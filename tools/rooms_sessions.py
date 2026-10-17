@@ -38,7 +38,8 @@ SESSIONS = {
     "cls-n-cold": ("ObjClassic", "enter-normal", 4051, "cycle", "1,2", 4, 45, 0, CLASSIC_WP),
     "cls-nm-jail": ("ObjClassic", "enter-nightmare", 4052, "cycle", "1,7", 4, 40, 0, CLASSIC_WP + ["--es", "30"]),
     "smoke": ("ObjNova", "enter-normal", 4001, "cycle", "1,2", 1, 20, 0, []),
-    "town-n": ("ObjNova", "enter-normal", 4061, "town", "1,1", 3, 35, 0, []),
+    "town-n": ("ObjNova", "enter-normal", 4061, "town", "1,1", 4, 40, 0, []),
+    "town-n2": ("ObjNova", "enter-normal", 4062, "town", "1,1", 5, 40, 0, []),
 }
 
 
@@ -64,6 +65,35 @@ def last_plr(log):
     except OSError:
         pass
     return pos
+
+
+def blood_moor_rects(log, start, lid=2):
+    """Tile rects of two activated rooms of level lid: the one nearest to start, and the one about two rooms on."""
+    rect, lev = {}, {}
+    try:
+        for line in open(os.path.join(ROOT, log), errors="replace"):
+            if line.startswith("RL "):
+                d = json.loads(line[3:])
+                rect[d["room"]] = d["rect"]
+            elif line.startswith("RRESEED "):
+                d = json.loads(line[8:])
+                lev[d["room"]] = d["level"]
+    except (OSError, ValueError):
+        return []
+    if not start:
+        return []
+    cand = []
+    for r, lv in lev.items():
+        if lv == lid and r in rect:
+            x, y, w, h = rect[r]
+            cx, cy = 5 * x + 5 * w / 2, 5 * y + 5 * h / 2
+            cand.append((((cx - start[0]) ** 2 + (cy - start[1]) ** 2) ** 0.5, tuple(rect[r])))
+    cand.sort()
+    if not cand:
+        return []
+    d0 = cand[0][0]
+    far = [c for c in cand if c[0] <= d0 + 60]
+    return [list(cand[0][1]), list(far[-1][1])] if far[-1] != cand[0] else [list(cand[0][1])]
 
 
 def pilot(log, slot, args, timeout, out, shots):
@@ -112,19 +142,25 @@ def run_session(name, slot, tag, saves, run):
                       shots)
             time.sleep(8)
     elif kind == "town":
-        # the waypoint to the town (arrival next to its waypoint), walk out until monsters come, walk back to the
-        # waypoint with them following, take the waypoint away (the town's rooms are released) and back
+        # the waypoint to the town (arrival next to its waypoint), walk out into the Blood Moor (the activated level-2
+        # rooms nearest to the arrival and two rooms on), wait for the monsters, walk back to the waypoint with them
+        # following, take the waypoint away (the town's rooms are released) and back
         pilot(log, slot, ["farm", "--wp", wp, "--time", "1", "--max-res", "1000"] + wpargs, 90, out, shots)
         start = last_plr(log)
         print("arrival %s" % (start,), flush=True)
         for c in range(cycles):
-            pilot(log, slot, ["explore", "--any-level", "--walk", "--hops", str(hops), "--nova", "0"], 400, out, shots)
-            time.sleep(4)
+            out_rects = blood_moor_rects(log, start)
+            print("cycle %d: out %s" % (c, out_rects), flush=True)
+            for rect in out_rects:
+                pilot(log, slot, ["explore", "--any-level", "--walk", "--to-rect", ",".join(map(str, rect)), "--hops",
+                                  "60", "--nova", "0"], 300, out, shots)
+            time.sleep(8)
             if start:
                 rect = "%d,%d,1,1" % (start[0] // 5, start[1] // 5)
-                pilot(log, slot, ["explore", "--any-level", "--walk", "--to-rect", rect, "--hops", "80", "--nova",
-                                  "0"], 400, out, shots)
-            time.sleep(3)
+                for _ in range(2):          # explore stops on entering a town: walk on to the waypoint after it
+                    pilot(log, slot, ["explore", "--any-level", "--walk", "--to-rect", rect, "--hops", "80", "--nova",
+                                      "0"], 400, out, shots)
+            time.sleep(2)
             pilot(log, slot, ["wpchain", "--chain", "1,2", "--linger", "15"] + wpargs, 120, out, shots)
             pilot(log, slot, ["wpchain", "--chain", "1,1", "--linger", "6"] + wpargs, 120, out, shots)
     sh(PY + ["tools/slots.py", "stop", str(slot)], 60)

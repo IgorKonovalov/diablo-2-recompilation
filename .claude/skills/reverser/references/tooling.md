@@ -226,6 +226,17 @@ formulas a second while the pointer rests on a skill. Check with `python3 -I too
 A fresh Act I character starts beside Warriv, not the waypoint: start field sessions in Act IV (progression 15,
 difficulty bytes 131) so `d2pilot.py farm --wp 1,2` finds the waypoint.
 
+### Room-lifecycle sessions (plan 0040, run:2026-10-17-lifecycle)
+`tools/gdb/rooms.gdb` (`pilot.py` + `rooms.py`) logs the reference moves with before/after snapshots of the DRLG rooms
+(`RM0`/`RMX`) and every server callback (`RCB`; the pilot's own `CB` is the collision grid), the client lists, each
+release pass (`RP`, every 12 frames), the save test per unit with its sub-results, the records, the restore and the
+wanderer gate, every line with the game frame `f`. `tools/rooms_sessions.py run --slot N --tag T --saves DIR --run R
+SESSION…` plays waypoint travel, then cycles of `explore --any-level` and a return to the arrival point
+(`explore --to-rect`), so the rooms left behind are released and restored on the way back; the `town` kind walks out
+of the Rogue Encampment and back and takes the waypoint away and back (`wpchain`, which needs the `OBJP` lines
+`rooms.py` writes every fifth `RP`). Check with `python3 -I tools/rooms.py check <logs>`. A session of four cycles
+gives a log of 3–12 MB.
+
 ### NPC actions (plan 0031, run:2026-10-15-vendors)
 
 `tools/d2pilot.py npc <log> <name> trade|gamble|hire --slot N [--repeat K] [--stay] [--buy ROW] [-v]` opens a town NPC's trade,

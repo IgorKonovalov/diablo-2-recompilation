@@ -317,10 +317,23 @@ class Tables:
         lv = self.pool.lv
         return lv[lid][0x2E] if 0 <= lid < len(lv) else 0
 
-    def level(self, cls, lid, diff, exp):
+    def stat12(self, r, outcome, mf, lid, diff, exp):
+        """Stat 12 of a restored monster: the monsters/stats level (MonsterInit, with the classic nightmare/hell
+        Level + 25 d), then for a minion the flag-0
+        handlers of mods 1-4 and the saved mods (MinionRestore), for a special the same mods with the flag-1
+        handlers (what the run shows: the champion handler's -1 applies)."""
         if self.mst is None:
             return None
-        return self.mst.level(cls, lid, diff, exp)[0]
+        lvl = self.mst.level(r["c"], lid, diff, exp)[0]
+        T = self.mst.T
+        if exp == 0 and diff != 0 and T.ms[r["c"]][0x4C] != 1:     # MonClassicDiffAdjust 0x0063EEF0
+            lvl = T.m16(r["c"], 0xAA) + 25 * diff
+        if outcome == "exact":
+            return lvl
+        st = {12: lvl, 13: 1000, 7: 10000, 6: 10000}
+        for m in [1, 2, 3, 4] + [m for m in r["mods"] if m]:
+            self.mst.handler(st, r["c"], m, 0 if outcome == "minion" else 1, mf, diff, 1)
+        return st[12]
 
 
 # ---- the checker -------------------------------------------------------------------------------------------------
@@ -483,7 +496,8 @@ class Checker:
     # -- the release pass
     def release(self, name, L):
         idle = {}
-        last_leave = {}      # room -> frame its +0x78 fell to 0
+        last_leave = {}      # room -> frame its +0x78 fell to 0 (after a visit that spanned a pass)
+        last_enter = {}
         in78 = {}
         pending = None       # (frame, {room: predicted release}) of the last RP
         rt_pred = {}
@@ -493,9 +507,16 @@ class Checker:
             where = "%s:%d" % (name, ln)
             f = d.get("f")
             if tag == "CL" and d["n78"] == 1:
-                last_leave[d["r"]] = f
+                ce = last_enter.get(d["r"])
+                # a pass P sees the client iff enter <= P < leave (the client sync runs before the pass)
+                spans = ce is None or (-(-ce // 12) * 12 < f)
+                if spans:
+                    last_leave[d["r"]] = f
+                else:
+                    self.n["client visits between two passes (the idle count not reset)"] += 1
             elif tag == "CE":
-                last_leave.pop(d["r"], None)
+                if d["n78"] == 0:
+                    last_enter[d["r"]] = f
             if tag == "RP":
                 if pending is not None:
                     self.close_pass(pending, freed_rooms, where)
@@ -736,20 +757,28 @@ class Checker:
 
     # -- the restore
     def restore(self, name, L, diff, exp):
-        frame_of = {}
-        freed = set()
+        freed = {}
+        walked = set()
+        popd = {}
         drlg_pop = {}
         last_dra = {}
         i = 0
         cur = None
         for k, (ln, tag, d) in enumerate(L):
             where = "%s:%d" % (name, ln)
+            if tag in ("WG", "RS0"):        # a walk (or RoomUpdateOne) ran the room: flags bit 0 is set after it
+                walked.add(d["r"])
             if tag == "FREE":
-                freed.add(d.get("d"))
+                freed[d.get("d")] = 1 if (d["r"] in walked or popd.get(d.get("d"))) else 0
+                walked.discard(d["r"])
+                if not freed[d.get("d")]:
+                    self.n["rooms released before any new-rooms walk reached them (never populated)"] += 1
             elif tag == "DRA":
                 last_dra[d["d"]] = d
+                popd[d["d"]] = d["pop"] & 1
                 if d["d"] in freed:
-                    self.ok("re-activated room keeps its populated bit (DRLG +0x60)", d["pop"] & 1 == 1, where)
+                    self.ok("re-activation: DRLG +0x60 bit 0 = populated before the release", d["pop"] & 1 ==
+                            freed[d["d"]], where)
                     self.n["re-activations"] += 1
             elif tag == "RS0":
                 cur = {"r": d["r"], "lid": d["lid"], "re": d["d"] in freed, "mons": 0, "items": 0, "units": 0}
@@ -872,14 +901,14 @@ class Checker:
             self.ok("stats 13, 7, 6 unchanged after the write", (st.get("13", 0), st.get("7", 0), st.get("6", 0)) == (
                 mrs["st"].get("13", 0), mrs["st"].get("7", 0), mrs["st"].get("6", 0)) if mrs else False, where)
             first = self.mrecs.get((r["id"], r["fr"]))
-            lvl = self.T.level(r["c"], lid, diff, exp) if diff is not None else None
-            if outcome == "exact" and lvl is not None:
-                self.ok("stat 12: the monsters/stats level", st.get("12") == lvl, where, "model %s unit %s" % (
-                    lvl, st.get("12")))
-                self.n["stat 12 predicted by the monsters/stats model"] += 1
+            lvl = self.T.stat12(r, outcome, mre.get("mf") or 0, lid, diff, exp) if diff is not None else None
+            if lvl is not None:
+                self.ok("stat 12: the monsters/stats model (%s path)" % outcome, st.get("12", 0) == lvl, where,
+                        "model %s unit %s" % (lvl, st.get("12")))
             if first:
                 fst = first[1].get("st", {})
-                self.ok("stat 12 = the first instance's", st.get("12") == fst.get("12"), where)
+                self.hist["stat 12 minus the first instance's (%s path)" % outcome][
+                    st.get("12", 0) - fst.get("12", 0)] += 1
             self.ok("+0xC4 gets 0x3000000 and the record's 0x20000", mre["c4"] & 0x3020000 == (
                 0x3000000 | (r["c4"] & 0x20000)), where)
             if r["c8"] & 0x200:
@@ -935,7 +964,7 @@ class Checker:
                         self.ok("item restore: the saved start seed (+0x28), 0 for a simple item",
                                 irc["u28"] == (0 if simple else s0["u28"]), w2,
                                 "save %s restore %s simple %s" % (s0["u28"], irc["u28"], bool(simple)))
-                        self.hist["item restore: same unit id"][irc["id"] == s0["id"]] += 1
+                        self.hist["item restore: same unit id (simple, same)"][(bool(simple), irc["id"] == s0["id"])] += 1
                         self.hist["item restore: same x, y"][(irc["x"], irc["y"]) == (s0["x"], s0["y"])] += 1
                     else:
                         self.n["items restored without their save in the log"] += 1

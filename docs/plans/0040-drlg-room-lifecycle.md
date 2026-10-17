@@ -256,3 +256,23 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `restore`), asserted freed without a record and absent at the return.
 
   **P2 opens** (lane H1 queue order, 1 slot).
+
+- **2026-10-17 — Phase 2 checkpoint (reverser, `lane/p40h`, slot 1; in progress, not for review).** Tools:
+  `tools/gdb/rooms.{gdb,py}`, `tools/rooms.py check` (with `tools/test_rooms.py`), `tools/rooms_sessions.py`. Sessions
+  of run:2026-10-17-lifecycle (logs `workspace/logs/rooms/lifecycle-*.log`): 13 played (n-cold, n-catacombs,
+  n-farooze, nm-dark, nm-spider, h-highlands, h-flayer, n-long, nm-long, cls-n-cold, cls-nm-jail, town-n, town-n2);
+  the 12 first check with **0 mismatches** over 1 882 803 checks (2 234 releases, 1 245 restores of re-activated
+  rooms, 1 926 monsters restored of which 195 special and 254 damaged, 75 over 7500 frames, 876 items, 1 653 objects
+  of which 536 operated, 10 128 wanderer-gate draws, 541 039 reference callbacks; acts I–V, three difficulties, maze
+  29 and 35, classic Normal and Nightmare). Corrections the run makes to drlg/0009: an item restore takes **two**
+  game-seed draws (type 4), a simple (compact) item comes back with start seed 0; a client visit between two release
+  passes does not reset the idle count; a room activated by `RoomActivateB` after the walk passed and released
+  before the next walk is never populated (+0x60 bit 0 clear); every logged champion carries `0x08` (MonMarkSpecial),
+  so the 0x18 test frees dead champions (6 seen) and the "dead champion restored alive" surprise is not reachable on
+  stock data; restored minions get the flag-0 handlers of mods 1–4 (+3 level), specials the flag-1 ones.
+  **Shortfalls so far:** the town-follow case (two `town` sessions: no hostile monster entered a town room; the
+  scripted walk-and-lure does not converge), wanderer roll/spawn (0 of 3 051 eligible draws passed, as expected),
+  expired item records (0), pets/owned, `+0xD0` < 8, necro summons, `restore` 0, the `0x400` and level-108 records.
+  **Resume:** write the run record (experiments.md), the drlg/0009 Phase 2 section with the `[C]` raises and the
+  corrections above, the manifest, and the review request; the town-follow case needs owner play or a static
+  answer (whether town rooms block monster movement), named as a shortfall otherwise. Slot 1 stopped.
