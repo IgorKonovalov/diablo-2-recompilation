@@ -582,7 +582,7 @@ Step notes:
 - [C] Per list entry, `RollEntry`'s record: Id, level, life, strength, dexterity, price, experience, defence, damage,
   `Share`, `Resist`, `HireDesc`. (fn:HIRELING_RollEntry@0x006637F0, run:2026-10-16-hirelings)
 - [C] Per hire or load, a monster unit of the row's class with pet info `{seed, name, Id}` (pet type 7), owner = the
-  player, and the stats and skills of § G. (fn:MERC_Init@0x00573270, fn:MERC_SetLevel@0x00572840, run:2026-10-16-hirelings)
+  player, the stats and skills of § G, and the stats and skill `MonStatsInit` leaves (§ I). (fn:MERC_Init@0x00573270, fn:MERC_SetLevel@0x00572840, run:2026-10-16-hirelings)
 
 ## Worked example
 

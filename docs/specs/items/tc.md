@@ -222,8 +222,8 @@ Step notes:
   - the Travincal compelling orb: the object init that spawns it (object `InitFn` 60, 0x005BBBE9) and its death in the
     council quest's death callback (0x005BBC41) (2);
   - a monster that ends itself through its AI, setting the bit before it enters death mode (12 sites in ten `MonAI`
-    rows): `FoulCrowNest`, `Sarcophagus` and `MosquitoNest` (0x005E02A1) once their spawn count reaches the AI
-    parameter, `GenericSpawner` (`evilhut`), the `Trap-Missile`, `Trap-Poison` and `Trap-Nova` traps, `7TIllusion`
+    rows): `FoulCrowNest`, `Sarcophagus` and `MosquitoNest` (0x005E02A1) once their spawn count reaches (`FoulCrowNest`) or
+    passes (the other two) the AI parameter of the difficulty, `GenericSpawner` (`evilhut`), the `Trap-Missile`, `Trap-Poison` and `Trap-Nova` traps, `7TIllusion`
     (`seventombs`), `DarkWanderer` and `TrappedSoul`;
   - a monster made by a spawner: `srvdofunc` 91 (`Nest`, `EvilHutSpawner`), 135 (`MinionSpawner`), 140
     (`Baal Tentacle`), the `EvilHole` AI and Baal's clone (5);
