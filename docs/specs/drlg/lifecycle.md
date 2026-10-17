@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/room-tiles, monsters/spawn, monsters/special, monsters/stats, objects, save/d2s]
 consumed_by: [drlg/room-tiles, drlg/preset, drlg/collision, monsters/spawn, monsters/special, monsters/stats, objects]
-tags: {C: 78, I: 70, L: 8}
+tags: {C: 80, I: 73, L: 7}
 updated: 2026-10-17
 ---
 
@@ -466,11 +466,16 @@ always saved and kept (unit `+0xC8 |= 0x100`); no kept unit was met. (fn:sub_005
 - [C] **No logged dead champion was saved.** `MonMarkSpecial` sets monster flag `0x08`; all 15 champions in 30 save
 tests carried flags `0x0D` or `0x2D`, and the 6 dead ones were freed by test 5. (run:2026-10-17-lifecycle,
 fn:sub_005A0320_MonMarkSpecial@0x005A0320, 0x005432EF)
-- [I] So a dead champion is not saved on stock data as far as its creation paths pass `MonMarkSpecial`: four callers
-do (`SpecialMonPlace` after every successful creation at 0x005A0B61, 0x005A487B, `ChampionMemberMark` at 0x005A48F4,
-skipped when monster data `+0x16` bit `0x04` is already set, and `MonMakeSpecial` at 0x005A496E). Whether every champion
-path passes one is open. (fn:sub_005A0320_MonMarkSpecial@0x005A0320, fn:sub_005A09E0_SpecialMonPlace@0x005A09E0,
-fn:sub_005A48C0_ChampionMemberMark@0x005A48C0)
+- [I] So a dead champion is not saved on stock data: every server write of the champion bit `0x04` to monster data
+`+0x16` comes after `MonMarkSpecial` on the same unit, and no server instruction clears `0x08`. The four writes are
+`SpecialModsRoll` (0x005A083E), reached from `SpecialMonSpawn` only when `SpecialMonPlace` gave a unit and from
+`MonMakeSpecial` after its own `MonMarkSpecial` (0x005A496E); `SpecialMonRestore` (0x005A44A3), after `SpecialMonPlace`
+returned a unit; and `ChampionMemberMark` (0x005A4905), after `MonMarkSpecial` (0x005A48F4). `SpecialMonPlace` marks
+every unit it creates (0x005A0B61), and `MonMarkSpecial` ORs `0x08` into any monster with monster data
+(0x005A0369–0x005A0375). This is a code reading: a block copy of monster data is not followed. (drlg/0009 § 11.1 (b);
+fn:sub_005A0320_MonMarkSpecial@0x005A0320, fn:sub_005A0760_SpecialModsRoll@0x005A0760,
+fn:sub_005A09E0_SpecialMonPlace@0x005A09E0, fn:sub_005A4440_SpecialMonRestore@0x005A4440,
+fn:sub_005A48C0_ChampionMemberMark@0x005A48C0, fn:sub_005A4940_MonMakeSpecial@0x005A4940)
 - [I] A player's own room is always in its near set, so a released room holds no live player; units that the walk
 does not save and does not keep are freed with the room, and are gone for good. (fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0)
 
@@ -617,13 +622,16 @@ H2a. exact path:                                                  [C] (fn:sub_00
 
 H2b. SpecialMonRestore(rec):                                      [I] (fn:sub_005A4440_SpecialMonRestore@0x005A4440, fn:sub_005A09E0_SpecialMonPlace@0x005A09E0)
       u ← SpecialMonPlace(room, no box, rec.x, rec.y, rec.id, avoid warps) in mode 1     ; record flag 4 is ignored
-      mods ← rec.mods;  apply the mod handlers without minions    ; stat 12 of a champion: the flag-1 result, see the champion note below H3
+      mods ← rec.mods
+      SpecialModsApply(u, minions: 0)                             ; [C] the flag-1 handlers (0x005A4558, 0x005A214D, 0x005A21A6, run:2026-10-17-lifecycle)
+                                                                  ; [I] the pushed 0 is the minions argument (0x005A454E, tested at 0x005A2123)
       name seed ← rec.nameSeed;  the aura when a mod is 30;  the superunique quest hooks
 
 H2c. MinionRestore(rec):                                          [I] (fn:sub_005A46E0_MinionRestore@0x005A46E0)
       u ← SpawnWithId(rec.x, rec.y, rec.class, mode 1, rec.id, radius −1, 0x62)
       if none: radius 4;  if none: a SpawnPosPick position
-      mods ← rec.mods;  the flag-0 handlers of mods 1–4 and of each saved mod
+      mods ← rec.mods;  the flag-0 handlers of mods 1–4 and of each saved mod   ; called by MinionRestore itself (0x005A4811, 0x005A4830)
+                                                                  ; so rndname takes no unit-seed step here (0x005A0CE7)
 
 H3. on a created unit u, in this order:                           [I] (0x005427FB–0x00542916)
       MonSetOwner(rec.leaderId, 1, …)                             ; the group link
@@ -667,8 +675,22 @@ Stat 12 does not tell which handler flag the minion path applies (the checker gi
 flag-0 reading of H2c stays `[I]`. (run:2026-10-17-lifecycle, fn:sub_005A46E0_MinionRestore@0x005A46E0)
 - [C] A restored **champion**'s stat 12 is the result of the **flag-1** handlers: + 2 (`leveladd` + 3,
 `champion` − 1); with flag 0 the checker gives 15 mismatches, one level high on each champion restore. A restored unique
-comes back at + 3, which does not separate the flag. The code reading of `SpecialMonRestore` names a flag-0 call; which
-call applies the flag-1 handlers is open. (run:2026-10-17-lifecycle, fn:sub_005A4440_SpecialMonRestore@0x005A4440)
+comes back at + 3, which does not separate the flag. (run:2026-10-17-lifecycle, fn:sub_005A4440_SpecialMonRestore@0x005A4440)
+- [C] **`SpecialMonRestore` applies the flag-1 handlers through its `SpecialModsApply` call** (0x005A4558).
+`SpecialModsApply` always calls the special's own handlers with flag 1, mods 1–4 at 0x005A214D and the saved list at
+0x005A21A6, and its group callback with flag 0. The code reading and the 15 champion restores above agree, and flag 0
+gives 15 mismatches, so the run separates the two readings. (drlg/0009 § 11.1 (c); run:2026-10-17-lifecycle,
+fn:sub_005A2120_SpecialModsApply@0x005A2120, data:g_UModAlwaysMods@0x006E2168)
+- [I] **The 0 that `SpecialMonRestore` pushes is the `minions` argument** of `SpecialModsApply` (pushed at 0x005A454E,
+tested at 0x005A2123), so the special is restored without new minions. drlg/0009 § 6 first read that 0 as the handler
+flag. The run does not separate "no minions" from another use of the argument. (fn:sub_005A4440_SpecialMonRestore@0x005A4440,
+fn:sub_005A2120_SpecialModsApply@0x005A2120)
+- [I] **`MinionRestore` calls the handlers itself with flag 0** (mods 1–4 at 0x005A4811, its nine saved mod bytes at
+0x005A4830), after setting `0x10` (0x005A47DF). `rndname` (mod 1) steps the unit seed and writes the name seed only with
+flag 1 (0x005A0CE7), so a minion restore takes no unit-seed step where flag 1 would take one; `resist` (8, 27, 28) also
+acts only with flag 1 (0x005A138F). That difference would show outside stat 12 on every minion restore; it was not looked
+for, and the kept lifecycle logs were not searched for a unit seed after the handlers. (fn:sub_005A46E0_MinionRestore@0x005A46E0,
+fn:sub_005A0CE0_UModRndName@0x005A0CE0, fn:sub_005A1370_UModResist@0x005A1370)
 - [C] After the writes, `+0xC4` has `0x3000000` and the record's `0x20000`, so a restored unit carries the
 preset flag `0x2000000` and is saveable again in any level. `MonRegionUnitLeave` takes record `+0x2C`, the current
 level, the alignment, the dead flag and flag `0x40`, and lowers the current level's region `+0x2CC` for an alignment-0
@@ -679,8 +701,8 @@ that bit over (0x005428F9–0x00542903, drlg/0009 § 6). The group link, the AI 
 re-append are code readings; AI and movement of a restored monster are boundary oracles (ADR-0014 phase 4).
 (fn:sub_00541E20_InactiveMonAiRestore@0x00541E20, fn:sub_005A4850_ModAppendApply@0x005A4850, fn:sub_005543B0_MonAlignSet@0x005543B0)
 - [I] **A dead special saved without `0x08` or `0x10` would come back alive**: `SpecialMonRestore` places the unit
-in mode 1 whatever record flag 4 says, with stat 6 by the 7500-frame rule. The dead-champion notes of § F make this unreachable on the
-logged data. (0x00542693–0x005426C3, fn:sub_005A4440_SpecialMonRestore@0x005A4440)
+in mode 1 whatever record flag 4 says, with stat 6 by the 7500-frame rule. By the dead-champion reading of § F (every
+champion carries `0x08`) no stock case reaches it. (0x00542693–0x005426C3, fn:sub_005A4440_SpecialMonRestore@0x005A4440)
 - [I] A `0x400` record with alignment 0 (the only one the drop lets through) reaches the fatal error `0x691`
 (0x0054287F–0x0054288E, 0x00542990). The wanderer class `rogue2` has MonStats `Align` 1, so a saved wanderer would be
 alignment 2 and dropped if its creation path sets the alignment the same way (open question). (0x005427B8–0x005427D4,
@@ -863,10 +885,20 @@ restore is not specified here.
   can, the save rule frees it without a record at the town's release (`SaveMonsters` 0, no `0x2000000`), against the
   community claim that such monsters stay "injured" (drlg/0009 *Leads used*). The run met only the other half: all 172
   monsters the save test saw in a `SaveMonsters` 0 level (120 in level 1, 52 in level 103) carried `0x2000000` and were
-  saved. Lead: MonStats `inTown` (`+0x0D` bit 2) is set on no pool class; its readers are not read. Owner: reverser.
-- [L] **A champion without monster flag `0x08`** (§ F): whether any champion creation path skips `MonMarkSpecial`, which
-  would make a dead champion saveable and restored alive (§ H). Owner: reverser.
-- [L] **Which call in `SpecialMonRestore` applies the flag-1 handlers** that a restored champion's stat 12 shows (§ H), and which flag the minion path really applies. Owner: reverser.
+  saved. The static reading so far (drlg/0009 § 11.1 (a)): the server's path planner refuses a path whose target room
+  is a town room for a monster that is not an NPC (0x006483A0), so a hostile pool monster cannot plan a path into town.
+  Three routes stay open: the test reads only the target room, never the rooms a path crosses; path types 4, 10 and 14
+  (`+0x34` bit `0x40000`) go to a straight-path planner before the test; and knockback, teleport and placement are not
+  followed. MonStats `inTown`, the earlier lead, has two readers, both in combat. Owner: reverser (the static remainder
+  first, then a recipe only if it finds a route in, per the `lane/rbs3` ruling).
+- ~~A champion without monster flag `0x08`~~ answered by the § F reading from drlg/0009 § 11.1 (b): every server write of
+  the champion bit follows `MonMarkSpecial`, so no champion path skips it (still a code reading; a block copy of monster data is
+  not followed).
+- ~~Which call in `SpecialMonRestore` applies the flag-1 handlers~~ answered in § H from drlg/0009 § 11.1 (c): its
+  `SpecialModsApply` call.
+- [L] **Which handler flag the minion restore really applies** (§ H): stat 12 does not separate them, so H2c's flag 0
+  stays a code reading. A kept lifecycle log that shows a minion's unit seed after the handlers would check it without a
+  run (the `rndname` step). Owner: reverser.
 - [L] **The wanderer roll and spawn** were never reached (1 in 32 768 gate draws pass); whether `SpawnAtPos` sets a
   wanderer's alignment from MonStats `Align` (so that a saved wanderer is dropped at the restore rather than reaching the
   fatal `0x691`) is a static read.

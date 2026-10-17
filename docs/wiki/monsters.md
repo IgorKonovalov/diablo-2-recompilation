@@ -298,7 +298,11 @@ brings its own MonStats minions if its class has them. They are not linked to th
 
 **Map presets** ([special § H](../specs/monsters/special.md#h-monplace-presets)) can also make specials. One preset
 kind makes a unique, its class picked as for a random special, at a random point of the room, with no champion roll. Another makes a champion
-at the preset point, with mod 16 and a champion pack. Both were reproduced in Tristram.
+at the preset point, with mod 16 and a champion pack. Both were reproduced in Tristram. Many other preset kinds,
+by the code, place nothing at all when the room's presets are spawned or restored: the group presets that the map's
+keep/drop roll keeps (see [levels](levels.md#what-a-preset-places-units-and-keepdrop-rolls)), the river, nest, guard and maggot kinds among them. Five
+place one fixed monster at the point with no special code: the rogue warner (`navi`), Blood Raven, the Maggot Queen,
+and two tentacle-head kinds whose type depends on the level. Other code that reads a room's presets is not yet followed.
 
 ## Unique minions and mod transfer
 

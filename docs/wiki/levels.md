@@ -363,7 +363,9 @@ kept or dropped by chance, one draw each. Everything else, [superuniques](../glo
 | object 581 | 3/4 |
 
 The `place_group25` and `place_group75` chances run **against their names**: 25 is kept three times in four, 75 once
-in four. That is the code, and every observed outcome matches it. The rolls walk the units from the **last** one in
+in four. That is the code, and every observed outcome matches it. A kept group preset still places no monster when
+the room is filled: by the code, the spawner does nothing for any of the four group kinds (see
+[monsters](monsters.md)). The roll is still drawn. The rolls walk the units from the **last** one in
 the file, and no difficulty, expansion or player-count test is involved.
 
 **Which seed.** Each preset instance rolls exactly once ([preset § 2](../specs/drlg/preset.md#2-which-seed-rolls-and-when)).
@@ -511,7 +513,8 @@ Each unit of the released room is saved, kept or freed:
 | missile | freed |
 
 Every logged champion carries the flag that bars a dead special from the save, so no dead champion was saved in the
-run; whether every way of making a champion sets that flag is still open. Anything the rule does not save is gone
+run. The code, read but not run on every path, sets that flag on every champion the server makes and never clears it,
+so a dead champion is not saved with the shipped data. Anything the rule does not save is gone
 for good. Several tests (pets and summons, a few special monster classes, `restore` 0 classes) and the case of a
 level whose flag is clear for a monster that came from neither a preset nor a restore were never met, and stay
 readings of the code.
@@ -522,8 +525,10 @@ A plain one is placed at its saved position with three room-seed draws (seven wh
 created in full, then gets its saved experience and maximum hit points back. Its hit points are the saved ones if
 fewer than 7 500 frames passed since the release, and full otherwise. Its level comes from the new creation and its
 re-applied mods: a minion created at the plain pool level comes back 3 levels higher at its first restore, and a
-champion comes back 2 levels above the plain level. That champion result is not what the restore code was read to
-do, and which call produces it is still open. States, timers and anything a hit left behind are lost. Each restored item takes two game-seed draws; an item
+champion comes back 2 levels above the plain level. For the champion, the code and the run agree: its restore
+re-applies its mods in full, as at its first creation, but makes no new minions (the minion part is read from the
+code). A minion's restore re-applies its mods in the lighter form, which also skips the step a random name takes on
+the monster's own seed; its level does not show which form it gets, so that is read from the code only. States, timers and anything a hit left behind are lost. Each restored item takes two game-seed draws; an item
 saved in full keeps its seed, while a simple one (gold, potions, keys) comes back with seed 0. Its expiry becomes the
 later of the saved one and 15 000 frames from now. A run reproduced 2 035 monster, 876 item and 1 799 object restores.
 
@@ -613,11 +618,13 @@ section.
   run (the cube cannot open its portal in this version, and no other code opens a portal to levels 133–136). Three
   branches once missing are now reached in runs and match the model: the Frigid Highlands prisons placed by the
   fallback scan, a road search that fails in the Black Marsh, and the bridge search on the non-square Blood Moor. A
-  link-builder back-up was never reached. A vertex merge in the level outline, a waypoint pass with no free cell,
-  roads with 5 or 6 endpoints and an exhausted road search were never reached either, in the logged games or in
-  52 200 windows of an offline scan; whether the shipped data can reach them at all is an open question. So is the
-  cliff-cave scan's swapped bounds, which only a non-square level would show: of the Act I levels 2–7 only the Blood
-  Moor is non-square, and it never got a cliff run in the scan's 1800 Blood Moor windows. A few table reads past the end are not reached by the shipped tables.
+  link-builder back-up was never reached. A vertex merge in the level outline and a waypoint pass with no free cell
+  were never reached either, in the logged games or in 52 200 windows of an offline scan, and nothing yet shows that
+  the shipped data cannot reach them. Three other branches have no case in the shipped data, by a reading of the code
+  that the scan agrees with: roads with 5 or 6 endpoints (an Act I level has at most 4, since its border pieces never
+  take the opening's variant), an exhausted road search (it uses at most 45 of its 900 nodes), and the cliff-cave scan's
+  swapped bounds, which only a non-square level would show (of the Act I levels 2–7 only the Blood Moor is non-square,
+  and nothing between the step that skips its cliffs and the scan gives it a cliff run). A few table reads past the end are not reached by the shipped tables.
 - **Room tiles** ([room tiles § Open questions](../specs/drlg/room-tiles.md#open-questions)): the tile-merge
   branches that would re-orient a wall or shadow, or treat orientation 3 specially, are **unreachable on the shipped
   data**, outdoor rooms included: every wall and shadow cell of the 2077 map files a room can read carries the bit
@@ -650,9 +657,10 @@ section.
   data cannot give it; only one slot's warp cells falling in two rooms of a level could, and nothing in the code rules
   that out.
 - **Room lifecycle** ([lifecycle § Open questions](../specs/drlg/lifecycle.md#open-questions)): whether a hostile
-  monster can follow a player into a town room at all (if it can, the town's release frees it instead of saving it),
-  whether any way of making a champion skips the flag that keeps a dead one from being saved, which call gives a
-  restored champion its level, the wanderer roll and spawn, an expired item, several save tests and restore paths,
+  monster can follow a player into a town room at all (if it can, the town's release frees it instead of saving it).
+  The code bars such a monster from planning a path whose goal is in town, but three other ways in are not read yet: a
+  path that only crosses a town room, the straight-line path kinds, and knockback, teleport or placement. Also open:
+  which form of the mod handlers a restored minion gets, the wanderer roll and spawn, an expired item, several save tests and restore paths,
   and multiplayer games, none of which a run met.
 - **Collision** ([collision § Open questions](../specs/drlg/collision.md#open-questions)): the reader of the missile
   mark in spawn tests, the clear-and-restamp of a merged tile, single-cell placement tests, three special-class spawn

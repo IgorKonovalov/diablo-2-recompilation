@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/spawn, monsters/pool, data/excel, drlg/collision]
 consumed_by: [monsters/stats, monsters/spawn, items/tc]
-tags: {C: 106, I: 92, L: 3}
+tags: {C: 107, I: 94, L: 4}
 updated: 2026-10-17
 ---
 
@@ -428,9 +428,16 @@ E1. The copy runs as each minion is created, inside `SpecialModsApply` and befor
 mods, or a superunique's fixed and extra mods, are therefore in the copy. A superunique's mod 22, appended later, is not.
 The run predicted all 277 minion lists after the copy, including Beetleburst's `scarab2` minions, whose own post-create
 mod 20 comes first. [C] (0x005A0C8F, 0x005A4B8E, run:2026-10-14-mon-special) A minion's own handlers are never called for
-its copied list. What reaches it is the boss's handlers with flag 0 (§ C), for every boss mod, `xfer` or not. The copied
-list is what the server sends for the minion and what other code reads. [I] (fn:sub_0058F380_MonGroupForEach@0x0058F380,
-fn:sub_0053E2E0_MonUnitPacketBuild@0x0053E2E0)
+its copied list, and the copied list is what the server sends for the minion. [C] (fn:sub_005A0930_ModsXferCopy@0x005A0930,
+fn:sub_0053E2E0_MonUnitPacketBuild@0x0053E2E0, fn:sub_0045F190_ClientMonAssign@0x0045F190, run:2026-10-14-mon-special,
+run:2026-10-15-mon-stats, [monsters/0003 § Plan 0038 batch S3b](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-s3b-2026-10-16))
+What reaches it is the boss's handlers with flag 0 (§ C), for every boss mod, `xfer` or not. The other readers of a monster's list see any later append: the
+inactive save copies all nine bytes, the restore re-appends with flag 0 each byte that differs from the new unit's list
+([drlg/lifecycle § H](../drlg/lifecycle.md#h-the-restore)), and a three-slot packet path sends slots 0–2 only; the fourth
+reader is `SuperUniqueSpawn`'s own later append. [I] (fn:sub_0058F380_MonGroupForEach@0x0058F380,
+fn:sub_0053E2E0_MonUnitPacketBuild@0x0053E2E0, fn:sub_005421A0_InactiveMonsterSave@0x005421A0,
+fn:sub_005A4850_ModAppendApply@0x005A4850, 0x00597C87,
+[monsters/0003 § Plan 0038 batch S3b](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-s3b-2026-10-16))
 
 E2. With stock data every unique-pick mod except `aura` has `xfer` 1, and so do the five champion mods. A unique's
 minions therefore carry all its rolled mods except `aura`. [C] (tbl:MonUMod.txt:xfer, run:2026-10-14-mon-special)
@@ -571,12 +578,39 @@ H2. MonPlace case 3, a champion at the point:                      [C] (0x0054E8
   (fn:sub_0054E600_PresetMonSpawn@0x0054E600, fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, run:2026-10-14-mon-special)
 - [I] Cases `0x11`–`0x20` are fixed classes at the point and not specials: 17 `fallen1`, 18 `fallenshaman1`, 22
   `fetish1`, 23 `fetishshaman1`; 29 `minion1`, 30 `imp1` (`deathmauler1` in level 110), 31 `act5barb1`, 32
-  `reanimatedhorde3`, these four with mode 12; 19–21 and 24 class 0; 25 and 28 nothing. The class goes through
+  `reanimatedhorde3`, these four with mode 12; 25, 27 and 28 nothing (their table entry returns 0); 19–21
+  never reach this table (next bullet). What 24 and 26 do outside Normal is an open question. The class goes through
   `LevelClassVariant` and then `PresetFallenVariant` (`fallen1` → `fallen2` in level 6, `fallen3` in 7, 12, 16;
   `fallenshaman1` → `fallenshaman2` in 6 and 7, `fallenshaman3` in 12 and 16). `reanimatedhorde3` (438) draws
   `Range(u.seed, 50)` for an AI timer. In normal difficulty `0x18` and `0x1A` place a group in the preset's box instead.
   (fn:sub_0054E2A0_PresetFallenVariant@0x0054E2A0, fn:sub_0063EC70_LevelClassVariant@0x0063EC70,
   fn:sub_0054E090_PresetGroupSpawn@0x0054E090)
+- [I] **Every MonPlace row, from the switch.** The MonPlace branch switches on `index − 2` with the bound `0x1E`
+  (0x0054E76F–0x0054E782). Rows 0, 1 and 33–36 fail the bound, and rows 6, 7, 9, 12–16 and 19–21 have byte-table entry 8;
+  both go to 0x0054EAFE, which returns 0 with no call. **These rows place nothing in `PresetMonSpawn`**:
+  `place_nothing`, `place_npc_pack`, the river monsters, `place_amphibian`, the nests, the talking and dumb guards,
+  `place_maggot`, `place_maggotegg`, `place_mosquitonest` and `place_group25` to `place_group100`. A `place_group25`–`75`
+  unit that the DRLG preset pass keeps on its room-seed draw ([drlg/preset § 3](../drlg/preset.md#3-the-keepdrop-rolls))
+  still places nothing here. The rows placed at the preset point with `SpawnAtPos(x, y, class, mode, radius −1, …)` and
+  no special code:
+
+  | Row | `code` | Class | Flags | Anchor |
+  |---|---|---|---|---|
+  | 4 | `place_rogue_warner` | 266 `navi` | 0 | 0x0054E919–0x0054E933 |
+  | 5 | `place_bloodraven` | 267 `bloodraven` | 0 | 0x0054E808–0x0054E840 |
+  | 8 | `place_tightspotboss` | 284 `maggotqueen1` | 8 | 0x0054E943–0x0054E95D |
+  | 10 | `place_tentacle_ns` | `tentaclehead1`–`3` by level | 4 | 0x0054E789–0x0054E7F8 |
+  | 11 | `place_tentacle_ew` | `tentaclehead1`–`3` by level | 0 | 0x0054E789–0x0054E7F8 |
+
+  Rows 4 and 5 use their class only while `nMonStats` exceeds it, else −1. Rows 10 and 11 step class 261's `BaseId`
+  along `NextInClass` once in levels 76–78 (`tentaclehead2`) and twice in 92 and 93 (`tentaclehead3`), else not at all.
+  The scope is this function: `PresetUnitDispatch` returns its result with no fallback (0x005558DD–0x005558EA), and both
+  the first spawn (`PresetUnitSpawn`) and the inactive restore (`RoomInactiveUnitsRestore`) reach the switch through it.
+  The four other callers of `PresetMonSpawn` (0x00545C75, 0x0058A70D, 0x005AA231, 0x005ACB43) and any other reader of
+  the room's preset list are not followed. ([monsters/0003 § 7](../../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20);
+  fn:sub_0054E600_PresetMonSpawn@0x0054E600, fn:sub_005557D0_PresetUnitDispatch@0x005557D0,
+  fn:sub_005B2F20_SpawnAtPos@0x005B2F20, fn:sub_0054DA60_MonClassChainStep@0x0054DA60, tbl:MonPlace.txt:code,
+  tbl:MonStats.txt:NextInClass)
 
 ### I. Names
 
@@ -658,10 +692,16 @@ fn:sub_00653E20_UNameTablesFree@0x00653E20, tbl:UniqueTitle.txt:Name)
   (fn:sub_005A4440_SpecialMonRestore@0x005A4440, fn:sub_005A46E0_MinionRestore@0x005A46E0,
   fn:sub_005A4940_MonMakeSpecial@0x005A4940, fn:sub_005A0320_MonMarkSpecial@0x005A0320)
 - [C] A restored champion's stat 12 is what the **flag-1** handlers give (15 restores; with flag 0 each would come out one
-  level high), and a restored minion's is the level plus the handlers of mods 1–4 and its saved mods (144), which does
-  not tell the minion path's flag. Which call in `SpecialMonRestore` applies flag 1 is open
+  level high), and `SpecialMonRestore` applies them through its `SpecialModsApply` call (0x005A4558), which calls the
+  special's own handlers with flag 1 (0x005A214D, 0x005A21A6). A restored minion's stat 12 is the level plus the handlers
+  of mods 1–4 and its saved mods (144), which does not tell the minion path's flag
   ([drlg/lifecycle § H](../drlg/lifecycle.md#h-the-restore)). (run:2026-10-17-lifecycle, fn:sub_005A4440_SpecialMonRestore@0x005A4440,
-  fn:sub_005A46E0_MinionRestore@0x005A46E0)
+  fn:sub_005A2120_SpecialModsApply@0x005A2120, fn:sub_005A46E0_MinionRestore@0x005A46E0)
+- [I] The 0 that `SpecialMonRestore` pushes is `SpecialModsApply`'s `minions` argument (0x005A454E, tested at
+  0x005A2123), not a handler flag. `MinionRestore` calls the handlers itself with flag 0 (0x005A4811, 0x005A4830), so
+  `rndname` takes no unit-seed step there ([drlg/lifecycle § H](../drlg/lifecycle.md#h-the-restore)).
+  (fn:sub_005A4440_SpecialMonRestore@0x005A4440, fn:sub_005A46E0_MinionRestore@0x005A46E0,
+  fn:sub_005A0CE0_UModRndName@0x005A0CE0)
 - [I] **`MonMakeSpecial`'s caller is the Warping Shrine.** `OBJ_OperateDispatch` calls `g_ObjOperateFns[OperateFn]`;
   slot 2 is `OBJOP_Shrine`. It acts only on a shrine not yet used (object data `+0x0C` = 0 and mode 0), marks it used
   (`+0x0C` = operator id + 1, mode 1), and calls `g_ShrineEffects[Code]` from the shrine record (a NULL row falls back
@@ -891,6 +931,12 @@ The name is format 1722 with prefix, suffix and appellation, from the keys `Fire
 - ~~What calls `sub_005A4940_MonMakeSpecial` (caller `0x00583050`)~~ answered in [§ J](#j-other-entry-paths-and-pre-existing-mods) (the Warping Shrine) from
   [monsters/0003 § Plan 0039 batch P1c](../../findings/monsters/0003-special-monsters.md#plan-0039-batch-p1c-2026-10-17); the
   path is unreached, in the list above.
+- [L] **What MonPlace rows 24 and 26 do outside Normal** (§ H). Both go to the group case, which places a group only in
+  Normal; monsters/0003 § 7's older bullet reads 24 as class 0 in the fixed-class table, the newer switch bullet does not
+  list either row, and [MonPlace](../../tables/MonPlace.md) says both placed nothing in Hell's logs. At the `lane/sw6`
+  review an objdump read gives rows 24 and 26 the group case's switch byte and that case a return of 0 when the game's
+  difficulty is not Normal, not a fixed-class entry; the finding has not taken this in. Owner: reverser (the open
+  monsters/0003 § 7 reconcile entry).
 - [L] Where a unique's random colour is drawn, and on which client seed. It is display only and cannot reach a server seed,
   and the name roll re-initialises its own seed.
 - ~~The effects of every handler and the readers of `constants` rows 1–33~~ specified in [monsters/stats § G](stats.md#g-the-mod-handlers-stat-effects).
