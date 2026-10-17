@@ -617,7 +617,12 @@ At `0x0054E651` the function overwrites its first argument with the room's level
   fail the bound, and rows 6, 7, 9, 12–16 and 19–21 have byte 8. Both go to `0x0054EAFE`, which returns 0 with no call:
   **these rows place nothing**. That covers `place_nothing`, `place_npc_pack`, the river monsters, `place_amphibian`, the
   nests, the talking and dumb guards, `place_maggot`, `place_maggotegg`, `place_mosquitonest` and **`place_group25` to
-  `place_group100`**. H4b's case-36 calls are this branch. The rows not read before:
+  `place_group100`**. H4b's case-36 calls are this branch. The scope is this function and its caller
+  `PresetUnitDispatch`, which returns its result with no fallback (0x005558DD–0x005558EA). For rows 33–35 the DRLG
+  preset pass first keeps or drops the unit on a room-seed draw (0x0066777D, [drlg/preset](../../specs/drlg/preset.md)),
+  so a kept group preset reaches this branch and still places nothing here. Other readers of a kept preset monster
+  unit (the four other callers of `PresetMonSpawn`, anything that reads the room's preset list) are not followed. The
+  rows not read before:
   - **4 `place_rogue_warner`**: `SpawnAtPos(x, y, class 266 navi, mode, radius −1, flags 0)` at the point
     (0x0054E919–0x0054E933).
   - **5 `place_bloodraven`**: the same with class 267 `bloodraven` (0x0054E808–0x0054E840). Class 0x10A or 0x10B is
