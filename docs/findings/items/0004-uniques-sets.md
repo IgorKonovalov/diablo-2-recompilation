@@ -900,6 +900,32 @@ The batch's other ledgers are in [items/0008 § Plan 0038 batch S2c](0008-cube.m
   creations, the quality-7 hammers among them (`tools/uniques.py`, run:2026-10-16-quest-drops).
   (fn:sub_00557450_ItemCreateByQuality@0x00557450, fn:ITEMS_BuildUnique@0x005566B0)
 
+## Plan 0039 batch P1b (2026-10-17)
+
+Row Q22 of [plan 0039](../../plans/0039-backlog-sweep-4.md): `nolimit` and automatic identification. Static (a call-site
+survey of `ITEMS_SetFlag(…, 0x10, …)` with objdump) and a table check. No game run.
+
+- [I] **Who writes the identified flag (`0x10`).** 22 call sites. Clearing it: the magic, unique (0x00556855 and
+  0x00556A28), rare (`ITEMS_BuildRareAffixes`, the version-0 rare), crafted, set (`ITEMS_BuildSetPick`, the version-0
+  set) builders, `sub_00556A60_CharmForcedAffixes` and `GAMBLE_BuildInv`. Setting it: `sub_00557AB0_ItemInitStats`,
+  `sub_00555D20_ItemQuestHook`, `sub_0055FE00_ItemIdentifyAttach`, `sub_00565AB0_RecipeOutputCreate` (2), the identify
+  routine 0x005762C0 (4 callers), the Act II staff and viper chests (`sub_00599CF0_A2Q2_StaffChest`,
+  `sub_0059A7E0_A2Q3_ViperChest`), and the client at 0x004C19FE. `ItemCreate` and `ITEMS_CreateForStore` copy it from the
+  creation record. (0x00556855, 0x00556A28, 0x00557ECF, 0x00555D4A, 0x005762CE, 0x00558EE1, 0x00559E0B)
+- [I] **A quest unique is created identified.** `ItemInitStats` runs after `ItemCreateByQuality` returns (0x00557E41), and for
+  a base with both `quest` and `questdiffcheck` set it writes stat 356 (the difficulty) and then sets flag `0x10`
+  (0x00557E60–0x00557ECF), undoing the unique builder's clear. [C] (data) every stock base with the `unique` flag and
+  `quest` (17 bases) has `questdiffcheck` 1; `std` (`unique` flag, no `quest`) is not identified by this rule.
+  (fn:sub_00557AB0_ItemInitStats@0x00557AB0, tbl:Misc.txt:questdiffcheck, tbl:Weapons.txt:questdiffcheck)
+- [I] **`nolimit` plays no part in identification.** Its reader is `ITEMS_UniqueMarkMade` (§ 3.3), called once, from the
+  unique builder (0x00556A1A, the only `call` to it in the image); the writers above decide on the base, the quality or
+  their caller, and none of those read here tests the UniqueItems row. With every stock row's `nolimit` blank, a stock unique is always marked made. (fn:ITEMS_UniqueMarkMade@0x00556530, tbl:UniqueItems.txt:nolimit)
+- [I] **A gambled unique enters the made-uniques set.** `GAMBLE_BuildInv` creates each slot's item with
+  `ITEMS_CreateForStore(…, quality q, …)` when the window is built ([items/0009 § 7](0009-vendors.md#7-gambling-gamble_buildinv-0x00578790)),
+  and quality 7 reaches the same `ITEMS_BuildUnique`, whose one `ITEMS_UniqueMarkMade` call marks the row. So a unique
+  shown in the gamble window marks its row made whether or not it is bought, and a row already made fails the pick
+  and falls back (§ 5). (fn:GAMBLE_BuildInv@0x00578790, fn:ITEMS_BuildUnique@0x005566B0)
+
 ## Data touched
 
 - `tbl:UniqueItems.txt:version` (`+0x24` u16), `enabled` (`+0x2C` bit 0), `ladder` (bit 3), `nolimit` (bit 1),
@@ -947,9 +973,9 @@ The batch's other ledgers are in [items/0008 § Plan 0038 batch S2c](0008-cube.m
 - Not reached by the Phase 2 runs, so these keep their Phase 1 tag: a fallback builder failing in turn (the chain past its first step); a
   `unique`-flag base with no candidate; a quest base skipping the made test; a set-29 row;
   an item of type 11 drawing on the item seed before the pick.
-- `nolimit` and automatic identification (`src:d2dfg-blizzard`): the builder clears the identified flag of every unique.
+- ~~`nolimit` and automatic identification (`src:d2dfg-blizzard`): the builder clears the identified flag of every unique.
   Whether a `nolimit` or quest unique is identified later is not read. Every stock row has `nolimit` blank, so no drop
-  reaches it.
+  reaches it.~~ Read in [§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17): a quest unique is identified by `ItemInitStats`; `nolimit` takes no part.
 
 ## Change notes
 

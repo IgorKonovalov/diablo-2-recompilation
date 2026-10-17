@@ -221,8 +221,8 @@ its stack (`"-\x02"` … `"\x82\x02"`); none is found and the 0 goes to gems `+0
   `name` (0x006341E0–0x0063420B); the `.bin` holds 0 there. The client's item-name builder takes the two merged ids
   of a rare item (`ITEMS_GetRareName1`, item data `+0x32`, and `0x00628040`, `+0x34`), resolves each through
   `RAREAFFIX_GetRecord`, and shows `STRTABLE_GetByIndex(record + 0x0C)` for each; when that index is 0 it shows the
-  raw `name` between `(` and `)` instead. The two texts go to two separate buffers (0x0048C5C1–0x0048C726); how the
-  line joins them (order, separator) is not read. (fn:sub_00633F40_LoadRareAffixes@0x00633F40,
+  raw `name` between `(` and `)` instead. The two texts go to two separate buffers (0x0048C5C1–0x0048C726), joined by
+  `RareFormat` ([§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17)). (fn:sub_00633F40_LoadRareAffixes@0x00633F40,
   fn:RAREAFFIX_GetRecord@0x00634260, fn:ITEMS_GetRareName1@0x00627FE0, fn:STRTABLE_GetByIndex@0x00524A30)
 
 ## Plan 0038 batch S1b (2026-10-16)
@@ -275,6 +275,76 @@ inferred and this section raises it, the tag and the second source given here ar
   `runes.bin` records; `Runeword95` (rows 39 and 118) is one key and resolved to 20600, and the store is at `+0x82`
   (0x00639C6E, pinned). (fn:RUNES_Load@0x006394A0, tbl:Runes.txt:Name)
 
+## Plan 0039 batch P1b (2026-10-17)
+
+Row B8 of [plan 0039](../../plans/0039-backlog-sweep-4.md): how the client's item-name line joins a rare item's two
+names. Static (objdump, Ghidra on the lane's copy).
+
+- [I] **The two texts are the two arguments of `RareFormat`.** In the client builder
+  `sub_0048C060_ClientItemNameBuild`, qualities 6, 8 and 9 share one case (0x0048C5C1). It writes `name1`'s text
+  (`ITEMS_GetRareName1`, item data `+0x32`) into the buffer at `[ebp−0x17D8]` and `name2`'s (`0x00628040`, `+0x34`) into
+  `[ebp−0x0FD8]`, either `STRTABLE_GetByIndex(record + 0x0C)` or `"(" + raw name + ")"` when that index is 0, as
+  § Rare names says; a missing record leaves its buffer empty (0x0048C6BE, 0x0048C7F3). Then it calls
+  `sub_0048BE80_ClientFormatArgs(out, STRTABLE_GetByIndex(0x6B6), name1Text, name2Text, NULL)` (0x0048C89A–0x0048C8BC).
+  String 1718 (`0x6B6`) is the key `RareFormat`. The formatter copies its NULL-terminated argument list into 400-byte
+  slots in order (0x0048BEB2–0x0048BED8), so `%0` is `name1`'s text and `%1` `name2`'s; `MagicFormat` (1714, `%0 %1 %2`)
+  is called the same way with the prefix buffer, the base name and the suffix buffer
+  (0x0048CDCB–0x0048CDF7). The `%n` substitution itself (after the grammar-tag pass that starts at 0x0048BEE0) is not
+  read here. (fn:sub_0048C060_ClientItemNameBuild@0x0048C060,
+  fn:sub_0048BE80_ClientFormatArgs@0x0048BE80, fn:ITEMS_GetRareName1@0x00627FE0, fn:STRTABLE_GetByIndex@0x00524A30)
+- [C] **`RareFormat` in the shipped English table** is `%0 %1` (`string.tbl` entry 1718, read with
+  `tools/tbl.py index … spx 0x6B6`; [tbl.md](../../formats/tbl.md), data check).
+- [I] **So an English rare name is `name1`, one space, `name2`**, and the order and separator come from the string
+  table, not the code (another language's `RareFormat` can reorder them). This rests on `%n` naming the *n*-th argument,
+  which the argument copy and the `MagicFormat` call (prefix, base, suffix for `%0 %1 %2`) support but the
+  substitution code does not yet show.
+- [I] The buffers are built with the wide-string helpers `sub_005267E0_WStrCpy`, `sub_00526700_WStrCat` and
+  `sub_00526800_WStrLen` (0x005267E0, 0x00526700, 0x00526800). `name2`'s text is appended to its own empty buffer when
+  `name1`'s record exists and copied otherwise, which gives the same text. The builder is fatal (error at line `0x822`)
+  when `len(name1) + len(name2) + len(base name) + 3` reaches its output size (0x0048C7FC–0x0048C81D).
+
+## Plan 0038 batch S1e (2026-10-17)
+
+Static batch S1e of [plan 0038](../../plans/0038-inferred-claims-sweep.md): rows 4, 5, 10, 12, 14, 16, 17, 20, 24, 25,
+32 and 35 of [inventory data-strings](../../plans/0038-inventory/data-strings.md) and rows 52 and 53 of
+[inventory data-excel](../../plans/0038-inventory/data-excel.md) (14 statements). No session was played. Method:
+`STRTABLE_GetByIndex`, `STRTABLE_GetByKey`, `STRTABLE_KeyToIndex` and `UNICODE_CharCount` under Ghidra's p-code
+emulator against `tools/sweep_s1e.py`'s model ([ADR-0015](../../adrs/0015-emulated-reproduction.md)),
+[run:2026-10-17-sweep-emu](experiments.md#run2026-10-17-sweep-emu) family `strings`, 885 calls. The table images are
+the stock `eng` files and three synthetic ones built to fmt:tbl (`string` 520, `patchstring` 600 and
+`expansionstring` 700 entries); each case sets the six table and text-array globals (0x008829B4–0x008829D4) to one of
+six worlds: stock; no `expansionstring`; `string` alone; a 600-entry `patchstring` without `expansionstring`; all
+synthetic; a 520-entry `string` with the stock `patchstring`. Text arrays hold a distinct pointer per used node, so the
+returned pointer names the table and node. Keys found nowhere come from a scratch not-xlated cache (`0x008829B0`), so
+no case allocates. Read set: the globals, tables and arrays (spec and case memory) and the cookie; the trace found no
+other access. Where a statement above is tagged inferred and this section raises it, the tag and the second source
+given here are the current ones. Each raise is of the code's map; that the stock install never reaches the fallbacks
+stays as § Walkthrough and the spec state it.
+
+- **Rows 4, 12, 24** (spec L83, L208, L371) and **data-excel 52** (excel L538): an index ≥ 20000 without
+  `expansionstring` becomes 11078 **raised.** [C] 141 such indices in the three worlds without it went through 11078.
+  (0x00524A33–0x00524A49, run:2026-10-17-sweep-emu)
+- **Row 16** (spec L226: 11078 lands on `patchstring` entry 1078, or on entry 500 when `patchstring` has 1 078 entries
+  or fewer) **raised.** [C] with the stock `patchstring` (1 179 entries) they return its entry 1078; with the
+  600-entry one, its entry 500. (fn:STRTABLE_GetByIndex@0x00524A30, run:2026-10-17-sweep-emu)
+- **Row 17** (spec L228: without `patchstring`, 10000–19999 is looked up in `string`, past its end, so entry 500)
+  **raised.** [C] in the `string`-alone world every index 10000–19999 (and every index ≥ 20000, through 11078) returns
+  `string` entry 500. (fn:STRTABLE_GetByIndex@0x00524A30, run:2026-10-17-sweep-emu)
+- **Rows 5, 14, 25, 32** (spec L84, L213, L372, L446) and **data-excel 53** (excel L542): an entry ≥ the table's count
+  becomes entry 500 of the same table **raised.** [C] 218 calls landed on entry 500, in every table (stock and
+  synthetic), with the 16-bit entry compared unsigned. (fn:STRTABLE_EntryToString@0x00524930, run:2026-10-17-sweep-emu)
+- **Row 10** (spec L163, `CharCount` without a font map returns `strlen`) **raised.** [C] 300 calls with
+  `g_pFontMapTable` = 0 and random byte strings return the length whatever the limit in EDX (0, 1, exact, larger, wide,
+  0x80000000). (fn:UNICODE_CharCount@0x00527D50, run:2026-10-17-sweep-emu)
+- **Rows 20, 35** (spec L271, L457, entry 0 of `string` cannot be told from "not found" through `GetByKey`) **raised.**
+  [C] `WarrivAct1IntroGossip1` and the synthetic `string`'s entry-0 key return 0 with their text (5 calls), as do the
+  24 calls with keys found nowhere (with the cached text) and the empty key (with `g_EmptyText`); the other keys return
+  `10000 + e`, `20000 + e` or `e` in the order `patchstring`, `expansionstring`, `string`. (fn:STRTABLE_GetByKey@0x00524D30,
+  run:2026-10-17-sweep-emu)
+  *Review note (architect, 2026-10-17):* a key found nowhere goes to the not-xlated helper 0x00524AC0, whose cache miss
+  allocates; only its cache hit was run. The returned index 0 is set after the helper returns (`xor ax, ax` at
+  0x00524E0C), so it does not depend on the helper's path, but the text a cache miss returns is not covered.
+
 ## Data touched
 
 - fmt:tbl#layout fields `crc`, `count`, `hash_size`, `string_start`, `max_probes`, `file_size`, `index`, nodes.
@@ -290,4 +360,5 @@ inferred and this section raises it, the tag and the second source given here ar
   map's two other tables (`n` pairs and `n` u16, presentation) are not read here.
 - ~~`GEMS_Load`'s 68 not-found two-byte keys (§ Run): what field it means to look up.~~ The gem's `code` text, read
   from a field that now holds the item index (§ Run, 2026-10-15).
-- How the item-name line joins a rare item's two names (§ Run): the client builder after 0x0048C726.
+- ~~How the item-name line joins a rare item's two names (§ Run): the client builder after 0x0048C726.~~ Through
+  `RareFormat` (`%0 %1` in English), `name1` first: [§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17).

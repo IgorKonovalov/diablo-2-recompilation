@@ -16,8 +16,8 @@
 - [I] **Every full read is a cache read.** `sub_00625500_UnitGetStat` and `STATS_GetUnitStat` read the unit list's
   `+0x48` array (the "full" values); `STATS_GetUnitBaseStat` reads its `+0x24` array (the unit's own entries). Both
   floor the value at `MinAccr << ValShift` when the stat has `fMin` and the unit is a player or a monster. Nothing is
-  summed at read time. (fn:STATLIST_GetFullValue@0x00625420, fn:sub_00624F60_StatListGetValue@0x00624F60,
-  fn:STATLIST_GetBaseValue@0x00624ED0, tbl:ItemStatCost.txt:fMin, tbl:ItemStatCost.txt:MinAccr)
+  summed at read time. (fn:sub_00625420_StatListGetStat@0x00625420, fn:sub_00624F60_StatListGetValue@0x00624F60,
+  fn:sub_00624ED0_StatListGetBaseValue@0x00624ED0, tbl:ItemStatCost.txt:fMin, tbl:ItemStatCost.txt:MinAccr)
 - [I] **The cache is kept by propagation.** Every add or set on any list passes the delta up the parent chain
   (`STATLIST_Propagate`): a stat with no `op` link adds the delta to each extended list's cache; a stat that feeds an
   `op` or is an `op` target is re-evaluated (`sub_006266C0_StatRecompute`). The walk stops after a list with flag
@@ -40,11 +40,11 @@
   stat 7. Removing an item also clamps life, mana and stamina to their maxima (`UNIT_ClampVitals`).
   (fn:sub_0055B800_MonStatCallback@0x0055B800, fn:UNIT_ClampVitals@0x006275B0)
 - [I] **Items count only while linked.** An equipped item's list is linked when it is not broken (item flag `0x100`)
-  and its requirements are met (`ITEMS_CheckRequirements`: identified, strength and dexterity with
-  `item_req_percent` and the ethereal −10, level, class); the refresh `ITEMS_RefreshEquipUsability` unlinks the
+  and its requirements are met (`sub_0062EAF0_ItemReqCheck`: identified, strength and dexterity with
+  `item_req_percent` and the ethereal −10, level, class); the refresh `sub_0055DBC0_EquipReqRefresh` unlinks the
   failing ones (flag `0x4000`) and re-links in a loop until no item changes. Charms count from the inventory. For a
   Barbarian or an Assassin the weapon that is not the active one is linked "without damage".
-  (fn:ITEMS_RefreshEquipUsability@0x0055DBC0, fn:ITEMS_CheckRequirements@0x0062EAF0, fn:ITEMS_AttachToOwner@0x0055C2C0)
+  (fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0, fn:sub_0062EAF0_ItemReqCheck@0x0062EAF0, fn:ITEMS_AttachToOwner@0x0055C2C0)
 - [I] **Set bonuses** live in two places: each worn set item's own `aprop` lists (states 165–169, flags `0x2040`,
   switched on or off by `add func`: 1 = by which other member is worn, 2 = by how many), and one list per set on
   the wearer (a state from 165–170, marked by stat 71 = the set id) rebuilt from Sets' partial blocks
@@ -113,16 +113,16 @@ Phase 1b, compared after the code reading of § 4 – § 8 (blind first).
 | `0x006266C0` | `sub_006266C0_StatRecompute` | evaluate, write the cache, recompute targets and dependents | I |
 | `0x00626920` | `STATLIST_Propagate` | pass a delta up the parent chain | I |
 | `0x006250B0` / `0x00625150` | `STATLIST_CacheAdd` / `STATLIST_CacheWrite` | update the `+0x48` cache, fire the stat callback | I |
-| `0x00624ED0` / `0x00624F60` | `STATLIST_GetBaseValue` / `sub_00624F60_StatListGetValue` | the readers, with the `fMin` floor | I |
+| `0x00624ED0` / `0x00624F60` | `sub_00624ED0_StatListGetBaseValue` / `sub_00624F60_StatListGetValue` | the readers, with the `fMin` floor | I |
 | `0x00637A00` | `ITEMSTATCOST_Load` | builds the op graph (`+0x51..+0x53`, `+0x5E`, `+0x0DE`) | I |
 | `0x0065CA30` | `STAT_ByTimeValue` | the op 6/7 time-of-day value | I |
 | `0x00625D10`, `0x00625D60`, `0x00625DB0` | `sub_00625D10_UnitGetMaxHp`, `UNIT_GetMaxMana`, `UNIT_GetMaxStamina` | full stats 7, 9, 11 | I |
 | `0x0055B800` | `sub_0055B800_MonStatCallback` | the stat callback of players and monsters | I (C for stat 7 on monsters, monsters/0004) |
 | `0x006275B0` | `UNIT_ClampVitals` | stamina, mana, life down to their maxima | I |
 | `0x0055C2C0` / `0x0055C730` | `ITEMS_AttachToOwner` / `ITEMS_DetachFromOwner` | equip and unequip, with the set update | I |
-| `0x0055DBC0` | `ITEMS_RefreshEquipUsability` | the requirement pass over charms and body slots 1..10 | I |
-| `0x0062EAF0` | `ITEMS_CheckRequirements` | strength, dexterity, level, identified, class | I |
-| `0x0055F850` | `ITEMS_Break` | flag `0x100`, durability 0, unlink, set update | I |
+| `0x0055DBC0` | `sub_0055DBC0_EquipReqRefresh` | the requirement pass over charms and body slots 1..10 | I |
+| `0x0062EAF0` | `sub_0062EAF0_ItemReqCheck` | strength, dexterity, level, identified, class | I |
+| `0x0055F850` | `sub_0055F850_ItemBreak` | flag `0x100`, durability 0, unlink, set update | I |
 | `0x00663CC0`, `0x00663A20`, `0x00663B40`, `0x00660120` | `SETS_UpdateOnEquip`, `SETS_ToggleItemAProps`, `SETS_UpdateOwnerBonusList`, `sub_00660120_SetBonusApply` | the set activation | I |
 | `0x00535D10`, `0x00623C80` | `sub_00535D10_WeaponListsRelink`, `sub_00623C80_WeaponListsRelink2` | relink the two hands of a dual-wielder | I |
 
@@ -311,25 +311,25 @@ return acc;
   `SETS_UpdateOnEquip(owner, item, 1, 0)`; the list is unlinked (unless broken and not forced); for a dual-wielder
   the remaining primary weapon is re-linked with damage; `clamp` runs `UNIT_ClampVitals`.
   (fn:ITEMS_DetachFromOwner@0x0055C730)
-- [I] **Requirements** (`ITEMS_CheckRequirements(item, unit)`): `str = reqstr + MulDiv(reqstr, stat 91, 100)`,
+- [I] **Requirements** (`sub_0062EAF0_ItemReqCheck(item, unit)`): `str = reqstr + MulDiv(reqstr, stat 91, 100)`,
   `dex` the same with `reqdex` (record `+0x10A`, `+0x10C`), each −10 when ethereal (`0x400000`); the unit's full
   strength and dexterity must be ≥ 1 and ≥ the requirement; level ≥ the item's level requirement; the item must be
   identified (`0x10`); a type-18 base needs a positive stat 70; the class must match: item class 7 is any class, a
   player needs its own class, and a monster passes only for class-4 (Barbarian) items when
-  `sub_00463900_MonClassCheck` gives 560 or 561. (fn:ITEMS_CheckRequirements@0x0062EAF0, 0x0062EB63–0x0062EBBE,
+  `sub_00463900_MonClassCheck` gives 560 or 561. (fn:sub_0062EAF0_ItemReqCheck@0x0062EAF0, 0x0062EB63–0x0062EBBE,
   tbl:ItemStatCost.txt:Stat)
-- [I] **The refresh** (`ITEMS_RefreshEquipUsability`, after equip, place, break, repair, identify and more): (1)
+- [I] **The refresh** (`sub_0055DBC0_EquipReqRefresh`, after equip, place, break, repair, identify and more): (1)
   each inventory charm (type 13) that is usable and not linked is linked; (2) body slots 1..10: each item that is
   linked or not marked, and fails its requirements, is marked `0x4000` and unlinked with the clamp; (3) repeat over
   slots 1..10 until nothing changes: each unbroken item that is marked or unlinked and now passes is unmarked and
   linked; (4) every equipped, unbroken, unmarked set item is detached and re-attached (refreshing every set list).
   Step (2) runs once, so an unlink that breaks another item's requirement is caught at the next refresh, not in this
-  one. (fn:ITEMS_RefreshEquipUsability@0x0055DBC0, fn:sub_0055DB00_ItemUsableEquipped@0x0055DB00,
+  one. (fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0, fn:sub_0055DB00_ItemUsableBy@0x0055DB00,
   fn:ITEMS_IsActiveCharm@0x0062FF70)
-- [I] **Broken:** `ITEMS_Break` sets `0x100`, unlinks the item when equipped, sets durability 72 to 0 and updates
+- [I] **Broken:** `sub_0055F850_ItemBreak` sets `0x100`, unlinks the item when equipped, sets durability 72 to 0 and updates
   its set with the item excluded; `sub_0055F900_ItemRepairBroken` clears it and re-runs the refresh. Ethereal and
   sockets change only the item's own lists (items/0006 § 6, items/0007), which reach the wearer through the item's
-  cache. (fn:ITEMS_Break@0x0055F850, fn:sub_0055F900_ItemRepairBroken@0x0055F900)
+  cache. (fn:sub_0055F850_ItemBreak@0x0055F850, fn:sub_0055F900_ItemRepairBroken@0x0055F900)
 
 ### 7. Set bonuses
 

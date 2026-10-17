@@ -152,6 +152,14 @@ generator that builds a preset instance from the record. The values of `Levels.D
   - `[L]` For those two types the survey takes a record inside a maze rotation range (`base < Def < base + 16`,
     drlg/0003) as maze. This is the survey's sorting rule, not an observation. The other 93 stay "maze or outdoor".
   - `[C]` All 216 records in a rotation range come out as maze.
+  - `[C]` **The 93 "maze or outdoor" records by logged caller** (plan 0039 P1a): of the three callers of
+    `PresetInstanceCreate`, `MazeLevelRooms` placed 769–782, 784–794 and 852–856 (maze rooms, 30) and
+    `OutdoorRoomsCreate` placed 605–658 and 857–862 (outdoor cells, 60); 836 is placed by both (it is
+    `MAZE_DEF_BASE` of level type 28, one below its rotation range, and an outdoor anchor); 783 and 795 were never
+    logged. Across all kinds no record was logged from another kind's caller, so the data-only kinds above hold
+    wherever a run reached them (fn:sub_00666ED0_PresetInstanceCreate@0x00666ED0,
+    fn:sub_00673A60_MazeLevelRooms@0x00673A60, fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0,
+    run:2026-10-16-sweep-roomk; [drlg/0004 § P1a](../findings/drlg/0004-preset-units.md#plan-0039-batch-p1a-2026-10-16)).
 - **no file** (3): `Def` 0 (`None`, all zeros) and `Def` 2/3 (`Act 1 - Town 1 Transition E/S`, sizes 8×40 and
   56×8, `Files` 0, nothing named).
 

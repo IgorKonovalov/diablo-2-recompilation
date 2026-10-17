@@ -251,7 +251,10 @@ def normalize(cell, f, refs=None):
         elif f.get("names") and not cell.lstrip("-").isdigit():
             # a name in a number column (runes T1Param: a skill name): the row index of that name in
             # f["names"] ("table:column", case-insensitive); "t1:c|t2:c" tries each table in turn, the
-            # first holding the key wins (sets FParam: a skill or a state name); not found -> -1
+            # first holding the key wins (sets FParam: a skill or a state name); not found -> -1.
+            # Known limit (docs/tables/Sets.md, Bonus blocks): the order ignores the block's property; 44 names
+            # are both a skill and a state, none of them in a stock Sets cell. Kept until plan 0041 Phase 1 (e)
+            # reads the compiler's own rule.
             v = -1
             for spec in f["names"].split("|"):
                 v = refs.index(spec, nocase=True).get(cell.lower(), -1)

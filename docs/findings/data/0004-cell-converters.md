@@ -270,6 +270,46 @@ else compiled.
   [C] The no-column and padding bytes listed in § Answer are 0 in every record of the game-compiled files (they are the
   shipped bytes), and the absent-column −1 defaults (J3, 23 855 cells) are present in them: a write. (fn:EXCEL_ParseTxt@0x006BD780)
 
+## Plan 0038 batch S1e (2026-10-17)
+
+Static batch S1e of [plan 0038](../../plans/0038-inferred-claims-sweep.md), rows 56, 60, 64 and 66 of
+[inventory data-excel](../../plans/0038-inventory/data-excel.md). No session was played. Method: the converters under
+Ghidra's p-code emulator against `tools/sweep_s1e.py`'s models ([ADR-0015](../../adrs/0015-emulated-reproduction.md)),
+[run:2026-10-17-sweep-emu](experiments.md#run2026-10-17-sweep-emu). `EXCEL_ParseTxt` (family `parsetxt`, 400 calls)
+ran on a synthetic parsed `.txt` (header and NUL-separated cells, rows ended by `\n`; the columns shuffled against the
+descriptor) and a 13-entry descriptor of the integer (2, 3, 4, 5, 8, 0x1A), code-lookup (0x0B, 0x0D, 0x0F) and
+name-lookup (0x13, 0x14, 0x15) types, with a scratch code link and name tree; no registration type, so the first pass
+and its allocations do not run, and every descriptor entry has a column, so the defaults pass does not run. Read set:
+the descriptor, text, links and records (spec and case memory); the type → class bytes and jump tables
+(0x006BE08C–0x006BE13F, `.text`); `FUN_00413CE0`'s name-hash table 0x006CEE30, `STR_ToLowerN`'s table and
+`BITFIELD_Set`/`Clear`'s mask tables 0x006CE274–0x006CE2FF (all `.rdata`); `__locale_changed` and the SSE2 flag (spec;
+both flag values run, identical output); `strncpy`'s write-only store to 0x007788D8. Where a statement above is tagged
+inferred and this section raises it, the tag and the second source given here are the current ones.
+
+- **Row 60** (spec L618, J2b: the integer converter sign-extends each byte, so a byte ≥ 0x80 adds a negative digit)
+  **raised.** [C] 2 312 integer cells with bytes ≥ 0x80 among digits, signs, spaces and letters, stored at every
+  width; `value·10 + (s8 byte − 0x30)` per byte after an optional leading `-`, no validation, truncation to the field;
+  type 5 skips an empty cell (60 cases) and type 0x1A sets or clears its bit. The negative control (bytes read
+  unsigned, 0 for a lookup miss) differs in 399 of 400 calls. The `movsx` is cited from the disassembly (0x006BDE20, ADR-0015 condition 5).
+  (fn:EXCEL_ParseTxt@0x006BD780, 0x006BDE20, fn:BITFIELD_Set@0x00410B10, run:2026-10-17-sweep-emu)
+- **Row 66** (spec L665, a non-blank key that matches nothing stores −1) **raised.** [C] 1 931 code-lookup cells and
+  1 258 name-lookup cells that match nothing store −1 at the field width (`0xFFFFFFFF`, `0xFFFF`, `0xFF`); blank code
+  cells find the `"    "` key (378), and longer keys are cut to 4 (codes) and 31 (names; 1 058 cells over 31 bytes)
+  before the lookup. (0x006BDD82, 0x006BDDE7, run:2026-10-17-sweep-emu)
+- **Row 64** (spec L629, the item calc callback stores −1 for a blank cell or an expression that fails to compile)
+  **raised.** [C] 420 calls of `sub_00631530_ItemCalcCell` (ECX = text or NULL, EDX = field offset, stack: record and
+  three more arguments; `ret 0x10`): a NULL cell (13) and a failed compile (97) store −1; a compiled one (190) appends
+  its bytes to `itemscode` (`g_DataTables + 0x98`, size `+0x9C`) and stores the old size; offset 0 (120) stores
+  nothing. Family `compile`, both SSE2 flag values. (fn:sub_00631530_ItemCalcCell@0x00631530,
+  fn:sub_006118B0_CalcPoolAppend@0x006118B0, run:2026-10-17-sweep-emu)
+  *Review note (architect, 2026-10-17):* the scratch pool's capacity (0x10000) is above every append, so the growth
+  loop of `CalcPoolAppend` (0x006118D0–0x006118FE: capacity + 0x400, then the pool allocator 0x0040B4B0) is not
+  reached; the `[C]` covers the append without growth.
+- **Row 56** (spec L574, I2: `string.tbl` entry 0's key would compile to 5382) **raised.** [C] `STRTABLE_KeyToIndex`
+  on `WarrivAct1IntroGossip1` (and the synthetic `string`'s entry-0 key) returns 5382, as on the empty key and the keys
+  found nowhere; every other key returns its index (family `strings`, [data/0003 § S1e](0003-string-tables.md#plan-0038-batch-s1e-2026-10-17)).
+  (fn:STRTABLE_KeyToIndex@0x006117B0, run:2026-10-17-sweep-emu)
+
 ## Data touched
 
 - `fmt:excel-bin#bin` (all laid-out tables), `tbl:Weapons.txt:gemoffset` (`+0x0F0`), `tbl:Levels.txt:LevelName`,

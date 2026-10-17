@@ -98,6 +98,11 @@ code stores −1; a code is the [Properties](Properties.md) row index, matched c
   overlap elsewhere: 44 names are both a Skills `skill` and a States `state`, case-insensitively (`might`,
   `fanaticism`, `thorns`, `fade`…), so a `state` block naming one of them would decode as the skill row under
   this tool order. (`sets_params_named` = 10, tbl:Sets.txt:FParam5)
+- **Known limit of `excel_bin.py`** (not a claim about the game): the skills-then-states order is a tool
+  convention that is right for stock data only. The tool does not look at the block's property, so on edited data
+  a `state` block naming one of the 44 shared names would be compared against the Skills row, and an `oskill` block
+  naming a name that is only a state against the States row. The tool keeps the order until plan 0041 Phase 1
+  item (e) reads how the compiler resolves a param name; it then follows that rule rather than a guessed one.
 - `[C]` No block has a param, min or max without its code. Within each run (the `a` blocks, the `b` blocks, the full
   blocks) no used block follows a blank one (`sets_block_gaps` = 0).
 - `[C]` No set has a partial block `k` (`PCode<k>a/b`) above its member count (`sets_partial_beyond_members` = 0);

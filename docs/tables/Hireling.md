@@ -32,6 +32,12 @@ act, difficulty, price, experience factor, base stats and per-level growth, skil
   Id when L is below every band), so a group's rows must stay in `Level` order; the loader indexes the first row of
   each (version, Id) in `g_HirelingFirstById[(Version > 99)·256 + Id]` ([hirelings/0001 § 1](../findings/hirelings/0001-hirelings.md#1-the-table-and-its-lookups),
   fn:HIRELING_GetRecord@0x006562F0, fn:HIRELING_LoadTable@0x00655720). The scan works with the interleaved order above.
+- `[I]` The loader and `GetRecord` test `Version` differently: the loader indexes the first row by `Version > 99`
+  (`cmp word [rec], 0x64; sbb …`, 0x0065623E), while `GetRecord` matches a row's `Version` against exactly 100
+  (expansion) or 0. `[C]` by data, stock `Version` takes only 0 (60 rows) and 100 (60 rows), so the two agree on
+  every stock row; a `Version` other than 0 or 100 would be indexed but never returned
+  ([hirelings/0001 § S3b](../findings/hirelings/0001-hirelings.md#plan-0038-batch-s3b-2026-10-16),
+  fn:HIRELING_LoadTable@0x00655720, fn:HIRELING_GetRecord@0x006562F0, tbl:Hireling.txt:Version).
 - `[I]` The save stores the hireling `Id` (`merc_type`, header `0x0B9`); the reader takes `GetRecord(version, Id, 1)`
   for the class and name range, then the row of each level band as it walks the experience up
   ([save/0001](../findings/save/0001-d2s-io.md), [hirelings/0001 § 7](../findings/hirelings/0001-hirelings.md#7-the-mercenary-from-a-save),

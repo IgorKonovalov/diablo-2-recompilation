@@ -1589,3 +1589,225 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     are its inputs.
   - **Follow-ups (backlog):** to the spec-writer, additions to the lane's Phase 3 entry. None to the reverser.
   - **Next:** the owner merges `lane/h5a`; then the Phase 3 round for the three drlg clusters.
+
+- **2026-10-17 — Phase 3, third round (spec-writer, `lane/p38s3`, from `main` `590e323`).** H5a's acceptance completes
+  the batches of drlg/maze, drlg/preset and drlg/warps (S4a, S4b, H5c, H5e, H5a; inventory § 2.6). Template: the
+  round-2 outdoor re-tag.
+  - **drlg/maze** {C 105, I 26, L 3} → **{C 122, I 11, L 2}**. Raised rows 1, 3 (S4a), 4, 5 (`FindWest`), 15 (Barracks
+    `k` 0 and 2) (H5a), 6, 11, 12 (H5e), 7, 16 (S4a), 9 (S4b). Split: 2 (one caller `[C]`; the fatal `[I]`, no stock
+    case), 8 (failed candidates `[C]`; no room able `[I]`), 10 (the F cells `[C]`; 133 and 135 no stock build, tombs 69
+    and 72 on the static reading, `[I]`). Unchanged d-none: 13 (now citing P1a's 408 000-build sample), 14. The G2
+    comment now says `k` is the index the link builder left (drawn on Black Marsh sides 1 and 3, else the create-time
+    index), with its own `[C]` note; the rebuilt-level rect `[C]` (H5e review (a)). P1a folded at `[I]`: the dead
+    `MazeRoomAdd`/`0x00670E70`, the fatal sweep, the tomb redraw. *Open questions*: the unreached-paths entry narrowed
+    to the no-room attach; the fatal entry kept; the dead-code entry closed.
+  - **drlg/preset** {C 98, I 44, L 2} → **{C 134, I 24, L 2}**. Raised 27 rows (1, 7, 9, 10, 16,
+    20, 23–26, 28, 30, 38, 40 S4a; 3, 11, 21, 34, 37, 39, 41 S4b; 31, 32 H5c; 2, 12, 13, 14 H5e). Split: 5 (path attach
+    and `MapId` `[C]`; the skip, the path drop and the unused `MapId` branches `[I]`, no stock case, per S4a's survey),
+    6 (`ValidId` stays `[I]`, c-emu), 8 (`action` below version 15 `[I]`), 29, 33, and 18 (`id = 573` has no logged unit,
+    `[I]`; split here, not in the ledger). d-none 22 written as not reachable on stock data with the static argument
+    (step 7 note 2); `v` = 0 cites run:2026-10-17-sweep-links, `v` = 2 never kept `[I]` (note 5). 27 reworded:
+    `RoomIsOutdoors` reads `0x80000` (`[I]`). The bit-0x40 object marks are drlg/warps' waypoint bits (step 6 note 3,
+    column note 5, Boundaries). Folded at `[I]`: plan 0039 P1a (the `Outdoors` callers, level 17's points) and plan
+    0040 (d) (the server detach, no second dispatch). *Open questions*: four entries closed or narrowed.
+  - **drlg/warps** {C 91, I 35, L 2} → **{C 104, I 16, L 1}**. Raised rows 1 (×2, H5c), 3 (×10), 5's Burial Grounds half,
+    6, 8 (H5a), 7 (S4b), 13, 18 (S4a), 16, 19 (H5c). `0x00676450` (0, 1) and (2, 0) are `[C]` for position with the
+    never-kept note (Rogue residues 0, 1, 3, 5, 6, 7), and the B2 rule reads "a build ended on it, or the placed rect
+    was logged at the pick's return". Split: 14 along `Position` (S4a; backlog 582 (a)). d-none 5's widening half, 9, 11
+    reworded `[I]` not reachable on stock data; 12 as a new C1 `[I]` note. Distinct counts quoted (15 Rogue rejects, 3
+    Burial Grounds, 36 widened tests, 24 `RectTouch` tests). *Open questions* L621 struck, the d-none reasons kept.
+  - **drlg/README**: step note 6 and the act-setup paragraph say level 27's index is drawn only on Black Marsh sides 1
+    and 3 (reverser's H5a entry); wording only, counts unchanged.
+  - **Backlog:** struck the H5e Phase 3 entry, the H5e review additions, the H5a entry and the H5a review additions;
+    annotated as partly done the S4a corrections ((a)), the S4b corrections ((b), (c), (e)), the P1a fold ((c), (e)) and
+    plan 0040 ((d)). New: review request to the architect with the three specs' counts; W4 wiki follow-up for levels.
+  - **Commits:** drlg/maze, drlg/preset, drlg/warps (with drlg/README), then backlog and this log. Gate green; W4 warns
+    for levels on drlg/README, maze and preset.
+  - **Next:** architect review of `lane/p38s3` (backlog).
+- **2026-10-17 — Phase 3 third round review (architect, `lane/p38s3` at `1940298`): accept with fixes.** `main`
+  (`cc59597`: plan 0037 P3/P4 and its close) merged into the lane first; the one conflict was the backlog, both sides
+  kept, deduplicated by entry text with the struck copies kept (the plan 0037 P3 entry struck from `main`, the H5e
+  review additions struck from the lane).
+  - **Raises and splits against the ledgers.** Every raise matches an accepted line of drlg/0004, 0006 or 0007 (S4a,
+    S4b, H5c, H5e, H5a sections) and inventory § 2.6. drlg/maze: 1, 3, 7, 16 (S4a), 9 (S4b), 6, 10, 11, 12 (H5e), 4, 5,
+    15 (H5a); splits 2 (S4b: one caller `[C]`, fatal remainder), 8 (S4a review's named remainder), 10 (133, 135 and the
+    H5e review's tombs 69/72 static line). drlg/preset: the 27 raises as logged; 5 (S4a: path attach and `MapId` `[C]`,
+    skip d-none), 6 (S4b; `ValidId` c-emu), 8, 29, 33 (S4b remainders), 21/34/37 (S4b in part, the remainder an owner
+    rewording, now done), 27 left `[I]` as S4b's contradiction. drlg/warps: 1, 16, 19 (H5c), 7 (S4b), 13, 18 (S4a),
+    3 (×10), 5's Burial Grounds half, 6, 8 (H5a); 14 split along `Position` (S4a shortfall); 20 stays (S4b shortfall).
+    The P1a and plan 0040 (d) folds are `[I]` as drlg/0004 § P1a, drlg/0006 § P1a and drlg/0009 § 8 have them.
+  - **Counts recounted** in the files: maze {C 122, I 11, L 2}, preset {C 134, I 24, L 2}, warps {C 104, I 16, L 1},
+    drlg/README {C 75, I 6, L 0}. No `[L]` above *Open questions* in any. Gate green (W4 for levels only, filed).
+  - **Anchors (objdump, pinned `Game.exe`, sha256 `631066c1…`).** `0x00673B19` `call 0x61F490` (`LvlMazeByLevel`'s one
+    caller); `0x006774D6`–`0x006774F0` the act-seed step then `and al, 1; neg al; sbb eax, eax; add eax, 2`, written at
+    `0x006774F9` (the `v` = 3 path just before it: `not eax; and eax, 1`); `0x006775FE` `push −1` → `0x00677606`
+    `call 0x66B880`; `0x00676E44` `cmp [eax], edx` and `0x00676E5F` `cmp eax, 0x6F0848` (15 slots of 16 bytes);
+    `0x00676E7B`–`0x00676EA1` index `d + 4f + 8·dir[a] + 32·flip[a]`; `0x00642ED7`/`0x00642EDC` `cmp edi, eax; je`
+    (the tomb redraw); `0x0067252A`–`0x0067253C` `r ← (r + 1) mod 4`; `0x0055596C` `call 0x666120` (`PtrMove`);
+    `0x006F0470` holds `0x00672420`; `0x0066BA80`–`0x0066BA83` `mov eax, [ecx+0x28]; and eax, 0x80000`. All resolve as cited.
+  - **Ruling 1, preset 18: the split stands, but it is the S4a review's, not new.** The S4a review's fixes list
+    "preset 18: id 573" among the raised-in-part rows, so the `id = 573` remainder was in the accepted ledger; the lane's
+    log line "split here, not in the ledger" is corrected by this entry. The ledger in drlg/0004 § S4a still reads
+    "raised" with "no unit with id 573 was met"; the review's fix list overrides it, as § 2.6 does for class moves.
+  - **Ruling 2, the extra `[I]` on unused `MapId` and path branches: accepted.** S4a raised the statements whole on the
+    branches taken; the survey over the 2043 DS1s shows the others are never taken, which is the d-none argument of the
+    skip half, not a corroboration of their behaviour. Tagging them `[I]` beside the `[C]` is the S2a/S4a raised-in-part
+    standard. The repetition (pseudocode comments and step note 6) counts each once per tag, as elsewhere.
+  - **Ruling 3, warps *Open questions* L621 untagged and struck: accepted.** The H5a review asked to keep only what
+    stays `[I]` with its d-none reason. A no-stock-case branch is not an open question (nothing left to look for), and
+    an `[L]` with no lead behind it would be wrong; the three remainders are `[I]` in the body (B3, C1, C3). Fix below:
+    the struck entry said every choice and validator path was reached, which is too broad.
+  - **d-none rewordings against the H5a review's static arguments.** warps B3 (the widening: table outcome fixed by the
+    difficulty and the first draws of Black Marsh and Dark Wood, 16 pairs, 3 600 widened accepts, 36 logged), C1 (the
+    shared `r`, `r & 3` = 1 forcing `r & 1` = 1, outcomes 0→0, 1→1, 2→3, 3→3, the draw at `0x006774D6` after the copy),
+    C3 (one call, `push −1`, no stored pointer, four seam forms, 5 400 tests, 24 distinct logged) and preset step 7
+    notes 2 and 5 (`v` = 2 never kept) state the review's arguments with nothing added. All are `[I]`, as ruled.
+  - **Commit subject.** `25ab5dd`'s subject lists "dispatch" among the raised rows; row 18 (the dispatch) was split
+    (`[C]` for the logged branches, `id = 573` `[I]`), as its body and this log say. History is not rewritten; this
+    entry is the correction.
+  - **Fixes applied:** drlg/warps *Open questions*: the struck entry now says every pick choice was placed and logged
+    (all but `0x00676450` (0, 1) and (2, 0) also kept) and every validator path but the widened reject was taken (no tag
+    change). Research map: the warps row worded the same way.
+  - **Follow-ups (backlog):** to the reverser, a static survey for preset 18's `id = 573` (not blocking). The W4 wiki
+    follow-up for levels is already filed (spec-writer).
+  - **Next:** the owner merges `lane/p38s3`.
+- **2026-10-17 — Phase 3 third round wiki follow-up (spec-writer, `lane/wiki4`, from `main` `04bc872`).** The
+  round-3 W4 follow-up. [levels](../wiki/levels.md): `based_on:` bumped for drlg/README, drlg/maze and drlg/preset
+  (2026-10-17); re-read against drlg/warps too. § Laying out the act: rejects are overlaps, the Rogue side table (15
+  logged) and the Burial Grounds side test (3 logged), no back-up in runs or the offline scan; every pick choice
+  reached (nine chosen map seeds), Rogue `(0, 1)`/`(2, 0)` placed and never kept; the Act1B widening never decides a
+  check (code plus scan). Level 27: drawn only on Black Marsh sides 1 and 3, else the create-time index; indices 0, 1, 2
+  built; side-1 index 2 and side 2 not reachable on stock data (code plus enumeration). § Preset levels: the override
+  sentence scoped to sides 1 and 3. § Maze levels: tomb ×3/×2 confirmed, no tomb with both by the code; every § F row
+  built but 133/135 (no stock build) and tombs 69/72 (role reading); the no-room attach unreached; the Barracks side
+  from `k` 0/1/2, all built. § Which seed: server/client agreement confirmed (888 pairs alike, 4 differing). § Units the
+  game adds: centre monster and all six river types confirmed. § Pairing: the caller confirmed (695 activations); the
+  near-list paragraph stays code-read. *What is not known yet*: maze (no-room attach, the sampled fatal), preset (no
+  stock case list, the `Outdoors` reader, the server path detach, client detach and `action` unknown) and warps (the
+  three no-stock-case paths) rewritten. Gate W4: 3 warnings before, 0 after.
+  - **Next:** architect review (backlog).
+- **2026-10-17 — Review: Phase 3 third round wiki follow-up (architect, `lane/wiki4` at `9324f8b`, `main` `8d03310`
+  merged in first).** **Accept with fixes**, applied on the lane. Every changed statement was traced to the 2026-10-17
+  drlg/README, maze, preset and warps at the same strength. § Laying out the act: the three reject kinds are B3 `[C]`
+  (51 overlaps, 15 Rogue side-table, 3 Burial Grounds); no back-up in runs or the offline scan is B1 `[C]`; Rogue
+  `(0, 1)`/`(2, 0)` placed and never kept is B2 `[C]`; the Act1B widening is B3 `[C]` for the test and `[I]` for "never
+  decides", said as code plus scan. Level 27: drawn only on Black Marsh sides 1 and 3 (warps C1 `[C]`, preset step 7,
+  drlg/README step note 6), indices 0, 1, 2 built (C1, maze G2 `[C]`), side-1 index 2 and side 2 not reachable (C1
+  `[I]`), said as the code's reading. § Preset levels: the scoped override matches step note 6. § Maze levels: tomb
+  ×3/×2 and 18/12 rooms are C1 `[C]`, distinct tombs C1 `[I]` "by the code"; the § F rows, 133/135 and tombs 69/72
+  match the table tags and F3 `[I]`; the no-room attach is D2 `[I]` (0 of 337); the Barracks `k` 0/1/2 → east, south,
+  west matches G2 `[C]` (finders East, South, West). § Which seed: 888/4 is preset step 2 note 4 `[C]`. § Units the
+  game adds: step 4 notes 1, 2 `[C]` (map seeds 45 and 9; six `Def`s). § Pairing: F1 `[C]` (695 calls). *What is not
+  known yet*: maze, preset and warps bullets match the three specs' *Open questions* (the 408 000-build sample, the
+  `Outdoors` reader and server detach `[I]` said "by the code"). Links and anchors resolve, `based_on:` equals the
+  specs' `updated:` (W4 0), gate fast tier green. **Fixes:** (1) the reject sentence said each reject's next choice "was
+  then accepted"; B1 says a later choice of the entry was accepted (a Rogue reject can follow another), reworded.
+  (2) The nine chosen map seeds were said to "end on every choice", against the next sentence and B2: they end on
+  every choice but two, which were placed and logged. (3) *Preset units* no-stock-case list gains the Black Marsh
+  ending on side 2 (preset step 7 note 5, `v` = 2). No follow-ups.
+  - **Next:** merge `lane/wiki4` (owner).
+
+
+- **2026-10-17 — Batch S1e done (reverser, `lane/s1e`, static; no slot, no game; Ghidra copy `workspace/ghidra-s1e`).**
+  74 statements (data/calc 43, data/excel 13, data/strings 12, rng 2, save/d2s 4), all class (c-emu): **69 raised, 1
+  raised in part, 4 not raised** (data-calc 13's L305 and 14 → d-edit, data-excel 43 and 44 → d-none; proposed in
+  [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews), pending review). By spec (raised /
+  in part / not raised): data/calc 41/0/2, data/excel 10/1/2, data/strings 12/0/0, rng 2/0/0, save/d2s 4/0/0.
+  - **Method:** ADR-0015 emulated reproduction, [run:2026-10-17-sweep-emu](../findings/data/experiments.md#run2026-10-17-sweep-emu)
+    (and an addendum to run:2026-10-11-rng-emu): 28 643 emulated calls in ten families plus the two SSE2-flag reruns,
+    all bit-exact against `tools/` models, each family with a negative control that fails (`neg` > 0).
+  - **Tools:** `re/ghidra_scripts/EmuTrace.java` (`tools/ghidra.sh emutrace`): per-case memory and registers, dumps, a
+    step limit, and a **trace of every data access outside the stack, the spec and the case memory**, so condition 2's
+    read set is enumerated by the tool (ADR-0015 Negative: "EmuCall.java does not yet fail on a read outside the spec").
+    `tools/sweep_s1e.py` (`cases`, `check`, `static`, `manifest`, `all`; `all` exits 0, report
+    `workspace/logs/sweep-s1e-all.txt` `3293ae63…`, files manifest `94c19392…`) and `tools/test_sweep_s1e.py` (10 tests).
+  - **Read sets:** every traced access of every family falls in a declared range: `.text` jump tables, `.rdata` tables
+    (no write permission), four `.data` tables with no store in `.text` (objdump scan), and three runtime-written
+    globals handled by the spec: the security cookie (no output depends on it), `__locale_changed` (its one writer sits
+    in an uncalled `setlocale`), and the CRT SSE2 flag (both values run, identical outputs).
+  - **Findings for Phase 3 and other lanes:** (1) **contradicted:** `LNG_GetLanguageCode` falls back to entry 0 only for
+    ids ≥ 14; id 13 reads the 0x18 bytes after the table, whose "pointers" are 0x4D/0x42/0x54, so a `use` byte of 13
+    crashes the string-table load (data/0002 § S1e; spec data/excel I1, data/strings A1). (2) The compiler fails on
+    consecutive unary minus (`- -5`), which the spec's quirk list does not name. (3) Under SLEIGH, `idiv` of
+    `INT32_MIN ÷ −1` returns 0 instead of trapping: a tool limit to keep in mind for any later emulated division.
+    (4) `TC_ParseItemCell` cannot be emulated (every resolved cell reallocates the TC's entries).
+  - **S1f:** the lane proposes 15 statements (11 rows) with declarable read sets and recommends that S1f run; the other
+    16 candidates keep their classes (inventory § 2.6, S1e entry).
+  - **Symbols:** 13 I → C (`CALC_Push`, `CALC_Pop`, `sub_00627B40_ItemCalcVar`, `sub_00631530_ItemCalcCell`,
+    `EXCEL_AddCode`, `EXCEL_FindName`, `STR_ToLowerN`, `LNG_GetLanguageCode`, `g_LanguageTable`, `RNG_RangePow2Plus`,
+    `BITBUF_WriteClamped`, `BITFIELD_Set`, `BITFIELD_Clear`); 5 added (`sub_0040F590_ReturnEcx`, `CRT_setlocale`,
+    `g_pctype`, `g_LocaleChanged`, `g_Sse2Available`). Gate green. Review requested (backlog). Nothing merged.
+
+- **2026-10-17 — Batch S1e reviewed (architect, on `lane/s1e` at `39d1c65`): accept with fixes.** `main` (`04bc872`:
+  H5a, plan 0040 P1, plan 0037's close, P3 rounds 2 and 3, plan 0043 P0) merged into the lane at `2d5484d`; the plan-log
+  and backlog conflicts kept both sides (one duplicate backlog entry dropped, its struck copy kept), and the totals are
+  recomputed once below.
+  - **Re-runs:** the manifest matches its 53 files; `sweep_s1e.py static` (53 of 53 pins, writer scan,
+    `clamp_sequence_equal=1`) and `test_sweep_s1e.py` (10 tests) re-run identically. Under
+    `GHIDRA_PROJ_DIR=workspace/ghidra-s1e`, heap 3 GB, `MemoryMax=4G`: the kept `lang` and `calcvar` cases gave `.out`
+    files byte-identical to the lane's (182/182 and 5 000/5 000, undeclared 0). `cases` regenerates every family
+    identically except `eval`, whose `skillsvar` skill index came from Python's unseeded module generator; fixed in the
+    tool, `eval` regenerated twice (identical) and run: 6 000/6 000, neg 196, undeclared 0. A corrupted output gave
+    `bad=2, undeclared=1`. Recorded in run:2026-10-17-sweep-emu (review re-run).
+  - **Anchors read with objdump:** `sub_0040F590_ReturnEcx` (`mov eax, ecx; ret`); the divide (`test esi, esi; je` at
+    0x006C0EC6, `cdq; idiv esi` at 0x006C0ECE); the ternary (0x006C0F2C); the compile limits (`cmp eax, 0x40` at
+    0x006C1B7A, `cmp ecx, 0x40` at 0x006C1942); `dm78` (0x0064651F); the SSE2 flag's writer (0x0069A8C5, after
+    `cpuid`); `__locale_changed`'s writer (0x006926F7, `mov dword [0x96dfe4], 1`, in a section with no file bytes, so 0
+    at load); `LNG_GetLanguageIndex`'s clamp (0x005251A1) and `LNG_GetLanguageCode` whole; the entry-13 writers
+    (0x005257E0–0x005258E7); `TC_AddEntry` → `TC_GrowEntries` → 0x0040B4B0; `CalcPoolAppend`'s growth loop; the clamp
+    and its inlined copy operand by operand; `mana`'s `shl eax, cl`; `AffixCandAdd`, `MONSTATS_ValidId` and `MulDiv`'s
+    calls (for S1f). All match the ledgers, with the wording fixes below.
+  - **Rulings on the lane's points:**
+    (1) **`EmuTrace.java` is the condition-2 check ADR-0015's Negative section asked for, with the writer scan beside
+    it.** The trace enumerates every data access outside the stack, the spec and the case memory, and `check` fails on
+    one outside the family's declared ranges (the review's corrupted output showed it), so an unaccounted read can no
+    longer pass unseen. Condition 2's other half, that each declared image range is written by no code at run time,
+    still rests on the static writer scan (`sweep_s1e.py static`), and the trace is blind to whatever the spec or case
+    lines write, which is why ruling 3 applies to every spec write on an image address. New emulated runs use
+    `emutrace`; `EmuCall.java`, `EmuFastcall.java` and `EmuCalcFunc.java` stay in the tree, frozen, so run:2026-10-16-
+    calc-emu and run:2026-10-11-rng-emu can be re-run as recorded. No ADR change: ADR-0015 already admits a mechanical
+    check, and its Negative bullet records the state on 2026-10-16.
+    (2) **Image functions as probes are accepted.** Passing `sub_0040F590_ReturnEcx` as the variable reader, or a
+    scratch function table of stock entries under made-up argc values, is a choice of arguments: data, no instruction
+    patched, every callee run emulated (condition 1), synthetic inputs admitted (condition 4). The `[C]` covers
+    `CALC_Eval`'s map under those arguments. A claim about a stock table's contents (which function sits at which index,
+    with which argc) rests on the stock-table cases (row 20) or a static table read, never on the scratch table. A probe
+    function is admitted only when its own code is short enough to read whole and is cited (two instructions here).
+    (3) **The memory spec may set a global the code writes at run time, under one of three justifications, named in
+    the finding:** (a) no output depends on it (the security cookie: XORed in and out, random per family); (b) every
+    value it can hold at run time is run and the outputs compared (the SSE2 flag, 0 and 1: `memcpy`'s two paths gave
+    identical outputs); (c) its run-time value is fixed by a writer scan (`__locale_changed`: 0 at load, one writer in
+    `setlocale`, which has no caller and no pointer). Without one of these the claim is conditional on the value set,
+    and says so. Inputs set by the spec on purpose (the language id, the already-read flag, `g_pDataTables`) are
+    arguments in this sense and need no justification beyond the claim's own domain.
+    (4) **The `LNG_GetLanguageCode` contradiction is accepted, narrowed.** `[C]` for the map: an unmatched id below 14
+    reads entry 13, the 0x18 bytes after the table (also plain in objdump: loop bound `cmp edx, 0x730524`, then `cmp
+    ecx, 0xe; jl`). Entry 13's low words are not image constants: 0x00525832–0x005258E7 write each as the default
+    letter or the single character of string 0x14D1–0x14D3, so the values read there, and the fault, are `[I]`; no
+    store touches the high words, which are 0 in the image, so each "pointer" is below 0x10000 in any run. The `use`
+    byte of 13 crashing the load is `[I]`, d-edit. data/0002 review note added; spec-writer addition filed.
+    (5) **data-excel 43, 44 → d-none accepted.** The allocator is reached unconditionally (above); the lookups the two
+    claims rest on are `[C]`, the test order stays a code reading.
+    (6) **S1f runs: 15 statements in 11 rows, as proposed** (inventory § 2.6 S1f table, § 5, § 7 rank 11). The two
+    conditional rows (pool 27, uniques-sets 44) are kept only if their claimed branches are reached with no case
+    stopping at the allocator, an import or the fatal path; that rule applies to every S1f row, as do capacity above
+    every case for growable pools and ruling 3 for spec writes. S1f starts after `lane/s1e` merges (same findings).
+    (7) **No ADR note for `idiv`.** Condition 5 already leaves faults out of emulated evidence; that SLEIGH returns 0
+    for `INT32_MIN ÷ −1` instead of trapping is a tool fact, the kind of thing a case writer must know so that it never
+    counts such a case as a match. It goes to the reverser's tooling notes (backlog), with the other EmuTrace notes.
+    It does not change a decision, so nothing goes to the owner.
+  - **Fixes on the lane:** `tools/sweep_s1e.py` (the `eval` writer's unseeded draw; `rnd_skill` now takes the
+    generator); run record review re-run note; data/0002 row 51 review note (run-time-written entry 13, `[C]` for the
+    index map only); data/0005 row 31 condition-5 citation (`shl eax, cl` masks the count; `sar eax, 8`); data/0004 row
+    64 (pool growth not reached); data/0003 rows 20, 35 (the not-xlated cache miss not reached; the index 0 set after
+    it); save/0001 the inlined clamp copy is not a plain register renaming, read equivalent at the review. Inventory
+    § 2.6 S1e entry marked reviewed, with the S1f table; § 5 S1e row (record and tool named) and S1f row; § 7 S1e done,
+    S1f rank 11; concurrency line. No tag in the ledgers changes; 69 raised, 1 in part, 4 not raised stand.
+  - **Final:** 74 statements: **69 raised, 1 raised in part, 4 not raised, 3 reclassified** (data-calc 14 → d-edit;
+    data-excel 43, 44 → d-none). **Totals now** (recomputed once over the fourteen batch reviews and P1a, with S1f
+    created): static 567 (S1f 15 included), harness 532, c-emu awaiting a batch 0, blocked 415 (d-none 282, d-edit 73,
+    d-sim 28, d-2c 14, d-owner 10, d-0032 8), deferred 2, raised 10: 1 526. Before S1f's creation the S1e moves alone
+    give static 552, blocked 426 (d-none 285, d-edit 81).
+  - **Follow-ups (backlog):** to the reverser, the EmuTrace tooling notes and the S1f batch; to the spec-writer,
+    additions to the lane's S1e Phase 3 entry.
+  - **Next:** the owner merges `lane/s1e`; then S1f (static, the lane's Ghidra copy may be reused).

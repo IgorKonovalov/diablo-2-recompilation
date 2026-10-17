@@ -113,7 +113,8 @@ cast, and when, is an input.
     stat and the six progressive `aurastat` cells with no calc; (d) which States row each timed shrine code applies
     (the name pairing is `[L]`; code + 122 holds for 7 of 10) and whether `Arg0`/`Arg1` become its stat value; (e)
     how the Sets compiler resolves a param name (by the property, or by a table order; 44 names are both a skill and
-    a state); (f) which code sets the 56 States rows no data column names, the monster-mod states among them;
+    a state; *the answer goes to the archivist for `excel_bin.py`'s Sets lookup, now a recorded tool limit in
+    [Sets § Bonus blocks](../tables/Sets.md#bonus-blocks-plan-0041-phase-0), arc4 review 2026-10-17*); (f) which code sets the 56 States rows no data column names, the monster-mod states among them;
   - **the boundary recommendation** for Phase 2: the event entry points, which stats stay value oracles (a skill's own
     computation, AI), the stat-read window (a recompute is a per-frame path: ADR-0014 § Log volume). The architect
     rules at the review.
@@ -287,7 +288,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
      the player's stat 216/224 cache with a per-level item on).
   4. *Rescale:* stat callback cases 7, 9, 11 (`0x0055B8EC` and the mana/stamina twins): old, new, current, result;
      boundary: `old ≤ 256`, a result of 0 or 1, a maximum that rises.
-  5. *Requirements:* `ITEMS_CheckRequirements` (`0x0062EAF0`) return per item and `ITEMS_RefreshEquipUsability`
+  5. *Requirements:* `sub_0062EAF0_ItemReqCheck` (`0x0062EAF0`) return per item and `sub_0055DBC0_EquipReqRefresh`
      (`0x0055DBC0`) marks; cases: an item whose strength comes from another item (the one-pass detach), an ethereal
      item at its −10 boundary, `item_req_percent`, an unidentified item, a broken item.
   6. *Sets:* `SETS_WornMemberMask` (`0x0062A370`) result, `SETS_ToggleItemAProps` (`0x00663A20`) per state on/off,
