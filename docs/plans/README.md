@@ -47,7 +47,7 @@ Lane runs (agent usage, review verdicts, fix counts by category) are logged in t
 | [0039](0039-backlog-sweep-4.md) | Backlog sweep 4: the static loose ends and the open questions a reading settles | approved | approved 2026-10-16 (owner, unattended); no slot (P0 archivist, P1a–c static, P2 spec); P1a, P1b and P1c accepted with fixes (2026-10-16, 2026-10-17, 2026-10-17; Phase 1 done); P2 for P1a+P1b accepted with fixes (2026-10-17, `lane/p39s`); P2 round 2 (P1c fold, items/uniques-sets) accepted with fixes (2026-10-17, `lane/p39s2`); complete except data/excel (P1b (a), P1c (a), its 11 W1), folded with plan 0038 Phase 3 |
 | [0040](0040-drlg-room-lifecycle.md) | Room lifecycle: activation, release, the inactive-unit restore and the wanderers | approved | approved 2026-10-16 (owner, unattended); P1/1b reviewed 2026-10-17 (accept with fixes); P2 open (1 slot, 2 allowed); P3 spec |
 | [0041](0041-stats-and-states.md) | Stats and states: how a unit's final stats add up, and how timed states live and die (ADR-0014 phase 2) | in progress | P0 accepted with fixes 2026-10-16; P1/1b accepted with fixes 2026-10-17 (stats/0001, 0002 all `[I]`; no draws); P2 open, 2 slots (0037·P3 reviewed, ADR-0016 gate met) |
-| [0042](0042-quests-travel.md) | Quests and travel: the quest state machines, waypoints, town portals and level entry | approved | approved 2026-10-16 (owner, unattended); ADR-0017 accepted; P2 up to 2 slots, owner fallback |
+| [0042](0042-quests-travel.md) | Quests and travel: the quest state machines, waypoints, town portals and level entry | approved | approved 2026-10-16 (owner, unattended); ADR-0017 accepted; P0 reviewed 2026-10-16, P1/1b reviewed 2026-10-17 (accept with fixes); P2 open, 2 slots, owner fallback |
 | [0043](0043-items-economy.md) | Item economy: prices, repair, gold and durability wear | approved | approved 2026-10-16 (owner, unattended); ADR-0017 accepted; P0 reviewed 2026-10-17 (accept with fixes); P1/1b next; P2 1 slot |
 | [0044](0044-multiplayer-branches.md) | Multiplayer branches: the two-client cases of the reviewed specs | approved | approved 2026-10-16 (owner, unattended); ADR-0008 accepted on the port-4000 condition; host and joiner on two non-zero slots; P2 holds both harness lanes |
 
@@ -63,7 +63,7 @@ the architect reviews in landing order.
 phase its slots in the prompt.
 
 **Gates** (owner, 2026-10-16: plans 0039–0044 approved to run unattended; ADR-0016, ADR-0017 and ADR-0008 accepted).
-0041's P2 is open (P1 reviewed 2026-10-17; 0037·P3 reviewed, so the ADR-0016 gate is met). 0042 and 0043 are open (ADR-0017).
+0041's P2 is open (P1 reviewed 2026-10-17; 0037·P3 reviewed, so the ADR-0016 gate is met). 0042 and 0043 are open (ADR-0017); 0042's P2 is open (P1 reviewed 2026-10-17).
 0044·P2 runs only after its lane has made TCP port 4000 unreachable from outside loopback, or confirmed it already is,
 and recorded how in the run record (the owner's condition on ADR-0008); host and joiner on two non-zero slots. A phase
 whose prerequisite has not landed is skipped, not waited on: the lane takes the next phase it can run.

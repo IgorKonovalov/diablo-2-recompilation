@@ -83,6 +83,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-17 | `lane/s1f` | 0038 S1f | reverser-static | 476 395 | 157 | 53 | Ghidra (lane copy) | accept with fixes | 3: omission 2, stale cross-reference 1 |
 | 2026-10-17 | `lane/s1f` review | 0038 S1f | architect-review | 198 740 | 91 | 14 | Ghidra (lane copy) | gave accept with fixes | — (on the lane row) |
 | 2026-10-17 | `lane/p39s2` | 0039 P2 round 2 | spec-writer | 201 174 | 81 | 19 | — | accept with fixes | 4: misread 1, miscount 1, stale cross-reference 2 |
+| 2026-10-17 | `lane/p42r` | 0042 P1/P1b | reverser-static | — | — | — | Ghidra (lane copy) | accept with fixes | 7: overclaim 3, misread 2, miscount 1, symbol clash 1 (2 commits; usage unknown) |
+| 2026-10-17 | `lane/p42r` review | 0042 P1/P1b | architect-review | — | — | — | — | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

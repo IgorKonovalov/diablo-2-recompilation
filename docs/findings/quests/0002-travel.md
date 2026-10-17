@@ -39,7 +39,7 @@ and writers of the act changes are also listed per quest in [quests/0001](0001-p
 - [I] **Act changes by NPC** are a branch of `NPC_MenuAction` for an action other than 1–3: NPC 155 needs word 6
   bit 0 and goes to level 40, NPC 210 needs word 14 bit 0 and goes to 75, NPC 367 needs an expansion game and word 26
   bit 0 and goes to 109 (all at point type 0, then `NpcActTravel` writes the travel words and the town's waypoint bit
-  is set); NPCs 175, 264 and 520 go back to levels 1, 40 and 103 at point type 5 with no test (row names `warriv2`,
+  is set); NPCs 175, 264 and 520 go back to levels 1, 40 and 103 at point type 5 with no quest-word test (264 and 520 only for action 0; row names `warriv2`,
   `meshif2`, `cain6`, `[L]` as identities). The player is moved
   **before** the words are written. (fn:NPC_MenuAction@0x00579D60 0x0057A650–0x0057A7D6, 0x0054B830,
   fn:sub_005467E0_NpcActTravel@0x005467E0)
@@ -101,14 +101,16 @@ fetched and compared afterwards.
   Detail: the owner's use of the town end frees both ends (§ 6).
 - [L] src:arreat-summit-basics-travel: only party members may use a player's portal. **held with refinement**
   Detail: the owner and the operator must have the same party id; the owner's own portal is exempt (§ 6).
-- [L] src:arreat-summit-basics-travel: going hostile closes the player's portal. **held with refinement**
+- [L] src:arreat-summit-basics-travel: going hostile closes the player's portal. **held with refinement**, on the
+  condition that `0x005A5E50` is the hostility declaration
   Detail: `0x005A5E50` closes it and writes the tick stamp; that it is the hostility declaration is a lead (open
-  question).
+  question, plan 0044).
 - [L] src:arreat-summit-basics-travel: a hostile player cannot use other players' portals. **not covered**
   Detail: no hostility test was found in `OBJOP_Portal`; the party test may be what enforces it.
 - [L] src:arreat-summit-basics-travel: a 10-second delay separates a hostility declaration from leaving town by
   waypoint or portal. **held** for waypoints (10 000 ms, § 3), **contradicted** for portals: the portal gate waits
-  5000 ms (`0x00584870`). Multiplayer only, not reachable with one client; backlog entry 2026-10-17 (plan 0044).
+  5000 ms (`0x00584870`). Both gates read stamps written only by `0x005A5E50` (`0x0055B720`, one caller), so the
+  verdicts hold on the same condition as the previous one: that `0x005A5E50` is the hostility declaration. Multiplayer only, not reachable with one client; backlog entry 2026-10-17 (plan 0044).
 - [L] src:arreat-summit-quest-acts: another player's portal into an area behind a "blocking quest" (cow level: Terror's
   End or Eve of Destruction; Durance: The Blackened Temple) cannot be entered without that quest. **held**
   Detail: `QuestFlag` 26 / `QuestFlagEx` 40 on level 39 and 21 on 100–102, bit 0 of that word (§ 6).

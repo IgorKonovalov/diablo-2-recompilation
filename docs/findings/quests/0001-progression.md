@@ -29,8 +29,11 @@ record (§ 3). The quest drops, rewards and the quest seed's item draws are [ite
   reach quest code through `g_ObjOperateFns` and `QUESTS_ObjectEvent` (items/0010 § 9), and quest timers run every 20th
   frame. (fn:QUESTS_DispatchEvent@0x005438E0, fn:QUESTS_DispatchUnitEvent@0x005439A0, § 2, § 5)
 - [I] **The game creator's history.** At the first join, every quest the joining player has finished (bit 0 or 15) is
-  deactivated for the whole game and marked in the game record (word bit 15); only forced events (a fixed list of
-  superunique and boss deaths) still reach it. Later players never change this. (fn:sub_00546270_QuestsPlayerJoin@0x00546270, § 3)
+  deactivated for the whole game and marked in the game record (word bit 15). The dispatch then skips it only for
+  unforced events, which are the item and monster hook events (e4, e5, and e8 outside the forced superunique and boss
+  list); the dispatched events e0, e2, e3, e10 and e11 are all raised forced, so its handlers still run and each tests
+  the quest's own state. Later players never change this. (fn:sub_00546270_QuestsPlayerJoin@0x00546270,
+  fn:QUESTS_DispatchEvent@0x005438E0 0x00543934–0x0054393E, § 2, § 3)
 - [I] **One bit grammar for all quests.** Bit 0 done, bit 1 done-in-a-game-reward-pending, 13 done in this game, 14
   failed in this game, 15 reward pending from an earlier game, 2–11 log steps (cleared by `0x0065C3E0` at the reward),
   12 "seen in the log" (client packet `0x58`, no test). Credit goes to the actor, often to every player in the boss's
@@ -38,9 +41,9 @@ record (§ 3). The quest drops, rewards and the quest seed's item draws are [ite
   check. (§ 4)
 - [I] **Per quest**, the bit tables with setter addresses, triggers and readers are § 7 (Act I), § 8 (Act II), § 9
   (Act III), § 10 (Acts IV–V). Highlights: the Countess completes at once (bits 13, 0, no reward step); the Hell respec
-  is word 41, granted by `NPC_MenuAction`; Khalim's Will completes on the second hit of the orb; Diablo's death raises
+  is word 41, granted by `NPC_MenuAction`; Khalim's Will completes on the second operate of the orb with `qf2` held; Diablo's death raises
   the classic status progression; word 28 is set by the Harrogath portal object (566), expansion only; the Ancients'
-  experience is 1.4M/20M/40M; word 33 has no writer.
+  experience is 1.4M/20M/40M; no quest script writes word 33 (only packet `0x58`'s bit 12 can).
 - [I] **Draws.** On the **quest seed**, besides plan 0032's item draws: the cairn-stone order (≥ 5 `mod 5` steps, first
   stone or scroll), the Act II eclipse timer (`RandLoHi(15, 17)`, once per game), each talk to NPC 331 once the palace is
   open (`mod 3`), the Act III Dark Wanderer timer (one step per game), Anya's reward (`Range`), the Zoo (1–10
@@ -64,8 +67,9 @@ below were fetched and compared afterwards.
 
 - [L] src:arreat-summit-quest-acts: a player who joins a game gets only the quests its creator has not solved.
   **held with refinement**
-  Detail: the first joiner's finished flag-0 quests (bit 0 or 15) are deactivated for the game (§ 3); forced boss and
-  superunique deaths still reach them, and a later joiner's record changes nothing.
+  Detail: the first joiner's finished flag-0 quests (bit 0 or 15) are deactivated for the game (§ 3); the forced
+  events (talks, messages, level changes, leaves, the forced boss and superunique deaths) still reach their handlers,
+  which test the quest's state, and a later joiner's record changes nothing.
 - [L] src:arreat-summit-quest-acts: party members share a completion only when they are in the same act. **held**
   Detail: every party-credit callback tests `DRLG_ActFromLevelId` of the member's level against the quest's act (§ 4).
 - [L] src:arreat-summit-quest-acts: when another player completes a quest, it becomes unavailable until a new game.
@@ -250,9 +254,14 @@ QuestsPlayerJoin(game, player, rejoin) (0x00546270)                             
 
 - [I] **The game creator's history shapes the game.** Every flag-0 quest the first player has finished (bit 0, or bit
   15 = "done, reward pending" saved earlier) is switched off for the whole game: its object stops receiving unforced
-  events and its scripts see `+0x09` = 0. Later players' records are never consulted for this. This is how a quest
-  boss's script stays inactive in a game made by a player who has done it, while forced death events (above) still
-  reach it. (0x005462C0–0x0054634A, 0x00544410)
+  events and its scripts see `+0x09` = 0. Later players' records are never consulted for this. The unforced events
+  are only the hook events (e4 and e5 push force 0 at `0x00543D8A`; e8 outside the forced list, § 2): every raiser
+  of a `QUESTS_DispatchEvent` event pushes force 1 (`0x00543BA2` e3, `0x00543C96` e10, `0x00543D2A` e0, `0x00543D5C`
+  e2, `0x005443FA` e11, `0x005457BF` the re-dispatched e0). So a deactivated quest's talk, message, level-change and
+  leave handlers still run, and what keeps them inert is each handler's own test of `+0x09`/`+0x0A` or of its state
+  bytes, per quest (§ 7–§ 10). This is how a quest boss's script stays inactive in a game made by a player who has
+  done it, while forced death events (above) still reach it. (0x005462C0–0x0054634A, 0x00544410,
+  fn:QUESTS_DispatchEvent@0x005438E0 0x00543934–0x0054393E)
 - [I] The first-join callbacks (`+0xD4`) copy the creator's step bits into the quest's state bytes; the later-join ones
   (`+0xD8`) recount quest items and the like; § 7–§ 10 per quest. The `rejoin` argument is 1 at `0x00532673` and
   `0x0056A072` (after `0x005701B0`) and 0 at `0x005344EF` and `0x0053458F`; which flows these are is open.
@@ -1035,8 +1044,9 @@ new level at `+0x18`, the player at `+0xC`. So e3 handlers test `+0x18` = level 
 | W18 b0, b13 | set | 0x005BB9F7, 0x005BBA14 (`0x005BB980`) | **Compelling Orb operate** (object 404, OperateFn 53): the operator's primary weapon is `qf2`, and the orb's hit counter (private `+0x38`) reaches 2 | Durance warp gate (see word 21), `0x00546AC0` removal (`save/0002`), council `0x005BB210` |
 | W18 b0, b13 | set | 0x005BB8E7, 0x005BB8F1 (`0x005BB850`, party members) | same operate: each party member in Act III (`0x00540510` PartyForEach); a member who already had b0 just loses the five items | — |
 
-- [I] **Compelling Orb operate** (`0x005BB980`, data:g_ObjOperateFns@0x00732D18 `+0xD4`): first hit only counts; on the
-  second hit with `qf2` equipped: sets W18 b0 and b13, removes `qf2`, and if the operator's W21 b4 is set, sets W21 b0
+- [I] **Compelling Orb operate** (`0x005BB980`, data:g_ObjOperateFns@0x00732D18 `+0xD4`): an operate counts a hit only
+  when the operator's primary weapon is `qf2` (the code test at 0x005BB9B3 exits before the counter's increment at
+  0x005BB9CD), so an operate without it changes nothing; on the second counted hit: sets W18 b0 and b13, removes `qf2`, and if the operator's W21 b4 is set, sets W21 b0
   (0x005BBA6F, the record re-read through `QUESTS_PlayerRecord`); the orb monster spawned at the object (private `+0x2C`,
   `0x005BBBA0`) is killed (`0x005DDFC0`, `0x005DFEE0`); the object goes to mode 1 and queues object event 1; council
   private `+0xC` = 1 ("orb broken"); `0x00545760` sends every player's record; the quest's `+0xF0`; party pass
@@ -1465,9 +1475,10 @@ The forge itself (OperateFn 49, the strikes, the waves and the rune) is plan 003
 | +0xE8 | 0x005B69E0 | no log entry |
 | +0xEC | 0x005B69F0 | 408 has something while word 27 bits 0, 1, 13 are clear, or word 26 bits 0 and 13 are clear |
 
-- [I] Word 33 has **no writer**: no `QUESTRECORD_SetState` with word 33 exists in Acts IV/V code and the global scan of
-  constant-word setters finds none (heuristic: immediate pushes before `0x0065C360`). The object is a dialogue
-  selector only. No draw.
+- [I] **No quest script writes word 33**: no `QUESTRECORD_SetState` with word 33 exists in Acts IV/V code and the
+  global scan of constant-word setters finds none (heuristic: immediate pushes before `0x0065C360`). Its only writers
+  are packet `0x58`, which sets bit 12 of any word < 42 (`0x0054C9C0`, § 4), and the loader. The object is a dialogue
+  selector only. No draw. (0x005B6A70, 0x0054C9C0)
 
 #### Word 35 — quest object 31 (row 31, init 0x005876E0, `a5q1.cpp`): Shenk, Larzuk's socket
 
