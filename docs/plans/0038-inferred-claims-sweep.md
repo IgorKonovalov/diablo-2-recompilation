@@ -2387,3 +2387,24 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   0011, 0014, 0015, 0018. No spec changed. Commit `2b8a67f`; gate green. Review request:
   [wiki6 review](../backlog/2026-10-17-spec-writer-architect-wiki6-index-and-how-we-know-review.md).
   - **Next:** architect review of `lane/wiki6`.
+- **2026-10-17 — `lane/wiki6` reviewed (architect, on the lane at `b2aa52d`; `main` `407758a` already merged): accept
+  with fixes.** Every number checked against its source at the same strength: 28 643 calls in ten families (S1e
+  entry) and 18 800 in eight, none stopped, the guard-stop failure shown at the S1f review; 40 655 events in 40 logs
+  (plan index, 0037); 1 526 `[I]` against 2 531 `[C]` (§ TL;DR); 600 seeds and 0 of 52 200 windows, the Acts I, II,
+  IV, V enumeration as a bound and Act III as a sample (inventory § 2.6 `lane/rbs4` block, drlg/0008 H5e (a));
+  7 shrines and 5 wells against 50 operates and the floor of 20 (plan 0041 P2 review ruling 1); the seed-invariance
+  rule (plan 0041 P2 amendment) and Sanctuary's draw taking the chaining minimum (ruling 5); ADR-0008, 0011, 0014 and
+  0015 restated without overreach; the open-plan wording matches the plan index but for 0044. Gate green.
+  **Fixes (6), applied on the lane:**
+  (1) *stale cross-reference:* wiki/README's 0044 bullet said the two-client run waits until the port is shown
+  closed; the owner's `ufw` check was recorded on 2026-10-17 ([plan 0044 log](0044-multiplayer-branches.md#implementation-log),
+  `78b96a9`), so it now waits only for two free slots. The plan index row of 0044 updated likewise (architect's file).
+  (2) *stale cross-reference:* how-we-know's two-client section gains the met condition and the per-session re-read.
+  (3) *overclaim:* "a bound: a static argument plus an exhaustive scan" made every d-none ruling need a scan; most rest
+  on the static argument alone, so the scan is now "where the argument alone leaves cases open".
+  (4) *overclaim:* "inputs can be random, so each branch is driven by at least one case" stated as a consequence what
+  ADR-0015 (4) sets as a requirement; reworded as a requirement.
+  (5) *omission:* ADR-0015 (5)'s self-modifying code added to what emulation cannot confirm.
+  (6) *omission:* the sweep's blocked reasons gain the plan 0032 owner addendum (`d-0032`, § Classes).
+  Request closed; ledger rows in [metrics](metrics.md) (usage "—").
+  - **Next:** merge `lane/wiki6`.

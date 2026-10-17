@@ -117,8 +117,8 @@ Some code is never reached by ordinary play in a session of reasonable length: a
 table column, an error branch. For such code the project can run **the game's own machine code, one function at a
 time, inside Ghidra's emulator**, and compare it bit for bit with the project's model
 ([ADR-0015](../adrs/0015-emulated-reproduction.md#decision)). No instruction is patched; the project only writes the
-memory the function starts from. Because the inputs are chosen, they can be random as well as stock rows, so each
-branch a claim covers is driven by at least one case, and each family of cases has a *negative control*: a
+memory the function starts from. Because the inputs are chosen, they can be random as well as stock rows. Each
+branch a claim covers must be driven by at least one case, and each family of cases has a *negative control*: a
 deliberately wrong model or output that the checker must reject, to show the comparison can fail.
 
 Two safeguards were added while the inferred-claims sweep used the method, on 2026-10-17:
@@ -144,7 +144,8 @@ its return value, the bytes it writes, the seeds' exit states, and so how many r
 - what the game's memory actually holds at those offsets while playing: what each offset *means* (which table
   column, which field) needs its own evidence;
 - who calls the function, when, and on which live seed in play: that still needs a run;
-- crashes and processor faults, x87 floating-point results, and calls into the operating system;
+- crashes and processor faults, x87 floating-point results, calls into the operating system, and code that rewrites
+  itself;
 - a mistake in the emulator's own model of an instruction, which the decompiler, built from the same model, would
   share. Where a claim turns on an unusual instruction, the record also cites a second disassembler. One such limit
   is already known: the emulator returns 0 for one overflowing division that the real processor traps on
@@ -195,7 +196,10 @@ the server side; a claim about the joiner's own client state would need its own 
 While hosting, the game listens on its network port on every interface. The owner accepted the method on one
 condition: before any hosting run, the lane makes sure that port cannot be reached from outside the machine (a
 firewall rule, or a confirmed existing block) and records how in the run record. Host and joiner use two numbered
-slots, never the owner's ([ADR-0008, status](../adrs/0008-two-client-harness.md)). Until a two-client run reaches
+slots, never the owner's ([ADR-0008, status](../adrs/0008-two-client-harness.md)). The condition is met: on
+2026-10-17 the owner's firewall listing showed the port dropped on every interface but the machine's own, and before
+each hosting session the lane re-reads the firewall state and asks the owner again only if it changed
+([plan 0044 log](../plans/0044-multiplayer-branches.md#implementation-log)). Until a two-client run reaches
 them, multiplayer branches stay "read from the code"
 ([ADR-0003 § Negative](../adrs/0003-runtime-experiments.md#negative)); plan 0044 is the plan that will run them.
 
@@ -208,7 +212,8 @@ explained ([plan 0038 § Classes](../plans/0038-inferred-claims-sweep.md#classes
 the class says why no run will reach it; it does not confirm the code reading.
 
 Ruling a branch out takes more than not having seen it. It takes a **bound**: a static argument about what can reach
-the branch, plus an exhaustive scan or enumeration of every case that argument leaves open. A sample of seeds is not
+the branch, completed, where the argument alone leaves cases open, by an exhaustive scan or enumeration of all of
+them. A sample of seeds is not
 a bound, however large, because the next seed might be the one. The outdoor generator's vertex merge (statement 7 of
 the outdoor inventory) shows the difference
 ([inventory § 2.6, the `lane/rbs3` and `lane/rbs4` blocks](../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews);
@@ -243,7 +248,7 @@ Each plan confirmed what its own run reached and left the rest inferred. On 2026
 ([plan 0038 § TL;DR](../plans/0038-inferred-claims-sweep.md#tldr)). Plan 0038 lists every one of them, classes it by
 its route to confirmation (a new check over logs already kept, one more session with an existing recipe, a new
 recipe, a static second source, an emulated run) or by the reason it is blocked (two clients, owner play, a later
-simulation phase, edited data only, no observable), and works through the routes in batches.
+simulation phase, edited data only, an owner addendum of an earlier plan, no observable), and works through the routes in batches.
 
 *Raising* an inferred claim means adding the independent check it lacked and naming it in the statement
 ([evidence rules § Promotion](../../.claude/skills/architect/references/evidence-rules.md#promotion)). A batch's

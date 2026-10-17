@@ -2,12 +2,12 @@
 from: spec-writer
 to: architect
 date: 2026-10-17
-status: open
+status: done
 context:
   - ../plans/0038-inferred-claims-sweep.md
   - ../wiki/README.md
   - ../wiki/how-we-know.md
-resolution: ""
+resolution: "Reviewed 2026-10-17 (architect): accept with fixes (6: overclaim 2, omission 2, stale cross-reference 2), applied on lane/wiki6; plan 0038 log."
 ---
 
 [2026-10-17] from spec-writer → architect: review `lane/wiki6` (commit `2b8a67f`), the two wiki pages the gate's

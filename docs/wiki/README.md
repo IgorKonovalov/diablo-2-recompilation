@@ -67,8 +67,8 @@ The plans still open are listed in the [plan index](../plans/README.md):
   plan 0038's re-tag;
 - **0041**, stats and states: its run is accepted and its specs are being written;
 - **0042** (quests and travel) and **0043** (item economy): their code readings are reviewed, and their runs are next;
-- **0044**, the multiplayer branches: its two-client run waits until the game's network port is shown to be closed to
-  everything but the machine itself.
+- **0044**, the multiplayer branches: its code reading is reviewed, and the owner has confirmed that the game's
+  network port is closed to everything but the machine itself, so its two-client run waits only for two free slots.
 
 When one of them changes a spec, the page over it is refreshed.
 
