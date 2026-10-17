@@ -907,6 +907,64 @@ Row Q21 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static (objdump, Gh
   `Normal` 0 and would keep the forced quality. (0x005574E3–0x00557567, tbl:ItemTypes.txt:Normal)
 - **`superuniques` has no table doc (stale):** [SuperUniques](../../tables/SuperUniques.md) exists.
 
+## Plan 0039 batch P1c (2026-10-17)
+
+Follow-up (a) of the P1b review ([backlog](../../backlog.md), 2026-10-17 architect → reverser). Static: an operand
+scan of the objdump listing (scratch script, not kept), Ghidra on the lane's copy and `tools/xrefscan.py`. No game run.
+
+### Which units skip the death drop (`unit+0xC4` bit 17)
+
+- [I] **The writer count.** P1b gave "21" `or [reg+0xC4], 0x20000` sites. An exact scan finds **20**. The 21st
+  match is at 0x00458E0E, `or [ebx+0xC4], 0x20000000` (bit 29), which a text search for `0x20000` also catches.
+  OR-immediates that include bit 17 with other bits add **9** more sites, and one register OR stored to `+0xC4` adds
+  1 (0x005CC9B4, `or eax, 0x4020000`). That makes **30 direct writers**: 0x4020000 at 6 sites, 0x402000E at 3,
+  0x4020200 at 1. No `mov [reg+0xC4], imm` sets the bit (the four such stores at 0x005B66BA…0x005BAB11 write code
+  pointers into quest data, not units). A computed word copied in whole would escape the scan; the restore at
+  0x00541FC6 is the one copy of the bit that was found.
+- **The 30 writers by unit kind** (the five P1b read are marked "P1b"):
+
+  | kind | site(s) | function | note |
+  |---|---|---|---|
+  | a class with MonStats `Align` 1 (113 classes: town NPCs, critters, hirelings, player summons) | 0x005B2EC2 | `MonSpawnTry`, after `MonAlignSet(2)` | every creation through `MonSpawnTry` ([MonStats](../../tables/MonStats.md) `Align`) |
+  | bone prisons 340–343, `compellingorb` 366 | 0x005B1E54, 0x005B1E79 | `MonPostCreateBoss` | P1b |
+  | a monster spawned for another unit | 0x0056D9F0 | `SpawnOwnedMonster` | P1b |
+  | `MonSetNoDeathDrop`'s argument | 0x005AD3C2 | `MonSetNoDeathDrop` | P1b |
+  | an inactive monster restored | 0x00541FC6 | `0x00541E20` | P1b; copies the saved bit |
+  | the Travincal compelling orb (object InitFn 60 spawns class 366) | 0x005BBBE9 | `sub_005BBBA0_ObjInitCompellingOrb` (pointer at `0x00731CB0` = `g_ObjInitFns` slot 60) | P1b placed this site in `A3Q4_FigurineDrop`; it is the next function |
+  | the compelling orb at its death | 0x005BBC41 | `A3Q5_CouncilDeath` (class 366 branch) | sets the bit in the quest death callback |
+  | monsters that end themselves through their AI: the bit, then `sub_005DDFC0_MonAiSetMode(0, 0, 0)` (death mode) | 0x005E02A1, 0x005E61F7, 0x005E6238, 0x005E9F38, 0x005EA09A, 0x005EA1DF, 0x005EA246, 0x005F6698, 0x005F6A58, 0x005FB5CF, 0x005FB91F, 0x005FB9CF | the AI functions of `g_MonAiTable` (16-byte rows, slot `+8`, indexed by MonStats `AI`) | see the next table; P1b listed 0x005E02A1 under `UberTristramDrop` and the other 11 as "skill code" |
+  | a monster spawned by a spawner AI or skill | 0x005CBED9, 0x005D2567, 0x005D2E15, 0x005FB536, 0x005FCA71 | `srvdofunc` 91 (`Nest`, `EvilHutSpawner`), 135 (`MinionSpawner`), 140 (`Baal Tentacle`), AI 76 `EvilHole` (`evilhole1`–`5`, `demonhole`), `sub_005FC860_BaalCloneSpawn` (class 570 `baalclone`) | 0x4020000 |
+  | a monster brought back to life | 0x005CC9B4, 0x005C5533, 0x005C0888 | `0x005CC960` from `srvdofunc` 97 (`Resurrect`, `Resurrect2`); `0x005C5430` from `srvdofunc` 58 (`Revive`); `sub_005C07A0_SkillReviveDo`, a corpse callback of `0x005C09E0` | 0x4020000, 0x402000E, 0x402000E |
+  | a hireling | 0x005732A3, 0x00579B69 | `MERC_Init`; `sub_00579AA0_MercRevive` (resurrection) | 0x4020200, 0x402000E |
+
+  The AI rows. The MonStats classes are read from the shipped `.txt` by `AI` name; `monai` has no `Expansion` row,
+  and the MonStats one is skipped.
+
+  | AI index | `monai` row | function | classes | when |
+  |---:|---|---|---|---|
+  | 43 | `FoulCrowNest` | 0x005F6650 | `crownest1`–`4` | its spawn count `≥` the AI parameter `+0x62` of the difficulty |
+  | 45 | `Sarcophagus` | 0x005F6A10 | `sarcophagus` | its spawn count past the AI parameter of the difficulty |
+  | 77 | `Trap-Missile` | 0x005FB5B0 | `trap-firebolt`, `trap-lightning` | on its ending branch (condition not read) |
+  | 80 | `Trap-Poison` | 0x005FB900 | `trap-poisoncloud` | as row 77 |
+  | 83 | `MosquitoNest` | 0x005E0260 | `suckernest1`–`4` | its spawn count past the AI parameter of the difficulty |
+  | 88 | `7TIllusion` | 0x005EA080 | `seventombs` | on its second tick |
+  | 91 | `DarkWanderer` | 0x005EA130 | `darkwanderer` | two branches of its state 2 (conditions not read) |
+  | 92 | `Trap-Nova` | 0x005FB9B0 | `trap-nova` | as row 77 |
+  | 99 | `TrappedSoul` | 0x005E9F10 | `trappedsoul1`, `trappedsoul2` | every tick (the bit is set before anything else) |
+  | 129 | `GenericSpawner` | 0x005E61B0 | `evilhut` | no target, or spawn count reached |
+
+  The table base comes from `sub_005B15D0_MonAiEntryGet`, which with `EDX` = 0 returns `0x0073CA18 + 16·AI` for
+  `AI` < 148 (0x005B161F–0x005B1635). (data:g_MonAiTable@0x0073CA18, fn:sub_005B15D0_MonAiEntryGet@0x005B15D0,
+  fn:sub_005DDFC0_MonAiSetMode@0x005DDFC0, fn:sub_005BBBA0_ObjInitCompellingOrb@0x005BBBA0,
+  fn:sub_005BBC00_A3Q5_CouncilDeath@0x005BBC00, fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:MERC_Init@0x00573270,
+  fn:sub_00579AA0_MercRevive@0x00579AA0, fn:sub_005FC860_BaalCloneSpawn@0x005FC860,
+  fn:sub_005C07A0_SkillReviveDo@0x005C07A0, tbl:MonStats.txt:AI, tbl:MonStats.txt:Align, tbl:Skills.txt:srvdofunc)
+- [I] **For items/tc:** the units that skip the death drop are those in the table, read off the code. That covers the
+  113 `Align` 1 classes when made through `MonSpawnTry`, the AI self-removals, spawned and raised minions, hirelings
+  and the two compelling-orb sites. It is a lower bound for the reason above. The bit's meaning still rests on its two
+  readers (§ Plan 0039 batch P1b). The identity of `0x005C09E0`'s skill (its pointer sits at `0x0073262C`, past the
+  `srvdofunc` table) is not read.
+
 ## Open questions
 
 - **x87 precision control** in other renderers. Every logged evaluation shows control word `0x027F` (53-bit, round
