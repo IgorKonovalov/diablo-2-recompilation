@@ -1318,3 +1318,92 @@
   differs from the act's rect. Level 10 re-checked on `od-s2-3102-nightmare` and `a35-s1-21-normal` (4 windows, 105 078
   checks, 0 mismatches). An Act I check over map seeds 1–100: flag `0x20` set only on levels 4, 5 and 6; levels 3–7
   always 10×10, the Blood Moor 12×7 or 7×12.
+
+## run:2026-10-17-lifecycle
+
+- **Question:** (plan 0040 Phase 2) Does the room-lifecycle model of [drlg/0009](0009-room-lifecycle.md) (references and
+  activation, the client lists, the release pass, the save rule and the records, the new-rooms walk, the restore of
+  monsters, items and unit records, the wanderer gate) reproduce a scripted run with 0 mismatches?
+- **Setup:** the ADR-0003 harness on **slot 1** (display `:8`, prefix `workspace/wineprefix-1`), agent-driven play
+  (no owner play). Characters built with `tools/d2s.py build workspace/merged/data/global/excel`: `ObjNova` from
+  `tools/d2s_recipes/objnova.json` on `workspace/samples/d2s-owner/smpsor-l50.d2s` (save `d54d5dc3…`, expansion) and
+  `ObjClassic` from `objclassic.json` on `workspace/runtime/monspawn-chars/cls/smpsor.d2s` (save `0f1afac1…`, classic),
+  the bytes of run:2026-10-15-objects; the slot's empty saves directory set aside as tag `r40` and restored before
+  each launch, the save installed with `d2run.py --install r40`.
+  - **Logger** `tools/gdb/rooms.gdb` (`726e3453…`): `pilot.py` (`1ad48a4c…`) and `rooms.py` (`45da126c…`, new; tags in
+    its header, every line with the game frame `f`).
+  - **Checker** `tools/rooms.py check` (`4f816bd1…`, new; unit tests `tools/test_rooms.py`), with the monsters/stats
+    model (`tools/monstats.py`) for stat 12; tables from `workspace/merged/data/global/excel`.
+  - **Driver** `tools/rooms_sessions.py` (`ba25cac1…`): per session, waypoint travel (`d2pilot.py farm --wp T,R --time
+    1`), then cycles of `explore --any-level --hops H --nova 2 --loot 18 --persist 6` (plus `--es 30` in Nightmare and
+    Hell) and a return to the arrival point (`explore --any-level --to-rect`), so that the rooms left behind are
+    released and restored on the way back; the `long` sessions wait 330 s before the last return (restores over 7500
+    frames). The `town` sessions walk from the Rogue Encampment waypoint into the Blood Moor and back, then
+    `wpchain 1,2` and `1,1`.
+- **Procedure:** `python3 -I tools/rooms_sessions.py run --slot 1 --tag r40 --saves workspace/runtime/p40h-chars --run
+  lifecycle <session>…` (each launch is `d2run.py --slot 1 --seed N --gdb tools/gdb/rooms.gdb --steps
+  tools/gdb/enter-<diff>.steps --after 2400 --install r40 …`; the game starts in the Act IV town; the Xwayland window
+  kept on `special:d2harness`; `slots.py stop 1` after each session). Check:
+  `python3 -I tools/rooms.py check workspace/logs/rooms/lifecycle-*.log --json …` (under `MemoryMax=4G`).
+
+  | Session | Seed | Character | Difficulty | Waypoint, levels | Releases / restores of re-activated rooms |
+  |---|---|---|---|---|---|
+  | n-cold | 4011 | ObjNova | Normal | 1,2: Cold Plains 3 (+ 2, 4) | 268 / 151 |
+  | n-catacombs | 4012 | ObjNova | Normal | 1,9: Catacombs 34, 35 (maze) | 61 / 36 |
+  | n-farooze | 4013 | ObjNova | Normal | 2,5: Far Oasis 43, 42 | 267 / 156 |
+  | nm-dark | 4021 | ObjNova | Nightmare | 1,4: Dark Wood 5, 6 | 275 / 174 |
+  | nm-spider | 4022 | ObjNova | Nightmare | 3,2: Spider Forest 76, 77 | 260 / 177 |
+  | h-highlands | 4031 | ObjNova | Hell | 5,2: Frigid Highlands 111, 110 | 218 / 106 |
+  | h-flayer | 4032 | ObjNova | Hell | 3,4: Flayer Jungle 78 | 43 / 2 |
+  | n-long | 4041 | ObjNova | Normal | 1,3: Stony Field 4 (330 s wait) | 140 / 59 |
+  | nm-long | 4042 | ObjNova | Nightmare | 2,3: Dry Hills 42, 43 (330 s wait) | 149 / 54 |
+  | cls-n-cold | 4051 | ObjClassic | Normal | 1,2: Cold Plains 3, Blood Moor 2 | 286 / 143 |
+  | cls-nm-jail | 4052 | ObjClassic | Nightmare | 1,7: Jail 29 (maze) | 70 / 53 |
+  | town-n | 4061 | ObjNova | Normal | 1,1: Rogue Encampment 1, Blood Moor 2 | (town rooms released) |
+  | town-n2 | 4062 | ObjNova | Normal | 1,1: the same, with a walk to the Blood Moor rooms | (town rooms released) |
+
+- **Observed** (`tools/rooms.py check`, 13 logs, trimmed; full output `workspace/logs/rooms-lifecycle-check.txt`,
+  `042c01ee…`):
+  ```
+  ref moves 913: callbacks predicted in kind, room, refs and status at entry 634 982; refs and status at RMX 52 119;
+    activations (ACTA after e1) 2 377 in 913 moves
+  client room changes 913: enter/leave calls 5 418 in order, +0x78 before each; +0x78 = 1 iff in the client room's
+    near list: 180 132 room-passes
+  release passes 15 614 (frame % 12 = 0): idle counts carried, new rooms at 0; release tests 19 328 (refused: pin 4 592,
+    town 12 296); rooms freed per pass all predicted; releases 2 440, of which 2 224 at the first eligible pass,
+    120..131 frames after the last leave (120: 186 … 131: 156; > 131: 82, held by a test); 5 client visits between
+    two passes left the idle count running
+  tiles release: server 2 440 (EDX 1, 0x200000 set after), client 8 277 (EDX 0, 0x200000 clear)
+  save rule: monsters 4 401 (saved 3 086, saved dead 413, freed dead 902), mode-12 room draws 1 315 (seed out and
+    low mod 3), room seed chained unit to unit; objects 3 023 (B4), items 1 347, type 5 59, missiles 9
+  records: monster 3 499 (x, y, class, id, frame, +0xC4/+0xC8, stats 13/6, max life, mods, flag bits), unit 3 037,
+    item 1 347 (expiry from quest, quality, base type, gold, filler)
+  new-rooms walk: wanderer gate draws 11 064 (out = step(in); 3 211 with +0x78 = 0 and MonWndr; passes 0);
+    populated 1 137, restored 1 361, the restore once per activation; re-activations 1 414 with DRLG +0x60 bit 0
+  monster restore 2 035 (exact 1 836, minion 144, special 55): id and class the record's, mode, 1 game-seed draw each,
+    unit +0x28 = the low word after it; room draws 3 (exact at the record's x, y: 1 808), 7 on a radius-5 fallback (31);
+    stats 13, 7 the record's, 6 by the 7500-frame rule (under 1 931, over 104), 12 by the monsters/stats model;
+    +0xC4 |= 0x3000000; region counts after MonRegionUnitLeave 2 035; 255 damaged before the release; 199 specials
+  items restored 876: list order, 2 game-seed draws each, start seed (+0x28) the saved one (289) or 0 for a simple
+    item (587), unit seed Init(+0x28), position kept, expiry max(saved, frame + 15000)
+  unit records restored 1 799, re-created with type, class and position (objects 1 760, 603 operated before)
+  preset paths moved by PresetUnitSpawn 49
+  SUMMARY mismatches=0 checks=2215807
+  ```
+- **Raw logs:** `workspace/logs/rooms/lifecycle-*.log`, sha256 in `workspace/logs/rooms-lifecycle-manifest.sha256`
+  (`da0c0d7d…`, 13 logs): cls-n-cold `069afe5b`, cls-nm-jail `97141baa`, h-flayer `51e8fdfc`, h-highlands `9bae846b`,
+  n-catacombs `6f00c674`, n-cold `c28345bb`, n-farooze `d1fe5630`, n-long `b54fd84c`, nm-dark `41c05842`, nm-long
+  `66f1dabb`, nm-spider `85502803`, town-n `ced466ac`, town-n2 `312ce6ad`; pilot transcripts and screenshots beside
+  them.
+- **Development logs** (not part of the record): `dev-smoke`, `dev2-n-cold`, `dev3-town-n`, `dev4-town-n` (earlier
+  logger revisions: the client lists logged before the reference move, the preset path read one level too deep).
+- **Deviations:** h-flayer made few releases (the pilot stayed near the arrival point). Both town sessions released the
+  town's rooms (level 1: 161 room releases, 128 restores of re-activated town rooms over the run) but no hostile monster was in a town room at a release: the
+  scripted walk out and back did not bring one in. One launch overlapped a running development session on the slot;
+  both were killed and the slot stopped before the batch was relaunched (its partial log was deleted).
+- **Not reached:** the town-follow case (required; shortfall); a wanderer roll or spawn (0 of 3 211 eligible gate
+  draws passed; the rate is 1 in 32 768); an expired item record; an owned or pet monster, a monster with `+0xD0` < 8,
+  `+0xC4` bit 9, necromancer summons, `restore` 0, a kept monster or unit, a `0x400` record, the level-108 rule, a kept
+  player corpse; a dead champion saved (none can be on stock data: see drlg/0009 § 11).
+- **Conclusion:** raises the claims listed in [drlg/0009 § 11](0009-room-lifecycle.md#11-phase-2-run2026-10-17-lifecycle)
+  and corrects four.

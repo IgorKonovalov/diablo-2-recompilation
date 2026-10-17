@@ -276,3 +276,44 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   **Resume:** write the run record (experiments.md), the drlg/0009 Phase 2 section with the `[C]` raises and the
   corrections above, the manifest, and the review request; the town-follow case needs owner play or a static
   answer (whether town rooms block monster movement), named as a shortfall otherwise. Slot 1 stopped.
+
+- **2026-10-17 — Phase 2 landed (reverser, `lane/p40h`, slot 1; review pending).** run:2026-10-17-lifecycle
+  ([experiments](../findings/drlg/experiments.md#run2026-10-17-lifecycle)): 13 sessions, **0 mismatches** over
+  2 215 807 checks under `tools/rooms.py check`. Raises and corrections in
+  [drlg/0009 § 11](../findings/drlg/0009-room-lifecycle.md#11-phase-2-run2026-10-17-lifecycle).
+
+  | Done-when item | Target | Run |
+  |---|---|---|
+  | room releases | 300 | 2 440 (acts I–V; Normal, Nightmare, Hell; mazes 29 and 35; outdoor; classic Normal and Nightmare) |
+  | re-activations with a restore | 200 | 1 362 restores of a re-activated room (1 414 re-activations) |
+  | monsters restored | 400; 40 special; 30 damaged; stats 7, 12, 13 predicted | 2 035; 199; 255; all predicted (stat 12 by the monsters/stats model) |
+  | 7500-frame rule, both sides | — | 1 931 under, 104 over |
+  | objects restored | 150, 30 operated | 1 760, 603 operated; objects § B4 save rule on 3 023 objects |
+  | ground items restored | 60, seeds and fields | 876 (seed rule corrected, below) |
+  | wanderer gate draws | 200 | 11 064 (3 211 eligible; no pass, no spawn: shortfall) |
+  | town-follow case | required | **shortfall**: two town sessions released the town's rooms, but no hostile monster was in a town room |
+
+  **Corrections to Phase 1 claims** (drlg/0009 § 11):
+  1. An item restore takes **two** game-seed draws, and a simple item comes back with start seed 0.
+  2. A client visit that falls between two passes does not reset the idle count.
+  3. A `RoomActivateB` room can be released before it is populated.
+  4. The save test's `0x18` mask is "special or minion". Every logged champion carries `0x08`, so a dead champion is
+     never saved: surprise (1) is unreachable on the logged data.
+  5. Restored specials carry stat 12 as the flag-1 handlers give it, and restored minions as the flag-0 handlers of
+     mods 1–4 give it.
+
+  **Not reached:**
+  - the wanderer roll and spawn;
+  - an expired item;
+  - pets, `+0xD0` < 8, necromancer summons, `restore` 0;
+  - kept units, `0x400` records, level 108, player corpses.
+
+  Plan 0038's deferred objects row 5 (the revisit monster and item restores) is answered by § 11.
+
+  **Tooling:**
+  - `tools/gdb/rooms.{gdb,py}`;
+  - `tools/rooms.py` and `tools/test_rooms.py`;
+  - `tools/rooms_sessions.py`;
+  - a section in tooling.md.
+
+  No symbol rows changed (tags in `re/symbols.csv` left for the review). Slot 1 is stopped.
