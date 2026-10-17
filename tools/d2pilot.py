@@ -1992,6 +1992,24 @@ def read_plan(path):
     return out
 
 
+def inv_grid_open(p):
+    """The inventory grid is showing: its cell borders (display x 418 + 29k) are brighter than the cell centres by
+    more than 10 grey levels on average and the centres are dark (plan 0041 Phase 2; a dark town such as the
+    Pandemonium Fortress fooled a plain darkness test)."""
+    raw, bpl = p.grab(400, 316, 320, 120)
+    if raw is None:
+        return False
+
+    def grey(x, y):
+        o = (y - 316) * bpl + 4 * (x - 400)
+        b, g, r = raw[o:o + 3]
+        return (r + g + b) / 3.0
+    lines = [grey(418 + 29 * k, y) for k in range(11) for y in (330, 360, 390, 420)]
+    cells = [grey(418 + 29 * k + 14, y) for k in range(10) for y in (330, 360, 390, 420)]
+    lm, cm = sum(lines) / len(lines), sum(cells) / len(cells)
+    return lm - cm > 10 and cm < 35
+
+
 def cmd_cube(args, tokens):
     """Play a cube session (plan 0030 Phase 2) against a tools/gdb/cube.gdb log. Tokens (also read from --plan FILE):
     key:K, sleep:S, shot:PATH, xy:X,Y, click:CELL, rclick:CELL as for insert; settle:S[,B] waits until the log has grown
@@ -2088,7 +2106,7 @@ def cmd_cube(args, tokens):
             # 316..432) is dark (open) or not (closed), at most four presses
             want = arg == "open"
             for _ in range(4):
-                is_open = p.dark_share(420, 318, 286, 112) > 0.5     # display pixels, as the screenshots
+                is_open = inv_grid_open(p)
                 if is_open == want:
                     break
                 p.dpy.key("i")
