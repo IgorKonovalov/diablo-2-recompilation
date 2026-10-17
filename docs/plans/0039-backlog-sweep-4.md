@@ -273,3 +273,38 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     research map, which now names them. That gives the "moved" half a destination.
   - **Bookkeeping.** P1a covers 15 items; the Phase 1 text said 16 (B11 counted twice), and the text is left as is. B1,
     B2 and B4 are struck correctly. B11's (a)(b) annotation is merged into the H5c review entry. Gate green.
+- **2026-10-17 — Phase 1 batch P1b done (reverser, `lane/p39b`, static).** 18 ledger items (B7–B10, B12, Q1–Q3,
+  Q16–Q25; the Phase 1 text counts 20). No game run; Ghidra on the lane's copy (`ghidra-p39b`), objdump scans of the whole image, table surveys and
+  a re-read of 14 kept level-up logs (sha256 checked against their manifest). B7 (c) was not consumed by plan 0041
+  Phase 0 (it listed the gaps and waited for this batch), so it is answered here. 32 symbols added (31 `func`, 1 `data`,
+  all `I`). New statements: 8 `[C]` (B10 from code and logs; the rest data checks) and about 50 `[I]`; no `[L]` raised or
+  added.
+
+  | Item | Verdict | Anchor or reason |
+  |---|---|---|
+  | B7 (a) | stale | every `tbl:` table of items/0007, items/0008, player/0001, items/0010 has its doc (gate E4) |
+  | B7 (b) | stale | CubeMain § Output record answers it; items/0008's open question struck: [items/0008 § P1b](../findings/items/0008-cube.md#plan-0039-batch-p1b-2026-10-17) |
+  | B7 (c) | answered | `STATES_Load`'s descriptor: `attred` = bit 10, `immed` not compiled, `rfred`/`rcred`/`rlred` = 26/27/28: [data/0001 § P1b](../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17) `[I]` |
+  | B8 | answered | `RareFormat` (1718) with `name1` as `%0`, `name2` as `%1`; `%0 %1` in English: [data/0003 § P1b](../findings/data/0003-string-tables.md#plan-0039-batch-p1b-2026-10-17) `[I]` + `[C]` data |
+  | B9 | answered | the reader stores the index unmapped at `ItemData+0x38`, the writer re-runs `RUNEWORD_Match`; *Patience* never matches: [items/0007 § P1b](../findings/items/0007-sockets-runewords.md#plan-0039-batch-p1b-2026-10-17) `[I]` + `[C]` data |
+  | B10 | answered | the `CSvBits` clamp (21 bits) on a base **above** `0x1FFFFF`; 364 of 364 written entries predicted: [save/0001 § P1b](../findings/save/0001-d2s-io.md#plan-0039-batch-p1b-2026-10-17) `[C]` |
+  | B12 | answered | the cursor branch tests `quest` and stat 356 only; a missing stat is 0; a cursor-held cube counts in Normal only: [items/0010 § P1b](../findings/items/0010-quest-drops.md#plan-0039-batch-p1b-2026-10-17) `[I]` |
+  | Q1 | stale | items/0001 § 9 (`[I]`) and data/0001 § S1b (G2 `[C]`) |
+  | Q2 | stale | the post-pass is `TC_BuildChestTable`; the walk is items/0001 § 4 (`[C]`); re-read agrees |
+  | Q3 | answered | the classic item index map of the version-`0x47` item reader (361 version-0 rows): [data/0001 § P1b](../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17) `[I]` |
+  | Q16 | stale | items/0005 § Plan 0038 batch S2b (re-read at 0x005C1121–0x005C1165 here, agrees) |
+  | Q17 | answered (cell stale) | `UnitStatDelta` = stat − base stat: [items/0008 § P1b](../findings/items/0008-cube.md#plan-0039-batch-p1b-2026-10-17) `[I]`; the output cell is S2c cube 45 |
+  | Q18 | answered in part | flag bits 0/2/8/14 = update pending, use in progress, broken, requirements not met `[I]`; `kids[n]` **not determinable statically** (earlier stack contents): [items/0007 § P1b](../findings/items/0007-sockets-runewords.md#plan-0039-batch-p1b-2026-10-17) |
+  | Q19 | answered (b stale) | a minion's owner is its boss (`UniqueMinions`), a boss its own: [items/0002 § P1b](../findings/items/0002-quality-roll.md#plan-0039-batch-p1b-2026-10-17) `[I]`; the overrides survey is items/0004 § 10, counts re-derived and the "two quivers" corrected |
+  | Q20 | answered | object drop ilvl 1 with no `Levels` record; Cow King quality 0 → case 2 (`[C]` outcome); type 4 = `gold`; flag `0x1000` = monster equipment; `+0x40` reaches no builder; `0x0055CA40` = carry-one / quest duplicate test: [items/0010 § P1b](../findings/items/0010-quest-drops.md#plan-0039-batch-p1b-2026-10-17) `[I]` |
+  | Q21 | answered (parts stale) | bit 17 = no death drop and its writers; `game+0x78` = item version; bits `0x04`/`0x10` = forced ethereal / sockets; forced quality on gold/potions → 2: [items/0001 § P1b](../findings/items/0001-tc-resolution.md#plan-0039-batch-p1b-2026-10-17) `[I]`; cow bit (items/0004) and SuperUniques doc stale |
+  | Q22 | answered | quest uniques identified by `ItemInitStats`; `nolimit` plays no part: [items/0004 § P1b](../findings/items/0004-uniques-sets.md#plan-0039-batch-p1b-2026-10-17) `[I]` + `[C]` data |
+  | Q23 | answered in part, rest moved | the act change counts before the room changes; a gambled unique enters the made set: [items/0009 § P1b](../findings/items/0009-vendors.md#plan-0039-batch-p1b-2026-10-17) `[I]`; `NpcStoreRec` `+0x24..+0x26` writers read, no reader found, **moved** to plan 0043 Phase 1 |
+  | Q24 | answered in part | `SpawnMax`, `Act`: no reader in the image (operand scan); `TrapProb`: none among the 89 record fetchers; a kept record pointer stays open: [objects/0001 § P1b](../findings/objects/0001-object-population.md#plan-0039-batch-p1b-2026-10-17) `[I]` |
+  | Q25 | answered in part (ids, quest/wp slots stale) | NPC slot *d* = difficulty *d*; corpse u32 uninitialised and unread `[I]`; client `+0x480..+0x482` **not determinable statically** (host bytes); status bit 1 **moved** (client presentation, out of plan): [save/0001 § P1b](../findings/save/0001-d2s-io.md#plan-0039-batch-p1b-2026-10-17) |
+
+  Surprises: the B10 backlog premise was reversed (the base life was above the clamp, not below); monster minions *do*
+  have an owner record (their boss), against items/0002's expectation; items/0001's "upgrade bits" are forced ethereal
+  and forced sockets, and `ce=` can have no effect at all (classic only, where the ethereal roll does not run);
+  `immed` is not compiled at all. Spec notes for Phase 2, the archivist entry, a `d2sio.py` follow-up, the plan 0043
+  hand-off and the review request are in the backlog.
