@@ -257,7 +257,7 @@ byte `+0x44`.
   collision map, the tile lists and the room. (fn:sub_0061A910_ActiveRoomFree@0x0061A910,
   fn:sub_0066B4C0_RoomReleaseWrap@0x0066B4C0, fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0, fn:DUNGEON_RoomFree@0x0061A840)
 - [I] **`0x200000` and `EDX ≠ 0`.** `RoomTilesRelease` sets `0x200000` iff its `EDX` is non-zero, and the only non-zero
-  `EDX` comes through the wrapper, which passes the logical not of its own `EDX` (`sete`, 0x0066B4DE). The wrapper is
+  `EDX` comes through the wrapper, which passes the logical not of its own `EDX` (`test edx, edx` at 0x0066B4DE, `sete al` at 0x0066B4E0). The wrapper is
   called only from `ActiveRoomFree`, with `EDX` = the DUNGEON act's `+0x50` (0x0061A9D0), and only for a built room
   (DRLG `+0x28` bit `0x100000`, 0x0066B4C9). On a server release `+0x50` is 0 (`RoomReleaseAllowed` makes any other
   value fatal), so the tiles release gets `EDX` 1 and sets `0x200000`. No reader was found: the only `+0x28` access
@@ -363,8 +363,9 @@ then the unit records (objects § 13.5, which this reading confirms).
     flag-4 record) and the saved unit id; the path is picked by flag `0x20` first, then flag `1` (a record with both
     goes to `MinionRestore`, 0x0054264A–0x0054266D):
     - flags 1 → `SpecialMonRestore(x, y, class, id, nameSeed, champion, superunique, suId, mods)`: `SpecialMonPlace(room,
-      no box, x, y, id, avoid warps)` in **mode 1**, then the saved mods, `SpecialModsApply(flag 0)` as read (**the run
-      contradicts the flag-0 result for champions**: their stat 12 is the flag-1 handlers', § 11), the saved name seed,
+      no box, x, y, id, avoid warps)` in **mode 1**, then the saved mods, `SpecialModsApply(…, minions 0)` (0x005A4558), whose handler calls
+      carry flag 1 (0x005A214D, 0x005A21A6): the 0 pushed at 0x005A454E is the `minions` argument (tested at
+      0x005A2123), not the handler flag, as the run's stat 12 shows (§ 11), the saved name seed,
       the aura when a mod is 30, and the superunique quest hooks;
     - flag `0x20` → `MinionRestore`: `SpawnWithId(x, y, class, mode 1, id, −1, 0x62)`, then radius 4, then a
       `SpawnPosPick` position, the saved mods and the flag-0 handlers of mods 1–4 and of each saved mod;
@@ -569,11 +570,9 @@ classic Normal and Nightmare), checked by `tools/rooms.py check`: **0 mismatches
   freed by the test (§ 5 test 5, mask `0x18` = `0x08` or `0x10`, not "unique or minion"). (run:2026-10-17-lifecycle,
   fn:sub_005A0320_MonMarkSpecial@0x005A0320, 0x005432EF)
 - [I] **So a dead champion is never saved on stock data**, and the § 6 surprise ("a dead champion comes back alive")
-  needs a champion without `0x08`. `MonMarkSpecial` has four callers: `SpecialMonPlace` after every successful
-  creation (0x005A0B61), and 0x005A487B, 0x005A48F4 (in `ChampionMemberMark`, skipped when monster data `+0x16` bit
-  `0x04` is already set, 0x005A48EB) and 0x005A496E (`MonMakeSpecial`). Whether every champion path passes one of them
-  is not read (counted at the Phase 2 review, objdump). (fn:sub_005A0320_MonMarkSpecial@0x005A0320,
-  fn:sub_005A09E0_SpecialMonPlace@0x005A09E0, fn:sub_005A48C0_ChampionMemberMark@0x005A48C0)
+  needs a champion without `0x08`, which no server path makes (§ 11.1 (b), static).
+  (fn:sub_005A0320_MonMarkSpecial@0x005A0320, fn:sub_005A09E0_SpecialMonPlace@0x005A09E0,
+  fn:sub_005A48C0_ChampionMemberMark@0x005A48C0)
 - [C] **Stat 12 of a restored special** (run:2026-10-17-lifecycle, 199 restores, all predicted).
   - A restored minion's stat 12 is the monsters/stats level plus the handlers of mods 1–4 and its saved mods (144):
     a first instance at the pool level comes back 3 higher (`leveladd`; 2 seen), later restores unchanged (142).
@@ -584,17 +583,18 @@ classic Normal and Nightmare), checked by `tools/rooms.py check`: **0 mismatches
 
   (fn:sub_005A46E0_MinionRestore@0x005A46E0, fn:sub_005A4440_SpecialMonRestore@0x005A4440)
 - [I] **The handler flag of a minion restore stays the § 6 reading (flag 0).** Stat 12 does not separate it: the
-  checker with the minion path set to flag 1 also gives 0 mismatches (at the review). Which call applies the flag-1
-  handlers inside `SpecialMonRestore` is a static question. (fn:sub_005A46E0_MinionRestore@0x005A46E0)
+  checker with the minion path set to flag 1 also gives 0 mismatches (at the review). The code passes 0 itself
+  (§ 11.1 (c)). (fn:sub_005A46E0_MinionRestore@0x005A46E0)
 
 **Not reached (these stay inferred; named shortfalls).**
 
 - **The town-follow case** (required by the Phase 1 review; accepted as a shortfall at the Phase 2 review). Two
   sessions released the town's rooms (161 room releases of level 1). No hostile monster was in a town room at a
   release: the scripted walk out of the Rogue Encampment and back never brought one in. Every monster the save test
-  met in a `SaveMonsters` 0 level (120 in level 1, 52 in level 103; counted at the review from the `US`/`USD` lines) carried `+0xC4` bit `0x2000000` and was saved, so
-  the other half of the rule, `SaveMonsters` 0 without that bit, was never met. Whether a pool monster can enter a
-  town room at all is a static question (open questions).
+  met in a `SaveMonsters` 0 level (120 in level 1, 52 in level 103; `rooms.py check` prints this census since
+  `lane/rbs3`, kept output `rooms-check-census-rbs3-2026-10-17.txt`) carried `+0xC4` bit `0x2000000` and was saved, so
+  the other half of the rule, `SaveMonsters` 0 without that bit, was never met. The static reading of § 11.1 (a)
+  rules out the ordinary chase into town but not every way in; the case stays open.
 - The wanderer roll and spawn: 0 of 3 211 eligible gate draws passed, at an expected 1 in 32 768.
 - An expired item record (at the restore, or in the 20-frame sweep `0x00542AC0`).
 - Monster save-rule branches: an owned monster or pet, `+0xD0` < 8, `+0xC4` bit 9, necromancer summons, `restore` 0.
@@ -602,6 +602,97 @@ classic Normal and Nightmare), checked by `tools/rooms.py check`: **0 mismatches
   restored without its boss.
 - Pins appeared only as inputs. Six set calls came from portal and object code (`0x0056D2A3`, `0x0056D2B1`,
   `0x00581476`, `0x00581484`), and no clear call was seen.
+
+### 11.1 Static follow-ups of the Phase 2 review (`lane/rbs3`)
+
+Scans by `tools/sweep_rbs3.py` (outputs `sweep-rbs3-*-2026-10-17.txt` under `workspace/logs/`, manifest
+`sweep-rbs3-manifest.txt`). All of it is a code reading.
+
+**(a) Town reachability.**
+
+- [I] **MonStats `inTown` has two readers, both in combat.** The scan finds every byte read of `+0x0D` tested against bit 2
+  (immediate or the mask table `0x006CE268`) and every `MONSTATS_FlagTest` call with index 10. It gives two reads,
+  `COMBAT_ApplyDamage` (0x0057C72D) and `COMBAT_GetHit` (0x0057CF34), and no getter call (the one non-immediate index,
+  0x0057C76D, is `1 + 0x0E` = 15). In `COMBAT_ApplyDamage`, when the stack-argument unit's room is a town room
+  (`RoomIsTown`, 0x0057C709), bit 1 of the damage word `+0x04` is cleared (0x0057C732). The clear is skipped when the
+  unit in `EDX` is a monster whose class has `inTown`. No movement, path, collision or AI code reads the flag.
+  (fn:COMBAT_ApplyDamage@0x0057C6C0, fn:COMBAT_GetHit@0x0057CEE0, fn:MONSTATS_FlagTest@0x00457490,
+  tbl:MonStats.txt:inTown)
+- [I] **The path planner refuses a target in town for a hostile monster.** `sub_006483A0` returns 1 for a unit that
+  is not a monster or is `MonIsNpc` (0x006483A8, 0x006483B6). Otherwise it returns `!RoomIsTown(target room)`
+  (0x00648417). Its one caller, the planner `sub_00649970`, runs it on the room found at the path's target `+0x10`
+  (0x00649AC5; no room means no path, 0x00649AD9). On 0 the planner clears the path and returns 0 (0x00649C7B) unless
+  its third argument is non-zero (0x00649AEE). The planner has 68 direct calls in 59 functions (`pushes 0x00649970 3`):
+  - 66 push 0;
+  - 0x005FBFB7 pushes `EDI`, which is 0 there (the list loop at 0x005FBF71 exits on `EDI` = 0);
+  - 0x004804C4 (client code, not followed) pushes unit `+0xC4` bit 21.
+
+  So on the server a hostile pool monster cannot plan a path whose target lies in a town room.
+  (fn:sub_00649970_PathPlan@0x00649970, fn:sub_006483A0_PathTargetNotTown@0x006483A0,
+  fn:sub_0061AB00_RoomIsTown@0x0061AB00, fn:sub_0063E860_MonIsNpc@0x0063E860)
+- [I] **Not every way in is ruled out** (0x006499AE, 0x00649AC5). Three routes stay open, so the Phase 1b verdict's 'freed without a record'
+  half is not shown unreachable:
+  - the test reads the target room only, never the rooms a planned path crosses;
+  - a path with `+0x34` bit `0x40000` goes to `sub_00649760` (path types 4, 10 and 14) before the test (0x006499AE);
+  - knockback, teleport and placement are not followed. `RoomIsTown` has 135 direct calls in 108 functions; only the
+    path one is read.
+
+  A recipe is a lead (open questions). (0x006499AE, fn:sub_00649760_PathPlanStraight@0x00649760)
+
+**(b) Champions and `0x08`.**
+
+- [I] **Every server write of the champion bit `0x04` comes after `MonMarkSpecial` on the same unit**, so every
+  champion carries `0x08` (0x005A083E, 0x005A44A3, 0x005A4905; 0x005A0375). `writes 0x16 --mask 0xc` lists four server writes of `0x04` to monster data `+0x16`:
+  - `SpecialModsRoll` (0x005A083E). It is reached from `SpecialMonSpawn` (0x005A4419), which returns at once when
+    `SpecialMonPlace` (0x005A4400) gives no unit, and from `MonMakeSpecial` (0x005A4978), after its own
+    `MonMarkSpecial` (0x005A496E).
+  - `SpecialMonRestore` (0x005A44A3, set or cleared by its champion argument), after `SpecialMonPlace` (0x005A4460)
+    returned a unit.
+  - `ChampionMemberMark` (0x005A4905, flags `0x05`), after `MonMarkSpecial` (0x005A48F4). The call is skipped only when
+    `0x04` is already set (0x005A48EB), that is, when one of these writes already ran.
+
+  `SpecialMonPlace` calls `MonMarkSpecial` on every unit `0x005B30E0` returns (0x005A0B56, 0x005A0B61), and
+  `MonMarkSpecial` ORs `0x08` into any monster with monster data (0x005A0369–0x005A0375).
+  (fn:sub_005A0320_MonMarkSpecial@0x005A0320, fn:sub_005A0760_SpecialModsRoll@0x005A0760,
+  fn:sub_005A4440_SpecialMonRestore@0x005A4440, fn:sub_005A48C0_ChampionMemberMark@0x005A48C0,
+  fn:sub_005A4940_MonMakeSpecial@0x005A4940, fn:sub_005A43E0_SpecialMonSpawn@0x005A43E0)
+- [I] **The other writes do not make a champion** (0x005A4967, 0x005A01C9, 0x00586DD2).
+  - `MonMakeSpecial`'s `or [+0x16], cx` (0x005A4967) writes `CX` = the unit type, 1, because its guard
+    `cmp ecx, ecx` (0x005A495F) is always equal.
+  - The generic set/clear `sub_005A01B0` (0x005A01C9, 0x005A01D3) has no direct call and no absolute reference
+    (`xrefscan.py`, 0 hits).
+  - `sub_00586D80_A5Q1_TalkEnd` (0x00586DD2) writes a quest structure.
+  - No server instruction clears `0x08`: the clears are `0xFEFF`, `0xFF7F` and `0xFFFB` and the uncalled setter.
+  - Outside the server range the `0x004…` sites are client code, and the `0x006…` sites write other structures (a list
+    node, the path, frame locals, `TC_ParseItemCell`, `PresetPopSet`). Not followed: a block copy of monster data.
+
+  So the 0x18 save test frees every dead champion on stock data, and the § 6 surprise needs no champion path that
+  exists. (fn:sub_005A01B0_MonTypeFlagSet@0x005A01B0, 0x005A4967)
+
+**(c) The handler flag of the two restores.**
+
+- [I] **`SpecialModsApply` always calls the special's own handlers with flag 1:** mods 1–4 from `0x006E2168` = {1, 2,
+  3, 4} at 0x005A214D, and the saved list at 0x005A21A6. It always calls the group callback with flag 0 (0x005A215A,
+  0x005A21B3). Its third stack argument is `minions` (0x005A2123). `SpecialMonRestore` calls it at 0x005A4558, pushing
+  0 for that argument at 0x005A454E. So the call that applies the flag-1 handlers is that `SpecialModsApply` call
+  itself, without minions. § 6 read the `minions` 0 as the handler flag, and the run's stat 12 (§ 11) agrees with this
+  reading. (fn:sub_005A2120_SpecialModsApply@0x005A2120, data:g_UModAlwaysMods@0x006E2168)
+- [I] **`MinionRestore` calls the handlers itself with flag 0**: mods 1–4 at 0x005A4811 and its nine saved mod bytes at
+  0x005A4830, after setting `0x10` (0x005A47DF). Flag 0 shows outside stat 12 on every minion restore. `rndname`
+  (mod 1) steps the unit seed (`+0x20`/`+0x24`) and writes the name seed only with flag 1 (0x005A0CE7; step
+  0x005A0CED–0x005A0D05), so a minion restore takes no unit-seed step where flag 1 would take one. `resist` (8, 27,
+  28) also acts only with flag 1 (0x005A138F). The kept lifecycle logs were not searched for a unit seed after the
+  handlers. (fn:sub_005A46E0_MinionRestore@0x005A46E0, fn:sub_005A0CE0_UModRndName@0x005A0CE0,
+  fn:sub_005A1370_UModResist@0x005A1370)
+
+**(d) Tooling.** `rooms.py check` now prints two counts.
+- The save-test census of every monster met in a `SaveMonsters` 0 level, by level, bit `0x2000000` and outcome:
+  {(1, 1, saved): 120, (103, 1, saved): 52}.
+- The `ItemGroundExpiry` branch of each item record: else 796, gold up to 10000 437, magic 66, socket filler 27,
+  qualities 5–9 21.
+
+  These are the counts above, now from the kept tool. (`rooms-check-census-rbs3-2026-10-17.txt`; 0 mismatches over
+  2 215 807 checks, unchanged.)
 
 ## Data touched
 
@@ -627,12 +718,13 @@ Each is a Phase 2 question (§ P2 questions in the plan log) unless it says othe
 - [L] Whether a wanderer (target list 8) is saved as alignment 2 (dropped at the restore) or 0 (the fatal `0x691`):
   a static read of `SpawnAtPos`'s alignment write answers it (MonStats `Align` 1 for `rogue2` predicts 2). A run will
   hardly see one: the gate passes 1 in 32768 room updates and the roll 3 in 100 (§ 7).
-- [L] A champion without monster flag `0x08` (the only one a dead save could keep, § 11): a static search of the
-  champion creation paths for one that skips `MonMarkSpecial`.
-- [L] Which call inside `SpecialMonRestore` applies the flag-1 handlers that stat 12 shows (§ 11); code still to read.
-- [L] The town-follow case (§ 11 shortfall): whether a hostile monster can enter a town room at all. Lead: MonStats
-  `inTown` (`+0x0D` bit 2, [MonStats](../../tables/MonStats.md)) is set on 109 records and on no pool class; its
-  readers in the movement and collision code are not read.
+- [L] The town-follow case (§ 11 shortfall, § 11.1 (a)): a hostile monster in a town room by a route the path
+  planner's target test does not cover. Recipe leads, for a harness addendum: a monster whose chase target is outside
+  the camp while its route crosses a town room (a player at the Rogue Encampment's edge, inside the Blood Moor), or a
+  knockback or straight-path skill (path types 4, 10, 14) toward the camp. The other static routes, `RoomIsTown`'s 134
+  unread calls and the `0x40000` path types, are still to read.
+- [L] Whether a kept lifecycle log shows the minion restore's unit seed after the handlers (§ 11.1 (c)). If it does,
+  the flag-0 reading of `MinionRestore` can be checked from the logs without a run.
 - [L] Which client-copy code detached the path of the client-copy units of drlg/0004's 19 (§ 8); code still to read.
 - [L] DUNGEON act `+0x50` reads as "client act". The values are settled by § 11 (0 on the server at every pass, and
   `EDX` 0 at every client tiles release, so non-zero there); the name stays a reading until the act constructor is

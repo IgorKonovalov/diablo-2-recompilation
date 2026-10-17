@@ -1136,6 +1136,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A00F0,func,sub_005A00F0_UModConstant,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A0140,func,sub_005A0140_MonNameSeedGet,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A0180,func,sub_005A0180_MonTypeFlag,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x005A01B0,func,sub_005A01B0_MonTypeFlagSet,,I,monsters/special,docs/findings/drlg/0009-room-lifecycle.md
 0x005A0200,func,sub_005A0200_MonSuperUniqueIdSet,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A0260,func,sub_005A0260_ModCount,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A02E0,func,sub_005A02E0_ModAppend,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
@@ -1891,6 +1892,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00646F20,func,SKILLS_RefreshPassivesInState,,I,stats/states,docs/findings/stats/0002-states.md
 0x00647110,func,SKILLS_AddSkill,,I,player/creation,docs/findings/player/0001-creation.md
 0x00647EE0,func,SKILLS_InitPlayerSkills,,C,player/creation,docs/findings/player/0001-creation.md
+0x006483A0,func,sub_006483A0_PathTargetNotTown,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x00648480,func,PATH_MonTestMask,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00648580,func,PATH_PatternFromSize,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x006488C0,func,sub_006488C0_PathGetX,,I,items/tc,docs/findings/items/0001-tc-resolution.md
@@ -1900,6 +1902,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00649190,func,sub_00649190_UnitSetCollPattern,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00649400,func,UNIT_CollMark,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00649560,func,UNIT_CollUnmark,,I,drlg/collision,docs/findings/drlg/0005-collision.md
+0x00649760,func,sub_00649760_PathPlanStraight,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
+0x00649970,func,sub_00649970_PathPlan,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x00649CA0,func,sub_00649CA0_PathPatternRefresh,,C,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00649D00,func,PATH_DynamicCreate,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00649F70,func,sub_00649F70_UnitCorpseColl,,I,drlg/collision,docs/findings/drlg/0005-collision.md

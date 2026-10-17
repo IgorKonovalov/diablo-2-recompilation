@@ -90,6 +90,12 @@ class Expiry(unittest.TestCase):
         self.assertEqual(rooms.item_expiry(100, {"quest": 0, "q": 2, "bt": 50, "filler": 1}), 30100)
         self.assertEqual(rooms.item_expiry(100, {"quest": 0, "q": 2, "bt": 50, "filler": 0}), 15100)
 
+    def test_branch_names(self):
+        self.assertEqual(rooms.item_expiry_branch(100, {"quest": 1})[1], "quest item: 0")
+        self.assertEqual(rooms.item_expiry_branch(100, {"q": 2, "bt": 4, "gold": 20000})[1], "gold above 10000: +45000")
+        self.assertEqual(rooms.item_expiry_branch(100, {"q": 2, "bt": 4, "gold": 50})[1], "gold up to 10000: +15000")
+        self.assertEqual(rooms.item_expiry_branch(100, {"q": 2, "bt": 50})[1], "else: +15000")
+
 
 class Records(unittest.TestCase):
     def test_mrec_parse(self):
