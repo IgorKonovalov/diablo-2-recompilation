@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 37 (no `Expansion` marker)   **Record:** 2 B
 > **sha256:** `.txt` `1bc9f2d3acf57b65eb7036641c54e7424e5f235bfcd79a71a4ec040b46bc0b75`, `.bin` `1a3a7ee8e4d2d03c0e192b5724794dc2ff238829ac87543078cd9bf1299bfab0`
-> **Doc status:** complete for layout; what the preset spawn does per row from monsters/0002 § 7 and monsters/0003 § 7 (plan 0039 P1c), the names `[L]` elsewhere
+> **Doc status:** complete for layout; what the preset spawn does for every row from monsters/0002 § 7 and monsters/0003 § 7 (plan 0039 P1c, `lane/rbs3`), other readers open
 
 ## Purpose
 
@@ -50,7 +50,7 @@ compares it with every cell, 37 cells, 0 mismatches.
 - `[L]` Reading the names: `place_champion` / `place_unique_pack` / `place_npc_pack` look like "spawn a random
   champion / unique pack here", `place_group25..100` like a group placed with a 25..100 % chance, the rest like
   hand-placed special packs (fallen camps, nests, guards). Nothing in the data confirms any of this; the code
-  reading below settles the rows it reads.
+  reading below settles every row in the preset spawn, where `place_npc_pack`, the nests, the guards and `place_group25..100` place nothing.
 - `[I]` **The preset spawn switches on the row index.** `sub_0054E600_PresetMonSpawn` takes a preset unit whose id is
   in the MonPlace range (`id ≥ nMonStats + nSuperUniques`) and branches on the MonPlace index `id − nMonStats −
   nSuperUniques` ([monsters/0002 § 7](../findings/monsters/0002-room-population.md#7-wanderers-monspcwalk-presets-and-superuniques), fn:sub_0054E600_PresetMonSpawn@0x0054E600). By row:
@@ -67,13 +67,41 @@ compares it with every cell, 37 cells, 0 mismatches.
     ([monsters/0003 § 7](../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20), [monsters/0003 § Plan 0038 batch H4b](../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b), fn:sub_0054E2A0_PresetFallenVariant@0x0054E2A0).
   - `[I]` 24 `place_impgroup` and 26 `place_miniongroup` are Normal-only group spawns (`imp1`/`deathmauler1` by
     level 110, or `minion1`: a leader in the preset's box and `MinGrp − 1 + RangeB(…)` members around it); in Hell
-    both placed nothing in the logs `[C]`. In the fixed-class table 19–21 and 24 give class 0, and 25 `place_imp`
-    and 28 `place_bloodlord` place nothing ([monsters/0003 § 7](../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20)).
-  - The other rows (0, 1, 4–16, 27, 33–36) are not among the cases the findings read; whether the switch has a case
-    for them is not stated there. H4b's watch line counts calls with case 36 (`place_group100`) but records no class or outcome for them ([monsters/0003 § Plan 0038 batch H4b](../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b)).
+    both placed nothing in the logs `[C]`. Outside Normal, 24 gives class 0 in the fixed-class table
+    ([monsters/0003 § 7](../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20)). Rows 19–21
+    never reach that table (next bullet), which corrects the earlier "19–21 class 0" reading.
+  - `[I]` **Every other row, from the switch** ([monsters/0003 § 7](../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20),
+    bullet *Every MonPlace row, from the switch*; `lane/rbs3`, static). The MonPlace branch switches on `index − 2` with the
+    bound `0x1E` (0x0054E76F–0x0054E782). Rows the code places, all at the preset point through `SpawnAtPos`:
+    - 4 `place_rogue_warner` → class 266 `navi`, flags 0 (0x0054E919–0x0054E933);
+    - 5 `place_bloodraven` → class 267 `bloodraven`, flags 0 (0x0054E808–0x0054E840);
+    - 8 `place_tightspotboss` → class 284 `maggotqueen1`, flags 8 (0x0054E943–0x0054E95D);
+    - 10 `place_tentacle_ns` (flags 4) and 11 `place_tentacle_ew` (flags 0) → class 261 `tentaclehead1` stepped along
+      `NextInClass` by level id: `tentaclehead2` in levels 76–78 (Act 3 Jungle 1–3), `tentaclehead3` in 92 and 93 (Act 3
+      Sewer 1–2), else `tentaclehead1` (0x0054E789–0x0054E7F8, fn:sub_0054DA60_MonClassChainStep@0x0054DA60).
+
+    Rows that **place nothing** (the branch returns 0 with no call, `0x0054EAFE`): 0 `place_nothing`, 1 `place_npc_pack`,
+    6 and 7 the river monsters, 9 `place_amphibian`, 12 `place_fallennest`, 13 `place_fetishnest`, 14 `place_talkingrogue`,
+    15 `place_talkingguard`, 16 `place_dumbguard`, 19 `place_maggot`, 20 `place_maggotegg`, 21 `place_mosquitonest`,
+    and **33–36 `place_group25` to `place_group100`** (rows 0, 1 and 33–36 fail the bound; the others have byte 8 in the
+    case table). 25 `place_imp`, 27 `place_minion` and 28 `place_bloodlord` hit the fixed-class table's entry
+    `0x0054EAB1`, which also returns 0. H4b's case-36 calls are this branch.
+
+    **Scope.** "Place nothing" holds in `sub_0054E600_PresetMonSpawn` and its caller `PresetUnitDispatch`, which returns
+    the result with no fallback (0x005558DD–0x005558EA). `PresetUnitDispatch` is reached from both the first spawn
+    (`PresetUnitSpawn`, 0x00555949) and the restore of an inactive room (`RoomInactiveUnitsRestore`, 0x00542C29), so
+    both go through this switch. Four other callers of `PresetMonSpawn` (0x00545C75, 0x0058A70D in
+    `A5Q3_NihlathakBossSpawn`, 0x005AA231, 0x005ACB43) and any other reader of a room's kept preset monster units are
+    not followed. For rows 33–35 the DRLG preset pass first keeps or drops the unit on a room-seed draw (0x0066777D,
+    [drlg/preset](../specs/drlg/preset.md)); a kept group preset then places nothing here. (fn:sub_0054E600_PresetMonSpawn@0x0054E600,
+    fn:sub_005B2F20_SpawnAtPos@0x005B2F20, tbl:MonStats.txt:NextInClass)
 
 ## Open questions
 
-- ~~What a preset monster unit whose id lies in the MonPlace range does when the room is populated~~ answered for
-  the rows of § Interpretation notes (plan 0039 P1c). `[L]` What the rows outside those cases do (0, 1, 4–16, 27,
-  33–36), including `place_group25..100`.
+- ~~What a preset monster unit whose id lies in the MonPlace range does when the room is populated~~ answered `[I]`
+  for every row in § Interpretation notes (plan 0039 P1c; the rest from the `PresetMonSpawn` switch, `lane/rbs3`,
+  [monsters/0003 § 7](../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20)), including
+  `place_group25..100`, which place nothing there.
+- `[L]` Whether a "place nothing" row (0, 1, 6, 7, 9, 12–16, 19–21, 25, 27, 28, 33–36) does anything through the four
+  unfollowed callers of `PresetMonSpawn` or another reader of the room's preset monster units (§ Interpretation notes,
+  *Scope*).
