@@ -492,3 +492,35 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   unchanged); which call applies it before the block roll is still unread, and that session's other 101 mismatches
   are an event-9 handler `0x005C01D0` (backlog). Slot 2 stopped and empty. Next: architect review of the resume lane,
   then the spec re-tag (Phase 3) and the wiki refresh (Phase 4).
+- **2026-10-17 — Resume lane review (architect): accept with fixes.** Both batches reviewed in the lane worktree
+  after merging `main` (one conflict, `docs/backlog.md`, both sides kept). **Re-runs:** the 40 logs of `c37r-run2.lst`
+  match their three manifests (19 + 18 + 3: sha256, size, lines); `tools/combat.py` (`d4dfed41…`) `check` over the run
+  list under `MemoryMax=4G` prints `SUMMARY mismatches=0 events=40655`, output byte-identical to `c37r2-check.txt` and
+  `.json`; the checker has no unit tests, so the run list is its test. The set-aside *Fleshripper* log re-checks with
+  133 state-52 skips and 101 mismatches. Gate fast tier green. **Rulings.** (1) *Block `/3` and the running automatic
+  hit to `[C]`*: **confirmed**, scoped. Phase 3 ruling (2) was a count ruling (26, under the floor), and its own backlog
+  entry asked the lane to raise both at about 30; at 48 and 47 the raise applies ruling (a), it does not go against
+  ruling (2). The logs show only mode 3 (running): 47 melee events with no `THR` and none with one, `mv` set in mode 3
+  only, and the `/3` taken after the 75 cap (45 expansion at 75 → 25, 3 classic at 53 → 17). So the `[C]` is for a
+  running player, after the cap; no walking player (mode 2) was attacked, so the mode-2 exception stays `[I]`, and the
+  moving test stays a value oracle. (2) *State-52 skip*: accepted. It is checker hygiene that consumes no draw and
+  leaves the run's output unchanged (0 such lines in the run list); the no-draw claim is `[I]` because its only session
+  is outside the run and the applying call is unread. The finding now names that log (sha256 `e001b03e…`, in the lane's
+  session scratch, not under `workspace/logs/`), so the record says where it is; copying it under `workspace/logs/combat/`
+  with a manifest line is a reverser follow-up. (3) *`ow-n-andariel5-p8` stays in the run list*: accepted. It checks
+  with 0 mismatches and adds 452 attack events; dropping a session for missing its target would bias the run.
+  (4) *First-batch items*: the third-unit `STA` drop is accepted (a state line is not a draw; any draw a third unit
+  took on our seeds would still fail the seed checks); the three `CombatSorH` revisions are accepted (each log header
+  names its save, matching the addendum; rev2 and rev3 are in the recipe's history, rev1's three items are listed);
+  the pilot changes are accepted (nothing the pilot computes feeds a model). (5) *W1 at experiments.md*: the first addendum's conclusion lacked an anchor (the gate reports it at line 222 after the merge); fixed. **Settled at this review** (the 2026-10-16
+  architect → reverser count, which the lane had not answered; counted from the run list with a scratch counter, no
+  new run): open wounds halve by the type flags `0x0C` only, and **Andariel carries the unique flag `0x08`**, so her 63
+  wounds were halved; the finding's "no `/2` for a boss" and the spec's "act bosses take the full amount" were wrong,
+  and the checker had modelled it right all along. Unique half `[C]` (383 events), champion half `[I]` (0 with `0x04`
+  alone), a `boss` without `0x08` not met. The player's resistance reached exactly −100 214 times and never went below,
+  so the floor changed no value and stays `[I]`. **Fixes applied:** combat/0001 § 15 (the open-wounds correction, the
+  `/3` and automatic-hit scope, a new bullet for the halving and floor counts, the *Fleshripper* log named), the Leads
+  verdict detail on open wounds, the status line; experiments: the W1 anchor and an *Architect review* subsection.
+  **Not blocking, filed:** the spec re-tag with its exact lines (spec-writer, replacing the three earlier re-tag
+  entries), the wiki's open-wounds sentence in the Phase 4 refresh, and a reverser follow-up (the *Fleshripper* log
+  under `workspace/logs/`, a checker counter for a total ≤ 0). Next: the spec re-tag (Phase 3), then Phase 4.

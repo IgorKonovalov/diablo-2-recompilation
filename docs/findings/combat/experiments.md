@@ -223,7 +223,7 @@ player attacks 3 821, monster attacks 11 083, mercenary 2 449, missile defence 6
   lane*); crushing blow on an act boss (28) and a superunique (22), cold and lightning at the cap and the negative
   absorbed amount stay `[I]` with their counts. One more Normal Andariel session (about 8 crushing blows on her) and
   one more Frigid Highlands session would close the crushing-blow pair; the lane stopped at the owner's deadline for
-  the machine.
+  the machine. (run:2026-10-16-combat)
 
 #### Resume lane, second sessions, 2026-10-17
 
@@ -271,3 +271,33 @@ a monster's seed `MonAttackStats` → `ma` 4 655, → `ha` 1 035.
   player's hit without a roll were already above the floor after the first addendum (43, 42) but were not raised
   there; they move to `[C]` in the same bullet. Champions, cold and lightning at the cap, the negative absorbed
   amount and a total ≤ 0 stay `[I]`. Slot 2 stopped, its saves restored empty. (run:2026-10-16-combat)
+
+#### Architect review of the resume lane, 2026-10-17
+
+Re-run read-only in the lane worktree after merging `main`. The 40 logs of `c37r-run2.lst` (`12d53ed1…`) match the
+three manifests (`c37p2-manifest.txt` 19, `c37r-manifest.txt` 18, `c37r2-manifest.txt` 3: sha256, size and line
+count); every `CombatOW` log header names save `b07db91b…`, and the `CombatSorH` logs name the three revisions as the
+addendum lists them. `python3 -I tools/combat.py check $(cat workspace/logs/combat/c37r-run2.lst) --json …` with
+`tools/combat.py` `d4dfed41…` under `systemd-run --user --scope -p MemoryMax=4G`: `SUMMARY mismatches=0
+events=40655`, text and JSON output byte-identical to `c37r2-check.txt` and `c37r2-check.json`. The checker has no
+unit tests (`tools/test_*.py` has no combat module); the run list is its test.
+
+Counts read at the review (the same checker, with a scratch counter wrapped around `openwounds` and `resist_for`,
+and a scan of the `EV0`/`DRM` lines; no new run):
+
+- **Running player.** Monster attacks on a player in mode 3: 47 with a `DRB` and no `THR`, 0 with a `THR`, 30 that
+  ended before any defence line. `DRM` `mv` was set in mode 3 only (47 melee, 1 missile), never in another mode, and
+  no attack on a walking player (mode 2) was logged. All 48 `/3` events divide the capped chance: 45 expansion at
+  75 → 25, 3 classic at 53 → 17.
+- **Open wounds.** 1 880 applications: 383 on monsters with type flag `0x08` (Andariel 63 with `f` = `0x08`; other
+  uniques 320, 87 of them with `0x04` as well), all at half the band; 1 497 on monsters without `0x0C`, at the full
+  band; 0 on a monster with `0x04` and not `0x08`; 0 on a player.
+- **Resistance floor.** 214 resistance applications on the player at exactly −100 before the floor, none below.
+- **Set-aside *Fleshripper* session** (lane scratch, sha256 `e001b03e…`, not in the run): 861 events, 133 state-52
+  `STA` lines skipped, 101 mismatches, the first 60 printed all "expected `AD1`, got `EVH`".
+
+- **Conclusion:** the lane's raises hold, scoped in [combat/0001 § 15](0001-formulas.md) to what the logs show: the
+  `/3` and the automatic hit are `[C]` for a running player; the mode-2 exception stays `[I]`. Open wounds on
+  Andariel are halved, by her unique flag, not taken in full as the finding had said; the unique half of the `0x0C`
+  test is `[C]` (383), the champion half `[I]` (0); the −100 floor changed no logged value and stays `[I]`.
+  Verdict in the [plan log](../../plans/0037-combat-formulas.md#implementation-log). (run:2026-10-16-combat)
