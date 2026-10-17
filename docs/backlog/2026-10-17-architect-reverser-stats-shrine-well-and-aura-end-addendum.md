@@ -4,7 +4,7 @@ to: reverser
 date: 2026-10-17
 status: open
 context:
-  - ../plans/0041-stats-and-states.md#implementation-log
+  - ../plans/done/0041-stats-and-states.md#implementation-log
   - ../findings/stats/0002-states.md
 resolution: ""
 ---

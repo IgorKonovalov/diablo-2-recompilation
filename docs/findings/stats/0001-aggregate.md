@@ -229,6 +229,14 @@ while (list) {
   stat 0), 6/7 (list of a player or monster) or 13 (list of an item); ops 8, 9, 10, 11 never take. So a source of op
   1, 2–7, 12 or 13 keeps its **old** cache value (0 on first use) while its target is non-zero, and its dependents are
   not walked. (fn:sub_006266C0_StatRecompute@0x006266C0, 0x006267AD the op class table at 0x0062690C)
+- [I] **The write order, by instruction** (plan 0041 P3 review, objdump): `StatEvaluate` at 0x006266D0; no `+0x51`:
+  `CacheWrite` at 0x006266EA and return; `v = 0`: `CacheWrite` at 0x00626708; per `+0x58` target (three words at
+  most, `0xFFFF` ends): `StatRecompute` of the target at 0x00626775, its `CacheWrite` at 0x00626786, the take test only
+  for a non-zero result (0x00626790) by the source row's `+0x54` op byte through the class bytes at 0x0062690C
+  (`00 05 01 01 02 02 03 03 00 00 00 00 05 04` for ops 0–13) and the jump table at 0x006268F4; then, when no target
+  took and `v ≠ 0` (0x0062684B, 0x00626856), the source's `CacheWrite` at 0x00626868 and each `+0x5E` dependent (64
+  words at most) recomputed at 0x006268C1 and written at 0x006268CF. The take tests read the list's `+0x08` (ops 2, 3,
+  6, 7, 13) or its linked unit `+0x04` (ops 4, 5). The run's in-order writes (§ 9) bear the order out. (fn:sub_006266C0_StatRecompute@0x006266C0)
 - [I] **A quirk in the take test for ops 2–5:** the `op base` it reads is not the source row's `+0x56` but the
   source row's own `opIn[k].opBase` (`+0x0DE + 6k`, `k` = the target's index), which is 0 for every row that is not
   itself a target, so it tests the list's (or the linked unit's) stat 0 `strength`. Players have strength, so on a

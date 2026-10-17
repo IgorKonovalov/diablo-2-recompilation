@@ -3,9 +3,9 @@ spec: items/properties
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/uniques-sets, items/affixes, items/quality, data/excel]
-consumed_by: [items/affixes, items/sockets-runewords, items/cube, items/vendors, save/d2s, player/creation]
-tags: {C: 129, I: 35, L: 3}
-updated: 2026-10-15
+consumed_by: [items/affixes, items/sockets-runewords, items/cube, items/vendors, save/d2s, player/creation, stats/aggregate]
+tags: {C: 130, I: 35, L: 2}
+updated: 2026-10-17
 ---
 
 # Base stats and the property roll
@@ -300,6 +300,10 @@ Step notes:
 - B3. On stock data, 82 set rows with `add func` 1 or 2 carry `aprop`s, and two rows with it blank carry one
   (`Civerb's Cudgel` `dmg/lvl`, `Trang-Oul's Claws` `extra-pois`). The code distinguishes only 0 from non-zero; what 1
   and 2 change happens when the item is worn. [I] (0x0065FFE3, tbl:SetItems.txt:add func)
+- B3. **When worn** ([stats/aggregate § J](../stats/aggregate.md#j-set-bonuses)): `add func` 1 switches the list of
+  pair *k* on while the member it names is worn, `add func` 2 while *k* other members are worn; the wearer also gets
+  one list per set from the `Sets` partial and full blocks. 19 525 toggles and 5 569 wearer lists were predicted.
+  [C] (fn:SETS_ToggleItemAProps@0x00663A20, fn:sub_00660120_SetBonusApply@0x00660120, run:2026-10-17-stats)
 - B3. The save writer marks a set item's lists by the same five states, which is the second code path for the
   state numbers. [C] (0x006E90B8, data:g_SetAPropStates@0x006EDB40, [save/d2s § J](../save/d2s.md#j-property-list-framing))
 - B1. **Version 0** sends each block to `g_PropFuncTableV0[code]` and applies only 2 set blocks. No drop creates an
@@ -870,7 +874,7 @@ blank). [C] (run:2026-10-14-props-forced)
 - ~~The affix stitch~~ closed on the two runs: the chained check predicts the builders' picks and the automagic pick
   (*Inputs and boundaries*); `ITEMS_RollStaffMods` stays an oracle. ~~One creation checked end to end with both line
   sets~~ closed by run:2026-10-15-items-chain: 219 creations end to end (*Inputs and boundaries*).
-- [L] **What `add func` 1 and 2 change when the item is worn** (`sub_00660120_SetBonusApply`), and the `Sets` bonus
-  blocks: `player/*`, outside creation.
+- ~~**What `add func` 1 and 2 change when the item is worn** (`sub_00660120_SetBonusApply`), and the `Sets` bonus
+  blocks.~~ Specified in [stats/aggregate § J](../stats/aggregate.md#j-set-bonuses) (plan 0041; B3 above).
 - ~~**The four other callers** of `ItemApplyProps` (0x004C0D20, 0x004E6720, 0x004E67D0, 0x0055C2C0)~~: the socket
   transfer and its client copies, in [items/sockets-runewords § C](sockets-runewords.md#c-what-a-gem-rune-or-jewel-brings).

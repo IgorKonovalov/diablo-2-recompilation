@@ -3,7 +3,7 @@ spec: items/uniques-sets
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/tc, items/quality, data/excel]
-consumed_by: [items/affixes, items/properties, items/vendors, items/cube, save/d2s]
+consumed_by: [items/affixes, items/properties, items/vendors, items/cube, save/d2s, stats/aggregate]
 tags: {C: 71, I: 55, L: 4}
 updated: 2026-10-17
 ---
@@ -699,7 +699,8 @@ made test, the fallback and the seed only. Classic Nightmare, item 320 `brs`, il
   [ItemTypes](../../tables/ItemTypes.md), [Weapons](../../tables/Weapons.md), [Armor](../../tables/Armor.md),
   [Misc](../../tables/Misc.md), [TreasureClassEx](../../tables/TreasureClassEx.md).
 - Specs: [rng](../rng/README.md) (`Step`, `Range`, `Init`), [rng/seeds](../rng/seeds.md) (step 7a),
-  [items/tc](tc.md) (hand-off), [items/quality](quality.md) (the code and § F).
+  [items/tc](tc.md) (hand-off), [items/quality](quality.md) (the code and § F). Downstream:
+  [stats/aggregate § J](../stats/aggregate.md#j-set-bonuses) (a set item's bonuses once worn).
 - `tools/uniques.py` (`check`, `survey`), the reference model; `tools/unique_survey.py`, the candidates per base.
 
 ## Open questions

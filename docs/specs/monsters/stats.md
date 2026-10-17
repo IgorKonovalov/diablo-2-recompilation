@@ -3,8 +3,8 @@ spec: monsters/stats
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, monsters/spawn, monsters/special, items/properties, data/excel]
-consumed_by: [items/tc, hirelings, combat/overview, combat/damage]
-tags: {C: 104, I: 57, L: 4}
+consumed_by: [items/tc, hirelings, combat/overview, combat/damage, stats/aggregate]
+tags: {C: 105, I: 57, L: 4}
 updated: 2026-10-17
 ---
 
@@ -392,8 +392,11 @@ sets stat 74 to 0; with flag 0 (group members) and in `possessed` and `berserk` 
 `berserk` part is shown by the 33 berserkers of a forced-path run, every stat write predicted. [C]
 (fn:sub_005A1280_UModBerserk@0x005A1280, run:2026-10-15-berserk-forced)
 
-E3. The callback's other cases (stats 9, 11, 83, 97, 98, 107, 126, 127, 151, 188, 204) were not read; no creation stat
-reaches them. [I] (fn:sub_0055B800_MonStatCallback@0x0055B800)
+E3. The callback's other cases (stats 9, 11, 83, 97, 98, 107, 126, 127, 151, 188, 204) are not reached by a creation
+stat. They are specified in [stats/aggregate § G](../stats/aggregate.md#g-the-maxima-the-rescale-and-the-stat-callback)
+(plan 0041): stats 9 and 11 rescale current mana and stamina by the rule of E1 (a player's 5 752 rescales of
+stats 7, 9 and 11 reproduced). [C] (fn:sub_0055B800_MonStatCallback@0x0055B800, run:2026-10-17-stats) The skill,
+item-aura and state cases are read from the code. [I] (fn:sub_0055B800_MonStatCallback@0x0055B800)
 
 ### F. MonProp at creation
 

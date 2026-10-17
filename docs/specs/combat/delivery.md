@@ -3,8 +3,8 @@ spec: combat/delivery
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, combat/to-hit, combat/damage, combat/reductions, monsters/stats]
-consumed_by: [combat/overview, items/tc]
-tags: {C: 50, I: 39, L: 4}
+consumed_by: [combat/overview, items/tc, stats/states]
+tags: {C: 52, I: 38, L: 3}
 updated: 2026-10-17
 ---
 
@@ -45,7 +45,7 @@ flowchart TD
 | Leech | fn:COMBAT_Leech@0x0057C420 | [C] for players, the mercenary and monsters (run:2026-10-16-combat) |
 | Crushing blow, open wounds, freeze (stat events 16, 15, 14) | fn:STATEVENT_CrushingBlow@0x005BFFC0, fn:STATEVENT_OpenWounds@0x005BFE60, fn:STATEVENT_Freeze@0x005BFC60 | [C] for the first two (run:2026-10-16-combat) |
 | A monster's life tick (poison, open wounds) | fn:sub_005A6920_MonRegenEvent@0x005A6920 | [C] (run:2026-10-16-combat) |
-| A player's life tick | fn:sub_00580810_RegenEvent@0x00580810 → fn:sub_00580610_LifeRegenTick@0x00580610 | [I] |
+| A player's life tick | fn:sub_00580810_RegenEvent@0x00580810 → fn:sub_00580610_LifeRegenTick@0x00580610 ([stats/states § E](../stats/states.md#e-the-regeneration-tick)) | [C] (run:2026-10-17-stats: 54 719 ticks, 1 082 under poison) |
 | The kill | fn:COMBAT_GetHit@0x0057CEE0 → fn:sub_0057CCB0_UnitKilled@0x0057CCB0 | [I] |
 
 ## Inputs
@@ -360,9 +360,13 @@ E4. MonLifeTick(game, unit):                                          [C] (fn:su
 - E4. **Bleed and poison kill monsters**; under a `life` state a monster's natural regeneration is suspended (the base
   list's stat 74 is subtracted). 6 181 ticks reproduced. [C] (fn:sub_005A6920_MonRegenEvent@0x005A6920,
   tbl:States.txt:life, run:2026-10-16-combat)
-- E4. **A player's tick never takes life below 256** (one point): `sub_00580610_LifeRegenTick` adds stat 74, caps at
-  stat 7, raises a result below 256 to 256. Poison and open wounds cannot kill a player. No window on the player was
-  logged. [I] (fn:sub_00580610_LifeRegenTick@0x00580610, 0x0058065B–0x0058066E)
+- E4. **A player's tick adds stat 74 whatever its sign** ([stats/states § E](../stats/states.md#e-the-regeneration-tick)):
+  `sub_00580610_LifeRegenTick` writes `stat 6 + stat 74`, capped at stat 7; 1 082 ticks of a poisoned player
+  (negative stat 74) were reproduced by plan 0041's run. [C] (fn:sub_00580610_LifeRegenTick@0x00580610,
+  run:2026-10-17-stats)
+- E4. **A player's tick never takes life below 256** (one point): a result below 256 is raised to 256, so poison and
+  open wounds cannot kill a player. No poisoned tick reached the floor and open wounds never hit the player.
+  [I] (fn:sub_00580610_LifeRegenTick@0x00580610, 0x0058065B–0x0058066E)
 
 ### F. The boundary at delivery
 
@@ -438,9 +442,9 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
 
 - [L] Branches reproduced under the plan's floor of about 30: crushing blow on champions (0 labelled); a total of 0 or
   less leaving life unchanged (B4, 25).
-- [L] Not reached: open wounds on a champion without the unique flag and on a player, the freeze handler and freezing,
-  the player's life tick.
-- [L] The state end: when a timed state's stat list is freed at its end frame (the run measured the open-wounds end
-  from the ticks).
+- [L] Not reached: open wounds on a champion without the unique flag and on a player, the freeze handler and freezing.
+  ~~The player's life tick~~: reproduced by run:2026-10-17-stats under poison (E4); its 256 floor was not reached.
+- ~~The state end: when a timed state's stat list is freed at its end frame.~~ At `frame + duration` by unit event 12,
+  one event per apply or refresh: [stats/states § C](../stats/states.md#c-expiry-and-removal) (plan 0041).
 - [L] Event handlers other than 14, 15 and 16 (skill on hit, knockback, slow and the like) draw on seeds this spec
   does not model; they are boundary oracles until phase (3).

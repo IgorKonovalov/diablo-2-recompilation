@@ -19,7 +19,7 @@ runs), [ADR-0011](../adrs/0011-harness-slots.md) (harness slots), [ADR-0012](../
 [ADR-0018](../adrs/0018-backlog-one-file-per-entry.md) (the backlog), the
 [evidence rules](../../.claude/skills/architect/references/evidence-rules.md), and the records of
 [plan 0038](../plans/0038-inferred-claims-sweep.md) (the inferred-claims sweep) and
-[plan 0041](../plans/0041-stats-and-states.md) (stats and states). Where this page and those texts disagree, they
+[plan 0041](../plans/done/0041-stats-and-states.md) (stats and states). Where this page and those texts disagree, they
 win.
 
 ## One binary, read directly
@@ -176,7 +176,7 @@ outputs; the model predicts every draw and output and must arrive at the logged 
   event kinds. Plan 0041 turned that into a check: the run logs the game seed and the acting unit's seed on entry and
   exit of every event, and a kind whose seeds stay unchanged over at least 20 events has its "no draw" confirmed. A
   kind that moves a seed is re-read and must then meet the chaining minimum
-  ([plan 0041, Phase 2, amended 2026-10-17](../plans/0041-stats-and-states.md)). In its run one kind did move a seed
+  ([plan 0041, Phase 2, amended 2026-10-17](../plans/done/0041-stats-and-states.md)). In its run one kind did move a seed
   (a damaging aura draws once per hit) and was checked through chained pairs instead. The specs of that plan are not
   reviewed yet, so no wiki page restates them.
 
@@ -234,7 +234,7 @@ Not every run reaches everything its plan hoped for. When a case is not reached,
 is named with its count and its reason, the claim stays inferred, and the plan is not blocked by it
 ([plan 0038 § Phase 2](../plans/0038-inferred-claims-sweep.md#phase-2--harness-batches)). For example, the stats and
 states run met 7 shrines and 5 wells, below the plan's target of 50 operates and below the floor of 20 events per
-kind for the "no draw" check, and its review accepted them as a named shortfall ([plan 0041 log, Phase 2 review](../plans/0041-stats-and-states.md)).
+kind for the "no draw" check, and its review accepted them as a named shortfall ([plan 0041 log, Phase 2 review](../plans/done/0041-stats-and-states.md)).
 
 Gaps in knowledge are written down, not filled. A spec's *Open questions* section holds what is unknown and every
 lead; a gap one lane needs another to close becomes a backlog entry, one file per request, closed with a link to the

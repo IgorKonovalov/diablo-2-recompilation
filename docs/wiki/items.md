@@ -4,7 +4,7 @@ based_on:
   - docs/specs/items/quality.md 2026-10-17
   - docs/specs/items/uniques-sets.md 2026-10-17
   - docs/specs/items/affixes.md 2026-10-17
-  - docs/specs/items/properties.md 2026-10-15
+  - docs/specs/items/properties.md 2026-10-17
 ---
 
 # How an item drops
