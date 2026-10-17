@@ -19,6 +19,7 @@ tools/ghidra.sh strings 0x00642AE0       # strings a function references (source
 tools/ghidra.sh emu 0x0045C390 cases.txt # emulate a __fastcall(u32 *seed, u32 edx) per "low high edx" line
 tools/ghidra.sh emucalc 0x00643700 cases.txt     # a calc-function entry: "a b c ctx low high" lines (EmuCalcFunc.java)
 tools/ghidra.sh emucall 0x0064B340 cases.txt mem.txt  # any call: "ecx edx args…" lines + a memory spec (EmuCall.java)
+tools/ghidra.sh emutrace cases mem > out # per-case memory, dumps, guards, traced read set (EmuTrace.java, below)
 ```
 
 - Project: `workspace/ghidra/d2.gpr`, program `game.exe`, language `x86:LE:32:default`, cspec `windows`.
@@ -43,9 +44,54 @@ dependency. To check they compile without a project: `javac -proc:none -cp "$(fi
 - `FindScalar.java`, `StringsIn.java`, `EmuFastcall.java`: as above. `EmuFastcall` uses Ghidra's p-code
   emulator (`EmulatorHelper`, deprecated in 12.1). Pair it with a `tools/` model for bit-exact `[C]` checks
   (see `tools/rng.py check`).
+- **`EmuCall.java`, `EmuFastcall.java` and `EmuCalcFunc.java` are frozen**: they stay in the tree so that
+  run:2026-10-11-rng-emu and run:2026-10-16-calc-emu can be re-run as recorded. New emulated runs use `emutrace`
+  (plan 0038 S1e review).
 - Planned: `ImportTypes.java re/types/*.h`.
 
 Headless runs lock the project. Never run two at once, and never while the GUI has it open.
+
+### `tools/ghidra.sh emutrace <cases> <mem>` (`EmuTrace.java`, ADR-0015)
+
+The emulator route of ADR-0015 (plan 0038 batches S1e and S1f; `tools/sweep_s1e.py` and `tools/sweep_s1f.py` write
+the cases and check the output). It prints one block per call to stdout; redirect it to a `.out` file.
+
+```bash
+GHIDRA_PROJ_DIR=workspace/ghidra-<lane> GHIDRA_HEADLESS_MAXMEM=3G \
+  systemd-run --user --scope -p MemoryMax=4G tools/ghidra.sh emutrace D/fam.cases D/fam.mem > D/fam.out
+```
+
+- **Memory spec** (`<mem>`, applied before every case; `#` comments): `load <addr> <file>`, `dword <addr> <value>`,
+  `bytes <addr> <hex>`; `const <directive>` writes once, before the first case (for large tables the code only reads;
+  much faster); `guard <addr>` stops any case whose pc reaches `addr` (`STOP … guard address reached`). Put the
+  allocator and fatal-path entries in as guards (`sweep_s1f.py` adds 0x00408090, 0x00408A60, 0x00681E09, 0x0040B4B0,
+  0x0040B430 and 0x0040B480 to every family), so that a case reaching either is a stop, never a silent pass.
+- **Cases file**: blocks, each ended by a `call <fn> <ecx> <edx> [args…]` line (args pushed as for `__stdcall`, arg 1
+  at `[ESP+4]`). Before it: `w <addr> <hex>` (write, this case only), `s <addr> <len>` (declare case memory without
+  writing it), `d <addr> <len>` (dump after the call), `r <reg> <value>` (EAX, EBX, ESI, EDI register arguments). On
+  entry EAX = 0xDEADBEEF, EBX = ESI = EDI = 0, EBP = 0x7FF00800, and the return address is a sentinel.
+- **Output**: `C <n> <fn> eax= edx= pop= steps=`, or `C <n> <fn> STOP <pc> steps= <why>`; the dumps (`D`); then every
+  traced access outside the stack, the spec and the case memory, aggregated: `R`/`W <pc> <addr> <size> <count>`. The
+  checkers fail a family on any traced access outside its declared read set (ADR-0015 condition 2, S1e review
+  ruling 1).
+- **Not traced**: reads inside spec, `const`, `w` and `s` ranges. So every spec write on an **image** address needs a
+  justification in the finding (S1e review ruling 3): no output depends on it (the security cookie), every value it
+  can hold at run time was run with identical outputs (the CRT SSE2 flag), or a writer scan fixes its run-time value
+  (`__locale_changed`). An input set on purpose (`g_pDataTables`, a DataTables field the claim reads) is an argument
+  of the claim and is listed as such.
+- **Emulator memory persists from case to case**; only the spec is re-applied. A case writes everything it reads
+  (or the spec does), or a value left by an earlier case leaks into it.
+- **A call into an import stops the case** at the thunk (`pc outside the image's code`); so does the 20 M step limit.
+  A family's stop count must be 0 for every claim that rests on it.
+- **Every case-writer draw comes from the family's seeded generator** (`random.Random("s1f-<family>")`), never from
+  Python's module-level `random` (the S1e `eval` bug, fixed at its review): `cases` must regenerate identical files.
+- **SLEIGH limits.** `idiv` of `INT32_MIN ÷ −1` returns 0 instead of trapping, and no fault is modelled at all, so a
+  case writer leaves fault inputs out and never counts one as a match. Faults, x87 results and OS calls are not
+  emulated evidence (ADR-0015 condition 5). Cite subtle instructions (flags consumed across instructions, `shl r, cl`,
+  `rep` forms) from objdump next to the claim; `sweep_s1*.py static` pins them.
+- `tools/ghidra.sh` logs to the shared `workspace/logs/ghidra-last.log`. When another lane runs Ghidra at the same
+  time, call `analyzeHeadless <project copy> d2 -process game.exe -noanalysis -readOnly -scriptPath re/ghidra_scripts
+  -postScript EmuTrace.java <out> <cases> <mem> -log <own log>` directly instead.
 
 ## radare2 / rizin quick looks
 
