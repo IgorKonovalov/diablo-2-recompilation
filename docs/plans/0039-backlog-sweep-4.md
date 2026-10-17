@@ -419,3 +419,52 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `ItemInitStats`, `nolimit`), because P1c also edits them (Q4, B5); each is folded once after the P1c review.
   - Research-map rows of the twelve specs updated. Backlog: the P1a entry struck, the P1b entry annotated (done in part,
     the held items named); review request and a W4 wiki follow-up (15 `based_on` dates) filed. Gate green.
+- **2026-10-17 — Phase 2 (P1a and P1b folds) reviewed (architect, on `lane/p39s` after merging `main` at `f10dca8`).
+  Verdict: accept with fixes (applied in the review commit).**
+  - **Tags against the findings.** Every new `[C]` has its accepted source at the same strength: rng/seeds `+0x28`
+    `0x40000` and `+0x60` bit 0 (Q15, code plus run:2026-10-16-sweep-roomk, P1a review); data/strings entry 1718 =
+    `%0 %1` (data); items/cube G4's cell (S2c cube 45, S2c review ruling 3); sockets-runewords *Patience* (`complete`
+    data); items/quality's override survey (data, items/0002 Q19 (b)); quest-drops' no-unique-imbue check (data);
+    save/d2s's 21-bit clamp (B10, P1b ruling 1) and the merged affix ids (items/0005 § 1 `[C]`, save side S1a rows 87 and
+    101). Every new `[I]` matches a P1a/P1b `[I]` reading; none is stronger than its finding. The two P1b amendments are
+    honoured (quality M3 with `SetBoss` minions and the 17 unfollowed sites as a narrowed `[L]`; tc B1 with "21
+    writers, five read as examples"), and ruling 3's host bytes are a body `[I]`, ruling 4's status bit 1 an
+    out-of-plan `[L]`.
+  - **Counts.** All twelve front matters recounted with the review's own script (raw `[C]`/`[I]`/`[L]` after the front
+    matter): all match the request's new figures, and the per-spec deltas match the diff statement by statement. No
+    `[L]` above *Open questions* in any of the twelve.
+  - **Anchors (objdump), 8 checked, all hold.** `0x0055A5E3` `mov cx,[eax+0x78]` stored to the record (tc H7);
+    `0x00556D24` `test byte [ebx+0x80],0x4` (forced ethereal); `0x00556C1F`–`0x00556C24` `test cl,0x10; je; xor eax,eax`
+    after the `Range(100)` call (forced sockets); `0x0053AF40` `call TownLevelLeave` before `0x0053AF4F` `call
+    PlayerChangeAct`, and `0x00538191` the per-frame call (vendors C2); `0x00649E9A` `UNIT_CollMark` under the room-arg
+    test and `0x005A7CB1` after `0x005541B0` returns 0 (collision, the two marks); `0x00625560`: stat list `+0x5C`, 0
+    with none, `StatListGetStat` − `StatListGetBaseStat` (cube `UnitStatDelta`); `0x0066B4D7` the `+0x60` store in
+    `RoomReleaseWrap` (seeds).
+  - **Point (1), the two plan 0038 items.** *items/cube G4's output cell `[C]`: accepted.* cube 45 is **raised** in
+    items/0008 § Plan 0038 batch S2c and the S2c review accepted the placement model (ruling 3, `InvPlaceItem` I → C,
+    scope: the player branch on an empty grid, which the spec keeps). Closing the open question needed a statement, and
+    stating it at `[I]` against an accepted `[C]` would understate it. *drlg/collision § G2 edge points at `[I]`:
+    accepted.* S4a rows 43 and 44 are raised (`[C]`) in drlg/0005 and accepted, but the drlg/collision cluster still
+    waits on H5b and H5d, so the raise of the G2 statements (barriers, merge, and these edge points) stays with plan
+    0038 Phase 3. The asymmetry is acceptable: one pre-existing statement closed on an accepted raise, against a new
+    text that leaves the raise where it is planned. Plan 0038 Phase 3 must count cube 45 as already applied and raise
+    the G2 edge-point statement with rows 43–44 (note in the plan 0038 log).
+  - **Point (2), the save/d2s F1 contradiction: accepted.** F1's run sentence now limits "code only" to the param
+    branch, and the clamp `[C]` gives the code range, the 364 entries and experience's 32-bit exemption, as the B10
+    finding does. Fixes: the follow-on `[I]` (8191.99 after a reload) now cites `D2S_LoadFinish`; the merged-ids `[C]`
+    note now also cites S1a rows 87 and 101 for its save-side half, and says the I3/I4 pseudocode re-tag is plan 0038
+    Phase 3's.
+  - **Point (3), the amendments: accepted** (above).
+  - **Point (4), not determinable statically: accepted.** `kids[n]` is narrowed with the reason and the route (a run
+    or a declared-stack emulation); the host bytes are a body `[I]` with the reimplementation rule (carry unchanged);
+    status bit 1 is an `[L]` labelled out of plan, not "moved".
+  - **Point (5), held items: accepted.** data/excel (P1b (a)) and the items/uniques-sets half of Q22 wait for P1c; the
+    vendors half of Q22 (the gambled unique marked made) is folded here, which is right, since the open question was
+    vendors'. The P1b backlog entry stays annotated, not struck.
+  - **Other corrections confirmed:** sockets-runewords *Patience*, quality's "two quivers" (`mboq`/`mxbq`), tc's
+    "upgrade bits" (forced ethereal and sockets, `ce=` without effect).
+  - **Fix, research map.** Three rows had the new clause spliced into the old one's punctuation (items/tc, items/affixes,
+    save/d2s: "…from S2b: both line sets…", "…corpse record: merc header…"); rewritten. The other nine rows are right.
+  - **Gate:** fast tier green (the 15 W4 `based_on` warnings are the filed wiki follow-up).
+  - **Next:** the owner merges `lane/p39s`; the W4 wiki follow-up; P2 for data/excel and items/uniques-sets after the
+    P1c review.

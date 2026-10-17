@@ -496,7 +496,7 @@ F1. WriteStats(player, bb):                                      [C] (fn:D2S_Wri
   12. (0x00569605–0x00569698, fn:D2S_WriteStats@0x00569540, tbl:ItemStatCost.txt:CSvBits, run:2026-10-16-player,
   [save/0001 § Plan 0039 batch P1b](../../findings/save/0001-d2s-io.md#b10-the-hell-0x1fffff-life-is-the-writers-clamp))
 - F1. [I] Since `D2S_LoadFinish` sets stats 6 and 8 back to the values read, a character saved with more than 8191
-  life or mana comes back with 8191.99 until it is recomputed. Not run. (fn:D2S_WriteStats@0x00569540,
+  life or mana comes back with 8191.99 until it is recomputed. Not run. (fn:D2S_WriteStats@0x00569540, fn:D2S_LoadFinish@0x0056AF80,
   [save/0001 § Plan 0039 batch P1b](../../findings/save/0001-d2s-io.md#b10-the-hell-0x1fffff-life-is-the-writers-clamp))
 - F1. [I] The clamp is inline and compares the value as a signed s32, so a negative value of an unsigned stat is
   written as 0 (0x0056965B–0x00569661). It is not `BITBUF_WriteClamped`, whose unsigned compare in the item writer
@@ -724,7 +724,9 @@ I4. Quality fields, written only when the item is identified (f bit 4) or the sa
   rebased by `StorePrefix`, and `class_affix` (I3) by the automagic base. (fn:MAGICAFFIX_GetRecord@0x00633EE0,
   fn:RAREAFFIX_GetRecord@0x00634260, data:g_MagicAffixInfo@0x0096CA7C, data:g_RareAffixInfo@0x0096CAA0,
   run:2026-10-14-affixes, [items/0005 § 1](../../findings/items/0005-affixes.md#1-the-merged-affix-arrays-and-the-ids-0x00633730-0x00633f40),
-  [items/affixes](../items/affixes.md))
+  [items/affixes](../items/affixes.md); the save side: rows 87 and 101 of
+  [save/0001 § Plan 0038 batch S1a](../../findings/save/0001-d2s-io.md#plan-0038-batch-s1a-2026-10-16), whose re-tag of
+  the I3/I4 pseudocode is plan 0038 Phase 3's)
 
 - I1. [C] Over 8 writes (14 or 11 items each, no socketed item) the saved `flags`, `version`, `location`, `body`,
   `store` and `code` equal the runtime item, and the 5 loads put them back: `version` = item data `+0x30` = 101 in
