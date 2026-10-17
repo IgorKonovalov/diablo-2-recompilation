@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/tc, items/quality, items/affixes, items/uniques-sets, items/properties, items/sockets-runewords, hirelings, player/creation]
-tags: {C: 88, I: 144, L: 5}
-updated: 2026-10-16
+tags: {C: 90, I: 150, L: 3}
+updated: 2026-10-17
 ---
 
 # Character save (`.d2s`): writer, reader, header and item bitstream
@@ -311,6 +311,18 @@ side with the logged client and player-data fields after `D2S_ReadHeader`; [save
   no mercenary; the run's 15 all-zero headers created none, but the checker does not assert it). (fn:D2S_WriteMercHeader@0x00568E60, fn:D2S_ReadMercHeader@0x0056AA50)
 - [I] **The act is clamped.** An act (`b & 0x7F`) of 5 or more is read as 0; no run fed an out-of-range value.
   (fn:D2S_ReadHeader@0x0056A090, 0x0056A1E8–0x0056A1F1)
+- [I] **`0x0CF` and client `+0x480`–`+0x482` are host bytes the game only carries.** The reader stores the byte through
+  `ClientSetHostBytes` (and the join path sets the three bytes from a join record); the writer reads them back through
+  `ClientGetHostBytes`; the two save callers hand them to the host callback, with the status word and the experience,
+  only in a ladder game (`Game+0x74` ≠ 0); the client-removal report sends them (0 as `0xFF`). No game rule reads them,
+  so their meaning is the host's, not determinable from `Game.exe`. A reimplementation reads, carries and writes them
+  back unchanged. (0x0056A343, 0x00532997, 0x005692A9, 0x0052C9AB, 0x0052CA84, 0x00539D0C–0x00539D38,
+  fn:sub_00539190_ClientGetHostBytes@0x00539190, fn:sub_005391C0_ClientSetHostBytes@0x005391C0,
+  fn:sub_0052C900_SaveClients@0x0052C900, fn:D2S_ReadHeader@0x0056A090,
+  [save/0001 § Plan 0039 batch P1b](../../findings/save/0001-d2s-io.md#q25-the-save-fields-left-open))
+- [I] **Status bit 1** is set only by the client's creation screen (`0x0043C6A0`, called with 1 from 0x004360A4, on the
+  stub's status word); `D2S_CheckStatus` tests bits 2, 3, 5 and 6, never bit 1. (0x00569D80–0x00569F00,
+  [save/0001 § Plan 0039 batch P1b](../../findings/save/0001-d2s-io.md#q25-the-save-fields-left-open))
 - [C] `level` is written from stat 12 and never read back: a save with header level 2 and stat 12 = 1 was rewritten
   with level 1. (0x0056904D, run:2026-10-11-d2s-edit)
 - [C] `unk_2c` is a pass-through: an edited `0x0BADF00D` survived two load/save cycles, and the only instructions
@@ -434,6 +446,12 @@ E3. NPCs: 01 77, u16 0x34, then 3 × 8 bytes (first record of player data +0x60 
     and 3 × 8 bytes (second record), d = 0, 1, 2; read back in the same order.            [I] (fn:D2S_WriteNpcs@0x00569490, fn:D2S_ReadNpcs@0x0056A470)
 ```
 
+- E1–E3. [I] **Slot d is difficulty d** for all three sections. For quests and waypoints this is
+  [save/0002](../../findings/save/0002-quest-words.md); for the NPC records, the three game-time readers index player
+  data `+0x60 + 4·d` with the game's difficulty byte `Game+0x6D`. (0x0057236C–0x00572370, 0x005723CC–0x005723D0,
+  0x005724CC–0x005724D0, struct:Game+0x6D, fn:D2S_WriteNpcs@0x00569490,
+  [save/0001 § Plan 0039 batch P1b](../../findings/save/0001-d2s-io.md#q25-the-save-fields-left-open))
+
 ### F. Character stats (`gf`)
 
 ```mermaid
@@ -465,9 +483,21 @@ F1. WriteStats(player, bb):                                      [C] (fn:D2S_Wri
 ```
 
 - F1. [C] The run covers the list order and the `CSvBits` skip (the base lists of 11 and 13 written stats, the
-  others having `CSvBits` 0), with no param and no clamp hit; those two branches are read from the code only.
+  others having `CSvBits` 0), with no param and no clamp hit; the param branch is read from the code only.
   There is no zero test: a stat absent from the base list is absent from the file. (0x00569540–0x005696DF,
   run:2026-10-12-d2s-io)
+- F1. [C] **The unsigned clamp is hit by high life and mana.** Stats 6–11 (life, mana, stamina and their maxima) have
+  `CSvBits` 21, so a base value of `0x1FFFFF` or more (8191.99 points with the 8 fraction bits) is written as
+  `0x1FFFFF`. The base list carries the item bonuses, so the written value can be below the character's base entry.
+  Second source: in the 14 level-up logs of run:2026-10-16-player, all 364 written entries (26 save writes) equal
+  `min(base, 2^CSvBits − 1)` of the header-time base list, and the 10 that differ from the base are exactly those with a
+  base ≥ `0x1FFFFF` (stat 6 of two Hell Barbarian and Paladin saves, stat 8 of three Sorceress saves). Experience
+  (stat 13, `CSvBits` 32) is not clamped. `D2S_WriteHeader` has no stat pass of its own; the header writes only stat
+  12. (0x00569605–0x00569698, fn:D2S_WriteStats@0x00569540, tbl:ItemStatCost.txt:CSvBits, run:2026-10-16-player,
+  [save/0001 § Plan 0039 batch P1b](../../findings/save/0001-d2s-io.md#b10-the-hell-0x1fffff-life-is-the-writers-clamp))
+- F1. [I] Since `D2S_LoadFinish` sets stats 6 and 8 back to the values read, a character saved with more than 8191
+  life or mana comes back with 8191.99 until it is recomputed. Not run. (fn:D2S_WriteStats@0x00569540,
+  [save/0001 § Plan 0039 batch P1b](../../findings/save/0001-d2s-io.md#b10-the-hell-0x1fffff-life-is-the-writers-clamp))
 - F1. [I] The clamp is inline and compares the value as a signed s32, so a negative value of an unsigned stat is
   written as 0 (0x0056965B–0x00569661). It is not `BITBUF_WriteClamped`, whose unsigned compare in the item writer
   turns the same value into `2^n − 1` (J). (fn:D2S_WriteStats@0x00569540,
@@ -518,13 +548,22 @@ H1. WriteInventoryList(owner, bb):                               [I] (fn:ITEMS_W
         n ← sub_005316D0_WriteOneItem(item)       ; § I, then its socketed items
         if n = 0: count ← count − 1               ; ITEMS_Serialize refused it (unit +0xC8 bit 15)
       ; socketed items follow their parent, each starting on a byte boundary, not counted
-H2. Corpses: "JM", u16 count (0 or 1; ≥ 2 refused, 0x68); per corpse: u32 (meaning open),
+H2. Corpses: "JM", u16 count (0 or 1; ≥ 2 refused, 0x68); per corpse: u32 (uninitialised stack, note),
     u32, u32 (position getters 0x0045ADF0 / 0x0045AE20), then an item list.           [I] (fn:D2S_WriteCorpses@0x005697F0, fn:D2S_ReadCorpses@0x0056A830)
 H3. Expansion only: "jf", then the mercenary's item list if the player has a pet of type 7;
     "kf", then u8 1 and the golem's item if the player owns a pet of type 3 whose class is 291
     (irongolem) and that golem holds an item, else u8 0.                             [I] (fn:D2S_WriteMercItems@0x005699A0, fn:D2S_WriteGolem@0x00569A00, fn:D2S_ReadGolem@0x0056AE50)
 H4. Reader: "JM", count, then count items, each followed by its n_filled socketed items.   [I] (fn:ITEMS_ReadInventoryList@0x005335E0)
 ```
+
+- H2. [I] **The corpse record's 12 bytes are not read on load.** The writer's first u32 is `[ebp−0x2C]`, a local of its
+  frame that no instruction writes, so it holds whatever an earlier call left on the stack; the reader checks that 12
+  bytes remain and skips all three u32s (the corpse unit is created fresh). A reimplementation may write anything
+  there. (0x0056994E–0x00569954, 0x0056A900–0x0056A91B, fn:D2S_WriteCorpses@0x005697F0, fn:D2S_ReadCorpses@0x0056A830,
+  [save/0001 § Plan 0039 batch P1b](../../findings/save/0001-d2s-io.md#q25-the-save-fields-left-open))
+- H2. [I] **Which corpse is written.** With more than one corpse of the player, the writer keeps the one whose items
+  have the highest summed `ItemTradePrice(…, mode 3, …)` over items that are not gold, ties going to the later corpse.
+  (0x00569835–0x005698EA, 0x005698CE, fn:D2S_WriteCorpses@0x005697F0)
 
 ### I. One item
 
@@ -677,6 +716,15 @@ I4. Quality fields, written only when the item is identified (f bit 4) or the sa
     StorePrefix(id) = id − firstPrefix if id ≠ 0, else 0; the reader adds firstPrefix back to a
     non-zero value; suffix ids are stored unchanged.             [I] (0x0062CEEA, 0x0062CFBA, 0x0062D0A3)
 ```
+
+- I4. [C] **What the ids index.** Every affix pick returns the merged index + 1: magic affixes over `MagicSuffix`, then
+  `MagicPrefix`, then `AutoMagic` (stock: suffix row r is id r + 1, prefix row r id 748 + r, automagic row r id
+  1417 + r), rare names over `RareSuffix` then `RarePrefix` (rare suffix row r id r + 1, rare prefix row r id 156 + r).
+  The item-data setters keep these ids, so the saved suffix and rare-name fields are merged ids, the saved prefix is
+  rebased by `StorePrefix`, and `class_affix` (I3) by the automagic base. (fn:MAGICAFFIX_GetRecord@0x00633EE0,
+  fn:RAREAFFIX_GetRecord@0x00634260, data:g_MagicAffixInfo@0x0096CA7C, data:g_RareAffixInfo@0x0096CAA0,
+  run:2026-10-14-affixes, [items/0005 § 1](../../findings/items/0005-affixes.md#1-the-merged-affix-arrays-and-the-ids-0x00633730-0x00633f40),
+  [items/affixes](../items/affixes.md))
 
 - I1. [C] Over 8 writes (14 or 11 items each, no socketed item) the saved `flags`, `version`, `location`, `body`,
   `store` and `code` equal the runtime item, and the 5 loads put them back: `version` = item data `+0x30` = 101 in
@@ -996,7 +1044,8 @@ python3 -I tools/d2sio.py check workspace/merged/data/global/excel workspace/log
 - [findings/save/0001-d2s-io.md](../../findings/save/0001-d2s-io.md): the writer, reader, checksum, bit I/O, header
   table, stat stream, item serialiser and property framing; every code anchor above. [save/0001 §8](../../findings/save/0001-d2s-io.md#8-plan-0015-phase-3-framing-details-and-item-flag-bit-13) (plan 0015
   Phase 3): followers, shift kind, the unsigned clamp, the fixed fields, `has_class`, modes 3/5, ears, the
-  mercenary header's place in the reader, bit 13.
+  mercenary header's place in the reader, bit 13. § Plan 0039 batch P1b: the life/mana clamp (B10, with
+  run:2026-10-16-player), the NPC slots, the host bytes, the corpse record, status bit 1.
 - [findings/save/experiments.md § run:2026-10-12-d2s-io](../../findings/save/experiments.md#run2026-10-12-d2s-io):
   8 writes and 7 loads under gdb, 1625 comparisons, 0 mismatches; reader codes 6 and 5; map-seed reuse with a
   `-seed 7` control; the picked-up drop; stat 9 through `D2S_LoadFinish`.
@@ -1017,9 +1066,10 @@ python3 -I tools/d2sio.py check workspace/merged/data/global/excel workspace/log
 - ~~**Runeword field** (backlog D2S (d))~~: `Runes` `+0x82` is the string index of the row's `Name`, set at load;
   flag bit 26, the field (read into `ItemData+0x38`) and the state-171 list are specified from the runeword side in
   [items/sockets-runewords § E and § G](../items/sockets-runewords.md#g-in-the-save).
-- [L] **Affix and name ids** (backlog D2S (e)): the prefix ids are rebased on `firstPrefix` of `g_MagicAffixInfo`;
-  which `MagicPrefix`/`MagicSuffix` rows the stored ids index, which rows the rare `name1`/`name2` index, and what
-  the low/superior 3-bit index and the automagic `class_affix` select are for `items/affixes` and `items/quality`.
+- ~~**Affix and name ids** (backlog D2S (e)).~~ Answered (plan 0039 P1b, stale): the merged-id mapping is I4's note from
+  [items/0005 § 1](../../findings/items/0005-affixes.md#1-the-merged-affix-arrays-and-the-ids-0x00633730-0x00633f40); the
+  rebasing and `class_affix` are rows 101 and 87 of [save/0001 § Plan 0038 batch S1a](../../findings/save/0001-d2s-io.md#plan-0038-batch-s1a-2026-10-16),
+  whose re-tag of I3/I4 is plan 0038 Phase 3's.
 - [L] **Item flags bit 13**, narrowed (plan 0015 Phase 3, I6): the set and clear sites are read and the pickup is ruled
   out. Open: who sets `act+0x00`, so how soon the ground pass runs after a drop, and what the bit means. Named run case
   for the next save run: `break *0x00553357` (the `0x2000` clear call in `sub_00553220_UnitFrameReset`, ESI = the unit)
@@ -1034,8 +1084,8 @@ python3 -I tools/d2sio.py check workspace/merged/data/global/excel workspace/log
   (item version 2), stats past the run's lists.
 - ~~**The condition for `has_class`** and the encoder of the fixed stat fields~~: answered in I3 from [save/0001 §8](../../findings/save/0001-d2s-io.md#8-plan-0015-phase-3-framing-details-and-item-flag-bit-13)
   (plan 0015).
-- [L] Which quest, waypoint and NPC slot (player data `+0x10/+0x14/+0x18`, `+0x1C/+0x20/+0x24`, `+0x60`) is which
-  difficulty: the code saves them in index order; the format doc's runs place the Normal and Nightmare waypoint
-  blocks by data only.
-- [L] The meaning of client `+0x480`–`+0x482` (`0x0CF`), of status bit 1 and of the corpse record's first u32. (Where
-  `D2S_ReadMercHeader` runs is answered in D3e2.)
+- ~~Which quest, waypoint and NPC slot is which difficulty.~~ Answered: slot d is difficulty d (§ E note).
+- ~~The meaning of client `+0x480`–`+0x482` (`0x0CF`) and of the corpse record's first u32.~~ Answered as far as
+  `Game.exe` can: host bytes carried unchanged (§ D notes), and uninitialised stack never read (§ H note).
+  [L] **Status bit 1**, narrowed: set only by the client's creation screen and never tested by `D2S_CheckStatus`
+  (§ D notes); what the screen means by it is client presentation, outside plan 0039.
