@@ -1,12 +1,12 @@
 ---
 based_on:
   - docs/specs/drlg/README.md 2026-10-16
-  - docs/specs/drlg/room-tiles.md 2026-10-16
+  - docs/specs/drlg/room-tiles.md 2026-10-17
   - docs/specs/drlg/preset.md 2026-10-15
   - docs/specs/drlg/collision.md 2026-10-15
   - docs/specs/drlg/maze.md 2026-10-15
-  - docs/specs/drlg/warps.md 2026-10-16
-  - docs/specs/drlg/outdoor.md 2026-10-15
+  - docs/specs/drlg/warps.md 2026-10-17
+  - docs/specs/drlg/outdoor.md 2026-10-17
 ---
 
 # How a level is built
@@ -376,6 +376,13 @@ same destination in several slots (a wilderness level with four cave slots), the
 when rank fails, the first destination slot that names the source and has a room is taken. Rank alone mispairs the
 Durance levels and some caves, so the fallback matters. 172 pairings were predicted without error.
 
+Pairing also widens what the stairs room can see, by the code. When the room activates, the game rebuilds its
+[near list](../glossary.md) from the rooms of its own level within 6 tiles, then adds the paired room of the next level
+at the end and sorts the list again, so that room becomes a near room of the stairs room for the tile merge and the
+collision tests. The stairs room also gets a link to the paired room; nothing is marked on the destination room. For
+a seam slot the call makes no link and adds every destination room with that slot and within 6 tiles to the near
+list instead. A room of the Matron's Den (level 133) makes no pairing call at all.
+
 ## The collision grid and logic regions
 
 When a room becomes an active room on the server, it gets a collision grid: one 16-bit cell per
@@ -481,22 +488,36 @@ section.
   room counts, Lair 64, Crypt 21–24 and 133, Jail 31, the caves 10–12, Dungeon 87 and 89, a special that no room can
   take, and the "level too small" error.
 - **Outdoor** ([outdoor § Open questions](../specs/drlg/outdoor.md#open-questions)): level 134 is not built by any
-  run (the cube cannot open its portal in this version); several rare branches (a link-builder back-up, roads with
-  5 or 6 endpoints, a waypoint pass with no free cell, and others) were never reached.
-- **Room tiles** ([room tiles § Open questions](../specs/drlg/room-tiles.md#open-questions)): some tile-merge branches
-  between outdoor rooms (not found in 50 586 logged merges) and a room with no tiles were never exercised. The
-  fallback tile is not confirmed: the model took it 1280 times in replays of logged games, with the draws matching,
-  but that does not count as confirmation. Release and re-activation is now confirmed, but what one flag of it means
-  and which callers ask for it are not read. One shipped file (`Act1/Outdoors/Trees.ds1`) is 12 bytes short; reading the missing bytes as
-  zeros matches every observed draw, but the original reads whatever is in memory there.
+  run (the cube cannot open its portal in this version, and no other code opens a portal to levels 133–136). Three
+  branches once missing are now reached in runs and match the model: the Frigid Highlands prisons placed by the
+  fallback scan, a road search that fails in the Black Marsh, and the bridge search on the non-square Blood Moor. A
+  link-builder back-up was never reached. A vertex merge in the level outline, a waypoint pass with no free cell,
+  roads with 5 or 6 endpoints and an exhausted road search were never reached either, in the logged games or in
+  52 200 windows of an offline scan; whether the shipped data can reach them at all is an open question. So is the
+  cliff-cave scan's swapped bounds, which only a non-square level would show: of the Act I levels 2–7 only the Blood
+  Moor is non-square, and it never got a cliff run in the scan's 1800 Blood Moor windows. A few table reads past the end are not reached by the shipped tables.
+- **Room tiles** ([room tiles § Open questions](../specs/drlg/room-tiles.md#open-questions)): the tile-merge
+  branches that would re-orient a wall or shadow, or treat orientation 3 specially, are **unreachable on the shipped
+  data**, outdoor rooms included: every wall and shadow cell of the 2077 map files a room can read carries the bit
+  that skips them, and the logged merges agree one by one. The spec keeps them only as the code's reading of edited
+  data. A room with no tiles was never exercised. The fallback tile is not confirmed: the model took it 1280 times in
+  replays of logged games, with the draws matching, but that does not count as confirmation. Release and
+  re-activation is confirmed, but what one flag of it means and which callers ask for it are not read. A tile-file
+  name of `"0"` in a room's list would not stop the build, but what happens next depends on memory contents and
+  cannot be told from the code; no checked shipped room has one. One shipped file (`Act1/Outdoors/Trees.ds1`) is 12
+  bytes short; reading the missing bytes as zeros matches every observed draw, but the original reads whatever is
+  in memory there.
 - **Preset units** ([preset § Open questions](../specs/drlg/preset.md#open-questions)): the Blood Moor centre monster,
   the river objects of three preset types, level 27's index 2 and the special filters of levels 133–136 were not
   reached. What a path point's `action` does, who detaches a preset monster's path between two builds of a room, and
   who reads the `Outdoors` flag are unknown.
 - **Warps** ([warps § Open questions](../specs/drlg/warps.md#open-questions)): only one map seed was logged for the
   link builder, so many side choices are read from the code. What happens when the Matron's Den stairs (133 → 17),
-  which have no way back, are used is unknown; so are the units of the warp exit offsets, and whether a level can
-  have more than nine warp points.
+  which have no way back, are used is unknown. The units of the `LvlWarp` columns are now read from the code: the
+  `Offset` and `ExitWalk` columns are subtiles, the `Select` columns screen pixels. More than nine warp points in a
+  level was not seen in 1452 logged builds (the most was 8, in the Valley of the Kings), and the slot counts in the
+  data cannot give it; only one slot's warp cells falling in two rooms of a level could, and nothing in the code rules
+  that out.
 - **Collision** ([collision § Open questions](../specs/drlg/collision.md#open-questions)): the reader of the missile
   mark in spawn tests, the clear-and-restamp of a merged tile, single-cell placement tests, three special-class spawn
   checks, NPC footprints, the level-seed step in the Arcane Sanctuary and Canyon of the Magi (seen only in Tristram),

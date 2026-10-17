@@ -2,7 +2,7 @@
 based_on:
   - docs/specs/rng/README.md 2026-10-11
   - docs/specs/rng/seeds.md 2026-10-16
-  - docs/specs/drlg/room-tiles.md 2026-10-16
+  - docs/specs/drlg/room-tiles.md 2026-10-17
 ---
 
 # Randomness: one seed per thing

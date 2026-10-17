@@ -1475,3 +1475,18 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     bullets in levels), in the backlog. The outdoor shortfalls are already with the reverser in the H5e static
     reachability entry. The warps re-tag waits for H5a.
   - **Next:** the owner merges `lane/p38s2`.
+- **2026-10-17 — Phase 3 second round wiki follow-up (spec-writer, `lane/wiki3`, from `main` `fc84933`).** The
+  round-2 review's W4 follow-up. [levels](../wiki/levels.md): `based_on:` bumped for drlg/outdoor, drlg/room-tiles and
+  drlg/warps (2026-10-17); § Pairing gains a paragraph on the near-list append (code-read: the stairs room's near list
+  rebuilt within 6 tiles, the paired room appended and the list re-sorted; a seam slot appends every destination room
+  within 6 tiles and makes no link; nothing marked on the destination; no pairing call for a room of level 133).
+  *What is not known yet*: *Outdoor* now says the prisons' fallback scan, a failed road search and `BridgeFind` on
+  the non-square Blood Moor are reached, the back-up is unreached, and the other four branches were not met in the
+  52 200-window scan with stock reachability open, plus the swapped cliff-cave scan; no other code opens a portal to
+  133–136. *Room tiles*: the merge branches are unreachable on stock data (2077 DS1s, logs merge by merge) and kept as
+  the edited-data reading; the `"0"` DT1 name outcome is not determinable statically. *Warps*: `Offset`/`ExitWalk`
+  subtiles and `Select` screen pixels (code-read); more than nine points not seen in 1452 builds (max 8, level 46)
+  and not given by slot counts, one slot's cells in two rooms not excluded. [randomness](../wiki/randomness.md):
+  re-read against drlg/room-tiles; the round's changes (merge branches, `0x40000`, `"0"` names, DS1 views) touch
+  nothing it says, so only `based_on:` is bumped. Gate W4: 4 warnings before (levels 3, randomness 1), 0 after.
+  - **Next:** architect review (backlog).
