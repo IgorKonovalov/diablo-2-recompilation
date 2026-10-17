@@ -488,13 +488,23 @@ field is written only when the item is identified or the save flag is set, so in
   The merged arrays are `magicsuffix`, `magicprefix`, `automagic` (in that order) and `raresuffix`, `rareprefix`;
   an id is the merged index + 1 (`[C]` there, run:2026-10-14-affixes). So with stock data a stored suffix `s` is
   `MagicSuffix` record `s − 1`, a stored prefix `p` is `MagicPrefix` record `p − 1` once the reader adds
-  `firstPrefix` (748) back, and a stored rare `name1` of 160 is `RarePrefix` row 160 − 156 = 4. The quality 1 and
+  `firstPrefix` (747, see the next bullet) back, and a stored rare `name1` of 160 is `RarePrefix` row 160 − 156 = 4. The quality 1 and
   3 field is the row the low or superior builder picked (`RNG_Range(item seed, nLow)` over `LowQualityItems`, the
   rejection pick over `QualityItems`), which the builder stores as the item's file index and the writer saves
   through the same getter as the unique and set ids (`0x00629DA0`); the samples' values (1; 6, 7) fit the 4 and 8
   stock rows. The writer side is read, not run. (fn:ITEMS_BuildLowPick@0x005C2D40,
   fn:ITEMS_BuildSuperiorPick@0x005C2970, 0x00629DA0, [items/0005](../findings/items/0005-affixes.md),
   [save/0001 § 7](../findings/save/0001-d2s-io.md))
+- `[C]` **`firstPrefix` is 747** (corrected from 748): the code computes it as `(prefix pointer − base) / 0x90`, the
+  merged index of the first prefix, which is the `MagicSuffix` record count of the shipped `.bin` (the `Expansion`
+  rows skipped: 747 `MagicSuffix` and 669 `MagicPrefix` records). The writer subtracts it from a prefix id
+  (0x00630688–0x0063068F magic, 0x0063055B–0x0063055F a rare prefix slot; the suffix slot raw at 0x006305A7) and the
+  reader adds it back (0x0062CEEA, 0x0062CFBA, 0x0062D0A3). So a stored suffix *s* is `MagicSuffix` record *s* − 1 and
+  a stored prefix *p* is `MagicPrefix` record *p* − 1, records counted as the `.bin` has them. Data: over the 85
+  magic, rare and crafted game-written items with a main list in the 146-save corpus, all 127 affix ids name a record
+  whose stats are in the item's list; records shifted by +1 (9 unmatched), −1 (46) or prefix and suffix swapped (124)
+  fail ([save/0001 § S1a](../findings/save/0001-d2s-io.md#plan-0038-batch-s1a-2026-10-16) row 101,
+  run:2026-10-11-d2s-samples, tbl:MagicPrefix.txt:Name, tbl:MagicSuffix.txt:Name).
 - **(corrected)** The `tome` 5 bits belong to the normal-quality fields, so they come **before** `runeword` and
   `pname`, not after them. No sample has a tome that is also a runeword or personalized, so the samples read the same
   either way.

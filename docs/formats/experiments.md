@@ -462,3 +462,13 @@ No new run: this reads the kept output of the compile runs above, the directory
   key `codetable_identical` (and `codetable_differs`, `codetable_missing`, each a `bad`), and so reproduces the
   per-table claim above without the scratch script. Rerun on the same directories: the summary line as above plus
   `codetable_identical=20`, `bad=0`, and the 20 lines name the same archives as the bullet *Observed*.
+
+## Later uses of these runs
+
+Claims in other lanes' findings that cite a run above as their runtime or corpus source, recorded here so a reader
+of the run can find them. The run records themselves are unchanged.
+
+| run | later use |
+|---|---|
+| run:2026-10-15-cube-saves | the compile's byte-identical `monstats2.bin` backs `+0x025` `[C]` (monsters pool 9, [monsters/0001 § S3b](../findings/monsters/0001-level-pool.md#plan-0038-batch-s3b-2026-10-16); [MonStats2](../tables/MonStats2.md)); its saves are in the S1a corpus |
+| run:2026-10-11-d2s-samples, run:2026-10-11-d2s-edit, run:2026-10-11-d2s-waypoints, run:2026-10-15-socket-saves, run:2026-10-15-cube-saves | the corpus of 146 game-written saves of [save/0001 § S1a](../findings/save/0001-d2s-io.md#plan-0038-batch-s1a-2026-10-16) (among other runs), which backs its raised rows, `firstPrefix` 747 among them ([d2s.md § Extended items](d2s.md)) |
