@@ -389,3 +389,15 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   layer index ORed in at load); table, bullet and *Unknown fields* row corrected, the runtime-flag cells tagged `[I]`.
   [Levels](../tables/Levels.md): level 0 is the null level, not a town. Gate fast tier and `--full=economy,excel_layout`
   green. Follow-up to the reverser for the two finding wordings these came from.
+- **2026-10-17, `lane/w1` review (architect): accept.** Findings W1 104 → 0, `main` `f10dca8` merged first (no
+  conflict; the S1e and p39b sections add no W1; specs 15, filed to the spec-writer). Sampled more than 60 of the added anchors
+  across 20 files (save/0001 22, items/0007 14, the six experiments files 16, data, drlg, rng, monsters, items/0001,
+  0002, 0010 and the rest): every `fn:`/`data:` resolves (gate E1), every address is one the same finding already gives that code
+  in its own section (save/0001 §§ 7–8 ranges, items/0007 § 6, items/0002 L65, items/0001 `TC_GetByIndex`), every
+  `run:` in an experiments file is the enclosing record's own id, and the save/0001 corpus rows cite the writer or
+  reader plus the runs whose writes they count (8 + 192 = 200 for rows 24, 45, 86). No anchor chosen for the gate
+  alone. The two open-question corrections match their sections: drlg/0006 tomb multipliers are H5e C1 `[C]`;
+  drlg/0002's 1 280 `(10,0,0)` fallbacks are § S4a's, over the collision and objects logs (none in roomk).
+  `tbl:MonUMod.txt:constants` is documented (MonUMod.md, row 0 `[C]`). The four tag mentions reworded are status
+  lines and "would take to `[C]`" phrases, not claims. arc4 wordings (a) and (b) done. Follow-up (reverser): drlg/0002
+  rows 9 and 20 stay `[I]` on "no stock key lacks a candidate", which the same S4a fallbacks contradict.
