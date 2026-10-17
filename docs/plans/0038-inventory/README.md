@@ -770,6 +770,18 @@ The spec's L693 and L866 are reworded by the spec-writer (backlog).
 review).** Neither sweep moves a class. **Static 567, harness 532, c-emu awaiting a batch 0, blocked 415** (d-none 282,
 d-edit 73, d-sim 28, d-2c 14, d-owner 10, d-0032 8), **deferred 2, raised 10: 1 526.**
 
+**`lane/rbs3` (review 2026-10-17, architect): outdoor 7 after the printed scan condition.** `sweep_h5e.py scan 1 601`
+now tests drlg/0008's vertex-merge condition per window (re-run at the review: identical to the kept output but for the
+`systemd-run` banner).
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| outdoor 7, a vertex merge | a-run (H5e), shortfall | **a-run, shortfall** (unchanged) | Condition met in 0 of 52 200 windows; the smallest seam overlap is 24 tiles (a multiple of 8 on all 125 seams seen), against the 8 the branch needs. That is a scan of 600 map seeds, not a bound: the overlaps come from the seed-dependent outdoor layout, which no static reading bounds yet. Ruled as row 11 was at the `lane/rbs2` review. A static bound on the layout's level offsets (overlap never 8, origins and sizes on the 8-tile grid) would make it d-none (static sweep queue). |
+
+Net effect: none on the totals. No class moves; the `lane/rbs2` totals stand after merging `main` (`78b96a9`), which
+moved no row: **static 567, harness 532, c-emu awaiting a batch 0, blocked 415** (d-none 282, d-edit 73, d-sim 28,
+d-2c 14, d-owner 10, d-0032 8), **deferred 2, raised 10: 1 526.**
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is

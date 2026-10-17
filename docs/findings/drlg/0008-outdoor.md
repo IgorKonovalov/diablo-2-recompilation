@@ -1594,6 +1594,19 @@ condition a map seed must meet. Three of the five are answered here; (b) and (c)
   its edges is 8 tiles, or any level rect value not a multiple of 8. Not shown here that no stock layout meets it.
   (fn:sub_0067D050_VertexRingBuild@0x0067D050, fn:sub_0067CE20_VertexRingSeams@0x0067CE20,
   fn:sub_00675080_OutVertsToCells@0x00675080)
+- [I] **(a) The scan condition is met by no window of the scan** (`lane/rbs3`, H5e (a) scan condition). `sweep_h5e.py
+  scan` (sha256 `3fc33bc8…14855b0`) now tests it per window before the model runs. The grid half is refined:
+  `OutVertsToCells` moves the ring to the level's origin before the division by 8 (0x00675080). So the test reads the
+  level's width and height and, per seam, the neighbour's origin relative to the level's and its extent along that
+  edge. Absolute origins such as Act I's y 1114 (≡ 2 mod 8) do not matter.
+  - `scan 1 601`: 52 200 windows, 0 model errors. The condition is met in **0** of them, and the model's ring-merge
+    count is 0.
+  - The smallest overlap per seam is a multiple of 8 on all 125 seams seen, between 24 and 80 tiles. 24 is the smallest
+    (5 seams).
+
+  The scan covers map seeds 1–600 at the three difficulties; other seeds are not shown. (0x00675080,
+  `workspace/logs/sweep-h5e-scan-rbs3-2026-10-17.txt`, `4c0a07bf…0ccb23`;
+  fn:sub_00675080_OutVertsToCells@0x00675080)
 - Tool addendum (H5e review tool follow-ups, 2026-10-17): `sweep_h5e.py` (sha256 `d46a3838…d641426`) now keys the
   cliff-cave scan by level and prints flags `0x10`/`0x20` by level and grid shape. `scan 1 601`
   (`workspace/logs/sweep-h5e-scan-rbs-2026-10-17.txt`, `53e96744…a6c2c1`): 52 200 windows, 0 errors; `0x20` set on

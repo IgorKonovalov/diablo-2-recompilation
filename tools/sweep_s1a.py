@@ -1050,6 +1050,15 @@ PINS = [
     (0x0062CEEA, "add", r"eax,DWORD PTR \[ebp\+0x14\]"),
     (0x0062CFBA, "add", r"eax,DWORD PTR \[ebp\+0x14\]"),
     (0x0062D0A3, "add", r"eax,DWORD PTR \[ebp\+0x14\]"),
+    # reader: the runeword pass (state 0xAB) and the set-list loop the rows 98/99 ruling rests on (S1a review tool
+    # follow-up (b)): bit cl of the list mask, then the state from the 5-entry table at 0x006E90B8, mask 0x2040
+    (0x0062D8C8, "mov", r"DWORD PTR \[ebp\+0x14\],0xab"),
+    (0x0062D8D7, "mov", r"eax,0x1"),
+    (0x0062D8DC, "shl", r"eax,cl"),
+    (0x0062D8DE, "test", r"edx,eax"),
+    (0x0062D8E0, "je", r"0x62e254"),
+    (0x0062D8E6, "mov", r"eax,DWORD PTR \[ecx\*4\+0x6e90b8\]"),
+    (0x0062D8F0, "mov", r"DWORD PTR \[ebp\+0x10\],0x2040"),
 ]
 
 

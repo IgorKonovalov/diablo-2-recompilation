@@ -48,6 +48,8 @@ Every line carries the game frame "f". The model predicts, per log, in log order
   * the preset path (PSU0, PSUX): moved out of the preset unit (left 0) into the AI control +0x38;
   * the town-follow case: a monster of alignment 0 in a room of a town level at the release, not saved, and its id
     never seen again (MON lines, MR0, US).
+  Counts printed for the reviews (plan 0040 P2 review (d)): the save-test census of every monster met in a level with
+  SaveMonsters 0, per (level, +0xC4 bit 0x2000000, outcome), and the item-expiry branch taken per item record.
 
 Exit 0 only if every check holds. Stdlib only. Read-only.
 """
@@ -265,20 +267,27 @@ def other_save(u, sub):
     return 0, 0
 
 
-def item_expiry(f, sub):
-    """ItemGroundExpiry 0x00558A10 from its logged inputs."""
+def item_expiry_branch(f, sub):
+    """(expiry, branch) of ItemGroundExpiry 0x00558A10 from its logged inputs; the branch names the path taken."""
     if sub.get("quest"):
-        return 0
+        return 0, "quest item: 0"
     q = sub.get("q")
     if q == 4:
-        return (f + 30000) & M32
+        return (f + 30000) & M32, "magic: +30000"
     if q is not None and 5 <= q <= 9:
-        return (f + 45000) & M32
+        return (f + 45000) & M32, "quality 5-9: +45000"
     if sub.get("bt") == 4:
-        return (f + 45000) & M32 if s32(sub.get("gold", 0)) > 10000 else (f + 15000) & M32
+        if s32(sub.get("gold", 0)) > 10000:
+            return (f + 45000) & M32, "gold above 10000: +45000"
+        return (f + 15000) & M32, "gold up to 10000: +15000"
     if sub.get("filler"):
-        return (f + 30000) & M32
-    return (f + 15000) & M32
+        return (f + 30000) & M32, "socket filler: +30000"
+    return (f + 15000) & M32, "else: +15000"
+
+
+def item_expiry(f, sub):
+    """ItemGroundExpiry 0x00558A10 from its logged inputs."""
+    return item_expiry_branch(f, sub)[0]
 
 
 def mrec_parse(h):
@@ -645,6 +654,10 @@ class Checker:
                                       + (" dead" if sub.get("dead") else "")] += 1
             self.ok("a monster record exactly when saved", kinds == (["MREC"] if d["save"] else []), where,
                     "save %d records %s" % (d["save"], kinds))
+            if not sub.get("sm"):
+                self.hist["save test census, SaveMonsters 0 levels (level, +0xC4 bit 0x2000000, outcome)"][
+                    (u["lid"], 1 if u["c4"] & 0x2000000 else 0, ("saved" if d["save"] else "freed")
+                     + (" kept" if d["kept"] else "") + (" dead" if sub.get("dead") else ""))] += 1
             if u["lid"] in TOWNS and not d["save"] and not sub.get("dead") and not d["kept"]:
                 self.town_follow.append((ctx["where"].split(":")[0], u))
             for t, r, w in recs:
@@ -676,8 +689,9 @@ class Checker:
                     self.n["objects saved that were operated"] += 1
             elif t == "IREC":
                 self.n["item records"] += 1
-                pe = item_expiry(r["f"], r["sub"] or {})
+                pe, branch = item_expiry_branch(r["f"], r["sub"] or {})
                 self.ok("item expiry", pe == r["exp"] & M32, w, "pred %d log %d sub %s" % (pe, r["exp"], r["sub"]))
+                self.hist["item expiry branches (ItemGroundExpiry, per item record)"][branch] += 1
                 is0 = next((x for tt, x, _ in recs if tt == "IS0"), None)
                 self.item_bytes[r["b"]] = (r, is0)
 

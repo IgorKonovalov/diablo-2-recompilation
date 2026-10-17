@@ -277,7 +277,8 @@ Both read as in § 3 and § 6, so nothing is corrected and the tags stay `[I]`.
 | `0x005A0CE0` … `0x005A1F90` | the 22 server handlers | table below | I |
 | `0x005A00F0` | `sub_005A00F0_UModConstant` | MonUMod `constants` of a row (`+0x1C`) | I |
 | `0x005A21D0` | `sub_005A21D0_UModElemDamage` | elemental damage % from `constants` rows 28 and 31 (`monsters/stats`) | I |
-| `0x0054E600` | `sub_0054E600_PresetMonSpawn` | MonPreset dispatch; MonPlace cases 2, 3, `0x11`–`0x20` | I |
+| `0x0054DA60` | `sub_0054DA60_MonClassChainStep` | `(class, n)`: the class's `BaseId`, then `NextInClass` n times | I |
+| `0x0054E600` | `sub_0054E600_PresetMonSpawn` | MonPreset dispatch; MonPlace switch: rows 2–5, 8, 10, 11, 17, 18, 22–24, 26, 29–32 place a monster (24, 26 in Normal only); the rest nothing | I |
 | `0x0054E2A0` | `sub_0054E2A0_PresetFallenVariant` | `fallen1`/`fallenshaman1` → act-1 variant by level id | I |
 | `0x0063EC70` | `sub_0063EC70_LevelClassVariant` | the level's version of a base class (its `mon` list, else `NextInClass` by `Level`) | I |
 | `0x0054E090` | `sub_0054E090_PresetGroupSpawn` | normal-difficulty MonPlace `0x18`/`0x1A`: a group in the preset's box | I |
@@ -610,6 +611,36 @@ At `0x0054E651` the function overwrites its first argument with the room's level
 - [I] `0x18` and `0x1A` are normal-difficulty only: `sub_0054E090_PresetGroupSpawn` with class `imp1`/`deathmauler1`
   (by level 110) or `minion1`, a leader in the preset's box and `MinGrp − 1 + RangeB(leader.seed, MaxGrp − MinGrp + 1)` members around it.
   (0x0054EAA8–0x0054EAF9, fn:sub_0054E090_PresetGroupSpawn@0x0054E090, tbl:MonStats.txt:MinGrp)
+- [I] **Every MonPlace row, from the switch** (`lane/rbs3`, the MonPlace remaining-cases entry; kept output
+  `sweep-rbs3-monplace-2026-10-17.txt`, `tools/sweep_rbs3.py switch`). The MonPlace branch switches on `index − 2`
+  with the bound `0x1E` (0x0054E76F–0x0054E782: byte table `0x0054EB30`, dword table `0x0054EB0C`). Rows 0, 1 and 33–36
+  fail the bound, and rows 6, 7, 9, 12–16 and 19–21 have byte 8. Both go to `0x0054EAFE`, which returns 0 with no call:
+  **these rows place nothing**. That covers `place_nothing`, `place_npc_pack`, the river monsters, `place_amphibian`, the
+  nests, the talking and dumb guards, `place_maggot`, `place_maggotegg`, `place_mosquitonest` and **`place_group25` to
+  `place_group100`**. H4b's case-36 calls are this branch. The scope is this function and its caller
+  `PresetUnitDispatch`, which returns its result with no fallback (0x005558DD–0x005558EA). For rows 33–35 the DRLG
+  preset pass first keeps or drops the unit on a room-seed draw (0x0066777D, [drlg/preset](../../specs/drlg/preset.md)),
+  so a kept group preset reaches this branch and still places nothing here. Other readers of a kept preset monster
+  unit are not followed. `PresetUnitDispatch` has two callers, `PresetUnitSpawn` (0x00555949) and
+  `RoomInactiveUnitsRestore` (0x00542C29), so both the first spawn and the restore of a preset reach this switch. The
+  four other callers of `PresetMonSpawn` (0x00545C75, 0x0058A70D in `A5Q3_NihlathakBossSpawn`, 0x005AA231, 0x005ACB43)
+  and any other reader of the room's preset list are unfollowed (counted at the `lane/rbs3` review,
+  `sweep_rbs3.py callers 0x0054E600 0x005557D0`). The
+  rows not read before:
+  - **4 `place_rogue_warner`**: `SpawnAtPos(x, y, class 266 navi, mode, radius −1, flags 0)` at the point
+    (0x0054E919–0x0054E933).
+  - **5 `place_bloodraven`**: the same with class 267 `bloodraven` (0x0054E808–0x0054E840). Class 0x10A or 0x10B is
+    used only while `nMonStats` exceeds it, else −1.
+  - **8 `place_tightspotboss`**: the same with class 284 `maggotqueen1` and flags 8 (0x0054E943–0x0054E95D).
+  - **10 `place_tentacle_ns` and 11 `place_tentacle_ew`**: class 261's `BaseId`, then `NextInClass` n times
+    (`sub_0054DA60_MonClassChainStep`, 0x0054DA8D–0x0054DAB5), with n by level id from the table at `0x0054EB60`:
+    1 in levels 76–78, 2 in 92 and 93, else 0. That gives `tentaclehead2`, `tentaclehead3`, else `tentaclehead1`. The
+    spawn is at the point with flags 4 for row 10 and 0 for row 11 (0x0054E789–0x0054E7F8).
+  - **25 `place_imp`, 27 `place_minion` and 28 `place_bloodlord`**: entry `0x0054EAB1` of the fixed-class table
+    (`0x0054EB74`, `index − 17`), which returns 0. They place nothing. Rows 19–21 never reach that table.
+
+  (fn:sub_0054E600_PresetMonSpawn@0x0054E600, fn:sub_005B2F20_SpawnAtPos@0x005B2F20,
+  fn:sub_0054DA60_MonClassChainStep@0x0054DA60, tbl:MonPlace.txt:code, tbl:MonStats.txt:NextInClass)
 
 ### 8. Names: server seed, client roll
 
@@ -919,6 +950,36 @@ S3B special handler_calls=1844 handler_on_live_minion=0 minion_lists=538 packet_
   list" is not settled for those readers by the writer alone. Static leftover (backlog, reverser): read the four sites.
   *Review note (S3b review, architect):* the sites were listed with objdump at the review (`call 0x5a0120`); the packet
   half stands as filed.
+  *Static leftover read (`lane/rbs3`, [I]):* the four other callers of 0x005A0120, with their enclosing functions
+  (`sweep_rbs3.py callers 0x005A0120`, the function by `re/symbols.csv` and `int3` padding):
+  - 0x005423F8 in `InactiveMonsterSave`: copies all nine bytes of the list into the record (`+0x32`–`+0x3A`,
+    0x00542401–0x0054243B) at save time, so any append made before the save is kept.
+  - 0x005428A9 in `InactiveMonstersRestore`: for each of the nine slots where the new unit's list differs from the
+    record's byte, it calls `ModAppendApply(record byte, mark 0)` (0x005428C5–0x005428D3). That writes the byte into the
+    first empty slot and calls its handler with flag 0 (0x005A4897–0x005A48B0), and no `MonMarkSpecial`, since the
+    second argument is 0 (0x005A4874).
+  - 0x00597C87 in `sub_00597C70` (one caller, 0x005983C5 in `sub_00598220`, itself called from 0x0053A585). When
+    monster data `+0x5C` bit 1 is set (`sub_00573540`, 0x00597C7B), it sends slots 0–2 only, with the name seed and
+    `MonTypeFlag(0x04)`, through `0x0053D880`. A mod in slot 3 or above is not sent on this path.
+  - 0x005A4A5F in `SuperUniqueSpawn`: the list of the unit `SpecialMonPlace` returned, then `ModCount` (0x005A4ACF) and
+    the record's mods and picked unique mods written from the end of the list (0x005A4AE3–0x005A4B5F). This is the
+    later append the remainder names.
+
+  So a later append is seen by the save (all nine bytes), the restore (re-applied with flag 0) and the packet builder
+  (the whole list). The three-slot packet sees it only in slots 0–2. (fn:sub_005421A0_InactiveMonsterSave@0x005421A0,
+  fn:sub_005424F0_InactiveMonstersRestore@0x005424F0, fn:sub_005A4850_ModAppendApply@0x005A4850,
+  fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, 0x00597C87)
+- *Tool addendum (`lane/rbs3`, S3b review tool follow-ups (a)–(c); no row depends on it):* `tools/sweep_s3b.py` changes
+  in three checks.
+  - `special` lists the five callers of 0x005A0120 with their enclosing functions (above).
+  - `pool` prints the review's second counterfactual for pool 23: `cf_levels_list_ok=0`. The walk over level 29's
+    `mon` list `[22, 39, 57, 172, 384]` gives base 170 and class 172 against the logged 384, on both barrel spawns.
+  - `stats` asserts that `sub_006538A0_MonLvlStats` never reads its out fields. EBX holds the out pointer from
+    0x0065392B. Over the 329 instructions of the body, 0 operands read `[ebx…]` other than the two stores, EBX has no
+    other writer, and none of the five `cmp`s names an out field. Ruling 1 rests on this.
+
+  Kept outputs: `sweep-s3b-{pool,special,stats}-rbs3-2026-10-17.txt`, all exit 0, with the hashes in
+  `sweep-rbs3-manifest.txt`. (fn:sub_006538A0_MonLvlStats@0x006538A0, fn:sub_005474C0_RegionActClass@0x005474C0)
 
 ## Plan 0039 batch P1c (2026-10-17)
 
