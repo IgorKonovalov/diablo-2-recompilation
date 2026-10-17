@@ -221,8 +221,8 @@ its stack (`"-\x02"` … `"\x82\x02"`); none is found and the 0 goes to gems `+0
   `name` (0x006341E0–0x0063420B); the `.bin` holds 0 there. The client's item-name builder takes the two merged ids
   of a rare item (`ITEMS_GetRareName1`, item data `+0x32`, and `0x00628040`, `+0x34`), resolves each through
   `RAREAFFIX_GetRecord`, and shows `STRTABLE_GetByIndex(record + 0x0C)` for each; when that index is 0 it shows the
-  raw `name` between `(` and `)` instead. The two texts go to two separate buffers (0x0048C5C1–0x0048C726); how the
-  line joins them (order, separator) is not read. (fn:sub_00633F40_LoadRareAffixes@0x00633F40,
+  raw `name` between `(` and `)` instead. The two texts go to two separate buffers (0x0048C5C1–0x0048C726), joined by
+  `RareFormat` ([§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17)). (fn:sub_00633F40_LoadRareAffixes@0x00633F40,
   fn:RAREAFFIX_GetRecord@0x00634260, fn:ITEMS_GetRareName1@0x00627FE0, fn:STRTABLE_GetByIndex@0x00524A30)
 
 ## Plan 0038 batch S1b (2026-10-16)
@@ -275,6 +275,34 @@ inferred and this section raises it, the tag and the second source given here ar
   `runes.bin` records; `Runeword95` (rows 39 and 118) is one key and resolved to 20600, and the store is at `+0x82`
   (0x00639C6E, pinned). (fn:RUNES_Load@0x006394A0, tbl:Runes.txt:Name)
 
+## Plan 0039 batch P1b (2026-10-17)
+
+Row B8 of [plan 0039](../../plans/0039-backlog-sweep-4.md): how the client's item-name line joins a rare item's two
+names. Static (objdump, Ghidra on the lane's copy).
+
+- [I] **The two texts are the two arguments of `RareFormat`.** In the client builder
+  `sub_0048C060_ClientItemNameBuild`, qualities 6, 8 and 9 share one case (0x0048C5C1). It writes `name1`'s text
+  (`ITEMS_GetRareName1`, item data `+0x32`) into the buffer at `[ebp−0x17D8]` and `name2`'s (`0x00628040`, `+0x34`) into
+  `[ebp−0x0FD8]`, either `STRTABLE_GetByIndex(record + 0x0C)` or `"(" + raw name + ")"` when that index is 0, as
+  § Rare names says; a missing record leaves its buffer empty (0x0048C6BE, 0x0048C7F3). Then it calls
+  `sub_0048BE80_ClientFormatArgs(out, STRTABLE_GetByIndex(0x6B6), name1Text, name2Text, NULL)` (0x0048C89A–0x0048C8BC).
+  String 1718 (`0x6B6`) is the key `RareFormat`. The formatter copies its NULL-terminated argument list into 400-byte
+  slots in order (0x0048BEB2–0x0048BED8), so `%0` is `name1`'s text and `%1` `name2`'s; `MagicFormat` (1714, `%0 %1 %2`)
+  is called the same way with the prefix buffer, the base name and the suffix buffer
+  (0x0048CDCB–0x0048CDF7). The `%n` substitution itself (after the grammar-tag pass that starts at 0x0048BEE0) is not
+  read here. (fn:sub_0048C060_ClientItemNameBuild@0x0048C060,
+  fn:sub_0048BE80_ClientFormatArgs@0x0048BE80, fn:ITEMS_GetRareName1@0x00627FE0, fn:STRTABLE_GetByIndex@0x00524A30)
+- [C] **`RareFormat` in the shipped English table** is `%0 %1` (`string.tbl` entry 1718, read with
+  `tools/tbl.py index … spx 0x6B6`; [tbl.md](../../formats/tbl.md), data check).
+- [I] **So an English rare name is `name1`, one space, `name2`**, and the order and separator come from the string
+  table, not the code (another language's `RareFormat` can reorder them). This rests on `%n` naming the *n*-th argument,
+  which the argument copy and the `MagicFormat` call (prefix, base, suffix for `%0 %1 %2`) support but the
+  substitution code does not yet show.
+- [I] The buffers are built with the wide-string helpers `sub_005267E0_WStrCpy`, `sub_00526700_WStrCat` and
+  `sub_00526800_WStrLen` (0x005267E0, 0x00526700, 0x00526800). `name2`'s text is appended to its own empty buffer when
+  `name1`'s record exists and copied otherwise, which gives the same text. The builder is fatal (error at line `0x822`)
+  when `len(name1) + len(name2) + len(base name) + 3` reaches its output size (0x0048C7FC–0x0048C81D).
+
 ## Data touched
 
 - fmt:tbl#layout fields `crc`, `count`, `hash_size`, `string_start`, `max_probes`, `file_size`, `index`, nodes.
@@ -290,4 +318,5 @@ inferred and this section raises it, the tag and the second source given here ar
   map's two other tables (`n` pairs and `n` u16, presentation) are not read here.
 - ~~`GEMS_Load`'s 68 not-found two-byte keys (§ Run): what field it means to look up.~~ The gem's `code` text, read
   from a field that now holds the item index (§ Run, 2026-10-15).
-- How the item-name line joins a rare item's two names (§ Run): the client builder after 0x0048C726.
+- ~~How the item-name line joins a rare item's two names (§ Run): the client builder after 0x0048C726.~~ Through
+  `RareFormat` (`%0 %1` in English), `name1` first: [§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17).
