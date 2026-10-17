@@ -119,13 +119,13 @@ fastest).
 `[C]` Observed bit distribution over every non-zero cell of the clean files (`survey` prints the
 full histograms):
 
-| bits | wall (173 411 non-zero) | floor (696 511) | shadow (15 055) | name (`[L]`, no lead) |
+| bits | wall (173 411 non-zero) | floor (696 511) | shadow (15 055) | reading (untagged cells: `[L]`, no lead) |
 |---|---|---|---|---|
 | 0–7 | `0x81` ×170 211, `0x91`, `0x85`, `0x89`, `0x99` | `0xC2` ×656 897, `0x42` ×39 303, `0xC6`, `0xCA` | `0x80` ×15 054, `0x88` ×1 | `prop1`: flag byte |
 | 8–13 | 63 distinct (0..63) | 64 distinct | 64 distinct | sub-index (`sequence`), `[C]` via DT1 |
-| 14–19 | 0, 8, 12, 4 | 0, 8, 12, 4 | 0, 8, 12 | unknown |
+| 14–19 | 0, 8, 12, 4 | 0, 8, 12, 4 | 0, 8, 12 | 14–15: top of the sub-index byte as read `[I]`; 16–17: runtime flags; 18–19: never set, no mapping |
 | 20–25 | 46 distinct | 49 distinct | 15 distinct | main index (`style`), `[C]` via DT1 |
-| 26–30 | 0, 4, 1, 8 | 0, 4, 1 | 2, 6, 15 | unknown |
+| 26–30 | 0, 4, 1, 8 | 0, 4, 1 | 2, 6, 15 | 26, 28, 29: runtime flags; 27: shadow select; 30: no reader `[I]` |
 | 31 | 1 in 2 744 | 1 in 6 690 | 1 in 7 | `hidden` |
 
 - `[C]` A cell is either 0 (empty) or has a non-zero low byte: no non-zero cell has bits 0–7 clear.
@@ -147,6 +147,19 @@ full histograms):
   drlg/0001); low-byte bits 0, 1 and 2 and bit 27 select which tiles are picked for the cell (floor,
   wall, the bit-2 path, shadow) (fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0,
   fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20; [drlg/0001 § Per-cell decision](../findings/drlg/0001-ds1-dt1-readers.md#per-cell-decision)).
+- `[I]` **Bits 14–15 are the top of the sub-index byte as the code reads it.** Every reader takes the sub-index as
+  `(cell >> 8) & 0xFF` (bits 8–15), so a set bit 14 or 15 would select sub-index 64–255 in the DT1 lookup; no stock DS1
+  sets either (the bits 14–19 field takes only 0, 4, 8 and 12, i.e. bits 16 and 17, table above)
+  (fn:DRLG_PickTileByRarity@0x0066D820, fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0,
+  fn:sub_0066FCF0_LvlSubFits@0x0066FCF0; [drlg/0001 § P1a](../findings/drlg/0001-ds1-dt1-readers.md#plan-0039-batch-p1a-2026-10-16)).
+- `[I]` **Bit 30 has no reader** in the DRLG, collision and tile code, and `CellBits` maps bits 2, 3, 7, 16, 17, 26, 28,
+  29 and 31 only; no stock DS1 sets it (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20;
+  [drlg/0001 § P1a](../findings/drlg/0001-ds1-dt1-readers.md#plan-0039-batch-p1a-2026-10-16)).
+- `[C]` **Every wall cell (bit 0) and shadow cell (bit 27) of the DS1s a room can load has bit 7.** Over the 2077 files
+  that `LvlPrest` `File1..6` (2043) and `LvlSub` `File` (34) name, 152 587 + 2 518 wall cells and 13 279 + 307 shadow
+  cells all carry it, and no floor cell has bit 0 or bit 27 (data survey with `tools/ds1.py parse`, the layer-kind
+  signature above narrowed to the loadable files; [drlg/0002 § P1a](../findings/drlg/0002-room-build-draws.md#plan-0039-batch-p1a-2026-10-16),
+  tbl:LvlPrest.txt:File1, tbl:LvlSub.txt:File).
 - `[L]` That runtime flag `0x8` makes the tile invisible: `src:siramy-ds1edit` § Advanced tile editing
   and § "Weird" Tiles say a cell carries a per-layer Hidden bit; the renderer's test is not read.
 - `[L]` Orientation values 0..19: 0 means none, and the rest are wall, corner, roof and special
@@ -195,7 +208,7 @@ full histograms):
 | `unk_group` | s32 | v ≥ 18 | 0 in all 117 v18 files that have the list | layout `[C]`, meaning unknown |
 | `count` | s32 | | 0..134 | `[C]` |
 | `x`, `y`, `w`, `h` | s32 ×4 | per group | a tile rectangle; every one lies inside the `(size_x+1) × (size_y+1)` grid | layout `[C]`, meaning `[L]` |
-| `unk` | s32 | per group, v ≥ 13 | 0 (×781), 1 (×61), 2..16 | layout `[C]`, meaning unknown |
+| `unk` | s32 | per group, v ≥ 13 | 0 (×781), 1 (×61), 2..16 | layout `[C]`; variant count read by `ApplyAll` only `[I]` |
 
 - `[C]` The list is absent when `tag_type` is 0 (the object list is followed directly by the
   paths), and the `v ≥ 18` extra dword is pinned between v17 (absent) and v18 (present).
@@ -209,6 +222,14 @@ full histograms):
   preset instance's substitution layer or groups. The only group reader, `sub_006704E0_LvlSubLoadDs1`, reads the
   DS1 a `LvlSub` record names. So the 429 groups of LvlPrest files ([§ Substitution groups by file
   source](#substitution-groups-by-file-source)) are dead data. ([drlg/0004](../findings/drlg/0004-preset-units.md) § Answer, fn:sub_006704E0_LvlSubLoadDs1@0x006704E0)
+- `[I]` In a `LvlSub` DS1 the group `unk` is a **variant count**: `LvlSubApplyAll` draws `v = Range(room seed, unk)` for a
+  `tag_type` 2 DS1 and stamps the group from the copy `(w + 1)·(v + 1)` cells to its right, so `unk` counts the
+  alternative versions laid out beside the group; a `tag_type` 1 DS1 ignores it. `LvlSubApplyPick`, the only path stock
+  data takes (all 34 `LvlSub` records have `CheckAll` 0), reads the rectangles only and never `unk`. The substitution
+  layer itself is never viewed by `LvlSubLoadDs1`, so no code path reads substitution cells
+  (fn:sub_0066FF50_LvlSubApplyAll@0x0066FF50, fn:sub_00670170_LvlSubApplyPick@0x00670170,
+  fn:sub_006704E0_LvlSubLoadDs1@0x006704E0, tbl:LvlSub.txt:CheckAll;
+  [drlg/0001 § P1a](../findings/drlg/0001-ds1-dt1-readers.md#plan-0039-batch-p1a-2026-10-16)).
 
 ### v12–13 trailer
 
@@ -427,11 +448,11 @@ differently.
 | field | where | observed |
 |---|---|---|
 | `unk_skip` | header, v9–13 | `(5000, 5000)` in all 41 files |
-| cell bits 14–19, 26–30 | wall/floor/shadow cells | small sets of values (table above) |
+| cell bits 18–19 | wall/floor/shadow cells | never set in stock files; bit 30 has no reader `[I]` |
 | cell low byte | wall/floor/shadow cells | per-layer constant flags (`0x81`/`0x42`/`0x80` always set) |
 | object `flags` | v ≥ 6 | 0 or 1 |
 | `unk_group` | group list, v18 | 0 |
-| group `unk` | v ≥ 13 | 0..16 |
+| group `unk` | v ≥ 13 | 0..16; `ApplyAll` variant count `[I]`, unreachable on stock data |
 | v12–13 trailer | after groups | 0; never read by the game `[I]` |
 | path point `action` | v ≥ 15 | 1..5 |
 
@@ -478,7 +499,7 @@ another DT1, 11 missing; wall cells 149 674 own, 2 084 other, 61 missing, 768 sk
   by another flag. drlg/0001 shows both kinds get a wall entry that differs only in runtime flag `0x8`;
   which flag the renderer tests is not read ([§ Preview](#preview)).
 
-- `[L]` Cell flag bits (low byte, bit 31, bits 14–19 and 26–30). The index split is settled by data
-  ([dt1.md](dt1.md#ds1-cells--dt1-tiles)). How the game uses the flags goes to the reverser (backlog).
+- `[L]` What the runtime tile flags the cell bits become do in the renderer (drlg/0001 maps the bits to flags; bits
+  14–15 and 30 are answered above).
 - `[L]` What the substitution cells and groups mean, and what `unk_skip` holds (backlog → reverser).
   The header reads, the object `id` tables and the v12–13 trailer are answered above from drlg/0001.
