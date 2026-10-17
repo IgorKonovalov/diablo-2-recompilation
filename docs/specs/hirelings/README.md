@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/vendors, monsters/pool, monsters/stats, data/strings, data/excel, save/d2s]
 consumed_by: [items/quality, monsters/pool, save/d2s]
-tags: {C: 89, I: 39, L: 8}
-updated: 2026-10-16
+tags: {C: 92, I: 41, L: 6}
+updated: 2026-10-17
 ---
 
 # Hirelings: the hire list, the hire, the mercenary's stats and its creation from a save
@@ -322,6 +322,23 @@ Step notes:
 - E5. [I] The client list window draws up to 10 entries, and shows name index 1057 (`Lharhad`) as 11021 (`Jarulf`),
   as does the client's mercenary init; the run compared the window's `RollEntry` calls, not its text.
   (fn:sub_004B5C60_ClientHireListDraw@0x004B5C60, fn:sub_004B1090_ClientMercInit@0x004B1090)
+- E5. [I] **`Share` has no effect.** `RollEntry` copies `max(0, Share)` into the entry at `+0x28`, but none of its four
+  callers (`MERC_Init`, `HIRE_Hire`, the client's mercenary init and the list window) reads `+0x28`. The equipment
+  columns `Head`, `Torso`, `Weapon` and `Shield` (record `+0x68`…`+0x74`) and `Share` (`+0x4C`) are read by none of
+  the code that holds a `Hireling` record: the loader, `HIRELING_FreeTable`, the five getters and their 19 callers,
+  none of which passes a record on. (0x006639C0–0x006639D1, fn:HIRELING_RollEntry@0x006637F0,
+  data:g_pHirelingTxt@0x0096BDD0, fn:HIRELING_GetRecord@0x006562F0, tbl:Hireling.txt:Share, tbl:Hireling.txt:Head;
+  [hirelings/0001 § Plan 0039 batch P1c](../../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17))
+- E5. [I] **The description text is a hard-coded string.** The list window takes the entry's `HireDesc` (`+0x30`) and
+  calls `HIRELING_DescString(index)`, which for an index 0..8 with a non-zero word returns
+  `STRTABLE_GetByIndex(g_HireDescStrIdx[index])`, and none otherwise; the window appends it to the row's line.
+  `hiredesc.bin` plays no part in the text. (0x004B6262–0x004B6267, fn:HIRELING_DescString@0x00663720,
+  data:g_HireDescStrIdx@0x006EE410, fn:sub_004B5C60_ClientHireListDraw@0x004B5C60)
+- E5. [C] **The table matches every `HireDesc` row by data.** Its nine u16 are 0, 3371, 3372, 11090, 11088, 11089,
+  3377, 3376 and 3375, which in the English tables read none, "Fire Arrow", "Cold Arrow", "Combat", "Defensive",
+  "Offensive", "Fire", "Cold" and "Lightning": the rows `None`, `farw`, `carw`, `comb`, `def`, `off`, `fire`, `cold`
+  and `ltng` in order. So row 0 (the Barbarians) shows no description. (data:g_HireDescStrIdx@0x006EE410,
+  tbl:HireDesc.txt:Code)
 
 ### F. The hire (`HIRE_Hire`, `MERC_Init`)
 
@@ -519,6 +536,18 @@ Step notes:
 - [C] Whatever level MonStatsInit gave, `MERC_SetLevel` overwrites stat 12 and the stats of § G right after the
   creation: in `MERC_Init` for a hire, in `D2S_ReadMercHeader` for a load. (fn:MERC_Init@0x00573270,
   fn:D2S_ReadMercHeader@0x0056AA50, run:2026-10-16-hirelings)
+- [C] **The stats `MonStatsInit` leaves.** A mercenary is a type-1 unit, so `MonStatsInit` runs for it as for any
+  monster ([monsters/stats § B](../monsters/stats.md#b-monstatsinit-in-order)). Its step B5 writes 68 `attackrate` = 100,
+  67 `velocitypercent` = 75, 69 `other_animrate` = 100, 352 `last_sent_hp_pct` = 128 and 100 `monster_playercount` =
+  `max(1, players)`; `MERC_SetLevel` writes none of them. All 72 logged `MERC_SetLevel` blocks hold exactly these
+  values, with 100 = 1 (every session was single player). (0x00573F14, fn:sub_00574250_MonsterInit@0x00574250,
+  fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:MERC_SetLevel@0x00572840, run:2026-10-16-hirelings; [hirelings/0001 § Plan 0039 batch P1c](../../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17))
+- [C] **The Rogues' skill 336 (`RogueMissile`) is the MonStats skill of `MonStatsInit` step B10**, from the `roguehire`
+  row (`Skill1` `RogueMissile`, `Sk1lvl` 1). Its level is `Sk1lvl` + DifficultyLevels `MonsterSkillBonus` (0, 3, 7), so
+  1 in Normal, 4 in Nightmare and 8 in Hell; the hireling's `d` = 0 does not touch this bonus. The logs agree in every
+  Rogue block: 22 at level 1 (Normal), 6 at 4 (Nightmare), 2 at 8 (Hell). `act2hire` has `Skill1` `Jab` the same way;
+  the Act III and Act V rows have no MonStats skill. (0x005740E0–0x00574135, fn:sub_0056DEB0_UnitSkillAdd@0x0056DEB0,
+  tbl:MonStats.txt:Sk1lvl, tbl:DifficultyLevels.txt:MonsterSkillBonus, run:2026-10-16-hirelings)
 - [I] Hirelings have `Align` 1, so the player-count bonus of [monsters/stats](../monsters/stats.md) does not apply
   to them. (0x0057396C, tbl:MonStats.txt:Align)
 
@@ -611,8 +640,8 @@ Header bytes from `0x0AF`: flags 0, seed 12345, name 3, Id 0, experience 2 790 0
 | hpregen | 73 728 ÷ 2000 | 36 |
 | skills | Inner Sight, Fire Arrow: 1 + (10·27 >> 5) | 9, 9 |
 
-The logged stat list after `MERC_SetLevel` holds exactly these values (plus the MonStatsInit leftovers of *Open
-questions*). The same mercenary block in `MercMF` showed level 30, next level 3 075 200, life 288 and resistances 54
+The logged stat list after `MERC_SetLevel` holds exactly these values (plus the stats and the Rogue skill that
+MonStatsInit leaves, § I). The same mercenary block in `MercMF` showed level 30, next level 3 075 200, life 288 and resistances 54
 on the in-game screen.
 
 ## Reimplementation notes
@@ -674,15 +703,13 @@ on the in-game screen.
   `NPC_OpenStore`, a level-up in play (`MERC_AddExp`, and the input share of the owner's experience, not read), a dead
   or empty header and a name past the range, the written header, multiplayer sharing of the table, the list window's
   name 1057. Each needs a harness session; none changes the draw order of § D.
-- [L] **MonStatsInit leftovers** (observed, not read): after `MERC_SetLevel` the stat list also holds 67
-  `velocitypercent`, 68 `attackrate`, 69 `other_animrate`, 100 `monster_playercount` and 352 `last_sent_hp_pct`, and
-  the Rogues carry skill 336 (`RogueMissile`, level 1); none comes from `Hireling.txt`. Which MonStatsInit write sets
-  each is not read ([hirelings/0001 § Open questions](../../findings/hirelings/0001-hirelings.md#open-questions)).
+- ~~**MonStatsInit leftovers**~~ answered in [§ I](#i-monster-class-and-the-monster-level): MonStatsInit B5 constants and the
+  B10 MonStats skill, whose level is 1/4/8 by difficulty, not 1 as this entry said ([hirelings/0001 § Plan 0039 batch P1c](../../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17)).
 - [L] Whether the client ever shows its own `RollEntry` values (first-band row, floor, `d` clamped at 0 for skills)
   instead of the server's stats is a display question, not read.
-- [L] What `Share` and the equipment columns (`Head`, `Torso`, `Weapon`, `Shield`) do, and where the hire list's
-  description text comes from: no reader found ([Hireling § Open questions](../../tables/Hireling.md#open-questions),
-  [HireDesc § Open questions](../../tables/HireDesc.md#open-questions)).
+- ~~What `Share` and the equipment columns do, and where the description text comes from~~ answered in
+  [§ E](#e-an-entry-hireling_rollentry) step notes E5: no reader, and a hard-coded string table indexed by the
+  `HireDesc` row ([hirelings/0001 § Plan 0039 batch P1c](../../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17)).
 
 ### Community sources: differences of 1.14d
 
