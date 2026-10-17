@@ -2347,3 +2347,62 @@ Logs `workspace/logs/quests-s<slot>-<seed>-<tag>-<difficulty>.log`; screenshots 
   and word 6 bits 0, 3, 4, 13, as above. objdump re-read `MonModeRecord` (0x005A78A0–0x005A79B0),
   `MonsterOwnerRef`, the death event's owner lookup, Warriv's two calls, Baal's gold loop, `DropGoldAmount`'s cap and
   `PlayerFindItemByCode`'s tests; fixes in the finding sections (review entry in the plan 0038 log).
+
+## run:2026-10-17-economy
+
+**Status: in progress** (plan 0043 Phase 2, harness lane `lane/p43h`, rotated after the first sessions; resume note in
+the plan log). No claim of the plan's *Done when* is met yet; the counts below are what the kept logs give.
+
+- **Question:** plan 0043 Phase 2. Does `tools/economy.py`, the model of [items/0011](0011-economy.md) (the price
+  core in modes 0–3 with the gamble path, `RepairCost`, the gold adds, the gold amount at creation, gold find, the
+  wear draws), reproduce what the game computes at each logged event, and which event kinds move the game seed or the
+  player's seed?
+- **Setup:** agent-driven sessions on harness slot 1 (display `:8`, prefix `workspace/wineprefix-1`), single player,
+  pinned `game.exe` (stock data), `-seed` per session. Logger `tools/gdb/economy.gdb` = `tools/gdb/pilot.py`,
+  `tools/gdb/vendors.py` and the new `tools/gdb/economy.py` (entry and exit of every economy function of items/0011,
+  each line with the game seed, the player's seed, gold and stash; price payloads written once per distinct input,
+  `k` an id). Session 4311 ran with `tools/gdb/economy.py` of commit 5507e36; 4321 and 4322 with that of b43ef61 (adds
+  the caller's return address `ra2` and the control watchpoint `SWC`). Driver `tools/economy_sessions.py` (`tour`:
+  waypoint hops and `tools/d2pilot.py npc … --stay`, then hover sweeps of the store grid, the inventory and the
+  repair cursor; the pointer rests 0.07 s on each occupied cell, during which the client prices the item every frame).
+  Characters built with `tools/d2s.py build` from `tools/d2s_recipes/econ*.json` (new test-state key `"dur"`: current
+  durability below the maximum, a damaged item); saves in `workspace/scratch-p43h/saves/`.
+- **Sessions** (logs `workspace/logs/<name>.log`, sha256 in `workspace/logs/economy-run-manifest.txt`):
+
+  | name | save (recipe) | difficulty | what was played | status |
+  |---|---|---|---|---|
+  | `economy-s1-4311-normal` | EconA (`econa.json`, clvl 30, every quest done) | Normal | 20 stops: the trade windows of Halbu, Jamella, Larzuk, Malah, Anya, Ormus, Hratli, Alkor, Fara, Drognan, Elzix, Akara, Charsi and Gheed (store tabs and inventory hovered; the repair cursor at the five repairers), the gamble windows of Jamella, Anya, Alkor, Elzix and Gheed, at Charsi repair-all, three sales and one purchase, Kashya's hire list | run |
+  | `economy-dev1` | EconA | Normal | development: Halbu and Jamella, the first sweeps, a sale over the gold cap, a refused purchase | development log, no claim |
+  | `economy-s1-4321-wear` | EconW (`econw.json`, Barbarian) | Normal | `d2pilot.py farm --sweep` with melee options: the pilot's Teleport hops cannot move a Barbarian, no melee hit was delivered (0 `CD0`) | aborted, kept as a development log |
+  | `economy-s1-4322-nova` | EconN (`econn.json`, Nova, no gold find) | Normal | `farm --sweep --wp 1,2 --players 8`: the pilot left the level after 45 s | short |
+
+- **Procedure:** `python3 -I tools/economy.py check workspace/merged/data/global/excel workspace/logs/economy-s1-4311-normal.log
+  workspace/logs/economy-s1-4322-nova.log` (output `workspace/logs/economy/check-run.txt`, sha256 in the manifest;
+  per-branch coverage of session 4311 in `workspace/logs/economy/coverage-4311.txt`). Unit tests `tools/test_economy.py`
+  (9 tests).
+- **Observed** (trimmed):
+  ```
+  price calls 6949; distinct inputs: mode 0 683, mode 1 159, mode 2 70, mode 3 56 (968); 0 mismatches
+  RepairCost sums (= the sum of its mode-3 price calls) 60; replenish ticks 71; PayGold 2; gold stat adds 5
+  gold amounts at creation 10, gold find scalings 10 (gold find 0 in all ten)
+  seeds: PR 6949, RC 60, IR 804, NR 1, PG 2, UG 5, GG 3, RP 71: game and player seed unchanged;
+         NB 1: game seed +2 steps; NS 3: game seed +2 steps in 2, unchanged in 1; player seed unchanged in all
+  economy: 0 mismatches
+  ```
+  Branches of the 968 distinct price inputs (coverage file): base `cost` 727, stack (`n = maxstack`) 117, quiver 30,
+  tome 24; armour scaling 251; quality 1 20, 2 346, 3 48, 4 470, 7 14 (no set, rare or crafted item priced yet);
+  stat terms Encode 0 845, 1 127, 2 21, 3 9 (no Encode 4); staff mods (stat 107) 100; charged items 9; class item 38;
+  `P > 0xFFFF` at the terms 14; `max buy` reached 101; the repairable-stack sale (`M·S − R`) 29; unidentified 14;
+  14 NPC classes, difficulty 0 only, quest group A on (every quest done), `item_reducedprices` 0.
+- **Phase 1b required cases (backlog `2026-10-17-reverser-reverser-plan-0043-p2-contradicted-cases`):** (2) ethereal
+  sale: 29 distinct mode-1 inputs of ethereal items reproduce with `S / 4`; (3) the ethereal throwing stack (`7ja`,
+  40) sold for 1 040 at every one of 15 NPCs, not 1 gold, as the model predicts; (4) the all-resistance amulet
+  (`multiply` 1280): 16 mode-1 inputs reproduce with the affix term over 1024 for `S`; (5) the gamble price: 55 of 55
+  non-ring, non-amulet gamble prices differ from the base's `gamble cost` and reproduce from `GamblePrice`, 15 ring
+  and amulet prices equal `gamble cost`. (1) the armour slot weights: no wear event logged yet.
+- **Question 9 (`NpcStoreRec` readers):** the 4-byte read watchpoint on Charsi's record `+0x24` was set in 4311
+  (`SWSET`) and logged no read over the whole session, Charsi's trade, repair, three sales and a purchase included. The
+  session had no positive control, so this is not yet evidence of "no reader": the control watchpoint (`SWC`, the
+  record's `+0x00`) was added after it and must fire in the next Act I session.
+- **Limits so far:** one difficulty; no wear, death, resurrection, Cain, stash-move, pickup or hire-payment event;
+  the sale and purchase cross-checks (`ra2`) were added after session 4311.

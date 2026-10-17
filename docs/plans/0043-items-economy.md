@@ -375,3 +375,42 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   the `items/economy` row added under *Game rules (ADR-0017)*. Backlog: the review request, the architect → reverser
   Phase 1 inputs entry (answered) and the plan 0039 Q23 entry (moved to P2 question 9) closed; filed architect →
   reverser `game-type-writer`. **Phase 2 may start** (harness lane H1, 1 slot).
+- **2026-10-17 — Phase 2 started; rotation checkpoint (reverser, `lane/p43h`, harness slot 1).** Not done; no review
+  request yet. Record: [run:2026-10-17-economy](../findings/items/experiments.md#run2026-10-17-economy) (status in
+  progress); finding section [items/0011 § Phase 2](../findings/items/0011-economy.md#phase-2-runtime-results-in-progress-run2026-10-17-economy).
+  Tools: logger `tools/gdb/economy.py` (+ `economy.gdb`, `economy-hire.gdb`), checker `tools/economy.py` (test
+  `tools/test_economy.py`), driver `tools/economy_sessions.py` (`act`, `tour`, `die`), `d2s.py` key `"dur"`,
+  `d2pilot.py` NPC rows `cain2`/`cain5`/`cain6`/`tyrael` and the `identify`/`resurrect` confirmations (untested),
+  recipes `econ*.json` (pinned in `test_d2s.py` without hashes).
+
+  **Done so far (0 mismatches):** 968 distinct price inputs over 6 949 calls (mode 0 683, 1 159, 2 70, 3 56), Normal
+  only, 14 NPCs; 60 repair-all sums; 71 replenish ticks (gaps 501 and 834 frames seen); 10 gold amounts at creation and
+  10 gold-find scalings (gold find 0); seeds unchanged for price, repair, `PayGold`, `UnitAddGoldStat`, give-gold and
+  replenish; buy and sell move the game seed by 2 steps per created item. Required cases 2–5 reproduced (ethereal
+  `S/4`, the ethereal throwing stack 1 040, the all-resistance `S` over 1024, the computed gamble price); case 1 (slot
+  weights) not yet.
+
+  **Resume note.** Saves built in `workspace/scratch-p43h/saves/` (rebuild with `d2s.py build … <recipe>`; base
+  `workspace/samples/d2s-owner/smpsor-l50.d2s`, Barbarians on `workspace/samples/d2s/smpbar.d2s`): EconA (damaged
+  equipment, ethereal, stacks, tome, quiver, staff mod, replenish items), EconB (set, socketed sword, rare and
+  unidentified rings, crossbow, class shield, Gheed's Fortune for `r ≠ 0`, Darksight Helm charges), EconC (EconA with
+  quest words 4, 9, 17, 35, 41 bits 0–1 cleared: quest-off multipliers, and Cain's paid identify), EconD (40 one-cell
+  rings, amulets, charms: about 40 sale prices per NPC), EconDL3 / EconDL75 (EconD at clvl 3 and 75, for the gamble
+  `L′ = 5` and high-level cases), EconK1..K10 (deaths: level, gold and stash vary, 5 hit points, a dead mercenary of
+  level 10..99 for resurrection, Act IV start: Tyrael), EconW / EconT (Barbarian wear and throwing), EconG / EconN
+  (Nova with and without gold find). Left, by question:
+  1–2. Nightmare and Hell tours (EconD and EconB), a quest-off tour (EconC), gamble refresh runs with EconDL3 and
+  EconDL75 (`4:jamella:gamble:grid` repeated). A tour of 20 stops takes ~50 min (walks dominate): prefer Acts IV, V
+  and II. 3. Repair cases: a single-item repair (`repair` token then a click), the partial repair (gold short), an
+  ethereal item refused, a broken item (needs an armour broken by wear) and the quest repair. 4. Sales and purchases
+  with the new `ra2` cross-check (≥ 20 each). 5. Pickup of an overflow pile and the stash move (UI not scripted).
+  6. Hires: `economy-hire.gdb`, `d2pilot.py npc <log> kashya hire --repeat 20 --buy 1`; resurrections: EconK saves,
+  `npc tyrael resurrect` (menu line unverified). 7. Deaths: `economy_sessions.py die --save EconK<n>.d2s --wp 4,2`
+  (Hell) — not yet run. 8. Gold: longer Nova farms (EconG, EconN; the 4322 farm left the level after 45 s). 9. The
+  store-record watch: session 4311 logged no read of Charsi's `+0x24` in a full Act I visit, but had no control; the
+  control watch `SWC` (`+0x00`) is now in the logger: rerun an Act I visit and require `SWC` hits. 10. Wear: the
+  Barbarian cannot use the pilot's Teleport hops (4321: 0 melee hits); drive the melee with walking clicks
+  (`explore --any-level --walk --melee`, as `player_sessions.py levelup` does) or let a Nova sorceress stand in a
+  melee pack without Energy Shield. 11–13. Quantity (EconT, Throw on the right button), charges, Cain (EconC).
+  Gotchas: `--save` is `action=append` (one per flag); store cells are skipped when empty by a brightness test (26);
+  Escape after a sale may need a second press; `d2pilot.py npc` stops when a trade window is still open.

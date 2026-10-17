@@ -602,3 +602,34 @@ From the plan 0043 P1 review: the byte `PLAYER_DeathGoldLoss` tests against 3 (0
 - The party gold split (`PartyGoldShare`) and trading gold between players: plan 0044.
 - ~~`game+0x6A` = 3 as "single player" rests on the logged runs, not on its writer~~: the writer is read above
   (`lane/rbs2`). [L] Which network modes `g_ClientGameMode` 6 and 8 are.
+
+## Phase 2 runtime results (in progress, run:2026-10-17-economy)
+
+First sessions of the harness phase; the phase is not done (plan 0043 log, resume note). Raises are stated with their
+counts and remainders; everything not listed stays as tagged above.
+
+- **§ 1–§ 4, the price core, raised in part.** [C] `tools/economy.py` reproduces every logged `ITEMS_TradePriceCore`
+  result from the logged inputs (the item's own and full-stat lists as value oracles) in 6 949 calls, 968 distinct
+  inputs (mode 0 683, mode 1 159, mode 3 56, mode 2 70), 0 mismatches: the bases `cost`, stack (`n = maxstack`),
+  quiver and tome; the armour scaling; quality 1 (halving), 2, 3, 4 and 7; the automagic, magic and unique terms over
+  1024 for `P`, `S` and `R`; the stat terms of Encode 0–3 (`S` over 4096 in Encode 1–3) with the unsigned division by
+  `n`; the staff-mod term; the class-item and ethereal quarters of `S`; the mode-1 and mode-3 durability steps
+  (stat 252 included); the Npc multipliers of 14 classes with quest group A; the quantity step with the repairable
+  stack's `M·S − R`; `max buy` (101 inputs capped); the floor; the gamble price (55 computed, 15 ring and amulet
+  prices from `gamble cost`). (fn:ITEMS_TradePriceCore@0x0062EFB0, fn:sub_00628E70_PriceStatTerms@0x00628E70,
+  fn:sub_0062EDD0_PriceStaffModTerm@0x0062EDD0, fn:sub_00629370_GamblePrice@0x00629370, run:2026-10-17-economy)
+  **Remainder (`[I]`):** set, rare and crafted items, sockets, ears and body parts, Encode 4, `item_reducedprices`
+  (`r ≠ 0`), quest groups B and C and the quest-off state, difficulties 1 and 2, the recharge cost, version-0 items.
+- **`RepairCost` raised.** [C] All 60 logged repair-all sums equal the sum of the mode-3 price calls made inside them
+  (0 mismatches). (fn:sub_0062FE60_RepairCost@0x0062FE60, run:2026-10-17-economy)
+- **Seeds (§ 8).** [C] The price core (6 949 calls), `RepairCost` (60), `ItemRepairAll` (804), `NpcRepair` (1),
+  `PayGold` (2), `UnitAddGoldStat` (5), `PlayerGiveGold` (3) and `ITEMEVENT_Replenish` (71) leave the game seed and the
+  player's seed unchanged from entry to exit; `NPC_BuyItem` moved the game seed by 2 LCG steps (1 call) and
+  `NPC_SellItem` by 2 steps in 2 of 3 calls (one item creation each, the store copy or the overflow pile), the
+  player's seed unchanged. Counts below the plan's 20 for repair, `PayGold`, buy and sell are shortfalls so far.
+  (run:2026-10-17-economy)
+- **Leads used, required cases.** [C] An ethereal item's `S` is quartered (29 distinct sale inputs reproduce with
+  `S / 4`; the lead's "25 % less" is contradicted); an ethereal throwing stack sold for 1 040 at 15 NPCs (not "always
+  1 gold"); the all-resistance prefix (`multiply` 1280) scales `S` over 1024 (16 sale inputs); the gamble price is
+  computed, not `gamble cost`, for every non-ring, non-amulet base (55 of 55). The armour slot weights wait for a
+  wear session. (fn:ITEMS_TradePriceCore@0x0062EFB0, fn:sub_00629370_GamblePrice@0x00629370, run:2026-10-17-economy)

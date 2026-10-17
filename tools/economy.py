@@ -595,6 +595,7 @@ class Checker:
         dl_pending = None
         last_rp = {}
         trade = {"sellk": [], "sellv": [], "buyk": [], "buyv": []}
+        pend_gf = {}
         for tag, d, ln in ev:
             if tag == "ECON":
                 econ = d
@@ -630,6 +631,12 @@ class Checker:
                     pend_cd = {"d": d, "ln": ln}
                 elif tag == "DL0":
                     dl_pending = d
+                elif tag == "GF0":
+                    pend_gf = {}
+            elif tag in ("GFK", "GFO"):
+                pend_gf[tag] = d["v"]
+            elif tag == "GPL":
+                self.cases["object gold pile (DropGoldPile)"] += 1
             elif tag in ("CDS", "CDU", "CDW"):
                 if pend_cd is not None:
                     pend_cd[tag] = d
@@ -740,7 +747,27 @@ class Checker:
             self.fail(path, ln, "PayGold %d from %d/%d: model %r, game %r" % (amt, g, sg, want, got))
 
     def on_GA(self, path, ln, d0, d1, ctx):
-        pass
+        """The gold item's amount at creation: ilvl + RNG_Range(item seed, 5 ilvl), at least 1 (items/0006)."""
+        ilvl = d0["ilvl"]
+        lo, hi = seedpair(d0["sd"])
+        r, lo, hi = rng_rangeb(lo, hi, 5 * ilvl) if 5 * ilvl > 0 else (0, lo, hi)
+        amt = max(1, ilvl + r)
+        self.n["gold amounts at creation"] += 1
+        self.cases["gold item from 0x%X" % d0.get("ra", 0)] += 1
+        if (amt, "%08x:%08x" % (lo, hi)) != (d1["amt"], d1["sd"]):
+            self.fail(path, ln, "gold amount ilvl %d: model %d %08x:%08x, game %d %s" % (ilvl, amt, lo, hi, d1["amt"], d1["sd"]))
+
+    def on_GF(self, path, ln, d0, d1, ctx):
+        """sub_005589A0_DropGoldFind: gold x (100 + GF(killer) + GF(owner)) / 100."""
+        pg = ctx.get("pend_gf") or {}
+        if "GFK" not in pg:
+            return
+        gf = pg["GFK"] + pg.get("GFO", 0)
+        want = tdiv(imul(d0["gold"], 100 + gf), 100)
+        self.n["gold find scalings"] += 1
+        self.cases["gold find %s" % ("> 0" if gf else "0")] += 1
+        if want != d1["gold"]:
+            self.fail(path, ln, "gold find %d on %d: model %d, game %d" % (gf, d0["gold"], want, d1["gold"]))
 
     def on_DL(self, path, ln, d0, d1, ctx):
         """ITEMS_DurabilityLossRoll: predict the draw and the item after."""
