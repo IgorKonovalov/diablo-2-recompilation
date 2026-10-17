@@ -1,0 +1,104 @@
+{
+ "game": "expansion",
+ "class": "Barbarian",
+ "seed": 743000011,
+ "name": "EconW",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "stats": {
+  "strength": 400,
+  "energy": 200,
+  "dexterity": 400,
+  "vitality": 800,
+  "hitpoints": 6000,
+  "maxhp": 6000,
+  "mana": 3000,
+  "maxmana": 3000,
+  "stamina": 800,
+  "maxstamina": 800,
+  "level": 85,
+  "experience": 1145236814
+ },
+ "skills": {},
+ "mouse": {
+  "left": "Attack",
+  "right": "Attack",
+  "swap_left": "Attack",
+  "swap_right": "Attack"
+ },
+ "hotkeys": [
+  "Attack"
+ ],
+ "items": [
+  {
+   "code": "axe",
+   "equip": "rarm",
+   "dur": 3
+  },
+  {
+   "unique": "Stormshield",
+   "equip": "larm"
+  },
+  {
+   "code": "cap",
+   "equip": "head",
+   "dur": 2
+  },
+  {
+   "code": "ltp",
+   "equip": "tors",
+   "dur": 40
+  },
+  {
+   "code": "hgl",
+   "equip": "glov",
+   "dur": 3
+  },
+  {
+   "code": "lbl",
+   "equip": "belt",
+   "dur": 4
+  },
+  {
+   "set": "Aldur's Advance",
+   "equip": "feet"
+  },
+  {
+   "unique": "Nokozan Relic",
+   "equip": "neck",
+   "roll": "max"
+  },
+  {
+   "code": "hax",
+   "suffix": 401,
+   "dur": 5,
+   "store": "inventory",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "code": "jav",
+   "suffix": 404,
+   "quantity": 20,
+   "store": "inventory",
+   "x": 1,
+   "y": 0
+  }
+ ],
+ "belt_fill": [
+  "rvl",
+  "rvl",
+  "rvl",
+  "mp5"
+ ],
+ "quests": "all"
+}

@@ -3,6 +3,11 @@
 
 Usage:
   python3 -I tools/economy_sessions.py --slot N act TOKEN...
+  python3 -I tools/economy_sessions.py --slot N tour --seed S --diff D --log LOG --save F.d2s ACT:NPC:KIND:TOK+TOK...
+
+tour plays one game: d2run.py with tools/gdb/economy.gdb and the save installed, then for each stop a waypoint hop to
+the act's town (d2pilot.py wpchain), d2pilot.py npc NPC KIND --stay, the tokens (with "=" for ":" inside a token,
+e.g. sell=9,0), Escape; then slots.py stop and saves.py restore.
 
 Run it after `tools/d2pilot.py npc <log> <name> trade|gamble --stay` has opened the window. Each hover leaves the
 pointer on a cell for --dwell seconds, during which the client prices the item under it every frame
@@ -64,10 +69,34 @@ class Drv:
         self.dpy.click(self.off[0] + x, self.off[1] + y, button=button, hold=0.12)
         time.sleep(0.3)
 
+    def grab(self, x0, y0, w, h):
+        import ctypes as C
+        img = xdrive.X11.XGetImage(self.dpy.d, self.dpy.root, self.off[0] + x0, self.off[1] + y0, w, h, 0xFFFFFFFF, 2)
+        if not img:
+            return None, 0
+        im = xdrive.XImage.from_address(img)
+        return C.string_at(im.data, im.bytes_per_line * h), im.bytes_per_line
+
+    def occupied(self, x, y):
+        """A grid cell holds an item: the mean of the brightest channel over a 13 x 13 patch at its centre is above
+        26 (empty cells measure 15..20, item cells 30 and up, from screenshots of run:2026-10-17-economy)."""
+        raw, bpl = self.grab(x - 6, y - 6, 13, 13)
+        if raw is None:
+            return True
+        s = n = 0
+        for yy in range(0, 13, 2):
+            for xx in range(0, 13, 2):
+                o = yy * bpl + 4 * xx
+                s += max(raw[o], raw[o + 1], raw[o + 2])
+                n += 1
+        return s / n > 26
+
     def grid(self, xy, cols, rows):
-        for r in range(rows):
-            for c in range(cols):
-                self.move(*xy(c, r))
+        self.dpy.move(self.off[0] + 790, self.off[1] + 590)     # the pointer off the grid while it is sampled
+        time.sleep(0.15)
+        cells = [xy(c, r) for r in range(rows) for c in range(cols)]
+        for x, y in [p for p in cells if self.occupied(*p)]:
+            self.move(x, y)
 
     def equip(self):
         for xy in EQUIP.values():
@@ -125,16 +154,197 @@ def run(drv, tokens):
             raise SystemExit("unknown token %r" % tok)
 
 
+# ------------------------------------------------------------------------------------------------ tours
+
+ROOT = os.path.dirname(HERE)
+PY = [sys.executable, "-I"]
+STEPS = {"normal": "tools/gdb/enter-normal.steps", "nightmare": "tools/gdb/enter-nightmare.steps",
+         "hell": "tools/gdb/enter-hell.steps"}
+TOWNS = {1: 1, 40: 2, 75: 3, 103: 4, 109: 5}
+
+
+def sh(cmd, timeout=None):
+    import subprocess
+    print("+ " + " ".join(cmd), flush=True)
+    try:
+        return subprocess.run(cmd, cwd=ROOT, timeout=timeout).returncode
+    except subprocess.TimeoutExpired:
+        print("  (timed out after %s s)" % timeout, flush=True)
+        return 124
+
+
+def tool(args, timeout=None):
+    return sh(PY + [os.path.join(HERE, args[0])] + list(args[1:]), timeout=timeout)
+
+
+def last(log, tag):
+    v = None
+    try:
+        with open(log, errors="replace") as fh:
+            for ln in fh:
+                if ln.startswith(tag + " "):
+                    v = ln
+    except OSError:
+        pass
+    if v is None:
+        return None
+    import json
+    try:
+        return json.loads(v[len(tag) + 1:])
+    except ValueError:
+        return None
+
+
+def launch(a):
+    import subprocess
+    tool(["saves.py", "--slot", str(a.slot), "restore", a.tag])
+    tool(["saves.py", "--slot", str(a.slot), "aside", a.tag])
+    out = open(a.log + ".d2run.out", "w")
+    cmd = PY + [os.path.join(HERE, "d2run.py"), "--slot", str(a.slot), "--seed", str(a.seed), "--gdb", a.gdb,
+                "--steps", STEPS[a.diff], "--after", str(a.after), "--install", a.tag] + a.save + ["--log", a.log]
+    print("+ " + " ".join(cmd), flush=True)
+    subprocess.Popen(cmd, cwd=ROOT, stdout=out, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                     start_new_session=True)
+
+
+def town(log):
+    p = last(log, "PLR")
+    return TOWNS.get(p["lid"]) if p else None
+
+
+def go_town(a, act):
+    for _ in range(3):
+        if town(a.log) == act:
+            return True
+        tool(["d2pilot.py", "--slot", str(a.slot), "npc", a.log, "waypoint", "walk"], timeout=90)
+        tool(["d2pilot.py", "--slot", str(a.slot), "wpchain", a.log, "--chain", "%d,1" % act], timeout=25)
+        time.sleep(2)
+    return town(a.log) == act
+
+
+def cmd_tour(a, drv_factory):
+    """One game: for each stop ACT:NPC:KIND:TOK+TOK..., hop to the act's town, open the NPC's window, play the
+    tokens, close it with Escape."""
+    launch(a)
+    try:
+        t0 = time.time()
+        while time.time() - t0 < 150 and last(a.log, "PLR") is None:
+            time.sleep(2)
+        if last(a.log, "PLR") is None:
+            print("tour: no PLR line")
+            return 1
+        time.sleep(3)
+        drv = drv_factory()
+        for stop in a.stops:
+            act, npc, kind, toks = (stop.split(":", 3) + [""])[:4]
+            if not go_town(a, int(act)):
+                print("tour: did not reach act %s for %s" % (act, npc), flush=True)
+                continue
+            rc = tool(["d2pilot.py", "--slot", str(a.slot), "npc", a.log, npc, kind, "--stay"], timeout=180)
+            if rc != 0:
+                print("tour: %s %s did not open (rc %d)" % (npc, kind, rc), flush=True)
+                drv.dpy.key("Escape")
+                continue
+            if toks:
+                run(drv, [t.replace("=", ":") for t in toks.split("+")])
+            drv.dpy.key("Escape")
+            time.sleep(1.0)
+        return 0
+    finally:
+        if not a.keep:
+            tool(["slots.py", "stop", str(a.slot)])
+            time.sleep(2)
+            tool(["saves.py", "--slot", str(a.slot), "restore", a.tag])
+
+
+def count(log, tag):
+    n = 0
+    try:
+        with open(log, errors="replace") as fh:
+            for ln in fh:
+                if ln.startswith(tag + " "):
+                    n += 1
+    except OSError:
+        pass
+    return n
+
+
+def cmd_die(a, drv_factory):
+    """One game: a.deaths times, walk to the town waypoint, take it to --wp (a dangerous level), stand until the
+    logger shows PLAYER_DeathGoldLoss's exit (DG1), press Escape until the player is back in a town."""
+    launch(a)
+    try:
+        t0 = time.time()
+        while time.time() - t0 < 150 and last(a.log, "PLR") is None:
+            time.sleep(2)
+        if last(a.log, "PLR") is None:
+            print("die: no PLR line")
+            return 1
+        time.sleep(3)
+        drv = drv_factory()
+        for k in range(a.deaths):
+            n0 = count(a.log, "DG1")
+            tool(["d2pilot.py", "--slot", str(a.slot), "npc", a.log, "waypoint", "walk"], timeout=90)
+            tool(["d2pilot.py", "--slot", str(a.slot), "wpchain", a.log, "--chain", a.wp], timeout=25)
+            t1 = time.time()
+            while time.time() - t1 < a.wait and count(a.log, "DG1") == n0:
+                time.sleep(1)
+            if count(a.log, "DG1") == n0:
+                print("die: no death within %d s (death %d)" % (a.wait, k + 1), flush=True)
+                break
+            print("die: death %d" % (k + 1), flush=True)
+            time.sleep(3)
+            for _ in range(10):
+                drv.dpy.key("Escape")
+                time.sleep(2)
+                if town(a.log):
+                    break
+            time.sleep(3)
+        return 0
+    finally:
+        if not a.keep:
+            tool(["slots.py", "stop", str(a.slot)])
+            time.sleep(2)
+            tool(["saves.py", "--slot", str(a.slot), "restore", a.tag])
+
+
 def main(argv):
     ap = argparse.ArgumentParser()
     ap.add_argument("--slot", type=int, required=True)
     ap.add_argument("--dwell", type=float, default=0.07)
-    ap.add_argument("cmd", choices=["act"])
-    ap.add_argument("tokens", nargs="+")
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    p = sub.add_parser("act")
+    p.add_argument("tokens", nargs="+")
+    p = sub.add_parser("tour")
+    p.add_argument("--tag", default="p43h")
+    p.add_argument("--seed", type=int, required=True)
+    p.add_argument("--diff", choices=sorted(STEPS), default="normal")
+    p.add_argument("--gdb", default="tools/gdb/economy.gdb")
+    p.add_argument("--after", type=int, default=3600)
+    p.add_argument("--log", required=True)
+    p.add_argument("--save", action="append", required=True)
+    p.add_argument("--keep", action="store_true", help="leave the game running at the end")
+    p.add_argument("stops", nargs="+")
+    p = sub.add_parser("die")
+    p.add_argument("--tag", default="p43h")
+    p.add_argument("--seed", type=int, required=True)
+    p.add_argument("--diff", choices=sorted(STEPS), default="hell")
+    p.add_argument("--gdb", default="tools/gdb/economy.gdb")
+    p.add_argument("--after", type=int, default=1800)
+    p.add_argument("--log", required=True)
+    p.add_argument("--save", action="append", required=True)
+    p.add_argument("--keep", action="store_true")
+    p.add_argument("--wp", default="4,2", help="waypoint tab,row of the level to die in")
+    p.add_argument("--deaths", type=int, default=2)
+    p.add_argument("--wait", type=int, default=120)
     a = ap.parse_args(argv)
-    display = slots.display(a.slot) if hasattr(slots, "display") else ":%d" % (7 + a.slot)
-    run(Drv(display, a.dwell), a.tokens)
-    return 0
+    display = slots.display(a.slot)
+    if a.cmd == "act":
+        run(Drv(display, a.dwell), a.tokens)
+        return 0
+    if a.cmd == "die":
+        return cmd_die(a, lambda: Drv(display, a.dwell))
+    return cmd_tour(a, lambda: Drv(display, a.dwell))
 
 
 if __name__ == "__main__":

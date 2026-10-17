@@ -1,0 +1,306 @@
+{
+ "game": "expansion",
+ "class": "Sorceress",
+ "seed": 743000004,
+ "name": "EconD",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 60,
+  "energy": 60,
+  "dexterity": 25,
+  "vitality": 100,
+  "hitpoints": 500,
+  "maxhp": 500,
+  "mana": 300,
+  "maxmana": 300,
+  "stamina": 200,
+  "maxstamina": 200,
+  "level": 30,
+  "experience": 5493363,
+  "gold": 300000,
+  "goldbank": 2000000
+ },
+ "skills": {
+  "Charged Bolt": 1,
+  "Static Field": 1,
+  "Telekinesis": 1,
+  "Teleport": 1
+ },
+ "mouse": {
+  "left": "Teleport",
+  "right": "Telekinesis"
+ },
+ "keep_items": [],
+ "items": [
+  {
+   "unique": "Nokozan Relic",
+   "store": "inventory",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "unique": "The Eye of Etlich",
+   "store": "inventory",
+   "x": 1,
+   "y": 0
+  },
+  {
+   "unique": "The Mahim-Oak Curio",
+   "store": "inventory",
+   "x": 2,
+   "y": 0
+  },
+  {
+   "unique": "Nagelring",
+   "store": "inventory",
+   "x": 3,
+   "y": 0
+  },
+  {
+   "unique": "Manald Heal",
+   "store": "inventory",
+   "x": 4,
+   "y": 0
+  },
+  {
+   "unique": "The Stone of Jordan",
+   "store": "inventory",
+   "x": 5,
+   "y": 0
+  },
+  {
+   "unique": "Bul Katho's Wedding Band",
+   "store": "inventory",
+   "x": 6,
+   "y": 0
+  },
+  {
+   "unique": "The Cat's Eye",
+   "store": "inventory",
+   "x": 7,
+   "y": 0
+  },
+  {
+   "unique": "The Rising Sun",
+   "store": "inventory",
+   "x": 8,
+   "y": 0
+  },
+  {
+   "unique": "Crescent Moon",
+   "store": "inventory",
+   "x": 9,
+   "y": 0
+  },
+  {
+   "unique": "Mara's Kaleidoscope",
+   "store": "inventory",
+   "x": 0,
+   "y": 1
+  },
+  {
+   "unique": "Atma's Scarab",
+   "store": "inventory",
+   "x": 1,
+   "y": 1
+  },
+  {
+   "unique": "Dwarf Star",
+   "store": "inventory",
+   "x": 2,
+   "y": 1
+  },
+  {
+   "unique": "Raven Frost",
+   "store": "inventory",
+   "x": 3,
+   "y": 1
+  },
+  {
+   "unique": "Highlord's Wrath",
+   "store": "inventory",
+   "x": 4,
+   "y": 1
+  },
+  {
+   "unique": "Saracen's Chance",
+   "store": "inventory",
+   "x": 5,
+   "y": 1
+  },
+  {
+   "unique": "Nature's Peace",
+   "store": "inventory",
+   "x": 6,
+   "y": 1
+  },
+  {
+   "unique": "Seraph's Hymn",
+   "store": "inventory",
+   "x": 7,
+   "y": 1
+  },
+  {
+   "unique": "Wisp",
+   "store": "inventory",
+   "x": 8,
+   "y": 1
+  },
+  {
+   "unique": "Metalgrid",
+   "store": "inventory",
+   "x": 9,
+   "y": 1
+  },
+  {
+   "unique": "Carrion Wind",
+   "store": "inventory",
+   "x": 0,
+   "y": 2
+  },
+  {
+   "unique": "Annihilus",
+   "store": "inventory",
+   "x": 1,
+   "y": 2
+  },
+  {
+   "set": "Civerb's Icon",
+   "store": "inventory",
+   "x": 2,
+   "y": 2
+  },
+  {
+   "set": "Iratha's Collar",
+   "store": "inventory",
+   "x": 3,
+   "y": 2
+  },
+  {
+   "set": "Vidala's Snare",
+   "store": "inventory",
+   "x": 4,
+   "y": 2
+  },
+  {
+   "set": "Cathan's Sigil",
+   "store": "inventory",
+   "x": 5,
+   "y": 2
+  },
+  {
+   "set": "Cathan's Seal",
+   "store": "inventory",
+   "x": 6,
+   "y": 2
+  },
+  {
+   "set": "Tancred's Weird",
+   "store": "inventory",
+   "x": 7,
+   "y": 2
+  },
+  {
+   "set": "Angelic Halo",
+   "store": "inventory",
+   "x": 8,
+   "y": 2
+  },
+  {
+   "set": "Angelic Wings",
+   "store": "inventory",
+   "x": 9,
+   "y": 2
+  },
+  {
+   "set": "Arcanna's Sign",
+   "store": "inventory",
+   "x": 0,
+   "y": 3
+  },
+  {
+   "set": "Tal Rasha's Adjudication",
+   "store": "inventory",
+   "x": 1,
+   "y": 3
+  },
+  {
+   "set": "Telling of Beads",
+   "store": "inventory",
+   "x": 2,
+   "y": 3
+  },
+  {
+   "code": "amu",
+   "prefix": 63,
+   "suffix": 86,
+   "store": "inventory",
+   "x": 3,
+   "y": 3
+  },
+  {
+   "code": "rin",
+   "prefix": 55,
+   "suffix": 73,
+   "store": "inventory",
+   "x": 4,
+   "y": 3
+  },
+  {
+   "code": "rin",
+   "prefix": 28,
+   "suffix": 105,
+   "store": "inventory",
+   "x": 5,
+   "y": 3
+  },
+  {
+   "code": "amu",
+   "prefix": 111,
+   "suffix": 78,
+   "store": "inventory",
+   "x": 6,
+   "y": 3
+  },
+  {
+   "code": "cm1",
+   "prefix": 321,
+   "store": "inventory",
+   "x": 7,
+   "y": 3
+  },
+  {
+   "code": "amu",
+   "rare": [
+    170,
+    130
+   ],
+   "suffix": 92,
+   "store": "inventory",
+   "x": 8,
+   "y": 3
+  },
+  {
+   "code": "rin",
+   "rare": [
+    180,
+    140
+   ],
+   "suffix": 57,
+   "store": "inventory",
+   "x": 9,
+   "y": 3
+  }
+ ]
+}

@@ -1,0 +1,269 @@
+{
+ "game": "expansion",
+ "class": "Sorceress",
+ "seed": 743000003,
+ "name": "EconC",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 60,
+  "energy": 60,
+  "dexterity": 25,
+  "vitality": 100,
+  "hitpoints": 500,
+  "maxhp": 500,
+  "mana": 300,
+  "maxmana": 300,
+  "stamina": 200,
+  "maxstamina": 200,
+  "level": 30,
+  "experience": 5493363,
+  "gold": 300000,
+  "goldbank": 2000000
+ },
+ "skills": {
+  "Charged Bolt": 1,
+  "Static Field": 1,
+  "Telekinesis": 1,
+  "Teleport": 1
+ },
+ "mouse": {
+  "left": "Teleport",
+  "right": "Telekinesis"
+ },
+ "keep_items": [],
+ "items": [
+  {
+   "code": "uap",
+   "equip": "head",
+   "dur": 3
+  },
+  {
+   "code": "ltp",
+   "equip": "tors",
+   "dur": 20
+  },
+  {
+   "code": "hgl",
+   "equip": "glov",
+   "dur": 7
+  },
+  {
+   "code": "lbt",
+   "equip": "feet",
+   "dur": 1
+  },
+  {
+   "code": "lbl",
+   "equip": "belt",
+   "dur": 9
+  },
+  {
+   "code": "buc",
+   "equip": "larm",
+   "dur": 2
+  },
+  {
+   "code": "wnd",
+   "equip": "rarm",
+   "dur": 4
+  },
+  {
+   "unique": "Tyrael's Might",
+   "store": "inventory",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "code": "xui",
+   "ethereal": true,
+   "dur": 5,
+   "store": "inventory",
+   "x": 2,
+   "y": 0
+  },
+  {
+   "code": "jav",
+   "suffix": 404,
+   "quantity": 30,
+   "store": "inventory",
+   "x": 4,
+   "y": 0
+  },
+  {
+   "code": "tax",
+   "dur": 1,
+   "quantity": 50,
+   "store": "inventory",
+   "x": 5,
+   "y": 0
+  },
+  {
+   "code": "7ja",
+   "ethereal": true,
+   "quantity": 40,
+   "store": "inventory",
+   "x": 6,
+   "y": 0
+  },
+  {
+   "code": "aqv",
+   "quantity": 200,
+   "store": "inventory",
+   "x": 7,
+   "y": 0
+  },
+  {
+   "code": "tbk",
+   "quantity": 12,
+   "store": "inventory",
+   "x": 8,
+   "y": 0
+  },
+  {
+   "code": "amu",
+   "prefix": 327,
+   "store": "inventory",
+   "x": 9,
+   "y": 0
+  },
+  {
+   "code": "cap",
+   "quality": "low",
+   "dur": 6,
+   "store": "inventory",
+   "x": 8,
+   "y": 2
+  },
+  {
+   "code": "ob1",
+   "store": "inventory",
+   "x": 5,
+   "y": 2
+  },
+  {
+   "code": "rin",
+   "suffix": 120,
+   "identified": false,
+   "store": "inventory",
+   "x": 9,
+   "y": 1
+  },
+  {
+   "code": "hax",
+   "suffix": 401,
+   "dur": 10,
+   "store": "stash",
+   "x": 0,
+   "y": 0
+  }
+ ],
+ "quest_bits": {
+  "normal": {
+   "4": {
+    "clear": [
+     0,
+     1
+    ]
+   },
+   "9": {
+    "clear": [
+     0,
+     1
+    ]
+   },
+   "17": {
+    "clear": [
+     0,
+     1
+    ]
+   },
+   "35": {
+    "clear": [
+     0,
+     1
+    ]
+   },
+   "41": {
+    "clear": [
+     0,
+     1
+    ]
+   }
+  },
+  "nightmare": {
+   "4": {
+    "clear": [
+     0,
+     1
+    ]
+   },
+   "9": {
+    "clear": [
+     0,
+     1
+    ]
+   },
+   "17": {
+    "clear": [
+     0,
+     1
+    ]
+   },
+   "35": {
+    "clear": [
+     0,
+     1
+    ]
+   },
+   "41": {
+    "clear": [
+     0,
+     1
+    ]
+   }
+  },
+  "hell": {
+   "4": {
+    "clear": [
+     0,
+     1
+    ]
+   },
+   "9": {
+    "clear": [
+     0,
+     1
+    ]
+   },
+   "17": {
+    "clear": [
+     0,
+     1
+    ]
+   },
+   "35": {
+    "clear": [
+     0,
+     1
+    ]
+   },
+   "41": {
+    "clear": [
+     0,
+     1
+    ]
+   }
+  }
+ }
+}

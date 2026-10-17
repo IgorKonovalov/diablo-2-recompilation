@@ -1,0 +1,98 @@
+{
+ "game": "expansion",
+ "class": "Barbarian",
+ "seed": 743000012,
+ "name": "EconT",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "stats": {
+  "strength": 400,
+  "energy": 200,
+  "dexterity": 400,
+  "vitality": 800,
+  "hitpoints": 6000,
+  "maxhp": 6000,
+  "mana": 3000,
+  "maxmana": 3000,
+  "stamina": 800,
+  "maxstamina": 800,
+  "level": 85,
+  "experience": 1145236814
+ },
+ "skills": {},
+ "mouse": {
+  "left": "Attack",
+  "right": "Throw",
+  "swap_left": "Attack",
+  "swap_right": "Attack"
+ },
+ "hotkeys": [
+  "Throw"
+ ],
+ "items": [
+  {
+   "code": "tax",
+   "equip": "rarm",
+   "dur": 2,
+   "quantity": 130
+  },
+  {
+   "code": "cap",
+   "equip": "head",
+   "dur": 12
+  },
+  {
+   "code": "ltp",
+   "equip": "tors",
+   "dur": 60
+  },
+  {
+   "code": "lbl",
+   "equip": "belt"
+  },
+  {
+   "code": "tkf",
+   "quantity": 160,
+   "store": "inventory",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "code": "tkf",
+   "quantity": 160,
+   "store": "inventory",
+   "x": 1,
+   "y": 0
+  },
+  {
+   "code": "jav",
+   "quantity": 60,
+   "store": "inventory",
+   "x": 2,
+   "y": 0
+  },
+  {
+   "code": "jav",
+   "quantity": 60,
+   "store": "inventory",
+   "x": 3,
+   "y": 0
+  }
+ ],
+ "belt_fill": [
+  "rvl",
+  "rvl",
+  "rvl",
+  "mp5"
+ ],
+ "quests": "all"
+}

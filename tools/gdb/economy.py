@@ -46,8 +46,9 @@
 #   UC0/UC1 sub_0056BEC0_UseCharge entry / returns: the stat 204 entries of every item of the player
 #   RP0/RP1 ITEMEVENT_Replenish 0x00562D30 (ECX game, EDX item) / return: the item
 #   CI0/CI1 NPC_CainIdentify 0x00578460 (ECX game, EDX player; npc id) / returns: the unidentified items
-#   SWW     a read watchpoint (4 bytes) on Charsi's (class 154) NpcStoreRec +0x24, set at the first trade open: pc,
-#           [esp], the EBP-chain return addresses (from tools/gdb/economy.gdb sessions only)
+#   SWW     a read watchpoint (4 bytes) on Charsi's (class 154) NpcStoreRec +0x24, set at the first price call or
+#           trade open: pc, [esp], the EBP-chain return addresses; SWC the same on the record's +0x00 (the class
+#           dword NPCSTORE_FindRec compares), the positive control, at most 40 lines
 import base64
 import hashlib
 import json
@@ -268,6 +269,10 @@ def _economy_main():
         def on0():
             d = f0() or {}
             d["ra"] = u32(reg("esp"))
+            try:
+                d["ra2"] = u32(reg("ebp") + 4)      # the caller's return address (its EBP frame), e.g. the price
+            except gdb.MemoryError:                # wrapper's caller
+                pass
             d["sn"] = snap()
             st["pend"][(tag0, reg("esp"))] = d.get("_ctx")
             d.pop("_ctx", None)
@@ -539,16 +544,16 @@ def _economy_main():
 
     # ---------------------------------------------------------------- the store record watchpoint (question 9)
     class Watch(gdb.Breakpoint):
-        def __init__(self, addr):
+        def __init__(self, addr, tag="SWW", cap=2000):
             super().__init__("*(int*)0x%08X" % addr, gdb.BP_WATCHPOINT, gdb.WP_READ, internal=True)
             self.silent = True
-            self.addr = addr
+            self.addr, self.tag, self.cap, self.n = addr, tag, cap, 0
 
         def stop(self):
             try:
-                st["nw"] += 1
-                if st["nw"] <= 2000:
-                    emit("SWW", {"a": self.addr, "pc": reg("eip"), "esp0": u32(reg("esp")), "ras": ra_chain()})
+                self.n += 1
+                if self.n <= self.cap:
+                    emit(self.tag, {"a": self.addr, "pc": reg("eip"), "esp0": u32(reg("esp")), "ras": ra_chain()})
             except Exception as e:
                 gdb.write("LOGERR economy watch %r\n" % (e,))
             return False
@@ -564,6 +569,7 @@ def _economy_main():
             if u32(r) == 154:
                 try:
                     Watch(r + 0x24)
+                    Watch(r + 0x00, "SWC", 40)     # positive control: the class dword NPCSTORE_FindRec compares
                     st["watch"] = r
                     emit("SWSET", {"rec": r, "b": mem(r + 0x24, 4).hex()})
                 except Exception as e:

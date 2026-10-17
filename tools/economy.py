@@ -579,7 +579,11 @@ class Checker:
         for k in ("gs", "ps"):
             if s0.get(k) is None or s1.get(k) is None:
                 continue
-            self.seeds[kind][k + (" same" if s0[k] == s1[k] else " changed")] += 1
+            if s0[k] == s1[k]:
+                self.seeds[kind][k + " same"] += 1
+            else:
+                n = rng.steps_between(seedpair(s0[k]), seedpair(s1[k]), 2000)
+                self.seeds[kind][k + " +%s steps" % (n if n is not None else ">2000")] += 1
 
     def check_log(self, path):
         ev = read_events(path)
@@ -590,6 +594,7 @@ class Checker:
         pend_cd = None
         dl_pending = None
         last_rp = {}
+        trade = {"sellk": [], "sellv": [], "buyk": [], "buyv": []}
         for tag, d, ln in ev:
             if tag == "ECON":
                 econ = d
@@ -602,6 +607,21 @@ class Checker:
                 if tag == "PR0":
                     if "p" in d:
                         self.keys[d["k"]] = d["p"]
+                    if d.get("ra2") in (0x00579620, 0x005798D2) and open_["NS"]:
+                        trade["sellk"].append(d["k"])
+                    if d.get("ra2") in (0x00577949, 0x00577B08) and open_["NB"]:
+                        trade["buyk"].append(d["k"])
+                elif tag == "GG0" and open_["NS"] and trade["sellv"]:
+                    self.n["sales checked (gold given = the lower price)"] += 1
+                    if d["a"][0] != min(trade["sellv"]):
+                        self.fail(path, ln, "sale: gold given %d, prices %r" % (d["a"][0], trade["sellv"]))
+                elif tag == "PG0" and open_["NB"] and trade["buyv"]:
+                    self.n["purchases checked (PayGold = price x count)"] += 1
+                    pv = trade["buyv"][-1]
+                    if pv <= 0 or d["a"][0] % pv:
+                        self.fail(path, ln, "purchase: paid %d, price %r" % (d["a"][0], trade["buyv"]))
+                if tag in ("NS0", "NB0"):
+                    trade.update(sellk=[], sellv=[], buyk=[], buyv=[])
                     if rc and d.get("ra") == 0x0062FF35:
                         rc[-1]["calls"].append(d["k"])
                 elif tag == "RC0":
@@ -623,6 +643,10 @@ class Checker:
                 getattr(self, "on_" + kind, self.on_none)(path, ln0, d0, d, locals())
                 if kind == "PR" and rc and d0.get("ra") == 0x0062FF35:
                     rc[-1]["vals"].append(d["v"])
+                if kind == "PR" and d0["k"] in trade["sellk"]:
+                    trade["sellv"].append(d["v"])
+                if kind == "PR" and d0["k"] in trade["buyk"]:
+                    trade["buyv"].append(d["v"])
                 if kind == "RC" and rc:
                     r = rc.pop()
                     self.n["repair-all sums"] += 1
@@ -630,8 +654,8 @@ class Checker:
                         self.fail(path, ln, "RepairCost %d, its mode-3 calls sum %d" % (d["v"], sum(r["vals"])))
                 if kind == "CD":
                     pend_cd = None
-            elif tag == "SWW":
-                self.sww[(d["pc"], d["esp0"])] += 1
+            elif tag in ("SWW", "SWC"):
+                self.sww[(tag, d["pc"], d["esp0"])] += 1
             elif tag == "SWSET":
                 self.n["store-record watch set"] += 1
         return econ
@@ -747,9 +771,19 @@ class Checker:
             return
         roll = lo % 100
         key = d0["o"]["u"]
-        if self.last_exit.get(key) == o0:
-            self.n["wear chained pairs"] += 1
+        pc = ctx.get("pend_cd") or {}
+        if d0.get("ra") == 0x0057D4DD and pc.get("CDW"):
+            # the armour half: the roll draws right after RangeB(W) on the defender's seed
+            if pc["CDW"]["s"] != o0:
+                self.fail(path, ln, "armour roll entry seed %s is not the seed after RangeB(W) %s" % (o0, pc["CDW"]["s"]))
+            else:
+                self.n["wear chained draw pairs"] += 1
+        elif self.last_exit.get(key) == o0:
+            self.n["wear chained draw pairs"] += 1
+            self.n["wear chained pairs across events"] += 1
         self.last_exit[key] = o1
+        self.cases["wear roll %s" % ("defender" if d0.get("ra") == 0x0057D4DD else
+                                     "attacker" if d0.get("ra") == 0x0057D3F8 else "other 0x%X" % d0.get("ra", 0))] += 1
         a0, a1 = d0["it"], d1["it"]
         self.cases["wear %s chance %d" % ("armour" if armo else "weapon", chance)] += 1
         if roll >= chance:
@@ -760,18 +794,15 @@ class Checker:
         D, Mx, q = a0["d"], M.max_dur(item), a0["n"]
         if D - 1 >= 1:
             want = (min(D - 1, Mx), q, a0["fl"])
-        elif armo and not weap:
-            if not a0["fl"] & 0x100:
-                self.cases["wear: armour broken"] += 1
-                want = (a1["d"], q, a0["fl"] | 0x100)
-            else:
-                want = None
+        elif not weap and not a0["fl"] & 0x100:
+            self.cases["wear: armour broken"] += 1
+            want = (a1["d"], q, a0["fl"] | 0x100)
         elif item.v >= 1:
             if q > 1:
                 self.cases["wear: stack -1, refilled"] += 1
                 want = (Mx, q - 1, a0["fl"])
             else:
-                self.cases["wear: weapon to 0"] += 1
+                self.cases["wear: weapon to 0 (broken flag after: %d)" % bool(a1["fl"] & 0x100)] += 1
                 want = (0, 0, a1["fl"])
         else:
             want = (0, q, a1["fl"])
@@ -800,6 +831,8 @@ class Checker:
         if cdw is None or cdw["v"] != w or cdw["s"] != "%08x:%08x" % (lo, hi):
             self.fail(path, ln, "RangeB(W=%d): model %d, game %r" % (W, w, cdw))
             return
+        self.n["wear chained draw pairs"] += 1        # RangeB(7) then RangeB(W) on one seed
+        self.cases["armour W %d" % W] += 1
         k = u
         while True:
             if cds["slots"][k] is not None:
@@ -894,7 +927,7 @@ def cmd_check(argv):
     for kind in sorted(ch.seeds):
         print("  %-4s %s" % (kind, ", ".join("%s %d" % kv for kv in sorted(ch.seeds[kind].items()))))
     if ch.sww:
-        print("store-record watch hits (pc, [esp]): %s" % ", ".join("0x%08X/0x%08X x%d" % (a, b, n) for (a, b), n in sorted(ch.sww.items())))
+        print("store-record watch hits (tag pc/[esp]): %s" % ", ".join("%s 0x%08X/0x%08X x%d" % (t, a, b, n) for (t, a, b), n in sorted(ch.sww.items())))
     for m in ch.mis[:40]:
         print("MISMATCH " + m)
     print("economy: %d mismatches" % len(ch.mis))
