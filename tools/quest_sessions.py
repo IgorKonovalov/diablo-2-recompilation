@@ -19,6 +19,7 @@ workspace/logs/quests/<RUN>-<SESSION>.log. Actions:
                       end, come back through the town end (the owner: both ends freed)
   wp:CHAIN            d2pilot.py wpchain --chain CHAIN (space-separated TAB,ROW hops; '_' for a space here)
   towp                d2pilot.py npc waypoint walk (next to the town waypoint)
+  nearwp              Teleport next to the current field level's waypoint (OBJP), e.g. after town-portal cycles
   explore:HOPS        d2pilot.py explore --hops HOPS (Nova, new rooms)
   walk:HOPS           d2pilot.py explore --any-level --walk --hops HOPS (a town)
   warp:REC            d2pilot.py farm --descend REC --time 1 (find and take the LvlWarp row REC)
@@ -271,6 +272,20 @@ class Driver:
                 self.tp(int(rest))
             elif kind == "wp":
                 self.pilot(["wpchain", "--chain", rest.replace("_", " "), "--linger", "0.1"], timeout=1800)
+            elif kind == "nearwp":            # Teleport next to the waypoint of the current (field) level
+                for _ in range(15):
+                    pos = self.pos()
+                    w = self.d2p.waypoint_at(self.log, pos[2]) if pos else None
+                    if not w:
+                        print("nearwp: no waypoint logged in level %s" % (pos[2] if pos else None), flush=True)
+                        break
+                    dx, dy = w[0] - pos[0], w[1] - pos[1]
+                    d = math.hypot(dx, dy)
+                    if d <= 4:
+                        break
+                    k = min(9.0, d - 2) / d
+                    self.p.teleport(int(round(dx * k)), int(round(dy * k)))
+                    time.sleep(0.8)
             elif kind == "towp":
                 self.pilot(["npc", "waypoint", "walk"], timeout=180)
             elif kind == "explore":
@@ -367,20 +382,24 @@ C_B = "1,1 2,1 3,1 4,1 1,1"
 TALK1 = ["menu:akara:1:1", "key:Escape", "menu:kashya:1:1", "key:Escape", "menu:charsi:1:1", "key:Escape",
          "menu:gheed:1:1", "key:Escape", "menu:warriv:1:1", "key:Escape", "qlog"]
 sess("x-act", "ActTwoWarriv", "enter-normal", 4211, ["menu:warriv:2:1", "sleep:2", "menu:warriv2:2:1", "sleep:2"] * 11)
+sess("x-act3", "ActThreeMeshif", "enter-normal", 4218, ["menu:meshif:2:1", "sleep:2", "menu:meshif2:3:1", "sleep:2"] * 6)
 sess("x-lut", "QuestBookLost", "enter-normal", 4212, ["walk:25", "talk:331:22", "qlog", "towp", "wp:2,3", "tp:10",
-                                                      "wp:" + X_A.replace(" ", "_"), "tp:6",
+                                                      "nearwp", "wp:" + X_A.replace(" ", "_"), "tp:6", "nearwp",
                                                       "wp:" + X_B.replace(" ", "_"), "tp:1"])
-sess("x-summit0", "QuestSummit", "enter-normal", 4213, ["towp", "wp:5,8", "warp:74", "warp:79", "warp:80", "tp:3"])
-sess("x-summit1", "TravelWpFive", "enter-normal", 4214, ["towp", "wp:5,8", "warp:74", "warp:79"])
-sess("x-orb", "ActFourDurance", "enter-normal", 4215, ["towp", "wp:3,8", "objop:404:3"])
+sess("x-summit0", "QuestSummit", "enter-normal", 4213, ["walk:8", "towp", "wp:5,8", "warp:76", "warp:81", "warp:82", "tp:3"])
+sess("x-summit1", "TravelWpFive", "enter-normal", 4214, ["walk:8", "towp", "wp:5,8", "warp:76", "warp:81"])
+sess("x-orb", "ActFourDurance", "enter-normal", 4215, ["walk:8", "towp", "wp:3,8", "objop:404:3"])
 sess("x-off", "TravelWpOne", "enter-normal", 4216, TALK1)
 sess("x-fresh", "QuestFresh", "enter-normal", 4217, TALK1)
-sess("c-tp", "QuestPortalC", "enter-normal", 4221, TALK1 + ["towp", "wp:1,2", "tp:10", "wp:" + C_A.replace(" ", "_"), "tp:6",
-                                                            "wp:" + C_B.replace(" ", "_"), "tp:1"], CLS)
+sess("c-tp", "QuestPortalC", "enter-normal", 4221, TALK1 + ["towp", "wp:1,2", "tp:10", "nearwp", "wp:" + C_A.replace(" ", "_"),
+                                                            "tp:6", "nearwp", "wp:" + C_B.replace(" ", "_"), "tp:1"],
+     CLS)
 sess("nm-lut", "QuestBookLost", "enter-nightmare", 4222, ["walk:25", "talk:331:22", "towp", "wp:2,3", "tp:10",
-                                                          "wp:" + X_A.replace(" ", "_"), "tp:6"], ["--es", "30"])
-sess("h-lut", "QuestBookLost", "enter-hell", 4223, ["wp:2,3", "tp:10", "wp:" + X_A.replace(" ", "_"), "tp:6",
-                                                    "wp:" + X_B.replace(" ", "_")], ["--es", "30"])
+                                                          "nearwp", "wp:" + X_A.replace(" ", "_"), "tp:6"], ["--es", "30"])
+sess("h-lut", "QuestBookLost", "enter-hell", 4223, ["walk:8", "towp", "wp:2,3", "tp:10", "nearwp", "wp:" + X_A.replace(" ", "_"),
+                                                    "tp:6", "nearwp", "wp:" + X_B.replace(" ", "_")], ["--es", "30"])
+sess("c-wp", "QuestPortalC", "enter-nightmare", 4224, ["walk:8", "towp", "wp:" + C_A.replace(" ", "_"), "tp:8", "nearwp",
+                                                       "wp:" + C_B.replace(" ", "_")], CLS + ["--es", "30"])
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

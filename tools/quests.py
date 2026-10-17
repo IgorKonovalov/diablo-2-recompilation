@@ -31,7 +31,8 @@ What is predicted (docs/findings/quests/0001-progression.md, 0002-travel.md; eve
               the operator's weapon code is 'qf2' (0001 § 9)
   free cell   COLL_FindFreeNear from the logged cells (pos +/- 12): the first free footprint by the ring order of
               0002 § 4 (counted "beyond" when the answer lies outside the logged square)
-  spot        ActLevelSpot: the search starts at the tile's sub-tile (5 tx + 3, 5 ty + 3); the result is the search's
+  placement   PlayerChangeLevel / PlayerChangeAct / the join's placement leave the player on the last free search's
+              cell (UnitTeleport's own search returns at once)
   chaining    per seed, consecutive events of one kind whose exit seed is the next one's entry seed (nothing drew
               between): counted as chained pairs per kind
 Seeds are "low:high" hex; one step is low * 0x6AC690C5 + high (tools/rng.py). Stdlib only.
@@ -281,6 +282,7 @@ class Checker:
         self.ff = d
 
     def on_FFX(self, d):
+        self.note("FFX", d)
         e, self.ff = self.ff, None
         if not e:
             return
@@ -426,6 +428,44 @@ class Checker:
         if g:
             for dd in want:
                 self.ok(g[dd["word"]] & 0x8000, "join game record bit 15", "word %d = %x" % (dd["word"], g[dd["word"]]))
+
+    def placed(self, k, e, x, sub):
+        """The player ends where the last free search inside the event put him (ActLevelSpot's, or
+        PlayerChangeAct's second one): UnitTeleport's own search returns at once (0002 § 4)."""
+        ff = [d for t, d, n in sub if t == "FFX"]
+        if not ff or not x.get("pos"):
+            self.hit("%s placement without a logged search" % k)
+            return
+        self.ok(list(x["pos"]) == [ff[-1]["x"], ff[-1]["y"]], "placement %s" % k, "pos %s, search %s" % (
+            x["pos"], (ff[-1]["x"], ff[-1]["y"])))
+
+    TRAVEL_WORD = {155: 7, 210: 15, 367: 28}       # NpcActTravel's word per NPC class (save/0002 § 2)
+
+    def ev_npcact(self, e, x, sub):
+        """NpcActTravel: the travel word gets bits 0 and 13 when bit 0 was clear, else is left; player data +0x4C = 1
+        on that branch only (0002 § 5, narrowed by run:2026-10-17-quests)."""
+        cls = e["npc"][1] if e.get("npc") else None
+        w = self.TRAVEL_WORD.get(cls)
+        if w is None or not e.get("rec") or not x.get("rec"):
+            self.hit("npcact class %s not checked" % cls)
+            return
+        a, b = e["rec"][w], x["rec"][w]
+        want = a | 0x2001 if not a & 1 else a
+        self.ok(b == want, "act travel word", "class %d word %d %x -> %x, want %x" % (cls, w, a, b, want))
+        # +0x4C = 1 only on the branch that writes the word (the bit-0 test exits first, 0x0054684A for 155)
+        self.ok(x.get("c4c") == (1 if want != a else 0), "act travel +0x4C", "+0x4C %s (word %s)" % (
+            x.get("c4c"), "set" if want != a else "already set"))
+        self.hit("act travel word %d %s" % (w, "set" if want != a else "already set"))
+
+    def ev_chlevel(self, e, x, sub):
+        self.placed("chlevel", e, x, sub)
+
+    def ev_chact(self, e, x, sub):
+        self.placed("chact", e, x, sub)
+
+    def ev_place(self, e, x, sub):
+        if not e.get("given"):
+            self.placed("place", e, x, sub)
 
     def ev_lpf(self, e, x, sub):
         lid, typ = e["lvl"], e["type"]

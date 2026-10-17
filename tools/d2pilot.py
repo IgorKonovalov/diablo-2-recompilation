@@ -1044,6 +1044,8 @@ NPCS = {
     "charsi": (154, ["talk", "trade", "cancel"], None),
     "warriv": (155, ["talk", "go east", "cancel"], None),    # plan 0038 H6d: the report after Andariel
     "warriv2": (175, ["talk", "go west", "cancel"], None),   # plan 0042 Phase 2: the act change back to Act I
+    "meshif": (210, ["talk", "sail east", "cancel"], None),  # plan 0042 Phase 2: Act II -> Act III
+    "meshif2": (264, ["talk", "trade", "sail west", "cancel"], None),   # plan 0042 Phase 2: Act III -> Act II
     "kashya": (150, ["talk", "hire", "cancel"], None),
     "fara": (178, ["talk", "trade", "cancel"], (49, -7)),
     "drognan": (177, ["talk", "trade", "cancel"], (20, -52)),
