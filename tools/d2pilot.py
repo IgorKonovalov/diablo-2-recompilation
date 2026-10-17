@@ -1043,6 +1043,7 @@ NPCS = {
     "gheed": (147, ["talk", "trade", "gamble", "cancel"], None),
     "charsi": (154, ["talk", "trade", "cancel"], None),
     "warriv": (155, ["talk", "go east", "cancel"], None),    # plan 0038 H6d: the report after Andariel
+    "warriv2": (175, ["talk", "go west", "cancel"], None),   # plan 0042 Phase 2: the act change back to Act I
     "kashya": (150, ["talk", "hire", "cancel"], None),
     "fara": (178, ["talk", "trade", "cancel"], (49, -7)),
     "drognan": (177, ["talk", "trade", "cancel"], (20, -52)),
