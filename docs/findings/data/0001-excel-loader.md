@@ -267,8 +267,8 @@ All per-table globals are fields of one data-tables block at `0x0096BC30`, whose
   sub-ranges **of the combined copy** (`0x006333E1`–`0x0063343B`). Then, in a stock run, it calls
   `EXCEL_AddCode(g_ItemCodeLink, item[i]+0x80)` for i = 0…nItems−1 (`0x00633491` loop). So item index = combined
   position, and the code key is the u32 at record `+0x80`.
-- [I] It also builds a u16 list at `0x0096CA78` of the indices whose `+0xF6` word is 0 (`0x00633510`); meaning left
-  to the items plan.
+- [I] It also builds a u16 list at `0x0096CA78` of the indices whose `+0xF6` word is 0 (`0x00633510`): the classic item
+  index map of the version-`0x47` item reader ([§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17) Q3).
 
 ### 6. Code→index and name→index
 
@@ -517,6 +517,77 @@ rank first (`sweep_s1b.py compile`). Several rows below rest on that.
 - **Row 78** (spec L722, runtime TC array 1 013 × `0x2C`) **raised in part.** [C] the stride (row 13). **Remainder
   d-none:** the count (row 42, L458). (fn:TC_Alloc@0x00653F90)
 
+## Plan 0039 batch P1b (2026-10-17)
+
+Rows Q1, Q2, Q3 and B7 (c) of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static: Ghidra on the lane's copy and
+objdump. No game run.
+
+### Q1: the auto-TC details (stale)
+
+- The details that the data/excel spec keeps as an `[L]` open question (G2 (a)–(d): the names, `picks` 1, `group` 0,
+  `level` L − 3, the item filter, the entry probability and flag `0x10`) are already in a finding:
+  [items/0001 § 9](../items/0001-tc-resolution.md#9-auto-item-type-tcs-weapn-armon-bown-melen-abown) states each of them `[I]` with anchors
+  (0x0065428B–0x00654361), and § Plan 0038 batch S1b above raised G2 and the index formula to `[C]` (55 auto TCs logged with
+  their entries). Nothing new to read; the spec's open question can move into G2 with those anchors.
+
+### Q2: the TC post-pass and the `group`/`level` walk (stale)
+
+- The post-pass `0x0065A2C0` is `TC_BuildChestTable`: for act 1–5, the three difficulty suffixes and the three chest
+  kinds it builds the name `"Act %d%s Chest %s"`, looks it up in `g_TCLink` and stores the TC pointer (0 when the name is
+  missing) in `g_ChestTCs` ([items/0001](../items/0001-tc-resolution.md), its *Functions* table and the chest bullet,
+  `[I]`). Re-read here (0x0065A2C0–0x0065A38F): it reads no TC field and changes none, so § 7's "post-pass, not read" is
+  answered by that row. (fn:TC_BuildChestTable@0x0065A2C0, data:g_ChestTCs@0x0096C5F4)
+- The walk in `TC_GetByIndex` is [items/0001 § 4](../items/0001-tc-resolution.md#4-level-upgrade--tc_dropbyindex-0x0055afa0-and-tc_getbyindex-0x00654e00),
+  `[C]` there (tc 3). Re-read in the disassembly (0x00654E00–0x00654E5E): the index is a `u16` tested `≠ 0` and
+  `< g_nTreasureClasses` (signed `jge`), else NULL; the level is a signed `int`, and the walk runs only for `level > 0`,
+  `group ≠ 0` and `t[1].group = t.group`; each step compares `t[1].level` (`movsx`, signed) with the level (`jg` stops)
+  and continues while `t[2].group = t[1].group`. This agrees with § 4.
+
+### Q3: the u16 list at `0x0096CA78`
+
+- [I] **It maps a classic item index to the current one.** `ITEMS_LoadItemTables` allocates `2 · nItems` bytes, zeroes
+  them, and writes, in item order, the combined index of every record whose `version` (`+0xF6`, u16) is 0
+  (0x006334C4–0x00633531). The count is not stored: entries past the last version-0 item stay 0.
+  (fn:ITEMS_LoadItemTables@0x006315D0, data:g_pClassicItemIndex@0x0096CA78, tbl:Weapons.txt:version)
+- [I] **Its one reader is the oldest item record format.** `sub_006335A0_ItemClassicIndexMap(i)` returns
+  `list[i]` (u16) for `0 ≤ i < nItems`, −1 otherwise, and is fatal when the list is NULL (0x006335A0–0x006335E6). Its only
+  caller is `sub_00532F30_ItemReadV71Record` (0x00533310), which `sub_00533350_ItemListReadV71` calls three times
+  ([rng/0002](../rng/0002-seed-tree.md), the version-`0x47` item list). For a record whose flags have neither bit
+  `0x100000` nor the ear bit `0x10000`, the item is named by a signed 10-bit index (`BITBUF_ReadSigned(10)`); the reader
+  maps it through the list, stores the current index at record `+0x06` and the item's code (`+0x80` of its record) at
+  `+0x44`; an index < 0 or a missing record gives index −1 and code 0. So an item saved by a version-0 game is found
+  by its position among the version-0 items, whatever the expansion rows inserted since.
+  (fn:sub_006335A0_ItemClassicIndexMap@0x006335A0, fn:sub_00532F30_ItemReadV71Record@0x00532F30,
+  fn:sub_00533350_ItemListReadV71@0x00533350)
+- [C] **Stock counts (data).** In the shipped `weapons.txt`, `armor.txt` and `misc.txt`, 361 of the 659 item rows have
+  `version` 0 (175, 92, 94), the rest 100 (one `misc` row 109). A 10-bit signed index reaches 511, so it covers them.
+  (tbl:Weapons.txt:version, tbl:Armor.txt:version, tbl:Misc.txt:version)
+- `sub_00633540_ItemTablesFree` frees the item code link, the combined table and this list (0x00633540–0x0063358F).
+
+### B7 (c): the States field descriptor
+
+`STATES_Load` (0x00618100) builds the `states` descriptor on its stack at `[ebp−0x580]` and passes it to
+`DATATBLS_LoadTable` at 0x00618B7D. Read by replaying the stores (register constants and `[ebp−X]` writes,
+0x0061812A–0x00618B59) into 20-byte entries `{column, type, len, offset, link}` (§ 1); 70 entries, the last `end`.
+Type `0x1A` is a bit flag: `len` is the bit number, `offset` the flag field.
+
+- [I] **`attred` is flag bit 10** (entry 12: type `0x1A`, bit `0xA`, field `+0x10`). Bit 9 is `attblue`, bit 11 `curse`.
+  The data agree: `attred` is blank in all 185 rows and bit 10 is 0 in every record.
+  (fn:STATES_Load@0x00618100, tbl:States.txt:attred)
+- [I] **`immed` has no descriptor entry**, so the compiler ignores the column (the header maps it to "unknown",
+  `EXCEL_MapColumns` § Functions). That is why no byte or bit follows it. (fn:STATES_Load@0x00618100,
+  fn:EXCEL_MapColumns@0x006BCE20, tbl:States.txt:immed)
+- [I] **The red bits:** `rfred` is bit 26 (`0x1A`), `rcred` bit 27 (`0x1B`), `rlred` bit 28 (`0x1C`), then `rpred` 29.
+  The blue run is `rfblue` 20, `rcblue` 21, `rlblue` 22, `rpblue` 23. (tbl:States.txt:rfred, tbl:States.txt:rcred,
+  tbl:States.txt:rlred)
+- [I] The rest of the descriptor agrees with [States § Columns](../../tables/States.md): `state` (type `0x11`, a word
+  index through the name link `0x0096BCF0`, at `+0x00`), `group` (type 3, an s16 at `+0x1E`, so the always-0 byte
+  `+0x1F` is its high byte), the 40 flag bits at `+0x10` (`nosend` 0 … `disguise` 16, `restrict` 17
+  … `noclear` 36, `bossinv` 37, `meleeonly` 38, `notondead` 39), the overlays (`+0x02..+0x0E`), `stat` `+0x18`,
+  `setfunc`/`remfunc` `+0x1A`/`+0x1C`, `missile` `+0x3A`, `skill` `+0x38`, the colour and light bytes `+0x20..+0x24`,
+  the sounds `+0x26`/`+0x28`, `itemtype` `+0x2A`, `itemtrans` `+0x2C`, `gfxtype` `+0x2D`, `gfxclass` `+0x2E`, `cltevent`
+  `+0x30`, `clteventfunc`, `cltactivefunc`, `srvactivefunc` `+0x32..+0x36`. (0x0061812A–0x00618B59)
+
 ## Data touched
 
 - `fmt:excel-bin#bin` count header and record array (all 88 files).
@@ -549,5 +620,6 @@ rank first (`sweep_s1b.py compile`). Several rows below rest on that.
   (and checks that `DATA\GLOBAL\EXCEL\*.bin` files are written) would take the `-txt` claims to `[C]`.
 - `EXCEL_ParseTxt` type codes are only partly read (section 1). Only relevant if the spec has to describe the
   `.txt` → `.bin` compiler; the archivist's cell diff covers the stock data.
-- `TC_GetByIndex`'s group/level walk and `sub_0065A2C0`'s post-pass belong to plan 0004 (items/tc).
+- ~~`TC_GetByIndex`'s group/level walk and `sub_0065A2C0`'s post-pass belong to plan 0004 (items/tc).~~ Stale: both are
+  read in items/0001 (§ 4, and `TC_BuildChestTable`); see [§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17) Q2.
 - `runessrv` probe (`0x00639420`) and the `cubeserver.*` guard: purpose not followed.

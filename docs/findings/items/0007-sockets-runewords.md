@@ -731,8 +731,8 @@ compared in full.
 
 - [I] **`runes` `+0x084`** is not written by `RUNES_Load`: its only store into the record after the table load is
   the u16 `+0x82` (`STRTABLE_GetByKey(Name)`, 0x00639C63–0x00639C6E). `Name` keys are looked up one row at a time, so
-  the two rows named `Runeword95` (*Passion*, *Patience*) get the same string index; which row the save reader maps
-  that index back to is not read. (fn:RUNES_Load@0x006394A0, fn:STRTABLE_GetByKey@0x00524D30, tbl:Runes.txt:Name)
+  the two rows named `Runeword95` (*Passion*, *Patience*) get the same string index; the save reader maps it back to
+  no row, and only *Passion* can match ([§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17) B9). (fn:RUNES_Load@0x006394A0, fn:STRTABLE_GetByKey@0x00524D30, tbl:Runes.txt:Name)
 - [I] **`itype1..6` and `etype1..3` slots.** `RUNEWORD_Match` reads six i16 from `+0x86` and three from `+0x92`
   (§ 4), so `itype4..6` are `+0x8C`, `+0x8E`, `+0x90` and `etype1..3` `+0x92`, `+0x94`, `+0x96`, the stride
   placement of [Runes](../../tables/Runes.md). (0x0062BFD0–0x0062C023, tbl:Runes.txt:itype1, tbl:Runes.txt:etype1)
@@ -865,6 +865,75 @@ run and the quest run. The second tool next to Ghidra is GNU objdump.
 part (2, 4, 6, 14, 26, 43, 44, 46, 47; 14 split at the S2c review, filed as raised), 4 reclassified (35 ×2 → b H6b, 36 L442 → d-none, 42 → a-run H2b). Correction:
 sock 25's count is 422.
 
+## Plan 0039 batch P1b (2026-10-17)
+
+Rows B9 and Q18 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static: objdump and Ghidra on the lane's copy, plus a
+survey of the item-flag call sites. No game run.
+
+### B9: which `Runeword95` row a save maps back to
+
+- [I] **No reader maps the index back to a row.** `ITEMS_ReadFull` reads the 16 runeword bits of an item with flag bit
+  26 and stores them as they are at `ItemData+0x38` (0x0062D1CB–0x0062D1EA); it looks no row up. `ITEMS_WriteFull` does
+  not save `+0x38` either: it calls `RUNEWORD_Match(item)` and writes that row's `+0x82`, or `0xFFFF` with no row
+  (0x0063087E–0x00630890). The row of a loaded runeword is always re-derived by `RUNEWORD_Match` from its socketed runes
+  (§ 4), and the readers that drop an item with flag bit 26 but no matching row (§ 6) use the same match.
+  (fn:ITEMS_ReadFull@0x0062CBE0, fn:ITEMS_WriteFull@0x0062FFF0, fn:RUNEWORD_Match@0x0062BED0)
+- [C] **Patience never matches on stock data.** Of the two `Runeword95` rows, *Passion* has `complete` 1 and *Patience*
+  has `complete` blank (0), and `RUNEWORD_Match` skips every row with `complete` = 0 (§ 4). So the shared index 20600
+  (`Passion` in the English table) only ever comes from *Passion*. (tbl:Runes.txt:complete, tbl:Runes.txt:Name, data
+  check)
+- [I] `ItemData+0x38` is also the first prefix slot of a rare or crafted item (save/0001 § 7); a runeword's quality is
+  never 4–9 (§ 4), so the two uses do not meet.
+
+### Q18 (a): the stale `kids[n]` word
+
+- **Not determinable statically.** `kids[6]` lies in `RUNEWORD_Match`'s own frame, and `kids[n]` (with `n` the number of
+  children, ≤ 5 when a row has one rune more) is a slot this call never writes (§ 4). Its value is what the last code to
+  use that stack address left there, which depends on the call chain that reached `RUNEWORD_Match` (the insert, the two
+  readers, the cube's socket paths, the client's description code) and on what ran before it at that depth. One
+  narrowing [I]: a slot written by an earlier `RUNEWORD_Match` call on a fuller item at the same stack depth would hold
+  that item's `n`-th child class, so a stale match needs a matching earlier call, not chance; the logged case held 638.
+  A run or an emulation with a declared stack image is needed to say more.
+
+### Q18 (b): item flag bits 0, 2, 8 and 14
+
+Call-site survey of `ITEMS_CheckFlags` (0x006280A0) and `ITEMS_SetFlag` (0x006280D0) by the pushed mask (objdump):
+
+| bit | mask | set | cleared | tested |
+|---|---|---|---|---|
+| 0 | `0x1` | 28 sites | none | 1 site |
+| 2 | `0x4` | 3 sites | 4 sites | 6 sites |
+| 8 | `0x100` | 1 site, plus a copy in `ItemCreate` | 2 sites (one in the client) | 52 sites |
+| 14 | `0x4000` | 2 sites | 26 sites | 32 sites |
+
+- [I] **Bit 0 (`0x1`) is "changed, send an update".** It is set by every server routine that moves an item or changes
+  its state: the 26 sites in 0x0055EE32–0x00563F7A (the equip, unequip, inventory, belt, cursor and socket moves,
+  `ITEMS_InsertSocket` at 0x0056285D among them), the identify routine 0x005762C0 right after it sets flag `0x10`
+  (0x005762FE), and 0x00576C76. It is never cleared through `ITEMS_SetFlag`. Its only test is in `sub_005973F0_ItemFlagUpdateSend`
+  (0x005977FE), the routine that also sends bits 8 and 9 to the client through `0x0053D440`. (0x005762C0,
+  fn:sub_005973F0_ItemFlagUpdateSend@0x005973F0)
+- [I] **Bit 8 (`0x100`) is "broken".** `sub_0055F850_ItemBreak` sets it and then sets the item's durability (stat 72) to 0
+  (0x0055F85A–0x0055F8B6); `sub_0055F900_ItemRepairBroken` sets bit 9 and clears bit 8 (0x0055F918–0x0055F92D).
+  `ItemCreate` copies it from the creation record's flags (0x00558F91–0x00558FA6). `ITEMS_AttachToOwner` does not link a
+  broken child's stats to the parent unless forced (§ 3), and the NPC service tests refuse a broken item
+  ([items/0010](../items/0010-quest-drops.md) § 6). (fn:sub_0055F850_ItemBreak@0x0055F850,
+  fn:sub_0055F900_ItemRepairBroken@0x0055F900)
+- [I] **Bit 14 (`0x4000`) is "equipped but its requirements are not met".** `sub_0055DBC0_EquipReqRefresh` walks the
+  owner's equipped items: an item that now passes `sub_0055DB00_ItemUsableBy` gets the bit cleared (0x0055DC5D), one that
+  fails it gets the bit set (0x0055DCFA). `ItemUsableBy` is `sub_0062EAF0_ItemReqCheck` (stats 0, 2, 12 against the
+  requirements, with stat 91 `item_req_percent`) plus the quiver test against the other hand
+  (`sub_0062E740_ItemTypeQuiver`). Every move routine clears the bit with bit 0 (26 sites). `ItemBreak` calls
+  `EquipReqRefresh` too (0x0055F898). The client sets and clears it at 0x004C1493/0x004C13F6.
+  (fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0, fn:sub_0055DB00_ItemUsableBy@0x0055DB00,
+  fn:sub_0062EAF0_ItemReqCheck@0x0062EAF0)
+- [I] **Bit 2 (`0x4`) marks an item whose use is in progress.** `sub_005BF240_ItemUse` skips its pre-check when the item
+  has the bit (0x005BF2FC), sets it before calling the item's use function (0x005BF36B), and when the use function
+  fails calls `sub_005BE1C0_InvClearUseMark`, which clears the bit on every item of the player's inventory
+  (0x005BE1E7–0x005BE1F5). The client tests it before letting the player act on an item (0x0048424F, 0x0049921F).
+  The socket insert does not read it: `ITEMS_InsertSocket` tests only `0x10` and `0x800`, sets bit 0 and clears bit 14
+  (0x0056270C, 0x00562748, 0x00562765, 0x0056285D, 0x00562883). (fn:sub_005BF240_ItemUse@0x005BF240,
+  fn:sub_005BE1C0_InvClearUseMark@0x005BE1C0, fn:ITEMS_InsertSocket@0x00562660)
+
 ## Data touched
 
 - `struct:RunesRec+0x80` (`complete`), `+0x81` (`server`), `+0x82` (`nameStr`), `+0x86` (`itype`), `+0x92`
@@ -899,8 +968,8 @@ sock 25's count is 422.
   save (49 of 49), an advanced seed for a rune made in the session (the cube's Nef) (Answer).
 - ~~[L] `kids[n]` for a row with one rune more than the sockets (§ 4)~~ logged in Phase 2: a 3-socket armour holding
   the first three runes of *Bramble* matched no row; the stale word held 638, not *Bramble*'s fourth rune (614).
-  Still open: [L] what the word holds in general (an earlier call's stack contents), so whether it can ever equal
-  the extra rune; the one logged case did not.
-- [L] Flag bits 0, 2, 8 and 14 (`0x1`, `0x4`, `0x100`, `0x4000`) that the insert path sets, clears or tests: their
-  meanings were not followed.
+  Still open, **not determinable statically** ([§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17)): what the word holds in general (an earlier call's stack
+  contents), so whether it can ever equal the extra rune; the one logged case did not.
+- ~~[L] Flag bits 0, 2, 8 and 14 (`0x1`, `0x4`, `0x100`, `0x4000`) that the insert path sets, clears or tests: their
+  meanings were not followed.~~ Answered in [§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17): update pending, use in progress, broken, requirements not met.
 - [L] `0x0065D220`, the other caller of `ITEMS_SetSocketsOnLoad` (no direct xref; called through a pointer).
