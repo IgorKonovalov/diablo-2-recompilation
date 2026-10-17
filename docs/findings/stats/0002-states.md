@@ -3,50 +3,65 @@
 > **Subsystem:** stats/states
 > **Question:** when a state is put on a unit (a curse, an aura, cold, poison, a potion, a shrine), how long does it
 > last in frames, what stat list does it carry, how does it refresh, expire and tick, and what draws does it make?
-> **Date:** 2026-10-17   **Plan:** 0041 (Phase 1 and 1b, static)   **Status:** open (Phase 2 runs the reproduction)
+> **Date:** 2026-10-17   **Plan:** 0041 (Phase 1 and 1b, static; Phase 2 run)   **Status:** Phase 2 run reviewed 2026-10-17 (accept with fixes)
 
 ## Answer (summary)
 
-- [I] **A state is two things:** a bit in the unit list's state bit-set (`UNIT_HasState`) and, usually, a stat list
+Phase 2 (run:2026-10-17-stats) replayed the Paladins' states, ticks and auras and the Necromancer's set state
+against this finding; § 8 lists what each claim was checked against and what stays `[I]`.
+
+- [C] **A state is two things:** a bit in the unit list's state bit-set (`UNIT_HasState`) and, usually, a stat list
   carrying the state id at `+0x14` under the unit. `STATE_Set` writes the bit (and the "changed" bit for the client);
   most removers free the list and clear the bit together. (fn:STATE_Set@0x00639DB0, fn:UNIT_SetStateBit@0x00625A70,
-  fn:UNIT_HasState@0x00639DF0, struct:StatList+0x14)
-- [I] **`STATE_ApplyTimed` is the common apply.** It takes `{source, target, skill, level, duration, stat, value,
-  state, remove callback}`. A curse (States `curse`) is refused when the target's `curse_resistance` (109) is ≥ 100
-  or the target is in state 57 `attract`, and its duration loses `MulDiv(duration, r, 100)` with `r` = stat 109 (a
-  negative `r` lengthens it; the test is signed). An existing list
-  of the same state (for a curse: any curse list, flag `0x20`) with the same skill and level is **refreshed** (expiry
-  = frame + duration); with the same skill and a lower new level the call is **refused**; otherwise the old list is
-  freed and a new one made (so a new curse replaces any curse, and a higher or equal-level aura replaces). The new
-  list expires at `frame + duration` through unit event 12. No draw. (fn:STATE_ApplyTimed@0x0056E970,
-  0x0056E9C9–0x0056EA4B, tbl:States.txt:curse)
-- [I] **Expiry.** Unit event 12 (`EVENT_TimedListExpire`, both the player and the monster table) frees every timed
-  list (flag `0x2`) whose `+0x18` ≤ the current frame; the list's remove callback (default
-  `STATE_DefaultRemoveCB`) clears the state bit, except on a dead unit when the state has
-  `plrstaydeath`/`monstaydeath`, and rebuilds the passives. Death purges every non-item list without flags
-  `0x181` whose state does not stay on death. (fn:EVENT_TimedListExpire@0x00580800, fn:UNIT_ExpireTimedLists@0x00627460,
-  fn:STATE_DefaultRemoveCB@0x0056E900, fn:sub_00627540_StatListsPurgeOnDeath@0x00627540)
-- [I] **`group` exclusion** is done by `STATE_GroupClear`, not by the apply: called by the item-use states
-  (potions), five skill functions and the `state` stat callback, it clears every other state of the same non-zero
-  `group` on the unit and frees its list. (fn:STATE_GroupClear@0x0056C740, tbl:States.txt:group)
-- [I] **The per-frame ticks** (player event 3, every frame): life `+= stat 74` capped at max (dropping the `healthpot`
-  list at the cap) and floored at 256; stamina `+= max >> 8` standing, `>> 9` walking (not below 1 point outside town),
-  none running unless `staminarecoverybonus` ≥ 1000, `× (100 + bonus)/100`; mana `+= MulDiv(max / (ManaRegen·25),
-  100 + manarecoverybonus, 100) + manarecovery`, off under state 85 `nomanaregen`. No draw.
-  (fn:sub_00580810_RegenEvent@0x00580810, fn:sub_00580610_LifeRegenTick@0x00580610,
-  fn:PLAYER_StaminaRegenTick@0x00580500, fn:PLAYER_ManaRegenTick@0x005806F0)
-- [I] **Auras are refreshed timed states.** An aura skill (Skills `aura`) runs from unit event 8 (the selected right
-  skill) or event 9 (an item's `item_aura`, stat 151) every `p = max(perdelay, 5)` frames on a grid
-  (`((frame − 1 + p) / p)·p + 1`); each run applies `auratargetstate` to every unit within `aurarangecalc` passing
-  `aurafilter`, with a duration that ends one frame after the next run, carrying `aurastat1..6` and 350/351.
-  Two auras of one state: equal level refreshes, higher replaces, lower is refused. (fn:EVENT_SelectedAuraTick@0x0056FCB0,
-  fn:EVENT_ItemAuraTick@0x0056FE40, fn:SKILLS_NextPeriodicFrame@0x0056CD50, fn:SKILLS_ForUnitsInRange@0x0056B7E0,
-  fn:AURA_ApplyToTarget@0x005CEDC0)
-- [I] **Shrines** apply their state through a table at `0x006E1850` (code → stat, state): codes 6–15 → states 128,
-  129, 131, 132, 130, 133, 134, 135, 136, 137 for `Duration in frames`, the stat value `Arg0` for armour %, the
-  resists, mana regeneration and experience; combat and stamina have their own handlers. A shrine re-arms after
-  `reset × 1200 + 1` frames. Wells heal `Parm1/256` of each maximum per use and cure poison and freeze.
-  (fn:OBJOP_Shrine@0x00583C70, data:g_ShrineEffects@0x006E1850, fn:SHRINE_TimedStat@0x00583B30)
+  fn:UNIT_HasState@0x00639DF0, struct:StatList+0x14, run:2026-10-17-stats)
+- [C] **`STATE_ApplyTimed` is the common apply.** It takes `{source, target, skill, level, duration, stat, value,
+  state, remove callback}`. An existing list of the same state (for a curse: any curse list, flag `0x20`) with the
+  same skill and level is **refreshed** (expiry = frame + duration); with the same skill and a lower new level the
+  call is **refused**; otherwise the old list is freed and a new one made (a higher-level aura replaces). The new
+  list expires at `frame + duration` through unit event 12. Shrine states are curses (§ 5). No draw.
+  (fn:STATE_ApplyTimed@0x0056E970, 0x0056EA4B, tbl:States.txt:curse, run:2026-10-17-stats)
+- [I] A curse is refused when the target's `curse_resistance` (109) is ≥ 100 or the target is in state 57
+  `attract`, and its duration loses `MulDiv(duration, r, 100)` with `r` = stat 109 (a negative `r` lengthens it; the
+  test is signed): unreachable on stock data for the player (no item or affix carries stat 109; no monster casts
+  Attract). (0x0056E9C9–0x0056EA4A, tbl:ItemStatCost.txt:Stat)
+- [C] **Expiry.** Unit event 12 (`EVENT_TimedListExpire`) frees every timed list (flag `0x2`) whose `+0x18` ≤ the
+  current frame; each request queues its own event, so a refreshed list's earlier event fires and frees nothing.
+  (fn:EVENT_TimedListExpire@0x00580800, fn:UNIT_ExpireTimedLists@0x00627460, run:2026-10-17-stats)
+- [I] The list's remove callback (default `STATE_DefaultRemoveCB`) keeps the bit on a dead unit when the state has
+  `plrstaydeath`/`monstaydeath`; death purges every non-item list without flags `0x181` whose state does not stay on
+  death: no death in the run. (fn:STATE_DefaultRemoveCB@0x0056E900, fn:sub_00627540_StatListsPurgeOnDeath@0x00627540)
+- [C] **`group` exclusion** is done by `STATE_GroupClear`, not by the apply: it clears every other state of the same
+  non-zero `group` on the unit and frees its list; the stock potions' states (178–180) have no `group`, so the
+  potions' call clears nothing. The full Trang-Oul's Avatar's `state` = monsterset (stat 98) runs it through the stat
+  callback; when the set breaks the call clears `monsterset` itself (180 clears, § 8). (fn:STATE_GroupClear@0x0056C740,
+  fn:sub_0055B800_MonStatCallback@0x0055B800, tbl:States.txt:group, run:2026-10-17-stats)
+- [I] The exclusion of a *different* state of the same group (the Druid's shapes and `maul`/`feralrage` share group 3
+  with `monsterset`) was not reached. (fn:STATE_GroupClear@0x0056C740, tbl:States.txt:group)
+- [C] **The per-frame ticks** (player event 3, every frame): stamina `+= max >> 8` standing, `>> 9` walking (not
+  below 1 point outside town), none running unless `staminarecoverybonus` ≥ 1000, `× (100 + bonus)/100`; mana
+  `+= MulDiv(max / (ManaRegen·25), 100 + manarecoverybonus, 100) + manarecovery`, off under state 85 `nomanaregen`;
+  life unchanged while stat 74 is 0. No draw. (fn:sub_00580810_RegenEvent@0x00580810, fn:PLAYER_StaminaRegenTick@0x00580500,
+  fn:PLAYER_ManaRegenTick@0x005806F0, run:2026-10-17-stats)
+- [C] Life `+= stat 74` capped at max (dropping the `healthpot` list at the cap), for a positive stat 74 (potions) and
+  a negative one (poison: 1 082 ticks, § 8). (fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-10-17-stats)
+- [I] The floor at 256 life was not reached; open wounds never hit the player. (fn:sub_00580610_LifeRegenTick@0x00580610,
+  0x0058065B–0x0058066E)
+- [C] **Auras are refreshed timed states.** An aura skill runs from unit event 8 (the selected right skill) or event
+  9 (an item's `item_aura`, stat 151) every `p = max(perdelay, 5)` frames on a grid (`((frame − 1 + p) / p)·p + 1`);
+  each run applies `auratargetstate` to the units in range with a duration that ends one frame after the next run.
+  Two auras of one state: equal level refreshes, higher replaces, lower is refused. A mercenary's aura runs the same
+  way. A damaging aura's run draws one `RNG_RangeB` per hit on the caster's seed (the hit's elemental damage, phase
+  3's); the run draws nothing else. (fn:EVENT_SelectedAuraTick@0x0056FCB0, fn:EVENT_ItemAuraTick@0x0056FE40,
+  fn:SKILLS_NextPeriodicFrame@0x0056CD50, fn:AURA_ApplyToTarget@0x005CEDC0, fn:SKILLS_RollElemDamage@0x0056E0C0,
+  run:2026-10-17-stats)
+- [I] **Shrines** apply their state through a table at `0x006E1850` (code → stat, state) for `Duration in frames`,
+  the stat value `Arg0` for the resists and the other `SHRINE_TimedStat` codes: the 3 timed shrines of the run matched,
+  a named shortfall against the plan's 50 operates (§ 8). (fn:OBJOP_Shrine@0x00583C70,
+  data:g_ShrineEffects@0x006E1850, fn:SHRINE_TimedStat@0x00583B30, run:2026-10-17-stats)
+- [I] Combat and stamina shrines' own handlers and the re-arm after `reset × 1200 + 1` frames were not reached; the
+  wells (`Parm1/256` of each maximum per use, capped) matched in all 5 uses (4 raised a value) and the recharge shrines in 4 (each on a full player,
+  so none decided), below the plan's count; poison and freeze cured by a well was not reached.
+  (fn:SHRINE_Combat@0x005839B0, fn:SHRINE_Stamina@0x00583A70, tbl:Shrines.txt:reset)
 
 ## Leads used
 
@@ -73,23 +88,23 @@ Phase 1b, compared after the code reading of § 2 – § 7 (blind first).
 
 | Address | Name | Role | Tag |
 |---|---|---|---|
-| `0x0056E970` | `STATE_ApplyTimed` | the timed apply: curse rules, refresh, replace, expiry event | I |
+| `0x0056E970` | `STATE_ApplyTimed` | the timed apply: curse rules, refresh, replace, expiry event | C |
 | `0x00639DB0` | `STATE_Set` | set or clear a state bit (and the client bit) | I |
 | `0x00625A70` / `0x00625B70` | `UNIT_SetStateBit` / `UNIT_TestStateBit` | the bit-sets at unit list `+0x58` | I |
-| `0x0056C740` | `STATE_GroupClear` | clear the states of the same `group` | I |
+| `0x0056C740` | `STATE_GroupClear` | clear the states of the same `group` | C |
 | `0x0056E900` | `STATE_DefaultRemoveCB` | the remove callback: state bit, passives | I |
-| `0x00580800` | `EVENT_TimedListExpire` | unit event 12 | I |
-| `0x00627460` | `UNIT_ExpireTimedLists` | free timed lists at or past their frame | I |
+| `0x00580800` | `EVENT_TimedListExpire` | unit event 12 | C |
+| `0x00627460` | `UNIT_ExpireTimedLists` | free timed lists at or past their frame | C |
 | `0x00627540` | `sub_00627540_StatListsPurgeOnDeath` | drop non-item states that do not stay on death | I |
 | `0x006272E0` | `sub_006272E0_StatListsDropOnMode` | drop flag-4 lists on a mode change | I |
-| `0x00580810`, `0x00580610`, `0x00580500`, `0x005806F0` | `sub_00580810_RegenEvent`, `sub_00580610_LifeRegenTick`, `PLAYER_StaminaRegenTick`, `PLAYER_ManaRegenTick` | the player's per-frame tick | I |
-| `0x0056FCB0`, `0x0056FE40` | `EVENT_SelectedAuraTick`, `EVENT_ItemAuraTick` | unit events 8 and 9 | I |
+| `0x00580810`, `0x00580610`, `0x00580500`, `0x005806F0` | `sub_00580810_RegenEvent`, `sub_00580610_LifeRegenTick`, `PLAYER_StaminaRegenTick`, `PLAYER_ManaRegenTick` | the player's per-frame tick | C |
+| `0x0056FCB0`, `0x0056FE40` | `EVENT_SelectedAuraTick`, `EVENT_ItemAuraTick` | unit events 8 and 9 | C |
 | `0x005BF510` / `0x005BF5D0` | `ITEMAURA_Start` / `ITEMAURA_Stop` | stat 151 on and off | I |
-| `0x0056CD50` | `SKILLS_NextPeriodicFrame` | the `perdelay` grid | I |
+| `0x0056CD50` | `SKILLS_NextPeriodicFrame` | the `perdelay` grid | C |
 | `0x0056B7E0` | `SKILLS_ForUnitsInRange` | near rooms, squared distance, filter | I |
 | `0x005CF010` | `sub_005CF010_PalAuraDo` | a paladin aura run (SkilPal.cpp) | I |
-| `0x005CEDC0` | `AURA_ApplyToTarget` | the target's aura state and its stats | I |
-| `0x00646D60`, `0x00646F20` | `SKILLS_RefreshPassive`, `SKILLS_RefreshPassivesInState` | the passive state lists | I |
+| `0x005CEDC0` | `AURA_ApplyToTarget` | the target's aura state and its stats | C |
+| `0x00646D60`, `0x00646F20` | `SKILLS_RefreshPassive`, `SKILLS_RefreshPassivesInState` | the passive state lists | C (`SKILLS_RefreshPassive`; I for `SKILLS_RefreshPassivesInState`) |
 | `0x00583C70` | `OBJOP_Shrine` | the shrine operate (OperateFn 2) | I |
 | `0x00583B30`, `0x005839B0`, `0x00583A70`, `0x00583BF0` | `SHRINE_TimedStat`, `SHRINE_Combat`, `SHRINE_Stamina`, `SHRINE_Skill` | the timed shrine handlers | I |
 | `0x00583840` | `SHRINE_StatValue` | the stat value of a timed shrine | I |
@@ -291,7 +306,7 @@ stateDiagram-v2
 | apply | `STATE_ApplyTimed` (and the combat appliers) | the request, frame, target stats 109, state 57, existing lists | list made, refreshed or refused; event 12 | none |
 | expire | `EVENT_TimedListExpire` | frame, the timed lists | lists freed, bits cleared, passives rebuilt | none |
 | tick | `sub_00580810_RegenEvent` (player), `sub_005A6920_MonRegenEvent` | stats 6–11, 26–28, 74, mode, states 85, 100, 106 | stats 6, 8, 10 | none |
-| aura | events 8, 9 | skill, level, calcs, units in range | target lists via apply | none in the code read; the calcs are data/calc's |
+| aura | events 8, 9 | skill, level, calcs, units in range | target lists via apply | none in the code read; the run found one `RNG_RangeB` per hit of a damaging aura (§ 8) |
 | recompute | any list write, link, unlink (stats/0001 § 3) | the lists | the `+0x48` cache, callbacks | none |
 | shrine, well | `OBJOP_Shrine`, OperateFn 22 | Shrines/Objects row, player stats | apply, refill, re-arm event | none for codes 0–15 and wells |
 
@@ -300,6 +315,80 @@ stateDiagram-v2
   others and for `0x6AC690C5`; the only hits are in shrine codes 18, 21, 22, out of scope). So no event kind of this
   plan draws, and Phase 2's chaining minimum has no pairs to log: their draw-order claims stay `[I]`.
   (0x00582CE3, 0x0058311D, 0x0058344D, fn:RNG_Range@0x0045C390)
+- [C] *Corrected by the run (§ 8, P2 review):* the scan was one level deep and missed the aura kind's draw. A
+  damaging aura's run (Sanctuary) calls `sub_005CF3A0_AuraHitDo`, which calls `SKILLS_RollElemDamage` at 0x005CF5D5,
+  which draws `RNG_RangeB` at 0x0056E132 on the caster's seed, once per hit. Every other kind of the table is
+  draw-free by the run. (fn:sub_005CF3A0_AuraHitDo@0x005CF3A0, fn:SKILLS_RollElemDamage@0x0056E0C0,
+  fn:RNG_RangeB@0x0045C3E0, run:2026-10-17-stats)
+
+### 8. The Phase 2 run (`run:2026-10-17-stats`)
+
+The Paladins of the run (Prayer selected, Sanctuary from *Azurewrath*, an Act II Prayer mercenary; `StatsPalC` with a
+low defence, to be poisoned) walked Act II, III and V areas; the Barbarians and the Necromancer stayed in town. `tools/stats.py` predicted each line below from § 2–
+§ 7 and the mirrored lists (method and counts in the run record).
+
+- [C] **Apply** (§ 2): 3 643 `STATE_ApplyTimed` calls on the player, each predicted as refuse, refresh, replace or
+  new, with the list made (flags `0x2`/`0x20`/`0x8`/`0x800`, state, `+0x18` = frame + duration, skill, level, the one
+  stat) or the expiry moved: Prayer (34) refreshed 1 708, refused 1 013, replaced 2; Sanctuary's target state (47)
+  new 5, refreshed 894; state 113 (a monster's skill 309) new 11, refreshed 4; Conviction (28, a monster's aura) new 1,
+  refreshed 2; the shrine states 130 and 131 new 3. A same skill and level refreshes (the list kept, its stats not
+  rewritten); the same skill at a lower level is refused (the player's and the mercenary's Prayer, at different
+  levels, against each other: 1 013); a higher level frees the old list and makes a new one (2). The curse branch's cut by stat 109
+  and the `attract` refusal were not reached: no stock item or affix carries `curse_resistance` (properties with stat
+  109: none), and no monster casts Attract (MonStats skills). (fn:STATE_ApplyTimed@0x0056E970, run:2026-10-17-stats)
+- [I] **Shrine states are curses.** States 128–137 have the `curse` bit, so a shrine's list carries flag `0x20` and
+  is "the" curse of § 2: it replaces a monster curse and a curse replaces it. The run applied 3 timed shrines
+  (codes 10 (1), 8 (2)) with flag `0x22`, the duration `Duration in frames` and, for `SHRINE_TimedStat`, the table's
+  stat with value `Arg0`. (fn:OBJOP_Shrine@0x00583C70, data:g_ShrineEffects@0x006E1850, tbl:States.txt:curse,
+  tbl:Shrines.txt:Duration in frames, run:2026-10-17-stats)
+- [I] **Shrines and wells: a named shortfall.** The run operated 7 shrines (3 timed: codes 8 and 10; 4 recharge, codes 2
+  and 3, each on a full player, so the refill changed nothing, as predicted) and 5 wells (each predicted:
+  `Parm1 · max >> 8` = 128/256 of the maximum added to life, mana and stamina, capped; one on a full player returned 0
+  and changed nothing; raised life and mana 2, mana 1, mana and stamina 1), 12 operates against the 50 the plan
+  asks. `objop --walk` reaches only the shrines and wells of the rooms the field explore activated, about one per
+  session. Every one matched, but at these counts the shrine and well claims of § 5 stay `[I]`. (fn:OBJOP_Shrine@0x00583C70,
+  fn:SHRINE_Refill@0x005828E0, 0x00585720, tbl:Objects.txt:Parm1, run:2026-10-17-stats)
+- [C] **Expiry** (§ 3): 2 749 runs of `EVENT_TimedListExpire` on the player freed exactly the `+0x3C` children with
+  flag 2 and `+0x18` ≤ the frame (123 lists, each on its own expiry frame: lateness 0 in every case);
+  2 630 runs freed nothing. A refresh queues a new event 12 at the new expiry and the earlier event still fires
+  and finds nothing: one event per request, not one per unit (open question answered). (fn:EVENT_TimedListExpire@0x00580800,
+  fn:UNIT_ExpireTimedLists@0x00627460, fn:STATE_ApplyTimed@0x0056E970, run:2026-10-17-stats)
+- [C] **Auras** (§ 4): 3 629 runs of event 8 and 9 (the player's Prayer and Sanctuary, the mercenary's Prayer
+  through the monster table) fell on frames `≡ 1 (mod 50)` 50 frames apart (the mercenary's selected Prayer 1 021 runs, the
+  player's item Sanctuary 899, the player's selected Prayer 1 709; the only other gaps are the session starts), the grid of
+  `SKILLS_NextPeriodicFrame` with Prayer's and Sanctuary's `perdelay` 50; each target state's duration was
+  `perdelay + 1` = 51 (6 207 applies, Conviction's included). An aura state's start and end were rare: new 6
+  (Sanctuary's 47 five times, Conviction's 28 once), replaced 2, and one end by expiry (28); the end is the timed
+  expiry above, and the Prayer and Sanctuary states never ended (the auras always reached the player). (fn:EVENT_SelectedAuraTick@0x0056FCB0, fn:EVENT_ItemAuraTick@0x0056FE40,
+  fn:SKILLS_NextPeriodicFrame@0x0056CD50, tbl:Skills.txt:perdelay, run:2026-10-17-stats)
+- [C] **The regeneration tick** (§ 6): 54 719 player ticks; the life, stamina and mana written equal the formulas of
+  § 6 from the mirrored stats, the unit mode and state 85 (life: +74 1 424, capped 10 657, −74 1 082, no 74 41 556; mana: regenerated 48 433,
+  state 85 6 286; stamina: by mode 1, 3, 4, 5, 7, 9 and 19, with and without `staminarecoverybonus`).
+  **Poison reached the player** (`StatsPalC` in the Act III and Act II fields, `palc-spider` 683 ticks and `palc-oasis` 399): the 1 082 ticks with a
+  negative stat 74 each wrote `hp + stat 74` as predicted. No poisoned tick reached the floor at 256, and open wounds never hit the player: the floor stays `[I]`. (fn:sub_00580610_LifeRegenTick@0x00580610,
+  fn:PLAYER_StaminaRegenTick@0x00580500, fn:PLAYER_ManaRegenTick@0x005806F0, run:2026-10-17-stats)
+- [C] **`group`** (§ 2): 450 `STATE_GroupClear` calls on the player: the potions of the run (antidote, thawing,
+  stamina: states 178–180) have no `group`, so the call cleared nothing (90 calls). The Necromancer's full Trang-Oul's Avatar (`nec-town1`) ran it through the stat
+  callback 360 times: when stat 98 appeared (the full block, param `monsterset` 176) with the self argument 0, no
+  other state of group 3 was on the player and nothing was cleared (180); when the set broke (98 back to 0) with the
+  self argument 1, the call cleared state 176 itself (180 effective clears; a reading that clears only the *other*
+  states of the group predicts the bit kept). A clear of a *different* state of the same group (the Druid's `wolf`,
+  `bear`, `maul`, `feralrage`, or `delerium`) was not reached: that half stays `[I]`.
+  (fn:sub_0055B800_MonStatCallback@0x0055B800, 0x0055BD8F–0x0055BDC4, fn:STATE_GroupClear@0x0056C740,
+  tbl:States.txt:group, run:2026-10-17-stats)
+- [C] **Draws** (§ 7, the P1 review's draw-freedom amendment): the game seed and the acting unit's seed were equal at
+  the entry and the exit of every logged event of these kinds: apply 6 232, expire 2 749, link 12 868, unlink 12 853,
+  own write 101 995, toggle 19 525, tick 54 719, aura 2 763; those kinds draw nothing, except the aura kind's hit
+  below (`[C]`). Shrine 7 and well 5
+  are below the 20 the amendment asks: their "no draw" stays `[I]` (§ 7's scan). The aura kind does
+  when the aura hits: 865 runs of the player's item aura (Sanctuary) moved the player's seed, each by exactly
+  the number of `RNG_RangeB` calls `SKILLS_RollElemDamage` made from `sub_005CF3A0_AuraHitDo` (one per hit, 865
+  steps; each such run's exit is asserted against its entry advanced by its logged draws, and 746 of the next runs
+  of the same caster entered on that exit: chained pairs, counted at the P2 review); the game seed never moved
+  except once, when a kill dropped an item; a run that killed also stepped the dead
+  monster's own seeds (not the caster's). That draw is the skill's damage (phase 3), outside this plan's stat and
+  state code. (fn:SKILLS_RollElemDamage@0x0056E0C0, fn:sub_005CF3A0_AuraHitDo@0x005CF3A0, fn:RNG_RangeB@0x0045C3E0,
+  run:2026-10-17-stats)
 
 ## Data touched
 
@@ -400,9 +489,7 @@ Ghidra's (`tools/ghidra.sh instrat`); "(no function)" is a site Ghidra's analysi
 
 ## Open questions
 
-- [L] Whether the unit event queue keeps one event 12 per unit or one per call (`sub_005417D0_UnitQueueEvent` →
-  `0x005416B0` not read). Either way the handler frees all expired lists; it matters for which frame a later,
-  shorter state ends. Phase 2 logs each event-12 run.
+- *Answered by the run (§ 8):* one event 12 per request; a refreshed list's earlier event fires and frees nothing.
 - [L] The monster gate's two bits (MonStats `+0x0D` bit 0, MonStats2 `+0x05` bit 1): which columns.
 - [L] The skill shrine's `Arg0` (2): no stat is written, so the +2 skills come from a reader of state 134 not read here.
 - [L] Holy Shield, the progressive skills and the timed self-states (armours, shouts): their skill functions.

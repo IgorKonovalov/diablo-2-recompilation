@@ -1,6 +1,6 @@
 # 0041 — Stats and states: how a unit's final stats add up, and how timed states live and die (ADR-0014 phase 2)
 
-> **Status:** in progress. P0 and P1/1b reviewed (accepted with fixes, 2026-10-16 and 2026-10-17); P2 open (0037·P3 reviewed 2026-10-17, the [ADR-0016](../adrs/0016-pipelined-simulation-phases.md) gate is met)
+> **Status:** in progress. P0, P1/1b and P2 reviewed (accepted with fixes, 2026-10-16, 2026-10-17 and 2026-10-17); P3 open
 > **Created:** 2026-10-16
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases
@@ -409,3 +409,139 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   the second slot is lane H2's between two 0038 batches.
   **Filed:** reverser (static: Phase 0 surprise (e) and the 34 States rows of (f); optional op 6/7 emulation),
   backlog. Struck: the review request and the contradicted-lead entry (ruled here).
+- **2026-10-17 — Phase 2 checkpoint (reverser, `lane/p41h`, slots 2 and 1): resume note.** Stopped at a clean break
+  on the orchestrator's rotation; both slots stopped and empty, no background loop left. Run id `run:2026-10-17-stats`
+  ([record](../findings/stats/experiments.md#run2026-10-17-stats), marked in progress). 13 sessions logged and checked:
+  **0 mismatches** (`tools/stats.py check`, 17 703 links/unlinks, 156 683 CacheAdd/CacheWrite predicted in order,
+  648 599 reads of 118 stat ids, 3 907 set lists, 12 895 aprop toggles, 14 240 requirement checks, 6 200 passive
+  lists, 3 226 rescales, 2 941 applies, 2 208 expiry runs (80 lists freed, lateness 0), 42 794 ticks, 4 810 aura
+  durations (= `perdelay` + 1), 3 timed shrines, 714 refresh step-4 checks, 7 level changes; the ISC run-time graph
+  equals the loader's rules on all 359 rows). Ops reached in predicted writes: 1 288, 2 1 484, 4 1 932, 5 26,
+  8 531, 9 2 572, 11 92, 13 124. Seed invariance (entry = exit, game and acting unit): link 8 856, unlink 8 841, own
+  write 67 592, toggle 12 895, apply 4 835, expire 2 208, tick 42 794, shrine 4, well 3, aura 2 064 — every kind ≥ 20
+  except shrine and well; the aura kind draws when Sanctuary hits (865 runs chained: one `RNG_RangeB` per hit from
+  `SKILLS_RollElemDamage` 0x0056E0C0, called by `sub_005CF3A0_AuraHitDo`; a kill inside a run also moves the game
+  seed through the drop).
+  **Questions:** 1 (snapshots), 2 (reads), 3 (cache writes, take test, level-up, stale source), 4 (rescale), 6 (sets:
+  masks, add func 0/1/2, partial and full, duplicate member, failing member), 7 (dual wield, switch: callers
+  0x005616A0 / 0x0054CE70), 8 (apply: refresh, lower refused, higher replaces, new; shrine states are curses), 9
+  (expiry: one event per request), 11 (stamina and mana ticks by mode, state 85, life capped; stat 74 positive only),
+  12 (aura grid ≡ 1 mod 50, durations, merc through the monster table), 14 (passives), 15 (itemspecific 72/73 reach the
+  wearer's cache) are covered. **Left:** Q5 decisive cases (`req_decisive_ethereal` and `_req_percent` are 0: run
+  `bard-town1`, StatsBarD strength 85, built); Q10 effective group clear (run `nec-town1`, StatsNec full Trang-Oul's,
+  built; the first attempt failed because `inv:open` took the dark Act IV town for an open panel, fixed in
+  `d2pilot.py` `inv_grid_open`, failed log kept as `s1017-nec-town1.log.failed-dark-town`); Q11 poison and the
+  stat-74 tick at 256 (run `palc-spider`, `palc-oasis`, StatsPalC low defence, built; no Paladin was poisoned so far);
+  Q13 shrines (3) and wells (3) are far below 50 (shortfall likely; `objop --walk` finds few); op 5 at 26 and op 11 at
+  92 (op 3, 6, 7, 10, 12 unreachable). Not done at all: the findings' § 9 (0001) and § 8 (0002) sections — drafts with
+  `{PLACEHOLDERS}` and the helpers (`fill.py` fills them from the check JSON, `table.py` the session table, `acts.py`
+  lists the clicks' effects) are in `workspace/logs/stats/p41h-drafts/`; the summary bullets of both findings are
+  already split and raised against this run; the oracle replacement (`tools/stats.py oracle-player`: 13 of 20
+  level-up maxima of run:2026-10-16-player equal the own entries, 7 need item lists the logs lack; the combat logs
+  hold values, not lists: not replaceable); the review request.
+  **Built saves:** `workspace/logs/stats/p41h-saves/*.d2s` (Stats, StatsB/C/D, StatsNec, StatsPal/B/C; rebuild
+  with `d2s.py build` on `workspace/samples/d2s/smp{bar,pal,nec}.d2s`, hashes in `test_d2s.py`). **Resume:**
+  `python3 -I tools/stats_sessions.py run --slot 2 --tag s41 --saves workspace/logs/stats/p41h-saves --run s1017
+  bard-town1 nec-town1` and `… --slot 1 --tag s41p … palc-spider palc-oasis`, then append the logs to
+  `s1017-run.lst`, re-run the check and the manifest, fill the sections, finish the record and file the review.
+  **Gotchas:** every click that changes lists must be `clickv`; a requirement-failing item cannot be re-equipped by
+  the UI (never toggle it); start the next session only after the previous one's `restore` (two launches at once
+  missed the menu); the game's `EquipReqRefresh` runs on a 136-frame period by itself; the logger slows the game to
+  about a frame per click in town (settle handles it).
+- **2026-10-17 — Phase 2 landed (reverser, `lane/p41h`, slots 2 and 1): resumed from the checkpoint above.** Main
+  merged twice (`78b96a9`, then `7e15a1b` before the request). Five sessions added (`bard-town1`, `bard-town2`,
+  `nec-town1` on slot 2; `palc-spider`, `palc-oasis` on slot 1): `run:2026-10-17-stats`
+  ([record](../findings/stats/experiments.md#run2026-10-17-stats)) is **18 sessions, 0 mismatches** (`tools/stats.py
+  check` at `27f49ad`, report `s1017-check.json` `677e12a6…`, run list `a42758f3…`, manifest `7fd7a93a…`): 26 087
+  links/unlinks, 232 042 CacheAdd/CacheWrite in order, 891 844 reads of 120 stat ids, 17 634 requirement checks,
+  5 749 set lists, 19 525 aprop toggles, 8 832 passive lists, 5 752 rescales, 3 643 applies, 2 749 expiry runs (123
+  lists freed, lateness 0), 54 719 ticks, 6 207 aura durations, 450 group clears, 7 shrines, 5 wells. Ops in
+  predicted writes 1 348, 2 1 490, 4 2 568, 5 26, 8 919, 9 3 784, 11 92, 13 136. Seed invariance: link 12 868,
+  unlink 12 853, own write 101 995, toggle 19 525, apply 6 232, expire 2 749, tick 54 719, aura 2 763 unchanged;
+  aura 865 runs chained (Sanctuary's `RNG_RangeB`); shrine 7 and well 5 below 20.
+  **Raised:** the ethereal −10 decides 30 requirement checks (`StatsBarD`; a second session, `bard-town2`, was added
+  for the count) → `[C]`; the stat-74 tick under poison (1 082 ticks, `StatsPalC`) → `[C]`; the `monsterset` group
+  clear with the self argument (180 effective clears, `StatsNec`) → `[C]`. **Kept `[I]`, named:** the
+  `item_req_percent` term (814 checks, none decisive); the life floor at 256 and open wounds (not reached); a clear
+  of a *different* state of one group (no group-3 pair on one unit); shrines and wells, **12 operates against 50**
+  (every one predicted: 3 timed shrines, 4 recharge shrines on a full player, 5 wells), their "no draw" too; the
+  summary shrine bullet of stats/0002 was lowered from `[C]` to `[I]` for that count. The 180 full Trang-Oul's set
+  lists (`state` and `oskill` blocks) are taken as logged: a tool limit, named in the record.
+  **Tool changes** (`27f49ad`): `tools/stats.py` predicts wells (`Parm1 · max >> 8`, capped, the return) and the
+  recharge shrines 1–3, splits the life tick by the sign of stat 74 and the requirement cases by dexterity, and resets
+  events left open at a log's end (a killed session's open aura run was carried into the next log when the logs were
+  checked in another order); `tools/stats_sessions.py` gains `bard-town2`.
+  **Oracle replacement:** run:2026-10-16-player's level-up maxima: 13 of 20 equal the own entries (replaceable), 7
+  need item lists the logs lack; run:2026-10-16-combat logs values only: not replaceable.
+  **Findings:** stats/0001 § 9 and stats/0002 § 8 written; summaries split (stats/0001 {C 8, I 40, L 13} →
+  {C 22, I 44, L 11}; stats/0002 {C 7, I 41, L 9} → {C 14, I 49, L 8}); answered open questions struck (itemspecific,
+  weapon switch, one event 12 per request). Both slots stopped and empty; no background loop left.
+  **Review request** filed to the architect (backlog).
+- **2026-10-17 — Phase 2 reviewed (architect, `lane/p41h`, `main` `af90ea8` merged in): accept with fixes; P3
+  opens.** Merge clean (no `docs/backlog.md` or `re/symbols.csv` conflict; `backlog.py migrate` moved nothing).
+  **Re-runs.** Manifest: the 18 logs re-hashed (sha256, size, line count) and the run list, manifest and report hash
+  to the record's `a42758f3…`, `7fd7a93a…`, `677e12a6…`. `tools/stats.py check` under `systemd-run --user --scope -p
+  MemoryMax=4G python3 -I` over the 18 logs: in the run's order the report is byte-identical to `s1017-check.json`
+  (0 mismatches); reversed and shuffled (`random.Random(41)`): 0 mismatches, identical counts and seed tallies (only
+  the aura grid's cross-log gaps and the report's first 20 wells differ). The pre-fix checker (`27f49ad^`, scratch
+  copy) on the shuffled order fails once (`aura_rng` at `s1017-pal-tundra.log:613`: `palc-oasis` ends inside an
+  aura run), so the per-log reset is the fix and is sound. `test_stats.py` (6) and `test_d2s.py` (45) pass. Gate
+  green before and after.
+  **Anchors** (objdump on the pinned `game.exe`, `631066c1…`): the well entry 0x00585720 (`push ebp`) and its only
+  return 0x0058589B (`ret 8`); `OBJOP_Shrine`'s two returns 0x00583CA4 and 0x00583E65 are its only `ret`s;
+  `STATE_GroupClear`'s returns 0x0056C82F and 0x0056C83A; the seven aura-tick returns the logger stops at are the
+  seven `ret 8` of 0x0056FCB0–0x0056FEFF; `EVENT_TimedListExpire` returns at 0x0058080D and the tick at 0x00580855;
+  0x005CF5D5 calls `SKILLS_RollElemDamage` (return 0x005CF5DA, the logger's `ra2`), which calls `RNG_RangeB` at
+  0x0056E132.
+  **Rulings.**
+  1. *Shrines and wells:* a **named shortfall**, no addendum required for P3. Their claims are a table read and two
+     short handlers, already `[I]` with code anchors, and the spec can state them so; 12 operates (7 shrines, 5
+     wells) are below the 50 and the draw-freedom floor (7, 5 against 20). The 4 recharge shrines were all on a full
+     player, so none decided: the summary now says so. An optional addendum (a shrine-and-well hunt with lowered
+     vitals, an aura state's end, a different-state group clear) is filed for an idle slot.
+  2. *Trang-Oul's lists:* acceptable, but **not as an ADR-0004 oracle**: the set list is in-scope code, which
+     ADR-0004 never oracles. The 180 lists are an unchecked remainder taken as the input of the predicted events
+     after them (as an ADR-0014 value oracle is), excluded from the Sets count (5 569 of 5 749), seeds checked around
+     them; the content of a full block with a `state` or `oskill` property stays `[I]` (stats/0001 summary now says
+     so). The record names it. Predicting the other blocks of those lists is a tool follow-up.
+  3. *Checker fix:* sound (re-runs above).
+  4. *Oracle replacement:* **does not hold**. `oracle-player` compares the logged maxima with the own entries and
+     calls the 13 equal ones replaceable; but the 14 level-ups of built characters carry 9 or 10 items and the new characters
+     their starting items, the logs hold no child list, and "no linked child adds to 7, 9 or 11" is concluded from the
+     equality itself. A consistency check, not a prediction: **none of the 20 is replaced**, the maxima stay value
+     oracles of run:2026-10-16-player, the combat logs are not replaceable either. The done-when asks the record to
+     name what could and could not be replaced, which it now does.
+  5. *Done-when:* **met**, with named shortfalls. Seed invariance ≥ 20 for link, unlink, own write, toggle, apply,
+     expire, tick and aura; shrine 7 and well 5 named. The aura kind moves the caster's seed (one `RNG_RangeB` per
+     Sanctuary hit), so it takes the chaining minimum: the checker asserts each of the 865 drawing runs' exits against
+     the logged draws, and the review counted **746 chained pairs** (the next run of the same caster entering on that
+     exit; the record had called the 865 "chained"). Counted shortfalls the record had not named: expiries as freed
+     lists 123 against 300 (the 2 749 event-12 runs check the free set), aura on/off events 9 against 50 (Prayer's
+     and Sanctuary's states never ended), both under rules that are `[C]` on these counts.
+  6. *Raises:* Q5 ethereal −10 (30 decisive checks, a reading without it fails each), Q11 poison tick (1 082, `hp +
+     stat 74` with a negative 74; a reading that ignores negatives fails each) and Q10 `monsterset` self-clear (180;
+     the "other states only" reading keeps the bit) stand at `[C]`; each split has its remainder at `[I]` (stat 91,
+     level, class, broken; the 256 floor, open wounds; a different state of the group). Counts recomputed after the
+     merge: stats/0001 {C 22, I 44, L 11}, stats/0002 {C 15, I 49, L 8} (one `[C]` bullet added to § 7 below).
+  7. *Symbols:* 29 rows raised `I` → `C`, each a logged breakpoint or a function whose writes the run predicted, with
+     the code reading as the other source: `STATLIST_LinkToUnit`, `STATLIST_Unlink`, `STATLIST_Propagate`,
+     `sub_006266C0_StatRecompute`, `STATLIST_CacheAdd`, `STATLIST_CacheWrite`, `sub_00624F60_StatListGetValue`,
+     `ITEMSTATCOST_Load`, `UNIT_ToggleStatListByState`, `sub_0055DBC0_EquipReqRefresh`, `sub_0062EAF0_ItemReqCheck`,
+     `SETS_UpdateOnEquip`, `SETS_ToggleItemAProps`, `SETS_UpdateOwnerBonusList`, `sub_00660120_SetBonusApply`,
+     `SETS_WornMemberMask`, `STATE_ApplyTimed`, `STATE_GroupClear`, `EVENT_TimedListExpire`, `UNIT_ExpireTimedLists`,
+     `sub_00580810_RegenEvent`, `sub_00580610_LifeRegenTick`, `PLAYER_StaminaRegenTick`, `PLAYER_ManaRegenTick`,
+     `EVENT_SelectedAuraTick`, `EVENT_ItemAuraTick`, `SKILLS_NextPeriodicFrame`, `AURA_ApplyToTarget`,
+     `SKILLS_RefreshPassive`; the findings' *Functions* tags follow. Left at `I`: the shrine and well code
+     (shortfall), `STATE_Set` and the bit helpers, the readers' base-value half, the damage-stat toggles, the maxima
+     getters, `sub_005CF3A0_AuraHitDo` and `SKILLS_RollElemDamage` (located by return chains, their own work phase 3's).
+  **Fixes applied on the lane** (9): overclaim 1 (the oracle replacement); misread 2 (the 865 exit-asserted runs
+  called chained pairs; "the game seed never moved" in the aura bullet, against the checker's one kill-drop run);
+  stale cross-reference 1 (stats/0002 § 7's aura row and "no event kind draws", corrected with an anchored `[C]`
+  bullet; the summary's aura bullet gains the draw); omission 3 (the expiry and aura on/off counts; the Trang-Oul's
+  remainder in stats/0001's summary); under-claim 1 (29 symbol confidences and the *Functions* tags); other 1 (the
+  recharge shrines' non-decisive match). The record gains the review's re-check and the "not an oracle" note.
+  **Follow-ups filed** (backlog): reverser, tools (the chained-pair count, the per-log aura grid, tests for the
+  well, refill, negative tick and reset, the full Trang-Oul's stat blocks, `oracle-player`'s wording or its
+  precondition); reverser, optional harness addendum (shrines and wells, an aura state's end, a different-state group
+  clear). **P3 opens** (spec-writer queue order) with these rulings: the shrine, well, `item_req_percent`, 256-floor
+  and different-state group claims are `[I]`, and the stats oracles of plans 0034 and 0037 stay oracles.

@@ -1,0 +1,64 @@
+{
+  "game": "expansion",
+  "class": "Necromancer",
+  "seed": 4150,
+  "name": "StatsNec",
+  "progression": 15,
+  "difficulty": [
+    131,
+    131,
+    131
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "stats": {
+    "strength": 200,
+    "energy": 100,
+    "dexterity": 100,
+    "vitality": 200,
+    "hitpoints": 900,
+    "maxhp": 900,
+    "mana": 500,
+    "maxmana": 500,
+    "stamina": 300,
+    "maxstamina": 300,
+    "level": 80,
+    "experience": 1000000000
+  },
+  "skills": {},
+  "items": [
+    {
+      "set": "Trang-Oul's Guise",
+      "equip": "head"
+    },
+    {
+      "set": "Trang-Oul's Scales",
+      "equip": "tors"
+    },
+    {
+      "set": "Trang-Oul's Wing",
+      "equip": "larm"
+    },
+    {
+      "set": "Trang-Oul's Claws",
+      "equip": "glov"
+    },
+    {
+      "set": "Trang-Oul's Girth",
+      "equip": "belt"
+    },
+    {
+      "unique": "The Gnasher",
+      "equip": "rarm"
+    },
+    {
+      "unique": "Nagelring",
+      "identified": false,
+      "equip": "lrin"
+    }
+  ],
+  "quests": "all"
+}

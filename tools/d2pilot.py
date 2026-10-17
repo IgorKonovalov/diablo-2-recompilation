@@ -196,7 +196,7 @@ class LogState:
             elif tag == "OO0":
                 self.operated.add(d["u"])
             elif tag == "OBJS":
-                self.objs_xy = [(x, y) for _, x, y in d["o"]]
+                self.objs_xy = [(o[1], o[2]) for o in d["o"]]
                 self.objs_cls = d["o"]
             elif tag == "NPC":
                 npcs = {}
@@ -1819,6 +1819,9 @@ def cmd_objop(args):
     between the clicks. Nothing here feeds a model."""
     st = LogState(args.log)
     p = Pilot(args)
+    p.walk = bool(getattr(args, "walk", False))           # plan 0041 Phase 2: a walking character (no Teleport)
+    classes = {int(c) for c in str(args.obj_cls).split(",") if c}
+    visited = set()                                       # (x, y) of objects clicked (confirmed or given up)
     t0 = time.time()
     done = 0
     blind = [0, set()]
@@ -1830,7 +1833,12 @@ def cmd_objop(args):
         if not args.no_nova and gate.cast(p, st):    # Nova first at whatever it can hurt in range
             upkeep(args, p)
             continue
-        objs = [o for o in getattr(st, "objs_cls", []) if o[0] == args.obj_cls]
+        objs = [o for o in getattr(st, "objs_cls", []) if o[0] in classes and (o[1], o[2]) not in visited]
+        if len(classes) > 1 and st.pos:
+            # several classes (shrines and wells): unused ones only (mode 0, when the line carries it) and within
+            # 300 sub-tiles (the object lists hold every level's objects)
+            objs = [o for o in objs if (len(o) < 4 or o[3] == 0)
+                    and math.hypot(o[1] - st.pos[0], o[2] - st.pos[1]) < 300]
         if not st.pos:
             time.sleep(0.5)
             continue
@@ -1871,6 +1879,10 @@ def cmd_objop(args):
                 c = optimistic_hop(st, (o[1], o[2]), args.hop, blind[1], step=1)
             if c is None:
                 print("objop: no hop towards the object at (%d, %d), d %.1f" % (o[1], o[2], d))
+                misses[0] += 1
+                if len(classes) > 1 and misses[0] >= 4:
+                    visited.add((o[1], o[2]))
+                    misses[0] = 0
                 time.sleep(1.0)
                 continue
             p.teleport(c[0] - px, c[1] - py)
@@ -1898,6 +1910,9 @@ def cmd_objop(args):
                 break
         done += ok
         misses[0] = 0 if ok else misses[0] + 1
+        if len(classes) > 1 and (ok or misses[0] >= 4):
+            visited.add((o[1], o[2]))
+            misses[0] = 0
         print("objop: click %d at (%d, %d) d %.1f: %s" % (done, o[1], o[2], d, "done" if ok else "no %s line" % args.done))
         time.sleep(args.linger)
         if args.shots:
@@ -2047,9 +2062,30 @@ def read_plan(path):
     return out
 
 
+def inv_grid_open(p):
+    """The inventory grid is showing: its cell borders (display x 418 + 29k) are brighter than the cell centres by
+    more than 10 grey levels on average and the centres are dark (plan 0041 Phase 2; a dark town such as the
+    Pandemonium Fortress fooled a plain darkness test)."""
+    raw, bpl = p.grab(400, 316, 320, 120)
+    if raw is None:
+        return False
+
+    def grey(x, y):
+        o = (y - 316) * bpl + 4 * (x - 400)
+        b, g, r = raw[o:o + 3]
+        return (r + g + b) / 3.0
+    lines = [grey(418 + 29 * k, y) for k in range(11) for y in (330, 360, 390, 420)]
+    cells = [grey(418 + 29 * k + 14, y) for k in range(10) for y in (330, 360, 390, 420)]
+    lm, cm = sum(lines) / len(lines), sum(cells) / len(cells)
+    return lm - cm > 10 and cm < 35
+
+
 def cmd_cube(args, tokens):
     """Play a cube session (plan 0030 Phase 2) against a tools/gdb/cube.gdb log. Tokens (also read from --plan FILE):
-    key:K, sleep:S, shot:PATH, xy:X,Y, click:CELL, rclick:CELL as for insert; mv:A>B picks the item at cell A up and
+    key:K, sleep:S, shot:PATH, xy:X,Y, click:CELL, rclick:CELL as for insert; settle:S[,B] waits until the log has grown
+    by less than B bytes (4000) over the last S seconds (at most 20 s; plan 0041 Phase 2); inv:open and inv:closed
+    press I until the inventory grid is (not) showing; clickv:CELL clicks (keyv:K presses) until a ULK/LNK/UOE line
+    follows outside an EQR .. EQX refresh; mv:A>B picks the item at cell A up and
     puts it down with its footprint's centre at B; out:inv:x,y,w,h moves the first item the cube holds after the
     last transmute (at the cell its CUBX line gives) to that footprint; tm presses Transmute (--tm-xy) and waits for the logger's CUBX line,
     then prints the row matched (or none), the classes placed and the classes left in the cube; drop:CELL picks the
@@ -2064,7 +2100,7 @@ def cmd_cube(args, tokens):
     def click(x, y, button=1):
         p.dpy.click(p.off[0] + x, p.off[1] + y, button=button, hold=0.12)
 
-    for tok in tokens:
+    for ntok, tok in enumerate(tokens):
         kind, _, arg = tok.partition(":")
         if kind == "key":
             p.dpy.key(arg)
@@ -2081,6 +2117,41 @@ def cmd_cube(args, tokens):
             x, y = cell_xy(arg)
             click(x, y, 1 if kind == "click" else 3)
             time.sleep(0.6)
+        elif kind in ("clickv", "keyv"):
+            # plan 0041 Phase 2: a click that must change the player's stat lists (an equip, an unequip, a charm
+            # picked up or put down): wait for a ULK/LNK/UOE line (tools/gdb/stats.py) and click again when none
+            # comes, at most three clicks; the wait goes on while the log grows (the logger holding the game)
+            x, y = cell_xy(arg) if kind == "clickv" else (0, 0)
+            for attempt in range(3):
+                start = os.path.getsize(args.log)
+                if kind == "clickv":
+                    click(x, y)
+                else:
+                    p.dpy.key(arg)
+                t1, seen, size = time.time(), False, start
+                while time.time() - t1 < 4.0:
+                    time.sleep(0.2)
+                    n = os.path.getsize(args.log)
+                    if n != size:
+                        size = n
+                        text, _ = log_tail(args.log, start)
+                        inside = False                 # a periodic EquipReqRefresh (EQR .. EQX) does not count
+                        for ln in text.splitlines():
+                            if ln.startswith("EQR "):
+                                inside = True
+                            elif ln.startswith("EQX "):
+                                inside = False
+                            elif not inside and ln.startswith(("ULK ", "LNK ", "UOE ")):
+                                seen = True
+                                break
+                        if seen:
+                            break
+                        t1 = max(t1, time.time() - 3.0)
+                if seen:
+                    break
+                print("cube: %s %s attempt %d (token %d): no list change" % (kind, arg, attempt + 1, ntok))
+            else:
+                print("cube: %s %s: no list change after three tries" % (kind, arg))
         elif kind == "mv":
             a, b = arg.split(">")
             click(*cell_xy(a))
@@ -2100,6 +2171,33 @@ def cmd_cube(args, tokens):
             time.sleep(args.pick_wait)
             click(*cell_xy(b))
             time.sleep(args.pick_wait)
+        elif kind == "inv":
+            # inv:open / inv:closed (plan 0041 Phase 2): press I until the inventory grid (window x 418..708, y
+            # 316..432) is dark (open) or not (closed), at most four presses
+            want = arg == "open"
+            for _ in range(4):
+                is_open = inv_grid_open(p)
+                if is_open == want:
+                    break
+                p.dpy.key("i")
+                time.sleep(1.0)
+            else:
+                print("cube: inventory not %s after four presses" % arg)
+        elif kind == "settle":
+            # plan 0041 Phase 2: wait until the log has not grown for S seconds (the logger's work after a click
+            # holds the game), at most 20 s
+            # settle:S[,B]: quiet = the log grew by less than B bytes (default 4000) over the last S seconds, which a
+            # per-frame regeneration line or a read window allows
+            a = arg.split(",")
+            quiet, limit, t0 = float(a[0]), int(a[1]) if len(a) > 1 else 4000, time.time()
+            hist = [(t0, os.path.getsize(args.log))]
+            while time.time() - t0 < 20:
+                time.sleep(0.1)
+                now = time.time()
+                hist.append((now, os.path.getsize(args.log)))
+                old = [h for h in hist if now - h[0] >= quiet]
+                if old and hist[-1][1] - old[-1][1] < limit:
+                    break
         elif kind == "drop":
             click(*cell_xy(arg))
             time.sleep(args.pick_wait)
@@ -2894,7 +2992,8 @@ def main():
     ap.add_argument("--done-wait", type=float, default=6.0, help="npc: seconds to wait for the logger's confirmation")
     ap.add_argument("--linger-open", type=float, default=0.3, help="npc: seconds the window stays open")
     ap.add_argument("--close-wait", type=float, default=0.6, help="npc: seconds after the Escape")
-    ap.add_argument("--obj-cls", type=int, default=376, help="objop: the object class (objects.txt row)")
+    ap.add_argument("--obj-cls", default="376", help="objop: the object class (objects.txt row), or several "
+                    "comma-separated (plan 0041 Phase 2: any shrine or well); each object clicked once (by position)")
     ap.add_argument("--obj-near", type=float, default=4.0, help="objop: click the object from this close (sub-tiles)")
     ap.add_argument("--obj-dy", type=int, default=30, help="objop: click this many pixels above the object's cell")
     ap.add_argument("--times", type=int, default=1, help="objop: the number of confirmed clicks")
