@@ -90,12 +90,13 @@ the act's check rejects the new rectangle, the entry tries its next side, with n
 runs out of choices, the builder backs up one entry. A check rejects a rectangle that overlaps one already placed; in
 Act I it also rejects a side of the Rogue Encampment that a small table of allowed sides does not list, and a side of
 the Burial Grounds that another level placed against the Cold Plains already holds. Rejects of all three kinds were
-logged, and each was followed by the same entry's next choice, which was then accepted: the recorded games, and an
-offline scan of the builder, never needed a back-up. Act III is different: its jungle layout steps the act seed itself and is part of the outdoor generator
+logged, and each was followed by the same entry's next choice, until a later choice of that entry was accepted: the
+recorded games, and an offline scan of the builder, never needed a back-up. Act III is different: its jungle layout steps the act seed itself and is part of the outdoor generator
 ([outdoor § J](../specs/drlg/outdoor.md#j-act-iii)).
 
 Every side choice of every entry was reached in runs: besides one fully logged game, nine map seeds were chosen
-offline so that between them they end on every choice, and their builds were replayed pick by pick
+offline so that between them they end on every choice but two, those two were placed and logged, and their builds
+were replayed pick by pick
 ([warps § B](../specs/drlg/warps.md#b-the-act-link-builder)). Two choices of the Rogue Encampment's entry are placed
 and always rejected: its table of allowed sides cannot accept them, so the Rogue Encampment ends on one of the six
 other choices in every game. One more Act I test treats the Moo Moo Farm's rectangle as 200 tiles longer toward lower
@@ -544,7 +545,7 @@ section.
 - **Preset units** ([preset § Open questions](../specs/drlg/preset.md#open-questions)): the Blood Moor centre monster
   and the river objects of all six preset types are now reached in runs. What stays read from the code has no case in
   the shipped data: the row skip for floor tiles other than the one the Act I town uses, the Courtyard's index 2 from
-  the side-1 formula, a few map-entry branches no shipped map uses, and the special filters of levels 133–136, which
+  the side-1 formula, the Black Marsh ending on side 2, a few map-entry branches no shipped map uses, and the special filters of levels 133–136, which
   cannot be reached. The reader of the `Outdoors` flag is found, by the code: a test of whether a room is outdoors,
   called by the client when the player changes room and by one server walk in the skill code; what the client does
   with the result is presentation and not found. On the server a preset monster's path is detached when the monster
