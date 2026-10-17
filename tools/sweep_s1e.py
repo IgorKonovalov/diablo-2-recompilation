@@ -2090,6 +2090,54 @@ def mem_targets(ops):
     return out
 
 
+def clamp_run(A, lo, hi, regs):
+    """Run the straight-line clamp sequence [lo, hi) of the objdump decoding on 32-bit registers: the mnemonics it
+    uses (cmp, je, jae, xor, sbb, and, mov, shl, add), with CF and ZF; a taken branch to hi ends the run."""
+    r = dict(regs)
+    cf = zf = 0
+
+    def val(o):
+        o = o.strip()
+        if o in r:
+            return r[o]
+        if o == "cl":
+            return r["ecx"] & 0xFF
+        return int(o, 16) & M32
+    va = lo
+    while va < hi:
+        mn, ops = A.at(va)
+        nxt = A.next_va(va)
+        args = [x.strip() for x in ops.split(",")] if ops else []
+        if mn == "cmp":
+            x, y = val(args[0]), val(args[1])
+            cf, zf = int(x < y), int(x == y)
+        elif mn in ("je", "jae"):
+            t = int(args[0], 16)
+            if (mn == "je" and zf) or (mn == "jae" and not cf):
+                if t != hi:
+                    raise ValueError("branch out of the sequence at %#x" % va)
+                break
+        elif mn == "xor":
+            r[args[0]] = val(args[0]) ^ val(args[1]); cf = 0; zf = int(r[args[0]] == 0)
+        elif mn == "sbb":
+            res = (val(args[0]) - val(args[1]) - cf) & M32
+            r[args[0]] = res
+        elif mn == "and":
+            r[args[0]] = val(args[0]) & val(args[1]); cf = 0
+        elif mn == "mov":
+            r[args[0]] = val(args[1])
+        elif mn == "shl":
+            c = val(args[1]) & 31
+            r[args[0]] = (val(args[0]) << c) & M32
+        elif mn == "add":
+            t = val(args[0]) + val(args[1])
+            cf = int(t > M32); r[args[0]] = t & M32
+        else:
+            raise ValueError("mnemonic %s at %#x not modelled" % (mn, va))
+        va = nxt
+    return r
+
+
 def cmd_static(a):
     rep = Report("static")
     A = S4.asm()
@@ -2108,6 +2156,24 @@ def cmd_static(a):
     rep.c["clamp_sequence_equal"] = int(f == g)
     if f != g:
         rep.bad("clamp sequences differ: %r %r" % (f, g))
+    # S1e review (c): the copies differ in register roles (0x0062AF58 zeroes EAX, 0x00630F38 a scratch EDX), so they
+    # are compared under an explicit operand map, by running both straight-line sequences on the same inputs:
+    # value EDX -> ESI, width ECX -> ECX, result EDX -> ESI; every width 0..32 and the seeded value set
+    vals = [0, 1, 2, 0x7F, 0x80, 0xFF, 0x100, 0x7FFFFFFF, 0x80000000, 0xFFFFFFFE, 0xFFFFFFFF]
+    rnd = random.Random("s1e-clamp-map")
+    vals += [rnd.getrandbits(32) for _ in range(2000)] + [(1 << k) + d & M32 for k in range(32) for d in (-1, 0, 1)]
+    n = diff = 0
+    for cl in range(33):
+        for v in vals:
+            a = clamp_run(A, 0x0062AF53, 0x0062AF70, {"ecx": cl, "edx": v, "eax": 0xDEADBEEF})["edx"]
+            b = clamp_run(A, 0x00630F33, 0x00630F50, {"ecx": cl, "esi": v, "eax": 0xDEADBEEF, "edx": 0xDEADBEEF})["esi"]
+            n += 1
+            if a != b:
+                diff += 1
+                if diff <= 3:
+                    rep.bad("clamp copies differ under the operand map: width %d value %#x: %#x vs %#x" % (cl, v, a, b))
+    rep.c["clamp_operand_map_cases"] = n
+    rep.c["clamp_operand_map_diff"] = diff
     # writer scan of the declared .data reads
     for lo, hi, name in DATA_READS:
         refs, stores = [], []

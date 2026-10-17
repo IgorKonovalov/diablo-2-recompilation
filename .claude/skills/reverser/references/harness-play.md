@@ -206,3 +206,7 @@ matches the shell running the `pkill` and every other process whose command line
 shell this way). Have the loop write its PID at start (`echo $$ > <scratch>/loop.pid`, or `os.getpid()` in Python),
 then `kill $(cat <scratch>/loop.pid)` and `slots.py stop N`. To find a stray process, `pgrep -a` with a bracketed
 pattern (`pgrep -af '[f]arm2.py'`) and kill by the PID it prints, after checking it is yours.
+
+**Partial logs are kept.** An aborted session, or one that overlapped another on the same slot, leaves a partial log:
+keep it under `workspace/logs/` as a development log (a `dev-` name, or the session name with a note in the
+experiment's record) and never delete it; no claim rests on it unless the experiment says so (plan 0040 P2 review).

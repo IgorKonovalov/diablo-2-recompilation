@@ -25,7 +25,7 @@ every output goes to a scratch directory, nothing in workspace/ is written:
   and clear of bits that "quests" set), the refusals (word, bit, a bit both set and cleared, a difficulty), and the
   simple quest item's required "quest_diff" (stat 356). Plan 0042 Phase 0: tools/quest_saves.py check passes on
   its 17 recipes (14 of Phase 0, 3 of Phase 1 (c)) and build writes the whole set. Plan 0044 Phase 2:
-  tools/mp_saves.py check passes on its 25 recipes and 17 pairs and build writes the whole set.
+  tools/mp_saves.py check passes on its 27 recipes and 18 pairs and build writes the whole set.
 - MercTest (plan 0033 Phase 0) covers the "merc" key: the header fields 0xAF..0xBE, the mercenary item list after
   'jf' (equipped, hand item last) read back and round-trip byte for byte, the dead flag (bit 16), and the refusals
   (no row of the save's Version, seed 0, a name id past NameLast, items in a classic save, an item not placed with
@@ -234,6 +234,8 @@ RECIPE_BASES = {
     "mp-quest-host": (BASE_X, None),
     "mp-quest-join": (BASE_X, None),
     "mp-cow-host": (BASE_X, None),
+    "mp-pvp-host": (BASE_X, None),
+    "mp-pvp-join": (BASE_X, None),
     "mp-pal-join": (BASE_PAL, None),
     # recipes committed by session lanes without a base entry here (found by test_every_recipe_has_a_base, lane/arc5)
     "combatow": (BASE_X, None),
@@ -705,7 +707,7 @@ class QuestBitsTest(Scratch):
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             self.assertEqual(mp_saves.main(["check", EXCEL]), 0, buf.getvalue())
-        self.assertIn("SURVEY mp_saves recipes=25 bad=0 pairs=17 pairs_bad=0", buf.getvalue())
+        self.assertIn("SURVEY mp_saves recipes=27 bad=0 pairs=18 pairs_bad=0", buf.getvalue())
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(mp_saves.main(["build", EXCEL, self.path("mp")]), 0)
         self.assertEqual(len(os.listdir(self.path("mp"))), len(mp_saves.SET))

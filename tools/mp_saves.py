@@ -13,7 +13,11 @@ check  builds every recipe of SET into a temporary directory and tests, for each
        both are letters only and the game types match; the levels the case needs (hostility: both >= 9, so
        character level 9 or more on both sides, multiplayer/0001 § 4); the quest bits, waypoints, start act and
        held items each case names; magic find (stat 80) on the host's items only (MP19); a mercenary (MP04); a
-       Paladin joiner whose right skill is an aura (MP25). Exit 1 on any failure. `SURVEY mp_saves ...` ends
+       Paladin joiner whose right skill is an aura (MP25); for the MP23 bulk pair, both sides with
+       Nova on the right button, no Lightning Mastery, no item with a property, and max life at least 200 times the
+       other side's largest Nova hit at 17 % and the worst resistance (an upper bound from skills.txt EMax +
+       (level - 1) * the largest EMaxLev*, times 17 % and (100 - the lowest DifficultyLevels ResistPenalty) %, rounded
+       up), so either survives 200 attack events in any difficulty with no potion. Exit 1 on any failure. `SURVEY mp_saves ...` ends
        the output.
 pairs  prints PAIRS: case ids, host recipe, joiner recipe, what the pair is for.
 
@@ -46,12 +50,14 @@ SET = {n: "x" for n in (
     "mp-nova-host", "mp-nova-weak", "mp-nova-low", "mp-tank-join", "mp-mf-host", "mp-merc-host",
     "mp-forge-host", "mp-forge-join", "mp-forge-done", "mp-andy-open", "mp-andy-done", "mp-andy-weak",
     "mp-den-host", "mp-den-join", "mp-dur-host", "mp-dur-closed", "mp-dur-open", "quest-w39summit",
-    "mp-anc-join", "mp-anc-low", "mp-scroll-join", "mp-quest-host", "mp-quest-join", "mp-cow-host")}
+    "mp-anc-join", "mp-anc-low", "mp-scroll-join", "mp-quest-host", "mp-quest-join", "mp-cow-host",
+    "mp-pvp-host", "mp-pvp-join")}
 SET["mp-pal-join"] = "pal"
 
 # (cases, host, joiner, purpose): the backlog request's items (a)-(f)
 PAIRS = [
     ("MP01 MP23 MP24", "mp-nova-host", "mp-nova-weak", "(a) Nova pair, both level >= 9; the joiner weak enough to die"),
+    ("MP23", "mp-pvp-host", "mp-pvp-join", "(a) the bulk of MP23: both level 80, life 8000, Nova 1 and no gear, so both survive 200 attack events"),
     ("MP24 counter", "mp-nova-host", "mp-nova-low", "(a) joiner below level 9: the declaration is refused"),
     ("MP19", "mp-mf-host", "mp-tank-join", "(b) MF host (uniqnova's gear), joiner with no MF item"),
     ("MP04", "mp-merc-host", "mp-tank-join", "(c) host with a mercenary (mercnova's Rogue)"),
@@ -71,7 +77,9 @@ PAIRS = [
 ]
 
 # pairs whose case declares hostility (multiplayer/0001 § 4: both players at character level 9 or more)
-HOSTILE = {"MP01 MP23 MP24", "MP25", "MP24 cow"}
+HOSTILE = {"MP01 MP23 MP24", "MP23", "MP25", "MP24 cow"}
+# MP23 bulk (multiplayer/0001 § 2: at least 200 events, P = 17 % on every scaled field)
+MP23_EVENTS, MP23_PCT = 200, 17
 
 
 def bit(qw, d, word, b):
@@ -102,6 +110,26 @@ def aura_skills(excel):
         if len(r) > ia and r[ia] == "1":
             rows.append(int(r[iid]))
     return set(rows)
+
+
+def nova_bound(excel, level):
+    """An upper bound on one Nova hit at that skill level, whole points: EMax + (level - 1) * max(EMaxLev1..5)
+    (skills.txt, HitShift 8), with no mastery and no item bonus."""
+    with open(os.path.join(excel, "skills.txt"), newline="") as fh:
+        lines = [ln.rstrip("\r\n").split("\t") for ln in fh.read().split("\n") if ln]
+    head = lines[0]
+    r = next(x for x in lines[1:] if x[0] == "Nova")
+    assert r[head.index("HitShift")] == "8"
+    step = max(int(r[head.index("EMaxLev%d" % k)]) for k in range(1, 6))
+    return int(r[head.index("EMax")]) + max(level - 1, 0) * step
+
+
+def resist_floor(excel):
+    """The lowest DifficultyLevels ResistPenalty, floored at -100 (a player defender with no resistance)."""
+    with open(os.path.join(excel, "difficultylevels.txt"), newline="") as fh:
+        lines = [ln.rstrip("\r\n").split("\t") for ln in fh.read().split("\n") if ln]
+    col = lines[0].index("ResistPenalty")
+    return max(min(int(x[col]) for x in lines[1:] if x[col] != ""), -100)
 
 
 def stat(f, sid):
@@ -144,9 +172,32 @@ def checks(excel):
         "mp-quest-join": [("words 4-6 done, 1-3 not", lambda f, q, w: every(lambda d: all(bit(q, d, x, 0) for x in (4, 5, 6)) and not any(bit(q, d, x, 0) for x in (1, 2, 3))))],
         "mp-pal-join": [("Paladin", lambda f, q, w: f["header"]["cls"] == 3), ("right skill an aura", lambda f, q, w: f["header"]["mouse"][1] in aura),
                         ("level >= 9", lambda f, q, w: lvl(f) >= 9)],
+        "mp-pvp-host": [("level >= 9", lambda f, q, w: lvl(f) >= 9), ("no item with a property", lambda f, q, w: not any(i.get("props") for i in f["items"]["items"]))],
+        "mp-pvp-join": [("level >= 9", lambda f, q, w: lvl(f) >= 9), ("no item with a property", lambda f, q, w: not any(i.get("props") for i in f["items"]["items"]))],
         "mp-cow-host": [("word 4 bit 10 clear", lambda f, q, w: every(lambda d: not bit(q, d, 4, 10))), ("leg, tbk held", lambda f, q, w: held(f, "leg") and held(f, "tbk")),
                         ("box held", lambda f, q, w: held(f, "box"))],
     }
+
+
+def mp23_errors(excel, t, fh, fj):
+    """MP23 bulk: each side attacks with Nova and outlives 200 of the other's largest hits at 17 %."""
+    order = t.class_skills["sor"]
+    nova, mastery = order.index("Nova"), order.index("Lightning Mastery")
+    errs = []
+    for side, f, other in (("host", fh, fj), ("joiner", fj, fh)):
+        if f["header"]["cls"] != 1 or other["header"]["cls"] != 1:
+            errs.append("%s: not a Sorceress" % side)
+            continue
+        if f["skills"][nova] < 1 or f["header"]["mouse"][1] != 48:
+            errs.append("%s: Nova not on the right button" % side)
+        if other["skills"][mastery]:
+            errs.append("%s: the other side has Lightning Mastery" % side)
+        # P = 17 %, then the worst resistance: 0 base plus the lowest ResistPenalty (expansion Hell -100), floored at
+        # -100, so a factor of at most (100 - penalty) / 100 (combat/0001 § 7, COMBAT_ResistFor)
+        hit = -(-nova_bound(excel, other["skills"][nova]) * MP23_PCT * (100 - resist_floor(excel)) // 10000)
+        if stat(f, 7) >> 8 < MP23_EVENTS * hit:
+            errs.append("%s: max life %d < %d x %d" % (side, stat(f, 7) >> 8, MP23_EVENTS, hit))
+    return errs
 
 
 def build_one(excel, name, out_path):
@@ -188,6 +239,8 @@ def check_all(excel):
             errs.append("hostility needs level >= 9 on both")
         if cases == "MP24 counter" and fj["header"]["level"] >= 9:
             errs.append("the counter joiner must be below level 9")
+        if cases == "MP23":
+            errs += mp23_errors(excel, t, fh, fj)
         pbad += bool(errs)
         print("pair %-16s %-16s %-16s %s" % (cases, h, j, "ok" if not errs else "FAIL " + "; ".join(errs)))
     print("SURVEY mp_saves recipes=%d bad=%d pairs=%d pairs_bad=%d" % (len(SET), bad, len(PAIRS), pbad))

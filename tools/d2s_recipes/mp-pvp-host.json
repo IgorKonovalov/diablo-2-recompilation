@@ -1,0 +1,53 @@
+{
+  "game": "expansion",
+  "class": "Sorceress",
+  "seed": 440440030,
+  "name": "MpPvpHost",
+  "progression": 15,
+  "difficulty": [
+    128,
+    128,
+    128
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "stats": {
+    "strength": 88,
+    "energy": 1000,
+    "dexterity": 25,
+    "vitality": 1000,
+    "hitpoints": 8000,
+    "maxhp": 8000,
+    "mana": 8000,
+    "maxmana": 8000,
+    "stamina": 275,
+    "maxstamina": 275,
+    "level": 80,
+    "experience": 742730244
+  },
+  "skills": {
+    "Nova": 1
+  },
+  "mouse": {
+    "left": "Attack",
+    "right": "Nova"
+  },
+  "keep_items": [
+    "tsc",
+    "isc"
+  ],
+  "items": [
+    {
+      "code": "tbk",
+      "tome": 0,
+      "quantity": 20,
+      "store": "inventory",
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "quests": "all"
+}

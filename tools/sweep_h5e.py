@@ -20,7 +20,10 @@ wrapping three of its methods; it prints one `H5E` line per counter group:
 seed and difficulty and counts the same branches, plus the cliff-cave scan and, on the Act I levels, flags `0x10` and
 `0x20` set or clear, keyed by level id and grid shape, the Act I road endpoints split by source (town and Monastery
 Gate nodes, seam openings, caves, east bridge; H5e reachability (c)) and, per level, the windows of the waypoint pass and
-the fewest free interior cells it met (no 0x1B81 bit; H5e reachability (b)); it reads no log. In `logs`, a rebuild whose previous placement
+the fewest free interior cells it met (no 0x1B81 bit; H5e reachability (b)), and the H5e (a) vertex-merge condition
+per window (a Vis/Warp -1 seam overlapping the level edge by exactly 8 tiles, or the level's size or a neighbour's
+origin relative to the level's or extent, along the seam's edge, off the 8 grid; per level met / not met, each reason, and the smallest overlap
+per seam); it reads no log. In `logs`, a rebuild whose previous placement
 differs from the act's rect for the level is counted apart, by level (`gen maze input: rebuild ... differs`).
 
 `stampdefs` reads the LvlSub border records of each TYPE (drlg.load_outdoor, drlg.od_sub_ds1) and prints, per type,
@@ -156,6 +159,41 @@ class Hooks:
         G.maze_check = maze_check
 
 
+def seam_overlaps(rect, adj):
+    """Per adjacency node (Vis with Warp -1, the ring's seams): (neighbour, side, overlap in tiles) along the level edge
+    on that side, inclusive bounds as in the ring build (side 0 left and 2 right: y; 1 top and 3 bottom: x)."""
+    out = []
+    for n in adj:
+        r, side = n["rect"], n["side"]
+        if side in (0, 2):
+            lo, hi = max(rect[1], r[1]), min(rect[1] + rect[3], r[1] + r[3]) - 1
+        else:
+            lo, hi = max(rect[0], r[0]), min(rect[0] + rect[2], r[0] + r[2]) - 1
+        out.append((n["nbr"], side, hi - lo + 1))
+    return out
+
+
+def vertex_merge_condition(rect, adj):
+    """H5e (a) scan condition (drlg/0008 H5e reachability (a)): the reasons a window could meet a vertex merge in
+    OutVertsToCells: a seam whose overlap with the level edge is exactly 8 tiles, or a rect value off the 8 grid. The
+    ring is moved to the level's origin before the division by 8 (0x00675080), so the grid test is on the level's
+    width and height and, per seam, on the neighbour's origin relative to the level's and its extent along that edge
+    (y and height on sides 0 and 2, x and width on 1 and 3; absolute origins such as Act I's y 1114 are off the grid
+    and do not matter, nor is the other axis read by the ring). An empty list means the ring cannot merge."""
+    why = []
+    for nb, side, ov in seam_overlaps(rect, adj):
+        if ov == 8:
+            why.append("seam overlap 8 (neighbour %d, side %d)" % (nb, side))
+    if rect[2] % 8 or rect[3] % 8:
+        why.append("level size off the 8 grid")
+    for n in adj:
+        r = n["rect"]
+        k = 1 if n["side"] in (0, 2) else 0      # the coordinate along the edge: y on the left and right, else x
+        if (r[k] - rect[k]) % 8 or r[k + 2] % 8:
+            why.append("neighbour %d off the level's 8 grid along side %d" % (n["nbr"], n["side"]))
+    return why
+
+
 def cmd_logs(paths):
     import drlg
     H = Hooks(drlg)
@@ -195,6 +233,15 @@ def cmd_scan(argv):
                     if drlg.LV[lid]["act"] != acti or lid not in A.rect:
                         continue
                     O = drlg.Outdoor(A, lid, drlg.Seed(A.base + lid))
+                    why = vertex_merge_condition(O.rect, O.adj)
+                    H.c["vertex-merge condition %s: level %d" % ("met" if why else "not met", lid)] += 1
+                    for w in why:
+                        H.c["vertex-merge condition reason: level %d, %s" % (lid, w)] += 1
+                    for nb, side, ov in seam_overlaps(O.rect, O.adj):
+                        H.lo["seam overlap (tiles), level %d side %d neighbour %d" % (lid, side, nb)] = min(
+                            ov, H.lo.get("seam overlap (tiles), level %d side %d neighbour %d" % (lid, side, nb), ov))
+                    if why and len(seeds_hit["vertex-merge condition"]) < 5:
+                        seeds_hit["vertex-merge condition"].append((s, diff, lid))
                     try:
                         O.run()
                     except Exception as e:      # a model fatal or an unmodelled branch: counted, never hidden
@@ -214,6 +261,8 @@ def cmd_scan(argv):
     print("H5E scan: map seeds %d..%d, difficulties %s, outdoor windows %d, model errors %d" % (a, b - 1, diffs, windows, errors))
     for k in RARE:
         print("H5E scan %s  %d  first %s" % (k, H.c["scan %s" % k], seeds_hit.get(k, [])))
+    met = sum(v for k, v in H.c.items() if k.startswith("vertex-merge condition met"))
+    print("H5E scan vertex-merge condition met  %d  first %s" % (met, seeds_hit.get("vertex-merge condition", [])))
     for k in sorted(H.c):
         if not k.startswith("scan "):
             print("H5E %s  %d" % (k, H.c[k]))

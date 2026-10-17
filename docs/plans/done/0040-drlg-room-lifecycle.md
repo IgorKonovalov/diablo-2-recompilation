@@ -488,3 +488,25 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   three `0x400` records of class 522 with alignment 2 saved in `h-highlands` at frames 9636, 9828 and 13008 and never
   restored, the cheapest route to the `0x400` drop); the P2 follow-ups (town reachability, champion paths, the flag-1
   call) stay open in their own entry.
+
+- **2026-10-17 — post-close: the P2 review follow-ups, reviewed with `lane/rbs3` (architect).** The static answers are in
+  [drlg/0009 § 11.1](../../findings/drlg/0009-room-lifecycle.md#111-static-follow-ups-of-the-phase-2-review-lanerbs3);
+  the full review is in the [plan 0038 log](../0038-inferred-claims-sweep.md#implementation-log) (`lane/rbs3` review).
+  The plan stays closed; nothing here reopens a phase.
+  - (1) **Town-follow case: stays a named Phase 2 shortfall.** The path planner refuses a town target room for a
+    non-NPC monster (`sub_006483A0`, read at the review), but three routes stay open. No P2 addendum and no owner-play
+    candidate now: the recipe would be a guess, and the static remainder (the `0x40000` branch, the knockback, teleport
+    and placement writers) is cheaper and could settle it. Routed to the static sweep queue
+    ([rbs3 review static remainders](../../backlog/2026-10-17-architect-reverser-rbs3-review-static-remainders.md) (1));
+    a harness case, if that read finds a route in, would be a plan 0038 harness batch, not a 0040 addendum.
+  - (2) **The dead champion "not saved on stock data" stays `[I]`.** Every server write of champion bit `0x04` follows
+    `MonMarkSpecial` (0x005A0375, `or [esi+0x16], dx` with `EDX` = 8 from 0x005A034A, read at the review), but the
+    universal half is a code reading only: the run's 6 dead champions all carried `0x08`, which is the claim itself, not
+    a second source for "no other path", and a block copy of monster data is unfollowed. The `[C]` "no logged dead
+    champion was saved" stands.
+  - (3) **§ 6 corrected; the flag-1 call raised.** The lane's § 6 correction stands. The review raised "SpecialMonRestore
+    applies the flag-1 handlers through `SpecialModsApply` (0x005A4558)" to `[C]`: the code reading plus the run's 15
+    champion restores, which flag 0 would miss. "The pushed 0 is `minions`" stays `[I]`. drlg/lifecycle repeats the
+    old wording (H2b note, § H champion bullet, two open questions): routed to the spec-writer (annotated
+    [rbs3 lifecycle and MonPlace readings](../../backlog/2026-10-17-reverser-spec-writer-rbs3-lifecycle-and-monplace-readings.md)).
+  - (4) `rooms.py check` re-run at the review: 0 mismatches over 2 215 807 checks; census and expiry branches as kept.
