@@ -310,6 +310,59 @@ inferred and this section raises it, the tag and the second source given here ar
   found nowhere; every other key returns its index (family `strings`, [data/0003 § S1e](0003-string-tables.md#plan-0038-batch-s1e-2026-10-17)).
   (fn:STRTABLE_KeyToIndex@0x006117B0, run:2026-10-17-sweep-emu)
 
+## Plan 0038 batch S1f (2026-10-17)
+
+Static batch S1f of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the c-emu rows of the
+[inventory § 2.6 S1f table](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews). No session was
+played. Method: the function runs under Ghidra's p-code emulator against `tools/sweep_s1f.py`'s models, under
+[ADR-0015](../../adrs/0015-emulated-reproduction.md): [run:2026-10-17-sweep-emu2](experiments.md#run2026-10-17-sweep-emu2).
+Every memory spec guards the fatal path (0x00408090, 0x00408A60, 0x00681E09) and the pool allocator's entries
+(0x0040B4B0, 0x0040B430, 0x0040B480), and no case stopped, so no claimed branch was reached through either (review
+condition (a)). Where a statement above is tagged inferred and this section raises it, the tag and the second source
+given here are the current ones.
+
+`EXCEL_ParseTxt` (family `parsetxt2`, 300 calls, 618 rows; both values of the CRT SSE2 flag, identical outputs) ran on
+a synthetic parsed `.txt` and a 45-entry descriptor (record 0xA0 bytes, random prefill dumped after the call). 17
+entries may have a column (the integer, flag, code- and name-lookup types of S1e, plus three type `0x19`, one `0x17`
+and one `0x18` entry whose callback is `fn:sub_00631530_ItemCalcCell@0x00631530`, the item calc cell callback S1e
+reproduced, used here as an admitted probe: S1e ruling 2); each case keeps about 60 % of them, in a shuffled order,
+with unknown headers mixed in (221 cases). 22 entries never have a column: one of every type the parse pass would
+convert through a link the run does not build or register (1, 7, 9, 0x0A, 0x0C, 0x0E, 0x10–0x12, 0x16, a second
+0x1A) and four groups of absent entries sharing one field (OvA: 2, 0x13, 0x19; OvB: 0x19, 2; OvC: 0x15, 5, 0x17; OvD:
+0x14, 3, 0x0B), so the field shows which ran last. Six more form three pairs of a present column and an absent entry
+on one field (OvP: column type 2, absent 0x19; OvQ: column 0x19, absent 0x13; OvR: column 0x19, absent 2). Calc cells
+hold compiler texts (S1e's random expressions and fixed valid and invalid ones); the itemscode pool
+(`g_DataTables + 0x98`, case memory) has capacity 0x10000 and the pool reached 178 bytes at most, so
+`CalcPoolAppend`'s growth loop and its allocator call are not reached (and are guarded: no case stopped). No
+registration column is present, so the first pass (`EXCEL_AddCode`, which may grow its array) does not run. Read
+set: S1e's `parsetxt` and `compile` sets, plus the defaults jump table 0x006BE128 (26 entries, `.text`), which S1e
+never reached. Spec writes on image addresses: the security cookie (no output depends on it), `__locale_changed`
+(writer scan, S1e) and the SSE2 flag (both values run): S1e ruling 3 (a), (c), (b); the itemstatcost name link
+`g_DataTables + 0xBD0` (0x0096C800) and the pool header are arguments.
+
+- **Row 65** (spec J3 table L645–L649, the absent-column defaults no stock column exercises; 5 statements) **raised.**
+  [C] After each row's last cell every absent entry is written through the jump table at 0x006BE128 at its exact
+  width, the bytes around it unchanged: types 5, 7, 0x0C, 0x10 write the byte 0; 8, 0x0A, 0x12 the dword 0; 0x0E,
+  0x11 the word 0 (L645); 0x0B and 0x13 the dword −1 (L646); 0x15 the byte `0xFF` (L647); 0x17 and 0x18 call the
+  entry's callback with ECX = 0 (no cell) and the record and field offset in EDX and the first stack argument, so the
+  probe writes −1 at record + offset (421 and 120 absent calls; L648); 0x1A leaves the byte untouched, the prefill showing it (409;
+  L649). Every type 1–0x1A was absent in 113 to 1 261 rows, and all 618 rows reproduce. The scope of L648 is the
+  arguments the probe uses; the length, row and column pushed with them (0x006BE003–0x006BE01A) stay a code reading,
+  and L649's "the record was zeroed" is the caller's (data/0001 § 1), not this run's. (fn:EXCEL_ParseTxt@0x006BD780,
+  0x006BDFBE, 0x006BE128, run:2026-10-17-sweep-emu2)
+- **Row 69** (spec J2f–J3 note L683, callback order: `.txt` columns, then the absent entries) **raised.** [C] In all
+  300 calls the present callback columns ran when their column was reached (the pool holds their compiled bytes in
+  shuffled header order, 3 092 present calc cells) and the absent entries after the row's last cell, in descriptor
+  order: in OvP, OvQ and OvR the absent entry's default overwrote the present cell's value in every row, and in OvA–OvD
+  the last absent entry in descriptor order decided the field. Two negative controls fail: absent entries before the
+  cells (300 of 300 calls differ) and present cells in descriptor order (290). `EXCEL_MapColumns` appends the
+  unmatched entries in descriptor order (0x006BCFB0–0x006BCFDC); a header the descriptor lacks maps to 0x7FFF and its
+  cell is skipped. (fn:EXCEL_ParseTxt@0x006BD780, fn:EXCEL_MapColumns@0x006BCE20, run:2026-10-17-sweep-emu2)
+- [I] The first pass's gate and loop count only the `.txt` columns (`mov eax, [ebx+0xc]` at 0x006BD7FE, loop to
+  0x006BD847), so an absent registration entry (0x0A, 0x0C, 0x0E, 0x10–0x12) is never registered, only defaulted. In
+  this run no registration column was present and the pass did not run (the registration entries had no link, and no
+  read through one was traced). (0x006BD7FE, 0x006BD85F)
+
 ## Data touched
 
 - `fmt:excel-bin#bin` (all laid-out tables), `tbl:Weapons.txt:gemoffset` (`+0x0F0`), `tbl:Levels.txt:LevelName`,
