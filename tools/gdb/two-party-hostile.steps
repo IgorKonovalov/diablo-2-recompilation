@@ -1,0 +1,10 @@
+# plan 0044: open the party screen and declare hostility to the other player (first row). The button position is
+# UNCALIBRATED: plan 0011 measured only INVITE/ACCEPT (297,141) and LEAVE (333,87); the hostile button of row 1 is
+# assumed to the right of INVITE. The driver's live test (plan 0044 log) measures it and replaces this line.
+# Both players need character level 9 or more (0x005A5E84, 0x005A5E9A), or the declaration is ignored.
+key p
+sleep 1.5
+click 370 141   # HOSTILE on row 1 (uncalibrated)
+sleep 1.5
+shot workspace/logs/two-party-hostile.png
+key p

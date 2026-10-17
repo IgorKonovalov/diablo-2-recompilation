@@ -38,6 +38,19 @@
 #         player's word 27
 #   PZ    0x0057A62A personalize, after the flag 0x1000000 and sub_00628370_ItemSetPersonalName (EBX copy): flags,
 #         name at ItemData+0x4A
+#   Added by plan 0038 batch H6d (tags only; the lines above are unchanged):
+#   QME   0x00543AB5 QUESTS_MonsterDeathEvent after the killer resolution (EBX monster, ESI the killer argument,
+#         [ebp-0x14] the player the event carries: the killer itself, or the owner sub_0058F090 found, or 0)
+#   MMR   0x005A7D51 sub_005A7C20_MonSetMode after sub_005A78A0_MonModeRecord (ESI monster, [ebp-4] mode, EAX the
+#         mode record), only for mode 0 of the five TCQuestId classes (156, 211, 242, 243, 544): record, its start
+#         function ([EAX])
+#   BG0   0x0058E02E sub_0058DF20_A5Q6_BaalDeath before the gold loop: lo [ebp-0x10], hi [ebp-0xC], the count of
+#         qualifying players (quest data [ebp-8] +0x88), difficulty
+#   BGR   0x0058E061 after RNG_RandLoHi on the quest seed: amount (EAX), the quest seed after the draw
+#   OOP   0x0058450E OBJ_OperateDispatch at its OperateFn call (ESI object, [ebp+8] class, EDX the function): object
+#         unit, class, function (a done line for tools/d2pilot.py objop: seals, portals, the forge)
+#   GLD   0x0055A1BD sub_0055A090_DropGoldAmount after the stat-14 write, while a BG0 loop is open: pile item, the
+#         pile's amount (EDI), stat 14 of the item
 import json
 import struct
 
@@ -255,6 +268,43 @@ def _quests_main():
         emit("FOP", {"mode": u32(obj + 0x10) if obj else None, "state": u16(fd) if fd else None,
                      "strikes": s32(fd + 0xC) if fd else None, "w27": word(rec, 27)})
 
+    QUEST_CLS = (156, 211, 242, 243, 544)
+
+    def on_qme():
+        ebp = reg("ebp")
+        emit("QME", {"mon": unit(reg("ebx")), "killer": unit(reg("esi")), "player": unit(u32(ebp - 0x14))})
+
+    def on_mmr():
+        u, ebp, rec = reg("esi"), reg("ebp"), reg("eax")
+        mode = u32(ebp - 4)
+        if mode != 0 or not u or u32(u) != 1 or s32(u + 4) not in QUEST_CLS:
+            return
+        emit("MMR", {"mon": unit(u), "mode": mode, "rec": "%08x" % rec, "start": "%08x" % u32(rec) if rec else None})
+
+    def on_bg0():
+        ebp, edi = reg("ebp"), reg("edi")
+        g = u32(edi + 4)
+        qd = u32(ebp - 8)
+        st["baal"] = True
+        emit("BG0", {"lo": s32(ebp - 0x10), "hi": s32(ebp - 0xC), "n": s32(qd + 0x88), "diff": u8(g + 0x6D),
+                     "qs": qs(g)})
+
+    def on_bgr():
+        g = u32(reg("edi") + 4)
+        emit("BGR", {"amt": reg("eax"), "qs": qs(g)})
+
+    def on_gld():
+        if not st.get("baal"):
+            return
+        it = reg("esi")
+        emit("GLD", {"item": unit(it), "amt": reg("edi"), "s14": stat(it, 14)})
+
+    def on_oop():
+        emit("OOP", {"obj": unit(reg("esi")), "cls": s32(reg("ebp") + 8), "fn": "%08x" % reg("edx")})
+
+    def on_bgx():
+        st["baal"] = False
+
     def on_pz():
         it = reg("ebx")
         d = u32(it + 0x14)
@@ -288,6 +338,13 @@ def _quests_main():
     Bp(0x0057A3E7, on_lzy)
     Bp(0x0057A62A, on_pz)
     Bp(0x005B5C10, on_fop)
+    Bp(0x00543AB5, on_qme)
+    Bp(0x005A7D51, on_mmr)
+    Bp(0x0058E02E, on_bg0)
+    Bp(0x0058E061, on_bgr)
+    Bp(0x0055A1BD, on_gld)
+    Bp(0x0058E07B, on_bgx)
+    Bp(0x0058450E, on_oop)
     gdb.write("QUESTS logger armed\n")
 
 

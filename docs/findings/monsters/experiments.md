@@ -286,7 +286,7 @@
     entry it is taken after the presets/objects window (RW4), and is predicted end to end in 176 rooms (11 populated, listed above).
 - **Conclusion:** [monsters/0002](0002-room-population.md) §§ 3–6 are reproduced bit-exactly in 516 rooms, `[C]` under the
   oracles named; the `MonUMax` threshold `≤ 5` is observed at `r = 5`; the special count is the live `+0x2C8`; the
-  champion chance is MonUMod row 0 (20); `MonWndr` has no reader beyond the two of the static search on the levels watched.
+  champion chance is MonUMod row 0 (20); `MonWndr` has no reader beyond the two of the static search on the levels watched. (run:2026-10-13-mon-spawn)
 - **Addendum 2026-10-15: roomk on the predicted out-room grids, and the tile-entry flags (plan 0027 Phase 2).** No new
   game run. `tools/drlg.py gen` now runs the roomk passes in every log with `OD0` and `LSUB` lines, with the type-1 grids
   of each room's first `LSUB` taken from the drlg/0008 § 16.4 prediction (the logged grids stay the check), and in logs
@@ -766,7 +766,7 @@
     `sub_005A00F0_UModConstant`, monsters/0004 § 8, and `sub_005A1280_UModBerserk` calls it not at all: −75 and 300 are immediates, r2 at review).
     So it taints no claim of this run; the run backs nothing about the champion chance (every one of the 19 modelled
     rolls passed trivially against 100) and no champion/unique ratio.
-- **Conclusion:** the `berserk` handler and the berserker level are `[C]` on a forced path; no frequency claim.
+- **Conclusion:** the `berserk` handler and the berserker level are `[C]` on a forced path; no frequency claim. (run:2026-10-15-berserk-forced)
 
 ### Addendum 2026-10-16: plan 0038 batch S3a
 

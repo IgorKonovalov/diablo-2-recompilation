@@ -2,8 +2,8 @@
 based_on:
   - docs/specs/data/README.md 2026-10-16
   - docs/specs/data/excel.md 2026-10-15
-  - docs/specs/data/strings.md 2026-10-16
-  - docs/specs/data/calc.md 2026-10-16
+  - docs/specs/data/strings.md 2026-10-17
+  - docs/specs/data/calc.md 2026-10-17
 ---
 
 # Game data: tables, strings and formulas
@@ -234,8 +234,12 @@ Name columns hold stored string indices: MonStats `NameStr`, SuperUniques `Name`
 ([strings § D](../specs/data/strings.md#d-key--index--strtable_getbykey), *Rare names*). The `.bin` stores no index for
 them. When the rare-name tables are loaded, each record's `name` key is looked up and the index kept. When the
 client shows a rare item, it takes the item's two rare-name ids, finds each record and shows the text of each stored
-index; if an index is 0, it shows the raw key in parentheses instead. How the client then joins the two words
-(order, separator) is not known yet.
+index; if an index is 0, it shows the raw key in parentheses instead, and a missing record leaves its word empty. The two words are then put into the string
+`RareFormat` as its first and second arguments, the way the magic name line uses `MagicFormat` (prefix, base name,
+suffix); that is read from the code. In the shipped English table `RareFormat` is `%0 %1` (checked in the data), so
+an English rare name is the first word, one space, the second word. The order and the separator come from the string
+table, so another language may change them. This rests on `%0` and `%1` standing for the first and second argument;
+the code that substitutes them is not read yet.
 
 One loader shows how a key lookup can silently fail: the gems table loader builds a key from bytes that, in this
 version, hold the gem's compiled item index rather than its code text, so the lookups miss (the run saw 68 such keys)
@@ -246,8 +250,8 @@ and every gem stores 0 there. The cause is read from the code; the misses were s
 Some cells hold a [calc formula](../glossary.md) rather than a number: a skill's damage or duration, a number in a
 skill description, a missile's synergy, a potion's duration and strength. In the shipped data these are already
 compiled into postfix bytecode, kept in four pools (`skillscode`, `skilldesccode`, `misscode`, `itemscode`), and the
-record stores an offset into its pool, or −1 for a blank cell, which evaluates to 0 (that last step is read from
-the code) ([calc § A](../specs/data/calc.md#a-pools-and-formula-columns)). The spec describes the machine that runs the formulas, not
+record stores an offset into its pool, or −1 for a blank cell, which evaluates to 0 (that last step is confirmed by
+running the game's own code under an emulator) ([calc § A](../specs/data/calc.md#a-pools-and-formula-columns)). The spec describes the machine that runs the formulas, not
 what each one means. One link to combat is named, from the code: the `ToHitCalc` result of a player skill is the
 attack-rating percent its melee hit passes to the hit test (see the [combat](combat.md) page).
 
@@ -261,22 +265,31 @@ in a run of 44 529 evaluations with no mismatch:
 
 - **Both branches of `?:` are computed.** The ternary is just an operator over three values already on the stack,
   so every variable read and function call in the unused branch still happens.
-- **Division truncates toward zero**, as in C. A zero divisor gives 0 rather than a crash; that guard is read from
-  the code.
+- **Division truncates toward zero**, as in C. A zero divisor gives 0 rather than a crash, confirmed under the
+  emulator. One division still crashes the game: the smallest 32-bit integer divided by −1. That is read from the
+  code only, since an emulator cannot show a crash, and only an edited formula can reach it.
 - Evaluation stops at the end byte, and also at the byte the compiler emits for an unclosed `(`; stock Fire Wall
   ends that way.
+
+The rest of the evaluator, which no stock formula reaches, is confirmed by running the game's own code under an
+emulator against a model: the opcodes the compiler never emits, comparisons other than `<` and `>`, the power operator,
+overflow (it wraps), a stack of 64 values that drops any further push, and a pop from an empty stack, which gives 0.
 
 **Contexts** ([calc § E](../specs/data/calc.md#e-contexts), [§ F](../specs/data/calc.md#f-function-tables),
 [§ G](../specs/data/calc.md#g-variables)). A formula runs with a context: a skill formula with the unit, the skill
 and its level; a missile formula with the missile, its owner and a level; an item formula with the unit that uses
 the item and the item itself. Variables
-are the rows of SkillCalc or MissCalc (`lvl`, `par1`…, `ln12` and so on). Item formulas have no variables (read
-from the code), and the stock ones are all constants. The functions are `min max rand skill miss stat sklvl` for skills, a shorter list for
+are the rows of SkillCalc or MissCalc (`lvl`, `par1`…, `ln12` and so on). Item formulas have no variables
+(confirmed under the emulator), and the stock ones are all constants. The functions are `min max rand skill miss stat sklvl` for skills, a shorter list for
 missiles and items. Values that depend on the unit's state (its skill levels, its stats, elemental damage) are inputs
-the rest of the game supplies. The skills table of functions is confirmed in play; `min`, `max` and `rand` of all
-three tables, the missile variables (except the ones that read damage) and the missile context are confirmed by
-running the game's own code under an emulator against a model. The item context's callers (the item-use functions,
-seen running when a stamina, antidote or thawing potion is drunk) are read from the code.
+the rest of the game supplies. The skills table of functions is confirmed in play, and the missile and item tables
+by the run's logs with the tables in the program file; `min`, `max` and `rand` of all three tables, the missile
+variables (except the ones that read damage) and the missile context are confirmed under the emulator. So are the
+skill variables no stock formula reads, except five that read the unit's state: a skill's mana cost, for example,
+shifts by the table's `manashift` masked to its low 5 bits. Which game functions call the missile and item formulas
+is confirmed: the run's calls return into the missile elemental-damage functions and into the potion-use function, read as
+code, for a stamina, antidote or thawing potion. That the item context's second value is the used item is read from
+the code; no stock formula reads it.
 
 `rand(a, b)` is the one place a formula draws: one [draw](../glossary.md) on the unit's [seed](../glossary.md),
 `a + Range(b − a + 1)`, or no draw when `a ≥ b` (see [randomness](randomness.md)). In the missile context the
@@ -285,9 +298,12 @@ themselves are confirmed under the emulator; which unit's seed `rand` draws on w
 one stock skill that uses it was not seen in play.
 
 **Compiling.** Only `-txt` compiles formulas ([calc § C](../specs/data/calc.md#c-the-compiler--txt-only)). The
-compiler folds a formula with no variables and no function calls into one constant, fails on some text a permissive parser would accept
-(a cell holding one space, confirmed; `min(-1,lvl)`, read from the code), and then stores −1, so the formula yields 0. Two equal
-formulas are stored twice, in record and column order.
+compiler folds a formula with no variables and no function calls into one constant, fails on some text a permissive
+parser would accept (a cell holding one space, `min(-1,lvl)`, two minus signs in a row as in `- -5`), and then stores
+−1, so the formula yields 0. It also fails past 64 pending operators or 1 024 bytes of output. All of this is
+confirmed, the space on a stock cell and the rest under the emulator. Two equal formulas are stored twice, in record
+order and, within a record, in the order of the columns in the text file, then the formula columns the file lacks,
+which store −1 (confirmed under the emulator).
 
 ## Worked examples
 
@@ -354,10 +370,12 @@ From the open questions of [excel](../specs/data/excel.md#open-questions),
 - Whether anything reads two MonStats padding bytes, and what a list of item indices built at item load means, are
   open.
 - The string-table fallbacks and fatal checks are read from the code and unreachable on a stock install; the other
-  languages' font maps are not read; how a rare item's two name words are joined is not known.
+  languages' font maps are not read; the substitution of `%0`, `%1` in the rare and magic name lines is not read.
 - `max` and `rand` were checked under an emulator but not in a live monster cast; the missile variables that read
-  damage were not checked; the item context's second argument (the used item) is read from the code and no stock
-  formula reads it; a zero divisor, an overflow, the power operator and a full stack have not been reached.
+  damage, and five skill variables that read the unit's state, were not checked; the item context's second
+  argument (the used item) is read from the code and no stock formula reads it; that hovering over a potion evaluates
+  nothing is not shown: no formula ran without a drink, but the logs cannot tell when the pointer rested on one; the crash on the smallest integer
+  divided by −1 cannot be shown under an emulator.
 
 ## Where to read more
 

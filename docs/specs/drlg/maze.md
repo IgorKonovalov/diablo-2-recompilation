@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview]
 consumed_by: [drlg/overview, drlg/warps, drlg/room-tiles, drlg/collision, monsters/spawn, objects]
-tags: {C: 105, I: 26, L: 3}
-updated: 2026-10-15
+tags: {C: 122, I: 11, L: 2}
+updated: 2026-10-17
 ---
 
 # Maze generator: room growth, `Def`s, special rooms and themes
@@ -27,14 +27,22 @@ each special room carries, and the level links, are in [warps.md](warps.md).
 
 | When | Function | Tag |
 |---|---|---|
-| Maze level record created (the `LvlMaze` row by level id; no draw) | fn:sub_00673B10_MazeLevelCreate@0x00673B10 → fn:sub_0061F490_LvlMazeByLevel@0x0061F490 | [I] |
+| Maze level record created (the `LvlMaze` row by level id); no draw (in all 1378 logged maze-level creations the level seed after the create dispatch is `Init(base + id)`) | fn:sub_00673B10_MazeLevelCreate@0x00673B10 → fn:sub_0061F490_LvlMazeByLevel@0x0061F490, run:2026-10-12-drlg-gen, run:2026-10-15-drlg-maze, [drlg/0006 § Plan 0038 batch S4a](../../findings/drlg/0006-maze.md#plan-0038-batch-s4a-2026-10-16) | [C] |
 | Maze level built, from `LevelInit` after the re-seed | fn:sub_00673B30_MazeLevelBuild@0x00673B30, run:2026-10-15-drlg-maze (230 windows) | [C] |
 | Conversion of each maze room into a preset instance (boundary of this spec) | fn:sub_00673A60_MazeLevelRooms@0x00673A60, [drlg/overview](README.md) step 9a | [C] |
 
-- [I] `LvlMazeByLevel` takes the first `LvlMaze` row whose `Level` equals the level id, and stops the game with a fatal
-  error if there is none. Its only caller is `MazeLevelCreate`, so the 11 `LvlMaze` rows of non-maze levels are never
-  read. (fn:sub_0061F490_LvlMazeByLevel@0x0061F490, fn:sub_00673B10_MazeLevelCreate@0x00673B10,
-  [drlg/0006 § 8 (e)](../../findings/drlg/0006-maze.md#8-answers-to-the-phase-0-questions-backlog-archivist--reverser-2026-10-14))
+- [C] `LvlMazeByLevel` takes the first `LvlMaze` row whose `Level` equals the level id. Every one of the 70 maze levels
+  (`DrlgType` 1) has exactly one row, so the first is that row. Its only caller is `MazeLevelCreate` (`0x00673B19`, the
+  one call in Ghidra and in an objdump walk), so the 11 `LvlMaze` rows of non-maze levels are never read.
+  (fn:sub_0061F490_LvlMazeByLevel@0x0061F490, fn:sub_00673B10_MazeLevelCreate@0x00673B10, tbl:LvlMaze.txt:Level,
+  [drlg/0006 § 8 (e)](../../findings/drlg/0006-maze.md#8-answers-to-the-phase-0-questions-backlog-archivist--reverser-2026-10-14),
+  [drlg/0006 § Plan 0038 batch S4b](../../findings/drlg/0006-maze.md#plan-0038-batch-s4b-2026-10-16))
+- [I] With no matching row `LvlMazeByLevel` stops the game with a fatal error. Stock data has no such case: no maze level
+  lacks a row. (fn:sub_0061F490_LvlMazeByLevel@0x0061F490, [drlg/0006 § Plan 0038 batch S4b](../../findings/drlg/0006-maze.md#plan-0038-batch-s4b-2026-10-16))
+- [I] `MazeRoomAdd` and `0x00670E70` are dead code. `MazeRoomAdd`'s only caller is `MazeRoomAddFromExits` (`0x00670E7B`),
+  and `0x00670E70` has no reference in Ghidra, no `call`/`jmp` to it in a linear disassembly of `.text`, and no 32-bit
+  value in the file equal to its address. (fn:sub_00670D70_MazeRoomAdd@0x00670D70,
+  fn:sub_00670E70_MazeRoomAddFromExits@0x00670E70, [drlg/0006 § Plan 0039 batch P1a](../../findings/drlg/0006-maze.md#plan-0039-batch-p1a-2026-10-16))
 
 ## Inputs
 
@@ -64,7 +72,7 @@ each special room carries, and the level links, are in [warps.md](warps.md).
 | difficulty | `u32` 0..2 | act `+0x450` | game |
 | act index (0-based) | `u32` | act `+0x480` | game |
 | the two Act II tombs | `u32` level ids | act `+0x094` (the true tomb), `+0x484` | [rng/seeds](../rng/seeds.md) step 3c |
-| level 27's preset file index, level 27's rect (level 28 only) | `i32`; rect | level 27 | [warps.md](warps.md) (the link builder's level-6 draw) |
+| level 27's preset file index, level 27's rect (level 28 only) | `i32`; rect | level 27 | [warps.md](warps.md) (the link builder's level-6 draw on Black Marsh sides 1 and 3, else level 27's create-time index) |
 | level 108's rect (level 107 only) | rect | level 108 | [warps.md § C](warps.md#c-level-rectangles-and-the-links-after-the-layout) |
 
 ### Constants
@@ -132,10 +140,12 @@ A1. MazeLevelBuild(L):                                               [C] (fn:sub
   room list in list order with absolute rects, `Def`s and forced indices, and the seed after the window: 230 windows,
   41 maze levels, all 20 maze level types, 0 mismatches. (fn:sub_00673B30_MazeLevelBuild@0x00673B30,
   run:2026-10-15-drlg-maze)
-- [I] R0's centred position cancels out: every placement path of § G translates all rooms by an offset computed from
-  the rooms' own positions. So only the relative layout and the level rect decide the final rects.
+- [C] R0's centred position cancels out: every placement path of § G translates all rooms by an offset computed from
+  the rooms' own positions. So only the relative layout and the level rect decide the final rects. The 230 windows were
+  replayed with R0 moved off the centre by (37, −53), (−1000, 999) and (4096, 4096): every absolute rect, `Def`, index and
+  level-seed step still match (moving the second room by one tile instead gives 3019 mismatches).
   (fn:sub_00642590_MazeLevelPlace@0x00642590, fn:sub_00673120_MazeBarracksPlace@0x00673120,
-  fn:sub_00673320_MazeRiverOfFlame@0x00673320)
+  fn:sub_00673320_MazeRiverOfFlame@0x00673320, run:2026-10-15-drlg-maze, [drlg/0006 § Plan 0038 batch S4a](../../findings/drlg/0006-maze.md#plan-0038-batch-s4a-2026-10-16))
 
 ### B. Primitives
 
@@ -208,7 +218,7 @@ B9. Probe(R, d) → bool:          ; "can R grow in d"                 [C] (fn:s
       RoomFree(T)                                                    ; unlinked from R and from L
       return true
 
-B10. Find(d) → room | none:       ; FindWest/North/East/South         [C] except FindWest [I] (fn:sub_006723E0_MazeFindNorth@0x006723E0, fn:sub_00672460_MazeFindEast@0x00672460, fn:sub_006724A0_MazeFindSouth@0x006724A0, fn:sub_00672420_MazeFindWest@0x00672420, run:2026-10-15-drlg-maze)
+B10. Find(d) → room | none:       ; FindWest/North/East/South         [C] (fn:sub_006723E0_MazeFindNorth@0x006723E0, fn:sub_00672460_MazeFindEast@0x00672460, fn:sub_006724A0_MazeFindSouth@0x006724A0, fn:sub_00672420_MazeFindWest@0x00672420, run:2026-10-15-drlg-maze, run:2026-10-17-sweep-links)
       key ← d = 0: x (lowest);  1: y (lowest);  2: −x (highest x);  3: −y (highest y)
       best ← none
       for R in L.rooms (newest first):
@@ -236,8 +246,11 @@ Step notes:
 - B9. [C] A probe spends a level draw whenever it gets past the lock and link test. Because the finders probe only a
   room that beats the current best, **the number of probe draws depends on the list order**.
   (fn:sub_00672340_MazeProbe@0x00672340, fn:sub_006723E0_MazeFindNorth@0x006723E0, run:2026-10-12-drlg-gen)
-- B10. [I] `MazeFindWest` was never called in the run (level 27's index was 1 in every log, so the Barracks took
-  `FindSouth`). It is read as the mirror of `FindEast`. (fn:sub_00672420_MazeFindWest@0x00672420)
+- B10. [C] `MazeFindWest` is the mirror of `FindEast`: lowest `x`, a room probed only when strictly better. Its one
+  caller is the Barracks, through `g_BarracksFinders[2]`: the file holds one pointer to it (the slot at `0x006F0470`) and
+  no call. With level 27's index 2 (map seed 58, two level-28 windows) its probes, their level draws and the room it
+  returns match. (fn:sub_00672420_MazeFindWest@0x00672420, data:g_BarracksFinders@0x006F0468,
+  run:2026-10-17-sweep-links, [drlg/0006 § Plan 0038 batch H5a](../../findings/drlg/0006-maze.md#plan-0038-batch-h5a-run2026-10-17-sweep-links))
 - B1–B9. [C] The maze rooms are freed after the conversion, so their room draws leave no trace outside the window. Only
   the level seed matters to later steps. (fn:sub_00671210_MazeGrow@0x00671210, fn:sub_00673A60_MazeLevelRooms@0x00673A60,
   run:2026-10-12-drlg-gen)
@@ -264,8 +277,8 @@ flowchart TD
 ```
 C1. MazeGrow(L):                                                     [C] (fn:sub_00671210_MazeGrow@0x00671210, fn:sub_006711A0_MazeRoomPickRandom@0x006711A0, run:2026-10-15-drlg-maze)
       target: i32 ← LvlMaze.Rooms[act.difficulty]
-      if L.id = act[+0x094]: target ← target × 3                     ; [I] no tomb 66–72 built (0x00671210)
-      if L.id = act[+0x484]: target ← target × 2                     ; [I] no tomb 66–72 built (0x00671210)
+      if L.id = act[+0x094]: target ← target × 3                     ; [C] level 70 grew to 18 rooms (0x00671210, run:2026-10-16-sweep-mazes)
+      if L.id = act[+0x484]: target ← target × 2                     ; [C] level 71 grew to 12 rooms (0x00671210, run:2026-10-16-sweep-mazes)
       while L.count < target:
         k: u32 ← Range(L.seed, L.count)                              ; level draw
         P ← the k-th room of L.rooms (0 = newest)
@@ -276,6 +289,12 @@ C1. MazeGrow(L):                                                     [C] (fn:sub
 - C1. [C] The count is read per difficulty: 22 levels were built on all three difficulties, and the nightmare and hell
   counts were reproduced (99 windows). (fn:sub_00671210_MazeGrow@0x00671210, tbl:LvlMaze.txt:Rooms,
   run:2026-10-15-drlg-maze)
+- C1. [C] The tomb multipliers: map seed 1557 drew level 70 as the true tomb and 71 as Kaa's (act `+0x094`, `+0x484`,
+  logged and equal to the act model's draws). `Rooms` is 6 for every tomb 66–72; level 70 ends its growth at 18 rooms,
+  71 at 12, and the plain tombs 66 and 68 at 6 (67 at 7: its special attach adds one). (fn:sub_00671210_MazeGrow@0x00671210,
+  tbl:LvlMaze.txt:Rooms, run:2026-10-16-sweep-mazes, [drlg/0006 § Plan 0038 batch H5e](../../findings/drlg/0006-maze.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes))
+- C1. [I] No tomb takes both multipliers: `DRLG_ActCreate` draws the two fields as `66 + r mod 7` and redraws while they
+  are equal (`0x00642ED7`–`0x00642EDC`). (fn:DRLG_ActCreate@0x00642DA0, [drlg/0006 § Plan 0039 batch P1a](../../findings/drlg/0006-maze.md#plan-0039-batch-p1a-2026-10-16))
 - C1. [C] A locked pick, or a placement that overlaps, adds no room, but its draws are spent. The loop then picks again,
   so the number of level draws per growth step is not fixed: 1 (locked) or 2 (create) per iteration, plus the room
   draws. (fn:sub_00671210_MazeGrow@0x00671210, run:2026-10-15-drlg-maze)
@@ -296,7 +315,7 @@ D1. SpecialPlace(entry, rotate: bool):                               [C] (fn:sub
       else: Attach(entry)                                            ; D2
       if rotate: r ← (r + 1) & 3
 
-D2. Attach(entry):                                                   [I] (fn:sub_00670EB0_MazeSpecialAttach@0x00670EB0, drlg/0006 § 6)
+D2. Attach(entry):                                                   [C] but the no-room end (fn:sub_00670EB0_MazeSpecialAttach@0x00670EB0, drlg/0006 § 6, run:2026-10-15-drlg-maze)
       for P in L.rooms (newest first), P not locked:
         R ← RoomCreate(L)                                            ; level draw per candidate tried
         if Place(R, P, entry.dir):
@@ -311,9 +330,12 @@ D2. Attach(entry):                                                   [I] (fn:sub
   succeeds on the first candidate tried is reproduced (Den of Evil, Cave Level 1, § Worked example).
   (fn:sub_006724E0_MazeSpecialPlace@0x006724E0, [drlg/0006 § 6](../../findings/drlg/0006-maze.md#6-the-special-tables),
   run:2026-10-15-drlg-maze)
-- D2. [I] A candidate whose placement fails spends its level draw and the walk goes on. The case where no room can take
-  the special was not reached. (fn:sub_00670EB0_MazeSpecialAttach@0x00670EB0,
-  [drlg/0006 § 6](../../findings/drlg/0006-maze.md#6-the-special-tables), run:2026-10-15-drlg-maze)
+- D2. [C] A candidate whose placement fails spends its level draw and the walk goes on: of the 337 logged attaches, 154
+  placed the special only after one or more candidates failed, 313 failed candidates in all, each `RoomCreate` draw
+  checked one by one. (fn:sub_00670EB0_MazeSpecialAttach@0x00670EB0,
+  [drlg/0006 § 6](../../findings/drlg/0006-maze.md#6-the-special-tables), run:2026-10-15-drlg-maze, [drlg/0006 § Plan 0038 batch S4a](../../findings/drlg/0006-maze.md#plan-0038-batch-s4a-2026-10-16))
+- D2. [I] When no room can take the special, nothing is placed. No logged attach reached that case (0 of 337).
+  (fn:sub_00670EB0_MazeSpecialAttach@0x00670EB0, [drlg/0006 § Plan 0038 batch S4a](../../findings/drlg/0006-maze.md#plan-0038-batch-s4a-2026-10-16))
 - [C] **The table layout.** 47 of the 50 four-entry tables follow one rule, which gives every entry of those 47 tables
   as read from the data. With `m` the block's `DefFromExits` base and `b` the special's first record, entry `r` matches the
   dead end whose only exit is N, E, S, W for `r` = 0, 1, 2, 3 (`matchDef` = `m` + 8, 2, 4, 1) and attaches in the opposite
@@ -353,10 +375,12 @@ D2. Attach(entry):                                                   [I] (fn:sub
   1044 → 1051 (2). Down is placed from `0x006F02F8 + 16r` unless the level is 124, and Waypoint on level 123 from
   `0x006F0328 + 16r`. (data 0x006F02F8–0x006F0367, fn:sub_00673000_MazeSpecialsTemple@0x00673000,
   [drlg/0006 § 6 *Temple*](../../findings/drlg/0006-maze.md#6-the-special-tables), run:2026-10-15-drlg-maze: 122, 123)
-- [I] Down reads `r` 0..2 only (the draw is `mod 3`), so the word after its third entry, which is Waypoint's entry 0, is
-  never read as Down's entry 3. Waypoint is read after Down has advanced `r`, so at `r` 1..3, and its entry 0 is never
-  read either. (fn:sub_00673000_MazeSpecialsTemple@0x00673000,
-  [drlg/0006 § 6 *Temple*](../../findings/drlg/0006-maze.md#6-the-special-tables))
+- [C] Down reads `r` 0..2 only (the draw is `mod 3`, `0x00673026`–`0x00673038`), so the word after its third entry, which
+  is Waypoint's entry 0, is never read as Down's entry 3. `MazeSpecialPlace` reads one entry and then sets
+  `r ← (r + 1) mod 4` (`0x0067252A`–`0x0067253C`), so Waypoint is read at `r` 1..3, and its entry 0 is never read either.
+  Every logged Temple build is reproduced with the reads counted: Down entries 0 and 2 (6 each), Waypoint entry 1 (6).
+  (fn:sub_00673000_MazeSpecialsTemple@0x00673000, fn:sub_006724E0_MazeSpecialPlace@0x006724E0,
+  [drlg/0006 § 6 *Temple*](../../findings/drlg/0006-maze.md#6-the-special-tables), run:2026-10-15-drlg-maze, [drlg/0006 § Plan 0038 batch S4b](../../findings/drlg/0006-maze.md#plan-0038-batch-s4b-2026-10-16))
 
 ### E. Start shapes
 
@@ -431,31 +455,36 @@ E6. FillAround(def, exclude):                                        [C] (fn:sub
 
 | Type | Levels | Start | Growth | Finisher (`r` = `Step(L.seed) & 3` unless stated; specials in order) | Tag |
 |---|---|---|---|---|---|
-| 3 caves | 8–12 | — | yes | `r`; Prev; 8: Den of Evil, else Down; 9: + Coldcrow; 10: + Next | [C] 8, 9 / [I] 10–12 (0x00672550) |
-| 4 crypts | 18–24, 133 | — | yes | `r`; Prev; 18: Bonebreak; 19, 133: Chest; 21–24: Next | [C] 18, 19 / [I] others (0x00672610) |
+| 3 caves | 8–12 | — | yes | `r`; Prev; 8: Den of Evil, else Down; 9: + Coldcrow; 10: + Next | [C] (0x00672550) |
+| 4 crypts | 18–24, 133 | — | yes | `r`; Prev; 18: Bonebreak; 19, 133: Chest; 21–24: Next | [C] 18–24 / [I] 133, no stock build (0x00672610) |
 | 7 Barracks | 28 | `Ring(2)` | yes | none; the level 28 placement (§ G2) places its specials | [C] (0x00673120) |
-| 8 Jail | 29–31 | `Ring(2)` | yes | `r`; Prev; 29: Waypoint; 30: Pitspawn; 31: Cath, else Next | [C] 29, 30 / [I] 31 (0x006726D0) |
+| 8 Jail | 29–31 | `Ring(2)` | yes | `r`; Prev; 29: Waypoint; 30: Pitspawn; 31: Cath, else Next | [C] (0x006726D0) |
 | 10 Catacombs | 34–36 | E3 | yes | `r`; Next; 35: Waypoint | [C] (0x006727A0) |
 | 13 Sewers A2 | 47–49, 65 | `Ring(2)` | yes | `a`, then `r` (F2); 47: the dock path; 48: Prev, Waypoint, Next; 49: Prev, Radament; 65: Prev, Chest | [C] (0x00672810) |
 | 14 Harem, 15 Basement, 23 Spider | 51–54, 84, 85 | `Ring(2)` | no | none | [C] (0x00670F60) |
-| 17 Tomb | 55–61, 66–72 | tee; 61: R0 locked as 480 `Tomb Tainted Sun X` | yes (not 61) | F3; 61 has none | [C] 57, 58, 61 / [I] others (0x00672BE0) |
-| 18 Lair | 62–64 | `Ring(2)` | yes | `r`; 64: Tight Spot (fixed entry), then `r ← 3`, Treasure (fixed entry, `r` → 0), Prev; else Next, Prev | [C] 62 / [I] 63, 64 (0x00672DC0, drlg/0006 § 6 *Lair 64*) |
+| 17 Tomb | 55–61, 66–72 | tee; 61: R0 locked as 480 `Tomb Tainted Sun X` | yes (not 61) | F3; 61 has none | [C] 55–61, 66–68, 70, 71 / [I] 69, 72, F3 note (0x00672BE0) |
+| 18 Lair | 62–64 | `Ring(2)` | yes | `r`; 64: Tight Spot (fixed entry), then `r ← 3`, Treasure (fixed entry, `r` → 0), Prev; else Next, Prev | [C] (0x00672DC0, drlg/0006 § 6 *Lair 64*) |
 | 19 Arcane | 74 | E4 | no | `r`; Summoner | [C] (0x00672E50) |
 | 22 Durance | 100, 101 | `Ring(2)` | yes | `r`; Prev; 101: Waypoint, Next; 100: Next | [C] (0x00672F60) |
-| 24 Dungeon | 86–89 | `Ring(2)` | yes | `r`; Prev, Next | [C] 86, 88 / [I] 87, 89 (0x00672EA0) |
+| 24 Dungeon | 86–89 | `Ring(2)` | yes | `r`; Prev, Next | [C] (0x00672EA0) |
 | 25 Sewers A3 | 92 | `Ring(5)`, then F4 | yes | `r`; Drain, Chest | [C] (0x00672F00) |
 | 28 Act IV lava | 107 | — | yes | none; the level 107 placement (§ G3) | [C] (0x00673320) |
 | 32 Temple | 122, 123 | `Ring(2)` | no | `r ← Step(L.seed) mod 3`; not 124: Down; 123: Waypoint | [C] (0x00673000) |
 | 33 Ice | 113, 115, 118 | `Ring(2)` | yes | `r`; Prev, Next, Down; 115: Theme; 113, 115, 118: Waypoint | [C] (0x00673530) |
 | 33 Ice | 114, 116, 119 | R0 locked: 114 `Range(L.seed, 2)` = 1 → 1038, 0 → 1039; 116 → 1040; 119 → 1041 | no | none | [C] (0x00673B30) |
-| 34 Baal | 128–130 | tee | yes | `r`; Next; 129: Waypoint | [C] 129 / [I] 128, 130 (0x006730B0) |
-| 35 Act V lava | 125–127, 135 | E5 | no | none | [C] 125 / [I] others (0x00671430) |
+| 34 Baal | 128–130 | tee | yes | `r`; Next; 129: Waypoint | [C] (0x006730B0) |
+| 35 Act V lava | 125–127, 135 | E5 | no | none | [C] 125–127 / [I] 135, no stock build (0x00671430) |
 
 (fn:sub_00673B30_MazeLevelBuild@0x00673B30, fn:sub_00672550_MazeSpecialsCave@0x00672550, fn:sub_00672610_MazeSpecialsCrypt@0x00672610,
 fn:sub_006726D0_MazeSpecialsJail@0x006726D0, fn:sub_006727A0_MazeSpecialsCatacombs@0x006727A0, fn:sub_00672DC0_MazeSpecialsLair@0x00672DC0,
 fn:sub_00672E50_MazeSpecialsArcane@0x00672E50, fn:sub_00672EA0_MazeSpecialsDungeon@0x00672EA0, fn:sub_00672F00_MazeSpecialsSewerA3@0x00672F00,
 fn:sub_00672F60_MazeSpecialsDurance@0x00672F60, fn:sub_00673000_MazeSpecialsTemple@0x00673000, fn:sub_00673530_MazeSpecialsIce@0x00673530,
-fn:sub_006730B0_MazeSpecialsBaal@0x006730B0; the tags cite run:2026-10-15-drlg-maze)
+fn:sub_006730B0_MazeSpecialsBaal@0x006730B0; the tags cite run:2026-10-15-drlg-maze and, for caves 10–12, crypts 21–24,
+Jail 31, tombs 55, 56, 59, 60, 66–68, 70, 71, Lair 63, 64, Dungeon 87, 89, Baal 128, 130 and lava 126, 127,
+run:2026-10-16-sweep-mazes, every window matched room for room with its draws; level 10 in the kept logs of
+run:2026-10-15-drlg-outdoor and run:2026-10-15-acts-3-5, re-run at the H5e review; Jail 31 and lava 126, 127 on the server
+copy only, as a window carries every draw ([drlg/0006 § Plan 0038 batch H5e](../../findings/drlg/0006-maze.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes)). Levels 133 and 135
+have no stock build: 133–136 are unreachable ([outdoor.md § Entry points](outdoor.md#entry-points)))
 
 - F1. [C] The table order is the call order: start shape, then growth, then the finisher draw `r`, then the specials.
   The single-room Ice levels and level 61 break out of the chain after their fixed room, with no growth and no
@@ -477,15 +506,15 @@ F2. Sewers A2 finisher (type 13):                                    [C] (fn:sub
         SpecialPlace(Next[r], rotate)
       else: the specials of the table row, each SpecialPlace(table[r], rotate)
 
-F3. Tomb finisher (type 17):                                         [C] (fn:sub_00672BE0_MazeSpecialsTomb@0x00672BE0, run:2026-10-15-drlg-maze: 57, 58)
+F3. Tomb finisher (type 17):                                         [C] (fn:sub_00672BE0_MazeSpecialsTomb@0x00672BE0, run:2026-10-15-drlg-maze: 57, 58, run:2026-10-16-sweep-mazes)
       P ← first room in L.rooms (newest first) with P.def > 428       ; the tee's Prev record
       r ← {444: 3, 445: 1, 446: 0, 447: 2}[P.def];  fatal for any other Def      ; no draw
       55–58: Next;  57: Waypoint
       59 or 61: Chest
       66–72 and L.id ≠ act[+0x094]: Chest;  59: Leatherarm
       60: Cube;  59 or 61: Treasure
-      L.id = act[+0x094]: Tal Rasha                                  ; [I] not reached (0x00672BE0)
-      L.id = act[+0x484]: Kaa                                        ; [I] not reached (0x00672BE0)
+      L.id = act[+0x094]: Tal Rasha                                  ; [C] level 70, map seed 1557 (0x00672BE0, run:2026-10-16-sweep-mazes)
+      L.id = act[+0x484]: Kaa                                        ; [C] level 71, map seed 1557 (0x00672BE0, run:2026-10-16-sweep-mazes)
 
 F4. Level 92 corners:                                                [C] (fn:sub_00673B30_MazeLevelBuild@0x00673B30, run:2026-10-15-drlg-maze: 2 windows)
       after Ring(5): for (want, new) in (0x2C5, 735), (0x2C6, 736), (0x2C9, 737), (0x2CA, 738):
@@ -496,25 +525,30 @@ F4. Level 92 corners:                                                [C] (fn:sub
   (fn:sub_00672810_MazeSpecialsSewerA2@0x00672810, run:2026-10-15-drlg-maze)
 - F3. [C] The Tomb finisher makes no draw of its own: its rotation comes from the tee's draw. Level 61 never reaches it.
   (fn:sub_00672BE0_MazeSpecialsTomb@0x00672BE0, run:2026-10-15-drlg-maze)
+- F3. [I] Tombs 69 and 72 have no path of their own. The finisher tests a tomb level only by the range 66–72
+  (`0x00672CA5`, `0x00672CAA`) and against the act's true tomb (`+0x094`, `0x00672CB5`, `0x00672D43`) and Kaa's tomb
+  (`+0x484`, `0x00672D6D`); nothing else compares the id with 69 or 72. So a tomb's path is its role's, and all three
+  roles were built: 70 true, 71 Kaa, 66–68 plain. (fn:sub_00672BE0_MazeSpecialsTomb@0x00672BE0, [drlg/0006 § Plan 0038 batch H5e](../../findings/drlg/0006-maze.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes))
 - [C] **Lair 64's entries**, as read from the data: Tight Spot is the single entry at `0x006F00E8`, `{485 → 509, idx −1,
   dir 1}`; the fixed Treasure address `0x006F00D8` is entry 3 of the Treasure table, `{482 → 505, −1, dir 2}` (a W dead
   end); the Prev entry 0 that follows is `{489 → 500, −1, dir 3}`. (data 0x006F00E8, 0x006F00D8, 0x006F0028,
   [drlg/0006 § 6 *Lair 64*](../../findings/drlg/0006-maze.md#6-the-special-tables))
-- [I] **Lair 64's sequence**: after the draw `r`, Tight Spot with `&r`, then `r ← 3` and Treasure from the fixed address
-  (so `r` becomes 0), then Prev from `0x006F0028 + 16r`. Level 64 was not built in the run; level 62 reproduces the other
-  branch (Next from `0x006F0068 + 16r`, then Prev). (fn:sub_00672DC0_MazeSpecialsLair@0x00672DC0,
-  [drlg/0006 § 6 *Lair 64*](../../findings/drlg/0006-maze.md#6-the-special-tables))
+- [C] **Lair 64's sequence**: after the draw `r`, Tight Spot with `&r`, then `r ← 3` and Treasure from the fixed address
+  (so `r` becomes 0), then Prev from `0x006F0028 + 16r`. Both windows of level 64 match room for room with their draws;
+  levels 62 and 63 reproduce the other branch (Next from `0x006F0068 + 16r`, then Prev). (fn:sub_00672DC0_MazeSpecialsLair@0x00672DC0,
+  [drlg/0006 § 6 *Lair 64*](../../findings/drlg/0006-maze.md#6-the-special-tables), run:2026-10-15-drlg-maze,
+  run:2026-10-16-sweep-mazes, [drlg/0006 § Plan 0038 batch H5e](../../findings/drlg/0006-maze.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes))
 
 ### G. Placement
 
 ```
 G1. MazeLevelPlace(L):                                               [C] (fn:sub_00642590_MazeLevelPlace@0x00642590, fn:sub_00642520_LevelRoomsBounds@0x00642520, run:2026-10-15-drlg-maze)
       (x0, y0, x1, y1) ← bounding box of L.rooms
-      if L.w < x1 − x0 or L.h < y1 − y0: fatal                       ; [I] never reached (0x00642590)
+      if L.w < x1 − x0 or L.h < y1 − y0: fatal                       ; [I] no stock case found, G1 note (0x00642590)
       every room: (x, y) ← (x + L.x − x0, y + L.y − y0)
 
-G2. MazeBarracksPlace(L)  (level 28):                                [C] for k = 1 (fn:sub_00673120_MazeBarracksPlace@0x00673120, run:2026-10-15-drlg-maze: 8 windows)
-      ensure level 27; k: i32 ← level 27's preset file index           ; written by the act link builder (warps.md)
+G2. MazeBarracksPlace(L)  (level 28):                                [C] (fn:sub_00673120_MazeBarracksPlace@0x00673120, run:2026-10-15-drlg-maze: 8 windows, k 1; run:2026-10-17-sweep-links: k 0 4 windows, k 2 2 windows)
+      ensure level 27; k: i32 ← level 27's preset file index           ; left by the act link builder: drawn on Black Marsh sides 1 and 3, else the create-time index (warps.md)
       P ← Find({0: 2, 1: 3, 2: 0}[k])                                 ; East, South or West: g_BarracksFinders[k]
       C ← AddFixed(P, {0: 2, 1: 3, 2: 0}[k], 167, idx k, recalcParent: true)   ; Barracks Court Connect
       LevelAdjAdd(L → 27, dir {0: 2, 1: 3, 2: 0}[k])                  ; no draw
@@ -555,14 +589,38 @@ G3. MazeRiverOfFlame(L)  (level 107):                                [C] (fn:sub
   [drlg/0006 § 6](../../findings/drlg/0006-maze.md#6-the-special-tables), run:2026-10-15-drlg-maze)
 - G1. [C] No test against the level rectangle is made during growth. The rooms grow freely around R0, and this shift puts
   the bounding box at the level origin. (fn:sub_00642590_MazeLevelPlace@0x00642590, run:2026-10-15-drlg-maze)
-- G2. [I] For k = 0 and 2 (`FindEast`, `FindWest`), and for the translations they use, the run had no case: level 27's
-  index was 1 in every log. (fn:sub_00673120_MazeBarracksPlace@0x00673120, fn:sub_00672420_MazeFindWest@0x00672420)
+- G1. [I] No sampled stock seed reaches the fatal error. An offline sweep of the maze model over every `DrlgType` 1 level
+  with an `LvlMaze` row but 28 and 107 (68 levels), all three difficulties, 2000 level seeds each (408 000 builds), raised
+  it only 7 times, all with both tomb fields equal to the level, which the act draw excludes (C1 note); the least room
+  left in a multi-room level was 8 tiles (the tombs) and 20 in Arcane Sanctuary, and the one-room levels fit exactly. A
+  sample is not a proof. (fn:sub_00642590_MazeLevelPlace@0x00642590, tbl:LvlMaze.txt:Rooms, tbl:Levels.txt:SizeX,
+  [drlg/0006 § Plan 0039 batch P1a](../../findings/drlg/0006-maze.md#plan-0039-batch-p1a-2026-10-16))
+- G2. [C] `k` 0 takes `FindEast`, attaches 167 with dir 2 and forced index 0, and translates by
+  `(Q.x − C.x − sx, Q.y + Q.h ÷ 2 − C.y)`: four windows, map seed 52 (index drawn on Black Marsh side 3) and map seed 2
+  (the create-time index). `k` 2 takes `FindWest`, dir 0, forced index 2, `(Q.x + Q.w − C.x, Q.y + Q.h ÷ 2 − C.y + 1)`:
+  two windows, map seed 58. Rooms, draws, the seed after and the bounding-box rect all match.
+  (fn:sub_00673120_MazeBarracksPlace@0x00673120, fn:sub_00672420_MazeFindWest@0x00672420,
+  fn:sub_00672460_MazeFindEast@0x00672460, run:2026-10-17-sweep-links, [drlg/0006 § Plan 0038 batch H5a](../../findings/drlg/0006-maze.md#plan-0038-batch-h5a-run2026-10-17-sweep-links))
+- G2. [C] `k` is level 27's preset index as the act link builder left it: the level-6 draw when Black Marsh ends on side 1
+  or 3, otherwise the create-time index (`RangeB` over `Files` 3 on level 27's create seed), which nothing overwrites.
+  Index 2 reached the Barracks that way (map seed 58), and index 0 too (map seed 2). The side-1 draw itself never gives 2
+  on stock data ([warps.md § C](warps.md#c-level-rectangles-and-the-links-after-the-layout)).
+  (fn:sub_00673120_MazeBarracksPlace@0x00673120, fn:sub_006772C0_LevelLinkBuild@0x006772C0, tbl:LvlPrest.txt:Files,
+  run:2026-10-17-sweep-links, [drlg/0006 § Plan 0038 batch H5a](../../findings/drlg/0006-maze.md#plan-0038-batch-h5a-run2026-10-17-sweep-links))
 - G2, G3. [C] These two levels **set their own level rectangle** to the rooms' bounding box. Every other maze level keeps
   the rect that `LevelSetPosition` gave it ([warps.md § C](warps.md#c-level-rectangles-and-the-links-after-the-layout)).
   (fn:sub_00673120_MazeBarracksPlace@0x00673120, fn:sub_00673320_MazeRiverOfFlame@0x00673320, run:2026-10-15-drlg-maze)
-- G2, G3. [I] The level-adjacency node to level 27 or 108 is what joins them without a warp: these are the `Vis` pairs
-  27↔28 and 107↔108 whose `Warp` is −1 ([warps.md § B](warps.md#b-the-act-link-builder)).
-  (fn:sub_0066B790_LevelAdjAdd@0x0066B790, fn:sub_00673120_MazeBarracksPlace@0x00673120)
+- G2, G3. [C] The level-adjacency node to level 27 or 108 is what joins them without a warp: these are the `Vis` pairs
+  27↔28 and 107↔108 whose `Warp` is −1 in all four directions ([warps.md § B](warps.md#b-the-act-link-builder)). No act
+  link list overrides them (32 logs), none of the 431 logged warp pairings joins them, and the 8 Barracks and 28 River of
+  Flame windows place against the neighbour through its rect and an adjacency node.
+  (fn:sub_0066B790_LevelAdjAdd@0x0066B790, fn:sub_00673120_MazeBarracksPlace@0x00673120, tbl:Levels.txt:Vis0,
+  tbl:Levels.txt:Warp0, run:2026-10-15-drlg-maze, [drlg/0006 § Plan 0038 batch S4a](../../findings/drlg/0006-maze.md#plan-0038-batch-s4a-2026-10-16))
+- G1–G3. [C] When `LevelInit` builds the same level object again, the window starts with the rect the previous
+  placement wrote: for level 28, the Barracks' bounding box instead of the builder's 200 × 200 rect. The window is the
+  same, as R0's cancelling position predicts (§ A). Only level 28's three rebuilds in run:2026-10-16-sweep-mazes tell
+  this apart; in every other logged rebuild the placed rect equals the act's rect for the level.
+  (fn:sub_006424A0_LevelInit@0x006424A0, run:2026-10-16-sweep-mazes, [drlg/0006 § Plan 0038 batch H5e](../../findings/drlg/0006-maze.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes))
 
 ### H. Themes
 
@@ -711,6 +769,10 @@ run:2026-10-15-drlg-maze) The warp points this level ends with are the example o
   reproduction.
 - [findings/drlg/experiments.md § run:2026-10-15-drlg-maze](../../findings/drlg/experiments.md#run2026-10-15-drlg-maze):
   230 windows over 41 maze levels, 12388 level draws, 0 mismatches; § run:2026-10-12-drlg-gen for the Den of Evil.
+- Plan 0038: the S4a, S4b, H5e and H5a sections of [drlg/0006](../../findings/drlg/0006-maze.md), with
+  [run:2026-10-16-sweep-mazes](../../findings/drlg/experiments.md#run2026-10-16-sweep-mazes) (the tombs, Lair 64 and the
+  finisher chains) and [run:2026-10-17-sweep-links](../../findings/drlg/experiments.md#run2026-10-17-sweep-links) (the
+  Barracks with `k` 0 and 2).
 - Reference model: `python3 -I tools/drlg.py gen` replays the windows of both runs (the worked examples included). It is a
   check of this spec, not a source: every statement above cites the code, the data or a run.
 - [findings/drlg/0003-generator-dispatch.md](../../findings/drlg/0003-generator-dispatch.md): the window's place in the
@@ -721,12 +783,13 @@ run:2026-10-15-drlg-maze) The warp points this level ends with are the example o
 
 ## Open questions
 
-- [L] The paths the run did not reach (run:2026-10-15-drlg-maze): `MazeFindWest` and the Barracks indices 0 and 2, the true-tomb and Kaa entries and
-  the ×3/×2 counts of the tombs 66–72, Lair 64's special sequence, Crypt 21–24 and 133, Jail 31, the caves 10–12, Dungeon
-  87 and 89, `MazeSpecialAttach` with no room able to take the special, and `MazeLevelPlace`'s fatal error. Their
-  statements above are `[I]`; a run with another map seed (level 27's index 0 or 2) and an Act II game reaching the tombs
-  would close most of them. ([drlg/0006 § 10](../../findings/drlg/0006-maze.md#10-phase-2-reproduction-run2026-10-15-drlg-maze))
-- [L] Whether any stock seed reaches `MazeLevelPlace`'s fatal error (Arcane's 61 rooms within its `Levels` size is the
-  tightest case).
-- [L] `sub_00670D70_MazeRoomAdd` and `0x00670E70` have no caller in the window. If other code calls them, they belong
-  here.
+- [L] **`MazeSpecialAttach` with no room able to take the special** was met in no logged attach (0 of 337). The other
+  paths run:2026-10-15-drlg-maze did not reach are now reproduced: the tombs, Lair 64 and the finisher chains in
+  run:2026-10-16-sweep-mazes, `MazeFindWest` and the Barracks indices 0 and 2 in run:2026-10-17-sweep-links. Levels 133
+  and 135 have no stock build, and tombs 69 and 72 rest on the static reading of F3.
+  ([drlg/0006 § 10](../../findings/drlg/0006-maze.md#10-phase-2-reproduction-run2026-10-15-drlg-maze), [drlg/0006 § Plan 0038 batch H5e](../../findings/drlg/0006-maze.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes),
+  [drlg/0006 § Plan 0038 batch H5a](../../findings/drlg/0006-maze.md#plan-0038-batch-h5a-run2026-10-17-sweep-links))
+- [L] Whether any stock seed reaches `MazeLevelPlace`'s fatal error. The sampled sweep of 408 000 builds found none
+  with a possible tomb pair (G1 note); only a proof over every seed would close it.
+- ~~`sub_00670D70_MazeRoomAdd` and `0x00670E70` have no caller in the window.~~ Answered: both are dead code (*Entry
+  points*, [drlg/0006 § Plan 0039 batch P1a](../../findings/drlg/0006-maze.md#plan-0039-batch-p1a-2026-10-16)).

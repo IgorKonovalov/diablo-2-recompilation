@@ -1123,6 +1123,12 @@ class Checker:
             res, hit = 1, True
             self.case("running player hit without a roll")
         if hit:
+            # the attacker's prevent-heal (stat 117) applies state 52 between the to-hit and the defence rolls; it
+            # takes no draw on either seed (h37r, the set-aside Fleshripper session: 133 events)
+            while i < len(lines) and lines[i][0] == "STA" and lines[i][1].get("state") == 52 \
+                    and lines[i][1]["a"] == a["u"]:
+                self.case("prevent-heal state 52 before the defence rolls (no draw)")
+                i += 1
             bits, sd, i = self.defence(d, sd, lines, i, 0, 1, g)
             if bits & 2:
                 res |= 0x100
@@ -1385,6 +1391,8 @@ class Checker:
                 continue
             if melee and t in ("DRB", "DRM", "DRR", "WBC", "WBS"):
                 prev = out[-1] if out else None
+                if prev is not None and prev[0] == "STA" and prev[1].get("state") == 52 and len(out) > 1:
+                    prev = out[-2]       # the prevent-heal state sits between the to-hit and the defence rolls
                 ok_prev = prev is None or prev[0] in ("DRB", "DRM", "DRR", "WBC", "WBS") or (
                     prev[0] == "THR" and prev[1]["r"] < prev[1]["c"])
                 if not ok_prev:
@@ -1414,6 +1422,11 @@ class Checker:
                 continue
             if t == "STA" and x["a"] not in units and x["d"] not in units:
                 self.inc(self.stats, "foreign STA lines dropped")
+                continue
+            if t == "STA" and x["a"] not in units:
+                # a state a third unit applied (a monster's curse on the mercenary) between a deferred hit test and
+                # its delivery (h37r, run:2026-10-16-combat addendum)
+                self.inc(self.stats, "foreign STA lines dropped (third-unit applier)")
                 continue
             out.append((t, x))
         return out

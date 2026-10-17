@@ -437,7 +437,7 @@ if (!townEmpty) {
   (1, 40, 75, 103, 109 → act 0–4). It counts the players still in that level and calls
   `NPCSTORE_ActStale(game, act, count == 0)`. [C] In single player the count is 0 (the leaving player already
   elsewhere) on a level change within the act, and 1 (the player still counted in the town) on a waypoint to another
-  act: 6 and 26 calls, every one so (run:2026-10-15-vendors; why the act change still counts the player was not read). `sub_00537580_TownPlayerRemove` (from the client-removal path
+  act: 6 and 26 calls, every one so (run:2026-10-15-vendors; why the act change still counts the player: [§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17)). `sub_00537580_TownPlayerRemove` (from the client-removal path
   `0x00539DA0`) does the same with `count − 1 == 0`, for levels 1, 40, 75 and 103 only: Harrogath is missing from its
   switch. (0x00537340–0x00537402, 0x00537580–0x005375FB)
 - [C] So in single player, leaving the town for a level of the same act by a waypoint of the act ([I] walking out: not run) destroys
@@ -870,6 +870,38 @@ compare-and-jump-table switch for one register value through the objdump instruc
 **Tally:** 15 statements: 8 raised (3, 7, 8, 9, 19, 20, 25, 27), 7 raised in part (4, 11, 21, 22, 24, 26, 28). One
 correction (vend 4). Symbol `NPCSTORE_FindRec` I → C (vend 7).
 
+## Plan 0039 batch P1b (2026-10-17)
+
+Row Q23 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static (objdump, Ghidra on the lane's copy). No game run.
+
+- [I] **Why an act change counts the leaving player: the call comes before the player leaves the town's room.**
+  `sub_00537340_TownLevelLeave(game, unit, old, new)` counts, with `sub_005538D0` and the callback
+  `sub_00536820_CountPlayersInLevelCb`, the players whose current room's level (`UNIT_GetRoom` →
+  `sub_0061A1B0_RoomGetLevelId`) equals `old` (0x00536820–0x0053683F). Its two callers differ in when they call:
+  - `sub_0053AEC0_PlayerChangeLevel`, for a target in another act, calls it (0x0053AF40) and then
+    `sub_0053ACC0_PlayerChangeAct` (0x0053AF4F): the player's unit is still in its town room, so it is counted and
+    `townEmpty` is 0;
+  - a change within the act goes through 0x00554EA0 (0x0053AF97), and the per-frame room check calls `TownLevelLeave`
+    (0x00538191) only after it has found the player's room in a new level (`RoomGetLevelId` of the new and the old room
+    compared at 0x00538163–0x00538179), so the player is no longer counted.
+
+  A walk out of town takes the per-frame path, so it behaves like the in-act waypoint. This is what the run logged
+  (count 0 on 6 in-act changes, 1 on 26 act changes, § 3). (fn:sub_00537340_TownLevelLeave@0x00537340,
+  fn:sub_00536820_CountPlayersInLevelCb@0x00536820, fn:sub_0053AEC0_PlayerChangeLevel@0x0053AEC0,
+  fn:sub_0053ACC0_PlayerChangeAct@0x0053ACC0)
+- [I] **A gambled unique enters the made-uniques set** when the gamble window is built, bought or not
+  ([items/0004 § Plan 0039 batch P1b](0004-uniques-sets.md#plan-0039-batch-p1b-2026-10-17)). (fn:GAMBLE_BuildInv@0x00578790,
+  fn:ITEMS_BuildUnique@0x005566B0)
+- **`NpcStoreRec` `+0x24`..`+0x26` (writers read; reader search moved to plan 0043).** [I] `NPCSTORE_CtlCreate` sets
+  `+0x26` from byte 6 of the NPC's `g_NpcStoreTable` slot (0x00536242) and `+0x24` = `+0x25` = 1 for classes 147
+  `gheed`, 154 `charsi`, 178 `fara`, 252 `asheara`, 253 `hratli`, 257 `halbu`, 405 `jamella`, 511 `larzuk` and 512
+  `drehya` (0x0053628E–0x005363BF, written through `ESI` = record + 0x14); the gambler dword `+0x0C` is set for 147,
+  199, 254, 405, 512 and 514. No reader was found: no byte read at those offsets in the 27 functions that call
+  `NPCSTORE_FindRec` or its unit wrapper `0x00535F10` or read the store control `Game+0x1D24` (both the record-base and
+  the record + 0x14 forms were looked for). A record pointer kept elsewhere is not excluded, so the
+  meaning stays open; the store's trade rules are plan 0043 Phase 1's subject, and the search goes there with this
+  writer table. (fn:NPCSTORE_CtlCreate@0x00536070, fn:NPCSTORE_FindRec@0x00535EA0)
+
 ## Data touched
 
 - `tbl:Weapons.txt:CharsiMin`, `CharsiMax`, `CharsiMagicMin`, `CharsiMagicMax`, `CharsiMagicLvl` and the other
@@ -900,9 +932,9 @@ correction (vend 4). Symbol `NPCSTORE_FindRec` I → C (vend 7).
   has an expansion upgrade target.
 - ~~Whether closing the gamble window ends the NPC interaction~~: settled (Phase 2, § 7): the close removes the player
   from the NPC's interaction list, which frees the gamble inventory.
-- [L] Why an act change still counts the leaving player in the town at `sub_00537340_TownLevelLeave` (§ 3) was not
-  read.
-- [L] `NpcStoreRec` bytes `+0x24`..`+0x26` (set for smiths and some gamblers, and from the slot table) and the
-  `HIRE_BuildStock` draw count are not followed.
+- ~~[L] Why an act change still counts the leaving player in the town at `sub_00537340_TownLevelLeave` (§ 3) was not
+  read.~~ The act change calls it before the player leaves the town room ([§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17)).
+- [L] `NpcStoreRec` bytes `+0x24`..`+0x26` (set for smiths and some gamblers, and from the slot table; writers read and no
+  reader found in [§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17), the search moved to plan 0043) and the `HIRE_BuildStock` draw count are not followed.
 - The equal-level order of the gamble list: dumped (Phase 2, [§ Phase 2](#the-gamble-list-order-stock-data)); a
   model of MSVC `qsort` would derive it, not needed.

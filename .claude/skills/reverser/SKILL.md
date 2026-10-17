@@ -11,7 +11,7 @@ confidence-tagged notes that the spec-writer turns into the deliverable. Your na
 thrown away and rebuilt from the CSV at any time.
 
 Read `CLAUDE.md` and `.claude/skills/architect/references/evidence-rules.md` before your first
-write in a session.
+write in a session. Also read `references/review-fixes.md` at the start: the fixes reviews keep making on this lane's work.
 
 ## On bare invocation — wait for instructions
 
@@ -90,10 +90,13 @@ What the spec-writer needs from you:
 
 Append to the plan's `## Implementation log`, add backlog entries for other lanes, and stop.
 
+**Backlog** ([ADR-0018](../../../docs/adrs/0018-backlog-one-file-per-entry.md)): one file per entry under `docs/backlog/`. File one with `python3 -I tools/backlog.py new --from reverser --to <lane> --slug "…"`, then write the request under the front matter. Answer one addressed to you with `close <file> --resolution "… [link]"`; annotate with a dated paragraph, never edit the request. `docs/backlog.md` is a frozen archive: don't add to it.
+
 ## References
 
 - `references/tooling.md`: Ghidra headless wrapper, scripts, r2 recipes, the wine experiment harness.
 - `references/harness-play.md`: how to play on the harness (scripted Nova/Teleport rules, owner play, showing
   `:7` to the owner, cleanup). Binding for every harness phase.
 - `references/finding-template.md`
+- `references/review-fixes.md`: recurring review fixes, one rule each. Read at start.
 - `references/d2-landmarks.md`: what to look for first, per subsystem. All of it is leads.

@@ -3,7 +3,7 @@
 > **Subsystem:** data/excel (file layer under the excel loader)
 > **Question:** In which order does 1.14d open its MPQs, which archive wins when several hold the same file, when
 > does it read loose files from disk, and what does `data\local\use` select?
-> **Date:** 2026-10-11   **Plan:** 0002 (Phase 2)   **Status:** answered (`[I]`, runtime check open)
+> **Date:** 2026-10-11   **Plan:** 0002 (Phase 2)   **Status:** answered (inferred, runtime check open)
 
 ## Answer (summary)
 
@@ -19,11 +19,13 @@
 - [I] **Effective precedence for `data\global\…`:** `patch_d2` > `d2exp` > `d2kfixup` > `d2delta` > `d2data`
   (`d2speech`/`d2sfx`/`d2char`/`d2music`/`d2X*` sit in the same bands but hold no excel data). This is the
   `workspace/merged/` order (d2data → d2exp → patch_d2, later wins), so the merged tree matches the game.
+  (fn:MPQ_OpenCoreArchives@0x004FAB90, fn:STORM_LinkArchive@0x0041B6B0)
 - [I] **`d2kfixup.mpq` and `d2delta.mpq` are opened whenever present** (failure is tolerated; neither is required).
   At priority 1000 and opened after `d2data`, each overrides `d2data` but loses to `d2exp` and `patch_d2`. They don't
-  ship in our set, so they change nothing here.
+  ship in our set, so they change nothing here. (fn:MPQ_OpenCoreArchives@0x004FAB90)
 - [I] **`d2exp.mpq` is opened unconditionally** (if the file exists), also for a classic game, and its excel tables
-  outrank `d2data`'s. So classic and expansion games read the same excel data.
+  outrank `d2data`'s. So classic and expansion games read the same excel data. (fn:MPQ_OpenCoreArchives@0x004FAB90,
+  fn:STORM_LinkArchive@0x0041B6B0)
 - [I] **Loose files are read only under `-direct`.** `-direct` (`FILEIO`/`DIRECT`, `config+0x204`) sets Storm's
   direct-access flags (`0x00779058`) and the game's `g_bDirect` (`0x0074C82C`). With the flag set, every file open
   first tries the path on disk (relative path as given) and only then the archives, so **a loose file beats every
@@ -110,7 +112,7 @@ return 0;
   these call sites) and tries the name relative to the working directory, then next to `Game.exe`, then a third
   location (`0x00517128`, not followed).
 - [I] `STORM_OpenArchive` stores the priority at record `+0x118` and the flag bit 2 at `+0x114` (0 for every game
-  archive). `STORM_LinkArchive` then inserts:
+  archive). `STORM_LinkArchive` then inserts (fn:STORM_OpenArchive@0x0041BA60, fn:STORM_LinkArchive@0x0041B6B0):
   ```asm
   0x0041B946  mov eax,[g_StormArchiveList]          ; head (0x0070835C)
   0x0041B955  cmp [eax+0x118], ecx                  ; node.prio vs new.prio
@@ -138,10 +140,11 @@ for (a = g_StormArchiveList; ; a = a->next) {
 ```
 
 - [I] The disk test sits inside the loop, before the first archive's hash lookup, so with the flag it runs before
-  any archive is searched.
+  any archive is searched. (fn:STORM_FindFile@0x00417F10)
 - [I] `STORM_GetDirectFlags`: bit 0 if `g_StormDirectFlags & 1`, **or** if no archive is open and the flags are 0;
   bit 1 if `g_StormDirectFlags & 2`. The game writes `g_StormDirectFlags` only from `sub_00406870_InitFileIO`, with
   the `-direct` byte (0 or 1). So in a stock run (archives open, no `-direct`) the disk is never read.
+  (fn:STORM_GetDirectFlags@0x00418B50, fn:sub_00406870_InitFileIO@0x00406870)
 - [I] The game's whole-file loader `FILE_LoadWhole` (`0x00517079`, used by the excel loader and for `data\local\use`)
   goes `0x004068E0` → `STORM_OpenFile` with archive 0 (global search), so the rule above covers every excel table.
 
@@ -161,6 +164,7 @@ return g_lng;
   tag, `enUS` for entry 0). `0x005259C0` uses the code for the string-table and font paths and the charset.
 - [I] The 1.14d install's launcher scripts copy `Use_rus` (0x0B) over `data\local\Use` and pass `-direct`; in that
   launch path the loose byte is read and selects `RUS`. Without `-direct`, the byte comes from the MPQ copy.
+  (fn:LNG_GetLanguageIndex@0x00525150, fn:STORM_FindFile@0x00417F10)
 
 ## Plan 0038 batch S1b (2026-10-16)
 
@@ -210,6 +214,42 @@ log reads each kind with 0 mismatches on the merged tree (`workspace/merged/`, d
   are the same, so the claim has no observable. The d2exp copies of `automagic`, `rareprefix` and `raresuffix` `.bin` are
   a different matter: their record sizes (132, 60, 60) do not fit, which is the order above, not this claim.
 
+## Plan 0038 batch S1e (2026-10-17)
+
+Static batch S1e of [plan 0038](../../plans/0038-inferred-claims-sweep.md), row 51 of
+[inventory data-excel](../../plans/0038-inventory/data-excel.md). Method: `LNG_GetLanguageCode` under Ghidra's p-code
+emulator against a model read from the image ([ADR-0015](../../adrs/0015-emulated-reproduction.md)),
+[run:2026-10-17-sweep-emu](experiments.md#run2026-10-17-sweep-emu) family `lang`: 182 calls, ids −2…19, 100, 255,
+0x7FFFFFFF, 0x80000000, fields 0–4, −1, 7, with the "already read" flag `0x008829F0` set and the id at `0x008829EC` by
+the spec (so `LNG_GetLanguageIndex` returns it without the file read). Read set: the table and its strings; the trace
+found nothing else outside the table, the 0x18 bytes after it and the three NULL-page pointers below.
+
+- **Row 51** (spec L522, the language code table: 0 `ENG` … 12 `ENG`/`HAN`; unknown → entry 0) **raised in part.**
+  [C] ids 0–12 give their entry (the code at `+0`, the strings at `+4` and `+8`, the 4-byte tag at `+0xC`), every id
+  ≥ 14 gives entry 0, and a field other than 1, 2 or 3 copies the code; `ret 8`. **Contradicted for id 13 (and any
+  negative id):** the id search runs 13 entries and leaves its counter at 13 when nothing matches; the test after it
+  sends only counts ≥ 14 to entry 0 (`cmp ecx, 0xe; jl` at 0x005252B2), so an unmatched id below 14 reads entry 13,
+  the 0x18 bytes after the table at 0x00730514. There the "pointers" are the dwords `'M'`, `'B'`, `'T'` (0x4D, 0x42,
+  0x54: word stores of a number-suffix table, 0x00525832–0x005258E7), so fields 0–2 copy from the NULL page, which
+  faults in the game (the emulator read zeros there: the fault itself is not evidence, ADR-0015 condition 5); field 3
+  returns `' -no'`, the start of `g_szNotXlatedSuffix`. The `use` byte is read as a `u8` and `LNG_GetLanguageIndex`
+  clamps only values ≥ 14 (0x005251A1), so **a `use` byte of 13 crashes the string-table load** where § 4 says it
+  falls back to `ENG`. Only an edited `use` file has it (d-edit). (fn:LNG_GetLanguageCode@0x00525260,
+  data:g_LanguageTable@0x007303DC, fn:LNG_GetLanguageIndex@0x00525150, run:2026-10-17-sweep-emu)
+- Correction to § 4 ("falls back to entry 0"): only ids ≥ 14 fall back; § 1's "values > 13 become 0" is right, and
+  13 is kept and reaches entry 13 as above. [C] for the map (the emulation), [I] for the crash.
+  (0x005251A1, 0x005252B2, run:2026-10-17-sweep-emu)
+- *Review note (architect, 2026-10-17).* Entry 13's first three dwords are not image constants: their low words are
+  written at run time (0x00525832–0x005258E7, after entry 12's `+0x14` at 0x005257E0), each either the default letter
+  (`'M'`, `'B'`, `'T'`) when string 0x14D1, 0x14D2 or 0x14D3 is longer than one character, or that string's single
+  character, sign-extended to a word (`movsx`). The emulation read the image's bytes (the default letters). No store
+  touches their high words (the writer scan lists every instruction reference to 0x00730514–0x0073052B), which are 0 in
+  the image, so in any run each "pointer" is below 0x10000. The `[C]` therefore covers the index map only: an unmatched
+  id below 14 reads entry 13 at 0x00730514, which objdump shows directly (the loop bound `cmp edx, 0x730524` at
+  0x005252AA, `cmp ecx, 0xe; jl` at 0x005252B2). The values it reads there, field 3's `' -no'` included, are run-time
+  memory and stay `[I]` (ADR-0015 condition 3), as does the fault. Entry 12's `+0x14` is not read by this function
+  (it reads `+0x0` to `+0x10`), so ids 0–12 and ≥ 14 read only image data no code writes.
+
 ## Data touched
 
 - Archive names `0x006DC728`…`0x006DC7B4`, `0x006CD3A0`, `0x006D4C78`.
@@ -227,7 +267,7 @@ log reads each kind with 0 mismatches on the merged tree (`workspace/merged/`, d
 ## Open questions
 
 - Runtime confirmation: a wine run with a loose `DATA\GLOBAL\EXCEL\<table>.bin` that differs from the MPQ copy,
-  launched with and without `-direct`, would take the loose-file rule to `[C]`. Same for a dummy `d2kfixup.mpq`
+  launched with and without `-direct`, would confirm the loose-file rule. Same for a dummy `d2kfixup.mpq`
   carrying one excel file.
 - Storm's lookup also matches a (locale, platform) pair with neutral fallback (`STORM_HashLookup`). Which locale the
   game sets is not followed; excel files are stored neutral in our archives, so it does not affect them.

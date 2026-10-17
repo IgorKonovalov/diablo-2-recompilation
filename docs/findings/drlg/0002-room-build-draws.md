@@ -843,8 +843,19 @@ Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phas
   prefix. (fn:sub_0061E4A0_TilePathPrefix@0x0061E4A0, fn:DRLG_LoadLvlTypes@0x0061E520, run:2026-10-11-drlg-roomk)
   **Remainder `[I]`:** the "0" cell. No mask of a record with a known level type selects one (`dt1`), but the 1056
   `LevelId`-0 records need the generators' placement map.
-- **Rows 9 and 20** (spec L337, L600) **shortfall.** Showing that no stock key lacks a candidate needs the exact list
-  of every room, including the `LevelId`-0 records, so they stay `[I]`.
+- **Rows 9 and 20** (spec L337, L600), **re-ruled 2026-10-17** (`lane/rbs`, the `lane/w1` review's request). The S4b
+  shortfall read these rows as "no stock key lacks a candidate", which the S4a run already contradicted: stock keys do
+  lack candidates. Corrected:
+  - **Row 20 raised.** [C] The `(10, 0, 0)` fallback makes no draw. `python3 -I tools/sweep_s4a.py pick` (re-run
+    2026-10-17, report `workspace/logs/sweep-s4a-pick-rbs-2026-10-17.txt`, sha256 `d5391880…76ddb22`, tool sha256
+    `fafe0406…f9c8a87`, `tools/drlg.py` `b38b91a6…1484bb`) counts 1 280 picks with no candidate for the primary key
+    over the 36 logs with TL and TINIT lines (run:2026-10-14-collision, run:2026-10-15-objects), each taking the
+    fallback with no draw in the model, and 0 roomk mismatches: every room's seed is checked at RACT, so a draw in any
+    of the 1 280 would have moved that room's k (a wrong reading cannot match by chance). (fn:DRLG_PickTileByRarity@0x0066D820,
+    run:2026-10-14-collision, run:2026-10-15-objects)
+  - **Row 9 raised in part.** [C] the no-candidate branch taking `(10, 0, 0)` with no draw, as row 20. **Remainder
+    `[I]`:** the fatal branch (neither the key nor `(10, 0, 0)` has a candidate), not reached in any log; the model
+    raises on it and never did. (fn:DRLG_PickTileByRarity@0x0066D820, fn:sub_0066DC50_RoomTileAdd@0x0066DC50)
 - **Row 17** (spec L581) **raised.** [C] The rerun of the recorded `rngcallgraph` gives `functions=657 rng=4
   unclassified=0 indirect=64`. The objdump walk finds the same four functions and the same 11 sites, and the 18
   functions Ghidra reached through resolved calls hold no RNG site (`sweep_s4b.py rng`). (fn:DRLG_PickTileByRarity@0x0066D820)
@@ -1031,7 +1042,10 @@ Both writers are client code, outside the DRLG build, which is why only a later 
   its draw is `[I]` from the code; it stays an oracle (row `objects`). Update 2026-10-15 (plan 0027 Phase 2): the 40
   logs of § Entry flags reach it 3 times and the model now predicts when it happens; the unit creation stays the oracle. Update
   2026-10-16 (plan 0038 H5c): 44 draws in level 57, and a 0 result skips the unit (§ Plan 0038 batch H5c).
-- The `(10,0,0)` fallback (no draw) and the ApplyAll path (`CheckAll ≠ 0`) were not exercised; both `[I]`.
+  (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, run:2026-10-16-sweep-roomk)
+- The ApplyAll path (`CheckAll ≠ 0`) was not exercised: `[I]`. (fn:sub_0066FF50_LvlSubApplyAll@0x0066FF50) The `(10,0,0)`
+  fallback (no draw), not met in run:2026-10-11-drlg-roomk, was taken 1280 times in the S4a logs with every room's k
+  matched (§ Plan 0038 batch S4a, run:2026-10-14-collision, run:2026-10-15-objects).
 - ~~Type-2 grids are a logged input~~ Settled 2026-10-12 (fix F1): the prepare is modelled and reproduces every
   logged type-2 grid (§ Type 2 prepare). The `0x84` write lands in a DS1 buffer that all preset instances and
   both act copies share, but no grid in the run shows it. A case that could show it needs a cell that is

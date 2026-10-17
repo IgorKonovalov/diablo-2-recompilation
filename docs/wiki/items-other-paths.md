@@ -1,9 +1,9 @@
 ---
 based_on:
-  - docs/specs/items/sockets-runewords.md 2026-10-16
-  - docs/specs/items/cube.md 2026-10-16
-  - docs/specs/items/vendors.md 2026-10-16
-  - docs/specs/items/quest-drops.md 2026-10-16
+  - docs/specs/items/sockets-runewords.md 2026-10-17
+  - docs/specs/items/cube.md 2026-10-17
+  - docs/specs/items/vendors.md 2026-10-17
+  - docs/specs/items/quest-drops.md 2026-10-17
 ---
 
 # Items that do not come from a monster drop
@@ -118,10 +118,15 @@ flowchart TD
 - A classic game accepts runes in sockets (confirmed) but forms no runeword. That second part is read from the code and
   the data, not seen in a run: the match has no game-type test, and every rune is an expansion item, so no row is
   classic-legal.
+- *Patience* never forms: its row is not marked complete, and the match skips every incomplete row. That is checked
+  against the stock table. *Passion* and *Patience* share one name, so the name a runeword shows only ever comes from
+  *Passion*.
 
 A quirk in the bound check means a row with exactly one rune more than the item has sockets compares that extra rune
 against a leftover memory slot. Read from the code, such a row matches only if the leftover happens to hold that
-rune's [item index](../glossary.md); the single logged case did not match, and what that slot can hold in general is unknown.
+rune's [item index](../glossary.md); the single logged case did not match. The slot holds whatever the code that ran
+before at the same depth of the call stack left there, so a false match would need an earlier match check on a fuller
+item, not chance. What it holds in a given game cannot be worked out from the code alone; only a run could show it.
 
 ### What the runeword rolls
 
@@ -142,7 +147,10 @@ Charged skills still draw their roll, and then a player-made runeword has its ch
 That refill is confirmed for the insert a player makes; that the save reader does *not* refill is read from the code.
 A runeword loaded from a save is not rolled again: read from the code, the reader rebuilds the parent with its saved
 lists first, so the match finds the runeword list already present
-([§ E](../specs/items/sockets-runewords.md#e-the-runeword-flag-list-and-rolls)). Also read from the code only: a
+([§ E](../specs/items/sockets-runewords.md#e-the-runeword-flag-list-and-rolls)). The save does not name the runeword's
+row either: the writer runs the match again and saves that row's name index, and the reader keeps the number without
+looking a row up; the row of a loaded runeword is always found again from its runes (read from the code;
+[sockets-runewords, *Inputs*](../specs/items/sockets-runewords.md#tables)). Also read from the code only: a
 loaded item still marked as a runeword whose row no longer matches is discarded
 ([§ G](../specs/items/sockets-runewords.md#g-in-the-save)).
 
@@ -195,7 +203,9 @@ Wirt's Leg matches only if its quest-difficulty stat is at least the current dif
 matched no row in Nightmare, one at 1 did; in Normal every leg passes. Read from the table, the same test binds the
 Staff of Kings, the Viper Amulet, Khalim's Flail and Khalim's organs. A recipe whose output
 adds a socket refuses a first input that cannot hold sockets (a rare amulet stayed unmatched). The rows' optional
-player tests (day of the month, stats) are read from the code only; no stock row uses them.
+player tests (day of the month, stats) are read from the code only; no stock row uses them. Some of the stat tests
+(on the player, and on the first input) compare not the stat itself but its bonus over the base value (from items, skills and states); that reading is from
+the code too.
 
 That a stackable item relaxes the exact count is also read from the code.
 
@@ -237,8 +247,11 @@ Some details from [§ E](../specs/items/cube.md#e-building-one-output--sub_00565
 
 **Finishing** ([§ G](../specs/items/cube.md#g-finishing-the-transmute)). If anything was produced, every item in the
 cube is destroyed (with the stock rows that is exactly the inputs) and the outputs are placed in the cube,
-**identified**, crafted items included. Where in the cube grid an output lands was observed but its search order is not
-known. If nothing was produced, the cube stays as it was: nothing produced, nothing consumed.
+**identified**, crafted items included. Where each output lands is the same free-spot search the game uses for a
+player's inventory, run on the empty 3 × 4 cube grid: a 1 × 1 item lands at cell (2, 3), a 2 × 1 item at (1, 3),
+and anything larger at (0, 0). That search reproduced all 100 logged placements. A partly filled
+cube never meets an output, since the inputs are destroyed first. If nothing was produced, the cube stays as it was:
+nothing produced, nothing consumed.
 
 ### Crafted items
 
@@ -298,7 +311,9 @@ window, from the opener's level ([§ C](../specs/items/vendors.md#c-when-stock-i
   rebuilds from the opener's current level.
 - A waypoint **to another act** only marks the old act's stores stale, and only those built more than 240 seconds
   (240 000 ms) before. A stale store is rebuilt at the next trade open when the opener is the only player interacting.
-  Why the code still counts the leaving player as in town in this case was not read.
+  The leaving player still counts as in town here because, for a change of act, the town-leave check runs before the
+  player leaves its town room; within an act it runs only after the player is found in the new level. That ordering
+  is read from the code and matches the run's counts.
 - Read from the code but never seen in the test run, so unconfirmed: reopening a built store keeps its stock; walking out of town behaves
   like a waypoint within the act; leaving the game from Harrogath triggers nothing; and a level-up, entering a town or
   a quest event rebuilds nothing, so the stock keeps the level of its build. The multiplayer cases (two players
@@ -352,8 +367,9 @@ that player has no window there yet
 
 The gambled item is fully decided at the build, base and quality included. Closing the window frees it, and the next
 *Gamble* builds a new one. Read from the code, not exercised: opening it twice within one interaction shows the same
-items, and buying an item copies it to the player without making a replacement. Whether a gambled unique enters the
-[made-uniques set](../glossary.md) as a dropped one does is an open question. Prices and repair are named in the spec
+items, and buying an item copies it to the player without making a replacement. A gambled unique enters the
+[made-uniques set](../glossary.md) when the window is built, as a dropped one does, whether or not it is bought, so a
+later pick of that row fails and falls back; this is read from the code. Prices and repair are named in the spec
 but not specified ([§ I](../specs/items/vendors.md#i-named-only-prices-and-repair)).
 
 ## Quest drops and quest rewards
@@ -411,7 +427,9 @@ recorded game.
 - **The Cow King** ([§ D3](../specs/items/quest-drops.md#d3-the-cow-king-and-the-cows)): after his own TC, eight
   stamina potions for a qualifying killer (one who has killed Baal, in an expansion game, and has not been credited
   before), with no draw on the quest seed. Confirmed in one owner-played kill: the script asks for quality 0 and the
-  potions came out normal quality, at his level; which quality case maps that is unknown. The two refusals and the
+  potions came out normal quality, at his level. By the code, quality 0 makes item creation run a quality roll on the
+  item's own seed, and then the stamina potion's type, which is always normal, overrides the result; the roll's draws
+  are not checked by any log. The two refusals and the
   classic game's test (Diablo instead of Baal) are read from the code. The cow level itself was played: 565 hell
   bovines dropped ordinary TC drops.
 - **The Hellforge** ([§ D4](../specs/items/quest-drops.md#d4-the-hellforge)): the hammer must be found *and* equipped
@@ -434,8 +452,14 @@ The Horadric parts, Wirt's Leg, the scrolls, the books and the other quest items
 fixed codes and qualities ([§ E](../specs/items/quest-drops.md#e-quest-items)). Nearly all of that table is read from
 the code. A duplicate is refused only by each script's own test (its quest bits, or "the player already holds the
 item"); this is read from the code. Because a quest item checked against the difficulty only counts when its
-quest-difficulty stat is at least the current difficulty, a Normal staff does not stop a Nightmare chest from making a new one, while the cube does. A quest chest, read from the
+quest-difficulty stat is at least the current difficulty, a Normal staff does not stop a Nightmare chest from making a new one, while the cube does.
+The item on the cursor is tested slightly differently: the cube held on the cursor counts only in Normal, while in the
+inventory it counts in every difficulty (read from the code). Separately, the check on moving an item refuses a second
+copy of a quest item, a quest item whose finished form (the Horadric Staff, Khalim's Will) is already held, and a
+second copy of a carry-one unique (read from the code). A quest chest, read from the
 code, makes its quest item, then its ordinary chest drop, then 5 to 9 gold piles with one draw on the quest seed.
+An object's drop takes its item level from the monster level of the object's level; in a level with no `Levels`
+record, or a town (monster level 0 or 1), that is 1 (read from the code).
 
 ### NPC services: imbue, socket, personalize
 
@@ -548,21 +572,19 @@ Collected from the specs' open questions and unconfirmed points:
 
 - **Socketing** ([open questions](../specs/items/sockets-runewords.md#open-questions)): the server refusals behind the
   client test were never seen failing; a child above the player's level, ladder-only rows in a ladder game, and the
-  `etype` exclusion were not tested; what the leftover slot of the one-extra-rune case can hold is unknown; the
-  creation-side socket caps were not executed (the crafted cap is 3 in the code); which of *Passion* and *Patience* a
-  save maps back to (they share one name) is not read.
+  `etype` exclusion were not tested; what the leftover slot of the one-extra-rune case holds in a game needs a run;
+  the creation-side socket caps were not executed (the crafted cap is 3 in the code).
 - **Cube** ([open questions](../specs/items/cube.md#open-questions)): whether upgrading an ethereal item re-applies its
-  ethereal bonus; the cow portal's draws and its classic-game condition; the output's placement order in the cube grid;
-  and everything the run did not reach (outputs B and C, the player and item tests, ethereal and elite inputs, repair of
+  ethereal bonus; the cow portal's draws and its classic-game condition; whether the stat-bonus reading of the stat
+  tests holds, since no stock row uses them; and everything the run did not reach (outputs B and C, the player and item tests, ethereal and elite inputs, repair of
   damaged items, the item level cap, the crafted edge cases).
-- **Vendors** ([open questions](../specs/items/vendors.md#open-questions)): why a cross-act waypoint still counts the
-  leaving player in town; the multiplayer cases; whether a gambled unique enters the made-uniques set; how many draws
+- **Vendors** ([open questions](../specs/items/vendors.md#open-questions)): the multiplayer cases; three bytes of the
+  vendor record with no reader found yet; how many draws
   the [mercenary (hireling)](../glossary.md) list takes from the shared store seed (another plan owns it).
 - **Quests** ([open questions](../specs/items/quest-drops.md#open-questions)): kills by pets, hirelings or converted
   monsters, parties, classic games, Diablo, Baal and his gold, Anya's and Qual-Kehk's items, the chest and Wirt gold,
-  the Countess in Hell and the Cow King's refusals were not attempted; how Baal's gold is split into piles; the ilvl of
-  an object drop in a level without a `Levels` row; which quality case turns the Cow King's quality-0 request into
-  normal potions; and, for quest objects other than the Hellforge, the timer route at run time.
+  the Countess in Hell and the Cow King's refusals were not attempted; how Baal's gold is split into piles; and, for
+  quest objects other than the Hellforge, the timer route at run time.
 
 ## Where to read more
 

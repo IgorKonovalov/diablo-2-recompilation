@@ -703,6 +703,7 @@ BarricadeLvlSub(L); BarricadePrisons(L) /*111 only*/; BarricadeTablePlace(L)
 - [C] **(b) The five `tag_type` 2 records** are the border stamps of § 7. `sub_006752A0_OutBorderSubApply` (and Act V's
   `sub_0067E0E0_BarricadeLvlSub`) applies every record of a `Type` to the outdoor grids, on the level seed, with no mask and
   no `Prob`, `Trials`, `Max` or `Dt1Mask`. That is why those columns are 0 and no level names the five `Type`s.
+  (fn:sub_006752A0_OutBorderSubApply@0x006752A0, fn:sub_0067E0E0_BarricadeLvlSub@0x0067E0E0, tbl:LvlSub.txt:Type)
   - `BordType` (`+0x44`, read at `0x0066F955` and `0x0066F9BC`): 0 makes one `RangeB(groups)` draw for the start group and
     stops after the first stamp; 1 tries every group and stamps each at most once; 2 stamps every group at every matching
     position. Stock: Cliffs 1, Middle 0, Corner 1, Border 2, Barricade 2.
@@ -1547,7 +1548,61 @@ Batch H5e, record [experiments.md § run:2026-10-16-sweep-mazes](experiments.md#
 - Shortfall, still `[I]`: a vertex merge in `OutVertsToCells`, a waypoint pass with no free cell, roads with 5 or 6
   endpoints and an exhausted search pool. None in the six logs, and none in the offline scan of every outdoor level
   of all five acts (52 200 windows, map seeds 1–600 × three difficulties: 0 of each). They may be unreachable on stock data; that needs a static argument, not
-  more seeds.
+  more seeds. (fn:sub_00675080_OutVertsToCells@0x00675080, run:2026-10-16-sweep-mazes)
+
+### H5e review: static reachability (2026-10-17, `lane/rbs`)
+
+The H5e review asked, for each branch the sweep never met, for a static argument that stock data cannot take it or the
+condition a map seed must meet. Three of the five are answered here; (b) and (c) are not (backlog entry left open).
+
+- [I] **(e) Flag `0x20` is never set on the Blood Moor.** `OutdoorAct1` skips `A1CliffMark` for levels 2, 3 and 17
+  (`cmp $0x2` / `$0x3` / `$0x11` on `L+0x1D0`, 0x006807F3–0x00680806, then `call 0x00680070` at 0x0068080A only when
+  none matched). `A1CliffMark`'s `orl $0x20,(%ecx)` at 0x00680170 is the only instruction in 0x00660000–0x0068FFFF
+  that ORs the immediate `0x20` into a dword through a bare register (`objdump -d --no-show-raw-insn -j .text game.exe
+  | grep -E '^\s+6[6-8][0-9a-f]{4}:\s+or[lbw]?\s+\$0x20,\(%e[a-z]{2}\)$'`: three lines; eight in all of `.text`. The
+  other two in the range are word ORs, `orw $0x20,(%eax)` at 0x006689BC and 0x00668FC8, in the cube parsers
+  `sub_00668600_CubeParseInput` and `CUBEMAIN_OutputTypeParse` on a cube record, not on `O`. *Corrected at the
+  `lane/rbs` review:* the lane's pattern `or[lb]?` missed them and gave "one line; six". Not covered by the pattern:
+  an OR with a displacement (11 with `$0x20` in the range, such as `orl $0x20,-0x4(%ecx)` at 0x006785FF on a grid
+  cell) or from a register.) `LinkOutdoorFlags` ORs only `g_LinkOutdoorFlags` values (`0x4`, `0x8`, `0x10`, `0x80`,
+  `0x100`, `0x200`, `0x400`; § 16). Between the skip and the test at 0x0068023B, `OutSeamMark`, `OutBorderBuild` and
+  `OutBorderSubApply(0)` reach `O` only through its vertex list (`+0x64`) and grids (`+0x04`, `+0x2C`, `+0x54`) in
+  their Ghidra C; their callees `OutPresetPlace`, `GridCellOp`, `GridSegmentOp`, `OutCornerFlood` and
+  `BorderSubApplyType` are not followed (5). So the cliff-cave scan's non-square half has no stock case: **d-none**.
+  (fn:sub_006807F0_OutdoorAct1@0x006807F0, fn:sub_00680070_A1CliffMark@0x00680070,
+  fn:sub_00680200_A1RiverEastAndCave@0x00680200, data:g_LinkOutdoorFlags@0x006F1258)
+- [I] **(d) The road search pool cannot be exhausted on stock levels.** A new pool node is taken only when the current
+  node has no child yet (`piVar7[9] == 0` in `A1PathSearchStep`, 0x00681630; the count is `pool[0x2329]`, 900 → none),
+  and a child is reused on every later visit, so the nodes in use are one chain: at most (depth reached + 1) per
+  bound. A child costs `g + 2` and is kept only when `h + g ≤ bound`, so depth ≤ bound / 2. `A1PathSearch` runs the
+  bounds `1.5·h0` (integer) up to `1.5·h0 + 30` in steps of 5 (stop when `bound ≥ h0 + h0/2 + 35`), with
+  `h0 = min(a, b) + 2·max(a, b)` ≤ 3·max(a, b). `A1PathSearch` has one caller, `A1Paths` (0x00681454), and
+  `A1Paths` one, `OutdoorAct1` at 0x0068086F under `2 ≤ id ≤ 7`, whose grids are at most 12 cells a side (10×10, or
+  12×7 / 7×12 on the Blood Moor, H5e scan above), so `a, b ≤ 13` with the snapped endpoints, `h0 ≤ 39`, depth ≤ 44 and
+  at most 45 nodes, against 900. The branch needs `h0` above about 1 170, i.e. a grid over 390 cells a side.
+  **d-none.** (fn:sub_00681630_A1PathSearchStep@0x00681630, fn:sub_006817D0_A1PathSearch@0x006817D0,
+  fn:sub_00681420_A1Paths@0x00681420)
+- [I] **(a) A vertex merge in `OutVertsToCells` needs a seam exactly one cell long** (or a rect off the 8-tile grid).
+  From § 3's ring build (inclusive coordinates), when every level and neighbour rect has `x`, `y`, `w`, `h` ≡ 0 mod 8,
+  each vertex coordinate along an edge is a low bound (≡ 0 mod 8: `L.x`, `r.x`, …) or an inclusive high bound
+  (≡ 7: `L.x + w − 1`, `r.x + r.w − 1`, …). Two values of the same class are equal or at least 8 apart, and a 7-class
+  value followed by a 0-class one above it (one seam's end, the next seam's start) starts a new cell. Inserted points
+  lie strictly inside the edge (`a·c > s·c`, `b·c < e·c`), so `/ 8` makes two consecutive vertices equal only when a
+  seam's low and high bound are 7 apart: an adjacency overlap of **exactly 8 tiles** along an edge (the seam from the
+  edge start `s`, or from an inserted `a`, to `b`).
+  **Scan condition** for `sweep_h5e.py scan`: an outdoor level with a Vis/`Warp` −1 neighbour whose overlap with one of
+  its edges is 8 tiles, or any level rect value not a multiple of 8. Not shown here that no stock layout meets it.
+  (fn:sub_0067D050_VertexRingBuild@0x0067D050, fn:sub_0067CE20_VertexRingSeams@0x0067CE20,
+  fn:sub_00675080_OutVertsToCells@0x00675080)
+- Tool addendum (H5e review tool follow-ups, 2026-10-17): `sweep_h5e.py` (sha256 `d46a3838…d641426`) now keys the
+  cliff-cave scan by level and prints flags `0x10`/`0x20` by level and grid shape. `scan 1 601`
+  (`workspace/logs/sweep-h5e-scan-rbs-2026-10-17.txt`, `53e96744…a6c2c1`): 52 200 windows, 0 errors; `0x20` set on
+  level 4 (1 353), 5 (1 341) and 6 (570), and clear in all 1 800 Blood Moor windows (900 of 12×7, 900 of 7×12), as (e)
+  says it must be. `logs` (`sweep-h5e-logs-rbs-2026-10-17.txt`, `ba403a96…a7163a`): 153 567 checks, 0 mismatches; of
+  the 8 rebuilds, the 3 of level 28 are the ones whose previous placement differs from the act rect.
+- Not answered in this sweep: **(b)** a waypoint pass with no free cell (`OutWaypointPlace` not read) and **(c)** an
+  Act I road set with 5 or 6 endpoints (needs, per level 2–7, the bound on seam openings and cave cells that
+  `A1PathEndpoints` counts, from `OutBorderBuild` and the cave placement).
 
 
 ## Data touched

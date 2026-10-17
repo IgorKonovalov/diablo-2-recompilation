@@ -3,7 +3,7 @@
 > **Status:** accepted
 > **Date:** 2026-10-16
 > **Amends:** [ADR-0002](0002-scope-creation-paths-and-enablers.md) (its deferral of game simulation; presentation formats stay as ADR-0005 left them)
-> **Related plan(s):** [0037-combat-formulas](../plans/0037-combat-formulas.md) (the first simulation plan)
+> **Related plan(s):** [0037-combat-formulas](../plans/done/0037-combat-formulas.md) (the first simulation plan)
 
 ## Context
 

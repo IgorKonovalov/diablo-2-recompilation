@@ -24,7 +24,7 @@
   ```
 - **Conclusion:** promotes `RNG_Step`, `RNG_Range`, `RNG_RangeB`, `RNG_RangePow2`, `RNG_SeedInit` and `RNG_SeedInitOne` to `[C]`
   (bit-exact reproduction, evidence rule 4). This includes the `n < 1` "return 0, no draw" rule for `RNG_Range`.
-  See [0001-rng-core](0001-rng-core.md). It says nothing about the seed tree in [0002](0002-seed-tree.md).
+  See [0001-rng-core](0001-rng-core.md). It says nothing about the seed tree in [0002](0002-seed-tree.md). (run:2026-10-11-rng-emu)
 
 - **Addendum 2026-10-16: plan 0038 batch S1b (static, no new run; `tools/sweep_s1b.py` sha256 `f0df814a30306bab…`).**
   The kept `cases.txt` and `out-*.txt` re-read for the `n = 0` lines (outputs are `eax low high`):
@@ -37,6 +37,21 @@
   `RNG_RangePow2` steps for `n = 0`, `RNG_Range`/`RangeB` do not. With the objdump read of the primitives (memory only
   through ECX and the stack) this backs [rng/0001 § Plan 0038 batch S1b](0001-rng-core.md#plan-0038-batch-s1b-2026-10-16)
   rows 4 and 7.
+
+- **Addendum 2026-10-17: plan 0038 batch S1e (static, Ghidra emulator; `tools/sweep_s1e.py` `8e5f2aad…`).**
+  `RNG_RangePow2Plus` (0x00472240), unreferenced and not cased in 2026-10-11, run through
+  `re/ghidra_scripts/EmuTrace.java` on 3 000 calls: ECX = a seed at a scratch address, EDX = `base`, one stack argument
+  `n` (seeds 0/0, 1/666, all ones, carry cases; `n` 0, 1, powers of two, 0x7FFFFFFF, 0x80000000, all ones; `base` 0,
+  1, −1, wide), then random. Files in `workspace/logs/sweep-s1e/` (`rng.*`, manifest `94c19392…`).
+  ```
+  python3 -I tools/sweep_s1e.py cases rng
+  tools/ghidra.sh emutrace workspace/logs/sweep-s1e/rng.cases workspace/logs/sweep-s1e/rng.mem > workspace/logs/sweep-s1e/rng.out
+  python3 -I tools/sweep_s1e.py check rng
+  S1E rng cases=3000 match=3000 bad=0 neg=2239 traced=0 undeclared=0
+  ```
+  Every call returned `(low' & (n − 1)) + base` (wrapping) with the seed stepped once and popped 4 bytes (`ret 4`); no
+  memory beyond the seed was touched. The negative control (`low' & n`) differs in 2 239 cases. Backs
+  [rng/0001 § Plan 0038 batch S1e](0001-rng-core.md#plan-0038-batch-s1e-2026-10-17).
 
 ## run:2026-10-11-seed-tree
 
@@ -78,7 +93,7 @@
   `GAME_InitSeeds`, the act seed and `+0x470`, the Act II tomb draws and Act III bit, the 0-based act index, the level
   seed sum with its u32 wrap, and the DRLG room seed and `+0x04`. It also showed that the act seed has
   data-dependent consumers inside `DRLG_ActCreate` (`ACTEND` ≠ `ACT` for N = 777 and in Act III), which are now recorded there.
-  Active-room and unit seeds were not reached and stay `[I]`.
+  Active-room and unit seeds were not reached and stay `[I]`. (run:2026-10-11-seed-tree)
 
 ## run:2026-10-11-seed-tree-p1
 
@@ -126,7 +141,7 @@
   32-bit `RNG_EntropySeed`; `-seed 0` not applied; the 32-bit `config+0x21A`; the server/client act copies with
   the same seed; the activation sequence (re-seed from `+0x04`, k type-code draws, one activation draw,
   `active.seed = init(low)`); server unit seeds from game `+0xD0`; client unit seeds from client active rooms. Supports
-  the restated "draw" bullet in [0001-rng-core](0001-rng-core.md).
+  the restated "draw" bullet in [0001-rng-core](0001-rng-core.md). (run:2026-10-11-seed-tree-p1)
 - **Addendum 2026-10-16: plan 0038 batch S1b (static, no new session; `tools/sweep_s1b.py` sha256
   `f0df814a30306bab…`).** The logs of this run and of run:2026-10-11-seed-tree-p1 (12 files, sha256 recorded in
   `workspace/logs/sweep-s1b-manifest.txt`, `d06d2aac…c9506fb`; the record gave none) re-read by room type and unit type:

@@ -731,6 +731,39 @@ S3B stats contra=1 ds1_placed_401=1 ds1_placed_484=0 monprop_normal_rows=3 monpr
   `mon-stats.gdb` (its `SI` lines carry the MonProp stat list).
   (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_0063EE90_HirelingType@0x0063EE90, 0x0057416D, tbl:Skills.txt:summon)
 
+## Plan 0038 batch S1f (2026-10-17)
+
+Static batch S1f of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the c-emu rows of the
+[inventory § 2.6 S1f table](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews). No session was
+played. Method: the function runs under Ghidra's p-code emulator against `tools/sweep_s1f.py`'s models, under
+[ADR-0015](../../adrs/0015-emulated-reproduction.md): [run:2026-10-17-sweep-emu2](../data/experiments.md#run2026-10-17-sweep-emu2).
+Every memory spec guards the fatal path (0x00408090, 0x00408A60, 0x00681E09) and the pool allocator's entries
+(0x0040B4B0, 0x0040B430, 0x0040B480), and no case stopped, so no claimed branch was reached through either (review
+condition (a)). Where a statement above is tagged inferred and this section raises it, the tag and the second source
+given here are the current ones.
+
+`sub_00483360_MulDiv` (ECX = a, EDX = b, c on the stack, `ret 4`) ran on 4 000 synthetic triples (family `muldiv`):
+the branch edges (`a` around 0x100000, `b` around 0x10000, `c` around `a >> 4` and `b >> 4`), negative values of
+each, `c` = 0, and random 32-bit words. Its one callee is the CRT's signed 64-bit divide
+`fn:CRT_alldiv@0x00684240` (pure: it reads its four stack words only). No access outside the stack was traced. The case
+writer leaves out the one fault input, `a·b` wrapping to `INT32_MIN` with `c` = −1 in the 32-bit branch (ADR-0015
+condition 5: the emulator returns 0 where the processor traps).
+
+- **Row 9** (spec A1 pseudocode L153, the branches beyond the 32-bit one) **raised.** [C] All 4 000 return the model's
+  EAX, and in the 64-bit branches EDX too: `c` = 0 → 0 (382); `a > 0x100000` and `c ≤ a >> 4` (arithmetic shift,
+  signed compare: every negative `c` lands here) → `(a ÷ c) · b`, truncating first, the product wrapping at 32 bits
+  (605); `a > 0x100000` and `c > a >> 4` → the 64-bit product divided by the sign-extended `c` through `CRT_alldiv`,
+  truncated toward zero, and **the low 32 bits of the 64-bit quotient returned** (EDX holds the high half; 215 cases,
+  39 of them with a quotient outside the 32-bit range, which therefore wraps); the same two branches on `b > 0x10000`
+  (960 and 266, 26 wide quotients); otherwise the 32-bit `imul` product (wrapped in 1 300 cases) divided by `idiv`
+  (272 without wrap). The negative control (the exact quotient `a·b ÷ c` everywhere) differs in 1 948. The instructions
+  are cited from objdump (`cmp ecx, 0x100000; jle`, `sar eax, 4`, `cdq; idiv esi; imul eax, edi` at
+  0x00483376–0x0048338C; `imul edi` and the call at 0x004833A6/0x004833B3; `CRT_alldiv`'s `neg edx; sbb eax, 0` at
+  0x00684254–0x00684256). (fn:sub_00483360_MulDiv@0x00483360, fn:CRT_alldiv@0x00684240, run:2026-10-17-sweep-emu2)
+- **Row 11** (spec A1 step note L179, "the other branches are as read") **raised.** [C] The same 4 000 cases; the read
+  holds with one precision the note does not state: a 64-bit quotient outside the 32-bit range is returned wrapped
+  (its low 32 bits), not saturated. (fn:sub_00483360_MulDiv@0x00483360, run:2026-10-17-sweep-emu2)
+
 ## Open questions
 
 - ~~Whether champion-pack members get a champion leader's flag-0 handlers~~ answered in § 12: they do not; each member

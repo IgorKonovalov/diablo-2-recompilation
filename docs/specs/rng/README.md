@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: []
 consumed_by: [rng/seeds, items/*, monsters/*, drlg/*, objects]
-tags: {C: 22, I: 8, L: 1}
-updated: 2026-10-11
+tags: {C: 28, I: 4, L: 1}
+updated: 2026-10-17
 ---
 
 # RNG: seed state, step, range reduction, initialisers
@@ -31,22 +31,34 @@ documents a call site states which form it uses (see *Reimplementation notes*).
 | power-of-two range plus base | fn:RNG_RangePow2Plus@0x00472240 | 0, dead code | [I] |
 | init with value | fn:RNG_SeedInit@0x00650E40 | 103 calls in 76 functions, both initialisers combined | [C] |
 | init to one | fn:RNG_SeedInitOne@0x00650E30 | (counted with `init with value`) | [C] |
-| inlined step | 852 multiplier immediates, all inside functions | — | [I] |
+| inlined step | 852 multiplier immediates, all inside functions (e.g. fn:DRLG_ActCreate@0x00642DA0, fn:DRLG_RoomCreate@0x0066B3E0) | — | [C] for 846 sites, [I] for 6 |
 
 All 852 occurrences of the multiplier bytes `C5 90 C6 6A` in the file are `mov r32, imm32` instructions inside
 functions, so each one is a draw site: 837 in 427 functions found at first, 4 outside any function Ghidra had
-defined, and 11 in nine DRLG level-link callbacks reached only through data tables (`sub_…_LinkPick`). [I]
-([0001](../../findings/rng/0001-rng-core.md#answer-summary))
+defined, and 11 in nine DRLG level-link callbacks reached only through data tables (`sub_…_LinkPick`). [C] for the
+count and the instruction form, and for 846 of the sites being inside functions: GNU objdump decodes 852 instructions
+with the operand `0x6AC690C5`, every one `mov r32, imm32`, at the 852 raw byte occurrences (the list of
+`tools/gdb/lcg-sites.txt`, the same 852 Ghidra counts); an objdump walk from every direct call target, every pointer
+to an instruction in `.rdata`/`.data` and every code immediate that names one reaches 836 of them, and 10 more lie in
+bodies that start after `int3` padding with a `push ebp` prologue. [I] for the other 6 sites, whose body the walk
+does not delimit: they are inside functions on Ghidra's reading alone. (fn:DRLG_ActCreate@0x00642DA0,
+fn:DRLG_RoomCreate@0x0066B3E0, fn:sub_00676150_LinkPick@0x00676150, [0001](../../findings/rng/0001-rng-core.md#answer-summary),
+[§ Plan 0038 batch S1b](../../findings/rng/0001-rng-core.md#plan-0038-batch-s1b-2026-10-16))
 
 Every out-of-line primitive except `RangePow2Plus` takes the seed pointer in ECX and `n` (or the
 init value) in EDX. [C] (run:2026-10-11-rng-emu) `RangePow2Plus` takes the seed in ECX, `base` in EDX
-and `n` on the stack. [I] (fn:RNG_RangePow2Plus@0x00472240)
+and `n` on the stack: 3 000 emulated calls with that convention return the modelled value and pop exactly 4 bytes
+(`ret 4`). [C] (fn:RNG_RangePow2Plus@0x00472240, run:2026-10-11-rng-emu, addendum 2026-10-17)
 
 ## Inputs
 
 ### Tables
 
-None. The RNG reads no table. [I] ([0001](../../findings/rng/0001-rng-core.md#data-touched))
+None. The RNG reads no table. [C] The seven primitives' bodies (145 instructions, no calls) address memory only
+through ECX (the seed, `[ecx]` and `[ecx+0x4]`) and the stack, with no absolute address operand, and the 5 000-case
+emulator run mapped no table. (fn:RNG_Step@0x0045C370, fn:RNG_Range@0x0045C390, fn:RNG_RangeB@0x0045C3E0,
+fn:RNG_RangePow2@0x00472210, fn:RNG_RangePow2Plus@0x00472240, fn:RNG_SeedInit@0x00650E40, fn:RNG_SeedInitOne@0x00650E30, run:2026-10-11-rng-emu,
+[0001 § Plan 0038 batch S1b](../../findings/rng/0001-rng-core.md#plan-0038-batch-s1b-2026-10-16))
 
 ### Runtime state
 
@@ -98,9 +110,9 @@ type Seed { low: u32; high: u32 }
      Step(s)                                                   ; draw, always
      return s.low & (n − 1)                                    ; u32 arithmetic; callers pass a power of two
 
-4. RangePow2Plus(s: Seed, base: i32, n: u32) → i32:            [I] (fn:RNG_RangePow2Plus@0x00472240)
+4. RangePow2Plus(s: Seed, base: i32, n: u32) → i32:            [C] (fn:RNG_RangePow2Plus@0x00472240, run:2026-10-11-rng-emu)
      Step(s)                                                   ; draw
-     return (s.low & (n − 1)) + base
+     return (s.low & (n − 1)) + base                           ; the sum wraps at 32 bits; n = 0 masks with all ones
 
 5. Init(s: Seed, v: u32):                                      [C] (fn:RNG_SeedInit@0x00650E40, run:2026-10-11-rng-emu)
      s.low ← v;  s.high ← INIT_HIGH                            ; no draw
@@ -117,7 +129,13 @@ Step notes:
    and return 0 without a draw. [C] (run:2026-10-11-rng-emu edge cases)
 4. This helper is dead code in 1.14d: no absolute pointer to it exists anywhere in the file, and no `call` or `jmp`
    rel32 at any `.text` offset reaches it. No spec depends on it, and a reimplementation can omit it. It is defined
-   here only for completeness. [I] (fn:RNG_RangePow2Plus@0x00472240, [0001](../../findings/rng/0001-rng-core.md#dead-ends))
+   here only for completeness; the emulation that confirms step 4 (3 000 of 3 000 calls, `n` = 0, 1, powers of two
+   and not, wide `base`, the exit seed one `Step` on, addendum 2026-10-17 to run:2026-10-11-rng-emu) covers the code
+   only. It is not alone: 14 inlined draw sites lie in 9 bodies with no static reference (no rel32 call or jump, no
+   absolute address), `RangePow2Plus` and 0x005528E0, 0x0055FB80, 0x0057D760, 0x005E9750, 0x005F7F10, 0x005F8010,
+   0x005FD0F0 and 0x00675F80 (4 sites), so a count of reachable draw sites leaves them out. Having no reference has no
+   observable, so both stay readings of the code. [I] (fn:RNG_RangePow2Plus@0x00472240,
+   [0001](../../findings/rng/0001-rng-core.md#dead-ends), [§ Plan 0038 batch S1b](../../findings/rng/0001-rng-core.md#plan-0038-batch-s1b-2026-10-16))
 
 **What counts as one draw.** In every spec, "draw#k" means one call of `Step` on a named seed
 object, whether it happens inside `Range`, `RangePow2`, or inline. A draw is one step of one specific seed
@@ -158,7 +176,10 @@ Step 1 in full: `0x3039 × 0x6AC690C5 + 0x29A = 0x0000141D_015B2E77`, and `0x015
   by `0x24924925` plus a correction, which is an exact unsigned `mod 7`) have no guard, and neither
   has `RangePow2`. A table-driven `n` that can be 0 (an empty pool, a zero weight sum) therefore
   draws or doesn't draw depending on the call site. Each consuming spec states the form per site.
-  [I] ([0001](../../findings/rng/0001-rng-core.md#answer-summary))
+  [C] In the 7 emulator cases with `n = 0`, `RNG_RangePow2` stepped the seed every time and returned `low` whole,
+  while `RNG_Range` and `RNG_RangeB` returned 0 with the seed unchanged; the inlined `mod 7` of `DRLG_ActCreate`
+  draws unguarded ([seeds](seeds.md) step 3c, run:2026-10-11-seed-tree). (fn:RNG_RangePow2@0x00472210,
+  run:2026-10-11-rng-emu, [0001 § Plan 0038 batch S1b](../../findings/rng/0001-rng-core.md#plan-0038-batch-s1b-2026-10-16))
 - **Reduce the new `low`, not the old one.** The step happens first, and the result is taken from
   the updated state. [C] (run:2026-10-11-rng-emu)
 - **`high` is not a constant.** `Init` sets it to 666, but each step overwrites it with the carry
@@ -172,7 +193,11 @@ Step 1 in full: `0x3039 × 0x6AC690C5 + 0x29A = 0x0000141D_015B2E77`, and `0x015
 
 - [findings/rng/0001-rng-core.md](../../findings/rng/0001-rng-core.md): state, step, range, initialisers (answered).
 - [findings/rng/experiments.md § run:2026-10-11-rng-emu](../../findings/rng/experiments.md#run2026-10-11-rng-emu):
-  5,000-case emulator comparison of every primitive except `RangePow2Plus`.
+  5,000-case emulator comparison of every primitive except `RangePow2Plus`, and its 2026-10-17 addendum (plan 0038
+  batch S1e): 3 000 cases of `RangePow2Plus`.
+- [findings/rng/0001 § Plan 0038 batch S1b](../../findings/rng/0001-rng-core.md#plan-0038-batch-s1b-2026-10-16) and
+  [§ S1e](../../findings/rng/0001-rng-core.md#plan-0038-batch-s1e-2026-10-17): the multiplier sites by objdump, the
+  primitives' memory operands, the unguarded forms, `RangePow2Plus`.
 - [findings/rng/experiments.md § run:2026-10-11-seed-tree-p1](../../findings/rng/experiments.md#run2026-10-11-seed-tree-p1):
   shared game-seed consumers interleaving at runtime (the "draw" definition).
 - `tools/rng.py`: the reference model used for the comparison and for the worked example.

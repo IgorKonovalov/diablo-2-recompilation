@@ -1,7 +1,7 @@
 ---
 based_on:
-  - docs/specs/rng/README.md 2026-10-11
-  - docs/specs/rng/seeds.md 2026-10-16
+  - docs/specs/rng/README.md 2026-10-17
+  - docs/specs/rng/seeds.md 2026-10-17
   - docs/specs/drlg/room-tiles.md 2026-10-17
 ---
 
@@ -40,8 +40,9 @@ flowchart TD
 ## The generator: eight bytes and one multiplication
 
 A [seed](../glossary.md) is 8 bytes: two unsigned 32-bit halves, `low` and `high`. It is stored inside the thing
-that owns it ([RNG core, runtime state](../specs/rng/README.md#runtime-state)). As far as the code shows, the
-generator reads no table.
+that owns it ([RNG core, runtime state](../specs/rng/README.md#runtime-state)). The generator reads no table: its
+code touches only the seed and the stack, and running it under an emulator with no table loaded gave the game's
+own results ([RNG core, tables](../specs/rng/README.md#tables)).
 
 The whole generator is a handful of operations ([RNG core, algorithm](../specs/rng/README.md#algorithm)):
 
@@ -67,12 +68,15 @@ as what each one computes ([RNG core, algorithm](../specs/rng/README.md#algorith
 
 The "return 0 without drawing for n below 1" guard is not everywhere. Many call sites copy the step inline, and an
 inlined draw with a fixed modulus (such as a `mod 7`) has no guard; neither has RangePow2. So when a
-table-driven count can be zero, whether the game still draws depends on the call site. This is read from the code
-and has not been confirmed for every site; each subsystem spec states the form per call site
-([RNG core, reimplementation notes](../specs/rng/README.md#reimplementation-notes)). The project's count of
-those inlined draw sites (852 multiplier constants in the program) is also a reading of the code, not a run
-([RNG core, entry points](../specs/rng/README.md#entry-points)). One more helper, "power-of-two range plus a
-base", is also in the program, but as far as the code shows nothing calls it, and no spec depends on it.
+table-driven count can be zero, whether the game still draws depends on the call site. That much is confirmed:
+RangePow2 under the emulator steps the seed with n = 0 where Range does not, and the act's inlined `mod 7` draws in
+play with no guard. Which form each other site uses is stated call site by call site in the subsystem specs
+([RNG core, reimplementation notes](../specs/rng/README.md#reimplementation-notes)). The program holds 852 inlined
+draw sites (852 copies of the multiplier, each loaded into a register by one `mov`), confirmed by a second disassembler; that 846
+of them lie inside functions is confirmed by walking the code, and the other 6 only by Ghidra's reading
+([RNG core, entry points](../specs/rng/README.md#entry-points)). One more helper, "power-of-two range plus a base",
+is also in the program: what it computes is confirmed under the emulator, but by the code nothing calls it, and no
+spec depends on it. Eight other pieces of code holding inlined draws have no caller either, by the same reading.
 
 ## Two roots: the map seed and the game seed
 
@@ -163,14 +167,20 @@ tick), and on its first activation it then gets its presets, its objects and its
 seed, and its density rolls and one step per creation from the game seed. Details are on the
 [monsters page](monsters.md). A flag on the active room marks it as already populated, and the pass skips such a
 room; a run confirmed it (no pass ever followed a check that found the flag set, and every one of 558 passes
-followed a check that found it clear).
+followed a check that found it clear). The DRLG room keeps that flag when its active room is released (or its level
+unloaded) and gives it back on the next activation, so a room is never populated twice. Another bit of the same flag
+value marks the rooms of the client act copy. Both are confirmed in a run
+([seed tree, step note 6](../specs/rng/seeds.md#algorithm)).
 
 ## Units: the game seed, in call order
 
 Every unit the server creates, except players, takes one draw from the game seed and is initialised with it
 ([seed tree, step 7a](../specs/rng/seeds.md#algorithm)). This holds for monsters too: **server monsters are seeded
 from the game seed, not from their room**. An item takes one extra game-seed draw right after its unit seed; that
-draw gives the item's own starting seed, the one its quality, affix and unique picks draw on.
+draw gives the item's own starting seed, the one its quality, affix and unique picks draw on. Item creation can also
+take two stored seeds instead, but by the code only one path passes them: items read from an old-format item list
+of a save. Drops, gold, stores, the cube, the imbue, objects and traps all take their seeds from the game seed, and
+a current save restores its items by another path ([seed tree, step note 7a](../specs/rng/seeds.md#algorithm)).
 
 Because the game seed is shared, a unit's seed depends on everything that drew from the game seed before it
 ([seed tree, step note 7a](../specs/rng/seeds.md#algorithm)):
@@ -272,15 +282,14 @@ From the [RNG core open questions](../specs/rng/README.md#open-questions) and th
   reads its own call sites.
 - The order of game-seed draws after game creation: draws 1 to 5 are pinned, but the gaps between later units are
   open.
-- Which item-creation paths pass their own two creation seeds, instead of leaving them empty as drops do, is not yet
-  followed in the seed-tree spec.
 - Which Act II tomb field is the real tomb, what the Act III bit means, and what decides the other Act III act-seed
   consumers, and what the level-27 bit set while building level 6 means, are open.
-- What the two DRLG room bits behind the active room's flag value mean, and where one of them is set, are open.
-- Only about 20 of the 76 functions that initialise a seed have been followed; others (such as a level-table global
-  seed) are not yet covered.
-- Read from the code but not confirmed by a run: that the generator reads no table, the "power-of-two range plus
-  a base" helper being unused, three of the six on-demand level creators, a room with no tiles at all, which
+- Every function that initialises a seed is now classified, by reading the code. Besides the tree above there are seeds that never feed
+  gameplay: the client automap's own seed, two title-screen seeds and short-lived local seeds. Still unread are the
+  places in the skill and missile code that re-seed a unit or another object, and from what; they belong to a later
+  phase of the project.
+- Read from the code but not confirmed by a run: the "power-of-two range plus a base" helper and eight other
+  pieces of code with inlined draws being unused, three of the six on-demand level creators, a room with no tiles at all, which
   player-creation paths run and what they pass, the clock fallback for a unit without a parent, and the room
   lookup's answer for (0, 0). Calling `InitOne` right before `Init`, as the game does, has no effect, also by
   reading the code.

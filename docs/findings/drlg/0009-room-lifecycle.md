@@ -85,8 +85,8 @@ written from the code before they were read. Little exists beyond anecdotes; not
   Detail: in 1.14d a level without `SaveMonsters` saves only `0x2000000` units (preset spawns, earlier restores) and
   `restore` 2 classes; any other live monster of a released room is freed without a record, and the room is not
   populated again, so it is gone, not injured. The observation fits a room that was never released (the player stayed
-  within the near sets, or less than 120 frames away) or a preset monster. On stock data only the towns and the Harem
-  (levels 0, 1, 40, 50, 75, 103, 109) have `SaveMonsters` 0, and none is populated; but the test takes the level of
+  within the near sets, or less than 120 frames away) or a preset monster. On stock data only the null level, the five towns and
+  the Harem (levels 0, 1, 40, 50, 75, 103, 109) have `SaveMonsters` 0, and none is populated; but the test takes the level of
   the unit's **current** room (0x005431F9–0x0054322A), so a hostile pool monster that follows a player into a town
   room meets it on stock data when the town's rooms are released (corrected at the review; a required Phase 2 case).
 - [L] src:pk-boss-heal-thread: Blood Raven back at full health after about 20 minutes away. **held with refinement**
@@ -307,7 +307,7 @@ stateDiagram-v2
   and freed. (fn:sub_005431F0_InactiveMonsterSaveTest@0x005431F0, 0x00543260–0x00543287, fn:sub_00642820_LevelSaveMonsters@0x00642820,
   fn:sub_0063A130_UnitHasStateInMask@0x0063A130, fn:sub_005A0180_MonTypeFlag@0x005A0180, tbl:Levels.txt:SaveMonsters,
   tbl:MonStats2.txt:restore, tbl:MonStats.txt:MonStatsEx, tbl:States.txt:udead)
-- [I] Data: `SaveMonsters` is 0 only for levels 0, 1, 40, 50, 75, 103 and 109 (the towns and the Harem); `restore` is 1
+- [I] Data: `SaveMonsters` is 0 only for levels 0, 1, 40, 50, 75, 103 and 109 (the null level, the five towns and the Harem); `restore` is 1
   for 698 MonStats rows, 0 for 18 and 2 for 18 (the barricade tower, the minion spawners, the catapults, `act5pow`,
   the injured barbarians, `demonspawner`). (tbl:Levels.txt:SaveMonsters, tbl:MonStats2.txt:restore)
 - [I] **Object (type 2)**: objects § B4 holds, with the level flag named: `save` starts as `SaveMonsters(level)` or the

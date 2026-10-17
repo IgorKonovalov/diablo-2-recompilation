@@ -156,7 +156,8 @@ where tagged. Item-side columns (`cost`, `durability`, stacks) are in [Weapons Â
   36 weapons have a `Throwable` type (the 30 throwing weapons and the 6 throwing potions, exactly the `stackable`
   weapons). Whether the repair test reads the item's own type or its `Equiv` closure is a Phase 1 question `[L]`; on stock
   data it changes no count: walking `Equiv1`/`Equiv2` to the root gives the same 270, 202 and 0 (misc), no item
-  differing (recomputed from `itemtypes.txt` at the plan 0043 Phase 0 review; not yet a survey key).
+  differing (survey keys `w_closure_repair` = 270, `a_closure_repair` = 202, `m_closure_repair` = 0 and
+  `*_closure_repair_differs` = 0, `economy_survey.py types`).
 
 ## Open questions
 

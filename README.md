@@ -100,7 +100,7 @@ research map is authoritative: it adds the dependencies, key tables, tag counts 
 
 | Subsystem | What it covers | Status | Date |
 |---|---|---|---|
-| `combat/formulas` | to-hit, damage, resistances, block, avoid, damage reduction, on-hit effects | not started ([plan 0037](docs/plans/0037-combat-formulas.md)) | plan approved 2026-10-16 |
+| [`combat/formulas`](docs/specs/combat/README.md) | to-hit, damage, resistances, block, avoid, damage reduction, on-hit effects | reviewed | 2026-10-17 |
 
 Later simulation rows (stats and states, skills and missiles, monster AI, animation timing) are added when their
 plans start.
@@ -109,7 +109,6 @@ plans start.
 
 In flight ([plans index](docs/plans/README.md)):
 
-- **[0037](docs/plans/0037-combat-formulas.md)**: combat formulas, the first simulation plan (approved).
 - **[0038](docs/plans/0038-inferred-claims-sweep.md)**: the inferred-claims sweep: which inferred points in the reviewed specs one more run, a re-check of kept
   logs or a static second source raises to confirmed (approved 2026-10-16).
 
@@ -128,6 +127,7 @@ Done (each closed plan is in `docs/plans/done/`, listed in the [plans index](doc
 - **Data, saves and players**: save files (0013), string tables (0028), player creation (0034), calc formulas (0035).
 - **Sweeps**: backlog sweeps 1–3 (0015, 0020, 0027).
 - **Reading**: the human wiki and this README (0036).
+- **Simulation**: combat formulas (0037).
 
 ### Supporting material
 

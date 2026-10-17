@@ -1,10 +1,10 @@
 ---
 based_on:
-  - docs/specs/drlg/README.md 2026-10-16
+  - docs/specs/drlg/README.md 2026-10-17
   - docs/specs/drlg/room-tiles.md 2026-10-17
-  - docs/specs/drlg/preset.md 2026-10-15
-  - docs/specs/drlg/collision.md 2026-10-15
-  - docs/specs/drlg/maze.md 2026-10-15
+  - docs/specs/drlg/preset.md 2026-10-17
+  - docs/specs/drlg/collision.md 2026-10-17
+  - docs/specs/drlg/maze.md 2026-10-17
   - docs/specs/drlg/warps.md 2026-10-17
   - docs/specs/drlg/outdoor.md 2026-10-17
 ---
@@ -86,18 +86,36 @@ Before any level is built, the act's [link builder](../glossary.md) places the a
 other ([warps § A](../specs/drlg/warps.md#a-per-act-link-setup), [§ B](../specs/drlg/warps.md#b-the-act-link-builder)).
 For Acts I, II, IV and V it walks small tables of levels. Each entry places one level's rectangle against an
 **anchor** level, on a side that is usually chosen by a draw on a *copy* of the act seed (a few entries are fixed). If
-the act's check rejects the new rectangle (every reject in the recorded games was an overlap), the entry tries its next
-side, with no new draw for most entries; if it runs out of choices, the builder backs up one entry. The recorded games
-never needed a back-up: every reject was followed by the same entry's next choice, which was then accepted. Act III is different: its jungle layout steps the act seed itself and is part of the outdoor generator
+the act's check rejects the new rectangle, the entry tries its next side, with no new draw for most entries; if it
+runs out of choices, the builder backs up one entry. A check rejects a rectangle that overlaps one already placed; in
+Act I it also rejects a side of the Rogue Encampment that a small table of allowed sides does not list, and a side of
+the Burial Grounds that another level placed against the Cold Plains already holds. Rejects of all three kinds were
+logged, and each was followed by the same entry's next choice, until a later choice of that entry was accepted: the
+recorded games, and an offline scan of the builder, never needed a back-up. Act III is different: its jungle layout steps the act seed itself and is part of the outdoor generator
 ([outdoor § J](../specs/drlg/outdoor.md#j-act-iii)).
+
+Every side choice of every entry was reached in runs: besides one fully logged game, nine map seeds were chosen
+offline so that between them they end on every choice but two, those two were placed and logged, and their builds
+were replayed pick by pick
+([warps § B](../specs/drlg/warps.md#b-the-act-link-builder)). Two choices of the Rogue Encampment's entry are placed
+and always rejected: its table of allowed sides cannot accept them, so the Rogue Encampment ends on one of the six
+other choices in every game. One more Act I test treats the Moo Moo Farm's rectangle as 200 tiles longer toward lower
+y while it checks the other levels of its table. A reimplementation has to make that test, but on the shipped data it
+never decides a check; that is the code's reading backed by an offline scan of every input the table can get, not a
+run.
 
 Because each table starts from a copy of the same act seed, the first draws of different tables repeat one another.
 The builder also writes three things other generators read later: each level's rectangle, the map file index of the
-Rogue Encampment and Lut Gholein (from the sides it chose), and the file index of level 27, the Courtyard, from the
-link builder's only draw on the act seed itself
+Rogue Encampment and Lut Gholein (from the sides it chose), and the file index of level 27, the Courtyard
 ([warps § C](../specs/drlg/warps.md#c-level-rectangles-and-the-links-after-the-layout),
-[preset § 7](../specs/drlg/preset.md#7-level-27s-file-index)). Both formulas for that index were reached in runs,
-but one of their outcomes (index 2) is read from the code only.
+[preset § 7](../specs/drlg/preset.md#7-level-27s-file-index)). That index comes from the link builder's only draw on
+the act seed itself, made after the layout while it writes the Black Marsh's links, and only when the Black Marsh ends on side 1 or 3, each
+side with its own formula. When the Black Marsh ends on side 0, nothing is drawn or written, and the Courtyard keeps
+the index its own creation drew. All three cases were reached in runs, and the Courtyard was built with each of its
+indices 0, 1 and 2. One outcome of the side-1 formula, index 2, cannot happen with the shipped data: the Black
+Marsh's side and the Courtyard's draw come from the same random value, and side 1 is kept only when that value makes
+the formula give 1. For the same reason the Black Marsh never ends on side 2. Both points are the code's reading,
+with every possible draw value enumerated, not something a run can show.
 
 Each level carries eight link slots, `Vis0..7` (the destination level) and `Warp0..7` (which warp record). A slot
 whose `Warp` is −1 is a [seam](../glossary.md): a walkable border between two touching levels, not stairs. The link
@@ -129,8 +147,10 @@ matter for anyone reproducing it ([overview § Algorithm, step notes 4 and 6](..
 
 - `Files` is the operand, not the number of files the row names. A record with `Files` 1 still makes a draw; a
   record with `Files` 0 makes none.
-- The level's own index wins. For the Rogue Encampment, Lut Gholein and the Courtyard the link builder has already
-  written the index, and that index is used instead of the draw. The draw is still made.
+- The level's own index wins. For the Rogue Encampment and Lut Gholein, and for the Courtyard when the Black Marsh
+  ended on side 1 or 3, the link builder has already written the index, and that index is used instead of the draw.
+  The draw is still made. Otherwise the level's own index is the one its creation drew from the same seed value, so
+  the two agree.
 
 The map is then cut into 8 × 8 rooms, rows outer and columns inner; the Rogue Encampment (56 × 40) becomes 35 rooms
 and a 24 × 24 preset 9. Each room costs one level draw. If the preset record has `Scan` or `Pops` set, the game also
@@ -161,7 +181,10 @@ count for the difficulty, the game picks an existing room with a level draw, the
 **that room's own seed**, and tries to put a new room there. A new room that would overlap is freed, but all its
 draws are spent. A new room also checks the other rooms it shares an edge with (not its parent, and no locked room)
 and may link to each (the `Merge` chance, out of 1000); that check draws on the other room's seed **even when `Merge` is 0 or 1000**, which changes the
-direction that room will draw next ([maze § B](../specs/drlg/maze.md#b-primitives)).
+direction that room will draw next ([maze § B](../specs/drlg/maze.md#b-primitives)). Two of Act II's seven tombs,
+chosen when the act is created, grow larger: the true tomb to three times its `Rooms` count and Kaa's tomb to twice
+it (a game whose tombs have 6 grew them to 18 and 12 rooms). By the code the two choices always differ, since the act
+draws again while they are equal.
 
 **Map pieces from exits** ([maze § B](../specs/drlg/maze.md#b-primitives)). Each maze room gets its `LvlPrest`
 record from its exits: on most level types, a bit per side (west 1, east 2, south 4, north 8) added to the level
@@ -172,14 +195,19 @@ type, for example, is record 53, `Cave W`.
 pass places the level's Prev and Next stairs, waypoint and quest rooms. Each special replaces a dead end facing the
 right way if one exists; otherwise a new room is attached. On most level types a single draw `r` picks the starting
 entry of the special tables (the tombs take it from their start shape instead, with no draw), and each following special moves to the next entry, so consecutive specials face different directions. Which specials
-each level type places is a table in [maze § F](../specs/drlg/maze.md#f-the-chain-per-level-type); several of its
-rows (for example the caves 10–12, Jail 31, the tombs' Tal Rasha and Kaa entries, Lair 64) were not reached by any
-run and are read from the code only.
+each level type places is a table in [maze § F](../specs/drlg/maze.md#f-the-chain-per-level-type), and every row of
+it was built in runs and matched room for room, the tombs' Tal Rasha and Kaa entries and Lair 64 included, with two
+kinds of exception. Levels 133 and 135 have no build in the stock game. Tombs 69 and 72 were not built, but the code
+gives a tomb no path of its own: it follows the tomb's role (true tomb, Kaa's or plain), and all three roles were
+built. A special that no room can take was met in none of 337 logged attaches; by the code, nothing is placed then.
 
 **Placement and themes** ([maze § G](../specs/drlg/maze.md#g-placement), [§ H](../specs/drlg/maze.md#h-themes)).
 Growth ignores the level rectangle; afterwards all rooms are shifted so their bounding box sits at the level's
 origin. The Barracks (28) and the River of Flame (107) are instead attached to a neighbour level (the Courtyard, the
-Chaos Sanctuary) and set their own rectangle. Finally the [theme](../glossary.md) pass locks up to `max(2, rooms ÷ 5 + 1)` unlocked
+Chaos Sanctuary) and set their own rectangle. The Barracks' side comes from the Courtyard's file index as the link
+builder left it ([maze § G](../specs/drlg/maze.md#g-placement)): index 0 puts the connection to the Courtyard on the
+maze's east side, 1 on its south side and 2 on its west side, each by its own search for the outermost room, and all
+three were built in runs. Finally the [theme](../glossary.md) pass locks up to `max(2, rooms ÷ 5 + 1)` unlocked
 rooms, of any exit shape except the four-way one, as their `… Theme …` records. It always makes 31 level draws on level types that have themes, whatever it
 finds (the Den of Evil skips the pass). The specials come first, so a dead end gets a theme only if no special took it.
 
@@ -340,11 +368,13 @@ With the record's `Scan` or `Pops` set, it rolls on the level seed while the roo
 later room's seed. Otherwise the first room of the instance to load rolls on its creation-time seed, just before its
 re-seed, so those draws change nothing else; but they still decide the units of every room of the instance. Server
 and client copies roll separately, and with the room-seed roll they agree only when the same room loads first in
-both (that agreement condition is read from the code).
+both: in a run, 888 server/client pairs loaded the same room first and rolled alike, and in 4 pairs different rooms
+loaded first and the roll seeds differed.
 
 **Units the game adds** ([preset § 4](../specs/drlg/preset.md#4-units-the-game-adds)). Some river presets get ambient
-river objects that exist only in the client copy. In the Blood Moor, by the code, a preset of record 4–7 with
-file index 3 gets a monster (`navi`) at its centre; no run built that case.
+river objects that exist only in the client copy; all six preset types that get them were reached in runs. In the
+Blood Moor a preset of record 4–7 with file index 3 gets a monster (`navi`) at its centre, with no draw; runs built
+that case on two map seeds and matched it.
 
 **To the room and to the spawners** ([preset § 5](../specs/drlg/preset.md#5-from-the-instance-to-the-room),
 [§ 6](../specs/drlg/preset.md#6-handover-to-the-server-spawners-boundary)). Each unit moves to the room whose
@@ -370,8 +400,9 @@ flag their own seam rooms and waypoint cells.
 build, the game lists the centre of each room that has a waypoint flag or a warp slot with a real warp (seams don't
 count). The [population pass](../glossary.md) reads this list to test whether a spawn point is too close to a warp (next section).
 
-**Pairing** ([warps § F](../specs/drlg/warps.md#f-warp-pairing)). By the code, when a room with a warp flag
-activates, the game builds the destination level if needed and finds the matching room there. If a level names the
+**Pairing** ([warps § F](../specs/drlg/warps.md#f-warp-pairing)). When a room with a warp flag activates, the game
+calls the pairing once per warp flag, in slot order, builds the destination level if needed and finds the matching
+room there; a run logged 695 such activations. If a level names the
 same destination in several slots (a wilderness level with four cave slots), the slots are paired in order by rank;
 when rank fails, the first destination slot that names the source and has a room is taken. Rank alone mispairs the
 Durance levels and some caves, so the fallback matters. 172 pairings were predicted without error.
@@ -405,14 +436,19 @@ The spec notes that this is what keeps monsters off the rows next to an inactive
 test, tiles block only through bit 0 of their cells. Earlier monsters block only through the centre marks of
 their [footprint pattern](../glossary.md), not through their whole footprint, so a new monster may be placed with one
 cell of an earlier monster's footprint inside its own. What most of the other bits mean to movement, missiles and
-line of sight is not specified: those readers have not been read.
+line of sight is not specified: those readers have not been read. Two bits have no writer at all on stock data (read
+from the code): no stock tile carries one of them and no marking code sets either, so the player's movement test of
+one of them never meets a set cell, and the other is neither written nor read.
 
 **[Logic regions](../glossary.md)** ([collision § G](../specs/drlg/collision.md#g-logic-regions)). Each room also gets
 a list of [logic boxes](../glossary.md), the rectangles the population pass makes its spawn attempts in. An outdoor
 room, or a preset room whose record has `Logicals` 0, is one box covering the room (that builder is read from the
 code). A preset with `Logicals` 1 floods its tiles into regions separated by walls, cuts them into rectangles and
 relabels regions that continue into neighbour rooms; the flood was reproduced 378 times, while the wall grid it
-starts from was taken from the run, and the cross-room relabelling was only counted, not traced in detail.
+starts from was taken from the run (the rule that builds it is read from the code). The relabelling walks the points along the room's four edges and, for each
+neighbour in the near list that touches the room and whose tiles hold the point, merges the two regions there; a
+released room takes no part until it is built again. That is read from the code; a later check reproduced it on every
+flood of two runs, and the spec has not yet raised it.
 
 **Side effects of the warp test** ([collision § I](../specs/drlg/collision.md#i-nearwarptestgame-room-x-y-and-its-side-effects)).
 The "is this point too close to a warp" test that spawning calls is not a pure test. When no warp point is near, it
@@ -484,10 +520,12 @@ section.
   8 tiles per cell; both are confirmed by runs. A level with only one of the two −1 is read from the code only (no
   shipped level with that case has an outdoor room), and so are the outdoor room DT1 mask values for level types 22,
   27, 28 and 30.
-- **Maze paths not reached** ([maze § Open questions](../specs/drlg/maze.md#open-questions)): the Barracks attached on
-  the west or east side (level 27's index was 1 in every log), the tombs' Tal Rasha and Kaa entries and their larger
-  room counts, Lair 64, Crypt 21–24 and 133, Jail 31, the caves 10–12, Dungeon 87 and 89, a special that no room can
-  take, and the "level too small" error.
+- **Maze paths not reached** ([maze § Open questions](../specs/drlg/maze.md#open-questions)): later runs reached the
+  tombs, Lair 64, the other finisher rows and the Barracks on all three sides. Two paths remain: a special that no
+  room can take (met in none of 337 logged attaches), and the "level too small" error, which an offline sample of
+  408 000 maze builds never raised for any pair of tombs the act can choose; a sample is not a proof, so whether a
+  shipped seed can reach it stays open. Levels 133 and 135 have no stock build, and tombs 69 and 72 rest on the
+  code's reading of the tomb finisher.
 - **Outdoor** ([outdoor § Open questions](../specs/drlg/outdoor.md#open-questions)): level 134 is not built by any
   run (the cube cannot open its portal in this version, and no other code opens a portal to levels 133–136). Three
   branches once missing are now reached in runs and match the model: the Frigid Highlands prisons placed by the
@@ -509,12 +547,20 @@ section.
   some maze special rooms). One shipped file (`Act1/Outdoors/Trees.ds1`) is 12
   bytes short; reading the missing bytes as zeros matches every observed draw, but the original reads whatever is
   in memory there.
-- **Preset units** ([preset § Open questions](../specs/drlg/preset.md#open-questions)): the Blood Moor centre monster,
-  the river objects of three preset types, level 27's index 2 and the special filters of levels 133–136 were not
-  reached. What a path point's `action` does, who detaches a preset monster's path between two builds of a room, and
-  who reads the `Outdoors` flag are unknown.
-- **Warps** ([warps § Open questions](../specs/drlg/warps.md#open-questions)): only one map seed was logged for the
-  link builder, so many side choices are read from the code. What happens when the Matron's Den stairs (133 → 17),
+- **Preset units** ([preset § Open questions](../specs/drlg/preset.md#open-questions)): the Blood Moor centre monster
+  and the river objects of all six preset types are now reached in runs. What stays read from the code has no case in
+  the shipped data: the row skip for floor tiles other than the one the Act I town uses, the Courtyard's index 2 from
+  the side-1 formula, the Black Marsh ending on side 2, a few map-entry branches no shipped map uses, and the special filters of levels 133–136, which
+  cannot be reached. The reader of the `Outdoors` flag is found, by the code: a test of whether a room is outdoors,
+  called by the client when the player changes room and by one server walk in the skill code; what the client does
+  with the result is presentation and not found. On the server a preset monster's path is detached when the monster
+  is spawned, which takes the path over (by the code); who detaches it on the client copy is unknown, and so is what
+  a path point's `action` does.
+- **Warps** ([warps § Open questions](../specs/drlg/warps.md#open-questions)): every side choice of the link builder
+  and every reject rule but one was reached in runs. What stays read from the code has no case in the shipped data,
+  by the code and an offline scan of every input the builder can get: a reject decided by the Moo Moo Farm's widened
+  rectangle, the Courtyard's index 2 from the side-1 formula, and the outcomes of Act V's "do these rectangles touch"
+  test other than a shared edge, and that test's other mode. Only edited data could reach them. What happens when the Matron's Den stairs (133 → 17),
   which have no way back, are used is unknown. The units of the `LvlWarp` columns are now read from the code: the
   `Offset` and `ExitWalk` columns are subtiles, the `Select` columns screen pixels. More than nine warp points in a
   level was not seen in 1452 logged builds (the most was 8, in the Valley of the Kings), and the slot counts in the
@@ -523,7 +569,7 @@ section.
 - **Collision** ([collision § Open questions](../specs/drlg/collision.md#open-questions)): the reader of the missile
   mark in spawn tests, the clear-and-restamp of a merged tile, single-cell placement tests, three special-class spawn
   checks, NPC footprints, the level-seed step in the Arcane Sanctuary and Canyon of the Magi (seen only in Tristram),
-  the wall grid behind the logic regions, and the meaning of the bits that only movement reads.
+  and the meaning of the bits that only movement reads.
 
 ## Where to read more
 

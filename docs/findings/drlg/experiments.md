@@ -111,7 +111,7 @@
   as the `LvlPrest` file that reproduces the grids; Phase 3 logs it. **Conclusion:** promotes in
   [drlg/0002](0002-room-build-draws.md) to `[C]`: the type-2 grid prepare (views and `0x84`/`i << 18`
   writes), the DT1-list rule, the maze-room (and every preset room's) mask = `LvlPrest.Dt1Mask`, and the
-  outdoor mask rule with `sub_006706A0_LvlSubRoll` for level type 2.
+  outdoor mask rule with `sub_006706A0_LvlSubRoll` for level type 2. (run:2026-10-11-drlg-roomk)
 - **Addendum 2026-10-16: plan 0038 batch S4a (static, no new session; `tools/sweep_s4a.py` sha256 `fafe0406c61b4363…`).** The room-tiles model (`tools/drlg.py`,
   `Model`/`run_log`, unchanged) re-run with counters by `tools/sweep_s4a.py` over every log with roomk lines, which are
   the six logs above, the 7 of run:2026-10-14-collision and the 29 of run:2026-10-15-objects. Commands:
@@ -216,12 +216,12 @@
     indices. `tools/drlg.py` had kept the `sub_006738C0` counters across builds; it now resets them at each LI0
     (commit `6f335bd`). The five scripted logs still give 14545 checks, 0 mismatches.
   - *Conclusion:* the maze dispatch tags of drlg/0003 stand, now with the plan's waypoint case. The rotation
-    counters are per build, and a rebuilt level repeats its room sequence, `[C]`.
+    counters are per build, and a rebuilt level repeats its room sequence, `[C]`. (run:2026-10-12-drlg-gen)
 - **Conclusion:** promotes in [drlg/0003](0003-generator-dispatch.md) to `[C]`: the two `DrlgType` dispatches and
   the re-seed, the level-seed draws of each generator in order (with `DRLG_PresetUnitDropRolls` and the
   maze and outdoor generators as boundary oracles), the preset file index (draw, overrides, maze rotation, the
   `Files` operand), the room-creation order of the preset split and the outdoor cells, the maze conversion order,
-  and `sub_006706A0_LvlSubRoll`.
+  and `sub_006706A0_LvlSubRoll`. (run:2026-10-12-drlg-gen)
 - **Addendum 2026-10-14: maze window replay (plan 0022 Phase 1).** No new run. The logs above were replayed against
   the static reading of [drlg/0006](0006-maze.md) with
   `python3 -I tools/maze_replay.py workspace/merged/data/global/excel workspace/logs/gen-12345-bloodmoor.log workspace/logs/gen-12345-act2.log workspace/logs/gen-1-catacombs-owner.log`
@@ -234,7 +234,7 @@
   Negative controls on scratch copies: dropping the merge draw gives 8 mismatching windows, dropping the theme
   swaps 10, and replacing the probe by a test without the room creation 2. *Conclusion:* placement, growth, merge,
   `Def` from exits, the finder probes, the special placement and the theme pass are `[C]` for types 3, 10 and 13 on
-  normal difficulty ([drlg/0006](0006-maze.md)).
+  normal difficulty ([drlg/0006](0006-maze.md)). (run:2026-10-12-drlg-gen)
 - **Addendum 2026-10-14: outdoor window replay (plan 0026 Phase 1).** No new run. Every log under `workspace/logs/` with an
   `OD0` line (63 logs from this run, run:2026-10-13-drlg-preset, run:2026-10-13-mon-spawn, run:2026-10-14-mon-special and
   run:2026-10-14-collision; `L` below is that list, `grep -l '^OD0' workspace/logs/*.log`) was replayed against the static
@@ -719,7 +719,7 @@
   | three difficulties for ≥ 5 levels (room counts per difficulty) | 22 levels |
   | classic and expansion for ≥ 3 Act I–IV levels | not met in this run (correction below); met by run:2026-10-15-drlg-outdoor: 7 maze levels built in both modes |
   | branches 28, 61, 92, 107, 114, 116, 119 | all reached |
-  | finishers read only `[I]` (Arcane, Tomb/Baal, Act V hell, Durance 100/101, 107) | 74; 57, 58, 61 / 129; 125; 100, 101; 107 |
+  | finishers read only `[I]` (Arcane, Tomb/Baal, Act V hell, Durance 100/101, 107) | 74; 57, 58, 61 / 129; 125; 100, 101; 107 (run:2026-10-15-drlg-maze) |
   | act links of Acts I, II, IV, V, level 27's index from the level-6 draw | 196 calls, 16 draws |
   | warp cells and point lists of every logged level | 389 builds; outdoor-room bits stay drlg/outdoor's |
   | run:2026-10-14-collision and plan 0014 logs with predicted warp points | above |
@@ -1308,7 +1308,7 @@
   search pool (none in the logs nor in the offline scan); a non-square level with a cliff cave (none exists on stock
   data).
 - **Conclusion:** raises the claims listed in the "Plan 0038 batch H5e" sections of drlg/0004, 0006 and 0008; the four
-  outdoor branches above stay `[I]` as a shortfall; and a rebuilt maze level object keeps its placed rect (drlg/0006).
+  outdoor branches above stay `[I]` as a shortfall; and a rebuilt maze level object keeps its placed rect (drlg/0006). (run:2026-10-16-sweep-mazes)
 - **Review note (2026-10-16, architect, H5e review).** Re-run on the lane after merging `main`: the manifest checks
   (six logs OK); `tools/test_sweep_h5e.py` OK; `sweep_h5e.py logs` reproduces the observed block (153 567 checks, 0
   mismatches); `sweep_h5e.py scan 1 601 0,1,2` reproduces the scan block line for line; `drlg.py gen` on the
@@ -1407,3 +1407,110 @@
   player corpse; a dead champion saved (none can be on stock data: see drlg/0009 § 11).
 - **Conclusion:** raises the claims listed in [drlg/0009 § 11](0009-room-lifecycle.md#11-phase-2-run2026-10-17-lifecycle)
   and corrects four.
+
+## run:2026-10-17-sweep-links
+
+- **Question:** (plan 0038 Phase 2, batch H5a, [inventory § 5](../../plans/0038-inventory/README.md#5-batch-list)) Do
+  the act link builder's choices that run:2026-10-15-drlg-maze never ended on (one map seed, 2027), its rejects by the
+  Rogue side table and by the Burial Grounds side test, the Act1B widening, level 27's index 2 on Black Marsh side 1,
+  `LevelSeamsByTouch`'s false `RectTouch` branches, and the Barracks with `MazeFindEast` and `MazeFindWest` reproduce in
+  `tools/drlg.py gen` and in a replay of every logged `LevelLinkBuild` call, with no oracle? Where a branch has no
+  session, is it reachable on stock data at all?
+- **Setup:** the ADR-0003 harness on **slot 1** (display `:8`, prefix `workspace/wineprefix-1`, game in
+  `workspace/runtime/game`), wine and gdb as in run:2026-10-16-sweep-mazes. Expansion, Normal, agent-driven (scripted
+  `tools/d2pilot.py wpchain` waypoint hops only; no owner play, no fight). Character `UniqNova` built with `python3 -I
+  tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/uniqnova.json
+  workspace/samples/d2s-owner/smpsor-l50.d2s workspace/runtime/h5a-chars/UniqNova.d2s` (recipe `95c8be4e…a8cdc1f`,
+  save `2c793a3d…d7ddc376`, the same bytes as the H5e build: every waypoint); the slot's empty saves directory set
+  aside as tag `h5a`, restored and set aside again before each launch, the save installed with `d2run.py --install
+  h5a`, and restored after the last session.
+  - **Logger** `tools/gdb/sweep-links.gdb` (`d2001bfc…`): `drlg-gen.py` (`6dfeeef9…`), `drlg-maze.py` (`f6c48da5…`),
+    `pilot.py` (`1ad48a4c…`) and the new `tools/gdb/drlg-links.py` (`6ee05477…`, five breakpoints, the same revision in
+    every session): **LNKP** `0x00677388` after each pick call of `LevelLinkBuild` (entry `i` = `EDI`, result `EAX`,
+    `rect[i]`, `dir`, `dir0`, `flip`, `flip0` and the seed copy from the block at `[ebp−0x204]`); **LNKC**
+    `0x006773C5` after each check call (`i`, result); **LNKW** `0x00676F30` in `LinkCheckAct1B` after the widened
+    `RectGapTest`, before the restore (`rect[0]` as widened, `rect[i]`, the result); **LNKT**/**LNKU** `0x00677606` /
+    `0x0067760B`, `LevelSeamsByTouch`'s one `RectTouch` call (levels `EDI`, `ESI`, both rects, `t` from the stack,
+    the result).
+  - **Checkers** `tools/drlg.py gen` (`b38b91a6…`, unchanged) and `tools/sweep_h5a.py` (`a88405a8…`, new; unit tests
+    `tools/test_sweep_h5a.py`). `logs` runs gen with a level-28 counter and then replays every logged
+    `LevelLinkBuild` call from its `LNK0` act seed with the unchanged link-builder model (`drlg.link_build`, its picks,
+    checks and `touch` wrapped to record the event sequence) and requires the logged `LNKP`/`LNKC` sequence to be
+    equal: entry, result, rect, `dir`, `dir0`, `flip`, `flip0` and the seed copy after each pick, and each check's
+    result. `LNKW` is checked against `RectGapTest` on the logged rects and against the model's `rect[0]`; `LNKU`
+    against `RectTouch` on the logged rects. `scan` runs the act model alone over map seeds and difficulties.
+  - **Seeds** were chosen offline. Seeds 82 and 52 came from a first greedy cover of `scan 1 301 0 0` before the scan
+    knew level 27's create-time index; the other seven from `python3 -I tools/sweep_h5a.py scan 1 301 0,1,2 0 82,52`
+    (the cover of difficulty 0 after 82 and 52): 58 (Barracks with `FindWest`), 90, 4, 17, 5, 68, and 2 (Barracks
+    with `FindEast` from the create-time index).
+- **Procedure** (per session: `python3 -I tools/d2run.py --slot 1 --seed N --gdb tools/gdb/sweep-links.gdb --steps
+  tools/gdb/enter-normal.steps --after 3600 --install h5a workspace/runtime/h5a-chars/UniqNova.d2s --log
+  workspace/logs/sweep-links/<log>`, then `python3 -I tools/d2pilot.py --slot 1 wpchain <log> --chain "…"`, then
+  `python3 -I tools/slots.py stop 1`; the Xwayland window stayed on `special:d2harness`). The game starts in the Act IV
+  town, so Act IV is built at the start. A waypoint hop to another act's town builds that act (both act objects of the
+  single-player game, so every build appears twice); the hop to the Outer Cloister (1,6) builds levels 27 and 28.
+
+  | Session | Log (`workspace/logs/sweep-links/`) | Seed | `wpchain` | Acts built | Black Marsh first → final; level 27 |
+  |---|---|---|---|---|---|
+  | s1 | `sweep-links-s1-82-normal.log` | 82 | `5,1 2,1 1,1` | IV, V, II, I | 2 → 3; drawn 1 |
+  | s2 | `sweep-links-s2-52-normal.log` | 52 | `5,1 2,1 1,1 1,6` | IV, V, II, I; 27, 28 | 3 → 3; drawn 0 (`FindEast`) |
+  | s3 | `sweep-links-s3-58-normal.log` | 58 | `5,1 2,1 1,1 1,6` | IV, V, II, I; 27, 28 | 0 → 0; create-time 2 (`FindWest`) |
+  | s4 | `sweep-links-s4-90-normal.log` | 90 | `5,1 2,1 1,1` | IV, V, II, I | 1 → 1; drawn 1 |
+  | s5 | `sweep-links-s5-4-normal.log` | 4 | `2,1 1,1` | IV, II, I | 3 → 3; drawn 0 |
+  | s6 | `sweep-links-s6-17-normal.log` | 17 | `2,1 1,1` | IV, II, I | 2 → 3; drawn 1 |
+  | s7 | `sweep-links-s7-5-normal.log` | 5 | `2,1 1,1` | IV, II, I | 1 → 1; drawn 1 |
+  | s8 | `sweep-links-s8-68-normal.log` | 68 | `2,1 1,1` | IV, II, I | 2 → 3; drawn 1 |
+  | s9 | `sweep-links-s9-2-normal.log` | 2 | `1,1 1,6` | IV, I; 27, 28 | 0 → 0; create-time 0 (`FindEast`) |
+
+  Checks: `python3 -I tools/sweep_h5a.py logs` (gen and the replay on the nine logs); `python3 -I tools/sweep_h5a.py
+  scan 1 301 0,1,2 0 82,52`; `python3 -I tools/test_sweep_h5a.py`.
+- **Observed** (`sweep_h5a.py logs`, trimmed; every count is over both act objects, so 64 distinct builds):
+  ```
+  gen: 99288 checks, 0 mismatches over 9 logs; logger lines: 0 mismatches
+  LevelLinkBuild calls replayed, event sequence matched 128 (mismatched 0)
+  final (LNK1), per pick and choice:
+    0x00676150 0: 26, 1: 18, 2: 26, 3: 38
+    0x00676280 0: 8, 1: 10, 2: 2, 3: 4, 4: 2, 5: 6, 6: 2, 7: 14
+    0x00676450 (0,0): 2, (1,0): 4, (1,1): 2, (2,1): 2, (3,0): 2, (3,1): 6
+    0x00676650 (0,0), (0,1): 4, (1,0), (1,1), (2,0), (2,1), (3,0), (3,1): 2 each
+    0x006769A0 1: 10, 2: 6;  0x00676AE0 0-7: 2 each;  0x00676C00 lo&1 0: 10, 1: 8
+    0x0067D830 b 0: 4, 1: 4;  0x0067D8E0 b 0: 4, 1: 4;  0x0067D980 k 0-3: 2 each
+  tried (LNKP, placed and then checked): 0x00676450 (0,1): 6, (2,0): 6 (never final); every final choice above
+  checks (LNKC): 1a level 1 reject 50, level 17 reject 18, level 2 reject 14; 1b level 5 reject 4, level 6 reject 6;
+    plain: levels 42-45, 105, 106 rejects 36; no pick exhausted (no backtrack)
+  rejects as the replayed model reads them: Rogue table 0 entry 30 (indices 8, 10, 12, 14, 22, 27, 35, 40, 42, 44, 45,
+    46, 51, 55, 58), Burial Grounds side taken 6 (s2, s6, s7), overlap 92
+  Act1B widened test (LNKW) 72, all accepts as modelled; rect[0] logged as (x, y - 200, w, h + 200) of the model's
+    rect[0] in all 72
+  RectTouch (LNKT/LNKU, t = -1 in all 48): edge gx = 0 40, edge gy = 0 8, result 1 in all, as modelled
+  level 27: LC1 create-time index 0: 8, 1: 2, 2: 8; LK27 drawn index 0: 4, 1: 10 (side 1 in s4, s7: both r & 1 = 1)
+  maze window level 28 (Barracks): index 0 FindEast 4 (s2 drawn, s9 create-time), index 2 FindWest 2 (s3), all matched
+  ```
+  Offline scan (`python3 -I tools/sweep_h5a.py scan 1 301 0,1,2 0 82,52`, the act model alone, no log):
+  ```
+  map seeds 1..300, difficulties 0-2, acts I II IV V, model errors 0
+  table 0x6F0840, each difficulty: all 16 (Black Marsh first, Dark Wood first) pairs; Black Marsh 0 -> 0, 1 -> 1,
+    2 -> 3, 3 -> 3 in every one; no backtrack
+  level 6 side 1: 225, drawn index 1 in all 225; side 3: drawn 0 225, 1 225; side 0: create-time 0 75, 1 72, 2 78
+  Act1B widened test reached with the plain test passed: 3600, all accepts
+  table 0x6F0DE0, each difficulty: all 4 (Rigid b, Arreat first) pairs; RectTouch: edge gx = 0 4500, edge gy = 0 900,
+    no corner, apart or overlap case
+  0x00676450 (0,1) and (2,0): tried 387 and 249, final 0
+  ```
+- **Raw logs** (sha256 in `workspace/logs/sweep-links-manifest.sha256`, `911656ec…05fca1fb`): s1 `1386c101…72ccef44`,
+  s2 `fe5cbbac…058b37a9`, s3 `9e6d67f7…d549f86d`, s4 `b73e553c…e1f3d533`, s5 `0cf1f443…be95d39d`, s6
+  `29aae5aa…1c2ac95d`, s7 `bf2b638b…f4897d4c`, s8 `59011633…ede092f6`, s9 `9afa58f0…f7ef029e`.
+- **Deviations:** in s2 the fourth hop (1,6) did not register in the scripted chain within its 240 s limit; a second
+  `wpchain --chain "1,6"` took the character to the Outer Cloister (level 1 → 27). Every other hop changed level within
+  1.5 s. The pilot sometimes stays in its linger after the last hop until the limit; no effect on the logs.
+- **Not reached:** Nightmare, Hell and classic (the builder's inputs that depend on the difficulty are the `Levels`
+  sizes, which the scan covers); level 27's index 2 from the side-1 draw, the Act1B widening deciding a check, and a
+  false `RectTouch` (unreachable on stock data: see the conclusion).
+- **Conclusion:** raises the claims listed in the "Plan 0038 batch H5a" sections of drlg/0007 and drlg/0006. Three
+  branches are unreachable on stock data, by the code and the exhaustive input sets the scan prints: (1) Black Marsh's
+  first draw is the first step of the seed copy (entries 0–2 of `0x006F0840` are two anchors and the fixed pick,
+  no draw) and so the same value `r` as level 27's act-seed draw; side 1 only ever comes from `dir0` = 1 (choice 0 is
+  always accepted, choice 2 always rejected, at every difficulty, with no backtrack), so `r & 3` = 1 and `r & 1` = 1,
+  index 1. (2) The Act1B widened test never rejects where the plain test passed. (3) Act V's seam pairs always share an
+  edge. Each outcome depends only on the difficulty and the entries' first choices, and every combination is in the
+  scan.

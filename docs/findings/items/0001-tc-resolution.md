@@ -259,6 +259,7 @@ flags: `0x01` unique, `0x02` set, `0x04` TC, `0x10` expansion-only; `+0x0E..+0x1
   (`+0xF6`) ≥ 100, any unique or set reference, or a sub-TC whose own `totalClassic` is 0. (0x00654440, 0x006540C0, tbl:Weapons.txt:version)
 - [I] Only `mul=` occurs in the shipped `treasureclassex.txt` (81 cells, all `gld,mul=…`). No `cu=`/`cs=`/`cr=`/`cm=`/`ce=`/`cg=`
   and no non-zero record `+0x30` exist, so the ratio-modifier and upgrade-flag paths below never run with stock data.
+  (fn:TC_ParseItemCell@0x00654440, tbl:TreasureClassEx.txt:Item1)
 
 ### 2. Entry points
 
@@ -390,6 +391,7 @@ TC *TC_GetByIndex(u16 idx, int lvl) {
 - [I] The walk reads `t[1]` without a bound check. The loader stops at the first empty name, so the last loaded TC
   is `Pandemonium Key C` (index 1012, `group` blank → 0). A group run cannot extend into it, but a walk that reaches
   the last TC of a run still reads the next entry's `group`; with stock data every run is followed by a loaded TC.
+  (0x00654E00, fn:TC_LoadTreasureClassEx@0x006547D0)
 
 ### 5. The pick loop — `TC_ResolveDrops` (0x0055A6D0)
 
@@ -436,8 +438,9 @@ for (;;) {
   (0x0055AA03–0x0055AA3F) with the `range < 1` guard and the power-of-two mask: the same values and stepping as
   `RNG_Range` ([rng/0001](../rng/0001-rng-core.md)).
 - [I] `picks` and `noDrop` are re-read from the TC each iteration, and the NoDrop scaling is recomputed for every pick.
+  (fn:TC_ResolveDrops@0x0055A6D0)
 - [I] `roll < nd` uses a signed compare. A pick that ends on `index == 0xFFFF`, on a classic out-of-range scan, or on a
-  rejected item still consumes the pick.
+  rejected item still consumes the pick. (fn:TC_ResolveDrops@0x0055A6D0)
 
 #### 5.1 Entry selection
 
@@ -518,8 +521,11 @@ for (k = 0; k < 6; k++)                        // each field read before it is w
   run:2026-10-11-tc-drops)
 - [I] The child sees the
   parent's ratios as they are at the moment of the push (including any `cm=`…`cg=` raises from §8).
+  (0x0055AB68–0x0055AC2F)
 - [I] The parent's remaining picks resume after the child frame is exhausted (frames are a stack; the outer loop pops).
+  (0x0055AB68–0x0055AC2F, fn:TC_ResolveDrops@0x0055A6D0)
 - [I] A sub-TC with no picks left in its parent overwrites the parent's frame. This does not change the order of draws.
+  (0x0055AB68–0x0055AC2F)
 
 ### 8. Item pick and hand-off (0x0055AC5F–0x0055AF59)
 
@@ -552,7 +558,7 @@ sub_005589A0_DropGoldFind(killer, unit);
 
 - [I] **Order of draws on the source seed for one item pick:** the pick roll (§5), then the quality roll's draws, then
   the two upgrade draws (only when their ratio word is non-zero, never with stock data), then item creation (which draws
-  from the game seed, below).
+  from the game seed, below). (0x0055AC5F–0x0055AF59, fn:TC_ResolveDrops@0x0055A6D0)
 - [I] The per-entry ratio raises `cm=`…`cg=` are applied **only in classic games** (the block sits behind
   `game+0x70 == 0`, 0x0055AC75) and they persist in the frame for the rest of that TC's picks.
 - [I] Classic games also reject items with `version ≥ 100` (pick consumed) and re-pick throwable item types: the first
@@ -590,7 +596,7 @@ sub_005589A0_DropGoldFind(killer, unit);
   `"%s%d"` of the type code as rebuilt by `0x006BD180` (spaces become NUL, so `bow ` → `bow3`). If that rebuild fails,
   no TC is allocated for that L, which would shift the numbering (does not happen with stock data: 160 TCs).
 - [I] Each is created with `picks` 1, `group` 0, `level` L − 3, `noDrop` 0 and all ratios 0, so it never upgrades and
-  inherits its ratios from the TC that references it.
+  inherits its ratios from the TC that references it. (fn:TC_BuildAutoTCs@0x006541C0)
 - [I] Entries are items, in item-index order (weapons, armor, misc), passing: `quest` (`+0x12A`) = 0, `spawnable`
   (`+0x133`) ≠ 0, the item is of the type, the item is **not** of type 38 (`tpot`) unless the TC is for type 38 itself,
   and `L − 3 < level (+0xFD) ≤ L`. Probability = `max(1, Rarity)` of the item's own `type` record (itemtypes `+0x1E`).
@@ -861,6 +867,133 @@ Per row (inventory row, spec line at the inventory's commit, outcome):
 **Symbols:** `TC_ResolveDrops`, `TC_DropByIndex`, `MONSTER_DropItems`, `MONSTATS_GetRecord`, `TC_AddEntry` and
 `TC_SetEntryProb` move to `C` in `re/symbols.csv` (their roles above are now reproduced or settled by two code paths).
 
+## Plan 0039 batch P1b (2026-10-17)
+
+Row Q21 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static (objdump, Ghidra on the lane's copy). No game run.
+
+- [I] **`unit+0xC4` bit 17 (`0x20000`) is "no death drop".** The operand scan finds two readers (a load of `+0xC4`
+  followed by `shr 0x11`; no `test` of `0x20000` on `+0xC4`): the death-drop guard `sub_005A6830_MonDeathDrop` (0x005A6861)
+  and 0x00542031 in 0x00541FE0, which copies bits 26 and 17 into a saved-unit record (`+0x4C` ← `0x007314C0`, `+0x50` |=
+  `0x007314C4` or `0x007314C8`); 0x00541E20 copies them back (0x00541F9E–0x00541FC6), so the bit survives that save.
+  Writers: `or [reg+0xC4], 0x20000` occurs **21 times** in the image (count corrected at the architect's review,
+  2026-10-17; the batch said five; **20** in fact, the 21st match being a bit-29 OR, and 30 direct writers in all:
+  [§ Plan 0039 batch P1c](#plan-0039-batch-p1c-2026-10-17)). The five read here:
+  - `sub_005B1CF0_MonPostCreateBoss` for monster classes 340–343 (`boneprison1`–`4`) and 366 (`compellingorb`)
+    (0x005B1E54, 0x005B1E79);
+  - `sub_0056D940_SpawnOwnedMonster`, on a monster it spawns for another unit and gives that unit as owner
+    (0x0056D9F0);
+  - `sub_005AD3A0_MonSetNoDeathDrop`, on its argument when a unit it looks up has `+0xC4` bit 9 clear (0x005AD3C2);
+  - 0x00541FC6, the restore above.
+
+  Not read: 0x005B2EC2 in `sub_005B2A00_MonSpawnTry` (after a `0x005543B0` call with mode 0, 1 or 2), 0x005BBBE9 in
+  `sub_005BAB60_A3Q4_FigurineDrop`, 0x005BBC41 in `sub_005BBC00_A3Q5_CouncilDeath`, 0x005E02A1 in
+  `sub_005E0070_UberTristramDrop`, and 12 sites in the unnamed code after `MERCAI_PickSkill` (0x005E61F7, 0x005E6238,
+  0x005E9F38, 0x005EA09A, 0x005EA1DF, 0x005EA246, 0x005F6698, 0x005F6A58, 0x005FB5CF, 0x005FB91F, 0x005FB9CF). So the
+  list above is not the full set of units that skip the death drop; the meaning of the bit rests on its two readers.
+  (Corrected by [§ Plan 0039 batch P1c](#plan-0039-batch-p1c-2026-10-17): 0x005BBBE9 is in the compelling-orb object
+  init `sub_005BBBA0_ObjInitCompellingOrb`, 0x005E02A1 in the `MosquitoNest` AI, and the 11 sites listed as "12" are
+  MonAI self-removals.)
+
+  (fn:sub_005A6830_MonDeathDrop@0x005A6830, fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0,
+  fn:sub_0056D940_SpawnOwnedMonster@0x0056D940, fn:sub_005AD3A0_MonSetNoDeathDrop@0x005AD3A0, tbl:MonStats.txt:Id)
+- [I] **`game+0x78` is the game's item version** (u16), which the drop paths copy to creation record `+0x2A`
+  (`sub_0055A550_DropCreateItem` at 0x0055A5E3, `sub_00559A30_DropItemAtUnit` at 0x00559C32). The logged values agree: record `+0x2A` =
+  101 in the 132 expansion and 2 in the 8 classic cube records ([items/0008](0008-cube.md) cube 29), and `g78` = 101 in
+  every `WHDR` line of run:2026-10-16-player (expansion games only). (struct:Game+0x78, run:2026-10-15-cube)
+- **The `hellbovine` bit (stale).** Creation flag bit 0 lets set 29 (`Cow King's Leathers`) be picked: [items/0004
+  § 4](0004-uniques-sets.md) and its § Plan 0038 batch S2b (221 cow drops with the bit).
+- [I] **The "upgrade bits" are forced ethereal (`0x04`) and forced sockets (`0x10`).** `sub_00556CA0_ItemRollEthereal` makes
+  the item ethereal when record `+0x80` has `0x04` (0x00556D24) or its own draw says so; `sub_00556B60_ItemRollSockets`
+  makes its `RNG_Range(100)` draw, then skips with `0x08` and, with `0x10`, replaces the draw by 0 so that sockets are
+  always added (0x00556C14–0x00556C24). [items/0006](0006-properties.md) § 6 calls them "the forced bits" without
+  saying which is which. The resolver sets `0x04` from `ce=` (ratio word 4) and `0x10` from `cg=` (word 5), in a classic
+  game only (§ 8), where the ethereal roll does not run (item version < 100), so `ce=` has no effect at all; no stock
+  cell has either. "Exceptional/elite upgrade" in § Open questions was a wrong guess. (fn:sub_00556CA0_ItemRollEthereal@0x00556CA0,
+  fn:sub_00556B60_ItemRollSockets@0x00556B60, tbl:TreasureClassEx.txt:Item1)
+- [I] **A forced quality on a gold or potion entry.** The resolver hands any item entry the caller's forced quality and
+  makes no quality roll (§ 8); `ItemCreateByQuality`'s last override then writes 2 for every base whose own type has
+  `Normal` = 1, which `gold` and the potion types `hpot`, `mpot`, `rpot`, `spot`, `apot`, `wpot` and `tpot` have. So a
+  sparkle chest's gold or potion is built as quality 2, after the source seed skipped the quality draws; `elix` has
+  `Normal` 0 and would keep the forced quality. (0x005574E3–0x00557567, tbl:ItemTypes.txt:Normal)
+- **`superuniques` has no table doc (stale):** [SuperUniques](../../tables/SuperUniques.md) exists.
+
+## Plan 0039 batch P1c (2026-10-17)
+
+Follow-up (a) of the P1b review ([backlog](../../backlog.md), 2026-10-17 architect → reverser). Static: an operand
+scan of the objdump listing (scratch script, not kept), Ghidra on the lane's copy and `tools/xrefscan.py`. No game run.
+
+### Which units skip the death drop (`unit+0xC4` bit 17)
+
+- [I] **The writer count.** P1b gave "21" `or [reg+0xC4], 0x20000` sites. An exact scan finds **20**. The 21st
+  match is at 0x00458E0E, `or [ebx+0xC4], 0x20000000` (bit 29), which a text search for `0x20000` also catches.
+  OR-immediates that include bit 17 with other bits add **9** more sites, and one register OR stored to `+0xC4` adds
+  1 (0x005CC9B4, `or eax, 0x4020000`). That makes **30 direct writers**: 0x4020000 at 6 sites, 0x402000E at 3,
+  0x4020200 at 1. No `mov [reg+0xC4], imm` sets the bit (the four such stores at 0x005B66BA…0x005BAB11 write code
+  pointers into quest data, not units). A computed word copied in whole would escape the scan; the restore at
+  0x00541FC6 is the one copy of the bit that was found.
+- **The 30 writers by unit kind** (the five P1b read are marked "P1b"):
+
+  | kind | site(s) | function | note |
+  |---|---|---|---|
+  | a class with MonStats `Align` 1 (113 classes: town NPCs, critters, hirelings, player summons) | 0x005B2EC2 | `MonSpawnTry`, after `MonAlignSet(2)` | every creation through `MonSpawnTry` ([MonStats](../../tables/MonStats.md) `Align`) |
+  | bone prisons 340–343, `compellingorb` 366 | 0x005B1E54, 0x005B1E79 | `MonPostCreateBoss` | P1b |
+  | a monster spawned for another unit | 0x0056D9F0 | `SpawnOwnedMonster` | P1b |
+  | `MonSetNoDeathDrop`'s argument | 0x005AD3C2 | `MonSetNoDeathDrop` | P1b |
+  | an inactive monster restored | 0x00541FC6 | `0x00541E20` | P1b; copies the saved bit |
+  | the Travincal compelling orb (object InitFn 60 spawns class 366) | 0x005BBBE9 | `sub_005BBBA0_ObjInitCompellingOrb` (pointer at `0x00731CB0` = `g_ObjInitFns` slot 60) | P1b placed this site in `A3Q4_FigurineDrop`; it is the next function |
+  | the compelling orb at its death | 0x005BBC41 | `A3Q5_CouncilDeath` (class 366 branch) | sets the bit in the quest death callback |
+  | monsters that end themselves through their AI: the bit, then `sub_005DDFC0_MonAiSetMode(0, 0, 0)` (death mode) | 0x005E02A1, 0x005E61F7, 0x005E6238, 0x005E9F38, 0x005EA09A, 0x005EA1DF, 0x005EA246, 0x005F6698, 0x005F6A58, 0x005FB5CF, 0x005FB91F, 0x005FB9CF | the AI functions of `g_MonAiTable` (16-byte rows, slot `+8`, indexed by MonStats `AI`) | see the next table; P1b listed 0x005E02A1 under `UberTristramDrop` and the other 11 as "skill code" |
+  | a monster spawned by a spawner AI or skill | 0x005CBED9, 0x005D2567, 0x005D2E15, 0x005FB536, 0x005FCA71 | `srvdofunc` 91 (`Nest`, `EvilHutSpawner`), 135 (`MinionSpawner`), 140 (`Baal Tentacle`), AI 76 `EvilHole` (`evilhole1`–`5`, `demonhole`), `sub_005FC860_BaalCloneSpawn` (class 570 `baalclone`) | 0x4020000 |
+  | a monster brought back to life | 0x005CC9B4, 0x005C5533, 0x005C0888 | `0x005CC960` from `srvdofunc` 97 (`Resurrect`, `Resurrect2`); `0x005C5430` from `srvdofunc` 58 (`Revive`); `sub_005C07A0_SkillReviveDo`, a corpse callback of `0x005C09E0` | 0x4020000, 0x402000E, 0x402000E |
+  | a hireling | 0x005732A3, 0x00579B69 | `MERC_Init`; `sub_00579AA0_MercRevive` (resurrection) | 0x4020200, 0x402000E |
+
+  The AI rows. The MonStats classes are read from the shipped `.txt` by `AI` name; `monai` has no `Expansion` row,
+  and the MonStats one is skipped.
+
+  | AI index | `monai` row | function | classes | when |
+  |---:|---|---|---|---|
+  | 43 | `FoulCrowNest` | 0x005F6650 | `crownest1`–`4` | its spawn count `≥` the AI parameter `+0x62` of the difficulty |
+  | 45 | `Sarcophagus` | 0x005F6A10 | `sarcophagus` | its spawn count past the AI parameter of the difficulty |
+  | 77 | `Trap-Missile` | 0x005FB5B0 | `trap-firebolt`, `trap-lightning` | on its ending branch (condition not read) |
+  | 80 | `Trap-Poison` | 0x005FB900 | `trap-poisoncloud` | as row 77 |
+  | 83 | `MosquitoNest` | 0x005E0260 | `suckernest1`–`4` | its spawn count past the AI parameter of the difficulty |
+  | 88 | `7TIllusion` | 0x005EA080 | `seventombs` | on its second tick |
+  | 91 | `DarkWanderer` | 0x005EA130 | `darkwanderer` | two branches of its state 2 (conditions not read) |
+  | 92 | `Trap-Nova` | 0x005FB9B0 | `trap-nova` | as row 77 |
+  | 99 | `TrappedSoul` | 0x005E9F10 | `trappedsoul1`, `trappedsoul2` | every tick (the bit is set before anything else) |
+  | 129 | `GenericSpawner` | 0x005E61B0 | `evilhut` | no target, or spawn count reached |
+
+  The table base comes from `sub_005B15D0_MonAiEntryGet`, which with `EDX` = 0 returns `0x0073CA18 + 16·AI` for
+  `AI` < 148 (0x005B161F–0x005B1635). (data:g_MonAiTable@0x0073CA18, fn:sub_005B15D0_MonAiEntryGet@0x005B15D0,
+  fn:sub_005DDFC0_MonAiSetMode@0x005DDFC0, fn:sub_005BBBA0_ObjInitCompellingOrb@0x005BBBA0,
+  fn:sub_005BBC00_A3Q5_CouncilDeath@0x005BBC00, fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:MERC_Init@0x00573270,
+  fn:sub_00579AA0_MercRevive@0x00579AA0, fn:sub_005FC860_BaalCloneSpawn@0x005FC860,
+  fn:sub_005C07A0_SkillReviveDo@0x005C07A0, tbl:MonStats.txt:AI, tbl:MonStats.txt:Align, tbl:Skills.txt:srvdofunc)
+- [I] **For items/tc:** the units that skip the death drop are those in the table, read off the code. That covers the
+  113 `Align` 1 classes when made through `MonSpawnTry`, the AI self-removals, spawned and raised minions, hirelings
+  and the two compelling-orb sites. It is a lower bound for the reason above. The bit's meaning still rests on its two
+  readers (§ Plan 0039 batch P1b). The identity of `0x005C09E0`'s skill (its pointer sits at `0x0073262C`, past the
+  `srvdofunc` table) is not read.
+## Plan 0038 batch H6d (2026-10-17)
+
+Harness batch H6d of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (run:2026-10-17-sweep-quest-b6,
+[experiments](experiments.md#run2026-10-17-sweep-quest-b6)) took two inferred statements of
+[items/tc](../../specs/items/tc.md), rows 26 and 27 of [the inventory](../../plans/0038-inventory/items-tc.md). The
+evidence is the B6 groups of the run, ledger in [items/0010 § Plan 0038 batch H6d](0010-quest-drops.md#plan-0038-batch-h6d-2026-10-17)
+(qd 11).
+
+- **tc 26** (L232: the quest TC replaces the column the drop would use; a non-player killer is resolved to its owner)
+  **raised.** [C] In the two kills by a non-player (session 6: the Rogue Scout hireling, class 271; session 9: the
+  player's Hydra, class 352), `MONSTER_DropItems` resolved the killer to the owning player (`B6O`), read that player's
+  word 6 and replaced the TC so far (`TreasureClass1` 830, `Andariel`) with `TreasureClass4` (833, `Andarielq`). The `DROP`
+  base was 833 in both, reproduced by `tools/tc.py replay`. The same replacement held for the player's own kills
+  (Andariel ×5 in Normal, Nightmare, Hell and classic, Baal fresh), and the done Baal kept 881. (fn:MONSTER_DropItems@0x005A6600
+  0x005A6705–0x005A67F1, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, run:2026-10-17-sweep-quest-b6)
+- **tc 27** (L244: the pet, hireling, `exp`-state and party killers were not run) **raised in part.** [C] Pet (a Hydra)
+  and hireling (the Rogue Scout) kills now ran (sessions 9 and 6). Each was resolved to the owner, and the TC walk still
+  got the unresolved killer (`B6X` killer and the drop's `TCR ktype=1 kclass=271`/`352`). **Remainder:** the
+  `exp`-state killer (shortfall, stays `[I]`: `B6E` was 0 in both kills) and the party (d-2c, as filed).
+
 ## Open questions
 
 - **x87 precision control** in other renderers. Every logged evaluation shows control word `0x027F` (53-bit, round
@@ -872,7 +1005,7 @@ Per row (inventory row, spec line at the inventory's commit, outcome):
   Normal or Hell, in a classic game, of another class, and whether any monster carries both `0x02` and `0x04` (the
   superunique test comes first in the code, `[I]`). The meaning of type-flag bit `0x01` belongs to `monsters`.
 - **Quest TC, one sighting.** In the same run Andariel (class 156, `mflags=08`) logged `DROP base=834`,
-  `Andarielq (N)` = `TreasureClass4(N)`, not `TreasureClass3(N)` (831). The killer's quest state is not logged and the replay accepts either column, so §3's quest replacement
+  `Andarielq (N)` = `TreasureClass4(N)`, not `TreasureClass3(N)` (831) (run:2026-10-12-tc-champion). The killer's quest state is not logged and the replay accepts either column, so §3's quest replacement
   stays `[I]` until `items/quest-drops` logs the three quest tests. The sighting fits the static reading of
   [items/0010 § 2–3](0010-quest-drops.md#2-b6-the-quest-tc-switch-and-the-killer): the drop runs before Andariel's
   script sets bit 1, so a fresh killer gets the quest TC.
@@ -884,15 +1017,17 @@ Per row (inventory row, spec line at the inventory's commit, outcome):
 - ~~Quest-drop tests (`0x0065C310` with 15, 1 and `TCQuestCP`), and the killer resolution through `0x0063A690` /
   `0x00625760(…, 0x800)`~~: answered statically in [items/0010 § 2–3](0010-quest-drops.md#2-b6-the-quest-tc-switch-and-the-killer)
   (`[I]`; the record is the resolved killer's own; `0x0063A690` tests the states with `states.txt` `exp`; the bits per boss).
-- `unit+0xC4` bit 17 (skips the death drop), `game+0x78` (copied into the creation record) and the `hellbovine` flag
-  bit: their meanings belong to `monsters` and item creation. (Item `+0x129` and itemtypes `+0x14..+0x16` are answered in
+- ~~`unit+0xC4` bit 17 (skips the death drop), `game+0x78` (copied into the creation record) and the `hellbovine` flag
+  bit: their meanings belong to `monsters` and item creation.~~ [§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17): bit 17 is set for bone prisons, the compelling
+  orb and owned spawns; `game+0x78` is the item version; the cow bit gates set 29. (Item `+0x129` and itemtypes `+0x14..+0x16` are answered in
   [items/0002 §1](0002-quality-roll.md#1-arguments-and-early-returns-0x005586400x005586ce).)
-- `ce=`/`cg=` upgrade bits `0x04`/`0x10` in the creation flags: what item creation does with them (exceptional/elite
-  upgrade?) belongs to item creation; the quality roll does not read them (items/0002). Not reachable with stock data.
+- ~~`ce=`/`cg=` upgrade bits `0x04`/`0x10` in the creation flags: what item creation does with them (exceptional/elite
+  upgrade?) belongs to item creation; the quality roll does not read them (items/0002). Not reachable with stock data.~~
+  Forced ethereal and forced sockets ([§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17)).
 - **`/players` in run 18.** The session typed `/players 1`, yet every resolver call of that log has `pover=8`. Did the
   command reach the game (chat focus, typo, or a game type where it is ignored)? The NoDrop draws still reproduce with the
   logged values, so the model is unaffected, but how `/players` sets the override is not confirmed by this run.
 - **Unique-item names in TC entries.** `ROP (N)` / `ROP (H)` → `Annihilus` is a unique-item name. The loader side is
   read in [specs/data/excel.md G4](../../specs/data/excel.md#g-treasure-classes): a unique name resolves to a unique entry
-  (flag `0x11`, `[I]`), which the resolver hands on with quality 7 (§8). Still open: a run that reaches those TCs
+  (flag `0x11`, `[I]`; fn:TC_ParseItemCell@0x00654440), which the resolver hands on with quality 7 (§8, 0x0055AC5F–0x0055AF59). Still open: a run that reaches those TCs
   (`tools/tc.py` does not resolve the two cells yet).

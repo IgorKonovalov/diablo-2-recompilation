@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [combat/overview, combat/damage, monsters/stats]
 consumed_by: [combat/delivery]
-tags: {C: 35, I: 24, L: 5}
-updated: 2026-10-16
+tags: {C: 38, I: 25, L: 4}
+updated: 2026-10-17
 ---
 
 # Combat: the defender's reductions
@@ -67,7 +67,7 @@ freeze, cannot be frozen), 142–149 (absorb percent and flat), 327 (a missile's
 | classic penalty | −20 Nightmare, −50 Hell | fn:COMBAT_ResistFor@0x0057BE00 | [C] (run:2026-10-16-combat) |
 | absorb percent cap | 40 | 0x0057BF2A–0x0057BF6F | [C] (run:2026-10-16-combat) |
 | PvP percent; hireling against hireling | 17; 25 | 0x0057C0B6, 0x0057C0D4 | [I] |
-| prime evil against a bit-31 unit | 200 (hireling defender) or 400 | 0x0057C129–0x0057C132 | [I] |
+| prime evil against a bit-31 unit | 200 (hireling defender) or 400 | 0x0057C129–0x0057C132 | [C] for 200 (run:2026-10-16-combat), [I] for 400 |
 
 ## Algorithm
 
@@ -136,12 +136,13 @@ A2. DamagePercent(ctx) → i32:                                         [I] (fn:
 ```
 
 - A2. **P = 100** for every player and monster attack the run logged, and **`HireableBossDamagePercent`** for the
-  mercenary hitting Andariel: 50 in Normal (2 events) and 35 in Nightmare (78), one read indexed by the difficulty.
-  [C] (0x0057C0FE, tbl:DifficultyLevels.txt:HireableBossDamagePercent, run:2026-10-16-combat) Hell's 25 was not
-  reached; it is the same read, and it is what tells this column from `MonsterCEDamagePercent` (20 in Hell). [I]
-  (0x0057C0FE)
-- A2. The prime-evil 200 occurred once (Andariel against the mercenary), under the floor. The 17 % of player against
-  player and the 25 % of hireling against hireling were not reached. [I] (0x0057C129–0x0057C132, 0x0057C0B6,
+  mercenary hitting Andariel: 50 in Normal (2 events), 35 in Nightmare (78) and 25 in Hell (33), one read indexed by
+  the difficulty. [C] (0x0057C0FE, tbl:DifficultyLevels.txt:HireableBossDamagePercent, run:2026-10-16-combat) Hell's
+  25 is what tells this column from `MonsterCEDamagePercent` (20 in Hell): all 33 Hell events logged P = 25. [C]
+  (0x0057C0FE, run:2026-10-16-combat)
+- A2. The prime-evil 200 (Andariel against the mercenary) reproduced with 0 mismatches in 154 events. [C]
+  (0x0057C129–0x0057C132, run:2026-10-16-combat) The 400 against a non-hireling, the 17 % of player against player
+  and the 25 % of hireling against hireling were not reached. [I] (0x0057C129–0x0057C132, 0x0057C0B6,
   0x0057C0D4, run:2026-10-16-combat) `Unit+0xC4` bit 31's meaning is not named by the finding. [I] (0x0057C0B6)
 - A2. "Boss" is MonStats `boss` (`+0x0C` bit 6), not a unique or superunique. [I] (fn:MONSTATS_IsBoss@0x0063E9F0)
 
@@ -217,7 +218,7 @@ B2. ResistFor(ctx, row) → i32:                                        [C] (fn:
           if difficulty = Hell:      r ← r − 50
         else:
           r ← r + ctx.diff.ResistPenalty                              ; 0, −40, −100
-      if r < −99: r ← −100
+      if r < −99: r ← −100                                            ; [I] (fn:COMBAT_ResistFor@0x0057BE00: none logged below −100, 214 at exactly −100)
       if r ≥ 1 and not ctx.defIsMon:
         cap: i32 ← row.maxStat ≥ 0 ? min(75 + stat(def, row.maxStat), 95) : (row is 0 ? 50 : 75)
         r ← min(r, cap)
@@ -230,9 +231,9 @@ B2. ResistFor(ctx, row) → i32:                                        [C] (fn:
   throughout. [C] (fn:COMBAT_ResistFor@0x0057BE00, tbl:DifficultyLevels.txt:ResistPenalty, run:2026-10-16-combat)
 - B2. Physical (stat 36) and magic (stat 37) resistances take no difficulty penalty. [C] (fn:COMBAT_ResistFor@0x0057BE00,
   run:2026-10-16-combat)
-- B2. The cap is one code path for every row; fire reached it 381 times. Cold (15), lightning (17) and poison (2)
+- B2. The cap is one code path for every row; fire reached it 2 115 times and poison 692. Cold (27) and lightning (17)
   reached it fewer times than the plan's floor of about 30, and magic never. [C] for the formula
-  (fn:COMBAT_ResistFor@0x0057BE00, run:2026-10-16-combat); the per-element counts are listed under *Open questions*.
+  (fn:COMBAT_ResistFor@0x0057BE00, run:2026-10-16-combat); the cold and lightning counts are listed under *Open questions*.
 - B2. Pierce (stats 333–336) applies unless the defender is a monster at 100 or more; no logged attacker had pierce.
   Sanctuary (state 47) zeroes physical resistance against undead; not met. [I] (fn:COMBAT_ResistFor@0x0057BE00)
 
@@ -298,7 +299,8 @@ poison 153 pass unreduced. No penalty and no cap apply to the monster. [C] (run:
 - **DR and MDR come before the resistance**, and a field they push negative skips the resistance and stays negative.
   [C] (0x0057BFB4–0x0057C04D, run:2026-10-16-combat)
 - **Penalty, then floor, then cap**: a player's 115 % fire resist in Hell is 15 %, not `min(115, 85) − 100` = −15 %.
-  [C] (fn:COMBAT_ResistFor@0x0057BE00, run:2026-10-16-combat)
+  [C] for the penalty before the cap (fn:COMBAT_ResistFor@0x0057BE00, run:2026-10-16-combat); [I] for the floor,
+  which changed no logged value (fn:COMBAT_ResistFor@0x0057BE00)
 - **Classic uses constants, not `ResistPenalty`.** Classic Nightmare −20 and Hell −50 differ from the expansion's −40
   and −100 in `DifficultyLevels`. [C] (fn:COMBAT_ResistFor@0x0057BE00, run:2026-10-16-combat)
 - **Monsters are never capped**: a monster resistance above 100 is immunity, and pierce does not lower it. [C] for
@@ -323,10 +325,8 @@ poison 153 pass unreduced. No penalty and no cap apply to the monster. [C] (run:
 
 ## Open questions
 
-- [L] Hell's `HireableBossDamagePercent` (25): 0 events in run:2026-10-16-combat. A mercenary hitting Andariel in
-  Hell (the resume lane, plan 0037 Phase 2) tells it from `MonsterCEDamagePercent` 20.
-- [L] Branches reproduced under the plan's floor of about 30 events: the prime-evil 200 (1), the negative absorbed
-  amount (4), the resistance cap reached for cold (15), lightning (17) and poison (2).
+- [L] Branches reproduced under the plan's floor of about 30 events: the negative absorbed amount (4), the
+  resistance cap reached for cold (27) and lightning (17).
 - [L] Not reached: magic at or above the cap and magic immunity, pierce, flat absorb, the stat-118 halving, states
   131 and 133, sanctuary, the PvP 17 % and the hireling-against-hireling 25 %. PvP needs two clients (ADR-0008).
 - [L] The handlers of event 11 (`absorbdamage`): energy shield and the bone and cyclone armours by the community's

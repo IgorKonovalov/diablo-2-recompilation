@@ -1,7 +1,7 @@
 ---
 based_on:
-  - docs/specs/objects/README.md 2026-10-16
-  - docs/specs/items/tc.md 2026-10-16
+  - docs/specs/objects/README.md 2026-10-17
+  - docs/specs/items/tc.md 2026-10-17
 ---
 
 # Objects: shrines, chests, barrels and the rest
@@ -323,8 +323,10 @@ creation).
   [quality code](../glossary.md) otherwise. A non-zero forced quality replaces the normal quality roll for every entry
   that is not a unique or set entry. A sparkle chest uses the **same** act chest TC as any other chest; only the
   quality is forced.
-- Unknown: how a forced quality applies when the TC entry is gold or a potion, which a sparkle chest passes on every
-  drop.
+- When the TC entry is gold or a potion, the sparkle chest's forced quality makes no difference: the item skips the
+  quality roll, and then item creation's always-normal rule builds it as normal quality anyway (elixirs excepted,
+  which keep the forced quality). This is read from the code
+  ([items/tc § J](../specs/items/tc.md#j-object-drops-named-only)).
 
 ## Traps and timer events
 
@@ -412,8 +414,9 @@ From the spec's [open questions](../specs/objects/README.md#open-questions) and 
   fires that fire traps create.
 - **Not tried on the collision model:** a gold pile placed off its room, door masks, and units that move between a
   room's activation and its object window.
-- **Open leads:** whether any code reads the Objects columns `TrapProb`, `SpawnMax` and `Act` (the scan stopped three
-  calls deep); how a forced quality applies to gold or potions; two contradictions with a community guide (a
+- **Open leads:** whether any code reads the Objects column `TrapProb`: none of the functions that fetch an Objects
+  record reads it, but code that keeps a record from elsewhere could. A whole-image scan finds no reader of `SpawnMax`
+  or `Act` either, though a reader through a computed address is not ruled out. Also open: two contradictions with a community guide (a
   `DENSITY` of 128 and a shrine row with `Parm0` 0) that only modified data could reach.
 - **The chest tier's exact cut:** how the third is rounded and which bound counts, and a check of the tier (and of
   the tier used as the quality roll's item level) against recorded chests, see [the hand-off](#what-a-chest-drops-the-hand-off).
