@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 23 (no `Expansion` marker)   **Record:** 184 B (`0xB8`)
 > **sha256:** `.txt` `1dae6107c983c5e03079ac6916cf77a3d828df4b2a0517818504dcf20a68fb6d`, `.bin` `2a7e6f8f0cc8c8743f4d7971c31b80c3083cef846ff8100598944c71b0ab0678`
-> **Doc status:** complete for layout (every byte placed); every effect row listed (plan 0041 Phase 0); semantics `[I]` for the pick ([§ Code semantics](#code-semantics-plan-0023-phase-1), objects/0001), `[L]` for the effects
+> **Doc status:** complete for layout (every byte placed); every effect row listed (plan 0041 Phase 0); semantics `[I]` for the pick ([§ Code semantics](#code-semantics-plan-0023-phase-1), objects/0001), `[I]` for the timed and recharge effects and row 20 (plan 0041 Phase 1, § Effects), `[L]` for the other magic effects
 
 ## Purpose
 
@@ -33,8 +33,8 @@ Values from `python3 -I tools/obj_survey.py shrines workspace/merged/data/global
 | `Code` | int 0..22 = row index | `+0x000` u32 | effect number | — | [C] |
 | `Arg0` | int 0..400 (8 distinct) | `+0x004` s32 | first effect argument | — | [C] |
 | `Arg1` | int 0..2000 (9 distinct) | `+0x008` s32 | second effect argument | — | [C] |
-| `Duration in frames` | int {0: 13, 3600: 5, 2400: 4, 4800: 1} | `+0x00C` u32 | effect duration (25 frames per second: 2400 = 96 s) | — | [C] |
-| `reset time in minutes` | int {5: 11, 0: 10, 2: 2} | `+0x010` u8 | time before the shrine can be used again (0 = once) | — | [C] |
+| `Duration in frames` | int {0: 13, 3600: 5, 2400: 4, 4800: 1} | `+0x00C` u32 | `[I]` duration of the timed state, in frames (§ Effects) | — | [C] |
+| `reset time in minutes` | int {5: 11, 0: 10, 2: 2} | `+0x010` u8 | `[I]` the shrine re-arms `value × 1200 + 1` frames after use; 0 = never (§ Effects) | — | [C] |
 | `rarity` | int {2: 12, 3: 9, 1: 2} | `+0x011` u8 | `[I]` not read by the shrine pick | — | [C] |
 | `view name` | str `blah` in every row | `+0x012` `char[32]` | unused text | — | [C] (width by next field) |
 | `niftyphrase` | str `blah` in every row | `+0x032` `char[128]` | unused text | — | [C] (width by next field) |
@@ -51,11 +51,11 @@ u8; a u16 at `+0x0B2` would decode the same values (`+0x0B3` is 0 everywhere).
 Every row with the columns a shrine operate is expected to read: the code, the two arguments, the duration and the
 class (all `[C]` layout, § Columns). From `python3 -I tools/stats_survey.py shrines workspace/merged/data/global/excel`
 (gate survey `stats`; `tools/obj_survey.py shrines` prints the same values). Effect names are the `.txt` editor names.
-**What each effect does is `[L]`**: the operate is game simulation, named in [objects](../specs/objects/README.md) and
-read by plan 0041 Phase 1 for the effects that put a state on the player or refill (the others, which create missiles
-or monsters, are phase 3). (tbl:Shrines.txt:Arg0, tbl:Shrines.txt:Duration in frames)
+What the timed and recharge effects do is read by plan 0041 Phase 1 (`[I]`, the bullets below the table, from
+[stats/0002 § 5](../findings/stats/0002-states.md#5-shrines-and-wells)); the magic effects, which create missiles, objects or monsters, are not read, except the
+function of row 20. (tbl:Shrines.txt:Arg0, tbl:Shrines.txt:Duration in frames)
 
-| `Code` | Name | `Shrine Type` | `Arg0` | `Arg1` | Duration (frames) | reset | `rarity` | `effectclass` | `LevelMin` | [States](States.md) row by name (`[L]`) |
+| `Code` | Name | `Shrine Type` | `Arg0` | `Arg1` | Duration (frames) | reset | `rarity` | `effectclass` | `LevelMin` | [States](States.md) row (`[I]`, `g_ShrineEffects`) |
 |---:|---|---|---:|---:|---:|---:|---:|---:|---:|---|
 | 0 | None | None | 100 | 100 | 0 | 2 | 1 | 0 | 0 | — |
 | 1 | Refill | Recharge | 100 | 100 | 0 | 2 | 1 | 4 | 1 | — |
@@ -83,13 +83,30 @@ or monsters, are phase 3). (tbl:Shrines.txt:Arg0, tbl:Shrines.txt:Duration in fr
 
 - `[C]` Ten rows have a duration, codes 6–15 (`shrine_timed`): 2400 frames on 6, 7, 12, 13, 3600 on 8–11 and 15, 4800 on 14. 19 rows have a non-zero `Arg0`, 12 a non-zero `Arg1`
   (`shrine_arg0_nonzero`, `shrine_arg1_nonzero`). (tbl:Shrines.txt:Duration in frames)
-- `[L]` The last column pairs a timed code with the States row of the same name (`shrine_pairs` = 10; the state is
-  code + 122 for 7 of them; fire, cold and lightning are in another order: [States § Which data names a row](States.md#which-data-names-a-row)).
-  Shrines has no column that names a state, so which state an operate applies, and whether it takes `Arg0`/`Arg1` as
-  the state's stat value, is Phase 1. The States rows name a stat for 128–133 and 136 (armour class, to-hit, the
-  four resistances, stamina), none for 134, 135, 137.
-- `[L]` By the names, codes 1–5 refill or exchange life and mana with `Arg0`/`Arg1` as amounts or percentages, and
-  16–22 are the magic class (portal, gem, storm, warp, explosion, poison) that create objects, missiles or monsters.
+- `[C]` (data) The last column pairs a timed code with the States row of the same name (`shrine_pairs` = 10; the state
+  is code + 122 for 7 of them; fire, cold and lightning are in another order: [States § Which data names a row](States.md#which-data-names-a-row)).
+  `[I]` The code confirms the pairing for all ten: `OBJOP_Shrine` (OperateFn 2) runs `g_ShrineEffects[Code]`, a table
+  of `{fn, stat, state}` rows: 6 → stat 171 `skill_armor_percent`, state 128; 7 → state 129; 8 → 39, 131; 9 → 43, 132;
+  10 → 41, 130; 11 → 45, 133; 12 → state 134 (its stat is not read); 13 → 27, 135; 14 → 162, 136; 15 → 85, 137. The
+  stat is not always the States row's `stat`: shrine 6 writes 171 although row 128 names `armorclass`.
+  ([stats/0002 § 5](../findings/stats/0002-states.md#5-shrines-and-wells), fn:OBJOP_Shrine@0x00583C70, data:g_ShrineEffects@0x006E1850)
+- `[I]` **`Arg0` is the stat value of codes 6, 8–11, 13 and 15** (armour 100, resists 75, mana regeneration 400,
+  experience 50): `SHRINE_StatValue` returns `Arg0` itself for their stats. **`Arg1` is code 7's damage percent**
+  (stat 25 `damagepercent` = 200), and code 7 adds a to-hit value worked out from the right skill. Code 14 sets
+  stamina to its maximum and writes stat 162 = `stat 162 × Arg0 / 100`, stat 10 twice that and 28 = 1000; code 12
+  writes no stat and refreshes the skills. Each timed state lasts `Duration in frames`. ([stats/0002 § 5](../findings/stats/0002-states.md#5-shrines-and-wells),
+  fn:SHRINE_StatValue@0x00583840, fn:SHRINE_Combat@0x005839B0, fn:SHRINE_Stamina@0x00583A70, tbl:Shrines.txt:Arg0)
+- `[I]` **Recharge codes 1–5:** 1 refills life and mana, 2 life, 3 mana; 4 takes `h = ⌊Arg0·⌊life/256⌋/100⌋` points of
+  life and gives `⌊Arg1·h·256/100⌋` mana; 5 takes `m = ⌊Arg0·mana/100⌋` mana and gives `⌊Arg1·m/100⌋` life (unsigned).
+  A code with no function falls back to `SHRINE_Refill`. ([stats/0002 § 5](../findings/stats/0002-states.md#5-shrines-and-wells), fn:SHRINE_HealthExchange@0x00582940,
+  fn:SHRINE_ManaExchange@0x005829A0)
+- `[I]` **`reset time in minutes` (`reset`) re-arms the shrine** `reset × 1200 + 1` frames after use (object event 5), when `reset` ≠ 0 (6000 + 1
+  frames for `reset` 5). (fn:OBJOP_Shrine@0x00583C70, tbl:Shrines.txt:reset)
+- `[I]` **Row 20 (Warping Shrine)** runs `sub_00583050_ShrineWarping` (`g_ShrineEffects` row at `0x006E1940`): it finds
+  the operator's nearest unit through filter `0x00582750` and makes it a special monster (`MonMakeSpecial`); with no
+  hit nothing happens. ([monsters/0003 § Plan 0039 batch P1c](../findings/monsters/0003-special-monsters.md#plan-0039-batch-p1c-2026-10-17), fn:sub_00583050_ShrineWarping@0x00583050)
+- `[L]` By the names, codes 16–19, 21 and 22 are the magic class (portal, gem, storm, explosion, poison) that create
+  objects, missiles or monsters; their functions are not read.
 - `[C]` `rarity` sums to 53 over the 23 rows (1 on rows 0 and 1, 3 on rows 4, 5, 14–16, 18, 20–22, else 2).
 - `[C]` `LevelMin` is above 8 only for the three resist boosts other than fire: cold 26, poison 21, lightning 32.
 
