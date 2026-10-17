@@ -1,0 +1,13 @@
+---
+from: reverser
+to: archivist
+date: 2026-10-17
+status: open
+context:
+  - ../findings/monsters/0003-special-monsters.md
+resolution: ""
+---
+
+Not blocking. MonPlace rows the code now settles (`lane/rbs3`, static, [I]): [monsters/0003 § 7](../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20), bullet *Every MonPlace row, from the switch*. Please update [MonPlace.md](../tables/MonPlace.md):
+- § Interpretation notes: replace the last bullet ("The other rows (0, 1, 4–16, 27, 33–36) …") with the reading by row. Rows 0, 1, 6, 7, 9, 12–16, 19–21, 25, 27, 28 and 33–36 place nothing (`place_group25..100` included). 4 places `navi`, 5 `bloodraven`, 8 `maggotqueen1` (flags 8), and 10/11 `tentaclehead1`–`3` by level, all at the point.
+- § Open questions: close the `[L]` on those rows.

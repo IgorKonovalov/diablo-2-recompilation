@@ -6,6 +6,7 @@
     python3 -I tools/sweep_rbs3.py window 0xADDR [BEFORE AFTER]
     python3 -I tools/sweep_rbs3.py pushes 0xADDR N
     python3 -I tools/sweep_rbs3.py writes 0xOFF [--mask 0xM] [--lo 0xA --hi 0xB]
+    python3 -I tools/sweep_rbs3.py switch 0xBYTES 0xJUMPS FIRST COUNT [NJUMPS]
 
 All subcommands read one GNU objdump Intel-syntax disassembly of `.text` (`objdump -d --no-show-raw-insn -M intel
 -j .text`), run once per invocation; `--exe` overrides the image path. Function entries come from re/symbols.csv
@@ -28,6 +29,9 @@ function is the nearest entry at or below it, printed with its symbols.csv name 
   sbb, inc, dec, not, neg, bts/btr/btc), optionally only sites in [lo, hi) and, with `--mask M`, only `or`/`mov` with an
   immediate that has a bit of M set, plus every register-source `or`/`mov` and every `and`/`xor`/`btr` (a clear or a
   write the scan cannot value): `W <site> <function> <name> <instruction>`, then a count.
+- `switch BYTES JUMPS FIRST COUNT [NJUMPS]`: an MSVC two-level switch read from the image: case FIRST+i (i < COUNT)
+  goes to dword `JUMPS[BYTES[i]]`; with BYTES = `-` the dword table is indexed directly. `S <case> <index> <target>`.
+  The bound check and the default are read from the code (window).
 - `window ADDR [B A]`: B instructions before and A after ADDR (default 12 12), for kept excerpts.
 
 Stdlib only. Read-only.
@@ -193,6 +197,34 @@ def cmd_writes(img, off, mask, lo, hi):
     print("N writes %d (offset %#x%s)" % (k, off, "" if mask is None else " mask %#x" % mask))
 
 
+def image_reader(exe):
+    sys.path.insert(0, HERE)
+    import pe_info
+    data = open(exe, "rb").read()
+    secs = pe_info.parse(exe)["sections"]
+
+    def read(va, n):
+        rva = va - 0x400000
+        for sc in secs:
+            if sc["va"] <= rva < sc["va"] + max(sc["vsize"], sc["rsize"]):
+                o = rva - sc["va"] + sc["raw"]
+                return data[o:o + n]
+        raise SystemExit("address %#x not in the image" % va)
+    return read
+
+
+def cmd_switch(exe, bytes_va, jumps_va, first, count, njumps):
+    read = image_reader(exe)
+    if bytes_va is None:
+        idx = list(range(count))
+    else:
+        idx = list(read(bytes_va, count))
+    n = njumps or (max(idx) + 1)
+    jt = [int.from_bytes(read(jumps_va + 4 * k, 4), "little") for k in range(n)]
+    for i, k in enumerate(idx):
+        print("S %d %d 0x%08X" % (first + i, k, jt[k]))
+
+
 def cmd_window(img, addr, before, after):
     i = img.index(addr)
     for a, txt in img.ins[max(0, i - before):i + after + 1]:
@@ -221,7 +253,16 @@ def main(argv):
     p.add_argument("--mask")
     p.add_argument("--lo", default="0")
     p.add_argument("--hi", default="0xffffffff")
+    p = sub.add_parser("switch")
+    p.add_argument("bytes")
+    p.add_argument("jumps")
+    p.add_argument("first", type=int)
+    p.add_argument("count", type=int)
+    p.add_argument("njumps", nargs="?", type=int, default=0)
     a = ap.parse_args(argv)
+    if a.cmd == "switch":
+        cmd_switch(a.exe, None if a.bytes == "-" else int(a.bytes, 16), int(a.jumps, 16), a.first, a.count, a.njumps)
+        return
     img = Image(a.exe)
     if a.cmd == "callers":
         cmd_callers(img, [int(t, 16) for t in a.targets])

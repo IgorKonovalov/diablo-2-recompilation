@@ -277,7 +277,8 @@ Both read as in § 3 and § 6, so nothing is corrected and the tags stay `[I]`.
 | `0x005A0CE0` … `0x005A1F90` | the 22 server handlers | table below | I |
 | `0x005A00F0` | `sub_005A00F0_UModConstant` | MonUMod `constants` of a row (`+0x1C`) | I |
 | `0x005A21D0` | `sub_005A21D0_UModElemDamage` | elemental damage % from `constants` rows 28 and 31 (`monsters/stats`) | I |
-| `0x0054E600` | `sub_0054E600_PresetMonSpawn` | MonPreset dispatch; MonPlace cases 2, 3, `0x11`–`0x20` | I |
+| `0x0054DA60` | `sub_0054DA60_MonClassChainStep` | `(class, n)`: the class's `BaseId`, then `NextInClass` n times | I |
+| `0x0054E600` | `sub_0054E600_PresetMonSpawn` | MonPreset dispatch; MonPlace switch: rows 2–5, 8, 10, 11, 17, 18, 22–24, 26, 29–32 place a monster (24, 26 in Normal only); the rest nothing | I |
 | `0x0054E2A0` | `sub_0054E2A0_PresetFallenVariant` | `fallen1`/`fallenshaman1` → act-1 variant by level id | I |
 | `0x0063EC70` | `sub_0063EC70_LevelClassVariant` | the level's version of a base class (its `mon` list, else `NextInClass` by `Level`) | I |
 | `0x0054E090` | `sub_0054E090_PresetGroupSpawn` | normal-difficulty MonPlace `0x18`/`0x1A`: a group in the preset's box | I |
@@ -610,6 +611,27 @@ At `0x0054E651` the function overwrites its first argument with the room's level
 - [I] `0x18` and `0x1A` are normal-difficulty only: `sub_0054E090_PresetGroupSpawn` with class `imp1`/`deathmauler1`
   (by level 110) or `minion1`, a leader in the preset's box and `MinGrp − 1 + RangeB(leader.seed, MaxGrp − MinGrp + 1)` members around it.
   (0x0054EAA8–0x0054EAF9, fn:sub_0054E090_PresetGroupSpawn@0x0054E090, tbl:MonStats.txt:MinGrp)
+- [I] **Every MonPlace row, from the switch** (`lane/rbs3`, the MonPlace remaining-cases entry; kept output
+  `sweep-rbs3-monplace-2026-10-17.txt`, `tools/sweep_rbs3.py switch`). The MonPlace branch switches on `index − 2`
+  with the bound `0x1E` (0x0054E76F–0x0054E782: byte table `0x0054EB30`, dword table `0x0054EB0C`). Rows 0, 1 and 33–36
+  fail the bound, and rows 6, 7, 9, 12–16 and 19–21 have byte 8. Both go to `0x0054EAFE`, which returns 0 with no call:
+  **these rows place nothing**. That covers `place_nothing`, `place_npc_pack`, the river monsters, `place_amphibian`, the
+  nests, the talking and dumb guards, `place_maggot`, `place_maggotegg`, `place_mosquitonest` and **`place_group25` to
+  `place_group100`**. H4b's case-36 calls are this branch. The rows not read before:
+  - **4 `place_rogue_warner`**: `SpawnAtPos(x, y, class 266 navi, mode, radius −1, flags 0)` at the point
+    (0x0054E919–0x0054E933).
+  - **5 `place_bloodraven`**: the same with class 267 `bloodraven` (0x0054E808–0x0054E840). Class 0x10A or 0x10B is
+    used only while `nMonStats` exceeds it, else −1.
+  - **8 `place_tightspotboss`**: the same with class 284 `maggotqueen1` and flags 8 (0x0054E943–0x0054E95D).
+  - **10 `place_tentacle_ns` and 11 `place_tentacle_ew`**: class 261's `BaseId`, then `NextInClass` n times
+    (`sub_0054DA60_MonClassChainStep`, 0x0054DA8D–0x0054DAB5), with n by level id from the table at `0x0054EB60`:
+    1 in levels 76–78, 2 in 92 and 93, else 0. That gives `tentaclehead2`, `tentaclehead3`, else `tentaclehead1`. The
+    spawn is at the point with flags 4 for row 10 and 0 for row 11 (0x0054E789–0x0054E7F8).
+  - **25 `place_imp`, 27 `place_minion` and 28 `place_bloodlord`**: entry `0x0054EAB1` of the fixed-class table
+    (`0x0054EB74`, `index − 17`), which returns 0. They place nothing. Rows 19–21 never reach that table.
+
+  (fn:sub_0054E600_PresetMonSpawn@0x0054E600, fn:sub_005B2F20_SpawnAtPos@0x005B2F20,
+  fn:sub_0054DA60_MonClassChainStep@0x0054DA60, tbl:MonPlace.txt:code, tbl:MonStats.txt:NextInClass)
 
 ### 8. Names: server seed, client roll
 
