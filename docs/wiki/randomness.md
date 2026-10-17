@@ -72,7 +72,7 @@ table-driven count can be zero, whether the game still draws depends on the call
 RangePow2 under the emulator steps the seed with n = 0 where Range does not, and the act's inlined `mod 7` draws in
 play with no guard. Which form each other site uses is stated call site by call site in the subsystem specs
 ([RNG core, reimplementation notes](../specs/rng/README.md#reimplementation-notes)). The program holds 852 inlined
-draw sites (852 copies of the multiplier, each the same instruction), confirmed by a second disassembler; that 846
+draw sites (852 copies of the multiplier, each loaded into a register by one `mov`), confirmed by a second disassembler; that 846
 of them lie inside functions is confirmed by walking the code, and the other 6 only by Ghidra's reading
 ([RNG core, entry points](../specs/rng/README.md#entry-points)). One more helper, "power-of-two range plus a base",
 is also in the program: what it computes is confirmed under the emulator, but by the code nothing calls it, and no
