@@ -57,6 +57,11 @@ DMG_RA = {0x6278FB: +1, 0x627ADD: -1}                         # Enable / Disable
 TAKE_CLASS = [0, 5, 1, 1, 2, 2, 3, 3, 0, 0, 0, 0, 5, 4]      # 0x0062690C by op
 
 
+# the shrine table 0x006E1850 (stats/0002 § 5): state -> Shrines code, and the stat SHRINE_TimedStat writes
+SHRINE_STATE = {128: 6, 129: 7, 131: 8, 132: 9, 130: 10, 133: 11, 134: 12, 135: 13, 136: 14, 137: 15}
+SHRINE_STAT = {6: 171, 8: 39, 9: 43, 10: 41, 11: 45, 13: 27, 15: 85}
+
+
 def lcg_step(lo, hi):
     """RNG_Step (rng/0001): (lo, hi) <- (lo * 0x6AC690C5 + hi) as 64 bits."""
     v = lo * 0x6AC690C5 + hi
@@ -525,6 +530,7 @@ class Checker:
         self.levels_seen = set()
         self.aura_durations = collections.Counter()
         self.wells = []
+        self.shrine_codes = collections.Counter()
         self.notes = collections.Counter()
 
     def fail(self, kind, msg):
@@ -906,6 +912,22 @@ class Checker:
     def states_step(self, M, tag, d, stack):
         if tag == "STA0":
             self.n["apply_%s" % d["w"]] += 1
+            if getattr(self, "shr", None) is not None and d["w"] == "p" and d["state"] in SHRINE_STATE:
+                # a timed shrine (stats/0002 § 5, data:g_ShrineEffects@0x006E1850): the request's duration is the
+                # code's `Duration in frames`; for the codes of SHRINE_TimedStat the stat is the table's and the
+                # value is Arg0
+                code = SHRINE_STATE[d["state"]]
+                row = self.t.shrines[code]
+                self.n["shrine_apply"] += 1
+                self.shrine_codes[code] += 1
+                want = [int(row["Duration in frames"] or 0)]
+                got = [d["len"]]
+                if code in SHRINE_STAT:
+                    want += [SHRINE_STAT[code], int(row["Arg0"] or 0)]
+                    got += [d["stat"], d["val"]]
+                if got != want:
+                    self.fail("shrine", "shrine code %d (state %d): duration/stat/value %r, predicted %r" % (
+                        code, d["state"], got, want))
             r = self.t.skill_by_id.get(d["sk"])
             if r is not None and r.get("aura") == "1" and d.get("src") and d["len"]:
                 # an aura's target state lasts to one frame past the next run on the perdelay grid
@@ -1607,6 +1629,7 @@ class Checker:
                "rescale_cases": dict(getattr(self, "rescale_cases", {})),
                "aura_durations": {"skill %d len %d" % k: v for k, v in sorted(self.aura_durations.items())},
                "aura_draw_sites": {"%s from %s (%s/%s)" % k: v for k, v in self.au_sites.items()},
+               "shrine_codes": {str(k): v for k, v in sorted(self.shrine_codes.items())},
                "wells": [[a["p"], a["v"], b["v"]] for a, b in self.wells[:20]]}
         print(json.dumps(res, indent=1, sort_keys=True))
         if out:

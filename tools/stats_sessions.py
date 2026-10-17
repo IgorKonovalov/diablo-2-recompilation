@@ -152,6 +152,8 @@ SESSIONS = {
     "pal-oasis": ("StatsPal", "enter-normal", 4146, pal_field("2,5")),
     "palb-crystal": ("StatsPalB", "enter-normal", 4161, pal_field("5,4", 40)),
     "palb-spider": ("StatsPalB", "enter-normal", 4162, pal_field("3,2", 40)),
+    "palc-spider": ("StatsPalC", "enter-normal", 4171, pal_field("3,2", 50)),
+    "palc-oasis": ("StatsPalC", "enter-normal", 4172, pal_field("2,5", 50)),
     "barb-town1": ("StatsBarB", "enter-normal", 4121, [("plan", "statsbarb", 3), ("wait", 20)]),
     "barb-town2": ("StatsBarB", "enter-nightmare", 4122, [("plan", "statsbarb", 3), ("wait", 20)]),
     "barc-town1": ("StatsBarC", "enter-normal", 4131, [("plan", "statsbarc", 4), ("wait", 10)]),

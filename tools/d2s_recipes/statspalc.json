@@ -1,0 +1,120 @@
+{
+  "game": "expansion",
+  "class": "Paladin",
+  "seed": 4170,
+  "name": "StatsPalC",
+  "progression": 15,
+  "difficulty": [
+    131,
+    131,
+    131
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "stats": {
+    "strength": 60,
+    "energy": 60,
+    "dexterity": 20,
+    "vitality": 300,
+    "hitpoints": 1800,
+    "maxhp": 1800,
+    "mana": 400,
+    "maxmana": 400,
+    "stamina": 500,
+    "maxstamina": 500,
+    "level": 85,
+    "experience": 1145236813
+  },
+  "skills": {
+    "Prayer": 12,
+    "Might": 1,
+    "Zeal": 1
+  },
+  "mouse": {
+    "left": "Attack",
+    "right": "Prayer",
+    "swap_left": "Attack",
+    "swap_right": "Prayer"
+  },
+  "hotkeys": [
+    "Prayer",
+    "Might"
+  ],
+  "items": [
+    {
+      "code": "lsd",
+      "equip": "rarm"
+    },
+    {
+      "unique": "Goldwrap",
+      "equip": "belt"
+    },
+    {
+      "code": "yps",
+      "store": "inventory",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "code": "yps",
+      "store": "inventory",
+      "x": 1,
+      "y": 0
+    },
+    {
+      "code": "wms",
+      "store": "inventory",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "code": "wms",
+      "store": "inventory",
+      "x": 3,
+      "y": 0
+    },
+    {
+      "code": "vps",
+      "store": "inventory",
+      "x": 4,
+      "y": 0
+    },
+    {
+      "code": "vps",
+      "store": "inventory",
+      "x": 5,
+      "y": 0
+    }
+  ],
+  "belt_fill": [
+    "rvl",
+    "yps",
+    "wms",
+    "vps"
+  ],
+  "merc": {
+    "id": 6,
+    "seed": 4171,
+    "name": 2,
+    "exp": 62208000,
+    "dead": false,
+    "items": [
+      {
+        "code": "vou",
+        "equip": "rarm"
+      },
+      {
+        "code": "brs",
+        "equip": "tors"
+      },
+      {
+        "code": "hlm",
+        "equip": "head"
+      }
+    ]
+  },
+  "quests": "all"
+}
