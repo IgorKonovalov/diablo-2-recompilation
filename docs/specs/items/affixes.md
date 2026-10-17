@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/quality, items/uniques-sets, data/excel]
 consumed_by: [items/properties, items/vendors, items/cube, save/d2s]
-tags: {C: 112, I: 45, L: 4}
-updated: 2026-10-16
+tags: {C: 112, I: 46, L: 4}
+updated: 2026-10-17
 ---
 
 # Affixes: alvl, magic and rare picks, automagic, and the other builders
@@ -585,8 +585,12 @@ I4.   u ← low % 100 after one Step
       t' ← max(t', 1); on a low-quality item t' ← min(t', 4)
 I5.   up to 6 tries, one Step each:
         skill ← low % 5 + (t' − 1) × 5 + first
-        accept if not a repeat and (Skills[skill].itypea1 is empty or the item is of that type)
-      if all 6 fail: keep the last skill drawn
+        if skill < 0 or skill ≥ the skill count or skill has no record:
+          skip the type test                                                ; straight to the repeat test
+        else if Skills[skill].itypea1 ≥ 1 and the item is not of that type:
+          reject
+        accept if skill differs from the three stored skills
+      if all 6 fail: write the last skill drawn, and do not store it for the repeat test
 I6.   unless the item is a low-quality expansion item:
         v ← low % 100 + bonus ÷ 2 after one Step; level ← 3 if v ≥ 90, 2 if v ≥ 60, else 1
       set stat 107 (item_singleskill), layer skill, to that level
@@ -599,6 +603,11 @@ Step notes:
   tbl:Skills.txt:charclass, run:2026-10-14-affixes, [Skills § Class blocks](../../tables/Skills.md#class-blocks))
 - I2–I6. Every `low % k` uses the unsigned low word; all draws are on the item seed. [I]
   (fn:sub_005C0F90_StaffModsRoll@0x005C0F90)
+- I5. The acceptance test is re-read in the disassembly: a skill index below 0 (`js`), at or past the skill count, or
+  with no record skips the type test and goes to the repeat test, so the decompile's grouping was right. `itypea1` is
+  the s16 at `+0x18`; a value below 1 accepts any item. The 6-try fallback was not reached. [I] (0x005C1121–0x005C1165,
+  fn:sub_005C0F90_StaffModsRoll@0x005C0F90, tbl:Skills.txt:itypea1,
+  [items/0005 § Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16))
 - I1. The classic body `sub_005C0D70_StaffModsRollV0` (item version 0 only) has no bonus, tier 4 at most, a try loop
   that runs until a non-repeat other than 0x49, and an unconditional level draw. [I]
   (fn:sub_005C0D70_StaffModsRollV0@0x005C0D70)
@@ -861,9 +870,9 @@ A single candidate still costs both draws. [C] (run:2026-10-14-affixes)
   the charm.
 - [L] **Automagic and `spawnable`.** The pick passes `needSpawnable` 0, but every stock `automagic` row has
   `spawnable` 1; ruled unreachable with stock data (plan 0021 Phase 1 review). Only modded data would show it.
-- [L] **The staff-mods skill test** (§ I5) was read from a decompile whose condition grouping is awkward (an
-  out-of-range skill index also reads as accepted). It needs a re-read in the disassembly at 0x005C1125, or the
-  model of `items/properties`, before § I can be reproduced. Class 0 (`ama`) `firstSkill` was not logged.
+- ~~**The staff-mods skill test** (§ I5) was read from a decompile whose condition grouping is awkward.~~ Re-read in
+  the disassembly at 0x005C1121–0x005C1165 and modelled ([items/0005 § Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16));
+  § I5 now gives it (plan 0039 Phase 2). [L] Class 0 (`ama`) `firstSkill` was not logged.
 - [L] **The automagic `class_affix` in a save** (record + 1) was not checked: no session wrote a save. `save/d2s`.
 - ~~The stitch with [items/properties](properties.md)~~ closed on the existing runs (*Inputs and oracles*): the
   join-to-automagic gap is covered on run:2026-10-14-props and run:2026-10-14-props-forced, and ~~one creation checked
