@@ -49,7 +49,7 @@ Lane runs (agent usage, review verdicts, fix counts by category) are logged in t
 | [0041](0041-stats-and-states.md) | Stats and states: how a unit's final stats add up, and how timed states live and die (ADR-0014 phase 2) | in progress | P0 accepted with fixes 2026-10-16; P1/1b accepted with fixes 2026-10-17 (stats/0001, 0002 all `[I]`; no draws); P2 open, 2 slots (0037·P3 reviewed, ADR-0016 gate met) |
 | [0042](0042-quests-travel.md) | Quests and travel: the quest state machines, waypoints, town portals and level entry | approved | approved 2026-10-16 (owner, unattended); ADR-0017 accepted; P0 reviewed 2026-10-16, P1/1b reviewed 2026-10-17 (accept with fixes); P2 open, 2 slots, owner fallback |
 | [0043](0043-items-economy.md) | Item economy: prices, repair, gold and durability wear | approved | approved 2026-10-16 (owner, unattended); ADR-0017 accepted; P0 reviewed 2026-10-17 (accept with fixes); P1/1b reviewed 2026-10-17 (accept with fixes, `lane/p43r`); P2 open (1 slot) |
-| [0044](0044-multiplayer-branches.md) | Multiplayer branches: the two-client cases of the reviewed specs | approved | approved 2026-10-16 (owner, unattended); ADR-0008 accepted on the port-4000 condition; host and joiner on two non-zero slots; P2 holds both harness lanes |
+| [0044](0044-multiplayer-branches.md) | Multiplayer branches: the two-client cases of the reviewed specs | approved | approved 2026-10-16 (owner, unattended); ADR-0008 accepted on the port-4000 condition; P1 reviewed 2026-10-17 (accept with fixes; multiplayer/0001, 32 cases, 29 stageable); P2 open, both harness lanes on two non-zero slots, gated on the owner's `ufw status` record (human backlog), first step the driver's live test |
 
 ## Run order (unattended queue, set 2026-10-16, plans 0037–0044)
 
