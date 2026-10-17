@@ -1,6 +1,6 @@
 # Plans index
 
-Next free number: **0039**
+Next free number: **0045**
 
 | # | Title | Status | Current phase |
 |---|---|---|---|
@@ -40,26 +40,42 @@ Next free number: **0039**
 | [0034](done/0034-player-creation.md) | Player: new character, starting items, experience and level-up | done | — (closed 2026-10-16; `player/creation` reviewed, C 79 / I 39 / L 6; run:2026-10-16-player, 35 new characters, 269 item copies, 20 level-ups, 0 mismatches; class byte > 7 → reverser backlog) |
 | [0035](done/0035-data-calc.md) | Data: the calc formulas (`*code.bin`, the compiler and the evaluator) | done | — (closed 2026-10-16; `data/calc` reviewed, C 68 / I 67 / L 3; run:2026-10-16-calc, 44 529 evaluations, 0 mismatches, 14/14 stock opcodes; `max`/`rand`/missile reader/item caller → reverser backlog) |
 | [0036](done/0036-human-wiki-readme.md) | A human wiki over the reviewed specs (ADR-0012, not published), and a refreshed main README | done | — (closed 2026-10-16; `docs/wiki/` index plus ten pages over every reviewed spec, README refreshed; two spec rulings → spec-writer backlog) |
-| [0037](0037-combat-formulas.md) | Combat formulas: to-hit, damage, resistances, defences and on-hit effects (first simulation plan, ADR-0014) | in-progress | approved 2026-10-16; P0 accepted 2026-10-16 (ElemTypes, MonMode, PlrMode; combat sections; gate survey `combat`); P1/1b accepted with fixes 2026-10-16 (combat/0001 static `[I]`; `HireableBossDamagePercent` has a reader; mercenary case added); P2 accepted with fixes 2026-10-16 (run:2026-10-16-combat, 15 358 events, 0 mismatches; [C] in combat/0001 § 15; rare-branch shortfalls named); next a 1-slot P2 resume lane (Hell hireling boss percent, open wounds on an act boss) and P3 |
+| [0037](0037-combat-formulas.md) | Combat formulas: to-hit, damage, resistances, defences and on-hit effects (first simulation plan, ADR-0014) | in-progress | approved 2026-10-16; P0 accepted 2026-10-16 (ElemTypes, MonMode, PlrMode; combat sections; gate survey `combat`); P1/1b accepted with fixes 2026-10-16 (combat/0001 static `[I]`; `HireableBossDamagePercent` has a reader; mercenary case added); P2 accepted with fixes 2026-10-16 (run:2026-10-16-combat, 15 358 events, 0 mismatches; [C] in combat/0001 § 15; rare-branch shortfalls named); P3 accepted with fixes 2026-10-16 (specs/combat reviewed, C 173 / I 142 / L 22); next the 1-slot P2 resume lane (Hell hireling boss percent, open wounds on an act boss), the spec re-tag, then P4, now a refresh: the combat wiki page was written ahead and accepted with fixes 2026-10-16 |
 | [0038](0038-inferred-claims-sweep.md) | Inferred-claims sweep: which `[I]` in the reviewed specs one more run, a re-check of kept logs or a static second source raises to `[C]` | approved | approved 2026-10-16 (owner, unattended); **P0 accepted** 2026-10-16 (with fixes; [batch list](0038-inventory/README.md#5-batch-list)); P1 static batches any time; P2 harness batches in the slots 0037·P2 leaves free; P3 re-tag after 0036·P2 |
+| [0039](0039-backlog-sweep-4.md) | Backlog sweep 4: the static loose ends and the open questions a reading settles | approved | approved 2026-10-16 (owner, unattended); no slot (P0 archivist, P1a–c static, P2 spec) |
+| [0040](0040-drlg-room-lifecycle.md) | Room lifecycle: activation, release, the inactive-unit restore and the wanderers | approved | approved 2026-10-16 (owner, unattended); P1/1b static, P2 1 slot (2 allowed), P3 spec |
+| [0041](0041-stats-and-states.md) | Stats and states: how a unit's final stats add up, and how timed states live and die (ADR-0014 phase 2) | approved | approved 2026-10-16 (owner, unattended); ADR-0016 accepted: P0/P1 now; P2 up to 2 slots after 0037·P3 is reviewed |
+| [0042](0042-quests-travel.md) | Quests and travel: the quest state machines, waypoints, town portals and level entry | approved | approved 2026-10-16 (owner, unattended); ADR-0017 accepted; P2 up to 2 slots, owner fallback |
+| [0043](0043-items-economy.md) | Item economy: prices, repair, gold and durability wear | approved | approved 2026-10-16 (owner, unattended); ADR-0017 accepted; P2 1 slot |
+| [0044](0044-multiplayer-branches.md) | Multiplayer branches: the two-client cases of the reviewed specs | approved | approved 2026-10-16 (owner, unattended); ADR-0008 accepted on the port-4000 condition; host and joiner on two non-zero slots; P2 holds both harness lanes |
 
-## Run order (unattended queue, set 2026-10-15)
+## Run order (unattended queue, set 2026-10-16, plans 0037–0044)
 
-The owner approved plans 0027–0036 together, to run without them. Phases with the human owner are gone: plan 0020
-Phase 4 is agent-driven, with owner play as the fallback. Each lane takes the first phase of its queue whose
-prerequisites have landed. A lane that finishes a phase files its review request in the backlog and moves on; the
-architect reviews in landing order. Harness budget: 3–4 slots (ADR-0011), and since 2026-10-15 at most two harness lanes at once (OOM). Give every harness phase its slots in the
-prompt.
+This table replaces the 2026-10-15 table, whose plans (0027–0036) are all done; that table is in git history. The
+paragraphs on plans 0037 and 0038 below still hold. Each lane takes the first phase of its queue whose prerequisites
+have landed and whose gate is open; a lane that finishes a phase files its review request in the backlog and moves on;
+the architect reviews in landing order.
+
+**Limits** (memory, 2026-10-15 and 2026-10-16): at most **two harness lanes** at once, each on its own slot from 1 to 8
+(slot 0 is the owner's); at most **two static Ghidra lanes** (`-Xmx3G` each); replays under `MemoryMax=4G`. Give every harness
+phase its slots in the prompt.
+
+**Gates** (owner, 2026-10-16: plans 0039–0044 approved to run unattended; ADR-0016, ADR-0017 and ADR-0008 accepted).
+0041's P0 and P1/1b may start now; its P2 waits for 0037·P3's review (ADR-0016). 0042 and 0043 are open (ADR-0017).
+0044·P2 runs only after its lane has made TCP port 4000 unreachable from outside loopback, or confirmed it already is,
+and recorded how in the run record (the owner's condition on ADR-0008); host and joiner on two non-zero slots. A phase
+whose prerequisite has not landed is skipped, not waited on: the lane takes the next phase it can run.
 
 | Lane | Queue, in order | Notes |
 |---|---|---|
-| **architect** | reviews of 0038 batches as they land | 0038·P0 accepted 2026-10-16; its review fixed the batch list and the first batches ([inventory § 7](0038-inventory/README.md#7-priority-order)). |
-| **archivist** (no slots) | 0027·P1 → 0029·P0 → 0030·P0 → 0031·P0 → 0033·P0 → 0034·P0 → 0032·P0 → 0035·P0 → 0036·P0 → 0037·P0 | 0027·P1 first: its `tbk` fix unblocks 0030 and 0032's cow recipes. Each table phase regenerates the `excel_layout` baseline; merge one at a time. |
-| **reverser, static** (Ghidra; parallel copies allowed) | 0027·P2 → 0029·P1/1b → 0030·P1/1b → 0031·P1/1b → 0033·P1/1b → 0034·P1/1b → 0032·P1/1b → 0035·P1 → 0037·P1/1b; 0038·P1 (S4a ∥ S2a first, then the Phase 0 order) | A P1 needs its P0's table doc only for column names; it can start before P0 merges if the lane reads the `.txt` header. 0038's static batches take no slot and run in parallel copies beside any other phase. |
-| **reverser, harness** (slots) | 0020·P4 · 0027·P3 · 0028·P1 → 0029·P2 → 0030·P2 → 0031·P2 → 0033·P2 → 0032·P2 → 0034·P2 → 0035·P2 → 0037·P2 ‖ 0038·P2 (the accepted Phase 0 order: H5c ∥ H4b first) | The first three are independent, so give them separate slots. 0038·P2 runs only in what 0037·P2 leaves free: never more than two harness lanes in total. 0031·P2 lands the `d2pilot.py npc` action, which 0033·P2 and 0032·P2 need. 0030·P2 needs 0029's socket model. |
-| **spec-writer** | 0028·P2 · 0027·P4 · each plan's spec phase after its P2 → 0036·P1 → 0036·P2 → 0037·P3 · 0038·P3 (per cluster, once its batches are accepted) | 0036 runs over whatever is `reviewed` when it starts. 0038·P3 and 0037·P3 merge monsters/stats, player/creation and data/calc one at a time. |
-
-Earlier suggested orders (plans 0021–0026) are superseded by this table.
+| **architect** | reviews in landing order: S2c, 0037·P2 resume, 0037·P3, then each phase below | H4b reviewed and merged 2026-10-16. The owner's decisions are recorded under *Gates*. |
+| **archivist** (no slots) | 0039·P0 → 0041·P0 → 0042·P0 → 0043·P0 | Each table phase that changes a layout regenerates the `excel_layout` baseline; merge one at a time. 0042·P0's quest saves load in the first free slot or at the start of 0042·P2. |
+| **reverser, static lane A** (Ghidra 1) | 0038: S2c (in flight) → S3b → S1a → S1e → S1f (if the S1e review accepts it) → then lane B's queue | The 0038 order is the inventory's § 7. |
+| **reverser, static lane B** (Ghidra 2) | 0039·P1a → 0040·P1/1b → 0039·P1b → 0041·P1/1b → 0039·P1c → 0042·P1/1b → 0043·P1/1b → 0044·P1 | 0039's batches fill the gaps while a plan's P1 waits for its gate. 0039·P1a's B11 (b) is the S1f precondition: run it before S1f if lane A gets there first. |
+| **reverser, harness lane H1** (one slot) | 0037·P2 resume (running) → 0040·P2 → 0041·P2 → 0042·P2 → 0043·P2; while none of these is ready, the next 0038 batch of lane H2's queue | A new plan's P2 starts when its P1 review has landed. A P2 granted two slots takes lane H2's slot when its current batch ends, and 0038 pauses until it gives the slot back. |
+| **reverser, harness lane H2** (one slot) | 0038 § 7 (H4b done): H5e (assigned) → H5a → H5b → H6d → H2a → H2b → H5d → H6e2 → H1b → H6e1 → H6b → H6f → H6a → H3b → H4a → H6c → H6g → H1a → H2c | Batches of one logger family run one after another (§ 7). The plan 0038 Phase 2 leftovers (backlog 2026-10-16) ride on the next session that loads their logger. |
+| **two-client** (both lanes' slots together) | 0044·P2 | Runs only when both lanes are free: lane H1 between two plan phases and lane H2 between two 0038 batches. |
+| **spec-writer** | 0037·P3 (lane open) → 0038·P3 per cluster → 0037·P4 (wiki page, after the 0037 re-tag) → 0039·P2 → 0040·P3 → 0041·P3 → 0042·P3 → 0043·P3 → 0044·P3 | Specs edited by two phases (monsters/stats, player/creation, data/calc, objects, drlg/*) merge one at a time, the earlier plan's first. |
 
 **Plan 0037 (added 2026-10-16, ADR-0014).** The owner's order is plan 0032 (Phase 2, then its spec), then plan 0036,
 then 0037. No lane starts a 0037 phase before 0036 closes, even when its own queue is empty. 0037·P2 takes at most two

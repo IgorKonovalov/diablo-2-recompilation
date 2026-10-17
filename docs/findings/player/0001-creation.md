@@ -634,6 +634,45 @@ kills 32: stat 85 0, XP_Compute's return = the value after XP_ApplyExpRatio in 3
   client act is `N − 1` under `-act N` and 0 otherwise. (fn:D2S_ReadHeader@0x0056A090, run:2026-10-16-player) **Remainder
   `[I]`:** that the value comes through `g_StartAct` (`0x0052FB97`), which no line logs.
 
+## Plan 0038 batch S3b (2026-10-16)
+
+Static batch S3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 3 inferred statements of
+[player/creation](../../specs/player/creation.md), rows of [the inventory](../../plans/0038-inventory/player-creation.md) (spec
+lines `Lnnn` at `main` `7df5039`). No game ran. The check is `python3 -I tools/sweep_s3b.py player`: objdump pins of the
+pinned image (the second tool) and the stock `experience` and `charstats` tables, `.txt` and `.bin`.
+
+```
+S3B player addskill_sites=12 charstats_records=7 charstats_repeat_or_attack=0 pins=25 ratio_max=1024 ratio_rows=100
+  Experience row 0 (MaxLvl) per class [Amazon .. Assassin]: 99 each; ExpRatio 10
+  ExpRatio rows 100, values 5 .. 1024; shift count (r >> 10) + 10 per row: {11: 70, 10: 30}; with r = 0 above MaxLvl: 10
+  experience.bin: row 0 [99, 99, 99, 99, 99, 99, 99], ExpRatio of row 0 10, 101 rows
+```
+
+- **player/creation 16** (L259) **reclassified a-run, H6g** (proposed in inventory § 2.6). The raise branch, re-read with
+  objdump: `SKILLS_AddSkill` walks the list for an entry with the same Skills record and item reference −1 (0x00647167,
+  0x0064716B); on a match it compares the entry's level (`+0x28`) with `SKILLS_GetMaxLevel` (Skills `+0x12C`, 20 when
+  that cell is ≤ 0; 0x004AA8CD, 0x004AA8D9) and adds 1 when below (0x0064724F–0x0064725E). New detail, `[I]`: for a
+  monster unit (type 1) the entry is raised also at or above the maximum (`cmp [unit], 1` at 0x00647256). No stock
+  creation reaches the branch: no CharStats record repeats a skill in `Skill 1..10` or names Attack, which
+  `SKILLS_InitPlayerSkills` adds only when absent (0 of 7 records). The branch is reached in stock play by the skill-point
+  path: `GetStat(5 newskills)`, `AddStat(5, −cost)`, `SKILLS_AddSkill` on the same skill (0x005700FF–0x0057011A), which
+  no kept log covers. **Route:** spend two points on one class skill under `player.gdb` (an `AddSkill` line with the
+  entry's level before and after), and, with H6g's level-98 save, one skill to its maximum.
+  (fn:SKILLS_AddSkill@0x00647110, fn:SKILLS_GetMaxLevel@0x004AA8B0, struct:CharStatsRec+0xAE)
+- **player/creation 21** (L366) **raised.** [C] `MaxLvl(class)` is row 0, column `c` of the experience table, with `c` 0
+  for a class outside 0..6: `ExpMaxLevel` reads `[g_pExperience + 4c]` (0x00611854; column 0 at 0x00611847). Second code
+  path: `EXP_LevelFromExp` loads the same cell with the same clamp as its loop bound (0x00611885, `cmp eax, esi` at
+  0x00611895), and that function is `[C]` by run:2026-10-16-player (levels 1–98 from the total experience); `EXP_GetRatio`
+  compares `L` with row 0, column 0 (0x00613E81). Data: row 0 (`MaxLvl`) holds 99 for all seven classes in the `.txt`
+  and the `.bin`. (fn:sub_00611830_ExpMaxLevel@0x00611830, fn:EXP_LevelFromExp@0x00611860, fn:EXP_GetRatio@0x00613E60,
+  data:g_pExperience@0x0096C8A8, tbl:Experience.txt:Amazon, run:2026-10-16-player)
+- **player/creation 36** (L605) **raised.** [C] With stock data the shift count of G4's overflow bound is 10 or 11. Data
+  behaviour over every row: `ExpRatio` takes 31 values from 5 to 1024 in the 100 level rows and is 10 in row 0, so
+  `(r >> 10) + 10` is 11 for the 70 rows with 1024 and 10 for the other 30, and 10 for `r` = 0 (a level above `MaxLvl`).
+  The count is computed as read: `sar edx, cl` then `add edx, eax` (0x0057E3B9, 0x0057E3C1), used by `sar ebx, cl` on
+  `0x7FFFFFFF` (0x0057E3C5), after the `1 ≤ s ≤ 31` test (0x0057E3B0). (fn:XP_ApplyExpRatio@0x0057E390,
+  tbl:Experience.txt:ExpRatio)
+
 ## Open questions
 
 - Which UI path sets status bit `0x20` for classes 0–4 in an expansion game, and bit `0x40` (ladder): the stub only

@@ -223,6 +223,53 @@ for (g = 0; g < nGems; g++) {
   sites sit in client code on other structures. Records reached through a cached pointer (unit → monster data →
   record) are not covered by this window: that is the limit of the padding claims.
 
+## Plan 0038 batch S1b (2026-10-16)
+
+Static batch S1b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the compiler rows of
+[inventory data-excel](../../plans/0038-inventory/data-excel.md). No session was played; method and log manifest as in
+[data/0001 § Plan 0038 batch S1b](0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16). The checks are
+`python3 -I tools/sweep_s1b.py compile` and `survey`. Where a statement above is tagged inferred and this section
+raises it, the tag and the second source given here are the current ones.
+
+**The compiler's own output.** In run:2026-10-15-cube-saves the pinned game compiled every table under `-direct -txt`.
+88 of the 90 `.bin` it wrote are byte-identical to the shipped files; `cubemain.bin` is the probe's own table and
+`monstats.bin` differs in two bytes. `excel_bin.py survey` explains every cell of the shipped tables (66 laid-out
+tables, 11 434 records, 848 353 cells, 0 unexplained, 2 explained) and of the game-compiled ones (0 unexplained, 1
+explained). So the survey's cell rules are now checked against this binary's compile, not only against files someone
+else compiled.
+
+- **The `Lilith` question (Open questions) answered.** The two differing `monstats.bin` bytes are record 707
+  (`uberandariel`) `NameStr` at `+0x006`: the game compiled 11154 (`patchstring` entry 1154, `Lilith`), the shipped
+  file holds 5382. So the converter rule holds for this cell too: the pinned compiler, given this install's string
+  tables, stores the key's index. The shipped `monstats.bin` was compiled against string tables without `Lilith`; that
+  part stays an inference about how the file was made. [C] for the converter on this cell
+  (fn:STRTABLE_KeyToIndex@0x006117B0, run:2026-10-15-cube-saves). The survey's one explained exception is gone on the
+  compiled tables.
+- **data/excel row 55** (spec L571, the `deu`/`fra` `string.tbl` have fewer entries; the stored indices are the English
+  ones) **raised.** [C] `deu` and `fra` `string.tbl` hold 5 322 entries, `eng` 5 391. With the `deu` (or `fra`) tables
+  in place of `eng`, 1 505 (1 506) of the 4 548 string-key cells of the laid-out tables would compile to another index,
+  while the `eng` tables explain all of them: rule 2. (fn:STRTABLE_KeyToIndex@0x006117B0)
+- **data/excel row 61** (spec L620, J2c: a code lookup takes ≤ 4 bytes, pads with spaces, stores `FindCode` at the field
+  width) **raised in part.** [C] for the word code lookups, the only width with present cells: 4 549 cells, 475 shorter
+  than 4 characters (padded), 12 longer (cut), all equal in the game-compiled tables. **Remainder d-edit:** the byte
+  (`0x0D`) and dword (`0x0B`) conversions of a present cell; no stock cell has one (their absent-column defaults are J3,
+  `[C]`). (fn:EXCEL_FindCode@0x006BD130)
+- **data/excel row 62** (spec L624, J2d: a name lookup takes ≤ 31 bytes, stores `FindName` at the field width)
+  **raised in part.** [C] for the dword (610 cells) and word (126) name lookups, 11 of them in another case than their
+  key. **Remainder:** the byte width (`0x15`) has no present cell (d-edit); the 31-byte cut has no cell over 31 (S1e's
+  c-emu data-excel row 16). (fn:EXCEL_FindName@0x006BD3C0)
+- **data/excel row 63** (spec L628, J2f: callbacks get `(cell, record, offset, len, row, col)`) **raised in part.** [C]
+  what the callbacks write: the game-compiled records and the four `*code.bin` pools that the calc callbacks build are
+  byte-identical to the shipped ones, so the cell and the record offset reach the callback as the shipped data needs.
+  **Remainder d-none:** the `row` and `col` arguments; no stock output depends on them. (fn:EXCEL_ParseTxt@0x006BD780)
+- **data/excel row 67** (spec L672: the first pass registers keys before any lookup; overflow is fatal; callbacks run in
+  `.txt` column order) **raised in part.** [C] registration before lookup: 442 `monstats` `NextInClass` cells name a
+  later row and resolve, in the game-compiled table. **Remainder d-none:** the overflow fatal (no stock table reaches
+  255/65535), and the callback order (spec J2f–J3: no stock row distinguishes the two orders). (fn:EXCEL_ParseTxt@0x006BD780)
+- **data/excel row 68** (spec L675: the record is zeroed before the parse; the −1 defaults are real writes) **raised.**
+  [C] The no-column and padding bytes listed in § Answer are 0 in every record of the game-compiled files (they are the
+  shipped bytes), and the absent-column −1 defaults (J3, 23 855 cells) are present in them: a write. (fn:EXCEL_ParseTxt@0x006BD780)
+
 ## Data touched
 
 - `fmt:excel-bin#bin` (all laid-out tables), `tbl:Weapons.txt:gemoffset` (`+0x0F0`), `tbl:Levels.txt:LevelName`,

@@ -129,6 +129,23 @@
   become `[C]`. The finding's bit-13 reading ("items created in the session carry it into the save") does not hold for this drop: set at creation, cleared before the save.
   [data/0003](../data/0003-string-tables.md): the crc check, its CRC model and the fatal halt become `[C]`.
 
+- **Addendum 2026-10-16: plan 0038 batch S1a (static, no new session; `tools/sweep_s1a.py` sha256 `c07086a3…`, log manifest `workspace/logs/sweep-s1a-manifest.txt` `18318973…1676`).** The logs above (hashes as recorded) and the
+  71 d2s-io-logged logs of run:2026-10-16-player, re-read together:
+  ```
+  python3 -I tools/sweep_s1a.py writes
+  S1A writes auto_zero=588 bad=0 cf_list_order_hand_first=200 compactsave_0=588 compactsave_1=1372 hand_items=328
+      items=1960 unk_bf_rest_zero=200 writes=200 wsw_nonzero=0
+  python3 -I tools/sweep_s1a.py reads
+  S1A reads bad=0 lfin_after_items=67 loads=104 ritem_auto_zero=252 ritem_nbytes_eq=747 ritem_nbytes_eq_simple=495
+      ritems=747 rstat_values=803 stubs=35 stubs_class56_bit5=8
+  ```
+  Per write: `weapon_set` = client `+0x45C` (0 in all 200), `unk_bf` rest 0 and `0xCF` = client `+0x480`, flags bit 21 =
+  `compactsave`, `has_class` = item data `+0x36` ≠ 0, the hand-slot items after every other top-level item while the
+  earlier serialiser calls of the same write meet them first. Per load: the order header, stats, items, `LoadFinish`;
+  each `RITEM` byte count is the file item's decoded length; `RSTAT` values are the file's. Conclusion:
+  [save/0001 § Plan 0038 batch S1a](0001-d2s-io.md#plan-0038-batch-s1a-2026-10-16) (rows 5, 14, 24, 45, 58, 71, 75, 76,
+  84, 86, 103, 109, 131).
+
 ## run:2026-10-15-acts-3-5-load
 
 - **Question:** (plan 0020 Phase 4, the load test of [save/0002](0002-quest-words.md)) Does a save built with the

@@ -450,9 +450,14 @@ Notes the spec makes a point of:
 - Read from the code only: the `poisonhit` and `always_run_ai` handlers, the halving for will-o'-wisp classes, and
   the `ghostly`/`fanatic`/`possessed`/`berserk` handlers on group members.
 
-To-hit and damage are not creation stats. They are computed at each attack and lie outside this spec's confirmed
-scope ([stats § H](../specs/monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only)). By the code,
-the expansion adds 6.25 % damage per player beyond the first in nightmare and hell only.
+To-hit and damage are not creation stats. They are computed each time the monster enters an attack mode
+([stats § H](../specs/monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only)). The random draws of that
+step are confirmed by the combat run: one draw of 100 for each elemental group of that attack mode whose chance is between 1 and 99, one
+draw of 5 for one element type, and nothing else. The formulas of the values it writes are read from the code only,
+because the combat run took those values as given. By the code, the expansion adds 6.25 % damage per player beyond the
+first in nightmare and hell only, and a `noRatio` class (a summon or pet) ends up with no elemental damage at attack
+time, because its elemental values are written to one place and read from another. The attack itself is on the
+[combat](combat.md) page.
 
 ## Worked examples
 
@@ -532,6 +537,7 @@ Each spec's *Open questions* has the full list: [pool](../specs/monsters/pool.md
 - **Stats:** what a monster re-created from an inactive room keeps, whether a graphics renderer can change the
   floating-point precision of the hit-point rescale, the will-o'-wisp halving, and the unreached branches (`poisonhit`,
   `always_run_ai`, monster equipment, a `MonProp` slot with a chance, more than 8 players, the overflow branches).
+  The formulas of the attack-time to-hit and damage values were not asserted by a run.
 
 ## Where to read more
 

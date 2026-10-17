@@ -22,6 +22,11 @@ and kick; animation timing is ADR-0014 phase (5).
   mismatches as indices of this table's `Code` rows; the 116 `anim` cells and 98 `seqtrans` cells `SQ` store 18,
   which only `Code` gives (`SQ` is no `Token`). (tbl:Skills.txt:anim, tbl:PlrMode.txt:Code)
 - `[C]` `Name` and `Code` are unique; `Token` is not (`GH` three times, rows 4, 18, 19).
+- `[C]` **The pinned game's compile gives the shipped file.** Under `-direct -txt` it writes a `plrmode.bin`
+  byte-identical to the shipped one (shipped in d2exp), so this layout is the one the binary's compiler produces
+  ([experiments § run:2026-10-15-cube-saves, addendum
+  2026-10-16](../formats/experiments.md#addendum-2026-10-16-the-whole-bin-set-the-compile-wrote-plan-0039-a3), plan
+  0039 A3). The `-txt`-only code-list load of the same `.txt` adds no file of its own.
 
 ## Columns
 

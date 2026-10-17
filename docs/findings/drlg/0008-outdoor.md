@@ -1482,6 +1482,74 @@ Not raised:
   So the second visit can never change the result, ties included. Run with exclusive bounds, the 4 `PlaceFar` calls
   (level 2's cave) give 0 mismatches as well. Phase 3 may drop "which only matters for ties". (fn:sub_006744F0_OutPresetPlaceFar@0x006744F0)
 
+## Plan 0038 batch S4b (2026-10-16)
+
+Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory drlg-outdoor](../../plans/0038-inventory/drlg-outdoor.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
+
+- **Row 3** (spec L53) **raised.** [C] All 12 call sites of `PortalObjectCreate` (Ghidra and the raw scan agree) were
+  traced to the level they pass (the 4th stack argument, tested at 0x0056D181). Seven pass constants: 1, 1, 38, 39, 46,
+  121 and 121. Two pass the act's town (`0x0061AB70`), one passes 40, and `0x0054B830` is called only with 40, 75, 103,
+  109 and 109. `0x005A9930` passes Missiles `+0x44` from two missile functions, and that column holds 0, 38 or 128 in all
+  684 records. None is in 133–136 (`sweep_s4b.py portal`). (fn:sub_0056D130_PortalObjectCreate@0x0056D130)
+- **Row 5** (spec L194) **raised.** [C] Under `OutdoorLevelBuild` (543 functions, `OutdoorRoomsCreate` excluded), every
+  operand at `+0x40` or `add reg, 0x40` is one of these: grid3's allocation before the act switch (0x006753E1), a
+  LvlPrest `Files` read (0x00674380, 0x00674386, 0x00667490, 0x0067F502), or C runtime code. `OutdoorRoomsCreate` reads
+  grid3 through the grid getter (0x00675201) and passes it on (`sweep_s4b.py grid3`). The def grid, grid0 and the cell
+  grid are the ones the outdoor run reproduced. (fn:sub_00675360_OutdoorLevelBuild@0x00675360,
+  fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, run:2026-10-15-drlg-outdoor)
+- **Row 19** (spec L1290) **raised.** [C] There is no immediate 852–856 in the 543 functions under the generators. No
+  16-bit value 852–856 lies within 0x800 bytes of any of the 342 data addresses they name, and the five records have
+  `LevelId` 0, so no by-level lookup finds them. The `defs` grids of all 532 logged outdoor windows (30 levels, level 108
+  20 times) hold none (`sweep_s4b.py defs`). Level 107, whose presets 852–854 are, is a maze. (fn:sub_0067E840_OutA4DiabloGrid@0x0067E840,
+  run:2026-10-15-drlg-outdoor)
+
+## Plan 0039 batch P1a (2026-10-16)
+
+Row Q9 of [plan 0039](../../plans/0039-backlog-sweep-4.md).
+
+- [I] **Adjacency node `+0xC` is written once, to 0.** The border-adjacency nodes (`O+0x264` lists) are made only by
+  `sub_0066B790_LevelAdjAdd`, called from `LevelBorderAdj` (0x00677671, 0x0067770F). It allocates 0x18 bytes and writes
+  `+0x00` the neighbour level, `+0x04` the side, `+0x08` the flag its caller computes (`neighbour+0x00 == 2`, the
+  neighbour level's `DrlgType` is preset, 0x00677661), `+0x0C` = 0 (0x0066B7D5), `+0x10` = &neighbour rect (`+0x1C`) and
+  `+0x14` the link, then inserts the node (`0x0066B720`). None of the list's readers (`SeamWarpFlag` 0x006740AE,
+  0x006753FA, 0x0067558E, 0x0067F563, 0x00680D7D) or the insert writes `+0x0C`. So `SeamWarpFlag`'s `+0x0C` test
+  (0x006740FB) always passes, as the model assumes. (fn:sub_0066B790_LevelAdjAdd@0x0066B790,
+  fn:sub_00677680_LevelBorderAdj@0x00677680, fn:sub_00674040_SeamWarpFlag@0x00674040)
+- [I] **The five functions with no caller are dead code.** `0x0067F7A0`, `0x0067DB00`, `0x00675DE0`, `0x00675EB0` and
+  `0x00675F80` have no reference in Ghidra, no `call`/`jmp`/`jcc` to them in a linear disassembly of the whole `.text`,
+  and their addresses do not occur as a 32-bit value anywhere in the file (so no pointer table holds them).
+  (fn:sub_0067F7A0_OutA2OasisPair@0x0067F7A0, fn:sub_0067DB00_GateIfOpen@0x0067DB00,
+  fn:sub_00675DE0_RectBesideA@0x00675DE0, fn:sub_00675EB0_RectBesideB@0x00675EB0, fn:sub_00675F80_RectBeside8@0x00675F80)
+
+## Plan 0038 batch H5e (run:2026-10-16-sweep-mazes)
+
+Batch H5e, record [experiments.md § run:2026-10-16-sweep-mazes](experiments.md#run2026-10-16-sweep-mazes); `python3 -I tools/sweep_h5e.py logs` (`tools/drlg.py gen` with counters; 153 567 checks, 0 mismatches over the six logs). Map seeds chosen offline with the outdoor model
+(`python3 -I tools/sweep_h5e.py scan`, which runs `Act`, `act_links` and `Outdoor` with no log).
+
+- [C] **`BridgeFind` on a non-square Blood Moor.** Every Blood Moor is 12×7 or 7×12 cells, and the ones with flag
+  `0x10` are 12×7, so the row bound `cw − 1` = 11 runs past the 7 rows: the bridge (`Def` 28, file 1) always stands in a
+  row the loop reaches first. Map seed 45: two windows (server and client copies), bridge hub and every road draw
+  matched. The offline scan (map seeds 1–600, three difficulties): flag `0x10` in 564 of 1 800 Blood Moor windows, all 12×7. (fn:sub_0067FC20_A1BridgeFindMid@0x0067FC20,
+  fn:sub_0067FB90_A1BridgeFind@0x0067FB90, run:2026-10-16-sweep-mazes)
+- [C] **The cliff-cave scan, columns outer** (`r & 1` = 1): 6 windows on square 10×10 levels, rows outer 2, all matched.
+  [I] Its swapped bounds would differ from the plain scan only on a non-square level. Among the Act I wilderness levels
+  2–7 only the Blood Moor is non-square in cells (12×7 or 7×12 from the act layout, although its Levels `SizeX/Y` is
+  80 like the others); 3–7 are 10×10 in every seed. The scan ran the cliff-cave scan 3 264 times, every time on a 10×10
+  level, and flag `0x20` (a cliff run in the outline) was set only on levels 4, 5 and 6, never on the Blood Moor
+  (1 800 windows here, and none in the development loop's seeds 1–2 999). That half has no stock observable (d-none),
+  on this evidence; whether the Blood Moor's outline can set `0x20` at all is filed with the static reachability
+  question (H5e review). If it can, the half returns to a-run. (fn:sub_00680200_A1RiverEastAndCave@0x00680200,
+  run:2026-10-16-sweep-mazes)
+- [C] **A failed road search.** Map seed 45, Black Marsh: one road whose IDA search returns none (2 windows); the
+  remaining roads and their jitter draws match. (fn:sub_006817D0_A1PathSearch@0x006817D0, run:2026-10-16-sweep-mazes)
+- [C] **The prisons' fallback scan** places prisons in Frigid Highlands for map seed 312 (2 windows, 2 prisons by
+  scan in each), every draw matched. (fn:sub_0067E240_BarricadePrisons@0x0067E240, run:2026-10-16-sweep-mazes)
+- Shortfall, still `[I]`: a vertex merge in `OutVertsToCells`, a waypoint pass with no free cell, roads with 5 or 6
+  endpoints and an exhausted search pool. None in the six logs, and none in the offline scan of every outdoor level
+  of all five acts (52 200 windows, map seeds 1–600 × three difficulties: 0 of each). They may be unreachable on stock data; that needs a static argument, not
+  more seeds.
+
+
 ## Data touched
 
 - tbl:LvlPrest.txt:Files (the rotation's operand), tbl:LvlPrest.txt:SizeX / tbl:LvlPrest.txt:SizeY (footprints, `/ 8`).

@@ -103,6 +103,12 @@ created three times in a test run and each row below was reproduced.
 | Druid | 15 | 20 | 20 | 25 | 55 | 20 | 84 | 1.5 / 2 / 1 |
 | Assassin | 20 | 20 | 25 | 20 | 50 | 25 | 95 | 2 / 1.5 / 1.25 |
 
+Two more class columns are not read at creation but at every attack
+([player/creation § Reimplementation notes](../specs/player/creation.md#reimplementation-notes)): `ToHitFactor`
+(Amazon 5, Sorceress −15, Necromancer −10, Paladin 20, Barbarian 20, Druid 5, Assassin 15) is added to the base
+attack rating, and is not a bonus in the chance to hit's level term as community pages say; `BlockFactor` is added in
+the block chance. Both are confirmed by the combat run; see the [combat](combat.md) page.
+
 Life, mana and stamina are stored with 8 fraction bits, so a Sorceress's 40 life is held as 10240. Every class
 starts at level 1 with 500 experience needed for level 2 and gets 5 attribute points per level.
 

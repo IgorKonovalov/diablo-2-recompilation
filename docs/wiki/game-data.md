@@ -247,8 +247,9 @@ Some cells hold a [calc formula](../glossary.md) rather than a number: a skill's
 skill description, a missile's synergy, a potion's duration and strength. In the shipped data these are already
 compiled into postfix bytecode, kept in four pools (`skillscode`, `skilldesccode`, `misscode`, `itemscode`), and the
 record stores an offset into its pool, or −1 for a blank cell, which evaluates to 0 (that last step is read from
-the code) ([calc § A](../specs/data/calc.md#a-pools-and-formula-columns)). What the formulas mean in combat is out of the
-project's scope; the spec describes the machine that runs them.
+the code) ([calc § A](../specs/data/calc.md#a-pools-and-formula-columns)). The spec describes the machine that runs the formulas, not
+what each one means. One link to combat is named, from the code: the `ToHitCalc` result of a player skill is the
+attack-rating percent its melee hit passes to the hit test (see the [combat](combat.md) page).
 
 **The code.** Postfix means operands come before their operator: `(lvl < 4) ? lvl : (2+lvl/3)` becomes "lvl, 4, <,
 lvl, 2, lvl, 3, ÷, +, ?:, end" ([calc § B](../specs/data/calc.md#b-the-encoding)). Each step is one opcode byte,

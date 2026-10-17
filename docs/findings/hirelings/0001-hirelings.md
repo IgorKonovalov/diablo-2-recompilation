@@ -671,6 +671,63 @@ merc headers 48: all zero 15, MERC_Create entered 0; name 0 with seed and experi
   **Remainder, d-none:** a header whose seed or experience alone is 0 (a hired mercenary has experience, and a seed of 0 is
   one value in 2³²).
 
+## Plan 0038 batch H4b (run:2026-10-16-sweep-monsters-b)
+
+Harness batch H4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took one row of
+[hirelings](../../specs/hirelings/README.md) ([inventory](../../plans/0038-inventory/hirelings-README.md), row 34).
+
+- **hirelings 34** (L522) **raised.** [C] A hireling gets no player-count bonus: in session 5 of
+  [run:2026-10-16-sweep-monsters-b](../monsters/experiments.md#run2026-10-16-sweep-monsters-b) `/players 8` was typed, the
+  game left with *Save and Exit*, and a second game started in the same process with the setting still 8; the
+  `roguehire` hireling (class 271, `Align` 1) was created with `MonPlayerBonus` record players 1, HP and XP percent 0,
+  which `tools/monstats.py` reproduces. (0x0057396C, fn:sub_00573930_MonPlayerBonus@0x00573930, tbl:MonStats.txt:Align,
+  run:2026-10-16-sweep-monsters-b) Its live stats then are the save's (level 30), not the creation's; the stats model does
+  not cover that load.
+
+## Plan 0038 batch S3b (2026-10-16)
+
+Static batch S3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 2 inferred statements of
+[hirelings](../../specs/hirelings/README.md), rows of [the inventory](../../plans/0038-inventory/hirelings-README.md) (spec lines
+`Lnnn` at `main` `7df5039`). No game ran. The check is `python3 -I tools/sweep_s3b.py hire`: the Hireling table read with
+`tools/hirelings.py`'s loader, objdump pins of the pinned image (the second tool, as ruled at the S4b review), and
+`tools/hirelings.py check` re-run on the 48 logs of run:2026-10-16-hirelings (0 mismatches; addendum under the run in
+[experiments.md](experiments.md#run2026-10-16-hirelings)).
+
+```
+S3B hire bands=120 firstbyid_refs=7 hirelings_check_rc=0 ids=60 pins=19 rows=120 stock_first_zero=0
+         stock_id_ge_256=0 stock_last_le_first=0 walks=7326
+  Version values {0: 60, 100: 60}; Ids 0..29
+  instructions naming g_HirelingFirstById or its bounds: 0x00656175, 0x00656192, 0x0065624D, 0x00656254,
+    0x006562C5, 0x006562DB, 0x00656322
+  stock name ranges (first..last): [(1019, 1039), (1040, 1059), (3411, 3451), (10835, 10901)]
+  tools/hirelings.py check on 48 logs of run:2026-10-16-hirelings: hirelings: 0 mismatches
+```
+
+- **hirelings 7** (L151) **raised.** [C] `GetRecord` returns the row of the Id with the greatest `Level` ≤ `L`, or the
+  Id's first row when `L` is below every band. Data behaviour: in all 60 (version, Id) groups of the stock table (120 rows,
+  `Version` only 0 and 100) the rows stand in strictly increasing `Level` order, and the walk of A3 as `tools/hirelings.py`
+  models it gives exactly that row for all 7 326 inputs tried (both version flags, Ids 0–30, 255 and 256, `L` −5..105).
+  The walk itself is the model that reproduces the 72 `MERC_SetLevel` calls and the 723 `RollEntry` calls of the run.
+  (fn:HIRELING_GetRecord@0x006562F0, tbl:Hireling.txt:Level, run:2026-10-16-hirelings)
+- **hirelings 8** (L154) **raised in part.** [C] The first-row index and the name indices, by writer and reader pairs read
+  with objdump (fn:HIRELING_LoadTable@0x00655720, run:2026-10-16-hirelings; detail and anchors below):
+  - `HIRELING_LoadTable` computes `(Version < 100 ? 0 : 1)·256 + Id` (`cmp word [rec], 0x64; sbb; add 1; shl 8` at
+    0x0065623E–0x00656248), skips `Id` ≥ 256 (0x00656236), and stores the row index only while the slot is still negative
+    (0x0065624D, 0x0065625D), after both halves were set to −1 (0x00656180). `HIRELING_GetRecord` reads the slot at
+    `(vflag ≠ 0)·256 + id` (0x0065631A–0x00656322). Seven instructions in `.text` name the table or its bounds, all in
+    the loader, its unloader (0x006562B0) and `GetRecord`; the run's `GetRecord` model starts from the first row of the
+    (version, Id), and it reproduces every logged call.
+  - The loader writes `+0x114` and `+0x116` from the two `STRTABLE_GetByKey` calls (0x006561CF–0x00656201), and
+    `HIRE_GetNameRange` reads them (0x0057601F, 0x0057602C). The 53 logged hire tables of the run hold the names
+    `first + i` with `first` the string index of `NameFirst` (§ Plan 0038 batch S3a above).
+  (fn:HIRELING_LoadTable@0x00655720, fn:HIRELING_GetRecord@0x006562F0, data:g_HirelingFirstById@0x0096BDD8,
+  fn:HIRE_GetNameRange@0x00575FF0, fn:STRTABLE_GetByKey@0x00524D30, run:2026-10-16-hirelings)
+  **Remainder, d-edit (as routed):** the three fatal branches (`0x816` first index 0, `0x817` last ≤ first, `0x818`
+  `Id` > 255; jumps pinned at 0x0065621C, 0x00656226, 0x00656230). No stock row takes one: every first index is non-zero,
+  every last is above its first, every `Id` is below 30.
+- Not a claim of the spec, recorded for the reader: the writer indexes by `Version > 99`, the reader compares `Version`
+  with exactly 100 or 0. On stock data (only 0 and 100) the two agree.
+
 ## Open questions
 
 - Which MonStats-derived fields (velocity, mana, other stats that `MERC_SetLevel` does not set) survive from

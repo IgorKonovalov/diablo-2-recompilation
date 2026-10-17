@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/affixes
 > **Question:** Once an item's quality is settled (or a builder has fallen back), which `MagicPrefix`, `MagicSuffix`, `RarePrefix`, `RareSuffix` and `AutoMagic` rows does it get, and in which draw order on the item seed?
-> **Date:** 2026-10-14   **Plan:** 0021 (Phase 1, Phase 1b)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14, three contradictions with `src:arreat-summit-magic-items` and one with `src:d2dfg-blizzard`; Phase 2 bit-exact reproduction run:2026-10-14-affixes, 3 102 creations, 0 mismatches; plan 0038 batch S2b, 2026-10-16: `ITEMS_RollStaffMods` modelled with no oracle over 105 stock rolls, 9 statements raised and 8 in part (after the S2b review), 2 reclassified, [§ Plan 0038 batch S2b](#plan-0038-batch-s2b-2026-10-16))
+> **Date:** 2026-10-14   **Plan:** 0021 (Phase 1, Phase 1b)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14, three contradictions with `src:arreat-summit-magic-items` and one with `src:d2dfg-blizzard`; Phase 2 bit-exact reproduction run:2026-10-14-affixes, 3 102 creations, 0 mismatches; plan 0038 batch S2b, 2026-10-16: `ITEMS_RollStaffMods` modelled with no oracle over 105 stock rolls, 9 statements raised and 8 in part (after the S2b review), 2 reclassified, [§ Plan 0038 batch S2b](#plan-0038-batch-s2b-2026-10-16); plan 0038 batch S2c, 2026-10-16: 2 statements raised and 1 in part, [§ Plan 0038 batch S2c](#plan-0038-batch-s2c-2026-10-16))
 
 Names of structs and fields are ours. As in [items/0004](0004-uniques-sets.md): "record" is the 0x84-byte creation
 record (`struct:ItemCreateRec`), "item seed" is the item-data seed at `ItemData+0x04` (not the unit seed at
@@ -957,6 +957,35 @@ oracle. The default stays the oracle (ADR-0004 switch).
 - 2 reclassified to d-none (aff 7, 16).
 
 Symbols: `ITEMS_RollStaffMods` and `sub_005C0F90_StaffModsRoll` I → C.
+
+## Plan 0038 batch S2c (2026-10-16)
+
+Static batch S2c of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took three inferred statements of
+[items/affixes](../../specs/items/affixes.md), rows 2, 11 and 14 of [the inventory](../../plans/0038-inventory/items-affixes.md).
+The checks are `tools/sweep_s2c.py cube` (it runs `tools/cube.py`'s model per transmute and records every forced pick
+with its row's level window) and `props` (reports `workspace/logs/sweep-s2c-*.txt`). The batch's other ledgers are in
+[items/0008 § Plan 0038 batch S2c](0008-cube.md#plan-0038-batch-s2c-2026-10-16) and the sections it links.
+
+- **aff 2** (L67) **raised.** [C] Vendors, gambling, the cube and imbue reach the same builders: the affix model
+  reproduces the vendors' 8 787 chained creations (run:2026-10-15-vendors), the cube's 140 (12 picks with a forced id;
+  run:2026-10-15-cube) and the 17 imbued rares (`tools/items_chain.py affixes`, run:2026-10-16-quest-drops).
+  (fn:ITEMS_PickMagicAffix@0x005C1560, struct:ItemCreateRec+0x68)
+- **aff 11** (L275) **raised.** [C] The 12 forced picks of run:2026-10-15-cube (rows 6–10, 17, 18, 19) take the
+  forced row with the roll draw only: the item seed after each pick is the model's with no weighted draw.
+  (0x005C180B–0x005C181B, run:2026-10-15-cube)
+- **aff 14** (L331) **raised in part.** [C] A forced row that passes the other tests is returned with no draw 2 (aff
+  11), and on the drop path `forcedId` is 0 (C4i). (fn:ITEMS_PickMagicAffix@0x005C1560, run:2026-10-15-cube)
+  **Remainder → a-run, H6a:** "skips only the level window". All 12
+  forced picks lie inside their rows' windows (alvl 28–50 against levels 6–42), so the run does not decide it; stock
+  data reaches the case once, cube row 17 on a magic tower shield (alvl 19 at output ilvl 30, *of Spikes* level 21;
+  items/0008 § Plan 0038 batch S2c, cube 58).
+- **aff 27, remainder cited** (not an S2c row; S2b review point 5). The false return of the low builder for a base
+  that is neither weapon nor armour is logged once on stock data: run:2026-10-15-cube, `cube-cowopen-s1-3071.log`
+  transmute 5, a Token of Absolution whose quality-0 roll gave 1; `ITEMS_BuildLowPick` failed and the normal fallback
+  followed, reproduced (items/0008 § 8.1). One case decides it: a successful low build would have left a low-quality
+  item. (fn:ITEMS_BuildLowPick@0x005C2D40, run:2026-10-15-cube) Proposed for the review as `[C]` for that branch.
+  **S2c review (2026-10-16): accepted.** The branch is decided by the base's class alone, the reading names it, and
+  the logged case is reproduced through the fallback, so one case is decisive; aff 27 is now raised in full.
 
 ## Data touched
 

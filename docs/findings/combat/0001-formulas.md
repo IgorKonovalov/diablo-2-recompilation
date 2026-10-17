@@ -495,9 +495,10 @@ In order, `(game, attacker; defender, doReductions, packet)`:
    `flags & 0x80`, then event 2 `damagedbymissile` on the defender (only when `flags & 0x20`). Each event runs the
    unit's handlers newest first (`UNIT_AddEvent` pushes at the head). (0x0057C7A5–0x0057C7F3, fn:UNIT_AddEvent@0x005C0AD0)
 4. [I] `phys = min(phys, HP)`; `COMBAT_Leech` (§ 9); for a monster attacker with a hit, `0x005A4390`; `absorbHeal` to
-   the defender (`UNIT_AddLifeCapped`, not when dead or under state 92); **HP −= total**, 0 when the result is below
-   256; mana `−= manaSteal` and stamina `−= stamSteal` on the defender (each 0 when below 256); stun; cold; freeze;
-   poison; burn. (0x0057C7F8–0x0057C8D8)
+   the defender (`UNIT_AddLifeCapped`, not when dead or under state 92); **HP −= total** only when `total > 0`
+   (`test edi, edi` / `jle` at 0x0057C855–0x0057C857, named at the Phase 3 review), 0 when the result is below 256;
+   mana `−= manaSteal` and stamina `−= stamSteal` on the defender (each 0 when below 256); stun; cold; freeze; poison;
+   burn. (0x0057C7F8–0x0057C8D8)
 5. [I] HP ≤ 0 → `result |= 2`; else clear 2 and, for a monster defender hit with `total ≠ 0`, reschedule its
    regeneration when stat 74 ≠ 0 and call `0x005D6410`. Killed and not `result & 0x20` → event 10 `killed` on the
    defender, event 9 `kill` on the attacker. (0x0057C8DD–0x0057C970)
@@ -524,7 +525,8 @@ In order, `(game, attacker; defender, doReductions, packet)`:
   return), −50 otherwise; a monster with `ce < 0` divides the length by `MonsterColdDivisor`; length ≥ 1; state 11
   until `frame + length` with stats 67, 68, 69 = `ce` (a longer chill extends, a shorter one does not shorten); then
   **one draw on the defender's seed**: `r < 20` and a monster without MonStats2 flag (`0x004638A0`) → state 107
-  (shatter) on, else off. (fn:COMBAT_ApplyCold@0x0057AF80, 0x0057B00D, tbl:MonStats.txt:coldeffect,
+  (shatter) on, else off. (fn:COMBAT_ApplyCold@0x0057AF80, 0x0057B00D the divisor read, 0x0057B0FA–0x0057B124 the draw
+  and the 20 test, tbl:MonStats.txt:coldeffect,
   tbl:DifficultyLevels.txt:MonsterColdDivisor)
 - [I] **Freeze** (`COMBAT_ApplyFreeze`): a player, a boss, a unique (`0x08`) or a hireling gets **cold** instead (with
   the same length); a monster under state 54 nothing; others need `coldeffect < 0`, length `/= MonsterFreezeDivisor`,
@@ -733,8 +735,8 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
   src:arreat-summit-character-basics holds as read. Oracle: the player's percent (`THV`, mastery included).
   (fn:COMBAT_ToHitRoll@0x0057D9B0, fn:sub_00622560_PlayerBaseToHit@0x00622560, run:2026-10-16-combat)
 - [C] **Shield block** (§ 4): the player's chance `((dex − 15)·(stat 20 + BlockFactor)) / (2·max(lvl, 1))` capped at 75
-  in an expansion game (2 523 events) and `stat 20 + BlockFactor` in classic (395), `/3` for a moving player not
-  walking (26), the monster's `stat 20`, one draw on the defender's seed. Oracles: `UnitBlockChance`'s shield test and
+  in an expansion game (2 523 events) and `stat 20 + BlockFactor` in classic (395), the monster's `stat 20`, one draw
+  on the defender's seed (the `/3` for a moving player is in the last bullet). Oracles: `UnitBlockChance`'s shield test and
   `UnitIsMoving`. Evade, weapon block, dodge and avoid stay `[I]` (no event). (fn:COMBAT_DefenceRoll@0x0057DFB0,
   fn:sub_00622720_UnitBlockChance@0x00622720, run:2026-10-16-combat)
 - [C] **The damage build** (§ 5): the physical roll (min/max, `+ stat 111`, enhanced damage with the weapon's
@@ -794,8 +796,10 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
   2026-10-16, counts after the resume addendum). Each passed with 0 mismatches and stays `[I]` until a later run reaches
   the floor: crushing blow `k` = 8 on an act boss (28) and superuniques (22), and champions (0 labelled); the negative
   absorbed amount that heals nothing (4); the resistance cap reached for cold and lightning (27, 17; the cap formula
-  itself is `[C]` above). Not reached at all: open wounds on a player, evade, weapon block, dodge, avoid, magic at the
-  cap or immune, conversion, freeze, pierce, flat absorb, PvP 17 % and 25 %, the player's tick.
+  itself is `[C]` above); the block `/3` for a moving player not walking and the running player's hit without a roll
+  (the same 26 events in the first run; moved here at the Phase 3 review, ruling (a)); a total ≤ 0 leaving life
+  unchanged (25 in the first run). Not reached at all: open wounds on a player, evade, weapon block, dodge, avoid,
+  magic at the cap or immune, conversion, freeze, pierce, flat absorb, PvP 17 % and 25 %, the player's tick.
   (fn:COMBAT_Absorb@0x0057BF10, fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat)
 
 ## Boundary recommendation for Phase 2

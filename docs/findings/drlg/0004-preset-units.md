@@ -576,6 +576,53 @@ Reclassified:
   the 2043 DS1 files `lvlprest.bin` names. No type-1 entry sits in a DS1 below version 5, and no type-2 entry is below
   version 6, at id ≥ 150 or `0x23D`, or maps to −1.
 
+## Plan 0038 batch S4b (2026-10-16)
+
+Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory drlg-preset](../../plans/0038-inventory/drlg-preset.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
+
+- **Row 3** (spec L87) **raised.** [C] `LevelIsTown` is a byte table (0x006426C8, ids 1–109) selecting one of two
+  jump targets. Decoded over every input, it returns 1 exactly for 1, 40, 75, 103 and 109 (`sweep_s4b.py data`), and its
+  callers `DRLG_RoomNoPopNearTown` and `OBJ_PopulateGate` are `[C]` on the logged runs. (fn:sub_006426A0_LevelIsTown@0x006426A0,
+  fn:DRLG_RoomNoPopNearTown@0x0066BD50, fn:OBJ_PopulateGate@0x00552560)
+- **Row 6, first statement** (spec L146) **raised.** [C] Both rewrite branches first test `id < nMonStats`
+  (0x00665CC0, 0x00665CFC), and SuperUnique and MonPlace ids are mapped to `nMonStats + k` (0x00665C8E, 0x00665CA9),
+  so they cannot match. The logged instance lists keep such units unchanged and are reproduced. This is a consistency
+  check: the claim is itself the invariance. (fn:DS1_Parse@0x00665950, run:2026-10-15-acts-3-5)
+- **Row 6, second statement** (`MONSTATS_ValidId` is a range check) **reclassified (c-emu)**, proposed for S1f: a
+  pure 8-instruction function (0x004E6C50–0x004E6C67) whose map is best shown under the emulator.
+- **Row 8** (spec L155) **raised in part.** [C] Path points are 12 bytes `(action, x, y)`: the 4736 points logged as
+  12-byte records (actions 1–5) are in the instance lists the preset runs reproduce. (fn:sub_006660B0_PresetPathCopy@0x006660B0,
+  run:2026-10-13-drlg-preset) **Remainder, d-none:** "action 1 below version 15", since no shipped DS1 below version 15
+  has a path point (2272 files parsed; the 17 with points are all version 15 or later).
+- **Row 11** (spec L292) **raised.** [C] The seven names are the table cells: MonStats `Id` of rows 204, 205, 371 and 372,
+  and MonPlace `code` of rows 33–35 (`sweep_s4b.py data`). (tbl:MonStats.txt:hcIdx, tbl:MonPlace.txt:code)
+- **Rows 21 and 37** (spec L439, L526) **raised in part.** [C] `0x0054F490` and the instantiation are objects/0001 § 8's
+  (`OBJ_PresetPseudoDispatch`, `[C]`). The `+0x167` bit `0x40` is Objects `SubClass` bit 6, the waypoint flag. The scan
+  turns it into room bit `0x30000`, which drlg/0007 D1 predicts in 21728 rooms. (fn:OBJ_PresetPseudoDispatch@0x0054F490,
+  fn:DRLG_PresetMapScan@0x00667970, run:2026-10-15-drlg-maze) **Remainder:** the owner named for the bit-0x40 mark is
+  drlg/warps, not objects. Phase 3 rewords it.
+- **Row 27** (spec L478) **shortfall, contradicted.** A reader of the `0x80000` room bit exists.
+  `sub_0066BA70_RoomIsOutdoors` returns 1 for an out room (type 1) and `flags & 0x80000` for a preset room (type 2)
+  (0x0066BA80–0x0066BA83). It is reached through `sub_0061AA40_DungeonRoomIsOutdoors`, called at 0x00460EEA (client) and
+  0x005DD9A1 (server). [I] `Outdoors` therefore marks a preset room as outdoors for that test. (fn:sub_0066BA70_RoomIsOutdoors@0x0066BA70,
+  fn:sub_0061AA40_DungeonRoomIsOutdoors@0x0061AA40)
+- **Row 29** (spec L480) **raised in part.** [C] `+0x024` is 0 in all 1091 `lvlprest` records (`sweep_s4b.py data`).
+  **Remainder `[I]`:** the period meaning (0 means 80, read at 0x00666D80 only).
+- **Row 33** (spec L505) **raised in part.** [C] The flood is drlg/0005 § G's (`LogicRegionsFromDs1`, `[C]`), and the
+  spawn read is monsters/0002's (`LogicRegionIdAt` predicted, run:2026-10-14-collision). (fn:sub_0066D110_LogicRegionsFromDs1@0x0066D110)
+  **Remainder `[I]`:** the client cut-away (presentation).
+- **Row 34** (spec L509) **raised in part.** [C] All three scan outputs are confirmed by their reader: the slot bits, the
+  `+0x2C` points and the waypoint bits (drlg/0007 D1, 21728 rooms). (fn:DRLG_PresetMapScan@0x00667970, run:2026-10-15-drlg-maze)
+  **Remainder:** as rows 21 and 37, the object marks belong to drlg/warps.
+- **Row 36** (spec L519) **shortfall.** Bounding the reads of a DS1 struct's `+0x48`/`+0x4C`/`+0x50` needs a data-flow
+  trace from `DS1_LoadCached`'s five callers, which neither tool gives. (fn:sub_006704E0_LvlSubLoadDs1@0x006704E0)
+- **Row 39** (spec L531) **raised.** [C] The style 30–33 cells become level `+0x2C` points in drlg/0007 D1, a block
+  tagged `[C]` on run:2026-10-15-drlg-maze. (fn:DRLG_PresetMapScan@0x00667970, run:2026-10-15-drlg-maze)
+- **Row 41** (spec L630) **raised.** [C] The shared files are cut the same way in every view. `tri_town4` is a preset
+  level both times (43 × 48, the 8 × 8 split), `lake1` is an 8 × 8 outdoor preset (one room), and the Maggot Lair files
+  are 10 × 10 maze rooms in levels 62–64, whose LvlMaze size is 10 × 10, so the single-room test always takes them whole
+  (`sweep_s4b.py data`). (0x0066814D, 0x00673AAF, 0x006751EB, tbl:LvlMaze.txt:SizeX)
+
 ## Plan 0038 batch H5c (run:2026-10-16-sweep-roomk)
 
 Batch H5c, record [experiments.md § run:2026-10-16-sweep-roomk](experiments.md#run2026-10-16-sweep-roomk); `tools/drlg.py roomk`, 0 mismatches.
@@ -586,6 +633,87 @@ Batch H5c, record [experiments.md § run:2026-10-16-sweep-roomk](experiments.md#
 - [C] **`HiddenWarpTilesAdd` sets `0x800000`.** Its calls (HWF, `0x0066E37E`) match the model's hidden-warp cells room by
   room (25 rooms), and each of those rooms has `0x800000` at the TINIT exit; in 17 the bit was not set before the
   build. (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-16-sweep-roomk)
+
+## Plan 0039 batch P1a (2026-10-16)
+
+Rows B4, Q10 and Q11 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Q13 (a cell that is a border of one view and
+interior to another) is already answered in § Shared DS1 buffers (`0x84`).
+
+### B4: the `Def`s each generator reaches, by caller
+
+- [C] **Three callers create a preset instance.** `sub_00666ED0_PresetInstanceCreate` is called only from
+  `sub_00668100_PresetLevelBuild` (0x00668129), `sub_00673A60_MazeLevelRooms` (0x00673A7E) and
+  `sub_006750F0_OutdoorRoomsCreate` (0x006751C9) (xrefs; no other call or pointer). Every `PIC` line of the 180 kept logs
+  that carry it (89 357 lines) returns to one of the three. (fn:sub_00666ED0_PresetInstanceCreate@0x00666ED0,
+  fn:sub_00668100_PresetLevelBuild@0x00668100, fn:sub_00673A60_MazeLevelRooms@0x00673A60,
+  fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0)
+- [C] **The logged `Def`s, by caller**, against the archivist's data-only kind (LvlPrest § Survey by generator kind)
+  (fn:sub_00666ED0_PresetInstanceCreate@0x00666ED0, run:2026-10-16-sweep-roomk):
+
+  | data kind (records) | `PresetLevelBuild` | `MazeLevelRooms` | `OutdoorRoomsCreate` | both | never logged |
+  |---|---:|---:|---:|---:|---:|
+  | preset level (35) | 18 | — | — | — | 17 |
+  | maze room (603) | — | 513 | — | — | 90 |
+  | outdoor cell (357) | — | — | 295 | — | 62 |
+  | maze or outdoor (93) | — | 30 | 60 | 1 | 2 |
+  | no file (3) | — | — | — | — | 3 |
+
+  917 distinct `Def`s were logged. No record of one data kind was logged from the other kinds' caller, so the data-only
+  kinds hold wherever a run reached them. Of the 93 records the survey left "maze or outdoor": 769–782, 784–794 and
+  852–856 are maze rooms; 605–658 and 857–862 are outdoor cells; 836 is placed by both (it is `MAZE_DEF_BASE` of level
+  type 28 itself, one below its rotation range, and also an outdoor anchor); 783 and 795 were never logged.
+  (run:2026-10-15-drlg-maze, run:2026-10-15-drlg-outdoor, run:2026-10-16-sweep-roomk, fn:sub_00666ED0_PresetInstanceCreate@0x00666ED0,
+  fn:sub_0061F0E0_LvlPrestByLevel@0x0061F0E0)
+- [I] Where each caller's `Def` comes from: `PresetLevelBuild` the first record whose `LevelId` is the level
+  (`sub_0061F0E0_LvlPrestByLevel`, a linear search, 0x00668112); `MazeLevelRooms` each maze room's `+0x00` (drlg/0006); `OutdoorRoomsCreate` the outdoor cell's preset (drlg/0008). The
+  never-logged records are left as they are: a full static list needs the maze specials' and the outdoor tables' `Def`
+  constants, which drlg/0006 and drlg/0008 hold per generator.
+
+### Q10: who reads the room flag `0x80000` (`Outdoors`)
+
+- [I] Answered at plan 0038 S4b (§ Plan 0038 batch S4b): `sub_0066BA70_RoomIsOutdoors` reads it, through
+  `sub_0061AA40_DungeonRoomIsOutdoors`. Its two callers (fn:sub_0061AA40_DungeonRoomIsOutdoors@0x0061AA40):
+  - client, `sub_00460E70_ClientRoomChange` (0x00460EEA): when the player's room changes (global `0x007A5260`), it passes
+    the result to `sub_00473C90_ClientSetOutdoors`, which only stores it in `0x007A8A10`; no instruction reads that global
+    by its address, so its use is not found (presentation; the `Outdoors` lighting lead stays `[L]`);
+  - server, `0x005DD7F0` (0x005DD9A1), a walk in the skill code: an outdoors room ends it with `[ebp−0xC]` = 0. Not read
+    further (skills are out of scope).
+
+  (fn:sub_0066BA70_RoomIsOutdoors@0x0066BA70, fn:sub_0061AA40_DungeonRoomIsOutdoors@0x0061AA40,
+  fn:sub_00460E70_ClientRoomChange@0x00460E70, fn:sub_00473C90_ClientSetOutdoors@0x00473C90)
+
+### Q11: level 17's preset room data `+0xF0` has no live reader
+
+- [I] **Correction of the trigger.** `sub_00666990_L17WallPointsRecord` is called from `PresetRoomTilesBuild` only when the
+  room's level is 17 (`cmp [level+0x1D0], 0x11`, 0x00666DE6), not by `Def`. It scans the room's wall layer 0 (preset
+  data `+0x10`) for cells whose **main index** is 10 and sub-index 23–27 (`shr 0x14 & 0x3F` = 10 at 0x006669F3; the earlier
+  "orientation-10" reading is wrong) and records up to six points `(x·5 + 2, y·5 + 2)` in subtiles at `+0xF0`, the count
+  at `+0xF4`. It makes no draw. (fn:sub_00666990_L17WallPointsRecord@0x00666990, fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0)
+- [I] **Nothing consumes the points.** The only reader of `+0xF0`/`+0xF4` besides the free (`0x006665D2`) is the getter
+  `sub_00666A80_PresetRoomL17Points` (type-2 rooms only), whose only caller is the Dungeon wrapper
+  `sub_0061AD10_DungeonRoomL17Points` (0x0061AD20). That wrapper has no call, no jump and no 32-bit pointer to it anywhere
+  in the file, so the list is built and freed but never read. The extra grid that `Def` 1 and 108 build (room-tiles
+  step 7b) is a separate, zero-filled grid. (fn:sub_00666A80_PresetRoomL17Points@0x00666A80,
+  fn:sub_0061AD10_DungeonRoomL17Points@0x0061AD10)
+
+## Plan 0038 batch H5e (run:2026-10-16-sweep-mazes)
+
+Batch H5e, record [experiments.md § run:2026-10-16-sweep-mazes](experiments.md#run2026-10-16-sweep-mazes); `python3 -I tools/sweep_h5e.py logs` (`tools/drlg.py gen` with counters; 153 567 checks, 0 mismatches over the six logs).
+
+- [C] **The centre monster** (step 4a). Blood Moor instances of `Def` 4–7 with file index 3 get MonStats 266 at the
+  instance centre, mode 1, prepended after the rolls: 4 instance lists after `PresetRoomLoadDs1` (map seed 45, `Def`
+  7, both copies; map seed 9, `Def` 5, both copies) equal the model's, and the room seeds around them are unchanged
+  (no draw). (fn:sub_006664A0_PresetCentreMonster@0x006664A0, run:2026-10-16-sweep-mazes)
+- [C] **Client river objects of `Def` 3, 28 and 300**: `Def` 3 (Town Transition S, map seed 9) 1 list, `Def` 28 (the
+  bridge, Blood Moor and Black Marsh) 4, `Def` 300 (Tristram, through the Cairn Stones portal) 1, each equal to the
+  model's list on the client copy. (fn:DRLG_PresetClientObjects@0x006663C0, fn:DRLG_PresetRoomLoadDs1@0x00667890,
+  run:2026-10-16-sweep-mazes)
+- Checker fix: `tools/drlg.py gen` forgets a room's modelled unit list when a new DRLG room is linked at the same
+  address (RL). In s1 an Act IV town room's address was reused by a Cold Plains out room, and the old list made one
+  false `RoomPresetUnits` mismatch. The pre-fix gen also gives three in s2 (rooms `0x02E1C700`, `0x02DD5300`,
+  `0x02DD7600`, each linked first in level 103 or 2 and later in another level), so four in all (H5e review).
+- `re/symbols.csv`: `sub_006664A0_PresetCentreMonster` I → C.
+
 
 ## Data touched
 

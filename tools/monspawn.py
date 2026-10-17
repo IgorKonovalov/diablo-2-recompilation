@@ -739,14 +739,44 @@ class Pass:
         self.eq("post-create setup: rs unchanged", mup["rs"], fmt(rsd.t()))
         self.eq("post-create setup: gs unchanged", mup["gs"], fmt(self.gs.t()))
         if not fl & 0x40:
-            self.minions(u["u"])
+            self.minions(u["u"], fl)
         return u["u"]
 
     def near_unit(self, unit, box, cls, a10, rad, fl):
         U = self.units[unit]
         return self.spawn_try(U["room"], box, cls, a10, 0, U["x"], U["y"], rad, fl)
 
-    def minions(self, unit):
+    TENTACLE_XY = None
+
+    def tentacles(self, unit, fl, m1):
+        """plan 0038 batch H4b: MinionsSpawn's BaseId-261 branch (0x005B28C1..0x005B291C) and sub_005B2570 (named
+        TentacleMinionsSpawn in monsters/0002). The count is RandRangeIncl(PartyMin, PartyMax) on the head's seed
+        (0x005B28FA, logged as MMT); o = not(request flags bit 2) (0x005B2903..0x005B290A); the branch steps the head's
+        seed once more, j = low % 6 (unsigned), and places each limb at the head's cell plus row o*6 + j of the
+        offset table 0x006E2CF0 (3 x 6 pairs of i32), j <- (j + 5) % 6, with MonSpawnTry(no box, minion1, a10 1,
+        radius -1, flags 0x40) from the head's room."""
+        t = self.t
+        U = self.units[unit]
+        cls = U["cls"]
+        if Pass.TENTACLE_XY is None:
+            Pass.TENTACLE_XY = struct.unpack("<36i", drlg.exe_read(drlg.DEFAULT_EXE, 0x006E2CF0, 144))
+        lo, hi = t.m(cls, 0x2C, "<B"), t.m(cls, 0x2D, "<B")
+        if lo >= hi:
+            self.guard("I1 lo >= hi: no draw")
+        n = lo if lo >= hi else lo + U["us"].rangeb(hi - lo + 1)
+        mm = self.take("MMT")
+        self.eq("tentacle count", mm["n"], n)
+        self.eq("MMT us", mm["us"], fmt(U["us"].t()))
+        o = (~(fl >> 2)) & 1
+        j = U["us"].step() % 6
+        self.stats["tentacle heads (0x005B2570), o = %d" % o] = self.stats.get("tentacle heads (0x005B2570), o = %d" % o, 0) + 1
+        for _ in range(max(n, 0)):
+            dx, dy = Pass.TENTACLE_XY[2 * (o * 6 + j)], Pass.TENTACLE_XY[2 * (o * 6 + j) + 1]
+            self.spawn_try(U["room"], None, m1, 1, 0, U["x"] + dx, U["y"] + dy, -1, 0x40)
+            self.stats["tentacle limbs created or tried"] = self.stats.get("tentacle limbs created or tried", 0) + 1
+            j = (j + 5) % 6
+
+    def minions(self, unit, fl=0):
         t = self.t
         U = self.units[unit]
         cls = U["cls"]
@@ -755,7 +785,10 @@ class Pass:
         m1 = t.m(cls, 0x26, "<h")
         if t.valid(cls) and 0 <= m1 < len(t.ms):
             if t.m(cls, 0x02, "<h") == 261:
-                raise Mismatch("tentaclehead minions (0x005B2570) not modelled")
+                self.tentacles(unit, fl, m1)            # plan 0038 batch H4b: the separate branch, then the exit
+                mx = self.take("MMX")
+                self.eq("MMX unit, us (tentacle branch)", (mx["unit"], mx["us"]), (unit, fmt(U["us"].t())))
+                return
             lo, hi = t.m(cls, 0x2C, "<B"), t.m(cls, 0x2D, "<B")
             if lo >= hi:
                 self.guard("I1 lo >= hi: no draw")
@@ -1506,12 +1539,43 @@ class Checker:
                 i = end
             elif tag in CLIENT_TAGS:
                 self.client.append((tag, d, ln))
+            elif tag in ("MT0", "MTX", "MC0", "MC"):
+                self.window_cell_test(tag, d, ln, path)
             elif tag == "WND":
                 self.wnd(d)
             elif tag == "PDEAD":
                 self.fail_("%s:%d the dead type-1 branch ran" % (path, ln))
             i += 1
         self.client_check(path)
+
+    def window_cell_test(self, tag, d, ln, path):
+        """plan 0038 batch H4b (spawn 42): a MonSpawnTry outside a pass (the presets window: DS1 preset monsters such
+        as sarcophagi, evil huts and nests) for a class whose BaseId has an offset-cell SpawnClassCellTest: the
+        result is predicted by the collision model on the activation-model grids (the window's own marks are not
+        applied). The request itself stays an oracle there."""
+        st = self.__dict__.setdefault("_win_mt", [])
+        if tag == "MT0":
+            st.append(d)
+        elif tag == "MTX":
+            if st:
+                st.pop()
+        elif tag == "MC0" and st:
+            cls = st[-1]["cls"]
+            b = self.t.m(cls, 0x02, "<h") if self.t.valid(cls) else -1
+            self._win_mc = None
+            if b in collision.CLASS_CELL or b == 298:
+                try:
+                    with self.world.model_state():      # the activation model: there is no pass snapshot here
+                        self._win_mc = (cls, self.world.spawn_class_cell_test(cls, d["room"], d["x"], d["y"], 1))
+                except collision.NotLogged as e:
+                    self.oracle("presets window SpawnClassCellTest (model needs %s)" % str(e).split(" of room")[0])
+        elif tag == "MC" and getattr(self, "_win_mc", None):
+            cls, r = self._win_mc
+            self._win_mc = None
+            self.ok((1 if d["r"] else 0) == r, "%s:%d presets window SpawnClassCellTest class %d: %s, model %d" % (
+                path, ln, cls, d["r"], r))
+            k = "presets window SpawnClassCellTest class %d predicted (result %d)" % (cls, r)
+            self.stats[k] = self.stats.get(k, 0) + 1
 
     def client_check(self, path):
         """The client name roll (sub_004AC870_ClientMonNameBuild): the name seed it receives must be the one the

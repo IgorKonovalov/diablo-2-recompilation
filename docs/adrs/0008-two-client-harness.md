@@ -1,6 +1,6 @@
 # ADR-0008 — Two clients in one game: a second prefix and display, a local TCP/IP game, gdb on the host only
 
-> **Status:** proposed
+> **Status:** accepted (owner, 2026-10-16) on one condition: before any hosting run, the lane makes sure TCP port 4000 cannot be reached from outside loopback (a firewall rule, or a confirmed existing block) and records how in the run record. Host and joiner run on two non-zero slots; slot 0 stays the owner's (ADR-0011 placed the host on slot 0).
 > **Date:** 2026-10-12
 > **Related plan(s):** 0011-two-client-harness (done); used next by 0014 (player-count cases) and `monsters/stats`
 

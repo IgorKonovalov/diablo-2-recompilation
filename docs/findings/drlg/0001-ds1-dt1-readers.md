@@ -444,6 +444,62 @@ The mask lives in the **DRLG room**, not the level: `DRLG_LevelDt1ListBuild` run
   `0x0064BE91`, `0x00665DF1`, `0x00667AE6`) were not tied to a DRLG room; `0x00667AE6` stores an
   allocation into the preset-map record, not a mask. The maze generator's rooms were not traced (fn:DRLG_PresetMapScan@0x00667970).
 
+## Plan 0039 batch P1a (2026-10-16)
+
+Rows B1 and B2 of [plan 0039](../../plans/0039-backlog-sweep-4.md): the cell bits and DS1 sections this finding left
+open, and what loading a `"0"` DT1 name does.
+
+### B1: DS1 cell bits 14–15 and 30
+
+- [I] **Bits 14–15 are the top of the sub-index as the code reads it.** Every reader takes the sub-index as the byte
+  `(cell >> 8) & 0xFF`, bits 8–15: `DRLG_PickTileByRarity` (`shr eax, 8` then `movzx eax, al`, 0x0066D83D/0x0066D848),
+  `RoomCellBuild` (0x0066E9C2), the LvlSub fits and theme masks (`0x3F0FF00`, `0x3F0FF80`) and the animated-tile count
+  (`sub_0066D290_AnimTilesCount`, 0x0066D31B). So a set bit 14 or 15 would select sub-index 64–255 in the DT1 lookup. No stock DS1 sets either bit: the
+  6-bit field at bits 14–19 takes only 0, 4, 8 and 12, i.e. bits 16 and 17 ([ds1.md § Wall, floor and shadow
+  cells](../../formats/ds1.md#wall-floor-and-shadow-cells), `[C]` by data). (fn:DRLG_PickTileByRarity@0x0066D820,
+  fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0, fn:sub_0066FCF0_LvlSubFits@0x0066FCF0)
+- [I] **Bit 30 has no reader.** No test of `0x40000000`, no `shr reg, 0x1E` and no `bt reg, 30` occurs in
+  `0x00600000`–`0x0068FFFF` (the merged DRLG, collision and tile code) except one `shr eax, 0x1E` in the stats code
+  (0x0062585E), and `CellBits` (drlg/0002 § Entry flags) maps bits 2, 3, 7, 16, 17, 26, 28, 29 and 31 only. No stock DS1
+  sets it either (the bits 26–30 field takes 0, 1, 2, 4, 6, 8 and 15). (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20)
+
+### B1: the `LvlSub` side of DS1 (e) and the group `unk`
+
+- [I] **`ApplyPick`, the only stock path, reads the group rectangles only.** `LvlSubApplyPick` reads the DS1's group count
+  (`+0x4C`) and list (`+0x50`), and per group `x, y, w, h`; it never reads the group's `+0x14` (`unk`). All 34 `LvlSub`
+  records have `CheckAll` 0 ([LvlSub](../../tables/LvlSub.md)), so this is the path every stock outdoor room takes.
+  (fn:sub_00670170_LvlSubApplyPick@0x00670170, tbl:LvlSub.txt:CheckAll)
+- [I] **`unk` is a variant count, read only by `ApplyAll`.** For a DS1 with `tag_type` 2, `LvlSubApplyAll` draws
+  `v = Range(room seed, unk)` and stamps the group from the copy `(w + 1)·(v + 1)` cells to its right, so `unk` counts the
+  alternative versions laid out beside the group. A `tag_type` 1 DS1 ignores it. `ApplyAll` runs only for `CheckAll ≠ 0`,
+  so stock data never reaches it. (fn:sub_0066FF50_LvlSubApplyAll@0x0066FF50)
+- [I] **The substitution layer is never viewed.** `LvlSubLoadDs1` makes grid views of the wall and orientation layers,
+  floor layer 0 (0x006705F9) and the shadow layer (0x00670618), not of the substitution layer (DS1 `[18]`).
+  `LvlSubMatches`, `ApplyAll`'s tag-2 test, compares those views with the room's grids. Together with drlg/0004 (a type-2
+  room reads neither), no code path reads substitution cells. (fn:sub_006704E0_LvlSubLoadDs1@0x006704E0,
+  fn:sub_0066FE00_LvlSubMatches@0x0066FE00)
+
+### B2: what loading a `"0"` DT1 name does
+
+- [I] **The load does not stop.** `DRLG_LevelDt1ListBuild` passes the name to `DT1_ListAdd` without a test, which calls
+  `DT1_LoadCached`. That function looks the name up in the DT1 cache and, on a miss, takes the file size through
+  `sub_005FDF80_FileSize`. Its open (`sub_00516E46_FileOpen`) fails for `"0"`, logs `"Error opening file: %s"` through
+  `sub_00410610_LogError` (a log writer, `sub_00410340_LogWrite`, not a fatal) and returns size 0. `DT1_LoadCached` then
+  allocates 0 bytes, opens the file again, reads nothing, and hands the empty buffer to `DT1_Relocate` and
+  `sub_0060A440_Dt1IndexTiles`, which read the DT1 header from it. What those reads find is heap content, so the outcome
+  (a crash, a garbage tile list or an empty one) is **not determinable statically**. (fn:DRLG_LevelDt1ListBuild@0x0066F240,
+  fn:DT1_ListAdd@0x00604A40, fn:DT1_LoadCached@0x00600790, fn:sub_005FDF80_FileSize@0x005FDF80,
+  fn:sub_00516E46_FileOpen@0x00516E46, fn:sub_00410610_LogError@0x00410610, fn:DT1_Relocate@0x0060A390)
+- [I] **No checked stock room has such a bit.** For the 251 `LvlPrest` records whose level type is fixed by the data (a
+  `LevelId`, or a maze rotation range `base+1..base+15`), every set `Dt1Mask` bit names a non-`"0"` `File` of that type;
+  so does every `LvlSub` record's mask against the level types of the outdoor levels that use its `Type` as `SubType`,
+  `SubWaypoint` or `SubShrine`. The outdoor anchors and maze specials outside the rotation ranges are not covered by this
+  check; no logged room list held `"0"` (drlg/0002 § fix F2). (tbl:LvlPrest.txt:Dt1Mask, tbl:LvlSub.txt:Dt1Mask,
+  tbl:LvlTypes.txt:File 1)
+- **B2's other half is stale.** `lvlmaze` `Rooms`/`Rooms(N)`/`Rooms(H)` are the room counts per difficulty, confirmed in
+  [drlg/0006 § Answer](0006-maze.md#answer-summary) (row `+0x04 + 4·difficulty`, reproduced on all three difficulties),
+  and `Merge` is answered there too.
+
 ## Data touched
 
 - tbl:LvlPrest.txt:File1 (`+0x44`, 6 × 0x3C), tbl:LvlPrest.txt:Expansion (`+0x20`), record size 0x1B0.

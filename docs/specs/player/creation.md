@@ -3,8 +3,8 @@ spec: player/creation
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, items/uniques-sets, items/properties, items/affixes, monsters/stats, save/d2s]
-consumed_by: [save/d2s]
-tags: {C: 79, I: 39, L: 5}
+consumed_by: [save/d2s, combat/to-hit]
+tags: {C: 81, I: 39, L: 5}
 updated: 2026-10-16
 ---
 
@@ -65,6 +65,7 @@ flowchart TD
 | tbl:CharStats.txt:LifePerLevel, `ManaPerLevel`, `StaminaPerLevel`, `StatPerLevel` | level-up gains (§ I), quarter points |
 | tbl:CharStats.txt:LifePerVitality, `StaminaPerVitality`, `ManaPerMagic` | attribute spending only (§ J), never at creation |
 | tbl:CharStats.txt:Skill 1, … `Skill 10`, `StartSkill` | skill list and right skill (§ D) |
+| tbl:CharStats.txt:ToHitFactor, `BlockFactor` | not read at creation; read at every attack by [combat/to-hit](../combat/to-hit.md) |
 | tbl:CharStats.txt:item1, `item1loc`, `item1count` … `item10…` | starting items (§ E) |
 | tbl:Experience.txt:ExpRatio and the seven class columns | thresholds, level lookup, gain ratio (§ F, § G) |
 | tbl:ItemTypes.txt:Beltable | belt placement (§ E) |
@@ -604,6 +605,13 @@ the Barbarian has one copy more (the buckler), so only its eighth copy (`isc`) t
 - **`XP_Compute` returns 1, not 0, for a non-positive input**, and 0 at the level cap. [I] (fn:XP_Compute@0x0057E480)
 - With stock `ExpRatio` (≤ 1024) and shift 10, the shift count `(r >> s) + s` of G4 is 10 or 11. [I]
   (fn:XP_ApplyExpRatio@0x0057E390, tbl:Experience.txt:ExpRatio)
+- **`ToHitFactor` is an attack-rating term, not a level bonus.** The class constant (Amazon 5, Sorceress −15,
+  Necromancer −10, Paladin 20, Barbarian 20, Druid 5, Assassin 15) is added to the player's base attack rating
+  `(dex − 7)·5 + stat 19` before the percent, and the chance to hit's level term has no class constant
+  ([combat/to-hit § A](../combat/to-hit.md#a-the-chance-to-hit-combat_tohitroll)). This contradicts
+  src:arreat-summit-character-basics. [C] (fn:sub_00622560_PlayerBaseToHit@0x00622560, struct:CharStatsRec+0x3C,
+  run:2026-10-16-combat) `BlockFactor` is added to stat 20 in the block chance. [C]
+  (fn:sub_00622720_UnitBlockChance@0x00622720, run:2026-10-16-combat)
 - **`StatPerLevel` is signed.** It is read as an `i8`; stock data holds 5 for every class. [I] (struct:CharStatsRec+0x50)
 
 ## Evidence

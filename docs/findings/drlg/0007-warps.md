@@ -501,6 +501,18 @@ Not raised:
   one-to-one, and the kept lines cannot say why. Settling it needs a line at `RoomNeighboursEnsure` (`0x0066C370`): its
   room, its bits, each `WarpPairLink` call and its outcome. That is H5c's logger work.
 
+## Plan 0038 batch S4b (2026-10-16)
+
+Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory drlg-warps](../../plans/0038-inventory/drlg-warps.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
+
+- **Row 7** (spec L252) **raised.** [C] The table at 0x006F0750 is in `.rdata`, 16 bytes per slot `{fn, level, anchor,
+  dir}`. The loop compares slot `+8` (the anchor) with the checked slot's anchor (0x00676E44). For Burial Grounds
+  (slot 4, level 17, anchor 1), slot 5's anchor is −1 and slots 6–14 hold 0, so slots 5–14 can never match
+  (`sweep_s4b.py data`). (fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0)
+- **Row 20** (spec L464) **shortfall.** `g_pLvlWarp` is referenced only by its loader and two accessors. `0x0061F310`
+  returns a row index, so the client reaches the records through a pointer that was not traced. The four columns'
+  offsets (`+0x04`–`+0x10`) are too generic for an operand scan. Stays `[I]`. (fn:sub_0045B1E0_WarpSelectBoxDraw@0x0045B1E0)
+
 ## Plan 0038 batch H5c (run:2026-10-16-sweep-roomk)
 
 Batch H5c, record [experiments.md § run:2026-10-16-sweep-roomk](experiments.md#run2026-10-16-sweep-roomk); `tools/drlg.py roomk`, 0 mismatches.
@@ -517,6 +529,66 @@ Batch H5c, record [experiments.md § run:2026-10-16-sweep-roomk](experiments.md#
   `+0x2C` is 0 on a room's first activation **and** after `sub_00643060_LevelUnloadCheck` cleared the neighbour lists of
   the rooms of the levels linked to one it unloads (`0x006431C0`), so a room can be ensured again (1 case).
   (fn:sub_0066C370_RoomNeighboursEnsure@0x0066C370, fn:sub_0066C220_WarpPairLink@0x0066C220, run:2026-10-16-sweep-roomk)
+
+## Plan 0039 batch P1a (2026-10-16)
+
+Rows B11 (a) and Q14 of [plan 0039](../../plans/0039-backlog-sweep-4.md).
+
+### B11 (a): `RoomNeighboursEnsure` skips level 133
+
+- [I] **Correction to § 2's 133 → 17 bullet.** `RoomNeighboursEnsure` tests the room's level before each pairing: for every
+  warp bit `0x10 << slot` of `+0x28` (slot order, mask `0xFF0`), it calls `WarpPairLink` only when
+  `[room+0x58]+0x1D0` ≠ `0x85` (0x0066C39B). So a room of Matron's Den (133) never pairs and never marks, whatever its
+  `Warp`. § 2's "the pairing code [does] not test the level" holds for `WarpPairLink` itself, not for its caller. The
+  133 → 17 link therefore has no pairing at all; what using its warp does stays open. Level 133 is not reached in the
+  runs, so this stays `[I]`. (fn:sub_0066C370_RoomNeighboursEnsure@0x0066C370, fn:sub_0066C220_WarpPairLink@0x0066C220)
+- The F1 bullet of § Plan 0038 batch H5c gains this exception: the per-bit call is skipped for level 133.
+
+### Q14: `WarpPairLink`'s arguments and the marking function `0x0066BDA0`
+
+- [I] **Arguments.** `WarpPairLink(a1, srcRoom, m)` (stdcall, `ret 0xC`): `srcRoom` (`[ebp+0xC]`, fatal if null) and the
+  slot `m` (`[ebp+0x10]`, a byte, fatal if ≥ 8). `a1` is `RoomNeighboursEnsure`'s `ECX`; it is passed on to
+  `WarpPairRoomFind` as its first stack argument, which loads it into `ECX` before calling `0x0066BDA0`, and that function
+  does not read `ECX`. So `a1` has no effect. `WarpPairRoomFind` takes `EAX` = the destination level's room list
+  (`+0x10`), `CL` = the destination slot `j`, `EDX` = `srcRoom`, then `(a1, m, wid)` on the stack.
+  (fn:sub_0066C220_WarpPairLink@0x0066C220, fn:sub_0066BE80_WarpPairRoomFind@0x0066BE80)
+- [I] **`0x0066BDA0` adds a room to the source room's near-room list; it does not mark the destination.**
+  `sub_0066BDA0_RoomNearListAppend(EAX = srcRoom, stack: D)` adds 1 to `srcRoom+0x2C`, reallocates `srcRoom+0x08` to
+  count × 4 bytes (fatal on failure), stores `D` last, and re-sorts the list with `sub_0066BBC0_RoomNearListSort`. The
+  sort is an exchange sort over adjacent pairs `(d, c)` = `(list[i], list[i+1])` that swaps them unless
+  `d.x < c.x + c.w` and `d.y < c.y + c.h` (signed). This is the list that the bit-2 scan, the collision near list and
+  `DUNGEON_NearRoomsBuild` read, so a paired room of the next level becomes a near room of the stairs room.
+  (fn:sub_0066BDA0_RoomNearListAppend@0x0066BDA0, fn:sub_0066BBC0_RoomNearListSort@0x0066BBC0)
+- [I] **The list it extends.** `RoomNeighboursEnsure` first rebuilds it with `sub_0066BC20_RoomNearListBuild`: `+0x2C` = 0,
+  then every room of the same level (`level+0x10`, chain `+0x24`) whose gap to the room is below 6 tiles on both axes,
+  the room itself included (gap negative), sorted as above and copied to a new `+0x08` block. Then `WarpPairLink` appends
+  the paired rooms. (fn:sub_0066BC20_RoomNearListBuild@0x0066BC20, fn:sub_0066C370_RoomNeighboursEnsure@0x0066C370)
+- [I] **The warp node goes on the source room.** With `wid` ≠ −1, `WarpPairRoomFind` appends the first destination room
+  with bit `0x10 << j` and then calls `RoomWarpNodeAdd` with `EDI` = `srcRoom`: the node `{+0x00 D, +0x04 next, +0x08 1,
+  +0x10 LevelWarpRec(src level, m, 'b')}` is prepended to `srcRoom+0x4C`. So the source room's node points at the
+  destination room. With `wid` = −1 every destination room with the bit and a gap below 6 is appended, and no node is
+  made. drlg/warps F1's "it is marked and gets a warp node" should read "it is appended to the source room's near list,
+  and the source room gets a warp node pointing at it". (fn:sub_0066BE10_RoomWarpNodeAdd@0x0066BE10,
+  fn:sub_0066AF50_LevelWarpRec@0x0066AF50)
+- [I] **Units of the `LvlWarp` columns** (fn:sub_0066E1C0_WarpUnitAdd@0x0066E1C0, fn:sub_005550B0_WarpExitPos@0x005550B0).
+  - `OffsetX/OffsetY` are subtiles, relative to the room: `WarpUnitAdd` converts the cell's room-relative tile
+    `(x − R.x, y − R.y)` to subtiles (× 5) and adds `+0x1C`/`+0x20` before `PresetUnitCreate(5, Id, …)`.
+  - `ExitWalkX/ExitWalkY` are subtiles: `WarpExitPos` adds `+0x14`/`+0x18` to the paired warp unit's subtile position
+    (`sub_0045ADF0_UnitGetSubX`, `sub_0045AE20_UnitGetSubY`).
+  - `SelectX/SelectY/SelectDX/SelectDY` are screen pixels: the client converts the unit's subtile position with
+    `sub_00643260_SubtileToScreen` (`X = (x − y)·16`, `Y = (x + y)·8`), subtracts the view origin, adds `SelectX`/`SelectY`
+    for the box corner and uses `SelectDX`/`SelectDY` as its width and height.
+
+  (fn:sub_0066E1C0_WarpUnitAdd@0x0066E1C0, fn:sub_005550B0_WarpExitPos@0x005550B0, fn:sub_0045B1E0_WarpSelectBoxDraw@0x0045B1E0,
+  fn:sub_00643260_SubtileToScreen@0x00643260, tbl:LvlWarp.txt:OffsetX, tbl:LvlWarp.txt:ExitWalkX, tbl:LvlWarp.txt:SelectX)
+- [I] **More than 9 warp points: not in stock data.** `LevelWarpPointsBuild` appends one point per room with `0x30000` or a
+  slot bit whose `LevelWarpId` ≠ −1. Over the kept logs with `LWP` lines (37 logs, 1452 builds of 93 levels), the count
+  equals the number of rooms that qualify by `Levels` `Warp0..7` in every build, no qualifying bit is on two rooms of a
+  build, no build has two waypoint rooms, and the largest count is 8 (Valley of the Kings 46: seven tombs and the
+  waypoint). In the data the most `Warp` ≠ −1 slots of any level is 7 (level 46). The 43 levels the logs miss have at
+  most 3 such slots. A count above 9 would need one slot's warp cells in two rooms of a level. The logs never show it,
+  but no static bound excludes it, which is why this is `[I]`. (fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0,
+  tbl:Levels.txt:Warp0, run:2026-10-15-drlg-maze, run:2026-10-16-sweep-roomk)
 
 ## Data touched
 

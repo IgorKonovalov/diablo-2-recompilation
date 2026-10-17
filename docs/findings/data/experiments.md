@@ -89,6 +89,22 @@
   count. Unreached and still `[I]`: the 500 and 11078 fallbacks and the fatal checks
   ([data/0003 § Open questions](0003-string-tables.md#open-questions), fn:STRTABLE_EntryToString@0x00524930).
 
+- **Addendum 2026-10-16: plan 0038 batch S1b (static, no new session; `tools/sweep_s1b.py` sha256
+  `f0df814a30306bab…`).** The two logs above, sha256 equal to `strings-manifest.txt`, re-read:
+  ```
+  python3 -I tools/sweep_s1b.py strings
+  S1B strings lines=4264 model_mismatches=0 skey_GetStringByKey=906 skey_GEMS_Load=136 skey_LoadRareAffixes=394
+      skey_RUNES_Load=336 getstringbykey_found=886 getstringbykey_not_found=20 gems_logged_keys_distinct=68
+      gems_keys_distinct=68 gems_idx_nonzero=0 rare_logged_keys_distinct=197 rare_keys_logged_by_other_caller=3
+      rare_idx_eq_model=197 runes_logged_keys_distinct=168 runes_duplicated_names=1 key_7f_chars_lost=2
+      keys_walked=8949 logged_dup_keys=3 logged_dup_keys_lowest=3 keys_present_only_under_other_case=0
+      sidx_5382_lines=1 bad=0
+  ```
+  The lines per return address are those of the table loaders the finding names; the gem keys are the `gems.bin`
+  bytes `+0x28..+0x2A`, the rare-name keys the records' names, the rune keys the `runes.bin` names. Conclusion:
+  [data/0003 § Plan 0038 batch S1b](0003-string-tables.md#plan-0038-batch-s1b-2026-10-16) (strings rows 1, 3, 11, 21,
+  31 in part, 33; excel rows 57 in part, 72, 75, 76).
+
 ## run:2026-10-16-calc
 
 - **Question:** (plan 0035 Phase 2) Does the model of `fn:CALC_Eval@0x006C0BC0` in `tools/calc.py` reproduce every
@@ -190,6 +206,34 @@
   the stock pools and 1 188 distinct cells, with the row-only variables, `min`, the row-only `sklvl` and the formula
   links computed. Corroborated (`[C]`) for that scope; the oracles above and the unreached items stay `[I]`.
   (fn:CALC_Eval@0x006C0BC0, [data/0005 § 10](0005-calc.md))
+
+- **Addendum 2026-10-16: plan 0038 batch S1b (static, no new session; `tools/sweep_s1b.py` sha256
+  `f0df814a30306bab…`).** The 14 logs above, sha256 equal to `calc-manifest.txt`, re-read per pool:
+  ```
+  python3 -I tools/sweep_s1b.py calc
+  S1B calc ce_skillscode=14658 ce_skilldesccode=28771 ce_misscode=1044 ce_itemscode=56 (ce_whole_file_* the same)
+      pool_bases_constant=35 pool_bases_varying=0 ra2_misscode_0064B1A4=522 ra2_misscode_0064B274=522
+      ra2_itemscode_005BEE04=21 ra2_itemscode_005BEF16=35 callsite_ok=4 callsite_in_body=4 item_ctx=56
+      item_ctx_unit_is_player=56 item_ctx_word1_distinct=21 image_miss_count=4 image_items_count=4
+      itemuse9_is_timedstate=1 itemuse6_calls_timedstate=1 bad=0
+  ```
+  Every evaluation's function table and count are its pool's, offset + length is the pool file's size, and each
+  logged caller follows a call of the entry point in the function the finding names. Conclusion:
+  [data/0005 § Plan 0038 batch S1b](0005-calc.md#plan-0038-batch-s1b-2026-10-16) (rows 1, 2, 6, 7; 18 and 19 in part)
+  and [data/0001 § Plan 0038 batch S1b](0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16) (excel row 31).
+
+- **Addendum 2026-10-16: plan 0038 batch S1a (static, no new session; `tools/sweep_s1a.py` sha256 `c07086a3…`, log manifest `workspace/logs/sweep-s1a-manifest.txt` `18318973…1676`).** The 14 logs above (sha256 as in
+  `calc-manifest.txt`) and the 14 installed saves (`workspace/scratch-h35p2/Calc*.d2s`, sha256 prefixes as the log headers):
+  ```
+  python3 -I tools/sweep_s1a.py calc
+  S1A calc bad=0 cast_path_evals=5073 cast_skills_hotkeyed=34 cf_shifted_skill_bytes_fail=7 classes_cast_in_slot_order=7
+      hotkeys_empty=56 hotkeys_flagged=0 hotkeys_set=56 level1_extra_evals=68 skills_checked=207 skills_saved_nonzero=187
+      skills_saved_zero=20 skills_without_cells=3
+  ```
+  Hover sessions: each class skill's evaluations run at its saved `if` byte (and the next level), a 0 byte at level 1.
+  Field sessions: every evaluation through a caller absent from the hover sessions is of a hotkeyed skill, first cast in
+  slot order. Conclusion: [save/0001 § Plan 0038 batch S1a](../save/0001-d2s-io.md#plan-0038-batch-s1a-2026-10-16) (rows
+  32, 70).
 
 ## run:2026-10-16-calc-emu
 
