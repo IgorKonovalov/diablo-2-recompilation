@@ -1,8 +1,8 @@
 ---
 based_on:
   - docs/specs/save/d2s.md 2026-10-17
-  - docs/specs/player/creation.md 2026-10-16
-  - docs/specs/hirelings/README.md 2026-10-16
+  - docs/specs/player/creation.md 2026-10-17
+  - docs/specs/hirelings/README.md 2026-10-17
 ---
 
 # Saves: what a `.d2s` file holds
@@ -142,7 +142,9 @@ makes on them are read from the code:
 
 A new character is first written as a header-only [stub](../glossary.md) with bit 0 set; how the game then builds the
 character is on the [characters](characters.md) page and in
-[player/creation § A](../specs/player/creation.md#a-the-stub-and-the-servers-checks). Bit 1 is set only by the
+[player/creation § A](../specs/player/creation.md#a-the-stub-and-the-servers-checks). The creation screen sets
+bit 5 for any class in an expansion install unless its "expansion" box is cleared, and toggles bits 2 and 6 with the
+hardcore and ladder boxes (read from the code). Bit 1 is set only by the
 client's character-creation screen and the reader never tests it (read from the code); what that screen means by it is
 unknown.
 
@@ -232,7 +234,9 @@ Each list starts with `JM` and a count ([save/d2s § H](../specs/save/d2s.md#h-i
 - The corpse list holds 0 or 1 corpse, each with its own item list. With more than one corpse, the writer keeps the
   one whose items (gold aside) are worth the most, ties going to the later one. The corpse record's 12 bytes are not
   read back on load, and its first value is whatever the writer's stack held, so a reimplementation may write
-  anything there.
+  anything there. In play a corpse carries three quarters of the experience its death cost, returned to its owner on
+  pickup ([player/creation § J](../specs/player/creation.md#j-other-level-and-experience-changes), read from the
+  code); whether a saved corpse keeps that amount is not known.
 - In an expansion game, `jf` carries the mercenary's items, and `kf` carries one byte and, when the player has an
   Iron Golem holding an item, that item.
 
