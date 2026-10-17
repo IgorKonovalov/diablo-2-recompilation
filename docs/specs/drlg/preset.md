@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/room-tiles]
 consumed_by: [monsters/spawn, monsters/special, objects, drlg/collision, drlg/warps]
-tags: {C: 135, I: 25, L: 2}
+tags: {C: 136, I: 24, L: 2}
 updated: 2026-10-17
 ---
 
@@ -151,7 +151,10 @@ Step notes:
    `id < nMonStats` (`0x00665CC0`, `0x00665CFC`), and SuperUnique and MonPlace ids are mapped to `nMonStats + k`
    (`0x00665C8E`, `0x00665CA9`); the logged instance lists keep such units unchanged and are reproduced. [C]
    (0x00665CB2–0x00665D3E, fn:DS1_Parse@0x00665950, run:2026-10-15-acts-3-5, [drlg/0004 § Plan 0038 batch S4b](../../findings/drlg/0004-preset-units.md#plan-0038-batch-s4b-2026-10-16)) The act-2 comparisons go through `MONSTATS_ValidId`, which returns `id` when
-   `0 ≤ id < nMonStats` and −1 otherwise; it is a range check, not an id table. [I] (fn:MONSTATS_ValidId@0x004E6C50)
+   `0 ≤ id < nMonStats` and −1 otherwise, both compares signed; it is a range check, not an id table. Under emulation
+   (ADR-0015) 2 000 calls with the count and `id` across their edges (0, 1, 733, 734, −1, `INT32_MIN`, `0x7FFFFFFF`)
+   gave exactly that. [C] (fn:MONSTATS_ValidId@0x004E6C50, 0x004E6C52, 0x004E6C5C, run:2026-10-17-sweep-emu2,
+   [drlg/0004 § Plan 0038 batch S1f](../../findings/drlg/0004-preset-units.md#plan-0038-batch-s1f-2026-10-17))
 3. run:2026-10-13-drlg-preset reproduced lists that contained the rewrites 297 → 382 (8 times, act index 2) and
    514 → 461 (10 times, act index 4). run:2026-10-15-acts-3-5 reproduced the other two in rolled instance lists:
    366 → 404 twice (`TravN.ds1`, Travincal, act index 2) and 537 → 476, 538 → 475, 539 → 474 three times each
