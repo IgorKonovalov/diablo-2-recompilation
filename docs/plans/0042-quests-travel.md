@@ -199,3 +199,92 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
      46, whose waypoint has an index) the column is never applied. Levels § Travel restated, `[C]` (134's branch `[I]`).
   Loading the 14 saves stays the first step of Phase 2 (plan 0034 precedent). Phase 0's *Done when* is met but for
   the load; Phase 1 may start.
+- **2026-10-17 — Phase 1 and Phase 1b done (reverser, `lane/p42r`, static).** No game run, no slot; Ghidra on the
+  lane's copy (`ghidra-p42r`), objdump for the instruction-level reads. The quest code was decompiled whole
+  (`[0x00543400, 0x00548200)`, `[0x00586E00, 0x005A0000)`, `[0x005B3000, 0x005BE200)`) and read in four passes (Act I,
+  Act II, Act III, Acts IV–V) beside the core and travel reading; every bit write was checked at the pushed constants of
+  its call (1592 calls of the five record functions scanned; the 353 setter sites the findings cite all match). Findings:
+  [quests/0001](../findings/quests/0001-progression.md) (core § 1–6, per quest § 7–10, draws § 11, creation readers
+  § 12, boundary § 13, function index § 14; 142 `[I]`, no `[C]`; 14 lead verdicts) and
+  [quests/0002](../findings/quests/0002-travel.md) (48 `[I]`, one `[C]` restating drlg/0005's run; 11 lead verdicts);
+  [quests/experiments](../findings/quests/experiments.md) (empty heading). **601 symbols** added (subsystems
+  `quests/progression` and `quests/travel`; about 530 are per-quest callbacks, listed by name in quests/0001 § 14);
+  types in `re/types/quests.h` (`QuestDesc`, `QuestObject`, `QuestControl`, `QuestEvent`, `QuestTimer`, `PlayerTravel`).
+
+  | Done-when item | Answer | Anchor |
+  |---|---|---|
+  | registry | 37 + 4 quest objects (ids 37–40 the NPC introductions, inactive), act, word, init, source file; callbacks e0–e12 at `+0xA0`, first/later join `+0xD4`/`+0xD8`, log state `+0xE8`, NPC gate `+0xEC`, chain `+0xF0`; dispatch runs from object 40 down to row 0 | 0001 § 1 `[I]` |
+  | event kinds | e0 talk start, e2 talk end, e3 level change (old/new level), e4 item placed, e5 item dropped, e8 hooked death (forced for a fixed superunique/boss list), e9/e10 a leaving player, e11 NPC message (packet `0x31`), e13/e14 joins; e1, e6, e7, e12 never raised; timers every 20th frame (period *p* → *p* + 1 boundaries) | 0001 § 2, § 5 `[I]` |
+  | per quest | bit tables with setter, trigger, readers, classic/expansion and difficulty branches, rewards, timers, objects | 0001 § 7–10 `[I]` |
+  | game-wide flags | the game record: bit 13 per quest "this game's step done", bit 15 "creator had it done", word 4 bit 11 the cow portal; the first joiner's finished quests are **deactivated for the game** | 0001 § 3 `[I]` |
+  | rng/seeds fields | act `+0x094` = the true tomb (quest 12's entry step, the join's tomb index, the lair portal pair); `+0x484` maze only; `+0x474` the Kurast gates only; the level-27 bit no quest code | 0001 § 12 `[I]` |
+  | NPC interaction | e11 handlers keyed by `{NPC class, message id}` from packet `0x31`; e0/e2; `NPC_MenuAction`'s imbue, socket, personalise, Hell respec (word 41) and travel; packet `0x58` sets bit 12 (log seen) for any word < 42 | 0001 § 6 `[I]` |
+  | travel | waypoint activation = operate (every click sets the bit; five `Sync` 0 rows draw their seed); travel packet `0x49` (10 000 ms real-time gate); NPC act change (words 6/14/26, moved before the words are written); Durance portal; town portal (item `pSpell` 2, one pair per player, town end at the town's type-11 point, five draws; use: party and `QuestFlag`/`QuestFlagEx` gates, 5000 ms gate, owner closes from the town end); warps (`WarpExitPos`, quest gates into 73, 100, 118/128 from 120, 132); death and join placement; `ActLevelSpot` + `COLL_FindFreeNear` (pseudocode) | 0002 `[I]` |
+  | draws | quest seed: cairn order, eclipse timer, NPC 331 talk, Dark Wanderer, Anya's reward, the Zoo (+ plan 0032's item draws); **player unit seed: NPC 266 and NPC 377 talks**; travel: the destination's level seed on `Position` levels (every point type but 13), the portal pair's game/object/level seeds, the Sync-0 waypoints; all else none | 0001 § 11, 0002 § 10 `[I]` |
+  | creation readers | Hratli InitFns 49/50, InitFn 52, the Tristram portal, Diablo's `+0x13` (Chaos gate), Nihlathak's boss after Anya, the Zoo, the warp gates, the portal quest gate | 0001 § 12 `[I]` |
+  | Phase 0 requests | `QuestFlag`/`QuestFlagEx` read by the portal operate (destination level, bit 0); `Portal` (leveldefs `+0x8C`) no reader found; `OperateFn` 15/23/34/43/46 and `InitFn` 11/12/17/29/44 read; `0x005BCFD0` re-opens the Act III bridge and moves nobody, object 410 is never placed (`DurancePortalOperate` keeps its name); the Meshif and Durance removal branches both ways (below) | 0002 § 5–6, 0001 § 10 |
+
+  **Surprises.** (1) The game creator's finished quests are switched off for everyone in the game. (2) NPC talks draw:
+  NPC 266 and 377 on the player's unit seed, NPC 331 on the quest seed. (3) Every placement on a `Position` level
+  (towns included) steps that level's seed, so waypoint, NPC, portal, death and join arrivals chain with the
+  population pass. (4) Real time: the waypoint 10 s and portal 5 s gates and Diablo's end-of-game timer read
+  `GetTickCount`. (5) Warps out of the Arreat Summit (to 118 and 128) are refused until the Ancients die.
+  (6) The NPC act travel moves the player before it writes the travel words, and NPC 520 (`cain6`) takes a player back
+  to Act IV. (7) Word 33 has no writer; rows 7 and 29 share one init (word 29); row 24's init writes word 16.
+
+  **Phase 1b.** Registered `src:arreat-summit-quest-acts` (Quest Basics, act pages I–V) and
+  `src:arreat-summit-basics-travel` (Basics' waypoint and portal sections, PvP); three other pages refused the fetch.
+  25 verdicts: 6 held, 15 held with refinement, 3 not covered, 1 **contradicted** (the 10-second hostility delay holds
+  for waypoints, the portal gate is 5 s). The contradiction is multiplayer only (no hostility with one client), so it is
+  not a required Phase 2 case; backlog entry for plan 0044.
+
+  **P2 harness questions** (every line logs `game +0xA8`; the saves are Phase 0's in `workspace/runtime/quest-saves-p42/`
+  and plan 0032's; **two slots**: slot A expansion, slot B classic and the Nightmare/Hell runs):
+  1. *Dispatch log:* at `QUESTS_DispatchEvent` / `QUESTS_DispatchUnitEvent` entry the block (`+0x04`–`+0x18`), and at
+     each callback entry the quest id; at every `QUESTRECORD_SetState`/`ClearState` and `GameQuestSet` the record
+     owner, word, bit. The checker predicts each write from the event (0001 § 7–10) and the callback order (object 40
+     → row 0). Saves: `questfresh`, `questfreshc` (classic), `questfreshv`.
+  2. *Join:* at `QuestsPlayerJoin` entry/exit the joiner's record, the game record and each object's `+0x09`/`+0x0A`;
+     predict the deactivations and bit-15 marks. Cases: a `quests: all` creator (`travel-wp1`), a fresh creator
+     (`questfresh`), a creator with word 9 bits 0 and 5 and no `ass` (word 9's clear; a built save).
+  3. *Per quest*, one Normal expansion pass, each step from the Phase 0 recipe nearest it: the e11 message ids and the
+     bits written, the party/near-room credit (one client: the actor and level-wide credit only), and the `Save and
+     Exit` words compared word by word. Ten quests again in Nightmare/Hell; Acts I–IV classic (`questfreshc`): Diablo's
+     classic bits 6/7 and the status raise, the cube and trade refusal after Diablo.
+  4. *Quest-seed draws:* the quest seed in and out of `0x00592E90` (cairn order: ≥ 5 steps, the five classes),
+     `0x0059EDC0` (eclipse period 15–17), `0x0059B1C0` (NPC 331, `mod 3`), `0x005BD390` (Dark Wanderer), `0x00589937`
+     (Anya), `0x0058E830` (the Zoo, 1–10 draws, the `zoo` row); chained pairs ≥ 20 for the NPC 331 talk.
+  5. *Player-seed draws:* the player's unit seed around each talk to NPC 266 (Act I) and NPC 377 (Act II): one step per
+     talk, the branch by G1:13 / word 1; ≥ 20 chained pairs each.
+  6. *Timers:* `QUESTS_TimerAdd` (fn, period, tick) and each run of `QUESTS_TimersRun`; predict run frames
+     (`frame mod 20 = 0`, *p* + 1 boundaries).
+  7. *Creation readers:* InitFn 49/50 (Hratli) both ways of G16:13; InitFn 52; the Tristram class-60 portal when quest
+     4 is inactive (`travel-wp1`); Diablo's `+0x13` at `sub_005B5210_DiabloQuestFlag` with the seal/boss order both
+     ways; the warp gates into 73, 100 and 132, and **120 → 118 refused before the Ancients** (the Phase 1b case); the
+     portal `QuestFlag` gate (needs two players: plan 0044, or logged as unreached).
+  8. *Waypoints (60 activations, 150 travels):* `WaypointOperate` (object mode before/after, record bit), packet `0x49`
+     (tick stamp vs `GetTickCount`), `WaypointTravel` (type 0 or 13), `ActLevelSpot` in/out (level seed `+0x1C4`,
+     point, free cell), `COLL_FindFreeNear` with a collision snapshot; the five `Sync` 0 Act V rows (object seed
+     draws). Saves `travel-wp1`..`5`, `travel-wpnone`, `travel-tab2`, `travel-tab5d`, `travel-arcane`.
+  9. *Act changes (20):* `NPC_MenuAction` action and NPC class, `NpcTravelMove`, `PlayerChangeAct` (both free
+     searches, mask `0x1C89` step 5), the destination level seed, the words and waypoint set after the move, player data
+     `+0x4C` and its clearing. Saves `travel-act2`..`5`; the counter cases (word 10 or 18 already set with `msf`/`vip`
+     or the five Khalim items held: nothing removed).
+  10. *Town portals (60):* `ITEMUSE_TownPortal` (refusal in town and on 136), both `SUnitCreate`s (game seed), both
+      `UNIT_AnimInit` draws (field 25, partner 25), `LevelPointPick` on the town (type 11), the partner's step-5 search;
+      `OBJOP_Portal` both ways (field → town, town → field by the owner: both freed), state 102 for 75 frames, the
+      second scroll closing the first pair; a portal on level 120 resetting the Ancients.
+  11. *Warps (150 level entries):* `WarpExitPos` (paired warp, free cell, `ExitWalkX/Y`), the walk command's
+      `0x0057EEC0` (no draw without state 42).
+  12. *Death and join placement:* packet `0x41` (type 0 in town, level-seed step), `sub_005394A0_PlayerPlaceInAct`.
+
+  **Boundary recommendation:** quests/0001 § 13 and quests/0002 § 11 (event entry points; triggers, dialogue message
+  ids, party, rooms and `GetTickCount` as inputs; spawns, item creation, DRLG builds and room activation as oracles).
+
+  **Points for the review.** (a) Everything is `[I]`; the per-quest tables come from four parallel passes over one
+  decompile, each bit write machine-checked against its call's constants; spot-check a few rows per act. (b) The
+  join's deactivation of the creator's finished quests (0x005462C0–0x0054634A) and the forced-death list. (c) The
+  NPC-talk draws on the player's seed (0x00596B23, 0x0059E1CE) and the six non-item quest-seed sites. (d) The
+  `Position`-level seed step for every point type but 13 extends drlg/0005's `[C]` (type 11) to types 0 and 5 as `[I]`.
+  (e) Real-time gates as inputs. (f) The contradicted lead (portal 5 s) and its reachability. (g) The research-map rows
+  `quests/progression` and `quests/travel` are still to be added (architect).

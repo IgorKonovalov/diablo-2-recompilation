@@ -1244,7 +1244,7 @@ new level at `+0x18`, the player at `+0xC`. So e3 handlers test `+0x18` = level 
   "done in this game" copy and is cleared on load, so a reloaded character passes through bit 0.
 - [I] **Act `+0x474` is not a quest field.** No instruction in 0x005B6C10–0x005BDB20 (all Act III quest code) addresses
   `+0x474`, `+0x094` or `+0x484`; the only readers of act `+0x474` in the image are 0x0067EB0D and 0x0067EC44 (outdoor
-  Kurast gates, drlg/0008 `[C]`). So rng/seeds' Act III bit is a DRLG choice, settled there. (operand scan of the image)
+  Kurast gates, confirmed in drlg/0008). So rng/seeds' Act III bit is a DRLG choice, settled there. (operand scan of the image)
 
 #### Draws (Act III summary)
 
