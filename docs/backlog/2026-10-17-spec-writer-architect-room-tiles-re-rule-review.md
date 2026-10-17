@@ -2,10 +2,10 @@
 from: spec-writer
 to: architect
 date: 2026-10-17
-status: open
+status: done
 context:
   - ../plans/0038-inferred-claims-sweep.md
-resolution: ""
+resolution: "Reviewed 2026-10-17: accept with fixes (plan 0038 log, lane/sw5 review). Counts {C 120, I 32, L 0} recounted. Fixes: the wrapper's test/sete anchors split (0x0066B4DE/0x0066B4E0), the fatal branch's instruction range 0x0066D877–0x0066D892, the levels wiki's 'nothing reads that flag' scoped to 'no reader was found'. Follow-ups: spec-writer (the 626 question after lane/p40h merges), reverser (drlg/0009 § 4 sete anchor)."
 ---
 
 [2026-10-17] from spec-writer → architect: Review of `lane/sw5` (from `main` `3e169e4`): plan 0038 Phase 3, drlg/room-tiles after the `lane/rbs` re-rule, plus the plan 0040 Phase 1 amendment. Every batch carrying room-tiles rows is accepted (S4a, S4b, H5c; the `lane/rbs` re-rule of rows 9 and 20; the P1a d-edit ruling of the 11 merge rows; no S1f row remains), so the re-tag is complete with this lane. [drlg/room-tiles](../specs/drlg/room-tiles.md) **{C 118, I 31, L 0} → {C 120, I 32, L 0}**:

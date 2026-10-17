@@ -340,7 +340,7 @@ flowchart TD
                first, at most 40 in all;  n ← |buf|            ; the cap of 40 is inferred only (§ Constants)
    3b. if n = 0:                                                      [C] (fn:DRLG_PickTileByRarity@0x0066D820, 0x0066D868–0x0066D8A3, run:2026-10-14-collision, run:2026-10-15-objects; step note 3)
          if key (10, 0, 0) has a tile: return it                      ; NO draw
-         else fatal                                                   [I] (fn:DRLG_PickTileByRarity@0x0066D820, fn:sub_0066DC50_RoomTileAdd@0x0066DC50; met in no log)
+         else fatal                                                   [I] (fn:DRLG_PickTileByRarity@0x0066D820, 0x0066D877–0x0066D892, fn:sub_0066DC50_RoomTileAdd@0x0066DC50; met in no log)
    3c. total: i32 ← Σ rarity(buf[i]), wrapping                        [C] (fn:DRLG_PickTileByRarity@0x0066D820, run:2026-10-11-drlg-roomk)
        r: u32 ← 0
        if total > 0:                                                  ; signed
@@ -624,7 +624,7 @@ Step notes:
    activation, so a draw in any of the 1 280 would have moved that room's k). run:2026-10-11-drlg-roomk met none. [C]
    (fn:DRLG_PickTileByRarity@0x0066D820, run:2026-10-14-collision, run:2026-10-15-objects,
    [drlg/0002 § Plan 0038 batch S4b](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4b-2026-10-16)) The fatal branch, where neither the key nor `(10, 0, 0)` has a
-   candidate, was met in no log. [I] (fn:DRLG_PickTileByRarity@0x0066D820, fn:sub_0066DC50_RoomTileAdd@0x0066DC50) Which
+   candidate, was met in no log. [I] (fn:DRLG_PickTileByRarity@0x0066D820, 0x0066D877–0x0066D892, fn:sub_0066DC50_RoomTileAdd@0x0066DC50) Which
    candidate is returned (3d) does not change k: every entry of every activation dump names its tile, and the model's
    choice equals it on 1 852 097 entries, while candidates in file order would differ on 781 380. [C]
    (fn:DRLG_PickTileByRarity@0x0066D820, fn:TILE_GetRarity@0x00604C20, run:2026-10-14-collision,
@@ -845,13 +845,13 @@ logged 1516 releases, compared field by field, and 235 re-activations ([drlg/000
   fn:sub_0067D680_OutRoomGridsFree@0x0067D680, fn:sub_00666610_PresetRoomGridsFree@0x00666610, 0x0061A9D7,
   run:2026-10-16-sweep-roomk)
 - [I] **The `EDX` the wrapper passes.** `ActiveRoomFree` calls the wrapper with `EDX` = the DUNGEON act's `+0x50`, and
-  the wrapper passes its logical negation to `RoomTilesRelease` (`sete` at 0x0066B4DE). On a server release `+0x50` is
+  the wrapper passes its logical negation to `RoomTilesRelease` (`test edx, edx` at 0x0066B4DE, `sete al` at 0x0066B4E0). On a server release `+0x50` is
   0 (`RoomReleaseAllowed` makes any other value fatal), so the tiles release gets `EDX` 1 and sets `0x200000`. In the
   890 nested pairs the inner call gets `EDX` 0, so the client act's `+0x50` is non-zero, and `0x200000` reads
   "released by the server": set on a server release, clear on a client one. No reader of `0x200000` was found (the
   only `+0x28` access with that immediate is the write at 0x0066F232). That the 626 calls with `EDX` ≠ 0 are exactly
   the server releases is not checked against the logs. (fn:sub_0061A910_ActiveRoomFree@0x0061A910,
-  fn:sub_0066B4C0_RoomReleaseWrap@0x0066B4C0, fn:sub_0061A3F0_RoomReleaseAllowed@0x0061A3F0, 0x0061A9D0, 0x0066B4DE,
+  fn:sub_0066B4C0_RoomReleaseWrap@0x0066B4C0, fn:sub_0061A3F0_RoomReleaseAllowed@0x0061A3F0, 0x0061A9D0, 0x0066B4DE–0x0066B4E0,
   0x0066F232, [drlg/0009 § 4](../../findings/drlg/0009-room-lifecycle.md#4-release))
 - [C] The release keeps `0x1000000` (DT1 list), `0x2000000` (DS1 loaded), the neighbour count `R[+0x2C]`
   and the seed base `R[+0x04]`. The next activation (step 1) therefore skips the DT1 list, the DS1 load and

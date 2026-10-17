@@ -326,8 +326,8 @@ activation restarts from the same seed and rebuilds the tiles. A run confirmed t
 re-activations, each rebuilt as the model predicts. k may still differ on the rebuild, because the neighbours
 built at that moment may have changed, and what the first build merged into its neighbours is not undone: of the
 235 re-activations, 183 got the same k as the first build and 52 a different one. Read from the code together with the
-logged counts, the release sets one flag only when the server releases the room, and nothing reads that flag; whether the logged releases that set it
-are exactly the server's has not been checked.
+logged counts, the release sets one flag only when the server releases the room, and no code that reads that flag
+was found; whether the logged releases that set it are exactly the server's has not been checked.
 
 ## What a preset places: units and keep/drop rolls
 
