@@ -308,3 +308,63 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   and forced sockets, and `ce=` can have no effect at all (classic only, where the ethereal roll does not run);
   `immed` is not compiled at all. Spec notes for Phase 2, the archivist entry, a `d2sio.py` follow-up, the plan 0043
   hand-off and the review request are in the backlog.
+- **2026-10-17 — Phase 1 batch P1b reviewed (architect, on `lane/p39b` after merging `main` at `cc59597`). Verdict:
+  accept with fixes (applied in the review commit).**
+  - **Anchors (objdump), 14 checked, 13 hold.** B10: `D2S_WriteStats` 0x00569605 `mov cl,[edi+0xA]`, `jbe` on 0,
+    `cmp cl,0x20; jae` past the clamp, the unsigned branch 0x0056964D–0x00569667 clamps to `[0, 2^bits − 1]` (negative
+    to 0), the signed branch to `[−2^(b−1), 2^(b−1) − 1]`. B7 (c): see below. Q3: 0x006334E4 stores the list at
+    `0x0096CA78`, 0x00633510 `cmp word [rec+0xF6], 0` with stride `0x1A8`; `0x006335A0` bounds and the fatal NULL test;
+    its one `call` at 0x00533310. Q25: 0x0057236C–0x00572370 `[pdata + 4·game+0x6D + 0x60]`; `D2S_WriteCorpses` frame
+    `0x2C`, `[ebp−0x2C]` read at 0x0056994E and accessed nowhere else; 0x0056A343 calls the host-byte setter. B12:
+    0x0055814F `quest`, 0x0055815E stat `0x164`, `jle` on `Game+0x6D`, no `+0x12B` test on the cursor branch, the
+    inventory branch tests `+0x12B` at 0x005581BC. B9: 0x0063087E `RUNEWORD_Match` → `+0x82` or `0xFFFF`; 0x0062D1EA
+    stores the read bits at `ItemData+0x38`. B8: 0x0048C8AA `0x6B6`, arguments `[ebp−0x17D8]`, `[ebp−0xFD8]`, NULL.
+    Q19: 26 `call 0x58F030` in `.text`; 0x005A0C94–0x005A0CA6 as stated. Q21 bit 17: both readers (0x00542031,
+    0x005A6861, load then `shr 0x11`) hold, no `test`/byte form elsewhere; **the writers do not**: `or [reg+0xC4],
+    0x20000` occurs 21 times, not five.
+  - **B10 log check re-run** (the review's own script over `tools/d2s.py`, under `systemd-run … MemoryMax=4G python3
+    -I`): the 14 logs match their manifest; 26 writes, 364 entries; with the code's rule (no clamp for `CSvBits` 0 or
+    ≥ 32) every entry is predicted, and the 10 that differ from the base are the stated ones (stat 6 in `LvBarD`/`LvPalD`,
+    stat 8 in the three Sorceress logs, two writes each). The 6 entries a naive 32-bit clamp gets wrong are stat 13
+    (experience, `CSvBits` 32, a negative s32 base), which the code does not clamp. `[C]` holds.
+  - **Ruling 1, B10 `[C]`: accepted.** Code plus 364 logged entries, reproduced here; reversing the backlog's "the base
+    is lower" is correct (the base carries the item bonuses). Precision added: the range is `[0, 2^bits − 1]` and
+    applies for 0 < `CSvBits` < 32 (§ 4 already said so).
+  - **Ruling 2, B7 (c) without a kept script: an objdump re-check is enough.** The review replayed the stores
+    independently (its own 60-line scratch script: register constants plus `[ebp−X]` writes from 0x00618100 to the
+    `DATATBLS_LoadTable` call): 70 entries ending in `end`, `attred` entry 12 = type `0x1A`, bit `0xA`, field `+0x10`,
+    `group` type 3 at `+0x1E`, `rfred`/`rcred`/`rlred` = `0x1A`/`0x1B`/`0x1C`, no `immed` entry. Two independent replays
+    agreeing is what a kept tool would give; `[I]` stays (one kind of evidence). No tool is required; if plan 0041 or a
+    later table phase needs more stack-built descriptors, the archivist may promote a generic dumper then.
+  - **Ruling 3, the two "not determinable statically" verdicts: accepted.** `kids[n]` is stack residue of whatever ran
+    before at that depth; only a run or a declared-stack emulation can say more, and the narrowing `[I]` is fair. For
+    client `+0x480..+0x482` the verdict stands for the *meaning*, but for a reimplementer the behaviour is settled:
+    the spec should state, `[I]`, that the bytes are read from header `0x0CF`/the join record, carried, written back and
+    handed to the host callback in a ladder game, and read by no game rule. That is a body statement, not an open
+    question (backlog P2 entry (k) already says "host bytes").
+  - **Ruling 4, the two moves: accepted, one re-labelled.** `NpcStoreRec` `+0x24..+0x26` → plan 0043 Phase 1 is a
+    proper move (named plan, backlog entry with the writer table). Status bit 1 names no plan, so it is not "moved" but
+    *out of this plan* (client presentation, as § Context's exclusion list says); the d2s spec keeps it as an open
+    question narrowed to the `[I]` facts (set only by the creation screen, `D2S_CheckStatus` never tests it).
+  - **Ruling 5, Q24 at `[I]`: accepted.** The review re-ran the whole-image scans: no operand with a `+0xC3`
+    displacement at all, and the only byte operand at `+0x170` is the stack array at 0x00694D9E. Wider reads at
+    `+0x16C..+0x170` exist (30 non-stack word/dword operands, other structures by context), so "no reader" is an
+    operand-scan negative and stays `[I]`, with the computed-address caveat the finding already states.
+  - **Ruling 6, Q19 with 20 sites unfollowed: accepted for the question asked, with a fix.** The answer needed was
+    whether minions have an owner; that is shown. Fixes: superunique minions reach `UniqueMinions` through
+    `SpecialModsApply` (0x005A4B6C–0x005A4B8E → 0x005A2135), which the finding asserted without the path; 0x005A4DD8
+    is one record's hard-coded tail, not every superunique (the general self-owner is `SpecialMonPlace`); MonStats party
+    minions with `SetBoss` were already linked in monsters/0002 (`[C]`), so `MinionsSpawn`'s three sites are not
+    "unfollowed". 17 sites remain unread; follow-up filed (backlog), not blocking.
+  - **Fix, Q21 bit 17 (blocking-class error, fixed here).** The finding said "five" writers; there are 21. The five
+    read stay as examples, the 16 unread ones are listed (`MonSpawnTry`, three quest drops, 12 skill-code sites), and
+    the meaning rests on the two readers. The P2 backlog entry (h) is reworded so the spec does not present the five as
+    the full set. Follow-up filed.
+  - **Tags.** The other `[C]`s are data checks with named tables (`version` counts, `complete`, `RareFormat`, the
+    `unique`/`quest`/`questdiffcheck` survey, the imbue survey) or a run outcome (Cow King `vps` quality 2); all fine.
+    No `[L]` raised. Symbols: 32 added, all `I`, no duplicate address or name after the merge (checked; gate agrees).
+  - **Count.** P1b has 18 items (B7–B10 = 4, B12, Q1–Q3 = 3, Q16–Q25 = 10); the Phase 1 text's "20" is wrong, as P1a's
+    "16" was. Text left as is; P1c's "8" is right.
+  - **Phase 2 readiness.** P2 can start now on the P1a and P1b items (both reviewed). Two specs also take P1c items:
+    data/excel (Q4) and possibly items/uniques-sets (B5's check against items/0004). Fold those two last, or after P1c,
+    so each is edited once; the 0038-first merge rule of Phase 2 still applies.

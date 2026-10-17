@@ -627,10 +627,16 @@ survey. No game run.
 - [I] **`MonSetOwner` has 26 call sites, and monster minions are among them.** Hirelings: `MERC_Init` (2 sites).
   `sub_005A0C00_UniqueMinions` sets each minion's owner to the boss (`EDX` = the minion, id =
   `sub_00451F50_UnitGetId(boss)`, type 1, 0x005A0C94–0x005A0CA6), then `sub_0058F100_MonGroupAddMember(game, boss,
-  minion)` adds the minion's id to the boss's list (0x005A0CAB–0x005A0CB0). `sub_005A09E0_SpecialMonPlace` (0x005A0B9B)
-  and `sub_005A49B0_SuperUniqueSpawn` (0x005A4DD8) set a boss as its own owner (`EDX` and the id are the same unit). A
-  monster spawned for another unit (`sub_0056D940_SpawnOwnedMonster`, 0x0056DA15) gets that unit. The other sites
-  (`sub_005B2830_MinionsSpawn` 3, `sub_005B24E0_EscortSpawn`, `sub_005B2570_TentacleMinionsSpawn`, and 0x00579ADB,
+  minion)` adds the minion's id to the boss's list (0x005A0CAB–0x005A0CB0). A superunique's minions take the same path:
+  `SuperUniqueSpawn` calls `sub_005A2120_SpecialModsApply` with the `MinGrp`/`MaxGrp` range and minions = 1
+  (0x005A4B6C–0x005A4B8E), which calls `UniqueMinions` (0x005A2135, its only caller) (added at the architect's review).
+  `sub_005A09E0_SpecialMonPlace` (0x005A0B9B) sets the placed boss as its own owner (`EDX` and the id are the same
+  unit); 0x005A4DD8 in `sub_005A49B0_SuperUniqueSpawn` does the same in one record's hard-coded tail (a `switch` case,
+  before `EscortSpawn`), not for every superunique. A monster spawned for another unit
+  (`sub_0056D940_SpawnOwnedMonster`, 0x0056DA15) gets that unit. MonStats party minions of a `SetBoss` leader are linked
+  to it through the same pair (`0x0058F030`/`0x0058F100`, [monsters/0002](../monsters/0002-room-population.md) § MonStats
+  minions, `[C]` there), so they have their leader as owner too. The other sites
+  (`sub_005B24E0_EscortSpawn`, `sub_005B2570_TentacleMinionsSpawn`, and 0x00579ADB,
   0x0058F50F, 0x005A2CDD, 0x005A2D50, 0x005AEEF1, 0x005B3192, 0x005B324A, 0x005B3389, 0x005C08C0, 0x005C5611,
   0x005C5A15, 0x005C5D97, 0x005C5DAD, 0x005FCAA1, 0x005FCACB) are not followed here.
 - [I] **So a minion's kill adds its leader's stat 80, and a boss's kill its own a second time,** while the leader is
