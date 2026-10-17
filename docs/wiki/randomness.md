@@ -40,8 +40,9 @@ flowchart TD
 ## The generator: eight bytes and one multiplication
 
 A [seed](../glossary.md) is 8 bytes: two unsigned 32-bit halves, `low` and `high`. It is stored inside the thing
-that owns it ([RNG core, runtime state](../specs/rng/README.md#runtime-state)). As far as the code shows, the
-generator reads no table.
+that owns it ([RNG core, runtime state](../specs/rng/README.md#runtime-state)). The generator reads no table: its
+code touches only the seed and the stack, and running it under an emulator with no table loaded gave the game's
+own results ([RNG core, tables](../specs/rng/README.md#tables)).
 
 The whole generator is a handful of operations ([RNG core, algorithm](../specs/rng/README.md#algorithm)):
 
@@ -67,12 +68,15 @@ as what each one computes ([RNG core, algorithm](../specs/rng/README.md#algorith
 
 The "return 0 without drawing for n below 1" guard is not everywhere. Many call sites copy the step inline, and an
 inlined draw with a fixed modulus (such as a `mod 7`) has no guard; neither has RangePow2. So when a
-table-driven count can be zero, whether the game still draws depends on the call site. This is read from the code
-and has not been confirmed for every site; each subsystem spec states the form per call site
-([RNG core, reimplementation notes](../specs/rng/README.md#reimplementation-notes)). The project's count of
-those inlined draw sites (852 multiplier constants in the program) is also a reading of the code, not a run
-([RNG core, entry points](../specs/rng/README.md#entry-points)). One more helper, "power-of-two range plus a
-base", is also in the program, but as far as the code shows nothing calls it, and no spec depends on it.
+table-driven count can be zero, whether the game still draws depends on the call site. That much is confirmed:
+RangePow2 under the emulator steps the seed with n = 0 where Range does not, and the act's inlined `mod 7` draws in
+play with no guard. Which form each other site uses is stated call site by call site in the subsystem specs
+([RNG core, reimplementation notes](../specs/rng/README.md#reimplementation-notes)). The program holds 852 inlined
+draw sites (852 copies of the multiplier, each the same instruction), confirmed by a second disassembler; that 846
+of them lie inside functions is confirmed by walking the code, and the other 6 only by Ghidra's reading
+([RNG core, entry points](../specs/rng/README.md#entry-points)). One more helper, "power-of-two range plus a base",
+is also in the program: what it computes is confirmed under the emulator, but by the code nothing calls it, and no
+spec depends on it. Eight other pieces of code holding inlined draws have no caller either, by the same reading.
 
 ## Two roots: the map seed and the game seed
 
@@ -284,8 +288,8 @@ From the [RNG core open questions](../specs/rng/README.md#open-questions) and th
   gameplay: the client automap's own seed, two title-screen seeds and short-lived local seeds. Still unread are the
   places in the skill and missile code that re-seed a unit or another object, and from what; they belong to a later
   phase of the project.
-- Read from the code but not confirmed by a run: that the generator reads no table, the "power-of-two range plus
-  a base" helper being unused, three of the six on-demand level creators, a room with no tiles at all, which
+- Read from the code but not confirmed by a run: the "power-of-two range plus a base" helper and eight other
+  pieces of code with inlined draws being unused, three of the six on-demand level creators, a room with no tiles at all, which
   player-creation paths run and what they pass, the clock fallback for a unit without a parent, and the room
   lookup's answer for (0, 0). Calling `InitOne` right before `Init`, as the game does, has no effect, also by
   reading the code.
