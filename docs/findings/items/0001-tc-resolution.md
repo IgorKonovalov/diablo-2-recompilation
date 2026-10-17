@@ -861,6 +861,45 @@ Per row (inventory row, spec line at the inventory's commit, outcome):
 **Symbols:** `TC_ResolveDrops`, `TC_DropByIndex`, `MONSTER_DropItems`, `MONSTATS_GetRecord`, `TC_AddEntry` and
 `TC_SetEntryProb` move to `C` in `re/symbols.csv` (their roles above are now reproduced or settled by two code paths).
 
+## Plan 0039 batch P1b (2026-10-17)
+
+Row Q21 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static (objdump, Ghidra on the lane's copy). No game run.
+
+- [I] **`unit+0xC4` bit 17 (`0x20000`) is "no death drop".** The operand scan finds two readers (a load of `+0xC4`
+  followed by `shr 0x11`; no `test` of `0x20000` on `+0xC4`): the death-drop guard `sub_005A6830_MonDeathDrop` (0x005A6861)
+  and 0x00542031 in 0x00541FE0, which copies bits 26 and 17 into a saved-unit record (`+0x4C` ← `0x007314C0`, `+0x50` |=
+  `0x007314C4` or `0x007314C8`); 0x00541E20 copies them back (0x00541F9E–0x00541FC6), so the bit survives that save.
+  Writers (`or [reg+0xC4], 0x20000`, five in the image):
+  - `sub_005B1CF0_MonPostCreateBoss` for monster classes 340–343 (`boneprison1`–`4`) and 366 (`compellingorb`)
+    (0x005B1E54, 0x005B1E79);
+  - `sub_0056D940_SpawnOwnedMonster`, on a monster it spawns for another unit and gives that unit as owner
+    (0x0056D9F0);
+  - `sub_005AD3A0_MonSetNoDeathDrop`, on its argument when a unit it looks up has `+0xC4` bit 9 clear (0x005AD3C2);
+  - 0x00541FC6, the restore above.
+
+  (fn:sub_005A6830_MonDeathDrop@0x005A6830, fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0,
+  fn:sub_0056D940_SpawnOwnedMonster@0x0056D940, fn:sub_005AD3A0_MonSetNoDeathDrop@0x005AD3A0, tbl:MonStats.txt:Id)
+- [I] **`game+0x78` is the game's item version** (u16), which the drop paths copy to creation record `+0x2A`
+  (`sub_0055A550_DropCreateItem` at 0x0055A5E3, `sub_00559A30_DropItemAtUnit` at 0x00559C32). The logged values agree: record `+0x2A` =
+  101 in the 132 expansion and 2 in the 8 classic cube records ([items/0008](0008-cube.md) cube 29), and `g78` = 101 in
+  every `WHDR` line of run:2026-10-16-player (expansion games only). (struct:Game+0x78, run:2026-10-15-cube)
+- **The `hellbovine` bit (stale).** Creation flag bit 0 lets set 29 (`Cow King's Leathers`) be picked: [items/0004
+  § 4](0004-uniques-sets.md) and its § Plan 0038 batch S2b (221 cow drops with the bit).
+- [I] **The "upgrade bits" are forced ethereal (`0x04`) and forced sockets (`0x10`).** `sub_00556CA0_ItemRollEthereal` makes
+  the item ethereal when record `+0x80` has `0x04` (0x00556D24) or its own draw says so; `sub_00556B60_ItemRollSockets`
+  makes its `RNG_Range(100)` draw, then skips with `0x08` and, with `0x10`, replaces the draw by 0 so that sockets are
+  always added (0x00556C14–0x00556C24). [items/0006](0006-properties.md) § 6 calls them "the forced bits" without
+  saying which is which. The resolver sets `0x04` from `ce=` (ratio word 4) and `0x10` from `cg=` (word 5), in a classic
+  game only (§ 8), where the ethereal roll does not run (item version < 100), so `ce=` has no effect at all; no stock
+  cell has either. "Exceptional/elite upgrade" in § Open questions was a wrong guess. (fn:sub_00556CA0_ItemRollEthereal@0x00556CA0,
+  fn:sub_00556B60_ItemRollSockets@0x00556B60, tbl:TreasureClassEx.txt:Item1)
+- [I] **A forced quality on a gold or potion entry.** The resolver hands any item entry the caller's forced quality and
+  makes no quality roll (§ 8); `ItemCreateByQuality`'s last override then writes 2 for every base whose own type has
+  `Normal` = 1, which `gold` and the potion types `hpot`, `mpot`, `rpot`, `spot`, `apot`, `wpot` and `tpot` have. So a
+  sparkle chest's gold or potion is built as quality 2, after the source seed skipped the quality draws; `elix` has
+  `Normal` 0 and would keep the forced quality. (0x005574E3–0x00557567, tbl:ItemTypes.txt:Normal)
+- **`superuniques` has no table doc (stale):** [SuperUniques](../../tables/SuperUniques.md) exists.
+
 ## Open questions
 
 - **x87 precision control** in other renderers. Every logged evaluation shows control word `0x027F` (53-bit, round
@@ -884,11 +923,13 @@ Per row (inventory row, spec line at the inventory's commit, outcome):
 - ~~Quest-drop tests (`0x0065C310` with 15, 1 and `TCQuestCP`), and the killer resolution through `0x0063A690` /
   `0x00625760(…, 0x800)`~~: answered statically in [items/0010 § 2–3](0010-quest-drops.md#2-b6-the-quest-tc-switch-and-the-killer)
   (`[I]`; the record is the resolved killer's own; `0x0063A690` tests the states with `states.txt` `exp`; the bits per boss).
-- `unit+0xC4` bit 17 (skips the death drop), `game+0x78` (copied into the creation record) and the `hellbovine` flag
-  bit: their meanings belong to `monsters` and item creation. (Item `+0x129` and itemtypes `+0x14..+0x16` are answered in
+- ~~`unit+0xC4` bit 17 (skips the death drop), `game+0x78` (copied into the creation record) and the `hellbovine` flag
+  bit: their meanings belong to `monsters` and item creation.~~ [§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17): bit 17 is set for bone prisons, the compelling
+  orb and owned spawns; `game+0x78` is the item version; the cow bit gates set 29. (Item `+0x129` and itemtypes `+0x14..+0x16` are answered in
   [items/0002 §1](0002-quality-roll.md#1-arguments-and-early-returns-0x005586400x005586ce).)
-- `ce=`/`cg=` upgrade bits `0x04`/`0x10` in the creation flags: what item creation does with them (exceptional/elite
-  upgrade?) belongs to item creation; the quality roll does not read them (items/0002). Not reachable with stock data.
+- ~~`ce=`/`cg=` upgrade bits `0x04`/`0x10` in the creation flags: what item creation does with them (exceptional/elite
+  upgrade?) belongs to item creation; the quality roll does not read them (items/0002). Not reachable with stock data.~~
+  Forced ethereal and forced sockets ([§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17)).
 - **`/players` in run 18.** The session typed `/players 1`, yet every resolver call of that log has `pover=8`. Did the
   command reach the game (chat focus, typo, or a game type where it is ignored)? The NoDrop draws still reproduce with the
   logged values, so the model is unaffected, but how `/players` sets the override is not confirmed by this run.
