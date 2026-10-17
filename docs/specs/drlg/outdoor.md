@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/warps]
 consumed_by: [drlg/overview, drlg/warps, drlg/room-tiles, drlg/collision, monsters/spawn, objects]
-tags: {C: 180, I: 19, L: 3}
+tags: {C: 180, I: 19, L: 2}
 updated: 2026-10-17
 ---
 
@@ -728,11 +728,18 @@ H4. A1RiverMidTransCave(L):                                          [C] (fn:sub
   [drlg/0008 § Plan 0038 batch H5e](../../findings/drlg/0008-outdoor.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes))
 - [C] The cliff-cave scan with columns outer (`r & 1` = 1) matched in 6 windows on square 10×10 levels, and the rows-outer
   scan in 2. (fn:sub_00680200_A1RiverEastAndCave@0x00680200, run:2026-10-16-sweep-mazes)
-- [I] The swapped bounds of that scan would differ from the plain scan only on a non-square level. No window reached
-  that case: of levels 2–7 only the Blood Moor is non-square in cells, and flag `0x20` (a cliff run) was never set on it
-  in the scan's 1 800 Blood Moor windows. Whether its outline can set `0x20` is an open question.
-  (fn:sub_00680200_A1RiverEastAndCave@0x00680200,
-  [drlg/0008 § Plan 0038 batch H5e](../../findings/drlg/0008-outdoor.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes))
+- [I] The swapped bounds of that scan would differ from the plain scan only on a non-square level, and that half has
+  **no stock case**. Of levels 2–7 only the Blood Moor is non-square in cells, and its flag `0x20` (a cliff run) stays
+  clear. `OutdoorAct1` skips `A1CliffMark` for levels 2, 3 and 17 (0x006807F3–0x0068080A); its OR at 0x00680170 is the
+  only bare-register OR of `0x20` into a dword in 0x00660000–0x0068FFFF, and `LinkOutdoorFlags` ORs other values. Between that skip and the test at 0x0068023B nothing writes `O+0x00`: the callee closure
+  of `OutSeamMark`, `OutBorderBuild`, `OutBorderSubApply` and `A1RiverEastAndCave` (46 functions, the indirect calls
+  resolved by hand) writes only the level seed and rotation list, stack slots, the BorderSub context, the LvlSub record's
+  grid view, allocations and grid cells. Only an out-of-range grid index
+  landing on `O` could reach it, and nothing on the path computes one. The scan agrees: `0x20` clear in all 1 800 Blood
+  Moor windows. (fn:sub_006807F0_OutdoorAct1@0x006807F0, fn:sub_00680070_A1CliffMark@0x00680070,
+  fn:sub_00680200_A1RiverEastAndCave@0x00680200,
+  [drlg/0008 § H5e review (e)](../../findings/drlg/0008-outdoor.md#h5e-review-static-reachability-2026-10-17-lanerbs) and
+  [second pass (e′)](../../findings/drlg/0008-outdoor.md#h5e-reachability-second-pass-2026-10-17-lanerbs2))
 
 #### H6. Roads
 
@@ -906,9 +913,22 @@ H6e. A1PathJitter(L, i, path):                                        [C] (fn:su
 - [C] A failed road search was reached: in map seed 45's Black Marsh one road's search returns none (2 windows), and the
   remaining roads and their jitter draws match. (fn:sub_006817D0_A1PathSearch@0x006817D0, run:2026-10-16-sweep-mazes,
   [drlg/0008 § Plan 0038 batch H5e](../../findings/drlg/0008-outdoor.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes))
-- [I] Roads with 5 or 6 endpoints and an exhausted search pool happened in no logged window and in none of the 52 200
-  windows of the offline scan; whether stock data can reach them is an open question.
-  (fn:sub_00680D70_A1PathEndpoints@0x00680D70, fn:sub_006817D0_A1PathSearch@0x006817D0, run:2026-10-16-sweep-mazes)
+- [I] Roads with 5 or 6 endpoints have **no stock case**: an Act I road set has at most 4. `A1PathEndpoints` counts one
+  endpoint per adjacency node to level 1 or 26, one per seam opening, cave cell and east-river bridge cell. Node endpoints
+  and openings together are at most the nodes: a node to level 1 or 26 (a preset) gets no opening, `OutBorderBuild`
+  marks one opening per other seam vertex, and its own border pieces go in with file
+  −1, so `OutPresetFileRotate` gives them index `(c + 1) mod Files`, which is 0, 1 or 2 for Defs 4–7 (`Files` 3) and
+  never the opening index 3; stamps place file 0, and every explicit index before `A1Paths` is on another Def. Caves are
+  at most 1 (each placement is gated on and sets `O.flags & 0x40`) and the bridge at most 1, none on level 3. That
+  bounds the count at 4 on levels 2, 3, 6 and 7 and 3 on levels 4 and 5; the scan gives 3, 4, 2, 2, 3 and 3 on
+  levels 2–7. An exhausted search pool has **no stock case** either. The nodes in use form one chain, at most the depth reached
+  plus one, and a child costs 2, so depth ≤ bound / 2. `A1PathSearch` is called only for levels 2–7, whose grids are at
+  most 12 cells a side, so `h0` ≤ 39, the depth ≤ 44 and at most 45 pool nodes are used against 900. Neither case
+  happened in a logged window or in the 52 200 windows of the offline scan. (fn:sub_00680D70_A1PathEndpoints@0x00680D70,
+  fn:sub_00674320_OutPresetFileRotate@0x00674320, tbl:LvlPrest.txt:Files, fn:sub_006817D0_A1PathSearch@0x006817D0,
+  fn:sub_00681630_A1PathSearchStep@0x00681630, run:2026-10-16-sweep-mazes,
+  [drlg/0008 § H5e second pass (c)](../../findings/drlg/0008-outdoor.md#h5e-reachability-second-pass-2026-10-17-lanerbs2),
+  [review (d)](../../findings/drlg/0008-outdoor.md#h5e-review-static-reachability-2026-10-17-lanerbs))
 - [C] The road tiles are made later, at the room prepare of each out room, from these polylines (§ M), outside the level
   window and with no draw. (fn:sub_00680C80_OutRoomRoadGrid@0x00680C80, fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0,
   run:2026-10-15-drlg-outdoor)
@@ -1752,18 +1772,19 @@ are the `Range(6 or 2)` and seven first uses. Blood Moor is 12 × 7 cells (its l
   stays `[I]`. It stays a named boundary (architect ruling, plan 0027 Phase 3): the cube cannot open its portal in this `Game.exe` (*Entry points*;
   [save/0002 § 6](../../findings/save/0002-quest-words.md#6-the-pandemonium-key-transmute-level-134-plan-0027-phase-2-2026-10-15)),
   and a forced path would edit data into a state the binary never makes.
-- [L] **Branches no log reached**: a link-builder backtrack, a vertex merge (C5), a waypoint pass with no free cell (F1),
-  and roads with 5 or 6 endpoints or an exhausted pool (H6). The prisons' fallback scan (L6), a failed road search (H6)
-  and `BridgeFind` on the non-square Blood Moor (H2) were reached in run:2026-10-16-sweep-mazes. The vertex merge, the
-  full waypoint pass and the road branches were not met in 52 200 offline-scan windows either; whether stock data can
-  reach them at all is a static reachability question to the reverser (plan 0038 H5e review). If a branch is shown
-  unreachable its statement says so; otherwise the answer names the seed condition for `sweep_h5e.py scan`. Also the
-  reads past a table that the stock tables never reach: a second side bit on one jungle cell (J2e), a river-column `Def`
-  above 15 (H3), and `LinkOutdoorFlags`' `B.dir[i + 1]` past link entry 14 (H0), where the code reads the next slot.
-- [L] **The swapped cliff-cave scan on a non-square level** (H2) has no stock observable on the scan's evidence: of levels
-  2–7 only the Blood Moor is non-square in cells, and flag `0x20` was never set on it (1 800 scan windows; seeds 1–2 999
-  of the development loop). Whether the Blood Moor's outline can set `0x20` at all joins the static reachability
-  question; if it can, the case returns to a harness route ([drlg/0008 § Plan 0038 batch H5e](../../findings/drlg/0008-outdoor.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes)).
+- [L] **Branches no log reached**: a link-builder backtrack, a vertex merge (C5) and a waypoint pass with no free cell
+  (F1). The prisons' fallback scan (L6), a failed road search (H6) and `BridgeFind` on the non-square Blood Moor (H2)
+  were reached in run:2026-10-16-sweep-mazes. The vertex merge and the full waypoint pass were not met in 52 200
+  offline-scan windows either, and no static bound shows them unreachable: each has a scan condition in
+  [drlg/0008 § H5e](../../findings/drlg/0008-outdoor.md#h5e-review-static-reachability-2026-10-17-lanerbs) ((a) an
+  adjacency overlap of exactly 8 tiles or a rect off the 8-tile grid; (b) a level with no free interior cell at the
+  pass), so they stay shortfalls. Also the reads past a table that the stock tables never reach: a second side bit on
+  one jungle cell (J2e), a river-column `Def` above 15 (H3), and `LinkOutdoorFlags`' `B.dir[i + 1]` past link entry 14
+  (H0), where the code reads the next slot.
+- ~~Roads with 5 or 6 endpoints or an exhausted pool (H6)~~ answered in H6 from drlg/0008's H5e reachability reads (c)
+  and (d): no stock case (at most 4 endpoints, at most 45 pool nodes against 900).
+- ~~The swapped cliff-cave scan on a non-square level (H2)~~ answered in H2 from drlg/0008's H5e reachability reads (e)
+  and (e′): the Blood Moor's `0x20` stays clear, so the swapped half has no stock case.
 - ~~Who writes adjacency node `+0xC`; the five functions with no caller.~~ Answered: `LevelAdjAdd` writes `+0xC` = 0 and
   nothing else writes it (§ E1), and the five functions are dead code (*Entry points*), both from
   [drlg/0008 § Plan 0039 batch P1a](../../findings/drlg/0008-outdoor.md#plan-0039-batch-p1a-2026-10-16).

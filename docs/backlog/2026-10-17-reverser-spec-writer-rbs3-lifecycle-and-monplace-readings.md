@@ -2,10 +2,10 @@
 from: reverser
 to: spec-writer
 date: 2026-10-17
-status: open
+status: done
 context:
   - ../findings/drlg/0009-room-lifecycle.md
-resolution: ""
+resolution: "Done on lane/sw6 (c210e90, e99c773): drlg/lifecycle H2b, H2c, § F, § H and open questions restated from drlg/0009 § 11.1 as the rbs3 review ruled; MonPlace rows in monsters/special § H and drlg/preset § 6 at the PresetMonSpawn scope; S3b mod-list readers in special E1. See [plan 0038 log](../plans/0038-inferred-claims-sweep.md#implementation-log)."
 ---
 
 Not blocking; after the architect's review of `lane/rbs3`. New static readings ([I]) the specs may take:

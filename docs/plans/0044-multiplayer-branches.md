@@ -222,3 +222,22 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - ALLOW IN rules only for `53317/tcp` and `53317/udp` (IPv4 and v6, from Anywhere), and for `172.17.0.1 53/udp` from `172.16.0.0/12` and from `192.168.0.0/16` (`allow-docker-dns`).
 
   No rule names 4000, no range contains it, and no rule is portless. So TCP 4000 is dropped on every non-loopback interface, and loopback is accepted by `before.rules`. This meets ADR-0008's condition. Before each hosting session, the lane re-reads the ufw state and the rule-file hashes without root. It asks the owner again only if they changed.
+- **2026-10-17 — `lane/arc6` MP23 pair reviewed (architect, `main` `925d060` already in). Verdict: accept with fixes.**
+  - **Ruling: the low-damage pair is right for MP23.** The prediction is P = 17 % on every scaled field
+    ([combat/0001 § 7](../findings/combat/0001-formulas.md#7-reductions-combat_applyreductions)). `combat.gdb` logs the
+    packet in 1/256 life and `combat.py` checks the RDP percent and the RD1 packet exactly after `MulDiv(v, 17, 100)`,
+    so a 1-point field is already 256 units. A Nova 1 lightning field of 256 to 5120 separates P = 17 from 16 or 18 and
+    from any other rounding. Large hits would reach only `MulDiv`'s large-value branch (more than 4096 life in one
+    field), which MP23 does not predict. No potions, Energy Shield or sturdier class are needed, and no archivist
+    follow-up was filed.
+  - **Checked:** class 1 = Sorceress and right skill 48 = Nova (skills.txt `Id`); Nova `EMin` 1, `EMax` 20, `HitShift` 8,
+    `EDmgSymPerCalc` blank; `mp_saves.py check` 27 recipes 0 bad, 18 pairs 0 bad; `test_d2s.py` 45 OK; `d2s.py survey`
+    27 files 0 errors and `roundtrip` 0 item and 0 file differences on a fresh build, with the two new hashes as pinned.
+  - **Fix (misread):** the bound ignored the player's resistance penalty. `COMBAT_ResistFor` adds `ResistPenalty`
+    for a player defender (−40 Nightmare, −100 Hell in expansion), so a player with no resistance takes ×2 in Hell.
+    The check now multiplies by `(100 − lowest ResistPenalty) / 100`: 7 points for Nova 1, 1400 ≤ 8000, and the pair
+    survives in any difficulty. d2s.md says so.
+  - **For the Phase 2 session:** the pair can reach row 0 (the left-button `Attack`, unarmed, through
+    `COMBAT_MeleeHitTest`, the case's entry) and row 2 (Nova). Run both kinds of attack. The other scaled rows (fire,
+    cold, magic, poison) stay a shortfall of this pair, and the session must name that shortfall rather than claim
+    "every scaled field".
