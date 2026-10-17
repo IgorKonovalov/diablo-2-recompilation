@@ -521,8 +521,18 @@ the three masteries of § The `passive` rows, and eight paladin auras, none with
 
 `cost mult` (`+0x234` s32) and `cost add` (`+0x238` s32), [§ Columns](#columns) (`[C]`, `excel_bin.py diff`). Counts
 from `python3 -I tools/economy_survey.py skills workspace/merged/data/global/excel` (gate survey `economy`), `[C]` as
-data. The price function is named only ([items/0009 § 9](../findings/items/0009-vendors.md#9-named-only-prices-and-repair)),
-so what the two columns price (by the names, a charged-skill property on an item) is `[L]`, for plan 0043 Phase 1.
+data. `[I]` The price function reads them, with `reqlevel`, in three terms (plan 0043 Phase 1):
+
+- **Stat terms** ([items/0011 § 3](../findings/items/0011-economy.md#3-the-value-terms) step 5): for an item stat whose ItemStatCost `Encode` is 1 (param = a skill: 97
+  `item_nonclassskill`, 107 `item_singleskill`), 2 (skill on event: 195–199, 201) or 3 (charged: 204–213), the
+  skill's `cost mult`/`cost add` replace the stat's own `Multiply`/`Add`: `X·cost mult·v/1024 + cost add` on the buy
+  and repair values and `/4096` on the sell value; for Encode 2 and 3, `v` is the **skill level** from the param, and
+  the charge count does not enter. (fn:sub_00628E70_PriceStatTerms@0x00628E70 0x00628F35, tbl:Skills.txt:cost mult)
+- **Staff mods** (same section): for each stat 107 entry, `(cost mult·X/1024 + cost add)·(2v − 1)` (`/4096` for the
+  sell value), unless the item type's `StaffMods` byte is 7. (fn:sub_0062EDD0_PriceStaffModTerm@0x0062EDD0)
+- **Recharge** ([items/0011 § 4](../findings/items/0011-economy.md#4-mode-steps-the-npc-row-quantity-and-the-result)): a repair adds, for each charged skill with `c` of `x` charges,
+  `(x − c)·(t + cost add)/x` with `K = level + 2·(reqlevel/6) + 2`, `t = cost mult·K·10000/1024`; this is added after
+  the Npc multipliers. (fn:sub_00628D30_RechargeCost@0x00628D30, tbl:Skills.txt:reqlevel)
 
 - `[C]` **The 210 class skills, and only they**, have a `cost mult` (the 147 rows with no `charclass` have it blank and
   `cost add` 0). No row has a `cost add` without a `cost mult`.
@@ -537,8 +547,9 @@ so what the two columns price (by the names, a charged-skill property on an item
   (24, 768, 32000) ×32, (30, 896, 64000) ×35.
 - `[C]` **Every skill a `charged` property names has a cost**: 112 distinct skills are named by 268 `charged` cells
   (MagicSuffix 205, UniqueItems 38, Runes 24, SetItems 1; MagicPrefix none), all resolve, and all 112 have a
-  `cost mult`. ItemStatCost 204 `item_charged_skill`, the stat a `charged` property writes, has its own price terms
-  ([ItemStatCost § Price](ItemStatCost.md#price-plan-0043-phase-0)).
+  `cost mult`. ItemStatCost 204 `item_charged_skill`, the stat a `charged` property writes, has its own
+  `Multiply`/`Add` cells ([ItemStatCost § Price](ItemStatCost.md#price-plan-0043-phase-0)), but `[I]` its `Encode` 3
+  makes the price take the skill's costs instead ([items/0011 § 3](../findings/items/0011-economy.md#3-the-value-terms)).
 
 ## Open questions
 

@@ -1298,10 +1298,11 @@ LAYOUTS["npc"] = dict(size=0x4C, fields=[
 # ------------------------------------------------------------------ books (32 B = 0x20)
 # Plan 0043 Phase 0 (docs/tables/Books.md). One record per books.txt row (3). Name is the string index of the
 # key `unused` (the same in every row); Namco and Completed have no field. ScrollSkill/BookSkill store the Skills row
-# (blank = -1); the scroll and book codes follow the costs. +0x003 is 0 in every record.
+# (blank = -1); the scroll and book codes follow the costs. +0x003 is 0 in every record. Plan 0043 Phase 1
+# (items/0011, review (b)): pSpell is read 32-bit signed, SpellIcon as a byte, CostPerCharge 32-bit; BaseCost no reader.
 LAYOUTS["books"] = dict(size=0x20, fields=[
     T("Name", 0x000), I("SpellIcon", 0x002, "s8"), U("pad_003", 0x003, "u8"),
-    I("pSpell", 0x004, "u32"),
+    I("pSpell", 0x004, "s32"),
     R("ScrollSkill", 0x008, "skills:skill", "s32"), R("BookSkill", 0x00C, "skills:skill", "s32"),
     I("BaseCost", 0x010, "u32"), I("CostPerCharge", 0x014, "u32"),
     C("ScrollSpellCode", 0x018), C("BookSpellCode", 0x01C),

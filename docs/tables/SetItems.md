@@ -204,13 +204,15 @@ The set-wide bonuses are [Sets § Bonus blocks](Sets.md#bonus-blocks-plan-0041-p
 
 Offsets are [§ Record layout](#record-layout) (`[C]`, `excel_bin.py diff`); the counts come from
 `python3 -I tools/economy_survey.py affixes workspace/merged/data/global/excel` (gate survey `economy`), `[C]` as
-data. The price function is named only ([items/0009 § 9](../findings/items/0009-vendors.md#9-named-only-prices-and-repair)),
-so the meanings are `[L]`, for plan 0043 Phase 1.
+data. `[I]` The price function reads them (plan 0043 Phase 1, [items/0011 § 3](../findings/items/0011-economy.md#3-the-value-terms) step 4): an identified set item adds
+`X·cost mult/1024 + cost add` to each of the buy, sell and repair values (`X` the running value; `(X/1024)·cost mult +
+cost add` when the buy value is above `0xFFFF`), and gets no per-stat terms. For stock rows the addend dominates
+(`cost mult` 5 over 1024). (fn:ITEMS_TradePriceCore@0x0062EFB0 0x0062F8A4–0x0062F96B, tbl:SetItems.txt:cost mult)
 
 | Column | Field | Values | Meaning |
 |---|---|---|---|
-| `cost mult` | `+0x038` u32 | 5 in every row | price multiplier of a set item `[L]` |
-| `cost add` | `+0x03C` u32 | 2500 on 62 rows, 5000 on 65 | price addend of a set item `[L]` |
+| `cost mult` | `+0x038` u32 | 5 in every row | `[I]` `X·cost mult/1024` |
+| `cost add` | `+0x03C` u32 | 2500 on 62 rows, 5000 on 65 | `[I]` added once |
 
 - `[C]` **`cost add` follows the set's version**: 2500 on all 62 members of the 16 classic sets ([Sets](Sets.md)
   `version` 0: *Civerb's Vestments* … *Arcanna's Tricks*), 5000 on all 65 members of the 16 expansion sets

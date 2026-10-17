@@ -22,4 +22,5 @@ Suffix-only facts, each detailed there:
   [§ Code semantics](MagicPrefix.md#code-semantics-items0005), fn:sub_00633730_LoadMagicAffixes@0x00633730).
 - `[C]` **Price** (plan 0043 Phase 0): `divide`, `multiply` and `add` (`+0x084`, `+0x088`, `+0x08C`) are 0 in every
   suffix row; only 21 prefixes (the all-resistance rows) carry a price term
-  ([MagicPrefix § Price](MagicPrefix.md#price-plan-0043-phase-0), `economy_survey.py affixes`).
+  ([MagicPrefix § Price](MagicPrefix.md#price-plan-0043-phase-0), `economy_survey.py affixes`). `[I]` `divide` is
+  never read by the price path; `multiply`/`add` are read as for the prefixes ([items/0011 § 3](../findings/items/0011-economy.md#3-the-value-terms)).

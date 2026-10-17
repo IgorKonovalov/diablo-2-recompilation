@@ -59,9 +59,9 @@ slot but the sign only for those three; the save columns' widths and signs are w
 | `Send Param Bits` | {0 ×337, 3 ×2, 6 ×1, 8 ×8, 9 ×2, 10 ×3, 16 ×6}, 337 blank | `+0x009` u8 | width of the client update param | — | [C] |
 | `CSvBits` | {0 ×343, 7, 8, 10 ×5, 21 ×6, 25 ×2, 32}, 343 blank | `+0x00A` u8 | `[I]` width of the stat in the `.d2s` character-stat section; 0 = not saved there | [d2s § stats](../formats/d2s.md) | [C] |
 | `CSvParam` | blank in every row | `+0x00B` u8 (from code) | `[I]` width of its param in that section | — | [I] (slot from code) |
-| `Divide` | {0 ×7 (blank), 1024 ×352} | `+0x00C` s32 | cost divisor (vendor price) | — | [C] |
-| `Multiply` | −34..4096, 67 distinct, 132 blank | `+0x010` s32 | cost multiplier | — | [C] |
-| `Add` | 0..56452, 118 distinct, 174 blank | `+0x014` s32 | cost addend | — | [C] |
+| `Divide` | {0 ×7 (blank), 1024 ×352} | `+0x00C` s32 | `[I]` not read by the price path (the divisor there is the constant 1024, § Price) | — | [C] |
+| `Multiply` | −34..4096, 67 distinct, 132 blank | `+0x010` s32 | `[I]` price multiplier per unit of the stat (§ Price) | — | [C] |
+| `Add` | 0..56452, 118 distinct, 174 blank | `+0x014` s32 | `[I]` price added once per stat entry (§ Price) | — | [C] |
 | `ValShift` | {0 ×351, 8 ×8}, 351 blank | `+0x018` u8 | `[I]` the stored value is shifted right by it before saving and left after loading (fixed point, `hitpoints`/`mana`/…); the property writer stores `value << ValShift` at creation (fn:PROP_WriteStat@0x0065EA50) | — | [C] |
 | `1.09-Save Bits` | 0..30, 14 distinct, 87 blank | `+0x01A` u8 | `[I]` `Save Bits` for saves of version < 93 | — | [C] |
 | `1.09-Save Add` | −1..128, 9 distinct, 89 blank | `+0x020` s32 | `[I]` `Save Add` for saves of version < 93 | — | [C] |
@@ -471,15 +471,24 @@ Every row with `op` ≠ 0 (`op_rows` = 84), from `stats_survey.py isc`. `[C]` as
 
 The three per-stat price columns. Offsets are [§ Columns](#columns) (`[C]`, `excel_bin.py diff`); the counts and the
 row list come from `python3 -I tools/economy_survey.py stats workspace/merged/data/global/excel` (gate survey
-`economy`), `[C]` as data. The price function (`sub_0062FDC0_ItemTradePrice`) is named only
-([items/0009 § 9](../findings/items/0009-vendors.md#9-named-only-prices-and-repair)), so how a stat's value enters the
-price is `[L]`; by the names, a stat adds `value · Multiply / Divide + Add` or similar, for Phase 1 to read.
+`economy`), `[C]` as data.
+
+`[I]` **How a stat enters the price** (plan 0043 Phase 1, [items/0011 § 3](../findings/items/0011-economy.md#3-the-value-terms) step 5, fn:sub_00628E70_PriceStatTerms@0x00628E70).
+For a superior, magic, rare, crafted or tempered item, for each entry of its full-stat cache, `v` = full − base value
+of that stat and param; an entry with `v` = 0 is skipped. Then **`v >>= ValShift` first** (arithmetic shift, so
+`maxhp`, `maxmana`, `maxstamina` are priced in whole points). By `Encode`: 0 (and 5+) adds `Multiply·X·v/1024 + Add`
+to each of the buy, sell and repair sums (`X` = the running value); 1 (param = a skill) uses the [Skills](Skills.md)
+row's `cost mult`/`cost add` instead, with the sell value over 4096; 2 and 3 (skill-on-event, charged) take the
+**skill level** from the param as `v` and the Skills costs likewise; 4 (by time) takes `v = (min + max)/2` with this
+row's `Multiply`/`Add`. Each sum is divided by the stack divisor (unsigned) and added. **`Divide` is never read** in
+the price path: the divisor is the constant 1024 (no image-wide reader scan was made). (tbl:ItemStatCost.txt:Multiply,
+tbl:ItemStatCost.txt:ValShift, tbl:ItemStatCost.txt:Encode)
 
 | Column | Field | Values | Meaning |
 |---|---|---|---|
-| `Divide` | `+0x00C` s32 | 1024 on 352 rows; 0 (blank) on 7: 181 `fade`, 182 `armor_override_percent`, 183..187 `unused183`..`unused187` | price divisor `[L]` (a fixed point of 1024, as in [Npc](Npc.md), by the value) |
-| `Multiply` | `+0x010` s32 | −34..4096, 67 distinct; non-zero on 187; negative on 2 (91 `item_req_percent` −34, 120 `item_damagetargetac` −20) | per-unit price `[L]` |
-| `Add` | `+0x014` s32 | 0..56 452, 118 distinct; non-zero on 184 | fixed price per stat present `[L]` |
+| `Divide` | `+0x00C` s32 | 1024 on 352 rows; 0 (blank) on 7: 181 `fade`, 182 `armor_override_percent`, 183..187 `unused183`..`unused187` | `[I]` not read by the price path (the divisor is the constant 1024); 1024 by data |
+| `Multiply` | `+0x010` s32 | −34..4096, 67 distinct; non-zero on 187; negative on 2 (91 `item_req_percent` −34, 120 `item_damagetargetac` −20) | `[I]` `Multiply·X·v/1024` per entry (Encode 0, 4) |
+| `Add` | `+0x014` s32 | 0..56 452, 118 distinct; non-zero on 184 | `[I]` added once per entry with `v` ≠ 0 (Encode 0, 4) |
 
 - `[C]` **190 rows are priced** (`Multiply` or `Add` ≠ 0); every one has `Divide` 1024, so no priced row divides by 0.
   6 have `Multiply` only: 59 `poisonlength` (4) and the five `passive_*_pierce` (333..336, 358; 1 984..2 812). 3 have
@@ -496,10 +505,12 @@ price is `[L]`; by the names, a stat adds `value · Multiply / Divide + Add` or 
   155 stats a used property code writes, 149 are priced; the 5 reachable on the drop path with no price are 27
   `manarecoverybonus`, 28 `staminarecoverybonus`, 151 `item_aura`, 155 `item_reanimate` and 268 `item_armor_bytime`.
   41 priced stats are written by no used code (the 205..213 `unused204`..`unused212` among them, priced as
-  `item_charged_skill`).
+  `item_charged_skill`). `[I]` The `Multiply`/`Add` of the 18 rows with `Encode` 1–3 (97, 107, 195–199, 201,
+  204–213) are not used by the price: those terms take the [Skills](Skills.md#charge-cost-columns-plan-0043-phase-0)
+  `cost mult`/`cost add` of the param's skill ([items/0011 § 3](../findings/items/0011-economy.md#3-the-value-terms)).
 - `[C]` 7 priced rows are also `Saved` (0 `strength`, 1 `energy`, 2 `dexterity`, 3 `vitality`, 7 `maxhp`, 9 `maxmana`,
-  11 `maxstamina`); the last three have `ValShift` 8, so whether the price reads the raw or the shifted value matters
-  `[L]`.
+  11 `maxstamina`); the last three have `ValShift` 8, and `[I]` the price shifts the value first (whole points,
+  [items/0011 § 3](../findings/items/0011-economy.md#3-the-value-terms)).
 
 ## Interpretation notes
 

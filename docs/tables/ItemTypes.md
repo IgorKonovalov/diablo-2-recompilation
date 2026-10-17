@@ -128,13 +128,12 @@ From [items/0006 § 1, § 6](../findings/items/0006-properties.md#1-base-stats-s
 
 The per-type columns the repair, price and wear code is expected to read. Offsets are [§ Columns](#columns) (`[C]`,
 `excel_bin.py diff`); the rows come from `python3 -I tools/economy_survey.py types workspace/merged/data/global/excel`
-(gate survey `economy`), `[C]` as data. The repair and price readers are named only
-([items/0009 § 9](../findings/items/0009-vendors.md#9-named-only-prices-and-repair)), so the meanings are `[L]` except
-where tagged. Item-side columns (`cost`, `durability`, stacks) are in [Weapons § Economy](Weapons.md#economy-plan-0043-phase-0).
+(gate survey `economy`), `[C]` as data. The repair and price readers are read by plan 0043 Phase 1
+([items/0011](../findings/items/0011-economy.md)); the meanings are `[L]` except where tagged. Item-side columns (`cost`, `durability`, stacks) are in [Weapons § Economy](Weapons.md#economy-plan-0043-phase-0).
 
 | Column | Field | Rows with it | Meaning |
 |---|---|---|---|
-| `Repair` | `+0x008` u8 | 32: `shie`, `tors`, `boot`, `glov`, `belt`, `helm`, `circ`, `phlm`, `pelt`, `head`, `ashd`, `cloa`, `scep`, `wand`, `staf`, `orb`, `axe`, `club`, `swor`, `hamm`, `knif`, `spea`, `pole`, `mace`, `xbow`, `h2h`, `h2h2`, `aspe`, `tkni`, `taxe`, `jave`, `ajav` | the type can be repaired `[L]` |
+| `Repair` | `+0x008` u8 | 32: `shie`, `tors`, `boot`, `glov`, `belt`, `helm`, `circ`, `phlm`, `pelt`, `head`, `ashd`, `cloa`, `scep`, `wand`, `staf`, `orb`, `axe`, `club`, `swor`, `hamm`, `knif`, `spea`, `pole`, `mace`, `xbow`, `h2h`, `h2h2`, `aspe`, `tkni`, `taxe`, `jave`, `ajav` | `[I]` the repair test `ItemCanRepair` reads it on the item's **own** type, no `Equiv` walk ([items/0011 § 5](../findings/items/0011-economy.md#5-callers-buy-sell-repair-the-client-copy)) |
 | `Throwable` | `+0x010` u8 | 7: `tpot`, `tkni`, `taxe`, `jave`, `ajav`, `thro`, `comb` | `[I]` the classic-game re-pick in the TC resolver ([items/0001](../findings/items/0001-tc-resolution.md), 0x0055AE6E) and the affix-count rule ([items/0005](../findings/items/0005-affixes.md), fn:sub_0062BA80_ItemTypeThrowable@0x0062BA80); quantity loss on a throw `[L]` |
 | `Reload` | `+0x011` u8 | 9: `bowq`, `xboq`, `mboq`, `mxbq`, `tpot`, `tkni`, `taxe`, `jave`, `ajav` | a spent stack is refilled from the inventory `[L]` |
 | `ReEquip` | `+0x012` u8 | 5: `tpot`, `tkni`, `taxe`, `jave`, `ajav` | a spent stack is replaced by a like item `[L]` |
@@ -154,10 +153,19 @@ where tagged. Item-side columns (`cost`, `durability`, stacks) are in [Weapons �
 - `[C]` **The item's own `type` against these flags** (the `Equiv` tree not walked): 270 of 306 weapons and all 202
   armors have a `Repair` type; the 36 weapons without one are `bow`, `abow` and `tpot` items, all `nodurability` 1;
   36 weapons have a `Throwable` type (the 30 throwing weapons and the 6 throwing potions, exactly the `stackable`
-  weapons). Whether the repair test reads the item's own type or its `Equiv` closure is a Phase 1 question `[L]`; on stock
-  data it changes no count: walking `Equiv1`/`Equiv2` to the root gives the same 270, 202 and 0 (misc), no item
+  weapons). `[I]` The repair test reads the item's own type ([items/0011 § 5](../findings/items/0011-economy.md#5-callers-buy-sell-repair-the-client-copy), 0x0062E6B2–0x0062E6C2); on stock
+  data the closure would change no count: walking `Equiv1`/`Equiv2` to the root gives the same 270, 202 and 0 (misc), no item
   differing (survey keys `w_closure_repair` = 270, `a_closure_repair` = 202, `m_closure_repair` = 0 and
   `*_closure_repair_differs` = 0, `economy_survey.py types`).
+- `[I]` **`ItemCanRepair`** (fn:sub_0062E660_ItemCanRepair@0x0062E660): an identified, non-ethereal item with missing
+  charges can be repaired; otherwise its own type must have `Repair`, and then a repairable stack (throwable,
+  stackable, not ethereal) or an item with durability can. So the 13 `nodurability` crossbows of a `Repair` type,
+  bows and `tpot` are refused unless they have charges ([items/0011 § 5](../findings/items/0011-economy.md#5-callers-buy-sell-repair-the-client-copy)).
+- `[I]` **`StaffMods`** (`+0x01F`) gates the price's staff-mod term: the term runs for every `item_singleskill`
+  (stat 107) entry unless the type's byte is 7, which no stock type has (the bytes are 1..6 or 255)
+  ([items/0011 § 3](../findings/items/0011-economy.md#3-the-value-terms), fn:sub_0062EDD0_PriceStaffModTerm@0x0062EDD0, tbl:ItemTypes.txt:StaffMods).
+- `[I]` **`Class`** (`+0x021`) < 7 (a class-only type) quarters the sell value `S` (after the ethereal quartering,
+  which stacks with it); the buy and repair values are untouched ([items/0011 § 3](../findings/items/0011-economy.md#3-the-value-terms) step 8, tbl:ItemTypes.txt:Class).
 
 ## Open questions
 
