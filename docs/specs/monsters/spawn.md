@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, data/excel, drlg/collision, objects]
 consumed_by: [monsters/special, monsters/stats, items/tc]
-tags: {C: 110, I: 64, L: 6}
-updated: 2026-10-16
+tags: {C: 112, I: 64, L: 5}
+updated: 2026-10-17
 ---
 
 # Random population of a room
@@ -140,7 +140,7 @@ inside the presets window are predicted, with 0 mismatches on the logs of this s
 | `NearWarpTest(room, x, y)` | modelled, [drlg/collision § I](../drlg/collision.md#i-nearwarptestgame-room-x-y-and-its-side-effects); the level's warp points from [drlg/warps § E](../drlg/warps.md#e-warp-points), the type-11 point from the log | point within `WarpDist` of one of the level's warp points or of its waypoint point. Not pure: it can activate a room and step the level seed. In the run:2026-10-14-collision logs the warp points are predicted at all 1646 calls: the outdoor rooms' points of levels 4 and 44, logged until plan 0026, now follow from the out rooms' flags. The plan 0014 logs hold no warp points, so there it stays a value oracle | `drlg/collision`; the points [drlg/warps](../drlg/warps.md), outdoor rooms' bits [drlg/outdoor](../drlg/outdoor.md#b-the-cell-grid-and-its-bits) | [C] (fn:sub_0054DB50_NearWarpTest@0x0054DB50, fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, run:2026-10-14-collision, run:2026-10-15-drlg-maze, run:2026-10-15-drlg-outdoor) |
 | `SpawnPosOnTile(room)` | modelled, [drlg/collision § J](../drlg/collision.md#j-spawnposontileroom-spawncol-1) | the `spawnCol` 1 tile placement: one room draw, then a scan | `drlg/collision` | [C] (fn:sub_005B2700_SpawnPosOnTile@0x005B2700, run:2026-10-14-collision) |
 | seed of another room at its first request in a pass | seed oracle | a frog demon placed on a near room's tile: its group and minions draw from that room's seed (2 calls) | [rng/seeds](../rng/seeds.md) | [C] (fn:sub_005B2700_SpawnPosOnTile@0x005B2700, run:2026-10-14-collision) |
-| unit seed after `SUnitCreate` | seed oracle | the new monster's `+0x20`. The game-seed step is in scope (§ J); the unit seed is 2 steps past `Init(step(game).low)` on 914 of 916 creations, 6 and 15 on the other two | `monsters/stats` | [C] (fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-13-mon-spawn) |
+| unit seed after `SUnitCreate` | seed oracle | the new monster's `+0x20`. The game-seed step is in scope (§ J); the unit seed is 2 steps past `Init(step(game).low)` on 914 of 916 creations, 6 and 15 on the other two (a class appended to the level's region, note J1) | `monsters/stats` | [C] (fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-13-mon-spawn) |
 | special mods after the champion roll, the unique-minion setup, the mod handlers of a boss and of each pack member | modelled, [monsters/special § A–F](special.md#a-champion-or-unique) | the mod picks on the unit seed, the minion count and transfer, one `rndname` step per special; room and game seed unchanged by the handlers | [monsters/special](special.md) | [C] (fn:sub_005A0760_SpecialModsRoll@0x005A0760, fn:sub_005A2120_SpecialModsApply@0x005A2120, run:2026-10-13-mon-spawn, run:2026-10-14-mon-special) |
 
 - [C] `CollisionTest`, `LogicRegionIdAt` and `SpawnClassCellTest` draw nothing and change nothing. `NearWarpTest` draws on
@@ -707,7 +707,21 @@ This spec takes the unit seed after `SUnitCreate` as an input owned by `monsters
 (fn:sub_00555230_SUnitCreate@0x00555230, fn:sub_00552DF0_UnitSeedInit@0x00552DF0, run:2026-10-13-mon-spawn)
 The two usual steps are named there: the appearance pick and the HP draw of `MonStatsInit`
 ([stats § B](stats.md#b-monstatsinit-in-order) B2 and B7). [C] (fn:sub_00573CB0_MonStatsInit@0x00573CB0,
-0x00573F8F, run:2026-10-15-mon-stats) What makes the 6- and 15-step outliers is not identified (*Open questions*).
+0x00573F8F, run:2026-10-15-mon-stats)
+The extra steps come from the level's monster region. `SUnitCreate` reaches `MonsterInit`, which calls
+`MonRegionFindAdd` before `MonStatsInit`. A class not yet in the level's region, with MonStats2 `TotalPieces` above 2,
+is appended to it, and `MonVariantRoll(&unit.seed, entry, 3)` rolls its sets on the **unit** seed. So the unit seed is
+the variant roll's draws plus the usual 2 steps past `Init`. This is the rule
+[monsters/0001 § Plan 0038 batch S3a](../../findings/monsters/0001-level-pool.md#plan-0038-batch-s3a-2026-10-16) (pool 22)
+states for the region. [C] (fn:sub_00574250_MonsterInit@0x00574250, fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0,
+fn:sub_005BDB20_MonVariantRoll@0x005BDB20, 0x00547C87, 0x00547CA1, tbl:MonStats2.txt:TotalPieces,
+run:2026-10-13-mon-spawn) The three kept logs of the run hold 1 786 creations (towns and unwatched levels included).
+1 725 take 2 steps and 47 take 3 (a stale entry: `TotalPieces` ≤ 2, one draw per component with a count of at least 1,
+then the HP draw). The other 14 are appends at 6, 10, 11, 13, 14, 15 or 16 steps, and every one has the exact count
+`tools/monpool.py`'s variant roll predicts from its seed; the `goatman1` (6) and the `fallen1` (15) are among them.
+The confirmation rests on those 14. The region state is not modelled, so the 2- and 3-step creations fit the rule without
+showing which branch each took. [C] (fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0, run:2026-10-13-mon-spawn;
+[monsters/0002 § Plan 0039 batch P1c](../../findings/monsters/0002-room-population.md#plan-0039-batch-p1c-2026-10-17))
 
 J2. Every draw this pass makes on a unit seed comes after that input, in this order: the MonStats minion count
 (§ I, inside the creation), then the group size (§ F) for a leader; the champion roll (§ G3), then, after the
@@ -928,8 +942,6 @@ draw (leader seed → `219966E1:68C8AB12`).
   null room in `MonSpawnTry`, `smax < s`, a region-id mismatch in either position search, `PartyMin ≥ PartyMax`, and the two
   negative tests of `ChampionMemberMark`. A run that reaches one should log it; `tools/monspawn.py` counts each
   (`guard …` lines). (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:sub_0054F060_RoomWandererTick@0x0054F060)
-- [L] Which callee of `SUnitCreate` makes the 6 and 15 unit-seed steps of the two outlier creations (the usual 2 are
-  the appearance pick and the HP draw, [stats § B](stats.md#b-monstatsinit-in-order)). Owner: `monsters/stats`.
 - [L] Multiplayer games were not logged. By the code they take the same path (no read of the player count was found).
   Nightmare and classic games were logged in run:2026-10-14-mon-special, whose passes reproduce with 0 mismatches.
 - [L] What room `+0x78` is (it must be 0 for a wanderer), and when `0x0061A4D0` lets a populated room restore its

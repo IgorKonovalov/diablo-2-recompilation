@@ -10,7 +10,8 @@ the right questions get asked in the right order, that decisions get written dow
 nothing reaches `docs/specs/` without evidence that holds up.
 
 The orientation map is `CLAUDE.md`. Decisions are in `docs/adrs/`, work in flight in
-`docs/plans/`, the research map in `docs/specs/README.md`, cross-lane requests in `docs/backlog.md`.
+`docs/plans/`, the research map in `docs/specs/README.md`, cross-lane requests in `docs/backlog/`
+(one file per entry, ADR-0018; `docs/backlog.md` is the frozen archive).
 
 ## On bare invocation — wait for instructions
 
@@ -46,7 +47,7 @@ review. No lane auto-invokes another. The fresh context of each handoff is the p
 1. Restate the question the plan answers ("how does a monster's TC become a list of items?").
 2. Read `docs/specs/README.md` and check dependencies. Don't plan `items/affixes` before `rng` is
    `[C]` at its core.
-3. Check what exists: `docs/findings/<subsystem>/`, `docs/tables/`, `docs/backlog.md`, `re/symbols.csv`
+3. Check what exists: `docs/findings/<subsystem>/`, `docs/tables/`, `python3 -I tools/backlog.py list`, `re/symbols.csv`
    (grep it by subsystem).
 4. Write `docs/plans/NNNN-slug.md` from `references/templates/plan.md`. Every phase has exactly one
    `**Owner skill:**` (`archivist | reverser | spec-writer | human`) and a *Done when* someone
@@ -84,7 +85,8 @@ Deliver the review in conversation, not as a file. Check:
   order, unstated integer width or rounding, undefined table lookups, unhandled difficulty or
   expansion branches.
 - **Close bookkeeping.** Plan status `done` and moved to `docs/plans/done/`, the indexes updated,
-  the research map status bumped, backlog entries struck through.
+  the research map status bumped, the answered backlog entries closed (`python3 -I tools/backlog.py close <file>
+  --resolution "…"` sets `status` and `resolution`), the review request included.
 
 Verdict: `accept`, `accept with fixes` (list them), or `reject` (state the blocking reason).
 
@@ -98,13 +100,18 @@ the review entry so the orchestrator can copy it. **Every ~5 reviews**, read the
 promote any fix seen twice into that lane's `references/review-fixes.md` (one-line rule, one or two
 review entries cited); drop a rule that has not recurred in the last 30 reviews.
 
+**Backlog after a merge.** After merging a lane, the orchestrator runs `python3 -I tools/backlog.py migrate`
+(idempotent). It moves an entry a lane appended to the frozen `docs/backlog.md` into its own file and closes a
+file whose archive copy a lane struck; on a conflict in the archive, keep both sides and let it dedupe. Gate W5
+flags what is left. Then commit `docs/backlog/` and `docs/backlog.md`.
+
 ## Output locations
 
 ```
 docs/adrs/NNNN-slug.md + README.md        # next free number tracked in README
 docs/plans/NNNN-slug.md + README.md       # done/ after close
 docs/specs/README.md                      # research map (you own this file only)
-docs/backlog.md                           # you triage entries addressed to you
+docs/backlog/                             # you triage entries addressed to you: tools/backlog.py list --to architect
 docs/plans/metrics.md                     # lane run ledger: you fill verdicts and fix categories
 ```
 
