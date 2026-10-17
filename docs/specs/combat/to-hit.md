@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, player/creation, monsters/stats]
 consumed_by: [combat/overview, combat/damage, combat/delivery]
-tags: {C: 26, I: 30, L: 4}
-updated: 2026-10-16
+tags: {C: 32, I: 27, L: 3}
+updated: 2026-10-17
 ---
 
 # Combat: the hit test, chance to hit and the defence rolls
@@ -82,7 +82,7 @@ dodge, 339 avoid, 340 evade, 348 weapon block. [I] ([combat/0001 § 12b (e)](../
 |---|---|---|---|
 | to-hit clamp | 5 .. 95 | 0x0057DB22–0x0057DB30 | [C] (run:2026-10-16-combat) |
 | block cap | 75 | fn:sub_00622720_UnitBlockChance@0x00622720 | [C] (run:2026-10-16-combat) |
-| moving-player block divisor | 3 | 0x0057E011–0x0057E01F | [I] (run:2026-10-16-combat: 26 events, under the floor) |
+| moving-player block divisor | 3 | 0x0057E011–0x0057E01F | [C] (run:2026-10-16-combat: 48 events, all on a running player, mode 3) |
 | attacker-monster range bonus | 2 | fn:COMBAT_MeleeHitTest@0x0057EC10 | [I] |
 
 ## Algorithm
@@ -204,7 +204,7 @@ sequenceDiagram
 ```
 C1. MeleeHitTest(att, def, arPct: i32, rangeExtra: i32) → result: u16:            [I] (fn:COMBAT_MeleeHitTest@0x0057EC10, all of C1)
       if att and def are not hostile, or either is not a player or a monster: return 0
-      auto: bool ← def is a player and def.mode = 3                                ; running
+      auto: bool ← def is a player and def.mode = 3                                ; running; [C] (run:2026-10-16-combat, 47)
       reach ← (att is a monster ? 2 : 0) + 1 − (rangeExtra ≠ 0 ? weaponRange(att) + rangeExtra : 0)
       if not InMeleeRange(att, def, reach): return 0
       res: u16 ← auto ? 0x1 : (ToHitRoll(att, def, arPct, false) ? 0x1 : 0)       ; § A
@@ -221,7 +221,8 @@ C1. MeleeHitTest(att, def, arPct: i32, rangeExtra: i32) → result: u16:        
 ```
 
 - C1. **A running player is hit without a to-hit roll**, and no draw happens on the attacker's seed; the block and
-  avoidance rolls still run. The run met 26 such hits, under the plan's rare-branch floor of about 30. [I]
+  avoidance rolls still run. Reproduced with 0 mismatches in 47 melee events on a player in mode 3: every one that
+  reached a defence line had no to-hit draw logged, and none had one. [C]
   (0x0057EC71–0x0057EC77, run:2026-10-16-combat)
 - C1. The result bits are: `0x1` hit, `0x2` killed, `0x4` get-hit, `0x8` knockback, `0x10` blocked, `0x80` dodged,
   `0x100` avoided, `0x200` evaded (missiles), `0x2000` doubled by a critical or deadly strike, `0x8000` weapon block.
@@ -238,7 +239,7 @@ C1. MeleeHitTest(att, def, arPct: i32, rangeExtra: i32) → result: u16:        
 C2. DefenceRoll(def, isMissile: bool, useBlock: bool) → u32:                     [C] (fn:COMBAT_DefenceRoll@0x0057DFB0, run:2026-10-16-combat, all of C2)
       if useBlock:
         b: i32 ← BlockChance(def, game.expansion)
-        if def is a player and IsMoving(def) and def.mode ≠ 2: b ← b ÷ 3            ; moving, not walking; [I] (0x0057E00B–0x0057E01F)
+        if def is a player and IsMoving(def) and def.mode ≠ 2: b ← b ÷ 3            ; moving, not walking; [C] mode 3 (run:2026-10-16-combat, 48), [I] the mode-2 exception (0x0057E00B–0x0057E01F)
         if b > 0:
           r ← Range(def.seed, 100)                                                ; draw (defender)
           if r < b: return 0x01                                                   ; blocked
@@ -256,15 +257,17 @@ C2. DefenceRoll(def, isMissile: bool, useBlock: bool) → u32:                  
 
 - C2. The player's chance was checked against its formula in 2 523 expansion and 395 classic events, and 2 243 blocks
   occurred. The shield test was a value oracle (`UnitBlockChance`'s shield check). [C]
-  (fn:sub_00622720_UnitBlockChance@0x00622720, run:2026-10-16-combat) The `÷ 3` for a moving player who is not
-  walking reproduced in 26 events, under the plan's floor of about 30, with the moving test a value oracle
-  (`sub_00622D00_UnitIsMoving`). [I] (fn:sub_00622D00_UnitIsMoving@0x00622D00, 0x0057E011–0x0057E01F,
-  run:2026-10-16-combat)
+  (fn:sub_00622720_UnitBlockChance@0x00622720, run:2026-10-16-combat) The `÷ 3` for a **running** player (mode 3)
+  reproduced with 0 mismatches in 48 events (47 melee, 1 missile), with the moving test a value oracle
+  (`sub_00622D00_UnitIsMoving`). [C] (fn:sub_00622D00_UnitIsMoving@0x00622D00, 0x0057E011–0x0057E01F,
+  run:2026-10-16-combat) The exception for a walking player (mode 2), who keeps the full chance, is read but was not
+  met: no walking player was attacked. [I] (0x0057E00B–0x0057E01F)
 - C2. **The dexterity form applies only in an expansion game**; classic uses `stat 20 + BlockFactor`. The divisor is
   `2·level` with level 0 and 1 both counting as 1. [C] (fn:sub_00622720_UnitBlockChance@0x00622720, tbl:CharStats.txt:BlockFactor,
   run:2026-10-16-combat)
-- C2. The `÷ 3` comes after the 75 cap, so a moving player blocks at most 25 %. [I] (0x0057E011–0x0057E01F,
-  run:2026-10-16-combat) Which modes `0x00621190` counts as moving (2, 3 and 6 by the reading) is a value oracle;
+- C2. The `÷ 3` comes after the 75 cap, so a moving player blocks at most 25 %: the logged chance of a running
+  player was `b ÷ 3` taken after the cap in 45 expansion events (75 → 25) and 3 classic events (53 → 17). [C]
+  (0x0057E011–0x0057E01F, run:2026-10-16-combat) Which modes `0x00621190` counts as moving (2, 3 and 6 by the reading) is a value oracle;
   see *Open questions*. [I] (0x0057DFD5)
 - C2. The draw is inlined on `def.seed`, `low mod 100`, and reported to `DEBUG_DefenceRollStub` before the test. [C]
   (fn:DEBUG_DefenceRollStub@0x005347C0, run:2026-10-16-combat)
@@ -368,6 +371,4 @@ case shows the running defender: no to-hit draw, and a third of the capped block
   that gates weapon block is unread ([combat/0001 *Open questions*](../../findings/combat/0001-formulas.md#open-questions)).
 - [L] Whether `0x00621190` (the "moving" test of C2) returns the player's mode or a separate state; the run took it
   as a value oracle.
-- [L] The running player's automatic hit (C1) and the moving player's block `÷ 3` (C2): the same 26 events, under the
-  floor of about 30; a resume run may raise both.
 - [L] The target modifiers of A7 and the defence percents of B1: no logged unit carried them.
