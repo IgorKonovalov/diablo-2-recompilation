@@ -1550,6 +1550,50 @@ Batch H5e, record [experiments.md § run:2026-10-16-sweep-mazes](experiments.md#
   of all five acts (52 200 windows, map seeds 1–600 × three difficulties: 0 of each). They may be unreachable on stock data; that needs a static argument, not
   more seeds. (fn:sub_00675080_OutVertsToCells@0x00675080, run:2026-10-16-sweep-mazes)
 
+### H5e review: static reachability (2026-10-17, `lane/rbs`)
+
+The H5e review asked, for each branch the sweep never met, for a static argument that stock data cannot take it or the
+condition a map seed must meet. Three of the five are answered here; (b) and (c) are not (backlog entry left open).
+
+- [I] **(e) Flag `0x20` is never set on the Blood Moor.** `OutdoorAct1` skips `A1CliffMark` for levels 2, 3 and 17
+  (`cmp $0x2` / `$0x3` / `$0x11` on `L+0x1D0`, 0x006807F3–0x00680806, then `call 0x00680070` at 0x0068080A only when
+  none matched). `A1CliffMark`'s `orl $0x20,(%ecx)` at 0x00680170 is the only instruction in 0x00660000–0x0068FFFF
+  that ORs the immediate `0x20` into memory (`objdump -d --no-show-raw-insn -j .text game.exe | grep -E
+  '^\s+6[6-8][0-9a-f]{4}:\s+or[lb]?\s+\$0x20,\(%e[a-z]{2}\)$'`: one line; six in all of `.text`, the other five
+  outside the DRLG range), and `LinkOutdoorFlags` ORs only `g_LinkOutdoorFlags` values (`0x4`, `0x8`, `0x10`, `0x80`,
+  `0x100`, `0x200`, `0x400`; § 16). Between the skip and the test at 0x0068023B, `OutSeamMark`, `OutBorderBuild` and
+  `OutBorderSubApply(0)` reach `O` only through its vertex list (`+0x64`) and grids (`+0x04`, `+0x2C`, `+0x54`) in
+  their Ghidra C; their callees `OutPresetPlace`, `GridCellOp`, `GridSegmentOp`, `OutCornerFlood` and
+  `BorderSubApplyType` are not followed (5). So the cliff-cave scan's non-square half has no stock case: **d-none**.
+  (fn:sub_006807F0_OutdoorAct1@0x006807F0, fn:sub_00680070_A1CliffMark@0x00680070,
+  fn:sub_00680200_A1RiverEastAndCave@0x00680200, data:g_LinkOutdoorFlags@0x006F1258)
+- [I] **(d) The road search pool cannot be exhausted on stock levels.** A new pool node is taken only when the current
+  node has no child yet (`piVar7[9] == 0` in `A1PathSearchStep`, 0x00681630; the count is `pool[0x2329]`, 900 → none),
+  and a child is reused on every later visit, so the nodes in use are one chain: at most (depth reached + 1) per
+  bound. A child costs `g + 2` and is kept only when `h + g ≤ bound`, so depth ≤ bound / 2. `A1PathSearch` runs the
+  bounds `1.5·h0` (integer) up to `1.5·h0 + 30` in steps of 5 (stop when `bound ≥ h0 + h0/2 + 35`), with
+  `h0 = min(a, b) + 2·max(a, b)` ≤ 3·max(a, b). `A1PathSearch` has one caller, `A1Paths` (0x00681454), and
+  `A1Paths` one, `OutdoorAct1` at 0x0068086F under `2 ≤ id ≤ 7`, whose grids are at most 12 cells a side (10×10, or
+  12×7 / 7×12 on the Blood Moor, H5e scan above), so `a, b ≤ 13` with the snapped endpoints, `h0 ≤ 39`, depth ≤ 44 and
+  at most 45 nodes, against 900. The branch needs `h0` above about 1 170, i.e. a grid over 390 cells a side.
+  **d-none.** (fn:sub_00681630_A1PathSearchStep@0x00681630, fn:sub_006817D0_A1PathSearch@0x006817D0,
+  fn:sub_00681420_A1Paths@0x00681420)
+- [I] **(a) A vertex merge in `OutVertsToCells` needs a seam exactly one cell long** (or a rect off the 8-tile grid).
+  From § 3's ring build (inclusive coordinates), when every level and neighbour rect has `x`, `y`, `w`, `h` ≡ 0 mod 8,
+  each vertex coordinate along an edge is a low bound (≡ 0 mod 8: `L.x`, `r.x`, …) or an inclusive high bound
+  (≡ 7: `L.x + w − 1`, `r.x + r.w − 1`, …). Two values of the same class are equal or at least 8 apart, and a 7-class
+  value followed by a 0-class one above it (one seam's end, the next seam's start) starts a new cell. Inserted points
+  lie strictly inside the edge (`a·c > s·c`, `b·c < e·c`), so `/ 8` makes two consecutive vertices equal only when a
+  seam's low and high bound are 7 apart: an adjacency overlap of **exactly 8 tiles** along an edge (the seam from the
+  edge start `s`, or from an inserted `a`, to `b`).
+  **Scan condition** for `sweep_h5e.py scan`: an outdoor level with a Vis/`Warp` −1 neighbour whose overlap with one of
+  its edges is 8 tiles, or any level rect value not a multiple of 8. Not shown here that no stock layout meets it.
+  (fn:sub_0067D050_VertexRingBuild@0x0067D050, fn:sub_0067CE20_VertexRingSeams@0x0067CE20,
+  fn:sub_00675080_OutVertsToCells@0x00675080)
+- Not answered in this sweep: **(b)** a waypoint pass with no free cell (`OutWaypointPlace` not read) and **(c)** an
+  Act I road set with 5 or 6 endpoints (needs, per level 2–7, the bound on seam openings and cave cells that
+  `A1PathEndpoints` counts, from `OutBorderBuild` and the cave placement).
+
 
 ## Data touched
 

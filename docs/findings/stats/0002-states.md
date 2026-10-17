@@ -317,9 +317,80 @@ struct:StatList+0x18, struct:ShrineEffect+0x8.
   Tested only: 7 `playerbody` (equip refused), 57 `attract` (curses refused), 100 `healthpot` and 106 `manapot` (named
   by Misc; freed by the ticks). (data:g_ShrineEffects@0x006E1850, data:g_SetBonusStates@0x006EE424,
   fn:sub_005CF010_PalAuraDo@0x005CF010)
-- [L] The rest (0, 6, 12, 18, 21, 25, 29, 39, 54, 86, 90–93, 96, 98, 99, 102, 104, 105, 108–110, 116, 118, 121, 142,
-  146, 154, 164, 171–173, 184): skill functions and monster code not read. A scan for `push <id>` before `STATE_Set`
-  and `STATE_ApplyTimed` would list their setters (static follow-up).
+- The rest (0, 6, 12, 18, 21, 25, 29, 39, 54, 86, 90–93, 96, 98, 99, 102, 104, 105, 108–110, 116, 118, 121, 142,
+  146, 154, 164, 171–173, 184): their setters are listed by the scan of § Surprise (f) setters scan below; the
+  functions it names are not read.
+
+### Surprise (f) setters scan (plan 0041 P1 review follow-up (b), 2026-10-17)
+
+`python3 -I tools/state_setters.py --asm <objdump .text dump> --ids 0,6,12,18,21,25,29,39,54,86,90,91,92,93,96,98,99,102,104,105,108,109,110,116,118,121,142,146,154,164,171,172,173,184`
+(tool sha256 `67d4f5d2…beec18b`, dump `objdump -d --no-show-raw-insn -j .text` of the pinned exe, sha256
+`b1e133a0…ad30564`) walks every direct call to `STATE_Set`, `UNIT_SetStateBit`, `STATLIST_SetState`, `STATE_ApplyTimed`
+(request `+0x1C`) and the testers `UNIT_HasState`, `UNIT_TestStateBit`, `UNIT_FindStatListByState`,
+`sub_00625650_StatListFindByState`, and resolves the state argument when it is an immediate (pushed, or moved into the
+pushed register; method in the tool's docstring). 659 call sites, 391 resolved, 268 not (a state taken from a table
+column such as Skills `+0x80`, a caller's argument, or a value across a jump). The containing function of each site is
+Ghidra's (`tools/ghidra.sh instrat`); "(no function)" is a site Ghidra's analysis left outside any function.
+
+- [I] For each row, the functions that pass it as an immediate to a setter (`STATE_Set` with on = 1 or from a
+  register, `STATLIST_SetState`, `STATE_ApplyTimed`), those that pass it to `STATE_Set` with on = 0, and the number of
+  test sites. Unnamed functions are given by entry address and are not read; most of the `0x005C…`–`0x005F…` ones sit
+  among the skill functions, which plan 0041 Phase 3 reads. (fn:STATE_Set@0x00639DB0, fn:STATLIST_SetState@0x006252D0,
+  fn:STATE_ApplyTimed@0x0056E970, fn:UNIT_HasState@0x00639DF0, fn:UNIT_FindStatListByState@0x006256B0)
+
+| Row | `state` | Set: `STATE_Set` on (or on/off from a register), `STATLIST_SetState`, `STATE_ApplyTimed` | Cleared: `STATE_Set` off | Test sites |
+|---:|---|---|---|---:|
+| 0 | `none` | `sub_0045F190_ClientMonAssign` | — | 1 |
+| 6 | `resistmagic` | — | — | 0 |
+| 12 | `inferno` | `(no function) 0x004E3130`, `(no function) 0x004E313A`, `0x004F0AB0`, `0x004F2450` ×2, `0x005C8E30` ×2, `0x005CC240`, `0x005D1280`, `0x005D69D0` ×2, `0x005E9170` | `0x004F0B50`, `0x0054A260`, `0x005C8C10`, `0x005E0C80`, `0x005E3530`, `0x005E5280`, `0x005E52D0`, `0x005E8480`, `0x005EA3D0`, `0x005EE5D0`, `0x005F9950`, `0x005F9A80`, `0x005FCF30` | 36 |
+| 18 | `skill_move` | `0x005CF6B0`, `0x005D8F50`, `0x005D9D50`, `0x005DA540` | `(no function) 0x0045D705`, `(no function) 0x0045D719`, `(no function) 0x0045D72D`, `0x00571B70` | 1 |
+| 21 | `stunned` | `0x00570420` ×2, `COMBAT_ApplyStun` ×2 | — | 7 |
+| 25 | `fetishaura` | — | — | 0 |
+| 29 | `convicted` | — | — | 0 |
+| 39 | `lightningbolt` | — | — | 0 |
+| 54 | `uninterruptable` | `0x004C21F0` ×2, `0x0054C0E0`, `0x005544B0` | `0x004C2180`, `0x004CA000`, `0x0054C0E0` | 36 |
+| 86 | `justhit` | `0x004D2D70` ×2, `0x005ADB00` ×2 | — | 6 |
+| 90 | `blue` | `0x005F0700` | `0x005F0700` | 0 |
+| 91 | `red` | `0x005F1B60` ×2, `0x005F1DE0` ×2 | `0x005F0700` | 0 |
+| 92 | `death_delay` | `0x005544B0`, `COMBAT_GetHit`, `sub_005A6920_MonRegenEvent` | — | 2 |
+| 93 | `valkyrie` | `0x005DC1E0` | — | 1 |
+| 96 | `revive` | `sub_005C07A0_SkillReviveDo`, `sub_005C55C0_SummonFinish` | — | 0 |
+| 98 | `sourceunit` | `0x00621C30` ×2, `0x00621CE0` | — | 2 |
+| 99 | `redeemed` | `0x005D0C40`, `0x005D0D70` | — | 0 |
+| 102 | `just_portaled` | `0x00584870` ×2 | — | 1 |
+| 104 | `corpse_nodraw` | `(no function) 0x005A4222`, `0x005C4DF0`, `0x005D26F0`, `0x005D89B0` | — | 0 |
+| 105 | `alignment` | `sub_005543B0_MonAlignSet` ×2 | — | 2 |
+| 108 | `sync_warped` | `0x0054CC40` ×2 | — | 2 |
+| 109 | `conversion_save` | `0x005D0350`, `0x005D7430` | — | 4 |
+| 110 | `pregnant` | `0x005D2250` | — | 1 |
+| 116 | `dragonflight` | — | — | 0 |
+| 118 | `corpse_noselect` | `0x004CA060`, `sub_005A4440_SpecialMonRestore` ×2, `sub_005A49B0_SuperUniqueSpawn` ×2, `sub_005B1CF0_MonPostCreateBoss`, `sub_005C07A0_SkillReviveDo`, `0x005C5E60`, `0x005D2A10`, `0x005D81C0`, `sub_005D8780_CorpseFindItem`, `0x005D89B0` | `0x004CA060` | 5 |
+| 121 | `skilldelay` | `0x0056EF90` ×2 | — | 2 |
+| 142 | `changeclass` | `0x005D1E10` ×2, `0x005EF320` ×2 | — | 0 |
+| 146 | `invis` | `0x005EF620`, `0x0063EFA0` | — | 6 |
+| 154 | `recycled` | — | `sub_00579AA0_MercRevive` | 0 |
+| 164 | `debugcontrol` | — | — | 0 |
+| 171 | `runeword` | — | — | 0 |
+| 172 | `restinpeace` | `0x005C0770` | — | 0 |
+| 173 | `corpseexp` | `sub_005C07A0_SkillReviveDo` | — | 0 |
+| 184 | `uberminion` | `0x005F7F10`, `0x005FB410`, `0x005FD0F0` | — | 1 |
+
+- [I] Row 0 is a list given state 0 right after `STATLIST_Alloc(…, 0x40, …)` in `sub_0045F190_ClientMonAssign`
+  (`push 0; push ebx; call STATLIST_SetState` at 0x0045F5AA–0x0045F5AD), i.e. a stat list marked as no state, not a
+  state being set. (fn:sub_0045F190_ClientMonAssign@0x0045F190)
+- [I] Named setters: 21 `stunned` by `COMBAT_ApplyStun` (and `0x00570420`); 92 `death_delay` by `COMBAT_GetHit` and
+  `sub_005A6920_MonRegenEvent`; 96 `revive` by `sub_005C07A0_SkillReviveDo` and `sub_005C55C0_SummonFinish`; 105
+  `alignment` by `sub_005543B0_MonAlignSet`; 118 `corpse_noselect` by `sub_005A4440_SpecialMonRestore`,
+  `sub_005A49B0_SuperUniqueSpawn`, `sub_005B1CF0_MonPostCreateBoss`, `sub_005C07A0_SkillReviveDo`,
+  `sub_005D8780_CorpseFindItem` and five unnamed functions; 173 `corpseexp` by `sub_005C07A0_SkillReviveDo`; 154
+  `recycled` is only cleared, by `sub_00579AA0_MercRevive` (0x00579B64). (fn:COMBAT_ApplyStun@0x0057AAE0,
+  fn:COMBAT_GetHit@0x0057CEE0, fn:sub_005C07A0_SkillReviveDo@0x005C07A0, fn:sub_005543B0_MonAlignSet@0x005543B0,
+  fn:sub_00579AA0_MercRevive@0x00579AA0)
+- [I] 110 `pregnant` is the only one of the 34 applied through `STATE_ApplyTimed` with an immediate: request
+  `+0x1C` = `0x6E` and remove callback `0x005D21B0` at 0x005D22F0–0x005D22FE, in `0x005D2250`.
+- [L] Rows 6 `resistmagic`, 25 `fetishaura`, 29 `convicted`, 39 `lightningbolt`, 116 `dragonflight`, 164
+  `debugcontrol` and 171 `runeword` have no immediate site at any of the eight functions: either one of the 268
+  unresolved sites sets them, another path writes the bit, or nothing does. Not settled by this scan.
 
 ## Dead ends
 
