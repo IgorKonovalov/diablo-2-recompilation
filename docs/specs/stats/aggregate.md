@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [stats/overview, items/properties, items/uniques-sets, player/creation, monsters/stats, data/calc]
 consumed_by: [stats/states, combat/overview, player/creation, monsters/stats, data/calc]
-tags: {C: 62, I: 43, L: 5}
+tags: {C: 62, I: 42, L: 5}
 updated: 2026-10-17
 ---
 
@@ -230,8 +230,8 @@ Step notes:
   cache entry is not written, so it keeps its previous value (0 on first use) and its dependents are not walked:
   24 279 cache entries of sources whose target took kept their old value. (0x006267AD, run:2026-10-17-stats)
 - C4. [C] **The zero-source early write.** A source that evaluates to 0 is written 0 at once, before its targets,
-  and its `+0x5E` dependents are never walked: 1 239 such recomputes. No stock `op base` row (all are `level`) reaches
-  0. (0x006266FB–0x00626708, 0x00626847–0x00626856, run:2026-10-17-stats)
+  and its `+0x5E` dependents are never walked: 1 239 such recomputes. No stock `op base` row (all are `level`)
+  reaches 0. (0x006266FB–0x00626708, 0x00626847–0x00626856, run:2026-10-17-stats)
 - C5. [C] **The take-test quirk (`StatRecompute`).** For ops 2–5 the stat tested is not the source row's `op base`
   (`+0x56`) but the word at the source row's own `+0x0DE + 6k`, the `op base` of the row's own *k*-th op input. The
   loader fills only `+0x5E..+0xDD` with `0xFFFF`, so on a row that is not itself an op target that word is the
@@ -489,8 +489,8 @@ Step notes:
   (the propagation, the `monsterset` clear, the `oskill` passive) were. A set whose last member is broken was not
   reached. (fn:sub_00660120_SetBonusApply@0x00660120, fn:SETS_WornMemberMask@0x0062A370, run:2026-10-17-stats)
 - J2. [I] The aprop lists are the item's own lists of states 165..169 (flags `0x2040`, made at creation,
-  [items/properties § G](../items/properties.md#g-stat-storage)): pair *k* counts when its member is worn (`add func`
-  1) or when *k* other members are worn (`add func` 2). `add func` 0 (blank) puts the aprop in the main list at
+  [items/properties § G](../items/properties.md#g-stat-storage)): pair *k* counts when its member is worn
+  (`add func` 1) or when *k* other members are worn (`add func` 2). `add func` 0 (blank) puts the aprop in the main list at
   creation, where it always counts. (data:g_SetBonusStates@0x006EE424, fn:SETITEMS_GetMemberIndex@0x0062B3A0,
   tbl:SetItems.txt:add func)
 - J3. [I] **Stat 71 sums.** The marker stat 71 (`value`) is an ordinary entry, so the wearer's full stat 71 is the
@@ -593,7 +593,7 @@ tbl:CharStats.txt:LifePerVitality, run:2026-10-17-stats)
   on the client; the 1.14d server code computes both (D1). No stock path reaches them (*of Dawn* and *of Sunlight*
   are not spawnable), so no run can show it; an optional emulation of `STAT_ByTimeValue` is filed to the reverser.
   `sub_0061C100_ActTimeOfDay` and `owner +0x1C` are not read.
-- [L] Not reached in the run, each `[I]` above: the `fMin` floor (F2); ops 3, 6, 7, 10, 12; a decisive
+- [L] Not reached in the run, each inferred above: the `fMin` floor (F2); ops 3, 6, 7, 10, 12; a decisive
   `item_req_percent`, level or class test; a broken item and a set with a broken member; an Assassin's second weapon;
   the clamp of G4 as a predicted write.
 - [L] The full Trang-Oul's blocks with a `state` or an `oskill` property: their content is code-read only (J4); a tool

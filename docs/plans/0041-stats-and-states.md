@@ -545,3 +545,28 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   precondition); reverser, optional harness addendum (shrines and wells, an aura state's end, a different-state group
   clear). **P3 opens** (spec-writer queue order) with these rulings: the shrine, well, `item_req_percent`, 256-floor
   and different-state group claims are `[I]`, and the stats oracles of plans 0034 and 0037 stay oracles.
+- **2026-10-17 — Phase 3 drafted (spec-writer, `lane/p41s`, from `main` `f4b2aaf`).** Three new specs, status `draft`:
+  [stats](../specs/stats/README.md) (overview: files, entry points, the P2 boundary, draw order; {C 13, I 4, L 3}),
+  [stats/aggregate](../specs/stats/aggregate.md) ({C 62, I 42, L 5}; § A tree, § B link/unlink/toggle, § C propagation
+  and `StatRecompute` with the take-test quirk and the zero-source early write, § D op 1–13, § E the loader's op graph,
+  § F reads, § G maxima, rescale and callback, § H items, requirements with the ethereal −10, the refresh and its
+  136-frame period, per-level item values not refreshed on level-up, § I dual wield, § J set bonuses, § K passives,
+  draw order; four worked examples) and [stats/states](../specs/stats/states.md) ({C 43, I 44, L 6}; § A bit and list,
+  § B the timed apply as a decision diagram, § C expiry (one event per request) and removal with the lifecycle state
+  diagram, § D the group clear with the self argument, § E the tick (order diagram, stat-74 sign, 256 floor `[I]`),
+  § F auras (grid, `perdelay + 1`, stacking, the shortfall), § G shrines and wells all `[I]`, § H draws per kind; four
+  worked examples). The P2 splits are kept: the full Trang-Oul's block content `[I]` (an unchecked remainder, not an
+  oracle); the oracle maxima of plans 0034/0037 stay value oracles; aura draws `[C]` with the 746 chained pairs;
+  shrines and wells `[I]`, the recharge shrines deciding nothing; the expiry (123 of 300) and aura on/off (9 of 50)
+  shortfalls named; "no draw" `[C]` for link, unlink, own write, toggle, apply, expire, tick and aura, `[I]` for the
+  group clear, removal, shrines and wells. The op 6/7 contradicted lead is stated as 1.14d behaviour under *Open
+  questions*. Folded (one reverser entry closed): player/creation {C 81, I 44, L 3} → {C 81, I 45, L 2} (open
+  question 4 struck, I2–I3 note), items/properties {C 129, I 35, L 3} → {C 130, I 35, L 2} (B3 when worn; open
+  question struck), combat/delivery {C 50, I 39, L 4} → {C 52, I 38, L 3} (the player's life tick `[C]` under
+  poison, the floor `[I]`; the state end struck), combat/README {C 36, I 21, L 5} unchanged (the phase (2) question
+  pointed to stats, a narrower `[L]` kept), monsters/stats {C 104, I 57, L 4} → {C 105, I 57, L 4} (E3, the callback's
+  stats 9 and 11), data/calc {C 129, I 17, L 3} → {C 130, I 18, L 3} (what `stat(id, k)` reads), items/uniques-sets
+  {C 71, I 55, L 4} unchanged (downstream link). Research-map rows `stats/aggregate` and `stats/states` set to
+  `draft spec`, the touched rows' counts updated; five glossary terms. No wiki page (ADR-0012: the specs are not
+  reviewed); follow-up filed to the spec-writer, and `docs/wiki/items.md` keeps a W4 staleness warning until then.
+  Open questions: 14 `[L]` over the three specs. Gate green. Review request filed (backlog).

@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [stats/overview, stats/aggregate, rng, combat/delivery, data/calc, objects]
 consumed_by: [combat/delivery, combat/overview, objects]
-tags: {C: 43, I: 45, L: 6}
+tags: {C: 43, I: 44, L: 6}
 updated: 2026-10-17
 ---
 
@@ -340,8 +340,8 @@ Step notes:
 
 ### G. Shrines and wells
 
-All of § G is `[I]`: the run operated 7 shrines and 5 wells, every one predicted, against the plan's 50 operates and
-the 20 that the draw-freedom check asks per kind (a named shortfall).
+All of § G is inferred: the run operated 7 shrines and 5 wells, every one predicted, against the plan's 50 operates
+and the 20 that the draw-freedom check asks per kind (a named shortfall).
 
 ```
 G1. OBJOP_Shrine(object, player):                                      [I] (fn:OBJOP_Shrine@0x00583C70, tbl:Shrines.txt:reset)
