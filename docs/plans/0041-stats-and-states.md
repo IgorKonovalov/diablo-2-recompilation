@@ -113,7 +113,8 @@ cast, and when, is an input.
     stat and the six progressive `aurastat` cells with no calc; (d) which States row each timed shrine code applies
     (the name pairing is `[L]`; code + 122 holds for 7 of 10) and whether `Arg0`/`Arg1` become its stat value; (e)
     how the Sets compiler resolves a param name (by the property, or by a table order; 44 names are both a skill and
-    a state); (f) which code sets the 56 States rows no data column names, the monster-mod states among them;
+    a state; *the answer goes to the archivist for `excel_bin.py`'s Sets lookup, now a recorded tool limit in
+    [Sets § Bonus blocks](../tables/Sets.md#bonus-blocks-plan-0041-phase-0), arc4 review 2026-10-17*); (f) which code sets the 56 States rows no data column names, the monster-mod states among them;
   - **the boundary recommendation** for Phase 2: the event entry points, which stats stay value oracles (a skill's own
     computation, AI), the stat-read window (a recompute is a per-frame path: ADR-0014 § Log volume). The architect
     rules at the review.

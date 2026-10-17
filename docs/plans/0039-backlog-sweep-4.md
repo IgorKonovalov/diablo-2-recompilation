@@ -375,3 +375,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   compare (`sweep_s1b.py compile` now prints identical/differs for the 15 code lists, `compcode` and the four pools,
   key `codetable_identical` = 20; cited in [formats/experiments](../formats/experiments.md#addendum-2026-10-16-the-whole-bin-set-the-compile-wrote-plan-0039-a3)).
   No row's verdict changes.
+- **2026-10-17 — `lane/arc4` reviewed (architect, after merging `main` at `8d03310`). Verdict: accept with fixes**
+  (applied in the review commit). Nine entries checked against their sources: `ToHitCalc` `[I]` (data/calc § G),
+  `ToHitFactor` `[C]` and Hell 25 `[C]` (combat/0001 § 15, run:2026-10-16-combat, 1 974 attacks and 33 events), the
+  bit-7 survey and the 93 LvlPrest records `[C]` (drlg/0002, drlg/0004 § P1a), LvlWarp units `[I]` (drlg/0007 § P1a),
+  `firstPrefix` 747 `[C]` (save/0001 S1a row 101), `+0x025` `[C]` (monsters/0001 pool 9) all hold. Data re-counted:
+  `SaveMonsters` 0 for 7 levels, `restore` 698/18/18 with the named rows, Hireling `Version` 60 × 0 and 60 × 100,
+  DifficultyLevels 50/35/25. `sweep_s1b.py compile` re-run: `codetable_identical=20`, `bad=0`. The `economy`
+  baseline adds six keys and changes none. **Sets ruling:** recording the skills-then-states order as a tool limit is
+  accepted (the entry offered it; a property-based order now would be a guess); plan 0041 Phase 1 (e) now names the
+  archivist as the consumer of its answer. Fixes: [ds1.md](../formats/ds1.md) said bits 18–19 have no mapping and
+  `CellBits` maps 16/17 only, but drlg/0001 § Per-cell decision maps the 18–19 value field to `(v+1)·0x4000` (the
+  layer index ORed in at load); table, bullet and *Unknown fields* row corrected, the runtime-flag cells tagged `[I]`.
+  [Levels](../tables/Levels.md): level 0 is the null level, not a town. Gate fast tier and `--full=economy,excel_layout`
+  green. Follow-up to the reverser for the two finding wordings these came from.

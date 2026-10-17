@@ -123,9 +123,9 @@ full histograms):
 |---|---|---|---|---|
 | 0–7 | `0x81` ×170 211, `0x91`, `0x85`, `0x89`, `0x99` | `0xC2` ×656 897, `0x42` ×39 303, `0xC6`, `0xCA` | `0x80` ×15 054, `0x88` ×1 | `prop1`: flag byte |
 | 8–13 | 63 distinct (0..63) | 64 distinct | 64 distinct | sub-index (`sequence`), `[C]` via DT1 |
-| 14–19 | 0, 8, 12, 4 | 0, 8, 12, 4 | 0, 8, 12 | 14–15: top of the sub-index byte as read `[I]`; 16–17: runtime flags; 18–19: never set, no mapping |
+| 14–19 | 0, 8, 12, 4 | 0, 8, 12, 4 | 0, 8, 12 | 14–15: top of the sub-index byte as read `[I]`; 16–17: runtime flags `[I]`; 18–19: never set in stock files, the layer index ORed in at load, mapped to runtime flag `(v+1)·0x4000` `[I]` |
 | 20–25 | 46 distinct | 49 distinct | 15 distinct | main index (`style`), `[C]` via DT1 |
-| 26–30 | 0, 4, 1, 8 | 0, 4, 1 | 2, 6, 15 | 26, 28, 29: runtime flags; 27: shadow select; 30: no reader `[I]` |
+| 26–30 | 0, 4, 1, 8 | 0, 4, 1 | 2, 6, 15 | 26, 28, 29: runtime flags `[I]`; 27: shadow select `[I]`; 30: no reader `[I]` |
 | 31 | 1 in 2 744 | 1 in 6 690 | 1 in 7 | `hidden` |
 
 - `[C]` A cell is either 0 (empty) or has a non-zero low byte: no non-zero cell has bits 0–7 clear.
@@ -143,7 +143,7 @@ full histograms):
   [drlg/0001 § Per-cell decision](../findings/drlg/0001-ds1-dt1-readers.md#per-cell-decision)). What flag `0x1` does in the renderer is not read.
 - `[I]` Bit 31 sets runtime tile flag `0x8` (clears it otherwise). The DRLG builds a bit-31 cell like
   any other, except that orientations 8–11 are diverted to other handlers; nothing in DRLG drops it.
-  Low-byte bits 2, 3 and 7 and bits 16–19, 26, 28 and 29 also become runtime flags (table in
+  Low-byte bits 2, 3 and 7, bits 16 and 17, the 18–19 value field, and bits 26, 28 and 29 also become runtime flags (table in
   drlg/0001); low-byte bits 0, 1 and 2 and bit 27 select which tiles are picked for the cell (floor,
   wall, the bit-2 path, shadow) (fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0,
   fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20; [drlg/0001 § Per-cell decision](../findings/drlg/0001-ds1-dt1-readers.md#per-cell-decision)).
@@ -152,8 +152,8 @@ full histograms):
   sets either (the bits 14–19 field takes only 0, 4, 8 and 12, i.e. bits 16 and 17, table above)
   (fn:DRLG_PickTileByRarity@0x0066D820, fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0,
   fn:sub_0066FCF0_LvlSubFits@0x0066FCF0; [drlg/0001 § P1a](../findings/drlg/0001-ds1-dt1-readers.md#plan-0039-batch-p1a-2026-10-16)).
-- `[I]` **Bit 30 has no reader** in the DRLG, collision and tile code, and `CellBits` maps bits 2, 3, 7, 16, 17, 26, 28,
-  29 and 31 only; no stock DS1 sets it (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20;
+- `[I]` **Bit 30 has no reader** in the DRLG, collision and tile code, and `CellBits` maps bits 2, 3, 7, 16, 17, the 18–19 value field (`(v+1)·0x4000`, drlg/0001
+  § Per-cell decision), 26, 28, 29 and 31 only; no stock DS1 sets it (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20;
   [drlg/0001 § P1a](../findings/drlg/0001-ds1-dt1-readers.md#plan-0039-batch-p1a-2026-10-16)).
 - `[C]` **Every wall cell (bit 0) and shadow cell (bit 27) of the DS1s a room can load has bit 7.** Over the 2077 files
   that `LvlPrest` `File1..6` (2043) and `LvlSub` `File` (34) name, 152 587 + 2 518 wall cells and 13 279 + 307 shadow
@@ -448,7 +448,7 @@ differently.
 | field | where | observed |
 |---|---|---|
 | `unk_skip` | header, v9–13 | `(5000, 5000)` in all 41 files |
-| cell bits 18–19 | wall/floor/shadow cells | never set in stock files; bit 30 has no reader `[I]` |
+| cell bits 18–19, 30 | wall/floor/shadow cells | never set in stock files; 18–19 receive the layer index at load and map to a runtime flag `[I]`; bit 30 has no reader `[I]` |
 | cell low byte | wall/floor/shadow cells | per-layer constant flags (`0x81`/`0x42`/`0x80` always set) |
 | object `flags` | v ≥ 6 | 0 or 1 |
 | `unk_group` | group list, v18 | 0 |
