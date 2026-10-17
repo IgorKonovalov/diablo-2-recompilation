@@ -27,6 +27,30 @@ class ScanOrder(unittest.TestCase):
         self.assertIsNone(S.scan_order([]))
 
 
+class EndpointSources(unittest.TestCase):
+    def test_split(self):
+        cw, ch = 4, 3
+        defg = [[0] * cw for _ in range(ch)]
+        cell = [[0] * cw for _ in range(ch)]
+        defg[0][1], cell[0][1] = 5, 0x30000        # opening, index 3
+        defg[1][0], cell[1][0] = 6, 0x20000        # border piece, index 2: not an opening
+        defg[2][1] = 51                            # cave
+        defg[1][2], cell[1][2] = 28, 0x10000       # bridge at x = cw - 2
+        defg[1][1], cell[1][1] = 28, 0x10000       # bridge piece elsewhere: not counted
+        adj = [{"nbr": 1}, {"nbr": 26}, {"nbr": 3}]
+        self.assertEqual(S.endpoint_sources(adj, defg, cell, cw, ch), (1, 1, 1, 1, 1))
+
+
+class FreeInterior(unittest.TestCase):
+    def test_ring_ignored(self):
+        cell = [[0x100] * 4 for _ in range(4)]
+        cell[1][1] = 0
+        cell[2][2] = 0x2                           # not in 0x1B81
+        cell[1][2] = 0x800
+        cell[0][0] = 0                             # ring cell: never counted
+        self.assertEqual(S.free_interior(cell, 4, 4), 2)
+
+
 class TombRole(unittest.TestCase):
     def test_roles(self):
         tombs = (70, 71)
