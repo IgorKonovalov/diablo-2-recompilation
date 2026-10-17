@@ -391,3 +391,36 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   lifted by § 11's `0x200000` bullet. The Phase 1 follow-up (a) is answered by the run for the values.
 
   **P3 opens** (spec-writer queue order).
+
+- **2026-10-17 — Phase 3 written (spec-writer, `lane/p40s`; review pending).** [drlg/lifecycle](../specs/drlg/lifecycle.md),
+  status `draft`, **{C 78, I 68, L 8}**, from drlg/0009 (§§ 1–9 and § 11) and the P1 and P2 rulings. Sections: A the
+  frame; B activation (reference counts per distance, enter/leave callbacks, status, `RoomActivateA`/`B`, client copy);
+  C the client lists (`+0x78`); D the new-rooms walk; E release (idle count, the narrowed 120–131-frame wording, the
+  release test with pin, status and town conditions, the free, `0x200000`); F the save rule (monster tests in order,
+  the mode-12 room draw, objects, items, type 5, missiles); G the records (room, unit, item tables; the monster record as
+  a table and a `packet-beta`; item expiry); H the restore (order, the three monster paths, stats 13/7/6 and the
+  7500-frame rule, stat 12 per path with the champion flag-1 result, the items' two game-seed draws and start seed 0
+  for a simple item); I the wanderer tick; J the preset path and list; the draw order across seeds. Diagrams: a room's
+  life and the activation states (`stateDiagram-v2`), the release decision and the save rule (`flowchart TD`), the
+  monster record (`packet-beta`), the restore's draw order (`sequenceDiagram`), the wanderer gate. Worked example: one
+  Cold Plains room of session `n-cold` released at frame 5460 (129 frames after the leave; two of four dead monsters
+  drawn, one saved) and restored at 6570 (a corpse in mode 12, an item, an object), every seed step re-derived.
+  - Review splits carried: the wanderer gate's `+0x78`/`MonWndr` conditions `[I]` (the draw `[C]`); the expired-item drop
+    and 0 expiry `[I]`; quest-item and gold-above-10000 expiry `[I]`; the level-120 half `[I]`; champion stat 12 the
+    flag-1 result `[C]`, the minion handler flag `[I]`; the dead-champion observation `[C]`, "not saved on stock data"
+    `[I]`. *Open questions* (8 `[L]`): the town-follow case (with the 172 town saves as context), a champion without
+    `0x08`, the flag-1 call, the wanderer roll/spawn and alignment, the unreached branches, the client detach and act
+    `+0x50`, the unread fields, multiplayer.
+  - Linked specs (tags old → new): room-tiles {C 120, I 32, L 0} → {121, 32, 0} (the `EDX`/`0x200000` bullet split into
+    `[C]` by run:2026-10-17-lifecycle and "no reader" `[I]`; open question struck; runtime-state row); objects
+    {136, 71, 4} → {138, 71, 4} (B4 names `Levels.SaveMonsters`, its save test `[C]`; B5 and the inputs row point to
+    lifecycle § H); monsters/spawn {112, 64, 5} → {112, 64, 4} (`+0x78`/`0x0061A4D0` question struck); monsters/stats
+    {103, 57, 5} → {104, 57, 4} (the re-created stats row `[C]`, the open question struck); monsters/special
+    {104, 93, 3} → {106, 92, 3} (restore entry points `[C]`, the champion stat-12 bullet); drlg/preset {136, 24, 2} →
+    {137, 23, 2} (server detach `[C]`, 49 moves); drlg README and rng/seeds link the spec; glossary: *room release /
+    inactive record*, *wanderer*.
+  - Research map: the `drlg/lifecycle` row set to `draft`; the overview, preset, objects, spawn, special and stats rows
+    rewritten whole. Wiki: [levels](../wiki/levels.md) (the release flag, both passages), [monsters](../wiki/monsters.md)
+    and [objects](../wiki/objects.md) restated where the reviewed specs changed; no lifecycle section yet, since ADR-0012
+    covers reviewed specs only (a levels.md section after the review).
+  - Backlog closed: the P3-opens entry, the reverser's (b)/(c), the room-tiles 626 entry. Review requested.
