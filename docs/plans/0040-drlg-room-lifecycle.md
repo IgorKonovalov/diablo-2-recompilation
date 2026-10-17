@@ -139,3 +139,63 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-16 — Drafted (architect, `lane/plans39`).** Status `proposed`.
 - **2026-10-16 — Approved (owner, via the main session).** Plans 0039–0044 approved to run unattended, like 0027–0038.
+
+- **2026-10-17 — Phase 1 and Phase 1b done (reverser, `lane/p40r`, static).** No game run, no slot; Ghidra on the lane's
+  copy, objdump and r2 for the instruction-level reads. Finding: [drlg/0009](../findings/drlg/0009-room-lifecycle.md)
+  (46 `[I]`, 0 `[C]`, 14 `[L]`: 8 lead verdicts and 6 open questions). 47 symbols added (45 functions, 2 data, subsystem
+  `drlg/lifecycle`); types in `re/types/lifecycle.h` (views of the active and DRLG room, the four inactive records).
+
+  | Done-when item | Answer | Anchor |
+  |---|---|---|
+  | activation | a reference count per DRLG room at near-list distance 0..3, moved by `ClientRoomChange`; gaining distance 1 activates (`RoomActivateA`), 2 sets status 2, 3 loads the files; the new rooms are populated or restored at the start of the next frame; the server activates the near list of each client's room, the union over clients; the client act also builds one status-2 room every 5 ticks and releases at status 4 | drlg/0009 § 2, § 3 `[I]` |
+  | `RoomActivateA`/`B` | A: neighbour step, re-seed, type init, `DRLG_RoomActivate`, act counters; B: the on-demand variant (DT1 list and DS1 too, no-op when built), used by warps, waypoints, level points, preset level build; its rooms get no reference | § 2 `[I]` |
+  | release | every 12th frame; the 11th client-free pass in a row (room `+0x78` = 0), if not portal-pinned (`0x400000`), status ≥ 2, and in towns and level 120 every room of the level at status ≥ 2: **120–131 frames** after the last client's room change; frees the active room, unlinks it from the neighbours, `RoomTilesRelease(EDX 1)` through the wrapper, `DUNGEON_RoomFree` | § 4 `[I]` |
+  | `0x200000`, `EDX ≠ 0` | set iff the tiles were freed with the active room (the wrapper passes the negation of its `EDX`, called only by `ActiveRoomFree`); no reader found; corrects drlg/room-tiles' wording ("with the act's `+0x50`") | § 4 `[I]` |
+  | inactive records | monsters (0x5C), units (0x34: objects, type 5, kept player corpses), items (serialised bytes + expiry) under one room record per released room, oldest first; the monster save rule (eight tests, one room draw per mode-12 monster, `low mod 3 = 0`), objects § B4 confirmed with its level flag named (`Levels.SaveMonsters`), items always, missiles freed | § 5 `[I]` |
+  | restores | monsters (saved unit id, `MonSpawnTry` / `SpecialMonPlace` / `MinionRestore`, then stats 13 and 7 from the record, stat 6 = saved life within 7500 frames else the maximum, stat 12 not written), then items (`ItemCreateFromSave`: game-seed draw, saved seed kept, expiry `max(saved, frame + 15000)`), then objects § 13.5; `0x0061A4D0` = active-room flags bit 1 ("restored", once per activation); room `+0x78` = clients whose near set holds the room | § 3, § 6 `[I]` |
+  | wanderer tick | room draw, `low & 0x7FFF = 0`, `+0x78` = 0, `MonWndr`; roll `low mod 100 < 3` and region `+0x2C4` < 3; act I list (270); target list 8 | § 7 `[I]` |
+  | preset questions | the server's `PresetUnitSpawn` moves the DS1 path into the monster (zeroing it); a re-activated room never re-dispatches its preset list | § 8 `[I]` |
+  | seed consumers | release: one room draw per dead monster; walk: the tick, then the restore's monster, item and object draws in that order | § 9 `[I]` |
+  | boundary | event entry points, models and oracles | § 10 (recommendation; the architect rules) |
+
+  **Surprises.** (1) A dead champion is saved (1 in 3) and restored **alive** by `SpecialMonRestore` (mode 1). (2) A
+  record with flag `0x400` (target lists 8 and 9; wanderers are put in list 8) is dropped at the restore when its
+  alignment is good or neutral, and reaches the fatal error `0x691` when evil. (3) `RoomActivateB` rooms carry no
+  reference, so only the idle timer releases them; with `+0x78` = 0 they are the rooms where wanderers can appear.
+
+  **Phase 1b.** Searched for area reset, respawn, healing after leaving and wandering monsters; registered
+  `src:pk-boss-heal-thread` and `src:d2io-pmh-thread`, re-read `src:d2dfg-blizzard` (Levels, monstats2, objects).
+  8 verdicts: 2 held, 4 held with refinement, 1 not covered, 1 **contradicted** (`SaveMonsters` 0 leaves monsters
+  "injured": in 1.14d a non-preset monster of such a level is freed at the release). The contradicted case is not
+  reachable on stock data (only the towns and the Harem have `SaveMonsters` 0), so it is not a required Phase 2 case;
+  backlog entry filed for the ruling.
+
+  **P2 harness questions** (what Phase 2 must log and check; the logger needs the frame counter `game +0xA8` on every line):
+  1. *Release timing:* every `ClientRoomChange` (`0x00537B50`: client, old and new room), every idle count
+     (`0x0052D276` return) and test (`0x0052D284`), every free (`0x0052D2BB`): the model predicts each release frame
+     (11 passes, 120–131 frames), the town and level-120 rule and portal pins (`0x0061BAC0`).
+  2. *References and activation:* `DrlgRefMove` and the enter/leave callbacks (`0x00744384`/`0x00744394` targets): the
+     model predicts refs, status and every activation; `RoomActivateB` activations logged as inputs.
+  3. *Client lists:* `0x0061A660`/`0x0061A700` (room, client, count): `+0x78` per room.
+  4. *Save rule:* at `0x0052D2A9` per unit: type, class, mode, dead flag, `+0xC4`/`+0xC8`/`+0xD0`, alignment, `udead`
+     states, owner, region; the room seed in and out of `0x00543260` (the mode-12 draw): predict save, keep or free.
+  5. *Records:* the fields at the exits of `0x005421A0`, `0x00542E10` (`0x00542E30`) and `0x00541B10`.
+  6. *Restores:* per record at `0x00542563` and the creation calls (`0x00542689`, `0x005426C3`, `0x005426E9`): unit id
+     reused, the game-seed draw of `SUnitCreate`, `MonsterInit` through the monsters/stats model, stats 6, 7, 12, 13 at
+     `0x00542809`–`0x0054284A` and after; both sides of the 7500-frame rule (a revisit under and over 7500 frames);
+     specials and minions through the monsters/special model; items at `0x00541AE8` (expiry, seed, the game-seed draw,
+     socketed children, position); objects § 13.5 again.
+  7. *A dead champion restored alive* (§ 6): a champion killed, its room released and restored. Rare; a shortfall is
+     named.
+  8. *A saved wanderer:* the record flags (`0x400`, alignment) and the outcome (dropped or the fatal `0x691`).
+  9. *The wanderer gate:* the tick on every room of every walk, with `+0x78`; ≥ 200 gated updates, ≥ 30 spawns.
+  10. *`0x200000`:* set on every server release and on the nested client release only.
+  11. *The preset path:* preset unit `+0x10` before and after `PresetUnitSpawn` (`0x0055596C`), server and client copies.
+  12. *Region counts* before and after `MonRegionUnitLeave` at a restore (`0x00542954`).
+  13. *Level 108:* the drop rule while quest 23's byte `+0x13` is set, if a session reaches it (not required).
+
+  **Points for the review.** (a) Everything is `[I]`; the release timing and the seed consumers are stated in frames and
+  draw sites, ready for Phase 2. (b) The two surprises of the monster restore (dead champion alive; flag `0x400`
+  dropped or fatal) rest on instruction-level reads (0x005432EF–0x00543303, 0x005425F7–0x0054260B,
+  0x0054287F–0x0054288E). (c) The correction to drlg/room-tiles (the wrapper negates `EDX`) and the naming of objects
+  § B4's level flag (`Levels.SaveMonsters`). (d) The contradicted lead and its stock-data reachability.
