@@ -664,6 +664,60 @@ and Misc against ItemTypes (data, `[C]` for the counts):
 (fn:sub_00557450_ItemCreateByQuality@0x00557450 0x005574E3–0x00557567, tbl:ItemTypes.txt:Magic, tbl:ItemTypes.txt:Rare,
 tbl:ItemTypes.txt:Normal, tbl:Weapons.txt:unique, tbl:Misc.txt:quest)
 
+## Plan 0039 batch P1c (2026-10-17)
+
+Follow-up (b) of the P1b review ([backlog](../../backlog.md), 2026-10-17 architect → reverser). Static: Ghidra on the
+lane's copy, objdump and `tools/xrefscan.py`. No game run.
+
+### The 17 `MonSetOwner` sites P1b did not follow
+
+`sub_0058F030_MonSetOwner(game ECX, monster EDX, id, type, a, b)` has 26 `call` sites in `.text`. P1b followed nine:
+`MERC_Init` (2), `UniqueMinions`, `SpecialMonPlace`, `SuperUniqueSpawn` (0x005A4DD8), `SpawnOwnedMonster` and the
+three `MinionsSpawn` sites. The other 17, read here:
+
+| site | function | the monster | its owner |
+|---|---|---|---|
+| 0x005B2546 | `EscortSpawn` | each escort of a boss | the boss (`id` = boss `+0x0C`, type 1); `MonGroupAddMember` |
+| 0x005B26D9 | `TentacleMinionsSpawn` | each tentacle | the monster that spawns them (its id, type 1); group add |
+| 0x005B3192 | `sub_005B3130_FormationLeaderSpawn` | a formation leader | itself (`id` = new unit's `+0x0C`, `a` = 1) |
+| 0x005B324A | `sub_005B31B0_FormationMembersSpawn` | each formation member | the leader passed in; group add |
+| 0x005B3389 | `sub_005B3270_FormationSpawn`, case 5 | a unit made by `SpawnAtPos` | the unit given as the third argument (`[ebp+0x10]`: id by `UnitGetId`, type by `sub_0044BE50_UnitGetType`) |
+| 0x005FCAA1, 0x005FCACB | `sub_005FC860_BaalCloneSpawn` | Baal's clone (class 570) | Baal (`ESI`); group add |
+| 0x005AEEF1 | `sub_005AEDA0_MissileSpawnOwnedMonster` (pointer at `0x0073C79C`, a missile-side table) | a monster made by `SpawnOwnedMonster` | the missile's owner unit (found by id); group add, mod 15 `partydead` appended |
+| 0x005C5A15 | `sub_005C58B0_SkillBoneWallDo` (`srvdofunc` 60, `Bone Wall`) | the wall piece | the caster (type and id; none → type 6, id −1); mod 15 appended |
+| 0x005C5D97, 0x005C5DAD | `sub_005C5D00_SkillBonePrisonDo` (`srvdofunc` 62, `Bone Prison`) | the prison pieces | the first piece: the caster; the others: the first piece, group add |
+| 0x005C5611 | `sub_005C55C0_SummonFinish`, called from `srvdofunc` 58 (`Revive`) at 0x005C5855 | the revived monster | the caster (none → type 6, id −1); mod 21 `killself` with its timer |
+| 0x005C08C0 | `sub_005C07A0_SkillReviveDo`, a corpse callback of `0x005C09E0` | a monster raised from a corpse | the caster, found by id |
+| 0x0058F50F | `sub_0058F4D0_MonSetOwnerRestore`, from `sub_005424F0_InactiveMonstersRestore` (0x005427FB) | a restored inactive monster | its saved owner, and the saved block `+0x34` |
+| 0x00579ADB | `sub_00579AA0_MercRevive` | the old mercenary | none (id −1): unlinked before it is freed |
+| 0x005A2CDD | `sub_005A2CC0_PartyDeadKillMember` | each member of a `partydead` group | none (id −1), then death mode |
+| 0x005A2D50 | `sub_005A2D10_UModPartyDeadDeath` (`g_UModEventFns` mod 15, slot 1) | a dying `partydead` monster | none (id −1); its owner, if a monster and not itself, is put in death mode as well |
+
+`g_UModEventFns` is a table of six code pointers per MonUMod row, called as `[0x0073C0B8 + 4·(6·mod + event)]`
+(0x005A42DD), or `[0x0073C0CC + 24·mod]` for event 5 (0x005A4317). Slot 91 is mod 15 (`partydead`), event 1.
+(fn:sub_0058F030_MonSetOwner@0x0058F030, fn:sub_005B24E0_EscortSpawn@0x005B24E0,
+fn:sub_005B2570_TentacleMinionsSpawn@0x005B2570, fn:sub_005B3270_FormationSpawn@0x005B3270,
+fn:sub_005FC860_BaalCloneSpawn@0x005FC860, fn:sub_005AEDA0_MissileSpawnOwnedMonster@0x005AEDA0,
+fn:sub_005C58B0_SkillBoneWallDo@0x005C58B0, fn:sub_005C5D00_SkillBonePrisonDo@0x005C5D00,
+fn:sub_005C55C0_SummonFinish@0x005C55C0, fn:sub_0058F4D0_MonSetOwnerRestore@0x0058F4D0,
+fn:sub_005A2D10_UModPartyDeadDeath@0x005A2D10, data:g_UModEventFns@0x0073C0B8, tbl:Skills.txt:srvdofunc)
+
+- [I] **For items/quality** (a monster killer adds its owner's stat 80, § Plan 0039 batch P1b). Owners are set for
+  these kinds, and a kill by one of them also counts its owner's stat 80 while the owner is in the game
+  (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0):
+  - escorts (the boss);
+  - tentacles (their spawner);
+  - formation members (their leader; a leader owns itself);
+  - Baal's clone (Baal);
+  - the bone wall and prison pieces, revived and raised monsters, and missile-spawned monsters (the caster or the
+    missile's owner);
+  - a restored inactive monster (its saved owner).
+
+  Unique and superunique minions, MonStats party minions, hirelings and summons were already shown in P1b. The three
+  "none" rows only clear a link. (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, fn:ITEMS_DropMagicFind@0x005585D0)
+- Which callers reach `FormationSpawn` (0x0054E1CB in `PresetGroupSpawn`, and 0x005B3559) and which caster
+  `0x005C09E0` belongs to are not read.
+
 ## Open questions
 
 - ~~Which other monsters have an owner for magic find (`monsterData+0x28`)? A summon (skeleton) does (§7). Hirelings are
