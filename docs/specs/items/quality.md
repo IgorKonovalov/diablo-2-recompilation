@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/tc, data/excel]
 consumed_by: [items/tc, items/uniques-sets, items/affixes, items/vendors]
-tags: {C: 64, I: 38, L: 3}
+tags: {C: 64, I: 39, L: 2}
 updated: 2026-10-17
 ---
 
@@ -275,12 +275,29 @@ Step notes:
   pair ([monsters/0002](../../findings/monsters/0002-room-population.md) § MonStats minions). `SpecialMonPlace` sets a
   placed boss as its own owner, and a monster spawned for another unit (`SpawnOwnedMonster`) gets that unit. So a
   minion's kill adds its leader's stat 80, and a placed boss's kill its own stat 80 a second time, while the leader is
-  still in the game. Seventeen other `MonSetOwner` sites (escorts, tentacles, quest and skill code) are not followed,
-  and whether any stock monster carries stat 80 is not checked. [I] (0x005A0C94–0x005A0CB0, 0x005A4B6C–0x005A4B8E,
+  still in the game. Whether any stock monster carries stat 80 is not checked. [I] (0x005A0C94–0x005A0CB0, 0x005A4B6C–0x005A4B8E,
   0x005A2135, 0x005A0B9B, 0x0056DA15, fn:sub_005A0C00_UniqueMinions@0x005A0C00,
   fn:sub_005A2120_SpecialModsApply@0x005A2120, fn:sub_005A09E0_SpecialMonPlace@0x005A09E0,
   fn:sub_0056D940_SpawnOwnedMonster@0x0056D940, fn:sub_0058F100_MonGroupAddMember@0x0058F100,
   [items/0002 § Plan 0039 batch P1b](../../findings/items/0002-quality-roll.md#plan-0039-batch-p1b-2026-10-17))
+- M3. **The other monster owners.** `MonSetOwner` has 26 call sites; the other 17 give these kinds an owner, so a
+  kill by one of them also adds its owner's stat 80 while the owner is in the game. [I]
+  (fn:sub_0058F030_MonSetOwner@0x0058F030, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0,
+  fn:sub_005B24E0_EscortSpawn@0x005B24E0, fn:sub_005B2570_TentacleMinionsSpawn@0x005B2570,
+  fn:sub_005B3270_FormationSpawn@0x005B3270, fn:sub_005FC860_BaalCloneSpawn@0x005FC860,
+  fn:sub_005C58B0_SkillBoneWallDo@0x005C58B0, fn:sub_005C5D00_SkillBonePrisonDo@0x005C5D00,
+  fn:sub_005C55C0_SummonFinish@0x005C55C0, fn:sub_005C07A0_SkillReviveDo@0x005C07A0,
+  fn:sub_005AEDA0_MissileSpawnOwnedMonster@0x005AEDA0, fn:sub_0058F4D0_MonSetOwnerRestore@0x0058F4D0; [items/0002 § Plan 0039 batch P1c](../../findings/items/0002-quality-roll.md#plan-0039-batch-p1c-2026-10-17))
+  - a boss's escorts (the boss), and tentacles (the monster that spawns them);
+  - formation members (their leader; a formation leader owns itself, as a placed boss does), and the unit
+    `FormationSpawn`'s case 5 makes (the unit passed to it);
+  - Baal's clone, class 570 (Baal);
+  - the Bone Wall and Bone Prison pieces (the caster; the later prison pieces the first one), a monster revived with
+    `Revive` or raised from a corpse (the caster), and a monster a missile spawns (the missile's owner);
+  - a restored inactive monster (its saved owner).
+
+  Three more sites only clear the link (owner id −1): an old mercenary replaced at resurrection, and the members and
+  the dying monster of a `partydead` group.
 - K1–K2. At MF 100 the factors are 171 (unique), 183 (set) and 185 (rare); a linear factor of 200 in those three
   tests gets 34 of 847 rolls wrong. At MF 10 the factor is 110 in every test; the diminishing form there (109)
   breaks 24 of 574 rolls. [C] (0x0055861E–0x0055862C, 0x00558613–0x0055861B, run:2026-10-12-quality,
@@ -589,11 +606,9 @@ that tell the two models apart. [C] (run:2026-10-12-quality)
 
 ## Open questions
 
-- [L] **Other monster killers' owners**, narrowed (plan 0039 P1b): minions of unique, superunique and `SetBoss`
-  leaders have their leader as owner, and a placed boss itself (M3). Still open: the 17 `MonSetOwner` sites not
-  followed (escorts, tentacles, the quest and skill sites), so which other monster kinds' kills add an owner's stat 80
-  (backlog reverser, the P1b review follow-up (b);
-  [items/0002 § Plan 0039 batch P1b](../../findings/items/0002-quality-roll.md#plan-0039-batch-p1b-2026-10-17)).
+- ~~**Other monster killers' owners**~~ answered (M3): every `MonSetOwner` site is followed ([items/0002 § Plan 0039 batch P1c](../../findings/items/0002-quality-roll.md#plan-0039-batch-p1c-2026-10-17)).
+  Which callers reach `FormationSpawn` and which skill owns the corpse-raise callback are reverser residues (backlog,
+  P1c residues (a) and (b)); they name the paths, not the owner rule.
 - [L] **The `*Min` clamp (D6) and its place after magic find.** No logged chance came near a minimum; it needs
   a very large `ilvl − qlvl`, a very high MF or edited data. It may stay code-read.
 - [L] **Not exercised:** Hell, negative magic find (including the `mf ≤ −100` bypass), multiplayer, the early
