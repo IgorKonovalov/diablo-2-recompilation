@@ -300,8 +300,9 @@ makes **one** draw on the room seed, even when only one tile is a candidate; if 
 with no draw. Which tile is chosen does not change the draw count, and the choice itself is confirmed: the model
 picked the logged tile for each of 1 852 097 tile entries, where taking the candidates in file order would have
 been wrong for 781 380 of them. If a key has no candidate at all, the game falls back to one fixed tile with no
-draw. That fallback is read from the code only: in replays of logged games the model took it 1280 times, with the
-draw count still matching, but that is not counted as confirmation.
+draw. That fallback is confirmed: in replays of logged games 1 280 picks had no candidate, the model took the
+fallback with no draw each time, and every room's draw count still matched. If even the fallback tile were missing,
+the game would stop with a fatal error; that branch is read from the code only and no logged game met it.
 
 **k.** The number of room-seed draws between the re-seed and the activation draw is called [k](../glossary.md). It
 counts the substitution draws of an outdoor room, one per pick with a positive rarity sum, and the draws of a unit
@@ -324,8 +325,9 @@ the room's tiles but keeps its tile list, its loaded map, its neighbour list and
 activation restarts from the same seed and rebuilds the tiles. A run confirmed this with 1516 releases and 235
 re-activations, each rebuilt as the model predicts. k may still differ on the rebuild, because the neighbours
 built at that moment may have changed, and what the first build merged into its neighbours is not undone: of the
-235 re-activations, 183 got the same k as the first build and 52 a different one. What one flag the release can set
-means, and which callers ask for it, are not read.
+235 re-activations, 183 got the same k as the first build and 52 a different one. Read from the code together with the
+logged counts, the release sets one flag only when the server releases the room, and nothing reads that flag; whether the logged releases that set it
+are exactly the server's has not been checked.
 
 ## What a preset places: units and keep/drop rolls
 
@@ -539,9 +541,9 @@ section.
   branches that would re-orient a wall or shadow, or treat orientation 3 specially, are **unreachable on the shipped
   data**, outdoor rooms included: every wall and shadow cell of the 2077 map files a room can read carries the bit
   that skips them, and the logged merges agree one by one. The spec keeps them only as the code's reading of edited
-  data. A room with no tiles was never exercised. The fallback tile is not confirmed: the model took it 1280 times in
-  replays of logged games, with the draws matching, but that does not count as confirmation. Release and
-  re-activation is confirmed, but what one flag of it means and which callers ask for it are not read. A tile-file
+  data. A room with no tiles was never exercised, nor was the fatal error when even the fallback tile is missing. Release
+  and re-activation is confirmed; what decides the release flag is read from the code only, and whether every
+  release that sets it is a server one is not checked against the logs. A tile-file
   name of `"0"` in a room's list would not stop the build, but what happens next depends on memory contents and
   cannot be told from the code; no checked shipped room has one (the check leaves out the outdoor anchor rooms and
   some maze special rooms). One shipped file (`Act1/Outdoors/Trees.ds1`) is 12
