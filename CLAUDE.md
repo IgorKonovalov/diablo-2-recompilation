@@ -37,7 +37,8 @@ of them.**
 | `spec-writer` | `docs/specs/<subsystem>/`, `docs/wiki/` (ADR-0012) | inventing behaviour with no finding or table behind it |
 
 Handoffs are manual: the user invokes the next lane. When a lane needs something it doesn't own,
-it writes an entry in [`docs/backlog.md`](docs/backlog.md) and does not reach across.
+it files an entry in [`docs/backlog/`](docs/backlog/README.md) (one file per entry, `python3 -I tools/backlog.py new`;
+ADR-0018) and does not reach across.
 
 ## Where things live
 
@@ -54,7 +55,7 @@ docs/
   wiki/              # human-readable pages over the reviewed specs; no claims of their own, not published (ADR-0012)
   sources.md         # registry of external references used as leads (see sources policy)
   glossary.md        # D2 terms (ilvl, alvl, TC, DRLG, act/level/room…)
-  backlog.md         # cross-lane requests and open questions
+  backlog/           # cross-lane requests, one file per entry (tools/backlog.py); backlog.md is the frozen archive
 re/
   symbols.csv        # SINGLE SOURCE OF TRUTH for named addresses (the Ghidra project is disposable)
   types/             # C headers for recovered structs, imported into Ghidra

@@ -14,7 +14,8 @@ review against these before committing it. Categories are those of the [lane run
    `÷ 3`, found at Phase 3 (0037).
 5. **Recompute totals once, over every reviewed batch, after merging `main`.** Two reviews computed in
    parallel each missed the other (S2b and S3a, fixed at the S4b review, 0038).
-6. **After a backlog merge conflict, dedupe by entry text and keep the struck copy.** Seen: the S2b, S4b,
+6. **After a merge that touches `docs/backlog.md`, run `python3 -I tools/backlog.py migrate`** (ADR-0018; on a
+   conflict keep both sides, migrate dedupes and keeps the strike). Before ADR-0018: dedupe by entry text, keep the struck copy. Seen: the S2b, S4b,
    H4b, `lane/p38s3` and S1e merges (0038).
 7. **Label a plan's estimates as estimates.** "No logger change" in a batch recipe was a guess (H5a ruling
    4, 0038).
