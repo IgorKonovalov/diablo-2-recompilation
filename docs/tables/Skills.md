@@ -111,7 +111,7 @@ columns are not listed (not compiled).
 | `auratgtevent` | blank in all rows | `+0x090` u16 index | aura target event and handler number | `events:event` | [C] value; slot by stride `[L]` |
 | `auratgteventfunc` | blank in all rows | `+0x092` u16 | aura target event and handler number | — | [C] value; slot by stride `[L]` |
 | `passivestate` | str, 28 distinct, 328 blank | `+0x094` u16 index | state of a passive skill | `states:state` | [C] |
-| `passiveitype` | str, 7 distinct, 349 blank | `+0x096` u16 index | item type a passive needs | `itemtypes:Code` | [C] |
+| `passiveitype` | str, 7 distinct, 349 blank | `+0x096` u16 index | `[I]` the param of the passive stats: `SKILLS_RefreshPassive` writes `passivestat1..5` = `passivecalc` with this item type as their param ([stats/0002 § 4](../findings/stats/0002-states.md#4-auras-and-passives), fn:SKILLS_RefreshPassive@0x00646D60); "the item type a passive needs" `[L]` by the name | `itemtypes:Code` | [C] |
 | `passivestat1` | str, 30 distinct, 306 blank | `+0x098` u16 index | passive stat 1 and its value formula | `itemstatcost:Stat` | [C] |
 | `passivecalc1` | formula, 22 distinct, 306 blank | `+0x0A4` s32 calc | passive stat 1 and its value formula | `skillscode.bin` | [C] |
 | `passivestat2` | str, 11 distinct, 331 blank | `+0x09A` u16 index | passive stat 2 and its value formula | `itemstatcost:Stat` | [C] |
@@ -241,7 +241,7 @@ columns are not listed (not compiled).
 | `InTown` | int {1}, 294 blank | `+0x005` bit 0 | behaviour flag (name reading) | — | [C] |
 | `aura` | int {1}, 331 blank | `+0x004` bit 5 | behaviour flag (name reading) | — | [C] |
 | `periodic` | int {1}, 355 blank | `+0x004` bit 6 | behaviour flag (name reading) | — | [C] |
-| `perdelay` | formula, 3 distinct, 335 blank | `+0x128` s32 calc | periodic delay formula | `skillscode.bin` | [C] |
+| `perdelay` | formula, 3 distinct, 335 blank | `+0x128` s32 calc | `[I]` the aura period in frames: `SKILLS_NextPeriodicFrame = ((frame − 1 + p) / p)·p + 1` with `p` = this calc, 5 when it gives less than 6; the item-aura and selected-aura events requeue at it ([stats/0002 § 4](../findings/stats/0002-states.md#4-auras-and-passives), fn:SKILLS_NextPeriodicFrame@0x0056CD50) | `skillscode.bin` | [C] |
 | `finishing` | int {1}, 352 blank | `+0x004` bit 3 | behaviour flag (name reading) | — | [C] |
 | `passive` | int {1}, 331 blank | `+0x004` bit 4 | behaviour flag (name reading) | — | [C] |
 | `progressive` | int {1}, 351 blank | `+0x004` bit 2 | behaviour flag (name reading) | — | [C] (the other probe candidates lie inside fields other columns pin) |

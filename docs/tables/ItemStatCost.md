@@ -114,28 +114,31 @@ a non-blank cell).
 `+0x03E` `dgrp` · `+0x040` `dgrpfunc` · `+0x041` `dgrpval` · `+0x042/44/46` `dgrpstrpos/neg/2` ·
 `+0x048/4A` `itemevent1/2` · `+0x04C/4E` `itemeventfunc1/2` · `+0x050` `keepzero` · `+0x054` `op` ·
 `+0x055` `op param` · `+0x056` `op base` · `+0x058/5A/5C` `op stat1..3` · `+0x05E..+0x13F` (226 B) 0 in every
-record, no `.txt` column, filled at run time (below) · `+0x140` `stuff` u32.
+record, no `.txt` column, filled at load (below) · `+0x140` `stuff` u32.
 
 - `[C]` The offsets and the zero ranges: `diff` (0 mismatches) and `python3 -I tools/excel_bin.py unknown … itemstatcost`,
   which lists only `+0x002`, `+0x006`, `+0x01B`, `+0x028` and `+0x05E..+0x13F` as uncovered, each 0 in all 359 records.
-- `[I]` **The record tail is filled at run time** (items/0006 § 4, read 2026-10-15 from the evaluation code: the reader only). The
-  stat-list code reads these fields, which are 0 in every file record:
+- `[I]` **The record tail is filled at load by `ITEMSTATCOST_Load`** (plan 0041 Phase 1; first seen from the reader
+  side in items/0006 § 4). The loader walks the rows in id order and builds the `op` graph in bytes that are 0 in
+  every file record:
 
-  | Offset | Type | What the reader does with it |
-  |---|---|---|
-  | `+0x051` | u8 | non-zero: walk this stat's `op stat1..3` and the list at `+0x05E`; meaning not settled |
-  | `+0x052` | u8 | "has op inputs": `StatEvaluate` walks the `+0x0DE` table only when it is set |
-  | `+0x05E` | u16[64] | the stats re-evaluated when this one changes (`sub_006266C0_StatRecompute`) |
-  | `+0x0DE` | 16 × 6 B | the stats whose `op stat1..3` name this one, each `{u16 op base, u16 source stat, u8 op, u8 op param}`, ending at the first `op` 0 (`sub_00626200_StatEvaluate`) |
+  | Offset | Type | Written by the loader | Read by |
+  |---|---|---|---|
+  | `+0x051` | u8 | "has dependents": set on every row with an `op` target and on every row named as an `op base` | `StatRecompute`, the cache path |
+  | `+0x052` | u8 | "has op inputs": set on every `op stat1..3` target | `StatEvaluate` (walks `+0x0DE` only when set) |
+  | `+0x053` | u8 | set on every source whose `op` is 4 or 5 | `STATLIST_CacheAdd`/`CacheWrite` (list flag `0x20000000`) |
+  | `+0x05E` | u16[64] | filled with `0xFFFF`, then the rows whose `op base` is this row, appended | `StatRecompute` (the dependents walked) |
+  | `+0x0DE` | 16 × 6 B | the rows whose `op stat1..3` name this row, each `{u16 op base, u16 source stat, u8 op, u8 op param}`, appended in source-row order; the first `op` 0 ends it | `StatEvaluate` |
 
-  `+0x0DE + 96` = `+0x13E`, so `+0x13E..+0x13F` are 2 bytes no reader was seen to touch. The `+0x0DE` table is the
-  inverse of the `op stat1..3` columns: stat 73 `maxdurability` holds the entry for 75
-  `item_maxdurability_percent` (`op` 13), which is how `dur%` reaches the evaluated maximum durability. `+0x051` and
-  `+0x052` sit inside the u32 the `.bin` layout gives `keepzero` (`+0x050`, values 0 and 1 in the file, so bytes
-  `+0x051..+0x053` are 0 in all 359 records); the reader treats them as their own bytes, so `keepzero` is in effect
-  the byte `+0x050`. The loader that fills the tail is unread, so all of this is `[I]`.
-  (fn:sub_00626200_StatEvaluate@0x00626200, fn:sub_006266C0_StatRecompute@0x006266C0, tbl:ItemStatCost.txt:op,
-  [items/0006 § 4](../findings/items/0006-properties.md#4-the-handlers-per-func))
+  The loader also zeroes an `op` outside 1..13, and sets run-time marks on the rows linked to ops 7, 9 and 11 in the
+  flag bytes (`+0x004` bits 5–7, `+0x005` bit 0), which are clear in every file record. So stat 73 `maxdurability`
+  holds the `+0x0DE` entry for 75 `item_maxdurability_percent` (`op` 13), which is how `dur%` reaches the evaluated
+  maximum durability. `+0x0DE + 96` = `+0x13E`, so `+0x13E..+0x13F` are 2 bytes no reader was seen to touch. `+0x051`
+  to `+0x053` sit inside the u32 the `.bin` layout gives `keepzero` (`+0x050`, values 0 and 1 in the file, so bytes
+  `+0x051..+0x053` are 0 in all 359 records); `keepzero` is the byte `+0x050`, read by `STATLIST_CacheAdd` (a cache
+  entry that reaches 0 is removed unless it is set). ([stats/0001 § 4](../findings/stats/0001-aggregate.md#4-the-evaluation-the-op-terms-fnsub_00626200_statevaluate0x00626200), [stats/0001 § 3](../findings/stats/0001-aggregate.md#3-the-cache-propagation-and-recompute),
+  fn:ITEMSTATCOST_Load@0x00637A00 0x006382E0–0x00638490, fn:STATLIST_CacheAdd@0x006250B0,
+  fn:sub_00626200_StatEvaluate@0x00626200, fn:sub_006266C0_StatRecompute@0x006266C0, tbl:ItemStatCost.txt:op)
 - `[C]` `CSvParam` (blank in every row) and `CSvSigned` (blank or 0) match any always-zero byte, so the data cannot
   place them. `[I]` Their slots are where the save code reads them: `CSvParam` `+0x00B`, `CSvSigned` `+0x005` bit 5
   ([save/0001 § 7](../findings/save/0001-d2s-io.md), 0x0056A4F0). `dgrpstr2` (blank in every row) takes the slot the
@@ -343,7 +346,7 @@ the evaluation code of [items/0006 § 4](../findings/items/0006-properties.md#4-
 | `maxstat` | `+0x032` u16 stat index, blank `0xFFFF` | 4 rows, the `direct` ones: 6 → 7 `maxhp`, 8 → 9 `maxmana`, 10 → 11 `maxstamina`, 72 → 73 `maxdurability` | `isc_maxstat`, `isc_maxstat_and_direct` = 4 | the cap of a `direct` stat |
 | `itemspecific` | `+0x004` bit 3 | 6 rows: 70 `quantity`, 71 `value`, 72 `durability`, 73 `maxdurability`, 194 `item_numsockets`, 324 `item_extra_charges` | `isc_itemspecific` | kept on the item, not added to the owner |
 | `damagerelated` | `+0x004` bit 2 | 104 rows: ids 17–19, 21–25, 48–66, 68, 70, 81, 93, 108, 111–113, 115–117, 119–124, 134–136, 140–141, 150, 154–156, 159–160, 179–180, 195–196, 198, 218–219, 224–229, 243–250, 256–261, 272–273, 278–283, 296–303, 309–312, 324, 326 | `isc_damagerelated` | belongs to the weapon's own damage list |
-| `keepzero` | `+0x050` (u32 in the layout; the evaluation code reads the byte, § Record layout) | 2 rows: 8 `mana`, 10 `stamina` | `isc_keepzero` | the stat stays in its list at 0 |
+| `keepzero` | `+0x050` (u32 in the layout; `STATLIST_CacheAdd` reads the byte, § Record layout) | 2 rows: 8 `mana`, 10 `stamina` | `isc_keepzero` | the stat stays in its list at 0 |
 | `fCallback` | `+0x005` bit 3 | 35 rows (below) | `isc_fcallback`; `isc_fcallback_with_event` = 21 | a change runs a callback |
 | `fMin` | `+0x005` bit 2 | 7 rows: 0 `strength`, 1 `energy`, 2 `dexterity`, 3 `vitality`, 7 `maxhp`, 9 `maxmana`, 11 `maxstamina` | `isc_fmin` | the value is floored |
 | `MinAccr` | `+0x02C` u32 | 1 on 5 rows (0–3, 7), all with `fMin`; 0 on 9 `maxmana` and 11 `maxstamina` | `isc_minaccr`, `isc_minaccr_without_fmin` = 0 | the floor `fMin` uses |
