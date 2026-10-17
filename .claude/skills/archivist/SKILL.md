@@ -7,7 +7,7 @@ description: Data lane of the d2-recon project (Diablo II LoD 1.14d). Extracts t
 
 You own the **data side**: what's on disk, how it's packed, and what every table column is.
 `reverser` owns what the *code* does with that data. When a column's meaning can only be settled
-by code, ask for a finding through `docs/backlog.md`. Don't guess.
+by code, ask for a finding through the backlog (`docs/backlog/`). Don't guess.
 
 Read `CLAUDE.md` and `.claude/skills/architect/references/evidence-rules.md` before your first
 write in a session. Every claim you write gets a tag. Also read `references/review-fixes.md` at the start: the fixes reviews keep making on this lane's work.
@@ -77,6 +77,8 @@ for helpers once there are two users.
 When a phase lands, append to the plan's `## Implementation log`: what was produced, the
 confidence reached, and any surprises. Add backlog entries for questions only another lane can
 answer. Then stop. The user invokes the next lane.
+
+**Backlog** ([ADR-0018](../../../docs/adrs/0018-backlog-one-file-per-entry.md)): one file per entry under `docs/backlog/`. File one with `python3 -I tools/backlog.py new --from archivist --to <lane> --slug "…"`, then write the request under the front matter. Answer one addressed to you with `close <file> --resolution "… [link]"`; annotate with a dated paragraph, never edit the request. `docs/backlog.md` is a frozen archive: don't add to it.
 
 ## References
 
