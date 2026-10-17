@@ -47,6 +47,8 @@
 #   BG0   0x0058E02E sub_0058DF20_A5Q6_BaalDeath before the gold loop: lo [ebp-0x10], hi [ebp-0xC], the count of
 #         qualifying players (quest data [ebp-8] +0x88), difficulty
 #   BGR   0x0058E061 after RNG_RandLoHi on the quest seed: amount (EAX), the quest seed after the draw
+#   OOP   0x0058450E OBJ_OperateDispatch at its OperateFn call (ESI object, [ebp+8] class, EDX the function): object
+#         unit, class, function (a done line for tools/d2pilot.py objop: seals, portals, the forge)
 #   GLD   0x0055A1BD sub_0055A090_DropGoldAmount after the stat-14 write, while a BG0 loop is open: pile item, the
 #         pile's amount (EDI), stat 14 of the item
 import json
@@ -297,6 +299,9 @@ def _quests_main():
         it = reg("esi")
         emit("GLD", {"item": unit(it), "amt": reg("edi"), "s14": stat(it, 14)})
 
+    def on_oop():
+        emit("OOP", {"obj": unit(reg("esi")), "cls": s32(reg("ebp") + 8), "fn": "%08x" % reg("edx")})
+
     def on_bgx():
         st["baal"] = False
 
@@ -339,6 +344,7 @@ def _quests_main():
     Bp(0x0058E061, on_bgr)
     Bp(0x0055A1BD, on_gld)
     Bp(0x0058E07B, on_bgx)
+    Bp(0x0058450E, on_oop)
     gdb.write("QUESTS logger armed\n")
 
 

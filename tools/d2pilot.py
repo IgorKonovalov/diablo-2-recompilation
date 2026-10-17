@@ -1816,7 +1816,8 @@ def cmd_objop(args):
             # greedy hop exists, else a blind Teleport of --hop towards it (lava and gaps are crossed that way)
             want = {int(x) for x in args.to_pdef.split(",")}
             lp = st.lptr.get(st.pos[2])
-            rooms = [st.rl[r][1] for r, pd in st.pdef.items() if pd in want and r in st.rl and st.rl[r][0] == lp]
+            rooms = [st.rl[r][1] for r, pd in st.pdef.items() if pd in want and r in st.rl
+                     and (args.pdef_any or st.rl[r][0] == lp)]
             if not rooms:
                 time.sleep(0.5)
                 continue
@@ -1916,6 +1917,20 @@ def cmd_hunt(args):
             continue
         live_ms = [m for m in ms if live(m)]
         px, py = st.pos[0], st.pos[1]
+        if not live_ms and args.goal:
+            # plan 0038 H6d: the target's place is known from an earlier game on the same map seed: hop towards it
+            gx, gy = (int(v) for v in args.goal.split(","))
+            if math.hypot(gx - px, gy - py) > 4:
+                c = optimistic_hop(st, (gx, gy), args.hop, bad, step=2)
+                if c is not None:
+                    p.teleport(c[0] - px, c[1] - py)
+                    time.sleep(args.wait)
+                    st.poll()
+                    if st.pos and math.hypot(st.pos[0] - px, st.pos[1] - py) < 2:
+                        bad.add(c)
+                    continue
+            time.sleep(0.5)
+            continue
         if not live_ms:
             # not created yet (its room has not activated): head for the farthest unactivated room of the level
             # from where we stand, over optimistic paths; the rooms activate as we pass
@@ -2714,6 +2729,10 @@ def main():
     ap.add_argument("--mon-cls", type=int, help="hunt: the MonStats row to kill")
     ap.add_argument("--pet", type=float, default=0, help="hunt (plan 0038 H6d): within this many sub-tiles of the "
                     "target stand still and cast nothing (the mercenary or a summon kills it); never Nova on the way")
+    ap.add_argument("--pdef-any", action="store_true", help="objop --to-pdef: preset rooms of any built level (plan "
+                    "0038 H6d: the Chaos Sanctuary's wings from the River of Flame), not only the current one")
+    ap.add_argument("--goal", help="hunt: X,Y sub-tiles to head for while the target is not seen (its place in an "
+                    "earlier game on the same map seed)")
     ap.add_argument("--summon-key", help="hunt --pet: F-key of a placed summon (Hydra), cast towards the target")
     ap.add_argument("--summon-every", type=float, default=3.0, help="hunt --pet: seconds between summon casts")
     ap.add_argument("--no-nova", action="store_true", help="objop: never stop to cast Nova (Hell: Teleport through)")
