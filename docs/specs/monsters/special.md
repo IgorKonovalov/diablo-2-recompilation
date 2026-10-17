@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/spawn, monsters/pool, data/excel, drlg/collision]
 consumed_by: [monsters/stats, monsters/spawn, items/tc]
-tags: {C: 104, I: 91, L: 4}
-updated: 2026-10-15
+tags: {C: 104, I: 93, L: 3}
+updated: 2026-10-17
 ---
 
 # Special monsters: mods, minions, superuniques and names
@@ -33,7 +33,7 @@ resistances) is specified in [monsters/stats](stats.md) and is only named here. 
 | MonPlace preset: cases 2 and 3 (and the fixed classes `0x11`–`0x20`) | fn:sub_0054E600_PresetMonSpawn@0x0054E600 | [C] |
 | Client: the display name | fn:sub_004AC870_ClientMonNameBuild@0x004AC870 | [C] |
 | Inactive-unit restore of a special or a minion | fn:sub_005A4440_SpecialMonRestore@0x005A4440, fn:sub_005A46E0_MinionRestore@0x005A46E0 | [I] |
-| An existing monster made special (caller `0x00583050`, not read) | fn:sub_005A4940_MonMakeSpecial@0x005A4940 | [I] |
+| An existing monster made special: the Warping Shrine (`Shrines.txt` row 20), `OBJOP_Shrine` → `g_ShrineEffects[20]` = `0x00583050` ([§ J](#j-other-entry-paths-and-pre-existing-mods)) | fn:sub_005A4940_MonMakeSpecial@0x005A4940, fn:sub_00583050_ShrineWarping@0x00583050 | [I] |
 
 - [C] Everything except the name roll runs on the server, on the server game. Of the paths below that the run reached,
   the random boss and MonPlace 2 roll their mods with `SpecialModsRoll`, a pack member or preset champion takes mod 16,
@@ -653,9 +653,31 @@ fn:sub_00653E20_UNameTablesFree@0x00653E20, tbl:UniqueTitle.txt:Name)
 - [I] An inactive special that is restored (`SpecialMonRestore`) gets its saved mods and name seed back and runs
   `SpecialModsApply` without minions. A restored minion (`MinionRestore`) gets its
   saved mods and the handlers with flag 0. `MonMakeSpecial` runs `SpecialModsRoll(…, allowChampion = 1)` on an existing
-  monster and then `SpecialModsApply` without minions; its caller is not read (*Open questions*).
+  monster and then `SpecialModsApply` without minions. It sets flag `0x01` at `MonsterData+0x16`, calls
+  `MonMarkSpecial` and sets unit flag `0x800`.
   (fn:sub_005A4440_SpecialMonRestore@0x005A4440, fn:sub_005A46E0_MinionRestore@0x005A46E0,
-  fn:sub_005A4940_MonMakeSpecial@0x005A4940)
+  fn:sub_005A4940_MonMakeSpecial@0x005A4940, fn:sub_005A0320_MonMarkSpecial@0x005A0320)
+- [I] **`MonMakeSpecial`'s caller is the Warping Shrine.** `OBJ_OperateDispatch` calls `g_ObjOperateFns[OperateFn]`;
+  slot 2 is `OBJOP_Shrine`. It acts only on a shrine not yet used (object data `+0x0C` = 0 and mode 0), marks it used
+  (`+0x0C` = operator id + 1, mode 1), and calls `g_ShrineEffects[Code]` from the shrine record (a NULL row falls back
+  to `SHRINE_Refill`, `0x005828E0`). Row 20, `Shrines.txt`'s Warping Shrine ("nearest monster becomes unique"), is
+  `sub_00583050_ShrineWarping`: it finds the nearest qualifying monster to the operator and, on a hit, calls
+  `MonMakeSpecial` on it (0x005830C7–0x005830CC). With no hit, nothing happens. No session operated a Warping Shrine,
+  so the path is code-read only. (fn:OBJ_OperateDispatch@0x00584420, data:g_ObjOperateFns@0x00732D18,
+  fn:OBJOP_Shrine@0x00583C70, data:g_ShrineEffects@0x006E1850, fn:sub_00583050_ShrineWarping@0x00583050,
+  tbl:Shrines.txt:Code; [monsters/0003 § Plan 0039 batch P1c](../../findings/monsters/0003-special-monsters.md#plan-0039-batch-p1c-2026-10-17))
+- [I] **The shrine's target.** `sub_0065A800_NearestUnitFind(operator, x, y, radius 0, filter)` walks the units of the
+  operator's room and its near rooms (a room whose rectangle lies outside the radius is skipped; radius 0 becomes
+  `0x10000`, so in practice there is no limit). It keeps the unit with the strictly smallest distance, so the first one
+  met wins a tie. The distance is `(min(dx, dy) + 2·max(dx, dy)) / 2`, truncating, with `dx = |x − ux|` and
+  `dy = |y − uy|`. The filter `sub_00582750_WarpShrineTargetOk` accepts a unit only when all of these hold: it is not
+  the operator and is a monster (type 1); it is not on the operator's side and has alignment 0; it is not in a death
+  mode and is in mode 1 or 2 (neutral or walk); `MonModeAllowed(class, 2)` holds; its MonStats2 `Height` byte is
+  non-zero; it is not a `boss` and not a prime evil; and none of the special flags `0x01`–`0x10` is set. So a
+  champion, unique, superunique or minion is never picked. (fn:sub_0065A800_NearestUnitFind@0x0065A800,
+  fn:sub_006417F0_UnitDistance@0x006417F0, fn:sub_00582750_WarpShrineTargetOk@0x00582750,
+  fn:sub_0046C140_MonModeAllowed@0x0046C140, fn:sub_005A0180_MonTypeFlag@0x005A0180, 0x005827D8,
+  tbl:MonStats2.txt:Height)
 
 ### Draw order on the unit seed
 
@@ -858,9 +880,11 @@ The name is format 1722 with prefix, suffix and appellation, from the keys `Fire
   ≤ 9 cut, the superunique tails (Radament's `Range(5)` + 2 escorts, the quest hooks, the `EscortSpawn` tails), `thief`,
   an `aura` superunique with its second aura call and Lord De Seis's index, `ubermephisto`'s aura, a superunique with 5
   or more mods at creation, the `Stacks` refusal, `poisonhit` and `always_run_ai` handlers, a client fixed-name class and
-  Blood Raven's name, and the inactive-restore paths. None is reachable on demand with stock data and the recipes built so
+  Blood Raven's name, the inactive-restore paths, and the Warping Shrine's `MonMakeSpecial` (no session operated one). None is reachable on demand with stock data and the recipes built so
   far (architect ruling (c), plan 0018 Phase 2).
-- [L] What calls `sub_005A4940_MonMakeSpecial` (caller `0x00583050`, likely a skill) and whether it occurs in normal play.
+- ~~What calls `sub_005A4940_MonMakeSpecial` (caller `0x00583050`)~~ answered in [§ J](#j-other-entry-paths-and-pre-existing-mods) (the Warping Shrine) from
+  [monsters/0003 § Plan 0039 batch P1c](../../findings/monsters/0003-special-monsters.md#plan-0039-batch-p1c-2026-10-17); the
+  path is unreached, in the list above.
 - [L] Where a unique's random colour is drawn, and on which client seed. It is display only and cannot reach a server seed,
   and the name roll re-initialises its own seed.
 - ~~The effects of every handler and the readers of `constants` rows 1–33~~ specified in [monsters/stats § G](stats.md#g-the-mod-handlers-stat-effects).
