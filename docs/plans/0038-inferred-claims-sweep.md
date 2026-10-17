@@ -1671,3 +1671,18 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Follow-ups (backlog):** to the reverser, a static survey for preset 18's `id = 573` (not blocking). The W4 wiki
     follow-up for levels is already filed (spec-writer).
   - **Next:** the owner merges `lane/p38s3`.
+- **2026-10-17 — Phase 3 third round wiki follow-up (spec-writer, `lane/wiki4`, from `main` `04bc872`).** The
+  round-3 W4 follow-up. [levels](../wiki/levels.md): `based_on:` bumped for drlg/README, drlg/maze and drlg/preset
+  (2026-10-17); re-read against drlg/warps too. § Laying out the act: rejects are overlaps, the Rogue side table (15
+  logged) and the Burial Grounds side test (3 logged), no back-up in runs or the offline scan; every pick choice
+  reached (nine chosen map seeds), Rogue `(0, 1)`/`(2, 0)` placed and never kept; the Act1B widening never decides a
+  check (code plus scan). Level 27: drawn only on Black Marsh sides 1 and 3, else the create-time index; indices 0, 1, 2
+  built; side-1 index 2 and side 2 not reachable on stock data (code plus enumeration). § Preset levels: the override
+  sentence scoped to sides 1 and 3. § Maze levels: tomb ×3/×2 confirmed, no tomb with both by the code; every § F row
+  built but 133/135 (no stock build) and tombs 69/72 (role reading); the no-room attach unreached; the Barracks side
+  from `k` 0/1/2, all built. § Which seed: server/client agreement confirmed (888 pairs alike, 4 differing). § Units the
+  game adds: centre monster and all six river types confirmed. § Pairing: the caller confirmed (695 activations); the
+  near-list paragraph stays code-read. *What is not known yet*: maze (no-room attach, the sampled fatal), preset (no
+  stock case list, the `Outdoors` reader, the server path detach, client detach and `action` unknown) and warps (the
+  three no-stock-case paths) rewritten. Gate W4: 3 warnings before, 0 after.
+  - **Next:** architect review (backlog).
