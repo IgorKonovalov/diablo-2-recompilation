@@ -844,7 +844,8 @@ Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phas
   **Remainder `[I]`:** the "0" cell. No mask of a record with a known level type selects one (`dt1`), but the 1056
   `LevelId`-0 records need the generators' placement map.
 - **Rows 9 and 20** (spec L337, L600) **shortfall.** Showing that no stock key lacks a candidate needs the exact list
-  of every room, including the `LevelId`-0 records, so they stay `[I]`.
+  of every room, including the `LevelId`-0 records, so they stay `[I]`. (fn:DRLG_PickTileByRarity@0x0066D820,
+  fn:sub_0066DC50_RoomTileAdd@0x0066DC50)
 - **Row 17** (spec L581) **raised.** [C] The rerun of the recorded `rngcallgraph` gives `functions=657 rng=4
   unclassified=0 indirect=64`. The objdump walk finds the same four functions and the same 11 sites, and the 18
   functions Ghidra reached through resolved calls hold no RNG site (`sweep_s4b.py rng`). (fn:DRLG_PickTileByRarity@0x0066D820)
@@ -1031,7 +1032,10 @@ Both writers are client code, outside the DRLG build, which is why only a later 
   its draw is `[I]` from the code; it stays an oracle (row `objects`). Update 2026-10-15 (plan 0027 Phase 2): the 40
   logs of § Entry flags reach it 3 times and the model now predicts when it happens; the unit creation stays the oracle. Update
   2026-10-16 (plan 0038 H5c): 44 draws in level 57, and a 0 result skips the unit (§ Plan 0038 batch H5c).
-- The `(10,0,0)` fallback (no draw) and the ApplyAll path (`CheckAll ≠ 0`) were not exercised; both `[I]`.
+  (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, run:2026-10-16-sweep-roomk)
+- The ApplyAll path (`CheckAll ≠ 0`) was not exercised: `[I]`. (fn:sub_0066FF50_LvlSubApplyAll@0x0066FF50) The `(10,0,0)`
+  fallback (no draw), not met in run:2026-10-11-drlg-roomk, was taken 1280 times in the S4a logs with every room's k
+  matched (§ Plan 0038 batch S4a, run:2026-10-14-collision, run:2026-10-15-objects).
 - ~~Type-2 grids are a logged input~~ Settled 2026-10-12 (fix F1): the prepare is modelled and reproduces every
   logged type-2 grid (§ Type 2 prepare). The `0x84` write lands in a DS1 buffer that all preset instances and
   both act copies share, but no grid in the run shows it. A case that could show it needs a cell that is

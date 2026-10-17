@@ -28,7 +28,8 @@
   (in `DRLG_ActCreate`, `DRLG_RoomCreate`, `DRLG_RoomActivate`, `sub_00465FD0_UnitInit`, `GAME_InitSeeds`) is the
   same `mul`/`add`/`adc` sequence. **An inlined range draw may drop the `n < 1` guard** when `n` is a constant
   (e.g. `% 7` in `DRLG_ActCreate`, compiled as a multiply by `0x24924925` plus a correction, which is an exact
-  unsigned `% 7`). Specs must state per call site which form is used.
+  unsigned `% 7`). Specs must state per call site which form is used. (fn:RNG_Range@0x0045C390,
+  fn:DRLG_ActCreate@0x00642DA0, fn:DRLG_RoomCreate@0x0066B3E0)
 - [C] **A draw is one step of a specific seed object, and every consumer of that object interleaves in call
   order.** Many seed objects exist (game `+0xD0`, act, level, DRLG room, active room, unit…), and several consumers
   share one. For example, every server unit constructor, the object-region and monster-region code and the
