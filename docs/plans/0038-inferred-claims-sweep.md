@@ -1910,3 +1910,36 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     spec-writer, (f)–(h) added to the lane's S1f Phase 3 entry. Ghidra copy `workspace/ghidra-s1f` can go when the lane
     merges.
   - **Next:** merge `lane/s1f`; then a Phase 3 round for data/calc, rng/README and drlg/preset's S1f line.
+- **2026-10-17 — Phase 3, fourth round (spec-writer, `lane/p38s4`, from `main` `2783aee`).** The S1f review's
+  qualifying clusters: data/calc (S1b, S1e, S1f) and rng/README (S1b, S1e), every batch accepted (inventory § 2.6, § 5,
+  § 7). drlg/preset's S1f line (L154, `MONSTATS_ValidId`) is left for a later pass while `lane/p39s2` edits that spec;
+  data/excel, data/strings and data/README wait for H3b. Template: the round-3 re-tag.
+  - **data/calc** {C 77, I 66, L 3} → **{C 129, I 17, L 3}**. Raised: rows 1, 2, 6, 7 (S1b: the missile and item
+    callers by `ra2` plus the call sites read as code; the two function tables by the logs and the image); 4, 5, 9, 10
+    (×7), 11, 12, 13 (15 of 16), 15, 16, 20, 31 (6 of 7), 36–40 (S1e, run:2026-10-17-sweep-emu); 8, 33 (S1f,
+    run:2026-10-17-sweep-emu2). Split: 18 (`EvalItem`: offset test and the user `[C]`; the used item `[I]`, d-none), 19
+    (drinking `[C]`; hover `[I]`, a Phase 2 leftover piece). Kept `[I]`: 13's L305 and 14 (the `INT32_MIN ÷ −1` fault,
+    d-edit; step note 4g says emulation cannot show a fault), 31's `blvl` and 23–27, 34 (d-sim), 32 (deferred, its
+    table row now without codes 45–48). Row 3 (meta prose, d-none) is gone with the rewritten paragraph. Restated
+    with the raises: the reimplementation note on failed compiles (now `[C]`, `- -5` added). Corrections: `- -5` in
+    § C (S1e (c)); 4g kept `[I]` (S1e (d)); the `m1rn`–`m3rn` out-of-range cases (S1e (e)); `manashift & 31` on `usmc`,
+    `mps` and `mana` and `mana`'s arithmetic `>> 8` (S1e review (b)), with a reimplementation note; a new § G1 `[C]`
+    bullet on `MISS_GetElemMin`/`Max` (S1f review (f)) and a `[C]` table row for codes 45–48. Not written here: S1f
+    (b), the `MulDiv` negative-`c` rule (monsters/stats A1; data/calc calls `MulDiv` with `c = 100` only), and (g),
+    the NULL-callback skip (data/excel J3). *Open questions*: the not-reached entry narrowed to the fault, five
+    unit-state codes and hover.
+  - **rng/README** {C 22, I 8, L 1} → **{C 28, I 4, L 1}**. Raised: rows 4 (no table read), 7 (unguarded forms) (S1b);
+    3, 5 (`RangePow2Plus`, for the code only; S1e, the run:2026-10-11-rng-emu addendum). Split: row 2's two statements
+    (the entry-points row and paragraph): 846 sites inside functions `[C]` by the objdump walk, 6 on Ghidra's reading
+    `[I]`. Kept `[I]` (d-none): rows 1, 6, `RangePow2Plus` has no caller; step note 4 gains the S1b observation (14
+    sites in 9 bodies with no static reference) at the same tag (S1b entry (b)). Evidence lists the S1b/S1e sections.
+  - **Research map:** the data/calc row and the rng row rewritten whole. **Wiki:** [game-data](../wiki/game-data.md)
+    § Calc formulas and *What is not known yet* restated, `based_on` data/calc 2026-10-17 (W4 1 → 0);
+    [randomness](../wiki/randomness.md) § The generator and *What is not known yet* restated (same `updated:` date, so
+    no W4 flag; changed under review fix 7).
+  - **Backlog:** annotated as partly done the S1b entry ((b), (d) for data/calc and rng), the S1e entry ((a) for
+    data/calc and rng, (c), (d), (e)), the S1e review additions ((b)) and the S1f entry ((a) for data/calc, (f)). New:
+    review request to the architect with both specs' counts.
+  - **Commits:** `4dc605a` data/calc (with the map row and game-data), `f8b9c76` rng/README (with the map row and
+    randomness), then backlog and this log. Gate green (fast tier, W4 0).
+  - **Next:** architect review of `lane/p38s4` (backlog).
