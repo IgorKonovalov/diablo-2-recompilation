@@ -1,6 +1,6 @@
 # 0041 — Stats and states: how a unit's final stats add up, and how timed states live and die (ADR-0014 phase 2)
 
-> **Status:** approved (owner, 2026-10-16; unattended). [ADR-0016](../adrs/0016-pipelined-simulation-phases.md) accepted: P0 and P1/1b may start now; P2 waits for 0037·P3's review
+> **Status:** in progress. P0 and P1/1b reviewed (accepted with fixes, 2026-10-16 and 2026-10-17); P2 open (0037·P3 reviewed 2026-10-17, the [ADR-0016](../adrs/0016-pipelined-simulation-phases.md) gate is met)
 > **Created:** 2026-10-16
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases
@@ -146,12 +146,22 @@ cast, and when, is an input.
   - 50 shrine or well operates that apply a state or refill;
   - **chaining (ADR-0014):** for every event kind that draws, at least 20 chained pairs; a kind with none keeps its
     draw-order claims at `[I]`;
+  - *(amended 2026-10-17, P1 review)* **draw-freedom:** stats/0002 § 7 finds no draw in any event kind of this plan,
+    so the chaining bullet above has nothing to pair. Instead, log the game seed and the acting unit's seed
+    ([rng/seeds](../specs/rng/seeds.md)) on entry and exit of every logged event; each kind (apply, expire, tick,
+    aura, recompute, shrine/well) shows the seeds unchanged over at least 20 events, which raises its "no draw" to
+    `[C]` (run). A kind that moves a seed is re-read and then takes the chaining minimum;
   - **the oracle replacement:** run:2026-10-16-combat and run:2026-10-16-player re-checked with the stat oracles
     replaced by `tools/stats.py` where their logs hold the lists it needs; the record names what could and could not
     be replaced;
   - the Phase 1b cases.
 
   Rare-branch minimums (about 30 each) may fall short, named in the record with their counts; their claims stay `[I]`.
+
+  *(amended 2026-10-17, P1 review)* "Each `op` used by a stock row" is ops **1, 2, 4, 5, 8, 9, 11, 13**: op 1 only
+  through the Barbarian's Increased Stamina (`skill_staminapercent`, `skill_passive_staminapercent`), op 5 through
+  `ac%/lvl` and `dmg%/lvl` (two magic prefixes and three uniques, so a tool-built item); ops 3, 10 and 12 have no
+  row, ops 6 and 7 only the unspawnable *of Dawn* and *of Sunlight*. Those five stay `[I]` from the code.
 
 ### Phase 3 — Spec: stats
 - **Owner skill:** spec-writer
@@ -323,3 +333,79 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   value. (c) op 11 as a percentage of the flat sum only (`[ebp-8]`). (d) The unequip of a set item frees the wearer's
   set list, which the refresh rebuilds; Phase 2 should see the rebuild. (e) Surprise (e) and 34 of the (f) rows
   left as static follow-ups. (f) The contradicted lead and its stock reachability.
+- **2026-10-17 — Phase 1 and 1b reviewed (architect, `lane/p41r`, `main` `f10dca8` merged in as `270c773`): accept
+  with fixes; Phase 2 opens.** Merge: six addresses were named on both sides (p39b on `main`, this lane):
+  `0x0055DB00`, `0x0055DBC0`, `0x0055F850`, `0x00624ED0`, `0x00625420`, `0x0062EAF0`. `main`'s names are kept
+  (`sub_0055DB00_ItemUsableBy`, `sub_0055DBC0_EquipReqRefresh`, `sub_0055F850_ItemBreak`,
+  `sub_00624ED0_StatListGetBaseValue`, `sub_00625420_StatListGetStat`, `sub_0062EAF0_ItemReqCheck`) and stats/0001
+  and the P2 questions above cite them; the lane's symbols are 95 after the merge (89 functions, 6 data). Gate green.
+  **Anchors** (objdump on the pinned `Game.exe`): the 17 function starts of the event entry points and the set,
+  aura, passive and shrine code (`STATLIST_Propagate`, `STATE_GroupClear`, `EVENT_TimedListExpire`,
+  `ITEMSTATCOST_Load`, `SETS_WornMemberMask`, events 8/9, `OBJOP_Shrine`, `SKILLS_RefreshPassive`,
+  `AURA_ApplyToTarget`, `UNIT_ToggleStatListByState`, `STATLIST_LinkToUnit`/`Unlink`, `SETS_ToggleItemAProps`,
+  `sub_00660120_SetBonusApply`, the life tick, `SKILLS_NextPeriodicFrame`) all resolve; `StatRecompute`'s op class
+  table `0x0062690C` (0→none, 1 and 12 always, 2/3, 4/5, 6/7, 13) and `StatEvaluate`'s jump table `0x00626688`
+  match § 3–4; the curse rules at `0x0056EA0A–0x0056EA4A` (109 ≥ 100 refused, `MulDiv` cut, 57) match; the shrine
+  table `0x006E1850` read as 24 × `{fn, stat, state}`: codes 6–15 give exactly the ten pairs of 0002 § 5, codes
+  0–5 and 16–23 no state; `SHRINE_Stamina` writes 28 = 1000 (`0x00583B14`). An independent one-level scan of the 95
+  functions' ranges finds RNG calls or the LCG constant only in neighbouring functions (`0x0056C8E0`, shrine codes
+  18/21/22, an item-event function at `0x005BFA10`), never inside a function the findings read.
+  **Tags:** no `[C]` in either finding (the "C" in stats/0001's function table is the existing symbol row for op
+  13, items/0006); every behavioural claim `[I]` with a code anchor; every `[L]` is a lead verdict or under *Open
+  questions*; `src:pk-itemstatcost-guide` registered with version and "no game code"; verdicts recorded blind-first.
+  **Rulings:**
+  - (a) **Draw-free subsystem: no ADR change.** ADR-0016 only gates phases; ADR-0014's chaining floor applies to kinds
+    that draw. What the plan lacked was evidence for the absence itself: P2's done-when now asks for seed
+    invariance per event kind (amendment above), which makes "no draw" `[C]` by run and sends any kind that moves
+    a seed back to the chaining minimum. Everything else rises by the per-event reproduction, as for 0037.
+  - (b) **The take-test quirk: confirmed.** `0x006267C0` loads `[ebp−8]` = source row `+0x0DE + 6k` (set at
+    `0x0062670D`), whose word 0 is `opIn[k].opBase` (the loader writes it at `+0x0DE` from `op base`,
+    `0x0063840B–0x0063841B`), not the row's `+0x56`; ops 4/5 do the same at `0x006267F7` with `STATS_GetUnitStat`
+    on the linked unit. Two refinements written into 0001 § 3: the loader's `0xFFFF` fill covers `+0x5E..+0xDD`
+    only, so the 0 that makes the quirk test strength is the record's initial content (P2 question 3 confirms);
+    and a source evaluating to 0 writes 0 early and never walks its `+0x5E` dependents (`0x00626851`), which the
+    finding had missed.
+  - (c) **op 11 on the flat sum: confirmed.** Case 11 (`0x0062660B`) multiplies `[ebp−8]`, set to own + children at
+    `0x0062624C` and changed only by ops 1 and 13 when the owner is an item; op 7 alone uses the running `[ebp−4]`.
+  - (d) **Set unequip frees the set list: confirmed.** `SETS_UpdateOwnerBonusList` mode 1 calls
+    `UNIT_UnlinkStatList` and `STATLIST_FreeIfPlain` (`0x00663C0A`, `0x00663C10`); mode 0 clears an existing list or
+    allocates, links with damage and sets the state, then adds stat 71 and applies the blocks (`0x00663C8A`). The
+    finding's stat-71 anchor pointed at the unlink call; corrected to `0x00663C93`, and "includes the ids" made
+    "the sum of the active set ids" (two sets add).
+  - (e) **Phase 0 surprises (e) and (f): not blocking.** The *Done when* asked for a verdict on each; (e) has "not
+    read" and (f) 22 of 56 placed. Neither changes an aggregation or state rule the spec needs: (e) is the Sets
+    compiler (the stored values are `[C]` as data), and the 34 unplaced rows are set by skill or monster code
+    (phase 3 territory). Both filed to the reverser as one static follow-up; (e)'s answer then goes to the
+    archivist as the arc4 review recorded.
+  - (f) **Other surprises: accepted as findings.** Armour shrine → 171 and the stamina shrine's 28 = 1000 are read
+    from the table and the handler (above); the skill shrine's table stat 11 is not read (the handler writes 11 = 0
+    itself), added to 0002 § 5. Stat 71 in the totals: see (d).
+  - **The contradicted lead (op 6/7).** Settled as "1.14d's server computes them" by the code; the evidence rules
+    want a contradiction settled by a second path, run or reproduction. Data check repeated: of the 36 `…/time`
+    properties only `ac/time` is used, by *of Dawn* and *of Sunlight* (`spawnable` blank, `frequency` 0), so no stock
+    path reaches op 6/7 and P2 cannot see them. The claim stays `[I]`; the spec states it as a 1.14d behaviour
+    differing from the guide and lists it under *Open questions*. Optional, not blocking: an ADR-0015 emulation of
+    `STAT_ByTimeValue` and `StatEvaluate` cases 6/7 with a declared image (filed).
+  - **P2 questions: concrete enough, with four additions.** Each names its breakpoint, its fields and its boundary
+    cases, and together they cover every P2 *Done when* line. Additions: (i) the seed invariance above, at the
+    breakpoints already listed; (ii) question 2's window is stated as "all reads of the logged unit for 50 frames
+    after each list change", and its op list is the eight stock ops of the amendment (op 1 by the Barbarian's
+    Increased Stamina, op 5 by a tool-built `ac%/lvl` item); (iii) question 3 also logs a level-up (stat 12 change:
+    the 37 per-level rows re-evaluated) and a source that falls to 0 (no dependent walk); (iv) question 8's "two
+    paladins of one aura" is a paladin plus an Act 2 hireling with the same aura (one client; plan 0044 keeps the
+    two-player case).
+  - **Boundary: accepted as recommended.** 0037·P3's review (2026-10-17) moved no input across the combat boundary,
+    so ADR-0016 needs no re-ruling: a skill's own calc results with unit-reading variables, the shrine to-hit and
+    damage values (`SHRINE_StatValue` 19 and 21), monster AI and the combat appliers stay value oracles; reads are
+    logged in windows after list changes and every cache write is logged.
+  **Fixes applied:** stats/0001 § 3 (the `v = 0` path and the `+0x0DE` initial content), § 7 (stat 71 sum, anchor);
+  stats/0002 summary (curse cut by `r` = stat 109, negative lengthens) and § 5 (skill shrine's table stat); the merge
+  renames; P2 *Done when* amendments (draw-freedom, the stock op list); research map rows `stats/aggregate` and
+  `stats/states` added (they were due when the plan started); README row.
+  **P2 readiness:** open now, **two slots** (the plan's maximum): slot A a Barbarian (dual wield, Increased Stamina,
+  per-level and `ac%/lvl` items, a partial and a full set, charms, ethereal and socketed items, an item whose
+  requirement fails) for questions 1–7, 14, 15; slot B a Paladin with two auras and an Act 2 hireling, standing in
+  curses, cold and poison, with potions, shrines and wells, for 8–13. Lane H1 takes it after 0040·P2 per the queue;
+  the second slot is lane H2's between two 0038 batches.
+  **Filed:** reverser (static: Phase 0 surprise (e) and the 34 States rows of (f); optional op 6/7 emulation),
+  backlog. Struck: the review request and the contradicted-lead entry (ruled here).

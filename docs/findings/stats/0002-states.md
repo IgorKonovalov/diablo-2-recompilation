@@ -13,7 +13,8 @@
   fn:UNIT_HasState@0x00639DF0, struct:StatList+0x14)
 - [I] **`STATE_ApplyTimed` is the common apply.** It takes `{source, target, skill, level, duration, stat, value,
   state, remove callback}`. A curse (States `curse`) is refused when the target's `curse_resistance` (109) is ≥ 100
-  or the target is in state 57 `attract`, and its duration is cut by `MulDiv(duration, 109, 100)`. An existing list
+  or the target is in state 57 `attract`, and its duration loses `MulDiv(duration, r, 100)` with `r` = stat 109 (a
+  negative `r` lengthens it; the test is signed). An existing list
   of the same state (for a curse: any curse list, flag `0x20`) with the same skill and level is **refreshed** (expiry
   = frame + duration); with the same skill and a lower new level the call is **refused**; otherwise the old list is
   freed and a new one made (so a new curse replaces any curse, and a higher or equal-level aura replaces). The new
@@ -240,7 +241,8 @@ stateDiagram-v2
   `SHRINE_Refill` when none), and when `reset` ≠ 0 queues object event 5 at `frame + reset × 1200 + 1`.
   (fn:OBJOP_Shrine@0x00583C70, data:g_ShrineEffects@0x006E1850, tbl:Shrines.txt:reset)
 - [I] The table, `{fn, stat, state}` by Shrines `Code`: 6 armour → 171 `skill_armor_percent`, state 128; 7 combat →
-  state 129; 8 fire → 39, 131; 9 cold → 43, 132; 10 lightning → 41, 130; 11 poison → 45, 133; 12 skill → state 134;
+  state 129; 8 fire → 39, 131; 9 cold → 43, 132; 10 lightning → 41, 130; 11 poison → 45, 133; 12 skill → 11, state 134
+  (the table's stat is not read: `SHRINE_Skill` writes stat 11 = 0 itself);
   13 recharge → 27, 135; 14 stamina → 162, 136; 15 experience → 85, 137. So the name pairing of the Phase 0 table is
   right for all ten (Phase 0 surprise (d)), and the state is **not** always the States row's `stat`: shrine 6 writes
   171 although row 128 names `armorclass`. (data:g_ShrineEffects@0x006E1850, tbl:States.txt:stat)

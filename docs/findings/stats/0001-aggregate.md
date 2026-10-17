@@ -206,9 +206,10 @@ while (list) {
   value and calls the callback only when it changed. Both set list flag `0x20000000` for a stat with ISC `+0x53`.
   (fn:STATLIST_CacheAdd@0x006250B0, fn:STATLIST_CacheWrite@0x00625150, tbl:ItemStatCost.txt:keepzero)
 - [I] `StatRecompute(list, key)`: `v = Evaluate(list, key)`. A stat without dependents writes `v` and returns. Else:
-  `v = 0` is written at once; each `op stat1..3` target is recomputed and written; then, if no target "took" a
-  contribution, `v` is written and every `+0x5E` dependent (the stats whose `op base` is this one) is recomputed and
-  written. A target "takes" when its new value is non-zero and the source's `op` is 1 or 12 (always), 2/3 (list of a
+  when `v` is 0 it is written at once; each `op stat1..3` target is recomputed and written; then, only if no target
+  "took" a contribution **and** `v ≠ 0`, `v` is written and every `+0x5E` dependent (the stats whose `op base` is this
+  one) is recomputed and written. So a source that evaluates to 0 never walks its dependents (no stock `op base` row
+  reaches 0: they are all `level`). (0x006266FB–0x00626708, 0x00626847–0x00626856; review 2026-10-17) A target "takes" when its new value is non-zero and the source's `op` is 1 or 12 (always), 2/3 (list of a
   player or monster and a positive cached stat 0, see below), 4/5 (linked unit a player or monster with positive
   stat 0), 6/7 (list of a player or monster) or 13 (list of an item); ops 8, 9, 10, 11 never take. So a source of op
   1, 2–7, 12 or 13 keeps its **old** cache value (0 on first use) while its target is non-zero, and its dependents are
@@ -216,8 +217,10 @@ while (list) {
 - [I] **A quirk in the take test for ops 2–5:** the `op base` it reads is not the source row's `+0x56` but the
   source row's own `opIn[k].opBase` (`+0x0DE + 6k`, `k` = the target's index), which is 0 for every row that is not
   itself a target, so it tests the list's (or the linked unit's) stat 0 `strength`. Players have strength, so on a
-  player the per-level sources are hidden; a monster's strength is usually 0. (0x006267C0–0x006267DA,
-  0x006267F7–0x00626811)
+  player the per-level sources are hidden; a monster's strength is usually 0. The loader fills only `+0x5E..+0xDD`
+  with `0xFFFF` (`rep stos`, 0x20 dwords), not `+0x0DE`, so the 0 of a non-target row is the record's initial
+  content, which no code read here writes; Phase 2 question 3 confirms it. (0x006267C0–0x006267DA,
+  0x006267F7–0x00626811, 0x00638250–0x00638262)
 - [I] **Level-up.** `level` is the `op base` of the 37 per-level rows, so it has dependents; a change of stat 12
   re-evaluates `level` (no targets, so it is always written) and then every per-level row and their targets.
   (fn:ITEMSTATCOST_Load@0x00637A00, tbl:ItemStatCost.txt:op base)
@@ -357,8 +360,10 @@ flowchart TD
   `n ≥ members` the eight full blocks until the first code < 0, each through `PROP_ApplyBlockByVersion` (mode 4)
   into that list. (fn:SETS_UpdateOwnerBonusList@0x00663B40, fn:sub_00660120_SetBonusApply@0x00660120,
   data:g_PopCount6A@0x006EDA40, struct:SetsRec+0x0C)
-- [I] Stat 71 (`value`) of the marker is an ordinary entry, so the wearer's full stat 71 includes the ids of its
-  active sets. (0x00663C0A, fn:STATLIST_AddStat@0x00627030)
+- [I] Stat 71 (`value`) of the marker is an ordinary entry, so the wearer's full stat 71 is the **sum** of its
+  active sets' ids (set id 0 adds nothing) plus any other stat-71 entry under it. The lookup reads stat 71 of each
+  set list itself, not the cache, so the sum does not disturb it. (0x00663C93, 0x00663BDD,
+  fn:STATLIST_AddStat@0x00627030)
 - [I] The worn mask counts an item only in node page 3 (equipped), quality 5, not broken, not marked `0x4000`,
   and of the same set; a duplicate member sets the same bit. (fn:SETS_WornMemberMask@0x0062A370)
 
