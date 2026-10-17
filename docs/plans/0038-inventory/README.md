@@ -750,6 +750,26 @@ room's k, so a wrong reading could not match by chance. The evidence is in
 Net effect: none on the totals. Both rows stay counted as S4b, and no class moves. The spec's L337, L600, step note 3
 (L621) and L1023 are re-tagged by the spec-writer (backlog).
 
+**`lane/rbs2` (review 2026-10-17, architect): the H5e outdoor remainders, after the static reachability reads.** The
+`lane/rbs` and `lane/rbs2` sweeps answered the H5e review's static question for rows 7, 11, 13 and 14, all `[I]`, in
+[drlg/0008 § H5e reachability](../../findings/drlg/0008-outdoor.md#h5e-reachability-second-pass-2026-10-17-lanerbs2)
+(first pass (a), (d), (e); second pass (b), (c), (e′)). The review re-ran `callee_writes.py` (both outputs), `sweep_h5e.py
+stampdefs` and `scan 1 601`; every output matches the manifest `workspace/logs/sweep-rbs2-manifest.txt`.
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| outdoor 13, the non-square half (the Blood Moor's `0x20`) | d-none (half), H5e review, on the scan and a condition | **d-none** (half), condition met | (e) and (e′): no writer of `O+0x00` between the cliff-mark skip and the test at 0x0068023B, over the whole callee closure (46 functions, 12 indirect sites read by hand, 21 bare-register writes classified). The remainder is an out-of-range grid index landing on `O`, which nothing on the path computes. It stays a caveat in the finding and does not reopen the half. |
+| outdoor 14, 5 or 6 endpoints and the exhausted pool | a-run (H5e), raised in part (the failed search), remainder a shortfall | **d-none** (remainder) | (c): at most 4 endpoints on every stock level (nodes + one cave + at most one bridge; the scan gives 3, 4, 2, 2, 3, 3 on levels 2–7). (d): at most 45 pool nodes against 900. |
+| outdoor 11, a waypoint pass with no free cell | a-run (H5e), shortfall | **a-run, shortfall** (unchanged) | (b): no static bound; scan condition printed (fewest free interior cells, minimum 12 of 64 over 52 200 windows). A seed with 0 would take the branch. |
+| outdoor 7, a vertex merge | a-run (H5e), shortfall | **a-run, shortfall** (unchanged) | (a): needs an adjacency overlap of exactly 8 tiles or a rect off the 8-tile grid; the condition is stated but not printed by the scan, whose ring-merge counter is 0 over 52 200 windows. Left for the next static sweep (backlog). |
+
+Net effect: none on the totals. Rows 13 and 14 stay counted as H5e, as drlg-preset 18's remainder stays counted as S4a.
+The spec's L693 and L866 are reworded by the spec-writer (backlog).
+
+**Totals after the batch reviews, plan 0039 P1a and P1c, `lane/rbs` and `lane/rbs2`, recomputed once (`lane/rbs2`
+review).** Neither sweep moves a class. **Static 567, harness 532, c-emu awaiting a batch 0, blocked 415** (d-none 282,
+d-edit 73, d-sim 28, d-2c 14, d-owner 10, d-0032 8), **deferred 2, raised 10: 1 526.**
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is

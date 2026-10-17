@@ -1654,7 +1654,12 @@ from `tools/sweep_h5e.py` (sha256 `40e0a4f6…220dff3`).
   - *openings*: levels 1 and 26 are presets (`DrlgType` 2), so their seam vertex has flag 2 and no opening.
     `VertexRingSeams` sets bit 0 on one vertex per node, and `OutBorderBuild` marks one mid cell per such vertex
     (`0x30400`). A river or a stamp's covered cell can only remove an opening. A stamp places its pieces with file 0
-    (index 0), so it never makes one. So town + monastery + openings ≤ nodes.
+    (index 0), so it never makes one. `OutBorderBuild`'s own border pieces go in with file −1 (0x00675987,
+    0x00675B28, 0x00675B45, 0x00675D19), so `OutPresetFileRotate` picks their index as `(c + 1) mod Files`. For
+    Defs 4–7 `Files` (record `+0x40`) is 3, so a rotated border piece takes index 0, 1 or 2 and never 3. Every
+    explicit index on the Act I path before `A1Paths` is on another Def: rivers 26/27, bridge 28, the town
+    transitions 2/3, and the caves at −1. So town + monastery + openings ≤ nodes. *Added at the `lane/rbs2` review.*
+    (fn:sub_00674320_OutPresetFileRotate@0x00674320, tbl:LvlPrest.txt:Files)
   - *caves*: each of the three cave placements is gated on `O.flags & 0x40` and sets it (or is fatal), so one cave
     `Def` is written. No other writer before `A1Paths` writes 24, 25, 51 or 52:
     - the border tables give ≤ 23 for styles 0 and 1 (§ 16.1);

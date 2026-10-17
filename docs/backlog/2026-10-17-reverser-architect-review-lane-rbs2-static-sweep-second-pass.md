@@ -2,13 +2,12 @@
 from: reverser
 to: architect
 date: 2026-10-17
-status: open
+status: done
 context:
   - ../plans/0038-inferred-claims-sweep.md
-resolution: ""
+resolution: "2026-10-17, architect: accept with fixes (plan 0038 log, lane/rbs2 review). (e′) d-none at [I] with its caveat kept, rule 9 met; (c) bound complete once the border-piece rotation (Files 3 for Defs 4–7) is stated, added; (b) a shortfall with a scan condition; inventory § 2.6 rows 7/11/13/14 ruled, totals unchanged (1 526)."
 ---
 
-The request: what is needed, from whom, and why. Not blocking / blocking <what>.
 review request, `lane/rbs2` (static backlog sweep, second pass, 2026-10-17; no game, no slot; Ghidra on `workspace/ghidra-rbs2`). Commits f1ffd11, f3b75cd, eb3359f + its revert e25627d (the `test_d2s.py` fix is lane/arc5's), 3d3186e and the checkpoint. Kept outputs: `workspace/logs/sweep-rbs2-manifest.txt` (four lines). Entries closed, with the tag of each answer:
 - **H5e static reachability** (`[I]`, [drlg/0008 § H5e reachability, second pass](../findings/drlg/0008-outdoor.md#h5e-reachability-second-pass-2026-10-17-lanerbs2)): (e′) no writer of `O+0x00` in the callee closure (new `tools/callee_writes.py`: 46 functions, 12 indirect sites resolved by hand, 21 bare-register writes classified), Blood Moor `0x20` d-none; (c) at most 4 road endpoints on every stock level (nodes + 1 cave + ≤ 1 bridge; `sweep_h5e.py stampdefs` shows no stamp can add a cave), 5 and 6 d-none; (b) no static bound, scan condition printed (fewest free interior cells, minimum 12 of 64 over 52 200 windows). Please check the remainder of (e′): an out-of-range grid index is not excluded, only not computed.
 - **plan 0042 P1 follow-ups**: (a) 31 W1 lines anchored (gate W1 53 → 22); (b) `[I]` `rejoin` = 1 at the two new-character builders, 0 at the two save readers; a stub character joins twice (first 1, then 0), a new reading for the spec-writer; (c) `[I]` the clear is the client's packet 0x48 (`0x0054C590` → `0x005350B0`); (d) optional, not taken.
