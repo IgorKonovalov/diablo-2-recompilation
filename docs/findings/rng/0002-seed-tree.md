@@ -91,7 +91,8 @@ No struct in `re/types/` exists yet.
   anchors. (fn:DRLG_LevelCreate@0x00642AE0, 0x00673B19, run:2026-10-11-seed-tree)
 - [I] **On-demand level creation.** Besides `DRLG_ActCreate`, six functions create levels. Each one first walks the
   act's level list (head `act+0x47C`, next `level+0x1AC`, id `level+0x1D0`) and calls `DRLG_LevelCreate` only if the id
-  is absent ("get or create"). Because the level seed is a sum, it doesn't depend on which caller runs first:
+  is absent ("get or create"). Because the level seed is a sum, it doesn't depend on which caller runs first
+  (fn:DRLG_LevelCreate@0x00642AE0):
   | Caller | Role |
   |---|---|
   | `0x00642BB0` `sub_00642BB0_LevelEnsure` | `(act, levelId)`: get or create, nothing else |
@@ -113,7 +114,7 @@ No struct in `re/types/` exists yet.
 
 - [C] **Activation sequence.** Both activation paths (`sub_0061B190_RoomActivateA`, `sub_0061B730_RoomActivateB`;
   the second does the following only while room `+0x28` bit `0x100000` is clear) run, for DRLG room `R` with
-  act `A = R[+0x58][+0x1B4]` (room → level → act):
+  act `A = R[+0x58][+0x1B4]` (room → level → act; fn:sub_0061B190_RoomActivateA@0x0061B190, run:2026-10-11-seed-tree-p1):
   1. `sub_0066EE40_DrlgRoomReseed`: **`R.seed (+0x14) = init(R[+0x04])`**. The seed restarts from the value its
      first draw stored at creation, so draws made on the room seed during level generation don't carry over. Then
      the room-type code runs: type `R[+0x48]` 1 → `0x0067D2D0`, 2 → `0x006667D0`.

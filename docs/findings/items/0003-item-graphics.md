@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/graphics (no research-map row; see *Open questions*)
 > **Question:** Which inventory and ground cel does the game draw for an item, how is its palette shift chosen from the base `Transform`/`InvTrans` and the unique/set/affix colour, and how do Armor `component`, the body-part columns, `armtype` and `compcode` reach the worn layers?
-> **Date:** 2026-10-12   **Plan:** 0015 (Phase 4)   **Status:** answered (static reading, `[I]`; two named runtime cases open)
+> **Date:** 2026-10-12   **Plan:** 0015 (Phase 4)   **Status:** answered (static reading, inferred; two named runtime cases open)
 
 Static reading of the pinned `Game.exe` only; no run. Names of functions, structs and fields are ours. "Item record"
 is the Weapons/Armor/Misc record (`ITEMS_GetRecord`), "item data" the per-unit item struct at `unit+0x14`, and
