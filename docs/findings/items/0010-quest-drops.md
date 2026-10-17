@@ -63,7 +63,9 @@ Phase 1 was written from the code only; no community text had been read when it 
   the source unit's `+0xB8`, normal or unique quality, ilvl from the source unit) and `QUESTS_GiveItem` (into the
   inventory, or dropped when it is full). A script counts the players that still need the item and creates that many
   copies. "Needs" is `sub_00558110_PlayerFindItemByCode`, which ignores a quest item with `questdiffcheck` whose stat
-  356 (set to the game difficulty when the item is created) is below the current difficulty. (§ 5, tbl:Misc.txt:questdiffcheck)
+  356 (set to the game difficulty when the item is created) is below the current difficulty; for the cursor item it
+  ignores any quest item with stat 356 below it, `questdiffcheck` or not (§ 5, § Plan 0039 batch P1b B12,
+  tbl:Misc.txt:questdiffcheck)
 - [I] **Rewards.** All three NPC item services live in `NPC_MenuAction`: Charsi's imbue creates a
   **new** rare (quality 6) of the same base with **ilvl = clvl, +4 when clvl > 5**, on fresh seeds; Larzuk's socket
   copies the item and requests `max` sockets (low, normal, superior), `1 + RangeB(item seed, min(max, 2))` (magic) or 1
@@ -173,7 +175,7 @@ verdict per compared claim.
 | `0x00559A30` | `sub_00559A30_DropItemAtUnit` | creates the item coded at `source+0xB8` (or a random base) at the source, quality given | I |
 | `0x00559CE0` | `ITEMS_CreateForStore` | creation record for an item index, quality, ilvl; ItemCreate (existing row, items/0009) | I |
 | `0x005466B0` | `QUESTS_GiveItem` | item by code into the player's inventory, or dropped at the player | I |
-| `0x00558110` | `sub_00558110_PlayerFindItemByCode` | cursor or inventory item with a code; quest items with `questdiffcheck` count only at stat 356 ≥ difficulty | I |
+| `0x00558110` | `sub_00558110_PlayerFindItemByCode` | cursor or inventory item with a code; in the inventory a quest item with `questdiffcheck` counts only at stat 356 ≥ difficulty, on the cursor every quest item does (P1b B12) | I |
 | `0x00544160` | `sub_00544160_PlayerRemoveItemByCode` | removes that item | I |
 | `0x00585970` | `sub_00585970_DropItemCodeAt` | creates an item by code at a unit (used for `gld`) | I |
 | `0x0055A090` | `sub_0055A090_DropGoldAmount` | gold piles of a given amount at a unit | I |
@@ -491,7 +493,8 @@ level; `ITEMS_CreateForStore`; durability set to max; into the inventory, or dro
   item (`quest` ≠ 0) whose record has `questdiffcheck` counts only when its stat 356 is ≥ the game's difficulty.
   `sub_00557AB0_ItemInitStats` gives every created item with `quest` ≠ 0 and `questdiffcheck` ≠ 0 stat 356 = the game
   difficulty. So a Normal-difficulty staff does not stop a Nightmare chest from making a new one; the cube (`box`,
-  `questdiffcheck` blank) does. (fn:sub_00558110_PlayerFindItemByCode@0x00558110 0x0055815E,
+  `questdiffcheck` blank) does, held in the inventory; on the cursor the stat-356 test applies to every quest item, so a
+  cursor-held cube counts in Normal only ([§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17) B12). (fn:sub_00558110_PlayerFindItemByCode@0x00558110 0x0055815E,
   fn:sub_00557AB0_ItemInitStats@0x00557AB0 0x00557E61–0x00557EC3, tbl:Misc.txt:quest, tbl:Misc.txt:questdiffcheck)
 - [I] Per-player loops (`sub_005537D0_GameForEachUnit`) visit every player unit in the game except those in state 7
   (`playerbody`), wherever they are; the party loops (`sub_00540510_PartyForEach`) visit the members of one party.
@@ -519,12 +522,12 @@ level; `ITEMS_CreateForStore`; durability set to max; into the inventory, or dro
   the object of the script that creates the item (§ 5 table): `ass` (Radament's death, word 9), `mss` (Mephisto's
   death, word 22) and `ice`/`tr2` (Malah, word 37); the code uses the value as written. (data:g_QuestDescs@0x00731510)
 - [I] **`sub_0055CC90_ItemQuestGate`** returns 0 (refuse) for: a unique quest item whose unique row has `+0x2C` bit 2
-  for which `0x0055CA40` (not read) returns non-zero; `ass` while word 9 bit 5 is clear; `j34` once word 20 bit 0 is set;
+  for which `0x0055CA40` (the holder test, [§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17)) returns non-zero; `ass` while word 9 bit 5 is clear; `j34` once word 20 bit 0 is set;
   `xyz` while word 20 bit 5 is clear; `g33` once word 19 bit 7 or bit 8 is set; `tr2` while word 37 bit 8 is clear or
   once bit 7 is set. Then by `quest − 1`: object 9 (word 10 bit 0 set, unless the code is `box`); object 4 (word 4 bit 0
   set, unless the code is `leg`, which has object 0 and so never reaches this branch); otherwise the pair table above
   (word bit 0 set). Finally it refuses when `0x0055CA40` returns non-zero for the player, or for any other player of the game
-  (by its use, a holder test; not read). All tests read the player's record for the game's difficulty. Its callers (0x0055D011, 0x005631DE,
+  (the carry-one and quest-duplicate test, [§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17)). All tests read the player's record for the game's difficulty. Its callers (0x0055D011, 0x005631DE,
   0x00563631, 0x00567304) are item-move paths not read here. (fn:sub_0055CC90_ItemQuestGate@0x0055CC90,
   fn:QUESTRECORD_GetState@0x0065C310)
 
@@ -968,6 +971,86 @@ the 7 of its owner-played addendum, sha256 checked against `quests-run-manifest.
 **Tally:** 16 statements: 10 raised (7, 9, 14, 20, 28, 31, 37, 41, 47, 49), 5 raised in part (8, 10, 19, 21, 38), 1
 reclassified (48 → a-run H4a). One correction (qd 8) and two refinements (qd 28, 49).
 
+## Plan 0039 batch P1b (2026-10-17)
+
+Rows B12 and Q20 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static: objdump and Ghidra on the lane's copy, plus a
+table survey. No game run.
+
+### B12: the cursor branch of `PlayerFindItemByCode`
+
+- [I] **The two branches test different flags.** `sub_00558110_PlayerFindItemByCode(code)` first looks at the cursor item
+  (`INV_GetCursorItem`, inventory `+0x20`, 0x00558128). When its code matches it is returned unless its record has
+  `quest` ≠ 0 (`+0x12A`, 0x0055814F) **and** its stat 356 is below the game's difficulty (`cmp` of `Game+0x6D` with
+  `STATS_GetUnitStat(item, 356, 0)`, `jle` found, 0x0055815C–0x0055816F). `questdiffcheck` is not tested there. A cursor
+  item that fails falls through to the inventory walk, which skips page-1 items (`sub_00628250_ItemGetPage` = 1) and
+  returns a matching item when `quest` = 0, or `questdiffcheck` (`+0x12B`) = 0, or stat 356 ≥ the difficulty
+  (0x005581B3–0x005581D8). (fn:sub_00558110_PlayerFindItemByCode@0x00558110, fn:INV_GetCursorItem@0x0063C1E0,
+  tbl:Misc.txt:quest, tbl:Misc.txt:questdiffcheck)
+- [I] **A missing stat reads as 0.** `STATS_GetUnitStat` returns 0 for a unit with no stat list (`+0x5C` NULL,
+  0x00625496), for a stat id out of range or without an ItemStatCost record (0x006254C4), and
+  `sub_00624F60_StatListGetValue` returns 0 when the binary search finds no entry (0x00624F8C).
+  (fn:STATS_GetUnitStat@0x00625480, fn:sub_00624F60_StatListGetValue@0x00624F60)
+- [I] **So a quest item without `questdiffcheck` and without stat 356 is found on the cursor only in Normal.** The cube
+  (`box`, `quest` 10, `questdiffcheck` blank) held on the cursor counts in Normal (0 ≤ 0) and is not found in Nightmare
+  or Hell (1 or 2 > 0); in the inventory it counts in every difficulty. An item with `questdiffcheck` gets stat 356 =
+  the difficulty it was made in (§ 5), so both branches agree for it. `box` is the only stock `quest` row with
+  `questdiffcheck` blank (survey of the 26 `quest` rows of Weapons, Armor and Misc).
+  (tbl:Misc.txt:questdiffcheck)
+- [I] `sub_0063DFD0_InvNodeItem` returns the node's unit when it is an item (type 4), else NULL (0x0063DFD0–0x0063DFEE).
+
+### Q20: the open questions of § Open questions
+
+- [I] **The ilvl of a scripted drop from an object.** `sub_00559A30_DropItemAtUnit` takes the source's level stat for a
+  monster (type 1, `STATS_GetUnitStat(…, 12)`), its base level for a player (type 0), and for any other source (an
+  object) `sub_0061DCA0_LevelMonLvl(level of the source's room, difficulty, expansion)`; any value below 2 becomes 1.
+  `LevelMonLvl` returns 1 for a difficulty ≥ 3, a level id ≤ 0 or ≥ the `Levels` count, or no record, and otherwise
+  `MonLvl` or `MonLvlEx` (`+0x10`/`+0x16 + 2·d`). A unit with no room gives level id 0. So an object in a level with no
+  `Levels` record, or with a `MonLvl` of 0 or 1 (the towns), drops at ilvl 1. (0x00559A6F–0x00559AEF, 0x0061DCA0–0x0061DCF4,
+  fn:sub_00559A30_DropItemAtUnit@0x00559A30, fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0, tbl:Levels.txt:MonLvl1)
+- **The Cow King's quality 0** takes case 2.
+  - [I] Quality 0 in the record makes `sub_00556F60_ItemRollQualityCreate` run its drawing body (the early return
+    needs a non-zero `+0x30`, 0x00556F76–0x00556F7E): it draws on the item seed and reads `ITEMRATIO_Select`, and its
+    result is the quality written first (0x005574CC–0x005574DE).
+  - [I] Then the pre-switch overrides run ([items/0004 § 2](0004-uniques-sets.md#2-pre-switch-overrides-0x005574e30x00557567)):
+    `vps` is of type `spot`, whose `Normal` is 1, so the last override writes quality 2 whatever the roll returned, and
+    the switch takes case 2 (the normal builder). (0x005574E3–0x00557567, tbl:ItemTypes.txt:Normal, tbl:Misc.txt:type)
+  - [C] for the outcome: the eight `vps` of the owner-played addendum (§ Phase 2) came out with quality 2. The roll's
+    draws are not checked by any log.
+- [I] **`ITEMS_GetType` = 4 is `gold`.** `ITEMS_GetType` returns the record's own `type` (`+0x11E`, s16); ItemTypes row 4 is
+  `gold`, as rows 5, 6 and 7 (`bowq`, `xboq`, `play`) are the types the personalize test also refuses, and items/0001
+  reads the same index as `gold` in the resolver (`ITEMS_UnitIsType(unit, 4)`). (fn:ITEMS_GetType@0x00628700,
+  tbl:ItemTypes.txt:Code)
+- [I] **Item flag `0x1000` marks an item made to be worn by a monster.** It has two writers: `ItemCreate` copies it from the
+  creation record's flags (`+0x44`, 0x00558EE6–0x00558EFB), and `sub_00573B20_MonEquipItemCreate` sets it on each item it
+  creates with `ITEMS_CreateForStore` and equips on a monster (0x00573B8D–0x00573B95). Its callers are
+  `sub_005D6B60_MonEquipInit` (0x005D6CC4) and `sub_005B1C50` (0x005B1CCD, four codes per monster class from a table,
+  raised to the exceptional or elite code by difficulty). Readers: the imbue, socket and personalize tests (§ 6) and
+  the trade test `sub_00567620_TradeItemTest` (`.\PLAYER\PlrTrade.cpp`, 0x0056777D), which refuses a non-quest item with
+  the flag. So the three NPC services and trading refuse a monster's own equipment if it ever reaches a player.
+  (fn:sub_00573B20_MonEquipItemCreate@0x00573B20, fn:sub_00567620_TradeItemTest@0x00567620,
+  fn:sub_00558D90_ItemCreate@0x00558D90)
+- [I] **The imbue's `+0x40` never reaches a builder.** In the creation path, record `+0x40` is read only by the set pick
+  (`ITEMS_BuildSetPick`, 0x005C2664) and the unique builder; `ITEMS_BuildRare` (0x005C21A0, called at 0x00557634 with
+  `ECX` item, `EDX` record) reads the record for its staff mods and forced affixes (`+0x68 + 4·i`) but not `+0x40`, and
+  neither do `ItemCreate`, `ItemCreateByQuality`, the fallback helpers, the staff mods or the affix and rare-name
+  pickers (objdump scan for `+0x40]` operands over 0x005572A0–0x00557AA2, 0x00558D90–0x005594B4, 0x005C0F90–0x005C12FF
+  and 0x005C12F0–0x005C25BF: none; the one hit nearby, 0x005C2664, is in the set pick). The imbue writes quality 6, which an override can only change to 4
+  (`Rare` = 0 type) or to 7 (a base with the `unique` flag). [C] (data) every stock base with the `unique` flag is a
+  `quest` item other than `leg` or has `bitfield1` bit 0 clear (`std`), so `sub_0062C590_ItemCanImbue` refuses it: no
+  imbued item takes the unique path. (fn:ITEMS_BuildRare@0x005C21A0, fn:ITEMS_BuildSetPick@0x005C25C0,
+  tbl:Weapons.txt:unique, tbl:Misc.txt:bitfield1)
+- [I] **`0x0055CA40` is "the inventory already holds this quest item, or this carry-one unique".**
+  `sub_0055CA40_InvHoldsQuestDup(EAX = first inventory node, item X, EBX = X's record)` walks the inventory, skipping X
+  itself, and returns 1 when it finds:
+  - when X is a unique (quality 7) whose `UniqueItems` row has `carry1` (`+0x2C` bit 2, mask byte `0x006CE270` = 4), an
+    item of quality 7 with the same row (not on page 1);
+  - an item not on page 1 whose record has `quest` ≠ 0 and equal to X's `quest`, and the same code, or one of the pairs
+    `j34`/`g34`, `bks`/`bkd`, `d33`/`g33`, `hst`/`msf`, `hst`/`vip` (either way round), or `qf2` with `qf1`, `qhr`,
+    `qey` or `qbr` (`sub_0055CA00_QuestCodePairTest`).
+
+  So the gate refuses a second copy, and a quest item whose finished form (the Horadric Staff, Khalim's Will) is held.
+  (0x0055CA40–0x0055CC80, fn:sub_0055CA00_QuestCodePairTest@0x0055CA00, tbl:UniqueItems.txt:carry1, tbl:Misc.txt:quest)
+
 ## Data touched
 
 - `tbl:MonStats.txt:TCQuestId` (`+0x9E` u8), `tbl:MonStats.txt:TCQuestCP` (`+0x9F` u8), `tbl:MonStats.txt:TreasureClass4`
@@ -994,13 +1077,13 @@ reclassified (48 → a-run H4a). One correction (qd 8) and two refinements (qd 2
   before the death scripts' bit writes in every kill. Diablo and Baal were not killed.
 - ~~Whether the kill context's killer can be a missile.~~ Answered for Nova (§ Phase 2): the killer of every Nova kill
   was the player unit. Other missile skills were not run.
-- [L] The meaning of `ITEMS_GetType` = 4 and item flag `0x1000` in the imbue, socket and personalize tests. Flag
-  `0x100` is the broken flag (`sub_005761C0_ItemRepairAll` repairs on it), so Larzuk and Anya refuse a broken item.
-- [L] The ilvl that `DropItemAtUnit` gives a scripted drop from an object in a level without a `Levels` record, and
+- ~~The meaning of `ITEMS_GetType` = 4 and item flag `0x1000` in the imbue, socket and personalize tests. Flag
+  `0x100` is the broken flag (`sub_005761C0_ItemRepairAll` repairs on it), so Larzuk and Anya refuse a broken item.~~ Answered in [§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17): type 4 is `gold`, flag `0x1000` marks a monster's own equipment.
+- ~~The ilvl that `DropItemAtUnit` gives a scripted drop from an object in a level without a `Levels` record, and
   quality 0 in the Cow King's call: which `ItemCreateByQuality` case takes it. At run time the eight `vps` came out
-  with quality 2 (owner-played addendum, § Phase 2); the code path is not read.
-- [L] The record's `+0x40` (`ITEMS_GetFileIndex` of the old item) in the imbue: whether a non-zero value can reach the
-  rare build.
+  with quality 2 (owner-played addendum, § Phase 2); the code path is not read.~~ Answered in [§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17): ilvl 1; quality 0 runs the creation roll, then the `Normal` override gives case 2.
+- ~~The record's `+0x40` (`ITEMS_GetFileIndex` of the old item) in the imbue: whether a non-zero value can reach the
+  rare build.~~ Answered in [§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17): no builder on the imbue's path reads `+0x40`.
 - [I] The § 9 route at run time: the Hellforge's waves are `[C]` (the run plus the reference scan, § 9); for the other
   groups no breakpoint sat on `0x00581A10` or `QUESTS_ObjectEvent`, and a run that reaches `sub_00594630_A1Q4_WirtGold`
   (Wirt's body clicked) or another event-7 target would make theirs `[C]` the same way. The first event-7 queue of classes 122, 371 and 459–461 is not read. (fn:QUESTS_ObjectEvent@0x005449E0)
