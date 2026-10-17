@@ -112,14 +112,14 @@ written from the code before they were read. Little exists beyond anecdotes; not
 | `0x0053A8E0` / `0x0053A9B0` | `sub_0053A8E0_RoomClientEnter` / `sub_0053A9B0_RoomClientLeave` | add / remove the client in the room's client list (`+0x48`, `+0x78`) and tell the units | C |
 | `0x0061A660` / `0x0061A700` | `sub_0061A660_RoomClientAdd` / `sub_0061A700_RoomClientRemove` | the client list, kept sorted | C |
 | `0x0061B6F0` | `sub_0061B6F0_DrlgRefMove` | `RefAdd(new, 0)`; old: `refs[0]−1`, leave callback 0, `RefRemoveNear(old, 1)` | C |
-| `0x0061B490` | `sub_0061B490_DrlgRefAdd` | `RefAddNear(d+1)` first, then `refs[d]+1` with the enter callback when it lowers the status | I |
+| `0x0061B490` | `sub_0061B490_DrlgRefAdd` | `RefAddNear(d+1)` first, then `refs[d]+1` with the enter callback when it lowers the status | C |
 | `0x0061B390` / `0x0061B5B0` | `sub_0061B390_DrlgRefAddNear` / `sub_0061B5B0_DrlgRefRemoveNear` | the same over the near list, recursing to distance 3 | C |
 | `0x00744384` / `0x00744394` | `g_DrlgRefEnterFns` / `g_DrlgRefLeaveFns` | enter: status 0, activate (1), status 2, prepare files (3); leave: recompute status (0–2), recompute and client release (3) | C |
 | `0x0061B2C0`, `0x0061B2D0`, `0x0061BB10` | `sub_0061B2C0_DrlgEnter0`, `sub_0061B2D0_DrlgEnter1Activate`, `sub_0061BB10_DrlgEnter2` | enter callbacks 0, 1, 2 (3 is `sub_0061B320_RoomPrepareFiles`) | C |
-| `0x0061B4F0` / `0x0061B210` | `sub_0061B4F0_DrlgStatusRecompute` / `sub_0061B210_DrlgStatusSet` | status = lowest distance with a reference, else 4; status rings at DRLG act `+0xA0 + 0xEC·s` | I |
+| `0x0061B4F0` / `0x0061B210` | `sub_0061B4F0_DrlgStatusRecompute` / `sub_0061B210_DrlgStatusSet` | status = lowest distance with a reference, else 4; status rings at DRLG act `+0xA0 + 0xEC·s` | C / I |
 | `0x0061B560` | `sub_0061B560_DrlgLeave3Release` | leave callback 3: recompute; at status 4 on a client act, `RoomTilesRelease(room, 0)` | C |
 | `0x0061B920` | `sub_0061B920_ClientBackgroundBuild` | client loop: every 5 client ticks build one status-2 room | I |
-| `0x0052D240` | `sub_0052D240_RoomsDeactivate` | the release pass | I |
+| `0x0052D240` | `sub_0052D240_RoomsDeactivate` | the release pass | C |
 | `0x0061A790` | `sub_0061A790_RoomIdleCount` | room `+0x0C`: 0 if `+0x78` ≠ 0, else +1; returns it | C |
 | `0x0061A3F0` / `0x0061BA30` | `sub_0061A3F0_RoomReleaseAllowed` / `sub_0061BA30_DrlgRoomReleaseTest` | DUNGEON act `+0x50` must be 0; pin, status and town tests | C |
 | `0x0061BAC0` / `0x0061AED0` | `sub_0061BAC0_DrlgRoomPinFlag` / `sub_0061AED0_RoomPinSet` | DRLG `+0x28` `0x400000` set (arg 0) or cleared (arg ≠ 0); 31 call sites, portal and object code | C (`0x0061BAC0`), I |
@@ -142,6 +142,16 @@ written from the code before they were read. Little exists beyond anecdotes; not
 | `0x005B5210` | `sub_005B5210_DiabloQuestFlag` | quest 23 data `+0x13` | I |
 | `0x00642820` | `sub_00642820_LevelSaveMonsters` | leveldefs `+0x94` | I |
 | `0x00666120` | `sub_00666120_PtrMove` | `*dst = *src; *src = 0` | C |
+
+Tags raised at `lane/rbs4` (plan 0040 close follow-ups, item 1), each on § 11's reproduction of
+run:2026-10-17-lifecycle: `DrlgRefAdd` and `DrlgStatusRecompute` (the reference replay predicts every callback, ref and
+status), `RoomsDeactivate` (every release predicted; its level-120 half unreached, `[I]`), and the two restores
+`InactiveMonstersRestore` and `RoomInactiveUnitsRestore` (§ 11's monster and unit restore). `DrlgStatusSet` (the status
+rings) stays `I`; so does `RoomWandererTick`, whose gate decision, roll and spawn the run never reached (§ 11: only
+the gate's draw and the walk order). (run:2026-10-17-lifecycle, fn:sub_0061B490_DrlgRefAdd@0x0061B490,
+fn:sub_0061B4F0_DrlgStatusRecompute@0x0061B4F0, fn:sub_0052D240_RoomsDeactivate@0x0052D240,
+fn:sub_005424F0_InactiveMonstersRestore@0x005424F0, fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40,
+fn:sub_0054F060_RoomWandererTick@0x0054F060)
 
 ## Walkthrough
 

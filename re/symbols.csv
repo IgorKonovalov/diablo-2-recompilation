@@ -155,7 +155,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0052CA10,func,sub_0052CA10_SaveGameClients,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0052D0F0,func,sub_0052D0F0_RoomUpdateOne,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x0052D160,func,sub_0052D160_NewRoomsUpdate,,C,rng/seeds,docs/findings/monsters/0002-room-population.md
-0x0052D240,func,sub_0052D240_RoomsDeactivate,,I,objects,docs/findings/objects/0001-object-population.md
+0x0052D240,func,sub_0052D240_RoomsDeactivate,,C,objects,docs/findings/objects/0001-object-population.md
 0x0052D350,func,sub_0052D350_AutosaveTick,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0052D440,func,sub_0052D440_ClientsRoomSync,,I,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0052D870,func,sub_0052D870_GameTick,,I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -269,8 +269,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00541E20,func,sub_00541E20_InactiveMonAiRestore,,I,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x00541FE0,func,sub_00541FE0_InactiveMonAiSave,,I,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x005421A0,func,sub_005421A0_InactiveMonsterSave,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
-0x005424F0,func,sub_005424F0_InactiveMonstersRestore,,I,objects,docs/findings/objects/0001-object-population.md
-0x00542B40,func,sub_00542B40_RoomInactiveUnitsRestore,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
+0x005424F0,func,sub_005424F0_InactiveMonstersRestore,,C,objects,docs/findings/objects/0001-object-population.md
+0x00542B40,func,sub_00542B40_RoomInactiveUnitsRestore,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x00542E10,func,sub_00542E10_InactiveRecordSave,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x00542E30,func,sub_00542E30_InactiveUnitSave,,C,objects,docs/findings/objects/0001-object-population.md
 0x005431F0,func,sub_005431F0_InactiveMonsterSaveTest,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
@@ -1568,8 +1568,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0061B2D0,func,sub_0061B2D0_DrlgEnter1Activate,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0061B320,func,sub_0061B320_RoomPrepareFiles,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0061B390,func,sub_0061B390_DrlgRefAddNear,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
-0x0061B490,func,sub_0061B490_DrlgRefAdd,,I,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
-0x0061B4F0,func,sub_0061B4F0_DrlgStatusRecompute,,I,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
+0x0061B490,func,sub_0061B490_DrlgRefAdd,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
+0x0061B4F0,func,sub_0061B4F0_DrlgStatusRecompute,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0061B560,func,sub_0061B560_DrlgLeave3Release,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0061B5B0,func,sub_0061B5B0_DrlgRefRemoveNear,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0061B6F0,func,sub_0061B6F0_DrlgRefMove,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
