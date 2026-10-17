@@ -24,7 +24,7 @@ back to it. Then follow the game from the map to the loot, and on to the charact
 |---|---|---|
 | 1 | [Randomness](randomness.md) | how the game's random number generator works, how one game seed becomes a tree of seeds for acts, levels, rooms and units, and why the same seed gives the same map |
 | 2 | [Game data](game-data.md) | what the excel tables are, which form of them the game loads, how one table points into another, and how string tables and calc formulas are read |
-| 3 | [Levels](levels.md) | how a level is built: acts, levels and rooms, the preset, maze and outdoor generators, room tiles, preset maps, warps and the collision grid |
+| 3 | [Levels](levels.md) | how a level is built: acts, levels and rooms, the preset, maze and outdoor generators, room tiles, preset maps, warps and the collision grid, and how rooms are released when no player is near and restored when one comes back |
 | 4 | [Monsters](monsters.md) | which monsters a level can have, how a room is populated, packs and minions, champions, uniques and superuniques, and their stats |
 | 5 | [Objects](objects.md) | how shrines, chests and other objects are placed and created, what happens when you operate one, and what a chest drops |
 | 6 | [Items](items.md) | one monster drop end to end: treasure class, quality and magic find, uniques and sets, affixes and rare names, base stats, ethereal and sockets |
@@ -32,7 +32,7 @@ back to it. Then follow the game from the map to the loot, and on to the charact
 | 8 | [Characters and hirelings](characters.md) | what a new character starts with, how experience and level-up work, and how hirelings are listed, hired and saved |
 | 9 | [Combat](combat.md) | what happens when one unit hits another: the chance to hit, block and avoid, the damage build, resistances and absorb, crushing blow, open wounds, leech and the life change, and whose seed each draw is on |
 | 10 | [Saves](saves.md) | what a `.d2s` save file holds and how an item is stored in it |
-| — | [How we know](how-we-know.md) | how the project works: the one binary, the three levels of confidence, runs and bit-exact reproduction, and what "reviewed" means. Read it any time; it is the only page not based on a spec |
+| — | [How we know](how-we-know.md) | how the project works: the one binary, the three levels of confidence, runs, bit-exact and emulated reproduction, combat events, two-client games, what "not reachable on stock data" means, the sweep of inferred claims, and what "reviewed" means. Read it any time; it is the only page not based on a spec |
 
 ## Why the pages are cut this way
 
@@ -54,11 +54,23 @@ Everything else is one page per topic as planned. The string tables and calc for
 
 Only reviewed specs are covered, and every row of the [research map](../specs/README.md) that is reviewed has a page
 here: randomness and seeds, the excel data, string tables and calc formulas, the level generators, monsters, objects,
-item creation and the other item paths, new characters, hirelings, saves, and since 2026-10-16 the first simulation
-row, [combat formulas](../specs/combat/README.md). Rows that are not reviewed get no page. The plans still open are
-listed in the [plan index](../plans/README.md): 0037 (combat formulas), 0038 (a sweep that confirms inferred claims
-with more runs), 0039 (backlog sweep 4), 0040 (room lifecycle), 0041 (stats and states), 0042 (quests and travel),
-0043 (item economy) and 0044 (multiplayer branches). When one of them changes a spec, the page over it is refreshed.
+item creation and the other item paths, new characters, hirelings, saves, and the first simulation row,
+[combat formulas](../specs/combat/README.md) (plan 0037, closed 2026-10-17). The room lifecycle
+([drlg/lifecycle](../specs/drlg/lifecycle.md), reviewed at the close of plan 0040 on 2026-10-17) has no page of its
+own: it is the section [Rooms that come and go](levels.md#rooms-that-come-and-go-release-and-restore) of the Levels
+page. Rows that are not reviewed get no page; the next simulation rows, stats and states, are still being written.
+
+The plans still open are listed in the [plan index](../plans/README.md):
+- **0038**, a sweep that tries to confirm inferred claims with another run, a re-check of kept logs or a second code
+  path; its batches are still running, and the specs are re-tagged cluster by cluster;
+- **0039**, backlog sweep 4: complete but for part of the [excel data](../specs/data/excel.md) spec, which goes with
+  plan 0038's re-tag;
+- **0041**, stats and states: its run is accepted and its specs are being written;
+- **0042** (quests and travel) and **0043** (item economy): their code readings are reviewed, and their runs are next;
+- **0044**, the multiplayer branches: its two-client run waits until the game's network port is shown to be closed to
+  everything but the machine itself.
+
+When one of them changes a spec, the page over it is refreshed.
 
 When a spec is updated after a page was written, the docs gate warns that the page may be stale until it is
 refreshed.
