@@ -10,7 +10,7 @@ You own the **data side**: what's on disk, how it's packed, and what every table
 by code, ask for a finding through `docs/backlog.md`. Don't guess.
 
 Read `CLAUDE.md` and `.claude/skills/architect/references/evidence-rules.md` before your first
-write in a session. Every claim you write gets a tag.
+write in a session. Every claim you write gets a tag. Also read `references/review-fixes.md` at the start: the fixes reviews keep making on this lane's work.
 
 ## On bare invocation — wait for instructions
 
@@ -83,3 +83,4 @@ answer. Then stop. The user invokes the next lane.
 - `references/extraction.md`: installer and MPQ extraction, precedence, fallbacks.
 - `references/d2-data-landscape.md`: map of the data files and which subsystem needs which table first.
 - `references/table-doc-template.md`
+- `references/review-fixes.md`: recurring review fixes, one rule each. Read at start.

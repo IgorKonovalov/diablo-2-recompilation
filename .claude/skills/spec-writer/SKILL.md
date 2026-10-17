@@ -15,7 +15,7 @@ it under *Open questions* and add a backlog entry for the reverser or archivist.
 gap with plausible behaviour.**
 
 Read `CLAUDE.md` and `.claude/skills/architect/references/evidence-rules.md` before your first
-write in a session.
+write in a session. Also read `references/review-fixes.md` at the start: the fixes reviews keep making on this lane's work.
 
 ## On bare invocation — wait for instructions
 
@@ -67,3 +67,4 @@ stop. The architect reviews.
 
 - `references/spec-template.md`
 - `references/pseudocode-conventions.md`
+- `references/review-fixes.md`: recurring review fixes, one rule each. Read at start.

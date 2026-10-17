@@ -88,6 +88,16 @@ Deliver the review in conversation, not as a file. Check:
 
 Verdict: `accept`, `accept with fixes` (list them), or `reject` (state the blocking reason).
 
+**Before a review**, read `references/review-fixes.md` (your own blind spots) and the reviewed lane's
+`.claude/skills/<lane>/references/review-fixes.md`.
+
+**Ledger.** `docs/plans/metrics.md` holds one row per lane run. The orchestrator appends the lane's row
+and the review's row when it merges the lane; in each review you fill the verdict and the fix count by
+category (the categories are defined in that file), in the review commit when the row exists, else in
+the review entry so the orchestrator can copy it. **Every ~5 reviews**, read the ledger's recent rows and
+promote any fix seen twice into that lane's `references/review-fixes.md` (one-line rule, one or two
+review entries cited); drop a rule that has not recurred in the last 30 reviews.
+
 ## Output locations
 
 ```
@@ -95,9 +105,11 @@ docs/adrs/NNNN-slug.md + README.md        # next free number tracked in README
 docs/plans/NNNN-slug.md + README.md       # done/ after close
 docs/specs/README.md                      # research map (you own this file only)
 docs/backlog.md                           # you triage entries addressed to you
+docs/plans/metrics.md                     # lane run ledger: you fill verdicts and fix categories
 ```
 
 ## References
 
 - `references/evidence-rules.md`: tags, anchors, promotion rules, how experiments are recorded.
 - `references/templates/plan.md`, `references/templates/adr.md`.
+- `references/review-fixes.md`: the reviewer's recurring blind spots. Read before each review.
