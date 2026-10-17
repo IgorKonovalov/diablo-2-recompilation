@@ -102,12 +102,13 @@ class CheckerLog(unittest.TestCase):
         pts = [[100, 200, 0], [110, 210, 11]]
         lines = [
             ("EV", {"k": "tp", "ph": 0, "own": 0, "gs": s(gs0), "qs": s(gs0), "ps": s(gs0)}),
-            ("PU", {"at": "field", "oinit": "%08x" % g1[0], "os": s(f0)}),
-            ("PU", {"at": "field1", "os": s(quests.step(f0))}),
+            ("PU", {"at": "field", "oinit": "%08x" % g1[0], "os": s(f0), "omode": 1}),
+            ("PU", {"at": "field1", "os": s(f0)}),
             ("EV", {"k": "lpf", "ph": 0, "lvl": 40, "type": 11}),
             ("LPL", {"lid": 40, "ls": s(ls), "pts": pts}),
             ("EV", {"k": "lpf", "ph": 1, "tx": 110, "ty": 210, "ls": s(quests.step(ls))}),
-            ("PU", {"at": "partner", "oinit": "%08x" % g2[0], "os": s(p0)}),
+            ("PU", {"at": "roomupdate", "gs": s(g1)}),
+            ("PU", {"at": "partner", "oinit": "%08x" % g2[0], "os": s(p0), "omode": 0, "gs": s(g2)}),
             ("PU", {"at": "partner2", "os": s(quests.step(p0))}),
             ("EV", {"k": "tp", "ph": 1, "own": 7, "gs": s(g2), "qs": s(gs0), "ps": s(gs0)}),
         ]

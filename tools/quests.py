@@ -12,15 +12,17 @@ What is predicted (docs/findings/quests/0001-progression.md, 0002-travel.md; eve
   join        the first join with rejoin 0 and byte 0x0073150C set: every g_QuestDescs row with flag +0x0C = 0 whose
               word has bit 0 or 15 in the joiner's record is deactivated (+0x09 = +0x0A = +0x0B = 0) and its word's
               bit 15 is set in the game record, in descriptor order; no other quest is switched off by the pass (0001 § 3)
-  deactivated a deactivated quest's (+0x09 = 0) callbacks of a forced event write no quest bit of that quest's word
+  deactivated a deactivated quest's (+0x09 = 0) callbacks of a forced event write no bit of that quest's word, but for
+              the handlers that do not test +0x09 (deactivated_writes: quest 11's NPC 331 messages)
   seeds       per event kind, the steps of the game seed (gs), the quest seed (qs) and the player's unit seed (ps)
               between the entry and the exit: NPC 331 talk with the palace open (quest 11's +0x0E) one qs step;
               NPC 266 and 377 talks one ps step; town portal open two gs steps; every other kind none (0001 § 11,
               0002 § 10)
   level seed  LevelPointFind on a Levels.Position level steps the level seed once for point types 0, 5, 11 (when a
               point is found) and not for 13; a level without Position: no step (0002 § 4)
-  portal pair the field end's seed is Init(gs.low) after one gs step at SUnitCreate, then one step at SetMode(1)
-              (Objects.Sync 0); the partner the same after the second gs step and SetMode(2) (0002 § 6)
+  portal pair the field end's seed is Init(gs.low) after one gs step at SUnitCreate; the partner's after the second
+              gs step; the SetMode(1)/(2) that follows draws (Objects.Sync 0) only if the mode changes, and the run
+              finds both ends already in that mode at creation, so no object-seed draw (corrects 0002 § 6's five)
   gates       packet 0x49 and the portal use pass iff GetTickCount() >= stamp + 10000 / 5000 (0002 § 3, § 9)
   packet 0x58 the word's bit 12 is set, nothing else (0001 § 4)
   warp gate   QUESTS_WarpGate(120, 118 or 128) = quest 35 active and its private "done" byte 0; a refused warp
@@ -197,6 +199,20 @@ def free_near(win, x0, y0, size, mask, radius, stp):
     return pos[0], pos[1], best
 
 
+def deactivated_writes(qid, ev, e):
+    """The bits a deactivated quest's callback still writes (0001 § 3: what keeps it inert is each handler's own
+    test). Quest 11's e11 handler 0x0059AF50 tests only the NPC class (0x14B = 331) and the message: 0xBA sets word
+    12 bit 7, 0xBB-0xBD bit 8, with no +0x09 test (0x0059AF84-0x0059AFC3; run:2026-10-17-quests). Every other
+    handler the run reached writes nothing while its quest is off."""
+    if qid == 11 and ev == 11 and e.get("p14") == 331:
+        m = e.get("p18")
+        if m == 0xBA:
+            return [(12, 7)]
+        if 0xBB <= m <= 0xBD:
+            return [(12, 8)]
+    return []
+
+
 # ---------------------------------------------------------------- the checker
 class Checker:
     def __init__(self, data):
@@ -314,7 +330,7 @@ class Checker:
                 return 0, 0, 1
             return 0, 0, 0
         if k == "tp":
-            return (2 if x.get("own") and x.get("own") != e.get("own") else 0), 0, 0
+            return None if x.get("own") and x.get("own") != e.get("own") else (0, 0, 0)   # ev_tp checks gs
         if k in ("pocreate", "join", "place", "due"):
             return None
         return 0, 0, 0
@@ -378,8 +394,12 @@ class Checker:
         if ran_off:
             self.hit("forced e%d callbacks of deactivated quests" % ev, len(ran_off))
             words = {off[i] for i in ran_off}
-            writes = [d for t, d, n in sub if t in ("QS", "QC") and d["w"] in words]
-            self.ok(not writes, "deactivated no write", "e%d writes %s" % (ev, writes))
+            writes = [(d["w"], d["b"]) for t, d, n in sub if t in ("QS", "QC") and d["w"] in words]
+            want = []
+            for i in ran_off:
+                want += deactivated_writes(i, ev, e)
+            self.ok(writes == want, "deactivated quest writes", "e%d writes %s, want %s" % (ev, writes, want))
+            self.hit("deactivated quest writes (word, bit) %s" % (want,) if want else "deactivated quest no write")
 
     def ev_join(self, e, x, sub):
         rec = e["rec"]
@@ -451,17 +471,38 @@ class Checker:
         gs0 = pseed(e["gs"])
         g1 = step(gs0)
         g2 = step(g1)
+        ru = pu.get("roomupdate")
+        pop = 0
+        if ru:                         # the town end's room populated by RoomUpdateOne: its draws are an oracle
+            pop = nsteps(g1, pseed(ru["gs"]), 64)
+            if pop is None:
+                self.ok(False, "portal room update", "gs %s after the field end %08x" % (ru["gs"], g1[0]))
+                return
+            g2 = step(pseed(ru["gs"]))
+        elif pu.get("partner"):        # older logs: find the population draws between the two creations
+            pop = nsteps(g1, (int(pu["partner"]["oinit"], 16), pseed(pu["partner"]["gs"])[1]), 64)
+            pop = (pop - 1) if pop else 0
+            g2 = step(g1, pop + 1)
+        if pop:
+            self.hit("town portal: gs draws of the town room's population (oracle)", pop)
         f, f1, p, p2 = pu.get("field"), pu.get("field1"), pu.get("partner"), pu.get("partner2")
         if not (f and f1 and p and p2):
             self.hit("town portal without its PU lines")
             return
         self.ok(int(f["oinit"], 16) == g1[0] and pseed(f["os"]) == (g1[0], 666), "portal field seed",
                 "field %s %s gs+1 %08x" % (f["oinit"], f["os"], g1[0]))
-        self.ok(pseed(f1["os"]) == step(pseed(f["os"])), "portal field SetMode draw", "%s -> %s" % (f["os"], f1["os"]))
+        # SUnitCreate already leaves the field end in mode 1 and the partner in mode 2 (PU "omode"), so the
+        # SetMode that follows changes nothing and draws nothing; a draw is predicted only for a real mode change
+        fw = step(pseed(f["os"])) if f.get("omode") != 1 else pseed(f["os"])
+        self.ok(pseed(f1["os"]) == fw, "portal field SetMode(1)", "%s -> %s (mode %s)" % (f["os"], f1["os"],
+                                                                                         f.get("omode")))
         self.ok(int(p["oinit"], 16) == g2[0] and pseed(p["os"]) == (g2[0], 666), "portal partner seed",
                 "partner %s %s gs+2 %08x" % (p["oinit"], p["os"], g2[0]))
-        self.ok(pseed(p2["os"]) == step(pseed(p["os"])), "portal partner SetMode draw", "%s -> %s" % (p["os"],
-                                                                                                    p2["os"]))
+        pw = step(pseed(p["os"])) if p.get("omode") != 2 else pseed(p["os"])
+        self.ok(pseed(p2["os"]) == pw, "portal partner SetMode(2)", "%s -> %s (mode %s)" % (p["os"], p2["os"],
+                                                                                           p.get("omode")))
+        self.ok(pseed(x["gs"]) == g2, "town portal gs at exit", "exit %s, want %08x:%08x" % (x["gs"], g2[0], g2[1]))
+        self.hit("town portal object draws %d" % ((fw != pseed(f["os"])) + (pw != pseed(p["os"]))))
         self.hit("town portals opened")
 
     def ev_p58(self, e, x, sub):

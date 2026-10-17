@@ -12,11 +12,11 @@
 #          `objdump -d --no-show-raw-insn -M intel game.exe`, from the function start to its int3 padding). "k" names
 #          the event; both lines carry gs, qs, ps; the entry line the event's inputs, the exit line its outputs.
 #     k        entry       rets                                    inputs (ECX/EDX/stack)
-#     de       0x005438E0  0x00543973 (internal exit)              EDI block; [esp+4] force, [esp+8] act filter; also
+#     de       0x005438E0  0x00543974 (its ret 8)                  EDI block; [esp+4] force, [esp+8] act filter; also
 #                                                                  every quest object [id, act, +0x09, +0x0A, +0x0B,
 #                                                                  word] in list order and the ids whose slot is set
 #                                                                  ("slots"); for NPC 331 quest 11's private +0x0E
-#     due      0x005439A0  0x00543A03                              EDI block; [esp+4] force
+#     due      0x005439A0  0x00543A05                              EDI block; [esp+4] force
 #     join     0x00546270  0x0054666F 0x005466A4                   ECX game, EDX player, [esp+4] rejoin
 #     p49      0x0054C5D0  0x0054C5E7 0x0054C630 0x0054C675 0x0054C68A  ECX game, EDX player, [esp+4] packet
 #     p48      0x0054C590  0x0054C5A3 0x0054C5B9 0x0054C5C7        ECX game, EDX player
@@ -30,7 +30,8 @@
 #     durance  0x00584750  0x00584817                              ECX ctx (OperateFn 46)
 #     orb      0x005BB980  0x005BBB55 0x005BBB6B                   ECX ctx (OperateFn 53): mode, weapon code, counter
 #     tp       0x005BE290  0x005BE2AC 0x005BE3CB 0x005BE3E3        ECX game, EDX player (g_ItemUseFns[2].use)
-#     pocreate 0x0056D130  0x0056D1BF 0x0056D283 0x0056D2BC        PortalObjectCreate: [esp+0x10] dest, [esp+0x18] class
+#     pocreate 0x0056D130  0x0056D1BF 0x0056D283 0x0056D2BC        PortalObjectCreate: [esp+4] room, x, y, dest, &out,
+#                                                                  class, noSearch (seven stack arguments, ret 0x1C)
 #     npcmove  0x0054B830  0x0054B883 0x0054B8FE 0x0054B916        ECX game, EDX player, [esp+4] level, [esp+8] type
 #     npcact   0x005467E0  0x005468D5 0x00546982 0x00546A40 0x00546AB4  ECX game, EDX player, [esp+4] npc
 #     chlevel  0x0053AEC0  0x0053AF5A 0x0053AFA2                   ECX game, EDX player, [esp+4] level, [esp+8] type
@@ -52,7 +53,8 @@
 #          active +0x09, +0x0A, the event
 #   PU     the portal pair's seeds: 0x0056D24E after the field end's SUnitCreate (EAX), 0x0056D261 after its
 #          SetMode(1) (ESI), 0x0056D097 after the partner's SUnitCreate (EAX), 0x0056D10C after its SetMode(2) (ESI):
-#          the object, its seed (+0x20) and start seed (+0x28), gs
+#          the object, its seed (+0x20) and start seed (+0x28), gs; "roomupdate" at 0x0056CF82, after
+#          RoomUpdateOne(the town end's room) in PortalPartnerCreate (a room it populates draws gs: an oracle): gs
 #   FF0    0x0064DEA0 COLL_FindFreeNear entry, only inside a travel event: room, pos, other, size, maskA, maskB,
 #          fallback, radius, step and the collision cells of the active rooms (game +0xBC + 4·act, list +0x10, next
 #          +0x7C; map +0x20 = {x0, y0, w, h, ..., +0x20 cells u16}) in the square pos ± 12 (row-major, null when no
@@ -393,8 +395,9 @@ def _questev_main():
         return {"own": u32(pd + 0x48) if pd else None, "lid": unit_level(p), "pos": upos(p)}
 
     def ctx_poc(esp):
-        return {"x": u32(esp + 4), "y": u32(esp + 8), "dest": u32(esp + 0x0C), "cls": u32(esp + 0x14),
-                "nosearch": u32(esp + 0x18), "plr": unit(reg("edx")), "_keep": {"out": u32(esp + 0x10)}}
+        return {"room": u32(esp + 4), "x": u32(esp + 8), "y": u32(esp + 0x0C), "dest": u32(esp + 0x10),
+                "cls": u32(esp + 0x18), "nosearch": u32(esp + 0x1C), "plr": unit(reg("edx")),
+                "_keep": {"out": u32(esp + 0x14)}}
 
     def ctx_npcmove(esp):
         d = ctx_gp(esp)
@@ -465,8 +468,8 @@ def _questev_main():
         emit("LPL", {"lv": lv, "lid": u32(lv + 0x1D0), "ls0": s0 if lv0 == lv else None, "init": int(not i0),
                      "ls": seed(lv + 0x1C4), "pts": pts})
 
-    bracket("de", 0x005438E0, [0x00543973], ctx_block)
-    bracket("due", 0x005439A0, [0x00543A03], ctx_ublock)
+    bracket("de", 0x005438E0, [0x00543974], ctx_block)
+    bracket("due", 0x005439A0, [0x00543A05], ctx_ublock)
     bracket("join", 0x00546270, [0x0054666F, 0x005466A4], ctx_join, out_join)
     bracket("p49", 0x0054C5D0, [0x0054C5E7, 0x0054C630, 0x0054C675, 0x0054C68A], ctx_p49, out_pos)
     bracket("p48", 0x0054C590, [0x0054C5A3, 0x0054C5B9, 0x0054C5C7], ctx_p48, out_p48)
@@ -534,6 +537,11 @@ def _questev_main():
                         "opos": upos(o), "gs": seed(g + 0xD0) if g else None})
         return f
 
+    def on_ru():                       # 0x0056CF82: after RoomUpdateOne(the town end's room) in PortalPartnerCreate
+        g = st["game"]
+        emit("PU", {"at": "roomupdate", "gs": seed(g + 0xD0) if g else None})
+
+    Bp(0x0056CF82, on_ru)
     Bp(0x0056D24E, on_pu("field", "eax"))
     Bp(0x0056D261, on_pu("field1", "esi"))
     Bp(0x0056D097, on_pu("partner", "eax"))
