@@ -327,6 +327,22 @@ The columns the defender's block and the kick and shield damage are expected to 
 - `[L]` By the names, `block` is the shield's block chance, the shield damage feeds a shield attack (Smite) and the
   boot damage the kick; `absorbs` has no known reader. Plan 0037 Phase 1.
 
+## Economy (plan 0043 Phase 0)
+
+The fields, their offsets, the readers named so far and the survey command are in
+[Weapons § Economy](Weapons.md#economy-plan-0043-phase-0); every price, repair and wear meaning is `[L]`. Armor rows
+(`[C]`, `python3 -I tools/economy_survey.py items` and `types`, gate survey `economy`):
+
+- `[C]` `cost` 64..373 558 (200 distinct) and `gamble cost` 3 016..4 872 212 (179 distinct) are set on all 202 rows.
+  **`cost` is above `gamble cost` on 5 rows**, the elite class shields and heads `pac`, `pad`, `pae`, `paf` (85 659..139 860
+  against 82 066..82 069) and `nef` (86 238 against 82 073); none of the five is on the gamble list.
+- `[C]` `durability` 12..100 on every row, `nodurability` 0 on every row; `durwarning` takes six values (1 ×39,
+  2 ×45, 3 ×73, 4 ×15, 5 ×15, 6 ×15). No stack, `qntwarning`, `multibuy` or `quest` cell is set.
+- `[C]` Every armor's own `type` has `Repair` 1 (202 of 202), and none is `Throwable`.
+- `[C]` `CostFormula` 1 is set on seven armor types and no other: `shie`, `tors`, `boot`, `glov`, `belt`, `helm`,
+  `circ` (the one 2 is on `body`, the misc body parts;
+  [ItemTypes § Repair and throwing columns](ItemTypes.md#repair-and-throwing-columns-plan-0043-phase-0)).
+
 ## Open questions
 
 - Answered `[I]` by [data/0004](../findings/data/0004-cell-converters.md) (field descriptors and fillers): the four bytes no shipped column fills,

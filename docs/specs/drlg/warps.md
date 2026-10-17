@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/maze, drlg/preset, drlg/room-tiles]
 consumed_by: [drlg/overview, drlg/maze, drlg/collision, monsters/spawn, objects]
-tags: {C: 91, I: 30, L: 5}
-updated: 2026-10-16
+tags: {C: 91, I: 35, L: 2}
+updated: 2026-10-17
 ---
 
 # Level links, warp slots and warp points
@@ -402,6 +402,13 @@ E1. LevelWarpPointsBuild(L):  ; at the end of every LevelInit         [C] (fn:su
   run:2026-10-15-drlg-maze)
 - E1. [I] The count is not bounded by the 9-entry arrays; no build had more than 9 points.
   (fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0)
+- E1. [I] Stock data does not pass 9 in any logged build. Over the 37 kept logs with `LWP` lines (1452 builds of 93
+  levels) the count equals the number of rooms that qualify by `Levels` `Warp0..7`, no qualifying bit is on two rooms
+  of a build, no build has two waypoint rooms, and the largest count is 8 (Valley of the Kings, 46). In the data the
+  most `Warp` ≠ −1 slots of a level is 7 (46), and the 43 levels the logs miss have at most 3. A count above 9 would need
+  one slot's warp cells in two rooms of a level; no static bound excludes that. (fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0,
+  tbl:Levels.txt:Warp0, run:2026-10-15-drlg-maze, run:2026-10-16-sweep-roomk,
+  [drlg/0007 § Plan 0039 batch P1a](../../findings/drlg/0007-warps.md#plan-0039-batch-p1a-2026-10-16))
 - E1. [C] In levels with outdoor rooms the bits of those rooms come from [outdoor.md § B](outdoor.md#b-the-cell-grid-and-its-bits).
   In run:2026-10-15-drlg-maze 38 lists used the logged flags of their outdoor rooms; in run:2026-10-15-drlg-outdoor
   the out rooms' flags are predicted, and so are the 292 point lists of levels with out rooms.
@@ -413,7 +420,7 @@ E1. LevelWarpPointsBuild(L):  ; at the end of every LevelInit         [C] (fn:su
 flowchart TD
   a["room with warp bit m activates"] --> d["dest = Vis[m] of S; LevelEnsure, LevelInit if not built"]
   d --> w{"Warp[m] ≠ −1?"}
-  w -->|"no: a seam"| mark["mark rooms within 6 tiles"]
+  w -->|"no: a seam"| mark["add dest rooms within 6 tiles<br/>to the source room's near list"]
   w -->|"yes"| k["k = earlier slots of S naming dest"]
   k --> r{"k-th slot j of dest naming S<br/>has a room with bit j?"}
   r -->|"yes"| pair["paired room: first room of dest with bit j"]
@@ -434,7 +441,10 @@ F1. WarpPairLink(srcRoom, m):                                        [C] (fn:sub
       for j in 0 ..< 8 with LevelVisIds(D)[j] = S.id:                 ; the fallback walk
         if FindRoom(D, j): return
       FindRoom(D, j): the first room of D.rooms (newest first) whose flags have 0x10 << j;
-                      it is marked and gets a warp node with the 'b' LvlWarp record
+                      it is appended to srcRoom's near list, and srcRoom gets a warp node
+                      pointing at it, with the 'b' LvlWarp record of (S, m)
+      ; with LevelWarpId(S, m) = −1, FindRoom instead appends every room of D with bit 0x10 << j and a gap below 6 tiles
+      ; to srcRoom's near list and makes no warp node                [I] (fn:sub_0066BE80_WarpPairRoomFind@0x0066BE80, fn:sub_0066BDA0_RoomNearListAppend@0x0066BDA0)
 ```
 
 - F1. [C] 172 pairings were predicted: 162 by rank (32 at rank 1 on a repeated destination) and 10 by the fallback (the
@@ -446,13 +456,31 @@ F1. WarpPairLink(srcRoom, m):                                        [C] (fn:sub
   slot a Durance level ends up with depends on that draw. In seed 2027 level 100's Prev took slot 2, and Travincal pairs
   with it by rank (83 slot 0 ↔ 100 slot 2). (fn:sub_0066C220_WarpPairLink@0x0066C220,
   fn:sub_00672F60_MazeSpecialsDurance@0x00672F60, run:2026-10-15-drlg-maze)
-- F1. [I] The caller is `RoomNeighboursEnsure`, once per warp bit, when a room activates. So entering a room with stairs
-  builds the next level. With `Warp` −1 the call only marks the destination's rooms within 6 tiles.
-  (fn:sub_0066C370_RoomNeighboursEnsure@0x0066C370, fn:sub_0066BE80_WarpPairRoomFind@0x0066BE80,
-  fn:sub_0066BE10_RoomWarpNodeAdd@0x0066BE10)
+- F1. [I] The caller is `RoomNeighboursEnsure`, once per warp bit, when a room activates, except for a room of level 133,
+  for which it makes no call (below). So entering a room with stairs builds the next level. With `Warp` −1 the call
+  appends every destination room with the bit and a gap below 6 tiles to the source room's near list and makes no
+  warp node. (fn:sub_0066C370_RoomNeighboursEnsure@0x0066C370, fn:sub_0066BE80_WarpPairRoomFind@0x0066BE80,
+  fn:sub_0066BE10_RoomWarpNodeAdd@0x0066BE10,
+  [drlg/0007 § Plan 0039 batch P1a](../../findings/drlg/0007-warps.md#plan-0039-batch-p1a-2026-10-16))
+- F1. [I] **The pairing extends the source room's near list.** `RoomNeighboursEnsure` first rebuilds the list (`+0x08`,
+  count `+0x2C`) from the rooms of the same level whose gap to the room is below 6 tiles on both axes, the room itself
+  included. `RoomNearListAppend` then adds each paired room at the end and re-sorts the list with an exchange sort over
+  adjacent pairs `(d, c)` that swaps them unless `d.x < c.x + c.w` and `d.y < c.y + c.h` (signed). This is the list the
+  bit-2 scan, the collision near list and `DUNGEON_NearRoomsBuild` read, so the paired room of the next level becomes a
+  near room of the stairs room. With `Warp` ≠ −1, `RoomWarpNodeAdd` prepends the node `{D, next, 1, LevelWarpRec(S, m,
+  'b')}` to the source room's `+0x4C`. Nothing marks the destination room. (fn:sub_0066BC20_RoomNearListBuild@0x0066BC20,
+  fn:sub_0066BDA0_RoomNearListAppend@0x0066BDA0, fn:sub_0066BBC0_RoomNearListSort@0x0066BBC0,
+  fn:sub_0066BE10_RoomWarpNodeAdd@0x0066BE10, fn:sub_0066AF50_LevelWarpRec@0x0066AF50,
+  [drlg/0007 § Plan 0039 batch P1a](../../findings/drlg/0007-warps.md#plan-0039-batch-p1a-2026-10-16))
+- F1. [I] `WarpPairLink(a1, srcRoom, m)` is stdcall; `srcRoom` null or `m` ≥ 8 is fatal. Its first argument, the
+  caller's `ECX`, reaches only a function that does not read it, so it has no effect.
+  (fn:sub_0066C220_WarpPairLink@0x0066C220, fn:sub_0066BE80_WarpPairRoomFind@0x0066BE80)
 - F1. [I] **133 → 17.** Matron's Den's Prev stairs carry slot 0, so they name `Vis0` 17 with `Warp0` 8. Level 17 names
-  no slot back, so both walks find nothing. What the game does when that warp is used is open.
-  (fn:sub_0066C220_WarpPairLink@0x0066C220, tbl:Levels.txt:Vis0)
+  no slot back, so both walks would find nothing; but `RoomNeighboursEnsure` makes no pairing call at all for a room of
+  level 133 (`[level+0x1D0]` = `0x85` at `0x0066C39B`), so that room never pairs, whatever its `Warp`. The pairing
+  code's lack of a level test holds for `WarpPairLink` itself, not for its caller. What the game does when that warp
+  is used is open. (fn:sub_0066C370_RoomNeighboursEnsure@0x0066C370, fn:sub_0066C220_WarpPairLink@0x0066C220,
+  tbl:Levels.txt:Vis0, [drlg/0007 § Plan 0039 batch P1a](../../findings/drlg/0007-warps.md#plan-0039-batch-p1a-2026-10-16))
 
 ### G. The warp unit and the LvlWarp columns
 
@@ -466,6 +494,14 @@ F1. WarpPairLink(srcRoom, m):                                        [C] (fn:sub
   (fn:sub_005550B0_WarpExitPos@0x005550B0, tbl:LvlWarp.txt:ExitWalkX)
 - [I] `SelectX/Y/DX/DY` are read only by the client, which draws the warp's selection box.
   (fn:sub_0045B1E0_WarpSelectBoxDraw@0x0045B1E0)
+- [I] **Units.** `OffsetX/OffsetY` are subtiles relative to the room: `WarpUnitAdd` converts the cell's room-relative
+  tile to subtiles (× 5) and adds them. `ExitWalkX/ExitWalkY` are subtiles added to the paired warp unit's subtile
+  position. `SelectX/SelectY/SelectDX/SelectDY` are screen pixels: the client converts the unit's subtile position with
+  `X = (x − y)·16`, `Y = (x + y)·8`, subtracts the view origin, adds `SelectX/SelectY` for the box corner and takes
+  `SelectDX/SelectDY` as its width and height. (fn:sub_0066E1C0_WarpUnitAdd@0x0066E1C0,
+  fn:sub_005550B0_WarpExitPos@0x005550B0, fn:sub_0045B1E0_WarpSelectBoxDraw@0x0045B1E0,
+  fn:sub_00643260_SubtileToScreen@0x00643260, tbl:LvlWarp.txt:OffsetX, tbl:LvlWarp.txt:ExitWalkX, tbl:LvlWarp.txt:SelectX,
+  [drlg/0007 § Plan 0039 batch P1a](../../findings/drlg/0007-warps.md#plan-0039-batch-p1a-2026-10-16))
 
 ## Outputs
 
@@ -587,6 +623,9 @@ carries slot 6 (`0x400`) in this seed.
   `2 − (lo & 1)` with `r & 1 = 0`): one map seed was logged by the warp run, and side 1 was reached only with
   `r & 1 = 1` (run:2026-10-15-acts-3-5). A second map seed would cover most of them.
 - [L] What happens when a warp with no back-link (133 → 17) is used. Level 133 is an uber level; not run.
-- [L] The second argument of `WarpPairLink` and the marking function `0x0066BDA0` are not read in full.
-- [L] The units of `Select*`, `ExitWalk*` and `Offset*` (pixels or subtiles).
-- [L] Whether the warp point count can pass 9 in a stock level (the arrays have 9 entries, the count is unbounded).
+- ~~The arguments of `WarpPairLink` and the marking function `0x0066BDA0`~~: read (§ F1; `0x0066BDA0` appends to the
+  source room's near list and marks nothing), [drlg/0007 § Plan 0039 batch P1a](../../findings/drlg/0007-warps.md#plan-0039-batch-p1a-2026-10-16).
+- ~~The units of `Select*`, `ExitWalk*` and `Offset*`~~: subtiles for `Offset*` and `ExitWalk*`, screen pixels for
+  `Select*` (§ G).
+- ~~Whether the warp point count can pass 9 in a stock level~~: not in any logged build, and not by the data's slot
+  counts (§ E1); only one slot's warp cells in two rooms of a level could do it, which no static bound excludes.
