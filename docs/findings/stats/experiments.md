@@ -7,9 +7,9 @@ and evidence rules: ADR-0003, ADR-0004, ADR-0011, ADR-0013, ADR-0014;
 
 ## run:2026-10-17-stats
 
-**In progress** (lane `lane/p41h`, rotated at a checkpoint 2026-10-17; the resume note in the
-[plan 0041 log](../../plans/0041-stats-and-states.md#implementation-log) lists what is left). The sessions below are
-complete and checked; the record is finished by the resuming lane.
+**Complete** (lane `lane/p41h`, 2026-10-17: 13 sessions before the checkpoint, 5 after the resume; the resume
+note and its close are in the [plan 0041 log](../../plans/0041-stats-and-states.md#implementation-log)). 18 sessions,
+**0 mismatches**.
 
 - **Question:** plan 0041 Phase 2. Does `tools/stats.py`, the model of stats/0001 and stats/0002, reproduce every
   logged stat-list event of the player write for write (every Propagate, CacheAdd and CacheWrite a link, an unlink or
@@ -40,7 +40,11 @@ complete and checked; the record is finished by the resuming lane.
   Messerschmidt's Reaver on the switch), `StatsBarC` (op coverage: Headstriker/Bing Sz Wang against Messerschmidt's,
   Ironpelt, The Stone of Jordan), `StatsPal` (Paladin 85 one experience point below 86: Prayer 12, *Azurewrath*
   (Sanctuary), an Act II Prayer mercenary), `StatsPalB` (Prayer 1, Doombringer, Ironpelt: the mercenary's higher
-  Prayer replaces). Not yet run: `StatsBarD`, `StatsNec`, `StatsPalC` (see the plan log).
+  Prayer replaces), `StatsBarD` (as `StatsBar` with strength 85: with the belt and gloves off the strength lands in
+  115..124, where the ethereal War Boots (125) pass only with the −10), `StatsNec` (Necromancer: the full Trang-Oul's
+  Avatar, whose full block sets the property `state` = `monsterset`), `StatsPalC` (Paladin with a low defence, to be
+  poisoned in the Act III and Act II fields). Saves built into `workspace/logs/stats/p41h-saves/` from
+  `workspace/samples/d2s/smp{bar,pal,nec}.d2s`.
 
 ### Sessions
 
@@ -59,11 +63,59 @@ complete and checked; the record is finished by the resuming lane.
 | pal-oasis | r8 | 239 | 8365 | 45531 | 0 | 0 | 760 | 0 | 30 | 452 | 318 | 5951 | 746 | 0 |
 | pal-spider | r8 | 152 | 6724 | 27647 | 0 | 0 | 850 | 0 | 30 | 425 | 348 | 5951 | 672 | 0 |
 | pal-tundra | r8 | 338 | 11967 | 57466 | 0 | 0 | 780 | 0 | 30 | 453 | 326 | 5951 | 743 | 0 |
-| **all** | | **17703** | **156683** | **648599** | **3907** | **12895** | **14240** | **6200** | **3226** | **2941** | **2208** | **42794** | **4810** | **0** |
+| bard-town1 | r8 | 2136 | 12792 | 20827 | 538 | 1990 | 858 | 608 | 592 | 0 | 0 | 79 | 0 | 0 |
+| bard-town2 | r8 | 4144 | 24023 | 38533 | 1044 | 3860 | 1668 | 1184 | 1152 | 0 | 0 | 79 | 0 | 0 |
+| nec-town1 | r8 | 1368 | 14870 | 18709 | 260 | 780 | 388 | 840 | 776 | 0 | 0 | 79 | 0 | 0 |
+| palc-spider | r8 | 444 | 13355 | 100124 | 0 | 0 | 246 | 0 | 3 | 250 | 293 | 5860 | 498 | 0 |
+| palc-oasis | r8 | 292 | 10319 | 65052 | 0 | 0 | 234 | 0 | 3 | 452 | 248 | 5828 | 899 | 0 |
+| **all** | | **26087** | **232042** | **891844** | **5749** | **19525** | **17634** | **8832** | **5752** | **3643** | **2749** | **54719** | **6207** | **0** |
 
-Logs: `workspace/logs/stats/s1017-*.log`, run list `s1017-run.lst` (`14aa1fbb…`, 13 logs), per-file sha256 in
-`s1017-manifest.txt` (`82a50af3…`); `python3 -I tools/stats.py check $(cat workspace/logs/stats/s1017-run.lst)
---json …/s1017-check.json` under `systemd-run --user --scope -p MemoryMax=4G`, `tools/stats.py` at the checkpoint
-commit: **0 mismatches**. Seeds unchanged at entry and exit: link 8 856, unlink 8 841, own write 67 592, toggle
-12 895, apply 4 835, expire 2 208, tick 42 794, shrine 4, well 3, aura 2 064; the aura kind moved the caster's seed in
-865 runs, each by exactly the `RNG_RangeB` calls of `SKILLS_RollElemDamage` (Sanctuary's hit), chained.
+Seeds and sessions after the resume: `bard-town1` 4141 (2 cycles of the `statsbar` plan) and `bard-town2` 4142 (4
+cycles, added to reach 30 decisive ethereal checks), `nec-town1` 4151 (4 cycles of `statsnec`; the first attempt
+before the checkpoint failed on the dark Act IV town, its log kept as `s1017-nec-town1.log.failed-dark-town` and not
+in the run), `palc-spider` 4171 and `palc-oasis` 4172 (`pal_field`, 50 hops). Slot 2 ran the first three, slot 1 the
+Paladin sessions, side by side, one session per slot.
+
+### Log manifest
+
+| file | sha256 | what |
+|---|---|---|
+| `workspace/logs/stats/s1017-run.lst` | `a42758f3…` | the 18 session logs of the run, in check order |
+| `workspace/logs/stats/s1017-manifest.txt` | `7fd7a93a…` | per log: sha256, size, line count (`tools/stats.py manifest`) |
+| `workspace/logs/stats/s1017-check.json` | `677e12a6…` | the checker's report over the 18 logs |
+| `workspace/logs/stats/s1017-<session>.log` | in the manifest | the logger's output, one per session |
+| `workspace/logs/stats/s1017-<session>.plan`, `.pilot.txt`, `-shots/` | — | the click plan, the driver's output, screenshots |
+| `workspace/logs/stats/p41h-saves/*.d2s` | `tools/test_d2s.py` | the built characters |
+
+Check: `systemd-run --user --scope -p MemoryMax=4G python3 -I tools/stats.py check $(cat
+workspace/logs/stats/s1017-run.lst) --json workspace/logs/stats/s1017-check.json`, `tools/stats.py` at commit
+`27f49ad` (`a6f77ece…` before its docstring line; the logic is that commit's): **0 mismatches**. Notes, not
+checks: 180 full Trang-Oul's set lists not predicted (the model builds no `state` or `oskill` property list), one
+event open at a log's end (the session killed inside it).
+
+### Results
+
+- **Draw-freedom** (seeds equal at entry and exit, game and acting unit): link 12 868, unlink 12 853, own write
+  101 995, toggle 19 525, apply 6 232, expire 2 749, tick 54 719, aura 2 763 — every kind ≥ 20; **shrine 7 and well 5
+  fall short** of 20. The aura kind moved the caster's seed in 865 runs, each by exactly the `RNG_RangeB` calls of
+  `SKILLS_RollElemDamage` from `sub_005CF3A0_AuraHitDo` (Sanctuary's hit), chained (865 pairs ≥ 20).
+- **Reads:** 891 844 in the 50-frame windows after each list change, 120 stat ids. **Ops** in predicted writes: 1 348,
+  2 1 490, 4 2 568, 5 26, 8 919, 9 3 784, 11 92, 13 136 (every stock op ≥ 20). Ops 3, 6, 7, 10, 12: no reachable row.
+- **Recomputes:** 26 087 links and unlinks, 232 042 CacheAdd/CacheWrite, 9 level changes. **Sets:** 5 749 wearer
+  lists (5 569 predicted, 180 full Trang-Oul's taken as logged), 19 525 aprop toggles by add func 0/1/2.
+- **States:** 3 643 applies (refresh 2 608, refuse 1 013, replace 2, new 20), 2 749 expiry runs (123 lists freed,
+  lateness 0), 3 629 aura runs on the `≡ 1 (mod 50)` grid, 6 207 aura durations = `perdelay + 1`.
+- **`group`:** 450 `STATE_GroupClear` calls, 180 effective (the full Trang-Oul's `monsterset` cleared when the set
+  breaks, self argument 1). A clear of a different state of one group: **not reached**.
+- **Ticks:** 54 719, of which 1 082 with a negative stat 74 (poison, `StatsPalC`): the stat-74 tick under poison is
+  reproduced. **Not reached:** the floor at 256 life, open wounds.
+- **Requirements:** 17 634 checks; the ethereal −10 decided 30 (`bard-town1` 10, `bard-town2` 20); stat 91 decided
+  none (814 checks with it); level, class and broken-item branches not reached.
+- **Shrines and wells (named shortfall):** 7 shrines (3 timed: codes 8, 10; 4 recharge on a full player) and 5 wells,
+  all predicted, 12 against the plan's 50. `objop --walk` operates only what the field explore activated (about one
+  per session); raising it would need sessions that only hunt shrines, which this resume did not run.
+- **Oracle replacement:** run:2026-10-16-player (`workspace/scratch-h34p2/player-run.lst`, `fef9a539…`): `python3 -I
+  tools/stats.py oracle-player $(cat …)` finds 13 of its 20 level-up maxima (`UnitGetMaxHp/Mana/Stamina`, value
+  oracles there) equal to the player's own entries, so replaceable by the model; the other 7 (characters wearing
+  items) need the child lists, which those logs do not hold. run:2026-10-16-combat logs values, not lists: its stat
+  oracles are **not replaceable** from the kept logs.

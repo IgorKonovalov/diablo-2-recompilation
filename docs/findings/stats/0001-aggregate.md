@@ -39,7 +39,7 @@ finding, write for write; § 9 lists what each claim was checked against and wha
 - [C] **The maxima** are the cached full stats 7, 9 and 11 (`UnitGetMaxHp`, `UNIT_GetMaxMana`,
   `UNIT_GetMaxStamina`). Item and state life reaches them through the cache; vitality and energy from items through
   op 9 and op 8 with the class's `LifePerVitality`, `StaminaPerVitality`, `ManaPerMagic` (quarter points); `item_maxhp_percent` and `item_maxmana_percent` (op 11) are a
-  percentage of the summed flat value only (op 11 reached in the Paladin B logs; the count is pending, see the plan log).
+  percentage of the summed flat value only (op 11: 92 predicted writes, § 9).
   (fn:sub_00625D10_UnitGetMaxHp@0x00625D10, fn:UNIT_GetMaxMana@0x00625D60, fn:UNIT_GetMaxStamina@0x00625DB0,
   tbl:CharStats.txt:LifePerVitality, run:2026-10-17-stats)
 - [C] **When a maximum changes, the current value is rescaled** by the stat callback (stats 7, 9, 11 → 6, 8, 10):
@@ -49,13 +49,13 @@ finding, write for write; § 9 lists what each claim was checked against and wha
   is 1 life (`MinAccr` 1). Neither value was predicted by the run (the clamp's writes were taken as inputs).
   (fn:UNIT_ClampVitals@0x006275B0, tbl:ItemStatCost.txt:MinAccr)
 - [C] **Items count only while linked.** An equipped item's list is linked when its requirements are met
-  (`sub_0062EAF0_ItemReqCheck`: identified, strength and dexterity with `item_req_percent` and the ethereal −10);
+  (`sub_0062EAF0_ItemReqCheck`: identified, strength and dexterity, with the ethereal −10 deciding 30 checks);
   the refresh `sub_0055DBC0_EquipReqRefresh` unlinks the failing ones (flag `0x4000`) and re-links in a loop until no
   item changes. Charms count from the inventory. For a Barbarian the weapon that is not the active one is linked
   "without damage". (fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0, fn:sub_0062EAF0_ItemReqCheck@0x0062EAF0,
   fn:ITEMS_AttachToOwner@0x0055C2C0, run:2026-10-17-stats)
-- [I] The level and class tests, a broken item (flag `0x100`) and an Assassin's second weapon were not reached by
-  the run. (fn:sub_0062EAF0_ItemReqCheck@0x0062EAF0, fn:sub_0055F850_ItemBreak@0x0055F850, fn:UNIT_CanDualWield@0x006235A0)
+- [I] The `item_req_percent` (stat 91) term of the requirement changed no outcome in the run; the level and class
+  tests, a broken item (flag `0x100`) and an Assassin's second weapon were not reached by the run. (fn:sub_0062EAF0_ItemReqCheck@0x0062EAF0, fn:sub_0055F850_ItemBreak@0x0055F850, fn:UNIT_CanDualWield@0x006235A0)
 - [C] **Set bonuses** live in two places: each worn set item's own `aprop` lists (states 165–169, flags `0x2040`,
   switched on or off by `add func`: 1 = by which other member is worn, 2 = by how many), and one list per set on
   the wearer (a state from 165–170, marked by stat 71 = the set id) rebuilt from Sets' partial blocks
@@ -389,6 +389,88 @@ flowchart TD
 - [I] An aura's target list is the `auratargetstate` list made by `AURA_ApplyToTarget` with `aurastat1..6` =
   `aurastatcalc`; stats 350/351 again; details in stats/0002 § 4. (fn:AURA_ApplyToTarget@0x005CEDC0)
 
+### 9. The Phase 2 run (`run:2026-10-17-stats`)
+
+The run logged the server player's whole stat-list tree and replayed it with `tools/stats.py`, which mirrors the tree
+and predicts every line from § 1–§ 8 (method and counts in the run record). What each claim was checked against:
+
+- [C] **The loader's op graph** (§ 4): the run-time ISC tail the logger dumps (targets `+0x58`, dependents `+0x5E`, the
+  `opIn` table `+0x0DE`, the `+0x51`/`+0x52`/`+0x53` flags, the op byte, ValShift, MinAccr, keepzero and the
+  damagerelated, fMin and fCallback bits) equals, for every one of the 359 rows (103 392 fields), what the rules of
+  § 4 build from ItemStatCost; the take test's word `+0x0DE + 6k` is 0 on every row that is not itself a target
+  (the record's initial content, § 3). (fn:ITEMSTATCOST_Load@0x00637A00, tbl:ItemStatCost.txt:op stat1,
+  run:2026-10-17-stats)
+- [C] **Linking, unlinking and propagation** (§ 2, § 3): 26 087 top-level and nested links and unlinks (item lists,
+  set lists, state and passive lists, socketed children, the aprop toggles) and 207 017 Propagate calls; every
+  Propagate a link or unlink makes was predicted (list, key, delta: 96 342), and every write inside each Propagate
+  (137 242 CacheAdd, 94 800 CacheWrite) was predicted in order, with the old value it found; the tree after every
+  top-level event equalled the mirror (5 143 snapshots, own entries, caches, flags and chains). Linking without
+  damage (32, the dual-wield second weapon) and the `0x20000000` re-evaluation on link and unlink are among
+  them. (fn:STATLIST_LinkToUnit@0x00626E10, fn:STATLIST_Unlink@0x006269F0, fn:STATLIST_Propagate@0x00626920,
+  fn:sub_006266C0_StatRecompute@0x006266C0, run:2026-10-17-stats)
+- [C] **The take test** (§ 3) as far as stock rows reach it: op 1 taken 156, op 2 taken 280, op 4 taken 2 568 and not
+  taken 3 467 (the item unlinked: no linked unit), op 5 taken 26 and not 70, ops 8 and 9 never taken
+  (615); 24 279 cache entries of sources whose target took kept their old value, and 1 239 recomputes of a source
+  evaluating to 0 wrote it at once and walked no dependent. Op 3, 6, 7, 12 and 13's class were not reached by a
+  source with a target that took. (0x006267AD, 0x0062690C, run:2026-10-17-stats)
+- [C] **The evaluation** (§ 4) for the ops a stock row reached in a predicted write: op 1 348, op 2 1 490, op 4 2 568, op 5
+  26, op 8 919, op 9 3 784, op 11 92, op 13 136 (each of the eight stock ops at least 20). Every other cached entry of every extended list evaluated to its cache (646 835 evaluations at the tree snapshots), except the stale
+  sources above and the item op-4/5 values below. Op 3 and op 10 have no row, op 6, 7 and 12 none spawnable: those
+  stay `[I]`. (fn:sub_00626200_StatEvaluate@0x00626200, run:2026-10-17-stats)
+- [C] **An item's op-4/5 value is not refreshed when the wearer levels up.** After the Paladin's level-ups the
+  item lists with an op-4 source (`item_armor_perlevel` on Stormshield) kept the value of their last link (94
+  entries), equal to the evaluation at the wearer's previous level: nothing propagates a stat of the linked unit into
+  an item list; only `STATLIST_LinkToUnit` and `STATLIST_Unlink` re-evaluate the `+0x53` keys. The wearer's own
+  per-level rows are re-evaluated by the level write (9 level changes, their dependent writes predicted).
+  (0x00626EC4, 0x00626A84, run:2026-10-17-stats)
+- [C] **Reads** (§ 1): 891 844 reads of the player's unit list by `sub_00624F60_StatListGetValue` in the 50-frame windows,
+  of 120 stat ids, each equal to the mirrored cache entry with the fMin floor; no read reached the floor
+  (0). (fn:sub_00624F60_StatListGetValue@0x00624F60, run:2026-10-17-stats)
+- [C] **The rescale callback** (§ 5): 5 752 changes of stats 7, 9 and 11 with a positive current value; the
+  current value written after each equals `min(max(ftol(f32(new / max(old, 256) × cur)), 1), new)` (stat 7: falls 1 797, rises 1 810, capped 57; stat 9: falls 432, rises 446,
+  capped 702; stat 11: rises 5, capped 503).
+  (fn:sub_0055B800_MonStatCallback@0x0055B800, 0x0055B8EC, run:2026-10-17-stats)
+- [C] **The stat callback fires** exactly for the player-list writes of `fCallback` stats that change the value
+  (14 522 calls, key, old and new predicted). (fn:STATLIST_CacheAdd@0x006250B0, fn:STATLIST_CacheWrite@0x00625150,
+  run:2026-10-17-stats)
+- [C] **Requirements** (§ 6): 17 634 checks; the strength and dexterity flags and the result predicted from the base
+  record, stat 91, the ethereal −10 and the mirrored unit stats (passed 15 610 plain, 814 with stat 91, 428 ethereal; failed 428 by
+  strength, 24 ethereal by strength, 240 by dexterity, 90 unidentified). **The ethereal −10 decided 30 checks**
+  (`StatsBarD`, strength 85: the ethereal War Boots, 125 strength, pass with 115..124 and would fail without the −10;
+  `bard-town1`, `bard-town2`): `[C]`. The `item_req_percent` term (stat 91) changed no outcome in its 814 checks (a
+  reading without it predicts the same flags), the level test and the class test passed in every check (no item
+  failed them), and a broken item was never checked: those branches stay `[I]`.
+  (fn:sub_0062EAF0_ItemReqCheck@0x0062EAF0, run:2026-10-17-stats)
+- [C] **Sets** (§ 7): 11 343 worn masks predicted from the inventory (page 3, quality 5, flags `0x4000` and `0x100`,
+  member index; the Soul Cage, whose strength fails, never counted; two Angelic Halo set one bit); 5 749 aprop toggle
+  sequences (add func 0: 1 844, 1: 819, 2: 3 086) with 19 525 toggles; 5 749 wearer set lists, of which 5 569 equal
+  the Sets blocks for `n = popcount(mask)` (Angelical Raiment n=1 830; Civerb's n=1 22, n=2 880, n=3 1 152; Immortal
+  King n=1 60, n=2 228, n=3 2 317; Trang-Oul's n=4 80). The 180 full Trang-Oul's lists (n=5, the full blocks with
+  `state` and `oskill`) were taken as logged: the model does not build a `state` or `oskill` property list (a
+  tool limit, the set's mask and count were predicted). The full blocks of a set whose last member is a broken item
+  were not reached.
+  (fn:SETS_WornMemberMask@0x0062A370, fn:SETS_ToggleItemAProps@0x00663A20, fn:sub_00660120_SetBonusApply@0x00660120,
+  run:2026-10-17-stats)
+- [C] **Passives** (§ 8): 8 832 refreshes; each `passivestate` list holds `passivestat` = `passivecalc` at the level it
+  records in 351 (an input), with param `passiveitype`, and 350 = the skill (Sword Mastery 127 at 4–8, Increased Stamina 141 at 13–17, Iron Skin
+  145 at 5–9, Natural Resistance 153 at 6–10; Fire Mastery 61 at 3–4 from the full Trang-Oul's `oskill`).
+  Another 540 refreshes found no `passivestate` list on the player and were only counted.
+  (fn:SKILLS_RefreshPassive@0x00646D60, run:2026-10-17-stats)
+- [C] **`itemspecific` does not stop the propagation** (open question): the player's cache holds the sum of the
+  equipped items' 72 and 73 in every snapshot, evaluated as an ordinary sum. (fn:STATLIST_Propagate@0x00626920,
+  run:2026-10-17-stats)
+- [I] **The weapon switch** (open question): a W press runs `sub_005616A0_PlayerSwapWeapons` (from
+  `sub_0054CE70_SwapWeaponsReq`), which detaches both hands through `ITEMS_DetachFromOwner` (return addresses
+  0x005617C9, 0x005617DD) and attaches the other pair through `ITEMS_AttachToOwner` (0x00561930): the logged caller
+  chains; the function itself was not read. (fn:sub_005616A0_PlayerSwapWeapons@0x005616A0,
+  fn:sub_0054CE70_SwapWeaponsReq@0x0054CE70, run:2026-10-17-stats)
+- [C] **Step 4 of the refresh** (§ 6): every `sub_0055DBC0_EquipReqRefresh` (972) detached and re-attached every
+  equipped, usable set item (`SETS_UpdateOnEquip` mode 1 then 0, each item's list unlinked and linked), as predicted.
+  (fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0, run:2026-10-17-stats)
+- [I] The refresh also ran with no click on a period of 136 frames on every character of the run (the commonest gap
+  between two refreshes in every session); what queues it was not read. (fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0,
+  run:2026-10-17-stats)
+
 ## Data touched
 
 tbl:ItemStatCost.txt:op, tbl:ItemStatCost.txt:op param, tbl:ItemStatCost.txt:op base, tbl:ItemStatCost.txt:op stat1,
@@ -432,11 +514,8 @@ struct:ItemStatCostOps+0x5E, struct:ItemStatCostOps+0xDE.
 
 ## Open questions
 
-- [L] Whether `itemspecific` (ISC `+0x04` bit 3) is read anywhere on the propagation path: `STATLIST_Propagate` and
-  `STATLIST_LinkToUnit` test only bit 2, so an equipped item's 70–73 would reach the wearer's cache. Phase 2: log the
-  player's full stats 72 and 73 with an item on and off.
-- [L] The weapon-switch slots: which code unlinks the inactive set of hands (the refresh walks body slots 1..10).
-  Read the swap handler, or log a swap in Phase 2.
+- *Answered by the run (§ 9):* `itemspecific` does not stop the propagation; the weapon switch detaches and
+  re-attaches both hands through `sub_005616A0_PlayerSwapWeapons` (the function itself not read).
 - [L] The take test's stat-0 quirk hides a per-level source's own value on a player (§ 3); which readers read the
   per-level stats themselves (the character screen is client-side). Phase 2 logs one.
 - [L] `sub_0061C100_ActTimeOfDay` and `owner +0x1C` (op 6/7): not read; unreachable on stock data.

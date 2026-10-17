@@ -32,27 +32,33 @@ against this finding; § 8 lists what each claim was checked against and what st
   death: no death in the run. (fn:STATE_DefaultRemoveCB@0x0056E900, fn:sub_00627540_StatListsPurgeOnDeath@0x00627540)
 - [C] **`group` exclusion** is done by `STATE_GroupClear`, not by the apply: it clears every other state of the same
   non-zero `group` on the unit and frees its list; the stock potions' states (178–180) have no `group`, so the
-  potions' call clears nothing. The full Trang-Oul's Avatar's `state` = monsterset (stat 98) runs it through the stat callback (counts pending,
-  see the plan log). (fn:STATE_GroupClear@0x0056C740, tbl:States.txt:group,
-  run:2026-10-17-stats)
+  potions' call clears nothing. The full Trang-Oul's Avatar's `state` = monsterset (stat 98) runs it through the stat
+  callback; when the set breaks the call clears `monsterset` itself (180 clears, § 8). (fn:STATE_GroupClear@0x0056C740,
+  fn:sub_0055B800_MonStatCallback@0x0055B800, tbl:States.txt:group, run:2026-10-17-stats)
+- [I] The exclusion of a *different* state of the same group (the Druid's shapes and `maul`/`feralrage` share group 3
+  with `monsterset`) was not reached. (fn:STATE_GroupClear@0x0056C740, tbl:States.txt:group)
 - [C] **The per-frame ticks** (player event 3, every frame): stamina `+= max >> 8` standing, `>> 9` walking (not
   below 1 point outside town), none running unless `staminarecoverybonus` ≥ 1000, `× (100 + bonus)/100`; mana
   `+= MulDiv(max / (ManaRegen·25), 100 + manarecoverybonus, 100) + manarecovery`, off under state 85 `nomanaregen`;
   life unchanged while stat 74 is 0. No draw. (fn:sub_00580810_RegenEvent@0x00580810, fn:PLAYER_StaminaRegenTick@0x00580500,
   fn:PLAYER_ManaRegenTick@0x005806F0, run:2026-10-17-stats)
-- [I] Life `+= stat 74` capped at max (dropping the `healthpot` list at the cap) and floored at 256: no poison or
-  open wounds reached the player in the run so far (Phase 2 in progress). (fn:sub_00580610_LifeRegenTick@0x00580610)
+- [C] Life `+= stat 74` capped at max (dropping the `healthpot` list at the cap), for a positive stat 74 (potions) and
+  a negative one (poison: 1 082 ticks, § 8). (fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-10-17-stats)
+- [I] The floor at 256 life was not reached; open wounds never hit the player. (fn:sub_00580610_LifeRegenTick@0x00580610,
+  0x0058065B–0x0058066E)
 - [C] **Auras are refreshed timed states.** An aura skill runs from unit event 8 (the selected right skill) or event
   9 (an item's `item_aura`, stat 151) every `p = max(perdelay, 5)` frames on a grid (`((frame − 1 + p) / p)·p + 1`);
   each run applies `auratargetstate` to the units in range with a duration that ends one frame after the next run.
   Two auras of one state: equal level refreshes, higher replaces, lower is refused. A mercenary's aura runs the same
   way. (fn:EVENT_SelectedAuraTick@0x0056FCB0, fn:EVENT_ItemAuraTick@0x0056FE40, fn:SKILLS_NextPeriodicFrame@0x0056CD50,
   fn:AURA_ApplyToTarget@0x005CEDC0, run:2026-10-17-stats)
-- [C] **Shrines** apply their state through a table at `0x006E1850` (code → stat, state) for `Duration in frames`,
-  the stat value `Arg0` for the resists and the other `SHRINE_TimedStat` codes. (fn:OBJOP_Shrine@0x00583C70,
+- [I] **Shrines** apply their state through a table at `0x006E1850` (code → stat, state) for `Duration in frames`,
+  the stat value `Arg0` for the resists and the other `SHRINE_TimedStat` codes: the 3 timed shrines of the run matched,
+  a named shortfall against the plan's 50 operates (§ 8). (fn:OBJOP_Shrine@0x00583C70,
   data:g_ShrineEffects@0x006E1850, fn:SHRINE_TimedStat@0x00583B30, run:2026-10-17-stats)
-- [I] Combat and stamina shrines' own handlers, the re-arm after `reset × 1200 + 1` frames and the wells (`Parm1/256`
-  of each maximum per use, poison and freeze cured) were not reached or not predicted.
+- [I] Combat and stamina shrines' own handlers and the re-arm after `reset × 1200 + 1` frames were not reached; the
+  wells (`Parm1/256` of each maximum per use, capped) matched in all 5 uses and the recharge shrines in 4, below the
+  plan's count; poison and freeze cured by a well was not reached.
   (fn:SHRINE_Combat@0x005839B0, fn:SHRINE_Stamina@0x00583A70, tbl:Shrines.txt:reset)
 
 ## Leads used
@@ -308,6 +314,70 @@ stateDiagram-v2
   plan draws, and Phase 2's chaining minimum has no pairs to log: their draw-order claims stay `[I]`.
   (0x00582CE3, 0x0058311D, 0x0058344D, fn:RNG_Range@0x0045C390)
 
+### 8. The Phase 2 run (`run:2026-10-17-stats`)
+
+The Paladins of the run (Prayer selected, Sanctuary from *Azurewrath*, an Act II Prayer mercenary; `StatsPalC` with a
+low defence, to be poisoned) walked Act II, III and V areas; the Barbarians and the Necromancer stayed in town. `tools/stats.py` predicted each line below from § 2–
+§ 7 and the mirrored lists (method and counts in the run record).
+
+- [C] **Apply** (§ 2): 3 643 `STATE_ApplyTimed` calls on the player, each predicted as refuse, refresh, replace or
+  new, with the list made (flags `0x2`/`0x20`/`0x8`/`0x800`, state, `+0x18` = frame + duration, skill, level, the one
+  stat) or the expiry moved: Prayer (34) refreshed 1 708, refused 1 013, replaced 2; Sanctuary's target state (47)
+  new 5, refreshed 894; state 113 (a monster's skill 309) new 11, refreshed 4; Conviction (28, a monster's aura) new 1,
+  refreshed 2; the shrine states 130 and 131 new 3. A same skill and level refreshes (the list kept, its stats not
+  rewritten); the same skill at a lower level is refused (the player's and the mercenary's Prayer, at different
+  levels, against each other: 1 013); a higher level frees the old list and makes a new one (2). The curse branch's cut by stat 109
+  and the `attract` refusal were not reached: no stock item or affix carries `curse_resistance` (properties with stat
+  109: none), and no monster casts Attract (MonStats skills). (fn:STATE_ApplyTimed@0x0056E970, run:2026-10-17-stats)
+- [I] **Shrine states are curses.** States 128–137 have the `curse` bit, so a shrine's list carries flag `0x20` and
+  is "the" curse of § 2: it replaces a monster curse and a curse replaces it. The run applied 3 timed shrines
+  (codes 10 (1), 8 (2)) with flag `0x22`, the duration `Duration in frames` and, for `SHRINE_TimedStat`, the table's
+  stat with value `Arg0`. (fn:OBJOP_Shrine@0x00583C70, data:g_ShrineEffects@0x006E1850, tbl:States.txt:curse,
+  tbl:Shrines.txt:Duration in frames, run:2026-10-17-stats)
+- [I] **Shrines and wells: a named shortfall.** The run operated 7 shrines (3 timed: codes 8 and 10; 4 recharge, codes 2
+  and 3, each on a full player, so the refill changed nothing, as predicted) and 5 wells (each predicted:
+  `Parm1 · max >> 8` = 128/256 of the maximum added to life, mana and stamina, capped; one on a full player returned 0
+  and changed nothing; raised life and mana 2, mana 1, mana and stamina 1), 12 operates against the 50 the plan
+  asks. `objop --walk` reaches only the shrines and wells of the rooms the field explore activated, about one per
+  session. Every one matched, but at these counts the shrine and well claims of § 5 stay `[I]`. (fn:OBJOP_Shrine@0x00583C70,
+  fn:SHRINE_Refill@0x005828E0, 0x00585720, tbl:Objects.txt:Parm1, run:2026-10-17-stats)
+- [C] **Expiry** (§ 3): 2 749 runs of `EVENT_TimedListExpire` on the player freed exactly the `+0x3C` children with
+  flag 2 and `+0x18` ≤ the frame (123 lists, each on its own expiry frame: lateness 0 in every case);
+  2 630 runs freed nothing. A refresh queues a new event 12 at the new expiry and the earlier event still fires
+  and finds nothing: one event per request, not one per unit (open question answered). (fn:EVENT_TimedListExpire@0x00580800,
+  fn:UNIT_ExpireTimedLists@0x00627460, fn:STATE_ApplyTimed@0x0056E970, run:2026-10-17-stats)
+- [C] **Auras** (§ 4): 3 629 runs of event 8 and 9 (the player's Prayer and Sanctuary, the mercenary's Prayer
+  through the monster table) fell on frames `≡ 1 (mod 50)` 50 frames apart (the mercenary's selected Prayer 1 021 runs, the
+  player's item Sanctuary 899, the player's selected Prayer 1 709; the only other gaps are the session starts), the grid of
+  `SKILLS_NextPeriodicFrame` with Prayer's and Sanctuary's `perdelay` 50; each target state's duration was
+  `perdelay + 1` = 51 (6 207 applies, Conviction's included). (fn:EVENT_SelectedAuraTick@0x0056FCB0, fn:EVENT_ItemAuraTick@0x0056FE40,
+  fn:SKILLS_NextPeriodicFrame@0x0056CD50, tbl:Skills.txt:perdelay, run:2026-10-17-stats)
+- [C] **The regeneration tick** (§ 6): 54 719 player ticks; the life, stamina and mana written equal the formulas of
+  § 6 from the mirrored stats, the unit mode and state 85 (life: +74 1 424, capped 10 657, −74 1 082, no 74 41 556; mana: regenerated 48 433,
+  state 85 6 286; stamina: by mode 1, 3, 4, 5, 7, 9 and 19, with and without `staminarecoverybonus`).
+  **Poison reached the player** (`StatsPalC` in the Act III and Act II fields, `palc-spider` 683 ticks and `palc-oasis` 399): the 1 082 ticks with a
+  negative stat 74 each wrote `hp + stat 74` as predicted. No poisoned tick reached the floor at 256, and open wounds never hit the player: the floor stays `[I]`. (fn:sub_00580610_LifeRegenTick@0x00580610,
+  fn:PLAYER_StaminaRegenTick@0x00580500, fn:PLAYER_ManaRegenTick@0x005806F0, run:2026-10-17-stats)
+- [C] **`group`** (§ 2): 450 `STATE_GroupClear` calls on the player: the potions of the run (antidote, thawing,
+  stamina: states 178–180) have no `group`, so the call cleared nothing (90 calls). The Necromancer's full Trang-Oul's Avatar (`nec-town1`) ran it through the stat
+  callback 360 times: when stat 98 appeared (the full block, param `monsterset` 176) with the self argument 0, no
+  other state of group 3 was on the player and nothing was cleared (180); when the set broke (98 back to 0) with the
+  self argument 1, the call cleared state 176 itself (180 effective clears; a reading that clears only the *other*
+  states of the group predicts the bit kept). A clear of a *different* state of the same group (the Druid's `wolf`,
+  `bear`, `maul`, `feralrage`, or `delerium`) was not reached: that half stays `[I]`.
+  (fn:sub_0055B800_MonStatCallback@0x0055B800, 0x0055BD8F–0x0055BDC4, fn:STATE_GroupClear@0x0056C740,
+  tbl:States.txt:group, run:2026-10-17-stats)
+- [C] **Draws** (§ 7, the P1 review's draw-freedom amendment): the game seed and the acting unit's seed were equal at
+  the entry and the exit of every logged event of these kinds: apply 6 232, expire 2 749, link 12 868, unlink 12 853,
+  own write 101 995, toggle 19 525, tick 54 719, aura 2 763; those kinds draw nothing (`[C]`). Shrine 7 and well 5
+  are below the 20 the amendment asks: their "no draw" stays `[I]` (§ 7's scan). The aura kind does
+  when the aura hits: 865 runs of the player's item aura (Sanctuary) moved the player's seed, each by exactly
+  the number of `RNG_RangeB` calls `SKILLS_RollElemDamage` made from `sub_005CF3A0_AuraHitDo` (one per hit; the
+  run's chained pairs, 865 steps); the game seed never moved; a run that killed also stepped the dead
+  monster's own seeds (not the caster's). That draw is the skill's damage (phase 3), outside this plan's stat and
+  state code. (fn:SKILLS_RollElemDamage@0x0056E0C0, fn:sub_005CF3A0_AuraHitDo@0x005CF3A0, fn:RNG_RangeB@0x0045C3E0,
+  run:2026-10-17-stats)
+
 ## Data touched
 
 tbl:States.txt:curse, tbl:States.txt:group, tbl:States.txt:plrstaydeath, tbl:States.txt:monstaydeath,
@@ -407,9 +477,7 @@ Ghidra's (`tools/ghidra.sh instrat`); "(no function)" is a site Ghidra's analysi
 
 ## Open questions
 
-- [L] Whether the unit event queue keeps one event 12 per unit or one per call (`sub_005417D0_UnitQueueEvent` →
-  `0x005416B0` not read). Either way the handler frees all expired lists; it matters for which frame a later,
-  shorter state ends. Phase 2 logs each event-12 run.
+- *Answered by the run (§ 8):* one event 12 per request; a refreshed list's earlier event fires and frees nothing.
 - [L] The monster gate's two bits (MonStats `+0x0D` bit 0, MonStats2 `+0x05` bit 1): which columns.
 - [L] The skill shrine's `Arg0` (2): no stat is written, so the +2 skills come from a reader of state 134 not read here.
 - [L] Holy Shield, the progressive skills and the timed self-states (armours, shouts): their skill functions.
