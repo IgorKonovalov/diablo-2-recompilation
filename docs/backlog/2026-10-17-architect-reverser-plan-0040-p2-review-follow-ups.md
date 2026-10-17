@@ -4,7 +4,7 @@ to: reverser
 date: 2026-10-17
 status: done
 context:
-  - ../plans/0040-drlg-room-lifecycle.md#implementation-log
+  - ../plans/done/0040-drlg-room-lifecycle.md#implementation-log
   - ../findings/drlg/0009-room-lifecycle.md#11-phase-2-run2026-10-17-lifecycle
 resolution: "Done [I], static, in [drlg/0009 § 11.1](../findings/drlg/0009-room-lifecycle.md#111-static-follow-ups-of-the-phase-2-review-lanerbs3): (a) inTown has only two combat readers; the path planner 0x00649970 refuses a town target for a hostile monster, but three routes stay open (the rooms a path crosses, the 0x40000 path types, unfollowed moves), so the town-follow case stays open with recipe leads; (b) every server write of champion bit 0x04 follows MonMarkSpecial; (c) the flag-1 handlers come from SpecialModsApply at 0x005A4558 (the 0 pushed is minions), and MinionRestore's flag 0 shows in the unit seed (rndname) and resist; (d) rooms.py check prints the census and expiry branches; partial-log rule in harness-play.md."
 ---

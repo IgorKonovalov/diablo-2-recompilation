@@ -182,6 +182,20 @@ byte `+0x44`.
   remove walk mirrors it with `g_DrlgRefLeaveFns`. (fn:sub_00537B50_ClientRoomChange@0x00537B50,
   fn:sub_0061B6F0_DrlgRefMove@0x0061B6F0, fn:sub_0061B490_DrlgRefAdd@0x0061B490,
   fn:sub_0061B390_DrlgRefAddNear@0x0061B390, fn:sub_0061B5B0_DrlgRefRemoveNear@0x0061B5B0, struct:DrlgRoomLife+0x0C)
+- [I] **The remove walk, instruction by instruction** (read at the Phase 3 review, objdump). `DrlgRefRemoveNear(R, d)`
+  walks R's near list (`+0x08`, count `+0x2C`) in order and skips a null entry; for each room N it subtracts 1 from
+  `N.refs[d]` (a `u16` add of `0xFFFF`, no zero test), calls `g_DrlgRefLeaveFns[d](N)` on every decrement, and **then**
+  recurses with `d+1` while `d < 3` (0x0061B5C3–0x0061B5EE). The add walk recurses **before** its enter test
+  (0x0061B3E1) and does not test for a null entry. `DrlgRefMove`'s old-room step tests `refs[0] ≠ 0` before its
+  decrement, then calls leave 0 and tail-jumps to `DrlgRefRemoveNear(old, 1)` (0x0061B70C–0x0061B729). Leave callbacks 0–2 jump to `DrlgStatusRecompute` (0x0061B530, 0x0061B540,
+  0x0061B550); leave 3 returns at once when the status is already 4, else recomputes and, if the status is now 4 on a
+  client act (`ActIsClient`), tail-calls `RoomTilesRelease(R, EDX 0)` (0x0061B563–0x0061B58D). `DrlgStatusRecompute`
+  returns early when the status is below 4 and `refs[status]` is non-zero, else sets the lowest d with a non-zero
+  count, 4 if none (0x0061B4F0–0x0061B528). Enter 2 requires DRLG `+0x28` bit `0x1000000`, and bit `0x2000000` too
+  when room `+0x48` (type) is 2, and a status above 2 (unsigned byte); it sets status 2 and tail-calls enter 1 when
+  `refs[1] ≠ 0` (0x0061BB10–0x0061BB44). (fn:sub_0061B5B0_DrlgRefRemoveNear@0x0061B5B0,
+  fn:sub_0061B560_DrlgLeave3Release@0x0061B560, fn:sub_0061B4F0_DrlgStatusRecompute@0x0061B4F0,
+  fn:sub_0061BB10_DrlgEnter2@0x0061BB10)
 - [I] The callbacks: enter 0 sets status 0; enter 1 activates the room through `RoomActivateA` if it has no active room
   and is not built (and resets the act's background countdown), then sets status 1 if higher; enter 2, if the DT1 list
   is built and (for a preset room) the DS1 loaded, sets status 2 and, when `refs[1] ≠ 0`, runs enter 1; enter 3 is
@@ -380,7 +394,8 @@ then the unit records (objects § 13.5, which this reading confirms).
   parameters and the preset path back; for flag `0x400`: target list 8 (alignment 2) or 9 (alignment 1), any other
   alignment a fatal error `0x691` (the alignment is re-derived from the record bits at 0x005427B8–0x005427D4; since the
   drop above already removed alignments 1 and 2, only alignment 0 reaches this test, and it reaches the fatal error); each mod slot that differs from the saved byte gets `ModAppendApply(saved, 0)`;
-  `MonAlignSet(saved alignment)`; `+0xC8 |= 0x200` if saved; `+0xC4 |= (saved & 0x20000) | 0x3000000`. A failed creation
+  `MonAlignSet(saved alignment)`; `+0xC8 |= 0x200` when the record's saved `+0xC8` (record `+0x14`) has bit `0x200`,
+  so that bit is carried over (0x005428F9–0x00542903, worded at the Phase 3 review); `+0xC4 |= (saved & 0x20000) | 0x3000000`. A failed creation
   frees the AI list. Last, `MonRegionUnitLeave(level, alignment, dead, flag 0x40, unit)` and the record (and any
   path still in it) is freed. (0x005427FB–0x00542916, fn:sub_00627260_UnitSetStat@0x00627260,
   fn:sub_00541E20_InactiveMonAiRestore@0x00541E20, fn:sub_005543B0_MonAlignSet@0x005543B0,

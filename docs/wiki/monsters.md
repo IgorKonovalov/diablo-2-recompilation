@@ -6,6 +6,7 @@ based_on:
   - docs/specs/monsters/special.md 2026-10-17
   - docs/specs/monsters/stats.md 2026-10-17
   - docs/specs/drlg/collision.md 2026-10-17
+  - docs/specs/drlg/lifecycle.md 2026-10-17
 ---
 
 # Monsters
@@ -408,9 +409,11 @@ Town NPCs, critters, hirelings, summons and a few neutral classes get no bonus; 
 
 **The count is applied once, at creation.** A test run changed `/players` 13 times and compared 302 live monsters
 at each change: none changed. Monsters created after the change get the new count. A monster that is re-created when
-its room comes back from inactive keeps some of its first instance's values (level, max hit points, experience). The
-code that does this is not read yet, so it is an open question. The formula above 8 players is read from the code
-only.
+its room comes back from inactive is created anew, then gets its first instance's maximum hit points and experience
+back from the saved record; its level comes out of the new creation and the re-applied mods again, so a minion
+created at the plain pool level comes back 3 levels higher at its first restore ([stats § Inputs and oracles](../specs/monsters/stats.md#inputs-and-oracles),
+[lifecycle § H](../specs/drlg/lifecycle.md#h-the-restore); the page on [levels](levels.md#rooms-that-come-and-go-release-and-restore)
+tells the whole story). The formula above 8 players is read from the code only.
 
 ## Classic nightmare and hell
 
@@ -539,16 +542,15 @@ Each spec's *Open questions* has the full list: [pool](../specs/monsters/pool.md
 - **Pools:** the classic normal game (pool and monster level) and the no-record fallback are not logged. Natural
   nightmare and hell pools are checked for one seed, with Act I visited.
 - **Population:** what `sparsePopulate` really does (unreachable on stock data, and the community sources
-  disagree), and multiplayer games, which were not logged. Also an unidentified room field the wanderer roll tests,
-  and when a populated room restores its
-  inactive monsters. Many guard exits and rare branches were never reached: the evil hut object, the tentacle-head
+  disagree), and multiplayer games, which were not logged. The room field the wanderer roll tests and the restore of
+  inactive monsters are answered by the [room lifecycle spec](../specs/drlg/lifecycle.md). Many guard exits and rare branches were never reached: the evil hut object, the tentacle-head
   minions, the wanderer spawn, and others listed in the spec. Monster positions also depend on inputs no spec yet
   produces end to end, namely the object marks on the collision grid and one waypoint point.
 - **Specials:** whether a `MonUMod` row with `champion` 0 could ever be a champion mod (no stock row tests it, and a
   community source claims it can). Where a unique's colour is drawn. The superunique tails, the `lightning` exclusion,
-  `thief`, the `Stacks` refusal, Blood Raven's and the act bosses' fixed names, the restore of inactive specials and the
-  Warping Shrine are read from the code only.
-- **Stats:** what a monster re-created from an inactive room keeps, whether a graphics renderer can change the
+  `thief`, the `Stacks` refusal, Blood Raven's and the act bosses' fixed names and the Warping Shrine are read from the
+  code only. The restore of inactive specials was reached by a run; a minion restored without its boss was not.
+- **Stats:** whether a graphics renderer can change the
   floating-point precision of the hit-point rescale, the will-o'-wisp halving, and the unreached branches (`poisonhit`,
   `always_run_ai`, monster equipment, a `MonProp` slot with a chance, more than 8 players, the overflow branches).
   The formulas of the attack-time to-hit and damage values were not asserted by a run.

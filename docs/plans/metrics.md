@@ -104,6 +104,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-17 | `lane/arc5` review | 0039/0041/0042/0043 P1 readers, 0044 pairs | architect-review | 166 074 | 57 | 10 | — | gave accept with fixes | — (on the lane row; usage unknown) |
 | 2026-10-17 | `lane/rbs2` | 0038 static backlog sweep, second pass | reverser-static | 362 559 | 179 | 342 | Ghidra (lane copy) | accept with fixes | 2: omission 1, other 1 (usage unknown) |
 | 2026-10-17 | `lane/rbs2` review | 0038 static backlog sweep, second pass | architect-review | 198 344 | 74 | 17 | — | gave accept with fixes | — (on the lane row; usage unknown) |
+| 2026-10-17 | `lane/p40s` | 0040 P3 | spec-writer | 316 355 | 90 | 25 | — | accept with fixes | 8: overclaim 2, misread 1, miscount 1, omission 2, wrong anchor 1, stale cross-reference 1 (usage unknown) |
+| 2026-10-17 | `lane/p40s` review | 0040 P3 | architect-review | 240 204 | 73 | 20 | — | gave accept with fixes | — (on the lane row; usage unknown) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
