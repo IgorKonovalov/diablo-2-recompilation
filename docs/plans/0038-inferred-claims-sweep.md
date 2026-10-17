@@ -1701,3 +1701,77 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `EXCEL_AddCode`, `EXCEL_FindName`, `STR_ToLowerN`, `LNG_GetLanguageCode`, `g_LanguageTable`, `RNG_RangePow2Plus`,
     `BITBUF_WriteClamped`, `BITFIELD_Set`, `BITFIELD_Clear`); 5 added (`sub_0040F590_ReturnEcx`, `CRT_setlocale`,
     `g_pctype`, `g_LocaleChanged`, `g_Sse2Available`). Gate green. Review requested (backlog). Nothing merged.
+
+- **2026-10-17 — Batch S1e reviewed (architect, on `lane/s1e` at `39d1c65`): accept with fixes.** `main` (`04bc872`:
+  H5a, plan 0040 P1, plan 0037's close, P3 rounds 2 and 3, plan 0043 P0) merged into the lane at `2d5484d`; the plan-log
+  and backlog conflicts kept both sides (one duplicate backlog entry dropped, its struck copy kept), and the totals are
+  recomputed once below.
+  - **Re-runs:** the manifest matches its 53 files; `sweep_s1e.py static` (53 of 53 pins, writer scan,
+    `clamp_sequence_equal=1`) and `test_sweep_s1e.py` (10 tests) re-run identically. Under
+    `GHIDRA_PROJ_DIR=workspace/ghidra-s1e`, heap 3 GB, `MemoryMax=4G`: the kept `lang` and `calcvar` cases gave `.out`
+    files byte-identical to the lane's (182/182 and 5 000/5 000, undeclared 0). `cases` regenerates every family
+    identically except `eval`, whose `skillsvar` skill index came from Python's unseeded module generator; fixed in the
+    tool, `eval` regenerated twice (identical) and run: 6 000/6 000, neg 196, undeclared 0. A corrupted output gave
+    `bad=2, undeclared=1`. Recorded in run:2026-10-17-sweep-emu (review re-run).
+  - **Anchors read with objdump:** `sub_0040F590_ReturnEcx` (`mov eax, ecx; ret`); the divide (`test esi, esi; je` at
+    0x006C0EC6, `cdq; idiv esi` at 0x006C0ECE); the ternary (0x006C0F2C); the compile limits (`cmp eax, 0x40` at
+    0x006C1B7A, `cmp ecx, 0x40` at 0x006C1942); `dm78` (0x0064651F); the SSE2 flag's writer (0x0069A8C5, after
+    `cpuid`); `__locale_changed`'s writer (0x006926F7, `mov dword [0x96dfe4], 1`, in a section with no file bytes, so 0
+    at load); `LNG_GetLanguageIndex`'s clamp (0x005251A1) and `LNG_GetLanguageCode` whole; the entry-13 writers
+    (0x005257E0–0x005258E7); `TC_AddEntry` → `TC_GrowEntries` → 0x0040B4B0; `CalcPoolAppend`'s growth loop; the clamp
+    and its inlined copy operand by operand; `mana`'s `shl eax, cl`; `AffixCandAdd`, `MONSTATS_ValidId` and `MulDiv`'s
+    calls (for S1f). All match the ledgers, with the wording fixes below.
+  - **Rulings on the lane's points:**
+    (1) **`EmuTrace.java` is the condition-2 check ADR-0015's Negative section asked for, with the writer scan beside
+    it.** The trace enumerates every data access outside the stack, the spec and the case memory, and `check` fails on
+    one outside the family's declared ranges (the review's corrupted output showed it), so an unaccounted read can no
+    longer pass unseen. Condition 2's other half, that each declared image range is written by no code at run time,
+    still rests on the static writer scan (`sweep_s1e.py static`), and the trace is blind to whatever the spec or case
+    lines write, which is why ruling 3 applies to every spec write on an image address. New emulated runs use
+    `emutrace`; `EmuCall.java`, `EmuFastcall.java` and `EmuCalcFunc.java` stay in the tree, frozen, so run:2026-10-16-
+    calc-emu and run:2026-10-11-rng-emu can be re-run as recorded. No ADR change: ADR-0015 already admits a mechanical
+    check, and its Negative bullet records the state on 2026-10-16.
+    (2) **Image functions as probes are accepted.** Passing `sub_0040F590_ReturnEcx` as the variable reader, or a
+    scratch function table of stock entries under made-up argc values, is a choice of arguments: data, no instruction
+    patched, every callee run emulated (condition 1), synthetic inputs admitted (condition 4). The `[C]` covers
+    `CALC_Eval`'s map under those arguments. A claim about a stock table's contents (which function sits at which index,
+    with which argc) rests on the stock-table cases (row 20) or a static table read, never on the scratch table. A probe
+    function is admitted only when its own code is short enough to read whole and is cited (two instructions here).
+    (3) **The memory spec may set a global the code writes at run time, under one of three justifications, named in
+    the finding:** (a) no output depends on it (the security cookie: XORed in and out, random per family); (b) every
+    value it can hold at run time is run and the outputs compared (the SSE2 flag, 0 and 1: `memcpy`'s two paths gave
+    identical outputs); (c) its run-time value is fixed by a writer scan (`__locale_changed`: 0 at load, one writer in
+    `setlocale`, which has no caller and no pointer). Without one of these the claim is conditional on the value set,
+    and says so. Inputs set by the spec on purpose (the language id, the already-read flag, `g_pDataTables`) are
+    arguments in this sense and need no justification beyond the claim's own domain.
+    (4) **The `LNG_GetLanguageCode` contradiction is accepted, narrowed.** `[C]` for the map: an unmatched id below 14
+    reads entry 13, the 0x18 bytes after the table (also plain in objdump: loop bound `cmp edx, 0x730524`, then `cmp
+    ecx, 0xe; jl`). Entry 13's low words are not image constants: 0x00525832–0x005258E7 write each as the default
+    letter or the single character of string 0x14D1–0x14D3, so the values read there, and the fault, are `[I]`; no
+    store touches the high words, which are 0 in the image, so each "pointer" is below 0x10000 in any run. The `use`
+    byte of 13 crashing the load is `[I]`, d-edit. data/0002 review note added; spec-writer addition filed.
+    (5) **data-excel 43, 44 → d-none accepted.** The allocator is reached unconditionally (above); the lookups the two
+    claims rest on are `[C]`, the test order stays a code reading.
+    (6) **S1f runs: 15 statements in 11 rows, as proposed** (inventory § 2.6 S1f table, § 5, § 7 rank 11). The two
+    conditional rows (pool 27, uniques-sets 44) are kept only if their claimed branches are reached with no case
+    stopping at the allocator, an import or the fatal path; that rule applies to every S1f row, as do capacity above
+    every case for growable pools and ruling 3 for spec writes. S1f starts after `lane/s1e` merges (same findings).
+    (7) **No ADR note for `idiv`.** Condition 5 already leaves faults out of emulated evidence; that SLEIGH returns 0
+    for `INT32_MIN ÷ −1` instead of trapping is a tool fact, the kind of thing a case writer must know so that it never
+    counts such a case as a match. It goes to the reverser's tooling notes (backlog), with the other EmuTrace notes.
+    It does not change a decision, so nothing goes to the owner.
+  - **Fixes on the lane:** `tools/sweep_s1e.py` (the `eval` writer's unseeded draw; `rnd_skill` now takes the
+    generator); run record review re-run note; data/0002 row 51 review note (run-time-written entry 13, `[C]` for the
+    index map only); data/0005 row 31 condition-5 citation (`shl eax, cl` masks the count; `sar eax, 8`); data/0004 row
+    64 (pool growth not reached); data/0003 rows 20, 35 (the not-xlated cache miss not reached; the index 0 set after
+    it); save/0001 the inlined clamp copy is not a plain register renaming, read equivalent at the review. Inventory
+    § 2.6 S1e entry marked reviewed, with the S1f table; § 5 S1e row (record and tool named) and S1f row; § 7 S1e done,
+    S1f rank 11; concurrency line. No tag in the ledgers changes; 69 raised, 1 in part, 4 not raised stand.
+  - **Final:** 74 statements: **69 raised, 1 raised in part, 4 not raised, 3 reclassified** (data-calc 14 → d-edit;
+    data-excel 43, 44 → d-none). **Totals now** (recomputed once over the fourteen batch reviews and P1a, with S1f
+    created): static 567 (S1f 15 included), harness 532, c-emu awaiting a batch 0, blocked 415 (d-none 282, d-edit 73,
+    d-sim 28, d-2c 14, d-owner 10, d-0032 8), deferred 2, raised 10: 1 526. Before S1f's creation the S1e moves alone
+    give static 552, blocked 426 (d-none 285, d-edit 81).
+  - **Follow-ups (backlog):** to the reverser, the EmuTrace tooling notes and the S1f batch; to the spec-writer,
+    additions to the lane's S1e Phase 3 entry.
+  - **Next:** the owner merges `lane/s1e`; then S1f (static, the lane's Ghidra copy may be reused).

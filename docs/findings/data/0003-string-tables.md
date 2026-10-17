@@ -313,6 +313,9 @@ stays as § Walkthrough and the spec state it.
   24 calls with keys found nowhere (with the cached text) and the empty key (with `g_EmptyText`); the other keys return
   `10000 + e`, `20000 + e` or `e` in the order `patchstring`, `expansionstring`, `string`. (fn:STRTABLE_GetByKey@0x00524D30,
   run:2026-10-17-sweep-emu)
+  *Review note (architect, 2026-10-17):* a key found nowhere goes to the not-xlated helper 0x00524AC0, whose cache miss
+  allocates; only its cache hit was run. The returned index 0 is set after the helper returns (`xor ax, ax` at
+  0x00524E0C), so it does not depend on the helper's path, but the text a cache miss returns is not covered.
 
 ## Data touched
 

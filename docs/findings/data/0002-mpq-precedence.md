@@ -235,6 +235,16 @@ found nothing else outside the table, the 0x18 bytes after it and the three NULL
 - Correction to § 4 ("falls back to entry 0"): only ids ≥ 14 fall back; § 1's "values > 13 become 0" is right, and
   13 is kept and reaches entry 13 as above. [C] for the map (the emulation), [I] for the crash.
   (0x005251A1, 0x005252B2, run:2026-10-17-sweep-emu)
+- *Review note (architect, 2026-10-17).* Entry 13's first three dwords are not image constants: their low words are
+  written at run time (0x00525832–0x005258E7, after entry 12's `+0x14` at 0x005257E0), each either the default letter
+  (`'M'`, `'B'`, `'T'`) when string 0x14D1, 0x14D2 or 0x14D3 is longer than one character, or that string's single
+  character, sign-extended to a word (`movsx`). The emulation read the image's bytes (the default letters). No store
+  touches their high words (the writer scan lists every instruction reference to 0x00730514–0x0073052B), which are 0 in
+  the image, so in any run each "pointer" is below 0x10000. The `[C]` therefore covers the index map only: an unmatched
+  id below 14 reads entry 13 at 0x00730514, which objdump shows directly (the loop bound `cmp edx, 0x730524` at
+  0x005252AA, `cmp ecx, 0xe; jl` at 0x005252B2). The values it reads there, field 3's `' -no'` included, are run-time
+  memory and stay `[I]` (ADR-0015 condition 3), as does the fault. Entry 12's `+0x14` is not read by this function
+  (it reads `+0x0` to `+0x10`), so ids 0–12 and ≥ 14 read only image data no code writes.
 
 ## Data touched
 

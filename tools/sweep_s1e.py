@@ -684,7 +684,7 @@ def eval_cases(rnd):
         elif r < 0.22:
             length = len(prog) - 1
         ctx = rnd.choice([CTX, CTX, CTX, 0]) if name != "skillsvar" and tag is None else CTX
-        words = [UNIT, cv.rnd_skill(), rnd.choice([0, 1, 5, 20, -3, 33])] if name == "skillsvar" or ctx else [UNIT, 0, 0]
+        words = [UNIT, cv.rnd_skill(rnd), rnd.choice([0, 1, 5, 20, -3, 33])] if name == "skillsvar" or ctx else [UNIT, 0, 0]
         if name == "skillsvar":
             words[0] = 0            # the CalcVar model reads no unit; NULL keeps a unit read visible in the trace
         useed = (rnd.getrandbits(32), rnd.getrandbits(32))
@@ -876,7 +876,7 @@ class CalcVarWorld:
         w.pool = bytes.fromhex(m["pool"])
         return w
 
-    def rnd_skill(self, rnd=random):
+    def rnd_skill(self, rnd):
         return rnd.randrange(0, self.NSK)
 
     def mem(self):

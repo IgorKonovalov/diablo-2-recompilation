@@ -302,6 +302,9 @@ inferred and this section raises it, the tag and the second source given here ar
   its bytes to `itemscode` (`g_DataTables + 0x98`, size `+0x9C`) and stores the old size; offset 0 (120) stores
   nothing. Family `compile`, both SSE2 flag values. (fn:sub_00631530_ItemCalcCell@0x00631530,
   fn:sub_006118B0_CalcPoolAppend@0x006118B0, run:2026-10-17-sweep-emu)
+  *Review note (architect, 2026-10-17):* the scratch pool's capacity (0x10000) is above every append, so the growth
+  loop of `CalcPoolAppend` (0x006118D0–0x006118FE: capacity + 0x400, then the pool allocator 0x0040B4B0) is not
+  reached; the `[C]` covers the append without growth.
 - **Row 56** (spec L574, I2: `string.tbl` entry 0's key would compile to 5382) **raised.** [C] `STRTABLE_KeyToIndex`
   on `WarrivAct1IntroGossip1` (and the synthetic `string`'s entry-0 key) returns 5382, as on the empty key and the keys
   found nowhere; every other key returns its index (family `strings`, [data/0003 § S1e](0003-string-tables.md#plan-0038-batch-s1e-2026-10-17)).

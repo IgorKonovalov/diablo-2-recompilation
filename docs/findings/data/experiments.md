@@ -362,3 +362,15 @@
   covered: faults (the divide error, the language table's entry 13 copy), `TC_ParseItemCell` (every resolved cell
   allocates through 0x0040B4B0), and who calls these functions in play. (fn:CALC_Eval@0x006C0BC0,
   fn:CALC_Compile@0x006C1AE0, fn:SKILLS_CalcVar@0x00646460, fn:EXCEL_ParseTxt@0x006BD780)
+- **Review re-run (architect, 2026-10-17).** The manifest matches its 53 files. `sweep_s1e.py static` (53 of 53 pins,
+  the writer scan, `clamp_sequence_equal=1`) and `test_sweep_s1e.py` (10 tests) re-run identically. Under the lane's
+  Ghidra copy (heap 3 GB, `tools/ghidra.sh emutrace`), the kept `lang` and `calcvar` cases gave outputs byte-identical
+  to the kept `.out` files, and `check` gave `lang` 182/182 (neg 28, undeclared 0) and `calcvar` 5 000/5 000 (neg 25,
+  undeclared 0). `cases` regenerated every family's files identically except `eval`: its skill index for the
+  `skillsvar` configuration was drawn from Python's unseeded module generator (`CalcVarWorld.rnd_skill()` called
+  without the family's generator), so the kept `eval.cases` cannot be regenerated. The review fixed the call (the
+  generator is now a required argument; `tools/sweep_s1e.py` `c9134335…`, the other families' output unchanged),
+  regenerated `eval` twice (identical), and ran it: 6 000/6 000 bit-exact, neg 196, undeclared 0. The kept `eval`
+  files remain the lane's record; the fixed tool regenerates a different, reproducible case set. A corrupted `eval`
+  output (one EAX bit flipped, one undeclared read added) gave `bad=2`, `undeclared=1`, so the checker fails when it
+  should.
