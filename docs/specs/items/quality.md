@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/tc, data/excel]
 consumed_by: [items/tc, items/uniques-sets, items/affixes, items/vendors]
-tags: {C: 63, I: 37, L: 4}
-updated: 2026-10-16
+tags: {C: 64, I: 38, L: 3}
+updated: 2026-10-17
 ---
 
 # The drop quality roll: from a picked item to a quality code
@@ -264,10 +264,23 @@ Step notes:
   bonus): total 40 ([hirelings § J](../hirelings/README.md#j-magic-find-on-a-mercenarys-kill)). [C]
   (fn:sub_0058F030_MonSetOwner@0x0058F030, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, fn:ITEMS_DropMagicFind@0x005585D0,
   run:2026-10-16-hirelings)
-- M3. For a player, `MonsterOwner` returns none. For other monster killers (a monster's minions, plain monsters) the
-  owner is whatever `monsterData+0x28` names; which of them have one is not read. A killer that is neither a player
-  nor a monster (an object, a missile) gives 0. [I] (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0,
+- M3. For a player, `MonsterOwner` returns none. For a monster killer the owner is the unit that its AI block
+  (`monsterData+0x28`) names by game, id and type (`+0x28`, `+0x2C`, `+0x30`); a block with no game, or a unit no
+  longer in the game, gives none. A killer that is neither a player nor a monster (an object, a missile) gives 0. [I]
+  (0x0058F0E5–0x0058F0FA, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, fn:sub_0058F030_MonSetOwner@0x0058F030,
   fn:ITEMS_DropMagicFind@0x005585D0)
+- M3. **Monster minions have an owner: their leader.** `UniqueMinions` sets each minion's owner to its unique boss
+  and adds it to the boss's member list; a superunique's minions take the same path (`SuperUniqueSpawn` →
+  `SpecialModsApply` → `UniqueMinions`); MonStats party minions of a `SetBoss` leader are linked to it through the same
+  pair ([monsters/0002](../../findings/monsters/0002-room-population.md) § MonStats minions). `SpecialMonPlace` sets a
+  placed boss as its own owner, and a monster spawned for another unit (`SpawnOwnedMonster`) gets that unit. So a
+  minion's kill adds its leader's stat 80, and a placed boss's kill its own stat 80 a second time, while the leader is
+  still in the game. Seventeen other `MonSetOwner` sites (escorts, tentacles, quest and skill code) are not followed,
+  and whether any stock monster carries stat 80 is not checked. [I] (0x005A0C94–0x005A0CB0, 0x005A4B6C–0x005A4B8E,
+  0x005A2135, 0x005A0B9B, 0x0056DA15, fn:sub_005A0C00_UniqueMinions@0x005A0C00,
+  fn:sub_005A2120_SpecialModsApply@0x005A2120, fn:sub_005A09E0_SpecialMonPlace@0x005A09E0,
+  fn:sub_0056D940_SpawnOwnedMonster@0x0056D940, fn:sub_0058F100_MonGroupAddMember@0x0058F100,
+  [items/0002 § Plan 0039 batch P1b](../../findings/items/0002-quality-roll.md#plan-0039-batch-p1b-2026-10-17))
 - K1–K2. At MF 100 the factors are 171 (unique), 183 (set) and 185 (rare); a linear factor of 200 in those three
   tests gets 34 of 847 rolls wrong. At MF 10 the factor is 110 in every test; the diminishing form there (109)
   breaks 24 of 574 rolls. [C] (0x0055861E–0x0055862C, 0x00558613–0x0055861B, run:2026-10-12-quality,
@@ -390,6 +403,15 @@ They come from [items/0004](../../findings/items/0004-uniques-sets.md).
   fn:sub_00628C70_ItemBaseIsUnique@0x00628C70, fn:sub_0062EA30_ItemTypeNormal@0x0062EA30, 0x005574E3–0x00557567,
   tbl:ItemTypes.txt:Magic, tbl:ItemTypes.txt:Rare, tbl:ItemTypes.txt:Normal, tbl:Weapons.txt:unique,
   [items/0004 § 2](../../findings/items/0004-uniques-sets.md#2-pre-switch-overrides-0x005574e30x00557567))
+- [C] **Which stock bases the overrides change** (a survey of the 659 Weapons, Armor and Misc rows against ItemTypes;
+  the tests read the base's own type record, with no `Equiv` walk): `Magic` = 1, 7 bases (`rin`, `amu`, `vip`, `jew`,
+  `cm1`–`cm3`; `vip` is a quest base and gets 7); the `Magic` types `char`, `mboq` and `mxbq` have no base of their own,
+  so no quiver is forced magic. `Rare` = 0: 153 bases of 30 types (potions, gems, runes, scrolls, books, keys, gold,
+  quivers, body parts, charms, quest items). `unique` flag: 18 bases, 17 quest items and `std`. `Normal` = 1: 121 bases of
+  24 types; no base has a type without a record. (tbl:ItemTypes.txt:Magic, tbl:ItemTypes.txt:Rare,
+  tbl:ItemTypes.txt:Normal, tbl:Weapons.txt:unique, tbl:Misc.txt:quest, data survey,
+  [items/0002 § Plan 0039 batch P1b](../../findings/items/0002-quality-roll.md#q19-b-which-stock-bases-the-pre-switch-overrides-change-survey);
+  the overrides on drops are reproduced in [items/0004 § 10](../../findings/items/0004-uniques-sets.md#10-phase-2-reproduction-plan-0019))
 - [I] **Builders and fallbacks.** `sub_00557450_ItemCreateByQuality` has one case per code (and 8, 9, which
   this roll never returns). A unique or set that cannot be built falls back 7 → 6 → 4 → 3 → 2 or 5 → 4 → 3 → 2,
   after a durability step (`sub_005573F0_ItemFallbackRare`, `sub_00557380_ItemFallbackMagic`,
@@ -567,10 +589,11 @@ that tell the two models apart. [C] (run:2026-10-12-quality)
 
 ## Open questions
 
-- [L] **Other monster killers' owners.** A summon's and a mercenary's owner count (M3; the mercenary settled by
-  run:2026-10-16-hirelings). Whether a monster's minions have an owner record (`monsterData+0x28`) is not read or
-  logged; reading the other writers of `+0x28` would settle it. (backlog reverser, from
-  [items/0002 § Open questions](../../findings/items/0002-quality-roll.md#open-questions))
+- [L] **Other monster killers' owners**, narrowed (plan 0039 P1b): minions of unique, superunique and `SetBoss`
+  leaders have their leader as owner, and a placed boss itself (M3). Still open: the 17 `MonSetOwner` sites not
+  followed (escorts, tentacles, the quest and skill sites), so which other monster kinds' kills add an owner's stat 80
+  (backlog reverser, the P1b review follow-up (b);
+  [items/0002 § Plan 0039 batch P1b](../../findings/items/0002-quality-roll.md#plan-0039-batch-p1b-2026-10-17)).
 - [L] **The `*Min` clamp (D6) and its place after magic find.** No logged chance came near a minimum; it needs
   a very large `ilvl − qlvl`, a very high MF or edited data. It may stay code-read.
 - [L] **Not exercised:** Hell, negative magic find (including the `mf ≤ −100` bypass), multiplayer, the early
@@ -582,7 +605,6 @@ that tell the two models apart. [C] (run:2026-10-12-quality)
   and 13 rolls (spec-writer → archivist); [items/0002](../../findings/items/0002-quality-roll.md) § Answer and
   § Reproduction name the minima as `SetMin` 3200 and `RareMin` 5600, while the table has `RareMin` 3200 and
   `SetMin` 5600 (spec-writer → reverser). This spec follows the decoded records.
-- [L] **Which stock rows the overrides of F change.** A scratch read in items/0004 suggests `Magic` types (rings,
-  amulets, charms, jewels, two quivers), 31 `Normal` types (gold, potions, gems, runes, keys among them) and the
-  `unique` bases (quest items plus `std`); plan 0019 Phase 2 logs or surveys them. (from
-  [items/0004 § Open questions](../../findings/items/0004-uniques-sets.md#open-questions))
+- ~~**Which stock rows the overrides of F change.**~~ Answered in § F by the survey of
+  [items/0002 § Plan 0039 batch P1b](../../findings/items/0002-quality-roll.md#plan-0039-batch-p1b-2026-10-17); the
+  "two quivers" of the earlier scratch read are the base-less types `mboq`/`mxbq`.
