@@ -1791,6 +1791,11 @@ def cmd_objop(args):
             upkeep(args, p)
             continue
         objs = [o for o in getattr(st, "objs_cls", []) if o[0] in classes and (o[1], o[2]) not in visited]
+        if len(classes) > 1 and st.pos:
+            # several classes (shrines and wells): unused ones only (mode 0, when the line carries it) and within
+            # 300 sub-tiles (the object lists hold every level's objects)
+            objs = [o for o in objs if (len(o) < 4 or o[3] == 0)
+                    and math.hypot(o[1] - st.pos[0], o[2] - st.pos[1]) < 300]
         if not st.pos:
             time.sleep(0.5)
             continue
@@ -1830,6 +1835,10 @@ def cmd_objop(args):
                 c = optimistic_hop(st, (o[1], o[2]), args.hop, blind[1], step=1)
             if c is None:
                 print("objop: no hop towards the object at (%d, %d), d %.1f" % (o[1], o[2], d))
+                misses[0] += 1
+                if len(classes) > 1 and misses[0] >= 4:
+                    visited.add((o[1], o[2]))
+                    misses[0] = 0
                 time.sleep(1.0)
                 continue
             p.teleport(c[0] - px, c[1] - py)
