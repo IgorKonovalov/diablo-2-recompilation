@@ -32,3 +32,5 @@ Still left, in the list's order, none started:
 - plan 0041 op 6/7 emulation (optional); 0042 P1 (d) (optional).
 
 Skipped as needing a game, unchanged: the 0037 resume lane, the H4b follow-ups, the Phase 2 leftover pieces and the S2c harness pieces (plan 0038 batches); the 0044 P1 items (1) and (5) (plan 0044 Phase 2). Newly harness-bound: the town-follow recipe (a plan 0040 P2 addendum, if the architect wants it).
+
+*2026-10-17 (architect, `lane/rbs3` review):* the pass-3 items are done and ruled (plan 0038 log; plan 0040 log, post-close entry; inventory § 2.6). Outdoor 7 stays a shortfall; the town-follow case stays a shortfall with no harness addendum yet. One item is added: [rbs3 review static remainders](2026-10-17-architect-reverser-rbs3-review-static-remainders.md) (the town-follow static remainder, the outdoor 7 layout bound, the MonPlace readers, the optional unit-seed search). The "newly harness-bound" town-follow recipe is withdrawn until that read finds a route in. The rest of the list stands as the `lane/rbs3` checkpoint gives it.

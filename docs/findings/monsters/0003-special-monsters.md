@@ -621,7 +621,11 @@ At `0x0054E651` the function overwrites its first argument with the room's level
   `PresetUnitDispatch`, which returns its result with no fallback (0x005558DD–0x005558EA). For rows 33–35 the DRLG
   preset pass first keeps or drops the unit on a room-seed draw (0x0066777D, [drlg/preset](../../specs/drlg/preset.md)),
   so a kept group preset reaches this branch and still places nothing here. Other readers of a kept preset monster
-  unit (the four other callers of `PresetMonSpawn`, anything that reads the room's preset list) are not followed. The
+  unit are not followed. `PresetUnitDispatch` has two callers, `PresetUnitSpawn` (0x00555949) and
+  `RoomInactiveUnitsRestore` (0x00542C29), so both the first spawn and the restore of a preset reach this switch. The
+  four other callers of `PresetMonSpawn` (0x00545C75, 0x0058A70D in `A5Q3_NihlathakBossSpawn`, 0x005AA231, 0x005ACB43)
+  and any other reader of the room's preset list are unfollowed (counted at the `lane/rbs3` review,
+  `sweep_rbs3.py callers 0x0054E600 0x005557D0`). The
   rows not read before:
   - **4 `place_rogue_warner`**: `SpawnAtPos(x, y, class 266 navi, mode, radius −1, flags 0)` at the point
     (0x0054E919–0x0054E933).

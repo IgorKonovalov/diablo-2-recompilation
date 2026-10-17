@@ -592,7 +592,7 @@ classic Normal and Nightmare), checked by `tools/rooms.py check`: **0 mismatches
   - A restored minion's stat 12 is the monsters/stats level plus the handlers of mods 1–4 and its saved mods (144):
     a first instance at the pool level comes back 3 higher (`leveladd`; 2 seen), later restores unchanged (142).
   - A restored special (`SpecialMonRestore`, 55) has the stat 12 the **flag-1** handlers give: a champion at + 2
-    (`leveladd` + 3, `champion` − 1), a unique at + 3. The flag-0 result of § 6 fails on the 15 champion restores
+    (`leveladd` + 3, `champion` − 1), a unique at + 3. The flag-0 result of § 6's first reading (corrected in § 11.1 (c)) fails on the 15 champion restores
     (one level high on each; the checker with the special path set to flag 0 gives 15 mismatches, at the Phase 2
     review).
 
@@ -686,14 +686,19 @@ Scans by `tools/sweep_rbs3.py` (outputs `sweep-rbs3-*-2026-10-17.txt` under `wor
 
 **(c) The handler flag of the two restores.**
 
-- [I] **`SpecialModsApply` always calls the special's own handlers with flag 1:** mods 1–4 from `0x006E2168` = {1, 2,
-  3, 4} at 0x005A214D, and the saved list at 0x005A21A6. It always calls the group callback with flag 0 (0x005A215A,
-  0x005A21B3). Its third stack argument is `minions` (0x005A2123). `SpecialMonRestore` calls it at 0x005A4558, pushing
-  0 for that argument at 0x005A454E. So the call that applies the flag-1 handlers is that `SpecialModsApply` call
-  itself, without minions. § 6 read the `minions` 0 as the handler flag, and the run's stat 12 (§ 11) agrees with this
-  reading. (fn:sub_005A2120_SpecialModsApply@0x005A2120, data:g_UModAlwaysMods@0x006E2168)
+- [C] **`SpecialMonRestore` applies the flag-1 handlers through its `SpecialModsApply` call** (0x005A4558).
+  `SpecialModsApply` always calls the special's own handlers with flag 1: mods 1–4 from `0x006E2168` = {1, 2, 3, 4} at
+  0x005A214D, and the saved list at 0x005A21A6. It always calls the group callback with flag 0 (0x005A215A,
+  0x005A21B3). Second source: the run's stat 12 of the 15 champion restores (§ 11) is the flag-1 result, and flag 0
+  gives 15 mismatches, so the run separates the two readings. (Raised at the `lane/rbs3` review: the code reading and
+  the run agree, and a wrong reading could not match all 15.) (run:2026-10-17-lifecycle,
+  fn:sub_005A2120_SpecialModsApply@0x005A2120, data:g_UModAlwaysMods@0x006E2168)
+- [I] **The 0 that `SpecialMonRestore` pushes is the `minions` argument.** `SpecialModsApply`'s third stack argument is
+  tested at 0x005A2123, and `SpecialMonRestore` pushes 0 for it at 0x005A454E, so the restore applies the mods without
+  minions. § 6 first read that 0 as the handler flag. The run does not separate "no minions" from another use of the
+  argument. (fn:sub_005A4440_SpecialMonRestore@0x005A4440, 0x005A454E)
 - [I] **`MinionRestore` calls the handlers itself with flag 0**: mods 1–4 at 0x005A4811 and its nine saved mod bytes at
-  0x005A4830, after setting `0x10` (0x005A47DF). Flag 0 shows outside stat 12 on every minion restore. `rndname`
+  0x005A4830, after setting `0x10` (0x005A47DF). Flag 0 would show outside stat 12 on every minion restore (not looked for). `rndname`
   (mod 1) steps the unit seed (`+0x20`/`+0x24`) and writes the name seed only with flag 1 (0x005A0CE7; step
   0x005A0CED–0x005A0D05), so a minion restore takes no unit-seed step where flag 1 would take one. `resist` (8, 27,
   28) also acts only with flag 1 (0x005A138F). The kept lifecycle logs were not searched for a unit seed after the
@@ -738,6 +743,10 @@ Each is a Phase 2 question (§ P2 questions in the plan log) unless it says othe
   the camp while its route crosses a town room (a player at the Rogue Encampment's edge, inside the Blood Moor), or a
   knockback or straight-path skill (path types 4, 10, 14) toward the camp. The other static routes, `RoomIsTown`'s 134
   unread calls and the `0x40000` path types, are still to read.
+  *Ruling (`lane/rbs3` review, architect):* the case stays a named shortfall of plan 0040 Phase 2. No harness addendum
+  and no owner-play candidate for now: the static remainder (the `0x40000` branch into `sub_00649760`, the knockback,
+  teleport and placement writers of a monster's room) goes first, to the static sweep queue; a recipe is chosen only if
+  that read finds a route in.
 - [L] Whether a kept lifecycle log shows the minion restore's unit seed after the handlers (§ 11.1 (c)). If it does,
   the flag-0 reading of `MinionRestore` can be checked from the logs without a run.
 - [L] Which client-copy code detached the path of the client-copy units of drlg/0004's 19 (§ 8); code still to read.

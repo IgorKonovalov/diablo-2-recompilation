@@ -2210,3 +2210,57 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     drlg/outdoor L693 and L866 wording; the quests and economy readings for plans 0042 and 0043 Phase 3. Ledger rows
     are in [metrics](metrics.md) (usage "—").
   - **Next:** merge `lane/rbs2`.
+
+- **2026-10-17 — `lane/rbs3` review (architect, static backlog sweep, third pass): accept with fixes.** `main`
+  (`78b96a9`) merged first, clean. `re/symbols.csv`: the lane's 5 rows are new, with no duplicate address or name.
+  - **Checked.** Every output in `workspace/logs/sweep-rbs3-manifest.txt` re-run and compared:
+    - `sweep_rbs3.py` `flagreads`, `callers`, `pushes`, `writes`; `xrefscan.py 0x005A01B0`; `sweep_s1e.py static`;
+      `sweep_s3b.py pool`, `special`, `stats`; `sweep_s1a.py static`: all ten byte-identical (sha256 as kept), every
+      tool hash as in the manifest.
+    - The MonPlace output: identical (`01db978a…`) once its `#` header lines are echoed between the listed commands;
+      the manifest line lists the commands only.
+    - `rooms.py check` (under `MemoryMax=4G`) and `sweep_h5e.py scan 1 601`: identical except the `systemd-run`
+      banner. 0 mismatches over 2 215 807 checks; condition met 0, ring merge 0, 125 seams, minimum overlap 24 (5 seams).
+    - `test_rooms.py`, `test_sweep_h5e.py`: pass. Gate green.
+
+    Anchors read in objdump: `sub_006483A0` whole (MonIsNpc at 0x006483B6, the room from `[esi+0xC]` = the planner's
+    lookup at 0x00649AC5, `neg/sbb/add 1` after `RoomIsTown` at 0x00648417); `PathPlan` 0x006499AE (`0x40000`),
+    0x00649AD9, 0x00649AEE (third argument), 0x00649C7B (clear, return 0); 0x005FBFB7's pushes (`EDI` third, 0 after the
+    loop at 0x005FBF71); 0x005A454E/0x005A4558 and `SpecialModsApply` 0x005A2123, 0x005A214D (`push 1`), 0x005A215A
+    (`push 0`); `MonMarkSpecial` (`EDX` = 8 at 0x005A034A, the `or` at 0x005A0375 on every monster with data);
+    `ChampionMemberMark` 0x005A48EB–0x005A4905; `MonMakeSpecial` 0x005A495E (`cmp ecx, ecx`) to 0x005A4978;
+    `SpecialMonPlace` 0x005A0B56–0x005A0B61; `COMBAT_ApplyDamage` 0x0057C709–0x0057C732; the MonPlace switch
+    0x0054E76F–0x0054E782 and 0x0054EAFE (returns `ESI`, 0 since 0x0054E62A), 0x0054EAB1, the navi spawn at 0x0054E919
+    (class `0x10A`), the tentacle step 0x0054E789–0x0054E7BB; the `sete` pair 0x0066B4DE/0x0066B4E0.
+  - **Rulings.**
+    - (1) **Town-follow: a shortfall still**, ruled in the [plan 0040 log](done/0040-drlg-room-lifecycle.md#implementation-log)
+      (post-close entry). No harness addendum or owner-play candidate until the static remainder is read; a harness
+      case, if one follows, is a plan 0038 harness batch.
+    - (2) **Dead champion "not saved on stock data": `[I]`** (plan 0040 log). The run cannot separate it.
+    - (3) **(c): § 6 corrected by the lane; "flag-1 handlers through `SpecialModsApply`" raised to `[C]`** at the review
+      (the code and the run's 15 champion restores; flag 0 gives 15 mismatches). drlg/lifecycle repeats the old
+      wording: spec-writer.
+    - (4) **MonPlace: the scope stands** ("place nothing" in `PresetMonSpawn`). The review counted the readers: both
+      callers of `PresetUnitDispatch` (`PresetUnitSpawn`, `RoomInactiveUnitsRestore`) reach the switch, so the first
+      spawn and the restore of a kept group preset place nothing there; four other callers of `PresetMonSpawn` are
+      unfollowed, now named in monsters/0003 § 7 (rule 9). They go to the static queue.
+    - (5) **Outdoor 7 stays an a-run shortfall** (inventory § 2.6, the `lane/rbs3` block): 0 of 52 200 windows is a
+      scan of 600 seeds, not a bound on the seed-dependent layout, as with row 11. A static bound on the layout's
+      level offsets would make it d-none. No class moves; totals recomputed once after merging `main`, unchanged:
+      static 567, harness 532, blocked 415 (d-none 282), deferred 2, raised 10, 1 526 in all.
+    - (6) The S3b leftover, the S3b, S1e (c) and S1a (b) tool follow-ups, the five symbols at `I` and the
+      harness-play partial-log rule are accepted.
+  - **Fixes (4).**
+    - *Under-claim 1:* drlg/0009 § 11.1 (c) split: `SpecialMonRestore`'s flag-1 handlers through `SpecialModsApply`
+      `[C]` (run:2026-10-17-lifecycle as second source); the `minions` 0 stays `[I]`.
+    - *Overclaim 1:* "flag 0 shows outside stat 12 on every minion restore" → "would show (not looked for)"; the closed
+      0040 P2 follow-ups entry annotated to match.
+    - *Stale cross-reference 1:* drlg/0009 § 11's stat-12 bullet still called the flag-0 result "§ 6's"; now "§ 6's first
+      reading (corrected in § 11.1 (c))".
+    - *Omission 1:* monsters/0003 § 7 names `PresetUnitDispatch`'s two callers and `PresetMonSpawn`'s four other callers
+      (`sweep_rbs3.py callers 0x0054E600 0x005557D0`).
+  - **Backlog.** The review request is closed. The *static sweep, remaining* entry is annotated. New reverser entry:
+    [rbs3 review static remainders](../backlog/2026-10-17-architect-reverser-rbs3-review-static-remainders.md)
+    (town-follow remainder, outdoor 7 layout bound, MonPlace readers, the optional unit-seed search). The lane's
+    spec-writer entry is annotated with the lifecycle rewording. Ledger rows are in [metrics](metrics.md) (usage "—").
+  - **Next:** merge `lane/rbs3`.

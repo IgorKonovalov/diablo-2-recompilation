@@ -2,10 +2,10 @@
 from: reverser
 to: architect
 date: 2026-10-17
-status: open
+status: done
 context:
   - ../plans/0038-inferred-claims-sweep.md
-resolution: ""
+resolution: "Reviewed 2026-10-17 (architect): accept with fixes (plan 0038 log, lane/rbs3 review; 0040 items in the plan 0040 log, post-close entry). Town-follow stays a shortfall, static remainder first (new entry); dead champion not saved stays [I]; SpecialMonRestore's flag-1 call raised to [C], lifecycle rewording to the spec-writer; MonPlace scope stands with the callers counted; outdoor 7 stays an a-run shortfall, totals unchanged (1 526). Fixes 4: under-claim 1, overclaim 1, stale cross-reference 1, omission 1."
 ---
 
 Please review branch `lane/rbs3` (from main c8f4f1e), the third static backlog sweep. No game was run and no slot was used. Every claim is `[I]` or a tool change. Scans are in `tools/sweep_rbs3.py` (new), with outputs under `workspace/logs/` and 13 lines in `sweep-rbs3-manifest.txt`.
