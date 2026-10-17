@@ -74,6 +74,8 @@ and writers of the act changes are also listed per quest in [quests/0001](0001-p
   travel, NPC act change, death, join, the lair, Arcane and Durance portals: the destination's level seed when it has
   `Position` (plus a full level or room build when the level or room does not exist yet, DRLG oracles); town portal
   creation: five (above); portal use: none of its own (a room activation is an oracle); warp: none.
+  (fn:sub_0054C5D0_Pkt49WaypointTravel@0x0054C5D0, fn:sub_005467E0_NpcActTravel@0x005467E0,
+  fn:sub_0066AC40_LevelPointPick@0x0066AC40, fn:sub_0056D130_PortalObjectCreate@0x0056D130, 0x00584870)
 
 ## Leads used
 
@@ -291,6 +293,7 @@ if best = −1 and fallback = 0: return 0   ; else the room at pos (pos unchange
   are as written, the Manhattan distance is `|dx| + |dy|`. (fn:COLL_FindFreeNear@0x0064DEA0 0x0064DF6B–0x0064E1F7)
 - [I] Masks and steps used by travel: player placement `0x1C09` step 1; act change a second search `0x1C89` step 5;
   portal field end `0x3E01`/`0xC01` with the partner footprint, size 3, no fallback; portal town end `0xBE11` step 5.
+  (fn:sub_0061B060_ActLevelSpot@0x0061B060, fn:COLL_FindFreeNear@0x0064DEA0, 0x005BE290)
 
 ### 5. Act change through an NPC
 
@@ -310,11 +313,12 @@ NpcTravelMove(level, type) (0x0054B830)
 
 - [I] `NpcActTravel` (read in [save/0002 § 2](../save/0002-quest-words.md#2-who-writes-the-act-travel-words)) sets the
   travel word (7, 15 with 10, 28) with bits 0 and 13 only if bit 0 was clear, sends the record and the NPC flags of the
-  new act (`0x00544FA0`), and sets player data `+0x4C` = 1, which blocks operates and waypoint menus until cleared (the
-  clearing is not read). For NPC 155 it also runs quest 6's event-3 callback when word 6 bits 13 and 0 are set, and
+  new act (`0x00544FA0`), and sets player data `+0x4C` = 1, which blocks operates and waypoint menus until the client's
+  packet 0x48 clears it (§ 9). For NPC 155 it also runs quest 6's event-3 callback when word 6 bits 13 and 0 are set, and
   `0x00597310` (the Act I "Cain not rescued" mark, quests/0001). It does **not** move the player: the move has already
   happened in `NpcTravelMove`. (fn:sub_005467E0_NpcActTravel@0x005467E0)
 - [I] The NPC classes are `monstats` rows; their names (Warriv, Meshif, Tyrael, …) are `[L]`.
+  (fn:sub_005467E0_NpcActTravel@0x005467E0)
 - [I] `TownLevelLeave(old, new)` marks the old town's store stale (vendors) and, on arrival in town 1, 40, 75 or 109,
   sends that act's NPC quest flags (`0x00545100`, lists at `0x007318B0`…); arrival in 40 also runs `0x00597310`.
   (fn:sub_00537340_TownLevelLeave@0x00537340)
@@ -422,8 +426,18 @@ QUESTS_WarpGate(src, dest) (0x00545B80)
 ### 9. Act-change state and real-time gates
 
 - [I] Player data `+0x4C` = 1 is set by `NpcActTravel`, `DuranceActTravel` and the Act IV/V quest code that calls
-  `0x0053D940` (`0x005B5880`, `0x0058E740`). While it is set, `OBJ_OperateDispatch` and `PlayerIsBusy` refuse. Its clear
-  was not found in the code read (open question).
+  `0x0053D940` (`0x005B5880`, `0x0058E740`). While it is set, `OBJ_OperateDispatch` and `PlayerIsBusy` refuse.
+- [I] **The clear** (plan 0042 P1 review follow-up (c), `lane/rbs2`) is the client's packet **0x48**. Its
+  `g_SrvPacketTable` entry (0x006E0D18 + 8·0x48 = 0x006E0F58) is `0x0054C590`, next to packet 0x49's `0x0054C5D0`.
+  The handler returns 3 unless its second argument is 1, and returns 2 when player data `+0x4C` is already 0.
+  Otherwise it calls `0x005350B0` and returns 0. `0x005350B0` fetches the player data (`0x006221A0`), stops the game
+  with error 0x1C7 if `+0x4C` is 0, and writes `+0x4C` = 0 (`movl $0x0,0x4c(%eax)` at 0x005350DB). `0x005350B0` has
+  one direct caller (`grep -cE '(call|jmp) +0x5350b0$'`: 1, at 0x0054C5BE). Other writers of `+0x4C` were not
+  listed (the offset is common: `grep -cE 'mov[lb]? +\$0x[01],0x4c\(%e[a-z]{2}\)$'` finds 26 immediate 0/1 stores to some
+  `0x4c(%reg)` in `.text`). What the client sends
+  0x48 after is not read here; the act-loaded reading of the old open question stays a lead.
+  (fn:sub_0054C590_Pkt48ActChangeClear@0x0054C590, fn:sub_005350B0_PlayerActChangeClear@0x005350B0,
+  data:g_SrvPacketTable@0x006E0D18)
 - [I] Two gates use `GetTickCount` (wall-clock milliseconds), not the game frame: waypoint travel (10 000) and portal
   use (5000). Both read the operator's own player data `+0x160` (`PlayerTickGet(player, 0)`: EDX = 0 at 0x0054C5F5
   and 0x005848BA); the per-player entries of list `+0x38` hold the 60 s hostility stamp of each pair, which only
@@ -447,7 +461,8 @@ QUESTS_WarpGate(src, dest) (0x00545B80)
 - [I] **ADR-0014 chaining.** The draws that chain are the destination level seed (one step per placement on a
   `Position` level, shared with the waypoint lookups of the population pass) and the game seed (portal creation, shared
   with every server unit). A reimplementation that models travel must assert both on entry, as drlg/0005's R1 did for
-  the level seed.
+  the level seed. (fn:sub_0066AC40_LevelPointPick@0x0066AC40, fn:sub_0056D130_PortalObjectCreate@0x0056D130,
+  fn:sub_00555230_SUnitCreate@0x00555230)
 
 ### 11. Boundary recommendation for Phase 2 (travel)
 
@@ -478,8 +493,8 @@ QUESTS_WarpGate(src, dest) (0x00545B80)
 
 ## Open questions
 
-- [L] Where player data `+0x4C` is cleared after an act change (likely on the client's "act loaded" message); Phase 2
-  can log its writes.
+- ~~Where player data `+0x4C` is cleared~~: packet 0x48's handler, § 9 (`lane/rbs2`). [L] What the client
+  sends 0x48 after is still a lead ("act loaded"); Phase 2 can log the packet.
 - [L] The un-declare path of `0x005A5E50` (hostile = 0, 0x005A5FA4) and what the table at `0x006E2228` dispatches;
   the declaring path is read in multiplayer/0001 § 4. Multiplayer, plan 0044 MP24.
 - [L] The exact distance metrics of the operate (`0x00641530` < 51, `0x00623660`) and the warp click (< 5) were not

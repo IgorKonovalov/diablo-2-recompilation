@@ -179,6 +179,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00533C70,func,sub_00533C70_ReadMercOldSave,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00534330,func,D2S_ReadSave,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005343A0,func,PLRSAVE_ReadFile,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x005344B0,func,sub_005344B0_PlayerLoadFromFile,,I,save/d2s,docs/findings/quests/0001-progression.md
+0x00534520,func,sub_00534520_PlayerLoadFromClient,,I,save/d2s,docs/findings/quests/0001-progression.md
 0x005345A0,func,sub_005345A0_PlayerLoad,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005347B0,func,DEBUG_ToHitRollStub,"void __fastcall DEBUG_ToHitRollStub(void * game, void * attacker, void * defender, int chance, int roll)",C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005347C0,func,DEBUG_DefenceRollStub,"void __fastcall DEBUG_DefenceRollStub(void * game, void * defender, void * unit, int chance, int roll, char * label)",C,combat/formulas,docs/findings/combat/0001-formulas.md
@@ -191,6 +193,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00534D60,func,sub_00534D60_StartItemSlot,,C,player/creation,docs/findings/player/0001-creation.md
 0x00534F10,func,PLAYER_GiveStartItems,,C,player/creation,docs/findings/player/0001-creation.md
 0x00535060,func,sub_00535060_PlayerIsBusy,,I,quests/travel,docs/findings/quests/0002-travel.md
+0x005350B0,func,sub_005350B0_PlayerActChangeClear,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x005353B0,func,sub_005353B0_PlayerPortalSet,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x005353F0,func,sub_005353F0_PlayerPortalGet,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x00535430,func,sub_00535430_PlayerPortalClose,,I,quests/travel,docs/findings/quests/0002-travel.md
@@ -355,6 +358,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0054B830,func,sub_0054B830_NpcTravelMove,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x0054BA90,func,sub_0054BA90_Pkt31NpcMessage,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0054C0E0,func,sub_0054C0E0_Pkt41Resurrect,,I,quests/travel,docs/findings/quests/0002-travel.md
+0x0054C590,func,sub_0054C590_Pkt48ActChangeClear,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x0054C5D0,func,sub_0054C5D0_Pkt49WaypointTravel,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x0054C7C0,func,sub_0054C7C0_Pkt4FButton,,I,items/cube,docs/findings/items/0008-cube.md
 0x0054C9C0,func,sub_0054C9C0_Pkt58QuestSeen,,I,quests/progression,docs/findings/quests/0001-progression.md
