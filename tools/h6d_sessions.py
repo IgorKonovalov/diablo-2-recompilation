@@ -96,10 +96,10 @@ def diablo():
 
 
 def baal():
-    """Worldstone Keep Level 2 waypoint (tab 5 row 9); two `Baal Temple Down` warps (LvlWarp 87/88) to the Throne of
+    """Worldstone Keep Level 2 waypoint (tab 5 row 9); two `Baal Temple Down` warps (LvlWarp Id 82: records 86/87 of the loaded table, one below the .txt row numbers past its `Expansion` row) to the Throne of
     Destruction (131); a long Nova sweep through the five waves; the Worldstone Chamber portal (object 563); Baal
     (544)."""
-    down = ["farm", "--sweep", "--descend", "87,88", "--descend-time", "240", "--time", "5"] + NOVA
+    down = ["farm", "--sweep", "--descend", "86,87", "--descend-time", "240", "--time", "5"] + NOVA
     return [("pilot", ["wpchain", "--chain", "5,9", "--linger", "2"], 120),
             ("until", (130, down, 300, 5), 0),
             ("until", (131, down, 300, 5), 0),
