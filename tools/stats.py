@@ -29,6 +29,8 @@ player's stat-list tree (the unit list and every list under it) and replays the 
   * UOE/MSK/TIP/TGL (sets): the worn mask from the inventory listing (page 3, quality 5, not 0x4000 or 0x100, same
     set id, bit = member index), and the toggle sequence of the item's aprop lists by add func (§ 7);
   * SBX: the wearer's set list predicted from the Sets blocks for n = popcount(mask) (partial pairs and full);
+  * WEL0/WEL1 (a well, 0x00585720): life (Parm3 bit 1), mana (bit 0) and stamina each raised by Parm1 * max >> 8,
+    capped, and the return 1 only when something changed; SHR0/SHR1 of the recharge codes 1-3: life and/or mana to max;
   * seeds: the game seed and the player's seed at the entry and exit of every top-level event (LNK, ULK, TGL, PRP,
     TK) must be equal (stats/0002 § 7, the P1 review's draw-freedom amendment).
 Exit 0 only if every check holds. Stdlib only. Read-only.
@@ -532,6 +534,8 @@ class Checker:
         self.aura_durations = collections.Counter()
         self.wells = []
         self.shrine_codes = collections.Counter()
+        self.refill_cases = collections.Counter()
+        self.well_cases = collections.Counter()
         self.notes = collections.Counter()
 
     def fail(self, kind, msg):
@@ -577,6 +581,8 @@ class Checker:
         self.eqr = None
         self.cur_log = os.path.basename(path)
         self.cur_line = 0
+        # an event left open at the end of the previous log (the session was killed inside it) is not continued
+        self.au_open = self.shr = self.wel = self.grp = self.rq = None
         M = None
         isc = None
         stack = []                 # frames: dict(tag, gen, pend (expected tuple or None), top, seeds)
@@ -1114,6 +1120,20 @@ class Checker:
             if a:
                 self.seed_pair("shrine", a, d)
                 self.n["shrine"] += 1
+                # the recharge shrines 1-3 (SHRINE_Refill 0x005828E0, stats/0002 § 5): life and/or mana to max; the
+                # code is the object data's second dword
+                code = int.from_bytes(bytes.fromhex(a["od"])[4:8], "little") if a.get("od") else None
+                if code in (1, 2, 3) and a.get("v") and d.get("v"):
+                    want = list(a["v"][:6])
+                    if code in (1, 2):
+                        want[0] = want[1]
+                    if code in (1, 3):
+                        want[2] = want[3]
+                    self.n["shrine_refill_checked"] += 1
+                    self.refill_cases[(code, tuple(x != y for x, y in zip(a["v"][:6], want)))] += 1
+                    if list(d["v"][:6]) != want:
+                        self.fail("shrine_refill", "shrine code %d: vitals %r -> %r, predicted %r" % (
+                            code, a["v"][:6], d["v"][:6], want))
             return
         if tag == "WEL0":
             self.wel = d
@@ -1125,6 +1145,20 @@ class Checker:
                 self.seed_pair("well", a, d)
                 self.n["well"] += 1
                 self.wells.append((a, d))
+                # 0x00585720 (stats/0002 § 5): Parm1 * max >> 8 added to life (Parm3 bit 1), mana (bit 0) and
+                # stamina, each capped at its maximum; the return is 1 when something changed
+                p, v = a.get("p"), a.get("v")
+                if p and v and d.get("v"):
+                    want = list(v[:6])
+                    for i, on in ((0, p[2] & 2), (2, p[2] & 1), (4, True)):
+                        if on and want[i] < want[i + 1]:
+                            want[i] = min(want[i] + ((p[0] * want[i + 1]) >> 8), want[i + 1])
+                    r = int(want != list(v[:6]))
+                    self.n["well_checked"] += 1
+                    self.well_cases[tuple(i for i in (0, 2, 4) if want[i] != v[i]) or ("full",)] += 1
+                    if list(d["v"][:6]) != want or d.get("r") != r:
+                        self.fail("well", "well p=%r: vitals %r -> %r (r %r), predicted %r (r %d)" % (
+                            p, v[:6], d["v"][:6], d.get("r"), want, r))
             return
 
     def predict_apply(self, M, d):
@@ -1175,7 +1209,7 @@ class Checker:
         if r:
             n = s32(hp + r)
             mx = st(7)
-            why = "life +74"
+            why = "life +74" if r > 0 else "life -74"
             if n > mx:
                 n, why = mx, "life capped"
             if n < 256:
@@ -1584,7 +1618,7 @@ class Checker:
             self.n["req"] += 1
             self.req_cases = getattr(self, "req_cases", collections.Counter())
             self.req_cases[(want, "eth" if eth else "", "s91" if s91 else "", "unid" if not ident else "",
-                            "self" if "ss" in q else "", "strfail" if not so else "", "lvlfail" if not lo else "")] += 1
+                            "self" if "ss" in q else "", "strfail" if not so else "", "dexfail" if not do else "", "lvlfail" if not lo else "")] += 1
             # cases a wrong reading would have predicted differently (review rule 10): the strength flag without
             # the ethereal -10, or without the item_req_percent term
             if eth:
@@ -1680,7 +1714,12 @@ class Checker:
                "aura_durations": {"skill %d len %d" % k: v for k, v in sorted(self.aura_durations.items())},
                "aura_draw_sites": {"%s from %s (%s/%s)" % k: v for k, v in self.au_sites.items()},
                "shrine_codes": {str(k): v for k, v in sorted(self.shrine_codes.items())},
-               "wells": [[a["p"], a["v"], b["v"]] for a, b in self.wells[:20]]}
+               "wells": [[a["p"], a["v"], b["v"]] for a, b in self.wells[:20]],
+               "well_cases": {("raised " + "+".join({0: "life", 2: "mana", 4: "stamina"}[i] for i in k)) if k != ("full",) else
+                              "already full": v
+                              for k, v in sorted(self.well_cases.items(), key=repr)},
+               "refill_cases": {"code %d %s" % (k[0], "changed" if any(k[1]) else "already full"): v
+                                for k, v in sorted(self.refill_cases.items())}}
         print(json.dumps(res, indent=1, sort_keys=True))
         if out:
             with open(out, "w") as fh:

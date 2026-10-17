@@ -160,6 +160,7 @@ SESSIONS = {
     # the ethereal boundary: strength 85, so with the belt and gloves off (and Annihilus in) the strength lands in
     # 115..124, where the War Boots (125) pass only with the ethereal -10
     "bard-town1": ("StatsBarD", "enter-normal", 4141, [("plan", "statsbar", 2), ("wait", 10)]),
+    "bard-town2": ("StatsBarD", "enter-normal", 4142, [("plan", "statsbar", 4), ("wait", 10)]),
     "nec-town1": ("StatsNec", "enter-normal", 4151, [("plan", "statsnec", 4), ("wait", 10)]),
     "bar-town1": ("StatsBar", "enter-normal", 4111, [("plan", "statsbar", 3), ("wait", 20)]),
     "bar-town2": ("StatsBar", "enter-normal", 4112, [("plan", "statsbar", 3), ("wait", 20)]),
