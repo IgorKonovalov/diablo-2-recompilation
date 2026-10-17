@@ -407,7 +407,7 @@ stat175_goldlost = max(loss, 0);
   dropped as piles by `CorpseDropGold`; with 16 corpses the items and gold are dropped instead (`CorpseOverflowDrop`).
   (fn:PLAYER_CorpseCreate@0x0057F700, fn:sub_0057F390_CorpseDropGold@0x0057F390,
   fn:sub_0057F540_CorpseOverflowDrop@0x0057F540)
-- [I] **Hire and resurrect.** The hire price is `HIRELING_RollEntry`'s (hirelings/0001 § 5, `[C]`). Resurrection at
+- [I] **Hire and resurrect.** The hire price is `HIRELING_RollEntry`'s (hirelings/0001 § 5, tagged C there). Resurrection at
   classes 150, 198, 252, 367, 515 costs `MERC_ResurrectCost(merc)`: `L` = the **mercenary's** stat 12, `(L·L)/2`
   (signed) `·15`, then `min(·, 50 000)` by an unsigned compare; paid with `PayGold`; the same value is sent to the
   client when the mercenary dies. (fn:MERC_Resurrect@0x00579C00, fn:MERC_ResurrectCost@0x006637B0,
