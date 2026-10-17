@@ -3,7 +3,7 @@ based_on:
   - docs/specs/player/README.md 2026-10-16
   - docs/specs/player/creation.md 2026-10-16
   - docs/specs/hirelings/README.md 2026-10-16
-  - docs/specs/save/d2s.md 2026-10-16
+  - docs/specs/save/d2s.md 2026-10-17
 ---
 
 # Characters and hirelings
@@ -214,7 +214,10 @@ flowchart LR
 - Attribute points rise by `StatPerLevel × d` (5 per level for every class) and skill points by `d`.
 
 The level-up characters of the test run were prepared saves with unusual values (for example 8000 life), so the
-run backs the arithmetic and the "no draw" result, not what a naturally levelled character's life would be.
+run backs the arithmetic and the "no draw" result, not what a naturally levelled character's life would be. Such
+values meet a limit of the save file: life, mana and stamina are written in fields that hold at most 8191.99 points,
+and a larger value is written as that maximum; the same runs' saves confirm it
+([save/d2s § F](../specs/save/d2s.md#f-character-stats-gf), and the [saves](saves.md) page).
 
 ## Other ways to gain or lose experience
 

@@ -1,9 +1,9 @@
 ---
 based_on:
-  - docs/specs/items/tc.md 2026-10-16
-  - docs/specs/items/quality.md 2026-10-16
+  - docs/specs/items/tc.md 2026-10-17
+  - docs/specs/items/quality.md 2026-10-17
   - docs/specs/items/uniques-sets.md 2026-10-15
-  - docs/specs/items/affixes.md 2026-10-16
+  - docs/specs/items/affixes.md 2026-10-17
   - docs/specs/items/properties.md 2026-10-15
 ---
 
@@ -80,6 +80,11 @@ and that player's quest bits for the boss are clear. Because the drop runs befor
 bits, a first kill always gets the quest TC. This is confirmed for single player; kills by a pet, a hireling, and a
 party were not run ([TC § B](../specs/items/tc.md#b-monster-drop-which-tc--monster_dropitems)).
 
+Some monsters carry a "no death drop" flag and skip the drop entirely. Read from the code, the bone prisons, the
+compelling orb and a monster spawned on behalf of another unit get it; the flag has more writers (one in the spawn
+code, three in quest drops, twelve in skill code) that are not yet read, so the full list of monsters that drop nothing
+is not known ([TC § B, note B1](../specs/items/tc.md#b-monster-drop-which-tc--monster_dropitems)).
+
 **Level upgrade.** In an expansion game on Nightmare or Hell, a monster's top TC can move up its group (for example
 `Act 1 (N) H2H A` to `H2H B`). The game walks forward through the group while the monster's level
 ([mlvl](../glossary.md)) is at least the next TC's `level`. The walk only moves forward, so a base TC whose own level is
@@ -124,7 +129,10 @@ the killer's (and its owner's) gold find adds a percentage; both are read from t
 Chests use the same walk with no level upgrade. Their TC is an `Act N Chest A/B/C` of their [act](../glossary.md) and difficulty; how
 the tier is chosen is read from the code, while the chest drops of a recorded game reproduce the walk itself. The tier
 (0, 1 or 2) is also passed as the item level of the quality roll, so a chest's quality roll runs at item level 0 to 2
-(read from the code; [quality](../specs/items/quality.md#c-shared-terms-and-magic-find)). The
+(read from the code; [quality](../specs/items/quality.md#c-shared-terms-and-magic-find)). A chest can also force a
+quality on its drop; when the entry is gold or a potion, that item skips the quality roll and is then built as normal
+quality anyway, because the always-normal rule of item creation overrides it (read from the code; elixirs are the
+exception and keep the forced quality). The
 chest side is on the [objects](objects.md) page ([TC § J](../specs/items/tc.md#j-object-drops-named-only)).
 
 **Classic games differ.** In a classic game the walk uses only the classic weights, skips expansion-only entries,
@@ -207,8 +215,12 @@ tests, and the rare test if their type allows rare, with their draws, before the
 
 **[Magic find](../glossary.md) (MF)** is the killer's MF plus its owner's: a summon's kill counts the summoner's MF,
 and a [mercenary](../glossary.md)'s kill counts its own plus its player's. Both are confirmed in recorded games.
-Whether a monster's minions have an owner is not known
-([quality § C](../specs/items/quality.md#c-shared-terms-and-magic-find)). The factor is:
+Monsters can have owners too. Read from the code: the minions of a unique or superunique boss, and the MonStats
+minions of a champion-pack member, have their leader as owner, so a minion's kill adds the leader's MF while the
+leader is still in the game; a boss placed by a map preset is its own owner, so its own MF counts twice. Other code
+that gives monsters an owner (escorts, tentacles, quest and skill code) is not followed, and whether any stock
+monster has MF at all is not checked
+([quality § C, note M3](../specs/items/quality.md#c-shared-terms-and-magic-find)). The factor is:
 
 | Test | Factor with MF ≤ 10 | Factor with MF above 10 | At MF 100 |
 |---|---|---|---|
@@ -248,7 +260,12 @@ not yet set when these stats are rolled: a rare throwing weapon keeps its drawn 
 Item creation first applies four override rules (an always-magic type becomes at least magic, a type that cannot be
 rare turns rare into magic, a base flagged unique becomes unique, an always-normal type becomes normal). For a drop
 through the quality roll they never change anything, because the roll already respects them; a TC entry that forces
-unique or set on an always-normal base would end normal. The rules are read from the code, and only the last one was
+unique or set on an always-normal base would end normal. A survey of the stock bases shows which ones the rules
+touch: seven bases are always magic (rings, amulets, jewels, the three charms, and the Viper Amulet, a quest base that the
+unique rule then makes unique), and no quiver is,
+since the two quiver types that are flagged always-magic have no base of their own; 153 bases of 30 types (potions,
+gems, runes, scrolls, books, keys, gold, quivers, body parts, charms, quest items) cannot be rare; 18 bases (17 quest
+items and the Standard of Heroes) are flagged unique; 121 bases of 24 types are always normal. The rules are read from the code, and only the last one was
 ever seen writing
 ([uniques-sets § B](../specs/items/uniques-sets.md#b-itemcreatebyquality-the-creation-roll-the-overrides-and-the-switch)).
 
@@ -350,8 +367,12 @@ draws nothing for most bases ([affixes § H](../specs/items/affixes.md#h-the-nor
 
 **[Staff mods](../glossary.md)**: every builder ends by giving an item whose type names a class in `StaffMods` up to
 three class skill bonuses ([affixes § I](../specs/items/affixes.md#i-staff-mods--items_rollstaffmods)). Where
-these draws sit in the order is confirmed; the draws themselves are read from the code and not yet reproduced, and the
-test that rejects an unsuitable skill was read from an awkward decompile that needs a second reading.
+these draws sit in the order is confirmed; the draws themselves are read from the code and not yet reproduced. Each
+bonus gets up to 6 tries. A drawn skill is refused if the item is not of the skill's item type, or if it repeats one
+of the skills already stored; a skill index out of range or without a record skips the type test and goes straight
+to the repeat test. If all 6 tries fail, the last skill drawn is written anyway but is not stored for later repeat
+tests; that fallback was never reached. This test was read again in the disassembly, so the earlier doubt about the
+decompile is settled, but it is still read from the code only.
 
 A magic build fails only if neither slot gets an affix, and a rare one if no name or no affix fits; both then fall back
 one step with the seed reset. Neither happened in a run.
@@ -399,6 +420,12 @@ After the builder, three more steps run on the item seed, in this order
    (class items such as orbs) gets one affix from `AutoMagic`, picked like any affix with the same alvl. It always
    spends its coin draw. That set and unique items skip it, and that it does not check `spawnable`, are read from the
    code; every stock automagic row is spawnable, so the second point cannot show in a normal game.
+
+A TC can also hand the item two flags that force the outcome of the first two steps: one makes the ethereal roll
+succeed, the other replaces the socket draw by 0 so that sockets are always added. These flags come only from TC
+modifiers that exist in classic games (where the ethereal roll does not run, so the ethereal one has no effect at all)
+or from a field the stock tables leave at zero, so no stock drop uses them. All of this is read from the code
+([TC § H, note H5](../specs/items/tc.md#h-item-pick-and-hand-off)).
 
 An item with an `ethereal` property can in principle be made ethereal a second time by the roll (a second ×3/2 and
 halved durability); this was not reached in a run.
@@ -488,19 +515,21 @@ The main flow above is confirmed in recorded games. These parts are not, or are 
   and `Picks = 0`; the untested classic cases (expansion-only entries before the chosen one, the Long Sword, the
   ratio raises); a TC entry naming a unique (`Annihilus`) in stock data; the floating-point precision under other game
   types or renderers; whether `/players` works in a TCP/IP game; the quest TC for a kill by a pet, a hireling or a
-  party member, and for Mephisto, Diablo and Baal after their quest is done; and the meaning of the two upgrade bits a
-  TC can set, which no stock data uses.
+  party member, and for Mephisto, Diablo and Baal after their quest is done; and which monsters skip the death drop,
+  beyond the few whose flag was read. The two "upgrade" bits a TC can set turned out, by the code, to force the item
+  ethereal and force sockets (see [Ethereal, sockets and automagic](#ethereal-sockets-and-automagic)); no stock data
+  sets them.
 - **Quality** ([quality open questions](../specs/items/quality.md#open-questions)): Hell, negative magic find,
-  multiplayer, the minimum clamp, the unique-only base and quest-item early returns, and whether a monster's minions
-  count an owner's magic find.
+  multiplayer, the minimum clamp, the unique-only base and quest-item early returns, and which other kinds of
+  monster have an owner whose magic find counts.
 - **Uniques and sets** ([uniques-sets open questions](../specs/items/uniques-sets.md#open-questions)): the fallback
   chain past its first step; a unique-only base with no row; a quest base skipping the made test; the Cow King's set
   from a Hell Bovine; which game type, if any, excludes ladder uniques; whether a unique is identified later.
 - **Affixes** ([affixes open questions](../specs/items/affixes.md#open-questions)): rare jewels, the classic
   refusal of throwing weapons, the socket test on affixes, an empty rare-name list, a failed magic build, charms
   reaching
-  the normal builder, automagic on set and unique items, the staff-mods skill test, and which text a rare name id is
-  shown as.
+  the normal builder, automagic on set and unique items, and which text a rare name id is shown as (the
+  [game data](game-data.md) page has the name line).
 - **Properties** ([properties open questions](../specs/items/properties.md#open-questions)): several property kinds
   never reached, the type-11 setup, classic body armour at the socket roll, the second ethereal, and the exact
   rounding of a superior ethereal item with a durability bonus, where the code and a community page disagree (for

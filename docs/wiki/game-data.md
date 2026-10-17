@@ -2,7 +2,7 @@
 based_on:
   - docs/specs/data/README.md 2026-10-16
   - docs/specs/data/excel.md 2026-10-15
-  - docs/specs/data/strings.md 2026-10-16
+  - docs/specs/data/strings.md 2026-10-17
   - docs/specs/data/calc.md 2026-10-16
 ---
 
@@ -234,8 +234,12 @@ Name columns hold stored string indices: MonStats `NameStr`, SuperUniques `Name`
 ([strings § D](../specs/data/strings.md#d-key--index--strtable_getbykey), *Rare names*). The `.bin` stores no index for
 them. When the rare-name tables are loaded, each record's `name` key is looked up and the index kept. When the
 client shows a rare item, it takes the item's two rare-name ids, finds each record and shows the text of each stored
-index; if an index is 0, it shows the raw key in parentheses instead. How the client then joins the two words
-(order, separator) is not known yet.
+index; if an index is 0, it shows the raw key in parentheses instead, and a missing record leaves its word empty. The two words are then put into the string
+`RareFormat` as its first and second arguments, the way the magic name line uses `MagicFormat` (prefix, base name,
+suffix); that is read from the code. In the shipped English table `RareFormat` is `%0 %1` (checked in the data), so
+an English rare name is the first word, one space, the second word. The order and the separator come from the string
+table, so another language may change them. This rests on `%0` and `%1` standing for the first and second argument;
+the code that substitutes them is not read yet.
 
 One loader shows how a key lookup can silently fail: the gems table loader builds a key from bytes that, in this
 version, hold the gem's compiled item index rather than its code text, so the lookups miss (the run saw 68 such keys)
@@ -354,7 +358,7 @@ From the open questions of [excel](../specs/data/excel.md#open-questions),
 - Whether anything reads two MonStats padding bytes, and what a list of item indices built at item load means, are
   open.
 - The string-table fallbacks and fatal checks are read from the code and unreachable on a stock install; the other
-  languages' font maps are not read; how a rare item's two name words are joined is not known.
+  languages' font maps are not read; the substitution of `%0`, `%1` in the rare and magic name lines is not read.
 - `max` and `rand` were checked under an emulator but not in a live monster cast; the missile variables that read
   damage were not checked; the item context's second argument (the used item) is read from the code and no stock
   formula reads it; a zero divisor, an overflow, the power operator and a full stack have not been reached.
