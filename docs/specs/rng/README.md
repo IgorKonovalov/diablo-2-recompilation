@@ -48,7 +48,7 @@ and `n` on the stack. [I] (fn:RNG_RangePow2Plus@0x00472240)
 ### Tables
 
 None. The RNG reads no table. [I] (fn:RNG_Step@0x0045C370, fn:RNG_Range@0x0045C390, fn:RNG_RangeB@0x0045C3E0,
-fn:RNG_RangePow2@0x00472210, fn:RNG_SeedInit@0x00650E40, fn:RNG_SeedInitOne@0x00650E30, run:2026-10-11-rng-emu,
+fn:RNG_RangePow2@0x00472210, fn:RNG_RangePow2Plus@0x00472240, fn:RNG_SeedInit@0x00650E40, fn:RNG_SeedInitOne@0x00650E30, run:2026-10-11-rng-emu,
 [0001](../../findings/rng/0001-rng-core.md#data-touched))
 
 ### Runtime state

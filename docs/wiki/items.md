@@ -216,8 +216,9 @@ tests, and the rare test if their type allows rare, with their draws, before the
 **[Magic find](../glossary.md) (MF)** is the killer's MF plus its owner's: a summon's kill counts the summoner's MF,
 and a [mercenary](../glossary.md)'s kill counts its own plus its player's. Both are confirmed in recorded games.
 Monsters can have owners too. Read from the code: the minions of a unique or superunique boss, and the MonStats
-minions of a champion-pack member, have their leader as owner, so a minion's kill adds the leader's MF while the
-leader is still in the game; a boss placed by a map preset is its own owner, so its own MF counts twice. Other code
+party minions of a leader whose `MonStats` row has `SetBoss`, have their leader as owner, so a minion's kill adds the
+leader's MF while the leader is still in the game; a boss placed by the special-monster placement (a superunique, for
+example) is its own owner, so when it is the killer its own MF counts twice. Other code
 that gives monsters an owner (escorts, tentacles, quest and skill code) is not followed, and whether any stock
 monster has MF at all is not checked
 ([quality § C, note M3](../specs/items/quality.md#c-shared-terms-and-magic-find)). The factor is:
@@ -265,8 +266,8 @@ touch: seven bases are always magic (rings, amulets, jewels, the three charms, a
 unique rule then makes unique), and no quiver is,
 since the two quiver types that are flagged always-magic have no base of their own; 153 bases of 30 types (potions,
 gems, runes, scrolls, books, keys, gold, quivers, body parts, charms, quest items) cannot be rare; 18 bases (17 quest
-items and the Standard of Heroes) are flagged unique; 121 bases of 24 types are always normal. The rules are read from the code, and only the last one was
-ever seen writing
+items and the Standard of Heroes) are flagged unique; 121 bases of 24 types are always normal ([quality § F](../specs/items/quality.md#f-boundaries-named-only)). The
+rules are read from the code, and only the last one was ever seen writing
 ([uniques-sets § B](../specs/items/uniques-sets.md#b-itemcreatebyquality-the-creation-roll-the-overrides-and-the-switch)).
 
 **Unique.** The game lists every `UniqueItems` row that
@@ -368,7 +369,7 @@ draws nothing for most bases ([affixes § H](../specs/items/affixes.md#h-the-nor
 **[Staff mods](../glossary.md)**: every builder ends by giving an item whose type names a class in `StaffMods` up to
 three class skill bonuses ([affixes § I](../specs/items/affixes.md#i-staff-mods--items_rollstaffmods)). Where
 these draws sit in the order is confirmed; the draws themselves are read from the code and not yet reproduced. Each
-bonus gets up to 6 tries. A drawn skill is refused if the item is not of the skill's item type, or if it repeats one
+bonus gets up to 6 tries. A drawn skill is refused if the skill names an item type and the item is not of it, or if it repeats one
 of the skills already stored; a skill index out of range or without a record skips the type test and goes straight
 to the repeat test. If all 6 tries fail, the last skill drawn is written anyway but is not stored for later repeat
 tests; that fallback was never reached. This test was read again in the disassembly, so the earlier doubt about the

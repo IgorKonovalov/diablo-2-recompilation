@@ -282,7 +282,7 @@ The rest of the extended part is read from the code only, except the picture var
 - the quality fields: a 3-bit index for low and superior items, a prefix and a suffix [affix id](../glossary.md) for
   magic items (the prefix rebased, the suffix not), a 12-bit id for set and unique items, the two
   [rare name](../glossary.md) words and up to three prefixes and three suffixes for rare and crafted items. The ids
-  are the game's merged affix numbers (confirmed): the magic suffixes first, then the magic prefixes, then the
+  come from the game's merged affix numbers (confirmed; a magic prefix is then rebased, as said): the magic suffixes first, then the magic prefixes, then the
   automagic rows, each id one more than its place, and the rare names likewise, suffixes before prefixes;
 - a [runeword](../glossary.md) field, an ear or a personalized name, and a realm bit;
 - fixed fields: defense for armor, then maximum and current durability (current only when the maximum is not 0),
