@@ -424,7 +424,8 @@ No new run: this reads the kept output of the compile runs above, the directory
 `workspace/runtime/game-cubeprobe/data/global/excel/` as the last compile (step 3, the 81-row probe) left it
 (timestamps 2026-10-15 09:23), against the shipped files in `workspace/merged/data/global/excel/`.
 
-- **Commands:** `python3 -I tools/sweep_s1b.py compile` (rerun 2026-10-16 in the `lane/p39a` worktree), and a
+- **Commands:** `python3 -I tools/sweep_s1b.py compile` (rerun 2026-10-16 in the `lane/p39a` worktree; since
+  2026-10-17 it also prints the per-table compare, last bullet), and at first a
   per-table compare of the 15 code lists, `compcode` and the four `*code.bin` pools (a scratch script outside the
   repository: byte compare of each written file with the shipped one, and the archives that ship it).
 - **Observed:**
@@ -455,5 +456,9 @@ No new run: this reads the kept output of the compile runs above, the directory
   30): the `.bin` files ship, so their absence cannot show it.
 - **Re-run (architect review, 2026-10-16):** `sweep_s1b.py compile` gives the same summary line, and an independent
   byte compare of the 15 code lists, `compcode` and the four `*code.bin` pools (`misscode`, `skillscode`,
-  `skilldesccode`, `itemscode`) between the same two directories finds all 20 written and identical. The per-table
-  compare is not yet part of `sweep_s1b.py` (backlog 2026-10-16, archivist).
+  `skilldesccode`, `itemscode`) between the same two directories finds all 20 written and identical.
+- **Per-table compare in the tool (2026-10-17, `lane/arc4`):** `sweep_s1b.py compile` now compares each of those 20
+  tables itself, prints one `code table <name>: identical|DIFFERS (shipped in <archives>)` line per table, adds the
+  key `codetable_identical` (and `codetable_differs`, `codetable_missing`, each a `bad`), and so reproduces the
+  per-table claim above without the scratch script. Rerun on the same directories: the summary line as above plus
+  `codetable_identical=20`, `bad=0`, and the 20 lines name the same archives as the bullet *Observed*.
