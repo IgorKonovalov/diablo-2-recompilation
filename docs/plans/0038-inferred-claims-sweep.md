@@ -2377,3 +2377,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (H7a geometry prep, the teleport-target read, optional unfollowed calls). Ledger rows in [metrics](metrics.md)
     (usage "—").
   - **Next:** merge `lane/rbs4`.
+
+- **2026-10-17 — Wiki refresh of the index and *How we know* (spec-writer, `lane/wiki6`, from `main` `407758a`).**
+  The two pages W4 cannot see as stale (ADR-0012). [wiki/README](../wiki/README.md): plans 0037 and 0040 closed, room
+  lifecycle on the Levels page, the open-plan list from the plan index, the Levels and How-we-know table rows.
+  [wiki/how-we-know](../wiki/how-we-know.md) (`based_on: [process]`): emulated reproduction (ADR-0015, batches S1e
+  and S1f), simulation per event and the plan 0041 seed-invariance rule (ADR-0014), two clients (ADR-0008), d-none
+  bounds and the outdoor 7 split, shortfalls and open questions, this sweep, the review loop; ADR list gains 0008,
+  0011, 0014, 0015, 0018. No spec changed. Commit `2b8a67f`; gate green. Review request:
+  [wiki6 review](../backlog/2026-10-17-spec-writer-architect-wiki6-index-and-how-we-know-review.md).
+  - **Next:** architect review of `lane/wiki6`.
