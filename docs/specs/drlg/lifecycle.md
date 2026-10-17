@@ -1,10 +1,10 @@
 ---
 spec: drlg/lifecycle
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/room-tiles, monsters/spawn, monsters/special, monsters/stats, objects, save/d2s]
 consumed_by: [drlg/room-tiles, drlg/preset, drlg/collision, monsters/spawn, monsters/special, monsters/stats, objects]
-tags: {C: 78, I: 68, L: 8}
+tags: {C: 78, I: 70, L: 8}
 updated: 2026-10-17
 ---
 
@@ -181,7 +181,7 @@ B4. RefAddNear(R, d):                                             [C] (fn:sub_00
         EnterTest(N, d)
         N.refs[d] ← N.refs[d] + 1
 
-B5. RefRemoveNear(R, d):                                          [C] (fn:sub_0061B5B0_DrlgRefRemoveNear@0x0061B5B0, run:2026-10-17-lifecycle)
+B5. RefRemoveNear(R, d):                                          [C] (fn:sub_0061B5B0_DrlgRefRemoveNear@0x0061B5B0, 0x0061B5C3–0x0061B5EE, run:2026-10-17-lifecycle)
       for N in R.near, in list order, skipping null entries:
         N.refs[d] ← N.refs[d] − 1
         Leave(N, d)
@@ -190,7 +190,7 @@ B5. RefRemoveNear(R, d):                                          [C] (fn:sub_00
 B6. EnterTest(R, d):                                              [C] (data:g_DrlgRefEnterFns@0x00744384, run:2026-10-17-lifecycle)
       if R.status ≥ d and R.refs[0], …, R.refs[d] are all 0: Enter(R, d)
 
-B7. Enter(R, d):                                                  [C] (data:g_DrlgRefEnterFns@0x00744384, run:2026-10-17-lifecycle)
+B7. Enter(R, d):                                                  [C] (data:g_DrlgRefEnterFns@0x00744384, 0x0061BB10–0x0061BB44, run:2026-10-17-lifecycle)
       d = 0: R.status ← 0                                         ; fn:sub_0061B2C0_DrlgEnter0@0x0061B2C0
       d = 1: if R has no active room and not (R.flags & 0x100000): RoomActivateA(R)
              R.status ← min(R.status, 1)                          ; fn:sub_0061B2D0_DrlgEnter1Activate@0x0061B2D0
@@ -199,11 +199,11 @@ B7. Enter(R, d):                                                  [C] (data:g_Dr
                if R.refs[1] ≠ 0: Enter(R, 1)                      ; fn:sub_0061BB10_DrlgEnter2@0x0061BB10
       d = 3: RoomPrepareFiles(R)                                  ; DT1 list, DS1, then status 3 if higher
 
-B8. Leave(R, d):                                                  [C] (data:g_DrlgRefLeaveFns@0x00744394, fn:sub_0061B560_DrlgLeave3Release@0x0061B560, run:2026-10-17-lifecycle)
+B8. Leave(R, d):                                                  [C] (data:g_DrlgRefLeaveFns@0x00744394, fn:sub_0061B560_DrlgLeave3Release@0x0061B560, 0x0061B563–0x0061B58D, run:2026-10-17-lifecycle)
       d < 3, or d = 3 with R.status ≠ 4: Recompute(R)
       d = 3 on a client act, status now 4: RoomTilesRelease(R, EDX 0)   ; the client copy only
 
-B9. Recompute(R):                                                 [C] (fn:sub_0061B4F0_DrlgStatusRecompute@0x0061B4F0, run:2026-10-17-lifecycle)
+B9. Recompute(R):                                                 [C] (fn:sub_0061B4F0_DrlgStatusRecompute@0x0061B4F0, 0x0061B4F0–0x0061B528, run:2026-10-17-lifecycle)
       if R.status < 4 and R.refs[R.status] ≠ 0: return
       R.status ← the lowest d with R.refs[d] ≠ 0, else 4
 ```
@@ -212,7 +212,10 @@ B9. Recompute(R):                                                 [C] (fn:sub_00
 builds them, predicts every server callback in kind and room with the refs and status at its entry (634 982 callbacks
 in 913 moves), the refs and status of every logged room after the move (52 119), and every activation:
 `RoomActivateA` after an enter-1 call on a room with no active room and no `0x100000` (2 377). The status rule holds on
-all of them. (run:2026-10-17-lifecycle, fn:sub_0061B6F0_DrlgRefMove@0x0061B6F0, fn:sub_0061B390_DrlgRefAddNear@0x0061B390)
+all of them. The order inside each walk (the add walk recurses before its enter test; the remove walk decrements, calls
+the leave callback, then recurses, and skips null entries), the leave callbacks and `Recompute` are the instruction-level
+reading of [drlg/0009 § 2](../../findings/drlg/0009-room-lifecycle.md#2-activation). (run:2026-10-17-lifecycle,
+fn:sub_0061B6F0_DrlgRefMove@0x0061B6F0, fn:sub_0061B390_DrlgRefAddNear@0x0061B390, fn:sub_0061B5B0_DrlgRefRemoveNear@0x0061B5B0)
 - [I] A reference counts paths, not rooms: a room reached through several near lists at the same distance holds one
 reference per path, so distance-3 counts in the tens are normal (the worked example's room had refs (0, 0, 4, 39) at
 its enter-1 call). (fn:sub_0061B390_DrlgRefAddNear@0x0061B390, run:2026-10-17-lifecycle)
@@ -423,7 +426,7 @@ F1. InactiveUnitSaveTest(game, u):                                [C] (fn:sub_00
 
 F2. InactiveMonsterSaveTest(game, u) → (save, kept), in this order:   [I] (fn:sub_005431F0_InactiveMonsterSaveTest@0x005431F0, fn:sub_00642820_LevelSaveMonsters@0x00642820)
       lvl ← the level of u's current room
-      save: bool ← Levels[lvl].SaveMonsters ≠ 0 or u[+0xC4] & 0x2000000      ; [C] (run:2026-10-17-lifecycle)
+      save: bool ← Levels[lvl].SaveMonsters ≠ 0 or u[+0xC4] & 0x2000000      ; [C] when either is set (run:2026-10-17-lifecycle); [I] when both are clear, never met (0x005431F9–0x0054322A)
       kept: bool ← false
       dead: bool ← UnitIsDead(u)
       1. if u.mode = 12:                                          ; [C] (0x00543260–0x00543287, run:2026-10-17-lifecycle)
@@ -454,10 +457,12 @@ dead-unit tests included. (fn:sub_005431F0_InactiveMonsterSaveTest@0x005431F0, t
 - [C] **Objects** follow [objects § B](../objects/README.md#b-the-window-in-the-room-driver-and-the-revisit) B4,
 whose level flag is `Levels.SaveMonsters` (leveldefs `+0x94`): `save` starts as that flag or the preset flag
 `0x2000000`; `Objects.Restore` = 0 or sparkle bit `0x02` → no; `RestoreVirgins` and mode ≠ 0 → no. The rule held on
-3 023 objects (`Restore` 0: 15; `RestoreVirgins` on a used object: 30). (run:2026-10-17-lifecycle,
+3 023 objects (`Restore` 0: 15; `RestoreVirgins` on a used object: 30; the starting flag set on all of them, 653 by the
+preset flag alone). (run:2026-10-17-lifecycle,
 fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0, tbl:Objects.txt:Restore, tbl:Objects.txt:RestoreVirgins)
-- [I] The object's type-1 timers are removed, and classes 59 and 60 (portals) are always saved and kept (unit
-`+0xC8 |= 0x100`); no kept unit was met. (fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0)
+- [I] Not met for objects: the sparkle bit `0x02` (never set on a tested object) and a start with both flags clear,
+so those two refusals are code readings. The object's type-1 timers are removed, and classes 59 and 60 (portals) are
+always saved and kept (unit `+0xC8 |= 0x100`); no kept unit was met. (fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0)
 - [C] **No logged dead champion was saved.** `MonMarkSpecial` sets monster flag `0x08`; all 15 champions in 30 save
 tests carried flags `0x0D` or `0x2D`, and the 6 dead ones were freed by test 5. (run:2026-10-17-lifecycle,
 fn:sub_005A0320_MonMarkSpecial@0x005A0320, 0x005432EF)
@@ -519,10 +524,11 @@ packet-beta
 | `+0x1C` | group leader id (AI control `+0x2C` when the AI link type `+0x30` is 1), else −1 | [I] (fn:sub_005421A0_InactiveMonsterSave@0x005421A0) |
 | `+0x20`, `+0x24`, `+0x28` | AI control `+0x34`; the preset path moved out of AI control `+0x38`; the AI record's first dword | [I] (fn:sub_00541FE0_InactiveMonAiSave@0x00541FE0, 0x00542098) |
 | `+0x2C` | monster data `+0x58` | [I] (fn:sub_005421A0_InactiveMonsterSave@0x005421A0) |
-| `+0x30`, `+0x32`, `+0x3C` | name seed (`u16`); nine mod bytes; superunique id (`u16`) | [C] for the mods (run:2026-10-17-lifecycle), [I] for the others (fn:sub_005421A0_InactiveMonsterSave@0x005421A0) |
+| `+0x30`, `+0x32`, `+0x3C` | name seed (`u16`); nine mod bytes; superunique id (`u16`); `+0x3B` and `+0x3E`–`+0x3F` are padding | [C] for the mods (run:2026-10-17-lifecycle), [I] for the others (fn:sub_005421A0_InactiveMonsterSave@0x005421A0) |
 | `+0x40`, `+0x44`, `+0x48` | stat 13; `UnitGetMaxHp` (equal to stat 7 on all 3 499 records); stat 6 | [C] (run:2026-10-17-lifecycle) |
 | `+0x4C`, `+0x50` | AI parameters (`InactiveMonAiSave`) | [I] (fn:sub_00541FE0_InactiveMonAiSave@0x00541FE0) |
 | `+0x54` | game frame at the save | [C] (run:2026-10-17-lifecycle) |
+| `+0x58` | next record of the room's monster list | [I] (fn:sub_005421A0_InactiveMonsterSave@0x005421A0, struct:InactiveMonRec+0x00) |
 
 Record flags `+0x18`: `0x1` placed by `SpecialMonPlace`, `0x2` champion, `0x4` mode 12 or 0 (dying or dead), `0x20`
 minion, `0x40` monster data `+0x5C` bit 1, alignment `0x200` (0), `0x80` (1), `0x100` (2), `0x400` the unit is in a
@@ -628,7 +634,7 @@ H3. on a created unit u, in this order:                           [I] (0x005427F
       if rec.flags & 0x400: alignment from the record bits: 2 → target list 8, 1 → list 9, else fatal error 0x691
       for each mod slot i with u.mods[i] ≠ rec.mods[i]: ModAppendApply(rec.mods[i], 0)
       MonAlignSet(u, the saved alignment)
-      if saved: u[+0xC8] |= 0x200
+      if rec.flagsC8 & 0x200: u[+0xC8] |= 0x200                  ; the saved bit carried over (0x005428F9–0x00542903)
       u[+0xC4] |= (rec.flagsC4 & 0x20000) | 0x3000000            ; [C] (run:2026-10-17-lifecycle)
 ```
 
@@ -668,8 +674,8 @@ preset flag `0x2000000` and is saveable again in any level. `MonRegionUnitLeave`
 level, the alignment, the dead flag and flag `0x40`, and lowers the current level's region `+0x2CC` for an alignment-0
 unit without flag `0x40`, and `+0x2C8` too for monster flag `0x01` (2 035). (run:2026-10-17-lifecycle,
 fn:sub_00547ED0_MonRegionUnitLeave@0x00547ED0)
-- [I] "If saved" before `+0xC8 |= 0x200` is drlg/0009 § 6's wording; the condition (the record's `+0xC8` bit,
-as the checker applies it) is not spelled out further. The group link, the AI restore, the target lists and the mod
+- [I] The `+0xC8` bit `0x200` is set only when the record's saved `+0xC8` (record `+0x14`) has it, so the restore carries
+that bit over (0x005428F9–0x00542903, drlg/0009 § 6). The group link, the AI restore, the target lists and the mod
 re-append are code readings; AI and movement of a restored monster are boundary oracles (ADR-0014 phase 4).
 (fn:sub_00541E20_InactiveMonAiRestore@0x00541E20, fn:sub_005A4850_ModAppendApply@0x005A4850, fn:sub_005543B0_MonAlignSet@0x005543B0)
 - [I] **A dead special saved without `0x08` or `0x10` would come back alive**: `SpecialMonRestore` places the unit
@@ -743,7 +749,7 @@ I1. RoomWandererTick(game, room):                                 [C] for the fi
 
 - [C] The server's preset spawn moves the DS1 path out of the room's preset unit into the new monster:
   `PresetUnitSpawn` moves preset `+0x10` into the monster's AI control `+0x38` with `PtrMove` and leaves 0 behind (49
-  moves). That is the detach [drlg/preset § 5](preset.md#5-from-the-instance-to-the-room) note 4 saw.
+  moves). That is the server-copy half of the detach [drlg/preset § 5](preset.md#5-from-the-instance-to-the-room) note 4 saw.
   (run:2026-10-17-lifecycle, 0x0055596C, fn:sub_00555910_PresetUnitSpawn@0x00555910, fn:sub_00666120_PtrMove@0x00666120)
 - [I] The release moves the path into the monster record (0x00542098) and the restore back into the new monster
   (0x00541EA2). The client copy's detach was not found. (fn:sub_00541FE0_InactiveMonAiSave@0x00541FE0,
@@ -840,7 +846,7 @@ restore is not specified here.
 
 - [findings/drlg/0009-room-lifecycle.md](../../findings/drlg/0009-room-lifecycle.md): §§ 1–9 (the code reading) and
   [§ 11](../../findings/drlg/0009-room-lifecycle.md#11-phase-2-run2026-10-17-lifecycle) (the run's raises and
-  corrections); the plan 0040 Phase 1 and Phase 2 rulings in the [plan log](../../plans/0040-drlg-room-lifecycle.md#implementation-log).
+  corrections); the plan 0040 Phase 1 and Phase 2 rulings in the [plan log](../../plans/done/0040-drlg-room-lifecycle.md#implementation-log).
 - [findings/drlg/experiments.md § run:2026-10-17-lifecycle](../../findings/drlg/experiments.md#run2026-10-17-lifecycle):
   13 sessions, 2 215 807 checks, 0 mismatches under `tools/rooms.py check` (with the monsters/stats model for stat 12).
 - [drlg/room-tiles § Release and re-activation](room-tiles.md#release-and-re-activation): what the tiles release frees.

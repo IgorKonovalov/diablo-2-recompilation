@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, drlg/preset, drlg/collision]
 consumed_by: [monsters/spawn, drlg/collision, items/tc, items/quality, items/quest-drops]
-tags: {C: 138, I: 71, L: 4}
+tags: {C: 138, I: 72, L: 4}
 updated: 2026-10-17
 ---
 
@@ -227,7 +227,7 @@ flowchart LR
 ```
 
 ```
-B4. Saving, when the room driver deactivates a room:             [C] for SaveTest (run:2026-10-17-lifecycle), [I] for the rest (fn:sub_0052D240_RoomsDeactivate@0x0052D240, fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0, fn:sub_00542E30_InactiveUnitSave@0x00542E30)
+B4. Saving, when the room driver deactivates a room:             [C] for SaveTest on the branches the run met (run:2026-10-17-lifecycle), [I] for the rest (fn:sub_0052D240_RoomsDeactivate@0x0052D240, fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0, fn:sub_00542E30_InactiveUnitSave@0x00542E30)
       ; the room's unit list room+0x74 is newest first: every creation prepends (unit+0xE8 ← room+0x74; room+0x74 ← unit)
       for u in room+0x74, head first:
         if u.type = 2 and SaveTest(u): prepend a 0x34-byte record to the room's record list (+0x10, next at +0x30)
@@ -254,8 +254,10 @@ B5. RoomInactiveUnitsRestore(game, room), on a revisit:           [C] (fn:sub_00
 
 - B4. [C] The save test, with its level flag named `Levels.SaveMonsters`, held on the 3 023 objects of
   run:2026-10-17-lifecycle (`Restore` 0: 15; `RestoreVirgins` on a used object: 30), and the records it wrote came back
-  through B5 ([drlg/lifecycle § F](../drlg/lifecycle.md#f-the-save-rule)). Classes 59 and 60 (kept) were not met.
-  (run:2026-10-17-lifecycle, fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0, tbl:Levels.txt:SaveMonsters)
+  through B5 ([drlg/lifecycle § F](../drlg/lifecycle.md#f-the-save-rule)). The starting flag was set on all of them
+  (653 by the preset flag alone). (run:2026-10-17-lifecycle, fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0, tbl:Levels.txt:SaveMonsters)
+- B4. [I] Not met, so read from the code only: the refusal for a level flag and preset flag both clear, the sparkle bit
+  `0x02` (never set on a tested object), and classes 59 and 60 (kept). (fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0)
 - B4. [I] Saving walks a newest-first list and prepends, so it reverses the order: the record list is oldest first.
   Items and monsters are saved to other lists (`0x00541B10`, `0x005421A0`). (fn:sub_0064C2C0_RoomUnitAdd@0x0064C2C0,
   fn:sub_00554850_SUnitPathCreate@0x00554850, tbl:Objects.txt:Restore, tbl:Objects.txt:RestoreVirgins)

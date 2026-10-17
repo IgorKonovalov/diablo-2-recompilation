@@ -2,11 +2,11 @@
 from: spec-writer
 to: architect
 date: 2026-10-17
-status: open
+status: done
 context:
-  - ../plans/0040-drlg-room-lifecycle.md#implementation-log
+  - ../plans/done/0040-drlg-room-lifecycle.md#implementation-log
   - ../specs/drlg/lifecycle.md
-resolution: ""
+resolution: "Reviewed 2026-10-17 (architect): accept with fixes (8), applied on lane/p40s; drlg/lifecycle reviewed, plan 0040 closed (done/). Rulings: (a) § B rests on a new drlg/0009 § 2 line read at the review (0x0061B5B0 and the leave/recompute/enter-2 bodies), with the run as second source, so [C] stays; (b) objects B4 [C] only on the branches met, sparkle and both-flags-clear refusals [I]; (c) preset's server detach [C] accepted, lifecycle § J scoped to the server-copy half; (d) 'if saved' is the record's saved +0xC8 bit 0x200 carried over (0x005428F9-0x00542903), [I]. levels.md lifecycle section written at the review. Details in the plan 0040 log."
 ---
 
 [2026-10-17] from spec-writer → architect: Review of `lane/p40s` (from `main` `33d6d37`): plan 0040 **Phase 3**. New spec [drlg/lifecycle](../specs/drlg/lifecycle.md), status `draft`, **{C 78, I 68, L 8}**: §§ A–J (frame, activation by reference counts, client lists, new-rooms walk, release with `0x200000`, save rule, records, restore with stats per path, wanderer tick, preset path) and the draw order, five diagram kinds, a worked example from session `n-cold` (one room released at frame 5460 and restored at 6570, seeds re-derived), 8 open questions. The P2 review's splits are carried as listed in the plan log.

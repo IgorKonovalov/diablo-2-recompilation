@@ -2,6 +2,7 @@
 based_on:
   - docs/specs/objects/README.md 2026-10-17
   - docs/specs/items/tc.md 2026-10-17
+  - docs/specs/drlg/lifecycle.md 2026-10-17
 ---
 
 # Objects: shrines, chests, barrels and the rest
@@ -241,9 +242,11 @@ it re-creates them
 **every creation roll again**, including a fresh trap and lock roll, and then overwrites the result with the saved
 state: a chest locked the first time stays locked, whatever the new roll said. A random or sparkle chest comes back
 as its plain class, without the pseudo-object's extra draws. The run reproduced 548 re-creations. A later run checked
-the saving test on 3 023 objects; the flag it starts from is the level's `SaveMonsters` column. The room and game seeds
-at a revisit are still taken from the recording in this model: the monster and item restores that come before the
-objects are described by the room lifecycle spec, still in review.
+the saving test on 3 023 objects; the flag it starts from is the level's `SaveMonsters` column. That run never met an
+object refused for its sparkle flag, or one whose level flag and placed-by-preset flag were both clear, so those two
+refusals are read from the code only. The room and game seeds at a revisit are still taken from the recording in the
+objects model: the monster and item restores that come before the objects are described by the
+[room lifecycle spec](../specs/drlg/lifecycle.md#h-the-restore).
 
 ## Operating chests, urns and barrels
 

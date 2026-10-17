@@ -7,7 +7,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
 1. **A new code reading is `[I]`.** `[C]` needs a named second source (a reproduction of logged calls, a
    writer/reader pair, a full-table check, an independent tool). Don't name a meaning the code does not
    give. Seen: S1e rows 51/64 ([0038](../../../../docs/plans/0038-inferred-claims-sweep.md), 2026-10-17); `0x400` "good/evil"
-   ([0040](../../../../docs/plans/0040-drlg-room-lifecycle.md) P1 review).
+   ([0040](../../../../docs/plans/done/0040-drlg-room-lifecycle.md) P1 review).
 2. **Recount every count from the binary with a kept command**, never from memory or a partial scan:
    writers, call sites, instructions, items. Seen: bit-17 writers 5 → 21
    ([0039](../../../../docs/plans/0039-backlog-sweep-4.md) P1b review); S4b row 17 short by 9, "7" instructions for 8 (0038).
@@ -27,7 +27,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    Seen: the resume lane's experiments addendum (0037); `lane/w1`'s 104 W1 lines (0039).
 8. **Split a raise where it has a remainder** and head the row "raised in part", in the ledger itself.
    Seen: special 65 (H4b), sock 14 (S2c), special 43 (S3b), all 0038; five `[C]` bullets of drlg/0009 § 11 with an
-   unreached branch inside (the wanderer gate's `+0x78`, the item drop on expiry; [0040](../../../../docs/plans/0040-drlg-room-lifecycle.md) P2 review).
+   unreached branch inside (the wanderer gate's `+0x78`, the item drop on expiry; [0040](../../../../docs/plans/done/0040-drlg-room-lifecycle.md) P2 review).
 9. **Name the path for every claim about a caller**, or say "unfollowed" with the count. Seen: the
    superunique minion path (0039 P1b, Q19); the 8/9 case's `RoomTileSetFlags` call (0039 P1a).
 10. **One case decides only if a wrong reading could not match it by chance.** Seen: aff 28's durability

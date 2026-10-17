@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-10-17
 status: done
 context:
-  - ../plans/0040-drlg-room-lifecycle.md#implementation-log
+  - ../plans/done/0040-drlg-room-lifecycle.md#implementation-log
   - ../findings/drlg/0009-room-lifecycle.md#11-phase-2-run2026-10-17-lifecycle
 resolution: "Done in [drlg/lifecycle](../specs/drlg/lifecycle.md) (lane/p40s, draft {C 78, I 68, L 8}), with the P2 review's splits carried; linked from the drlg README, objects § B, monsters/spawn, monsters/stats, monsters/special, drlg/room-tiles and drlg/preset; review requested."
 ---
