@@ -2315,3 +2315,65 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     {C 137, I 25, L 2}, drlg/outdoor {C 180, I 19, L 2} as filed. Gate green.
   - **Backlog:** the review request closed; the S3b spec-writer entry annotated ((f) applied, (a)–(e) remain); the
     monsters/0003 § 7 reconcile entry (reverser) annotated with the rows 24/26 objdump lead. Ledger rows added.
+- **2026-10-17 — `lane/rbs4` review (architect, static backlog sweep, fourth pass): accept with fixes.** `main`
+  (`af90ea8`) merged into the lane first (clean; `backlog.py migrate` moved nothing). Request:
+  [rbs4 review](../backlog/2026-10-17-reverser-architect-review-lane-rbs4-static-sweep-pass-4.md).
+  - **Re-runs.** Every `sweep-rbs4-*` output re-run against `workspace/logs/sweep-rbs4-manifest.txt`: `layouts` (under
+    `MemoryMax=4G`, 5 min) byte-identical, and `dwords`, both `tree`, both `stackfield`, both `regarg` and the
+    `xrefscan` loop identical; `sweep_rbs3.py pushes 0x00648CF0 2` identical but for two caller names `lane/rbs4` added
+    (`MonPathPlanType`); `pushes 0x0054E600 4` gives the five calls. Tool hashes match the manifest. Ten outputs echo
+    their command on line 1; the `xrefscan` loop (`xref-pathcb`) prints per-address headers and its command is in the
+    manifest only. Counts recounted from the outputs: override calls 94 immediate + 9 not (five through `+0x0D`/`+0x02`),
+    setter 9, `PathSetType` 51, `MonCmdInit` 49, `MonSetMode` 54, `UnitTeleport` 20 in 19 functions, 288 seams with
+    minimum 24 on 15.
+  - **Layout bound method checked.** `_Probe` turns any draw used other than by `& 1/3/7` or `~` into a fatal stop, and
+    every `step()` in `drlg.act_links` (link picks, `_cyc`, the `0x00676C00`/`0x0067D830` sides, level 27) is masked; the
+    enumeration of independent draws is a superset of the LCG's reachable layouts, so 0 met is a bound for Acts I, II, IV
+    and V.
+  - **Anchors read in objdump:** `PathRoomUpdate` 0x0064FAD0 whole (in-room test, `RoomAtSubtile` 0x00463740 at
+    0x0064FB1B and 0x0064FB31, the `0x40000` give-up at 0x0064FB3C, the room relink 0x0064FB54–0x0064FB7F; no town
+    call); `SkillTeleportDo` 0x005CA360 whole (the caster's room → level → Levels `+0x04`, 0 refuses, 2 adds the
+    `0x804` line test 0x005CA3AE, then `UnitTeleport` 0x005CA3C9); `MonAiPathOverride` 0x005DE190 (1 → 7, two calls of
+    0x005A6260 passing `EDX`); 0x005ACB1F–0x005ACB43 (the id from 0x006444A0 in `EDI`); `MonMovePlan` 0x005A63FB, 0x005A6429
+    (100), 0x005A6443 (101 → 13); `PathSetType` 0x00648D65 (`and 0xFFF800FF`, bits 8–18); `UnitTeleport` 0x00554F00/0x00554F14
+    (room at the point) and 0x00554F32 (`0x1C09`); `MonSetMode` 0x005A7D22–0x005A7D2F; 0x005AA1F0–0x005AA1F7 (Missiles
+    `+0x4C` within `[0, nMonStats)`); `MonIdFromKind` 0x00659B80 (kind 0 adds 0x0096C70C and `+0xA80`, kind 2 `+0xA80`);
+    0x0058A6F6 (`push 2`); the bound check 0x0054E76F. Three cited addresses were mid-instruction (fixes).
+  - **Rulings.**
+    - (1) **Town-follow: a plan 0038 harness batch, H7a (`lifecycle`)**, recorded in the
+      [plan 0040 log](done/0040-drlg-room-lifecycle.md#implementation-log) (post-close entry) and inventory § 5 and § 7.
+      The `lane/rbs3` ruling made a found route the trigger, and § 11.2 found two. Recipe (b) first, after an offline
+      geometry check (seed and points, or a recorded "no stock layout allows it"); recipe (c) only after a static read
+      shows an AI teleport target in a town room. Not owner play: both are scripted `rooms.gdb` sessions. The `0x400`
+      drop (plan 0040 close follow-ups (2)) rides on the same batch. Until H7a runs the case stays a named shortfall;
+      the lifecycle spec's open question is routed to the spec-writer.
+    - (2) **Outdoor 7: split** (inventory § 2.6, `lane/rbs4` block): d-none for Acts I, II, IV and V on the bound;
+      Act III an a-run shortfall on its sample. A whole-row d-none would claim Act III on a sample, and "d-none outside
+      Act III" with Act III kept a-run is this split. No class moves (one statement, counted as H5e, as outdoor 13's
+      half); totals recomputed once after the merge, unchanged: static 567, harness 532, blocked 415 (d-none 282),
+      deferred 2, raised 10, 1 526 in all.
+    - (3) **MonPlace rows 33–35: accepted `[I]`.** The bound check at 0x0054E76F is caller-independent; the four other
+      callers pass SuperUnique ids (kind 2), a MonStats row (bounded at 0x005AA1F7) or an unfollowed skill value
+      (0x005ACB43), named and counted.
+    - (4) **Symbols:** the 17 new rows are clean (no address or name duplicated after the merge). Of the five raises,
+      `DrlgRefAdd` (inside `DrlgRefMove`'s replay, 634 982 callbacks) and `DrlgStatusRecompute` (the status rule on all
+      of them) are supported whole. `RoomsDeactivate` (level-120 half unreached), `InactiveMonstersRestore` and
+      `RoomInactiveUnitsRestore` (kept units, `0x400` records, the level-108 rule, a boss-less minion unreached) are
+      supported **in part**: `C` in `re/symbols.csv` for the role, the remainders written `[I]` (fix 3).
+  - **Fixes (5).**
+    - *Wrong anchor 2:* drlg/0009 § 11.2 (b) `RoomAtSubtile` 0x0064FB0B → 0x0064FB1B and the relink 0x0064FB4B–0x0064FB80
+      → 0x0064FB54–0x0064FB7F; § 11.2 (c) 0x00554EC9 (inside the assert's `push`) → 0x00554F00/0x00554F14.
+    - *Overclaim 1:* the five-raise paragraph in drlg/0009 § Functions now heads three of them "raised in part" and names
+      the unreached restore and release branches; the `RoomsDeactivate` row reads "C in part (level-120 half I)".
+    - *Stale cross-reference 1:* the function tables of objects/0001 (`RoomsDeactivate`, `InactiveMonstersRestore`) and
+      monsters/0002 (`RoomInactiveUnitsRestore`), which `re/symbols.csv` cites as evidence, still said `I`; now "C in
+      part", pointing at drlg/0009.
+    - *Other 1:* § 11.2 (c)'s "That byte is 1 in the towns" read as if the destination's byte mattered; reworded: the
+      test reads the caster's level (0x005CA37C–0x005CA395), never the target's.
+  - **Backlog.** The review request is closed; plan 0040 close follow-ups closed ((1) done, (2) to H7a); the *static
+    sweep, remaining* entry annotated. New: spec-writer
+    [rbs4 town-follow and outdoor 7](../backlog/2026-10-17-architect-spec-writer-rbs4-town-follow-and-outdoor-7.md);
+    reverser [rbs4 review static remainders](../backlog/2026-10-17-architect-reverser-rbs4-review-static-remainders.md)
+    (H7a geometry prep, the teleport-target read, optional unfollowed calls). Ledger rows in [metrics](metrics.md)
+    (usage "—").
+  - **Next:** merge `lane/rbs4`.

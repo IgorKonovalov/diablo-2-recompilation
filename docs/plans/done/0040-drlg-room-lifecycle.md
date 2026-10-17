@@ -510,3 +510,21 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     old wording (H2b note, § H champion bullet, two open questions): routed to the spec-writer (annotated
     [rbs3 lifecycle and MonPlace readings](../../backlog/2026-10-17-reverser-spec-writer-rbs3-lifecycle-and-monplace-readings.md)).
   - (4) `rooms.py check` re-run at the review: 0 mismatches over 2 215 807 checks; census and expiry branches as kept.
+
+- **2026-10-17 — post-close: the town-follow static remainder and the close follow-ups, reviewed with `lane/rbs4`
+  (architect).** The reading is [drlg/0009 § 11.2](../../findings/drlg/0009-room-lifecycle.md#112-the-town-follow-static-remainder-lanerbs4);
+  the full review is in the [plan 0038 log](../0038-inferred-claims-sweep.md#implementation-log) (`lane/rbs4` review).
+  The plan stays closed.
+  - (1) **Town-follow: now a plan 0038 harness batch, H7a (`lifecycle`).** § 11.2 shows two routes in by code reading,
+    all `[I]`: the walk's room update `PathRoomUpdate` (0x0064FAD0) has no town test, so the planner's target test is the
+    only barrier on a planned walk; `UnitTeleport` and the Teleport do function (0x005CA360) test the caster's level only.
+    The `0x40000` branch reaches a monster only through 9 unfollowed `MonAiPathOverride` calls. As the `lane/rbs3`
+    ruling set, a route in makes it a plan 0038 harness batch, not a 0040 addendum. Recipe (b), a Blood Moor chaser
+    whose route crosses a camp room, goes first, after an offline geometry check picks the seed and points; recipe (c),
+    a teleporting unique, waits on a static read of the AI's teleport target. Not owner play: both are scripted
+    recipes for the `rooms.gdb` family. Until H7a runs, the case stays a named shortfall in the spec's *Open
+    questions* (spec-writer entry [rbs4 town-follow and outdoor 7](../../backlog/2026-10-17-architect-spec-writer-rbs4-town-follow-and-outdoor-7.md)).
+  - (2) **The `0x400` drop rides on H7a** (close follow-ups item (2); entry closed).
+  - (3) **Symbols:** `DrlgRefAdd` and `DrlgStatusRecompute` raised to `C`; `RoomsDeactivate`, `InactiveMonstersRestore`
+    and `RoomInactiveUnitsRestore` raised **in part** (the unreached branches § 11 lists stay `[I]`, written into
+    drlg/0009 § Functions at the review). `RoomWandererTick` and `DrlgStatusSet` stay `I`.

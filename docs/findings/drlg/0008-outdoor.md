@@ -1701,6 +1701,35 @@ from `tools/sweep_h5e.py` (sha256 `40e0a4f6…220dff3`).
   minimum, out of 64, is 12 on levels 3 and 6, 19 on levels 4 and 5, and 33, 25 and 21 on Act II's 42, 43 and 44. A
   seed meets the branch only at 0. (fn:sub_00674B70_OutWaypointPlace@0x00674B70)
 
+### H5e reachability (a), the layout bound (2026-10-17, `lane/rbs4`)
+
+- [I] **No layout the act link builder can produce in Acts I, II, IV or V meets the vertex-merge condition.**
+  (fn:sub_006772C0_LevelLinkBuild@0x006772C0) The enumeration is `sweep_rbs4.py layouts`; output `workspace/logs/sweep-rbs4-layouts-2026-10-17.txt`, manifest
+  `sweep-rbs4-manifest.txt`.
+  - *Method.* The tool runs `drlg.act_links`, the model of `LevelLinkBuild` that § 5 of drlg/0007 checks against 196
+    builds, with the act seed replaced by a scripted one.
+  - *Why the draws can be enumerated.* Every draw the builder makes is used only through its low bits: `& 7`
+    (`LinkPick`, `0x00676AE0`), `& 3` and `& 1` (`0x00676150`, `0x00676450`, `0x00676650`, `0x0067D980`),
+    `(v & 1) + 1` (`0x006769A0`), `lo & 1` (`0x00676C00`, `0x0067D830`, `0x0067D8E0`), and level 27's `v & 1` /
+    `~v & 1` (0x006774F9). So the tool enumerates each draw over the values of its masked bits, independently of the
+    other draws. A draw used any other way stops the run, and none did.
+  - *Why it bounds every seed.* The enumeration covers every layout the LCG can reach and more: the real draws are not
+    independent, and both Act I tables start from the same act seed. So a condition met nowhere here is met by no seed.
+  - *Result.* Per difficulty: Act I 28 672 layouts (at most 9 draws), Act II 8 192, Act IV 32, Act V 8. The
+    condition holds for 0 outdoor levels in any of them:
+    - no seam overlap of exactly 8 tiles;
+    - no level size off the 8 grid;
+    - no neighbour off the level's 8 grid along its seam.
+  - *Overlaps.* Over the 288 (level, side, neighbour, difficulty) seams the enumeration meets, the smallest overlap
+    is 24 tiles (15 seams). The next values are 32, 40, 48, 56 and 64. This is the minimum the 600-seed scan found.
+
+  So the ring merge of `OutVertsToCells` (H5e (a)) is **d-none in Acts I, II, IV and V** on stock data, at `[I]` (the
+  link model is `[C]` by its run, the merge rule is a code reading). (fn:sub_00675080_OutVertsToCells@0x00675080)
+- **Act III is not covered.** Its jungle layout (`act_links_a3`) takes ranged draws and restarts, so it cannot be
+  enumerated this way. Its levels 76–83 keep the 600-seed scan above (0 of 52 200 windows), a sample and not a bound.
+  (fn:sub_006772C0_LevelLinkBuild@0x006772C0, fn:sub_00678AD0_ActLinkInit@0x00678AD0,
+  fn:sub_00675080_OutVertsToCells@0x00675080, data:g_ActLinkTables@0x006F0750)
+
 
 ## Data touched
 

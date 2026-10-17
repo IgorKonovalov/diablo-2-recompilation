@@ -262,9 +262,9 @@ Two fetches failed and nothing from them is used:
 | `0x005817A0` | `OBJ_TrapEvent` | object event 4: runs the trap function | I |
 | `0x005822F0` / `0x00582380` | `OBJTRAP_MonsterSpawn` / `OBJTRAP_ObjectCreate` | trap types 8, 9 (one object-region draw) / 5, 7 (two `fire`) | I |
 | `0x005B6AD0` | `sub_005B6AD0_SealObjectCreate` | OperateFn 54–56: creates class 131 | I |
-| `0x0052D240` | `sub_0052D240_RoomsDeactivate` | room driver: saves the units of idle rooms | I |
+| `0x0052D240` | `sub_0052D240_RoomsDeactivate` | room driver: saves the units of idle rooms | C in part (raised at `lane/rbs4` on run:2026-10-17-lifecycle, drlg/0009 § Functions) |
 | `0x005433F0` / `0x00542E30` | `sub_005433F0_InactiveUnitSaveTest` / `sub_00542E30_InactiveUnitSave` | which units are saved / the saved record, prepended | I / C |
-| `0x005418C0` / `0x005424F0` / `0x00541AC0` | `sub_005418C0_InactiveRecordTake` / `sub_005424F0_InactiveMonstersRestore` / `sub_00541AC0_InactiveItemsRestore` | restore steps 2, 1, 3 (§ 13.5) | I |
+| `0x005418C0` / `0x005424F0` / `0x00541AC0` | `sub_005418C0_InactiveRecordTake` / `sub_005424F0_InactiveMonstersRestore` / `sub_00541AC0_InactiveItemsRestore` | restore steps 2, 1, 3 (§ 13.5) | I / C in part (`0x005424F0`, raised at `lane/rbs4`, drlg/0009 § Functions) / I |
 | `0x0064C2C0` / `0x00621B00` | `sub_0064C2C0_RoomUnitAdd` / `UNIT_IsShrine` | room unit list, newest first / type 2 and `SubClass` bit 0 | I |
 | `0x00624690` / `0x00624390` | `UNIT_SetMode` / `UNIT_AnimInit` | mode change; an object's animation start draws its unit seed when `Sync` is 0 | C |
 | `0x004BC500` | `RNG_RandLoHi` | `lo + Range(hi − lo)`, `lo` without a draw when `hi ≤ lo` | C |
