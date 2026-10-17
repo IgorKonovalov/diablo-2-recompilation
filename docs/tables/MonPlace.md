@@ -50,7 +50,7 @@ compares it with every cell, 37 cells, 0 mismatches.
 - `[L]` Reading the names: `place_champion` / `place_unique_pack` / `place_npc_pack` look like "spawn a random
   champion / unique pack here", `place_group25..100` like a group placed with a 25..100 % chance, the rest like
   hand-placed special packs (fallen camps, nests, guards). Nothing in the data confirms any of this; the code
-  reading below settles every row in the preset spawn, where `place_npc_pack`, the nests, the guards and `place_group25..100` place nothing.
+  reading below (`[I]`, by row) replaces this reading for the preset spawn.
 - `[I]` **The preset spawn switches on the row index.** `sub_0054E600_PresetMonSpawn` takes a preset unit whose id is
   in the MonPlace range (`id ≥ nMonStats + nSuperUniques`) and branches on the MonPlace index `id − nMonStats −
   nSuperUniques` ([monsters/0002 § 7](../findings/monsters/0002-room-population.md#7-wanderers-monspcwalk-presets-and-superuniques), fn:sub_0054E600_PresetMonSpawn@0x0054E600). By row:

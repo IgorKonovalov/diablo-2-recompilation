@@ -15,8 +15,9 @@ check  builds every recipe of SET into a temporary directory and tests, for each
        held items each case names; magic find (stat 80) on the host's items only (MP19); a mercenary (MP04); a
        Paladin joiner whose right skill is an aura (MP25); for the MP23 bulk pair, both sides with
        Nova on the right button, no Lightning Mastery, no item with a property, and max life at least 200 times the
-       other side's largest Nova hit at 17 % (an upper bound from skills.txt EMax + (level - 1) * the largest
-       EMaxLev*, rounded up), so either survives 200 attack events with no potion. Exit 1 on any failure. `SURVEY mp_saves ...` ends
+       other side's largest Nova hit at 17 % and the worst resistance (an upper bound from skills.txt EMax +
+       (level - 1) * the largest EMaxLev*, times 17 % and (100 - the lowest DifficultyLevels ResistPenalty) %, rounded
+       up), so either survives 200 attack events in any difficulty with no potion. Exit 1 on any failure. `SURVEY mp_saves ...` ends
        the output.
 pairs  prints PAIRS: case ids, host recipe, joiner recipe, what the pair is for.
 
@@ -123,6 +124,14 @@ def nova_bound(excel, level):
     return int(r[head.index("EMax")]) + max(level - 1, 0) * step
 
 
+def resist_floor(excel):
+    """The lowest DifficultyLevels ResistPenalty, floored at -100 (a player defender with no resistance)."""
+    with open(os.path.join(excel, "difficultylevels.txt"), newline="") as fh:
+        lines = [ln.rstrip("\r\n").split("\t") for ln in fh.read().split("\n") if ln]
+    col = lines[0].index("ResistPenalty")
+    return max(min(int(x[col]) for x in lines[1:] if x[col] != ""), -100)
+
+
 def stat(f, sid):
     return next((v for s, _p, v in f["stats"] if s == sid), 0)
 
@@ -183,7 +192,9 @@ def mp23_errors(excel, t, fh, fj):
             errs.append("%s: Nova not on the right button" % side)
         if other["skills"][mastery]:
             errs.append("%s: the other side has Lightning Mastery" % side)
-        hit = -(-nova_bound(excel, other["skills"][nova]) * MP23_PCT // 100)
+        # P = 17 %, then the worst resistance: 0 base plus the lowest ResistPenalty (expansion Hell -100), floored at
+        # -100, so a factor of at most (100 - penalty) / 100 (combat/0001 § 7, COMBAT_ResistFor)
+        hit = -(-nova_bound(excel, other["skills"][nova]) * MP23_PCT * (100 - resist_floor(excel)) // 10000)
         if stat(f, 7) >> 8 < MP23_EVENTS * hit:
             errs.append("%s: max life %d < %d x %d" % (side, stat(f, 7) >> 8, MP23_EVENTS, hit))
     return errs
