@@ -100,8 +100,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-17 | `lane/sw5` review | 0038 P3 room-tiles re-tag | architect-review | 84 697 | 25 | 6 | — | gave accept with fixes | — (on the lane row) |
 | 2026-10-17 | `lane/p40h` | 0040 P2 | reverser-harness | 505 856 | 217 | 508 | slot 1 | accept with fixes | 12: overclaim 5, under-claim 2, stale cross-reference 1, miscount 1, omission 2, tool not kept 1 (usage unknown) |
 | 2026-10-17 | `lane/p40h` review | 0040 P2 | architect-review | 189 026 | 92 | 21 | — | gave accept with fixes | — (on the lane row; usage unknown) |
-| 2026-10-17 | `lane/arc5` | 0039/0041/0042/0043 P1 readers, 0044 pairs | archivist | — | — | — | — | accept with fixes | 4: overclaim 1, omission 2, stale cross-reference 1 (usage unknown) |
-| 2026-10-17 | `lane/arc5` review | 0039/0041/0042/0043 P1 readers, 0044 pairs | architect-review | — | — | — | — | gave accept with fixes | — (on the lane row; usage unknown) |
+| 2026-10-17 | `lane/arc5` | 0039/0041/0042/0043 P1 readers, 0044 pairs | archivist | 365 592 | 170 | 333 | — | accept with fixes | 4: overclaim 1, omission 2, stale cross-reference 1 (usage unknown) |
+| 2026-10-17 | `lane/arc5` review | 0039/0041/0042/0043 P1 readers, 0044 pairs | architect-review | 166 074 | 57 | 10 | — | gave accept with fixes | — (on the lane row; usage unknown) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
