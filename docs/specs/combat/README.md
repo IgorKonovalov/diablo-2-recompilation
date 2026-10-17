@@ -147,7 +147,8 @@ life/mana/stamina drain roll, `0x20` built (and forced at delivery), `0x80` no `
 | boundary oracles | stat-event handlers other than 15 and 16, `COMBAT_DurabilityLoss`, the knockback, `COMBAT_GetHit`, a monster's on-hit skill `0x005A4390`, a skill do-function's draws before the build, a delivery on a later frame than the hit test: entry seeds asserted, exit seeds taken (ADR-0004) | [C] (run:2026-10-16-combat) |
 
 [C] Under this boundary run:2026-10-16-combat reproduced 15 358 logged events of 19 sessions with 0 mismatches,
-every logged seed asserted. (run:2026-10-16-combat) The progressive-charge hooks around the player's build and the
+every logged seed asserted; with the resume-lane addendum the run list holds 40 logs and 40 655 events, still with 0
+mismatches. (run:2026-10-16-combat) The progressive-charge hooks around the player's build and the
 finisher before delivery were dropped events by rule; none occurred. [I] (fn:COMBAT_PrgHooksBeforeBuild@0x005D3AC0,
 fn:COMBAT_PrgFinisher@0x005D5220)
 
@@ -343,7 +344,8 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   and chaining), 12 (branches), 14 (the hooks and the finisher), 15 (the reproduction), the boundary recommendation,
   *Leads used* (30 verdicts, five contradicted).
 - [combat/experiments § run:2026-10-16-combat](../../findings/combat/experiments.md#run2026-10-16-combat) and its
-  architect review: 19 sessions, 15 358 events, 0 mismatches; the shortfalls.
+  architect review: 19 sessions, 15 358 events, 0 mismatches; the resume-lane addendum (40 logs, 40 655 events,
+  0 mismatches) and its review; the shortfalls.
 - `tools/combat.py` (the model behind the confirmed tags, `check` over the run list), `tools/gdb/combat.gdb`.
 - Types: `re/types/combat.h`. Plan: [0037](../../plans/0037-combat-formulas.md).
 - Upstream: [rng](../rng/README.md), [rng/seeds](../rng/seeds.md), [monsters/stats](../monsters/stats.md),
