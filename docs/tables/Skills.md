@@ -111,7 +111,7 @@ columns are not listed (not compiled).
 | `auratgtevent` | blank in all rows | `+0x090` u16 index | aura target event and handler number | `events:event` | [C] value; slot by stride `[L]` |
 | `auratgteventfunc` | blank in all rows | `+0x092` u16 | aura target event and handler number | — | [C] value; slot by stride `[L]` |
 | `passivestate` | str, 28 distinct, 328 blank | `+0x094` u16 index | state of a passive skill | `states:state` | [C] |
-| `passiveitype` | str, 7 distinct, 349 blank | `+0x096` u16 index | item type a passive needs | `itemtypes:Code` | [C] |
+| `passiveitype` | str, 7 distinct, 349 blank | `+0x096` u16 index | `[I]` the param of the passive stats: `SKILLS_RefreshPassive` writes `passivestat1..5` = `passivecalc` with this item type as their param ([stats/0002 § 4](../findings/stats/0002-states.md#4-auras-and-passives), fn:SKILLS_RefreshPassive@0x00646D60); "the item type a passive needs" `[L]` by the name | `itemtypes:Code` | [C] |
 | `passivestat1` | str, 30 distinct, 306 blank | `+0x098` u16 index | passive stat 1 and its value formula | `itemstatcost:Stat` | [C] |
 | `passivecalc1` | formula, 22 distinct, 306 blank | `+0x0A4` s32 calc | passive stat 1 and its value formula | `skillscode.bin` | [C] |
 | `passivestat2` | str, 11 distinct, 331 blank | `+0x09A` u16 index | passive stat 2 and its value formula | `itemstatcost:Stat` | [C] |
@@ -241,7 +241,7 @@ columns are not listed (not compiled).
 | `InTown` | int {1}, 294 blank | `+0x005` bit 0 | behaviour flag (name reading) | — | [C] |
 | `aura` | int {1}, 331 blank | `+0x004` bit 5 | behaviour flag (name reading) | — | [C] |
 | `periodic` | int {1}, 355 blank | `+0x004` bit 6 | behaviour flag (name reading) | — | [C] |
-| `perdelay` | formula, 3 distinct, 335 blank | `+0x128` s32 calc | periodic delay formula | `skillscode.bin` | [C] |
+| `perdelay` | formula, 3 distinct, 335 blank | `+0x128` s32 calc | `[I]` the aura period in frames: `SKILLS_NextPeriodicFrame = ((frame − 1 + p) / p)·p + 1` with `p` = this calc, 5 when it gives less than 6; the item-aura and selected-aura events requeue at it ([stats/0002 § 4](../findings/stats/0002-states.md#4-auras-and-passives), fn:SKILLS_NextPeriodicFrame@0x0056CD50) | `skillscode.bin` | [C] |
 | `finishing` | int {1}, 352 blank | `+0x004` bit 3 | behaviour flag (name reading) | — | [C] |
 | `passive` | int {1}, 331 blank | `+0x004` bit 4 | behaviour flag (name reading) | — | [C] |
 | `progressive` | int {1}, 351 blank | `+0x004` bit 2 | behaviour flag (name reading) | — | [C] (the other probe candidates lie inside fields other columns pin) |
@@ -521,8 +521,18 @@ the three masteries of § The `passive` rows, and eight paladin auras, none with
 
 `cost mult` (`+0x234` s32) and `cost add` (`+0x238` s32), [§ Columns](#columns) (`[C]`, `excel_bin.py diff`). Counts
 from `python3 -I tools/economy_survey.py skills workspace/merged/data/global/excel` (gate survey `economy`), `[C]` as
-data. The price function is named only ([items/0009 § 9](../findings/items/0009-vendors.md#9-named-only-prices-and-repair)),
-so what the two columns price (by the names, a charged-skill property on an item) is `[L]`, for plan 0043 Phase 1.
+data. `[I]` The price function reads them, with `reqlevel`, in three terms (plan 0043 Phase 1):
+
+- **Stat terms** ([items/0011 § 3](../findings/items/0011-economy.md#3-the-value-terms) step 5): for an item stat whose ItemStatCost `Encode` is 1 (param = a skill: 97
+  `item_nonclassskill`, 107 `item_singleskill`), 2 (skill on event: 195–199, 201) or 3 (charged: 204–213), the
+  skill's `cost mult`/`cost add` replace the stat's own `Multiply`/`Add`: `X·cost mult·v/1024 + cost add` on the buy
+  and repair values and `/4096` on the sell value; for Encode 2 and 3, `v` is the **skill level** from the param, and
+  the charge count does not enter. (fn:sub_00628E70_PriceStatTerms@0x00628E70 0x00628F35, tbl:Skills.txt:cost mult)
+- **Staff mods** (same section): for each stat 107 entry, `(cost mult·X/1024 + cost add)·(2v − 1)` (`/4096` for the
+  sell value), unless the item type's `StaffMods` byte is 7. (fn:sub_0062EDD0_PriceStaffModTerm@0x0062EDD0)
+- **Recharge** ([items/0011 § 4](../findings/items/0011-economy.md#4-mode-steps-the-npc-row-quantity-and-the-result)): a repair adds, for each charged skill with `c` of `x` charges,
+  `(x − c)·(t + cost add)/x` with `K = level + 2·(reqlevel/6) + 2`, `t = cost mult·K·10000/1024`; this is added after
+  the Npc multipliers. (fn:sub_00628D30_RechargeCost@0x00628D30, tbl:Skills.txt:reqlevel)
 
 - `[C]` **The 210 class skills, and only they**, have a `cost mult` (the 147 rows with no `charclass` have it blank and
   `cost add` 0). No row has a `cost add` without a `cost mult`.
@@ -537,8 +547,9 @@ so what the two columns price (by the names, a charged-skill property on an item
   (24, 768, 32000) ×32, (30, 896, 64000) ×35.
 - `[C]` **Every skill a `charged` property names has a cost**: 112 distinct skills are named by 268 `charged` cells
   (MagicSuffix 205, UniqueItems 38, Runes 24, SetItems 1; MagicPrefix none), all resolve, and all 112 have a
-  `cost mult`. ItemStatCost 204 `item_charged_skill`, the stat a `charged` property writes, has its own price terms
-  ([ItemStatCost § Price](ItemStatCost.md#price-plan-0043-phase-0)).
+  `cost mult`. ItemStatCost 204 `item_charged_skill`, the stat a `charged` property writes, has its own
+  `Multiply`/`Add` cells ([ItemStatCost § Price](ItemStatCost.md#price-plan-0043-phase-0)), but `[I]` its `Encode` 3
+  makes the price take the skill's costs instead ([items/0011 § 3](../findings/items/0011-economy.md#3-the-value-terms)).
 
 ## Open questions
 

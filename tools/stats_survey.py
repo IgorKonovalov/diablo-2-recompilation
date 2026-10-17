@@ -210,7 +210,7 @@ def sec_states(d):
                                                                  for i in rows)))
     imm = [i for i in range(n) if not st.blank(i, "immed")]
     kv["col_immed"] = len(imm)
-    out.append("  immed (not located) %d rows: %s" % (len(imm), ids(imm)))
+    out.append("  immed (not compiled) %d rows: %s" % (len(imm), ids(imm)))
 
     src = _state_sources(d)
     out.append("Rows named by data: id state | flags | sources")

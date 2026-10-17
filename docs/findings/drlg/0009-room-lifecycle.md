@@ -4,49 +4,53 @@
 > **Question:** as players move, which rooms does the server activate and release, and when; what does it keep of the
 > units of a released room; how does it re-create them when the room comes back, with which draws; and when does a
 > room spawn a wandering monster?
-> **Date:** 2026-10-17   **Plan:** 0040 (Phase 1 and 1b, static)   **Status:** open (Phase 2 runs the reproduction)
+> **Date:** 2026-10-17   **Plan:** 0040 (Phase 1 and 1b static; Phase 2 run:2026-10-17-lifecycle, § 11)   **Status:** open (Phase 2 under review)
 
 ## Answer (summary)
 
-- [I] **Activation is a reference count over the DRLG near lists.** When a client's room changes, the server moves one
+- [C] **Activation is a reference count over the DRLG near lists** (§ 11, 634 982 callbacks). When a client's room changes, the server moves one
   reference from the old DRLG room to the new one and adds or removes one at near-list distance 1, 2 and 3 around it.
   A room's status is the lowest distance that holds a reference (4 = none). Gaining distance 1 activates the room
   (`RoomActivateA` → `DRLG_RoomActivate` → `DUNGEON_RoomCreate`); distance 2 sets status 2 (and activates if a
   distance-1 reference is already there); distance 3 loads the room's DT1 list and DS1. The new active rooms are
   populated, or their saved units restored, at the start of the next game frame. (fn:sub_00537B50_ClientRoomChange@0x00537B50,
   fn:sub_0061B6F0_DrlgRefMove@0x0061B6F0, fn:sub_0061B390_DrlgRefAddNear@0x0061B390, data:g_DrlgRefEnterFns@0x00744384,
-  fn:sub_0052D870_GameTick@0x0052D870)
-- [I] **Release is a timer in game frames.** Every 12th frame (`frame % 12 = 0`) `RoomsDeactivate` counts, per active
+  fn:sub_0052D870_GameTick@0x0052D870, run:2026-10-17-lifecycle)
+- [C] **Release is a timer in game frames** (§ 11, 2 440 releases). Every 12th frame (`frame % 12 = 0`) `RoomsDeactivate` counts, per active
   room, the passes in a row in which no client has the room in its near set (room `+0x78` = 0); on the 11th such pass,
   if the DRLG room is not pinned by a portal (`0x400000`), is at status 2 or more, and (in a town or level 120) every
-  room of the level is at status 2 or more, it saves the room's units and frees the room. A room is therefore
-  released 120 to 131 frames after the last client's room change took it out of every near set.
+  room of the level is at status 2 or more, it saves the room's units and frees the room (level 120 was not reached:
+  that half is `[I]`). A room is therefore
+  released 120 to 131 frames after the last client's room change took it out of every near set, if a pass saw the
+  client there (a visit between two passes does not reset the count, § 11).
   (fn:sub_0052D240_RoomsDeactivate@0x0052D240, fn:sub_0061A790_RoomIdleCount@0x0061A790,
-  fn:sub_0061BA30_DrlgRoomReleaseTest@0x0061BA30)
-- [I] **What is kept.** Ground items: always, as their serialised bytes with a new expiry frame. Objects and type-5
+  fn:sub_0061BA30_DrlgRoomReleaseTest@0x0061BA30, run:2026-10-17-lifecycle)
+- [I] **What is kept** (`[C]` for the branches § 11 lists). Ground items: always, as their serialised bytes with a new expiry frame. Objects and type-5
   units: by the objects rule (objects § B4, here with its level flag named: `Levels.SaveMonsters`). Monsters: when the
   level has `SaveMonsters` or the unit came from a preset or an earlier restore, alive or dying; a dead one (mode 12)
-  only when a **room-seed draw** gives `low mod 3 = 0`; never a dead unique or minion, a dead unit with a `udead` state,
+  only when a **room-seed draw** gives `low mod 3 = 0`; never a dead special (monster flag `0x08`, which every logged
+  champion carries) or minion, a dead unit with a `udead` state,
   a necromancer skeleton or mage corpse, or a player's summon; `MonStats2.restore` 0 never, 2 always. Missiles are
   freed. (fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0, fn:sub_005431F0_InactiveMonsterSaveTest@0x005431F0,
   0x00543260, tbl:Levels.txt:SaveMonsters, tbl:MonStats2.txt:restore, tbl:States.txt:udead)
-- [I] **Restore order and draws.** A re-activated room (populated bit kept in DRLG `+0x60`) skips the population and
+- [C] **Restore order and draws** (§ 11; items corrected there). A re-activated room (populated bit kept in DRLG `+0x60`) skips the population and
   runs only the inactive restore, once per activation (active-room flags bit 1): monsters first (each through
   `MonSpawnTry` with its saved unit id: 3 room draws at the centre, the game-seed draw of `SUnitCreate`, a full
-  `MonsterInit`; champions and uniques through `SpecialMonPlace` and a flag-0 `SpecialModsApply` with the saved mods;
-  minions through `MinionRestore`), then the items (one game-seed draw each in `SUnitCreate`, the saved seed written
-  back), then objects and type-5 units through `PresetUnitDispatch`. (fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40,
-  fn:sub_005424F0_InactiveMonstersRestore@0x005424F0, fn:sub_00541990_InactiveItemRestoreOne@0x00541990)
-- [I] **Stats of a re-created monster.** Stat 13 and stat 7 come from the record (the first instance's values);
+  `MonsterInit`; champions and uniques through `SpecialMonPlace` with the saved mods (stat 12 as the flag-1 handlers, § 11);
+  minions through `MinionRestore`), then the items (two game-seed draws each in `SUnitCreate`, type 4; the saved start
+  seed written back, 0 for a simple item), then objects and type-5 units through `PresetUnitDispatch`. (fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40,
+  fn:sub_005424F0_InactiveMonstersRestore@0x005424F0, fn:sub_00541990_InactiveItemRestoreOne@0x00541990, run:2026-10-17-lifecycle)
+- [C] **Stats of a re-created monster** (§ 11, 2 035 restores). Stat 13 and stat 7 come from the record (the first instance's values);
   stat 6 is the saved life if fewer than 7500 frames passed since the save, otherwise the saved maximum; stat 12 is
   not written, it is the new `MonsterInit`'s (and the re-applied mods'). (0x00542800–0x0054284A,
-  fn:sub_00627260_UnitSetStat@0x00627260)
-- [I] **Room `+0x78`** is the number of clients whose current room's near list holds the room; **`0x0061A4D0`** reads
-  active-room flags bit 1 ("inactive units restored"), set by every update that ran the restore. The wanderer tick
-  goes on only when `+0x78` is 0, so wanderers appear only in active rooms that no client is near.
-  (fn:sub_0061A660_RoomClientAdd@0x0061A660, fn:sub_0061A4D0_RoomRestoredGet@0x0061A4D0,
-  fn:sub_0054F060_RoomWandererTick@0x0054F060)
-- [I] **The preset questions.** The server's preset spawn moves the DS1 path out of the room's preset unit into the new
+  fn:sub_00627260_UnitSetStat@0x00627260, run:2026-10-17-lifecycle)
+- [C] **Room `+0x78`** is the number of clients whose current room's near list holds the room; **`0x0061A4D0`** reads
+  active-room flags bit 1 ("inactive units restored"), set by every update that ran the restore.
+  (fn:sub_0061A660_RoomClientAdd@0x0061A660, fn:sub_0061A4D0_RoomRestoredGet@0x0061A4D0, run:2026-10-17-lifecycle)
+- [I] The wanderer tick goes on only when `+0x78` is 0, so wanderers appear only in active rooms that no client is
+  near. No gate draw passed in the run, so the `+0x78` and `MonWndr` conditions were never what decided (§ 11).
+  (fn:sub_0054F060_RoomWandererTick@0x0054F060, 0x0054F089)
+- [I] **The preset questions** (the detach `[C]`, § 11). The server's preset spawn moves the DS1 path out of the room's preset unit into the new
   monster (`PresetUnitSpawn`, 0x0055596C), which is the detach drlg/preset saw; the inactive record carries it across a
   release. A re-activated room never re-dispatches its preset list: units come back only from the records.
   (fn:sub_00555910_PresetUnitSpawn@0x00555910, fn:sub_00666120_PtrMove@0x00666120)
@@ -104,40 +108,40 @@ written from the code before they were read. Little exists beyond anecdotes; not
 | `0x0052D870` | `sub_0052D870_GameTick` | frame++, new-room updates, unit events, client room sync, every 12 frames `RoomsDeactivate`, every 11 frames the level-unload tick per act | I |
 | `0x0052D440` | `sub_0052D440_ClientsRoomSync` | per client: `ClientRoomSync` | I |
 | `0x005380D0` | `sub_005380D0_ClientRoomSync` | client room ← its player's room; on a change `ClientRoomChange` | I |
-| `0x00537B50` | `sub_00537B50_ClientRoomChange` | DRLG reference move, level reference move, near-set difference → client add/remove per active room | I |
-| `0x0053A8E0` / `0x0053A9B0` | `sub_0053A8E0_RoomClientEnter` / `sub_0053A9B0_RoomClientLeave` | add / remove the client in the room's client list (`+0x48`, `+0x78`) and tell the units | I |
-| `0x0061A660` / `0x0061A700` | `sub_0061A660_RoomClientAdd` / `sub_0061A700_RoomClientRemove` | the client list, kept sorted | I |
-| `0x0061B6F0` | `sub_0061B6F0_DrlgRefMove` | `RefAdd(new, 0)`; old: `refs[0]−1`, leave callback 0, `RefRemoveNear(old, 1)` | I |
+| `0x00537B50` | `sub_00537B50_ClientRoomChange` | DRLG reference move, level reference move, near-set difference → client add/remove per active room | C |
+| `0x0053A8E0` / `0x0053A9B0` | `sub_0053A8E0_RoomClientEnter` / `sub_0053A9B0_RoomClientLeave` | add / remove the client in the room's client list (`+0x48`, `+0x78`) and tell the units | C |
+| `0x0061A660` / `0x0061A700` | `sub_0061A660_RoomClientAdd` / `sub_0061A700_RoomClientRemove` | the client list, kept sorted | C |
+| `0x0061B6F0` | `sub_0061B6F0_DrlgRefMove` | `RefAdd(new, 0)`; old: `refs[0]−1`, leave callback 0, `RefRemoveNear(old, 1)` | C |
 | `0x0061B490` | `sub_0061B490_DrlgRefAdd` | `RefAddNear(d+1)` first, then `refs[d]+1` with the enter callback when it lowers the status | I |
-| `0x0061B390` / `0x0061B5B0` | `sub_0061B390_DrlgRefAddNear` / `sub_0061B5B0_DrlgRefRemoveNear` | the same over the near list, recursing to distance 3 | I |
-| `0x00744384` / `0x00744394` | `g_DrlgRefEnterFns` / `g_DrlgRefLeaveFns` | enter: status 0, activate (1), status 2, prepare files (3); leave: recompute status (0–2), recompute and client release (3) | I |
-| `0x0061B2C0`, `0x0061B2D0`, `0x0061BB10` | `sub_0061B2C0_DrlgEnter0`, `sub_0061B2D0_DrlgEnter1Activate`, `sub_0061BB10_DrlgEnter2` | enter callbacks 0, 1, 2 (3 is `sub_0061B320_RoomPrepareFiles`) | I |
+| `0x0061B390` / `0x0061B5B0` | `sub_0061B390_DrlgRefAddNear` / `sub_0061B5B0_DrlgRefRemoveNear` | the same over the near list, recursing to distance 3 | C |
+| `0x00744384` / `0x00744394` | `g_DrlgRefEnterFns` / `g_DrlgRefLeaveFns` | enter: status 0, activate (1), status 2, prepare files (3); leave: recompute status (0–2), recompute and client release (3) | C |
+| `0x0061B2C0`, `0x0061B2D0`, `0x0061BB10` | `sub_0061B2C0_DrlgEnter0`, `sub_0061B2D0_DrlgEnter1Activate`, `sub_0061BB10_DrlgEnter2` | enter callbacks 0, 1, 2 (3 is `sub_0061B320_RoomPrepareFiles`) | C |
 | `0x0061B4F0` / `0x0061B210` | `sub_0061B4F0_DrlgStatusRecompute` / `sub_0061B210_DrlgStatusSet` | status = lowest distance with a reference, else 4; status rings at DRLG act `+0xA0 + 0xEC·s` | I |
-| `0x0061B560` | `sub_0061B560_DrlgLeave3Release` | leave callback 3: recompute; at status 4 on a client act, `RoomTilesRelease(room, 0)` | I |
+| `0x0061B560` | `sub_0061B560_DrlgLeave3Release` | leave callback 3: recompute; at status 4 on a client act, `RoomTilesRelease(room, 0)` | C |
 | `0x0061B920` | `sub_0061B920_ClientBackgroundBuild` | client loop: every 5 client ticks build one status-2 room | I |
 | `0x0052D240` | `sub_0052D240_RoomsDeactivate` | the release pass | I |
-| `0x0061A790` | `sub_0061A790_RoomIdleCount` | room `+0x0C`: 0 if `+0x78` ≠ 0, else +1; returns it | I |
-| `0x0061A3F0` / `0x0061BA30` | `sub_0061A3F0_RoomReleaseAllowed` / `sub_0061BA30_DrlgRoomReleaseTest` | DUNGEON act `+0x50` must be 0; pin, status and town tests | I |
-| `0x0061BAC0` / `0x0061AED0` | `sub_0061BAC0_DrlgRoomPinFlag` / `sub_0061AED0_RoomPinSet` | DRLG `+0x28` `0x400000` set (arg 0) or cleared (arg ≠ 0); 31 call sites, portal and object code | I |
-| `0x0061A910` | `sub_0061A910_ActiveRoomFree` | unlink from the act list and the neighbours' near lists, `RoomReleaseWrap`, `DUNGEON_RoomFree` | I |
+| `0x0061A790` | `sub_0061A790_RoomIdleCount` | room `+0x0C`: 0 if `+0x78` ≠ 0, else +1; returns it | C |
+| `0x0061A3F0` / `0x0061BA30` | `sub_0061A3F0_RoomReleaseAllowed` / `sub_0061BA30_DrlgRoomReleaseTest` | DUNGEON act `+0x50` must be 0; pin, status and town tests | C |
+| `0x0061BAC0` / `0x0061AED0` | `sub_0061BAC0_DrlgRoomPinFlag` / `sub_0061AED0_RoomPinSet` | DRLG `+0x28` `0x400000` set (arg 0) or cleared (arg ≠ 0); 31 call sites, portal and object code | C (`0x0061BAC0`), I |
+| `0x0061A910` | `sub_0061A910_ActiveRoomFree` | unlink from the act list and the neighbours' near lists, `RoomReleaseWrap`, `DUNGEON_RoomFree` | C |
 | `0x00642A00` | `sub_00642A00_ActIsClient` | DRLG act `+0x8C` bit 0 | I |
 | `0x00643200` | `sub_00643200_ActLevelsUnloadTick` | per level with no references and built rooms: countdown 10, then `LevelUnload(keep)` | I |
 | `0x005433F0` | `sub_005433F0_InactiveUnitSaveTest` | per unit of a released room: save or keep, then free | I |
-| `0x005431F0` | `sub_005431F0_InactiveMonsterSaveTest` | the monster rule (one room draw for a dead monster) | I |
-| `0x00542E10` | `sub_00542E10_InactiveRecordSave` | dispatch: monster → `InactiveMonsterSave`; else room record, item → `InactiveItemSave`, else a 0x34 record | I |
+| `0x005431F0` | `sub_005431F0_InactiveMonsterSaveTest` | the monster rule (one room draw for a dead monster) | C |
+| `0x00542E10` | `sub_00542E10_InactiveRecordSave` | dispatch: monster → `InactiveMonsterSave`; else room record, item → `InactiveItemSave`, else a 0x34 record | C |
 | `0x00542E30` | `sub_00542E30_InactiveUnitSave` | tail of `0x00542E10` (a second entry) | C |
-| `0x005421A0` | `sub_005421A0_InactiveMonsterSave` | the 0x5C monster record | I |
-| `0x00541B10` | `sub_00541B10_InactiveItemSave` | serialise, new expiry, free the item and its socketed children | I |
+| `0x005421A0` | `sub_005421A0_InactiveMonsterSave` | the 0x5C monster record | C |
+| `0x00541B10` | `sub_00541B10_InactiveItemSave` | serialise, new expiry, free the item and its socketed children | C |
 | `0x00541D20` | `sub_00541D20_InactiveRoomRecordFind` | find (or insert) the room record by x, y in the act list | I |
 | `0x00541FE0` / `0x00541E20` | `sub_00541FE0_InactiveMonAiSave` / `sub_00541E20_InactiveMonAiRestore` | AI parameters and the preset path, out and back | I |
-| `0x00558A10` | `sub_00558A10_ItemGroundExpiry` | frame + 15000, 30000 or 45000 by quality and kind; 0 = never | I |
-| `0x00541990` | `sub_00541990_InactiveItemRestoreOne` | `ItemCreateFromSave`, expiry, socketed children | I |
-| `0x005B30E0` | `sub_005B30E0_SpawnWithId` | `MonSpawnTry` wrapper with a given unit id | I |
+| `0x00558A10` | `sub_00558A10_ItemGroundExpiry` | frame + 15000, 30000 or 45000 by quality and kind; 0 = never | C |
+| `0x00541990` | `sub_00541990_InactiveItemRestoreOne` | `ItemCreateFromSave`, expiry, socketed children | C |
+| `0x005B30E0` | `sub_005B30E0_SpawnWithId` | `MonSpawnTry` wrapper with a given unit id | C |
 | `0x005B1990` / `0x005B1A90` | `sub_005B1990_TargetListAdd` / `sub_005B1A90_TargetListRemove` | unit `+0xD0` target list (11 = none) | I |
 | `0x00554A30` | `sub_00554A30_UnitRelocate` | move a kept unit back into a room | I |
 | `0x005B5210` | `sub_005B5210_DiabloQuestFlag` | quest 23 data `+0x13` | I |
 | `0x00642820` | `sub_00642820_LevelSaveMonsters` | leveldefs `+0x94` | I |
-| `0x00666120` | `sub_00666120_PtrMove` | `*dst = *src; *src = 0` | I |
+| `0x00666120` | `sub_00666120_PtrMove` | `*dst = *src; *src = 0` | C |
 
 ## Walkthrough
 
@@ -178,6 +182,20 @@ byte `+0x44`.
   remove walk mirrors it with `g_DrlgRefLeaveFns`. (fn:sub_00537B50_ClientRoomChange@0x00537B50,
   fn:sub_0061B6F0_DrlgRefMove@0x0061B6F0, fn:sub_0061B490_DrlgRefAdd@0x0061B490,
   fn:sub_0061B390_DrlgRefAddNear@0x0061B390, fn:sub_0061B5B0_DrlgRefRemoveNear@0x0061B5B0, struct:DrlgRoomLife+0x0C)
+- [I] **The remove walk, instruction by instruction** (read at the Phase 3 review, objdump). `DrlgRefRemoveNear(R, d)`
+  walks R's near list (`+0x08`, count `+0x2C`) in order and skips a null entry; for each room N it subtracts 1 from
+  `N.refs[d]` (a `u16` add of `0xFFFF`, no zero test), calls `g_DrlgRefLeaveFns[d](N)` on every decrement, and **then**
+  recurses with `d+1` while `d < 3` (0x0061B5C3–0x0061B5EE). The add walk recurses **before** its enter test
+  (0x0061B3E1) and does not test for a null entry. `DrlgRefMove`'s old-room step tests `refs[0] ≠ 0` before its
+  decrement, then calls leave 0 and tail-jumps to `DrlgRefRemoveNear(old, 1)` (0x0061B70C–0x0061B729). Leave callbacks 0–2 jump to `DrlgStatusRecompute` (0x0061B530, 0x0061B540,
+  0x0061B550); leave 3 returns at once when the status is already 4, else recomputes and, if the status is now 4 on a
+  client act (`ActIsClient`), tail-calls `RoomTilesRelease(R, EDX 0)` (0x0061B563–0x0061B58D). `DrlgStatusRecompute`
+  returns early when the status is below 4 and `refs[status]` is non-zero, else sets the lowest d with a non-zero
+  count, 4 if none (0x0061B4F0–0x0061B528). Enter 2 requires DRLG `+0x28` bit `0x1000000`, and bit `0x2000000` too
+  when room `+0x48` (type) is 2, and a status above 2 (unsigned byte); it sets status 2 and tail-calls enter 1 when
+  `refs[1] ≠ 0` (0x0061BB10–0x0061BB44). (fn:sub_0061B5B0_DrlgRefRemoveNear@0x0061B5B0,
+  fn:sub_0061B560_DrlgLeave3Release@0x0061B560, fn:sub_0061B4F0_DrlgStatusRecompute@0x0061B4F0,
+  fn:sub_0061BB10_DrlgEnter2@0x0061BB10)
 - [I] The callbacks: enter 0 sets status 0; enter 1 activates the room through `RoomActivateA` if it has no active room
   and is not built (and resets the act's background countdown), then sets status 1 if higher; enter 2, if the DT1 list
   is built and (for a preset room) the DS1 loaded, sets status 2 and, when `refs[1] ≠ 0`, runs enter 1; enter 3 is
@@ -232,8 +250,9 @@ byte `+0x44`.
   (fn:sub_0052D240_RoomsDeactivate@0x0052D240, fn:sub_0061A790_RoomIdleCount@0x0061A790, struct:DungeonRoomLife+0x0C)
 - [I] **Frames.** The count rises only on passes (`frame % 12 = 0`) with `+0x78` = 0 and drops to 0 on any pass with a
   client, so the release comes on the 11th client-free pass in a row: 120 frames after the first client-free pass,
-  which falls 0 to 11 frames after the last client's room change (the client sync runs before `RoomsDeactivate` in
-  the same frame). The test keeps passing once `n > 10`, so a room held back by the release test goes at the first
+  which falls 0 to 11 frames after the last client's room change that a pass saw (the client sync runs before
+  `RoomsDeactivate` in the same frame; a visit that starts and ends between two passes leaves the count running,
+  § 11). The test keeps passing once `n > 10`, so a room held back by the release test goes at the first
   later pass that allows it. A newly created room starts at 0 (the 0x80-byte room is zeroed). (fn:sub_0052D870_GameTick@0x0052D870,
   fn:DUNGEON_RoomCreate@0x00619890)
 - [I] **The release test** (`DrlgRoomReleaseTest` on the DRLG room; `RoomReleaseAllowed` first requires the DUNGEON act's
@@ -295,7 +314,8 @@ stateDiagram-v2
   2. dead (`UnitIsDead`): no save if any state with the `udead` flag is on the unit, or its alignment is 2;
   3. unit `+0xD0` < 8 (in a low target list): alive → save, alignment set to 0, removed from the list; dead → no save;
   4. dead and class 363 or 364 (`necroskeleton`, `necromage`) → no save;
-  5. dead and monster flags `0x18` (unique or minion) → no save;
+  5. dead and monster flags `0x18` (`0x08`, which `MonMarkSpecial` sets on every special the run logged, or `0x10`)
+     → no save (corrected at the Phase 2 review from "unique or minion"; § 11);
   6. unit `+0xC4` bit 31 (owned): no save; if the owner is a player and the player's pet list holds the unit, the
      unit is **kept** (`+0xC8 |= 0x100`);
   7. `+0xC4` bit 9 → no save;
@@ -357,7 +377,8 @@ then the unit records (objects § 13.5, which this reading confirms).
     flag-4 record) and the saved unit id; the path is picked by flag `0x20` first, then flag `1` (a record with both
     goes to `MinionRestore`, 0x0054264A–0x0054266D):
     - flags 1 → `SpecialMonRestore(x, y, class, id, nameSeed, champion, superunique, suId, mods)`: `SpecialMonPlace(room,
-      no box, x, y, id, avoid warps)` in **mode 1**, then the saved mods, `SpecialModsApply(flag 0)`, the saved name seed,
+      no box, x, y, id, avoid warps)` in **mode 1**, then the saved mods, `SpecialModsApply(flag 0)` as read (**the run
+      contradicts the flag-0 result for champions**: their stat 12 is the flag-1 handlers', § 11), the saved name seed,
       the aura when a mod is 30, and the superunique quest hooks;
     - flag `0x20` → `MinionRestore`: `SpawnWithId(x, y, class, mode 1, id, −1, 0x62)`, then radius 4, then a
       `SpawnPosPick` position, the saved mods and the flag-0 handlers of mods 1–4 and of each saved mod;
@@ -372,7 +393,8 @@ then the unit records (objects § 13.5, which this reading confirms).
   parameters and the preset path back; for flag `0x400`: target list 8 (alignment 2) or 9 (alignment 1), any other
   alignment a fatal error `0x691` (the alignment is re-derived from the record bits at 0x005427B8–0x005427D4; since the
   drop above already removed alignments 1 and 2, only alignment 0 reaches this test, and it reaches the fatal error); each mod slot that differs from the saved byte gets `ModAppendApply(saved, 0)`;
-  `MonAlignSet(saved alignment)`; `+0xC8 |= 0x200` if saved; `+0xC4 |= (saved & 0x20000) | 0x3000000`. A failed creation
+  `MonAlignSet(saved alignment)`; `+0xC8 |= 0x200` when the record's saved `+0xC8` (record `+0x14`) has bit `0x200`,
+  so that bit is carried over (0x005428F9–0x00542903, worded at the Phase 3 review); `+0xC4 |= (saved & 0x20000) | 0x3000000`. A failed creation
   frees the AI list. Last, `MonRegionUnitLeave(level, alignment, dead, flag 0x40, unit)` and the record (and any
   path still in it) is freed. (0x005427FB–0x00542916, fn:sub_00627260_UnitSetStat@0x00627260,
   fn:sub_00541E20_InactiveMonAiRestore@0x00541E20, fn:sub_005543B0_MonAlignSet@0x005543B0,
@@ -380,15 +402,16 @@ then the unit records (objects § 13.5, which this reading confirms).
 - [I] So a restored monster's unit id and class are the first instance's, its unit seed is a new game-seed draw
   (`SUnitCreate`), and `MonsterInit` runs in full; stat 12 is never written by the restore. The `0x2000000` it gets makes
   it saveable again in any level. (fn:sub_00555230_SUnitCreate@0x00555230, fn:sub_005B2A00_MonSpawnTry@0x005B2A00)
-- [I] **A dead champion comes back alive.** The save keeps a dead champion (flag 0x04 is not in the `0x18` test) with
-  flag 4, and the restore's flag-1 path ignores flag 4: `SpecialMonRestore` places it in mode 1. Its life is then the
-  saved stat 6 within 7500 frames, else the saved maximum. Not reached by any run. (0x005432EF–0x00543303,
+- [I] **A dead special saved without `0x08` or `0x10` would come back alive.** The restore's flag-1 path ignores
+  record flag 4: `SpecialMonRestore` places the unit in mode 1, with the saved stat 6 within 7500 frames, else the
+  saved maximum. Phase 1 read this as "a dead champion comes back alive"; the run (§ 11) shows every logged champion
+  with monster flag `0x08`, which the `0x18` save test catches, so no dead champion reached the restore. (0x005432EF–0x00543303,
   0x00542693–0x005426C3)
 - [I] **Items** (`InactiveItemsRestore`), oldest first: an item whose expiry is non-zero and passed (`frame >
   expiry`, signed) is dropped; else `ItemCreateFromSave` re-creates it and each socketed child, and the expiry becomes
   `max(saved, frame + 15000)` (0 stays 0). `ItemCreateFromSave` goes through `SUnitCreate`, which makes the item's
-  game-seed draw, then the stream's saved seed replaces the unit seed (items/0008 § `useitem`): the item keeps its
-  seed. (fn:sub_00541AC0_InactiveItemsRestore@0x00541AC0, fn:sub_00541990_InactiveItemRestoreOne@0x00541990,
+  game-seed draw, then the stream's saved seed replaces the unit seed (items/0008 § `useitem`). **Corrected by the
+  run (§ 11):** two game-seed draws per item, and a simple (compact) item comes back with start seed 0. (fn:sub_00541AC0_InactiveItemsRestore@0x00541AC0, fn:sub_00541990_InactiveItemRestoreOne@0x00541990,
   fn:sub_00558CB0_ItemCreateFromSave@0x00558CB0, fn:sub_00552E90_ItemSeedInit@0x00552E90)
 - [I] **Objects and type 5**: `PresetUnitDispatch(type, class, x, y, mode, +0xC4)` as objects § 13.5; kept units (the
   portals, a player corpse) are found by id and relocated, a kept player must be in mode 17 (fatal otherwise).
@@ -430,7 +453,8 @@ then the unit records (objects § 13.5, which this reading confirms).
 - [I] New-rooms walk, per room in list order: the wanderer tick (room seed, 1 draw; +1 for the roll; +`RNG_Range` and
   `SpawnPosPick` and the spawn's draws when it spawns). Then the restore of a re-activated room: per monster record,
   `MonSpawnTry` (3 room draws at the centre, more on a fallback), `SUnitCreate`'s game-seed draw, `MonsterInit`'s
-  unit-seed draws, and for specials the mod handlers; per item, one game-seed draw (and one per socketed child); per
+  unit-seed draws, and for specials the mod handlers; per item, two game-seed draws (§ 11; socketed children not
+  logged); per
   unit record, objects § 13.5's draws (game seed, object-region seed). (fn:sub_0052D160_NewRoomsUpdate@0x0052D160,
   fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40)
 
@@ -443,10 +467,156 @@ then the unit records (objects § 13.5, which this reading confirms).
 | release pass | `0x0052D276` (count), `0x0052D284` (test), `0x0052D2A9` (save test per unit), `0x0052D2BB` (free) | idle count, test, the save rule, the mode-12 draw (room seed in/out at `0x00543260`) | `UnitIsDead`, state and owner tests logged as inputs |
 | save | `0x005421A0`, `0x00542E10`, `0x00541B10` exits | record fields | `ITEMS_Serialize` bytes as logged data |
 | restore | `0x00542B40` entry/exit; per monster `0x00542563`; creation calls `0x00542689`/`0x005426C3`/`0x005426E9`; stat writes `0x00542809`–`0x0054284A` | order, ids, stat 6/7/13 | `MonSpawnTry` (monsters/spawn model), `SpecialMonPlace`/mods (monsters/special model), `MonsterInit` (monsters/stats model); AI and path as boundary oracles |
-| items | `0x00541AE8` per item | expiry rule, ids | `ItemCreateFromSave`: one game-seed draw, saved seed |
+| items | `0x00541AE8` per item | expiry rule, ids | `ItemCreateFromSave`: one game-seed draw, saved seed (corrected in § 11: two draws, 0 for a simple item) |
 | wanderer | `0x0054F060`, `0x0054EFF0`, `0x0054EF50` | gate and roll | `SpawnPosPick`, `SpawnAtPos` (monsters/spawn) |
 
 The frame counter (`game +0xA8`) is logged at every line; release times are checked in frames.
+
+### 11. Phase 2: run:2026-10-17-lifecycle
+
+Thirteen scripted sessions on slot 1 (acts I–V, Normal, Nightmare and Hell, the mazes 29 and 35, outdoor levels,
+classic Normal and Nightmare), checked by `tools/rooms.py check`: **0 mismatches** over 2 215 807 checks
+([experiments](experiments.md#run2026-10-17-lifecycle)). Each line below cites the run and gives its count.
+
+**Raised to `C`** (each bullet below).
+
+- [C] **References and activation (§ 2).** `DrlgRefMove` replayed on the snapshot before the move, with the near lists
+  as `DrlgRefAddNear` builds them, predicts every server callback in kind and room, with the refs and status at
+  its entry (634 982 callbacks in 913 moves), the refs and status of every snapshot room after the move (52 119), and
+  the activations: `RoomActivateA` after an enter-1 call on a room with no active room and no `0x100000` (2 377).
+  The status rule (lowest distance with a reference, else 4; the enter-2 condition on the DT1/DS1 bits and the tail
+  call to enter 1) holds on all of them. (run:2026-10-17-lifecycle, fn:sub_0061B6F0_DrlgRefMove@0x0061B6F0,
+  fn:sub_0061B390_DrlgRefAddNear@0x0061B390, fn:sub_0061B5B0_DrlgRefRemoveNear@0x0061B5B0, data:g_DrlgRefEnterFns@0x00744384,
+  data:g_DrlgRefLeaveFns@0x00744394)
+- [C] **Client lists (§ 2).** `ClientRoomChange` calls `RoomClientEnter` for the rooms of the new near list that are
+  not in the old one, in list order, then `RoomClientLeave` for the reverse (5 418 calls, `+0x78` before each). The
+  near lists are `DUNGEON_GetNearRooms`' after the reference move. With one client, room `+0x78` is 1 exactly when the
+  room is in the near list of the client's current room (180 132 room-passes). (run:2026-10-17-lifecycle,
+  fn:sub_00537B50_ClientRoomChange@0x00537B50, fn:sub_0061A660_RoomClientAdd@0x0061A660)
+- [C] **Release (§ 4).** The release pass runs on `frame % 12 = 0` (15 614 passes). The idle count is 0 for a new
+  room, is reset by a pass that sees `+0x78` ≠ 0, and is otherwise +1. A room is freed when the count exceeds 10 and
+  `DrlgRoomReleaseTest` passes (19 328 tests; refused for a pin 4 592 times and for a town room 12 296 times). Every
+  room each pass frees is predicted. 2 440 releases, 2 224 of them at the first eligible pass, between 120 and 131
+  frames after the last client left (every value from 120 to 131 is seen); 82 later (a test refused the first
+  eligible pass, or a visit fell between two passes), and 134 with no logged client leave before them. Act `+0x50` is
+  0 on the server at every pass. The level-120 half of the release test was not reached and stays `[I]`. (run:2026-10-17-lifecycle, fn:sub_0052D240_RoomsDeactivate@0x0052D240, fn:sub_0061A790_RoomIdleCount@0x0061A790,
+  fn:sub_0061BA30_DrlgRoomReleaseTest@0x0061BA30)
+- [C] **`0x200000`.** Every server release calls `RoomTilesRelease` with `EDX` 1 and leaves `0x200000` set (2 440).
+  Every client release has `EDX` 0 and leaves it clear (8 277). (run:2026-10-17-lifecycle, 0x0066F232,
+  fn:sub_0066B4C0_RoomReleaseWrap@0x0066B4C0)
+- [C] **The save rule (§ 5)** on the branches reached (run:2026-10-17-lifecycle):
+  - 4 401 monsters: 3 086 saved, 413 saved dead, 902 freed dead;
+  - `SaveMonsters`, `+0xC4` bit `0x2000000`;
+  - the mode-12 room draw: seed out = step(seed in) and `low mod 3`, chained unit to unit (1 315);
+  - the `udead` (1) and alignment-2 (12) tests on dead units;
+  - the `0x18` flag test on dead units (106);
+  - `restore` 1 and 2 (30);
+  - 3 023 objects (objects § B4, `Restore` 0: 15, `RestoreVirgins` on a used object: 30);
+  - items 1 347, type 5: 59, missiles freed: 9.
+
+  A record line follows exactly the units the rule saves. (run:2026-10-17-lifecycle,
+  fn:sub_005431F0_InactiveMonsterSaveTest@0x005431F0, fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0, 0x00543260)
+- [C] **The records (§ 5)** (run:2026-10-17-lifecycle).
+  - **Monster records (3 499).** The record holds the unit's x, y, class, id, `+0xC4` and `+0xC8`, the save frame,
+    stats 13 and 6, and `UnitGetMaxHp` (equal to stat 7 on all of them). It also holds the mod bytes and the flag bits
+    `0x1`/`0x2`/`0x800`/`0x20` from the monster flags, the alignment bits, `0x400` and `0x4`.
+  - **Unit records (3 037).**
+  - **Item records (1 347).** The expiry is frame + 30000 for magic (66), + 45000 for qualities 5–9 (21), + 30000 for a
+    socket filler (27), + 15000 for gold up to 10000 (437) and else (796). The quest-item 0 and the + 45000 for gold
+    above 10000 were not reached and stay inferred (fn:sub_00558A10_ItemGroundExpiry@0x00558A10).
+
+  (run:2026-10-17-lifecycle, fn:sub_005421A0_InactiveMonsterSave@0x005421A0, fn:sub_00558A10_ItemGroundExpiry@0x00558A10)
+- [C] **The new-rooms walk (§ 3).** Per walked room, the wanderer tick comes first. Then a room with flags bit 0 clear
+  is restored and populated (1 137), a room with bit 0 set and bit 1 clear is restored only (1 361), and any other
+  room is left alone. A re-activated room's DRLG `+0x60` bit 0 is 1 exactly when the room was walked (or restored) before its
+  release (1 414). (run:2026-10-17-lifecycle, fn:sub_0052D160_NewRoomsUpdate@0x0052D160)
+- [C] **The wanderer gate's draw (§ 7).** One room-seed step per walked room, out = step(in) (11 064), and no roll
+  after a draw whose `low & 0x7FFF` ≠ 0 (11 064; 3 211 of them in rooms with `+0x78` = 0 and `MonWndr` ≠ 0).
+  (run:2026-10-17-lifecycle, 0x0054F089)
+- [I] The rest of the gate stays a reading: no draw passed, so the run never saw `+0x78` or `MonWndr` decide.
+  (0x0054F089–0x0054F096)
+- [C] **The monster restore (§ 6)** (run:2026-10-17-lifecycle). 2 035 records: 1 836 exact, 144 minion and 55 special.
+  - The created unit has the record's id and class, and its mode is 12 for a flag-4 record on the exact path, else 1.
+  - The creation takes one game-seed draw (`SUnitCreate`), and the unit's `+0x28` is the low word after it.
+  - An exact placement takes 3 room draws and lands at the record's x, y (1 808). The radius-5 fallback takes 7 room
+    draws (31).
+  - Stats 13 and 7 come from the record. Stat 6 is the saved life within 7500 frames (1 931) and the saved maximum
+    after them (104).
+  - Stat 12 is the monsters/stats model's level (1 836 exact; classic Nightmare as `Level + 25 d`).
+  - `+0xC4` gets `0x3000000` and the record's `0x20000`.
+  - `MonRegionUnitLeave` takes (record `+0x2C`, current level, alignment, dead, flag `0x40`) and lowers the current
+    level's region `+0x2CC` for an alignment-0 unit without flag `0x40`, and `+0x2C8` too for monster flag `0x01`
+    (2 035).
+  - 255 restored monsters were damaged before the release.
+
+  (run:2026-10-17-lifecycle, fn:sub_005424F0_InactiveMonstersRestore@0x005424F0, fn:sub_00547ED0_MonRegionUnitLeave@0x00547ED0,
+  0x00542819)
+- [C] **The item restore (§ 6)** (run:2026-10-17-lifecycle).
+  - Items are restored in list order (876).
+  - The expiry written back is `max(saved, frame + 15000)` (876).
+  - The item comes back at its saved x, y (876).
+  - Not reached, so still inferred: the drop of an item whose non-zero expiry has passed, and an expiry of 0 kept (no
+    quest item was saved).
+  - (run:2026-10-17-lifecycle, fn:sub_00541AC0_InactiveItemsRestore@0x00541AC0, fn:sub_00541990_InactiveItemRestoreOne@0x00541990)
+- [C] **Unit records** come back through `PresetUnitDispatch` with their type, class and position (1 799; objects
+  1 760, 603 of them operated before the release). The objects § B4 save rule and § 13.5 re-creation hold on these
+  objects. (run:2026-10-17-lifecycle, fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40)
+- [C] **The preset path (§ 8):** `PresetUnitSpawn` moves the preset unit's `+0x10` into the monster's AI control
+  `+0x38` and leaves 0 behind (49). (run:2026-10-17-lifecycle, 0x0055596C)
+
+**Corrected or refined by the run.**
+
+- [C] **An item restore takes two game-seed draws**, not one: `SUnitCreate`'s unit seed and `ItemSeedInit` (type 4;
+  876 of 876). The start seed (`+0x28`) is the saved one for an item stored in full (289). For a **simple (compact)
+  item** (record flags bit `0x200000`) it is **0** (587; gold, potions, keys). The unit seed is `Init(+0x28)` in both
+  cases. This corrects § 6 and § 9 ("one game-seed draw", "the item keeps its seed"). (run:2026-10-17-lifecycle,
+  fn:sub_00558CB0_ItemCreateFromSave@0x00558CB0)
+- [C] **The 120–131 frame window needs a visit that spans a pass.** A client whose room stays in the near set only
+  between two passes does not reset the count (5 cases, each released 36–110 frames after that visit). So
+  "120–131 frames after the last client's room change" holds only for a visit that a pass saw. The idle model above
+  covers both cases. (run:2026-10-17-lifecycle, fn:sub_0061A790_RoomIdleCount@0x0061A790)
+- [C] **A room can be released unpopulated.** A room that `RoomActivateB` activates after the act's walk has passed it
+  (its callers `0x0066ADB1` and `0x0066B3C5` during the population pass) is released before any walk reaches it if no
+  new room arrives meanwhile (3 rooms). Its `+0x60` bit 0 stays clear, and it is populated at its next activation.
+  (run:2026-10-17-lifecycle, fn:sub_0061B730_RoomActivateB@0x0061B730)
+- [C] **Every logged champion carries monster flag `0x08`, and the `0x18` test frees a dead one.** `MonMarkSpecial`
+  sets `0x08` (0x005A0375). 15 champions in 30 save tests had monster flags `0x0D` or `0x2D`; the 6 dead ones were
+  freed by the test (§ 5 test 5, mask `0x18` = `0x08` or `0x10`, not "unique or minion"). (run:2026-10-17-lifecycle,
+  fn:sub_005A0320_MonMarkSpecial@0x005A0320, 0x005432EF)
+- [I] **So a dead champion is never saved on stock data**, and the § 6 surprise ("a dead champion comes back alive")
+  needs a champion without `0x08`. `MonMarkSpecial` has four callers: `SpecialMonPlace` after every successful
+  creation (0x005A0B61), and 0x005A487B, 0x005A48F4 (in `ChampionMemberMark`, skipped when monster data `+0x16` bit
+  `0x04` is already set, 0x005A48EB) and 0x005A496E (`MonMakeSpecial`). Whether every champion path passes one of them
+  is not read (counted at the Phase 2 review, objdump). (fn:sub_005A0320_MonMarkSpecial@0x005A0320,
+  fn:sub_005A09E0_SpecialMonPlace@0x005A09E0, fn:sub_005A48C0_ChampionMemberMark@0x005A48C0)
+- [C] **Stat 12 of a restored special** (run:2026-10-17-lifecycle, 199 restores, all predicted).
+  - A restored minion's stat 12 is the monsters/stats level plus the handlers of mods 1–4 and its saved mods (144):
+    a first instance at the pool level comes back 3 higher (`leveladd`; 2 seen), later restores unchanged (142).
+  - A restored special (`SpecialMonRestore`, 55) has the stat 12 the **flag-1** handlers give: a champion at + 2
+    (`leveladd` + 3, `champion` − 1), a unique at + 3. The flag-0 result of § 6 fails on the 15 champion restores
+    (one level high on each; the checker with the special path set to flag 0 gives 15 mismatches, at the Phase 2
+    review).
+
+  (fn:sub_005A46E0_MinionRestore@0x005A46E0, fn:sub_005A4440_SpecialMonRestore@0x005A4440)
+- [I] **The handler flag of a minion restore stays the § 6 reading (flag 0).** Stat 12 does not separate it: the
+  checker with the minion path set to flag 1 also gives 0 mismatches (at the review). Which call applies the flag-1
+  handlers inside `SpecialMonRestore` is a static question. (fn:sub_005A46E0_MinionRestore@0x005A46E0)
+
+**Not reached (these stay inferred; named shortfalls).**
+
+- **The town-follow case** (required by the Phase 1 review; accepted as a shortfall at the Phase 2 review). Two
+  sessions released the town's rooms (161 room releases of level 1). No hostile monster was in a town room at a
+  release: the scripted walk out of the Rogue Encampment and back never brought one in. Every monster the save test
+  met in a `SaveMonsters` 0 level (120 in level 1, 52 in level 103; counted at the review from the `US`/`USD` lines) carried `+0xC4` bit `0x2000000` and was saved, so
+  the other half of the rule, `SaveMonsters` 0 without that bit, was never met. Whether a pool monster can enter a
+  town room at all is a static question (open questions).
+- The wanderer roll and spawn: 0 of 3 211 eligible gate draws passed, at an expected 1 in 32 768.
+- An expired item record (at the restore, or in the 20-frame sweep `0x00542AC0`).
+- Monster save-rule branches: an owned monster or pet, `+0xD0` < 8, `+0xC4` bit 9, necromancer summons, `restore` 0.
+- Restore outcomes: a kept monster or unit, a `0x400` record, the level-108 rule, a kept player corpse, a minion
+  restored without its boss.
+- Pins appeared only as inputs. Six set calls came from portal and object code (`0x0056D2A3`, `0x0056D2B1`,
+  `0x00581476`, `0x00581484`), and no clear call was seen.
 
 ## Data touched
 
@@ -472,13 +642,16 @@ Each is a Phase 2 question (§ P2 questions in the plan log) unless it says othe
 - [L] Whether a wanderer (target list 8) is saved as alignment 2 (dropped at the restore) or 0 (the fatal `0x691`):
   a static read of `SpawnAtPos`'s alignment write answers it (MonStats `Align` 1 for `rogue2` predicts 2). A run will
   hardly see one: the gate passes 1 in 32768 room updates and the roll 3 in 100 (§ 7).
-- [L] A dead champion comes back alive (§ 6): log a champion corpse through a release and a restore.
+- [L] A champion without monster flag `0x08` (the only one a dead save could keep, § 11): a static search of the
+  champion creation paths for one that skips `MonMarkSpecial`.
+- [L] Which call inside `SpecialMonRestore` applies the flag-1 handlers that stat 12 shows (§ 11); code still to read.
+- [L] The town-follow case (§ 11 shortfall): whether a hostile monster can enter a town room at all. Lead: MonStats
+  `inTown` (`+0x0D` bit 2, [MonStats](../../tables/MonStats.md)) is set on 109 records and on no pool class; its
+  readers in the movement and collision code are not read.
 - [L] Which client-copy code detached the path of the client-copy units of drlg/0004's 19 (§ 8); code still to read.
-- [L] DUNGEON act `+0x50` reads as "client act" (0 on the server, non-zero on the client by the 626/890 split of § 4);
-  check against the kept logs of run:2026-10-16-sweep-roomk and the act constructor.
+- [L] DUNGEON act `+0x50` reads as "client act". The values are settled by § 11 (0 on the server at every pass, and
+  `EDX` 0 at every client tiles release, so non-zero there); the name stays a reading until the act constructor is
+  read.
 - [L] The meanings of monster data `+0x58` and `+0x5C` bit 1, record `+0x2C`, and the state list
   at DataTables `+0x174`; code still to read.
-- [L] `MonRegionUnitLeave` at the restore: which counts it moves for a created unit; the region counts before and
-  after a restore answer it.
-- [L] The items stream: whether the ground position comes back from the bytes or from elsewhere; log x, y of a
-  restored item.
+- `MonRegionUnitLeave` at the restore and the restored item's position: answered in § 11.

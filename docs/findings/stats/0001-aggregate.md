@@ -406,6 +406,21 @@ struct:ItemStatCostOps+0x5E, struct:ItemStatCostOps+0xDE.
   `secondary_mindamage` and `item_throw_mindamage`, and 237 and 291 feed `item_absorbmagic`. 237 is reachable only
   through a `…/lvl` property and 273/291 through `…/time` ones; whether a stock item carries 237 is a data check for
   Phase 2 (291 and 273: none, Leads used). (fn:ITEMSTATCOST_Load@0x00637A00, tbl:ItemStatCost.txt:op stat1)
+- [I] **(e) A Sets param name resolves by a fixed table order, not by the property** (plan 0041 P1 review follow-up,
+  2026-10-17). In the Sets descriptor built by `sub_00634DC0_LoadSetTables`, all 16 param fields (`pparam2a..5b`,
+  `fparam1..8`) are type `0x19` with the callback `sub_006336A0_PropParamCell` (EBX = 0x006336A0 at 0x00634DD7, stored
+  into the 16 entries from 0x00634EAE to 0x00635779; the code fields beside them are type `0x13` name lookups in
+  `g_PropertiesLink`). The callback reads only the cell (ECX), the record (EDX) and the field offset: a cell starting
+  with `-` or a digit is `atol`; otherwise the first `EXCEL_FindName` hit, in order, in the `skills` link
+  (`0x0096C7CC`), the `montype` link (`0x0096C868`) and the `states` link (`0x0096BCF0`), is stored; a blank cell or a
+  name in none of them stores 0. It never reads the block's code field, so an `oskill` and a `state` block with the
+  same name store the same number, and a name that is both a skill and a state (44 such names) stores the **skill**
+  row in either block. The same callback compiles Runes `T1Param` (items/0007 § 9) and is stored in 35 descriptor
+  entries of this loader (the 16 Sets params, and SetItems `par1..9` and `apar1a..5b`). The ten stock named cells (Sets § Bonus blocks)
+  are consistent with it: the four `oskill` names are skills, the six `state` names (`fullsetgeneric`, `monsterset`)
+  are neither a skill nor a montype; no montype name equals a state name, and only `mosquito` is both a montype and
+  a skill. (fn:sub_00634DC0_LoadSetTables@0x00634DC0, fn:sub_006336A0_PropParamCell@0x006336A0 0x006336A0–0x00633727,
+  fn:EXCEL_FindName@0x006BD3C0, tbl:Sets.txt:FParam5)
 - [I] **(a), (c)** are answered in [stats/0002 § 4](0002-states.md#4-auras-and-passives) (they are skill-state
   questions). (fn:SKILLS_RefreshPassive@0x00646D60, fn:sub_005CF010_PalAuraDo@0x005CF010)
 
@@ -425,5 +440,3 @@ struct:ItemStatCostOps+0x5E, struct:ItemStatCostOps+0xDE.
 - [L] The take test's stat-0 quirk hides a per-level source's own value on a player (§ 3); which readers read the
   per-level stats themselves (the character screen is client-side). Phase 2 logs one.
 - [L] `sub_0061C100_ActTimeOfDay` and `owner +0x1C` (op 6/7): not read; unreachable on stock data.
-- [L] (e) How the Sets compiler resolves a property param name (by the property or by a table order): the Sets loader's
-  field descriptor was not read. Static follow-up; the stored values are confirmed as data in [Sets § Bonus blocks](../../tables/Sets.md#bonus-blocks-plan-0041-phase-0).

@@ -24,6 +24,13 @@ casts, belt potions, steered by the live gdb log.
         xy:X,Y (a click at window coordinates), sleep:S, shot:PATH; CELL = inv:c,r[,w,h] | cube:c,r[,w,h] (the cube open) | eq:head|tors|rarm|larm|...
     python3 -I tools/d2pilot.py cube <run.log> [--plan FILE] TOKEN...   # Horadric Cube sessions (tools/gdb/cube.gdb
         log): the insert tokens, plus mv:A>B (move an item), tm (press Transmute, wait for CUBX), drop:CELL
+    python3 -I tools/d2pilot.py join <host.log> where|follow [--me join --lead host --near-lead D --teleport]
+    python3 -I tools/d2pilot.py join <host.log> party invite|accept|leave|hostile   # plan 0011's two-party-*.steps
+    python3 -I tools/d2pilot.py join <host.log> leave [--exit-xy X,Y]             # Escape, SAVE AND EXIT GAME
+    python3 -I tools/d2pilot.py join <host.log> trade request|accept|give:inv:c,r>tr:c,r|ok|key:K|sleep:S|shot:P ...
+        # plan 0044: steer one client of a two-client game (--slot of that client) from the HOST's PLRS lines
+        # (tools/gdb/two-players.py); --me on any other command also steers by PLRS. Trade and exit geometry are
+        # uncalibrated until the live test (tools/joiner.py).
 
 Watchdog (explore, farm): when neither the log nor the player position changes for --stall seconds (20), a STALL line
 names what the pilot was doing and the game process state (gdb holding it shows as 't'), a screenshot is saved, the
@@ -71,14 +78,18 @@ if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
 import collision  # noqa: E402
+import joiner  # noqa: E402
 
 BLOCK = 0x1C09
 TOWNS = (1, 40, 75, 103, 109)       # Levels ids of the five towns
 
 
 class LogState:
+    me = None                       # --me (plan 0044): steer by this player's PLRS entry ('host', 'join' or a unit id)
+
     def __init__(self, path):
         self.path = path
+        self.players = joiner.Players()
         self.f = open(path, errors="replace")
         self.buf = ""
         self.pos = None             # (x, y, lid, room)
@@ -114,13 +125,26 @@ class LogState:
         for line in lines:
             tag, _, rest = line.partition(" ")
             if tag not in ("PLR", "RL", "RRESEED", "CB", "SMA0", "SU0", "MON", "WRP", "OU0", "OUX", "OO0", "MZ1", "NPC",
-                           "OBJS"):
+                           "OBJS", "PLRS"):
                 continue
             try:
                 d = json.loads(rest)
             except ValueError:
                 continue
-            if tag == "PLR":
+            if tag == "PLRS":                   # tools/gdb/two-players.py (plan 0044): every player of the game
+                if not isinstance(d.get("p"), list):
+                    continue
+                self.players.feed(d)
+                if self.me is not None:
+                    e = self.players.get(self.me)
+                    if e and e.get("x") is not None:
+                        if not self.pos or (e["x"], e["y"], e["lid"]) != self.pos[:3]:
+                            self.n_plr += 1
+                        self.pos = (e["x"], e["y"], e["lid"], e["room"])
+                        self.visited.add((e["lid"], e["x"] // 10, e["y"] // 10))
+            elif tag == "PLR" and self.me is not None:
+                continue                        # two clients: PLR lines alternate between the players' marks
+            elif tag == "PLR":
                 self.pos = (d["x"], d["y"], d["lid"], d["room"])
                 self.visited.add((d["lid"], d["x"] // 10, d["y"] // 10))
                 self.n_plr += 1
@@ -443,6 +467,24 @@ class Pilot:
         self.dpy.click(self.off[0] + self.cx, self.off[1] + self.cy, button=3, hold=self.nova_hold)
         time.sleep(0.05)
         self.dpy.keystate("Shift_L", False)
+
+    def summon(self, key, dx, dy):
+        """A right-button skill placed at a sub-tile offset (plan 0038 H6d: Hydra next to a boss): the skill's
+        F-key, then Shift + right click at (dx, dy) from the player; nova_key afterwards, so the right button is Nova
+        again at the next burst."""
+        sx, sy = self.screen(dx, dy)
+        sx, sy = max(10, min(790, sx)), max(10, min(int(540 * self.vs), sy))
+        self.dpy.key(key)
+        time.sleep(0.1)
+        self.dpy.keystate("Shift_L", True)
+        time.sleep(0.05)
+        self.dpy.click(self.off[0] + int(sx), self.off[1] + int(sy), button=3, hold=0.12)
+        time.sleep(0.05)
+        self.dpy.keystate("Shift_L", False)
+        time.sleep(0.4)
+        if self.nova_key:
+            self.dpy.key(self.nova_key)
+            time.sleep(0.05)
 
     es_key = None
 
@@ -1000,6 +1042,7 @@ NPCS = {
     "akara": (148, ["talk", "trade", "cancel"], None),
     "gheed": (147, ["talk", "trade", "gamble", "cancel"], None),
     "charsi": (154, ["talk", "trade", "cancel"], None),
+    "warriv": (155, ["talk", "go east", "cancel"], None),    # plan 0038 H6d: the report after Andariel
     "kashya": (150, ["talk", "hire", "cancel"], None),
     "fara": (178, ["talk", "trade", "cancel"], (49, -7)),
     "drognan": (177, ["talk", "trade", "cancel"], (20, -52)),
@@ -1805,7 +1848,8 @@ def cmd_objop(args):
             # greedy hop exists, else a blind Teleport of --hop towards it (lava and gaps are crossed that way)
             want = {int(x) for x in args.to_pdef.split(",")}
             lp = st.lptr.get(st.pos[2])
-            rooms = [st.rl[r][1] for r, pd in st.pdef.items() if pd in want and r in st.rl and st.rl[r][0] == lp]
+            rooms = [st.rl[r][1] for r, pd in st.pdef.items() if pd in want and r in st.rl
+                     and (args.pdef_any or st.rl[r][0] == lp)]
             if not rooms:
                 time.sleep(0.5)
                 continue
@@ -1893,6 +1937,7 @@ def cmd_hunt(args):
     skip_rect = set()
     goal = [None]
     t0 = time.time()
+    t_sum = [0.0]
     seen = False
     while time.time() - t0 < args.time:
         st.poll()
@@ -1907,10 +1952,24 @@ def cmd_hunt(args):
             time.sleep(args.linger)
             return 0
         upkeep(args, p, st)
-        if gate.cast(p, st):
+        if not args.pet and gate.cast(p, st):
             continue
         live_ms = [m for m in ms if live(m)]
         px, py = st.pos[0], st.pos[1]
+        if not live_ms and args.goal:
+            # plan 0038 H6d: the target's place is known from an earlier game on the same map seed: hop towards it
+            gx, gy = (int(v) for v in args.goal.split(","))
+            if math.hypot(gx - px, gy - py) > 4:
+                c = optimistic_hop(st, (gx, gy), args.hop, bad, step=2)
+                if c is not None:
+                    p.teleport(c[0] - px, c[1] - py)
+                    time.sleep(args.wait)
+                    st.poll()
+                    if st.pos and math.hypot(st.pos[0] - px, st.pos[1] - py) < 2:
+                        bad.add(c)
+                    continue
+            time.sleep(0.5)
+            continue
         if not live_ms:
             # not created yet (its room has not activated): head for the farthest unactivated room of the level
             # from where we stand, over optimistic paths; the rooms activate as we pass
@@ -1934,7 +1993,18 @@ def cmd_hunt(args):
         seen = True
         m = min(live_ms, key=lambda m: math.hypot(m["x"] - px, m["y"] - py))
         d = math.hypot(m["x"] - px, m["y"] - py)
-        if d <= args.radius - 2:
+        if args.pet and d <= args.pet:
+            # plan 0038 H6d: the kill is left to the mercenary or a summon; the player only stands near the target,
+            # drinks, and (--summon-key) places the summon between itself and the target every --summon-every s
+            if args.summon_key and time.time() - t_sum[0] >= args.summon_every:
+                k = min(1.0, 4.0 / max(d, 1.0))
+                p.summon(args.summon_key, (m["x"] - px) * k, (m["y"] - py) * k)
+                t_sum[0] = time.time()
+            time.sleep(0.3)
+            continue
+        if args.pet:
+            pass                        # out of --pet range: hop nearer below, never Nova
+        elif d <= args.radius - 2:
             p.nova()                    # in range but not a Nova target (resist above the gate's): cast anyway
             continue
         c = greedy_hop(st, (m["x"], m["y"]), args.hop, 2.0, bad=bad, avoid_warps=True)
@@ -2674,11 +2744,136 @@ def cmd_mons(args):
     return 0
 
 
+# ---------------------------------------------------------------- two clients (plan 0044 Phase 1)
+# Steer one client of a TCP/IP game from the HOST's log (tools/gdb/two-pilot.gdb, or any logger that sources
+# tools/gdb/two-players.py): the joiner has no debugger (ADR-0008), so both players' positions, the party list and the
+# travel-gate ticks come from the host's PLRS lines. The pure parts are tools/joiner.py (tested by tools/test_joiner.py).
+
+def join_wait(st, who, timeout):
+    t0 = time.time()
+    while time.time() - t0 < timeout:
+        st.poll()
+        if all(st.players.get(w) for w in who):
+            return True
+        time.sleep(0.25)
+    return False
+
+
+def join_steps(p, path, tag):
+    import xdrive
+    for cmd in joiner.read_steps(path):
+        if cmd[0] == "shot" and not os.path.isabs(cmd[1]):
+            cmd = ["shot", os.path.join(os.path.dirname(HERE), cmd[1])]
+        xdrive.do(p.dpy, cmd, p.off, tag)
+
+
+def cmd_join(args, tokens):
+    """join <log> where | follow | party invite|accept|leave|hostile | leave | trade TOKEN... (see tools/joiner.py)."""
+    act = args.dx
+    st = LogState(args.log)
+    me, lead = args.me or "join", args.lead
+    if not join_wait(st, [me, lead] if act != "where" else [], args.done_wait if act != "follow" else 30.0):
+        print("join: the log lists no PLRS entry for %s and %s (tools/gdb/two-players.py loaded?)" % (me, lead))
+        return 1
+    if act == "where":
+        st.poll()
+        for e in (st.players.last or {}).get("p", []):
+            role = "host" if e["id"] == st.players.resolve("host") else "join" if e["id"] == st.players.resolve("join") \
+                else "-"
+            print("player %s %s cls %s lid %s x %s y %s mode %s dead %s party %s tk %s hl %s" % (
+                e["id"], role, e["cls"], e["lid"], e["x"], e["y"], e["mode"], e["dead"], st.players.party_of(e["id"]),
+                e.get("tk"), e.get("hl")))
+        print("follow step (me %s, lead %s): %s" % (me, lead, joiner.follow_step(st.players.get(me), st.players.get(lead),
+                                                                               args.near_lead, args.hop)))
+        return 0
+    p = Pilot(args)
+    p.walk = not args.teleport
+    if act == "follow":
+        t0, last, still = time.time(), None, 0
+        said = None
+        while time.time() - t0 < args.time:
+            st.poll()
+            step = joiner.follow_step(st.players.get(me), st.players.get(lead), args.near_lead, args.hop)
+            if step is None or step[0] != "move":
+                if step != said:
+                    print("follow: %s" % (step or "near"))
+                    sys.stdout.flush()
+                    said = step
+                time.sleep(0.3)
+                continue
+            pos = st.players.get(me)
+            here = (pos["x"], pos["y"])
+            still = still + 1 if here == last else 0
+            last = here
+            if still >= 4:
+                print("STALL follow: no move after %d clicks at %s" % (still, here))
+                if args.shots:
+                    p.shot(os.path.join(args.shots, "stall%s-join-%d.png" % (args.shot_tag, int(time.time()))))
+                still = 0
+            p.teleport(step[1], step[2])
+            time.sleep(args.walk_wait if p.walk else args.wait)
+        print("follow: done after %.0f s" % (time.time() - t0))
+        return 0
+    if act == "party":
+        what = args.dy
+        if what not in joiner.STEPS:
+            raise SystemExit("join party: one of %s" % ", ".join(sorted(joiner.STEPS)))
+        tk0 = (st.players.get(me) or {}).get("tk")
+        join_steps(p, joiner.STEPS[what], args.shot_tag)
+        t0 = time.time()
+        while time.time() - t0 < args.done_wait:
+            st.poll()
+            if joiner.party_done(st.players, what, me, lead, tk0):
+                print("party %s: done after %.1f s (party %s, tk %s)" % (what, time.time() - t0, st.players.party_of(me),
+                                                                      (st.players.get(me) or {}).get("tk")))
+                return 0
+            time.sleep(0.25)
+        print("party %s: no effect in the log after %.0f s" % (what, args.done_wait))
+        return 1
+    if act == "leave":
+        x, y = (int(v) for v in args.exit_xy.split(","))
+        p.dpy.key("Escape")
+        time.sleep(0.6)
+        p.dpy.click(p.off[0] + x, p.off[1] + y, button=1, hold=0.12)
+        t0 = time.time()
+        while time.time() - t0 < args.done_wait:
+            st.poll()
+            if st.players.get(me) is None:
+                print("leave: %s gone from the game after %.1f s" % (me, time.time() - t0))
+                return 0
+            time.sleep(0.25)
+        print("leave: %s still listed after %.0f s" % (me, args.done_wait))
+        return 1
+    if act == "trade":
+        st.poll()
+        e, f = st.players.get(me), st.players.get(lead)
+        xy = None
+        if e and f and e.get("lid") == f.get("lid"):
+            sx, sy = joiner.screen(args.cx, args.cy, f["x"] - e["x"], f["y"] - e["y"])
+            xy = joiner.clamp_click(sx, sy - args.npc_dy)
+        for a in joiner.plan_trade(tokens, xy):
+            if a[0] == "click":
+                p.dpy.click(p.off[0] + a[1], p.off[1] + a[2], button=a[3], hold=0.12)
+                time.sleep(0.8)
+            elif a[0] == "key":
+                p.dpy.key(a[1])
+                time.sleep(0.6)
+            elif a[0] == "sleep":
+                time.sleep(a[1])
+            elif a[0] == "shot":
+                p.shot(a[1])
+        print("trade: %d tokens played" % len(tokens))
+        return 0
+    raise SystemExit("join: unknown action %r" % act)
+
+
 def main():
     tokens = None
-    if len(sys.argv) > 2 and sys.argv[1] in ("insert", "cube"):
+    if len(sys.argv) > 2 and sys.argv[1] in ("insert", "cube") or sys.argv[1:2] == ["join"] and sys.argv[3:4] == ["trade"]:
         # insert <log> TOKEN... [options]: tokens are the positionals after the log that do not start with --
-        rest, tokens, opts = sys.argv[3:], [], []
+        # (join <log> trade TOKEN...: after the action)
+        k = 4 if sys.argv[1] == "join" else 3
+        rest, tokens, opts = sys.argv[k:], [], []
         it = iter(rest)
         for a in it:
             if a.startswith("--"):
@@ -2687,10 +2882,10 @@ def main():
                     opts.append(next(it))
             else:
                 tokens.append(a)
-        sys.argv = sys.argv[:3] + opts
+        sys.argv = sys.argv[:k] + opts
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=("where", "explore", "hop", "farm", "mons", "wp", "wpchain", "players", "insert",
-                                    "cube", "npc", "objop", "hunt"))
+                                    "cube", "npc", "objop", "hunt", "join"))
     ap.add_argument("log")
     ap.add_argument("dx", nargs="?", default="0")
     ap.add_argument("dy", nargs="?", default="0")
@@ -2804,11 +2999,29 @@ def main():
     ap.add_argument("--times", type=int, default=1, help="objop: the number of confirmed clicks")
     ap.add_argument("--done", help="objop: the log tag that confirms a click (e.g. QS)")
     ap.add_argument("--mon-cls", type=int, help="hunt: the MonStats row to kill")
+    ap.add_argument("--pet", type=float, default=0, help="hunt (plan 0038 H6d): within this many sub-tiles of the "
+                    "target stand still and cast nothing (the mercenary or a summon kills it); never Nova on the way")
+    ap.add_argument("--pdef-any", action="store_true", help="objop --to-pdef: preset rooms of any built level (plan "
+                    "0038 H6d: the Chaos Sanctuary's wings from the River of Flame), not only the current one")
+    ap.add_argument("--goal", help="hunt: X,Y sub-tiles to head for while the target is not seen (its place in an "
+                    "earlier game on the same map seed)")
+    ap.add_argument("--summon-key", help="hunt --pet: F-key of a placed summon (Hydra), cast towards the target")
+    ap.add_argument("--summon-every", type=float, default=3.0, help="hunt --pet: seconds between summon casts")
     ap.add_argument("--no-nova", action="store_true", help="objop: never stop to cast Nova (Hell: Teleport through)")
     ap.add_argument("--approach", action="store_true", help="objop: stop within --obj-near of the object, no click")
+    ap.add_argument("--me", help="two clients (plan 0044): steer by this player's PLRS entry (tools/gdb/two-players.py): "
+                                 "'host', 'join' or a unit id; join defaults to 'join'")
+    ap.add_argument("--lead", default="host", help="join follow/trade: the other player ('host', 'join' or a unit id)")
+    ap.add_argument("--near-lead", type=float, default=6.0, help="join follow: stop within this many sub-tiles")
+    ap.add_argument("--teleport", action="store_true", help="join follow: Teleport (Shift + left) instead of walking")
+    ap.add_argument("--exit-xy", default="%d,%d" % joiner.EXIT_MENU_XY,
+                    help="join leave: the Escape menu's SAVE AND EXIT GAME (window coordinates; uncalibrated default)")
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()
-    if args.cmd == "npc":
+    if args.cmd == "join" and args.me is None:
+        args.me = "join"
+    LogState.me = args.me
+    if args.cmd in ("npc", "join"):
         args.npc_name, args.npc_action = args.dx, args.dy
     else:
         try:
@@ -2826,6 +3039,8 @@ def main():
         return cmd_insert(args, tokens or [])
     if args.cmd == "cube":
         return cmd_cube(args, tokens or [])
+    if args.cmd == "join":
+        return cmd_join(args, tokens or [])
     return {"where": cmd_where, "explore": cmd_explore, "hop": cmd_hop, "farm": cmd_farm,
             "mons": cmd_mons, "wp": cmd_wp, "wpchain": cmd_wpchain, "players": cmd_players, "npc": cmd_npc,
             "objop": cmd_objop, "hunt": cmd_hunt}[args.cmd](args)

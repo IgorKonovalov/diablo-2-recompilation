@@ -4,6 +4,7 @@ offline seed scan that chose the map seeds.
 Usage:
   python3 -I tools/sweep_h5e.py logs [LOG ...]            # default: workspace/logs/sweep-mazes/sweep-mazes-s*.log
   python3 -I tools/sweep_h5e.py scan FIRST LAST [DIFFS]    # map seeds FIRST..LAST-1, difficulties "0,1,2"
+  python3 -I tools/sweep_h5e.py stampdefs BASE TYPE ...    # every Def a border stamp of these LvlSub types can place
 Unit tests of the pure helpers: python3 -I tools/test_sweep_h5e.py.
 
 `logs` runs the unchanged GenModel of tools/drlg.py (its own checks, 0 mismatches required) with counters added by
@@ -16,7 +17,16 @@ wrapping three of its methods; it prints one `H5E` line per counter group:
   preset   PresetRoomLoadDs1 lists that matched with the Blood Moor centre monster added, and the client river
            objects per Def
 `scan` runs the outdoor model alone (drlg.Act, act_links, Outdoor) on every outdoor level of every act for each map
-seed and difficulty and counts the same branches; it reads no log.
+seed and difficulty and counts the same branches, plus the cliff-cave scan and, on the Act I levels, flags `0x10` and
+`0x20` set or clear, keyed by level id and grid shape, the Act I road endpoints split by source (town and Monastery
+Gate nodes, seam openings, caves, east bridge; H5e reachability (c)) and, per level, the windows of the waypoint pass and
+the fewest free interior cells it met (no 0x1B81 bit; H5e reachability (b)); it reads no log. In `logs`, a rebuild whose previous placement
+differs from the act's rect for the level is counted apart, by level (`gen maze input: rebuild ... differs`).
+
+`stampdefs` reads the LvlSub border records of each TYPE (drlg.load_outdoor, drlg.od_sub_ds1) and prints, per type,
+the set of Defs `BorderSubStamp` (0x0066F520) can place with base BASE: `BASE + ((W >> 8) & 0xFF) - 1` for every wall
+cell with bit 0 in every variant of every group (srcX = (w + 1)(v + 1), v < variants), the wildcard 62 excluded; it is a
+superset of what a run can stamp (H5e reachability (c): which caves or bridges a stamp could add).
 
 Exit 1 when gen reports a mismatch. Stdlib only. Read-only.
 """
@@ -33,6 +43,7 @@ LOGS = os.path.join(ROOT, "workspace", "logs", "sweep-mazes")
 
 RARE = ("ring merge", "waypoint not placed", "A1 road endpoints 5", "A1 road endpoints 6", "A1 road path not found",
         "A1 road search pool exhausted", "A5 prison by scan")
+A1_LEVELS = (2, 3, 4, 5, 6, 7, 17)    # the Act I outdoor levels whose O.flags carry 0x10 (middle river) and 0x20 (cliff)
 LAIR64_DEFS = (509, 505)     # Tight Spot (0x006F00E8) and the fixed Treasure entry (0x006F00D8), drlg/0006 § 6
 
 
@@ -42,6 +53,31 @@ def scan_order(calls):
     if len(calls) < 2:
         return None
     return "columns" if calls[1][0] == calls[0][0] else "rows"
+
+
+def endpoint_sources(adj, defg, cell, cw, ch):
+    """The road endpoints A1PathEndpoints (0x00680D70) would collect, by source: (town nodes, Monastery Gate nodes, seam
+    openings (Def 4-7, file index 3), caves (Def 24, 25, 51, 52), east bridge (Def 28, index 1, x = cw - 2)). The
+    model's own list (drlg.Outdoor.a1_paths) is the reference; this split only labels it."""
+    town = sum(1 for n in adj if n["nbr"] == 1)
+    mon = sum(1 for n in adj if n["nbr"] == 26)
+    op = cv = br = 0
+    for x in range(cw):
+        for y in range(ch):
+            d, idx = defg[y][x], (cell[y][x] >> 16) & 0xF
+            if 4 <= d <= 7 and idx == 3:
+                op += 1
+            elif d in (24, 25, 51, 52):
+                cv += 1
+            elif d == 28 and idx == 1 and x == cw - 2:
+                br += 1
+    return town, mon, op, cv, br
+
+
+def free_interior(cell, cw, ch):
+    """Cells (x, y) with 1 <= x <= cw - 2, 1 <= y <= ch - 2 and no 0x1B81 bit: the cells OutWaypointPlace (0x00674B70)
+    can take after its shuffle."""
+    return sum(1 for y in range(1, ch - 1) for x in range(1, cw - 1) if not cell[y][x] & 0x1B81)
 
 
 def tomb_role(lid, tombs):
@@ -58,8 +94,9 @@ class Hooks:
         self.d = drlg
         self.c = collections.Counter()
         self.probe = None
+        self.lo = {}
         O, G = drlg.Outdoor, drlg.GenModel
-        cave, east, paths = O.a1_cave_try, O.a1_river_east_cave, O.a1_paths
+        cave, east, paths, wayp = O.a1_cave_try, O.a1_river_east_cave, O.a1_paths, O.waypoint
         check = G.maze_check
         h = self
 
@@ -75,15 +112,26 @@ class Hooks:
             finally:
                 order = scan_order(h.probe)
                 if order:
-                    h.c["outdoor cliff-cave scan, %s outer, %s level (%dx%d)"
-                        % (order, "square" if o.cw == o.ch else "non-square", o.cw, o.ch)] += 1
+                    h.c["outdoor cliff-cave scan, %s outer, level %d, %s (%dx%d)"
+                        % (order, o.lid, "square" if o.cw == o.ch else "non-square", o.cw, o.ch)] += 1
                 h.probe = None
 
         def a1_paths(o):
             if o.flags & 0x10:
                 h.c["outdoor BridgeFind (flag 0x10), level %d, %s (%dx%d)"
                     % (o.lid, "square" if o.cw == o.ch else "non-square", o.cw, o.ch)] += 1
+            t, m, op, cv, br = endpoint_sources(o.adj, o.defg, o.cell, o.cw, o.ch)
+            h.c["A1 road endpoint sources: level %d, town %d, monastery %d, openings %d, caves %d, bridge %d (total %d)"
+                % (o.lid, t, m, op, cv, br, t + m + op + cv + br)] += 1
             return paths(o)
+
+        def waypoint(o):
+            n = free_interior(o.cell, o.cw, o.ch)
+            k = "waypoint pass free interior cells: level %d, %s (%dx%d)" % (
+                o.lid, "square" if o.cw == o.ch else "non-square", o.cw, o.ch)
+            h.c[k + " windows"] += 1
+            h.lo[k] = min(h.lo.get(k, n), n)
+            return wayp(o)
 
         def maze_check(g, path, L, d):
             f0 = g.fail
@@ -104,7 +152,7 @@ class Hooks:
                         509 in defs, 505 in defs)] += 1
             return r
 
-        O.a1_cave_try, O.a1_river_east_cave, O.a1_paths = cave_try, river_east, a1_paths
+        O.a1_cave_try, O.a1_river_east_cave, O.a1_paths, O.waypoint = cave_try, river_east, a1_paths, waypoint
         G.maze_check = maze_check
 
 
@@ -154,6 +202,10 @@ def cmd_scan(argv):
                         print("H5E scan error: seed %d difficulty %d level %d: %r" % (s, diff, lid, e))
                         continue
                     windows += 1
+                    shape = "%s (%dx%d)" % ("square" if O.cw == O.ch else "non-square", O.cw, O.ch)
+                    for bit in (0x10, 0x20):          # H5e review follow-up (b): the flags by level and grid shape
+                        if lid in A1_LEVELS:
+                            H.c["outdoor flag 0x%02x %s: level %d, %s" % (bit, "set" if O.flags & bit else "clear", lid, shape)] += 1
                     for k in RARE:
                         if O.cov.get(k):
                             H.c["scan %s" % k] += 1
@@ -165,12 +217,45 @@ def cmd_scan(argv):
     for k in sorted(H.c):
         if not k.startswith("scan "):
             print("H5E %s  %d" % (k, H.c[k]))
+    for k in sorted(H.lo):
+        print("H5E %s minimum  %d" % (k, H.lo[k]))
     return 1 if errors else 0
+
+
+def cmd_stampdefs(argv):
+    import drlg
+    base, types = int(argv[0]), [int(x) for x in argv[1:]]
+    data = drlg.Data(drlg.DEFAULT_DATA, drlg.DEFAULT_EXE)
+    drlg.load_outdoor(data.root, data.exe)
+    for t in types:
+        defs, recs, cells = set(), 0, 0
+        for i, rec in enumerate(drlg.LVLSUB):
+            if rec["type"] != t:
+                continue
+            recs += 1
+            S = drlg.od_sub_ds1(i)
+            cols = S["cols"]
+            for g in S["groups"]:
+                for v in range(g[4]):
+                    srcx = (g[2] + 1) * (v + 1)
+                    for gy in range(g[3]):
+                        for gx in range(g[2]):
+                            si = (g[1] + gy) * cols + g[0] + gx + srcx
+                            W = S["wall"][si] if S["wall"] and si < len(S["wall"]) else 0
+                            if W & 1:
+                                cells += 1
+                                o = ((W >> 8) & 0xFF) - 1
+                                if o != 62:
+                                    defs.add(base + o)
+        print("H5E stampdefs type %d base %d: records %d, wall cells %d, Defs %s" % (t, base, recs, cells, sorted(defs)))
+    return 0
 
 
 def main(argv):
     if len(argv) >= 2 and argv[1] == "logs":
         return cmd_logs(argv[2:])
+    if len(argv) >= 4 and argv[1] == "stampdefs":
+        return cmd_stampdefs(argv[2:])
     if len(argv) >= 4 and argv[1] == "scan":
         return cmd_scan(argv[2:])
     print(__doc__)

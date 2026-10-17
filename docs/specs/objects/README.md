@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, drlg/preset, drlg/collision]
 consumed_by: [monsters/spawn, drlg/collision, items/tc, items/quality, items/quest-drops]
-tags: {C: 136, I: 71, L: 4}
+tags: {C: 138, I: 72, L: 4}
 updated: 2026-10-17
 ---
 
@@ -134,7 +134,7 @@ owners. Every `[C]` of this spec holds under these inputs. [C] (run:2026-10-15-o
 | when a player operates which object | input | simulation | game | [C] (fn:OBJ_OperateDispatch@0x00584420, run:2026-10-15-objects) |
 | when an object timer event runs | input | simulation (ADR-0002); its draws are modelled (§ K), the trap event's `OBJTRAP_MonsterSpawn` draw included | game | [C] (data:g_ObjEventFns@0x006E19B0, run:2026-10-15-objects) |
 | trap effects | named only | `g_ObjTrapFns[t]`, run by object event 4 (§ K); the `fire` creations of `OBJTRAP_ObjectCreate` (one game-seed step and a unit-seed draw each) are **not modelled**, and no trap of types 5, 7, 8 or 9 fired in the run | game simulation | [I] (fn:OBJ_TrapEvent@0x005817A0, fn:OBJTRAP_ObjectCreate@0x00582380) |
-| room and game seeds at each revisit re-creation | logged | the monster and item restores that run before the objects (§ B5) are not modelled; the object re-creations' own draws are | `monsters/spawn`, items | [I] (fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40) |
+| room and game seeds at each revisit re-creation | logged | the monster and item restores that run before the objects (§ B5) are specified in [drlg/lifecycle § H](../drlg/lifecycle.md#h-the-restore), not in this spec's model; the object re-creations' own draws are this spec's | `drlg/lifecycle` | [I] (fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40) |
 | populate windows inside an operate | — | a portal-like operate handler that activates a room runs that room's window (§ B) inside the operate; those draws are the window's | this spec | [I] (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0) |
 
 ## Algorithm
@@ -227,12 +227,12 @@ flowchart LR
 ```
 
 ```
-B4. Saving, when the room driver deactivates a room:             [I] (fn:sub_0052D240_RoomsDeactivate@0x0052D240, fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0, fn:sub_00542E30_InactiveUnitSave@0x00542E30)
+B4. Saving, when the room driver deactivates a room:             [C] for SaveTest on the branches the run met (run:2026-10-17-lifecycle), [I] for the rest (fn:sub_0052D240_RoomsDeactivate@0x0052D240, fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0, fn:sub_00542E30_InactiveUnitSave@0x00542E30)
       ; the room's unit list room+0x74 is newest first: every creation prepends (unit+0xE8 ← room+0x74; room+0x74 ← unit)
       for u in room+0x74, head first:
         if u.type = 2 and SaveTest(u): prepend a 0x34-byte record to the room's record list (+0x10, next at +0x30)
       SaveTest(object) holds when all of:
-        the level flag (level record +0x94) or the preset flag 0x2000000 (set by PresetUnitDispatch) is set;
+        the level flag Levels.SaveMonsters (leveldefs +0x94) or the preset flag 0x2000000 (set by PresetUnitDispatch) is set;
         Objects.Restore ≠ 0;  (sparkle byte & 0x02) = 0;  Objects.RestoreVirgins = 0 or mode = 0
       classes 59, 60 (portals): always saved, the unit kept alive and flagged 0x100 (unit +0xC8)
       record: x, y (+0x0, +0x4); type, class (+0x8, +0xC); mode (+0x10; mode 1 is saved as 2 when Objects +0x109 = 0
@@ -240,9 +240,9 @@ B4. Saving, when the room driver deactivates a room:             [I] (fn:sub_005
         event time (+0x20/+0x24), otherwise the sparkle byte (+0x24); the interact byte (+0x28); unit +0xB8 (+0x2C)
 
 B5. RoomInactiveUnitsRestore(game, room), on a revisit:           [C] (fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40, run:2026-10-15-objects)
-      InactiveMonstersRestore(room)                                ; monsters/spawn; not modelled here
+      InactiveMonstersRestore(room)                                ; drlg/lifecycle § H; not modelled here
       recs ← InactiveRecordTake(room)                              ; unlinks the record matched on the room's x, y
-      InactiveItemsRestore(recs)                                   ; items: a separate list
+      InactiveItemsRestore(recs)                                   ; items: a separate list, drlg/lifecycle § H
       for rec in recs.units, head first:                           ; = the earlier creation order, oldest first
         if rec.type = 1 or rec.flagsC8 & 0x100: continue           ; a kept unit (portal) is only moved back
         u ← PresetUnitDispatch(rec.type, rec.class, rec.x, rec.y, mode ← rec.mode)   ; every creation draw of §§ G, H
@@ -252,6 +252,12 @@ B5. RoomInactiveUnitsRestore(game, room), on a revisit:           [C] (fn:sub_00
           any other object: interact ← rec+0x28, sparkle ← rec+0x24, unit+0xB8 ← rec+0x2C when that is ≠ 0
 ```
 
+- B4. [C] The save test, with its level flag named `Levels.SaveMonsters`, held on the 3 023 objects of
+  run:2026-10-17-lifecycle (`Restore` 0: 15; `RestoreVirgins` on a used object: 30), and the records it wrote came back
+  through B5 ([drlg/lifecycle § F](../drlg/lifecycle.md#f-the-save-rule)). The starting flag was set on all of them
+  (653 by the preset flag alone). (run:2026-10-17-lifecycle, fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0, tbl:Levels.txt:SaveMonsters)
+- B4. [I] Not met, so read from the code only: the refusal for a level flag and preset flag both clear, the sparkle bit
+  `0x02` (never set on a tested object), and classes 59 and 60 (kept). (fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0)
 - B4. [I] Saving walks a newest-first list and prepends, so it reverses the order: the record list is oldest first.
   Items and monsters are saved to other lists (`0x00541B10`, `0x005421A0`). (fn:sub_0064C2C0_RoomUnitAdd@0x0064C2C0,
   fn:sub_00554850_SUnitPathCreate@0x00554850, tbl:Objects.txt:Restore, tbl:Objects.txt:RestoreVirgins)
@@ -1085,7 +1091,7 @@ fn:sub_00585B90_ObjectChestDrop@0x00585B90, run:2026-10-15-objects)
   (fn:OBJPOP_Clusters@0x00550C20, fn:OBJ_PlaceByOrientation@0x00550A30, fn:OBJOP_Bookshelf@0x00584060,
   fn:OBJOP_TrappedSoul@0x005869F0, fn:OBJOP_EvilUrn@0x00586520, fn:OBJ_TrapEvent@0x005817A0)
 - [I] **Boundaries that stay logged or unmodelled:** when a timer event runs (an input, § K); the room and game seeds
-  at each revisit re-creation (§ B5); the `fire` creations of `OBJTRAP_ObjectCreate`, which draw only the game seed
+  at each revisit re-creation (§ B5; the restores before the objects are [drlg/lifecycle § H](../drlg/lifecycle.md#h-the-restore)); the `fire` creations of `OBJTRAP_ObjectCreate`, which draw only the game seed
   and the fire's unit seed, so the checker would not see them (K2). (data:g_ObjEventFns@0x006E19B0,
   fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40, fn:OBJTRAP_ObjectCreate@0x00582380)
 - ~~**Object marks are not fed to the collision model.**~~ Done at plan 0027 Phase 2: the marks (G4) and the

@@ -37,7 +37,7 @@ Leads: no lead; derived from data.
 
 `[C]` layout tags are by data behaviour: `python3 -I tools/excel_bin.py diff workspace/merged/data/global/excel setitems`
 decodes all 127 records and matches every mapped cell (127 × 92 = 11 684 cells, 0 mismatches; the 4 skill names in
-a `par` cell are matched by the field option `names="skills:skill"`, § Property block), and each `[C]` offset of the head is the only
+a `par` cell are matched by the field option `names=PROP_PARAM`, § Property block), and each `[C]` offset of the head is the only
 one `excel_bin.py probe` finds. The head was mapped by plan 0009 (127 × 16 = 2 032 cells); the 76 property columns
 were added by plan 0024 Phase 1, so the layout now covers every byte of the 440. A column that is
 blank in every row, or equal to a sibling in every row, cannot be placed by the data; its position
@@ -161,7 +161,10 @@ Layout pinned by `excel_bin.py diff` (above); the reading at creation from
   row index, matched case-insensitively (row 122 `Light` → 73). A `par` cell holding a skill name stores that
   skill's row index: four cells (`Tal Rasha's Lidless Eye` `par5..7` `Fire/Lightning/Cold Mastery` → 61/63/65,
   `M'avina's Caster` `apar2a` `Nova` → 48), the rule [Runes](Runes.md) `T1Param` follows; `excel_bin.py` applies it
-  to every `par`/`apar` field with `names="skills:skill"` (plan 0030 Phase 0; until then four `explain` entries).
+  to every `par`/`apar` field with `names=PROP_PARAM` (plan 0030 Phase 0; until then four `explain` entries). `[I]` The
+  compiler's rule is the `sub_006336A0_PropParamCell` order: `atol` for a cell starting with `-` or a digit, else
+  the first hit in `skills`, `montype`, `states`, else 0; the tool's `PROP_PARAM` follows it
+  ([stats/0001 § Phase 0 surprises (e)](../findings/stats/0001-aggregate.md#phase-0-surprises)).
   (`python3 -I tools/excel_bin.py diff … setitems`, tbl:Skills.txt:skill)
 - `[C]` **Both lists are rolled at creation.** Set mode (mode 4) of `ItemApplyProps` applies the 9 `prop` blocks,
   then the 10 `aprop` blocks, with the same handlers and item-seed draws (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0,
@@ -201,13 +204,15 @@ The set-wide bonuses are [Sets § Bonus blocks](Sets.md#bonus-blocks-plan-0041-p
 
 Offsets are [§ Record layout](#record-layout) (`[C]`, `excel_bin.py diff`); the counts come from
 `python3 -I tools/economy_survey.py affixes workspace/merged/data/global/excel` (gate survey `economy`), `[C]` as
-data. The price function is named only ([items/0009 § 9](../findings/items/0009-vendors.md#9-named-only-prices-and-repair)),
-so the meanings are `[L]`, for plan 0043 Phase 1.
+data. `[I]` The price function reads them (plan 0043 Phase 1, [items/0011 § 3](../findings/items/0011-economy.md#3-the-value-terms) step 4): an identified set item adds
+`X·cost mult/1024 + cost add` to each of the buy, sell and repair values (`X` the running value; `(X/1024)·cost mult +
+cost add` when the buy value is above `0xFFFF`), and gets no per-stat terms. For stock rows the addend dominates
+(`cost mult` 5 over 1024). (fn:ITEMS_TradePriceCore@0x0062EFB0 0x0062F8A4–0x0062F96B, tbl:SetItems.txt:cost mult)
 
 | Column | Field | Values | Meaning |
 |---|---|---|---|
-| `cost mult` | `+0x038` u32 | 5 in every row | price multiplier of a set item `[L]` |
-| `cost add` | `+0x03C` u32 | 2500 on 62 rows, 5000 on 65 | price addend of a set item `[L]` |
+| `cost mult` | `+0x038` u32 | 5 in every row | `[I]` `X·cost mult/1024` |
+| `cost add` | `+0x03C` u32 | 2500 on 62 rows, 5000 on 65 | `[I]` added once |
 
 - `[C]` **`cost add` follows the set's version**: 2500 on all 62 members of the 16 classic sets ([Sets](Sets.md)
   `version` 0: *Civerb's Vestments* … *Arcanna's Tricks*), 5000 on all 65 members of the 16 expansion sets

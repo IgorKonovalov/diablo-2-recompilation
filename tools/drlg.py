@@ -2714,6 +2714,10 @@ class GenModel:
         if getattr(L, "mz_placed", None) is not None:
             # plan 0038 batch H5e: LevelInit rebuilding the same level object (LI0 with no LC0 in between) finds the
             # rect its previous window's placement wrote (MazeLevelPlace / the level 28 and 107 placements)
+            if list(L.mz_placed) != list(inp["rect"]):
+                # H5e review follow-up (a): count apart the rebuilds whose previous placement moved the level
+                self.hit("maze input: rebuild of a level object, previous placement differs from the act rect, level %d"
+                         % L.id)
             inp["rect"] = list(L.mz_placed)
             self.hit("maze input: rebuild of a level object, rect from its previous placement")
         if mza:

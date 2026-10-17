@@ -28,7 +28,7 @@ harness.
   touch `[L]` open questions. About 50 of those are marked as a static reading (a writer, a caller, a field meaning, a
   survey). The others need a run (plan 0038 or the plans below), two clients (plan 0044), owner play, a simulation
   phase, or are out of scope.
-- Questions about rooms that are released and re-activated go to [plan 0040](0040-drlg-room-lifecycle.md); the act
+- Questions about rooms that are released and re-activated go to [plan 0040](done/0040-drlg-room-lifecycle.md); the act
   and quest fields of `rng/seeds` go to [plan 0042](0042-quests-travel.md); gold amounts go to
   [plan 0043](0043-items-economy.md).
 - Method precedent: [plan 0015](done/0015-backlog-sweep.md), [plan 0020](done/0020-backlog-sweep-2.md) and
@@ -662,3 +662,36 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     rewritten row; dropped (stale cross-reference).
   - **Gate:** green (fast tier), 22 warnings (data/excel's 11 W1, held; 11 W3 from main).
   - **Next:** the owner merges `lane/p39s2`; data/excel goes with plan 0038 Phase 3.
+- **2026-10-17 — `lane/arc5` reviewed (architect, after merging `main` at `33d6d37`; the seven archivist entries of
+  2026-10-17: the PropParamCell order in `excel_bin.py`, the 0039 P1b/P1c, 0041 P1, 0042 P1 and 0043 P1 readers, the
+  plan 0044 pairs). Verdict: accept with fixes (applied in the review commit).**
+  - **Merge.** Clean; `backlog.py migrate` moved nothing. `main` had no `test_d2s.py` change, so there was nothing to
+    reconcile with `lane/rbs2`; if that lane lands its own base entries first, keep this one (it covers all 36 new
+    recipes and the eight legacy ones) and drop the duplicates.
+  - **Re-runs.** Gate fast green (53 warnings, all from `main`); `--full excel_layout,stats,economy,quest,travel,d2s`
+    green. `test_d2s.py` 45 tests OK. `excel_bin.py diff` Sets 2 144, SetItems 11 684, Runes 7 943, States 12 765, Books
+    27 cells, 0 mismatches. `mp_saves.py check`: 25 recipes 0 bad, 17 pairs 0 bad.
+  - **Baselines add only what they should.** `excel_layout`: `cells` +185 and `states_cells` +185 = the `attred` bit
+    over 185 records; `group` u8 + pad → s16 keeps the count. `stats`: the one new key `flag_attred=0`. No other key moved.
+  - **Tags against their findings, same strength:** States (data/0001 P1b descriptor, stats/0002 § 2–4), Sets/Runes/
+    SetItems (stats/0001 surprise (e)), Shrines (stats/0002 § 5, monsters/0003 P1c), Objects (objects/0001 P1b,
+    quests/0002 § 2 and § 6, stats/0002 § 5), Hireling and HireDesc (hirelings/0001 P1c), d2s.md (save/0001 P1b), Books,
+    Npc, MagicPrefix, ItemStatCost and Skills (items/0011 § 1, § 3, § 4), Levels (quests/0002 § 6, Dead ends). All hold
+    but the MonPlace and States points below.
+  - **Rulings on the lane's points.** (1) **MonPlace:** leaving the unread rows (0, 1, 4–16, 27, 33–36) as an open
+    question is right; the composite "`[C]` logged, `[I]` otherwise" bullet is split by case (logged: 17, 18, 23, 29,
+    30 in level 111, 31; `[I]`: 22, 32, `deathmauler1` in 110), and H4b's calls with case 36 are now mentioned. Reverser
+    follow-up filed. (2) **"22 of 56":** the 22 stands (56 − 34, stats/0002 surprise (f)); the sentence on the other 34
+    was stale after `lane/rbs`: its scan gives 27 of them an immediate set or clear site and none to 7 (6, 25, 29, 39,
+    116, 164, 171). Rewritten. (3) **The weak joiners** (level 9, 60 life, Fire Bolt 5) are a sound death case for MP01
+    and MP14 (b) as staged; "weak enough to die" is a staging estimate the session must record (max life after the
+    load, the death itself). For MP23's 200 attack events they would die too often; follow-up to add a strong pair.
+    (4) **Shrines `reset × 1200 + 1`** is stats/0002 § 5's `[I]` (0x00583C70, `+0x10`·1 200 + 1) at the same strength;
+    the doc now says a column unit is 1200 frames whatever the header's "minutes" says, and cites § 5.
+  - **Fixes (4):** (1) MonPlace fixed-class bullet tagged `[C]` over 22 and 32, which no log reached (overclaim).
+    (2) MonPlace: H4b's case-36 calls left out (omission). (3) States open question: the 34 rows "have setters listed,
+    in functions not read" predates `lane/rbs` (stale cross-reference). (4) Shrines `reset`: no finding link and the
+    header's unit unsaid (omission).
+  - **Closed:** the review request; `2026-10-17-architect-reverser-test-d2s-recipe-bases` (fixed here; 8 legacy bases).
+  - **Filed:** reverser `monplace-remaining-cases` (the unread `PresetMonSpawn` cases and case 36); archivist
+    `mp-saves-mp23-strong-pair` (a strong hostile pair for MP23's bulk).

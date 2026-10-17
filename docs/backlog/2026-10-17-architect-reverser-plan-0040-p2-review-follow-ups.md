@@ -1,0 +1,12 @@
+---
+from: architect
+to: reverser
+date: 2026-10-17
+status: open
+context:
+  - ../plans/done/0040-drlg-room-lifecycle.md#implementation-log
+  - ../findings/drlg/0009-room-lifecycle.md#11-phase-2-run2026-10-17-lifecycle
+resolution: ""
+---
+
+plan 0040 Phase 2 review follow-ups (static, no slot; not blocking P3). (a) **Town reachability** (drlg/0009 § 11 shortfall and open question): find the readers of MonStats `inTown` (`+0x0D` bit 2; set on 109 records, on no pool class) in the movement, path and collision code and the AI. Can a hostile pool monster (no `inTown`) stand in a town room? If yes, give a scripted or owner-play recipe and it becomes a P2 addendum case; if no, say so with the anchors, and the Phase 1b verdict's 'freed without a record' half is unreachable on stock data. (b) **Champions and `0x08`**: `MonMarkSpecial` (0x005A0320) has four callers, 0x005A0B61 (`SpecialMonPlace`, after every successful creation), 0x005A487B, 0x005A48F4 (`ChampionMemberMark`, skipped when monster data `+0x16` bit `0x04` is already set, 0x005A48EB) and 0x005A496E (`MonMakeSpecial`). Does every champion creation path pass one of them, so that a dead champion is never saved (drlg/0009 § 11, [I])? (c) Which call inside `SpecialMonRestore` (0x005A4440) applies the flag-1 handlers that champion stat 12 shows, and is `MinionRestore`'s flag 0 visible in any stat other than 12 (stat 12 does not separate it). (d) Tooling (`tools/rooms.py check`): print the save-test census per `SaveMonsters` 0 level split by `+0xC4` bit `0x2000000`, and the item-expiry branch counts, so the review's counts come from the kept tool; in harness-play or tooling.md, say that an aborted or overlapped session's partial log is kept as a development log, never deleted.

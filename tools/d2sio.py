@@ -11,7 +11,8 @@ For every save written (a WDONE line, with the WHDR/WLVL/WTIME/SBIT lines since 
     (= stat 12 as read by the writer), unk_2c (client +0x488), last_played (= time() in the writer), unk_34,
     mouse skills (player data +0x70..+0x8C: skill id, item ref 0 for "no item"), difficulty bytes (game
     difficulty byte = client act | 0x80, the others 0), map_seed (game +0x7C), 0xCF (client +0x480), the other
-    unk_bf bytes 0, and the character stats ('gf') against the unit's base stat list;
+    unk_bf bytes 0, and the character stats ('gf') against the unit's base stat list, each base value put through the
+    writer's CSvBits clamp first (csv_clamp);
   - for every item serialised in the final pass (SBIT final=true), the file item at the logged offset:
     flags (runtime item-data flags with bit 19 cleared and bit 23 set; bit 21 may be added, compactsave),
     version, location (= unit mode), body, store (= inventory page + 1), code, and for extended items seed
@@ -67,6 +68,20 @@ class Checker:
             print("  MISMATCH %s: file %r, runtime %r" % (what, got, want))
 
 
+def csv_clamp(v, bits, signed):
+    """D2S_WriteStats' inline clamp (save/0001 § Character stats, 0x00569605-0x00569698): with CSvBits < 32 the value,
+    compared as a s32, is clamped to [0, 2^bits - 1] for an unsigned stat (a negative value becomes 0) and to
+    [-2^(bits-1), 2^(bits-1) - 1] for a signed one (CSvSigned); CSvBits >= 32 is written unclamped."""
+    v &= M32
+    if v & 0x80000000:
+        v -= 1 << 32
+    if bits >= 32:
+        return v
+    if signed:
+        return max(-(1 << (bits - 1)), min(v, (1 << (bits - 1)) - 1))
+    return max(0, min(v, (1 << bits) - 1))
+
+
 def check_write(ck, buf, whdr, wlvl, wtime, sbits, isc, kinds, drops=None):
     f = d2s.parse(buf, isc, kinds)
     h = f["header"]
@@ -99,10 +114,12 @@ def check_write(ck, buf, whdr, wlvl, wtime, sbits, isc, kinds, drops=None):
     ck.eq("map_seed", h["map_seed"], whdr["g7c"])
     ck.eq("0xCF", buf[0xCF], int(whdr["c480"][:2], 16))
     ck.eq("unk_bf other bytes zero", bytes(buf[0xBF:0xCF]) + bytes(buf[0xD0:0x14F]), bytes(0x8F))
-    # values compared modulo the save field width: the runtime entry is a s32, the file field unsigned (experience
-    # above 2^31 from level 93 on, run:2026-10-16-player)
-    rt = [(i, p if isc[i]["csv_param"] else None, v & ((1 << isc[i]["csv_bits"]) - 1)) for i, p, v in whdr["stats"]
-          if isc.get(i, {}).get("csv_bits")]
+    # the runtime entry goes through the writer's clamp first (csv_clamp), then both sides are compared modulo the
+    # save field width: the runtime entry is a s32, the file field unsigned (experience above 2^31 from level 93 on,
+    # run:2026-10-16-player)
+    rt = [(i, p if isc[i]["csv_param"] else None,
+           csv_clamp(v, isc[i]["csv_bits"], isc[i].get("csv_signed")) & ((1 << isc[i]["csv_bits"]) - 1))
+          for i, p, v in whdr["stats"] if isc.get(i, {}).get("csv_bits")]
     ck.eq("gf stats", [(i, p, v & ((1 << isc[i]["csv_bits"]) - 1)) for i, p, v in f["stats"]], rt)
     items = {it["off"]: it for it in d2s.all_items(f)}
     final = [s for s in sbits if s["final"]]

@@ -363,6 +363,11 @@ never reached. Spec writes on image addresses: the security cookie (no output de
   0x006BD847), so an absent registration entry (0x0A, 0x0C, 0x0E, 0x10–0x12) is never registered, only defaulted. In
   this run no registration column was present and the pass did not run (the registration entries had no link, and no
   read through one was traced). (0x006BD7FE, 0x006BD85F)
+- [I] An absent callback entry (types 0x17–0x19) with no callback is skipped, not called: the defaults pass loads
+  `link` (`mov ebx, [ecx+0x10]` at 0x006BDFFC), tests it (`test ebx, ebx` at 0x006BDFFF) and jumps past the call
+  (`je 0x006BE022` at 0x006BE001), so such a field keeps the record's zero. A code reading only: no descriptor this run
+  emulated had a callback entry without a link, so no case reached the branch (plan 0038 p38s4 review, ruling on S1f
+  addition (g)). (fn:EXCEL_ParseTxt@0x006BD780, 0x006BDFFC–0x006BE001)
 
 ## Data touched
 

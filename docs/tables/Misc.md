@@ -211,6 +211,13 @@ has no column for (4 983 cells, all at the missing-column default).
   cell compiles to −16 (misc `TMogMin`/`TMogMax` of the Khalim parts → `0xF0`).
 - `[C]` Calc columns are offsets into `itemscode.bin`; every non-blank misc calc cell is an integer
   constant and decodes back to its value ([excel-bin.md § calc](../formats/excel-bin.md#calc-columns-formulas)).
+- `[I]` **`version` 0 places a row in the classic index map.** `ITEMS_LoadItemTables` writes, in item order, the
+  combined index of every weapons, armor and misc record whose `version` (`+0x0F6`) is 0 into a u16 list
+  (`g_pClassicItemIndex`); its one reader is the version-`0x47` item record reader, which names an item by its
+  position among the version-0 items and maps it through the list to the current index. `[C]` (data) 361 of the 659
+  item rows have `version` 0: weapons 175, armor 92, misc 94; the rest are 100 (misc one row 109).
+  ([data/0001 § Plan 0039 batch P1b](../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17) Q3,
+  fn:ITEMS_LoadItemTables@0x006315D0, data:g_pClassicItemIndex@0x0096CA78, tbl:Weapons.txt:version)
 
 ## Fields the quality roll reads (plan 0010 Phase 0)
 
@@ -310,7 +317,7 @@ The vendor fields, their offsets, the group order and the survey command are in
 ## Economy (plan 0043 Phase 0)
 
 The fields, their offsets, the readers named so far and the survey command are in
-[Weapons § Economy](Weapons.md#economy-plan-0043-phase-0); every price, repair and wear meaning is `[L]`. Misc rows
+[Weapons § Economy](Weapons.md#economy-plan-0043-phase-0), with the readers plan 0043 Phase 1 found (`[I]`). Misc rows
 (`[C]`, `python3 -I tools/economy_survey.py items`, gate survey `economy`):
 
 - `[C]` `cost` 0..134 540 (68 distinct). **`cost` is 0 on 7 rows**: gold (`gld`), the ear (`ear`) and five quest items
@@ -318,7 +325,8 @@ The fields, their offsets, the readers named so far and the survey command are i
   Book of Skill, Scroll of Malah - Boost Resistances). The other 12 quest rows have a `cost` (e.g. `luv` 99 999, `bkd` 12 000, `ice` 10 000, `xyz` 10 000, `qey` 45).
 - `[C]` **`gamble cost` is set on 5 rows only**, all above `cost`: `amu` 2 400 / 63 000, `rin` 1 800 / 50 000, the charms
   `cm1` 2 000 / 45 000, `cm2` 1 000 / 38 000, `cm3` 600 / 32 000 (`cost` / `gamble cost`); the other 146 cells are
-  blank. Only `amu` and `rin` are on the gamble list.
+  blank. Only `amu` and `rin` are on the gamble list. `[I]` Only those two (and version-0 items) have their gamble
+  price read from the column ([items/0011 § 2](../findings/items/0011-economy.md#2-the-gamble-price-mode-2)).
 - `[C]` `durability` is blank and `nodurability` 1 on every row; `durwarning` 0 everywhere.
 - `[C]` **Stacks.** 10 `stackable` rows: the tomes `tbk`, `ibk` (1/20/5 as `minstack`/`maxstack`/`spawnstack`), the
   quivers `aqv` (100/350/200) and `cqv` (60/250/150), `key` (1/12/6), gold `gld` (0/5000/0) and the four unused potions
@@ -330,7 +338,9 @@ The fields, their offsets, the readers named so far and the survey command are i
   `spe`, `cost` 32..100) are the only items whose type has `CostFormula` 2; no other misc type has a `CostFormula`
   ([ItemTypes § Repair and throwing columns](ItemTypes.md#repair-and-throwing-columns-plan-0043-phase-0)).
 - `[C]` The tomes' `cost` equals [Books](Books.md) `BaseCost` (`tbk` 250, `ibk` 200); `CostPerCharge` (50, 40) is
-  neither scroll's `cost` (`tsc` 100, `isc` 80).
+  neither scroll's `cost` (`tsc` 100, `isc` 80). `[I]` A tome's base price is `CostPerCharge × q + cost` (this
+  `cost`, not `BaseCost`); a quiver's is `cost × q / 1024` with the repair value `MaxStack × cost / 1024`; a body part's
+  `cost + 8 × MonStats Level` of its monster for the difficulty; an ear's `earLevel × cost` ([items/0011 § 1](../findings/items/0011-economy.md#1-the-price-core-inputs-and-the-base)).
 
 ## Open questions
 

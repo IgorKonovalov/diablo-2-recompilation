@@ -14,9 +14,10 @@ check  builds each recipe into a temporary directory and compares the built save
        (0x80 | act, all three difficulties) and the codes of the items added to the inventory. Exit 1 on any
        difference. `SURVEY quest_saves ...` ends the output.
 
-SET holds the 14 recipes plan 0042 Phase 0 adds and the 9 plan 0032 quest recipes the plan reuses (questfresh,
-questfreshv, questfreshvh, questb6, questdurielk, questrewards, questrewardsh, questservices, questcows). EXPECT covers the Phase 0 recipes only; the plan 0032 ones are
-checked by tools/test_d2s.py (QuestBitsTest, pinned hashes).
+SET holds the 14 recipes plan 0042 Phase 0 adds, the 9 plan 0032 quest recipes the plan reuses (questfresh,
+questfreshv, questfreshvh, questb6, questdurielk, questrewards, questrewardsh, questservices, questcows), and the 3
+saves plan 0042 Phase 1 (c) asks for (quest-w9lost, quest-w9book, quest-w39summit). EXPECT covers the Phase 0 and
+Phase 1 recipes; the plan 0032 ones are checked by tools/test_d2s.py (QuestBitsTest, pinned hashes).
 
 Bases: workspace/samples/d2s-owner/smpsor-l50.d2s (expansion Sorceress) and
 workspace/runtime/monspawn-chars/cls/smpsor.d2s (classic Sorceress), both with every quest word 0.
@@ -48,6 +49,7 @@ SET = {
     "travel-act2": "x", "travel-act3": "x", "travel-act4": "x", "travel-act5": "x", "questfreshc": "c",
     "questfresh": "x", "questfreshv": "x", "questfreshvh": "x", "questb6": "x", "questdurielk": "x",
     "questrewards": "x", "questrewardsh": "x", "questservices": "x", "questcows": "x",
+    "quest-w9lost": "x", "quest-w9book": "x", "quest-w39summit": "x",
 }
 
 # Waypoint indices per act: levels.txt Waypoint 0..38 in act order (docs/tables/Levels.md § Travel)
@@ -63,8 +65,8 @@ ACT5 = set(range(35, 41))
 TRAVEL_X = {7, 15, 23, 26, 28}     # acts_open in an expansion save
 ALL_X = ACT1 | ACT2 | ACT3 | ACT4 | ACT5 | TRAVEL_X
 
-# recipe -> (words with bit 0 set, waypoint bits, act of the header byte, added item codes); the same in every
-# difficulty; no other quest bit is set
+# recipe -> (words with bit 0 set, waypoint bits, act of the header byte, added item codes[, {word: other bits}]); the
+# same in every difficulty; no other quest bit is set than the optional fifth element names
 EXPECT = {
     "travel-wp1": (ALL_X, TOWN_WP | ACT_WP[1], 0, []),
     "travel-wp2": (ALL_X, TOWN_WP | ACT_WP[2], 0, []),
@@ -81,6 +83,11 @@ EXPECT = {
                     ["qf1", "qey", "qhr", "qbr"]),
     "travel-act5": (ACT1 | ACT2 | ACT3 | ACT4 | {7, 15, 23, 26}, ALL_WP - ACT_WP[5], 3, []),
     "questfreshc": ({7, 15, 23}, set(range(30)), 0, []),
+    # plan 0042 Phase 1 (c): the word-9 first-join clear (bits 0 and 5, no `ass`; counter case with `ass`) and the
+    # summit with the Ancients not done (quests/0001 § 8 word 9, § 10 word 39)
+    "quest-w9lost": (ALL_X, ALL_WP, 1, ["tbk"], {9: 1 << 5}),
+    "quest-w9book": (ALL_X, ALL_WP, 1, ["tbk", "ass"], {9: 1 << 5}),
+    "quest-w39summit": (ALL_X - {39, 40}, ALL_WP, 4, ["tbk"]),
 }
 
 
@@ -93,13 +100,14 @@ def build_one(excel, name, out_path):
 
 def check_one(name, b):
     """[difference, ...] between a built save image and EXPECT[name]."""
-    words, wps, act, codes = EXPECT[name]
+    words, wps, act, codes = EXPECT[name][:4]
+    extra = EXPECT[name][4] if len(EXPECT[name]) > 4 else {}
     errs = []
     qw = d2s.quest_words(b)
     wpb = d2s.parse_waypoints(b)
     for d in range(3):
         got = {q for q in range(d2s.QUEST_WORD_COUNT) if qw[d][q] & 1}
-        other = [(q, qw[d][q] & ~1) for q in range(d2s.QUEST_WORD_COUNT) if qw[d][q] & ~1]
+        other = [(q, qw[d][q] & ~1) for q in range(d2s.QUEST_WORD_COUNT) if qw[d][q] & ~1 != extra.get(q, 0)]
         if got != words:
             errs.append("%s: bit-0 words +%s -%s" % (d2s.DIFFICULTIES[d], sorted(got - words), sorted(words - got)))
         if other:

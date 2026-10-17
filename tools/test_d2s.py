@@ -24,7 +24,8 @@ every output goes to a scratch directory, nothing in workspace/ is written:
 - QuestBitsTest (plan 0032 Phase 0) covers "quest_bits": exactly the asked bits change against the base (set,
   and clear of bits that "quests" set), the refusals (word, bit, a bit both set and cleared, a difficulty), and the
   simple quest item's required "quest_diff" (stat 356). Plan 0042 Phase 0: tools/quest_saves.py check passes on
-  its 14 recipes and build writes the whole set.
+  its 17 recipes (14 of Phase 0, 3 of Phase 1 (c)) and build writes the whole set. Plan 0044 Phase 2:
+  tools/mp_saves.py check passes on its 25 recipes and 17 pairs and build writes the whole set.
 - MercTest (plan 0033 Phase 0) covers the "merc" key: the header fields 0xAF..0xBE, the mercenary item list after
   'jf' (equipped, hand item last) read back and round-trip byte for byte, the dead flag (bit 16), and the refusals
   (no row of the save's Version, seed 0, a name id past NameLast, items in a classic save, an item not placed with
@@ -56,6 +57,7 @@ BASE_X = os.path.join(WS, "samples", "d2s-owner", "smpsor-l50.d2s")       # expa
 BASE_C = os.path.join(WS, "runtime", "monspawn-chars", "cls", "smpsor.d2s")  # classic Sorceress
 BASE_N = os.path.join(WS, "samples", "d2s", "smpnec.d2s")                # expansion Necromancer
 BASE_RW = os.path.join(WS, "samples", "d2s", "qitbarb.d2s")              # expansion Barbarian, runeword sword
+BASE_PAL = os.path.join(WS, "samples", "d2s", "smppal.d2s")              # expansion Paladin
 RECIPES = os.path.join(HERE, "d2s_recipes")
 P0005 = os.path.join(WS, "runtime", "saves-backup", "p0005")              # run:2026-10-16-calc bases (smp<cls>.d2s)
 SAMPLES = os.path.join(WS, "samples", "d2s")                               # run:2026-10-16-player level-up bases
@@ -205,6 +207,43 @@ RECIPE_BASES = {
     "travel-wp4": (BASE_X, None),
     "travel-wp5": (BASE_X, None),
     "travel-wpnone": (BASE_X, None),
+    # plan 0042 Phase 1 (c) (tools/quest_saves.py) and plan 0044 Phase 2 pairs (tools/mp_saves.py): not loaded yet
+    "quest-w9lost": (BASE_X, None),
+    "quest-w9book": (BASE_X, None),
+    "quest-w39summit": (BASE_X, None),
+    "mp-nova-host": (BASE_X, None),
+    "mp-nova-weak": (BASE_X, None),
+    "mp-nova-low": (BASE_X, None),
+    "mp-tank-join": (BASE_X, None),
+    "mp-mf-host": (BASE_X, None),
+    "mp-merc-host": (BASE_X, None),
+    "mp-forge-host": (BASE_X, None),
+    "mp-forge-join": (BASE_X, None),
+    "mp-forge-done": (BASE_X, None),
+    "mp-andy-open": (BASE_X, None),
+    "mp-andy-done": (BASE_X, None),
+    "mp-andy-weak": (BASE_X, None),
+    "mp-den-host": (BASE_X, None),
+    "mp-den-join": (BASE_X, None),
+    "mp-dur-host": (BASE_X, None),
+    "mp-dur-closed": (BASE_X, None),
+    "mp-dur-open": (BASE_X, None),
+    "mp-anc-join": (BASE_X, None),
+    "mp-anc-low": (BASE_X, None),
+    "mp-scroll-join": (BASE_X, None),
+    "mp-quest-host": (BASE_X, None),
+    "mp-quest-join": (BASE_X, None),
+    "mp-cow-host": (BASE_X, None),
+    "mp-pal-join": (BASE_PAL, None),
+    # recipes committed by session lanes without a base entry here (found by test_every_recipe_has_a_base, lane/arc5)
+    "combatow": (BASE_X, None),
+    "combatsorh": (BASE_X, None),
+    "questalldone": (BASE_X, None),
+    "questbaalf": (BASE_X, None),
+    "questfreshct": (BASE_C, None),
+    "questfreshm": (BASE_X, None),
+    "questfresht": (BASE_X, None),
+    "questservicesone": (BASE_X, None),
 }
 
 _TABLES = []
@@ -652,11 +691,24 @@ class QuestBitsTest(Scratch):
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             self.assertEqual(quest_saves.main(["check", EXCEL]), 0, buf.getvalue())
-        self.assertIn("SURVEY quest_saves recipes=14 bad=0", buf.getvalue())
+        self.assertIn("SURVEY quest_saves recipes=17 bad=0", buf.getvalue())
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(quest_saves.main(["build", EXCEL, self.path("set")]), 0)
         self.assertTrue(os.path.exists(self.path("set/ActFourDurance/ActFourDurance.d2s")))
         self.assertEqual(len(os.listdir(self.path("set"))), len(quest_saves.SET))
+
+    def test_mp_saves_check(self):
+        """plan 0044 Phase 2: every two-client pair holds the state of its cases (tools/mp_saves.py check), and
+        every recipe of the set builds into <Name>/<Name>.d2s."""
+        need(BASE_X, BASE_PAL)
+        import mp_saves
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            self.assertEqual(mp_saves.main(["check", EXCEL]), 0, buf.getvalue())
+        self.assertIn("SURVEY mp_saves recipes=25 bad=0 pairs=17 pairs_bad=0", buf.getvalue())
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(mp_saves.main(["build", EXCEL, self.path("mp")]), 0)
+        self.assertEqual(len(os.listdir(self.path("mp"))), len(mp_saves.SET))
 
 
 class MercTest(Scratch):

@@ -23,7 +23,8 @@ tools/ghidra.sh emutrace cases mem > out # per-case memory, dumps, guards, trace
 ```
 
 - Project: `workspace/ghidra/d2.gpr`, program `game.exe`, language `x86:LE:32:default`, cspec `windows`.
-- Logs: `workspace/logs/ghidra-build-<UTC>.log` (+ `.script.log`), and `workspace/logs/ghidra-last.log(.script)`
+- Logs: `workspace/logs/ghidra-build-<UTC>.log` (+ `.script.log`), and `$GHIDRA_LOG` (default
+  `workspace/logs/ghidra-last.log`, or `ghidra-last-<project dir basename>.log` for a project copy; § emutrace)
   for the most recent query. Query commands open the project `-readOnly`, so renames have to go through
   `re/symbols.csv` + `import-symbols` (or the GUI followed by `export-symbols`).
 - `SYMBOLS_CSV=<path>` points import/export at another CSV (round-trip tests).
@@ -63,7 +64,9 @@ GHIDRA_PROJ_DIR=workspace/ghidra-<lane> GHIDRA_HEADLESS_MAXMEM=3G \
 
 - **Memory spec** (`<mem>`, applied before every case; `#` comments): `load <addr> <file>`, `dword <addr> <value>`,
   `bytes <addr> <hex>`; `const <directive>` writes once, before the first case (for large tables the code only reads;
-  much faster); `guard <addr>` stops any case whose pc reaches `addr` (`STOP … guard address reached`). Put the
+  much faster); a scratch structure the code reads through an image pointer (DataTables and the like) is written
+  **one field per field the claim reads**, never as a whole page, so a read of any other field is traced (S1f review,
+  ruling 4; whole-page specs of earlier records stand); `guard <addr>` stops any case whose pc reaches `addr` (`STOP … guard address reached`). Put the
   allocator and fatal-path entries in as guards (`sweep_s1f.py` adds 0x00408090, 0x00408A60, 0x00681E09, 0x0040B4B0,
   0x0040B430 and 0x0040B480 to every family), so that a case reaching either is a stop, never a silent pass.
 - **Cases file**: blocks, each ended by a `call <fn> <ecx> <edx> [args…]` line (args pushed as for `__stdcall`, arg 1
@@ -89,9 +92,10 @@ GHIDRA_PROJ_DIR=workspace/ghidra-<lane> GHIDRA_HEADLESS_MAXMEM=3G \
   case writer leaves fault inputs out and never counts one as a match. Faults, x87 results and OS calls are not
   emulated evidence (ADR-0015 condition 5). Cite subtle instructions (flags consumed across instructions, `shl r, cl`,
   `rep` forms) from objdump next to the claim; `sweep_s1*.py static` pins them.
-- `tools/ghidra.sh` logs to the shared `workspace/logs/ghidra-last.log`. When another lane runs Ghidra at the same
-  time, call `analyzeHeadless <project copy> d2 -process game.exe -noanalysis -readOnly -scriptPath re/ghidra_scripts
-  -postScript EmuTrace.java <out> <cases> <mem> -log <own log>` directly instead.
+- **Per-lane log.** Every non-build command logs to `$GHIDRA_LOG`, default `workspace/logs/ghidra-last.log` for a
+  project directory named `ghidra` and `workspace/logs/ghidra-last-<basename of GHIDRA_PROJ_DIR>.log` otherwise, so a
+  lane on its own project copy (`GHIDRA_PROJ_DIR=workspace/ghidra-<lane>`) never truncates or greps another lane's log;
+  set `GHIDRA_LOG` to override it. `import-symbols`, `export-symbols` and `decompile-range` read their result from it.
 
 ## radare2 / rizin quick looks
 
@@ -272,6 +276,17 @@ formulas a second while the pointer rests on a skill. Check with `python3 -I too
 A fresh Act I character starts beside Warriv, not the waypoint: start field sessions in Act IV (progression 15,
 difficulty bytes 131) so `d2pilot.py farm --wp 1,2` finds the waypoint.
 
+### Room-lifecycle sessions (plan 0040, run:2026-10-17-lifecycle)
+`tools/gdb/rooms.gdb` (`pilot.py` + `rooms.py`) logs the reference moves with before/after snapshots of the DRLG rooms
+(`RM0`/`RMX`) and every server callback (`RCB`; the pilot's own `CB` is the collision grid), the client lists, each
+release pass (`RP`, every 12 frames), the save test per unit with its sub-results, the records, the restore and the
+wanderer gate, every line with the game frame `f`. `tools/rooms_sessions.py run --slot N --tag T --saves DIR --run R
+SESSION…` plays waypoint travel, then cycles of `explore --any-level` and a return to the arrival point
+(`explore --to-rect`), so the rooms left behind are released and restored on the way back; the `town` kind walks out
+of the Rogue Encampment and back and takes the waypoint away and back (`wpchain`, which needs the `OBJP` lines
+`rooms.py` writes every fifth `RP`). Check with `python3 -I tools/rooms.py check <logs>`. A session of four cycles
+gives a log of 3–12 MB.
+
 ### NPC actions (plan 0031, run:2026-10-15-vendors)
 
 `tools/d2pilot.py npc <log> <name> trade|gamble|hire --slot N [--repeat K] [--stay] [--buy ROW] [-v]` opens a town NPC's trade,
@@ -377,34 +392,50 @@ bit write `QS`/`QC` with its return address and the word before, every `QUESTS_G
 
 The game refuses a second copy in one wine session ("Only one copy of Diablo II may run at a time": `FindWindowA`
 on its own window class at `0x004F5610`). The second client therefore runs in **its own prefix and display** (a
-second slot), and the two meet in a **TCP/IP game** over `127.0.0.1`. A two-client lane is given two slots; below,
-slots 0 and 1. Plan 0011's runs used `workspace/wineprefix2` on `:8` for the joiner; that prefix is kept for the
-record (ADR-0008) but is not a slot, and `:8` is now slot 1's display, so new runs use slot 1:
+second slot), and the two meet in a **TCP/IP game** over `127.0.0.1`. A two-client lane is given two slots, **both
+non-zero** (the owner's condition on ADR-0008, 2026-10-16: slot 0 stays the owner's); below, slots 1 and 2. Plan
+0011's runs used `workspace/wineprefix2` on `:8` for the joiner; that prefix is kept for the record (ADR-0008) but is
+not a slot.
 
 | | host (server) | joiner |
 |---|---|---|
-| slot | 0: `:7`, `workspace/wineprefix` | 1: `:8`, `workspace/wineprefix-1` (`tools/slots.py create 1`, same hidden workspace rule) |
-| saves | `tools/saves.py aside/install/restore` | `tools/saves.py --slot 1 aside/install/restore`, a test character built with `tools/d2s.py` |
-| launcher | `d2run.py --gdb …` (gdb on this process) | `d2run.py --slot 1` (no `--gdb`) |
+| slot | 1: `:8`, `workspace/wineprefix-1` | 2: `:9`, `workspace/wineprefix-2` (`tools/slots.py create N`, same hidden workspace rule) |
+| saves | `tools/saves.py --slot 1 aside/install/restore` | `tools/saves.py --slot 2 aside/install/restore`, a test character built with `tools/d2s.py` (another name) |
+| launcher | `d2run.py --slot 1 --gdb …` (gdb on this process) | `d2run.py --slot 2` (no `--gdb`) |
 | menus | `tools/gdb/two-host.steps` (Other Multiplayer → TCP/IP → Host → OK) | `tools/gdb/two-join.steps` (… → Join → `127.0.0.1` → OK → OK), started once the host is in game |
 
+**Before the run's first hosting session**, the run record states how TCP port 4000 is unreachable from outside
+loopback (the owner's `sudo ufw status verbose`, or the deny rule the owner added), with the commands and their
+output; before each later session the lane re-reads the ufw state and file hashes without root and logs them:
+[multiplayer/0001 § 5](../../../../docs/findings/multiplayer/0001-cases.md#5-the-hosts-binding-and-the-port-4000-precondition).
+No hosting session starts before that line is in the record.
+
 ```bash
-python3 -I tools/d2run.py --seed 1 --gdb tools/gdb/tc-party.gdb --steps tools/gdb/two-host.steps \
-    --after 3600 --log workspace/logs/tc-party-N.log &                  # wait ~50 s
-python3 -I tools/d2run.py --slot 1 --seed 1 --steps tools/gdb/two-join.steps --after 3600 \
+python3 -I tools/d2run.py --slot 1 --seed 1 --gdb tools/gdb/two-pilot.gdb --steps tools/gdb/two-host.steps \
+    --after 3600 --log workspace/logs/two-N.log &                       # wait ~50 s
+python3 -I tools/d2run.py --slot 2 --seed 1 --steps tools/gdb/two-join.steps --after 3600 \
     --log workspace/logs/join-N.log &                                    # wait ~55 s
-python3 -I tools/xdrive.py --slot 0 --window "Diablo II" run tools/gdb/two-party-invite.steps
-python3 -I tools/xdrive.py --slot 1 --window "Diablo II" run tools/gdb/two-party-accept.steps
-python3 -I tools/d2hunt.py --slot 1 findwp      # optional: move the joiner (then click a row on :8)
+python3 -I tools/d2pilot.py join workspace/logs/two-N.log where --slot 2
+python3 -I tools/d2pilot.py join workspace/logs/two-N.log party invite --slot 1 --me host --lead join
+python3 -I tools/d2pilot.py join workspace/logs/two-N.log party accept --slot 2
+python3 -I tools/d2pilot.py join workspace/logs/two-N.log follow --slot 2 --time 120
 ```
 
+- **The joiner's driver** (`d2pilot.py join`, plan 0044): the joiner has no debugger, so it is steered from the
+  host's `PLRS` lines (`tools/gdb/two-players.py`: every player's position, level, dead bit, party, travel tick and
+  hostility stamps). `--slot` is the client being driven; `--me`/`--lead` are `host`, `join` or a unit id. Actions:
+  `where`, `follow`, `party invite|accept|leave|hostile` (the steps files below), `leave` (Escape, exit item),
+  `trade TOKEN…`. `--me` on any other command (`wp`, `npc`, `explore`) also steers by PLRS; without it, the PLR
+  line alternates between the two players' marks. The hostile button, the exit item and the trade geometry are
+  uncalibrated until the plan 0044 live test (`tools/joiner.py`).
 - gdb goes on the **host**: it runs the server game, so `TC_ResolveDrops` and the party count run there (every
   resolver call of the two-client runs was logged by the host's gdb). The joiner is a plain client.
 - Each slot has its own driver pidfile (`d2run-driver.pid` for slot 0, `d2run-driver-slot1.pid` for slot 1), and
   each driver's `wineserver -k` reaches only its own prefix. End a session with `tools/slots.py stop` on **both**
   slots.
-- Two characters with different names (the host's and the joiner's). The party screen (`p`) lists the other player
-  on row 1: `INVITE` / `ACCEPT` / `LEAVE` buttons at window (297,141) and (333,87).
+- Two characters with different names (the host's and the joiner's), both at level 9 or more when a case declares
+  hostility (0x005A5E84). The party screen (`p`) lists the other player on row 1: `INVITE` / `ACCEPT` / `LEAVE`
+  buttons at window (297,141) and (333,87).
 - `tools/gdb/tc-party.gdb` = `tc-drops.gdb` plus `tc-party.py`: at `TC_DropByIndex` entry it logs every player unit
   (`PLR`: id, subtile position, level id, mode, dead flag), the party list (`PTY`) and the source/killer position
   (`KILL`); `tools/tc.py replay` checks every `PARTY` and `PLAYERS` line against them and `-v` prints the distances.

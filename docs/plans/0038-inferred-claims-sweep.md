@@ -1976,3 +1976,237 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request closed; the S1f Phase 3 entry annotated with the rulings; new: reverser, the
     NULL-callback finding line. Ledger row added in [metrics](metrics.md) (2: overclaim 2).
   - **Next:** merge `lane/p38s4`. Phase 3 continues per cluster as H4a, H2b, H6d and H3b are accepted.
+- **2026-10-17 — Batch H6d done (reverser, `lane/h6d` from `main` `4d31287`, slot 2).** run:2026-10-17-sweep-quest-b6,
+  19 sessions (5 failed starts or routes among them, all logged and listed), recorded in
+  [items/experiments.md](../findings/items/experiments.md#run2026-10-17-sweep-quest-b6). Logger `tools/gdb/quests.gdb`
+  with new `quests.py` lines `QME`, `MMR`, `BG0`, `BGR`, `GLD` and `OOP` (tags only). New checker `tools/sweep_h6d.py`
+  (`logs`, `static`, `copies`) with `tools/test_sweep_h6d.py` (8 tests). New session runner `tools/h6d_sessions.py`.
+  Pilot additions (`hunt --pet`, `--summon-key`, `--goal`, `objop --pdef-any`, Warriv). Six recipes.
+  - **Checks:** `sweep_h6d.py logs` 0 bad over the 19 logs; `questdrops.py` 0 mismatches; `tc.py replay` 1 322
+    calls (66 of them classic; "1 322 + 66" in the draft, review fix), 0 failed; `items_chain.py affixes` 1 153 creations, 0 failed; `monpool.py check` 8 607/8 607.
+  - **17 statements: 5 raised, 9 raised in part, 2 shortfall, 1 reclassified.**
+    - Raised: qd 18 (Warriv's report: bit 1 cleared and bit 0 set, written save, quest TC in the next game), qd 22
+      (gems in Normal, Nightmare, Hell and classic), qd 27 ×2 (Baal's gold: `RandLoHi` reproduced, one pile, stat 14),
+      tc 26 (the quest TC replaces the column for a hireling's and a Hydra's kill).
+    - In part: qd 11 ×4 and tc 27 (hireling and summon resolved to the owner, the unresolved killer passed to the TC
+      walk; the `exp`-state branch remains), qd 13 (Baal's order and mode-0 record; MonModeRecord read statically for
+      every class; Diablo remains), qd 16 ×3 (Baal fresh and done; Diablo remains).
+    - Shortfall: qd 25 ×2 (the Nightmare forge was not reached in three sessions; the boundary is already `[C]` from
+      the owner's Hell session).
+    - Reclassified: us 21 → b, H1a (the services' copies make no creation record; the restore flag comes only from the
+      version-`0x47` item-list reader). Proposed in [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews).
+  - Fewer than half of the rows are raised outright, because two targets need routes the scripted pilot lacks: the
+    Chaos Sanctuary's seals and the River of Flame crossing on map seed 3811. An owner-played addendum (Diablo fresh and
+    done, the Nightmare forge) is proposed in the run record.
+  - **Also:** a correction to S2c's qd 49 refinement (Baal's death does create items: the gold piles); the backlog's
+    `PlayerFindItemByCode` cursor-branch question answered statically (items/0010 § H6d).
+  - **Symbols:** `QUESTS_MonsterDeathEvent`, `QUESTS_PlayerRecord`, `sub_005A78A0_MonModeRecord`,
+    `sub_00595C60_A1Q6_NpcMessage`, `sub_0058DF20_A5Q6_BaalDeath`, `sub_0055B030_DropGold` and
+    `sub_0055A090_DropGoldAmount` I → C; new `sub_0058F090_MonsterOwnerRef` (C).
+  - Review requested (backlog). Slot 2 stopped, its saves restored, no session left running.
+
+- **2026-10-17 — Batch H6d review (architect, `lane/h6d`): accept with fixes.** `main` merged into the lane first, twice:
+  `cf1d6e1` (148 commits past the lane's base `4d31287`), then `f33ee6d` (plan 0043 P1/1b, no conflict). Conflicts kept both sides: the backlog archive (then
+  `tools/backlog.py migrate`; one stale copy of the plan 0043 archivist follow-up, closed on `main`, was migrated as a
+  new open file by the merge and was removed), items/0001, 0004 and 0010 (main's P1b, P1c and S1f sections, then
+  H6d's), this log, the inventory and `re/symbols.csv` (H6d's `C` rows replace `main`'s `I` rows of the same names at
+  the same addresses; no duplicate address). `tools/d2pilot.py`: `main`'s `upkeep(args, p, st)` with the lane's
+  `not args.pet` gate.
+  - **Re-runs.** Manifest: 19 of 19 OK. `sweep_h6d.py logs` and `static` byte-identical to the lane's reports;
+    `copies` (LZ0 15, PZ 15, no `IC0`) and `test_sweep_h6d.py` (8) re-run; `questdrops.py check` on the 19 logs
+    (MemoryMax 4G) 0 mismatches; `tc.py replay` on sessions 6, 9, 12, 17, 18: 493 calls, 0 failed, each B6 test
+    reproduced, the same counts as the lane's. objdump spot-checks: `MonModeRecord` whole (0x005A78A0–0x005A79B0, the
+    five jump targets, the default `shl eax, 4; add eax, 0x006E2260`), `MonsterOwnerRef` (0x0058F090), the death
+    event's owner lookup (0x00543A8C–0x00543AB2), Warriv's `QUESTRECORD` clear and set (0x00595D92, 0x00595D9C),
+    Baal's gold loop (`imul 0x1770`, `+0x5DC`, `+0xBB8`, the `0xFFFF` clamp, the loop over `ctx+0x88`, the flag at
+    0x0058DFA6), `DropGoldAmount`'s `cmp eax, 0x77359400` (0x0055A0F3) and `ITEMS_CreateForStore` call (0x0055A188),
+    `PlayerFindItemByCode`'s five tests, and the `ItemCreateFromOldRec` store (0x00530FDA) and its callers.
+  - **Ruling 1 (qd 18 and the Hydra kill on session 6's written save).** Accepted. The save is the game's own write
+    (a *Save and Exit*), not a tool-built state, and the claim's three links are each logged: Warriv's clear and set
+    in session 6, the written word (`d2s.py questbits`, re-run at the review on the kept file), and the loaded word
+    `0x0019` that `B6P` reads in session 9 before the quest TC. The save was left in the lane's session scratch; it and
+    the six built saves are now kept in `workspace/logs/h6d/saves/` with `quest-b6-saves.sha256` (fix, tool not kept).
+  - **Ruling 2 (qd 22, one map seed).** Raised as filed, for the code path: the statement is "the same in every
+    difficulty and game type", and the six kills ran it in four states with the draws reproduced and the ilvl
+    following the difficulty (12, 49, 75). It says nothing about pick frequencies, which D1 does not claim. The
+    statement's second clause, the per-player callbacks for "the killer's Act I party", is a party case the run cannot
+    separate; Phase 3 keeps that clause `[I]` or splits it (fix to the spec-writer entry, overclaim).
+  - **Ruling 3 (qd 13's Diablo half on the static read).** The kill order for Baal is `[C]` as filed. The static
+    sentence "no class gets a special mode-0 record" is a new code reading whose run covered two of the five jump
+    targets (Andariel's default, Baal's 0x005A7991). It is now `[I]`; Diablo's block (0x005A7977) was not run, so his
+    record and order stay `[I]` with the static read as their support (fix, overclaim; the "five case blocks" wording
+    made four blocks and a default).
+  - **Ruling 4 (us 21 → b, H1a).** Accepted with a reach condition. The service copies make no creation record
+    (`copies` re-run). The restore flag's only constant store is in `ItemCreateFromOldRec`, whose two calls sit in
+    helpers `0x00531040` and `0x00531390`, called only from `sub_00533350_ItemListReadV71` (four calls, no stored
+    pointer; the draft put the calls in the reader itself, fix, wrong anchor). H1a first shows a version-71 load
+    reaches `0x00533350`; if the loader refuses that version first, the row goes to d-none with the refusal as the
+    reason, recorded at H1a's review.
+  - **Ruling 5 (the LvlWarp numbering note).** Known and documented: [LvlWarp](../tables/LvlWarp.md) header and
+    § Row identity (88 records, the `Expansion` marker not loaded; `Id` equals the record index only up to 71) and
+    [excel-bin](../formats/excel-bin.md) (the 30 marker rows). Nothing goes to the archivist; the run record's
+    session 16 row now cites both.
+  - **Ruling 6 (the owner-played addendum).** The Diablo remainders of qd 13 and qd 16 are recorded as **d-owner
+    candidates** (inventory § 2.6; the rows stay counted as H6d, no totals change): the pilot reached the Chaos
+    Sanctuary but cannot open the seals, and one owner pair (Diablo fresh, Diablo done) would close both. qd 25 stays a
+    shortfall: its boundary is already `[C]` from the owner's Hell session, and a Nightmare equality would add a second
+    case of the same compare. The forge session is not requested.
+  - **Raises judged.** qd 11 ×4 and tc 27 in part (the `exp`-state branch and the party remain); tc 26, qd 18, qd 22,
+    qd 27 ×2 raised; qd 16 ×3 in part (Baal both states). qd 27's single draw decides: the model reproduces the value
+    and the seed after it from the logged quest seed, which a wrong reading would not match by chance. The S2c qd 49
+    correction (Baal's gold piles are items) stands. The `PlayerFindItemByCode` answer agrees with plan 0039 P1b's
+    § B12, which answered the same entry first on `main`; the H6d paragraph now says so and uses `main`'s names
+    (`INV_GetCursorItem`, `ITEMS_GetCode`, `INV_GetFirstItem`, `INV_GetNextItem`), and the spec-writer entry's item
+    (g) points at the P1b fold.
+  - **Fixes (8).** Miscount 2: `tc.py replay` 1 388 → 1 322 (the classic 66 counted twice; finding, record, log);
+    "harness batches hold the same 537" → 532. Misread 1: `MonsterOwnerRef` returns the GUID from `+0x2C` and the type
+    from `+0x30` of the record MonsterData `+0x28` points to (the draft swapped them; finding body and *Functions*
+    row). Wrong anchor 1: the `ItemCreateFromOldRec` calls lie in two helpers of the V71 reader. Overclaim 2: qd 13's
+    static sentence `[C]` → `[I]`; qd 22's party clause kept out of the spec-writer's `[C]`. Tool not kept 1: the
+    saves. Stale cross-reference 1: the `PlayerFindItemByCode` paragraph and entry (g) against P1b.
+  - **Totals** (recomputed once after the merge): H6d moves one b row to H1a (46). **Static 567, harness 532, c-emu
+    0, blocked 415** (d-none 282, d-edit 73, d-sim 28, d-2c 14, d-owner 10, d-0032 8), **deferred 2, raised 10:
+    1 526.**
+  - **Phase 3 clusters.** None newly qualifies. H6d's three clusters still wait: items/tc on H2a, H2b and H2c;
+    items/uniques-sets on H2b and now H1a (us 21); items/quest-drops on H4a, H6e1 and H6e2. The H6d raises are banked in
+    the spec-writer's entry for those rounds.
+  - **Symbols.** The seven I → C stand (each name's function ran under a logged line: `QME`, `B6P`, `MMR`, Warriv's
+    `QC`/`QS`, `BG0`, `GLD`); `sub_0058F090_MonsterOwnerRef` (C) is new and its address is not named on `main`.
+  - **Backlog:** review request closed; the spec-writer entry annotated with rulings 2 and 3 and the (g) pointer; the
+    H1a piece annotated with the reach condition. New: the human (owner) entry for the Diablo pair, d-owner candidates.
+    Ledger rows added in [metrics](metrics.md).
+
+- **2026-10-17 — `lane/rbs` review (architect, static backlog sweep): accept with fixes.** `main` (`fc3e89b`) merged
+  first, clean; `tools/backlog.py migrate` changed nothing; `re/symbols.csv` untouched by the lane, no duplicates.
+  - **Checked.** Tests: `test_sweep_s2c` (6), `test_sweep_h5e` (4), `test_sweep_s4a` (9) pass; `test_d2s` has one
+    failure that `main` has too (two recipes with no base, from e2d42b1; backlog). Every hash in
+    `workspace/logs/sweep-rbs-manifest.txt` re-taken: the four outputs and the tool versions match. `state_setters.py`
+    re-run on a fresh objdump dump (same sha256 `b1e133a0…`): 659 sites, 391 resolved, 27 rows set or cleared and
+    7 none, the per-row setters and test-site counts as in the stats/0002 table. `d2sio.py check` re-run over the 23
+    logs (manifest hashes checked): 13 268 comparisons, 0 mismatches; the parent version gives 10. Sets params: 35
+    stores of EBX = 0x006336A0 in `sub_00634DC0_LoadSetTables` (16 from 0x00634EAE to 0x00635779), and over the
+    stock tables (case-folded) 44 skill ∩ state names, 0 montype ∩ state, montype ∩ skill = {`mosquito`}. Anchors read
+    in objdump: 0x006336A0–0x00633727 (the `-`/digit test, skills 0x0096C7CC, montype 0x0096C868, states 0x0096BCF0,
+    the 0 store), 0x00634DD7, 0x006BDFFC–0x006BE001, 0x00680170, 0x006807F3–0x0068080A, 0x0068023B, 0x00681454,
+    0x0068086F, 0x0045F5AA–0x0045F5AD, 0x005D22F0–0x005D22FE, 0x00579B64. `tools/ghidra.sh` read: the default
+    project `workspace/ghidra` keeps `ghidra-last.log`; `bash -n` clean.
+  - **Rulings.** (1) 0041 (e) `[I]` accepted; the archivist entry stands. (2) The 34 States rows: 27 placed `[I]`,
+    7 `[L]` in the finding, accepted. (3) room-tiles 20 raised `[C]`, 9 raised in part (fatal branch `[I]`): a draw in
+    any of the 1 280 fallbacks would move the room's k (rule 10 met); recorded in inventory § 2.6 and the per-spec file,
+    no class moves, totals unchanged. (4) The NULL-callback `[I]` line meets ruling 2 of the p38s4 review; data/excel J3
+    may cite it. (5) `GHIDRA_LOG` and the tooling.md rules accepted. (6) The d2sio clamp accepted. (7) The S2c flag clobber
+    accepted, extended (fixes). (8) The H5e counters accepted. (9) 0037 close: fire at the cap 2 115 `[C]` run (count
+    re-read in the kept output); "never `boss`" `[I]`, consistent with combat/delivery E2 and the combat wiki. (10) H5e
+    (a), (d), (e) accepted at `[I]`, entry kept open. On (e) and rule 9: the five unfollowed callees are named and
+    counted, so the rule is met, but the d-none rests on them; they become item (e′) of the open entry. (11) The
+    harness skips are accepted: each names the harness batch it rides on.
+  - **Fixes (5).** *Miscount 1:* drlg/0008 (e)'s pattern `or[lb]?` missed `orw $0x20,(%eax)` at 0x006689BC and
+    0x00668FC8 (cube parsers): three lines in the range, eight in `.text`. The text also scopes what the pattern does not
+    cover (11 displacement forms in the range, register sources). *Tool not kept 2:* the `state_setters.py` and
+    `d2sio.py check` outputs are now under `workspace/logs/` with manifest lines, cited in stats/0002 and save/0001.
+    *Omission 1:* `sweep_s2c.py emu` now also clears flags on `call` and on a memory `cmp`/`sub`/`add`; three negative
+    cases were added and the `static` output is unchanged. *Wrong anchor 1:* `PropParamCell`'s range ends at
+    0x00633727, not at the next function's 0x00633730.
+  - **Backlog.** The review request is closed. The H5e reachability and S2c tool entries are annotated. New entries:
+    reverser, *static sweep, remaining* (the checkpoint list plus (e′)); reverser, the `test_d2s.py` recipe bases.
+    The spec-writer's room-tiles re-tag entry (filed by the lane) stands. Ledger rows are in [metrics](metrics.md).
+  - **Next:** merge `lane/rbs`.
+
+- **2026-10-17 — Phase 3, room-tiles after the `lane/rbs` re-rule (spec-writer, `lane/sw5`, from `main` `3e169e4`).**
+  Every batch carrying drlg/room-tiles rows is accepted (S4a, S4b, H5c, inventory § 5; the `lane/rbs` re-rule of rows
+  9 and 20 and the plan 0039 P1a d-edit ruling of the 11 merge rows, § 2.6; no S1f row is left), so this lane completes
+  the re-tag begun in the first round.
+  - **drlg/room-tiles** {C 118, I 31, L 0} → **{C 120, I 32, L 0}**. Raised row 20 (step note 3, the `(10, 0, 0)`
+    fallback makes no draw: 1 280 replayed picks, k matched). Split row 9: step 3b's fallback `[C]`, the `else fatal`
+    line `[I]` (met in no log). From the plan 0040 Phase 1 amendment (and the reverser's 0040 entry (a)): the nested
+    release call's `EDX` leaves the `[C]` bullet and a new `[I]` bullet states the wrapper's negation of the DUNGEON
+    act's `+0x50`, the nested inner `EDX` 0 and `0x200000` as "released by the server" with no reader (drlg/0009 § 4).
+    *Open questions*: the fallback entry struck, the `0x200000`/`EDX` entry narrowed to whether the 626 are exactly
+    the server releases. No inventory row changes class.
+  - **Wiki:** [levels](../wiki/levels.md) restated (the fallback confirmed, its fatal branch and the release flag
+    read from the code); [randomness](../wiki/randomness.md) states neither and is unchanged. W4 0.
+  - **Backlog:** closed the room-tiles re-rule entry and the plan 0040 Phase 1 amendment; annotated the reverser's
+    plan 0040 entry ((a) done; (b), (c) remain). New entry to the architect with the old and new counts.
+  - **Commits:** `e476530` (spec and research map), `5b59759` (wiki), then backlog and this log. Gate green.
+  - **Next:** architect review of `lane/sw5` (backlog).
+
+- **2026-10-17 — Review of `lane/sw5` (architect): accept with fixes.** Main `3e169e4` merged (already up to date).
+  - **Checked.** The raise and split against [drlg/0002 § S4b](../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4b-2026-10-16)
+    (rows 9 and 20 re-ruled) and the `lane/rbs` review ruling (3): row 20 `[C]` in step note 3, row 9 split in step 3b
+    (fallback `[C]`, `else fatal` `[I]`), step note 3 carrying the same split; the release `[I]` bullet against
+    [drlg/0009 § 4](../findings/drlg/0009-room-lifecycle.md#4-release) and the plan 0040 Phase 1 amendment (worded
+    `[I]`, as the amendment allows). Front matter recounted by script: {C 120, I 32, L 0}, against {C 118, I 31, L 0}
+    at `3e169e4` (+1 `[C]` step 3b, +1 `[C]` step note 3, +1 `[I]` release bullet); no `[L]` above *Open questions*.
+    Research-map row rewritten whole, counts match. The three changed [levels](../wiki/levels.md) passages read
+    against the spec. Anchors read in objdump on the pinned `Game.exe`: 0x0066B4C0–0x0066B4EB (the built test at
+    0x0066B4C9, `test edx, edx` 0x0066B4DE, `sete al` 0x0066B4E0, call `RoomTilesRelease`), 0x0061A9D0 (`mov edx,
+    [esi+0x50]`) and the call at 0x0061A9D7, 0x0066F232 (`or [esi+0x28], 0x200000`), 0x0066D868–0x0066D8A3 (the
+    `(10, 0, 0)` lookup with cap `0x28`, the fatal at 0x0066D87B–0x0066D892). `re/symbols.csv` holds the five
+    functions cited. Gate green.
+  - **Fixes (3).** *Wrong anchor 1:* the spec cited `sete` at 0x0066B4DE, which is `test edx, edx`; now both
+    instructions (0x0066B4DE, 0x0066B4E0). *Omission 1:* the fatal branch's `[I]` (step 3b and step note 3) gains its
+    instruction range 0x0066D877–0x0066D892. *Overclaim 1:* the levels wiki's "nothing reads that flag" scoped to "no
+    code that reads that flag was found" (the spec says no reader was found).
+  - **Backlog.** The review request is closed. New entries: spec-writer, the 626 question once `lane/p40h` (plan 0040
+    Phase 2, which logged `0x200000` set on 2 440 server releases and clear on 8 277 client ones) is accepted and
+    merged; reverser, drlg/0009 § 4's `sete` anchor. Ledger rows are in [metrics](metrics.md) (usage unknown).
+  - **Next:** merge `lane/sw5`.
+
+- **2026-10-17 — `lane/rbs2` review (architect, static backlog sweep, second pass): accept with fixes.** `main`
+  (`33d6d37`) merged first, clean (`72681d5`). `re/symbols.csv`: the lane's 12 rows are all new, with no duplicate
+  address or name.
+  - **Checked.** Every output in `workspace/logs/sweep-rbs2-manifest.txt` re-run and compared:
+    - `callee_writes.py`, both runs on a fresh objdump dump: sha256 `f778470f…` and `15b51a4b…`, as kept. The dump's own
+      hash differs because objdump's header names the input path. Totals 46 / 2 532 / 12 / 13 / 21; 204 write lines
+      under `--all-writes`.
+    - `sweep_h5e.py stampdefs 4 0 1 2 3`: `a45d047f…`, as kept.
+    - `scan 1 601`: identical except the kept file's first line, the `systemd-run` banner.
+    - `test_sweep_h5e`: 6 tests pass.
+
+    Anchors read in objdump:
+    - 0x006807F0–0x00680874 (no store between the skip and the call to 0x00680200);
+    - 0x00680219–0x0068023B (`O` = `L+0x14`, the test on `(%esi)`);
+    - `g_GridOps` (0x00749BAC: the six stubs 0x0067C420–0x0067C470), and `GridCellOp` (no bounds check);
+    - `OutBorderSubApply`'s context (`memset` 0x38, the five callbacks, `+0x24` and `+0x28` null-tested at 0x0066F47D
+      and 0x0066F5F2);
+    - `BorderSubRecord`'s wildcard 62 (0x0066F9B5), `BorderSubStamp`'s `OutPresetPlace(…, file 0, 1)` (0x0066F62D);
+    - 0x00530CFF (`mov %al,0x6a(%edi)` from `[ebp+8]`), 0x0053F16B–0x0053F17A (message `+0x11`), 0x00477CB0–0x00477CDF
+      (the 0 → 3, 6 → 1, 8 → 2 map), 0x0044D630;
+    - 0x0054C590 → 0x005350B0 (the `+0x4C` clear); `g_SrvPacketTable` entry 0x006E0F58;
+    - 0x00554292 (`PlayerPairFlags(8)`), and `SkillUnitFilter`'s bit order;
+    - the four `QuestsPlayerJoin` sites and their pushes (1 at 0x0056A06C and 0x0053266D, 0 at 0x005344E9 and
+      0x0053458B), and 0x005345E2–0x00534607.
+
+    Ten of the 31 new quests anchors were sampled (0x00598640, 0x005987D0, 0x00598780, 0x005B36A0, 0x0059CB20,
+    0x00592E90, 0x0059EDC0, 0x00589937, 0x00599C10, 0x005B3E60): each one is the function or site that its section's
+    table or text describes. `save.h` offsets are recounted: `+0x38`, `+0x60` and `+0x160`. Gate green; W1 is 12 on the
+    merged tree.
+  - **Rulings.**
+    - (1) **(e′) d-none stands at `[I]`.** The closure is mechanical and kept, every indirect site is resolved, and
+      every stopped call is named and counted, so rule 9 is met. The caveat, an unchecked grid index landing on `O`,
+      stays written as a caveat. Nothing on the path is shown to compute such an index, and the tag stays `[I]`
+      partly for that reason. It does not reopen the half.
+    - (2) **(c) is complete once one more writer class is stated.** `OutBorderBuild`'s own border pieces are placed
+      with file −1, and the rotation gives `(c + 1) mod Files` with `Files` = 3 for Defs 4–7, so they never take
+      index 3. The finding left this out; it is added (fixes). With it, 5 and 6 endpoints are d-none at `[I]`.
+    - (3) **(b) stays a shortfall** with its printed scan condition.
+    - (4) **Bucketing** (inventory § 2.6, the `lane/rbs2` block):
+      - outdoor 13's half keeps d-none, its condition met;
+      - outdoor 14's remainder (5 or 6 endpoints from (c), the pool from (d) of the first pass) becomes d-none
+        (remainder);
+      - rows 11 and 7 stay a-run shortfalls.
+
+      No class moves. The totals are recomputed once and are unchanged: static 567, harness 532, blocked 415
+      (d-none 282), deferred 2, raised 10, 1 526 in all.
+    - (5) The game-type writer, the `rejoin` flows with the double join, the `+0x4C` clear, the MP25 prediction and the
+      12 symbols are accepted at `[I]`. The network names of modes 6 and 8 stay `[L]`.
+    - (6) The `test_d2s.py` revert is right: the entry stays open for lane/arc5.
+  - **Fixes (2).**
+    - *Omission 1:* drlg/0008 (c)'s openings bullet now states the border-piece rotation (0x00675987, 0x00675B28,
+      0x00675B45, 0x00675D19; `Files` 3 for Defs 4–7, read at the review) and the explicit indices on other Defs.
+    - *Other 1:* the template placeholder line is removed from the review request.
+  - **Backlog.** The review request is closed. The *static sweep, remaining* entry is annotated: H5e done, and a new
+    item to print the H5e (a) vertex-merge condition in the scan (row 7 waits on it). New spec-writer entries:
+    drlg/outdoor L693 and L866 wording; the quests and economy readings for plans 0042 and 0043 Phase 3. Ledger rows
+    are in [metrics](metrics.md) (usage "—").
+  - **Next:** merge `lane/rbs2`.

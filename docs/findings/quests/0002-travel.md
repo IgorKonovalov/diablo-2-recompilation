@@ -74,6 +74,8 @@ and writers of the act changes are also listed per quest in [quests/0001](0001-p
   travel, NPC act change, death, join, the lair, Arcane and Durance portals: the destination's level seed when it has
   `Position` (plus a full level or room build when the level or room does not exist yet, DRLG oracles); town portal
   creation: five (above); portal use: none of its own (a room activation is an oracle); warp: none.
+  (fn:sub_0054C5D0_Pkt49WaypointTravel@0x0054C5D0, fn:sub_005467E0_NpcActTravel@0x005467E0,
+  fn:sub_0066AC40_LevelPointPick@0x0066AC40, fn:sub_0056D130_PortalObjectCreate@0x0056D130, 0x00584870)
 
 ## Leads used
 
@@ -100,17 +102,22 @@ fetched and compared afterwards.
 - [L] src:arreat-summit-basics-travel: the portal stays open until the caster re-enters it from town. **held**
   Detail: the owner's use of the town end frees both ends (§ 6).
 - [L] src:arreat-summit-basics-travel: only party members may use a player's portal. **held with refinement**
-  Detail: the owner and the operator must have the same party id; the owner's own portal is exempt (§ 6).
-- [L] src:arreat-summit-basics-travel: going hostile closes the player's portal. **held with refinement**, on the
-  condition that `0x005A5E50` is the hostility declaration
-  Detail: `0x005A5E50` closes it and writes the tick stamp; that it is the hostility declaration is a lead (open
-  question, plan 0044).
-- [L] src:arreat-summit-basics-travel: a hostile player cannot use other players' portals. **not covered**
-  Detail: no hostility test was found in `OBJOP_Portal`; the party test may be what enforces it.
+  Detail: the owner and the operator must have the same party id; the owner is exempt from this party test (§ 6).
+- [L] src:arreat-summit-basics-travel: going hostile closes the player's portal. **held with refinement**
+  Detail: `0x005A5E50` closes it and sets the declarer's tick; it reads as the hostility toggle (town only, level 9
+  or more on both players, relation bit 8, a 60 s stamp per pair: [multiplayer/0001 § 4](../multiplayer/0001-cases.md#4-the-hostility-declaration-and-the-two-travel-gates),
+  plan 0044 Phase 1, folded at its review 2026-10-17). (0x005A5E5F–0x005A5E9D, 0x005A5F41–0x005A5F65)
+- [L] src:arreat-summit-basics-travel: a hostile player cannot use other players' portals. **held** (was "not
+  covered"; plan 0044 Phase 1 review)
+  Detail: `OBJOP_Portal`'s first test refuses when `0x00535B10(game, operator)` is non-zero (the operator holds
+  relation bit 8 toward some player of the game) and the portal's owner is not the operator. (0x0058488F–0x005848B1,
+  0x00535B10–0x00535B44, 0x00535AF0–0x00535B0D)
 - [L] src:arreat-summit-basics-travel: a 10-second delay separates a hostility declaration from leaving town by
   waypoint or portal. **held** for waypoints (10 000 ms, § 3), **contradicted** for portals: the portal gate waits
-  5000 ms (`0x00584870`). Both gates read stamps written only by `0x005A5E50` (`0x0055B720`, one caller), so the
-  verdicts hold on the same condition as the previous one: that `0x005A5E50` is the hostility declaration. Multiplayer only, not reachable with one client; backlog entry 2026-10-17 (plan 0044).
+  5000 ms (`0x00584870`). Both gates read the operator's own player data `+0x160` (`PlayerTickGet` with EDX = 0 at
+  0x0054C5F5 and 0x005848BA), set to `GetTickCount()` by `0x0055B720`, whose one caller is the declaration
+  `0x005A5E50`; no portal is exempt, the operator's own included (plan 0044 Phase 1 review). Multiplayer only, not
+  reachable with one client; plan 0044 MP24 stages it.
 - [L] src:arreat-summit-quest-acts: another player's portal into an area behind a "blocking quest" (cow level: Terror's
   End or Eve of Destruction; Durance: The Blackened Temple) cannot be entered without that quest. **held**
   Detail: `QuestFlag` 26 / `QuestFlagEx` 40 on level 39 and 21 on 100–102, bit 0 of that word (§ 6).
@@ -286,6 +293,7 @@ if best = −1 and fallback = 0: return 0   ; else the room at pos (pos unchange
   are as written, the Manhattan distance is `|dx| + |dy|`. (fn:COLL_FindFreeNear@0x0064DEA0 0x0064DF6B–0x0064E1F7)
 - [I] Masks and steps used by travel: player placement `0x1C09` step 1; act change a second search `0x1C89` step 5;
   portal field end `0x3E01`/`0xC01` with the partner footprint, size 3, no fallback; portal town end `0xBE11` step 5.
+  (fn:sub_0061B060_ActLevelSpot@0x0061B060, fn:COLL_FindFreeNear@0x0064DEA0, 0x005BE290)
 
 ### 5. Act change through an NPC
 
@@ -305,11 +313,12 @@ NpcTravelMove(level, type) (0x0054B830)
 
 - [I] `NpcActTravel` (read in [save/0002 § 2](../save/0002-quest-words.md#2-who-writes-the-act-travel-words)) sets the
   travel word (7, 15 with 10, 28) with bits 0 and 13 only if bit 0 was clear, sends the record and the NPC flags of the
-  new act (`0x00544FA0`), and sets player data `+0x4C` = 1, which blocks operates and waypoint menus until cleared (the
-  clearing is not read). For NPC 155 it also runs quest 6's event-3 callback when word 6 bits 13 and 0 are set, and
+  new act (`0x00544FA0`), and sets player data `+0x4C` = 1, which blocks operates and waypoint menus until the client's
+  packet 0x48 clears it (§ 9). For NPC 155 it also runs quest 6's event-3 callback when word 6 bits 13 and 0 are set, and
   `0x00597310` (the Act I "Cain not rescued" mark, quests/0001). It does **not** move the player: the move has already
   happened in `NpcTravelMove`. (fn:sub_005467E0_NpcActTravel@0x005467E0)
 - [I] The NPC classes are `monstats` rows; their names (Warriv, Meshif, Tyrael, …) are `[L]`.
+  (fn:sub_005467E0_NpcActTravel@0x005467E0)
 - [I] `TownLevelLeave(old, new)` marks the old town's store stale (vendors) and, on arrival in town 1, 40, 75 or 109,
   sends that act's NPC quest flags (`0x00545100`, lists at `0x007318B0`…); arrival in 40 also runs `0x00597310`.
   (fn:sub_00537340_TownLevelLeave@0x00537340)
@@ -346,8 +355,8 @@ PortalPartnerCreate(field, dest, src) (0x0056CF40)
 ```text
 OBJOP_Portal (OperateFn 15, 0x00584870)                                                      [I]
   refuse if PlayerIsBusy
-  if 0x00535B10(operator) ≠ 0 and the owner (0x00552B10) is not the operator: refuse
-  if GetTickCount() < PlayerTickGet(…) + 5000: refuse        ; 0x0055B6C0, arguments not traced
+  if 0x00535B10(operator) ≠ 0 and the owner (0x00552B10) is not the operator: refuse   ; operator hostile to anyone
+  if GetTickCount() < PlayerTickGet(operator, 0) + 5000: refuse   ; EDX = 0 at 0x005848BA: the operator's own +0x160
   if an owner exists and is not the operator: refuse unless both have the same party id (0x00554630)
   partner = PortalPartnerGet(object) (objects only)
   dest = object data +4; def = LevelDefs[dest]
@@ -372,7 +381,7 @@ OBJOP_Portal (OperateFn 15, 0x00584870)                                         
   tbl:Levels.txt:QuestFlagEx)
 - [I] **Closing.** The pair is freed when (a) the owner goes through the town end; (b) the owner opens a new portal
   (`PlayerPortalClose` at the start of `ITEMUSE_TownPortal`); (c) the owner unit is freed (`sub_00555600_UnitFree`
-  calls `PlayerPortalClose`); (d) `0x005A5E50` runs (it also writes the 10 000 / 5000 ms tick stamp). Class 60
+  calls `PlayerPortalClose`); (d) `0x005A5E50` runs (it also sets the declarer's `+0x160`, which both real-time gates read). Class 60
   portals are never closed by these paths. (0x00535430 callers: 0x005BE2FD, 0x00555674, 0x005A5F65, 0x0058D2F3)
 - [I] A portal from Duriel's lair (73) puts its town end at level 40's point type 12 (step-7 free search, mask `0xBE11`)
   when an Act II quest object's private byte `+0x3C` is 1 (`0x0059DFD0`, through `QUESTS_PortalTownSpot`); quests/0001
@@ -417,11 +426,24 @@ QUESTS_WarpGate(src, dest) (0x00545B80)
 ### 9. Act-change state and real-time gates
 
 - [I] Player data `+0x4C` = 1 is set by `NpcActTravel`, `DuranceActTravel` and the Act IV/V quest code that calls
-  `0x0053D940` (`0x005B5880`, `0x0058E740`). While it is set, `OBJ_OperateDispatch` and `PlayerIsBusy` refuse. Its clear
-  was not found in the code read (open question).
+  `0x0053D940` (`0x005B5880`, `0x0058E740`). While it is set, `OBJ_OperateDispatch` and `PlayerIsBusy` refuse.
+- [I] **The clear** (plan 0042 P1 review follow-up (c), `lane/rbs2`) is the client's packet **0x48**. Its
+  `g_SrvPacketTable` entry (0x006E0D18 + 8·0x48 = 0x006E0F58) is `0x0054C590`, next to packet 0x49's `0x0054C5D0`.
+  The handler returns 3 unless its second argument is 1, and returns 2 when player data `+0x4C` is already 0.
+  Otherwise it calls `0x005350B0` and returns 0. `0x005350B0` fetches the player data (`0x006221A0`), stops the game
+  with error 0x1C7 if `+0x4C` is 0, and writes `+0x4C` = 0 (`movl $0x0,0x4c(%eax)` at 0x005350DB). `0x005350B0` has
+  one direct caller (`grep -cE '(call|jmp) +0x5350b0$'`: 1, at 0x0054C5BE). Other writers of `+0x4C` were not
+  listed (the offset is common: `grep -cE 'mov[lb]? +\$0x[01],0x4c\(%e[a-z]{2}\)$'` finds 26 immediate 0/1 stores to some
+  `0x4c(%reg)` in `.text`). What the client sends
+  0x48 after is not read here; the act-loaded reading of the old open question stays a lead.
+  (fn:sub_0054C590_Pkt48ActChangeClear@0x0054C590, fn:sub_005350B0_PlayerActChangeClear@0x005350B0,
+  data:g_SrvPacketTable@0x006E0D18)
 - [I] Two gates use `GetTickCount` (wall-clock milliseconds), not the game frame: waypoint travel (10 000) and portal
-  use between players (5000, per-owner entry of player data list `+0x38`). With one player the portal gate compares
-  against the entry for that owner only when owner ≠ operator; an own portal is never delayed. (0x0055B6C0)
+  use (5000). Both read the operator's own player data `+0x160` (`PlayerTickGet(player, 0)`: EDX = 0 at 0x0054C5F5
+  and 0x005848BA); the per-player entries of list `+0x38` hold the 60 s hostility stamp of each pair, which only
+  the declaration reads. No portal is exempt, the operator's own included. (Corrected at the plan 0044 Phase 1
+  review, 2026-10-17: this section read a per-owner entry and an exempt own portal.) (0x0055B6C0–0x0055B715,
+  0x0054C5F5–0x0054C612, 0x005848BA–0x005848CF)
 
 ### 10. Event kinds: inputs, outputs, draws and chaining
 
@@ -439,7 +461,8 @@ QUESTS_WarpGate(src, dest) (0x00545B80)
 - [I] **ADR-0014 chaining.** The draws that chain are the destination level seed (one step per placement on a
   `Position` level, shared with the waypoint lookups of the population pass) and the game seed (portal creation, shared
   with every server unit). A reimplementation that models travel must assert both on entry, as drlg/0005's R1 did for
-  the level seed.
+  the level seed. (fn:sub_0066AC40_LevelPointPick@0x0066AC40, fn:sub_0056D130_PortalObjectCreate@0x0056D130,
+  fn:sub_00555230_SUnitCreate@0x00555230)
 
 ### 11. Boundary recommendation for Phase 2 (travel)
 
@@ -470,10 +493,10 @@ QUESTS_WarpGate(src, dest) (0x00545B80)
 
 ## Open questions
 
-- [L] Where player data `+0x4C` is cleared after an act change (likely on the client's "act loaded" message); Phase 2
-  can log its writes.
-- [L] What `0x005A5E50` is (an entry of the table at `0x006E2228`; it writes the tick stamp and closes the portal); the
-  hostility declaration is a guess. Multiplayer, plan 0044.
+- ~~Where player data `+0x4C` is cleared~~: packet 0x48's handler, § 9 (`lane/rbs2`). [L] What the client
+  sends 0x48 after is still a lead ("act loaded"); Phase 2 can log the packet.
+- [L] The un-declare path of `0x005A5E50` (hostile = 0, 0x005A5FA4) and what the table at `0x006E2228` dispatches;
+  the declaring path is read in multiplayer/0001 § 4. Multiplayer, plan 0044 MP24.
 - [L] The exact distance metrics of the operate (`0x00641530` < 51, `0x00623660`) and the warp click (< 5) were not
   read; Phase 2 logs the distances.
 - [L] The `Levels.Portal` and `Levels.Teleport` columns: no server reader found for `Portal`; `Teleport` is the skill's.

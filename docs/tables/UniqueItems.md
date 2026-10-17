@@ -205,20 +205,23 @@ column. The full pick (forced row, weighted draw, fallbacks) belongs to the `ite
 
 Offsets are [§ Record layout](#record-layout) (`[C]`, `excel_bin.py diff`); the counts come from
 `python3 -I tools/economy_survey.py affixes workspace/merged/data/global/excel` (gate survey `economy`), `[C]` as
-data. The price function is named only ([items/0009 § 9](../findings/items/0009-vendors.md#9-named-only-prices-and-repair))
-and the builder does not read these columns (§ Semantics), so the meanings are `[L]`, for plan 0043 Phase 1.
+data. The builder does not read these columns (§ Semantics). `[I]` The price function reads them (plan 0043 Phase 1, [items/0011 § 3](../findings/items/0011-economy.md#3-the-value-terms) step 4): an identified unique item adds
+`X·cost mult/1024 + cost add` to each of the buy, sell and repair values (`X` the running value; `(X/1024)·cost mult +
+cost add` when the buy value is above `0xFFFF`), and gets no per-stat terms. For stock rows the addend dominates
+(`cost mult` 3 or 5 over 1024). (fn:ITEMS_TradePriceCore@0x0062EFB0 0x0062F8A4–0x0062F96B, tbl:UniqueItems.txt:cost add) A unique with no file
+index or no record takes the magic branch instead.
 
 | Column | Field | Values | Meaning |
 |---|---|---|---|
-| `cost mult` | `+0x07C` u32 | 5 on 315 rows, 3 on 81, blank (0) on 6 | price multiplier of a unique `[L]` |
-| `cost add` | `+0x080` u32 | 5000 on 396 rows, blank (0) on the same 6 | price addend of a unique `[L]` |
+| `cost mult` | `+0x07C` u32 | 5 on 315 rows, 3 on 81, blank (0) on 6 | `[I]` `X·cost mult/1024` |
+| `cost add` | `+0x080` u32 | 5000 on 396 rows, blank (0) on the same 6 | `[I]` added once |
 
 - `[C]` The pairs are (5, 5000) ×315, (3, 5000) ×81 and (0, 0) ×6; the 6 blank rows are the five label rows (200
   `Armor`, 247 `Elite Uniques`, 267 `Rings`, 278 `Class Specific`, 401 with a blank `index`) and 372 *Merman's Speed*
   (a nobase row).
 - `[C]` **`cost mult` 3 only on expansion rows**: all 81 have `version` 100 and sit in records 201..400 (53 armor
   bases, 14 weapon, 12 misc, among them the 8 *Rainbow Facet* jewels, *Annihilus* and *Hellfire Torch*, and 2 with no
-  base); `cost mult` 5 is on 129 `version` 0 and 186 `version` 100 rows. Nothing in the data says why a row has 3 `[L]`.
+  base); `cost mult` 5 is on 129 `version` 0 and 186 `version` 100 rows. Nothing in the data says why a row has 3 `[L]`; `[I]` its effect is a smaller multiplier term (3/1024 against 5/1024 of `X`).
 
 ## Interpretation notes
 

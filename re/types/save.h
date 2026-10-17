@@ -22,11 +22,21 @@ typedef struct Client { /* server per-connection client (.\GAME\Clients.cpp); ac
     struct Client * pNext;        /* +0x4A8 next client of the game (Game+0x088) */
 } Client;
 
+typedef struct PlayerPair { /* an entry of PlayerData+0x38, one per other player (multiplayer/0001 § 4) */
+    uint32_t otherUnitId;         /* +0x00 the other player's unit id (unit+0x0C), compared by 0x0055B6C0/0x0055B720 */
+    uint32_t flags;               /* +0x04 relation bits; 8 = hostile (0x0055B300(8), toggled by 0x005A5E50) */
+    uint32_t stamp;               /* +0x08 GetTickCount() + 60000 after a hostility declaration (0x0055B720 from 0x005A5E50) */
+    uint8_t  _pad0C[0x4];
+    struct PlayerPair * pNext;    /* +0x10 next entry; 0 ends the list */
+} PlayerPair;
+
 typedef struct PlayerData { /* unit+0x14 of a player unit (0x006221A0) */
     uint8_t  _pad0000[0x10];
     void    * pQuests[3];         /* +0x010 96-byte quest records, saved in index order (Woo!) */
     void    * pWaypoints[3];      /* +0x01C 16-byte waypoint records, saved in index order (WS) */
-    uint8_t  _pad0028[0x38];
+    uint8_t  _pad0028[0x10];
+    PlayerPair * pPairs;          /* +0x038 per-other-player list (0x0055B6C0 reads, 0x0055B720 writes the stamp) */
+    uint8_t  _pad003C[0x24];
     void    * pNpc[3];            /* +0x060 two 8-byte NPC records each (01 77 section) */
     uint8_t  _pad006C[0x4];
     uint32_t rightSkill;          /* +0x070 from save 0x7C */
@@ -37,6 +47,9 @@ typedef struct PlayerData { /* unit+0x14 of a player unit (0x006221A0) */
     uint32_t swapSkillA;          /* +0x084 from save 0x80 */
     uint32_t swapSkillBItem;      /* +0x088 from save 0x86 */
     uint32_t swapSkillAItem;      /* +0x08C from save 0x82 */
+    uint8_t  _pad0090[0xD0];
+    uint32_t tickStamp;           /* +0x160 GetTickCount() at the last hostility declaration (0x0055B720; read by
+                                     0x0055B6C0 with no other player: the waypoint and portal gates, quests/0002 § 9) */
 } PlayerData;
 
 typedef struct ItemData { /* unit+0x14 of an item unit, 0x74 bytes (rng/0002) */

@@ -15,3 +15,5 @@ resolution: ""
 - **H6e1:** a cursor-item line at `sub_0055EEA0_CursorItemConsume` (qd 38).
 - **H2b:** normal and rare drops requesting more than 3 and 4 sockets (sock 44).
 - Context: [inventory § 2.6](../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews)
+
+*2026-10-17 (reverser, `lane/rbs` static sweep):* skipped: needs harness; rides on plan 0038 harness batches H2b, H6a, H6b, H6c and H6e1.

@@ -21,7 +21,9 @@ are in [warps.md](warps.md). The outdoor generators that run inside step 7 (the 
 the placements and the file rotation) are specified in [outdoor.md](outdoor.md). The preset-unit drop rolls, which also draw on the
 level seed, are specified in [preset.md](preset.md). What happens when a
 room is activated (its tiles and the k room-seed draws) is in [room-tiles.md](room-tiles.md), and the active room's
-collision grid, its logic regions and the spawn position tests are in [collision.md](collision.md).
+collision grid, its logic regions and the spawn position tests are in [collision.md](collision.md). Which rooms
+are active, when a room is released, and how its saved units are restored when it comes back is in
+[lifecycle.md](lifecycle.md).
 Primitives (`Step`, `Range`, `RangeB`, `Init`) are those of [rng](../rng/README.md). The act and level
 seeds are defined in [rng/seeds](../rng/seeds.md) steps 3–5.
 

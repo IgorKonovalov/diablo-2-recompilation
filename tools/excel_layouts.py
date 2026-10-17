@@ -597,11 +597,16 @@ LAYOUTS["uniqueitems"] = dict(size=332, partial=True, fields=[
     I("dropsfxframe", 0x088, "u32"),
 ])
 
+# The descriptor callback sub_006336A0_PropParamCell compiles every property param cell (Sets PParam/FParam,
+# SetItems par/apar, Runes T1Param): '-' or a digit first -> atol, else the first hit in skills, montype,
+# states (case-insensitive), else 0 (stats/0001 Phase 0 surprise (e); tools/excel_bin.py normalize).
+PROP_PARAM = "skills:skill|montype:type|states:state"
+
 # ------------------------------------------------------------------ setitems (440 B)
 # Same head shape as uniqueitems, shifted. Property block (plan 0024 Phase 1, items/0006 section 2):
 # 16-byte (code s32, par s32, min s32, max s32) blocks, prop1..9 at +0x088, then aprop1a, aprop1b, ...,
 # aprop5b at +0x118; a blank code stores -1, a code is matched case-insensitively (row 122 `Light`).
-# A par cell holding a skill name stores that skill's row index (field option names=, as runes T1Param).
+# A par cell holding a name stores its row index (field option names=PROP_PARAM, as runes T1Param).
 # chrtransform/invtransform are equal in every row, and flippyfile/invfile/dropsound/usesound/
 # dropsfxframe are blank in every row, so their order within their slots follows uniqueitems and the
 # .txt, not the data (docs/tables/SetItems.md).
@@ -627,12 +632,12 @@ LAYOUTS["setitems"] = dict(size=440, fields=[
     I("add func", 0x087, "u8"),
 ] + [f for k in range(9) for f in (
     R("prop%d" % (k + 1), 0x088 + 16 * k, "properties:code", "s32", nocase=True),
-    I("par%d" % (k + 1), 0x08C + 16 * k, "s32", names="skills:skill"),
+    I("par%d" % (k + 1), 0x08C + 16 * k, "s32", names=PROP_PARAM),
     I("min%d" % (k + 1), 0x090 + 16 * k, "s32"),
     I("max%d" % (k + 1), 0x094 + 16 * k, "s32"))
 ] + [f for k in range(10) for f in (
     R("aprop%d%s" % (k // 2 + 1, "ab"[k % 2]), 0x118 + 16 * k, "properties:code", "s32", nocase=True),
-    I("apar%d%s" % (k // 2 + 1, "ab"[k % 2]), 0x11C + 16 * k, "s32", names="skills:skill"),
+    I("apar%d%s" % (k // 2 + 1, "ab"[k % 2]), 0x11C + 16 * k, "s32", names=PROP_PARAM),
     I("amin%d%s" % (k // 2 + 1, "ab"[k % 2]), 0x120 + 16 * k, "s32"),
     I("amax%d%s" % (k // 2 + 1, "ab"[k % 2]), 0x124 + 16 * k, "s32"))
 ])
@@ -640,8 +645,8 @@ LAYOUTS["setitems"] = dict(size=440, fields=[
 # ------------------------------------------------------------------ sets (296 B = 0x128)
 # Plan 0019 Phase 0: the identity head. Plan 0041 Phase 0: the sixteen bonus quads PCode2a..PMax5b and
 # FCode1..FMax8 (+0x010..+0x10F, 16 x 16 B: code s32 (blank -1, properties row, case-insensitive), param,
-# min, max s32), the setitems property-block shape. A param cell holding a name stores the row index of a
-# skill (oskill) or of a state (state: fullsetgeneric, monsterset) (docs/tables/Sets.md). `index` is stored
+# min, max s32), the setitems property-block shape. A param cell holding a name stores its row index by
+# the PROP_PARAM order (skills, montype, states), whatever the block's code (docs/tables/Sets.md). `index` is stored
 # as the row's own index (u16), `name` as a string-table key. `level` has no field: probe finds it at no
 # offset under any encoding (docs/tables/Sets.md).
 # Plan 0019 Phase 1 (items/0004 section 7): +0x00C member count and +0x110..+0x127 six member
@@ -654,7 +659,7 @@ LAYOUTS["sets"] = dict(size=0x128, fields=[
 ] + [f for k, (c, n) in enumerate([("P", "%d%s" % (k // 2 + 2, "ab"[k % 2])) for k in range(8)]
                                    + [("F", "%d" % (k + 1)) for k in range(8)]) for f in (
     R("%sCode%s" % (c, n), 0x010 + 16 * k, "properties:code", "s32", nocase=True),
-    I("%sParam%s" % (c, n), 0x014 + 16 * k, "s32", names="skills:skill|states:state"),
+    I("%sParam%s" % (c, n), 0x014 + 16 * k, "s32", names=PROP_PARAM),
     I("%sMin%s" % (c, n), 0x018 + 16 * k, "s32"),
     I("%sMax%s" % (c, n), 0x01C + 16 * k, "s32"))
 ] + [U("member%d" % k, 0x110 + 4 * k, "u32") for k in range(6)],
@@ -1122,7 +1127,7 @@ LAYOUTS["runes"] = dict(size=0x120, fields=[
   + [R("Rune%d" % (k + 1), 0x098 + 4 * k, _GEM_ITEMS, "s32") for k in range(6)]
   + [f for k in range(7) for f in (
     R("T1Code%d" % (k + 1), 0x0B0 + 16 * k, "properties:code", "s32"),
-    I("T1Param%d" % (k + 1), 0x0B4 + 16 * k, "s32", names="skills:skill"),
+    I("T1Param%d" % (k + 1), 0x0B4 + 16 * k, "s32", names=PROP_PARAM),
     I("T1Min%d" % (k + 1), 0x0B8 + 16 * k, "s32"),
     I("T1Max%d" % (k + 1), 0x0BC + 16 * k, "s32"))
 ], txt_only={"*runes": "editor comment (the rune letters joined); no bytes in the record",
@@ -1293,10 +1298,11 @@ LAYOUTS["npc"] = dict(size=0x4C, fields=[
 # ------------------------------------------------------------------ books (32 B = 0x20)
 # Plan 0043 Phase 0 (docs/tables/Books.md). One record per books.txt row (3). Name is the string index of the
 # key `unused` (the same in every row); Namco and Completed have no field. ScrollSkill/BookSkill store the Skills row
-# (blank = -1); the scroll and book codes follow the costs. +0x003 is 0 in every record.
+# (blank = -1); the scroll and book codes follow the costs. +0x003 is 0 in every record. Plan 0043 Phase 1
+# (items/0011, review (b)): pSpell is read 32-bit signed, SpellIcon as a byte, CostPerCharge 32-bit; BaseCost no reader.
 LAYOUTS["books"] = dict(size=0x20, fields=[
     T("Name", 0x000), I("SpellIcon", 0x002, "s8"), U("pad_003", 0x003, "u8"),
-    I("pSpell", 0x004, "u32"),
+    I("pSpell", 0x004, "s32"),
     R("ScrollSkill", 0x008, "skills:skill", "s32"), R("BookSkill", 0x00C, "skills:skill", "s32"),
     I("BaseCost", 0x010, "u32"), I("CostPerCharge", 0x014, "u32"),
     C("ScrollSpellCode", 0x018), C("BookSpellCode", 0x01C),
@@ -1351,12 +1357,13 @@ LAYOUTS["hiredesc"] = dict(size=4, fields=[C("Code", 0x0)],
 # ------------------------------------------------------------------ states (60 B)
 # docs/tables/States.md. Offsets by `excel_bin.py probe`. The 40 flag columns are bits 0..39 of the five bytes at
 # +0x010; `exp` is flag bit 30 (+0x013 bit 6), the bit-set the loader builds at DataTables+0x144 (items/0010 section 2).
-# rfred/rlred/rcred hold the same values in every row, so the data cannot tell bits 26..28 apart: they are assigned
-# here in the order of the blue bits (rf, rc, rl = bits 20, 21, 22). Widths of the u16 fields whose high byte is 0
-# in every row follow the packing of their neighbours.
+# The loader's descriptor (STATES_Load 0x00618100, data/0001 Plan 0039 batch P1b B7 (c)) places attred at flag bit
+# 10, rfred/rcred/rlred at bits 26/27/28 (the data cannot tell them apart), group as an s16 at +0x01E, and has no
+# entry for immed. Widths of the other u16 fields whose high byte is 0 in every row follow the packing of their
+# neighbours.
 _ST_FLAGS = [
     ("nosend", 0), ("aura", 1), ("hide", 2), ("transform", 3), ("pgsv", 4), ("active", 5), ("remhit", 6),
-    ("damblue", 7), ("damred", 8), ("attblue", 9), ("curse", 11), ("curable", 12), ("plrstaydeath", 13),
+    ("damblue", 7), ("damred", 8), ("attblue", 9), ("attred", 10), ("curse", 11), ("curable", 12), ("plrstaydeath", 13),
     ("monstaydeath", 14), ("bossstaydeath", 15), ("disguise", 16), ("restrict", 17), ("blue", 18),
     ("armblue", 19), ("rfblue", 20), ("rcblue", 21), ("rlblue", 22), ("rpblue", 23), ("stambarblue", 24),
     ("armred", 25), ("rfred", 26), ("rcred", 27), ("rlred", 28), ("rpred", 29), ("exp", 30), ("shatter", 31),
@@ -1371,7 +1378,7 @@ LAYOUTS["states"] = dict(size=0x3C, fields=[
   + [B(c, 0x010 + k // 8, k % 8) for c, k in _ST_FLAGS]
   + [U("pad_015", 0x015, "u8"), U("pad_016", 0x016, "u16"),
      R("stat", 0x018, "itemstatcost:Stat", "u16"), I("setfunc", 0x01A, "u16"), I("remfunc", 0x01C, "u16"),
-     I("group", 0x01E, "u8"), U("pad_01F", 0x01F, "u8"),
+     I("group", 0x01E, "s16"),
      I("colorpri", 0x020, "u8"), I("colorshift", 0x021, "u8"),
      I("light-r", 0x022, "u8"), I("light-g", 0x023, "u8"), I("light-b", 0x024, "u8"), U("pad_025", 0x025, "u8"),
      R("onsound", 0x026, "sounds:Sound", "u16", blank=0), R("offsound", 0x028, "sounds:Sound", "u16", blank=0),
@@ -1381,8 +1388,7 @@ LAYOUTS["states"] = dict(size=0x3C, fields=[
      I("cltactivefunc", 0x034, "u16"), I("srvactivefunc", 0x036, "u16"),
      R("skill", 0x038, "skills:skill", "u16", nocase=True), R("missile", 0x03A, "missiles:Missile", "u16")],
     txt_only={"state": "the row's name; the record holds id (+0x000), equal to the row index in every row",
-              "immed": "1 on 12 rows, but no byte or bit of the record follows it; not located",
-              "attred": "blank in every row; not located (flag bit 10, +0x011 bit 2, is 0 in every record)",
+              "immed": "1 on 12 rows; the descriptor has no entry for it, so the compiler ignores it (data/0001 P1b)",
               "eol": "end-of-line marker column"})
 
 # ------------------------------------------------------------------ elemtypes (4 B)

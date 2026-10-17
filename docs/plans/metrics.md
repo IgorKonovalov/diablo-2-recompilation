@@ -88,6 +88,24 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-17 | `lane/p38s4` review | 0038 P3 round 4 | architect-review | 153 056 | 55 | 9 | — | gave accept with fixes | — (on the lane row) |
 | 2026-10-17 | `lane/p42r` | 0042 P1/P1b | reverser-static | 551 952 | 191 | 45 | Ghidra (lane copy) | accept with fixes | 7: overclaim 3, misread 2, miscount 1, symbol clash 1 (2 commits; usage unknown) |
 | 2026-10-17 | `lane/p42r` review | 0042 P1/P1b | architect-review | 224 353 | 113 | 23 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-17 | `lane/p43r` | 0043 P1/P1b | reverser-static | 429 692 | 202 | 38 | Ghidra (lane copy) | accept with fixes | 5: overclaim 2, omission 2, miscount 1 |
+| 2026-10-17 | `lane/p43r` review | 0043 P1/P1b | architect-review | 192 590 | 65 | 13 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-17 | `lane/p44r` | 0044 P1 | reverser-static | 333 991 | 136 | 27 | — (objdump; driver live test pending a slot) | accept with fixes | 4: overclaim 1, omission 1, wrong anchor 1, other 1 |
+| 2026-10-17 | `lane/p44r` review | 0044 P1 | architect-review | 135 980 | 51 | 10 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-17 | `lane/h6d` | 0038 H6d | reverser-harness | 555 235 | 306 | 183 | slot 2 | accept with fixes | 8: overclaim 2, misread 1, miscount 2, wrong anchor 1, stale cross-reference 1, tool not kept 1 (usage unknown) |
+| 2026-10-17 | `lane/h6d` review | 0038 H6d | architect-review | 203 682 | 136 | 20 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-17 | `lane/rbs` | 0038 static backlog sweep | reverser-static | 267 203 | 138 | 23 | Ghidra (lane copy) | accept with fixes | 5: miscount 1, omission 1, wrong anchor 1, tool not kept 2 |
+| 2026-10-17 | `lane/rbs` review | 0038 static backlog sweep | architect-review | 161 968 | 92 | 15 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-17 | `lane/sw5` | 0038 P3 room-tiles re-tag | spec-writer | 118 685 | 44 | 306 | — | accept with fixes | 3: overclaim 1, omission 1, wrong anchor 1 (usage unknown) |
+| 2026-10-17 | `lane/sw5` review | 0038 P3 room-tiles re-tag | architect-review | 84 697 | 25 | 6 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-17 | `lane/p40h` | 0040 P2 | reverser-harness | 505 856 | 217 | 508 | slot 1 | accept with fixes | 12: overclaim 5, under-claim 2, stale cross-reference 1, miscount 1, omission 2, tool not kept 1 (usage unknown) |
+| 2026-10-17 | `lane/p40h` review | 0040 P2 | architect-review | 189 026 | 92 | 21 | — | gave accept with fixes | — (on the lane row; usage unknown) |
+| 2026-10-17 | `lane/arc5` | 0039/0041/0042/0043 P1 readers, 0044 pairs | archivist | 365 592 | 170 | 333 | — | accept with fixes | 4: overclaim 1, omission 2, stale cross-reference 1 (usage unknown) |
+| 2026-10-17 | `lane/arc5` review | 0039/0041/0042/0043 P1 readers, 0044 pairs | architect-review | 166 074 | 57 | 10 | — | gave accept with fixes | — (on the lane row; usage unknown) |
+| 2026-10-17 | `lane/rbs2` | 0038 static backlog sweep, second pass | reverser-static | 362 559 | 179 | 342 | Ghidra (lane copy) | accept with fixes | 2: omission 1, other 1 (usage unknown) |
+| 2026-10-17 | `lane/rbs2` review | 0038 static backlog sweep, second pass | architect-review | 198 344 | 74 | 17 | — | gave accept with fixes | — (on the lane row; usage unknown) |
+| 2026-10-17 | `lane/p40s` | 0040 P3 | spec-writer | 316 355 | 90 | 25 | — | accept with fixes | 8: overclaim 2, misread 1, miscount 1, omission 2, wrong anchor 1, stale cross-reference 1 (usage unknown) |
+| 2026-10-17 | `lane/p40s` review | 0040 P3 | architect-review | 240 204 | 73 | 20 | — | gave accept with fixes | — (on the lane row; usage unknown) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

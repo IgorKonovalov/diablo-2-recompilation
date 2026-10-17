@@ -25,11 +25,13 @@
 #                               RNG call, matched against a classification file (RngCallGraph.java)
 #
 # Run from the repo root. Logs: workspace/logs/ghidra-build-<UTC stamp>.log (build) and
-# workspace/logs/ghidra-last.log (the most recent other command), each with a .stderr next to it. Query commands open
+# $GHIDRA_LOG (the most recent other command; see GHIDRA_LOG below), each with a .stderr next to it. Query commands open
 # the project read-only. Headless runs lock the project: never run two at once or with the GUI open.
 # Env: GHIDRA_HOME (default /opt/ghidra), GHIDRA_HEADLESS_MAXMEM (default 8G), SYMBOLS_CSV (default
 # re/symbols.csv; point it at a scratch copy to test a round trip), GHIDRA_PROJ_DIR (default workspace/ghidra;
-# point it at a per-worktree copy of the project so parallel lanes don't share the lock).
+# point it at a per-worktree copy of the project so parallel lanes don't share the lock), GHIDRA_LOG (log of every
+# non-build command; default workspace/logs/ghidra-last.log when the project dir is named `ghidra`, else
+# workspace/logs/ghidra-last-<basename of GHIDRA_PROJ_DIR>.log, so lanes on project copies never share a log).
 set -euo pipefail
 
 GHIDRA_HOME=${GHIDRA_HOME:-/opt/ghidra}
@@ -44,6 +46,14 @@ PROGRAM=game.exe
 SCRIPTS="$ROOT/re/ghidra_scripts"
 CSV=${SYMBOLS_CSV:-"$ROOT/re/symbols.csv"}
 LOGS="$ROOT/workspace/logs"
+if [ -z "${GHIDRA_LOG:-}" ]; then
+	proj_base=$(basename "$PROJ_DIR")
+	if [ "$proj_base" = ghidra ]; then
+		GHIDRA_LOG="$LOGS/ghidra-last.log"
+	else
+		GHIDRA_LOG="$LOGS/ghidra-last-$proj_base.log"
+	fi
+fi
 
 die() { echo "ghidra.sh: $*" >&2; exit 1; }
 usage() { sed -n '2,/^set -euo/{/^set/!p}' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
@@ -89,7 +99,7 @@ build() {
 # run_script <readonly 0|1> <script> [args...]
 run_script() {
 	have_project || die "no project at $PROJ_DIR (run build)"
-	local ro=() log="$LOGS/ghidra-last.log"
+	local ro=() log="$GHIDRA_LOG"
 	: >"$log"
 	[ "$1" = 1 ] && ro=(-readOnly)
 	shift
@@ -117,10 +127,10 @@ case "$cmd" in
 	rebuild) rm -rf "$PROJ_DIR"; build ;;
 	import-symbols)
 		run_script 0 ImportSymbols.java "$CSV"
-		grep -oE 'ImportSymbols: .*' "$LOGS/ghidra-last.log" ;;
+		grep -oE 'ImportSymbols: .*' "$GHIDRA_LOG" ;;
 	export-symbols)
 		run_script 1 ExportSymbols.java "$CSV"
-		grep -oE 'ExportSymbols: .*' "$LOGS/ghidra-last.log" ;;
+		grep -oE 'ExportSymbols: .*' "$GHIDRA_LOG" ;;
 	decompile) query Decompile.java "$@" ;;
 	xrefs) query Xrefs.java "$@" ;;
 	findstring) query FindString.java "$@" ;;
@@ -134,7 +144,7 @@ case "$cmd" in
 	decompile-range)
 		[ $# -eq 3 ] || usage
 		run_script 1 DecompileRange.java "$@"
-		grep -oE 'DecompileRange: .*' "$LOGS/ghidra-last.log" ;;
+		grep -oE 'DecompileRange: .*' "$GHIDRA_LOG" ;;
 	rngcallgraph) query RngCallGraph.java "$@" ;;
 	*) usage ;;
 esac

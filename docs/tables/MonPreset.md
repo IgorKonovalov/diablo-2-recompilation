@@ -75,6 +75,8 @@ compares it with every cell (`Place` twice, once per field), 687 cells, 0 mismat
 
 - Answered `[I]` in [monsters/0002 § 7](../findings/monsters/0002-room-population.md#7-wanderers-monspcwalk-presets-and-superuniques):
   `sub_0054E600_PresetMonSpawn` places a MonStats-range id as that class, a SuperUniques-range id as the superunique,
-  and a MonPlace-range id by keyword case (some cases read, the class table `0x0054E2A0` not; plan 0018 Phase 1).
-  (fn:sub_0054E600_PresetMonSpawn@0x0054E600)
+  and a MonPlace-range id by its MonPlace row index; the cases read, with `0x0054E2A0` =
+  `sub_0054E2A0_PresetFallenVariant`, are in [MonPlace § Interpretation notes](MonPlace.md#interpretation-notes)
+  ([monsters/0003 § 7](../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20), [monsters/0003 § Plan 0038 batch H4b](../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b)). (fn:sub_0054E600_PresetMonSpawn@0x0054E600,
+  fn:sub_0054E2A0_PresetFallenVariant@0x0054E2A0)
 - `[L]` The compiler's search order for `Place` (data cannot settle it; only matters to a modder who reuses a name).

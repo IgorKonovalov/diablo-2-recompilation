@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 17 (17 `.txt` data rows, no `Expansion` marker)   **Record:** 76 B (`0x4C`)
 > **sha256:** `.txt` `912becf632e93306b00e2d1feaa879be8611b4cc6cec8fdad91594482e7e0afd`, `.bin` `b4af470431925d2d5090489f600cf023b3737abdb93a3850c711535f397d9314`
-> **Doc status:** layout complete (plan 0031 Phase 0), every slot named by the loader's descriptor; row lookup and quest overrides `[I]` from [items/0009 § 9](../findings/items/0009-vendors.md#9-named-only-prices-and-repair); the price formula and `max buy` named only
+> **Doc status:** layout complete (plan 0031 Phase 0), every slot named by the loader's descriptor; row lookup and quest overrides `[I]` from [items/0009 § 9](../findings/items/0009-vendors.md#9-named-only-prices-and-repair); the price formula and `max buy` from [items/0011 § 4](../findings/items/0011-economy.md#4-mode-steps-the-npc-row-quantity-and-the-result) (plan 0043 Phase 1)
 
 ## Purpose
 
@@ -10,12 +10,12 @@ One row per trading NPC: the monster class it belongs to, three price multiplier
 quest-gated overrides of those multipliers, and a "max buy" amount per difficulty. The column names say these are
 the economy side of a vendor: what the NPC charges and what it pays, not what it stocks. Stock comes from the
 vendor columns of the item tables ([Weapons § Vendor columns](Weapons.md#vendor-columns-plan-0031-phase-0)), and
-gambling from [Gamble](Gamble.md). Reader: `items/vendors` (plan 0031); prices are named only under ADR-0002.
+gambling from [Gamble](Gamble.md). Reader: `items/vendors` (plan 0031); prices are read by `items/economy` (plan 0043 Phase 1, [items/0011](../findings/items/0011-economy.md)).
 Leads: `src:d2dfg-blizzard` (§ Npc.txt), not yet fetched; nothing here comes from it.
 
 - `[I]` **Not read on the item-creation path.** Stock building, the stock upgrade and gambling read none of this
   table: the NPC → vendor group map is two switches on the MonStats class, not the `npc` column, and the multiplier,
-  quest and `max buy` columns are inputs of the price function (`sub_0062FDC0_ItemTradePrice`), which is named only.
+  quest and `max buy` columns are inputs of the price function (`sub_0062FDC0_ItemTradePrice`), read in items/0011 (§ Multipliers).
   ([items/0009 § Answer](../findings/items/0009-vendors.md#answer-summary),
   [§ 9](../findings/items/0009-vendors.md#9-named-only-prices-and-repair), fn:sub_0062FDC0_ItemTradePrice@0x0062FDC0,
   tbl:Npc.txt:npc)
@@ -52,9 +52,9 @@ fn:sub_00656620_NpcLoadTable@0x00656620).
 | Column | Observed type / range | `.bin` field | Meaning | References | Tag |
 |---|---|---|---|---|---|
 | `npc` | str, 17 distinct, 0 blank | `+0x00` u32 row index | the NPC's monster class: the key `NpcGetByClass` scans for `[I]` | [MonStats](MonStats.md) `Id` | [C] |
-| `sell mult` | int 960..2048 (4 distinct: 960 `charsi`, 1088 `gheed`, 2048 the four Act V rows, 1024 the rest) | `+0x04` u32 | first of the three running values the price function scales (`v · m / 1024`) `[I]`; that it is the NPC-sells price `[L]` | — | [C] |
-| `buy mult` | int, always 512 | `+0x08` u32 | second running value's multiplier `[I]`; the NPC-buys price `[L]` | — | [C] |
-| `rep mult` | int, always 128 | `+0x0C` u32 | third running value's multiplier `[I]`; the repair cost `[L]` | — | [C] |
+| `sell mult` | int 960..2048 (4 distinct: 960 `charsi`, 1088 `gheed`, 2048 the four Act V rows, 1024 the rest) | `+0x04` u32 | `[I]` scales the buy value `P`, the price the player **pays** (`v · m / 1024`) ([items/0011 § 4](../findings/items/0011-economy.md#4-mode-steps-the-npc-row-quantity-and-the-result)) | — | [C] |
+| `buy mult` | int, always 512 | `+0x08` u32 | `[I]` scales the sell value `S`, what the NPC pays the player | — | [C] |
+| `rep mult` | int, always 128 | `+0x0C` u32 | `[I]` scales the repair value `R` (the recharge cost is added after it, unscaled) | — | [C] |
 | `questflag A` | int {4, 9, 17, 41}: 4 on the three Act I rows, 9 on Act II, 17 on Act III, 41 on Acts IV–V | `+0x10` u32 | a quest record **word** (save/0002 numbering): with bit 0 (done) or bit 1 (reward pending) of it set, the A multipliers apply `[I]` | [save/0002](../findings/save/0002-quest-words.md) words | [C] |
 | `questflag B` | int 35 on 4 rows (`malah`, `drehya`, `larzuk`, `nihlathak`), 13 blank | `+0x14` u32 | the same for the B multipliers (word 35) `[I]` | — | [C] |
 | `questflag C` | always blank | `+0x18` u32 | the same for C; 0 = no override `[I]` | — | [C] |
@@ -64,9 +64,9 @@ fn:sub_00656620_NpcLoadTable@0x00656620).
 | `questbuymult A`, `questrepmult A` | int, always 1024 (both) | `questbuymult` `+0x28`, `questrepmult` `+0x34` u32 | scale the second and third values when quest A's test holds `[I]` | — | [C] (descriptor, see notes) |
 | `questbuymult B`, `questrepmult B` | int 1024 on the 4 rows with `questflag B`, 13 blank (both) | `+0x2C`, `+0x38` u32 | the same for quest B `[I]` | — | [C] |
 | `questbuymult C`, `questrepmult C` | always blank (both) | `+0x30`, `+0x3C` u32 | the same for C `[I]` | — | [C] |
-| `max buy` | int 5000..25000: 5000 on Act I rows, 10000 Act II, 15000 Act III, 20000 Act IV (`jamella`, `halbu`), 25000 Act V | `+0x40` u32 | most gold the NPC pays for one item in normal `[L]` | — | [C] |
-| `max buy (N)` | int, always 30000 | `+0x44` u32 | the same in nightmare `[L]` | — | [C] |
-| `max buy (H)` | int, always 35000 | `+0x48` u32 | the same in hell `[L]` | — | [C] |
+| `max buy` | int 5000..25000: 5000 on Act I rows, 10000 Act II, 15000 Act III, 20000 Act IV (`jamella`, `halbu`), 25000 Act V | `+0x40` u32 | `[I]` caps the sell value in normal: `S′ = min(S, max buy)` after the Npc, quest and quantity steps, before the floor 1 ([items/0011 § 4](../findings/items/0011-economy.md#4-mode-steps-the-npc-row-quantity-and-the-result)) | — | [C] |
+| `max buy (N)` | int, always 30000 | `+0x44` u32 | `[I]` the same in nightmare (`+0x40 + 4·difficulty`) | — | [C] |
+| `max buy (H)` | int, always 35000 | `+0x48` u32 | `[I]` the same in hell | — | [C] |
 
 The act grouping in the ranges above is by the NPC's town (`[L]`, from the names); it is exact in the data: every
 row of one `questflag A` value has the same `max buy`, except `jamella` and `halbu` (`questflag A` 41, `max buy`
@@ -76,9 +76,10 @@ row of one `questflag A` value has the same `max buy`, except `jamella` and `hal
 
 Every row, from `python3 -I tools/economy_survey.py npc workspace/merged/data/global/excel` (gate survey `economy`),
 `[C]` as data. The scaling arithmetic and the quest test are `[I]` ([items/0009 § 9](../findings/items/0009-vendors.md#9-named-only-prices-and-repair),
-§ Interpretation notes); which running value is the NPC's selling price, its buying price and the repair cost, and what
-`max buy` caps, stay `[L]` until plan 0043 Phase 1 reads the price function. Group C is blank in every row and
-omitted.
+§ Interpretation notes). `[I]` Plan 0043 Phase 1 read the price function ([items/0011 § 4](../findings/items/0011-economy.md#4-mode-steps-the-npc-row-quantity-and-the-result)): `sell mult` and the
+`questsellmult` triplet scale the buy value `P` (what the player pays), `buy mult` and `questbuymult` the sell value
+`S` (what the NPC pays), `rep mult` and `questrepmult` the repair value `R`; `max buy` caps `S` per difficulty. Group C
+is blank in every row and omitted.
 
 | Row | `npc` (class) | `sell` / `buy` / `rep mult` | `questflag A` → `sell` / `buy` / `rep` | `questflag B` → `sell` / `buy` / `rep` | `max buy` N / NM / H |
 |---:|---|---|---|---|---|
@@ -124,8 +125,9 @@ omitted.
 
 - Answered by [items/0009 § 9](../findings/items/0009-vendors.md#9-named-only-prices-and-repair): the row lookup (by MonStats class), the `questflag` test (quest record word, bit 0 or 1),
   the order and arithmetic of the scalings, and which triplet is `questbuymult` (above).
-- `[L]` What the three running values are before the scaling (the item's base price), which one is the sell, buy or
-  repair price in the trade screens, and what `max buy` does: the price function is named only (ADR-0002).
+- ~~What the three running values are, which is the sell, buy or repair price, and what `max buy` does~~: answered
+  `[I]` by [items/0011 § 4](../findings/items/0011-economy.md#4-mode-steps-the-npc-row-quantity-and-the-result) (§ Multipliers). One quirk there: the large form of `S`'s scaling tests `sell mult` ≠ 0, not
+  `buy mult` (0x0062FAEE–0x0062FAF2); every stock row has both non-zero.
 - Answered `[I]`: `nihlathak` has a row but no column group because he only gambles (his record borrows Larzuk's
   list, never shown); the `Cain` group is unused by any class (Row identity). Why the data keeps either is not a code
   question.

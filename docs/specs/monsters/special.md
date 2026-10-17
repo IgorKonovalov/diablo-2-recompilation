@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/spawn, monsters/pool, data/excel, drlg/collision]
 consumed_by: [monsters/stats, monsters/spawn, items/tc]
-tags: {C: 104, I: 93, L: 3}
+tags: {C: 106, I: 92, L: 3}
 updated: 2026-10-17
 ---
 
@@ -32,7 +32,7 @@ resistances) is specified in [monsters/stats](stats.md) and is only named here. 
 | Superunique placed from a preset | fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0 | [C] |
 | MonPlace preset: cases 2 and 3 (and the fixed classes `0x11`–`0x20`) | fn:sub_0054E600_PresetMonSpawn@0x0054E600 | [C] |
 | Client: the display name | fn:sub_004AC870_ClientMonNameBuild@0x004AC870 | [C] |
-| Inactive-unit restore of a special or a minion | fn:sub_005A4440_SpecialMonRestore@0x005A4440, fn:sub_005A46E0_MinionRestore@0x005A46E0 | [I] |
+| Inactive-unit restore of a special or a minion ([drlg/lifecycle § H](../drlg/lifecycle.md#h-the-restore)) | fn:sub_005A4440_SpecialMonRestore@0x005A4440, fn:sub_005A46E0_MinionRestore@0x005A46E0 | [C] (run:2026-10-17-lifecycle) |
 | An existing monster made special: the Warping Shrine (`Shrines.txt` row 20), `OBJOP_Shrine` → `g_ShrineEffects[20]` = `0x00583050` ([§ J](#j-other-entry-paths-and-pre-existing-mods)) | fn:sub_005A4940_MonMakeSpecial@0x005A4940, fn:sub_00583050_ShrineWarping@0x00583050 | [I] |
 
 - [C] Everything except the name roll runs on the server, on the server game. Of the paths below that the run reached,
@@ -657,6 +657,11 @@ fn:sub_00653E20_UNameTablesFree@0x00653E20, tbl:UniqueTitle.txt:Name)
   `MonMarkSpecial` and sets unit flag `0x800`.
   (fn:sub_005A4440_SpecialMonRestore@0x005A4440, fn:sub_005A46E0_MinionRestore@0x005A46E0,
   fn:sub_005A4940_MonMakeSpecial@0x005A4940, fn:sub_005A0320_MonMarkSpecial@0x005A0320)
+- [C] A restored champion's stat 12 is what the **flag-1** handlers give (15 restores; with flag 0 each would come out one
+  level high), and a restored minion's is the level plus the handlers of mods 1–4 and its saved mods (144), which does
+  not tell the minion path's flag. Which call in `SpecialMonRestore` applies flag 1 is open
+  ([drlg/lifecycle § H](../drlg/lifecycle.md#h-the-restore)). (run:2026-10-17-lifecycle, fn:sub_005A4440_SpecialMonRestore@0x005A4440,
+  fn:sub_005A46E0_MinionRestore@0x005A46E0)
 - [I] **`MonMakeSpecial`'s caller is the Warping Shrine.** `OBJ_OperateDispatch` calls `g_ObjOperateFns[OperateFn]`;
   slot 2 is `OBJOP_Shrine`. It acts only on a shrine not yet used (object data `+0x0C` = 0 and mode 0), marks it used
   (`+0x0C` = operator id + 1, mode 1), and calls `g_ShrineEffects[Code]` from the shrine record (a NULL row falls back
@@ -880,7 +885,8 @@ The name is format 1722 with prefix, suffix and appellation, from the keys `Fire
   ≤ 9 cut, the superunique tails (Radament's `Range(5)` + 2 escorts, the quest hooks, the `EscortSpawn` tails), `thief`,
   an `aura` superunique with its second aura call and Lord De Seis's index, `ubermephisto`'s aura, a superunique with 5
   or more mods at creation, the `Stacks` refusal, `poisonhit` and `always_run_ai` handlers, a client fixed-name class and
-  Blood Raven's name, the inactive-restore paths, and the Warping Shrine's `MonMakeSpecial` (no session operated one). None is reachable on demand with stock data and the recipes built so
+  Blood Raven's name, a minion restored without its boss (the inactive-restore paths themselves are reached by
+  run:2026-10-17-lifecycle, [drlg/lifecycle § H](../drlg/lifecycle.md#h-the-restore)), and the Warping Shrine's `MonMakeSpecial` (no session operated one). None is reachable on demand with stock data and the recipes built so
   far (architect ruling (c), plan 0018 Phase 2).
 - ~~What calls `sub_005A4940_MonMakeSpecial` (caller `0x00583050`)~~ answered in [§ J](#j-other-entry-paths-and-pre-existing-mods) (the Warping Shrine) from
   [monsters/0003 § Plan 0039 batch P1c](../../findings/monsters/0003-special-monsters.md#plan-0039-batch-p1c-2026-10-17); the
