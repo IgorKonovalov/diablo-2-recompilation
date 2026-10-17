@@ -30,7 +30,7 @@ simulation plan does not apply to it.
 ## Context
 
 - **Research map:** every Core, Enabler and Creation-path row is `reviewed`. The Simulation band has one row,
-  `combat/formulas`, owned by [plan 0037](0037-combat-formulas.md), which starts after [plan 0036](done/0036-human-wiki-readme.md)
+  `combat/formulas`, owned by [plan 0037](done/0037-combat-formulas.md), which starts after [plan 0036](done/0036-human-wiki-readme.md)
   closes.
 - **`[I]` counts of the reviewed specs on 2026-10-16** (front matter, `main` at `32a1a6e`):
 
