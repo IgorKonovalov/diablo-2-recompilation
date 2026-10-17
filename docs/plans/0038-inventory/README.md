@@ -653,6 +653,19 @@ Net effect on § 2.4 (S1f created): static +15; c-emu awaiting −4; d-none −3
 567 statements (S1f 15 included), harness batches 532, none is c-emu awaiting a batch, and 415 are blocked** (d-none
 282, d-edit 73, d-sim 28, d-2c 14, d-owner 10, d-0032 8), with 2 deferred and 10 raised: 1 526 in all.
 
+**Plan 0039 P1c (review 2026-10-17, architect): drlg-preset 18's `id = 573` remainder.** The row was raised in part at
+S4a (the logged dispatch branches `[C]`, the `id = 573` branch `[I]`; plan 0038 log, round-3 review ruling 1). The
+survey in [drlg/0004 § Plan 0039 batch P1c](../../findings/drlg/0004-preset-units.md#plan-0039-batch-p1c-2026-10-17)
+shows no stock unit reaches it: only Act IV DS1 ids 5–7 map to 573 in `g_Ds1ObjectIds` (re-read at the review: those
+three cells, no −1), no shipped DS1 uses them (2 274 of 2 276 parsed, all 2 043 `lvlprest` files included), and the
+other `PresetUnitCreate` callers add no 573.
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| drlg-preset 18, the `id = 573` remainder | raised in part (S4a), remainder `[I]` | **d-none** (remainder) | No stock case; the spec keeps the branch as an `[I]` code reading and says "no stock case". |
+
+Net effect: none on the totals. The row stays counted as S4a, as data-excel 51's id-13 remainder stays counted as S1e.
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is

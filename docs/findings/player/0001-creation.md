@@ -676,7 +676,7 @@ S3B player addskill_sites=12 charstats_records=7 charstats_repeat_or_attack=0 pi
 ## Plan 0039 batch P1c (2026-10-17)
 
 Row Q29 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static: Ghidra on the lane's copy and objdump. No game
-run, so every statement here is `[I]`.
+run, so every statement here is inferred.
 
 ### What triggers `ExpGrantCapped`: the Rite of Passage reward
 
@@ -687,7 +687,7 @@ run, so every statement here is `[I]`.
   fn:QUESTS_MonsterDeathEvent@0x00543A30)
 - [I] **The death callback.** It acts only when classes 540, 541 or 542 die (`ancientbarb1`–`3`), and sets that
   Ancient's flag. It decrements the quest data's count `+0x44`. When the count reaches 0 and the quest is active
-  (`+9`), the reward runs in this order:
+  (`+9`), the reward runs in this order (fn:sub_0058C9A0_A5Q5_AncientDeath@0x0058C9A0):
   1. The killing player gets the grant when its word 39 bit 0 is clear and its base level ≥ 20·(d + 1) (20, 40, 60).
      The quest bits 0 and 13 are set first.
   2. `sub_005537D0_GameForEachUnit(sub_0058C7E0_A5Q5_SummitExpGrant)` visits each player. A player standing in level
@@ -700,8 +700,8 @@ run, so every statement here is `[I]`.
   fn:sub_0058C6D0_A5Q5_PartyExpGrant@0x0058C6D0, fn:sub_005537D0_GameForEachUnit@0x005537D0,
   fn:sub_00540510_PartyForEach@0x00540510, fn:QUESTRECORD_GetState@0x0065C310)
 - [I] The grant itself (§ 7): 1 400 000, 20 000 000 or 40 000 000 by difficulty, cut to one level span, then filled
-  level by level with `PLAYER_LevelUp`. So the Ancients give at most one level. Each tested player is marked done (bit
-  0) before the grant, so a player can get it once per difficulty. (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0)
+  level by level with `PLAYER_LevelUp`. So the Ancients give at most one level. Each tested player is marked done (bit 0)
+  before the grant, so a player can get it once per difficulty. (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0)
 
 ### Death loss and the corpse: 75 % comes back
 
@@ -711,6 +711,7 @@ run, so every statement here is `[I]`.
   fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0)
 - [I] **The loss is kept on the client.** `PLAYER_DeathExpLoss` computes `loss = DeathExpPenalty × (T(L) − T(L − 1)) /
   100` (`EXP_GetThreshold`, unsigned, the `0x51EB851F` multiply then `shr 5`), for a character level above 1.
+  (fn:PLAYER_DeathExpLoss@0x005359F0)
   - The new experience is `exp − loss`. When that is ≤ `T(L − 1)`, it becomes `T(L − 1) + 1`, and the kept amount
     becomes `exp − T(L − 1)`, floored at 0 (0x00535A61–0x00535A6F).
   - Before the stat write, the kept amount goes to `CLIENT_SetDeathExpLoss`, at client `+0x508` (0x00535A75–0x00535A8A).
@@ -720,7 +721,8 @@ run, so every statement here is `[I]`.
   tbl:DifficultyLevels.txt:DeathExpPenalty)
 - [I] **The corpse takes 75 % of it.** When the death mode ends (`sub_00581020_PlayerModeEnd`, mode 0),
   `sub_0057FCA0_PlayerDeathModeEnd` calls `PLAYER_CorpseCreate` at the player's position. That function creates the
-  corpse unit (type 0, mode `0x11`), reads `v = CLIENT_GetDeathExpLoss` and writes the corpse's stat 13 (experience):
+  corpse unit (type 0, mode `0x11`), reads `v = CLIENT_GetDeathExpLoss` and writes the corpse's stat 13 (experience)
+  (fn:PLAYER_CorpseCreate@0x0057F700):
   - `v·75/100` when `v` ≤ `0x100000`;
   - `(v/100)·75` above that (signed, truncating; the 64-bit branch at 0x0057F82B is not reachable for v ≥ 0) (0x0057F80F–0x0057F86C).
 
@@ -755,7 +757,7 @@ run, so every statement here is `[I]`.
   (`0x0070B0D0`…`0x0070B4F0`, `tools/xrefscan.py`). (fn:sub_00430730_CreateToggleHardcore@0x00430730,
   fn:sub_00430750_CreateToggleLadder@0x00430750)
 - The run's counts agree with this (bit `0x20` in all 19 expansion stubs of classes 0–4 and in none of the 8 classic
-  ones, § Plan 0038 batch S3a). They do not show which control set it, so the tag stays `[I]`.
+  ones, § Plan 0038 batch S3a). They do not show which control set it, so the statement stays inferred.
 
 ## Open questions
 

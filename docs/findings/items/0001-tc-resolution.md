@@ -876,7 +876,8 @@ Row Q21 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static (objdump, Gh
   and 0x00542031 in 0x00541FE0, which copies bits 26 and 17 into a saved-unit record (`+0x4C` ← `0x007314C0`, `+0x50` |=
   `0x007314C4` or `0x007314C8`); 0x00541E20 copies them back (0x00541F9E–0x00541FC6), so the bit survives that save.
   Writers: `or [reg+0xC4], 0x20000` occurs **21 times** in the image (count corrected at the architect's review,
-  2026-10-17; the batch said five). The five read here:
+  2026-10-17; the batch said five; **20** in fact, the 21st match being a bit-29 OR, and 30 direct writers in all:
+  [§ Plan 0039 batch P1c](#plan-0039-batch-p1c-2026-10-17)). The five read here:
   - `sub_005B1CF0_MonPostCreateBoss` for monster classes 340–343 (`boneprison1`–`4`) and 366 (`compellingorb`)
     (0x005B1E54, 0x005B1E79);
   - `sub_0056D940_SpawnOwnedMonster`, on a monster it spawns for another unit and gives that unit as owner
@@ -889,6 +890,9 @@ Row Q21 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static (objdump, Gh
   `sub_005E0070_UberTristramDrop`, and 12 sites in the unnamed code after `MERCAI_PickSkill` (0x005E61F7, 0x005E6238,
   0x005E9F38, 0x005EA09A, 0x005EA1DF, 0x005EA246, 0x005F6698, 0x005F6A58, 0x005FB5CF, 0x005FB91F, 0x005FB9CF). So the
   list above is not the full set of units that skip the death drop; the meaning of the bit rests on its two readers.
+  (Corrected by [§ Plan 0039 batch P1c](#plan-0039-batch-p1c-2026-10-17): 0x005BBBE9 is in the compelling-orb object
+  init `sub_005BBBA0_ObjInitCompellingOrb`, 0x005E02A1 in the `MosquitoNest` AI, and the 11 sites listed as "12" are
+  MonAI self-removals.)
 
   (fn:sub_005A6830_MonDeathDrop@0x005A6830, fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0,
   fn:sub_0056D940_SpawnOwnedMonster@0x0056D940, fn:sub_005AD3A0_MonSetNoDeathDrop@0x005AD3A0, tbl:MonStats.txt:Id)

@@ -662,7 +662,7 @@ example by matching the `Id` ordinal at `+0x000`.
   structure would escape it. None was met while reading the 16 odd sites, and the loader stores the pointer only at
   `0x0096C6A8` (0x0065385D).
 - Consequence, as before: only the three *Pandemonium 3* cells that store 723 are affected (spec H). Whether a unit of
-  class 723 shows in play is still `monsters/spawn`'s question (the region pool already shows it, `[C]`).
+  class 723 shows in play is still `monsters/spawn`'s question (the region pool already shows it, confirmed).
 
 ## Data touched
 

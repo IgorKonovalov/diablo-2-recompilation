@@ -703,7 +703,8 @@ fn:sub_005C55C0_SummonFinish@0x005C55C0, fn:sub_0058F4D0_MonSetOwnerRestore@0x00
 fn:sub_005A2D10_UModPartyDeadDeath@0x005A2D10, data:g_UModEventFns@0x0073C0B8, tbl:Skills.txt:srvdofunc)
 
 - [I] **For items/quality** (a monster killer adds its owner's stat 80, § Plan 0039 batch P1b). Owners are set for
-  these kinds, and a kill by one of them also counts its owner's stat 80 while the owner is in the game:
+  these kinds, and a kill by one of them also counts its owner's stat 80 while the owner is in the game
+  (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0):
   - escorts (the boss);
   - tentacles (their spawner);
   - formation members (their leader; a leader owns itself);

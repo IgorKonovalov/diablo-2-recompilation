@@ -948,7 +948,7 @@ section names the whole path and the target test.
   in practice there is no limit. It keeps the unit with the smallest distance, strictly smaller than the best so far,
   so the first one met wins a tie. The distance is `sub_006417F0_UnitDistance`: with `dx = |x − ux|`, `dy = |y − uy|`, it
   is `(min + 2·max) / 2`, truncating. The filter `sub_00582750_WarpShrineTargetOk` accepts a unit only when every test
-  below passes:
+  below passes (fn:sub_00582750_WarpShrineTargetOk@0x00582750):
   - it is not the operator and is a monster (type 1);
   - it is not on the operator's side (`0x00650D70` ≠ 1) and has alignment 0 (`0x006259B0`);
   - it is not in a death mode, and it is in mode 1 or 2 (neutral or walk);
@@ -969,7 +969,7 @@ section names the whole path and the target test.
 
 The 2026-10-12 archivist entry asked what each MonPreset range does. Its three open parts are answered:
 - **The ranges and the MonPlace cases:** [monsters/0002 § 7](0002-room-population.md#7-wanderers-monspcwalk-presets-and-superuniques)
-  (`[I]`).
+  (inferred).
 - **`0x0054E2A0` and the per-case classes:** § 7 above (`[C]` for cases 2 and 3; `[I]` for `0x11`–`0x20`). The
   `sub_0054E2A0_PresetFallenVariant` correction is in § Plan 0038 batch H4b (special 65, `[C]` in part).
 - **The superunique details:** § 6.

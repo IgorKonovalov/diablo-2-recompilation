@@ -748,7 +748,8 @@ its `DS1_Parse` unit model (scratch script, not kept), objdump and `tools/xrefsc
   use raw ids 0–2 and 8–65, never 5–7. The two files that do not parse are `act1/outdoors/trees.ds1` (an `LvlSub`
   file, act index 0) and `expansion/siege/xtransition.ds1` (unreferenced). Their act tables hold no 573, so only a raw
   723 could give one. (data:g_Ds1ObjectIds@0x00748AD8, tbl:LvlPrest.txt:File1)
-- [I] **The other code that adds type-2 units adds none with 573.** `sub_0066BF30_PresetUnitCreate` has 12 call sites:
+- [I] **The other code that adds type-2 units adds none with 573.** `sub_0066BF30_PresetUnitCreate` has 12 call sites
+  (fn:sub_0066BF30_PresetUnitCreate@0x0066BF30):
   - `DS1_Parse` (data, above);
   - `DRLG_PresetClientUnitsA`, under `PresetClientObjects` (constants 40, 41, 42, 65, every unit flagged);
   - `PresetCentreMonster` (type 1);
