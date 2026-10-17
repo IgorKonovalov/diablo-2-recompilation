@@ -46,6 +46,7 @@ SESSIONS = {
     # plan 0038 batch H7a: h-highlands' seed and route, with visits back to the rooms of saved 0x400 records
     "h-barb": ("ObjNova", "enter-hell", 4031, "rec400", "5,2", 4, 45, 0, ["--es", "30"]),
     "h-barb2": ("ObjNova", "enter-hell", 4033, "rec400", "5,2", 4, 45, 0, ["--es", "30"]),
+    "h-barb3": ("ObjNova", "enter-hell", 4034, "rec400", "5,2", 6, 50, 0, ["--es", "30"]),
 }
 
 

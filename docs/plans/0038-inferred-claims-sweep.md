@@ -2408,3 +2408,36 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (6) *omission:* the sweep's blocked reasons gain the plan 0032 owner addendum (`d-0032`, § Classes).
   Request closed; ledger rows in [metrics](metrics.md) (usage "—").
   - **Next:** merge `lane/wiki6`.
+
+- **2026-10-17 — H7a (`lifecycle`) started; stopped early for a machine shutdown (reverser, `lane/h7a`, harness slot 2).**
+  Not done; no review request, no finding section and no inventory § 2.6 entry yet. Run id **run:2026-10-17-h7a-lifecycle**,
+  logs `workspace/logs/rooms/h7a-*.log`, manifest `workspace/logs/h7a-lifecycle-manifest.sha256` (logger
+  `tools/gdb/rooms.gdb` unchanged, `726e3453…`; save `ObjNova` `d54d5dc3…`).
+  **Done so far.**
+  - *Recipe (b), offline geometry* (`tools/townfollow_geom.py scan`, new): per act, the town's free cells under mask
+    `0x3C01`, the openings onto other levels and, for every pair of outside cells next to an opening (within the
+    100-sub-tile window), shortest distance with and without town cells (4- and 8-connected). On the partial scans
+    (`dev-townfollow-geom-h7a-partial3.txt`, 80 layouts from the kept logs; the full run was stopped at the shutdown,
+    partial kept as `…partial4.txt`): **0 door pairs with a strictly shorter or equal-length route through a town
+    cell**, in every town seen (Rogue Encampment 34 layouts with the Blood Moor logged, Lut Gholein 7, Kurast Docks 3,
+    Harrogath 2). The camp's interior (≈14 900 free cells) touches the Blood Moor only at its 15–17-cell gate (other
+    openings are 1-cell or small separate pockets), so a Blood Moor route never gains by entering it. Points to (b) being
+    a shortfall; the full scan must finish first. `partial1/2` are development outputs (acts not separated: wrong).
+  - *Recipe (c), static:* withdrawn on reading. Monsters teleport with skill 184 (`MonTeleport`, `srvdofunc` 98 →
+    0x005CCC80, no town test itself). The unique mod's AI `0x005B11F0` (the only reader of AI flag `0x20`) refuses a
+    point whose room is a town room (0x005B133C); the Zakarum priests' AI (0x005F72D0) checks the point through
+    `0x005FD470`, which for skill 184 refuses a town room (0x005FD59C). Unfollowed: `UberIzual` (no town in its levels)
+    and 154 register-skill calls of `0x005DEAD0`. Draft text in the lane scratch is lost at shutdown: rewrite from these
+    anchors; kept outputs `workspace/logs/sweep-h7a-*.txt`; tables via `tools/sweep_h7a.py skills`. Seven new `I`
+    symbols already in `re/symbols.csv`.
+  - *The `0x400` drop:* new session kind `rec400` in `tools/rooms_sessions.py` (visits the rooms of saved `0x400` records).
+    Sessions h-barb (4031), h-barb2 (4033), h-barb3 (4034, killed at the shutdown during its cycle-2 return; partial log
+    kept and part of the record up to its last line). **4 records** (class 522 `act5barb1`, flags `0x540`, alignment 2,
+    mode 2, `+0xD0` 8), **4 restores, all dropped with no creation** (`tools/sweep_h7a.py rec400`). `rooms.py check`:
+    h-barb 0 mismatches / 96 414 checks, h-barb2 0 / 209 891; h-barb3 not checked yet. h-barb had one wanderer gate draw
+    pass (level 111, `+0x78` = 1, `MonWndr` 0: no roll, but the case does not separate the two tests).
+  **Left:** rerun the full geometry scan (≈1 h, under `MemoryMax=4G`); `rooms.py check` on h-barb3; write drlg/0009
+  § 11.3 (geometry, (c), the drop: alignment-2 half only, alignment 1 unreached), the experiments record, inventory
+  § 2.6 entry (pending review), the review request and the spec-writer entry. **Gotchas:** `CB` lines of
+  `tools/gdb/collision.py` have no `z`/`lid` (now skipped); towns of different acts share coordinates (cells keyed by
+  act); the Frigid Highlands arrival is (3764, 5094) on every seed tried.

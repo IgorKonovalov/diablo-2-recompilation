@@ -11,7 +11,7 @@ whose route goes through a town room. This tool looks for such routes on the col
 
 Input. The CB lines of tools/gdb/pilot.py (COLL_MapBuild 0x0064C9FF: a room's sub-tile rect, its level id and its
 cells at activation). Every log that holds CB lines of a town (level 1, 40, 75, 103, 109) is read; the cells of a
-game are the union of its CB grids (a second GP line starts a new game).
+game are the union of its CB grids per act (each act has its own coordinates; a second GP line starts a new game).
 
 Method. A cell is free under the move mask when `cell & mask` = 0 (default 0x3C01, the ground monster move mask of
 PATH_MonTestMask 0x00648480; drlg/0005). A town free cell 8-adjacent to a free cell of another level is an
@@ -39,12 +39,18 @@ if HERE not in sys.path:
 import collision  # noqa: E402
 
 TOWNS = (1, 40, 75, 103, 109)
+ACT_FIRST = (1, 40, 75, 103, 109)       # first level id of acts I-V (Levels.txt `Act`); each act has its own
+                                        # sub-tile coordinate space, so cells are keyed by act
+
+
+def act_of(lid):
+    return sum(1 for a in ACT_FIRST if lid >= a) - 1
 N4 = ((1, 0), (-1, 0), (0, 1), (0, -1))
 N8 = N4 + ((1, 1), (1, -1), (-1, 1), (-1, -1))
 
 
 def games(path):
-    """Yield (game index, {cell: (value, lid)}) for every game of the log that has a town CB line."""
+    """Yield (game index, {act: {cell: (value, lid)}}) for every game of the log that has a town CB line."""
     cells, has_town, g = {}, False, 0
     with open(path, errors="replace") as f:
         for line in f:
@@ -58,6 +64,8 @@ def games(path):
                     d = json.loads(line[3:])
                 except ValueError:
                     continue
+                if "z" not in d or "lid" not in d:
+                    continue        # a CB line of another logger (tools/gdb/collision.py): no level id or cells
                 c = collision.unz(d["z"]).get("cells")
                 if not c or not c[4]:
                     continue
@@ -66,9 +74,10 @@ def games(path):
                 if lid in TOWNS:
                     has_town = True
                 vals = collision.u16cells(c[4])
+                act = cells.setdefault(act_of(lid), {})
                 for j in range(h):
                     for i in range(w):
-                        cells[(x0 + i, y0 + j)] = (vals[j * w + i], lid)
+                        act[(x0 + i, y0 + j)] = (vals[j * w + i], lid)
     if has_town:
         yield g, cells
 
@@ -208,26 +217,30 @@ def main(argv):
     seen = {}
     total = {"games": 0, "layouts": 0, "shorter": 0}
     for path in logs:
-        for g, cells in games(path):
+        for g, acts in games(path):
             total["games"] += 1
-            h = hashlib.sha256(json.dumps(sorted((c[0], c[1], v, l) for c, (v, l) in cells.items()
-                                                 if l in TOWNS)).encode())
-            # layouts: key on the town cells and the cells of the other levels within 3 cells of a town cell
-            tcells = {c for c, (_, l) in cells.items() if l in TOWNS}
-            near = sorted((c[0], c[1], cells[c][0], cells[c][1]) for c in cells if cells[c][1] not in TOWNS and
-                          any((c[0] + dx, c[1] + dy) in tcells for dx in (-3, 0, 3) for dy in (-3, 0, 3)))
-            h.update(json.dumps(near).encode())
-            key = h.hexdigest()[:16]
-            if key in seen:
-                seen[key][1].append("%s#%d" % (os.path.relpath(path), g))
-                continue
-            res = scan_game(cells, mask, window)
-            seen[key] = (res, ["%s#%d" % (os.path.relpath(path), g)])
-            total["layouts"] += 1
-            for r in res:
-                if r["pairs_4"]["via town strictly shorter"] or r["pairs_8"]["via town strictly shorter"]:
-                    total["shorter"] += 1
-            print(json.dumps({"layout": key, "first": seen[key][1][0], "towns": res}), flush=True)
+            for act in sorted(acts):
+                cells = acts[act]
+                if not any(l in TOWNS for _, l in cells.values()):
+                    continue
+                tcells = {c for c, (_, l) in cells.items() if l in TOWNS}
+                h = hashlib.sha256(json.dumps(sorted((c[0], c[1], cells[c][0], cells[c][1]) for c in tcells)).encode())
+                # layouts: the town cells and the cells of the other levels within 3 cells of a town cell
+                near = sorted((c[0], c[1], cells[c][0], cells[c][1]) for c in cells if cells[c][1] not in TOWNS and
+                              any((c[0] + dx, c[1] + dy) in tcells for dx in (-3, 0, 3) for dy in (-3, 0, 3)))
+                h.update(json.dumps(near).encode())
+                key = h.hexdigest()[:16]
+                where = "%s#%d" % (os.path.relpath(path), g)
+                if key in seen:
+                    seen[key][1].append(where)
+                    continue
+                res = scan_game(cells, mask, window)
+                seen[key] = (res, [where])
+                total["layouts"] += 1
+                for r in res:
+                    if r["pairs_4"]["via town strictly shorter"] or r["pairs_8"]["via town strictly shorter"]:
+                        total["shorter"] += 1
+                print(json.dumps({"layout": key, "first": where, "act": act + 1, "towns": res}), flush=True)
     print("SUMMARY " + json.dumps(dict(total, mask=hex(mask), window=window)))
     if show:
         for key, (res, where) in seen.items():
