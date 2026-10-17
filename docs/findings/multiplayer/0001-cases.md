@@ -61,7 +61,8 @@ merge keeps them (review fix 5).
 | `0x006C321D` | (call site in an unnamed function) | the other `bind(INADDR_ANY:port)`, then `listen(s, 250)` | I |
 | `0x0055B6C0` | `PlayerTickGet` on lane/p42r | (player, other): other = 0 → PlayerData `+0x160`; else the stamp of other's entry in PlayerData `+0x38` | I |
 | `0x0055B720` | `PlayerTickSet` on lane/p42r | (player, other, value): the pair entry's stamp ← value; PlayerData `+0x160` ← `GetTickCount()` | I |
-| `0x005A5E50` | (unnamed; one reference, the table entry `0x006E2228`) | the hostility toggle between two players | I |
+| `0x005A5E50` | `sub_005A5E50_PlayerHostileToggle` (one reference, the table entry `0x006E2228`; named at `lane/rbs2`) | the hostility toggle between two players | I |
+| `0x00535B10` | `sub_00535B10_PlayerHostileToAny` (one caller, the portal operate at 0x0058488F; named at `lane/rbs2`) | (ECX game, EDX unit; 0 unless the unit is a player, type 0): walks the players through `0x005538D0` with the callback `0x00535AF0`; non-zero when the unit is hostile to any (§ 4) | I |
 
 ## Walkthrough
 
@@ -153,7 +154,7 @@ function starts, the line before is `int3` or `ret`; the other eight bare addres
 |---|---|---|---|---|---|---|
 | MP23 | combat/0001 § 12 (player against player) | fn:COMBAT_MeleeHitTest@0x0057EC10, fn:COMBAT_DamagePercent@0x0057C060, fn:sub_00554200_UnitsHostile@0x00554200 | H and J hostile (MP24), outside town, attack each other (Nova); then one stands in town | `combat.gdb` (players on both sides); `combat.py check` | P = 17 % on every scaled field; stat events and leech with D = 100; a defender in town takes no damage (0x0057C6D5–0x0057C78E) | yes; at least 200 events |
 | MP24 | the contradicted lead (portal 5 s, waypoint 10 s), plan 0042 | `0x005A5E50`; waypoint 0x0054C5D0; portal operate 0x00584870 | J, in town, declares hostility to H (`party hostile`), then: J's town waypoint at once, again after 10 s; J, still hostile, clicks H's town-end portal (the hostility test refuses); J declares, withdraws at once, and is invited back, then clicks H's portal within 5 s and after (the gate, then nothing); J walks out of town, opens a portal and uses it (likely past 5 s; the `tk` gap is logged); J declares again within 60 s; counter cases: J below level 9, J outside town | `two-players.py` (PLRS `tk`, `hl`); logger addition: the two gates' compare inputs and outcome (0x0054C60F, 0x005848CD) and the declaration (0x005A5E50 entry, its 0x005A5F22 refusal) | § 4: the hostility test refuses portals J does not own; the gates close until `tk` + 10 000 / 5000; the pair stamp is `tk` + 60 000; the repeat is refused; J's portal closes and J leaves the party; the counter cases change nothing. The withdraw step depends on the un-declare path (not read): log `tk` around it | yes |
-| MP25 | plan 0041 (party auras, hostile states) | fn:EVENT_SelectedAuraTick@0x0056FCB0 → fn:SKILLS_ForUnitsInRange@0x0056B7E0 → fn:AURA_ApplyToTarget@0x005CEDC0 | J is a Paladin with an aura. H in range: (a) partied; (b) not partied; (c) hostile | `combat.gdb` / plan 0041's state logger | **no prediction yet**: which `aurafilter` bits pass a party member or a hostile player is not read (stats/0002 names the filter only) | yes, as an observation; the reading is a static request (backlog) |
+| MP25 | plan 0041 (party auras, hostile states) | fn:EVENT_SelectedAuraTick@0x0056FCB0 → fn:SKILLS_ForUnitsInRange@0x0056B7E0 → fn:AURA_ApplyToTarget@0x005CEDC0 | J is a Paladin with an aura. H in range: (a) partied; (b) not partied; (c) hostile | `combat.gdb` / plan 0041's state logger | § 4, *MP25 prediction* (`lane/rbs2`): a `0x12003` aura (Might and 12 others) reaches H only when partied (a), not (b) or (c); the offensive ones (`0xA583`, `0xA783`, `0x4A283`) reach H only when hostile (c) | yes, as an observation; the reading is a static request (backlog) |
 
 #### quests and travel (plan 0042 Phase 1, lane/p42r)
 
@@ -265,6 +266,36 @@ Portal operate (0x00584870):       refuse while PlayerTickGet(operator, none) + 
   declared has `+0x160` = 0, which no gate notices once the machine has been up 10 s. The waypoint gate delays the
   declarer's waypoint travel for 10 000 ms, and it can be reached straight from town. The community lead's
   10-second delay holds for waypoints; for portals the wait is 5 s. MP24 settles both. (0x0054C601, 0x005848C1)
+
+#### MP25 prediction: which `aurafilter` bits pass a player (2026-10-17, `lane/rbs2`)
+
+- [I] **The filter.** `SKILLS_ForUnitsInRange` calls `sub_0056B3E0_SkillUnitFilter(filter)` with ECX = the source
+  and EDX = the target, for each unit in range other than the source. With filter bit `0x2000`, it first skips every
+  near room that is a town room (`sub_0061AB00_RoomIsTown`). For a player target (type 0) the filter checks, in order (fn:sub_0056B3E0_SkillUnitFilter@0x0056B3E0):
+  - bit `0x1` must be set;
+  - without `0x1000` the target must not be in mode 0 or 0x11 (with `0x1000`, it must be in mode 0x11);
+  - `0x80` needs bit 2 of the target's `+0xC4`, and `0x400` needs bit 3;
+  - `0x100` rejects a target standing in a town room;
+  - `0x10000` needs `sub_00554DE0_UnitsSameParty`: two players pass only when both have a party (`+0x80` set) with
+    the same id from `PartyIdOfUnit` (not −1), or when they are the same unit (monsters are first replaced by their
+    owners);
+  - `0x8000` needs `sub_00554200_UnitsHostile`, which for two players is `sub_0055B300_PlayerPairFlags(8)`: bit 8 of
+    the source's pair entry for the target (PlayerData `+0x38`, entry `+0x04`), the bit the hostility toggle writes;
+  - `0x20000` is melee range, `0x80000` rejects state 0x56, and `0x200` needs a clear line.
+  (fn:SKILLS_ForUnitsInRange@0x0056B7E0, fn:sub_0056B3E0_SkillUnitFilter@0x0056B3E0,
+  fn:sub_00554DE0_UnitsSameParty@0x00554DE0, fn:sub_00554200_UnitsHostile@0x00554200,
+  fn:sub_0055B300_PlayerPairFlags@0x0055B300, fn:sub_005A5E50_PlayerHostileToggle@0x005A5E50, tbl:Skills.txt:aurafilter)
+- [I] **Prediction for MP25** (J a Paladin, H a player in range, outside town, alive; fn:sub_0056B3E0_SkillUnitFilter@0x0056B3E0).
+  - The helping auras with `0x12003` (`0x10000 | 0x2000 | 0x2 | 0x1`: Might, Prayer, the resists, Thorns, Defiance,
+    Blessed Aim, Cleansing, Concentration, Vigor, Fanaticism, Salvation) reach H in case (a), partied. They do not
+    reach H in (b), not partied, or in (c), hostile, since a declaration also leaves the party (§ 4). Meditation
+    (`0x12001`) is the same.
+  - The offensive ones carry `0x8000` and no `0x10000`, so they reach H only in (c): Conviction (`0xA583`), Holy
+    Fire and Holy Shock (`0xA783`), Holy Freeze (`0x4A283`). For a player target they also need H's `+0xC4` bits 2
+    (`0x80`) and 3 (`0x400`), which are not read here. A case (c) with no effect would point at those bits.
+  - Every aura with `0x2000` does nothing to a target whose room is a town room, so the case must be played outside
+    town. Sanctuary (`0xE786`) has no `0x1` and never touches a player.
+  (fn:sub_0056B3E0_SkillUnitFilter@0x0056B3E0, tbl:Skills.txt:aurafilter)
 
 ### 5. The host's binding and the port-4000 precondition
 

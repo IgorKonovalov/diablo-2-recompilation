@@ -2151,3 +2151,62 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     Phase 2, which logged `0x200000` set on 2 440 server releases and clear on 8 277 client ones) is accepted and
     merged; reverser, drlg/0009 § 4's `sete` anchor. Ledger rows are in [metrics](metrics.md) (usage unknown).
   - **Next:** merge `lane/sw5`.
+
+- **2026-10-17 — `lane/rbs2` review (architect, static backlog sweep, second pass): accept with fixes.** `main`
+  (`33d6d37`) merged first, clean (`72681d5`). `re/symbols.csv`: the lane's 12 rows are all new, with no duplicate
+  address or name.
+  - **Checked.** Every output in `workspace/logs/sweep-rbs2-manifest.txt` re-run and compared:
+    - `callee_writes.py`, both runs on a fresh objdump dump: sha256 `f778470f…` and `15b51a4b…`, as kept. The dump's own
+      hash differs because objdump's header names the input path. Totals 46 / 2 532 / 12 / 13 / 21; 204 write lines
+      under `--all-writes`.
+    - `sweep_h5e.py stampdefs 4 0 1 2 3`: `a45d047f…`, as kept.
+    - `scan 1 601`: identical except the kept file's first line, the `systemd-run` banner.
+    - `test_sweep_h5e`: 6 tests pass.
+
+    Anchors read in objdump:
+    - 0x006807F0–0x00680874 (no store between the skip and the call to 0x00680200);
+    - 0x00680219–0x0068023B (`O` = `L+0x14`, the test on `(%esi)`);
+    - `g_GridOps` (0x00749BAC: the six stubs 0x0067C420–0x0067C470), and `GridCellOp` (no bounds check);
+    - `OutBorderSubApply`'s context (`memset` 0x38, the five callbacks, `+0x24` and `+0x28` null-tested at 0x0066F47D
+      and 0x0066F5F2);
+    - `BorderSubRecord`'s wildcard 62 (0x0066F9B5), `BorderSubStamp`'s `OutPresetPlace(…, file 0, 1)` (0x0066F62D);
+    - 0x00530CFF (`mov %al,0x6a(%edi)` from `[ebp+8]`), 0x0053F16B–0x0053F17A (message `+0x11`), 0x00477CB0–0x00477CDF
+      (the 0 → 3, 6 → 1, 8 → 2 map), 0x0044D630;
+    - 0x0054C590 → 0x005350B0 (the `+0x4C` clear); `g_SrvPacketTable` entry 0x006E0F58;
+    - 0x00554292 (`PlayerPairFlags(8)`), and `SkillUnitFilter`'s bit order;
+    - the four `QuestsPlayerJoin` sites and their pushes (1 at 0x0056A06C and 0x0053266D, 0 at 0x005344E9 and
+      0x0053458B), and 0x005345E2–0x00534607.
+
+    Ten of the 31 new quests anchors were sampled (0x00598640, 0x005987D0, 0x00598780, 0x005B36A0, 0x0059CB20,
+    0x00592E90, 0x0059EDC0, 0x00589937, 0x00599C10, 0x005B3E60): each one is the function or site that its section's
+    table or text describes. `save.h` offsets are recounted: `+0x38`, `+0x60` and `+0x160`. Gate green; W1 is 12 on the
+    merged tree.
+  - **Rulings.**
+    - (1) **(e′) d-none stands at `[I]`.** The closure is mechanical and kept, every indirect site is resolved, and
+      every stopped call is named and counted, so rule 9 is met. The caveat, an unchecked grid index landing on `O`,
+      stays written as a caveat. Nothing on the path is shown to compute such an index, and the tag stays `[I]`
+      partly for that reason. It does not reopen the half.
+    - (2) **(c) is complete once one more writer class is stated.** `OutBorderBuild`'s own border pieces are placed
+      with file −1, and the rotation gives `(c + 1) mod Files` with `Files` = 3 for Defs 4–7, so they never take
+      index 3. The finding left this out; it is added (fixes). With it, 5 and 6 endpoints are d-none at `[I]`.
+    - (3) **(b) stays a shortfall** with its printed scan condition.
+    - (4) **Bucketing** (inventory § 2.6, the `lane/rbs2` block):
+      - outdoor 13's half keeps d-none, its condition met;
+      - outdoor 14's remainder (5 or 6 endpoints from (c), the pool from (d) of the first pass) becomes d-none
+        (remainder);
+      - rows 11 and 7 stay a-run shortfalls.
+
+      No class moves. The totals are recomputed once and are unchanged: static 567, harness 532, blocked 415
+      (d-none 282), deferred 2, raised 10, 1 526 in all.
+    - (5) The game-type writer, the `rejoin` flows with the double join, the `+0x4C` clear, the MP25 prediction and the
+      12 symbols are accepted at `[I]`. The network names of modes 6 and 8 stay `[L]`.
+    - (6) The `test_d2s.py` revert is right: the entry stays open for lane/arc5.
+  - **Fixes (2).**
+    - *Omission 1:* drlg/0008 (c)'s openings bullet now states the border-piece rotation (0x00675987, 0x00675B28,
+      0x00675B45, 0x00675D19; `Files` 3 for Defs 4–7, read at the review) and the explicit indices on other Defs.
+    - *Other 1:* the template placeholder line is removed from the review request.
+  - **Backlog.** The review request is closed. The *static sweep, remaining* entry is annotated: H5e done, and a new
+    item to print the H5e (a) vertex-merge condition in the scan (row 7 waits on it). New spec-writer entries:
+    drlg/outdoor L693 and L866 wording; the quests and economy readings for plans 0042 and 0043 Phase 3. Ledger rows
+    are in [metrics](metrics.md) (usage "—").
+  - **Next:** merge `lane/rbs2`.

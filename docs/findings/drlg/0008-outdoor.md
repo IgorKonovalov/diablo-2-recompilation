@@ -1602,7 +1602,91 @@ condition a map seed must meet. Three of the five are answered here; (b) and (c)
   the 8 rebuilds, the 3 of level 28 are the ones whose previous placement differs from the act rect.
 - Not answered in this sweep: **(b)** a waypoint pass with no free cell (`OutWaypointPlace` not read) and **(c)** an
   Act I road set with 5 or 6 endpoints (needs, per level 2–7, the bound on seam openings and cave cells that
-  `A1PathEndpoints` counts, from `OutBorderBuild` and the cave placement).
+  `A1PathEndpoints` counts, from `OutBorderBuild` and the cave placement). *Answered in the second pass below.*
+
+### H5e reachability, second pass (2026-10-17, `lane/rbs2`)
+
+The three items the first pass left: (e′) the callees (e) did not follow, (b) and (c). Kept outputs (manifest
+`workspace/logs/sweep-rbs2-manifest.txt`): `callee-writes-h5e-e-rbs2-2026-10-17.txt` (`f778470f…eba894f`) and
+`callee-writes-h5e-e-all-rbs2-2026-10-17.txt` (`15b51a4b…b59463`) from the new `tools/callee_writes.py`;
+`sweep-h5e-scan-rbs2-2026-10-17.txt` (`b2a15531…88e564`) and `sweep-h5e-stampdefs-rbs2-2026-10-17.txt` (`a45d047f…42cb7e`)
+from `tools/sweep_h5e.py` (sha256 `40e0a4f6…220dff3`).
+
+- [I] **(e′) Nothing between the cliff-mark skip and the test at 0x0068023B writes `O+0x00`.** `callee_writes.py` walks
+  the callee closure of `OutSeamMark`, `OutBorderBuild`, `OutBorderSubApply` and `A1RiverEastAndCave` up to 0x0068023B.
+  That closure takes in `A1RiverColumnClear` and `A1RiverPlace` → `A1BridgePlace`, which the first pass did not list.
+  The walk also follows the targets of the indirect calls, resolved by hand: the six `g_GridOps` stubs
+  (`0x0067C420`–`0x0067C470`, the dwords at 0x00749BAC) and the five context callbacks that `OutBorderSubApply` stores
+  (`OutCellNotOpening`, `OutPresetFits`, `OutCellClear`, `OutCellCover`, `OutPresetPlace`). The context's `+0x24` and
+  `+0x28` slots are zero from its `memset`, and both are null-tested. It follows OutBorderBuild's three switch tables
+  (5, 10 and 5 entries).
+  - *Totals:* 46 functions, 2 532 instructions and 12 indirect-call sites, all of them the `g_GridOps` or callback calls
+    above.
+  - *Stopped calls (13):* the allocator `0x0040B430`; the fatal trio `0x00408090`, `0x00408A60` and `0x00681E09`;
+    `memset` `0x00681EF0` on the stack context; and `DS1_LoadCached`. `DS1_LoadCached` is passed the LvlSub record's
+    `+0x50` slot, its `+0x04` name and the act's pool `act+0x464`, never `O`.
+  - *The 21 writes through a bare base register*, read one by one:
+    - the level seed (`RNG_RangeB`, `ECX = &L+0x1C4`);
+    - the shuffle swap in `BorderSubGroup`'s stack array (0x0066F858, 0x0066F863);
+    - the new rotation node in `OutPresetFileRotate` (0x00674371, 0x0067437E), taken from the allocator;
+    - `GridView`'s view header and row table in the LvlSub record (`EDX` = record `+0x54`…, `+0xF4`, `+0x108`) and its
+      allocation;
+    - `VertexDir`'s two out-parameters (caller stack slots);
+    - the six grid-op stubs. They write `cells + 4·(rows[y] + x)` of the grid in `ECX`, which is in the cell arrays and
+      never in the grid header.
+  - *The 183 writes with a displacement* (in the `--all-writes` list) hit the stack, the level (`+0x1C4`/`+0x1C8` seed,
+    `+0x1CC` rotation list), the BorderSub context (`+0x14` wildcard) or the same allocations.
+
+  That leaves one way to reach `O+0x00`: a grid op whose out-of-range cell index lands on `O`. No bound check rules it
+  out, because the grid ops take their indices unchecked, but nothing in this path computes such an index. Together
+  with (e), the Blood Moor's `0x20` stays clear: **d-none**, at `[I]`. (fn:sub_00675770_OutSeamMark@0x00675770,
+  fn:sub_00675850_OutBorderBuild@0x00675850, fn:sub_006752A0_OutBorderSubApply@0x006752A0,
+  fn:sub_00670750_BorderSubApplyType@0x00670750, fn:sub_006743C0_OutPresetPlace@0x006743C0,
+  fn:sub_0067C4F0_GridCellOp@0x0067C4F0, fn:sub_0067C760_GridSegmentOp@0x0067C760,
+  fn:sub_00675670_OutCornerFlood@0x00675670, fn:sub_0067FE90_A1RiverPlace@0x0067FE90, data:g_GridOps@0x00749BAC)
+- [I] **(c) An Act I road set has at most 4 endpoints on every stock level: 5 and 6 are d-none.** `A1PathEndpoints`
+  counts, in this order: one entry per adjacency node whose neighbour is level 1 or 26 (the `default` side still counts),
+  then one per cell with Def 4–7 at file index 3, Def 24 or 25, Def 28 at index 1 in column `cw − 2`, or Def 51 or 52
+  (fn:sub_00680D70_A1PathEndpoints@0x00680D70). Per source:
+  - *nodes*: `LevelBorderAdj` makes one node per `Vis` slot with `Warp` −1 (§ 3). For levels 2–7 only the Act I link
+    tables fill those slots. `Levels` gives 0 in slots 0–2 and 7 and warps in 3–6, and level 6's slot 2 has warp 10.
+    The tables give 2 {1, 3}, 3 {2, 4, 17}, 4 {3}, 5 {6}, 6 {5, 7}, 7 {6, 26} (data:g_ActLinkTables@0x006F0750, drlg/0007).
+  - *openings*: levels 1 and 26 are presets (`DrlgType` 2), so their seam vertex has flag 2 and no opening.
+    `VertexRingSeams` sets bit 0 on one vertex per node, and `OutBorderBuild` marks one mid cell per such vertex
+    (`0x30400`). A river or a stamp's covered cell can only remove an opening. A stamp places its pieces with file 0
+    (index 0), so it never makes one. `OutBorderBuild`'s own border pieces go in with file −1 (0x00675987,
+    0x00675B28, 0x00675B45, 0x00675D19), so `OutPresetFileRotate` picks their index as `(c + 1) mod Files`. For
+    Defs 4–7 `Files` (record `+0x40`) is 3, so a rotated border piece takes index 0, 1 or 2 and never 3. Every
+    explicit index on the Act I path before `A1Paths` is on another Def: rivers 26/27, bridge 28, the town
+    transitions 2/3, and the caves at −1. So town + monastery + openings ≤ nodes. *Added at the `lane/rbs2` review.*
+    (fn:sub_00674320_OutPresetFileRotate@0x00674320, tbl:LvlPrest.txt:Files)
+  - *caves*: each of the three cave placements is gated on `O.flags & 0x40` and sets it (or is fatal), so one cave
+    `Def` is written. No other writer before `A1Paths` writes 24, 25, 51 or 52:
+    - the border tables give ≤ 23 for styles 0 and 1 (§ 16.1);
+    - the rivers write 26 and 27, the bridge 28, and the town transitions 2 and 3;
+    - `stampdefs 4 0 1 2 3` lists the Defs every Act I stamp can place as 4–23 (types 0–3, one record each).
+
+    So caves ≤ 1.
+  - *bridge*: `A1BridgePlace` places once. Def 28 at index 1 lands in column `cw − 2` only from the east river: the
+    middle river is at `cw/2 − 1`, which equals `cw − 2` only for `cw = 2`. Level 3 has no river at all, because
+    `g_LinkOutdoorFlags` rows 0–5 exclude level 3 and rows 6–14 are level 2's, so `O.flags & 0x1C` is 0 there. So
+    bridge ≤ 1, and 0 on level 3.
+
+  Bound: 4 on level 3 (3 + 1 + 0), 4 on levels 2, 6 and 7 (2 + 1 + 1), and 3 on levels 4 and 5. The scan agrees and is
+  tighter (1 800 windows a level, seeds 1–600, three difficulties). It gives totals of 3, 4, 2, 2, 3 and 3 for levels
+  2–7. The bridge shows only on level 6 (270 windows), each time with one opening, never with two.
+  (fn:sub_00680D70_A1PathEndpoints@0x00680D70, fn:sub_0066B790_LevelAdjAdd@0x0066B790,
+  fn:sub_0067CE20_VertexRingSeams@0x0067CE20, fn:sub_00680200_A1RiverEastAndCave@0x00680200,
+  fn:sub_006803D0_A1RiverMidTransCave@0x006803D0, fn:sub_0067FD20_A1BridgePlace@0x0067FD20,
+  data:g_LinkOutdoorFlags@0x006F1258)
+- [I] **(b) The waypoint pass fails only if every interior cell is taken. No static bound is shown here.** Level 3's
+  seam rule returns only once it has marked a cell. After it, `OutWaypointPlace` shuffles the `(cw − 2)(ch − 2)`
+  interior cells (`2N` level-seed draws) and takes the first with no `0x1B81` bit. It returns with nothing marked only
+  when every interior cell carries one. Rivers, caves, stamps, roads and the earlier presets all mark interior cells,
+  and the stamps' covered cells are not bounded here, so the remainder is not d-none. **Scan condition** for
+  `sweep_h5e.py scan` (now printed): the fewest free interior cells at the pass, per level. Over 52 200 windows the
+  minimum, out of 64, is 12 on levels 3 and 6, 19 on levels 4 and 5, and 33, 25 and 21 on Act II's 42, 43 and 44. A
+  seed meets the branch only at 0. (fn:sub_00674B70_OutWaypointPlace@0x00674B70)
 
 
 ## Data touched

@@ -43,20 +43,27 @@ record (§ 3). The quest drops, rewards and the quest seed's item draws are [ite
   (Act III), § 10 (Acts IV–V). Highlights: the Countess completes at once (bits 13, 0, no reward step); the Hell respec
   is word 41, granted by `NPC_MenuAction`; Khalim's Will completes on the second operate of the orb with `qf2` held; Diablo's death raises
   the classic status progression; word 28 is set by the Harrogath portal object (566), expansion only; the Ancients'
-  experience is 1.4M/20M/40M; no quest script writes word 33 (only packet `0x58`'s bit 12 can).
+  experience is 1.4M/20M/40M; no quest script writes word 33 (only packet `0x58`'s bit 12 can). (fn:sub_00595710_A1Q5_CountessDeath@0x00595710,
+  fn:NPC_MenuAction@0x00579D60, fn:sub_005BB980_A3Q5_CompellingOrbOperate@0x005BB980,
+  fn:sub_005B5880_A4Q2_HarrogathPortalOperate@0x005B5880, fn:sub_0058C6D0_A5Q5_PartyExpGrant@0x0058C6D0,
+  fn:sub_0054C9C0_Pkt58QuestSeen@0x0054C9C0)
 - [I] **Draws.** On the **quest seed**, besides plan 0032's item draws: the cairn-stone order (≥ 5 `mod 5` steps, first
   stone or scroll), the Act II eclipse timer (`RandLoHi(15, 17)`, once per game), each talk to NPC 331 once the palace is
   open (`mod 3`), the Act III Dark Wanderer timer (one step per game), Anya's reward (`Range`), the Zoo (1–10
   `RandLoHi`). On the **player's unit seed**: every talk to NPC 266 (`Range(2)` or one step) and to NPC 377. Every other
   quest event draws nothing in quest code; the spawns, portals and items it creates draw on their own seeds (oracles).
-  (§ 11)
+  (§ 11; fn:sub_00592E90_A1Q4_StoneOrderDraw@0x00592E90, 0x0059EDC0, 0x0059B1C0, fn:sub_005BD390_A3Q7_AfterglowTimer@0x005BD390,
+  0x00589937, fn:sub_0058E830_A5Q6_ZooInit@0x0058E830, 0x00596B23, 0x0059E1CE)
 - [I] **Creation-path readers** (§ 12): object inits that read the game record (Hratli's two InitFns by G16:13, InitFn
   52 by G22:13, the Tristram portal when quest 4 is inactive, the Zoo), the Chaos Sanctuary gate (Diablo's private
   `+0x13`, set when the five seals are open and three seal bosses dead), Nihlathak's boss spawn (Anya rescued), the warp
   gates into 73, 100, 118/128 and 132, the true-tomb index (act `+0x094`) used by quest 12 and the client; act `+0x484`
-  and `+0x474` are DRLG fields that no quest code reads.
+  and `+0x474` are DRLG fields that no quest code reads. (fn:sub_005B70B0_A3Q0_HratliSpawnA@0x005B70B0,
+  fn:sub_005B7160_A3Q0_HratliSpawnB@0x005B7160, fn:sub_0058A6C0_A5Q3_NihlathakBossSpawn@0x0058A6C0,
+  fn:QUESTS_WarpGate@0x00545B80, fn:sub_005BBFA0_A3Q5_DuranceWarpGate@0x005BBFA0, fn:sub_0058E830_A5Q6_ZooInit@0x0058E830)
 - [I] **NPC interaction** (§ 6): the server changes quest state in e11 handlers keyed by `{NPC class, message id}` from
   the client's packet `0x31`, with checks on the player's bits and held items; the dialogue is presentation.
+  (fn:sub_0054BA90_Pkt31NpcMessage@0x0054BA90, fn:QUESTS_RaiseNpcMessage@0x005443B0)
 
 ## Leads used
 
@@ -183,7 +190,8 @@ The core functions are below. The per-quest functions (about 530) are named in `
   from the `…\Quests\aNqM.cpp` asserts in each init's range. (data:g_QuestDescs@0x00731510, 0x00596C40, 0x005BD368)
 - [I] Words written by no quest object: 7, 15, 23, 28 (the act-travel words, written by the travel code,
   [quests/0002](0002-travel.md)), 34, 41 (written by `NPC_MenuAction`'s respec, § 7 word 1), 42 (the second-table objects
-  carry it but never write it). Words 43–47 are never addressed.
+  carry it but never write it). Words 43–47 are never addressed. (fn:QUESTRECORD_SetState@0x0065C360,
+  fn:NPC_MenuAction@0x00579D60, data:g_QuestDescs@0x00731510)
 
 ### 2. Events
 
@@ -264,8 +272,30 @@ QuestsPlayerJoin(game, player, rejoin) (0x00546270)                             
   fn:QUESTS_DispatchEvent@0x005438E0 0x00543934–0x0054393E)
 - [I] The first-join callbacks (`+0xD4`) copy the creator's step bits into the quest's state bytes; the later-join ones
   (`+0xD8`) recount quest items and the like; § 7–§ 10 per quest. The `rejoin` argument is 1 at `0x00532673` and
-  `0x0056A072` (after `0x005701B0`) and 0 at `0x005344EF` and `0x0053458F`; which flows these are is open.
-  (fn:sub_00546270_QuestsPlayerJoin@0x00546270)
+  `0x0056A072` (after `0x005701B0`) and 0 at `0x005344EF` and `0x0053458F`. (fn:sub_00546270_QuestsPlayerJoin@0x00546270)
+- [I] **The flows behind `rejoin`** (plan 0042 P1 review follow-up (b), `lane/rbs2`). `QuestsPlayerJoin` has four
+  direct call sites (`grep -cE '(call|jmp) +0x546270$'` over `objdump -d --no-show-raw-insn -j .text`: 4). The same
+  pattern gives one or two callers for every function on the way up (`D2S_ReadSave` 0x00534475 and 0x0053455E;
+  `D2S_ReadSaveV92` 0x00534387; the version < 92 reader `0x00534020` at 0x0053437B; `PLRSAVE_ReadFile` 0x005344DB;
+  `0x005344B0` 0x005345DB; `0x00534520` 0x005345FB), so all four are under `sub_005345A0_PlayerLoad`, whose one caller
+  is `sub_00539760_ClientAddPlayerToGame` (0x00539804). Indirect calls are not covered by the pattern. The argument is
+  "the character was made just now", not "joins again":
+  - `rejoin` = 1: the two new-character builders, at their end. `NewCharFromStub` (0x0056A072) is reached from
+    `D2S_ReadSaveV92` when the save is only the header stub (0x0056B1E2). `NewCharLegacy` (0x00532673) is reached
+    from `PlayerLoad` when it has no save data (`[ebp+0xC]` = 0, 0x00534607) and from the version < 92 reader
+    (0x00534098).
+  - `rejoin` = 0: the two save readers, once the read has left a unit (`0x005344B0` whatever the return code,
+    `0x00534520` only when `D2S_ReadSave` returned 0). `0x005344B0` reads the save file
+    (`PLRSAVE_ReadFile`); `PlayerLoad` takes it in a game whose type byte `+0x6A` is not 1 or 2 and with no host
+    callback (`0x00883D50` = 0). `0x00534520` reads the buffer the client sent (`0x00538E00`, `0x00538E30`) through
+    `D2S_ReadSave`, for game type 1 or 2 or with the host callback, and calls `0x00538F10` first for types 1 and 2.
+  - Both readers call the join on the unit `D2S_ReadSave` returns, and the new-character builders write that same
+    out-pointer (0x0056A07B, 0x0053267C). So a character made from a stub, or by the version < 92 reader, joins
+    **twice**: first with 1 (as the game's first player: no deactivation pass, `+0xD4` FirstJoin), then with 0. On
+    the second call `recordReady` is already set, so it runs the later-join `+0xD8` pass and re-sends the 0x5E and
+    record packets. Only `PlayerLoad`'s own no-save branch joins once, because 0x00534607 is followed by no join.
+  (fn:sub_005344B0_PlayerLoadFromFile@0x005344B0, fn:sub_00534520_PlayerLoadFromClient@0x00534520, 0x005345B6–0x00534607, fn:PLRSAVE_ReadFile@0x005343A0, fn:D2S_ReadSave@0x00534330,
+  fn:sub_00569F80_NewCharFromStub@0x00569F80, fn:sub_00532590_NewCharLegacy@0x00532590)
 - [I] **The game-wide record** (`QuestControl+0x0C`, 96 bytes) is written only through
   `sub_00544720_GameQuestSet` and read through `sub_00544760_GameQuestGet` (both fatal before the first join), and by
   the join above. In the code read, bit 13 of word *w* marks "this game's step done" for that quest (set at the same
@@ -277,7 +307,8 @@ QuestsPlayerJoin(game, player, rejoin) (0x00546270)                             
 
 ### 4. The common pattern of a quest word
 
-- [I] **Bit meanings shared by the quest scripts** (each script also has its own bits, § 7–§ 10):
+- [I] **Bit meanings shared by the quest scripts** (each script also has its own bits, § 7–§ 10;
+  fn:QUESTRECORD_SetState@0x0065C360, fn:QUESTRECORD_ClearState@0x0065C3A0):
 
 | bit | meaning in the code | set by | cleared by |
 |---|---|---|---|
@@ -294,10 +325,12 @@ QuestsPlayerJoin(game, player, rejoin) (0x00546270)                             
   (fn:QUESTRECORD_LoadBytes@0x0065C4D0, fn:QUESTRECORD_SetState@0x0065C360, fn:QUESTRECORD_ClearState@0x0065C3A0, 0x005455F0, 0x0065C3E0)
 - [I] **Party credit.** When a quest credits a player, its party members (`sub_00540510_PartyForEach` on the party of
   `0x00554630`) get the same bits only if their bits 0 and 1 are clear and **their current level is in the quest's
-  act** (`DRLG_ActFromLevelId`). Each quest has its own copy of this callback. (§ 7–§ 10)
+  act** (`DRLG_ActFromLevelId`). Each quest has its own copy of this callback. (§ 7–§ 10;
+  fn:sub_00598D40_A2Q1_PartyCredit@0x00598D40, fn:sub_005871C0_A5Q1_PartyCredit@0x005871C0)
 - [I] **The chain.** Each quest's `+0xF0` starts it (`+0x0C` ← 1, "changing state") when it is active and not yet at
   its last state, or calls `+0xF0` of the quest whose id is in its `+0x10`. The join starts one chain per act (quest
-  objects 1, 8, 18, 22, 31), so in each act the next quest is offered when the previous one finishes. (§ 7–§ 10)
+  objects 1, 8, 18, 22, 31), so in each act the next quest is offered when the previous one finishes. (§ 7–§ 10;
+  fn:sub_00593D70_A1Q4_ChainNext@0x00593D70, fn:sub_005B7CD0_A3Q1_Chain@0x005B7CD0, fn:sub_00546270_QuestsPlayerJoin@0x00546270)
 - [I] **The NPC gate.** When a player starts talking to an NPC whose MonStats `+0x0D` bit 1 is set, `0x00544590` asks
   `+0xEC` of each quest of the player's act whether it has something for that NPC class (the "quest available" mark);
   the first yes sends a message (`0x0053DFF0`). (0x00544590)
@@ -325,7 +358,7 @@ QuestsPlayerJoin(game, player, rejoin) (0x00546270)                             
 
 ### 7. Act I (rows 0–7 and 29, second-table object 37)
 
-Conventions (all `[I]`; each bit write was read at the pushed constants of its call):
+Conventions (all `[I]`; each bit write was read at the pushed constants of its call; fn:QUESTRECORD_SetState@0x0065C360):
 
 - "rec" = the player's record for the game's difficulty (`PlayerData +0x10 + 4·game[+0x6D]`); "G" = the game-wide record
   (`QuestControl +0x0C`, written by `fn:sub_00544720_GameQuestSet@0x00544720`, read by
@@ -677,7 +710,7 @@ id 8 → 13, id 10 → 11, id 11 → 13, id 13 → 10 (constant). `0x00546270` s
 | w8 b0 | set | `0x00598671` | e11, NPC 201 msg 0xFD | e0 and +0xEC (NPC 201 greeting gate), e13 (the word-10 and word-14 log callbacks `0x0059E630`/`0x0059CA50` read **word 7** b0, not word 8) |
 | game w8 b13 | set | `0x0059867F`, `0x005987FE` | e11 above; first join of a player with w8 b0 | `0x0059F380`, `0x0059F4C2` (Jerhyn placement, word 12) |
 
-- [I] All `[I]` from the addresses above. Draws: none.
+- [I] All `[I]` from the addresses above. Draws: none. (0x00598640, 0x005987D0, 0x00598780)
 
 #### Word 9 — quest object 8 (row 9, a2q1.cpp)
 
@@ -749,7 +782,8 @@ id 8 → 13, id 10 → 11, id 11 → 13, id 13 → 10 (constant). `0x00546270` s
 
 - [I] Quest chests `sub_00599C10_A2Q2_ScrollChest`, `sub_00599CF0_A2Q2_StaffChest`, `sub_00599DF0_A2Q2_CubeChest`
   (OperateFn 40, 41, 39; objects 355, 356, 354): item counts per player, then **one quest-seed LCG step**,
-  `n = low mod 5 + 5` gold piles (items/0010 § 4/§ 9). No record write.
+  `n = low mod 5 + 5` gold piles (items/0010 § 4/§ 9). No record write. (fn:sub_00599C10_A2Q2_ScrollChest@0x00599C10,
+  fn:sub_00599CF0_A2Q2_StaffChest@0x00599CF0, fn:sub_00599DF0_A2Q2_CubeChest@0x00599DF0)
 - Draws: the three chests (one quest-seed step each, items/0010). No other.
 
 #### Word 11 — quest object 10 (row 11, a2q3.cpp): the altar and the eclipse
@@ -893,7 +927,7 @@ id 8 → 13, id 10 → 11, id 11 → 13, id 13 → 10 (constant). `0x00546270` s
   private `+0x3C` = 1.
 - [I] **Meshif.** Two separate paths: word 14's e11 msg 0x1C2 (needs b4) removes `hst`, `vip`, `msf` when w10 b0 is
   set; the act travel `sub_005467E0_NpcActTravel` NPC 210 (first crossing) sets w10 b0, b13 when clear and removes
-  `msf`, `vip` only.
+  `msf`, `vip` only. (0x0059CB20, fn:sub_005467E0_NpcActTravel@0x005467E0)
 - Draws: none in the quest's functions. Object 100 and the portal 59 are created by `sub_00555230_SUnitCreate` /
   `sub_0056D130_PortalObjectCreate` (game-seed draw of `SUnitCreate`, rng/0002; oracles).
 
@@ -989,7 +1023,8 @@ new level at `+0x18`, the player at `+0xC`. So e3 handlers test `+0x18` = level 
   (`0x005B7160`) only while it is **set** (and then ORs `+0xC4 |= 0x3000000` on him); a guid in the quest data keeps a
   second spawn out. So the game record word 16 bit 13 picks which of two preset places Hratli starts at.
   (0x005B70CF, 0x005B710B, 0x005B7197, 0x005B71DA, data:g_ObjInitFns@0x00731BC0 entries `+0xC4`, `+0xC8`)
-- [I] No draw (SpawnAtPos is an oracle; its own draws are monsters/spawn's).
+- [I] No draw (SpawnAtPos is an oracle; its own draws are monsters/spawn's). (fn:sub_005B70B0_A3Q0_HratliSpawnA@0x005B70B0,
+  fn:sub_005B7160_A3Q0_HratliSpawnB@0x005B7160, fn:sub_005B2F20_SpawnAtPos@0x005B2F20)
 
 #### Word 17 — quest object 15 (row 18, `a3q1.cpp`) — Lam Esen's tome
 
@@ -1022,6 +1057,7 @@ new level at `+0x18`, the player at `+0xC`. So e3 handlers test `+0x18` = level 
   fn:sub_006272B0_UnitAddStat@0x006272B0)
 - [I] Tome creation is plan 0032's `sub_005B7A60_A3Q1_TomeDrop` (object 193 operate): it refuses a player whose W17
   b0 is set ([items/0010 § 5](../items/0010-quest-drops.md)). No draw in word 17's code.
+  (fn:sub_005B7A60_A3Q1_TomeDrop@0x005B7A60, fn:sub_005B7E90_A3Q1_Init@0x005B7E90)
 
 #### Word 18 — quest object 16 (row 19, `a3q2.cpp`, init `0x005BDA30`) — Khalim's Will
 
@@ -1095,7 +1131,7 @@ new level at `+0x18`, the player at `+0xC`. So e3 handlers test `+0x18` = level 
   unique or `boss` monster (items/0010 § 5). The quest's own code draws nothing; SpecialMonSpawn's draws are
   monsters/special's (oracle). (0x005B9943, 0x005B99F0)
 - [I] Reward items are created through `QUESTS_GiveItem` (plan 0032); the free hireling through `HIRE_GiveFreeMerc`
-  (hirelings).
+  (hirelings). (fn:QUESTS_GiveItem@0x005466B0, fn:HIRE_GiveFreeMerc@0x00579180)
 
 #### Word 20 — quest object 18 (row 21, `a3q4.cpp`) — Golden Bird
 
@@ -1120,6 +1156,7 @@ new level at `+0x18`, the player at `+0xC`. So e3 handlers test `+0x18` = level 
 | G-W20 b13 | set | 0x005BA5CA | after msg 0x21A when the reporter has b13 | — |
 
 - [I] Meshif (0x108) msg 0x211 with `j34` held: removes `j34`, **`QUESTS_GiveItem('g34', 0, 2, 1)`** (no bit written).
+  (fn:sub_005BA320_A3Q4_NpcMessage@0x005BA320, fn:QUESTS_GiveItem@0x005466B0)
 - [I] **The figurine monster** (`0x00544E80`, called at 0x005A0B7F after a pack spawn `0x005B30E0` in Act III): when
   quest 18 is active, the class is not 0x197 and MonStats `+0x0D & 0x40` is clear, `0x005BAC70` hooks the first such
   monster (`QUESTS_HookMonster(0x12)`) while the private "armed" byte is set and quest 17's dagger flag is clear, and
@@ -1315,7 +1352,7 @@ Two patterns repeat in every quest below and are stated once here:
 | 0 | set | 0x005B36C9 | e11, NPC 367, message 0x298 | 0x005B36D0, 0x005B3750 |
 
 - [I] No draw, no timer, no unit created. Word 24 is the Act IV "intro" word (a dialogue flag); nothing else in Acts
-  IV/V reads it.
+  IV/V reads it. (0x005B36A0, 0x005B36D0, 0x005B3750)
 
 #### Word 25 — quest object 22 (row 26, init 0x005B42B0, `a4q1.cpp`)
 
@@ -1354,8 +1391,10 @@ Private data 0x1C bytes (`+0x04` death room, `+0x0C` byte, `+0x0D` timer armed, 
   `sub_005B2F20_SpawnAtPos(x, y, 406, 8, r, 0)` for r = −1, then 3, then 5 until one succeeds, and returns 1 (removed).
   Spawn draws are the spawner's (oracle). (0x005B3E95–0x005B3F14)
 - [I] **Draws:** none in the quest's own code; the ghost spawn is a `SpawnAtPos` oracle.
+  (fn:sub_005B3E60_A4Q1_GhostTimer@0x005B3E60, fn:sub_005B4020_A4Q1_IzualDeath@0x005B4020)
 - [I] The hooked monster is the one whose death reaches this e8 (`QUESTS_HookMonster` 22); which class is not read
   here (monsters/0003 lists no superunique hook 22; the hook is placed elsewhere — open point).
+  (fn:QUESTS_HookMonster@0x005436B0, fn:sub_005B4020_A4Q1_IzualDeath@0x005B4020)
 
 #### Word 26 — quest object 23 (row 27, init 0x005B54C0, `a4q2.cpp`): Diablo, the seals, the Harrogath portal
 
@@ -1437,6 +1476,8 @@ mode, `+0x44/+0x45` Harrogath portal flags, `+0x48` seal-boss deaths.
   and marks Harrogath's waypoint (`0x005B4FF0`: `WAYPOINT_IndexFromLevel(109)`, `WAYPOINT_Set`). (0x005B5880)
 - [I] **Draws:** none in the quest's own code. Oracles: the Diablo and seal-boss spawns, `SUnitCreate` of objects 131
   and 566 (each one game-seed step, drlg/0009 § 6). `GetTickCount` makes the end timer non-deterministic in frames.
+  (fn:sub_005B4B60_A4Q2_DiabloSpawn@0x005B4B60, fn:sub_005B45E0_A4Q2_HarrogathPortalCreate@0x005B45E0,
+  fn:sub_005B4BE0_A4Q2_Timer@0x005B4BE0, fn:sub_005B54C0_A4Q2_Init@0x005B54C0)
 
 #### Word 27 — quest object 24 (row 28, init 0x005B6610, `a4q3.cpp`): the Hellforge
 
@@ -1466,6 +1507,7 @@ The forge itself (OperateFn 49, the strikes, the waves and the rune) is plan 003
 | 1 | clr | 0x005B6296 | same | — |
 
 - [I] **Draws:** the forge's (items/0010). The quest's own code draws nothing.
+  (fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10, fn:sub_005B6610_A4Q3_Init@0x005B6610)
 
 #### Word 33 — quest object 29 (row 30, init 0x005B6A70; no source string)
 
@@ -1515,6 +1557,7 @@ Private data 0x18 bytes (`+0x00` Larzuk's preset path, `+0x04` death room, `+0x0
   unit. Superunique 42's AI calls `0x00587900` (0x005E27D0) to move the log state to 1. (0x00587840, 0x00587950,
   0x00587900)
 - [I] **Draws:** none in the quest's code; Larzuk's `SpawnAtPos` is an oracle.
+  (fn:sub_00587840_A5Q1_LarzukSpawn@0x00587840, fn:sub_005876E0_A5Q1_Init@0x005876E0)
 
 #### Word 36 — quest object 32 (row 32, init 0x00588510, `a5q2.cpp`): the barbarian prisoners
 
@@ -1558,7 +1601,8 @@ per-cage flags, `+0x10E+i` cage freed, `+0x114+4i` per-cage deaths, `+0x120` res
   gets a class-189 dummy object whose object event 7 (every 25 frames) is `0x00588CA0` (QUESTS_ObjectEvent class 189
   → quest 32 outside Act I and level 109). (0x00588040, 0x005888D0, 0x00588CA0, 0x00588600)
 - [I] **Draws:** none in the quest's code; up to 25 `SpawnAtPos` per cage and the `SUnitCreate` of the dummy objects
-  are oracles (game seed for each created unit).
+  are oracles (game seed for each created unit). (fn:sub_00588600_A5Q2_CageSpawnPrisoners@0x00588600,
+  fn:sub_005886A0_A5Q2_CageInit@0x005886A0)
 
 #### Word 37 — quest object 33 (row 33, init 0x0058A410, `a5q3.cpp`): Anya, Malah's potion and scroll
 
@@ -1600,6 +1644,7 @@ Private data 0x114 bytes (`+0x84` Anya state: 1 thawed, 2 back in town; `+0x88` 
   draw** `RNG_Range(questSeed, count[class])` (0x00589937), then `QUESTS_GiveItem(code, UnitDropLevel, 6, 1)`.
 - [I] **Malah's potion** is given at most once per game while no player holds one (`+0xD8` = 0), and `tr2 ` once more
   per game (`+0x102`) to a player who already did the quest, has bit 8 and not bit 7.
+  (fn:sub_00589580_A5Q3_NpcMessage@0x00589580, 0x00589F10)
 - [I] **Bug, presentation only:** `0x0058A2A0` (log byte) asks the party whether any member holds `ice ` with the
   callback `0x0058A270`, which writes the flag into **quest object 3's** private data (`QUESTS_FindById(game, 3)`,
   0x0058A281) at `+0xE2`, while the reader tests quest 33's `+0xE2` (0x0058A2EA). A party member's potion therefore
@@ -1648,6 +1693,7 @@ Private data 0x90 bytes (`+0x85` timer armed, `+0x86` msg flag, `+0x87` portal p
   `0x0058BC80` (from 0x005E72B3, monster AI), makes the same portal when `+0x89` is set and the unit is in act index 4.
   (0x0058AF90, 0x0058B940, 0x0058BC80)
 - [I] **Draws:** none in the quest's code; the portal object's `SUnitCreate` is an oracle.
+  (fn:sub_0058AF90_A5Q4_RedPortalCreate@0x0058AF90, fn:sub_0058BC80_A5Q4_RedPortalCreateAI@0x0058BC80)
 
 #### Word 39 — quest object 35 (row 35, init 0x0058CE30, `a5q5.cpp`): the Ancients
 
@@ -1678,6 +1724,8 @@ open, `+0x4C` altar mode, `+0x50` altar id, `+0x54` live players on 120, `+0x58.
 
 - [I] **Experience reward:** each credit calls `sub_0058C5C0_ExpGrantCapped` (player/0001): 1 400 000 (Normal),
   20 000 000 (Nightmare), 40 000 000 (Hell), capped at the experience between the current and next level. No draw.
+  (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, fn:sub_0058C6D0_A5Q5_PartyExpGrant@0x0058C6D0,
+  fn:sub_0058C7E0_A5Q5_SummitExpGrant@0x0058C7E0)
 - [I] **Arming:** the altar (OperateFn 65 = `0x0058D310`, object 546) sends message 0x4E22 to e11: if `+0x0C` = 0 and
   all three statue modes are 0, `0x0058BF40` pins the statues' rooms, puts the three statues (474–476) in mode 3 and
   queues their object event 7 at frame + 20, and sets `+0x10`/`+0x11`. With `+0x0C` > 0 the altar instead closes every
@@ -1794,10 +1842,13 @@ and for the LCG multiplier `0x6AC690C5` (per-act scans in § 7–§ 10); the res
 - [I] **Spawns, portals, objects and items created by quest events draw on their own seeds** and are oracles here:
   `sub_005B2F20_SpawnAtPos` and the monster spawners (room and game seeds), `sub_00555230_SUnitCreate` (game seed),
   `sub_0056D130_PortalObjectCreate` ([quests/0002 § 6](0002-travel.md#6-town-portals)), item creation (items/0010).
+  (fn:sub_005B2F20_SpawnAtPos@0x005B2F20, fn:sub_00555230_SUnitCreate@0x00555230,
+  fn:sub_0056D130_PortalObjectCreate@0x0056D130)
 - [I] **Chaining (ADR-0014).** Quest-seed draws chain across quests: the seed is one object for the game, and its state
   at any draw depends on which of the events above ran before. The player-seed draws of NPC 266 and 377 chain with every
   other user of the player's unit seed (combat, skills). Phase 2 must assert the quest seed on entry to each drawing
-  event and log the player seed around the two talks.
+  event and log the player seed around the two talks. (fn:sub_00592E90_A1Q4_StoneOrderDraw@0x00592E90, 0x0059EDC0,
+  0x0059B1C0, 0x00589937, 0x00596B23, 0x0059E1CE)
 
 ### 12. Creation-path readers of the quest state
 
@@ -2059,8 +2110,9 @@ The names given to the quest functions read in § 7–§ 10 (all inferred from t
 
 ## Open questions
 
-- [L] Which flows pass `rejoin` = 1 to `QuestsPlayerJoin` (`0x00532673`, `0x0056A072`, both after `0x005701B0`);
-  likely a character re-entering an existing game record. Phase 2 can log it.
+- ~~Which flows pass `rejoin` = 1 to `QuestsPlayerJoin`~~: the new-character builders, read in § 3 (`lane/rbs2`). The
+  double join of a stub character is inferred there; Phase 2 can confirm it by logging the two calls
+  (0x0056A072, 0x005344EF).
 - [L] The monsters hooked to quests 1, 2, 5, 6 and 22 (Levels `+0x30` and superunique hooks) were not all re-read;
   monsters/0003 lists the superunique hooks.
 - [L] What `0x0056EDE0` creates with arguments `0x120` (the stones), `0x14C` (the Countess's chests) and 625 (Baal's
