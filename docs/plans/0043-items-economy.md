@@ -120,3 +120,44 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-16 — Drafted (architect, `lane/plans39`).** Status `proposed`; gated on ADR-0017.
 - **2026-10-16 — Approved (owner, via the main session).** Plans 0039–0044 approved to run unattended, like 0027–0038. ADR-0017 accepted the same day.
+- **2026-10-17 — Phase 0 landed (archivist, `lane/p43a`), review requested.** Gate survey `economy`
+  (`tools/economy_survey.py`, sections `items`, `types`, `stats`, `affixes`, `npc`, `hireling`, `skills`, `books`;
+  baseline `tools/gate/baselines/economy.txt`); every count in the sections below is a key of its `SURVEY` line.
+  - [Weapons § Economy](../tables/Weapons.md#economy-plan-0043-phase-0) (the shared table of `cost`, `gamble cost`,
+    `durability`, `nodurability`, `durwarning`, `qntwarning`, `stackable`, `minstack`/`maxstack`/`spawnstack`,
+    `multibuy`, `quest` with offsets and per-file ranges), [Armor § Economy](../tables/Armor.md#economy-plan-0043-phase-0),
+    [Misc § Economy](../tables/Misc.md#economy-plan-0043-phase-0).
+  - [ItemTypes § Repair and throwing columns](../tables/ItemTypes.md#repair-and-throwing-columns-plan-0043-phase-0):
+    `Repair` (32 types), `Throwable`, `Reload`, `ReEquip`, `AutoStack`, `Shoots`, `Quiver`, `CostFormula`, with the
+    item bases' own type against `nodurability`.
+  - [ItemStatCost § Price](../tables/ItemStatCost.md#price-plan-0043-phase-0) (`Divide`/`Multiply`/`Add`, 190 priced
+    rows, cross-checked with `prop_survey.py`'s stat use); [MagicPrefix § Price](../tables/MagicPrefix.md#price-plan-0043-phase-0)
+    (with MagicSuffix, AutoMagic, and the uncompiled QualityItems and RareSuffix price cells),
+    [UniqueItems § Price](../tables/UniqueItems.md#price-plan-0043-phase-0), [SetItems § Price](../tables/SetItems.md#price-plan-0043-phase-0);
+    [Npc § Multipliers](../tables/Npc.md#multipliers-plan-0043-phase-0) (every row);
+    [Hireling § Costs](../tables/Hireling.md#costs-plan-0043-phase-0); [Skills § Charge cost columns](../tables/Skills.md#charge-cost-columns-plan-0043-phase-0).
+  - **New table: [Books](../tables/Books.md)** (`BaseCost`, `CostPerCharge`, the tome and scroll codes and skills): a
+    price table the plan did not name, found by a header scan of every `.txt` for cost, price, gold, repair and charge
+    columns (the only other hits are MonStats' `El*Dur` and QualityItems' `Dur%`, not prices). New `books` layout in
+    `tools/excel_layouts.py` (3 × 9 cells, 0 mismatches); `excel_layout` baseline regenerated: tables 66 → 67,
+    cells 850 401 → 850 428, `books_cells` 27, `books_bad` 0, nothing else moved.
+
+  Confidence: layouts and counts `[C]` (diff and survey); meanings `[L]` (the price, repair and wear code is named
+  only), except the creation-side readers already anchored (`stackable`/stack bounds and `durability` `[I]` from
+  items/0006, `ItemHasDurability` `[C]` from items/0004, the hire price `[C]` from hirelings/0001, the Npc scaling
+  `[I]` from items/0009, `Throwable` `[I]` from items/0001 and 0005). Surprises, for Phase 1:
+  (a) every item-side price input is present on every base except where it is 0 by design (`cost` 0 on gold, the ear
+  and five quest items; `gamble cost` 0 on the throwing potions and the nine quest weapons), but 5 armors
+  (`pac`..`paf`, `nef`) have `cost` above `gamble cost`; (b) the 13 `nodurability` weapons whose own type has
+  `Repair` (12 crossbows, `7cr`), and the bows/`tpot` with no `Repair` type: the repair test's type read decides
+  them; (c) MagicPrefix `divide` is 0 on the 21 priced rows (all-resistance prefixes are the only affixes with a
+  price term), so the affix term must guard a 0 divisor or skip; (d) QualityItems and RarePrefix/RareSuffix price
+  cells have no field, so a superior or rare price term, if any, is code; (e) ItemStatCost stats with no price term
+  that a used property reaches (27, 28, 151, 155, 268), and `ValShift` 8 on three priced saved stats (raw or
+  shifted value?); (f) UniqueItems `cost mult` 3 on 81 expansion rows against 5 elsewhere, SetItems `cost add` by
+  the set's version (2500 classic, 5000 expansion); (g) Skills `cost mult` is 256 + 128·tier of `reqlevel`, and 13
+  rows break the `cost add` tier pattern; every skill a `charged` property names (112) has a cost; (h) Npc: the Act V
+  rows' `sell mult` 2048 and quest B 512 compose to the same 922/1024 as Acts I–IV with quest A; (i) Books
+  `BaseCost` equals the tomes' Misc `cost`, and `CostPerCharge` is a fifth of it, not the scroll's `cost`;
+  (j) resurrection has no column in 1.14d (constants in code, hirelings/0001). Gate green (fast tier;
+  `--full=economy,excel_layout`).
