@@ -224,3 +224,50 @@ player attacks 3 821, monster attacks 11 083, mercenary 2 449, missile defence 6
   absorbed amount stay `[I]` with their counts. One more Normal Andariel session (about 8 crushing blows on her) and
   one more Frigid Highlands session would close the crushing-blow pair; the lane stopped at the owner's deadline for
   the machine.
+
+#### Resume lane, second sessions, 2026-10-17
+
+The crushing-blow pair left short above. Same run id, slot 2, logger r9 unchanged (`tools/gdb/combat.gdb`
+`450f36f8…`, `tools/gdb/combat.py` `82780acc…`), `tools/d2pilot.py` unchanged (`95dd71c5…`); driver
+`tools/combat_sessions.py` `54984ffc…` (two more Andariel rows and one Frigid Highlands row, same steps as their
+predecessors). Save `CombatOW` (`b07db91b…`, the recipe revision of the addendum above), /players 8, Normal.
+
+| session | seed | where | pa | ma | md | MAS | target counts |
+|---|---:|---|---:|---:|---:|---:|---|
+| ow-n-andariel5-p8 | 3712 | Catacombs 4; Andariel seen about 50 cells away, never reached (the hunt timed out) | 147 | 206 | 99 | 300 | — |
+| ow-n-highlands3-p8 | 3786 | Frigid Highlands; boss class 453 killed, class 481 seen | 265 | 209 | 219 | 300 | CB superunique 33 |
+| ow-n-andariel6-p8 | 3712 | Andariel killed | 189 | 438 | 197 | 300 | CB boss 6, OW boss 12 |
+
+`ow-n-andariel5-p8` has no event on Andariel but checks with 0 mismatches, so it stays in the run list.
+
+**Checker change** (`tools/combat.py` `d4dfed41…`): a state-52 (`preventheal`) `STA` line of the attacker between
+the to-hit and the defence rolls is skipped without a draw, and the defence line after it is no longer dropped as
+foreign. No log of the run list has such a line (the case counter is absent from the output), so the run's output
+is unchanged by it. On the set-aside *Fleshripper* session (above) it removes all 133 "expected `DRB`" mismatches;
+101 remain, all "expected `AD1`, got `EVH`" at an event-9 handler `0x005C01D0` (open question in
+[combat/0001](0001-formulas.md#open-questions)). That session stays out of the run.
+
+**Result.** Run list `workspace/logs/combat/c37r-run2.lst` (`12d53ed1…`, `c37r-run.lst` plus the three logs above,
+40 logs); the new logs' sha256 in `c37r2-manifest.txt`. `python3 -I tools/combat.py check $(cat …/c37r-run2.lst)
+--json …/c37r2-check.json` under `systemd-run --user --scope -p MemoryMax=4G`: **`SUMMARY mismatches=0
+events=40655`** (`c37r2-check.txt` `dc63aab8…`, `c37r2-check.json` `25f5f1bd…`): player attacks 4 422, monster
+attacks 11 936, mercenary 2 449, missile defence 6 875, Nova 3 613, `MonAttackStats` 11 360. Chained pairs on the
+player's seed (first / second): `pa` 4 045 / 4 063, `ma` 11 362 / 11 337, `md` 5 901 / 5 907, `pm` 3 608 / 3 609; on
+a monster's seed `MonAttackStats` → `ma` 4 655, → `ha` 1 035.
+
+| target (floor about 30) | after the first addendum | whole run list now | |
+|---|---:|---:|---|
+| crushing blow `k` = 8 on an act boss | 28 | **34** | met |
+| crushing blow on a superunique | 22 | **55** | met |
+| crushing blow on a champion (labelled) | 0 | 0 | not reached |
+| open wounds on an act boss | 51 | 63 | met (already) |
+| block `/3`, player moving and not walking | 43 | **48** | met |
+| running player hit without a to-hit roll | 42 | **47** | met |
+| resistance at the cap: cold / lightning | 27 / 17 | 27 / 17 | short |
+| negative absorbed amount | 4 | 4 | short |
+
+- **Conclusion:** crushing blow `k` = 8 on an act boss and on superuniques moves to `[C]` in
+  [combat/0001 § 15](0001-formulas.md) (bullet *Resume lane, second sessions*). The block `/3` and the running
+  player's hit without a roll were already above the floor after the first addendum (43, 42) but were not raised
+  there; they move to `[C]` in the same bullet. Champions, cold and lightning at the cap, the negative absorbed
+  amount and a total ≤ 0 stay `[I]`. Slot 2 stopped, its saves restored empty. (run:2026-10-16-combat)

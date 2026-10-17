@@ -3,7 +3,7 @@
 > **Subsystem:** combat/formulas
 > **Question:** when one unit attacks another, how does the server decide hit, block or avoid, build the damage of each
 > type, reduce it on the defender, apply it and run the on-hit effects, and which seeds does each step draw on?
-> **Date:** 2026-10-16   **Plan:** 0037 (Phases 1, 1b and 2)   **Status:** open (Phase 2 accepted with fixes 2026-10-16; resume lane landed 2026-10-16, review pending)
+> **Date:** 2026-10-16   **Plan:** 0037 (Phases 1, 1b and 2)   **Status:** open (Phase 2 accepted with fixes 2026-10-16; resume lane landed 2026-10-16, crushing-blow pair closed 2026-10-17, review pending)
 
 The claims of §§ 1–14 are from a static reading of the pinned `Game.exe` (Ghidra decompile plus objdump disassembly
 of every function cited) and stay `[I]` there; § 15 raises those that run:2026-10-16-combat reproduced to `[C]`. Unit types:
@@ -736,7 +736,8 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
   (fn:COMBAT_ToHitRoll@0x0057D9B0, fn:sub_00622560_PlayerBaseToHit@0x00622560, run:2026-10-16-combat)
 - [C] **Shield block** (§ 4): the player's chance `((dex − 15)·(stat 20 + BlockFactor)) / (2·max(lvl, 1))` capped at 75
   in an expansion game (2 523 events) and `stat 20 + BlockFactor` in classic (395), the monster's `stat 20`, one draw
-  on the defender's seed (the `/3` for a moving player is in the last bullet). Oracles: `UnitBlockChance`'s shield test and
+  on the defender's seed (the `/3` for a moving player is raised by the resume addendum, bullet *Resume lane,
+  second sessions* below). Oracles: `UnitBlockChance`'s shield test and
   `UnitIsMoving`. Evade, weapon block, dodge and avoid stay `[I]` (no event). (fn:COMBAT_DefenceRoll@0x0057DFB0,
   fn:sub_00622720_UnitBlockChance@0x00622720, run:2026-10-16-combat)
 - [C] **The damage build** (§ 5): the physical roll (min/max, `+ stat 111`, enhanced damage with the weapon's
@@ -765,8 +766,8 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
 - [C] **Crushing blow** (§ 10): one draw on the attacker's seed; `k` = 4 for normal monsters (247) and **uniques** (63:
   the 1/8 of src:fextralife-d2r-crushing-blow does not apply to them), raised by `PlayerHpPct` at /players 2, 3 and 8
   (5, 40, 124 events: the player count does scale it, against src:purediablo-mechanics), `cb −= MulDiv(cb, min(stat 36,
-  100), 100)`. `k` = 8 for an act boss and superuniques and the champion branch stay `[I]` (last bullet; the resume
-  addendum brought them to 28 and 22). (fn:STATEVENT_CrushingBlow@0x005BFFC0,
+  100), 100)`. `k` = 8 for an act boss and superuniques is raised by the resume addendum (bullet *Resume lane, second
+  sessions* below: 34 and 55); the champion branch stays `[I]` (last bullet, 0 labelled). (fn:STATEVENT_CrushingBlow@0x005BFFC0,
   run:2026-10-16-combat)
 - [C] **Open wounds** (§ 10): one draw on the attacker's seed, `band(L) + 40`, `/2` on champions and uniques,
   state 62 for 200 frames with stat 74 = `−dmg` (246), the bleed ending at application frame + 200 (11 windows). On an
@@ -792,13 +793,20 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
   draw on a unique (34); the resistance cap reached for poison (692). (fn:COMBAT_DamagePercent@0x0057C060,
   fn:STATEVENT_OpenWounds@0x005BFE60, fn:COMBAT_Leech@0x0057C420, fn:COMBAT_ApplyStun@0x0057AAE0,
   fn:COMBAT_ResistFor@0x0057BE00, tbl:DifficultyLevels.txt:HireableBossDamagePercent, run:2026-10-16-combat)
+- [C] **Resume lane, second sessions** (2026-10-17, three more `CombatOW` sessions appended to the same addendum; 40
+  logs, **40 655 events, 0 mismatches**). Crushing blow with `k` = 8 (the same one draw on the attacker's seed, the
+  same player-count scaling and physical-resistance step as for `k` = 4, § 10) on an **act boss** (34: Andariel, Normal, /players 8) and on **superuniques** (55 over the run list, 33 of
+  them from the new Frigid Highlands session, Normal, /players 8), passing the floor of about 30. From
+  the same run list, also above the floor: the block `/3` for a player moving and not walking (48 events, `DRM`
+  `mv` set, mode ≠ 2, the logged chance `DRR ch` equal to `tdiv(b, 3)`) and the running player's hit without a to-hit
+  draw (47); these two were under the floor at the Phase 3 review (26, ruling (2)) and reached it in the resume
+  sessions. (fn:STATEVENT_CrushingBlow@0x005BFFC0, fn:COMBAT_DefenceRoll@0x0057DFB0, fn:COMBAT_MeleeHitTest@0x0057EC10,
+  run:2026-10-16-combat)
 - [I] **Reproduced, but below the plan's rare-branch floor** (about 30 events; plan 0037 Phase 2, architect review
   2026-10-16, counts after the resume addendum). Each passed with 0 mismatches and stays `[I]` until a later run reaches
-  the floor: crushing blow `k` = 8 on an act boss (28) and superuniques (22), and champions (0 labelled); the negative
-  absorbed amount that heals nothing (4); the resistance cap reached for cold and lightning (27, 17; the cap formula
-  itself is `[C]` above); the block `/3` for a moving player not walking and the running player's hit without a roll
-  (the same 26 events in the first run; moved here at the Phase 3 review, ruling (a)); a total ≤ 0 leaving life
-  unchanged (25 in the first run). Not reached at all: open wounds on a player, evade, weapon block, dodge, avoid,
+  the floor: crushing blow on champions (0 labelled); the negative absorbed amount that heals nothing (4); the
+  resistance cap reached for cold and lightning (27, 17; the cap formula itself is `[C]` above); a total ≤ 0 leaving
+  life unchanged (25 in the first run; the checker has no counter for it in the resume logs). Not reached at all: open wounds on a player, evade, weapon block, dodge, avoid,
   magic at the cap or immune, conversion, freeze, pierce, flat absorb, PvP 17 % and 25 %, the player's tick.
   (fn:COMBAT_Absorb@0x0057BF10, fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat)
 
@@ -857,7 +865,13 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
 - [L] Event handlers other than 14, 15 and 16 (skill on hit, knockback 7, howl 8, slow 19, …) draw on seeds that this
   finding does not model; Phase 2 treats them as boundary oracles.
 - [L] An item's prevent-heal stat (117, *Fleshripper*) applies a timed state 52 (`preventheal`, `STATE_ApplyTimed`
-  logged with stat 31, value 0, length 120 000) on a melee hit between the to-hit roll and the defence roll; the
-  checker does not model it (133 mismatches in a resume-lane session with that weapon, set aside and not part of the
-  run). Its seed draws, if any, and why it precedes the block roll are unread.
+  logged with stat 31, value 0, length 120 000) on a melee hit between the to-hit roll and the defence roll. Why it
+  precedes the block roll (which call applies it) is unread.
+- [I] *Answered in part 2026-10-17* (the set-aside *Fleshripper* session only, outside the run): applying state 52
+  takes **no draw on either seed**. With the `STA` state-52 line skipped (`tools/combat.py` now does so and counts
+  it), all 133 "expected `DRB`" events of that session check: the defender's seed at `DRR` and the attacker's at
+  `RPE`/`BD1` equal the model with no step between them. (fn:COMBAT_DefenceRoll@0x0057DFB0, run:2026-10-16-combat)
+- [L] The same session's remaining 101 mismatches are a different gap: an event-9 (kill) handler at `0x005C01D0` runs
+  inside the delivery before `AD1` with that revision's items (*Fleshripper*, *Dracul's Grasp*); not read, not
+  modelled.
 - [L] Whether `0x00621190` returns the player's mode (the "moving" test in block) or a separate state.

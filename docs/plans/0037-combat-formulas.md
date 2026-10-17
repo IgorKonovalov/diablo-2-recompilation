@@ -1,6 +1,6 @@
 # 0037 — Combat formulas: to-hit, damage, resistances, defences and on-hit effects
 
-> **Status:** in-progress (P0 accepted 2026-10-16; P1/1b accepted with fixes 2026-10-16; P2 accepted with fixes 2026-10-16; P3 accepted with fixes 2026-10-16; P2 shortfall resume and the spec re-tag next)
+> **Status:** in-progress (P0 accepted 2026-10-16; P1/1b accepted with fixes 2026-10-16; P2 accepted with fixes 2026-10-16; P3 accepted with fixes 2026-10-16; P2 shortfall resume landed 2026-10-17, review pending; the spec re-tag next)
 > **Created:** 2026-10-16
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation
@@ -474,3 +474,21 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (further sessions not started). To close the crushing-blow pair: `ow-n-andariel5-p8` (seed 3712, about 8 crushing
   blows on Andariel per kill) and `ow-n-highlands3-p8` (Eldritch, about 5–12 on the superunique) are ready in
   `tools/combat_sessions.py`; run them, append to the addendum, re-check the run list and move those two lines.
+- **2026-10-17 — Resume lane, crushing-blow pair closed (reverser, `lane/h37r`, slot 2; review pending).** `main`
+  merged into the lane first (bookkeeping conflicts in backlog, the finding's under-floor bullet and this log; both
+  sides kept). Three more `CombatOW` sessions at /players 8, Normal, appended to the addendum
+  ([experiments](../findings/combat/experiments.md#resume-lane-second-sessions-2026-10-17)): `ow-n-andariel5-p8`
+  (Andariel not reached; kept, 0 mismatches), `ow-n-highlands3-p8` (33 crushing blows on a superunique) and
+  `ow-n-andariel6-p8` (a new row of the same steps; 6 on Andariel). `combat.py check` over the 40-log run list
+  `c37r-run2.lst`: **0 mismatches over 40 655 events**. **Met, raised to `[C]`** in
+  [combat/0001 § 15](../findings/combat/0001-formulas.md#15-phase-2-per-event-reproduction-run2026-10-16-combat)
+  (bullet *Resume lane, second sessions*): crushing blow `k` = 8 on an act boss (34) and on superuniques (55); and,
+  from the same run list, the block `/3` for a moving player not walking (48) and the running player's hit without a
+  roll (47), which the first addendum had already lifted to 43 and 42 without raising them (Phase 3 review ruling (2)
+  put them under the floor at 26). **Still `[I]`:** champions (0 labelled; the code has no champion branch), cold and
+  lightning at the cap (27, 17), the negative absorbed amount (4), a total ≤ 0 (25, no counter in the checker).
+  **Fleshripper open question, answered in part:** state 52 takes no draw on either seed (the set-aside session's 133
+  "expected `DRB`" events all check once the `STA` line is skipped; `tools/combat.py` now skips it, the run's output
+  unchanged); which call applies it before the block roll is still unread, and that session's other 101 mismatches
+  are an event-9 handler `0x005C01D0` (backlog). Slot 2 stopped and empty. Next: architect review of the resume lane,
+  then the spec re-tag (Phase 3) and the wiki refresh (Phase 4).
