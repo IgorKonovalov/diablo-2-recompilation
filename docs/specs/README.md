@@ -73,14 +73,15 @@ Rows are added when each phase's plan starts: (1) combat formulas, (2) stats and
 `monsters/ai`, `anim/timing`; each plan may split or rename its row. Phase (3) also takes the skill and missile sites that
 re-seed a unit (`+0x20`) or another object's seed, left unread by plan 0039 Q15
 ([rng/0002 § Plan 0039 batch P1a](../findings/rng/0002-seed-tree.md#plan-0039-batch-p1a-2026-10-16)). A simulation `[C]` is a per-event reproduction
-with logged inputs at a named boundary; stat values are value oracles until `stats/aggregate` models them. Phase (2) is drafted as
-[plan 0041](../plans/0041-stats-and-states.md) (approved 2026-10-16; rows `stats/aggregate` and `stats/states` when it
-starts); [ADR-0016](../adrs/0016-pipelined-simulation-phases.md) (accepted 2026-10-16) lets its table and static phases
+with logged inputs at a named boundary; stat values are value oracles until `stats/aggregate` models them. Phase (2) is
+[plan 0041](../plans/0041-stats-and-states.md) (approved 2026-10-16; rows `stats/aggregate` and `stats/states` below); [ADR-0016](../adrs/0016-pipelined-simulation-phases.md) (accepted 2026-10-16) lets its table and static phases
 start before plan 0037's spec is reviewed.
 
 | Subsystem | Depends on | Key tables | Status |
 |---|---|---|---|
 | `combat/formulas`: to-hit, physical and elemental damage, resistances and caps, block, avoid and evade, damage reduction and absorb, crushing blow, deadly strike, open wounds, leech, difficulty penalties; player against monster and monster against player | monsters/stats, player/creation, items/properties, data/calc | MonStats, MonStats2, MonLvl, DifficultyLevels, CharStats, ItemStatCost, Weapons, Armor, Skills, ElemTypes | **reviewed** · [combat](combat/README.md) (2026-10-16, updated 2026-10-17; overview, to-hit, damage, reductions, delivery; C 190 / I 139 / L 20), [combat/0001](../findings/combat/0001-formulas.md), run:2026-10-16-combat (40 logs with the resume lane, 40 655 events, 0 mismatches) · [plan 0037](../plans/done/0037-combat-formulas.md) done (closed 2026-10-17; P2 resume lane, the re-tag of the shortfalls and the P4 wiki refresh accepted with fixes 2026-10-17) |
+| `stats/aggregate`: stat lists and the `+0x48` cache, `op` 1–13, the maxima and their rescale, item requirements, set bonuses, passive stat lists | combat/formulas, items/properties, player/creation, data/calc, items/uniques-sets | ItemStatCost, CharStats, Sets, SetItems, Skills | findings in progress · [stats/0001](../findings/stats/0001-aggregate.md) (plan 0041 P1 accepted 2026-10-17; all `[I]`); P2 open |
+| `stats/states`: timed state apply, refresh, `group`, expiry, the regeneration ticks, auras, shrines and wells | stats/aggregate, combat/formulas, objects | States, Skills, Shrines, Objects, CharStats | findings in progress · [stats/0002](../findings/stats/0002-states.md) (plan 0041 P1 accepted 2026-10-17; all `[I]`, no draws); P2 open |
 
 ### Game rules (ADR-0017)
 
