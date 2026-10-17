@@ -93,18 +93,40 @@ workspace/logs/stats/s1017-run.lst) --json workspace/logs/stats/s1017-check.json
 checks: 180 full Trang-Oul's set lists not predicted (the model builds no `state` or `oskill` property list), one
 event open at a log's end (the session killed inside it).
 
+- **Not an oracle** (P2 review): the 180 full Trang-Oul's lists are not an ADR-0004 boundary oracle (the set list is
+  in scope, and ADR-0004 never oracles in-scope code). They are an **unchecked remainder**: the model takes each
+  logged list as the input of the events after it (its propagation, the `monsterset` clear, the `oskill` passive),
+  which are predicted; the seeds are checked at the link around it; the Sets count excludes them (5 569 of 5 749),
+  and the content of a full block with a `state` or `oskill` property stays `[I]`.
+  (fn:sub_00660120_SetBonusApply@0x00660120, run:2026-10-17-stats)
+- **Re-check at the review** (2026-10-17, `main` `af90ea8` merged): the manifest re-hashed (18 logs: sha256, size
+  and line count equal); `tools/stats.py check` over the 18 logs in this order gives a report byte-identical to
+  `s1017-check.json`, and in the reversed order and in a shuffled order (`random.Random(41)`) 0 mismatches with
+  identical counts and seed tallies (only the aura grid's cross-log gaps and the first 20 wells of the report differ).
+  The pre-fix checker (`27f49ad^`) on the shuffled order fails once (`aura_rng`, `s1017-pal-tundra.log:613`: the
+  open aura run at the end of `palc-oasis` carried into the next log), so the per-log reset is the fix.
+
 ### Results
 
 - **Draw-freedom** (seeds equal at entry and exit, game and acting unit): link 12 868, unlink 12 853, own write
   101 995, toggle 19 525, apply 6 232, expire 2 749, tick 54 719, aura 2 763 — every kind ≥ 20; **shrine 7 and well 5
   fall short** of 20. The aura kind moved the caster's seed in 865 runs, each by exactly the `RNG_RangeB` calls of
-  `SKILLS_RollElemDamage` from `sub_005CF3A0_AuraHitDo` (Sanctuary's hit), chained (865 pairs ≥ 20).
+  `SKILLS_RollElemDamage` from `sub_005CF3A0_AuraHitDo` (Sanctuary's hit): each such run's exit is asserted
+  against its entry advanced by its logged draws (865). Chained pairs in the ADR-0014 sense (the next run of the
+  same caster entering on that exit): 746, counted at the review by a scratch pass over the AU0/AU1 lines; the
+  checker does not report them (follow-up). The game seed moved in one aura run (a kill dropped an item).
 - **Reads:** 891 844 in the 50-frame windows after each list change, 120 stat ids. **Ops** in predicted writes: 1 348,
   2 1 490, 4 2 568, 5 26, 8 919, 9 3 784, 11 92, 13 136 (every stock op ≥ 20). Ops 3, 6, 7, 10, 12: no reachable row.
 - **Recomputes:** 26 087 links and unlinks, 232 042 CacheAdd/CacheWrite, 9 level changes. **Sets:** 5 749 wearer
   lists (5 569 predicted, 180 full Trang-Oul's taken as logged), 19 525 aprop toggles by add func 0/1/2.
 - **States:** 3 643 applies (refresh 2 608, refuse 1 013, replace 2, new 20), 2 749 expiry runs (123 lists freed,
   lateness 0), 3 629 aura runs on the `≡ 1 (mod 50)` grid, 6 207 aura durations = `perdelay + 1`.
+- **Counted shortfalls** (P2 review): the plan's 300 expiries read as freed lists are **123** (potion states 178–180
+  79, state 21 18, state 113 11, poison 2 7, 86 5, shrines 130/131 2, Conviction 28 1); the 2 749 event-12 runs each
+  check the free set, the 2 630 that freed nothing included. The 50 aura on and off events are **9**: an aura state
+  new 6 (47 five, 28 one), replaced 2, ended 1 (28); Prayer's and Sanctuary's states never ended. The rule both
+  rest on (the timed expiry, the apply cases) is `[C]` on the counts above; no claim is raised on the shortfall.
+  (fn:EVENT_TimedListExpire@0x00580800, fn:STATE_ApplyTimed@0x0056E970, run:2026-10-17-stats)
 - **`group`:** 450 `STATE_GroupClear` calls, 180 effective (the full Trang-Oul's `monsterset` cleared when the set
   breaks, self argument 1). A clear of a different state of one group: **not reached**.
 - **Ticks:** 54 719, of which 1 082 with a negative stat 74 (poison, `StatsPalC`): the stat-74 tick under poison is
@@ -114,8 +136,11 @@ event open at a log's end (the session killed inside it).
 - **Shrines and wells (named shortfall):** 7 shrines (3 timed: codes 8, 10; 4 recharge on a full player) and 5 wells,
   all predicted, 12 against the plan's 50. `objop --walk` operates only what the field explore activated (about one
   per session); raising it would need sessions that only hunt shrines, which this resume did not run.
-- **Oracle replacement:** run:2026-10-16-player (`workspace/scratch-h34p2/player-run.lst`, `fef9a539…`): `python3 -I
-  tools/stats.py oracle-player $(cat …)` finds 13 of its 20 level-up maxima (`UnitGetMaxHp/Mana/Stamina`, value
-  oracles there) equal to the player's own entries, so replaceable by the model; the other 7 (characters wearing
-  items) need the child lists, which those logs do not hold. run:2026-10-16-combat logs values, not lists: its stat
+- **Oracle replacement:** **none replaced** (P2 review). run:2026-10-16-player (`workspace/scratch-h34p2/player-run.lst`,
+  `fef9a539…`): `python3 -I tools/stats.py oracle-player $(cat …)` finds 13 of its 20 level-up maxima
+  (`UnitGetMaxHp/Mana/Stamina`, value oracles there) equal to the player's own entries and 7 not. That is a
+  consistency check, not a replacement: the 14 level-ups of the built characters carry 9 or 10 items each (recipes
+  `tools/d2s_recipes/lv*.json`) and the 6 new characters their starting items, the logs hold no child list, and "no linked child adds to 7, 9 or 11" is concluded
+  from the equality itself (levels 1 and 9 equal, 49 and 97 differ, consistent with item requirements, not shown).
+  The maxima stay value oracles until a run logs the lists. run:2026-10-16-combat logs values, not lists: its stat
   oracles are **not replaceable** from the kept logs.

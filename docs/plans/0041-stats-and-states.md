@@ -1,6 +1,6 @@
 # 0041 — Stats and states: how a unit's final stats add up, and how timed states live and die (ADR-0014 phase 2)
 
-> **Status:** in progress. P0 and P1/1b reviewed (accepted with fixes, 2026-10-16 and 2026-10-17); P2 landed 2026-10-17, review requested (0037·P3 reviewed 2026-10-17, the [ADR-0016](../adrs/0016-pipelined-simulation-phases.md) gate is met)
+> **Status:** in progress. P0, P1/1b and P2 reviewed (accepted with fixes, 2026-10-16, 2026-10-17 and 2026-10-17); P3 open
 > **Created:** 2026-10-16
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases
@@ -477,3 +477,71 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   {C 22, I 44, L 11}; stats/0002 {C 7, I 41, L 9} → {C 14, I 49, L 8}); answered open questions struck (itemspecific,
   weapon switch, one event 12 per request). Both slots stopped and empty; no background loop left.
   **Review request** filed to the architect (backlog).
+- **2026-10-17 — Phase 2 reviewed (architect, `lane/p41h`, `main` `af90ea8` merged in): accept with fixes; P3
+  opens.** Merge clean (no `docs/backlog.md` or `re/symbols.csv` conflict; `backlog.py migrate` moved nothing).
+  **Re-runs.** Manifest: the 18 logs re-hashed (sha256, size, line count) and the run list, manifest and report hash
+  to the record's `a42758f3…`, `7fd7a93a…`, `677e12a6…`. `tools/stats.py check` under `systemd-run --user --scope -p
+  MemoryMax=4G python3 -I` over the 18 logs: in the run's order the report is byte-identical to `s1017-check.json`
+  (0 mismatches); reversed and shuffled (`random.Random(41)`): 0 mismatches, identical counts and seed tallies (only
+  the aura grid's cross-log gaps and the report's first 20 wells differ). The pre-fix checker (`27f49ad^`, scratch
+  copy) on the shuffled order fails once (`aura_rng` at `s1017-pal-tundra.log:613`: `palc-oasis` ends inside an
+  aura run), so the per-log reset is the fix and is sound. `test_stats.py` (6) and `test_d2s.py` (45) pass. Gate
+  green before and after.
+  **Anchors** (objdump on the pinned `game.exe`, `631066c1…`): the well entry 0x00585720 (`push ebp`) and its only
+  return 0x0058589B (`ret 8`); `OBJOP_Shrine`'s two returns 0x00583CA4 and 0x00583E65 are its only `ret`s;
+  `STATE_GroupClear`'s returns 0x0056C82F and 0x0056C83A; the seven aura-tick returns the logger stops at are the
+  seven `ret 8` of 0x0056FCB0–0x0056FEFF; `EVENT_TimedListExpire` returns at 0x0058080D and the tick at 0x00580855;
+  0x005CF5D5 calls `SKILLS_RollElemDamage` (return 0x005CF5DA, the logger's `ra2`), which calls `RNG_RangeB` at
+  0x0056E132.
+  **Rulings.**
+  1. *Shrines and wells:* a **named shortfall**, no addendum required for P3. Their claims are a table read and two
+     short handlers, already `[I]` with code anchors, and the spec can state them so; 12 operates (7 shrines, 5
+     wells) are below the 50 and the draw-freedom floor (7, 5 against 20). The 4 recharge shrines were all on a full
+     player, so none decided: the summary now says so. An optional addendum (a shrine-and-well hunt with lowered
+     vitals, an aura state's end, a different-state group clear) is filed for an idle slot.
+  2. *Trang-Oul's lists:* acceptable, but **not as an ADR-0004 oracle**: the set list is in-scope code, which
+     ADR-0004 never oracles. The 180 lists are an unchecked remainder taken as the input of the predicted events
+     after them (as an ADR-0014 value oracle is), excluded from the Sets count (5 569 of 5 749), seeds checked around
+     them; the content of a full block with a `state` or `oskill` property stays `[I]` (stats/0001 summary now says
+     so). The record names it. Predicting the other blocks of those lists is a tool follow-up.
+  3. *Checker fix:* sound (re-runs above).
+  4. *Oracle replacement:* **does not hold**. `oracle-player` compares the logged maxima with the own entries and
+     calls the 13 equal ones replaceable; but the 14 level-ups of built characters carry 9 or 10 items and the new characters
+     their starting items, the logs hold no child list, and "no linked child adds to 7, 9 or 11" is concluded from the
+     equality itself. A consistency check, not a prediction: **none of the 20 is replaced**, the maxima stay value
+     oracles of run:2026-10-16-player, the combat logs are not replaceable either. The done-when asks the record to
+     name what could and could not be replaced, which it now does.
+  5. *Done-when:* **met**, with named shortfalls. Seed invariance ≥ 20 for link, unlink, own write, toggle, apply,
+     expire, tick and aura; shrine 7 and well 5 named. The aura kind moves the caster's seed (one `RNG_RangeB` per
+     Sanctuary hit), so it takes the chaining minimum: the checker asserts each of the 865 drawing runs' exits against
+     the logged draws, and the review counted **746 chained pairs** (the next run of the same caster entering on that
+     exit; the record had called the 865 "chained"). Counted shortfalls the record had not named: expiries as freed
+     lists 123 against 300 (the 2 749 event-12 runs check the free set), aura on/off events 9 against 50 (Prayer's
+     and Sanctuary's states never ended), both under rules that are `[C]` on these counts.
+  6. *Raises:* Q5 ethereal −10 (30 decisive checks, a reading without it fails each), Q11 poison tick (1 082, `hp +
+     stat 74` with a negative 74; a reading that ignores negatives fails each) and Q10 `monsterset` self-clear (180;
+     the "other states only" reading keeps the bit) stand at `[C]`; each split has its remainder at `[I]` (stat 91,
+     level, class, broken; the 256 floor, open wounds; a different state of the group). Counts recomputed after the
+     merge: stats/0001 {C 22, I 44, L 11}, stats/0002 {C 15, I 49, L 8} (one `[C]` bullet added to § 7 below).
+  7. *Symbols:* 29 rows raised `I` → `C`, each a logged breakpoint or a function whose writes the run predicted, with
+     the code reading as the other source: `STATLIST_LinkToUnit`, `STATLIST_Unlink`, `STATLIST_Propagate`,
+     `sub_006266C0_StatRecompute`, `STATLIST_CacheAdd`, `STATLIST_CacheWrite`, `sub_00624F60_StatListGetValue`,
+     `ITEMSTATCOST_Load`, `UNIT_ToggleStatListByState`, `sub_0055DBC0_EquipReqRefresh`, `sub_0062EAF0_ItemReqCheck`,
+     `SETS_UpdateOnEquip`, `SETS_ToggleItemAProps`, `SETS_UpdateOwnerBonusList`, `sub_00660120_SetBonusApply`,
+     `SETS_WornMemberMask`, `STATE_ApplyTimed`, `STATE_GroupClear`, `EVENT_TimedListExpire`, `UNIT_ExpireTimedLists`,
+     `sub_00580810_RegenEvent`, `sub_00580610_LifeRegenTick`, `PLAYER_StaminaRegenTick`, `PLAYER_ManaRegenTick`,
+     `EVENT_SelectedAuraTick`, `EVENT_ItemAuraTick`, `SKILLS_NextPeriodicFrame`, `AURA_ApplyToTarget`,
+     `SKILLS_RefreshPassive`; the findings' *Functions* tags follow. Left at `I`: the shrine and well code
+     (shortfall), `STATE_Set` and the bit helpers, the readers' base-value half, the damage-stat toggles, the maxima
+     getters, `sub_005CF3A0_AuraHitDo` and `SKILLS_RollElemDamage` (located by return chains, their own work phase 3's).
+  **Fixes applied on the lane** (9): overclaim 1 (the oracle replacement); misread 2 (the 865 exit-asserted runs
+  called chained pairs; "the game seed never moved" in the aura bullet, against the checker's one kill-drop run);
+  stale cross-reference 1 (stats/0002 § 7's aura row and "no event kind draws", corrected with an anchored `[C]`
+  bullet; the summary's aura bullet gains the draw); omission 3 (the expiry and aura on/off counts; the Trang-Oul's
+  remainder in stats/0001's summary); under-claim 1 (29 symbol confidences and the *Functions* tags); other 1 (the
+  recharge shrines' non-decisive match). The record gains the review's re-check and the "not an oracle" note.
+  **Follow-ups filed** (backlog): reverser, tools (the chained-pair count, the per-log aura grid, tests for the
+  well, refill, negative tick and reset, the full Trang-Oul's stat blocks, `oracle-player`'s wording or its
+  precondition); reverser, optional harness addendum (shrines and wells, an aura state's end, a different-state group
+  clear). **P3 opens** (spec-writer queue order) with these rulings: the shrine, well, `item_req_percent`, 256-floor
+  and different-state group claims are `[I]`, and the stats oracles of plans 0034 and 0037 stay oracles.

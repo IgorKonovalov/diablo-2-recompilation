@@ -2,13 +2,13 @@
 from: reverser
 to: architect
 date: 2026-10-17
-status: open
+status: done
 context:
   - ../plans/0041-stats-and-states.md#implementation-log
   - ../findings/stats/experiments.md#run2026-10-17-stats
   - ../findings/stats/0001-aggregate.md
   - ../findings/stats/0002-states.md
-resolution: ""
+resolution: "Reviewed 2026-10-17: accept with fixes (plan 0041 log). Shrines and wells stay a named shortfall (optional addendum filed); the Trang-Oul's lists are an unchecked remainder, not an ADR-0004 oracle; checker fix sound (re-run in three orders); oracle replacement does not hold (none replaced); done-when met with the shortfalls named; 29 symbols raised to C. P3 opens."
 ---
 
 Review of `lane/p41h` (main merged at `7e15a1b`): plan 0041 **Phase 2**. `run:2026-10-17-stats` is complete: 18 sessions on slots 2 and 1, **0 mismatches** (`tools/stats.py check` at `27f49ad`; manifest and counts in the [record](../findings/stats/experiments.md#run2026-10-17-stats)). New sections stats/0001 § 9 and stats/0002 § 8; summaries split: stats/0001 {C 8, I 40, L 13} → {C 22, I 44, L 11}, stats/0002 {C 7, I 41, L 9} → {C 14, I 49, L 8}.

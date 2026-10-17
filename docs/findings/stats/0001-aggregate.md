@@ -3,7 +3,7 @@
 > **Subsystem:** stats/aggregate
 > **Question:** given a unit's base stats, its equipped items, its set bonuses, its passives, the auras around it and
 > the states on it, what value does the server read for a stat, and when is that value recomputed?
-> **Date:** 2026-10-17   **Plan:** 0041 (Phase 1 and 1b, static; Phase 2 run)   **Status:** Phase 2 run done, review requested
+> **Date:** 2026-10-17   **Plan:** 0041 (Phase 1 and 1b, static; Phase 2 run)   **Status:** Phase 2 run reviewed 2026-10-17 (accept with fixes)
 
 ## Answer (summary)
 
@@ -63,7 +63,9 @@ finding, write for write; § 9 lists what each claim was checked against and wha
   requirements fail are not counted, and a duplicate member counts once. (fn:SETS_UpdateOnEquip@0x00663CC0,
   fn:SETS_ToggleItemAProps@0x00663A20, fn:SETS_UpdateOwnerBonusList@0x00663B40, fn:sub_00660120_SetBonusApply@0x00660120,
   fn:SETS_WornMemberMask@0x0062A370, run:2026-10-17-stats)
-- [I] A broken member (flag `0x100`) was not reached. (fn:SETS_WornMemberMask@0x0062A370)
+- [I] A broken member (flag `0x100`) was not reached, and a full block with a `state` or `oskill` property (the full
+  Trang-Oul's, 180 lists) was taken as logged, not predicted (§ 9). (fn:SETS_WornMemberMask@0x0062A370,
+  fn:sub_00660120_SetBonusApply@0x00660120)
 
 ## Leads used
 
@@ -115,28 +117,28 @@ Phase 1b, compared after the code reading of § 4 – § 8 (blind first).
 |---|---|---|---|
 | `0x00626D40` | `sub_00626D40_UnitStatListCreate` | a unit's extended list, its callback and its state bit-sets | I |
 | `0x006251F0` | `STATLIST_Alloc` | a plain list (pool, flags, `+0x18`, owner type and guid) | I |
-| `0x00626E10` | `STATLIST_LinkToUnit` | attach a list under a unit's list and propagate its entries | I |
-| `0x006269F0` | `STATLIST_Unlink` | detach, propagate the negated entries, run the remove callback | I |
+| `0x00626E10` | `STATLIST_LinkToUnit` | attach a list under a unit's list and propagate its entries | C |
+| `0x006269F0` | `STATLIST_Unlink` | detach, propagate the negated entries, run the remove callback | C |
 | `0x00626C00` | `STATLIST_Free` | unlink and free, freeing plain children | I |
 | `0x00627910` | `sub_00627910_StatListLinkOwner` | link an item's list to a unit, with or without damage | I |
 | `0x00627A40` / `0x00627860` | `STATLIST_DisableDamageStats` / `STATLIST_EnableDamageStats` | flip `0x40000000` and propagate the damage-related entries | I |
-| `0x006279A0` | `UNIT_ToggleStatListByState` | move a state's list between the counting and the off chain | I |
+| `0x006279A0` | `UNIT_ToggleStatListByState` | move a state's list between the counting and the off chain | C |
 | `0x00624FE0` | `STATLIST_SumOwnAndChildren` | own entry plus each counting child's entry | I |
 | `0x00626200` | `sub_00626200_StatEvaluate` | the full evaluation with the op terms | C (items/0006 for op 13) |
-| `0x006266C0` | `sub_006266C0_StatRecompute` | evaluate, write the cache, recompute targets and dependents | I |
-| `0x00626920` | `STATLIST_Propagate` | pass a delta up the parent chain | I |
-| `0x006250B0` / `0x00625150` | `STATLIST_CacheAdd` / `STATLIST_CacheWrite` | update the `+0x48` cache, fire the stat callback | I |
-| `0x00624ED0` / `0x00624F60` | `sub_00624ED0_StatListGetBaseValue` / `sub_00624F60_StatListGetValue` | the readers, with the `fMin` floor | I |
-| `0x00637A00` | `ITEMSTATCOST_Load` | builds the op graph (`+0x51..+0x53`, `+0x5E`, `+0x0DE`) | I |
+| `0x006266C0` | `sub_006266C0_StatRecompute` | evaluate, write the cache, recompute targets and dependents | C |
+| `0x00626920` | `STATLIST_Propagate` | pass a delta up the parent chain | C |
+| `0x006250B0` / `0x00625150` | `STATLIST_CacheAdd` / `STATLIST_CacheWrite` | update the `+0x48` cache, fire the stat callback | C |
+| `0x00624ED0` / `0x00624F60` | `sub_00624ED0_StatListGetBaseValue` / `sub_00624F60_StatListGetValue` | the readers, with the `fMin` floor | I (C for `sub_00624F60_StatListGetValue`) |
+| `0x00637A00` | `ITEMSTATCOST_Load` | builds the op graph (`+0x51..+0x53`, `+0x5E`, `+0x0DE`) | C |
 | `0x0065CA30` | `STAT_ByTimeValue` | the op 6/7 time-of-day value | I |
 | `0x00625D10`, `0x00625D60`, `0x00625DB0` | `sub_00625D10_UnitGetMaxHp`, `UNIT_GetMaxMana`, `UNIT_GetMaxStamina` | full stats 7, 9, 11 | I |
 | `0x0055B800` | `sub_0055B800_MonStatCallback` | the stat callback of players and monsters | I (C for stat 7 on monsters, monsters/0004) |
 | `0x006275B0` | `UNIT_ClampVitals` | stamina, mana, life down to their maxima | I |
 | `0x0055C2C0` / `0x0055C730` | `ITEMS_AttachToOwner` / `ITEMS_DetachFromOwner` | equip and unequip, with the set update | I |
-| `0x0055DBC0` | `sub_0055DBC0_EquipReqRefresh` | the requirement pass over charms and body slots 1..10 | I |
-| `0x0062EAF0` | `sub_0062EAF0_ItemReqCheck` | strength, dexterity, level, identified, class | I |
+| `0x0055DBC0` | `sub_0055DBC0_EquipReqRefresh` | the requirement pass over charms and body slots 1..10 | C |
+| `0x0062EAF0` | `sub_0062EAF0_ItemReqCheck` | strength, dexterity, level, identified, class | C |
 | `0x0055F850` | `sub_0055F850_ItemBreak` | flag `0x100`, durability 0, unlink, set update | I |
-| `0x00663CC0`, `0x00663A20`, `0x00663B40`, `0x00660120` | `SETS_UpdateOnEquip`, `SETS_ToggleItemAProps`, `SETS_UpdateOwnerBonusList`, `sub_00660120_SetBonusApply` | the set activation | I |
+| `0x00663CC0`, `0x00663A20`, `0x00663B40`, `0x00660120` | `SETS_UpdateOnEquip`, `SETS_ToggleItemAProps`, `SETS_UpdateOwnerBonusList`, `sub_00660120_SetBonusApply` | the set activation | C |
 | `0x00535D10`, `0x00623C80` | `sub_00535D10_WeaponListsRelink`, `sub_00623C80_WeaponListsRelink2` | relink the two hands of a dual-wielder | I |
 
 ## Walkthrough
