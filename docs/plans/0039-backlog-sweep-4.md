@@ -605,3 +605,29 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Follow-ups (backlog):** to the reverser, the *Leads used* re-fetch and keeping scan scripts; the P1c fold entry
     to the spec-writer amended (items/tc and wiki wording, `OBJOP_Shrine`, the 1 786 count).
   - **Next:** the owner merges `lane/p39c`; then P2 (the P1c fold, data/excel and items/uniques-sets).
+- **2026-10-17 — Phase 2 round 2 (P1c fold and the held uniques-sets half of Q22) done (spec-writer, `lane/p39s2`, from
+  `main` `9bdd892`; review pending).** The P1c fold entry (b)–(h) with the review's amendments (the 1 786 re-count,
+  `OBJOP_Shrine`, the Rogue skill at 1/4/8, items/tc B1's 20 plain ORs and 30 writers), and P1b (i)'s uniques-sets half.
+
+  | Spec | Items | {C, I, L} |
+  |---|---|---|
+  | monsters/spawn | Q26 (J1) | {110, 64, 6} → {112, 64, 5} |
+  | monsters/special | Q27 (§ J, *Entry points*) | {104, 91, 4} → {104, 93, 3} |
+  | hirelings | Q28 (§ E notes E5, § I) | {89, 39, 8} → {92, 41, 6} |
+  | player/creation | Q29 (A1, J2, J3) | {81, 39, 5} → {81, 44, 3} |
+  | items/tc | P1b review (a) (B1) | {45, 81, 7} → {45, 82, 6} |
+  | items/quality | P1b review (b) (M3) | {64, 38, 3} → {64, 39, 2} |
+  | drlg/preset | id 573 (§ 6) | {134, 24, 2} → {135, 25, 2} |
+  | items/uniques-sets | Q22 held half (C8, C9); B5 stale, no change | {70, 52, 6} → {71, 55, 4} |
+
+  - **Corrected:** hirelings' Rogue skill "level 1" (only in *Open questions*) → 1/4/8 by difficulty; items/tc's "21"
+    bit-17 writes and the P1b split ("three quest drops", "12 skill-code sites"); the [items](../wiki/items.md) wiki
+    paragraph to match.
+  - **Narrowed, not closed:** player/creation (a saved corpse's stat 13 and the create screen's mode word, P1c residues
+    (c) and (d)). Closed with a pointer to a reverser residue, no tag: items/tc (`0x005C09E0`'s skill), items/quality
+    (`FormationSpawn`'s callers).
+  - **Held:** data/excel (P1b (a), P1c (a), its 11 W1), to be folded with plan 0038 Phase 3's re-tag after the S1f
+    review.
+  - **Wiki (W4 7 → 0, restated):** items, monsters, characters, saves. Research-map rows of the eight rewritten.
+    Backlog: the P1b and P1c fold entries annotated (done in part, data/excel held), the W1 entry annotated, review
+    request filed. Gate green.
