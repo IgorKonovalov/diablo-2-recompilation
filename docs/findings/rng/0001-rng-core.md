@@ -135,6 +135,22 @@ section raises it, the tag and the second source given here are the current ones
   run:2026-10-11-rng-emu). The inlined `mod 7` of `DRLG_ActCreate` draws unguarded (rng/seeds step 3c, `[C]` by
   run:2026-10-11-seed-tree). (fn:RNG_RangePow2@0x00472210, fn:DRLG_ActCreate@0x00642DA0)
 
+## Plan 0038 batch S1e (2026-10-17)
+
+Static batch S1e of [plan 0038](../../plans/0038-inferred-claims-sweep.md), rows 3 and 5 of
+[inventory rng-README](../../plans/0038-inventory/rng-README.md). Method: the binary's function under Ghidra's p-code
+emulator against a `tools/` model, under [ADR-0015](../../adrs/0015-emulated-reproduction.md); record in the addendum
+to [run:2026-10-11-rng-emu](experiments.md#run2026-10-11-rng-emu). Read set: the seed (ECX), the stack; the trace
+found no other access.
+
+- **Row 3** (spec L43, `RangePow2Plus` takes the seed in ECX, `base` in EDX and `n` on the stack) **raised.** [C] 3 000
+  emulated calls with that convention return the modelled value and pop exactly 4 bytes (`ret 4`, one stack argument).
+  (fn:RNG_RangePow2Plus@0x00472240, run:2026-10-11-rng-emu addendum 2026-10-17)
+- **Row 5** (spec L101, `RangePow2Plus = (low & (n − 1)) + base` after one step) **raised.** [C] 3 000 of 3 000 calls,
+  `n` = 0 (mask all ones), 1, powers of two and not, wide `base`, the sum wrapping at 32 bits; the seed's exit state is
+  one `RNG_Step`. The function has no reference in the image (§ Walkthrough), so the `[C]` is for the code only.
+  (fn:RNG_RangePow2Plus@0x00472240, run:2026-10-11-rng-emu addendum 2026-10-17)
+
 ## Data touched
 
 None. No table is read.

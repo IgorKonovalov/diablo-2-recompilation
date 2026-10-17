@@ -38,6 +38,21 @@
   through ECX and the stack) this backs [rng/0001 § Plan 0038 batch S1b](0001-rng-core.md#plan-0038-batch-s1b-2026-10-16)
   rows 4 and 7.
 
+- **Addendum 2026-10-17: plan 0038 batch S1e (static, Ghidra emulator; `tools/sweep_s1e.py` `8e5f2aad…`).**
+  `RNG_RangePow2Plus` (0x00472240), unreferenced and not cased in 2026-10-11, run through
+  `re/ghidra_scripts/EmuTrace.java` on 3 000 calls: ECX = a seed at a scratch address, EDX = `base`, one stack argument
+  `n` (seeds 0/0, 1/666, all ones, carry cases; `n` 0, 1, powers of two, 0x7FFFFFFF, 0x80000000, all ones; `base` 0,
+  1, −1, wide), then random. Files in `workspace/logs/sweep-s1e/` (`rng.*`, manifest `94c19392…`).
+  ```
+  python3 -I tools/sweep_s1e.py cases rng
+  tools/ghidra.sh emutrace workspace/logs/sweep-s1e/rng.cases workspace/logs/sweep-s1e/rng.mem > workspace/logs/sweep-s1e/rng.out
+  python3 -I tools/sweep_s1e.py check rng
+  S1E rng cases=3000 match=3000 bad=0 neg=2239 traced=0 undeclared=0
+  ```
+  Every call returned `(low' & (n − 1)) + base` (wrapping) with the seed stepped once and popped 4 bytes (`ret 4`); no
+  memory beyond the seed was touched. The negative control (`low' & n`) differs in 2 239 cases. Backs
+  [rng/0001 § Plan 0038 batch S1e](0001-rng-core.md#plan-0038-batch-s1e-2026-10-17).
+
 ## run:2026-10-11-seed-tree
 
 - **Question:** Under `-seed N`, does the running game derive the game, act, level and DRLG-room seeds exactly as
