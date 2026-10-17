@@ -280,14 +280,14 @@ entry is `[C]`, § Code semantics). The class is the record index ([§ Row ident
 
 | Class (record index) | `Name` / description | `SubClass` | `InitFn` → handler | `OperateFn` → handler | `PopulateFn` | `Parm0` |
 |---|---|---|---|---|---|---|
-| 59 | `Portal` / Town portal | `0x04` (bit 2) | 11 → `0x00550140` | 15 → `0x00584870` | 0 | 0 |
-| 60 | `Portal` / Permanent town portal | `0x04` | 12 → `OBJINIT_Portal` `0x0054FE70` | 15 → `0x00584870` | 0 | 0 |
-| 298 | `portal` / arcane sanctuary portal | `0x10` (bit 4) | 29 → `0x0059BA40` | 34 → `0x005846B0` | 3 | 0 |
+| 59 | `Portal` / Town portal | `0x04` (bit 2) | 11 → `OBJINIT_TownPortal` `0x00550140` | 15 → `OBJOP_Portal` `0x00584870` | 0 | 0 |
+| 60 | `Portal` / Permanent town portal | `0x04` | 12 → `OBJINIT_Portal` `0x0054FE70` | 15 → `OBJOP_Portal` `0x00584870` | 0 | 0 |
+| 298 | `portal` / arcane sanctuary portal | `0x10` (bit 4) | 29 → `0x0059BA40` | 34 → `OBJOP_ArcanePortal` `0x005846B0` | 3 | 0 |
 | 342 | `portal` / hellgate | `0x10` | 44 → `0x005BCBF0` | 46 → `sub_00584750_DurancePortalOperate` | 0 | 18 |
-| 410 | `Siege Control` | `0x08` | 0 | 46 → `0x00584750` | 0 | 18 |
-| 100 | `Duriel's Lair` / Portal to Duriel's Lair | 0 | 0 | 43 → `0x00584D00` | 0 | 0 |
-| 377 | `Guild Portal` | 0 | 0 | 43 → `0x00584D00` | 0 | 0 |
-| 119, 145, 156, 157, 237, 238, 288, 323, 324, 398, 402, 429, 494, 496, 511, 539 | `Waypoint` (16 rows) | `0x40` (bit 6) | 17 → `0x00547210` | 23 → `sub_00584E30_WaypointOperate` | 0, 2 or 3 | 0 |
+| 410 | `Siege Control` | `0x08` | 0 | 46 → `sub_00584750_DurancePortalOperate` | 0 | 18 |
+| 100 | `Duriel's Lair` / Portal to Duriel's Lair | 0 | 0 | 43 → `OBJOP_LevelPortal` `0x00584D00` | 0 | 0 |
+| 377 | `Guild Portal` | 0 | 0 | 43 → `OBJOP_LevelPortal` `0x00584D00` | 0 | 0 |
+| 119, 145, 156, 157, 237, 238, 288, 323, 324, 398, 402, 429, 494, 496, 511, 539 | `Waypoint` (16 rows) | `0x40` (bit 6) | 17 → `OBJINIT_Waypoint` `0x00547210` | 23 → `sub_00584E30_WaypointOperate` | 0, 2 or 3 | 0 |
 
 - `[C]` **Waypoints by data.** The 16 rows with `SubClass` bit 6 are exactly the 16 rows with `OperateFn` 23, all with
   `InitFn` 17, `OperateRange` 2, `Restore` 1, `OpenWarp` 0, `ClientFn` 0 (`obj_subclass_bit6=16 obj_op_waypoint=16
@@ -299,13 +299,25 @@ entry is `[C]`, § Code semantics). The class is the record index ([§ Row ident
   through it, 23 times (objects/0001 § 13). `[I]` It marks the level's waypoint and sends the record; travel is
   `sub_00584F60_WaypointTravel`, reached from it ([save/0002 § 4](../findings/save/0002-quest-words.md)).
   (fn:sub_00584E30_WaypointOperate@0x00584E30, fn:sub_00584F60_WaypointTravel@0x00584F60)
+- `[I]` **Five waypoint rows draw at each mode change.** 429, 494, 496, 511 and 539 have `Sync` 0 (`[C]` data; the
+  other eleven have `Sync` 1), so each of their mode changes draws their own unit seed,
+  `RangeB(object seed, FrameDelta[mode] >> 3)` (`FrameDelta` 200 for mode 1, 100 for mode 2); `OBJINIT_Waypoint`
+  (`InitFn` 17) puts a town's waypoint straight into mode 2. ([quests/0002 § 2](../findings/quests/0002-travel.md#2-waypoint-activation), fn:UNIT_AnimInit@0x00624390,
+  fn:OBJINIT_Waypoint@0x00547210, tbl:Objects.txt:Sync)
 - `[I]` **Bit 6** marks the waypoint for the DRLG map scan (`DRLG_PresetMapScan`, room flag `0x30000`) and the
   waypoint lookup `LevelWaypointRoom` (first type-2 preset object with the bit) (drlg/0007 § 1, drlg/0005 § 9).
   (fn:DRLG_PresetMapScan@0x00667970, fn:sub_0066AD80_LevelWaypointRoom@0x0066AD80)
 - `[C]` **Town portals by data.** Bit 2 is on 59 and 60 only; they share `OperateFn` 15 and differ in `InitFn`
   (11 vs 12) and `Restore` (0 vs 1). `[I]` Class 60 is the portal `PortalObjectCreate` makes for the cow level
-  (items/0008 § 5.1) and its `InitFn` 12 (`OBJINIT_Portal`) marks it at once (drlg/0005, objects/0001); which class
-  a Town Portal scroll or book makes, and what bit 2's collision mask `0x8000` does to the pair, is Phase 1.
+  (items/0008 § 5.1) and its `InitFn` 12 (`OBJINIT_Portal`) marks it at once (drlg/0005, objects/0001); it sets the
+  destination from the level it stands on (1 ↔ 39, 4 ↔ 38, 46 ↔ 74, 109 ↔ 121, 111 ↔ 125, 112 ↔ 126, 117 ↔ 127, the
+  true tomb ↔ 73). `[I]` A Town Portal scroll or book (`pSpell` 2, `ITEMUSE_TownPortal`) makes a class-59 pair: the
+  field end at the player, the town end at the town's point type 11; `OBJINIT_TownPortal` (`InitFn` 11) sets the
+  destination to the act's town. `OBJOP_Portal` (`OperateFn` 15) moves the user to the partner; someone else's
+  class-59 portal is refused when the destination's `QuestFlag`/`QuestFlagEx` word lacks bit 0
+  ([Levels § Travel](Levels.md#travel-plan-0042-phase-0)). ([quests/0002 § 6](../findings/quests/0002-travel.md#6-town-portals), fn:ITEMUSE_TownPortal@0x005BE290,
+  fn:OBJINIT_TownPortal@0x00550140, fn:OBJOP_Portal@0x00584870) `[L]` What bit 2's collision mask `0x8000` does to
+  the pair is not read.
   (fn:sub_0056D130_PortalObjectCreate@0x0056D130, fn:OBJINIT_Portal@0x0054FE70, fn:UNIT_GetCollMask@0x006209D0)
 - `[C]` **Bit 4 by data** is on 298 (Arcane Sanctuary portal) and 342 (hellgate). `[I]` `OperateFn` 46 is
   `sub_00584750_DurancePortalOperate` (needs word 22 bit 13 or bit 0, then the Act IV travel, save/0002 § 2).
@@ -314,10 +326,16 @@ entry is `[C]`, § Code semantics). The class is the record index ([§ Row ident
   `sub_0061A1B0_RoomGetLevelId`), tests word 22 bits 13 and 0, and calls `sub_00546AC0_DuranceActTravel` with that
   level, which does the Act IV travel only on level 102 (`cmp …, 0x66`) and otherwise calls `0x005BCFD0` (not read);
   marking waypoint 103 and the move to level 103 are also gated on 102 (static read at the Phase 0 review, objdump;
-  plan 0042 log). `[L]` What `0x005BCFD0` does for 410 `Siege Control`, and whether 410 is placed anywhere, is Phase 1.
+  plan 0042 log). `[I]` On any level but 102, `0x005BCFD0` opens the Mephisto portal and bridge objects and moves no
+  one, so 410 `Siege Control` would move no player; and no DS1 id, `objgroup` cell or creation call names 410, so it
+  is never placed ([quests/0002 § Answer](../findings/quests/0002-travel.md#answer-summary), quests/0001 § 10).
   (fn:sub_00584750_DurancePortalOperate@0x00584750, fn:sub_00546AC0_DuranceActTravel@0x00546AC0)
-- `[L]` `OperateFn` 43 (`0x00584D00`) is shared by 100 (Portal to Duriel's Lair) and 377 (Guild Portal); `OpenWarp` 1
-  is on four rows that are not portals (74 trap door, 194/195 stairs, 386 `Dummy`). Neither is named; listed for Phase 1.
+- `[I]` `OperateFn` 43 is `OBJOP_LevelPortal`, shared by 100 (Portal to Duriel's Lair) and 377 (Guild Portal): class
+  100 → level 73, class 377 → the level in its object byte, point type 0, no quest test. `OperateFn` 34 is
+  `OBJOP_ArcanePortal`: from 74 to 54 at type 0, from 54 to 74 at type 11, then Act II quest code. Both set mode 1
+  and queue event 1 when the object is in mode 0. ([quests/0002 § 6](../findings/quests/0002-travel.md#6-town-portals), fn:OBJOP_LevelPortal@0x00584D00,
+  fn:OBJOP_ArcanePortal@0x005846B0)
+- `[L]` `OpenWarp` 1 is on four rows that are not portals (74 trap door, 194/195 stairs, 386 `Dummy`); not named.
 
 ## Interpretation notes
 

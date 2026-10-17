@@ -231,10 +231,10 @@ column is `[I]` only where a finding names its reader, and Phase 1 of plan 0042 
 |---|---|---|---|---|
 | `Act` | `levels` `+0x003` u8 | 0..4 | the act ranges of the waypoint menu tabs (table `0x007224AC`, per act) and the act change of `sub_0053AEC0_PlayerChangeLevel` compare acts; that they read this byte is not shown | `[L]` |
 | `Waypoint` | `levels` `+0x0E4` u8 | 0..38 on 39 levels, 255 (none) on 98 | `WAYPOINT_IndexFromLevel` returns it, 255 = none; `WAYPOINT_LevelFromIndex` is its inverse | `[I]` (fn:WAYPOINT_IndexFromLevel@0x00660E00, fn:WAYPOINT_LevelFromIndex@0x00660D90) |
-| `QuestFlag` | `leveldefs` `+0x000` u32 | 0; 11, 13, 21, 26, 39 on 24 levels | none named | `[L]` |
-| `QuestFlagEx` | `leveldefs` `+0x004` u32 | equal to `QuestFlag` on every level but 39 (26 / 40) | none named | `[L]` |
-| `Portal` | `leveldefs` `+0x08C` u32 | 1 on 16 levels | none named | `[L]` |
-| `Position` | `leveldefs` `+0x090` u32 | 1 on 18 levels | `LevelPointFind` takes the level point list when it is set, else the waypoint room's object (drlg/0005 § 9, drlg/0007) | `[C]` (fn:sub_0066B2B0_LevelPointFind@0x0066B2B0, run:2026-10-14-collision) |
+| `QuestFlag` | `leveldefs` `+0x000` u32 | 0; 11, 13, 21, 26, 39 on 24 levels | `OBJOP_Portal` (OperateFn 15): another player's town portal (class 59) to this level is refused unless the operator's quest word `QuestFlag` has bit 0 set (classic game), [quests/0002 § 6](../findings/quests/0002-travel.md#6-town-portals) | `[I]` (fn:OBJOP_Portal@0x00584870, 0x005849BB–0x00584A19) |
+| `QuestFlagEx` | `leveldefs` `+0x004` u32 | equal to `QuestFlag` on every level but 39 (26 / 40) | the same test in an expansion game | `[I]` (fn:OBJOP_Portal@0x00584870) |
+| `Portal` | `leveldefs` `+0x08C` u32 | 1 on 16 levels | none found: no read of `+0x8C` at the 28 `sub_0061E470_LevelDefGet` call sites ([quests/0002 § Dead ends](../findings/quests/0002-travel.md#dead-ends)) | `[I]` (no reader at those sites) |
+| `Position` | `leveldefs` `+0x090` u32 | 1 on 18 levels | `LevelPointFind` takes the level point list when it is set, else the waypoint room's object (drlg/0005 § 9, drlg/0007); so it decides whether a placement steps the level seed (one draw on a `Position` level when a point of the type exists, none for type 13), for every placement through `ActLevelSpot` ([quests/0002 § 4](../findings/quests/0002-travel.md#4-placement-playerchangelevel-playerchangeact-actlevelspot)) | `[C]` (fn:sub_0066B2B0_LevelPointFind@0x0066B2B0, run:2026-10-14-collision); the seed step on every placement `[I]` |
 | `SubWaypoint` | `leveldefs` `+0x040` s32 | 4 on levels 2–7, 7 on 41–44, 46, 134, −1 elsewhere (0 on level 0) | the `LvlSub` record of the cell `OutWaypointPlace` marks (drlg/0008 § 6) | `[I]` (fn:sub_00674B70_OutWaypointPlace@0x00674B70) |
 | `Teleport` | `levels` `+0x004` u8 | 1 everywhere but level 0 (0) and Duriel's Lair 73 (2) | none named | `[L]` |
 | `IsInside`, `Quest` | `levels` `+0x008`, `+0x030` u8 | `Quest` 1 on level 8, 11 on level 74, 0 elsewhere | `Quest` is copied by the pool loader (monsters/pool) | `[L]` |
@@ -265,12 +265,15 @@ column is `[I]` only where a finding names its reader, and Phase 1 of plan 0042 
   `QuestFlag` and 40 in `QuestFlagEx`, the only row where the two differ. `[L]` 11, 13, 21 and 39 are quest-record
   words of the level's own act in `g_QuestDescs` (Act II words 8–14, Act III 16–22, Act V 35–40; save/0002), and the
   cow level's 26 / 40 (Acts IV and V) are the classic / expansion words the cow portal tests (items/0008 § 5.1, fn:CUBE_CowPortalOpen@0x00594140), so the
-  pair reads as "the quest word that gates entry, classic / expansion". No reader of `leveldefs +0x000/+0x004` is
-  named; plan 0042 Phase 1 reads it. (tbl:Levels.txt:QuestFlag, tbl:Levels.txt:QuestFlagEx)
+  pair reads as "the quest word that gates entry, classic / expansion". `[I]` The reader is the town-portal operate:
+  for someone else's portal (class 59) the destination level's word (`QuestFlagEx` in an expansion game, else
+  `QuestFlag`) must have bit 0 set, so another player's portal to the Durance needs word 21 bit 0, to the Arcane
+  Sanctuary or the palace word 11; the portal's owner and anyone using the owner's own end are not tested
+  ([quests/0002 § 6](../findings/quests/0002-travel.md#6-town-portals), fn:OBJOP_Portal@0x00584870). (tbl:Levels.txt:QuestFlag, tbl:Levels.txt:QuestFlagEx)
 - `[C]` **`Portal` by data** is 1 on levels 1, 3, 5, 7, 27, 29, 33, 36, 40, 43, 45, 46, 53, 54, 74, 134: Acts I and
-  II and Pandemonium 2, none in Acts III–V otherwise. `[L]` No reader is named; whether it is the town-portal
-  "can open here" test or a client-side marker is for Phase 1 (a town portal opens in Act III–V field levels, so it is
-  not a plain "portal allowed" switch). (tbl:Levels.txt:Portal)
+  II and Pandemonium 2, none in Acts III–V otherwise. `[I]` None of the 28 `LevelDefGet` call sites reads `+0x8C`, and no
+  reader through `g_pLevelDefs` directly was found ([quests/0002 § Dead ends](../findings/quests/0002-travel.md#dead-ends)); a town portal opens in Act III–V field levels, so it is not a "portal allowed" switch.
+  (tbl:Levels.txt:Portal)
 - `[C]` **`Position`** is 1 on levels 1, 38, 40, 46, 54, 73, 74, 75, 102, 103, 109, 121, 125, 126, 127, 132, 134, 135.
   The waypoint-travel arrival (point type 13 on 46, 74, 133–136, else 0, `sub_00584F60_WaypointTravel`) goes through
   `LevelPointFind`, which reads it (drlg/0005 § 9). (tbl:Levels.txt:Position)
