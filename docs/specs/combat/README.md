@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/stats, player/creation, items/properties, data/calc]
 consumed_by: [items/tc]
-tags: {C: 36, I: 20, L: 5}
-updated: 2026-10-16
+tags: {C: 36, I: 21, L: 5}
+updated: 2026-10-17
 ---
 
 # Combat formulas: the attack event, its seeds and its branches
@@ -147,7 +147,8 @@ life/mana/stamina drain roll, `0x20` built (and forced at delivery), `0x80` no `
 | boundary oracles | stat-event handlers other than 15 and 16, `COMBAT_DurabilityLoss`, the knockback, `COMBAT_GetHit`, a monster's on-hit skill `0x005A4390`, a skill do-function's draws before the build, a delivery on a later frame than the hit test: entry seeds asserted, exit seeds taken (ADR-0004) | [C] (run:2026-10-16-combat) |
 
 [C] Under this boundary run:2026-10-16-combat reproduced 15 358 logged events of 19 sessions with 0 mismatches,
-every logged seed asserted. (run:2026-10-16-combat) The progressive-charge hooks around the player's build and the
+every logged seed asserted; with the resume-lane addendum the run list holds 40 logs and 40 655 events, still with 0
+mismatches. (run:2026-10-16-combat) The progressive-charge hooks around the player's build and the
 finisher before delivery were dropped events by rule; none occurred. [I] (fn:COMBAT_PrgHooksBeforeBuild@0x005D3AC0,
 fn:COMBAT_PrgFinisher@0x005D5220)
 
@@ -270,7 +271,7 @@ resynchronises. (fn:sub_005A4F50_MonAttackStats@0x005A4F50, run:2026-10-16-comba
 | difficulty | to-hit, block, crushing blow, open wounds | none | [I] (fn:COMBAT_ToHitRoll@0x0057D9B0, fn:STATEVENT_CrushingBlow@0x005BFFC0, fn:STATEVENT_OpenWounds@0x005BFE60) |
 | player count | crushing blow divisor | `k + MulDiv(k, PlayerHpPct(n), 100)` with the monster's creation count | [C] (fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat) |
 | player count | `MonAttackStats` damage | expansion, Nightmare and Hell: + `b/128` with `b = 8(n − 1)` for `n < 9` | [I] (fn:sub_005A4F20_PlayerDmgBonus@0x005A4F20) |
-| hireling | P, crushing blow, leech, drains | § A2 | [C] for P 50 and 35 against a boss (run:2026-10-16-combat); [I] otherwise (fn:sub_0063EE90_HirelingType@0x0063EE90) |
+| hireling | P, crushing blow, leech, drains | § A2 | [C] for P 50, 35 and 25 against a boss (run:2026-10-16-combat); [I] otherwise (fn:sub_0063EE90_HirelingType@0x0063EE90) |
 | player against player | P = 17 on every scaled field; stat events and leech with `D` = 100 | named only; no two-client run yet (ADR-0008) | [I] (fn:COMBAT_DamagePercent@0x0057C060) |
 
 - D. "Players" means the monster's stat 100, the count frozen at its creation, not the current `/players`. [C]
@@ -333,9 +334,9 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
 - **A monster attack and its `MonAttackStats` are two moments.** The `El` draws happen when the attack mode starts,
   the to-hit and build at the hit frame, with the monster's AI drawing in between. [C]
   (fn:sub_005A4F50_MonAttackStats@0x005A4F50, run:2026-10-16-combat)
-- **The community's 1/8 crushing blow on champions and uniques and its player-count-free crushing blow do not hold in
-  1.14d**; nor does the class level bonus in the chance to hit, nor healing only from flat absorb. [C]
-  (run:2026-10-16-combat)
+- **The community's 1/8 crushing blow on uniques and its player-count-free crushing blow do not hold in 1.14d**; nor
+  does the class level bonus in the chance to hit, nor healing only from flat absorb. [C] (run:2026-10-16-combat) The
+  1/8 on champions does not hold by the reading; no champion was labelled. [I] (fn:STATEVENT_CrushingBlow@0x005BFFC0)
 
 ## Evidence
 
@@ -343,9 +344,10 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   and chaining), 12 (branches), 14 (the hooks and the finisher), 15 (the reproduction), the boundary recommendation,
   *Leads used* (30 verdicts, five contradicted).
 - [combat/experiments § run:2026-10-16-combat](../../findings/combat/experiments.md#run2026-10-16-combat) and its
-  architect review: 19 sessions, 15 358 events, 0 mismatches; the shortfalls.
+  architect review: 19 sessions, 15 358 events, 0 mismatches; the resume-lane addendum (40 logs, 40 655 events,
+  0 mismatches) and its review; the shortfalls.
 - `tools/combat.py` (the model behind the confirmed tags, `check` over the run list), `tools/gdb/combat.gdb`.
-- Types: `re/types/combat.h`. Plan: [0037](../../plans/0037-combat-formulas.md).
+- Types: `re/types/combat.h`. Plan: [0037](../../plans/done/0037-combat-formulas.md).
 - Upstream: [rng](../rng/README.md), [rng/seeds](../rng/seeds.md), [monsters/stats](../monsters/stats.md),
   [player/creation](../player/creation.md), [items/properties](../items/properties.md), [data/calc](../data/calc.md).
   Downstream: [items/tc](../items/tc.md) (the drop at the kill).
@@ -360,12 +362,10 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   freeze (skill on hit, knockback, slow…), the progressive-charge hooks and the finisher's draw.
 - [L] **Owed to phase (5), animation:** hit recovery, knockback and stun lengths in time, the hit class, the get-hit
   and durability draws.
-- [L] **Shortfalls of run:2026-10-16-combat** (plan 0037 Phase 2; a resume lane may raise some): Hell's
-  `HireableBossDamagePercent` 25 (0 events); open wounds on an act boss (0); crushing blow on an act boss (1), a
-  superunique (5), a champion (0); the prime-evil 200 (1); the negative absorbed amount (4); the monster leech branch
-  (7); the stun draw on a unique (17); the resistance cap for cold (15), lightning (17), poison (2), magic (0); magic
-  immunity (0); evade, weapon block, dodge, avoid (0); conversion, freeze, pierce, flat absorb (0); the running
-  player's automatic hit and the moving player's block `÷ 3` (the same 26 events); the negative total that leaves life
-  unchanged (25); the player's life tick (no window).
+- [L] **Shortfalls of run:2026-10-16-combat** (plan 0037 Phase 2, after the resume lane; 40 655 events): crushing
+  blow on a champion (0 labelled); the resistance cap for cold (27), lightning (17), magic (0); magic immunity (0);
+  the negative absorbed amount (4); evade, weapon block, dodge, avoid (0); conversion, freeze, pierce, flat absorb (0);
+  the negative total that leaves life unchanged (25); the player's life tick (no window); the mode-2 (walking)
+  exception of the block `÷ 3` (no walking player attacked).
 - [L] Player against player and hostile auras need two clients (ADR-0008, accepted 2026-10-16 on the port-4000
   condition; no such run yet).

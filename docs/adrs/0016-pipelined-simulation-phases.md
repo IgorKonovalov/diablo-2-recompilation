@@ -3,7 +3,7 @@
 > **Status:** accepted (owner, 2026-10-16)
 > **Date:** 2026-10-16
 > **Amends:** [ADR-0014](0014-scope-game-simulation.md) (the sentence "A later phase's plan is written only once the earlier phase's spec is reviewed")
-> **Related plan(s):** [0037-combat-formulas](../plans/0037-combat-formulas.md) (phase 1), [0041-stats-and-states](../plans/0041-stats-and-states.md) (phase 2)
+> **Related plan(s):** [0037-combat-formulas](../plans/done/0037-combat-formulas.md) (phase 1), [0041-stats-and-states](../plans/0041-stats-and-states.md) (phase 2)
 
 ## Context
 

@@ -1,6 +1,6 @@
 # 0037 — Combat formulas: to-hit, damage, resistances, defences and on-hit effects
 
-> **Status:** in-progress (P0 accepted 2026-10-16; P1/1b accepted with fixes 2026-10-16; P2 accepted with fixes 2026-10-16; P3 accepted with fixes 2026-10-16; P2 shortfall resume and the spec re-tag next)
+> **Status:** done (approved 2026-10-16, closed 2026-10-17; P0 accepted 2026-10-16; P1/1b, P2 and P3 accepted with fixes 2026-10-16; P2 resume lane, P3 re-tag and P4 wiki accepted with fixes 2026-10-17)
 > **Created:** 2026-10-16
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation
@@ -11,14 +11,14 @@
 each type it does, how the defender's resistances, block, avoidance, damage reduction and absorb change that, and what
 the on-hit effects do (crushing blow, deadly strike, open wounds, life and mana leech, cold and freeze, poison)? This
 covers player against monster and monster against player, in every difficulty and in classic and expansion games.
-It is the first simulation plan under [ADR-0014](../adrs/0014-scope-game-simulation.md), phase (1).
+It is the first simulation plan under [ADR-0014](../../adrs/0014-scope-game-simulation.md), phase (1).
 
 When it is done:
 - the combat columns of the tables are documented, and the element and mode code lists have table docs;
 - `docs/findings/combat/0001-formulas.md` states each formula, its draws and seeds, its inputs and its outputs;
 - `tools/combat.py` reproduces logged attack events bit for bit under ADR-0014's per-event rule, with stat values as
   value oracles and a skill's damage packet as an input;
-- `docs/specs/combat/` is drafted and reviewed; [monsters/stats § H](../specs/monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only)
+- `docs/specs/combat/` is drafted and reviewed; [monsters/stats § H](../../specs/monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only)
   moves from reference to `[C]` where the run reaches it, and the `ToHitFactor` contradiction is settled.
 
 The boundary: a unit's **final stats** are inputs here (phase (2), stats and states, models how they add up), and a
@@ -28,17 +28,17 @@ covers a normal attack's own damage build, the to-hit roll, everything the defen
 ## Context
 
 - Research map: new band **Simulation (ADR-0014)**, row `combat/formulas`, `not started`. Dependencies, all
-  `reviewed`: [monsters/stats](../specs/monsters/stats.md) (C 99; creation stats, the attack-time § H as reference
-  `[I]`), [player/creation](../specs/player/creation.md) (base stats, the attack rating term), [items/properties](../specs/items/properties.md)
-  (base damage, defence, the property writers), [data/calc](../specs/data/calc.md) (the evaluator for `ToHitCalc` and
+  `reviewed`: [monsters/stats](../../specs/monsters/stats.md) (C 99; creation stats, the attack-time § H as reference
+  `[I]`), [player/creation](../../specs/player/creation.md) (base stats, the attack rating term), [items/properties](../../specs/items/properties.md)
+  (base damage, defence, the property writers), [data/calc](../../specs/data/calc.md) (the evaluator for `ToHitCalc` and
   the skill damage formulas), `rng` and `rng/seeds` (the unit seed).
 - **Code already named** (grep `re/symbols.csv`):
   - `sub_005A4F50_MonAttackStats` (I) and `sub_005A4F20_PlayerDmgBonus` (I), `data:g_PlayerDmgBonus`: a monster's to-hit,
     damage and elemental damage at attack time, with `El<e>` draws on the **attacker's unit seed**
-    ([monsters/0004 § 9](../findings/monsters/0004-stats.md#9-to-hit-and-damage-at-attack-time-sub_005a4f50_monattackstats));
+    ([monsters/0004 § 9](../../findings/monsters/0004-stats.md#9-to-hit-and-damage-at-attack-time-sub_005a4f50_monattackstats));
   - `sub_006538A0_MonLvlStats` (C), `sub_00611D30_DifficultyRec` (I), `g_pDifficultyLevels` (C);
   - `sub_00622560_PlayerBaseToHit` (I): `(dex − 7) × 5 + stat 19 + ToHitFactor`; `0x00583740` (unnamed) adds
-    `ToHitFactor` once more to a computed rating ([player/0001 § 9–10](../findings/player/0001-creation.md#9-other-charstats-readers-for-the-archivists-table-doc));
+    `ToHitFactor` once more to a computed rating ([player/0001 § 9–10](../../findings/player/0001-creation.md#9-other-charstats-readers-for-the-archivists-table-doc));
   - `sub_00622720_UnitBlockChance` (I): `toblock + BlockFactor`, the dexterity form, capped at 75;
   - `SKILLS_GetToHit` (I, data/calc), `sub_00625500_UnitGetStat` (I), the stat-list functions (`STATLIST_*`,
     `sub_00624F60_StatListGetValue`), `UNIT_SetMode` (C), `sub_005A7C20_MonSetMode` (I: the death set-mode where the
@@ -47,22 +47,22 @@ covers a normal attack's own damage build, the to-hit roll, everything the defen
     (C), `sub_005A1E00_UModPoisonHit` (I), `sub_005A21D0_UModElemDamage` (I), `sub_005A0D20_MonHpAddPct` (C).
 - **Contradiction waiting for this plan**: backlog 2026-10-15 "ToHitFactor": src:arreat-summit-character-basics calls
   the class constants (20/15/5/−10/−15) a bonus to the attacker's level in the chance-to-hit formula; 1.14d adds
-  `ToHitFactor` to the attack rating ([player/0001 § 10](../findings/player/0001-creation.md#10-community-cross-check-phase-1b)).
+  `ToHitFactor` to the attack rating ([player/0001 § 10](../../findings/player/0001-creation.md#10-community-cross-check-phase-1b)).
   The block formula's 25 % cap while running is `not covered` there too.
 - Open notes from earlier plans: monsters/stats *Open questions* (the noRatio elemental damage written to
   `+0x24`/`+0x28` and read at `+0x2C`/`+0x30` by the attack code, "for a later `monsters/combat` row"); the DifficultyLevels
   columns with no reader yet (`ResistPenalty`, the freeze, cold and curse divisors, `LifeStealDivisor`,
-  `ManaStealDivisor`, [DifficultyLevels § Open questions](../tables/DifficultyLevels.md#open-questions)).
-- **Data already documented** (no Phase 0 work unless named below): [CharStats](../tables/CharStats.md) (`ToHitFactor`,
-  `BlockFactor` with readers), [MonLvl](../tables/MonLvl.md) (TH, DM, AC per level), [MonProp](../tables/MonProp.md),
-  [MonUMod](../tables/MonUMod.md), [Skills](../tables/Skills.md) (layout `[C]`, including `ToHit`, `LevToHit`,
-  `ToHitCalc`, `SrcDam`, `HitShift`, `MinDam`, `EType`, `EMin`), [SkillCalc](../tables/SkillCalc.md),
-  [MissCalc](../tables/MissCalc.md), [Hireling](../tables/Hireling.md) (`AR`).
+  `ManaStealDivisor`, [DifficultyLevels § Open questions](../../tables/DifficultyLevels.md#open-questions)).
+- **Data already documented** (no Phase 0 work unless named below): [CharStats](../../tables/CharStats.md) (`ToHitFactor`,
+  `BlockFactor` with readers), [MonLvl](../../tables/MonLvl.md) (TH, DM, AC per level), [MonProp](../../tables/MonProp.md),
+  [MonUMod](../../tables/MonUMod.md), [Skills](../../tables/Skills.md) (layout `[C]`, including `ToHit`, `LevToHit`,
+  `ToHitCalc`, `SrcDam`, `HitShift`, `MinDam`, `EType`, `EMin`), [SkillCalc](../../tables/SkillCalc.md),
+  [MissCalc](../../tables/MissCalc.md), [Hireling](../../tables/Hireling.md) (`AR`).
 - Leads already registered: `src:arreat-summit-character-basics`, `src:arreat-summit-bonuses`,
   `src:arreat-summit-monster-pages`, `src:d2dfg-blizzard`, `src:pk-monstats-guide`, `src:pk-monumod-guide`,
   `src:fandom-d2-elite-monsters`. Combat is heavily documented, so Phase 1b searches for and registers more
   (ADR-0014 § Sources).
-- Harness: the Nova sorceress build of [harness-play](../../.claude/skills/reverser/references/harness-play.md) kills
+- Harness: the Nova sorceress build of [harness-play](../../../.claude/skills/reverser/references/harness-play.md) kills
   through all three difficulties; melee "with a low-level character fails in Nightmare and Hell", so the melee and
   defence characters are tool-built at a high level with stock items (ADR-0013 § Neutral: tool-built saves on stock
   tables are not forced-path runs).
@@ -77,25 +77,25 @@ covers a normal attack's own damage build, the to-hit roll, everything the defen
   - new table docs `docs/tables/ElemTypes.md` (`elemtypes.txt`/`.bin`: the element codes that Skills `EType` and
     the monster `El` groups name), `MonMode.md` and `PlrMode.md` (the mode codes that select a monster's `A1`/`A2`/`S1`
     damage columns and the attack modes); `HitClass` waits for the animation phase (ADR-0014 phase 5);
-  - [MonStats](../tables/MonStats.md) § Combat columns: the per-mode damage and to-hit columns, the three `El`
+  - [MonStats](../../tables/MonStats.md) § Combat columns: the per-mode damage and to-hit columns, the three `El`
     groups (mode, type, percent, min, max, duration), `Drain`, `coldeffect`, `DamageRegen`, `ToBlock`, `NoRatio` and any
     other column the survey ties to an attack, per difficulty, with blank patterns; extend § Stat columns rather than
     duplicate it;
-  - [MonStats2](../tables/MonStats2.md) § Combat columns: the per-mode availability flags and any melee-range or
+  - [MonStats2](../../tables/MonStats2.md) § Combat columns: the per-mode availability flags and any melee-range or
     hit-class column;
-  - [DifficultyLevels](../tables/DifficultyLevels.md) § Combat columns: `ResistPenalty`, `MonsterFreezeDivisor`,
+  - [DifficultyLevels](../../tables/DifficultyLevels.md) § Combat columns: `ResistPenalty`, `MonsterFreezeDivisor`,
     `MonsterColdDivisor`, `AiCurseDivisor`, `LifeStealDivisor`, `ManaStealDivisor`, the damage-percent columns and
     `StaticFieldMin`, with their values per row;
-  - [ItemStatCost](../tables/ItemStatCost.md) § Combat stats: a table of the stat ids a combat formula is expected to
+  - [ItemStatCost](../../tables/ItemStatCost.md) § Combat stats: a table of the stat ids a combat formula is expected to
     read (attack rating and its percent, defence, the damage group and enhanced damage, each element's min, max and
     length, each resistance and its maximum, damage reduction and magic damage reduction flat and percent, absorb,
     block, crushing blow, deadly strike, open wounds, life and mana leech, pierce and the enemy-resistance stats), each
     with `ValShift`, `Save Bits`, signedness and the `.bin` offsets, from data only;
-  - [Weapons](../tables/Weapons.md) and [Armor](../tables/Armor.md) § Combat columns: the one-hand, two-hand and
+  - [Weapons](../../tables/Weapons.md) and [Armor](../../tables/Armor.md) § Combat columns: the one-hand, two-hand and
     missile damage columns, `StrBonus`, `DexBonus`, `speed`, the range column; `block` and the shield and boot damage
     columns;
-  - [States](../tables/States.md): the rows the on-hit effects are expected to set (cold, freeze, poison, open wounds),
-    by row id; [Skills](../tables/Skills.md): a survey of which rows carry each damage-feeding column, and the row of
+  - [States](../../tables/States.md): the rows the on-hit effects are expected to set (cold, freeze, poison, open wounds),
+    by row id; [Skills](../../tables/Skills.md): a survey of which rows carry each damage-feeding column, and the row of
     the normal attack;
   - `tools/combat_survey.py` (gate survey `combat`), printing the counts the docs state; the `excel_layout` baseline
     regenerated if a new table is parsed.
@@ -158,7 +158,7 @@ covers a normal attack's own damage build, the to-hit roll, everything the defen
   entry. A calculator is used only through its prose (ADR-0014 § Sources).
 
 ### Phase 2 — Per-event reproduction
-- **Owner skill:** reverser (agent-driven per [harness-play](../../.claude/skills/reverser/references/harness-play.md);
+- **Owner skill:** reverser (agent-driven per [harness-play](../../../.claude/skills/reverser/references/harness-play.md);
   at most two slots, given in the prompt; owner play is the fallback for a fight scripted play can't win)
 - **What:** write `tools/combat.py` (model and `check`), `tools/gdb/combat.gdb` and its Python handler, the recipes
   for the test characters, and log a run.
@@ -206,9 +206,9 @@ covers a normal attack's own damage build, the to-hit roll, everything the defen
 - **Owner skill:** spec-writer
 - **What:** write `docs/specs/combat/README.md` (overview, the event entry points, the data flow, the ADR-0014
   boundary) and one or more algorithm files (for example to-hit, damage, defences, on-hit effects); update
-  [monsters/stats § H](../specs/monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only) and its
-  *Open questions*, [player/creation](../specs/player/creation.md) (the attack rating term), and the
-  [data/calc](../specs/data/calc.md) open question on what `ToHitCalc` feeds.
+  [monsters/stats § H](../../specs/monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only) and its
+  *Open questions*, [player/creation](../../specs/player/creation.md) (the attack rating term), and the
+  [data/calc](../../specs/data/calc.md) open question on what `ToHitCalc` feeds.
 - **Done when:** the spec follows the template and every statement is tagged; it gives each event's draw order on its
   seed as a Mermaid sequence with the same facts tagged in the text; it states the order of the defender's reductions,
   every clamp and cap, and the classic and difficulty branches; it has worked examples from the run (a melee hit with
@@ -249,8 +249,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   asks for at least 20 chained pairs per kind. The rare-branch minimums are lowered to about 30, and a shortfall is
   named instead of blocking, with that branch's claims kept at `[I]`. MonMode and PlrMode stay in Phase 0; `HitClass`
   moves to the animation phase. ADR-0008 stays open.
-- **2026-10-16 — Phase 0 landed (archivist, `lane/a37p0`).** New table docs [ElemTypes](../tables/ElemTypes.md),
-  [MonMode](../tables/MonMode.md) and [PlrMode](../tables/PlrMode.md): layouts `[C]` by `excel_bin.py diff` (13, 32, 40
+- **2026-10-16 — Phase 0 landed (archivist, `lane/a37p0`).** New table docs [ElemTypes](../../tables/ElemTypes.md),
+  [MonMode](../../tables/MonMode.md) and [PlrMode](../../tables/PlrMode.md): layouts `[C]` by `excel_bin.py diff` (13, 32, 40
   cells, 0 mismatches; 13, 16, 20 records = the `.txt` data rows; every byte placed). Combat sections in MonStats,
   MonStats2, DifficultyLevels, ItemStatCost (104 stats by name), Weapons, Armor, States (11 rows by name) and Skills,
   each column with offset, width and range. `tools/combat_survey.py` (gate survey `combat`); the `excel_layout`
@@ -258,7 +258,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `Code` other tables resolve by (`knockback`, `Sequence`, `Knock back` store `GH`); the PlrMode mixed-archive pair
   agrees (the patch `.txt` only adds `Code`); **no MonStats record with `S1` damage has the `S1` mode** (all 29 are
   `seq_*` sequence monsters), and 27 `El1` groups name a mode their MonStats2 row lacks. Meanings stay `[L]`; questions
-  for Phase 1 in the [backlog](../backlog.md).
+  for Phase 1 in the [backlog](../../backlog.md).
 - **2026-10-16 — Phase 0 review (architect): accept with fixes.** Re-ran `excel_bin.py diff` for `elemtypes`,
   `monmode`, `plrmode` (13, 32, 40 cells, 0 mismatches; 13, 16, 20 records = the `.txt` data rows) and
   `combat_survey.py summary` (equal to the new baseline); `gate.py` fast tier and `--full combat,excel_layout` green;
@@ -271,7 +271,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   named whole groups that hold `damagerelated` 0 stats (`item_kickdamage`, `firelength`, `burningmin`, `burningmax`);
   plan status, plans index and research-map note updated. Merge: only `docs/backlog.md` conflicts with `main` (both
   sides append at the end); keep both sides.
-- **2026-10-16 — Phases 1 and 1b landed (reverser, `lane/r37p1`).** [combat/0001](../findings/combat/0001-formulas.md): the server path is `.\UNIT\SUnitDmg.cpp` (`0x0057A830`–`0x0057EFFF`) plus the stat-event handlers; attack events, to-hit (`ToHitFactor` an AR term, settled statically), block/evade/dodge/avoid on the defender's seed, the builder (including an unconditional `RangeB(seed, 1)` and the player builder running on a miss), the 12-row reduction table, delivery, leech, cold/freeze/poison/stun, crushing blow, open wounds, draws per event and the chaining plan; all `[I]` (no emulation, no run). 77 symbols, `re/types/combat.h`. 1b: 7 sources, 30 verdicts, 5 contradicted (four behaviours, all Phase 2 required cases). Surprises: `HireableBossDamagePercent` has a reader; absorb heals from both % and flat absorb; a mercenary case is needed (its branches differ). Archivist questions (a)–(e) answered in § 12b.
+- **2026-10-16 — Phases 1 and 1b landed (reverser, `lane/r37p1`).** [combat/0001](../../findings/combat/0001-formulas.md): the server path is `.\UNIT\SUnitDmg.cpp` (`0x0057A830`–`0x0057EFFF`) plus the stat-event handlers; attack events, to-hit (`ToHitFactor` an AR term, settled statically), block/evade/dodge/avoid on the defender's seed, the builder (including an unconditional `RangeB(seed, 1)` and the player builder running on a miss), the 12-row reduction table, delivery, leech, cold/freeze/poison/stun, crushing blow, open wounds, draws per event and the chaining plan; all `[I]` (no emulation, no run). 77 symbols, `re/types/combat.h`. 1b: 7 sources, 30 verdicts, 5 contradicted (four behaviours, all Phase 2 required cases). Surprises: `HireableBossDamagePercent` has a reader; absorb heals from both % and flat absorb; a mercenary case is needed (its branches differ). Archivist questions (a)–(e) answered in § 12b.
 - **2026-10-16 — Phases 1 and 1b review (architect): accept with fixes.** Every Done-when item is met: the entry points
   are named (77 rows, no duplicate address or name), each formula has widths, signs, rounding and order, § 11 gives
   draws and seeds per event kind with the chaining reading, the client AR copy is told apart, the `ToHitFactor` backlog
@@ -286,7 +286,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   slot and flag as tabled); crushing blow 10 (player, hireling) / 4 / 8 (boss flag or type `0x02`), `MulDiv` by
   `PlayerHpPct(max(stat 100, 1))` for non-hirelings, `×2` on event 6, physical resist capped 100 and only when > 0;
   `SKILL_AttackDo` calling `COMBAT_BuildDamage` after the hit test whatever its result. All seven hold.
-  **Fixes applied:** the `HireableBossDamagePercent` correction note in [monsters/0004](../findings/monsters/0004-stats.md#1-the-two-loader-descriptors)
+  **Fixes applied:** the `HireableBossDamagePercent` correction note in [monsters/0004](../../findings/monsters/0004-stats.md#1-the-two-loader-descriptors)
   § 1 and its *Open questions* (the earlier full xref named `0x0057C060` as not reading the member; it does); backlog
   entries to the spec-writer (monsters/stats G7) and to the reverser (the leftovers in ruling 3); the archivist's
   DifficultyLevels change is already filed ("combat table readers" (a)). **Rulings.** (1) Accept; the finding stays
@@ -329,11 +329,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   boss; the unconditional `RangeB(1)` and the build on a miss (both checked by the exit seed). *Slots:* one slot
   serially covers it; a second slot only for the classic and `/players` sessions in parallel (plan 0038 · P2 yields).
 - **2026-10-16 — Phase 2 landed (reverser, `lane/h37p2`, slot 3; review pending).** run:2026-10-16-combat
-  ([experiments](../findings/combat/experiments.md#run2026-10-16-combat)): 19 sessions, 15 358 events, **0 mismatches**
+  ([experiments](../../findings/combat/experiments.md#run2026-10-16-combat)): 19 sessions, 15 358 events, **0 mismatches**
   under `tools/combat.py check`; player attacks 2 030 (485 / 787 / 758 by difficulty, 1 644 hits, 386 misses), monster
   attacks 4 533 (608 / 1 446 / 2 479, 697 hits, 2 243 blocks overall), missile defence 1 957, Nova 519, mercenary
   1 259, `MonAttackStats` 5 060; chained pairs on the player's seed `pa` 1 796, `ma` 4 235, `md` 1 505, `pm` 519, on
-  a monster's seed 2 795 (`MonAttackStats` → attack). Static leftovers of ruling 3 closed in [combat/0001 § 14](../findings/combat/0001-formulas.md#14-phase-2-static-leftovers-phase-1-review-ruling-3)
+  a monster's seed 2 795 (`MonAttackStats` → attack). Static leftovers of ruling 3 closed in [combat/0001 § 14](../../findings/combat/0001-formulas.md#14-phase-2-static-leftovers-phase-1-review-ruling-3)
   (no `PRG` event occurred; "state 38" is the `meleeonly` flag; the monster tick is `0x005A6920`). § 15 raises the
   reproduced claims to `[C]`. **Shortfalls:** the hireling boss percent in Hell (Andariel not reached; 50 and 35 done),
   open wounds on an act boss, crushing blow on an act boss (1) and a superunique (5) below 30, champions 0, evade /
@@ -366,7 +366,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `AD1`, 630 events). (4) The stat-74 open question narrowed to the player's tick. (5) `re/symbols.csv`: 21 rows whose
   claims § 15 holds at `[C]` raised I → C (the to-hit, defence, build, reduction, delivery, crushing blow and open
   wounds functions, the monster tick, `MonAttackStats`, the two debug stubs, `g_DamageResistTable`). (6) The Phase 1
-  leftovers backlog entry struck (answered by § 14). Review addendum under the [run record](../findings/combat/experiments.md#architect-review-2026-10-16).
+  leftovers backlog entry struck (answered by § 14). Review addendum under the [run record](../../findings/combat/experiments.md#architect-review-2026-10-16).
   **Rulings.** (a) A reproduced branch under the floor stays `[I]` with its count, whatever the code shape; the cap
   formula is the exception because the same instructions run for every element row and fire covers it. (b) The
   finding stays `open` until the resume lane. (c) **Resume lane** (reverser, 1 slot, short): run
@@ -376,11 +376,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   run:2026-10-16-combat as a dated addendum (or a new run id), re-check the whole run list, and move the matching
   lines of the last § 15 bullet to `[C]`. (d) Phase 3 (spec-writer) may start now on what is `[C]`/`[I]`; it lists the
   shortfalls under *Open questions* and re-tags after (c) lands.
-- **2026-10-16 — Phase 3 drafted (spec-writer, `lane/p37s`; review pending).** [combat](../specs/combat/README.md)
+- **2026-10-16 — Phase 3 drafted (spec-writer, `lane/p37s`; review pending).** [combat](../../specs/combat/README.md)
   in five files: README (events, the packet, the ADR-0014 boundary, the draw order of a player attack, a monster
   attack and a missile on the player as sequence diagrams, chaining per seed role, the branch table, Example 1),
-  [to-hit](../specs/combat/to-hit.md), [damage](../specs/combat/damage.md), [reductions](../specs/combat/reductions.md),
-  [delivery](../specs/combat/delivery.md); tags C 175 / I 138 / L 23, all `draft`. Worked examples recomputed from the
+  [to-hit](../../specs/combat/to-hit.md), [damage](../../specs/combat/damage.md), [reductions](../../specs/combat/reductions.md),
+  [delivery](../../specs/combat/delivery.md); tags C 175 / I 138 / L 23, all `draft`. Worked examples recomputed from the
   run's logs with every seed re-derived: a Hell melee hit with crushing blow and leech (`solo-h3` 357), monster hits
   blocked and resisted in Normal, Nightmare, Hell and classic Hell, crushing blow at `/players 8`, open wounds at level
   85. Every shortfall of § 15's last bullet is under *Open questions* with its count (23 `[L]`); re-tag after the
@@ -431,7 +431,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   bit ranges match `re/types/combat.h`. **Not closed:** the plan stays `in-progress` until the resume lane
   (`lane/h37r`) lands, its review, and the spec re-tag (backlog). Wiki: not part of this plan.
 - **2026-10-16 — Phase 4 page written ahead of the re-tag (spec-writer, `lane/wiki2`; review pending).** At the
-  owner's request the [combat wiki page](../wiki/combat.md) is written now, on the reviewed spec's current tags
+  owner's request the [combat wiki page](../../wiki/combat.md) is written now, on the reviewed spec's current tags
   (`based_on:` the five combat files at 2026-10-16), and linked from the wiki index's reading order; the index's
   "no page yet" paragraph is replaced. Confirmed and read-from-the-code statements follow the current `[C]`/`[I]`
   split, and the under-floor branches and the ADR-0014 hand-offs are in its *What is not known yet*. **Phase 4 now
@@ -439,7 +439,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `based_on:` dates, and keep the gate's W4 silent. The same pass restated monsters, game-data and characters to the
   Phase 3 follow-ons (`MonAttackStats` draws, `ToHitCalc`, `ToHitFactor`).
 - **2026-10-16 — Phase 4 page reviewed ahead of the re-tag (architect, `lane/wiki2`): accept with fixes**, applied on
-  the lane after merging `main`. Every section of [wiki/combat](../wiki/combat.md) and the restated paragraphs of
+  the lane after merging `main`. Every section of [wiki/combat](../../wiki/combat.md) and the restated paragraphs of
   monsters, game-data and characters were checked against the five combat files, monsters/stats § H, data/calc and
   player/creation; the README's plan list matches the plan index. The worked example matches overview § Example 1
   row by row (AR 2300, `c` 70 → 77, phys 92 195, the reduced total 106 806, crushing blow 74 776 → 58 886, leech 731,
@@ -457,3 +457,127 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   and monsters pages); the event-11 absorb handlers are not read, not "read from the code"; champions' 1/4 crushing
   blow said as code-read; freeze said as code-read; the example's "every seed" (the page shows none); the open-wounds
   shortfalls (act bosses and players, not superuniques). Plan 0037 stays `in-progress`: Phase 4 is now the refresh.
+- **2026-10-16 — Resume lane landed (reverser, `lane/h37r`, slot 2; review pending).** Ruling (c) of the Phase 2
+  review. 18 more sessions appended to run:2026-10-16-combat as a dated addendum
+  ([experiments](../../findings/combat/experiments.md#resume-lane-addendum-2026-10-16)); logger r9 unchanged;
+  `combat.py check` over the whole run list (37 logs): **0 mismatches over 37 786 events**, and the first run's 19 logs
+  give output identical to the recorded check. **Met (≥ 30), raised to `[C]`** in [combat/0001 § 15](../../findings/combat/0001-formulas.md#15-phase-2-per-event-reproduction-run2026-10-16-combat)
+  (bullet *Resume lane*): Hell's `HireableBossDamagePercent` 25 (33 mercenary hits on Andariel, `RDP` P = 25, so not
+  `MonsterCEDamagePercent` 20), open wounds on an act boss (51), and from the same sessions the prime-evil 200 (154),
+  the monster drain branch (80), the stun draw on a unique (34), poison at the cap (692). **Still short, `[I]`:**
+  crushing blow on an act boss 28 and a superunique 22, champion 0, cold and lightning at the cap 27 and 17, the
+  negative absorbed amount 4. Tooling: recipes `combatsorh` (Hell, mercenary in unique gear, three gear revisions
+  named per session) and `combatow` (open wounds 85 %, crushing blow 40 %); `d2pilot.py` descend stays on its path,
+  `--merc-drink`; `combat_sessions.py` guards descend steps by level; `combat.py` drops states a third unit applies
+  inside a deferred delivery. New open question: *Fleshripper*'s prevent-heal state 52 lands between to-hit and block
+  and is not modelled (session set aside). **Resume note:** the lane stopped at the owner's deadline for the machine
+  (further sessions not started). To close the crushing-blow pair: `ow-n-andariel5-p8` (seed 3712, about 8 crushing
+  blows on Andariel per kill) and `ow-n-highlands3-p8` (Eldritch, about 5–12 on the superunique) are ready in
+  `tools/combat_sessions.py`; run them, append to the addendum, re-check the run list and move those two lines.
+- **2026-10-17 — Resume lane, crushing-blow pair closed (reverser, `lane/h37r`, slot 2; review pending).** `main`
+  merged into the lane first (bookkeeping conflicts in backlog, the finding's under-floor bullet and this log; both
+  sides kept). Three more `CombatOW` sessions at /players 8, Normal, appended to the addendum
+  ([experiments](../../findings/combat/experiments.md#resume-lane-second-sessions-2026-10-17)): `ow-n-andariel5-p8`
+  (Andariel not reached; kept, 0 mismatches), `ow-n-highlands3-p8` (33 crushing blows on a superunique) and
+  `ow-n-andariel6-p8` (a new row of the same steps; 6 on Andariel). `combat.py check` over the 40-log run list
+  `c37r-run2.lst`: **0 mismatches over 40 655 events**. **Met, raised to `[C]`** in
+  [combat/0001 § 15](../../findings/combat/0001-formulas.md#15-phase-2-per-event-reproduction-run2026-10-16-combat)
+  (bullet *Resume lane, second sessions*): crushing blow `k` = 8 on an act boss (34) and on superuniques (55); and,
+  from the same run list, the block `/3` for a moving player not walking (48) and the running player's hit without a
+  roll (47), which the first addendum had already lifted to 43 and 42 without raising them (Phase 3 review ruling (2)
+  put them under the floor at 26). **Still `[I]`:** champions (0 labelled; the code has no champion branch), cold and
+  lightning at the cap (27, 17), the negative absorbed amount (4), a total ≤ 0 (25, no counter in the checker).
+  **Fleshripper open question, answered in part:** state 52 takes no draw on either seed (the set-aside session's 133
+  "expected `DRB`" events all check once the `STA` line is skipped; `tools/combat.py` now skips it, the run's output
+  unchanged); which call applies it before the block roll is still unread, and that session's other 101 mismatches
+  are an event-9 handler `0x005C01D0` (backlog). Slot 2 stopped and empty. Next: architect review of the resume lane,
+  then the spec re-tag (Phase 3) and the wiki refresh (Phase 4).
+- **2026-10-17 — Resume lane review (architect): accept with fixes.** Both batches reviewed in the lane worktree
+  after merging `main` (one conflict, `docs/backlog.md`, both sides kept). **Re-runs:** the 40 logs of `c37r-run2.lst`
+  match their three manifests (19 + 18 + 3: sha256, size, lines); `tools/combat.py` (`d4dfed41…`) `check` over the run
+  list under `MemoryMax=4G` prints `SUMMARY mismatches=0 events=40655`, output byte-identical to `c37r2-check.txt` and
+  `.json`; the checker has no unit tests, so the run list is its test. The set-aside *Fleshripper* log re-checks with
+  133 state-52 skips and 101 mismatches. Gate fast tier green. **Rulings.** (1) *Block `/3` and the running automatic
+  hit to `[C]`*: **confirmed**, scoped. Phase 3 ruling (2) was a count ruling (26, under the floor), and its own backlog
+  entry asked the lane to raise both at about 30; at 48 and 47 the raise applies ruling (a), it does not go against
+  ruling (2). The logs show only mode 3 (running): 47 melee events with no `THR` and none with one, `mv` set in mode 3
+  only, and the `/3` taken after the 75 cap (45 expansion at 75 → 25, 3 classic at 53 → 17). So the `[C]` is for a
+  running player, after the cap; no walking player (mode 2) was attacked, so the mode-2 exception stays `[I]`, and the
+  moving test stays a value oracle. (2) *State-52 skip*: accepted. It is checker hygiene that consumes no draw and
+  leaves the run's output unchanged (0 such lines in the run list); the no-draw claim is `[I]` because its only session
+  is outside the run and the applying call is unread. The finding now names that log (sha256 `e001b03e…`, in the lane's
+  session scratch, not under `workspace/logs/`), so the record says where it is; copying it under `workspace/logs/combat/`
+  with a manifest line is a reverser follow-up. (3) *`ow-n-andariel5-p8` stays in the run list*: accepted. It checks
+  with 0 mismatches and adds 452 attack events; dropping a session for missing its target would bias the run.
+  (4) *First-batch items*: the third-unit `STA` drop is accepted (a state line is not a draw; any draw a third unit
+  took on our seeds would still fail the seed checks); the three `CombatSorH` revisions are accepted (each log header
+  names its save, matching the addendum; rev2 and rev3 are in the recipe's history, rev1's three items are listed);
+  the pilot changes are accepted (nothing the pilot computes feeds a model). (5) *W1 at experiments.md*: the first addendum's conclusion lacked an anchor (the gate reports it at line 222 after the merge); fixed. **Settled at this review** (the 2026-10-16
+  architect → reverser count, which the lane had not answered; counted from the run list with a scratch counter, no
+  new run): open wounds halve by the type flags `0x0C` only, and **Andariel carries the unique flag `0x08`**, so her 63
+  wounds were halved; the finding's "no `/2` for a boss" and the spec's "act bosses take the full amount" were wrong,
+  and the checker had modelled it right all along. Unique half `[C]` (383 events), champion half `[I]` (0 with `0x04`
+  alone), a `boss` without `0x08` not met. The player's resistance reached exactly −100 214 times and never went below,
+  so the floor changed no value and stays `[I]`. **Fixes applied:** combat/0001 § 15 (the open-wounds correction, the
+  `/3` and automatic-hit scope, a new bullet for the halving and floor counts, the *Fleshripper* log named), the Leads
+  verdict detail on open wounds, the status line; experiments: the W1 anchor and an *Architect review* subsection.
+  **Not blocking, filed:** the spec re-tag with its exact lines (spec-writer, replacing the three earlier re-tag
+  entries), the wiki's open-wounds sentence in the Phase 4 refresh, and a reverser follow-up (the *Fleshripper* log
+  under `workspace/logs/`, a checker counter for a total ≤ 0). Next: the spec re-tag (Phase 3), then Phase 4.
+- **2026-10-17 — Phase 3 re-tag after the resume lane, and the Phase 4 wiki refresh (spec-writer, `lane/p37t` from
+  `main` `b873f46`; review pending).** Source: [combat/0001 § 15](../../findings/combat/0001-formulas.md#15-phase-2-per-event-reproduction-run2026-10-16-combat)
+  (*Resume lane*, *Resume lane, second sessions*, *Open-wounds halving and the resistance floor*, the floor and
+  under-floor bullets) and the run record. Every line of the architect's re-tag entry applied, re-located by content.
+  **to-hit** (C 26 / I 30 / L 4 → C 32 / I 27 / L 3): the `÷ 3` constant, C1's `auto` (inline) and note (47), C2's
+  inline divisor tag and note split (`[C]` for a running player, mode 3, 48 events; the mode-2 exception `[I]`), the
+  after-the-cap note (45 at 75 → 25, 3 at 53 → 17; the *which modes* sentence stays `[I]`); the *Open questions* lead
+  on the 26 events removed. **delivery** (C 42 / I 41 / L 4 → C 50 / I 39 / L 4): crushing-blow divisors `[C]` for
+  4 and 8, E1's `k = 8` inline and note (act boss 34, superuniques 55; champions split out `[I]`), the "1.14d does
+  neither" note scoped to uniques and the player count with champions `[I]`; the monster leech branch inline and note
+  (80) and the entry row; the unique stun draw inline and note (34); **E2 corrected**: the halving tests `0x0C` only,
+  `[C]` for the unique bit (383, Andariel's 63 included), `[I]` for the champion bit and an act boss without `0x08`;
+  *Open questions* now champions and a total ≤ 0, and not reached: a champion without `0x08`, a player, the freeze,
+  the player's tick. **reductions** (C 35 / I 24 / L 5 → C 38 / I 25 / L 4): A2 Hell's 25 `[C]` (33, telling the
+  column from `MonsterCEDamagePercent`), the prime-evil 200 `[C]` (154; 400, PvP 17 % and hireling 25 % stay `[I]`),
+  its constants row split; B2's floor inline `[I]` (214 at exactly −100, none below); the cap counts (fire 2 115,
+  poison 692, cold 27, lightning 17, magic 0); the *Penalty, then floor, then cap* note scoped (`[C]` penalty before
+  cap, `[I]` floor); *Open questions* trimmed to the negative absorbed amount (4) and cold/lightning at the cap.
+  **monsters/stats** (C 102 / I 58 / L 5 → C 103 / I 57 / L 5): § G's Hell 25 `[C]`. **combat/README** (C 36 / I 20 /
+  L 5 → C 36 / I 21 / L 5): the hireling row adds 25, the shortfall list rewritten, the community-contradiction note
+  scoped to uniques with champions `[I]`, and (no tag change) the run totals with the resume addendum (40 logs, 40 655
+  events). damage unchanged (C 34 / I 27 / L 4). Combat total C 173 / I 142 / L 22 → C 190 / I 139 / L 20. Research-map
+  rows (combat, monsters/stats) updated. **Phase 4:** [wiki/combat](../../wiki/combat.md) restated: the run totals, the
+  running player's automatic hit and `÷ 3` confirmed with the walking exception read from the code, the cap counts and
+  the −100 floor, the damage percent in all three difficulties and the prime-evil 200, crushing blow 1/8 on act bosses
+  and superuniques, **open wounds halved for uniques, Andariel included** (the "act bosses the full amount" sentence
+  replaced), monster leech and the unique stun draw confirmed, the difficulty table, *What is not known yet*;
+  `based_on:` bumped; [wiki/monsters](../../wiki/monsters.md) `based_on:` bumped (no statement depended on the change).
+  Gate green, W4 5 → 0.
+- **2026-10-17 — Phase 3 re-tag and Phase 4 wiki review (architect, `lane/p37t`, `main` `590e323` merged in): accept
+  with fixes; plan closed.** Every moved line checked against [combat/0001 § 15](../../findings/combat/0001-formulas.md#15-phase-2-per-event-reproduction-run2026-10-16-combat)
+  and the resume-lane review's `check` output over `c37r-run2.lst` (40 655 events, 0 mismatches): block `÷ 3` 48 and
+  the running hit 47 (mode 3; 45 at 75 → 25, 3 at 53 → 17), crushing blow `k` = 8 on an act boss 34 and superuniques 55,
+  monster leech 80 (Nightmare 7, Hell 73), the unique stun draw 34, Hell's `HireableBossDamagePercent` 25 on 33, the
+  prime-evil 200 on 154, open wounds halved on 383 `0x08` wounds (Andariel 63) and full on 1 497, poison at the cap 692,
+  cold 27, lightning 17; all above the floor of about 30 where raised, all under it where kept `[I]`. The −100 floor
+  inline `[I]` (214 at exactly −100, none below). No `[L]` above *Open questions*; front-matter tags recounted and equal
+  to the lane's (to-hit {32, 27, 3}, delivery {50, 39, 4}, reductions {38, 25, 4}, README {36, 21, 5}, damage {34, 27,
+  4}, monsters/stats {103, 57, 5}; combat C 190 / I 139 / L 20). Gate green (E5, E6, E8, E11, W4 ok).
+  **Rulings:** (1) the README's community 1/8 note scoped to uniques `[C]` (163 crushing blows on uniques over the run
+  list) with champions `[I]` (0 labelled): accepted; it is the same split as delivery E1. (2) The run-totals sentence
+  (README § The ADR-0014 boundary, no tag change): accepted; the totals match the check output. (3) The E2 correction
+  stands, with one scope fix below. (4) The monster leech and unique stun raises are in § 15 bullet *Resume lane* with
+  80 and 34: accepted. (5) The prime-evil 200 `[C]` (154) is accepted for the hireling defender only; the 400 stays
+  `[I]`. (6) Fire at the cap 2 115 is in the resume-lane review's check output but in no committed record; the formula
+  tag does not rest on it, so it stays, and the reverser adds it to the run record (follow-up).
+  **Fixes applied:** delivery E2 note: "never MonStats `boss`" moved from the `[C]` sentence to the `[I]` one. Andariel
+  carries `0x08`, so the run cannot tell "`0x0C` only" from "`0x0C` or `boss`"; the `[C]` part now says only what the
+  383 and 1 497 wounds show (tags unchanged). [wiki/combat](../../wiki/combat.md): the open-wounds paragraph restated the
+  same way (the confirmed part is the unique half and the full amount without either mark, the act-boss reading is from
+  the code); the prime-evil sentence keeps the internal-mark condition (200 against a marked mercenary, as the spec's
+  A2 states, rather than against any mercenary); "a player on the run" → "a running player"; one over-long line
+  reflowed. Every other wiki statement matches its spec at the same strength.
+  **Close:** plan 0037 done and moved to `done/`; links rewritten; research map row and the root README updated.
+  **Filed:** reverser (fire 2 115 into the run record; scope § 15's "never MonStats `boss`" the same way as the spec),
+  archivist ([DifficultyLevels](../../tables/DifficultyLevels.md) still has Hell's 25 `[I]` in § Combat columns and
+  § Combat readers).
