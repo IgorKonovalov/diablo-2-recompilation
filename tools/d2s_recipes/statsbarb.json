@@ -1,0 +1,145 @@
+{
+  "game": "expansion",
+  "class": "Barbarian",
+  "seed": 4102,
+  "name": "StatsBarB",
+  "progression": 15,
+  "difficulty": [
+    131,
+    131,
+    131
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "stats": {
+    "strength": 95,
+    "energy": 40,
+    "dexterity": 60,
+    "vitality": 250,
+    "hitpoints": 1100,
+    "maxhp": 1100,
+    "mana": 200,
+    "maxmana": 200,
+    "stamina": 600,
+    "maxstamina": 600,
+    "level": 80,
+    "experience": 1000000000
+  },
+  "skills": {
+    "Increased Stamina": 12,
+    "Natural Resistance": 5,
+    "Iron Skin": 4,
+    "Sword Mastery": 3,
+    "Bash": 1
+  },
+  "mouse": {
+    "left": "Attack",
+    "right": "Bash",
+    "swap_left": "Attack",
+    "swap_right": "Bash"
+  },
+  "hotkeys": [
+    "Bash"
+  ],
+  "items": [
+    {
+      "set": "Civerb's Cudgel",
+      "equip": "rarm"
+    },
+    {
+      "set": "Civerb's Ward",
+      "equip": "larm"
+    },
+    {
+      "set": "Civerb's Icon",
+      "equip": "neck"
+    },
+    {
+      "set": "Immortal King's Will",
+      "equip": "head",
+      "sockets": 2,
+      "filled": [
+        {
+          "code": "gpr"
+        },
+        {
+          "code": "gpr"
+        }
+      ]
+    },
+    {
+      "set": "Angelic Mantle",
+      "equip": "tors"
+    },
+    {
+      "set": "Immortal King's Forge",
+      "equip": "glov"
+    },
+    {
+      "set": "Immortal King's Detail",
+      "equip": "belt"
+    },
+    {
+      "set": "Immortal King's Pillar",
+      "equip": "feet"
+    },
+    {
+      "set": "Angelic Halo",
+      "equip": "rrin"
+    },
+    {
+      "unique": "Nagelring",
+      "identified": false,
+      "equip": "lrin"
+    },
+    {
+      "unique": "Headstriker",
+      "equip": "rarm2"
+    },
+    {
+      "unique": "Bing Sz Wang",
+      "equip": "larm2"
+    },
+    {
+      "code": "brs",
+      "prefix": 531,
+      "store": "inventory",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "unique": "Ironpelt",
+      "store": "inventory",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "unique": "Duriel's Shell",
+      "store": "inventory",
+      "x": 4,
+      "y": 0
+    },
+    {
+      "set": "Angelic Halo",
+      "store": "inventory",
+      "x": 6,
+      "y": 0
+    },
+    {
+      "unique": "Annihilus",
+      "store": "inventory",
+      "x": 9,
+      "y": 0
+    },
+    {
+      "unique": "Highlord's Wrath",
+      "store": "inventory",
+      "x": 9,
+      "y": 2
+    }
+  ],
+  "quests": "all"
+}

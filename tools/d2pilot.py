@@ -1979,7 +1979,8 @@ def read_plan(path):
 
 def cmd_cube(args, tokens):
     """Play a cube session (plan 0030 Phase 2) against a tools/gdb/cube.gdb log. Tokens (also read from --plan FILE):
-    key:K, sleep:S, shot:PATH, xy:X,Y, click:CELL, rclick:CELL as for insert; mv:A>B picks the item at cell A up and
+    key:K, sleep:S, shot:PATH, xy:X,Y, click:CELL, rclick:CELL as for insert; settle:S[,B] waits until the log has grown
+    by less than B bytes (4000) over the last S seconds (at most 20 s; plan 0041 Phase 2); mv:A>B picks the item at cell A up and
     puts it down with its footprint's centre at B; out:inv:x,y,w,h moves the first item the cube holds after the
     last transmute (at the cell its CUBX line gives) to that footprint; tm presses Transmute (--tm-xy) and waits for the logger's CUBX line,
     then prints the row matched (or none), the classes placed and the classes left in the cube; drop:CELL picks the
@@ -2030,6 +2031,21 @@ def cmd_cube(args, tokens):
             time.sleep(args.pick_wait)
             click(*cell_xy(b))
             time.sleep(args.pick_wait)
+        elif kind == "settle":
+            # plan 0041 Phase 2: wait until the log has not grown for S seconds (the logger's work after a click
+            # holds the game), at most 20 s
+            # settle:S[,B]: quiet = the log grew by less than B bytes (default 4000) over the last S seconds, which a
+            # per-frame regeneration line or a read window allows
+            a = arg.split(",")
+            quiet, limit, t0 = float(a[0]), int(a[1]) if len(a) > 1 else 4000, time.time()
+            hist = [(t0, os.path.getsize(args.log))]
+            while time.time() - t0 < 20:
+                time.sleep(0.1)
+                now = time.time()
+                hist.append((now, os.path.getsize(args.log)))
+                old = [h for h in hist if now - h[0] >= quiet]
+                if old and hist[-1][1] - old[-1][1] < limit:
+                    break
         elif kind == "drop":
             click(*cell_xy(arg))
             time.sleep(args.pick_wait)

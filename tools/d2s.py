@@ -59,7 +59,13 @@ build recipe (JSON object; every key optional; example tools/d2s_recipes/lightso
                {"code": item code, "rare": [name1, name2]} (the two 8-bit name ids as stored, name1 =
                RarePrefix row + 156; an optional "suffix" fills affix slot 1 as above, else no affix and
                no property), placed by
-               "equip": bodylocs Code | "belt_slot": 0..15 | "store": "inventory"|"cube"|"stash" with x, y;
+               "equip": bodylocs Code (or "rarm2" / "larm2", the weapon-switch hands, body 11 / 12) |
+               "belt_slot": 0..15 | "store": "inventory"|"cube"|"stash" with x, y;
+               plan 0041 Phase 2 adds {"set": setitems index} (quality 5: prop1..9 to the main list, aprop pairs
+               to the set lists by add func, items/0006), {"code": ..., "prefix": magicprefix record index}
+               (with or without "suffix"), "ethereal": true (flags bit 22; armor or weapon with durability), and
+               the property funcs 5, 6 (damage by base column), 10 (skill tab), 14 (sockets: give "sockets"), 20
+               (indestructible) and 22 (skill param, e.g. an aura) in the unique, set and affix rows;
                optional "seed", "ilvl" (99), "gfx", "roll" ("max" | "min"), "quantity", "tome" (tbk/ibk, 0),
                "sockets": N (flags bit 11 and the 4-bit socket count, base stat 194; 1..min(6, invwidth x
                invheight, gemsockets, the type's MaxSock for the ilvl), else refused; also refused above the
@@ -938,6 +944,13 @@ class Tables:
         # record index = data row index with the 'Expansion' marker row dropped (MagicPrefix.md); a save stores
         # the suffix record index as is (d2s.md: suffix 277 = 'of Wealth', item_goldbonus)
         self.suffixes = [{c: cell(ix, r, c) for c in ix} for r in rows if r[ix["Name"]] != "Expansion"]
+        ix, rows = load_txt(excel_dir, "magicprefix.txt")
+        self.prefixes = [{c: cell(ix, r, c) for c in ix} for r in rows if r[ix["Name"]] != "Expansion"]
+        ix, rows = load_txt(excel_dir, "setitems.txt")
+        # record index = data row index with the 'Expansion' marker row dropped (SetItems.md, [C])
+        self.setitems = {}
+        for rec, r in enumerate(r for r in rows if r[ix["index"]] != "Expansion"):
+            self.setitems.setdefault(r[ix["index"]], []).append((rec, {c: cell(ix, r, c) for c in ix}))
         ix, rows = load_txt(excel_dir, "properties.txt")
         self.props = {}
         for r in rows:
@@ -978,13 +991,19 @@ class Tables:
             raise D2sError("unique %r: %d enabled rows" % (name, len(rows)))
         return rows[0]
 
+    def setitem(self, name):
+        rows = self.setitems.get(name, [])
+        if len(rows) != 1:
+            raise D2sError("set item %r: %d rows" % (name, len(rows)))
+        return rows[0]
+
     def stat_id(self, name):
         if name not in self.isc_by_name:
             raise D2sError("itemstatcost has no stat %r" % name)
         return self.isc_by_name[name]
 
 
-def unique_stats(tables, row, pick="max"):
+def unique_stats(tables, row, pick="max", base=None):
     """The (id, param) -> value map of a unique's prop1..12 at their max (or min), through the
     properties.txt stat slots. Supported funcs: 1, 2, 3, 8 (value), 15 / 16 (min / max of the row into
     two stats), 11 (skill on an event), 17 (par as the value), 19 (charged skill), 21 (param = the
@@ -1026,14 +1045,14 @@ def unique_stats(tables, row, pick="max"):
             elif fn == 17:
                 add(sid, None, int(par))
             elif fn == 19:
-                skill = tables.skills.get(par)
+                skill = tables.skills.get(par) or ({"id": int(par)} if par.isdigit() else None)
                 if skill is None:
                     raise D2sError("property %r: skill %r not in skills.txt" % (code, par))
                 # param = skill id << 6 | skill level (max column); value = charges << 8 | charges
                 # (min column), as the samples' stats 201/204 decode ([L], see d2s.md § tools)
                 add(sid, skill["id"] << 6 | hi, lo << 8 | lo)
             elif fn == 11:
-                skill = tables.skills.get(par)
+                skill = tables.skills.get(par) or ({"id": int(par)} if par.isdigit() else None)
                 if skill is None:
                     raise D2sError("property %r: skill %r not in skills.txt" % (code, par))
                 # skill on an event (hit-skill, gethit-skill...): param = skill id << 6 | skill level
@@ -1041,6 +1060,39 @@ def unique_stats(tables, row, pick="max"):
                 add(sid, skill["id"] << 6 | hi, lo)
             elif fn == 21:
                 add(sid, int(s["val"]), v)
+            elif fn in (5, 6) and base is not None:
+                # plan 0041 Phase 2: E1 of items/properties (min / max damage by base column; the clamp is not
+                # reached on stock data)
+                cols = (("mindam", "2handmindam", "minmisdam"), ("maxdam", "2handmaxdam", "maxmisdam"))[fn - 5]
+                b1, b2 = (int(base.get(c) or 0) for c in cols[:2])
+                weapon = base.get("_kind") == "weapon"
+                s1, s2, st = (21, 23, 159) if fn == 5 else (22, 24, 160)
+                if not (weapon and b1 == 0 and b2 != 0):
+                    add(s1, None, v)
+                if not (weapon and b2 == 0 and b1 != 0):
+                    add(s2, None, v)
+                if not (weapon and base.get("throwable", "") != "1"):
+                    add(st, None, v)
+                prev = v
+            elif fn == 20:
+                # items/properties E: AddStat(list, 152, 0, 1) (indestructible)
+                add(152, None, 1)
+            elif fn == 22:
+                # items/properties E: W(stat, (u16) par, v), par a skill (by name or id): Azurewrath's aura
+                skill = tables.skills.get(par) or ({"id": int(par)} if par.isdigit() else None)
+                if skill is None:
+                    raise D2sError("property %r: skill %r not in skills.txt" % (code, par))
+                add(sid, skill["id"] & 0xFFFF, v)
+                prev = v
+            elif fn == 10:
+                # E of items/properties: param = par mod 3 + (par div 3) x 8 (class in bits 3.., tab in 0..1)
+                pv = int(par)
+                add(sid, pv % 3 + (pv // 3) * 8, v)
+                prev = v
+            elif fn == 14:
+                # 'sock': the builder takes the socket count from the recipe's "sockets" key (flags bit 11 and the
+                # 4-bit field), as the game's E5 sets it; no property entry
+                pass
             else:
                 raise D2sError("property %r: func %d has no known value rule" % (code, fn))
     return out
@@ -1100,6 +1152,8 @@ def checkuniq(excel_dir, paths):
 
 
 FLAG_IDENTIFIED, FLAG_SOCKETED, FLAG_SIMPLE, FLAG_23 = 1 << 4, 1 << 11, 1 << 21, 1 << 23
+FLAG_ETHEREAL = 1 << 22
+SWAP_BODIES = {"rarm2": 11, "larm2": 12}
 LOCATIONS = {"stored": 0, "equipped": 1, "belt": 2, "socketed": 6}
 STORES = {"inventory": 1, "cube": 4, "stash": 5}
 QUALITIES = {"low": 1, "normal": 2, "superior": 3, "rare": 6, "crafted": 8}
@@ -1107,8 +1161,10 @@ QUALITIES = {"low": 1, "normal": 2, "superior": 3, "rare": 6, "crafted": 8}
 
 def new_item(t, spec, rng):
     """An item dict for encode_item from a recipe entry (see build)."""
-    if "unique" in spec and ("suffix" in spec or "rare" in spec):
-        raise D2sError("item %r: unique, or suffix / rare, not both" % spec)
+    if sum(k in spec for k in ("unique", "set")) + ("suffix" in spec or "prefix" in spec or "rare" in spec) > 1:
+        raise D2sError("item %r: one of unique, set, or prefix / suffix / rare" % spec)
+    if "prefix" in spec and "rare" in spec:
+        raise D2sError("item %r: prefix goes with a magic item, not rare" % spec)
     rare = spec.get("rare")
     if rare is not None and (not isinstance(rare, list) or len(rare) != 2
                              or not all(isinstance(n, int) and 0 <= n < 256 for n in rare)):
@@ -1116,15 +1172,27 @@ def new_item(t, spec, rng):
     if "unique" in spec:
         rec, row = t.unique(spec["unique"])
         code = row["code"]
-    elif "suffix" in spec:
-        rec, code = spec["suffix"], spec["code"]
-        if not isinstance(rec, int) or not 1 <= rec < len(t.suffixes):
+    elif "set" in spec:
+        # plan 0041 Phase 2: a set item; prop1..9 to the main list, aprop1a..5b to the set lists (add func 1, 2:
+        # pair k -> list k - 1, set_lists bit k - 1) or to the main list (add func 0 / blank), items/0006 § 2 [C]
+        rec, row = t.setitem(spec["set"])
+        code = row["item"]
+    elif "suffix" in spec or "prefix" in spec:
+        rec, code = spec.get("suffix", 0), spec["code"]
+        pre = spec.get("prefix", 0)
+        if "suffix" in spec and (not isinstance(rec, int) or not 1 <= rec < len(t.suffixes)):
             raise D2sError("suffix %r: not a magicsuffix record index 1..%d" % (rec, len(t.suffixes) - 1))
-        sfx = t.suffixes[rec]
-        # the suffix row's mod1..3 read as a unique row's prop/par/min/max (same properties.txt funcs)
-        row = {"%s%d" % (k, n): sfx.get("mod%d%s" % (n, m), "") for n in (1, 2, 3)
-               for k, m in (("prop", "code"), ("par", "param"), ("min", "min"), ("max", "max"))}
+        if "prefix" in spec and (not isinstance(pre, int) or not 1 <= pre < len(t.prefixes)):
+            raise D2sError("prefix %r: not a magicprefix record index 1..%d" % (pre, len(t.prefixes) - 1))
+        # the affix rows' mod1..3 read as a unique row's prop/par/min/max (same properties.txt funcs); the prefix's
+        # mods first (props 1..3), then the suffix's (4..6)
+        row = {}
+        for base_k, aff in ((0, t.prefixes[pre] if pre else None), (3, t.suffixes[rec] if rec else None)):
+            for n in (1, 2, 3):
+                for k, m in (("prop", "code"), ("par", "param"), ("min", "min"), ("max", "max")):
+                    row["%s%d" % (k, base_k + n)] = aff.get("mod%d%s" % (n, m), "") if aff else ""
         row["magic"] = True
+        row["prefix"] = pre
     elif rare is not None:
         rec, row, code = None, {"rare": True}, spec["code"]
     else:
@@ -1136,7 +1204,9 @@ def new_item(t, spec, rng):
     it = dict(flags=FLAG_IDENTIFIED | FLAG_23 | (FLAG_SIMPLE if simple else 0), version=101,
               code=code.ljust(4), body=0, x=0, y=0, store=0, realm=0)
     if "equip" in spec:  # a bodylocs.txt Code; x = the body slot in every equipped sample item
-        body = t.bodylocs[spec["equip"]]
+        # "rarm2" / "larm2": the weapon-switch hands, body 11 and 12 (not in bodylocs.txt; [L] community save
+        # layouts, plan 0041 Phase 2 checks them in the run)
+        body = SWAP_BODIES[spec["equip"]] if spec["equip"] in SWAP_BODIES else t.bodylocs[spec["equip"]]
         it.update(location=1, body=body, x=body)
     elif "belt_slot" in spec:  # belt slot 0..15 in x, y 0, as the samples' potions
         it.update(location=2, x=spec["belt_slot"])
@@ -1157,7 +1227,7 @@ def new_item(t, spec, rng):
             it["quest_diff"] = qd
         return it
     kind = t.kinds.get(code)
-    quality = 2 if row is None else 6 if rare is not None else 4 if row.get("magic") else 7
+    quality = 2 if row is None else 6 if rare is not None else 4 if row.get("magic") else 5 if "set" in spec else 7
     it.update(n_filled=0, seed=spec.get("seed", rng.getrandbits(32)), ilvl=spec.get("ilvl", 99),
               quality=quality, has_class=0, class_affix=None)
     if "quality" in spec:
@@ -1176,6 +1246,12 @@ def new_item(t, spec, rng):
             it["affixes"] = [None] * 6
     if spec.get("identified", True) is False:
         it["flags"] &= ~FLAG_IDENTIFIED
+    if spec.get("ethereal"):
+        # flags bit 22 (d2s.md); the game's builders make ethereal items only from bases without nodurability and
+        # with a non-zero durability (items/0006 § 6, [I]); refused otherwise
+        if kind not in ("armor", "weapon") or base.get("nodurability") == "1":
+            raise D2sError("item %r: ethereal needs an armor or weapon base with durability" % spec)
+        it["flags"] |= FLAG_ETHEREAL
     var = int(t.types.get(base["type"], {}).get("VarInvGfx") or 0)
     it["has_gfx"] = int(var > 0)
     it["gfx"] = spec.get("gfx", it["seed"] % var) if var else None
@@ -1185,12 +1261,39 @@ def new_item(t, spec, rng):
         it["names"] = tuple(rare)
         it["affixes"] = [None, rec if row.get("magic") else None, None, None, None, None]
         stats = unique_stats(t, row, spec.get("roll", "max")) if row.get("magic") else {}
+    elif row is not None and "set" in spec:
+        it["qid"] = rec
+        pick = spec.get("roll", "max")
+        main = {k: v for k, v in row.items() if not k.startswith(("prop", "par", "min", "max"))}
+        for n in range(1, 10):
+            for k in ("prop", "par", "min", "max"):
+                main["%s%d" % (k, n)] = row.get("%s%d" % (k, n), "")
+        stats = unique_stats(t, main, pick, dict(base, _kind=kind))
+        func = int(row.get("add func") or 0)
+        lists = []
+        for k in range(1, 6):
+            pair = {}
+            for j, ab in enumerate("ab"):
+                for c, a in (("prop", "aprop"), ("par", "apar"), ("min", "amin"), ("max", "amax")):
+                    pair["%s%d" % (c, j + 1)] = row.get("%s%d%s" % (a, k, ab), "")
+            ps = unique_stats(t, pair, pick, dict(base, _kind=kind))
+            if not ps:
+                lists.append(None)
+                continue
+            if func == 0:
+                for key, v in ps.items():
+                    stats[key] = stats.get(key, 0) + v
+                lists.append(None)
+            else:
+                lists.append(ps)
+        it["set_lists"] = sum(1 << k for k, ps in enumerate(lists) if ps)
+        it["set_props"] = [props_list(ps) for ps in lists if ps]
     elif row is not None:
         if row.get("magic"):
-            it["prefix"], it["suffix"] = 0, rec
+            it["prefix"], it["suffix"] = row.get("prefix", 0), rec
         else:
             it["qid"] = rec
-        stats = unique_stats(t, row, spec.get("roll", "max"))
+        stats = unique_stats(t, row, spec.get("roll", "max"), dict(base, _kind=kind))
     else:
         stats = {}
     for k, v in spec.get("item_stats", {}).items():
@@ -1571,7 +1674,7 @@ def build(excel_dir, recipe_path, src, dst):
         new += belt_items
         new_groups += [[it] for it in belt_items]
     # items in the two hand slots are written after the others (save/0001 § 6), each with its socketed items
-    hands = (t.bodylocs["rarm"], t.bodylocs["larm"])
+    hands = (t.bodylocs["rarm"], t.bodylocs["larm"]) + tuple(SWAP_BODIES.values())
     groups += new_groups
     check_layout([it for g in groups for it in g], item_sizes(t))
 
