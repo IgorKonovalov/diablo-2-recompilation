@@ -23,7 +23,8 @@
 - [I] **Mixed-archive tables: the `.bin` is authoritative in a stock run.** `automagic`, `RarePrefix`, `RareSuffix`:
   the patch_d2 `.bin` (the patch's update is live; the stale d2exp `.txt` is ignored). `inventory`, `PlrMode`: the
   d2exp `.bin` (the patch_d2 `.txt` edit is **not** live unless the game runs with `-direct -txt`). Follows from the two
-  claims above plus the archive order in [0002](0002-mpq-precedence.md).
+  claims above plus the archive order in [0002](0002-mpq-precedence.md). (fn:DATATBLS_LoadTable@0x006122F0, 0x00744308,
+  fn:DATATBLS_SetCompileTxt@0x006125A0)
 - [C] **The live TC table is `treasureclassex`.** `TreasureClass.txt` is never loaded: the string `treasureclass`
   (`0x006EA76C`) is only the name of the `itemtypes` column `TreasureClass` in the itemtypes descriptor.
   `TC_LoadTreasureClassEx` copies the `treasureclassex.bin` records into the runtime TC array `g_pTreasureClasses`
@@ -33,7 +34,7 @@
   fn:TC_LoadTreasureClassEx@0x006547D0, fn:TC_GetByIndex@0x00654E00, tbl:monstats.txt:TreasureClass1)
 - [C] **Record sizes:** 86/88 `.bin` tables are registered, and for every one the call site's record size equals the
   `.bin` record size in `docs/tables/README.md`. The other two, `cubemod` and `cubetype`, are never loaded: their
-  names do not occur in `Game.exe`.
+  names do not occur in `Game.exe`. (fn:DATATBLS_LoadAll@0x00619300, fn:DATATBLS_LoadTable@0x006122F0; § 4)
 - [I] **Code→index:** `EXCEL_FindCode` (`0x006BD130`) binary-searches a sorted `{u32 code, s32 index}` array
   (unsigned compare) and returns the index or −1. Item codes go through `ITEMS_GetByCode` (`0x00633640`) on
   `g_ItemCodeLink`; the index is the position in the combined items array (weapons, then armor, then misc).
@@ -163,13 +164,13 @@ destination).
   exist to fill code links used while compiling `.txt`; a stock run never loads them. Same for the 2-byte
   `monstats`/`skilldesc` calls in `0x00613F80` (`0x00617745 je`).
 - [I] So `monmode`, `plrmode`, `skills`, `skilldesc`, `monstats` each have two call sites. In a stock run only the
-  full-record one executes.
+  full-record one executes. (0x006127DF, 0x00617745)
 - [I] Four header-less `*code.bin` files are loaded raw by `DATATBLS_LoadCodeBin` (buffer, size, capacity triple),
   not through `DATATBLS_LoadTable`: `itemscode` (`0x00633478`, into `0x0096BCC8`), `skillscode`, `skilldesccode`
   (`0x00617946`/`0x00617961`), `misscode` (`0x006631F5`). Under `-txt` they are written out after the tables that
   feed them are parsed, so formula columns (`itemstatcost`, `skills`, `skilldesc`, `missiles`) are compiled to
   offsets into these buffers at `.txt`-compile time. The bytecode itself is `data/calc`, not followed.
-- [I] Other excel-directory readers, outside `DATATBLS_LoadTable`:
+- [I] Other excel-directory readers, outside `DATATBLS_LoadTable` (0x00481950, 0x00504430, 0x00669130, 0x00639420):
   - `sounds.txt` and `soundenviron.txt` are read as text by `0x00481950` (client sound). `sounds.bin` is also loaded
     through the table loader (`0x00659C16`).
   - `D2Comp.cpp` (`0x00504430`) is a second copy of the loader, used for `weapons`/`armor`/`misc`/`itemtypes` by the
@@ -179,7 +180,7 @@ destination).
     `cubeserver.txt` can be opened (`0x0066A110`, `0x0066A164`), then loads `cubemain` normally.
   - `runessrv` (`0x00639420`, called from the Runes loader): probed through the same API, not followed.
 - [I] `.txt`-only tables (`Aiparms`, `MonName`, `TreasureClass`, `WeaponClass`) have no loader. Only
-  `SoundEnviron` is read (above).
+  `SoundEnviron` is read (above). (fn:DATATBLS_LoadAll@0x00619300, 0x00481950)
 
 ### 4. Record-size corroboration (all 88 `.bin` tables)
 
@@ -242,7 +243,8 @@ for every row, so only one size column is shown.
   call exists for every loaded table, and the extra 2- and 4-byte calls are compile-only code lists. Since the `.bin`
   path ignores `recSize`, this agreement is the evidence that the record strides the consumers use (fixed by each
   table's descriptor) are the `.bin` strides. It takes the "fixed-size records" claim and the name→loader→pointer
-  mapping below to `[C]` (code anchor + data behaviour over every file).
+  mapping below to `[C]` (code anchor + data behaviour over every file). (fn:DATATBLS_LoadTable@0x006122F0,
+  fn:DATATBLS_LoadAll@0x00619300)
 
 ### 5. Where the nine Phase-1 tables land
 
@@ -291,11 +293,12 @@ int EXCEL_AddCode(ExcelLink *l, u32 code) {
 
 - [I] The link object is 16 bytes: `+0 count`, `+4 capacity`, `+8 code array (8-byte {u32 code, s32 index})`,
   `+0xC name-tree root`. A link is used in one mode only (`EXCEL_AddCode` fatals if the tree root is set,
-  `EXCEL_AddName` if the code array is set).
+  `EXCEL_AddName` if the code array is set). (fn:EXCEL_AddCode@0x006BD230, fn:EXCEL_AddName@0x006BD500)
 - [I] Name nodes are 0x2C bytes: `char name[32]` (lowercased, truncated to 31), `+0x20 index`, `+0x24 left` (key <
   node), `+0x28 right`. `EXCEL_FindName` copies at most 0x20 bytes of the key, lowercases it with `STR_ToLowerN`
   (table at `0x006CEB98`: `A`–`Z` → `a`–`z`, everything else unchanged), and compares with plain byte `strcmp`.
 - [I] There is no hash. Codes are an ordered array, names are an unbalanced BST in insertion order.
+  (fn:EXCEL_FindCode@0x006BD130, fn:EXCEL_FindName@0x006BD3C0, fn:EXCEL_AddName@0x006BD500)
 
 ### 7. Treasure classes at load time
 
@@ -321,7 +324,7 @@ if (g_nTreasureClasses > 0xFFFE) fatal();
   Then `item1`, `item2`, … go to `TC_ParseItemCell` **until the first empty `itemN`** (later columns are not read);
   a cell whose `probN` < 1 is ignored.
 - [I] `TC_ParseItemCell` resolution order for one cell: strip `"`, split at the first `,` (the rest is `mul=`, `cu=`,
-  `cs=`, `cr=`, `cm=`, `ce=`, `cg=`, `ma=`, `mg=` modifiers). Then:
+  `cs=`, `cr=`, `cm=`, `ce=`, `cg=`, `ma=`, `mg=` modifiers). Then (fn:TC_ParseItemCell@0x00654440):
   1. if the name is ≤ 4 characters: `STR_ToItemCode` → `ITEMS_GetByCode`; on a hit, the entry is an item;
   2. else (or on a miss) `EXCEL_FindName(g_TCLink)`; a hit **≥ 1** makes it a TC reference (index 0, the empty TC, is
      treated as a miss);
@@ -332,7 +335,8 @@ if (g_nTreasureClasses > 0xFFFE) fatal();
 - [C] The resulting index space (0 empty, 1–160 auto, 161+ = TCEx row order, names case-insensitive) reproduces every
   non-blank `TreasureClass*` cell of `monstats.bin` (12 columns at `+0x86`…`+0x9C`, u16; 4362 cells, 0 mismatches;
   blank cells are 0). This is data-behaviour corroboration that `treasureclassex` is the only TC source. The 707-row
-  `TreasureClass.txt` would give a different numbering.
+  `TreasureClass.txt` would give a different numbering. (fn:TC_LoadTreasureClassEx@0x006547D0,
+  tbl:monstats.txt:TreasureClass1)
 
 ### 8. Answers to the archivist's Phase 1 questions
 
@@ -359,6 +363,7 @@ if (g_nTreasureClasses > 0xFFFE) fatal();
     and string-table keys.~~ Read in [data/0004](0004-cell-converters.md) (plan 0015 Phase 2): a per-type defaults
     pass (0, or −1 for lookups and calc fields), −1 for a key not found, patchstring → expansionstring → string with
     0 → 5382; `[C]` for each sub-rule a named cell of the `excel_bin.py survey` exercises, `[I]` for the rest (data/0004 lists which).
+    (fn:EXCEL_ParseTxt@0x006BD780, fn:EXCEL_MapColumns@0x006BCE20)
 
 ## Plan 0038 batch S1b (2026-10-16)
 
@@ -617,7 +622,7 @@ Type `0x1A` is a bit flag: `len` is the bit number, `offset` the flag field.
 ## Open questions
 
 - Behaviour under `-direct -txt` is read from code only. A wine run that edits one `.txt` cell and observes the effect
-  (and checks that `DATA\GLOBAL\EXCEL\*.bin` files are written) would take the `-txt` claims to `[C]`.
+  (and checks that `DATA\GLOBAL\EXCEL\*.bin` files are written) would confirm the `-txt` claims.
 - `EXCEL_ParseTxt` type codes are only partly read (section 1). Only relevant if the spec has to describe the
   `.txt` → `.bin` compiler; the archivist's cell diff covers the stock data.
 - ~~`TC_GetByIndex`'s group/level walk and `sub_0065A2C0`'s post-pass belong to plan 0004 (items/tc).~~ Stale: both are

@@ -3,7 +3,7 @@
 > **Subsystem:** data/excel (file layer under the excel loader)
 > **Question:** In which order does 1.14d open its MPQs, which archive wins when several hold the same file, when
 > does it read loose files from disk, and what does `data\local\use` select?
-> **Date:** 2026-10-11   **Plan:** 0002 (Phase 2)   **Status:** answered (`[I]`, runtime check open)
+> **Date:** 2026-10-11   **Plan:** 0002 (Phase 2)   **Status:** answered (inferred, runtime check open)
 
 ## Answer (summary)
 
@@ -19,11 +19,13 @@
 - [I] **Effective precedence for `data\global\…`:** `patch_d2` > `d2exp` > `d2kfixup` > `d2delta` > `d2data`
   (`d2speech`/`d2sfx`/`d2char`/`d2music`/`d2X*` sit in the same bands but hold no excel data). This is the
   `workspace/merged/` order (d2data → d2exp → patch_d2, later wins), so the merged tree matches the game.
+  (fn:MPQ_OpenCoreArchives@0x004FAB90, fn:STORM_LinkArchive@0x0041B6B0)
 - [I] **`d2kfixup.mpq` and `d2delta.mpq` are opened whenever present** (failure is tolerated; neither is required).
   At priority 1000 and opened after `d2data`, each overrides `d2data` but loses to `d2exp` and `patch_d2`. They don't
-  ship in our set, so they change nothing here.
+  ship in our set, so they change nothing here. (fn:MPQ_OpenCoreArchives@0x004FAB90)
 - [I] **`d2exp.mpq` is opened unconditionally** (if the file exists), also for a classic game, and its excel tables
-  outrank `d2data`'s. So classic and expansion games read the same excel data.
+  outrank `d2data`'s. So classic and expansion games read the same excel data. (fn:MPQ_OpenCoreArchives@0x004FAB90,
+  fn:STORM_LinkArchive@0x0041B6B0)
 - [I] **Loose files are read only under `-direct`.** `-direct` (`FILEIO`/`DIRECT`, `config+0x204`) sets Storm's
   direct-access flags (`0x00779058`) and the game's `g_bDirect` (`0x0074C82C`). With the flag set, every file open
   first tries the path on disk (relative path as given) and only then the archives, so **a loose file beats every
@@ -110,7 +112,7 @@ return 0;
   these call sites) and tries the name relative to the working directory, then next to `Game.exe`, then a third
   location (`0x00517128`, not followed).
 - [I] `STORM_OpenArchive` stores the priority at record `+0x118` and the flag bit 2 at `+0x114` (0 for every game
-  archive). `STORM_LinkArchive` then inserts:
+  archive). `STORM_LinkArchive` then inserts (fn:STORM_OpenArchive@0x0041BA60, fn:STORM_LinkArchive@0x0041B6B0):
   ```asm
   0x0041B946  mov eax,[g_StormArchiveList]          ; head (0x0070835C)
   0x0041B955  cmp [eax+0x118], ecx                  ; node.prio vs new.prio
@@ -138,10 +140,11 @@ for (a = g_StormArchiveList; ; a = a->next) {
 ```
 
 - [I] The disk test sits inside the loop, before the first archive's hash lookup, so with the flag it runs before
-  any archive is searched.
+  any archive is searched. (fn:STORM_FindFile@0x00417F10)
 - [I] `STORM_GetDirectFlags`: bit 0 if `g_StormDirectFlags & 1`, **or** if no archive is open and the flags are 0;
   bit 1 if `g_StormDirectFlags & 2`. The game writes `g_StormDirectFlags` only from `sub_00406870_InitFileIO`, with
   the `-direct` byte (0 or 1). So in a stock run (archives open, no `-direct`) the disk is never read.
+  (fn:STORM_GetDirectFlags@0x00418B50, fn:sub_00406870_InitFileIO@0x00406870)
 - [I] The game's whole-file loader `FILE_LoadWhole` (`0x00517079`, used by the excel loader and for `data\local\use`)
   goes `0x004068E0` → `STORM_OpenFile` with archive 0 (global search), so the rule above covers every excel table.
 
@@ -161,6 +164,7 @@ return g_lng;
   tag, `enUS` for entry 0). `0x005259C0` uses the code for the string-table and font paths and the charset.
 - [I] The 1.14d install's launcher scripts copy `Use_rus` (0x0B) over `data\local\Use` and pass `-direct`; in that
   launch path the loose byte is read and selects `RUS`. Without `-direct`, the byte comes from the MPQ copy.
+  (fn:LNG_GetLanguageIndex@0x00525150, fn:STORM_FindFile@0x00417F10)
 
 ## Plan 0038 batch S1b (2026-10-16)
 
@@ -227,7 +231,7 @@ log reads each kind with 0 mismatches on the merged tree (`workspace/merged/`, d
 ## Open questions
 
 - Runtime confirmation: a wine run with a loose `DATA\GLOBAL\EXCEL\<table>.bin` that differs from the MPQ copy,
-  launched with and without `-direct`, would take the loose-file rule to `[C]`. Same for a dummy `d2kfixup.mpq`
+  launched with and without `-direct`, would confirm the loose-file rule. Same for a dummy `d2kfixup.mpq`
   carrying one excel file.
 - Storm's lookup also matches a (locale, platform) pair with neutral fallback (`STORM_HashLookup`). Which locale the
   game sets is not followed; excel files are stored neutral in our archives, so it does not affect them.

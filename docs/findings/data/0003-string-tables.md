@@ -293,11 +293,11 @@ names. Static (objdump, Ghidra on the lane's copy).
   read here. (fn:sub_0048C060_ClientItemNameBuild@0x0048C060,
   fn:sub_0048BE80_ClientFormatArgs@0x0048BE80, fn:ITEMS_GetRareName1@0x00627FE0, fn:STRTABLE_GetByIndex@0x00524A30)
 - [C] **`RareFormat` in the shipped English table** is `%0 %1` (`string.tbl` entry 1718, read with
-  `tools/tbl.py index … spx 0x6B6`; [tbl.md](../../formats/tbl.md), data check).
+  `tools/tbl.py index … spx 0x6B6`; [tbl.md](../../formats/tbl.md), data check). (fmt:tbl#layout, 0x0048C89A–0x0048C8BC)
 - [I] **So an English rare name is `name1`, one space, `name2`**, and the order and separator come from the string
   table, not the code (another language's `RareFormat` can reorder them). This rests on `%n` naming the *n*-th argument,
   which the argument copy and the `MagicFormat` call (prefix, base, suffix for `%0 %1 %2`) support but the
-  substitution code does not yet show.
+  substitution code does not yet show. (0x0048C89A–0x0048C8BC, 0x0048BEB2–0x0048BED8, 0x0048CDCB–0x0048CDF7)
 - [I] The buffers are built with the wide-string helpers `sub_005267E0_WStrCpy`, `sub_00526700_WStrCat` and
   `sub_00526800_WStrLen` (0x005267E0, 0x00526700, 0x00526800). `name2`'s text is appended to its own empty buffer when
   `name1`'s record exists and copied otherwise, which gives the same text. The builder is fatal (error at line `0x822`)

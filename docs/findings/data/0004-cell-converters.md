@@ -2,7 +2,7 @@
 
 > **Subsystem:** data/excel
 > **Question:** What does the `.txt` compiler store for each kind of cell (including a blank cell and a column the `.txt` lacks), and are the record bytes no column fills padding or filled at run time?
-> **Date:** 2026-10-12   **Plan:** 0015 (Phase 2)   **Status:** answered (each converter sub-rule `[C]` where a named cell of the laid-out tables exercises it, else `[I]`; no-column fields `[I]`)
+> **Date:** 2026-10-12   **Plan:** 0015 (Phase 2)   **Status:** answered (each converter sub-rule confirmed where a named cell of the laid-out tables exercises it, else inferred; no-column fields inferred)
 
 Static reading only. This continues [data/0001](0001-excel-loader.md) §1 and §8, which named `EXCEL_ParseTxt` and
 `EXCEL_MapColumns` and left the defaults, the key not-found value and the string-key order open. The compiler runs
@@ -73,7 +73,8 @@ entry of a table's field descriptor (data/0001 §1).
     questions).
   - [I] `STRTABLE_GetByKey` also returns 0 for entry 0 of `string.tbl` (key `WarrivAct1IntroGossip1`), so that key
     would compile to 5382; no cell uses it. (fn:STRTABLE_GetByKey@0x00524D30)
-- [I] **Fields with no `.txt` column** (archivist backlog 2026-10-11), all seen 0 in every record:
+- [I] **Fields with no `.txt` column** (archivist backlog 2026-10-11), all seen 0 in every record
+  (fn:EXCEL_ParseTxt@0x006BD780, fn:GEMS_Load@0x00636B70, fn:MONEQUIP_Load@0x00659E60, fn:DRLG_LoadLevels@0x0061C540):
   - items `+0x0F0` is **`gemoffset`** (s32 descriptor entry, every cell `0`); `GEMS_Load` then overwrites it at run
     time: records 0 … nGems−1 get −1 and each gem's item gets its `gems` row (§3). `+0x114` is **`missile`** and
     `+0x122` **`subtype`** (u8 each), descriptor entries whose columns no shipped `.txt` has; `subtype` is read at
