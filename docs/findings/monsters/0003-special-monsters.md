@@ -941,6 +941,36 @@ S3B special handler_calls=1844 handler_on_live_minion=0 minion_lists=538 packet_
   list" is not settled for those readers by the writer alone. Static leftover (backlog, reverser): read the four sites.
   *Review note (S3b review, architect):* the sites were listed with objdump at the review (`call 0x5a0120`); the packet
   half stands as filed.
+  *Static leftover read (`lane/rbs3`, [I]):* the four other callers of 0x005A0120, with their enclosing functions
+  (`sweep_rbs3.py callers 0x005A0120`, the function by `re/symbols.csv` and `int3` padding):
+  - 0x005423F8 in `InactiveMonsterSave`: copies all nine bytes of the list into the record (`+0x32`–`+0x3A`,
+    0x00542401–0x0054243B) at save time, so any append made before the save is kept.
+  - 0x005428A9 in `InactiveMonstersRestore`: for each of the nine slots where the new unit's list differs from the
+    record's byte, it calls `ModAppendApply(record byte, mark 0)` (0x005428C5–0x005428D3). That writes the byte into the
+    first empty slot and calls its handler with flag 0 (0x005A4897–0x005A48B0), and no `MonMarkSpecial`, since the
+    second argument is 0 (0x005A4874).
+  - 0x00597C87 in `sub_00597C70` (one caller, 0x005983C5 in `sub_00598220`, itself called from 0x0053A585). When
+    monster data `+0x5C` bit 1 is set (`sub_00573540`, 0x00597C7B), it sends slots 0–2 only, with the name seed and
+    `MonTypeFlag(0x04)`, through `0x0053D880`. A mod in slot 3 or above is not sent on this path.
+  - 0x005A4A5F in `SuperUniqueSpawn`: the list of the unit `SpecialMonPlace` returned, then `ModCount` (0x005A4ACF) and
+    the record's mods and picked unique mods written from the end of the list (0x005A4AE3–0x005A4B5F). This is the
+    later append the remainder names.
+
+  So a later append is seen by the save (all nine bytes), the restore (re-applied with flag 0) and the packet builder
+  (the whole list). The three-slot packet sees it only in slots 0–2. (fn:sub_005421A0_InactiveMonsterSave@0x005421A0,
+  fn:sub_005424F0_InactiveMonstersRestore@0x005424F0, fn:sub_005A4850_ModAppendApply@0x005A4850,
+  fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, 0x00597C87)
+- *Tool addendum (`lane/rbs3`, S3b review tool follow-ups (a)–(c); no row depends on it):* `tools/sweep_s3b.py` changes
+  in three checks.
+  - `special` lists the five callers of 0x005A0120 with their enclosing functions (above).
+  - `pool` prints the review's second counterfactual for pool 23: `cf_levels_list_ok=0`. The walk over level 29's
+    `mon` list `[22, 39, 57, 172, 384]` gives base 170 and class 172 against the logged 384, on both barrel spawns.
+  - `stats` asserts that `sub_006538A0_MonLvlStats` never reads its out fields. EBX holds the out pointer from
+    0x0065392B. Over the 329 instructions of the body, 0 operands read `[ebx…]` other than the two stores, EBX has no
+    other writer, and none of the five `cmp`s names an out field. Ruling 1 rests on this.
+
+  Kept outputs: `sweep-s3b-{pool,special,stats}-rbs3-2026-10-17.txt`, all exit 0, with the hashes in
+  `sweep-rbs3-manifest.txt`. (fn:sub_006538A0_MonLvlStats@0x006538A0, fn:sub_005474C0_RegionActClass@0x005474C0)
 
 ## Plan 0039 batch P1c (2026-10-17)
 

@@ -512,6 +512,16 @@ def chk_pool(a):
             cfl = [c for c in T.slots(lid, 0x36) if struct.unpack_from("<h", T.ms[c], 0x02)[0]
                    == struct.unpack_from("<h", T.ms[cfb], 0x02)[0]]
             R.add("cf_no_pool_read_ok", int((cfl[0] if cfl else cfb) == cls))
+            # S3b review tool follow-up (a), the review's second counterfactual: the same walk over the level's whole
+            # mon list (Levels mon1..) instead of the region's pool; it must miss the logged class
+            mon = list(T.slots(lid, 0x36))
+            cfm = region_act_class(mon, act)
+            cfmb = struct.unpack_from("<h", T.ms[cfm], 0x02)[0]
+            cfml = [c for c in mon if struct.unpack_from("<h", T.ms[c], 0x02)[0] == cfmb]
+            cfmv = cfml[0] if cfml else cfm
+            R.add("cf_levels_list_ok", int(cfmv == cls))
+            R.note("%s line %d: counterfactual over level %d's mon list %s -> base %d, variant %d; logged %d" % (
+                os.path.basename(path), i, lid, mon, cfm, cfmv, cls))
             R.note("%s line %d: fn %d object %d, level %d, nPool %d %s -> RegionActClass %d -> variant %s; logged %d" % (
                 os.path.basename(path), i, fn, oid, lid, npool, ents[:npool], base, pred, cls))
     return R.done()
@@ -631,6 +641,17 @@ def chk_special(a):
     vas, calls, _ = S4.body(S4.asm(), 0x0053E2E0)
     R.add("packet_list_calls", sum(1 for _, t in calls if t == 0x005A0120))
     R.note("MonGetModList (0x005A0120) direct callers: %d sites" % len(direct_refs(0x005A0120)))
+    # S3b review tool follow-up (c): the callers with their enclosing functions (int3/ret heuristic, named from
+    # re/symbols.csv where a row exists)
+    names = {}
+    import csv
+    with open(os.path.join(os.path.dirname(HERE), "re", "symbols.csv"), newline="") as fh:
+        for row in csv.DictReader(fh):
+            names[int(row["address"], 16)] = row["name"]
+    for mn, site in direct_refs(0x005A0120):
+        e = enclosing(site, after_ret=False)
+        R.note("MonGetModList caller 0x%08X %s in 0x%08X %s" % (site, mn, e, names.get(e, "-")))
+    R.add("modlist_callers", len(direct_refs(0x005A0120)))
     live_total, hd_total, hd_on_minion, hd_on_reused = 0, 0, 0, 0
     for run, p, _ in monster_logs():
         if "special" not in run and "stats" not in run:
@@ -688,6 +709,28 @@ def chk_stats(a):
     pin(R, 0x0045C3E3, "test", r"esi,esi", "RNG_RangeB tests n")
     pin(R, 0x0045C3E5, "jg", r"0x45c3eb", "n > 0 (signed) -> the step")
     pin(R, 0x0045C3E7, "xor", r"eax,eax", "n <= 0 -> 0, no step")
+    # S3b review tool follow-up (b): ruling 1 rests on MonLvlStats (0x006538A0) never comparing its two out fields.
+    # EBX holds the out pointer from 0x0065392B; every EBX operand in the body must be a store into [ebx] or
+    # [ebx+0x4], EBX must have no other writer than that load and the epilogue pops, and no cmp may name it.
+    pin(R, 0x0065392B, "mov", r"ebx,DWORD PTR \[ebp\+0x1c\]", "MonLvlStats: EBX = out")
+    A = S4.asm()
+    vas, _, _ = S4.body(A, 0x006538A0)
+    reads, writers, cmps = [], [], []
+    for v in sorted(vas):
+        mn, ops = A.ins[v]
+        dst = ops.split(",")[0]
+        if "[ebx" in ops and not (mn == "mov" and dst.startswith("DWORD PTR [ebx") and "[ebx" not in ops.split(",", 1)[1]):
+            reads.append(v)
+        if re.match(r"ebx\b", dst) and mn not in ("push", "cmp", "test") and v != 0x0065392B and mn != "pop":
+            writers.append(v)
+        if mn == "cmp":
+            cmps.append("0x%08X %s" % (v, ops))
+    R.add("monlvl_body_instructions", len(vas))
+    R.add("monlvl_out_reads", len(reads))
+    R.add("monlvl_ebx_writers", len(writers))
+    R.note("MonLvlStats compares: %s" % cmps)
+    R.expect(not reads, "MonLvlStats reads its out fields at %s" % ["0x%08X" % v for v in reads])
+    R.expect(not writers, "EBX written in MonLvlStats at %s" % ["0x%08X" % v for v in writers])
     # where the reversed classes come from: pools and the DS1 presets lvlprest names
     T = monpool.Tables(EXCEL)
     revc = sorted({c for c, *_ in rev})
