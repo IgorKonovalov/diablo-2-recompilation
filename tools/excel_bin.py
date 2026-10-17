@@ -230,6 +230,18 @@ def d2atoi(cell):
     return -v if neg else v
 
 
+def atol(cell):
+    """C atol on a cell that starts with '-' or a digit: an optional '-', then the leading decimal digits."""
+    neg = cell.startswith("-")
+    digits = ""
+    for ch in cell[1:] if neg else cell:
+        if not ch.isdigit():
+            break
+        digits += ch
+    v = int(digits) if digits else 0
+    return -v if neg else v
+
+
 def _wrap(v, kind):
     bits = INT_SIZE[kind] * 8
     v &= (1 << bits) - 1
@@ -248,18 +260,22 @@ def normalize(cell, f, refs=None):
             v = f["conv"](cell, refs)
         elif cell == "":
             v = f.get("blank", 0)
-        elif f.get("names") and not cell.lstrip("-").isdigit():
-            # a name in a number column (runes T1Param: a skill name): the row index of that name in
-            # f["names"] ("table:column", case-insensitive); "t1:c|t2:c" tries each table in turn, the
-            # first holding the key wins (sets FParam: a skill or a state name); not found -> -1.
-            # Known limit (docs/tables/Sets.md, Bonus blocks): the order ignores the block's property; 44 names
-            # are both a skill and a state, none of them in a stock Sets cell. Kept until plan 0041 Phase 1 (e)
-            # reads the compiler's own rule.
-            v = -1
-            for spec in f["names"].split("|"):
-                v = refs.index(spec, nocase=True).get(cell.lower(), -1)
-                if v != -1:
-                    break
+        elif f.get("names"):
+            # a param cell compiled by the descriptor callback sub_006336A0_PropParamCell (type 0x19; Sets
+            # PParam/FParam, SetItems par/apar, Runes T1Param; stats/0001 Phase 0 surprise (e), items/0007
+            # section 9): a cell starting with '-' or a digit is atol; otherwise the first table of f["names"]
+            # ("t1:c|t2:c|...", case-insensitive, the compiler's skills -> montype -> states order) holding
+            # the name gives its row index, whatever the block's property; a name in none of them stores 0.
+            if cell[0] == "-" or cell[0].isdigit():
+                v = atol(cell)
+            else:
+                v = 0
+                for spec in f["names"].split("|"):
+                    v = refs.index(spec, nocase=True).get(cell.lower(), -1)
+                    if v != -1:
+                        break
+                else:
+                    v = 0
         else:
             v = d2atoi(cell)
         if kind == "bit":

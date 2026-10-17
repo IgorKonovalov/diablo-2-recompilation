@@ -3,7 +3,7 @@
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 120 (no `Expansion` marker)   **Record:** 280 B (`0x118`)
 > **sha256:** `.txt` `c743a6489456bd2c29143ae55312fda8fb6acb226d55a637c2c8f54a555afa78`, `.bin` `540ec2865297d57a4faa0793476858cb7226aa27a457b3ac2d9845151b9d95f7`
 > **Doc status:** layout complete (plan 0033 Phase 0); semantics from [hirelings/0001](../findings/hirelings/0001-hirelings.md)
-> (plan 0033 Phase 1); `Share`, the equipment columns and the combat-skill columns' meaning remain `[L]`
+> (plan 0033 Phase 1); `Share` and the equipment columns have no reader in 1.14d (plan 0039 P1c); the combat-skill columns' meaning remains `[L]`
 
 ## Purpose
 
@@ -77,13 +77,13 @@ non-negative product, which every stock row gives (every per-level column is ≥
 | `Str`, `Str/Lvl` | int 35..200; {10, 14, 15} | `+0x034`, `+0x038` s32 | strength `max(10, Str + Str/Lvl·d ÷8)`: the per-level column is in eighths `[C]` for `d ≥ 0` ([§ 6](../findings/hirelings/0001-hirelings.md#6-the-stats-per-level-merc_setlevel)) | — | [C] |
 | `Dex`, `Dex/Lvl` | int 40..173; {8, 10, 12, 16} | `+0x03C`, `+0x040` s32 | dexterity `max(10, Dex + Dex/Lvl·d ÷8)`, eighths `[C]` for `d ≥ 0` ([§ 6](../findings/hirelings/0001-hirelings.md#6-the-stats-per-level-merc_setlevel)) | — | [C] |
 | `AR`, `AR/Lvl` | int 10..1520; 10..45 | `+0x044`, `+0x048` s32 | attack rating `max(0, AR + AR/Lvl·d)` `[I]` (one code path, [§ 6](../findings/hirelings/0001-hirelings.md#6-the-stats-per-level-merc_setlevel)) | — | [C] |
-| `Share` | int 1..6, 10 blank | `+0x04C` s32 | copied, clamped at 0, into the hire entry by `HIRELING_RollEntry` `[I]` ([§ 4](../findings/hirelings/0001-hirelings.md#4-an-entry-type-level-price-and-the-displayed-stats)); what reads it there is `[L]` | — | [C] |
+| `Share` | int 1..6, 10 blank | `+0x04C` s32 | copied, clamped at 0, into the hire entry (`+0x28`) by `HIRELING_RollEntry` `[I]` ([§ 4](../findings/hirelings/0001-hirelings.md#4-an-entry-type-level-price-and-the-displayed-stats)); `[I]` none of the entry's four readers reads `+0x28`, so it has no effect in 1.14d ([hirelings/0001 § Plan 0039 batch P1c](../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17)) | — | [C] |
 | `Dmg-Min`, `Dmg-Max`, `Dmg/Lvl` | int 1..61; 3..65; {2, 4, 6, 8} | `+0x050`, `+0x054`, `+0x058` s32 | damage `max(0, Dmg-Min + Dmg/Lvl·d ÷8)` and `max(1, Dmg-Max + Dmg/Lvl·d ÷8)`, eighths `[C]` for `d ≥ 0` ([§ 6](../findings/hirelings/0001-hirelings.md#6-the-stats-per-level-merc_setlevel)) | — | [C] |
 | `Resist`, `Resist/Lvl` | int 0..148; 4..8 | `+0x05C`, `+0x060` s32 | one pair for all four resistances (fire, lightning, cold, poison): `max(0, Resist + Resist/Lvl·d ÷4)`, quarters `[I]` (one code path, [§ 6](../findings/hirelings/0001-hirelings.md#6-the-stats-per-level-merc_setlevel)) | — | [C] |
 | `DefaultChance` | int {10, 30, 50, 75}, one per kind | `+0x064` s32 | read by the combat skill choice `MERCAI_PickSkill` (named only, out of scope) `[I]` ([§ 10](../findings/hirelings/0001-hirelings.md#10-named-only)); its formula `[L]` | — | [C] |
-| `Head`, `Weapon` | int {0, 2} (both: 0 on the 24 Barbarian rows, 2 elsewhere) | `+0x068` `Head`, `+0x070` `Weapon` s32 | no reader found `[L]` (equipment-related by name) | — | [C] (the descriptor names the offsets, [hirelings/0001 § 1](../findings/hirelings/0001-hirelings.md#1-the-table-and-its-lookups)) |
-| `Torso` | int {0, 1, 2}: 1 on the Rogues, 2 on Acts II–III, 0 on Barbarians | `+0x06C` s32 | no reader found `[L]` | — | [C] |
-| `Shield` | int {0, 1}: 1 on the 36 Eastern Sorceror rows | `+0x074` s32 | no reader found `[L]` | — | [C] |
+| `Head`, `Weapon` | int {0, 2} (both: 0 on the 24 Barbarian rows, 2 elsewhere) | `+0x068` `Head`, `+0x070` `Weapon` s32 | `[I]` no reader in 1.14d ([hirelings/0001 § Plan 0039 batch P1c](../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17)); equipment-related by name `[L]` | — | [C] (the descriptor names the offsets, [hirelings/0001 § 1](../findings/hirelings/0001-hirelings.md#1-the-table-and-its-lookups)) |
+| `Torso` | int {0, 1, 2}: 1 on the Rogues, 2 on Acts II–III, 0 on Barbarians | `+0x06C` s32 | `[I]` no reader in 1.14d ([hirelings/0001 § Plan 0039 batch P1c](../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17)) | — | [C] |
+| `Shield` | int {0, 1}: 1 on the 36 Eastern Sorceror rows | `+0x074` s32 | `[I]` no reader in 1.14d ([hirelings/0001 § Plan 0039 batch P1c](../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17)) | — | [C] |
 | `Skill1` … `Skill3` | str: `Skill1` 6 distinct, `Skill2` 12, `Skill3` only `Ice Blast` (12 rows, 108 blank) | `+0x078 + 4(k−1)` s32 row index, blank −1 | the hireling's skills, added in slot order; the loop stops at the first `Skill_k` < 1 or ≥ the skill count; a skill is added only when its `reqlevel` ≤ the mercenary's level `[I]` ([§ 6](../findings/hirelings/0001-hirelings.md#6-the-stats-per-level-merc_setlevel)) | [Skills](Skills.md) `skill` | [C] |
 | `Skill4` … `Skill6` | always blank | `+0x084`, `+0x088`, `+0x08C` | as `Skill1..3`; blank ends the loop | — | [C] value −1; slots in the descriptor ([hirelings/0001 § 1](../findings/hirelings/0001-hirelings.md#1-the-table-and-its-lookups)) [C] |
 | `Chance1..6` | int 10..152; 10..1000; 240; slots 4–6 blank | `+0x090 + 4(k−1)` s32 | read by `MERCAI_PickSkill` (out of scope) `[I]` ([§ 10](../findings/hirelings/0001-hirelings.md#10-named-only)); its use `[L]` | — | [C] (6 × s32 in the descriptor) |
@@ -126,7 +126,7 @@ non-negative product, which every stock row gives (every per-level column is ≥
   `ExpForLevel(L)` (using the row of band L − 1) ≤ its experience `[C]` (two code paths and run:2026-10-12-mon-pool-p2:
   Id 4, `Exp/Lvl` 120, experience 500 000 gives 15, [§ 6](../findings/hirelings/0001-hirelings.md#6-the-stats-per-level-merc_setlevel), [§ 7](../findings/hirelings/0001-hirelings.md#7-the-mercenary-from-a-save)).
 - **`Head` against `Weapon`.** The two columns hold the same cells in every row; the loader's descriptor puts `Head`
-  at `+0x068` and `Weapon` at `+0x070` `[C]` ([hirelings/0001 § 1](../findings/hirelings/0001-hirelings.md#1-the-table-and-its-lookups)). No reader of the four equipment columns was found.
+  at `+0x068` and `Weapon` at `+0x070` `[C]` ([hirelings/0001 § 1](../findings/hirelings/0001-hirelings.md#1-the-table-and-its-lookups)). `[I]` None of the four equipment columns has a reader: the record array is read only by the loader, the free and the five getters, whose 19 callers never read `+0x068`…`+0x074` nor pass a record on ([hirelings/0001 § Plan 0039 batch P1c](../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17), data:g_pHirelingTxt@0x0096BDD0).
 - **Skill slots 4–6** are blank in every row, and slot 3 is used only by the Cold Eastern Sorcerors (`Ice Blast`).
   The descriptor declares six slots per array at the strides above `[C]`; their bytes are −1 (skill) and 0 `[C]`.
 - **`WType1`/`WType2` are not loaded.** All 280 bytes are accounted for by other fields and the descriptor names
@@ -163,7 +163,7 @@ survey `economy`), `[C]` as data.
 
 ## Open questions
 
-- `[L]` What `Share`, the equipment columns (`Head`, `Torso`, `Weapon`, `Shield`) do; no reader was found by
-  plan 0033 Phase 1.
+- ~~What `Share`, the equipment columns (`Head`, `Torso`, `Weapon`, `Shield`) do~~: no reader in 1.14d `[I]`
+  ([hirelings/0001 § Plan 0039 batch P1c](../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17)).
 - `[L]` How `MERCAI_PickSkill` uses `DefaultChance`, `Chance_k`, `ChancePerLvl_k` and `Mode_k` (combat AI, out of
   scope under ADR-0002; [hirelings/0001 § 10](../findings/hirelings/0001-hirelings.md#10-named-only)).

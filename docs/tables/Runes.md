@@ -59,14 +59,14 @@ Observed values are from the `.txt` cells.
 | `T1Max1` … `T1Max7` | int −100..775 | `+0x0BC` + 16·(k−1) s32 | the line's maximum (as `T1Min`) `[C]` ([items/0007 § 5](../findings/items/0007-sockets-runewords.md#5-the-runeword-runeword_applyparent-child-0-0x006600a0)) | — | [C] |
 | `eol` | int {0} | — (not compiled) | end-of-line marker | — | [C] |
 
-The `T1Param` rule is the one `tools/excel_bin.py` applies with the field option `names="skills:skill"`: a cell that is
-not a number is stored as the row index of that skill name, matched case-insensitively (`enchant` → 52,
+The `T1Param` rule is the one `tools/excel_bin.py` applies with the field option `names=PROP_PARAM`: a cell that is
+not a number is stored as the row index of that name (on stock data always a skill), matched case-insensitively (`enchant` → 52,
 `fanaticism` → 122, `Delerium Change` → 350); all 109 such cells match. The SetItems `par` cells that hold a skill name
 follow the same rule, through the same option ([SetItems](SetItems.md)). `[I]` The game's converter is the descriptor
 callback `sub_006336A0_PropParamCell` (type `0x19`): a cell starting with `-` or a digit is `atol`; otherwise the name
 is looked up, first match wins, in `skills`, then `montype`, then `states` (each lower-cased, `EXCEL_FindName`); an
-empty cell or a name in none of them stores 0. On stock data every named cell is a skill, so the tool's
-`skills:skill` rule gives the same bytes. ([items/0007 § 9](../findings/items/0007-sockets-runewords.md#9-table-fields-the-socket-path-does-not-use-backlog-2026-10-15-static), fn:sub_006336A0_PropParamCell@0x006336A0,
+empty cell or a name in none of them stores 0. The tool follows that order (`PROP_PARAM` =
+`skills:skill|montype:type|states:state`, 0 for an unmatched name, [Sets § Bonus blocks](Sets.md#bonus-blocks-plan-0041-phase-0)). ([items/0007 § 9](../findings/items/0007-sockets-runewords.md#9-table-fields-the-socket-path-does-not-use-backlog-2026-10-15-static), fn:sub_006336A0_PropParamCell@0x006336A0,
 fn:EXCEL_FindName@0x006BD3C0)
 
 ## Survey of the stock rows

@@ -238,28 +238,34 @@ code (`[I]`); plan 0021 Phase 2 reproduced the picks, which the two `[C]` bullet
 The affix price columns, and the price columns of the other quality tables, which have no field. Offsets are
 [§ Record layout](#record-layout) (`[C]`, `excel_bin.py diff`); the counts come from
 `python3 -I tools/economy_survey.py affixes workspace/merged/data/global/excel` (gate survey `economy`), `[C]` as
-data. The price function is named only ([items/0009 § 9](../findings/items/0009-vendors.md#9-named-only-prices-and-repair));
-`[I]` no affix pick reads these columns (§ Code semantics), so every meaning below is `[L]`, for plan 0043 Phase 1.
+data. `[I]` No affix pick reads these columns (§ Code semantics); the price function does (plan 0043 Phase 1,
+[items/0011 § 3](../findings/items/0011-economy.md#3-the-value-terms) steps 3–4): for an identified item, the automagic affix (any quality) and, for a magic item, prefix 0 and
+suffix 0, for a rare or crafted item prefixes 0–2 and suffixes 0–2, each add `X·multiply/1024 + add` to the buy, sell
+and repair values (`X` the running value; `(X/1024)·multiply + add` when the buy value is above `0xFFFF` and
+`multiply` ≠ 0). **`divide` is never read**: the divisor is the constant 1024 (no image-wide reader scan was made).
+(fn:ITEMS_TradePriceCore@0x0062EFB0 0x0062F1AB–0x0062F213, tbl:MagicPrefix.txt:multiply)
 
 | Column | Field | MagicPrefix | MagicSuffix | AutoMagic | Meaning |
 |---|---|---|---|---|---|
-| `divide` | `+0x084` u32 | 0 in every row (3 blank) | 0 in every row | 0 in every row | price divisor `[L]` |
-| `multiply` | `+0x088` u32 | 1280 on 21 rows, 0 elsewhere | 0 in every row | 0 in every row | price multiplier `[L]` |
-| `add` | `+0x08C` u32 | 500..32 000 on the same 21 rows | 0 in every row | 0 in every row | price addend `[L]` |
+| `divide` | `+0x084` u32 | 0 in every row (3 blank) | 0 in every row | 0 in every row | `[I]` not read by the price path |
+| `multiply` | `+0x088` u32 | 1280 on 21 rows, 0 elsewhere | 0 in every row | 0 in every row | `[I]` `X·multiply/1024` |
+| `add` | `+0x08C` u32 | 500..32 000 on the same 21 rows | 0 in every row | 0 in every row | `[I]` added once per affix |
 
 - `[C]` **The 21 priced prefixes are exactly the all-resistance rows** (`mod1code` `res-all`, records 316..336):
   *Shimmering* ×10, *Rainbow* ×3, *Scintillating* ×4, *Prismatic* ×2, *Chromatic* ×2, all with `multiply` 1280; `add`
   rises with the tier (e.g. record 323 *Rainbow* `level` 18 add 2 000, 326 *Chromatic* `level` 50 add 16 000, 331
   *Chromatic* `level` 55 add 32 000). No other affix of any of the three tables carries a price column.
-- `[C]` **`divide` is 0 wherever `multiply` is set.** If the code divides by `divide`, it must guard 0; a reading
-  that skips the affix terms when `divide` = 0 would price no affix at all. Which holds is Phase 1 `[L]`.
+- `[C]` **`divide` is 0 wherever `multiply` is set.** `[I]` It needs no guard: the price path never reads it, the
+  divisor is 1024 ([items/0011 § 3](../findings/items/0011-economy.md#3-the-value-terms)).
 - `[C]` **No field: QualityItems `multiply`/`add`** ([QualityItems](QualityItems.md); probe finds no offset): 2..5
   and 100..350 on all 8 rows: the four one-modifier rows 2 / 100 (to hit, durability), 3 / 250 (damage) and 2 / 200
   (armor class); the four two-modifier rows (`mod2code` set) 5 / 350 each. **No field: RarePrefix and
   RareSuffix `add`/`multiply`/`divide`** ([RarePrefix](RarePrefix.md)): 0 on every prefix and set on 10 suffixes, the
   belt words (`clasp`, `buckle`, `harness`, `lock`, `fringe`, `winding`, `chain`, `strap`, `lash`, `cord`). The game
-  loads only the `.bin` ([data/0001](../findings/data/0001-excel-loader.md#answer-summary)), so none of these cells can reach a price;
-  a superior or rare term, if any, comes from code or another column `[L]`.
+  loads only the `.bin` ([data/0001](../findings/data/0001-excel-loader.md#answer-summary)), so none of these cells can reach a price.
+  `[I]` The quality enters the price only through code: low quality halves, superior and tempered get the
+  ItemStatCost stat terms, magic, rare and crafted their affixes' terms; QualityItems and the rare names carry no
+  price field and none is read ([items/0011 § 3](../findings/items/0011-economy.md#3-the-value-terms) step 4, jump table 0x0062FD9C).
 
 ## Open questions
 

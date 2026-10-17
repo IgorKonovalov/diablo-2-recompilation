@@ -1,0 +1,57 @@
+{
+  "game": "expansion",
+  "class": "Sorceress",
+  "seed": 440440005,
+  "name": "MpNovaWeak",
+  "progression": 15,
+  "difficulty": [
+    128,
+    128,
+    128
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "stats": {
+    "strength": 10,
+    "energy": 35,
+    "dexterity": 25,
+    "vitality": 10,
+    "hitpoints": 60,
+    "maxhp": 60,
+    "mana": 60,
+    "maxmana": 60,
+    "stamina": 74,
+    "maxstamina": 74,
+    "level": 9,
+    "experience": 44396
+  },
+  "skills": {
+    "Fire Bolt": 5,
+    "Charged Bolt": 1,
+    "Frozen Armor": 1,
+    "Telekinesis": 1,
+    "Static Field": 1
+  },
+  "mouse": {
+    "left": "Attack",
+    "right": "Fire Bolt"
+  },
+  "keep_items": [
+    "tsc",
+    "isc"
+  ],
+  "items": [
+    {
+      "code": "tbk",
+      "tome": 0,
+      "quantity": 20,
+      "store": "inventory",
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "quests": "all"
+}

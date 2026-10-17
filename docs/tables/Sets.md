@@ -92,17 +92,20 @@ code stores −1; a code is the [Properties](Properties.md) row index, matched c
   Ball` → 47, `PParam3b` `Fire Wall` → 51, `PParam4b` `Meteor` → 56, `FParam7` `Fire Mastery` → 61) store the
   [Skills](Skills.md) row, and the six `state` blocks (`FParam5` of Immortal King, Griswold's Legacy and Trang-Oul's
   Avatar, `FParam6` of Tal Rasha's Wrappings and M'avina's Battle Hymn, `FParam7` of Aldur's Watchtower) store the
-  [States](States.md) row: 175 `fullsetgeneric`, 176 `monsterset` (Trang-Oul's). `excel_bin.py` resolves such a cell in
-  Skills, then in States (field option `names="skills:skill|states:state"`). None of the ten names stored here is
-  both a skill and a state, so the data does not show how the compiler picks the table. The two name spaces do
-  overlap elsewhere: 44 names are both a Skills `skill` and a States `state`, case-insensitively (`might`,
-  `fanaticism`, `thorns`, `fade`…), so a `state` block naming one of them would decode as the skill row under
-  this tool order. (`sets_params_named` = 10, tbl:Sets.txt:FParam5)
-- **Known limit of `excel_bin.py`** (not a claim about the game): the skills-then-states order is a tool
-  convention that is right for stock data only. The tool does not look at the block's property, so on edited data
-  a `state` block naming one of the 44 shared names would be compared against the Skills row, and an `oskill` block
-  naming a name that is only a state against the States row. The tool keeps the order until plan 0041 Phase 1
-  item (e) reads how the compiler resolves a param name; it then follows that rule rather than a guessed one.
+  [States](States.md) row: 175 `fullsetgeneric`, 176 `monsterset` (Trang-Oul's). (`sets_params_named` = 10,
+  tbl:Sets.txt:FParam5)
+- `[I]` **The compiler resolves a param name by a fixed table order, not by the block's property.** All 16 param
+  fields are compiled by the descriptor callback `sub_006336A0_PropParamCell` (type `0x19`): a cell starting with `-`
+  or a digit is `atol`; otherwise the first `EXCEL_FindName` hit, case-insensitive, in `skills`, then `montype`, then
+  `states` is stored; a blank cell or a name in none of them stores 0. The callback never reads the block's code, so
+  a name that is both a Skills `skill` and a States `state` (44 such names, case-insensitively: `might`,
+  `fanaticism`, `thorns`, `fade`…) stores the **skill** row in a `state` block too. The ten stock cells agree with
+  it: the four `oskill` names are skills, the two `state` names are neither a skill nor a montype. The same callback
+  compiles SetItems `par`/`apar` and [Runes](Runes.md) `T1Param`. `excel_bin.py` applies this rule to all three
+  tables (field option `names=PROP_PARAM` = `skills:skill|montype:type|states:state`, 0 for an unmatched name); the
+  stock bytes are the same as under the earlier skills-then-states order (`excel_layout` survey unchanged).
+  ([stats/0001 § Phase 0 surprises (e)](../findings/stats/0001-aggregate.md#phase-0-surprises),
+  fn:sub_006336A0_PropParamCell@0x006336A0, fn:EXCEL_FindName@0x006BD3C0)
 - `[C]` No block has a param, min or max without its code. Within each run (the `a` blocks, the `b` blocks, the full
   blocks) no used block follows a blank one (`sets_block_gaps` = 0).
 - `[C]` No set has a partial block `k` (`PCode<k>a/b`) above its member count (`sets_partial_beyond_members` = 0);

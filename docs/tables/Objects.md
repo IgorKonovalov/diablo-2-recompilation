@@ -83,10 +83,10 @@ counts from `python3 -I tools/obj_survey.py objects workspace/merged/data/global
 | `description - not loaded` | str ≤ 60 chars | — | comment | — | [C] |
 | `Id` | int 0..572, 408/409 twice | — | see *Row identity* | — | [C] |
 | `Token` | str 2 chars (one row `NU0`) | `+0x0C0` `char[3]` | graphics token (the `objects/<token>/` art folder); `[C]` stored cut to 2 characters + NUL (`NU0` → `NU`) | — | [C] |
-| `SpawnMax` | int {0: 350, 1: 196, 2: 27} | `+0x0C3` u8 | how many of this class a populate pass may add per room (name) | — | [C] |
-| `TrapProb` | int {0: 413, 15: 159, 20: 1} | `+0x0CC` u32 | chance (%) that the object is created trapped | — | [C] |
+| `SpawnMax` | int {0: 350, 1: 196, 2: 27} | `+0x0C3` u8 | `[L]` how many of this class a populate pass may add per room (name); `[I]` no reader in the image (§ Code semantics) | — | [C] |
+| `TrapProb` | int {0: 413, 15: 159, 20: 1} | `+0x0CC` u32 | `[L]` chance (%) that the object is created trapped (name); `[I]` not read by any record fetcher, the trap chance comes from `MonLvl1` (§ Code semantics) | — | [C] |
 | `SubClass` | int, bits 0..7 | `+0x167` u8 | class flags, by bit: 0 (`0x01`) shrines, 92 rows; 1 (`0x02`) `Obelisk`, 2; 2 (`0x04`) `Portal` (ids 59, 60); 3 (`0x08`) chests, caskets, urns and other containers, 132; 4 (`0x10`) `portal` (298, 342); 5 (`0x20`) `Well`, 5; 6 (`0x40`) `Waypoint`, 16; 7 (`0x80`) beds and traps, 9. `[I]` bit 2 selects the collision mask `0x8000` (fn:UNIT_GetCollMask@0x006209D0, [drlg/0005 § 5](../findings/drlg/0005-collision.md#5-unit-marks)); `[I]` bit 6 marks the waypoint for the DRLG map scan and the waypoint lookup (fn:DRLG_PresetMapScan@0x00667970, fn:sub_0066B2B0_LevelPointFind@0x0066B2B0, [drlg/preset](../specs/drlg/preset.md)) | — | [C] |
-| `Act` | int 0..16, bit set (1: 125, 16: 163, 4: 73, 2: 68, 15: 57, 8: 56) | `+0x170` u8 | acts the object may appear in, one bit per act (1 = Act I … 16 = Act V) | — | [C] |
+| `Act` | int 0..16, bit set (1: 125, 16: 163, 4: 73, 2: 68, 15: 57, 8: 56) | `+0x170` u8 | `[L]` acts the object may appear in, one bit per act (1 = Act I … 16 = Act V) (name); `[I]` no reader in the image (§ Code semantics) | — | [C] |
 | `Beta` | int {0: 340, 1: 233} | `+0x1B0` u8 | — | — | [C] |
 
 ### Size, footprint and collision
@@ -219,8 +219,9 @@ Column readers (objects/0001 §§ 3–9 and § 12; a `C` tag is run:2026-10-15-o
 | `Mode1` | `OBJOP_Chest` | non-zero: the opened chest goes to mode 1 and queues an event; else mode 2 | C |
 | `Parm0` | `InitFn` 1 (shrines) | 1 → health class, 2 → mana class, other → class 1 with chance 1/10, else class 4 | C |
 | `Parm1` | `OBJ_ShrineClassSubst` (forced shrine) | the class a forced non-health shrine becomes (1..572, else 84) | I (not reached) |
+| `Parm0`, `Parm1`, `Parm3` | `OperateFn` 22 (wells, `0x005858A0`) | with charges left, a use adds `Parm1 · max >> 8` (`Parm1` in 1/256 of the maximum) to life when `Parm3` bit 1 is set, to mana when bit 0 is, and to stamina, each capped, and frees the `poison` and `freeze` lists; a use that changed something costs a charge and re-arms at `frame + 1 + Parm0`. `[C]` (data) all 14 `OperateFn` 22 rows have `Parm0` 750, `Parm1` 128 (half), `Parm3` 3 (life and mana) ([stats/0002 § 5](../findings/stats/0002-states.md#5-shrines-and-wells), tbl:Objects.txt:Parm0) | I |
 | `SubClass` | forced-slot rule | read at the **group index** (a game bug the spec keeps, architect ruling (2)); bit 6 also marks the waypoint for the DRLG scan | I |
-| `SpawnMax`, `TrapProb`, `Act` | none found | not read by any function of objects/0001; the trap chance is `(MonLvl1/8 + 5)` %, not `TrapProb` | I |
+| `SpawnMax`, `TrapProb`, `Act` | none found | `SpawnMax` (`+0xC3`) and `Act` (`+0x170`) have no reader in the image (operand scan: no instruction addresses `+0xC3`, no byte read at `+0x170` but a stack array); `TrapProb` (`+0xCC`) none among the 89 functions that fetch an Objects record, [objects/0001 § Plan 0039 batch P1b](../findings/objects/0001-object-population.md#plan-0039-batch-p1b-2026-10-17); the trap chance is `(MonLvl1/8 + 5)` %, not `TrapProb` | I |
 
 (fn:sub_00552610_RoomObjectsPopulate@0x00552610, fn:OBJPOP_Barrels@0x00551850, fn:OBJPOP_Crates@0x00551C00,
 fn:OBJ_PlaceByOrientation@0x00550A30, fn:OBJINIT_Chest@0x0054FCB0, fn:OBJINIT_TrapByte@0x0054FBB0,
@@ -279,14 +280,14 @@ entry is `[C]`, § Code semantics). The class is the record index ([§ Row ident
 
 | Class (record index) | `Name` / description | `SubClass` | `InitFn` → handler | `OperateFn` → handler | `PopulateFn` | `Parm0` |
 |---|---|---|---|---|---|---|
-| 59 | `Portal` / Town portal | `0x04` (bit 2) | 11 → `0x00550140` | 15 → `0x00584870` | 0 | 0 |
-| 60 | `Portal` / Permanent town portal | `0x04` | 12 → `OBJINIT_Portal` `0x0054FE70` | 15 → `0x00584870` | 0 | 0 |
-| 298 | `portal` / arcane sanctuary portal | `0x10` (bit 4) | 29 → `0x0059BA40` | 34 → `0x005846B0` | 3 | 0 |
+| 59 | `Portal` / Town portal | `0x04` (bit 2) | 11 → `OBJINIT_TownPortal` `0x00550140` | 15 → `OBJOP_Portal` `0x00584870` | 0 | 0 |
+| 60 | `Portal` / Permanent town portal | `0x04` | 12 → `OBJINIT_Portal` `0x0054FE70` | 15 → `OBJOP_Portal` `0x00584870` | 0 | 0 |
+| 298 | `portal` / arcane sanctuary portal | `0x10` (bit 4) | 29 → `0x0059BA40` | 34 → `OBJOP_ArcanePortal` `0x005846B0` | 3 | 0 |
 | 342 | `portal` / hellgate | `0x10` | 44 → `0x005BCBF0` | 46 → `sub_00584750_DurancePortalOperate` | 0 | 18 |
-| 410 | `Siege Control` | `0x08` | 0 | 46 → `0x00584750` | 0 | 18 |
-| 100 | `Duriel's Lair` / Portal to Duriel's Lair | 0 | 0 | 43 → `0x00584D00` | 0 | 0 |
-| 377 | `Guild Portal` | 0 | 0 | 43 → `0x00584D00` | 0 | 0 |
-| 119, 145, 156, 157, 237, 238, 288, 323, 324, 398, 402, 429, 494, 496, 511, 539 | `Waypoint` (16 rows) | `0x40` (bit 6) | 17 → `0x00547210` | 23 → `sub_00584E30_WaypointOperate` | 0, 2 or 3 | 0 |
+| 410 | `Siege Control` | `0x08` | 0 | 46 → `sub_00584750_DurancePortalOperate` | 0 | 18 |
+| 100 | `Duriel's Lair` / Portal to Duriel's Lair | 0 | 0 | 43 → `OBJOP_LevelPortal` `0x00584D00` | 0 | 0 |
+| 377 | `Guild Portal` | 0 | 0 | 43 → `OBJOP_LevelPortal` `0x00584D00` | 0 | 0 |
+| 119, 145, 156, 157, 237, 238, 288, 323, 324, 398, 402, 429, 494, 496, 511, 539 | `Waypoint` (16 rows) | `0x40` (bit 6) | 17 → `OBJINIT_Waypoint` `0x00547210` | 23 → `sub_00584E30_WaypointOperate` | 0, 2 or 3 | 0 |
 
 - `[C]` **Waypoints by data.** The 16 rows with `SubClass` bit 6 are exactly the 16 rows with `OperateFn` 23, all with
   `InitFn` 17, `OperateRange` 2, `Restore` 1, `OpenWarp` 0, `ClientFn` 0 (`obj_subclass_bit6=16 obj_op_waypoint=16
@@ -298,13 +299,25 @@ entry is `[C]`, § Code semantics). The class is the record index ([§ Row ident
   through it, 23 times (objects/0001 § 13). `[I]` It marks the level's waypoint and sends the record; travel is
   `sub_00584F60_WaypointTravel`, reached from it ([save/0002 § 4](../findings/save/0002-quest-words.md)).
   (fn:sub_00584E30_WaypointOperate@0x00584E30, fn:sub_00584F60_WaypointTravel@0x00584F60)
+- `[I]` **Five waypoint rows draw at each mode change.** 429, 494, 496, 511 and 539 have `Sync` 0 (`[C]` data; the
+  other eleven have `Sync` 1), so each of their mode changes draws their own unit seed,
+  `RangeB(object seed, FrameDelta[mode] >> 3)` (`FrameDelta` 200 for mode 1, 100 for mode 2); `OBJINIT_Waypoint`
+  (`InitFn` 17) puts a town's waypoint straight into mode 2. ([quests/0002 § 2](../findings/quests/0002-travel.md#2-waypoint-activation), fn:UNIT_AnimInit@0x00624390,
+  fn:OBJINIT_Waypoint@0x00547210, tbl:Objects.txt:Sync)
 - `[I]` **Bit 6** marks the waypoint for the DRLG map scan (`DRLG_PresetMapScan`, room flag `0x30000`) and the
   waypoint lookup `LevelWaypointRoom` (first type-2 preset object with the bit) (drlg/0007 § 1, drlg/0005 § 9).
   (fn:DRLG_PresetMapScan@0x00667970, fn:sub_0066AD80_LevelWaypointRoom@0x0066AD80)
 - `[C]` **Town portals by data.** Bit 2 is on 59 and 60 only; they share `OperateFn` 15 and differ in `InitFn`
   (11 vs 12) and `Restore` (0 vs 1). `[I]` Class 60 is the portal `PortalObjectCreate` makes for the cow level
-  (items/0008 § 5.1) and its `InitFn` 12 (`OBJINIT_Portal`) marks it at once (drlg/0005, objects/0001); which class
-  a Town Portal scroll or book makes, and what bit 2's collision mask `0x8000` does to the pair, is Phase 1.
+  (items/0008 § 5.1) and its `InitFn` 12 (`OBJINIT_Portal`) marks it at once (drlg/0005, objects/0001); it sets the
+  destination from the level it stands on (1 ↔ 39, 4 ↔ 38, 46 ↔ 74, 109 ↔ 121, 111 ↔ 125, 112 ↔ 126, 117 ↔ 127, the
+  true tomb ↔ 73). `[I]` A Town Portal scroll or book (`pSpell` 2, `ITEMUSE_TownPortal`) makes a class-59 pair: the
+  field end at the player, the town end at the town's point type 11; `OBJINIT_TownPortal` (`InitFn` 11) sets the
+  destination to the act's town. `OBJOP_Portal` (`OperateFn` 15) moves the user to the partner; someone else's
+  class-59 portal is refused when the destination's `QuestFlag`/`QuestFlagEx` word lacks bit 0
+  ([Levels § Travel](Levels.md#travel-plan-0042-phase-0)). ([quests/0002 § 6](../findings/quests/0002-travel.md#6-town-portals), fn:ITEMUSE_TownPortal@0x005BE290,
+  fn:OBJINIT_TownPortal@0x00550140, fn:OBJOP_Portal@0x00584870) `[L]` What bit 2's collision mask `0x8000` does to
+  the pair is not read.
   (fn:sub_0056D130_PortalObjectCreate@0x0056D130, fn:OBJINIT_Portal@0x0054FE70, fn:UNIT_GetCollMask@0x006209D0)
 - `[C]` **Bit 4 by data** is on 298 (Arcane Sanctuary portal) and 342 (hellgate). `[I]` `OperateFn` 46 is
   `sub_00584750_DurancePortalOperate` (needs word 22 bit 13 or bit 0, then the Act IV travel, save/0002 § 2).
@@ -313,10 +326,16 @@ entry is `[C]`, § Code semantics). The class is the record index ([§ Row ident
   `sub_0061A1B0_RoomGetLevelId`), tests word 22 bits 13 and 0, and calls `sub_00546AC0_DuranceActTravel` with that
   level, which does the Act IV travel only on level 102 (`cmp …, 0x66`) and otherwise calls `0x005BCFD0` (not read);
   marking waypoint 103 and the move to level 103 are also gated on 102 (static read at the Phase 0 review, objdump;
-  plan 0042 log). `[L]` What `0x005BCFD0` does for 410 `Siege Control`, and whether 410 is placed anywhere, is Phase 1.
+  plan 0042 log). `[I]` On any level but 102, `0x005BCFD0` opens the Mephisto portal and bridge objects and moves no
+  one, so 410 `Siege Control` would move no player; and no DS1 id, `objgroup` cell or creation call names 410, so it
+  is never placed ([quests/0002 § Answer](../findings/quests/0002-travel.md#answer-summary), quests/0001 § 10).
   (fn:sub_00584750_DurancePortalOperate@0x00584750, fn:sub_00546AC0_DuranceActTravel@0x00546AC0)
-- `[L]` `OperateFn` 43 (`0x00584D00`) is shared by 100 (Portal to Duriel's Lair) and 377 (Guild Portal); `OpenWarp` 1
-  is on four rows that are not portals (74 trap door, 194/195 stairs, 386 `Dummy`). Neither is named; listed for Phase 1.
+- `[I]` `OperateFn` 43 is `OBJOP_LevelPortal`, shared by 100 (Portal to Duriel's Lair) and 377 (Guild Portal): class
+  100 → level 73, class 377 → the level in its object byte, point type 0, no quest test. `OperateFn` 34 is
+  `OBJOP_ArcanePortal`: from 74 to 54 at type 0, from 54 to 74 at type 11, then Act II quest code. Both set mode 1
+  and queue event 1 when the object is in mode 0. ([quests/0002 § 6](../findings/quests/0002-travel.md#6-town-portals), fn:OBJOP_LevelPortal@0x00584D00,
+  fn:OBJOP_ArcanePortal@0x005846B0)
+- `[L]` `OpenWarp` 1 is on four rows that are not portals (74 trap door, 194/195 stairs, 386 `Dummy`); not named.
 
 ## Interpretation notes
 
@@ -342,5 +361,6 @@ entry is `[C]`, § Code semantics). The class is the record index ([§ Row ident
 - ~~The handler tables behind `InitFn`, `PopulateFn`, `OperateFn`~~ answered by objects/0001 (§ Code semantics).
   `[L]` `ClientFn`'s table is not read.
 - ~~What the populate pass and the creation handlers read of `Xspace`/`Yspace`, `Lockable`, `PreOperate`, `Parm0`/`Parm1`~~
-  answered (§ Code semantics). `[L]` `SpawnMax`, `TrapProb` and `Act` have no reader in objects/0001; whether any code
-  reads them (and `Parm2..7` outside the shrine and chest handlers) is open.
+  answered (§ Code semantics). `SpawnMax` and `Act` have no reader in the image and `TrapProb` none among the record
+  fetchers ([objects/0001 § Plan 0039 batch P1b](../findings/objects/0001-object-population.md#plan-0039-batch-p1b-2026-10-17), `[I]`). `[L]` Whether code reads `TrapProb` through a record pointer kept in an object's
+  data, and `Parm2..7` outside the shrine, chest and well handlers, is open.
