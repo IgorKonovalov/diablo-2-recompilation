@@ -190,8 +190,10 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00534C70,func,sub_00534C70_StartItemCreate,,C,player/creation,docs/findings/player/0001-creation.md
 0x00534D60,func,sub_00534D60_StartItemSlot,,C,player/creation,docs/findings/player/0001-creation.md
 0x00534F10,func,PLAYER_GiveStartItems,,C,player/creation,docs/findings/player/0001-creation.md
+0x00535510,func,sub_00535510_PlayerDropGold,,I,items/economy,docs/findings/items/0011-economy.md
 0x00535780,func,sub_00535780_SetPlayersOverride,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00535790,func,sub_00535790_PlayerCount,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x005357D0,func,PLAYER_DeathGoldLoss,,I,items/economy,docs/findings/items/0011-economy.md
 0x005359F0,func,PLAYER_DeathExpLoss,,I,player/creation,docs/findings/player/0001-creation.md
 0x00535AB0,func,sub_00535AB0_PlayerDeathExpLossGate,,I,player/creation,docs/findings/player/0001-creation.md
 0x00535BC0,func,sub_00535BC0_UnitGetWeapon,,I,combat/formulas,docs/findings/combat/0001-formulas.md
@@ -236,12 +238,14 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0053D670,func,sub_0053D670_SendQuestRecord,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x0053E2E0,func,sub_0053E2E0_MonUnitPacketBuild,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x0053FE70,func,sub_0053FE70_GameIsTemplate,,I,player/creation,docs/findings/player/0001-creation.md
+0x0053FF00,func,sub_0053FF00_UnitAddGoldStat,,I,items/economy,docs/findings/items/0011-economy.md
 0x00540290,func,sub_00540290_PartyFind,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005404F0,func,sub_005404F0_PartyCountAliveCb,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00540510,func,sub_00540510_PartyForEach,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005405A0,func,sub_005405A0_PartyForEachInLevel,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00540710,func,sub_00540710_PartyIdOfUnit,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005408E0,func,sub_005408E0_PartyCountInLevel,,C,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00540900,func,sub_00540900_PartyGoldShare,,I,items/economy,docs/findings/items/0011-economy.md
 0x00541160,func,sub_00541160_ObjEventsRun,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005414D0,func,sub_005414D0_GameRunUnitEvents,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005417D0,func,sub_005417D0_UnitQueueEvent,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
@@ -375,6 +379,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005557D0,func,sub_005557D0_PresetUnitDispatch,,C,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x00555910,func,sub_00555910_PresetUnitSpawn,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005559A0,func,sub_005559A0_RoomPresetUnits,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
+0x00555C90,func,ITEMTYPES_GetRecord,,I,items/economy,docs/findings/items/0011-economy.md
 0x00555D20,func,sub_00555D20_ItemQuestHook,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00556360,func,sub_00556360_ItemRollDefense,,I,items/properties,docs/findings/items/0006-properties.md
 0x005563D0,func,sub_005563D0_ItemSetBaseDamage,,I,items/properties,docs/findings/items/0006-properties.md
@@ -420,9 +425,11 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0055A6D0,func,TC_ResolveDrops,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0055AFA0,func,TC_DropByIndex,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0055B030,func,sub_0055B030_DropGold,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x0055B060,func,sub_0055B060_PlayerGiveGold,,I,items/economy,docs/findings/items/0011-economy.md
 0x0055B800,func,sub_0055B800_MonStatCallback,,C,monsters/stats,docs/findings/monsters/0004-stats.md
 0x0055C2C0,func,ITEMS_AttachToOwner,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0055C730,func,ITEMS_DetachFromOwner,,I,stats/aggregate,docs/findings/stats/0001-aggregate.md
+0x0055C850,func,sub_0055C850_GoldPickup,,I,items/economy,docs/findings/items/0011-economy.md
 0x0055CC90,func,sub_0055CC90_ItemQuestGate,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0055E9B0,func,sub_0055E9B0_ItemToBelt,,C,player/creation,docs/findings/player/0001-creation.md
 0x0055EEA0,func,sub_0055EEA0_CursorItemConsume,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
@@ -437,7 +444,10 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00560200,func,sub_00560200_InvPlaceItem,,C,items/cube,docs/findings/items/0008-cube.md
 0x005606B0,func,sub_005606B0_ItemEquip,,I,player/creation,docs/findings/player/0001-creation.md
 0x00562660,func,ITEMS_InsertSocket,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
+0x00562C40,func,sub_00562C40_ReplenishStep,,I,items/economy,docs/findings/items/0011-economy.md
+0x00562D30,func,ITEMEVENT_Replenish,,I,items/economy,docs/findings/items/0011-economy.md
 0x00563470,func,sub_00563470_ItemDiscardInvalid,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
+0x00564D50,func,sub_00564D50_StashGoldMove,,I,items/economy,docs/findings/items/0011-economy.md
 0x00564F30,func,sub_00564F30_CubeDestroyContents,,C,items/cube,docs/findings/items/0008-cube.md
 0x00564FD0,func,sub_00564FD0_CubeCountItems,,C,items/cube,docs/findings/items/0008-cube.md
 0x00565010,func,CUBE_MatchInput,,C,items/cube,docs/findings/items/0008-cube.md
@@ -483,7 +493,10 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0056AF80,func,D2S_LoadFinish,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056B180,func,D2S_ReadSaveV92,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056B7E0,func,SKILLS_ForUnitsInRange,,I,stats/states,docs/findings/stats/0002-states.md
+0x0056BEC0,func,sub_0056BEC0_UseCharge,,I,items/economy,docs/findings/items/0011-economy.md
 0x0056C2D0,func,sub_0056C2D0_AttackDeliverMeleeOnly,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0056C310,func,sub_0056C310_ItemConsumeOne,,I,items/economy,docs/findings/items/0011-economy.md
+0x0056C3F0,func,PLAYER_UseAmmo,,I,items/economy,docs/findings/items/0011-economy.md
 0x0056C740,func,STATE_GroupClear,,I,stats/states,docs/findings/stats/0002-states.md
 0x0056CA40,func,SKILL_AttackStart,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0056CD50,func,SKILLS_NextPeriodicFrame,,I,stats/states,docs/findings/stats/0002-states.md
@@ -538,14 +551,18 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00577010,func,HIRE_RebuildIfEmpty,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x005770E0,func,HIRE_Hire,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x005774F0,func,MERC_Create,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
+0x00577830,func,NPC_BuyItem,,I,items/economy,docs/findings/items/0011-economy.md
 0x00578050,func,sub_00578050_NpcRepair,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00578460,func,NPC_CainIdentify,,I,items/economy,docs/findings/items/0011-economy.md
 0x005786A0,func,GAMBLE_Upgrade,,C,items/vendors,docs/findings/items/0009-vendors.md
 0x00578790,func,GAMBLE_BuildInv,,C,items/vendors,docs/findings/items/0009-vendors.md
 0x00578AE0,func,sub_00578AE0_GambleEnsure,,C,items/vendors,docs/findings/items/0009-vendors.md
 0x00578B30,func,NPC_OpenStore,,C,items/vendors,docs/findings/items/0009-vendors.md
+0x00578ED0,func,sub_00578ED0_NpcHealDead,,I,items/economy,docs/findings/items/0011-economy.md
 0x00579090,func,sub_00579090_StockRebuildDead,,I,items/vendors,docs/findings/items/0009-vendors.md
 0x00579180,func,HIRE_GiveFreeMerc,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00579430,func,NPC_TradeOpen,,C,items/vendors,docs/findings/items/0009-vendors.md
+0x00579510,func,NPC_SellItem,,I,items/economy,docs/findings/items/0011-economy.md
 0x00579AA0,func,sub_00579AA0_MercRevive,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x00579C00,func,MERC_Resurrect,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00579D60,func,NPC_MenuAction,,C,items/vendors,docs/findings/items/0009-vendors.md
@@ -602,9 +619,12 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0057EB10,func,PLAYER_GrantLevel,,C,player/creation,docs/findings/player/0001-creation.md
 0x0057EC10,func,COMBAT_MeleeHitTest,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057F240,func,sub_0057F240_RunStaminaDrain,,I,player/creation,docs/findings/player/0001-creation.md
+0x0057F390,func,sub_0057F390_CorpseDropGold,,I,items/economy,docs/findings/items/0011-economy.md
+0x0057F540,func,sub_0057F540_CorpseOverflowDrop,,I,items/economy,docs/findings/items/0011-economy.md
 0x0057F700,func,PLAYER_CorpseCreate,,I,player/creation,docs/findings/player/0001-creation.md
 0x0057FB70,func,PLAYER_CorpsePickup,,I,player/creation,docs/findings/player/0001-creation.md
 0x0057FCA0,func,sub_0057FCA0_PlayerDeathModeEnd,,I,player/creation,docs/findings/player/0001-creation.md
+0x00580310,func,sub_00580310_HandsRefresh,,I,items/economy,docs/findings/items/0011-economy.md
 0x00580500,func,PLAYER_StaminaRegenTick,,I,stats/states,docs/findings/stats/0002-states.md
 0x00580610,func,sub_00580610_LifeRegenTick,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005806F0,func,PLAYER_ManaRegenTick,,I,stats/states,docs/findings/stats/0002-states.md
@@ -850,6 +870,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005D6B60,func,sub_005D6B60_MonEquipInit,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x005D8780,func,sub_005D8780_CorpseFindItem,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005D9C80,func,sub_005D9C80_MonSkillAttackDo,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005DAA40,func,sub_005DAA40_SkillWeaponWear,,I,items/economy,docs/findings/items/0011-economy.md
 0x005DDFC0,func,sub_005DDFC0_MonAiSetMode,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005E0070,func,sub_005E0070_UberTristramDrop,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005E4D30,func,MERCAI_PickSkill,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
@@ -974,6 +995,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00622720,func,sub_00622720_UnitBlockChance,,C,player/creation,docs/findings/player/0001-creation.md
 0x00622C40,func,sub_00622C40_InMeleeRange,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x00622D00,func,sub_00622D00_UnitIsMoving,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x00622DE0,func,sub_00622DE0_HealCost,,I,items/economy,docs/findings/items/0011-economy.md
+0x00622E70,func,PLAYER_GoldCap,,I,items/economy,docs/findings/items/0011-economy.md
+0x00623460,func,PLAYER_StashGoldCap,,I,items/economy,docs/findings/items/0011-economy.md
 0x006235A0,func,UNIT_CanDualWield,,I,stats/aggregate,docs/findings/stats/0001-aggregate.md
 0x00623830,func,UNIT_CollUnmarkRect,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00623C80,func,sub_00623C80_WeaponListsRelink2,,I,stats/aggregate,docs/findings/stats/0001-aggregate.md
@@ -1010,6 +1034,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00625820,func,STATLIST_GetOwnerUnit,,I,stats/aggregate,docs/findings/stats/0001-aggregate.md
 0x00625A70,func,UNIT_SetStateBit,,I,stats/states,docs/findings/stats/0002-states.md
 0x00625B70,func,UNIT_TestStateBit,,I,stats/states,docs/findings/stats/0002-states.md
+0x00625C30,func,sub_00625C30_StatListCopyFull,,I,items/economy,docs/findings/items/0011-economy.md
 0x00625CE0,func,STATLIST_SetRemoveCallback,,I,stats/states,docs/findings/stats/0002-states.md
 0x00625D10,func,sub_00625D10_UnitGetMaxHp,,C,monsters/stats,docs/findings/monsters/0004-stats.md
 0x00625D60,func,UNIT_GetMaxMana,,I,stats/aggregate,docs/findings/stats/0001-aggregate.md
@@ -1019,6 +1044,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006260E0,func,STATLIST_GetSkill,,I,stats/states,docs/findings/stats/0002-states.md
 0x006260F0,func,STATLIST_SetSkillLevel,,I,stats/states,docs/findings/stats/0002-states.md
 0x00626100,func,STATLIST_GetSkillLevel,,I,stats/states,docs/findings/stats/0002-states.md
+0x006261D0,func,sub_006261D0_StatListGetEntries,,I,items/economy,docs/findings/items/0011-economy.md
 0x00626200,func,sub_00626200_StatEvaluate,,C,items/properties,docs/findings/items/0006-properties.md
 0x006266C0,func,sub_006266C0_StatRecompute,,I,items/properties,docs/findings/items/0006-properties.md
 0x00626920,func,STATLIST_Propagate,,I,stats/aggregate,docs/findings/stats/0001-aggregate.md
@@ -1053,6 +1079,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00627EA0,func,ITEMS_SetQuality,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00627EC0,func,ITEMS_GetPrefix,,C,items/affixes,docs/findings/items/0005-affixes.md
 0x00627EF0,func,ITEMS_SetPrefix,,C,items/affixes,docs/findings/items/0005-affixes.md
+0x00627F20,func,sub_00627F20_ItemGetAutoAffix,,I,items/economy,docs/findings/items/0011-economy.md
 0x00627F50,func,ITEMS_SetAutoAffix,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00627F80,func,ITEMS_GetSuffix,,C,items/affixes,docs/findings/items/0005-affixes.md
 0x00627FB0,func,ITEMS_SetSuffix,,C,items/affixes,docs/findings/items/0005-affixes.md
@@ -1066,6 +1093,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00628250,func,sub_00628250_ItemGetPage,,I,items/cube,docs/findings/items/0008-cube.md
 0x00628280,func,sub_00628280_ItemSetPage,,I,items/cube,docs/findings/items/0008-cube.md
 0x00628370,func,sub_00628370_ItemSetPersonalName,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x006283A0,func,sub_006283A0_ItemEarLevel,,I,items/economy,docs/findings/items/0011-economy.md
 0x006283F0,func,sub_006283F0_ItemInvGfxIndex,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x00628420,func,sub_00628420_ItemSetInvGfxVariant,,I,items/properties,docs/findings/items/0006-properties.md
 0x00628590,func,ITEMS_GetCode,,I,items/properties,docs/findings/items/0006-properties.md
@@ -1073,10 +1101,15 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006286C0,func,sub_006286C0_ItemInvSize,,I,items/properties,docs/findings/items/0006-properties.md
 0x00628700,func,ITEMS_GetType,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00628740,func,ITEMS_GetQLvl,,C,items/affixes,docs/findings/items/0005-affixes.md
+0x006287D0,func,sub_006287D0_ItemNormCode,,I,items/economy,docs/findings/items/0011-economy.md
 0x00628860,func,ITEMTYPES_IsThrowable,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x006289F0,func,sub_006289F0_ItemBaseStackable,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x00628C70,func,sub_00628C70_ItemBaseIsUnique,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00628CD0,func,sub_00628CD0_ItemBaseIsQuest,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x00628D30,func,sub_00628D30_RechargeCost,,I,items/economy,docs/findings/items/0011-economy.md
+0x00628E70,func,sub_00628E70_PriceStatTerms,,I,items/economy,docs/findings/items/0011-economy.md
+0x006292F0,func,sub_006292F0_PriceSocketTerm,,I,items/economy,docs/findings/items/0011-economy.md
+0x00629370,func,sub_00629370_GamblePrice,,I,items/economy,docs/findings/items/0011-economy.md
 0x006295B0,func,ITEMS_GetMaxStack,,I,items/properties,docs/findings/items/0006-properties.md
 0x00629660,func,ITEMS_GetSpawnStack,,I,items/properties,docs/findings/items/0006-properties.md
 0x006296F0,func,ITEMS_GetMinStack,,I,items/properties,docs/findings/items/0006-properties.md
@@ -1094,7 +1127,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0062A0F0,func,sub_0062A0F0_ItemQualityMagicPlus,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x0062A250,func,ITEMGFX_PackShiftCode,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0062A370,func,SETS_WornMemberMask,,I,stats/aggregate,docs/findings/stats/0001-aggregate.md
+0x0062A530,func,sub_0062A530_CountUnidentified,,I,items/economy,docs/findings/items/0011-economy.md
 0x0062A670,func,sub_0062A670_ItemGetVersion,,I,items/quality,docs/findings/items/0002-quality-roll.md
+0x0062A840,func,sub_0062A840_ItemHasCharges,,I,items/economy,docs/findings/items/0011-economy.md
 0x0062A8D0,func,ITEMS_IsEthereal,,I,items/properties,docs/findings/items/0006-properties.md
 0x0062A900,func,ITEMS_CountFilledSockets,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0062A970,func,ITEMS_ReadCompact,,I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -1112,6 +1147,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0062BE00,func,ITEMS_SetSocketsOnLoad,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0062BEB0,func,ITEMS_IsSocketFiller,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0062BED0,func,RUNEWORD_Match,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
+0x0062C060,func,sub_0062C060_ItemIsClassItem,,I,items/economy,docs/findings/items/0011-economy.md
 0x0062C0B0,func,sub_0062C0B0_ItemTypeClass,,C,items/affixes,docs/findings/items/0005-affixes.md
 0x0062C100,func,ITEMGFX_GetItemShift,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0062C590,func,sub_0062C590_ItemCanImbue,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
@@ -1119,6 +1155,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0062C770,func,sub_0062C770_ItemCanQuestSocket,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0062CBE0,func,ITEMS_ReadFull,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0062E430,func,ITEMS_Deserialize,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0062E5D0,func,sub_0062E5D0_ItemIsRepairableStack,,I,items/economy,docs/findings/items/0011-economy.md
+0x0062E660,func,sub_0062E660_ItemCanRepair,,I,items/economy,docs/findings/items/0011-economy.md
 0x0062E740,func,sub_0062E740_ItemTypeQuiver,,I,items/properties,docs/findings/items/0006-properties.md
 0x0062E880,func,sub_0062E880_ItemStorePage,,I,items/vendors,docs/findings/items/0009-vendors.md
 0x0062E8D0,func,sub_0062E8D0_ItemVarInvGfx,,I,items/graphics,docs/findings/items/0003-item-graphics.md
@@ -1127,6 +1165,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0062E9E0,func,sub_0062E9E0_ItemTypeMagic,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x0062EA30,func,sub_0062EA30_ItemTypeNormal,,C,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x0062EAF0,func,sub_0062EAF0_ItemReqCheck,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
+0x0062EDD0,func,sub_0062EDD0_PriceStaffModTerm,,I,items/economy,docs/findings/items/0011-economy.md
+0x0062EFB0,func,ITEMS_TradePriceCore,,I,items/economy,docs/findings/items/0011-economy.md
 0x0062FDC0,func,sub_0062FDC0_ItemTradePrice,,I,items/vendors,docs/findings/items/0009-vendors.md
 0x0062FE60,func,sub_0062FE60_RepairCost,,L,items/vendors,docs/findings/items/0009-vendors.md
 0x0062FF70,func,ITEMS_IsActiveCharm,,I,stats/aggregate,docs/findings/stats/0001-aggregate.md
@@ -1139,6 +1179,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006335A0,func,sub_006335A0_ItemClassicIndexMap,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006335F0,func,ITEMS_GetRecord,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00633640,func,ITEMS_GetByCode,"void * __stdcall ITEMS_GetByCode(uint code, int * pIndex)",C,data/excel,docs/findings/data/0001-excel-loader.md
+0x00633680,func,sub_00633680_ItemIndexByCode,,I,items/economy,docs/findings/items/0011-economy.md
 0x006336A0,func,sub_006336A0_PropParamCell,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x00633730,func,sub_00633730_LoadMagicAffixes,,C,items/affixes,docs/findings/items/0005-affixes.md
 0x00633ED0,func,sub_00633ED0_GetMagicAffixInfo,,C,items/affixes,docs/findings/items/0005-affixes.md
@@ -1152,6 +1193,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00636B20,func,QUALITYITEMS_GetRecord,,C,items/affixes,docs/findings/items/0005-affixes.md
 0x00636B70,func,GEMS_Load,,I,data/excel,docs/findings/data/0004-cell-converters.md
 0x006372C0,func,GEMS_GetRecord,,I,data/excel,docs/findings/data/0004-cell-converters.md
+0x006374B0,func,BOOKS_GetRecord,,I,items/economy,docs/findings/items/0011-economy.md
 0x006375B0,func,sub_006375B0_GetLowQualityInfo,,C,items/affixes,docs/findings/items/0005-affixes.md
 0x00637620,func,ITEMS_LoadItemRatio,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00637910,func,ITEMRATIO_Select,,C,items/quality,docs/findings/items/0002-quality-roll.md
@@ -1183,6 +1225,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0063B620,func,sub_0063B620_InvSpotFind,,C,player/creation,docs/findings/player/0001-creation.md
 0x0063B850,func,sub_0063B850_InvSpotFindBySize,,I,player/creation,docs/findings/player/0001-creation.md
 0x0063B950,func,sub_0063B950_InvPlaceAnywhere,,I,player/creation,docs/findings/player/0001-creation.md
+0x0063BDE0,func,sub_0063BDE0_InvGetBodyLocItem,,I,items/economy,docs/findings/items/0011-economy.md
 0x0063BEF0,func,INV_GetPrimaryWeapon,,I,stats/aggregate,docs/findings/stats/0001-aggregate.md
 0x0063BF90,func,INV_GetOtherWeapon,,I,stats/aggregate,docs/findings/stats/0001-aggregate.md
 0x0063C1E0,func,INV_GetCursorItem,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
@@ -1365,6 +1408,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0065C660,func,sub_0065C660_AffixPropBlock,,I,items/properties,docs/findings/items/0006-properties.md
 0x0065C6D0,func,sub_0065C6D0_PropBlock3x3,,I,items/properties,docs/findings/items/0006-properties.md
 0x0065C730,func,sub_0065C730_PropBlockGet,,I,items/properties,docs/findings/items/0006-properties.md
+0x0065C940,func,sub_0065C940_ItemSetCharges,,I,items/economy,docs/findings/items/0011-economy.md
 0x0065CA30,func,STAT_ByTimeValue,,I,stats/aggregate,docs/findings/stats/0001-aggregate.md
 0x0065CBF0,func,sub_0065CBF0_PropTargetList,,I,items/properties,docs/findings/items/0006-properties.md
 0x0065CCC0,func,sub_0065CCC0_PropBaseReset,,I,items/properties,docs/findings/items/0006-properties.md
@@ -1779,6 +1823,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006DA488,data,g_ChampionNameStr,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x006E0D18,data,g_SrvPacketTable,,I,items/cube,docs/findings/items/0008-cube.md
 0x006E1080,data,g_PresetShrineRanges,,I,objects,docs/findings/objects/0001-object-population.md
+0x006E117C,data,g_ItemEventFuncs,,I,items/economy,docs/findings/items/0011-economy.md
 0x006E11C8,data,g_CubePortalFns,,C,save/d2s,docs/findings/save/0002-quest-words.md
 0x006E1208,data,g_D2sLoadErrorMap,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x006E1520,data,g_ActStartLevel,,I,player/creation,docs/findings/player/0001-creation.md
@@ -1876,6 +1921,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00731FEC,data,g_QuestItemWordGate,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x007325B0,data,g_StatEventFuncs,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x00732980,data,g_DamageResistTable,,C,combat/formulas,docs/findings/combat/0001-formulas.md
+0x00732B90,data,g_ArmorWearSlots,,I,items/economy,docs/findings/items/0011-economy.md
 0x00732CEC,data,g_ObjTrapFns,,I,objects,docs/findings/objects/0001-object-population.md
 0x00732D18,data,g_ObjOperateFns,,C,objects,docs/findings/objects/0001-object-population.md
 0x00732FEC,data,g_QualKehkRunes,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
