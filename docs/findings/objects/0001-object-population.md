@@ -1110,6 +1110,25 @@ Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phas
   seed: 24, 39, 40, 41, 57, 58 and 59 (`sweep_s4b.py operate`). (data:g_ObjOperateFns@0x00732D18,
   fn:QUESTS_GetSeed@0x005438B0, fn:OBJ_OperateDispatch@0x00584420) **Remainder `[I]`:** the three indirect routes.
 
+## Plan 0039 batch P1b (2026-10-17)
+
+Row Q24 of [plan 0039](../../plans/0039-backlog-sweep-4.md): which code reads Objects `TrapProb`, `SpawnMax` and `Act`.
+Static: objdump scans of the whole image. No game run.
+
+- [I] **No direct reader of the three columns.** Every function that calls `OBJECTS_GetRecord` or reads the table
+  pointer `0x0096D470` itself (89 functions, the loader included) was scanned for operands at `+0xC3` (`SpawnMax`, u8),
+  `+0xCC` (`TrapProb`, u32) and `+0x170` (`Act`, u8). The scan finds three, none a record read: a function pointer stored
+  at `+0xCC` of another structure in 0x005B52E0 (0x005B5505) and two stack slots of the loader (`[ebp−0x170]`,
+  `[ebp−0xCC]`, 0x00640B79, 0x00640C2B). This extends S4b row 1, which scanned the 106 functions of the objects spec.
+  (fn:OBJECTS_GetRecord@0x00640E90, tbl:Objects.txt:SpawnMax, tbl:Objects.txt:TrapProb, tbl:Objects.txt:Act)
+- [I] **`SpawnMax` and `Act` have no reader anywhere in the image, as far as an operand scan can tell.** No instruction
+  of the image has a `+0xC3` displacement at all, and no byte-sized operand has a `+0x170` displacement except
+  `[ebp+ecx*1+0x170]` at 0x00694D9E (an indexed stack array, not a record). A reader would have to reach the bytes
+  through a computed address or a wider read. `TrapProb`'s `+0xCC` is too common a displacement for the same
+  whole-image test; its absence is shown only for the 89 functions above.
+- Not covered, for `TrapProb`: a function that keeps an Objects record pointer from elsewhere (an object unit's data)
+  and reads `+0xCC` later. The question narrows to that; it stays in § Open questions.
+
 ## Data touched
 
 - Levels: `tbl:Levels.txt:ObjGrp0` and `tbl:Levels.txt:ObjPrb0` (`..7`, `+0x0E5`, `+0x0ED`), `tbl:Levels.txt:Themes`
@@ -1147,7 +1166,9 @@ Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phas
   never reached in run:2026-10-15-objects, and neither was the forced conversion of a placed shrine; they stay `[I]`.
   The forced-slot trigger itself is now `[C]` (§ 3).
 - Which code, if any, reads Objects `TrapProb`, `SpawnMax`, `Act` and the zero ranges `+0x040`, `+0x16C` and `+0x16F`,
-  and ObjMode `+0x024`. None of the functions here does. The loader `0x00640DDE` was not read.
+  and ObjMode `+0x024`. None of the functions here does. The loader `0x00640DDE` was not read. Narrowed in [§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17):
+  no instruction addresses `+0xC3` and none reads a byte at `+0x170`; `TrapProb` has no reader among the 89 functions
+  that fetch an Objects record; a reader through a record pointer kept in an object's data stays possible for it.
 - `ObjRgnLevel+0x0C`: no writer found, so the theme gate's first test is always true. A whole-binary search for writers
   at that offset of the level record is still to do.
 - The InitFn callee scan stopped at depth 3. A handler that draws deeper (through quest helpers) would be missed.
