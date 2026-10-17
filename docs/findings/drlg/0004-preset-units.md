@@ -715,6 +715,21 @@ Batch H5e, record [experiments.md § run:2026-10-16-sweep-mazes](experiments.md#
 - `re/symbols.csv`: `sub_006664A0_PresetCentreMonster` I → C.
 
 
+## Plan 0038 batch H5a (run:2026-10-17-sweep-links)
+
+Batch H5a, record [experiments.md § run:2026-10-17-sweep-links](experiments.md#run2026-10-17-sweep-links).
+
+- [I] **The `v = 1` index-2 outcome is unreachable on stock data**, so it stays `[I]` for good (proposed d-none). The
+  draw `r` is the first act-seed step after table `0x006F0840`'s seed copy was made, and Black Marsh's first choice is
+  `r & 3` from the same first step of the copy; side 1 is only ever kept from a first choice of 1, at every
+  difficulty, so `r & 1` = 1 and the index is 1. Reasoning and the scan in
+  [drlg/0007 § Plan 0038 batch H5a](0007-warps.md#plan-0038-batch-h5a-run2026-10-17-sweep-links); the run logged two more
+  side-1 builds (map seeds 90, 5), both index 1 with the act seed after as predicted. (0x006774F9,
+  fn:sub_006772C0_LevelLinkBuild@0x006772C0, run:2026-10-17-sweep-links)
+- [C] Level 27 keeps its create-time index when `v` is 0 (no draw, no write): 0 and 2 in the run (map seeds 2, 58),
+  each built into the Barracks placement as modelled (drlg/0006 § Plan 0038 batch H5a). (0x006774F9,
+  fn:sub_00673120_MazeBarracksPlace@0x00673120, run:2026-10-17-sweep-links)
+
 ## Data touched
 
 - tbl:LvlPrest.txt:Populate (`+0x08`), tbl:LvlPrest.txt:Logicals (`+0x0C`), tbl:LvlPrest.txt:Outdoors (`+0x10`),

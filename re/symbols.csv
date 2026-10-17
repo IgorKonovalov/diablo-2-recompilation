@@ -1369,7 +1369,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006719F0,func,sub_006719F0_MazeArcane,,C,drlg/maze,docs/findings/drlg/0006-maze.md
 0x00672340,func,sub_00672340_MazeProbe,,C,drlg/maze,docs/findings/drlg/0006-maze.md
 0x006723E0,func,sub_006723E0_MazeFindNorth,,C,drlg/maze,docs/findings/drlg/0006-maze.md
-0x00672420,func,sub_00672420_MazeFindWest,,I,drlg/maze,docs/findings/drlg/0006-maze.md
+0x00672420,func,sub_00672420_MazeFindWest,,C,drlg/maze,docs/findings/drlg/0006-maze.md
 0x00672460,func,sub_00672460_MazeFindEast,,C,drlg/maze,docs/findings/drlg/0006-maze.md
 0x006724A0,func,sub_006724A0_MazeFindSouth,,C,drlg/maze,docs/findings/drlg/0006-maze.md
 0x006724E0,func,sub_006724E0_MazeSpecialPlace,,C,drlg/maze,docs/findings/drlg/0006-maze.md
