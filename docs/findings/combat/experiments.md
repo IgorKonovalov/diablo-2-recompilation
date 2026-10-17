@@ -135,11 +135,11 @@ events. Branches that reproduced but stay under the plan's rare-branch floor of 
 § 15, last bullet): crushing blow on an act boss (1) and a superunique (5), the prime-evil percent 200 (1), the
 negative absorbed amount (4), the monster drain branch (7), the stun draw on a unique (17), and the resistance cap
 reached for cold (15), lightning (17) and poison (2); fire reaches it 381 times and the cap is one path over the
-table rows (run:2026-10-16-combat). Verdict in the [plan log](../../plans/0037-combat-formulas.md#implementation-log).
+table rows (run:2026-10-16-combat). Verdict in the [plan log](../../plans/done/0037-combat-formulas.md#implementation-log).
 
 #### Resume lane addendum, 2026-10-16
 
-Phase 2 review ruling (c) ([plan 0037](../../plans/0037-combat-formulas.md#implementation-log)): the shortfalls of
+Phase 2 review ruling (c) ([plan 0037](../../plans/done/0037-combat-formulas.md#implementation-log)): the shortfalls of
 Hell's hireling boss percent, open wounds on an act boss and crushing blow on act bosses and superuniques. Same run id,
 same harness rules, on slot 2 (display `:9`, `workspace/wineprefix-2`), logger r9 unchanged (`tools/gdb/combat.gdb`
 `450f36f8…`, `tools/gdb/combat.py` `82780acc…`). Driver `tools/combat_sessions.py` (`a140aecb…`) with new sessions
@@ -300,4 +300,4 @@ and a scan of the `EV0`/`DRM` lines; no new run):
   `/3` and the automatic hit are `[C]` for a running player; the mode-2 exception stays `[I]`. Open wounds on
   Andariel are halved, by her unique flag, not taken in full as the finding had said; the unique half of the `0x0C`
   test is `[C]` (383), the champion half `[I]` (0); the −100 floor changed no logged value and stays `[I]`.
-  Verdict in the [plan log](../../plans/0037-combat-formulas.md#implementation-log). (run:2026-10-16-combat)
+  Verdict in the [plan log](../../plans/done/0037-combat-formulas.md#implementation-log). (run:2026-10-16-combat)
