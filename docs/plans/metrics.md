@@ -108,8 +108,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-17 | `lane/p40s` review | 0040 P3 | architect-review | 240 204 | 73 | 20 | — | gave accept with fixes | — (on the lane row; usage unknown) |
 | 2026-10-17 | `lane/rbs3` | 0038 static backlog sweep, third pass | reverser-static | 325 800 | 197 | 48 | no slot | accept with fixes | 4: under-claim 1, overclaim 1, stale cross-reference 1, omission 1 (usage unknown) |
 | 2026-10-17 | `lane/rbs3` review | 0038 static backlog sweep, third pass | architect-review | 150 996 | 62 | 20 | — | gave accept with fixes | — (on the lane row; usage unknown) |
-| 2026-10-17 | `lane/arc6` | 0039 MonPlace rows, 0044 MP23 pair | archivist | — | — | — | — | accept with fixes | 2: misread 1, other 1 (usage unknown) |
-| 2026-10-17 | `lane/arc6` review | 0039 MonPlace rows, 0044 MP23 pair | architect-review | — | — | — | — | gave accept with fixes | — (on the lane row; usage unknown) |
+| 2026-10-17 | `lane/arc6` | 0039 MonPlace rows, 0044 MP23 pair | archivist | 103 147 | 43 | 9 | — | accept with fixes | 2: misread 1, other 1 (usage unknown) |
+| 2026-10-17 | `lane/arc6` review | 0039 MonPlace rows, 0044 MP23 pair | architect-review | 105 644 | 42 | 8 | — | gave accept with fixes | — (on the lane row; usage unknown) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
