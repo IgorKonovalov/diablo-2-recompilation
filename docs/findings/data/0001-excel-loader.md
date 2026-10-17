@@ -588,6 +588,43 @@ Type `0x1A` is a bit flag: `len` is the bit number, `offset` the flag field.
   the sounds `+0x26`/`+0x28`, `itemtype` `+0x2A`, `itemtrans` `+0x2C`, `gfxtype` `+0x2D`, `gfxclass` `+0x2E`, `cltevent`
   `+0x30`, `clteventfunc`, `cltactivefunc`, `srvactivefunc` `+0x32..+0x36`. (0x0061812A–0x00618B59)
 
+## Plan 0038 batch S1e (2026-10-17)
+
+Static batch S1e of [plan 0038](../../plans/0038-inferred-claims-sweep.md), rows 16, 36, 37, 40, 43 and 44 of
+[inventory data-excel](../../plans/0038-inventory/data-excel.md). No session was played. Method: the functions under
+Ghidra's p-code emulator against models ([ADR-0015](../../adrs/0015-emulated-reproduction.md)),
+[run:2026-10-17-sweep-emu](experiments.md#run2026-10-17-sweep-emu) family `excel` (5 500 calls) and, for the 31-byte
+cut through the `.txt` converter, family `parsetxt` ([data/0004 § S1e](0004-cell-converters.md#plan-0038-batch-s1e-2026-10-17)).
+Read set: the scratch link, its array or name nodes and the key (case memory); `STR_ToLowerN`'s table 0x006CEB18–0x006CEC17
+(`.rdata`, indexed by a signed char); `memmove`'s jump tables (`.text`); one write-only store of `strncpy` (0x004135D0)
+to 0x007788D8, which none of these functions reads. Where a statement above is tagged inferred and this section raises
+it, the tag and the second source given here are the current ones.
+
+- **Row 36** (spec L288, `FindCode`: binary search, unsigned compare) **raised.** [C] 2 500 calls on arrays of 0–300
+  entries (336 deliberately unsorted, so the probe path itself is compared), 1 021 probes ≥ 2³¹, 133 negative counts
+  (−1 at once): every return equals the model's `lo/hi` search with `mid = (hi − lo)/2 + lo` and an unsigned compare;
+  the family's negative controls (a signed compare here, a reused duplicate for `AddCode`, a 32-byte key for `FindName`)
+  differ in 1 048 cases. (fn:EXCEL_FindCode@0x006BD130,
+  run:2026-10-17-sweep-emu)
+- **Row 37** (spec L298, `AddCode` bumps a duplicate code to code + 1) **raised.** [C] 1 500 inserts (capacity above
+  the count, so no allocation): 665 bumped, 221 of them through `0xFFFFFFFF` → 0 → … chains, 835 plain; the array,
+  count and returned index (the old count) match byte for byte, `memmove` included. (fn:EXCEL_AddCode@0x006BD230,
+  run:2026-10-17-sweep-emu)
+- **Row 40** (spec L320, item codes are case-sensitive) **raised.** [C] 316 probes that differ from a stored code only in
+  letter case find nothing (−1). (fn:EXCEL_FindCode@0x006BD130, run:2026-10-17-sweep-emu)
+- **Row 16** (spec L75, name keys are 31 characters) **raised.** [C] 1 500 `FindName` calls on random trees: the key is
+  cut to its first 31 bytes and lower-cased through the table (bytes ≥ 0x80 indexed as signed), then walked by unsigned
+  `strcmp` (`<` left at `+0x24`, else right at `+0x28`); 435 keys longer than 31 bytes, 57 of them found by their
+  first 31; 894 mixed-case keys; an empty link returns −1. `EXCEL_ParseTxt`'s name lookups give the same cut (1 058
+  cells over 31 bytes, data/0004 § S1e). (fn:EXCEL_FindName@0x006BD3C0, fn:STR_ToLowerN@0x004113C0, run:2026-10-17-sweep-emu)
+- **Rows 43, 44** (spec L461, a short name that is both an item code and a TC resolves to the item; L463, `uniqueitems`
+  row 0 cannot be named from a TC, `setitems` row 0 can) **not raised; returned to d-none.** `TC_ParseItemCell` calls
+  `TC_AddEntry` on every resolved cell, and `TC_AddEntry` always calls `TC_GrowEntries`, which reallocates through the
+  pool allocator 0x0040B4B0 (heap calls outside the image), so no case that reaches either claim runs to completion
+  under ADR-0015 condition 1. The lookups they rest on are now `[C]` (`FindCode` case rules above, `FindName` row 16);
+  the order of the tests and the `jle`/`jl` that separate unique and set row 0 stay code readings (0x0065450F,
+  0x00654569, 0x006545B4). (fn:TC_ParseItemCell@0x00654440, fn:TC_GrowEntries@0x00654010)
+
 ## Data touched
 
 - `fmt:excel-bin#bin` count header and record array (all 88 files).

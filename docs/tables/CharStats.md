@@ -41,7 +41,7 @@ prints them per class from the `.bin`).
 | `PercentStr`, `PercentInt`, `PercentDex`, `PercentVit` | int 20..35; 10..35; 15..35; 15..30 | `+0x036`, `+0x037`, `+0x038`, `+0x039` u8 | compiled; no reader found among the 23 server code sites `[I]` ([§ 3](../findings/player/0001-creation.md#3-starting-attributes--player_initbasestats-0x005706d0)); client getter `0x004833E0` not followed | — | [C]; note `PercentInt` before `PercentDex` |
 | `ManaRegen` | int 120 (all) | `+0x03A` u8 | mana regeneration factor, read as `ManaRegen × 25` `[I]` (0x00548640, [§ 9](../findings/player/0001-creation.md#9-other-charstats-readers-for-the-archivists-table-doc)) | — | [C] |
 | — | — | `+0x03B` u8 | padding, 0 | — | [C] value |
-| `ToHitFactor` | int −15..20 | `+0x03C` s32 | added to the base attack rating `(dex − 7) × 5 + stat 19 + ToHitFactor` `[I]` (fn:sub_00622560_PlayerBaseToHit@0x00622560, [§ 9](../findings/player/0001-creation.md#9-other-charstats-readers-for-the-archivists-table-doc)) | — | [C] |
+| `ToHitFactor` | int −15..20 | `+0x03C` s32 | added to the base attack rating `(dex − 7) × 5 + stat 19 + ToHitFactor`, an attack-rating term only `[C]` (fn:sub_00622560_PlayerBaseToHit@0x00622560, [§ 9](../findings/player/0001-creation.md#9-other-charstats-readers-for-the-archivists-table-doc), run:2026-10-16-combat) | — | [C] |
 | `WalkVelocity`, `RunVelocity` | int 6; 9 (all) | `+0x040`, `+0x041` u8 | walk speed `WalkVelocity << 8`; run as `velocitypercent = RunVelocity × 100 / WalkVelocity − 100` `[I]` (0x0056E5B0, [§ 9](../findings/player/0001-creation.md#9-other-charstats-readers-for-the-archivists-table-doc)) | — | [C] |
 | `RunDrain` | int {15: Assassin, 20} | `+0x042` u8 | per-step run drain `RunDrain × 2`, scaled by the equipped armour and stat 154 `[I]` (0x0057F240, [§ 9](../findings/player/0001-creation.md#9-other-charstats-readers-for-the-archivists-table-doc)) | — | [C] |
 | `Comment` | str `The following are in fourths` (all) | — (not compiled) | editor note on the next six columns; not compiled `[I]` ([§ 3](../findings/player/0001-creation.md#3-starting-attributes--player_initbasestats-0x005706d0)) | — | [C] |
@@ -103,7 +103,10 @@ The plan's column list also names `SkillsPerLevel` and `MinimumCastingDelay`: **
 
 - `[L]` `PercentStr..PercentVit`: no server reader found; the client getter `0x004833E0` was not followed
   ([player/0001 § Open questions](../findings/player/0001-creation.md#open-questions)).
-- `[L]` `ToHitFactor` as an attacker-level bonus in the chance-to-hit code, besides the attack-rating term
-  ([player/0001 § 10](../findings/player/0001-creation.md#10-community-cross-check-phase-1b), contradicted by src:arreat-summit-character-basics; backlog "ToHitFactor").
+- Answered `[C]` by run:2026-10-16-combat ([combat/0001 § 15](../findings/combat/0001-formulas.md#15-phase-2-per-event-reproduction-run2026-10-16-combat)):
+  `ToHitFactor` is an attack-rating term only (`(dex − 7)·5 + stat 19 + ToHitFactor`, 1 974 player attacks,
+  Sorceress −15, Barbarian +20), not an attacker-level bonus in the chance-to-hit code; the reading of
+  src:arreat-summit-character-basics is contradicted (fn:sub_00622560_PlayerBaseToHit@0x00622560,
+  fn:COMBAT_ToHitRoll@0x0057D9B0).
 - Answered `[I]` by [player/0001 § 9](../findings/player/0001-creation.md#9-other-charstats-readers-for-the-archivists-table-doc): `StartSkill` compiles through `skills`, and `+0x000`..`+0x01F` hold the
   class's UTF-16 display name filled at load (Interpretation notes).

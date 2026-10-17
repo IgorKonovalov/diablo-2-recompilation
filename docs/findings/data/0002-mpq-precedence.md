@@ -210,6 +210,42 @@ log reads each kind with 0 mismatches on the merged tree (`workspace/merged/`, d
   are the same, so the claim has no observable. The d2exp copies of `automagic`, `rareprefix` and `raresuffix` `.bin` are
   a different matter: their record sizes (132, 60, 60) do not fit, which is the order above, not this claim.
 
+## Plan 0038 batch S1e (2026-10-17)
+
+Static batch S1e of [plan 0038](../../plans/0038-inferred-claims-sweep.md), row 51 of
+[inventory data-excel](../../plans/0038-inventory/data-excel.md). Method: `LNG_GetLanguageCode` under Ghidra's p-code
+emulator against a model read from the image ([ADR-0015](../../adrs/0015-emulated-reproduction.md)),
+[run:2026-10-17-sweep-emu](experiments.md#run2026-10-17-sweep-emu) family `lang`: 182 calls, ids −2…19, 100, 255,
+0x7FFFFFFF, 0x80000000, fields 0–4, −1, 7, with the "already read" flag `0x008829F0` set and the id at `0x008829EC` by
+the spec (so `LNG_GetLanguageIndex` returns it without the file read). Read set: the table and its strings; the trace
+found nothing else outside the table, the 0x18 bytes after it and the three NULL-page pointers below.
+
+- **Row 51** (spec L522, the language code table: 0 `ENG` … 12 `ENG`/`HAN`; unknown → entry 0) **raised in part.**
+  [C] ids 0–12 give their entry (the code at `+0`, the strings at `+4` and `+8`, the 4-byte tag at `+0xC`), every id
+  ≥ 14 gives entry 0, and a field other than 1, 2 or 3 copies the code; `ret 8`. **Contradicted for id 13 (and any
+  negative id):** the id search runs 13 entries and leaves its counter at 13 when nothing matches; the test after it
+  sends only counts ≥ 14 to entry 0 (`cmp ecx, 0xe; jl` at 0x005252B2), so an unmatched id below 14 reads entry 13,
+  the 0x18 bytes after the table at 0x00730514. There the "pointers" are the dwords `'M'`, `'B'`, `'T'` (0x4D, 0x42,
+  0x54: word stores of a number-suffix table, 0x00525832–0x005258E7), so fields 0–2 copy from the NULL page, which
+  faults in the game (the emulator read zeros there: the fault itself is not evidence, ADR-0015 condition 5); field 3
+  returns `' -no'`, the start of `g_szNotXlatedSuffix`. The `use` byte is read as a `u8` and `LNG_GetLanguageIndex`
+  clamps only values ≥ 14 (0x005251A1), so **a `use` byte of 13 crashes the string-table load** where § 4 says it
+  falls back to `ENG`. Only an edited `use` file has it (d-edit). (fn:LNG_GetLanguageCode@0x00525260,
+  data:g_LanguageTable@0x007303DC, fn:LNG_GetLanguageIndex@0x00525150, run:2026-10-17-sweep-emu)
+- Correction to § 4 ("falls back to entry 0"): only ids ≥ 14 fall back; § 1's "values > 13 become 0" is right, and
+  13 is kept and reaches entry 13 as above. [C] for the map (the emulation), [I] for the crash.
+  (0x005251A1, 0x005252B2, run:2026-10-17-sweep-emu)
+- *Review note (architect, 2026-10-17).* Entry 13's first three dwords are not image constants: their low words are
+  written at run time (0x00525832–0x005258E7, after entry 12's `+0x14` at 0x005257E0), each either the default letter
+  (`'M'`, `'B'`, `'T'`) when string 0x14D1, 0x14D2 or 0x14D3 is longer than one character, or that string's single
+  character, sign-extended to a word (`movsx`). The emulation read the image's bytes (the default letters). No store
+  touches their high words (the writer scan lists every instruction reference to 0x00730514–0x0073052B), which are 0 in
+  the image, so in any run each "pointer" is below 0x10000. The `[C]` therefore covers the index map only: an unmatched
+  id below 14 reads entry 13 at 0x00730514, which objdump shows directly (the loop bound `cmp edx, 0x730524` at
+  0x005252AA, `cmp ecx, 0xe; jl` at 0x005252B2). The values it reads there, field 3's `' -no'` included, are run-time
+  memory and stay `[I]` (ADR-0015 condition 3), as does the fault. Entry 12's `+0x14` is not read by this function
+  (it reads `+0x0` to `+0x10`), so ids 0–12 and ≥ 14 read only image data no code writes.
+
 ## Data touched
 
 - Archive names `0x006DC728`…`0x006DC7B4`, `0x006CD3A0`, `0x006D4C78`.

@@ -293,3 +293,84 @@
   [ADR-0015](../../adrs/0015-emulated-reproduction.md) (architect review of `lane/rbl`, 2026-10-16); the read set its
   condition 2 asks for is in [data/0005 § 11](0005-calc.md#11-static-emulation-of-the-functions-and-the-missile-context-run2026-10-16-calc-emu).
   (fn:MISS_CalcVar@0x0064B340, fn:MISS_EvalCalc@0x0064B7C0)
+
+## run:2026-10-17-sweep-emu
+
+- **Question:** (plan 0038 batch S1e, the c-emu rows of [inventory § 5](../../plans/0038-inventory/README.md#5-batch-list))
+  Do the binary's calc evaluator and compiler, the calc entry points and `SKILLS_CalcVar`, the excel code and name
+  links, the `.txt` cell converters, the language table, the string-table lookups, `RNG_RangePow2Plus` and
+  `BITBUF_WriteClamped` produce exactly what the findings say, on inputs no stock play reaches?
+- **Setup:** Ghidra 12.1.2 p-code emulator (`EmulatorHelper`) on the pinned `game.exe` (lane copy
+  `GHIDRA_PROJ_DIR=workspace/ghidra-s1e`, symbols replayed from `re/symbols.csv`, heap 3 GB). No wine, nothing runs
+  natively. New script `re/ghidra_scripts/EmuTrace.java` (`be7a0b2d…`, `tools/ghidra.sh emutrace`): per case it applies
+  a memory spec (`const` lines once), writes the case's memory and registers, calls one function with a sentinel return
+  address, prints EAX, EDX, the bytes popped and dumps, and stops a case that leaves the image's code or passes 20 M
+  steps. It traces every data read and write outside the stack, the spec and the case memory (instruction fetches
+  excluded) and prints them aggregated, so the read set of ADR-0015 condition 2 is enumerated by the tool and not only
+  by reading the code. Models, case writers and checks: `tools/sweep_s1e.py` (`8e5f2aad…`; it reuses `tools/calc.py`'s
+  compiler for the compile family, `tools/rng.py` and `tools/tbl.py`), unit tests `tools/test_sweep_s1e.py` (10).
+  Stock inputs: `workspace/merged/data/local/lng/eng/*.tbl`; everything else is synthetic. Files in
+  `workspace/logs/sweep-s1e/`, `manifest.txt` `94c19392…` (53 files: cases, memory specs, expected values, outputs,
+  the synthetic `.tbl` and text arrays). Full report `workspace/logs/sweep-s1e-all.txt` (`3293ae63…`).
+- **Procedure:**
+  ```
+  D=workspace/logs/sweep-s1e
+  python3 -I tools/sweep_s1e.py cases                      # writes D/<family>.cases, .mem, .json (seeded: "s1e-<family>")
+  for f in rng bitbuf eval calcvar entry excel lang strings compile parsetxt; do
+    tools/ghidra.sh emutrace $D/$f.cases $D/$f.mem > $D/$f.out
+  done
+  for f in compile parsetxt; do tools/ghidra.sh emutrace $D/$f.cases $D/$f-sse.mem > $D/$f-sse.out; done
+  systemd-run --user --scope -p MemoryMax=4G python3 -I tools/sweep_s1e.py all      # checks, static, manifest
+  ```
+  The `-sse` runs set the CRT's SSE2 flag (`data:g_Sse2Available@0x00994C88`, written once at start-up by
+  0x0069A8C5), which picks `memcpy`/`memset`'s path; both values must give the same output. `__locale_changed`
+  (`data:g_LocaleChanged@0x0096DFE4`) is set to 0 by the spec: its one writer (0x006926F7) lies in
+  `fn:CRT_setlocale@0x0069263E`, which has no caller and no pointer in the image (`sweep_s1e.py static`), so the ctype
+  functions take their table path through `data:g_pctype@0x0074AB98`.
+- **Observed** (`S1E` lines; `neg` = cases where the negative control's perturbed model differs, `undeclared` =
+  traced accesses outside the declared read set):
+  ```
+  S1E rng      cases=3000 match=3000 bad=0 neg=2239 traced=0  undeclared=0
+  S1E bitbuf   cases=2500 match=2500 bad=0 neg=881  traced=8  undeclared=0   clamped_neg=1092 clamped_pos=737 n32=77 overflow=404
+  S1E eval     cases=6000 match=6000 bad=0 neg=205  traced=83 undeclared=0   lone_op=256 stack_full=5844 len_le0=232 operand_past_len=197
+               var_null=714 f_out_of_range=2406 argc0=58 argc1=89 argc2=1102 argc3=85 argc_other=124 div_zero=522 pow=369
+               pow_e_le0=936 ternary_short=430 wrap10/11/12=30/38/99 rand_in_unused_drew=3 sklvl=15
+  S1E calcvar  cases=5000 match=5000 bad=0 neg=25   traced=53 undeclared=0   codes 0-16 21 22 35-37 42 54-72 >72, each also at lvl < 1
+  S1E entry    cases=1556 match=1556 bad=0 neg=227  traced=23 undeclared=0   null_pool=126 off_ge_size=722 eval=708
+  S1E excel    cases=5500 match=5500 bad=0 neg=1048 traced=79 undeclared=0   find_probe_ge_2^31=1021 find_case_variant_miss=316
+               find_unsorted=336 add_bumped=665 add_wrapped=221 name_key_over_31=435 name_key_over_31_hit=57 name_mixed_case=894
+  S1E lang     cases=182  match=182  bad=0 neg=28   traced=201 undeclared=0  entries 0-12, entry0 (ids >= 14)=70, entry13=28
+  S1E strings  cases=885  match=885  bad=0 neg=423  traced=0  undeclared=0   GetByIndex 373 (via 11078: 141, entry 500: 218)
+               key lookups at string entry 0: 10, found nowhere: 48; charcount_nofontmap=300
+  S1E compile  cases=3620 match=3620 bad=0 neg=112  traced=334 undeclared=0  compile_ok=2109 compile_fail=891 bare_ident_var0=402
+               itemvar_zero=200 cell_append=190 cell_fail=97 cell_null=13 cell_noop_off0=120      (compile-sse: identical)
+  S1E parsetxt cases=400  match=400  bad=0 neg=399  traced=87 undeclared=0   int_byte_ge_0x80=2312 code misses 1 931, name misses 1 258
+               name_over31=1 058                                                                    (parsetxt-sse: identical)
+  S1E static   pins=53 pins_ok=53 clamp_sequence_equal=1 data_reads=6 data_stores=6 (all six in entry 13 and entry 12 +0x14)
+               locale_changed_writers=1 setlocale_refs=0
+  ```
+  One informative case outside the checks: `CALC_Eval` on `09 00000080 07 FF 13 00` (`INT32_MIN ÷ −1`) returned 0 under
+  the emulator; the hardware raises the divide error there. ADR-0015 condition 5 excludes faults, so it is evidence of
+  nothing and is recorded as a SLEIGH limit for this instruction.
+- **Conclusion:** bit-exact reproduction (evidence rule 4, under ADR-0015) of every function above on the cases
+  listed, with each traced access declared (the per-family read sets and the writer scan are in the "Plan 0038 batch
+  S1e" sections of [data/0005](0005-calc.md#plan-0038-batch-s1e-2026-10-17),
+  [data/0001](0001-excel-loader.md#plan-0038-batch-s1e-2026-10-17), [data/0002](0002-mpq-precedence.md#plan-0038-batch-s1e-2026-10-17),
+  [data/0003](0003-string-tables.md#plan-0038-batch-s1e-2026-10-17), [data/0004](0004-cell-converters.md#plan-0038-batch-s1e-2026-10-17),
+  [rng/0001](../rng/0001-rng-core.md#plan-0038-batch-s1e-2026-10-17) and [save/0001](../save/0001-d2s-io.md#plan-0038-batch-s1e-2026-10-17)).
+  It contradicts one statement: `LNG_GetLanguageCode` does not fall back to entry 0 for id 13 (data/0002). Not
+  covered: faults (the divide error, the language table's entry 13 copy), `TC_ParseItemCell` (every resolved cell
+  allocates through 0x0040B4B0), and who calls these functions in play. (fn:CALC_Eval@0x006C0BC0,
+  fn:CALC_Compile@0x006C1AE0, fn:SKILLS_CalcVar@0x00646460, fn:EXCEL_ParseTxt@0x006BD780)
+- **Review re-run (architect, 2026-10-17).** The manifest matches its 53 files. `sweep_s1e.py static` (53 of 53 pins,
+  the writer scan, `clamp_sequence_equal=1`) and `test_sweep_s1e.py` (10 tests) re-run identically. Under the lane's
+  Ghidra copy (heap 3 GB, `tools/ghidra.sh emutrace`), the kept `lang` and `calcvar` cases gave outputs byte-identical
+  to the kept `.out` files, and `check` gave `lang` 182/182 (neg 28, undeclared 0) and `calcvar` 5 000/5 000 (neg 25,
+  undeclared 0). `cases` regenerated every family's files identically except `eval`: its skill index for the
+  `skillsvar` configuration was drawn from Python's unseeded module generator (`CalcVarWorld.rnd_skill()` called
+  without the family's generator), so the kept `eval.cases` cannot be regenerated. The review fixed the call (the
+  generator is now a required argument; `tools/sweep_s1e.py` `c9134335…`, the other families' output unchanged),
+  regenerated `eval` twice (identical), and ran it: 6 000/6 000 bit-exact, neg 196, undeclared 0. The kept `eval`
+  files remain the lane's record; the fixed tool regenerates a different, reproducible case set. A corrupted `eval`
+  output (one EAX bit flipped, one undeclared read added) gave `bad=2`, `undeclared=1`, so the checker fails when it
+  should.
