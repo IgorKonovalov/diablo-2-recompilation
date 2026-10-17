@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, items/uniques-sets, items/properties, items/affixes, monsters/stats, save/d2s]
 consumed_by: [save/d2s, combat/to-hit]
-tags: {C: 81, I: 39, L: 5}
-updated: 2026-10-16
+tags: {C: 81, I: 44, L: 3}
+updated: 2026-10-17
 ---
 
 # New character, starting items, experience and level-up
@@ -51,8 +51,8 @@ flowchart TD
 | The game was started with `-act N` (N = 2..5): inside `PLAYER_InitBaseStats` | fn:PLAYER_GrantLevel@0x0057EB10, run:2026-10-16-player (6 characters) | [C] |
 | A monster is killed: experience to the credited player | fn:XP_OnMonsterKill@0x0057E990 → fn:XP_PartyShare@0x0057E6C0, run:2026-10-16-player (32 kills, one player) | [C] |
 | Any experience change that changes the level | fn:PLAYER_AddExperience@0x0057E510 → fn:PLAYER_LevelUp@0x00570880, run:2026-10-16-player (20 level-ups) | [C] |
-| A capped grant of 1.4M / 20M / 40M experience (trigger not read) | fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0 | [I] |
-| Death | fn:PLAYER_DeathExpLoss@0x005359F0 | [I] |
+| The Ancients' reward (quest a5q5, Rite of Passage): a capped grant of 1.4M / 20M / 40M experience | fn:sub_0058C9A0_A5Q5_AncientDeath@0x0058C9A0 → fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0 | [I] |
+| Death, unless the killer is a player or a player's monster; the corpse's share returns on its pickup | fn:sub_00580EC0_PlayerDeath@0x00580EC0 → fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0 → fn:PLAYER_DeathExpLoss@0x005359F0; fn:PLAYER_CorpseCreate@0x0057F700, fn:PLAYER_CorpsePickup@0x0057FB70 | [I] |
 | An attribute point is spent | fn:PLAYER_SpendStatPoint@0x00570D60 | [I] |
 
 ## Inputs
@@ -145,6 +145,15 @@ Step notes:
 
 - A1. Hardcore is bit 2 (`0x04`) of the status word the character screen passes; the screen also ORs `0x20` for class
   5 or 6 before the call. [I] (0x00436360–0x004363CE)
+- A1. **Where the screen's status bits come from.** In an expansion install (`HasExpansionMpq`), selecting any class
+  sets `0x20` (`or word [status+0x1EF], 0x20`); the "expansion" checkbox toggles it (`xor 0x20`, only with the
+  expansion MPQ present), and class 5 or 6 forces it again. So a classic character of classes 0–4 is the default
+  with the box cleared. The hardcore and ladder checkboxes toggle `0x04` and `0x40`, and the class select also sets
+  `0x40` by default when the screen's mode word `0x007795EC` is 1 (set at 0x00435B31 on a path the finding places on
+  Battle.net by its context, not read further). The stub then copies the word (A1). [I] (0x00433F72–0x00433FF1,
+  fn:sub_00433BF0_CreateClassSelect@0x00433BF0, fn:sub_00430770_CreateToggleExpansion@0x00430770,
+  fn:sub_00408F20_HasExpansionMpq@0x00408F20, fn:sub_00430730_CreateToggleHardcore@0x00430730,
+  fn:sub_00430750_CreateToggleLadder@0x00430750; [player/0001 § Plan 0039 batch P1c](../../findings/player/0001-creation.md#plan-0039-batch-p1c-2026-10-17))
 - A2. Every stub of the run passed these checks, so none of the failure codes was observed. Class 7 passes the class
   test although CharStats has records 0..6 only; see § J. [I] (0x0056A172)
 
@@ -497,9 +506,14 @@ J2. ExpGrantCapped: grant 1 400 000 (Normal), 20 000 000 (Nightmare),    [I] (fn
       40 000 000 (Hell), at most one level span per step, filling the current level and calling
       PLAYER_LevelUp per level until the grant is used or MaxLvl
 J3. PLAYER_DeathExpLoss (character level lvl > 1):                       [I] (fn:PLAYER_DeathExpLoss@0x005359F0, tbl:DifficultyLevels.txt:DeathExpPenalty)
+      ; not called when the killer is a player or a monster owned by one (note J3)
       span: u32 ← Exp[lvl] − Exp[lvl − 1]                                ; Exp[n] = EXP_GetThreshold(class, n)
       loss: u32 ← DeathExpPenalty × span ÷ 100
-      if loss ≠ 0: exp ← exp − loss;  if exp ≤ Exp[lvl − 1]: exp ← Exp[lvl − 1] + 1
+      if loss ≠ 0:
+        new ← exp − loss;  kept ← loss
+        if new ≤ Exp[lvl − 1]: new ← Exp[lvl − 1] + 1;  kept ← max(0, exp − Exp[lvl − 1])
+        client.deathLoss ← kept                                          ; client +0x508, before the stat write
+        exp ← new
       ; the level never drops
 J4. XP_PartyShare with n ≥ 2 members (alive, same level, distance² ≤ 6400, at most 8):   [I] (fn:XP_PartyShare@0x0057E6C0, fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0, 0x0057E736–0x0057E79D)
       total: i32 ← exp + ((n − 1) × exp × 89) ÷ 256
@@ -518,6 +532,28 @@ Step notes:
   `PLAYER_LevelUp` call each. [C] (fn:PLAYER_GrantLevel@0x0057EB10, run:2026-10-16-player)
 - J2–J5. Not run: party share needs two clients; death loss, the experience cap and the capped grant were not reached.
   [I] (run:2026-10-16-player)
+- J2. **The trigger is the Ancients' reward** (quest record word 39, `a5q5`). The quest's monster-death callback acts on
+  classes 540–542 (`ancientbarb1`–`3`) and counts them down; when the last dies and the quest is active, the grant goes
+  first to the killing player, then to each player standing in level 120 (the Arreat Summit), and, for a player there in
+  a party, to each party member in an Act V level. Each player is granted only when its word-39 bit 0 is clear and its
+  base level is at least 20·(d + 1) (20, 40, 60), and bit 0 is set before the grant, so a player gets it once per
+  difficulty. With the one-span cut of J2, the reward is at most one level. [I]
+  (fn:sub_0058C9A0_A5Q5_AncientDeath@0x0058C9A0, fn:sub_0058C7E0_A5Q5_SummitExpGrant@0x0058C7E0,
+  fn:sub_0058C6D0_A5Q5_PartyExpGrant@0x0058C6D0, fn:sub_0058CE30_A5Q5_Init@0x0058CE30, fn:QUESTRECORD_GetState@0x0065C310;
+  [player/0001 § Plan 0039 batch P1c](../../findings/player/0001-creation.md#plan-0039-batch-p1c-2026-10-17))
+- J3. **When the loss is taken.** `PlayerDeath` calls the gate with the killer; the gate skips the loss when the killer is
+  a player (type 0) or a monster whose owner is a player, and otherwise calls `PLAYER_DeathExpLoss`. When the clamp
+  applies, the amount kept is `exp − Exp[lvl − 1]` (floored at 0), not `loss`; it is stored at client `+0x508` before the
+  stat write. [I] (0x00535A61–0x00535A8A, fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0,
+  fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, fn:CLIENT_SetDeathExpLoss@0x005391E0)
+- J3. **75 % goes on the corpse.** When the death mode ends, `PLAYER_CorpseCreate` makes the corpse unit and writes its
+  stat 13 (experience) from `v` = the stored amount: `v·75/100` when `v` ≤ `0x100000`, `(v/100)·75` above it (signed,
+  truncating); it then clears the stored amount and moves the items and gold onto the corpse. [I]
+  (0x0057F80F–0x0057F875, fn:PLAYER_CorpseCreate@0x0057F700, fn:CLIENT_GetDeathExpLoss@0x00539210,
+  fn:sub_0057FCA0_PlayerDeathModeEnd@0x0057FCA0)
+- J3. **It returns only to the owner.** `PLAYER_CorpsePickup` needs the permission test and a corpse whose owner id is
+  the picker's; a non-zero stat 13 is then zeroed and added with `sub_0057EAB0_AddExperienceDirect`. Another player's
+  pickup returns nothing. [I] (fn:PLAYER_CorpsePickup@0x0057FB70, fn:sub_0057EAB0_AddExperienceDirect@0x0057EAB0)
 - J. **Class 7** passes the header check (A2), but every CharStats reader tests `class < 7`, so it gets no attributes,
   no items and no start skill, and the experience lookups read class 0's column. [I] (0x005706FD, 0x00611808)
 
@@ -629,10 +665,10 @@ the Barbarian has one copy more (the buckler), so only its eighth copy (`isc`) t
 
 ## Open questions
 
-- [L] What triggers `sub_0058C5C0_ExpGrantCapped` (callers `0x0058C6D0`, `0x0058C7E0`, `0x0058C9A0`, not read).
-- [L] Whether 1.14d returns part of the death loss with the corpse (75 % per src:arreat-summit-experience); no code
-  read.
-- [L] Which UI path sets status bit `0x20` for classes 0–4 in an expansion game, and the ladder bit `0x40`; the stub
-  only copies the word.
+- ~~What triggers `ExpGrantCapped`~~, ~~whether the corpse returns part of the death loss~~ and ~~which UI path sets
+  status bits `0x20` and `0x40`~~: answered from the code in J2, J3 and A1 ([player/0001 § Plan 0039 batch P1c](../../findings/player/0001-creation.md#plan-0039-batch-p1c-2026-10-17)). None was run. The corpse's 75 %
+  agrees in substance with a community page; its *Leads used* verdict waits for a re-fetch (reverser backlog).
+- [L] Whether a corpse saved with its character keeps its stat 13 (the corpse record's first u32 is not initialised,
+  [save/d2s](../save/d2s.md)); and what sets the create screen's mode word `0x007795EC` (the default ladder bit). Not read (reverser backlog, the P1c residues (c) and (d)).
 - [L] How `UnitGetMaxHp/Mana/Stamina` add item bonuses to the base maxima (the I3 inputs); outside this plan.
 - [L] The header's `appearance` bytes of the first save (the client's graphics) are not predicted.
