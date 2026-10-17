@@ -691,7 +691,8 @@ other `PresetUnitCreate` callers add no 573.
 | drlg-preset 18, the `id = 573` remainder | raised in part (S4a), remainder `[I]` | **d-none** (remainder) | No stock case; the spec keeps the branch as an `[I]` code reading and says "no stock case". |
 
 Net effect: none on the totals. The row stays counted as S4a, as data-excel 51's id-13 remainder stays counted as S1e.
-**H6d (filed 2026-10-17, reverser, `lane/h6d`; pending review): 17 statements of items/quest-drops, tc and
+
+**H6d (filed 2026-10-17, reverser, `lane/h6d`; reviewed 2026-10-17, accepted with fixes): 17 statements of items/quest-drops, tc and
 uniques-sets.** run:2026-10-17-sweep-quest-b6, 19 sessions on slot 2. The lane files 5 raised, 9 raised in part, 2
 shortfall and 1 reclassified. The evidence is in the "Plan 0038 batch H6d" sections of
 [items/0010](../../findings/items/0010-quest-drops.md#plan-0038-batch-h6d-2026-10-17),
@@ -700,7 +701,7 @@ shortfall and 1 reclassified. The evidence is in the "Plan 0038 batch H6d" secti
 
 | Row | Was | Now (proposed) | Why |
 |---|---|---|---|
-| items-uniques-sets 21 (the restore path `rec+0x2C` ≠ 0) | b, H6d | **b, H1a** | Larzuk's and Anya's copies go through `ItemCopy` → `ItemCreateFromSave` and never reach `ItemCreateByQuality` (no `IC0` in the 30 services of run:2026-10-16-quest-drops). The only writer of the flag is `ItemCreateFromOldRec`, reached from the version-`0x47` item-list reader. Route: H1a's legacy loads with a unique in such a list, under `uniques.py`. Version 0 stays d-none. |
+| items-uniques-sets 21 (the restore path `rec+0x2C` ≠ 0) | b, H6d | **b, H1a** (accepted, review ruling 4) | Larzuk's and Anya's copies go through `ItemCopy` → `ItemCreateFromSave` and never reach `ItemCreateByQuality` (no `IC0` in the 30 services of run:2026-10-16-quest-drops). The only writer of the flag is `ItemCreateFromOldRec`, reached from the version-`0x47` item-list reader. Route: H1a's legacy loads with a unique in such a list, under `uniques.py`. Version 0 stays d-none. |
 
 Not class moves, for Phase 3 and later lanes (the rows stay counted as H6d):
 - **quest-drops 13 and 16**: raised in part on Baal; Diablo is a shortfall (one session reached the Chaos Sanctuary, no
@@ -709,8 +710,29 @@ Not class moves, for Phase 3 and later lanes (the rows stay counted as H6d):
 - **quest-drops 11 and tc 27**: the `exp`-state remainder is a shortfall with a route (Attract, Confuse or Conversion
   on a monster that kills a quest boss). The party half of tc 27 stays d-2c.
 
-Net effect on § 2.4 (H6d, if accepted): none. The b row moves from H6d to H1a, which then holds 46 statements. Harness
-batches hold the same 537.
+Net effect on § 2.4 (H6d): none. The b row moves from H6d to H1a, which then holds 46 statements. Harness
+batches hold the same 532 (the lane's draft said 537, the H5e-era figure).
+
+**H6d review (architect, 2026-10-17): accept with fixes; 5 raised, 9 raised in part, 2 shortfall, us 21 → b, H1a.**
+The manifest matches its 19 logs; `sweep_h6d.py logs` and `static` re-run byte-identical to the lane's reports,
+`copies` and the 8 tests re-run, `questdrops.py` 0 mismatches, and `tc.py replay` on five sessions (493 calls) gives
+the lane's counts (run record, review re-run). The lane's 1 388 calls were 1 322 counted with the classic 66 twice.
+Rulings (plan log): qd 18 and the Hydra kill stand on session 6's game-written save, now kept with a manifest; qd 22
+is raised for the code path in four difficulty and game-type states, the party clause of its statement stays `[I]`;
+qd 13's Diablo half stays `[I]` and its static "no special mode-0 record" sentence is `[I]` (the run reached two of
+the five targets); us 21's route to H1a is accepted with a reach condition. The Diablo remainders of qd 13 and 16
+are **d-owner candidates** (one owner pair, Diablo fresh and done), and qd 25 stays a shortfall: its boundary is
+already `[C]` from the owner's Hell session.
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| items-quest-drops 13 and 16, the Diablo remainders | raised in part (H6d), remainder `[I]` | **d-owner** (remainder, candidate) | The scripted pilot reached the Chaos Sanctuary but cannot operate the seals. The owner pair proposed in the run record (Diablo fresh, Diablo done) turns both remainders into raises. |
+
+Net effect on the totals: none. The rows stay counted as H6d, as drlg-preset 18's remainder stays counted as S4a.
+
+**Totals after the batch reviews, plan 0039 P1a and P1c, recomputed once (H6d review).** H6d moves one b row between
+harness batches. **Static 567, harness 532, c-emu awaiting a batch 0, blocked 415** (d-none 282, d-edit 73, d-sim 28,
+d-2c 14, d-owner 10, d-0032 8), **deferred 2, raised 10: 1 526.**
 
 
 ## 3. Blocked rows, for the plan's open questions
@@ -787,7 +809,7 @@ a letter suffix and its own run id, as the plan requires.
 
 | Batch | Slug | Stmts | T1/T2/T3 | Rows | Recipe, logger and checker; new pieces | Record | Sessions |
 |---|---|---|---|---|---|---|---|
-| **H1a** | `d2s-load` | 45 | 0/2/43 | save/d2s 9–10, 17, 22–23, 26–30, 36, 38, 44, 46–47, 49–50, 52–54, 59, 62, 65, 68, 80, 90–91, 105–107, 126, 132, 139–140; hirelings 3, 30, 32–33; player/creation 1, 8–9, 11, 20, 34 | `d2s-io.gdb` + `d2sio.py check`. Tool-built saves from `d2sio_saves.py`: bad magic or version, wrong name, class 7 and 8, act 5, status mismatches, waypoint markers, out-of-range unique and set ids, legacy v94 and versions 71 and 87 (builder support needed), item version < 93, ear, personalized, realm, > 8 KiB, checksum and size wrong; `MercMF` loaded | `findings/save/experiments.md` | ~18 |
+| **H1a** | `d2s-load` | 46 (45 filed; uniques-sets 21 from H6d, § 2.6) | 0/3/43 | save/d2s 9–10, 17, 22–23, 26–30, 36, 38, 44, 46–47, 49–50, 52–54, 59, 62, 65, 68, 80, 90–91, 105–107, 126, 132, 139–140; hirelings 3, 30, 32–33; player/creation 1, 8–9, 11, 20, 34; uniques-sets 21 (from H6d) | `d2s-io.gdb` + `d2sio.py check`. Tool-built saves from `d2sio_saves.py`: bad magic or version, wrong name, class 7 and 8, act 5, status mismatches, waypoint markers, out-of-range unique and set ids, legacy v94 and versions 71 and 87 (builder support needed; from H6d, a version-`0x47` item list holding a unique, under `uniques.py`, if a version-71 load reaches `0x00533350`), item version < 93, ear, personalized, realm, > 8 KiB, checksum and size wrong; `MercMF` loaded | `findings/save/experiments.md` | ~18 |
 | **H1b** | `d2s-play` | 48 | 0/22/26 | save/d2s 1–4, 6, 18–19, 21, 25, 31, 33–35, 37, 39–43, 48, 55–57, 60, 72–73, 77–78, 83, 88, 102, 108, 110–116, 117 (from S1a), 118, 124 (from S1a), 125, 127; hirelings 24 | same family. A one-client TCP/IP host, weapon swap, hotkeys, the hirelings mercenary saves (write side, dead flag), iron golem, corpse, runeword, the `questdiffcheck` item, `maxhp`/`maxmana` and poison items, the bit-13 case, and section writer, reader and join breakpoints. **Also:** load `questrewards` and `questrewardsh` (built `246515c5…`, `14c28526…`; backlog 2026-10-16, archivist `lane/abl`) and pin both in `tools/test_d2s.py` with the run id, as the plan 0032 recipes were pinned. From S1a (§ 2.6; 117 and 124 counted here, the other pieces stay counted as S1a): a set item with one damage group in its main and a bonus list; a lone `fire-max` and a lone `fire-min`; magic damage (group 52); a hired mercenary, a swapped weapon set, a left-button hotkey, an item on the cursor and a class item with an automagic affix at *Save and Exit* | `findings/save/experiments.md` | ~14–17 |
 | **H2a** | `items-tc` | 17 | 10/0/7 | quality 20, 22–23; tc 1–2, 11, 22, 34 (2, from S2a), 37, 45, 47, 59–60, 70–71 | `tc-drops.gdb` + `tc.py`. New lines: the caller, gold (stat 14), the MonDeathDrop exit. A Find Item barbarian, `/players 8` host and chests, Hell mfnecro, skeleton or Valkyrie kills; a classic Countess kill (tc 34, § 2.6) | `findings/items/experiments.md` | ~6 |
 | **H2b** | `items-chain` | 25 | 7/1/17 | affixes 5, 13, 17, 19–21, 24; properties 7, 20, 24 (from S2b); sockets 42 (from S2c); tc 58, 68 (from S2a); uniques-sets 7, 9, 10, 35, 39 (9, 39 from S2b) | `items-chain.gdb` + `items_chain.py both`. A classic hunt (classicsorc) and a long Hell hunt (also a superior ethereal `dur%` item where the two orders differ, properties 24; magic drops requesting 5 or 6 sockets, sockets 42; from the S2c review, a piece with the row counted as S2c: normal and rare drops requesting more than 3 and 4, sockets 44). New line (tc 58, 68, uniques-sets 9, 39; § 2.6): `game+0xD0` at `sub_00558D90_ItemCreate` entry and after `sub_00552E90_ItemSeedInit`, and `Unit+0x20` with the game seed at `IC0` and `ICJ` | `findings/items/experiments.md` | 6–10 |
@@ -803,7 +825,7 @@ a letter suffix and its own run id, as the plan requires.
 | **H6a** | `cube` | 29 | 0/18/11 | cube 1, 7, 15–16, 17 (from S2c), 25, 32, 36, 38–40, 43–44, 51 (from S2c), 53–54, 58 (from S2c) | `cube.gdb` + `cube.py`; new `.plan` files (upgrades, eth/strip rows, ethereal or socketed inputs, repair, recharge, `qty`, Staff of Kings, Khalim's Will, unsocket, the cow portal outside level 1 and in classic; from S2c: an elite upgrade with an exceptional-tier and a normal-tier base, more row-19 transmutes, row 17 on a magic tower shield, which also decides affixes 14's remainder); a UnitSetEvent line. From the S2c review (piece; cube 49 stays counted as S2c): a crafting session at output ilvl ≤ 5 with `sst` (rows 72, 90), `lbt` (83) or `lgl` (84) on a tool-built low-level save, for the crafted pick of 0; case (b) faults the game, so it is the session's last transmute | `findings/items/experiments.md` | ≤ 20 |
 | **H6b** | `sockets` | 25 | 0/20/5 | sockets 1, 9–10, 12–13, 16–18, 21, 29, 35 ×2 (from S2c), 38 | `sockets.gdb` + `sockets.py`; child x/y and cursor lines; sock-refuse and sock-rw plans; a save holding a runeword (the *Steel* sample) loaded under the logger (sockets 35; with it the reader's `+0x38` store of sockets 46). From the S2c review (piece; sockets 14 stays counted as S2c): an unidentified socketed parent's client flags before and after identifying it, with an insert tried each time | `findings/items/experiments.md` | ≤ 20 |
 | **H6c** | `vendors` | 13 | 0/11/2 | vendors 2, 5, 12, 14–15, 18, 29–30, 32–34, 36 | `vendors.gdb` + `vendors.py`; reopen store or gamble, Asheara's hire list first, walk out of town, level-up between opens, buy and sell; saves at clvl ≤ 9, ≥ 96, 99 in Hell. From the S2c review (pieces; vendors 22 and 26 stay counted as S2c): the stock item's store tab and grid cell, and `+0x18`/`+0x28` of the store creation record at `IC0` | `findings/items/experiments.md` | ≤ 20 |
-| **H6d** | `quest-b6` | 17 | 10/5/2 | quest-drops 11, 13, 16, 18, 22, 25, 27; tc 26–27; uniques-sets 21 | `quests.gdb` + tc-drops, `tc.py` b6_model, `questdrops.py`: Andariel or Duriel killed by a mercenary or summon, Diablo and Baal, Warriv's report, questfresh in Nightmare, Hell and classic, the forge with a stat-356-1 hammer, the unique restore path | `findings/items/experiments.md` | ≤ 20 |
+| **H6d** (done) | `quest-b6` | 16 (17 filed; uniques-sets 21 to H1a, § 2.6) | 10/5/2 | quest-drops 11, 13, 16, 18, 22, 25, 27; tc 26–27; uniques-sets 21 | `quests.gdb` + tc-drops, `tc.py` b6_model, `questdrops.py`: Andariel or Duriel killed by a mercenary or summon, Diablo and Baal, Warriv's report, questfresh in Nightmare, Hell and classic, the forge with a stat-356-1 hammer, the unique restore path | `findings/items/experiments.md` | ≤ 20 |
 | **H6e1** | `quest-npc` | 22 | 0/20/2 | quest-drops 2, 4–5, 32, 39–40, 42–46, 50–51 | `quests.gdb` + `d2pilot.py npc`: given items and service branches and refusals. From the S2c review (piece; quest-drops 38 stays counted as S2c): a cursor-item line at `sub_0055EEA0_CursorItemConsume` in each service branch | `findings/items/experiments.md` | ≤ 20 |
 | **H6e2** | `quest-items` | 24 | 0/23/1 | quest-drops 1, 30, 33–35; objects 48 | `quests.gdb` with `objop`/`hunt` on tool-built quest saves: the 16 quest items, chests, duplicates, the item-move gate; the quest objects ride the same sessions; a backtrace at `QUESTS_ObjectEvent` (quest-drops 1). objects/0001 cites the record | `findings/items/experiments.md` | ~20, at the cap |
 | **H6f** | `hirelings` | 23 | 0/17/6 | hirelings 1–2, 5–6, 9–10, 14–18, 20–21, 23, 25, 27–29, 31, 35–37 | `hirelings.gdb` + `hireling_sessions.py`: Asheara's trade first, Greiz, classic lists, the free mercenary, the level floor, quest, level and gold gates, stash payment, `MERC_AddExp`, `merc_saves.py` saves, resurrection | `findings/hirelings/experiments.md` | ≤ 20 |
@@ -906,7 +928,7 @@ Static and harness batches use different resources (Ghidra copies against slots)
 | 3 | H5e (done) | 16 | 0 | 22 | no logger change; after H5c (same family); reviewed, no class move (§ 2.6) |
 | 4 | H5a (done) | 16 | 0 | 21 | after H5e; a new logger file (`drlg-links.py`), 9 sessions; reviewed, 5 to d-none (§ 2.6) |
 | 5 | H5b | 12 | 2 | 33 | objects family; may pair with any DRLG batch; +1 from S4b (§ 2.6) |
-| 6 | H6d | 10 | 5 | 17 | |
+| 6 | H6d (done) | 10 | 5 | 17 | 19 sessions; reviewed, us 21 to H1a, the Diablo remainders d-owner candidates (§ 2.6) |
 | 7 | H2a | 10 | 0 | 17 | +2 from S2a (§ 2.6) |
 | 8 | H2b | 7 | 1 | 25 | +2 from S2a, +3 from S2b, +1 from S2c (§ 2.6) |
 | 9 | H5d | 6 | 0 | 17 | after H5c (`collision.gdb`) and H5a; +1 from S3b (§ 2.6) |
@@ -920,7 +942,7 @@ Static and harness batches use different resources (Ghidra copies against slots)
 | 17 | H4a | 0 | 14 | 32 | after H4b (same family); +2 from S3a, +1 from S2c (§ 2.6) |
 | 18 | H6c | 0 | 11 | 13 | |
 | 19 | H6g | 0 | 8 | 17 | +1 from S3b (§ 2.6) |
-| 20 | H1a | 0 | 2 | 45 | after H1b (same family) |
+| 20 | H1a | 0 | 3 | 46 | after H1b (same family); +1 from H6d (§ 2.6) |
 | 21 | H2c | 0 | 0 | 7 | forced, admitted with the § 6 conditions; after H2b (same family) |
 
 **Ruling 3 (order).** H5c stays ahead of H5e and H5a. It has the most T1 statements and the fewest sessions of the

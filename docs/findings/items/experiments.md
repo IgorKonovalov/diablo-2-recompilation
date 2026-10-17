@@ -2264,7 +2264,10 @@ Logs `workspace/logs/quests-s<slot>-<seed>-<tag>-<difficulty>.log`; screenshots 
     `574460e7…`, save `84888ad5…`: `questfreshc` with Lightning Mastery and the hotkeys; status byte `0x00`, classic).
     Stat 356 on the hammer is a value the game itself gives a created quest item, written by the builder's
     `item_stats`; no test-state key, no table edit. The Warriv session's written save (Save and Exit in session 6) is
-    `b50b68dd…`, `d2s.py questbits` against the built save: Normal word 0 bit 0, word 6 bits 0, 3, 4, 13.
+    `b50b68dd…`, `d2s.py questbits` against the built save: Normal word 0 bit 0, word 6 bits 0, 3, 4, 13. The six
+    built saves and the written one are kept in `workspace/logs/h6d/saves/` (the written one under `written/`),
+    manifest `workspace/logs/h6d/quest-b6-saves.sha256` (`0c2db76f…`; added at the review, 2026-10-17, from the lane's
+    session scratch, hashes unchanged).
 
 | # | Log (`workspace/logs/h6d/`) | Save, difficulty | What | Result |
 |---|---|---|---|---|
@@ -2281,7 +2284,7 @@ Logs `workspace/logs/quests-s<slot>-<seed>-<tag>-<difficulty>.log`; screenshots 
 | 11 | `quest-b6-s2-3811-andy-hell.log` | QuestFreshT, Hell | Andariel (Nova) | kill, gems |
 | 12 | `quest-b6-s2-3811-andy-classic.log` | QuestFreshCT, Normal (classic) | Andariel (Nova) | kill, gems |
 | 13–15 | `quest-b6-s2-3811-forge-nm.log`, `-r2`, `-r3` | QuestSvcOne, Nightmare | River of Flame to the Hellforge | not reached (a lava edge near x 7765) |
-| 16 | `quest-b6-s2-3811-baal-fresh.log` | QuestBaalF, Normal | Worldstone Keep 2 down | `--descend 87,88` named the .txt rows; the loaded records are 86/87 |
+| 16 | `quest-b6-s2-3811-baal-fresh.log` | QuestBaalF, Normal | Worldstone Keep 2 down | `--descend 87,88` named the .txt rows; the loaded records are 86/87 (the `Expansion` marker row is not loaded: [LvlWarp](../../tables/LvlWarp.md#row-identity), [excel-bin](../../formats/excel-bin.md)) |
 | 17 | `quest-b6-s2-3811-baal-fresh-r2.log` | QuestBaalF, Normal | WSK 2 → 3 → Throne, five waves, the Chamber portal (563), Baal | **Baal killed, fresh**; gold |
 | 18 | `quest-b6-s2-3811-baal-done.log` | QuestAllDone, Normal | the same | **Baal killed, done** |
 | 19 | `quest-b6-s2-3811-diablo-fresh.log` | QuestFreshT, Normal | River of Flame → Chaos Sanctuary, seals, Diablo | Sanctuary reached, no seal operated (the runner was stopped and one manual `objop` tried, in the pilot record) |
@@ -2311,7 +2314,7 @@ Logs `workspace/logs/quests-s<slot>-<seed>-<tag>-<difficulty>.log`; screenshots 
                   0 bad
   questdrops: 18 quest seed starts, 332 quest-bit writes, 19 quest-seed fetches (19 predicted), 18 scripted draws
               reproduced (Andariel), 0 mismatches
-  tc.py replay: 1322 expansion + 66 classic TC_ResolveDrops calls reproduced, 0 failed; B6 tied to the DROP base in all 9 kills
+  tc.py replay: 1322 TC_ResolveDrops calls reproduced (66 of them classic), 0 failed; B6 tied to the DROP base in all 9 kills
   items_chain.py affixes: 1153 creations reproduced, 0 failed
   monpool.py check: 8607/8607 match
   sweep_h6d static: MonModeRecord gives no class a special mode-0 record; ItemCreateFromOldRec's +0x2C store at
@@ -2322,7 +2325,7 @@ Logs `workspace/logs/quests-s<slot>-<seed>-<tag>-<difficulty>.log`; screenshots 
   not operated); the Nightmare Hellforge with the stat-356-1 hammer (3 sessions, all stopped at the same lava edge); the
   `exp`-state killer (not attempted: it needs a Necromancer's Attract or Confuse, or a Paladin's Conversion, on a
   monster that then kills a quest boss). Session 19's runner was stopped after the scripted seal clicks failed. One manual
-  `objop --obj-cls 394` was tried on the live game (logged in the pilot record) before the slot was stopped.
+  `objop --obj-cls 394` was tried on the live game (logged in the pilot record) before the slot was stopped. (run:2026-10-17-sweep-quest-b6)
 - **Owner-played addendum (proposed, same run id):** slot given by the architect, `tools/gdb/quests.gdb`, no steps,
   `--after 3600`, never *Save and Exit*:
   1. Diablo fresh (`QuestFreshT`, Normal): River of Flame waypoint, Chaos Sanctuary, the five seals, kill Diablo.
@@ -2334,3 +2337,13 @@ Logs `workspace/logs/quests-s<slot>-<seed>-<tag>-<difficulty>.log`; screenshots 
   states, Baal's quest TC both ways, his death order and his gold reproduce with 0 mismatches over 19 sessions. The
   raised claims are in [items/0010 § Plan 0038 batch H6d](0010-quest-drops.md#plan-0038-batch-h6d-2026-10-17),
   [items/0001](0001-tc-resolution.md#plan-0038-batch-h6d-2026-10-17) and [items/0004](0004-uniques-sets.md#plan-0038-batch-h6d-2026-10-17).
+- **Review re-run (architect, 2026-10-17):** `sha256sum -c` on the manifest, 19 of 19 OK. `sweep_h6d.py logs`
+  (output byte-identical to `check-sweep_h6d.txt`), `sweep_h6d.py static` (identical to `check-static.txt`),
+  `sweep_h6d.py copies` (LZ0 15, PZ 15, IMB0 17, no `IC0`) and `test_sweep_h6d.py` (8 tests OK) re-run. `questdrops.py
+  check` on the 19 logs under `systemd-run --user --scope -p MemoryMax=4G`: 0 mismatches, report identical. `tc.py
+  replay` on sessions 6, 9, 12, 17 and 18: 65, 73, 66, 147 and 142 calls, 0 failed, the same counts as `check-tc.txt`,
+  each with its B6 test reproduced. The 19 report lines sum to 1 322 calls, the classic session's 66 included (the
+  first draft read 1 322 + 66). `d2s.py questbits` on the kept written save against `QuestFreshM` gives word 0 bit 0
+  and word 6 bits 0, 3, 4, 13, as above. objdump re-read `MonModeRecord` (0x005A78A0–0x005A79B0),
+  `MonsterOwnerRef`, the death event's owner lookup, Warriv's two calls, Baal's gold loop, `DropGoldAmount`'s cap and
+  `PlayerFindItemByCode`'s tests; fixes in the finding sections (review entry in the plan 0038 log).

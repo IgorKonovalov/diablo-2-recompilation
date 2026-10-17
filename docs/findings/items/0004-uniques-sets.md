@@ -979,10 +979,12 @@ and [items/0001](0001-tc-resolution.md#plan-0038-batch-h6d-2026-10-17).
   (seeds 3311–3333), the 15 Larzuk and the 15 Anya services have no `IC0` line between the menu action (`MA`) and the
   service line on the copy (`LZ0`, `PZ`): `python3 -I tools/sweep_h6d.py copies` prints `LZ0 after MA with 0 IC0
   between 15` and `PZ after MA with 0 IC0 between 15`. The only constant store of the restore flag is `mov
-  [ebp-0x5C], 1` at 0x00530FDA, record `+0x2C` of `sub_00530F40_ItemCreateFromOldRec`. Its two callers (0x0053105E,
-  0x0053139C) lie in `sub_00533350_ItemListReadV71`, the reader of a version-`0x47` item list
-  ([rng/0002](../rng/0002-seed-tree.md#which-item-creations-pass-seeds-0x480x4c)); `sweep_h6d.py static` checks the
-  store and lists the callers. [C] for "a service copy makes no creation record" (the copy path above, and the logs);
+  [ebp-0x5C], 1` at 0x00530FDA, record `+0x2C` of `sub_00530F40_ItemCreateFromOldRec`. Its two calls (0x0053105E,
+  0x0053139C) lie in two helpers, `0x00531040` and `0x00531390`, and those are called only from
+  `sub_00533350_ItemListReadV71` (0x00533528 and 0x005335A2; 0x00533490 and 0x0053358A), the reader of a
+  version-`0x47` item list ([rng/0002](../rng/0002-seed-tree.md#which-item-creations-pass-seeds-0x480x4c)). The
+  review (2026-10-17) re-read the helper calls with objdump; the first draft placed the two calls inside the reader
+  itself. `sweep_h6d.py static` checks the store and lists the calls. [C] for "a service copy makes no creation record" (the copy path above, and the logs);
   [I] for "only an old-format item list sets the flag" (the other 19 `ItemCreate` call sites zero the record and leave
   `+0x2C` at 0, as rng/0002 reads them; not re-read here). New route: H1a's legacy loads (save versions 71 and 87,
   builder support needed) with a unique item in a version-`0x47` list, under `uniques.py`. Version 0 stays d-none.

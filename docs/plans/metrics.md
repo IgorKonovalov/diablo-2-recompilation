@@ -90,6 +90,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-17 | `lane/p42r` review | 0042 P1/P1b | architect-review | 224 353 | 113 | 23 | — | gave accept with fixes | — (on the lane row) |
 | 2026-10-17 | `lane/p43r` | 0043 P1/P1b | reverser-static | 429 692 | 202 | 38 | Ghidra (lane copy) | accept with fixes | 5: overclaim 2, omission 2, miscount 1 |
 | 2026-10-17 | `lane/p43r` review | 0043 P1/P1b | architect-review | 192 590 | 65 | 13 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-17 | `lane/h6d` | 0038 H6d | reverser-harness | — | — | — | slot 2 | accept with fixes | 8: overclaim 2, misread 1, miscount 2, wrong anchor 1, stale cross-reference 1, tool not kept 1 (usage unknown) |
+| 2026-10-17 | `lane/h6d` review | 0038 H6d | architect-review | — | — | — | — | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

@@ -161,7 +161,7 @@ verdict per compared claim.
 | `0x005438E0` | `QUESTS_DispatchEvent` | calls `Quest+0xA0 + 4·event` of every quest object | I |
 | `0x005439A0` | `QUESTS_DispatchUnitEvent` | same, for the quests registered on a unit (`Unit+0x74`) | I |
 | `0x00543A30` | `QUESTS_MonsterDeathEvent` | event 8 for a dying monster, killer resolved to a player | C (H6d) |
-| `0x0058F090` | `sub_0058F090_MonsterOwnerRef` | a monster's owner as (type, GUID) from MonsterData `+0x28`: `+0x2C`, `+0x30` (−1 for none); the death event finds the unit by it | C (H6d) |
+| `0x0058F090` | `sub_0058F090_MonsterOwnerRef` | a monster's owner from the record MonsterData `+0x28` points to: GUID `+0x2C`, type `+0x30` when the record's `+0x28` ≠ 0, else GUID −1; the death event finds a player by it | C (H6d) |
 | `0x00543BD0` | `sub_00543BD0_QuestsInvItemEvent` | each inventory item with `quest` ≠ 0: event 9 (`Quest+0xC4`) of quest object `quest − 1`; then event 1 (§ 5) | I |
 | `0x00555D20` | `sub_00555D20_ItemQuestHook` | sets identified; an item with `quest` ≠ 0 is registered with quest object `quest − 1` (`QUESTS_HookMonster`) (§ 5) | I |
 | `0x0055CC90` | `sub_0055CC90_ItemQuestGate` | per-code and per-`quest` refusals of a quest item for a player, four item-move callers (§ 5) | I |
@@ -1063,7 +1063,7 @@ Harness batch H6d of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took
 killer and player, 0x00543AB5), `MMR` (the death-mode record of the five `TCQuestId` classes, 0x005A7D51), `BG0`/`BGR`
 (Baal's gold loop and each draw, 0x0058E02E, 0x0058E061), `GLD` (each pile at 0x0055A1BD) and, from session 5 on, `OOP`
 (each object operate, for the pilot). Checker `tools/sweep_h6d.py logs` (0 bad over the 19 logs) next to
-`tools/questdrops.py` (0 mismatches), `tools/tc.py replay` (1 322 + 66 classic calls, 0 failed, every B6 group tied to
+`tools/questdrops.py` (0 mismatches), `tools/tc.py replay` (1 322 calls, 66 of them classic, 0 failed, every B6 group tied to
 its `DROP`), `tools/items_chain.py affixes` (1 153 creations, 0 failed) and `tools/monpool.py check` (8 607/8 607).
 Tool-built saves on stock tables (ADR-0013 § Neutral): a mercenary and Hydra on the `questfresh` character, the
 Baal-fresh and all-done states, a classic copy with hotkeys, and `questservices` with stat 356 = 1 on the hammer.
@@ -1082,8 +1082,10 @@ Baal-fresh and all-done states, a classic copy with hotkeys, and `questservices`
   Route: a Necromancer's Attract or Confuse, or a Paladin's Conversion, on a monster that then kills a quest boss. (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0,
   fn:MONSTER_DropItems@0x005A6600 0x005A6817, run:2026-10-17-sweep-quest-b6)
 - The death event resolves the same way. [C] `QUESTS_MonsterDeathEvent` gives its event the player behind a monster
-  killer. `sub_0058F090_MonsterOwnerRef` returns the owner's type and GUID from MonsterData `+0x28` (`+0x2C`, `+0x30`;
-  −1 when there is none), and `GameFindUnit` finds the player (0x00543A8C–0x00543AB2). In session 6 the `QME` line has
+  killer. `sub_0058F090_MonsterOwnerRef` reads the record MonsterData `+0x28` points to: when that record's `+0x28` is
+  nonzero it returns the owner's GUID from `+0x2C` and type from `+0x30`, else GUID −1 (0x0058F0A8–0x0058F0C7).
+  `QUESTS_MonsterDeathEvent` then calls `GameFindUnit` only for type 0, a player (0x00543A8C–0x00543AB2; review
+  2026-10-17: the first draft had type and GUID swapped). In session 6 the `QME` line has
   the merc as the killer and the player as the event's player. Andariel's script then set the player's word 6 bits 13
   and 1 (0x0059621D, 0x00596227) and dropped the three gems: a pet or hireling kill credits the owner and pays the
   owner's gems. (fn:QUESTS_MonsterDeathEvent@0x00543A30, fn:sub_0058F090_MonsterOwnerRef@0x0058F090,
@@ -1092,13 +1094,16 @@ Baal-fresh and all-done states, a classic copy with hotkeys, and `questservices`
   run (Andariel ×7, Baal ×2) the `MMR` line shows mode 0's record `0x006E2260`, whose start is `sub_005A6FF0_MonDeathEvent`.
   `sweep_h6d.py` checks that it comes before the B6 test, that no write of the class's word lies between, and that the
   `QME` dispatch follows the drop. For Baal's fresh kill (session 17) the drop (`Baalq`, 884) comes first, then the
-  `QME`, then word 40 bits 13 and 0 from `0x0058DD30` (returns 0x0058DD3D, 0x0058DD47). [C] (static) No class gets a
+  `QME`, then word 40 bits 13 and 0 from `0x0058DD30` (returns 0x0058DD3D, 0x0058DD47). [I] (static) No class gets a
   special mode-0 record. `sub_005A78A0_MonModeRecord` tests `MonStats+0x1A5` (0x005A78EF), then switches on the class
   in two jump tables (classes 243–418 at 0x005A79C4/0x005A79B4, 544–709 at 0x005A7A80/0x005A7A74, and 543 directly).
-  The five case blocks return a special record only for modes 4, 5, 8, 9 (one class), 11 (two), 10 and 11 (three, Diablo
-  243 among them) and 10 (four, Baal 544 among them); every other case falls to `0x006E2260 + 16·mode`. `sweep_h6d.py
-  static` reads both tables from the image and checks the six blocks' first instructions. **Remainder** (shortfall):
-  Diablo was not killed (below), so his order rests on the static read and the shared code path.
+  The tables reach five targets. Four return a special record only for modes 4, 5, 8, 9 (one class), 11 (two), 10 and
+  11 (three, Diablo 243 among them) and 10 (four, Baal 544 among them). The fifth target, like every class outside the
+  two ranges, falls to `0x006E2260 + 16·mode`. `sweep_h6d.py static` reads both tables from the image and checks the
+  first instruction at the five targets and at 0x005A7984, the mode-10 test of the 10-and-11 block. The run reached
+  the default record (Andariel, outside the ranges) and Baal's block. Diablo's block (0x005A7977) and the two others
+  were not run, so the sentence stays `[I]` (review 2026-10-17). **Remainder** (shortfall): Diablo was not killed
+  (below), so his record and his order rest on the static read and the shared code path.
   (fn:sub_005A78A0_MonModeRecord@0x005A78A0, fn:sub_005A7C20_MonSetMode@0x005A7C20, fn:sub_0057CCB0_UnitKilled@0x0057CCB0,
   run:2026-10-17-sweep-quest-b6)
 - **qd 16** (L223, L224, L238: Diablo's and Baal's quest TC, clear word → quest TC, bit 0 → normal TC) **raised in
@@ -1129,7 +1134,7 @@ Baal-fresh and all-done states, a classic copy with hotkeys, and `questservices`
   seed 3811. The pilot stopped at the same lava edge (about x 7765) every time, 370 sub-tiles from the forge's preset
   rooms (LvlPrest 853/854). No `FOP` line was logged. The boundary itself is already `[C]` from the owner-played Hell
   session (356 = 2 at difficulty 2, § Owner-played addendum). This Nightmare case would have been a second equality.
-  `n` > 1 stays d-2c.
+  `n` > 1 stays d-2c. (fn:sub_00558110_PlayerFindItemByCode@0x00558110, run:2026-10-17-sweep-quest-b6)
 - **qd 27** (L402, L408: Baal's first-kill gold) **raised.** [C] Session 17: `BG0` bounds 1 500 and 3 000 (`6000·0 +
   1500`, `min(6000·0 + 3000, 0xFFFF)`), one qualifying player. The `QGS` at 0x0058E057 found the quest seed as
   `QUESTS_InitGame` left it (`91fdb5f0:0000029a`). `RNG_RandLoHi` gave 2 178, which is `1500 + low(step) mod 1500`; the
@@ -1150,11 +1155,12 @@ pilot. The Chaos Sanctuary seals (Diablo) and the River of Flame crossing to the
 have. A proposed owner-played addendum (same run id) is in the run record.
 
 **Backlog leftover (static, 2026-10-16 architect entry): the two branches of `sub_00558110_PlayerFindItemByCode`.**
-[I] The function first looks at the **cursor** item (`sub_0063C1E0`). It matches when the code is the asked one
-(`sub_00628590`), and then accepts it at once unless the base has `quest` (`+0x12A`, 0x0055814F). For a quest item it
+Plan 0039 P1b answered this entry first ([§ B12](#b12-the-cursor-branch-of-playerfinditembycode)); this independent
+read agrees with it and adds the page test of the inventory walk. [I] The function first looks at the **cursor** item
+(`INV_GetCursorItem`). It matches when the code is the asked one (`ITEMS_GetCode`), and then accepts it at once unless the base has `quest` (`+0x12A`, 0x0055814F). For a quest item it
 compares the stat 356 (`STATS_GetUnitStat(item, 0x164, 0)`) with the difficulty: `difficulty ≤ stat` (signed `jle`,
 0x0055816D) accepts. The cursor branch does **not** test `questdiffcheck`. Then the **inventory walk**
-(`sub_0063B2C0` / `sub_0063DFD0` / `sub_0063DFA0`) skips an item whose page test (`sub_00628250_ItemGetPage`) is 1.
+(`INV_GetFirstItem` / `sub_0063DFD0_InvNodeItem` / `INV_GetNextItem`) skips an item whose page test (`sub_00628250_ItemGetPage`) is 1.
 For a matching code it accepts unless the base has both `quest` (0x005581B3) and `questdiffcheck` (`+0x12B`,
 0x005581BC); only then does it make the same compare (0x005581D6). A missing stat reads as 0
 (`sub_00624F60_StatListGetValue` returns 0 when the stat is not in the list, 0x00624F81–0x00624F8C). So a cursor-held
