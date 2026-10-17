@@ -39,16 +39,19 @@ reason they could not be reached, and the specs are re-tagged. No new subsystem.
   chooses at the start); a `d2pilot.py` mode that drives the joiner's character (follow, party, leave, trade), on
   top of plan 0011's `two-*.steps` files.
 - **Done when:** every d-2c row and every multiplayer open question listed in *Context* has a case or a reason it can't
-  be staged (for example a third player); the joiner's driver is tested on a non-zero slot; the architect's review
-  rules the case list.
+  be staged (for example a third player); the joiner's driver is tested on a non-zero slot (moved to Phase 2's first
+  step by the Phase 1 review, 2026-10-17); the architect's review rules the case list.
 
 ### Phase 2 — Two-client runs
 - **Owner skill:** reverser (agent-driven; **two slots together**, both harness lanes)
-- **Precondition (owner's condition on ADR-0008, 2026-10-16):** before the first hosting session of the run, and again
-  after any reboot or firewall change, the lane makes sure TCP port 4000 cannot be reached from outside loopback:
-  it blocks the port with a host firewall rule limited to non-loopback interfaces, or confirms that an existing rule
-  already blocks it (for example by listing the rules and probing the port from a non-loopback address). The run
-  record states which, with the commands used and their output. No hosting session starts until this is recorded.
+- **Precondition (owner's condition on ADR-0008, 2026-10-16):** before the first hosting session of the run, the lane
+  makes sure TCP port 4000 cannot be reached from outside loopback: a host firewall rule that leaves loopback open,
+  or a confirmed existing block. The run record states which, with the commands used and their output. No hosting
+  session starts until this is recorded. The steps are [multiplayer/0001 § 5](../findings/multiplayer/0001-cases.md#5-the-hosts-binding-and-the-port-4000-precondition)
+  (Phase 1 review, 2026-10-17): the owner's root listing, or the owner's deny rule; the lane re-checks the ufw state
+  and file hashes without root before each later session, and repeats the owner's step only if they changed.
+- **First step: the driver's live test** (Phase 1's checkpoint, carried here by the Phase 1 review): the six steps
+  of the Phase 1 log entry, after the precondition, before any case session.
 - **What:** run the cases, with the existing loggers on the host (`tc-party.gdb`, `vendors.gdb`, `quests.gdb`,
   `player.gdb`, `combat.gdb` and the others the case list names) and their checkers.
 - **Done when:** the port-4000 precondition is recorded in the run record; `run:YYYY-MM-DD-two-clients` reproduces with **0 mismatches** under each checker, and every case of the
@@ -155,3 +158,61 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** a review request to the architect; two-client recipes to the archivist; the precondition's root
     step or probe approval to the human; and to the reverser, the quests/0002 corrections for when lane/p42r merges
     and the `aurafilter` read for MP25.
+- **2026-10-17 — Phase 1 reviewed (architect, `lane/p44r`, `main` `cf1d6e1` merged in as `4aa03c9`): accept with
+  fixes; Phase 2 opens with the driver's live test as its first step, after the port-4000 record.** Merge: only this
+  plan's log conflicted (both entries kept, in date order); `tools/backlog.py migrate` changed nothing. Gate green.
+  **Checks** (my own objdump of the pinned `Game.exe`, sha256 `631066c1…`, not the lane's dump):
+  - All **38 `fn:` anchors** of § 2 name the `re/symbols.csv` row at that address and follow `int3` or `ret`. The
+    Entry column also holds 13 bare addresses: five function starts (0x00539DA0, 0x0054C5D0, 0x00554630, 0x00584870,
+    0x005A5E50, also after `int3`) and eight sites (0x0055A8E4 is the clamp `cmp edi, 8` in `TC_ResolveDrops`), so
+    "all 38 entries" is reworded and MP03 cites its function.
+  - **The gates:** `xor edx, edx` at 0x0054C5F5 and 0x005848BA before `call 0x0055B6C0`, which returns PlayerData
+    `+0x160` when EDX = 0 (0x0055B6C8–0x0055B6D4); `add eax, 0x2710` / `lea edi, [eax+0x1388]`, `GetTickCount`, `jbe`
+    (unsigned). `0x0055B720` writes `+0x160` ← `GetTickCount()` for its ECX player (0x0055B759–0x0055B76B), called at
+    0x005A5F51 with ECX = the declarer. **Both readings hold.**
+  - **The portal's hostility test:** 0x0058488F `0x00535B10(game, operator)`, then owner id (`0x00552B10`) vs the
+    operator's `+0x0C`; `0x00535AF0` sets the result on `0x0055B300(operator, player, 8)`. Holds.
+  - **The declaration** (0x005A5E50–0x005A5FED): town, levels, pair stamp `+ 0xEA60`, refusal message 0x13, portal
+    close, party leave all as read. The lane missed two details: the two level reads are `STATS_GetUnitBaseStat`
+    (0x006253B0), and a declaration toward a player not yet hostile also needs `STATS_GetUnitStat(O, 12)` ≥ 9
+    (0x005A5EE4–0x005A5EFF); the early refusals set an out flag (0x005A5FDE). § 4 and the summary corrected.
+  - **Binding:** both `bind` sites zero a 16-byte `sockaddr_in`, write family 2 and the port, and pass it
+    (0x006C31F8–0x006C321D, 0x006C3BF4–0x006C3C26). Holds.
+  - `test_joiner.py` 16 OK, `test_slots.py` 33 OK. The lane's d-2c command gives **14** (tc 43, 44, 46; vendors 1,
+    10, 13, 16, 17; quest-drops 6, 12, 36; hirelings 11; player/creation 6, 31); `grep d-2c` adds exactly the four
+    halves and pool 1. Tags: every behavioural line is `[I]` with an anchor; `[L]` only under *Open questions*.
+  **Rulings:**
+  - (a) **One cross-cutting finding: accepted.** The research map's multiplayer paragraph now names it; Phase 3 re-tags
+    the owning rows.
+  - (b) **The checkpoint is carried into Phase 2**, as its first step: the live test hosts a game, so it needs the
+    port-4000 record anyway. Phase 1's *Done when* item says so. No case session runs before the driver passes,
+    and the four uncalibrated positions are measured then.
+  - (c) **MP02, MP03, MP05 unstageable: accepted.** MP02 and MP03 stay `[I]` (this plan's open question; `/players`
+    stands in for `PlayerCount` only). MP05 is a named shortfall unless a session meets it.
+  - (d) **MP25, MP31–MP32 without a prediction:** they may be staged, but a run raises nothing unless the prediction
+    is written before the session that reaches it (ADR-0004). MP25's comes from the open `aurafilter` entry (static,
+    before Phase 2); MP31–MP32 wait for plan 0043 Phase 1's acceptance (`lane/p43r`, under review); if Phase 2 runs
+    first, they are shortfalls, not observations to fit.
+  - (e) **MP18's packet condition: accepted.** Phase 2 tries the stock client once with the trade open; if no PKT
+    `0x28` line appears, MP18 is a shortfall (d-edit). A forged packet is out of this plan (pinned client only,
+    ADR-0002 defers network tooling).
+  - (f) **The quests/0002 correction is folded here**, since `lane/p42r` is on `main` and the review re-read the
+    instructions: quests/0002 § 6 pseudocode, § 9, the closing list, the three hostility verdicts (the portal one
+    "not covered" → "held"; the 10 s one keeps "contradicted for portals" on the operator's own tick) and the
+    `0x005A5E50` open question (narrowed to the un-declare path). The research-map row says so. The reverser entry
+    is closed. The earlier log entry above ("another player's portal 5000 ms") is superseded by this reading.
+  - (g) **The firewall plan: accepted with the precondition reworded to the owner's condition and no more.** The
+    owner's condition is "a firewall rule, or a confirmed existing block, recorded, before any hosting run". § 5 and
+    this plan's Phase 2 text now ask the owner for one thing, once per Phase 2 run: `sudo ufw status verbose`
+    (active, deny incoming, no ALLOW IN covering 4000/tcp), or, if it does not show that, `sudo ufw deny proto tcp
+    from any to any port 4000`. Dropped: the probe option (a Docker-bridge probe covers only `docker0`, and a LAN
+    probe needs a second machine), the `nft`/`iptables` listing (ufw's deny-incoming chain drops the packet whatever
+    other tables say), and the owner's repeat after every reboot (the lane re-reads the ufw state and file hashes
+    without root before each session, and asks again only if they changed). The human entry is reworded to match;
+    tooling.md § Two clients too. No firewall was touched.
+  **Fixes, 4:** omission 1 (the declaration's base/full level reads and out flag), wrong anchor 1 (MP03's entry and
+  "38 entries" over 51 addresses), overclaim 1 (a Docker-bridge probe offered as confirming every non-loopback
+  interface), other 1 (precondition steps beyond the owner's condition, partly from this plan's own text). Not a
+  lane fix: the quests/0002 fold (routed correctly while p42r was unmerged).
+  **Follow-ups:** reverser (Phase 2 start): name `0x005A5E50` and `0x00535B10` in `re/symbols.csv` and add PlayerData
+  `+0x38`/`+0x160` to `re/types/save.h`; spec-writer (0042 Phase 3): quests/travel takes the corrected gates.

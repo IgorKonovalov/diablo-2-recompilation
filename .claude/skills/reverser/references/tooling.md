@@ -389,8 +389,9 @@ not a slot.
 | launcher | `d2run.py --slot 1 --gdb …` (gdb on this process) | `d2run.py --slot 2` (no `--gdb`) |
 | menus | `tools/gdb/two-host.steps` (Other Multiplayer → TCP/IP → Host → OK) | `tools/gdb/two-join.steps` (… → Join → `127.0.0.1` → OK → OK), started once the host is in game |
 
-**Before the first hosting session** (and after any reboot or firewall change), the run record states how TCP port
-4000 is unreachable from outside loopback, with the commands and their output:
+**Before the run's first hosting session**, the run record states how TCP port 4000 is unreachable from outside
+loopback (the owner's `sudo ufw status verbose`, or the deny rule the owner added), with the commands and their
+output; before each later session the lane re-reads the ufw state and file hashes without root and logs them:
 [multiplayer/0001 § 5](../../../../docs/findings/multiplayer/0001-cases.md#5-the-hosts-binding-and-the-port-4000-precondition).
 No hosting session starts before that line is in the record.
 

@@ -30,11 +30,12 @@
   declaration `0x005A5E50`. So the delay starts when the player declares hostility, and no portal is exempt, the
   operator's own included. Plan 0042 Phase 1 (lane/p42r) read "an own portal is never delayed"; § 4 corrects
   that. (0x0054C5FC–0x0054C612, 0x005848B7–0x005848CF, 0x0055B6C0–0x0055B715)
-- [I] **Declaring hostility** requires the declarer to stand in a town, and character level (stat 12) 9 or more on
-  both players. For that pair it writes a stamp of `GetTickCount() + 60000`, and a second declaration before that
+- [I] **Declaring hostility** requires the declarer to stand in a town, and base character level (stat 12,
+  `STATS_GetUnitBaseStat`) 9 or more on both players; a declaration toward a player not yet hostile also needs the
+  other's full level (`STATS_GetUnitStat`, stat 12) at 9 or more. For that pair it writes a stamp of `GetTickCount() + 60000`, and a second declaration before that
   stamp is refused. It also sets the declarer's `+0x160` to `GetTickCount()`, closes the declarer's town portal,
   and leaves the party when both players are in the same one. (0x005A5E5F–0x005A5E9D,
-  fn:sub_006426A0_LevelIsTown@0x006426A0, 0x005A5F0F–0x005A5F96, § 4)
+  0x005A5EE4–0x005A5EFF, fn:sub_006426A0_LevelIsTown@0x006426A0, 0x005A5F0F–0x005A5F96, § 4)
 - [I] **A player hostile to anyone cannot use a portal it does not own.** The portal operate tests this before the
   5 s gate. Plan 0042 Phase 1b left this claim of the lead as not covered. (0x0058488F–0x005848B1,
   0x00535B10–0x00535B44, § 4)
@@ -70,8 +71,10 @@ Each case is a two-client session as ADR-0008 decides it. The owner's condition 
 slots. The host runs the server game with gdb attached and its logger. The joiner has no debugger, so its driver
 reads both players from the host's log (§ 3).
 A case names:
-- **Entry:** the server entry point. Each entry address was checked to start a function in the pinned binary: all 38
-  follow `int3` padding or a `ret` (command in § 2).
+- **Entry:** the server entry point. Each `fn:` anchor was checked to start a function in the pinned binary: all 38
+  follow `int3` padding or a `ret` (command in § 2). The column's 13 bare addresses are five function starts
+  (0x00539DA0, 0x0054C5D0, 0x00554630, 0x00584870, 0x005A5E50, checked the same way) and eight sites inside cited
+  functions (for example 0x0055A8E4, the clamp in `TC_ResolveDrops`).
 - **Condition:** what the two clients do.
 - **Logger:** the existing logger that sees it, and its checker.
 - **Expected:** what the reviewed reading predicts.
@@ -94,8 +97,8 @@ grep -H "^| [0-9]" docs/plans/0038-inventory/*.md \
 ```
 
 **Entry check, kept command** (`objdump -d -M intel --no-show-raw-insn workspace/install/app/game.exe > game.asm`,
-then for each entry address *a*: `grep -m1 -B1 "^  a:" game.asm`). For all 38 entries cited below, the line before
-is `int3` or `ret`.
+then for each entry address *a*: `grep -m1 -B1 "^  a:" game.asm`). For all 38 `fn:` anchors cited below and the five bare
+function starts, the line before is `int3` or `ret`; the other eight bare addresses are sites, not entries.
 
 #### items/tc (NoDrop with real players)
 
@@ -103,7 +106,7 @@ is `int3` or `ret`.
 |---|---|---|---|---|---|---|
 | MP01 | tc 43 (dead member), tc 44 (dead) | fn:TC_ResolveDrops@0x0055A6D0 → fn:sub_005408E0_PartyCountInLevel@0x005408E0 → fn:sub_005404F0_PartyCountAliveCb@0x005404F0 | H and J partied in one level, J dead (corpse, before it respawns), H kills | `tc-party.gdb` (PLR dead bit, PTY, PARTY); `tc.py replay` | party = 1, `PlayerCount` = 1 (a dead player is not counted), n = 1 | yes: J is killed in the field (a hostile H, MP23, or a pack), then H kills before J respawns |
 | MP02 | tc 43 (more than two players), tc Open questions | as MP01 | three or more partied players | — | — | **no**: a third client exceeds ADR-0008's two and the memory budget; `/players` stands in for `PlayerCount` only, not for the party count |
-| MP03 | tc 43 (the clamp at 8) | 0x0055A8E4 | eight partied players in the killer's level | — | — | **no**: needs eight clients |
+| MP03 | tc 43 (the clamp at 8) | fn:TC_ResolveDrops@0x0055A6D0 at 0x0055A8E4 (the clamp) | eight partied players in the killer's level | — | — | **no**: needs eight clients |
 | MP04 | tc 43 (monster killer → owner), tc 27 (party half) | fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, then MP01's path | H's hireling (or J's summon) kills, the other player partied in the level | `tc-party.gdb` (KILL `ktype` 1); logger addition: the owner unit (MonsterOwner's result) on the KILL line | party = 2, counted from the owner | yes: `mercnova`-type recipe for H; J `follow` |
 | MP05 | tc 44 (member without a room) | fn:sub_005404F0_PartyCountAliveCb@0x005404F0 | a partied player with no room when the other kills | `tc-party.gdb` (PLR `lvl` −1) | skipped, party = 1 | **no**: a player has no room only while its act loads, and no input holds that open. Logged if a session meets it |
 | MP06 | tc 46 (`/players` with real players) | fn:sub_00535790_PlayerCount@0x00535790 | H and J alive; H types `/players 3`, then `/players 1`, then `/players 8`; J types `/players 5` | `tc-party.gdb` (PLAYERS, PARTY); `tc.py replay` | `PlayerCount` = max(2 alive, H's setting); n = party + (count − party) ÷ 2. J's `/players` changes nothing: the setting is a global of the process (data:g_PlayersOverride@0x00883D70), and the server runs in H's process | yes |
@@ -223,11 +226,12 @@ MP17 and MP25 come last. MP31–MP32 wait for plan 0043.
 
 ```text
 0x005A5E50(game, player P, other O, hostile)                                           [I]
-  P's room must be in a town: 0x0061AB00(UnitGetRoom(P)) = LevelIsTown(RoomLevelId(room)), else return
+  P's room must be in a town: 0x0061AB00(UnitGetRoom(P)) = LevelIsTown(RoomLevelId(room)), else *out ← 1, return
                                     ; fn:sub_0066BAB0_RoomLevelId@0x0066BAB0, fn:sub_006426A0_LevelIsTown@0x006426A0
-  stat 12 (level) ≥ 9 on P and on O, else return                                        ; 0x005A5E7A–0x005A5E9D
+  base stat 12 (level) ≥ 9 on P and on O, else *out ← 1, return       ; STATS_GetUnitBaseStat, 0x005A5E7A–0x005A5E9D, 0x005A5FDE
   0x0055B140 both ways (the pair's entries)
   if the pair's relation bit 8 already equals the request: refresh both, return
+  if relation bit 8 is clear and STATS_GetUnitStat(O, 12) < 9: return              ; 0x005A5EE4–0x005A5EFF
   if hostile:
     if PlayerTickGet(P, O) > GetTickCount(): message 0x13 to P, refused                ; the pair's stamp
     PlayerTickSet(P, O, GetTickCount() + 60000)                                         ; also P +0x160 ← GetTickCount()
@@ -283,23 +287,25 @@ Portal operate (0x00584870):       refuse while PlayerTickGet(operator, none) + 
   So the **configuration** already drops inbound TCP 4000 on every non-loopback interface and keeps loopback open
   for the joiner's `127.0.0.1`. The **loaded** ruleset needs root to list (`ufw status` and `nft list ruleset` say
   "Operation not permitted"), and this lane has no root.
-- **Phase 2 precondition: what the run record must hold** before the first hosting session, and again after any
-  reboot or firewall change:
-  1. Confirm the block (preferred, no change). The owner or a root shell runs `sudo ufw status verbose`, which must
-     show `Default: deny (incoming)` and no ALLOW rule matching 4000/tcp. Next, `sudo nft list ruleset | grep -n
-     4000` must show no accept, or `sudo iptables -S | grep 4000` on a legacy backend. The output is pasted into the
-     record, with the sha256 of the four `/etc/ufw` rule files and `/etc/default/ufw` (taken 2026-10-17:
-     `user.rules` `125c8b51…`, `before.rules` `d63bc8bb…`, `/etc/default/ufw` `07db07bb…`).
-  2. Probe from outside loopback. While a stand-in listener holds `0.0.0.0:4000` (`python3 -I -c` with a socket
-     bound there, no game), a client whose packets enter on a non-loopback interface must time out. Such a client
-     is another LAN host aiming at 192.168.0.12:4000, or a container on the Docker bridge aiming at 172.17.0.1:4000
-     and 192.168.0.12:4000. Meanwhile `127.0.0.1:4000` must connect, to show that the listener was up. A probe from
-     this machine to its own 192.168.0.12 does **not** count, because Linux routes it through `lo`, which ufw
-     accepts. This lane tried to look inside a local container image for a probe client, and the session's
-     permission check refused it. The probe needs the owner's approval.
-  3. Add a rule only if 1 or 2 fails: `sudo ufw deny proto tcp from any to any port 4000`. The `-i lo` accept in
-     `before.rules` comes first, so loopback stays open. The record keeps the command and its output.
-  4. Hosting starts only after the record names which of 1–3 held.
+- **Phase 2 precondition: what the run record must hold** before the run's first hosting session (the owner's
+  condition: port 4000 unreachable from outside loopback, by a firewall rule or a confirmed existing block, and how
+  it was made sure of, recorded). One of:
+  1. **Confirmed existing block** (preferred, no change). The owner runs `sudo ufw status verbose`; it must show
+     `Status: active`, `Default: deny (incoming)`, and no ALLOW IN rule that covers 4000/tcp (a rule naming 4000, a
+     port range containing it, or a rule with no port). The lane pastes the output, with its date, into the record.
+  2. **A firewall rule**, only if 1 does not show that: the owner runs `sudo ufw deny proto tcp from any to any port
+     4000`. The `-i lo` accept in `before.rules` comes first, so the joiner's `127.0.0.1` stays open. The record
+     keeps the command and its output.
+
+  Hosting starts only after the record names which of the two held. Before each later session of the same run, the
+  lane re-reads what it can without root (`systemctl is-active ufw`, `/etc/default/ufw`, and the sha256 of
+  `/etc/default/ufw` and the `/etc/ufw` rule files, against the hashes in the record) and logs it; if any of them
+  changed, step 1 or 2 is repeated before hosting. That re-read is the lane's own change detector, not part of
+  the owner's step.
+- **Not a confirmation.** A probe from this machine to its own 192.168.0.12 enters on `lo`, which ufw accepts, so it
+  tests nothing. A probe from another LAN host to 192.168.0.12:4000 against a stand-in listener would also confirm
+  the block on `wlp4s0`, but it needs a second machine and is not asked for; a probe from a container on the Docker
+  bridge covers only `docker0`.
 
 ## Data touched
 

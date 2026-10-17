@@ -93,11 +93,12 @@ Until then, quest state, prices, repair and gold amounts stay inputs or named-on
 | Subsystem | Depends on | Key tables | Status |
 |---|---|---|---|
 | `quests/progression`: the quest registry and event dispatch, each quest's record bits per event and difficulty, the join's game-wide record, quest timers, the quest seed's non-item draws, the creation-path readers of quest state | rng, save/d2s, items/quest-drops, objects, monsters/spawn | Levels (`Quest`), Objects (`InitFn`/`OperateFn`), MonStats (NPC classes) | findings in progress · [quests/0001](../findings/quests/0001-progression.md) (plan 0042 P1/1b accepted with fixes 2026-10-17; 142 `[I]`, no `[C]`; no quest table: the logic is hardcoded) · [plan 0042](../plans/0042-quests-travel.md); P2 open (two slots) |
-| `quests/travel`: waypoint activation and travel, act change by NPC and the Durance portal, town portals (open, use, close), warps and their quest gates, death and join placement | quests/progression, drlg/collision, drlg/warps, objects | Levels (`Waypoint`, `Position`, `QuestFlag`/`QuestFlagEx`), Objects (waypoints and portals), LvlWarp | findings in progress · [quests/0002](../findings/quests/0002-travel.md) (plan 0042 P1/1b accepted with fixes 2026-10-17; 48 `[I]`, one `[C]` restating drlg/0005) · [plan 0042](../plans/0042-quests-travel.md); P2 open |
+| `quests/travel`: waypoint activation and travel, act change by NPC and the Durance portal, town portals (open, use, close), warps and their quest gates, death and join placement | quests/progression, drlg/collision, drlg/warps, objects | Levels (`Waypoint`, `Position`, `QuestFlag`/`QuestFlagEx`), Objects (waypoints and portals), LvlWarp | findings in progress · [quests/0002](../findings/quests/0002-travel.md) (plan 0042 P1/1b accepted with fixes 2026-10-17; 48 `[I]`, one `[C]` restating drlg/0005; the real-time gates of § 6 and § 9 corrected at the plan 0044 P1 review: both read the operator's own tick, no portal exempt) · [plan 0042](../plans/0042-quests-travel.md); P2 open |
 
 Multiplayer branches ([plan 0044](../plans/0044-multiplayer-branches.md); ADR-0008 accepted 2026-10-16 on the port-4000
 condition) add no row: they re-tag
-existing ones.
+existing ones. Their case list is one cross-cutting finding, [multiplayer/0001](../findings/multiplayer/0001-cases.md)
+(32 cases, Phase 1 accepted with fixes 2026-10-17); Phase 3 re-tags the owning rows.
 
 ### Out of scope (ADR-0002, ADR-0005, ADR-0014)
 
