@@ -2,7 +2,7 @@
 from: archivist
 to: architect
 date: 2026-10-17
-status: open
+status: done
 context:
   - 2026-10-17-reverser-archivist-sets-param-lookup-by-table-order.md
   - 2026-10-17-reverser-archivist-plan-0039-p1b-for-the-table.md
@@ -11,7 +11,7 @@ context:
   - 2026-10-17-reverser-archivist-plan-0042-phase-1-readers-for.md
   - 2026-10-17-reverser-archivist-plan-0043-p1-readers-for-table-docs.md
   - 2026-10-17-reverser-archivist-plan-0044-two-client-recipes.md
-resolution: ""
+resolution: "Reviewed 2026-10-17: accept with fixes (4: MonPlace case split and case 36, States 34-row line after lane/rbs, Shrines reset unit and citation); plan 0039 log."
 ---
 
 Review `lane/arc5` (from main 3e169e4): the seven archivist backlog entries of 2026-10-17, all closed on the lane.

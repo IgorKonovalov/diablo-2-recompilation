@@ -359,6 +359,10 @@ several.
 
 - `[L]` What `setfunc`, `remfunc`, `srvactivefunc` and the flag bits without a reader above do. Of the 56 rows no data
   column names (§ Which data names a row), [stats/0002 § Phase 0 surprise (f)](../findings/stats/0002-states.md#phase-0-surprise-f-the-56-rows-no-data-names)
-  places 22 (set or tested by code it reads); the other 34 (0, 6,
-  12, 18, 21, 25, 29, 39, 54, 86, 90–93, 96, 98, 99, 102, 104, 105, 108–110, 116, 118, 121, 142, 146, 154, 164,
-  171–173, 184) have setters listed by its scan, in functions not read.
+  places 22 (set or tested by code it reads). Of the other 34 (0, 6, 12, 18, 21, 25, 29, 39, 54, 86, 90–93, 96, 98,
+  99, 102, 104, 105, 108–110, 116, 118, 121, 142, 146, 154, 164, 171–173, 184), its setters scan
+  ([§ Surprise (f) setters scan](../findings/stats/0002-states.md#surprise-f-setters-scan-plan-0041-p1-review-follow-up-b-2026-10-17), `lane/rbs`)
+  gives 27 an immediate set or clear site, some in named functions (21 `COMBAT_ApplyStun`, 92 `COMBAT_GetHit`, 96
+  and 173 `sub_005C07A0_SkillReviveDo`, 105 `sub_005543B0_MonAlignSet`, 118, and 154 cleared only by
+  `sub_00579AA0_MercRevive`; row 0's site marks a stat list as no state rather than setting one), most in functions
+  not read; it finds no site for 7 (6, 25, 29, 39, 116, 164, 171), which stay open.

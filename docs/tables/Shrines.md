@@ -101,7 +101,9 @@ function of row 20. (tbl:Shrines.txt:Arg0, tbl:Shrines.txt:Duration in frames)
   A code with no function falls back to `SHRINE_Refill`. ([stats/0002 § 5](../findings/stats/0002-states.md#5-shrines-and-wells), fn:SHRINE_HealthExchange@0x00582940,
   fn:SHRINE_ManaExchange@0x005829A0)
 - `[I]` **`reset time in minutes` (`reset`) re-arms the shrine** `reset × 1200 + 1` frames after use (object event 5), when `reset` ≠ 0 (6000 + 1
-  frames for `reset` 5). (fn:OBJOP_Shrine@0x00583C70, tbl:Shrines.txt:reset)
+  frames for `reset` 5); one unit of the column is 1200 frames whatever its header says. The `+ 1` is the event
+  queue's next frame, as for the wells' `Parm0`. ([stats/0002 § 5](../findings/stats/0002-states.md#5-shrines-and-wells),
+  fn:OBJOP_Shrine@0x00583C70, tbl:Shrines.txt:reset)
 - `[I]` **Row 20 (Warping Shrine)** runs `sub_00583050_ShrineWarping` (`g_ShrineEffects` row at `0x006E1940`): it finds
   the operator's nearest unit through filter `0x00582750` and makes it a special monster (`MonMakeSpecial`); with no
   hit nothing happens. ([monsters/0003 § Plan 0039 batch P1c](../findings/monsters/0003-special-monsters.md#plan-0039-batch-p1c-2026-10-17), fn:sub_00583050_ShrineWarping@0x00583050)

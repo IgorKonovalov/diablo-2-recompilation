@@ -57,7 +57,8 @@ compares it with every cell, 37 cells, 0 mismatches.
   - `[C]` 2 `place_unique_pack`: a class picked from the level's region, made a unique boss **at a random point of
     the room** away from warps (not the preset point), with 3..6 minions; 3 `place_champion`: the same class pick, a
     champion pack at the point, always champion mod 16 ([monsters/0003 § 7](../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20), run:2026-10-14-mon-special).
-  - `[C]` logged at the branch, `[I]` otherwise: 17 `place_fallen` → `fallen1`, 18 `place_fallenshaman` →
+  - Fixed classes at the point, `[C]` for the six cases logged at the branch (17, 18, 23, 29, 30 in level 111, 31;
+    H4b special 65), `[I]` for 22, 32 and `deathmauler1` in level 110: 17 `place_fallen` → `fallen1`, 18 `place_fallenshaman` →
     `fallenshaman1`, 22 `place_fetish` → `fetish1`, 23 `place_fetishshaman` → `fetishshaman1`, 29 `place_deadminion`
     → `minion1`, 30 `place_deadimp` → `imp1` (`deathmauler1` in level 110), 31 `place_deadbarb` → `act5barb1`, 32
     `place_reanimateddead` → `reanimatedhorde3`, the last four in mode 12. Each class then goes through
@@ -69,7 +70,7 @@ compares it with every cell, 37 cells, 0 mismatches.
     both placed nothing in the logs `[C]`. In the fixed-class table 19–21 and 24 give class 0, and 25 `place_imp`
     and 28 `place_bloodlord` place nothing ([monsters/0003 § 7](../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20)).
   - The other rows (0, 1, 4–16, 27, 33–36) are not among the cases the findings read; whether the switch has a case
-    for them is not stated there.
+    for them is not stated there. H4b's watch line counts calls with case 36 (`place_group100`) but records no class or outcome for them ([monsters/0003 § Plan 0038 batch H4b](../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b)).
 
 ## Open questions
 
