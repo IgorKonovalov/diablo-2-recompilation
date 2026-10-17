@@ -239,3 +239,86 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   Also: Sets' "by name block *k* belongs to *k* worn members" was under a `[C]`; split, the meaning `[L]`. Tags
   otherwise follow the evidence rules: meanings `[L]`, data counts `[C]`, the `+0x0DE` reader and the set builder's
   member count `[I]` from items/0006 and items/0004. Follow-up: archivist, property-aware param lookup (backlog).
+- **2026-10-17 — Phase 1 and Phase 1b done (reverser, `lane/p41r`, static).** No game run, no slot; Ghidra on the lane's
+  copy (`ghidra-p41r`), objdump for the instruction-level reads. The States layout answer of plan 0039 P1b (`attred` =
+  bit 10, `immed` not compiled, `rfred`/`rcred`/`rlred` = 26/27/28; `lane/p39b`, not yet merged) was read and is not
+  needed by these findings (they read bits 11, 13, 14, 16, 30, 32 through the loader's bit-sets). Findings:
+  [stats/0001](../findings/stats/0001-aggregate.md) (41 `[I]`, 14 `[L]`) and [stats/0002](../findings/stats/0002-states.md)
+  (39 `[I]`, 9 `[L]`); [stats/experiments](../findings/stats/experiments.md) (empty heading). 101 symbols added (95
+  functions, 6 data; subsystems `stats/aggregate`, `stats/states`); types in `re/types/stats.h` (`StatList`,
+  `StatEntry`, the ISC run-time tail `ItemStatCostOps`, `TimedStateReq`, `ShrineEffect`).
+
+  | Done-when item | Answer | Anchor |
+  |---|---|---|
+  | structure | one extended list per unit (`0x80000000`, callback `0x0055B800` for players and monsters); every other list linked under it, counting on `+0x3C`, kept but not counting on `+0x40` (`0x2000`); flags 2 timed, 4 mode-drop, 8 aura, `0x20` curse, `0x40` item props, `0x800` exp, `0x40000000` no damage; full reads = the `+0x48` cache, base reads = `+0x24`, both with the `fMin` floor | 0001 § 1–2 `[I]` |
+  | aggregation | no read-time sum: every write, link, unlink propagates up the parent chain (fast add, or a re-evaluation for op-linked stats); evaluation = own + one level of children, then the op terms in source-row order; `op` 1–13 arithmetic with widths (`MulDiv`, `imul` + `sar`, `× n × 64`); op 6/7 time value; a source of op 1–7, 12, 13 keeps its old cache while its target is non-zero; level-up re-evaluates the 37 per-level rows | 0001 § 3–4 `[I]` |
+  | maxima | cached full 7/9/11 with `MinAccr` floors 1/0/0; item vitality/energy through op 9/8 (`full − own`), percent through op 11 on the flat sum; current rescaled on a maximum change (`ftol(new/max(old,256)·cur)`, ≥ 1, ≤ new); clamp on unequip | 0001 § 5 `[I]` |
+  | items | linked unless broken (`0x100`) or failing requirements (`0x4000`: identified, str/dex with `item_req_percent` and ethereal −10, level, class); the refresh loops until stable; charms from inventory; a dual-wielder's other weapon linked without damage | 0001 § 6 `[I]` |
+  | set bonuses | per item: `aprop` lists 165–169 toggled by `add func` (1 by member, 2 by count); per set on the wearer: one list (state 165–170, stat 71 = set id) with partial blocks `0..2·min(n, m−1)−3` and full blocks at `n ≥ m`; broken and unusable members excluded; duplicates count once | 0001 § 7 `[I]` |
+  | passives and auras | passive: the `passivestate` list with `passivestat` (param `passiveitype`), 350/351, rebuilt on a level change, absent while the skill's `aurastate` is on; aura: events 8 (selected right skill) and 9 (item `item_aura`), on the `perdelay` grid (min 5), targets in `aurarangecalc` by `aurafilter`, a timed state lasting to one frame past the next run, `direct` heals capped at `maxstat`; same for hirelings (monster event table) | 0002 § 4 `[I]` |
+  | states | `STATE_ApplyTimed`: curse resistance (≥ 100 immune, else duration cut), `attract` blocks curses, one curse at a time; same skill+level refresh, lower level refused, else replace; expiry by event 12 at `frame + duration`; `group` exclusion in `STATE_GroupClear` (potions, five skills, stat 98); death purge, mode drop; ticks: life (stat 74, floor 256, cap), stamina by mode, mana `max/(ManaRegen·25)` | 0002 § 2, 3, 6 `[I]` |
+  | shrines, wells | table `0x006E1850` code → (stat, state): 6–15 → 128, 129, 131, 132, 130, 133, 134, 135, 136, 137, value `Arg0` (armour 171 not States' `armorclass`), combat `Arg1` damage% + to-hit, stamina 162/10/28 = 1000, skill a bare state; re-arm `reset × 1200 + 1`; recharge and exchange shrines; wells `Parm1/256` of each max, cure poison and freeze | 0002 § 5 `[I]` |
+  | event kinds | table of inputs, outputs and draws; **no draw** in any function read (RNG-call and LCG scan), so no chained pairs exist for this plan's event kinds | 0002 § 7 `[I]` |
+  | Phase 0 surprises | (a) no effect found for the masteries' `aura` bit; (b) off-name `op stat` cells honoured as written; (c) blank stat or zero value never written by the aura code read (Holy Shield's own function open); (d) the code + 122 pairing confirmed by the table for all ten; (e) not read (open question); (f) 22 of the 56 rows placed (shrines, set states, 85, combat's), 34 left | 0001, 0002 |
+
+  **Surprises.** (1) The take test of `StatRecompute` for ops 2–5 reads the source row's own `opIn[0].opBase` (0 =
+  `strength`), not its `op base`, so on a player a per-level stat's own cached value stays hidden. (2) The shrine of
+  armour writes `skill_armor_percent` (171), not the `armorclass` its States row names. (3) The stamina shrine sets
+  `staminarecoverybonus` 1000, which is exactly the threshold that lets stamina regenerate while running. (4) The set
+  marker stat 71 `value` is an ordinary entry, so the wearer's full stat 71 holds the active set ids.
+
+  **Phase 1b.** Registered `src:pk-itemstatcost-guide`; re-fetched `src:arreat-summit-character-basics`,
+  `src:arreat-summit-class-pages` (Barbarian), `src:arreat-summit-item-pages` (set basics). 12 verdicts: 1 held,
+  9 held with refinement, 1 not covered (weapon-switch slots), 1 **contradicted** (op 6/7 "do not work": the server
+  computes them). The contradicted case is not reachable on stock data (the only `…/time` property users, *of Dawn*
+  and *of Sunlight*, are not spawnable), so it is not a Phase 2 case; backlog entry filed. The Arreat Summit shrine and
+  paladin pages are gone; no shrine or aura-stacking lead.
+
+  **P2 harness questions** (what to log and what the checker predicts; every line needs the frame `game +0xA8`):
+  1. *List snapshots:* at each `STATLIST_LinkToUnit` (`0x00626E10`), `STATLIST_Unlink` (`0x006269F0`) and
+     `UNIT_ToggleStatListByState` (`0x006279A0`): the list's flags, state, owner type/guid, `+0x18`, its active
+     entries; the model rebuilds every unit's lists from these and predicts the `+0x48` cache.
+  2. *Stat reads:* at `sub_00624F60_StatListGetValue` (`0x00624F60`) on player and monster lists, a sampled window
+     (one unit, all reads for N frames after each equip/unequip): key, returned value; predicted from (1) with § 4 of
+     stats/0001. Covers ops 1, 2, 4, 8, 9, 11, 13 on stock items; boundary: a value at the `fMin` floor (negative
+     strength from a curse), `keepzero` mana 0.
+  3. *Cache writes:* `STATLIST_CacheAdd`/`STATLIST_CacheWrite` (`0x006250B0`, `0x00625150`): key, old, new; the
+     checker predicts each from the propagation order (stats/0001 § 3), including the hidden per-level source (log
+     the player's stat 216/224 cache with a per-level item on).
+  4. *Rescale:* stat callback cases 7, 9, 11 (`0x0055B8EC` and the mana/stamina twins): old, new, current, result;
+     boundary: `old ≤ 256`, a result of 0 or 1, a maximum that rises.
+  5. *Requirements:* `ITEMS_CheckRequirements` (`0x0062EAF0`) return per item and `ITEMS_RefreshEquipUsability`
+     (`0x0055DBC0`) marks; cases: an item whose strength comes from another item (the one-pass detach), an ethereal
+     item at its −10 boundary, `item_req_percent`, an unidentified item, a broken item.
+  6. *Sets:* `SETS_WornMemberMask` (`0x0062A370`) result, `SETS_ToggleItemAProps` (`0x00663A20`) per state on/off,
+     `sub_00660120_SetBonusApply` block indices; predicted from Sets/SetItems; partial (2, 3 of 4+) and full; `add
+     func` 1 and 2; a duplicate member; a broken member.
+  7. *Dual-wield:* a Barbarian with two weapons: the other weapon's list flag `0x40000000` and its damage stats absent
+     from the cache; the weapon switch (open question: which code unlinks the switch hand).
+  8. *Applies:* `STATE_ApplyTimed` (`0x0056E970`) entry (the request) and exit (return, list); the model predicts
+     refuse/refresh/replace/new; cases: a curse on a target with `curse_resistance`, a second curse, a higher and a
+     lower aura level, two paladins of one aura, an `attract` target.
+  9. *Expiry:* each `EVENT_TimedListExpire` (`0x00580800`) run and each list it frees: frame vs `+0x18` (durations
+     in frames); whether one event 12 per call or per unit (open question).
+  10. *Group:* `STATE_GroupClear` (`0x0056C740`): potions of one group, a `state` stat item.
+  11. *Ticks:* `sub_00580610_LifeRegenTick`, `PLAYER_StaminaRegenTick`, `PLAYER_ManaRegenTick` in/out per frame for a
+      window: mode, stats 6–11, 26–28, 74, states 85/100/106; boundary: life at 256 under poison, stamina at 255
+      walking, a potion at the cap (`healthpot` freed), stat 74 of the player under open wounds.
+  12. *Auras:* events 8 and 9 (`0x0056FCB0`, `0x0056FE40`) frames vs the `perdelay` grid, `SKILLS_ForUnitsInRange`
+      targets with distances, `AURA_ApplyToTarget` stats; a mercenary's aura (monster table).
+  13. *Shrines and wells:* `OBJOP_Shrine` (`0x00583C70`) code, the state/stat/value applied, `reset` re-arm frame;
+      a well use (charges, healed amounts, poison and freeze freed).
+  14. *Passives:* `SKILLS_RefreshPassive` (`0x00646D60`) per skill level change: stats, param `passiveitype`.
+  15. *itemspecific:* the player's full 72/73 with an item on and off (open question in stats/0001).
+
+  **Boundary recommendation.** Event entry points as in the P2 questions; value oracles: a skill's own `*calc`
+  results (data/calc evaluates the stock ones, but the unit-reading variables stay oracles), the shrine to-hit and
+  damage values (`SHRINE_StatValue` cases 19 and 21), monster AI and the combat events that apply states (inputs).
+  The stat-read window: reads are per frame and many (combat, regeneration); log reads only in windows after a list
+  change, and log every cache write, which bounds the model (ADR-0014 § Log volume).
+
+  **Points for the review.** (a) Everything is `[I]`; no event kind of this plan draws (0002 § 7), so the chaining
+  minimum has nothing to pair. (b) The `StatRecompute` take-test quirk (0x006267C0–0x006267DA) and the hidden source
+  value. (c) op 11 as a percentage of the flat sum only (`[ebp-8]`). (d) The unequip of a set item frees the wearer's
+  set list, which the refresh rebuilds; Phase 2 should see the rebuild. (e) Surprise (e) and 34 of the (f) rows
+  left as static follow-ups. (f) The contradicted lead and its stock reachability.
