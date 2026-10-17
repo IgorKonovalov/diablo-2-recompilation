@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/maze, drlg/preset, drlg/room-tiles]
 consumed_by: [drlg/overview, drlg/maze, drlg/collision, monsters/spawn, objects]
-tags: {C: 91, I: 34, L: 2}
+tags: {C: 91, I: 35, L: 2}
 updated: 2026-10-17
 ---
 
@@ -443,6 +443,8 @@ F1. WarpPairLink(srcRoom, m):                                        [C] (fn:sub
       FindRoom(D, j): the first room of D.rooms (newest first) whose flags have 0x10 << j;
                       it is appended to srcRoom's near list, and srcRoom gets a warp node
                       pointing at it, with the 'b' LvlWarp record of (S, m)
+      ; with LevelWarpId(S, m) = −1, FindRoom instead appends every room of D with bit 0x10 << j and a gap below 6 tiles
+      ; to srcRoom's near list and makes no warp node                [I] (fn:sub_0066BE80_WarpPairRoomFind@0x0066BE80, fn:sub_0066BDA0_RoomNearListAppend@0x0066BDA0)
 ```
 
 - F1. [C] 172 pairings were predicted: 162 by rank (32 at rank 1 on a repeated destination) and 10 by the fallback (the
