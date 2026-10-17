@@ -366,3 +366,37 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   and the contradicted-lead entry are closed; the two 2026-10-16 requests to the reverser (Phase 0 additions, the
   column readers) are answered by the Phase 1 table above and closed. Follow-ups filed: the 31 W1 lines and three
   static leftovers to the reverser (backlog).
+- **2026-10-17 — Phase 2 (reverser, `lane/p42h`, slots 1 and 2; review requested).** run:2026-10-17-quests
+  ([experiments](../findings/quests/experiments.md#run2026-10-17-quests)): 11 sessions, **0 mismatches over
+  16 199 checks** under `tools/quests.py check`. Tools: `tools/gdb/questev.py` and `quest-state.gdb` (the logger,
+  beside plan 0032's `quests.py`), `tools/quests.py` with `tools/test_quests.py`, `tools/quest_sessions.py` (sessions,
+  actions, the save loads), recipe `quest-tpc` (classic, a tome of town portal), three NPC rows in `d2pilot.py`.
+  Raises and corrections: [quests/0001 § 15](../findings/quests/0001-progression.md#15-phase-2-run2026-10-17-quests),
+  [quests/0002 § 12](../findings/quests/0002-travel.md#12-phase-2-run2026-10-17-quests).
+
+  | Required case | Result |
+  |---|---|
+  | quest-seed draws chained (≥ 20 pairs) | NPC 331 (Kaelan): 42 chained pairs, one step per talk (Normal 21, Nightmare 21) |
+  | player-seed NPC talks 266 and 377 (≥ 20 pairs each) | **shortfall**: neither NPC was in a server unit list (266 `navi` is the Blood Moor's preset centre monster, absent from the run's map; 377 never placed in the towns walked) |
+  | town portal open, five draws | **corrected**: three draws (62 opens): gs, the town's level seed (type 11), gs; both ends are created in their mode, no object-seed draw; the town room's first update draws gs for its population (oracle) |
+  | level seed per point type: 0, 5, 11 once, 13 never | 0: 22 one step; 11: 334 one step; 13: 28 no step; 5: 11 lookups on level 1, none steps (no group-1 point there: point 0, no draw), a stepping type-5 case not reached |
+  | every other kind: seeds unchanged over ≥ 20 events, or named | ≥ 20 events with gs, qs, ps unchanged: waypoint operate 61, waypoint travel and packet 0x49 61 each, portal use 122, summit door 73, packet 0x58 53, NPC move 22, `PlayerChangeLevel` 81, `PlayerChangeAct` 32, `ActLevelSpot` 154, `LevelPointFind` 2 356 (its own level seed predicted apart), dispatches 459 of 503 (the other 44 the Kaelan talks' predicted quest-seed step). Under 20: NpcActTravel 11, packet 0x48 1, warps 2 (named shortfalls); death (packet 0x41), the Durance, Arcane and lair portals: none |
+  | summit warp, both ways; 120 → 118 refused | the way back from 120 is the summit door (`OperateFn` 71), not a warp tile: refused for both creators (37 operates without word 39, 36 with every quest done); the door reads quest 35's private "done in this game" byte only, which is 0 in a new game whichever creator; `QUESTS_WarpGate`'s 118/128 branch never ran. Ruling (f)'s "allowed" half does not hold for the door |
+  | a switched-off quest's forced e0/e11 handlers without a bit write | 4631 forced callbacks of deactivated quests ran; 290 wrote nothing; **quest 11's e11 handler writes word 12 bit 8 while switched off** (44 writes), a correction |
+  | orb operate without `qf2` | **shortfall**: the scripted walk to the Kurast Docks waypoint failed (x-orb) |
+  | packet 0x58 on word 33 | **shortfall**: the stock client sends 0x58 only for the quest-log entries it shows (26 words, each bit 12 set); word 33 has none |
+  | tick and stamp at both gates | 61 packet-0x49 and 122 portal gate reads, stamp 0 each (one client), the pass rule exact |
+  | two-player cases (portal party gate, party credit) | out of scope: plan 0044 |
+
+  **Not reached** (Phase 2 done-when): no quest completed (question 3's per-quest pass, the Nightmare/Hell and classic
+  quest runs, the `Save and Exit` word comparison beyond the loads); 60 activations (every waypoint met was already in
+  mode 2; the Spider Forest walk of x-wpnew did not reach its waypoint); 150 waypoint travels (61); 150 warps
+  (2); 20 NPC act changes: 22 (11 each way, Warriv), reached; Hell (the scripted walk to the town waypoint failed
+  in four Hell launches, kept as development logs); timers; deaths; the creation readers of question 7 but the door.
+  **The saves load:** 18 of the 18 built saves loaded and wrote back (Normal); the quest-word changes are word 40
+  bit 10 set by the join (quest 36's first-join callback, `0x0058E4D0`) in the saves with word 40 done, and word 9
+  cleared in `QuestBookLost` but kept in `QuestBookHeld` (the word-9 first-join check both ways); `TravelWpNone`
+  comes back with waypoint 0 set in all three difficulties. Hashes not pinned in `test_d2s.py`
+  (archivist's, backlog).
+
+  Logger revisions and development logs are listed in the run record. Slots 1 and 2 stopped, asides restored.

@@ -525,6 +525,7 @@ class Checker:
             g2 = step(g1, pop + 1)
         if pop:
             self.hit("town portal: gs draws of the town room's population (oracle)", pop)
+            self.hit("town portal: opens with population draws")
         f, f1, p, p2 = pu.get("field"), pu.get("field1"), pu.get("partner"), pu.get("partner2")
         if not (f and f1 and p and p2):
             self.hit("town portal without its PU lines")

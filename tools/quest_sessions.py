@@ -6,6 +6,7 @@ Usage:
   python3 -I tools/quest_sessions.py list
   python3 -I tools/quest_sessions.py run --slot N --tag TAG --run RUN SESSION [SESSION ...]
   python3 -I tools/quest_sessions.py act --slot N LOG ACTION [ACTION ...]      # actions on a running session
+  python3 -I tools/quest_sessions.py load --slot N [NAME ...]     # load each built save, Save and Exit, compare
 
 A session installs one save (workspace/runtime/quest-saves-p42/<Name>/<Name>.d2s), launches the game with
 tools/d2run.py (seed, difficulty steps), plays its action list, and stops the slot (tools/slots.py stop N); the
@@ -388,10 +389,62 @@ def run_session(args, name):
     return 0
 
 
+LOAD_SET = ["TravelWpOne", "TravelWpTwo", "TravelWpThree", "TravelWpFour", "TravelWpFive", "TravelWpNone", "WpTabTwo",
+            "WpTabFiveDraw", "WpArcane", "ActTwoWarriv", "ActThreeMeshif", "ActFourDurance", "ActFiveTyrael",
+            "QuestFreshC", "QuestBookLost", "QuestBookHeld", "QuestSummit", "QuestPortalC"]
+
+
+def run_load(args, names):
+    """Plan 0042 Phase 0's first Phase 2 step: load each built save in Normal (tools/gdb/quest-load.steps: the
+    inventory and character sheet shots, then Save and Exit), keep the written-back save under
+    workspace/logs/quests/loads/, and list how its quest words and waypoints differ from the built file."""
+    import shutil
+    import slots
+    import d2s
+    out = os.path.join(ROOT, "workspace", "logs", "quests", "loads")
+    os.makedirs(out, exist_ok=True)
+    for name in names:
+        sv = [os.path.join(d, name, name + ".d2s") for d in SAVES if os.path.exists(os.path.join(d, name, name + ".d2s"))]
+        if not sv:
+            print("LOAD %s: no built save" % name, flush=True)
+            continue
+        sv = sv[0]
+        sh(PY + [os.path.join(HERE, "saves.py"), "--slot", str(args.slot), "restore", args.tag])
+        sh(PY + [os.path.join(HERE, "saves.py"), "--slot", str(args.slot), "aside", args.tag])
+        log = os.path.join("workspace", "logs", "quests", "loads", "%s-load-%s.log" % (args.run, name))
+        sh(PY + [os.path.join(HERE, "d2run.py"), "--slot", str(args.slot), "--seed", "4299", "--steps",
+                 "tools/gdb/quest-load.steps", "--after", "8", "--install", args.tag, sv, "--log", log], timeout=180)
+        sh(PY + [os.path.join(HERE, "slots.py"), "stop", str(args.slot)])
+        back = os.path.join(slots.saves_dir(args.slot), name + ".d2s")
+        a = open(sv, "rb").read()
+        if not os.path.exists(back):
+            print("LOAD %s: no save written back" % name, flush=True)
+            continue
+        b = open(back, "rb").read()
+        dst = os.path.join(out, "%s-%s.d2s" % (args.run, name))
+        shutil.copyfile(back, dst)
+        qa, qb = d2s.quest_words(a), d2s.quest_words(b)
+        wa, wb = d2s.parse_waypoints(a), d2s.parse_waypoints(b)
+        diffs = []
+        for dd in range(3):
+            for q in range(d2s.QUEST_WORD_COUNT):
+                if qa[dd][q] != qb[dd][q]:
+                    diffs.append("%s w%d %04x->%04x" % (d2s.DIFFICULTIES[dd], q, qa[dd][q], qb[dd][q]))
+            if sorted(wa[dd]["bits"]) != sorted(wb[dd]["bits"]):
+                diffs.append("%s waypoints +%s -%s" % (d2s.DIFFICULTIES[dd], sorted(set(wb[dd]["bits"]) - set(wa[dd]["bits"])),
+                                                     sorted(set(wa[dd]["bits"]) - set(wb[dd]["bits"]))))
+        import hashlib
+        print("LOAD %s: written back %s (built %s); act bytes %s -> %s; quest/waypoint differences: %s" % (
+            name, hashlib.sha256(b).hexdigest()[:8], hashlib.sha256(a).hexdigest()[:8], list(a[0xA8:0xAB]),
+            list(b[0xA8:0xAB]), "; ".join(diffs) or "none"), flush=True)
+        sh(PY + [os.path.join(HERE, "saves.py"), "--slot", str(args.slot), "restore", args.tag])
+    return 0
+
+
 def main(argv):
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=("list", "run", "act"))
+    ap.add_argument("cmd", choices=("list", "run", "act", "load"))
     ap.add_argument("rest", nargs="*")
     ap.add_argument("--slot", type=int)
     ap.add_argument("--tag", default="p42h")
@@ -408,6 +461,8 @@ def main(argv):
         log, actions = args.rest[0], args.rest[1:]
         Driver(args.slot, os.path.abspath(log), []).run(actions)
         return 0
+    if args.cmd == "load":
+        return run_load(args, args.rest or LOAD_SET)
     for name in args.rest:
         run_session(args, name)
     return 0
@@ -429,8 +484,8 @@ sess("x-act3", "ActThreeMeshif", "enter-normal", 4218, ["menu:meshif:2:1", "slee
 sess("x-lut", "QuestBookLost", "enter-normal", 4212, ["walk:25", "talk:331:22", "qlog", "towp", "wp:2,3", "tp:10",
                                                       "nearwp", "wp:" + X_A.replace(" ", "_"), "tp:6", "nearwp",
                                                       "wp:" + X_B.replace(" ", "_"), "tp:1"])
-sess("x-summit0", "QuestSummit", "enter-normal", 4213, ["walk:25", "towp", "wp:5,8", "explore:40", "clickwarp:76:1", "objop:564:3", "tp:3"])
-sess("x-summit1", "TravelWpFive", "enter-normal", 4214, ["walk:25", "towp", "wp:5,8", "explore:40", "clickwarp:76:1", "objop:564:2"])
+sess("x-summit0", "QuestSummit", "enter-normal", 4213, ["walk:25", "towp", "wp:5,8", "explore:40", "warp:76:150", "clickwarp:76:1", "objop:564:3", "tp:3"])
+sess("x-summit1", "TravelWpFive", "enter-normal", 4214, ["towp", "wp:5,8", "explore:40", "warp:76:150", "clickwarp:76:1", "objop:564:2"])
 sess("x-orb", "ActFourDurance", "enter-normal", 4215, ["walk:25", "towp", "wp:3,8", "objop:404:3"])
 sess("x-off", "TravelWpOne", "enter-normal", 4216, TALK1)
 sess("x-fresh", "QuestFresh", "enter-normal", 4217, TALK1)
