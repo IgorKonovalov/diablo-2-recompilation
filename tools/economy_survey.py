@@ -17,7 +17,7 @@ items     Weapons/Armor/Misc § Economy: per table the ranges of cost, gamble co
           without stackable); the Gamble rows' gamble cost.
 types     ItemTypes § Repair and throwing columns: the rows with Repair, Throwable, Reload, ReEquip, AutoStack,
           Shoots, Quiver, CostFormula; per item table, the bases whose own `type` row has Repair against their
-          nodurability and durability.
+          nodurability and durability, and the bases whose Equiv closure (Equiv1/Equiv2 to the root) has Repair.
 stats     ItemStatCost § Price: Divide, Multiply, Add; every row with a non-zero Multiply or Add.
 affixes   MagicPrefix/MagicSuffix/AutoMagic divide/multiply/add, UniqueItems/SetItems cost mult/add, and the
           QualityItems and RareSuffix price cells (.txt only: those columns have no field).
@@ -201,6 +201,27 @@ def sec_types(d):
                        codes("%s(%s)" % (d.code(tn, i), d.types[r["type"]]) for i, (r, x) in enumerate(zip(R, rep))
                              if x and r["nodurability"]),
                        kv["%s_type_throwable" % s]))
+    # the same against the Equiv closure (the item's own type and every type reached through Equiv1/Equiv2): the
+    # count of bases whose closure holds a Repair type, and of bases where it differs from the own-type answer
+    n = len(it.rec)
+
+    def closure(t):
+        seen, todo = set(), [t]
+        while todo:
+            x = todo.pop()
+            if 0 <= x < n and x not in seen:
+                seen.add(x)
+                todo += [it.rec[x]["Equiv1"], it.rec[x]["Equiv2"]]
+        return seen
+    for tn in ITEM_TABLES:
+        R, s = d.t[tn].rec, SHORT[tn]
+        own = [bool(it.rec[r["type"]]["Repair"]) if 0 <= r["type"] < n else False for r in R]
+        clo = [any(it.rec[x]["Repair"] for x in closure(r["type"])) for r in R]
+        kv["%s_closure_repair" % s] = sum(clo)
+        kv["%s_closure_repair_differs" % s] = sum(1 for a, b in zip(own, clo) if a != b)
+        out.append("%s: Equiv closure has Repair %d of %d; differs from the own type: %s" % (
+            tn, kv["%s_closure_repair" % s], len(R),
+            codes(d.code(tn, i) for i, (a, b) in enumerate(zip(own, clo)) if a != b) or "none"))
     return out, kv
 
 
