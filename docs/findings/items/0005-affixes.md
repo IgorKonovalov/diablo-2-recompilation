@@ -987,6 +987,49 @@ with its row's level window) and `props` (reports `workspace/logs/sweep-s2c-*.tx
   **S2c review (2026-10-16): accepted.** The branch is decided by the base's class alone, the reading names it, and
   the logged case is reproduced through the fallback, so one case is decisive; aff 27 is now raised in full.
 
+## Plan 0038 batch S1f (2026-10-17)
+
+Static batch S1f of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the c-emu rows of the
+[inventory § 2.6 S1f table](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews). No session was
+played. Method: the function runs under Ghidra's p-code emulator against `tools/sweep_s1f.py`'s models, under
+[ADR-0015](../../adrs/0015-emulated-reproduction.md): [run:2026-10-17-sweep-emu2](../data/experiments.md#run2026-10-17-sweep-emu2).
+Every memory spec guards the fatal path (0x00408090, 0x00408A60, 0x00681E09) and the pool allocator's entries
+(0x0040B4B0, 0x0040B430, 0x0040B480), and no case stopped, so no claimed branch was reached through either (review
+condition (a)). Where a statement above is tagged inferred and this section raises it, the tag and the second source
+given here are the current ones.
+
+Two families. `candadd`: `sub_005C0D00_AffixCandAdd` alone (EAX = count, ECX = list, EDX = record, the id on the stack,
+`ret 4`), 3 000 calls with the count at 0, 1, 0x1F0–0x20F, random values below 0x260, negative values and wide ones,
+the list window prefilled with random bytes and dumped. `pickaffix`: `ITEMS_PickMagicAffix(item, needSpawnable,
+mustRoll, applyProps 0, isPrefix, forcedId 0, autoGroup)`, 500 calls, on a synthetic affix table of 2 220 rows (suffix
+block 1 000, prefix block 1 100, automagic 120; random levels, groups, frequencies, `rare`, `classspecific`, item-type
+and exclusion lists, versions, a few wide or negative levels) built so that most rows pass the filters, against
+synthetic items (record `qlvl`, `magic lvl` +0x140, type and second type, `ilvl`, quality, seed, up to three prefix and
+suffix ids taking groups). Spec: `data:g_pDataTables@0x00744304` → `data:g_DataTables@0x0096BC30`, with only the fields
+read written: itemtypes `+0xBF8`/`+0xBFC`, the equivalence bits `+0xC00`/`+0xC04`, the items count and records
+`+0xE28`/`+0xE2C` (also read directly by `ITEMS_GetRecord`, 0x0096CA58), the affix block table `+0xE4C`–`+0xE5C`
+(read directly by `sub_00633ED0_GetMagicAffixInfo` and `MAGICAFFIX_GetRecord`, 0x0096CA7C/0x0096CA80). These image
+writes are the claim's arguments (S1e ruling 3). The only traced access is the bit-mask table 0x006CE268 (`.rdata`,
+masks `1 << i`, checked by `sweep_s1f.py static`). With `applyProps` 0 the property code (`sub_0065FEC0_ItemApplyProps`,
+whose property functions are indirect calls) is not reached; no case stopped.
+
+- **Row 6** (spec *Constants* L126, `CAND_CAP` 511 stored candidates) **raised.** [C] `AffixCandAdd` stores `{id,
+  record}` at `list + 8·count` and returns `count + 1` exactly when the signed count is below 0x1FF (1 635 calls, 78 at
+  510), and returns the count unchanged with nothing written from 511 up (1 365; 65 at exactly 511); negative counts
+  store below the list (195). Through the caller, in the 207 `pickaffix` calls with more than 511 eligible rows the
+  pick only ever chose among the first 511. The negative control (cap 512) differs in 65 `candadd` calls.
+  (fn:sub_005C0D00_AffixCandAdd@0x005C0D00, 0x005C0D03, fn:ITEMS_PickMagicAffix@0x005C1560, run:2026-10-17-sweep-emu2)
+- **Row 12** (spec C pseudocode L277, the weight is added even past the cap) **raised.** [C] 500 of 500 calls return
+  the model's id and seed. In the 207 calls with more than 511 eligible rows, the total `W` passed to
+  `RNG_RangeOffset(seed, 0, W + 1)` sums every eligible row's weight while the list holds 511; in 22 of them the draw
+  fell beyond the stored weights and the walk ended on the 511th candidate (`k = n − 1`), in 185 within them. The
+  negative control (weights summed only while stored) differs in 125. The caller adds the weight with no test of the
+  count (`add [ebp-0x8], ecx` / `add [ebp-0x8], edx` at 0x005C17E1/0x005C17EA after the call at 0x005C17C9), cited from
+  objdump. The rest of the pick reproduces on these cases: the first LCG step and the `mustRoll` gate (48 no-roll
+  returns), `frequency × level` weights when the base has a magic level (182), the auto-group filter (64) and no candidate
+  (14). No case had a total `W + 1` ≤ 0.
+  (fn:ITEMS_PickMagicAffix@0x005C1560, fn:RNG_RangeOffset@0x00472280, run:2026-10-17-sweep-emu2)
+
 ## Data touched
 
 - Affix records: tbl:MagicPrefix.txt:spawnable, tbl:MagicPrefix.txt:version, tbl:MagicPrefix.txt:level,

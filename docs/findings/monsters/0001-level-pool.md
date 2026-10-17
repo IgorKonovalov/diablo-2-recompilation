@@ -471,6 +471,44 @@ S3B pool cf_all_counts=13 cf_no_pool_read_ok=0 game_compile_identical=1 pins=18 
   walk of `LevelClassVariant` (taken when no `mon` class shares the `BaseId`) is not modelled.
   (fn:sub_005474C0_RegionActClass@0x005474C0, 0x005475BF, 0x005475CF)
 
+## Plan 0038 batch S1f (2026-10-17)
+
+Static batch S1f of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the c-emu rows of the
+[inventory § 2.6 S1f table](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews). No session was
+played. Method: the function runs under Ghidra's p-code emulator against `tools/sweep_s1f.py`'s models, under
+[ADR-0015](../../adrs/0015-emulated-reproduction.md): [run:2026-10-17-sweep-emu2](../data/experiments.md#run2026-10-17-sweep-emu2).
+Every memory spec guards the fatal path (0x00408090, 0x00408A60, 0x00681E09) and the pool allocator's entries
+(0x0040B4B0, 0x0040B430, 0x0040B480), and no case stopped, so no claimed branch was reached through either (review
+condition (a)). Where a statement above is tagged inferred and this section raises it, the tag and the second source
+given here are the current ones.
+
+`sub_005BDB20_MonVariantRoll(seed, entry, n)` (`ret 0xC`) ran on 3 000 calls (family `varroll`) against a scratch
+DataTables (`data:g_pDataTables@0x00744304` set by the spec, an argument; only the fields `+0xA78`/`+0xA80` MonStats
+records and count and `+0xA90`/`+0xA98` MonStats2 records and count written) of 12 random MonStats and MonStats2
+records. Three MonStats2 records have exactly one component with 2 (or 3) variants and `+0x25` = 2, so a third set fits.
+Each case writes the seed pair and a random 0x34-byte entry (class id in range, −1 or past the count; `nVariants`
+0–3 or a random byte; in 30 % of the cases `nVariants` 2 with set 1 equal to set 0, so one new draw can equal two
+sets) and `n` (1, 2, 3, 0, −1, 5, `0x7FFFFFFF`), and dumps the seed and the entry. The read set is the spec, the
+case memory and the security cookie (set by the spec; XORed with EBP at entry and checked by `__security_check_cookie`
+at exit, so no output depends on it: S1e ruling 3 (a)); no access was traced. The callees are
+`fn:sub_00451FE0_MonStats2Rec@0x00451FE0` and `fn:RNG_Range@0x0045C390`; the redraws inline the LCG.
+
+- **Pool 27** (spec, *Reimplementation notes*: the duplicate test is `tries = 0`, not `≤ 0`; when two sets equal the new
+  one, one try costs two, `tries` passes from 1 to −1 and the loop runs until a non-duplicate is drawn) **raised; the
+  conditional row is kept.** [C] 3 000 of 3 000 calls give the seed and entry bytes of the model. In 192 calls a set
+  went past 0 (3 → 1 → −1) and the loop went on to a non-duplicate, ending at −1 (112), −3 (38), −5 (25), −7 (10),
+  −9 (3), −11 (3) and −13 (1); in 93 a set stopped at exactly 0 and was appended although still a duplicate. The
+  negative control (stop at `tries ≤ 0`) differs in exactly those 192. The rest of the function reproduces too: set 0
+  drawn component by component (233), one varying component (`a = b`, 1 084) or two (137), the cap
+  `(1 << (m2[+0x25] & 31)) − nVariants` binding (1 142), `n ≤ 0` (645), a full entry (78) and no MonStats2 record (930)
+  returning without a draw. The test is cited from objdump: `mov [ebp-0x20], 3` (0x005BDCC0), `sub [ebp-0x20], eax`
+  per equal set (0x005BDE28), `cmp [ebp-0x20], 0; jne` back to the redraw (0x005BDE46–0x005BDE4A); `shl esi, cl`
+  masks the cap's count (0x005BDB87). (fn:sub_005BDB20_MonVariantRoll@0x005BDB20, run:2026-10-17-sweep-emu2)
+- [I] `tries` can pass 0 only when one draw equals two existing sets, and since `nVariants + n ≤ 3` an entry then
+  holds exactly two sets, both equal; the loop goes on until a draw differs from them in `a` or `b`, which a varying
+  component (`comp > 1`) always allows, so on the game's generator it ends with probability 1 but with no bound on the
+  number of draws. (0x005BDDA0–0x005BDE4A)
+
 ## Open questions
 
 - ~~The nightmare/hell monster level and the classic branches are code-read only.~~ Logged in run:2026-10-12-mon-pool-p2

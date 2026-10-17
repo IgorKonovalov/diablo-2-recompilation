@@ -731,6 +731,26 @@ Batch H5a, record [experiments.md § run:2026-10-17-sweep-links](experiments.md#
   each built into the Barracks placement as modelled (drlg/0006 § Plan 0038 batch H5a). (0x006774F9,
   fn:sub_00673120_MazeBarracksPlace@0x00673120, run:2026-10-17-sweep-links)
 
+## Plan 0038 batch S1f (2026-10-17)
+
+Static batch S1f of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the c-emu rows of the
+[inventory § 2.6 S1f table](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews). No session was
+played. Method: the function runs under Ghidra's p-code emulator against `tools/sweep_s1f.py`'s models, under
+[ADR-0015](../../adrs/0015-emulated-reproduction.md): [run:2026-10-17-sweep-emu2](../data/experiments.md#run2026-10-17-sweep-emu2).
+Every memory spec guards the fatal path (0x00408090, 0x00408A60, 0x00681E09) and the pool allocator's entries
+(0x0040B4B0, 0x0040B430, 0x0040B480), and no case stopped, so no claimed branch was reached through either (review
+condition (a)). Where a statement above is tagged inferred and this section raises it, the tag and the second source
+given here are the current ones.
+
+- **Row 6, second statement** (spec L154, `MONSTATS_ValidId` is a range check, not an id table) **raised.** [C] 2 000
+  calls (family `validid`) with `nMonStats` at `DataTables + 0xA80` set per case (0, 1, 733, 734, random, `0x7FFFFFFF`,
+  −1, `INT32_MIN`) and `id` in ECX across the same edges: the return is `id` when `0 ≤ id < nMonStats`, both compares
+  signed (599 cases), and −1 otherwise (830 ids at or above the count, 571 negative ids; 532 cases had a count ≤ 0, where
+  every id gives −1); nothing is popped. The negative control (`id ≤ nMonStats`) differs in 190. The function reads
+  only `data:g_pDataTables@0x00744304` (set by the spec: an argument of the claim, S1e ruling 3) and the count; no access
+  was traced. The signed tests are cited from objdump (`test eax, eax; jl` at 0x004E6C52, `cmp eax, [ecx+0xa80]; jl`
+  at 0x004E6C5C, `or eax, 0xffffffff` at 0x004E6C64). (fn:MONSTATS_ValidId@0x004E6C50, run:2026-10-17-sweep-emu2)
+
 ## Plan 0039 batch P1c (2026-10-17)
 
 Follow-up of the plan 0038 Phase 3 round-3 review ([backlog](../../backlog.md), 2026-10-17 architect → reverser): can a
