@@ -2111,3 +2111,21 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     reverser, *static sweep, remaining* (the checkpoint list plus (e′)); reverser, the `test_d2s.py` recipe bases.
     The spec-writer's room-tiles re-tag entry (filed by the lane) stands. Ledger rows are in [metrics](metrics.md).
   - **Next:** merge `lane/rbs`.
+
+- **2026-10-17 — Phase 3, room-tiles after the `lane/rbs` re-rule (spec-writer, `lane/sw5`, from `main` `3e169e4`).**
+  Every batch carrying drlg/room-tiles rows is accepted (S4a, S4b, H5c, inventory § 5; the `lane/rbs` re-rule of rows
+  9 and 20 and the plan 0039 P1a d-edit ruling of the 11 merge rows, § 2.6; no S1f row is left), so this lane completes
+  the re-tag begun in the first round.
+  - **drlg/room-tiles** {C 118, I 31, L 0} → **{C 120, I 32, L 0}**. Raised row 20 (step note 3, the `(10, 0, 0)`
+    fallback makes no draw: 1 280 replayed picks, k matched). Split row 9: step 3b's fallback `[C]`, the `else fatal`
+    line `[I]` (met in no log). From the plan 0040 Phase 1 amendment (and the reverser's 0040 entry (a)): the nested
+    release call's `EDX` leaves the `[C]` bullet and a new `[I]` bullet states the wrapper's negation of the DUNGEON
+    act's `+0x50`, the nested inner `EDX` 0 and `0x200000` as "released by the server" with no reader (drlg/0009 § 4).
+    *Open questions*: the fallback entry struck, the `0x200000`/`EDX` entry narrowed to whether the 626 are exactly
+    the server releases. No inventory row changes class.
+  - **Wiki:** [levels](../wiki/levels.md) restated (the fallback confirmed, its fatal branch and the release flag
+    read from the code); [randomness](../wiki/randomness.md) states neither and is unchanged. W4 0.
+  - **Backlog:** closed the room-tiles re-rule entry and the plan 0040 Phase 1 amendment; annotated the reverser's
+    plan 0040 entry ((a) done; (b), (c) remain). New entry to the architect with the old and new counts.
+  - **Commits:** `e476530` (spec and research map), `5b59759` (wiki), then backlog and this log. Gate green.
+  - **Next:** architect review of `lane/sw5` (backlog).
