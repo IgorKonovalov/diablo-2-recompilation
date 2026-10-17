@@ -124,6 +124,40 @@ From [items/0006 § 1, § 6](../findings/items/0006-properties.md#1-base-stats-s
   `min(6, invwidth × invheight, ItemMaxSockets)` with no difficulty cap. (fn:sub_0062BC20_ItemMaxSockets@0x0062BC20,
   fn:ITEMS_SetSockets@0x0062BCB0, fn:PROP_Func14_Sockets@0x0065F590, tbl:ItemTypes.txt:MaxSock1)
 
+## Repair and throwing columns (plan 0043 Phase 0)
+
+The per-type columns the repair, price and wear code is expected to read. Offsets are [§ Columns](#columns) (`[C]`,
+`excel_bin.py diff`); the rows come from `python3 -I tools/economy_survey.py types workspace/merged/data/global/excel`
+(gate survey `economy`), `[C]` as data. The repair and price readers are named only
+([items/0009 § 9](../findings/items/0009-vendors.md#9-named-only-prices-and-repair)), so the meanings are `[L]` except
+where tagged. Item-side columns (`cost`, `durability`, stacks) are in [Weapons § Economy](Weapons.md#economy-plan-0043-phase-0).
+
+| Column | Field | Rows with it | Meaning |
+|---|---|---|---|
+| `Repair` | `+0x008` u8 | 32: `shie`, `tors`, `boot`, `glov`, `belt`, `helm`, `circ`, `phlm`, `pelt`, `head`, `ashd`, `cloa`, `scep`, `wand`, `staf`, `orb`, `axe`, `club`, `swor`, `hamm`, `knif`, `spea`, `pole`, `mace`, `xbow`, `h2h`, `h2h2`, `aspe`, `tkni`, `taxe`, `jave`, `ajav` | the type can be repaired `[L]` |
+| `Throwable` | `+0x010` u8 | 7: `tpot`, `tkni`, `taxe`, `jave`, `ajav`, `thro`, `comb` | `[I]` the classic-game re-pick in the TC resolver ([items/0001](../findings/items/0001-tc-resolution.md), 0x0055AE6E) and the affix-count rule ([items/0005](../findings/items/0005-affixes.md), fn:sub_0062BA80_ItemTypeThrowable@0x0062BA80); quantity loss on a throw `[L]` |
+| `Reload` | `+0x011` u8 | 9: `bowq`, `xboq`, `mboq`, `mxbq`, `tpot`, `tkni`, `taxe`, `jave`, `ajav` | a spent stack is refilled from the inventory `[L]` |
+| `ReEquip` | `+0x012` u8 | 5: `tpot`, `tkni`, `taxe`, `jave`, `ajav` | a spent stack is replaced by a like item `[L]` |
+| `AutoStack` | `+0x013` u8 | 8: `bowq`, `xboq`, `tpot`, `key`, `tkni`, `taxe`, `jave`, `ajav` | a picked-up item joins a stack `[L]` |
+| `Shoots` | `+0x00C` u16 type row | 3: `bow` → `bowq`, `abow` → `bowq`, `xbow` → `xboq` | the ammunition a launcher uses (quantity loss per shot) `[L]` |
+| `Quiver` | `+0x00E` u16 type row | 4: `bowq`, `mboq` → `bow`; `xboq`, `mxbq` → `xbow` | `[I]` the quiver branch of the base-stat roll (above); the launcher a quiver feeds `[L]` |
+| `CostFormula` | `+0x020` u8 | 1 on 7: `shie`, `tors`, `boot`, `glov`, `belt`, `helm`, `circ`; 2 on `body` (body parts) | price formula selector `[L]` |
+
+- `[C]` `Throwable` and `ReEquip` go together: every `ReEquip` type is `Throwable`; `thro` and `comb` are `Throwable`
+  but not `ReEquip`, and they are the parent types (no item has them as its own `type`). Four `Throwable` types
+  also have `Repair` (`tkni`, `taxe`, `jave`, `ajav`); `tpot` has neither `Repair` nor durability.
+- `[C]` `Reload` without `AutoStack`: `mboq` and `mxbq` (the magic quivers); every other `Reload` type also has
+  `AutoStack`, and `key` is the one `AutoStack` type without `Reload`.
+- `[C]` `CostFormula` 1 is on armour types only, every one of them a `Repair` type. The one 2 is on `body` (*Body
+  Part*, `Equiv1` `misc`, no `Repair`): the 12 misc body parts (`hrt`, `brz`, `jaw`, `eyz`, `hrn`, `tal`, `flg`, `fng`,
+  `qll`, `sol`, `scz`, `spe`, `cost` 32..100). No weapon type has a `CostFormula`.
+- `[C]` **The item's own `type` against these flags** (the `Equiv` tree not walked): 270 of 306 weapons and all 202
+  armors have a `Repair` type; the 36 weapons without one are `bow`, `abow` and `tpot` items, all `nodurability` 1;
+  36 weapons have a `Throwable` type (the 30 throwing weapons and the 6 throwing potions, exactly the `stackable`
+  weapons). Whether the repair test reads the item's own type or its `Equiv` closure is a Phase 1 question `[L]`; on stock
+  data it changes no count: walking `Equiv1`/`Equiv2` to the root gives the same 270, 202 and 0 (misc), no item
+  differing (recomputed from `itemtypes.txt` at the plan 0043 Phase 0 review; not yet a survey key).
+
 ## Open questions
 
 - `[L]` How `Equiv1/2` chains are walked (depth, cycles) (backlog → reverser).

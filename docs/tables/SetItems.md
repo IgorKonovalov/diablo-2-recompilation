@@ -197,6 +197,23 @@ The set-wide bonuses are [Sets § Bonus blocks](Sets.md#bonus-blocks-plan-0041-p
   the one `add func` 1 row, a bonus tied to particular other members against one counted by members worn) is
   `sub_00660120_SetBonusApply`, plan 0041 Phase 1. (fn:sub_00660120_SetBonusApply@0x00660120)
 
+## Price (plan 0043 Phase 0)
+
+Offsets are [§ Record layout](#record-layout) (`[C]`, `excel_bin.py diff`); the counts come from
+`python3 -I tools/economy_survey.py affixes workspace/merged/data/global/excel` (gate survey `economy`), `[C]` as
+data. The price function is named only ([items/0009 § 9](../findings/items/0009-vendors.md#9-named-only-prices-and-repair)),
+so the meanings are `[L]`, for plan 0043 Phase 1.
+
+| Column | Field | Values | Meaning |
+|---|---|---|---|
+| `cost mult` | `+0x038` u32 | 5 in every row | price multiplier of a set item `[L]` |
+| `cost add` | `+0x03C` u32 | 2500 on 62 rows, 5000 on 65 | price addend of a set item `[L]` |
+
+- `[C]` **`cost add` follows the set's version**: 2500 on all 62 members of the 16 classic sets ([Sets](Sets.md)
+  `version` 0: *Civerb's Vestments* … *Arcanna's Tricks*), 5000 on all 65 members of the 16 expansion sets
+  (`version` 100); no set mixes the two. The member's `lvl` does not decide it (2500 rows have `lvl` 3..27, 5000 rows
+  from 20).
+
 ## Interpretation notes
 
 - `[C]` `chrtransform` equals `invtransform` in every one of the 127 rows (14 rows blank in both). The
