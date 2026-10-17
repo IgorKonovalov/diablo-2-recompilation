@@ -2264,3 +2264,54 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (town-follow remainder, outdoor 7 layout bound, MonPlace readers, the optional unit-seed search). The lane's
     spec-writer entry is annotated with the lifecycle rewording. Ledger rows are in [metrics](metrics.md) (usage "—").
   - **Next:** merge `lane/rbs3`.
+
+- **2026-10-17 — Phase 3, the `lane/rbs3` readings and the outdoor H5e reasons (spec-writer, `lane/sw6`, from `main`
+  `925d060`).** Two spec-writer entries that need no new evidence: the reverser's rbs3 lifecycle and MonPlace readings
+  (with the `lane/rbs3` review's annotation) and the architect's outdoor H5e remainders after `lane/rbs2`.
+  - **drlg/lifecycle** {C 78, I 70, L 8} → **{C 80, I 73, L 7}**. From drlg/0009 § 11.1 as the review ruled:
+    `SpecialMonRestore`'s flag-1 handlers through `SpecialModsApply` (0x005A4558) `[C]` (the run's 15 champion
+    restores), its pushed 0 the `minions` argument `[I]`, `MinionRestore`'s own flag 0 `[I]` ("would show outside
+    stat 12", not looked for). The dead-champion rule restated from § 11.1 (b), still `[I]`; the `[C]` "No logged dead
+    champion was saved" unchanged. Open questions: town-follow kept `[L]` with § 11.1 (a); the `0x08` and flag-1
+    questions struck; the minion-flag half kept.
+  - **monsters/special** {C 106, I 92, L 3} → **{C 106, I 94, L 3}**: every MonPlace row from the `PresetMonSpawn`
+    switch `[I]` at the review's scope (first spawn and restore through `PresetUnitDispatch`, four other callers
+    unfollowed); the restore flag split in § J; the S3b mod-list readers in E1.
+  - **drlg/preset** {C 137, I 23, L 2} → **{C 137, I 25, L 2}**: the `place_group` pointer in § 6 and the
+    reimplementation note, same scope.
+  - **drlg/outdoor** {C 180, I 19, L 3} → **{C 180, I 19, L 2}**: H2's swapped cliff-cave scan and H6's 5/6 endpoints
+    and exhausted pool say why there is no stock case (drlg/0008 (c) with the border-piece rotation, (d), (e), (e′));
+    rows stay `[I]`; two answered open questions struck. Rows 7 and 11 unchanged. No inventory row changes class.
+  - **Wiki:** [levels](../wiki/levels.md) and [monsters](../wiki/monsters.md) restated; W4 0.
+  - **Backlog:** both entries closed. Review request:
+    [sw6 review](../backlog/2026-10-17-spec-writer-architect-sw6-rbs3-readings-and-outdoor-h5e-review.md). The
+    rbs2 quests/economy readings entry is left for the 0042 and 0043 Phase 3 passes.
+  - **Commits:** `c210e90` (specs and research map), `e99c773` (wiki), then backlog and this log. Gate green.
+  - **Next:** architect review of `lane/sw6` (backlog).
+- **2026-10-17 — `lane/sw6` review (architect): accept with fixes.** Main (`7e15a1b`) merged into the lane first. Each
+  restated statement checked against its source at the same strength: drlg/0009 § 11.1 (a)–(c) and the `lane/rbs3`
+  ruling annotation (lifecycle H2b, H2c, § F, § H, open questions), monsters/0003 § 7's switch bullet (special § H,
+  preset § 6), monsters/0003 § S3b (special E1), drlg/0008 (c), (d), (e), (e′) with the rbs2 review (outdoor H2, H6).
+  special § H follows the newer switch bullet for 19–21 and 27; it agrees with [MonPlace](../tables/MonPlace.md) row
+  for row (both kept row 24's "class 0"; fix 2). Anchors spot-checked with objdump: 0x005A454E `push $0x0`, 0x005A4558 `call 0x5a2120`, 0x005A2123
+  `cmpl $0x0,0x10(%ebp)`, 0x005A214D `push $0x1`, 0x005A4811 and 0x005A4830 `push $0x0`, 0x005A0CE7 the flag test,
+  0x0054E76F–0x0054E775 (`index − 2`, bound `0x1E`), the byte table `0x0054EB30` (rows 6, 7, 9, 12–16, 19–21 → 8),
+  0x006807F3–0x0068080A (the 2/3/17 skip), 0x0068023B `test $0x20,%al`. All resolve. No `[L]` above *Open questions*
+  in the four specs; the wiki statements keep their hedges; research-map rows whole. **Scope addition (E1):** accepted;
+  it was in the reverser entry's third bullet, and the review completes it (fix 1).
+  - **Fixes (4):**
+    1. *under-claim*: special E1 kept "the copied list is what the server sends" `[I]`; the S3b review raised it
+       (`[C]`, S3b spec-writer entry (f)). Split: `[C]` for the handlers never called and the packet, `[I]` for the
+       boss handlers' flag 0 and the other readers.
+    2. *stale cross-reference*: special § H's fixed-class bullet kept "24 class 0" from monsters/0003 § 7's stale
+       bullet. Dropped, and an `[L]` open question added: objdump at the review gives rows 24 and 26 the group case,
+       which returns 0 outside Normal (0x0054EAA8–0x0054EAB9), never the fixed-class table; the finding has not taken
+       this in (reverser follow-up annotated).
+    3. *omission*: outdoor H2 listed the closure's writes as "the seed, stack slots, allocations and grid cells"; (e′)
+       also names the level's rotation list, the BorderSub context and the LvlSub record's grid view.
+    4. *other*: research-map special row's "five fixed-class rows" (the fixed-class table is rows 17–32) → "five rows
+       placed at the point"; row rewritten whole with the new counts.
+  - **Counts after the review:** monsters/special **{C 107, I 94, L 4}**; drlg/lifecycle {C 80, I 73, L 7}, drlg/preset
+    {C 137, I 25, L 2}, drlg/outdoor {C 180, I 19, L 2} as filed. Gate green.
+  - **Backlog:** the review request closed; the S3b spec-writer entry annotated ((f) applied, (a)–(e) remain); the
+    monsters/0003 § 7 reconcile entry (reverser) annotated with the rows 24/26 objdump lead. Ledger rows added.

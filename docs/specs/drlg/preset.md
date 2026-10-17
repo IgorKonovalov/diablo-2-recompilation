@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/room-tiles]
 consumed_by: [monsters/spawn, monsters/special, objects, drlg/collision, drlg/warps]
-tags: {C: 137, I: 23, L: 2}
+tags: {C: 137, I: 25, L: 2}
 updated: 2026-10-17
 ---
 
@@ -448,6 +448,14 @@ This spec's output ends at the room list. The rest of this section names what th
   `SUnitCreate` with type and class kept (21). (fn:sub_005557D0_PresetUnitDispatch@0x005557D0,
   fn:sub_00555910_PresetUnitSpawn@0x00555910, fn:sub_0054E600_PresetMonSpawn@0x0054E600,
   fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-13-drlg-preset, run:2026-10-15-acts-3-5, [drlg/0004 § Plan 0038 batch S4a](../../findings/drlg/0004-preset-units.md#plan-0038-batch-s4a-2026-10-16))
+- [I] **A kept `place_group` unit places nothing in `PresetMonSpawn`.** The function's MonPlace switch returns 0 with
+  no call for `place_group25` to `place_group100` (rows 33–36), as for the other rows listed in
+  [monsters/special § H](../monsters/special.md#h-monplace-presets), so the keep/drop roll of step 3 decides only
+  whether the unit stays in the room list. The scope is `PresetMonSpawn` reached through `PresetUnitDispatch`, which
+  returns its result with no fallback; both the first spawn and the inactive restore reach it that way. The four other
+  callers of `PresetMonSpawn` and any other reader of the room's preset list are not followed.
+  ([monsters/0003 § 7](../../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20);
+  fn:sub_0054E600_PresetMonSpawn@0x0054E600, fn:sub_005557D0_PresetUnitDispatch@0x005557D0, tbl:MonPlace.txt:code)
 - [I] Type 2 with `id = 573` goes to nothing; no logged unit has that id, and there is no stock case (the next two
   statements). (fn:sub_005557D0_PresetUnitDispatch@0x005557D0)
 - [C] **No shipped DS1 gives a 573.** `g_Ds1ObjectIds` holds 573 only at Act IV (act index 3) ids 5, 6 and 7; a raw id
@@ -698,7 +706,8 @@ The seed after the rolls is the second draw's (`954E7521:1858544F` and `3385BAE3
   number of times but tests each `r` against the wrong unit when an instance has two drawing units. [C]
   (fn:DRLG_PresetUnitDropRolls@0x00667620, run:2026-10-13-drlg-preset)
 - **`place_group25` keeps 3/4 and `place_group75` keeps 1/4.** Don't "fix" them to match the names. [C]
-  (0x00667687, 0x00667794, run:2026-10-15-acts-3-5)
+  (0x00667687, 0x00667794, run:2026-10-15-acts-3-5) The roll still has to be made: a kept unit places nothing in
+  `PresetMonSpawn` (§ 6), but the draw moves the seed. [I] (fn:sub_0054E600_PresetMonSpawn@0x0054E600)
 - **Roll once per instance, not per room.** A preset split into many rooms draws only on the first room that loads,
   and only when the map scan has not already rolled on the level seed. [C] (0x006678D2, run:2026-10-13-drlg-preset)
 - **The level-seed roll shifts every later room of the level.** With `Scan` or `Pops` set, each drawing unit is

@@ -110,6 +110,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-17 | `lane/rbs3` review | 0038 static backlog sweep, third pass | architect-review | 150 996 | 62 | 20 | — | gave accept with fixes | — (on the lane row; usage unknown) |
 | 2026-10-17 | `lane/arc6` | 0039 MonPlace rows, 0044 MP23 pair | archivist | 103 147 | 43 | 9 | — | accept with fixes | 2: misread 1, other 1 (usage unknown) |
 | 2026-10-17 | `lane/arc6` review | 0039 MonPlace rows, 0044 MP23 pair | architect-review | 105 644 | 42 | 8 | — | gave accept with fixes | — (on the lane row; usage unknown) |
+| 2026-10-17 | `lane/sw6` | 0038 P3 rbs3 readings, outdoor H5e reasons | spec-writer | 169 148 | 86 | 20 | — | accept with fixes | 4: under-claim 1, omission 1, stale cross-reference 1, other 1 |
+| 2026-10-17 | `lane/sw6` review | 0038 P3 rbs3 readings, outdoor H5e reasons | architect-review | 129 319 | 44 | 9 | — | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
