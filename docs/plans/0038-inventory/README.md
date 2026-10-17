@@ -734,6 +734,21 @@ Net effect on the totals: none. The rows stay counted as H6d, as drlg-preset 18'
 harness batches. **Static 567, harness 532, c-emu awaiting a batch 0, blocked 415** (d-none 282, d-edit 73, d-sim 28,
 d-2c 14, d-owner 10, d-0032 8), **deferred 2, raised 10: 1 526.**
 
+**`lane/rbs` (review 2026-10-17, architect): room-tiles 9 and 20 re-ruled.** The S4b review left both rows a shortfall,
+read as "no stock key lacks a candidate". The `lane/w1` review asked for a re-rule: the S4a run already showed stock keys
+without a candidate, and the claim is about what the code does then. `sweep_s4a.py pick`, re-run on the lane and its
+output hash checked at this review, counts 1 280 picks with no candidate over the 36 logs with `TL` and `TINIT` lines
+(run:2026-10-14-collision, run:2026-10-15-objects), and 0 roomk mismatches. A draw in any of them would have moved that
+room's k, so a wrong reading could not match by chance. The evidence is in
+[drlg/0002 § Plan 0038 batch S4b](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4b-2026-10-16).
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| room-tiles 20 (the `(10, 0, 0)` fallback makes no draw) | c, S4b, shortfall | **raised** | 1 280 fallbacks, k matched in every room. |
+| room-tiles 9 (no candidate: fallback with no draw, else fatal) | c, S4b, shortfall | **raised in part** | The fallback half as row 20. Remainder `[I]`: the fatal branch (neither the key nor `(10, 0, 0)` has a candidate), met in no log. |
+
+Net effect: none on the totals. Both rows stay counted as S4b, and no class moves. The spec's L337, L600, step note 3
+(L621) and L1023 are re-tagged by the spec-writer (backlog).
 
 ## 3. Blocked rows, for the plan's open questions
 

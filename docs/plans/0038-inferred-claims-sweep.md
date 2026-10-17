@@ -2075,3 +2075,39 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request closed; the spec-writer entry annotated with rulings 2 and 3 and the (g) pointer; the
     H1a piece annotated with the reach condition. New: the human (owner) entry for the Diablo pair, d-owner candidates.
     Ledger rows added in [metrics](metrics.md).
+
+- **2026-10-17 — `lane/rbs` review (architect, static backlog sweep): accept with fixes.** `main` (`fc3e89b`) merged
+  first, clean; `tools/backlog.py migrate` changed nothing; `re/symbols.csv` untouched by the lane, no duplicates.
+  - **Checked.** Tests: `test_sweep_s2c` (6), `test_sweep_h5e` (4), `test_sweep_s4a` (9) pass; `test_d2s` has one
+    failure that `main` has too (two recipes with no base, from e2d42b1; backlog). Every hash in
+    `workspace/logs/sweep-rbs-manifest.txt` re-taken: the four outputs and the tool versions match. `state_setters.py`
+    re-run on a fresh objdump dump (same sha256 `b1e133a0…`): 659 sites, 391 resolved, 27 rows set or cleared and
+    7 none, the per-row setters and test-site counts as in the stats/0002 table. `d2sio.py check` re-run over the 23
+    logs (manifest hashes checked): 13 268 comparisons, 0 mismatches; the parent version gives 10. Sets params: 35
+    stores of EBX = 0x006336A0 in `sub_00634DC0_LoadSetTables` (16 from 0x00634EAE to 0x00635779), and over the
+    stock tables (case-folded) 44 skill ∩ state names, 0 montype ∩ state, montype ∩ skill = {`mosquito`}. Anchors read
+    in objdump: 0x006336A0–0x00633727 (the `-`/digit test, skills 0x0096C7CC, montype 0x0096C868, states 0x0096BCF0,
+    the 0 store), 0x00634DD7, 0x006BDFFC–0x006BE001, 0x00680170, 0x006807F3–0x0068080A, 0x0068023B, 0x00681454,
+    0x0068086F, 0x0045F5AA–0x0045F5AD, 0x005D22F0–0x005D22FE, 0x00579B64. `tools/ghidra.sh` read: the default
+    project `workspace/ghidra` keeps `ghidra-last.log`; `bash -n` clean.
+  - **Rulings.** (1) 0041 (e) `[I]` accepted; the archivist entry stands. (2) The 34 States rows: 27 placed `[I]`,
+    7 `[L]` in the finding, accepted. (3) room-tiles 20 raised `[C]`, 9 raised in part (fatal branch `[I]`): a draw in
+    any of the 1 280 fallbacks would move the room's k (rule 10 met); recorded in inventory § 2.6 and the per-spec file,
+    no class moves, totals unchanged. (4) The NULL-callback `[I]` line meets ruling 2 of the p38s4 review; data/excel J3
+    may cite it. (5) `GHIDRA_LOG` and the tooling.md rules accepted. (6) The d2sio clamp accepted. (7) The S2c flag clobber
+    accepted, extended (fixes). (8) The H5e counters accepted. (9) 0037 close: fire at the cap 2 115 `[C]` run (count
+    re-read in the kept output); "never `boss`" `[I]`, consistent with combat/delivery E2 and the combat wiki. (10) H5e
+    (a), (d), (e) accepted at `[I]`, entry kept open. On (e) and rule 9: the five unfollowed callees are named and
+    counted, so the rule is met, but the d-none rests on them; they become item (e′) of the open entry. (11) The
+    harness skips are accepted: each names the harness batch it rides on.
+  - **Fixes (5).** *Miscount 1:* drlg/0008 (e)'s pattern `or[lb]?` missed `orw $0x20,(%eax)` at 0x006689BC and
+    0x00668FC8 (cube parsers): three lines in the range, eight in `.text`. The text also scopes what the pattern does not
+    cover (11 displacement forms in the range, register sources). *Tool not kept 2:* the `state_setters.py` and
+    `d2sio.py check` outputs are now under `workspace/logs/` with manifest lines, cited in stats/0002 and save/0001.
+    *Omission 1:* `sweep_s2c.py emu` now also clears flags on `call` and on a memory `cmp`/`sub`/`add`; three negative
+    cases were added and the `static` output is unchanged. *Wrong anchor 1:* `PropParamCell`'s range ends at
+    0x00633727, not at the next function's 0x00633730.
+  - **Backlog.** The review request is closed. The H5e reachability and S2c tool entries are annotated. New entries:
+    reverser, *static sweep, remaining* (the checkpoint list plus (e′)); reverser, the `test_d2s.py` recipe bases.
+    The spec-writer's room-tiles re-tag entry (filed by the lane) stands. Ledger rows are in [metrics](metrics.md).
+  - **Next:** merge `lane/rbs`.

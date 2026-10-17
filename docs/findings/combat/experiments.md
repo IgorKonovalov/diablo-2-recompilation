@@ -219,6 +219,11 @@ player attacks 3 821, monster attacks 11 083, mercenary 2 449, missile defence 6
 | resistance at the cap: cold / lightning / poison | 15 / 17 / 2 | 27 / 17 / **692** | poison met |
 | negative absorbed amount | 4 | 4 | short |
 
+*Fire at the cap, added 2026-10-17 (`lane/rbs`, plan 0037 close follow-up (a)):* `python3 -I tools/combat.py check
+$(cat workspace/logs/combat/c37r-run2.lst)` re-run (tool sha256 `d4dfed41…22c53b43c`; output
+`workspace/logs/combat/c37r-run2-check-rbs-2026-10-17.txt`, `dc63aab8…f17f5b983`): `SUMMARY mismatches=0
+events=40655`, `resist application fire at cap: 2115` (cold 27, light 17, poison 692, as above).
+
 - **Conclusion:** the branches marked met move to `[C]` in [combat/0001 § 15](0001-formulas.md) (bullet *Resume
   lane*); crushing blow on an act boss (28) and a superunique (22), cold and lightning at the cap and the negative
   absorbed amount stay `[I]` with their counts. One more Normal Andariel session (about 8 crushing blows on her) and
@@ -264,6 +269,7 @@ a monster's seed `MonAttackStats` → `ma` 4 655, → `ha` 1 035.
 | block `/3`, player moving and not walking | 43 | **48** | met |
 | running player hit without a to-hit roll | 42 | **47** | met |
 | resistance at the cap: cold / lightning | 27 / 17 | 27 / 17 | short |
+| resistance at the cap: fire (added at the plan 0037 close, 2026-10-17) | — | **2 115** | met |
 | negative absorbed amount | 4 | 4 | short |
 
 - **Conclusion:** crushing blow `k` = 8 on an act boss and on superuniques moves to `[C]` in

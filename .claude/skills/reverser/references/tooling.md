@@ -23,7 +23,8 @@ tools/ghidra.sh emutrace cases mem > out # per-case memory, dumps, guards, trace
 ```
 
 - Project: `workspace/ghidra/d2.gpr`, program `game.exe`, language `x86:LE:32:default`, cspec `windows`.
-- Logs: `workspace/logs/ghidra-build-<UTC>.log` (+ `.script.log`), and `workspace/logs/ghidra-last.log(.script)`
+- Logs: `workspace/logs/ghidra-build-<UTC>.log` (+ `.script.log`), and `$GHIDRA_LOG` (default
+  `workspace/logs/ghidra-last.log`, or `ghidra-last-<project dir basename>.log` for a project copy; § emutrace)
   for the most recent query. Query commands open the project `-readOnly`, so renames have to go through
   `re/symbols.csv` + `import-symbols` (or the GUI followed by `export-symbols`).
 - `SYMBOLS_CSV=<path>` points import/export at another CSV (round-trip tests).
@@ -63,7 +64,9 @@ GHIDRA_PROJ_DIR=workspace/ghidra-<lane> GHIDRA_HEADLESS_MAXMEM=3G \
 
 - **Memory spec** (`<mem>`, applied before every case; `#` comments): `load <addr> <file>`, `dword <addr> <value>`,
   `bytes <addr> <hex>`; `const <directive>` writes once, before the first case (for large tables the code only reads;
-  much faster); `guard <addr>` stops any case whose pc reaches `addr` (`STOP … guard address reached`). Put the
+  much faster); a scratch structure the code reads through an image pointer (DataTables and the like) is written
+  **one field per field the claim reads**, never as a whole page, so a read of any other field is traced (S1f review,
+  ruling 4; whole-page specs of earlier records stand); `guard <addr>` stops any case whose pc reaches `addr` (`STOP … guard address reached`). Put the
   allocator and fatal-path entries in as guards (`sweep_s1f.py` adds 0x00408090, 0x00408A60, 0x00681E09, 0x0040B4B0,
   0x0040B430 and 0x0040B480 to every family), so that a case reaching either is a stop, never a silent pass.
 - **Cases file**: blocks, each ended by a `call <fn> <ecx> <edx> [args…]` line (args pushed as for `__stdcall`, arg 1
@@ -89,9 +92,10 @@ GHIDRA_PROJ_DIR=workspace/ghidra-<lane> GHIDRA_HEADLESS_MAXMEM=3G \
   case writer leaves fault inputs out and never counts one as a match. Faults, x87 results and OS calls are not
   emulated evidence (ADR-0015 condition 5). Cite subtle instructions (flags consumed across instructions, `shl r, cl`,
   `rep` forms) from objdump next to the claim; `sweep_s1*.py static` pins them.
-- `tools/ghidra.sh` logs to the shared `workspace/logs/ghidra-last.log`. When another lane runs Ghidra at the same
-  time, call `analyzeHeadless <project copy> d2 -process game.exe -noanalysis -readOnly -scriptPath re/ghidra_scripts
-  -postScript EmuTrace.java <out> <cases> <mem> -log <own log>` directly instead.
+- **Per-lane log.** Every non-build command logs to `$GHIDRA_LOG`, default `workspace/logs/ghidra-last.log` for a
+  project directory named `ghidra` and `workspace/logs/ghidra-last-<basename of GHIDRA_PROJ_DIR>.log` otherwise, so a
+  lane on its own project copy (`GHIDRA_PROJ_DIR=workspace/ghidra-<lane>`) never truncates or greps another lane's log;
+  set `GHIDRA_LOG` to override it. `import-symbols`, `export-symbols` and `decompile-range` read their result from it.
 
 ## radare2 / rizin quick looks
 

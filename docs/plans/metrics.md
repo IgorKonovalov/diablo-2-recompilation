@@ -94,6 +94,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-17 | `lane/p44r` review | 0044 P1 | architect-review | 135 980 | 51 | 10 | — | gave accept with fixes | — (on the lane row) |
 | 2026-10-17 | `lane/h6d` | 0038 H6d | reverser-harness | 555 235 | 306 | 183 | slot 2 | accept with fixes | 8: overclaim 2, misread 1, miscount 2, wrong anchor 1, stale cross-reference 1, tool not kept 1 (usage unknown) |
 | 2026-10-17 | `lane/h6d` review | 0038 H6d | architect-review | 203 682 | 136 | 20 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-17 | `lane/rbs` | 0038 static backlog sweep | reverser-static | 267 203 | 138 | 23 | Ghidra (lane copy) | accept with fixes | 5: miscount 1, omission 1, wrong anchor 1, tool not kept 2 |
+| 2026-10-17 | `lane/rbs` review | 0038 static backlog sweep | architect-review | 161 968 | 92 | 15 | — | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
