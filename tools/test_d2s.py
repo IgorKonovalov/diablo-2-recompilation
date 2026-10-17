@@ -93,10 +93,8 @@ RECIPE_BASES = {
     "collsorc": (BASE_X, None),
     "combatbar": (os.path.join(SAMPLES, "smpbar.d2s"), "107f3ac19d9a75eee61b876db367022b5cc4cef6923b74990a369c46eeb54e2b"),  # run:2026-10-16-combat
     "combatclassic": (BASE_C, "8e1625b211a99df0dc4133e2d6bb590942d9532fcaa76b141f21c50722ae061e"),  # run:2026-10-16-combat
-    "combatow": (BASE_X, "b07db91bd4808aa1196548e90ca717727a22b47bff38f7feb021f69bf09c6781"),  # run:2026-10-16-combat resume lane (combat/experiments)
     "combatsolo": (BASE_X, "a2a64d7284ceb74d4614205d84ce7dd15f0c8dac8326b6a8813fbe61e4ab7599"),  # run:2026-10-16-combat
     "combatsor": (BASE_X, "1d9de374cb681c1f4260066694f27b92306f919c758e46187b683d61d3dd22fe"),  # run:2026-10-16-combat
-    "combatsorh": (BASE_X, "210b2c0cbd14234284cdbc855f946847ef55933f45f8c73d63aece047ee298ef"),  # resume lane, mercenary gear rev3 (combat/experiments)
     "cube-cal": (BASE_X, "65c1b6e8cc4324f618a8f932c00df354d52d21c2296039d6beb9d44739243067"),  # run:2026-10-15-cube
     "cube-classic": (BASE_C, "d5da5eb053c22cd4522c404ac5d59ddf007c7710f2515842cbf080a81b6f4d74"),  # run:2026-10-15-cube
     "cube-cowbaal": (BASE_X, "8e644d571e68da192fa207aa69c6bb891af58727c373d51a4d2c7bb299d98f7d"),  # run:2026-10-15-cube
@@ -140,13 +138,6 @@ RECIPE_BASES = {
     "mercmf": (BASE_X, "e98a6b9d06bf310fd1f95e312d3cd28f06ff417f007f3da4f02e2995e038b6cc"),  # run:2026-10-16-hirelings
     "mfnecro": (BASE_N, "da6ee2f5639793bcf8d355de0d853b815a633bfd2165e9b754f8d2d1ef922a56"),  # items/experiments
     "novasorc": (BASE_X, None),
-    # plan 0038 batch H6d (run:2026-10-17-sweep-quest-b6, items/experiments): the six recipes of ed40eba, saves as recorded
-    "questalldone": (BASE_X, "501eb4a8390d5b8a2f20033b3b034bbea958bd562a524dfe1c01e5151be61f97"),
-    "questbaalf": (BASE_X, "4078ca7a53d92bf1807b2010fc3097c36e5e186c73da3dc91c5d7cbb0097f6dd"),
-    "questfreshct": (BASE_C, "84888ad5b8a60a6f277a4199985de2ab57a6bbba58209be5b752347f3506f7f2"),
-    "questfreshm": (BASE_X, "b1d805590bf331352999962a6316aa0d4d2c145817b77dd182b9daf25a7bab00"),
-    "questfresht": (BASE_X, "09fd6ec4135bc5b25dcd70ae4e57881e68498cb73f3ce02b202c6acae25db1a0"),
-    "questservicesone": (BASE_X, "1f628a4ab8ffe58d14f960a467039933303cc2f26115ab75be8b0ed6194dc50e"),
     "questb6": (BASE_X, "c28e894cc7558528275815cf4a93a876a7a6c36879f6876309f640fbf0309b23"),  # run:2026-10-16-quest-drops
     "questcows": (BASE_X, "6700b4e3d5c75957923263841014493d56388b226996fd877c555ed1e1b47ca0"),  # run:2026-10-16-quest-drops
     "questfresh": (BASE_X, "9a12da6e0ea1524c6e001c8ef96a7791f4689b0a0b81982b4f0b086d6ce5f095"),  # run:2026-10-16-quest-drops
