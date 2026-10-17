@@ -368,3 +368,33 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Phase 2 readiness.** P2 can start now on the P1a and P1b items (both reviewed). Two specs also take P1c items:
     data/excel (Q4) and possibly items/uniques-sets (B5's check against items/0004). Fold those two last, or after P1c,
     so each is edited once; the 0038-first merge rule of Phase 2 still applies.
+- **2026-10-17 — Phase 2 landed for P1a and P1b (spec-writer, `lane/p39s`, from `main` `8d03310`; review pending).**
+  Folded the backlog's P1a entry (its (b) and (g); (a), (c)–(f) were applied by plan 0038 Phase 3 rounds 2 and 3) and
+  the P1b entry, with the review's amendments to (f) and (h). No game run, no Ghidra.
+
+  | Spec | Items | {C, I, L} old → new |
+  |---|---|---|
+  | drlg/collision | P1a (b): Q6, Q7; Q5's S4a answer as G2 text | {110, 55, 12} → {110, 60, 9} |
+  | rng/seeds | P1a (g): Q15 | {76, 7, 6} → {78, 9, 4} |
+  | data/strings | B8 | {59, 39, 3} → {60, 42, 3} |
+  | items/affixes | Q16 (stale, S2b) | {112, 45, 4} → {112, 46, 4} |
+  | items/cube | Q17 (cell from S2c cube 45) | {118, 82, 6} → {119, 82, 4} |
+  | items/sockets-runewords | B9, Q18 | {79, 77, 9} → {80, 83, 7} |
+  | items/quality | Q19 | {63, 37, 4} → {64, 38, 3} |
+  | items/quest-drops | B12, Q20 | {80, 82, 6} → {81, 88, 3} |
+  | items/tc | Q21 | {45, 77, 8} → {45, 81, 7} |
+  | items/vendors | Q23 (and the gambled-unique half of Q22's entry) | {70, 37, 4} → {70, 39, 2} |
+  | objects | Q24; Q21's forced-quality pointer | {136, 69, 5} → {136, 71, 4} |
+  | save/d2s | B10, Q25 | {88, 144, 5} → {90, 150, 3} |
+
+  - **Corrected:** save/d2s F1's "no clamp hit" (B10: the 21-bit clamp is hit by high life and mana, `[C]`);
+    sockets-runewords now states that *Patience* never matches (`[C]` data); items/quality's "two quivers" are the
+    base-less types `mboq`/`mxbq`; items/tc's "upgrade bits" are forced ethereal and forced sockets.
+  - **Narrowed, not closed:** items/quality (17 `MonSetOwner` sites unfollowed), items/tc (16 of the 21 bit-17 writers),
+    objects (`TrapProb` through a kept record pointer), data/strings (the `%n` substitution), rng/seeds (skill and
+    missile re-seeds, moved to Simulation phase (3)), sockets-runewords (`kids[n]`, not determinable statically), save/d2s
+    (status bit 1, client presentation), items/vendors (`NpcStoreRec` `+0x24..+0x26`, moved to plan 0043).
+  - **Held:** data/excel (P1b (a): Q1, Q2 stale, Q3) and items/uniques-sets (Q22: quest uniques identified by
+    `ItemInitStats`, `nolimit`), because P1c also edits them (Q4, B5); each is folded once after the P1c review.
+  - Research-map rows of the twelve specs updated. Backlog: the P1a entry struck, the P1b entry annotated (done in part,
+    the held items named); review request and a W4 wiki follow-up (15 `based_on` dates) filed. Gate green.
