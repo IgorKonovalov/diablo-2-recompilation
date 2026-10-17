@@ -216,3 +216,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   lane fix: the quests/0002 fold (routed correctly while p42r was unmerged).
   **Follow-ups:** reverser (Phase 2 start): name `0x005A5E50` and `0x00535B10` in `re/symbols.csv` and add PlayerData
   `+0x38`/`+0x160` to `re/types/save.h`; spec-writer (0042 Phase 3): quests/travel takes the corrected gates.
+- **2026-10-17, Phase 2 precondition (port 4000) met (owner).** The owner ran `sudo ufw status verbose`. The output:
+  - `Status: active`;
+  - `Default: deny (incoming), allow (outgoing), deny (routed)`;
+  - ALLOW IN rules only for `53317/tcp` and `53317/udp` (IPv4 and v6, from Anywhere), and for `172.17.0.1 53/udp` from `172.16.0.0/12` and from `192.168.0.0/16` (`allow-docker-dns`).
+
+  No rule names 4000, no range contains it, and no rule is portless. So TCP 4000 is dropped on every non-loopback interface, and loopback is accepted by `before.rules`. This meets ADR-0008's condition. Before each hosting session, the lane re-reads the ufw state and the rule-file hashes without root. It asks the owner again only if they changed.
