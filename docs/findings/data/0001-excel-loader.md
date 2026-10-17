@@ -351,7 +351,8 @@ if (g_nTreasureClasses > 0xFFFE) fatal();
   the record getter at `0x006538A0` is `idx*0x1A8 + g_pMonStats` with a `< g_nMonStats` bound. No lookup through
   `+0x000` was seen in the loader. So after the duplicate `cr_lancer8`, every stored monster reference points one
   record early (e.g. Pandemonium 3 `mon1` = 723 = the second `cr_lancer8`). Not checked: every one of the ~189
-  readers of `g_pMonStats`; a runtime look at Pandemonium 3's spawn list would settle it.
+  readers of `g_pMonStats`; a runtime look at Pandemonium 3's spawn list would settle it. (Every reader checked in
+  [§ Plan 0039 batch P1c](#plan-0039-batch-p1c-2026-10-17): all index by position.)
 - [I] **Cell converters** (`EXCEL_ParseTxt` and its column mapper `0x006BCE20`, compile path only):
   - Header → descriptor match: a Storm-style string hash (`0x00413CE0`, folds `a`–`z` to upper case and `/` to
     `\`) to find candidates, then `_strnicmp` (`0x00413590`). So the lookup is **case-insensitive**, and a `.txt`
@@ -629,6 +630,39 @@ it, the tag and the second source given here are the current ones.
   under ADR-0015 condition 1. The lookups they rest on are now `[C]` (`FindCode` case rules above, `FindName` row 16);
   the order of the tests and the `jle`/`jl` that separate unique and set row 0 stay code readings (0x0065450F,
   0x00654569, 0x006545B4). (fn:TC_ParseItemCell@0x00654440, fn:TC_GrowEntries@0x00654010)
+
+## Plan 0039 batch P1c (2026-10-17)
+
+Row Q4 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static: an operand scan of the objdump listing of the
+pinned image (scratch script, not kept), with the odd sites read by hand. No game run.
+
+### Q4: every reader of `g_pMonStats` uses the stored value as a position
+
+§ 8 left one thing unchecked: whether any of the ~189 readers of `g_pMonStats` looks a monster up some other way, for
+example by matching the `Id` ordinal at `+0x000`.
+
+- [I] **The scan.** It found 194 instructions that use `g_pMonStats` in `.text`: `[reg+0xA78]` with `reg` the table
+  block (`g_pDataTables`), or the absolute `0x0096C6A8`. Three are writes: the loader's store and the two clears.
+  The 191 reads fall into four shapes:
+
+  | shape | sites | what the index is |
+  |---|---:|---|
+  | `0 ≤ i < count` test (`+0xA80` or `0x0096C6B0`), then `base + i·0x1A8` | 177 | a position: 175 with the multiply next to the test, 2 (0x00466601, 0x00536174) with it computed earlier |
+  | a constant offset after a `count > n` test | 6 | the fixed classes 492–495 (`imp1`–`imp4`; offsets `0x32EE0`…`0x333D8`, 0x005E2DDD–0x005E3090) |
+  | loader-side code, 0x00650F00–0x0065111E | 5 | the `BaseId`/`NextInClass` post-passes of § 8, which index by position as well |
+  | allocation, free and NULL checks | 3 | 0x00653D30, 0x00653D63, 0x0065A211: no index |
+
+  None of the 191 is part of a search over the records, such as a loop that compares `+0x000` with a value. A record
+  is always the base plus a position times `0x1A8`, or a constant multiple of it. So H3 holds for every reader: whatever a table stores as a monster
+  reference (`BaseId`, `NextInClass`, `minion1`/`2`, `spawn`, the `levels` `mon`/`nmon`/`umon`/`cmon` lists, the
+  SuperUniques and Hireling classes, a MonPreset id) is used directly as the record position. It is never mapped
+  back through the ordinal. (data:g_pMonStats@0x0096C6A8, data:g_pDataTables@0x00744304,
+  0x0065385D)
+- [I] The scan sees only instructions that address `g_pMonStats`. A copy of the base pointer kept in another
+  structure would escape it. None was met while reading the 16 odd sites, and the loader stores the pointer only at
+  `0x0096C6A8` (0x0065385D).
+- Consequence, as before: only the three *Pandemonium 3* cells that store 723 are affected (spec H). Whether a unit of
+  class 723 shows in play is still `monsters/spawn`'s question (the region pool already shows it, confirmed).
 
 ## Data touched
 

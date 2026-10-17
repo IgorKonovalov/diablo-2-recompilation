@@ -728,13 +728,69 @@ S3B hire bands=120 firstbyid_refs=7 hirelings_check_rc=0 ids=60 pins=19 rows=120
 - Not a claim of the spec, recorded for the reader: the writer indexes by `Version > 99`, the reader compares `Version`
   with exactly 100 or 0. On stock data (only 0 and 100) the two agree.
 
+## Plan 0039 batch P1c (2026-10-17)
+
+Row Q28 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static: Ghidra on the lane's copy and objdump. It adds a
+re-read of the 72 `MSX` lines in the manifest-pinned logs of run:2026-10-16-hirelings (scratch script, not kept). No
+game run.
+
+### The leftover stats and skill
+
+- [C] **Stats 67, 68, 69, 100 and 352 are `MonStatsInit`'s constant writes.** A mercenary is a type-1 unit: `MERC_Create`
+  calls `SUnitCreate(type 1, …)`, and `SUnitCreate` → `MonsterInit` → `MonStatsInit` runs for it as for any monster
+  ([monsters/0004 § 2](../monsters/0004-stats.md#2-monstatsinit-in-order)). Step B5 writes `SetStat(68, 100)`,
+  `SetStat(67, 75)`, `SetStat(69, 100)`, `SetStat(352, 128)` and `SetStat(100, max(1, players))`, with the `push 0x4B`,
+  `push 0x43` pair at 0x00573F14. `MERC_SetLevel` writes none of these five. All 72 logged `MERC_SetLevel` blocks
+  (hires, loads and the kill session) hold exactly 67 = 75, 68 = 100, 69 = 100, 100 = 1 and 352 = 128; every session
+  was single player. (fn:MERC_Create@0x005774F0, fn:sub_00574250_MonsterInit@0x00574250,
+  fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:MERC_SetLevel@0x00572840, run:2026-10-16-hirelings)
+- [C] **The Rogues' skill 336 comes from `MonStatsInit` step B10**, from the `roguehire` MonStats row (`Skill1`
+  `RogueMissile`, `Sk1mode` `A1`, `Sk1lvl` 1). Its level is `Sk1lvl` + DifficultyLevels `MonsterSkillBonus` of the
+  game's difficulty (0, 3, 7). The hireling level rule (`d` = 0 for a hireling) does not apply to this bonus. In the
+  logs every Rogue block has skill 336 at level 1 in Normal (22 blocks), 4 in Nightmare (6) and 8 in Hell (2: the
+  `Merc271h` and `Merc271hca` loads). The finding said "level 1" before. Act II's `act2hire` row has `Skill1` `Jab` the
+  same way; the Act III and Act V hireling rows have no MonStats skill. (0x005740E0–0x00574135,
+  fn:sub_0056DEB0_UnitSkillAdd@0x0056DEB0, tbl:MonStats.txt:Sk1lvl, tbl:DifficultyLevels.txt:MonsterSkillBonus,
+  run:2026-10-16-hirelings)
+
+### `Share`, `Head`, `Torso`, `Weapon`, `Shield`
+
+- [I] **No reader.** The record array `g_pHirelingTxt` is read only by the loader, `HIRELING_FreeTable` and the five
+  getters (Ghidra xrefs). The getters' 19 callers are the only code that holds a record. They are listed in § Functions,
+  plus `D2S_WriteMercHeader`, `D2S_ReadMercHeader`, `sub_00533C70_ReadMercOldSave`, `sub_00533BF0_MercExpFromOldSave`,
+  `PLAYER_GrantLevel` and `MERCAI_PickSkill`. None of them reads `+0x4C` (`Share`) or `+0x68`…`+0x74` (`Head`,
+  `Torso`, `Weapon`, `Shield`), and none passes a record to another function.
+  (data:g_pHirelingTxt@0x0096BDD0, fn:HIRELING_GetRecord@0x006562F0, tbl:Hireling.txt:Share, tbl:Hireling.txt:Head)
+- [I] `HIRELING_RollEntry` copies `max(0, Share)` into the entry at `+0x28` (0x006639C0–0x006639D1), `Resist` at
+  `+0x2C` and `HireDesc` at `+0x30`. The entry is a stack record of the caller. Of its four callers, `MERC_Init` reads
+  `+0x00`, `+0x04` and `+0x18`, `HIRE_Hire` reads `+0x14` (the price), `sub_004B1090_ClientMercInit` reads `+0x00` and
+  `+0x04`, and `sub_004B5C60_ClientHireListDraw` reads `+0x04`, `+0x08`, `+0x14`, `+0x1C` and `+0x30`. None reads
+  `+0x28`, so `Share` has no effect in 1.14d. (fn:HIRELING_RollEntry@0x006637F0, fn:MERC_Init@0x00573270,
+  fn:HIRE_Hire@0x005770E0)
+
+### The description text
+
+- [I] **It comes from a hard-coded string table, indexed by the `HireDesc` row.** The client list window takes the
+  entry's `+0x30` (`[ebp−0x8C]` → `[ebp−0x40]`, 0x004B5ECC–0x004B5ED2) and calls `HIRELING_DescString(ECX = index)`
+  (0x004B6262–0x004B6267). For an index 0..8 with a non-zero word, that function returns
+  `STRTABLE_GetByIndex(g_HireDescStrIdx[index])`, and NULL otherwise. The window then appends the text to the row's
+  line through a format string. `hiredesc.txt` and `.bin` are not used for this.
+  (fn:HIRELING_DescString@0x00663720, data:g_HireDescStrIdx@0x006EE410, fn:sub_004B5C60_ClientHireListDraw@0x004B5C60)
+- [C] **The table matches every HireDesc row by data.** The nine u16 are 0, 3371, 3372, 11090, 11088, 11089, 3377, 3376
+  and 3375. With the English tables (`tools/tbl.py index … spx`) these read: none, "Fire Arrow", "Cold Arrow",
+  "Combat", "Defensive", "Offensive", "Fire", "Cold", "Lightning". Those are the rows `None`, `farw`, `carw`, `comb`,
+  `def`, `off`, `fire`, `cold` and `ltng` in order, so a Barbarian (row 0) gets no description.
+  (data:g_HireDescStrIdx@0x006EE410, tbl:HireDesc.txt:Code)
+
 ## Open questions
 
 - Which MonStats-derived fields (velocity, mana, other stats that `MERC_SetLevel` does not set) survive from
   MonStatsInit's level-1 creation? Partly answered by run:2026-10-16-hirelings (observed, not read): after
   `MERC_SetLevel` the base list also holds stats 67 `velocitypercent`, 68 `attackrate`, 69 `other_animrate`, 100
   `monster_playercount` and 352 `last_sent_hp_pct`, and the Rogues carry skill 336 (`RogueMissile`), none of them
-  from `hireling.txt`. Which MonStatsInit write sets each is not read.
+  from `hireling.txt`. Which MonStatsInit write sets each is not read. Answered in
+  [§ Plan 0039 batch P1c](#plan-0039-batch-p1c-2026-10-17): step B5's constants and step B10's MonStats skill (level
+  1 + `MonsterSkillBonus`).
 - The client's mercenary init rolls the entry again from the seed and the player's level and draws skills with
   `d` clamped at 0 (`sub_004B1090_ClientMercInit`); whether the client ever shows those instead of the server's values
   is a display question for Phase 2.
