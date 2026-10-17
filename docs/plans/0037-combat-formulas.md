@@ -1,6 +1,6 @@
 # 0037 — Combat formulas: to-hit, damage, resistances, defences and on-hit effects
 
-> **Status:** in-progress (P0 accepted 2026-10-16; P1/1b accepted with fixes 2026-10-16; P2 accepted with fixes 2026-10-16; P3 accepted with fixes 2026-10-16; P2 shortfall resume and the spec re-tag next)
+> **Status:** in-progress (P0 accepted 2026-10-16; P1/1b accepted with fixes 2026-10-16; P2 accepted with fixes 2026-10-16; P3 accepted with fixes 2026-10-16; P2 shortfall resume landed 2026-10-17, review pending; the spec re-tag next)
 > **Created:** 2026-10-16
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation
@@ -457,3 +457,70 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   and monsters pages); the event-11 absorb handlers are not read, not "read from the code"; champions' 1/4 crushing
   blow said as code-read; freeze said as code-read; the example's "every seed" (the page shows none); the open-wounds
   shortfalls (act bosses and players, not superuniques). Plan 0037 stays `in-progress`: Phase 4 is now the refresh.
+- **2026-10-16 — Resume lane landed (reverser, `lane/h37r`, slot 2; review pending).** Ruling (c) of the Phase 2
+  review. 18 more sessions appended to run:2026-10-16-combat as a dated addendum
+  ([experiments](../findings/combat/experiments.md#resume-lane-addendum-2026-10-16)); logger r9 unchanged;
+  `combat.py check` over the whole run list (37 logs): **0 mismatches over 37 786 events**, and the first run's 19 logs
+  give output identical to the recorded check. **Met (≥ 30), raised to `[C]`** in [combat/0001 § 15](../findings/combat/0001-formulas.md#15-phase-2-per-event-reproduction-run2026-10-16-combat)
+  (bullet *Resume lane*): Hell's `HireableBossDamagePercent` 25 (33 mercenary hits on Andariel, `RDP` P = 25, so not
+  `MonsterCEDamagePercent` 20), open wounds on an act boss (51), and from the same sessions the prime-evil 200 (154),
+  the monster drain branch (80), the stun draw on a unique (34), poison at the cap (692). **Still short, `[I]`:**
+  crushing blow on an act boss 28 and a superunique 22, champion 0, cold and lightning at the cap 27 and 17, the
+  negative absorbed amount 4. Tooling: recipes `combatsorh` (Hell, mercenary in unique gear, three gear revisions
+  named per session) and `combatow` (open wounds 85 %, crushing blow 40 %); `d2pilot.py` descend stays on its path,
+  `--merc-drink`; `combat_sessions.py` guards descend steps by level; `combat.py` drops states a third unit applies
+  inside a deferred delivery. New open question: *Fleshripper*'s prevent-heal state 52 lands between to-hit and block
+  and is not modelled (session set aside). **Resume note:** the lane stopped at the owner's deadline for the machine
+  (further sessions not started). To close the crushing-blow pair: `ow-n-andariel5-p8` (seed 3712, about 8 crushing
+  blows on Andariel per kill) and `ow-n-highlands3-p8` (Eldritch, about 5–12 on the superunique) are ready in
+  `tools/combat_sessions.py`; run them, append to the addendum, re-check the run list and move those two lines.
+- **2026-10-17 — Resume lane, crushing-blow pair closed (reverser, `lane/h37r`, slot 2; review pending).** `main`
+  merged into the lane first (bookkeeping conflicts in backlog, the finding's under-floor bullet and this log; both
+  sides kept). Three more `CombatOW` sessions at /players 8, Normal, appended to the addendum
+  ([experiments](../findings/combat/experiments.md#resume-lane-second-sessions-2026-10-17)): `ow-n-andariel5-p8`
+  (Andariel not reached; kept, 0 mismatches), `ow-n-highlands3-p8` (33 crushing blows on a superunique) and
+  `ow-n-andariel6-p8` (a new row of the same steps; 6 on Andariel). `combat.py check` over the 40-log run list
+  `c37r-run2.lst`: **0 mismatches over 40 655 events**. **Met, raised to `[C]`** in
+  [combat/0001 § 15](../findings/combat/0001-formulas.md#15-phase-2-per-event-reproduction-run2026-10-16-combat)
+  (bullet *Resume lane, second sessions*): crushing blow `k` = 8 on an act boss (34) and on superuniques (55); and,
+  from the same run list, the block `/3` for a moving player not walking (48) and the running player's hit without a
+  roll (47), which the first addendum had already lifted to 43 and 42 without raising them (Phase 3 review ruling (2)
+  put them under the floor at 26). **Still `[I]`:** champions (0 labelled; the code has no champion branch), cold and
+  lightning at the cap (27, 17), the negative absorbed amount (4), a total ≤ 0 (25, no counter in the checker).
+  **Fleshripper open question, answered in part:** state 52 takes no draw on either seed (the set-aside session's 133
+  "expected `DRB`" events all check once the `STA` line is skipped; `tools/combat.py` now skips it, the run's output
+  unchanged); which call applies it before the block roll is still unread, and that session's other 101 mismatches
+  are an event-9 handler `0x005C01D0` (backlog). Slot 2 stopped and empty. Next: architect review of the resume lane,
+  then the spec re-tag (Phase 3) and the wiki refresh (Phase 4).
+- **2026-10-17 — Resume lane review (architect): accept with fixes.** Both batches reviewed in the lane worktree
+  after merging `main` (one conflict, `docs/backlog.md`, both sides kept). **Re-runs:** the 40 logs of `c37r-run2.lst`
+  match their three manifests (19 + 18 + 3: sha256, size, lines); `tools/combat.py` (`d4dfed41…`) `check` over the run
+  list under `MemoryMax=4G` prints `SUMMARY mismatches=0 events=40655`, output byte-identical to `c37r2-check.txt` and
+  `.json`; the checker has no unit tests, so the run list is its test. The set-aside *Fleshripper* log re-checks with
+  133 state-52 skips and 101 mismatches. Gate fast tier green. **Rulings.** (1) *Block `/3` and the running automatic
+  hit to `[C]`*: **confirmed**, scoped. Phase 3 ruling (2) was a count ruling (26, under the floor), and its own backlog
+  entry asked the lane to raise both at about 30; at 48 and 47 the raise applies ruling (a), it does not go against
+  ruling (2). The logs show only mode 3 (running): 47 melee events with no `THR` and none with one, `mv` set in mode 3
+  only, and the `/3` taken after the 75 cap (45 expansion at 75 → 25, 3 classic at 53 → 17). So the `[C]` is for a
+  running player, after the cap; no walking player (mode 2) was attacked, so the mode-2 exception stays `[I]`, and the
+  moving test stays a value oracle. (2) *State-52 skip*: accepted. It is checker hygiene that consumes no draw and
+  leaves the run's output unchanged (0 such lines in the run list); the no-draw claim is `[I]` because its only session
+  is outside the run and the applying call is unread. The finding now names that log (sha256 `e001b03e…`, in the lane's
+  session scratch, not under `workspace/logs/`), so the record says where it is; copying it under `workspace/logs/combat/`
+  with a manifest line is a reverser follow-up. (3) *`ow-n-andariel5-p8` stays in the run list*: accepted. It checks
+  with 0 mismatches and adds 452 attack events; dropping a session for missing its target would bias the run.
+  (4) *First-batch items*: the third-unit `STA` drop is accepted (a state line is not a draw; any draw a third unit
+  took on our seeds would still fail the seed checks); the three `CombatSorH` revisions are accepted (each log header
+  names its save, matching the addendum; rev2 and rev3 are in the recipe's history, rev1's three items are listed);
+  the pilot changes are accepted (nothing the pilot computes feeds a model). (5) *W1 at experiments.md*: the first addendum's conclusion lacked an anchor (the gate reports it at line 222 after the merge); fixed. **Settled at this review** (the 2026-10-16
+  architect → reverser count, which the lane had not answered; counted from the run list with a scratch counter, no
+  new run): open wounds halve by the type flags `0x0C` only, and **Andariel carries the unique flag `0x08`**, so her 63
+  wounds were halved; the finding's "no `/2` for a boss" and the spec's "act bosses take the full amount" were wrong,
+  and the checker had modelled it right all along. Unique half `[C]` (383 events), champion half `[I]` (0 with `0x04`
+  alone), a `boss` without `0x08` not met. The player's resistance reached exactly −100 214 times and never went below,
+  so the floor changed no value and stays `[I]`. **Fixes applied:** combat/0001 § 15 (the open-wounds correction, the
+  `/3` and automatic-hit scope, a new bullet for the halving and floor counts, the *Fleshripper* log named), the Leads
+  verdict detail on open wounds, the status line; experiments: the W1 anchor and an *Architect review* subsection.
+  **Not blocking, filed:** the spec re-tag with its exact lines (spec-writer, replacing the three earlier re-tag
+  entries), the wiki's open-wounds sentence in the Phase 4 refresh, and a reverser follow-up (the *Fleshripper* log
+  under `workspace/logs/`, a checker counter for a total ≤ 0). Next: the spec re-tag (Phase 3), then Phase 4.
