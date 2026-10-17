@@ -538,7 +538,9 @@ all 128 logged `LevelLinkBuild` calls, 64 builds on two act objects, from their 
 sequence — every pick's entry, result, rect, `dir`, `dir0`, `flip`, `flip0` and seed copy, every check's result — equals
 the model's, 0 mismatches). Normal, expansion, map seeds 82, 52, 58, 90, 4, 17, 5, 68, 2 chosen offline with
 `sweep_h5a.py scan`. "Final" below means a build ended on the choice (`LNK1`, the B2 rule); "tried" means the pick placed
-it and the check then saw it (`LNKP`, `LNKC`).
+it and the check then saw it (`LNKP`, `LNKC`). Every count below is over both act objects of the single-player game, so each build appears
+twice (64 distinct builds): the 30 Rogue-table rejects are 15 distinct, the 6 Burial Grounds rejects 3, the 72 widened
+tests 36 and the 48 `RectTouch` tests 24 (review note, 2026-10-17).
 
 - [C] **Every choice of every pick is now reached, as modelled** (§ 3 *The picks*, the ten `I` cells of the table):
   `0x00676150` side 1 (final 18); `0x00676280` choices 0, 1, 3, 4, 6, 7 (final 8, 10, 4, 2, 2, 14); `0x00676450`

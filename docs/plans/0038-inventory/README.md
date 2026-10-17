@@ -526,7 +526,7 @@ Net effect on § 2.4 (H5e): none.
 moves stand. **Static batches hold 555 statements, harness batches 537, 4 are c-emu awaiting S1f, and 418 are blocked**
 (d-none 278, d-edit 80, d-sim 28, d-2c 14, d-owner 10, d-0032 8), with 2 deferred and 10 raised: 1 526 in all.
 
-**H5a (lane, 2026-10-17; pending review): 21 statements of drlg/maze, preset and warps.** run:2026-10-17-sweep-links, 9
+**H5a (lane, 2026-10-17; reviewed 2026-10-17, accepted with fixes): 21 statements of drlg/maze, preset and warps.** run:2026-10-17-sweep-links, 9
 sessions on slot 1 (map seeds chosen offline with `tools/sweep_h5a.py scan`). New logger lines (`tools/gdb/drlg-links.py`:
 every pick and check of `LevelLinkBuild`, the Act1B widened test, `LevelSeamsByTouch`'s `RectTouch`), replayed against
 the unchanged link-builder model: 128 builds, 0 mismatches; `drlg.py gen` 99 288 checks, 0 mismatches. The evidence is
@@ -549,8 +549,30 @@ raised, 0 in part, 0 shortfall, 5 reclassified**:
 Not class moves, for Phase 3: the Barracks' `k` is the create-time index whenever Black Marsh ends on side 0 (drlg/0006
 § H5a corrects § 7 step 1), and Rogue Encampment ends on six of its eight `(d, f)` only.
 
-Proposed net effect on § 2.4 (H5a): a-run −5, d-none +5. Against the H5e-review totals: harness 532, blocked 423 (d-none
-283), static 555, c-emu 4, deferred 2, raised 10: 1 526.
+Net effect on § 2.4 (H5a): a-run −5, d-none +5.
+
+**H5a review (architect, 2026-10-17): accept with fixes; the five d-none stand.** The manifest matches the nine logs;
+`sweep_h5a.py logs` (128 builds, 0 mismatches; gen 99 288 checks, 0 mismatches), `scan 1 301 0,1,2 0 82,52` and the unit
+tests re-run identically, and `drlg.py gen` on s2, s3 and s9 alone gives 0 mismatches. The review also enumerated every
+draw value of tables `0x006F0840` and `0x006F0DE0` directly (8 values per draw, 64 leaves per difficulty, not map
+seeds): Black Marsh's first draw is the copy's first step in all, its outcomes are 0 → 0, 1 → 1, 2 → 3, 3 → 3, no
+backtrack, no widened reject, and every Act V seam pair shares an edge. The d-none rows rest on that and on the code:
+the copy is taken from the act seed at entry (`0x0067730E`), the picks step only the copy, and the level-27 draw at
+`0x006774D6` is the act seed's next step, with `2 − (r & 1)` from `and al, 1; neg al; sbb eax, eax; add eax, 2`; the
+model that assumes no act-seed step in between predicted every logged `LK27` and act seed after. `RectTouch` has one
+call (`0x00677606`, `push −1` at `0x006775FE`) and no stored pointer; `MazeFindWest` has no call and one pointer
+(`g_BarracksFinders[2]` at `0x006F0470`). `0x00676450` (0, 1) and (2, 0) rest on the logged rect at the pick's return
+(`LNKP`, the same quantity `LNK1` checks); the B2 rule asked for a build to end on a choice only because no per-pick line
+existed, and the Rogue table's 16 nonzero indices (`0x006F1158`: 0, 1, 9, 19, 21, 24, 30, 31, 33, 39, 41, 53, 54, 56,
+62, 63) leave residues 2 and 4 out, with the index `d + 4f + 8·dir[a] + 32·flip[a]` read at `0x00676E7B`. Fixes: the
+drlg/0007 section says its counts are over both act objects (distinct: 15 Rogue rejects, 3 Burial Grounds, 36 widened
+tests, 24 `RectTouch` tests); drlg/0006 § 7 step 1 points at the correction.
+
+**Totals after the thirteen batch reviews and plan 0039 P1a, recomputed once (H5a review).** H5a moves 5 rows from
+a-run to d-none. **Static batches hold 555 statements, harness batches 532, 4 are c-emu awaiting S1f, and 423 are
+blocked** (d-none 283, d-edit 80, d-sim 28, d-2c 14, d-owner 10, d-0032 8), with 2 deferred and 10 raised: 1 526 in all.
+Every batch carrying drlg/maze, drlg/preset or drlg/warps statements is now accepted (S4a, S4b, H5c, H5e, H5a), so the
+three clusters are ready for the Phase 3 re-tag.
 
 
 ## 3. Blocked rows, for the plan's open questions
@@ -634,7 +656,7 @@ a letter suffix and its own run id, as the plan requires.
 | **H3b** | `data-load` | 25 | 0/16/9 | data/README 2–5; data/excel 1–8, 17–18, 20, 24–25, 27, 50, 71, 74; data/strings 2, 6, 22, 29 | **new** `excel`/startup logger that also sources `strings.py`. **First piece (review ruling 3):** a `d2run.py` mode that has gdb on the game before `DATATBLS_LoadAll`, built and tested off-slot; if it cannot be made to work, the 9 startup rows are a recorded shortfall and stay `[I]` (they have an observable, so not d-none). Covers `FindFile`, loose files without `-direct`, `-txt`, record-byte dumps, the rare-item hover, `STRTABLE_Unload`. From the S1b review (§ 2.6, rows stay counted as S1b): the remainders of data/README 1 ("only under `-direct`") and data/excel 30 (the code-list tables' names at `DATATBLS_LoadTable` in a stock start) | `findings/data/experiments.md` | ~6 |
 | **H4a** | `monsters-a` | 32 | 0/14/18 | pool 12; quest-drops 48 (from S2c); spawn 5, 11, 47–49; special 9–10, 25, 30–31, 34 (from S3a), 35, 38, 46, 48 (from S3a), 50–52, 54–56, 58–60, 68–69; stats 7, 18, 21 | `mon-stats.gdb` with `d2pilot.py` wp, `--descend`, `hunt`, `objop`: Radament, the Travincal council, the Chaos seals, Shenk, Nihlathak, Blood Raven, Andariel, Izual (Blood Raven, Izual or Radament in an expansion Nightmare or Hell game for quest-drops 48), a `flyingscimitar` level. The Ancients (b) need a quest-open recipe. From the H4b review (pieces; the rows stay counted as H4b, § 2.6): `doomknight3` (312) in the Chaos Sanctuary (stats 13, 14), a `willowisp` champion or unique (stats 40), Blood Raven's client name (special 66, mod 12), an aura special of level ≤ 15 (special 27, the clamp at 1); if a seed places one, a Shrines code-20 shrine operated with `objop` (special 2, 74; `MMS0`); optionally the camel at `/players` 8 (stats 23). From S3b (pieces; the rows stay counted as S3b, § 2.6): a Druid casting Raven in a Normal game (stats 30, the `druidhawk` Normal MonProp row), and, optionally (the S3b review raised the rows without it; no row depends on it), a Normal visit to the Durance of Hate Level 3 (`mephistospirit`, stats 19 and 45). Checked with `sweep_h4b.py` and `monstats.py` | `findings/monsters/experiments.md` | ~10 |
 | **H4b** (done) | `monsters-b` | 45 (47 filed; 2 returned, § 2.6) | 22/1/22 | hirelings 34; pool 1, 7, 8 (from S3a), 19; spawn 3, 6 (from S3a), 12, 42–45 (45 from S3a), 51; special 1–2, 5–7, 11, 15–16, 18, 20, 27, 29, 65 (from S3a), 66–67, 71–72, 74; stats 5, 13–14, 17, 20, 23, 40, 44 | `mon-stats.gdb` extended (skill list, aura id and level, client names, restore lines; from S3a: the tick line for every room, `PM0` for every MonPlace case) plus seeded-pool hunts picked with `monpool.py pool` (from S3a: a level holding class 141, 398 or 659–661), a `/players 8` `MercNova` session, and (from S3a) a classic Normal game start with `mon-pool.gdb` | `findings/monsters/experiments.md` | ≤ 20 |
-| **H5a** (run, pending review) | `drlg-links` | 21 | 16/0/5 | maze 4–5, 15; preset 22; warps 3, 5–6, 8–9, 11–12 | `drlg-maze.gdb` (LNK0/LNK1/LK27) + `drlg.py gen`; map seeds chosen offline with the link-builder model; `-seed N -act A` starts and one Barracks entry | `findings/drlg/experiments.md` | few |
+| **H5a** (done) | `drlg-links` | 16 (21 filed; 5 to d-none, § 2.6) | 16/0/5 | maze 4–5, 15; preset 22; warps 3, 5–6, 8–9, 11–12 | `drlg-maze.gdb` (LNK0/LNK1/LK27) + `drlg.py gen`; map seeds chosen offline with the link-builder model; `-seed N -act A` starts and one Barracks entry | `findings/drlg/experiments.md` | few |
 | **H5b** | `objects` | 33 | 12/2/19 | collision 27, 37, 39 (from S4b); objects 3–4, 6, 13, 15–17, 19–20, 23, 26–27, 35–36, 38–42, 45–46, 49–52 | `objects.gdb` + the objects checker, `d2pilot.py objop`, seeds from the populate model; the casket group and the orientation-2 shrine (plan 0023 ruling); from S4b (§ 2.6), one object of size 0 with `HasCollision` set (class 131, 399 or 564–567) created on `objects.gdb`; new `OBJTRAP_ObjectCreate` fire lines and revisit restores | `findings/objects/experiments.md` | ≤ 20 |
 | **H5c** | `roomk` | 41 | 33/0/8 | drlg/README 1–3, 5, 10; preset 31–32; room-tiles 1–2, 4 (2), 14 (2), 15, 27, 28 (3), 30–31, 33, 37, 38; warps 1, 16, 19; **rng/seeds 2, 4–10, 14** (ex H5r); room-tiles 4, 14, 28, 37 and warps 16 from S4a (§ 2.6) | `drlg-roomk.gdb` and `collision.gdb` (LevelUnload, RoomTilesRelease, TINIT-exit flags, `LI0` caller, the act callback, WarpExitPos), plus `seed-tree.gdb` + `rng.py seedtree` (act-seed steps in `LevelLinkBuild`, `R+0x28`/`R+0x60` and `T+0x18`/`+0x20` at activation, flags at `0x0052D1C9`, `LEVEL` caller, client `UnitInit` (x, y), one `-seed -2147483648` session). rng/0002 cites the record. From S4a (§ 2.6): a walled level whose bit-2 merges go through the remap rows 0–5, the row −2 return and the 8/9 edge (counted by `sweep_s4a.py roomk` on the batch's logs), and a `RoomNeighboursEnsure` line at `0x0066C370` (room, warp bits, each `WarpPairLink` call and outcome) | `findings/drlg/experiments.md` | ~10 |
 | **H5d** | `collision` | 17 | 6/0/11 | collision 1, 5, 8–9, 11, 19, 21, 24, 30, 36, 45–46; spawn 41 (from S3b) | `collision.gdb` + `collision.py`: tombs (228), Act III (334), Act V (298, 528, baaltaunt), a non-town `Position` level, `spawnCol` 1, ground items, an entry-flag `0x80` cell. From the H4b review (piece; the row stays counted as H4b): the tomb (228) and `suckernest1` (334) sessions also decide spawn 42's remainder, by `monspawn.py check` on the presets-window `SpawnClassCellTest` (`MC`) lines. From S3b (§ 2.6): a `sarcophagus` (228, size 1) and a `baaltaunt` (545, size 0) creation with their `MK0` lines (spawn 41) | `findings/drlg/experiments.md` | ~8 |
@@ -742,7 +764,7 @@ Static and harness batches use different resources (Ghidra copies against slots)
 | 1 | H5c | 33 | 0 | 41 | logger edits (roomk, collision, seed-tree), made and regression-checked off-slot; +9 from S4a (§ 2.6), one more line (`RoomNeighboursEnsure`) |
 | 2 | H4b (done) | 22 | 1 | 45 | logger extension; pairs with H5c; +4 from S3a, −2 at its review (§ 2.6) |
 | 3 | H5e (done) | 16 | 0 | 22 | no logger change; after H5c (same family); reviewed, no class move (§ 2.6) |
-| 4 | H5a (run, pending review) | 16 | 0 | 21 | after H5e; a new logger file (`drlg-links.py`), 9 sessions; 5 proposed d-none (§ 2.6) |
+| 4 | H5a (done) | 16 | 0 | 21 | after H5e; a new logger file (`drlg-links.py`), 9 sessions; reviewed, 5 to d-none (§ 2.6) |
 | 5 | H5b | 12 | 2 | 33 | objects family; may pair with any DRLG batch; +1 from S4b (§ 2.6) |
 | 6 | H6d | 10 | 5 | 17 | |
 | 7 | H2a | 10 | 0 | 17 | +2 from S2a (§ 2.6) |
