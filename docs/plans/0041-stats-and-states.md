@@ -1,6 +1,6 @@
 # 0041 — Stats and states: how a unit's final stats add up, and how timed states live and die (ADR-0014 phase 2)
 
-> **Status:** in progress. P0 and P1/1b reviewed (accepted with fixes, 2026-10-16 and 2026-10-17); P2 open (0037·P3 reviewed 2026-10-17, the [ADR-0016](../adrs/0016-pipelined-simulation-phases.md) gate is met)
+> **Status:** in progress. P0 and P1/1b reviewed (accepted with fixes, 2026-10-16 and 2026-10-17); P2 landed 2026-10-17, review requested (0037·P3 reviewed 2026-10-17, the [ADR-0016](../adrs/0016-pipelined-simulation-phases.md) gate is met)
 > **Created:** 2026-10-16
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases
@@ -448,3 +448,32 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   the UI (never toggle it); start the next session only after the previous one's `restore` (two launches at once
   missed the menu); the game's `EquipReqRefresh` runs on a 136-frame period by itself; the logger slows the game to
   about a frame per click in town (settle handles it).
+- **2026-10-17 — Phase 2 landed (reverser, `lane/p41h`, slots 2 and 1): resumed from the checkpoint above.** Main
+  merged twice (`78b96a9`, then `7e15a1b` before the request). Five sessions added (`bard-town1`, `bard-town2`,
+  `nec-town1` on slot 2; `palc-spider`, `palc-oasis` on slot 1): `run:2026-10-17-stats`
+  ([record](../findings/stats/experiments.md#run2026-10-17-stats)) is **18 sessions, 0 mismatches** (`tools/stats.py
+  check` at `27f49ad`, report `s1017-check.json` `677e12a6…`, run list `a42758f3…`, manifest `7fd7a93a…`): 26 087
+  links/unlinks, 232 042 CacheAdd/CacheWrite in order, 891 844 reads of 120 stat ids, 17 634 requirement checks,
+  5 749 set lists, 19 525 aprop toggles, 8 832 passive lists, 5 752 rescales, 3 643 applies, 2 749 expiry runs (123
+  lists freed, lateness 0), 54 719 ticks, 6 207 aura durations, 450 group clears, 7 shrines, 5 wells. Ops in
+  predicted writes 1 348, 2 1 490, 4 2 568, 5 26, 8 919, 9 3 784, 11 92, 13 136. Seed invariance: link 12 868,
+  unlink 12 853, own write 101 995, toggle 19 525, apply 6 232, expire 2 749, tick 54 719, aura 2 763 unchanged;
+  aura 865 runs chained (Sanctuary's `RNG_RangeB`); shrine 7 and well 5 below 20.
+  **Raised:** the ethereal −10 decides 30 requirement checks (`StatsBarD`; a second session, `bard-town2`, was added
+  for the count) → `[C]`; the stat-74 tick under poison (1 082 ticks, `StatsPalC`) → `[C]`; the `monsterset` group
+  clear with the self argument (180 effective clears, `StatsNec`) → `[C]`. **Kept `[I]`, named:** the
+  `item_req_percent` term (814 checks, none decisive); the life floor at 256 and open wounds (not reached); a clear
+  of a *different* state of one group (no group-3 pair on one unit); shrines and wells, **12 operates against 50**
+  (every one predicted: 3 timed shrines, 4 recharge shrines on a full player, 5 wells), their "no draw" too; the
+  summary shrine bullet of stats/0002 was lowered from `[C]` to `[I]` for that count. The 180 full Trang-Oul's set
+  lists (`state` and `oskill` blocks) are taken as logged: a tool limit, named in the record.
+  **Tool changes** (`27f49ad`): `tools/stats.py` predicts wells (`Parm1 · max >> 8`, capped, the return) and the
+  recharge shrines 1–3, splits the life tick by the sign of stat 74 and the requirement cases by dexterity, and resets
+  events left open at a log's end (a killed session's open aura run was carried into the next log when the logs were
+  checked in another order); `tools/stats_sessions.py` gains `bard-town2`.
+  **Oracle replacement:** run:2026-10-16-player's level-up maxima: 13 of 20 equal the own entries (replaceable), 7
+  need item lists the logs lack; run:2026-10-16-combat logs values only: not replaceable.
+  **Findings:** stats/0001 § 9 and stats/0002 § 8 written; summaries split (stats/0001 {C 8, I 40, L 13} →
+  {C 22, I 44, L 11}; stats/0002 {C 7, I 41, L 9} → {C 14, I 49, L 8}); answered open questions struck (itemspecific,
+  weapon switch, one event 12 per request). Both slots stopped and empty; no background loop left.
+  **Review request** filed to the architect (backlog).
