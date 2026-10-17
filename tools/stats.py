@@ -5,6 +5,7 @@ Usage:
   python3 -I tools/stats.py check <log> [...] [--excel DIR] [-v] [--json OUT]
   python3 -I tools/stats.py manifest <log> [...]          # sha256, size and line count of each log
   python3 -I tools/stats.py isc [--excel DIR]             # the op graph ITEMSTATCOST_Load builds, from the table
+  python3 -I tools/stats.py oracle-player <log> [...]     # run:2026-10-16-player's maxima against the own entries
 
 <log> is written by tools/d2run.py with tools/gdb/stats.gdb (the tags of tools/gdb/stats.py). The model mirrors the
 player's stat-list tree (the unit list and every list under it) and replays the logged events on it:
@@ -521,6 +522,7 @@ class Checker:
         self.tick_cases = collections.Counter()
         self.au = {}
         self.au_sites = collections.Counter()
+        self.levels_seen = set()
         self.aura_durations = collections.Counter()
         self.wells = []
         self.notes = collections.Counter()
@@ -563,6 +565,7 @@ class Checker:
 
     # ------------------------------------------------------------------ the replay
     def run_log(self, path):
+        self.levels_seen = set()
         self.cur_log = os.path.basename(path)
         self.cur_line = 0
         M = None
@@ -715,6 +718,8 @@ class Checker:
                 stack.append({"tag": "PRP", "gen": None, "pend": None, "top": d["top"], "d": d})
                 return
             ra = d["ra"]
+            if ra in WRITERS and d["k"] == 12 << 16 and x.p == M.plist:
+                self.n["level_change"] += 1
             if ra in WRITERS:
                 # an own write: the entry has changed by delta before the call
                 old = x.own.get(d["k"], 0)
@@ -833,8 +838,11 @@ class Checker:
         if tag == "RD":
             x = M.L.get(M.plist)
             key = d["k"]
-            want = M.floor(x, key, x.active().get(key, 0), d["r"])
+            raw = x.active().get(key, 0)
+            want = M.floor(x, key, raw, d["r"])
             self.n["RD"] += 1
+            if want != raw:
+                self.n["RD_floored"] += 1
             self.reads_by_stat[key >> 16] += 1
             if want != d["v"]:
                 self.fail("read", "read %d/%d = %d, predicted %d" % (key >> 16, key & 0xFFFF, d["v"], want))
@@ -1007,9 +1015,14 @@ class Checker:
             for site in sites:
                 self.au_sites[(hex(site[0]), hex(site[1] or 0), a["w"], a["k"])] += sites[site]
             self.n["aura_chained"] += 1
-            if a["gs"] != d["gs"] or k is None or k != len(self.au_rng):
-                self.fail("aura_rng", "aura run %s/%s: unit seed %s -> %s is %r step(s), %d LCG line(s); game seed %s"
-                          % (a["w"], a["k"], a["us"], d["us"], k, len(self.au_rng),
+            # the caster's draws: RNG_RangeB (0x0045C3E0) from 0x0056E0C0 (the elemental damage of the aura's hit,
+            # called at 0x005CF5D5); other LCG lines in the run belong to a killed monster's death (its own seeds)
+            own = sum(1 for r in self.au_rng if r.get("ra2") == 0x5CF5DA)
+            if len(self.au_rng) > own:
+                self.n["aura_runs_with_other_lcg"] += 1
+            if a["gs"] != d["gs"] or k is None or k != own:
+                self.fail("aura_rng", "aura run %s/%s: unit seed %s -> %s is %r step(s), %d caster draw(s) of %d LCG "
+                          "line(s); game seed %s" % (a["w"], a["k"], a["us"], d["us"], k, own, len(self.au_rng),
                              "same" if a["gs"] == d["gs"] else "moved"))
             else:
                 self.n["aura_chained_steps"] += k
@@ -1246,6 +1259,9 @@ class Checker:
     def check_invariant(self, M):
         """Every cache entry of every extended list equals its evaluation, except the stale op sources."""
         I = M.isc
+        lv = M.L[M.plist].cache.get(12 << 16)
+        if lv is not None:
+            self.levels_seen.add(lv)
         for x in list(M.L.values()):
             if not x.f & EXT:
                 continue
@@ -1273,9 +1289,23 @@ class Checker:
                     if x.ow and x.ow["t"] == 4 and any(op in (4, 5) and self.src_nonzero(M, x, src)
                                                        for ob, src, op, opp in I.opin[t]):
                         # an op-4/5 term reads the wearer's level, which no propagation reaches: the item keeps
-                        # the value of its last link or recompute (seen after a level-up)
-                        self.n["eval_stale_op45_item"] += 1
-                        continue
+                        # the value of its last link or recompute (seen after a level-up). The kept value must be
+                        # the evaluation at a level the wearer had before
+                        pl = M.L[M.plist]
+                        lk = 12 << 16
+                        now = pl.cache.get(lk)
+                        ok = False
+                        for old in sorted(self.levels_seen):
+                            pl.cache[lk] = old
+                            try:
+                                if M.evaluate(x, key) == c:
+                                    ok = True
+                                    break
+                            finally:
+                                pl.cache[lk] = now
+                        if ok:
+                            self.n["eval_stale_op45_item"] += 1
+                            continue
                     self.fail("eval", "list 0x%x (owner %s) stat %d/%d cache %d, evaluated %d" % (
                         x.p, (x.ow or {}).get("c"), t, key & 0xFFFF, c, v))
                 elif I.b52[t]:
@@ -1591,6 +1621,34 @@ TAGS = {"ISC", "TREE0", "TREE", "LNK", "LNX", "ULK", "ULX", "TGL", "TGX", "PRP",
         "WEL0", "WEL1", "RNGA"}
 
 
+def oracle_player(paths):
+    """The oracle replacement for run:2026-10-16-player (plan 0041 Phase 2): the level-up refill reads
+    UnitGetMaxHp/Mana/Stamina (LUM lines, value oracles there). Its logs hold the player's own entries after the
+    level-up (LUX "b") but no child list, so a maximum is predicted (the full value of stats 7, 9, 11 = own entry plus
+    children plus op terms, stats/0001 § 4-5) only where no child can contribute: a character with no equipped item
+    and no passive or state list. Prints, per level-up, whether the logged maxima equal the own entries."""
+    tot = same = 0
+    for path in paths:
+        lum = {}
+        for line in open(path, errors="replace"):
+            tag, _, rest = line.partition(" ")
+            if tag == "LUM":
+                d = json.loads(rest)
+                lum[d["k"]] = d["v"]
+            elif tag == "LUX":
+                d = json.loads(rest)
+                b = {e[0]: e[2] for e in d.get("b", []) if e[1] == 0}
+                got = (lum.get("hp"), lum.get("mana"), lum.get("stamina"))
+                own = (b.get(7), b.get(9), b.get(11))
+                tot += 1
+                same += got == own
+                print("%s maxima %r own %r %s" % (os.path.basename(path), got, own,
+                                                   "equal" if got == own else "differ: a child list contributes"))
+                lum = {}
+    print("ORACLE player level-ups=%d own_equal=%d child_lists_needed=%d" % (tot, same, tot - same))
+    return 0
+
+
 def manifest(paths):
     for p in paths:
         h = hashlib.sha256()
@@ -1604,7 +1662,7 @@ def manifest(paths):
 
 
 def main(argv):
-    if not argv or argv[0] not in ("check", "manifest", "isc"):
+    if not argv or argv[0] not in ("check", "manifest", "isc", "oracle-player"):
         print(__doc__)
         return 2
     excel, verbose, out, paths = DEFAULT_EXCEL, False, None, []
@@ -1623,6 +1681,8 @@ def main(argv):
             k += 1
     if argv[0] == "manifest":
         return manifest(paths)
+    if argv[0] == "oracle-player":
+        return oracle_player(paths)
     T = Tables(excel)
     if argv[0] == "isc":
         tg, deps, opin, b51, b52, b53 = T.isc_graph()
