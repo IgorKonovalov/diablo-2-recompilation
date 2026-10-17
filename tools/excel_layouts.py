@@ -1290,6 +1290,19 @@ LAYOUTS["npc"] = dict(size=0x4C, fields=[
   + [I("questrepmult %s" % g, 0x34 + 4 * k, "u32") for k, g in enumerate("ABC")]
   + [I("max buy", 0x40, "u32"), I("max buy (N)", 0x44, "u32"), I("max buy (H)", 0x48, "u32")])
 
+# ------------------------------------------------------------------ books (32 B = 0x20)
+# Plan 0043 Phase 0 (docs/tables/Books.md). One record per books.txt row (3). Name is the string index of the
+# key `unused` (the same in every row); Namco and Completed have no field. ScrollSkill/BookSkill store the Skills row
+# (blank = -1); the scroll and book codes follow the costs. +0x003 is 0 in every record.
+LAYOUTS["books"] = dict(size=0x20, fields=[
+    T("Name", 0x000), I("SpellIcon", 0x002, "s8"), U("pad_003", 0x003, "u8"),
+    I("pSpell", 0x004, "u32"),
+    R("ScrollSkill", 0x008, "skills:skill", "s32"), R("BookSkill", 0x00C, "skills:skill", "s32"),
+    I("BaseCost", 0x010, "u32"), I("CostPerCharge", 0x014, "u32"),
+    C("ScrollSpellCode", 0x018), C("BookSpellCode", 0x01C),
+], txt_only={"Namco": "display suffix (\"of Town Portal\"); no field (its keys are not in the string tables)",
+             "Completed": "1, 1, 0; no byte or bit follows it (+0x003 is 0 in every record)"})
+
 # ------------------------------------------------------------------ gamble (12 B)
 # Plan 0031 Phase 0 (docs/tables/Gamble.md). The item code, then 8 bytes that are 0 in every record (no column feeds
 # them; filled at load or never, a question for the reverser).

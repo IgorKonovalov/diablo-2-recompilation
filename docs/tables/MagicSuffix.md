@@ -20,3 +20,6 @@ Suffix-only facts, each detailed there:
 - `[I]` `MagicSuffix` comes first in the merged affix array, so record r has affix id r + 1 and record 0 (`of Health`)
   is id 1; the 27 rows with no `itype` are never picked ([MagicPrefix § Row identity](MagicPrefix.md#row-identity),
   [§ Code semantics](MagicPrefix.md#code-semantics-items0005), fn:sub_00633730_LoadMagicAffixes@0x00633730).
+- `[C]` **Price** (plan 0043 Phase 0): `divide`, `multiply` and `add` (`+0x084`, `+0x088`, `+0x08C`) are 0 in every
+  suffix row; only 21 prefixes (the all-resistance rows) carry a price term
+  ([MagicPrefix § Price](MagicPrefix.md#price-plan-0043-phase-0), `economy_survey.py affixes`).

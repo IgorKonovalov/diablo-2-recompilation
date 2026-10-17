@@ -1415,3 +1415,63 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     spec-writer: three additions to the lane's Phase 3 entry.
   - **Next:** the owner merges `lane/h5e`. H5a takes the next slot in the family (§ 7).
 
+- **2026-10-17 — Phase 3, second round (spec-writer, `lane/p38s2`, from `main` `8f8c0bc`).** Accepted since the first
+  round: S2c, S3b, S1a, H4b, H5e. Of the specs not yet re-tagged (combat excluded, plan 0037 open), only drlg/outdoor
+  has every batch carrying its statements accepted (S4a, S4b, H5e; inventory § 5 with the § 2.6 moves).
+  - **drlg/outdoor** (S4a, S4b, H5e): {C 170, I 22, L 3} → **{C 180, I 19, L 3}**. Raised rows 1 (no draw; the 0x268
+    size stays `[I]`), 3, 5, 6, 19, 20; split 13 (BridgeFind on the Blood Moor and the columns-outer scan `[C]`; the
+    non-square half `[I]`, carried in *Open questions* as pending the static reachability question), 14 (the failed
+    search `[C]`; 5/6 endpoints and the exhausted pool `[I]`), 16 (41, 45, 46 `[C]`; 134 and the fatal `SpecialArea`
+    `[I]`). Not raised: 7 and 11 (H5e shortfalls; they cite the 52 200-window scan), 8 (S4a shortfall, its reason
+    stated). d-none 10 reworded (the double visit cannot change the result); the other d-none rows (2, 4, 9, 12, 15,
+    17, 18, 21) unchanged. *Open questions*: the unreached-branches entry narrowed to the static question; the `+0xC`
+    and dead-function entry closed from plan 0039 P1a (both `[I]` in the body).
+  - **Folded on their own** (plan 0039 Phase 2 items, no 0038 re-tag; this plan's change is first, as 0039's rule asks):
+    drlg/room-tiles {C 116, I 26, L 0} → **{C 118, I 31, L 0}** (step 9c and note 9: the merge-remap branches are
+    unreachable on stock data, and the 11 d-edit rows stay `[I]`; notes 2, 6 and 9: the `"0"` load, no DS1 cut two ways,
+    `0x40000`); drlg/warps {C 91, I 30, L 5} → **{C 91, I 34, L 2}** (F1 and the 133 → 17 note, § G units, E1's > 9
+    question). No warps row is raised; its cluster waits for H5a.
+  - **Backlog:** struck the H5c review entry ((c), warps half, the last open part). Annotated as partly done: the S4a
+    corrections entry ((c)), the P1a Phase 2 entry ((a), (d), (f)), the reverser's H5e entry (outdoor part) and the H5e
+    review additions ((c)). New entry to the architect with the three specs' old and new counts.
+  - **Commits:** drlg/outdoor, drlg/room-tiles, drlg/warps, then backlog and this log. Gate green; W4 warns for the
+    levels and randomness wiki pages.
+  - **Waiting** (missing batches): items/tc H2a, H2b, H2c, H6d; items/quality H2a; items/affixes H2b;
+    items/uniques-sets H2b, H6d; items/properties H2b, H2c; items/cube H6a; items/sockets-runewords H2b, H6b;
+    items/vendors H6c; items/quest-drops H4a, H6d, H6e1, H6e2; save/d2s S1e, H1a, H1b; data/excel and data/strings
+    S1e, H3b; data/calc S1e; data/README H3b; rng S1e; monsters/pool H4a; monsters/spawn H4a, H5d; monsters/special
+    H4a; monsters/stats H4a; hirelings H1a, H1b, H6f; player/creation H1a, H6g; drlg/preset, drlg/maze and drlg/warps
+    H5a; drlg/collision H5b, H5d; objects H5b, H6e2.
+  - **Next:** architect review of `lane/p38s2` (backlog).
+
+- **2026-10-17 — Phase 3 second round review (architect, `lane/p38s2`): accept with fixes.** `main` had not moved
+  (`8f8c0bc`), so there was no merge.
+  - **drlg/outdoor raises and splits against the ledgers.** Every raise matches an accepted ledger line: row 1 and 6
+    (drlg/0008 § S4a; the 0x268 size stays `[I]` as S4a says), 3, 5 and 19 (§ S4b) and 20 (§ H5e). The splits follow the
+    remainders of § 2.6: 13 (BridgeFind and the columns-outer scan `[C]`, the non-square half `[I]` in the body with the
+    open question as 678 (c) asked), 14 (the failed search `[C]`; 5/6 endpoints and the exhausted pool `[I]`) and 16
+    (41/45/46 waypoint `[C]` per S4a; 134, the fatal `SpecialArea` and the 45 shrine pass `[I]`, which S4a's line does
+    not cover). The 7, 8 and 11 shortfalls stay `[I]`, and row 10's wording matches S4a's reclassification. The P1a `+0xC`
+    and dead-code lines are `[I]` as drlg/0008 § P1a has them.
+  - **Counts recounted** in the file: outdoor {C 180, I 19, L 3}, room-tiles {C 118, I 31, L 0}, warps {C 91, I 35, L 2}
+    after the fix below. There is no `[L]` above *Open questions* in any of the three. Gate green.
+  - **Anchors (objdump, pinned `Game.exe`).** `0x0066C39B` `cmp [eax+0x1D0], 0x85`; `0x0066B7D5` `mov [eax+0xC], 0`;
+    `0x0066E754` `test al, 1` → `0x0066E781` `test [ebp+0x14], 0x80` (flag before bit 7); `0x0056D181` `[ebp+0x14]`
+    (the 4th stack argument); `0x006753E1` `lea edx, [edi+0x40]` (grid3 allocation); `0x0066FC2A` → `GridCellOp`. All
+    resolve as cited.
+  - **Ruling: folding plan 0039 P1a outside a full re-tag is acceptable.** Plan 0039 Phase 2 anticipated it, and its
+    merge-order rule was kept. No room-tiles or warps inventory row changes class or tag: the 11 merge rows stay `[I]` as
+    d-edit, and warps rows 15 and 17 stay `[I]`. The new statements are `[I]` code readings with finding anchors, or
+    `[C]` only where P1a gives the second source (the 2077-DS1 survey, and the H5c logs merge by merge). The warps and
+    room-tiles re-tags count their rows from the inventory and do not count the front-matter delta, so the P1a `[I]`s
+    added here are not inventory rows.
+  - **Fix applied:** warps F1 pseudocode. FindRoom's line said "srcRoom gets a warp node" for every case, while the
+    caller bullet and drlg/0007 § P1a have no node and every room within 6 tiles appended when `Warp` = −1. The case is
+    added as an `[I]` comment line (fn:sub_0066BE80_WarpPairRoomFind, fn:sub_0066BDA0_RoomNearListAppend), and the
+    front matter is now `I` 35.
+  - **Research map:** the drlg/overview (room-tiles), drlg/outdoor and drlg/warps rows now carry the new counts and
+    states. This also clears the stale warps row noted in inventory item 9.
+  - **Follow-ups:** spec-writer, the wiki refresh (W4 on levels and randomness, and three stale *open questions*
+    bullets in levels), in the backlog. The outdoor shortfalls are already with the reverser in the H5e static
+    reachability entry. The warps re-tag waits for H5a.
+  - **Next:** the owner merges `lane/p38s2`.

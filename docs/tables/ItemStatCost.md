@@ -464,6 +464,40 @@ Every row with `op` ≠ 0 (`op_rows` = 84), from `stats_survey.py isc`. `[C]` as
 | 302 | `item_kick_damage_bytime` | 6 | 0 | — | `item_kickdamage` |
 | 303 | `item_deadlystrike_bytime` | 6 | 0 | — | `item_deadlystrike` |
 
+## Price (plan 0043 Phase 0)
+
+The three per-stat price columns. Offsets are [§ Columns](#columns) (`[C]`, `excel_bin.py diff`); the counts and the
+row list come from `python3 -I tools/economy_survey.py stats workspace/merged/data/global/excel` (gate survey
+`economy`), `[C]` as data. The price function (`sub_0062FDC0_ItemTradePrice`) is named only
+([items/0009 § 9](../findings/items/0009-vendors.md#9-named-only-prices-and-repair)), so how a stat's value enters the
+price is `[L]`; by the names, a stat adds `value · Multiply / Divide + Add` or similar, for Phase 1 to read.
+
+| Column | Field | Values | Meaning |
+|---|---|---|---|
+| `Divide` | `+0x00C` s32 | 1024 on 352 rows; 0 (blank) on 7: 181 `fade`, 182 `armor_override_percent`, 183..187 `unused183`..`unused187` | price divisor `[L]` (a fixed point of 1024, as in [Npc](Npc.md), by the value) |
+| `Multiply` | `+0x010` s32 | −34..4096, 67 distinct; non-zero on 187; negative on 2 (91 `item_req_percent` −34, 120 `item_damagetargetac` −20) | per-unit price `[L]` |
+| `Add` | `+0x014` s32 | 0..56 452, 118 distinct; non-zero on 184 | fixed price per stat present `[L]` |
+
+- `[C]` **190 rows are priced** (`Multiply` or `Add` ≠ 0); every one has `Divide` 1024, so no priced row divides by 0.
+  6 have `Multiply` only: 59 `poisonlength` (4) and the five `passive_*_pierce` (333..336, 358; 1 984..2 812). 3 have
+  `Add` only: 81 `item_knockback` (105), 90 `item_lightcolor` (155), 108 `item_restinpeace` (1 987).
+- `[C]` The largest terms: `Add` 56 452 on 77 `item_maxmana_percent`, 49 523 on 83 `item_addclassskills`, 36 015 on 85
+  `item_addexperience`, 32 093 on 76 `item_maxhp_percent`; `Multiply` 4 096 on 127 `item_allskills`, 2 048 on 153
+  `item_cannotbefrozen` and 156 `item_pierce`. Illustrative: 0 `strength` 1024 / 55 / 125, 31 `armorclass`
+  1024 / 10 / 17, 204 `item_charged_skill` 1024 / 256 / 401 (`Divide` / `Multiply` / `Add`).
+- `[C]` **Stats the price may never see.** 70 `quantity`, 72 `durability`, 152 `item_indestructible` and the 37
+  `*_bytime` stats have no price term; 73 `maxdurability` has one (4 / 9), and so do 252 `item_replenish_durability`
+  and 253 `item_replenish_quantity` (256 / 106 each), 194 `item_numsockets` (170 / 38) and 254 `item_extra_stack`
+  (10 / 99).
+- `[C]` **Against the property roll** (`prop_survey.py stats`, [§ Interpretation notes](#interpretation-notes)): of the
+  155 stats a used property code writes, 149 are priced; the 5 reachable on the drop path with no price are 27
+  `manarecoverybonus`, 28 `staminarecoverybonus`, 151 `item_aura`, 155 `item_reanimate` and 268 `item_armor_bytime`.
+  41 priced stats are written by no used code (the 205..213 `unused204`..`unused212` among them, priced as
+  `item_charged_skill`).
+- `[C]` 7 priced rows are also `Saved` (0 `strength`, 1 `energy`, 2 `dexterity`, 3 `vitality`, 7 `maxhp`, 9 `maxmana`,
+  11 `maxstamina`); the last three have `ValShift` 8, so whether the price reads the raw or the shifted value matters
+  `[L]`.
+
 ## Interpretation notes
 
 - **Save columns.** [save/0001 § 7–8](../findings/save/0001-d2s-io.md) reads the item property writer and reader:
