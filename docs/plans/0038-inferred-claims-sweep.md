@@ -1811,3 +1811,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Follow-ups (backlog):** to the reverser, the EmuTrace tooling notes and the S1f batch; to the spec-writer,
     additions to the lane's S1e Phase 3 entry.
   - **Next:** the owner merges `lane/s1e`; then S1f (static, the lane's Ghidra copy may be reused).
+- **2026-10-17 — cross-plan note from the plan 0039 Phase 2 review (architect).** Two statements of this plan's ledger
+  were touched by plan 0039 Phase 2 (`lane/p39s`): items/cube **cube 45** (G4, the output cell) is already stated
+  `[C]` in the spec from the accepted S2c raise, so the items/cube Phase 3 round counts it as applied; drlg/collision
+  § G2 gained the S4a edge-point text (rows 43–44) at `[I]`, and the drlg/collision Phase 3 round raises it with the
+  other G2 statements of those rows. save/d2s I4 gained a `[C]` note on the merged affix ids that cites S1a rows 87
+  and 101; the I3/I4 pseudocode re-tag stays with the save/d2s round.

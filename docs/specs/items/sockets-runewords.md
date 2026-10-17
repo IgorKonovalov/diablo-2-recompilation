@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/properties, save/d2s, data/excel]
 consumed_by: [save/d2s, items/cube]
-tags: {C: 79, I: 77, L: 9}
-updated: 2026-10-16
+tags: {C: 80, I: 83, L: 7}
+updated: 2026-10-17
 ---
 
 # Socket filling and runewords
@@ -100,6 +100,16 @@ Load-time details of these columns, from [items/0007 § 9](../../findings/items/
   (`STRTABLE_GetByKey(Name)`), one row at a time, so the two rows named `Runeword95` (*Passion*, *Patience*) get the
   same string index; `+0x084` is not written. (fn:RUNES_Load@0x006394A0 0x00639C63–0x00639C6E,
   fn:STRTABLE_GetByKey@0x00524D30, tbl:Runes.txt:Name)
+- [I] **The save maps the shared index to no row.** `ITEMS_ReadFull` stores the 16 runeword bits of an item with flag
+  bit 26 unmapped at `ItemData+0x38` and looks no row up; `ITEMS_WriteFull` does not save `+0x38` but calls
+  `RUNEWORD_Match(item)` and writes that row's `+0x82`, or `0xFFFF` with no row. The row of a loaded runeword is always
+  re-derived by `RUNEWORD_Match` from its socketed runes (§ D). `+0x38` is also a rare item's first prefix slot; a
+  runeword's quality is never 4–9, so the two uses do not meet. (0x0062D1CB–0x0062D1EA, 0x0063087E–0x00630890,
+  fn:ITEMS_ReadFull@0x0062CBE0, fn:ITEMS_WriteFull@0x0062FFF0, fn:RUNEWORD_Match@0x0062BED0,
+  [items/0007 § Plan 0039 batch P1b](../../findings/items/0007-sockets-runewords.md#plan-0039-batch-p1b-2026-10-17))
+- [C] **Patience never matches on stock data.** *Passion* has `complete` 1, *Patience* `complete` blank (0), and
+  `RUNEWORD_Match` skips every row with `complete` 0, so the shared index 20600 only ever comes from *Passion*.
+  (tbl:Runes.txt:complete, tbl:Runes.txt:Name, data check, [items/0007 § Plan 0039 batch P1b](../../findings/items/0007-sockets-runewords.md#b9-which-runeword95-row-a-save-maps-back-to))
 - [I] **Gems `letter`** is read by the client's item-description builder `sub_00486670_ItemDescRuneLetters`: for an
   item whose socketed children include runes (`ITEMS_UnitIsType(child, 74)`), it writes string 0x501A once and then
   each rune's `letter` through `UNICODE_Utf8ToUtf16(dst, letter, 6)`, i.e. at most 5 UTF-16 units of the field.
@@ -248,6 +258,24 @@ B6. parent.flags |= 0x1; parent.flags &= ~0x4000; queue a client update when a p
 ```
 
 Step notes:
+
+- B6. **The flag bits the insert touches**, from a survey of every `ITEMS_CheckFlags`/`ITEMS_SetFlag` call site by
+  mask ([items/0007 § Plan 0039 batch P1b](../../findings/items/0007-sockets-runewords.md#q18-b-item-flag-bits-0-2-8-and-14)):
+  - [I] Bit 0 (`0x1`) is "changed, send an update": set by every server routine that moves an item or changes its state
+    (26 move sites, `ITEMS_InsertSocket` among them, and the identify routine), never cleared through `ITEMS_SetFlag`,
+    tested only by `ItemFlagUpdateSend`. (0x0056285D, 0x005762FE, fn:sub_005973F0_ItemFlagUpdateSend@0x005973F0)
+  - [I] Bit 14 (`0x4000`) is "equipped, requirements not met": `EquipReqRefresh` sets it on an equipped item that fails
+    `ItemUsableBy` (stats 0, 2, 12 against the requirements with stat 91, plus the quiver test) and clears it on one
+    that passes; every move routine clears it with bit 0. (0x0055DC5D, 0x0055DCFA,
+    fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0, fn:sub_0055DB00_ItemUsableBy@0x0055DB00,
+    fn:sub_0062EAF0_ItemReqCheck@0x0062EAF0)
+  - [I] Bit 8 (`0x100`), which the client test of § A refuses, is "broken": `ItemBreak` sets it and durability (stat 72)
+    to 0, `ItemRepairBroken` clears it and sets bit 9, and `ItemCreate` copies it from the creation record.
+    (0x0055F85A–0x0055F8B6, fn:sub_0055F850_ItemBreak@0x0055F850, fn:sub_0055F900_ItemRepairBroken@0x0055F900)
+  - [I] Bit 2 (`0x4`) marks an item whose use is in progress (`ItemUse` sets it before the use function and
+    `InvClearUseMark` clears it on failure); the insert does not read it: it tests only `0x10` and `0x800`.
+    (0x005BF36B, 0x0056270C, 0x00562748, fn:sub_005BF240_ItemUse@0x005BF240, fn:sub_005BE1C0_InvClearUseMark@0x005BE1C0,
+    fn:ITEMS_InsertSocket@0x00562660)
 
 - B1. **Authority and tags.** The server list is what decides; the client test (§ A) stands in front of it and
   screens every server refusal but one from clicks. The run saw the whole chain pass in this order 350 times, and saw
@@ -417,7 +445,11 @@ Step notes:
   more than the sockets the loop reaches `k = n` and compares `kids[n]`, a stack slot this call never wrote; such a
   row matches only if that stale word equals the extra rune's item index. Two or more extra runes never match. The
   run's one case (a 3-socket armour with the first three runes of *Bramble*) matched nothing; the slot held 638, not
-  614. [I] (0x0062BFA3–0x0062BFCE, run:2026-10-15-sockets)
+  614. [I] (0x0062BFA3–0x0062BFCE, run:2026-10-15-sockets) The slot lies in `RUNEWORD_Match`'s own frame, so its value is
+  what the last code to use that stack address left, which depends on the call chain (the insert, the two readers,
+  the cube's socket paths, the client's description code). A slot written by an earlier `RUNEWORD_Match` call on a
+  fuller item at the same depth holds that item's `n`-th child class, so a stale match needs such an earlier call, not
+  chance. [I] (0x0062BFA3–0x0062BFCE, [items/0007 § Plan 0039 batch P1b](../../findings/items/0007-sockets-runewords.md#q18-a-the-stale-kidsn-word))
 - D2. **Scan order.** The first matching row from record 0 wins. On stock data no two `complete` rows share a rune
   sequence and none is a one-shorter prefix of another, so the order changes no stock result. [I] (0x0062BF6B–0x0062C03B,
   tbl:Runes.txt:Rune1)
@@ -675,7 +707,8 @@ Session `rw1` (slot 2, game seed `-seed 2001`, expansion, Normal). The parent is
 ## Evidence
 
 - [items/0007](../../findings/items/0007-sockets-runewords.md): the insert, the client test, the transfer, the match,
-  the runeword, the setters, the *Steel* save; *Leads used* (25 verdicts, Phase 1b).
+  the runeword, the setters, the *Steel* save; *Leads used* (25 verdicts, Phase 1b); § Plan 0039 batch P1b (the
+  `Runeword95` save path, the stale `kids[n]` slot, flag bits 0, 2, 8, 14).
 - [run:2026-10-15-sockets](../../findings/items/experiments.md#run2026-10-15-sockets): 23 sessions, 351 inserts,
   50 runewords from 29 rows, 357 client verdicts, 0 mismatches (`tools/sockets.py check`).
 - [run:2026-10-11-d2s-samples](../../formats/experiments.md#run2026-10-11-d2s-samples): the game-written *Steel* save.
@@ -692,8 +725,9 @@ Session `rw1` (slot 2, game seed `-seed 2001`, expansion, Normal). The parent is
   require it (architect ruling, plan 0029 Phase 2 review).
 - [L] **A child above the player's level.** The code has no level test, and the run had no such rune.
 - [L] **The ladder side of `server`.** No ladder game ran; whether such a row applies there is read only.
-- [L] **What the stale `kids[n]` word holds** in general (an earlier call's stack contents), so whether it can ever
-  equal the extra rune. The one logged case did not.
+- [L] **What the stale `kids[n]` word holds** in general, so whether it can ever equal the extra rune. Not
+  determinable statically (plan 0039 P1b): it is stack residue of whatever ran before at that depth (D2 note); only a
+  run or an emulation with a declared stack image can say more. The one logged case did not match.
 - [L] **`ITEMS_SetSockets`' quality clamps** were not executed by the run; the crafted cap (3 in the code, 1 in
   `src:arreat-summit-socketing`) is a case for the cube plan (0030 Phase 2) or a forced path (ADR-0010): Larzuk's
   reward asks for 1 socket on qualities 5–9, so it cannot reach the cap ([items/0010 § 6](../../findings/items/0010-quest-drops.md#6-npc-rewards)),
@@ -701,9 +735,9 @@ Session `rw1` (slot 2, game seed `-seed 2001`, expansion, Normal). The parent is
 - [L] **`gemoffset` per D2R.** `src:d2dfg-blizzard` describes `gemoffset` as a starting index into `gems`; in 1.14d the
   child's own `+0x0F0` is read. Every stock cell is 0, so the two readings agree on stock data and no run can tell
   them apart (backlog 2026-10-15, triaged into this section).
-- [L] **Flag bits 0, 2, 8 and 14** (`0x1`, `0x4`, `0x100`, `0x4000`) that the insert sets, clears or tests: meanings
-  not followed. The client's flag-`0x100` test is one of them.
+- ~~**Flag bits 0, 2, 8 and 14** that the insert sets, clears or tests: meanings not followed.~~ Answered: § B, step
+  note B6 (update pending, use in progress, broken, requirements not met).
 - [L] **`etype`**, the golem reader, the item copier and `0x0065D220` (the other caller of `ITEMS_SetSocketsOnLoad`)
   were not exercised.
-- [L] **Which `Runeword95` row a save maps back to.** *Passion* and *Patience* share one string index at `+0x82`;
-  which row the save reader resolves that index to is not read ([items/0007 § 9](../../findings/items/0007-sockets-runewords.md#9-table-fields-the-socket-path-does-not-use-backlog-2026-10-15-static)).
+- ~~**Which `Runeword95` row a save maps back to.**~~ Answered (*Inputs*, after `Name` → `+0x82`): none; the writer
+  re-runs `RUNEWORD_Match`, and *Patience* never matches on stock data.

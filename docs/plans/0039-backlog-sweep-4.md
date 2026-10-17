@@ -389,6 +389,127 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   layer index ORed in at load); table, bullet and *Unknown fields* row corrected, the runtime-flag cells tagged `[I]`.
   [Levels](../tables/Levels.md): level 0 is the null level, not a town. Gate fast tier and `--full=economy,excel_layout`
   green. Follow-up to the reverser for the two finding wordings these came from.
+- **2026-10-17, `lane/w1` review (architect): accept.** Findings W1 104 → 0, `main` `f10dca8` merged first (no
+  conflict; the S1e and p39b sections add no W1; specs 15, filed to the spec-writer). Sampled more than 60 of the added anchors
+  across 20 files (save/0001 22, items/0007 14, the six experiments files 16, data, drlg, rng, monsters, items/0001,
+  0002, 0010 and the rest): every `fn:`/`data:` resolves (gate E1), every address is one the same finding already gives that code
+  in its own section (save/0001 §§ 7–8 ranges, items/0007 § 6, items/0002 L65, items/0001 `TC_GetByIndex`), every
+  `run:` in an experiments file is the enclosing record's own id, and the save/0001 corpus rows cite the writer or
+  reader plus the runs whose writes they count (8 + 192 = 200 for rows 24, 45, 86). No anchor chosen for the gate
+  alone. The two open-question corrections match their sections: drlg/0006 tomb multipliers are H5e C1 `[C]`;
+  drlg/0002's 1 280 `(10,0,0)` fallbacks are § S4a's, over the collision and objects logs (none in roomk).
+  `tbl:MonUMod.txt:constants` is documented (MonUMod.md, row 0 `[C]`). The four tag mentions reworded are status
+  lines and "would take to `[C]`" phrases, not claims. arc4 wordings (a) and (b) done. Follow-up (reverser): drlg/0002
+  rows 9 and 20 stay `[I]` on "no stock key lacks a candidate", which the same S4a fallbacks contradict.
+
+- **2026-10-17 — Phase 2 landed for P1a and P1b (spec-writer, `lane/p39s`, from `main` `8d03310`; review pending).**
+  Folded the backlog's P1a entry (its (b) and (g); (a), (c)–(f) were applied by plan 0038 Phase 3 rounds 2 and 3) and
+  the P1b entry, with the review's amendments to (f) and (h). No game run, no Ghidra.
+
+  | Spec | Items | {C, I, L} old → new |
+  |---|---|---|
+  | drlg/collision | P1a (b): Q6, Q7; Q5's S4a answer as G2 text | {110, 55, 12} → {110, 60, 9} |
+  | rng/seeds | P1a (g): Q15 | {76, 7, 6} → {78, 9, 4} |
+  | data/strings | B8 | {59, 39, 3} → {60, 42, 3} |
+  | items/affixes | Q16 (stale, S2b) | {112, 45, 4} → {112, 46, 4} |
+  | items/cube | Q17 (cell from S2c cube 45) | {118, 82, 6} → {119, 82, 4} |
+  | items/sockets-runewords | B9, Q18 | {79, 77, 9} → {80, 83, 7} |
+  | items/quality | Q19 | {63, 37, 4} → {64, 38, 3} |
+  | items/quest-drops | B12, Q20 | {80, 82, 6} → {81, 88, 3} |
+  | items/tc | Q21 | {45, 77, 8} → {45, 81, 7} |
+  | items/vendors | Q23 (and the gambled-unique half of Q22's entry) | {70, 37, 4} → {70, 39, 2} |
+  | objects | Q24; Q21's forced-quality pointer | {136, 69, 5} → {136, 71, 4} |
+  | save/d2s | B10, Q25 | {88, 144, 5} → {90, 150, 3} |
+
+  - **Corrected:** save/d2s F1's "no clamp hit" (B10: the 21-bit clamp is hit by high life and mana, `[C]`);
+    sockets-runewords now states that *Patience* never matches (`[C]` data); items/quality's "two quivers" are the
+    base-less types `mboq`/`mxbq`; items/tc's "upgrade bits" are forced ethereal and forced sockets.
+  - **Narrowed, not closed:** items/quality (17 `MonSetOwner` sites unfollowed), items/tc (16 of the 21 bit-17 writers),
+    objects (`TrapProb` through a kept record pointer), data/strings (the `%n` substitution), rng/seeds (skill and
+    missile re-seeds, moved to Simulation phase (3)), sockets-runewords (`kids[n]`, not determinable statically), save/d2s
+    (status bit 1, client presentation), items/vendors (`NpcStoreRec` `+0x24..+0x26`, moved to plan 0043).
+  - **Held:** data/excel (P1b (a): Q1, Q2 stale, Q3) and items/uniques-sets (Q22: quest uniques identified by
+    `ItemInitStats`, `nolimit`), because P1c also edits them (Q4, B5); each is folded once after the P1c review.
+  - Research-map rows of the twelve specs updated. Backlog: the P1a entry struck, the P1b entry annotated (done in part,
+    the held items named); review request and a W4 wiki follow-up (15 `based_on` dates) filed. Gate green.
+- **2026-10-17 — Phase 2 (P1a and P1b folds) reviewed (architect, on `lane/p39s` after merging `main` at `f10dca8`).
+  Verdict: accept with fixes (applied in the review commit).**
+  - **Tags against the findings.** Every new `[C]` has its accepted source at the same strength: rng/seeds `+0x28`
+    `0x40000` and `+0x60` bit 0 (Q15, code plus run:2026-10-16-sweep-roomk, P1a review); data/strings entry 1718 =
+    `%0 %1` (data); items/cube G4's cell (S2c cube 45, S2c review ruling 3); sockets-runewords *Patience* (`complete`
+    data); items/quality's override survey (data, items/0002 Q19 (b)); quest-drops' no-unique-imbue check (data);
+    save/d2s's 21-bit clamp (B10, P1b ruling 1) and the merged affix ids (items/0005 § 1 `[C]`, save side S1a rows 87 and
+    101). Every new `[I]` matches a P1a/P1b `[I]` reading; none is stronger than its finding. The two P1b amendments are
+    honoured (quality M3 with `SetBoss` minions and the 17 unfollowed sites as a narrowed `[L]`; tc B1 with "21
+    writers, five read as examples"), and ruling 3's host bytes are a body `[I]`, ruling 4's status bit 1 an
+    out-of-plan `[L]`.
+  - **Counts.** All twelve front matters recounted with the review's own script (raw `[C]`/`[I]`/`[L]` after the front
+    matter): all match the request's new figures, and the per-spec deltas match the diff statement by statement. No
+    `[L]` above *Open questions* in any of the twelve.
+  - **Anchors (objdump), 8 checked, all hold.** `0x0055A5E3` `mov cx,[eax+0x78]` stored to the record (tc H7);
+    `0x00556D24` `test byte [ebx+0x80],0x4` (forced ethereal); `0x00556C1F`–`0x00556C24` `test cl,0x10; je; xor eax,eax`
+    after the `Range(100)` call (forced sockets); `0x0053AF40` `call TownLevelLeave` before `0x0053AF4F` `call
+    PlayerChangeAct`, and `0x00538191` the per-frame call (vendors C2); `0x00649E9A` `UNIT_CollMark` under the room-arg
+    test and `0x005A7CB1` after `0x005541B0` returns 0 (collision, the two marks); `0x00625560`: stat list `+0x5C`, 0
+    with none, `StatListGetStat` − `StatListGetBaseStat` (cube `UnitStatDelta`); `0x0066B4D7` the `+0x60` store in
+    `RoomReleaseWrap` (seeds).
+  - **Point (1), the two plan 0038 items.** *items/cube G4's output cell `[C]`: accepted.* cube 45 is **raised** in
+    items/0008 § Plan 0038 batch S2c and the S2c review accepted the placement model (ruling 3, `InvPlaceItem` I → C,
+    scope: the player branch on an empty grid, which the spec keeps). Closing the open question needed a statement, and
+    stating it at `[I]` against an accepted `[C]` would understate it. *drlg/collision § G2 edge points at `[I]`:
+    accepted.* S4a rows 43 and 44 are raised (`[C]`) in drlg/0005 and accepted, but the drlg/collision cluster still
+    waits on H5b and H5d, so the raise of the G2 statements (barriers, merge, and these edge points) stays with plan
+    0038 Phase 3. The asymmetry is acceptable: one pre-existing statement closed on an accepted raise, against a new
+    text that leaves the raise where it is planned. Plan 0038 Phase 3 must count cube 45 as already applied and raise
+    the G2 edge-point statement with rows 43–44 (note in the plan 0038 log).
+  - **Point (2), the save/d2s F1 contradiction: accepted.** F1's run sentence now limits "code only" to the param
+    branch, and the clamp `[C]` gives the code range, the 364 entries and experience's 32-bit exemption, as the B10
+    finding does. Fixes: the follow-on `[I]` (8191.99 after a reload) now cites `D2S_LoadFinish`; the merged-ids `[C]`
+    note now also cites S1a rows 87 and 101 for its save-side half, and says the I3/I4 pseudocode re-tag is plan 0038
+    Phase 3's.
+  - **Point (3), the amendments: accepted** (above).
+  - **Point (4), not determinable statically: accepted.** `kids[n]` is narrowed with the reason and the route (a run
+    or a declared-stack emulation); the host bytes are a body `[I]` with the reimplementation rule (carry unchanged);
+    status bit 1 is an `[L]` labelled out of plan, not "moved".
+  - **Point (5), held items: accepted.** data/excel (P1b (a)) and the items/uniques-sets half of Q22 wait for P1c; the
+    vendors half of Q22 (the gambled unique marked made) is folded here, which is right, since the open question was
+    vendors'. The P1b backlog entry stays annotated, not struck.
+  - **Other corrections confirmed:** sockets-runewords *Patience*, quality's "two quivers" (`mboq`/`mxbq`), tc's
+    "upgrade bits" (forced ethereal and sockets, `ce=` without effect).
+  - **Fix, research map.** Three rows had the new clause spliced into the old one's punctuation (items/tc, items/affixes,
+    save/d2s: "…from S2b: both line sets…", "…corpse record: merc header…"); rewritten. The other nine rows are right.
+  - **Gate:** fast tier green (the 15 W4 `based_on` warnings are the filed wiki follow-up).
+  - **Next:** the owner merges `lane/p39s`; the W4 wiki follow-up; P2 for data/excel and items/uniques-sets after the
+    P1c review.
+- **2026-10-17 — W4 wiki refresh and rng W1 anchors (spec-writer, `lane/wiki5`, from `main` `4a0d8b2`; review pending).**
+  - **Wiki.** Nine pages re-read against `git diff` of each `based_on` spec since the page's date and restated where the
+    fold touched them: items, items-other-paths, saves, characters, game-data, randomness, levels, monsters, objects.
+    Hedges kept: code-read points are said as "read from the code", the confirmed ones (cube output cell, Patience, the
+    21-bit clamp of B10, the populated and client-copy room bits, the override survey) as checked. W4 15 → 0
+    (16 dates bumped: rng/README's from the anchor edit below).
+  - **Spec W1.** rng/README L34, L36, L49 and rng/seeds L532 now carry their finding's anchors; no tag changed (the
+    S1b raises are plan 0038 Phase 3's). data/excel's 11 held for the P1c fold. W1 15 → 11.
+  - **Gate:** fast tier green. **Next:** architect review (backlog).
+- **2026-10-17 — `lane/wiki5` review (architect): accept with fixes.** Every changed wiki statement traced to its spec
+  at the same strength: code-read points are worded "read from the code" (no-death-drop writers, sparkle gold/potions,
+  monster owners, staff-mods test, forced ethereal/sockets, runeword save row, stale slot, stat-delta tests, act-change
+  count, gambled uniques, Cow King quality, cursor cube, move gate, object ilvl 1, `0x0CF`, status bit 1, NPC slots,
+  corpses, `RareFormat`, stored item seeds, initialiser survey, bits 3/14, edge merge, created-dead marks, Objects
+  readers); "confirmed" only on `[C]` (save/d2s F1 clamp, 364 entries, 8191.99; I4 merged ids; cube G4, 100 placements
+  of 100; Patience; rng/seeds step note 6 populated and client-copy bits). The "own magic find counts twice" sentence
+  matches items/quality M3 (`[I]`, `SpecialMonPlace` 0x005A0B9B). rng anchors: all ten `fn:` resolve in
+  `re/symbols.csv` (RNG_Step/Range/RangeB/RangePow2/RangePow2Plus/SeedInit/SeedInitOne, DRLG_ActCreate,
+  DRLG_RoomCreate, sub_00676150_LinkPick, the last one of drlg/0007's link callbacks); run:2026-10-11-rng-emu has its
+  heading in findings/rng/experiments.md; `RNG_Step`'s single static caller makes the ActCreate/RoomCreate steps
+  inlined copies. Gate fast tier green, E8 links and E11/W4 `based_on` clean, 22 warnings (11 W1 data/excel held for
+  P1c, 11 W3). **Fixes applied on the lane:** (1) items § magic find: "MonStats minions of a champion-pack member" was
+  wrong, the spec says party minions of a `SetBoss` leader; "a boss placed by a map preset" restated as the
+  special-monster placement (a superunique, for example), and the twice-counted MF scoped to its own kills. (2) items §
+  staff mods: the type test applies only when the skill names an item type (affixes I5, `itypea1` ≥ 1). (3) items §
+  overrides: the survey lives in items/quality § F, now linked beside uniques-sets § B. (4) saves § item fields: the
+  stored prefix is rebased, so "the ids are the merged numbers" now says they come from them. (5) rng/README § Tables:
+  the no-table line cited six primitives while 3b76e9b's subject says seven; `fn:RNG_RangePow2Plus@0x00472240` added
+  (no tag change). No follow-ups.
 - **2026-10-17 — Phase 1 batch P1c done (reverser, `lane/p39c`, static).** 8 ledger items (B3, B5, B6, Q4, Q26–Q29) and
   three reverser follow-ups from the backlog: the P1b review's (a) bit-17 writers and (b) `MonSetOwner` sites, and the
   plan 0038 round-3 review's id-573 survey. No game run. Ghidra ran on the lane's copy (`ghidra-p39c`). The work used
@@ -404,7 +525,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   | B6 | stale | both notes are in harness-play.md ("Every recipe needs `"game"`", "Reinstall before every launch") |
   | Q4 | answered | the 191 `g_pMonStats` reads all index by position (177 bounded, 6 fixed `imp` classes, 5 loader post-pass, 3 alloc/free); none searches by `Id`: [data/0001 § P1c](../findings/data/0001-excel-loader.md#plan-0039-batch-p1c-2026-10-17) `[I]` |
   | Q26 | answered | `MonsterInit` → `MonRegionFindAdd` appends a class new to its level region and rolls its sets on the unit seed; the 1 785 logged creations fit the found, appended or stale step count exactly, the 6 and 15 included: [monsters/0002 § P1c](../findings/monsters/0002-room-population.md#plan-0039-batch-p1c-2026-10-17) `[C]` |
-  | Q27 | answered (builds on H4b) | `OBJ_OperateDispatch` → `ShrineOperate` (OperateFn 2) → `g_ShrineFns[20]` → `0x00583050` → nearest qualifying monster (filter and distance read) → `MonMakeSpecial`: [monsters/0003 § P1c](../findings/monsters/0003-special-monsters.md#plan-0039-batch-p1c-2026-10-17) `[I]`; still d-owner for a run |
+  | Q27 | answered (builds on H4b) | `OBJ_OperateDispatch` → `OBJOP_Shrine` (OperateFn 2) → `g_ShrineEffects[20]` → `0x00583050` → nearest qualifying monster (filter and distance read) → `MonMakeSpecial`: [monsters/0003 § P1c](../findings/monsters/0003-special-monsters.md#plan-0039-batch-p1c-2026-10-17) `[I]`; still d-owner for a run |
   | Q28 | answered | 67/68/69/100/352 are MonStatsInit B5 constants and 336 is the B10 MonStats skill at level 1 + `MonsterSkillBonus` (`[C]`, 72 logged blocks); `Share` and the equipment columns have no reader `[I]`; the description is `STRTABLE(g_HireDescStrIdx[HireDesc])` `[I]`, the table `[C]` by data: [hirelings/0001 § P1c](../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17) |
   | Q29 | answered | `ExpGrantCapped` is the Ancients reward (a5q5, word 39); 75 % of the death loss actually taken goes onto the corpse and back to its owner, and a player killer takes none; bit `0x20` comes from the class select in an expansion install plus a checkbox: [player/0001 § P1c](../findings/player/0001-creation.md#plan-0039-batch-p1c-2026-10-17) `[I]` |
   | P1b (a) | answered | 30 direct bit-17 writers (20 plain ORs, not 21), by unit kind and MonAI row: [items/0001 § P1c](../findings/items/0001-tc-resolution.md#plan-0039-batch-p1c-2026-10-17) `[I]` |

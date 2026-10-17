@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/tc, items/quality, items/affixes, items/properties, items/sockets-runewords, items/cube, save/d2s]
 consumed_by: [items/tc, objects, monsters/pool]
-tags: {C: 80, I: 82, L: 6}
-updated: 2026-10-16
+tags: {C: 81, I: 88, L: 3}
+updated: 2026-10-17
 ---
 
 # Quest drops, quest rewards and special drops
@@ -279,6 +279,13 @@ Step notes:
 - C1. [C] The object case: the Hellforge's gems and rune took the area level of the forge's level (27 in Normal), and
   a monster's drop took the monster's level (Andariel 12, Hephasto 28 in Normal). In Hell the forge's drops took ilvl
   85, `MonLvl3Ex` of level 107, and the Cow King's potions his level 31. (run:2026-10-16-quest-drops, tbl:Levels.txt:MonLvl3Ex)
+- C1. [I] **An object with no level record.** For a source that is neither monster nor player, the level is
+  `LevelMonLvl(level of the source's room, difficulty, expansion)`: it returns 1 for a difficulty ≥ 3, a level id ≤ 0
+  or past the `Levels` count, or no record, else `MonLvl` or `MonLvlEx` of the difficulty; a unit with no room gives
+  level id 0, and any value below 2 becomes 1. So an object in a level with no `Levels` record, or with a monster level
+  of 0 or 1 (the towns), drops at ilvl 1. (0x00559A6F–0x00559AEF, 0x0061DCA0–0x0061DCF4,
+  fn:sub_00559A30_DropItemAtUnit@0x00559A30, fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0, tbl:Levels.txt:MonLvl1,
+  [items/0010 § Plan 0039 batch P1b](../../findings/items/0010-quest-drops.md#q20-the-open-questions-of--open-questions))
 - C2. [I] Every `QUESTS_GiveItem` creation is a fresh store-path creation (`ITEMS_CreateForStore`), as
   [items/vendors](vendors.md) uses. (fn:ITEMS_CreateForStore@0x00559CE0)
 
@@ -351,8 +358,15 @@ D3. CowKingDeath (quest hook 4):                                   [C] (fn:sub_0
   superunique TC (`Cow King`) dropped first, as for any kill; then killer word 4 bit 10 was set (0x00593EFB), the
   per-player code set it again (0x00593E63), and eight `DropItemAtUnit` calls with code `vps ` and quality 0 ran on an
   unchanged quest seed. The potions came out with **quality 2** and ilvl 31, the Cow King's level: the quality-0
-  request yields a quality-2 item (which `ItemCreateByQuality` case maps it is an open question).
-  (fn:sub_00593E70_A1Q4_CowKingDeath@0x00593E70, fn:sub_00559A30_DropItemAtUnit@0x00559A30, run:2026-10-16-quest-drops)
+  request yields a quality-2 item. (fn:sub_00593E70_A1Q4_CowKingDeath@0x00593E70, fn:sub_00559A30_DropItemAtUnit@0x00559A30,
+  run:2026-10-16-quest-drops)
+- D3. [I] **Why quality 2.** Quality 0 in the record makes `ItemRollQualityCreate` run its drawing body (its early return
+  needs a non-zero `+0x30`): it draws on the item seed, reads `ITEMRATIO_Select`, and writes its result first. Then the
+  pre-switch overrides run ([items/quality § F](quality.md#f-boundaries-named-only)): `vps` is of type `spot`, whose
+  `Normal` is 1, so the last override writes 2 whatever the roll gave, and the switch takes case 2, the normal builder.
+  The roll's draws are checked by no log. (0x00556F76–0x00556F7E, 0x005574CC–0x005574DE, 0x005574E3–0x00557567,
+  fn:sub_00556F60_ItemRollQualityCreate@0x00556F60, fn:sub_00557450_ItemCreateByQuality@0x00557450,
+  tbl:ItemTypes.txt:Normal, tbl:Misc.txt:type, [items/0010 § Plan 0039 batch P1b](../../findings/items/0010-quest-drops.md#q20-the-open-questions-of--open-questions))
 - D3. [I] `done` is bit 0 of the word: the bit Diablo's death script sets in word 26 and Baal's in word 40 (§ B), so a
   killer qualifies once Diablo (classic) or Baal (expansion) is killed in that difficulty. The two refusals (bit 10
   already set; Baal not done), the no-killer case and the classic word 26 test were not run. Word 4 bit 10 is the bit `CUBE_CowPortalOpen` refuses on ([items/cube § L](cube.md#l-the-special-outputs-kinds-1-2-3)).
@@ -409,6 +423,17 @@ D5. ForgeWave (timer), forge active:                               [C] (fn:sub_0
   `difficulty ≤ stat` jump at 0x005581D6 on the inventory walk; the cursor branch has the same compare at 0x0055816D.
   (fn:sub_00558110_PlayerFindItemByCode@0x00558110, tbl:Weapons.txt:questdiffcheck, tbl:Misc.txt:questdiffcheck,
   run:2026-10-16-quest-drops)
+- D4. [I] **The two branches test different flags.** The cursor item, when its code matches, is returned unless its
+  record has `quest` ≠ 0 **and** its stat 356 is below the difficulty; `questdiffcheck` is not tested there. A cursor
+  item that fails falls through to the inventory walk, which skips page 1 and returns a match when `quest` = 0, or
+  `questdiffcheck` = 0, or stat 356 ≥ the difficulty. A missing stat reads as 0 (no stat list, a stat out of range or
+  with no record, no entry). So a quest item with neither `questdiffcheck` nor stat 356 counts on the cursor only in
+  Normal: the cube (`box`, the only stock `quest` row with `questdiffcheck` blank) held on the cursor is found in Normal
+  and not in Nightmare or Hell, while in the inventory it counts in every difficulty. An item with `questdiffcheck`
+  carries stat 356 = its difficulty, so both branches agree for it. (0x0055814F, 0x0055815C–0x0055816F,
+  0x005581B3–0x005581D8, 0x00625496, 0x00624F8C, fn:sub_00558110_PlayerFindItemByCode@0x00558110,
+  fn:INV_GetCursorItem@0x0063C1E0, fn:STATS_GetUnitStat@0x00625480, tbl:Misc.txt:quest, tbl:Misc.txt:questdiffcheck,
+  [items/0010 § Plan 0039 batch P1b](../../findings/items/0010-quest-drops.md#b12-the-cursor-branch-of-playerfinditembycode))
 - D5. [C] Six operations (three Normal, two Nightmare, one Hell, one player each, so `n` = 1) made 24 waves in the
   order perfect, flawless, flawless, standard and six runes from the difficulty's table (`r03 r07 r10` Normal, `r13
   r19` Nightmare, `r19` Hell: `Range(11)` = 4, the fifth entry of `r15`…`r25`), all quality 2. So the rune table is
@@ -494,6 +519,14 @@ Step notes:
   set (not `box`), object 4 when word 4 bit 0 is set, otherwise the pair table's word bit 0; finally when `0x0055CA40`
   is non-zero for this or any other player. Its four callers are item-move paths. (fn:sub_0055CC90_ItemQuestGate@0x0055CC90,
   fn:QUESTRECORD_GetState@0x0065C310)
+- [I] **`0x0055CA40` is "the inventory already holds this quest item or this carry-one unique".** It walks the
+  inventory, skipping the item X itself, and returns 1 for: when X is a unique whose `UniqueItems` row has `carry1`, an
+  item of quality 7 with the same row (not on page 1); or an item not on page 1 whose `quest` equals X's (non-zero) and
+  whose code is X's, or pairs with it: `j34`/`g34`, `bks`/`bkd`, `d33`/`g33`, `hst`/`msf`, `hst`/`vip` (either way), or
+  `qf2` with `qf1`, `qhr`, `qey` or `qbr`. So the gate refuses a second copy, and a quest item whose finished form (the
+  Horadric Staff, Khalim's Will) is held. (0x0055CA40–0x0055CC80, fn:sub_0055CA40_InvHoldsQuestDup@0x0055CA40,
+  fn:sub_0055CA00_QuestCodePairTest@0x0055CA00, tbl:UniqueItems.txt:carry1, tbl:Misc.txt:quest,
+  [items/0010 § Plan 0039 batch P1b](../../findings/items/0010-quest-drops.md#q20-the-open-questions-of--open-questions))
 - [I] Per-player loops (`sub_005537D0_GameForEachUnit`) visit every player unit of the game except one in state 7
   (`playerbody`), wherever it stands; party loops (`sub_00540510_PartyForEach`) visit one party. (fn:sub_005537D0_GameForEachUnit@0x005537D0,
   fn:sub_00540510_PartyForEach@0x00540510)
@@ -553,6 +586,20 @@ F1. Imbue(player, item):                                          [C] (fn:NPC_Me
   a throwable (unless unit flag bit 25 at `Unit+0xC8`), a quest item other than `leg`, an item holding socketed
   items, a socketed item (`0x800`), and qualities 4–9. So only low, normal and superior bases (1–3) are imbued.
   (fn:sub_0062C590_ItemCanImbue@0x0062C590, fn:sub_00629C80_ItemMagicStockable@0x00629C80, tbl:Weapons.txt:bitfield1)
+- F1. [I] **`ITEMS_GetType` = 4 is `gold`**: it returns the record's own `type` (`+0x11E`), and ItemTypes row 4 is
+  `gold` (rows 5–7, `bowq`, `xboq`, `play`, are the types the personalize test refuses). **Item flag `0x1000` marks a
+  monster's own equipment**: `ItemCreate` copies it from the creation record, and `MonEquipItemCreate` sets it on each
+  item it makes and equips on a monster; besides the three service tests, the trade test refuses a non-quest item with
+  it. (0x00558EE6–0x00558EFB, 0x00573B8D–0x00573B95, 0x0056777D, fn:ITEMS_GetType@0x00628700,
+  fn:sub_00573B20_MonEquipItemCreate@0x00573B20, fn:sub_00567620_TradeItemTest@0x00567620, tbl:ItemTypes.txt:Code,
+  [items/0010 § Plan 0039 batch P1b](../../findings/items/0010-quest-drops.md#q20-the-open-questions-of--open-questions))
+- F1. [I] **The imbue record's `+0x40` reaches no builder.** In the creation path only the set pick and the unique
+  builder read record `+0x40`; `ITEMS_BuildRare` reads the record for its staff mods and forced affixes but not `+0x40`
+  (an operand scan of the creation, fallback, staff-mods, affix and rare-name code finds no other reader). The imbue
+  writes quality 6, which an override can change only to 4 or 7. (0x005C2664, fn:ITEMS_BuildRare@0x005C21A0,
+  fn:ITEMS_BuildSetPick@0x005C25C0) [C] No imbued item takes the unique path: every stock base with the `unique` flag is a
+  `quest` item other than `leg` or has `bitfield1` bit 0 clear (`std`), so `ItemCanImbue` refuses it. (data check,
+  tbl:Weapons.txt:unique, tbl:Misc.txt:bitfield1, fn:sub_0062C590_ItemCanImbue@0x0062C590)
 - F1. [I] The service tests word 3 bit 1 only: the run's reward saves had bit 15 beside bit 1 (the loader's copy) and
   the imbue was served in every session. (fn:sub_00591790_A1Q3_ImbueDone@0x00591790, run:2026-10-16-quest-drops)
 
@@ -791,7 +838,9 @@ logs of run:2026-10-16-quest-drops (`workspace/logs/quests-s3-<seed>-….log`, p
 
 - [findings/items/0010-quest-drops.md](../../findings/items/0010-quest-drops.md): §§ 1–7 (the quest objects and seed,
   B6 and the killer, the three bits per class, the special drops, the quest items, the NPC services, the `boss` test),
-  § 8 (the boundary), [§ Phase 2](../../findings/items/0010-quest-drops.md#phase-2-runtime-results-run2026-10-16-quest-drops)
+  § 8 (the boundary), [§ Plan 0039 batch P1b](../../findings/items/0010-quest-drops.md#plan-0039-batch-p1b-2026-10-17)
+  (the cursor branch, the object ilvl, the Cow King's case, the service flags, the imbue's `+0x40`, `0x0055CA40`),
+  [§ Phase 2](../../findings/items/0010-quest-drops.md#phase-2-runtime-results-run2026-10-16-quest-drops)
   (the promoted claims), § 9 (the operate slots and object event 7) and *Leads used* (17 verdicts).
 - [findings/items/experiments.md § run:2026-10-16-quest-drops](../../findings/items/experiments.md#run2026-10-16-quest-drops):
   53 sessions, 0 mismatches; the shortfalls; and its [owner-played addendum](../../findings/items/experiments.md#owner-played-addendum-same-run-id-2026-10-16-result)
@@ -816,12 +865,12 @@ logs of run:2026-10-16-quest-drops (`workspace/logs/quests-s3-<seed>-….log`, p
   chests' gold and Wirt's gold; Mephisto's kill-time bit 0 for a fresh killer; the Countess in Hell; the Cow King's two
   refusals.
 - [L] How `sub_0055A090_DropGoldAmount` splits Baal's amount into piles, and whether it draws.
-- [L] The ilvl `DropItemAtUnit` gives a drop from an object in a level without a `Levels` record, and which
-  `ItemCreateByQuality` case takes the Cow King's quality 0 (observed: the eight `vps` came out with quality 2, D3; the
-  code path is not read).
-- [L] The meaning of `ITEMS_GetType` = 4 and item flag `0x1000` in the three service tests, and whether the imbue
-  record's `+0x40` (the old item's file index) can reach the rare build. ([items/0010 § Open questions](../../findings/items/0010-quest-drops.md#open-questions))
-- [L] `0x0055CA40` (the holder test of the quest-item gate) is not read.
+- ~~The ilvl `DropItemAtUnit` gives a drop from an object in a level without a `Levels` record, and which
+  `ItemCreateByQuality` case takes the Cow King's quality 0.~~ Answered: ilvl 1 (C1 note), case 2 (D3 note).
+- ~~The meaning of `ITEMS_GetType` = 4 and item flag `0x1000` in the three service tests, and whether the imbue
+  record's `+0x40` can reach the rare build.~~ Answered: `gold`, a monster's own equipment, no (F1 notes).
+- ~~`0x0055CA40` (the holder test of the quest-item gate) is not read.~~ Answered: the carry-one and quest-duplicate
+  test (§ E step notes). All three from [items/0010 § Plan 0039 batch P1b](../../findings/items/0010-quest-drops.md#plan-0039-batch-p1b-2026-10-17).
 - [L] The event-7 route at run time for the quest objects other than the Hellforge (Wirt's gold, classes 26, 122, 131,
   189, 341, 367, 371, 459–461, 474–476): no breakpoint sat on the thunk or `QUESTS_ObjectEvent`; a run that clicks
   Wirt's body would settle it. The first event-7 queue of classes 122, 371 and 459–461 is not read.

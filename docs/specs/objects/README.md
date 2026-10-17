@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, drlg/preset, drlg/collision]
 consumed_by: [monsters/spawn, drlg/collision, items/tc, items/quality, items/quest-drops]
-tags: {C: 136, I: 69, L: 5}
-updated: 2026-10-16
+tags: {C: 136, I: 71, L: 4}
+updated: 2026-10-17
 ---
 
 # Objects: room object population, placement, preset objects, creation rolls and the chest drop
@@ -75,6 +75,12 @@ All tables are the compiled `.bin` records, indexed by record position ([data/ex
 Not read by any code of this spec: ObjGroup `SHRINES` and `WELLS`, Shrines `rarity`, Objects `SpawnMax`, `TrapProb`,
 `Act`. [I] ([objects/0001 § Data touched](../../findings/objects/0001-object-population.md#data-touched),
 tbl:ObjGroup.txt:SHRINES, tbl:Shrines.txt:rarity, tbl:Objects.txt:TrapProb)
+[I] Beyond this spec: `SpawnMax` (`+0xC3`) and `Act` (`+0x170`) have no reader in the whole image as far as an operand
+scan can tell (no `+0xC3` displacement at all; the one byte operand at `+0x170` is a stack array at 0x00694D9E), and
+none of the 89 functions that fetch an Objects record or read the table pointer reads `TrapProb` (`+0xCC`). A reader
+through a computed address, a wider read or a record pointer kept elsewhere is not excluded. (fn:OBJECTS_GetRecord@0x00640E90,
+tbl:Objects.txt:SpawnMax, tbl:Objects.txt:Act, tbl:Objects.txt:TrapProb,
+[objects/0001 § Plan 0039 batch P1b](../../findings/objects/0001-object-population.md#plan-0039-batch-p1b-2026-10-17))
 
 ### Runtime state
 
@@ -782,6 +788,10 @@ J3. ObjectChestDrop(object, player, q):                           [C] the drop's
   (`Act 3 Chest B` twice, `Act 1 Chest A` in the run): only its quality is forced. The confirmation covers this shape (no
   draw of its own, one resolver call), not the tier formula. (0x00585CC5,
   fn:TC_ResolveDrops@0x0055A6D0, data:g_ChestTCs@0x0096C5F4, run:2026-10-15-objects)
+- J3. [I] A sparkle chest's gold or potion is built as quality 2 whatever `q` is: the last pre-switch override of item
+  creation writes 2 for every base whose type has `Normal` = 1 (`gold` and the potion types; `elix` excepted)
+  ([items/tc § J](../items/tc.md#j-object-drops-named-only)). (0x005574E3–0x00557567, tbl:ItemTypes.txt:Normal,
+  [items/0001 § Plan 0039 batch P1b](../../findings/items/0001-tc-resolution.md#plan-0039-batch-p1b-2026-10-17))
 - J3. [I] **The tier.** `ObjectChestDrop` takes three values of `sub_0061DCA0_LevelMonLvl` (the level's monster level
   for the difficulty, the value [monsters/pool § E4](../monsters/pool.md#e-the-monster-level-sub_00573cb0_monstatsinit)
   calls the area level): the level of the object's room, then the act's two reference levels of the two-level-per-act
@@ -1084,10 +1094,12 @@ fn:sub_00585B90_ObjectChestDrop@0x00585B90, run:2026-10-15-objects)
   running position kept), the door masks `0x804` and `0x400`, and units that move between their room's activation
   and its window (players, wandering monsters; their moves are not logged, and none of the 5859 tests needed one).
   (fn:OBJINIT_GoldPiles@0x0054F8C0, fn:UNIT_GetCollMask@0x006209D0)
-- [L] Which code, if any, reads Objects `TrapProb`, `SpawnMax`, `Act` and the zero byte ranges; the `InitFn` callee
-  scan stopped at depth 3 ([objects/0001 § Open questions](../../findings/objects/0001-object-population.md#open-questions)).
-- [L] How the resolver applies a forced quality to a TC entry that is gold or a potion (a sparkle chest passes one on
-  every drop); owner [items/tc](../items/tc.md).
+- [L] Which code, if any, reads Objects `TrapProb` and the zero byte ranges, narrowed (plan 0039 P1b): `SpawnMax` and
+  `Act` have no reader by a whole-image operand scan, and no record fetcher reads `TrapProb` (*Inputs*); still open is a
+  function that keeps an Objects record pointer from elsewhere and reads `+0xCC` later
+  ([objects/0001 § Plan 0039 batch P1b](../../findings/objects/0001-object-population.md#plan-0039-batch-p1b-2026-10-17)).
+- ~~How the resolver applies a forced quality to a TC entry that is gold or a potion.~~ Answered in
+  [items/tc § J](../items/tc.md#j-object-drops-named-only): built as quality 2 (J3 note here).
 - [L] **Unreachable contradictions of the cross-check** (precedent: `sparsePopulate`, plan 0014): `DENSITY` 128 is
   fatal (`cmp bl, 0x80; jae` at `0x005527CE`) where src:d2dfg-blizzard allows it; a shrine row with `Parm0` 0 makes a
   uniform pick over all codes where the guide says health shrine. Only modified data reaches either.

@@ -725,6 +725,7 @@ fn:sub_005A2D10_UModPartyDeadDeath@0x005A2D10, data:g_UModEventFns@0x0073C0B8, t
   is its own owner.
 - The `*Min` clamp and the order MF-before-minimum: no logged chance came near a minimum; it needs a large
   `ilvl − qlvl` (about 300 for the unique test) or a very high MF, or a different table, so it may stay `[I]`.
+  (0x00558767–0x0055876E, run:2026-10-12-quality, run:2026-10-13-quality)
 - Normal and Hell difficulty with magic find, negative MF, and the two unexercised early returns (unique flag, quest).
 - The creation-side roll `sub_00556F60_ItemRollQualityCreate` and the pre-switch overrides in
   `sub_00557450_ItemCreateByQuality`: read with the creation rows (`items/uniques-sets`, `items/affixes`).

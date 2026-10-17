@@ -931,14 +931,14 @@ Rows Q27 and B3 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static: Ghi
 section names the whole path and the target test.
 
 - [I] **Dispatch.** `OBJ_OperateDispatch` calls `g_ObjOperateFns[OperateFn]`. Slot 2 (`0x00732D20`, the one reference to
-  it) is `sub_00583C70_ShrineOperate`. That function acts only on a shrine whose object data `+0x0C` is 0 and whose
+  it) is `OBJOP_Shrine`. That function acts only on a shrine whose object data `+0x0C` is 0 and whose
   mode is 0, which means a shrine not yet used. It marks the shrine used (`+0x0C` = operator id + 1, mode 1) and reads
-  the shrine record (`ObjectData+0x08`). It then calls `g_ShrineFns[Code]`, a table of 12-byte rows bounded by
-  `0x00732EAC`, through `IsBadCodePtr`. A NULL row falls back to `0x005828E0`. A non-zero record byte `+0x10` queues unit event 5
+  the shrine record (`ObjectData+0x08`). It then calls `g_ShrineEffects[Code]`, a table of 12-byte rows bounded by
+  `0x00732EAC`, through `IsBadCodePtr`. A NULL row falls back to `0x005828E0` (`SHRINE_Refill`). A non-zero record byte `+0x10` queues unit event 5
   `+0x10`·1 200 + 1 frames later. Row 20 (`0x006E1940`, the one reference to `0x00583050`) is the Warping
   Shrine (`Shrines.txt` row 20, effect "nearest monster becomes unique").
-  (fn:OBJ_OperateDispatch@0x00584420, data:g_ObjOperateFns@0x00732D18, fn:sub_00583C70_ShrineOperate@0x00583C70,
-  data:g_ShrineFns@0x006E1850, tbl:Shrines.txt:Code)
+  (fn:OBJ_OperateDispatch@0x00584420, data:g_ObjOperateFns@0x00732D18, fn:OBJOP_Shrine@0x00583C70,
+  data:g_ShrineEffects@0x006E1850, tbl:Shrines.txt:Code)
 - [I] **`sub_00583050_ShrineWarping(ctx)`** takes the operator (`ctx+8`) and its position. It calls
   `sub_0065A800_NearestUnitFind(operator, x, y, 0, filter 0x00582750)`. On a hit it jumps to `MonMakeSpecial` with
   `ECX` = game and `EDX` = the monster (0x005830C7–0x005830CC). With no hit, nothing happens.

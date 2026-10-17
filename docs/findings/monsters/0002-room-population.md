@@ -481,7 +481,8 @@ ChampionMemberMark(u, mod):                                              ; fn:su
   The chance is a data value (MonUMod record 0, `+0x1C`). (fn:sub_005A0760_SpecialModsRoll@0x005A0760, 0x005A0817, 0x005A0825, run:2026-10-13-mon-spawn)
 - [C] **By data:** MonUMod `+0x1C` is the `constants` column, and row 0 holds **20**. `monumod.bin` has 43 records of 0x20
   bytes, and the u32 at `+0x1C` equals the `constants` column of `monumod.txt` on all 43 rows; row 0 is `none`, constant 20,
-  `*constant desc` "champion chance". The table doc is still the archivist's (backlog). (`monumod.txt` `constants`, no table doc yet)
+  `*constant desc` "champion chance". The table doc is [MonUMod](../../tables/MonUMod.md). (tbl:MonUMod.txt:constants,
+  0x005A0817)
 - [C] That value is the champion chance: a random special is a champion when `Range(boss.seed, 100) < 20`, i.e. 20 of 100.
   This is the reading of `0x005A0817` (load, `Range(100)`, `jge`), and the run logged 24 such rolls on 24 specials:
   champion exactly when `r < 20` (4 champions, `r` = 0, 9, 4, 15). (0x005A0817, fn:sub_005A0760_SpecialModsRoll@0x005A0760, run:2026-10-13-mon-spawn)

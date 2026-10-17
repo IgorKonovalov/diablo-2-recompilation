@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng]
 consumed_by: [drlg/overview, drlg/room-tiles, drlg/*, monsters/spawn, objects, items/*]
-tags: {C: 76, I: 7, L: 6}
-updated: 2026-10-16
+tags: {C: 78, I: 9, L: 4}
+updated: 2026-10-17
 ---
 
 # Seed tree: game → act → level → room → unit
@@ -359,6 +359,19 @@ Step notes:
    2072 room-driver tests with bit 0 set, none followed by a pass; each of the 558 passes followed a test
    with bit 0 clear; [rng/0002 § Plan 0038 batch H5c](../../findings/rng/0002-seed-tree.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)) In the earlier runs every
    server-act room got `flags` 0 and every client-act room got 4. [C] (run:2026-10-11-seed-tree-p1)
+   **`R[+0x28]` bit `0x40000` marks a room of the client act copy.** Its only writer is `DRLG_RoomCreate`, when the
+   level's `+0x04` has bit `0x10`; `DRLG_LevelCreate` sets that bit when the act's `+0x8C` bit 0 is set, and
+   `DUNGEON_ActCreate` passes 1 there for the client copy and 0 for the server copy. Second source: the flags rule held
+   on all 2071 activations of run:2026-10-16-sweep-roomk (1332 with flags 4). [C] (0x0066B47C, 0x00642B3D, 0x006194F5,
+   fn:DRLG_RoomCreate@0x0066B3E0, fn:DRLG_LevelCreate@0x00642AE0, fn:DUNGEON_ActCreate@0x006194A0,
+   run:2026-10-16-sweep-roomk, [rng/0002 § Plan 0039 batch P1a](../../findings/rng/0002-seed-tree.md#plan-0039-batch-p1a-2026-10-16))
+   **`R[+0x60]` bit 0 is the "already populated" bit kept across a release.** It is 0 at creation;
+   `RoomReleaseWrap` stores the released active room's `flags` bit 0 there, and `LevelRoomStateRestore` ORs it back
+   from the array `LevelUnload` saved. So a room populated, released (or unloaded) and activated again comes back with
+   `flags` 1 and is not populated a second time. Second source: run:2026-10-16-sweep-roomk (1516 releases all through
+   the wrapper with `+0x60` = the active room's bit 0; 25 restores setting the bit on 90 rooms). [C] (0x0066B419,
+   0x0066B4D7, 0x006423C0, fn:sub_0066B4C0_RoomReleaseWrap@0x0066B4C0, fn:sub_00642390_LevelRoomStateRestore@0x00642390,
+   run:2026-10-16-sweep-roomk, [rng/0002 § Plan 0039 batch P1a](../../findings/rng/0002-seed-tree.md#plan-0039-batch-p1a-2026-10-16))
    **The server and client copies of one DRLG room can get different active-room seeds**, because
    their k can differ: of the 9 rooms activated in both copies, 6 (seed 12345) and 8 (seed 777) got
    different seeds. Gameplay uses the server copy. [C] (run:2026-10-11-seed-tree-p1) The cause is the
@@ -392,6 +405,15 @@ Step notes:
    The object region takes exactly draw 2: `OBJRGN_Create` steps the game seed once and seeds the game-wide
    object-region seed with `Init(low)` ([objects § A](../objects/README.md#a-the-object-region-seed-and-level-records-game-creation)). [C]
    (fn:OBJRGN_Create@0x00546C60, run:2026-10-15-objects)
+   **Stored item seeds.** `ItemCreate` replaces the unit seed and the item-data seed with `Init(rec+0x48)` and
+   `Init(rec+0x4C)` only when its third argument or `rec+0x2C` is non-zero. Of its 20 call sites, 19 (drops, gold, the
+   store, the cube output, the imbue, objects, traps, the missile drop) pass 0 on a zeroed record, so their seeds come
+   from the game seed as above. The one that sets `+0x2C` is `ItemCreateFromOldRec`, reached only from the version-`0x47`
+   item-list reader of the save readers; a current save restores its items through `ItemCreateFromSave`, which does not
+   call `ItemCreate`. So only an item read from an old (version-`0x47`) item list keeps stored seeds this way. [I]
+   (0x00558E47–0x00558E79, fn:sub_00558D90_ItemCreate@0x00558D90, fn:sub_00530F40_ItemCreateFromOldRec@0x00530F40,
+   fn:sub_005337F0_ItemListReadByVersion@0x005337F0, fn:sub_00558CB0_ItemCreateFromSave@0x00558CB0,
+   [rng/0002 § Plan 0039 batch P1a](../../findings/rng/0002-seed-tree.md#which-item-creations-pass-seeds-0x480x4c))
    Draw 3 is `NPCSTORE_CtlCreate`: it seeds the store seed, which is also the hirelings' NPC seed, with `Init(low)`
    ([items/vendors](../items/vendors.md) A1). [C] (fn:NPCSTORE_CtlCreate@0x00536070, run:2026-10-15-vendors,
    run:2026-10-16-hirelings)
@@ -478,6 +500,13 @@ separate objects.
   (fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-11-seed-tree-p1)
 - **`InitOne` before `Init` is dead.** It is overwritten immediately, and neither initialiser draws,
   so it has no observable effect. [I] (fn:GAME_InitSeeds@0x0052C280, fn:sub_00552DF0_UnitSeedInit@0x00552DF0)
+- **Seeds that are not gameplay seeds.** All 103 initialiser call sites (76 functions) are classified by call shape.
+  Besides the tree above, they are: the client automap's global seed `init(0)` (`AutomapTxtLoad`, drawn only by the
+  automap cell pick); two title-screen globals from `RNG_EntropySeed`; and local stack seeds in client/server pairs
+  (constant `0x53454953`, a unit base stat, or other values). None of these feeds the act, level, room, unit or item
+  seeds. The sites that re-seed a unit's `+0x20` or another object's seed lie in the skill and missile code and are not
+  read (*Open questions*). [I] (fn:RNG_SeedInitOne@0x00650E30, fn:RNG_SeedInit@0x00650E40,
+  fn:sub_0061FCF0_AutomapTxtLoad@0x0061FCF0, [rng/0002 § Plan 0039 batch P1a](../../findings/rng/0002-seed-tree.md#the-other-initialiser-sites))
 
 ## Evidence
 
@@ -497,8 +526,10 @@ separate objects.
   ([drlg/experiments.md § run:2026-10-16-sweep-roomk](../../findings/drlg/experiments.md#run2026-10-16-sweep-roomk):
   act-seed steps, activation flags, the `LevelCreate` callers, `T[+0x18]`/`T[+0x20]`, flags bit 0, client units at
   (0, 0), and the step note 2 correction).
+- Plan 0039: [rng/0002 § Plan 0039 batch P1a](../../findings/rng/0002-seed-tree.md#plan-0039-batch-p1a-2026-10-16)
+  (room `+0x28` bit `0x40000` and `+0x60` bit 0, the stored item seeds, the initialiser survey).
 - [findings/data/0001-excel-loader.md](../../findings/data/0001-excel-loader.md): level definition `+0x30` = `Levels.txt:DrlgType`.
-- [README.md](README.md): primitives (`[C]`).
+- [README.md](README.md): primitives (`[C]`; fn:RNG_Step@0x0045C370, fn:RNG_SeedInit@0x00650E40, run:2026-10-11-rng-emu).
 - [drlg/room-tiles](../drlg/room-tiles.md) and [findings/drlg/0002-room-build-draws.md](../../findings/drlg/0002-room-build-draws.md):
   k (step 6b), from run:2026-10-11-drlg-roomk; [drlg/overview](../drlg/README.md): the dispatch of step 4 and the room-creation order.
 
@@ -507,9 +538,8 @@ separate objects.
 - ~~The k room-type draws of step 6b~~: defined in [drlg/room-tiles § k](../drlg/room-tiles.md#k)
   (plan 0008). Its own open questions (the `Orient89Unit` draw, the merge orientation tables, the
   `Trees.ds1` overread) carry over there.
-- [L] What DRLG room `+0x60` bit 0 (→ flags 1) means, and where `+0x28` bit `0x40000` (→ flags 4, the
-  client-act flag drlg/0002 names) is set. The `RoomTile` counts are answered in step note 6. Owner:
-  `drlg/overview`.
+- ~~What DRLG room `+0x60` bit 0 (→ flags 1) means, and where `+0x28` bit `0x40000` (→ flags 4) is set.~~ Answered
+  in step note 6, both confirmed ([rng/0002 § Plan 0039 batch P1a](../../findings/rng/0002-seed-tree.md#plan-0039-batch-p1a-2026-10-16)).
 - [L] Meaning of act `+0x094` vs `+0x484` (which tomb is the real one), the Act III bit `+0x474`, what
   the Act III act-seed consumers under `0x006789B0` decide, and the level-27 bit set at level 6. They are
   placed as entry points in [drlg/overview](../drlg/README.md#act-seed-consumers). Owner:
@@ -520,15 +550,14 @@ separate objects.
   (plan 0004), monster and object plans.
 - ~~The server population pass `sub_0054EC90_RoomPopulate`~~: answered in step note 6 and in
   [monsters/spawn](../monsters/spawn.md) (plan 0014, run:2026-10-13-mon-spawn).
-- [L] The item seeds, narrowed: `sub_00552E90_ItemSeedInit`'s draw gives the item's start seed
-  ([items/uniques-sets § A](../items/uniques-sets.md#a-the-item-seed-at-entry)); still open is which creation paths
-  pass non-zero creation-parameter seeds `+0x48`/`+0x4C` at `0x00558D90` (drops pass none; the imbue copies the old
-  item's and does not use them, [items/quest-drops](../items/quest-drops.md) F1). Owner: plan 0004.
+- ~~The item seeds: which creation paths pass non-zero creation-parameter seeds `+0x48`/`+0x4C` at `0x00558D90`.~~
+  Answered in step note 7a (*Stored item seeds*: only the version-`0x47` item-list reader).
 - [L] **The `D2.ini` route of step 2.** Run:2026-10-16-sweep-roomk contradicted the earlier reading of step note 2
   for the command line only. Whether `GetPrivateProfileIntA` stores a negative or ≥ 2³¹ `seed` value as its
   two's-complement `u32` (so that seeds `0x80000000`…`0xFFFFFFFE` are reachable, and `0xFFFFFFFF` means "no
   override"), was not run ([rng/0002 § Plan 0038 batch H5c](../../findings/rng/0002-seed-tree.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)).
   Owner: reverser, a `D2.ini` session.
-- [L] Other initialiser sites not followed: `LvlTbls.cpp` (`0x0061FCF0`, a global seed `init(0)`); `QUESTS.CPP`
-  (`0x00545D80`) is followed (the quest seed, step note 7a). About 20 of the 76 initialiser-calling functions are
-  covered.
+- [L] **Skill and missile re-seeds**, narrowed: all 76 initialiser-calling functions are now classified
+  (*Reimplementation notes*); the `0x0061FCF0` global is the client automap's. Still unread are the server sites in
+  the skill and missile code that re-seed a unit's `+0x20` or another object's seed, and from what. Moved to the
+  research map's Simulation phase (3), skills and missiles.

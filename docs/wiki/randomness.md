@@ -1,7 +1,7 @@
 ---
 based_on:
-  - docs/specs/rng/README.md 2026-10-11
-  - docs/specs/rng/seeds.md 2026-10-16
+  - docs/specs/rng/README.md 2026-10-17
+  - docs/specs/rng/seeds.md 2026-10-17
   - docs/specs/drlg/room-tiles.md 2026-10-17
 ---
 
@@ -163,14 +163,20 @@ tick), and on its first activation it then gets its presets, its objects and its
 seed, and its density rolls and one step per creation from the game seed. Details are on the
 [monsters page](monsters.md). A flag on the active room marks it as already populated, and the pass skips such a
 room; a run confirmed it (no pass ever followed a check that found the flag set, and every one of 558 passes
-followed a check that found it clear).
+followed a check that found it clear). The DRLG room keeps that flag when its active room is released (or its level
+unloaded) and gives it back on the next activation, so a room is never populated twice. Another bit of the same flag
+value marks the rooms of the client act copy. Both are confirmed in a run
+([seed tree, step note 6](../specs/rng/seeds.md#algorithm)).
 
 ## Units: the game seed, in call order
 
 Every unit the server creates, except players, takes one draw from the game seed and is initialised with it
 ([seed tree, step 7a](../specs/rng/seeds.md#algorithm)). This holds for monsters too: **server monsters are seeded
 from the game seed, not from their room**. An item takes one extra game-seed draw right after its unit seed; that
-draw gives the item's own starting seed, the one its quality, affix and unique picks draw on.
+draw gives the item's own starting seed, the one its quality, affix and unique picks draw on. Item creation can also
+take two stored seeds instead, but by the code only one path passes them: items read from an old-format item list
+of a save. Drops, gold, stores, the cube, the imbue, objects and traps all take their seeds from the game seed, and
+a current save restores its items by another path ([seed tree, step note 7a](../specs/rng/seeds.md#algorithm)).
 
 Because the game seed is shared, a unit's seed depends on everything that drew from the game seed before it
 ([seed tree, step note 7a](../specs/rng/seeds.md#algorithm)):
@@ -272,13 +278,12 @@ From the [RNG core open questions](../specs/rng/README.md#open-questions) and th
   reads its own call sites.
 - The order of game-seed draws after game creation: draws 1 to 5 are pinned, but the gaps between later units are
   open.
-- Which item-creation paths pass their own two creation seeds, instead of leaving them empty as drops do, is not yet
-  followed in the seed-tree spec.
 - Which Act II tomb field is the real tomb, what the Act III bit means, and what decides the other Act III act-seed
   consumers, and what the level-27 bit set while building level 6 means, are open.
-- What the two DRLG room bits behind the active room's flag value mean, and where one of them is set, are open.
-- Only about 20 of the 76 functions that initialise a seed have been followed; others (such as a level-table global
-  seed) are not yet covered.
+- Every function that initialises a seed is now classified, by reading the code. Besides the tree above there are seeds that never feed
+  gameplay: the client automap's own seed, two title-screen seeds and short-lived local seeds. Still unread are the
+  places in the skill and missile code that re-seed a unit or another object, and from what; they belong to a later
+  phase of the project.
 - Read from the code but not confirmed by a run: that the generator reads no table, the "power-of-two range plus
   a base" helper being unused, three of the six on-demand level creators, a room with no tiles at all, which
   player-creation paths run and what they pass, the clock fallback for a unit without a parent, and the room

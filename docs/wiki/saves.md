@@ -1,6 +1,6 @@
 ---
 based_on:
-  - docs/specs/save/d2s.md 2026-10-16
+  - docs/specs/save/d2s.md 2026-10-17
   - docs/specs/player/creation.md 2026-10-16
   - docs/specs/hirelings/README.md 2026-10-16
 ---
@@ -121,6 +121,9 @@ What is confirmed and what is not:
   Nightmare save was also seen to load) and the map seed. The `level` byte is output only: a save edited to say
   level 2 for a level-1 character was rewritten with level 1. A field at `0x02C` is passed through unchanged; what
   it means is unknown.
+- The byte at `0x0CF` belongs to the host, not to the game. Read from the code: the game stores it on load, writes it
+  back on save, and hands it to the host program only in a ladder game; no game rule reads it. A reimplementation
+  carries it unchanged.
 - Read from the code only: the weapon-swap bit, the hotkeys, the two swap skills, the graphics and colour bytes,
   and the reserved bytes. A class byte above 7 is a read error, and an act of 5 or more is read as 0; no run fed
   either.
@@ -139,7 +142,9 @@ makes on them are read from the code:
 
 A new character is first written as a header-only [stub](../glossary.md) with bit 0 set; how the game then builds the
 character is on the [characters](characters.md) page and in
-[player/creation § A](../specs/player/creation.md#a-the-stub-and-the-servers-checks). What bit 1 means is unknown.
+[player/creation § A](../specs/player/creation.md#a-the-stub-and-the-servers-checks). Bit 1 is set only by the
+client's character-creation screen and the reader never tests it (read from the code); what that screen means by it is
+unknown.
 
 ## Which seeds survive a save
 
@@ -178,8 +183,8 @@ packet-beta
   128-191: "8 bytes never written"
 ```
 
-The code saves the three blocks in index order. Which block is which difficulty is placed only from data so far,
-not from the code. A new character's quest, waypoint and NPC sections are the same bytes for every new character
+The code saves the three blocks in index order, and block *d* is difficulty *d* (0 Normal, 1 Nightmare, 2 Hell) in
+all three sections; for the NPC blocks this comes from the code that reads them during a game. A new character's quest, waypoint and NPC sections are the same bytes for every new character
 of a game type ([player/creation § Outputs](../specs/player/creation.md#outputs)).
 
 ## Character stats and skills
@@ -201,12 +206,18 @@ flowchart LR
 - Each stat of the character's base list is written in list order, unless its `CSvBits` column in `ItemStatCost` is
   0. A stat that is not in the list is not in the file; there is no "skip zeros" test. Life, mana and stamina keep
   their 8 fraction bits. This much is confirmed by saves and loads.
-- Stats with a parameter, signed stats and the value clamp were not exercised. Read from the code, the clamp turns
-  a negative value of an unsigned stat into 0.
+- **Each value is clamped to the largest number its field can hold.** Life, mana, stamina and their maxima have 21-bit
+  fields, so a value of 8192 points or more (with the 8 fraction bits) is written as 8191.99. This is confirmed: in
+  the level-up saves of a test run all 364 written values matched the clamped list, and the ten that differed from
+  the character's value were exactly those at or above the limit (the life of Barbarian and Paladin saves in Hell, the
+  mana of Sorceress saves). Experience is not clamped.
+- Stats with a parameter and signed stats were not exercised. Read from the code, the clamp turns a negative value
+  of an unsigned stat into 0.
 - When the save is loaded, the game fixes a few stats: gold outside its limits becomes 0, stamina is set to its
   maximum, current life and mana are restored to the saved values, and the next-level threshold is recomputed.
   This step is read from the code, except one confirmed point: **maximum life and mana are not recomputed**, they
-  come from the file as is.
+  come from the file as is. So, by the code, a character saved with more than 8191 life or mana comes back with
+  8191.99 until something recomputes it; that was not run.
 
 The `if` section is one byte per class skill: that skill's base level. This is read from the code
 ([save/d2s § G](../specs/save/d2s.md#g-skills-if)).
@@ -218,7 +229,10 @@ Each list starts with `JM` and a count ([save/d2s § H](../specs/save/d2s.md#h-i
 - The player's list holds every item the character has, with the two hand slots and the item on the cursor last.
 - An item with filled sockets is followed by its [socket fillers](../glossary.md), each on its own byte boundary
   and not counted.
-- The corpse list holds 0 or 1 corpse, each with its own item list.
+- The corpse list holds 0 or 1 corpse, each with its own item list. With more than one corpse, the writer keeps the
+  one whose items (gold aside) are worth the most, ties going to the later one. The corpse record's 12 bytes are not
+  read back on load, and its first value is whatever the writer's stack held, so a reimplementation may write
+  anything there.
 - In an expansion game, `jf` carries the mercenary's items, and `kf` carries one byte and, when the player has an
   Iron Golem holding an item, that item.
 
@@ -267,7 +281,9 @@ The rest of the extended part is read from the code only, except the picture var
   only on an expansion item that rolled one;
 - the quality fields: a 3-bit index for low and superior items, a prefix and a suffix [affix id](../glossary.md) for
   magic items (the prefix rebased, the suffix not), a 12-bit id for set and unique items, the two
-  [rare name](../glossary.md) words and up to three prefixes and three suffixes for rare and crafted items;
+  [rare name](../glossary.md) words and up to three prefixes and three suffixes for rare and crafted items. The ids
+  come from the game's merged affix numbers (confirmed; a magic prefix is then rebased, as said): the magic suffixes first, then the magic prefixes, then the
+  automagic rows, each id one more than its place, and the rare names likewise, suffixes before prefixes;
 - a [runeword](../glossary.md) field, an ear or a personalized name, and a realm bit;
 - fixed fields: defense for armor, then maximum and current durability (current only when the maximum is not 0),
   the quantity of a stack, and the socket count. Defense and durability use the `Save Add` offset but no
@@ -391,19 +407,16 @@ game, with no mismatch.
 
 From [save/d2s § Open questions](../specs/save/d2s.md#open-questions):
 
-- which `MagicPrefix` and `MagicSuffix` rows the stored affix ids point at, which rows the rare name words index,
-  and what the low or superior index and the automagic field select;
 - what item flag bit 13 means, and how soon after a drop the game clears it;
 - not exercised in a run: the grid and ground positions, hotkeys, ears and personalized names, realm data, the
   mercenary header's write side and dead flag, the mercenary item list compared item by item, the golem and corpse
   sections, most reader error codes, character stats with a parameter or a sign, a classic game's items, and stats
   beyond those the runs saved;
-- which quest, waypoint and NPC block belongs to which difficulty, from the code;
-- what the byte at `0x0CF`, status bit 1 and the first value of a corpse record mean.
+- what the character-creation screen means by status bit 1.
 
 Beyond those, the many "read from the code only" points above (the other save paths, the 8 KiB limit, the quest
 and waypoint fix-ups on load, the load-time stat fixes, the skills section, the item list order, most of the
-extended item fields, the clamps, and the less common property groups) are still waiting for a run.
+extended item fields, the item clamps, and the less common property groups) are still waiting for a run.
 
 ## Where to read more
 

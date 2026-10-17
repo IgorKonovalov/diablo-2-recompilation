@@ -91,7 +91,8 @@ save, Acts I–V by waypoint) reached the branches that run left: every drawing 
     run:2026-10-13-drlg-preset)
   - [C] `DRLG_RoomNoPopNearTown` also sets `0x800000` on `Populate` 1 rooms: a room outside a town whose
     neighbour room is in a town level (`sub_006426A0_LevelIsTown`: levels 1, 40, 75, 103, 109). Two counts in the
-    run, both from the two logs with `FLG` lines (`preset-play-act4`, `preset-play-act5`):
+    run, both from the two logs with `FLG` lines (`preset-play-act4`, `preset-play-act5`; fn:DRLG_RoomNoPopNearTown@0x0066BD50,
+    run:2026-10-13-drlg-preset):
     - **22 flag sets** at `0x0066BD92`, on 22 distinct preset rooms (10 + 12);
     - **16 `RoomPopLevelId` returns of 0** on those rooms: 8 of the 22 were populated, with two calls each, all 0.
       The other 14 had no `RoomPopLevelId` call in the logs.

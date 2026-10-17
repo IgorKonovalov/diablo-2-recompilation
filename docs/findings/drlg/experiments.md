@@ -111,7 +111,7 @@
   as the `LvlPrest` file that reproduces the grids; Phase 3 logs it. **Conclusion:** promotes in
   [drlg/0002](0002-room-build-draws.md) to `[C]`: the type-2 grid prepare (views and `0x84`/`i << 18`
   writes), the DT1-list rule, the maze-room (and every preset room's) mask = `LvlPrest.Dt1Mask`, and the
-  outdoor mask rule with `sub_006706A0_LvlSubRoll` for level type 2.
+  outdoor mask rule with `sub_006706A0_LvlSubRoll` for level type 2. (run:2026-10-11-drlg-roomk)
 - **Addendum 2026-10-16: plan 0038 batch S4a (static, no new session; `tools/sweep_s4a.py` sha256 `fafe0406c61b4363…`).** The room-tiles model (`tools/drlg.py`,
   `Model`/`run_log`, unchanged) re-run with counters by `tools/sweep_s4a.py` over every log with roomk lines, which are
   the six logs above, the 7 of run:2026-10-14-collision and the 29 of run:2026-10-15-objects. Commands:
@@ -216,12 +216,12 @@
     indices. `tools/drlg.py` had kept the `sub_006738C0` counters across builds; it now resets them at each LI0
     (commit `6f335bd`). The five scripted logs still give 14545 checks, 0 mismatches.
   - *Conclusion:* the maze dispatch tags of drlg/0003 stand, now with the plan's waypoint case. The rotation
-    counters are per build, and a rebuilt level repeats its room sequence, `[C]`.
+    counters are per build, and a rebuilt level repeats its room sequence, `[C]`. (run:2026-10-12-drlg-gen)
 - **Conclusion:** promotes in [drlg/0003](0003-generator-dispatch.md) to `[C]`: the two `DrlgType` dispatches and
   the re-seed, the level-seed draws of each generator in order (with `DRLG_PresetUnitDropRolls` and the
   maze and outdoor generators as boundary oracles), the preset file index (draw, overrides, maze rotation, the
   `Files` operand), the room-creation order of the preset split and the outdoor cells, the maze conversion order,
-  and `sub_006706A0_LvlSubRoll`.
+  and `sub_006706A0_LvlSubRoll`. (run:2026-10-12-drlg-gen)
 - **Addendum 2026-10-14: maze window replay (plan 0022 Phase 1).** No new run. The logs above were replayed against
   the static reading of [drlg/0006](0006-maze.md) with
   `python3 -I tools/maze_replay.py workspace/merged/data/global/excel workspace/logs/gen-12345-bloodmoor.log workspace/logs/gen-12345-act2.log workspace/logs/gen-1-catacombs-owner.log`
@@ -234,7 +234,7 @@
   Negative controls on scratch copies: dropping the merge draw gives 8 mismatching windows, dropping the theme
   swaps 10, and replacing the probe by a test without the room creation 2. *Conclusion:* placement, growth, merge,
   `Def` from exits, the finder probes, the special placement and the theme pass are `[C]` for types 3, 10 and 13 on
-  normal difficulty ([drlg/0006](0006-maze.md)).
+  normal difficulty ([drlg/0006](0006-maze.md)). (run:2026-10-12-drlg-gen)
 - **Addendum 2026-10-14: outdoor window replay (plan 0026 Phase 1).** No new run. Every log under `workspace/logs/` with an
   `OD0` line (63 logs from this run, run:2026-10-13-drlg-preset, run:2026-10-13-mon-spawn, run:2026-10-14-mon-special and
   run:2026-10-14-collision; `L` below is that list, `grep -l '^OD0' workspace/logs/*.log`) was replayed against the static
@@ -719,7 +719,7 @@
   | three difficulties for ≥ 5 levels (room counts per difficulty) | 22 levels |
   | classic and expansion for ≥ 3 Act I–IV levels | not met in this run (correction below); met by run:2026-10-15-drlg-outdoor: 7 maze levels built in both modes |
   | branches 28, 61, 92, 107, 114, 116, 119 | all reached |
-  | finishers read only `[I]` (Arcane, Tomb/Baal, Act V hell, Durance 100/101, 107) | 74; 57, 58, 61 / 129; 125; 100, 101; 107 |
+  | finishers read only `[I]` (Arcane, Tomb/Baal, Act V hell, Durance 100/101, 107) | 74; 57, 58, 61 / 129; 125; 100, 101; 107 (run:2026-10-15-drlg-maze) |
   | act links of Acts I, II, IV, V, level 27's index from the level-6 draw | 196 calls, 16 draws |
   | warp cells and point lists of every logged level | 389 builds; outdoor-room bits stay drlg/outdoor's |
   | run:2026-10-14-collision and plan 0014 logs with predicted warp points | above |
@@ -1308,7 +1308,7 @@
   search pool (none in the logs nor in the offline scan); a non-square level with a cliff cave (none exists on stock
   data).
 - **Conclusion:** raises the claims listed in the "Plan 0038 batch H5e" sections of drlg/0004, 0006 and 0008; the four
-  outdoor branches above stay `[I]` as a shortfall; and a rebuilt maze level object keeps its placed rect (drlg/0006).
+  outdoor branches above stay `[I]` as a shortfall; and a rebuilt maze level object keeps its placed rect (drlg/0006). (run:2026-10-16-sweep-mazes)
 - **Review note (2026-10-16, architect, H5e review).** Re-run on the lane after merging `main`: the manifest checks
   (six logs OK); `tools/test_sweep_h5e.py` OK; `sweep_h5e.py logs` reproduces the observed block (153 567 checks, 0
   mismatches); `sweep_h5e.py scan 1 601 0,1,2` reproduces the scan block line for line; `drlg.py gen` on the

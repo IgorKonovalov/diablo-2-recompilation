@@ -1015,7 +1015,7 @@ table survey. No game run.
     `vps` is of type `spot`, whose `Normal` is 1, so the last override writes quality 2 whatever the roll returned, and
     the switch takes case 2 (the normal builder). (0x005574E3–0x00557567, tbl:ItemTypes.txt:Normal, tbl:Misc.txt:type)
   - [C] for the outcome: the eight `vps` of the owner-played addendum (§ Phase 2) came out with quality 2. The roll's
-    draws are not checked by any log.
+    draws are not checked by any log. (0x005574E3–0x00557567, run:2026-10-16-quest-drops)
 - [I] **`ITEMS_GetType` = 4 is `gold`.** `ITEMS_GetType` returns the record's own `type` (`+0x11E`, s16); ItemTypes row 4 is
   `gold`, as rows 5, 6 and 7 (`bowq`, `xboq`, `play`) are the types the personalize test also refuses, and items/0001
   reads the same index as `gold` in the resolver (`ITEMS_UnitIsType(unit, 4)`). (fn:ITEMS_GetType@0x00628700,

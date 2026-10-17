@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: []
 consumed_by: [rng/seeds, items/*, monsters/*, drlg/*, objects]
 tags: {C: 22, I: 8, L: 1}
-updated: 2026-10-11
+updated: 2026-10-17
 ---
 
 # RNG: seed state, step, range reduction, initialisers
@@ -31,12 +31,13 @@ documents a call site states which form it uses (see *Reimplementation notes*).
 | power-of-two range plus base | fn:RNG_RangePow2Plus@0x00472240 | 0, dead code | [I] |
 | init with value | fn:RNG_SeedInit@0x00650E40 | 103 calls in 76 functions, both initialisers combined | [C] |
 | init to one | fn:RNG_SeedInitOne@0x00650E30 | (counted with `init with value`) | [C] |
-| inlined step | 852 multiplier immediates, all inside functions | — | [I] |
+| inlined step | 852 multiplier immediates, all inside functions (e.g. fn:DRLG_ActCreate@0x00642DA0, fn:DRLG_RoomCreate@0x0066B3E0) | — | [I] |
 
 All 852 occurrences of the multiplier bytes `C5 90 C6 6A` in the file are `mov r32, imm32` instructions inside
 functions, so each one is a draw site: 837 in 427 functions found at first, 4 outside any function Ghidra had
 defined, and 11 in nine DRLG level-link callbacks reached only through data tables (`sub_…_LinkPick`). [I]
-([0001](../../findings/rng/0001-rng-core.md#answer-summary))
+(fn:DRLG_ActCreate@0x00642DA0, fn:DRLG_RoomCreate@0x0066B3E0, fn:sub_00676150_LinkPick@0x00676150,
+[0001](../../findings/rng/0001-rng-core.md#answer-summary))
 
 Every out-of-line primitive except `RangePow2Plus` takes the seed pointer in ECX and `n` (or the
 init value) in EDX. [C] (run:2026-10-11-rng-emu) `RangePow2Plus` takes the seed in ECX, `base` in EDX
@@ -46,7 +47,9 @@ and `n` on the stack. [I] (fn:RNG_RangePow2Plus@0x00472240)
 
 ### Tables
 
-None. The RNG reads no table. [I] ([0001](../../findings/rng/0001-rng-core.md#data-touched))
+None. The RNG reads no table. [I] (fn:RNG_Step@0x0045C370, fn:RNG_Range@0x0045C390, fn:RNG_RangeB@0x0045C3E0,
+fn:RNG_RangePow2@0x00472210, fn:RNG_RangePow2Plus@0x00472240, fn:RNG_SeedInit@0x00650E40, fn:RNG_SeedInitOne@0x00650E30, run:2026-10-11-rng-emu,
+[0001](../../findings/rng/0001-rng-core.md#data-touched))
 
 ### Runtime state
 
