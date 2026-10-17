@@ -108,8 +108,10 @@ describe, so a reimplementation that skips it gives a different world after the 
     stats 7, 12 and 13 predicted rather than logged;
   - 150 objects restored (at least 30 operated before the release), confirming objects § B4;
   - 60 ground items restored, with their seeds and fields;
-  - 30 wanderer rolls that spawn, and the wanderer gate in at least 200 room updates;
-  - the Phase 1b cases.
+  - the wanderer gate's draw in at least 200 room updates (amended at the Phase 1 review: the gate passes 1 in 32768
+    and the roll 3 in 100, so spawns are a named shortfall, not a target; the roll and spawn stay `[I]` unless reached);
+  - the Phase 1b cases: one hostile pool monster that followed a player into a town room, freed without a record at
+    the town's release and absent at the return (amended at the Phase 1 review).
 
   A rare branch (a minion restored without its boss, a corpse, a summon) that falls short is named with its count in
   the record and stays `[I]`; it does not block. In-scope claims go to `[C]`, citing the run. Plan 0038's deferred
@@ -199,3 +201,58 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   dropped or fatal) rest on instruction-level reads (0x005432EF–0x00543303, 0x005425F7–0x0054260B,
   0x0054287F–0x0054288E). (c) The correction to drlg/room-tiles (the wrapper negates `EDX`) and the naming of objects
   § B4's level flag (`Levels.SaveMonsters`). (d) The contradicted lead and its stock-data reachability.
+
+- **2026-10-17 — Phase 1 and 1b review (architect): accept with fixes.** Main (`4d31287`) merged into the lane first.
+  Anchors spot-checked with objdump (13, all resolve): the three surprise ranges 0x005432EF–0x00543303 (`MonTypeFlag(unit,
+  0x18)` and dead → no save; champion bit not in the mask), 0x005425F7–0x0054260B (flag `0x400` with record bit `0x100`
+  or `0x80` → drop) and 0x0054287F–0x0054288E (alignment 2 → list 8, 1 → list 9, else 0x00542990 `push 0x691`, fatal);
+  the wrapper's `sete` at 0x0066B4DE and `ActiveRoomFree`'s `EDX = act +0x50` at 0x0061A9D0; the write at 0x0066F232;
+  `GameTick`'s `% 20`, `% 12`, `% 11` (0x0052D913–0x0052D949); `n > 10` at 0x0052D27B; the mode-12 draw and `mod 3` at
+  0x00543260–0x00543287; the 7500-frame test (`0x1D4C`, unsigned `jb`) at 0x00542819; the wanderer gate `0x7FFF` and
+  `+0x78` at 0x0054F089–0x0054F096 and the roll `× 100`, `< 3`, `+0x2C4 < 3` at 0x0054F024–0x0054F041;
+  `SpecialMonRestore` → `SpecialMonPlace` with the saved id (0x005A4444–0x005A4460). Data checked: `SaveMonsters` 0 on
+  levels 0, 1, 40, 50, 75, 103, 109; `restore` 698/18/18 over MonStats rows; class 270 is `rogue2` (`restore` 1,
+  `Align` 1). Gate green; symbols: 47 `drlg/lifecycle` rows, no duplicate address or name; `lifecycle.h` names no
+  existing struct. Tags honest: no `[C]` claimed, the `[L]` are leads and open questions only. Two sources registered.
+
+  **Rulings.**
+  1. *Release rule and activation:* accepted at `[I]`. The window is 120–131 frames (first client-free pass 0–11 frames
+     after the room change, the 11th at +120); the model states it in frames from `game +0xA8`. The per-distance
+     reference counts with enter/leave callbacks are the activation model Phase 2 checks (question 2).
+  2. *Surprises:* both read as stated. (a) A dead champion is saved (1 in 3) and restored alive in mode 1 through
+     `SpecialMonRestore`: holds, `[I]`, a Phase 2 case with a named shortfall allowed. (b) Flag `0x400`: holds, but
+     the finding's "good or neutral / evil" named meanings the code does not give; corrected to numeric alignments
+     with the MonStats `Align` mapping (0 → 0, 1 → 2, 2 → 1, from MonSpawnTry). The fatal path is reached only by
+     alignment 0, since the earlier test drops 1 and 2. The wanderer is `rogue2` (`Align` 1), so a saved wanderer
+     is predicted dropped if `SpawnAtPos` applies the same rule: a static follow-up, not a run question.
+  3. *Spec corrections:* (a) the negation is right, but the finding's consequence was wrong for the client: the
+     H5c counts (626 `EDX` ≠ 0 of 1516 built-room releases, 890 nested client pairs; 626 + 890 = 1516) mean the
+     nested client inner call gets `EDX` 0, so the client DUNGEON act's `+0x50` is non-zero and `0x200000` reads
+     "released by the server". Corrected in § 4 (`[I]`); the spec-writer entry is amended. (b) objects § B4's level
+     flag is `Levels.SaveMonsters` (leveldefs `+0x94`, [Levels](../tables/Levels.md) `[C]` offset): accepted.
+  4. *§ 10 boundary:* accepted as the Phase 2 boundary, with the amendments below. Also logged as inputs: pin set and
+     clear (`0x0061AED0`, every site, not only the read ones), `RoomActivateB` activations, `UnitIsDead`, the state,
+     owner and pet tests of the save rule.
+  5. *Gaps:* none blocks. The client-copy detach is client-side and out of the server lifecycle; it stays an open
+     question. The unread fields stay `[L]` open questions. The 31 pin sites: Phase 2 logs the pin flag as an input
+     at every release test, so the model needs no reading of the sites; enumerating them is a static follow-up.
+  - *Phase 1b contradicted lead:* the verdict stands, settled by the code reading at `[I]`. The reachability
+     statement was wrong: the save test takes the level of the unit's current room (0x005431F9–0x0054322A), so a
+     hostile pool monster that follows a player into a town room meets `SaveMonsters` 0 on stock data. That case is a
+     required Phase 2 case (added to the done-when). The edited-table case is not needed and could not raise anything
+     anyway (ADR-0010 as amended by ADR-0013: a claim only edited data reaches stays `[I]`).
+
+  **Fixes applied on the lane.** drlg/0009: summary `0x400` bullet (numeric alignments, the `Align` mapping, `rogue2`);
+  § 4 `0x200000` (server-only, the 626/890 split); § 6 path precedence (flag `0x20` before flag `1`,
+  0x0054264A–0x0054266D) and why only alignment 0 reaches the `0x691` test; § 7 the rate; *Leads used* reachability;
+  open questions (wanderer alignment as a static read; act `+0x50` as "client act"). Now 48 `[I]`, 15 `[L]`. Plan:
+  Phase 2 done-when amended (wanderer spawns a named shortfall; the town-follow case required).
+
+  **P2 questions, amended.** Concrete enough for a logger and a checker: each names its breakpoint sites and fields.
+  Changes: Q8 is a static question (above) and stays in the logger only if a saved `0x400` record appears; Q9 is
+  the gate's draw on ≥ 200 room updates, each predicted (seed in and out, `low & 0x7FFF`, `+0x78`, `MonWndr`), with
+  spawns counted, not targeted; Q10 is "`0x200000` set on every server release, clear on every client release"; add
+  Q14 *town follow*: a hostile pool monster in a town room at the town's release (level, `+0xC4` bit `0x2000000`,
+  `restore`), asserted freed without a record and absent at the return.
+
+  **P2 opens** (lane H1 queue order, 1 slot).

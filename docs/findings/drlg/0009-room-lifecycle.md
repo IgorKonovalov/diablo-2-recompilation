@@ -51,8 +51,13 @@
   release. A re-activated room never re-dispatches its preset list: units come back only from the records.
   (fn:sub_00555910_PresetUnitSpawn@0x00555910, fn:sub_00666120_PtrMove@0x00666120)
 - [I] **A record with flag `0x400`** (a monster in target list 8 or 9, such as a wanderer) is not re-created when its
-  saved alignment is good or neutral; with alignment evil the restore reaches a fatal error (`0x691`). Whether a
-  wanderer is saved as neutral is a Phase 2 question. (0x005425F7–0x0054260B, 0x0054287F–0x0054288E)
+  saved alignment is 1 or 2 (record bit `0x80` or `0x100`); with alignment 0 (neither bit) the restore reaches a
+  fatal error (`0x691`). The numbers are the unit alignment that `MonSpawnTry` sets from MonStats `Align` (0 → 0,
+  1 → 2, 2 → 1; [MonStats](../../tables/MonStats.md) `Align`), so the hostile pool classes are alignment 0 and the
+  allies (MonStats `Align` 1) alignment 2; the names "hostile/ally/neutral" stay a reading. The wanderer class
+  (`rogue2`) has MonStats `Align` 1. Whether `WandererSpawn`'s creation path applies that rule, so that a saved
+  wanderer is dropped, is not read. (0x005425F7–0x0054260B, 0x005427B8–0x005427D4, 0x0054287F–0x0054288E,
+  0x00542990, tbl:MonStats.txt:Align)
 
 ## Leads used
 
@@ -79,7 +84,9 @@ written from the code before they were read. Little exists beyond anecdotes; not
   `restore` 2 classes; any other live monster of a released room is freed without a record, and the room is not
   populated again, so it is gone, not injured. The observation fits a room that was never released (the player stayed
   within the near sets, or less than 120 frames away) or a preset monster. On stock data only the towns and the Harem
-  have `SaveMonsters` 0, so this is not reachable without an edited table (§ P2 questions in the plan).
+  (levels 0, 1, 40, 50, 75, 103, 109) have `SaveMonsters` 0, and none is populated; but the test takes the level of
+  the unit's **current** room (0x005431F9–0x0054322A), so a hostile pool monster that follows a player into a town
+  room meets it on stock data when the town's rooms are released (corrected at the review; a required Phase 2 case).
 - [L] src:pk-boss-heal-thread: Blood Raven back at full health after about 20 minutes away. **held with refinement**
   Detail: a restored monster keeps its saved life if fewer than 7500 frames passed
   between the save and the restore, else it gets the saved maximum (0x00542814–0x0054284A). Natural regeneration was
@@ -246,12 +253,18 @@ byte `+0x44`.
   fn:sub_0066B4C0_RoomReleaseWrap@0x0066B4C0, fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0, fn:DUNGEON_RoomFree@0x0061A840)
 - [I] **`0x200000` and `EDX ≠ 0`.** `RoomTilesRelease` sets `0x200000` iff its `EDX` is non-zero, and the only non-zero
   `EDX` comes through the wrapper, which passes the logical not of its own `EDX` (`sete`, 0x0066B4DE). The wrapper is
-  called only from `ActiveRoomFree`. So `0x200000` means "the tiles were freed together with the room's active room":
-  every server release, and the inner call of a client release of a room that had an active room. A client release of
-  a room without one (leave 3, `EDX` 0, `+0x30` = 0) leaves it clear. No reader was found: the only `+0x28` access
+  called only from `ActiveRoomFree`, with `EDX` = the DUNGEON act's `+0x50` (0x0061A9D0), and only for a built room
+  (DRLG `+0x28` bit `0x100000`, 0x0066B4C9). On a server release `+0x50` is 0 (`RoomReleaseAllowed` makes any other
+  value fatal), so the tiles release gets `EDX` 1 and sets `0x200000`. No reader was found: the only `+0x28` access
   with the immediate `0x200000` is the write at 0x0066F232. This corrects the wording in
   [drlg/room-tiles § Release and re-activation](../../specs/drlg/room-tiles.md#release-and-re-activation) that the
-  wrapper passes the act's `+0x50`: it passes its negation. (0x0066B4DC–0x0066B4E5, 0x0066F232, fn:sub_0061B560_DrlgLeave3Release@0x0061B560)
+  wrapper passes the act's `+0x50`: it passes its negation. (0x0066B4C0–0x0066B4E5, 0x0061A9D0, 0x0066F232, fn:sub_0061B560_DrlgLeave3Release@0x0061B560)
+- [I] **The client release leaves `0x200000` clear** (corrected at the review). run:2026-10-16-sweep-roomk logged 1516
+  built-room releases, 626 with `EDX` ≠ 0 and 890 nested client pairs ([drlg/0002 § Plan 0038 batch H5c](0002-room-build-draws.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)).
+  626 + 890 = 1516, and with the negation read here the nested (client) inner calls can only have `EDX` 0 if the client
+  DUNGEON act's `+0x50` is non-zero. So `0x200000` reads "released by the server": set on every server release, clear
+  on a client release (nested or not). That the 626 are exactly the server-act releases is not yet checked against the
+  kept logs. (0x0066B4DC–0x0066B4E3, 0x0061A9D0, run:2026-10-16-sweep-roomk)
 - [I] The level-unload tick (server: every 11 frames per act; client: every 13 ticks) unloads, after a countdown of 10
   ticks, a level with no level references (`+0x0C`) and built rooms (`+0x10`), when `LevelUnloadCheck` allows; else it
   re-arms the countdown. (fn:sub_00643200_ActLevelsUnloadTick@0x00643200, fn:sub_00643060_LevelUnloadCheck@0x00643060,
@@ -339,9 +352,10 @@ then the unit records (objects § 13.5, which this reading confirms).
   - in level 108 while quest 23's data byte `+0x13` is set, a record that is neither dead (flag 4) nor class 243
     (`diablo`) is dropped;
   - kept units (`+0x14` bit `0x100`): found by id and relocated into the room; nothing is created;
-  - flag `0x400` with alignment 1 or 2: dropped;
+  - flag `0x400` with alignment 1 or 2 (record bit `0x80` or `0x100`): dropped;
   - else the creation flags are `0x62` (`0x6A` with flag `0x40`), `| 0x80` for a `flying` class, the mode 1 (12 for a
-    flag-4 record) and the saved unit id:
+    flag-4 record) and the saved unit id; the path is picked by flag `0x20` first, then flag `1` (a record with both
+    goes to `MinionRestore`, 0x0054264A–0x0054266D):
     - flags 1 → `SpecialMonRestore(x, y, class, id, nameSeed, champion, superunique, suId, mods)`: `SpecialMonPlace(room,
       no box, x, y, id, avoid warps)` in **mode 1**, then the saved mods, `SpecialModsApply(flag 0)`, the saved name seed,
       the aura when a mod is 30, and the superunique quest hooks;
@@ -356,7 +370,8 @@ then the unit records (objects § 13.5, which this reading confirms).
 - [I] Then, on a created unit: the group link (`MonSetOwner(leaderId, 1, …)`), **stat 13 = saved**, **stat 7 = saved
   maximum**, **stat 6 = saved life if `frame − saveFrame < 7500` (unsigned), else the saved maximum**; the AI state and
   parameters and the preset path back; for flag `0x400`: target list 8 (alignment 2) or 9 (alignment 1), any other
-  alignment a fatal error `0x691`; each mod slot that differs from the saved byte gets `ModAppendApply(saved, 0)`;
+  alignment a fatal error `0x691` (the alignment is re-derived from the record bits at 0x005427B8–0x005427D4; since the
+  drop above already removed alignments 1 and 2, only alignment 0 reaches this test, and it reaches the fatal error); each mod slot that differs from the saved byte gets `ModAppendApply(saved, 0)`;
   `MonAlignSet(saved alignment)`; `+0xC8 |= 0x200` if saved; `+0xC4 |= (saved & 0x20000) | 0x3000000`. A failed creation
   frees the AI list. Last, `MonRegionUnitLeave(level, alignment, dead, flag 0x40, unit)` and the record (and any
   path still in it) is freed. (0x005427FB–0x00542916, fn:sub_00627260_UnitSetStat@0x00627260,
@@ -392,6 +407,9 @@ then the unit records (objects § 13.5, which this reading confirms).
 - [I] So the gate needs a room that is active and not near any client: one kept alive by the idle timer, or activated
   by `RoomActivateB`. A room just activated by a client has `+0x78` ≥ 1 at its first update, because the client list is
   filled in the same `ClientRoomChange`. (fn:sub_00537B50_ClientRoomChange@0x00537B50, struct:DungeonRoomLife+0x78)
+- [I] **Rate** (added at the review). The gate's draw passes with probability 1/32768 (`test eax, 0x7FFF` on the new
+  low, 0x0054F089) and the roll with 3/100, so one spawn takes about 1.1 million room updates of an act I `MonWndr`
+  level with `+0x78` = 0 and region `+0x2C4` < 3. (0x0054F089, 0x0054F024–0x0054F02B)
 
 ### 8. The preset questions of drlg/preset
 
@@ -452,10 +470,13 @@ The frame counter (`game +0xA8`) is logged at every line; release times are chec
 Each is a Phase 2 question (§ P2 questions in the plan log) unless it says otherwise.
 
 - [L] Whether a wanderer (target list 8) is saved as alignment 2 (dropped at the restore) or 0 (the fatal `0x691`):
-  log the record flags of a saved wanderer.
+  a static read of `SpawnAtPos`'s alignment write answers it (MonStats `Align` 1 for `rogue2` predicts 2). A run will
+  hardly see one: the gate passes 1 in 32768 room updates and the roll 3 in 100 (§ 7).
 - [L] A dead champion comes back alive (§ 6): log a champion corpse through a release and a restore.
 - [L] Which client-copy code detached the path of the client-copy units of drlg/0004's 19 (§ 8); code still to read.
-- [L] The meanings of DUNGEON act `+0x50`, monster data `+0x58` and `+0x5C` bit 1, record `+0x2C`, and the state list
+- [L] DUNGEON act `+0x50` reads as "client act" (0 on the server, non-zero on the client by the 626/890 split of § 4);
+  check against the kept logs of run:2026-10-16-sweep-roomk and the act constructor.
+- [L] The meanings of monster data `+0x58` and `+0x5C` bit 1, record `+0x2C`, and the state list
   at DataTables `+0x174`; code still to read.
 - [L] `MonRegionUnitLeave` at the restore: which counts it moves for a created unit; the region counts before and
   after a restore answer it.
