@@ -430,6 +430,20 @@ def cmd_compile(a):
         R.add("codelist_bin_in_stock_archives", int(bool(inarch)))
     for t in CODE_BINS:
         R.add("codebin_written", int((t + ".bin") in written))
+    # per table: each code list, compcode and the four *code.bin pools against the shipped file (formats/experiments
+    # addendum 2026-10-16, plan 0039 A3)
+    for t in CODE_LISTS + ["compcode"] + CODE_BINS:
+        f = t + ".bin"
+        inarch = [x for x in ("d2data", "d2exp", "patch_d2")
+                  if excel_file(os.path.join(MPQ, x, "data", "global", "excel"), t)]
+        if f not in written or f not in shipped:
+            R.add("codetable_missing")
+            R.bad("code table %s: written %s, shipped %s" % (t, f in written, f in shipped))
+            continue
+        same = open(written[f], "rb").read() == open(shipped[f], "rb").read()
+        R.add("codetable_identical" if same else "codetable_differs")
+        R.expect(same, "code table %s differs from the shipped file" % t)
+        R.note("code table %s: %s (shipped in %s)" % (t, "identical" if same else "DIFFERS", ", ".join(inarch) or "none"))
     return R.done()
 
 

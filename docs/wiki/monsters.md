@@ -2,10 +2,10 @@
 based_on:
   - docs/specs/monsters/README.md 2026-10-16
   - docs/specs/monsters/pool.md 2026-10-16
-  - docs/specs/monsters/spawn.md 2026-10-16
-  - docs/specs/monsters/special.md 2026-10-15
-  - docs/specs/monsters/stats.md 2026-10-16
-  - docs/specs/drlg/collision.md 2026-10-15
+  - docs/specs/monsters/spawn.md 2026-10-17
+  - docs/specs/monsters/special.md 2026-10-17
+  - docs/specs/monsters/stats.md 2026-10-17
+  - docs/specs/drlg/collision.md 2026-10-17
 ---
 
 # Monsters
@@ -241,7 +241,9 @@ cell. The walk tests cells against the room's [collision grid](../glossary.md)
 - Every placement costs room draws, even when it fails. An exact placement still makes 3 room draws, and the
   random point's test is made twice: once as a probe, once to create the monster.
 - The grid changes as the pass runs. A monster just placed blocks later ones through its centre mark, so a later group
-  member may have to take another cell.
+  member may have to take another cell. Read from the code, every monster the server creates is marked the same way,
+  not only those of the pass, and a monster created already dead gets the same corpse mark as one that dies, as its
+  class's `deadCol` column decides ([drlg/collision § F](../specs/drlg/collision.md#f-unit-marks)).
 - The near-warp test can activate another room in the middle of the pass and, in some levels, step that level's
   seed ([drlg/collision](../specs/drlg/collision.md#i-nearwarptestgame-room-x-y-and-its-side-effects)).
 
@@ -249,8 +251,13 @@ Each creation steps the game seed once ([spawn § J](../specs/monsters/spawn.md#
 The new monster's own seed comes from that step. On 914 of 916 logged creations it was 2 steps past its starting
 value when the pass first drew on it, and 6 and 15 steps on the other two. The spawn spec takes that seed as an input. The stats
 spec names the two usual steps, the appearance pick and the hit-point draw
-([stats § B](../specs/monsters/stats.md#b-monstatsinit-in-order)); the creations that start from another seed are
-still taken from the logs.
+([stats § B](../specs/monsters/stats.md#b-monstatsinit-in-order)). The extra steps come from the level's list of
+classes and their appearance sets: when a class with more than two pieces is created for the first time in a level, it
+is added to that list, and its sets are rolled on the new monster's own seed before the two usual steps
+([spawn § J](../specs/monsters/spawn.md#j-creation-and-the-unit-seed)). This is confirmed: across the 1 786 creations
+in the logs, 14 were such additions, and each took exactly the number of steps the model predicts from its seed (6 to
+16), the two odd ones of the pass included. Which of the other creations found their class already listed is not told
+apart by the logs.
 
 **Wanderers** ([spawn § K](../specs/monsters/spawn.md#k-wanderers-the-tick)). Every room in the update walk takes one
 room-seed draw per tick; that it goes on after the room is populated is read from the code. Rarely (1 in 32 768 ticks), and only in a level with `MonWndr` set, a
@@ -354,6 +361,13 @@ The name is built on the client ([special § I](../specs/monsters/special.md#i-n
   The roll runs on its own seed, so by the code it cannot affect any server seed.
 - A **champion** shows a word for its champion mod in front of the class name. A **superunique** shows its row's
   `Name`. Both are read from the code. Where a unique's random colour is drawn is not known.
+
+**The Warping Shrine.** One path makes an existing monster special outside population: the Warping Shrine ("nearest
+monster becomes unique"). Read from the code, operating an unused one picks the nearest monster to the player, over the
+player's room and the rooms near it, with no real distance limit; the first one met wins a tie. Only an ordinary
+hostile monster that stands or walks qualifies: never a champion, unique, superunique or minion, a `boss`, a prime evil
+or a monster with no height. It gets a mod roll that allows champion mods, and no minions. With no candidate, nothing
+happens. No test session operated one ([special § J](../specs/monsters/special.md#j-other-entry-paths-and-pre-existing-mods)).
 
 ## Stats at creation: hit points, defence, experience
 
@@ -525,15 +539,15 @@ Each spec's *Open questions* has the full list: [pool](../specs/monsters/pool.md
 - **Pools:** the classic normal game (pool and monster level) and the no-record fallback are not logged. Natural
   nightmare and hell pools are checked for one seed, with Act I visited.
 - **Population:** what `sparsePopulate` really does (unreachable on stock data, and the community sources
-  disagree), and multiplayer games, which were not logged. Also the rare creations whose unit seed is 6 or 15 steps on
-  instead of 2 (their seed is taken from the logs), an unidentified room field the wanderer roll tests, and when a populated room restores its
+  disagree), and multiplayer games, which were not logged. Also an unidentified room field the wanderer roll tests,
+  and when a populated room restores its
   inactive monsters. Many guard exits and rare branches were never reached: the evil hut object, the tentacle-head
   minions, the wanderer spawn, and others listed in the spec. Monster positions also depend on inputs no spec yet
   produces end to end, namely the object marks on the collision grid and one waypoint point.
 - **Specials:** whether a `MonUMod` row with `champion` 0 could ever be a champion mod (no stock row tests it, and a
-  community source claims it can). What calls the code that turns an existing monster into a special. Where a unique's
-  colour is drawn. The superunique tails, the `lightning` exclusion, `thief`, the `Stacks` refusal, Blood Raven's and
-  the act bosses' fixed names, and the restore of inactive specials are read from the code only.
+  community source claims it can). Where a unique's colour is drawn. The superunique tails, the `lightning` exclusion,
+  `thief`, the `Stacks` refusal, Blood Raven's and the act bosses' fixed names, the restore of inactive specials and the
+  Warping Shrine are read from the code only.
 - **Stats:** what a monster re-created from an inactive room keeps, whether a graphics renderer can change the
   floating-point precision of the hit-point rescale, the will-o'-wisp halving, and the unreached branches (`poisonhit`,
   `always_run_ai`, monster equipment, a `MonProp` slot with a chance, more than 8 players, the overflow branches).

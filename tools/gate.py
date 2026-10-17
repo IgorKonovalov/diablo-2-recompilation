@@ -23,10 +23,16 @@ Implements the fast tier of `.claude/skills/architect/references/evidence-rules.
                path that is not a spec, or a spec whose status is not `reviewed`
            E12 a `##` section of a docs/wiki/ page has no relative link into docs/specs/
                (pages with `based_on: [process]` are exempt)
+           E13 a docs/backlog/ entry (ADR-0018): front matter well formed (tools/backlog.py), from/to
+               known lanes, status in the enum, a resolution once closed, the date equal to the file
+               name's, context links resolving
   warnings W1 a [C]/[I] line or table row with no anchor
            W2 a table with a Tag column has a row with an empty tag cell
            W3 a re/symbols.csv row cited by no spec or finding
            W4 a docs/wiki/ page's `based_on:` date is older than the spec's `updated:` date
+           W5 the frozen archive docs/backlog.md holds an unstruck entry, or a struck copy of an entry
+              that has its own file: run `python3 -I tools/backlog.py migrate` (a warning, so that a
+              lane merge appending to the archive leaves main green until the orchestrator migrates)
 
 Wiki front matter (E11, W4): `based_on: [process]`, or a list of `<repo path of a spec> <date>`, either
 `based_on: [docs/specs/rng/core.md 2026-10-11, ...]` or one `  - docs/specs/rng/core.md 2026-10-11` line
@@ -74,6 +80,9 @@ import tempfile
 import time
 import unicodedata
 from urllib.parse import unquote
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import backlog  # noqa: E402  (tools/backlog.py: the entry format and the archive parser, ADR-0018)
 
 # Pinned Game.exe: image base 0x400000, last section .reloc VA 0x00997000 + 0x23000
 # (docs/inventory.md, section table).
@@ -550,9 +559,35 @@ def check_spec_tags(rel, text, rep):
             rep.err("E6", rel, fm_line, f"tags: {k}: {declared[k]} but the body has {counts[k]} [{k}]")
 
 
+def link_error(rel, t, ctx):
+    """None when the relative link t, written in rel, resolves (E8 rules), else the message."""
+    path, _, frag = t.partition("#")
+    path = unquote(path)
+    if path:
+        base = os.path.dirname(rel)
+        target = os.path.normpath(path.lstrip("/") if path.startswith("/")
+                                  else os.path.join(base, path)).replace(os.sep, "/")
+        if target.startswith("../") or target == "..":
+            return f"link {t}: points outside the repository"
+        if target not in ctx["tracked"]:
+            prefix = target.rstrip("/") + "/"
+            if (not any(p.startswith(prefix) for p in ctx["tracked"]) or target == ".") and target != ".":
+                return f"link {t}: {target} is not a tracked file"
+            return None  # a directory with tracked files; no fragment check
+    else:
+        target = rel
+    if frag and target.endswith(".md"):
+        slugs = ctx["slug_cache"].get(target)
+        if slugs is None:
+            slugs = heading_slugs(read_text(ctx["root"], target))
+            ctx["slug_cache"][target] = slugs
+        if unquote(frag) not in slugs:
+            return f"link {t}: no heading with slug #{frag} in {target}"
+    return None
+
+
 def check_links(rel, text, ctx, rep):
     """E8."""
-    base = os.path.dirname(rel)
     for n, line, fenced in iter_lines_outside_fences(text):
         if fenced:
             continue
@@ -568,30 +603,9 @@ def check_links(rel, text, ctx, rep):
             if not t or RE_SCHEME.match(t) or t.startswith("//"):
                 continue
             rep.count("E8")
-            path, _, frag = t.partition("#")
-            path = unquote(path)
-            if path:
-                target = os.path.normpath(path.lstrip("/") if path.startswith("/")
-                                          else os.path.join(base, path)).replace(os.sep, "/")
-                if target.startswith("../") or target == "..":
-                    rep.err("E8", rel, n, f"link {t}: points outside the repository")
-                    continue
-                if target not in ctx["tracked"]:
-                    prefix = target.rstrip("/") + "/"
-                    if not any(p.startswith(prefix) for p in ctx["tracked"]) or target == ".":
-                        if target != ".":
-                            rep.err("E8", rel, n, f"link {t}: {target} is not a tracked file")
-                            continue
-                    continue  # a directory with tracked files; no fragment check
-            else:
-                target = rel
-            if frag and target.endswith(".md"):
-                slugs = ctx["slug_cache"].get(target)
-                if slugs is None:
-                    slugs = heading_slugs(read_text(ctx["root"], target))
-                    ctx["slug_cache"][target] = slugs
-                if unquote(frag) not in slugs:
-                    rep.err("E8", rel, n, f"link {t}: no heading with slug #{frag} in {target}")
+            msg = link_error(rel, t, ctx)
+            if msg:
+                rep.err("E8", rel, n, msg)
 
 
 def logical_units(text):
@@ -780,6 +794,51 @@ def check_wiki(rel, text, ctx, rep):
         rep.count("E12")
         if not sec[1]:
             rep.err("E12", rel, sec[0], "`##` section with no relative link into docs/specs/")
+
+
+# ---------------------------------------------------------------- backlog (ADR-0018)
+
+RE_BACKLOG_ENTRY = re.compile(r"docs/backlog/[^/]+\.md")
+
+
+def check_backlog_entry(rel, text, ctx, rep):
+    """E13 on one docs/backlog/<entry>.md."""
+    rep.count("E13")
+    fields, _, errs = backlog.parse_entry(text)
+    for n, msg in backlog.check_entry(os.path.basename(rel), fields, errs):
+        rep.err("E13", rel, n, msg)
+    lines = text.split("\n")
+    for c in fields.get("context") or []:
+        n = next((i for i, ln in enumerate(lines, 1) if ln.strip().startswith("-") and c in ln), 1)
+        if RE_SCHEME.match(c) or c.startswith("//"):
+            continue
+        msg = link_error(rel, c, ctx)
+        if msg:
+            rep.err("E13", rel, n, "context " + msg)
+
+
+def check_backlog_archive(text, entry_texts, rep):
+    """W5 on docs/backlog.md."""
+    keys = {}
+    for rel, t in entry_texts.items():
+        _, body, _ = backlog.parse_entry(t)
+        k = backlog.entry_key(backlog.first_paragraph(body))
+        if k:
+            keys[k] = rel
+    _, blocks = backlog.parse_archive(text)
+    for b in blocks:
+        if b.kind != "entry" or b.pointer():
+            continue
+        rep.count("W5")
+        if not b.struck():
+            rep.warn("W5", backlog.ARCHIVE, b.lineno, "unstruck entry in the frozen archive: "
+                     "run `python3 -I tools/backlog.py migrate`")
+            continue
+        request, _ = backlog.split_struck(backlog.entry_body(b))
+        rel = keys.get(backlog.entry_key(request))
+        if rel:
+            rep.warn("W5", backlog.ARCHIVE, b.lineno, f"struck copy of {rel} (closed in the archive?): "
+                     "run `python3 -I tools/backlog.py migrate`")
 
 
 # ---------------------------------------------------------------- full tier
@@ -993,10 +1052,12 @@ RULES = [
     ("E10", "no tags, anchors or addresses in the wiki"),
     ("E11", "wiki pages based_on reviewed specs"),
     ("E12", "wiki sections link a spec"),
+    ("E13", "backlog entries well formed"),
     ("W1", "[C]/[I] statements carry an anchor"),
     ("W2", "Tag cells filled"),
     ("W3", "symbols cited by a spec or finding"),
     ("W4", "wiki based_on dates current"),
+    ("W5", "no live entry in the frozen backlog archive"),
 ]
 
 
@@ -1047,6 +1108,12 @@ def run_gate(root, cache_root=None):
             check_wiki(rel, text, ctx, rep)
     for rel in link_mds:
         check_links(rel, texts[rel], ctx, rep)
+    entries = {rel: texts[rel] for rel in mds
+               if RE_BACKLOG_ENTRY.fullmatch(rel) and os.path.basename(rel) != backlog.INDEX}
+    for rel, text in entries.items():
+        check_backlog_entry(rel, text, ctx, rep)
+    if backlog.ARCHIVE in texts:
+        check_backlog_archive(texts[backlog.ARCHIVE], entries, rep)
     check_mermaid([(rel, n, body) for rel in mds if rel.startswith("docs/")
                    for n, body in mermaid_blocks(texts[rel])], cache_root or root, rep)
     # W3: a symbol is cited when its name appears in some spec or finding

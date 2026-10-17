@@ -900,6 +900,69 @@ The batch's other ledgers are in [items/0008 § Plan 0038 batch S2c](0008-cube.m
   creations, the quality-7 hammers among them (`tools/uniques.py`, run:2026-10-16-quest-drops).
   (fn:sub_00557450_ItemCreateByQuality@0x00557450, fn:ITEMS_BuildUnique@0x005566B0)
 
+## Plan 0039 batch P1b (2026-10-17)
+
+Row Q22 of [plan 0039](../../plans/0039-backlog-sweep-4.md): `nolimit` and automatic identification. Static (a call-site
+survey of `ITEMS_SetFlag(…, 0x10, …)` with objdump) and a table check. No game run.
+
+- [I] **Who writes the identified flag (`0x10`).** 22 call sites. Clearing it: the magic, unique (0x00556855 and
+  0x00556A28), rare (`ITEMS_BuildRareAffixes`, the version-0 rare), crafted, set (`ITEMS_BuildSetPick`, the version-0
+  set) builders, `sub_00556A60_CharmForcedAffixes` and `GAMBLE_BuildInv`. Setting it: `sub_00557AB0_ItemInitStats`,
+  `sub_00555D20_ItemQuestHook`, `sub_0055FE00_ItemIdentifyAttach`, `sub_00565AB0_RecipeOutputCreate` (2), the identify
+  routine 0x005762C0 (4 callers), the Act II staff and viper chests (`sub_00599CF0_A2Q2_StaffChest`,
+  `sub_0059A7E0_A2Q3_ViperChest`), and the client at 0x004C19FE. `ItemCreate` and `ITEMS_CreateForStore` copy it from the
+  creation record. (0x00556855, 0x00556A28, 0x00557ECF, 0x00555D4A, 0x005762CE, 0x00558EE1, 0x00559E0B)
+- [I] **A quest unique is created identified.** `ItemInitStats` runs after `ItemCreateByQuality` returns (0x00557E41), and for
+  a base with both `quest` and `questdiffcheck` set it writes stat 356 (the difficulty) and then sets flag `0x10`
+  (0x00557E60–0x00557ECF), undoing the unique builder's clear. [C] (data) every stock base with the `unique` flag and
+  `quest` (17 bases) has `questdiffcheck` 1; `std` (`unique` flag, no `quest`) is not identified by this rule.
+  (fn:sub_00557AB0_ItemInitStats@0x00557AB0, tbl:Misc.txt:questdiffcheck, tbl:Weapons.txt:questdiffcheck)
+- [I] **`nolimit` plays no part in identification.** Its reader is `ITEMS_UniqueMarkMade` (§ 3.3), called once, from the
+  unique builder (0x00556A1A, the only `call` to it in the image); the writers above decide on the base, the quality or
+  their caller, and none of those read here tests the UniqueItems row. With every stock row's `nolimit` blank, a stock unique is always marked made. (fn:ITEMS_UniqueMarkMade@0x00556530, tbl:UniqueItems.txt:nolimit)
+- [I] **A gambled unique enters the made-uniques set.** `GAMBLE_BuildInv` creates each slot's item with
+  `ITEMS_CreateForStore(…, quality q, …)` when the window is built ([items/0009 § 7](0009-vendors.md#7-gambling-gamble_buildinv-0x00578790)),
+  and quality 7 reaches the same `ITEMS_BuildUnique`, whose one `ITEMS_UniqueMarkMade` call marks the row. So a unique
+  shown in the gamble window marks its row made whether or not it is bought, and a row already made fails the pick
+  and falls back (§ 5). (fn:GAMBLE_BuildInv@0x00578790, fn:ITEMS_BuildUnique@0x005566B0)
+
+## Plan 0038 batch S1f (2026-10-17)
+
+Static batch S1f of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the c-emu rows of the
+[inventory § 2.6 S1f table](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews). No session was
+played. Method: the function runs under Ghidra's p-code emulator against `tools/sweep_s1f.py`'s models, under
+[ADR-0015](../../adrs/0015-emulated-reproduction.md): [run:2026-10-17-sweep-emu2](../data/experiments.md#run2026-10-17-sweep-emu2).
+Every memory spec guards the fatal path (0x00408090, 0x00408A60, 0x00681E09) and the pool allocator's entries
+(0x0040B4B0, 0x0040B430, 0x0040B480), and no case stopped, so no claimed branch was reached through either (review
+condition (a)). Where a statement above is tagged inferred and this section raises it, the tag and the second source
+given here are the current ones.
+
+`ITEMS_BuildSetPick` (the item in EBX, the creation record on the stack, `ret 4`) ran on 3 000 calls (family
+`setpick`) against 40 synthetic `setitems` tables of 0 to 200 rows (written once, `const`; random version word,
+item code from three values or random, `+0x2C` 0x1D or not, level −0x8000…0x7FFF, weight 1, 3, 7, 0, −1, −3, small,
+`0x7FFFFFFF` or a random word) and synthetic items (version 0, 1, 99, 100, 101; level 0, negative, normal, 0x7FFF;
+seed, flags and file index random) and records (`+0x40` forced row, `+0x80` flags). The spec sets
+`data:g_pDataTables@0x00744304` → `data:g_DataTables@0x0096BC30` with only the items count and records (`+0xE28`/
+`+0xE2C`, also read directly at 0x0096CA58) written; each case writes `+0xC18`/`+0xC1C` (the table and its count).
+These are the claim's arguments (S1e ruling 3). Every set row has no property (`+0x88`…`+0x1B7`: −1 in each slot,
+`+0x87` = 0), so a pick runs `sub_0065FEC0_ItemApplyProps` mode 4 to its end without calling a property function;
+the only traced access is that function's mode jump table 0x00660084 (`.text`). No case stopped: the success path
+(file index, flag 0x10 cleared, mode-4 properties) stays off the allocator and the fatal path, so the conditional
+row is kept. No table has more than 200 rows, under the 256 pairs of the stack list.
+
+- **Uniques-sets 44** (spec *Reimplementation notes* L661, a set weight of 0 counts as 1 and a negative one is kept;
+  with a non-positive total `Range` returns 0 without a draw and the walk can then fail) **raised, with a precision.**
+  [C] 3 000 of 3 000 calls give the model's return, item seed, file index, flags and level. 1 842 candidates of weight
+  0 were counted as 1 and 230 picks chose one; 2 452 negative weights were kept as they are. The precision: a total of
+  exactly 0 never reaches `Range`: it returns 0 at `test esi, esi; je` (0x005C26B9, 1 878 calls). Only a negative total
+  reaches `RNG_RangeB`, which returns 0 without a draw (458 calls); the walk then subtracts weights from 0 and either
+  finds a weight above the remainder or runs off the end and returns 0 (134), leaving the seed unchanged. A forced row
+  (12) is taken with no draw. The negative control (weight 0 counted as 0) differs in 254. The weight store is cited
+  from objdump (`test ecx, ecx; jne` then `mov [ebp+edi*8-0x810], 1` at 0x005C2678–0x005C268A).
+  (fn:ITEMS_BuildSetPick@0x005C25C0, fn:RNG_RangeB@0x0045C3E0, run:2026-10-17-sweep-emu2)
+- [I] The candidate list is `sub esp, 0x814`'s 0x800-byte array (256 pairs) and nothing counts the pairs against it
+  (0x005C2675–0x005C269F): a `setitems` table with more than 256 rows matching one base would overwrite the frame.
+  Stock data has 127 rows in all. (tbl:SetItems.txt:item)
 ## Plan 0038 batch H6d (2026-10-17)
 
 Harness batch H6d of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (run:2026-10-17-sweep-quest-b6,
@@ -973,9 +1036,9 @@ and [items/0001](0001-tc-resolution.md#plan-0038-batch-h6d-2026-10-17).
 - Not reached by the Phase 2 runs, so these keep their Phase 1 tag: a fallback builder failing in turn (the chain past its first step); a
   `unique`-flag base with no candidate; a quest base skipping the made test; a set-29 row;
   an item of type 11 drawing on the item seed before the pick.
-- `nolimit` and automatic identification (`src:d2dfg-blizzard`): the builder clears the identified flag of every unique.
+- ~~`nolimit` and automatic identification (`src:d2dfg-blizzard`): the builder clears the identified flag of every unique.
   Whether a `nolimit` or quest unique is identified later is not read. Every stock row has `nolimit` blank, so no drop
-  reaches it.
+  reaches it.~~ Read in [§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17): a quest unique is identified by `ItemInitStats`; `nolimit` takes no part.
 
 ## Change notes
 

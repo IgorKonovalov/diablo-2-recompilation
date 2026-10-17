@@ -341,7 +341,7 @@ column is `[I]` only where a finding names its reader, and Phase 1 of plan 0042 
 | `Blue` | int 0..255 (2 distinct) | `leveldefs` `+0x08B` u8 | — | [I] |
 | `Portal` | int 0..1 (2 distinct) | `leveldefs` `+0x08C` u32 | — | [C] |
 | `Position` | int 0..1 (2 distinct) | `leveldefs` `+0x090` u32 | — | [C] |
-| `SaveMonsters` | int 0..1 (2 distinct) | `leveldefs` `+0x094` u32 | — | [C] |
+| `SaveMonsters` | int 0..1 (2 distinct) | `leveldefs` `+0x094` u32 | [§ Inactive-room save](#inactive-room-save-plan-0040-phase-1) | [C] |
 | `Quest` | int 0..11 (3 distinct) | `levels` `+0x030` u8 | — | [C] |
 | `WarpDist` | int 0..3900 (8 distinct) | `levels` `+0x00C` u32 | — | [C] |
 | `MonLvl1` | int 0..50 (37 distinct) | `levels` `+0x010` u16 | [§ Object population columns](#object-population-columns-plan-0023-phase-1) (trap and lock chances) | [C] |
@@ -625,6 +625,18 @@ for that difficulty is non-zero. Meanings of the MonStats columns are in
 - `[C]` `WarpDist` (`+0x00C`) keeps random groups away from warps: the spawn-point pick, with `avoidWarp` (every
   random group and special), rejects a point whose squared distance in subtiles to a room warp point, or to the
   level's type-11 point, is below `WarpDist`. ([monsters/0002](../findings/monsters/0002-room-population.md) § 6, fn:sub_0054DC40_SpawnPosPick@0x0054DC40, run:2026-10-13-mon-spawn)
+
+## Inactive-room save (plan 0040 Phase 1)
+
+- `[I]` `SaveMonsters` (leveldefs `+0x94`) is read by `sub_00642820_LevelSaveMonsters`, the starting value of the save
+  test for a monster and for an object of a room being released: a monster's `save` starts as `SaveMonsters` of its
+  level (or unit `+0xC4` bit `0x2000000`), an object's as `SaveMonsters` or its preset flag; later tests can still veto
+  it ([MonStats2 § Inactive-room save](MonStats2.md#inactive-room-save-plan-0040-phase-1),
+  [States § Interpretation notes](States.md#interpretation-notes)). (fn:sub_00642820_LevelSaveMonsters@0x00642820,
+  fn:sub_005431F0_InactiveMonsterSaveTest@0x005431F0, fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0,
+  tbl:Levels.txt:SaveMonsters; [drlg/0009 § 5](../findings/drlg/0009-room-lifecycle.md#5-the-inactive-records))
+- `[C]` By data, `SaveMonsters` is 0 only for levels 0 (the null level), 1, 40, 75, 103 and 109 (the five towns) and 50 (the Harem) and 1 for
+  every other level (`levels.txt` read by script, tbl:Levels.txt:SaveMonsters).
 
 ## Record layouts
 

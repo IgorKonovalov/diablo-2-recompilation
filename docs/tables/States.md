@@ -328,8 +328,13 @@ several.
   over all 185 records), a code anchor plus data behaviour.
 - `[L]` The column name suggests the experience credit of a kill by a converted or confused monster also goes to the
   caster; only the quest-TC reader has been read.
-- Besides `exp`, the flag bits `life` and `meleeonly` and the row ids of § Combat readers have code readers; no other
-  column has a reader in a finding yet.
+- `[I]` **`udead` is flag bit 33** (the loader's bit-set at `DataTables+0x150` = `0xCC + 4·33`): when a room is
+  released, a dead monster that carries any state of that set is not saved (`InactiveMonsterSaveTest` step 2). In the
+  shipped data 13 rows set it (§ Flag bits by row). (fn:sub_005431F0_InactiveMonsterSaveTest@0x005431F0,
+  fn:sub_0063A130_UnitHasStateInMask@0x0063A130, tbl:States.txt:udead;
+  [drlg/0009 § 5](../findings/drlg/0009-room-lifecycle.md#5-the-inactive-records))
+- Besides `exp` and `udead`, the flag bits `life` and `meleeonly` and the row ids of § Combat readers have code
+  readers; no other column has a reader in a finding yet.
 
 ## Open questions
 

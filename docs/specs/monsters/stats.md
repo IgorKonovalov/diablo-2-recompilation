@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, monsters/spawn, monsters/special, items/properties, data/excel]
 consumed_by: [items/tc, hirelings, combat/overview, combat/damage]
-tags: {C: 102, I: 58, L: 5}
-updated: 2026-10-16
+tags: {C: 103, I: 57, L: 5}
+updated: 2026-10-17
 ---
 
 # Monster stats: hit points, defence, experience, resistances, MonProp and the mod effects
@@ -546,7 +546,8 @@ at 0x0057C0FE from the difficulty record its caller keeps, and when the attacker
 boss it is the percentage the hit's damage is scaled by ([combat/reductions § A](../combat/reductions.md#a-combat_applyreductions);
 correction in [monsters/0004 § 1](../../findings/monsters/0004-stats.md#1-the-two-loader-descriptors)). The mercenary
 hitting Andariel reproduced 50 in Normal and 35 in Nightmare. [C] (fn:COMBAT_DamagePercent@0x0057C060,
-tbl:DifficultyLevels.txt:HireableBossDamagePercent, run:2026-10-16-combat) Hell's 25 was not reached. [I] (0x0057C0FE)
+tbl:DifficultyLevels.txt:HireableBossDamagePercent, run:2026-10-16-combat) Hell's 25 reproduced in 33 events, which
+tells this column from `MonsterCEDamagePercent` (20 in Hell). [C] (0x0057C0FE, run:2026-10-16-combat)
 
 ### H. To-hit and damage at attack time (reference only)
 

@@ -370,8 +370,8 @@ return (ecx - 100) * k / (ecx - 100 + k) + 100;          // int, cdq/idiv
 - [I] **Whose stat 80, the rest.** A player killer: its own (`MonsterOwner` returns 0 for a non-monster). A monster killer
   (summon, minion of a monster, hireling, or a plain monster): its own stat 80 plus that of the unit
   `sub_0058F0D0_MonsterOwner` returns, which reads `monsterData+0x28` (the owner record) and looks the unit up through
-  `0x00552F60`. Which monsters have that owner record filled (summons and hirelings, presumably not monster minions) is
-  not read here. Any other killer type (an object, a missile) gives 0. Layer 0 of stat 80 (`item_magicbonus`). (fn:ITEMS_DropMagicFind@0x005585D0, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0)
+  `0x00552F60`. Which monsters have that owner record filled: summons, hirelings, and also the minions of unique and
+  superunique bosses ([§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17)). Any other killer type (an object, a missile) gives 0. Layer 0 of stat 80 (`item_magicbonus`). (fn:ITEMS_DropMagicFind@0x005585D0, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0)
 - [C] **A summon has an owner:** for 85 kills by Raise Skeleton skeletons (monster class 363), `MonsterOwner`
   returned the Necromancer (`QOWN otype=0 oclass=2`). The roll used the skeleton's stat 80 (0) plus the owner's (10)
   and reproduces only with the owner's part. (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, run:2026-10-13-quality)
@@ -609,13 +609,124 @@ it links.
   run:2026-10-15-cube) are created at item version 2, which passes 100, so they use the `Version` 1 rows; a version-0
   creation needs a game whose item version is 0, and no logged game has one (101 in expansion, 2 in classic).
 
+## Plan 0039 batch P1b (2026-10-17)
+
+Row Q19 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static (objdump, Ghidra on the lane's copy) and a table
+survey. No game run.
+
+### Q19 (a): whose stat 80 a monster killer adds (`monsterData+0x28`)
+
+- [I] **`monsterData+0x28` points to the monster's AI block; the owner is that block's `+0x28` game, `+0x2C` unit id,
+  `+0x30` unit type.** `sub_0058F0D0_MonsterOwner` reads those three and calls `sub_00552F60_GameFindUnit(game, type,
+  id)` (0x0058F0E5–0x0058F0FA); a block with `+0x28` = 0, or a unit no longer in the game, gives no owner.
+  `sub_0058F030_MonSetOwner(game /*ECX*/, monster /*EDX*/, id, type, a, b)` writes them (0x0058F078–0x0058F084);
+  `sub_0058F380_MonGroupForEach` ([monsters/0003](../monsters/0003-special-monsters.md)) reads the same fields as the group leader, and
+  `sub_0058F100_MonGroupAddMember` appends a member's id to the leader block's list `+0x34`.
+  (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, fn:sub_0058F030_MonSetOwner@0x0058F030,
+  fn:sub_0058F100_MonGroupAddMember@0x0058F100)
+- [I] **`MonSetOwner` has 26 call sites, and monster minions are among them.** Hirelings: `MERC_Init` (2 sites).
+  `sub_005A0C00_UniqueMinions` sets each minion's owner to the boss (`EDX` = the minion, id =
+  `sub_00451F50_UnitGetId(boss)`, type 1, 0x005A0C94–0x005A0CA6), then `sub_0058F100_MonGroupAddMember(game, boss,
+  minion)` adds the minion's id to the boss's list (0x005A0CAB–0x005A0CB0). A superunique's minions take the same path:
+  `SuperUniqueSpawn` calls `sub_005A2120_SpecialModsApply` with the `MinGrp`/`MaxGrp` range and minions = 1
+  (0x005A4B6C–0x005A4B8E), which calls `UniqueMinions` (0x005A2135, its only caller) (added at the architect's review).
+  `sub_005A09E0_SpecialMonPlace` (0x005A0B9B) sets the placed boss as its own owner (`EDX` and the id are the same
+  unit); 0x005A4DD8 in `sub_005A49B0_SuperUniqueSpawn` does the same in one record's hard-coded tail (a `switch` case,
+  before `EscortSpawn`), not for every superunique. A monster spawned for another unit
+  (`sub_0056D940_SpawnOwnedMonster`, 0x0056DA15) gets that unit. MonStats party minions of a `SetBoss` leader are linked
+  to it through the same pair (`0x0058F030`/`0x0058F100`, [monsters/0002](../monsters/0002-room-population.md) § MonStats
+  minions, `[C]` there), so they have their leader as owner too. The other sites
+  (`sub_005B24E0_EscortSpawn`, `sub_005B2570_TentacleMinionsSpawn`, and 0x00579ADB,
+  0x0058F50F, 0x005A2CDD, 0x005A2D50, 0x005AEEF1, 0x005B3192, 0x005B324A, 0x005B3389, 0x005C08C0, 0x005C5611,
+  0x005C5A15, 0x005C5D97, 0x005C5DAD, 0x005FCAA1, 0x005FCACB) are not followed here.
+- [I] **So a minion's kill adds its leader's stat 80, and a boss's kill its own a second time,** while the leader is
+  still in the game. Whether any stock monster carries stat 80 (which would make this visible) is not checked here.
+  For a hireling or a summon the owner is the player (§ 7, run:2026-10-16-hirelings). (fn:ITEMS_DropMagicFind@0x005585D0)
+
+### Q19 (b): which stock bases the pre-switch overrides change (survey)
+
+The overrides of [items/0004 § 2](0004-uniques-sets.md#2-pre-switch-overrides-0x005574e30x00557567) test the base's own
+`type` record (`sub_0062E9E0_ItemTypeMagic` reads `+0x14`, `sub_0062E990_ItemTypeRare` `+0x15`,
+`sub_0062EA30_ItemTypeNormal` `+0x16`, through `0x0062B400`, no `Equiv` walk; a missing record counts as `Normal`
+only) and the base's `unique` (`+0x129`) and `quest` (`+0x12A`). Survey of the 659 rows of the shipped Weapons, Armor
+and Misc against ItemTypes (data, `[C]` for the counts):
+
+- `Magic` = 1: 7 bases (`rin`, `amu`, `vip`, `jew`, `cm1`–`cm3`); `vip` has `quest` and so gets 7, the others 4 unless
+  already 4–9. The `Magic` types `char`, `mboq` and `mxbq` have no base of their own. This is what
+  [ItemTypes](../../tables/ItemTypes.md) already lists; the "two quivers" of the earlier scratch read are those two
+  base-less types, not `bowq`/`xboq`.
+- `Rare` = 0 (6 → 4): 153 bases of 30 types (potions, gems, runes, scrolls, books, keys, gold, quivers, body parts,
+  charms, quest items and the like).
+- `unique` flag (→ 7): 18 bases, `d33`, `g33`, `hdm`, `hfh`, `hst`, `msf`, `qf1`, `qf2`, `bks`, `bkd`, `j34`, `g34`, `bbb`,
+  `tr1`, `mss`, `ass`, `tr2` (all `quest`) and `std` (no `quest`).
+- `Normal` = 1 (→ 2, last): 121 bases of 24 types; no base has a type without a record.
+
+(fn:sub_00557450_ItemCreateByQuality@0x00557450 0x005574E3–0x00557567, tbl:ItemTypes.txt:Magic, tbl:ItemTypes.txt:Rare,
+tbl:ItemTypes.txt:Normal, tbl:Weapons.txt:unique, tbl:Misc.txt:quest)
+
+## Plan 0039 batch P1c (2026-10-17)
+
+Follow-up (b) of the P1b review ([backlog](../../backlog.md), 2026-10-17 architect → reverser). Static: Ghidra on the
+lane's copy, objdump and `tools/xrefscan.py`. No game run.
+
+### The 17 `MonSetOwner` sites P1b did not follow
+
+`sub_0058F030_MonSetOwner(game ECX, monster EDX, id, type, a, b)` has 26 `call` sites in `.text`. P1b followed nine:
+`MERC_Init` (2), `UniqueMinions`, `SpecialMonPlace`, `SuperUniqueSpawn` (0x005A4DD8), `SpawnOwnedMonster` and the
+three `MinionsSpawn` sites. The other 17, read here:
+
+| site | function | the monster | its owner |
+|---|---|---|---|
+| 0x005B2546 | `EscortSpawn` | each escort of a boss | the boss (`id` = boss `+0x0C`, type 1); `MonGroupAddMember` |
+| 0x005B26D9 | `TentacleMinionsSpawn` | each tentacle | the monster that spawns them (its id, type 1); group add |
+| 0x005B3192 | `sub_005B3130_FormationLeaderSpawn` | a formation leader | itself (`id` = new unit's `+0x0C`, `a` = 1) |
+| 0x005B324A | `sub_005B31B0_FormationMembersSpawn` | each formation member | the leader passed in; group add |
+| 0x005B3389 | `sub_005B3270_FormationSpawn`, case 5 | a unit made by `SpawnAtPos` | the unit given as the third argument (`[ebp+0x10]`: id by `UnitGetId`, type by `sub_0044BE50_UnitGetType`) |
+| 0x005FCAA1, 0x005FCACB | `sub_005FC860_BaalCloneSpawn` | Baal's clone (class 570) | Baal (`ESI`); group add |
+| 0x005AEEF1 | `sub_005AEDA0_MissileSpawnOwnedMonster` (pointer at `0x0073C79C`, a missile-side table) | a monster made by `SpawnOwnedMonster` | the missile's owner unit (found by id); group add, mod 15 `partydead` appended |
+| 0x005C5A15 | `sub_005C58B0_SkillBoneWallDo` (`srvdofunc` 60, `Bone Wall`) | the wall piece | the caster (type and id; none → type 6, id −1); mod 15 appended |
+| 0x005C5D97, 0x005C5DAD | `sub_005C5D00_SkillBonePrisonDo` (`srvdofunc` 62, `Bone Prison`) | the prison pieces | the first piece: the caster; the others: the first piece, group add |
+| 0x005C5611 | `sub_005C55C0_SummonFinish`, called from `srvdofunc` 58 (`Revive`) at 0x005C5855 | the revived monster | the caster (none → type 6, id −1); mod 21 `killself` with its timer |
+| 0x005C08C0 | `sub_005C07A0_SkillReviveDo`, a corpse callback of `0x005C09E0` | a monster raised from a corpse | the caster, found by id |
+| 0x0058F50F | `sub_0058F4D0_MonSetOwnerRestore`, from `sub_005424F0_InactiveMonstersRestore` (0x005427FB) | a restored inactive monster | its saved owner, and the saved block `+0x34` |
+| 0x00579ADB | `sub_00579AA0_MercRevive` | the old mercenary | none (id −1): unlinked before it is freed |
+| 0x005A2CDD | `sub_005A2CC0_PartyDeadKillMember` | each member of a `partydead` group | none (id −1), then death mode |
+| 0x005A2D50 | `sub_005A2D10_UModPartyDeadDeath` (`g_UModEventFns` mod 15, slot 1) | a dying `partydead` monster | none (id −1); its owner, if a monster and not itself, is put in death mode as well |
+
+`g_UModEventFns` is a table of six code pointers per MonUMod row, called as `[0x0073C0B8 + 4·(6·mod + event)]`
+(0x005A42DD), or `[0x0073C0CC + 24·mod]` for event 5 (0x005A4317). Slot 91 is mod 15 (`partydead`), event 1.
+(fn:sub_0058F030_MonSetOwner@0x0058F030, fn:sub_005B24E0_EscortSpawn@0x005B24E0,
+fn:sub_005B2570_TentacleMinionsSpawn@0x005B2570, fn:sub_005B3270_FormationSpawn@0x005B3270,
+fn:sub_005FC860_BaalCloneSpawn@0x005FC860, fn:sub_005AEDA0_MissileSpawnOwnedMonster@0x005AEDA0,
+fn:sub_005C58B0_SkillBoneWallDo@0x005C58B0, fn:sub_005C5D00_SkillBonePrisonDo@0x005C5D00,
+fn:sub_005C55C0_SummonFinish@0x005C55C0, fn:sub_0058F4D0_MonSetOwnerRestore@0x0058F4D0,
+fn:sub_005A2D10_UModPartyDeadDeath@0x005A2D10, data:g_UModEventFns@0x0073C0B8, tbl:Skills.txt:srvdofunc)
+
+- [I] **For items/quality** (a monster killer adds its owner's stat 80, § Plan 0039 batch P1b). Owners are set for
+  these kinds, and a kill by one of them also counts its owner's stat 80 while the owner is in the game
+  (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0):
+  - escorts (the boss);
+  - tentacles (their spawner);
+  - formation members (their leader; a leader owns itself);
+  - Baal's clone (Baal);
+  - the bone wall and prison pieces, revived and raised monsters, and missile-spawned monsters (the caster or the
+    missile's owner);
+  - a restored inactive monster (its saved owner).
+
+  Unique and superunique minions, MonStats party minions, hirelings and summons were already shown in P1b. The three
+  "none" rows only clear a link. (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, fn:ITEMS_DropMagicFind@0x005585D0)
+- Which callers reach `FormationSpawn` (0x0054E1CB in `PresetGroupSpawn`, and 0x005B3559) and which caster
+  `0x005C09E0` belongs to are not read.
+
 ## Open questions
 
-- Which other monsters have an owner for magic find (`monsterData+0x28`)? A summon (skeleton) does (§7). Hirelings are
+- ~~Which other monsters have an owner for magic find (`monsterData+0x28`)? A summon (skeleton) does (§7). Hirelings are
   expected to, monster minions are not. Resolve by reading where `+0x28` is written, or by a hireling kill under the
-  `QOWN`/`QOMF` lines.
+  `QOWN`/`QOMF` lines.~~ Read in [§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17): minions of unique and superunique bosses do have one (their boss), and a boss
+  is its own owner.
 - The `*Min` clamp and the order MF-before-minimum: no logged chance came near a minimum; it needs a large
   `ilvl − qlvl` (about 300 for the unique test) or a very high MF, or a different table, so it may stay `[I]`.
+  (0x00558767–0x0055876E, run:2026-10-12-quality, run:2026-10-13-quality)
 - Normal and Hell difficulty with magic find, negative MF, and the two unexercised early returns (unique flag, quest).
 - The creation-side roll `sub_00556F60_ItemRollQualityCreate` and the pre-switch overrides in
   `sub_00557450_ItemCreateByQuality`: read with the creation rows (`items/uniques-sets`, `items/affixes`).

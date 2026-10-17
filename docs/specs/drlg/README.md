@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds]
 consumed_by: [drlg/room-tiles, drlg/preset, drlg/maze, drlg/outdoor, drlg/warps, drlg/collision, monsters/spawn, objects]
 tags: {C: 75, I: 6, L: 0}
-updated: 2026-10-16
+updated: 2026-10-17
 ---
 
 # DRLG overview: act → level → room, generator dispatch and room-creation order
@@ -368,10 +368,11 @@ Step notes:
    `Range` start from the same seed value, so they agree whenever nothing overwrote the level's index. [C]
    (fn:sub_00668100_PresetLevelBuild@0x00668100, run:2026-10-12-drlg-gen) The act's link setup
    overwrites it for levels 1 and 40 (the town orientation, from the link value) and for level 27 (one
-   act-seed draw while it builds level 6): levels 1 and 40 changed index between creation and build in
-   run:2026-10-12-drlg-gen, and level 27 was built with its drawn index in run:2026-10-13-drlg-preset
-   ([preset.md](preset.md) step 7). [C] (fn:sub_006772C0_LevelLinkBuild@0x006772C0, run:2026-10-12-drlg-gen,
-   run:2026-10-13-drlg-preset) The level-27 draw is the link builder's only act-seed draw, made while its
+   act-seed draw while it builds level 6, only when Black Marsh ends on side 1 or 3; on side 0 level 27 keeps its
+   create-time index): levels 1 and 40 changed index between creation and build in run:2026-10-12-drlg-gen, level 27
+   was built with its drawn index in run:2026-10-13-drlg-preset ([preset.md](preset.md) step 7), and with its
+   create-time index 0 and 2 in run:2026-10-17-sweep-links. [C] (fn:sub_006772C0_LevelLinkBuild@0x006772C0,
+   run:2026-10-12-drlg-gen, run:2026-10-13-drlg-preset, run:2026-10-17-sweep-links) The level-27 draw is the link builder's only act-seed draw, made while its
    per-entry loop handles level 6, after the layout of table `0x006F0840`
    ([warps.md § C](warps.md#c-level-rectangles-and-the-links-after-the-layout)). [C]
    (fn:sub_006772C0_LevelLinkBuild@0x006772C0, run:2026-10-15-drlg-maze) The town callback made no level draw in the run. [C] (run:2026-10-12-drlg-gen)
@@ -426,7 +427,7 @@ Step notes:
   `sub_00678A70_ActLinkAct5`, which run `sub_006772C0_LevelLinkBuild` and the `LinkPick` callbacks on a
   copy of the act seed. `LevelLinkBuild` creates each linked level (`sub_00642BB0_LevelEnsure`), writes its
   position, writes the link value into the index of preset levels 1 and 40, and writes level 27's index
-  from one act-seed draw while it handles level 6. Then `DRLG_ActCreate` creates the act's town level and
+  from one act-seed draw while it handles level 6 when Black Marsh ends on side 1 or 3. Then `DRLG_ActCreate` creates the act's town level and
   calls `LevelInit` on it. Acts I, II, IV and V are reproduced (run:2026-10-15-drlg-maze: 196 link builds);
   Act III's jungle layout steps the act seed itself and is [outdoor.md § J](outdoor.md#j-act-iii), reproduced in
   run:2026-10-15-drlg-outdoor. See also [rng/seeds](../rng/seeds.md) step 3d.

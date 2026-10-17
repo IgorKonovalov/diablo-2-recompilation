@@ -73,7 +73,7 @@
   `Act 1 H2H A`, NoDrop' 10) and `NDIN n=4 nd=125 total=38 fctrl=027f` (1 call, `Quill 1`, NoDrop' 20); the model at
   53-bit precision gives both. TCs seen: `Act 1 H2H A` (9), `Quill 1` (1); all Normal, no champion, unique or
   superunique died, no Nightmare save (the header `difficulty`/`progression` fields are layout `[C]`, meaning `[L]` in
-  [d2s.md](../../formats/d2s.md), so no save was edited for it).
+  [d2s.md](../../formats/d2s.md), so no save was edited for it). (run:2026-10-11-tc-drops)
 - **Conclusion (both sessions):** 14 resolver calls recorded, 14 reproduced. Covered: NoDrop at two player counts
   (n = 1 and n = 4, with NoDrop' matching the x87 model), the x87 control word (`0x027F`: 53-bit precision, round to
   nearest, in all 10 NDIN lines), `weapN` (`weap3`), one recursive chain (`Act 1 H2H A` → `Act 1 Equip A` → `weap3`;
@@ -412,7 +412,7 @@
 - **Conclusion:** case (c) met. The champion column `TreasureClass2` and the champion-before-unique test order are
   `[C]` for Nightmare, expansion, single player, class 61 ([items/0001](0001-tc-resolution.md) summary and §3), and the
   forward upgrade walk ran on the champion group (§4 observed part). Live champions carry `0x0d`. Not reached: a
-  Normal or Hell champion, a classic game, a monster with both `0x02` and `0x04`.
+  Normal or Hell champion, a classic game, a monster with both `0x02` and `0x04`. (run:2026-10-12-tc-champion)
 
 ### Addendum 2026-10-16: plan 0038 batch S2a
 
@@ -1567,7 +1567,7 @@
 - **Conclusion:** the TC-named preference, its filter test and the first-row rule of the name tree are reproduced on
   a forced path; no frequency claim. **Architect review 2026-10-15:** the run agrees with items/0004 §§ 3.2, 6 but
   raises no tag. The edited cells are the TC cells those claims are about, and only edited data reaches a named row in
-  a run, so under ADR-0010 they stay `[I]` (the plan 0019 ruling on case (d) stands).
+  a run, so under ADR-0010 they stay `[I]` (the plan 0019 ruling on case (d) stands). (run:2026-10-15-uniques-tcnamed-forced)
 
 ## run:2026-10-15-sockets
 
@@ -2061,7 +2061,7 @@ Logs `workspace/logs/quests-s<slot>-<seed>-<tag>-<difficulty>.log`; screenshots 
   - the cow portal and 565 cow kills with their drops; the Cow King was not met.
   - the `boss` case: Andariel created in an expansion Nightmare and Hell game, level reproduced by `monpool.py`.
   - the Phase 1b case (the Act I `TCQuestId` label): Andariel's `TCQuestId` 6 read record word 6 in every B6 group.
-- **Shortfalls** (claims stay `[I]`; attempts are consecutive scripted sessions):
+- **Shortfalls** (claims stay `[I]`; attempts are consecutive scripted sessions) (run:2026-10-16-quest-drops):
   - Mephisto with his quest done (B6 not taken): 4 attempts (3352, 3357, 3358, 3359): the Durance descent or the moat.
   - The Countess (no quest dependence, her rune TC): not killed in 10 attempts over the four states (Normal not done
     3401, 3402, 3404, 3405; Normal done 3406, 3407, 3408; Nightmare done 3421, 3423; Nightmare not done 3422; 3403 ended by

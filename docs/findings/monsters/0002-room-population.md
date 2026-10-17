@@ -481,7 +481,8 @@ ChampionMemberMark(u, mod):                                              ; fn:su
   The chance is a data value (MonUMod record 0, `+0x1C`). (fn:sub_005A0760_SpecialModsRoll@0x005A0760, 0x005A0817, 0x005A0825, run:2026-10-13-mon-spawn)
 - [C] **By data:** MonUMod `+0x1C` is the `constants` column, and row 0 holds **20**. `monumod.bin` has 43 records of 0x20
   bytes, and the u32 at `+0x1C` equals the `constants` column of `monumod.txt` on all 43 rows; row 0 is `none`, constant 20,
-  `*constant desc` "champion chance". The table doc is still the archivist's (backlog). (`monumod.txt` `constants`, no table doc yet)
+  `*constant desc` "champion chance". The table doc is [MonUMod](../../tables/MonUMod.md). (tbl:MonUMod.txt:constants,
+  0x005A0817)
 - [C] That value is the champion chance: a random special is a champion when `Range(boss.seed, 100) < 20`, i.e. 20 of 100.
   This is the reading of `0x005A0817` (load, `Range(100)`, `jge`), and the run logged 24 such rolls on 24 specials:
   champion exactly when `r < 20` (4 champions, `r` = 0, 9, 4, 15). (0x005A0817, fn:sub_005A0760_SpecialModsRoll@0x005A0760, run:2026-10-13-mon-spawn)
@@ -910,6 +911,56 @@ S3B spawn call_paths=3 classes_size01=58 disp_2be=1 getrecord_fns=26 getrecord_s
   run's watchpoints (`[C]` already), it is not a roam/stand flag. (fn:LEVELS_GetRecord@0x0061DB70,
   fn:sub_005479C0_MonRegionsBuild@0x005479C0, fn:sub_0054F060_RoomWandererTick@0x0054F060, tbl:Levels.txt:MonWndr,
   run:2026-10-13-mon-spawn)
+
+## Plan 0039 batch P1c (2026-10-17)
+
+Row Q26 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static (Ghidra on the lane's copy, objdump) and a re-read
+of the three kept logs of run:2026-10-13-mon-spawn. No game run.
+
+### Q26: the callee behind the 6- and 15-step unit seeds
+
+- [C] **The extra steps are `MonRegionFindAdd` appending the class to its level's region.** `SUnitCreate` reaches
+  `MonsterInit` for a type-1 unit through its jump table (case 1 at 0x005553A0, `call 0x00574250`). `MonsterInit` calls
+  `MonRegionFindAdd` (0x005742DC) before `MonStatsInit` (0x005742E4). A class not yet in the level's region, with
+  `TotalPieces` above 2 (`cmp byte [eax+0xEC], 2` at 0x00547C87), is appended, and `MonVariantRoll(&unit.seed, entry, 3)`
+  (0x00547CA1) rolls its sets on the **unit** seed. `MonStatsInit` then makes its two usual steps (the set pick and the
+  HP draw). So the step count is the variant roll's draws plus 2. This is the rule that
+  [monsters/0001 § Plan 0038 batch S3a](0001-level-pool.md#plan-0038-batch-s3a-2026-10-16) (pool 22) already raised to
+  `[C]` on the mon-stats logs. Here it is matched to the two creations the spawn finding left unexplained.
+  (fn:sub_00555230_SUnitCreate@0x00555230, fn:sub_00574250_MonsterInit@0x00574250,
+  fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0, fn:sub_005BDB20_MonVariantRoll@0x005BDB20,
+  fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:MonStats2.txt:TotalPieces, run:2026-10-13-mon-spawn)
+- [C] **Checked on the three kept logs** (a scratch script, not kept, over `monspawn-s1-12345-normal-a1.log`,
+  `monspawn-s2-12345-normal-a2-5.log` and `monspawn-s3-1-hell-a1.log`). Every `MU` line with a preceding `MU0` was
+  counted: 1 786 creations (1 785 before the review's re-count), the towns and unwatched levels included, so more than the run's 916. The steps from
+  `Init(step(game seed at MU0).low)` to the logged unit seed were compared with three hypotheses
+  (run:2026-10-13-mon-spawn):
+  - *found*: 2 steps;
+  - *appended*: `tools/monpool.py`'s `variant_roll` on a fresh entry, plus 2;
+  - *stale*: `TotalPieces` ≤ 2, one draw per component with count ≥ 1, plus the HP draw.
+
+  Every creation fits one of them:
+
+  | steps | creations | hypothesis that fits |
+  |---|---:|---|
+  | 2 | 1 725 | found (905 also fit an append that makes no draw, 761 of them also a stale entry with one component; review re-count) |
+  | 3 | 47 | stale (two components with count ≥ 1) |
+  | 6, 10, 11, 13, 14, 15, 16 | 1, 3, 4, 1, 1, 3, 1 | appended, exact step count |
+
+  The run record's two outliers are among the appends: the `goatman1` unique boss at line 4 101 of the s1 log (6 = 4
+  variant draws + 2; one component with count 6, so each further set draws once, one retry) and the `fallen1` minion
+  at line 10 222 of the s3 log (15 = 13 + 2). No count is left over. The region state was not modelled here, so the
+  test shows that each count fits the rule. Which branch a creation took comes from the S3a model on the mon-stats logs.
+  (run:2026-10-13-mon-spawn, fn:sub_005BDB20_MonVariantRoll@0x005BDB20)
+- **Review re-run (architect, 2026-10-17).** An independent script over the same three logs (`tools/monpool.py`'s
+  `Seed` and `variant_roll`, a counting seed, the merged `.bin` tables) gives the same step histogram and the same
+  14 appends, each at the step count the variant roll predicts (6, 10 ×3, 11 ×4, 13, 14, 15 ×3, 16), the `goatman1`
+  at s1 line 4 101 and the `fallen1` at s3 line 10 222 among them. The table sums to **1 786**, not the 1 785 first
+  written; the 2-step overlap is 905 appends with no draw (761 of them also stale), not 45. No creation fails all
+  three hypotheses. The confirmation rests on the 14 appends, whose step counts the model predicts exactly from the seed;
+  the 2- and 3-step creations fit but do not tell the branches apart.
+- The finding's statement "Which callee of `SUnitCreate` makes them is not read" (§ 6, creation draws) is answered by
+  this section; the spawn spec's J1 note and *Open questions* entry can name `MonRegionFindAdd` (backlog, P2).
 
 ## Open questions
 

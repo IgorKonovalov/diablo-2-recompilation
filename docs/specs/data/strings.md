@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [data/excel]
 consumed_by: [data/excel, monsters/special, items/affixes, hirelings]
-tags: {C: 59, I: 39, L: 3}
-updated: 2026-10-16
+tags: {C: 60, I: 42, L: 3}
+updated: 2026-10-17
 ---
 
 # String tables: loading, index → text, key → index
@@ -294,6 +294,20 @@ Step notes:
   and `)` instead. The two texts go to two separate buffers. [I] (fn:sub_00633F40_LoadRareAffixes@0x00633F40
   0x006341E0–0x0063420B, fn:RAREAFFIX_GetRecord@0x00634260, fn:ITEMS_GetRareName1@0x00627FE0,
   fn:STRTABLE_GetByIndex@0x00524A30, 0x0048C5C1–0x0048C726, [data/0003 § Run](../../findings/data/0003-string-tables.md#run))
+  A missing record leaves its buffer empty. [I] (0x0048C6BE, 0x0048C7F3)
+- **The rare name line is `RareFormat`.** Qualities 6, 8 and 9 share one case of the client builder, which then calls
+  `ClientFormatArgs(out, STRTABLE_GetByIndex(1718), name1Text, name2Text, NULL)`; string 1718 is the key `RareFormat`.
+  The formatter copies its NULL-terminated arguments into 400-byte slots in order, so `%0` is `name1`'s text and `%1`
+  `name2`'s; `MagicFormat` (1714, `%0 %1 %2`) is called the same way with the prefix text, the base name and the suffix
+  text. [I] (0x0048C89A–0x0048C8BC, 0x0048BEB2–0x0048BED8, 0x0048CDCB–0x0048CDF7,
+  fn:sub_0048C060_ClientItemNameBuild@0x0048C060, fn:sub_0048BE80_ClientFormatArgs@0x0048BE80,
+  [data/0003 § Plan 0039 batch P1b](../../findings/data/0003-string-tables.md#plan-0039-batch-p1b-2026-10-17))
+  [C] In the shipped English `string.tbl`, entry 1718 is `%0 %1` (data check with `tools/tbl.py`; [tbl.md](../../formats/tbl.md)).
+  [I] So an English rare name is `name1`, one space, `name2`: the order and the separator come from the string table,
+  not the code, and another language's `RareFormat` may reorder them. This rests on `%n` naming the *n*-th argument,
+  which the argument copy and the `MagicFormat` call support. The builder is fatal (error line `0x822`) when
+  `len(name1) + len(name2) + len(base name) + 3` reaches its output size. (0x0048C7FC–0x0048C81D,
+  fn:sub_0048C060_ClientItemNameBuild@0x0048C060)
 
 ### E. Hash probing — `STRTABLE_FindInTable`, `STRTABLE_Hash`
 
@@ -459,7 +473,7 @@ all its `max_probes` nodes, and returns 0 with `"funeralpire -not xlated call ke
 ## Evidence
 
 - [findings/data/0003-string-tables.md](../../findings/data/0003-string-tables.md): every section (loading, index,
-  key, hash, text conversion, language, the run).
+  key, hash, text conversion, language, the run); § Plan 0039 batch P1b (the rare name line).
 - [findings/data/experiments.md § run:2026-10-15-strings](../../findings/data/experiments.md#run2026-10-15-strings):
   the lookup log and the `tools/tbl.py check` counts.
 - [findings/save/experiments.md § run:2026-10-12-d2s-io](../../findings/save/experiments.md#run2026-10-12-d2s-io): the
@@ -478,5 +492,6 @@ all its `max_probes` nodes, and returns 0 with `"funeralpire -not xlated call ke
   fatal. They stay `[I]` above. (fn:STRTABLE_EntryToString@0x00524930, 0x00524A33, [data/0003 § Open questions](../../findings/data/0003-string-tables.md#open-questions))
 - [L] The other charsets' `default.map` files and the map's two other tables are not read; they matter only for
   non-`eng` text and presentation. ([data/0003 § Open questions](../../findings/data/0003-string-tables.md#open-questions))
-- [L] How the client's item-name line joins a rare item's two name texts (order, separator; § D, *Rare names*): the
-  builder after 0x0048C726 is not read. ([data/0003 § Open questions](../../findings/data/0003-string-tables.md#open-questions))
+- [L] How the client's item-name line joins a rare item's two name texts, narrowed (plan 0039 P1b): the line is
+  `RareFormat` with `name1` as `%0` and `name2` as `%1` (§ D); the `%n` substitution itself, after the grammar-tag pass
+  that starts at 0x0048BEE0, is not read. ([data/0003 § Plan 0039 batch P1b](../../findings/data/0003-string-tables.md#plan-0039-batch-p1b-2026-10-17))

@@ -1912,7 +1912,7 @@ def cmd_hunt(args):
             print("hunt: class %d down after %.0f s" % (args.mon_cls, time.time() - t0))
             time.sleep(args.linger)
             return 0
-        upkeep(args, p)
+        upkeep(args, p, st)
         if not args.pet and gate.cast(p, st):
             continue
         live_ms = [m for m in ms if live(m)]
@@ -2321,13 +2321,31 @@ def room_centre(rect):
     return (5 * rect[0] + 2.5 * rect[2], 5 * rect[1] + 2.5 * rect[3])
 
 
-UPKEEP = {"t_mana": 0.0, "t_es": None, "npot": 0}
+UPKEEP = {"t_mana": 0.0, "t_es": None, "npot": 0, "t_merc": 0.0, "merc_max": 0}
 
 
-def upkeep(args, p):
+HIRE_CLS = (271, 338, 359, 560, 561)
+
+
+def upkeep(args, p, st=None):
     """Belt potions and Energy Shield: a potion from the non-mana columns below --drink life, one from --mana-col
-    below --mana-drink mana (at most every 2 s), Energy Shield every --es seconds."""
+    below --mana-drink mana (at most every 2 s), Energy Shield every --es seconds. With --merc-drink F and a log
+    state, a belt potion is given to the mercenary (Shift + the column key) when the life of its last MON entry
+    falls below F of the most it was seen with (at most every 2 s)."""
     u = UPKEEP
+    if st is not None and args.merc_drink and time.time() - u["t_merc"] > 2:
+        hm = [m for m in st.mon if m.get("cls") in HIRE_CLS and m.get("hp")]
+        if hm:
+            hp = hm[0]["hp"]
+            u["merc_max"] = max(u["merc_max"], hp)
+            if hp < args.merc_drink * u["merc_max"]:
+                u["npot"] += 1
+                col = [c for c in (1, 2, 3, 4) if c != args.mana_col][u["npot"] % 3]
+                p.dpy.keystate("Shift_L", True)
+                p.potion(col)
+                p.dpy.keystate("Shift_L", False)
+                u["t_merc"] = time.time()
+                print("merc life %d/%d, potion column %d to the mercenary" % (hp, u["merc_max"], col))
     if args.es and (u["t_es"] is None or time.time() - u["t_es"] > args.es):
         p.shield(args.es_swap)
         u["t_es"] = time.time()
@@ -2363,7 +2381,7 @@ def descend(args, st, p, gate, deadline):
         if st.pos[2] != lid0:
             print("descend: level %s -> %s" % (lid0, st.pos[2]))
             return True
-        upkeep(args, p)
+        upkeep(args, p, st)
         if gate.cast(p, st):
             continue
         px, py = st.pos[0], st.pos[1]
@@ -2382,9 +2400,13 @@ def descend(args, st, p, gate, deadline):
                         break
                     time.sleep(0.1)
                 continue
-            tgt = greedy_hop(st, w, args.hop, args.min_hop, bad, avoid_warps=False)
-            if tgt is None:
-                tgt = greedy_hop(st, w, 1.6 * args.hop, 2, bad, avoid_warps=False)
+            tgt = None
+            if path is None:
+                # once on a path, stay on it: a path step that leads away from the warp followed by a greedy hop
+                # back towards it shuttled between two cells for the whole search (h37r, seed 3738)
+                tgt = greedy_hop(st, w, args.hop, args.min_hop, bad, avoid_warps=False)
+                if tgt is None:
+                    tgt = greedy_hop(st, w, 1.6 * args.hop, 2, bad, avoid_warps=False)
             if tgt is None:
                 # a wall between: follow one breadth-first path over known free cells, never back along it
                 if path is None:
@@ -2490,7 +2512,7 @@ def cmd_farm(args):
         if wd.check("farm: %d casts, %d hops at %s" % (casts, hops, st.pos[:2])) == 2:
             why_end = "stalled twice"
             break
-        upkeep(args, p)
+        upkeep(args, p, st)
         if gate.cast(p, st):
             casts += 1
             continue
@@ -2633,6 +2655,8 @@ def main():
     ap.add_argument("--potion", type=int, default=0)
     ap.add_argument("--es", type=float, default=0, help="cast Energy Shield every this many seconds (0: never)")
     ap.add_argument("--es-swap", type=int, default=1, help="1: Energy Shield is the swap set's right skill")
+    ap.add_argument("--merc-drink", type=float, default=0, help="farm, hunt: give the mercenary a belt potion "
+                    "(Shift + column key) below this fill of its most seen MON life (0: never)")
     ap.add_argument("--drink", type=float, default=0.6, help="drink a belt potion below this life-orb fill")
     ap.add_argument("--to-pdef", help="go to the room of this LvlPrest Def (or any of a comma-separated list) in the "
                                       "current level, then stop")

@@ -526,6 +526,171 @@ Net effect on § 2.4 (H5e): none.
 moves stand. **Static batches hold 555 statements, harness batches 537, 4 are c-emu awaiting S1f, and 418 are blocked**
 (d-none 278, d-edit 80, d-sim 28, d-2c 14, d-owner 10, d-0032 8), with 2 deferred and 10 raised: 1 526 in all.
 
+**H5a (lane, 2026-10-17; reviewed 2026-10-17, accepted with fixes): 21 statements of drlg/maze, preset and warps.** run:2026-10-17-sweep-links, 9
+sessions on slot 1 (map seeds chosen offline with `tools/sweep_h5a.py scan`). New logger lines (`tools/gdb/drlg-links.py`:
+every pick and check of `LevelLinkBuild`, the Act1B widened test, `LevelSeamsByTouch`'s `RectTouch`), replayed against
+the unchanged link-builder model: 128 builds, 0 mismatches; `drlg.py gen` 99 288 checks, 0 mismatches. The evidence is
+in the "Plan 0038 batch H5a" sections of [drlg/0007](../../findings/drlg/0007-warps.md),
+[0006](../../findings/drlg/0006-maze.md) and [0004](../../findings/drlg/0004-preset-units.md). The lane files **16
+raised, 0 in part, 0 shortfall, 5 reclassified**:
+
+| Row | Ruling | Evidence |
+|---|---|---|
+| maze 4, 5 (`MazeFindWest`) | raised | Reachable after all: level 27 keeps its create-time index (`Files` 3) when Black Marsh ends on side 0, and index 2 sends the Barracks to `g_BarracksFinders[2]`. Map seed 58, two level-28 windows matched with their probe draws; `MazeFindWest` I → C. |
+| maze 15 (Barracks `k` 0 and 2) | raised | `k` 0 four windows (s2 drawn, s9 create-time), `k` 2 two windows (s3), attach, translation and rect as modelled. |
+| warps 3 (×10, the unreached choices) | raised | Every choice ended a logged build (`LNK1`), except `0x00676450` (0, 1) and (2, 0), which are placed and logged (`LNKP`, 6 each, rects as the table) but never kept: the Rogue side table has no nonzero index with `d + 4f` = 2 or 4. |
+| warps 5, the Burial Grounds reject | raised | 6 rejects (s2, s6, s7) with the plain test passing, the next choice accepted. |
+| warps 5, the Act1B widening deciding a check | **d-none** | Never on stock data: the table's outcome depends only on the difficulty and the first choices of Black Marsh and Dark Wood; the scan holds all 16 pairs at each difficulty, and the 3 600 widened tests with the plain test passed all accept (72 logged, all accept). |
+| warps 6 (a Rogue-table 0 reject) | raised | 30 rejects at 15 distinct indices. |
+| warps 8 (the widening's axis) | raised | `LNKW`: rect[0] is the model's with `y − 200`, `h + 200` in all 72 widened tests. |
+| warps 9, 12; preset 22 (level 27's index 2 from side 1) | **d-none** | Unreachable: Black Marsh's first choice and the level-27 draw read the same `r` (first step of the copy and of the act seed), side 1 is kept only from a first choice of 1 at every difficulty, so `r & 1` = 1, index 1 (drlg/0007 § H5a; the logged side-1 builds s4, s7 index 1). |
+| warps 11 (`RectTouch` false branches, `t` = 0) | **d-none** | One call site, `push −1`; Act V's seam rects take 4 forms per difficulty, all in the scan, and every pair shares an edge (5 400 tests; 48 logged, all true). |
+
+Not class moves, for Phase 3: the Barracks' `k` is the create-time index whenever Black Marsh ends on side 0 (drlg/0006
+§ H5a corrects § 7 step 1), and Rogue Encampment ends on six of its eight `(d, f)` only.
+
+Net effect on § 2.4 (H5a): a-run −5, d-none +5.
+
+**H5a review (architect, 2026-10-17): accept with fixes; the five d-none stand.** The manifest matches the nine logs;
+`sweep_h5a.py logs` (128 builds, 0 mismatches; gen 99 288 checks, 0 mismatches), `scan 1 301 0,1,2 0 82,52` and the unit
+tests re-run identically, and `drlg.py gen` on s2, s3 and s9 alone gives 0 mismatches. The review also enumerated every
+draw value of tables `0x006F0840` and `0x006F0DE0` directly (8 values per draw, 64 leaves per difficulty, not map
+seeds): Black Marsh's first draw is the copy's first step in all, its outcomes are 0 → 0, 1 → 1, 2 → 3, 3 → 3, no
+backtrack, no widened reject, and every Act V seam pair shares an edge. The d-none rows rest on that and on the code:
+the copy is taken from the act seed at entry (`0x0067730E`), the picks step only the copy, and the level-27 draw at
+`0x006774D6` is the act seed's next step, with `2 − (r & 1)` from `and al, 1; neg al; sbb eax, eax; add eax, 2`; the
+model that assumes no act-seed step in between predicted every logged `LK27` and act seed after. `RectTouch` has one
+call (`0x00677606`, `push −1` at `0x006775FE`) and no stored pointer; `MazeFindWest` has no call and one pointer
+(`g_BarracksFinders[2]` at `0x006F0470`). `0x00676450` (0, 1) and (2, 0) rest on the logged rect at the pick's return
+(`LNKP`, the same quantity `LNK1` checks); the B2 rule asked for a build to end on a choice only because no per-pick line
+existed, and the Rogue table's 16 nonzero indices (`0x006F1158`: 0, 1, 9, 19, 21, 24, 30, 31, 33, 39, 41, 53, 54, 56,
+62, 63) leave residues 2 and 4 out, with the index `d + 4f + 8·dir[a] + 32·flip[a]` read at `0x00676E7B`. Fixes: the
+drlg/0007 section says its counts are over both act objects (distinct: 15 Rogue rejects, 3 Burial Grounds, 36 widened
+tests, 24 `RectTouch` tests); drlg/0006 § 7 step 1 points at the correction.
+
+**Totals after the thirteen batch reviews and plan 0039 P1a, recomputed once (H5a review).** H5a moves 5 rows from
+a-run to d-none. **Static batches hold 555 statements, harness batches 532, 4 are c-emu awaiting S1f, and 423 are
+blocked** (d-none 283, d-edit 80, d-sim 28, d-2c 14, d-owner 10, d-0032 8), with 2 deferred and 10 raised: 1 526 in all.
+Every batch carrying drlg/maze, drlg/preset or drlg/warps statements is now accepted (S4a, S4b, H5c, H5e, H5a), so the
+three clusters are ready for the Phase 3 re-tag.
+
+
+**S1e (filed 2026-10-17, reverser; reviewed 2026-10-17, accepted with fixes): 3 statements of data/calc and data/excel.** run:2026-10-17-sweep-emu
+(the Ghidra p-code emulator under ADR-0015, `tools/sweep_s1e.py`, new script `re/ghidra_scripts/EmuTrace.java`). The
+evidence is in the "Plan 0038 batch S1e" sections of [data/0001](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1e-2026-10-17),
+[0002](../../findings/data/0002-mpq-precedence.md#plan-0038-batch-s1e-2026-10-17),
+[0003](../../findings/data/0003-string-tables.md#plan-0038-batch-s1e-2026-10-17),
+[0004](../../findings/data/0004-cell-converters.md#plan-0038-batch-s1e-2026-10-17),
+[0005](../../findings/data/0005-calc.md#plan-0038-batch-s1e-2026-10-17),
+[rng/0001](../../findings/rng/0001-rng-core.md#plan-0038-batch-s1e-2026-10-17) and
+[save/0001](../../findings/save/0001-d2s-io.md#plan-0038-batch-s1e-2026-10-17).
+
+| Row | Was | Now (proposed) | Why |
+|---|---|---|---|
+| data-calc 14 (`INT32_MIN ÷ −1` raises the divide error; 1) | c-emu, S1e | **d-edit** | ADR-0015 condition 5 excludes faults (the emulator even returned 0 there); only an edited formula with a variable divisor reaches it. The instruction reading stays `[I]`, re-pinned by objdump. |
+| data-excel 43, 44 (a 4-character name both code and TC resolves to the item; unique row 0 cannot be named from a TC; 2) | c-emu, S1e | **d-none** (as filed by 0b) | `TC_ParseItemCell` calls `TC_AddEntry` → `TC_GrowEntries` → the pool allocator 0x0040B4B0 on every resolved cell, so no case reaching either claim runs under ADR-0015 condition 1. The lookups they rest on are now `[C]`. |
+
+Remainders of rows raised in part (the rows stay counted as S1e; no class moves): data-calc 13's L305 (the same
+divide error as row 14, d-edit); data-excel 51's id 13, which the batch **contradicts** (an unmatched id below 14 reads
+the 0x18 bytes after the language table, whose pointers are 0x4D/0x42/0x54, and the string-table load faults; a `use`
+byte of 13 needs an edited file: d-edit; spec-writer backlog).
+
+**Proposal S1f (§ 2.5), for the review.** Of the 31 candidates, the lane can declare the read set of 15 statements
+(11 rows), from the objdump call closures (`sweep_s4b` graph) and the S1e families that already cover their callees:
+drlg-preset 6 second statement (`MONSTATS_ValidId`, one function, no callee); monsters-stats 9, 11 (`MulDiv`, two
+functions, no allocation or import); items-affixes 6, 12 (`sub_005C0D00_AffixCandAdd`, one function); data-calc 8 (the
+compile order within a record: `EXCEL_ParseTxt` with a calc cell callback, as the S1e `parsetxt` and `compile`
+families run them) and 33 (`SKILLS_CalcVar` codes 43–48 through `MISS_GetElemMin`/`Max` on synthetic records, as the
+`calcvar` family); data-excel 65 (5, the absent-column defaults: `EXCEL_ParseTxt`'s defaults pass with descriptor
+entries that have no column) and 69 (callback order, the same run with two calc columns and an absent one); and,
+conditionally, monsters-pool 27 (`MonVariantRoll`) and items-uniques-sets 44 (`ITEMS_BuildSetPick`'s weight), whose
+static closures reach the allocator and the fatal path (421 and 433 functions): the S1f lane keeps them only if the
+emulation trace shows the claimed branches stay off those paths, else they return to their classes. The other 16 keep
+their classes: monsters-pool 2, 25, 26 (`DRLG_LoadLevels` allocates); monsters-stats 4, 35, 41 (unit and stat-list
+reads); items-uniques-sets 26, 43 (`ITEMS_BuildUnique` takes the game and item units); items-quality 2, 17, 21 (the
+drop's unit and game reads); items-tc 9, 54, 65 (`TC_ResolveDrops`: an ADR-0004 oracle needs logged values, and there
+are none for edited cells); data-excel 70 (the descriptor is built on the stack by each table loader, which allocates).
+**The lane recommends that S1f run**, 15 statements, static, with `tools/sweep_s1e.py` and `EmuTrace.java` reused.
+
+Net effect on § 2.4 (S1e): static −3 (S1e's c-emu rows); d-edit +1, d-none +2. (The lane's totals were computed
+before H5a's review; they are recomputed below.)
+
+**S1e review (architect, 2026-10-17): accept with fixes; the three moves stand.** The manifest matches its 53 files;
+`sweep_s1e.py static` and the unit tests re-run identically; the kept `lang` and `calcvar` cases re-run under the
+lane's Ghidra copy give byte-identical outputs, and `eval`, regenerated after the review fixed an unseeded draw in its
+case writer, gives 6 000/6 000 (run record, review re-run). data-calc 14 → d-edit: the divide error is a fault, which
+ADR-0015 condition 5 leaves out, and only an edited formula reaches it; row 13's L305 is the same claim and stays
+counted as S1e, not raised. data-excel 43, 44 → d-none: `TC_AddEntry` calls `TC_GrowEntries` unconditionally
+(0x0065408A), and that calls the pool allocator 0x0040B4B0 (0x00654036), so no case reaching either claim can run
+under condition 1; read in objdump at the review. data-excel 51's id-13 remainder is d-edit, counted as S1e; its
+`[C]` covers the index map only, since entry 13's low words are written at run time (data/0002 review note).
+
+**S1f (created by the S1e review): 15 statements in 11 rows, the lane's proposal as filed.** S1f is a static batch
+under ADR-0015 with `tools/sweep_s1e.py` (new families) and `EmuTrace.java`. It takes the 4 c-emu rows awaiting it and
+11 statements from blocked classes:
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| drlg-preset 6, second statement; monsters-stats 9, 11; monsters-pool 27 (4) | c-emu, awaiting S1f | **c-emu, S1f** | As § 2.6 S3a and S4b routed them. `MONSTATS_ValidId` (0x004E6C50) reads only `g_pDataTables`; `sub_00483360_MulDiv` calls one CRT helper (0x00684240). Pool 27 is conditional (below). |
+| items-affixes 6, 12 (2) | d-none | **c-emu, S1f** | `sub_005C0D00_AffixCandAdd` is seven instructions with the `cmp eax, 0x1ff` cap and no call; read at the review. |
+| data-calc 8, 33 (2) | d-edit | **c-emu, S1f** | The compile order within a record (`EXCEL_ParseTxt` with a calc cell callback, as S1e's `parsetxt` and `compile` ran) and `SKILLS_CalcVar` codes 43–48 through `MISS_GetElemMin`/`Max` on synthetic records (as `calcvar`). |
+| data-excel 65 (5), 69 (1) | d-edit | **c-emu, S1f** | `EXCEL_ParseTxt`'s defaults pass (descriptor entries with no column) and the callback order with two calc columns and an absent one. |
+| items-uniques-sets 44 (1) | d-none | **c-emu, S1f** | `ITEMS_BuildSetPick`'s weight 0; conditional (below). |
+
+Conditions, set by the review: (a) every S1f claim needs a case that reaches its branch with no case stopping (a call
+into an import or the allocator stops a case at the import thunk, `pc outside the image's code`); a row whose claimed
+branch cannot be reached without the allocator, an import or the fatal path returns to its class, recorded at the
+batch, and this applies to pool 27 and uniques-sets 44 first, whose static closures reach the allocator and the fatal
+path; (b) a pool or array the code may grow gets a capacity above every case, and the record says the growth path is
+not reached; (c) every spec write to an image address is listed in the finding with its ruling-3 justification (S1e
+review, plan log). The other 16 candidates keep their classes, as the lane filed them. S1f writes the same data
+findings as S1e and starts after S1e merges.
+
+Net effect on § 2.4 (S1f created): static +15; c-emu awaiting −4; d-none −3, d-edit −8.
+
+**Totals after the fourteen batch reviews and plan 0039 P1a, recomputed once (S1e review).** S1e moves 3 statements
+(static −3; d-edit +1, d-none +2) and creates S1f (static +15 from c-emu 4, d-none 3, d-edit 8). **Static batches hold
+567 statements (S1f 15 included), harness batches 532, none is c-emu awaiting a batch, and 415 are blocked** (d-none
+282, d-edit 73, d-sim 28, d-2c 14, d-owner 10, d-0032 8), with 2 deferred and 10 raised: 1 526 in all.
+
+**S1f (filed 2026-10-17, reverser; reviewed 2026-10-17, accepted with fixes): 15 statements in 11 rows.** run:2026-10-17-sweep-emu2 (the
+Ghidra p-code emulator under ADR-0015, `tools/sweep_s1f.py`, `EmuTrace.java` with a new `guard` directive). The
+evidence is in the "Plan 0038 batch S1f" sections of [drlg/0004](../../findings/drlg/0004-preset-units.md#plan-0038-batch-s1f-2026-10-17),
+[monsters/0004](../../findings/monsters/0004-stats.md#plan-0038-batch-s1f-2026-10-17),
+[monsters/0001](../../findings/monsters/0001-level-pool.md#plan-0038-batch-s1f-2026-10-17),
+[items/0005](../../findings/items/0005-affixes.md#plan-0038-batch-s1f-2026-10-17),
+[items/0004](../../findings/items/0004-uniques-sets.md#plan-0038-batch-s1f-2026-10-17),
+[data/0005](../../findings/data/0005-calc.md#plan-0038-batch-s1f-2026-10-17) and
+[data/0004](../../findings/data/0004-cell-converters.md#plan-0038-batch-s1f-2026-10-17). **All 15 raised; no row
+returns to its class.** The two conditional rows meet condition (a): monsters-pool 27's `MonVariantRoll` reaches the
+fatal path only on a NULL seed or entry, and items-uniques-sets 44's success path runs `ItemApplyProps` mode 4 to its
+end on property-less set rows; every S1f memory spec guards the fatal path and the allocator entries, and no case of
+any family stopped. Condition (b): the one growable pool reached (itemscode, `parsetxt2`) has capacity 0x10000 against
+178 bytes at most, and `EXCEL_AddCode` is not reached (no registration column present). Condition (c): every spec
+write on an image address is listed in the finding with its ruling-3 justification (cookie (a), SSE2 flag (b),
+`__locale_changed` (c); `g_pDataTables`, the DataTables fields read, the itemstatcost link and the pool header as
+arguments). No class moves; the totals of the S1e review stand (static 567 including S1f).
+
+**S1f review (architect, 2026-10-17): accept with fixes; all 15 raises stand, no class moves.** The manifest matches its
+38 files; `sweep_s1f.py static` (65 of 65 pins, the writer scan) and `test_sweep_s1f.py` (7 tests) re-run identically;
+`cases` regenerates every kept input byte for byte; under the lane's Ghidra copy the `muldiv`, `setpick` and
+`pickaffix` cases gave `.out` files byte-identical to the lane's (run record, review re-run). The `guard` directive
+plus the static call closures is accepted as the mechanical check of condition (a) (plan log, ruling 1), and both
+conditional rows meet it. Totals unchanged: **static 567 (S1f's 15 included), harness 532, c-emu awaiting a batch 0,
+blocked 415** (d-none 282, d-edit 73, d-sim 28, d-2c 14, d-owner 10, d-0032 8), **deferred 2, raised 10: 1 526.**
+
+**Plan 0039 P1c (review 2026-10-17, architect): drlg-preset 18's `id = 573` remainder.** The row was raised in part at
+S4a (the logged dispatch branches `[C]`, the `id = 573` branch `[I]`; plan 0038 log, round-3 review ruling 1). The
+survey in [drlg/0004 § Plan 0039 batch P1c](../../findings/drlg/0004-preset-units.md#plan-0039-batch-p1c-2026-10-17)
+shows no stock unit reaches it: only Act IV DS1 ids 5–7 map to 573 in `g_Ds1ObjectIds` (re-read at the review: those
+three cells, no −1), no shipped DS1 uses them (2 274 of 2 276 parsed, all 2 043 `lvlprest` files included), and the
+other `PresetUnitCreate` callers add no 573.
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| drlg-preset 18, the `id = 573` remainder | raised in part (S4a), remainder `[I]` | **d-none** (remainder) | No stock case; the spec keeps the branch as an `[I]` code reading and says "no stock case". |
+
+Net effect: none on the totals. The row stays counted as S4a, as data-excel 51's id-13 remainder stays counted as S1e.
 **H6d (filed 2026-10-17, reverser, `lane/h6d`; pending review): 17 statements of items/quest-drops, tc and
 uniques-sets.** run:2026-10-17-sweep-quest-b6, 19 sessions on slot 2. The lane files 5 raised, 9 raised in part, 2
 shortfall and 1 reclassified. The evidence is in the "Plan 0038 batch H6d" sections of
@@ -605,7 +770,8 @@ runs, plus a "Plan 0038 batch S*n*" section in each finding. A harness batch wri
 |---|---|---|---|---|---|
 | **S1a** | 54 (56 filed; 2 returned, § 2.6) | 0/49/5 | save/d2s 5, 7–8, 11–16, 20, 24, 32, 45, 51, 58, 61, 63–64, 66, 69–71, 74–76, 79, 81, 84–87, 92–94, 96–101, 103–104, 109, 117, 119–121, 123–124, 128, 130–131, 135–138 | writer/reader pairs (rule 1); `d2s.py survey` over every game-written save (rule 2) | `findings/save`: addenda to run:2026-10-12-d2s-io, -10-14-props-forced, -10-16-calc |
 | **S1b** | 75 (76 filed; 1 returned, § 2.6) | 7/52/16 | data/README 1; data/calc 1–2, 6–7, 18–19; data/excel 9–14, 19, 21, 23, 26, 28–31, 33–35, 38, 41–42, 45–49, 55, 57, 61–63, 67–68, 72–73, 75–78; data/strings 1, 3, 11, 21, 31, 33; rng 2, 4, 7; rng/seeds 1, 3, 11, 15–16 | the `tc.py` TC array against the tc-drops logs; item index ↔ code over kept item logs; archive precedence; `excel_bin.py survey`; strings, calc, seed-tree and rng-emu addenda | `findings/data`, `findings/rng` (addenda) |
-| **S1e** | 74 | 0/4/70 | data/calc 4–5, 9–16, 20, 31 (6 of 7), 36–40; data/excel 16, 36–37, 40, 43–44, 51–53, 56, 60, 64, 66; data/strings 4–5, 10, 12, 14, 16–17, 20, 24–25, 32, 35; rng 3, 5; save/d2s 82, 122, 129, 133 | **(c-emu)**, ADR-0015: `tools/ghidra.sh emucall`/`emucalc` (from `lane/rbl`) on `CALC_Eval`, `CALC_Compile`, `SKILLS_CalcVar`, `SKILLS_DimReturns`, the calc entry points, `BITBUF_WriteClamped`, `EXCEL_FindCode`/`AddCode`, the excel cell parsers, the string-table lookups and `RNG_RangePow2Plus`, each against a `tools/` model. Each function's read set is declared, and each has a negative control. | `findings/data/experiments.md` **run:&lt;date&gt;-sweep-emu**; addendum to run:2026-10-11-rng-emu |
+| **S1e** | 71 (74 filed; 3 returned, § 2.6) | 0/4/67 | data/calc 4–5, 9–16, 20, 31 (6 of 7), 36–40; data/excel 16, 36–37, 40, 43–44, 51–53, 56, 60, 64, 66; data/strings 4–5, 10, 12, 14, 16–17, 20, 24–25, 32, 35; rng 3, 5; save/d2s 82, 122, 129, 133 | **(c-emu)**, ADR-0015: `tools/ghidra.sh emutrace` (`EmuTrace.java`) and `tools/sweep_s1e.py` on `CALC_Eval`, `CALC_Compile`, `SKILLS_CalcVar`, `SKILLS_DimReturns`, the calc entry points, `BITBUF_WriteClamped`, `EXCEL_FindCode`/`AddCode`, the excel cell parsers, the string-table lookups and `RNG_RangePow2Plus`, each against a `tools/` model. Each function's read set is declared, and each has a negative control. | `findings/data/experiments.md` **run:2026-10-17-sweep-emu**; addendum to run:2026-10-11-rng-emu |
+| **S1f** | 15 (created at the S1e review, § 2.6) | 0/2/13 | drlg/preset 6 (second statement); monsters/stats 9, 11; monsters/pool 27 (conditional); items/affixes 6, 12; items/uniques-sets 44 (conditional); data/calc 8, 33; data/excel 65 (5), 69 | **(c-emu)**, ADR-0015: `tools/ghidra.sh emutrace` and `tools/sweep_s1f.py` (reusing `tools/sweep_s1e.py`) on `MONSTATS_ValidId`, `sub_00483360_MulDiv`, `sub_005BDB20_MonVariantRoll`, `sub_005C0D00_AffixCandAdd`, `ITEMS_BuildSetPick`, `EXCEL_ParseTxt` (defaults pass, callback order) and `SKILLS_CalcVar` codes 43–48; the S1e review's conditions (§ 2.6) | `findings/data/experiments.md` **run:2026-10-17-sweep-emu2** (15 raised; reviewed 2026-10-17, accepted with fixes) |
 | **S2a** | 57 (65 filed; 8 returned, § 2.6) | 51/0/6 | quality 1, 5, 7, 10–11, 13–14, 18–19, 24–30, 33, 35; tc 3–5, 7, 12–16, 18–19, 21, 23–25, 28–36, 38–42, 48–52, 57–58, 61–62, 64, 66–69, 72–74 | `tc.py replay` (incl. `--quality model`) and `quality.py` over the kept tc-drops logs; classic counterfactual replays; xrefs; TreasureClassEx data checks | `findings/items`: addenda to run:2026-10-11-tc-drops, -10-13-quality, -10-14-uniques/-props |
 | **S2b** | 49 (58 filed; 9 returned, § 2.6) | 39/0/10 | affixes 1, 3–4, 8–10, 15, 22, 27–28, 30, 34–35, 37; properties 1–2, 4–6, 8–9, 16, 18; uniques-sets 3–6, 12–13, 15, 20, 23–24, 27–29, 32–34, 36, 40, 42 (returned: affixes 7, 16; properties 23, 24; uniques-sets 8, 9, 22, 31, 39) | `items_chain.py`, `uniques.py`, `props.py`, `affixes.py` over ichain*, uniques-*, props*, quests-s*-cows; a new `ITEMS_RollStaffMods` checker case removes that oracle | `findings/items`: addenda to run:2026-10-15-items-chain, -10-14-uniques, -10-14-props |
 | **S2c** | 76 (86 filed; 10 returned, § 2.6) | 1/57/18 | affixes 2, 11, 14; cube 6, 8, 10, 12–13, 17, 20–22, 24, 29, 45, 47, 49, 51–52, 55–56, 58; properties 19; quality 16; quest-drops 7–10, 14, 19–21, 28, 31, 37–38, 41, 47–49; sockets 2–6, 8, 14, 19–20, 25–28, 32, 34–36, 41–47; uniques-sets 1; vendors 3–4, 7–9, 11, 19–22, 24–28 (returned: cube 17, 20, 24, 51, 58; quest-drops 48; sockets 35 ×2, 36 (L442), 42) | `cube.py`, `sockets.py`, `vendors.py`, `questdrops.py` over kept logs; a new `InvPlaceItem` case; second sources from save/d2s; xrefs | `findings/items`: addenda to run:2026-10-15-cube, -sockets, -vendors, -10-16-quest-drops |
@@ -629,7 +795,7 @@ a letter suffix and its own run id, as the plan requires.
 | **H3b** | `data-load` | 25 | 0/16/9 | data/README 2–5; data/excel 1–8, 17–18, 20, 24–25, 27, 50, 71, 74; data/strings 2, 6, 22, 29 | **new** `excel`/startup logger that also sources `strings.py`. **First piece (review ruling 3):** a `d2run.py` mode that has gdb on the game before `DATATBLS_LoadAll`, built and tested off-slot; if it cannot be made to work, the 9 startup rows are a recorded shortfall and stay `[I]` (they have an observable, so not d-none). Covers `FindFile`, loose files without `-direct`, `-txt`, record-byte dumps, the rare-item hover, `STRTABLE_Unload`. From the S1b review (§ 2.6, rows stay counted as S1b): the remainders of data/README 1 ("only under `-direct`") and data/excel 30 (the code-list tables' names at `DATATBLS_LoadTable` in a stock start) | `findings/data/experiments.md` | ~6 |
 | **H4a** | `monsters-a` | 32 | 0/14/18 | pool 12; quest-drops 48 (from S2c); spawn 5, 11, 47–49; special 9–10, 25, 30–31, 34 (from S3a), 35, 38, 46, 48 (from S3a), 50–52, 54–56, 58–60, 68–69; stats 7, 18, 21 | `mon-stats.gdb` with `d2pilot.py` wp, `--descend`, `hunt`, `objop`: Radament, the Travincal council, the Chaos seals, Shenk, Nihlathak, Blood Raven, Andariel, Izual (Blood Raven, Izual or Radament in an expansion Nightmare or Hell game for quest-drops 48), a `flyingscimitar` level. The Ancients (b) need a quest-open recipe. From the H4b review (pieces; the rows stay counted as H4b, § 2.6): `doomknight3` (312) in the Chaos Sanctuary (stats 13, 14), a `willowisp` champion or unique (stats 40), Blood Raven's client name (special 66, mod 12), an aura special of level ≤ 15 (special 27, the clamp at 1); if a seed places one, a Shrines code-20 shrine operated with `objop` (special 2, 74; `MMS0`); optionally the camel at `/players` 8 (stats 23). From S3b (pieces; the rows stay counted as S3b, § 2.6): a Druid casting Raven in a Normal game (stats 30, the `druidhawk` Normal MonProp row), and, optionally (the S3b review raised the rows without it; no row depends on it), a Normal visit to the Durance of Hate Level 3 (`mephistospirit`, stats 19 and 45). Checked with `sweep_h4b.py` and `monstats.py` | `findings/monsters/experiments.md` | ~10 |
 | **H4b** (done) | `monsters-b` | 45 (47 filed; 2 returned, § 2.6) | 22/1/22 | hirelings 34; pool 1, 7, 8 (from S3a), 19; spawn 3, 6 (from S3a), 12, 42–45 (45 from S3a), 51; special 1–2, 5–7, 11, 15–16, 18, 20, 27, 29, 65 (from S3a), 66–67, 71–72, 74; stats 5, 13–14, 17, 20, 23, 40, 44 | `mon-stats.gdb` extended (skill list, aura id and level, client names, restore lines; from S3a: the tick line for every room, `PM0` for every MonPlace case) plus seeded-pool hunts picked with `monpool.py pool` (from S3a: a level holding class 141, 398 or 659–661), a `/players 8` `MercNova` session, and (from S3a) a classic Normal game start with `mon-pool.gdb` | `findings/monsters/experiments.md` | ≤ 20 |
-| **H5a** | `drlg-links` | 21 | 16/0/5 | maze 4–5, 15; preset 22; warps 3, 5–6, 8–9, 11–12 | `drlg-maze.gdb` (LNK0/LNK1/LK27) + `drlg.py gen`; map seeds chosen offline with the link-builder model; `-seed N -act A` starts and one Barracks entry | `findings/drlg/experiments.md` | few |
+| **H5a** (done) | `drlg-links` | 16 (21 filed; 5 to d-none, § 2.6) | 16/0/5 | maze 4–5, 15; preset 22; warps 3, 5–6, 8–9, 11–12 | `drlg-maze.gdb` (LNK0/LNK1/LK27) + `drlg.py gen`; map seeds chosen offline with the link-builder model; `-seed N -act A` starts and one Barracks entry | `findings/drlg/experiments.md` | few |
 | **H5b** | `objects` | 33 | 12/2/19 | collision 27, 37, 39 (from S4b); objects 3–4, 6, 13, 15–17, 19–20, 23, 26–27, 35–36, 38–42, 45–46, 49–52 | `objects.gdb` + the objects checker, `d2pilot.py objop`, seeds from the populate model; the casket group and the orientation-2 shrine (plan 0023 ruling); from S4b (§ 2.6), one object of size 0 with `HasCollision` set (class 131, 399 or 564–567) created on `objects.gdb`; new `OBJTRAP_ObjectCreate` fire lines and revisit restores | `findings/objects/experiments.md` | ≤ 20 |
 | **H5c** | `roomk` | 41 | 33/0/8 | drlg/README 1–3, 5, 10; preset 31–32; room-tiles 1–2, 4 (2), 14 (2), 15, 27, 28 (3), 30–31, 33, 37, 38; warps 1, 16, 19; **rng/seeds 2, 4–10, 14** (ex H5r); room-tiles 4, 14, 28, 37 and warps 16 from S4a (§ 2.6) | `drlg-roomk.gdb` and `collision.gdb` (LevelUnload, RoomTilesRelease, TINIT-exit flags, `LI0` caller, the act callback, WarpExitPos), plus `seed-tree.gdb` + `rng.py seedtree` (act-seed steps in `LevelLinkBuild`, `R+0x28`/`R+0x60` and `T+0x18`/`+0x20` at activation, flags at `0x0052D1C9`, `LEVEL` caller, client `UnitInit` (x, y), one `-seed -2147483648` session). rng/0002 cites the record. From S4a (§ 2.6): a walled level whose bit-2 merges go through the remap rows 0–5, the row −2 return and the 8/9 edge (counted by `sweep_s4a.py roomk` on the batch's logs), and a `RoomNeighboursEnsure` line at `0x0066C370` (room, warp bits, each `WarpPairLink` call and outcome) | `findings/drlg/experiments.md` | ~10 |
 | **H5d** | `collision` | 17 | 6/0/11 | collision 1, 5, 8–9, 11, 19, 21, 24, 30, 36, 45–46; spawn 41 (from S3b) | `collision.gdb` + `collision.py`: tombs (228), Act III (334), Act V (298, 528, baaltaunt), a non-town `Position` level, `spawnCol` 1, ground items, an entry-flag `0x80` cell. From the H4b review (piece; the row stays counted as H4b): the tomb (228) and `suckernest1` (334) sessions also decide spawn 42's remainder, by `monspawn.py check` on the presets-window `SpawnClassCellTest` (`MC`) lines. From S3b (§ 2.6): a `sarcophagus` (228, size 1) and a `baaltaunt` (545, size 0) creation with their `MK0` lines (spawn 41) | `findings/drlg/experiments.md` | ~8 |
@@ -728,7 +894,8 @@ Static and harness batches use different resources (Ghidra copies against slots)
 | 7 | S2c (done) | 1 | 57 | 76 |
 | 8 | S3b (done) | 1 | 4 | 15 |
 | 9 | S1a (done) | 0 | 49 | 54 |
-| 10 | S1e | 0 | 4 | 74 |
+| 10 | S1e (done, reviewed: accepted with fixes) | 0 | 4 | 71 |
+| 11 | S1f (done, reviewed: accepted with fixes) | 0 | 2 | 15 |
 
 **Harness (Phase 2; queue rules of the plan: 0037·P2 first, never more than two harness lanes, never slot 0):**
 
@@ -737,7 +904,7 @@ Static and harness batches use different resources (Ghidra copies against slots)
 | 1 | H5c | 33 | 0 | 41 | logger edits (roomk, collision, seed-tree), made and regression-checked off-slot; +9 from S4a (§ 2.6), one more line (`RoomNeighboursEnsure`) |
 | 2 | H4b (done) | 22 | 1 | 45 | logger extension; pairs with H5c; +4 from S3a, −2 at its review (§ 2.6) |
 | 3 | H5e (done) | 16 | 0 | 22 | no logger change; after H5c (same family); reviewed, no class move (§ 2.6) |
-| 4 | H5a | 16 | 0 | 21 | no logger change; after H5e |
+| 4 | H5a (done) | 16 | 0 | 21 | after H5e; a new logger file (`drlg-links.py`), 9 sessions; reviewed, 5 to d-none (§ 2.6) |
 | 5 | H5b | 12 | 2 | 33 | objects family; may pair with any DRLG batch; +1 from S4b (§ 2.6) |
 | 6 | H6d | 10 | 5 | 17 | |
 | 7 | H2a | 10 | 0 | 17 | +2 from S2a (§ 2.6) |
@@ -770,6 +937,7 @@ same run record or finding section:
 - S4a and S4b write the same drlg and objects findings, so S4b follows S4a;
 - S1a, S1b and S1e are independent of S2–S4 and of each other, apart from the shared `findings/data` file of S1b and
   S1e. These two merge one at a time.
+- S1f writes the data findings and the run record S1e wrote, so it starts after `lane/s1e` merges (S1e review).
 
 ### First batches to run (review, 2026-10-16)
 

@@ -74,3 +74,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-16 — Drafted (architect, `lane/plans39`).** Status `proposed`; gated on ADR-0008.
 - **2026-10-16 — Approved (owner, via the main session).** Plans 0039–0044 approved to run unattended, like 0027–0038. ADR-0008 accepted the same day on the port-4000 condition, now Phase 2's precondition; host and joiner on two non-zero slots, slot 0 stays the owner's.
+- **2026-10-17 — Case added from plan 0042 (architect, P1 review of `lane/p42r`).** For Phase 1's list: the hostility
+  delays and the portal closing ([quests/0002 § Phase 1b verdicts](../findings/quests/0002-travel.md#phase-1b-verdicts),
+  § 9). Two stamps gate leaving town: waypoint travel waits 10 000 ms (`0x0054C5D0`) and another player's portal 5000 ms
+  (`0x00584870` via `0x0055B6C0`), both on `GetTickCount`; the only writer is `0x0055B720`, called once, from
+  `0x005A5E50`, which also closes the player's portal. The community lead (one 10-second delay for both) is contradicted
+  for portals on the condition that `0x005A5E50` is the hostility declaration. The case: player B declares hostility
+  on A, then each tries a waypoint and A's portal before and after 5 s and 10 s; log the stamp, the tick at each gate,
+  and the portal pair. Also from 0042: a party member using another player's portal into a `QuestFlag` level without
+  the quest (the portal gate of quests/0002 § 6).

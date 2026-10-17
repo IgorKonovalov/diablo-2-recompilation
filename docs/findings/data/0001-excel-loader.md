@@ -23,7 +23,8 @@
 - [I] **Mixed-archive tables: the `.bin` is authoritative in a stock run.** `automagic`, `RarePrefix`, `RareSuffix`:
   the patch_d2 `.bin` (the patch's update is live; the stale d2exp `.txt` is ignored). `inventory`, `PlrMode`: the
   d2exp `.bin` (the patch_d2 `.txt` edit is **not** live unless the game runs with `-direct -txt`). Follows from the two
-  claims above plus the archive order in [0002](0002-mpq-precedence.md).
+  claims above plus the archive order in [0002](0002-mpq-precedence.md). (fn:DATATBLS_LoadTable@0x006122F0, 0x00744308,
+  fn:DATATBLS_SetCompileTxt@0x006125A0)
 - [C] **The live TC table is `treasureclassex`.** `TreasureClass.txt` is never loaded: the string `treasureclass`
   (`0x006EA76C`) is only the name of the `itemtypes` column `TreasureClass` in the itemtypes descriptor.
   `TC_LoadTreasureClassEx` copies the `treasureclassex.bin` records into the runtime TC array `g_pTreasureClasses`
@@ -33,7 +34,7 @@
   fn:TC_LoadTreasureClassEx@0x006547D0, fn:TC_GetByIndex@0x00654E00, tbl:monstats.txt:TreasureClass1)
 - [C] **Record sizes:** 86/88 `.bin` tables are registered, and for every one the call site's record size equals the
   `.bin` record size in `docs/tables/README.md`. The other two, `cubemod` and `cubetype`, are never loaded: their
-  names do not occur in `Game.exe`.
+  names do not occur in `Game.exe`. (fn:DATATBLS_LoadAll@0x00619300, fn:DATATBLS_LoadTable@0x006122F0; § 4)
 - [I] **Code→index:** `EXCEL_FindCode` (`0x006BD130`) binary-searches a sorted `{u32 code, s32 index}` array
   (unsigned compare) and returns the index or −1. Item codes go through `ITEMS_GetByCode` (`0x00633640`) on
   `g_ItemCodeLink`; the index is the position in the combined items array (weapons, then armor, then misc).
@@ -163,13 +164,13 @@ destination).
   exist to fill code links used while compiling `.txt`; a stock run never loads them. Same for the 2-byte
   `monstats`/`skilldesc` calls in `0x00613F80` (`0x00617745 je`).
 - [I] So `monmode`, `plrmode`, `skills`, `skilldesc`, `monstats` each have two call sites. In a stock run only the
-  full-record one executes.
+  full-record one executes. (0x006127DF, 0x00617745)
 - [I] Four header-less `*code.bin` files are loaded raw by `DATATBLS_LoadCodeBin` (buffer, size, capacity triple),
   not through `DATATBLS_LoadTable`: `itemscode` (`0x00633478`, into `0x0096BCC8`), `skillscode`, `skilldesccode`
   (`0x00617946`/`0x00617961`), `misscode` (`0x006631F5`). Under `-txt` they are written out after the tables that
   feed them are parsed, so formula columns (`itemstatcost`, `skills`, `skilldesc`, `missiles`) are compiled to
   offsets into these buffers at `.txt`-compile time. The bytecode itself is `data/calc`, not followed.
-- [I] Other excel-directory readers, outside `DATATBLS_LoadTable`:
+- [I] Other excel-directory readers, outside `DATATBLS_LoadTable` (0x00481950, 0x00504430, 0x00669130, 0x00639420):
   - `sounds.txt` and `soundenviron.txt` are read as text by `0x00481950` (client sound). `sounds.bin` is also loaded
     through the table loader (`0x00659C16`).
   - `D2Comp.cpp` (`0x00504430`) is a second copy of the loader, used for `weapons`/`armor`/`misc`/`itemtypes` by the
@@ -179,7 +180,7 @@ destination).
     `cubeserver.txt` can be opened (`0x0066A110`, `0x0066A164`), then loads `cubemain` normally.
   - `runessrv` (`0x00639420`, called from the Runes loader): probed through the same API, not followed.
 - [I] `.txt`-only tables (`Aiparms`, `MonName`, `TreasureClass`, `WeaponClass`) have no loader. Only
-  `SoundEnviron` is read (above).
+  `SoundEnviron` is read (above). (fn:DATATBLS_LoadAll@0x00619300, 0x00481950)
 
 ### 4. Record-size corroboration (all 88 `.bin` tables)
 
@@ -242,7 +243,8 @@ for every row, so only one size column is shown.
   call exists for every loaded table, and the extra 2- and 4-byte calls are compile-only code lists. Since the `.bin`
   path ignores `recSize`, this agreement is the evidence that the record strides the consumers use (fixed by each
   table's descriptor) are the `.bin` strides. It takes the "fixed-size records" claim and the name→loader→pointer
-  mapping below to `[C]` (code anchor + data behaviour over every file).
+  mapping below to `[C]` (code anchor + data behaviour over every file). (fn:DATATBLS_LoadTable@0x006122F0,
+  fn:DATATBLS_LoadAll@0x00619300)
 
 ### 5. Where the nine Phase-1 tables land
 
@@ -267,8 +269,8 @@ All per-table globals are fields of one data-tables block at `0x0096BC30`, whose
   sub-ranges **of the combined copy** (`0x006333E1`–`0x0063343B`). Then, in a stock run, it calls
   `EXCEL_AddCode(g_ItemCodeLink, item[i]+0x80)` for i = 0…nItems−1 (`0x00633491` loop). So item index = combined
   position, and the code key is the u32 at record `+0x80`.
-- [I] It also builds a u16 list at `0x0096CA78` of the indices whose `+0xF6` word is 0 (`0x00633510`); meaning left
-  to the items plan.
+- [I] It also builds a u16 list at `0x0096CA78` of the indices whose `+0xF6` word is 0 (`0x00633510`): the classic item
+  index map of the version-`0x47` item reader ([§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17) Q3).
 
 ### 6. Code→index and name→index
 
@@ -291,11 +293,12 @@ int EXCEL_AddCode(ExcelLink *l, u32 code) {
 
 - [I] The link object is 16 bytes: `+0 count`, `+4 capacity`, `+8 code array (8-byte {u32 code, s32 index})`,
   `+0xC name-tree root`. A link is used in one mode only (`EXCEL_AddCode` fatals if the tree root is set,
-  `EXCEL_AddName` if the code array is set).
+  `EXCEL_AddName` if the code array is set). (fn:EXCEL_AddCode@0x006BD230, fn:EXCEL_AddName@0x006BD500)
 - [I] Name nodes are 0x2C bytes: `char name[32]` (lowercased, truncated to 31), `+0x20 index`, `+0x24 left` (key <
   node), `+0x28 right`. `EXCEL_FindName` copies at most 0x20 bytes of the key, lowercases it with `STR_ToLowerN`
   (table at `0x006CEB98`: `A`–`Z` → `a`–`z`, everything else unchanged), and compares with plain byte `strcmp`.
 - [I] There is no hash. Codes are an ordered array, names are an unbalanced BST in insertion order.
+  (fn:EXCEL_FindCode@0x006BD130, fn:EXCEL_FindName@0x006BD3C0, fn:EXCEL_AddName@0x006BD500)
 
 ### 7. Treasure classes at load time
 
@@ -321,7 +324,7 @@ if (g_nTreasureClasses > 0xFFFE) fatal();
   Then `item1`, `item2`, … go to `TC_ParseItemCell` **until the first empty `itemN`** (later columns are not read);
   a cell whose `probN` < 1 is ignored.
 - [I] `TC_ParseItemCell` resolution order for one cell: strip `"`, split at the first `,` (the rest is `mul=`, `cu=`,
-  `cs=`, `cr=`, `cm=`, `ce=`, `cg=`, `ma=`, `mg=` modifiers). Then:
+  `cs=`, `cr=`, `cm=`, `ce=`, `cg=`, `ma=`, `mg=` modifiers). Then (fn:TC_ParseItemCell@0x00654440):
   1. if the name is ≤ 4 characters: `STR_ToItemCode` → `ITEMS_GetByCode`; on a hit, the entry is an item;
   2. else (or on a miss) `EXCEL_FindName(g_TCLink)`; a hit **≥ 1** makes it a TC reference (index 0, the empty TC, is
      treated as a miss);
@@ -332,7 +335,8 @@ if (g_nTreasureClasses > 0xFFFE) fatal();
 - [C] The resulting index space (0 empty, 1–160 auto, 161+ = TCEx row order, names case-insensitive) reproduces every
   non-blank `TreasureClass*` cell of `monstats.bin` (12 columns at `+0x86`…`+0x9C`, u16; 4362 cells, 0 mismatches;
   blank cells are 0). This is data-behaviour corroboration that `treasureclassex` is the only TC source. The 707-row
-  `TreasureClass.txt` would give a different numbering.
+  `TreasureClass.txt` would give a different numbering. (fn:TC_LoadTreasureClassEx@0x006547D0,
+  tbl:monstats.txt:TreasureClass1)
 
 ### 8. Answers to the archivist's Phase 1 questions
 
@@ -347,7 +351,8 @@ if (g_nTreasureClasses > 0xFFFE) fatal();
   the record getter at `0x006538A0` is `idx*0x1A8 + g_pMonStats` with a `< g_nMonStats` bound. No lookup through
   `+0x000` was seen in the loader. So after the duplicate `cr_lancer8`, every stored monster reference points one
   record early (e.g. Pandemonium 3 `mon1` = 723 = the second `cr_lancer8`). Not checked: every one of the ~189
-  readers of `g_pMonStats`; a runtime look at Pandemonium 3's spawn list would settle it.
+  readers of `g_pMonStats`; a runtime look at Pandemonium 3's spawn list would settle it. (Every reader checked in
+  [§ Plan 0039 batch P1c](#plan-0039-batch-p1c-2026-10-17): all index by position.)
 - [I] **Cell converters** (`EXCEL_ParseTxt` and its column mapper `0x006BCE20`, compile path only):
   - Header → descriptor match: a Storm-style string hash (`0x00413CE0`, folds `a`–`z` to upper case and `/` to
     `\`) to find candidates, then `_strnicmp` (`0x00413590`). So the lookup is **case-insensitive**, and a `.txt`
@@ -359,6 +364,7 @@ if (g_nTreasureClasses > 0xFFFE) fatal();
     and string-table keys.~~ Read in [data/0004](0004-cell-converters.md) (plan 0015 Phase 2): a per-type defaults
     pass (0, or −1 for lookups and calc fields), −1 for a key not found, patchstring → expansionstring → string with
     0 → 5382; `[C]` for each sub-rule a named cell of the `excel_bin.py survey` exercises, `[I]` for the rest (data/0004 lists which).
+    (fn:EXCEL_ParseTxt@0x006BD780, fn:EXCEL_MapColumns@0x006BCE20)
 
 ## Plan 0038 batch S1b (2026-10-16)
 
@@ -517,6 +523,147 @@ rank first (`sweep_s1b.py compile`). Several rows below rest on that.
 - **Row 78** (spec L722, runtime TC array 1 013 × `0x2C`) **raised in part.** [C] the stride (row 13). **Remainder
   d-none:** the count (row 42, L458). (fn:TC_Alloc@0x00653F90)
 
+## Plan 0039 batch P1b (2026-10-17)
+
+Rows Q1, Q2, Q3 and B7 (c) of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static: Ghidra on the lane's copy and
+objdump. No game run.
+
+### Q1: the auto-TC details (stale)
+
+- The details that the data/excel spec keeps as an `[L]` open question (G2 (a)–(d): the names, `picks` 1, `group` 0,
+  `level` L − 3, the item filter, the entry probability and flag `0x10`) are already in a finding:
+  [items/0001 § 9](../items/0001-tc-resolution.md#9-auto-item-type-tcs-weapn-armon-bown-melen-abown) states each of them `[I]` with anchors
+  (0x0065428B–0x00654361), and § Plan 0038 batch S1b above raised G2 and the index formula to `[C]` (55 auto TCs logged with
+  their entries). Nothing new to read; the spec's open question can move into G2 with those anchors.
+
+### Q2: the TC post-pass and the `group`/`level` walk (stale)
+
+- The post-pass `0x0065A2C0` is `TC_BuildChestTable`: for act 1–5, the three difficulty suffixes and the three chest
+  kinds it builds the name `"Act %d%s Chest %s"`, looks it up in `g_TCLink` and stores the TC pointer (0 when the name is
+  missing) in `g_ChestTCs` ([items/0001](../items/0001-tc-resolution.md), its *Functions* table and the chest bullet,
+  `[I]`). Re-read here (0x0065A2C0–0x0065A38F): it reads no TC field and changes none, so § 7's "post-pass, not read" is
+  answered by that row. (fn:TC_BuildChestTable@0x0065A2C0, data:g_ChestTCs@0x0096C5F4)
+- The walk in `TC_GetByIndex` is [items/0001 § 4](../items/0001-tc-resolution.md#4-level-upgrade--tc_dropbyindex-0x0055afa0-and-tc_getbyindex-0x00654e00),
+  `[C]` there (tc 3). Re-read in the disassembly (0x00654E00–0x00654E5E): the index is a `u16` tested `≠ 0` and
+  `< g_nTreasureClasses` (signed `jge`), else NULL; the level is a signed `int`, and the walk runs only for `level > 0`,
+  `group ≠ 0` and `t[1].group = t.group`; each step compares `t[1].level` (`movsx`, signed) with the level (`jg` stops)
+  and continues while `t[2].group = t[1].group`. This agrees with § 4.
+
+### Q3: the u16 list at `0x0096CA78`
+
+- [I] **It maps a classic item index to the current one.** `ITEMS_LoadItemTables` allocates `2 · nItems` bytes, zeroes
+  them, and writes, in item order, the combined index of every record whose `version` (`+0xF6`, u16) is 0
+  (0x006334C4–0x00633531). The count is not stored: entries past the last version-0 item stay 0.
+  (fn:ITEMS_LoadItemTables@0x006315D0, data:g_pClassicItemIndex@0x0096CA78, tbl:Weapons.txt:version)
+- [I] **Its one reader is the oldest item record format.** `sub_006335A0_ItemClassicIndexMap(i)` returns
+  `list[i]` (u16) for `0 ≤ i < nItems`, −1 otherwise, and is fatal when the list is NULL (0x006335A0–0x006335E6). Its only
+  caller is `sub_00532F30_ItemReadV71Record` (0x00533310), which `sub_00533350_ItemListReadV71` calls three times
+  ([rng/0002](../rng/0002-seed-tree.md), the version-`0x47` item list). For a record whose flags have neither bit
+  `0x100000` nor the ear bit `0x10000`, the item is named by a signed 10-bit index (`BITBUF_ReadSigned(10)`); the reader
+  maps it through the list, stores the current index at record `+0x06` and the item's code (`+0x80` of its record) at
+  `+0x44`; an index < 0 or a missing record gives index −1 and code 0. So an item saved by a version-0 game is found
+  by its position among the version-0 items, whatever the expansion rows inserted since.
+  (fn:sub_006335A0_ItemClassicIndexMap@0x006335A0, fn:sub_00532F30_ItemReadV71Record@0x00532F30,
+  fn:sub_00533350_ItemListReadV71@0x00533350)
+- [C] **Stock counts (data).** In the shipped `weapons.txt`, `armor.txt` and `misc.txt`, 361 of the 659 item rows have
+  `version` 0 (175, 92, 94), the rest 100 (one `misc` row 109). A 10-bit signed index reaches 511, so it covers them.
+  (tbl:Weapons.txt:version, tbl:Armor.txt:version, tbl:Misc.txt:version)
+- `sub_00633540_ItemTablesFree` frees the item code link, the combined table and this list (0x00633540–0x0063358F).
+
+### B7 (c): the States field descriptor
+
+`STATES_Load` (0x00618100) builds the `states` descriptor on its stack at `[ebp−0x580]` and passes it to
+`DATATBLS_LoadTable` at 0x00618B7D. Read by replaying the stores (register constants and `[ebp−X]` writes,
+0x0061812A–0x00618B59) into 20-byte entries `{column, type, len, offset, link}` (§ 1); 70 entries, the last `end`.
+Type `0x1A` is a bit flag: `len` is the bit number, `offset` the flag field.
+
+- [I] **`attred` is flag bit 10** (entry 12: type `0x1A`, bit `0xA`, field `+0x10`). Bit 9 is `attblue`, bit 11 `curse`.
+  The data agree: `attred` is blank in all 185 rows and bit 10 is 0 in every record.
+  (fn:STATES_Load@0x00618100, tbl:States.txt:attred)
+- [I] **`immed` has no descriptor entry**, so the compiler ignores the column (the header maps it to "unknown",
+  `EXCEL_MapColumns` § Functions). That is why no byte or bit follows it. (fn:STATES_Load@0x00618100,
+  fn:EXCEL_MapColumns@0x006BCE20, tbl:States.txt:immed)
+- [I] **The red bits:** `rfred` is bit 26 (`0x1A`), `rcred` bit 27 (`0x1B`), `rlred` bit 28 (`0x1C`), then `rpred` 29.
+  The blue run is `rfblue` 20, `rcblue` 21, `rlblue` 22, `rpblue` 23. (tbl:States.txt:rfred, tbl:States.txt:rcred,
+  tbl:States.txt:rlred)
+- [I] The rest of the descriptor agrees with [States § Columns](../../tables/States.md): `state` (type `0x11`, a word
+  index through the name link `0x0096BCF0`, at `+0x00`), `group` (type 3, an s16 at `+0x1E`, so the always-0 byte
+  `+0x1F` is its high byte), the 40 flag bits at `+0x10` (`nosend` 0 … `disguise` 16, `restrict` 17
+  … `noclear` 36, `bossinv` 37, `meleeonly` 38, `notondead` 39), the overlays (`+0x02..+0x0E`), `stat` `+0x18`,
+  `setfunc`/`remfunc` `+0x1A`/`+0x1C`, `missile` `+0x3A`, `skill` `+0x38`, the colour and light bytes `+0x20..+0x24`,
+  the sounds `+0x26`/`+0x28`, `itemtype` `+0x2A`, `itemtrans` `+0x2C`, `gfxtype` `+0x2D`, `gfxclass` `+0x2E`, `cltevent`
+  `+0x30`, `clteventfunc`, `cltactivefunc`, `srvactivefunc` `+0x32..+0x36`. (0x0061812A–0x00618B59)
+
+## Plan 0038 batch S1e (2026-10-17)
+
+Static batch S1e of [plan 0038](../../plans/0038-inferred-claims-sweep.md), rows 16, 36, 37, 40, 43 and 44 of
+[inventory data-excel](../../plans/0038-inventory/data-excel.md). No session was played. Method: the functions under
+Ghidra's p-code emulator against models ([ADR-0015](../../adrs/0015-emulated-reproduction.md)),
+[run:2026-10-17-sweep-emu](experiments.md#run2026-10-17-sweep-emu) family `excel` (5 500 calls) and, for the 31-byte
+cut through the `.txt` converter, family `parsetxt` ([data/0004 § S1e](0004-cell-converters.md#plan-0038-batch-s1e-2026-10-17)).
+Read set: the scratch link, its array or name nodes and the key (case memory); `STR_ToLowerN`'s table 0x006CEB18–0x006CEC17
+(`.rdata`, indexed by a signed char); `memmove`'s jump tables (`.text`); one write-only store of `strncpy` (0x004135D0)
+to 0x007788D8, which none of these functions reads. Where a statement above is tagged inferred and this section raises
+it, the tag and the second source given here are the current ones.
+
+- **Row 36** (spec L288, `FindCode`: binary search, unsigned compare) **raised.** [C] 2 500 calls on arrays of 0–300
+  entries (336 deliberately unsorted, so the probe path itself is compared), 1 021 probes ≥ 2³¹, 133 negative counts
+  (−1 at once): every return equals the model's `lo/hi` search with `mid = (hi − lo)/2 + lo` and an unsigned compare;
+  the family's negative controls (a signed compare here, a reused duplicate for `AddCode`, a 32-byte key for `FindName`)
+  differ in 1 048 cases. (fn:EXCEL_FindCode@0x006BD130,
+  run:2026-10-17-sweep-emu)
+- **Row 37** (spec L298, `AddCode` bumps a duplicate code to code + 1) **raised.** [C] 1 500 inserts (capacity above
+  the count, so no allocation): 665 bumped, 221 of them through `0xFFFFFFFF` → 0 → … chains, 835 plain; the array,
+  count and returned index (the old count) match byte for byte, `memmove` included. (fn:EXCEL_AddCode@0x006BD230,
+  run:2026-10-17-sweep-emu)
+- **Row 40** (spec L320, item codes are case-sensitive) **raised.** [C] 316 probes that differ from a stored code only in
+  letter case find nothing (−1). (fn:EXCEL_FindCode@0x006BD130, run:2026-10-17-sweep-emu)
+- **Row 16** (spec L75, name keys are 31 characters) **raised.** [C] 1 500 `FindName` calls on random trees: the key is
+  cut to its first 31 bytes and lower-cased through the table (bytes ≥ 0x80 indexed as signed), then walked by unsigned
+  `strcmp` (`<` left at `+0x24`, else right at `+0x28`); 435 keys longer than 31 bytes, 57 of them found by their
+  first 31; 894 mixed-case keys; an empty link returns −1. `EXCEL_ParseTxt`'s name lookups give the same cut (1 058
+  cells over 31 bytes, data/0004 § S1e). (fn:EXCEL_FindName@0x006BD3C0, fn:STR_ToLowerN@0x004113C0, run:2026-10-17-sweep-emu)
+- **Rows 43, 44** (spec L461, a short name that is both an item code and a TC resolves to the item; L463, `uniqueitems`
+  row 0 cannot be named from a TC, `setitems` row 0 can) **not raised; returned to d-none.** `TC_ParseItemCell` calls
+  `TC_AddEntry` on every resolved cell, and `TC_AddEntry` always calls `TC_GrowEntries`, which reallocates through the
+  pool allocator 0x0040B4B0 (heap calls outside the image), so no case that reaches either claim runs to completion
+  under ADR-0015 condition 1. The lookups they rest on are now `[C]` (`FindCode` case rules above, `FindName` row 16);
+  the order of the tests and the `jle`/`jl` that separate unique and set row 0 stay code readings (0x0065450F,
+  0x00654569, 0x006545B4). (fn:TC_ParseItemCell@0x00654440, fn:TC_GrowEntries@0x00654010)
+
+## Plan 0039 batch P1c (2026-10-17)
+
+Row Q4 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static: an operand scan of the objdump listing of the
+pinned image (scratch script, not kept), with the odd sites read by hand. No game run.
+
+### Q4: every reader of `g_pMonStats` uses the stored value as a position
+
+§ 8 left one thing unchecked: whether any of the ~189 readers of `g_pMonStats` looks a monster up some other way, for
+example by matching the `Id` ordinal at `+0x000`.
+
+- [I] **The scan.** It found 194 instructions that use `g_pMonStats` in `.text`: `[reg+0xA78]` with `reg` the table
+  block (`g_pDataTables`), or the absolute `0x0096C6A8`. Three are writes: the loader's store and the two clears.
+  The 191 reads fall into four shapes:
+
+  | shape | sites | what the index is |
+  |---|---:|---|
+  | `0 ≤ i < count` test (`+0xA80` or `0x0096C6B0`), then `base + i·0x1A8` | 177 | a position: 175 with the multiply next to the test, 2 (0x00466601, 0x00536174) with it computed earlier |
+  | a constant offset after a `count > n` test | 6 | the fixed classes 492–495 (`imp1`–`imp4`; offsets `0x32EE0`…`0x333D8`, 0x005E2DDD–0x005E3090) |
+  | loader-side code, 0x00650F00–0x0065111E | 5 | the `BaseId`/`NextInClass` post-passes of § 8, which index by position as well |
+  | allocation, free and NULL checks | 3 | 0x00653D30, 0x00653D63, 0x0065A211: no index |
+
+  None of the 191 is part of a search over the records, such as a loop that compares `+0x000` with a value. A record
+  is always the base plus a position times `0x1A8`, or a constant multiple of it. So H3 holds for every reader: whatever a table stores as a monster
+  reference (`BaseId`, `NextInClass`, `minion1`/`2`, `spawn`, the `levels` `mon`/`nmon`/`umon`/`cmon` lists, the
+  SuperUniques and Hireling classes, a MonPreset id) is used directly as the record position. It is never mapped
+  back through the ordinal. (data:g_pMonStats@0x0096C6A8, data:g_pDataTables@0x00744304,
+  0x0065385D)
+- [I] The scan sees only instructions that address `g_pMonStats`. A copy of the base pointer kept in another
+  structure would escape it. None was met while reading the 16 odd sites, and the loader stores the pointer only at
+  `0x0096C6A8` (0x0065385D).
+- Consequence, as before: only the three *Pandemonium 3* cells that store 723 are affected (spec H). Whether a unit of
+  class 723 shows in play is still `monsters/spawn`'s question (the region pool already shows it, confirmed).
+
 ## Data touched
 
 - `fmt:excel-bin#bin` count header and record array (all 88 files).
@@ -546,8 +693,9 @@ rank first (`sweep_s1b.py compile`). Several rows below rest on that.
 ## Open questions
 
 - Behaviour under `-direct -txt` is read from code only. A wine run that edits one `.txt` cell and observes the effect
-  (and checks that `DATA\GLOBAL\EXCEL\*.bin` files are written) would take the `-txt` claims to `[C]`.
+  (and checks that `DATA\GLOBAL\EXCEL\*.bin` files are written) would confirm the `-txt` claims.
 - `EXCEL_ParseTxt` type codes are only partly read (section 1). Only relevant if the spec has to describe the
   `.txt` → `.bin` compiler; the archivist's cell diff covers the stock data.
-- `TC_GetByIndex`'s group/level walk and `sub_0065A2C0`'s post-pass belong to plan 0004 (items/tc).
+- ~~`TC_GetByIndex`'s group/level walk and `sub_0065A2C0`'s post-pass belong to plan 0004 (items/tc).~~ Stale: both are
+  read in items/0001 (§ 4, and `TC_BuildChestTable`); see [§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17) Q2.
 - `runessrv` probe (`0x00639420`) and the `cubeserver.*` guard: purpose not followed.

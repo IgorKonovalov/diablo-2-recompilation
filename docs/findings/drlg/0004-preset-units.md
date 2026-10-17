@@ -91,7 +91,8 @@ save, Acts I–V by waypoint) reached the branches that run left: every drawing 
     run:2026-10-13-drlg-preset)
   - [C] `DRLG_RoomNoPopNearTown` also sets `0x800000` on `Populate` 1 rooms: a room outside a town whose
     neighbour room is in a town level (`sub_006426A0_LevelIsTown`: levels 1, 40, 75, 103, 109). Two counts in the
-    run, both from the two logs with `FLG` lines (`preset-play-act4`, `preset-play-act5`):
+    run, both from the two logs with `FLG` lines (`preset-play-act4`, `preset-play-act5`; fn:DRLG_RoomNoPopNearTown@0x0066BD50,
+    run:2026-10-13-drlg-preset):
     - **22 flag sets** at `0x0066BD92`, on 22 distinct preset rooms (10 + 12);
     - **16 `RoomPopLevelId` returns of 0** on those rooms: 8 of the 22 were populated, with two calls each, all 0.
       The other 14 had no `RoomPopLevelId` call in the logs.
@@ -714,6 +715,77 @@ Batch H5e, record [experiments.md § run:2026-10-16-sweep-mazes](experiments.md#
   `0x02DD7600`, each linked first in level 103 or 2 and later in another level), so four in all (H5e review).
 - `re/symbols.csv`: `sub_006664A0_PresetCentreMonster` I → C.
 
+
+## Plan 0038 batch H5a (run:2026-10-17-sweep-links)
+
+Batch H5a, record [experiments.md § run:2026-10-17-sweep-links](experiments.md#run2026-10-17-sweep-links).
+
+- [I] **The `v = 1` index-2 outcome is unreachable on stock data**, so it stays `[I]` for good (proposed d-none). The
+  draw `r` is the first act-seed step after table `0x006F0840`'s seed copy was made, and Black Marsh's first choice is
+  `r & 3` from the same first step of the copy; side 1 is only ever kept from a first choice of 1, at every
+  difficulty, so `r & 1` = 1 and the index is 1. Reasoning and the scan in
+  [drlg/0007 § Plan 0038 batch H5a](0007-warps.md#plan-0038-batch-h5a-run2026-10-17-sweep-links); the run logged two more
+  side-1 builds (map seeds 90, 5), both index 1 with the act seed after as predicted. (0x006774F9,
+  fn:sub_006772C0_LevelLinkBuild@0x006772C0, run:2026-10-17-sweep-links)
+- [C] Level 27 keeps its create-time index when `v` is 0 (no draw, no write): 0 and 2 in the run (map seeds 2, 58),
+  each built into the Barracks placement as modelled (drlg/0006 § Plan 0038 batch H5a). (0x006774F9,
+  fn:sub_00673120_MazeBarracksPlace@0x00673120, run:2026-10-17-sweep-links)
+
+## Plan 0038 batch S1f (2026-10-17)
+
+Static batch S1f of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the c-emu rows of the
+[inventory § 2.6 S1f table](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews). No session was
+played. Method: the function runs under Ghidra's p-code emulator against `tools/sweep_s1f.py`'s models, under
+[ADR-0015](../../adrs/0015-emulated-reproduction.md): [run:2026-10-17-sweep-emu2](../data/experiments.md#run2026-10-17-sweep-emu2).
+Every memory spec guards the fatal path (0x00408090, 0x00408A60, 0x00681E09) and the pool allocator's entries
+(0x0040B4B0, 0x0040B430, 0x0040B480), and no case stopped, so no claimed branch was reached through either (review
+condition (a)). Where a statement above is tagged inferred and this section raises it, the tag and the second source
+given here are the current ones.
+
+- **Row 6, second statement** (spec L154, `MONSTATS_ValidId` is a range check, not an id table) **raised.** [C] 2 000
+  calls (family `validid`) with `nMonStats` at `DataTables + 0xA80` set per case (0, 1, 733, 734, random, `0x7FFFFFFF`,
+  −1, `INT32_MIN`) and `id` in ECX across the same edges: the return is `id` when `0 ≤ id < nMonStats`, both compares
+  signed (599 cases), and −1 otherwise (830 ids at or above the count, 571 negative ids; 532 cases had a count ≤ 0, where
+  every id gives −1); nothing is popped. The negative control (`id ≤ nMonStats`) differs in 190. The function reads
+  only `data:g_pDataTables@0x00744304` (set by the spec: an argument of the claim, S1e ruling 3) and the count; no access
+  was traced. The signed tests are cited from objdump (`test eax, eax; jl` at 0x004E6C52, `cmp eax, [ecx+0xa80]; jl`
+  at 0x004E6C5C, `or eax, 0xffffffff` at 0x004E6C64). (fn:MONSTATS_ValidId@0x004E6C50, run:2026-10-17-sweep-emu2)
+
+## Plan 0039 batch P1c (2026-10-17)
+
+Follow-up of the plan 0038 Phase 3 round-3 review ([backlog](../../backlog.md), 2026-10-17 architect → reverser): can a
+stock unit reach `PresetUnitDispatch` with type 2 and id 573? Static: a data survey with `tools/ds1.py`'s parser and
+its `DS1_Parse` unit model (scratch script, not kept), objdump and `tools/xrefscan.py`. No game run.
+
+- [C] **Where a 573 can come from.** A DS1 type-2 id below 150 is mapped through `g_Ds1ObjectIds[act][id]` (drlg/0001).
+  The pinned table holds 573 in exactly three cells, act index 3 (Act IV) ids 5, 6 and 7. No other cell is 573 and
+  none is −1. A raw id of 150 or more becomes `id − 150`, so 573 would need a raw 723. A version < 6 file maps a raw
+  573 to −1. The act rewrites produce only 382, 404, 461 and 474–476. (data:g_Ds1ObjectIds@0x00748AD8,
+  fn:DS1_Parse@0x00665950)
+- [C] **No shipped DS1 holds one.** 2 274 of the 2 276 DS1 files under `data/global/tiles` parse, including all 2 043
+  that `lvlprest.bin` `File1..6` names. Their 15 109 type-2 units all go through the table (no version < 6 type-2 unit,
+  no raw id ≥ 150) or a rewrite (6). None ends at 573: the largest ids are 580, 581 and 582. The Act IV type-2 units
+  use raw ids 0–2 and 8–65, never 5–7. The two files that do not parse are `act1/outdoors/trees.ds1` (an `LvlSub`
+  file, act index 0) and `expansion/siege/xtransition.ds1` (unreferenced). Their act tables hold no 573, so only a raw
+  723 could give one. (data:g_Ds1ObjectIds@0x00748AD8, tbl:LvlPrest.txt:File1)
+- [I] **The other code that adds type-2 units adds none with 573.** `sub_0066BF30_PresetUnitCreate` has 12 call sites
+  (fn:sub_0066BF30_PresetUnitCreate@0x0066BF30):
+  - `DS1_Parse` (data, above);
+  - `DRLG_PresetClientUnitsA`, under `PresetClientObjects` (constants 40, 41, 42, 65, every unit flagged);
+  - `PresetCentreMonster` (type 1);
+  - `sub_0066E1C0_WarpUnitAdd` at 0x0066E23C (type 5);
+  - `sub_0066FA10_LvlSubPresetUnits` at 0x0066FAAF, which copies the units of a parsed substitution DS1 (covered by the survey);
+  - `Orient89Unit` at 0x0066DAE9, whose `{id, type, dx, dy, …}` rows at `0x006EF194` are reached only as rows 0–33
+    (the level ranges at `0x006EEFC8`). Their type-2 ids are 13–16, 23–25, 27, 47, 60, 62–64, 91, 92, 229, 230 and
+    290–295, plus 449.
+
+  The one other type-2 caller, `0x00666170` (type 2, id from `EDX`), has no `call`, `jmp` or pointer to it
+  (`tools/xrefscan.py`). (fn:sub_0066BF30_PresetUnitCreate@0x0066BF30, fn:sub_0066D9E0_Orient89Unit@0x0066D9E0,
+  fn:DRLG_PresetClientUnitsA@0x006661A0, fn:sub_0066E1C0_WarpUnitAdd@0x0066E1C0,
+  fn:sub_0066FA10_LvlSubPresetUnits@0x0066FA10, data:g_Orient89Units@0x006EF194)
+- **Verdict: d-none.** No stock unit reaches the dispatch with type 2 and id 573. The spec line (drlg/preset § 6) can
+  say "no stock case" (inventory drlg-preset row 18; the move into [inventory § 2.6](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews)
+  is the review's).
 
 ## Data touched
 
