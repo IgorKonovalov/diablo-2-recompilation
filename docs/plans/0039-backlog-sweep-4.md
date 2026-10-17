@@ -273,3 +273,10 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     research map, which now names them. That gives the "moved" half a destination.
   - **Bookkeeping.** P1a covers 15 items; the Phase 1 text said 16 (B11 counted twice), and the text is left as is. B1,
     B2 and B4 are struck correctly. B11's (a)(b) annotation is merged into the H5c review entry. Gate green.
+- **2026-10-17 — archivist follow-ups (`lane/arc4`).** Two backlog entries of this plan cleared: the P1a format and
+  table items ([ds1.md](../formats/ds1.md) cell bits 14–15 and 30 `[I]`, the wall/shadow bit-7 survey `[C]`, the
+  group `unk` as `ApplyAll`'s variant count `[I]`; [LvlPrest](../tables/LvlPrest.md) the 93 "maze or outdoor" records
+  by logged caller `[C]`; [LvlWarp](../tables/LvlWarp.md) column units `[I]`), and the Phase 0 review's per-table
+  compare (`sweep_s1b.py compile` now prints identical/differs for the 15 code lists, `compcode` and the four pools,
+  key `codetable_identical` = 20; cited in [formats/experiments](../formats/experiments.md#addendum-2026-10-16-the-whole-bin-set-the-compile-wrote-plan-0039-a3)).
+  No row's verdict changes.
