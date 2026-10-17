@@ -684,8 +684,9 @@ carries slot 6 (`0x400`) in this seed.
 - ~~Act III's link layout and link lists, and the warp-slot bits of outdoor rooms~~: specified in
   [outdoor.md](outdoor.md) § J and § B, and reproduced in run:2026-10-15-drlg-outdoor.
 - ~~The pick choices no checked build ended on, the validator paths never taken and index 2 of Black Marsh side 1~~:
-  every choice and validator path was reached in run:2026-10-17-sweep-links (B2, B3). What stays inferred has no stock
-  case, each on the code and an exhaustive scan of the builder's inputs ([drlg/0007 § Plan 0038 batch H5a](../../findings/drlg/0007-warps.md#plan-0038-batch-h5a-run2026-10-17-sweep-links)):
+  in run:2026-10-17-sweep-links every pick choice was placed and logged (all but `0x00676450` (0, 1) and (2, 0) also
+  kept, B2), and every validator path was taken but a reject decided by the Act1B widening (B3). What stays inferred
+  has no stock case, each on the code and an exhaustive scan of the builder's inputs ([drlg/0007 § Plan 0038 batch H5a](../../findings/drlg/0007-warps.md#plan-0038-batch-h5a-run2026-10-17-sweep-links)):
   a reject decided by the Act1B widening (B3), index 2 of Black Marsh side 1 (C1), and `RectTouch`'s false branches and
   `t` = 0 (C3). Only edited data could reach them.
 - [L] What happens when a warp with no back-link (133 → 17) is used. Level 133 is an uber level; not run.
