@@ -695,3 +695,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Closed:** the review request; `2026-10-17-architect-reverser-test-d2s-recipe-bases` (fixed here; 8 legacy bases).
   - **Filed:** reverser `monplace-remaining-cases` (the unread `PresetMonSpawn` cases and case 36); archivist
     `mp-saves-mp23-strong-pair` (a strong hostile pair for MP23's bulk).
+- **2026-10-17 — `lane/arc6` MonPlace rows reviewed (architect). Verdict: accept with fixes.** Every row in
+  MonPlace § Interpretation notes matches [monsters/0003 § 7](../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20),
+  bullet *Every MonPlace row, from the switch*. The 37 rows are each covered once, the row names match monplace.txt,
+  and every reading is `[I]`. The scope is the `lane/rbs3` review's: `PresetMonSpawn` and `PresetUnitDispatch`, reached
+  from the first spawn and the restore, with four callers left unfollowed. The remaining `[L]` is narrowed to those
+  callers, under *Open questions*. The "19–21 class 0" correction is right. **Fix (other):** the `[L]` name-reading
+  bullet carried the code's outcome. It now points to the `[I]` reading below. **Filed:** reverser
+  `monsters-0003-s7-stale-fixed-class-rows`: the finding's older `0x11`–`0x20` bullet still says "19–21 and 24
+  class 0; 25 and 28 nothing", which the rbs3 bullet supersedes, and row 24 outside Normal needs a ruling.
