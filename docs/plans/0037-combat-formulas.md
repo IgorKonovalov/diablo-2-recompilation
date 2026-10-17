@@ -524,3 +524,32 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   **Not blocking, filed:** the spec re-tag with its exact lines (spec-writer, replacing the three earlier re-tag
   entries), the wiki's open-wounds sentence in the Phase 4 refresh, and a reverser follow-up (the *Fleshripper* log
   under `workspace/logs/`, a checker counter for a total ≤ 0). Next: the spec re-tag (Phase 3), then Phase 4.
+- **2026-10-17 — Phase 3 re-tag after the resume lane, and the Phase 4 wiki refresh (spec-writer, `lane/p37t` from
+  `main` `b873f46`; review pending).** Source: [combat/0001 § 15](../findings/combat/0001-formulas.md#15-phase-2-per-event-reproduction-run2026-10-16-combat)
+  (*Resume lane*, *Resume lane, second sessions*, *Open-wounds halving and the resistance floor*, the floor and
+  under-floor bullets) and the run record. Every line of the architect's re-tag entry applied, re-located by content.
+  **to-hit** (C 26 / I 30 / L 4 → C 32 / I 27 / L 3): the `÷ 3` constant, C1's `auto` (inline) and note (47), C2's
+  inline divisor tag and note split (`[C]` for a running player, mode 3, 48 events; the mode-2 exception `[I]`), the
+  after-the-cap note (45 at 75 → 25, 3 at 53 → 17; the *which modes* sentence stays `[I]`); the *Open questions* lead
+  on the 26 events removed. **delivery** (C 42 / I 41 / L 4 → C 50 / I 39 / L 4): crushing-blow divisors `[C]` for
+  4 and 8, E1's `k = 8` inline and note (act boss 34, superuniques 55; champions split out `[I]`), the "1.14d does
+  neither" note scoped to uniques and the player count with champions `[I]`; the monster leech branch inline and note
+  (80) and the entry row; the unique stun draw inline and note (34); **E2 corrected**: the halving tests `0x0C` only,
+  `[C]` for the unique bit (383, Andariel's 63 included), `[I]` for the champion bit and an act boss without `0x08`;
+  *Open questions* now champions and a total ≤ 0, and not reached: a champion without `0x08`, a player, the freeze,
+  the player's tick. **reductions** (C 35 / I 24 / L 5 → C 38 / I 25 / L 4): A2 Hell's 25 `[C]` (33, telling the
+  column from `MonsterCEDamagePercent`), the prime-evil 200 `[C]` (154; 400, PvP 17 % and hireling 25 % stay `[I]`),
+  its constants row split; B2's floor inline `[I]` (214 at exactly −100, none below); the cap counts (fire 2 115,
+  poison 692, cold 27, lightning 17, magic 0); the *Penalty, then floor, then cap* note scoped (`[C]` penalty before
+  cap, `[I]` floor); *Open questions* trimmed to the negative absorbed amount (4) and cold/lightning at the cap.
+  **monsters/stats** (C 102 / I 58 / L 5 → C 103 / I 57 / L 5): § G's Hell 25 `[C]`. **combat/README** (C 36 / I 20 /
+  L 5 → C 36 / I 21 / L 5): the hireling row adds 25, the shortfall list rewritten, the community-contradiction note
+  scoped to uniques with champions `[I]`, and (no tag change) the run totals with the resume addendum (40 logs, 40 655
+  events). damage unchanged (C 34 / I 27 / L 4). Combat total C 173 / I 142 / L 22 → C 190 / I 139 / L 20. Research-map
+  rows (combat, monsters/stats) updated. **Phase 4:** [wiki/combat](../wiki/combat.md) restated: the run totals, the
+  running player's automatic hit and `÷ 3` confirmed with the walking exception read from the code, the cap counts and
+  the −100 floor, the damage percent in all three difficulties and the prime-evil 200, crushing blow 1/8 on act bosses
+  and superuniques, **open wounds halved for uniques, Andariel included** (the "act bosses the full amount" sentence
+  replaced), monster leech and the unique stun draw confirmed, the difficulty table, *What is not known yet*;
+  `based_on:` bumped; [wiki/monsters](../wiki/monsters.md) `based_on:` bumped (no statement depended on the change).
+  Gate green, W4 5 → 0.
