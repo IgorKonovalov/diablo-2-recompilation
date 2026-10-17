@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/quality, items/quest-drops, objects]
-tags: {C: 45, I: 77, L: 8}
-updated: 2026-10-16
+tags: {C: 45, I: 81, L: 7}
+updated: 2026-10-17
 ---
 
 # Treasure class resolution: from a drop source to item-creation calls
@@ -45,7 +45,7 @@ in [data/excel § G](../data/excel.md#g-treasure-classes).
 | tbl:MonStats.txt:TreasureClass1 … `TreasureClass4(H)` (`+0x86 + 8·diff + 2·k`) | the monster's base TC per difficulty and kind (section B) ([MonStats](../../tables/MonStats.md)) |
 | tbl:MonStats.txt:TCQuestId, tbl:MonStats.txt:TCQuestCP | the quest TC switch (section B) |
 | tbl:MonStats.txt:noRatio (`+0x0C` bit 2), tbl:MonStats.txt:boss (`+0x0C` bit 6) | block the level upgrade (section C) |
-| `superuniques` record `+0x2C + 2·diff` (u16 TC index; no table doc yet, see *Open questions*) | a superunique's TC (section B) |
+| tbl:SuperUniques.txt:TC (`TC`, `TC(N)`, `TC(H)`: record `+0x2C + 2·diff`, u16 TC index) | a superunique's TC (section B) |
 | tbl:ItemTypes.txt:TreasureClass, tbl:ItemTypes.txt:Rarity | auto item-type TCs and their entry weights (section I) ([ItemTypes](../../tables/ItemTypes.md)) |
 | tbl:ItemTypes.txt:Throwable | the classic-game re-pick (section H) |
 | tbl:Weapons.txt:version, `level`, `quest`, `spawnable`, `type`, `type2` (same offsets in [Armor](../../tables/Armor.md) and [Misc](../../tables/Misc.md)) | expansion-only flag, auto-TC filter, classic rejection ([Weapons](../../tables/Weapons.md)) |
@@ -199,6 +199,15 @@ Step notes:
 - B1. The death drop is skipped entirely when the monster unit has `+0xC4` bit 17 set, or when the
   collision test at its position (mask `0x801`) fails. Monster class 344 (`bonewall`) is a fatal error
   there. [I] (fn:sub_005A6830_MonDeathDrop@0x005A6830)
+- B1. [I] **`+0xC4` bit 17 is "no death drop".** It has two readers: this guard (0x005A6861) and a saved-unit copy
+  that stores bits 26 and 17 and restores them (0x00542031, 0x00541F9E–0x00541FC6), so the bit survives that save. The
+  instruction that sets it occurs 21 times in the image. Examples read: `MonPostCreateBoss` on the bone prisons
+  (classes 340–343) and the compelling orb (366); `SpawnOwnedMonster` on a monster it spawns for another unit;
+  `MonSetNoDeathDrop`; and the restore. The other 16 (one in `MonSpawnTry`, three quest drops, 12 skill-code sites) are
+  not read, so this is not the full list of units that skip the drop; the meaning rests on the two readers. (0x005B1E54,
+  0x005B1E79, 0x0056D9F0, 0x005AD3C2, fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0,
+  fn:sub_0056D940_SpawnOwnedMonster@0x0056D940, fn:sub_005AD3A0_MonSetNoDeathDrop@0x005AD3A0, tbl:MonStats.txt:Id,
+  [items/0001 § Plan 0039 batch P1b](../../findings/items/0001-tc-resolution.md#plan-0039-batch-p1b-2026-10-17))
 - B2–B5. The test order is superunique, champion, unique, else. Live monsters carry more than one
   flag (low byte of the flag word: `0x0b` on both superuniques killed, `0x09` on uniques, `0x0d` on
   champions), so the order matters. The column for the normal, minion, unique and superunique kinds is
@@ -642,8 +651,13 @@ Step notes:
   expansion-only (A2). Neither was reached in the run. [I] (fn:TC_ParseItemCell@0x00654440, 0x0055AC5F)
 - H5. The upgrade draws are unguarded inlined steps; the test uses the low word after the step. They run
   only when the frame's ratio words 4/5 are non-zero, which needs a `ce=`/`cg=` modifier (classic only,
-  H3) or a non-zero `.bin` `+0x30` word: never with stock data. What creation does with bits
-  `0x04`/`0x10` belongs to `items/quality`. [I] (0x0055AC5F–0x0055AF59, [items/0001 §8](../../findings/items/0001-tc-resolution.md#8-item-pick-and-hand-off-0x0055ac5f0x0055af59))
+  H3) or a non-zero `.bin` `+0x30` word: never with stock data. [I] (0x0055AC5F–0x0055AF59, [items/0001 §8](../../findings/items/0001-tc-resolution.md#8-item-pick-and-hand-off-0x0055ac5f0x0055af59))
+- H5. [I] **`0x04` is forced ethereal and `0x10` forced sockets**, not upgrades. The ethereal roll makes the item
+  ethereal when record `+0x80` has `0x04`; the socket roll makes its `Range(100)` draw and, with `0x10`, replaces it by
+  0 so that sockets are always added ([items/properties § F](properties.md#f-ethereal-and-sockets)). Since `ce=` and
+  `cg=` exist only in a classic game, where the ethereal roll does not run (item version < 100), `ce=` has no effect at
+  all. (0x00556D24, 0x00556C14–0x00556C24, fn:sub_00556CA0_ItemRollEthereal@0x00556CA0,
+  fn:sub_00556B60_ItemRollSockets@0x00556B60, [items/0001 § Plan 0039 batch P1b](../../findings/items/0001-tc-resolution.md#plan-0039-batch-p1b-2026-10-17))
 - H6. The throwable test uses the item's `type` only (`ItemTypes.Throwable`), and runs **after** the
   quality roll and the upgrade draws, so a refunded pick has already stepped `src.seed`. The first 10
   throwables in one resolver call refund their pick; later ones become a Long Sword. Classic only. [I]
@@ -663,6 +677,10 @@ Step notes:
   position (a free spot near the source) and its room, quality, `uidx`, and the flags `up`, plus bit 0
   when the source is monster class 391 (`hellbovine`). The resolver's `ilvl` argument feeds only the
   quality roll. [I] (fn:sub_0055A550_DropCreateItem@0x0055A550, fn:sub_00558200_UnitDropLevel@0x00558200)
+- H7. [I] Record `+0x2A` takes `game+0x78`, the game's item version (u16): 101 in every logged expansion record, 2 in
+  the classic ones. Flag bit 0 (the `hellbovine` source) is what lets set 29 be picked
+  ([items/uniques-sets](uniques-sets.md) D2). (0x0055A5E3, 0x00559C32, struct:Game+0x78,
+  fn:sub_0055A550_DropCreateItem@0x0055A550, [items/0001 § Plan 0039 batch P1b](../../findings/items/0001-tc-resolution.md#plan-0039-batch-p1b-2026-10-17))
 - H7. **The item's seed comes from the game seed**, not from `src.seed`: drops pass no seed in the
   record, so `sub_00558D90_ItemCreate` leaves the two game-seed draws of the unit constructor in place
   ([rng/seeds](../rng/seeds.md#algorithm) step 7a). In a classic game creation also refuses an item with
@@ -724,6 +742,12 @@ Step notes:
   roll (H4), so a chest drop's quality roll runs at `ilvl` 0–2, while the created item's own level is taken from the
   source as for any drop ([items/quality](quality.md) step note on chests). (fn:sub_00585B90_ObjectChestDrop@0x00585B90,
   fn:TC_ResolveDrops@0x0055A6D0, [items/0001 § 2](../../findings/items/0001-tc-resolution.md#2-entry-points))
+- [I] **A forced quality on a gold or potion entry** is handed through with no quality roll (H4), and
+  `ItemCreateByQuality`'s last override then writes 2 for every base whose own type has `Normal` = 1: `gold` and the
+  potion types `hpot`, `mpot`, `rpot`, `spot`, `apot`, `wpot`, `tpot`. So a sparkle chest's gold or potion is built as
+  quality 2, after the source seed skipped the quality draws; `elix` has `Normal` 0 and keeps the forced quality.
+  (0x005574E3–0x00557567, tbl:ItemTypes.txt:Normal, [items/quality § F](quality.md#f-boundaries-named-only),
+  [items/0001 § Plan 0039 batch P1b](../../findings/items/0001-tc-resolution.md#plan-0039-batch-p1b-2026-10-17))
 - [C] The 11 object calls in the run (`Act 1 Chest A`, `max = 6`, 8 of them with forced quality 4)
   reproduce with D–H unchanged. (fn:sub_00585B90_ObjectChestDrop@0x00585B90, run:2026-10-11-tc-drops)
 
@@ -937,8 +961,10 @@ potions' quality calls return without drawing (H4).
   tiers logged in run:2026-10-15-objects; until the reverser writes the arithmetic of `ObjectChestDrop`
   (0x00585C01–0x00585C87) into items/0001 § 2, the tier formula and the tier-as-`ilvl` hand-off stay inferred
   (backlog 2026-10-16, architect → reverser).
-- [L] **`superuniques` has no table doc**, so its TC column (`+0x2C + 2·d`) is cited by offset, not by
-  `tbl:` anchor (backlog reverser → archivist on `superuniques`).
-- [L] Meanings left to other subsystems: monster `+0xC4` bit 17 (skips the drop), `game+0x78` (copied
-  into the creation record), the `hellbovine` flag bit, and the upgrade bits `0x04`/`0x10` (exceptional /
-  elite upgrade?). ([items/0001 § Open questions](../../findings/items/0001-tc-resolution.md#open-questions))
+- ~~**`superuniques` has no table doc.**~~ Stale: [SuperUniques](../../tables/SuperUniques.md) exists; *Inputs* now
+  cites `tbl:SuperUniques.txt:TC`.
+- ~~Meanings left to other subsystems: monster `+0xC4` bit 17, `game+0x78`, the `hellbovine` flag bit, and the
+  upgrade bits `0x04`/`0x10`.~~ Answered ([items/0001 § Plan 0039 batch P1b](../../findings/items/0001-tc-resolution.md#plan-0039-batch-p1b-2026-10-17)):
+  no death drop (B1 note), the item version and the set-29 filter (H7 notes), forced ethereal and forced sockets (H5
+  note). [L] Which units skip the death drop in full: 16 of the bit's 21 writers are not classified (backlog, P1b
+  review follow-up (a)).
