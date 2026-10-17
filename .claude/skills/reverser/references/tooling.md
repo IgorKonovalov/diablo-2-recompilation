@@ -381,34 +381,50 @@ bit write `QS`/`QC` with its return address and the word before, every `QUESTS_G
 
 The game refuses a second copy in one wine session ("Only one copy of Diablo II may run at a time": `FindWindowA`
 on its own window class at `0x004F5610`). The second client therefore runs in **its own prefix and display** (a
-second slot), and the two meet in a **TCP/IP game** over `127.0.0.1`. A two-client lane is given two slots; below,
-slots 0 and 1. Plan 0011's runs used `workspace/wineprefix2` on `:8` for the joiner; that prefix is kept for the
-record (ADR-0008) but is not a slot, and `:8` is now slot 1's display, so new runs use slot 1:
+second slot), and the two meet in a **TCP/IP game** over `127.0.0.1`. A two-client lane is given two slots, **both
+non-zero** (the owner's condition on ADR-0008, 2026-10-16: slot 0 stays the owner's); below, slots 1 and 2. Plan
+0011's runs used `workspace/wineprefix2` on `:8` for the joiner; that prefix is kept for the record (ADR-0008) but is
+not a slot.
 
 | | host (server) | joiner |
 |---|---|---|
-| slot | 0: `:7`, `workspace/wineprefix` | 1: `:8`, `workspace/wineprefix-1` (`tools/slots.py create 1`, same hidden workspace rule) |
-| saves | `tools/saves.py aside/install/restore` | `tools/saves.py --slot 1 aside/install/restore`, a test character built with `tools/d2s.py` |
-| launcher | `d2run.py --gdb …` (gdb on this process) | `d2run.py --slot 1` (no `--gdb`) |
+| slot | 1: `:8`, `workspace/wineprefix-1` | 2: `:9`, `workspace/wineprefix-2` (`tools/slots.py create N`, same hidden workspace rule) |
+| saves | `tools/saves.py --slot 1 aside/install/restore` | `tools/saves.py --slot 2 aside/install/restore`, a test character built with `tools/d2s.py` (another name) |
+| launcher | `d2run.py --slot 1 --gdb …` (gdb on this process) | `d2run.py --slot 2` (no `--gdb`) |
 | menus | `tools/gdb/two-host.steps` (Other Multiplayer → TCP/IP → Host → OK) | `tools/gdb/two-join.steps` (… → Join → `127.0.0.1` → OK → OK), started once the host is in game |
 
+**Before the run's first hosting session**, the run record states how TCP port 4000 is unreachable from outside
+loopback (the owner's `sudo ufw status verbose`, or the deny rule the owner added), with the commands and their
+output; before each later session the lane re-reads the ufw state and file hashes without root and logs them:
+[multiplayer/0001 § 5](../../../../docs/findings/multiplayer/0001-cases.md#5-the-hosts-binding-and-the-port-4000-precondition).
+No hosting session starts before that line is in the record.
+
 ```bash
-python3 -I tools/d2run.py --seed 1 --gdb tools/gdb/tc-party.gdb --steps tools/gdb/two-host.steps \
-    --after 3600 --log workspace/logs/tc-party-N.log &                  # wait ~50 s
-python3 -I tools/d2run.py --slot 1 --seed 1 --steps tools/gdb/two-join.steps --after 3600 \
+python3 -I tools/d2run.py --slot 1 --seed 1 --gdb tools/gdb/two-pilot.gdb --steps tools/gdb/two-host.steps \
+    --after 3600 --log workspace/logs/two-N.log &                       # wait ~50 s
+python3 -I tools/d2run.py --slot 2 --seed 1 --steps tools/gdb/two-join.steps --after 3600 \
     --log workspace/logs/join-N.log &                                    # wait ~55 s
-python3 -I tools/xdrive.py --slot 0 --window "Diablo II" run tools/gdb/two-party-invite.steps
-python3 -I tools/xdrive.py --slot 1 --window "Diablo II" run tools/gdb/two-party-accept.steps
-python3 -I tools/d2hunt.py --slot 1 findwp      # optional: move the joiner (then click a row on :8)
+python3 -I tools/d2pilot.py join workspace/logs/two-N.log where --slot 2
+python3 -I tools/d2pilot.py join workspace/logs/two-N.log party invite --slot 1 --me host --lead join
+python3 -I tools/d2pilot.py join workspace/logs/two-N.log party accept --slot 2
+python3 -I tools/d2pilot.py join workspace/logs/two-N.log follow --slot 2 --time 120
 ```
 
+- **The joiner's driver** (`d2pilot.py join`, plan 0044): the joiner has no debugger, so it is steered from the
+  host's `PLRS` lines (`tools/gdb/two-players.py`: every player's position, level, dead bit, party, travel tick and
+  hostility stamps). `--slot` is the client being driven; `--me`/`--lead` are `host`, `join` or a unit id. Actions:
+  `where`, `follow`, `party invite|accept|leave|hostile` (the steps files below), `leave` (Escape, exit item),
+  `trade TOKEN…`. `--me` on any other command (`wp`, `npc`, `explore`) also steers by PLRS; without it, the PLR
+  line alternates between the two players' marks. The hostile button, the exit item and the trade geometry are
+  uncalibrated until the plan 0044 live test (`tools/joiner.py`).
 - gdb goes on the **host**: it runs the server game, so `TC_ResolveDrops` and the party count run there (every
   resolver call of the two-client runs was logged by the host's gdb). The joiner is a plain client.
 - Each slot has its own driver pidfile (`d2run-driver.pid` for slot 0, `d2run-driver-slot1.pid` for slot 1), and
   each driver's `wineserver -k` reaches only its own prefix. End a session with `tools/slots.py stop` on **both**
   slots.
-- Two characters with different names (the host's and the joiner's). The party screen (`p`) lists the other player
-  on row 1: `INVITE` / `ACCEPT` / `LEAVE` buttons at window (297,141) and (333,87).
+- Two characters with different names (the host's and the joiner's), both at level 9 or more when a case declares
+  hostility (0x005A5E84). The party screen (`p`) lists the other player on row 1: `INVITE` / `ACCEPT` / `LEAVE`
+  buttons at window (297,141) and (333,87).
 - `tools/gdb/tc-party.gdb` = `tc-drops.gdb` plus `tc-party.py`: at `TC_DropByIndex` entry it logs every player unit
   (`PLR`: id, subtile position, level id, mode, dead flag), the party list (`PTY`) and the source/killer position
   (`KILL`); `tools/tc.py replay` checks every `PARTY` and `PLAYERS` line against them and `-v` prints the distances.
