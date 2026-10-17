@@ -46,7 +46,7 @@ Next free number: **0045**
 | [0040](0040-drlg-room-lifecycle.md) | Room lifecycle: activation, release, the inactive-unit restore and the wanderers | approved | approved 2026-10-16 (owner, unattended); P1/1b static, P2 1 slot (2 allowed), P3 spec |
 | [0041](0041-stats-and-states.md) | Stats and states: how a unit's final stats add up, and how timed states live and die (ADR-0014 phase 2) | approved | approved 2026-10-16 (owner, unattended); ADR-0016 accepted: P0/P1 now; P2 up to 2 slots after 0037·P3 is reviewed |
 | [0042](0042-quests-travel.md) | Quests and travel: the quest state machines, waypoints, town portals and level entry | approved | approved 2026-10-16 (owner, unattended); ADR-0017 accepted; P2 up to 2 slots, owner fallback |
-| [0043](0043-items-economy.md) | Item economy: prices, repair, gold and durability wear | approved | approved 2026-10-16 (owner, unattended); ADR-0017 accepted; P2 1 slot |
+| [0043](0043-items-economy.md) | Item economy: prices, repair, gold and durability wear | approved | approved 2026-10-16 (owner, unattended); ADR-0017 accepted; P0 reviewed 2026-10-17 (accept with fixes); P1/1b next; P2 1 slot |
 | [0044](0044-multiplayer-branches.md) | Multiplayer branches: the two-client cases of the reviewed specs | approved | approved 2026-10-16 (owner, unattended); ADR-0008 accepted on the port-4000 condition; host and joiner on two non-zero slots; P2 holds both harness lanes |
 
 ## Run order (unattended queue, set 2026-10-16, plans 0037–0044)

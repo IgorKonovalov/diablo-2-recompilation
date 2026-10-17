@@ -154,7 +154,9 @@ where tagged. Item-side columns (`cost`, `durability`, stacks) are in [Weapons Â
 - `[C]` **The item's own `type` against these flags** (the `Equiv` tree not walked): 270 of 306 weapons and all 202
   armors have a `Repair` type; the 36 weapons without one are `bow`, `abow` and `tpot` items, all `nodurability` 1;
   36 weapons have a `Throwable` type (the 30 throwing weapons and the 6 throwing potions, exactly the `stackable`
-  weapons). Whether the repair test reads the item's own type or its `Equiv` closure is a Phase 1 question `[L]`.
+  weapons). Whether the repair test reads the item's own type or its `Equiv` closure is a Phase 1 question `[L]`; on stock
+  data it changes no count: walking `Equiv1`/`Equiv2` to the root gives the same 270, 202 and 0 (misc), no item
+  differing (recomputed from `itemtypes.txt` at the plan 0043 Phase 0 review; not yet a survey key).
 
 ## Open questions
 

@@ -525,8 +525,8 @@ so what the two columns price (by the names, a charged-skill property on an item
   `cost add` 0). No row has a `cost add` without a `cost mult`.
 - `[C]` **`cost mult` is a function of `reqlevel`**: 256, 384, 512, 640, 768, 896 for `reqlevel` 1, 6, 12, 18, 24, 30
   (256 + 128·k for the k-th tier), on every one of the 210 rows.
-- `[C]` **`cost add` mostly follows the same tiers**: 1000, 3000, 8000, 16000, 32000, 64000. 13 rows carry the value
-  of the tier below: 131 *Find Potion* (`reqlevel` 1, 3000, the tier above instead), 231 *Cycle of Life*, 232 *Feral
+- `[C]` **`cost add` mostly follows the same tiers**: 1000, 3000, 8000, 16000, 32000, 64000. 13 rows break it: 131
+  *Find Potion* carries the value of the tier above (`reqlevel` 1, 3000), and 12 carry the value of the tier below: 231 *Cycle of Life*, 232 *Feral
   Rage*, 233 *Maul*, 261 *Charged Bolt Sentry*, 262 *Wake of Fire Sentry*, 263 *Weapon Block* (12, 3000), 236 *Heart
   of Wolverine*, 237 *Summon Fenris*, 266 *Blade Fury*, 267 *Fade* (18, 8000), 241 *Vines*, 271 *Lightning Sentry*
   (24, 16000). (`reqlevel`, `cost mult`, `cost add`): (1, 256, 1000) ×35, (1, 256, 3000) ×1, (6, 384, 3000) ×37,

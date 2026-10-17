@@ -254,7 +254,8 @@ data. The price function is named only ([items/0009 § 9](../findings/items/0009
 - `[C]` **`divide` is 0 wherever `multiply` is set.** If the code divides by `divide`, it must guard 0; a reading
   that skips the affix terms when `divide` = 0 would price no affix at all. Which holds is Phase 1 `[L]`.
 - `[C]` **No field: QualityItems `multiply`/`add`** ([QualityItems](QualityItems.md); probe finds no offset): 2..5
-  and 100..350 on all 8 rows (e.g. *improved damage* 3 / 250 and 5 / 350 for its two rows). **No field: RarePrefix and
+  and 100..350 on all 8 rows: the four one-modifier rows 2 / 100 (to hit, durability), 3 / 250 (damage) and 2 / 200
+  (armor class); the four two-modifier rows (`mod2code` set) 5 / 350 each. **No field: RarePrefix and
   RareSuffix `add`/`multiply`/`divide`** ([RarePrefix](RarePrefix.md)): 0 on every prefix and set on 10 suffixes, the
   belt words (`clasp`, `buckle`, `harness`, `lock`, `fringe`, `winding`, `chain`, `strap`, `lash`, `cord`). The game
   loads only the `.bin` ([data/0001](../findings/data/0001-excel-loader.md#answer-summary)), so none of these cells can reach a price;

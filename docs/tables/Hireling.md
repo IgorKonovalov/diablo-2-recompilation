@@ -149,9 +149,11 @@ survey `economy`), `[C]` as data.
   `Level`, signed and truncating, computed when the entry is rolled ([hirelings/0001 § 4](../findings/hirelings/0001-hirelings.md#4-an-entry-type-level-price-and-the-displayed-stats),
   run:2026-10-16-hirelings, tbl:Hireling.txt:Gold). Whether the gold taken at the hire (`sub_00576D90_PayGold`) is this
   value or is scaled again is plan 0043 Phase 1 `[L]`.
-- `[L]` **Resurrection** has no column: the 1.14d header lacks the later builds' `resurrectcost*` columns, and
-  [hirelings/0001](../findings/hirelings/0001-hirelings.md) (Phase 1b, `src:d2dfg-blizzard`) reports the divisor 2,
-  multiplier 15 and cap 50 000 as constants in `MERC_ResurrectCost` (0x006637B0, named only); plan 0043 Phase 1.
+- `[C]` **Resurrection** has no column: the 1.14d header lacks the later builds' `resurrectcost*` columns (the
+  header and the 280-byte layout above). `[I]` The price is code: `MERC_ResurrectCost = min(50000, (L²/2)·15)`
+  (unsigned compare), with the divisor, multiplier and cap as constants
+  ([hirelings/0001 § 10](../findings/hirelings/0001-hirelings.md#10-named-only), fn:MERC_ResurrectCost@0x006637B0,
+  fn:MERC_Resurrect@0x00579C00). Its widths, `L` (the mercenary's level) and the gold taken are plan 0043 Phase 1.
 
 ## Open questions
 

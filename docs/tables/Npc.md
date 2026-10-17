@@ -93,7 +93,8 @@ omitted.
 - `[C]` Only the first running value (`sell mult` and `questsellmult`) differs between rows: `buy mult` 512 and
   `rep mult` 128 everywhere, and every quest buy and repair multiplier is 1024, so the quest groups change nothing
   but the first value. `questsellmult A` is 922 in all 17 rows, `questsellmult B` 512 on the four Act V rows.
-- `[I]` With the scaling rule (`v · m / 1024`, truncated, in the order base, A, B), the first value of an Act V row is
+- `[I]` With the scaling rule (`v · m / 1024` truncated toward zero, or `(v / 1024) · m` when `v ≥ 0x10000`; in the
+  order base, A, B), the first value of an Act V row is
   scaled by 2048, then 922, then 512 (each over 1024): a product of 922/1024 before truncation when both quest groups
   hold, the same as an Act I–IV row with group A; Gheed's 1088 and Charsi's 960 stay above and below it. Derived from
   the rule and these cells, not observed. (fn:sub_0062FDC0_ItemTradePrice@0x0062FDC0, tbl:Npc.txt:questsellmult B)
