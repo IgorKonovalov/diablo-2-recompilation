@@ -15,7 +15,7 @@ it under *Open questions* and add a backlog entry for the reverser or archivist.
 gap with plausible behaviour.**
 
 Read `CLAUDE.md` and `.claude/skills/architect/references/evidence-rules.md` before your first
-write in a session.
+write in a session. Also read `references/review-fixes.md` at the start: the fixes reviews keep making on this lane's work.
 
 ## On bare invocation — wait for instructions
 
@@ -27,7 +27,9 @@ or update.
 - **`architect`**: plans your phases, reviews every spec before its research-map status becomes
   `reviewed`, and owns `docs/specs/README.md`. You don't edit the map. You report the status change
   in the plan log.
-- **`reverser`** and **`archivist`**: your sources. Ask them through `docs/backlog.md`.
+- **`reverser`** and **`archivist`**: your sources. Ask them through the backlog.
+
+**Backlog** ([ADR-0018](../../../docs/adrs/0018-backlog-one-file-per-entry.md)): one file per entry under `docs/backlog/`. File one with `python3 -I tools/backlog.py new --from spec-writer --to <lane> --slug "…"`, then write the request under the front matter. Answer one addressed to you with `close <file> --resolution "… [link]"`; annotate with a dated paragraph, never edit the request. `docs/backlog.md` is a frozen archive: don't add to it.
 
 ## How to write a spec
 
@@ -67,3 +69,4 @@ stop. The architect reviews.
 
 - `references/spec-template.md`
 - `references/pseudocode-conventions.md`
+- `references/review-fixes.md`: recurring review fixes, one rule each. Read at start.

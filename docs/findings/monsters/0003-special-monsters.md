@@ -920,6 +920,62 @@ S3B special handler_calls=1844 handler_on_live_minion=0 minion_lists=538 packet_
   *Review note (S3b review, architect):* the sites were listed with objdump at the review (`call 0x5a0120`); the packet
   half stands as filed.
 
+## Plan 0039 batch P1c (2026-10-17)
+
+Rows Q27 and B3 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static: Ghidra on the lane's copy, objdump and
+`tools/xrefscan.py`. No game run.
+
+### Q27: the path from a shrine to `MonMakeSpecial`
+
+§ Plan 0038 batch H4b (special 2) found the function: `0x00583050` is entry 20 of the shrine-function table. This
+section names the whole path and the target test.
+
+- [I] **Dispatch.** `OBJ_OperateDispatch` calls `g_ObjOperateFns[OperateFn]`. Slot 2 (`0x00732D20`, the one reference to
+  it) is `OBJOP_Shrine`. That function acts only on a shrine whose object data `+0x0C` is 0 and whose
+  mode is 0, which means a shrine not yet used. It marks the shrine used (`+0x0C` = operator id + 1, mode 1) and reads
+  the shrine record (`ObjectData+0x08`). It then calls `g_ShrineEffects[Code]`, a table of 12-byte rows bounded by
+  `0x00732EAC`, through `IsBadCodePtr`. A NULL row falls back to `0x005828E0` (`SHRINE_Refill`). A non-zero record byte `+0x10` queues unit event 5
+  `+0x10`·1 200 + 1 frames later. Row 20 (`0x006E1940`, the one reference to `0x00583050`) is the Warping
+  Shrine (`Shrines.txt` row 20, effect "nearest monster becomes unique").
+  (fn:OBJ_OperateDispatch@0x00584420, data:g_ObjOperateFns@0x00732D18, fn:OBJOP_Shrine@0x00583C70,
+  data:g_ShrineEffects@0x006E1850, tbl:Shrines.txt:Code)
+- [I] **`sub_00583050_ShrineWarping(ctx)`** takes the operator (`ctx+8`) and its position. It calls
+  `sub_0065A800_NearestUnitFind(operator, x, y, 0, filter 0x00582750)`. On a hit it jumps to `MonMakeSpecial` with
+  `ECX` = game and `EDX` = the monster (0x005830C7–0x005830CC). With no hit, nothing happens.
+  (fn:sub_00583050_ShrineWarping@0x00583050, fn:sub_005A4940_MonMakeSpecial@0x005A4940)
+- [I] **Which monster.** `NearestUnitFind` walks the units of the operator's room and of its near rooms
+  (`DUNGEON_GetNearRooms`), skipping a room whose rectangle lies outside the radius. The radius 0 becomes `0x10000`, so
+  in practice there is no limit. It keeps the unit with the smallest distance, strictly smaller than the best so far,
+  so the first one met wins a tie. The distance is `sub_006417F0_UnitDistance`: with `dx = |x − ux|`, `dy = |y − uy|`, it
+  is `(min + 2·max) / 2`, truncating. The filter `sub_00582750_WarpShrineTargetOk` accepts a unit only when every test
+  below passes (fn:sub_00582750_WarpShrineTargetOk@0x00582750):
+  - it is not the operator and is a monster (type 1);
+  - it is not on the operator's side (`0x00650D70` ≠ 1) and has alignment 0 (`0x006259B0`);
+  - it is not in a death mode, and it is in mode 1 or 2 (neutral or walk);
+  - `MonModeAllowed(class, 2)` holds;
+  - its MonStats2 `Height` byte (`+0x0B`) is non-zero;
+  - it is not a `boss` and not a prime evil;
+  - none of the special flags `0x01`–`0x10` is set (`MonTypeFlag(unit, 0x1F)` = 0, `lea edx,[eax+0x1F]` at 0x005827D8).
+
+  So champions, uniques, superuniques and minions are never picked. (fn:sub_0065A800_NearestUnitFind@0x0065A800,
+  fn:sub_006417F0_UnitDistance@0x006417F0, fn:sub_00582750_WarpShrineTargetOk@0x00582750,
+  fn:sub_0046C140_MonModeAllowed@0x0046C140, fn:sub_005A0180_MonTypeFlag@0x005A0180, tbl:MonStats2.txt:Height)
+- [I] What `MonMakeSpecial` then does is its row in § Functions: flag `0x01` at `MonsterData+0x16`, `MonMarkSpecial`,
+  `SpecialModsRoll(…, 1)`, `SpecialModsApply` without minions, unit flag `0x800`. The H4b d-owner verdict stands: no
+  session has operated a Warping Shrine, so the path stays `[I]`.
+  (fn:sub_005A0320_MonMarkSpecial@0x005A0320, fn:sub_005A0760_SpecialModsRoll@0x005A0760, fn:sub_005A2120_SpecialModsApply@0x005A2120)
+
+### B3: MonPreset and MonPlace preset monsters (stale)
+
+The 2026-10-12 archivist entry asked what each MonPreset range does. Its three open parts are answered:
+- **The ranges and the MonPlace cases:** [monsters/0002 § 7](0002-room-population.md#7-wanderers-monspcwalk-presets-and-superuniques)
+  (inferred).
+- **`0x0054E2A0` and the per-case classes:** § 7 above (`[C]` for cases 2 and 3; `[I]` for `0x11`–`0x20`). The
+  `sub_0054E2A0_PresetFallenVariant` correction is in § Plan 0038 batch H4b (special 65, `[C]` in part).
+- **The superunique details:** § 6.
+
+Nothing new was read. The archivist's two table docs still carry the open question (backlog entry to the archivist).
+
 ## Open questions
 
 - ~~[L] The monster level the aura handler reads in a classic game~~ answered in

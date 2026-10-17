@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/quality, items/quest-drops, objects]
-tags: {C: 45, I: 81, L: 7}
+tags: {C: 45, I: 82, L: 6}
 updated: 2026-10-17
 ---
 
@@ -200,14 +200,40 @@ Step notes:
   collision test at its position (mask `0x801`) fails. Monster class 344 (`bonewall`) is a fatal error
   there. [I] (fn:sub_005A6830_MonDeathDrop@0x005A6830)
 - B1. [I] **`+0xC4` bit 17 is "no death drop".** It has two readers: this guard (0x005A6861) and a saved-unit copy
-  that stores bits 26 and 17 and restores them (0x00542031, 0x00541F9E–0x00541FC6), so the bit survives that save. The
-  instruction that sets it occurs 21 times in the image. Examples read: `MonPostCreateBoss` on the bone prisons
-  (classes 340–343) and the compelling orb (366); `SpawnOwnedMonster` on a monster it spawns for another unit;
-  `MonSetNoDeathDrop`; and the restore. The other 16 (one in `MonSpawnTry`, three quest drops, 12 skill-code sites) are
-  not read, so this is not the full list of units that skip the drop; the meaning rests on the two readers. (0x005B1E54,
-  0x005B1E79, 0x0056D9F0, 0x005AD3C2, fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0,
-  fn:sub_0056D940_SpawnOwnedMonster@0x0056D940, fn:sub_005AD3A0_MonSetNoDeathDrop@0x005AD3A0, tbl:MonStats.txt:Id,
-  [items/0001 § Plan 0039 batch P1b](../../findings/items/0001-tc-resolution.md#plan-0039-batch-p1b-2026-10-17))
+  that stores bits 26 and 17 and restores them (0x00542031, 0x00541F9E–0x00541FC6), so the bit survives that save.
+  (0x005A6861, 0x00542031, [items/0001 § Plan 0039 batch P1b](../../findings/items/0001-tc-resolution.md#plan-0039-batch-p1b-2026-10-17))
+- B1. [I] **Its writers.** 20 sites set it with a plain `or [reg+0xC4], 0x20000`; P1b's count of 21 also took in a
+  bit-29 OR at 0x00458E0E (`0x20000000`). Nine OR-immediates set it together with other bits (`0x4020000` at five sites,
+  `0x402000E` at three, `0x4020200` at one, 0x005732A3) and one register OR adds it (0x005CC9B4,
+  `or eax, 0x4020000`): **30 direct writers** in all. No `mov [reg+0xC4], imm` sets it. A flag word computed elsewhere and
+  copied in whole would escape this count; the restore is the one such copy found. So the units below skip the death
+  drop, and the list is a lower bound (0x005B2EC2, 0x005BBBE9, 0x005BBC41, 0x005E02A1, 0x005CC9B4, 0x005732A3,
+  fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0,
+  fn:sub_0056D940_SpawnOwnedMonster@0x0056D940, fn:sub_005AD3A0_MonSetNoDeathDrop@0x005AD3A0,
+  fn:sub_005BBBA0_ObjInitCompellingOrb@0x005BBBA0, fn:sub_005BBC00_A3Q5_CouncilDeath@0x005BBC00,
+  data:g_MonAiTable@0x0073CA18, fn:MERC_Init@0x00573270, fn:sub_00579AA0_MercRevive@0x00579AA0,
+  fn:sub_005FC860_BaalCloneSpawn@0x005FC860, fn:sub_005C07A0_SkillReviveDo@0x005C07A0, tbl:MonStats.txt:Align,
+  tbl:MonStats.txt:AI, tbl:Skills.txt:srvdofunc; [items/0001 § Plan 0039 batch P1c](../../findings/items/0001-tc-resolution.md#plan-0039-batch-p1c-2026-10-17)):
+  - a class with MonStats `Align` 1 (113 classes: town NPCs, critters, hirelings, player summons) when it is created
+    through `MonSpawnTry` (1 site);
+  - the bone prisons (classes 340–343) and the compelling orb (366) in `MonPostCreateBoss` (2);
+  - a monster `SpawnOwnedMonster` makes for another unit (1), and `MonSetNoDeathDrop`'s argument (1);
+  - an inactive monster restored with its saved bit (1);
+  - the Travincal compelling orb: the object init that spawns it (object `InitFn` 60, 0x005BBBE9) and its death in the
+    council quest's death callback (0x005BBC41) (2);
+  - a monster that ends itself through its AI, setting the bit before it enters death mode (12 sites in ten `MonAI`
+    rows): `FoulCrowNest`, `Sarcophagus` and `MosquitoNest` (0x005E02A1) once their spawn count reaches (`FoulCrowNest`) or
+    passes (the other two) the AI parameter of the difficulty, `GenericSpawner` (`evilhut`), the `Trap-Missile`, `Trap-Poison` and `Trap-Nova` traps, `7TIllusion`
+    (`seventombs`), `DarkWanderer` and `TrappedSoul`;
+  - a monster made by a spawner: `srvdofunc` 91 (`Nest`, `EvilHutSpawner`), 135 (`MinionSpawner`), 140
+    (`Baal Tentacle`), the `EvilHole` AI and Baal's clone (5);
+  - a monster brought back to life: `srvdofunc` 97 (`Resurrect`), 58 (`Revive`) and a corpse callback whose skill is
+    not identified (3);
+  - a hireling, at `MERC_Init` and at its resurrection (2).
+
+  P1b's split of the unread writers into "three quest drops" and "12 skill-code sites" was wrong: the three are the
+  compelling orb's two sites and the `MosquitoNest` AI, and the skill-code sites are the AI self-removals, with the
+  spawner and revive skills as separate writers.
 - B2–B5. The test order is superunique, champion, unique, else. Live monsters carry more than one
   flag (low byte of the flag word: `0x0b` on both superuniques killed, `0x09` on uniques, `0x0d` on
   champions), so the order matters. The column for the normal, minion, unique and superunique kinds is
@@ -966,5 +992,6 @@ potions' quality calls return without drawing (H4).
 - ~~Meanings left to other subsystems: monster `+0xC4` bit 17, `game+0x78`, the `hellbovine` flag bit, and the
   upgrade bits `0x04`/`0x10`.~~ Answered ([items/0001 § Plan 0039 batch P1b](../../findings/items/0001-tc-resolution.md#plan-0039-batch-p1b-2026-10-17)):
   no death drop (B1 note), the item version and the set-29 filter (H7 notes), forced ethereal and forced sockets (H5
-  note). [L] Which units skip the death drop in full: 16 of the bit's 21 writers are not classified (backlog, P1b
-  review follow-up (a)).
+  note). ~~Which units skip the death drop in full~~: the 30 direct writers are classified in the B1 notes, a lower
+  bound ([items/0001 § Plan 0039 batch P1c](../../findings/items/0001-tc-resolution.md#plan-0039-batch-p1c-2026-10-17)); the skill behind the one unidentified revive callback is a reverser residue (backlog, P1c
+  residues (a)).

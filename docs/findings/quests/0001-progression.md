@@ -1853,7 +1853,7 @@ The names given to the quest functions read in § 7–§ 10 (all inferred from t
 | `0x0058B990` | `sub_0058B990_A5Q4_FirstJoin` | `0x0058BB20` | `sub_0058BB20_A5Q4_Init` | `0x0058BC80` | `sub_0058BC80_A5Q4_RedPortalCreateAI` |
 | `0x0058BE20` | `sub_0058BE20_A5Q5_StepBits` | `0x0058BF40` | `sub_0058BF40_A5Q5_StatuesArm` | `0x0058C000` | `sub_0058C000_A5Q5_AncientsReset` |
 | `0x0058C0E0` | `sub_0058C0E0_A5Q5_StatueEvent` | `0x0058C210` | `sub_0058C210_A5Q5_StepBitsByLevel` | `0x0058C290` | `sub_0058C290_A5Q5_NpcMessage` |
-| `0x0058C440` | `sub_0058C440_A5Q5_NpcTalk` | `0x0058C6D0` | `sub_0058C6D0_A5Q5_PartyCredit` | `0x0058C7E0` | `sub_0058C7E0_A5Q5_SummitCredit` |
+| `0x0058C440` | `sub_0058C440_A5Q5_NpcTalk` | `0x0058C6D0` | `sub_0058C6D0_A5Q5_PartyExpGrant` | `0x0058C7E0` | `sub_0058C7E0_A5Q5_SummitExpGrant` |
 | `0x0058C9A0` | `sub_0058C9A0_A5Q5_AncientDeath` | `0x0058CBA0` | `sub_0058CBA0_A5Q5_LevelChange` | `0x0058CCF0` | `sub_0058CCF0_A5Q5_NpcGate` |
 | `0x0058CE30` | `sub_0058CE30_A5Q5_Init` | `0x0058CF00` | `sub_0058CF00_A5Q5_SummitPortalAdd` | `0x0058CF50` | `sub_0058CF50_A5Q5_SummitPortalRemove` |
 | `0x0058D090` | `sub_0058D090_A5Q5_SummitWarpBlocked` | `0x0058D310` | `sub_0058D310_A5Q5_AltarOperate` | `0x0058D400` | `sub_0058D400_A5Q5_KeepDoorOperate` |
@@ -2009,7 +2009,7 @@ The names given to the quest functions read in § 7–§ 10 (all inferred from t
 | `0x005BB120` | `sub_005BB120_A3Q5_LevelChange` | `0x005BB210` | `sub_005BB210_A3Q5_NpcMessage` | `0x005BB410` | `sub_005BB410_A3Q5_Chain` |
 | `0x005BB480` | `sub_005BB480_A3Q5_FirstJoin` | `0x005BB550` | `sub_005BB550_A3Q5_CouncilHook` | `0x005BB640` | `sub_005BB640_A3Q5_PartySetBit4` |
 | `0x005BB710` | `sub_005BB710_A3Q5_SetMissed` | `0x005BB7B0` | `sub_005BB7B0_A3Q5_CountFlailCube` | `0x005BB850` | `sub_005BB850_A3Q5_OrbPartyPass` |
-| `0x005BB980` | `sub_005BB980_A3Q5_CompellingOrbOperate` | `0x005BBB70` | `sub_005BBB70_A3Q5_OrbInitB` | `0x005BBBA0` | `sub_005BBBA0_A3Q5_OrbInit` |
+| `0x005BB980` | `sub_005BB980_A3Q5_CompellingOrbOperate` | `0x005BBB70` | `sub_005BBB70_A3Q5_OrbInitB` | `0x005BBBA0` | `sub_005BBBA0_ObjInitCompellingOrb` |
 | `0x005BBEB0` | `sub_005BBEB0_A3Q5_Init` | `0x005BBF80` | `sub_005BBF80_A3Q5_OrbIntact` | `0x005BBFA0` | `sub_005BBFA0_A3Q5_DuranceWarpGate` |
 | `0x005BBFE0` | `sub_005BBFE0_A3Q6_NpcGate` | `0x005BC020` | `sub_005BC020_A3Q6_SetProgressBits` | `0x005BC190` | `sub_005BC190_A3Q6_SetDoneLevel102` |
 | `0x005BC210` | `sub_005BC210_A3Q6_LogUpdate` | `0x005BC270` | `sub_005BC270_A3Q6_NpcTalk` | `0x005BC370` | `sub_005BC370_A3Q6_NpcTalkEnd` |

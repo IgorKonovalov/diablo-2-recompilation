@@ -510,3 +510,155 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   stored prefix is rebased, so "the ids are the merged numbers" now says they come from them. (5) rng/README § Tables:
   the no-table line cited six primitives while 3b76e9b's subject says seven; `fn:RNG_RangePow2Plus@0x00472240` added
   (no tag change). No follow-ups.
+- **2026-10-17 — Phase 1 batch P1c done (reverser, `lane/p39c`, static).** 8 ledger items (B3, B5, B6, Q4, Q26–Q29) and
+  three reverser follow-ups from the backlog: the P1b review's (a) bit-17 writers and (b) `MonSetOwner` sites, and the
+  plan 0038 round-3 review's id-573 survey. No game run. Ghidra ran on the lane's copy (`ghidra-p39c`). The work used
+  objdump operand scans of the whole image, `tools/xrefscan.py`, a DS1 survey with `tools/ds1.py`'s unit model, and
+  re-reads of kept logs (run:2026-10-13-mon-spawn, run:2026-10-16-hirelings, sha256 checked against the manifest);
+  the scratch scripts were not kept. 44 symbols added (39 `func`, 5 `data`, all `I`). New statements: 7 `[C]` and 22
+  `[I]`; no `[L]` raised or added.
+
+  | Item | Verdict | Anchor or reason |
+  |---|---|---|
+  | B3 | stale | the ranges are in monsters/0002 § 7; the cases and `0x0054E2A0` (`PresetFallenVariant`) in monsters/0003 § 7 and § H4b special 65; the superuniques in § 6. Pointer in [monsters/0003 § P1c](../findings/monsters/0003-special-monsters.md#plan-0039-batch-p1c-2026-10-17); table-doc questions filed to the archivist |
+  | B5 | stale | (c) and (e) reproduced in run:2026-10-14-uniques-forced, [items/0004 § 10](../findings/items/0004-uniques-sets.md#10-phase-2-reproduction-plan-0019) `[C]`; the spec already states both; (d) ruled d-none 2026-10-14 |
+  | B6 | stale | both notes are in harness-play.md ("Every recipe needs `"game"`", "Reinstall before every launch") |
+  | Q4 | answered | the 191 `g_pMonStats` reads all index by position (177 bounded, 6 fixed `imp` classes, 5 loader post-pass, 3 alloc/free); none searches by `Id`: [data/0001 § P1c](../findings/data/0001-excel-loader.md#plan-0039-batch-p1c-2026-10-17) `[I]` |
+  | Q26 | answered | `MonsterInit` → `MonRegionFindAdd` appends a class new to its level region and rolls its sets on the unit seed; the 1 786 logged creations (1 785 as filed; review re-count) fit the found, appended or stale step count exactly, the 6 and 15 included: [monsters/0002 § P1c](../findings/monsters/0002-room-population.md#plan-0039-batch-p1c-2026-10-17) `[C]` |
+  | Q27 | answered (builds on H4b) | `OBJ_OperateDispatch` → `OBJOP_Shrine` (OperateFn 2) → `g_ShrineEffects[20]` → `0x00583050` → nearest qualifying monster (filter and distance read) → `MonMakeSpecial`: [monsters/0003 § P1c](../findings/monsters/0003-special-monsters.md#plan-0039-batch-p1c-2026-10-17) `[I]`; still d-owner for a run |
+  | Q28 | answered | 67/68/69/100/352 are MonStatsInit B5 constants and 336 is the B10 MonStats skill at level 1 + `MonsterSkillBonus` (`[C]`, 72 logged blocks); `Share` and the equipment columns have no reader `[I]`; the description is `STRTABLE(g_HireDescStrIdx[HireDesc])` `[I]`, the table `[C]` by data: [hirelings/0001 § P1c](../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17) |
+  | Q29 | answered | `ExpGrantCapped` is the Ancients reward (a5q5, word 39); 75 % of the death loss actually taken goes onto the corpse and back to its owner, and a player killer takes none; bit `0x20` comes from the class select in an expansion install plus a checkbox: [player/0001 § P1c](../findings/player/0001-creation.md#plan-0039-batch-p1c-2026-10-17) `[I]` |
+  | P1b (a) | answered | 30 direct bit-17 writers (20 plain ORs, not 21), by unit kind and MonAI row: [items/0001 § P1c](../findings/items/0001-tc-resolution.md#plan-0039-batch-p1c-2026-10-17) `[I]` |
+  | P1b (b) | answered | the 17 sites, each with its monster and owner: [items/0002 § P1c](../findings/items/0002-quality-roll.md#plan-0039-batch-p1c-2026-10-17) `[I]` |
+  | id 573 | d-none | only Act IV DS1 ids 5–7 map to 573 and no shipped DS1 uses them (2 274 parsed); the other `PresetUnitCreate` callers add none: [drlg/0004 § P1c](../findings/drlg/0004-preset-units.md#plan-0039-batch-p1c-2026-10-17) `[C]` data + `[I]` |
+
+  Surprises:
+  - The hireling spec's "skill 336 at level 1" holds only in Normal: the MonStats skill takes the difficulty's
+    `MonsterSkillBonus` (4 in Nightmare, 8 in Hell, logged).
+  - P1b's bit-17 count of 21 included a bit-29 OR. Its "12 skill sites" are monster AI self-removals (traps, nests,
+    spawners, trapped souls) plus the mosquito nest, which P1b had placed in `UberTristramDrop`.
+  - `Share` is copied into the hire entry and never read.
+  - The hire description is a hard-coded nine-word string table; `hiredesc.bin` plays no part.
+  - The death-loss amount travels through client `+0x508` to the corpse.
+
+  Spec notes for Phase 2, the archivist entry, the reverser residues and the review request are in the backlog.
+- **2026-10-17 — Phase 1 batch P1c reviewed (architect, on `lane/p39c` after merging `main` at `345e942`). Verdict:
+  accept with fixes (applied in the review commit).** Phase 1 is complete; P2 can finish data/excel and
+  items/uniques-sets with the P1c fold.
+  - **Merge.** Conflicts in the backlog, this log and `re/symbols.csv`, kept on both sides. Two addresses clashed with
+    main's plan 0041 rows: `0x00583C70` keeps main's `OBJOP_Shrine` (lane: `sub_00583C70_ShrineOperate`) and
+    `0x006E1850` main's `g_ShrineEffects` (lane: `g_ShrineFns`); monsters/0003 § P1c, the backlog and the Q27 row now
+    cite main's names, and the NULL-row fallback `0x005828E0` is named (`SHRINE_Refill`, main's row).
+  - **Anchors (objdump on the pinned image), 22 checked, all hold.** Q26: `0x005553A0` `call 0x574250`
+    (`MonsterInit`), `0x005742DC` `call 0x547bc0` before `0x005742E4` `call 0x573cb0`, `0x00547C87`
+    `cmp byte [eax+0xec],2; jbe`, `0x00547CA1` `call 0x5bdb20`. Bit 17: `0x00458E0E` `or [ebx+0xc4],0x20000000`
+    (the bit-29 match), `0x005BBBE9`, `0x005BBC41`, `0x005E02A1`, `0x005B2EC2` (after `call 0x5543b0` with `dl` 2)
+    plain ORs, `0x005CC9B4` `or eax,0x4020000` stored at `0x005CC9BD`, `0x005732A3` `or …,0x4020200`; `g_ObjInitFns`
+    slot 60 (`0x00731CB0`) = `0x005BBBA0`; `g_MonAiTable` slot `+8` of rows 43, 45, 77, 80, 83, 88, 91, 92, 99, 129 =
+    the ten AI functions of the table. 573: `g_Ds1ObjectIds` (s32[5][150]) holds 573 only at act 3 ids 5–7, minimum 0.
+    Q27: `g_ObjOperateFns` slot 2 (`0x00732D20`) = `0x00583C70`, `0x006E1940` = `0x00583050`. Q28: `0x00573F16`/`18`
+    `push 0x4b; push 0x43`; `g_HireDescStrIdx` = 0, 3371, 3372, 11090, 11088, 11089, 3377, 3376, 3375. Q29:
+    `0x0057F80F`–`0x0057F844` (`CLIENT_GetDeathExpLoss`, the `0x100000` split, 75 and 100), `0x00433FF1`
+    `or word [eax+0x1ef],0x20`. Ten new function symbols start after an `int3`/`ret`.
+  - **Re-runs.** The bit-17 operand scan: 20 plain `or [reg+0xC4],0x20000`, 9 OR-immediates with bit 17 (0x4020000 ×5,
+    0x402000E ×3, 0x4020200 ×1) and the register OR: 30, as filed. Q4: 194 operand sites (18 absolute `0x0096C6A8`, 176
+    `[reg+0xA78]`), as filed. Q26 (`systemd-run … MemoryMax=4G python3 -I`, an independent script on `tools/monpool.py`):
+    the same histogram and the same 14 appends at their predicted step counts, but the table sums to **1 786**, not
+    1 785, and the 2-step overlap is 905 appends with no draw (761 also stale), not 45. Fixed in monsters/0002 § P1c
+    (a review paragraph), the Q26 row and the backlog.
+  - **Ruling 1, Q26 at `[C]`: accepted, scoped.** The code path is read, and the second source is the logs: for the 14
+    appends the model predicts an exact step count from the seed (6 to 16), and every one matches. That is a test the
+    rule could fail, which a 2-step fit is not. The region state is not modelled, so the `[C]` covers "the extra steps
+    are the append's variant roll on the unit seed", not which branch each 2- or 3-step creation took; the review
+    paragraph says so. The rule itself was already `[C]` (monsters/0001 S3a pool 22).
+  - **Ruling 2, Q28 and the Rogue skill level: accepted.** `[C]` for the five constants and skill 336: MonStatsInit B5
+    and B10 read, and the 72 logged blocks agree (level 1/4/8 by difficulty = `Sk1lvl` 1 + `MonsterSkillBonus` 0/3/7).
+    The spec's "level 1" is a correction, routed in the P1c fold (d). `Share` and the equipment columns stay `[I]` (one
+    xref method); the HireDesc table is `[C]` by data, the lookup path `[I]`.
+  - **Ruling 3, Q4 at `[I]` on one operand scan: accepted.** `[I]` is the right level: a single tool, with the copied
+    base pointer the stated blind spot. The review's count matches. No raise without a second method (a Ghidra xref
+    pass or an emulated reader).
+  - **Ruling 4, the P1b corrections: accepted.** 20 plain ORs (the 21st, `0x00458E0E`, sets bit 29), `0x005BBBE9` in the
+    compelling-orb object init, `0x005E02A1` in the `MosquitoNest` AI, and the "skill sites" are MonAI self-removals.
+    The 21 was the P1b review's own figure; items/0001 § P1b now carries a correction note on its count and
+    its "Not read" list. The merged items/tc B1 ("occurs 21 times", the "three quest drops, 12 skill-code sites" split
+    and the *Open questions* `[L]`) and the [items](../wiki/items.md) wiki paragraph are routed to the spec-writer in
+    the P1c fold (f), worded exactly.
+  - **Ruling 5, id 573: accepted, d-none.** Moved in [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews)
+    as a remainder of drlg-preset 18, with no change to the totals. The `[C]` on the DS1 survey is data plus the table
+    re-read; the "other callers add none" bullet stays `[I]`.
+  - **Ruling 6, player/0001 *Leads used*: accepted as left.** ADR-0007 asks for the page to be re-read before a verdict
+    changes; the code reading stands on its own and the finding says the 75 % agrees in substance. Follow-up to the
+    reverser for the re-fetch (backlog).
+  - **Ruling 7, no scratch scripts kept: accepted for this batch, with a follow-up.** Every count the batch's tags
+    rest on was reproduced here (bit 17, Q4's sites, Q26's fit). Later batches should keep a count-bearing scan in
+    `tools/` or give its exact pattern in the finding (backlog follow-up (b)).
+  - **Tags.** Seven `[C]` (Q26 ×2, Q28 ×2 and the HireDesc data, the two 573 data bullets) each have code plus logs or
+    data; the 22 `[I]` are code readings. No `[L]` added; no `[L]` above *Open questions* in the touched findings.
+  - **Symbols.** 44 rows filed; 42 kept, the two clashes resolved to main's names. All `I`, kinds right, each cited
+    by its finding; gate fast tier green after the merge.
+  - **Fix, gate W1 in the findings (0 on `main` since `lane/w1`).** The batch added 13 W1 warnings: bullets whose
+    anchors sit after a sub-list or a wrapped `0)` that the gate reads as a new item, and tag mentions in prose. Fixed
+    with each statement's own anchor on its lead line (player/0001 ×3, monsters/0003, drlg/0004, items/0002,
+    monsters/0002) or the mention reworded (player/0001 ×2, monsters/0003, data/0001, the review paragraph). Findings
+    W1 back to 0; the 11 left are data/excel's, held for P2.
+  - **Follow-ups (backlog):** to the reverser, the *Leads used* re-fetch and keeping scan scripts; the P1c fold entry
+    to the spec-writer amended (items/tc and wiki wording, `OBJOP_Shrine`, the 1 786 count).
+  - **Next:** the owner merges `lane/p39c`; then P2 (the P1c fold, data/excel and items/uniques-sets).
+- **2026-10-17 — Phase 2 round 2 (P1c fold and the held uniques-sets half of Q22) done (spec-writer, `lane/p39s2`, from
+  `main` `9bdd892`; review pending).** The P1c fold entry (b)–(h) with the review's amendments (the 1 786 re-count,
+  `OBJOP_Shrine`, the Rogue skill at 1/4/8, items/tc B1's 20 plain ORs and 30 writers), and P1b (i)'s uniques-sets half.
+
+  | Spec | Items | {C, I, L} |
+  |---|---|---|
+  | monsters/spawn | Q26 (J1) | {110, 64, 6} → {112, 64, 5} |
+  | monsters/special | Q27 (§ J, *Entry points*) | {104, 91, 4} → {104, 93, 3} |
+  | hirelings | Q28 (§ E notes E5, § I) | {89, 39, 8} → {92, 41, 6} |
+  | player/creation | Q29 (A1, J2, J3) | {81, 39, 5} → {81, 44, 3} |
+  | items/tc | P1b review (a) (B1) | {45, 81, 7} → {45, 82, 6} |
+  | items/quality | P1b review (b) (M3) | {64, 38, 3} → {64, 39, 2} |
+  | drlg/preset | id 573 (§ 6) | {134, 24, 2} → {135, 25, 2} |
+  | items/uniques-sets | Q22 held half (C8, C9); B5 stale, no change | {70, 52, 6} → {71, 55, 4} |
+
+  - **Corrected:** hirelings' Rogue skill "level 1" (only in *Open questions*) → 1/4/8 by difficulty; items/tc's "21"
+    bit-17 writes and the P1b split ("three quest drops", "12 skill-code sites"); the [items](../wiki/items.md) wiki
+    paragraph to match.
+  - **Narrowed, not closed:** player/creation (a saved corpse's stat 13 and the create screen's mode word, P1c residues
+    (c) and (d)). Closed with a pointer to a reverser residue, no tag: items/tc (`0x005C09E0`'s skill), items/quality
+    (`FormationSpawn`'s callers).
+  - **Held:** data/excel (P1b (a), P1c (a), its 11 W1), to be folded with plan 0038 Phase 3's re-tag after the S1f
+    review.
+  - **Wiki (W4 7 → 0, restated):** items, monsters, characters, saves. Research-map rows of the eight rewritten.
+    Backlog: the P1b and P1c fold entries annotated (done in part, data/excel held), the W1 entry annotated, review
+    request filed. Gate green.
+- **2026-10-17 — Phase 2 round 2 reviewed (architect, on `lane/p39s2` after merging `main` at `2783aee`). Verdict:
+  accept with fixes (applied in the review commit).** Plan 0039 is complete except data/excel (P1b (a), P1c (a) and
+  its 11 W1), which is folded with plan 0038 Phase 3's re-tag.
+  - **Merge.** Clean; no backlog duplicates.
+  - **Tags against the P1c findings and rulings.** Every new `[C]` and `[I]` matches its finding at the same strength.
+    monsters/spawn J1: the rule `[C]` (S3a pool 22) and the fit `[C]` scoped to the 14 appends, the 2- and 3-step
+    creations said not to tell the branches apart (ruling 1); 1 725 + 47 + 14 = 1 786. hirelings: the five B5
+    constants and skill 336 at 1/4/8 `[C]` (ruling 2; Rogue blocks 22 + 6 + 2), the HireDesc table `[C]` by data, the
+    lookup and `Share` `[I]`. items/tc B1: 20 plain ORs, 9 OR-immediates (5 + 3 + 1) and the register OR = 30, and the
+    kinds sum to 30 (1 + 2 + 1 + 1 + 1 + 2 + 12 + 5 + 3 + 2) (ruling 4). drlg/preset § 6: the DS1 survey `[C]`, the other
+    creators `[I]` (ruling 5). player/creation and monsters/special: all `[I]`, as filed. items/uniques-sets: C8 and
+    the two C9 code notes `[I]`, the 17-base survey `[C]` by data.
+  - **No `[L]` above *Open questions*** in the eight; front matter recounted (gate E6 green) and the {C, I, L} deltas
+    match the added and struck statements.
+  - **Anchors (objdump on the pinned image), 8 new ranges checked, all hold:** `0x00535A61`–`0x00535A8A` (new = exp − loss;
+    kept = exp − T(L−1) floored at 0 under the clamp; `call 0x5391e0` before the stat-13 write; loss 0 skips all),
+    `0x005830C7`–`0x005830CC` (`jmp 0x5a4940`, `MonMakeSpecial`), `0x005827D8` (`lea edx,[eax+0x1f]`), `0x00557E41`
+    (`call 0x557450`, `ItemCreateByQuality`), `0x00556A1A` (`call 0x556530`, the only call to `ITEMS_UniqueMarkMade`
+    in the image), `0x005740E0`–`0x00574135` (`Sk1lvl` + `[ebp−0x1c]` into `call 0x56deb0`, 8 slots),
+    `0x006639C0`–`0x006639D1` (`max(0, [edi+0x4c])` to `[esi+0x28]`), `0x004B6262`–`0x004B6267` (`call 0x663720`).
+  - **Research-map rows:** the eight rewritten whole, counts match the front matter.
+  - **Wiki:** every changed statement of items, monsters, characters and saves checked against its spec; all hold,
+    each code reading worded as such and the region append's confirmation scoped to the 14.
+  - **Fixes (4; none to the wiki):** (1) items/quality M3 "the other 17 give these kinds an owner … Three more sites only clear" counted
+    the three twice: of the 17, fourteen give an owner and the remaining three clear (miscount). (2) items/tc B1: the
+    crow nest's AI test is "reaches", the sarcophagus and mosquito nest's "passes" (items/0001 § P1c) (misread).
+    (3) hirelings *Outputs* still named only § G's stats; it now names the stats and skill `MonStatsInit` leaves (§ I)
+    (stale cross-reference). (4) the research-map hirelings row carried the finding's stale "(C 42 / I 25)" into the
+    rewritten row; dropped (stale cross-reference).
+  - **Gate:** green (fast tier), 22 warnings (data/excel's 11 W1, held; 11 W3 from main).
+  - **Next:** the owner merges `lane/p39s2`; data/excel goes with plan 0038 Phase 3.

@@ -653,6 +653,45 @@ Net effect on § 2.4 (S1f created): static +15; c-emu awaiting −4; d-none −3
 567 statements (S1f 15 included), harness batches 532, none is c-emu awaiting a batch, and 415 are blocked** (d-none
 282, d-edit 73, d-sim 28, d-2c 14, d-owner 10, d-0032 8), with 2 deferred and 10 raised: 1 526 in all.
 
+**S1f (filed 2026-10-17, reverser; reviewed 2026-10-17, accepted with fixes): 15 statements in 11 rows.** run:2026-10-17-sweep-emu2 (the
+Ghidra p-code emulator under ADR-0015, `tools/sweep_s1f.py`, `EmuTrace.java` with a new `guard` directive). The
+evidence is in the "Plan 0038 batch S1f" sections of [drlg/0004](../../findings/drlg/0004-preset-units.md#plan-0038-batch-s1f-2026-10-17),
+[monsters/0004](../../findings/monsters/0004-stats.md#plan-0038-batch-s1f-2026-10-17),
+[monsters/0001](../../findings/monsters/0001-level-pool.md#plan-0038-batch-s1f-2026-10-17),
+[items/0005](../../findings/items/0005-affixes.md#plan-0038-batch-s1f-2026-10-17),
+[items/0004](../../findings/items/0004-uniques-sets.md#plan-0038-batch-s1f-2026-10-17),
+[data/0005](../../findings/data/0005-calc.md#plan-0038-batch-s1f-2026-10-17) and
+[data/0004](../../findings/data/0004-cell-converters.md#plan-0038-batch-s1f-2026-10-17). **All 15 raised; no row
+returns to its class.** The two conditional rows meet condition (a): monsters-pool 27's `MonVariantRoll` reaches the
+fatal path only on a NULL seed or entry, and items-uniques-sets 44's success path runs `ItemApplyProps` mode 4 to its
+end on property-less set rows; every S1f memory spec guards the fatal path and the allocator entries, and no case of
+any family stopped. Condition (b): the one growable pool reached (itemscode, `parsetxt2`) has capacity 0x10000 against
+178 bytes at most, and `EXCEL_AddCode` is not reached (no registration column present). Condition (c): every spec
+write on an image address is listed in the finding with its ruling-3 justification (cookie (a), SSE2 flag (b),
+`__locale_changed` (c); `g_pDataTables`, the DataTables fields read, the itemstatcost link and the pool header as
+arguments). No class moves; the totals of the S1e review stand (static 567 including S1f).
+
+**S1f review (architect, 2026-10-17): accept with fixes; all 15 raises stand, no class moves.** The manifest matches its
+38 files; `sweep_s1f.py static` (65 of 65 pins, the writer scan) and `test_sweep_s1f.py` (7 tests) re-run identically;
+`cases` regenerates every kept input byte for byte; under the lane's Ghidra copy the `muldiv`, `setpick` and
+`pickaffix` cases gave `.out` files byte-identical to the lane's (run record, review re-run). The `guard` directive
+plus the static call closures is accepted as the mechanical check of condition (a) (plan log, ruling 1), and both
+conditional rows meet it. Totals unchanged: **static 567 (S1f's 15 included), harness 532, c-emu awaiting a batch 0,
+blocked 415** (d-none 282, d-edit 73, d-sim 28, d-2c 14, d-owner 10, d-0032 8), **deferred 2, raised 10: 1 526.**
+
+**Plan 0039 P1c (review 2026-10-17, architect): drlg-preset 18's `id = 573` remainder.** The row was raised in part at
+S4a (the logged dispatch branches `[C]`, the `id = 573` branch `[I]`; plan 0038 log, round-3 review ruling 1). The
+survey in [drlg/0004 § Plan 0039 batch P1c](../../findings/drlg/0004-preset-units.md#plan-0039-batch-p1c-2026-10-17)
+shows no stock unit reaches it: only Act IV DS1 ids 5–7 map to 573 in `g_Ds1ObjectIds` (re-read at the review: those
+three cells, no −1), no shipped DS1 uses them (2 274 of 2 276 parsed, all 2 043 `lvlprest` files included), and the
+other `PresetUnitCreate` callers add no 573.
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| drlg-preset 18, the `id = 573` remainder | raised in part (S4a), remainder `[I]` | **d-none** (remainder) | No stock case; the spec keeps the branch as an `[I]` code reading and says "no stock case". |
+
+Net effect: none on the totals. The row stays counted as S4a, as data-excel 51's id-13 remainder stays counted as S1e.
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
@@ -711,7 +750,7 @@ runs, plus a "Plan 0038 batch S*n*" section in each finding. A harness batch wri
 | **S1a** | 54 (56 filed; 2 returned, § 2.6) | 0/49/5 | save/d2s 5, 7–8, 11–16, 20, 24, 32, 45, 51, 58, 61, 63–64, 66, 69–71, 74–76, 79, 81, 84–87, 92–94, 96–101, 103–104, 109, 117, 119–121, 123–124, 128, 130–131, 135–138 | writer/reader pairs (rule 1); `d2s.py survey` over every game-written save (rule 2) | `findings/save`: addenda to run:2026-10-12-d2s-io, -10-14-props-forced, -10-16-calc |
 | **S1b** | 75 (76 filed; 1 returned, § 2.6) | 7/52/16 | data/README 1; data/calc 1–2, 6–7, 18–19; data/excel 9–14, 19, 21, 23, 26, 28–31, 33–35, 38, 41–42, 45–49, 55, 57, 61–63, 67–68, 72–73, 75–78; data/strings 1, 3, 11, 21, 31, 33; rng 2, 4, 7; rng/seeds 1, 3, 11, 15–16 | the `tc.py` TC array against the tc-drops logs; item index ↔ code over kept item logs; archive precedence; `excel_bin.py survey`; strings, calc, seed-tree and rng-emu addenda | `findings/data`, `findings/rng` (addenda) |
 | **S1e** | 71 (74 filed; 3 returned, § 2.6) | 0/4/67 | data/calc 4–5, 9–16, 20, 31 (6 of 7), 36–40; data/excel 16, 36–37, 40, 43–44, 51–53, 56, 60, 64, 66; data/strings 4–5, 10, 12, 14, 16–17, 20, 24–25, 32, 35; rng 3, 5; save/d2s 82, 122, 129, 133 | **(c-emu)**, ADR-0015: `tools/ghidra.sh emutrace` (`EmuTrace.java`) and `tools/sweep_s1e.py` on `CALC_Eval`, `CALC_Compile`, `SKILLS_CalcVar`, `SKILLS_DimReturns`, the calc entry points, `BITBUF_WriteClamped`, `EXCEL_FindCode`/`AddCode`, the excel cell parsers, the string-table lookups and `RNG_RangePow2Plus`, each against a `tools/` model. Each function's read set is declared, and each has a negative control. | `findings/data/experiments.md` **run:2026-10-17-sweep-emu**; addendum to run:2026-10-11-rng-emu |
-| **S1f** | 15 (created at the S1e review, § 2.6) | 0/2/13 | drlg/preset 6 (second statement); monsters/stats 9, 11; monsters/pool 27 (conditional); items/affixes 6, 12; items/uniques-sets 44 (conditional); data/calc 8, 33; data/excel 65 (5), 69 | **(c-emu)**, ADR-0015: `tools/ghidra.sh emutrace` and new `tools/sweep_s1e.py` families on `MONSTATS_ValidId`, `sub_00483360_MulDiv`, `sub_005BDB20_MonVariantRoll`, `sub_005C0D00_AffixCandAdd`, `ITEMS_BuildSetPick`, `EXCEL_ParseTxt` (defaults pass, callback order) and `SKILLS_CalcVar` codes 43–48; the S1e review's conditions (§ 2.6) | addendum to run:2026-10-17-sweep-emu, or run:&lt;date&gt;-sweep-emu2 |
+| **S1f** | 15 (created at the S1e review, § 2.6) | 0/2/13 | drlg/preset 6 (second statement); monsters/stats 9, 11; monsters/pool 27 (conditional); items/affixes 6, 12; items/uniques-sets 44 (conditional); data/calc 8, 33; data/excel 65 (5), 69 | **(c-emu)**, ADR-0015: `tools/ghidra.sh emutrace` and `tools/sweep_s1f.py` (reusing `tools/sweep_s1e.py`) on `MONSTATS_ValidId`, `sub_00483360_MulDiv`, `sub_005BDB20_MonVariantRoll`, `sub_005C0D00_AffixCandAdd`, `ITEMS_BuildSetPick`, `EXCEL_ParseTxt` (defaults pass, callback order) and `SKILLS_CalcVar` codes 43–48; the S1e review's conditions (§ 2.6) | `findings/data/experiments.md` **run:2026-10-17-sweep-emu2** (15 raised; reviewed 2026-10-17, accepted with fixes) |
 | **S2a** | 57 (65 filed; 8 returned, § 2.6) | 51/0/6 | quality 1, 5, 7, 10–11, 13–14, 18–19, 24–30, 33, 35; tc 3–5, 7, 12–16, 18–19, 21, 23–25, 28–36, 38–42, 48–52, 57–58, 61–62, 64, 66–69, 72–74 | `tc.py replay` (incl. `--quality model`) and `quality.py` over the kept tc-drops logs; classic counterfactual replays; xrefs; TreasureClassEx data checks | `findings/items`: addenda to run:2026-10-11-tc-drops, -10-13-quality, -10-14-uniques/-props |
 | **S2b** | 49 (58 filed; 9 returned, § 2.6) | 39/0/10 | affixes 1, 3–4, 8–10, 15, 22, 27–28, 30, 34–35, 37; properties 1–2, 4–6, 8–9, 16, 18; uniques-sets 3–6, 12–13, 15, 20, 23–24, 27–29, 32–34, 36, 40, 42 (returned: affixes 7, 16; properties 23, 24; uniques-sets 8, 9, 22, 31, 39) | `items_chain.py`, `uniques.py`, `props.py`, `affixes.py` over ichain*, uniques-*, props*, quests-s*-cows; a new `ITEMS_RollStaffMods` checker case removes that oracle | `findings/items`: addenda to run:2026-10-15-items-chain, -10-14-uniques, -10-14-props |
 | **S2c** | 76 (86 filed; 10 returned, § 2.6) | 1/57/18 | affixes 2, 11, 14; cube 6, 8, 10, 12–13, 17, 20–22, 24, 29, 45, 47, 49, 51–52, 55–56, 58; properties 19; quality 16; quest-drops 7–10, 14, 19–21, 28, 31, 37–38, 41, 47–49; sockets 2–6, 8, 14, 19–20, 25–28, 32, 34–36, 41–47; uniques-sets 1; vendors 3–4, 7–9, 11, 19–22, 24–28 (returned: cube 17, 20, 24, 51, 58; quest-drops 48; sockets 35 ×2, 36 (L442), 42) | `cube.py`, `sockets.py`, `vendors.py`, `questdrops.py` over kept logs; a new `InvPlaceItem` case; second sources from save/d2s; xrefs | `findings/items`: addenda to run:2026-10-15-cube, -sockets, -vendors, -10-16-quest-drops |
@@ -835,7 +874,7 @@ Static and harness batches use different resources (Ghidra copies against slots)
 | 8 | S3b (done) | 1 | 4 | 15 |
 | 9 | S1a (done) | 0 | 49 | 54 |
 | 10 | S1e (done, reviewed: accepted with fixes) | 0 | 4 | 71 |
-| 11 | S1f (after S1e merges) | 0 | 2 | 15 |
+| 11 | S1f (done, reviewed: accepted with fixes) | 0 | 2 | 15 |
 
 **Harness (Phase 2; queue rules of the plan: 0037·P2 first, never more than two harness lanes, never slot 0):**
 

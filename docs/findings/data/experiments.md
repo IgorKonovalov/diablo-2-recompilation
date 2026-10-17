@@ -374,3 +374,94 @@
   files remain the lane's record; the fixed tool regenerates a different, reproducible case set. A corrupted `eval`
   output (one EAX bit flipped, one undeclared read added) gave `bad=2`, `undeclared=1`, so the checker fails when it
   should.
+
+## run:2026-10-17-sweep-emu2
+
+- **Question:** (plan 0038 batch S1f, the 15 c-emu statements of [inventory § 2.6](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews),
+  S1f table) Do `MONSTATS_ValidId`, `sub_00483360_MulDiv`, `sub_005C0D00_AffixCandAdd` and its caller
+  `ITEMS_PickMagicAffix`, `SKILLS_CalcVar` codes 43–48, `EXCEL_ParseTxt`'s defaults pass and callback order,
+  `sub_005BDB20_MonVariantRoll` and `ITEMS_BuildSetPick` do what the findings say on the branches no stock play
+  reaches, with no case reaching the allocator, an import or the fatal path?
+- **Setup:** as run:2026-10-17-sweep-emu: Ghidra 12.1.2 p-code emulator (`EmulatorHelper`) on the pinned `game.exe`,
+  lane copy `GHIDRA_PROJ_DIR=workspace/ghidra-s1f` (symbols replayed from `re/symbols.csv`), heap 3 GB, each run under
+  `systemd-run --user --scope -p MemoryMax=4G`. No wine, nothing runs natively, no slot. `re/ghidra_scripts/EmuTrace.java`
+  (`3255db0c…`) gains one directive, `guard <addr>`: a case whose pc reaches the address stops (`STOP … guard address
+  reached`); the S1e records do not use it and re-run unchanged. Every S1f memory spec guards the fatal path
+  (0x00408090, 0x00408A60, 0x00681E09) and the three pool-allocator entries (0x0040B4B0, 0x0040B430, 0x0040B480), so
+  review condition (a) is checked by the tool: a case that reached either would be a `STOP`, and every family has
+  `stopped=0`. Models, case writers and checks: `tools/sweep_s1f.py` (`0fb5b3fc…`, which imports `tools/sweep_s1e.py`'s
+  report, read-set accounting, CALC models and `.txt` world), unit tests `tools/test_sweep_s1f.py` (`b4c55e4d…`, 7). All
+  inputs are synthetic, written by generators seeded `"s1f-<family>"` (worlds by fixed integer seeds); `cases` regenerates
+  every file byte for byte (checked against the kept files). DataTables fields are written one dword per field the
+  code reads (not a whole page), so a read of any other field would be traced. Files in `workspace/logs/sweep-s1f/`,
+  `manifest.txt` `a1e058cc…` (38 files: cases, memory specs, expected inputs, outputs). Full report
+  `workspace/logs/sweep-s1f-all.txt` (`e108a769…`).
+- **Procedure:**
+  ```
+  D=workspace/logs/sweep-s1f
+  python3 -I tools/sweep_s1f.py cases                     # D/<family>.cases, .mem, .json; parsetxt2-sse.mem
+  for f in validid muldiv candadd calcvar2 varroll setpick guardctl parsetxt2 pickaffix; do
+    tools/ghidra.sh emutrace $D/$f.cases $D/$f.mem > $D/$f.out
+  done
+  tools/ghidra.sh emutrace $D/parsetxt2.cases $D/parsetxt2-sse.mem > $D/parsetxt2-sse.out
+  python3 -I tools/sweep_s1f.py manifest --write
+  python3 -I tools/sweep_s1f.py all                        # checks, static, manifest; exits 0
+  ```
+  (The lane ran `analyzeHeadless … -readOnly -postScript EmuTrace.java <out> <cases> <mem>` with its own `-log`, the
+  same script call `tools/ghidra.sh emutrace` makes, because another lane shared `workspace/logs/ghidra-last.log`.)
+- **Observed** (`S1F` lines; `neg` = cases where the negative control's perturbed model differs; `undeclared` = traced
+  accesses outside the declared read set; `stopped` = cases that did not return):
+  ```
+  S1F validid   cases=2000 match=2000 bad=0 neg=190  traced=0   undeclared=0 stopped=0  in_range=599 id_ge_n=830 neg_id=571 n_le0=532
+  S1F muldiv    cases=4000 match=4000 bad=0 neg=1948 traced=0   undeclared=0 stopped=0  c0=382 32bit=272 32bit_wrapped=1300
+                a_big_div_first=605 a_big_64=215 (q_wide 39) b_big_div_first=960 b_big_64=266 (q_wide 26) neg_c=1030
+  S1F candadd   cases=3000 match=3000 bad=0 neg=65   traced=0   undeclared=0 stopped=0  stored=1635 at_or_past_cap=1365
+                n_eq_510=78 n_eq_511=65 n_negative=195
+  S1F pickaffix cases=500  match=500  bad=0 neg=125  traced=9   undeclared=0 stopped=0  eligible_gt_511=207 eligible_le_511=245
+                x_beyond_stored=22 x_within_stored=185 fell_through_last=22 picked=383 picked_last=33 no_candidate=14
+                no_roll=48 autogroup=64 weight_freq_x_level=182
+  S1F calcvar2  cases=3000 match=3000 bad=0 neg=239  traced=10  undeclared=0 stopped=0  code43..48: 204 219 213 202 198 196
+                (missile 0, 0, 0, 0, 1, 1) calc_eval=611 calc_none=462 calc_off_ge_size=159 lvl_le0=232 no_skilldesc=583
+                no_missile=461; MulDiv inside: 32bit=67 32bit_wrapped=292 a_big_div_first=205
+  S1F parsetxt2 cases=300  match=300  bad=0 neg=300  traced=402 undeclared=0 stopped=0  neg_desc_order=290 rows=618
+                absent entries by type 01..1A: every type, 113..1 261 each; calc_columns_present=3092 unknown_header=221
+                                                                                       (parsetxt2-sse: identical)
+  S1F varroll   cases=3000 match=3000 bad=0 neg=192  traced=0   undeclared=0 stopped=0  tries_went_negative=192
+                (ended at tries -1: 112, -3: 38, -5: 25, -7: 10, -9: 3, -11: 3, -13: 1) stopped_at_zero_appended_dup=93
+                k1=1084 k_ge2=137 set0=233 cap_binds=1142 n_le0=645 full=78 no_monstats2=930
+  S1F setpick   cases=3000 match=3000 bad=0 neg=254  traced=1   undeclared=0 stopped=0  weight0_as_1=1842 picked_weight0=230
+                weight_negative=2452 total_negative_nodraw=458 walk_fails=134 total0_return=1878 picked=976 forced=12
+  S1F guardctl  cases=2    match=2                                                       guard_fatal=1 guard_alloc=1
+  S1F static    pins=65 pins_ok=65 masks_ok=1 ro_reads=9 data_stores=0
+  ```
+  `guardctl` is the guards' own control: `MonVariantRoll` with a NULL seed stops at 0x00408090 (the assert path) and
+  the item calc cell callback appending to a pool at capacity stops at 0x0040B4B0 (`CalcPoolAppend`'s growth). A
+  corrupted `varroll` output (one entry byte changed, one undeclared read added) gave `bad=2`, `undeclared=1`.
+- **Conclusion:** bit-exact reproduction (evidence rule 4, under ADR-0015) of the eight functions on the cases above,
+  each traced access declared and no case stopped. Per-statement rulings and read sets are in the "Plan 0038 batch
+  S1f" sections of [drlg/0004](../drlg/0004-preset-units.md#plan-0038-batch-s1f-2026-10-17),
+  [monsters/0004](../monsters/0004-stats.md#plan-0038-batch-s1f-2026-10-17),
+  [monsters/0001](../monsters/0001-level-pool.md#plan-0038-batch-s1f-2026-10-17),
+  [items/0005](../items/0005-affixes.md#plan-0038-batch-s1f-2026-10-17),
+  [items/0004](../items/0004-uniques-sets.md#plan-0038-batch-s1f-2026-10-17),
+  [data/0005](0005-calc.md#plan-0038-batch-s1f-2026-10-17) and [data/0004](0004-cell-converters.md#plan-0038-batch-s1f-2026-10-17).
+  Not covered: faults (`MulDiv`'s `INT32_MIN ÷ −1` in its 32-bit branch was left out of the cases), property
+  functions (every set record had no property, every affix pick ran with `applyProps` 0), registration columns
+  present in a `.txt` (their first pass allocates), and who calls these functions in play.
+  (fn:MONSTATS_ValidId@0x004E6C50, fn:sub_00483360_MulDiv@0x00483360, fn:ITEMS_PickMagicAffix@0x005C1560,
+  fn:SKILLS_CalcVar@0x00646460, fn:EXCEL_ParseTxt@0x006BD780, fn:sub_005BDB20_MonVariantRoll@0x005BDB20,
+  fn:ITEMS_BuildSetPick@0x005C25C0)
+- **Review re-run (architect, 2026-10-17).** The manifest matches its 38 files. `sweep_s1f.py static` (65 of 65 pins,
+  the closures, the writer scan: 0 stores) and `test_sweep_s1f.py` (7 tests) re-run identically, and `cases` into a
+  fresh directory regenerated every kept `.cases`, `.mem` and `.json` byte for byte. Under the lane's Ghidra copy
+  (`analyzeHeadless … -readOnly -postScript EmuTrace.java`, heap 3 GB, `MemoryMax=4G`, the review's own `-log`), the
+  `muldiv`, `setpick` and `pickaffix` cases gave `.out` files byte-identical to the kept ones, and `check` gave
+  4 000/4 000 (neg 1 948), 3 000/3 000 (neg 254) and 500/500 (neg 125), undeclared 0, stopped 0. A corrupted `setpick`
+  output (one EAX bit flipped, one undeclared read added) gave `bad=2`, `undeclared=1`; one case rewritten as a guard
+  stop at 0x0040B4B0 gave `stopped=1`, so a guarded case cannot pass. Anchors read with objdump at the review:
+  `MONSTATS_ValidId` whole; `MulDiv` whole (0x00483360–0x004833D7) and its `CRT_alldiv` call; `AffixCandAdd` whole and
+  the caller's weight adds (0x005C17E1/0x005C17EA); `ITEMS_BuildSetPick`'s store, zero-total exit and walk
+  (0x005C2675–0x005C26FB); `MonVariantRoll`'s `tries` (0x005BDCC0, 0x005BDE28, 0x005BDE46) and `shl esi, cl`
+  (0x005BDB87); the defaults dispatch at 0x006BDFBE, its 26-entry table at 0x006BE128 and the callback call
+  (0x006BDFFC–0x006BE01A: ECX 0, EDX the record, the offset as the first stack argument); the `÷ 3` sequences
+  (0x006468BE, 0x00646918). All match the ledgers.

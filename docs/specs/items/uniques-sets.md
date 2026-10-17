@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/tc, items/quality, data/excel]
 consumed_by: [items/affixes, items/properties, items/vendors, items/cube, save/d2s]
-tags: {C: 70, I: 52, L: 6}
-updated: 2026-10-15
+tags: {C: 71, I: 55, L: 4}
+updated: 2026-10-17
 ---
 
 # Unique and set selection, and the creation fallbacks
@@ -319,10 +319,25 @@ Step notes:
 - C8. `nolimit` is blank in every stock row, so every unique a drop builds is marked. Nothing on the drop path
   clears a bit; the set is cleared only at game creation. [I] (fn:ITEMS_UniqueMarkMade@0x00556530,
   fn:sub_00530BF0_GameCreate@0x00530BF0, tbl:UniqueItems.txt:nolimit)
+- C8. **Every path that builds a unique marks it.** `ITEMS_UniqueMarkMade` has one call in the image, from this
+  builder (0x00556A1A), so any caller that reaches `ITEMS_BuildUnique` marks the row. A unique shown in a gamble
+  window is marked when the window is built, bought or not ([items/vendors § G](vendors.md#g-gambling-gamble_buildinv)). [I]
+  (0x00556A1A, fn:ITEMS_UniqueMarkMade@0x00556530, fn:ITEMS_BuildUnique@0x005566B0, fn:GAMBLE_BuildInv@0x00578790;
+  [items/0004 § Plan 0039 batch P1b](../../findings/items/0004-uniques-sets.md#plan-0039-batch-p1b-2026-10-17))
 - C4. With no candidate on a base whose `unique` flag is set, the build succeeds as a quality-7 item with file
   index −1 and no properties. Not reached in the runs. [I] (0x00556942–0x00556963,
   fn:sub_00628C70_ItemBaseIsUnique@0x00628C70)
 - C9. The builder clears the identified flag (`0x10`) of every unique it builds. [I] (0x00556A23)
+- C9. **A quest unique is identified afterwards.** `ItemInitStats` runs after `ItemCreateByQuality` returns
+  (0x00557E41), and for a base with both `quest` and `questdiffcheck` set it writes stat 356 (the difficulty) and then
+  sets flag `0x10`, undoing the builder's clear. [I] (0x00557E60–0x00557ECF, fn:sub_00557AB0_ItemInitStats@0x00557AB0,
+  [items/0004 § Plan 0039 batch P1b](../../findings/items/0004-uniques-sets.md#plan-0039-batch-p1b-2026-10-17))
+- C9. Every stock base with the `unique` flag and `quest` (17 bases) has `questdiffcheck` 1, so every stock quest
+  unique is created identified; `std`, with the `unique` flag and no `quest`, is not identified by this rule. [C]
+  (tbl:Misc.txt:questdiffcheck, tbl:Weapons.txt:questdiffcheck)
+- C9. **`nolimit` plays no part in identification.** Its one reader is `ITEMS_UniqueMarkMade`, and none of the 22 sites
+  that set or clear the identified flag tests the UniqueItems row: they decide on the base, the quality or their
+  caller. [I] (fn:ITEMS_UniqueMarkMade@0x00556530, tbl:UniqueItems.txt:nolimit, [items/0004 § Plan 0039 batch P1b](../../findings/items/0004-uniques-sets.md#plan-0039-batch-p1b-2026-10-17))
 
 ### D. The set builder
 
@@ -518,7 +533,7 @@ At the join (0x00557943), before the post-switch steps:
 
 | Outcome | `item.quality` / `rec.quality` | `item.fileIndex` | Item seed | Extra | Tag |
 |---|---|---|---|---|---|
-| unique built | 7 / 7 | the row | ItemApplyProps's exit seed | row marked in `Game+0x1B24` (unless `nolimit`); unidentified | [C] (fn:ITEMS_BuildUnique@0x005566B0, run:2026-10-14-uniques, run:2026-10-14-uniques-forced) |
+| unique built | 7 / 7 | the row | ItemApplyProps's exit seed | row marked in `Game+0x1B24` (unless `nolimit`); unidentified, except a quest base, which `ItemInitStats` then identifies (C9 notes) | [C] (fn:ITEMS_BuildUnique@0x005566B0, run:2026-10-14-uniques, run:2026-10-14-uniques-forced) |
 | unique, no candidate, base `unique` flag | 7 / 7 | −1 | the entry seed | no properties | [I] (0x00556942–0x00556963) |
 | set built | 5 / 5 | the row | ItemApplyProps's exit seed | unidentified | [C] (fn:ITEMS_BuildSetPick@0x005C25C0, run:2026-10-14-uniques-forced) |
 | failed unique | 6 / 6 (or lower down the chain) | −1 | the fallback builder's exit seed | stats 72/73 ×3, cap 255 | [C] (fn:sub_005573F0_ItemFallbackRare@0x005573F0, run:2026-10-14-uniques-forced) |
@@ -703,7 +718,7 @@ made test, the fallback and the seed only. Classic Nightmare, item 320 `brs`, il
   agrees, but § F2 stays inferred for the reason above.
 - [L] **`Game+0x6A` = 0.** Which game type, if any, has it with no ladder flag (the only case that excludes `ladder`
   rows)? Single player and TCP/IP do not. The Open Battle.net value was not logged.
-- [L] **`nolimit` and automatic identification.** The builder clears the identified flag of every unique; whether
-  a `nolimit` or quest unique is identified later is not read. Every stock row has `nolimit` blank.
-- [L] **Other callers.** Gambling, vendors and quest rewards reach the same builders; their effect on the
-  made-uniques set belongs to [items/vendors](vendors.md) and `items/quest-drops`. (The cube's effect is stated under *Entry points*.)
+- ~~**`nolimit` and automatic identification.**~~ Answered in the C9 notes: a quest unique is identified by
+  `ItemInitStats`, and `nolimit` takes no part ([items/0004 § Plan 0039 batch P1b](../../findings/items/0004-uniques-sets.md#plan-0039-batch-p1b-2026-10-17)).
+- ~~**Other callers** and the made-uniques set.~~ Answered in the C8 notes: the mark has one call, in the builder, so every
+  path that builds a unique marks it; the gamble window's case is [items/vendors § G](vendors.md#g-gambling-gamble_buildinv).
