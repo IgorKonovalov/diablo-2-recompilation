@@ -354,9 +354,12 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
 
 ## Open questions
 
-- [L] **Owed to ADR-0014 phase (2), stats and states:** how items, skills, auras and states add up to the stats this
-  spec takes as inputs (attack rating percent, defence percents, `edPct`, resistances and their maxima, DR, MDR,
-  absorb, leech, the on-hit chances), and the formulas of the stats `MonAttackStats` writes.
+- ~~**Owed to ADR-0014 phase (2), stats and states:** how items, skills, auras and states add up to the stats this
+  spec takes as inputs.~~ Specified in [stats/aggregate](../stats/aggregate.md) and [stats/states](../stats/states.md)
+  (plan 0041, draft). The stats run:2026-10-16-combat logged stay value inputs: its logs hold values, not the lists the
+  aggregation needs (plan 0041 P2 review).
+- [L] **Still owed:** the formulas of the stats `MonAttackStats` writes, and a run that checks combat against the
+  aggregated stats instead of logged values.
 - [L] **Owed to phase (3), skills and missiles:** a skill's damage packet and `SrcDam`, a missile's packet, its hit
   test and knockback draws, the conversion fields, the event handlers other than crushing blow, open wounds and
   freeze (skill on hit, knockback, slow…), the progressive-charge hooks and the finisher's draw.
@@ -365,7 +368,8 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
 - [L] **Shortfalls of run:2026-10-16-combat** (plan 0037 Phase 2, after the resume lane; 40 655 events): crushing
   blow on a champion (0 labelled); the resistance cap for cold (27), lightning (17), magic (0); magic immunity (0);
   the negative absorbed amount (4); evade, weapon block, dodge, avoid (0); conversion, freeze, pierce, flat absorb (0);
-  the negative total that leaves life unchanged (25); the player's life tick (no window); the mode-2 (walking)
+  the negative total that leaves life unchanged (25); the player's life tick (no window here; reproduced under
+  poison by run:2026-10-17-stats, [stats/states § E](../stats/states.md#e-the-regeneration-tick)); the mode-2 (walking)
   exception of the block `÷ 3` (no walking player attacked).
 - [L] Player against player and hostile auras need two clients (ADR-0008, accepted 2026-10-16 on the port-4000
   condition; no such run yet).

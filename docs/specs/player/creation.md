@@ -3,8 +3,8 @@ spec: player/creation
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, items/uniques-sets, items/properties, items/affixes, monsters/stats, save/d2s]
-consumed_by: [save/d2s, combat/to-hit]
-tags: {C: 81, I: 44, L: 3}
+consumed_by: [save/d2s, combat/to-hit, stats/aggregate]
+tags: {C: 81, I: 45, L: 2}
 updated: 2026-10-17
 ---
 
@@ -88,7 +88,7 @@ The record index of CharStats is the class id 0..6 (`Expansion` marker row not c
 | player unit | `Unit`, class id `unit->classId` | `SUnitCreate(UNIT_PLAYER, class, …)` |
 | right / left skill | player data `+0x70` / `+0x74` | § B |
 | base and total stats | stat lists of the unit | `STATS_GetUnitStat` reads the total, "base" the unit's own entry |
-| full maxima | `UnitGetMaxHp/Mana/Stamina` | base maximum plus item bonuses, **named value inputs** of § I |
+| full maxima | `UnitGetMaxHp/Mana/Stamina` | base maximum plus item bonuses, **named value inputs** of § I; how they add up is [stats/aggregate § G](../stats/aggregate.md#g-the-maxima-the-rescale-and-the-stat-callback) |
 
 ### Constants
 
@@ -109,7 +109,7 @@ The record index of CharStats is the class id 0..6 (`Expansion` marker row not c
 | Input | Kind | Where it is specified | Tag |
 |---|---|---|---|
 | `ITEMS_RollStaffMods` at the end of the normal builder (the Sorceress's `sst`, the Necromancer's `wnd`) | seed oracle of the item model: its exit seed and its `item_singleskill` entries are the logged ones | [items/affixes § I](../items/affixes.md#i-staff-mods--items_rollstaffmods) | [C] (fn:ITEMS_RollStaffMods@0x005C1260, run:2026-10-16-player: 11 of 269 creations) |
-| full maxima `UnitGetMaxHp/Mana/Stamina` when items add to them | value input of the level-up refill; how the bonuses add up is not part of this spec | § I, I3 | [C] (fn:sub_00625D10_UnitGetMaxHp@0x00625D10, run:2026-10-16-player: 7 of 20 level-ups) |
+| full maxima `UnitGetMaxHp/Mana/Stamina` when items add to them | value input of the level-up refill; the sum is specified in [stats/aggregate § G](../stats/aggregate.md#g-the-maxima-the-rescale-and-the-stat-callback), and this run's values stay oracles (plan 0041 P2 review: none replaced, the logs hold no item lists) | § I, I3 | [C] (fn:sub_00625D10_UnitGetMaxHp@0x00625D10, run:2026-10-16-player: 7 of 20 level-ups) |
 
 ## Algorithm
 
@@ -491,6 +491,11 @@ Step notes:
   item bonuses (7 level-ups, the Sorceress's gear) the run took them as logged value inputs, so this spec states that
   the refill reads `UnitGetMaxHp/Mana/Stamina`, not how the bonuses sum. Current life is refilled only when it is
   above 0; mana and stamina always. [C] (fn:sub_00625D10_UnitGetMaxHp@0x00625D10, run:2026-10-16-player)
+- I2–I3. **What the refill reads.** Each write of I2 reaches the unit's cached full stat at once, and the stat
+  callback rescales the current value against the new maximum before I3 overwrites it; `UnitGetMaxHp` then returns
+  the cached full stat 7 (and 9, 11), that is the new base plus every item, set and state term
+  ([stats/aggregate § C, § G](../stats/aggregate.md#g-the-maxima-the-rescale-and-the-stat-callback)). [I]
+  (fn:STATLIST_Propagate@0x00626920, fn:sub_0055B800_MonStatCallback@0x0055B800, fn:sub_00625D10_UnitGetMaxHp@0x00625D10)
 - I1–I4. The level-up arithmetic adds to whatever base it finds: the level-up characters of the run were built saves
   (8 000 life, level 1 attributes at levels 9, 49 and 97), so the run backs the arithmetic, `XP_Compute` and the
   no-draw result, not what a natural level-*N* character's attributes or life would be. [C] (run:2026-10-16-player)
@@ -670,5 +675,8 @@ the Barbarian has one copy more (the buckler), so only its eighth copy (`isc`) t
   agrees in substance with a community page; its *Leads used* verdict waits for a re-fetch (reverser backlog).
 - [L] Whether a corpse saved with its character keeps its stat 13 (the corpse record's first u32 is not initialised,
   [save/d2s](../save/d2s.md)); and what sets the create screen's mode word `0x007795EC` (the default ladder bit). Not read (reverser backlog, the P1c residues (c) and (d)).
-- [L] How `UnitGetMaxHp/Mana/Stamina` add item bonuses to the base maxima (the I3 inputs); outside this plan.
+- ~~How `UnitGetMaxHp/Mana/Stamina` add item bonuses to the base maxima (the I3 inputs).~~ Specified in
+  [stats/aggregate § G](../stats/aggregate.md#g-the-maxima-the-rescale-and-the-stat-callback) (plan 0041, draft): the
+  cached full stats 7, 9 and 11, with item vitality and energy through op 9 and op 8. The I3 values of
+  run:2026-10-16-player stay value oracles.
 - [L] The header's `appearance` bytes of the first save (the client's graphics) are not predicted.
