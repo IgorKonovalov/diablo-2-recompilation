@@ -21,11 +21,13 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    ([0041](../../../../docs/plans/0041-stats-and-states.md) P1 review).
 6. **Keep the tool behind every claim**: the script in `tools/` (seeded, if it generates cases), its
    output hashed, logs under `workspace/logs/` with a manifest line. Seen: the unseeded `eval` case
-   writer (S1e, 0038); the *Fleshripper* log left in session scratch (resume lane, 0037).
+   writer (S1e, 0038); the *Fleshripper* log left in session scratch (resume lane, 0037). An aborted session's
+   partial log is kept as a development log, not deleted (0040 P2 review).
 7. **A conclusion needs an address, `fn:` or `run:` anchor**, not a link to another finding (gate W1).
    Seen: the resume lane's experiments addendum (0037); `lane/w1`'s 104 W1 lines (0039).
 8. **Split a raise where it has a remainder** and head the row "raised in part", in the ledger itself.
-   Seen: special 65 (H4b), sock 14 (S2c), special 43 (S3b), all 0038.
+   Seen: special 65 (H4b), sock 14 (S2c), special 43 (S3b), all 0038; five `[C]` bullets of drlg/0009 § 11 with an
+   unreached branch inside (the wanderer gate's `+0x78`, the item drop on expiry; [0040](../../../../docs/plans/0040-drlg-room-lifecycle.md) P2 review).
 9. **Name the path for every claim about a caller**, or say "unfollowed" with the count. Seen: the
    superunique minion path (0039 P1b, Q19); the 8/9 case's `RoomTileSetFlags` call (0039 P1a).
 10. **One case decides only if a wrong reading could not match it by chance.** Seen: aff 28's durability

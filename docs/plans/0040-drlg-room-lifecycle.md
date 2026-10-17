@@ -256,3 +256,138 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `restore`), asserted freed without a record and absent at the return.
 
   **P2 opens** (lane H1 queue order, 1 slot).
+
+- **2026-10-17 — Phase 2 checkpoint (reverser, `lane/p40h`, slot 1; in progress, not for review).** Tools:
+  `tools/gdb/rooms.{gdb,py}`, `tools/rooms.py check` (with `tools/test_rooms.py`), `tools/rooms_sessions.py`. Sessions
+  of run:2026-10-17-lifecycle (logs `workspace/logs/rooms/lifecycle-*.log`): 13 played (n-cold, n-catacombs,
+  n-farooze, nm-dark, nm-spider, h-highlands, h-flayer, n-long, nm-long, cls-n-cold, cls-nm-jail, town-n, town-n2);
+  the 12 first check with **0 mismatches** over 1 882 803 checks (2 234 releases, 1 245 restores of re-activated
+  rooms, 1 926 monsters restored of which 195 special and 254 damaged, 75 over 7500 frames, 876 items, 1 653 objects
+  of which 536 operated, 10 128 wanderer-gate draws, 541 039 reference callbacks; acts I–V, three difficulties, maze
+  29 and 35, classic Normal and Nightmare). Corrections the run makes to drlg/0009: an item restore takes **two**
+  game-seed draws (type 4), a simple (compact) item comes back with start seed 0; a client visit between two release
+  passes does not reset the idle count; a room activated by `RoomActivateB` after the walk passed and released
+  before the next walk is never populated (+0x60 bit 0 clear); every logged champion carries `0x08` (MonMarkSpecial),
+  so the 0x18 test frees dead champions (6 seen) and the "dead champion restored alive" surprise is not reachable on
+  stock data; restored minions get the flag-0 handlers of mods 1–4 (+3 level), specials the flag-1 ones.
+  **Shortfalls so far:** the town-follow case (two `town` sessions: no hostile monster entered a town room; the
+  scripted walk-and-lure does not converge), wanderer roll/spawn (0 of 3 051 eligible draws passed, as expected),
+  expired item records (0), pets/owned, `+0xD0` < 8, necro summons, `restore` 0, the `0x400` and level-108 records.
+  **Resume:** write the run record (experiments.md), the drlg/0009 Phase 2 section with the `[C]` raises and the
+  corrections above, the manifest, and the review request; the town-follow case needs owner play or a static
+  answer (whether town rooms block monster movement), named as a shortfall otherwise. Slot 1 stopped.
+
+- **2026-10-17 — Phase 2 landed (reverser, `lane/p40h`, slot 1; review pending).** run:2026-10-17-lifecycle
+  ([experiments](../findings/drlg/experiments.md#run2026-10-17-lifecycle)): 13 sessions, **0 mismatches** over
+  2 215 807 checks under `tools/rooms.py check`. Raises and corrections in
+  [drlg/0009 § 11](../findings/drlg/0009-room-lifecycle.md#11-phase-2-run2026-10-17-lifecycle).
+
+  | Done-when item | Target | Run |
+  |---|---|---|
+  | room releases | 300 | 2 440 (acts I–V; Normal, Nightmare, Hell; mazes 29 and 35; outdoor; classic Normal and Nightmare) |
+  | re-activations with a restore | 200 | 1 362 restores of a re-activated room (1 414 re-activations) |
+  | monsters restored | 400; 40 special; 30 damaged; stats 7, 12, 13 predicted | 2 035; 199; 255; all predicted (stat 12 by the monsters/stats model) |
+  | 7500-frame rule, both sides | — | 1 931 under, 104 over |
+  | objects restored | 150, 30 operated | 1 760, 603 operated; objects § B4 save rule on 3 023 objects |
+  | ground items restored | 60, seeds and fields | 876 (seed rule corrected, below) |
+  | wanderer gate draws | 200 | 11 064 (3 211 eligible; no pass, no spawn: shortfall) |
+  | town-follow case | required | **shortfall**: two town sessions released the town's rooms, but no hostile monster was in a town room |
+
+  **Corrections to Phase 1 claims** (drlg/0009 § 11):
+  1. An item restore takes **two** game-seed draws, and a simple item comes back with start seed 0.
+  2. A client visit that falls between two passes does not reset the idle count.
+  3. A `RoomActivateB` room can be released before it is populated.
+  4. The save test's `0x18` mask is "special or minion". Every logged champion carries `0x08`, so a dead champion is
+     never saved: surprise (1) is unreachable on the logged data.
+  5. Restored specials carry stat 12 as the flag-1 handlers give it, and restored minions as the flag-0 handlers of
+     mods 1–4 give it.
+
+  **Not reached:**
+  - the wanderer roll and spawn;
+  - an expired item;
+  - pets, `+0xD0` < 8, necromancer summons, `restore` 0;
+  - kept units, `0x400` records, level 108, player corpses.
+
+  Plan 0038's deferred objects row 5 (the revisit monster and item restores) is answered by § 11.
+
+  **Tooling:**
+  - `tools/gdb/rooms.{gdb,py}`;
+  - `tools/rooms.py` and `tools/test_rooms.py`;
+  - `tools/rooms_sessions.py`;
+  - a section in tooling.md.
+
+  No symbol rows changed (tags in `re/symbols.csv` left for the review). Slot 1 is stopped.
+
+- **2026-10-17 — Phase 2 review (architect): accept with fixes.** Main (`3e169e4`) merged into the lane first
+  (`docs/backlog.md` kept both sides and migrated; experiments.md kept both run sections). Re-runs:
+  `rooms-lifecycle-manifest.sha256` (`da0c0d7d…`) verifies all 13 logs; the tool hashes match the record (`rooms.gdb`
+  `726e3453`, `rooms.py` gdb `45da126c`, `rooms.py` `4f816bd1`, `rooms_sessions.py` `ba25cac1`, `pilot.py` `1ad48a4c`);
+  `systemd-run --user --scope -p MemoryMax=4G python3 -I tools/rooms.py check workspace/logs/rooms/lifecycle-*.log`
+  over the whole run gives `SUMMARY mismatches=0 checks=2215807`, byte-identical to `rooms-lifecycle-check.txt`
+  (`042c01ee…`); `tools/test_rooms.py` 9 tests OK. Each recorded log is one game (one `GP` line, frames from 0, never
+  decreasing). Logger addresses spot-checked with objdump on the pinned `game.exe` (13, all resolve): RT 0x0052D289
+  after the `RoomReleaseAllowed` call, FREE 0x0052D2BB the `ActiveRoomFree` call, WG 0x0054F089 `test eax, 0x7FFF`,
+  the `0x18` test's return 0x005432FB, the three creation calls 0x00542689/0x005426C3/0x005426E9 (`MinionRestore`,
+  `SpecialMonRestore`, `SpawnWithId`), PSU0/PSUX 0x0055596C/0x00555971 around `PtrMove`, RM0 0x0061A12B the
+  `DrlgRefMove` call, IRC 0x005419C8 after `ItemCreateFromSave`, the mode-12 `mod 3` 0x00543287, TRX 0x0066F239 after
+  the `0x200000` write. Two checker mutations (scratch copies, the special path or the minion path given the other
+  handler flag) measured what stat 12 separates (ruling 3).
+
+  **Rulings.**
+  1. *Town-follow case:* accepted as a **shortfall**; it does not block P3. The run adds the other half: every
+     monster the save test met in a `SaveMonsters` 0 level (120 in level 1, 52 in level 103, all town NPCs) carried
+     `+0xC4` bit `0x2000000` and was saved. Whether a pool monster can enter a town room at all is a static question
+     with a lead (MonStats `inTown`, `+0x0D` bit 2, on no pool class), routed to the reverser; not cheap at the review.
+     If the reverser finds it reachable, it becomes an owner-play candidate for a P2 addendum; if not, the Phase 1b
+     verdict stands at `[I]` as unreachable on stock data.
+  2. *Dead champion:* the observation is `[C]` (15 champions in 30 save tests, all with `0x08`; the 6 dead freed by
+     the `0x18` test); "never on stock data" stays `[I]`. Counted at the review: `MonMarkSpecial` has four callers
+     (0x005A0B61 in `SpecialMonPlace` after every successful creation; 0x005A487B; 0x005A48F4 in
+     `ChampionMemberMark`, skipped when monster data `+0x16` bit `0x04` is already set, 0x005A48EB; 0x005A496E in
+     `MonMakeSpecial`). Whether every champion path passes one is routed to the reverser. § 5 test 5 and the § 6
+     surprise reworded (the mask is `0x08` or `0x10`; the surprise needs a special without them).
+  3. *Stat 12 of restored specials:* the lane's contradiction holds for **champions** only. With the special path
+     given flag 0 the checker gives 15 mismatches (the champion restores, one level high each); uniques do not
+     separate the flag. So: champion stat 12 = the flag-1 result, `[C]` (15); § 6's "`SpecialModsApply(flag 0)`" is
+     marked contradicted for champions. The minion half was overclaimed: with the minion path given flag 1 the checker
+     also gives 0 mismatches, so stat 12 does not separate it, and "flag-0 handlers for minions" stays the § 6 reading
+     at `[I]`; the minion stat-12 value is `[C]` (144). Which call applies the flag-1 handlers is routed.
+  4. *Item restore:* two game-seed draws (876 of 876; one draw would fail every item) and start seed 0 for a simple
+     item (587) are `[C]`. Two halves of the § 11 item bullets were under `[C]` without a case and are split out:
+     the expired-item drop and the 0-expiry kept (no quest item saved), and in the record bullet the quest 0 and the
+     gold above 10000 expiry (branch counts at the review: magic 66, qualities 5–9 21, filler 27, gold up to 10000
+     437, else 796). § 6, § 9 and § 10 still said "one game-seed draw" and "keeps its seed": corrected in place.
+  5. *120–131 frames:* the narrowing is right (2 224 releases at the first eligible pass, every value 120–131 seen).
+     Added the remainder: 82 later (a refused test, or a visit between two passes) and 134 with no logged client
+     leave. § 4's frames bullet and the summary now say "the last change a pass saw". The level-120 half of the town
+     rule was not reached and is marked `[I]`.
+  6. *Procedural mishap:* the record discloses it, and the recorded logs are clean (checked above), so no claim
+     depends on it. But "its partial log" was ambiguous and the deletion breaks the keep-everything rule: reworded to
+     say it was the overlapped launch's log and should have been kept with the development logs; `smoke1.log` added to
+     the development list. A process fix, not a blocking one.
+  7. *Symbols:* 27 `drlg/lifecycle` rows raised `I` → `C`, each logged and predicted by the run with the code reading
+     as the second source: `ClientRoomChange`, `RoomClientEnter`/`Leave`, `RoomClientAdd`/`Remove`, `DrlgRefMove`,
+     `DrlgRefAddNear`/`RemoveNear`, `g_DrlgRefEnterFns`/`LeaveFns`, `DrlgEnter0`/`Enter1Activate`/`Enter2`,
+     `DrlgLeave3Release`, `RoomIdleCount`, `RoomReleaseAllowed`, `DrlgRoomReleaseTest`, `DrlgRoomPinFlag`,
+     `ActiveRoomFree`, `InactiveMonsterSaveTest`, `InactiveRecordSave`, `InactiveMonsterSave`, `InactiveItemSave`,
+     `ItemGroundExpiry`, `InactiveItemRestoreOne`, `SpawnWithId`, `PtrMove`; the drlg/0009 *Functions* tags follow.
+     Left at `I`: `RoomPinSet` (no clear call seen), the status helpers (`DrlgRefAdd`, `DrlgStatusRecompute`,
+     `DrlgStatusSet`: checked only through the model's status), `RoomRestoredGet`/`Set`, the AI save/restore (a
+     boundary), the client loop, `ActIsClient`, `ActLevelsUnloadTick`, `ActRoomsHead`, `LevelSaveMonsters`,
+     `InactiveRoomRecordFind`, the target lists, `UnitRelocate`, `DiabloQuestFlag`.
+  - Also split: the wanderer gate's `+0x78` and `MonWndr` conditions (no draw passed, so they never decided; summary
+    and § 11 now `[I]` for them, the draw itself `[C]` on 11 064). The act `+0x50` open question narrowed to the name.
+    experiments.md: "corrects four" → five; "a dead champion saved (none can be …)" reworded.
+
+  **Fixes applied on the lane** (12): overclaim 5 (wanderer gate conditions; item restore drop and 0-expiry; item
+  record quest and gold expiry; level-120 half; minion handler flag); under-claim 2 (the dead-champion observation;
+  the act `+0x50` values); stale cross-reference 1 (§ 4, § 5, § 6, § 9, § 10 left with Phase 1 text the run
+  corrected); miscount 1 ("corrects four"); omission 2 (the release remainder and the town saves; `smoke1.log`);
+  tool not kept 1 (the deleted partial log). Gate green.
+
+  **Follow-ups.** Reverser (static): the town reachability (`inTown` readers), the champion paths and `MonMarkSpecial`,
+  the flag-1 call in `SpecialMonRestore`, and the tool items (kept partial logs; the town-save census and the expiry
+  branches in `rooms.py check`). Spec-writer: P3 opens with this review's rulings; the room-tiles amendment's hold is
+  lifted by § 11's `0x200000` bullet. The Phase 1 follow-up (a) is answered by the run for the values.
+
+  **P3 opens** (spec-writer queue order).
