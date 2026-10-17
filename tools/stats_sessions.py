@@ -85,6 +85,22 @@ def statsbarb_cycle():
     return t
 
 
+def statsbarc_cycle():
+    """StatsBarC (the op coverage character): the weapon swap ten times (Headstriker and Bing Sz Wang against
+    Messerschmidt's Reaver: op 4, 5 and 13 on the item lists at every link), the torso (Ironpelt: ac/lvl op 4 and ac%
+    op 13) four times, Annihilus four times (strength, energy, vitality: op 1, 2, 8, 9 and The Stone of Jordan's
+    mana% op 11 on the player's list), the grand charm twice."""
+    t = []
+    for _ in range(5):
+        t += ["keyv:w", S, "keyv:w", S]
+    for _ in range(2):
+        t += toggle("tors")
+    for _ in range(4):
+        t += pickput("9,0")
+    t += pickput("8,0,1,3")
+    return t
+
+
 def statsnec_cycle():
     """StatsNec: the full Trang-Oul's Avatar (its full block sets the property `state` = monsterset, stat 98: the
     stat callback's group exclusion, stats/0002 § 2); each piece picked up and put back (full -> 4 of 5 -> full)."""
@@ -94,7 +110,8 @@ def statsnec_cycle():
     return t
 
 
-PLANS = {"statsbar": statsbar_cycle, "statsbarb": statsbarb_cycle, "statsnec": statsnec_cycle}
+PLANS = {"statsbar": statsbar_cycle, "statsbarb": statsbarb_cycle, "statsbarc": statsbarc_cycle,
+         "statsnec": statsnec_cycle}
 
 # objects.txt rows with OperateFn 2 (shrines) or 22 (wells): the classes objop may operate
 SHRINES_WELLS = ("2,77,81,83,84,85,86,93,96,97,109,111,113,115,116,118,120,123,124,130,132,133,134,135,136,137,138,"
@@ -137,6 +154,7 @@ SESSIONS = {
     "palb-spider": ("StatsPalB", "enter-normal", 4162, pal_field("3,2", 40)),
     "barb-town1": ("StatsBarB", "enter-normal", 4121, [("plan", "statsbarb", 3), ("wait", 20)]),
     "barb-town2": ("StatsBarB", "enter-nightmare", 4122, [("plan", "statsbarb", 3), ("wait", 20)]),
+    "barc-town1": ("StatsBarC", "enter-normal", 4131, [("plan", "statsbarc", 4), ("wait", 10)]),
     "nec-town1": ("StatsNec", "enter-normal", 4151, [("plan", "statsnec", 4), ("wait", 10)]),
     "bar-town1": ("StatsBar", "enter-normal", 4111, [("plan", "statsbar", 3), ("wait", 20)]),
     "bar-town2": ("StatsBar", "enter-normal", 4112, [("plan", "statsbar", 3), ("wait", 20)]),
