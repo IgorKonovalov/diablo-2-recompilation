@@ -112,6 +112,17 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-17 | `lane/arc6` review | 0039 MonPlace rows, 0044 MP23 pair | architect-review | 105 644 | 42 | 8 | — | gave accept with fixes | — (on the lane row; usage unknown) |
 | 2026-10-17 | `lane/sw6` | 0038 P3 rbs3 readings, outdoor H5e reasons | spec-writer | 169 148 | 86 | 20 | — | accept with fixes | 4: under-claim 1, omission 1, stale cross-reference 1, other 1 |
 | 2026-10-17 | `lane/sw6` review | 0038 P3 rbs3 readings, outdoor H5e reasons | architect-review | 129 319 | 44 | 9 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-17 | `lane/p41h` (part 1) | 0041 P2 | reverser-harness | 848 776 | 412 | 443 | slots 2 and 1 | accept with fixes | 9: overclaim 1, misread 2, stale cross-reference 1, omission 3, under-claim 1, other 1 (both parts) |
+| 2026-10-17 | `lane/p41h` (part 2) | 0041 P2 | reverser-harness | 195 452 | 119 | 49 | slots 2 and 1 | accept with fixes | — (on the part 1 row) |
+| 2026-10-17 | `lane/p41h` review | 0041 P2 | architect-review | 184 753 | 90 | 18 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-17 | `lane/rbs4` | 0038 static backlog sweep, fourth pass | reverser-static | 314 969 | 144 | 39 | no slot | accept with fixes | 5: wrong anchor 2, overclaim 1, stale cross-reference 1, other 1 (usage unknown) |
+| 2026-10-17 | `lane/rbs4` review | 0038 static backlog sweep, fourth pass | architect-review | 169 016 | 70 | 18 | — | gave accept with fixes | — (on the lane row; usage unknown) |
+| 2026-10-17 | `lane/wiki6` | 0038 wiki index and how-we-know | wiki | 137 324 | 49 | 17 | — | accept with fixes | 6: overclaim 2, omission 2, stale cross-reference 2 (usage unknown) |
+| 2026-10-17 | `lane/wiki6` review | 0038 wiki index and how-we-know | architect-review | 117 048 | 35 | 7 | — | gave accept with fixes | — (on the lane row; usage unknown) |
+| 2026-10-17 | `lane/p41s` | 0041 P3 | spec-writer | 295 443 | 75 | 28 | — | accept with fixes | 9: overclaim 2, misread 3, omission 4 (usage unknown) |
+| 2026-10-17 | `lane/p41s` review | 0041 P3 | architect-review | 253 625 | 65 | 15 | — | gave accept with fixes | — (on the lane row; usage unknown) |
+| 2026-10-17 | `lane/wiki7` | 0041 wiki | wiki | 156 103 | 30 | 12 | — | accept with fixes | 15: overclaim 3, misread 7, omission 5 |
+| 2026-10-17 | `lane/wiki7` review | 0041 wiki | architect-review | 120 332 | 26 | 12 | — | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

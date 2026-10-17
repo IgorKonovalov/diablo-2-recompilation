@@ -641,6 +641,25 @@ At `0x0054E651` the function overwrites its first argument with the room's level
 
   (fn:sub_0054E600_PresetMonSpawn@0x0054E600, fn:sub_005B2F20_SpawnAtPos@0x005B2F20,
   fn:sub_0054DA60_MonClassChainStep@0x0054DA60, tbl:MonPlace.txt:code, tbl:MonStats.txt:NextInClass)
+- [I] **The four other callers of `PresetMonSpawn` place nothing for rows 33–35** (`lane/rbs4`; kept output
+  `sweep-rbs4-presetmonspawn-2026-10-17.txt`, manifest `sweep-rbs4-manifest.txt`). The bound check above
+  (0x0054E76F) does not depend on the caller, so an id for rows 33–35 places nothing from any caller. Read one by one,
+  none of the four passes a MonPlace id:
+  - `sub_00659B80_MonIdFromKind(kind, i)` gives `i + nSuperUniques + nMonStats` for kind 0 (MonPlace), `i + nMonStats`
+    for kind 2 (SuperUniques) and `i` otherwise.
+  - 0x00545C75 is in `sub_00545C30_QuestPresetMonSpawn`. Its two callers, `A5Q5_StatueEvent` (0x0058C198) and
+    `A4Q2_SealBossEvent` (0x005B57DE), pass kind 2.
+  - 0x0058A70D (`A5Q3_NihlathakBossSpawn`) builds its id with kind 2 (0x0058A6F6).
+  - 0x005AA231 is in a missile function (the `.data` table at 0x0073C858; no direct call). It passes the Missiles
+    record's `+0x4C` only when that value is between 0 and `nMonStats` (DataTables `+0xA80`, 0x005AA1F0–0x005AA1F7),
+    so the id is a MonStats row.
+  - 0x005ACB43 is in a function of the `.data` table at 0x0073C918 (no direct call). It passes a value read from the
+    unit's skill (`0x006444A0`, 0x005ACB1F–0x005ACB43), which is not followed. Rows 33–35 would still place nothing
+    there, by the bound check.
+
+  `PresetMonSpawn` has these five calls only (`pushes 0x0054E600 4`). Readers of a room's preset list other than
+  `PresetUnitDispatch` are not followed. (fn:sub_00659B80_MonIdFromKind@0x00659B80,
+  fn:sub_00545C30_QuestPresetMonSpawn@0x00545C30, fn:sub_0058A6C0_A5Q3_NihlathakBossSpawn@0x0058A6C0)
 
 ### 8. Names: server seed, client roll
 

@@ -3,8 +3,8 @@ spec: data/calc
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [data/excel, rng]
-consumed_by: [combat/to-hit]
-tags: {C: 129, I: 17, L: 3}
+consumed_by: [combat/to-hit, stats/aggregate, stats/states]
+tags: {C: 130, I: 18, L: 3}
 updated: 2026-10-17
 ---
 
@@ -479,6 +479,10 @@ stat(id, k)  → input: the unit's stat id; k = 1 base, k = 2 the second accesso
 - [I] `stat(id, k)`: no unit, `id < 0` or `id ≥` the itemstatcost count → 0; `id = 19` → the player's attack rating
   (fatal for a non-player); `k = 1` → `STATS_GetUnitBaseStat`, `k = 2` → `sub_00625500_UnitGetStat`, else
   `STATS_GetUnitStat`. The item copy has the same body. (fn:STATS_GetUnitBaseStat@0x006253B0, fn:sub_00625500_UnitGetStat@0x00625500, fn:STATS_GetUnitStat@0x00625480, fn:sub_00627BB0_ItemCalcStat@0x00627BB0)
+- [C] What `stat(id, k)` returns for an `id` other than 19 and `k` ≠ 1: the unit's cached full value (`+0x48`), as
+  [stats/aggregate § F](../stats/aggregate.md#f-reads) specifies (plan 0041); a calc that reads a stat stays a
+  unit-state input of this spec. (fn:sub_00624F60_StatListGetValue@0x00624F60, run:2026-10-17-stats) With `k = 1` it
+  is the unit's own entry (`+0x24`). [I] (fn:sub_00624ED0_StatListGetBaseValue@0x00624ED0)
 - [I] The missile `rand`'s seed `ctx + 0x20` (stepped as shown by the emulation above) is a stack address inside
   `MISS_EvalCalc`'s frame holding its offset and missile-id arguments, so the draw is a function of those two values
   and advances no game seed. No stock missile formula calls `rand`. (fn:sub_00627B70_ItemCalcRand@0x00627B70, fn:sub_0064B720_MissCalcRand@0x0064B720, 0x0064B742)

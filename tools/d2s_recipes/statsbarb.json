@@ -1,0 +1,118 @@
+{
+  "game": "expansion",
+  "class": "Barbarian",
+  "seed": 4102,
+  "name": "StatsBarB",
+  "progression": 15,
+  "difficulty": [
+    131,
+    131,
+    131
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "stats": {
+    "strength": 95,
+    "energy": 40,
+    "dexterity": 60,
+    "vitality": 250,
+    "hitpoints": 1100,
+    "maxhp": 1100,
+    "mana": 200,
+    "maxmana": 200,
+    "stamina": 600,
+    "maxstamina": 600,
+    "level": 80,
+    "experience": 1000000000
+  },
+  "skills": {
+    "Increased Stamina": 12,
+    "Natural Resistance": 5,
+    "Iron Skin": 4,
+    "Sword Mastery": 3,
+    "Bash": 1
+  },
+  "mouse": {
+    "left": "Attack",
+    "right": "Bash",
+    "swap_left": "Attack",
+    "swap_right": "Bash"
+  },
+  "hotkeys": [
+    "Bash"
+  ],
+  "items": [
+    {
+      "set": "Civerb's Cudgel",
+      "equip": "rarm"
+    },
+    {
+      "set": "Civerb's Ward",
+      "equip": "larm"
+    },
+    {
+      "unique": "Highlord's Wrath",
+      "equip": "neck"
+    },
+    {
+      "set": "Immortal King's Will",
+      "equip": "head",
+      "sockets": 2,
+      "filled": [
+        {
+          "code": "gpr"
+        },
+        {
+          "code": "gpr"
+        }
+      ]
+    },
+    {
+      "code": "brs",
+      "prefix": 531,
+      "equip": "tors"
+    },
+    {
+      "set": "Immortal King's Forge",
+      "equip": "glov"
+    },
+    {
+      "set": "Immortal King's Detail",
+      "equip": "belt"
+    },
+    {
+      "unique": "Sandstorm Trek",
+      "equip": "feet"
+    },
+    {
+      "unique": "Bul Katho's Wedding Band",
+      "equip": "rrin"
+    },
+    {
+      "unique": "Nagelring",
+      "identified": false,
+      "equip": "lrin"
+    },
+    {
+      "unique": "Messerschmidt's Reaver",
+      "equip": "rarm2"
+    },
+    {
+      "unique": "Annihilus",
+      "store": "inventory",
+      "x": 9,
+      "y": 0
+    },
+    {
+      "code": "cm3",
+      "prefix": 478,
+      "store": "inventory",
+      "x": 8,
+      "y": 0
+    }
+  ],
+  "quests": "all"
+}

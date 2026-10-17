@@ -21,4 +21,4 @@ review against these before committing it. Categories are those of the [lane run
    4, 0038).
 8. **Give every reviewed spec a wiki owner and every plan its research-map rows at the start.** Seen:
    "wiki: not part of this plan" (0037 P3 → `lane/wiki1` ruling, 0038); the stats rows due when plan 0041
-   started ([0041](../../../../docs/plans/0041-stats-and-states.md) P1 review).
+   started ([0041](../../../../docs/plans/done/0041-stats-and-states.md) P1 review).

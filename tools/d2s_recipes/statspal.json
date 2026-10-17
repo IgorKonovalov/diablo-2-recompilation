@@ -1,0 +1,40 @@
+{
+  "game": "expansion",
+  "class": "Paladin",
+  "seed": 4130,
+  "name": "StatsPal",
+  "progression": 15,
+  "difficulty": [131, 131, 131],
+  "waypoints": {"normal": "all", "nightmare": "all", "hell": "all"},
+  "stats": {
+    "strength": 160, "energy": 60, "dexterity": 140, "vitality": 400,
+    "hitpoints": 2500, "maxhp": 2500, "mana": 400, "maxmana": 400,
+    "stamina": 500, "maxstamina": 500,
+    "level": 85, "experience": 1145236813
+  },
+  "skills": {"Prayer": 12, "Might": 1, "Zeal": 1},
+  "mouse": {"left": "Attack", "right": "Prayer", "swap_left": "Attack", "swap_right": "Prayer"},
+  "hotkeys": ["Prayer", "Might"],
+  "items": [
+    {"unique": "Azurewrath", "equip": "rarm"},
+    {"unique": "Stormshield", "equip": "larm"},
+    {"unique": "Harlequin Crest", "equip": "head"},
+    {"unique": "Arkaine's Valor", "equip": "tors"},
+    {"unique": "Venom Grip", "equip": "glov"},
+    {"unique": "Goldwrap", "equip": "belt"},
+    {"unique": "Gorerider", "equip": "feet"},
+    {"unique": "Highlord's Wrath", "equip": "neck"},
+    {"unique": "Bul Katho's Wedding Band", "equip": "rrin"},
+    {"unique": "Raven Frost", "equip": "lrin"},
+    {"code": "yps", "store": "inventory", "x": 0, "y": 0},
+    {"code": "yps", "store": "inventory", "x": 1, "y": 0},
+    {"code": "wms", "store": "inventory", "x": 2, "y": 0},
+    {"code": "wms", "store": "inventory", "x": 3, "y": 0},
+    {"code": "vps", "store": "inventory", "x": 4, "y": 0},
+    {"code": "vps", "store": "inventory", "x": 5, "y": 0}
+  ],
+  "belt_fill": ["rvl", "yps", "wms", "vps"],
+  "merc": {"id": 6, "seed": 4131, "name": 2, "exp": 62208000, "dead": false,
+           "items": [{"code": "vou", "equip": "rarm"}, {"code": "brs", "equip": "tors"}, {"code": "hlm", "equip": "head"}]},
+  "quests": "all"
+}

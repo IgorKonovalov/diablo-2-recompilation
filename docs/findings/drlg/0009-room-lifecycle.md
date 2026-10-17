@@ -112,14 +112,14 @@ written from the code before they were read. Little exists beyond anecdotes; not
 | `0x0053A8E0` / `0x0053A9B0` | `sub_0053A8E0_RoomClientEnter` / `sub_0053A9B0_RoomClientLeave` | add / remove the client in the room's client list (`+0x48`, `+0x78`) and tell the units | C |
 | `0x0061A660` / `0x0061A700` | `sub_0061A660_RoomClientAdd` / `sub_0061A700_RoomClientRemove` | the client list, kept sorted | C |
 | `0x0061B6F0` | `sub_0061B6F0_DrlgRefMove` | `RefAdd(new, 0)`; old: `refs[0]−1`, leave callback 0, `RefRemoveNear(old, 1)` | C |
-| `0x0061B490` | `sub_0061B490_DrlgRefAdd` | `RefAddNear(d+1)` first, then `refs[d]+1` with the enter callback when it lowers the status | I |
+| `0x0061B490` | `sub_0061B490_DrlgRefAdd` | `RefAddNear(d+1)` first, then `refs[d]+1` with the enter callback when it lowers the status | C |
 | `0x0061B390` / `0x0061B5B0` | `sub_0061B390_DrlgRefAddNear` / `sub_0061B5B0_DrlgRefRemoveNear` | the same over the near list, recursing to distance 3 | C |
 | `0x00744384` / `0x00744394` | `g_DrlgRefEnterFns` / `g_DrlgRefLeaveFns` | enter: status 0, activate (1), status 2, prepare files (3); leave: recompute status (0–2), recompute and client release (3) | C |
 | `0x0061B2C0`, `0x0061B2D0`, `0x0061BB10` | `sub_0061B2C0_DrlgEnter0`, `sub_0061B2D0_DrlgEnter1Activate`, `sub_0061BB10_DrlgEnter2` | enter callbacks 0, 1, 2 (3 is `sub_0061B320_RoomPrepareFiles`) | C |
-| `0x0061B4F0` / `0x0061B210` | `sub_0061B4F0_DrlgStatusRecompute` / `sub_0061B210_DrlgStatusSet` | status = lowest distance with a reference, else 4; status rings at DRLG act `+0xA0 + 0xEC·s` | I |
+| `0x0061B4F0` / `0x0061B210` | `sub_0061B4F0_DrlgStatusRecompute` / `sub_0061B210_DrlgStatusSet` | status = lowest distance with a reference, else 4; status rings at DRLG act `+0xA0 + 0xEC·s` | C / I |
 | `0x0061B560` | `sub_0061B560_DrlgLeave3Release` | leave callback 3: recompute; at status 4 on a client act, `RoomTilesRelease(room, 0)` | C |
 | `0x0061B920` | `sub_0061B920_ClientBackgroundBuild` | client loop: every 5 client ticks build one status-2 room | I |
-| `0x0052D240` | `sub_0052D240_RoomsDeactivate` | the release pass | I |
+| `0x0052D240` | `sub_0052D240_RoomsDeactivate` | the release pass | C in part (level-120 half I) |
 | `0x0061A790` | `sub_0061A790_RoomIdleCount` | room `+0x0C`: 0 if `+0x78` ≠ 0, else +1; returns it | C |
 | `0x0061A3F0` / `0x0061BA30` | `sub_0061A3F0_RoomReleaseAllowed` / `sub_0061BA30_DrlgRoomReleaseTest` | DUNGEON act `+0x50` must be 0; pin, status and town tests | C |
 | `0x0061BAC0` / `0x0061AED0` | `sub_0061BAC0_DrlgRoomPinFlag` / `sub_0061AED0_RoomPinSet` | DRLG `+0x28` `0x400000` set (arg 0) or cleared (arg ≠ 0); 31 call sites, portal and object code | C (`0x0061BAC0`), I |
@@ -142,6 +142,19 @@ written from the code before they were read. Little exists beyond anecdotes; not
 | `0x005B5210` | `sub_005B5210_DiabloQuestFlag` | quest 23 data `+0x13` | I |
 | `0x00642820` | `sub_00642820_LevelSaveMonsters` | leveldefs `+0x94` | I |
 | `0x00666120` | `sub_00666120_PtrMove` | `*dst = *src; *src = 0` | C |
+
+Tags raised at `lane/rbs4` (plan 0040 close follow-ups, item 1; review: three of the five **raised in part**), each on § 11's reproduction of
+run:2026-10-17-lifecycle: `DrlgRefAdd` and `DrlgStatusRecompute` (the reference replay predicts every callback, ref and
+status), `RoomsDeactivate` (every release predicted; its level-120 half unreached, `[I]`), and the two restores
+`InactiveMonstersRestore` and `RoomInactiveUnitsRestore` (§ 11's monster and unit restore). The raise covers the
+branches the run reached; the restore outcomes § 11 lists as not reached (a kept monster or unit, a `0x400` record,
+the level-108 rule, a kept player corpse, a minion restored without its boss) stay `[I]` inside both restores, as
+the level-120 half does inside `RoomsDeactivate`. `DrlgStatusSet` (the status
+rings) stays `I`; so does `RoomWandererTick`, whose gate decision, roll and spawn the run never reached (§ 11: only
+the gate's draw and the walk order). (run:2026-10-17-lifecycle, fn:sub_0061B490_DrlgRefAdd@0x0061B490,
+fn:sub_0061B4F0_DrlgStatusRecompute@0x0061B4F0, fn:sub_0052D240_RoomsDeactivate@0x0052D240,
+fn:sub_005424F0_InactiveMonstersRestore@0x005424F0, fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40,
+fn:sub_0054F060_RoomWandererTick@0x0054F060)
 
 ## Walkthrough
 
@@ -714,6 +727,123 @@ Scans by `tools/sweep_rbs3.py` (outputs `sweep-rbs3-*-2026-10-17.txt` under `wor
   These are the counts above, now from the kept tool. (`rooms-check-census-rbs3-2026-10-17.txt`; 0 mismatches over
   2 215 807 checks, unchanged.)
 
+### 11.2 The town-follow static remainder (`lane/rbs4`)
+
+Scans by `tools/sweep_rbs4.py` and `tools/sweep_rbs3.py`, outputs `sweep-rbs4-*-2026-10-17.txt` under
+`workspace/logs/`, manifest `sweep-rbs4-manifest.txt`. All of it is a code reading. The three routes § 11.1 (a) left
+are taken in turn.
+
+**(a) The `0x40000` branch (path types 4, 10, 14).**
+
+- [I] **`0x40000` comes only from the path type.** `sub_00648CF0_PathSetType(path, type)` replaces bits 8–18 of
+  `+0x34` with the dword `0x006EB690[type]` (0x00648D62–0x00648D6D). Of the 17 entries, only types 4, 10 and 14
+  carry `0x40000` (each `0x60000`; `sweep-rbs4-pathflags`). The one other type a server call passes, `0x65` at
+  0x005CBA59, reads 0 there (0x006EB824). (data:0x006EB690, fn:sub_00648CF0_PathSetType@0x00648CF0)
+- [I] **The server calls that set 4, 10 or 14 act on missiles.** `pushes 0x00648CF0 2` lists all 51 calls
+  (`sweep-rbs4-settype-pushes`). The server ones with 4, 10 or 14 are:
+  - `PATH_DynamicCreate`'s unit-type-3 branch (type 4, 0x00649DA9–0x00649DBB);
+  - four functions with no direct caller, stored as callbacks into a creation block: 0x005C9290, 0x005CD110,
+    0x005D40F0 and 0x005AC040 (type 10). `xrefscan` finds them only as `mov [ebp-…], imm32` in `.text`
+    (`sweep-rbs4-xref-pathcb`);
+  - 0x005D0040, a skill function in the `.data` table at 0x007323D4. It sets 14 on the unit that
+    `sub_0059FA30_MissileCreate` returns. That function reads a Missiles record (`sub_0046ACE0_MissileRec`, 0x0059FA6D)
+    and creates the unit (`SUnitCreate`, 0x0059FC75).
+
+  The other eight sites with these values are client code (`0x004…`).
+- [I] **A monster's walk takes its type from its mode command, and that type is never 4, 10 or 14 except through
+  9 unfollowed calls.** (0x005A7D2F)
+  - `MonSetMode` passes the command's byte `+0x15` to `sub_005A63F0_MonMovePlan` (0x005A7D22–0x005A7D2F).
+    `MonMovePlan` plans no path for 100 and maps 101 to 13 (0x005A6429–0x005A6443). It then calls
+    `sub_005A6290_MonPathPlanType`, which sets that type and plans, and falls back to 15 after a failed plan of type 2,
+    7, 9 or 13.
+  - `sub_005A7E60_MonCmdInit` writes `+0x15` = 100 or 101 (0x005A7EB8–0x005A7EDB). The `stackfield` scans list every
+    write to that byte of the command in the 46 functions calling `MonCmdInit` (49 calls) and the 50 calling
+    `MonSetMode` (54 calls) (`sweep-rbs4-cmdinit-type`, `sweep-rbs4-setmode-type`). They find a zeroing before the init
+    (0x005C555E), 100 at 0x005A8304, 0x005A85D8 and 0x005EED70, and the same 100-or-101 choice at 0x005A8392 and
+    0x005A8442.
+  - `MonMovePlan` takes an override type, when it is non-zero, from the dword `+0x18` of the structure at monster data
+    `+0x2C` (0x005A63FB). Its setter is `sub_005A6260_AiPathOverrideSet`.
+    - `regarg 0x005A6260 edx` lists its 9 calls (`sweep-rbs4-override-set`): 7, 13 and 0 once each, 1 five times, and
+      one with `EDX` passed on (0x005DE1D5, inside `sub_005DE190_MonAiPathOverride`).
+    - `MonAiPathOverride` maps 1 to 7 and passes its own `EDX` on. `regarg 0x005DE190 edx` lists its 103 calls
+      (`sweep-rbs4-override-type`). 94 of them set an immediate: 0, 1, 2, 5, 7, 13 or 15.
+    - **9 calls are not immediates and are not followed**: 0x005DF813, 0x005E12F8, 0x005ECBD7, 0x005F025C, 0x005F3817,
+      0x005F390C, 0x005F5447, 0x005F549B and 0x005FADD3. Five of them read a byte at `+0x0D` or `+0x02` of a record.
+  - The four calls that set the type from a register restore a saved type or are client code: 0x00648DC0 (7, or the
+    saved `+0x40`), 0x0054CB10 (15, then the saved type), 0x005DD510 (2, then the saved type), and 0x004AFFEE
+    (client).
+
+  So a monster's path reaches the straight branch only if one of the 9 unfollowed override calls passes 4, 10 or 14.
+  (fn:sub_005A7C20_MonSetMode@0x005A7C20, fn:sub_005A7E60_MonCmdInit@0x005A7E60,
+  fn:sub_005A63F0_MonMovePlan@0x005A63F0, fn:sub_005A6290_MonPathPlanType@0x005A6290,
+  fn:sub_005DE190_MonAiPathOverride@0x005DE190, fn:sub_005A6260_AiPathOverrideSet@0x005A6260)
+- [I] **What the straight types do.** (fn:sub_00649760_PathPlanStraight@0x00649760)
+  - Type 4 (`sub_006492F0_PathPlanToUnit`) heads for the unit at `+0x58`, refusing a target 100 subtiles or more
+    away on either axis.
+  - Type 14 (`sub_0067A140_PathPlanSpiral`) lays 77 points on a growing spiral.
+  - Type 10 (`sub_0067A240_PathPlanRandomWalk`) takes `+0x91 / 2` steps in directions drawn on the unit seed.
+
+  None of the three reads the room of a point. (fn:sub_006492F0_PathPlanToUnit@0x006492F0, fn:sub_0067A140_PathPlanSpiral@0x0067A140,
+  fn:sub_0067A240_PathPlanRandomWalk@0x0067A240)
+
+**(b) Rooms a planned path crosses.**
+
+- [I] **The walk changes a unit's room without a town test.** (fn:sub_0064FAD0_PathRoomUpdate@0x0064FAD0)
+  - After a plan, `PathPlan` calls 0x00647FB0 (0x00649C07). It sets `+0x34` bit 0 when any planned point lies outside
+    the current room (0x00647FB4–0x0064800B).
+  - `sub_00554CA0_UnitMoveStep` calls `sub_00650840_PathStep(path, 0x400)`. `PathStep` moves to the next point with
+    `sub_0064FB90_PathSetPoint`.
+  - When the path has a unit and bit 0, `PathSetPoint` calls `sub_0064FAD0_PathRoomUpdate`. That function keeps the
+    room if the point is inside it. Otherwise it takes `RoomAtSubtile` of the point (0x0064FB1B) and moves the unit's
+    room links (0x0064FB54–0x0064FB7F).
+  - `PathRoomUpdate` has one caller, `PathSetPoint`, and `PathSetPoint` has 7. None of the 9 functions in that tree
+    calls `RoomIsTown` (`sweep-rbs4-roomupdate-tree`, against § 11.1 (a)'s list of the 108 calling functions).
+  - The move masks have no town bit (drlg/0005 § bits).
+
+  So the target test of § 11.1 (a) is the only town barrier on a planned walk. A path whose target room is outside
+  town but whose points cross a town room takes the monster into that room.
+
+  The condition a session must create: a town room on the route between the monster and a target that is not in town,
+  within the planner's 100-subtile window, with free cells under the monster's move mask. This reading does not show
+  whether a stock town's walls and exits allow such a route. (fn:sub_00650840_PathStep@0x00650840,
+  fn:sub_0064FB90_PathSetPoint@0x0064FB90, fn:sub_0064FAD0_PathRoomUpdate@0x0064FAD0,
+  fn:sub_00554CA0_UnitMoveStep@0x00554CA0)
+
+**(c) Other position writers.**
+
+- [I] **`UnitTeleport` places a unit in the room of the point, with no town test.** `sub_00554EA0_UnitTeleport` takes
+  the room at the point when none is given (`RoomAtSubtile` at 0x00554F00, then with the unit's room as hint at
+  0x00554F14). It searches a free cell with mask `0x1C09` and moves the unit
+  through `0x00650BE0`. The scan finds 20 direct calls in 19 functions (`sweep-rbs4-teleport-tree`).
+  - One call is read: the Teleport skill's do function, `sub_005CA360_SkillTeleportDo` (0x005CA3C9). It tests only
+    the caster's level `Teleport` byte (Levels `+0x04`). A value of 2 adds a line test with mask `0x804`. The test
+    reads the caster's level (0x005CA37C–0x005CA395), never the target point's, and the byte is 0 only on level 0
+    (docs/tables/Levels.md). So a caster outside town whose skill target point lies in a town room is
+    teleported into it.
+  - The other 19 calls are not followed.
+
+  (fn:sub_00554EA0_UnitTeleport@0x00554EA0, fn:sub_005CA360_SkillTeleportDo@0x005CA360, tbl:Levels.txt:Teleport)
+- [I] **Knockback and the other mode changes plan a path.** `COMBAT_GetHit`'s three commands are built by
+  `MonCmdInit` (0x0057D028, 0x0057D098, 0x0057D0D8), so they take type 13 or none, as in (a), and their target room
+  is tested.
+  - The other position setters, `0x00650C20`, `0x00650C60` and `0x00650CA0`, serve player placement, client code or
+    have no caller. Their server callers (`sub_005352C0`, `PlayerChangeAct`, 0x00574CC0, 0x005A99E0) are not followed.
+  - Pool placement is outside the towns, which are not populated (§ 5).
+
+  (fn:COMBAT_GetHit@0x0057CEE0)
+
+**Ruling asked of the architect.** The case is not shown unreachable. (b) and (c) each give a way in, so it is not
+d-none. Two harness recipes, each a lead:
+- **(b), the walk across town:** a player just outside the Rogue Encampment (in the Blood Moor), placed so that a
+  chasing monster's direct route crosses a camp room.
+- **(c), the teleport:** a hostile monster that casts Teleport chasing a player who stands just inside the camp. A
+  unique with the MonUMod teleport mod, `sub_005A1600_UModTeleport`, is one. The AI's choice of the teleport target
+  point is not read.
+
+Both then need the player to leave until the town's rooms are released (§ 11's town-follow case). *Ruled at the review:* plan 0038
+batch H7a; the open question below records it.
+(fn:sub_005A1600_UModTeleport@0x005A1600)
+
 ## Data touched
 
 - tbl:Levels.txt:SaveMonsters (leveldefs `+0x94`), tbl:Levels.txt:MonWndr (`+0x2E`), Levels `+0x03` (act).
@@ -747,6 +877,11 @@ Each is a Phase 2 question (§ P2 questions in the plan log) unless it says othe
   and no owner-play candidate for now: the static remainder (the `0x40000` branch into `sub_00649760`, the knockback,
   teleport and placement writers of a monster's room) goes first, to the static sweep queue; a recipe is chosen only if
   that read finds a route in.
+  *Static remainder read (`lane/rbs4`, § 11.2):* the `0x40000` branch is closed to monsters except through 9
+  unfollowed override calls. The walk across a town room (§ 11.2 (b)) and a Teleport cast toward a town point
+  (§ 11.2 (c)) are routes in, each with a named condition; the two recipes there are for the architect's ruling.
+  *Ruled (architect, `lane/rbs4` review):* plan 0038 harness batch **H7a** (`lifecycle`, inventory § 5), recipe (b)
+  after an offline geometry check, (c) only if a static read shows an AI teleport target in a town room; no owner play.
 - [L] Whether a kept lifecycle log shows the minion restore's unit seed after the handlers (§ 11.1 (c)). If it does,
   the flag-0 reading of `MinionRestore` can be checked from the logs without a run.
 - [L] Which client-copy code detached the path of the client-copy units of drlg/0004's 19 (§ 8); code still to read.

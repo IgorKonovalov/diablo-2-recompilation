@@ -9,7 +9,7 @@ against all of them before you file the review request. Categories are those of 
    ([0043](../../../../docs/plans/0043-items-economy.md) P0); the four `SubWaypoint` levels ([0042](../../../../docs/plans/0042-quests-travel.md) P0); a
    raise missed ([0039](../../../../docs/plans/0039-backlog-sweep-4.md) P0).
 2. **A sentence about code with no finding is `[L]`**; "no reader" needs a full xref, otherwise write a
-   scope note ("combat/0001 reads none of these"). Seen: "set by code" ([0041](../../../../docs/plans/0041-stats-and-states.md) P0);
+   scope note ("combat/0001 reads none of these"). Seen: "set by code" ([0041](../../../../docs/plans/done/0041-stats-and-states.md) P0);
    ItemStatCost "not read" (0039 P0).
 3. **Recompute universal data claims over the whole table** (case-insensitive for names) before writing
    "no", "every" or "N rows". Seen: 44 names both a skill and a state (0041 P0); *Find Potion* takes the
