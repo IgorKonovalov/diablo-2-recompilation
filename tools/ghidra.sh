@@ -15,6 +15,8 @@
 #   emu <fn addr> <cases>       emulate a __fastcall(u32 *seed, u32 edx) per case line (EmuFastcall.java)
 #   emucalc <fn addr> <cases>   emulate a calc-formula function (a, b, c, ctx) per case line (EmuCalcFunc.java)
 #   emucall <fn addr> <cases> <mem>  emulate any call (ecx edx args...) with a memory spec (EmuCall.java)
+#   emutrace <cases> <mem>      emulate calls with per-case memory, dumps and a trace of every access outside the
+#                               stack, the spec and the case memory (EmuTrace.java)
 #   strings <addr|name>...      strings each function references (source paths tell the module)
 #   decompile-range <out> <lo> <hi>
 #                               C of every function with entry in [lo, hi) into <out> (slow: grep it after)
@@ -127,6 +129,7 @@ case "$cmd" in
 	emu) query EmuFastcall.java "$@" ;;
 	emucalc) query EmuCalcFunc.java "$@" ;;
 	emucall) query EmuCall.java "$@" ;;
+	emutrace) query EmuTrace.java "$@" ;;
 	strings) query StringsIn.java "$@" ;;
 	decompile-range)
 		[ $# -eq 3 ] || usage

@@ -575,6 +575,84 @@ Every batch carrying drlg/maze, drlg/preset or drlg/warps statements is now acce
 three clusters are ready for the Phase 3 re-tag.
 
 
+**S1e (filed 2026-10-17, reverser; reviewed 2026-10-17, accepted with fixes): 3 statements of data/calc and data/excel.** run:2026-10-17-sweep-emu
+(the Ghidra p-code emulator under ADR-0015, `tools/sweep_s1e.py`, new script `re/ghidra_scripts/EmuTrace.java`). The
+evidence is in the "Plan 0038 batch S1e" sections of [data/0001](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1e-2026-10-17),
+[0002](../../findings/data/0002-mpq-precedence.md#plan-0038-batch-s1e-2026-10-17),
+[0003](../../findings/data/0003-string-tables.md#plan-0038-batch-s1e-2026-10-17),
+[0004](../../findings/data/0004-cell-converters.md#plan-0038-batch-s1e-2026-10-17),
+[0005](../../findings/data/0005-calc.md#plan-0038-batch-s1e-2026-10-17),
+[rng/0001](../../findings/rng/0001-rng-core.md#plan-0038-batch-s1e-2026-10-17) and
+[save/0001](../../findings/save/0001-d2s-io.md#plan-0038-batch-s1e-2026-10-17).
+
+| Row | Was | Now (proposed) | Why |
+|---|---|---|---|
+| data-calc 14 (`INT32_MIN ÷ −1` raises the divide error; 1) | c-emu, S1e | **d-edit** | ADR-0015 condition 5 excludes faults (the emulator even returned 0 there); only an edited formula with a variable divisor reaches it. The instruction reading stays `[I]`, re-pinned by objdump. |
+| data-excel 43, 44 (a 4-character name both code and TC resolves to the item; unique row 0 cannot be named from a TC; 2) | c-emu, S1e | **d-none** (as filed by 0b) | `TC_ParseItemCell` calls `TC_AddEntry` → `TC_GrowEntries` → the pool allocator 0x0040B4B0 on every resolved cell, so no case reaching either claim runs under ADR-0015 condition 1. The lookups they rest on are now `[C]`. |
+
+Remainders of rows raised in part (the rows stay counted as S1e; no class moves): data-calc 13's L305 (the same
+divide error as row 14, d-edit); data-excel 51's id 13, which the batch **contradicts** (an unmatched id below 14 reads
+the 0x18 bytes after the language table, whose pointers are 0x4D/0x42/0x54, and the string-table load faults; a `use`
+byte of 13 needs an edited file: d-edit; spec-writer backlog).
+
+**Proposal S1f (§ 2.5), for the review.** Of the 31 candidates, the lane can declare the read set of 15 statements
+(11 rows), from the objdump call closures (`sweep_s4b` graph) and the S1e families that already cover their callees:
+drlg-preset 6 second statement (`MONSTATS_ValidId`, one function, no callee); monsters-stats 9, 11 (`MulDiv`, two
+functions, no allocation or import); items-affixes 6, 12 (`sub_005C0D00_AffixCandAdd`, one function); data-calc 8 (the
+compile order within a record: `EXCEL_ParseTxt` with a calc cell callback, as the S1e `parsetxt` and `compile`
+families run them) and 33 (`SKILLS_CalcVar` codes 43–48 through `MISS_GetElemMin`/`Max` on synthetic records, as the
+`calcvar` family); data-excel 65 (5, the absent-column defaults: `EXCEL_ParseTxt`'s defaults pass with descriptor
+entries that have no column) and 69 (callback order, the same run with two calc columns and an absent one); and,
+conditionally, monsters-pool 27 (`MonVariantRoll`) and items-uniques-sets 44 (`ITEMS_BuildSetPick`'s weight), whose
+static closures reach the allocator and the fatal path (421 and 433 functions): the S1f lane keeps them only if the
+emulation trace shows the claimed branches stay off those paths, else they return to their classes. The other 16 keep
+their classes: monsters-pool 2, 25, 26 (`DRLG_LoadLevels` allocates); monsters-stats 4, 35, 41 (unit and stat-list
+reads); items-uniques-sets 26, 43 (`ITEMS_BuildUnique` takes the game and item units); items-quality 2, 17, 21 (the
+drop's unit and game reads); items-tc 9, 54, 65 (`TC_ResolveDrops`: an ADR-0004 oracle needs logged values, and there
+are none for edited cells); data-excel 70 (the descriptor is built on the stack by each table loader, which allocates).
+**The lane recommends that S1f run**, 15 statements, static, with `tools/sweep_s1e.py` and `EmuTrace.java` reused.
+
+Net effect on § 2.4 (S1e): static −3 (S1e's c-emu rows); d-edit +1, d-none +2. (The lane's totals were computed
+before H5a's review; they are recomputed below.)
+
+**S1e review (architect, 2026-10-17): accept with fixes; the three moves stand.** The manifest matches its 53 files;
+`sweep_s1e.py static` and the unit tests re-run identically; the kept `lang` and `calcvar` cases re-run under the
+lane's Ghidra copy give byte-identical outputs, and `eval`, regenerated after the review fixed an unseeded draw in its
+case writer, gives 6 000/6 000 (run record, review re-run). data-calc 14 → d-edit: the divide error is a fault, which
+ADR-0015 condition 5 leaves out, and only an edited formula reaches it; row 13's L305 is the same claim and stays
+counted as S1e, not raised. data-excel 43, 44 → d-none: `TC_AddEntry` calls `TC_GrowEntries` unconditionally
+(0x0065408A), and that calls the pool allocator 0x0040B4B0 (0x00654036), so no case reaching either claim can run
+under condition 1; read in objdump at the review. data-excel 51's id-13 remainder is d-edit, counted as S1e; its
+`[C]` covers the index map only, since entry 13's low words are written at run time (data/0002 review note).
+
+**S1f (created by the S1e review): 15 statements in 11 rows, the lane's proposal as filed.** S1f is a static batch
+under ADR-0015 with `tools/sweep_s1e.py` (new families) and `EmuTrace.java`. It takes the 4 c-emu rows awaiting it and
+11 statements from blocked classes:
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| drlg-preset 6, second statement; monsters-stats 9, 11; monsters-pool 27 (4) | c-emu, awaiting S1f | **c-emu, S1f** | As § 2.6 S3a and S4b routed them. `MONSTATS_ValidId` (0x004E6C50) reads only `g_pDataTables`; `sub_00483360_MulDiv` calls one CRT helper (0x00684240). Pool 27 is conditional (below). |
+| items-affixes 6, 12 (2) | d-none | **c-emu, S1f** | `sub_005C0D00_AffixCandAdd` is seven instructions with the `cmp eax, 0x1ff` cap and no call; read at the review. |
+| data-calc 8, 33 (2) | d-edit | **c-emu, S1f** | The compile order within a record (`EXCEL_ParseTxt` with a calc cell callback, as S1e's `parsetxt` and `compile` ran) and `SKILLS_CalcVar` codes 43–48 through `MISS_GetElemMin`/`Max` on synthetic records (as `calcvar`). |
+| data-excel 65 (5), 69 (1) | d-edit | **c-emu, S1f** | `EXCEL_ParseTxt`'s defaults pass (descriptor entries with no column) and the callback order with two calc columns and an absent one. |
+| items-uniques-sets 44 (1) | d-none | **c-emu, S1f** | `ITEMS_BuildSetPick`'s weight 0; conditional (below). |
+
+Conditions, set by the review: (a) every S1f claim needs a case that reaches its branch with no case stopping (a call
+into an import or the allocator stops a case at the import thunk, `pc outside the image's code`); a row whose claimed
+branch cannot be reached without the allocator, an import or the fatal path returns to its class, recorded at the
+batch, and this applies to pool 27 and uniques-sets 44 first, whose static closures reach the allocator and the fatal
+path; (b) a pool or array the code may grow gets a capacity above every case, and the record says the growth path is
+not reached; (c) every spec write to an image address is listed in the finding with its ruling-3 justification (S1e
+review, plan log). The other 16 candidates keep their classes, as the lane filed them. S1f writes the same data
+findings as S1e and starts after S1e merges.
+
+Net effect on § 2.4 (S1f created): static +15; c-emu awaiting −4; d-none −3, d-edit −8.
+
+**Totals after the fourteen batch reviews and plan 0039 P1a, recomputed once (S1e review).** S1e moves 3 statements
+(static −3; d-edit +1, d-none +2) and creates S1f (static +15 from c-emu 4, d-none 3, d-edit 8). **Static batches hold
+567 statements (S1f 15 included), harness batches 532, none is c-emu awaiting a batch, and 415 are blocked** (d-none
+282, d-edit 73, d-sim 28, d-2c 14, d-owner 10, d-0032 8), with 2 deferred and 10 raised: 1 526 in all.
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
@@ -632,7 +710,8 @@ runs, plus a "Plan 0038 batch S*n*" section in each finding. A harness batch wri
 |---|---|---|---|---|---|
 | **S1a** | 54 (56 filed; 2 returned, § 2.6) | 0/49/5 | save/d2s 5, 7–8, 11–16, 20, 24, 32, 45, 51, 58, 61, 63–64, 66, 69–71, 74–76, 79, 81, 84–87, 92–94, 96–101, 103–104, 109, 117, 119–121, 123–124, 128, 130–131, 135–138 | writer/reader pairs (rule 1); `d2s.py survey` over every game-written save (rule 2) | `findings/save`: addenda to run:2026-10-12-d2s-io, -10-14-props-forced, -10-16-calc |
 | **S1b** | 75 (76 filed; 1 returned, § 2.6) | 7/52/16 | data/README 1; data/calc 1–2, 6–7, 18–19; data/excel 9–14, 19, 21, 23, 26, 28–31, 33–35, 38, 41–42, 45–49, 55, 57, 61–63, 67–68, 72–73, 75–78; data/strings 1, 3, 11, 21, 31, 33; rng 2, 4, 7; rng/seeds 1, 3, 11, 15–16 | the `tc.py` TC array against the tc-drops logs; item index ↔ code over kept item logs; archive precedence; `excel_bin.py survey`; strings, calc, seed-tree and rng-emu addenda | `findings/data`, `findings/rng` (addenda) |
-| **S1e** | 74 | 0/4/70 | data/calc 4–5, 9–16, 20, 31 (6 of 7), 36–40; data/excel 16, 36–37, 40, 43–44, 51–53, 56, 60, 64, 66; data/strings 4–5, 10, 12, 14, 16–17, 20, 24–25, 32, 35; rng 3, 5; save/d2s 82, 122, 129, 133 | **(c-emu)**, ADR-0015: `tools/ghidra.sh emucall`/`emucalc` (from `lane/rbl`) on `CALC_Eval`, `CALC_Compile`, `SKILLS_CalcVar`, `SKILLS_DimReturns`, the calc entry points, `BITBUF_WriteClamped`, `EXCEL_FindCode`/`AddCode`, the excel cell parsers, the string-table lookups and `RNG_RangePow2Plus`, each against a `tools/` model. Each function's read set is declared, and each has a negative control. | `findings/data/experiments.md` **run:&lt;date&gt;-sweep-emu**; addendum to run:2026-10-11-rng-emu |
+| **S1e** | 71 (74 filed; 3 returned, § 2.6) | 0/4/67 | data/calc 4–5, 9–16, 20, 31 (6 of 7), 36–40; data/excel 16, 36–37, 40, 43–44, 51–53, 56, 60, 64, 66; data/strings 4–5, 10, 12, 14, 16–17, 20, 24–25, 32, 35; rng 3, 5; save/d2s 82, 122, 129, 133 | **(c-emu)**, ADR-0015: `tools/ghidra.sh emutrace` (`EmuTrace.java`) and `tools/sweep_s1e.py` on `CALC_Eval`, `CALC_Compile`, `SKILLS_CalcVar`, `SKILLS_DimReturns`, the calc entry points, `BITBUF_WriteClamped`, `EXCEL_FindCode`/`AddCode`, the excel cell parsers, the string-table lookups and `RNG_RangePow2Plus`, each against a `tools/` model. Each function's read set is declared, and each has a negative control. | `findings/data/experiments.md` **run:2026-10-17-sweep-emu**; addendum to run:2026-10-11-rng-emu |
+| **S1f** | 15 (created at the S1e review, § 2.6) | 0/2/13 | drlg/preset 6 (second statement); monsters/stats 9, 11; monsters/pool 27 (conditional); items/affixes 6, 12; items/uniques-sets 44 (conditional); data/calc 8, 33; data/excel 65 (5), 69 | **(c-emu)**, ADR-0015: `tools/ghidra.sh emutrace` and new `tools/sweep_s1e.py` families on `MONSTATS_ValidId`, `sub_00483360_MulDiv`, `sub_005BDB20_MonVariantRoll`, `sub_005C0D00_AffixCandAdd`, `ITEMS_BuildSetPick`, `EXCEL_ParseTxt` (defaults pass, callback order) and `SKILLS_CalcVar` codes 43–48; the S1e review's conditions (§ 2.6) | addendum to run:2026-10-17-sweep-emu, or run:&lt;date&gt;-sweep-emu2 |
 | **S2a** | 57 (65 filed; 8 returned, § 2.6) | 51/0/6 | quality 1, 5, 7, 10–11, 13–14, 18–19, 24–30, 33, 35; tc 3–5, 7, 12–16, 18–19, 21, 23–25, 28–36, 38–42, 48–52, 57–58, 61–62, 64, 66–69, 72–74 | `tc.py replay` (incl. `--quality model`) and `quality.py` over the kept tc-drops logs; classic counterfactual replays; xrefs; TreasureClassEx data checks | `findings/items`: addenda to run:2026-10-11-tc-drops, -10-13-quality, -10-14-uniques/-props |
 | **S2b** | 49 (58 filed; 9 returned, § 2.6) | 39/0/10 | affixes 1, 3–4, 8–10, 15, 22, 27–28, 30, 34–35, 37; properties 1–2, 4–6, 8–9, 16, 18; uniques-sets 3–6, 12–13, 15, 20, 23–24, 27–29, 32–34, 36, 40, 42 (returned: affixes 7, 16; properties 23, 24; uniques-sets 8, 9, 22, 31, 39) | `items_chain.py`, `uniques.py`, `props.py`, `affixes.py` over ichain*, uniques-*, props*, quests-s*-cows; a new `ITEMS_RollStaffMods` checker case removes that oracle | `findings/items`: addenda to run:2026-10-15-items-chain, -10-14-uniques, -10-14-props |
 | **S2c** | 76 (86 filed; 10 returned, § 2.6) | 1/57/18 | affixes 2, 11, 14; cube 6, 8, 10, 12–13, 17, 20–22, 24, 29, 45, 47, 49, 51–52, 55–56, 58; properties 19; quality 16; quest-drops 7–10, 14, 19–21, 28, 31, 37–38, 41, 47–49; sockets 2–6, 8, 14, 19–20, 25–28, 32, 34–36, 41–47; uniques-sets 1; vendors 3–4, 7–9, 11, 19–22, 24–28 (returned: cube 17, 20, 24, 51, 58; quest-drops 48; sockets 35 ×2, 36 (L442), 42) | `cube.py`, `sockets.py`, `vendors.py`, `questdrops.py` over kept logs; a new `InvPlaceItem` case; second sources from save/d2s; xrefs | `findings/items`: addenda to run:2026-10-15-cube, -sockets, -vendors, -10-16-quest-drops |
@@ -755,7 +834,8 @@ Static and harness batches use different resources (Ghidra copies against slots)
 | 7 | S2c (done) | 1 | 57 | 76 |
 | 8 | S3b (done) | 1 | 4 | 15 |
 | 9 | S1a (done) | 0 | 49 | 54 |
-| 10 | S1e | 0 | 4 | 74 |
+| 10 | S1e (done, reviewed: accepted with fixes) | 0 | 4 | 71 |
+| 11 | S1f (after S1e merges) | 0 | 2 | 15 |
 
 **Harness (Phase 2; queue rules of the plan: 0037·P2 first, never more than two harness lanes, never slot 0):**
 
@@ -797,6 +877,7 @@ same run record or finding section:
 - S4a and S4b write the same drlg and objects findings, so S4b follows S4a;
 - S1a, S1b and S1e are independent of S2–S4 and of each other, apart from the shared `findings/data` file of S1b and
   S1e. These two merge one at a time.
+- S1f writes the data findings and the run record S1e wrote, so it starts after `lane/s1e` merges (S1e review).
 
 ### First batches to run (review, 2026-10-16)
 
