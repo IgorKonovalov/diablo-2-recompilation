@@ -890,7 +890,8 @@ Row Q23 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static (objdump, Gh
   fn:sub_00536820_CountPlayersInLevelCb@0x00536820, fn:sub_0053AEC0_PlayerChangeLevel@0x0053AEC0,
   fn:sub_0053ACC0_PlayerChangeAct@0x0053ACC0)
 - [I] **A gambled unique enters the made-uniques set** when the gamble window is built, bought or not
-  ([items/0004 § Plan 0039 batch P1b](0004-uniques-sets.md#plan-0039-batch-p1b-2026-10-17)).
+  ([items/0004 § Plan 0039 batch P1b](0004-uniques-sets.md#plan-0039-batch-p1b-2026-10-17)). (fn:GAMBLE_BuildInv@0x00578790,
+  fn:ITEMS_BuildUnique@0x005566B0)
 - **`NpcStoreRec` `+0x24`..`+0x26` (writers read; reader search moved to plan 0043).** [I] `NPCSTORE_CtlCreate` sets
   `+0x26` from byte 6 of the NPC's `g_NpcStoreTable` slot (0x00536242) and `+0x24` = `+0x25` = 1 for classes 147
   `gheed`, 154 `charsi`, 178 `fara`, 252 `asheara`, 253 `hratli`, 257 `halbu`, 405 `jamella`, 511 `larzuk` and 512
