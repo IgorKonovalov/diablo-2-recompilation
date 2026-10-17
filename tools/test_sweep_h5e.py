@@ -61,5 +61,24 @@ class TombRole(unittest.TestCase):
         self.assertIsNone(S.tomb_role(73, tombs))
 
 
+class VertexMergeCondition(unittest.TestCase):
+    L = [3000, 1018, 80, 80]
+
+    def test_on_grid_seam_not_met(self):
+        adj = [dict(nbr=26, side=1, rect=[3000, 1000, 64, 18])]   # top seam, x 0..63: 64 tiles; y not read
+        self.assertEqual(S.seam_overlaps(self.L, adj), [(26, 1, 64)])
+        self.assertEqual(S.vertex_merge_condition(self.L, adj), [])
+
+    def test_overlap_eight(self):
+        adj = [dict(nbr=6, side=2, rect=[3080, 1090, 80, 80])]    # right seam, y 1090..1097
+        self.assertEqual(S.seam_overlaps(self.L, adj), [(6, 2, 8)])
+        self.assertIn("seam overlap 8 (neighbour 6, side 2)", S.vertex_merge_condition(self.L, adj))
+
+    def test_off_grid_along_edge(self):
+        adj = [dict(nbr=5, side=3, rect=[3004, 1098, 80, 80])]
+        self.assertEqual(S.vertex_merge_condition(self.L, adj), ["neighbour 5 off the level's 8 grid along side 3"])
+        self.assertEqual(S.vertex_merge_condition([0, 0, 84, 80], []), ["level size off the 8 grid"])
+
+
 if __name__ == "__main__":
     unittest.main()
