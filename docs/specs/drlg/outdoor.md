@@ -733,7 +733,8 @@ H4. A1RiverMidTransCave(L):                                          [C] (fn:sub
   clear. `OutdoorAct1` skips `A1CliffMark` for levels 2, 3 and 17 (0x006807F3–0x0068080A); its OR at 0x00680170 is the
   only bare-register OR of `0x20` into a dword in 0x00660000–0x0068FFFF, and `LinkOutdoorFlags` ORs other values. Between that skip and the test at 0x0068023B nothing writes `O+0x00`: the callee closure
   of `OutSeamMark`, `OutBorderBuild`, `OutBorderSubApply` and `A1RiverEastAndCave` (46 functions, the indirect calls
-  resolved by hand) writes only the seed, stack slots, allocations and grid cells. Only an out-of-range grid index
+  resolved by hand) writes only the level seed and rotation list, stack slots, the BorderSub context, the LvlSub record's
+  grid view, allocations and grid cells. Only an out-of-range grid index
   landing on `O` could reach it, and nothing on the path computes one. The scan agrees: `0x20` clear in all 1 800 Blood
   Moor windows. (fn:sub_006807F0_OutdoorAct1@0x006807F0, fn:sub_00680070_A1CliffMark@0x00680070,
   fn:sub_00680200_A1RiverEastAndCave@0x00680200,

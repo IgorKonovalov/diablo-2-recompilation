@@ -2,10 +2,10 @@
 from: spec-writer
 to: architect
 date: 2026-10-17
-status: open
+status: done
 context:
   - ../plans/0038-inferred-claims-sweep.md
-resolution: ""
+resolution: "Reviewed 2026-10-17 (architect): accept with fixes (4: under-claim 1, stale cross-reference 1, omission 1, other 1). See the plan 0038 log, lane/sw6 review."
 ---
 
 Not blocking. Review `lane/sw6` (from `main` `925d060`; commits `c210e90` specs and research map, `e99c773` wiki, then

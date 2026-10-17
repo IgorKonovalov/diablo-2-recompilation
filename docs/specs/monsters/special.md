@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/spawn, monsters/pool, data/excel, drlg/collision]
 consumed_by: [monsters/stats, monsters/spawn, items/tc]
-tags: {C: 106, I: 94, L: 3}
+tags: {C: 107, I: 94, L: 4}
 updated: 2026-10-17
 ---
 
@@ -428,8 +428,10 @@ E1. The copy runs as each minion is created, inside `SpecialModsApply` and befor
 mods, or a superunique's fixed and extra mods, are therefore in the copy. A superunique's mod 22, appended later, is not.
 The run predicted all 277 minion lists after the copy, including Beetleburst's `scarab2` minions, whose own post-create
 mod 20 comes first. [C] (0x005A0C8F, 0x005A4B8E, run:2026-10-14-mon-special) A minion's own handlers are never called for
-its copied list. What reaches it is the boss's handlers with flag 0 (§ C), for every boss mod, `xfer` or not. The copied
-list is what the server sends for the minion. The other readers of a monster's list see any later append: the
+its copied list, and the copied list is what the server sends for the minion. [C] (fn:sub_005A0930_ModsXferCopy@0x005A0930,
+fn:sub_0053E2E0_MonUnitPacketBuild@0x0053E2E0, fn:sub_0045F190_ClientMonAssign@0x0045F190, run:2026-10-14-mon-special,
+run:2026-10-15-mon-stats, [monsters/0003 § Plan 0038 batch S3b](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-s3b-2026-10-16))
+What reaches it is the boss's handlers with flag 0 (§ C), for every boss mod, `xfer` or not. The other readers of a monster's list see any later append: the
 inactive save copies all nine bytes, the restore re-appends with flag 0 each byte that differs from the new unit's list
 ([drlg/lifecycle § H](../drlg/lifecycle.md#h-the-restore)), and a three-slot packet path sends slots 0–2 only; the fourth
 reader is `SuperUniqueSpawn`'s own later append. [I] (fn:sub_0058F380_MonGroupForEach@0x0058F380,
@@ -576,8 +578,8 @@ H2. MonPlace case 3, a champion at the point:                      [C] (0x0054E8
   (fn:sub_0054E600_PresetMonSpawn@0x0054E600, fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, run:2026-10-14-mon-special)
 - [I] Cases `0x11`–`0x20` are fixed classes at the point and not specials: 17 `fallen1`, 18 `fallenshaman1`, 22
   `fetish1`, 23 `fetishshaman1`; 29 `minion1`, 30 `imp1` (`deathmauler1` in level 110), 31 `act5barb1`, 32
-  `reanimatedhorde3`, these four with mode 12; 24 class 0; 25, 27 and 28 nothing (their table entry returns 0); 19–21
-  never reach this table (next bullet). The class goes through
+  `reanimatedhorde3`, these four with mode 12; 25, 27 and 28 nothing (their table entry returns 0); 19–21
+  never reach this table (next bullet). What 24 and 26 do outside Normal is an open question. The class goes through
   `LevelClassVariant` and then `PresetFallenVariant` (`fallen1` → `fallen2` in level 6, `fallen3` in 7, 12, 16;
   `fallenshaman1` → `fallenshaman2` in 6 and 7, `fallenshaman3` in 12 and 16). `reanimatedhorde3` (438) draws
   `Range(u.seed, 50)` for an AI timer. In normal difficulty `0x18` and `0x1A` place a group in the preset's box instead.
@@ -929,6 +931,12 @@ The name is format 1722 with prefix, suffix and appellation, from the keys `Fire
 - ~~What calls `sub_005A4940_MonMakeSpecial` (caller `0x00583050`)~~ answered in [§ J](#j-other-entry-paths-and-pre-existing-mods) (the Warping Shrine) from
   [monsters/0003 § Plan 0039 batch P1c](../../findings/monsters/0003-special-monsters.md#plan-0039-batch-p1c-2026-10-17); the
   path is unreached, in the list above.
+- [L] **What MonPlace rows 24 and 26 do outside Normal** (§ H). Both go to the group case, which places a group only in
+  Normal; monsters/0003 § 7's older bullet reads 24 as class 0 in the fixed-class table, the newer switch bullet does not
+  list either row, and [MonPlace](../../tables/MonPlace.md) says both placed nothing in Hell's logs. At the `lane/sw6`
+  review an objdump read gives rows 24 and 26 the group case's switch byte and that case a return of 0 when the game's
+  difficulty is not Normal, not a fixed-class entry; the finding has not taken this in. Owner: reverser (the open
+  monsters/0003 § 7 reconcile entry).
 - [L] Where a unique's random colour is drawn, and on which client seed. It is display only and cannot reach a server seed,
   and the name roll re-initialises its own seed.
 - ~~The effects of every handler and the readers of `constants` rows 1–33~~ specified in [monsters/stats § G](stats.md#g-the-mod-handlers-stat-effects).
