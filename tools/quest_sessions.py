@@ -190,7 +190,13 @@ class Driver:
             units = self.npc_units(cls)
             pos = self.pos()
             if not units or not pos:
-                # not seen: walk towards the nearest part of the town not yet walked (d2pilot.explore_step)
+                # not seen: walk towards the NPC's usual place (d2pilot.NPCS: an offset from the town waypoint),
+                # else towards the nearest part of the town not yet walked (d2pilot.explore_step)
+                hint = [v[2] for v in self.d2p.NPCS.values() if v[0] == cls and v[2]]
+                w = self.d2p.waypoint_at(self.log, pos[2]) if pos and hint else None
+                if w and pos and math.hypot(w[0] + hint[0][0] - pos[0], w[1] + hint[0][1] - pos[1]) > 8:
+                    self.move_near(w[0] + hint[0][0], w[1] + hint[0][1], 8)
+                    continue
                 if pos:
                     tgt = self.d2p.explore_step(self.st, 9)
                     if tgt is False:
@@ -204,7 +210,7 @@ class Driver:
                 continue
             u = min(units, key=lambda u: math.hypot(u[3] - pos[0], u[4] - pos[1]))
             if math.hypot(u[3] - pos[0], u[4] - pos[1]) > 10:
-                self.walk_towards(u[3], u[4], 8)
+                self.move_near(u[3], u[4], 8)        # along a known free path (walk_towards went straight)
                 units = self.npc_units(cls)
                 pos = self.pos()
                 u = min(units, key=lambda u: math.hypot(u[3] - pos[0], u[4] - pos[1]))
@@ -871,6 +877,8 @@ sess("x-newchar", None, "quest-newchar", 4371, ["sleep:4", "saveexit"])
 
 # the Tristram portal in a later game (quest 4 switched off by the join): the cairn stones in the Stony Field
 sess("x-tristram", "TravelWpOne", "enter-normal", 4372, ["towp2", "wp:1,3", "approach:17", "sleep:6", "saveexit"])
+
+sess("x-talk3b", "QuestTalkThree", "enter-normal", 4326, ["talk:254:2", "talk:245:2", "talk:252:2", "saveexit"])
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
