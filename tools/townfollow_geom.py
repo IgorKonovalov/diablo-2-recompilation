@@ -3,6 +3,7 @@
 Usage:
   python3 -I tools/townfollow_geom.py scan <log> [<log> ...] [--mask 0x3C01] [--window 100] [--show]
   python3 -I tools/townfollow_geom.py scan --list FILE ...
+  python3 -I tools/townfollow_geom.py summary <scan output>
 
 Question. § 11.2 (b) reads that a hostile monster's planned walk may cross a town room when the target room is not
 in town: the planner tests only the target room (sub_006483A0), and the walk's room update (PathRoomUpdate
@@ -191,7 +192,45 @@ def scan_game(cells, mask, window):
     return res
 
 
+def summary(path):
+    """Per town, from a scan output: layouts, layouts with a neighbour level logged, door pairs, the opening runs of
+    the town's large free component (over 1000 cells: the interior) and the other runs (cells, pocket size)."""
+    import collections
+    per = collections.defaultdict(lambda: {"layouts": 0, "with neighbour": 0, "neighbours": set(), "pairs_4": 0,
+                                           "pairs_8": 0, "shorter": 0, "ties": 0, "interior runs": collections.Counter(),
+                                           "pocket runs": collections.Counter()})
+    for ln in open(path):
+        if not ln.startswith("{"):
+            continue
+        d = json.loads(ln)
+        for t in d["towns"]:
+            p = per[t["town"]]
+            p["layouts"] += 1
+            p["with neighbour"] += bool(t["neighbours"])
+            p["neighbours"] |= set(t["neighbours"])
+            for k in ("pairs_4", "pairs_8"):
+                p[k] += t[k]["door pairs"]
+                p["shorter"] += t[k]["via town strictly shorter"]
+                p["ties"] += t[k]["equal length through town"]
+            if t["openings"]:
+                inner = tuple(sorted(o["cells"] for o in t["openings"] if any(c[1] > 1000 for c in o["town component"])))
+                other = tuple(sorted({(o["cells"], o["town component"][0][1]) for o in t["openings"]
+                                      if not any(c[1] > 1000 for c in o["town component"])}))
+                p["interior runs"][inner] += 1
+                p["pocket runs"][other] += 1
+    for town in sorted(per):
+        p = per[town]
+        print("town %d layouts %d with neighbour %d %s pairs_4 %d pairs_8 %d shorter %d ties %d" % (
+            town, p["layouts"], p["with neighbour"], sorted(p["neighbours"]), p["pairs_4"], p["pairs_8"], p["shorter"],
+            p["ties"]))
+        print("  interior opening runs (cells): %s" % dict(p["interior runs"]))
+        print("  other runs (cells, pocket size): %s" % dict(p["pocket runs"]))
+    return 0
+
+
 def main(argv):
+    if argv[:1] == ["summary"] and len(argv) == 2:
+        return summary(argv[1])
     if not argv or argv[0] != "scan":
         print(__doc__)
         return 2

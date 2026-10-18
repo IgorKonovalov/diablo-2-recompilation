@@ -2441,3 +2441,30 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   § 2.6 entry (pending review), the review request and the spec-writer entry. **Gotchas:** `CB` lines of
   `tools/gdb/collision.py` have no `z`/`lid` (now skipped); towns of different acts share coordinates (cells keyed by
   act); the Frigid Highlands arrival is (3764, 5094) on every seed tried.
+- **2026-10-18 — H7a (`lifecycle`) done; review requested (reverser, `lane/h7a`, harness slot 2).** Resumed from the
+  entry above; `main` (`c0c99f6`) merged first. Run **run:2026-10-17-h7a-lifecycle**
+  ([drlg/0009 § 11.3](../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle),
+  [experiments](../findings/drlg/experiments.md#run2026-10-17-h7a-lifecycle)); manifest
+  `workspace/logs/h7a-lifecycle-manifest.sha256` (logs, check outputs, geometry and scan outputs). No new session
+  today: the three sessions of 2026-10-17 are the record.
+  - **Checks:** `rooms.py check` on h-barb, h-barb2, h-barb3: **4 mismatches / 675 849 checks** (h-barb 0 / 96 414,
+    h-barb2 0 / 209 891, h-barb3 4 / 369 544). The 4 are one kind: the monster record's `+0xC4` carries bit `0x2000`
+    that the save-test line lacked (record copied at 0x00542498, after the state and timer removal; open question).
+  - **Raised:** the `0x400` drop, alignment-2 half (4 records, no creation, no game-seed draw), raised in part
+    (alignment 1 unreached); the expired-item drop at the restore (5 records, h-barb3), not in § 11's list.
+  - **Corrected (reading):** the expiry sweep `0x00542AC0` runs at `frame % 1500 = 0` from 0x0052D310, not every 20
+    frames.
+  - **Town-follow:** recipe (b) a recorded shortfall. The full geometry scan (`townfollow_geom.py scan`, 568 logs, 106
+    layouts, ≈40 min under `MemoryMax=4G`) gives 0 shorter or tied routes through a town; each town's interior meets its
+    neighbour at one gate. Recipe (c) withdrawn on the static read. Recount at the resume: `MonAiUseSkill` has 171
+    calls, 159 with the skill in a register, 152 of them outside the two AIs read (the checkpoint said 154).
+  - **Tools:** `townfollow_geom.py summary` (new mode, per-town table of a scan output); `sweep_h7a.py`,
+    `rooms_sessions.py` `rec400` unchanged since the checkpoint.
+  - **Backlog:** review request
+    [2026-10-18-reverser-architect-review-h7a-lifecycle](../backlog/2026-10-18-reverser-architect-review-h7a-lifecycle.md);
+    spec-writer entry
+    [2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates](../backlog/2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates.md);
+    the `lane/rbs4` static-remainders entry closed ((1), (2) answered; (3) deferred).
+  - **Inventory:** § 2.6 entry (pending review), no row moves, totals unchanged at 1 526.
+  - **Left:** the alignment-1 `0x400` record, the `+0xC4` bit-`0x2000` writer (a breakpoint at 0x0064C08B), the
+    unfollowed 152 register-skill calls and the § 11.2 optional counts (backlog entry (3)).

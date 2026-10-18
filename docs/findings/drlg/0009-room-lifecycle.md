@@ -4,7 +4,7 @@
 > **Question:** as players move, which rooms does the server activate and release, and when; what does it keep of the
 > units of a released room; how does it re-create them when the room comes back, with which draws; and when does a
 > room spawn a wandering monster?
-> **Date:** 2026-10-17   **Plan:** 0040 (Phase 1 and 1b static; Phase 2 run:2026-10-17-lifecycle, § 11)   **Status:** open (Phase 2 under review)
+> **Date:** 2026-10-17   **Plan:** 0040 (Phase 1 and 1b static; Phase 2 run:2026-10-17-lifecycle, § 11); 0038 H7a (§ 11.3)   **Status:** open (H7a under review)
 
 ## Answer (summary)
 
@@ -624,7 +624,8 @@ classic Normal and Nightmare), checked by `tools/rooms.py check`: **0 mismatches
   the other half of the rule, `SaveMonsters` 0 without that bit, was never met. The static reading of § 11.1 (a)
   rules out the ordinary chase into town but not every way in; the case stays open.
 - The wanderer roll and spawn: 0 of 3 211 eligible gate draws passed, at an expected 1 in 32 768.
-- An expired item record (at the restore, or in the 20-frame sweep `0x00542AC0`).
+- An expired item record (at the restore, or in the sweep `0x00542AC0`, which runs every 1 500 frames, not 20: corrected
+  in § 11.3 (4), where the restore half is reached).
 - Monster save-rule branches: an owned monster or pet, `+0xD0` < 8, `+0xC4` bit 9, necromancer summons, `restore` 0.
 - Restore outcomes: a kept monster or unit, a `0x400` record, the level-108 rule, a kept player corpse, a minion
   restored without its boss.
@@ -844,6 +845,117 @@ Both then need the player to leave until the town's rooms are released (§ 11's 
 batch H7a; the open question below records it.
 (fn:sub_005A1600_UModTeleport@0x005A1600)
 
+### 11.3 Plan 0038 batch H7a: run:2026-10-17-h7a-lifecycle
+
+Three scripted sessions on slot 2 (Hell, Frigid Highlands, the `rec400` kind of `tools/rooms_sessions.py`), checked by
+`tools/rooms.py check`: **4 mismatches over 675 849 checks**, all of one kind, (5) below
+([experiments](experiments.md#run2026-10-17-h7a-lifecycle)). Also an offline geometry scan of the kept logs for
+recipe (b), and static reads for recipe (c), the expiry sweep and the mismatch. Outputs `sweep-h7a-*.txt`,
+`townfollow-geom-h7a-2026-10-18.txt` and `rooms-h7a-check.txt` under `workspace/logs/`, manifest
+`h7a-lifecycle-manifest.sha256`.
+
+**(1) The town-follow case, recipe (b): the walk across a town room. A shortfall.**
+
+- [I] **No kept layout gives a planned route through a town cell.** `tools/townfollow_geom.py scan` read the `CB`
+  collision grids of the 568 kept logs that hold a town (output `townfollow-geom-h7a-2026-10-18.txt`). They give 106
+  distinct layouts: Rogue Encampment 72 (43 with Blood Moor cells logged next to it), Lut Gholein 20 (12 with level 41),
+  Kurast Docks 4 (3), the Pandemonium Fortress 3 (2) and Harrogath 7 (4). For every pair of outside cells next to a
+  town opening within the 100-subtile window, the scan compares the shortest route with town cells allowed and the
+  shortest without, under the ground move mask `0x3C01`, 4- and 8-connected. Over 93 944 pairs (4-connected) and
+  94 124 (8-connected), **0 routes through the town are shorter, and 0 are of equal length**
+  (`SUMMARY … "shorter": 0`; per town, `townfollow_geom.py summary`, output
+  `townfollow-geom-h7a-summary-2026-10-18.txt`). Cells that no `CB` line covers count as blocked. (fn:PATH_MonTestMask@0x00648480)
+- [I] **Why: each town's interior meets its neighbour level at one gate.** In every layout with its neighbour
+  logged, the town's large free component touches the outside level through one run of opening cells, and on 21 camp
+  layouts through one more run of 1 or 2 cells: 15 or 17 cells in the Rogue Encampment (9 on 8 layouts), 35 or 69 in Lut Gholein, 30 in
+  Harrogath, 7 in the Kurast Docks and 4 in the Pandemonium Fortress. The camp's other openings (runs of 1, 48, 66 or 80 cells) lead
+  into small free pockets of 1 to 80 cells cut off from the interior. So a route through the interior enters and leaves it
+  at the gate (or at its one other small run), and the scan finds it never beats the route outside. (`townfollow_geom.py summary`, fn:PATH_MonTestMask@0x00648480)
+- [I] **So recipe (b) is a recorded shortfall.** No session can be staged from these layouts, and none was run.
+  This is a sample of the stock layouts the kept logs hold, not a bound over all map seeds. It also tests only
+  shortest routes: a planner that takes a longer route than the shortest one is not covered. § 11.2 (b)'s reading (no
+  town test on the walk) stands as `[I]`, and the town-follow case stays a named shortfall.
+  (`tools/townfollow_geom.py`, fn:PATH_MonTestMask@0x00648480, fn:sub_0064FAD0_PathRoomUpdate@0x0064FAD0)
+
+**(2) The town-follow case, recipe (c): the teleport. Withdrawn.** All of it is a code reading.
+
+- [I] **The MonTeleport do function has no town test of its own.** Monsters teleport with skill 184 (`MonTeleport`,
+  `srvdofunc` 98 → `sub_005CCC80_SkillMonTeleportDo`, the do-function table at 0x007322B0, `sweep-h7a-srvdo`). No
+  MonStats row names skill 54 (`Teleport`) in `Skill1`–`Skill8`; seven name 184: `cantor1`–`cantor6` (AI
+  `ZakarumPriest`) and `uberizual` (AI `UberIzual`) (`tools/sweep_h7a.py skills`). (fn:sub_005CCC80_SkillMonTeleportDo@0x005CCC80,
+  tbl:Skills.txt:srvdofunc, tbl:MonStats.txt:Skill1)
+- [I] **The unique mod's teleport refuses a town point.** `sub_005B11F0_UModTeleportTry` is the only reader of AI
+  control flag `0x20` (`sub_005DD220_AiCtlFlagTest`, 6 calls, `sweep-h7a-aiflag-tests`; the flag is set by
+  `sub_005DD250_AiCtlTeleportFlagSet`). It picks a point with `SpawnPosPick` (0x005B1318), takes the room at it
+  (`RoomAtSubtile`, 0x005B132E) and gives up when `RoomIsTown` is true (0x005B133C–0x005B1343). Only then does it cast
+  skill `0xB8` (184) through `sub_005DEAD0_MonAiUseSkill` (0x005B13B7). It has one caller,
+  `sub_005B13E0_MonSpcWalkCheck` (`sweep-h7a-umodtele-tree`). (fn:sub_005B11F0_UModTeleportTry@0x005B11F0,
+  fn:sub_005DD220_AiCtlFlagTest@0x005DD220, fn:sub_005DD250_AiCtlTeleportFlagSet@0x005DD250,
+  fn:sub_0054DC40_SpawnPosPick@0x0054DC40, fn:sub_00463740_RoomAtSubtile@0x00463740, fn:sub_0061AB00_RoomIsTown@0x0061AB00)
+- [I] **The Zakarum priests' teleport refuses a town point.** Their AI, `sub_005F72D0_AiZakarumPriest` (MonAI row 49,
+  table entry 0x0073CD28, `sweep-h7a-aitable-priest`), checks its target point with
+  `sub_005FD470_MonSkillTargetOk` (0x005F73BB). For skill `0xB8` that function takes the room at the point
+  (0x005FD58C) and refuses a town room (0x005FD59C–0x005FD5A3) before its collision test with mask `0x3C01`
+  (0x005FD5A9). (fn:sub_005F72D0_AiZakarumPriest@0x005F72D0, fn:sub_005FD470_MonSkillTargetOk@0x005FD470)
+- [I] **Unfollowed.** The `UberIzual` AI (row 144, function 0x005F8C80, `sweep-h7a-aitable-izual`,
+  `sweep-h7a-izual-calls`): three `MonAiUseSkill` calls with the skill in a register; `uberizual` lives only in the
+  Uber levels, which hold no town. And of the 171 calls of `MonAiUseSkill` (`sweep-h7a-useskill-pushes`), 12 push
+  an immediate skill (184 only at 0x005B13B7) and 159 a register: 4 in the priest AI, 3 in `UberIzual`, **152 in 78
+  other functions, not followed**.
+
+  So recipe (c) is withdrawn as the review's condition asked: neither AI that is read can pick a teleport point in a
+  town room. The 152 register-skill calls are a remainder of the reading, not a route found.
+
+**(3) The `0x400` drop: the alignment-2 half.**
+
+- [C] **A record with flag `0x400` and alignment 2 is dropped at the restore, with no creation and no game-seed draw.**
+  4 records, all class 522 (`act5barb1`), record flags `0x540` (`0x400`, alignment 2 = `0x100`, `0x40`), saved in mode
+  2 with `+0xD0` = 8, and saved `+0xC8` without `0x100` (so not the kept-unit path). Each of their 4 restores (levels
+  111 and 110, none in level 108) logs no creation, and the game seed after the drop equals the seed before it.
+  Creating the unit would have made `SUnitCreate`'s game-seed draw (§ 11), so a wrong reading could not match by
+  chance. The test is `0x005425F7`–`0x00542603` (flag `0x400`, then `0x100`). (run:2026-10-17-h7a-lifecycle,
+  fn:sub_005424F0_InactiveMonstersRestore@0x005424F0, `tools/sweep_h7a.py rec400`)
+- [I] The alignment-1 half (record bit `0x80`, the sign test at 0x00542609–0x0054260B) was not reached. No stock
+  monster the sessions met was saved with `+0xD0` ≥ 8 and alignment 1. (0x00542609)
+
+**(4) Item records that expired before the restore.**
+
+- [C] **An item record whose non-zero expiry has passed is dropped at the restore** (`frame > expiry`, signed): 5
+  records in 2 restores of h-barb3 at frame 19 158, with expiries 18 720 and 18 324 (four records). The checker drops
+  them from the predicted list, and no `IR0` line follows for any of them. This raises the drop half of § 6's item
+  restore, which § 11 left unreached. The expiry 0 kept is still not reached. (run:2026-10-17-h7a-lifecycle,
+  fn:sub_00541AC0_InactiveItemsRestore@0x00541AC0)
+- [I] **Correction: the expiry sweep runs every 1 500 frames, not every 20.** `GameTick` calls 0x0052D310 every
+  frame (0x0052D96C). That function computes `frame % 1500` (signed `idiv` by `0x5DC`, 0x0052D310–0x0052D320) and,
+  when it is 0, calls 0x00558B90 and the sweep 0x00542AC0 for acts 0 to 4 (0x0052D322–0x0052D33D). The sweep frees an
+  act's item records whose expiry is non-zero and below the game frame (`+0xA8`, 0x00542AF0–0x00542AFF). This
+  corrects § 11's "the 20-frame sweep `0x00542AC0`" and the spec's matching line. The run agrees: a 20-frame sweep
+  would have freed the five records above long before frame 19 158, and the 1 500-frame one has no pass between
+  their expiries and that frame (18 000 < 18 324, 19 500 > 19 158). One case only, so the period stays a reading.
+  (fn:sub_0052D870_GameTick@0x0052D870, 0x0052D310, 0x00542AC0)
+
+**(5) The 4 mismatches: record `+0xC4` bit `0x2000`.**
+
+- [C] **The monster record copies `+0xC4` late, not at the save test.** In h-barb3, 4 of 1 689 monster records (all
+  in level 111, classes 454 `minion1` and 462 `suicideminion1`) hold `+0xC4` with bit `0x2000` set that the unit's
+  `US` line (the save test, 0x00543403) did not have; every other field matches. `InactiveMonsterSave` reads `+0xC4`
+  at 0x00542498, after the state removal and the timer removal (0x005421E0–0x00542221) and the AI save. So something
+  in between set the bit on these 4 units. (run:2026-10-17-h7a-lifecycle, fn:sub_005421A0_InactiveMonsterSave@0x005421A0)
+- [I] The only immediate store of bit `0x2000` into unit `+0xC4` in the binary is 0x0064C07E–0x0064C097: the function
+  0x0064C040 sets it and links the unit into a list of its room (`+0xE0` the next pointer), unless the room fails the
+  test 0x0061AB60 or the bit is already set (78 calls; `sweep-h7a-c4bit2000`). Which call reached these 4 units is
+  not followed. A state's removal callback (the stat list's `+0x38`, called at 0x00626BE7 from `UNIT_UnlinkStatList`)
+  is a candidate. The restore does not copy the bit back: it ORs in only the record's `0x20000` and `0x3000000`
+  (§ 6). So a reimplementation loses nothing by modelling the record's `+0xC4` as the unit's at the save test, apart
+  from this bit. The checker keeps the exact comparison and reports the 4 mismatches. (0x0064C040, 0x00542498)
+
+**(6) Other counts** (run:2026-10-17-h7a-lifecycle). These are the § 11 claims again on new sessions, with no new
+branch: 772 releases, 1 063 monster records restored (exact 828, minion 179, special 52, dropped 4), 253 items
+restored, 619 unit records restored, 3 470 wanderer gate draws. One gate draw passed (h-barb, level 111). Its room
+had `+0x78` = 1 and `MonWndr` 0, so both tests refused it, and the case does not separate them. § 11's `[I]` on the
+rest of the gate stands. The save-test census of `SaveMonsters` 0 levels met 12 monsters in level 103, all carrying
+`0x2000000` and saved: the other half of that rule is still unmet.
+
 ## Data touched
 
 - tbl:Levels.txt:SaveMonsters (leveldefs `+0x94`), tbl:Levels.txt:MonWndr (`+0x2E`), Levels `+0x03` (act).
@@ -882,6 +994,10 @@ Each is a Phase 2 question (§ P2 questions in the plan log) unless it says othe
   (§ 11.2 (c)) are routes in, each with a named condition; the two recipes there are for the architect's ruling.
   *Ruled (architect, `lane/rbs4` review):* plan 0038 harness batch **H7a** (`lifecycle`, inventory § 5), recipe (b)
   after an offline geometry check, (c) only if a static read shows an AI teleport target in a town room; no owner play.
+  *H7a (§ 11.3, pending review):* recipe (c) withdrawn (both AI teleport target choices that are read refuse a town
+  room); recipe (b) a recorded shortfall after the geometry scan of the kept layouts (§ 11.3 (1)). The case stays open.
+- [L] Which call sets unit `+0xC4` bit `0x2000` between the save test and the monster record's copy (§ 11.3 (5)):
+  a state removal callback is the candidate; a logger breakpoint at 0x0064C08B during a release would name it.
 - [L] Whether a kept lifecycle log shows the minion restore's unit seed after the handlers (§ 11.1 (c)). If it does,
   the flag-0 reading of `MinionRestore` can be checked from the logs without a run.
 - [L] Which client-copy code detached the path of the client-copy units of drlg/0004's 19 (§ 8); code still to read.

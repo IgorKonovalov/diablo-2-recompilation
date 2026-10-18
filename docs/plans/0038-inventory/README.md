@@ -799,6 +799,18 @@ stand: **static 567, harness 532, c-emu awaiting a batch 0, blocked 415** (d-non
 d-owner 10, d-0032 8), **deferred 2, raised 10: 1 526.** The town-follow case and the `0x400` drop are not inventory
 rows; they go to the new harness batch **H7a** (§ 5, § 7).
 
+**H7a (`lifecycle`, run:2026-10-17-h7a-lifecycle, pending review).** H7a holds no inventory row (§ 5); its claims are
+plan 0040 Phase 2 shortfalls of [drlg/0009 § 11](../../findings/drlg/0009-room-lifecycle.md#11-phase-2-run2026-10-17-lifecycle),
+reported in [§ 11.3](../../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle):
+the `0x400` drop raised in part (the alignment-2 half; alignment 1 unreached), the expired-item drop at the restore
+raised, the expiry sweep's period corrected (1 500 frames, a reading), the town-follow case's recipe (b) a recorded
+shortfall after the geometry scan and recipe (c) withdrawn on the static read. `rooms.py check`: 4 mismatches over
+675 849 checks, one kind (the record's `+0xC4` bit `0x2000`, § 11.3 (5)).
+
+Net effect: none on the totals. After merging `main` (`c0c99f6`), which moved no inventory row, they stand: **static
+567, harness 532, c-emu awaiting a batch 0, blocked 415** (d-none 282, d-edit 73, d-sim 28, d-2c 14, d-owner 10,
+d-0032 8), **deferred 2, raised 10: 1 526.**
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
