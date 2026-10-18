@@ -254,7 +254,7 @@ TALK_STEPS = [
     (4, 148, (0x76,), lambda w: B(w, 1), [("QS", 0, 0x005923AC), ("QC", 1, 0x005923B6)], "item"),
     (6, 155, (0xB7,), lambda w: B(w, 1), [("QC", 1, 0x00595D92), ("QS", 0, 0x00595D9C)]),
     (8, 201, (0xFD,), lambda w: True, [("QS", 0, 0x00598671)]),
-    (9, None, (0x14E,), lambda w: B(w, 1), [("QS", 0, None), ("QC", 1, None)]),
+    (9, None, (0x14E,), lambda w: B(w, 1), [("QS", 0, 0x00598BFE), ("QC", 1, 0x00598C0D)]),   # in 0x00598A70
     (14, 201, (0x1BA,), lambda w: B(w, 3), [("QS", 4, 0x0059CD2F), ("QC", 3, 0x0059CD39)]),
     (14, 210, (0x1C2,), lambda w: B(w, 4), [("QS", 0, 0x0059CE06), ("QC", 4, 0x0059CE1B)]),
     (14, None, (0x1BD,), lambda w: True, [("QS", 6, 0x0059CE50)]),            # the "talked to NPC" marks,
