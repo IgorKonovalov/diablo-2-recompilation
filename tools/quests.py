@@ -266,7 +266,8 @@ TALK_STEPS = [
     (21, None, (0x272,), lambda w: B(w, 4), [("QS", 0, 0x005BB3B6), ("QC", 4, 0x005BB3C0)]),
     (24, 367, (0x298,), lambda w: True, [("QS", 0, 0x005B36C9)]),
     (25, 367, (0x2A4,), lambda w: B(w, 1), [("QS", 0, 0x005B3AF8), ("QC", 1, 0x005B3B07), ("QK", None, 0x005B3B14)]),
-    (27, 246, (0x2A8,), lambda w: B(w, 1), [("QS", 0, 0x005B6287)]),
+    (27, 246, (0x2A8,), lambda w: B(w, 1), [("QS", 0, 0x005B6287), ("QC", 1, 0x005B6296)]),
+    (26, 246, (0x4E21,), lambda w: True, [("QS", 8, 0x005B4778)]),             # no expansion test
     # word 26, Tyrael's 0x4E20 (expansion only, game +0x70 tested at 0x005B4702; no classic message has that id):
     # b9, then the Harrogath portal unless private +0x45 (0x005B45E0: a portal creation, game seed)
     (26, 367, (0x4E20,), lambda w: True, [("QS", 9, 0x005B4715)], "portal"),
