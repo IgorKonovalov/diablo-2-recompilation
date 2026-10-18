@@ -257,6 +257,12 @@ TALK_STEPS = [
     (9, None, (0x14E,), lambda w: B(w, 1), [("QS", 0, None), ("QC", 1, None)]),
     (14, 201, (0x1BA,), lambda w: B(w, 3), [("QS", 4, 0x0059CD2F), ("QC", 3, 0x0059CD39)]),
     (14, 210, (0x1C2,), lambda w: B(w, 4), [("QS", 0, 0x0059CE06), ("QC", 4, 0x0059CE1B)]),
+    (14, None, (0x1BD,), lambda w: True, [("QS", 6, 0x0059CE50)]),            # the "talked to NPC" marks,
+    (14, None, (0x1BE,), lambda w: True, [("QS", 7, 0x0059CE61)]),            # msg order as quests/0001 § 8 lists
+    (14, None, (0x1C1,), lambda w: True, [("QS", 8, 0x0059CE72)]),
+    (14, None, (0x1BC,), lambda w: True, [("QS", 9, 0x0059CE83)]),
+    (14, None, (0x1C4,), lambda w: True, [("QS", 10, 0x0059CE94)]),
+    (14, None, (0x1BF,), lambda w: True, [("QS", 11, 0x0059CEA5)]),
     (16, 253, (0x1D1, 0x1D2), lambda w: True, [("QS", 0, 0x005B6F09)]),
     (19, 255, (0x251,), lambda w: B(w, 6) and not B(w, 8), [("QS", 8, 0x005B93EE)], "item"),
     (19, 252, (0x24D,), lambda w: not B(w, 7), [("QS", 7, 0x005B94BE)], "merc"),
@@ -271,7 +277,7 @@ TALK_STEPS = [
     # word 26, Tyrael's 0x4E20 (expansion only, game +0x70 tested at 0x005B4702; no classic message has that id):
     # b9, then the Harrogath portal unless private +0x45 (0x005B45E0: a portal creation, game seed)
     (26, 367, (0x4E20,), lambda w: True, [("QS", 9, 0x005B4715)], "portal"),
-    (35, 511, (0x4E7A,), lambda w: B(w, 1), [("QK", None, 0x00586F27)]),
+    (35, 511, (0x4E7A,), lambda w: B(w, 1), [("QK", None, 0x00586F27), ("QS", 5, 0x00586F36)]),
 ]
 
 
