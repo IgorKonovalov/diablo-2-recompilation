@@ -799,7 +799,7 @@ stand: **static 567, harness 532, c-emu awaiting a batch 0, blocked 415** (d-non
 d-owner 10, d-0032 8), **deferred 2, raised 10: 1 526.** The town-follow case and the `0x400` drop are not inventory
 rows; they go to the new harness batch **H7a** (§ 5, § 7).
 
-**H7a (`lifecycle`, run:2026-10-17-h7a-lifecycle, pending review).** H7a holds no inventory row (§ 5); its claims are
+**H7a (`lifecycle`, run:2026-10-17-h7a-lifecycle, accepted with fixes at the `lane/h7a` review).** H7a holds no inventory row (§ 5); its claims are
 plan 0040 Phase 2 shortfalls of [drlg/0009 § 11](../../findings/drlg/0009-room-lifecycle.md#11-phase-2-run2026-10-17-lifecycle),
 reported in [§ 11.3](../../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle):
 the `0x400` drop raised in part (the alignment-2 half; alignment 1 unreached), the expired-item drop at the restore

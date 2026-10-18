@@ -2467,4 +2467,49 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     the `lane/rbs4` static-remainders entry closed ((1), (2) answered; (3) deferred).
   - **Inventory:** § 2.6 entry (pending review), no row moves, totals unchanged at 1 526.
   - **Left:** the alignment-1 `0x400` record, the `+0xC4` bit-`0x2000` writer (a breakpoint at 0x0064C08B), the
-    unfollowed 152 register-skill calls and the § 11.2 optional counts (backlog entry (3)).
+    unfollowed 152 register-skill calls and the § 11.2 optional counts (the closed `lane/rbs4` entry's (3)).
+- **2026-10-18 — H7a (`lifecycle`) review (architect, `lane/h7a` at `36e34dd`, `main` `c0c99f6` merged): accept with
+  fixes.** Read: [drlg/0009 § 11.3](../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle)
+  and its open questions, the [experiments record](../findings/drlg/experiments.md#run2026-10-17-h7a-lifecycle), the
+  manifest, inventory § 2.6, the seven new symbols, the spec-writer entry and the closed `lane/rbs4` entry. Anchors checked
+  in the pinned `Game.exe` with r2: 0x0052D310 (`mov ecx, 0x5DC; idiv; test edx` then 0x00558B90 and 0x00542AC0 for
+  `esi` 0..4), 0x0052D96C (the call), 0x00542AF0–0x00542AFF (expiry non-zero and `frame > expiry`), 0x00542498 (the
+  record's `+0xC4` read), 0x005425F7–0x0054260B (`0x400`, `0x100`, sign of `al`), 0x0064C07E–0x0064C08B (the
+  `0x2000` store after 0x0061AB60), 0x005B132E–0x005B133C and 0x005FD58C–0x005FD5A9 (room at the point, `RoomIsTown`,
+  then mask `0x3C01`). The geometry counts recomputed from the kept summary (pairs 93 944 and 94 124, 43 camp layouts
+  with the Blood Moor, 21 with a second run); the manifest checks 23 / 23 after fix 1; symbols: no duplicate address or
+  name; gate green.
+  - **Ruling (a), the 4 mismatches: accepted as explained.** Each differs from its save-test line by exactly `0x2000` in
+    `+0xC4` (`0x300200E`/`0x300000E`, `0x8200E`/`0x8000E`), the record reads `+0xC4` at 0x00542498 after the state and
+    timer removal, and the restore does not copy the bit back. The `[C]` covers only "the record's `+0xC4` is the unit's
+    value at 0x00542498, not at the save test"; which call sets the bit stays an open question (the breakpoint at
+    0x0064C08B is not needed before the spec update). The checker keeps the exact comparison, so a later run reports
+    them the same way.
+  - **Ruling (b), the sweep period: the correction stands, as `[I]`.** The reading is direct (one `idiv` by 1 500, one
+    `test edx`), and the run excludes the 20-frame reading (five records still present at frame 19 158 with expiries
+    18 720 and 18 324) without confirming 1 500, since no sweep pass fell between an expiry and its restore. `[I]` is
+    the right tag; the source of the old "20" was the quest-timer tick 0x00543E10 at `frame % 20` beside it in § 1.
+  - **Ruling (c), recipe (b): the shortfall is accepted on the sample.** The text already scopes it (106 kept layouts,
+    not every map seed; shortest routes only), and the per-town gate structure explains the zero rather than just
+    counting it. The town-follow case stays a named shortfall of plan 0040 Phase 2; no further harness batch for it in
+    plan 0038. Recipe (c)'s withdrawal stands on the two AIs read; the 152 register-skill calls are an unfollowed
+    remainder, not a route.
+  - **Raises accepted:** the `0x400` drop's alignment-2 half `[C]` (raised in part; no creation and an unchanged game
+    seed, which a wrong reading could not match by chance), the expired-item drop at the restore `[C]` (5 records).
+    No inventory row moves; totals unchanged at **1 526** (static 567, harness 532, c-emu 0, blocked 415, deferred 2,
+    raised 10), against `main` `c0c99f6`.
+  - **Fixes (made here):** (1) *other:* the manifest mixed two path bases (21 lines relative to `workspace/logs/`, 2
+    with a `workspace/logs/` prefix), so `sha256sum -c` failed from either directory; normalised, and the record says
+    where to run it. (2) *tool not kept:* the record cited `townfollow_geom.py` `86e98cc4…`, the scan's revision; the
+    `summary` mode behind the per-town table is `eec3d7c6…` (additions only); both now cited. (3) *omission:* the
+    `0x400` alignment-1 half and the unfollowed static counts (152 register-skill calls, 9 `MonAiPathOverride`, 19
+    `UnitTeleport`) added to drlg/0009's open questions, out of plan 0038. (4) *other:* the `lane/rbs4` entry's
+    resolution said "(3) deferred" with no home; now "out of plan 0038", kept under drlg/0009's open questions, and the
+    log's "Left" line no longer points at the closed entry. Status lines (drlg/0009 header, the town-follow open
+    question, inventory § 2.6) set to accepted.
+  - **Ledger:** 4 fixes: tool not kept 1, omission 1, other 2. Rule 11 of the reverser's review-fixes recurred
+    (fix 4) and rule 6 gains the manifest check (fix 1); both cite this review.
+  - **Backlog:** review request closed; the spec-writer entry
+    [2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates](../backlog/2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates.md)
+    released.
+  - **Next:** merge `lane/h7a`; the spec-writer updates drlg/lifecycle from the released entry.

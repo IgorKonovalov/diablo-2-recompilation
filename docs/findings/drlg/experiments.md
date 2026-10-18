@@ -1538,7 +1538,8 @@
     restore has met yet (read back from the log's `MREC` and `RL` lines), then another return.
   - **Readers** `tools/sweep_h7a.py` (`d61d3ef7…`, new): `skills` (the Skills and MonStats rows of Teleport and
     MonTeleport, the MonAI rows), `rec400` (every `0x400` record and the restore that meets it).
-  - **Geometry** `tools/townfollow_geom.py` (`86e98cc4…`, new; offline, reads `CB` lines of kept logs, no session):
+  - **Geometry** `tools/townfollow_geom.py` (`86e98cc4…` for the `scan` run, new; the `summary` mode was added afterwards,
+    `eec3d7c6…`, with the scan code unchanged; offline, reads `CB` lines of kept logs, no session):
     per act and layout, the town's free cells under mask `0x3C01`, its openings onto other levels, and for every pair
     of outside cells next to an opening within the 100-subtile window, the shortest distance with and without town
     cells (4- and 8-connected). Input list `workspace/logs/townfollow-geom-h7a-logs.txt` (568 logs with `CB` lines of a
@@ -1609,7 +1610,7 @@
     other runs (cells, pocket size): {(): 4}
   ```
 - **Raw logs:** `workspace/logs/rooms/h7a-h-barb.log`, `h7a-h-barb2.log`, `h7a-h-barb3.log`, sha256 in
-  `workspace/logs/h7a-lifecycle-manifest.sha256` (h-barb `81634178`, h-barb2 `cd912798`, h-barb3 `4a3d9b41`), with the
+  `workspace/logs/h7a-lifecycle-manifest.sha256` (paths relative to `workspace/logs/`, `sha256sum -c` from there; h-barb `81634178`, h-barb2 `cd912798`, h-barb3 `4a3d9b41`), with the
   check outputs, the geometry outputs and the static scan outputs (`sweep-h7a-*.txt`); pilot transcripts and
   screenshots beside the logs.
 - **Development outputs** (not part of the record): `dev-townfollow-geom-h7a-partial.txt` to `…partial4.txt`, the

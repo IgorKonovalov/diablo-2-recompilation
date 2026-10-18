@@ -4,7 +4,7 @@
 > **Question:** as players move, which rooms does the server activate and release, and when; what does it keep of the
 > units of a released room; how does it re-create them when the room comes back, with which draws; and when does a
 > room spawn a wandering monster?
-> **Date:** 2026-10-17   **Plan:** 0040 (Phase 1 and 1b static; Phase 2 run:2026-10-17-lifecycle, § 11); 0038 H7a (§ 11.3)   **Status:** open (H7a under review)
+> **Date:** 2026-10-17   **Plan:** 0040 (Phase 1 and 1b static; Phase 2 run:2026-10-17-lifecycle, § 11); 0038 H7a (§ 11.3)   **Status:** open (H7a accepted; open questions remain)
 
 ## Answer (summary)
 
@@ -994,8 +994,12 @@ Each is a Phase 2 question (§ P2 questions in the plan log) unless it says othe
   (§ 11.2 (c)) are routes in, each with a named condition; the two recipes there are for the architect's ruling.
   *Ruled (architect, `lane/rbs4` review):* plan 0038 harness batch **H7a** (`lifecycle`, inventory § 5), recipe (b)
   after an offline geometry check, (c) only if a static read shows an AI teleport target in a town room; no owner play.
-  *H7a (§ 11.3, pending review):* recipe (c) withdrawn (both AI teleport target choices that are read refuse a town
+  *H7a (§ 11.3, accepted at the `lane/h7a` review):* recipe (c) withdrawn (both AI teleport target choices that are read refuse a town
   room); recipe (b) a recorded shortfall after the geometry scan of the kept layouts (§ 11.3 (1)). The case stays open.
+  Unfollowed, out of plan 0038: the 152 register-skill `MonAiUseSkill` calls (§ 11.3 (2)), the 9 `MonAiPathOverride`
+  calls (§ 11.2 (a)) and the 19 `UnitTeleport` calls (§ 11.2 (c)).
+- [L] The `0x400` drop's alignment-1 half (record bit `0x80`, 0x00542609): no stock monster the H7a sessions met was
+  saved with `+0xD0` ≥ 8 and alignment 1 (§ 11.3 (3)).
 - [L] Which call sets unit `+0xC4` bit `0x2000` between the save test and the monster record's copy (§ 11.3 (5)):
   a state removal callback is the candidate; a logger breakpoint at 0x0064C08B during a release would name it.
 - [L] Whether a kept lifecycle log shows the minion restore's unit seed after the handlers (§ 11.1 (c)). If it does,
