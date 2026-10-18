@@ -16,7 +16,7 @@ What is predicted (docs/findings/quests/0001-progression.md, 0002-travel.md; eve
               the handlers that do not test +0x09 (deactivated_writes: quest 11's NPC 331 messages)
   seeds       per event kind, the steps of the game seed (gs), the quest seed (qs) and the player's unit seed (ps)
               between the entry and the exit: NPC 331 talk with the palace open (quest 11's +0x0E) one qs step;
-              NPC 266 and 377 talks one ps step; town portal open two gs steps; every other kind none (0001 § 11,
+              NPC 266 talks one ps step per run of the shared e0 handler 0x00596A90 (quest objects 25 and 30: two), NPC 377 one; town portal open two gs steps; every other kind none (0001 § 11,
               0002 § 10)
   level seed  LevelPointFind on a Levels.Position level steps the level seed once for point types 0, 5, 11 (when a
               point is found) and not for 13; a level without Position: no step (0002 § 4)
@@ -410,7 +410,7 @@ class Checker:
         self.hit("exit without entry")
 
     # ---- per event
-    def seeds_rule(self, k, e, x):
+    def seeds_rule(self, k, e, x, sub=()):
         """Predicted steps (gs, qs, ps), or None for a kind the run does not predict."""
         if k == "de":
             ev, cls = e["ev"], e.get("ucls")
@@ -420,7 +420,14 @@ class Checker:
                 return None, 0, 0
             if ev == 0 and cls == 331:
                 return 0, (1 if e.get("q11e") else 0), 0
-            if ev == 0 and cls in (266, 377):
+            if ev == 0 and cls == 266:
+                # 0x00596A90 is the e0 handler of quest objects 25 and 30 (one init, 0x00596C40, for rows 29 and 7):
+                # each run steps the player's unit seed once (RNG_Range(.., 2) or one inline step), so a talk steps
+                # it once per run of that handler in the dispatch (part 2: two)
+                n = sum(1 for t, d, dep in sub if t == "QCB" and d.get("fn") == "00596a90" and d.get("unit") == "de")
+                self.hit("NPC 266 talk: e0 handler 0x00596A90 runs %d" % n)
+                return 0, 0, n
+            if ev == 0 and cls == 377:
                 return 0, 0, 1
             return 0, 0, 0
         if k == "orb" and e.get("cnt") == 1 and x.get("cnt") == 2:
@@ -437,7 +444,7 @@ class Checker:
     def event(self, k, e, x, sub):
         self.hit("events %s" % k)
         # seeds at the entry and the exit
-        rule = self.seeds_rule(k, e, x)
+        rule = self.seeds_rule(k, e, x, sub)
         names = ("gs", "qs", "ps")
         for i, s in enumerate(names):
             if e.get(s) is None or x.get(s) is None:
