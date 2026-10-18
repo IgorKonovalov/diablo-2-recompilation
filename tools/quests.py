@@ -264,8 +264,13 @@ TALK_STEPS = [
     (14, None, (0x1C4,), lambda w: True, [("QS", 10, 0x0059CE94)]),
     (14, None, (0x1BF,), lambda w: True, [("QS", 11, 0x0059CEA5)]),
     (16, 253, (0x1D1, 0x1D2), lambda w: True, [("QS", 0, 0x005B6F09)]),
-    (19, 255, (0x251,), lambda w: B(w, 6) and not B(w, 8), [("QS", 8, 0x005B93EE)], "item"),
-    (19, 252, (0x24D,), lambda w: not B(w, 7), [("QS", 7, 0x005B94BE)], "merc"),
+    # word 19: the ring (Ormus) and the hireling (Asheara); the second of the two rewards also sets b13 and b0
+    (19, 255, (0x251,), lambda w: B(w, 6) and not B(w, 8) and not B(w, 7), [("QS", 8, 0x005B93EE)], "item"),
+    (19, 255, (0x251,), lambda w: B(w, 6) and not B(w, 8) and B(w, 7), [("QS", 8, 0x005B93EE), ("QS", 13, 0x005B943B),
+                                                                      ("QS", 0, 0x005B9445)], "item"),
+    (19, 252, (0x24D,), lambda w: not B(w, 7) and not B(w, 8), [("QS", 7, 0x005B94BE)], "merc"),
+    (19, 252, (0x24D,), lambda w: not B(w, 7) and B(w, 8), [("QS", 7, 0x005B94BE), ("QS", 13, 0x005B94E6),
+                                                           ("QS", 0, 0x005B94F0)], "merc"),
     (20, 254, (0x21A,), lambda w: B(w, 1) and not B(w, 0), [("QC", 1, 0x005BA52B), ("QS", 0, 0x005BA535),
                                                            ("QS", 13, 0x005BA53F), ("QK", None, 0x005BA54C),
                                                            ("QS", 5, 0x005BA556)], "item"),
@@ -530,14 +535,19 @@ class Checker:
 
     def talk_steps(self, e, sub):
         npc, msg, rec = e.get("p14"), e.get("p18"), e["_prec"]
+        groups = {}                      # rows of one (word, NPC, message): the writes of those that fire
         for row in TALK_STEPS:
             word, cls, msgs, cond, writes = row[:5]
             if msg not in msgs or (cls is not None and npc != cls):
                 continue
+            g = groups.setdefault(word, [False, []])
+            if cond(rec[word]):
+                g[0] = True
+                g[1] += writes
+        for word, (on, writes) in sorted(groups.items()):
             got = sorted((t, d.get("b"), int(d["ret"], 16) - 5) for t, d, n in sub
                          if t in ("QS", "QC", "QK") and d["w"] == word and d.get("rec") == self.precp
                          and int(d["ret"], 16) >= 0x00500000)
-            on = bool(cond(rec[word]))
             want = writes if on else []
             ok = len(got) == len(want) and all(g[0] == w[0] and g[1] == w[1] and (w[2] is None or g[2] == w[2])
                                                for g, w in zip(got, sorted(want, key=lambda w: (w[0], w[1] if
