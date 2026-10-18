@@ -1,0 +1,14 @@
+# plan 0042 Phase 2 part 2 (run:2026-10-18-quests2): a new character through the menu on an empty saves directory
+# (the new-character builder's join, rejoin 1: quests/0001 § 3), then into the game (Normal). Window-relative, 800x600;
+# coordinates from tooling.md § New characters and level-ups.
+click 700 150   # empty background: the first click only activates the window
+sleep 1
+click 400 307   # SINGLE PLAYER (no character: straight to Select Hero Class)
+sleep 3
+click 620 320   # Sorceress
+sleep 2
+type stubsorc
+sleep 1
+click 690 556   # OK (expansion box checked by default)
+sleep 14
+shot workspace/logs/d2run-last.png

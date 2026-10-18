@@ -286,6 +286,7 @@ class Checker:
         self.precp = None               # its record pointer (the first server write outside the game record)
         self.joinrec = None             # the join's entry: the joiner's record as loaded, and the difficulty
         self.grecp = None
+        self.qactive = {}               # quest id -> +0x09 after the join
 
     def hit(self, k, v=1):
         self.n[k] = self.n.get(k, 0) + v
@@ -530,6 +531,7 @@ class Checker:
         self.ok([(d["w"], d["b"]) for d in writes] == [(dd["word"], 15) for dd in want], "join game-record marks",
                 "want %s got %s" % ([dd["word"] for dd in want], [d["w"] for d in writes]))
         after = {q[0]: q for q in x["qobj"]}
+        self.qactive = {q[0]: q[2] for q in x["qobj"]}
         wid = {dd["id"] for dd in want}
         for dd in want:
             q = after.get(dd["id"])
@@ -679,6 +681,16 @@ class Checker:
             self.hit("summit warp %s" % ("refused" if want else "allowed"))
         else:
             self.hit("warp gate %d -> %d = %d" % (src, dst, x["eax"]))
+
+    def ev_pocreate(self, e, x, sub):
+        """PortalObjectCreate's arguments. The Tristram portal (quests/0001 § 7 word 4): the cairn stones' init on
+        class 17, with quest 4 switched off (the creator had word 4 done) or private +0x4C set, registers a period-1
+        timer that creates class 60 to level 38 with noSearch 1 at stone 17 (0x00593646-0x00593677, 0x00592D50)."""
+        self.hit("portal created class %s dest %s" % (e.get("cls"), e.get("dest")))
+        if e.get("dest") == 38:
+            q4 = self.qactive.get(4)
+            self.ok(e.get("cls") == 60 and e.get("nosearch") == 1 and q4 == 0, "Tristram portal",
+                    "class %s noSearch %s quest 4 +0x09 %s" % (e.get("cls"), e.get("nosearch"), q4))
 
     def ev_warp(self, e, x, sub):
         self.hit("warps")

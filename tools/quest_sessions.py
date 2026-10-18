@@ -209,13 +209,14 @@ class Driver:
                 pos = self.pos()
                 u = min(units, key=lambda u: math.hypot(u[3] - pos[0], u[4] - pos[1]))
             t = Tail(self.log)
-            self.click_rel(u[3] - pos[0], u[4] - pos[1], up=40)
+            self.click_rel(u[3] - pos[0], u[4] - pos[1], up=(40, 28, 55)[i % 3])
             d = t.wait(lambda tag, d: tag == "EV" and d.get("k") == "de" and d.get("ph") == 0 and d.get("ev") == 0
                        and d.get("ucls") == cls, 8)
             if not d:
+                # no NpcInteractStart, so no window opened: no Escape here (an Escape with nothing open opens the
+                # game menu, and the next click on the NPC's place can land on SAVE AND EXIT, part 2 x-talk1-b)
                 print("talk %d: no event 0 (try %d)" % (cls, i + 1), flush=True)
-                self.p.dpy.key("Escape")
-                time.sleep(0.5)
+                time.sleep(0.3)
                 continue
             time.sleep(0.6)
             t.mark()
@@ -520,6 +521,32 @@ class Driver:
         print("activate: %d activations" % done, flush=True)
         return done
 
+    def die(self, n):
+        done = 0
+        t0 = time.time()
+        while done < n and time.time() - t0 < 600:
+            hp = self.p.hp()
+            if hp is not None and hp < 0.03:
+                time.sleep(1.5)
+                hp = self.p.hp()
+                if hp is not None and hp < 0.03:
+                    t = Tail(self.log)
+                    time.sleep(2.0)
+                    self.p.dpy.key("Escape")
+                    got = t.wait(lambda tag, d: tag == "EV" and d.get("k") == "p41" and d.get("ph") == 1, 8)
+                    print("die: dead; packet 0x41 %s" % ("logged" if got else "not logged"), flush=True)
+                    done += bool(got)
+                    time.sleep(3)
+                    if done < n:
+                        self.run(["towp2", "wp:1,2"])
+                    continue
+            pos = self.pos()
+            if pos and pos[2] in TOWNS:
+                time.sleep(1)
+                continue
+            self.pilot(["explore", "--hops", "4", "--nova", "0", "--drink", "0"], timeout=90)
+        print("die: %d deaths" % done, flush=True)
+
     def pilot(self, args, timeout=900):
         return sh(PY + [os.path.join(HERE, "d2pilot.py")] + args[:1] + [self.log] + args[1:] +
                   ["--slot", str(self.slot)] + self.extra, timeout=timeout)
@@ -575,9 +602,10 @@ class Driver:
                 sec = sec or "400"
                 self.pilot(["farm", "--descend", rec, "--time", "1", "--descend-time", sec],
                            timeout=int(float(sec)) + 120)
-            elif kind == "objop":
-                c, n = rest.split(":")
-                self.pilot(["objop", "--obj-cls", c, "--times", n, "--time", "240", "--done-wait", "4"], timeout=400)
+            elif kind == "objop":             # objop:CLS:N[:PDEFS]  (PDEFS: the preset room to head for while unseen)
+                c, n, *pd = rest.split(":")
+                self.pilot(["objop", "--obj-cls", c, "--times", n, "--time", "240", "--done-wait", "4"] +
+                           (["--to-pdef", pd[0]] if pd else []), timeout=400)
             elif kind == "qlog":              # the quest log: open it, click each act tab, close it
                 self.p.dpy.key("q")
                 time.sleep(1.0)
@@ -603,6 +631,10 @@ class Driver:
                         self.pilot(["explore", "--to-pdef", defs, "--hops", "30", "--nova", "2"], timeout=300)
                         if not self.npc_units(int(cls)):
                             self.pilot(["explore", "--hops", "15", "--nova", "2"], timeout=240)
+            elif kind == "die":               # die:N  N deaths: hop among monsters without casting until the life
+                self.die(int(rest))           # orb is empty, then Escape (the client's packet 0x41: back in town)
+            elif kind == "approach":          # approach:CLS  Teleport next to object class CLS (no click)
+                self.pilot(["objop", "--obj-cls", rest, "--approach", "--time", "240", "--obj-near", "6"], timeout=320)
             elif kind == "goto":              # goto:X:Y  walk (town) or Teleport next to a sub-tile position
                 x, y = rest.split(":")
                 print("goto: %s" % self.move_near(int(x), int(y), 7), flush=True)
@@ -625,12 +657,13 @@ def run_session(args, name):
     if os.path.exists(os.path.join(ROOT, log)):
         print("%s exists; not overwriting" % log)
         return 1
-    sv = [os.path.join(d, save, save + ".d2s") for d in SAVES if os.path.exists(os.path.join(d, save, save + ".d2s"))][0]
+    sv = [os.path.join(d, save, save + ".d2s") for d in SAVES if os.path.exists(os.path.join(d, save, save + ".d2s"))][0] \
+        if save else None             # None: no save installed (a character made through the menu)
     sh(PY + [os.path.join(HERE, "saves.py"), "--slot", str(args.slot), "restore", args.tag])
     sh(PY + [os.path.join(HERE, "saves.py"), "--slot", str(args.slot), "aside", args.tag])
     launch = PY + [os.path.join(HERE, "d2run.py"), "--slot", str(args.slot), "--seed", str(seed), "--gdb",
                    "tools/gdb/quest-state.gdb", "--steps", "tools/gdb/%s.steps" % steps, "--after", "3600",
-                   "--install", args.tag, sv, "--log", log]
+                   "--log", log] + (["--install", args.tag, sv] if sv else [])
     print("$ " + " ".join(launch), flush=True)
     subprocess.Popen(launch, cwd=ROOT, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                      stderr=subprocess.DEVNULL, start_new_session=True)
@@ -641,10 +674,11 @@ def run_session(args, name):
         time.sleep(1)
     time.sleep(3)
     import shutil
-    shutil.copyfile(sv, os.path.join(ROOT, log)[:-4] + ".in.d2s")     # the installed save, beside the log
+    if sv:
+        shutil.copyfile(sv, os.path.join(ROOT, log)[:-4] + ".in.d2s")     # the installed save, beside the log
     try:
         drv = Driver(args.slot, os.path.join(ROOT, log), extra)
-        drv.save_name = save
+        drv.save_name = save or "stubsorc"
         drv.run(actions)
     finally:
         time.sleep(2)
@@ -776,9 +810,9 @@ sess("x-warps", "TravelWpTwo", "enter-normal", 4311, ["towp2", "wp:2,1", "pingpo
 
 # the Compelling Orb and the Travincal -> Durance gate (100): without qf2 (ActFourDurance wields a staff, holds qf1),
 # then with qf2 wielded (quest-orbwill)
-sess("x-orbno", "ActFourDurance", "enter-normal", 4312, ["towp2", "wp:3,8", "warp1:64", "objop:404:2", "warp1:64",
+sess("x-orbno", "ActFourDurance", "enter-normal", 4312, ["towp2", "wp:3,8", "warp1:64", "objop:404:2:654", "warp1:64",
                                                          "saveexit"])
-sess("x-orb", "QuestOrbWill", "enter-normal", 4313, ["towp2", "wp:3,8", "warp1:64", "objop:404:3", "sleep:3",
+sess("x-orb", "QuestOrbWill", "enter-normal", 4313, ["towp2", "wp:3,8", "warp1:64", "objop:404:3:654", "sleep:3",
                                                      "warp1:64", "warp1:65", "warp1:66", "saveexit"])
 # level 120's warp tiles: row 82 (to 118) and 83 (to 128), from both creators
 sess("x-summit2", "QuestSummit", "enter-normal", 4314, ["towp2", "wp:5,8", "explore:40", "warp:76:150", "warp1:82",
@@ -826,6 +860,15 @@ sess("x-tyrael", "ActFiveTyrael", "enter-normal", 4317, (["menu:tyrael:2:1", "sl
      + ["saveexit"])
 sess("x-act2", "ActTwoWarriv", "enter-normal", 4318, (["menu:warriv:2:1", "sleep:2", "menu:warriv2:2:1", "sleep:2"] * 10)
      + ["saveexit"])
+
+# death and resurrection (packet 0x41): a 24-life save in the Cold Plains
+sess("x-death", "QuestDeath", "enter-normal", 4319, ["towp2", "wp:1,2", "die:3", "saveexit"])
+
+# a new character (the builder's double join, rejoin 1), Save and Exit
+sess("x-newchar", None, "quest-newchar", 4371, ["sleep:4", "saveexit"])
+
+# the Tristram portal in a later game (quest 4 switched off by the join): the cairn stones in the Stony Field
+sess("x-tristram", "TravelWpOne", "enter-normal", 4372, ["towp2", "wp:1,3", "approach:17", "sleep:6", "saveexit"])
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
