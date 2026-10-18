@@ -182,9 +182,13 @@ class Driver:
             time.sleep(1.0)
         return False
 
-    def talk(self, cls, n):
+    def talk(self, cls, n, misses=12):
         done = 0
+        miss = 0
         for i in range(n * 3 + 120):
+            if miss >= misses:
+                print("talk %d: %d clicks with no event 0 in a row; giving up" % (cls, miss), flush=True)
+                break
             if done >= n:
                 break
             units = self.npc_units(cls)
@@ -222,8 +226,10 @@ class Driver:
                 # no NpcInteractStart, so no window opened: no Escape here (an Escape with nothing open opens the
                 # game menu, and the next click on the NPC's place can land on SAVE AND EXIT, part 2 x-talk1-b)
                 print("talk %d: no event 0 (try %d)" % (cls, i + 1), flush=True)
+                miss += 1
                 time.sleep(0.3)
                 continue
+            miss = 0
             time.sleep(0.6)
             t.mark()
             self.p.dpy.key("Escape")
