@@ -437,7 +437,9 @@ class Driver:
             pos = self.pos()
             w = self.d2p.waypoint_at(self.log, pos[2]) if pos else None
             if w:
-                if self.move_near(w[0], w[1] + 2, 4):
+                if pos and math.hypot(w[0] - pos[0], w[1] - pos[1]) <= 6:
+                    return True
+                if self.move_near(w[0], w[1] + 2, 5):
                     return True
                 continue
             if pos:
