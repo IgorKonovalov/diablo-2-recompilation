@@ -155,12 +155,12 @@ class Driver:
         return self.st.pos
 
     def npc_units(self, cls):
-        out = []
-        for tag in ("NPCQ", "NPC"):
+        for tag in ("NPCQ", "NPC"):          # NPCQ first: written every 0.5 s; the NPC line lags a walking NPC
             d = last(self.log, tag)
-            if d:
-                out += [u for u in d["n"] if u[0] == cls]
-        return out
+            out = [u for u in d["n"] if u[0] == cls] if d else []
+            if out:
+                return out
+        return []
 
     def click_rel(self, dx, dy, up=0, button=1):
         sx, sy = self.p.screen(dx, dy)
@@ -471,6 +471,55 @@ class Driver:
         else:
             print("saveexit: no save written", flush=True)
 
+    def field_wps(self):
+        """{(level, x, y): mode} of the waypoint objects logged in non-town levels (OBJP lines, last mode)."""
+        out = {}
+        with open(self.log, errors="replace") as f:
+            for line in f:
+                if line.startswith("OBJP "):
+                    try:
+                        d = json.loads(line[5:])
+                    except ValueError:
+                        continue
+                    if d.get("cls") in self.d2p.WAYPOINT_CLASSES and d.get("lid") not in TOWNS:
+                        out[(d["lid"], d["x"], d["y"])] = d.get("mode")
+        return out
+
+    def activate(self, n, minutes):
+        """Up to n waypoint activations from mode 0 within `minutes`: explore across levels (walking in a town,
+        Teleport and Nova outside) until a field waypoint in mode 0 is logged, Teleport next to it and click it until
+        its operate (EV wpop) is logged; Escape closes the menu if one opened."""
+        done, t0, tried = 0, time.time(), set()
+        while done < n and time.time() - t0 < 60 * minutes:
+            pos = self.pos()
+            todo = [(k, m) for k, m in self.field_wps().items() if m == 0 and k not in tried and pos and k[0] == pos[2]]
+            if todo and pos:
+                (lid, x, y), _ = min(todo, key=lambda km: math.hypot(km[0][1] - pos[0], km[0][2] - pos[1]))
+                tried.add((lid, x, y))
+                self.move_near(x, y + 2, 3)
+                ok = False
+                for k in range(6):
+                    pos = self.pos()
+                    t = Tail(self.log)
+                    self.click_rel(x - pos[0], y - pos[1], up=20 + 10 * (k % 3))
+                    got = t.wait(lambda tag, d: tag == "EV" and d.get("k") == "wpop" and d.get("ph") == 1, 4)
+                    if got:
+                        ok = True
+                        print("activate: level %d (%d, %d) mode %s -> %s" % (lid, x, y, got.get("omode0"),
+                                                                             got.get("omode")), flush=True)
+                        break
+                time.sleep(1.0)
+                self.p.dpy.key("Escape")
+                time.sleep(0.5)
+                done += ok
+                continue
+            if pos and pos[2] in TOWNS:
+                self.pilot(["explore", "--any-level", "--walk", "--hops", "12"], timeout=180)
+            else:
+                self.pilot(["explore", "--any-level", "--hops", "12", "--nova", "2"], timeout=240)
+        print("activate: %d activations" % done, flush=True)
+        return done
+
     def pilot(self, args, timeout=900):
         return sh(PY + [os.path.join(HERE, "d2pilot.py")] + args[:1] + [self.log] + args[1:] +
                   ["--slot", str(self.slot)] + self.extra, timeout=timeout)
@@ -537,6 +586,23 @@ class Driver:
                     time.sleep(0.8)
                 self.p.dpy.key("Escape")
                 time.sleep(0.5)
+            elif kind == "activate":          # activate:N:MINUTES  waypoint activations from mode 0 (field levels)
+                n, m = rest.split(":")
+                self.activate(int(n), float(m))
+            elif kind == "tonpc":             # tonpc:CLS:PDEFS  leave the town, go to the preset room (LvlPrest Defs,
+                cls, defs = rest.split(":")   # comma-separated) of the current field level until NPC CLS is seen
+                t0 = time.time()
+                while time.time() - t0 < 420:
+                    pos = self.pos()
+                    if self.npc_units(int(cls)):
+                        print("tonpc: %s seen" % cls, flush=True)
+                        break
+                    if pos and pos[2] in TOWNS:
+                        self.pilot(["explore", "--any-level", "--walk", "--hops", "6"], timeout=120)
+                    else:
+                        self.pilot(["explore", "--to-pdef", defs, "--hops", "30", "--nova", "2"], timeout=300)
+                        if not self.npc_units(int(cls)):
+                            self.pilot(["explore", "--hops", "15", "--nova", "2"], timeout=240)
             elif kind == "goto":              # goto:X:Y  walk (town) or Teleport next to a sub-tile position
                 x, y = rest.split(":")
                 print("goto: %s" % self.move_near(int(x), int(y), 7), flush=True)
@@ -742,6 +808,24 @@ sess("c-talk1", "QuestTalkOneC", "enter-normal", 4351, T1 + ["towp2", "wp:" + C_
 sess("c-talk2", "QuestTalkTwoC", "enter-normal", 4352, T2 + ["saveexit"], CLS)
 sess("c-talk3", "QuestTalkThreeC", "enter-normal", 4353, T3 + ["saveexit"], CLS)
 sess("c-talk4", "QuestTalkFourC", "enter-normal", 4354, T4 + ["saveexit"], CLS)
+
+# waypoint activations from mode 0: saves without the act's field waypoints (towns only for that act)
+sess("x-wpact3", "TravelWpOne", "enter-normal", 4361, ["towp2", "wp:3,1", "activate:7:14", "saveexit"])
+sess("x-wpact5", "TravelWpOne", "enter-normal", 4362, ["towp2", "wp:5,1", "activate:3:10", "saveexit"])
+sess("x-wpact2", "TravelWpOne", "enter-normal", 4363, ["towp2", "wp:2,1", "activate:3:10", "saveexit"])
+sess("nm-wpact5", "TravelWpOne", "enter-nightmare", 4364, ["towp2", "wp:5,1", "activate:3:10", "saveexit"],
+     ["--es", "30"])
+
+# NPC 266 (navi, Flavie): the Blood Moor's border preset (Def 4-7) with file index 3 (drlg/preset step note 1:
+# map seeds 45 and 9 have one)
+sess("x-navi", "TravelWpTwo", "enter-normal", 45, ["tonpc:266:4,5,6,7", "talk:266:22", "saveexit"])
+sess("x-navi9", "TravelWpTwo", "enter-normal", 9, ["tonpc:266:4,5,6,7", "talk:266:22", "saveexit"])
+
+# NpcActTravel: Tyrael's Act IV -> V travel (word 28 first set, then set) and back by waypoint; Warriv each way
+sess("x-tyrael", "ActFiveTyrael", "enter-normal", 4317, (["menu:tyrael:2:1", "sleep:3", "towp2", "wp:4,1", "sleep:2"] * 6)
+     + ["saveexit"])
+sess("x-act2", "ActTwoWarriv", "enter-normal", 4318, (["menu:warriv:2:1", "sleep:2", "menu:warriv2:2:1", "sleep:2"] * 10)
+     + ["saveexit"])
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

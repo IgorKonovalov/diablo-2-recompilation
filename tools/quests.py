@@ -200,7 +200,7 @@ def free_near(win, x0, y0, size, mask, radius, stp):
     return pos[0], pos[1], best
 
 
-def deactivated_writes(qid, ev, e):
+def deactivated_writes(qid, ev, e, word=None):
     """The bits a deactivated quest's callback still writes (0001 § 3: what keeps it inert is each handler's own
     test). Quest 11's e11 handler 0x0059AF50 tests only the NPC class (0x14B = 331) and the message: 0xBA sets word
     12 bit 7, 0xBB-0xBD bit 8, with no +0x09 test (0x0059AF84-0x0059AFC3; run:2026-10-17-quests). Every other
@@ -211,6 +211,12 @@ def deactivated_writes(qid, ev, e):
             return [(12, 7)]
         if 0xBB <= m <= 0xBD:
             return [(12, 8)]
+    if ev == 11 and word is not None and e.get("_prec") is not None:
+        out = []
+        for row in talk_fires(e.get("p14"), e.get("p18"), e["_prec"]):
+            if row[0] == word:
+                out += [(word, b) for t, b, a in row[4] if t in ("QS", "QC")]
+        return out
     return []
 
 
@@ -220,21 +226,35 @@ def deactivated_writes(qid, ev, e):
 # setter's call instruction (the QS/QC/QK line's return address minus 5); None where the finding names the function
 # only. QK = QUESTRECORD_ClearSteps (bits 2-11). The check: inside an e11 dispatch with that NPC and message, the
 # writes to that word of the player's record are exactly these, when the condition holds on the record before the
-# dispatch, and none when it does not.
+# dispatch, and none when it does not. A sixth element names a unit the step creates ("item": QUESTS_GiveItem,
+# "merc": HIRE_GiveFreeMerc): its creation draws the game seed (SUnitCreate) and the item's or hireling's own seeds, an
+# oracle here, so the game seed is not asserted across such a dispatch. The reward handlers test the word's bits, not
+# the quest's +0x09: they write the same when the join switched the quest off (part 2), so deactivated_writes takes
+# these rows too.
 B = lambda w, b: (w >> b) & 1
+
+
+def talk_fires(npc, msg, rec):
+    """The TALK_STEPS rows an e11 (npc, msg) fires on the record before it."""
+    out = []
+    for row in TALK_STEPS:
+        word, cls, msgs, cond, writes = row[:5]
+        if msg in msgs and (cls is None or npc == cls) and cond(rec[word]):
+            out.append(row)
+    return out
 TALK_STEPS = [
     (0, 155, (0, 1), lambda w: True, [("QS", 0, 0x0058FAC1)]),
     (1, 148, (0x4C,), lambda w: B(w, 1), [("QS", 0, 0x0058FF11), ("QC", 1, 0x0058FF20), ("QK", None, 0x0058FF4B)]),
-    (2, 150, (0x5C,), lambda w: B(w, 1), [("QS", 0, 0x00590AB3), ("QC", 1, 0x00590AC2)]),
-    (4, 148, (0x76,), lambda w: B(w, 1), [("QS", 0, 0x005923AC), ("QC", 1, 0x005923B6)]),
+    (2, 150, (0x5C,), lambda w: B(w, 1), [("QS", 0, 0x00590AB3), ("QC", 1, 0x00590AC2)], "merc"),
+    (4, 148, (0x76,), lambda w: B(w, 1), [("QS", 0, 0x005923AC), ("QC", 1, 0x005923B6)], "item"),
     (6, 155, (0xB7,), lambda w: B(w, 1), [("QC", 1, 0x00595D92), ("QS", 0, 0x00595D9C)]),
     (8, 201, (0xFD,), lambda w: True, [("QS", 0, 0x00598671)]),
     (9, None, (0x14E,), lambda w: B(w, 1), [("QS", 0, None), ("QC", 1, None)]),
     (14, 201, (0x1BA,), lambda w: B(w, 3), [("QS", 4, 0x0059CD2F), ("QC", 3, 0x0059CD39)]),
     (14, 210, (0x1C2,), lambda w: B(w, 4), [("QS", 0, 0x0059CE06), ("QC", 4, 0x0059CE1B)]),
     (16, 253, (0x1D1, 0x1D2), lambda w: True, [("QS", 0, 0x005B6F09)]),
-    (19, 255, (0x251,), lambda w: B(w, 6) and not B(w, 8), [("QS", 8, 0x005B93EE)]),
-    (19, 252, (0x24D,), lambda w: not B(w, 7), [("QS", 7, 0x005B94BE)]),
+    (19, 255, (0x251,), lambda w: B(w, 6) and not B(w, 8), [("QS", 8, 0x005B93EE)], "item"),
+    (19, 252, (0x24D,), lambda w: not B(w, 7), [("QS", 7, 0x005B94BE)], "merc"),
     (20, 254, (0x21A,), lambda w: B(w, 1) and not B(w, 0), [("QC", 1, 0x005BA52B)]),
     (21, None, (0x272,), lambda w: B(w, 4), [("QS", 0, 0x005BB3B6), ("QC", 4, 0x005BB3C0)]),
     (24, 367, (0x298,), lambda w: True, [("QS", 0, 0x005B36C9)]),
@@ -366,6 +386,8 @@ class Checker:
         if d["ph"] == 0:
             if d["k"] == "de" and self.prec is not None:
                 d["_prec"] = list(self.prec)
+            if d["k"] == "join":
+                d["_recw"] = len(self.recw)
             self.stack.append((d["k"], d, []))
             if d["k"] == "lpf":
                 self.lpl = None
@@ -387,6 +409,10 @@ class Checker:
         """Predicted steps (gs, qs, ps), or None for a kind the run does not predict."""
         if k == "de":
             ev, cls = e["ev"], e.get("ucls")
+            if ev == 11 and e.get("_prec") is not None and any(
+                    len(r) > 5 for r in talk_fires(e.get("p14"), e.get("p18"), e["_prec"])):
+                self.hit("de gs: a unit created by a talk step (oracle)")
+                return None, 0, 0
             if ev == 0 and cls == 331:
                 return 0, (1 if e.get("q11e") else 0), 0
             if ev == 0 and cls in (266, 377):
@@ -408,7 +434,7 @@ class Checker:
                 continue
             a, b = pseed(e[s]), pseed(x[s])
             got = nsteps(a, b, 16)
-            if rule is not None:
+            if rule is not None and rule[i] is not None:
                 want = rule[i]
                 if want == 0 and got != 0 and k in ("chlevel", "chact", "npcmove", "p49", "wptr", "portal", "warp",
                                                      "p41", "lvlportal", "arcane", "durance", "wpop") and s == "gs":
@@ -420,7 +446,7 @@ class Checker:
                         self.hit("seed unchanged %s %s" % (k, s))
             # chaining: the exit of the last event of this kind is this entry
             key = (s, k, e.get("ucls"))
-            if rule is not None and rule[i] > 0:
+            if rule is not None and rule[i] is not None and rule[i] > 0:
                 if key in self.last_exit:
                     if self.last_exit[key] == e[s]:
                         self.hit("chained pairs %s %s %s" % (k, e.get("ucls"), s))
@@ -459,16 +485,18 @@ class Checker:
         if ran_off:
             self.hit("forced e%d callbacks of deactivated quests" % ev, len(ran_off))
             words = {off[i] for i in ran_off}
-            writes = [(d["w"], d["b"]) for t, d, n in sub if t in ("QS", "QC") and d["w"] in words]
+            writes = [(d["w"], d["b"]) for t, d, n in sub if t in ("QS", "QC") and d["w"] in words
+                      and d.get("rec") != self.grecp and int(d["ret"], 16) >= 0x00500000]   # the player's record
             want = []
             for i in ran_off:
-                want += deactivated_writes(i, ev, e)
+                want += deactivated_writes(i, ev, e, off[i])
             self.ok(writes == want, "deactivated quest writes", "e%d writes %s, want %s" % (ev, writes, want))
             self.hit("deactivated quest writes (word, bit) %s" % (want,) if want else "deactivated quest no write")
 
     def talk_steps(self, e, sub):
         npc, msg, rec = e.get("p14"), e.get("p18"), e["_prec"]
-        for word, cls, msgs, cond, writes in TALK_STEPS:
+        for row in TALK_STEPS:
+            word, cls, msgs, cond, writes = row[:5]
             if msg not in msgs or (cls is not None and npc != cls):
                 continue
             got = sorted((t, d.get("b"), int(d["ret"], 16) - 5) for t, d, n in sub
@@ -487,7 +515,7 @@ class Checker:
     def ev_join(self, e, x, sub):
         rec = e["rec"]
         if self.joinrec is None:
-            self.joinrec = (list(rec), e.get("diff"), len(self.recw))
+            self.joinrec = (list(rec), e.get("diff"), e.get("_recw", len(self.recw)))
             self.prec = list(rec[:42])
             # the join's own writes (inside it) came before this exit: apply them
             for t, d, n in sub:
@@ -705,7 +733,7 @@ class Checker:
         15 when bit 1 is set; the join's logged record of the game's difficulty must equal that; the written save
         holds that record after every server write to the player's record logged in the game (QS/QC on a record that
         is not the game record and from a server call site, ret >= 0x00500000), in order, and the other two records
-        as loaded. Words 42-47 are not compared (d2s.quest_words reads 0-41)."""
+        as loaded (words 42-47 copied unchanged by the loader); all 48 words of each record are compared."""
         base = path[:-4]
         if not (os.path.exists(base + ".in.d2s") and os.path.exists(base + ".out.d2s")):
             return
@@ -717,14 +745,15 @@ class Checker:
         def load(w):
             w &= ~0x6000
             return w | 0x8000 if w & 2 else w
-        loaded = [[load(w) for w in a[dd]] for dd in range(3)]
+        loaded = [[load(w) if i < 42 else w for i, w in enumerate(a[dd])] for dd in range(3)]   # 42-47 copied
         if self.joinrec is None:
             self.ok(False, "saved words", "no join logged")
             return
         jrec, diff, at = self.joinrec
-        self.ok(jrec[:42] == loaded[diff], "loaded words (join record)", "diff %d: join %s loaded %s" % (
-            diff, [(i, hex(v)) for i, v in enumerate(jrec[:42]) if v != loaded[diff][i]],
-            [(i, hex(v)) for i, v in enumerate(loaded[diff]) if v != jrec[i]]))
+        n = min(len(jrec), len(loaded[diff]))
+        self.ok(jrec[:n] == loaded[diff][:n], "loaded words (join record)", "diff %d: join %s loaded %s" % (
+            diff, [(i, hex(v)) for i, v in enumerate(jrec[:n]) if v != loaded[diff][i]],
+            [(i, hex(v)) for i, v in enumerate(loaded[diff][:n]) if v != jrec[i]]))
         pred = [list(r) for r in loaded]
         recp = None
         nw = 0
@@ -744,13 +773,13 @@ class Checker:
                 pred[diff][d["w"]] &= ~(1 << d["b"])
             nw += 1
         for dd in range(3):
-            for w in range(42):
+            for w in range(len(b[dd])):
                 self.ok(pred[dd][w] == b[dd][w], "saved word", "diff %d word %d: predicted %04x written %04x" % (
                     dd, w, pred[dd][w], b[dd][w]))
         self.hit("saved words: sessions compared")
         self.hit("saved words: player-record writes applied", nw)
         self.hit("saved words: words changed in the game's difficulty",
-                 sum(1 for w in range(42) if b[diff][w] != loaded[diff][w]))
+                 sum(1 for w in range(len(b[diff])) if b[diff][w] != loaded[diff][w]))
 
     def run(self, paths):
         for path in paths:

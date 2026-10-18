@@ -62,8 +62,9 @@
 #          fallback, radius, step and the collision cells of the active rooms (game +0xBC + 4·act, list +0x10, next
 #          +0x7C; map +0x20 = {x0, y0, w, h, ..., +0x20 cells u16}) in the square pos ± 12 (row-major, null when no
 #          map holds the cell); FFX at its returns (0x0064DF75 0x0064E22A 0x0064E24A 0x0064E255): room (EAX), pos
-#   NPCQ   at most every 0.5 s at a PLR-rate site (0x0064EA90): the server units of the NPC classes 155, 175, 210, 264,
-#          266, 331, 367, 377, 520 (a driver helper, as vendors.py's NPC line; nothing here feeds a model)
+#   NPCQ   at most every 0.5 s at a PLR-rate site (0x0064EA90): the server units of the NPC classes in NPCQ below (part 1:
+#          155, 175, 210, 264, 266, 331, 367, 377, 520; part 2 adds the town NPCs of the talk steps; a driver helper, as
+#          vendors.py's NPC line; nothing here feeds a model)
 #   QOBJ   at the join's exit and on request: every quest object (id, act, +0x09, +0x0A, +0x0B, word +0xE0)
 #   QK     0x0065C3E0 QUESTRECORD_ClearSteps entry (stdcall rec, word; bits 2-11 cleared by BITFIELD_Clear, no QC
 #          line): ret, rec, word, the word before (part 2, run:2026-10-18-quests2)
@@ -78,7 +79,8 @@ import gdb
 def _questev_main():
     inf = gdb.selected_inferior()
     st = {"game": 0, "plr": 0, "pend": {}, "travel": 0, "t": 0.0, "lpl": {}}
-    NPCQ = {155, 175, 210, 264, 266, 331, 367, 377, 520}
+    NPCQ = {147, 148, 150, 154, 155, 175, 176, 177, 178, 198, 199, 201, 202, 210, 244, 245, 246, 252, 253, 254, 255, 257,
+            264, 265, 266, 331, 367, 377, 405, 511, 512, 513, 514, 515, 520}    # part 2: the talk-step NPCs too
     TRAVEL = {"p49", "wptr", "portal", "lvlportal", "arcane", "durance", "tp", "pocreate", "npcmove", "chlevel",
               "chact", "warp", "place", "p41", "spot"}
 
