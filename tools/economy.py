@@ -703,6 +703,13 @@ class Checker:
             if (p.get("prp") or 0) > 0:
                 self.cases["player stat 87 > 0"] += 1
             self.cases["npc %d" % p["npc"]] += 1
+            rec = self.T.npcs.get(p["npc"])
+            if rec is not None and p["m"] != 2:
+                for g in range(3):
+                    f = s32(rec, 0x10 + 4 * g)
+                    if f:
+                        on = self.M.qbit(p["qb"], f, 0) or self.M.qbit(p["qb"], f, 1)
+                        self.cases["quest group %s %s" % ("ABC"[g], "on" if on else "off")] += 1
         if want != d1["v"]:
             tr = []
             try:
@@ -730,8 +737,18 @@ class Checker:
         v = imul(tdiv(imul(L, L), 2), 15)
         want = 50000 if (v & M32) > 50000 else v
         self.n["resurrect costs"] += 1
+        self.mc_last = d1["v"]
         if want != d1["v"]:
             self.fail(path, ln, "resurrect cost L %d: model %d, game %d" % (L, want, d1["v"]))
+
+    def on_MR(self, path, ln, d0, d1, ctx):
+        """MERC_Resurrect: the gold and stash gold drop by the last MERC_ResurrectCost result."""
+        s0, s1 = d0["sn"], d1["sn"]
+        paid = s0["g"] + s0["sg"] - s1["g"] - s1["sg"]
+        self.n["resurrections"] += 1
+        want = getattr(self, "mc_last", None)
+        if want is None or paid != want:
+            self.fail(path, ln, "resurrection paid %d, last cost %r" % (paid, want))
 
     def on_PG(self, path, ln, d0, d1, ctx):
         s0, s1 = d0["sn"], d1["sn"]

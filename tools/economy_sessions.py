@@ -197,6 +197,11 @@ def last(log, tag):
 
 def launch(a):
     import subprocess
+    if os.path.exists(a.log):
+        # an older log of the same name would satisfy the PLR wait at once; keep it as a development log
+        keep = a.log[:-4] + "-dev%d.log" % int(time.time()) if a.log.endswith(".log") else a.log + ".dev"
+        os.rename(a.log, keep)
+        print("launch: kept the older log as %s" % keep, flush=True)
     tool(["saves.py", "--slot", str(a.slot), "restore", a.tag])
     tool(["saves.py", "--slot", str(a.slot), "aside", a.tag])
     out = open(a.log + ".d2run.out", "w")
@@ -271,7 +276,8 @@ def count(log, tag):
 
 def cmd_die(a, drv_factory):
     """One game: a.deaths times, walk to the town waypoint, take it to --wp (a dangerous level), stand until the
-    logger shows PLAYER_DeathGoldLoss's exit (DG1), press Escape until the player is back in a town."""
+    logger shows PLAYER_DeathGoldLoss's exit (DG1), press Escape until the player is back in a town. With
+    --resurrect [ACT:]NPC, first resurrect the dead mercenary there (MR1)."""
     launch(a)
     try:
         t0 = time.time()
@@ -282,13 +288,31 @@ def cmd_die(a, drv_factory):
             return 1
         time.sleep(3)
         drv = drv_factory()
+        if a.resurrect:
+            act, _, npc = a.resurrect.rpartition(":")
+            if act and not go_town(a, int(act)):
+                print("die: did not reach act %s" % act, flush=True)
+            rc = tool(["d2pilot.py", "--slot", str(a.slot), "npc", a.log, npc, "resurrect"], timeout=180)
+            print("die: %s resurrect rc %d" % (npc, rc), flush=True)
+            drv.dpy.key("Escape")
+            time.sleep(1.0)
         for k in range(a.deaths):
             n0 = count(a.log, "DG1")
-            tool(["d2pilot.py", "--slot", str(a.slot), "npc", a.log, "waypoint", "walk"], timeout=90)
-            tool(["d2pilot.py", "--slot", str(a.slot), "wpchain", a.log, "--chain", a.wp], timeout=25)
+            for _ in range(3):      # a walk can stall after a menu (run:2026-10-17-economy); retry from where it is
+                tool(["d2pilot.py", "--slot", str(a.slot), "npc", a.log, "waypoint", "walk"], timeout=90)
+                tool(["d2pilot.py", "--slot", str(a.slot), "wpchain", a.log, "--chain", a.wp], timeout=25)
+                if not town(a.log) or count(a.log, "DG1") > n0:
+                    break
+                drv.dpy.key("Escape")
+                time.sleep(2)
             t1 = time.time()
             while time.time() - t1 < a.wait and count(a.log, "DG1") == n0:
-                time.sleep(1)
+                if town(a.log):
+                    time.sleep(1)
+                    continue
+                # walk towards unactivated rooms until something kills the 5-hit-point character
+                tool(["d2pilot.py", "--slot", str(a.slot), "explore", a.log, "--walk", "--hops", "8"],
+                     timeout=max(5, int(a.wait - (time.time() - t1))))
             if count(a.log, "DG1") == n0:
                 print("die: no death within %d s (death %d)" % (a.wait, k + 1), flush=True)
                 break
@@ -337,6 +361,7 @@ def main(argv):
     p.add_argument("--wp", default="4,2", help="waypoint tab,row of the level to die in")
     p.add_argument("--deaths", type=int, default=2)
     p.add_argument("--wait", type=int, default=120)
+    p.add_argument("--resurrect", default="", help="[ACT:]NPC: first travel to ACT's town and resurrect the mercenary at NPC (e.g. 5:qualres)")
     a = ap.parse_args(argv)
     display = slots.display(a.slot)
     if a.cmd == "act":

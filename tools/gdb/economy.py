@@ -553,9 +553,12 @@ def _economy_main():
             try:
                 self.n += 1
                 if self.n <= self.cap:
-                    emit(self.tag, {"a": self.addr, "pc": reg("eip"), "esp0": u32(reg("esp")), "ras": ra_chain()})
+                    # the pc from the frame: "$eip" does not convert on this gdb (wow64), which cost the first
+                    # sessions their watch lines (LOGERR "Cannot convert value to long", one per hit)
+                    pc = int(gdb.selected_frame().pc()) & 0xFFFFFFFF
+                    emit(self.tag, {"a": self.addr, "pc": pc, "esp0": u32(reg("esp")), "ras": ra_chain()})
             except Exception as e:
-                gdb.write("LOGERR economy watch %r\n" % (e,))
+                gdb.write("LOGERR economy watch %s %r\n" % (self.tag, e))
             return False
 
     def set_watch():

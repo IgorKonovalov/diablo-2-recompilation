@@ -1061,11 +1061,14 @@ NPCS = {
     "qual-kehk": (515, ["talk", "hire", "cancel"], (-56, 12)),
     "nihlathak": (514, ["talk", "gamble", "cancel"], None),
     # plan 0043 Phase 2 (tools/gdb/economy.py): Cain's identify (CI1 line) and the resurrect lines (MR1); the menus
-    # are as measured in run:2026-10-17-economy, a dead mercenary adds "resurrect" after "hire"
+    # are as measured in run:2026-10-17-economy
     "cain2": (244, ["talk", "identify", "cancel"], None),
     "cain5": (265, ["talk", "identify", "cancel"], None),
     "cain6": (520, ["talk", "identify", "cancel"], None),
-    "tyrael": (367, ["talk", "resurrect", "cancel"], None),
+    # a dead mercenary puts "Resurrect <name>: <cost>" second, before the seller's own lines (Qual-Kehk's menu
+    # measured in run:2026-10-17-economy: talk, resurrect, hire, cancel); Tyrael's travel line assumed to follow it
+    "tyrael": (367, ["talk", "resurrect", "travel", "cancel"], None),
+    "qualres": (515, ["talk", "resurrect", "hire", "cancel"], (-56, 12)),   # Qual-Kehk with a dead mercenary
     "waypoint": (None, [], None),       # npc <log> waypoint walk: walk next to the town waypoint (OBJP lines)
 }
 NPC_DONE = {"trade": ("TO", lambda d: d.get("gamble") == 0), "gamble": ("GBX", None), "hire": ("HIRE", None),
