@@ -214,6 +214,36 @@ def deactivated_writes(qid, ev, e):
     return []
 
 
+# ---------------------------------------------------------------- the NPC talk steps (part 2)
+# (word, NPC class or None for any, messages, condition on the word before, [(tag, bit, call site), ...]): the e11
+# rows of the per-quest bit tables of quests/0001 § 7-§ 10 whose trigger is one NPC message. A call site is the
+# setter's call instruction (the QS/QC/QK line's return address minus 5); None where the finding names the function
+# only. QK = QUESTRECORD_ClearSteps (bits 2-11). The check: inside an e11 dispatch with that NPC and message, the
+# writes to that word of the player's record are exactly these, when the condition holds on the record before the
+# dispatch, and none when it does not.
+B = lambda w, b: (w >> b) & 1
+TALK_STEPS = [
+    (0, 155, (0, 1), lambda w: True, [("QS", 0, 0x0058FAC1)]),
+    (1, 148, (0x4C,), lambda w: B(w, 1), [("QS", 0, 0x0058FF11), ("QC", 1, 0x0058FF20), ("QK", None, 0x0058FF4B)]),
+    (2, 150, (0x5C,), lambda w: B(w, 1), [("QS", 0, 0x00590AB3), ("QC", 1, 0x00590AC2)]),
+    (4, 148, (0x76,), lambda w: B(w, 1), [("QS", 0, 0x005923AC), ("QC", 1, 0x005923B6)]),
+    (6, 155, (0xB7,), lambda w: B(w, 1), [("QC", 1, 0x00595D92), ("QS", 0, 0x00595D9C)]),
+    (8, 201, (0xFD,), lambda w: True, [("QS", 0, 0x00598671)]),
+    (9, None, (0x14E,), lambda w: B(w, 1), [("QS", 0, None), ("QC", 1, None)]),
+    (14, 201, (0x1BA,), lambda w: B(w, 3), [("QS", 4, 0x0059CD2F), ("QC", 3, 0x0059CD39)]),
+    (14, 210, (0x1C2,), lambda w: B(w, 4), [("QS", 0, 0x0059CE06), ("QC", 4, 0x0059CE1B)]),
+    (16, 253, (0x1D1, 0x1D2), lambda w: True, [("QS", 0, 0x005B6F09)]),
+    (19, 255, (0x251,), lambda w: B(w, 6) and not B(w, 8), [("QS", 8, 0x005B93EE)]),
+    (19, 252, (0x24D,), lambda w: not B(w, 7), [("QS", 7, 0x005B94BE)]),
+    (20, 254, (0x21A,), lambda w: B(w, 1) and not B(w, 0), [("QC", 1, 0x005BA52B)]),
+    (21, None, (0x272,), lambda w: B(w, 4), [("QS", 0, 0x005BB3B6), ("QC", 4, 0x005BB3C0)]),
+    (24, 367, (0x298,), lambda w: True, [("QS", 0, 0x005B36C9)]),
+    (25, 367, (0x2A4,), lambda w: B(w, 1), [("QS", 0, 0x005B3AF8), ("QC", 1, 0x005B3B07), ("QK", None, 0x005B3B14)]),
+    (27, 246, (0x2A8,), lambda w: B(w, 1), [("QS", 0, 0x005B6287)]),
+    (35, 511, (0x4E7A,), lambda w: B(w, 1), [("QK", None, 0x00586F27)]),
+]
+
+
 # ---------------------------------------------------------------- the checker
 class Checker:
     def __init__(self, data):
@@ -232,6 +262,8 @@ class Checker:
         self.qcb = None
         self.lvlseed = {}               # level id -> the last level seed seen (exit of an lpf)
         self.recw = []                  # every QS/QC line in log order (the saved-words prediction)
+        self.prec = None                # the player's record words now (the join's record plus the writes since)
+        self.precp = None               # its record pointer (the first server write outside the game record)
         self.joinrec = None             # the join's entry: the joiner's record as loaded, and the difficulty
         self.grecp = None
 
@@ -261,13 +293,34 @@ class Checker:
         for fr in self.stack:
             fr[2].append((tag, d, n))
 
+    def player_write(self, tag, d):
+        if self.prec is None or d.get("rec") == self.grecp or int(d["ret"], 16) < 0x00500000 or d["w"] >= 42:
+            return
+        if self.precp is None:
+            self.precp = d["rec"]
+        if d["rec"] != self.precp:
+            return
+        if tag == "QS":
+            self.prec[d["w"]] |= 1 << d["b"]
+        elif tag == "QC":
+            self.prec[d["w"]] &= ~(1 << d["b"])
+        else:
+            self.prec[d["w"]] &= ~0x0FFC
+
     def on_QS(self, d):
         self.note("QS", d)
         self.recw.append(("QS", d))
+        self.player_write("QS", d)
 
     def on_QC(self, d):
         self.note("QC", d)
         self.recw.append(("QC", d))
+        self.player_write("QC", d)
+
+    def on_QK(self, d):
+        self.note("QK", d)
+        self.recw.append(("QK", d))
+        self.player_write("QK", d)
 
     def on_QCB(self, d):
         self.note("QCB", d)
@@ -311,6 +364,8 @@ class Checker:
 
     def on_EV(self, d):
         if d["ph"] == 0:
+            if d["k"] == "de" and self.prec is not None:
+                d["_prec"] = list(self.prec)
             self.stack.append((d["k"], d, []))
             if d["k"] == "lpf":
                 self.lpl = None
@@ -393,6 +448,8 @@ class Checker:
             if actf == 1 and pact is not None and q[1] != pact:
                 continue
             want.append(qid)
+        if ev == 11 and e.get("_prec") is not None:
+            self.talk_steps(e, sub)
         got = [d["id"] for t, d, n in sub if t == "QCB" and n == self.depth and d["unit"] == "de"]
         self.ok(got == want, "dispatch order e%d" % ev, "want %s got %s" % (want, got))
         self.hit("callbacks run e%d" % ev, len(got))
@@ -409,10 +466,33 @@ class Checker:
             self.ok(writes == want, "deactivated quest writes", "e%d writes %s, want %s" % (ev, writes, want))
             self.hit("deactivated quest writes (word, bit) %s" % (want,) if want else "deactivated quest no write")
 
+    def talk_steps(self, e, sub):
+        npc, msg, rec = e.get("p14"), e.get("p18"), e["_prec"]
+        for word, cls, msgs, cond, writes in TALK_STEPS:
+            if msg not in msgs or (cls is not None and npc != cls):
+                continue
+            got = sorted((t, d.get("b"), int(d["ret"], 16) - 5) for t, d, n in sub
+                         if t in ("QS", "QC", "QK") and d["w"] == word and d.get("rec") == self.precp
+                         and int(d["ret"], 16) >= 0x00500000)
+            on = bool(cond(rec[word]))
+            want = writes if on else []
+            ok = len(got) == len(want) and all(g[0] == w[0] and g[1] == w[1] and (w[2] is None or g[2] == w[2])
+                                               for g, w in zip(got, sorted(want, key=lambda w: (w[0], w[1] if
+                                                                                                   w[1] is not None
+                                                                                                   else -1))))
+            self.ok(ok, "talk step w%d" % word, "npc %s msg %#x word %04x: got %s want %s" % (
+                npc, msg, rec[word], [(t, b, "%08x" % a) for t, b, a in got], want))
+            self.hit("talk step w%d npc %s msg %#x %s" % (word, npc, msg, "fires" if on else "condition off"))
+
     def ev_join(self, e, x, sub):
         rec = e["rec"]
         if self.joinrec is None:
             self.joinrec = (list(rec), e.get("diff"), len(self.recw))
+            self.prec = list(rec[:42])
+            # the join's own writes (inside it) came before this exit: apply them
+            for t, d, n in sub:
+                if t in ("QS", "QC", "QK"):
+                    self.player_write(t, d)
         first = e["ready"] == 0
         if not (first and e["rejoin"] == 0 and e["b150c"]):
             self.hit("join without the pass")
@@ -658,6 +738,8 @@ class Checker:
                 continue
             if tag == "QS":
                 pred[diff][d["w"]] |= 1 << d["b"]
+            elif tag == "QK":                # ClearSteps: bits 2-11
+                pred[diff][d["w"]] &= ~0x0FFC
             else:
                 pred[diff][d["w"]] &= ~(1 << d["b"])
             nw += 1

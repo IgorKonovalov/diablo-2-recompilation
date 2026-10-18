@@ -537,6 +537,9 @@ class Driver:
                     time.sleep(0.8)
                 self.p.dpy.key("Escape")
                 time.sleep(0.5)
+            elif kind == "goto":              # goto:X:Y  walk (town) or Teleport next to a sub-tile position
+                x, y = rest.split(":")
+                print("goto: %s" % self.move_near(int(x), int(y), 7), flush=True)
             elif kind == "saveexit":          # Save and Exit; keep the written save beside the log (<log>.out.d2s)
                 self.saveexit()
             elif kind == "key":
@@ -704,6 +707,41 @@ sess("sewer", "TravelWpTwo", "enter-normal", 4302, ["towp2", "wp:2,1", "pingpong
 Q2_A2 = "2,2 2,3 2,4 2,5 2,6 2,7 2,8 2,9 2,1 1,1 3,1 4,1 5,1 2,1"
 sess("x-warps", "TravelWpTwo", "enter-normal", 4311, ["towp2", "wp:2,1", "pingpong:20:21:100", "towp2",
                                                        "wp:" + Q2_A2.replace(" ", "_"), "saveexit"])
+
+# the Compelling Orb and the Travincal -> Durance gate (100): without qf2 (ActFourDurance wields a staff, holds qf1),
+# then with qf2 wielded (quest-orbwill)
+sess("x-orbno", "ActFourDurance", "enter-normal", 4312, ["towp2", "wp:3,8", "warp1:64", "objop:404:2", "warp1:64",
+                                                         "saveexit"])
+sess("x-orb", "QuestOrbWill", "enter-normal", 4313, ["towp2", "wp:3,8", "warp1:64", "objop:404:3", "sleep:3",
+                                                     "warp1:64", "warp1:65", "warp1:66", "saveexit"])
+# level 120's warp tiles: row 82 (to 118) and 83 (to 128), from both creators
+sess("x-summit2", "QuestSummit", "enter-normal", 4314, ["towp2", "wp:5,8", "explore:40", "warp:76:150", "warp1:82",
+                                                        "warp1:83", "saveexit"])
+sess("x-summit3", "TravelWpFive", "enter-normal", 4315, ["towp2", "wp:5,8", "explore:40", "warp:76:150", "warp1:82",
+                                                         "saveexit"])
+# Meshif both ways (the type-5 return to 40), from ActThreeMeshif (Lut Gholein; Meshif at about (5205, 5055))
+sess("x-meshif", "ActThreeMeshif", "enter-normal", 4316, (["goto:5205:5060", "menu:meshif:2:1", "sleep:3",
+                                                           "menu:meshif2:3:1", "sleep:3"] * 6) + ["saveexit"])
+
+# NPC talk steps (quests/0001 § 7-§ 10 e11 rows) from the quest-talk recipes (the same words in every difficulty)
+T1 = ["talk:148:3", "talk:150:2", "talk:155:3"]
+T2 = ["talk:201:3", "talk:176:2", "goto:5205:5060", "talk:210:2"]
+T3 = ["talk:253:2", "talk:255:2", "talk:252:2", "talk:254:2", "talk:245:2"]
+T4 = ["talk:367:4", "talk:246:2"]
+T5 = ["talk:511:2"]
+X_ALL = ("1,2 1,3 1,4 1,5 1,6 1,7 1,8 1,9 1,1 2,1 3,1 4,1 5,1 1,1").replace(" ", "_")   # Act I waypoints + towns
+for d, dn, sd in (("x", "enter-normal", 4320), ("h", "enter-hell", 4330), ("nm", "enter-nightmare", 4340)):
+    ex = ["--es", "30"] if d != "x" else []
+    sess("%s-talk1" % d, "QuestTalkOne", dn, sd + 1, T1 + ["towp2", "wp:" + X_ALL, "saveexit"], ex)
+    sess("%s-talk2" % d, "QuestTalkTwo", dn, sd + 2, T2 + ["saveexit"], ex)
+    sess("%s-talk3" % d, "QuestTalkThree", dn, sd + 3, T3 + ["saveexit"], ex)
+    sess("%s-talk4" % d, "QuestTalkFour", dn, sd + 4, T4 + ["saveexit"], ex)
+    sess("%s-talk5" % d, "QuestTalkFive", dn, sd + 5, T5 + ["saveexit"], ex)
+C_ALL = ("1,2 1,3 1,4 1,5 1,6 1,7 1,8 1,9 1,1 2,1 3,1 4,1 1,1").replace(" ", "_")
+sess("c-talk1", "QuestTalkOneC", "enter-normal", 4351, T1 + ["towp2", "wp:" + C_ALL, "saveexit"], CLS)
+sess("c-talk2", "QuestTalkTwoC", "enter-normal", 4352, T2 + ["saveexit"], CLS)
+sess("c-talk3", "QuestTalkThreeC", "enter-normal", 4353, T3 + ["saveexit"], CLS)
+sess("c-talk4", "QuestTalkFourC", "enter-normal", 4354, T4 + ["saveexit"], CLS)
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

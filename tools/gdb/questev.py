@@ -65,6 +65,8 @@
 #   NPCQ   at most every 0.5 s at a PLR-rate site (0x0064EA90): the server units of the NPC classes 155, 175, 210, 264,
 #          266, 331, 367, 377, 520 (a driver helper, as vendors.py's NPC line; nothing here feeds a model)
 #   QOBJ   at the join's exit and on request: every quest object (id, act, +0x09, +0x0A, +0x0B, word +0xE0)
+#   QK     0x0065C3E0 QUESTRECORD_ClearSteps entry (stdcall rec, word; bits 2-11 cleared by BITFIELD_Clear, no QC
+#          line): ret, rec, word, the word before (part 2, run:2026-10-18-quests2)
 #   LOGERR on a handler exception (the game goes on)
 import json
 import struct
@@ -513,6 +515,14 @@ def _questev_main():
         emit("ORBW", {"code": struct.pack("<I", v).decode("latin1") if v else 0})
 
     Bp(0x005BB9B3, on_orbw)
+
+    def on_qk():            # 0x0065C3E0 QUESTRECORD_ClearSteps (stdcall rec, word): clears bits 2-11 of the word with
+        esp = reg("esp")    # BITFIELD_Clear, not through QUESTRECORD_ClearState (so no QC line); plan 0042 P2 part 2
+        rec, w = u32(esp + 4), u32(esp + 8)
+        emit("QK", {"ret": "%08x" % u32(esp), "rec": rec, "w": w,
+                    "old": u16(u32(rec) + 2 * w) if rec and u32(rec) and w < 48 else None})
+
+    Bp(0x0065C3E0, on_qk)
 
     # ---- the real-time gates
     def on_gt49():
