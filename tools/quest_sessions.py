@@ -604,7 +604,7 @@ class Driver:
                            timeout=int(float(sec)) + 120)
             elif kind == "objop":             # objop:CLS:N[:PDEFS]  (PDEFS: the preset room to head for while unseen)
                 c, n, *pd = rest.split(":")
-                self.pilot(["objop", "--obj-cls", c, "--times", n, "--time", "240", "--done-wait", "4"] +
+                self.pilot(["objop", "--obj-cls", c, "--times", n, "--time", "240", "--done-wait", "4", "--obj-near", "6"] +
                            (["--to-pdef", pd[0]] if pd else []), timeout=400)
             elif kind == "qlog":              # the quest log: open it, click each act tab, close it
                 self.p.dpy.key("q")

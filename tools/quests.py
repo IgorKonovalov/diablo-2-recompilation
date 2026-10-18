@@ -287,6 +287,7 @@ class Checker:
         self.joinrec = None             # the join's entry: the joiner's record as loaded, and the difficulty
         self.grecp = None
         self.qactive = {}               # quest id -> +0x09 after the join
+        self.orb_broken = False         # the council quest's "orb broken" byte (word 21 / 18, the Durance gate)
 
     def hit(self, k, v=1):
         self.n[k] = self.n.get(k, 0) + v
@@ -346,6 +347,9 @@ class Checker:
     def on_QCB(self, d):
         self.note("QCB", d)
 
+    def on_ORBW(self, d):
+        self.note("ORBW", d)
+
     def on_LPL(self, d):
         self.lpl = d
 
@@ -385,7 +389,7 @@ class Checker:
 
     def on_EV(self, d):
         if d["ph"] == 0:
-            if d["k"] == "de" and self.prec is not None:
+            if d["k"] in ("de", "orb") and self.prec is not None:
                 d["_prec"] = list(self.prec)
             if d["k"] == "join":
                 d["_recw"] = len(self.recw)
@@ -419,6 +423,11 @@ class Checker:
             if ev == 0 and cls in (266, 377):
                 return 0, 0, 1
             return 0, 0, 0
+        if k == "orb" and e.get("cnt") == 1 and x.get("cnt") == 2:
+            # the completing hit kills the orb's monster (0x005DDFC0, 0x005DFEE0) and sends the records: the game
+            # seed moves inside (a monster-death oracle, not asserted)
+            self.hit("orb gs: the completing hit (oracle)")
+            return None, 0, 0
         if k == "tp":
             return None if x.get("own") and x.get("own") != e.get("own") else (0, 0, 0)   # ev_tp checks gs
         if k in ("pocreate", "join", "place", "due"):
@@ -518,6 +527,7 @@ class Checker:
         if self.joinrec is None:
             self.joinrec = (list(rec), e.get("diff"), e.get("_recw", len(self.recw)))
             self.prec = list(rec[:42])
+            self.orb_broken = bool(rec[18] & 1)          # a first joiner with word 18 bit 0 sets the byte
             # the join's own writes (inside it) came before this exit: apply them
             for t, d, n in sub:
                 if t in ("QS", "QC", "QK"):
@@ -679,6 +689,14 @@ class Checker:
             want = int(bool(q and q[0] and q[2] == 0))
             self.ok(x["eax"] == want, "summit warp gate", "120 -> %d: %s, want %d (q35 %s)" % (dst, x["eax"], want, q))
             self.hit("summit warp %s" % ("refused" if want else "allowed"))
+        elif dst == 100:
+            # 0x005BBFA0 (quests/0001 § 9 word 21): refused unless the source room's level is 101 or the council
+            # quest's "orb broken" byte is set, by the orb's completing hit or by a first joiner with word 18 bit 0
+            want = 0 if (src == 101 or self.orb_broken) else None
+            if want is not None:
+                self.ok(x["eax"] == 0, "Durance warp gate", "%d -> 100: %s, want 0 (orb broken %s)" % (
+                    src, x["eax"], self.orb_broken))
+            self.hit("warp gate %d -> 100 = %d (orb broken %s)" % (src, x["eax"], self.orb_broken))
         else:
             self.hit("warp gate %d -> %d = %d" % (src, dst, x["eax"]))
 
@@ -712,7 +730,29 @@ class Checker:
             self.hit("summit door mode %s done %d -> level %s" % (m, q[2], x.get("lid")))
 
     def ev_orb(self, e, x, sub):
+        """The Compelling Orb (OperateFn 53, 0x005BB980; quests/0001 § 9 word 18): a hit counts (private +0x38
+        grows by one) only when the object is in mode 0 and the operator's primary weapon is qf2 (the test at
+        0x005BB9B3, logged as ORBW); the second counted hit sets word 18 bits 0 and 13 (0x005BB9F7, 0x005BBA14) and,
+        when word 21 bit 4 is set, word 21 bit 0 (0x005BBA6F), and puts the object in mode 1."""
         self.hit("orb operates")
+        w = [d.get("code") for t, d, n in sub if t == "ORBW"]
+        counts = e.get("omode") == 0 and w == ["qf2 "]
+        self.ok(x.get("cnt") == e.get("cnt", 0) + (1 if counts else 0), "orb counter",
+                "mode %s weapon %s: %s -> %s" % (e.get("omode"), w, e.get("cnt"), x.get("cnt")))
+        rec = e.get("_prec")
+        got = [(d["w"], d["b"], int(d["ret"], 16) - 5) for t, d, n in sub if t in ("QS", "QC")
+               and d.get("rec") == self.precp and int(d["ret"], 16) >= 0x00500000]
+        want = []
+        if counts and x.get("cnt") == 2:
+            self.orb_broken = True
+            want = [(18, 0, 0x005BB9F7), (18, 13, 0x005BBA14)]
+            if rec is not None and B(rec[21], 4):
+                want.append((21, 0, None))
+            self.ok(x.get("omode") == 1, "orb mode after the second hit", "mode %s" % x.get("omode"))
+        self.ok(len(got) == len(want) and all(g[:2] == w_[:2] and (w_[2] is None or g[2] == w_[2])
+                                              for g, w_ in zip(got, want)),
+                "orb writes", "got %s want %s" % (got, want))
+        self.hit("orb hit %s (weapon %s, mode %s)" % ("counted" if counts else "not counted", w, e.get("omode")))
 
     def ev_p48(self, e, x, sub):
         if e.get("c4c") == 1:
