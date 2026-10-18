@@ -231,6 +231,9 @@ class Checker:
         self.lpl = None
         self.qcb = None
         self.lvlseed = {}               # level id -> the last level seed seen (exit of an lpf)
+        self.recw = []                  # every QS/QC line in log order (the saved-words prediction)
+        self.joinrec = None             # the join's entry: the joiner's record as loaded, and the difficulty
+        self.grecp = None
 
     def hit(self, k, v=1):
         self.n[k] = self.n.get(k, 0) + v
@@ -250,6 +253,7 @@ class Checker:
 
     def on_QI1(self, d):
         self.grec = d.get("grec")
+        self.grecp = d.get("grec")
 
     def note(self, tag, d):
         """A line inside open events: every open frame keeps it with the depth it came at."""
@@ -259,9 +263,11 @@ class Checker:
 
     def on_QS(self, d):
         self.note("QS", d)
+        self.recw.append(("QS", d))
 
     def on_QC(self, d):
         self.note("QC", d)
+        self.recw.append(("QC", d))
 
     def on_QCB(self, d):
         self.note("QCB", d)
@@ -405,6 +411,8 @@ class Checker:
 
     def ev_join(self, e, x, sub):
         rec = e["rec"]
+        if self.joinrec is None:
+            self.joinrec = (list(rec), e.get("diff"), len(self.recw))
         first = e["ready"] == 0
         if not (first and e["rejoin"] == 0 and e["b150c"]):
             self.hit("join without the pass")
@@ -610,6 +618,58 @@ class Checker:
         self.ok(got == want, "waypoint object seed", "class %s Sync %s mode %s: %s steps" % (
             cls, self.D.sync.get(cls), m0, got))
 
+    def save_check(self, path):
+        """The saved quest words after Save and Exit (0001 § 4, save/0002 § 1): the session's installed save
+        (<log>.in.d2s) and the written one (<log>.out.d2s), when both are kept. D2S_ReadQuests loads each of the
+        three records with QUESTRECORD_LoadBytes(flag 1) (0x0056A3B7): per word 0-41 clear bits 13 and 14, set bit
+        15 when bit 1 is set; the join's logged record of the game's difficulty must equal that; the written save
+        holds that record after every server write to the player's record logged in the game (QS/QC on a record that
+        is not the game record and from a server call site, ret >= 0x00500000), in order, and the other two records
+        as loaded. Words 42-47 are not compared (d2s.quest_words reads 0-41)."""
+        base = path[:-4]
+        if not (os.path.exists(base + ".in.d2s") and os.path.exists(base + ".out.d2s")):
+            return
+        import d2s
+        a = d2s.quest_words(open(base + ".in.d2s", "rb").read())
+        b = d2s.quest_words(open(base + ".out.d2s", "rb").read())
+        self.ln = 0
+
+        def load(w):
+            w &= ~0x6000
+            return w | 0x8000 if w & 2 else w
+        loaded = [[load(w) for w in a[dd]] for dd in range(3)]
+        if self.joinrec is None:
+            self.ok(False, "saved words", "no join logged")
+            return
+        jrec, diff, at = self.joinrec
+        self.ok(jrec[:42] == loaded[diff], "loaded words (join record)", "diff %d: join %s loaded %s" % (
+            diff, [(i, hex(v)) for i, v in enumerate(jrec[:42]) if v != loaded[diff][i]],
+            [(i, hex(v)) for i, v in enumerate(loaded[diff]) if v != jrec[i]]))
+        pred = [list(r) for r in loaded]
+        recp = None
+        nw = 0
+        for tag, d in self.recw[at:]:
+            if d.get("rec") == self.grecp or int(d["ret"], 16) < 0x00500000 or d["w"] >= 42:
+                continue
+            if recp is None:
+                recp = d["rec"]
+            if d["rec"] != recp:
+                self.hit("saved words: a write to another record (not modelled)")
+                continue
+            if tag == "QS":
+                pred[diff][d["w"]] |= 1 << d["b"]
+            else:
+                pred[diff][d["w"]] &= ~(1 << d["b"])
+            nw += 1
+        for dd in range(3):
+            for w in range(42):
+                self.ok(pred[dd][w] == b[dd][w], "saved word", "diff %d word %d: predicted %04x written %04x" % (
+                    dd, w, pred[dd][w], b[dd][w]))
+        self.hit("saved words: sessions compared")
+        self.hit("saved words: player-record writes applied", nw)
+        self.hit("saved words: words changed in the game's difficulty",
+                 sum(1 for w in range(42) if b[diff][w] != loaded[diff][w]))
+
     def run(self, paths):
         for path in paths:
             self.path = path
@@ -628,6 +688,7 @@ class Checker:
                     except (KeyError, TypeError, ValueError) as ex:
                         self.hit("line errors")
                         self.bad.append("%s:%d %s: checker error %r" % (path, self.ln, tag, ex))
+            self.save_check(path)
         return self
 
 

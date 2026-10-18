@@ -44,11 +44,37 @@ if HERE not in sys.path:
     sys.path.insert(0, HERE)
 PY = [sys.executable, "-I"]
 SAVES = [os.path.join(ROOT, "workspace", "runtime", "quest-saves-p42"),      # quest_saves.py build (plan 0042 P0)
-         os.path.join(ROOT, "workspace", "runtime", "quest-saves-p42h")]     # d2s.py build of quest-tpc (Phase 2)
+         os.path.join(ROOT, "workspace", "runtime", "quest-saves-p42h"),     # d2s.py build of quest-tpc (Phase 2)
+         os.path.join(ROOT, "workspace", "runtime", "quest-saves-p42q")]     # part 2's step recipes (build_part2)
 CLASSIC_WP = ["--wp-tab-x0", "120", "--wp-tab-w", "78"]
+TOWNS = {1, 40, 75, 103, 109}
+# a warp's place where it is fixed (Lut Gholein is one preset; part 1 and part 2 logs, WRP lines): a walking goal
+# until the warp's room is logged
+WARP_HINTS = {20: (5218, 5180), 24: (5050, 5142)}
 
 # name: (save Name, steps, seed, [actions], extra pilot args)
 SESSIONS = {}
+
+
+_SELECT = {}
+
+
+def warp_select(rec):
+    """LvlWarp row rec (the WRP lines' numbering: the excel rows without the 'Expansion' divider): (SelectX, SelectY,
+    SelectDX, SelectDY), or None when the box is empty."""
+    if not _SELECT:
+        path = os.path.join(ROOT, "workspace", "merged", "data", "global", "excel", "lvlwarp.txt")
+        rows = [ln.rstrip("\r\n").split("\t") for ln in open(path, errors="replace")]
+        h = rows[0]
+        k = 0
+        for r in rows[1:]:
+            if not r or r[0] == "Expansion":
+                continue
+            v = [int(r[h.index(c)] or 0) for c in ("SelectX", "SelectY", "SelectDX", "SelectDY")]
+            _SELECT[k] = v
+            k += 1
+    v = _SELECT.get(rec)
+    return v if v and v[2] > 0 and v[3] > 0 else None
 
 
 def sess(name, save, steps, seed, actions, extra=None):
@@ -260,7 +286,8 @@ class Driver:
         clicks = 0
         for _ in range(40):
             pos = self.pos()
-            ws = [(x, y) for (lid, r, x, y) in self.st.wrp if lid == pos[2] and r == rec] if pos else []
+            ws = [(x, y) for (lid, r, x, y) in self.st.wrp if r == rec
+              and math.hypot(x - pos[0], y - pos[1]) < 200] if pos else []    # by position: a PLR line's level lags
             if not ws:
                 print("clickwarp %d: no such warp logged in level %s" % (rec, pos[2] if pos else None), flush=True)
                 return
@@ -288,6 +315,161 @@ class Driver:
             elif clicks > 12:
                 print("clickwarp %d: no warp event after %d clicks" % (rec, clicks), flush=True)
                 return
+
+    def move_near(self, x, y, near):
+        """Get within `near` sub-tiles of (x, y): Teleport hops in the field, walking clicks along a known free path
+        in a town (Teleport does not cast there). True when there."""
+        for _ in range(45):
+            pos = self.pos()
+            if not pos:
+                time.sleep(0.5)
+                continue
+            dx, dy = x - pos[0], y - pos[1]
+            d = math.hypot(dx, dy)
+            if d <= near:
+                return True
+            if pos[2] in TOWNS:
+                tgt = self.d2p.path_near(self.st, (x, y), max(1, near - 1), 9.0)
+                if tgt is not None:
+                    self.click_rel(tgt[0] - pos[0], tgt[1] - pos[1])
+                else:
+                    k = min(9.0, d) / d
+                    self.click_rel(dx * k, dy * k)
+                time.sleep(1.0)
+            else:
+                k = min(9.0, d - near + 1) / d
+                self.p.teleport(int(round(dx * k)), int(round(dy * k)))
+                time.sleep(0.7)
+        return False
+
+    def warp_once(self, rec, clicks_max=10):
+        """Take the warp of LvlWarp row rec (WRP lines) of the current level once: get next to it, click it until a
+        warp event (EV k=warp ph=1) is logged. Returns the logged exit line, or None."""
+        pos = self.pos()
+        ws = [(x, y) for (lid, r, x, y) in self.st.wrp if r == rec
+              and math.hypot(x - pos[0], y - pos[1]) < 200] if pos else []    # by position: a PLR line's level lags
+        if not ws:
+            return None
+        wx, wy = min(ws, key=lambda w: math.hypot(w[0] - pos[0], w[1] - pos[1]))
+        for k in range(clicks_max):
+            if k % 3 == 0:
+                # a click on a warp on screen walks to it and takes it: get within 9 sub-tiles only
+                self.move_near(wx, wy, 9 if pos[2] in TOWNS else 5)
+            pos = self.pos()
+            if math.hypot(wx - pos[0], wy - pos[1]) < 4.5:
+                # standing on the warp (just arrived through its pair): step off to a free cell 6-8 sub-tiles
+                # away first; the warp does not take a click while the player stands on it
+                cand = [(pos[0] + dx, pos[1] + dy) for dx in range(-8, 9) for dy in range(-8, 9)
+                        if 6 <= math.hypot(dx, dy) <= 8 and self.d2p.standable(self.st.cells, pos[0] + dx, pos[1] + dy)
+                        and math.hypot(pos[0] + dx - wx, pos[1] + dy - wy) >= 6]
+                if cand:
+                    c = cand[(7 * k) % len(cand)]
+                    self.click_rel(c[0] - pos[0], c[1] - pos[1])
+                else:
+                    ang = 0.6 + k
+                    self.click_rel(6 * math.cos(ang), 6 * math.sin(ang))
+                time.sleep(1.3)
+                pos = self.pos()
+            t = Tail(self.log)
+            box = warp_select(rec)
+            if box and k % 2 == 0:
+                # the warp's select box (LvlWarp SelectX/Y/DX/DY, pixels from the warp's screen point): its centre
+                sx, sy = self.p.screen(wx - pos[0], wy - pos[1])
+                sx, sy = sx + box[0] + box[2] // 2, sy + box[1] + box[3] // 2
+                sx, sy = max(10, min(790, sx)), max(10, min(530, sy))
+                self.p.dpy.click(self.p.off[0] + int(sx), self.p.off[1] + int(sy), button=1, hold=0.08)
+            else:
+                self.click_rel(wx - pos[0], wy - pos[1], up=8 + 8 * (k % 3))
+            got = t.wait(lambda tag, d: tag == "EV" and d.get("k") == "warp" and d.get("ph") == 1, 7)
+            if got:
+                return got
+            print("  warp %d: click %d from (%d, %d), warp (%d, %d): no warp event" % (rec, k, pos[0], pos[1], wx, wy),
+                  flush=True)
+        return None
+
+    def pingpong(self, recs, n):
+        """n warps through a pair of warps: each time the warp of whichever row of recs is logged in the current
+        level (e.g. Lut Gholein 24 <-> harem 25)."""
+        done = 0
+        miss = 0
+        while done < n and miss < 4:
+            pos = self.pos()
+            # the row whose logged warp unit (this level) is nearest; a WRP line can carry a stale level id, so
+            # rows farther than 200 sub-tiles are not taken
+            near = sorted((math.hypot(x - pos[0], y - pos[1]), rr) for (l, rr, x, y) in self.st.wrp
+                          if rr in recs) if pos else []
+            have = [rr for dd, rr in near if dd < 200][:1]
+            if not have and pos:
+                hint = [WARP_HINTS[r] for r in recs if r in WARP_HINTS and math.hypot(
+                    WARP_HINTS[r][0] - pos[0], WARP_HINTS[r][1] - pos[1]) < 400]
+                if hint:                      # walk towards the warp's usual place until its room is logged
+                    print("pingpong: towards %s" % (hint[0],), flush=True)
+                    self.move_near(hint[0][0], hint[0][1], 12)
+                    continue
+            if not have:
+                print("pingpong: none of %s logged in level %s" % (recs, pos[2] if pos else None), flush=True)
+                time.sleep(1.0)
+                miss += 1
+                continue
+            got = self.warp_once(have[0])
+            if not got:
+                miss += 1
+                print("pingpong: warp %d not taken" % have[0], flush=True)
+                continue
+            miss = 0
+            done += 1
+            t0 = time.time()
+            while time.time() - t0 < 6:          # the PLR line follows the warp a little later
+                q = self.pos()
+                if q and q[2] == got.get("lid") and math.hypot(q[0] - got["pos"][0], q[1] - got["pos"][1]) < 30:
+                    break
+                time.sleep(0.3)
+            if done % 10 == 0:
+                print("pingpong: %d/%d" % (done, n), flush=True)
+            time.sleep(1.2)
+        return done
+
+    def towp(self):
+        """Walk to the town waypoint; while no waypoint object of the level is logged, walk towards the nearest part
+        of the town not yet walked (d2pilot.explore_step)."""
+        for _ in range(80):
+            pos = self.pos()
+            w = self.d2p.waypoint_at(self.log, pos[2]) if pos else None
+            if w:
+                if self.move_near(w[0], w[1] + 2, 4):
+                    return True
+                continue
+            if pos:
+                tgt = self.d2p.explore_step(self.st, 9)
+                if tgt:
+                    self.click_rel(tgt[0] - pos[0], tgt[1] - pos[1])
+            time.sleep(1.1)
+        print("towp: the town waypoint was not reached", flush=True)
+        return False
+
+    def saveexit(self):
+        """Escape, SAVE AND EXIT GAME (window 400, 262); wait for the save file to be rewritten, copy it to
+        <log without .log>.out.d2s (compared with the prediction by tools/quests.py check)."""
+        import shutil
+        import slots
+        name = getattr(self, "save_name", None)
+        src = os.path.join(slots.saves_dir(self.slot), (name or "") + ".d2s")
+        m0 = os.path.getmtime(src) if name and os.path.exists(src) else 0
+        self.p.dpy.key("Escape")
+        time.sleep(1.0)
+        self.p.dpy.click(self.p.off[0] + 400, self.p.off[1] + 262, button=1, hold=0.15)
+        t0 = time.time()
+        while time.time() - t0 < 20:
+            if name and os.path.exists(src) and os.path.getmtime(src) > m0:
+                break
+            time.sleep(0.5)
+        time.sleep(3)
+        if name and os.path.exists(src) and os.path.getmtime(src) > m0:
+            dst = self.log[:-4] + ".out.d2s"
+            shutil.copyfile(src, dst)
+            print("saveexit: written save kept as %s" % dst, flush=True)
+        else:
+            print("saveexit: no save written", flush=True)
 
     def pilot(self, args, timeout=900):
         return sh(PY + [os.path.join(HERE, "d2pilot.py")] + args[:1] + [self.log] + args[1:] +
@@ -327,6 +509,14 @@ class Driver:
                     time.sleep(0.8)
             elif kind == "towp":
                 self.pilot(["npc", "waypoint", "walk"], timeout=180)
+            elif kind == "towp2":             # part 2: walk to the town waypoint, exploring the town until it is logged
+                self.towp()
+            elif kind == "pingpong":          # pingpong:RECA:RECB:N  N warps through a warp pair
+                a, b, n = rest.split(":")
+                self.pingpong([int(a), int(b)], int(n))
+            elif kind == "warp1":             # warp1:REC  take that warp once (walk in a town, Teleport elsewhere)
+                got = self.warp_once(int(rest))
+                print("warp1 %s: %s" % (rest, "level %s" % got.get("lid") if got else "not taken"), flush=True)
             elif kind == "explore":
                 self.pilot(["explore", "--hops", rest, "--nova", "2"], timeout=900)
             elif kind == "walk":
@@ -347,6 +537,8 @@ class Driver:
                     time.sleep(0.8)
                 self.p.dpy.key("Escape")
                 time.sleep(0.5)
+            elif kind == "saveexit":          # Save and Exit; keep the written save beside the log (<log>.out.d2s)
+                self.saveexit()
             elif kind == "key":
                 self.p.dpy.key(rest)
                 time.sleep(0.5)
@@ -379,8 +571,12 @@ def run_session(args, name):
             break
         time.sleep(1)
     time.sleep(3)
+    import shutil
+    shutil.copyfile(sv, os.path.join(ROOT, log)[:-4] + ".in.d2s")     # the installed save, beside the log
     try:
-        Driver(args.slot, os.path.join(ROOT, log), extra).run(actions)
+        drv = Driver(args.slot, os.path.join(ROOT, log), extra)
+        drv.save_name = save
+        drv.run(actions)
     finally:
         time.sleep(2)
         sh(PY + [os.path.join(HERE, "slots.py"), "stop", str(args.slot)])
@@ -500,6 +696,14 @@ sess("h-wp5", "TravelWpFive", "enter-hell", 4225, ["walk:25", "towp", "wp:5,1_1,
                                                     "wp:5,2", "tp:4", "nearwp", "wp:5,1"], ["--es", "30"])
 sess("c-wp", "QuestPortalC", "enter-nightmare", 4224, ["walk:25", "towp", "wp:" + C_A.replace(" ", "_"), "tp:8", "nearwp",
                                                        "wp:" + C_B.replace(" ", "_")], CLS + ["--es", "30"])
+
+# ---- part 2, run:2026-10-18-quests2 (plan 0042 Phase 2 part 2)
+sess("harem", "TravelWpTwo", "enter-normal", 4301, ["towp2", "wp:2,1", "pingpong:24:25:20"])
+sess("sewer", "TravelWpTwo", "enter-normal", 4302, ["towp2", "wp:2,1", "pingpong:20:21:20"])
+
+Q2_A2 = "2,2 2,3 2,4 2,5 2,6 2,7 2,8 2,9 2,1 1,1 3,1 4,1 5,1 2,1"
+sess("x-warps", "TravelWpTwo", "enter-normal", 4311, ["towp2", "wp:2,1", "pingpong:20:21:100", "towp2",
+                                                       "wp:" + Q2_A2.replace(" ", "_"), "saveexit"])
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
