@@ -641,8 +641,10 @@ class Driver:
                             self.pilot(["explore", "--hops", "15", "--nova", "2"], timeout=240)
             elif kind == "die":               # die:N  N deaths: hop among monsters without casting until the life
                 self.die(int(rest))           # orb is empty, then Escape (the client's packet 0x41: back in town)
-            elif kind == "approach":          # approach:CLS  Teleport next to object class CLS (no click)
-                self.pilot(["objop", "--obj-cls", rest, "--approach", "--time", "240", "--obj-near", "6"], timeout=320)
+            elif kind == "approach":          # approach:CLS[:PDEFS]  Teleport next to object class CLS (no click)
+                c, *pd = rest.split(":")
+                self.pilot(["objop", "--obj-cls", c, "--approach", "--time", "240", "--obj-near", "6"] +
+                           (["--to-pdef", pd[0]] if pd else []), timeout=320)
             elif kind == "goto":              # goto:X:Y  walk (town) or Teleport next to a sub-tile position
                 x, y = rest.split(":")
                 print("goto: %s" % self.move_near(int(x), int(y), 7), flush=True)
@@ -878,6 +880,7 @@ sess("x-newchar", None, "quest-newchar", 4371, ["sleep:4", "saveexit"])
 # the Tristram portal in a later game (quest 4 switched off by the join): the cairn stones in the Stony Field
 sess("x-tristram", "TravelWpOne", "enter-normal", 4372, ["towp2", "wp:1,3", "approach:17", "sleep:6", "saveexit"])
 
+sess("x-tristram2", "TravelWpOne", "enter-normal", 4373, ["towp2", "wp:1,3", "approach:17:160", "sleep:6", "saveexit"])
 sess("x-talk3b", "QuestTalkThree", "enter-normal", 4326, ["talk:254:2", "talk:245:2", "talk:252:2", "saveexit"])
 
 if __name__ == "__main__":

@@ -289,6 +289,7 @@ class Checker:
         self.grecp = None
         self.qactive = {}               # quest id -> +0x09 after the join
         self.orb_broken = False         # the council quest's "orb broken" byte (word 21 / 18, the Durance gate)
+        self.stub_join = False          # a rejoin-1 join seen, its second call pending
 
     def hit(self, k, v=1):
         self.n[k] = self.n.get(k, 0) + v
@@ -541,6 +542,17 @@ class Checker:
                 if t in ("QS", "QC", "QK"):
                     self.player_write(t, d)
         first = e["ready"] == 0
+        # a character made from a header stub joins twice (0001 § 3, part 2): NewCharFromStub's call (0x0056A072,
+        # rejoin 1) as the first player, then the save reader's (0x005344EF, rejoin 0) as a later join
+        if e["rejoin"] == 1:
+            self.ok(first and e.get("ret") == "0056a077", "stub join, first call", "ready %s ret %s" % (
+                e["ready"], e.get("ret")))
+            self.stub_join = True
+        elif self.stub_join:
+            self.ok(not first and e.get("ret") == "005344f4", "stub join, second call", "ready %s ret %s" % (
+                e["ready"], e.get("ret")))
+            self.stub_join = False
+            self.hit("stub character: double join")
         if not (first and e["rejoin"] == 0 and e["b150c"]):
             self.hit("join without the pass")
             return
