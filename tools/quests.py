@@ -4,6 +4,7 @@
 Usage:
   python3 -I tools/quests.py check LOG [LOG ...]       # predict every checked line; exit 1 on a mismatch
   python3 -I tools/quests.py test                       # the model's self-test (also tools/test_quests.py)
+  python3 -I tools/quests.py npcplace NAME [NAME ...]   # where DS1 presets / Levels / SuperUniques place a monster
 
 What is predicted (docs/findings/quests/0001-progression.md, 0002-travel.md; every rule names its claim):
   dispatch    the callbacks of one QUESTS_DispatchEvent, in order: the quest objects in list order (object 40 down to
@@ -874,7 +875,60 @@ def cmd_check(paths):
     return 1 if mism else 0
 
 
+def cmd_npcplace(names, root=os.path.join(ROOT, "workspace", "merged")):
+    """Where the DS1 presets place monsters by name (plan 0042 P2 part 2, NPCs 266 and 377): every .ds1 under
+    <root>/data/global/tiles whose type-1 units resolve (MonPreset: the DS1's act list, the unit id as the index) to one
+    of the names, or to a place_* placeholder; and whether a LvlPrest row's File1..6 names that file. Also every
+    Levels.txt monster column and SuperUniques.txt class that names one of them."""
+    import ds1
+    exc = os.path.join(root, "data", "global", "excel")
+    mp = {}
+    for r in tsv_at(exc, "monpreset.txt"):
+        mp.setdefault(ival(r.get("Act")), []).append(r.get("Place"))
+    used = set()
+    for r in tsv_at(exc, "lvlprest.txt"):
+        for k in range(1, 7):
+            f = (r.get("File%d" % k) or "").strip().lower().replace("\\", "/")
+            if f and f != "0":
+                used.add(f)
+    want = set(names)
+    hits = 0
+    for path in ds1.ds1_files(root):
+        try:
+            f = ds1.parse(open(path, "rb").read())
+        except Exception:  # noqa: BLE001
+            continue
+        act = min(f.get("act") or 0, 4) + 1 if f.get("version", 0) >= 8 else 1
+        lst = mp.get(act, [])
+        rel = path.split(os.sep + "tiles" + os.sep, 1)[-1].replace(os.sep, "/").lower()
+        for o in f.get("objects", []):
+            if o.get("type") != 1:
+                continue
+            nm = lst[o["id"]] if 0 <= o["id"] < len(lst) else None
+            if nm in want or (nm or "").startswith("place_talking") or (nm or "").startswith("place_dumb"):
+                hits += 1
+                print("DS1 %s act %d unit %d = %s at (%d, %d); LvlPrest names it: %s" % (
+                    rel, act, o["id"], nm, o["x"], o["y"], rel in used))
+    for r in tsv_at(exc, "levels.txt"):
+        for k, v in r.items():
+            if v in want:
+                print("Levels %s %s = %s" % (r.get("Name"), k, v))
+    for r in tsv_at(exc, "superuniques.txt"):
+        if r.get("Class") in want:
+            print("SuperUniques %s Class = %s" % (r.get("Superunique"), r.get("Class")))
+    print("SUMMARY npcplace names=%s ds1_units=%d" % (",".join(sorted(want)), hits))
+    return 0
+
+
+def tsv_at(exc, name):
+    with open(os.path.join(exc, name), errors="replace") as fh:
+        rows = [ln.rstrip("\r\n").split("\t") for ln in fh]
+    return [dict(zip(rows[0], r)) for r in rows[1:] if r and r[0] and r[0] != "Expansion"]
+
+
 def main(argv):
+    if argv and argv[0] == "npcplace":
+        return cmd_npcplace(argv[1:])
     if not argv or argv[0] not in ("check", "test"):
         print(__doc__)
         return 2
