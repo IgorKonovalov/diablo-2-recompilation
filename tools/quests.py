@@ -206,6 +206,10 @@ def deactivated_writes(qid, ev, e, word=None):
     test). Quest 11's e11 handler 0x0059AF50 tests only the NPC class (0x14B = 331) and the message: 0xBA sets word
     12 bit 7, 0xBB-0xBD bit 8, with no +0x09 test (0x0059AF84-0x0059AFC3; run:2026-10-17-quests). Every other
     handler the run reached writes nothing while its quest is off."""
+    if qid == 11 and ev == 3 and e.get("p18") == 50:
+        # quest 11's e3 handler 0x0059F0C0: entering level 50 sets word 12 b8 then b7 (0x0059F155, 0x0059F173) with no
+        # +0x09 test (0x0059F136-0x0059F173)
+        return [(12, 8), (12, 7)]
     if qid == 11 and ev == 11 and e.get("p14") == 331:
         m = e.get("p18")
         if m == 0xBA:
@@ -263,6 +267,9 @@ TALK_STEPS = [
     (24, 367, (0x298,), lambda w: True, [("QS", 0, 0x005B36C9)]),
     (25, 367, (0x2A4,), lambda w: B(w, 1), [("QS", 0, 0x005B3AF8), ("QC", 1, 0x005B3B07), ("QK", None, 0x005B3B14)]),
     (27, 246, (0x2A8,), lambda w: B(w, 1), [("QS", 0, 0x005B6287)]),
+    # word 26, Tyrael's 0x4E20 (expansion only, game +0x70 tested at 0x005B4702; no classic message has that id):
+    # b9, then the Harrogath portal unless private +0x45 (0x005B45E0: a portal creation, game seed)
+    (26, 367, (0x4E20,), lambda w: True, [("QS", 9, 0x005B4715)], "portal"),
     (35, 511, (0x4E7A,), lambda w: B(w, 1), [("QK", None, 0x00586F27)]),
 ]
 
