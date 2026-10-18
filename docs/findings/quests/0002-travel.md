@@ -3,7 +3,8 @@
 > **Subsystem:** quests/travel
 > **Question:** how does a player activate and use a waypoint, change act, open and use a town portal, and where is a
 > player placed on entering a level (by waypoint, NPC, portal, warp, death or joining), with which draws?
-> **Date:** 2026-10-17   **Plan:** 0042 (Phase 1 and 1b, static)   **Status:** open (Phase 2 runs the reproduction)
+> **Date:** 2026-10-17   **Plan:** 0042 (Phase 1 and 1b, static; Phase 2 run:2026-10-17-quests, § 12)   **Status:**
+> open (Phase 2 part 1 reviewed 2026-10-17, accept with fixes; part 2 pending)
 
 Static reading of the pinned `Game.exe` (Ghidra on the lane's copy, objdump for the instruction-level reads); no game
 run. Names are ours. "Record" and "word *q*, bit *s*" are as in [save/0002](../save/0002-quest-words.md): bit `16q + s`
@@ -53,9 +54,11 @@ and writers of the act changes are also listed per quest in [quests/0001](0001-p
   refused in a town and on level 136; it first **closes the player's previous portal pair** (one per player, player
   data `+0x48`), then creates a class-59 object at the nearest free cell (`mask 0x3E01`, size 3, no fallback) of the
   player's position, and a class-59 partner in the town of that act at the town's **point type 11** (the waypoint
-  point), moved by a step-5 free search (`mask 0xBE11`). Draws, in order: game seed (field portal's unit seed), field
-  portal's unit seed (`Sync` 0, mode 1), the town's level seed (`LevelPointPick`), game seed (partner), partner's unit
-  seed (mode 2). (0x005BE290, fn:sub_0056D130_PortalObjectCreate@0x0056D130, 0x0056CF40, 0x00535430,
+  point), moved by a step-5 free search (`mask 0xBE11`). Draws, in order: game seed (field portal's unit seed), the
+  town's level seed (`LevelPointPick`), game seed (partner): three, **not five** (corrected by Phase 2, § 12: both ends
+  leave `SUnitCreate` already in mode 1 and 2, so the `SetMode` draws on their own seeds never happen; 62 opens,
+  run:2026-10-17-quests); a town room updated for the first time adds its population's game-seed draws (oracle).
+  (0x005BE290, fn:sub_0056D130_PortalObjectCreate@0x0056D130, 0x0056CF40, 0x00535430,
   fn:sub_00555230_SUnitCreate@0x00555230, data:g_ItemUseFns@0x00741790, tbl:Misc.txt:pSpell)
 - [I] **Using a portal** (`OperateFn` 15, `0x00584870`) moves the player to the partner's position (free search, mask
   `0x1C09`) and gives state 102 for 75 frames. Someone else's class-59 portal is refused unless word
@@ -313,7 +316,9 @@ NpcTravelMove(level, type) (0x0054B830)
 
 - [I] `NpcActTravel` (read in [save/0002 § 2](../save/0002-quest-words.md#2-who-writes-the-act-travel-words)) sets the
   travel word (7, 15 with 10, 28) with bits 0 and 13 only if bit 0 was clear, sends the record and the NPC flags of the
-  new act (`0x00544FA0`), and sets player data `+0x4C` = 1, which blocks operates and waypoint menus until the client's
+  new act (`0x00544FA0`), and, on that branch only (each branch tests bit 0 first and exits when it is set: word 7
+  `0x00546991`, the branch Phase 2 ran, § 12; word 15 `0x005468E4` and word 28 `0x0054684A` read, not run), sets
+  player data `+0x4C` = 1, which blocks operates and waypoint menus until the client's
   packet 0x48 clears it (§ 9). For NPC 155 it also runs quest 6's event-3 callback when word 6 bits 13 and 0 are set, and
   `0x00597310` (the Act I "Cain not rescued" mark, quests/0001). It does **not** move the player: the move has already
   happened in `NpcTravelMove`. (fn:sub_005467E0_NpcActTravel@0x005467E0)
@@ -453,7 +458,7 @@ QUESTS_WarpGate(src, dest) (0x00545B80)
 | waypoint travel | packet, tick stamp, record | new level, position | target level seed (1 step) if `Position` and type ≠ 13; level/room build if absent (oracle) | per level seed, with every other user of it (drlg/0005) |
 | NPC act change | NPC class, action, words 6/14/26, expansion | position, words, waypoint bit, `+0x4C` | destination town's level seed (1 step, type 0 or 5); act creation if absent (oracle) | per level seed |
 | Durance portal | words 22, 23, 18, level | words, waypoint 103, position | 103's level seed (1 step) | per level seed |
-| town portal open | player position, act | two objects, `+0x48` | game seed, field seed (25), town level seed (type 11), game seed, partner seed (25) | game seed: with every unit creation; level seed: per town |
+| town portal open | player position, act | two objects, `+0x48` | game seed, town level seed (type 11), game seed (Phase 2: no object-seed draw, § 12) | game seed: with every unit creation; level seed: per town |
 | portal use | owner, tick, partner, words | position, state 102, maybe frees the pair | none of its own; room activation (oracle) | — |
 | warp | warp unit, paired warp, quest gates | position, walk | none (state-42 case aside) | — |
 | death, join | act | position | town level seed (1 step) | per level seed |
@@ -474,6 +479,38 @@ QUESTS_WarpGate(src, dest) (0x00545B80)
 - Model: `ActLevelSpot` and `COLL_FindFreeNear` from a logged collision snapshot (drlg/collision boundary B), the
   point-type rules, the level-seed step, the portal pair's draws, the closing rules.
 - Oracles: the collision grid at the search (logged), `UNIT_AnimInit`'s `FrameDelta` (data).
+
+### 12. Phase 2 (run:2026-10-17-quests)
+
+The run ([experiments](experiments.md#run2026-10-17-quests)) logged every travel event at its entry and exit with
+the game seed, the quest seed and the player's unit seed, the level-point lookups with the level's seed and points,
+the free-cell searches with the collision cells around them, the portal pair's seeds and both real-time gates, and
+checked them with `tools/quests.py check`: **0 mismatches over 16 199 checks** in 11 sessions (expansion
+Normal and Nightmare, classic Normal and Nightmare, on slots 1 and 2; no Hell session; one client).
+
+| Claim (section) | Run | Result |
+|---|---|---|
+| `LevelPointPick` steps the level seed once when a point of the type or its group exists, on a `Position` level (§ 4) | type 0: 22 lookups, type 11: 334; 343 chained pairs of one level's seed | **raised** `[C]`: each one step, the point the `k`-th match (`r mod n` or `r & (n − 1)`, then the `k`-th of the matching points); the group table `0x006EED88` (`{has, group}`: type 0 group 0, types 5–9 group 1, type 11 none) (run:2026-10-17-quests) |
+| type 13 on a `Position` level draws nothing (§ 3, § 4) | 28 waypoint arrivals in towns and on 46, 74 | **raised** `[C]` (run:2026-10-17-quests) |
+| type 5 (NPC 175's return to level 1) | 11 lookups on level 1 | **raised** `[C]` as a no-draw case: level 1 holds no point of group 1, so `LevelPointPick` takes point 0 with no draw (0x0066AC90 `je` to the `n = 0` branch). A type-5 lookup that finds a point (one step) was not reached (Meshif's return to 40 is the planned case; § 12 shortfalls) (run:2026-10-17-quests) |
+| a non-`Position` level draws nothing in `LevelPointFind` (§ 4) | 1958 lookups (waypoint arrivals, `NearWarpTest`'s type-11 lookups through `0x00619E50`) | **raised** `[C]` for the waypoint-room, warp-room and middle-room branches the run reached; the `RangeB` fallback (`0x0066AE70`) never ran (run:2026-10-17-quests) |
+| **the town portal draws five times** (§ 6, § 10) | 62 portals opened | **corrected**: three draws. Game seed (the field end's `SUnitCreate`), the town's level seed (`LevelPointPick` type 11), game seed (the partner's `SUnitCreate`). Both ends come out of `SUnitCreate` already in their mode (field 1, partner 2: PU `omode`), with unit seed exactly `Init(game seed low)`, so neither the creation nor the following `SetMode` draws on the object's seed. `UNIT_SetMode` changes nothing and draws nothing when the mode is unchanged (`0x006246A9` `je 0x006246D4`). When the town end's room is first updated (`RoomUpdateOne`, 0x0056CF7D, after the type-11 `ActLevelSpot` at 0x0056CF6E), its population draws on the game seed between the two creations (41 draws in 9 of the opens): a boundary oracle (plan 0040's population) whose entry is the asserted field-end state and whose exit is logged at 0x0056CF82 by logger revisions B and C (4 opens). In the 5 opens with population draws in the revision-A logs (x-lut 3, c-tp 2) that exit was not logged and the checker derives it from the partner's seed, so those 5 do not test the partner's draw; the three-draw `[C]` rests on the other 57 opens (53 with no population draw, 4 with the oracle exit logged). The open is a one-shot function (ADR-0017): its entry seed is the input and every draw is asserted to its exit, so ADR-0014's chaining floor does not apply to it (architect review, plan 0042 P2 part 1). `[C]` (run:2026-10-17-quests) |
+| refusal in a town and on 136 (§ 6) | none in the recorded sessions | not reached (the town uses ran in development logs only); stays `[I]` (run:2026-10-17-quests) |
+| portal use: no draw of its own; owner through the town end frees both (§ 6) | 122 uses, 122 gate reads | **raised** `[C]` for "no draw": gs, qs, ps unchanged across every use; the pair freed at the owner's town-end use is seen as the next open creating a new pair; the field end of a still-open pair is not re-checked (not modelled) (run:2026-10-17-quests) |
+| both real-time gates read `GetTickCount` against the operator's own stamp (§ 3, § 9) | 61 packet-0x49 gates, 122 portal gates | **raised** `[C]` for one client: the stamp is 0 in every read (no declaration ran), the gate passes, and `pass = (stamp + 10000 or 5000) <= tick` (unsigned) on every line. A non-zero stamp is plan 0044's (run:2026-10-17-quests) |
+| waypoint operate: the record bit set on every operate (§ 2) | 61 operates | **raised** `[C]` for operates of waypoints already in mode 2 (all 61: the saves hold their waypoints, so every logged waypoint was created in mode 2); no draw on gs, qs, ps or the object's seed. The mode-0 activation (mode 0 → 1, event 1, the `Sync` 0 draw) was not reached: every waypoint met was already in mode 2, and the walk of session x-wpnew to the Spider Forest waypoint did not get there (run:2026-10-17-quests) |
+| waypoint travel: no quest test, no draw but the destination's level seed (§ 3) | 61 travels | **raised** `[C]`: gs, qs, ps unchanged; the destination lookups as in the rows above (run:2026-10-17-quests) |
+| NPC act change: moved before the words; word 7 bits 0 and 13 only when bit 0 was clear; `+0x4C` = 1 (§ 5) | 22 Warriv trips (11 east, 11 west) | **raised** `[C]` for the move-then-write order and the word; **narrowed**: `+0x4C` is set only on the branch that writes the word (word 7: `0x00546991` exits to the word-6 test at `0x005469E4` when bit 0 is set, before the `+0x4C` write at `0x005469CD`), so 10 of the 11 eastward trips left it 0 and sent no packet 0x48 (run:2026-10-17-quests) |
+| packet 0x48 clears `+0x4C` (§ 9) | 1 | **not raised**: the one logged clear (1 → 0, return 0) holds; one case, kept `[I]` (run:2026-10-17-quests) |
+| placement: `ActLevelSpot`'s search, `PlayerChangeAct`'s second search, `UnitTeleport`'s own search returns at once (§ 4) | 124 placements (81 `PlayerChangeLevel`, 32 `PlayerChangeAct`, 11 joins) | **raised** `[C]`: the player ends on the last search's cell every time (run:2026-10-17-quests) |
+| `COLL_FindFreeNear`'s ring search (§ 4) | 545 searches inside travel events, 4 of which moved the cell | raised in part `[C]`: the first-cell test and the moved cases agree; the ring order beyond the first ring and the partner-footprint search (the portal's field end, 62) were not separated by the run (no logged search needed a far ring) and stay `[I]` (run:2026-10-17-quests) |
+| the summit door on 120 (quests/0001 § 10, `OperateFn` 71, object 564, at the arrival point from 118) | 73 operates: 37 by a creator without word 39 bit 0 (`QuestSummit`), 36 with every quest done (`TravelWpFive`) | **raised** `[C]` as refused: its private "done" byte 0, mode 1 or 2 → message 0x13, the player stays on 120, for both creators (quest 35 active in the first, switched off in the second): the door does not test `+0x09` (0x0058D6A0–0x0058D711). Whether the door or level 120's own warp tiles (WRP rows 82 and 83, logged, never taken) is the way back to 118 is not separated; `QUESTS_WarpGate`'s 118/128 branch never ran and stays `[I]` (run:2026-10-17-quests) |
+| warps: no draw (§ 7) | 2 warps | **not raised**: gs, qs, ps unchanged on the 2 warps taken, under the 20-event floor, so "no draw" stays `[I]`; the 150 level entries the plan asks for were not reached (run:2026-10-17-quests) |
+
+**Shortfalls (named).** Waypoint activation from mode 0; 150 waypoint travels (61 reached); 150 warp
+entries (2); a type-5 lookup that steps (no group-1 point on the towns the run reached); the walk command's
+state-42 draw; death and resurrection (packet 0x41: no death in the run); the portal `QuestFlag` gate, the party gate
+and a non-zero stamp (two clients: plan 0044, out of scope here); the Arcane and lair portals, the Durance portal.
 
 ## Data touched
 
@@ -500,5 +537,5 @@ QUESTS_WarpGate(src, dest) (0x00545B80)
 - [L] The exact distance metrics of the operate (`0x00641530` < 51, `0x00623660`) and the warp click (< 5) were not
   read; Phase 2 logs the distances.
 - [L] The `Levels.Portal` and `Levels.Teleport` columns: no server reader found for `Portal`; `Teleport` is the skill's.
-- [L] `UNIT_AnimInit`'s draw for the portal pair (class 59, `Sync` 0) at `SUnitCreate` time, before the explicit
-  `SetMode`: whether object creation itself sets a mode that draws is not read here; Phase 2 asserts the object seeds.
+- ~~`UNIT_AnimInit`'s draw for the portal pair at `SUnitCreate` time~~: answered by the run (§ 12): no draw at
+  creation, the ends created in their modes, no draw at the `SetMode` either.
