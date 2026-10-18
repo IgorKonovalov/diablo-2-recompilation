@@ -9,7 +9,10 @@ A session is waypoint travel (`d2pilot.py farm --wp TAB,ROW --time 1`), then cyc
 looting, new rooms) and a return to the arrival point (`explore --to-rect`), so the rooms left behind are released
 (120-131 frames out of every near set) and restored on the way back. The last cycle waits WAIT seconds before its
 return, so its restores come more than 7500 frames after the saves. The "town" kind lures monsters into a town room
-(walking out of the town and back), takes the waypoint away and back, for the SaveMonsters 0 case.
+(walking out of the town and back), takes the waypoint away and back, for the SaveMonsters 0 case. The "rec400" kind
+(plan 0038 batch H7a) is the "cycle" kind plus, after every return, a visit to each room that holds a monster record
+with flag 0x400 not yet met by a restore (MREC lines read back from the log; the room's tile rect from its RL line),
+so that the restore meets the record (drlg/0009 § 6, the 0x400 drop).
 The log goes to workspace/logs/rooms/<RUN>-<SESSION>.log. The slot is stopped after each session (tools/slots.py stop
 N) and its saves directory returned to the TAG aside. Nothing here feeds a model.
 """
@@ -40,6 +43,10 @@ SESSIONS = {
     "smoke": ("ObjNova", "enter-normal", 4001, "cycle", "1,2", 1, 20, 0, []),
     "town-n": ("ObjNova", "enter-normal", 4061, "town", "1,1", 4, 40, 0, []),
     "town-n2": ("ObjNova", "enter-normal", 4062, "town", "1,1", 5, 40, 0, []),
+    # plan 0038 batch H7a: h-highlands' seed and route, with visits back to the rooms of saved 0x400 records
+    "h-barb": ("ObjNova", "enter-hell", 4031, "rec400", "5,2", 4, 45, 0, ["--es", "30"]),
+    "h-barb2": ("ObjNova", "enter-hell", 4033, "rec400", "5,2", 4, 45, 0, ["--es", "30"]),
+    "h-barb3": ("ObjNova", "enter-hell", 4034, "rec400", "5,2", 6, 50, 0, ["--es", "30"]),
 }
 
 
@@ -96,6 +103,31 @@ def blood_moor_rects(log, start, lid=2):
     return [list(cand[0][1]), list(far[-1][1])] if far[-1] != cand[0] else [list(cand[0][1])]
 
 
+def rec400_pending(log):
+    """[(record unit id, room tile rect)] of the monster records with flag 0x400 saved and not yet met by a restore
+    (an MR0 line with the same unit id after the save), oldest first."""
+    import struct
+    rect_at, pending = {}, {}
+    try:
+        for line in open(os.path.join(ROOT, log), errors="replace"):
+            tag = line[:4]
+            if tag == "RL {":
+                d = json.loads(line[3:])
+                rect_at[(5 * d["rect"][0], 5 * d["rect"][1])] = d["rect"]
+            elif tag == "MREC":
+                d = json.loads(line[5:])
+                b = bytes.fromhex(d["b"])
+                uid, fl = struct.unpack_from("<i", b, 0x0C)[0], struct.unpack_from("<I", b, 0x18)[0]
+                if fl & 0x400:
+                    pending[uid] = (d["rx"], d["ry"])
+            elif tag == "MR0 ":
+                d = json.loads(line[4:])
+                pending.pop(struct.unpack_from("<i", bytes.fromhex(d["b"]), 0x0C)[0], None)
+    except (OSError, ValueError):
+        return []
+    return [(uid, rect_at[xy]) for uid, xy in pending.items() if xy in rect_at]
+
+
 def pilot(log, slot, args, timeout, out, shots):
     return sh(PY + ["tools/d2pilot.py", args[0], log, "--slot", str(slot)] + list(args[1:]) + ["--shots", shots],
               timeout, out)
@@ -126,7 +158,7 @@ def run_session(name, slot, tag, saves, run):
     for k, a in enumerate(extra):
         if a in ("--wp-tab-x0", "--wp-tab-w"):
             wpargs += [a, extra[k + 1]]
-    if kind == "cycle":
+    if kind in ("cycle", "rec400"):
         pilot(log, slot, ["farm", "--wp", wp, "--time", "1", "--max-res", "1000"] + wpargs, 90, out, shots)
         start = last_plr(log)
         print("arrival %s" % (start,), flush=True)
@@ -141,6 +173,24 @@ def run_session(name, slot, tag, saves, run):
                       600, out,
                       shots)
             time.sleep(8)
+            if kind == "rec400":
+                visited = set()
+                for _ in range(3):
+                    todo = [p for p in rec400_pending(log) if p[0] not in visited]
+                    print("cycle %d: 0x400 records pending %s" % (c, todo), flush=True)
+                    if not todo:
+                        break
+                    uid, r = todo[0]
+                    visited.add(uid)
+                    pilot(log, slot, ["explore", "--any-level", "--to-rect", ",".join(map(str, r)), "--hops", "120",
+                                      "--nova", "1"] + extra, 600, out, shots)
+                    time.sleep(4)
+                    print("after the visit: pending %s" % (rec400_pending(log),), flush=True)
+                if start and visited:
+                    rect = "%d,%d,3,3" % (start[0] // 5 - 1, start[1] // 5 - 1)
+                    pilot(log, slot, ["explore", "--any-level", "--to-rect", rect, "--hops", "120", "--nova", "1"] +
+                          extra, 600, out, shots)
+                    time.sleep(8)
     elif kind == "town":
         # the waypoint to the town (arrival next to its waypoint), walk out into the Blood Moor (the activated level-2
         # rooms nearest to the arrival and two rooms on), wait for the monsters, walk back to the waypoint with them
