@@ -322,6 +322,16 @@ NpcTravelMove(level, type) (0x0054B830)
   packet 0x48 clears it (§ 9). For NPC 155 it also runs quest 6's event-3 callback when word 6 bits 13 and 0 are set, and
   `0x00597310` (the Act I "Cain not rescued" mark, quests/0001). It does **not** move the player: the move has already
   happened in `NpcTravelMove`. (fn:sub_005467E0_NpcActTravel@0x005467E0)
+- [C] **Tyrael's travel is the red portal, not the menu** (part 3 correction, run:2026-10-19-quests3, § 14): the stock
+  client's menu for NPC 367 in an expansion game after Diablo (word 26 b0) has only *talk* and *cancel* (screenshot
+  `workspace/logs/quests/dev-p42r-tyrael-menu.png`), so the 367 branch above is not reached by stock play (like packet 0x58 on word 33). The Act
+  IV → V travel is the operate of the Harrogath portal (object 566, `0x005B5880`, made by Tyrael's 0x4E20 talk, quests/0001
+  § 10): expansion only (`game +0x70`), word 26 b0 or b13 (else message 0x13 to the player), the player in Act IV; with
+  word 28 b0 clear it sets word 28 b0 then b13 (0x005B590F, 0x005B5919), sends the record and sets player data `+0x4C`
+  = 1 (0x005B5960, `0x0053D940`), and in every case `NpcTravelMove(109, 5)` (0x005B598F) and `0x005B4FF0` (the
+  waypoint record). The run: @@TYR@@. (0x005B5880–0x005B59A5)
+- [C] **Meshif's Act III menu** (part 3, run:2026-10-19-quests3): *talk*, *sail west*, *cancel* (no trade line; part 2's
+  driver clicked *cancel*). (screenshot `workspace/logs/quests/dev-p42r-meshif-menu.png`)
 - [I] The NPC classes are `monstats` rows; their names (Warriv, Meshif, Tyrael, …) are `[L]`.
   (fn:sub_005467E0_NpcActTravel@0x005467E0)
 - [I] `TownLevelLeave(old, new)` marks the old town's store stale (vendors) and, on arrival in town 1, 40, 75 or 109,

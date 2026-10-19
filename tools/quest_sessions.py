@@ -565,6 +565,17 @@ class Driver:
             if pos and pos[2] in TOWNS:
                 time.sleep(1)
                 continue
+            # part 3: stand still next to the nearest live monster (hopping away, part 2's explore never let them
+            # hit); explore a little only when none is logged near
+            mons = [m for m in self.st.mon if m.get("mode") not in (0, 12)] if pos else []
+            if mons:
+                m = min(mons, key=lambda m: math.hypot(m["x"] - pos[0], m["y"] - pos[1]))
+                d = math.hypot(m["x"] - pos[0], m["y"] - pos[1])
+                if d > 3:                     # one hop at a time, so the life check above comes often
+                    k = min(9.0, d - 2) / d
+                    self.p.teleport(int(round((m["x"] - pos[0]) * k)), int(round((m["y"] - pos[1]) * k)))
+                time.sleep(2.0)
+                continue
             self.pilot(["explore", "--hops", "4", "--nova", "0", "--drink", "0"], timeout=90)
         print("die: %d deaths" % done, flush=True)
 
@@ -691,8 +702,13 @@ class Driver:
                 time.sleep(0.5)
             elif kind == "clickobj":          # part 3: clickobj:CLS  walk next to the object of class CLS (OBJS
                 cls = int(rest)               # lines) and click it until its operate (OOP) is logged
-                o = last(self.log, "OBJS")
-                objs = [u for u in (o or {}).get("o", []) if u[0] == cls]
+                objs = []
+                for _ in range(20):           # the OBJS line lags a new object (Tyrael's portal) by a few seconds
+                    o = last(self.log, "OBJS")
+                    objs = [u for u in (o or {}).get("o", []) if u[0] == cls]
+                    if objs:
+                        break
+                    time.sleep(0.5)
                 pos = self.pos()
                 if not objs or not pos:
                     print("clickobj %d: not logged" % cls, flush=True)
@@ -1020,12 +1036,14 @@ sess("x-meshifw", "QuestMeshifW", "enter-normal", 4421, ["talk:264:1"] + (["menu
 # Tyrael's Act IV -> V travel (word 28 first set, then set) and back by waypoint
 # (part 3: Tyrael's menu offers only talk and cancel; the travel is the red portal, object 566, OperateFn
 # 0x005B5880, next to him)
-sess("x-tyrael3", "ActFiveTyrael", "enter-normal", 4431, ["talk:367:1"] + (["clickobj:566", "sleep:3", "towp2",
+sess("x-tyrael3", "ActFiveTyrael", "enter-normal", 4431, ["talk:367:1"] + (["clickobj:566", "sleep:3", "towp",
                                                                          "wp:4,1", "sleep:2"] * 5) + ["saveexit"])
 sess("dev-meshif", "QuestMeshifW", "enter-normal", 4429, ["talk:264:1", "sleep:600"])   # menu probe (development)
 sess("dev-tyrael", "ActFiveTyrael", "enter-normal", 4439, ["talk:367:1", "sleep:600"])   # menu probe (development)
 # death and resurrection (packet 0x41): the 24-life save in the Cold Plains
 sess("x-death3", "QuestDeath", "enter-normal", 4441, ["towp2", "wp:1,2", "die:3", "saveexit"])
+# (part 3: in Normal the Cold Plains monsters seldom hit the 24-life save; Hell kills it)
+sess("h-death3", "QuestDeath", "enter-hell", 4442, ["towp2", "wp:1,2", "die:3", "saveexit"])
 # waypoint activation from mode 0: Act I, the towns' waypoints only; walk out and explore to the Cold Plains waypoint
 for k in range(12):
     sess("x-wpact1-%d" % k, "QuestWpAct", "enter-normal", 4322 + 100 * k, ["activate:1:9", "saveexit"])

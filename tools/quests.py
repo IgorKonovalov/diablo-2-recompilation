@@ -37,6 +37,23 @@ What is predicted (docs/findings/quests/0001-progression.md, 0002-travel.md; eve
               cell (UnitTeleport's own search returns at once)
   chaining    per seed, consecutive events of one kind whose exit seed is the next one's entry seed (nothing drew
               between): counted as chained pairs per kind
+  part 3 (run:2026-10-19-quests3, logger revision E):
+  timers      TMA/TMR/TMX: a timer added at tick T with period p first runs at tick T + p + 1 (due < tick), on a frame
+              with frame mod 20 = 0; a run returning 1 removes it, otherwise due = tick + p; no timer callback but the
+              Dark Wanderer's steps the quest seed (0001 § 5, § 11)
+  eclipse     an e3 into 44/45 with quest 10 at state 0 and +0x09 1 (and not armed): one quest-seed draw, the timer
+              0x0059ED80 with period 15 + (low & 1); armed until that timer runs (0001 § 8 word 11)
+  cairn order CRN0/CRN: the bkd use fills the order once from the quest seed (step, slot low mod 5, classes 17..21 in
+              fill order); a second use draws nothing (0001 § 7 word 4)
+  Dark Wanderer the timer 0x005BD390 steps the quest seed once (DWS low = one step of the QGS seed) and tries the
+              targets low & 1 .. 7 in order (DWF) (0001 § 9 word 32)
+  Anya        e11 512 0x4EA8 with b1, not b0, not b10: the table by difficulty and clvl, RNG_Range(quest seed, count),
+              the code, then the word-37 writes at their call sites (TALK_STEPS); qs one step (0001 § 10 word 37)
+  tr2, portal the tr2 use sets word 37 b7 only with b8 set and b7 clear; the Harrogath portal (object 566) sets word
+              28 b0 then b13 only while b0 is clear, with word 26 b0 or b13 (0001 § 10, 0002 § 5)
+  entry steps e3 writes to words 12 and 37 (entering 50; 112, 113/114, old 109, 121-124 by quest 33's state);
+              "Cain lost" on the first arrival in 40 with word 4 = 0 (0001 § 7, § 8, § 10)
+  town portal refused in a town: no portal lines, no draw (0002 § 6)
 Seeds are "low:high" hex; one step is low * 0x6AC690C5 + high (tools/rng.py). Stdlib only.
 """
 import json
@@ -1107,8 +1124,8 @@ class Checker:
         if not (os.path.exists(base + ".in.d2s") and os.path.exists(base + ".out.d2s")):
             return
         import d2s
-        a = d2s.quest_words(open(base + ".in.d2s", "rb").read())
-        b = d2s.quest_words(open(base + ".out.d2s", "rb").read())
+        with open(base + ".in.d2s", "rb") as fa, open(base + ".out.d2s", "rb") as fb:
+            a, b = d2s.quest_words(fa.read()), d2s.quest_words(fb.read())
         self.ln = 0
 
         def load(w):

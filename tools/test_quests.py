@@ -315,6 +315,51 @@ class Part3Rules(unittest.TestCase):
         self.assertEqual(c.bad, [])
         self.assertEqual(c.n["town portal in a town refused checks"], 1)
 
+    def test_entry_steps_word37(self):
+        g = s((1, 2))
+        q33 = lambda st, b11=0: [[33, 4, 1, 1, b11, 37, st]]
+        e, x = de(3, 0, 113, g, qobj=q33(1), slots=[33], lid=113, p14=112)
+        e["unit"] = 0
+        run = ("QCB", {"id": 33, "unit": "de", "ev": 3, "fn": "00589d80"})
+        b3 = ("QS", {"ret": "%08x" % (0x00588F71 + 5), "rec": 7, "w": 37, "b": 3})
+        c = self.run_lines(join_lines([0] * 48, g) + [("EV", e), run, b3, ("EV", x)])
+        self.assertEqual(c.bad, [])
+        self.assertEqual(c.n["entry step w37 112 -> 113 [3]"], 1)
+        self.assertTrue(self.run_lines(join_lines([0] * 48, g) + [("EV", e), run, ("EV", x)]).bad)   # b3 missing
+        e2, x2 = de(3, 0, 123, g, qobj=q33(3, 1), slots=[33], lid=123, p14=122)
+        e2["unit"] = 0
+        b14 = ("QS", {"ret": "%08x" % (0x00589AE6 + 5), "rec": 7, "w": 37, "b": 14})
+        self.assertEqual(self.run_lines(join_lines([0] * 48, g) + [("EV", e2), run, b14, ("EV", x2)]).bad, [])
+        e3, x3 = de(3, 0, 123, g, qobj=q33(6, 1), slots=[33], lid=123, p14=122)       # state 6: nothing
+        e3["unit"] = 0
+        self.assertTrue(self.run_lines(join_lines([0] * 48, g) + [("EV", e3), run, b14, ("EV", x3)]).bad)
+
+    def test_cain_lost(self):
+        g = s((1, 2))
+        ch = {"k": "chlevel", "ph": 0, "lvl": 40, "type": 13, "lid": 1, "gs": g, "qs": g, "ps": g}
+        cx = {"k": "chlevel", "ph": 1, "lid": 40, "gs": g, "qs": g, "ps": g}
+        w = [("QS", {"ret": "0054475c", "rec": 1, "w": 4, "b": 13}),
+             ("QS", {"ret": "00592b4b", "rec": 7, "w": 4, "b": 14})]
+        c = self.run_lines(join_lines([0] * 48, g) + [("EV", ch)] + w + [("EV", cx), ("EV", ch), ("EV", cx)])
+        self.assertEqual(c.bad, [])
+        self.assertEqual(c.n["Cain lost on arrival in 40 none"], 1)               # the second arrival
+        rec = [0] * 48
+        rec[4] = 1                                   # word 4 done: no write allowed
+        self.assertTrue(self.run_lines(join_lines(rec, g) + [("EV", ch)] + w + [("EV", cx)]).bad)
+
+    def test_tr2_and_portal_words(self):
+        g = s((1, 2))
+        rec = [0] * 48
+        rec[37] = 0x0102                            # b1, b8: the tr2 use sets b7
+        rec[26] = 1
+        lines = join_lines(rec, g) + [("QS", {"ret": "0055e4fa", "rec": 7, "w": 37, "b": 7}),
+                                      ("QS", {"ret": "005b5914", "rec": 7, "w": 28, "b": 0}),
+                                      ("QS", {"ret": "005b591e", "rec": 7, "w": 28, "b": 13})]
+        self.assertEqual(self.run_lines(lines).bad, [])
+        rec[37] = 0x0002                            # b8 clear: a b7 write is refused
+        rec[28] = 1                                 # word 28 already set: no portal write allowed
+        self.assertEqual(len(self.run_lines(join_lines(rec, g) + lines[2:]).bad), 2)
+
 
 if __name__ == "__main__":
     unittest.main()
