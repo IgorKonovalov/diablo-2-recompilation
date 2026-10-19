@@ -34,3 +34,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     value, about one in eight (S2b, 0038).
 11. **"Moved" names the destination plan**; otherwise write "out of this plan". Seen: status bit 1
     (0039 P1b ruling 4).
+12. **Carry a correction into the section it corrects**, not only into the run's ledger section: the claim, its
+    tables and the summary lists that repeat it. Seen: the summit door and the P1b summit-warp verdict
+    ([0042](../../../../docs/plans/0042-quests-travel.md) P2 part 1 review); NPC 266's two draws, word 40's bit map and
+    the switched-off reward writes, left in § 16 only (0042 P2 part 2 review).

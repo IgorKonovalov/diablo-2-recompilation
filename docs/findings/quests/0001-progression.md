@@ -5,7 +5,7 @@
 > game-wide quest flags exist and what reads them; which events draw, on which seed; and which creation code reads the
 > quest state?
 > **Date:** 2026-10-17   **Plan:** 0042 (Phase 1 and 1b, static; Phase 2 run:2026-10-17-quests, § 15; part 2 run:2026-10-18-quests2, § 16)   **Status:**
-> open (Phase 2 part 1 reviewed 2026-10-17, accept with fixes; part 2 review requested 2026-10-19)
+> open (Phase 2 part 1 reviewed 2026-10-17, accept with fixes; part 2 reviewed 2026-10-19, accept with fixes; part 3 open)
 
 Static reading of the pinned `Game.exe`: Ghidra's decompile of the quest code (`[0x00543400, 0x00548200)`,
 `[0x00586E00, 0x005A0000)`, `[0x005B3000, 0x005BE200)`) on the lane's copy, objdump for the instruction-level reads;
@@ -51,7 +51,8 @@ record (§ 3). The quest drops, rewards and the quest seed's item draws are [ite
 - [I] **Draws.** On the **quest seed**, besides plan 0032's item draws: the cairn-stone order (≥ 5 `mod 5` steps, first
   stone or scroll), the Act II eclipse timer (`RandLoHi(15, 17)`, once per game), each talk to NPC 331 once the palace is
   open (`mod 3`), the Act III Dark Wanderer timer (one step per game), Anya's reward (`Range`), the Zoo (1–10
-  `RandLoHi`). On the **player's unit seed**: every talk to NPC 266 (`Range(2)` or one step) and to NPC 377. Every other
+  `RandLoHi`). On the **player's unit seed**: every talk to NPC 266 (two draws, `Range(2)` or one step each: its e0 handler runs once
+  for each of quest objects 25 and 30, `[C]` § 16) and to NPC 377. Every other
   quest event draws nothing in quest code; the spawns, portals and items it creates draw on their own seeds (oracles).
   (§ 11; fn:sub_00592E90_A1Q4_StoneOrderDraw@0x00592E90, 0x0059EDC0, 0x0059B1C0, fn:sub_005BD390_A3Q7_AfterglowTimer@0x005BD390,
   0x00589937, fn:sub_0058E830_A5Q6_ZooInit@0x0058E830, 0x00596B23, 0x0059E1CE)
@@ -270,7 +271,8 @@ QuestsPlayerJoin(game, player, rejoin) (0x00546270)                             
   e2, `0x005443FA` e11, `0x005457BF` the re-dispatched e0). So a deactivated quest's talk, message, level-change and
   leave handlers still run, and what keeps them inert is each handler's own test of `+0x09`/`+0x0A` or of its state
   bytes, per quest (§ 7–§ 10); quest 11's e11 handler `0x0059AF50` has none and writes word 12 bit 7 or 8 with the
-  quest off (§ 15, run:2026-10-17-quests). This is how a quest boss's script stays inactive in a game made by a player who has
+  quest off (§ 15, run:2026-10-17-quests). The NPC-talk reward handlers test the word's own bits, not `+0x09`, and write
+  the same with the quest switched off (`[C]` for the rows reached, § 16, run:2026-10-18-quests2). This is how a quest boss's script stays inactive in a game made by a player who has
   done it, while forced death events (above) still reach it. (0x005462C0–0x0054634A, 0x00544410,
   fn:QUESTS_DispatchEvent@0x005438E0 0x00543934–0x0054393E)
 - [I] The first-join callbacks (`+0xD4`) copy the creator's step bits into the quest's state bytes; the later-join ones
@@ -622,15 +624,16 @@ Objects: operate 6 `0x00594E70` (the tower book: object mode 1, message 0x7F to 
 - e0 `0x00596A90`: NPC 266 (`navi` `[L]`). If G **1**:13 is clear, the quest is active, and the player's word 1 bits 0,
   13 and 1 are clear: message = `RNG_Range(player unit seed +0x20, 2)`; otherwise one inline LCG step of the **player's
   unit seed** (`unit +0x20`) and message = `low32 mod 3 + 2`. **This NPC talk draws on the player's unit seed** every
-  time NPC 266 is talked to. (0x00596B23, 0x00596B48–0x00596B5A)
+  time NPC 266 is talked to, **once per run**, and the dispatch runs this handler once for each of the two quest objects:
+  **two draws per talk** (correction, `[C]` § 16, run:2026-10-18-quests2). (0x00596B23, 0x00596B48–0x00596B5A)
 - +0xEC `0x00596BC0`: NPC 266 has a message under the same G/word-1 condition. +0xC0 points at `0x00596BA0` (a stub).
-- No record write. Draws: the one above.
+- No record write. Draws: the one above, twice per talk.
 
 #### Draws (Act I)
 
 | event | function | seed | draws |
 |---|---|---|---|
-| NPC 266 talk (e0) | `0x00596A90` | player unit seed (`+0x20`) | 1 (`RNG_Range(…, 2)` or one LCG step) |
+| NPC 266 talk (e0) | `0x00596A90` | player unit seed (`+0x20`) | 2: one per quest object (25, 30), each `RNG_Range(…, 2)` or one LCG step (§ 16) |
 | first cairn-stone operate / scroll send | `0x00592E90` | quest seed | ≥ 5 (`mod 5` until 5 distinct) |
 | Wirt's body event 7 (first) | `sub_00594630_A1Q4_WirtGold` | quest seed | 1 (items/0010) |
 | Andariel's death (e8) | `sub_005965A0_A1Q6_AndarielDeath` | quest seed | gems (items/0010) |
@@ -1765,7 +1768,7 @@ Private data 0xA8 bytes (`+0x86` Worldstone portal open, `+0x88` credited count,
 | e3 | 0x0058E190 | new level 109: Zoo message (`0x0058E120`); old 109 with state 2: state 3 + ForEach `0x0058D8B0`; new level > 130: state 1 + ForEach `0x0058D8B0` |
 | e8 | `sub_0058DF20_A5Q6_BaalDeath` | Baal dies (plan 0032 for the gold) |
 | e10 | 0x0058DCF0 | list removal |
-| e11 | 0x0058D940 | messages 0x4ECF..0x4ED4 → bits 4–9 (`+0xE0` word) |
+| e11 | 0x0058D940 | messages 0x4ECF..0x4ED4 → bits 7, 9, 5, 4, 6, 8 through the jump table at 0x0058D9D0 (`msg − 0x4ECF`), not in message order (`+0xE0` word; § 16) |
 | e13 | `sub_0058E430_A5Q6_PlayerJoin` | bit 0/15: **sets bit 10**, progression raise (`0x00538680(…, 5, d)`); else bits 3/2 restore (`+0x90`) |
 | e14 | 0x0058E3F0 | a later joiner with bit 0: **sets bit 10** |
 | +0xEC | 0x0058E2B0 | ancients 537–539 while armed; NPC 511 → bit 4, 512 → 9, 513 → 6, 515 → 8, 520 → 5 unless 10, 521 → 7 |
@@ -1776,7 +1779,7 @@ Private data 0xA8 bytes (`+0x86` Worldstone portal open, `+0x88` credited count,
 | 13, 0 | set | 0x0058DD38/0x0058DD42 (`0x0058DD30`: each player **on level 132**, bits 0, 1 clear, via `0x0058DEA0`), 0x0058DCB6/0x0058DCC0 (party `0x0058DC60`, act index 4) | e8, Baal dies | `fn:CUBE_CowPortalOpen@0x00594140` (0x005941BE, expansion cow gate, items/0008), 0x0058E740 (bit 13), `MONSTER_DropItems` B6 (items/0010) |
 | 14 | set | 0x0058DE08 | the rest | log |
 | 2 / 3 | set | 0x0058D91D/0x0058D933 (`0x0058D8B0`, act index 4) | log state 2/3 | e13 |
-| 4–9 | set | 0x0058D9C7 | e11 messages 0x4ECF–0x4ED4 | 0x0058D9F0, 0x0058E2B0 |
+| 4–9 | set | 0x0058D9C7 | e11 messages 0x4ECF → b7, 0x4ED0 → b9, 0x4ED1 → b5, 0x4ED2 → b4, 0x4ED3 → b6, 0x4ED4 → b8 (§ 16) | 0x0058D9F0, 0x0058E2B0 |
 | 10 | set | 0x0058E7FC (the last portal), 0x0058E4CB (first join), 0x0058E424 (later join) | see slots | 0x0058D9F0, 0x0058E2B0 |
 
 - [I] **Progression:** every Baal credit calls `0x00538680(client, 5, d)` (status progression ≥ 5d + 5), and so does
@@ -1830,7 +1833,7 @@ and for the LCG multiplier `0x6AC690C5` (per-act scans in § 7–§ 10); the res
 
 | event kind | draws in quest code | seed | sites |
 |---|---|---|---|
-| e0 NPC talk | NPC 266 (word 29): `Range(2)` or one step, every talk | **player's unit seed** `+0x20` | 0x00596B23, 0x00596B48 |
+| e0 NPC talk | NPC 266 (word 29): `Range(2)` or one step, twice per talk (two quest objects, § 16) | **player's unit seed** `+0x20` | 0x00596B23, 0x00596B48 |
 | e0 NPC talk | NPC 377 (word 30): one step or `Range`, every talk | **player's unit seed** | 0x0059E1CE–0x0059E257 |
 | e0 NPC talk | NPC 331 (word 12), palace open: one step, message `low mod 3 + 8` | quest seed | 0x0059B229 |
 | e11 NPC message | Anya's reward (word 37): `Range(count[class])` | quest seed | 0x00589937 |
@@ -2142,7 +2145,7 @@ words from the loaded record plus the logged writes. Totals are in the run recor
 | the NPC-talk reward and message steps of § 7–§ 10, each bit write at its call site (the e11 rows with one NPC message as trigger) | Normal expansion (x-talk1–5, x-talk3b: Acts I–V), Hell (h-talk1, h-talk3, h-talk4: 12 quest words), classic Normal (c-talk1, c-talk4: Acts I and IV): 41 talk-step checks, the steps of the table below | **raised** `[C]` row by row, for the rows and branches the run reached (table below): every predicted write at its call site and nothing else on that word inside the dispatch, and none when the condition was off. Four rows were transcribed short into the checker at first and matched the finding once read in full (word 20's 0x21A: b0, b13, the steps clear, b5, the `xyz` reward; word 27's b1 clear; word 35's b5; word 19's both-rewards b13 and b0): the finding's rows hold. Word 9's two writes, which § 8 gives by function only, are at 0x00598BFE (b0) and 0x00598C0D (b1 clear) (run:2026-10-18-quests2, the call sites below) |
 | a switched-off quest's handlers stay inert unless they skip the `+0x09` test (§ 3, § 15) | the reward talks above all ran with the quest switched off by the join (a saved bit 1 loads as bits 1 and 15, and the join's pass switches off every row with bit 0 or 15) | **corrected in part** `[C]`: the reward handlers test the word's own bits (word 1: `GetState(word, 1)` at 0x0058FE6D, then bit 13 at 0x0058FE85, no `+0x09` read before the writes at 0x0058FF11–0x0058FF4B) and write the same switched off; the checker's switched-off rule now takes the talk-step rows. `[C]` for the rows reached, `[I]` for the other handlers (run:2026-10-18-quests2, 0x0058FE59–0x0058FF4B) |
 | the reward's steps clear (`0x0065C3E0`, § 7 conventions) | every `QK` line (logger revision D) in the talk sessions | **raised** `[C]`: `0x0065C3E0(rec, word)` clears bits 2–11 with `BITFIELD_Clear`, no `QUESTRECORD_ClearState` call (no `QC` line); the saved words match only with it applied (run:2026-10-18-quests2, 0x0065C3E0) |
-| the saved quest words (save/0002 § 1, § 4 of this finding) | 16 sessions ended with *Save and Exit* (144 words each: 48 words × 3 difficulties; 2 304 word checks), 115 logged player-record writes applied, 46 words changed in the game's difficulty; the join's record equalled the loader rule's in all 16 | **raised** `[C]`: `D2S_ReadQuests` loads each of the three records with `QUESTRECORD_LoadBytes(…, 0x60, flag 1)` (`push 0x1` at 0x0056A3B7): per word 0–41 bits 13 and 14 cleared and bit 15 set when bit 1 is; words 42–47 copied; the join's logged record equals that in every session; the written save holds that record after every logged server write to the player's record (`QS`, `QC`, `QK`), in order, word by word in all three difficulties, and the other two records as loaded (run:2026-10-18-quests2, fn:D2S_ReadQuests@0x0056A370, fn:QUESTRECORD_LoadBytes@0x0065C4D0) |
+| the saved quest words (save/0002 § 1, § 4 of this finding) | 17 sessions wrote a save at *Save and Exit*; the 16 that started from a loaded save were compared (x-newchar started from the menu) (144 words each: 48 words × 3 difficulties; 2 304 word checks), 115 logged player-record writes applied, 46 words changed in the game's difficulty; the join's record equalled the loader rule's in all 16 | **raised** `[C]`: `D2S_ReadQuests` loads each of the three records with `QUESTRECORD_LoadBytes(…, 0x60, flag 1)` (`push 0x1` at 0x0056A3B7): per word 0–41 bits 13 and 14 cleared and bit 15 set when bit 1 is; words 42–47 copied; the join's logged record equals that in every session; the written save holds that record after every logged server write to the player's record (`QS`, `QC`, `QK`), in order, word by word in all three difficulties, and the other two records as loaded (run:2026-10-18-quests2, fn:D2S_ReadQuests@0x0056A370, fn:QUESTRECORD_LoadBytes@0x0065C4D0) |
 | the Compelling Orb counts only with `qf2` (§ 9) | x-orb: 2 operates with `qf2` wielded, object in mode 0; x-orbno (`qf1` held, a staff wielded): no operate reached the server in 4 probe clicks and the scripted clicks | **raised in part** `[C]` for the counted half: each operate in mode 0 with `ORBW` = `qf2 ` grows the counter by one; the second sets word 18 bits 0 and 13 at 0x005BB9F7 and 0x005BBA14 and leaves the object in mode 1; the game seed moves inside the completing hit (the orb monster's death, 0x005DDFC0/0x005DFEE0: a monster oracle, not asserted). The "without `qf2`" half is not reached server-side (the client sent no operate) and stays `[I]` (run:2026-10-18-quests2, fn:sub_005BB980_A3Q5_CompellingOrbOperate@0x005BB980) |
 | the Travincal → Durance gate (§ 9 word 21, `0x005BBFA0`) | x-orb: one warp 83 → 100 after the orb broke; x-orbno: the warp (row 64) took no click while the orb was whole | **not raised**: the one allowed case holds (gate 0) but one case of a two-valued answer decides nothing (review fix 10); the refusal was not reached server-side (no `WarpExitPos` call). Stays `[I]` (run:2026-10-18-quests2, fn:sub_005BBFA0_A3Q5_DuranceWarpGate@0x005BBFA0) |
 | NPC 266 talks step the player's unit seed once (§ 7 word 29, § 11) | x-navi: map seed 45, Flavie (266) found in the Blood Moor's border preset; 23 talks, 22 chained pairs | **corrected** `[C]`: **two** steps per talk. `0x00596A90` is the e0 handler of both quest objects 25 and 30 (one init `0x00596C40` for rows 29 and 7, § 7 word 29), the dispatch runs it once for each, and each run steps the player's unit seed once (`RNG_Range(…, 2)` at 0x00596B23 or the inline step at 0x00596B48); the exit seed of one talk is the next talk's entry seed 22 times. The checker predicts the steps as the number of runs of `0x00596A90` in the dispatch (2 in every talk) (run:2026-10-18-quests2, 0x00596A90, 0x00596B23, 0x00596B48) |
@@ -2155,7 +2158,8 @@ words from the loaded record plus the logged writes. Totals are in the run recor
 | quest timers (§ 5, question 6) | none | **not reached**: no logger line was added for `0x00543E10`/`0x00543F10` in this pass; stays `[I]` |
 
 Talk steps reached (each row `[C]` for the branch shown; "sessions" lists where it fired, every one with the
-predicted writes at the listed call sites; a reward run with the quest switched off by the join wrote the same):
+predicted writes at the listed call sites; a reward run with the quest switched off by the join wrote the same;
+run:2026-10-18-quests2, fn:QUESTRECORD_SetState@0x0065C360):
 
 | word | NPC (class) | message | condition (word before) | writes (call site) | sessions |
 |---|---|---|---|---|---|
@@ -2211,8 +2215,8 @@ stay plan 0044's. (run:2026-10-18-quests2)
 ## Open questions
 
 - ~~Which flows pass `rejoin` = 1 to `QuestsPlayerJoin`~~: the new-character builders, read in § 3 (`lane/rbs2`). The
-  double join of a stub character is inferred there; Phase 2 can confirm it by logging the two calls
-  (0x0056A072, 0x005344EF).
+  double join of a stub character is confirmed by logging the two calls (0x0056A072, 0x005344EF): § 16,
+  run:2026-10-18-quests2.
 - [L] The monsters hooked to quests 1, 2, 5, 6 and 22 (Levels `+0x30` and superunique hooks) were not all re-read;
   monsters/0003 lists the superunique hooks.
 - [L] What `0x0056EDE0` creates with arguments `0x120` (the stones), `0x14C` (the Countess's chests) and 625 (Baal's

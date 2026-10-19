@@ -150,8 +150,47 @@ use a town portal, and where is a player placed on entering a level? When it is 
   stays `[I]`); packet 0x48's 20-event floor beyond one case per travel word; the free-cell search's far rings unless a
   logged search needs one; every two-client case (plan 0044).
 
+#### Phase 2 part 3 — the draw-bearing remainder (ruled at the part 2 review, 2026-10-19)
+- **Owner skill:** reverser (agent-driven, at most two slots); **the last reproduction pass of this plan**: what it
+  does not reach stays `[I]` in this plan, named with the reason, and no part 4 is planned.
+- **Why:** part 2 found three misreadings among about twenty talk rows (NPC 266's draw count, the switched-off reward
+  writes, word 40's bit map), one of them a draw count. The `[I]` draws that remain sit on the quest seed (it feeds
+  the quest drops), the object seed and the level seed, and most of them are reachable by a waypoint hop or a town
+  talk, which the part 2 driver does reliably (108 travels, 41 talk steps, 0 mismatches). The volume floors are not
+  reopened.
+- **Start:** the part 2 tools unchanged; new recipes set just before each step (archivist entry afterwards). A session
+  budget of about four hours of game time; within it, the order below is the priority.
+- **Done when:** `run:YYYY-MM-DD-quests3` reproduces with 0 mismatches under the same checker, which re-checks the 32
+  logs of parts 1 and 2 unchanged, over what it reaches of:
+  1. **quest-seed draws reachable by a waypoint or a talk:** word 11's eclipse arm on the first entry to level 44 or 45
+     with state 0 (`RandLoHi(quest seed, 15, 17)` at 0x0059EDE1, the Lost City waypoint) and its timer firing (a
+     logger line for the timer registration and callback, `0x00543E10`/`0x00543F10`); Anya's reward draw (word 37,
+     0x00589937, a talk in Harrogath); the cairn-stone order draw (word 4, 0x00592E90) if a scroll path reaches it
+     without walking to the stones; the Dark Wanderer timer's step (word 32, 0x005BD3E6) and the Zoo's draws if their
+     triggers are a level entry or talk reachable the same way (read first; otherwise named);
+  2. **waypoint activation from mode 0:** first read when `InitFn` 17 creates a waypoint in mode 0, then pick a
+     waypoint one hop from where a built save starts (a town or a field waypoint next to a level entry); at least 20
+     activations with event 1 and the `Sync` 0 draw on the object seed predicted; chained pairs if a logger line for
+     the mode 1 → 2 draw is cheap, otherwise that draw order stays `[I]`;
+  3. **act travel through NPCs:** Meshif west (the type-5 lookup that steps, Meshif's return to 40) and Tyrael's
+     Act IV → V travel (word 28's branch, packet 0x48 on word 28);
+  4. **level-entry (e3) and item-use (e9) quest steps** reachable by a waypoint hop or in town, from a save holding
+     the item or set before the entry; the reverser lists the candidates from § 7–§ 10 first;
+  5. **cheap travel remainders:** a town portal refused in a town; a death and resurrection (packet 0x41) from
+     `QuestDeath` if the driver can be killed within the budget;
+  6. unit tests in `tools/test_quests.py` for part 2's checker rules (talk steps, saved words, NPC 266's handler runs,
+     word 40's map) and part 3's.
+- **Out of this plan** (named shortfalls, `[I]`): the 150-travel, 150-warp, 60-activation and 20-`NpcActTravel`
+  floors beyond the above; level 120's warp tiles and `QUESTS_WarpGate`'s 118/128 branch; the gates into 73, 100 and
+  132; NPC 377 (no stock placement); Nightmare; classic Acts II and III; kill-triggered and far-operate steps; the
+  Durance, Arcane and lair portals; the Compelling Orb's refusal (the client sends no operate); Hratli's `InitFn`s,
+  `InitFn` 52 and the Tristram portal; the owner-play steps unless the owner plays them before part 3's review
+  (backlog entry to the owner, optional).
+
 ### Phase 3 — Spec: quests
 - **Owner skill:** spec-writer
+- **Start:** after the part 2 review (2026-10-19), in parallel with Phase 2 part 3: the statements part 3 targets are
+  written `[I]` and re-tagged from part 3's reviewed raises before the Phase 3 review, which waits for part 3's.
 - **What:** write `docs/specs/quests/README.md`, `quests/progression.md` (a section per quest) and `quests/travel.md`;
   narrow or close the quest-state open questions in items/quest-drops, objects, monsters/spawn, monsters/special,
   rng/seeds, items/cube, drlg/collision and save/d2s.
@@ -524,3 +563,70 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `quests2-manifest.sha256` (`29693c4b…`), `dev-p42q-manifest.sha256` (`af3aefd0…`). One slot used (slot 1 was freed
   late and not taken; a second slot would have doubled the session count). Slot 2 stopped, its aside restored. The
   part 2 backlog entry is left open for the reviewer.
+- **2026-10-19 — Phase 2 part 2 reviewed (architect, `lane/p42q` at `f8469e1`, branched from `main` `c0c99f6`; `main`
+  not merged in by this review): accept with fixes; Phase 2 stays open for a narrow part 3; Phase 3 may start.**
+  **Re-runs:** the three manifests from one path base (`workspace/logs/quests/`): `sha256sum -c` gives 61 of 61 OK
+  (`quests2-manifest.sha256`, `29693c4b…`: 21 logs, 20 installed and 17 written saves, the check, the part 1 re-check
+  and the `npcplace` output), 20 of 20 (`dev-p42q-manifest.sha256`, `af3aefd0…`) and part 1's 11 of 11
+  (`quests-manifest.sha256`); `tools/quests.py check` under `systemd-run --user --scope -p MemoryMax=4G` gives
+  `SUMMARY mismatches=0 checks=23348 logs=21` and `mismatches=0 checks=16204 logs=11`, each byte-identical to
+  `quests2-check.txt` and `quests2-recheck-part1.txt`, 0 over 39 552 on the 32 logs together, 0 over 2 480 on the 11
+  development logs; `tools/test_quests.py` 7 tests OK (none added for part 2's rules). Every `[C]` row of quests/0001
+  § 16 and quests/0002 § 13 names a session whose log is in `quests2-manifest.sha256` (all 21 are); the development
+  logs back only the "not raised" row. **r2 checks** (pinned `Game.exe`): (1) **NPC 266, two draws per talk:** the
+  init `0x00596C40` is referenced twice in the descriptor table (0x007315B8 and 0x007317C8, 0x210 apart: rows 7 and 29
+  at 24 bytes a row) and writes `0x00596A90` into the e0 slot (0x00596C57) and `+0xE0` = 29 (0x00596C7E); the handler
+  tests the class (266 at 0x00596AAB) and steps the player unit's `+0x20` by `RNG_Range(…, 2)` (0x00596B23) or the
+  inline LCG (0x00596B48, `0x6AC690C5`): one draw per run, two runs per talk, **holds**. (2) **The reward handlers test
+  the word's bits:** `sub_0058FDD0_A1Q1_NpcMessage` tests NPC 148 (0x0058FDD9), message 0x4C (0x0058FE59),
+  `QUESTRECORD_GetState(word, 1)` (0x0058FE6D) and bit 13 (0x0058FE85), then `SetState` b0 (0x0058FF11), `ClearState`
+  b1 (0x0058FF20) and word 41's b13 (0x0058FF2F); no `+0x09` read on the path, **holds**. (3) **Word 40's jump table:**
+  `0x0058D940` adds `0xFFFFB131` (`− 0x4ECF`), bounds at 5 and jumps through 0x0058D9D0, whose six entries reach
+  `push 7, 9, 5, 4, 6, 8` before the one `SetState` at 0x0058D9C7; no NPC or `+0x09` test, **holds**. Spot checks:
+  `push 1` at 0x0056A3B7 (`LoadBytes` flag), the stub join's calls at 0x0056A072/0x005344EF with returns 0x0056A077/
+  0x005344F4, the orb's `SetState` calls at 0x005BB9F7/0x005BBA14, word 9's at 0x00598BFE (`SetState`) and 0x00598C0D
+  (`ClearState`). Recounts: 41 talk-step fires, 12 Hell quest words, eleven recipes, 104 warps, 15 door operates, all
+  as stated. The driver's watchdog (`8da839d`) kills the session's own process group and relies on `slots.py stop`
+  (driver kill, `wineserver -k`) for the game, which `d2run.py` starts in its own session: adequate.
+  **Rulings:**
+  - (a) **Part 2 accepted.** The talk-step pass is sound: 41 steps over 20 rows in Normal expansion, Hell and classic,
+    each write at its call site, the saved words after *Save and Exit* predicted word by word in 16 sessions, and three
+    corrections that hold in the code (above). The raises stand as scoped by the lane ("for the rows and branches
+    reached"); the Compelling Orb and packet 0x48 are correctly "raised in part"; the Durance gate is correctly not
+    raised on one case (reverser review-fixes 10).
+  - (b) **Shortfalls acceptable as named** (no further attempt in this plan; the statements stay `[I]` in Phase 3):
+    the volume floors (108 of 150 travels and 106 of 150 warps are past the 20-event floor, and both claims are
+    "no draw" one-shots; raised as the lane scoped them); level 120's warp tiles and `QUESTS_WarpGate`'s 118/128 branch
+    (the door answers the clicks; the open path needs the Ancients, owner play); the gates into 73, 100 (refusal) and
+    132 (quest gates reached only by boss or staff steps); **NPC 377**, whose stock placement does not exist (the
+    `npcplace` scan, kept): Phase 3 states its player-seed draw as `[I]` and unreachable on stock data;
+    **Nightmare**: the item-2 floor is met by Hell (one recorded Hell session asked for, three recorded; 12 Hell quest
+    words against ten quests); **classic Acts II and III**: classic I and IV are reached, and a row whose handler tests
+    `game +0x70` keeps its classic half `[I]` unless reached in classic (word 26's 0x4E20 is the case reached in
+    expansion only); kill-triggered and far-operate steps, the Durance, Arcane and lair portals, Hratli's `InitFn`s,
+    `InitFn` 52 and the Tristram portal (they need combat or long walks the driver does not do reliably: the cost of a
+    retry is a lane, the value a few `[I]` rows without draws); the orb's refusal (the stock client sends no operate);
+    the owner-play steps (the owner entry stays open, optional; what is played before part 3's review is taken, the
+    rest stays `[I]`).
+  - (c) **Shortfalls that block a Phase 3 `[C]`** (the spec writes them `[I]` until part 3 raises them): waypoint
+    activation from mode 0 (event 1, the `Sync` 0 object-seed draw); the type-5 lookup that steps (Meshif west);
+    packet 0x48 and the word-28 branch (two cases); quest timers and the quest-seed draws not yet logged (the eclipse
+    arm, Anya's reward, the cairn-stone order, the Dark Wanderer timer, the Zoo); death and resurrection (packet 0x41);
+    the level-entry and item-use quest steps.
+  - (d) **Part 3: needed, narrow and final** (defined above, filed to the reverser). Cost against value: a part 3
+    limited to what a waypoint hop or a town talk reaches costs about one harness lane, one slot or two; its value is
+    the draws of (c), which sit on the quest seed (the quest drops' seed), the object seed and the level seed, where an
+    `[I]` is least safe: part 2's 266 correction was a draw count read wrong in Phase 1. Everything in (b) is left out
+    of it, and no part 4 is planned: what part 3 misses stays `[I]` in this plan.
+  - (e) **Phase 3 may start now**, in parallel (Phase 3 *Start* above): the travel spec and the reached talk rows do not
+    depend on part 3; the Phase 3 review waits for part 3's review, so the spec is reviewed once with part 3's tags.
+    The spec-writer inputs entry is released with these rulings.
+  **Fixes applied (6):** miscount 1 (quests/0001 § 16: 17 sessions wrote a save, the 16 that started from a loaded
+  save were compared; x-newchar started from the menu); stale cross-reference 4 (the corrections were written only in
+  § 16, not where they correct: NPC 266's two draws carried into quests/0001 § 1, § 7 word 29 and its Act I draws
+  table, and § 11; word 40's jump-table map into § 10's e11 row and bit table; the reward handlers' switched-off writes
+  into § 3; the double-join open question marked answered); omission 1 (five gate-W1 lines without an anchor, quests/0001
+  § 16's talk-step table lead and four rows of quests/0002 § 13, reverser review-fixes 7: anchors added). **Routed (1):** omission 1 (no unit test for part 2's
+  checker rules: part 3 item 6). Status lines of both findings updated. Reverser review-fixes 12 promoted ("carry a
+  correction into the section it corrects", seen at the part 1 review and here). The review request and the part 2
+  entry are closed; part 3 is filed to the reverser; the owner entry stays open with a note.

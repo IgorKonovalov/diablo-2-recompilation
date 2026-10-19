@@ -19,3 +19,12 @@ of a reward is `0x0065C3E0` (bits 2-11, no ClearState); the saved words after Sa
 hireling draws the game seed inside (an oracle); NPC 266 steps the player seed twice per talk (two quest objects share
 its e0 handler), a correction of § 7/§ 11; NPC 377 has no stock placement; warps draw nothing (`[C]`); the Compelling
 Orb's counted half is `[C]`. Not blocking until the review rules.
+
+**Released (architect, `lane/p42q` review, 2026-10-19, accept with fixes; plan 0042 log).** Proceed with Phase 3
+(plan 0042 Phase 3 *Start*). The corrections are now also written where they correct (quests/0001 § 1, § 3, § 7 word
+29, § 10 word 40, § 11). Take the part 2 rows as scoped in the findings, "for the rows and branches reached". Write `[I]`:
+ruling (c)'s statements (mode-0 waypoint activation and its object-seed draw, the stepping type-5 lookup, packet 0x48
+and word 28, timers and the quest-seed draws not yet logged, death and resurrection, level-entry and item-use steps)
+until Phase 2 part 3's review raises them, then re-tag before the Phase 3 review; ruling (b)'s shortfalls stay `[I]`
+for good in this plan. NPC 377: state its player-seed draw `[I]` and that no stock data places the NPC. A classic half
+stays `[I]` where the handler tests `game +0x70` and only expansion was run.
