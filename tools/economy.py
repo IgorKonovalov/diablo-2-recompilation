@@ -596,6 +596,7 @@ class Checker:
         last_rp = {}
         trade = {"sellk": [], "sellv": [], "buyk": [], "buyv": []}
         pend_gf = {}
+        pend_gpl = None
         for tag, d, ln in ev:
             if tag == "ECON":
                 econ = d
@@ -631,12 +632,22 @@ class Checker:
                     pend_cd = {"d": d, "ln": ln}
                 elif tag == "DL0":
                     dl_pending = d
+                    if pend_cd is not None and d.get("ra") == 0x0057D4DD:
+                        pend_cd["DL"] = d
                 elif tag == "GF0":
                     pend_gf = {}
+                elif tag == "GA0" and pend_gpl is not None:
+                    # DropGoldPile: the pile's ilvl is the level's monster level, minus 1 when above 1 (0x00559338)
+                    want = pend_gpl - 1 if pend_gpl > 1 else pend_gpl
+                    self.n["object gold piles (ilvl checked)"] += 1
+                    if d["ilvl"] != want:
+                        self.fail(path, ln, "object gold ilvl %d, level monster level %d" % (d["ilvl"], pend_gpl))
+                    pend_gpl = None
             elif tag in ("GFK", "GFO"):
                 pend_gf[tag] = d["v"]
             elif tag == "GPL":
                 self.cases["object gold pile (DropGoldPile)"] += 1
+                pend_gpl = d["mlv"]
             elif tag in ("CDS", "CDU", "CDW"):
                 if pend_cd is not None:
                     pend_cd[tag] = d
@@ -742,11 +753,17 @@ class Checker:
             self.fail(path, ln, "resurrect cost L %d: model %d, game %d" % (L, want, d1["v"]))
 
     def on_MR(self, path, ln, d0, d1, ctx):
-        """MERC_Resurrect: the gold and stash gold drop by the last MERC_ResurrectCost result."""
+        """MERC_Resurrect: the gold and stash gold drop by the last MERC_ResurrectCost result; PayGold refuses (and
+        nothing is paid, the mercenary stays dead) when gold and stash together are short (0x00579CAE)."""
         s0, s1 = d0["sn"], d1["sn"]
         paid = s0["g"] + s0["sg"] - s1["g"] - s1["sg"]
         self.n["resurrections"] += 1
         want = getattr(self, "mc_last", None)
+        if want is not None and s0["g"] + s0["sg"] < want:
+            self.cases["resurrection refused (gold short)"] += 1
+            want = 0
+        else:
+            self.cases["resurrection paid"] += 1
         if want is None or paid != want:
             self.fail(path, ln, "resurrection paid %d, last cost %r" % (paid, want))
 
@@ -887,6 +904,13 @@ class Checker:
             k = (k + 1) % 7
         self.cases["armour wear slot %d" % WEAR_SLOTS[k][0]] += 1
         self.n["armour picks"] += 1
+        dl = pc.get("DL")
+        if dl is not None:
+            # the item ITEMS_DurabilityLossRoll then rolls is the picked slot's
+            self.n["armour picks checked against the rolled item"] += 1
+            if dl["it"]["c"] != cds["slots"][k]:
+                self.fail(path, ln, "armour pick: model slot %d class %r, rolled class %d"
+                          % (WEAR_SLOTS[k][0], cds["slots"][k], dl["it"]["c"]))
         self.armour_pick = (d0["def"]["u"], cds["slots"][k], "%08x:%08x" % (lo, hi))
 
     def on_IC(self, path, ln, d0, d1, ctx):
