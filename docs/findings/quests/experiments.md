@@ -154,3 +154,40 @@ Runtime records for [quests/0001](0001-progression.md) and [quests/0002](0002-tr
 - **Not reached / out of scope:** see the plan log entry and the two findings' Phase 2 sections (shortfalls named per question); the two-player cases (the portal party and `QuestFlag` gates, party credit, a non-zero gate stamp) are plan 0044's and out of scope here.
 - **Conclusion:** raises and corrections in [quests/0001 § 15](0001-progression.md#15-phase-2-run2026-10-17-quests)
   and [quests/0002 § 12](0002-travel.md#12-phase-2-run2026-10-17-quests).
+
+## run:2026-10-18-quests2
+
+- **Question:** (plan 0042 Phase 2 part 2, the completion pass) Do the NPC-talk quest steps of
+  [quests/0001](0001-progression.md) § 7–§ 10 (each bit write at its call site, from a save set just before the step),
+  the saved quest words after *Save and Exit*, the Compelling Orb, the Durance gate, NPC 266, the Tristram portal, a
+  new character's join, and the travel events of [quests/0002](0002-travel.md) (warps, waypoint activations and
+  travels, NPC act changes, packet 0x48 per travel word, death and resurrection) reproduce with 0 mismatches under
+  the part 1 checker, extended, which re-checks part 1's 11 logs unchanged?
+- **Setup:** the ADR-0003 harness on **slot 2** only (display `:9`, `workspace/wineprefix-2`; slot 1 was another
+  lane's), agent-driven play (no owner play), one client, one game at a time. The slot's empty saves directory set
+  aside as tag `p42q`, restored and set aside again before each launch (`quest_sessions.py run`), the session's save
+  installed with `d2run.py --install p42q`; the installed save is copied beside the log as `<log>.in.d2s` and the save
+  the game writes at *Save and Exit* as `<log>.out.d2s`.
+  - **Saves** (new recipes, built with `tools/d2s.py build workspace/merged/data/global/excel <recipe>
+    <base> workspace/runtime/quest-saves-p42q/<Name>/<Name>.d2s`; expansion base
+    `workspace/samples/d2s-owner/smpsor-l50.d2s`, classic base `workspace/runtime/monspawn-chars/cls/smpsor.d2s`):
+    `quest-talk1`..`5` (`QuestTalkOne`..`Five`: every quest done but the step's words, set the same in all three
+    difficulties, start act I..V: word 0, 8, 16, 24 clear; words 1, 2, 4, 6, 9, 20, 25, 27, 35 bit 1 only; word 14
+    bit 3; word 19 bit 6; word 21 bit 4), `quest-talk1c`..`4c` (the classic `QuestTalkOneC`..`FourC`, the same words,
+    classic status byte), `quest-orbwill` (`QuestOrbWill`: `travel-act4` with `qf2` wielded and no `qf1`),
+    `quest-death` (`QuestDeath`: 24 life, no belt). Phase 0's `TravelWpOne`, `TravelWpTwo`, `TravelWpFive`,
+    `QuestSummit`, `ActThreeMeshif`, `ActFourDurance`, `ActFiveTyrael` as built by `tools/quest_saves.py build`.
+  - **Logger** `tools/gdb/quest-state.gdb` as in part 1, with `questev.py` revision D (this run): `QK`, every
+    `QUESTRECORD_ClearSteps` call (`0x0065C3E0`, which clears bits 2–11 with `BITFIELD_Clear` and so writes no `QC`
+    line), and the `NPCQ` driver line extended to the town NPCs of the talk steps. Part 1's lines are unchanged.
+  - **Checker** `tools/quests.py check`, extended (rules in its docstring): the talk steps (`TALK_STEPS`: per word, NPC
+    class, message, condition on the word before, the writes with their call sites), the switched-off reward handlers
+    (`deactivated_writes`), the saved words (`save_check`: the loader rule, then every logged write to the player's
+    record, word by word for all three difficulties), the Compelling Orb, the Durance gate, NPC 266's player-seed steps,
+    the Tristram portal; tests `tools/test_quests.py`.
+  - **Driver** `tools/quest_sessions.py` (part 2 actions: `towp2`, `pingpong`, `warp1` with the LvlWarp select box,
+    `goto`, `tonpc`, `activate`, `approach`, `die`, `saveexit`; `talk` without a stray Escape), `tools/d2pilot.py`
+    (Tyrael's menu row), `tools/gdb/quest-newchar.steps`.
+- **Procedure:** `python3 -I tools/quest_sessions.py run --slot 2 --tag p42q --run 2026-10-18-quests2 SESSION…`
+  (sessions defined at the end of the file), then `systemd-run --user --scope -p MemoryMax=4G python3 -I
+  tools/quests.py check workspace/logs/quests/2026-10-17-quests-*.log workspace/logs/quests/2026-10-18-quests2-*.log`.

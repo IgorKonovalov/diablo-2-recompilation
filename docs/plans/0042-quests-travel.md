@@ -490,3 +490,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   P1b summit-warp verdict), wrong anchor 1 (`0x0054684A` is word 28's branch; Warriv's is `0x00546991`), misread 1
   (quests/0002 § 12 listed a Hell session), omission 1 (the portal oracle's revision-A boundary), tool not kept 1 (no
   manifest for the development and load logs). The review request is closed; part 2 is filed to the reverser.
+- **2026-10-19 — Phase 2 part 2 checkpoint (reverser, `lane/p42q`, slot 2; in progress).** run:2026-10-18-quests2:
+  18 recorded logs so far, 0 mismatches under the extended `tools/quests.py check` (part 1's 11 logs still 0). Done:
+  warps (104), NPC-talk steps of Acts I–IV in Normal, five Act I and four Act III steps in Hell, Act I in classic,
+  saved words after *Save and Exit* (12 sessions), the Compelling Orb with `qf2`, NPC 266 (two player-seed steps per
+  talk, a correction), the stub character's double join. Running: activations (`x-wpact3`), `h-talk4`, `c-talk4`,
+  `x-talk5`. **Resume note:** the driver now supervises each session (watchdogs) after an overnight hang on
+  2026-10-18/19 (the machine suspended; the game exited and the driver clicked on); sessions are listed at the end of
+  `tools/quest_sessions.py`; `workspace/scratch-p42q/agg.py` lists the talk steps per log; the finding sections hold
+  `@@` markers for the activation row and the shortfalls until the final pass.

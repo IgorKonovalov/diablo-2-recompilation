@@ -2128,6 +2128,58 @@ readers of question 7 other than the summit door (Hratli's InitFns, InitFn 52, t
 the warp gates into 73, 100, 132); word 33. Party credit and the portal party gate are two-client cases: plan 0044,
 out of scope here. (run:2026-10-17-quests)
 
+### 16. Phase 2 part 2 (run:2026-10-18-quests2)
+
+The completion pass ([experiments](experiments.md#run2026-10-18-quests2)) ran on slot 2 alone, one client, agent-driven.
+Each quest step started from a tool-built save set just before it (the `quest-talk*` recipes), the session ended
+with *Save and Exit* where it could, and `tools/quests.py check` predicted every bit write of the step from the logged
+event (the NPC class and the message id of the e11 dispatch, and the word before it) and the written save's quest
+words from the loaded record plus the logged writes. Totals are in the run record; the travel half is
+[quests/0002 § 13](0002-travel.md#13-phase-2-part-2-run2026-10-18-quests2).
+
+| Claim (section) | Run | Result |
+|---|---|---|
+| the NPC-talk reward and message steps of § 7–§ 10, each bit write at its call site (the e11 rows with one NPC message as trigger) | Normal expansion (x-talk1–4, x-talk3b), Hell (h-talk1, h-talk3), classic Normal (c-talk1): the steps of the table below | **raised** `[C]` row by row, for the rows and branches the run reached (table below): every predicted write at its call site and nothing else on that word inside the dispatch, and none when the condition was off. Four rows were transcribed short into the checker at first and matched the finding once read in full (word 20's 0x21A: b0, b13, the steps clear, b5, the `xyz` reward; word 27's b1 clear; word 35's b5; word 19's both-rewards b13 and b0): the finding's rows hold. Word 9's two writes, which § 8 gives by function only, are at 0x00598BFE (b0) and 0x00598C0D (b1 clear) (run:2026-10-18-quests2, the call sites below) |
+| a switched-off quest's handlers stay inert unless they skip the `+0x09` test (§ 3, § 15) | the reward talks above all ran with the quest switched off by the join (a saved bit 1 loads as bits 1 and 15, and the join's pass switches off every row with bit 0 or 15) | **corrected in part** `[C]`: the reward handlers test the word's own bits (word 1: `GetState(word, 1)` at 0x0058FE6D, then bit 13 at 0x0058FE85, no `+0x09` read before the writes at 0x0058FF11–0x0058FF4B) and write the same switched off; the checker's switched-off rule now takes the talk-step rows. `[C]` for the rows reached, `[I]` for the other handlers (run:2026-10-18-quests2, 0x0058FE59–0x0058FF4B) |
+| the reward's steps clear (`0x0065C3E0`, § 7 conventions) | every `QK` line (logger revision D) in the talk sessions | **raised** `[C]`: `0x0065C3E0(rec, word)` clears bits 2–11 with `BITFIELD_Clear`, no `QUESTRECORD_ClearState` call (no `QC` line); the saved words match only with it applied (run:2026-10-18-quests2, 0x0065C3E0) |
+| the saved quest words (save/0002 § 1, § 4 of this finding) | 12 sessions ended with *Save and Exit* (144 words each: 48 words × 3 difficulties; 1 728 word checks), 87 logged player-record writes applied, 35 words changed in the game's difficulty | **raised** `[C]`: `D2S_ReadQuests` loads each of the three records with `QUESTRECORD_LoadBytes(…, 0x60, flag 1)` (`push 0x1` at 0x0056A3B7): per word 0–41 bits 13 and 14 cleared and bit 15 set when bit 1 is; words 42–47 copied; the join's logged record equals that in every session; the written save holds that record after every logged server write to the player's record (`QS`, `QC`, `QK`), in order, word by word in all three difficulties, and the other two records as loaded (run:2026-10-18-quests2, fn:D2S_ReadQuests@0x0056A370, fn:QUESTRECORD_LoadBytes@0x0065C4D0) |
+| the Compelling Orb counts only with `qf2` (§ 9) | x-orb: 2 operates with `qf2` wielded, object in mode 0; x-orbno (`qf1` held, a staff wielded): no operate reached the server in 4 probe clicks and the scripted clicks | **raised in part** `[C]` for the counted half: each operate in mode 0 with `ORBW` = `qf2 ` grows the counter by one; the second sets word 18 bits 0 and 13 at 0x005BB9F7 and 0x005BBA14 and leaves the object in mode 1; the game seed moves inside the completing hit (the orb monster's death, 0x005DDFC0/0x005DFEE0: a monster oracle, not asserted). The "without `qf2`" half is not reached server-side (the client sent no operate) and stays `[I]` (run:2026-10-18-quests2, fn:sub_005BB980_A3Q5_CompellingOrbOperate@0x005BB980) |
+| the Travincal → Durance gate (§ 9 word 21, `0x005BBFA0`) | x-orb: one warp 83 → 100 after the orb broke; x-orbno: the warp (row 64) took no click while the orb was whole | **not raised**: the one allowed case holds (gate 0) but one case of a two-valued answer decides nothing (review fix 10); the refusal was not reached server-side (no `WarpExitPos` call). Stays `[I]` (run:2026-10-18-quests2, fn:sub_005BBFA0_A3Q5_DuranceWarpGate@0x005BBFA0) |
+| NPC 266 talks step the player's unit seed once (§ 7 word 29, § 11) | x-navi: map seed 45, Flavie (266) found in the Blood Moor's border preset; 23 talks, 22 chained pairs | **corrected** `[C]`: **two** steps per talk. `0x00596A90` is the e0 handler of both quest objects 25 and 30 (one init `0x00596C40` for rows 29 and 7, § 7 word 29), the dispatch runs it once for each, and each run steps the player's unit seed once (`RNG_Range(…, 2)` at 0x00596B23 or the inline step at 0x00596B48); the exit seed of one talk is the next talk's entry seed 22 times. The checker predicts the steps as the number of runs of `0x00596A90` in the dispatch (2 in every talk) (run:2026-10-18-quests2, 0x00596A90, 0x00596B23, 0x00596B48) |
+| NPC 266's placement (§ 7 word 29) | x-navi (seed 45) | **held** `[C]` for this case: 266 was in the server unit list only once the Blood Moor's border preset room (`Def` 4–7) near the camp was active, as drlg/preset step note 1 places the centre monster (file index 3) (run:2026-10-18-quests2) |
+| NPC 377 talks (§ 8 word 30) | static scan, `tools/quests.py npcplace navi act2guard4` (output `workspace/logs/quests/2026-10-18-quests2-npcplace.txt`) | **shortfall, with the reason** `[I]`: no DS1 that a LvlPrest row names places `act2guard4` (MonPreset Act 2 index 54) or a `place_talkingguard`/`place_dumbguard` placeholder; the only DS1 with those placeholders is `act2/town/lut2.ds1`, which LvlPrest does not name (Lut Gholein, `Def` 301, uses `LutW`/`LutN`); no Levels monster column or SuperUniques class names it; no code pushes `0x179` as a spawn class (`objdump … | grep -E "0x179\b"`: the pushes at 0x0059E20A, 0x0059E23D, 0x0059E286 are word 30's own message calls). So stock play cannot place NPC 377 and its player-seed draw stays `[I]` (run:2026-10-18-quests2) |
+| a character made from a header stub joins twice (§ 3, the open question) | x-newchar: a Sorceress made through the menu on an empty saves directory | **raised** `[C]`: two `QuestsPlayerJoin` calls, the first from `NewCharFromStub` (return 0x0056A077 after the call at 0x0056A072) with `rejoin` 1 and `recordReady` 0, the second from the save reader (return 0x005344F4 after 0x005344EF) with `rejoin` 0 and `recordReady` 1; neither runs the deactivation pass (the first by `rejoin`, the second as a later join) (run:2026-10-18-quests2, fn:sub_00546270_QuestsPlayerJoin@0x00546270) |
+| more switched-off writers (§ 3), seen in development logs only | `dev-p42q-harem-a` (entering the palace, level 50, quest 11 off); `dev-p42q-x-tyrael-a` (Tyrael's message 0x4E20, quest 26 off) | **not raised** (development logs raise nothing), read in the code and taken into the checker so those logs check: quest 11's e3 handler `0x0059F0C0` sets word 12 b8 and b7 on entering level 50 with no `+0x09` test (0x0059F136–0x0059F173); word 26's e11 sets b9 on Tyrael's 0x4E20 when the game is expansion (`game +0x70` at 0x005B4702) with no `+0x09` test, then makes the Harrogath portal unless private `+0x45` (0x005B4715–0x005B4720); the 0x4E20 write was then logged in x-talk4 (above). `[I]` beyond what the table above raises (0x0059F0C0, 0x005B46F8) |
+| the Tristram portal in a later game (§ 7 word 4) | x-tristram (`TravelWpOne`, quest 4 switched off): the Stony Field explored for 240 s, the cairn stones never reached | **not reached**; stays `[I]` (the checker has the rule: class 60 to 38, `noSearch` 1, quest 4 off) (run:2026-10-18-quests2) |
+| quest timers (§ 5, question 6) | none | **not reached**: no logger line was added for `0x00543E10`/`0x00543F10` in this pass; stays `[I]` |
+
+Talk steps reached (each row `[C]` for the branch shown; "sessions" lists where it fired, every one with the
+predicted writes at the listed call sites; a reward run with the quest switched off by the join wrote the same):
+
+| word | NPC (class) | message | condition (word before) | writes (call site) | sessions |
+|---|---|---|---|---|---|
+| 0 | 155 | 0 | — | b0 (0x0058FAC1) | x-talk1, h-talk1, c-talk1 |
+| 1 | 148 | 0x4C | b1 | b0 (0x0058FF11), b1 clear (0x0058FF20), steps clear (0x0058FF4B); word 41 b13, b1 in the saved words | x-talk1, h-talk1, c-talk1 |
+| 2 | 150 | 0x5C | b1 | b0 (0x00590AB3), b1 clear (0x00590AC2); the free hireling (game seed: oracle) | x-talk1, h-talk1, c-talk1 |
+| 4 | 148 | 0x76 | b1 | b0 (0x005923AC), b1 clear (0x005923B6); the ring (oracle) | x-talk1, h-talk1, c-talk1 |
+| 6 | 155 | 0xB7 | b1 | b1 clear (0x00595D92), b0 (0x00595D9C) | x-talk1, h-talk1, c-talk1 |
+| 8 | 201 | 0xFD | — | b0 (0x00598671) | x-talk2 |
+| 9 | 176 | 0x14E | b1 | b0 (0x00598BFE), b1 clear (0x00598C0D) | x-talk2 |
+| 14 | 201 | 0x1BA | b3 | b4 (0x0059CD2F), b3 clear (0x0059CD39) | x-talk2 |
+| 14 | 210 | 0x1C2 | b4 | b0 (0x0059CE06), b4 clear (0x0059CE1B) | x-talk2 |
+| 16 | 253 | 0x1D2 | — | b0 (0x005B6F09) | x-talk3, h-talk3 |
+| 19 | 255 | 0x251 | b6, b8 clear, b7 clear | b8 (0x005B93EE); the ring (oracle) | x-talk3, h-talk3 |
+| 19 | 252 | 0x24D | b7 clear, b8 set | b7 (0x005B94BE), b13 (0x005B94E6), b0 (0x005B94F0); the hireling (oracle) | h-talk3 |
+| 20 | 254 | 0x21A | b1, b0 clear | b1 clear (0x005BA52B), b0 (0x005BA535), b13 (0x005BA53F), steps clear (0x005BA54C), b5 (0x005BA556); `xyz` (oracle) | x-talk3b, h-talk3 |
+| 24 | 367 | 0x298 | — | b0 (0x005B36C9) | x-talk4 |
+| 25 | 367 | 0x2A4 | b1 | b0 (0x005B3AF8), b1 clear (0x005B3B07), steps clear (0x005B3B14) | x-talk4 |
+| 26 | 367 | 0x4E20 | expansion | b9 (0x005B4715); the Harrogath portal (game seed: oracle) | x-talk4 |
+| 26 | 246 | 0x4E21 | — | b8 (0x005B4778) | x-talk4 |
+| 27 | 246 | 0x2A8 | b1 | b0 (0x005B6287), b1 clear (0x005B6296) | x-talk4 |
+
+
+**Shortfalls (named).** @@SHORT1@@
+
 ## Data touched
 
 - `tbl:MonStats.txt:TCQuestId`, `tbl:MonStats.txt:TCQuestCP` (through items/0010), `tbl:MonStats.txt:zoo` (the Zoo)

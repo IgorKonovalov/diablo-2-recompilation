@@ -512,6 +512,25 @@ entries (2); a type-5 lookup that steps (no group-1 point on the towns the run r
 state-42 draw; death and resurrection (packet 0x41: no death in the run); the portal `QuestFlag` gate, the party gate
 and a non-zero stamp (two clients: plan 0044, out of scope here); the Arcane and lair portals, the Durance portal.
 
+### 13. Phase 2 part 2 (run:2026-10-18-quests2)
+
+The completion pass ([experiments](experiments.md#run2026-10-18-quests2); quest half
+[quests/0001 § 16](0001-progression.md#16-phase-2-part-2-run2026-10-18-quests2)) logged the travel events as part 1
+did (same logger, revision D), on slot 2, one client. `tools/quests.py check` predicts them with the part 1 rules.
+
+| Claim (section) | Run | Result |
+|---|---|---|
+| warps: no draw (§ 7) | 104 warps (x-warps 100: LvlWarp rows 20 and 21 alternately; x-orb 2; x-summit2 and x-summit3 1 each), 106 with part 1's | **raised** `[C]` for the warps reached: gs, qs and ps unchanged across every `WarpExitPos` call (the sewer-dock pair, LvlWarp rows 20 and 21, 100 times; row 64 into 100; row 76 into 120); the free-cell search after each is predicted as in § 12 (run:2026-10-18-quests2, fn:sub_005550B0_WarpExitPos@0x005550B0) |
+| level 120's warp tiles and `QUESTS_WarpGate(120, 118/128)` (§ 7) | x-summit2 (`QuestSummit`) and x-summit3 (`TravelWpFive`): clicks at row 82's place (to 118) and row 83's (to 128) | **not reached**: no click took either tile (no `WarpExitPos` call); the clicks at row 82's place operated the summit door instead (9 and 6 operates, each refused as quests/0001 § 15 has it). The 118/128 branch stays `[I]` for both creators (run:2026-10-18-quests2) |
+| the gate into 100 (§ 7) | x-orb: 83 → 100 after the orb broke | held in one case, `[I]` (quests/0001 § 16) |
+| NPC act change: the travel word set once, `+0x4C` = 1 and packet 0x48 (§ 5, § 9) | x-meshif: Meshif east from `ActThreeMeshif` (word 15 bit 0 clear) | **raised in part** `[C]` for word 15's branch (`0x005468E4`, read in Phase 1, not run before): word 15 set, `+0x4C` = 1, then packet 0x48 clears it (1 → 0, return 0); one case per travel word now for words 7 (part 1) and 15; word 28 (Tyrael) not reached (the scripted Tyrael menu did not travel). Packet 0x48 stays `[I]` (two cases) (run:2026-10-18-quests2, fn:sub_005467E0_NpcActTravel@0x005467E0, fn:sub_0054C590_Pkt48ActChangeClear@0x0054C590) |
+| waypoint travel: no quest test, no draw but the destination's level seed (§ 3) | 47 travels (packet 0x49 and `WaypointTravel`), 108 with part 1's 61; 47 operates of waypoints in mode 2 | holds as raised in part 1: gs, qs, ps unchanged, gates passed with stamp 0, the record bit set on every operate, the mode kept; 150 travels not reached (run:2026-10-18-quests2) |
+| waypoint activation from mode 0 (§ 2) | @@ACT@@ | @@ACTRES@@ |
+| death and resurrection (packet 0x41, § 8) | `dev-p42q-x-death-a` only: the 24-life save in the Cold Plains was not killed (the driver read a low life orb as death and pressed Escape) | **not reached**; stays `[I]` |
+| type-5 placement that steps (Meshif's return to 40, § 4) | x-meshif: the westward Meshif menu was not taken by the driver | **not reached**; stays `[I]` |
+
+**Shortfalls (named).** @@SHORT2@@
+
 ## Data touched
 
 - `tbl:Levels.txt:Position`, `tbl:Levels.txt:QuestFlag`, `tbl:Levels.txt:QuestFlagEx`, `tbl:Levels.txt:Waypoint`
