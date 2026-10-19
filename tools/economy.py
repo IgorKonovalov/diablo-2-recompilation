@@ -118,6 +118,7 @@ def u32(r, o):
 
 class Tables:
     def __init__(self, excel):
+        self.excel = excel
         self.items = _bin(excel, "weapons", 424) + _bin(excel, "armor", 424) + _bin(excel, "misc", 424)
         self.types = _bin(excel, "itemtypes", 228)
         self.isc = _bin(excel, "itemstatcost", 324)
@@ -570,6 +571,8 @@ class Checker:
         self.seeds = collections.defaultdict(collections.Counter)
         self.mis = []
         self.sww = collections.Counter()
+        self.swlog = []
+        self.levels = None
 
     def fail(self, path, ln, msg):
         self.mis.append("%s:%d: %s" % (os.path.basename(path), ln, msg))
@@ -598,7 +601,15 @@ class Checker:
         trade = {"sellk": [], "sellv": [], "buyk": [], "buyv": []}
         pend_gf = {}
         pend_gpl = None
+        self.nr = []              # plan 0043 P2b: open NpcRepair calls, each with its mode-3 prices and PayGold results
+        self.nsx = []             # NSX lines of the open NPC_SellItem
+        self.wg = None            # the open Wirt's-gold event: {"dul": ilvl computed, "gold": ...}
+        self.wgs = None
+        swc = {"n": 0, "first": None, "last": None, "maxn": 0}
+        last_fr = None
         for tag, d, ln in ev:
+            if isinstance(d, dict) and d.get("fr") is not None:
+                last_fr = d["fr"]
             if tag == "ECON":
                 econ = d
                 if d.get("affixes") != len(self.T.affixes) or d.get("items") != len(self.T.items):
@@ -625,10 +636,15 @@ class Checker:
                         self.fail(path, ln, "purchase: paid %d, price %r" % (d["a"][0], trade["buyv"]))
                 if tag in ("NS0", "NB0"):
                     trade.update(sellk=[], sellv=[], buyk=[], buyv=[])
+                    self.nsx = []
                     if rc and d.get("ra") == 0x0062FF35:
                         rc[-1]["calls"].append(d["k"])
                 elif tag == "RC0":
                     rc.append({"calls": [], "vals": []})
+                elif tag == "NR0":
+                    self.nr.append({"pr": [], "pg": []})
+                elif tag == "WG0":
+                    self.wg = {"diff": d["diff"], "exp": d["exp"]}
                 elif tag == "CD0":
                     pend_cd = {"d": d, "ln": ln}
                 elif tag == "DL0":
@@ -646,6 +662,15 @@ class Checker:
                     pend_gpl = None
             elif tag in ("GFK", "GFO"):
                 pend_gf[tag] = d["v"]
+            elif tag == "NSX":
+                self.nsx.append(d)
+            elif tag == "WGS":
+                self.wgs = d
+            elif tag == "WGN":
+                self.on_WGN(path, ln, d)
+            elif tag == "DUL":
+                if self.wg is not None:
+                    self.wg["dul"] = d["ilvl"]
             elif tag == "GPL":
                 self.cases["object gold pile (DropGoldPile)"] += 1
                 pend_gpl = d["mlv"]
@@ -660,6 +685,10 @@ class Checker:
                 self.n["events " + kind] += 1
                 self.seedcheck(kind, d0, d)
                 getattr(self, "on_" + kind, self.on_none)(path, ln0, d0, d, locals())
+                if kind == "PR" and self.nr and self.keys.get(d0["k"], {}).get("m") == 3:
+                    self.nr[-1]["pr"].append(d["v"])
+                if kind == "PG" and self.nr:
+                    self.nr[-1]["pg"].append((d0["a"][0], d["v"]))
                 if kind == "PR" and rc and d0.get("ra") == 0x0062FF35:
                     rc[-1]["vals"].append(d["v"])
                 if kind == "PR" and d0["k"] in trade["sellk"]:
@@ -675,8 +704,20 @@ class Checker:
                     pend_cd = None
             elif tag in ("SWW", "SWC"):
                 self.sww[(tag, d["pc"], d["esp0"])] += 1
+                if tag == "SWC" and "n" in d:
+                    swc["n"] += 1
+                    swc["first"] = d["fr"] if swc["first"] is None else swc["first"]
+                    swc["last"], swc["maxn"] = d["fr"], max(swc["maxn"], d["n"])
+                if tag == "SWW":
+                    self.swlog.append("%s line %d fr %s pc 0x%08X ras %s" % (os.path.basename(path), ln, d["fr"], d["pc"],
+                                                                           " ".join("0x%08X" % r for r in d.get("ras", []))))
             elif tag == "SWSET":
                 self.n["store-record watch set"] += 1
+                swc["set"] = d["fr"]
+        if swc["n"]:
+            self.swlog.append("%s: control SWC lines %d, frames %s..%s (watch set at %s, last frame of the log %s), "
+                              "hits counted %d" % (os.path.basename(path), swc["n"], swc["first"], swc["last"],
+                                                   swc.get("set"), last_fr, swc["maxn"]))
         return econ
 
     def on_none(self, path, ln, d0, d1, ctx):
@@ -730,6 +771,142 @@ class Checker:
                 pass
             self.fail(path, ln, "price k=%s mode %d npc %d class %d q %s: model %d, game %d; trace %r"
                       % (k, p["m"], p["npc"], p["it"]["c"], p["it"].get("q"), want, d1["v"], tr))
+
+    IR_CALLERS = {0x0057A0FE: "imbue (quest)", 0x0057A3F2: "socket (quest)", 0x0057A586: "personalize (quest)",
+                  0x005783D0: "NpcRepair one item", 0x0057659F: "store stock", 0x00578A1B: "gamble stock"}
+
+    def on_IR(self, path, ln, d0, d1, ctx):
+        """sub_005761C0_ItemRepairAll on one item: when ItemCanRepair (identified, not ethereal, ...), a broken item is
+        repaired and durability set to its maximum (items/0011 § 5). Checked: a non-ethereal item with a maximum
+        leaves with D = M and the broken flag clear; an ethereal one unchanged. Counted by caller."""
+        a0, a1 = d0["it"], d1["it"]
+        who = self.IR_CALLERS.get(d0.get("ra"), "callback 0x%X" % d0.get("ra", 0))
+        self.cases["ItemRepairAll from %s" % who] += 1
+        if a0["d"] < a0["m"]:
+            self.cases["ItemRepairAll from %s, damaged (D < M)" % who] += 1
+        if a0["fl"] & 0x400000:
+            if (a1["d"], a1["fl"]) != (a0["d"], a0["fl"]):
+                self.fail(path, ln, "ItemRepairAll on an ethereal item changed it: %r -> %r" % (a0, a1))
+            return
+        if not a0["fl"] & 0x10:
+            self.cases["ItemRepairAll from %s, not identified (unchanged)" % who] += 1
+            if a1["d"] != a0["d"]:
+                self.fail(path, ln, "ItemRepairAll on an unidentified item changed D %d -> %d" % (a0["d"], a1["d"]))
+            return
+        if a1["m"] <= 0:
+            return
+        b = self.T.base(a0["c"])
+        if self.T.own_type(a0["c"])[8] == 0 or b[0x113] != 0 or b[0x112] == 0 or a0.get("ind"):
+            return      # ItemCanRepair: the own type's Repair; ItemHasDurability: nodurability, durability 0, stat 152
+        if who in ("store stock", "gamble stock"):
+            return      # counted only: P2 logged no stat 152 here (2 of 2 565 stock items kept D < M, unexplained)
+        self.n["ItemRepairAll restorations checked"] += 1
+        if a1["d"] != a1["m"] or a1["fl"] & 0x100:
+            self.fail(path, ln, "ItemRepairAll (%s): D %d -> %d of M %d, flags %x" % (who, a0["d"], a1["d"], a1["m"], a1["fl"]))
+
+    def on_IB(self, path, ln, d0, d1, ctx):
+        """sub_0055F900_ItemRepairBroken: clears flag 0x100, durability = maximum."""
+        a0, a1 = d0["it"], d1["it"]
+        self.n["ItemRepairBroken"] += 1
+        self.cases["ItemRepairBroken: broken at entry %d" % bool(a0["fl"] & 0x100)] += 1
+        if a1["fl"] & 0x100 or a1["d"] != a1["m"]:
+            self.fail(path, ln, "ItemRepairBroken: %r -> %r" % (a0, a1))
+
+    def on_NR(self, path, ln, d0, d1, ctx):
+        """sub_00578050_NpcRepair, one item (flags bit 31 clear): refused unless ItemCanRepair (an ethereal item: no
+        price, no payment, unchanged); else priced in mode 3 and paid with PayGold; when PayGold refuses and D < M,
+        the partial repair (0x005782C0-0x0057834F): k = (cost << 10) / (M - D) unsigned; if gold > 0,
+        k < gold << 10 and k > 0 (signed) and the item is not broken, PayGold(gold) and D' = min(M, D + (gold << 10) / k)."""
+        ctxr = self.nr.pop() if self.nr else {"pr": [], "pg": []}
+        npc, iid, flags = d0["a"][0], d0["a"][1], d0["a"][3] & M32
+        if flags & 0x80000000:
+            self.cases["NpcRepair repair all"] += 1
+            return
+        its0 = {x["id"]: x for x in d0.get("its") or [] if "id" in x}
+        its1 = {x["id"]: x for x in d1.get("its") or [] if "id" in x}
+        a0, a1 = its0.get(iid), its1.get(iid)
+        if a0 is None or a1 is None:
+            self.cases["NpcRepair one item (item not in the logged list)"] += 1
+            return
+        s0, s1 = d0["sn"], d1["sn"]
+        self.n["NpcRepair one item"] += 1
+        if a0["fl"] & 0x400000:
+            self.cases["NpcRepair refused: ethereal"] += 1
+            if ctxr["pr"] or ctxr["pg"] or (a1["d"], s1["g"], s1["sg"]) != (a0["d"], s0["g"], s0["sg"]):
+                self.fail(path, ln, "NpcRepair of an ethereal item: prices %r, PayGold %r, %r -> %r" % (ctxr["pr"], ctxr["pg"], a0, a1))
+            return
+        if not ctxr["pr"]:
+            self.cases["NpcRepair refused (no price call)"] += 1
+            return
+        cost = ctxr["pr"][-1]
+        D, M = a0["d"], a1["m"]
+        first = ctxr["pg"][0] if ctxr["pg"] else None
+        if first is not None and first[1]:
+            self.cases["NpcRepair paid%s" % (" (broken)" if a0["fl"] & 0x100 else "")] += 1
+            if first[0] != cost or a1["d"] != M or a1["fl"] & 0x100:
+                self.fail(path, ln, "NpcRepair paid %r for cost %d: D %d -> %d of %d" % (first, cost, D, a1["d"], M))
+            return
+        # PayGold refused: the partial repair
+        gold = s0["g"]
+        want_d, want_g = D, gold
+        if M > D:
+            k = ((cost << 10) & M32) // (M - D)
+            g10 = w32(gold << 10)
+            if gold > 0 and w32(k) < g10 and w32(k) > 0 and not a0["fl"] & 0x100:
+                add = tdiv(g10, w32(k))
+                want_d, want_g = min(M, w32(D + add)), 0
+        self.cases["NpcRepair partial (gold short)%s" % (" taken" if want_g == 0 and gold else " refused")] += 1
+        if (a1["d"], s1["g"]) != (want_d, want_g):
+            self.fail(path, ln, "partial repair cost %d gold %d D %d M %d: model D %d gold %d, game D %d gold %d"
+                      % (cost, gold, D, M, want_d, want_g, a1["d"], s1["g"]))
+
+    def on_NS(self, path, ln, d0, d1, ctx):
+        """NPC_SellItem's store copy (items/0009 § 8): the copy is refused by the first matching test, else made by
+        ItemCopy (its item creation draws on the game seed) and placed or freed. Counted with the game seed's steps."""
+        x = self.nsx
+        why = [e["why"] for e in x if e["at"] in (0x00579653, 0x0057966F, 0x00579681, 0x005796A1, 0x005796C1,
+                                                   0x005796DD, 0x005796EF, 0x00579714)]
+        copied = any(e["at"] == 0x0057974C for e in x)
+        perm = [e for e in x if e["at"] == 0x00579734 and e.get("al")]
+        s0, s1 = d0["sn"], d1["sn"]
+        n = rng.steps_between(seedpair(s0["gs"]), seedpair(s1["gs"]), 2000) if s0.get("gs") and s1.get("gs") else None
+        if not x:
+            return
+        label = ("copy refused: %s" % "; ".join(why)) if why else ("permanent stock" if perm else
+                                                                     "copied" if copied else "no copy")
+        self.cases["sale %s, game seed +%s" % (label, n)] += 1
+        self.n["sales with the copy decision logged"] += 1
+        if (why or perm) and copied:
+            self.fail(path, ln, "sale: copy made after a refusal %r" % why)
+
+    def on_WGN(self, path, ln, d):
+        """RNG_RandLoHi(quest seed, 10, 20): 10 + low mod 10 after one step."""
+        if self.wgs is None:
+            return
+        lo, hi = seedpair(self.wgs["s"])
+        lo, hi = rng.step(lo, hi)
+        want = 10 + lo % 10
+        self.n["Wirt pile counts"] += 1
+        if (want, "%08x:%08x" % (lo, hi)) != (d["n"], d["s"]):
+            self.fail(path, ln, "Wirt pile count: model %d %08x:%08x, game %d %s" % (want, lo, hi, d["n"], d["s"]))
+
+    def monlvl(self, level, diff, exp):
+        if self.levels is None:
+            import csv
+            self.levels = {}
+            with open(os.path.join(self.T.excel, "levels.txt"), errors="replace") as fh:
+                for r in csv.DictReader(fh, delimiter="\t"):
+                    if r.get("Id", "").isdigit():
+                        self.levels[int(r["Id"])] = r
+        r = self.levels[level]
+        return int(r["MonLvl%d%s" % (diff + 1, "Ex" if exp else "")] or 0)
+
+    def on_WG(self, path, ln, d0, d1, ctx):
+        """One event 7 of Wirt's body: one pile (DropItemAtUnit) while +0x8C > 0, which it decrements."""
+        self.n["Wirt gold events"] += 1
+        self.wg = None
+        if d0["n8c"] > 0 and d1["n8c"] != d0["n8c"] - 1:
+            self.fail(path, ln, "Wirt event: piles left %d -> %d" % (d0["n8c"], d1["n8c"]))
 
     def on_UG(self, path, ln, d0, d1, ctx):
         if d0.get("np"):
@@ -789,6 +966,14 @@ class Checker:
         amt = max(1, ilvl + r)
         self.n["gold amounts at creation"] += 1
         self.cases["gold item from 0x%X" % d0.get("ra", 0)] += 1
+        if self.wg is not None and "dul" in self.wg:
+            # Wirt's pile: DropItemAtUnit's ilvl for an object source is LevelMonLvl of its level (Tristram, 38), at
+            # least 1 (0x00559AC4-0x00559AF8)
+            want = max(1, self.monlvl(38, self.wg["diff"], self.wg["exp"]))
+            self.n["Wirt piles (ilvl checked)"] += 1
+            if not ilvl == self.wg["dul"] == want:
+                self.fail(path, ln, "Wirt pile ilvl %d, DropItemAtUnit %d, Tristram monster level %d"
+                          % (ilvl, self.wg["dul"], want))
         if (amt, "%08x:%08x" % (lo, hi)) != (d1["amt"], d1["sd"]):
             self.fail(path, ln, "gold amount ilvl %d: model %d %08x:%08x, game %d %s" % (ilvl, amt, lo, hi, d1["amt"], d1["sd"]))
 
@@ -1002,6 +1187,8 @@ def cmd_check(argv):
     print("seeds at entry and exit (gs game, ps player):")
     for kind in sorted(ch.seeds):
         print("  %-4s %s" % (kind, ", ".join("%s %d" % kv for kv in sorted(ch.seeds[kind].items()))))
+    for line in ch.swlog:
+        print("watch: " + line)
     if ch.sww:
         print("store-record watch hits (tag pc/[esp]): %s" % ", ".join("%s 0x%08X/0x%08X x%d" % (t, a, b, n) for (t, a, b), n in sorted(ch.sww.items())))
     for m in ch.mis[:40]:

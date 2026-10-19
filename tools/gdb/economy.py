@@ -233,7 +233,7 @@ def _economy_main():
         idt = u32(it + 0x14)
         return {"u": it, "id": u32(it + 0x0C), "c": s32(it + 4), "fl": u32(idt + 0x18) if idt else None,
                 "d": stat(it, 72),
-                "m": stat(it, 73), "m0": stat(it, 73, base=True), "n": stat(it, 70)}
+                "m": stat(it, 73), "m0": stat(it, 73, base=True), "n": stat(it, 70), "ind": stat(it, 152)}
 
     def ra_chain(n=4):
         out, bp = [], reg("ebp")

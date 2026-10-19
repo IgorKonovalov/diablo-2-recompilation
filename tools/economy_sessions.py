@@ -25,6 +25,7 @@ pointer on a cell for --dwell seconds, during which the client prices the item u
   hoverall       hover the repair-all button only
   sell:c,r       pick up the inventory item at cell (c, r) and click it onto the store grid (a sale)
   buy:T:c,r      right-click the store cell (c, r) of tab T (a purchase)
+  hover:x,y      move the pointer there for 0.5 s;
   click:x,y      left click (window-relative);  rclick:x,y right click;  key:NAME;  sleep:S;  shot:PATH
 
 Window-relative coordinates on the 800 x 600 frame, measured from screenshots (run:2026-10-17-economy): store cell
@@ -128,11 +129,18 @@ def run(drv, tokens):
         elif kind == "fix":
             where, _, cell = rest.partition(":")
             xy = EQUIP[cell] if where == "eq" else inv_xy(*(int(v) for v in cell.split(",")))
+            # the repair button toggles the hammer cursor (left on after a repair); a click on an item the client
+            # can repair opens a box "Repair <item> Gold: <cost> Yes / No" at the pointer, Yes 5 px left of and 9 px
+            # above the click (screenshots of economy2-dev1-4502); the box comes also when the gold is short
             drv.click(*B_REPAIR)
             time.sleep(0.4)
             drv.move(*xy, dwell=0.4)
             drv.click(*xy)
-            time.sleep(1.0)
+            time.sleep(0.8)
+            drv.click(xy[0] - 5, xy[1] - 9)
+            time.sleep(0.8)
+            drv.click(*B_REPAIR)
+            time.sleep(0.4)
         elif kind == "hoverall":
             drv.move(*B_REPAIRALL, dwell=0.6)
         elif kind == "repairall":
@@ -151,6 +159,9 @@ def run(drv, tokens):
             drv.click(*TABS[int(t) - 1])
             drv.click(*store_xy(c, r), button=3)
             time.sleep(0.5)
+        elif kind == "hover":
+            x, y = (int(v) for v in rest.split(","))
+            drv.move(x, y, dwell=0.5)
         elif kind in ("click", "rclick"):
             x, y = (int(v) for v in rest.split(","))
             drv.click(x, y, button=1 if kind == "click" else 3)
@@ -345,6 +356,63 @@ def cmd_die(a, drv_factory):
             tool(["saves.py", "--slot", str(a.slot), "restore", a.tag])
 
 
+def cmd_wirt(a, drv_factory):
+    """Plan 0043 Phase 2b, Wirt's gold: one game; the Stony Field waypoint (1,3), Teleport to the cairn stones (LvlPrest
+    160, object 17: in a later game the stones open the Tristram portal, class 60, quests/0001 § 7), operate the portal,
+    then in Tristram (level 38) go to Wirt's body (object 268, LvlPrest 300) and operate it once (the leg, then the
+    10-19 piles by event 7, tools/gdb/economy.py WG0/WG1). Nova first at whatever is in range (d2pilot.py objop)."""
+    launch(a)
+    try:
+        t0 = time.time()
+        while time.time() - t0 < 150 and last(a.log, "PLR") is None:
+            time.sleep(2)
+        if last(a.log, "PLR") is None:
+            print("wirt: no PLR line")
+            return 1
+        time.sleep(3)
+        nova = ["--nova-key", "F1", "--es-key", "F2"]
+        for _ in range(3):
+            p = last(a.log, "PLR")
+            if p and p["lid"] == 4:
+                break
+            go_town(a, 1)
+            tool(["d2pilot.py", "--slot", str(a.slot), "npc", a.log, "waypoint", "walk"], timeout=90)
+            tool(["d2pilot.py", "--slot", str(a.slot), "wpchain", a.log, "--chain", "1,3"], timeout=25)
+            time.sleep(2)
+        p = last(a.log, "PLR")
+        if not p or p["lid"] != 4:
+            print("wirt: not in the Stony Field", flush=True)
+            return 1
+        tool(["d2pilot.py", "--slot", str(a.slot), "objop", a.log, "--obj-cls", "17", "--to-pdef", "160", "--approach",
+              "--time", "300", "--obj-near", "8"] + nova, timeout=330)
+        for _ in range(3):
+            tool(["d2pilot.py", "--slot", str(a.slot), "objop", a.log, "--obj-cls", "60", "--times", "1", "--done", "OOP",
+                  "--time", "90", "--obj-near", "4"] + nova, timeout=120)
+            time.sleep(4)
+            p = last(a.log, "PLR")
+            if p and p["lid"] == 38:
+                break
+        p = last(a.log, "PLR")
+        if not p or p["lid"] != 38:
+            print("wirt: not in Tristram", flush=True)
+            return 1
+        tool(["d2pilot.py", "--slot", str(a.slot), "objop", a.log, "--obj-cls", "268", "--to-pdef", "300", "--times", "1",
+              "--done", "WG0", "--time", "400", "--obj-near", "4"] + nova, timeout=430)
+        t1 = time.time()
+        while time.time() - t1 < 40:
+            w = last(a.log, "WG1")
+            if w and w.get("n8c") == 0:
+                break
+            time.sleep(2)
+        print("wirt: piles done" if (last(a.log, "WG1") or {}).get("n8c") == 0 else "wirt: no last pile", flush=True)
+        return 0
+    finally:
+        if not a.keep:
+            tool(["slots.py", "stop", str(a.slot)])
+            time.sleep(2)
+            tool(["saves.py", "--slot", str(a.slot), "restore", a.tag])
+
+
 def supervise(argv, log, quiet, limit):
     """Plan 0043 Phase 2b, after a driver hung ~9 h on 2026-10-18 still clicking after its game had exited (the
     pattern of tools/quest_sessions.py on lane/p42q): run this command again without --watchdog in its own process
@@ -428,8 +496,19 @@ def main(argv):
     p.add_argument("--deaths", type=int, default=2)
     p.add_argument("--wait", type=int, default=120)
     p.add_argument("--resurrect", default="", help="[ACT:]NPC: first travel to ACT's town and resurrect the mercenary at NPC (e.g. 5:qualres)")
+    p = sub.add_parser("wirt")
+    p.add_argument("--tag", default="p43h")
+    p.add_argument("--seed", type=int, required=True)
+    p.add_argument("--diff", choices=sorted(STEPS), default="normal")
+    p.add_argument("--gdb", default="tools/gdb/economy2.gdb")
+    p.add_argument("--after", type=int, default=1800)
+    p.add_argument("--log", required=True)
+    p.add_argument("--save", action="append", required=True)
+    p.add_argument("--keep", action="store_true")
     a = ap.parse_args(argv)
     display = slots.display(a.slot)
+    if a.cmd == "wirt":
+        return cmd_wirt(a, lambda: Drv(display, a.dwell))
     if a.cmd == "act":
         run(Drv(display, a.dwell), a.tokens)
         return 0
