@@ -311,3 +311,18 @@ Runtime records for [quests/0001](0001-progression.md) and [quests/0002](0002-tr
   0044's.
 - **Conclusion:** raises and corrections in [quests/0001 § 16](0001-progression.md#16-phase-2-part-2-run2026-10-18-quests2)
   and [quests/0002 § 13](0002-travel.md#13-phase-2-part-2-run2026-10-18-quests2).
+
+## run:2026-10-19-quests3
+
+- **Question:** (plan 0042 Phase 2 part 3, the last reproduction pass) Do the quest-seed draws a waypoint hop, a town
+  talk or an item use reaches (word 11's eclipse arm and its timer, the cairn order by the decoded scroll, the Dark
+  Wanderer timer, Anya's reward), the quest timers, the level-entry and item-use quest steps so reached, the town portal
+  refused in a town, Meshif's westward travel (the type-5 point), Tyrael's Act IV → V travel (word 28, packet 0x48), a
+  death and resurrection (packet 0x41) and waypoint activations from mode 0 reproduce with 0 mismatches under the part 2
+  checker, extended, which re-checks the 32 logs of parts 1 and 2 unchanged?
+- **Setup:** @@SETUP@@
+- **Procedure:** @@PROC@@
+- **Observed:** @@OBS@@
+- **Conclusion:** raises, corrections and shortfalls in
+  [quests/0001 § 17](0001-progression.md#17-phase-2-part-3-run2026-10-19-quests3) and
+  [quests/0002 § 14](0002-travel.md#14-phase-2-part-3-run2026-10-19-quests3).

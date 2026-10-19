@@ -3,8 +3,8 @@
 > **Subsystem:** quests/travel
 > **Question:** how does a player activate and use a waypoint, change act, open and use a town portal, and where is a
 > player placed on entering a level (by waypoint, NPC, portal, warp, death or joining), with which draws?
-> **Date:** 2026-10-17   **Plan:** 0042 (Phase 1 and 1b, static; Phase 2 run:2026-10-17-quests, § 12; part 2 run:2026-10-18-quests2, § 13)   **Status:**
-> open (Phase 2 part 1 reviewed 2026-10-17, accept with fixes; part 2 reviewed 2026-10-19, accept with fixes; part 3 open)
+> **Date:** 2026-10-17   **Plan:** 0042 (Phase 1 and 1b, static; Phase 2 run:2026-10-17-quests, § 12; part 2 run:2026-10-18-quests2, § 13; part 3 run:2026-10-19-quests3, § 14)   **Status:**
+> open (Phase 2 part 1 reviewed 2026-10-17, accept with fixes; part 2 reviewed 2026-10-19, accept with fixes; part 3 review requested 2026-10-19)
 
 Static reading of the pinned `Game.exe` (Ghidra on the lane's copy, objdump for the instruction-level reads); no game
 run. Names are ours. "Record" and "word *q*, bit *s*" are as in [save/0002](../save/0002-quest-words.md): bit `16q + s`
@@ -535,6 +535,15 @@ the refusal into 100 (the client offered no warp); `NpcActTravel` 20 events (1 i
 Tyrael's Act IV → V travel and more Warriv trips were not taken by the driver), packet 0x48 on word 28, a type-5 lookup
 that steps; death and resurrection; a portal refused in a town and the Durance, Arcane and lair portals (not
 attempted); the free-cell search's far rings (named at part 1). Two-client cases stay plan 0044's.
+
+### 14. Phase 2 part 3 (run:2026-10-19-quests3)
+
+The last pass ([experiments](experiments.md#run2026-10-19-quests3); quest half
+[quests/0001 § 17](0001-progression.md#17-phase-2-part-3-run2026-10-19-quests3)) logged the travel events with the
+part 2 lines (logger revision E adds only quest lines) on slot 2, one client; `tools/quests.py check` predicts them with
+the part 1 and 2 rules plus the town-portal refusal in a town.
+
+@@TABLE14@@
 
 ## Data touched
 

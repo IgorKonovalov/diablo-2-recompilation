@@ -689,6 +689,27 @@ class Driver:
                 d = t.wait(lambda tag, d: tag == "EV" and d.get("k") == "tp" and d.get("ph") == 1, 6)
                 print("tpuse: %s" % (("exit eax %s" % d.get("eax")) if d else "no tp event"), flush=True)
                 time.sleep(0.5)
+            elif kind == "clickobj":          # part 3: clickobj:CLS  walk next to the object of class CLS (OBJS
+                cls = int(rest)               # lines) and click it until its operate (OOP) is logged
+                o = last(self.log, "OBJS")
+                objs = [u for u in (o or {}).get("o", []) if u[0] == cls]
+                pos = self.pos()
+                if not objs or not pos:
+                    print("clickobj %d: not logged" % cls, flush=True)
+                    continue
+                ox, oy = min(objs, key=lambda u: math.hypot(u[1] - pos[0], u[2] - pos[1]))[1:]
+                self.move_near(ox, oy, 4)
+                ok = False
+                for k in range(8):
+                    pos = self.pos()
+                    t = Tail(self.log)
+                    self.click_rel(ox - pos[0], oy - pos[1], up=(25, 40, 55, 10)[k % 4])
+                    if t.wait(lambda tag, d: (tag == "OOP" and d.get("cls") == cls) or
+                              (tag == "EV" and d.get("ph") == 0 and d.get("k") in ("npcmove", "chlevel", "portal")), 4):
+                        ok = True
+                        break
+                print("clickobj %d at (%d, %d): %s" % (cls, ox, oy, "operated" if ok else "no operate"), flush=True)
+                time.sleep(2.0)
             elif kind == "key":
                 self.p.dpy.key(rest)
                 time.sleep(0.5)
@@ -981,24 +1002,28 @@ sess("x-talk3b", "QuestTalkThree", "enter-normal", 4326, ["talk:254:2", "talk:24
 # (the cairn order's quest-seed draws) twice, Lut Gholein (word 4's "Cain lost"), the palace (word 12, level 50),
 # Lost City (word 11's eclipse arm and its timer), Far Oasis and Lost City again, the Kurast Docks and the Dark
 # Wanderer (word 32's timer), Arreat Plateau, Crystalline Passage, Halls of Pain (word 37's level-entry steps)
-P3_ENTRY = ["tpuse", "use:1,0", "use:1,0", "towp2", "wp:2,1", "warp1:24", "warp1:25", "towp2", "wp:2,6", "sleep:22",
-            "nearwp", "wp:2,5", "nearwp", "wp:2,6", "nearwp", "wp:3,1", "goto:5150:4966", "sleep:15", "towp2",
-            "wp:5,3", "nearwp", "wp:5,4", "nearwp", "wp:5,5", "saveexit"]
+P3_ENTRY = ["tpuse", "use:1,0", "use:1,0", "towp2", "wp:2,1", "towp2", "wp:2,6", "sleep:22", "nearwp", "wp:2,5", "nearwp",
+            "wp:2,6", "nearwp", "wp:3,1", "goto:5150:4966", "sleep:15", "goto:5159:5054", "towp2", "wp:5,3", "nearwp",
+            "wp:5,4", "nearwp", "wp:5,6", "nearwp", "wp:2,1", "warp1:24", "saveexit"]
 sess("x-entry", "QuestEntry", "enter-normal", 4401, P3_ENTRY)
 sess("x-entry2", "QuestEntry", "enter-normal", 4402, P3_ENTRY)
 sess("h-entry", "QuestEntry", "enter-hell", 4403, P3_ENTRY, ["--es", "30"])
 # QuestAnya (Act V; word 37 bits 1, 8, 15; tr2 at 1,0): Anya's reward (one quest-seed draw), the tr2 use (word 37 b7)
-P3_ANYA = ["talk:512:2", "use:1,0", "tpuse", "saveexit"]
+P3_ANYA = ["goto:5088:5060", "goto:5096:5108", "talk:512:1", "use:1,0", "tpuse", "saveexit"]   # around the waypoint (5114, 5069)
 sess("x-anya", "QuestAnya", "enter-normal", 4411, P3_ANYA)
 sess("h-anya", "QuestAnya", "enter-hell", 4412, P3_ANYA, ["--es", "30"])
 sess("nm-anya", "QuestAnya", "enter-nightmare", 4413, P3_ANYA, ["--es", "30"])
 # Meshif west (NPC 264: NpcTravelMove(40, 5), the type-5 point) and back east, from the Kurast Docks
-sess("x-meshifw", "QuestMeshifW", "enter-normal", 4421, ["talk:264:1"] + (["menu:meshif2:3:1", "sleep:3",
+sess("x-meshifw", "QuestMeshifW", "enter-normal", 4421, ["talk:264:1"] + (["menu:meshif2:2:1", "sleep:3",
                                                           "goto:5205:5060", "menu:meshif:2:1", "sleep:3"] * 6) +
      ["saveexit"])
 # Tyrael's Act IV -> V travel (word 28 first set, then set) and back by waypoint
-sess("x-tyrael3", "ActFiveTyrael", "enter-normal", 4431, ["talk:367:1"] + (["menu:tyraelgo:2:1", "sleep:3", "towp2",
-                                                                         "wp:4,1", "sleep:2"] * 4) + ["saveexit"])
+# (part 3: Tyrael's menu offers only talk and cancel; the travel is the red portal, object 566, OperateFn
+# 0x005B5880, next to him)
+sess("x-tyrael3", "ActFiveTyrael", "enter-normal", 4431, ["talk:367:1"] + (["clickobj:566", "sleep:3", "towp2",
+                                                                         "wp:4,1", "sleep:2"] * 5) + ["saveexit"])
+sess("dev-meshif", "QuestMeshifW", "enter-normal", 4429, ["talk:264:1", "sleep:600"])   # menu probe (development)
+sess("dev-tyrael", "ActFiveTyrael", "enter-normal", 4439, ["talk:367:1", "sleep:600"])   # menu probe (development)
 # death and resurrection (packet 0x41): the 24-life save in the Cold Plains
 sess("x-death3", "QuestDeath", "enter-normal", 4441, ["towp2", "wp:1,2", "die:3", "saveexit"])
 # waypoint activation from mode 0: Act I, the towns' waypoints only; walk out and explore to the Cold Plains waypoint

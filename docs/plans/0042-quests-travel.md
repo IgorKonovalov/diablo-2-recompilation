@@ -630,3 +630,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   checker rules: part 3 item 6). Status lines of both findings updated. Reverser review-fixes 12 promoted ("carry a
   correction into the section it corrects", seen at the part 1 review and here). The review request and the part 2
   entry are closed; part 3 is filed to the reverser; the owner entry stays open with a note.
+- **2026-10-19 — Phase 2 part 3 checkpoint (reverser, `lane/p42r`, slot 2; in progress).** run:2026-10-19-quests3:
+  logger revision E (timers, the cairn order, the Dark Wanderer's step and tries, Anya's reward, the quest state byte),
+  checker rules and `tools/test_quests.py` (16 tests) committed; recorded so far x-entry (the eclipse arm and timer, the
+  bkd order, "Cain lost", level 50, word 37's 113 step, the Dark Wanderer), x-anya, h-anya, nm-anya (Anya's three tables,
+  the `tr2` use, the town-portal refusal), x-meshifw (six westward trips, type 5); 0 mismatches; the 32 part 1 and 2
+  logs 0 over 39 568 under the extended checker. Found: Meshif's Act III menu has no trade line; Tyrael's menu has no
+  travel line (the Act IV → V travel is the red portal, object 566, `0x005B5880`); the Zoo's object 567 is placed
+  nowhere. **Resume note:** sessions at the end of `tools/quest_sessions.py` (part 3 block); running x-tyrael3,
+  x-death3, x-entry2, h-entry, x-wpact1-0; development logs `dev-p42r-*`; the finding sections hold `@@` markers until
+  the final pass.

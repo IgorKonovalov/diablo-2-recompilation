@@ -1045,7 +1045,7 @@ NPCS = {
     "warriv": (155, ["talk", "go east", "cancel"], None),    # plan 0038 H6d: the report after Andariel
     "warriv2": (175, ["talk", "go west", "cancel"], None),   # plan 0042 Phase 2: the act change back to Act I
     "meshif": (210, ["talk", "sail east", "cancel"], None),  # plan 0042 Phase 2: Act II -> Act III
-    "meshif2": (264, ["talk", "trade", "sail west", "cancel"], None),   # plan 0042 Phase 2: Act III -> Act II
+    "meshif2": (264, ["talk", "sail west", "cancel"], None),   # plan 0042 Phase 2: Act III -> Act II (part 3: no trade line)
     "tyrael": (367, ["talk", "travel to harrogath", "cancel"], None),  # plan 0042 P2 part 2: Act IV -> Act V
     "kashya": (150, ["talk", "hire", "cancel"], None),
     "fara": (178, ["talk", "trade", "cancel"], (49, -7)),
@@ -1678,6 +1678,8 @@ def cmd_npc(args):
                     escape(p, args.log)
                     return 1
             my = y1 + 15 * (ln - 1)
+            if args.shots:              # plan 0042 P2 part 3: the menu as clicked
+                p.shot(os.path.join(args.shots, "npc%s-%s-open.png" % (tag, name)))
             start = os.path.getsize(args.log)
             p.dpy.move(p.off[0] + mx, p.off[1] + my)
             time.sleep(0.1)

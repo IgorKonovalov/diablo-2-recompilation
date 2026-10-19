@@ -5,6 +5,7 @@ Usage:
   python3 -I tools/quests.py check LOG [LOG ...]       # predict every checked line; exit 1 on a mismatch
   python3 -I tools/quests.py test                       # the model's self-test (also tools/test_quests.py)
   python3 -I tools/quests.py npcplace NAME [NAME ...]   # where DS1 presets / Levels / SuperUniques place a monster
+  python3 -I tools/quests.py objplace CLASS [CLASS ...] # where DS1 presets place an object class (part 3)
 
 What is predicted (docs/findings/quests/0001-progression.md, 0002-travel.md; every rule names its claim):
   dispatch    the callbacks of one QUESTS_DispatchEvent, in order: the quest objects in list order (object 40 down to
@@ -381,6 +382,19 @@ class Checker:
             self.prec[d["w"]] &= ~0x0FFC
 
     def on_QS(self, d):
+        if d.get("ret") in ("005b5914", "005b591e") and self.prec is not None and d.get("w") == 28:
+            # part 3: the Harrogath portal (object 566, 0x005B5880): in an expansion game, in Act IV, with word 26 b0
+            # or b13, word 28 b0 then b13 (0x005B590F, 0x005B5919) only while word 28 b0 is clear, then +0x4C = 1
+            # (0x005B5960) and NpcTravelMove(109, 5)
+            w = self.prec[28]
+            first = d["ret"] == "005b5914"          # b0 first (clear before it), then b13 (b0 just set)
+            self.ok(B(w, 0) != first and d["b"] == (0 if first else 13) and
+                    (B(self.prec[26], 0) or B(self.prec[26], 13)), "Harrogath portal word 28",
+                    "word 28 %04x word 26 %04x bit %s" % (w, self.prec[26], d["b"]))
+        if d.get("ret") == "0055e4fa" and self.prec is not None and d.get("w") == 37:
+            # part 3: the item use of tr2 (0x0055E4B4-0x0055E4F5) sets word 37 b7 only when b8 is set and b7 clear
+            w = self.prec[37]
+            self.ok(B(w, 8) and not B(w, 7) and d["b"] == 7, "tr2 use word 37 b7", "word 37 %04x bit %s" % (w, d["b"]))
         self.note("QS", d)
         self.recw.append(("QS", d))
         self.player_write("QS", d)
@@ -1215,6 +1229,40 @@ def cmd_npcplace(names, root=os.path.join(ROOT, "workspace", "merged")):
     return 0
 
 
+def cmd_objplace(classes, root=os.path.join(ROOT, "workspace", "merged")):
+    """Where the DS1 presets place objects by Objects.txt class (plan 0042 P2 part 3: the Zoo 567, the Dark
+    Wanderer's object 368): every .ds1 under <root>/data/global/tiles whose type-2 units resolve to one of the classes
+    through DS1_Parse's mapping (tools/ds1.py _units: ids < 150 through g_Ds1ObjectIds from the pinned game.exe, else
+    id - 150; the act rewrites of MonStats ids), and whether a LvlPrest row's File1..6 names that file."""
+    import ds1
+    exc = os.path.join(root, "data", "global", "excel")
+    used = set()
+    for r in tsv_at(exc, "lvlprest.txt"):
+        for k in range(1, 7):
+            f = (r.get("File%d" % k) or "").strip().lower().replace("\\", "/")
+            if f and f != "0":
+                used.add(f)
+    t = ds1._tables(root)
+    ot = ds1._object_table(EXE)
+    want = {int(c) for c in classes}
+    hits, files = 0, 0
+    for path in ds1.ds1_files(root):
+        try:
+            f = ds1.parse(open(path, "rb").read())
+        except Exception:  # noqa: BLE001
+            continue
+        files += 1
+        rel = path.split(os.sep + "tiles" + os.sep, 1)[-1].replace(os.sep, "/").lower()
+        for u in ds1._units(f, t, ot):
+            if u["type"] == 2 and u["id"] in want:
+                hits += 1
+                print("DS1 %s object %d at (%d, %d) (%s); LvlPrest names it: %s" % (rel, u["id"], u["x"], u["y"],
+                                                                                    u["rng"], rel in used))
+    print("SUMMARY objplace classes=%s ds1_files=%d placements=%d" % (",".join(str(c) for c in sorted(want)), files,
+                                                                      hits))
+    return 0
+
+
 def tsv_at(exc, name):
     with open(os.path.join(exc, name), errors="replace") as fh:
         rows = [ln.rstrip("\r\n").split("\t") for ln in fh]
@@ -1224,6 +1272,8 @@ def tsv_at(exc, name):
 def main(argv):
     if argv and argv[0] == "npcplace":
         return cmd_npcplace(argv[1:])
+    if argv and argv[0] == "objplace":
+        return cmd_objplace(argv[1:])
     if not argv or argv[0] not in ("check", "test"):
         print(__doc__)
         return 2
