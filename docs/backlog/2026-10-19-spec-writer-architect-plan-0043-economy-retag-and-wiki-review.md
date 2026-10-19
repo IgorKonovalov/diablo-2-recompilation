@@ -2,12 +2,12 @@
 from: spec-writer
 to: architect
 date: 2026-10-19
-status: open
+status: done
 context:
   - ../plans/0043-items-economy.md#implementation-log
   - ../specs/items/economy.md
   - ../wiki/economy.md
-resolution: ""
+resolution: "Reviewed 2026-10-19 (architect): accept with fixes (4), applied on lane/p43t; rulings in the plan 0043 log. Close bookkeeping left to a follow-up session."
 ---
 
 Review `lane/p43t` (from `main` `cf617f0`): plan 0043's last spec-writer pass, the re-tag of the reviewed

@@ -502,8 +502,9 @@ Step notes:
   unchanged; one paid repair of a broken cap in Hell (flag `0x100` cleared, durability 0 → 12). The stock client's
   repair box asks for the full cost even when the gold is short, and both partial repairs were reached through it.
   (0x005782C0–0x0057834F, fn:sub_00578050_NpcRepair@0x00578050, run:2026-10-19-economy2)
-- F6. [I] The entry refusals and the partial branch's tests other than `gold > 0` (the bounds on `k`, "not broken")
-  are read from the code. (0x0057822C–0x00578325)
+- F6. [I] The entry refusals, the partial branch's tests other than `gold > 0` (the bounds on `k`, "not broken") and
+  the rounding of its two divisions (two cases fit them but do not separate it) are read from the code.
+  (0x0057822C–0x00578325, 0x005782DA–0x00578309)
 - F6. [I] **An ethereal item** gets no repair box from the client, so no packet and no `NpcRepair` call came (two
   attempts); the server's own refusal (`ItemCanRepair` at 0x00578201) is read from the code only.
   (fn:sub_0062E660_ItemCanRepair@0x0062E660, 0x00578201)
@@ -533,7 +534,9 @@ Step notes:
   [items/vendors § C](vendors.md#c-when-stock-is-built-reset-and-marked-stale)), and never on `+0x24..+0x26`. The windows: Charsi's trade, sale,
   single-item and partial repairs, repair-all and imbue; Gheed's trade and gamble; Akara; Kashya's list; Larzuk,
   his socket service, Anya, her personalization and Malah in Normal; Larzuk, Malah, Anya, Halbu and Charsi in Hell;
-  ten gamble windows. Other NPC actions and game states are not covered. (fn:NPC_TradeOpen@0x00579430,
+  ten gamble windows. In session 4505 the watch was set at frame 1769 as the first Gheed gamble window opened and
+  the control's first line is at 2729, so that window is bracketed by the two rather than holding a control line. Other NPC
+  actions and game states are not covered. (fn:NPC_TradeOpen@0x00579430,
   fn:NPCSTORE_FindRec@0x00535EA0, run:2026-10-19-economy2)
 - [I] `D2S_WriteCorpses` sums mode-0 prices with difficulty **3** and class 513 (Malah) to choose the most valuable
   corpse; difficulty 3 indexes past `Level(H)` and `max buy (H)`, neither of which mode 0 reads for an ordinary
@@ -576,7 +579,7 @@ G7. monster drop, own type exactly 4 gold: amount ← amount × (100 + full(79, 
 G8. ilvl of other gold creators:                                                       [C] (fn:sub_00559300_DropGoldPile@0x00559300, run:2026-10-17-economy)
       DropGoldPile (OBJINIT_GoldPiles): the level's monster level − 1 when that is above 1
         (LevelMonLvl: MonLvl or MonLvlEx by the expansion flag)
-      DropItemAtUnit (Wirt's piles): LevelMonLvl of the body's level, at least 1         ; note G8
+      DropItemAtUnit (Wirt's piles): LevelMonLvl of the body's level, at least 1         ; notes G8, G8a; the floor code only
       DropItemCodeAt (the quest chests' piles): UnitDropLevel of the source              ; code only, note G8
 G8a. Wirt's gold (sub_00594630_A1Q4_WirtGold, on Wirt's body, object 268):           [C] (fn:sub_00594630_A1Q4_WirtGold@0x00594630, 0x00594651–0x00594695, run:2026-10-19-economy2)
       on its first event 7 (latch +0x90): count +0x8C ← RandLoHi(questSeed, 10, 20)      ; draw: 10 … 19

@@ -882,6 +882,9 @@ logs of run:2026-10-16-quest-drops (`workspace/logs/quests-s3-<seed>-….log`, p
 - ~~`0x0055CA40` (the holder test of the quest-item gate) is not read.~~ Answered: the carry-one and quest-duplicate
   test (§ E step notes). All three from [items/0010 § Plan 0039 batch P1b](../../findings/items/0010-quest-drops.md#plan-0039-batch-p1b-2026-10-17).
 - [L] The event-7 route at run time for the quest objects other than the Hellforge (Wirt's gold, classes 26, 122, 131,
-  189, 341, 367, 371, 459–461, 474–476): no breakpoint sat on the thunk or `QUESTS_ObjectEvent`; a run that clicks
-  Wirt's body would settle it. The first event-7 queue of classes 122, 371 and 459–461 is not read.
+  189, 341, 367, 371, 459–461, 474–476): no breakpoint sat on the thunk or `QUESTS_ObjectEvent`.
+  run:2026-10-19-economy2 operated Wirt's body and logged `A1Q4_WirtGold` 18 times, 10 frames apart
+  ([items/economy](economy.md#g-gold-payment-caps-piles-and-the-death-loss) G8a), but not the route to it, so the
+  route stays open for Wirt too; a run with a breakpoint on the thunk would settle it. The first event-7 queue of
+  classes 122, 371 and 459–461 is not read.
   ([items/0010 § Open questions](../../findings/items/0010-quest-drops.md#open-questions))
