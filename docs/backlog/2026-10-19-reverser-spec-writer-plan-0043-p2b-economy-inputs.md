@@ -2,11 +2,11 @@
 from: reverser
 to: spec-writer
 date: 2026-10-19
-status: open
+status: done
 context:
   - ../findings/items/0011-economy.md#phase-2b-runtime-results-run2026-10-19-economy2
   - 2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs.md
-resolution: ""
+resolution: "Applied 2026-10-19 (spec-writer, lane/p43t): items/economy re-tagged {C 109, I 80, L 12} -> {C 125, I 83, L 12} with the scopings as corrected at the P2b review; quest-drops and vendors stale text closed; review request 2026-10-19-spec-writer-architect-plan-0043-economy-retag-and-wiki-review."
 ---
 
 Plan 0043 Phase 2b inputs for `docs/specs/items/economy.md` (after the architect's review of

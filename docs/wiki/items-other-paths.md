@@ -370,7 +370,8 @@ The gambled item is fully decided at the build, base and quality included. Closi
 items, and buying an item copies it to the player without making a replacement. A gambled unique enters the
 [made-uniques set](../glossary.md) when the window is built, as a dropped one does, whether or not it is bought, so a
 later pick of that row fails and falls back; this is read from the code. Prices and repair have their own spec, which the
-vendor spec points to ([§ I](../specs/items/vendors.md#i-prices-and-repair)); no wiki page covers it yet.
+vendor spec points to ([§ I](../specs/items/vendors.md#i-prices-and-repair)); the [prices, repair, gold and wear](economy.md)
+page explains it.
 
 ## Quest drops and quest rewards
 
@@ -465,8 +466,11 @@ record, or a town (monster level 0 or 1), that is 1 (read from the code).
 ### NPC services: imbue, socket, personalize
 
 Three NPC services take the item on the cursor and give back a new or changed one
-([§ F](../specs/items/quest-drops.md#f-npc-item-services-and-given-items)). All three come back repaired, recharged
-and identified (read from the code), and each then sets bit 0 of its quest word and clears bit 1.
+([§ F](../specs/items/quest-drops.md#f-npc-item-services-and-given-items)). All three call the repair and then identify
+their result. A run showed the socketed and the personalized item come back repaired, but not the imbued one: it is
+not yet identified when the repair runs, and an unidentified item cannot be repaired
+([§ F0](../specs/items/quest-drops.md#f0-the-shared-tail); [prices, repair, gold and wear](economy.md#repair)). Each
+service then sets bit 0 of its quest word and clears bit 1.
 
 - **Charsi's [imbue](../glossary.md)** ([§ F1](../specs/items/quest-drops.md#f1-charsis-imbue-action-154-word-3-bit-1-set))
   is a **fresh creation**, not an edit: same base, quality rare, ilvl = character level + 4 (character level when it
@@ -580,10 +584,10 @@ Collected from the specs' open questions and unconfirmed points:
   tests holds, since no stock row uses them; and everything the run did not reach (outputs B and C, the player and item tests, ethereal and elite inputs, repair of
   damaged items, the item level cap, the crafted edge cases).
 - **Vendors** ([open questions](../specs/items/vendors.md#open-questions)): the multiplayer cases; three bytes of the
-  vendor record with no reader found yet; how many draws
+  vendor record that nothing read in the windows a run watched (a reader elsewhere is not excluded); how many draws
   the [mercenary (hireling)](../glossary.md) list takes from the shared store seed (another plan owns it).
 - **Quests** ([open questions](../specs/items/quest-drops.md#open-questions)): kills by pets, hirelings or converted
-  monsters, parties, classic games, Diablo, Baal and his gold, Anya's and Qual-Kehk's items, the chest and Wirt gold,
+  monsters, parties, classic games, Diablo, Baal and his gold, Anya's and Qual-Kehk's items, the chest gold (Wirt's gold is now run, see [gold](economy.md#how-much-a-pile-holds)),
   the Countess in Hell and the Cow King's refusals were not attempted; and, for quest objects other than the
   Hellforge, the timer route at run time.
 

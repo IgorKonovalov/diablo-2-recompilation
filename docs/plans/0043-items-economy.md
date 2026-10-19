@@ -1,6 +1,6 @@
 # 0043 — Item economy: prices, repair, gold and durability wear
 
-> **Status:** approved (owner, 2026-10-16; unattended); [ADR-0017](../adrs/0017-scope-quests-travel-economy.md) accepted 2026-10-16
+> **Status:** approved (owner, 2026-10-16; unattended); every phase accepted 2026-10-19, close bookkeeping pending (log); [ADR-0017](../adrs/0017-scope-quests-travel-economy.md) accepted 2026-10-16
 > **Created:** 2026-10-16
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0017-scope-quests-travel-economy
@@ -676,3 +676,77 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Merge note:** this branch's plan log conflicts with `main`'s (the P3 entries of `lane/p43s`, appended after
     `7aeeafd`): keep both sides, in either order; the ledger rows likewise.
   - **Next:** merge `lane/p43b`; the spec-writer re-tag pass; harness slot 1 to the next H2 batch (plan 0038 H5b).
+- **2026-10-19 — Phase 2b re-tag and economy wiki (spec-writer, `lane/p43t`, from `main` `cf617f0`), review
+  requested.** [items/economy](../specs/items/economy.md) re-tagged from
+  [run:2026-10-19-economy2](../findings/items/experiments.md#run2026-10-19-economy2): {C 109, I 80, L 12} →
+  {C 125, I 83, L 12}. Changed: Entry points (quest services' repair, Wirt's body), C4 crafted, D2 Hell repair, E2
+  `L2 = 5`, F4 (the eight copy tests, all evaluated; three reached `[C]`, five `[I]`), F6 single-item and partial
+  repairs `[C]` (ethereal server refusal `[I]`), F7 (the quest repair: socket and personalize `[C]`, the imbue no-op
+  `[C]`, no quest script repairs `[I]`; the broken repair's draws `[I]`), a § F note on the store record (`[C]` for
+  the windows played), G8/G8a Wirt's gold `[C]` (ilvl column unseparated), § I (sell split, Wirt row), a
+  reimplementation note, Evidence, *Open questions* (Phase 2b struck; its remainder one `[L]` bullet). Stale text
+  closed: [items/quest-drops](../specs/items/quest-drops.md) F0, F1, Outputs and the Wirt row ({C 81, I 88, L 2} →
+  {C 84, I 87, L 2}), [items/vendors](../specs/items/vendors.md)' store-record question (tags unchanged). Wiki: new
+  [economy](../wiki/economy.md) page, index row 8, items-other-paths' vendor link and services paragraph. Gate green.
+  Backlog: the P2b inputs and the wiki entries closed; review request
+  [2026-10-19-spec-writer-architect-plan-0043-economy-retag-and-wiki-review](../backlog/2026-10-19-spec-writer-architect-plan-0043-economy-retag-and-wiki-review.md),
+  which notes that the plan can close at this review. Research map: no status change (`reviewed`); the tag counts
+  for the architect.
+- **2026-10-19 — P2b re-tag and economy wiki review (architect, `lane/p43t` at `49a2dfc`, from `main` `cf617f0`):
+  accept with fixes. Plan 0043 can close; the close bookkeeping is left (below).** Read: the review request, the three lane commits' diffs, the Phase 2b
+  review above (rulings 1–5), [items/0011 § Phase 2b](../findings/items/0011-economy.md#phase-2b-runtime-results-run2026-10-19-economy2),
+  the [run record](../findings/items/experiments.md#run2026-10-19-economy2), ADR-0012, and both lanes' review-fixes.
+  - **Counts:** recounted by script over the bracketed tags: items/economy {C 125, I 83, L 12}, items/quest-drops
+    {C 84, I 87, L 2}, items/vendors {C 71, I 38, L 2}, each equal to its front matter (the fixes below move none). The
+    raised numbers match the kept outputs as the finding copies them: C4 55 crafted inputs (35/17/3), D2 25 mode-3
+    inputs, E2 125 gamble prices (ten windows), F6 the 4 calls (300 for 14 464, 1 → 2; 7 936 for 14 208, 2 → 34; gold
+    0; the broken cap 0 → 12), F4 11 decisions (6 copied, 5 refused: 2/2/1), G8a 18 piles at ilvl 6, the second run's
+    7 376 price calls; the wiki's 33 901 is 26 525 (run 1) + 7 376.
+  - **Tags against the rulings.** Ruling 1: the socket and personalize repairs and the imbue's no-op `[C]` (F7 note,
+    quest-drops F0 and Outputs), "no quest script repairs" `[I]`: held. Ruling 2: G8a `[C]`, the Levels column `[I]`
+    (G8 note), the `DropItemAtUnit` floor `[I]`: held, but see fix 3. Ruling 3: the store-record note `[C]` scoped to
+    the windows played, the reader elsewhere `[L]`: held, but see fix 2. Ruling 4: F4 lists the eight tests, every one
+    evaluated; three reached `[C]`, five `[I]` (inline marker, F4 note, § I's split rows): held; the § I sell row's
+    "+4 with a gold re-drop" is the finding's own `[C]` sentence (§ 8, the first run's 3 cases) and stays. Ruling 5:
+    the partial repairs `[C]`, the ethereal server refusal `[I]`, the broken repair's "no draw" `[I]`: held, but see
+    fix 1. F7's header stays `[I]` with the `[C]` parts in notes (the writer's point 2): right, since quantity and
+    charge refills are code-read. The writer's point 1 (§ I's buy and death rows cite the first run only): right, the
+    second run's check output lists no new buy or death seeds to cite.
+  - **Wiki (ADR-0012).** [economy](../wiki/economy.md): `based_on` items/economy 2026-10-19, the spec's `updated:`;
+    every statement traced to the spec, code-read points said "read from the code", the *What is not known yet* list
+    equal to the spec's two `[L]` shortfall bullets and its other open questions. The six worked numbers equal
+    examples 1 (11 442), 3 (5278), 4 (52 943), 5 (139 850 and 59 400; 0), 7 (24, 129) and 8 (slot 4, offset 0, roll
+    80). The index's renumbered rows 8–12 are not cited by number anywhere in `docs/` (searched); every link resolves
+    (gate). [items-other-paths](../wiki/items-other-paths.md) `based_on` already names quest-drops and vendors at
+    2026-10-19, which this lane's edits keep (both specs' `updated:` is 2026-10-19).
+  - **The writer's open point, quest-drops' event-7 route bullet:** not struck. The run logged `A1Q4_WirtGold`, not the
+    thunk or `QUESTS_ObjectEvent`, so the route is still unobserved; but the bullet's "a run that clicks Wirt's body
+    would settle it" is stale (fix 4).
+  - **Fixes (made here):** (1) *overclaim:* F6's `[C]` note gave the partial repair "with `k` and `D` as above" while
+    ruling 5 said the rounding rests on the code; the F6 `[I]` note now adds "the rounding of its two divisions (two
+    cases fit them but do not separate it)" with the `div`/`idiv` range. (2) *omission:* the store-record `[C]` note
+    lacked the 4505 scoping of the P2b review's fix 4 (the first Gheed gamble window bracketed by the watch's setting at
+    1769 and the control's first line at 2729); added. (3) *overclaim:* G8's pseudocode line gave Wirt's ilvl "at
+    least 1" inside the `[C]` block with only "note G8"; the comment now says "notes G8, G8a; the floor code only".
+    (4) *stale cross-reference:* [quest-drops](../specs/items/quest-drops.md)' event-7 route `[L]` bullet rewritten
+    whole: the economy2 run operated Wirt's body and logged `A1Q4_WirtGold` 18 times, 10 frames apart, but not the
+    route, which stays open; a breakpoint on the thunk settles it. No tag count moves.
+  - **Ledger:** 4 fixes: overclaim 2, omission 1, stale cross-reference 1. Spec-writer review-fixes: rule 2 (split a
+    code-read part out of a `[C]`) recurred in fixes 1 and 3, rule 3 (re-read the finding for each restated
+    condition) in fix 2 and rule 7 (close what your change makes stale) in fix 4; each gains this review as a
+    citation. No new rule.
+  - **Research map (left):** `items/economy` row to {C 125 / I 83 / L 12} with the P2b raises; `items/quest-drops`
+    row to {C 84 / I 87 / L 2} (it still says L 3).
+  - **Backlog:** the review request closed.
+  - **Close (left, the session stopped at the usage limit):** every phase is accepted (P0, P1/1b, P2, P2b, P3 and this
+    re-tag; the wiki page written). Still to do: status `done`, the move to `docs/plans/done/` with inbound links fixed,
+    the plan index row in the closed format and the *Gates* text, the research-map rows above, the two ledger rows
+    (`lane/p43t` accept with fixes, 4 fixes as below, usage at merge; its review) and the review-fixes citations.
+    **Follow-ups that leave the plan:** (a) the spec's two `[L]` remainders (*Remainder of Phase 2b*, *Accepted
+    shortfalls of Phase 2*) carry no run (plan 0038's sweep may take any that a kept log or a static second source
+    settles); (b) two clients (trading, the party gold split, game types 1 and 2) to plan 0044; (c) the open archivist
+    entries [register the plan 0042 quest recipes in test_d2s](../backlog/2026-10-19-architect-archivist-register-the-plan-0042-quest-recipes-in-test.md)
+    and [UniqueItems `carry1` has a reader](../backlog/2026-10-19-architect-archivist-unique-items-carry1-has-a-reader.md);
+    (d) quest-drops' event-7 route for Wirt's body and the other quest objects (a breakpoint on the thunk, any later
+    quest run).
+  - **Next:** merge `lane/p43t` (no conflict expected: `main` has not moved since `cf617f0` at this review's start).
