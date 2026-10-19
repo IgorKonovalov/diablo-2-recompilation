@@ -3,8 +3,8 @@
 > **Subsystem:** quests/travel
 > **Question:** how does a player activate and use a waypoint, change act, open and use a town portal, and where is a
 > player placed on entering a level (by waypoint, NPC, portal, warp, death or joining), with which draws?
-> **Date:** 2026-10-17   **Plan:** 0042 (Phase 1 and 1b, static; Phase 2 run:2026-10-17-quests, § 12)   **Status:**
-> open (Phase 2 part 1 reviewed 2026-10-17, accept with fixes; part 2 pending)
+> **Date:** 2026-10-17   **Plan:** 0042 (Phase 1 and 1b, static; Phase 2 run:2026-10-17-quests, § 12; part 2 run:2026-10-18-quests2, § 13)   **Status:**
+> open (Phase 2 part 1 reviewed 2026-10-17, accept with fixes; part 2 reviewed 2026-10-19, accept with fixes; part 3 open)
 
 Static reading of the pinned `Game.exe` (Ghidra on the lane's copy, objdump for the instruction-level reads); no game
 run. Names are ours. "Record" and "word *q*, bit *s*" are as in [save/0002](../save/0002-quest-words.md): bit `16q + s`
@@ -511,6 +511,30 @@ Normal and Nightmare, classic Normal and Nightmare, on slots 1 and 2; no Hell se
 entries (2); a type-5 lookup that steps (no group-1 point on the towns the run reached); the walk command's
 state-42 draw; death and resurrection (packet 0x41: no death in the run); the portal `QuestFlag` gate, the party gate
 and a non-zero stamp (two clients: plan 0044, out of scope here); the Arcane and lair portals, the Durance portal.
+
+### 13. Phase 2 part 2 (run:2026-10-18-quests2)
+
+The completion pass ([experiments](experiments.md#run2026-10-18-quests2); quest half
+[quests/0001 § 16](0001-progression.md#16-phase-2-part-2-run2026-10-18-quests2)) logged the travel events as part 1
+did (same logger, revision D), on slot 2, one client. `tools/quests.py check` predicts them with the part 1 rules.
+
+| Claim (section) | Run | Result |
+|---|---|---|
+| warps: no draw (§ 7) | 104 warps (x-warps 100: LvlWarp rows 20 and 21 alternately; x-orb 2; x-summit2 and x-summit3 1 each), 106 with part 1's | **raised** `[C]` for the warps reached: gs, qs and ps unchanged across every `WarpExitPos` call (the sewer-dock pair, LvlWarp rows 20 and 21, 100 times; row 64 into 100; row 76 into 120); the free-cell search after each is predicted as in § 12 (run:2026-10-18-quests2, fn:sub_005550B0_WarpExitPos@0x005550B0) |
+| level 120's warp tiles and `QUESTS_WarpGate(120, 118/128)` (§ 7) | x-summit2 (`QuestSummit`) and x-summit3 (`TravelWpFive`): clicks at row 82's place (to 118) and row 83's (to 128) | **not reached**: no click took either tile (no `WarpExitPos` call); the clicks at row 82's place operated the summit door instead (9 and 6 operates, each refused as quests/0001 § 15 has it). The 118/128 branch stays `[I]` for both creators (run:2026-10-18-quests2) |
+| the gate into 100 (§ 7) | x-orb: 83 → 100 after the orb broke | held in one case, `[I]` (run:2026-10-18-quests2, fn:sub_005BBFA0_A3Q5_DuranceWarpGate@0x005BBFA0) |
+| NPC act change: the travel word set once, `+0x4C` = 1 and packet 0x48 (§ 5, § 9) | x-meshif: Meshif east from `ActThreeMeshif` (word 15 bit 0 clear) | **raised in part** `[C]` for word 15's branch (`0x005468E4`, read in Phase 1, not run before): word 15 set, `+0x4C` = 1, then packet 0x48 clears it (1 → 0, return 0); one case per travel word now for words 7 (part 1) and 15; word 28 (Tyrael) not reached (the scripted Tyrael menu did not travel). Packet 0x48 stays `[I]` (two cases) (run:2026-10-18-quests2, fn:sub_005467E0_NpcActTravel@0x005467E0, fn:sub_0054C590_Pkt48ActChangeClear@0x0054C590) |
+| waypoint travel: no quest test, no draw but the destination's level seed (§ 3) | 47 travels (packet 0x49 and `WaypointTravel`), 108 with part 1's 61; 47 operates of waypoints in mode 2 | holds as raised in part 1: gs, qs, ps unchanged, gates passed with stamp 0, the record bit set on every operate, the mode kept; 150 travels not reached (run:2026-10-18-quests2) |
+| waypoint activation from mode 0 (§ 2) | x-wpact3 (`TravelWpOne`, no Act III field waypoint): 14 minutes of exploration from the Kurast Docks; the Spider Forest (76) and Great Marsh (77) waypoints were logged in mode 0 (`OBJP`) | **not reached**: the driver crossed from 76 into 77 inside one exploration chunk and could not get next to the Great Marsh waypoint (straight Teleport hops over the marsh), so no operate of a mode-0 waypoint was logged; the activation, event 1 and the `Sync` 0 draw (checked by `ev_wpop` when logged) stay `[I]`; the mode 1 → 2 draw that would make a chained pair is not logged by any revision (run:2026-10-18-quests2, fn:sub_00584E30_WaypointOperate@0x00584E30) |
+| death and resurrection (packet 0x41, § 8) | `dev-p42q-x-death-a` only: the 24-life save in the Cold Plains was not killed (the driver read a low life orb as death and pressed Escape) | **not reached**; stays `[I]` (fn:sub_0054C0E0_Pkt41Resurrect@0x0054C0E0) |
+| type-5 placement that steps (Meshif's return to 40, § 4) | x-meshif: the westward Meshif menu was not taken by the driver | **not reached**; stays `[I]` (run:2026-10-18-quests2, fn:sub_0061B060_ActLevelSpot@0x0061B060) |
+
+**Shortfalls (named).** 150 waypoint travels (108); 60 activations from mode 0 (none); 150 warp entries (106);
+level 120's warp tiles from either creator (the door answers the clicks) and the gates into 73 and 132 (not attempted);
+the refusal into 100 (the client offered no warp); `NpcActTravel` 20 events (1 in part 2: Meshif east; Meshif west,
+Tyrael's Act IV → V travel and more Warriv trips were not taken by the driver), packet 0x48 on word 28, a type-5 lookup
+that steps; death and resurrection; a portal refused in a town and the Durance, Arcane and lair portals (not
+attempted); the free-cell search's far rings (named at part 1). Two-client cases stay plan 0044's.
 
 ## Data touched
 

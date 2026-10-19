@@ -154,3 +154,160 @@ Runtime records for [quests/0001](0001-progression.md) and [quests/0002](0002-tr
 - **Not reached / out of scope:** see the plan log entry and the two findings' Phase 2 sections (shortfalls named per question); the two-player cases (the portal party and `QuestFlag` gates, party credit, a non-zero gate stamp) are plan 0044's and out of scope here.
 - **Conclusion:** raises and corrections in [quests/0001 § 15](0001-progression.md#15-phase-2-run2026-10-17-quests)
   and [quests/0002 § 12](0002-travel.md#12-phase-2-run2026-10-17-quests).
+
+## run:2026-10-18-quests2
+
+- **Question:** (plan 0042 Phase 2 part 2, the completion pass) Do the NPC-talk quest steps of
+  [quests/0001](0001-progression.md) § 7–§ 10 (each bit write at its call site, from a save set just before the step),
+  the saved quest words after *Save and Exit*, the Compelling Orb, the Durance gate, NPC 266, the Tristram portal, a
+  new character's join, and the travel events of [quests/0002](0002-travel.md) (warps, waypoint activations and
+  travels, NPC act changes, packet 0x48 per travel word, death and resurrection) reproduce with 0 mismatches under
+  the part 1 checker, extended, which re-checks part 1's 11 logs unchanged?
+- **Setup:** the ADR-0003 harness on **slot 2** only (display `:9`, `workspace/wineprefix-2`; slot 1 was another
+  lane's), agent-driven play (no owner play), one client, one game at a time. The slot's empty saves directory set
+  aside as tag `p42q`, restored and set aside again before each launch (`quest_sessions.py run`), the session's save
+  installed with `d2run.py --install p42q`; the installed save is copied beside the log as `<log>.in.d2s` and the save
+  the game writes at *Save and Exit* as `<log>.out.d2s`.
+  - **Saves** (new recipes, built with `tools/d2s.py build workspace/merged/data/global/excel <recipe>
+    <base> workspace/runtime/quest-saves-p42q/<Name>/<Name>.d2s`; expansion base
+    `workspace/samples/d2s-owner/smpsor-l50.d2s`, classic base `workspace/runtime/monspawn-chars/cls/smpsor.d2s`):
+    `quest-talk1`..`5` (`QuestTalkOne`..`Five`: every quest done but the step's words, set the same in all three
+    difficulties, start act I..V: word 0, 8, 16, 24 clear; words 1, 2, 4, 6, 9, 20, 25, 27, 35 bit 1 only; word 14
+    bit 3; word 19 bit 6; word 21 bit 4), `quest-talk1c`..`4c` (the classic `QuestTalkOneC`..`FourC`, the same words,
+    classic status byte), `quest-orbwill` (`QuestOrbWill`: `travel-act4` with `qf2` wielded and no `qf1`),
+    `quest-death` (`QuestDeath`: 24 life, no belt). Phase 0's `TravelWpOne`, `TravelWpTwo`, `TravelWpFive`,
+    `QuestSummit`, `ActThreeMeshif`, `ActFourDurance`, `ActFiveTyrael` as built by `tools/quest_saves.py build`.
+  - **Logger** `tools/gdb/quest-state.gdb` as in part 1, with `questev.py` revision D (this run): `QK`, every
+    `QUESTRECORD_ClearSteps` call (`0x0065C3E0`, which clears bits 2–11 with `BITFIELD_Clear` and so writes no `QC`
+    line), and the `NPCQ` driver line extended to the town NPCs of the talk steps. Part 1's lines are unchanged.
+  - **Checker** `tools/quests.py check`, extended (rules in its docstring): the talk steps (`TALK_STEPS`: per word, NPC
+    class, message, condition on the word before, the writes with their call sites), the switched-off reward handlers
+    (`deactivated_writes`), the saved words (`save_check`: the loader rule, then every logged write to the player's
+    record, word by word for all three difficulties), the Compelling Orb, the Durance gate, NPC 266's player-seed steps,
+    the Tristram portal; tests `tools/test_quests.py`.
+  - **Driver** `tools/quest_sessions.py` (part 2 actions: `towp2`, `pingpong`, `warp1` with the LvlWarp select box,
+    `goto`, `tonpc`, `activate`, `approach`, `die`, `saveexit`; `talk` without a stray Escape), `tools/d2pilot.py`
+    (Tyrael's menu row), `tools/gdb/quest-newchar.steps`.
+- **Procedure:** `python3 -I tools/quest_sessions.py run --slot 2 --tag p42q --run 2026-10-18-quests2 SESSION…`
+  (sessions defined at the end of the file), then `systemd-run --user --scope -p MemoryMax=4G python3 -I
+  tools/quests.py check workspace/logs/quests/2026-10-17-quests-*.log workspace/logs/quests/2026-10-18-quests2-*.log`.
+
+  | Session | Seed | Save | Game, difficulty | Actions (what happened) |
+  |---|---|---|---|---|
+  | x-warps | 4311 | `TravelWpTwo` | expansion Normal | waypoint to Lut Gholein, 100 warps through LvlWarp rows 20/21 (town ↔ sewer dock), 14-hop waypoint chain, Save and Exit |
+  | x-talk1 | 4321 | `QuestTalkOne` | expansion Normal | Akara ×3, Kashya ×2, Warriv ×3, waypoint chain (6 travels), Save and Exit |
+  | x-orbno | 4312 | `ActFourDurance` | expansion Normal | waypoint to Travincal, warp row 64 (no click taken), the orb (no operate reached the server), Save and Exit |
+  | x-orb | 4313 | `QuestOrbWill` | expansion Normal | the orb ×2 counted, warp 83 → 100 and back up, Save and Exit |
+  | x-navi | 45 | `TravelWpTwo` | expansion Normal | out of the camp to the Blood Moor's border preset, Flavie (266) ×23, Save and Exit |
+  | x-summit2 | 4314 | `QuestSummit` | expansion Normal | Ancients' Way, warp 118 → 120, clicks at rows 82/83 (the door answered, 9 refusals), Save and Exit |
+  | x-summit3 | 4315 | `TravelWpFive` | expansion Normal | the same (6 door refusals), Save and Exit |
+  | x-meshif | 4316 | `ActThreeMeshif` | expansion Normal | Meshif east (word 15 set, packet 0x48); Meshif west not taken; stopped by hand (no Save and Exit) |
+  | h-talk1 | 4331 | `QuestTalkOne` | expansion **Hell** | the Act I talks, waypoint chain, Save and Exit |
+  | c-talk1 | 4351 | `QuestTalkOneC` | **classic** Normal | the Act I talks, waypoint chain, Save and Exit |
+  | x-talk3 | 4323 | `QuestTalkThree` | expansion Normal | Hratli, Ormus; Asheara not found; stopped by hand |
+  | x-tristram | 4372 | `TravelWpOne` | expansion Normal | Stony Field explored 240 s, the cairn stones not reached, Save and Exit |
+  | x-newchar | 4371 | none (menu) | expansion Normal | a new Sorceress through the menu, Save and Exit |
+  | x-talk3b | 4326 | `QuestTalkThree` | expansion Normal | Alkor, Cain (0x1CA); stopped by hand |
+  | x-talk4 | 4324 | `QuestTalkFour` | expansion Normal | Tyrael, Cain, Save and Exit |
+  | x-talk2 | 4322 | `QuestTalkTwo` | expansion Normal | Jerhyn, Atma, Meshif, Save and Exit |
+  | h-talk3 | 4333 | `QuestTalkThree` | expansion **Hell** | Hratli, Ormus, Asheara, Alkor, Cain; the game exited during a machine suspend and the driver hung (below) |
+  | x-wpact3 | 4361 | `TravelWpOne` | expansion Normal | Kurast Docks → Spider Forest → Great Marsh, 14 min, no activation, Save and Exit |
+  | h-talk4 | 4334 | `QuestTalkFour` | expansion **Hell** | Tyrael, Cain, Save and Exit (supervised driver) |
+  | c-talk4 | 4354 | `QuestTalkFourC` | **classic** Normal | Tyrael, Cain, Save and Exit (supervised) |
+  | x-talk5 | 4325 | `QuestTalkFive` | expansion Normal | Larzuk ×2, Save and Exit (supervised) |
+
+- **Observed** (`tools/quests.py check` over the 21 logs; full output `workspace/logs/quests/quests2-check.txt`,
+  `edd07c40…`; per-kind seed lines and level-point lines trimmed):
+  ```
+  Durance warp gate checks                                               1
+  NPC 266 talk: e0 handler 0x00596A90 runs 2                             23
+  chained pairs de 266 ps                                                22
+  de gs: a unit created by a talk step (oracle)                          13
+  deactivated quest no write                                             426
+  deactivated quest writes checks                                        453
+  events chact                                                           13
+  events chlevel                                                         47
+  events de                                                              476
+  events door                                                            15
+  events due                                                             5
+  events join                                                            22
+  events lpf                                                             3942
+  events npcact                                                          1
+  events npcmove                                                         1
+  events orb                                                             2
+  events p48                                                             1
+  events p49                                                             47
+  events place                                                           21
+  events pocreate                                                        82
+  events spot                                                            68
+  events warp                                                            104
+  events warpgate                                                        1
+  events wpop                                                            47
+  events wptr                                                            47
+  free search checks                                                     323
+  free search moved                                                      54
+  gate p49 checks                                                        47
+  join quests deactivated                                                464
+  level seed chained pairs                                               106
+  loaded words (join record) checks                                      16
+  orb counter checks                                                     2
+  orb gs: the completing hit (oracle)                                    1
+  orb hit counted (weapon ['qf2 '], mode 0)                              2
+  orb mode after the second hit checks                                   1
+  orb operates                                                           2
+  orb writes checks                                                      2
+  saved word checks                                                      2304
+  saved words: player-record writes applied                              115
+  saved words: sessions compared                                         16
+  saved words: words changed in the game's difficulty                    46
+  stub character: double join                                            1
+  stub join, first call checks                                           1
+  stub join, second call checks                                          1
+  talk step w0 npc 155 msg 0x0 fires                                     3
+  talk step w1 npc 148 msg 0x4c fires                                    3
+  talk step w14 npc 201 msg 0x1ba fires                                  1
+  talk step w14 npc 210 msg 0x1c2 fires                                  1
+  talk step w16 npc 253 msg 0x1d2 fires                                  2
+  talk step w19 npc 252 msg 0x24d fires                                  1
+  talk step w19 npc 255 msg 0x251 fires                                  2
+  talk step w2 npc 150 msg 0x5c fires                                    3
+  talk step w20 npc 254 msg 0x21a fires                                  2
+  talk step w24 npc 367 msg 0x298 fires                                  3
+  talk step w25 npc 367 msg 0x2a4 fires                                  3
+  talk step w26 npc 246 msg 0x4e21 fires                                 2
+  talk step w26 npc 367 msg 0x4e20 fires                                 2
+  talk step w27 npc 246 msg 0x2a8 fires                                  3
+  talk step w35 npc 511 msg 0x4e7a fires                                 1
+  talk step w4 npc 148 msg 0x76 fires                                    3
+  talk step w40 npc 511 msg 0x4ed2 fires                                 1
+  talk step w6 npc 155 msg 0xb7 fires                                    3
+  talk step w8 npc 201 msg 0xfd fires                                    1
+  talk step w9 npc 176 msg 0x14e fires                                   1
+  warps                                                                  104
+  SUMMARY mismatches=0 checks=23348 logs=21
+  ```
+- **Part 1 re-checked:** the 11 part 1 logs match their manifest (`sha256sum -c quests-manifest.sha256`: 11 OK) and
+  give `SUMMARY mismatches=0 checks=16204 logs=11` under the final checker (`quests2-recheck-part1.txt`, `3a8209f8…`);
+  the 5 checks beyond part 1's 16 199 are the new talk-step rule on the Warriv and Jerhyn introductions those logs hold.
+- **Raw logs and kept files:** `workspace/logs/quests/2026-10-18-quests2-*.log` (21), the installed saves
+  (`*.in.d2s`, 20) and written saves (`*.out.d2s`, 17), `quests2-check.txt`, `quests2-recheck-part1.txt` and
+  `2026-10-18-quests2-npcplace.txt`, sha256 in `workspace/logs/quests/quests2-manifest.sha256` (61 lines,
+  `29693c4b…`). Driver transcripts (`workspace/scratch-p42q/q*.out`) are not kept as evidence.
+- **Development logs** (not part of the record, kept): `workspace/logs/quests/dev-p42q-*.log` (11: `harem-a`,
+  `sewer-a`, `sewer-b`, `x-talk1-a`, `x-talk1-b`, `x-orbno-a`, `x-orb-a`, `x-summit2-a`, `x-tyrael-a`, `x-death-a`,
+  `h-talk4-a`) with their installed saves, hashed in `dev-p42q-manifest.sha256` (20 lines, `af3aefd0…`); the final
+  checker gives 0 mismatches over 2 480 checks on them, which raises nothing. Causes: the driver's walking and clicking
+  being fixed (warp select boxes, the town waypoint walk, stale NPC positions, a stray Escape that reached SAVE AND
+  EXIT in `x-talk1-b`), the orb preset goal, a wrong Tyrael menu, a false death reading, a run restarted with the
+  supervised driver.
+- **Deviations:** one slot only (slot 2; slot 1 was freed by plan 0043 late in the run and not taken). During
+  h-talk3 the owner's machine suspended for about nine hours; the game exited, the driver kept clicking into the gone
+  window and the main session killed it at 07:23; h-talk3 has no written save. Afterwards `quest_sessions.py run`
+  supervises each session in its own process group (watchdogs on a quiet log, gdb's exit line and a time limit; waits
+  on `d2run.py`; bounded slot and save calls) and was run under `timeout`; h-talk4, c-talk4 and x-talk5 ran that way.
+  Sessions stopped by hand (x-meshif, x-talk3, x-talk3b) are recorded without a written save. x-wpact3's session line
+  shows no saveexit message but its written save is kept.
+- **Not reached / out of scope:** the two findings' part 2 sections name the shortfalls; two-client cases stay plan
+  0044's.
+- **Conclusion:** raises and corrections in [quests/0001 § 16](0001-progression.md#16-phase-2-part-2-run2026-10-18-quests2)
+  and [quests/0002 § 13](0002-travel.md#13-phase-2-part-2-run2026-10-18-quests2).

@@ -1,0 +1,143 @@
+{
+  "game": "classic",
+  "class": "Sorceress",
+  "seed": 342000251,
+  "name": "QuestTalkTwoC",
+  "progression": 8,
+  "difficulty": [
+    129,
+    129,
+    129
+  ],
+  "waypoints": {
+    "normal": "0-29",
+    "nightmare": "0-29",
+    "hell": "0-29"
+  },
+  "stats": {
+    "strength": 60,
+    "energy": 1000,
+    "dexterity": 25,
+    "vitality": 1000,
+    "hitpoints": 8000,
+    "maxhp": 8000,
+    "mana": 8000,
+    "maxmana": 8000,
+    "stamina": 1000,
+    "maxstamina": 1000,
+    "level": 80,
+    "experience": 742730244
+  },
+  "skills": {
+    "Teleport": 1,
+    "Nova": 20,
+    "Charged Bolt": 1,
+    "Static Field": 1,
+    "Telekinesis": 20,
+    "Frost Nova": 1,
+    "Frozen Armor": 1,
+    "Energy Shield": 20,
+    "Thunder Storm": 1,
+    "Lightning": 20,
+    "Chain Lightning": 1,
+    "Warmth": 20,
+    "Fire Bolt": 1,
+    "Inferno": 1,
+    "Blaze": 1,
+    "Fire Wall": 1
+  },
+  "mouse": {
+    "left": "Teleport",
+    "right": "Energy Shield"
+  },
+  "keep_items": [
+    "tsc",
+    "isc"
+  ],
+  "items": [
+    {
+      "code": "hbl",
+      "equip": "belt"
+    },
+    {
+      "code": "sst",
+      "equip": "rarm"
+    }
+  ],
+  "belt_fill": "rvl",
+  "quests": "all",
+  "quest_bits": {
+    "normal": {
+      "8": {
+        "set": [],
+        "clear": [
+          0
+        ]
+      },
+      "9": {
+        "set": [
+          1
+        ],
+        "clear": [
+          0
+        ]
+      },
+      "14": {
+        "set": [
+          3
+        ],
+        "clear": [
+          0
+        ]
+      }
+    },
+    "nightmare": {
+      "8": {
+        "set": [],
+        "clear": [
+          0
+        ]
+      },
+      "9": {
+        "set": [
+          1
+        ],
+        "clear": [
+          0
+        ]
+      },
+      "14": {
+        "set": [
+          3
+        ],
+        "clear": [
+          0
+        ]
+      }
+    },
+    "hell": {
+      "8": {
+        "set": [],
+        "clear": [
+          0
+        ]
+      },
+      "9": {
+        "set": [
+          1
+        ],
+        "clear": [
+          0
+        ]
+      },
+      "14": {
+        "set": [
+          3
+        ],
+        "clear": [
+          0
+        ]
+      }
+    }
+  }
+}

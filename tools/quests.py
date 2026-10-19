@@ -4,6 +4,7 @@
 Usage:
   python3 -I tools/quests.py check LOG [LOG ...]       # predict every checked line; exit 1 on a mismatch
   python3 -I tools/quests.py test                       # the model's self-test (also tools/test_quests.py)
+  python3 -I tools/quests.py npcplace NAME [NAME ...]   # where DS1 presets / Levels / SuperUniques place a monster
 
 What is predicted (docs/findings/quests/0001-progression.md, 0002-travel.md; every rule names its claim):
   dispatch    the callbacks of one QUESTS_DispatchEvent, in order: the quest objects in list order (object 40 down to
@@ -16,7 +17,7 @@ What is predicted (docs/findings/quests/0001-progression.md, 0002-travel.md; eve
               the handlers that do not test +0x09 (deactivated_writes: quest 11's NPC 331 messages)
   seeds       per event kind, the steps of the game seed (gs), the quest seed (qs) and the player's unit seed (ps)
               between the entry and the exit: NPC 331 talk with the palace open (quest 11's +0x0E) one qs step;
-              NPC 266 and 377 talks one ps step; town portal open two gs steps; every other kind none (0001 § 11,
+              NPC 266 talks one ps step per run of the shared e0 handler 0x00596A90 (quest objects 25 and 30: two), NPC 377 one; town portal open two gs steps; every other kind none (0001 § 11,
               0002 § 10)
   level seed  LevelPointFind on a Levels.Position level steps the level seed once for point types 0, 5, 11 (when a
               point is found) and not for 13; a level without Position: no step (0002 § 4)
@@ -200,18 +201,93 @@ def free_near(win, x0, y0, size, mask, radius, stp):
     return pos[0], pos[1], best
 
 
-def deactivated_writes(qid, ev, e):
+def deactivated_writes(qid, ev, e, word=None):
     """The bits a deactivated quest's callback still writes (0001 § 3: what keeps it inert is each handler's own
     test). Quest 11's e11 handler 0x0059AF50 tests only the NPC class (0x14B = 331) and the message: 0xBA sets word
     12 bit 7, 0xBB-0xBD bit 8, with no +0x09 test (0x0059AF84-0x0059AFC3; run:2026-10-17-quests). Every other
     handler the run reached writes nothing while its quest is off."""
+    if qid == 11 and ev == 3 and e.get("p18") == 50:
+        # quest 11's e3 handler 0x0059F0C0: entering level 50 sets word 12 b8 then b7 (0x0059F155, 0x0059F173) with no
+        # +0x09 test (0x0059F136-0x0059F173)
+        return [(12, 8), (12, 7)]
     if qid == 11 and ev == 11 and e.get("p14") == 331:
         m = e.get("p18")
         if m == 0xBA:
             return [(12, 7)]
         if 0xBB <= m <= 0xBD:
             return [(12, 8)]
+    if ev == 11 and word is not None and e.get("_prec") is not None:
+        out = []
+        for row in talk_fires(e.get("p14"), e.get("p18"), e["_prec"]):
+            if row[0] == word:
+                out += [(word, b) for t, b, a in row[4] if t in ("QS", "QC")]
+        return out
     return []
+
+
+# ---------------------------------------------------------------- the NPC talk steps (part 2)
+# (word, NPC class or None for any, messages, condition on the word before, [(tag, bit, call site), ...]): the e11
+# rows of the per-quest bit tables of quests/0001 § 7-§ 10 whose trigger is one NPC message. A call site is the
+# setter's call instruction (the QS/QC/QK line's return address minus 5); None where the finding names the function
+# only. QK = QUESTRECORD_ClearSteps (bits 2-11). The check: inside an e11 dispatch with that NPC and message, the
+# writes to that word of the player's record are exactly these, when the condition holds on the record before the
+# dispatch, and none when it does not. A sixth element names a unit the step creates ("item": QUESTS_GiveItem,
+# "merc": HIRE_GiveFreeMerc): its creation draws the game seed (SUnitCreate) and the item's or hireling's own seeds, an
+# oracle here, so the game seed is not asserted across such a dispatch. The reward handlers test the word's bits, not
+# the quest's +0x09: they write the same when the join switched the quest off (part 2), so deactivated_writes takes
+# these rows too.
+B = lambda w, b: (w >> b) & 1
+
+
+def talk_fires(npc, msg, rec):
+    """The TALK_STEPS rows an e11 (npc, msg) fires on the record before it."""
+    out = []
+    for row in TALK_STEPS:
+        word, cls, msgs, cond, writes = row[:5]
+        if msg in msgs and (cls is None or npc == cls) and cond(rec[word]):
+            out.append(row)
+    return out
+TALK_STEPS = [
+    (0, 155, (0, 1), lambda w: True, [("QS", 0, 0x0058FAC1)]),
+    (1, 148, (0x4C,), lambda w: B(w, 1), [("QS", 0, 0x0058FF11), ("QC", 1, 0x0058FF20), ("QK", None, 0x0058FF4B)]),
+    (2, 150, (0x5C,), lambda w: B(w, 1), [("QS", 0, 0x00590AB3), ("QC", 1, 0x00590AC2)], "merc"),
+    (4, 148, (0x76,), lambda w: B(w, 1), [("QS", 0, 0x005923AC), ("QC", 1, 0x005923B6)], "item"),
+    (6, 155, (0xB7,), lambda w: B(w, 1), [("QC", 1, 0x00595D92), ("QS", 0, 0x00595D9C)]),
+    (8, 201, (0xFD,), lambda w: True, [("QS", 0, 0x00598671)]),
+    (9, None, (0x14E,), lambda w: B(w, 1), [("QS", 0, 0x00598BFE), ("QC", 1, 0x00598C0D)]),   # in 0x00598A70
+    (14, 201, (0x1BA,), lambda w: B(w, 3), [("QS", 4, 0x0059CD2F), ("QC", 3, 0x0059CD39)]),
+    (14, 210, (0x1C2,), lambda w: B(w, 4), [("QS", 0, 0x0059CE06), ("QC", 4, 0x0059CE1B)]),
+    (14, None, (0x1BD,), lambda w: True, [("QS", 6, 0x0059CE50)]),            # the "talked to NPC" marks,
+    (14, None, (0x1BE,), lambda w: True, [("QS", 7, 0x0059CE61)]),            # msg order as quests/0001 § 8 lists
+    (14, None, (0x1C1,), lambda w: True, [("QS", 8, 0x0059CE72)]),
+    (14, None, (0x1BC,), lambda w: True, [("QS", 9, 0x0059CE83)]),
+    (14, None, (0x1C4,), lambda w: True, [("QS", 10, 0x0059CE94)]),
+    (14, None, (0x1BF,), lambda w: True, [("QS", 11, 0x0059CEA5)]),
+    (16, 253, (0x1D1, 0x1D2), lambda w: True, [("QS", 0, 0x005B6F09)]),
+    # word 19: the ring (Ormus) and the hireling (Asheara); the second of the two rewards also sets b13 and b0
+    (19, 255, (0x251,), lambda w: B(w, 6) and not B(w, 8) and not B(w, 7), [("QS", 8, 0x005B93EE)], "item"),
+    (19, 255, (0x251,), lambda w: B(w, 6) and not B(w, 8) and B(w, 7), [("QS", 8, 0x005B93EE), ("QS", 13, 0x005B943B),
+                                                                      ("QS", 0, 0x005B9445)], "item"),
+    (19, 252, (0x24D,), lambda w: not B(w, 7) and not B(w, 8), [("QS", 7, 0x005B94BE)], "merc"),
+    (19, 252, (0x24D,), lambda w: not B(w, 7) and B(w, 8), [("QS", 7, 0x005B94BE), ("QS", 13, 0x005B94E6),
+                                                           ("QS", 0, 0x005B94F0)], "merc"),
+    (20, 254, (0x21A,), lambda w: B(w, 1) and not B(w, 0), [("QC", 1, 0x005BA52B), ("QS", 0, 0x005BA535),
+                                                           ("QS", 13, 0x005BA53F), ("QK", None, 0x005BA54C),
+                                                           ("QS", 5, 0x005BA556)], "item"),
+    (21, None, (0x272,), lambda w: B(w, 4), [("QS", 0, 0x005BB3B6), ("QC", 4, 0x005BB3C0)]),
+    (24, 367, (0x298,), lambda w: True, [("QS", 0, 0x005B36C9)]),
+    (25, 367, (0x2A4,), lambda w: B(w, 1), [("QS", 0, 0x005B3AF8), ("QC", 1, 0x005B3B07), ("QK", None, 0x005B3B14)]),
+    (27, 246, (0x2A8,), lambda w: B(w, 1), [("QS", 0, 0x005B6287), ("QC", 1, 0x005B6296)]),
+    (26, 246, (0x4E21,), lambda w: True, [("QS", 8, 0x005B4778)]),             # no expansion test
+    # word 26, Tyrael's 0x4E20 (expansion only, game +0x70 tested at 0x005B4702; no classic message has that id):
+    # b9, then the Harrogath portal unless private +0x45 (0x005B45E0: a portal creation, game seed)
+    (26, 367, (0x4E20,), lambda w: True, [("QS", 9, 0x005B4715)], "portal"),
+    (35, 511, (0x4E7A,), lambda w: B(w, 1), [("QK", None, 0x00586F27), ("QS", 5, 0x00586F36)]),
+] + [
+    # word 40's e11 0x0058D940: msg - 0x4ECF indexes the jump table at 0x0058D9D0 -> bit 7, 9, 5, 4, 6, 8, one call
+    # site 0x0058D9C7, no NPC or +0x09 test (quests/0001 § 10 gave bits 4-9 in message order)
+    (40, None, (0x4ECF + k,), lambda w: True, [("QS", b, 0x0058D9C7)]) for k, b in enumerate((7, 9, 5, 4, 6, 8))
+]
 
 
 # ---------------------------------------------------------------- the checker
@@ -231,6 +307,14 @@ class Checker:
         self.lpl = None
         self.qcb = None
         self.lvlseed = {}               # level id -> the last level seed seen (exit of an lpf)
+        self.recw = []                  # every QS/QC line in log order (the saved-words prediction)
+        self.prec = None                # the player's record words now (the join's record plus the writes since)
+        self.precp = None               # its record pointer (the first server write outside the game record)
+        self.joinrec = None             # the join's entry: the joiner's record as loaded, and the difficulty
+        self.grecp = None
+        self.qactive = {}               # quest id -> +0x09 after the join
+        self.orb_broken = False         # the council quest's "orb broken" byte (word 21 / 18, the Durance gate)
+        self.stub_join = False          # a rejoin-1 join seen, its second call pending
 
     def hit(self, k, v=1):
         self.n[k] = self.n.get(k, 0) + v
@@ -250,6 +334,7 @@ class Checker:
 
     def on_QI1(self, d):
         self.grec = d.get("grec")
+        self.grecp = d.get("grec")
 
     def note(self, tag, d):
         """A line inside open events: every open frame keeps it with the depth it came at."""
@@ -257,14 +342,40 @@ class Checker:
         for fr in self.stack:
             fr[2].append((tag, d, n))
 
+    def player_write(self, tag, d):
+        if self.prec is None or d.get("rec") == self.grecp or int(d["ret"], 16) < 0x00500000 or d["w"] >= 42:
+            return
+        if self.precp is None:
+            self.precp = d["rec"]
+        if d["rec"] != self.precp:
+            return
+        if tag == "QS":
+            self.prec[d["w"]] |= 1 << d["b"]
+        elif tag == "QC":
+            self.prec[d["w"]] &= ~(1 << d["b"])
+        else:
+            self.prec[d["w"]] &= ~0x0FFC
+
     def on_QS(self, d):
         self.note("QS", d)
+        self.recw.append(("QS", d))
+        self.player_write("QS", d)
 
     def on_QC(self, d):
         self.note("QC", d)
+        self.recw.append(("QC", d))
+        self.player_write("QC", d)
+
+    def on_QK(self, d):
+        self.note("QK", d)
+        self.recw.append(("QK", d))
+        self.player_write("QK", d)
 
     def on_QCB(self, d):
         self.note("QCB", d)
+
+    def on_ORBW(self, d):
+        self.note("ORBW", d)
 
     def on_LPL(self, d):
         self.lpl = d
@@ -305,6 +416,10 @@ class Checker:
 
     def on_EV(self, d):
         if d["ph"] == 0:
+            if d["k"] in ("de", "orb") and self.prec is not None:
+                d["_prec"] = list(self.prec)
+            if d["k"] == "join":
+                d["_recw"] = len(self.recw)
             self.stack.append((d["k"], d, []))
             if d["k"] == "lpf":
                 self.lpl = None
@@ -322,15 +437,31 @@ class Checker:
         self.hit("exit without entry")
 
     # ---- per event
-    def seeds_rule(self, k, e, x):
+    def seeds_rule(self, k, e, x, sub=()):
         """Predicted steps (gs, qs, ps), or None for a kind the run does not predict."""
         if k == "de":
             ev, cls = e["ev"], e.get("ucls")
+            if ev == 11 and e.get("_prec") is not None and any(
+                    len(r) > 5 for r in talk_fires(e.get("p14"), e.get("p18"), e["_prec"])):
+                self.hit("de gs: a unit created by a talk step (oracle)")
+                return None, 0, 0
             if ev == 0 and cls == 331:
                 return 0, (1 if e.get("q11e") else 0), 0
-            if ev == 0 and cls in (266, 377):
+            if ev == 0 and cls == 266:
+                # 0x00596A90 is the e0 handler of quest objects 25 and 30 (one init, 0x00596C40, for rows 29 and 7):
+                # each run steps the player's unit seed once (RNG_Range(.., 2) or one inline step), so a talk steps
+                # it once per run of that handler in the dispatch (part 2: two)
+                n = sum(1 for t, d, dep in sub if t == "QCB" and d.get("fn") == "00596a90" and d.get("unit") == "de")
+                self.hit("NPC 266 talk: e0 handler 0x00596A90 runs %d" % n)
+                return 0, 0, n
+            if ev == 0 and cls == 377:
                 return 0, 0, 1
             return 0, 0, 0
+        if k == "orb" and e.get("cnt") == 1 and x.get("cnt") == 2:
+            # the completing hit kills the orb's monster (0x005DDFC0, 0x005DFEE0) and sends the records: the game
+            # seed moves inside (a monster-death oracle, not asserted)
+            self.hit("orb gs: the completing hit (oracle)")
+            return None, 0, 0
         if k == "tp":
             return None if x.get("own") and x.get("own") != e.get("own") else (0, 0, 0)   # ev_tp checks gs
         if k in ("pocreate", "join", "place", "due"):
@@ -340,14 +471,14 @@ class Checker:
     def event(self, k, e, x, sub):
         self.hit("events %s" % k)
         # seeds at the entry and the exit
-        rule = self.seeds_rule(k, e, x)
+        rule = self.seeds_rule(k, e, x, sub)
         names = ("gs", "qs", "ps")
         for i, s in enumerate(names):
             if e.get(s) is None or x.get(s) is None:
                 continue
             a, b = pseed(e[s]), pseed(x[s])
             got = nsteps(a, b, 16)
-            if rule is not None:
+            if rule is not None and rule[i] is not None:
                 want = rule[i]
                 if want == 0 and got != 0 and k in ("chlevel", "chact", "npcmove", "p49", "wptr", "portal", "warp",
                                                      "p41", "lvlportal", "arcane", "durance", "wpop") and s == "gs":
@@ -359,7 +490,7 @@ class Checker:
                         self.hit("seed unchanged %s %s" % (k, s))
             # chaining: the exit of the last event of this kind is this entry
             key = (s, k, e.get("ucls"))
-            if rule is not None and rule[i] > 0:
+            if rule is not None and rule[i] is not None and rule[i] > 0:
                 if key in self.last_exit:
                     if self.last_exit[key] == e[s]:
                         self.hit("chained pairs %s %s %s" % (k, e.get("ucls"), s))
@@ -387,6 +518,8 @@ class Checker:
             if actf == 1 and pact is not None and q[1] != pact:
                 continue
             want.append(qid)
+        if ev == 11 and e.get("_prec") is not None:
+            self.talk_steps(e, sub)
         got = [d["id"] for t, d, n in sub if t == "QCB" and n == self.depth and d["unit"] == "de"]
         self.ok(got == want, "dispatch order e%d" % ev, "want %s got %s" % (want, got))
         self.hit("callbacks run e%d" % ev, len(got))
@@ -396,16 +529,60 @@ class Checker:
         if ran_off:
             self.hit("forced e%d callbacks of deactivated quests" % ev, len(ran_off))
             words = {off[i] for i in ran_off}
-            writes = [(d["w"], d["b"]) for t, d, n in sub if t in ("QS", "QC") and d["w"] in words]
+            writes = [(d["w"], d["b"]) for t, d, n in sub if t in ("QS", "QC") and d["w"] in words
+                      and d.get("rec") != self.grecp and int(d["ret"], 16) >= 0x00500000]   # the player's record
             want = []
             for i in ran_off:
-                want += deactivated_writes(i, ev, e)
+                want += deactivated_writes(i, ev, e, off[i])
             self.ok(writes == want, "deactivated quest writes", "e%d writes %s, want %s" % (ev, writes, want))
             self.hit("deactivated quest writes (word, bit) %s" % (want,) if want else "deactivated quest no write")
 
+    def talk_steps(self, e, sub):
+        npc, msg, rec = e.get("p14"), e.get("p18"), e["_prec"]
+        groups = {}                      # rows of one (word, NPC, message): the writes of those that fire
+        for row in TALK_STEPS:
+            word, cls, msgs, cond, writes = row[:5]
+            if msg not in msgs or (cls is not None and npc != cls):
+                continue
+            g = groups.setdefault(word, [False, []])
+            if cond(rec[word]):
+                g[0] = True
+                g[1] += writes
+        for word, (on, writes) in sorted(groups.items()):
+            got = sorted((t, d.get("b"), int(d["ret"], 16) - 5) for t, d, n in sub
+                         if t in ("QS", "QC", "QK") and d["w"] == word and d.get("rec") == self.precp
+                         and int(d["ret"], 16) >= 0x00500000)
+            want = writes if on else []
+            ok = len(got) == len(want) and all(g[0] == w[0] and g[1] == w[1] and (w[2] is None or g[2] == w[2])
+                                               for g, w in zip(got, sorted(want, key=lambda w: (w[0], w[1] if
+                                                                                                   w[1] is not None
+                                                                                                   else -1))))
+            self.ok(ok, "talk step w%d" % word, "npc %s msg %#x word %04x: got %s want %s" % (
+                npc, msg, rec[word], [(t, b, "%08x" % a) for t, b, a in got], want))
+            self.hit("talk step w%d npc %s msg %#x %s" % (word, npc, msg, "fires" if on else "condition off"))
+
     def ev_join(self, e, x, sub):
         rec = e["rec"]
+        if self.joinrec is None:
+            self.joinrec = (list(rec), e.get("diff"), e.get("_recw", len(self.recw)))
+            self.prec = list(rec[:42])
+            self.orb_broken = bool(rec[18] & 1)          # a first joiner with word 18 bit 0 sets the byte
+            # the join's own writes (inside it) came before this exit: apply them
+            for t, d, n in sub:
+                if t in ("QS", "QC", "QK"):
+                    self.player_write(t, d)
         first = e["ready"] == 0
+        # a character made from a header stub joins twice (0001 § 3, part 2): NewCharFromStub's call (0x0056A072,
+        # rejoin 1) as the first player, then the save reader's (0x005344EF, rejoin 0) as a later join
+        if e["rejoin"] == 1:
+            self.ok(first and e.get("ret") == "0056a077", "stub join, first call", "ready %s ret %s" % (
+                e["ready"], e.get("ret")))
+            self.stub_join = True
+        elif self.stub_join:
+            self.ok(not first and e.get("ret") == "005344f4", "stub join, second call", "ready %s ret %s" % (
+                e["ready"], e.get("ret")))
+            self.stub_join = False
+            self.hit("stub character: double join")
         if not (first and e["rejoin"] == 0 and e["b150c"]):
             self.hit("join without the pass")
             return
@@ -414,6 +591,7 @@ class Checker:
         self.ok([(d["w"], d["b"]) for d in writes] == [(dd["word"], 15) for dd in want], "join game-record marks",
                 "want %s got %s" % ([dd["word"] for dd in want], [d["w"] for d in writes]))
         after = {q[0]: q for q in x["qobj"]}
+        self.qactive = {q[0]: q[2] for q in x["qobj"]}
         wid = {dd["id"] for dd in want}
         for dd in want:
             q = after.get(dd["id"])
@@ -561,8 +739,26 @@ class Checker:
             want = int(bool(q and q[0] and q[2] == 0))
             self.ok(x["eax"] == want, "summit warp gate", "120 -> %d: %s, want %d (q35 %s)" % (dst, x["eax"], want, q))
             self.hit("summit warp %s" % ("refused" if want else "allowed"))
+        elif dst == 100:
+            # 0x005BBFA0 (quests/0001 § 9 word 21): refused unless the source room's level is 101 or the council
+            # quest's "orb broken" byte is set, by the orb's completing hit or by a first joiner with word 18 bit 0
+            want = 0 if (src == 101 or self.orb_broken) else None
+            if want is not None:
+                self.ok(x["eax"] == 0, "Durance warp gate", "%d -> 100: %s, want 0 (orb broken %s)" % (
+                    src, x["eax"], self.orb_broken))
+            self.hit("warp gate %d -> 100 = %d (orb broken %s)" % (src, x["eax"], self.orb_broken))
         else:
             self.hit("warp gate %d -> %d = %d" % (src, dst, x["eax"]))
+
+    def ev_pocreate(self, e, x, sub):
+        """PortalObjectCreate's arguments. The Tristram portal (quests/0001 § 7 word 4): the cairn stones' init on
+        class 17, with quest 4 switched off (the creator had word 4 done) or private +0x4C set, registers a period-1
+        timer that creates class 60 to level 38 with noSearch 1 at stone 17 (0x00593646-0x00593677, 0x00592D50)."""
+        self.hit("portal created class %s dest %s" % (e.get("cls"), e.get("dest")))
+        if e.get("dest") == 38:
+            q4 = self.qactive.get(4)
+            self.ok(e.get("cls") == 60 and e.get("nosearch") == 1 and q4 == 0, "Tristram portal",
+                    "class %s noSearch %s quest 4 +0x09 %s" % (e.get("cls"), e.get("nosearch"), q4))
 
     def ev_warp(self, e, x, sub):
         self.hit("warps")
@@ -584,7 +780,29 @@ class Checker:
             self.hit("summit door mode %s done %d -> level %s" % (m, q[2], x.get("lid")))
 
     def ev_orb(self, e, x, sub):
+        """The Compelling Orb (OperateFn 53, 0x005BB980; quests/0001 § 9 word 18): a hit counts (private +0x38
+        grows by one) only when the object is in mode 0 and the operator's primary weapon is qf2 (the test at
+        0x005BB9B3, logged as ORBW); the second counted hit sets word 18 bits 0 and 13 (0x005BB9F7, 0x005BBA14) and,
+        when word 21 bit 4 is set, word 21 bit 0 (0x005BBA6F), and puts the object in mode 1."""
         self.hit("orb operates")
+        w = [d.get("code") for t, d, n in sub if t == "ORBW"]
+        counts = e.get("omode") == 0 and w == ["qf2 "]
+        self.ok(x.get("cnt") == e.get("cnt", 0) + (1 if counts else 0), "orb counter",
+                "mode %s weapon %s: %s -> %s" % (e.get("omode"), w, e.get("cnt"), x.get("cnt")))
+        rec = e.get("_prec")
+        got = [(d["w"], d["b"], int(d["ret"], 16) - 5) for t, d, n in sub if t in ("QS", "QC")
+               and d.get("rec") == self.precp and int(d["ret"], 16) >= 0x00500000]
+        want = []
+        if counts and x.get("cnt") == 2:
+            self.orb_broken = True
+            want = [(18, 0, 0x005BB9F7), (18, 13, 0x005BBA14)]
+            if rec is not None and B(rec[21], 4):
+                want.append((21, 0, None))
+            self.ok(x.get("omode") == 1, "orb mode after the second hit", "mode %s" % x.get("omode"))
+        self.ok(len(got) == len(want) and all(g[:2] == w_[:2] and (w_[2] is None or g[2] == w_[2])
+                                              for g, w_ in zip(got, want)),
+                "orb writes", "got %s want %s" % (got, want))
+        self.hit("orb hit %s (weapon %s, mode %s)" % ("counted" if counts else "not counted", w, e.get("omode")))
 
     def ev_p48(self, e, x, sub):
         if e.get("c4c") == 1:
@@ -610,6 +828,61 @@ class Checker:
         self.ok(got == want, "waypoint object seed", "class %s Sync %s mode %s: %s steps" % (
             cls, self.D.sync.get(cls), m0, got))
 
+    def save_check(self, path):
+        """The saved quest words after Save and Exit (0001 § 4, save/0002 § 1): the session's installed save
+        (<log>.in.d2s) and the written one (<log>.out.d2s), when both are kept. D2S_ReadQuests loads each of the
+        three records with QUESTRECORD_LoadBytes(flag 1) (0x0056A3B7): per word 0-41 clear bits 13 and 14, set bit
+        15 when bit 1 is set; the join's logged record of the game's difficulty must equal that; the written save
+        holds that record after every server write to the player's record logged in the game (QS/QC on a record that
+        is not the game record and from a server call site, ret >= 0x00500000), in order, and the other two records
+        as loaded (words 42-47 copied unchanged by the loader); all 48 words of each record are compared."""
+        base = path[:-4]
+        if not (os.path.exists(base + ".in.d2s") and os.path.exists(base + ".out.d2s")):
+            return
+        import d2s
+        a = d2s.quest_words(open(base + ".in.d2s", "rb").read())
+        b = d2s.quest_words(open(base + ".out.d2s", "rb").read())
+        self.ln = 0
+
+        def load(w):
+            w &= ~0x6000
+            return w | 0x8000 if w & 2 else w
+        loaded = [[load(w) if i < 42 else w for i, w in enumerate(a[dd])] for dd in range(3)]   # 42-47 copied
+        if self.joinrec is None:
+            self.ok(False, "saved words", "no join logged")
+            return
+        jrec, diff, at = self.joinrec
+        n = min(len(jrec), len(loaded[diff]))
+        self.ok(jrec[:n] == loaded[diff][:n], "loaded words (join record)", "diff %d: join %s loaded %s" % (
+            diff, [(i, hex(v)) for i, v in enumerate(jrec[:n]) if v != loaded[diff][i]],
+            [(i, hex(v)) for i, v in enumerate(loaded[diff][:n]) if v != jrec[i]]))
+        pred = [list(r) for r in loaded]
+        recp = None
+        nw = 0
+        for tag, d in self.recw[at:]:
+            if d.get("rec") == self.grecp or int(d["ret"], 16) < 0x00500000 or d["w"] >= 42:
+                continue
+            if recp is None:
+                recp = d["rec"]
+            if d["rec"] != recp:
+                self.hit("saved words: a write to another record (not modelled)")
+                continue
+            if tag == "QS":
+                pred[diff][d["w"]] |= 1 << d["b"]
+            elif tag == "QK":                # ClearSteps: bits 2-11
+                pred[diff][d["w"]] &= ~0x0FFC
+            else:
+                pred[diff][d["w"]] &= ~(1 << d["b"])
+            nw += 1
+        for dd in range(3):
+            for w in range(len(b[dd])):
+                self.ok(pred[dd][w] == b[dd][w], "saved word", "diff %d word %d: predicted %04x written %04x" % (
+                    dd, w, pred[dd][w], b[dd][w]))
+        self.hit("saved words: sessions compared")
+        self.hit("saved words: player-record writes applied", nw)
+        self.hit("saved words: words changed in the game's difficulty",
+                 sum(1 for w in range(len(b[diff])) if b[diff][w] != loaded[diff][w]))
+
     def run(self, paths):
         for path in paths:
             self.path = path
@@ -628,6 +901,7 @@ class Checker:
                     except (KeyError, TypeError, ValueError) as ex:
                         self.hit("line errors")
                         self.bad.append("%s:%d %s: checker error %r" % (path, self.ln, tag, ex))
+            self.save_check(path)
         return self
 
 
@@ -643,7 +917,60 @@ def cmd_check(paths):
     return 1 if mism else 0
 
 
+def cmd_npcplace(names, root=os.path.join(ROOT, "workspace", "merged")):
+    """Where the DS1 presets place monsters by name (plan 0042 P2 part 2, NPCs 266 and 377): every .ds1 under
+    <root>/data/global/tiles whose type-1 units resolve (MonPreset: the DS1's act list, the unit id as the index) to one
+    of the names, or to a place_* placeholder; and whether a LvlPrest row's File1..6 names that file. Also every
+    Levels.txt monster column and SuperUniques.txt class that names one of them."""
+    import ds1
+    exc = os.path.join(root, "data", "global", "excel")
+    mp = {}
+    for r in tsv_at(exc, "monpreset.txt"):
+        mp.setdefault(ival(r.get("Act")), []).append(r.get("Place"))
+    used = set()
+    for r in tsv_at(exc, "lvlprest.txt"):
+        for k in range(1, 7):
+            f = (r.get("File%d" % k) or "").strip().lower().replace("\\", "/")
+            if f and f != "0":
+                used.add(f)
+    want = set(names)
+    hits = 0
+    for path in ds1.ds1_files(root):
+        try:
+            f = ds1.parse(open(path, "rb").read())
+        except Exception:  # noqa: BLE001
+            continue
+        act = min(f.get("act") or 0, 4) + 1 if f.get("version", 0) >= 8 else 1
+        lst = mp.get(act, [])
+        rel = path.split(os.sep + "tiles" + os.sep, 1)[-1].replace(os.sep, "/").lower()
+        for o in f.get("objects", []):
+            if o.get("type") != 1:
+                continue
+            nm = lst[o["id"]] if 0 <= o["id"] < len(lst) else None
+            if nm in want or (nm or "").startswith("place_talking") or (nm or "").startswith("place_dumb"):
+                hits += 1
+                print("DS1 %s act %d unit %d = %s at (%d, %d); LvlPrest names it: %s" % (
+                    rel, act, o["id"], nm, o["x"], o["y"], rel in used))
+    for r in tsv_at(exc, "levels.txt"):
+        for k, v in r.items():
+            if v in want:
+                print("Levels %s %s = %s" % (r.get("Name"), k, v))
+    for r in tsv_at(exc, "superuniques.txt"):
+        if r.get("Class") in want:
+            print("SuperUniques %s Class = %s" % (r.get("Superunique"), r.get("Class")))
+    print("SUMMARY npcplace names=%s ds1_units=%d" % (",".join(sorted(want)), hits))
+    return 0
+
+
+def tsv_at(exc, name):
+    with open(os.path.join(exc, name), errors="replace") as fh:
+        rows = [ln.rstrip("\r\n").split("\t") for ln in fh]
+    return [dict(zip(rows[0], r)) for r in rows[1:] if r and r[0] and r[0] != "Expansion"]
+
+
 def main(argv):
+    if argv and argv[0] == "npcplace":
+        return cmd_npcplace(argv[1:])
     if not argv or argv[0] not in ("check", "test"):
         print(__doc__)
         return 2
