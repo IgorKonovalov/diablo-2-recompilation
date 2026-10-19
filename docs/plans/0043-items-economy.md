@@ -510,3 +510,23 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `econh.json`. Sessions so far: 4501 (quest services, sales, question 9), 4503 (partial repairs, sales, question 9),
   dev 4502 (repair box measured); 4504 (Hell, crafted) running. Left: gamble at clvl 3 (EconDL3), Wirt (`wirt`
   with EconN), the record and finding. Saves in `workspace/scratch-p43b/saves/` (rebuild from the recipes).
+- **2026-10-19 — Phase 2b done (reverser, `lane/p43b`, harness slot 1).** Record:
+  [run:2026-10-19-economy2](../findings/items/experiments.md#run2026-10-19-economy2) (5 claim logs, 1 development log;
+  manifest `workspace/logs/economy2-run-manifest.txt`, repository-root paths); finding
+  [items/0011 § Phase 2b](../findings/items/0011-economy.md#phase-2b-runtime-results-run2026-10-19-economy2).
+  `tools/economy.py check`: **0 mismatches** — 7 376 price calls (distinct: mode 0 542, mode 1 79, mode 2 153, mode 3
+  59), counts from `check-run.txt`. By item: (1) quest repair: no quest script repairs (`economy_scan.py qrepair`);
+  the socket and personalize services repaired their result (1 case each), the imbue's call is a no-op on the
+  unidentified new item; (2) Wirt's gold: 18 piles, the count and the 18 ilvls reproduce (one game); (3) crafted: 55
+  distinct inputs (sale 35, repair 17, purchase 3), tool-built items; (4) Hell repair: 25 distinct mode-3 inputs;
+  (5) gamble at clvl 3: 125 distinct; (6) 4 single-item repairs: 2 partial, 1 refused at gold 0, 1 broken (paid);
+  ethereal refused by the client (no call), `[I]`; (7) question 9: control live to each log's end in 4 sessions, the
+  watch fired only at the `+0x27` read (5), no `+0x24..+0x26` reader in the windows played; (8) the two P2 sales: no
+  store copy (ethereal; `carry1` unique, `sub_00575FA0_ItemIsCarry1Unique`); 11 sales separate copied (+2, 6) from
+  refused (+0, 5). **Shortfalls:** single cases (broken repair, each service repair, one Wirt game); the ethereal server
+  refusal and the `Cracked`/`0x0055F590` copy refusals not reached. Tools: `tools/economy.py`, `economy_scan.py`
+  (`qrepair`), `economy_sessions.py` (`--watchdog`, `fix:`, service stops, `wirt`), `gdb/economy.py`, `gdb/economy2.gdb`,
+  `d2s.py` (`crafted`, `broken`), recipes `econq`, `econh`. Symbols +2. Review request
+  [2026-10-19-reverser-architect-plan-0043-p2b-review](../backlog/2026-10-19-reverser-architect-plan-0043-p2b-review.md);
+  spec-writer entry [2026-10-19-reverser-spec-writer-plan-0043-p2b-economy-inputs](../backlog/2026-10-19-reverser-spec-writer-plan-0043-p2b-economy-inputs.md).
+  Game stopped, slot 1 saves restored (empty), no background process.

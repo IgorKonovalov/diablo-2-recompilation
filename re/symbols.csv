@@ -614,9 +614,11 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00574EC0,func,PETS_GetUnitOfType,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x005751A0,func,PETS_OnDeath,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00575E90,func,PETS_Add,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
+0x00575FA0,func,sub_00575FA0_ItemIsCarry1Unique,,I,items/economy,docs/findings/items/0011-economy.md
 0x00575FF0,func,HIRE_GetNameRange,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00576070,func,HIRE_BuildStock,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x005761C0,func,sub_005761C0_ItemRepairAll,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x005762B0,func,sub_005762B0_ItemRepairAllThunk,,I,items/economy,docs/findings/items/0011-economy.md
 0x00576330,func,VENDOR_CreateStockItem,,C,items/vendors,docs/findings/items/0009-vendors.md
 0x00576770,func,HIRE_SendList,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00576890,func,VENDOR_StockLevel,,C,items/vendors,docs/findings/items/0009-vendors.md
