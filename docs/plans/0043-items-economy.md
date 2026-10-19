@@ -414,3 +414,22 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   melee pack without Energy Shield. 11–13. Quantity (EconT, Throw on the right button), charges, Cain (EconC).
   Gotchas: `--save` is `action=append` (one per flag); store cells are skipped when empty by a brightness test (26);
   Escape after a sale may need a second press; `d2pilot.py npc` stops when a trade window is still open.
+- **2026-10-19 — Phase 2 done (reverser, `lane/p43h`, harness slot 1).** Record:
+  [run:2026-10-17-economy](../findings/items/experiments.md#run2026-10-17-economy) (status done; 33 claim logs and 7
+  development logs, sha256 in `workspace/logs/economy-run-manifest.txt`); finding
+  [items/0011 § Phase 2](../findings/items/0011-economy.md#phase-2-runtime-results-run2026-10-17-economy).
+  `tools/economy.py check`: **0 mismatches** — 26 525 price calls (3 762 distinct inputs, all three difficulties,
+  quest groups A and B on and off, set, rare, socketed, charged, ethereal, stacks, `item_reducedprices`), 138 repair-all
+  sums, 54 `PayGold`, 43 sales and 14 purchases checked, 22 hires, 14 resurrections (10 paid, 4 refused), 20 death
+  losses, 545 gold amounts at creation and 433 gold-find scalings (Normal 228, Nightmare 140, Hell 65), 102 object
+  piles, 1 060 durability rolls and 1 411 melee wear events (963 armour picks, 1 878 chained draw pairs), 130 quantity
+  uses, 287 replenish ticks; the five Phase 1b required cases (case 1, the slot weights, settled). Question 9 answered
+  with a control (one read, `NPC_TradeOpen`'s byte `+0x27`). New reading: a refused resurrection pays nothing and
+  revives nothing (0x00579CAE). **Shortfalls** (named in the record, left `[I]`): quest, partial, ethereal and broken
+  repairs; Wirt's and Baal's gold, the caps, pickup and stash move; the Hell repair price; crafted items, ears, Encode
+  4, the recharge cost; charges and skill wear; gamble at clvl 3; Cain one case. Tools: `tools/economy.py` (checker
+  additions), `tools/economy_sessions.py` (`die --resurrect`, retries, walking deaths), `tools/gdb/economy.py` (watch pc
+  fix), `tools/d2pilot.py` (`qualres`, Tyrael's menu order). Review request
+  [2026-10-19-reverser-architect-plan-0043-p2-review](../backlog/2026-10-19-reverser-architect-plan-0043-p2-review.md);
+  spec-writer entry [2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs](../backlog/2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs.md);
+  the required-cases entry closed.

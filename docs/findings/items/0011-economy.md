@@ -635,7 +635,7 @@ Each raise says what the run separates; what is not listed stays as tagged above
   computed inside `NPC_SellItem`; in 14 purchases checked `PayGold`'s amount is a multiple of the purchase price.
   (fn:NPC_SellItem@0x00579510, fn:NPC_BuyItem@0x00577830, run:2026-10-17-economy)
 - **Resurrection raised; one refinement.** [C] `MERC_ResurrectCost` = `min((L·L)/2·15, 50 000)` with `L` the
-  mercenary's level: 35 calls, the cap reached at level 99 (save K10, 50 000). `MERC_Resurrect` pays it with `PayGold`
+  mercenary's level: 35 calls at levels 1 to 99, the cap reached at 82, 85 and 99. `MERC_Resurrect` pays it with `PayGold`
   (10 paid) and, new, returns without reviving when `PayGold` refuses (0x00579CAE → 0x00579D44; 4 refused, nothing paid,
   the cases where gold and stash were below the cost). (fn:MERC_ResurrectCost@0x006637B0, fn:MERC_Resurrect@0x00579C00,
   run:2026-10-17-economy)

@@ -2372,10 +2372,17 @@ named under *Limits*.
   `explore` until `PLAYER_DeathGoldLoss` returns, twice), `tools/d2pilot.py npc … hire --repeat N --buy 1`,
   `tools/d2pilot.py explore --any-level --walk --melee [--melee-button 3]` (wear), and `farm --sweep` then `explore
   --any-level` with Nova (gold). Characters built with `tools/d2s.py build` from `tools/d2s_recipes/econ*.json`; saves
-  in `workspace/scratch-p43h/saves/`. Pilot additions (`tools/d2pilot.py`, decide where to click only): the NPC
+  in `workspace/scratch-p43h/saves/`. Command lines (every session launched on slot 1 with the save installed, tag
+  `p43h`): deaths `tools/economy_sessions.py --slot 1 die --seed S --save EconK<n>.d2s --resurrect 5:qualres --deaths 2`
+  (the resurrection-only sessions `--deaths 0`); wear `tools/d2pilot.py explore <log> --slot 1 --any-level --hops 400
+  --persist 20 --walk --melee [--melee-button 3] --radius 14 --give-up 40 --burst 6 --cast-wait 0.5`; gold
+  `tools/d2pilot.py farm <log> --slot 1 --wp W --players P --time 40 --sweep --nova-key F1 --es-key F2 --es 30 --mana-col
+  4 --mana-drink 0.3`, then `explore <log> --slot 1 --any-level --hops 600 --persist 20 --nova-key F1 --es-key F2 --es
+  30` for 480–600 s (the loops that chained these were shell scripts in the lane's scratch). Pilot additions (`tools/d2pilot.py`, decide where to click only): the NPC
   entry `qualres` (Qual-Kehk's menu with a dead mercenary, measured: talk, resurrect, hire, cancel) and Tyrael's
   menu order (not exercised).
-- **Sessions** (logs `workspace/logs/<name>.log`, sha256 in `workspace/logs/economy-run-manifest.txt`):
+- **Sessions** (logs `workspace/logs/<name>.log`, sha256 in `workspace/logs/economy-run-manifest.txt`, itself sha256
+  `ecfe97e0…ab2dbb`, which also hashes the logger, checker, drivers and check outputs):
 
   | name | save (recipe) | difficulty | what was played | status |
   |---|---|---|---|---|
