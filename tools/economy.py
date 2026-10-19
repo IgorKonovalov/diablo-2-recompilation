@@ -740,7 +740,11 @@ class Checker:
             it = p["it"]
             self.n["price distinct mode %d" % p["m"]] += 1
             self.cases["mode %d diff %d" % (p["m"], p["d"])] += 1
+            if p["m"] == 2:
+                self.cases["gamble at clvl %s" % p.get("plv")] += 1
             self.cases["quality %s" % it.get("q")] += 1
+            if it.get("q") == 8:
+                self.cases["quality 8 mode %d diff %d" % (p["m"], p["d"])] += 1
             fl = it.get("fl", 0)
             if fl & 0x400000:
                 self.cases["ethereal mode %d" % p["m"]] += 1
