@@ -2513,3 +2513,47 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     [2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates](../backlog/2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates.md)
     released.
   - **Next:** merge `lane/h7a`; the spec-writer updates drlg/lifecycle from the released entry.
+- **2026-10-19 — H5b (`objects`) started; stopped early at the usage limit (reverser, `lane/h5b`, harness slot 1).**
+  Resume note. run:2026-10-19-h5b-objects, nothing filed yet: no finding section, run record, inventory entry or review
+  request.
+  - **Tools (committed, no claim rests on them yet):**
+    - `tools/gdb/objects.py` gains trap lines `TF`/`TFQ` (OBJ_TrapFire and its queue call), `TE0` (OBJ_TrapEvent) and
+      `TT0`/`TTX` (the trap function's entry and return), plus `f` (frame) on `OO0`.
+    - `tools/gdb/objects-h5b.gdb` is objects.gdb plus vendors.py, so objop, wpchain and npc get the OBJS lines.
+    - `tools/objects.py` gains the trap chain model (frame + 35, the OBJ_TrapEvent remap, the fires of
+      OBJTRAP_ObjectCreate, MonsterSpawn's one draw), OperateFn 26/48/68 models, windows inside no-draw operates,
+      and counters for door marks, size-0 objects and 0x27 rect tests. The old 29 logs still give 150 338 checks,
+      0 mismatches.
+    - `tools/d2pilot.py` gains `--loot-fns` and `--loot-trap`.
+    - New `tools/h5b_sessions.py` (sessions cata, jail, jail2, cave, cata2, cotd, arcane, flayer, harro, tower; built-in
+      watchdog) and `tools/sweep_h5b.py` (`static`, `logs`).
+  - **Logs kept** (`workspace/logs/h5b/`, save ObjNova `d54d5dc3…`):
+    - `run-2026-10-19-h5b-s1-3901-cata.log` (Catacombs 2, complete). It was logged before the TE0 room fix; the
+      checker falls back to the unit's level.
+    - `…-3902-jail.log` (Jail 1–2), stopped mid-session at the limit. Keep it as a record or dev log.
+  - **Found, not yet written up (all need the finding text):**
+    - (a) OBJ_TrapEvent (0x005817A0) remaps the trap type to g_ObjTrapFns[2]: type 8 in levels ≥ 75, type 3 in
+      levels < 40 other than 25, types 1 and 4 in levels < 40. The cata log has one case: type 4 in level 35 ran
+      0x005824B0.
+    - (b) OBJTRAP_ObjectCreate makes class 162, then class **160** at x+1 when that is still in the room, and sets
+      sparkle 2 on both. objects/0001 § 13.6 says 162 twice; this needs a correction.
+    - (c) The old 29 logs already hold 514 WHTest rect tests that returned 0x27 unmasked, all predicted. That
+      contradicts the "not reached" of drlg/0005 § 14 and collision row 27, so the row is raisable.
+    - (d) The same logs hold 13 compared door 0x400 marks (classes 13 and 14, no BlocksVis, no BlockMissile). No stock
+      door has BlockMissile without BlocksVis, so the 0x804 half is a d-none candidate (collision 37, objects 23).
+    - (e) No ObjGroup shrine member has Orientation 2, and OBJ_PlaceByOrientation's only caller is the shrine handler,
+      so objects 20 is a d-none candidate (`sweep_h5b.py static`).
+    - (f) Class 523 (size 0, HasCollision) stands in Harrogath's townwest.ds1. The `harro` session covers collision 39.
+    - (g) cata reached one handler-1 follower walk after a class of another size (objects 13, 51).
+    - (h) Flayer Dungeon (shrine group 66, ObjPrb 80, no health member) is the target for the forced conversion and
+      the caps.
+  - **Left:** run cata2, jail2, cave, cotd, arcane, flayer, harro and tower
+    (`python3 -I tools/h5b_sessions.py run --slot 1 --tag h5b --saves workspace/scratch-h5b/saves --run
+    run-2026-10-19-h5b <s>`). Then the checker over all logs, the finding sections (objects/0001, drlg/0005), the run
+    record in `findings/objects/experiments.md`, the manifest, inventory § 2.6, the symbols, the review request and the
+    spec-writer entry.
+  - **Gotchas:**
+    - An object's room is its static path `+0x2C` → `+0x00`; `uroom()` returns 0 for objects.
+    - `explore` ends when the level is done, and `--persist` does not continue it.
+    - Bookshelves were created but not looted, so jail2 adds objop.
+  - Slot 1 stopped, saves restored, no background process left.

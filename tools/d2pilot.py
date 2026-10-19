@@ -108,6 +108,7 @@ class LogState:
         self.warps = {}             # DRLG room -> warp nodes (RL / RRESEED "warps", tools/gdb/pilot.py)
         self.wrp = {}               # (level id, LvlWarp row, x, y): warp units (WRP, tools/gdb/pilot.py)
         self.objs = {}              # object unit -> (class, x, y, mode at creation) (OU0/OUX, tools/gdb/objects.py)
+        self.obj_it = {}            # object unit -> interact byte at creation (OUX; trap type & 0x7F, lock 0x80)
         self.operated = set()       # object units operated (OO0)
         self.ou0 = None
         self.npcs = {}              # MonStats class -> [(unit id, mode, x, y)] (NPC lines, tools/gdb/vendors.py)
@@ -192,6 +193,7 @@ class LogState:
                 o = d.get("o") or {}
                 if getattr(self, "ou0", None) and o.get("u"):
                     self.objs[o["u"]] = self.ou0 + (o["mode"],)
+                    self.obj_it[o["u"]] = o.get("it") or 0
                 self.ou0 = None
             elif tag == "OO0":
                 self.operated.add(d["u"])
@@ -834,12 +836,13 @@ def cmd_hop(args):
 LOOT_FNS = None
 
 
-def loot_fns(excel):
-    """Objects records whose OperateFn is a container (1 casket, 3 urn, 4 chest, 5 barrel), plan 0023."""
+def loot_fns(excel, fns=(1, 3, 4, 5)):
+    """Objects records whose OperateFn is a container (1 casket, 3 urn, 4 chest, 5 barrel), plan 0023; plan 0038
+    batch H5b: --loot-fns adds others (26 bookshelves, 48 trapped souls, 68 evil urns)."""
     global LOOT_FNS
     if LOOT_FNS is None:
         from obj_survey import decode
-        LOOT_FNS = {i for i, o in enumerate(decode(excel, "objects")) if o["OperateFn"] in (1, 3, 4, 5)}
+        LOOT_FNS = {i for i, o in enumerate(decode(excel, "objects")) if o["OperateFn"] in fns}
     return LOOT_FNS
 
 
@@ -849,14 +852,17 @@ def loot(args, st, p, tried):
     to it first; then a plain left click on it (the character walks there and operates it). Returns the count clicked."""
     if not args.loot or not st.pos:
         return 0
-    fns = loot_fns(args.excel)
+    fns = loot_fns(args.excel, tuple(int(f) for f in str(getattr(args, "loot_fns", "1,3,4,5")).split(",") if f))
+    prio = {int(t) for t in str(getattr(args, "loot_trap", "") or "").split(",") if t}
     n = 0
     for _ in range(args.loot_max):
         st.poll()
         px, py = st.pos[0], st.pos[1]
-        cand = [(math.hypot(x - px, y - py), u, x, y) for u, (c, x, y, m) in st.objs.items()
+        # --loot-trap T,..: containers whose trap type is one of T come first, from twice as far (plan 0038 H5b)
+        cand = [(math.hypot(x - px, y - py) - (1000 if (st.obj_it.get(u, 0) & 0x7F) in prio else 0), u, x, y)
+                for u, (c, x, y, m) in st.objs.items()
                 if c in fns and m == 0 and u not in st.operated and u not in tried
-                and math.hypot(x - px, y - py) <= args.loot]
+                and math.hypot(x - px, y - py) <= args.loot * (2 if (st.obj_it.get(u, 0) & 0x7F) in prio else 1)]
         if not cand:
             break
         _, u, x, y = min(cand)
@@ -2972,6 +2978,10 @@ def main():
                                                           "before each hop (needs tools/gdb/objects.py's lines; plan 0023)")
     ap.add_argument("--persist", type=int, default=0, help="explore: on 'no target', make a random hop and plan again, "
                                                            "up to this many times in a row, before stopping")
+    ap.add_argument("--loot-fns", default="1,3,4,5", help="explore --loot: the OperateFn values operated (plan 0038 "
+                    "H5b adds 26 bookshelves, 48 trapped souls, 68 evil urns)")
+    ap.add_argument("--loot-trap", default="", help="explore --loot: trap types (interact & 0x7F) operated first and "
+                    "from twice --loot, e.g. 5,7,8 (plan 0038 H5b)")
     ap.add_argument("--loot-max", type=int, default=4, help="explore: most containers operated at one stop")
     ap.add_argument("--loot-wait", type=float, default=2.5, help="explore: seconds to wait for the operate (OO0) line")
     ap.add_argument("--loot-dy", type=int, default=20, help="explore: click this many pixels above the object's cell")
