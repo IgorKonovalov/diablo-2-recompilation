@@ -1,0 +1,106 @@
+{
+ "game": "expansion",
+ "class": "Sorceress",
+ "seed": 743000022,
+ "name": "EconN",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "stats": {
+  "strength": 88,
+  "energy": 1000,
+  "dexterity": 25,
+  "vitality": 1000,
+  "hitpoints": 8000,
+  "maxhp": 8000,
+  "mana": 8000,
+  "maxmana": 8000,
+  "stamina": 275,
+  "maxstamina": 275,
+  "level": 80,
+  "experience": 742730244
+ },
+ "skills": {
+  "Lightning": 20,
+  "Chain Lightning": 20,
+  "Lightning Mastery": 20,
+  "Charged Bolt": 1,
+  "Static Field": 1,
+  "Telekinesis": 20,
+  "Nova": 20,
+  "Teleport": 1,
+  "Thunder Storm": 1,
+  "Energy Shield": 20,
+  "Warmth": 20,
+  "Fire Wall": 20,
+  "Fire Bolt": 1,
+  "Inferno": 1,
+  "Blaze": 1
+ },
+ "mouse": {
+  "left": "Teleport",
+  "right": "Nova",
+  "swap_left": "Teleport",
+  "swap_right": "Energy Shield"
+ },
+ "keep_items": [
+  "tsc",
+  "isc"
+ ],
+ "items": [
+  {
+   "unique": "Harlequin Crest",
+   "equip": "head"
+  },
+  {
+   "unique": "Skin of the Vipermagi",
+   "equip": "tors"
+  },
+  {
+   "unique": "Magefist",
+   "equip": "glov"
+  },
+  {
+   "unique": "Arachnid Mesh",
+   "equip": "belt"
+  },
+  {
+   "equip": "feet",
+   "code": "lbt"
+  },
+  {
+   "unique": "Mara's Kaleidoscope",
+   "equip": "neck"
+  },
+  {
+   "unique": "The Stone of Jordan",
+   "equip": "rrin"
+  },
+  {
+   "unique": "The Stone of Jordan",
+   "equip": "lrin"
+  },
+  {
+   "unique": "Eschuta's temper",
+   "equip": "rarm"
+  },
+  {
+   "unique": "Lidless Wall",
+   "equip": "larm"
+  }
+ ],
+ "belt_fill": "rvl",
+ "quests": "all",
+ "hotkeys": [
+  "Nova",
+  "Energy Shield"
+ ]
+}

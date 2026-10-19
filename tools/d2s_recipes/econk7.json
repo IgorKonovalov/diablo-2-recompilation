@@ -1,0 +1,54 @@
+{
+ "game": "expansion",
+ "class": "Sorceress",
+ "seed": 743000107,
+ "name": "EconK7",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 60,
+  "energy": 60,
+  "dexterity": 25,
+  "vitality": 100,
+  "hitpoints": 5,
+  "maxhp": 5,
+  "mana": 300,
+  "maxmana": 300,
+  "stamina": 200,
+  "maxstamina": 200,
+  "level": 99,
+  "experience": 3837739017,
+  "gold": 900000,
+  "goldbank": 2500000
+ },
+ "skills": {
+  "Charged Bolt": 1,
+  "Static Field": 1,
+  "Telekinesis": 1,
+  "Teleport": 1
+ },
+ "mouse": {
+  "left": "Teleport",
+  "right": "Telekinesis"
+ },
+ "keep_items": [],
+ "items": [],
+ "merc": {
+  "id": 0,
+  "seed": 1007,
+  "name": 3,
+  "exp": 200,
+  "dead": true,
+  "items": []
+ }
+}

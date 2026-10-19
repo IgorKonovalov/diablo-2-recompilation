@@ -79,6 +79,8 @@ build recipe (JSON object; every key optional; example tools/d2s_recipes/lightso
                (flags bit 26 stays clear), whatever the runes; the game's insert path does that, not the builder
                "item_stats": {stat id: value} adds entries to an extended item's property list (plan 0030
                Phase 2: stat 356 on Wirt's Leg);
+               "dur": N (plan 0043 Phase 2, test state) writes current durability N (0..the full maximum) for
+               a damaged item;
                test-state keys (plan 0029 Phase 2): "identified": false clears flags bit 4 (an unidentified
                item); "quality": "low" | "superior" (3-bit field "qdata", 0) | "rare" | "crafted" ("names"
                [name1, name2], (160, 121), no affixes) on a plain code: the quality with empty quality fields and the
@@ -1312,6 +1314,15 @@ def new_item(t, spec, rng):
             # long sword of qitnec stores it (44 + 12 % = 49)
             it["dur"] = (it["maxdur"] + stats.get((73, None), 0)
                          + it["maxdur"] * stats.get((75, None), 0) // 100)
+            if "dur" in spec:
+                # test-state key (plan 0043 Phase 2): a damaged item, current durability 0..full maximum (a broken
+                # item at 0 keeps the broken flag clear: the game sets it, the builder does not)
+                d = spec["dur"]
+                if not isinstance(d, int) or not 0 <= d <= it["dur"]:
+                    raise D2sError("item %r: dur %r, 0..%d (the full maximum)" % (code, d, it["dur"]))
+                it["dur"] = d
+    if "dur" in spec and not it.get("maxdur"):
+        raise D2sError("item %r: dur needs an armor or weapon base with durability" % spec)
     if code in ("tbk", "ibk"):
         # the 5-bit tome field of a normal-quality book (d2s.md); 0 in the one sample tome (qitdru tbk)
         it["tome"] = spec.get("tome", 0)

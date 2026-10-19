@@ -190,6 +190,26 @@ RECIPE_BASES = {
     "uniqclassic": (BASE_C, "68e46a96698d98991ec362e273c26201f365f276444c4640d28c0bd931eaf0ea"),  # run:2026-10-14-uniques
     "uniqnova": (BASE_X, "2c793a3df3773c0f9d63d8c4ddc155e7eb384cc16b0495ac5eb00ab9d7ddc376"),  # run:2026-10-14-uniques rev 4
     "vendorclassic": (BASE_C, "d2e264dccbae35a21914754ed4ddcc878e4d1a2cfffaba8e08757e4df1058228"),  # run:2026-10-15-vendors
+    "econa": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
+    "econb": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
+    "econc": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
+    "econd": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
+    "econdl3": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
+    "econdl75": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
+    "econg": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
+    "econn": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
+    "econk1": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
+    "econk2": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
+    "econk3": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
+    "econk4": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
+    "econk5": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
+    "econk6": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
+    "econk7": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
+    "econk8": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
+    "econk9": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
+    "econk10": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
+    "econw": (os.path.join(SAMPLES, "smpbar.d2s"), None),  # run:2026-10-17-economy (plan 0043 P2)
+    "econt": (os.path.join(SAMPLES, "smpbar.d2s"), None),  # run:2026-10-17-economy (plan 0043 P2)
     "vendornova": (BASE_X, "eed8939c568f3db4e471220571649af51be9a7417feb918cabcf41a20365bb5c"),  # run:2026-10-15-vendors
     "vendornova75": (BASE_X, "dc2ca9397496b485df54b0547def9023d83c4b68390cd8eb91727831e82cae67"),  # run:2026-10-15-vendors
     # plan 0042 Phase 0 (tools/quest_saves.py): not loaded yet; the first step of Phase 2 loads them and pins the hashes

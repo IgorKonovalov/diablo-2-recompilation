@@ -1,0 +1,176 @@
+{
+ "game": "expansion",
+ "class": "Sorceress",
+ "seed": 743000002,
+ "name": "EconB",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 60,
+  "energy": 60,
+  "dexterity": 25,
+  "vitality": 100,
+  "hitpoints": 500,
+  "maxhp": 500,
+  "mana": 300,
+  "maxmana": 300,
+  "stamina": 200,
+  "maxstamina": 200,
+  "level": 30,
+  "experience": 5493363,
+  "gold": 300000,
+  "goldbank": 2000000
+ },
+ "skills": {
+  "Charged Bolt": 1,
+  "Static Field": 1,
+  "Telekinesis": 1,
+  "Teleport": 1
+ },
+ "mouse": {
+  "left": "Teleport",
+  "right": "Telekinesis"
+ },
+ "keep_items": [],
+ "items": [
+  {
+   "code": "skp",
+   "equip": "head",
+   "dur": 5
+  },
+  {
+   "code": "chn",
+   "equip": "tors",
+   "dur": 11
+  },
+  {
+   "code": "lgl",
+   "equip": "glov",
+   "dur": 2
+  },
+  {
+   "code": "mbt",
+   "equip": "feet",
+   "dur": 8
+  },
+  {
+   "code": "mbl",
+   "equip": "belt",
+   "dur": 3
+  },
+  {
+   "code": "kit",
+   "equip": "larm",
+   "dur": 12
+  },
+  {
+   "code": "axe",
+   "equip": "rarm",
+   "dur": 6
+  },
+  {
+   "set": "Sigon's Visor",
+   "store": "inventory",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "unique": "Bane Ash",
+   "store": "inventory",
+   "x": 2,
+   "y": 0
+  },
+  {
+   "unique": "Darksight Helm",
+   "store": "inventory",
+   "x": 3,
+   "y": 0
+  },
+  {
+   "code": "rin",
+   "rare": [
+    170,
+    130
+   ],
+   "suffix": 120,
+   "store": "inventory",
+   "x": 5,
+   "y": 0
+  },
+  {
+   "code": "rin",
+   "suffix": 200,
+   "identified": false,
+   "store": "inventory",
+   "x": 6,
+   "y": 0
+  },
+  {
+   "code": "lsd",
+   "sockets": 2,
+   "filled": [
+    {
+     "code": "gsv"
+    },
+    {
+     "code": "r01"
+    }
+   ],
+   "dur": 20,
+   "store": "inventory",
+   "x": 7,
+   "y": 0
+  },
+  {
+   "code": "lxb",
+   "store": "inventory",
+   "x": 5,
+   "y": 1
+  },
+  {
+   "code": "pa1",
+   "store": "inventory",
+   "x": 0,
+   "y": 2
+  },
+  {
+   "code": "tkf",
+   "prefix": 200,
+   "quantity": 100,
+   "store": "inventory",
+   "x": 9,
+   "y": 0
+  },
+  {
+   "code": "ibk",
+   "quantity": 5,
+   "store": "inventory",
+   "x": 3,
+   "y": 2
+  },
+  {
+   "unique": "Gheed's Fortune",
+   "store": "stash",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "code": "buc",
+   "quality": "superior",
+   "dur": 4,
+   "store": "stash",
+   "x": 1,
+   "y": 0
+  }
+ ]
+}

@@ -4,7 +4,8 @@
 > **Question:** what does an item cost to buy, sell, gamble and repair, what do hiring, resurrecting and identifying
 > cost, how much gold drops and is lost on death, what caps hold gold, and how do items lose and regain durability,
 > quantity and charges?
-> **Date:** 2026-10-17   **Plan:** 0043 (Phase 1 and 1b, static)   **Status:** open (Phase 2 runs the reproduction)
+> **Date:** 2026-10-17 (Phase 2: 2026-10-19)   **Plan:** 0043 (Phases 1, 1b and 2)   **Status:** Phase 2 done; review
+> pending
 
 All addresses are in the pinned `Game.exe`. Every claim below is a static reading (objdump on the image, the lane's
 Ghidra copy `ghidra-p43r`), so the behavioural claims are tagged I; data counts are tagged C from `tools/economy_survey.py`
@@ -86,8 +87,8 @@ Blind first: § 1–§ 7 were read from the code before the pages below were fet
   **held** Detail: § 7.
 - [L] src:maxroll-d2r-items: slot weights head 2, body 3, shield 2, waist 1, feet 1, hands 1. **contradicted**
   Detail: the table `g_ArmorWearSlots` (`0x00732B90`, 7 pairs) is head 3, torso 5, right hand 4, left hand 4, belt 2,
-  feet 2, gloves 2, and only an item of type `armo` in the slot counts (§ 7). Reachable on stock data: a P2 required
-  case (backlog).
+  feet 2, gloves 2, and only an item of type `armo` in the slot counts (§ 7). Settled by the P2 required case: the
+  logged `W` and all 964 slot picks reproduce with 3/5/4/4/2/2/2 (§ Phase 2).
 - [L] src:maxroll-d2r-items: an ethereal item sells for 25 % less. **contradicted** Detail: an ethereal item's `S` is
   divided by 4 (`sar 2`, 0x0062F88E), so it sells for a quarter; a class item is quartered again (0x0062F99C). P2
   required case (backlog).
@@ -588,17 +589,120 @@ From the plan 0043 P1 review: the byte `PLAYER_DeathGoldLoss` tests against 3 (0
 
 ## Open questions
 
-- `NpcStoreRec` `+0x24..+0x26`: no reader in the economy paths. A Phase 2 read watchpoint on Charsi's record bytes
-  during a store, repair and gamble session would find any reader (P2 question 9).
+- ~~`NpcStoreRec` `+0x24..+0x26`: no reader in the economy paths; a Phase 2 watchpoint would find any reader~~: run
+  (§ Phase 2, question 9). One reader of `+0x27` found (0x0057949E); the reader of `+0x24..+0x26` stays open, since
+  the watch's control saturated at the trade opening and later absence is uncontrolled. A rerun keeps the control
+  firing to the session's end (backlog `2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder`).
+- The two sales that left the game seed unchanged (§ Phase 2, seeds): what the store does instead of the copy's
+  `ItemCopy` there (4311 line 29206, 4332 line 5963). Same backlog entry.
 - Which code sets the broken flag of a melee weapon whose durability reaches 0 (`DurabilityLossRoll` writes `D = 0`
   and quantity 0 without `ItemBreak`; a stat 72 callback is a candidate). P2 boundary case. Read at the review:
   `HandsRefresh` (0x00580310) runs 0x00580030 on each hand item, which calls `ItemBreak` (0x005800CA) only for a
   stackable or throwable `weap` item without stat 125, of quantity ≤ 0, quality magic or better, not already broken
   (with stat 125 it only zeroes the quantity, 0x0058007E); an item that is neither stackable nor throwable and has no
   stat 125 is left untouched (0x00580058 → 0x005801D1). So no static path flags it; P2 logs flag `0x100` and
-  stat 72 after the event.
+  stat 72 after the event. P2: one melee weapon reached 0 (session 4381) and had no broken flag at the roll's exit;
+  what the client shows afterwards was not followed.
 - The gates of `PLAYER_UseAmmo`'s three missile call sites (`0x0056ECB0`, `0x0056F7F0`) and which skill reaches
   `SkillWeaponWear`.
 - The party gold split (`PartyGoldShare`) and trading gold between players: plan 0044.
 - ~~`game+0x6A` = 3 as "single player" rests on the logged runs, not on its writer~~: the writer is read above
   (`lane/rbs2`). [L] Which network modes `g_ClientGameMode` 6 and 8 are.
+
+
+## Phase 2 runtime results (run:2026-10-17-economy)
+
+33 claim logs, one checker (`tools/economy.py check`), 0 mismatches; counts, sessions and limits in the run record.
+Each raise says what the run separates; what is not listed stays as tagged above.
+
+- **§ 1–§ 4, the price core, raised in part.** [C] Every logged `ITEMS_TradePriceCore` result is reproduced from the
+  logged inputs (the item's own and full-stat lists as value oracles): 26 525 calls, 3 762 distinct inputs (mode 0
+  2 513, mode 1 852, mode 2 272, mode 3 125). Covered: the bases `cost`, stack (`n = maxstack`), quiver and tome; the
+  armour scaling; quality 1 (halving), 2, 3, 4, 5 (the set row's terms, 66 inputs), 6 (the rare item's six affixes,
+  18), 7; the automagic, magic and unique terms over 1024; the stat terms of Encode 0–3 with the unsigned division by
+  `n`; the staff-mod term; the socket term (`cost/2` per socketed child, 10 inputs); the class-item and ethereal
+  quarters of `S` (68 ethereal sale inputs); the mode-1 and mode-3 durability steps; the Npc multipliers of 15 classes;
+  quest groups A and B both on and off (A on 1 261 / off 2 229, B on 764 / off 169, from saves with every quest done
+  and with the quest words cleared); the quantity step with the repairable stack's `M·S − R`; `max buy`; the floor;
+  `item_reducedprices` `r ≠ 0` (Gheed's Fortune, 376 inputs); the gamble price; difficulties 0, 1 and 2 for modes 0–2
+  (distinct: 1 818/367/328, 552/79/221, 140/42/90) and 0, 1 for mode 3 (108/17). (fn:ITEMS_TradePriceCore@0x0062EFB0,
+  fn:sub_00628E70_PriceStatTerms@0x00628E70, fn:sub_0062EDD0_PriceStaffModTerm@0x0062EDD0,
+  fn:sub_00629370_GamblePrice@0x00629370, run:2026-10-17-economy) **Remainder (`[I]`):** crafted items, ears and body
+  parts, Encode 4, version-0 items, the recharge cost, the repair price in Hell; quest group C is set by no stock Npc
+  row (`npc.txt`), so it is unreachable on stock data.
+- **`RepairCost` raised.** [C] 138 repair-all sums equal the sum of the mode-3 price calls made inside them.
+  (fn:sub_0062FE60_RepairCost@0x0062FE60, run:2026-10-17-economy)
+- **`PayGold` raised.** [C] 54 calls (hires, purchases, resurrections) reproduce: taken from gold first, the rest from
+  the stash, refused with both unchanged when gold and stash together are short (the 4 refused resurrections below).
+  (fn:sub_00576D90_PayGold@0x00576D90, run:2026-10-17-economy)
+- **Buy and sell raised.** [C] In 43 sales checked the gold given (`PlayerGiveGold`) equals the lower of the sale prices
+  computed inside `NPC_SellItem`; in 14 purchases checked `PayGold`'s amount is a multiple of the purchase price.
+  (fn:NPC_SellItem@0x00579510, fn:NPC_BuyItem@0x00577830, run:2026-10-17-economy)
+- **Resurrection raised; one refinement.** [C] `MERC_ResurrectCost` = `min((L·L)/2·15, 50 000)` with `L` the
+  mercenary's level: 34 calls at levels 1 to 99, the cap reached at 82, 85 and 99. `MERC_Resurrect` pays it with `PayGold`
+  (10 paid) and, new, pays nothing when `PayGold` refuses: in the 4 refused cases `PayGold` returned 0 (gold and stash
+  below the cost) and gold and stash are unchanged at `MERC_Resurrect`'s exit. That it then revives nothing is read from
+  the code only and stays `[I]`: the test at 0x00579CAE jumps to the common exit 0x00579D44, and the revive (the `+0xC4`
+  bit `0x10000` cleared at 0x00579CC8, then 0x00624690, 0x00627260, 0x00579AA0) lies only on the `PayGold ≠ 0` path; the
+  logger does not record the mercenary's state after the call. (fn:MERC_ResurrectCost@0x006637B0, fn:MERC_Resurrect@0x00579C00,
+  run:2026-10-17-economy)
+- **Death raised in part.** [C] `PLAYER_DeathGoldLoss` reproduces in 20 softcore single-player deaths (gold, stash and
+  stat 175 after; 12 with the total above `500 L` after the loss, 8 below, levels 5 to 99). **Remainder (`[I]`):** PvP,
+  game types other than 3, hardcore. (fn:PLAYER_DeathGoldLoss@0x005357D0, run:2026-10-17-economy)
+- **Gold raised in part.** [C] 545 gold amounts at creation reproduce (`ilvl + RNG_Range(item seed, 5·ilvl)`, seed after);
+  433 gold-find scalings of monster drops reproduce `gold·(100 + GF(killer) + GF(owner))/100` (gold find 0: 207, > 0:
+  226; Normal 228, Nightmare 140, Hell 65); 102 object piles from `DropGoldPile` take the level's monster level minus 1
+  as ilvl (levels whose monster level is above 1); 97 `UnitAddGoldStat` adds reproduce. (fn:sub_005589A0_DropGoldFind@0x005589A0,
+  fn:sub_00559300_DropGoldPile@0x00559300, fn:sub_0053FF00_UnitAddGoldStat@0x0053FF00, run:2026-10-17-economy)
+  **Remainder (`[I]`):** Wirt's and the quest chests' ilvl, Baal's gold, the caps (no add went over a cap), pickup and
+  the stash move.
+- **§ 7, armour wear raised.** [C] In all 975 events with the slot list logged, `COMBAT_DurabilityLoss`'s `W` equals the
+  sum of the `g_ArmorWearSlots` weights 3/5/4/4/2/2/2 over the slots holding an `armo` item (W 18 in 802, W 10 in 162, and 11 with
+  `W = 0` and no draw); `u = RangeB(7)` and `w = RangeB(W)` on the defender's seed reproduce, and the cyclic pick names
+  the slot whose item `ITEMS_DurabilityLossRoll` then rolls in 964 of 964 picks; the roll draws next on the same seed
+  (1 878 chained draw pairs). (0x0057D3D7–0x0057D4DF, data:g_ArmorWearSlots@0x00732B90, run:2026-10-17-economy)
+- **§ 7, `ITEMS_DurabilityLossRoll` raised in part.** [C] 1 061 rolls reproduce: no draw without durability (50); one
+  LCG step of the owner's seed, `roll = low32 mod 100`, loss when below 10 (armour, 914 rolls), 4 (weapon, 90) or 10
+  (an expansion throwable, 7); `D′ = D − 1` kept when ≥ 1 (81 losses). (fn:ITEMS_DurabilityLossRoll@0x00559E30,
+  run:2026-10-17-economy) **Remainder (`[I]`):** the broken armour (one case, flag `0x100` set) and the weapon taken to 0
+  (one case, no broken flag at exit) are single cases; the indestructible item, the classic throwable, the stack refill
+  and version-0 items were not reached.
+- **§ 7, quantity per use raised in part.** [C] `ItemConsumeOne` writes `q − 1` in 130 thrown uses (throwing axe,
+  through `PLAYER_UseAmmo`, 142 calls), no draw. **Remainder (`[I]`):** bows, crossbows and quivers; skill wear; charges
+  (no `UseCharge` event). (fn:sub_0056C310_ItemConsumeOne@0x0056C310, fn:PLAYER_UseAmmo@0x0056C3F0, run:2026-10-17-economy)
+- **§ 7, replenish raised in part.** [C] 287 `ITEMEVENT_Replenish` ticks leave both seeds unchanged, and every
+  consecutive pair of ticks on one item is `2500/r + 1` frames apart (501 at `r = 5`: 131 pairs; 834 at `r = 3`: 76).
+  The value written per tick is not compared by the checker and stays `[I]`. (fn:ITEMEVENT_Replenish@0x00562D30,
+  run:2026-10-17-economy)
+- **§ 8, seeds, raised.** [C] Unchanged game and player seed from entry to exit: the price core (26 525), `RepairCost`
+  (138), `ItemRepairAll` (3 115), `NpcRepair` (2), `PayGold` (54), `UnitAddGoldStat` (97), `MERC_ResurrectCost` (34; the player's seed logged in 20),
+  `MERC_Resurrect` (14), Cain (1), the replenish tick (287), `ItemConsumeOne` (130), `PLAYER_UseAmmo` (142). The game
+  seed moves 2 LCG steps per created item: `NPC_BuyItem` (15 of 15), `NPC_SellItem` (+2 in 41, +4 in 3, unchanged in 2),
+  `PlayerGiveGold` (+2 in 3 of 46: a re-drop over the cap), `DropGoldAmount` (10 of 10), `PLAYER_DeathGoldLoss` (+2 in
+  the 7 deaths that dropped a pile, unchanged in 13); the player's seed is unchanged by all of them. The wear kinds draw
+  on the player's seed only (above). So the table of § 8 holds with "P2 decides" read as: resurrect, ammunition and
+  replenish draw nothing; buy and death draw only through their item creations (every purchase `+2`; a death `+2`
+  exactly when it dropped a pile). (run:2026-10-17-economy) **Remainder (`[I]`):** for sell, item creation
+  is not logged. The three `+4` sales each hold one `DropGoldAmount` (a gold re-drop) besides the copy; the 2 unchanged
+  sales (4311 line 29206, the ethereal throwing stack for 1 040; 4332 line 5963, 3 502) hold no `DropGoldAmount` and are
+  unexplained, so "sell draws only through its item creations" stays `[I]`.
+- **Hires.** [C] for the gold side: the 22 hires' `PayGold` reproduce; the hire price is `HIRELING_RollEntry`'s, which
+  `tools/hirelings.py check` reproduces on the same log (0 mismatches besides the broken watch handler's lines).
+  (fn:sub_00576D90_PayGold@0x00576D90, run:2026-10-17-economy)
+- **Cain** stays `[I]`: one paid identify (100 for one unidentified item, quest word 4 cleared), a single case.
+  (fn:NPC_CainIdentify@0x00578460, run:2026-10-17-economy)
+- **Question 9, the store record, raised in part.** [C] `NPC_TradeOpen` reads the byte `+0x27` of the store record
+  (`cmp byte [edi+0x27], 0`, 0x0057949E): a read watchpoint on Charsi's `NpcStoreRec` `+0x24..+0x27` fired there once
+  (watch pc 0x005794A2, the next instruction) on the trade opening that set it, beside a control watch on `+0x00` that
+  fired at `NPCSTORE_FindRec`'s compare (0x00535EC3). When the byte is set and two arguments allow, the code clears it
+  (0x005794AF) and calls 0x00536D10; that is read from the code only (`[I]`). (fn:NPC_TradeOpen@0x00579430,
+  fn:NPCSTORE_FindRec@0x00535EA0, run:2026-10-17-economy) **Remainder:** no later read of `+0x24..+0x27` was logged
+  during Charsi's repair and repair-all or the other NPCs' windows, but that absence is uncontrolled: the control's
+  40-line cap was reached within two frames of the watch being set in each of sessions 4335, 4401 and 4403, so nothing
+  shows the watchpoint still armed later. It is an observation, not a raise; the reader of `+0x24..+0x26` stays open. (fn:NPC_TradeOpen@0x00579430, fn:NPCSTORE_FindRec@0x00535EA0,
+  run:2026-10-17-economy)
+- **Leads used, required cases.** [C] All five reproduced: (1) the armour slot weights as above (the lead's 2/3/2/1/1/1
+  would give `W` 10 and 6 for the two worn sets, against the logged 18 and 10); (2) ethereal `S / 4`; (3) the ethereal
+  throwing stack sold for 1 040; (4) the all-resistance `S` over 1024; (5) the computed gamble price.
+  (data:g_ArmorWearSlots@0x00732B90, fn:ITEMS_TradePriceCore@0x0062EFB0, fn:sub_00629370_GamblePrice@0x00629370,
+  run:2026-10-17-economy)

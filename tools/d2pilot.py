@@ -1063,9 +1063,19 @@ NPCS = {
     "anya": (512, ["talk", "trade", "gamble", "cancel"], (-8, 46)),
     "qual-kehk": (515, ["talk", "hire", "cancel"], (-56, 12)),
     "nihlathak": (514, ["talk", "gamble", "cancel"], None),
+    # plan 0043 Phase 2 (tools/gdb/economy.py): Cain's identify (CI1 line) and the resurrect lines (MR1); the menus
+    # are as measured in run:2026-10-17-economy
+    "cain2": (244, ["talk", "identify", "cancel"], None),
+    "cain5": (265, ["talk", "identify", "cancel"], None),
+    "cain6": (520, ["talk", "identify", "cancel"], None),
+    # a dead mercenary puts "Resurrect <name>: <cost>" second, before the seller's own lines (Qual-Kehk's menu
+    # measured in run:2026-10-17-economy: talk, resurrect, hire, cancel); Tyrael's travel line assumed to follow it
+    "tyrael": (367, ["talk", "resurrect", "travel", "cancel"], None),
+    "qualres": (515, ["talk", "resurrect", "hire", "cancel"], (-56, 12)),   # Qual-Kehk with a dead mercenary
     "waypoint": (None, [], None),       # npc <log> waypoint walk: walk next to the town waypoint (OBJP lines)
 }
-NPC_DONE = {"trade": ("TO", lambda d: d.get("gamble") == 0), "gamble": ("GBX", None), "hire": ("HIRE", None)}
+NPC_DONE = {"trade": ("TO", lambda d: d.get("gamble") == 0), "gamble": ("GBX", None), "hire": ("HIRE", None),
+            "identify": ("CI1", None), "resurrect": ("MR1", None)}
 # Quest item services (plan 0032 Phase 2, tools/gdb/quests.py): with the reward pending the NPC's menu has one more line
 # just before "cancel" (Charsi: talk, trade, imbue, cancel). The service opens the inventory beside a one-item box:
 # the pilot picks the --item cell up, puts it into the box and presses the box's check mark, then waits for the line.
