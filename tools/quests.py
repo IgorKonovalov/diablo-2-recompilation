@@ -49,7 +49,7 @@ What is predicted (docs/findings/quests/0001-progression.md, 0002-travel.md; eve
               targets low & 1 .. 7 in order (DWF) (0001 § 9 word 32)
   Anya        e11 512 0x4EA8 with b1, not b0, not b10: the table by difficulty and clvl, RNG_Range(quest seed, count),
               the code, then the word-37 writes at their call sites (TALK_STEPS); qs one step (0001 § 10 word 37)
-  tr2, portal the tr2 use sets word 37 b7 only with b8 set and b7 clear; the Harrogath portal (object 566) sets word
+  tr2, portal the tr2 use sets word 37 b7 only with b8 set and b7 clear; the ass use clears word 9 b5 only when set; the Harrogath portal (object 566) sets word
               28 b0 then b13 only while b0 is clear, with word 26 b0 or b13 (0001 § 10, 0002 § 5)
   entry steps e3 writes to words 12 and 37 (entering 50; 112, 113/114, old 109, 121-124 by quest 33's state);
               "Cain lost" on the first arrival in 40 with word 4 = 0 (0001 § 7, § 8, § 10)
@@ -417,6 +417,10 @@ class Checker:
         self.player_write("QS", d)
 
     def on_QC(self, d):
+        if d.get("ret") == "0055e400" and self.prec is not None and d.get("w") == 9:
+            # part 3: the item use of ass (0x0055E3D0-0x0055E3FB) clears word 9 b5 only when it is set
+            self.ok(B(self.prec[9], 5) and d["b"] == 5, "ass use word 9 b5", "word 9 %04x bit %s" % (self.prec[9],
+                                                                                                   d["b"]))
         self.note("QC", d)
         self.recw.append(("QC", d))
         self.player_write("QC", d)

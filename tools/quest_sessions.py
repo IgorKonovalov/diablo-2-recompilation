@@ -1038,6 +1038,8 @@ sess("x-meshifw", "QuestMeshifW", "enter-normal", 4421, ["talk:264:1"] + (["menu
 # 0x005B5880, next to him)
 sess("x-tyrael3", "ActFiveTyrael", "enter-normal", 4431, ["talk:367:1"] + (["clickobj:566", "sleep:3", "towp",
                                                                          "wp:4,1", "sleep:2"] * 5) + ["saveexit"])
+# the Book of Skill (word 9 b5 clear at its use; part 1's QuestBookHeld: ass at inventory 1,0, Act II)
+sess("x-book", "QuestBookHeld", "enter-normal", 4451, ["use:1,0", "saveexit"])
 sess("dev-meshif", "QuestMeshifW", "enter-normal", 4429, ["talk:264:1", "sleep:600"])   # menu probe (development)
 sess("dev-tyrael", "ActFiveTyrael", "enter-normal", 4439, ["talk:367:1", "sleep:600"])   # menu probe (development)
 # death and resurrection (packet 0x41): the 24-life save in the Cold Plains

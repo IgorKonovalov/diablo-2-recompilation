@@ -44,6 +44,10 @@ and writers of the act changes are also listed per quest in [quests/0001](0001-p
   `meshif2`, `cain6`, `[L]` as identities). The player is moved
   **before** the words are written. (fn:NPC_MenuAction@0x00579D60 0x0057A650–0x0057A7D6, 0x0054B830,
   fn:sub_005467E0_NpcActTravel@0x005467E0)
+- [C] **Part 3** (run:2026-10-19-quests3, § 14): the stock client offers NPC 367 no travel line, so the expansion Act IV
+  → V travel is the Harrogath portal (object 566, `0x005B5880`: word 28 b0 and b13 once, `+0x4C`, then
+  `NpcTravelMove(109, 5)`), not the 367 branch (which stays `[I]`, unreachable by stock play); Meshif's return
+  (`NpcTravelMove(40, 5)`) steps Lut Gholein's level seed once per trip (a type-5 point found). (0x005B5880, 0x0054B830)
 - [I] **The Durance portal** (`OperateFn` 46) needs word 22 bit 13 or bit 0; on level 102 it writes word 23 (and 18),
   sets waypoint 103 and moves the player to level 103 at point type 0. On any other level the same handler only calls
   `0x005BCFD0`, which opens the Mephisto portal and bridge objects and moves no one; so `Siege Control` (410), which
@@ -329,7 +333,7 @@ NpcTravelMove(level, type) (0x0054B830)
   § 10): expansion only (`game +0x70`), word 26 b0 or b13 (else message 0x13 to the player), the player in Act IV; with
   word 28 b0 clear it sets word 28 b0 then b13 (0x005B590F, 0x005B5919), sends the record and sets player data `+0x4C`
   = 1 (0x005B5960, `0x0053D940`), and in every case `NpcTravelMove(109, 5)` (0x005B598F) and `0x005B4FF0` (the
-  waypoint record). The run: @@TYR@@. (0x005B5880–0x005B59A5)
+  waypoint record). The run: x-tyrael3, five trips (§ 14). (0x005B5880–0x005B59A5)
 - [C] **Meshif's Act III menu** (part 3, run:2026-10-19-quests3): *talk*, *sail west*, *cancel* (no trade line; part 2's
   driver clicked *cancel*). (screenshot `workspace/logs/quests/dev-p42r-meshif-menu.png`)
 - [I] The NPC classes are `monstats` rows; their names (Warriv, Meshif, Tyrael, …) are `[L]`.
@@ -409,6 +413,10 @@ OBJOP_Portal (OperateFn 15, 0x00584870)                                         
   no quest test; `OperateFn` 34 (`0x005846B0`): from 74 to 54 at type 0, from 54 to 74 at type 11, then `0x0059BAF0`
   (Act II quest code). Both set mode 1 and queue event 1 when the object is in mode 0. (0x00584D00, 0x005846B0)
 
+- [C] **The town refusal** (part 3, run:2026-10-19-quests3, § 14): a tome used in the Rogue Encampment or Harrogath
+  returns at the town test (0x005BE2E2 → 0x005BE3CE) with no portal and no draw. The level-136 refusal stays `[I]`.
+  (0x005BE2DB–0x005BE2E2)
+
 ### 7. Warps
 
 ```text
@@ -430,6 +438,10 @@ QUESTS_WarpGate(src, dest) (0x00545B80)
 
 ### 8. Death, resurrection and joining
 
+- [C] **Raised in part** (part 3, run:2026-10-19-quests3, § 14): three resurrections (h-death3, Hell) each moved the
+  player to level 1 by `PlayerChangeLevel(1, type 0)` with one step of the town's level seed, chained from one death to
+  the next, and no game, quest or player seed draw across the handler; the life, mana and state writes were not logged
+  and stay `[I]`. (0x0054C0E0)
 - [I] Packet `0x41` with the player in mode 17: life, mana, stamina to their maxima, unit `+0xC4 |= 2`, state 54 set
   and cleared, `PlayerChangeLevel(ActTownLevel(act of the player's level), type 0)`, a mode command, the skills
   re-selected. Type 0 in a town (all `Position` levels) draws the town's level seed. (0x0054C0E0)
@@ -553,7 +565,15 @@ The last pass ([experiments](experiments.md#run2026-10-19-quests3); quest half
 part 2 lines (logger revision E adds only quest lines) on slot 2, one client; `tools/quests.py check` predicts them with
 the part 1 and 2 rules plus the town-portal refusal in a town.
 
-@@TABLE14@@
+| Claim (section) | Run | Result |
+|---|---|---|
+| a town portal refused in a town (§ 6) | the tome used in the Rogue Encampment (x-entry, x-entry2, h-entry) and in Harrogath (x-anya, h-anya, nm-anya): @@TPN@@ uses | **raised** `[C]`: `ITEMUSE_TownPortal` returns at the town test (0x005BE2E2 → 0x005BE3CE) with no portal created (no `PU` line), the player's portal unchanged and no draw on the game, quest or player seed (run:2026-10-19-quests3, 0x005BE2DB–0x005BE2E2) |
+| the type-5 lookup that steps: Meshif's return to 40 (§ 4, § 5) | x-meshifw: six westward trips (NPC 264, `NpcTravelMove(40, 5)`) and six back east (word 15 already set) | **raised** `[C]`: each westward trip's `LevelPointFind(40, type 5)` found a point and stepped Lut Gholein's level seed once, the point picked as `LevelPointPick` predicts, the level seed chained from one trip to the next; no other seed moved; the eastward trips wrote nothing (word 15 already set, `+0x4C` 0) (run:2026-10-19-quests3, fn:sub_0054B830_NpcTravelMove@0x0054B830, 0x0066B2B0) |
+| Tyrael's Act IV → V travel, word 28, packet 0x48 (§ 5, § 9) | x-tyrael3 (`ActFiveTyrael`: word 26 b0, word 28 clear): Tyrael talked to (his 0x4E20 makes the portal), then five trips through the red portal (object 566) and back by waypoint | **corrected and raised** `[C]`: the travel is object 566's operate, not the NPC menu (above, § 5); the first trip set word 28 b0 then b13 (0x005B590F, 0x005B5919), `+0x4C` = 1, and the client's packet 0x48 cleared it (1 → 0, return 0); the four later trips wrote nothing and sent no 0x48; every trip's `NpcTravelMove(109, 5)` found no point matching type 5 among Harrogath's points (one, of type 0) and took the first point without a draw (`LevelPointPick`'s n = 0 exit, 0x0066AC90), the level seed unchanged, as part 1's rule predicts. Packet 0x48's clear now has one case per travel word (7 in part 1, 15 in part 2, 28 here): **raised in part** `[C]` for the clear branch; the 20-event floor stays out of this plan (run:2026-10-19-quests3, 0x005B5880–0x005B59A5, fn:sub_0054C590_Pkt48ActChangeClear@0x0054C590) |
+| death and resurrection (packet 0x41, § 8) | h-death3: the 24-life save (`QuestDeath`) killed three times in Hell's Cold Plains, Escape each time (x-death3 in Normal: the monsters seldom hit the character, two development logs) | **raised** `[C]` for the branch reached: packet 0x41 with the player dead moves him to the town by `PlayerChangeLevel(1, type 0)`: one step of the town's level seed (type 0, a `Position` level), the free search predicted, the game, quest and player seeds unchanged across the handler, three of three; the life, mana and state-54 writes were not logged (`[I]`) (run:2026-10-19-quests3, fn:sub_0054C0E0_Pkt41Resurrect@0x0054C0E0) |
+| waypoint activation from mode 0 (§ 2) | @@ACT@@ | @@ACTR@@ |
+
+**Shortfalls (named, final for this plan).** @@SHORT14@@
 
 ## Data touched
 

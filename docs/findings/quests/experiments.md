@@ -320,8 +320,36 @@ Runtime records for [quests/0001](0001-progression.md) and [quests/0002](0002-tr
   refused in a town, Meshif's westward travel (the type-5 point), Tyrael's Act IV → V travel (word 28, packet 0x48), a
   death and resurrection (packet 0x41) and waypoint activations from mode 0 reproduce with 0 mismatches under the part 2
   checker, extended, which re-checks the 32 logs of parts 1 and 2 unchanged?
-- **Setup:** @@SETUP@@
-- **Procedure:** @@PROC@@
+- **Setup:** the ADR-0003 harness on **slot 2** only (display `:9`, `workspace/wineprefix-2`; slot 1 was plan 0043's
+  P2b lane), agent-driven play, one client, one game at a time. The slot's empty saves directory set aside as tag
+  `p42r`, restored and set aside again around each launch (`quest_sessions.py run`); the installed save is kept beside
+  the log as `<log>.in.d2s`, the save written at *Save and Exit* as `<log>.out.d2s`.
+  - **Saves** (new recipes, built with `tools/d2s.py build workspace/merged/data/global/excel <recipe>
+    workspace/samples/d2s-owner/smpsor-l50.d2s workspace/runtime/quest-saves-p42r/<Name>/<Name>.d2s`):
+    `quest-p3entry` (`QuestEntry`: Act I start, every quest done but words 4, 11, 12 and 37, all clear; every waypoint;
+    a tome at inventory 0,0 and the decoded scroll `bkd ` at 1,0), `quest-p3anya` (`QuestAnya`: Act V start, word 37 =
+    b1, b8, b15; a tome and `tr2 ` at 1,0), `quest-p3meshif` (`QuestMeshifW`: Act III start, every quest done),
+    `quest-p3wpact` (`QuestWpAct`: Act I start, the five towns' waypoints only, a tome). Part 2's `QuestDeath` and Phase
+    0's `ActFiveTyrael`, part 1's `QuestBookHeld` as built.
+  - **Logger** `tools/gdb/quest-state.gdb` with `questev.py` **revision E**: `TMA` (0x00543F10, timer add), `TMR`/`TMX`
+    (0x00543E85/0x00543E87, a timer about to run and its result), `CRN0`/`CRN` (0x00593CD5/0x00593CE6, the cairn order
+    fill on the `bkd ` use), `DWS`/`DWF` (0x005BD40F/0x005BD458, the Dark Wanderer timer's step and each free-spot try),
+    `ANL`/`ANY` (0x005898D0/0x0058993C, Anya's reward: clvl, table, count, draw, code), and the quest state byte
+    `+0x0C` as a seventh element of every quest-object list; revision D's lines unchanged.
+  - **Checker** `tools/quests.py check`, extended (docstring "part 3"): timers, the eclipse arm, the cairn order, the
+    Dark Wanderer, Anya's reward (a `TALK_STEPS` row and the table/draw check), the `tr2 `/`ass ` uses, the Harrogath
+    portal's word 28, the level-entry steps of words 12 and 37, "Cain lost" on arrival in 40, the town-portal refusal in
+    a town; `tools/test_quests.py` 19 tests (part 2's rules: talk steps, saved words, NPC 266's handler runs, word 40's
+    map; part 3's rules). `tools/quests.py objplace` (DS1 placements of object classes).
+  - **Driver** `tools/quest_sessions.py` (part 3 actions `use`, `tpuse`, `clickobj`; `die` standing next to the nearest
+    monster; the part 3 session block), `tools/d2pilot.py` (Meshif's Act III menu without *trade*, the `tyraelgo`
+    row, the waypoint walk's stop at 5 sub-tiles, a screenshot of the menu as clicked).
+- **Procedure:** `timeout 4000 python3 -I tools/quest_sessions.py run --slot 2 --tag p42r --run 2026-10-19-quests3 SESSION…`
+  (sessions in the part 3 block of the file; each supervised by the part 2 watchdog), then `systemd-run --user --scope -p
+  MemoryMax=4G python3 -I tools/quests.py check workspace/logs/quests/2026-10-19-quests3-*.log`, and the same checker over
+  the 32 logs of parts 1 and 2.
+
+@@SESSTABLE@@
 - **Observed:** @@OBS@@
 - **Conclusion:** raises, corrections and shortfalls in
   [quests/0001 § 17](0001-progression.md#17-phase-2-part-3-run2026-10-19-quests3) and

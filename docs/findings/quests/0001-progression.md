@@ -58,7 +58,7 @@ record (§ 3). The quest drops, rewards and the quest seed's item draws are [ite
   (§ 11; fn:sub_00592E90_A1Q4_StoneOrderDraw@0x00592E90, 0x0059EDC0, 0x0059B1C0, fn:sub_005BD390_A3Q7_AfterglowTimer@0x005BD390,
   0x00589937, fn:sub_0058E830_A5Q6_ZooInit@0x0058E830, 0x00596B23, 0x0059E1CE)
 - [I] **Creation-path readers** (§ 12): object inits that read the game record (Hratli's two InitFns by G16:13, InitFn
-  52 by G22:13, the Tristram portal when quest 4 is inactive, the Zoo), the Chaos Sanctuary gate (Diablo's private
+  52 by G22:13, the Tristram portal when quest 4 is inactive, the Zoo, whose object no stock map places), the Chaos Sanctuary gate (Diablo's private
   `+0x13`, set when the five seals are open and three seal bosses dead), Nihlathak's boss spawn (Anya rescued), the warp
   gates into 73, 100, 118/128 and 132, the true-tomb index (act `+0x094`) used by quest 12 and the client; act `+0x484`
   and `+0x474` are DRLG fields that no quest code reads. (fn:sub_005B70B0_A3Q0_HratliSpawnA@0x005B70B0,
@@ -1923,7 +1923,7 @@ The reviewed specs that take quest state as an oracle, and what reads it:
 | spec | oracle | reader found | quest state read |
 |---|---|---|---|
 | items/quest-drops | B6 bits at kill time; quest seed on entry | `MONSTER_DropItems` (items/0010 § 2) | killer's word `TCQuestId` bits 15, 1, `TCQuestCP`, read before the boss's script writes (unchanged) |
-| objects | quest-state `InitFn`s | InitFn 49 / 50 (Hratli, G16:13 clear / set), InitFn 52 (NPC 297, skipped when G22:13), the cairn stones' init (Tristram portal when quest 4 is inactive), InitFn 55 (Diablo's start point), InitFn 69 (Nihlathak's boss after Anya's rescue, quest 33 private `+0x88`), InitFn 79 (the Zoo), InitFn 44 (hellgate 342) | game record and quest private state; § 9, § 10 |
+| objects | quest-state `InitFn`s | InitFn 49 / 50 (Hratli, G16:13 clear / set), InitFn 52 (NPC 297, skipped when G22:13), the cairn stones' init (Tristram portal when quest 4 is inactive), InitFn 55 (Diablo's start point), InitFn 69 (Nihlathak's boss after Anya's rescue, quest 33 private `+0x88`), InitFn 79 (the Zoo; object 567 placed nowhere on stock data, § 10), InitFn 44 (hellgate 342) | game record and quest private state; § 9, § 10 |
 | monsters/spawn | the Chaos Sanctuary gate | `sub_005B5210_DiabloQuestFlag` reads Diablo's private `+0x13`, set by `0x005B5230` when the five seals are open and three seal bosses are dead | quest 23 private state; § 10 |
 | monsters/special | superunique quest hooks | `QUESTS_HookMonster` callers; forced death dispatch (§ 2) | — |
 | rng/seeds | act `+0x094`, `+0x484`, `+0x474`, the level-27 bit | `+0x094` (via `0x0061AEB0`): quest 12's "true tomb" entry, the join's tomb index, `OBJINIT_Portal`'s Duriel-lair pair; `+0x484`: maze code only; `+0x474`: the outdoor Kurast gates only; the level-27 bit: no quest code | § 8, § 9 |
@@ -2262,7 +2262,39 @@ Wanderer's step and tries `DWS`/`DWF`, Anya's reward `ANL`/`ANY`, and the quest 
 list), and `tools/quests.py check` the part 3 rules (its docstring and `tools/test_quests.py`). The travel half is
 [quests/0002 § 14](0002-travel.md#14-phase-2-part-3-run2026-10-19-quests3).
 
-@@TABLE17@@
+| Claim (section) | Run | Result |
+|---|---|---|
+| quest timers: registration, the 20-frame pass, `due < tick` (§ 5) | every timer line of the run: @@TMRSESS@@ | **raised in part** `[C]`: each timer ran first at `tick = registration tick + period + 1`, on a frame with `frame mod 20 = 0`, and a run returning 1 was not repeated; only one-shot timers were reached, so the re-arm after a 0 and the tick wrap stay `[I]` (run:2026-10-19-quests3, 0x00543E10, 0x00543F10) |
+| word 11's eclipse arm: one quest-seed `RandLoHi(15, 17)`, the timer, once per game (§ 8) | @@ECLSESS@@ | **raised** `[C]` with a **correction**: the draw and the period `15 + (low & 1)` predicted from the quest seed at the e3 entry, the timer run once, b2 set by `0x0059A4F0` at state 1; the second entry to 44 drew nothing because the state was 1, not because of private `+0x01` (cleared by the timer); carried into § 8 (run:2026-10-19-quests3, 0x0059EDC0, 0x0059ED80) |
+| word 4's cairn order: ≥ 5 quest-seed steps, slot `low mod 5` (§ 7) | the decoded scroll used twice at the start of @@CRNSESS@@ | **raised** `[C]` for the scroll path, with a **refinement** of the trigger (the `bkd ` item use through `0x00544840`, not a "scroll send"; carried into § 7 and § 11): order and seed after predicted, @@CRNSTEPS@@ steps in all; the second use draws nothing (private `+0x4A`). The stone-operate trigger stays `[I]` (run:2026-10-19-quests3, 0x00592E90, 0x00593CB0) |
+| word 32's Dark Wanderer timer: one quest-seed step, targets `low & 1 … 7` (§ 9) | @@DWSESS@@ | **raised** `[C]`: one step per game, the tries from `low & 1` in order, word 32 b0 for the player first (run:2026-10-19-quests3, 0x005BD390, 0x005BD4A0) |
+| word 37's Anya reward: table by difficulty and clvl, one `RNG_Range` (§ 10) | x-anya (Normal table), nm-anya (Nightmare), h-anya (Hell): one reward each, clvl 80 | **raised** `[C]`: table, count, draw and item code predicted in each difficulty; the writes b9, b1 cleared, b0, b10 at their call sites with b8 set (switched off by the join, no `+0x09` test); the second talk gave nothing (run:2026-10-19-quests3, 0x00589883–0x005899E6) |
+| word 37's `tr2 ` use (item use, § 10) | x-anya | **raised** `[C]` for the branch reached (b8 set, b7 clear): b7 at 0x0055E4F5 (run:2026-10-19-quests3, 0x0055E4CC–0x0055E4F5) |
+| level-entry steps (e3) reachable by a waypoint hop (§ 7–§ 10) | @@E3SESS@@ | **raised** `[C]` for the branches reached: word 4's "Cain lost" on the first arrival in 40 (`0x00597310` from `TownLevelLeave`, not the e3 handler: game b13, player b14); word 12 b8, b7 on entering 50 (quest 11 active); word 37's 112 → 113 → 123 steps (b3, then b14). Other e3 rows: candidates table below (run:2026-10-19-quests3, 0x00597310, 0x0059F136, 0x00589D80) |
+| word 40's e11 map (§ 10, § 16) | Anya's talks also reported 0x4ED0 | **held** for a second message: 0x4ED0 → b9 (the jump table's second entry), as § 16 corrected (run:2026-10-19-quests3, 0x0058D9C7) |
+| the Zoo's draws (§ 10, word 40) | static scan (`objplace`), no session | **shortfall, unreachable on stock data** `[I]`: object 567 is placed by no DS1 and created by no code (§ 10) |
+
+Level-entry and item-use candidates from § 7–§ 10 (the e3 and item-use rows a waypoint hop or a town reaches; each
+reached row is `[C]` above for its branch, the rest stays `[I]`):
+
+| word | trigger | write | part 3 |
+|---|---|---|---|
+| 4 | first arrival in 40 with b0, b1 clear, Cain not rescued | game b13, b14 | reached (`TownLevelLeave` path) |
+| 4 | use of `bkd ` | the order draw (no bit) | reached |
+| 11 | entering 44/45 at state 0 | the draw; b2 at the timer | reached |
+| 11 | leaving 40 at state 2; entering 40 with private `+0x03` | log state; eclipse re-armed | not reached (states set by the altar) |
+| 12 | entering 50 | b8, b7 | reached |
+| 14 | entering 46 at state 0; the true tomb | state only; state 2 | not reached (no write on 46; the tomb is a walk) |
+| 17, 18, 21 | entering 79, 77, 82 | state only | not attempted (no write) |
+| 19 | entering 78; leaving 75 at state 2 | state; log bits | not reached (state 2 from a quest step not taken) |
+| 25, 26, 27 | entering 103 at log state 2; 108 | log bits | not reached (log state 2 from boss steps; 108 is a walk) |
+| 35, 36 | entering 110–112 at state 1/2 | state 3, log bits | not reached (states from Larzuk's and Qual-Kehk's quest talks, not built) |
+| 37 | entering 112, 113/114, 121–124; leaving 109 at state 2 | state; b3; b14 | 112, 113, 123 reached; 114, 121, 122, 124 and the 109 branch not |
+| 37 | use of `tr2 ` | b7 | reached |
+| 38, 39, 40 | entering 121 (+0x0B 1), 120, > 130 | state, log bits | not reached (need Anya's portal, the Ancients, Baal) |
+| 9 | use of `ass ` | b5 clear | not attempted (the part 1 save `QuestBookHeld` holds it; no session used it) |
+
+**Shortfalls (named, final for this plan).** @@SHORT17@@
 
 ## Data touched
 

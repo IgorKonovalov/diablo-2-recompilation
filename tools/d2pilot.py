@@ -1419,7 +1419,7 @@ def walk_to_wp(args):
         px, py = st.pos[0], st.pos[1]
         dx, dy = w[0] - px, w[1] - py
         d = math.hypot(dx, dy)
-        if d <= 4:
+        if d <= 5:                      # part 3: 4.1 away the walking click opened the waypoint menu, endlessly
             print("npc: at the waypoint (%d, %d), player (%d, %d)" % (w[0], w[1], px, py))
             return 0
         tgt = path_near(st, (w[0], w[1] + 2), 3, args.hop)
