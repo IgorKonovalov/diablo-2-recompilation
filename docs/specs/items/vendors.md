@@ -803,6 +803,7 @@ on each of slots 0 and 1, 4 on each of the eight slots with one upgrade draw, an
 - ~~**The made-uniques set**: whether a gambled unique enters it as a dropped unique does.~~ Answered: yes, at the
   window's build (§ G).
 - [L] `NpcStoreRec` bytes `+0x24`..`+0x26`: the writers are read in [items/0009 § Plan 0039 batch P1b](../../findings/items/0009-vendors.md#plan-0039-batch-p1b-2026-10-17);
-  plan 0043's read watchpoint found only `NPC_TradeOpen`'s read of `+0x27` (the stale byte of § C), and the reader of
-  `+0x24..+0x26` stays open until the Phase 2b rerun ([items/0011 § Phase 2](../../findings/items/0011-economy.md#phase-2-runtime-results-run2026-10-17-economy)).
+  plan 0043's read watchpoint, rerun with a control live to each session's end, found only `NPC_TradeOpen`'s read of
+  `+0x27` (the stale byte of § C) and no read of `+0x24..+0x26` in the windows played
+  ([items/economy § F](economy.md#f-callers-buy-sell-repair)); a reader in other NPC actions or game states stays open.
   The `HIRE_BuildStock` draw count is not followed (plan 0033 owns the hireling generator).
