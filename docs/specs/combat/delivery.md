@@ -3,9 +3,9 @@ spec: combat/delivery
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, combat/to-hit, combat/damage, combat/reductions, monsters/stats]
-consumed_by: [combat/overview, items/tc, stats/states]
+consumed_by: [combat/overview, items/tc, stats/states, items/economy]
 tags: {C: 52, I: 38, L: 3}
-updated: 2026-10-17
+updated: 2026-10-19
 ---
 
 # Combat: queue, delivery, on-hit effects and the life change
@@ -376,6 +376,7 @@ knockback (`0x005D10C0`), the get-hit decision (`sub_0057CB00_GetHitRoll`, up to
 and the monster's on-hit skill (`0x005A4390`) were boundary oracles in the run: their entry seeds were asserted and
 their exit seeds taken. [I] (fn:COMBAT_DurabilityLoss@0x0057D3D0, fn:ITEMS_DurabilityLossRoll@0x00559E30,
 fn:sub_0057CB00_GetHitRoll@0x0057CB00, run:2026-10-16-combat) Hit recovery and knockback timing are ADR-0014 phase (5).
+The durability loss itself is specified in [items/economy § H](../items/economy.md#h-wear-durability-quantity-charges-replenish).
 
 ## Outputs
 
