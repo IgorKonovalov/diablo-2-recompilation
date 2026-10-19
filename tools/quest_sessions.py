@@ -533,7 +533,7 @@ class Driver:
             if pos and pos[2] in TOWNS:
                 self.pilot(["explore", "--any-level", "--walk", "--hops", "12"], timeout=180)
             else:
-                self.pilot(["explore", "--any-level", "--hops", "12", "--nova", "2"], timeout=240)
+                self.pilot(["explore", "--any-level", "--hops", "5", "--nova", "2"], timeout=150)   # short: check often
         print("activate: %d activations" % done, flush=True)
         return done
 
