@@ -377,7 +377,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   reverser `game-type-writer`. **Phase 2 may start** (harness lane H1, 1 slot).
 - **2026-10-17 — Phase 2 started; rotation checkpoint (reverser, `lane/p43h`, harness slot 1).** Not done; no review
   request yet. Record: [run:2026-10-17-economy](../findings/items/experiments.md#run2026-10-17-economy) (status in
-  progress); finding section [items/0011 § Phase 2](../findings/items/0011-economy.md#phase-2-runtime-results-in-progress-run2026-10-17-economy).
+  progress); finding section [items/0011 § Phase 2](../findings/items/0011-economy.md#phase-2-runtime-results-run2026-10-17-economy).
   Tools: logger `tools/gdb/economy.py` (+ `economy.gdb`, `economy-hire.gdb`), checker `tools/economy.py` (test
   `tools/test_economy.py`), driver `tools/economy_sessions.py` (`act`, `tour`, `die`), `d2s.py` key `"dur"`,
   `d2pilot.py` NPC rows `cain2`/`cain5`/`cain6`/`tyrael` and the `identify`/`resurrect` confirmations (untested),

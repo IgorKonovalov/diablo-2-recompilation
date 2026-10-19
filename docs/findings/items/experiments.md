@@ -2350,59 +2350,108 @@ Logs `workspace/logs/quests-s<slot>-<seed>-<tag>-<difficulty>.log`; screenshots 
 
 ## run:2026-10-17-economy
 
-**Status: in progress** (plan 0043 Phase 2, harness lane `lane/p43h`, rotated after the first sessions; resume note in
-the plan log). No claim of the plan's *Done when* is met yet; the counts below are what the kept logs give.
+**Status: done** (plan 0043 Phase 2, harness lane `lane/p43h`; sessions 4311–4322 on 2026-10-17, the rest on
+2026-10-18/19 after a rotation). 0 mismatches over every claim log; the shortfalls against the plan's *Done when* are
+named under *Limits*.
 
 - **Question:** plan 0043 Phase 2. Does `tools/economy.py`, the model of [items/0011](0011-economy.md) (the price
-  core in modes 0–3 with the gamble path, `RepairCost`, the gold adds, the gold amount at creation, gold find, the
-  wear draws), reproduce what the game computes at each logged event, and which event kinds move the game seed or the
-  player's seed?
-- **Setup:** agent-driven sessions on harness slot 1 (display `:8`, prefix `workspace/wineprefix-1`), single player,
-  pinned `game.exe` (stock data), `-seed` per session. Logger `tools/gdb/economy.gdb` = `tools/gdb/pilot.py`,
-  `tools/gdb/vendors.py` and the new `tools/gdb/economy.py` (entry and exit of every economy function of items/0011,
-  each line with the game seed, the player's seed, gold and stash; price payloads written once per distinct input,
-  `k` an id). Session 4311 ran with `tools/gdb/economy.py` of commit 5507e36; 4321 and 4322 with that of b43ef61 (adds
-  the caller's return address `ra2` and the control watchpoint `SWC`). Driver `tools/economy_sessions.py` (`tour`:
-  waypoint hops and `tools/d2pilot.py npc … --stay`, then hover sweeps of the store grid, the inventory and the
-  repair cursor; the pointer rests 0.07 s on each occupied cell, during which the client prices the item every frame).
-  Characters built with `tools/d2s.py build` from `tools/d2s_recipes/econ*.json` (new test-state key `"dur"`: current
-  durability below the maximum, a damaged item); saves in `workspace/scratch-p43h/saves/`.
+  core in modes 0–3 with the gamble path, `RepairCost`, `PayGold`, the gold adds, the gold amount at creation, gold
+  find, death loss, resurrection, Cain, the wear draws and the quantity use), reproduce what the game computes at each
+  logged event, and which event kinds move the game seed or the player's seed?
+- **Setup:** agent-driven sessions on harness **slot 1** (display `:8`, prefix `workspace/wineprefix-1`), single player,
+  pinned `game.exe` (stock data), `-seed` per session, one game at a time. Logger `tools/gdb/economy.gdb` =
+  `tools/gdb/pilot.py`, `tools/gdb/vendors.py` and `tools/gdb/economy.py` (entry and exit of every economy function of
+  items/0011, each line with the game seed, the player's seed, gold and stash; price payloads written once per
+  distinct input, `k` an id); session 4334 used `tools/gdb/economy-hire.gdb` (the same plus `mon-pool.py` and
+  `hirelings.py`). Logger versions: 4311 ran `tools/gdb/economy.py` of commit 5507e36; 4321–4334 that of b43ef61 (adds
+  `ra2` and the control watchpoint `SWC`); 4335 and later that of df4659d, which fixes the watchpoint handler (`$eip`
+  did not convert on this gdb, so every watch hit of 4311–4334 was lost as a `LOGERR economy watch` line, one per hit;
+  no other line of those sessions is affected). Drivers: `tools/economy_sessions.py` (`tour`: waypoint hops and
+  `tools/d2pilot.py npc … --stay`, then hover sweeps of the store grid, the inventory and the repair cursor, sales and
+  purchases; `die`: optionally `npc qualres resurrect` in Harrogath, then waypoint 4,2 in Hell and walking
+  `explore` until `PLAYER_DeathGoldLoss` returns, twice), `tools/d2pilot.py npc … hire --repeat N --buy 1`,
+  `tools/d2pilot.py explore --any-level --walk --melee [--melee-button 3]` (wear), and `farm --sweep` then `explore
+  --any-level` with Nova (gold). Characters built with `tools/d2s.py build` from `tools/d2s_recipes/econ*.json`; saves
+  in `workspace/scratch-p43h/saves/`. Pilot additions (`tools/d2pilot.py`, decide where to click only): the NPC
+  entry `qualres` (Qual-Kehk's menu with a dead mercenary, measured: talk, resurrect, hire, cancel) and Tyrael's
+  menu order (not exercised).
 - **Sessions** (logs `workspace/logs/<name>.log`, sha256 in `workspace/logs/economy-run-manifest.txt`):
 
   | name | save (recipe) | difficulty | what was played | status |
   |---|---|---|---|---|
-  | `economy-s1-4311-normal` | EconA (`econa.json`, clvl 30, every quest done) | Normal | 20 stops: the trade windows of Halbu, Jamella, Larzuk, Malah, Anya, Ormus, Hratli, Alkor, Fara, Drognan, Elzix, Akara, Charsi and Gheed (store tabs and inventory hovered; the repair cursor at the five repairers), the gamble windows of Jamella, Anya, Alkor, Elzix and Gheed, at Charsi repair-all, three sales and one purchase, Kashya's hire list | run |
-  | `economy-dev1` | EconA | Normal | development: Halbu and Jamella, the first sweeps, a sale over the gold cap, a refused purchase | development log, no claim |
-  | `economy-s1-4321-wear` | EconW (`econw.json`, Barbarian) | Normal | `d2pilot.py farm --sweep` with melee options: the pilot's Teleport hops cannot move a Barbarian, no melee hit was delivered (0 `CD0`) | aborted, kept as a development log |
-  | `economy-s1-4322-nova` | EconN (`econn.json`, Nova, no gold find) | Normal | `farm --sweep --wp 1,2 --players 8`: the pilot left the level after 45 s | short |
+  | `economy-s1-4311-normal` | EconA (`econa.json`, clvl 30, every quest done) | Normal | 20 stops: the trade windows of 14 NPCs, five gamble windows, Charsi's repair-all, three sales, a purchase, Kashya's hire list | run |
+  | `economy-s1-4322-nova` | EconN (`econn.json`, Nova, no gold find) | Normal | `farm --sweep --wp 1,2 --players 8`, 45 s | short |
+  | `economy-s1-4331-nightmare` | EconB (`econb.json`: set, socketed sword, rare and unidentified rings, crossbow, class shield) | Nightmare | Jamella trade and gamble, Halbu (repair cursor), Larzuk, Malah, Anya trade and gamble, Fara, Drognan, Elzix gamble, Lysander; 2 sales, 1 purchase (Ormus and Hratli were put in Act IV by mistake and not found) | run |
+  | `economy-s1-4332-hell` | EconDL75 (`econdl75.json`: 40 one-cell rings, amulets, charms; clvl 75) | Hell | Jamella trade and 3 gamble windows, Halbu, Larzuk, Malah, Anya trade and 2 gamble windows, Fara, Elzix 2 gamble windows, Lysander; 40 sales, 13 purchases | run |
+  | `economy-s1-4333-questoff` | EconC (`econc.json`: EconA's kind of items, quest words 4, 9, 17, 35, 41 bits 0–1 cleared) | Normal | 19 stops over the five towns (Charsi's menu did not open; Cain not found in Act IV); 1 sale | run |
+  | `economy-s1-4334-hire` | EconA | Normal | Charsi trade, single-item repair clicks, repair-all, Akara; 10 hires at Kashya, 12 at Qual-Kehk | run |
+  | `economy-s1-4335-watch` | EconA | Normal | Charsi trade, repair, repair-all (the watch set at its trade opening), Gheed, Kashya's list, Fara, Drognan | run (the watch control) |
+  | `economy-s1-4351..4360-die-k1..k10` | EconK1..K10 (`econk1..10.json`: level, gold and stash vary, 5 hit points, a dead Act I mercenary) | Hell | resurrection at Qual-Kehk, then two deaths in the City of the Damned | run, 10 sessions |
+  | `economy-s1-4373/4375/4377/4378-res-k3/k5/k7/k8` | EconK3, K5, K7, K8 | Hell | resurrection only (the four saves whose gold covers the cost) | run |
+  | `economy-s1-4381-wear` | EconW (`econw.json`, Barbarian clvl 85, 7 armour slots minus the left hand) | Normal | walking melee out of the Pandemonium Fortress, 12 min | run |
+  | `economy-s1-4382-throw` | EconT (`econt.json`, Barbarian, Throw on the right button, throwing axe of quantity 130) | Normal | walking `explore --melee --melee-button 3`, 10 min (the steps file missed the difficulty click; clicked by hand) | run |
+  | `economy-s1-4391/4394/4398-gold-*` | EconG (gold find) / EconN / EconG | Normal | Nova farm and explore, Black Marsh / Dark Wood, `/players 8` | run |
+  | `economy-s1-4392/4396-gold-nm*` | EconN / EconG | Nightmare | the same, Black Marsh | run |
+  | `economy-s1-4393/4395/4397-gold-hell*` | EconG / EconG / EconN | Hell | the same; 4393 died after 17 hops (`/players 8`), 4395 at `/players 1`, 4397 at `/players 3` (Cold Plains) | run (4393 short) |
+  | `economy-s1-4401-reduced` | EconG (Gheed's Fortune in the inventory: `item_reducedprices`) | Normal | Larzuk (repair cursor), Malah, Anya trade and gamble, Halbu, Jamella gamble | run |
+  | `economy-s1-4403-cain` | EconC | Normal | Cain in Harrogath: paid identify; Larzuk | run |
+  | `economy-dev1`, `economy-s1-4321-wear`, `economy-dev2-k1`, `economy-dev3-k1`, `economy-s1-4351-die-k1-dev1792348055`, `economy-dev4-4402-cain`, `economy-dev5-4341-die-k1` | | | development: the first sweeps; the Barbarian on Teleport hops (0 hits); the resurrect menu measured; two death attempts that stood still at the waypoint; a Cain session whose game closed after Larzuk; the first `die` attempt (resurrect menu wrong) | development logs, no claim |
 
-- **Procedure:** `python3 -I tools/economy.py check workspace/merged/data/global/excel workspace/logs/economy-s1-4311-normal.log
-  workspace/logs/economy-s1-4322-nova.log` (output `workspace/logs/economy/check-run.txt`, sha256 in the manifest;
-  per-branch coverage of session 4311 in `workspace/logs/economy/coverage-4311.txt`). Unit tests `tools/test_economy.py`
-  (9 tests).
-- **Observed** (trimmed):
+- **Procedure:** `python3 -I tools/economy.py check workspace/merged/data/global/excel $(cat
+  workspace/logs/economy/claim-logs.txt)` over the 33 claim logs (output `workspace/logs/economy/check-run.txt`, sha256
+  `fd00d8d5…2abb3`); `python3 -I tools/hirelings.py check workspace/merged/data/global/excel
+  workspace/logs/economy-s1-4334-hire.log` (`workspace/logs/economy/check-hire-4334.txt`). Unit tests
+  `tools/test_economy.py` (9 tests). Checker additions in this run (commits df4659d, db75f28): the quest-group and
+  `item_reducedprices` coverage, the resurrection's payment, the object piles' ilvl, Cain's payment, the armour pick
+  compared with the item `ITEMS_DurabilityLossRoll` then rolls, and the wear chain kept within one log.
+  - The first check of the death logs failed four resurrections (paid 0, cost 6 750 to 50 000): in each the gold and
+    stash together were below the cost. Read again: `MERC_Resurrect` calls `PayGold` and returns at 0x00579CAE without
+    reviving when it refuses (`PayGold` returns 0), which items/0011 had not stated; the checker now expects 0 then.
+- **Observed** (trimmed from `check-run.txt`):
   ```
-  price calls 6949; distinct inputs: mode 0 683, mode 1 159, mode 2 70, mode 3 56 (968); 0 mismatches
-  RepairCost sums (= the sum of its mode-3 price calls) 60; replenish ticks 71; PayGold 2; gold stat adds 5
-  gold amounts at creation 10, gold find scalings 10 (gold find 0 in all ten)
-  seeds: PR 6949, RC 60, IR 804, NR 1, PG 2, UG 5, GG 3, RP 71: game and player seed unchanged;
-         NB 1: game seed +2 steps; NS 3: game seed +2 steps in 2, unchanged in 1; player seed unchanged in all
+  logs 33; games 8
+  price calls 26525; distinct inputs: mode 0 2513, mode 1 852, mode 2 272, mode 3 125 (3762)
+    by difficulty (distinct): mode 0 1818/367/328, mode 1 552/79/221, mode 2 140/42/90, mode 3 108/17/0
+    quality 1 316, 2 1048, 3 128, 4 2033, 5 66, 6 18, 7 153; socketed 10; charged 76; ethereal sales 68;
+    unidentified 311; staff mods 326; player stat 87 > 0 376; quest group A on 1261 / off 2229, B on 764 / off 169
+  repair-all sums 138; NpcRepair 2; ItemRepairAll 3115; PayGold 54
+  sales checked (gold given = the lower price) 43 of 46; purchases checked (PayGold = price x count) 14 of 15
+  hires 22 (PayGold); resurrections 14 (10 paid, 4 refused: gold short); resurrect costs 35; Cain 1 (100 for 1)
+  death losses 20 (total above 500 L 12, below 8)
+  gold amounts at creation 545; gold find scalings 433 (gold find 0 207, > 0 226); object piles (ilvl checked) 102
+  wear rolls 1060 (armour chance 10 913, weapon 4 90, throwable 10 7; losses 81; armour broken 1; weapon to 0 1;
+    no durability 50); melee wear events 1411; armour picks 963, all checked against the rolled item (W 18 801,
+    W 10 162, W = 0 11); wear chained draw pairs 1878
+  quantity uses 130; replenish ticks 287 (gaps 501 at r 5: 131, 834 at r 3: 76)
+  seeds: PR 26525, RC 138, IR 3115, NR 2, PG 54, UG 97, MC 35, MR 14, CI 1, RP 287, IC 130, UA 142: game and player
+         seed unchanged; NB 15: game seed +2; NS 46: game seed +2 in 41, +4 in 3, unchanged in 2; GG 46: +2 in 3;
+         DA 10: +2; DG 20: +2 in 7, unchanged in 13; DL 1060: player seed +1 in 1010, unchanged in 50 (no
+         durability); CD 1411: player seed +3 in 913, +2 in 50, +1 in 97, unchanged in 351
   economy: 0 mismatches
+  hirelings (4334): hires 22; 41 MISMATCH lines, every one a "LOGERR economy watch" line of the broken handler, 0 others
   ```
-  Branches of the 968 distinct price inputs (coverage file): base `cost` 727, stack (`n = maxstack`) 117, quiver 30,
-  tome 24; armour scaling 251; quality 1 20, 2 346, 3 48, 4 470, 7 14 (no set, rare or crafted item priced yet);
-  stat terms Encode 0 845, 1 127, 2 21, 3 9 (no Encode 4); staff mods (stat 107) 100; charged items 9; class item 38;
-  `P > 0xFFFF` at the terms 14; `max buy` reached 101; the repairable-stack sale (`M·S − R`) 29; unidentified 14;
-  14 NPC classes, difficulty 0 only, quest group A on (every quest done), `item_reducedprices` 0.
-- **Phase 1b required cases (backlog `2026-10-17-reverser-reverser-plan-0043-p2-contradicted-cases`):** (2) ethereal
-  sale: 29 distinct mode-1 inputs of ethereal items reproduce with `S / 4`; (3) the ethereal throwing stack (`7ja`,
-  40) sold for 1 040 at every one of 15 NPCs, not 1 gold, as the model predicts; (4) the all-resistance amulet
-  (`multiply` 1280): 16 mode-1 inputs reproduce with the affix term over 1024 for `S`; (5) the gamble price: 55 of 55
-  non-ring, non-amulet gamble prices differ from the base's `gamble cost` and reproduce from `GamblePrice`, 15 ring
-  and amulet prices equal `gamble cost`. (1) the armour slot weights: no wear event logged yet.
-- **Question 9 (`NpcStoreRec` readers):** the 4-byte read watchpoint on Charsi's record `+0x24` was set in 4311
-  (`SWSET`) and logged no read over the whole session, Charsi's trade, repair, three sales and a purchase included. The
-  session had no positive control, so this is not yet evidence of "no reader": the control watchpoint (`SWC`, the
-  record's `+0x00`) was added after it and must fire in the next Act I session.
-- **Limits so far:** one difficulty; no wear, death, resurrection, Cain, stash-move, pickup or hire-payment event;
-  the sale and purchase cross-checks (`ra2`) were added after session 4311.
+  Gold amounts from monsters (the `GFK` lines, killer known) by difficulty: Normal 228, Nightmare 140, Hell 65.
+- **Phase 1b required cases (backlog `2026-10-17-reverser-reverser-plan-0043-p2-contradicted-cases`):** (1) the armour
+  slot weights: `COMBAT_DurabilityLoss`'s `W` (EBX at 0x0057D480) equals the sum of `g_ArmorWearSlots` weights 3/5/4/4/2/2/2
+  over the occupied slots in all 974 events with the slot list logged (W 18 with six slots worn, W 10 with head, body
+  and belt; the lead's 2/3/2/1/1/1 gives 10 and 6), and the slot picked from `RangeB(7)` and `RangeB(W)` is the slot
+  whose item is rolled in 963 of 963 picks; (2)–(5) as before: ethereal sale `S / 4` (68 distinct mode-1 inputs of
+  ethereal items now), the ethereal throwing stack 1 040, the all-resistance `S` over 1024, the computed gamble price.
+- **Question 9 (`NpcStoreRec` readers):** in session 4335 the control watch on Charsi's record `+0x00` fired at
+  0x00535EC3 (`NPCSTORE_FindRec`'s compare, the instruction after it) 40 times (the line cap) from 7 distinct call
+  chains; the 4-byte watch on `+0x24..+0x27` fired once, at 0x005794A2: `NPC_TradeOpen`'s `cmp byte [edi+0x27], 0`
+  (0x0057949E) on the trade opening that set the watch. No read of `+0x24..+0x26` over Charsi's trade, repair,
+  repair-all, Gheed, Kashya, Fara and Drognan. Sessions 4401 and 4403 (watch set at a Harrogath trade opening) give
+  the control 40 lines each and no `+0x24..+0x27` read. The single error line of 4311 (logger before the fix) is an
+  unidentified hit, most likely the same opening's.
+- **Limits** (against the plan's *Done when*):
+  - prices: no crafted item (quality 8), ear or body part, Encode 4 stat term, version-0 item, recharge cost case; no
+    Hell repair price (mode 3 difficulty 2); quest group C is set by no stock Npc row;
+  - repairs: no quest repair, no partial repair (gold short), no ethereal or broken item at a repairer; single-item
+    repair clicks gave `NpcRepair` 2;
+  - gold: no Wirt's gold, no Baal's gold, no stash cap; no `GoldPickup` or stash move (pickup and stash UI not
+    scripted); Hell monster gold 65;
+  - wear: no indestructible item, no classic throwable, no version-0 item, no stack refill (`q > 1` at `D′ < 1`); the
+    weapon that reached 0 had no broken flag at the roll's exit (one case);
+  - no charge use (`UseCharge`), no skill wear; no gamble at clvl 3 (EconDL3 not run);
+  - Cain one case (paid; the free path not run).
