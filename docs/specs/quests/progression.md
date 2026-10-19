@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, save/d2s, items/quest-drops, objects, monsters/spawn, monsters/special, quests/travel]
 consumed_by: [items/quest-drops, items/cube, objects, monsters/spawn, monsters/special, quests/travel, save/d2s]
-tags: {C: 86, I: 327, L: 7}
+tags: {C: 84, I: 327, L: 7}
 updated: 2026-10-19
 ---
 
@@ -44,7 +44,7 @@ dialogue line the client reports) is an input; what the server does with it is s
 
 | Anchor | Used for |
 |---|---|
-| tbl:MonStats.txt:TCQuestId, tbl:MonStats.txt:TCQuestCP | the quest TC switch reads the killer's bits ([items/quest-drops § B](../items/quest-drops.md#b-the-quest-tc-switch-items-tc-b6)) |
+| tbl:MonStats.txt:TCQuestId, tbl:MonStats.txt:TCQuestCP | the quest TC switch reads the killer's bits ([items/quest-drops § B](../items/quest-drops.md#b-the-quest-tc-switch-itemstc-b6)) |
 | tbl:MonStats.txt:zoo | the Zoo's class draw (word 40) |
 | tbl:Levels.txt:QuestFlag, tbl:Levels.txt:QuestFlagEx | the portal quest gate ([quests/travel § G](travel.md#g-town-portals)) |
 | tbl:Misc.txt:quest | the quest an item belongs to (e9) |
@@ -361,7 +361,7 @@ E2. QUESTS_TimersRun, when frame mod 20 = 0:                        [I] (fn:QUES
   player's bits and often a held item. The client picks which message to report from the quest-message index the server
   sent at e0 (`QUESTS_SetNpcMessage`); no dialogue text is involved. (fn:QUESTS_RaiseNpcMessage@0x005443B0,
   fn:QUESTS_SetNpcMessage@0x00543790)
-- F2. [C] Each NPC-talk step of the per-quest tables marked `[C]` fired at its call site from the logged NPC class, message
+- F2. [C] Each NPC-talk step of the per-quest tables tagged confirmed fired at its call site from the logged NPC class, message
   and word, and wrote nothing when its condition was off: 41 talk steps over 20 rows, in Normal and Hell expansion and
   classic Normal. (fn:QUESTRECORD_SetState@0x0065C360, run:2026-10-18-quests2)
 - F3. [I] Item services and the Hell respec are `NPC_MenuAction` actions: imbue (word 3 bit 1), socket (word 35 bit 1),
@@ -398,7 +398,7 @@ sequenceDiagram
 | the Dark Wanderer timer | one inline `Step` | quest seed | 0x005BD3E6 | [I] (fn:sub_005BD390_A3Q7_AfterglowTimer@0x005BD390) |
 | the Zoo (`InitFn` 79) | 1–10 `RandLoHi(1, nMonStats)` | quest seed | 0x0058E87C | [I] (fn:sub_0058E830_A5Q6_ZooInit@0x0058E830) |
 | quest chests, Wirt, Andariel, Baal, the Hellforge, the Cow King | [items/quest-drops](../items/quest-drops.md#draw-order-on-the-quest-seed) | quest seed | — | as there |
-| every other quest event | none in quest code | — | — | [I] (§ 11 of [quests/0001](../../findings/quests/0001-progression.md#11-which-events-draw-all-acts)) |
+| every other quest event | none in quest code | — | — | [I] (fn:QUESTS_DispatchEvent@0x005438E0; § 11 of [quests/0001](../../findings/quests/0001-progression.md#11-which-events-draw-all-acts)) |
 
 ```
 G1. The quest seed: Init(questSeed, game seed low after one Step at QUESTS_InitGame)   [C] (fn:QUESTS_InitGame@0x00545D80, run:2026-10-16-quest-drops)
@@ -425,8 +425,8 @@ Step notes:
 Conventions: "rec" is the event player's record for the game's difficulty; "w*q* b*s*" is bit *s* of word *q*; "G w*q*
 b*s*" is the game record. "Steps" are bits 2–11 (§ D1); "near", "party", "fail others" and the reward pattern are § D.
 NPC, monster and object numbers are `monstats`, `objects` and `levels` rows; the names in brackets are table row names,
-labels only. A row tagged `[C]` holds for the branch the run reached (the condition shown); every other row is read from
-the code.
+labels only. A row tagged confirmed holds for the branch the run reached (the condition shown); every other row is read from
+the code, and every write site was checked at the pushed constants of its call (fn:QUESTRECORD_SetState@0x0065C360).
 
 Each state diagram shows the record bits of the event player's word; the log state bytes and private flags are left out
 unless they gate a bit.

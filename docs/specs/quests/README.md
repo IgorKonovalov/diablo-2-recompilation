@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, save/d2s, items/quest-drops, drlg/collision, drlg/warps, objects]
 consumed_by: [items/quest-drops, items/cube, objects, monsters/spawn, monsters/special, rng/seeds, save/d2s]
-tags: {C: 9, I: 4, L: 2}
+tags: {C: 9, I: 5, L: 2}
 updated: 2026-10-19
 ---
 
@@ -73,9 +73,11 @@ flowchart TD
   waypoint rows, the object's seed ([progression § G](progression.md#g-the-draws),
   [travel § Draws by event kind](travel.md#draws-by-event-kind)). (fn:QUESTS_GetSeed@0x005438B0,
   fn:sub_0066AC40_LevelPointPick@0x0066AC40)
-- [C] **One placement routine.** Every arrival by waypoint, NPC, portal destination lookup, resurrection or join goes
-  through `ActLevelSpot`: a level point, the subtile `5·t + 3`, then the nearest free cell
+- [C] **One placement routine.** The waypoint, NPC and join arrivals and the portals' town ends the runs logged went
+  through `ActLevelSpot`: a level point, the subtile `5·t + 3`, then the nearest free cell (124 placements)
   ([travel § A](travel.md#a-placement)). (fn:sub_0061B060_ActLevelSpot@0x0061B060, run:2026-10-17-quests)
+- [I] A resurrection and the Durance portal place the player the same way, read from the code.
+  (fn:sub_0054C0E0_Pkt41Resurrect@0x0054C0E0, fn:sub_00546AC0_DuranceActTravel@0x00546AC0)
 
 ## Inputs and oracles
 

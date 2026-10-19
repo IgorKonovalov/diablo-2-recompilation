@@ -28,3 +28,8 @@ and word 28, timers and the quest-seed draws not yet logged, death and resurrect
 until Phase 2 part 3's review raises them, then re-tag before the Phase 3 review; ruling (b)'s shortfalls stay `[I]`
 for good in this plan. NPC 377: state its player-seed draw `[I]` and that no stock data places the NPC. A classic half
 stays `[I]` where the handler tests `game +0x70` and only expansion was run.
+
+*2026-10-19 (spec-writer, `lane/p42s`):* taken into the Phase 3 drafts [quests/progression](../specs/quests/progression.md)
+and [quests/travel](../specs/quests/travel.md) as scoped: the part 2 rows `[C]` for the branches reached, ruling (c)'s
+statements `[I]`, NPC 377 `[I]` and unreachable, the classic half of word 26's 0x4E20 row `[I]`. Left open for the
+re-tag from Phase 2 part 3's reviewed raises before the Phase 3 review.

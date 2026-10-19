@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/collision, drlg/warps, objects, quests/progression, save/d2s]
 consumed_by: [quests/progression, monsters/spawn, objects]
-tags: {C: 55, I: 76, L: 4}
+tags: {C: 55, I: 80, L: 4}
 updated: 2026-10-19
 ---
 
@@ -232,7 +232,7 @@ stateDiagram-v2
 ```
 
 ```
-C1. WaypointOperate(game, object, player) (OperateFn 23):          [C] (fn:sub_00584E30_WaypointOperate@0x00584E30, run:2026-10-17-quests)
+C1. WaypointOperate(game, object, player) (OperateFn 23):          [C] for modes 1 and 2 (fn:sub_00584E30_WaypointOperate@0x00584E30, run:2026-10-17-quests); [I] for mode 0
       n ← WAYPOINT_IndexFromLevel(level of the object's room)
       if n is valid: WAYPOINT_Set(player's waypoint record, n)       ; on every operate, before the mode test
       if object.mode = 0:
@@ -338,7 +338,7 @@ E2. NpcTravelMove(level, type):                                      [I] (fn:sub
       else if act(level) = the player's act:  PortalObjectCreate(class 59, player x − 5, player y, level)   ; § G
       else:  PlayerChangeLevel(level, type)
 
-E3. NpcActTravel(npc):                                               [C] (fn:sub_005467E0_NpcActTravel@0x005467E0, run:2026-10-17-quests)
+E3. NpcActTravel(npc):                                               [C] for word 7's branch (fn:sub_005467E0_NpcActTravel@0x005467E0, run:2026-10-17-quests); [I] for the rest
       w ← 7 for NPC 155, 15 for 210, 28 for 367
       if word w bit 0 is set: skip to the tail                       ; no write, +0x4C untouched
       else: set word w bits 0 and 13;  send the record;  send the new act's NPC flags (0x00544FA0);  +0x4C ← 1
@@ -434,7 +434,7 @@ G1. ITEMUSE_TownPortal(player, item):                                [I] (fn:ITE
         PlayerPortalSet(player, field)                               ; player data +0x48
         level 120 only: the summit hook 0x0058CF00 for both ends (quests/progression § Word 39)
 
-G2. PortalObjectCreate(room, x, y, dest, &out, class, noSearch) → bool:   [C] (fn:sub_0056D130_PortalObjectCreate@0x0056D130, run:2026-10-17-quests)
+G2. PortalObjectCreate(room, x, y, dest, &out, class, noSearch) → bool:   [C] for the draws and their order (fn:sub_0056D130_PortalObjectCreate@0x0056D130, run:2026-10-17-quests)
       if a player is given and RoomIsTown(room) and not (class = 60 and dest ∈ {39, 133, 134, 135, 136}): refuse
       act(dest) must equal act(room's level), else fatal
       unless noSearch: room ← COLL_FindFreeNear(room, (x, y), other (x, y), 3, 0x3E01, 0xC01, fallback 0)
@@ -442,7 +442,7 @@ G2. PortalObjectCreate(room, x, y, dest, &out, class, noSearch) → bool:   [C] 
       SetMode(field, 1)                                              ; mode unchanged: no draw
       partner ← PortalPartnerCreate(field, dest, room's level)       ; G2a
       flags |= 3 on both;  RoomPinSet(each end's room, 0)
-G2a. PortalPartnerCreate(field, dest, src):                          [C] (fn:sub_0056CF40_PortalPartnerCreate@0x0056CF40, run:2026-10-17-quests)
+G2a. PortalPartnerCreate(field, dest, src):                          [C] for the draws and their order (fn:sub_0056CF40_PortalPartnerCreate@0x0056CF40, run:2026-10-17-quests); [I] for the level-73 branch
       (room, x, y) ← ActLevelSpot(act(dest), dest, type 11, size 3)   ; draw 2: dest's level seed (Position)
       RoomUpdateOne(room)                                            ; first update: population draws on the game seed (oracle)
       if src = 73 and QUESTS_PortalTownSpot(…):                      ; an Act II quest private byte +0x3C = 1
@@ -504,8 +504,8 @@ Step notes:
 - G3. [C] With one client the 5000 ms gate passes on every read: stamp 0, `stamp + 5000 ≤ GetTickCount()` (unsigned),
   122 reads. (fn:OBJOP_Portal@0x00584870 0x005848CD, run:2026-10-17-quests)
 - G3. [I] The hostility, party and quest-word tests need a second player ([plan 0044](../../plans/0044-multiplayer-branches.md)).
-  The stock `QuestFlag`/`QuestFlagEx` values: level 39 26 / 40; 46 and 66–73 13; 50–54 and 74 11; 100–102 21; 128–132
-  39. The owner, and anyone using the owner's own end, is not tested. (fn:OBJOP_Portal@0x00584870 0x005849BB–0x00584A20,
+  The stock `QuestFlag`/`QuestFlagEx` values: level 39 26 / 40; 46 and 66–73 13; 50–54 and 74 11; 100–102 21;
+  128–132 39. The owner, and anyone using the owner's own end, is not tested. (fn:OBJOP_Portal@0x00584870 0x005849BB–0x00584A20,
   tbl:Levels.txt:QuestFlag, tbl:Levels.txt:QuestFlagEx)
 
 #### Closing and permanent portals
@@ -528,7 +528,7 @@ Step notes:
 
 ```
 H1. UnitInteract case 5: a warp unit within distance 5 → WarpExitPos(player, warp)   [I] (fn:sub_00548B00_UnitInteract@0x00548B00)
-H2. WarpExitPos(player, warp):                                       [C] (fn:sub_005550B0_WarpExitPos@0x005550B0, run:2026-10-18-quests2)
+H2. WarpExitPos(player, warp):                                       [C] for the placement with no draw (fn:sub_005550B0_WarpExitPos@0x005550B0, run:2026-10-18-quests2); [I] for the gate
       dest ← UnitWarpDestRoom(room, warp class): the paired warp unit  ; drlg/warps § F
       (x, y) ← its subtile position
       room ← COLL_FindFreeNear(dest room, (x, y), size, 0x1C09, fallback 1)
@@ -576,8 +576,8 @@ I2. PlayerPlaceInAct(player, given = 0):                              [C] (fn:su
 
 - I1. [I] No death was logged in either run (the low-life save was not killed). The point type comes from
   `FUN_0053FDF0`, which returns 0 unconditionally. (fn:sub_0054C0E0_Pkt41Resurrect@0x0054C0E0)
-- I2. [C] 11 joins placed the player at A1's cell, with type 0 stepping the start town's level seed once.
-  (fn:sub_005394A0_PlayerPlaceInAct@0x005394A0 0x005394E2–0x00539530, run:2026-10-17-quests)
+- I2. [C] 11 joins placed the player at A1's cell; the hireling branch was not separated. (fn:sub_005394A0_PlayerPlaceInAct@0x005394A0
+  0x005394E2–0x00539530, run:2026-10-17-quests)
 
 ### J. Operate gates and real-time gates
 

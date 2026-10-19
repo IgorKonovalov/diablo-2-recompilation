@@ -446,6 +446,8 @@ E3. NPCs: 01 77, u16 0x34, then 3 × 8 bytes (first record of player data +0x60 
     and 3 × 8 bytes (second record), d = 0, 1, 2; read back in the same order.            [I] (fn:D2S_WriteNpcs@0x00569490, fn:D2S_ReadNpcs@0x0056A470)
 ```
 
+- E1. The quest load rule as the quest runs check it, and what the game writes into the record before Save and Exit,
+  are [quests/progression § A](../quests/progression.md#a-the-quest-record).
 - E1–E3. [I] **Slot d is difficulty d** for all three sections. For quests and waypoints this is
   [save/0002](../../findings/save/0002-quest-words.md); for the NPC records, the three game-time readers index player
   data `+0x60 + 4·d` with the game's difficulty byte `Game+0x6D`. (0x0057236C–0x00572370, 0x005723CC–0x005723D0,

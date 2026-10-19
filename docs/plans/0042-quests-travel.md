@@ -630,3 +630,21 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   checker rules: part 3 item 6). Status lines of both findings updated. Reverser review-fixes 12 promoted ("carry a
   correction into the section it corrects", seen at the part 1 review and here). The review request and the part 2
   entry are closed; part 3 is filed to the reverser; the owner entry stays open with a note.
+- **2026-10-19 — Phase 3 drafted (spec-writer, `lane/p42s`, from `main` `1679654`); review requested, to follow Phase 2
+  part 3's review.** Three specs, all `status: draft`: [quests](../specs/quests/README.md) (overview, C 9 / I 5 / L 2),
+  [quests/progression](../specs/quests/progression.md) (C 84 / I 327 / L 7) and [quests/travel](../specs/quests/travel.md)
+  (C 55 / I 80 / L 4). Progression has the record (bit grammar, the loader rule and the saved words `[C]`), the registry
+  and dispatch order (`[C]` for the forced half), the join (`[C]` for the branch reached and the stub double join),
+  timers, NPC interaction, the draws, a section per quest (41 word sections: bit tables with a setter site and a tag per
+  row, 35 state diagrams; words 29, 33 and the four introduction objects write no record state), the gates and the
+  creation readers; travel has placement, the free-cell search, waypoints, NPC act travel, the Durance and other portals,
+  town portals (three draws `[C]`), warps (no draw `[C]`), resurrection, join and the gates. Worked examples from the run
+  logs: two NPC 331 talks, one NPC 266 talk, word 1's reward through the saved words, one portal open and its level-seed
+  chaining. Ruling (c)'s statements are `[I]` and listed in the review request for the re-tag from part 3; ruling (b)'s
+  shortfalls are `[I]`. Open questions: 13 `[L]` over the three files (one new: the cairn order's two readings). Links
+  added from items/quest-drops, objects, monsters/spawn, monsters/special, rng/seeds, items/cube, drlg/collision, save/d2s
+  and drlg/warps; four glossary terms. Found while writing: save/d2s E1's load rule is stale against run 2 (flagged, not
+  edited), and quests/0002's summary still says the portal open draws five times. Research-map change for the architect:
+  rows `quests/progression` and `quests/travel` to "draft", review after part 3's review. Backlog: the plan 0044 gates
+  entry closed; the rbs2 entry annotated (quests items folded) and left open for the economy lane; the part 2 inputs
+  entry annotated, open for the re-tag; review request `2026-10-19-spec-writer-architect-plan-0042-phase-3-quests-spec-review.md`.
