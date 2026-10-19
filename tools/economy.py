@@ -587,6 +587,7 @@ class Checker:
 
     def check_log(self, path):
         ev = read_events(path)
+        self.last_exit, self.rp_last = {}, {}     # unit ids repeat from game to game: chain within one log only
         open_ = collections.defaultdict(list)     # tag0 -> stack of entry dicts
         econ = None
         rc = []          # open RepairCost sums
@@ -967,7 +968,14 @@ class Checker:
             self.fail(path, ln, "death L %d gold %d stash %d: model %r, game %r" % (L, g, sg, want, got))
 
     def on_CI(self, path, ln, d0, d1, ctx):
+        """NPC_CainIdentify: 100 x the unidentified count is paid (0 with quest word 4 bit 0 or 1, not logged: the
+        record states the save's quest state), and nothing is left unidentified."""
         self.n["Cain identify"] += 1
+        s0, s1 = d0["sn"], d1["sn"]
+        paid = s0["g"] + s0["sg"] - s1["g"] - s1["sg"]
+        self.cases["Cain paid %d for %d unidentified" % (paid, d0["unid"])] += 1
+        if paid not in (0, 100 * d0["unid"]) or d1["unid"] != 0:
+            self.fail(path, ln, "Cain: paid %d for %d, %d left" % (paid, d0["unid"], d1["unid"]))
 
 
 def rng_rangeb(lo, hi, n):
