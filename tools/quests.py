@@ -283,6 +283,10 @@ TALK_STEPS = [
     # b9, then the Harrogath portal unless private +0x45 (0x005B45E0: a portal creation, game seed)
     (26, 367, (0x4E20,), lambda w: True, [("QS", 9, 0x005B4715)], "portal"),
     (35, 511, (0x4E7A,), lambda w: B(w, 1), [("QK", None, 0x00586F27), ("QS", 5, 0x00586F36)]),
+] + [
+    # word 40's e11 0x0058D940: msg - 0x4ECF indexes the jump table at 0x0058D9D0 -> bit 7, 9, 5, 4, 6, 8, one call
+    # site 0x0058D9C7, no NPC or +0x09 test (quests/0001 § 10 gave bits 4-9 in message order)
+    (40, None, (0x4ECF + k,), lambda w: True, [("QS", b, 0x0058D9C7)]) for k, b in enumerate((7, 9, 5, 4, 6, 8))
 ]
 
 
