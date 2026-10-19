@@ -48,7 +48,17 @@
 #   CI0/CI1 NPC_CainIdentify 0x00578460 (ECX game, EDX player; npc id) / returns: the unidentified items
 #   SWW     a read watchpoint (4 bytes) on Charsi's (class 154) NpcStoreRec +0x24, set at the first price call or
 #           trade open: pc, [esp], the EBP-chain return addresses; SWC the same on the record's +0x00 (the class
-#           dword NPCSTORE_FindRec compares), the positive control, at most 40 lines
+#           dword NPCSTORE_FindRec compares), the positive control: P2 capped it at 40 lines; plan 0043 Phase 2b
+#           writes at most one line per 10 frames with no cap, "n" the hit count so far
+#   Plan 0043 Phase 2b:
+#   NSX     NPC_SellItem's store-copy decision: each refusal of the copy (the test's address and reason), the
+#           permanent test, after ItemCopy (the copy and its seed), the store page, the placement results, the copy
+#           freed; every line with the game seed
+#   WG0/WG1 sub_00594630_A1Q4_WirtGold (ECX quest, EDX Wirt's body) / return: the object, private +0x90 (counted
+#           already) and +0x8C (piles left), difficulty, expansion; WGS 0x00594658 the quest seed before
+#           RandLoHi(10, 20), WGN 0x00594664 the count (EAX) and the quest seed after
+#   DUL     0x00559AF8 in sub_00559A30_DropItemAtUnit: the ilvl it computed (EAX)
+#   wear_state items now carry "id" (unit +0x0C), so NpcRepair's item argument names the item
 import base64
 import hashlib
 import json
@@ -221,7 +231,8 @@ def _economy_main():
 
     def wear_state(it):
         idt = u32(it + 0x14)
-        return {"u": it, "c": s32(it + 4), "fl": u32(idt + 0x18) if idt else None, "d": stat(it, 72),
+        return {"u": it, "id": u32(it + 0x0C), "c": s32(it + 4), "fl": u32(idt + 0x18) if idt else None,
+                "d": stat(it, 72),
                 "m": stat(it, 73), "m0": stat(it, 73, base=True), "n": stat(it, 70)}
 
     def ra_chain(n=4):
@@ -542,21 +553,91 @@ def _economy_main():
 
     pair("RP0", "RP1", 0x00562D30, [0x00562D99], rp0, rp1)
 
+    # ---------------------------------------------------------------- plan 0043 Phase 2b
+    # NPC_SellItem's store-copy decision (0x00579624-0x0057989D): NSX {"at": address, "why": ...} at each refusal
+    # write of the copy flag [ebp-4], at the permanent test, after ItemCopy (the copy, its seed), at the page test, the
+    # placement results and the copy's release; each with the game seed
+    NSX_AT = {0x00579653: "quality 1 named Cracked", 0x0057966F: "flag 0x100", 0x00579681: "base type 7",
+              0x005796A1: "flag 0x1000000", 0x005796C1: "flag 0x400000 (ethereal)", 0x005796DD: "0x0055F590",
+              0x005796EF: "0x00575FA0 (unique carry1)", 0x00579714: "gamble view", 0x0057971B: "tests done",
+              0x00579734: "permanent test", 0x0057974C: "after ItemCopy", 0x0057977E: "store page",
+              0x005797CE: "placed (page 1 try)", 0x0057981C: "placed (page 2 try)", 0x00579784: "copy freed (page 0xFF)",
+              0x0057987B: "copy freed (not placed)", 0x00579824: "copy freed (page 2 not placed)"}
+
+    def nsx(a):
+        def f():
+            d = {"at": a, "why": NSX_AT[a], "gs": sd(st["game"] + 0xD0) if st["game"] else None}
+            if a == 0x0057971B:
+                d["ok"] = u32(reg("ebp") - 4)
+            elif a == 0x00579734:
+                d["al"] = reg("eax") & 0xFF
+            elif a == 0x0057974C:
+                c = reg("eax")
+                d["copy"] = c
+                d["csd"] = sd(c + 0x20) if c else None
+            elif a == 0x0057977E:
+                d["page"] = reg("eax") & 0xFF
+            elif a in (0x005797CE, 0x0057981C):
+                d["v"] = sreg("eax")
+            emit("NSX", d)
+        return f
+
+    for a in NSX_AT:
+        Bp(a, nsx(a))
+
+    # Wirt's body (sub_00594630_A1Q4_WirtGold, ECX quest, EDX object): one gold pile per event 7
+    def wg0():
+        q, o = reg("ecx"), reg("edx")
+        pv = u32(q + 0x18)
+        g = u32(q + 0x04)
+        return {"o": unit(o), "f90": u8(pv + 0x90), "n8c": s32(pv + 0x8C), "diff": u8(g + 0x6D),
+                "exp": u32(g + 0x70), "_ctx": pv}
+
+    def wg1(pv):
+        return {"f90": u8(pv + 0x90), "n8c": s32(pv + 0x8C)} if pv else {}
+
+    pair("WG0", "WG1", 0x00594630, [0x005946CE], wg0, wg1)
+
+    def wgs():      # 0x00594658: EAX = QUESTS_GetSeed's seed, before RandLoHi(10, 20)
+        st["wgseed"] = reg("eax")
+        emit("WGS", {"s": sd(reg("eax"))})
+
+    def wgn():      # 0x00594664: EAX = the pile count; the quest seed after
+        emit("WGN", {"n": sreg("eax"), "s": sd(st.get("wgseed", 0))})
+
+    Bp(0x00594658, wgs)
+    Bp(0x00594664, wgn)
+
+    # sub_00559A30_DropItemAtUnit (ECX game, EDX source; quality, &ilvl, ...; its entry and exit are quests.py's
+    # QDI/QDX when that file is sourced, economy2.gdb): DUL at 0x00559AF8, the ilvl it
+    # computed (EAX: monster stat 12, player base stat 12, or LevelMonLvl of an object's level, at least 1)
+    def dul():
+        emit("DUL", {"ilvl": sreg("eax")})
+
+    Bp(0x00559AF8, dul)
+
     # ---------------------------------------------------------------- the store record watchpoint (question 9)
     class Watch(gdb.Breakpoint):
-        def __init__(self, addr, tag="SWW", cap=2000):
+        def __init__(self, addr, tag="SWW", cap=2000, every=0):
             super().__init__("*(int*)0x%08X" % addr, gdb.BP_WATCHPOINT, gdb.WP_READ, internal=True)
             self.silent = True
             self.addr, self.tag, self.cap, self.n = addr, tag, cap, 0
+            self.every, self.last = every, None     # plan 0043 P2b: at most one line per `every` frames
 
         def stop(self):
             try:
                 self.n += 1
-                if self.n <= self.cap:
+                f = frame()
+                if self.every:
+                    if self.last is not None and f is not None and f - self.last < self.every:
+                        return False
+                    self.last = f
+                if self.n <= self.cap or self.every:
                     # the pc from the frame: "$eip" does not convert on this gdb (wow64), which cost the first
                     # sessions their watch lines (LOGERR "Cannot convert value to long", one per hit)
                     pc = int(gdb.selected_frame().pc()) & 0xFFFFFFFF
-                    emit(self.tag, {"a": self.addr, "pc": pc, "esp0": u32(reg("esp")), "ras": ra_chain()})
+                    emit(self.tag, {"a": self.addr, "pc": pc, "esp0": u32(reg("esp")), "ras": ra_chain(),
+                                    "n": self.n})
             except Exception as e:
                 gdb.write("LOGERR economy watch %s %r\n" % (self.tag, e))
             return False
@@ -572,7 +653,9 @@ def _economy_main():
             if u32(r) == 154:
                 try:
                     Watch(r + 0x24)
-                    Watch(r + 0x00, "SWC", 40)     # positive control: the class dword NPCSTORE_FindRec compares
+                    # positive control: the class dword NPCSTORE_FindRec compares; plan 0043 P2b: no line cap, at
+                    # most one line per 10 frames (P2's cap of 40 was reached within two frames), "n" the hit count
+                    Watch(r + 0x00, "SWC", 0, every=10)
                     st["watch"] = r
                     emit("SWSET", {"rec": r, "b": mem(r + 0x24, 4).hex()})
                 except Exception as e:

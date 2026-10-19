@@ -4,6 +4,7 @@
 Usage:
   python3 -I tools/economy_sessions.py --slot N act TOKEN...
   python3 -I tools/economy_sessions.py --slot N tour --seed S --diff D --log LOG --save F.d2s ACT:NPC:KIND:TOK+TOK...
+  python3 -I tools/economy_sessions.py --watchdog QUIET,LIMIT --slot N tour|die ...   # supervised (plan 0043 P2b)
 
 tour plays one game: d2run.py with tools/gdb/economy.gdb and the save installed, then for each stop a waypoint hop to
 the act's town (d2pilot.py wpchain), d2pilot.py npc NPC KIND --stay, the tokens (with "=" for ":" inside a token,
@@ -19,6 +20,8 @@ pointer on a cell for --dwell seconds, during which the client prices the item u
   equip          hover the ten paper-doll slots
   repair         click the repair button (single item), hover the inventory and paper doll, click it again
   repairall      hover the repair-all button, then click it (NpcRepair, packet bit 31)
+  fix:inv:c,r    (plan 0043 Phase 2b) a single-item repair: click the repair button, then the inventory cell (c, r)
+                 (NpcRepair with one item id); fix:eq:SLOT the same on a paper-doll slot
   hoverall       hover the repair-all button only
   sell:c,r       pick up the inventory item at cell (c, r) and click it onto the store grid (a sale)
   buy:T:c,r      right-click the store cell (c, r) of tab T (a purchase)
@@ -122,6 +125,14 @@ def run(drv, tokens):
             drv.grid(inv_xy, 10, 4)
             drv.equip()
             drv.click(*B_REPAIR)
+        elif kind == "fix":
+            where, _, cell = rest.partition(":")
+            xy = EQUIP[cell] if where == "eq" else inv_xy(*(int(v) for v in cell.split(",")))
+            drv.click(*B_REPAIR)
+            time.sleep(0.4)
+            drv.move(*xy, dwell=0.4)
+            drv.click(*xy)
+            time.sleep(1.0)
         elif kind == "hoverall":
             drv.move(*B_REPAIRALL, dwell=0.6)
         elif kind == "repairall":
@@ -245,7 +256,9 @@ def cmd_tour(a, drv_factory):
             if not go_town(a, int(act)):
                 print("tour: did not reach act %s for %s" % (act, npc), flush=True)
                 continue
-            rc = tool(["d2pilot.py", "--slot", str(a.slot), "npc", a.log, npc, kind, "--stay"], timeout=180)
+            kind, _, item = kind.partition("@")      # plan 0043 P2b: imbue@inv=0,0 -> imbue --item inv:0,0
+            extra = ["--item", item.replace("=", ":")] if item else ["--stay"]
+            rc = tool(["d2pilot.py", "--slot", str(a.slot), "npc", a.log, npc, kind] + extra, timeout=180)
             if rc != 0:
                 print("tour: %s %s did not open (rc %d)" % (npc, kind, rc), flush=True)
                 drv.dpy.key("Escape")
@@ -332,7 +345,60 @@ def cmd_die(a, drv_factory):
             tool(["saves.py", "--slot", str(a.slot), "restore", a.tag])
 
 
+def supervise(argv, log, quiet, limit):
+    """Plan 0043 Phase 2b, after a driver hung ~9 h on 2026-10-18 still clicking after its game had exited (the
+    pattern of tools/quest_sessions.py on lane/p42q): run this command again without --watchdog in its own process
+    group and watch its log; abort when the log has not grown for `quiet` s (after the first 150 s), when gdb's
+    "[Inferior ... exited" line is in its tail, or after `limit` s; on abort kill the group, stop the slot and restore
+    the saves set aside."""
+    import signal
+    import subprocess
+    slot, tag = None, "p43h"
+    for k, v in zip(argv, argv[1:]):
+        if k == "--slot":
+            slot = v
+        elif k == "--tag":
+            tag = v
+    child = subprocess.Popen(PY + [os.path.abspath(__file__)] + argv, cwd=ROOT, start_new_session=True)
+    t0 = time.time()
+    size, t_size, why = -1, time.time(), None
+    while child.poll() is None:
+        time.sleep(2)
+        now = time.time()
+        if os.path.exists(log):
+            n = os.path.getsize(log)
+            if n != size:
+                size, t_size = n, now
+            elif now - t_size > quiet and now - t0 > 150:
+                why = "log unchanged for %d s" % (now - t_size)
+            with open(log, "rb") as fh:
+                fh.seek(max(0, n - 4096))
+                tail = fh.read()
+            if b"[Inferior " in tail and b" exited" in tail:
+                why = why or "the game exited (gdb's Inferior line)"
+        elif now - t0 > 180:
+            why = "no log after 180 s"
+        if now - t0 > limit:
+            why = why or "session over %d s" % limit
+        if why:
+            print("WATCHDOG: %s; aborting the session" % why, flush=True)
+            try:
+                os.killpg(child.pid, signal.SIGKILL)
+            except OSError:
+                pass
+            child.wait(timeout=30)
+            sh(PY + [os.path.join(HERE, "slots.py"), "stop", str(slot)])
+            sh(PY + [os.path.join(HERE, "saves.py"), "--slot", str(slot), "restore", tag])
+            return 2
+    return child.returncode
+
+
 def main(argv):
+    if "--watchdog" in argv:
+        k = argv.index("--watchdog")
+        quiet, limit = (int(v) for v in argv[k + 1].split(","))
+        rest = argv[:k] + argv[k + 2:]
+        return supervise(rest, rest[rest.index("--log") + 1], quiet, limit)
     ap = argparse.ArgumentParser()
     ap.add_argument("--slot", type=int, required=True)
     ap.add_argument("--dwell", type=float, default=0.07)

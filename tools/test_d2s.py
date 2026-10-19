@@ -196,6 +196,8 @@ RECIPE_BASES = {
     "econd": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
     "econdl3": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
     "econdl75": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
+    "econh": (BASE_X, None),  # run:2026-10-19-economy2 (plan 0043 P2b)
+    "econq": (BASE_X, None),  # run:2026-10-19-economy2 (plan 0043 P2b)
     "econg": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
     "econn": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
     "econk1": (BASE_X, None),  # run:2026-10-17-economy (plan 0043 P2)
