@@ -500,3 +500,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     released with the three scopings; filed
     [2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder](../backlog/2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder.md).
   - **Next:** merge `lane/p43h`; Phase 3 (spec-writer) from the released entry; Phase 2b when harness slot 1 frees.
+- **2026-10-19 — Phase 2b started; resume note (reverser, `lane/p43b`, harness slot 1).** Not done. Run id
+  run:2026-10-19-economy2. Tools: logger `tools/gdb/economy.py` (+ `economy2.gdb` = `economy.gdb` with `quests.py`;
+  new lines `NSX` sale copy decision, `WG0/WG1/WGS/WGN` Wirt's gold, `DUL`, the control watch `SWC` rate-limited to
+  one line per 10 frames with no cap, item `id` and `ind`), checker `tools/economy.py` (NpcRepair one item and the
+  partial repair, `ItemRepairAll` by caller, `ItemRepairBroken`, the sale copy decision, Wirt's piles, the watch span),
+  `tools/economy_scan.py qrepair`, driver `tools/economy_sessions.py` (`--watchdog`, `fix:` with the repair confirm
+  box, service stops `imbue@inv=c,r`, `wirt`), `tools/d2s.py` keys `crafted` and `broken`, recipes `econq.json`,
+  `econh.json`. Sessions so far: 4501 (quest services, sales, question 9), 4503 (partial repairs, sales, question 9),
+  dev 4502 (repair box measured); 4504 (Hell, crafted) running. Left: gamble at clvl 3 (EconDL3), Wirt (`wirt`
+  with EconN), the record and finding. Saves in `workspace/scratch-p43b/saves/` (rebuild from the recipes).
