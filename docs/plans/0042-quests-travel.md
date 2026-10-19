@@ -499,3 +499,28 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   2026-10-18/19 (the machine suspended; the game exited and the driver clicked on); sessions are listed at the end of
   `tools/quest_sessions.py`; `workspace/scratch-p42q/agg.py` lists the talk steps per log; the finding sections hold
   `@@` markers for the activation row and the shortfalls until the final pass.
+- **2026-10-19 — Phase 2 part 2 (reverser, `lane/p42q`, slot 2; review requested).** run:2026-10-18-quests2
+  ([experiments](../findings/quests/experiments.md#run2026-10-18-quests2)): 21 recorded sessions, **0 mismatches over
+  23 348 checks** under the extended `tools/quests.py check`; part 1's 11 logs unchanged (manifest 11 OK) and 0 over
+  16 204 under the same checker; 11 development logs 0 over 2 480. Raises and corrections:
+  [quests/0001 § 16](../findings/quests/0001-progression.md#16-phase-2-part-2-run2026-10-18-quests2),
+  [quests/0002 § 13](../findings/quests/0002-travel.md#13-phase-2-part-2-run2026-10-18-quests2).
+
+  | Part 2 item | Result |
+  |---|---|
+  | 1. Normal expansion quest steps, saved words | the NPC-talk steps of Acts I–V reached (words 0, 1, 2, 4, 6, 8, 9, 14, 16, 19, 20, 24–27, 35, 40), each write at its call site `[C]`; the saved words after *Save and Exit* predicted word by word in 16 sessions; steps by kill, operate, item use or level entry: **shortfall** |
+  | 2. Nightmare/Hell and classic | Hell: 12 quest words in 3 recorded Hell sessions; classic: Acts I and IV (**shortfall** for II and III); Nightmare: none |
+  | 3. waypoints | 47 travels (108 with part 1); 0 activations from mode 0 (**shortfall**: the walk did not reach the Spider Forest or Great Marsh waypoints) |
+  | 4. warps | 104 (106 with part 1): "no draw" raised `[C]`; level 120's tiles never taken (the door answers), gates into 73/132 not attempted, 83 → 100 allowed once (**shortfalls**) |
+  | 5. act travel | 1 `NpcActTravel` (Meshif east: word 15's branch and packet 0x48); Meshif west, Tyrael, more Warriv: **shortfall** |
+  | 6. NPC 266 / 377 | 266: 23 talks, 22 chained pairs, **corrected** to two player-seed steps per talk; 377: no stock placement (static scan), **shortfall** with the reason |
+  | 7. Compelling Orb | with `qf2`: counted half `[C]`; without: no operate reached the server (**shortfall** server-side) |
+  | 8. the rest | stub double join `[C]`; switched-off reward handlers write (correction in part of § 3); `0x0065C3E0` steps clear `[C]`; word 40's message table corrected; timers, death, portal refusals, the remaining portals, Hratli's `InitFn`s, `InitFn` 52, the Tristram portal: **shortfall** |
+
+  Owner play (boss steps, the Ancients, Diablo's `+0x13`, Uber/136) was not played: shortfalls, the owner entry stays
+  open. Tools: `quest_sessions.py` (part 2 actions; supervised sessions after the overnight hang), `quests.py`
+  (talk steps, saved words, orb, Durance gate, stub join, `npcplace`), `questev.py` revision D (`QK`, `NPCQ` town
+  NPCs), `d2pilot.py` (Tyrael row), `quest-newchar.steps`; eleven recipes (archivist entry for d2s.md). Manifests:
+  `quests2-manifest.sha256` (`29693c4b…`), `dev-p42q-manifest.sha256` (`af3aefd0…`). One slot used (slot 1 was freed
+  late and not taken; a second slot would have doubled the session count). Slot 2 stopped, its aside restored. The
+  part 2 backlog entry is left open for the reviewer.
