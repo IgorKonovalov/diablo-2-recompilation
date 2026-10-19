@@ -676,3 +676,19 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Merge note:** this branch's plan log conflicts with `main`'s (the P3 entries of `lane/p43s`, appended after
     `7aeeafd`): keep both sides, in either order; the ledger rows likewise.
   - **Next:** merge `lane/p43b`; the spec-writer re-tag pass; harness slot 1 to the next H2 batch (plan 0038 H5b).
+- **2026-10-19 — Phase 2b re-tag and economy wiki (spec-writer, `lane/p43t`, from `main` `cf617f0`), review
+  requested.** [items/economy](../specs/items/economy.md) re-tagged from
+  [run:2026-10-19-economy2](../findings/items/experiments.md#run2026-10-19-economy2): {C 109, I 80, L 12} →
+  {C 125, I 83, L 12}. Changed: Entry points (quest services' repair, Wirt's body), C4 crafted, D2 Hell repair, E2
+  `L2 = 5`, F4 (the eight copy tests, all evaluated; three reached `[C]`, five `[I]`), F6 single-item and partial
+  repairs `[C]` (ethereal server refusal `[I]`), F7 (the quest repair: socket and personalize `[C]`, the imbue no-op
+  `[C]`, no quest script repairs `[I]`; the broken repair's draws `[I]`), a § F note on the store record (`[C]` for
+  the windows played), G8/G8a Wirt's gold `[C]` (ilvl column unseparated), § I (sell split, Wirt row), a
+  reimplementation note, Evidence, *Open questions* (Phase 2b struck; its remainder one `[L]` bullet). Stale text
+  closed: [items/quest-drops](../specs/items/quest-drops.md) F0, F1, Outputs and the Wirt row ({C 81, I 88, L 2} →
+  {C 84, I 87, L 2}), [items/vendors](../specs/items/vendors.md)' store-record question (tags unchanged). Wiki: new
+  [economy](../wiki/economy.md) page, index row 8, items-other-paths' vendor link and services paragraph. Gate green.
+  Backlog: the P2b inputs and the wiki entries closed; review request
+  [2026-10-19-spec-writer-architect-plan-0043-economy-retag-and-wiki-review](../backlog/2026-10-19-spec-writer-architect-plan-0043-economy-retag-and-wiki-review.md),
+  which notes that the plan can close at this review. Research map: no status change (`reviewed`); the tag counts
+  for the architect.
