@@ -4,7 +4,7 @@ actions below.
 
 Usage:
   python3 -I tools/quest_sessions.py list
-  python3 -I tools/quest_sessions.py run --slot N --tag TAG --run RUN SESSION [SESSION ...]
+  python3 -I tools/quest_sessions.py run --slot N --tag TAG --run RUN SESSION [SESSION ...]   # each supervised (watchdog)
   python3 -I tools/quest_sessions.py act --slot N LOG ACTION [ACTION ...]      # actions on a running session
   python3 -I tools/quest_sessions.py load --slot N [NAME ...]     # load each built save, Save and Exit, compare
 
@@ -82,6 +82,8 @@ def sess(name, save, steps, seed, actions, extra=None):
 
 
 def sh(args, timeout=None):
+    if timeout is None and any(a.endswith(("slots.py", "saves.py")) for a in args):
+        timeout = 120                 # part 2: no unbounded wait on the slot and save tools
     print("$ " + " ".join(args), flush=True)
     try:
         return subprocess.run(args, cwd=ROOT, timeout=timeout).returncode
@@ -681,8 +683,8 @@ def run_session(args, name):
                    "tools/gdb/quest-state.gdb", "--steps", "tools/gdb/%s.steps" % steps, "--after", "3600",
                    "--log", log] + (["--install", args.tag, sv] if sv else [])
     print("$ " + " ".join(launch), flush=True)
-    subprocess.Popen(launch, cwd=ROOT, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                     stderr=subprocess.DEVNULL, start_new_session=True)
+    proc = subprocess.Popen(launch, cwd=ROOT, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL, start_new_session=True)
     t0 = time.time()
     while time.time() - t0 < 120:
         if os.path.exists(os.path.join(ROOT, log)) and last(os.path.join(ROOT, log), "PLR"):
@@ -699,9 +701,60 @@ def run_session(args, name):
     finally:
         time.sleep(2)
         sh(PY + [os.path.join(HERE, "slots.py"), "stop", str(args.slot)])
+        try:
+            proc.wait(timeout=30)
+        except subprocess.TimeoutExpired:
+            print("d2run.py still running 30 s after the stop: killed", flush=True)
+            proc.kill()
+            proc.wait(timeout=10)
         sh(PY + [os.path.join(HERE, "saves.py"), "--slot", str(args.slot), "restore", args.tag])
     print("session %s done: %s" % (name, log), flush=True)
     return 0
+
+
+def supervise(args, name, quiet=60, limit=2700):
+    """Run one session in its own process group (`run --one`) and watch it (part 2, after a driver hung ~9 h on a
+    click into a game that had exited): abort when the log has not grown for `quiet` seconds, when gdb's
+    "[Inferior ... exited" line appears, or after `limit` seconds; on abort, kill the session's process group, stop
+    the slot (tools/slots.py stop N) and restore the saves aside."""
+    import signal
+    log = os.path.join(ROOT, "workspace", "logs", "quests", "%s-%s.log" % (args.run, name))
+    if os.path.exists(log):
+        print("%s exists; not overwriting" % log, flush=True)
+        return 1
+    child = subprocess.Popen(PY + [os.path.abspath(__file__), "run", "--one", "--slot", str(args.slot), "--tag",
+                                   args.tag, "--run", args.run, name], cwd=ROOT, start_new_session=True)
+    t0 = time.time()
+    size, t_size, why = -1, time.time(), None
+    while child.poll() is None:
+        time.sleep(2)
+        now = time.time()
+        if os.path.exists(log):
+            n = os.path.getsize(log)
+            if n != size:
+                size, t_size = n, now
+            elif now - t_size > quiet and now - t0 > 150:
+                why = "log unchanged for %d s" % (now - t_size)
+            with open(log, "rb") as fh:
+                fh.seek(max(0, n - 4096))
+                tail = fh.read()
+            if b"[Inferior " in tail and b" exited" in tail:
+                why = why or "the game exited (gdb's Inferior line)"
+        elif now - t0 > 180:
+            why = "no log after 180 s"
+        if now - t0 > limit:
+            why = why or "session over %d s" % limit
+        if why:
+            print("WATCHDOG %s: %s; aborting the session" % (name, why), flush=True)
+            try:
+                os.killpg(child.pid, signal.SIGKILL)
+            except OSError:
+                pass
+            child.wait(timeout=30)
+            sh(PY + [os.path.join(HERE, "slots.py"), "stop", str(args.slot)])
+            sh(PY + [os.path.join(HERE, "saves.py"), "--slot", str(args.slot), "restore", args.tag])
+            return 2
+    return child.returncode
 
 
 LOAD_SET = ["TravelWpOne", "TravelWpTwo", "TravelWpThree", "TravelWpFour", "TravelWpFive", "TravelWpNone", "WpTabTwo",
@@ -764,6 +817,7 @@ def main(argv):
     ap.add_argument("--slot", type=int)
     ap.add_argument("--tag", default="p42h")
     ap.add_argument("--run", default="2026-10-17-quests")
+    ap.add_argument("--one", action="store_true", help="run: one session in this process (what supervise starts)")
     args = ap.parse_args(argv)
     if args.cmd == "list":
         for k, v in SESSIONS.items():
@@ -778,8 +832,10 @@ def main(argv):
         return 0
     if args.cmd == "load":
         return run_load(args, args.rest or LOAD_SET)
+    if args.one:
+        return run_session(args, args.rest[0])
     for name in args.rest:
-        run_session(args, name)
+        supervise(args, name)
     return 0
 
 
