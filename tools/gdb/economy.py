@@ -355,7 +355,12 @@ def _economy_main():
         return {"it": d}
 
     pair("IR0", "IR1", 0x005761C0, [0x0057625F, 0x005762A3], ir0, ir1)
-    pair("IB0", "IB1", 0x0055F900, [0x0055F9B2], ir0, ir1)
+    def ib0():      # ECX game, EDX player, stack item (0x0055F915; P2 and lane p43b's first sessions read EDX)
+        it = arg(1)
+        d = wear_state(it)
+        return {"it": d, "_ctx": it}
+
+    pair("IB0", "IB1", 0x0055F900, [0x0055F9B2], ib0, ir1)
 
     def gen0():
         return {"r": [reg("ecx"), reg("edx")], "a": [arg(k) for k in range(1, 5)]}

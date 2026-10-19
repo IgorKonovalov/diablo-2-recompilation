@@ -807,6 +807,11 @@ class Checker:
     def on_IB(self, path, ln, d0, d1, ctx):
         """sub_0055F900_ItemRepairBroken: clears flag 0x100, durability = maximum."""
         a0, a1 = d0["it"], d1["it"]
+        ir = ctx.get("open_", {}).get("IR")
+        if ir and ir[-1][0]["it"]["u"] != a0["u"]:
+            # the logger read EDX (the player) as the item before the fix (ECX game, EDX player, stack item)
+            self.cases["ItemRepairBroken line on the player (logger before the argument fix)"] += 1
+            return
         self.n["ItemRepairBroken"] += 1
         self.cases["ItemRepairBroken: broken at entry %d" % bool(a0["fl"] & 0x100)] += 1
         if a1["fl"] & 0x100 or a1["d"] != a1["m"]:
