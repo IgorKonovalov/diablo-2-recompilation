@@ -45,7 +45,8 @@ if HERE not in sys.path:
 PY = [sys.executable, "-I"]
 SAVES = [os.path.join(ROOT, "workspace", "runtime", "quest-saves-p42"),      # quest_saves.py build (plan 0042 P0)
          os.path.join(ROOT, "workspace", "runtime", "quest-saves-p42h"),     # d2s.py build of quest-tpc (Phase 2)
-         os.path.join(ROOT, "workspace", "runtime", "quest-saves-p42q")]     # part 2's step recipes (build_part2)
+         os.path.join(ROOT, "workspace", "runtime", "quest-saves-p42q"),     # part 2's step recipes (build_part2)
+         os.path.join(ROOT, "workspace", "runtime", "quest-saves-p42r")]     # part 3's recipes (quest-p3*.json)
 CLASSIC_WP = ["--wp-tab-x0", "120", "--wp-tab-w", "78"]
 TOWNS = {1, 40, 75, 103, 109}
 # a warp's place where it is fixed (Lut Gholein is one preset; part 1 and part 2 logs, WRP lines): a walking goal
@@ -551,6 +552,10 @@ class Driver:
                     self.p.dpy.key("Escape")
                     got = t.wait(lambda tag, d: tag == "EV" and d.get("k") == "p41" and d.get("ph") == 1, 8)
                     print("die: dead; packet 0x41 %s" % ("logged" if got else "not logged"), flush=True)
+                    if not got:               # part 3: a false reading; the Escape opened the game menu: close it
+                        self.p.dpy.key("Escape")
+                        time.sleep(1.0)
+                        continue
                     done += bool(got)
                     time.sleep(3)
                     if done < n:
@@ -658,6 +663,32 @@ class Driver:
                 print("goto: %s" % self.move_near(int(x), int(y), 7), flush=True)
             elif kind == "saveexit":          # Save and Exit; keep the written save beside the log (<log>.out.d2s)
                 self.saveexit()
+            elif kind == "use":               # part 3: use:C,R  right-click the inventory item at cell (C, R)
+                import d2pilot
+                t = Tail(self.log)
+                self.p.dpy.key("i")
+                time.sleep(0.6)
+                x, y = d2pilot.cell_xy("inv:" + rest)
+                self.p.dpy.click(self.p.off[0] + x, self.p.off[1] + y, button=3, hold=0.08)
+                time.sleep(1.0)
+                got = [tag for tag, d in t.lines() if tag in ("CRN", "CRN0", "QS", "EV")]
+                # the decoded scroll opens its panel beside the inventory: Escape closes both (an Escape with
+                # nothing open would open the game menu, so only then); otherwise 'i' closes the inventory
+                self.p.dpy.key("Escape" if "CRN" in got else "i")
+                time.sleep(0.6)
+                print("use %s: %s" % (rest, ",".join(got[:12]) or "nothing logged"), flush=True)
+            elif kind == "tpuse":             # part 3: right-click the tome at inventory (0, 0) once (a town: refused)
+                import d2pilot
+                t = Tail(self.log)
+                self.p.dpy.key("i")
+                time.sleep(0.6)
+                x, y = d2pilot.cell_xy("inv:0,0")
+                self.p.dpy.click(self.p.off[0] + x, self.p.off[1] + y, button=3, hold=0.08)
+                time.sleep(0.5)
+                self.p.dpy.key("i")
+                d = t.wait(lambda tag, d: tag == "EV" and d.get("k") == "tp" and d.get("ph") == 1, 6)
+                print("tpuse: %s" % (("exit eax %s" % d.get("eax")) if d else "no tp event"), flush=True)
+                time.sleep(0.5)
             elif kind == "key":
                 self.p.dpy.key(rest)
                 time.sleep(0.5)
@@ -944,6 +975,35 @@ sess("x-tristram", "TravelWpOne", "enter-normal", 4372, ["towp2", "wp:1,3", "app
 
 sess("x-tristram2", "TravelWpOne", "enter-normal", 4373, ["towp2", "wp:1,3", "approach:17:160", "sleep:6", "saveexit"])
 sess("x-talk3b", "QuestTalkThree", "enter-normal", 4326, ["talk:254:2", "talk:245:2", "talk:252:2", "saveexit"])
+
+# ---- part 3, run:2026-10-19-quests3 (plan 0042 Phase 2 part 3): saves from tools/d2s_recipes/quest-p3*.json
+# QuestEntry (Act I; words 4, 11, 12, 37 clear; tome at 0,0, bkd at 1,0): a refused town portal in town, the bkd use
+# (the cairn order's quest-seed draws) twice, Lut Gholein (word 4's "Cain lost"), the palace (word 12, level 50),
+# Lost City (word 11's eclipse arm and its timer), Far Oasis and Lost City again, the Kurast Docks and the Dark
+# Wanderer (word 32's timer), Arreat Plateau, Crystalline Passage, Halls of Pain (word 37's level-entry steps)
+P3_ENTRY = ["tpuse", "use:1,0", "use:1,0", "towp2", "wp:2,1", "warp1:24", "warp1:25", "towp2", "wp:2,6", "sleep:22",
+            "nearwp", "wp:2,5", "nearwp", "wp:2,6", "nearwp", "wp:3,1", "goto:5150:4966", "sleep:15", "towp2",
+            "wp:5,3", "nearwp", "wp:5,4", "nearwp", "wp:5,5", "saveexit"]
+sess("x-entry", "QuestEntry", "enter-normal", 4401, P3_ENTRY)
+sess("x-entry2", "QuestEntry", "enter-normal", 4402, P3_ENTRY)
+sess("h-entry", "QuestEntry", "enter-hell", 4403, P3_ENTRY, ["--es", "30"])
+# QuestAnya (Act V; word 37 bits 1, 8, 15; tr2 at 1,0): Anya's reward (one quest-seed draw), the tr2 use (word 37 b7)
+P3_ANYA = ["talk:512:2", "use:1,0", "tpuse", "saveexit"]
+sess("x-anya", "QuestAnya", "enter-normal", 4411, P3_ANYA)
+sess("h-anya", "QuestAnya", "enter-hell", 4412, P3_ANYA, ["--es", "30"])
+sess("nm-anya", "QuestAnya", "enter-nightmare", 4413, P3_ANYA, ["--es", "30"])
+# Meshif west (NPC 264: NpcTravelMove(40, 5), the type-5 point) and back east, from the Kurast Docks
+sess("x-meshifw", "QuestMeshifW", "enter-normal", 4421, ["talk:264:1"] + (["menu:meshif2:3:1", "sleep:3",
+                                                          "goto:5205:5060", "menu:meshif:2:1", "sleep:3"] * 6) +
+     ["saveexit"])
+# Tyrael's Act IV -> V travel (word 28 first set, then set) and back by waypoint
+sess("x-tyrael3", "ActFiveTyrael", "enter-normal", 4431, ["talk:367:1"] + (["menu:tyraelgo:2:1", "sleep:3", "towp2",
+                                                                         "wp:4,1", "sleep:2"] * 4) + ["saveexit"])
+# death and resurrection (packet 0x41): the 24-life save in the Cold Plains
+sess("x-death3", "QuestDeath", "enter-normal", 4441, ["towp2", "wp:1,2", "die:3", "saveexit"])
+# waypoint activation from mode 0: Act I, the towns' waypoints only; walk out and explore to the Cold Plains waypoint
+for k in range(12):
+    sess("x-wpact1-%d" % k, "QuestWpAct", "enter-normal", 4322 + 100 * k, ["activate:1:9", "saveexit"])
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

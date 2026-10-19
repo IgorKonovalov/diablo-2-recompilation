@@ -1072,6 +1072,7 @@ NPCS = {
     # a dead mercenary puts "Resurrect <name>: <cost>" second, before the seller's own lines (Qual-Kehk's menu
     # measured in run:2026-10-17-economy: talk, resurrect, hire, cancel); Tyrael's travel line assumed to follow it
     "tyrael": (367, ["talk", "resurrect", "travel", "cancel"], None),
+    "tyraelgo": (367, ["talk", "travel to harrogath", "cancel"], None),   # plan 0042 P2 part 3: no mercenary
     "qualres": (515, ["talk", "resurrect", "hire", "cancel"], (-56, 12)),   # Qual-Kehk with a dead mercenary
     "waypoint": (None, [], None),       # npc <log> waypoint walk: walk next to the town waypoint (OBJP lines)
 }
