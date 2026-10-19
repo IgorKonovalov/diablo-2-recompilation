@@ -514,3 +514,67 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `draft spec` (the architect's row, proposed in the review request). Backlog: the inputs entry closed, the rbs2
   readings entry annotated (part (b) folded), review request
   [2026-10-19-spec-writer-architect-plan-0043-p3-economy-spec-review](../backlog/2026-10-19-spec-writer-architect-plan-0043-p3-economy-spec-review.md).
+- **2026-10-19 — Phase 3 review (architect, `lane/p43s` at `6607069`, from `main` `7aeeafd`): accept with fixes.**
+  [items/economy](../specs/items/economy.md) is `reviewed`, {C 109, I 80, L 12} after the fixes. Read: the spec whole,
+  [items/0011](../findings/items/0011-economy.md) § 1–§ 8 and § Phase 2, the
+  [run record](../findings/items/experiments.md#run2026-10-17-economy), the Phase 2 rulings above, the review request
+  and the cross-link diffs. Re-run: `tools/economy.py check` over the 33 claim logs gives an output byte-identical to
+  `check-run.txt` (0 mismatches). Worked examples recomputed with `tools/economy.py price` against the logged results:
+  1 (11 442), 2 (1040), 3 (5278 and 80) and 4 (52 943); 5–8 by hand from the logged seeds and values (EconK1/K9,
+  18 750, 24 → 129, `u` 4, `w` 0, rolls 80 and 51): all agree. Anchors checked with r2 in the pinned `Game.exe`:
+  0x00559E30–0x0055A07A (`ITEMS_DurabilityLossRoll`: the `IsType(50)`/`IsType(45)` gate, the chances, the inline
+  step, the branch order), 0x00629044/0x0062904E and 0x00628D6A (the param shift and mask), 0x0062FAAC–0x0062FAF2 (the
+  NPC step and `S`'s `sell mult` test), 0x005782C0–0x00578370 (the partial repair pays stat 14 through `PayGold`),
+  0x0057F72D (the corpse cap). The three released scopings are applied: the refused resurrection "pays nothing" `[C]`
+  and "revives nothing" `[I]` (G13); sell's seed movement `[I]` (§ I); question 9 only as the `+0x27` read, in the
+  vendors open question. The six community differences each cite a registered source (`maxroll-d2r-items`,
+  `d2dfg-blizzard`, both with plan 0043 notes in `docs/sources.md`); no transliterated code.
+  - **Ruling 1, the indestructible item: holds; the record is amended and the clause raised.** All 50 of the run's
+    "no durability" rolls are on two items of session 4381 with stat 152 = 1 in the full cache (a set `xtb`, 12 rolls,
+    first at frame 791; a unique `uit`, 38), whose bases have `nodurability` 0, `durability` 18 and 86 and a non-zero
+    maximum; every roll on an item without stat 152 drew (counted from the `DL0`/`DL1` pairs of the 33 logs). Only
+    stat 152 explains the 50, so the clause is `[C]` (H2's new note); the record's *Limits* carries a review note and
+    items/0011's Phase 2 remainder is corrected. `ItemHasDurability`'s other terms (F2) stay `[I]`.
+  - **Ruling 2, the param packing: holds, re-anchored.** The shift and mask are not the checker's: the code reads them
+    from the data tables' `+0xC6C` and `+0xC70` (0x00629044, 0x0062904E; `RechargeCost` 0x00628D6A), and the logger's
+    `ECON` line reads 6 and 63 in all 8 games. The Encode 2/3 row now says so (items/0011 § 3 notes it); the term stays
+    `[C]`, the recharge cost `[I]`.
+  - **Ruling 3, the last wear branches: the checker's order is the code's.** The break branch tests "not `weap`"
+    (0x00559F15) and "not broken", so a broken `armo` item falls to the version test; the two version-≠-0 branches
+    then arm the durability timer when `ITEMS_GetMaxStack` > 0 (0x0055A031–0x0055A040), which neither items/0011 nor
+    the spec stated. H2 rewritten and items/0011 § 7 noted; the branches stay `[I]` (single cases or none).
+  - **Ruling 4, branches at `[I]` under a `[C]` parent.** The large form of `Scale` is separated at the NPC step and
+    in the stat terms: a copy of `tools/economy.py` with the `0xFFFF` test made false reports 1 846 (line 491) and
+    2 737 (line 295) mismatch lines on the claim logs, so those two and the `LARGE` constant are `[C]`. The same edit
+    in `AddTerm` (line 417) reports 0, so the affix/set/unique large form is not separated (the request's "50 inputs
+    above 0xFFFF at the affix step" counts base values) and stays `[I]` with the staff-mod and recharge forms. The
+    writer's scratch count (`workspace/scratch-p43s/cov.py`, re-run here) shows zero cases of B1–B3, D1, the stat-252
+    and full-durability repair branches, `r` on a repair and `L2 = 5`: those stay `[I]`, correctly. The mutation
+    commands are in the record's review note.
+  - **Ruling 5, the combat/delivery link: made.** One sentence in [combat/delivery § F](../specs/combat/delivery.md#f-the-boundary-at-delivery)
+    links items/economy § H (no claim, no tag); `consumed_by` gains `items/economy`; the combat wiki's `based_on`
+    date follows (its text is unchanged and still true).
+  - **Cross-links.** items/vendors § I `[C]`: the routing is logged in the run, kept. quest-drops D6 and its struck
+    question: kept. hirelings F3 `[C]`: 10 `PayGold` calls in the run took the rest from the stash (gold short, stash
+    enough), kept; § K `[C]` covered the four other resurrection NPCs read from the code only: scoped (fix 5). The
+    0038 inventory row 35's anchor fix resolves (E8). The wiki's stale-page warnings are cleared, not left: see fix 6.
+  - **Fixes (made here):** (1) *under-claim:* the indestructible clause `[C]`, the record and items/0011 corrected.
+    (2) *under-claim:* `Scale`'s large form `[C]` at the NPC step and in the stat terms, `LARGE` `[C]`. (3) *wrong
+    anchor:* the Encode 2/3 packing cited the checker's decoder; now the code's two globals. (4) *miscount:* "22 claims:
+    10 held, 5 with refinement, 6 contradicted" left out the 1 not covered. (5) *overclaim:* hirelings § K's `[C]`
+    named five NPCs; the run resurrected at Qual-Kehk only. (6) *stale cross-reference:* the wiki kept "how Baal's
+    gold is split into piles is unknown" twice (items-other-paths) and the stash payment and resurrection as
+    code-only or named-only (characters); rewritten, and the `based_on` dates of items-other-paths, characters and
+    saves moved to 2026-10-19 (saves: § H unchanged); "not yet reviewed" dropped now that the spec is. (7)
+    *omission:* the combat/delivery link (the writer's point 5) and the H2 timer arm. Not the lane's: items/0011's
+    Leads-used detail said the partial repair "takes all carried and stashed gold"; the code passes stat 14 to
+    `PayGold` (0x005782C0–0x0057832F), so § 5 and the spec are right and the detail is corrected.
+  - **Ledger:** 7 fixes: under-claim 2, overclaim 1, wrong anchor 1, miscount 1, stale cross-reference 1, omission 1.
+    Spec-writer review-fixes: rules 2, 5, 7 and 8 recurred (fixes 5, 4, 6 and 1–2) and gain this review as a
+    citation; rule 9 gains fix 3.
+  - **Backlog:** review request closed; filed
+    [2026-10-19-architect-spec-writer-plan-0043-economy-wiki](../backlog/2026-10-19-architect-spec-writer-plan-0043-economy-wiki.md)
+    (wiki owner, architect rule 8). Phase 2b (`lane/p43b`) runs on; its items stay `[I]` in the spec and under
+    *Open questions* until it lands, and the spec is re-tagged then.
+  - **Research map:** `items/economy` → `reviewed`. Plan stays open for Phase 2b.
+  - **Next:** merge `lane/p43s`; Phase 2b review when `lane/p43b` reports; then the spec re-tag and the wiki entry.

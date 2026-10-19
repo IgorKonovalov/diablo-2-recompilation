@@ -1,10 +1,10 @@
 ---
 spec: items/economy
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/properties, items/tc, items/vendors, stats/aggregate, monsters/stats, hirelings, combat/delivery, data/excel]
 consumed_by: [items/vendors, hirelings, items/quest-drops, combat/delivery]
-tags: {C: 106, I: 81, L: 12}
+tags: {C: 109, I: 80, L: 12}
 updated: 2026-10-19
 ---
 
@@ -121,7 +121,7 @@ flowchart LR
 |---|---|---|---|
 | `FIXED` | 1024: every multiplier is over 1024 | 0x0062FAAC–0x0062FAE2, run:2026-10-17-economy | [C] |
 | `FIXED_SKILL_S` | 4096: the sell value's divisor in the skill-based terms | 0x00628E9F–0x006292D7, run:2026-10-17-economy | [C] |
-| `LARGE` | 0xFFFF: above it a scaling divides first (`Scale`, § A) | 0x0062FAAC–0x0062FAE2 | [I] |
+| `LARGE` | 0xFFFF: above it a scaling divides first (`Scale`, § A) | 0x0062FAAC–0x0062FAE2, run:2026-10-17-economy | [C] |
 | `NO_PRICE` | 0x7FFFFFFF (no player, no item, not an item) | 0x0062EFBA–0x0062F01F | [I] |
 | `R_CAP` | 99 (`item_reducedprices` cap) | 0x0062F02C–0x0062F062 | [I] |
 | `GOLD_PER_LEVEL` | 10 000: carried gold cap = `L × 10 000` | fn:PLAYER_GoldCap@0x00622E70 | [I] |
@@ -150,9 +150,14 @@ Scale(v: i32, m: i32, t: i32) → i32:                                  [C] (0x0
 
 - [C] `÷ 1024` is `cdq; and edx, 0x3FF; add; sar 10`, a signed division truncating toward zero, in every term of
   § B–§ D. (0x0062F0BE–0x0062FD8B, run:2026-10-17-economy)
-- [I] The large form is read from the code at every step that has it (affix, set, unique and stat terms, the NPC
-  step, the recharge cost); the run's coverage list does not name it separately. (0x0062F1AB–0x0062F213,
-  0x0062FAAC–0x0062FAE2, [items/0011 § 3](../../findings/items/0011-economy.md#3-the-value-terms))
+- [C] The run separates the large form at the NPC step and in the stat terms: with it the 26 525 price calls
+  reproduce, and with the small form alone `tools/economy.py check` reports 1 846 mismatch lines (NPC step) and
+  2 737 (stat terms) on the same logs (architect review, 2026-10-19). (0x0062FAAC–0x0062FAE2, 0x00628E9F–0x006292D7,
+  run:2026-10-17-economy)
+- [I] At the other steps that have it (the affix, set and unique terms of `AddTerm`, the staff-mod term, the
+  recharge cost) the large form is read from the code only: removing it from `AddTerm` changes no logged result, and
+  the other two have no separating case. (0x0062F1AB–0x0062F213, fn:sub_0062EDD0_PriceStaffModTerm@0x0062EDD0,
+  fn:sub_00628D30_RechargeCost@0x00628D30)
 
 ### B. The price core: early returns and the base
 
@@ -286,7 +291,7 @@ StatTerms(item, P, S, R, n):                                                    
 |---|---|---|---|---|
 | 0, and 5 or more | ISC `Multiply`, `Add` | `v` | 1024 | [C] (0x00628F15–0x00628F1C, run:2026-10-17-economy) |
 | 1 (param is a skill) | the skill's Skills `cost mult`, `cost add` | `v` | 4096 | [C] (0x00628F35, run:2026-10-17-economy) |
-| 2, 3 (skill on event, charged; param = skill `<< 6` \| level, as `tools/economy.py` decodes it) | the skill's Skills `cost mult`, `cost add` | the **level** from the param; the charge count does not enter | 4096 | [C] (0x00628E9F–0x006292D7, run:2026-10-17-economy) |
+| 2, 3 (skill on event, charged; skill = param `>>` the data tables' `+0xC6C`, level = param & their `+0xC70`, read at 0x00629044 and 0x0062904E, 6 and 63 in all 8 logged games) | the skill's Skills `cost mult`, `cost add` | the **level** from the param; the charge count does not enter | 4096 | [C] (0x00628E9F–0x006292D7, run:2026-10-17-economy) |
 | 4 (by time) | ISC `Multiply`, `Add` | `(min + max) ÷ 2` of `STAT_ByTimeValue` | 1024 | [I] (jump table 0x006292DC, fn:STAT_ByTimeValue@0x0065CA30) |
 
 - [C] `a` is added once per entry. A stat whose `Multiply` and `Add` are both 0 adds 0. A `ValShift` 8 stat (7, 9,
@@ -341,7 +346,7 @@ D7. if mode = 1: return max(S′, 1)                       ; "S′ < 1 → 1"   
 RechargeCost(item):                                                                   [I] (fn:sub_00628D30_RechargeCost@0x00628D30)
   total: i32 ← 0
   for each stat 204 (item_charged_skill) entry with current c = value & 0xFF < max x = value >> 8:
-    k ← Skills[param >> 6];  lvl ← param & 0x3F             ; the packing of the Encode 2, 3 terms
+    k ← Skills[param >> 6];  lvl ← param & 0x3F             ; the same two globals as Encode 2, 3 (0x00628D6A)
     K: i32 ← lvl + 2 × (k.reqlevel ÷ 6) + 2;  T: i32 ← K × 10000
     t: i32 ← (T > 0xFFFF and k.cost mult ≠ 0) ? (T ÷ 1024) × k.cost mult : (k.cost mult × T) ÷ 1024
     total ← total + ((x − c) × (t + k.cost add)) ÷ x
@@ -659,9 +664,9 @@ H2. DurabilityLossRoll(game, owner, item):                                      
       if roll ≥ chance: return
       D′ ← D − 1
       if D′ ≥ 1: D ← min(D′, M);  arm the replenish timer
-      else if armo and not broken: ItemBreak
-      else if version ≠ 0 and q ≥ 2: q ← q − 1;  D ← M                    ; a throwing stack refills
-      else if version ≠ 0: D ← 0;  q ← 0;  refresh the hands
+      else if not IsType(item, weap) and not broken: ItemBreak               ; an armo item
+      else if version ≠ 0 and q ≥ 2: q ← q − 1;  D ← M;  timer if MaxStack(item) > 0   ; a throwing stack refills
+      else if version ≠ 0: D ← 0;  q ← 0;  refresh the hands;  timer if MaxStack(item) > 0
       else: D ← 0                                                         ; version 0
 ```
 
@@ -673,14 +678,20 @@ Step notes:
   (data:g_ArmorWearSlots@0x00732B90, 0x0057D41A–0x0057D4B4, run:2026-10-17-economy)
 - H1. [I] Only a melee delivery reaches this function (one call site, from `COMBAT_DeliverQueued`); a missile or a
   spell causes no wear here. (fn:COMBAT_DeliverQueued@0x0057D4F0, [combat/delivery § A](../combat/delivery.md#a-queue-and-delivery))
-- H2. [C] 1 061 rolls reproduce: no draw without durability (50), one step of the owner's seed with
+- H2. [C] 1 061 rolls reproduce: no draw without durability (50, see the next note), one step of the owner's seed with
   `roll = low mod 100` (unsigned), a loss when below 10 (armour, 914 rolls), 4 (weapon, 90) or 10 (an expansion
   throwing weapon, 7), and `D′ = D − 1` kept when ≥ 1 (81 losses). (fn:ITEMS_DurabilityLossRoll@0x00559E30,
   run:2026-10-17-economy)
-- H2. [I] The indestructible clause (stat 152 makes `ItemHasDurability` false, so no draw), the classic throwing
-  weapon, the stack refill and version-0 items are read from the code; the broken armour and the weapon taken to 0
-  are single cases in the run. Ethereal items take the same path (no ethereal test), and an armour item that is
-  already broken falls through to the version branches, in the code's order. (0x00559E38–0x0055A07A)
+- H2. [C] **An indestructible item makes no draw.** All 50 rolls without a draw were on two items with stat 152 = 1
+  in their full-stat cache (a set `xtb`, 12 rolls, and a unique `uit`, 38, session 4381), whose bases have
+  `nodurability` 0, `durability` 18 and 86 and whose maximum is not 0, so only stat 152 makes `ItemHasDurability`
+  false; every roll on an item without stat 152 drew (architect review, 2026-10-19). (0x00559E63,
+  fn:sub_00629930_ItemHasDurability@0x00629930, run:2026-10-17-economy)
+- H2. [I] The classic throwing weapon, the stack refill and version-0 items are read from the code; the broken armour
+  and the weapon taken to 0 are single cases in the run. Ethereal items take the same path (no ethereal test). The
+  break tests "not a weapon" (0x00559F15), so an armour item that is already broken falls through to the version
+  branches, and the two version branches arm the replenish timer when `MaxStack` is above 0 (0x0055A031–0x0055A040),
+  in the code's order (architect review, 2026-10-19). (0x00559E38–0x0055A07A)
 - H2. [I] A melee weapon whose durability reaches 0 gets `D = 0` and quantity 0 but no `ItemBreak`; `HandsRefresh`
   calls `ItemBreak` only for a stackable or throwable `weap` of quantity ≤ 0, magic or better, without stat 125. The
   one weapon taken to 0 in the run had no broken flag at the roll's exit. (fn:sub_00580310_HandsRefresh@0x00580310,
@@ -896,7 +907,7 @@ so the amount is `5 + 19 = 24`, unchanged by `mul=`. G7: the killer's stat 79 is
   sales that left the game seed unchanged (§ I).
 - [L] **Accepted shortfalls of Phase 2** (inferred above, no run planned): ears and body parts, Encode 4,
   version-0 items, the recharge cost, charges used, skill wear, Baal's gold, the caps, pickup and the stash move,
-  PvP and non-single-player deaths, the indestructible item, the classic throwing weapon, the stack refill, Cain's
+  PvP and non-single-player deaths, the classic throwing weapon, the stack refill, Cain's
   free path, the broken ethereal sale, the stat-252 repair branch, `item_reducedprices` on a repair.
 - [L] Which network modes `g_ClientGameMode` 6 and 8 are (game types 1 and 2). A multiplayer log of `Game+0x6A`
   (plan 0044) settles it.
@@ -907,7 +918,7 @@ so the amount is `5 + 19 = 24`, unchanged by `mul=`. G7: the killer's stat 79 is
 ### Community sources: differences of 1.14d
 
 [items/0011 § Leads used](../../findings/items/0011-economy.md#leads-used) compared 22 claims: 10 held, 5 held with
-refinement, 6 contradicted. Each contradicted one was re-read and the 1.14d behaviour above stands; the first five
+refinement, 6 contradicted, 1 not covered. Each contradicted one was re-read and the 1.14d behaviour above stands; the first five
 were also reproduced by the run.
 
 - [L] src:maxroll-d2r-items: armour slot weights head 2, body 3, shield 2, waist 1, feet 1, hands 1. 1.14d uses

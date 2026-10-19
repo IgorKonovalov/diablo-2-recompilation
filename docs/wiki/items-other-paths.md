@@ -2,8 +2,8 @@
 based_on:
   - docs/specs/items/sockets-runewords.md 2026-10-17
   - docs/specs/items/cube.md 2026-10-17
-  - docs/specs/items/vendors.md 2026-10-17
-  - docs/specs/items/quest-drops.md 2026-10-17
+  - docs/specs/items/vendors.md 2026-10-19
+  - docs/specs/items/quest-drops.md 2026-10-19
 ---
 
 # Items that do not come from a monster drop
@@ -369,8 +369,8 @@ The gambled item is fully decided at the build, base and quality included. Closi
 *Gamble* builds a new one. Read from the code, not exercised: opening it twice within one interaction shows the same
 items, and buying an item copies it to the player without making a replacement. A gambled unique enters the
 [made-uniques set](../glossary.md) when the window is built, as a dropped one does, whether or not it is bought, so a
-later pick of that row fails and falls back; this is read from the code. Prices and repair have their own spec, not
-yet reviewed, which the vendor spec points to ([§ I](../specs/items/vendors.md#i-prices-and-repair)).
+later pick of that row fails and falls back; this is read from the code. Prices and repair have their own spec, which the
+vendor spec points to ([§ I](../specs/items/vendors.md#i-prices-and-repair)); no wiki page covers it yet.
 
 ## Quest drops and quest rewards
 
@@ -444,7 +444,8 @@ recorded game.
   forge's own operate function like any object's, and its waves arrive later as a timer event of the quest objects;
   both confirmed.
 - **Baal** ([§ D6](../specs/items/quest-drops.md#d6-baals-first-kill)): read from the code only, a gold amount of
-  6000·difficulty + 1500 to + 2999 per qualifying player; how it is split into piles is unknown.
+  6000·difficulty + 1500 to + 2999 per qualifying player, dropped as at most 32 piles of at most 2 000 000 000 gold,
+  each made like any dropped gold pile, so each takes that item's draws.
 
 ### Quest items and quest chests
 
@@ -583,8 +584,8 @@ Collected from the specs' open questions and unconfirmed points:
   the [mercenary (hireling)](../glossary.md) list takes from the shared store seed (another plan owns it).
 - **Quests** ([open questions](../specs/items/quest-drops.md#open-questions)): kills by pets, hirelings or converted
   monsters, parties, classic games, Diablo, Baal and his gold, Anya's and Qual-Kehk's items, the chest and Wirt gold,
-  the Countess in Hell and the Cow King's refusals were not attempted; how Baal's gold is split into piles; and, for
-  quest objects other than the Hellforge, the timer route at run time.
+  the Countess in Hell and the Cow King's refusals were not attempted; and, for quest objects other than the
+  Hellforge, the timer route at run time.
 
 ## Where to read more
 

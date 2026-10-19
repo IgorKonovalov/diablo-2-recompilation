@@ -568,9 +568,10 @@ Step notes:
   exists: the first entry in name order with `listed = 1` and `hired ≠ 1` becomes hired, spawned and initialised as a
   hire, with no payment and no quest gate; then `RebuildIfEmpty`. Not reached by the run. (fn:HIRE_GiveFreeMerc@0x00579180)
 - [C] **Resurrection** is specified in [items/economy § G](../items/economy.md#g-gold-payment-caps-piles-and-the-death-loss)
-  (G13): `MERC_Resurrect` at Kashya, Greiz, Asheara, Tyrael (367) or Qual-Kehk costs
-  `MERC_ResurrectCost = min(50000, (L² ÷ 2) × 15)` with `L` the mercenary's level (unsigned compare), paid with
-  `PayGold` like a hire; a refused payment pays nothing. (fn:MERC_Resurrect@0x00579C00,
+  (G13): `MERC_Resurrect` costs `MERC_ResurrectCost = min(50000, (L² ÷ 2) × 15)` with `L` the mercenary's level
+  (unsigned compare), paid with `PayGold` like a hire; a refused payment pays nothing. The run resurrected at
+  Qual-Kehk only; that Kashya, Greiz, Asheara and Tyrael (367) offer it too is read from the code (items/economy
+  § Entry points). (fn:MERC_Resurrect@0x00579C00,
   fn:MERC_ResurrectCost@0x006637B0, run:2026-10-17-economy)
 - [I] **Death.** `PETS_OnDeath` sets the pet's dead bit; a mercenary stays in the pet list. (fn:PETS_OnDeath@0x005751A0)
 - [I] **Combat skill choice** (`DefaultChance`, `Chance_i`, `ChancePerLvl_i`, `Mode_i`) is `MERCAI_PickSkill`, out of

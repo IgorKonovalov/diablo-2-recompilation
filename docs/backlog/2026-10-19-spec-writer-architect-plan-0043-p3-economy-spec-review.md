@@ -2,12 +2,13 @@
 from: spec-writer
 to: architect
 date: 2026-10-19
-status: open
+status: done
 context:
   - ../plans/0043-items-economy.md#phase-3--spec-itemseconomy
   - ../specs/items/economy.md
-resolution: ""
+resolution: "Reviewed 2026-10-19 (architect): accept with fixes; items/economy reviewed {C 109, I 80, L 12}; rulings and the 7 fixes in the plan 0043 log; wiki owner filed (2026-10-19-architect-spec-writer-plan-0043-economy-wiki)."
 ---
+
 Review `lane/p43s` (from `main` `7aeeafd`): plan 0043 Phase 3. Inputs: the released entry
 [plan-0043-p3-economy-inputs](2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs.md) (closed), items/0011 § 1–8,
 § The writer of `game+0x6A` and § Phase 2, the run record, the P2 review, and part (b) of the open

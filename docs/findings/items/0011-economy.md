@@ -101,8 +101,9 @@ Blind first: § 1–§ 7 were read from the code before the pages below were fet
   `of Replenishing` 5, `of Propogation` 10 (MagicSuffix `mod1param`); `2500/r + 1` frames gives 834, 501, 501, 251.
   The frames-to-seconds factor (25 per second) is not read here.
 - [L] src:maxroll-d2r-items: a broken item needs the full repair cost; otherwise a short purse repairs as far as it
-  goes. **held with refinement** Detail: the partial repair takes all carried and stashed gold and is refused for a
-  broken item (0x005782C3–0x00578325).
+  goes. **held with refinement** Detail: the partial repair takes all carried gold (stat 14, passed to `PayGold`, so the
+  stash is not touched; corrected at the Phase 3 review, 2026-10-19, to agree with § 5) and is refused for a broken
+  item (0x005782C3–0x00578337).
 - [L] src:maxroll-d2r-items: Impale costs quantity instead of durability. **not covered** Detail: a skill function
   (`sub_005DAA40_SkillWeaponWear`, its calcs at `+0x13C`/`+0x140`) rolls a chance and a durability amount, or one
   stack unit; which skill reaches it was not read.
@@ -271,7 +272,9 @@ After the base, for every mode except 2, in this order (0x0062F13C–0x0062F871)
      `dR += m·R·v/1024 + a`; or `((X·v)/1024)·m + a` for each when `P·v > 0xFFFF` and `m ≠ 0`;
    - 1 (param = a skill): the Skills row's `cost mult` (`+0x234`) and `cost add` (`+0x238`) instead, and **`S` over
      4096**: `dS += m·S·v/4096 + a` (large form `((S·v)/4096)·m + a`);
-   - 2, 3 (skill-on-event, charged; param = skill `<<` shift | level): `v` is replaced by the **level** from the
+   - 2, 3 (skill-on-event, charged; param = skill `<<` shift | level, the shift and mask read from the data tables'
+     `+0xC6C` and `+0xC70` at 0x00629044/0x0062904E and in `RechargeCost` at 0x00628D6A; the logger's `ECON` line
+     reads 6 and 63 in all 8 games of run:2026-10-17-economy, noted at the Phase 3 review): `v` is replaced by the **level** from the
      param; Skills `cost mult`/`add`; `S` over 4096 as in Encode 1. The charge count does not enter;
    - 4 (by time): `v = (min + max)/2` of `STAT_ByTimeValue`; ISC `Multiply`/`Add`, all over 1024.
 
@@ -443,7 +446,10 @@ stat175_goldlost = max(loss, 0);
   chance`. Then `D′ = D − 1`: if `D′ ≥ 1`, `D = min(D′, M)` and the replenish timer is armed; else an `armo` item that is
   not broken is broken (`ItemBreak`); a weapon of version ≠ 0 with quantity ≥ 2 loses one quantity and gets `D = M`, one
   with quantity < 2 gets `D = 0` and quantity 0 and the hands are refreshed; a version-0 item gets `D = 0`. Ethereal
-  items take the same path (no ethereal test). (0x00559E38–0x0055A07A)
+  items take the same path (no ethereal test). (0x00559E38–0x0055A07A) Read at the Phase 3 review (2026-10-19): the
+  break branch tests "not `weap`" (the `IsType(45)` result, 0x00559F15) and "not broken", so an `armo` item that is
+  already broken falls through to the version test (0x00559F48); the two version-≠-0 branches then arm the
+  durability timer (`sub_00558530_ItemReplenishDurTimer`) when `ITEMS_GetMaxStack` > 0 (0x0055A031–0x0055A040). [I]
 - [I] **Quantity per use.** `PLAYER_UseAmmo` (a player): for a bow or crossbow the stackable/throwable item in the
   right, else left, hand (the quiver); for any other weapon the weapon itself when stackable or throwable or with stat
   125 `item_throwable`. `ItemConsumeOne`: quantity `max(q − 1, 0)`, the quantity timer armed, durability reset to
@@ -665,8 +671,10 @@ Each raise says what the run separates; what is not listed stays as tagged above
   LCG step of the owner's seed, `roll = low32 mod 100`, loss when below 10 (armour, 914 rolls), 4 (weapon, 90) or 10
   (an expansion throwable, 7); `D′ = D − 1` kept when ≥ 1 (81 losses). (fn:ITEMS_DurabilityLossRoll@0x00559E30,
   run:2026-10-17-economy) **Remainder (`[I]`):** the broken armour (one case, flag `0x100` set) and the weapon taken to 0
-  (one case, no broken flag at exit) are single cases; the indestructible item, the classic throwable, the stack refill
-  and version-0 items were not reached.
+  (one case, no broken flag at exit) are single cases; the classic throwable, the stack refill and version-0 items were
+  not reached. The indestructible item was reached (corrected at the Phase 3 review, 2026-10-19): all 50 rolls
+  without a draw are on two items with stat 152 = 1 (session 4381; the run record's review note), raised `[C]` in
+  items/economy H2.
 - **§ 7, quantity per use raised in part.** [C] `ItemConsumeOne` writes `q − 1` in 130 thrown uses (throwing axe,
   through `PLAYER_UseAmmo`, 142 calls), no draw. **Remainder (`[I]`):** bows, crossbows and quivers; skill wear; charges
   (no `UseCharge` event). (fn:sub_0056C310_ItemConsumeOne@0x0056C310, fn:PLAYER_UseAmmo@0x0056C3F0, run:2026-10-17-economy)

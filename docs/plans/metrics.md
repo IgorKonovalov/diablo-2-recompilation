@@ -130,6 +130,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-18 | `lane/h7a` review | 0038 H7a | architect-review | 99 619 | 38 | 9 | — | gave accept with fixes | — (on the lane row) |
 | 2026-10-19 | `lane/p43h` | 0043 P2 | reverser-harness | 266 102 | 187 | 757 | slot 1 | accept with fixes | 5: overclaim 3, miscount 1, other 1 |
 | 2026-10-19 | `lane/p43h` review | 0043 P2 | architect-review | 140 522 | 71 | 12 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-19 | `lane/p43s` | 0043 P3 | spec-writer | 293 757 | 81 | 23 | no slot | accept with fixes | 7: under-claim 2, overclaim 1, wrong anchor 1, miscount 1, stale cross-reference 1, omission 1 |
+| 2026-10-19 | `lane/p43s` review | 0043 P3 | architect-review | — | — | — | — | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

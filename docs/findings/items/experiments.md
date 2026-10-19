@@ -2462,7 +2462,14 @@ named under *Limits*.
     repair clicks gave `NpcRepair` 2;
   - gold: no Wirt's gold, no Baal's gold, no stash cap; no `GoldPickup` or stash move (pickup and stash UI not
     scripted); Hell monster gold 65;
-  - wear: no indestructible item, no classic throwable, no version-0 item, no stack refill (`q > 1` at `D′ < 1`); the
-    weapon that reached 0 had no broken flag at the roll's exit (one case);
+  - wear: no classic throwable, no version-0 item, no stack refill (`q > 1` at `D′ < 1`); the weapon that reached 0
+    had no broken flag at the roll's exit (one case). Review note (architect, 2026-10-19, plan 0043 Phase 3 review):
+    the lane listed "no indestructible item", but all 50 of the "no durability" rolls are on two indestructible items
+    of session 4381 (stat 152 = 1 in the full cache: a set `xtb`, 12 rolls, first at frame 791; a unique `uit`, 38),
+    whose bases have `nodurability` 0 and `durability` 18 and 86; every roll without stat 152 drew. Counted from the
+    `DL0`/`DL1` pairs of the 33 claim logs (seed unchanged = no draw), so the indestructible clause is met, not short.
+    Also at that review: the stat-term and NPC-step large forms of `Scale` are separated by the run (a copy of
+    `tools/economy.py` with the `0xFFFF` test made false at line 295, or at line 491, reports 2 737 or 1 846 mismatch
+    lines on the same claim logs; the same edit at line 417, `AddTerm`, reports 0, so that form is not separated);
   - no charge use (`UseCharge`), no skill wear; no gamble at clvl 3 (EconDL3 not run);
   - Cain one case (paid; the free path not run).
