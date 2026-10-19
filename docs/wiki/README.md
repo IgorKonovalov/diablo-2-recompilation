@@ -29,10 +29,11 @@ back to it. Then follow the game from the map to the loot, and on to the charact
 | 5 | [Objects](objects.md) | how shrines, chests and other objects are placed and created, what happens when you operate one, and what a chest drops |
 | 6 | [Items](items.md) | one monster drop end to end: treasure class, quality and magic find, uniques and sets, affixes and rare names, base stats, ethereal and sockets |
 | 7 | [Other item paths](items-other-paths.md) | the items that do not come from a monster drop: socketing and runewords, the Horadric Cube, vendors and gambling, quest drops and rewards |
-| 8 | [Characters and hirelings](characters.md) | what a new character starts with, how experience and level-up work, and how hirelings are listed, hired and saved |
-| 9 | [Combat](combat.md) | what happens when one unit hits another: the chance to hit, block and avoid, the damage build, resistances and absorb, crushing blow, open wounds, leech and the life change, and whose seed each draw is on |
-| 10 | [Stats and states](stats-and-states.md) | how a character's final stats add up from items, set bonuses, passives and states, item requirements and the 136-frame refresh, how a timed state is applied, refreshed, refused, replaced and ended, group clears, the regeneration of life, mana and stamina, auras, and shrines and wells |
-| 11 | [Saves](saves.md) | what a `.d2s` save file holds and how an item is stored in it |
+| 8 | [Prices, repair, gold and wear](economy.md) | what an item costs to buy, sell, gamble and repair and why, how gold is paid, capped, dropped and lost on death, and how items wear out in melee and replenish |
+| 9 | [Characters and hirelings](characters.md) | what a new character starts with, how experience and level-up work, and how hirelings are listed, hired and saved |
+| 10 | [Combat](combat.md) | what happens when one unit hits another: the chance to hit, block and avoid, the damage build, resistances and absorb, crushing blow, open wounds, leech and the life change, and whose seed each draw is on |
+| 11 | [Stats and states](stats-and-states.md) | how a character's final stats add up from items, set bonuses, passives and states, item requirements and the 136-frame refresh, how a timed state is applied, refreshed, refused, replaced and ended, group clears, the regeneration of life, mana and stamina, auras, and shrines and wells |
+| 12 | [Saves](saves.md) | what a `.d2s` save file holds and how an item is stored in it |
 | — | [How we know](how-we-know.md) | how the project works: the one binary, the three levels of confidence, runs, bit-exact and emulated reproduction, combat events, two-client games, what "not reachable on stock data" means, the sweep of inferred claims, and what "reviewed" means. Read it any time; it is the only page not based on a spec |
 
 ## Why the pages are cut this way
@@ -44,6 +45,9 @@ were made because of how much material there is:
   uniques and sets, affixes, properties), so [Items](items.md) follows one drop end to end, and
   [Other item paths](items-other-paths.md) covers the four other ways an item is made or changed (sockets and
   runewords, the cube, vendors, quests). The second page links the first for the shared machinery.
+- **The item economy gets its own page.** Prices, repair, gold and wear come from one spec written after the plan
+  ([item economy](../specs/items/economy.md)); [Prices, repair, gold and wear](economy.md) covers it, and
+  [Other item paths](items-other-paths.md) links it from its vendor section.
 - **Characters and hirelings get their own page.** Their specs (new characters and level-up, hirelings) were reviewed
   after the plan was written and fit no other topic. [Saves](saves.md) refers to it for what a new character's save
   holds and how a mercenary is stored.
@@ -55,7 +59,7 @@ Everything else is one page per topic as planned. The string tables and calc for
 
 Only reviewed specs are covered, and every row of the [research map](../specs/README.md) that is reviewed has a page
 here: randomness and seeds, the excel data, string tables and calc formulas, the level generators, monsters, objects,
-item creation and the other item paths, new characters, hirelings, saves, and the first two simulation rows,
+item creation and the other item paths, the [item economy](../specs/items/economy.md) (plan 0043), new characters, hirelings, saves, and the first two simulation rows,
 [combat formulas](../specs/combat/README.md) (plan 0037, closed 2026-10-17) and
 [stats and states](../specs/stats/README.md) (plan 0041, closed 2026-10-17). The room lifecycle
 ([drlg/lifecycle](../specs/drlg/lifecycle.md), reviewed at the close of plan 0040 on 2026-10-17) has no page of its
@@ -68,7 +72,9 @@ The plans still open are listed in the [plan index](../plans/README.md):
   path; its batches are still running, and the specs are re-tagged cluster by cluster;
 - **0039**, backlog sweep 4: complete but for part of the [excel data](../specs/data/excel.md) spec, which goes with
   plan 0038's re-tag;
-- **0042** (quests and travel) and **0043** (item economy): their code readings are reviewed, and their runs are next;
+- **0042** (quests and travel): its code reading is reviewed, and its runs are next;
+- **0043** (item economy): its runs are done and its spec is reviewed; the plan closes at the review of the spec's
+  re-tag from the second run;
 - **0044**, the multiplayer branches: its code reading is reviewed, and the owner has confirmed that the game's
   network port is closed to everything but the machine itself, so its two-client run waits only for two free slots.
 
