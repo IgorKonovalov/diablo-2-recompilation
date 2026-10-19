@@ -2382,7 +2382,9 @@ named under *Limits*.
   entry `qualres` (Qual-Kehk's menu with a dead mercenary, measured: talk, resurrect, hire, cancel) and Tyrael's
   menu order (not exercised).
 - **Sessions** (logs `workspace/logs/<name>.log`, sha256 in `workspace/logs/economy-run-manifest.txt`, itself sha256
-  `ecfe97e0…ab2dbb`, which also hashes the logger, checker, drivers and check outputs):
+  `addf7737…6c5ea1`, which also hashes the logger, checker, drivers and check outputs; every path is relative to the
+  repository root, so `sha256sum -c workspace/logs/economy-run-manifest.txt` runs from there, 52 of 52 OK; the lane's
+  version `ecfe97e0…ab2dbb` mixed two path bases and was normalised at the review):
 
   | name | save (recipe) | difficulty | what was played | status |
   |---|---|---|---|---|
@@ -2423,33 +2425,35 @@ named under *Limits*.
     unidentified 311; staff mods 326; player stat 87 > 0 376; quest group A on 1261 / off 2229, B on 764 / off 169
   repair-all sums 138; NpcRepair 2; ItemRepairAll 3115; PayGold 54
   sales checked (gold given = the lower price) 43 of 46; purchases checked (PayGold = price x count) 14 of 15
-  hires 22 (PayGold); resurrections 14 (10 paid, 4 refused: gold short); resurrect costs 35; Cain 1 (100 for 1)
+  hires 22 (PayGold); resurrections 14 (10 paid, 4 refused: gold short); resurrect costs 34; Cain 1 (100 for 1)
   death losses 20 (total above 500 L 12, below 8)
   gold amounts at creation 545; gold find scalings 433 (gold find 0 207, > 0 226); object piles (ilvl checked) 102
-  wear rolls 1060 (armour chance 10 913, weapon 4 90, throwable 10 7; losses 81; armour broken 1; weapon to 0 1;
-    no durability 50); melee wear events 1411; armour picks 963, all checked against the rolled item (W 18 801,
+  wear rolls 1061 (armour chance 10 914, weapon 4 90, throwable 10 7; losses 81; armour broken 1; weapon to 0 1;
+    no durability 50); melee wear events 1412; armour picks 964, all checked against the rolled item (W 18 802,
     W 10 162, W = 0 11); wear chained draw pairs 1878
   quantity uses 130; replenish ticks 287 (gaps 501 at r 5: 131, 834 at r 3: 76)
-  seeds: PR 26525, RC 138, IR 3115, NR 2, PG 54, UG 97, MC 35, MR 14, CI 1, RP 287, IC 130, UA 142: game and player
+  seeds: PR 26525, RC 138, IR 3115, NR 2, PG 54, UG 97, MC 34 (player seed logged in 20), MR 14, CI 1, RP 287, IC 130, UA 142: game and player
          seed unchanged; NB 15: game seed +2; NS 46: game seed +2 in 41, +4 in 3, unchanged in 2; GG 46: +2 in 3;
-         DA 10: +2; DG 20: +2 in 7, unchanged in 13; DL 1060: player seed +1 in 1010, unchanged in 50 (no
-         durability); CD 1411: player seed +3 in 913, +2 in 50, +1 in 97, unchanged in 351
+         DA 10: +2; DG 20: +2 in 7, unchanged in 13; DL 1061: player seed +1 in 1011, unchanged in 50 (no
+         durability); CD 1412: player seed +3 in 914, +2 in 50, +1 in 97, unchanged in 351
   economy: 0 mismatches
   hirelings (4334): hires 22; 41 MISMATCH lines, every one a "LOGERR economy watch" line of the broken handler, 0 others
   ```
   Gold amounts from monsters (the `GFK` lines, killer known) by difficulty: Normal 228, Nightmare 140, Hell 65.
 - **Phase 1b required cases (backlog `2026-10-17-reverser-reverser-plan-0043-p2-contradicted-cases`):** (1) the armour
   slot weights: `COMBAT_DurabilityLoss`'s `W` (EBX at 0x0057D480) equals the sum of `g_ArmorWearSlots` weights 3/5/4/4/2/2/2
-  over the occupied slots in all 974 events with the slot list logged (W 18 with six slots worn, W 10 with head, body
+  over the occupied slots in all 975 events with the slot list logged (W 18 with six slots worn, W 10 with head, body
   and belt; the lead's 2/3/2/1/1/1 gives 10 and 6), and the slot picked from `RangeB(7)` and `RangeB(W)` is the slot
-  whose item is rolled in 963 of 963 picks; (2)–(5) as before: ethereal sale `S / 4` (68 distinct mode-1 inputs of
+  whose item is rolled in 964 of 964 picks; (2)–(5) as before: ethereal sale `S / 4` (68 distinct mode-1 inputs of
   ethereal items now), the ethereal throwing stack 1 040, the all-resistance `S` over 1024, the computed gamble price.
 - **Question 9 (`NpcStoreRec` readers):** in session 4335 the control watch on Charsi's record `+0x00` fired at
   0x00535EC3 (`NPCSTORE_FindRec`'s compare, the instruction after it) 40 times (the line cap) from 7 distinct call
   chains; the 4-byte watch on `+0x24..+0x27` fired once, at 0x005794A2: `NPC_TradeOpen`'s `cmp byte [edi+0x27], 0`
   (0x0057949E) on the trade opening that set the watch. No read of `+0x24..+0x26` over Charsi's trade, repair,
   repair-all, Gheed, Kashya, Fara and Drognan. Sessions 4401 and 4403 (watch set at a Harrogath trade opening) give
-  the control 40 lines each and no `+0x24..+0x27` read. The single error line of 4311 (logger before the fix) is an
+  the control 40 lines each and no `+0x24..+0x27` read. Review note (architect, 2026-10-19): in all three sessions the
+  control's 40 lines fall within two frames of `SWSET` (4335 frames 1967–1968, 4401 1308–1309, 4403 1989–1990), so the
+  absence of later reads is uncontrolled; only the `+0x27` read is raised. The single error line of 4311 (logger before the fix) is an
   unidentified hit, most likely the same opening's.
 - **Limits** (against the plan's *Done when*):
   - prices: no crafted item (quality 8), ear or body part, Encode 4 stat term, version-0 item, recharge cost case; no

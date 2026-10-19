@@ -99,6 +99,15 @@ quantity and charges in use, and get them back? When it is done:
   Rare branches (an indestructible item, a broken item, Baal's gold, the stash cap) may fall short, named in the record;
   they stay `[I]`.
 
+### Phase 2b — Shortfall remainder (added at the Phase 2 review, 2026-10-19)
+- **Owner skill:** reverser (harness, **1 slot**)
+- **What:** the stock-reachable items of Phase 2's *Done when* that the run missed and that are not rare branches,
+  listed in backlog [2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder](../backlog/2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder.md):
+  crafted prices, the Hell repair price, the gamble at clvl 3, partial/ethereal/broken repairs, the quest repair (or
+  its absence shown), Wirt's gold, question 9 with a control live to the session's end, the two unchanged-seed sales.
+- **Done when:** each listed item reproduces with 0 mismatches on the same manifest, or is named again as a shortfall
+  with its reason. Phase 3 does not wait for it; the spec is updated when it lands.
+
 ### Phase 3 — Spec: items/economy
 - **Owner skill:** spec-writer
 - **What:** write `docs/specs/items/economy.md`; replace the named-only text of items/vendors § I, hirelings and
@@ -422,7 +431,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   quest groups A and B on and off, set, rare, socketed, charged, ethereal, stacks, `item_reducedprices`), 138 repair-all
   sums, 54 `PayGold`, 43 sales and 14 purchases checked, 22 hires, 14 resurrections (10 paid, 4 refused), 20 death
   losses, 545 gold amounts at creation and 433 gold-find scalings (Normal 228, Nightmare 140, Hell 65), 102 object
-  piles, 1 060 durability rolls and 1 411 melee wear events (963 armour picks, 1 878 chained draw pairs), 130 quantity
+  piles, 1 061 durability rolls and 1 412 melee wear events (964 armour picks, 1 878 chained draw pairs), 130 quantity
   uses, 287 replenish ticks; the five Phase 1b required cases (case 1, the slot weights, settled). Question 9 answered
   with a control (one read, `NPC_TradeOpen`'s byte `+0x27`). New reading: a refused resurrection pays nothing and
   revives nothing (0x00579CAE). **Shortfalls** (named in the record, left `[I]`): quest, partial, ethereal and broken
@@ -433,3 +442,61 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   [2026-10-19-reverser-architect-plan-0043-p2-review](../backlog/2026-10-19-reverser-architect-plan-0043-p2-review.md);
   spec-writer entry [2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs](../backlog/2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs.md);
   the required-cases entry closed.
+- **2026-10-19 — Phase 2 review (architect, `lane/p43h` at `50a0eaf`, `main` `02d790d` merged): accept with fixes.**
+  Read: [items/0011 § Phase 2](../findings/items/0011-economy.md#phase-2-runtime-results-run2026-10-17-economy) and its
+  open questions, the [run record](../findings/items/experiments.md#run2026-10-17-economy), the manifest, the review
+  request, the spec-writer entry and the tool diffs (`tools/economy.py`, `economy_sessions.py`, `gdb/economy.py`,
+  `d2pilot.py`). Re-run: `tools/economy.py check` over the 33 claim logs gives a byte-identical `check-run.txt`
+  (0 mismatches); `tools/test_economy.py` 9 tests OK. Anchors checked in the pinned `Game.exe` with r2:
+  0x00579C9E–0x00579D5D (`MERC_ResurrectCost`, `PayGold`, the test at 0x00579CAE, the revive only on the non-zero
+  path), 0x00576D90–0x00576DDC (`PayGold` refuses when gold + stash < amount, signed), 0x00732B90 (seven pairs: slots
+  1/3/4/5/8/9/10, weights 3/5/4/4/2/2/2, count 7 at 0x00732BC8), 0x0057D41A–0x0057D4B4 (weights summed over slots whose
+  item passes the type test, `RangeB(7)` then `RangeB(W)` on the unit's `+0x20` seed, the cyclic pick),
+  0x0057949E–0x005794B3 (`cmp byte [edi+0x27]`, the clear at `[edi+0x20+7]`, the call 0x00536D10).
+  - **Ruling (b), the resurrection refinement: rests on the code, not fitted.** The branch is direct (0x00579CAE
+    `test eax, eax; jne 0x00579CC8`, else the common exit), and the four refused cases are told by the logged
+    `PayGold` exit `v = 0` in sessions 4352, 4354, 4359 and 4360, independent of the checker's `gold + stash < cost`
+    test, which is `PayGold`'s own condition (0x00576DB3). Scoped: "pays nothing" is `[C]`; "revives nothing" is `[I]`,
+    since the logger does not record the mercenary after the call (fix 3).
+  - **Ruling (c), question 9 and the pre-4335 watch data.** No claim rests on sessions 4311–4334's watch hits: the
+    question-9 statements cite 4335, 4401 and 4403 only; the hire check on 4334 counts its 41 `LOGERR` lines as the
+    broken handler's and rests on no watch line. The `+0x27` read at 0x0057949E is `[C]` (the watch hit at 0x005794A2,
+    the next instruction, and the code). The absence of other reads is **not** controlled: the control's 40-line cap was
+    reached within two frames of the watch being set in all three sessions, so nothing shows the watchpoint armed during
+    the later repair, repair-all and other NPCs' windows; the raise is "in part" and the absence an observation (fix 5),
+    with a rerun in P2b.
+  - **Required case 1, the slot weights: verified.** The table holds 3/5/4/4/2/2/2 and the logged `W` 18 (left hand
+    empty: 22 − 4) and 10 (head 3 + body 5 + belt 2) are separated from the lead's 2/3/2/1/1/1 (10 and 6); 964 of 964
+    picks name the slot whose item is then rolled. A wrong table could not match by chance.
+  - **Seed movement: accepted with one scoping.** The step counts are the kept output's. The three `+4` sales each hold
+    one `DropGoldAmount` beside the copy; the 2 unchanged sales (4311 line 29206, 4332 line 5963) hold none and are not
+    explained, so "sell draws only through its item creations" is `[I]`; buy (15 of 15 `+2`) and death (`+2` exactly in
+    the 7 that dropped a pile) stand `[C]` (fix 4). The wear kinds' `ps` steps (3 = two picks and a roll, 2 = picks and an
+    item without durability, 1 = the attacker's weapon roll) agree with the code read above.
+  - **Ruling (a), the shortfalls: Phase 3 may start; a Phase 2b is filed.** The run clears every numeric floor of the
+    *Done when* by a wide margin, and the single-case branches (broken armour, weapon to 0, Cain) are rightly `[I]`
+    (one case decides nothing here). But three named items are not rare branches and the *Done when* lists them: a
+    quest repair (items/0011 names no such path, so P2b first shows whether 1.14d has one), Wirt's gold, and "every
+    item quality" (crafted). With the cheap stock cases (the Hell repair price, the clvl 3 gamble with the save already
+    built, the partial, ethereal and broken repairs) and the two follow-ups above they form Phase 2b (one slot). None
+    blocks the spec: each stays `[I]` and goes under the spec's *Open questions*. Charges, skill wear, ears, Encode 4,
+    the recharge cost, version-0 items, Baal's gold, the caps, pickup and the stash move are accepted as shortfalls.
+  - **Ruling (e), gold per difficulty: accepted.** Hell 65 of 433 covers both gold-find states (4393/4395 with, 4397
+    without); the scaling has no difficulty term to separate.
+  - **Fixes (made here):** (1) *miscount:* eight counts in items/0011, the record and this log were one off the kept
+    `check-run.txt` (armour picks 963 → 964, W 18 801 → 802, events with the slot list 974 → 975, wear rolls 1 060 →
+    1 061, armour rolls 913 → 914, melee wear events 1 411 → 1 412, DL `+1` 1 010 → 1 011, resurrect-cost calls 35 → 34,
+    the player's seed logged in 20 of them); corrected to the output. (2) *other:* the manifest mixed two path bases
+    (46 lines relative to `workspace/logs/`, 6 tool lines to the repository root), so `sha256sum -c` failed from either;
+    normalised to the root, 52 of 52 OK, new hash `addf7737…` in the record. (3) *overclaim:* the refused resurrection's
+    "revives nothing" scoped to `[I]`. (4) *overclaim:* sell's seed scoped to `[I]`, the two unexplained sales added to
+    items/0011's open questions. (5) *overclaim:* question 9 raised in part; the absence uncontrolled; the record carries
+    the review note and the open question the rerun.
+  - **Ledger:** 5 fixes: overclaim 3, miscount 1, other 1. Promoted in the reverser's review-fixes: rule 2 gains "copy a
+    run's counts from the kept output" (fix 1), rule 4 gains "an absence counts only with a control live over the whole
+    window" (fixes 4–5), rule 6's one-path-base manifest recurred (fix 2, after H7a).
+  - **Backlog:** review request closed; the spec-writer entry
+    [2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs](../backlog/2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs.md)
+    released with the three scopings; filed
+    [2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder](../backlog/2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder.md).
+  - **Next:** merge `lane/p43h`; Phase 3 (spec-writer) from the released entry; Phase 2b when harness slot 1 frees.

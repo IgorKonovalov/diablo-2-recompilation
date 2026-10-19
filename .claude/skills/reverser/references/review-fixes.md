@@ -9,18 +9,23 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    give. Seen: S1e rows 51/64 ([0038](../../../../docs/plans/0038-inferred-claims-sweep.md), 2026-10-17); `0x400` "good/evil"
    ([0040](../../../../docs/plans/done/0040-drlg-room-lifecycle.md) P1 review).
 2. **Recount every count from the binary with a kept command**, never from memory or a partial scan:
-   writers, call sites, instructions, items. Seen: bit-17 writers 5 → 21
-   ([0039](../../../../docs/plans/0039-backlog-sweep-4.md) P1b review); S4b row 17 short by 9, "7" instructions for 8 (0038).
+   writers, call sites, instructions, items. Copy a run's counts from the kept, hashed check output, never from an
+   earlier check. Seen: bit-17 writers 5 → 21
+   ([0039](../../../../docs/plans/0039-backlog-sweep-4.md) P1b review); S4b row 17 short by 9, "7" instructions for 8 (0038);
+   eight wear and resurrection counts one off `check-run.txt` ([0043](../../../../docs/plans/0043-items-economy.md) P2 review).
 3. **Take totals against `main` after merging it**, not against the totals your batch started from.
    Seen: S2c, S3b and S1a reviews (0038), each recomputed.
 4. **"Never", "only", "no X": say what the run separates.** If one case carries both readings (Andariel has
-   flag `0x08` and `boss`), that half stays `[I]`. Seen: resume-lane review
-   ([0037](../../../../docs/plans/done/0037-combat-formulas.md)), re-scoped at the `lane/p37t` review.
+   flag `0x08` and `boss`), that half stays `[I]`. An observed absence counts only while a control is shown live over
+   the whole window. Seen: resume-lane review
+   ([0037](../../../../docs/plans/done/0037-combat-formulas.md)), re-scoped at the `lane/p37t` review; "sell draws only
+   through item creations" with 2 unexplained sales, and question 9's absence after a control saturated in two frames
+   ([0043](../../../../docs/plans/0043-items-economy.md) P2 review).
 5. **An existing reviewed symbol name wins.** Merge `main` and grep `re/symbols.csv` for every address
    before you name it; rename your side. Seen: six addresses named twice, `lane/p41r`
    ([0041](../../../../docs/plans/done/0041-stats-and-states.md) P1 review).
 6. **Keep the tool behind every claim**: the script in `tools/` (seeded, if it generates cases), its
-   output hashed, logs under `workspace/logs/` with a manifest line, one path base per manifest so `sha256sum -c` passes from one directory (H7a review, 0038), and every tool revision behind a cited output named. Seen: the unseeded `eval` case
+   output hashed, logs under `workspace/logs/` with a manifest line, one path base per manifest so `sha256sum -c` passes from one directory (H7a review, 0038; again 0043 P2 review), and every tool revision behind a cited output named. Seen: the unseeded `eval` case
    writer (S1e, 0038); the *Fleshripper* log left in session scratch (resume lane, 0037). An aborted session's
    partial log is kept as a development log, not deleted (0040 P2 review).
 7. **A conclusion needs an address, `fn:` or `run:` anchor**, not a link to another finding (gate W1).
