@@ -1214,6 +1214,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005AD730,func,MISSILE_ApplyDamage,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005ADF10,func,MISSILE_HitUnit,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005AEDA0,func,sub_005AEDA0_MissileSpawnOwnedMonster,,I,items/quality,docs/findings/items/0002-quality-roll.md
+0x005B11F0,func,sub_005B11F0_UModTeleportTry,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x005B13E0,func,sub_005B13E0_MonSpcWalkCheck,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005B15D0,func,sub_005B15D0_MonAiEntryGet,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005B1990,func,sub_005B1990_TargetListAdd,,I,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
@@ -1469,6 +1470,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005C5D00,func,sub_005C5D00_SkillBonePrisonDo,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x005C9800,func,sub_005C9800_SorSkillStaticMin,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005CA360,func,sub_005CA360_SkillTeleportDo,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
+0x005CCC80,func,sub_005CCC80_SkillMonTeleportDo,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x005CEDC0,func,AURA_ApplyToTarget,,C,stats/states,docs/findings/stats/0002-states.md
 0x005CF010,func,sub_005CF010_PalAuraDo,,I,stats/states,docs/findings/stats/0002-states.md
 0x005CF3A0,func,sub_005CF3A0_AuraHitDo,,I,stats/states,docs/findings/stats/0002-states.md
@@ -1484,12 +1486,17 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005D8780,func,sub_005D8780_CorpseFindItem,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005D9C80,func,sub_005D9C80_MonSkillAttackDo,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005DAA40,func,sub_005DAA40_SkillWeaponWear,,I,items/economy,docs/findings/items/0011-economy.md
+0x005DD220,func,sub_005DD220_AiCtlFlagTest,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
+0x005DD250,func,sub_005DD250_AiCtlTeleportFlagSet,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x005DDFC0,func,sub_005DDFC0_MonAiSetMode,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005DE190,func,sub_005DE190_MonAiPathOverride,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
+0x005DEAD0,func,sub_005DEAD0_MonAiUseSkill,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x005E0070,func,sub_005E0070_UberTristramDrop,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005E4D30,func,MERCAI_PickSkill,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
+0x005F72D0,func,sub_005F72D0_AiZakarumPriest,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x005FC860,func,sub_005FC860_BaalCloneSpawn,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x005FD350,func,sub_005FD350_SpawnClassCellTest,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
+0x005FD470,func,sub_005FD470_MonSkillTargetOk,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x005FDF80,func,sub_005FDF80_FileSize,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x005FE610,func,sub_005FE610_GfxCelPath,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x00600790,func,DT1_LoadCached,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md

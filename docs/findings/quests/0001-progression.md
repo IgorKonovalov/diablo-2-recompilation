@@ -4,8 +4,8 @@
 > **Question:** for each quest, which server event sets, clears or reads each bit of its record, per difficulty; which
 > game-wide quest flags exist and what reads them; which events draw, on which seed; and which creation code reads the
 > quest state?
-> **Date:** 2026-10-17   **Plan:** 0042 (Phase 1 and 1b, static)   **Status:** open (Phase 2 runs the per-event
-> reproduction)
+> **Date:** 2026-10-17   **Plan:** 0042 (Phase 1 and 1b, static; Phase 2 run:2026-10-17-quests, § 15)   **Status:**
+> open (Phase 2 part 1 reviewed 2026-10-17, accept with fixes; part 2 pending)
 
 Static reading of the pinned `Game.exe`: Ghidra's decompile of the quest code (`[0x00543400, 0x00548200)`,
 `[0x00586E00, 0x005A0000)`, `[0x005B3000, 0x005BE200)`) on the lane's copy, objdump for the instruction-level reads;
@@ -28,11 +28,12 @@ record (§ 3). The quest drops, rewards and the quest seed's item draws are [ite
   `0x31`), first join (e13), later join (e14); e1, e6, e7, e12 are never raised. Object operates and object event 7
   reach quest code through `g_ObjOperateFns` and `QUESTS_ObjectEvent` (items/0010 § 9), and quest timers run every 20th
   frame. (fn:QUESTS_DispatchEvent@0x005438E0, fn:QUESTS_DispatchUnitEvent@0x005439A0, § 2, § 5)
-- [I] **The game creator's history.** At the first join, every quest the joining player has finished (bit 0 or 15) is
+- [C] **The game creator's history.** (run:2026-10-17-quests: 11 joins, § 15) At the first join, every quest the joining player has finished (bit 0 or 15) is
   deactivated for the whole game and marked in the game record (word bit 15). The dispatch then skips it only for
   unforced events, which are the item and monster hook events (e4, e5, and e8 outside the forced superunique and boss
   list); the dispatched events e0, e2, e3, e10 and e11 are all raised forced, so its handlers still run and each tests
-  the quest's own state. Later players never change this. (fn:sub_00546270_QuestsPlayerJoin@0x00546270,
+  the quest's own state, which not every handler does: quest 11's NPC-331 message handler writes word 12 while the
+  quest is off (§ 15). Later players never change this. (fn:sub_00546270_QuestsPlayerJoin@0x00546270,
   fn:QUESTS_DispatchEvent@0x005438E0 0x00543934–0x0054393E, § 2, § 3)
 - [I] **One bit grammar for all quests.** Bit 0 done, bit 1 done-in-a-game-reward-pending, 13 done in this game, 14
   failed in this game, 15 reward pending from an earlier game, 2–11 log steps (cleared by `0x0065C3E0` at the reward),
@@ -111,7 +112,8 @@ below were fetched and compared afterwards.
   alive on the summit; credit needs level 20 / 40 / 60; the experience is capped at one level. **held with refinement**
   Detail: a portal on level 120 and an empty summit reset the fight; the **warps out of level 120 (to 118 and 128) are
   refused** while the quest is active and not done in this game (`0x0058D090`), so only a portal or death leaves.
-  The level and cap are as stated (§ 10, word 39). The refused warp to 118 is a Phase 2 case.
+  The level and cap are as stated (§ 10, word 39). Phase 2 (§ 15) found the summit door at the arrival point from
+  118 refusing for every creator; the level-120 warp tiles were not taken (a part-2 case).
 - [L] src:arreat-summit-quest-acts: Rescue on Mount Arreat reports "unable to complete quest" once failed. **not covered**
   Detail: bit 14 is set for the other players (§ 10, word 36); the message text is presentation.
 
@@ -267,7 +269,8 @@ QuestsPlayerJoin(game, player, rejoin) (0x00546270)                             
   of a `QUESTS_DispatchEvent` event pushes force 1 (`0x00543BA2` e3, `0x00543C96` e10, `0x00543D2A` e0, `0x00543D5C`
   e2, `0x005443FA` e11, `0x005457BF` the re-dispatched e0). So a deactivated quest's talk, message, level-change and
   leave handlers still run, and what keeps them inert is each handler's own test of `+0x09`/`+0x0A` or of its state
-  bytes, per quest (§ 7–§ 10). This is how a quest boss's script stays inactive in a game made by a player who has
+  bytes, per quest (§ 7–§ 10); quest 11's e11 handler `0x0059AF50` has none and writes word 12 bit 7 or 8 with the
+  quest off (§ 15, run:2026-10-17-quests). This is how a quest boss's script stays inactive in a game made by a player who has
   done it, while forced death events (above) still reach it. (0x005462C0–0x0054634A, 0x00544410,
   fn:QUESTS_DispatchEvent@0x005438E0 0x00543934–0x0054393E)
 - [I] The first-join callbacks (`+0xD4`) copy the creator's step bits into the quest's state bytes; the later-join ones
@@ -1739,11 +1742,14 @@ open, `+0x4C` altar mode, `+0x50` altar id, `+0x54` live players on 120, `+0x58.
   despawns the Ancients (`0x0058C000`); the death count only advances with `+0x0C` = 0 and `+0x11`. `0x0058D560`
   (from 0x00535141..0x0053519F) resets the same way when no living player (mode ∉ {0, 17}) is left on 120.
 - [I] **Gates:** the Worldstone Keep door (OperateFn 66 `0x0058D400`, object 547) refuses a player with bits 0 and 1
-  clear, and refuses everyone while the quest is active and not done in this game; the summit door (OperateFn 71
-  `0x0058D6A0`, object 564) the same. `0x00545B80(from, to)` is called by `fn:sub_005550B0_WarpExitPos@0x005550B0` (0x0055519B) for a warp whose
+  clear, and refuses everyone while the quest is active and not done in this game. The summit door (OperateFn 71
+  `0x0058D6A0`, object 564) is not the same: it reads only quest 35's private "done in this game" byte (`+0x18`
+  → byte 0) and neither `+0x09` nor the operator's record, and refuses (message 0x13) while that byte is 0 (§ 15,
+  run:2026-10-17-quests, 0x0058D6DC–0x0058D711). `0x00545B80(from, to)` is called by `fn:sub_005550B0_WarpExitPos@0x005550B0` (0x0055519B) for a warp whose
   target level is 73, 100, 118, 128 or 132, and a non-zero return refuses the warp; from 120 to 118 or 128 it
-  returns `0x0058D090`, true while quest 35 is active and not done in this game. So both warps out of the summit are
-  refused until the Ancients die (a P2 check: the 118 side is unexpected). Each kill also creates
+  returns `0x0058D090`, true while quest 35 is active (`+0x09`, `0x0058D09A`) and not done in this game. So both warps
+  out of the summit are refused until the Ancients die in this game, unless the creator's history switched quest 35
+  off (then `0x0058D090` returns 0). Phase 2 reached the door, never these warps (§ 15). Each kill also creates
   object 561 (`0x231`) at the killer and a skill/missile effect (`0x0058C8D0`, `0x0059FA30`, oracle).
 - [I] **Draws:** none in the quest's code. Oracles: the Ancients' `PresetMonSpawn`, `SUnitCreate`, `0x0059FA30`.
 
@@ -2091,6 +2097,36 @@ The names given to the quest functions read in § 7–§ 10 (all inferred from t
 |---|---|---|---|---|---|
 | `0x00538680` | `sub_00538680_PlayerProgressionRaise` | `0x00544E80` | `sub_00544E80_A3Q4_FigurineArmHook` | `0x00544F20` | `sub_00544F20_A3Q4_FigurineSaveHook` |
 | `0x00545240` | `QUESTS_PlayerListRemove` | `0x00545290` | `QUESTS_PlayerListHas` |  |  |
+
+### 15. Phase 2 (run:2026-10-17-quests)
+
+The run ([experiments](experiments.md#run2026-10-17-quests)) logged every `QUESTS_DispatchEvent` and
+`QUESTS_DispatchUnitEvent` at entry and exit (the block, the quest objects in list order with `+0x08`–`+0x0B` and
+`+0xE0`, the ids whose slot for the event is set, the three seeds), every callback about to run, the join with the
+joiner's record and the game record before and after, every quest-bit write (plan 0032's `QS`/`QC`), packet `0x58`
+and the summit door; `tools/quests.py check` predicts them with **0 mismatches** (the travel half is
+[quests/0002 § 12](0002-travel.md#12-phase-2-run2026-10-17-quests)).
+
+| Claim (section) | Run | Result |
+|---|---|---|
+| dispatch order: object 40 down to row 0, slot set, `+0x0A` = 1 unless forced, the act filter (§ 1, § 2) | 503 dispatches (e0 103, e2 101, e3 235, e11 64), all forced; the act filter on in 268, excluding a slotted quest of another act in each; 8203 callbacks | **raised in part** `[C]` for the order, the slot test, the act filter and "forced runs a quest whatever its `+0x0A`"; the unforced half (`+0x0A` = 0 skips: e4, e5, e8) stays `[I]`, no unforced dispatch being logged (run:2026-10-17-quests, fn:QUESTS_DispatchEvent@0x005438E0) |
+| every `QUESTS_DispatchEvent` raiser of e0, e2, e3, e11 pushes force 1 (§ 3, review (b)) | 4631 callbacks of deactivated quests ran (e0 352, e2 242, e3 3781, e11 256) | **raised** `[C]` (run:2026-10-17-quests, fn:QUESTS_DispatchEvent@0x005438E0) |
+| the join's pass: each flag-0 row whose word has bit 0 or 15 in the first joiner's record is deactivated and its game-record word gets bit 15, in descriptor order (§ 3) | 11 joins: 176 quests switched off (26 for each `quests: all` creator: `QuestBookLost` twice, `TravelWpOne` twice, `TravelWpFive`; 24 for `QuestSummit`, 16 for `ActFourDurance`, 6 for `ActTwoWarriv`), 0 for the fresh creators (`QuestPortalC` twice, classic; `QuestFresh`) | **raised** `[C]` for the branch the run reached: a first join (ready 0) with `rejoin` 0 and byte `0x0073150C` set, 11 of 11; the other branches (a rejoin, the byte clear, a later join) stay `[I]`. No first-join callback switched off another quest in these joins (run:2026-10-17-quests, fn:sub_00546270_QuestsPlayerJoin@0x00546270) |
+| a deactivated quest's forced handlers stay inert through their own tests (§ 3) | 4631 forced callbacks of deactivated quests, in 334 dispatches | **corrected in part**: in 290 of the 334 dispatches they wrote nothing, but quest 11's e11 handler `0x0059AF50` tests only the NPC class (331) and the message and writes word 12 bit 8 (messages 0xBB–0xBD; bit 7 for 0xBA) with the quest switched off: 44 writes, one per Kaelan talk, in Normal and Nightmare (`0x0059AF84`–`0x0059AFC3`). The other handlers' "inert" stays per handler: `[C]` for the e0, e2, e3 and e11 handlers the run reached, `[I]` for the rest (run:2026-10-17-quests, 0x0059AF50) |
+| NPC 331 talk with the palace open: one quest-seed step (§ 8, § 11) | 44 talks, 42 chained pairs (Normal and Nightmare, 21 each) | **raised** `[C]`: one step per talk, the exit seed of one talk the entry of the next (nothing else drew on the quest seed in between); quest 11's `+0x0E` was 1 in every talk (opened by the join, w11 bit 0) (run:2026-10-17-quests, 0x0059B229) |
+| NPC 266 and 377 talks step the player's unit seed (§ 7, § 8, § 11) | none | **not reached**: `navi` (266) is placed only as the Blood Moor's preset centre monster ([drlg/preset](../../specs/drlg/preset.md) step note 1: `Def` 4–7, file index 3), absent from the Blood Moor of the save the run used; no unit of class 377 was ever in a server unit list (Lut Gholein walked in three difficulties). Stays `[I]`, shortfall (run:2026-10-17-quests, 0x00596B23) |
+| packet `0x58` sets bit 12 of the word, for any word < 42 (§ 4) | 53 packets (the quest log opened in two sessions: words 1–6, 10–14, 17–22, 25–27, 35–40) | **raised** `[C]` for the words the client sends; word 33 is never sent by the stock client (its quest log has no entry for it), so "packet 0x58 on word 33" is not reachable by play: shortfall, stays `[I]` (run:2026-10-17-quests, fn:sub_0054C9C0_Pkt58QuestSeen@0x0054C9C0) |
+| the summit door refuses while quest 35 is active and not done in this game (§ 10) | 73 operates: 37 by `QuestSummit` (word 39 clear, quest 35 active), 36 by `TravelWpFive` (every quest done, quest 35 switched off by the join) | **raised** `[C]` for the refusal (private byte 0: message 0x13, the player stays on 120); the door reads no `+0x09` (0x0058D6A0–0x0058D725), so it refused the same way for both creators: its private byte is 0 in a new game whatever the creator did, and ruling (f)'s "allowed" half does not hold for the door (corrected, `[C]`; 0x0058D6DC–0x0058D711). The door stands at the arrival point from 118; level 120's own warp tiles (the WRP lines' rows 82 and 83) were logged but never taken, so `QUESTS_WarpGate`'s 120 → 118/128 branch (`0x0058D090`, which does read `+0x09` at `0x0058D09A`) never ran and its "allowed when switched off" half stays `[I]` (run:2026-10-17-quests, fn:sub_0058D6A0_A5Q5_SummitDoorOperate@0x0058D6A0) |
+| the Compelling Orb counts only with `qf2` (§ 9, review (a)) | none | **not reached**: the scripted walk to the Kurast Docks waypoint failed (x-orb); stays `[I]` (run:2026-10-17-quests, fn:sub_005BB980_A3Q5_CompellingOrbOperate@0x005BB980) |
+| e9, e10, e13/e14 (the double join of a stub character), timers, e4/e5/e8 hook events | not targeted | stay `[I]` (shortfalls below) (run:2026-10-17-quests, fn:QUESTS_DispatchEvent@0x005438E0) |
+
+**Shortfalls (named).** Question 3's per-quest pass (no quest was completed: the run's quest events are talks, the
+join, level changes, the quest log and two objects), so the per-quest bit tables (§ 7–§ 10) stay `[I]`; the ten
+Nightmare/Hell quests and the classic Acts I–IV quests likewise; the `Save and Exit` word comparison; timers (question
+6: not logged); NPC 266/377 (above); the double join of a stub character (no stub save was built); the creation-path
+readers of question 7 other than the summit door (Hratli's InitFns, InitFn 52, the Tristram portal, Diablo's `+0x13`,
+the warp gates into 73, 100, 132); word 33. Party credit and the portal party gate are two-client cases: plan 0044,
+out of scope here. (run:2026-10-17-quests)
 
 ## Data touched
 

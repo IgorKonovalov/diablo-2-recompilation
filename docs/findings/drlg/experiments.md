@@ -1518,3 +1518,111 @@
   index 1. (2) The Act1B widened test never rejects where the plain test passed. (3) Act V's seam pairs always share an
   edge. Each outcome depends only on the difficulty and the entries' first choices, and every combination is in the
   scan.
+
+## run:2026-10-17-h7a-lifecycle
+
+- **Question:** (plan 0038 Phase 2, batch H7a, [inventory § 5](../../plans/0038-inventory/README.md#5-batch-list)) The
+  plan 0040 Phase 2 shortfalls of [drlg/0009 § 11](0009-room-lifecycle.md#11-phase-2-run2026-10-17-lifecycle): (1)
+  can a stock layout give a chaser in the Blood Moor a planned route through a Rogue Encampment room (recipe (b),
+  offline geometry first), and can an AI teleport target lie in a town room (recipe (c), static); (2) is a monster
+  record with flag `0x400` dropped at the restore, as § 6 reads?
+- **Setup:** the ADR-0003 harness on **slot 2** (display `:9`, prefix `workspace/wineprefix-2`), agent-driven play
+  (no owner play). Character `ObjNova` (save `d54d5dc3…`, the run:2026-10-17-lifecycle bytes, from
+  `workspace/runtime/p40h-chars`); the slot's empty saves directory set aside as tag `h7a`, restored and set aside
+  again before each launch, the save installed with `d2run.py --install h7a`, restored after the last session.
+  - **Logger** `tools/gdb/rooms.gdb` (`726e3453…`, unchanged): `pilot.py` (`1ad48a4c…`) and `rooms.py` (`45da126c…`).
+  - **Checker** `tools/rooms.py check` (`1971372c…`, the `lane/rbs3` revision with the save-test census).
+  - **Driver** `tools/rooms_sessions.py` (`3393a73c…`), new session kind `rec400`: the `cycle` kind of
+    run:2026-10-17-lifecycle (waypoint 5,2 to the Frigid Highlands, cycles of `explore` and a return to the arrival
+    point) plus, after every return, a visit to the room of each saved monster record with flag `0x400` that no
+    restore has met yet (read back from the log's `MREC` and `RL` lines), then another return.
+  - **Readers** `tools/sweep_h7a.py` (`d61d3ef7…`, new): `skills` (the Skills and MonStats rows of Teleport and
+    MonTeleport, the MonAI rows), `rec400` (every `0x400` record and the restore that meets it).
+  - **Geometry** `tools/townfollow_geom.py` (`86e98cc4…` for the `scan` run, new; the `summary` mode was added afterwards,
+    `eec3d7c6…`, with the scan code unchanged; offline, reads `CB` lines of kept logs, no session):
+    per act and layout, the town's free cells under mask `0x3C01`, its openings onto other levels, and for every pair
+    of outside cells next to an opening within the 100-subtile window, the shortest distance with and without town
+    cells (4- and 8-connected). Input list `workspace/logs/townfollow-geom-h7a-logs.txt` (568 logs with `CB` lines of a
+    town).
+- **Procedure:** `python3 -I tools/rooms_sessions.py run --slot 2 --tag h7a --saves workspace/runtime/p40h-chars --run
+  h7a <session>` (each launch is `d2run.py --slot 2 --seed N --gdb tools/gdb/rooms.gdb --steps
+  tools/gdb/enter-hell.steps --after 2400 --install h7a …`; the game starts in the Act IV town; the Xwayland window
+  kept on `special:d2harness`; `slots.py stop 2` after each session). Checks, each under `MemoryMax=4G`:
+  `python3 -I tools/rooms.py check workspace/logs/rooms/h7a-*.log` (per log and all three together),
+  `python3 -I tools/sweep_h7a.py rec400 <the three logs>`, `python3 -I tools/townfollow_geom.py scan --list
+  workspace/logs/townfollow-geom-h7a-logs.txt`.
+
+  | Session | Seed | Difficulty | Waypoint, levels | Cycles × hops | Releases | `0x400` records / restores |
+  |---|---|---|---|---|---|---|
+  | h-barb | 4031 | Hell | 5,2: Frigid Highlands 111 | 4 × 45 | 101 | 1 / 1 |
+  | h-barb2 | 4033 | Hell | 5,2: 111, 110 | 4 × 45 | 265 | 0 / 0 |
+  | h-barb3 | 4034 | Hell | 5,2: 111, 110 | 6 × 50 | 406 | 3 / 3 |
+
+- **Observed** (`rooms.py check` on the three logs, trimmed; full output `workspace/logs/rooms-h7a-check.txt`, per log
+  `workspace/logs/rooms/h7a-<session>.check.txt`: h-barb 0 / 96 414, h-barb2 0 / 209 891, h-barb3 4 / 369 544):
+  ```
+  releases 772 (711 at the first eligible pass, 120..131 frames); release tests 6 783; server tiles releases 772
+  save rule: monster records 1 689, unit records 1 559 exactly when saved; item records 409
+  monster records restored 1 063: exact 828, minion 179, special 52, dropped (0x400) 4, no creation
+  items restored 253 in 766 restores, list order, expired ones dropped: item records dropped (expired) 5
+  unit records restored 619; wanderer gate draws 3 470 (passes 1)
+  save test census, SaveMonsters 0 levels (level, +0xC4 bit 0x2000000, outcome): {(103, 1, 'saved'): 12}
+  mismatch examples:
+    monster record: +0xC4, +0xC8: h7a-h-barb3.log:78168 rec 300200e/6020000 unit 300000e/6020000
+    monster record: +0xC4, +0xC8: h7a-h-barb3.log:83390 rec 8200e/6020000 unit 8000e/6020000
+    monster record: +0xC4, +0xC8: h7a-h-barb3.log:83424 rec 8200e/6020000 unit 8000e/6020000
+    monster record: +0xC4, +0xC8: h7a-h-barb3.log:131674 rec 300200e/6000000 unit 300000e/6000000
+  SUMMARY mismatches=4 checks=675849
+  ```
+  `sweep_h7a.py rec400`:
+  ```
+  R h7a-h-barb.log:17566 f=5076 id=123 class=522 flags=0x540 align=2 room=3560,4880 mode=2 d0=8
+  T h7a-h-barb.log:30087 f=6876 id=123 flags=0x540 lid=111 dropped
+  R h7a-h-barb3.log:36587 f=6972 id=341 class=522 flags=0x540 align=2 room=4080,5160 mode=2 d0=8
+  R h7a-h-barb3.log:38870 f=7152 id=353 class=522 flags=0x540 align=2 room=4120,5120 mode=2 d0=8
+  R h7a-h-barb3.log:38988 f=7236 id=352 class=522 flags=0x540 align=2 room=4080,5080 mode=2 d0=8
+  T h7a-h-barb3.log:56185 f=10268 id=341 flags=0x540 lid=110 dropped
+  T h7a-h-barb3.log:56227 f=10268 id=352 flags=0x540 lid=110 dropped
+  T h7a-h-barb3.log:57247 f=10475 id=353 flags=0x540 lid=110 dropped
+  ```
+  The game seed (`gs`) of the line after each of the 4 drops equals the dropped record's `MR0` seed. The 4 records'
+  saved `+0xC8` (record `+0x14`) is `0x6000000` or `0x6020000`, without the kept bit `0x100`.
+
+  `townfollow_geom.py scan --list workspace/logs/townfollow-geom-h7a-logs.txt` (output
+  `workspace/logs/townfollow-geom-h7a-2026-10-18.txt`, `938f4020…`; last line
+  `SUMMARY {"games": 568, "layouts": 106, "shorter": 0, "mask": "0x3c01", "window": 100}`), per town by
+  `townfollow_geom.py summary` (output `townfollow-geom-h7a-summary-2026-10-18.txt`):
+  ```
+  town 1 layouts 72 with neighbour 43 [2] pairs_4 70268 pairs_8 70448 shorter 0 ties 0
+    interior opening runs (cells): {(1, 17): 12, (15,): 14, (2, 15): 9, (9,): 8}
+    other runs (cells, pocket size): {(): 23, ((1, 1),): 12, ((48, 48), (66, 80)): 2, ((48, 48), (80, 80)): 6}
+  town 40 layouts 20 with neighbour 12 [41] pairs_4 21840 pairs_8 21840 shorter 0 ties 0
+    interior opening runs (cells): {(35,): 4, (69,): 8}
+    other runs (cells, pocket size): {(): 12}
+  town 75 layouts 4 with neighbour 3 [76] pairs_4 84 pairs_8 84 shorter 0 ties 0
+    interior opening runs (cells): {(7,): 3}
+    other runs (cells, pocket size): {(): 3}
+  town 103 layouts 3 with neighbour 2 [104] pairs_4 12 pairs_8 12 shorter 0 ties 0
+    interior opening runs (cells): {(4,): 2}
+    other runs (cells, pocket size): {(): 2}
+  town 109 layouts 7 with neighbour 4 [110] pairs_4 1740 pairs_8 1740 shorter 0 ties 0
+    interior opening runs (cells): {(30,): 4}
+    other runs (cells, pocket size): {(): 4}
+  ```
+- **Raw logs:** `workspace/logs/rooms/h7a-h-barb.log`, `h7a-h-barb2.log`, `h7a-h-barb3.log`, sha256 in
+  `workspace/logs/h7a-lifecycle-manifest.sha256` (paths relative to `workspace/logs/`, `sha256sum -c` from there; h-barb `81634178`, h-barb2 `cd912798`, h-barb3 `4a3d9b41`), with the
+  check outputs, the geometry outputs and the static scan outputs (`sweep-h7a-*.txt`); pilot transcripts and
+  screenshots beside the logs.
+- **Development outputs** (not part of the record): `dev-townfollow-geom-h7a-partial.txt` to `…partial4.txt`, the
+  geometry scan's earlier runs (`partial`, `partial2`: acts not separated, wrong; `partial3`: 80 layouts; `partial4`:
+  the full run stopped at a machine shutdown).
+- **Deviations:** h-barb's character died during its first visit to the `0x400` record's room, after the restore met
+  the record (frame 6 876); the later pilot commands of the session did nothing. h-barb3 ended with a death during its
+  last return and was stopped at a machine shutdown; its log is a whole game up to its last line and is part of the
+  record. h-barb2 saved no `0x400` record.
+- **Not reached:** a `0x400` record with alignment 1; a wanderer roll (1 gate pass, in a room with `+0x78` = 1 and
+  `MonWndr` 0); a monster in a `SaveMonsters` 0 level without `0x2000000`; an item record with expiry 0; the expiry
+  sweep's free (no sweep pass fell between an expiry and its restore).
+- **Conclusion:** see [drlg/0009 § 11.3](0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle):
+  the alignment-2 half of the `0x400` drop and the expired-item drop at the restore are raised; the 4 mismatches show
+  the monster record's `+0xC4` read after the save test (bit `0x2000`); recipe (b) is a shortfall and (c) withdrawn.

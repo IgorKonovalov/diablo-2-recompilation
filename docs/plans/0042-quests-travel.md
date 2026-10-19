@@ -113,6 +113,43 @@ use a town portal, and where is a player placed on entering a level? When it is 
   A quest step that neither scripted play nor the owner reaches is named in the record with the reason; its bits stay
   `[I]`. In-scope claims go to `[C]`, citing the run.
 
+#### Phase 2 part 2 — the completion pass (ruled at the part 1 review, 2026-10-17)
+- **Owner skill:** reverser (agent-driven, at most two slots); owner play only for the items marked *owner*.
+- **Start:** the part 1 tools (`questev.py`, `quests.py`, `quest_sessions.py`); new saves as tool-built recipes set
+  just before each step (the `quest-tpc` precedent; the archivist documents them in d2s.md afterwards, backlog). Fix
+  the scripted walks first: reach a waypoint, a portal or an NPC by teleporting next to the object, as `clickwarp`
+  does for warps.
+- **Done when:** `run:YYYY-MM-DD-quests2` reproduces with 0 mismatches under the same checker, which re-checks the
+  part 1 logs unchanged, over at least:
+  1. **quests, Normal expansion:** every quest step reachable by a talk, an operate, an item use, a level entry or a
+     non-boss kill, from a save set just before it; each bit transition predicted from the logged event; the saved
+     quest words after *Save and Exit* predicted word by word in each session. The per-quest tables (§ 7–§ 10) are
+     raised step by step;
+  2. **ten quests in Nightmare or Hell and the Act I–IV quests in a classic game**, by the same steps, with **at least
+     one recorded Hell session**;
+  3. **waypoints:** 60 activations from mode 0 (`TravelWpNone` and fresh saves; event 1 and the `Sync` 0 draw on the
+     object seed predicted, 20 chained pairs); 150 waypoint travels with part 1's 61;
+  4. **warps:** 150 level entries with part 1's 2, among them level 120's warp tiles (WRP rows 82 and 83) from both
+     creators (`QuestSummit`, `TravelWpFive`), which decides `QUESTS_WarpGate`'s 120 → 118/128 branch both ways, and
+     the warp gates into 73, 100 and 132;
+  5. **act travel:** `NpcActTravel` 20 events (Warriv and Meshif each way, the Act IV → V travel), packet 0x48 once
+     per travel word (7, 15, 28), a type-5 lookup that steps (Meshif's return to 40);
+  6. **NPC 266 and 377:** first read where each is placed and when (Flavie at the Blood Moor preset; class 377), then 20
+     chained player-seed pairs each; if scripted play cannot place one, that NPC is a named shortfall with the reason;
+  7. **the Compelling Orb:** operates with and without `qf2`;
+  8. **the rest of question 6–9:** quest timers (logger addition), a death and resurrection (packet 0x41, a low-life
+     save), the stub character's double join (a stub save), a portal refused in a town, the Durance, Arcane and lair
+     portals, and the creation readers of question 7 (Hratli's `InitFn`s, `InitFn` 52, the Tristram portal, the warp
+     gates above).
+- **Owner play candidates** (one owner session; plan 0038's d-owner rows may share it): the act-boss quest steps
+  (Andariel, Duriel, Mephisto, Diablo, Baal) and the Ancients, which set quest 35's "done in this game" byte and so
+  give the summit door's open path; the Nightmare and Hell boss steps; Diablo's `+0x13` reader; the Uber levels
+  (133–136) with the portal refusal on 136. What the owner does not play becomes a named shortfall at the part 2
+  review; those steps' bits stay `[I]`.
+- **Named shortfalls now** (no further attempt in this plan): packet 0x58 on word 33 (the stock client never sends it;
+  stays `[I]`); packet 0x48's 20-event floor beyond one case per travel word; the free-cell search's far rings unless a
+  logged search needs one; every two-client case (plan 0044).
+
 ### Phase 3 — Spec: quests
 - **Owner skill:** spec-writer
 - **What:** write `docs/specs/quests/README.md`, `quests/progression.md` (a section per quest) and `quests/travel.md`;
@@ -366,3 +403,90 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   and the contradicted-lead entry are closed; the two 2026-10-16 requests to the reverser (Phase 0 additions, the
   column readers) are answered by the Phase 1 table above and closed. Follow-ups filed: the 31 W1 lines and three
   static leftovers to the reverser (backlog).
+- **2026-10-17 — Phase 2 (reverser, `lane/p42h`, slots 1 and 2; review requested).** run:2026-10-17-quests
+  ([experiments](../findings/quests/experiments.md#run2026-10-17-quests)): 11 sessions, **0 mismatches over
+  16 199 checks** under `tools/quests.py check`. Tools: `tools/gdb/questev.py` and `quest-state.gdb` (the logger,
+  beside plan 0032's `quests.py`), `tools/quests.py` with `tools/test_quests.py`, `tools/quest_sessions.py` (sessions,
+  actions, the save loads), recipe `quest-tpc` (classic, a tome of town portal), three NPC rows in `d2pilot.py`.
+  Raises and corrections: [quests/0001 § 15](../findings/quests/0001-progression.md#15-phase-2-run2026-10-17-quests),
+  [quests/0002 § 12](../findings/quests/0002-travel.md#12-phase-2-run2026-10-17-quests).
+
+  | Required case | Result |
+  |---|---|
+  | quest-seed draws chained (≥ 20 pairs) | NPC 331 (Kaelan): 42 chained pairs, one step per talk (Normal 21, Nightmare 21) |
+  | player-seed NPC talks 266 and 377 (≥ 20 pairs each) | **shortfall**: neither NPC was in a server unit list (266 `navi` is the Blood Moor's preset centre monster, absent from the run's map; 377 never placed in the towns walked) |
+  | town portal open, five draws | **corrected**: three draws (62 opens): gs, the town's level seed (type 11), gs; both ends are created in their mode, no object-seed draw; the town room's first update draws gs for its population (oracle) |
+  | level seed per point type: 0, 5, 11 once, 13 never | 0: 22 one step; 11: 334 one step; 13: 28 no step; 5: 11 lookups on level 1, none steps (no group-1 point there: point 0, no draw), a stepping type-5 case not reached |
+  | every other kind: seeds unchanged over ≥ 20 events, or named | ≥ 20 events with gs, qs, ps unchanged: waypoint operate 61, waypoint travel and packet 0x49 61 each, portal use 122, summit door 73, packet 0x58 53, NPC move 22, `PlayerChangeLevel` 81, `PlayerChangeAct` 32, `ActLevelSpot` 154, `LevelPointFind` 2 356 (its own level seed predicted apart), dispatches 459 of 503 (the other 44 the Kaelan talks' predicted quest-seed step). Under 20: NpcActTravel 11, packet 0x48 1, warps 2 (named shortfalls); death (packet 0x41), the Durance, Arcane and lair portals: none |
+  | summit warp, both ways; 120 → 118 refused | the way back from 120 is the summit door (`OperateFn` 71), not a warp tile: refused for both creators (37 operates without word 39, 36 with every quest done); the door reads quest 35's private "done in this game" byte only, which is 0 in a new game whichever creator; `QUESTS_WarpGate`'s 118/128 branch never ran. Ruling (f)'s "allowed" half does not hold for the door |
+  | a switched-off quest's forced e0/e11 handlers without a bit write | 4631 forced callbacks of deactivated quests ran, in 334 dispatches; in 290 of them nothing was written; **quest 11's e11 handler writes word 12 bit 8 while switched off** (44 writes), a correction |
+  | orb operate without `qf2` | **shortfall**: the scripted walk to the Kurast Docks waypoint failed (x-orb) |
+  | packet 0x58 on word 33 | **shortfall**: the stock client sends 0x58 only for the quest-log entries it shows (26 words, each bit 12 set); word 33 has none |
+  | tick and stamp at both gates | 61 packet-0x49 and 122 portal gate reads, stamp 0 each (one client), the pass rule exact |
+  | two-player cases (portal party gate, party credit) | out of scope: plan 0044 |
+
+  **Not reached** (Phase 2 done-when): no quest completed (question 3's per-quest pass, the Nightmare/Hell and classic
+  quest runs, the `Save and Exit` word comparison beyond the loads); 60 activations (every waypoint met was already in
+  mode 2; the Spider Forest walk of x-wpnew did not reach its waypoint); 150 waypoint travels (61); 150 warps
+  (2); 20 NPC act changes: 22 (11 each way, Warriv), reached; Hell (the scripted walk to the town waypoint failed
+  in five Hell launches, kept as development logs); timers; deaths; the creation readers of question 7 but the door.
+  **The saves load:** 18 of the 18 built saves loaded and wrote back (Normal); the quest-word changes are word 40
+  bit 10 set by the join (quest 36's first-join callback, `0x0058E4D0`) in the saves with word 40 done, and word 9
+  cleared in `QuestBookLost` but kept in `QuestBookHeld` (the word-9 first-join check both ways); `TravelWpNone`
+  comes back with waypoint 0 set in all three difficulties. Hashes not pinned in `test_d2s.py`
+  (archivist's, backlog).
+
+  Logger revisions and development logs are listed in the run record. Slots 1 and 2 stopped, asides restored.
+- **2026-10-17 — Phase 2 part 1 reviewed (architect, `lane/p42h`, `main` `e6f365b` merged in): accept with fixes;
+  Phase 2 stays open for part 2.** Merge clean (no `docs/backlog.md` or `re/symbols.csv` conflict; `backlog.py migrate`
+  moved nothing; gate green). **Re-runs:** the manifest checks (11 of 11 OK); `tools/quests.py check` over the 11 logs
+  under `systemd-run --user --scope -p MemoryMax=4G` gives `SUMMARY mismatches=0 checks=16199 logs=11`, output
+  byte-identical to `quests-check.txt` (`6b2c787f…`); `tools/test_quests.py` 7 tests OK; the checker over each of the
+  20 development logs, 0 mismatches over 4 677 checks (outside the record, raises nothing). **objdump spot-checks**
+  (pinned `Game.exe`): the logger's dispatch call and exit points (`0x00543965`/`0x00543974`, `0x005439F9`/`0x00543A05`),
+  both gates (`0x0054C60F` `stamp + 10000`, `0x005848CD` `stamp + 5000`, each `jbe` on `GetTickCount`), the portal
+  pair (`0x0056D237`–`0x0056D249` pushes mode 1 to `SUnitCreate`, `0x0056D083`–`0x0056D092` mode 2; `UNIT_SetMode`
+  returns at `0x006246A9` without drawing when the mode is unchanged; `ActLevelSpot` type 11 at `0x0056CF6E` before
+  `RoomUpdateOne` at `0x0056CF7D`), the summit door (`0x0058D6A0`: `GetQuest(35)`, `+0x18` byte only, message 0x13
+  at `0x0058D711`; no `+0x09` read, while `0x0058D090` reads `+0x09` at `0x0058D09A`), quest 11's e11 handler
+  (`0x0059AF84` class 0x14B, 0xBA → word 12 bit 7, 0xBB–0xBD → bit 8, no `+0x09` test), `LevelPointPick`'s `n = 0`
+  exit (`0x0066AC90`) and `NpcActTravel`'s word-7 branch (`0x00546991` exits before the `+0x4C` write at `0x005469CD`).
+  **Rulings:**
+  - (a) **Part 1, with a planned part 2.** The run is sound and its corrections stand, but most of the done-when is
+    unmet (no quest completed, no activation from mode 0, 61/150 travels, 2/150 warps, no Hell session). Accepted as
+    **Phase 2 part 1**; **part 2** is defined in the Phase 2 section above (what it must do, the owner-play
+    candidates, the named shortfalls now) and filed to the reverser. Phase 3 waits for part 2's review.
+  - (b) **The summit door: correction accepted, scoped.** The door (object 564, `OperateFn` 71) reads only quest 35's
+    private "done in this game" byte, so it refused for both creators (37 operates by `QuestSummit`, 36 by
+    `TravelWpFive`): `[C]` (code and run). P1 ruling (f)'s "allowed" half is **split**: false for the door; for
+    `QUESTS_WarpGate` (`0x0058D090` returns 0 when quest 35 is switched off) it stays `[I]`, unreached. The lane's
+    "the way back from 120 is the door, not a warp tile" is narrowed: level 120's warp tiles (WRP rows 82 and 83) were
+    logged and never taken (part 2, item 4). quests/0001 § 10's "the summit door the same" (as the Keep door) and the
+    P1b verdict on the summit warps are corrected to match.
+  - (c) **Town portal, 5 → 3: accepted `[C]`, with its oracle boundary stated.** Both ends are created in their mode
+    (the pushed mode argument, `omode` logged), so the `SetMode` calls draw nothing; the draws are game seed, the
+    town's level seed (type 11), game seed. The town room's population (`RoomUpdateOne`) is a boundary oracle between
+    the two creations: its entry is the asserted field-end state, its exit is logged by logger revisions B and C (4
+    opens). In the 5 revision-A opens with population draws (x-lut 3, c-tp 2) the exit is derived from the partner's
+    seed, so those 5 do not test the partner's draw; the `[C]` rests on the other 57. The open is a one-shot function
+    (ADR-0017), so its evidence is ADR-0003/0004's (entry as input, every draw asserted to the exit) and ADR-0014's
+    chaining floor does not apply to it.
+  - (d) **Quest 11's e11 handler: correction accepted `[C]`** (code and 44 writes): "a deactivated quest's handlers
+    stay inert" is per handler, `[C]` only for the handlers and states the run reached.
+  - (e) **Raises.** Accepted: the Kaelan quest-seed step (42 chained pairs), the forced raisers, packet 0x58 for the
+    words the client sends, placement (124), the level-seed step per point type (0, 11 one step; 13 none; type 5 as a
+    no-draw case), the portal-use, waypoint and gate "no draw" rows, the `+0x4C` narrowing (anchor corrected to the
+    word-7 branch). **Scoped:** the dispatch order is raised in part (all 503 dispatches forced; the unforced
+    `+0x0A` skip stays `[I]`); the join is `[C]` for the branch reached (first join, `rejoin` 0, byte set, 11 of 11);
+    the free-ring search stays raised in part. **Not raised:** packet 0x48 (1 case) and warps (2, under the 20-event
+    floor): the rows said "raised in part", now "not raised".
+  - (f) **The kept logs: yes, with two manifests added.** The 20 development logs are kept and listed, and the 18 load
+    logs, the 18 written-back saves and `loads.txt` are kept; none was hashed. The review added
+    `workspace/logs/quests/dev-manifest.sha256` (`fc16bedc…`) and `loads/loads-manifest.sha256` (`017a6997…`),
+    cited in the record. Pinning the load hashes in `test_d2s.py` stays the archivist's (backlog).
+  **Fixes applied (14):** overclaim 4 (dispatch unforced half; join branch; the "door, not a warp tile" claim and
+  ruling (f)'s split; packet 0x48 and warps "raised in part" → "not raised"), miscount 4 (290 dispatches not callbacks; 73 = 37 + 36 operates; five Hell launches, not four;
+  eight saves with word 40, not nine), stale cross-reference 2 (quests/0001 § 10's "the summit door the same"; the
+  P1b summit-warp verdict), wrong anchor 1 (`0x0054684A` is word 28's branch; Warriv's is `0x00546991`), misread 1
+  (quests/0002 § 12 listed a Hell session), omission 1 (the portal oracle's revision-A boundary), tool not kept 1 (no
+  manifest for the development and load logs). The review request is closed; part 2 is filed to the reverser.
