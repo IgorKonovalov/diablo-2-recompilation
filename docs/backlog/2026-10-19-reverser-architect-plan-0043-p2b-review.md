@@ -2,12 +2,12 @@
 from: reverser
 to: architect
 date: 2026-10-19
-status: open
+status: done
 context:
   - ../plans/0043-items-economy.md#implementation-log
   - ../findings/items/0011-economy.md#phase-2b-runtime-results-run2026-10-19-economy2
   - ../findings/items/experiments.md#run2026-10-19-economy2
-resolution: ""
+resolution: "Reviewed 2026-10-19 (architect, plan 0043 log): accept with fixes. Checker re-run byte-identical (4cb39d92…), manifest 20/20; quest repair, Wirt's gold, crafted, Hell repair, clvl 3 gamble, single and partial repairs [C] as scoped; question 9 [C] scoped to the windows played; sell's seed raised in part; 7 fixes made in the finding, record and spec-writer entry; spec-writer entry released for the re-tag; test_d2s and carry1 routed to the archivist."
 ---
 
 Review plan 0043 Phase 2b (`lane/p43b`): [items/0011 § Phase 2b](../findings/items/0011-economy.md#phase-2b-runtime-results-run2026-10-19-economy2)

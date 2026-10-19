@@ -684,7 +684,8 @@ Each raise says what the run separates; what is not listed stays as tagged above
   exactly when it dropped a pile). (run:2026-10-17-economy) **Remainder (`[I]`):** for sell, item creation
   is not logged. The three `+4` sales each hold one `DropGoldAmount` (a gold re-drop) besides the copy; the 2 unchanged
   sales (4311 line 29206, the ethereal throwing stack for 1 040; 4332 line 5963, 3 502) hold no `DropGoldAmount` and are
-  unexplained, so "sell draws only through its item creations" stays `[I]`.
+  unexplained, so "sell draws only through its item creations" stays `[I]`. (Raised in part in § Phase 2b, item 8:
+  both are refusals of the store copy.)
 - **Hires.** [C] for the gold side: the 22 hires' `PayGold` reproduce; the hire price is `HIRELING_RollEntry`'s, which
   `tools/hirelings.py check` reproduces on the same log (0 mismatches besides the broken watch handler's lines).
   (fn:sub_00576D90_PayGold@0x00576D90, run:2026-10-17-economy)
@@ -764,8 +765,10 @@ Phase 2b list, in its order; what is not raised stays as tagged above.
 - **7. Question 9 rerun: no read of `+0x24..+0x26` in the windows played, with the control live to each session's
   end.** [C] A 4-byte read watchpoint on Charsi's `NpcStoreRec` `+0x24..+0x27` and the control on `+0x00`, now one line
   per 10 frames with no cap: over sessions 4501, 4503, 4504 and 4505 the control wrote 66 lines from the frame the
-  watch was set to the last economy line of each log (4501 frames 1207–12694, 286 hits; 4503 2275–7648, 136; 4504
-  1313–9446, 323; 4505 2729–7738, 240), at `NPCSTORE_FindRec`'s compare from four callers (the trade opening 0x00579454,
+  watch was set (4505: below) to the last economy line of each log (4501 frames 1207–12694, 286 hits; 4503 2275–7648, 136; 4504
+  1313–9446, 323; 4505 2729–7738, 240; in 4505 the watch was set at frame 1769, as the first Gheed gamble window
+  opened, so that window is bracketed by the watch's setting and the control's first line at 2729 rather than holding
+  a control line itself), at `NPCSTORE_FindRec`'s compare from four callers (the trade opening 0x00579454,
   the sale 0x00579704, 0x005371AC, 0x00536B2D), and it fired after the last repair-all of the closing Charsi window in
   4501 (frame 12694 after the hovers at 12680–12690). The watch fired 5 times, every time at 0x005794A2 after
   `NPC_TradeOpen`'s `cmp byte [edi+0x27], 0` (Charsi trade openings). The windows covered: Charsi trade, sale,
@@ -774,17 +777,25 @@ Phase 2b list, in its order; what is not raised stays as tagged above.
   windows nothing reads `+0x24..+0x26`; other NPC actions and game states are not covered. (fn:NPC_TradeOpen@0x00579430,
   fn:NPCSTORE_FindRec@0x00535EA0, run:2026-10-19-economy2)
 - **8. The two sales that left the game seed unchanged: no store copy was made.** [C] `NPC_SellItem` refuses the
-  store copy at its first matching test, before `ItemCopy`, and the logged decision (`NSX`) separates the cases in
+  store copy before `ItemCopy`: every test runs, in order (quality 1 named `Cracked`, flag `0x100`, base type 7, flag
+  `0x1000000`, flag `0x400000`, `0x0055F590`, `sub_00575FA0_ItemIsCarry1Unique`, the store record's byte `+4` from
+  0x00536CB0), and each match clears the copy flag `[ebp-4]`; the logged decision (`NSX`) separates the cases in
   11 sales: 6 copied (each `ItemCopy`, the game seed +2; 3 placed, 3 freed when no store page took them, still +2) and
   5 refused with the seed unchanged: flag `0x400000` (ethereal) 2, flag `0x100` (broken) 2, and
   `sub_00575FA0_ItemIsCarry1Unique` 1. The P2 cases are of these kinds: 4311 line 29206 sold an ethereal throwing
   stack (flags `0xC00010`), 4332 line 5963 *Annihilus* (unique, `carry1`). (0x0057962B–0x00579747,
   fn:NPC_SellItem@0x00579510, run:2026-10-19-economy2)
-  [I] `sub_00575FA0_ItemIsCarry1Unique`: quality 7 and the UniqueItems record's flag byte `+0x2C` AND the byte at
+  [I] `sub_00575FA0_ItemIsCarry1Unique`: a unit of type 4 (item), quality 7, a file index ≥ 0, and the UniqueItems record's flag byte `+0x2C` AND the byte at
   0x006CE270 (4, the `carry1` bit) non-zero; read from the code. (fn:sub_00575FA0_ItemIsCarry1Unique@0x00575FA0,
   tbl:UniqueItems.txt:carry1)
-  So sell's seed reading is raised: a sale draws only through the store copy's item creation (and a gold re-drop's).
+  [C] **Sell's seed, raised in part.** A sale draws only through the store copy's item creation (and a gold
+  re-drop's, § Phase 2). Separated by the logged decision in the 11 sales here: the copy (6, each +2) and the
+  refusals by flag `0x100`, flag `0x400000` and `carry1` (5, each +0). Phase 2's 46 sales, logged without the
+  decision, agree: 41 at +2, 3 at +4 with a re-drop, and the 2 at +0 of the refused kinds (ethereal, `carry1`).
+  **Remainder (`[I]`):** the other five refusal tests (`Cracked`, base type 7, flag `0x1000000`, `0x0055F590`, the
+  store record's byte `+4`) were not reached; their "no draw" rests on the code (they skip `ItemCopy`).
+  (0x005796F6–0x00579747, fn:NPC_SellItem@0x00579510, run:2026-10-17-economy, run:2026-10-19-economy2)
 
-**Not reached in Phase 2b** (stay as tagged): the `Cracked` low-quality refusal of the copy (0x00579630) and
-`0x0055F590`; the imbue's repair on an identified item (never: the imbued item is built unidentified).
+**Not reached in Phase 2b** (stay as tagged): the copy refusals by `Cracked` (0x00579630), base type 7 (0x00579677),
+flag `0x1000000` (0x00579688), `0x0055F590` (0x005796D4) and the store record's byte `+4` (0x0057970E); the imbue's repair on an identified item (never: the imbued item is built unidentified).
 

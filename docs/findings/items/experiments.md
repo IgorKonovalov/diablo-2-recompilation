@@ -2514,7 +2514,7 @@ logs; shortfalls under *Limits*.
   `workspace/logs/economy-scan/economy-qrepair.out`). `tools/test_economy.py` 9 tests OK. The checker of this phase
   also re-reads Phase 2's 33 claim logs with 0 mismatches (its added store-stock restoration check was dropped to a
   count after 2 of 2 565 P2 stock items kept D < M with no stat 152 logged).
-- **Observed** (trimmed from `check-run.txt`):
+- **Observed** (summarised from `check-run.txt`, not verbatim; the exact lines are in the hashed output):
   ```
   logs 5; games 4
   price calls 7376; distinct: mode 0 542, mode 1 79, mode 2 153, mode 3 59
@@ -2527,7 +2527,8 @@ logs; shortfalls under *Limits*.
   seeds: PR 7376, RC 193, IR 894, NR 6, PG 8, GG 11, UG 15, RP 12, IB 1: game and player seed unchanged;
          NS 11: +2 in 6, same in 5; WG 18: game seed +2
   watch: SWW 5 hits, all at 0x005794A2; control SWC 66 lines, from the watch's setting to the last line of
-         each log (4501 1207..12694, 4503 2275..7648, 4504 1313..9446, 4505 2729..7738)
+         each log (4501 1207..12694, 4503 2275..7648, 4504 1313..9446, 4505 2729..7738;
+         4505's watch set at 1769)
   economy: 0 mismatches
   ```
 - **Limits:** the imbue's repair acts on an unidentified item and changes nothing (one case); one broken repair (its

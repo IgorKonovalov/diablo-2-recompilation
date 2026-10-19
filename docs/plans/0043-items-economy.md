@@ -530,3 +530,71 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   [2026-10-19-reverser-architect-plan-0043-p2b-review](../backlog/2026-10-19-reverser-architect-plan-0043-p2b-review.md);
   spec-writer entry [2026-10-19-reverser-spec-writer-plan-0043-p2b-economy-inputs](../backlog/2026-10-19-reverser-spec-writer-plan-0043-p2b-economy-inputs.md).
   Game stopped, slot 1 saves restored (empty), no background process.
+- **2026-10-19 — Phase 2b review (architect, `lane/p43b` at `22ea490`, from `main` `7aeeafd`; `main` not merged in):
+  accept with fixes. Phase 2 is closed.** Read: [items/0011 § Phase 2b](../findings/items/0011-economy.md#phase-2b-runtime-results-run2026-10-19-economy2),
+  the [run record](../findings/items/experiments.md#run2026-10-19-economy2), the manifest, the kept `check-run.txt`, the
+  review request, the spec-writer entry, the Phase 2b definition and the Phase 2 review above. Re-run:
+  `sha256sum -c workspace/logs/economy2-run-manifest.txt` from the repository root, 20 of 20 OK (manifest
+  `cb72ac21…`); `tools/economy.py check` over the five claim logs gives an output byte-identical to `check-run.txt`
+  (`4cb39d92…30b4`, 0 mismatches); `tools/test_economy.py` 9 tests OK. Anchors checked with r2 in the pinned `Game.exe`:
+  `ItemRepairAll` returns at once when `ItemCanRepair` fails (0x005761CB), and `ItemCanRepair` needs an item unit with
+  flag `0x10` (identified) and not `0x400000` (0x0062E66B–0x0062E691); the imbue calls `ItemRepairAll` at 0x0057A0F9
+  and `ItemIdentifyAttach` after it at 0x0057A103; the socket call at 0x0057A3ED; `A1Q4_WirtGold` draws
+  `RNG_RandLoHi(QUESTS_GetSeed(…), 10, 20)` once (0x00594651–0x00594664, `+0x90` latch) and makes one `DropItemAtUnit`
+  pile per event (0x00594695, `+0x8C` decremented); `DropItemAtUnit` takes ilvl from `LevelMonLvl`, at least 1
+  (0x00559AE3–0x00559AF8); `NPC_SellItem`'s copy tests 0x0057962B–0x0057971B; `sub_00575FA0` (type 4, quality 7,
+  file index ≥ 0, UniqueItems `+0x2C` AND 0x006CE270 = 4, the `carry1` bit of UniqueItems.md); the thunk 0x005762B0
+  (frame and `jmp 0x005761C0`); the partial repair's unsigned `div` for `k` and signed `idiv` for the gain
+  (0x005782DA–0x00578309).
+  - **Ruling 1, the quest repair: accepted as written.** No quest script repairs (`[I]`, the scan; no second source),
+    and the repair is the services' shared `ItemRepairAll` step. Larzuk's socket and Anya's personalization each took
+    a cap from durability 1 to 12 (`[C]`, one case each: a wrong reading leaves 1, reverser rule 10). The imbue's call
+    is a no-op `[C]`: the code refuses an unidentified item and identifies after the call, and the run shows flags
+    `0x82000` (no `0x10`) and 10 of 12 unchanged, which the alternative (a repair) could not give.
+  - **Ruling 2, Wirt's gold: `[C]`, as scoped.** The count draw is matched by the logged quest seed's step (a
+    32-bit match, not a one-in-ten chance) and the range is the code's immediates, so one game suffices for the draw;
+    10..19 piles; the 18 piles' ilvl 6 and their amounts (among the 40 gold creations checked) reproduce. Which Levels column `LevelMonLvl` read here stays
+    unseparated (both 6), stated.
+  - **Ruling 3, question 9: `[C]` for the windows played; not raised further.** The control (uncapped, rate-limited)
+    wrote 66 lines and a line after the last window of each log, so the P2 objection (a cap reached in two frames) is
+    met. One scoping: in 4505 the watch was set at frame 1769 as the first Gheed gamble window opened and the control's
+    first line is at 2729, so that window is bracketed by the setting and the next control line rather than holding
+    one (fix 4). A reader of `+0x24..+0x26` outside the played windows cannot be excluded by a run; that remainder is
+    out of this plan (the open question stays in items/0011).
+  - **Ruling 4, the sales and sell's seed: raised in part to `[C]`.** The 11 logged decisions give 6 copies (`+2`
+    each; 3 placed, 3 freed) and 5 refusals (`+0`: ethereal 2, broken 2, `carry1` 1), the check output's counts; the
+    two P2 sales are of the refused kinds (flags `0xC00010`; *Annihilus*). But the copy decision runs **every** test
+    (eight, each clearing `[ebp-4]`), not "the first matching" one (fix 1), and five refusal tests were not reached
+    (fix 3); sell's seed is `[C]` for the copy and the three reached refusals and `[I]` for the five others (fix 2,
+    reverser rule 8).
+  - **Ruling 5, the single cases: accepted as `[I]` where stated.** The broken repair (one case, its `IB` line misread
+    by the earlier logger) keeps "no draw" `[I]`; its `ItemRepairAll` lines and the paid amount reproduce. The two
+    partial repairs are `[C]` (code and two cases; the arithmetic's rounding rests on the code). The ethereal server
+    refusal stays `[I]` (client-side in practice). Each service repair is one case and decides (ruling 1).
+  - **Symbols:** both new rows checked; neither address is named on `main` (4af9f86); names, kinds and `[I]` fit.
+  - **`tools/test_d2s.py`:** confirmed on `main` (4af9f86): `test_every_recipe_has_a_base` fails on twelve plan 0042
+    recipes with no `RECIPE_BASES` row (`quest-tpc`, `quest-death`, `quest-orbwill`, `quest-talk1`..`5`,
+    `quest-talk1c`..`4c`); not this lane's. Filed to the archivist.
+  - **Fixes (made here):** (1) *misread:* "refuses the store copy at its first matching test": every test runs; the
+    eight listed in order. (2) *overclaim:* "sell's seed reading is raised" (untagged, covering unreached refusals):
+    now "raised in part", `[C]` with a remainder, and Phase 2's § 8 remainder points to it. (3) *omission:* the
+    not-reached list lacked base type 7, flag `0x1000000` and the store record's byte `+4`. (4) *overclaim:* question
+    9's control "from the frame the watch was set" in all four logs; 4505 scoped (finding and record). (5) *overclaim:*
+    the spec-writer entry's "each now `[C]` unless noted" carried the scan (`[I]`), the unreached refusals ("…") and
+    Wirt's ilvl column unscoped; corrected. (6) *omission:* `sub_00575FA0`'s description lacked its unit-type and
+    file-index tests. (7) *other:* the record's *Observed* block, labelled "trimmed from", is a summary; relabelled,
+    the exact lines being in the hashed output.
+  - **Ledger:** 7 fixes: overclaim 3, omission 2, misread 1, other 1. Reverser review-fixes: rule 4 (a control live
+    over the whole window) recurred (fix 4, after the P2 review) and rule 8 (split a raise) recurred (fix 2); both gain
+    this review as a citation.
+  - **Backlog:** review request and the P2b remainder entry closed; the spec-writer entry
+    [2026-10-19-reverser-spec-writer-plan-0043-p2b-economy-inputs](../backlog/2026-10-19-reverser-spec-writer-plan-0043-p2b-economy-inputs.md)
+    corrected and **released** for a re-tag pass of the reviewed items/economy; filed
+    [2026-10-19-architect-archivist-register-the-plan-0042-quest-recipes-in-test](../backlog/2026-10-19-architect-archivist-register-the-plan-0042-quest-recipes-in-test.md)
+    and [2026-10-19-architect-archivist-unique-items-carry1-has-a-reader](../backlog/2026-10-19-architect-archivist-unique-items-carry1-has-a-reader.md).
+  - **Close:** Phase 2 is done for good (no Phase 2c: the remainders are single cases or unreachable by a run). Plan
+    0043 closes at the review of the items/economy re-tag pass; the wiki entry
+    (`2026-10-19-architect-spec-writer-plan-0043-economy-wiki`) may ride the same spec-writer pass or follow the close.
+  - **Merge note:** this branch's plan log conflicts with `main`'s (the P3 entries of `lane/p43s`, appended after
+    `7aeeafd`): keep both sides, in either order; the ledger rows likewise.
+  - **Next:** merge `lane/p43b`; the spec-writer re-tag pass; harness slot 1 to the next H2 batch (plan 0038 H5b).
