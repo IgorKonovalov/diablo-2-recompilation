@@ -6,6 +6,7 @@ Usage:
   python3 -I tools/quests.py test                       # the model's self-test (also tools/test_quests.py)
   python3 -I tools/quests.py npcplace NAME [NAME ...]   # where DS1 presets / Levels / SuperUniques place a monster
   python3 -I tools/quests.py objplace CLASS [CLASS ...] # where DS1 presets place an object class (part 3)
+  python3 -I tools/quests.py wpmodes LOG [LOG ...]      # field waypoints' first logged mode, by arrival (part 3)
 
 What is predicted (docs/findings/quests/0001-progression.md, 0002-travel.md; every rule names its claim):
   dispatch    the callbacks of one QUESTS_DispatchEvent, in order: the quest objects in list order (object 40 down to
@@ -1284,6 +1285,34 @@ def cmd_objplace(classes, root=os.path.join(ROOT, "workspace", "merged")):
     return 0
 
 
+WAYPOINT_CLASSES = {119, 145, 156, 157, 237, 238, 288, 323, 324, 398, 402, 429, 494, 496, 511, 539}
+
+
+def cmd_wpmodes(paths):
+    """The mode of each field waypoint (Objects SubClass & 64, outside the five towns) at its first OBJP line, by
+    whether the player had arrived in its level by waypoint travel (EV wptr exit) before that line (plan 0042 P2 part
+    3: InitFn 17's creation mode, observed; the OBJP lines are periodic, so "first seen" is not the creation)."""
+    from collections import Counter
+    cnt = Counter()
+    for fn in paths:
+        arrived, first = set(), {}
+        with open(fn, errors="replace") as f:
+            for line in f:
+                if line.startswith("EV ") and '"k":"wptr","ph":1' in line:
+                    arrived.add(json.loads(line[3:]).get("lid"))
+                elif line.startswith("OBJP "):
+                    d = json.loads(line[5:])
+                    if d.get("cls") in WAYPOINT_CLASSES and d.get("lid") not in (1, 40, 75, 103, 109) \
+                            and d["unit"] not in first:
+                        first[d["unit"]] = (d["mode"], d["lid"] in arrived)
+        for m, arr in first.values():
+            cnt[("arrived by waypoint" if arr else "not arrived", m)] += 1
+    for (k, m), v in sorted(cnt.items()):
+        print("%-22s mode %d  %d" % (k, m, v))
+    print("SUMMARY wpmodes logs=%d waypoints=%d" % (len(paths), sum(cnt.values())))
+    return 0
+
+
 def tsv_at(exc, name):
     with open(os.path.join(exc, name), errors="replace") as fh:
         rows = [ln.rstrip("\r\n").split("\t") for ln in fh]
@@ -1295,6 +1324,8 @@ def main(argv):
         return cmd_npcplace(argv[1:])
     if argv and argv[0] == "objplace":
         return cmd_objplace(argv[1:])
+    if argv and argv[0] == "wpmodes":
+        return cmd_wpmodes(argv[1:])
     if not argv or argv[0] not in ("check", "test"):
         print(__doc__)
         return 2

@@ -640,3 +640,35 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   nowhere. **Resume note:** sessions at the end of `tools/quest_sessions.py` (part 3 block); running x-tyrael3,
   x-death3, x-entry2, h-entry, x-wpact1-0; development logs `dev-p42r-*`; the finding sections hold `@@` markers until
   the final pass.
+- **2026-10-19 — Phase 2 part 3 (reverser, `lane/p42r`, slot 2; review requested).** run:2026-10-19-quests3
+  ([experiments](../findings/quests/experiments.md#run2026-10-19-quests3)): 13 recorded sessions, **0 mismatches over
+  6 167 checks** under the extended `tools/quests.py check` (`quests3-check.txt`, `7cde7b36…`); the 32 part 1 and 2
+  logs 0 over 39 568 under the same checker (`quests3-recheck-p12.txt`, `3f2b7de7…`; the 16 beyond part 2's 39 552
+  are the new "Cain lost" rule); 12 development logs 0 over 2 498. Raises, corrections and shortfalls:
+  [quests/0001 § 17](../findings/quests/0001-progression.md#17-phase-2-part-3-run2026-10-19-quests3),
+  [quests/0002 § 14](../findings/quests/0002-travel.md#14-phase-2-part-3-run2026-10-19-quests3).
+
+  | Part 3 item | Result |
+  |---|---|
+  | 1. quest-seed draws | the eclipse arm (3, periods 15/16/16; **correction**: once per game by the state, not private `+0x01`), the cairn order by the `bkd ` use (3 orders, 28 steps; trigger **refined**), the Dark Wanderer (4 games, 8 tries each; the 7-try branch not reached), Anya's reward in Normal, Nightmare and Hell, each `[C]`; quest timers raised in part (7 runs, one-shots only); the Zoo **unreachable** (object 567 placed by no DS1, created by no code: `objplace`, kept) |
+  | 2. waypoint activation from mode 0 | **shortfall**: three attempts (the Cold Plains twice from the camp, the Spider Forest waypoint logged in mode 0 at 110 sub-tiles), no operate; `wpmodes` (kept) shows field waypoints first logged in mode 1/2 after a waypoint arrival and 0 without, `[I]` |
+  | 3. act travel | Meshif west: six trips, one Lut Gholein level-seed step each (type 5) `[C]`; Tyrael: **correction**, the travel is the Harrogath portal (object 566, `0x005B5880`), the stock menu has no travel line; five trips, word 28 b0/b13 once, packet 0x48's clear (one case per travel word now: raised in part) |
+  | 4. e3 / item-use steps | "Cain lost" on arrival in 40 (from `TownLevelLeave`), word 12 on entering 50, word 37's 112/113/123 steps, the `tr2 ` and `ass ` uses `[C]`; candidates table in § 17; word 40's map holds for 0x4ED0 and 0x4ED3 too |
+  | 5. cheap travel remainders | town portal refused in a town (6) `[C]`; death and resurrection (3, Hell) `[C]` for the branch reached |
+  | 6. unit tests | `tools/test_quests.py` 19 tests (part 2's talk steps, saved words, NPC 266's runs, word 40's map; part 3's rules) |
+
+  Tools: `questev.py` revision E (`TMA`/`TMR`/`TMX`, `CRN0`/`CRN`, `DWS`/`DWF`, `ANL`/`ANY`, the state byte),
+  `quests.py` (part 3 rules, `objplace`, `wpmodes`), `quest_sessions.py` (`use`, `tpuse`, `clickobj`, `walkto`,
+  `pathto`, `push`, `toward`; `die` next to monsters; the part 3 block), `d2pilot.py` (Meshif's menu, `tyraelgo`, the
+  waypoint walk's stop, `--exclude-xy`, the menu screenshot); four recipes `quest-p3*.json` (archivist entry for
+  d2s.md). Manifests: `quests3-manifest.sha256` (43 lines, `1975e350…`), `dev-p42r-manifest.sha256` (26 lines,
+  `38d3aaa5…`), one path base (`workspace/logs/quests/`). Symbols: nine quest functions raised to C, one added. One
+  slot used; slot 2 stopped, its aside restored. No part 4 is planned: the shortfalls of § 17 and § 14 stay `[I]` in
+  this plan. The part 3 backlog entry is left open for the reviewer.
+  **Resume note (lane stopped at the owner's usage limit, 2026-10-19):** part 3 is complete as recorded above; nothing
+  is left running (slot 2 stopped, aside restored). Logs kept: `workspace/logs/quests/2026-10-19-quests3-*` (13
+  sessions with their saves and outputs) and `dev-p42r-*` (12 development logs, 2 screenshots), both manifests checked
+  OK. What is left: the architect review only (the review request is filed). Gotchas for any later harness work: Save
+  and Exit ends the game process (the watchdog then reports "the game exited"); walking clicks near a town waypoint
+  open its menu; the `act` driver does not know the save's name, so copy `<log>.out.d2s` by hand; Harrogath's type-5
+  lookup takes its single type-0 point without a draw.

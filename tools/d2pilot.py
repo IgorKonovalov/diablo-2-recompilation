@@ -1851,6 +1851,9 @@ def cmd_objop(args):
             upkeep(args, p)
             continue
         objs = [o for o in getattr(st, "objs_cls", []) if o[0] in classes and (o[1], o[2]) not in visited]
+        if args.exclude_xy:          # plan 0042 P2 part 3: skip an object of the same class elsewhere (a town waypoint)
+            ex, ey = (int(v) for v in args.exclude_xy.split(","))
+            objs = [o for o in objs if math.hypot(o[1] - ex, o[2] - ey) >= 20]
         if len(classes) > 1 and st.pos:
             # several classes (shrines and wells): unused ones only (mode 0, when the line carries it) and within
             # 300 sub-tiles (the object lists hold every level's objects)
@@ -2924,6 +2927,7 @@ def main():
     ap.add_argument("--drink", type=float, default=0.6, help="drink a belt potion below this life-orb fill")
     ap.add_argument("--to-pdef", help="go to the room of this LvlPrest Def (or any of a comma-separated list) in the "
                                       "current level, then stop")
+    ap.add_argument("--exclude-xy", help="objop: ignore objects of the class within 20 sub-tiles of X,Y")
     ap.add_argument("--to-rect", help="explore: go to this tile rect x,y,w,h (several: concatenated), then stop")
     ap.add_argument("--any-level", action="store_true",
                     help="explore: aim at unactivated rooms of any level that has an activated room (leaves a town)")

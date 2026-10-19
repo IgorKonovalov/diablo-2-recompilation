@@ -349,8 +349,124 @@ Runtime records for [quests/0001](0001-progression.md) and [quests/0002](0002-tr
   MemoryMax=4G python3 -I tools/quests.py check workspace/logs/quests/2026-10-19-quests3-*.log`, and the same checker over
   the 32 logs of parts 1 and 2.
 
-@@SESSTABLE@@
-- **Observed:** @@OBS@@
+  | Session | Seed | Save | Game, difficulty | Actions (what happened) |
+  |---|---|---|---|---|
+  | x-entry | 4401 | `QuestEntry` | expansion Normal | tome refused in the camp; `bkd ` used twice (the order drawn once); Lut Gholein ("Cain lost"); the palace (level 50); Lost City (the eclipse armed, period 15, the timer ran) and back via Far Oasis (no second arm); Kurast Docks and the Dark Wanderer (8 tries); Arreat Plateau, Crystalline Passage (word 37 b3), Glacial Trail (the driver's `5,5`, meant for Halls of Pain); Save and Exit. The driver was restarted by hand twice inside the game (a warp-click loop in the harem, a waypoint walk in level 76) with `quest_sessions.py act`, and the written save copied beside the log by hand |
+  | x-anya | 4411 | `QuestAnya` | expansion Normal | Anya's reward (`ob4 `), a second talk (nothing), the `tr2 ` use (word 37 b7), tome refused in Harrogath, Save and Exit |
+  | h-anya | 4412 | `QuestAnya` | expansion **Hell** | Anya's reward (Hell table), tome refused, Save and Exit (the `tr2 ` is a Normal quest item: no use) |
+  | nm-anya | 4413 | `QuestAnya` | expansion **Nightmare** | Anya's reward (Nightmare table), tome refused, Save and Exit |
+  | x-meshifw | 4421 | `QuestMeshifW` | expansion Normal | Meshif greeted, then six trips west (type 5 into 40) and six east, Save and Exit |
+  | h-death3 | 4442 | `QuestDeath` | expansion **Hell** | waypoint to the Cold Plains, three deaths next to monsters, Escape each time (packet 0x41), Save and Exit |
+  | x-tyrael3 | 4431 | `ActFiveTyrael` | expansion Normal | Tyrael talked to, five trips through the red portal (object 566) to Harrogath and back by waypoint, Save and Exit |
+  | x-entry2 | 4402 | `QuestEntry` | expansion Normal | as x-entry (eclipse period 16), with Halls of Pain (word 37 b14) and the palace last; the final warp-click loop stopped by hand, Save and Exit by `quest_sessions.py act`, the written save copied by hand |
+  | x-book | 4451 | `QuestBookHeld` | expansion Normal | the `ass ` right-clicked: no write logged; Save and Exit |
+  | h-entry | 4403 | `QuestEntry` | expansion **Hell** | as x-entry2 without the palace (eclipse period 16, Dark Wanderer, word 37's 113 and 123 steps); the driver stuck at the Kurast Docks barricade, the rest finished by `quest_sessions.py act` in the same game, the written save copied by hand |
+  | x-wpact1-0 | 4322 | `QuestWpAct` | expansion Normal | out of the Rogue Encampment, exploration of the Blood Moor towards the Cold Plains (4 min): no waypoint reached, Save and Exit |
+  | x-wpactr-0 | 4322 | `QuestWpAct` | expansion Normal | straight Teleport hops towards the Cold Plains waypoint's known place: stopped at a river in the Blood Moor; stopped by hand (no written save) |
+  | x-wpact3r-0 | 4361 | `TravelWpOne` | expansion Normal | Kurast Docks, the Dark Wanderer (8 tries), towards the Spider Forest waypoint (logged in mode 0): stuck in a jungle pocket; Save and Exit by `quest_sessions.py act`, the written save copied by hand |
+- **Observed:** (`tools/quests.py check` over the 13 logs; full output `workspace/logs/quests/quests3-check.txt`,
+  `7cde7b36…`; the part 3 lines and the event totals, per-kind seed and level-point lines trimmed):
+  ```
+  Anya reward draw checks                                                3
+  Anya reward ob4                                                        1
+  Anya reward ob7                                                        1
+  Anya reward obd                                                        1
+  Anya reward table checks                                               3
+  Cain lost on arrival in 40 checks                                      10
+  Cain lost on arrival in 40 none                                        7
+  Cain lost on arrival in 40 writes                                      3
+  Dark Wanderer object tries checks                                      4
+  Dark Wanderer objects created 8 of 8 tries                             4
+  Dark Wanderer quest-seed step checks                                   4
+  Harrogath portal word 28 checks                                        2
+  ass use word 9 b5 checks                                               1
+  cairn order checks                                                     3
+  cairn order kept checks                                                3
+  cairn order quest-seed steps                                           28
+  deactivated quest no write                                             102
+  deactivated quest writes (word, bit) [(26, 9)]                         1
+  deactivated quest writes (word, bit) [(37, 9), (37, 1), (37, 0), (37, 10)] 3
+  deactivated quest writes (word, bit) [(40, 6)]                         1
+  deactivated quest writes (word, bit) [(40, 9)]                         3
+  deactivated quest writes checks                                        110
+  eclipse arm off (state 1, +0x09 1, armed False, ran True)              3
+  eclipse armed (level 44)                                               3
+  eclipse timer period checks                                            3
+  eclipse timer: word 11 writes [(2, '0059a542')]                        3
+  entry step w12 40 -> 50 [7, 8]                                         2
+  entry step w12 checks                                                  2
+  entry step w37 112 -> 113 [3]                                          3
+  entry step w37 113 -> 123 [14]                                         2
+  entry step w37 checks                                                  5
+  events chact                                                           33
+  events chlevel                                                         54
+  events de                                                              110
+  events due                                                             7
+  events join                                                            13
+  events lpf                                                             457
+  events npcact                                                          6
+  events npcmove                                                         17
+  events p41                                                             3
+  events p48                                                             1
+  events p49                                                             37
+  events place                                                           13
+  events spot                                                            67
+  events tp                                                              6
+  events warp                                                            3
+  events wpop                                                            37
+  events wptr                                                            37
+  join quests deactivated                                                320
+  level seed Position type 5 step 0                                      5
+  level seed Position type 5 step 1                                      6
+  level seed chained pairs                                               10
+  saved word checks                                                      1728
+  saved words: player-record writes applied                              77
+  saved words: sessions compared                                         12
+  saved words: words changed in the game's difficulty                    33
+  talk step w37 checks                                                   3
+  talk step w37 npc 512 msg 0x4ea8 fires                                 3
+  talk step w40 checks                                                   4
+  talk step w40 npc 512 msg 0x4ed0 fires                                 3
+  talk step w40 npc 513 msg 0x4ed3 fires                                 1
+  timer due checks                                                       7
+  timer pass frame checks                                                7
+  timer qs checks                                                        3
+  timer runs 0059ed80 r1                                                 3
+  timer runs 005bd390 r1                                                 4
+  timers added 0059ed80                                                  3
+  timers added 005bd390                                                  4
+  town portal in a town refused checks                                   6
+  town portal refused (lid 1)                                            3
+  town portal refused (lid 109)                                          3
+  tr2 use word 37 b7 checks                                              1
+  SUMMARY mismatches=0 checks=6167 logs=13
+  ```
+- **Parts 1 and 2 re-checked:** the 32 logs under the final checker give `SUMMARY mismatches=0 checks=39568 logs=32`
+  (`quests3-recheck-p12.txt`, `3f2b7de7…`); the 16 checks beyond part 2's 39 552 are the "Cain lost" rule on the
+  arrivals in 40 those logs hold (1 with writes: part 1's c-wp, classic Nightmare, `QuestPortalC`, word 4 = 0; 15 with
+  none).
+- **Raw logs and kept files:** `workspace/logs/quests/2026-10-19-quests3-*.log` (13), the installed saves (`*.in.d2s`,
+  13) and written saves (`*.out.d2s`, 12; x-wpactr-0 has none), `quests3-check.txt`, `quests3-recheck-p12.txt`,
+  `2026-10-19-quests3-objplace.txt` (`tools/quests.py objplace 567 368`), `2026-10-19-quests3-zoo-imm.txt` (the
+  `0x237` immediates of the image) and `2026-10-19-quests3-wpmodes.txt` (`tools/quests.py wpmodes` over the 45 part
+  1–3 logs), sha256 in `workspace/logs/quests/quests3-manifest.sha256` (43 lines, `1975e350…`; `sha256sum -c` from
+  `workspace/logs/quests/`). Driver transcripts (`workspace/scratch-p42r/s-*.out`) are not kept as evidence.
+- **Development logs** (not part of the record, kept): `workspace/logs/quests/dev-p42r-*.log` (12: `x-entry-a`,
+  `x-anya-a`, `dev-meshif`, `x-meshifw-a`, `dev-tyrael`, `x-tyrael3-a`, `-b`, `-c`, `x-death3-a`, `-b`, `h-death3-a`,
+  `x-wpact3r-a`) with their installed saves and the two menu screenshots (`dev-p42r-meshif-menu.png`,
+  `dev-p42r-tyrael-menu.png`), hashed in `dev-p42r-manifest.sha256` (26 lines, `38d3aaa5…`); the final checker gives
+  0 mismatches over 2 498 checks on them, which raises nothing. Causes: the scroll panel left open (x-entry-a), a
+  walking click that opened the waypoint menu (x-anya-a, x-tyrael3-b), Meshif's menu line (no *trade*), Tyrael's
+  menu (no travel line: the probes), the waypoint walk stopping at 4 sub-tiles (x-tyrael3-c), deaths not reached in
+  Normal and a long hop loop while dead (x-death3-a, -b, h-death3-a), the town waypoint taken for the target
+  (x-wpact3r-a).
+- **Deviations:** one slot (slot 2). Three sessions (x-entry, x-entry2, h-entry) and x-wpact3r-0 were finished by
+  hand-run `quest_sessions.py act` commands in the same game after the driver looped (a warp-click loop in the harem,
+  a waypoint walk in level 76, the Kurast Docks barricade, a jungle pocket); their logs are continuous and their
+  written saves were copied beside the logs by hand (the `act` driver does not know the save's name). x-wpactr-0 was
+  stopped by hand. The driver supervises each session (part 2's watchdog), run under `timeout`.
+- **Not reached / out of scope:** the two findings' part 3 sections name the shortfalls (final for this plan);
+  two-client cases stay plan 0044's.
 - **Conclusion:** raises, corrections and shortfalls in
   [quests/0001 § 17](0001-progression.md#17-phase-2-part-3-run2026-10-19-quests3) and
   [quests/0002 § 14](0002-travel.md#14-phase-2-part-3-run2026-10-19-quests3).
