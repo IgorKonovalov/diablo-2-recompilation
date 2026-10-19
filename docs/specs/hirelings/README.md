@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/vendors, monsters/pool, monsters/stats, data/strings, data/excel, save/d2s]
 consumed_by: [items/quality, monsters/pool, save/d2s]
-tags: {C: 92, I: 41, L: 6}
-updated: 2026-10-17
+tags: {C: 94, I: 39, L: 6}
+updated: 2026-10-19
 ---
 
 # Hirelings: the hire list, the hire, the mercenary's stats and its creation from a save
@@ -350,7 +350,7 @@ F2. first ← SellerRow(vflag, npc)[+0x114]; e ← t[nameIdx − first]         
     refuse unless nameIdx is in the seller's range, e.nameIdx = nameIdx and e.hired = 0          ; listed is not tested
 F3. out ← RollEntry(vflag, playerLevel, e.seed, GetAct(vflag, 0, nameIdx), difficulty)          [C] (fn:HIRE_Hire@0x005770E0, run:2026-10-16-hirelings)
     pay out.price: inventory gold (stat 14) first                                                 [C] (fn:sub_00576D90_PayGold@0x00576D90, run:2026-10-16-hirelings)
-    the rest from the stash gold (stat 15); refuse if the two fall short                          [I] (fn:sub_00576D90_PayGold@0x00576D90)
+    the rest from the stash gold (stat 15); refuse if the two fall short                          [C] (fn:sub_00576D90_PayGold@0x00576D90, run:2026-10-17-economy)
 F4. merc ← spawn MonStats class SellerRow(vflag, npc).Class near the player (tried twice)          [C] (fn:HIRE_Hire@0x005770E0, run:2026-10-16-hirelings)
     e.hired ← 1
 F5. MERC_Init(merc, 0xFFFF, {nameIdx, e.seed})                                                    [C] (fn:MERC_Init@0x00573270, run:2026-10-16-hirelings)
@@ -567,9 +567,11 @@ Step notes:
   code) gives one when the player has none (expansion: none at all; classic: no living one) and the seller's table
   exists: the first entry in name order with `listed = 1` and `hired ≠ 1` becomes hired, spawned and initialised as a
   hire, with no payment and no quest gate; then `RebuildIfEmpty`. Not reached by the run. (fn:HIRE_GiveFreeMerc@0x00579180)
-- [I] **Resurrection.** `MERC_Resurrect` at Kashya, Greiz, Asheara, Tyrael (367) or Qual-Kehk, price
-  `MERC_ResurrectCost = min(50000, (L² ÷ 2) × 15)` (unsigned compare), paid like a hire. (fn:MERC_Resurrect@0x00579C00,
-  fn:MERC_ResurrectCost@0x006637B0)
+- [C] **Resurrection** is specified in [items/economy § G](../items/economy.md#g-gold-payment-caps-piles-and-the-death-loss)
+  (G13): `MERC_Resurrect` at Kashya, Greiz, Asheara, Tyrael (367) or Qual-Kehk costs
+  `MERC_ResurrectCost = min(50000, (L² ÷ 2) × 15)` with `L` the mercenary's level (unsigned compare), paid with
+  `PayGold` like a hire; a refused payment pays nothing. (fn:MERC_Resurrect@0x00579C00,
+  fn:MERC_ResurrectCost@0x006637B0, run:2026-10-17-economy)
 - [I] **Death.** `PETS_OnDeath` sets the pet's dead bit; a mercenary stays in the pet list. (fn:PETS_OnDeath@0x005751A0)
 - [I] **Combat skill choice** (`DefaultChance`, `Chance_i`, `ChancePerLvl_i`, `Mode_i`) is `MERCAI_PickSkill`, out of
   scope (ADR-0002). What a mercenary may equip is an inventory rule, not specified here. (fn:MERCAI_PickSkill@0x005E4D30,
@@ -699,7 +701,7 @@ on the in-game screen.
 ## Open questions
 
 - [L] **Not reached by a run** (each one inferred above): classic hire lists and hires, a Greiz hire, the free mercenary,
-  refused hires (quest gates, gold), the stash part of the payment, a hire of an unlisted entry, the build through
+  refused hires (quest gates, gold), a hire of an unlisted entry, the build through
   `NPC_OpenStore`, a level-up in play (`MERC_AddExp`, and the input share of the owner's experience, not read), a dead
   or empty header and a name past the range, the written header, multiplayer sharing of the table, the list window's
   name 1057. Each needs a harness session; none changes the draw order of § D.

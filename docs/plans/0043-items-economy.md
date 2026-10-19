@@ -500,3 +500,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     released with the three scopings; filed
     [2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder](../backlog/2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder.md).
   - **Next:** merge `lane/p43h`; Phase 3 (spec-writer) from the released entry; Phase 2b when harness slot 1 frees.
+- **2026-10-19 — Phase 3 written (spec-writer, `lane/p43s`, from `main` `7aeeafd`), review requested.** New
+  [items/economy](../specs/items/economy.md), draft, {C 106, I 81, L 12}: the `Scale` primitive, the price core
+  (early returns and base, value terms with the per-stat table by `Encode`, mode steps, NPC row and quest groups,
+  quantity, recharge, `max buy`, result), the gamble price, buy, sell and repair, gold (payment, caps, pile amount,
+  `DropGoldAmount`, the death loss with the `game+0x6A` writer of rbs2 (b), corpse, hire, resurrect and Cain costs),
+  wear (armour pick, rolls, quantity, charges, replenish) and a draws-per-event table; eight worked examples from
+  run:2026-10-17-economy. The three released scopings are applied; Phase 2b's items and the accepted shortfalls are
+  `[I]` in the body and listed under *Open questions* (6 `[L]` items plus 6 community differences). Cross-links:
+  items/vendors § I (renamed "Prices and repair", now a link), hirelings § K and F3 (`PayGold` and resurrection
+  raised to `[C]` from the run), items/quest-drops D6 and its `DropGoldAmount` question (struck), the items README
+  Files row, two glossary terms, and the two inbound links the § I rename broke. Research map: `items/economy` →
+  `draft spec` (the architect's row, proposed in the review request). Backlog: the inputs entry closed, the rbs2
+  readings entry annotated (part (b) folded), review request
+  [2026-10-19-spec-writer-architect-plan-0043-p3-economy-spec-review](../backlog/2026-10-19-spec-writer-architect-plan-0043-p3-economy-spec-review.md).

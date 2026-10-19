@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/tc, items/quality, items/affixes, items/properties, items/sockets-runewords, items/cube, save/d2s]
 consumed_by: [items/tc, objects, monsters/pool]
-tags: {C: 81, I: 88, L: 3}
-updated: 2026-10-17
+tags: {C: 81, I: 88, L: 2}
+updated: 2026-10-19
 ---
 
 # Quest drops, quest rewards and special drops
@@ -454,8 +454,10 @@ D6. BaalDeath, killer present, killer word 40 bit 0 clear:          [I] (fn:sub_
         DropGold(amount) at Baal                                   ; up to 32 piles
 ```
 
-- D6. [I] Not run (Baal was not killed). `DropGold` is `sub_0055A090_DropGoldAmount(amount, 32)`; how it splits the
-  amount into piles is not read (*Open questions*). (fn:sub_0055B030_DropGold@0x0055B030, fn:sub_0055A090_DropGoldAmount@0x0055A090)
+- D6. [I] Not run (Baal was not killed). `DropGold` is `sub_0055A090_DropGoldAmount(amount, 32)`: piles of at most
+  2 000 000 000, at most 32, each a created gold item whose stat 14 is set to its share, so each pile draws as an item
+  creation ([items/economy § G](economy.md#g-gold-payment-caps-piles-and-the-death-loss), G9).
+  (fn:sub_0055B030_DropGold@0x0055B030, fn:sub_0055A090_DropGoldAmount@0x0055A090)
 
 #### D7. Scripts that create nothing, and Uber Tristram
 
@@ -864,7 +866,9 @@ logs of run:2026-10-16-quest-drops (`workspace/logs/quests-s3-<seed>-….log`, p
   item; Larzuk on a non-magic item; Diablo's and Baal's kills; Baal's gold; Anya's and Qual-Kehk's items; the quest
   chests' gold and Wirt's gold; Mephisto's kill-time bit 0 for a fresh killer; the Countess in Hell; the Cow King's two
   refusals.
-- [L] How `sub_0055A090_DropGoldAmount` splits Baal's amount into piles, and whether it draws.
+- ~~How `sub_0055A090_DropGoldAmount` splits Baal's amount into piles, and whether it draws.~~ Answered in
+  [items/economy § G](economy.md#g-gold-payment-caps-piles-and-the-death-loss) (G9): piles of at most 2 000 000 000, at
+  most 32, one item creation each; Baal's gold itself stays unrun.
 - ~~The ilvl `DropItemAtUnit` gives a drop from an object in a level without a `Levels` record, and which
   `ItemCreateByQuality` case takes the Cow King's quality 0.~~ Answered: ilvl 1 (C1 note), case 2 (D3 note).
 - ~~The meaning of `ITEMS_GetType` = 4 and item flag `0x1000` in the three service tests, and whether the imbue

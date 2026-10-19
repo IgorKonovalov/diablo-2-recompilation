@@ -369,8 +369,8 @@ The gambled item is fully decided at the build, base and quality included. Closi
 *Gamble* builds a new one. Read from the code, not exercised: opening it twice within one interaction shows the same
 items, and buying an item copies it to the player without making a replacement. A gambled unique enters the
 [made-uniques set](../glossary.md) when the window is built, as a dropped one does, whether or not it is bought, so a
-later pick of that row fails and falls back; this is read from the code. Prices and repair are named in the spec
-but not specified ([§ I](../specs/items/vendors.md#i-named-only-prices-and-repair)).
+later pick of that row fails and falls back; this is read from the code. Prices and repair have their own spec, not
+yet reviewed, which the vendor spec points to ([§ I](../specs/items/vendors.md#i-prices-and-repair)).
 
 ## Quest drops and quest rewards
 
