@@ -80,7 +80,10 @@ build recipe (JSON object; every key optional; example tools/d2s_recipes/lightso
                "item_stats": {stat id: value} adds entries to an extended item's property list (plan 0030
                Phase 2: stat 356 on Wirt's Leg);
                "dur": N (plan 0043 Phase 2, test state) writes current durability N (0..the full maximum) for
-               a damaged item;
+               a damaged item; "broken": true (plan 0043 Phase 2b, test state, with "dur": 0) sets flags bit 8;
+               {"code": ..., "crafted": [name1, name2]} (plan 0043 Phase 2b) is a crafted item (quality 8) built
+               as a rare one, with an optional "prefix" in affix slot 0 and "suffix" in slot 1 (their mods as the
+               properties), a state the cube's crafting does not make (no recipe mods);
                test-state keys (plan 0029 Phase 2): "identified": false clears flags bit 4 (an unidentified
                item); "quality": "low" | "superior" (3-bit field "qdata", 0) | "rare" | "crafted" ("names"
                [name1, name2], (160, 121), no affixes) on a plain code: the quality with empty quality fields and the
@@ -1155,6 +1158,7 @@ def checkuniq(excel_dir, paths):
 
 FLAG_IDENTIFIED, FLAG_SOCKETED, FLAG_SIMPLE, FLAG_23 = 1 << 4, 1 << 11, 1 << 21, 1 << 23
 FLAG_ETHEREAL = 1 << 22
+FLAG_BROKEN = 1 << 8
 SWAP_BODIES = {"rarm2": 11, "larm2": 12}
 LOCATIONS = {"stored": 0, "equipped": 1, "belt": 2, "socketed": 6}
 STORES = {"inventory": 1, "cube": 4, "stash": 5}
@@ -1163,14 +1167,18 @@ QUALITIES = {"low": 1, "normal": 2, "superior": 3, "rare": 6, "crafted": 8}
 
 def new_item(t, spec, rng):
     """An item dict for encode_item from a recipe entry (see build)."""
-    if sum(k in spec for k in ("unique", "set")) + ("suffix" in spec or "prefix" in spec or "rare" in spec) > 1:
-        raise D2sError("item %r: one of unique, set, or prefix / suffix / rare" % spec)
+    if "rare" in spec and "crafted" in spec:
+        raise D2sError("item %r: rare or crafted, not both" % spec)
+    crafted = "crafted" in spec
+    if sum(k in spec for k in ("unique", "set")) + ("suffix" in spec or "prefix" in spec or "rare" in spec
+                                                      or crafted) > 1:
+        raise D2sError("item %r: one of unique, set, or prefix / suffix / rare / crafted" % spec)
     if "prefix" in spec and "rare" in spec:
         raise D2sError("item %r: prefix goes with a magic item, not rare" % spec)
-    rare = spec.get("rare")
+    rare = spec.get("crafted") if crafted else spec.get("rare")
     if rare is not None and (not isinstance(rare, list) or len(rare) != 2
                              or not all(isinstance(n, int) and 0 <= n < 256 for n in rare)):
-        raise D2sError("item %r: rare must be [name1, name2], two 8-bit name ids" % spec)
+        raise D2sError("item %r: rare / crafted must be [name1, name2], two 8-bit name ids" % spec)
     if "unique" in spec:
         rec, row = t.unique(spec["unique"])
         code = row["code"]
@@ -1229,7 +1237,8 @@ def new_item(t, spec, rng):
             it["quest_diff"] = qd
         return it
     kind = t.kinds.get(code)
-    quality = 2 if row is None else 6 if rare is not None else 4 if row.get("magic") else 5 if "set" in spec else 7
+    quality = (2 if row is None else (8 if crafted else 6) if rare is not None else 4 if row.get("magic")
+               else 5 if "set" in spec else 7)
     it.update(n_filled=0, seed=spec.get("seed", rng.getrandbits(32)), ilvl=spec.get("ilvl", 99),
               quality=quality, has_class=0, class_affix=None)
     if "quality" in spec:
@@ -1261,7 +1270,9 @@ def new_item(t, spec, rng):
         # names as stored (name1 = RarePrefix row + 156, d2s.md [I]); affix slots prefix, suffix, ... alternately:
         # the suffix, if given, goes in slot 1 (the first suffix slot) and its mod lines become the properties
         it["names"] = tuple(rare)
-        it["affixes"] = [None, rec if row.get("magic") else None, None, None, None, None]
+        # crafted (plan 0043 Phase 2b): quality 8 with the same fields; a "prefix" fills slot 0
+        it["affixes"] = [(row.get("prefix") or None) if row.get("magic") else None,
+                         (rec or None) if row.get("magic") else None, None, None, None, None]
         stats = unique_stats(t, row, spec.get("roll", "max")) if row.get("magic") else {}
     elif row is not None and "set" in spec:
         it["qid"] = rec
@@ -1321,6 +1332,14 @@ def new_item(t, spec, rng):
                 if not isinstance(d, int) or not 0 <= d <= it["dur"]:
                     raise D2sError("item %r: dur %r, 0..%d (the full maximum)" % (code, d, it["dur"]))
                 it["dur"] = d
+            if spec.get("broken"):
+                # test-state key (plan 0043 Phase 2b): flags bit 8, the broken flag ItemData+0x18 0x100 the game sets
+                # when an armour's durability reaches 0 (items/0011 § 7); only with "dur": 0
+                if spec.get("dur") != 0:
+                    raise D2sError("item %r: broken needs \"dur\": 0" % spec)
+                it["flags"] |= FLAG_BROKEN
+    if spec.get("broken") and not it.get("maxdur"):
+        raise D2sError("item %r: broken needs an armor or weapon base with durability" % spec)
     if "dur" in spec and not it.get("maxdur"):
         raise D2sError("item %r: dur needs an armor or weapon base with durability" % spec)
     if code in ("tbk", "ibk"):
