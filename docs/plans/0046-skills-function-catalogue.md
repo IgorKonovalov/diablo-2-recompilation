@@ -286,6 +286,43 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   returns 2 (damage, flies on) until its frames run out; hits 16/19 apply the aura stats to the search's result, 0
   for a new list; hit 21's state test admits the States count; hit 4 reads all four `HitSubMissile` slots (the
   stride the table doc had as `[L]`). Corrections in skills/0003 § 6 (hits 2, 3, 14, 17, 22, 44). Review request
-  [to the architect](../backlog/2026-10-20-reverser-architect-lane-p46m3-review-plan-0046-batch-9c.md) (three
+  [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p46m3-review-plan-0046-batch-9c.md) (three
   rulings: register values at a boundary, two weak controls, hit 2 unemulated); column readers
   [to the archivist](../backlog/2026-10-20-reverser-archivist-plan-0046-9c-missiles-skills-column-readers.md).
+- **2026-10-20 — `lane/p46m3` review (architect): batch 9c accepted with fixes (2: overclaim 1, other 1).**
+  Checks (kept in `workspace/logs/skills-cat-9c-review/`, `manifest.sha256` `b3761c63…`): the run's
+  `sha256sum -c manifest.sha256` passes (28 files); the lane's tool (`412e3e5c…`) regenerates every kept case, memory
+  and expectation file of 9a (27), 9b (39) and 9c (15) byte for byte and reproduces the three batches' `check.txt` and
+  `static.txt` byte for byte from their kept outputs; `re/ghidra_scripts/` is as on `main` (`EmuBoundary.java`
+  `286393aa…`). Objdump: hit 7's heal `RNG_RangeB(ECX = m+0x20, EDX = (calc2 << 8) − (calc1 << 8))` at 0x005AA0A6
+  (calc1 at Skills `+0x138`, calc2 at `+0x13C`, both `shl 8`), `+ lo`, and on `≤ 0` (`jg` at 0x005AA0B1)
+  `sub_005A8910_MissileElemRoll(EAX 22; m, 21, −1)` at 0x005AA0BD, then `UnitSetStat(unit, 6, min(stat 6 + h, max
+  life), 0)` at 0x005AA0E7; hit 44's `mov edi, [rec+0x4C]; test; jne` at 0x005A9E63–0x005A9E6D (non-zero, no owner
+  test: EBX = `UnitGetOwner` is never tested), EDI the radius and EBX the y position at `BuildDamage` 0x005A9F47;
+  hit 3 passes ECX/EDX through to hit 44 with unit 0 and returns 0 for a unit; hit 29's frames-left `test; je` at
+  0x005ABB5A (`!= 0` returns 2 before the owner test). From the kept cases: 7 of hit 44's 33 negative-`sHitPar1`
+  cases have no Skills row, so the non-zero test is decided by the boundary reached, not only by EDI. **Gate:** the
+  lane's files carry no W1 warning (the gate's W1 check over `docs/findings/skills/` gives none); the 11 W1 warnings
+  of the fast tier are `main`'s, in `docs/specs/data/excel.md`, outside this lane. **Ruling (1), register values:**
+  ADR-0021 (c) admits "every argument the claim uses, in registers and on the stack" and every byte written before
+  the call; a callee-saved register that is not an argument of the boundary is neither, and condition (3)'s map does
+  not list it. Its use as `AreaHitAt`'s radius also needs `BuildDamage` to preserve it, which is callee behaviour. So
+  the radius values of hits 24, 44 and 14 stay `[I]`, compared and matching in every case. The tests that choose
+  between returning and reaching the boundary stay `[C]` (ADR-0021). Route to `[C]`: a run that reaches `AreaHitAt`
+  (with `BuildDamage` emulated, or the harness); widening (c) to non-argument registers would take an amendment the
+  owner accepts, not a review. **Ruling (2), weak controls:** enough. The 9a rule asks a family whose control fails
+  fewer than 50 cases for a second perturbation; `holy9c` has `always2` (112) and `create9c` has `vel` (146), `ge0`
+  (80) and `count0` (54). The 8 (undead mask `0x18` against `0x08`) and the 4 (`left != 0` against `> 0`) cases each
+  decide their claim deterministically, not by chance (reverser review-fixes 10); `holy9c`'s hit-7 monster cases carry
+  mask values `0x08`, `0x10` and `0x18` alike (37 to 44 each). No re-run. **Ruling (3), hit 2:** accepted for this batch.
+  It is tier A, read by plan 0045, and tagged `[I]` here and in skills/0003 § 6, so nothing is raised on it. Its ring
+  of `MissileCreate` calls fits the same observed-boundary method as hits 25 and 29, so the "the rest are named with
+  the reason" clause of Phase 1 is met only by deferral. **Its emulation is carried to batch 9d.** **Fixes, made in
+  the documents:** (1) the three radius values split out of their `[C]` (ADR-0021) bullets into one `[I]` bullet
+  (skills/0006 § 3, § 4's hit 44 and hit 14, the Answer, skills/0003 § 6's 9c note, the experiments conclusion)
+  (overclaim); (2) hit 2's non-emulation given its destination (batch 9d) in skills/0006 § 16 and the experiments
+  conclusion (other). Review request closed
+  ([archive](../backlog/archive/2026-10-20-reverser-architect-lane-p46m3-review-plan-0046-batch-9c.md)); ledger rows
+  added. **Batch 9d may start** (missile hit 31–59 and row 568's 64 948), with 9c's conventions (call site asserted,
+  three seeds compared, pointed-to bytes compared, two controls per family). It also emulates hit 2, and it tags any
+  value read from a non-argument register at a boundary `[I]`.

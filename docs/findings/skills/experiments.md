@@ -200,6 +200,8 @@ Plan 0045 Phase 2's harness runs: none yet. Plan 0046's emulated runs (ADR-0015)
   calls with the call site, the arguments, the pointed-to packet or context and all three seeds asserted (`[C]` under
   [ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md); skills/0006 names each claim's boundary). The only
   seed any case steps before a boundary is the missile's (hits 1, 9, 13 through the `EType` roll; hit 7's heal); no
-  case steps the owner's or the target's. Not covered: what any boundary callee does and everything after it; hit 2;
+  case steps the owner's or the target's. A caller register that is not a boundary argument (the radius of hits 24,
+  44 and 14 in EBX, EDI and ESI at `BuildDamage`) is compared but stays `[I]` (`lane/p46m3` review, ruling 1). Not
+  covered: what any boundary callee does and everything after it; hit 2 (carried to batch 9d);
   faults (`MonsterOwnerRef` without MonsterData, `GameFindUnit` with a type above 5); when the game runs these
   functions or with which seed. (fn:sub_005A9FB0_MissHit07HolyBolt@0x005A9FB0, fn:sub_005AA650_MissHit10Guided@0x005AA650)

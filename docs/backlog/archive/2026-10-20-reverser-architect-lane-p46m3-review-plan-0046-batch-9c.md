@@ -2,18 +2,18 @@
 from: reverser
 to: architect
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../findings/skills/0006-missile-hit-1-29.md
-  - ../findings/skills/experiments.md
-  - ../plans/0046-skills-function-catalogue.md
-resolution: ""
+  - ../../findings/skills/0006-missile-hit-1-29.md
+  - ../../findings/skills/experiments.md
+  - ../../plans/0046-skills-function-catalogue.md
+resolution: "Reviewed 2026-10-20 (architect): batch 9c accepted with fixes (2). Ruling 1: the radius held in a callee-saved register at BuildDamage (hits 24, 44, 14) is not an argument and stays [I]; the path tests stay [C] (ADR-0021). Ruling 2: the two weak controls are enough (each family has a control failing 80+ cases; the 8 and 4 cases separate the claim deterministically). Ruling 3: hit 2 unemulated accepted, its emulation carried to batch 9d. Batch 9d may start. See plan 0046 log."
 ---
 
 The request: what is needed, from whom, and why. Not blocking / blocking <what>.
 Please review plan 0046 Phase 1 batch 9c (`lane/p46m3`): missile server hit functions 1–29, 25 entries
-([skills/0006](../findings/skills/0006-missile-hit-1-29.md), run:2026-10-20-cat-emu-9c in
-[experiments](../findings/skills/experiments.md)).
+([skills/0006](../../findings/skills/0006-missile-hit-1-29.md), run:2026-10-20-cat-emu-9c in
+[experiments](../../findings/skills/experiments.md)).
 
 - **Run:** five families, 8 400 cases, 0 mismatches, 0 undeclared reads, 0 stopped; site control 3 941 of 3 941;
   every negative control fails (two to six per family). `workspace/logs/skills-cat-9c/manifest.sha256` `343ef0d7…`
@@ -35,4 +35,4 @@ Please review plan 0046 Phase 1 batch 9c (`lane/p46m3`): missile server hit func
   return 3 on refusal, hit 3's return 0 for a unit.
 - **Symbols:** 42 rows (subsystem `skills/catalogue`), no clash with `main`.
 - Column readers filed to the archivist
-  ([entry](2026-10-20-reverser-archivist-plan-0046-9c-missiles-skills-column-readers.md)).
+  ([entry](../2026-10-20-reverser-archivist-plan-0046-9c-missiles-skills-column-readers.md)).

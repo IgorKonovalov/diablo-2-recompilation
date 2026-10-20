@@ -50,7 +50,10 @@ that return; a plain `[I]` is a code reading the emulator does not reach. (run:2
   freeze 12 `+0x34`). Hit 24 (pantherpotorange) and hit 3 → 44 (fire potions, bomb) and tier-A hit 14 (meteors) build
   the packet with `MISSILE_BuildDamage(owner; m, unit, packet)` instead. Hit 44 takes any **non-zero** `sHitPar1`
   (negative included) as its radius and has no owner test; hit 3 runs hit 44 only at the end of life (unit 0) and
-  returns 0 for a unit. Hit 9 (immolation arrow) first clears the missile's stats 56 and 134 (`UnitSetStat`, the
+  returns 0 for a unit. For hits 24, 44 and 14 the tests that choose between returning 1 and reaching `BuildDamage`
+  are covered (for hit 44, 7 cases with a negative `sHitPar1` and no Skills row reach the boundary), but the radius
+  value itself is held in a callee-saved register (EBX, EDI, ESI) at that boundary, not passed as an argument; it is
+  compared and stays `[I]` (ruling 1 of the `lane/p46m3` review, § 3). Hit 9 (immolation arrow) first clears the missile's stats 56 and 134 (`UnitSetStat`, the
   boundary) when `HitSubMissile1 ≥ 0`. (§§ 3–5, run:2026-10-20-cat-emu-9c `area9c`)
 - [C] (§ 6) **Hit 7 (holy bolt)** heals a unit that is the owner's pet (`TargetPet` set, the unit a monster whose owner
   reference is the owner player's guid): `life = min(stat 6 + heal, max life)` (`UnitSetStat(unit, 6, …)`, ADR-0021),
@@ -212,9 +215,16 @@ return 1;
   area hit is the damage). (run:2026-10-20-cat-emu-9c `area9c`, 0x005A9A70–0x005A9BEC,
   fn:sub_005A9A70_MissHit01AreaEType@0x005A9A70, fn:sub_0056BAD0_AreaHitAt@0x0056BAD0)
 - [C] (ADR-0021; ends at `MISSILE_BuildDamage` @0x005A9D36) **Hit 24**: the same tests, then
-  `MISSILE_BuildDamage(ECX game, EDX owner; m, unit, packet)` on the zeroed packet, with the radius in EBX at the call
-  (compared). No seed is stepped before it. After, `[I]`: the OR's, `AreaHitAt` with that radius, return 1.
+  `MISSILE_BuildDamage(ECX game, EDX owner; m, unit, packet)` on the zeroed packet. No seed is stepped before it.
+  After, `[I]`: the OR's, `AreaHitAt` with the radius, return 1.
   (run:2026-10-20-cat-emu-9c `area9c`, 0x005A9BF0–0x005A9D6E, fn:sub_005A9BF0_MissHit24AreaBuild@0x005A9BF0)
+- [I] **The radius of hits 24, 44 and 14** (`sHitPar1 > 0 ? : max(calc1, 1)` for 24, as § 4 for 44 and 14) is the
+  value in EBX (24), EDI (44) or ESI (14) at the `BuildDamage` call. The checker compares it in every boundary case
+  and it matches, but it is a callee-saved register, not an argument of `BuildDamage`, so it is outside ADR-0021 (c)
+  and its use as `AreaHitAt`'s radius depends on the callee preserving it. The `lane/p46m3` review ruled it stays
+  `[I]` (ruling 1). It can rise to `[C]` through a run that reaches `AreaHitAt`, where the radius is an argument.
+  (run:2026-10-20-cat-emu-9c `area9c`, fn:sub_005A9BF0_MissHit24AreaBuild@0x005A9BF0,
+  fn:sub_005A9E10_MissHit44AreaHit@0x005A9E10, fn:sub_005AABB0_MissHit14AreaHitSub@0x005AABB0)
 - [I] Stock: hit 1 on 62 fireball (`sHitPar1` 4), 129 vampirefireball (3), 283 desertfireball (2), 404 impfireball
   (5), 416 catapult cold ball (0: `calc1` of its creator), 441 sucfireball (3), 656 explodingarrowexp2 (5), 657
   freezingarrowexp3 (5, `EType` 12); `HitFlags` 2 and `ResultFlags` 5 on most. Hit 24 on 238 pantherpotorange (0,
@@ -232,12 +242,13 @@ return 1;
 - [C] **Hit 3** (`0x005A9F90`) returns 0 (no end, no damage) for any unit, without a record test; with unit 0 it calls
   hit 44 with unit 0 (a `call`, not a tail jump). [C] (ADR-0021; ends at `MISSILE_BuildDamage` @0x005A9F4C) **Hit 44**
   (`0x005A9E10`): with a record (else 1); **no owner test** (the owner may be 0); radius `sHitPar1` when it is
-  **non-zero** (`jne`: a negative value is taken as it is), else, with a Skills row (else 1), `max(aurarangecalc, 1)`
-  (EDI at the call, compared); then `BuildDamage(owner; m, 0, packet)`. After, `[I]`: the OR's, `AreaHitAt`, return 1
+  **non-zero** (`jne` at 0x005A9E6D: a negative value is taken as it is, and with no Skills row the case reaches
+  `BuildDamage` rather than returning 1), else, with a Skills row (else 1), `max(aurarangecalc, 1)` (EDI at the call,
+  value `[I]`, § 3); then `BuildDamage(owner; m, 0, packet)`. After, `[I]`: the OR's, `AreaHitAt`, return 1
   when it returns non-zero, else 3. (run:2026-10-20-cat-emu-9c `area9c`, 0x005A9E10–0x005A9FA7,
   fn:sub_005A9F90_MissHit03EndArea@0x005A9F90, fn:sub_005A9E10_MissHit44AreaHit@0x005A9E10)
 - [C] (ADR-0021; ends at `MISSILE_BuildDamage` @0x005AACB7) **Hit 14** (tier A, `0x005AABB0`): a Skills row and **an
-  owner** are required (else 1); radius `sHitPar1 > 0 ? : max(aurarangecalc, 1)` (ESI at the call, compared); then
+  owner** are required (else 1); radius `sHitPar1 > 0 ? : max(aurarangecalc, 1)` (ESI at the call, value `[I]`, § 3); then
   `BuildDamage(owner; m, unit, packet)`. After, `[I]` (0x005AACB7–0x005AAD3B): the OR's; `AreaHitAt`; result 1 when
   it returns non-zero, else 3; then, when `HitSubMissile1 ≥ 0`, `sub_005AAA90_MissSubRing18(EAX m; game,
   HitSubMissile1, Param3 + (lvl−1)·Param4, max(sHitPar2, 1))`, whose third argument, when above 0, gives each fire
@@ -460,7 +471,8 @@ default: return 4;
 
 - [C] **Hit 27** (`0x005ABA00`) is `mov eax, 1; ret 4` (end, no damage) on every input (`range9c`). Stock 250, 253,
   256 the grim wards (their do 14 runs skill do 30, skills/0004 § 9).
-- [I] **Hit 2** (tier A, not emulated): skills/0003 § 6 stands; in addition, a missing record or `HitSubMissile1 < 0`
+- [I] **Hit 2** (tier A, not emulated in this batch; emulation carried to batch 9d, ruling 3 of the `lane/p46m3`
+  review): skills/0003 § 6 stands; in addition, a missing record or `HitSubMissile1 < 0`
   returns 3 as the ring path does, and the ring's owner (EDX) is `UnitGetOwner(m)`. (0x005A9D80–0x005A9E05,
   fn:sub_005A9D80_MissHit02Ring@0x005A9D80)
 

@@ -391,9 +391,10 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
   *2026-10-20 (plan 0046 batch 9c), corrections to the rows above:* **hit 3** returns 0 for any unit (no record
   test) and runs hit 44 only with unit 0 (`[C]`); **hit 44** takes any non-zero `sHitPar1` as its radius (a negative
   one included; 0 gives `max(aurarangecalc, 1)`) and has no owner test, and builds the damage with
-  `MISSILE_BuildDamage(owner; m, 0, packet)` before any draw (`[C]` under ADR-0021, up to that call); **hit 14** needs
-  an owner (else 1), its radius is `sHitPar1 > 0 ? : max(aurarangecalc, 1)` (`[C]` under ADR-0021, up to
-  `BuildDamage`), and after the area hit (`[I]`) it passes `Param3 + (lvl−1)·Param4` to the 18-ring, which gives each
+  `MISSILE_BuildDamage(owner; m, 0, packet)` before any draw (`[C]` under ADR-0021, up to that call; the radius value,
+  held in EDI at that call and not an argument, `[I]`); **hit 14** needs an owner (else 1, `[C]` under ADR-0021, up to
+  `BuildDamage`), its radius is `sHitPar1 > 0 ? : max(aurarangecalc, 1)` (`[I]`: ESI at that call, the same ruling of
+  the `lane/p46m3` review), and after the area hit (`[I]`) it passes `Param3 + (lvl−1)·Param4` to the 18-ring, which gives each
   fire flags `0x8001` and that range; **hit 17**'s flee call is `0x005DDD00(owner; unit, skill, Param3 + (lvl−1)·Param4,
   Param5 + (lvl−1)·Param6)`, two level-scaled values, not "its `0x004EFCB0` length" alone (`[C]` under ADR-0021, up to
   that call); **hit 2** also returns 3 without a record or with `HitSubMissile1 < 0` (`[I]`); **hit 22** finds its unit
