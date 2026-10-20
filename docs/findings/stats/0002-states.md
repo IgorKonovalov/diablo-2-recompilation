@@ -50,8 +50,9 @@ against this finding; § 8 lists what each claim was checked against and what st
   9 (an item's `item_aura`, stat 151) every `p = max(perdelay, 5)` frames on a grid (`((frame − 1 + p) / p)·p + 1`);
   each run applies `auratargetstate` to the units in range with a duration that ends one frame after the next run.
   Two auras of one state: equal level refreshes, higher replaces, lower is refused. A mercenary's aura runs the same
-  way. A damaging aura's run draws one `RNG_RangeB` per hit on the caster's seed (the hit's elemental damage, phase
-  3's); the run draws nothing else. (fn:EVENT_SelectedAuraTick@0x0056FCB0, fn:EVENT_ItemAuraTick@0x0056FE40,
+  way. Each run of a damaging aura that draws moves the caster's seed by one `RNG_RangeB` (the elemental damage,
+  phase 3's; 865 Sanctuary runs, 865 steps); the run draws nothing else. That it is one draw whatever the number of
+  units hit is the reading of § 7's dated note, `[I]`: the run does not say how many units each run hit. (fn:EVENT_SelectedAuraTick@0x0056FCB0, fn:EVENT_ItemAuraTick@0x0056FE40,
   fn:SKILLS_NextPeriodicFrame@0x0056CD50, fn:AURA_ApplyToTarget@0x005CEDC0, fn:SKILLS_RollElemDamage@0x0056E0C0,
   run:2026-10-17-stats)
 - [I] **Shrines** apply their state through a table at `0x006E1850` (code → stat, state) for `Duration in frames`,
@@ -231,7 +232,8 @@ stateDiagram-v2
   `AURA_ApplyToTarget` (`[C]` under ADR-0021 there): the mana check also gates the `aurastat` evaluation (a player
   whose stat 8 is below the cost gets the `aurastate` with no values), `aurastate` must be above 0 (0 is skipped, and
   the run goes straight to `auratargetstate`, which admits 0), and a `passivestate` above 0 goes in the block's
-  `+0x48`, the state `AURA_ApplyToTarget` removes. (fn:sub_005CF010_PalAuraDo@0x005CF010)
+  `+0x48`. After the boundary, `[I]`: `AURA_ApplyToTarget` removes the state named at `+0x48` (the bullet below).
+  (fn:sub_005CF010_PalAuraDo@0x005CF010)
 - [I] **Range and filter.** The caster's near rooms; a unit counts when its squared distance to the caster
   (subtiles) is ≤ `range²` and it passes the filter (`aurafilter`, `0x583` when 0); a monster with a MonStats flag
   can be excluded. (fn:SKILLS_ForUnitsInRange@0x0056B7E0, tbl:Skills.txt:aurafilter)
@@ -311,7 +313,7 @@ stateDiagram-v2
 | apply | `STATE_ApplyTimed` (and the combat appliers) | the request, frame, target stats 109, state 57, existing lists | list made, refreshed or refused; event 12 | none |
 | expire | `EVENT_TimedListExpire` | frame, the timed lists | lists freed, bits cleared, passives rebuilt | none |
 | tick | `sub_00580810_RegenEvent` (player), `sub_005A6920_MonRegenEvent` | stats 6–11, 26–28, 74, mode, states 85, 100, 106 | stats 6, 8, 10 | none |
-| aura | events 8, 9 | skill, level, calcs, units in range | target lists via apply | none in the code read; the run found one `RNG_RangeB` per hit of a damaging aura (§ 8) |
+| aura | events 8, 9 | skill, level, calcs, units in range | target lists via apply | none in the code read; the run found one `RNG_RangeB` per drawing run of a damaging aura (§ 8; once per run by the reading, note below) |
 | recompute | any list write, link, unlink (stats/0001 § 3) | the lists | the `+0x48` cache, callbacks | none |
 | shrine, well | `OBJOP_Shrine`, OperateFn 22 | Shrines/Objects row, player stats | apply, refill, re-arm event | none for codes 0–15 and wells |
 
@@ -322,7 +324,9 @@ stateDiagram-v2
   (0x00582CE3, 0x0058311D, 0x0058344D, fn:RNG_Range@0x0045C390)
 - [C] *Corrected by the run (§ 8, P2 review):* the scan was one level deep and missed the aura kind's draw. A
   damaging aura's run (Sanctuary) calls `sub_005CF3A0_AuraHitDo`, which calls `SKILLS_RollElemDamage` at 0x005CF5D5,
-  which draws `RNG_RangeB` at 0x0056E132 on the caster's seed, once per hit. Every other kind of the table is
+  which draws `RNG_RangeB` at 0x0056E132 on the caster's seed, once in each run that draws (865 runs, 865 steps;
+  *wording narrowed at the `lane/p46m8` review*: "once per hit" read as once per unit hit is not separated by the
+  run, and the code makes one call per run, note below). Every other kind of the table is
   draw-free by the run. (fn:sub_005CF3A0_AuraHitDo@0x005CF3A0, fn:SKILLS_RollElemDamage@0x0056E0C0,
   fn:RNG_RangeB@0x0045C3E0, run:2026-10-17-stats)
   *2026-10-20 (plan 0046 batch `pal`, [skills/0011](../skills/0011-paladin.md) § 3), `[I]` from the reading:* the call
@@ -391,7 +395,7 @@ low defence, to be poisoned) walked Act II, III and V areas; the Barbarians and 
   below (`[C]`). Shrine 7 and well 5
   are below the 20 the amendment asks: their "no draw" stays `[I]` (§ 7's scan). The aura kind does
   when the aura hits: 865 runs of the player's item aura (Sanctuary) moved the player's seed, each by exactly
-  the number of `RNG_RangeB` calls `SKILLS_RollElemDamage` made from `sub_005CF3A0_AuraHitDo` (one per hit, 865
+  the number of `RNG_RangeB` calls `SKILLS_RollElemDamage` made from `sub_005CF3A0_AuraHitDo` (one per run, 865
   steps; each such run's exit is asserted against its entry advanced by its logged draws, and 746 of the next runs
   of the same caster entered on that exit: chained pairs, counted at the P2 review); the game seed never moved
   except once, when a kill dropped an item; a run that killed also stepped the dead

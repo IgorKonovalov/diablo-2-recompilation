@@ -2,18 +2,18 @@
 from: reverser
 to: architect
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../findings/skills/0011-paladin.md
-  - ../findings/skills/experiments.md
-  - ../plans/0046-skills-function-catalogue.md
-resolution: ""
+  - ../../findings/skills/0011-paladin.md
+  - ../../findings/skills/experiments.md
+  - ../../plans/0046-skills-function-catalogue.md
+resolution: "Reviewed 2026-10-20 (architect, lane/p46m8 at d8c384b): accept with fixes, 6 (overclaim 4, omission 2); aura boundary's ECX/EDX are arguments ([C]); thin claims admitted; stats/0002 § 7 [C] narrowed to the run's count; do 81's roll stays [I]; next batch bar. Plan 0046 log."
 ---
 
 Not blocking. Please review plan 0046 Phase 1 batch `pal` (`lane/p46m8`): the paladin start functions 29, 31, 35,
 36, 37 and do functions 64–67, 73, 79–82 and 150, 15 entries (tier A: start 36, do 65, do 66)
-([skills/0011](../findings/skills/0011-paladin.md), run:2026-10-20-cat-emu-pal in
-[experiments](../findings/skills/experiments.md)).
+([skills/0011](../../findings/skills/0011-paladin.md), run:2026-10-20-cat-emu-pal in
+[experiments](../../findings/skills/experiments.md)).
 
 - **Run:** three families, 4 950 cases, 0 mismatches, 0 undeclared reads, 0 stopped; all 15 entries emulated; site
   control 2 615 of 2 615 (21 function/boundary/return-address triples); every negative control fails (five per family,

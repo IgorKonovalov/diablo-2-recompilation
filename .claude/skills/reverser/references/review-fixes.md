@@ -7,7 +7,9 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
 1. **A new code reading is `[I]`.** `[C]` needs a named second source (a reproduction of logged calls, a
    writer/reader pair, a full-table check, an independent tool). Don't name a meaning the code does not
    give. Seen: S1e rows 51/64 ([0038](../../../../docs/plans/0038-inferred-claims-sweep.md), 2026-10-17); `0x400` "good/evil"
-   ([0040](../../../../docs/plans/done/0040-drlg-room-lifecycle.md) P1 review).
+   ([0040](../../../../docs/plans/done/0040-drlg-room-lifecycle.md) P1 review); a meaning word ("the missile count", "the
+   charge speed") inside a `[C]` of the batch's column-reader entry (`lane/p46m6` and `lane/p46m8` reviews,
+   [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
 2. **Recount every count from the binary with a kept command**, never from memory or a partial scan:
    writers, call sites, instructions, items. Copy a run's counts from the kept, hashed check output, never from an
    earlier check. Seen: bit-17 writers 5 → 21

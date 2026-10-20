@@ -65,8 +65,8 @@ cases that return; a plain `[I]` is a code reading the emulator does not reach. 
   returns 0 without an inventory (`+0x60`) and reads **no skill record**, else ends at `0x0063C8F0(inventory, 0)`; start
   37 (Zeal, Fury, BloodLordFrenzy) runs `sub_0056E510_UnitMeleeReachPlus4` (skills/0009's ends) and, with a target,
   writes `calc1`, the target's type and guid into the used skill's `+0x18`/`+0x1C`/`+0x20` and returns 1, else ends at
-  `sub_0056BD10_NearestUnitInRange(0, 0, reach + 4, 0x20003, −1, 0)`. Do 64 (Sacrifice) finds the caster's queued hit
-  on the target (`sub_0057D690_QueuedHitFind`; none → 1) and ends at `COMBAT_ApplyDamage(game, caster; caster, 0,
+  `sub_0056BD10_NearestUnitInRange(0, 0, reach + 4, 0x20003, −1, 0)`. Do 64 (Sacrifice) takes the first node of the caster's `+0xAC`
+  chain that names the caster and the target (`sub_0057D690_QueuedHitFind`; none → 1) and ends at `COMBAT_ApplyDamage(game, caster; caster, 0,
   &packet)` with `{+0x00 0x1000, +0x08 and +0x4C = MulDiv(min(queued +0x08, target stat 6), calc2, 100)}`; do 79
   (Conversion) sets bit 6, and with a target and its queued hit on a type-1 target with `HirelingType` and `0x006259B0` 0 ends at
   `0x0056E2F0(ECX target, EDX 0xB)` inside `0x005D02B0`, otherwise at `COMBAT_DeliverQueued(game, caster; target, 0)`.
@@ -272,7 +272,7 @@ return 1;
   `AURA_ApplyToTarget` when its `+0x48` is set and copies the packet to each unit for `COMBAT_ApplyDamage(…, 1, &copy)`
   and `COMBAT_GetHit`; `0x005D07C0` (do 81) returns 0 for a monster whose MonStats `+0x168 + difficulty` byte is 0 or
   more (signed), does the same, then steps **the unit's** seed inline (`× 0x6AC690C5`, carry) and sets state 107 when
-  the new low word `% 100` is below 20, else clears it; `0x005D0D70` (do 82) takes a unit `0x006456D0` accepts,
+  the new low word, unsigned, `% 100` (`mul 0x51EB851F; shr edx, 5`) is below 20, else clears it; `0x005D0D70` (do 82) takes a unit `0x006456D0` accepts,
   `RNG_Range(caster + 0x20, 100) < calc1`, raises stat 6 by `calc2 << 8` (capped at `UnitGetMaxHp`) and stat 8 by
   `calc3 << 8` (capped at `UNIT_GetMaxMana`), sets state 99, clears `+0xC4` bits 1–2 and counts.
   (0x005CF4FA–0x005CF69F, 0x005CF2A0–0x005CF397, 0x005D07C0–0x005D091F, 0x005D0D70–0x005D0E8F, 0x005D0FD2–0x005D1060)
@@ -401,7 +401,9 @@ return 1;
   fn:sub_005CF010_PalAuraDo@0x005CF010, fn:sub_005CF3A0_AuraHitDo@0x005CF3A0)
 - stats/0002 § 4, carried there as a dated note: the mana gate covers the `aurastat` evaluation of do 65, not only the
   `passivestat` writes; § 7's "once per hit" for Sanctuary's draw is one `SKILLS_RollElemDamage` per run of do 66 (its
-  packet copied to each unit hit), `[I]` from the reading. (fn:sub_005CF2A0_AuraHitUnitCb@0x005CF2A0, 0x005CF5D5)
+  packet copied to each unit hit), `[I]` from the reading. At the `lane/p46m8` review, stats/0002's `[C]` wording in its
+  Answer and §§ 7 and 8 was narrowed to what its run counted (one draw per drawing run, 865 of 865), the run not separating
+  one unit hit from several. (fn:sub_005CF2A0_AuraHitUnitCb@0x005CF2A0, 0x005CF5D5)
 
 ## Data touched
 

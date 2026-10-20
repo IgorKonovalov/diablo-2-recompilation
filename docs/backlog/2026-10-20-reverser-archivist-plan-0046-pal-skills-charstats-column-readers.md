@@ -23,9 +23,10 @@ these columns; please link them from the table docs.
   `passivestat1..5`, `passivecalc1..5` for do 65, 66, 81, 82: the words of the 0x50-byte block passed to
   `AURA_ApplyToTarget` (§ 3, `[C]` as block words; what the callee does with them `[I]`): do 65 needs `aurastate`
   above 0 (0 skipped) and `auratargetstate` 0 or more; do 66, 81, 82 need `aurastate` in `[0, States count)`.
-- [Skills](../tables/Skills.md) `Param1` (`+0x148`) for start 31: `0x004C9460` adds it to `max(stat 67, 50)` in the
-  charge speed `MulDiv(base, …, 100)` (§ 5, `[C]` as a map).
-- [CharStats](../tables/CharStats.md) `RunVelocity` (`+0x041`): start 31 reads the byte `<< 8` as its base speed (§ 5,
-  `[C]` as a map; the column name is the table doc's).
+- [Skills](../tables/Skills.md) `Param1` (`+0x148`) for start 31: `0x004C9460` adds it to `max(stat 67, 50)` in
+  `MulDiv(base, …, 100)`, the argument of `sub_00648690_PathSetSpeed` (§ 5, `[C]` as a map; that it is the charge's
+  speed is `[I]`).
+- [CharStats](../tables/CharStats.md) `RunVelocity` (`+0x041`): start 31 reads the byte `<< 8` as `base` in that
+  `MulDiv` (§ 5, `[C]` as a map; the column name is the table doc's, and its reading as a run speed `[I]`).
 - [MonStats](../tables/MonStats.md) `Run` (`+0x034`): start 31 reads it `movsx` `<< 8` for a monster (§ 5, `[C]` as a
   map; the table doc lays it out as u16, the code reads it signed).
