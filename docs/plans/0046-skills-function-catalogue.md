@@ -362,5 +362,45 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   call; the Skills `Kick` maximum divides by 3, not 4 (`[I]`). Row 568's 64 948: the four hit-table reads sit behind a
   signed `test ax, ax; jle` (scan `[C]`, meaning `[I]`). Tags: 38 `[C]`, 10 `[I]`, 4 `[L]` bullets; 28 symbols added
   (`I`). Dated notes in skills/0003 § 6 and skills/0006 § 16. Review request
-  [to the architect](../backlog/2026-10-20-reverser-architect-lane-p46m4-review-plan-0046-batch-9d.md); column
+  [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p46m4-review-plan-0046-batch-9d.md); column
   readers [to the archivist](../backlog/2026-10-20-reverser-archivist-plan-0046-9d-missiles-skills-column-readers.md).
+- **2026-10-20 — `lane/p46m4` review (architect): batch 9d accepted with fixes (4: overclaim 2, misread 1, miscount
+  1).** Merged `main` (`9ef5f84`) first; no conflict, `backlog.py archive` moved nothing; 28 new symbols, no address
+  or name twice in `re/symbols.csv` after the merge. **Re-run:** `sha256sum -c manifest.sha256` passes (29 files);
+  `check --batch 9d` and `static --batch 9d` from the lane's tool (`da004a4b…`) regenerate `check.txt` (`9ec69cf5…`)
+  and `static.txt` (`d909b72d…`) byte for byte; tag counts 38 `[C]`, 10 `[I]`, 4 `[L]` recounted. **Read against
+  objdump:** hit 52 (0x005AC940–0x005ACA4F), hit 2 (0x005A9D80–0x005A9E05), `MissNovaCreate`'s head
+  (0x0056D4E0–0x0056D539), `0x00408090`, `sub_00644C20_SkillKickDamage` (flag 0 divides by 3: `imul 0x55555556`),
+  and the four hit-table reads (each straight-line: `movzx eax, word [rec+0x0E]; test ax, ax; jle; movsx; cmp
+  [0x0073C83C]; jge; read`). **Ruling (1), hit 52:** the block word is `[C]` (ADR-0021): the block sits at
+  `ebp−0x60`, is zeroed, and no instruction stores to `ebp−0x50` (`+0x10`); the emulated block matches in all 173
+  creation cases. The control `cls52` fails all 120 cases with `HitSubMissile1 ≠ 0`; in the other 53 the word is 0
+  and the two readings agree (the finding said "120 of 120 creation cases"). That the missiles are row 0 (`arrow`)
+  is `MissileCreate`'s reading of `+0x10` (skills/0002 § 2), callee behaviour after the boundary, so it stays `[I]`
+  under ADR-0021's "what they mean to the callee keeps its own tag". Whether the game shows arrows stays under Open
+  questions (a harness check). **Ruling (2), the nova helper:** `[C]` up to the call accepted (boundary `Fatal` at
+  return address 0x0056D50C, 153 cases; control `fatal8` 53). But `0x00408090` is not an assertion-message helper: it
+  is `mov eax, [esp]; ret`, which returns its own return address. The `0xF0D` pushed before it is the third argument
+  of `0x00408A60(0x006CC837, that address, 0xF0D)`, which is followed by `0x00681E09(−1)`. All of that is after the
+  boundary, `[I]`. The finding now says "the fatal path's `0x00408090`" throughout, as rng/0002 and the data
+  findings name the trio. **Ruling (3), weak controls and hit 2's ring:** enough, under 9c ruling 2. `nofloor31` (2),
+  `nofloor55` (3) and `pct100` (6) each fail on every case whose input decides the claim (a negative roll, a drain
+  under 1, a percent above 100), deterministically (reverser review-fixes 10), beside `nocap43` 73 and `ownseed` 140
+  in `heal9d`. Hit 2's source choice is one `test ebx, ebx; jne; mov ebx, edi` (0x005A9DBF–0x005A9DC3). The 3
+  end-of-life cases compare the source pointer and its position, which a wrong reading could not match by chance,
+  and `ring_self` fails all 120 unit cases. No re-run. **Ruling (4), row 568:** the split holds. The scan
+  (`tabread_scan`, every `.text` operand naming `0x73c840`, lea and push included) is `[C]`; my read of the four
+  sites agrees. That the tested word is that row's `pSrvHitFunc` stays `[I]`: the layout (`+0x0E` u16) is `[C]` in
+  [Missiles](../tables/Missiles.md), but which record reaches sites 2–4 (`[ebp−4]`, `[edi]`) is the reading. Route to
+  `[C]`: an emulated `MISSILE_HitUnit` case with the word at 64 948. **Ruling 1 of the 9c review held:** no claim
+  rests on a non-argument register. ESI at the kick boundary is an argument and is not claimed. **Fixes, made in the
+  documents:** (1) the Answer's creation bullet no longer carries hit 52's "creates class 0 (`arrow`)", nor hit 51's
+  and hit 52's later creations, under `[C]`; they are marked after, `[I]` (overclaim); (2) § 5's hit 52 bullet moves
+  the row-0 meaning after the boundary, citing skills/0002 § 2 (overclaim); (3) `0x00408090` is described as what it
+  is in the Answer, § 2, the Functions table, the `nova9d` row, § 7 and Open questions, and in the experiments
+  conclusion (misread); (4) `cls52`'s count is "120 of the 120 with `HitSubMissile1 ≠ 0`, of 173" (miscount). Review
+  request closed
+  ([archive](../backlog/archive/2026-10-20-reverser-architect-lane-p46m4-review-plan-0046-batch-9d.md)); ledger rows
+  added. **The next batch (sorceress) may start**, with 9c and 9d's conventions. One addition: a meaning that a
+  boundary callee gives to a compared argument or block word (a class, a mode, a monster id) is stated after the
+  boundary, `[I]`, and is never part of the `[C]` sentence.

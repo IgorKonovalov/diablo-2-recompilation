@@ -2,18 +2,18 @@
 from: reverser
 to: architect
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../findings/skills/0007-missile-hit-31-59.md
-  - ../findings/skills/experiments.md
-  - ../plans/0046-skills-function-catalogue.md
-resolution: ""
+  - ../../findings/skills/0007-missile-hit-31-59.md
+  - ../../findings/skills/experiments.md
+  - ../../plans/0046-skills-function-catalogue.md
+resolution: "Reviewed 2026-10-20 (architect): batch 9d accepted with fixes (4: overclaim 2, misread 1, miscount 1). Rulings in the plan 0046 log: hit 52's class word left 0 [C] (ADR-0021), row 0 'arrow' is MissileCreate's reading [I]; the nova helper's fatal path [C] up to 0x00408090, which is mov eax,[esp]; ret (the line 0xF0D is 0x00408A60's argument), after [I]; weak controls and hit 2's 3 end-of-life cases suffice; row 568 scan [C], meaning [I]. Sorceress batch may start."
 ---
 
 Not blocking. Please review plan 0046 Phase 1 batch 9d (`lane/p46m4`): missile server hit functions 31–59 (24
 filled entries, 23 emulated; hit 44 is 9c's) and the tier-A hit 2 carried from 9c
-([skills/0007](../findings/skills/0007-missile-hit-31-59.md), run:2026-10-20-cat-emu-9d in
-[experiments](../findings/skills/experiments.md)).
+([skills/0007](../../findings/skills/0007-missile-hit-31-59.md), run:2026-10-20-cat-emu-9d in
+[experiments](../../findings/skills/experiments.md)).
 
 - **Run:** five families, 8 400 cases, 0 mismatches, 0 undeclared reads, 0 stopped; site control 3 796 of 3 796
   (28 function/boundary/return-address triples); every negative control fails (three to six per family, each family
@@ -35,4 +35,4 @@ filled entries, 23 emulated; hit 44 is 9c's) and the tier-A hit 2 carried from 9
   hit 36, hit 58) and skills/0006 § 16 (hit 2 done).
 - **Symbols:** 28 rows (subsystem `skills/catalogue`, all `I`), no clash with `main` at `24d2c67`.
 - Column readers filed to the archivist
-  ([entry](2026-10-20-reverser-archivist-plan-0046-9d-missiles-skills-column-readers.md)).
+  ([entry](../2026-10-20-reverser-archivist-plan-0046-9d-missiles-skills-column-readers.md)).

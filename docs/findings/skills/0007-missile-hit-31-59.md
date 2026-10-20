@@ -57,12 +57,14 @@ plain `[C]` rests on cases that return; a plain `[I]` is a code reading the emul
   else `0x17`; hit 2 from the hit unit's position (the missile's at the end of life). Hit 36 creates `HitSubMissile1`
   at the end of life only (0 for a unit); hit 48 at the path's position words; hit 51 `HitSubMissile1` (then 2 and 3);
   hit 58 at a point `(x − r + Range(2r+1), y − r + Range(2r+1))`, `r = max(sHitPar1, 1)`. **Hit 52 (blade fury)
-  tests `HitSubMissile1 ≥ 0` but never writes the block's class word, so it creates class 0 (`arrow`)** in steps of
-  `max(sHitPar1, 1)` over 8 directions of length 16. (run:2026-10-20-cat-emu-9d `create9d`)
-- [C] (ADR-0021; up to `MissileCreate`, the assertion call or the scatter, § 7) **Novas.** Hit 38 (catapult charged
+  tests `HitSubMissile1 ≥ 0` but never writes the block's class word `+0x10`, which reaches `MissileCreate` as 0.**
+  After, `[I]`: hit 51's creations of `HitSubMissile2` and `3`; hit 52's loop in steps of `max(sHitPar1, 1)` over 8
+  directions of length 16; and that `MissileCreate` takes the word as the class, so that hit 52's missiles are row 0
+  (`arrow`), is that callee's reading (skills/0002 § 2). (run:2026-10-20-cat-emu-9d `create9d`)
+- [C] (ADR-0021; up to `MissileCreate`, the fatal path's `0x00408090` or the scatter, § 7) **Novas.** Hit 38 (catapult charged
   ball) and hit 45 (lightning javelins) call `sub_0056D4E0_MissNovaCreate` with `n` creations (38: `(lvl − 1) ·
-  sHitPar2 + sHitPar1`, else `max(calc4, 1)`; 45: `sHitPar1`); **for `n ≥ 41` (`(n − 1) / 5 > 7`) it calls the
-  assertion `0x00408090(0xF0D)` instead** (§ 7 on the stock rows). The first creation has
+  sHitPar2 + sHitPar1`, else `max(calc4, 1)`; 45: `sHitPar1`); **for `n ≥ 41` (`(n − 1) / 5 > 7`) it takes the
+  fatal path instead, reaching `0x00408090` with line `0xF0D` pushed** (§ 7 on the stock rows). The first creation has
   flags 3, target offsets `(14, −14)` and creation callback `0x005AC040` (hit 38 always, hit 45 when `sHitPar2 ≠ 0`).
   Hit 40 (catapult spike ball) passes the same `n` and `n / 4` to `sub_005D5BF0_MissScatterAtTarget`.
   (run:2026-10-20-cat-emu-9d `nova9d`)
@@ -113,7 +115,7 @@ None. No community document was opened for this batch.
 | `0x005AD970` | `sub_005AD970_MissHit57BaalFx` | hit 57 | I |
 | `0x005ACDF0` | `sub_005ACDF0_MissHit58Reseed` | (P1.3 name) hit 58 | I |
 | `0x005ACF20` | `sub_005ACF20_MissHit59Ring16` | hit 59 | I |
-| `0x0056D4E0` | `sub_0056D4E0_MissNovaCreate` | `(ECX game, EDX n; block)`: the assertion for `(n−1)/5 > 7`, else `n` creations around the block's position, the first at offsets `(14, −14)` (§ 7) | I |
+| `0x0056D4E0` | `sub_0056D4E0_MissNovaCreate` | `(ECX game, EDX n; block)`: the fatal path for `(n−1)/5 > 7`, else `n` creations around the block's position, the first at offsets `(14, −14)` (§ 7) | I |
 | `0x005D5BF0` | `sub_005D5BF0_MissScatterAtTarget` | `(ECX game, EDX m; owner, cls, n, n/4, skill, lvl)`, `ret 0x18`: re-seeds and draws, then creations (read in part, § 7) | I |
 | `0x005B3570` | `sub_005B3570_RoomSpawnLevelMon` | `(ECX game, EDX room; x, y)`, `ret 8`: one `RNG_RangeB` and a spawn (read in part, § 9) | I |
 | `0x005C7DB0` | `sub_005C7DB0_RabiesApply` | `(ECX game, EDX owner; unit, frames, skill, lvl)`, `ret 0x10` (not read past its tests, § 8) | I |
@@ -154,8 +156,8 @@ more negative controls per family (one failing 50 cases or more), the three seed
 and the bytes behind a boundary's pointer argument compared (the `MissileCreate` block, 0x5C bytes, every creation;
 hit 47's zeroed packet, 0x70 bytes). The boundaries added for 9d: `0x0061AED0` RoomPinSet, `0x00624690`
 UNIT_SetMode, `0x005B3570` RoomSpawnLevelMon, `0x005D5BF0` ScatterAtTarget, `0x005C7DB0` RabiesApply, `0x0054E600`
-PresetMonSpawn, `0x00623990` the `SrcDam` weapon call, `0x00644C20` the kick damage, `0x00408090` the assertion
-message; 9c's stay declared (`MissileCreate`, `MissileCreateAt`, `MISSILE_BuildDamage`, `UnitSetStat`,
+PresetMonSpawn, `0x00623990` the `SrcDam` weapon call, `0x00644C20` the kick damage, `0x00408090` the first call of
+the fatal path (`Fatal` in `check.txt`); 9c's stay declared (`MissileCreate`, `MissileCreateAt`, `MISSILE_BuildDamage`, `UnitSetStat`,
 `UnitSetOverlayStat`, `PermPortalAtUnit`, `QUESTS_IsActive`, …). Emulated, not observed: `UnitGetOwner`,
 `GameFindUnit`, `UnitGetRoom`, `SKILLS_EvalCalc` on constant programs, `SKILLS_GetPhysMin/Max`, `SKILLS_LevelBands`,
 `SKILLS_GetElemLen`, `SKILLS_GetUnitSkill`, `MISSDATA_*`, `sub_005A8C70_MissileRollEType`, `STATS_GetUnitStat`,
@@ -171,7 +173,7 @@ message; 9c's stay declared (`MissileCreate`, `MissileCreateAt`, `MISSILE_BuildD
   |---|---|---:|---|---|
   | `heal9d` | hit 31, 37, 43, 50, 55 | 1 500 | hit 31 heal not floored (2); hit 43 cap dropped (73); hit 55 drain not floored (3); pct not capped at 100 (6); hit 50 `≤` for `<` (22); draws on the owner's seed (140) | UnitSetStat @0x005ABE1C, @0x005AC468, @0x005ACC29; OverlaySet @0x005AC452; KickDamage @0x00647D46 and SrcDamWeapon @0x00647C66 (in `GetPhysMax/Min`); returns 0, 1, 2 |
   | `create9d` | hit 2, 36, 48, 51, 52, 58, 59 | 2 100 | hit 2 ring from the missile for a unit (120); loops ignored (57); hit 52 with the class written (120); hit 58 offsets swapped (139); draws on the owner's seed (181) | MissileCreate @0x005A945D (in `MissSubRing16`, hits 2, 59), @0x005AC7E6, @0x005AC8FB, @0x005ACA0D, @0x005ACF0A; MissileCreateAt @0x005ABFF2; returns 0, 1, 3 |
-  | `nova9d` | hit 38, 40, 45 | 1 500 | hit 45 callback always (65); `sHitPar1/2` swapped (344); assertion at `> 8` (53) | MissileCreate @0x0056D539, Fatal @0x0056D50C (both in `MissNovaCreate`); ScatterAtTarget @0x005AC334; returns 1 |
+  | `nova9d` | hit 38, 40, 45 | 1 500 | hit 45 callback always (65); `sHitPar1/2` swapped (344); fatal path at `> 8` (53) | MissileCreate @0x0056D539, Fatal @0x0056D50C (both in `MissNovaCreate`); ScatterAtTarget @0x005AC334; returns 1 |
   | `area9d` | hit 47, 53, 56 | 1 500 | hit 53 `≤ 10` for `< 10` (24); `≥ len` for `> len` (29); hit 47 MonStats2 flag 10 for 11 (42); hit 56 passes the unit (378) | BuildDamage @0x005AC609, @0x005ACD38; RabiesApply @0x005ACAB9; returns 1, 2 |
   | `event9d` | hit 32, 33, 35, 39, 54, 57 | 1 800 | hit 32 `Param3` for `Param4` (86); hit 54 first match wins (19); hit 35 mode test inverted (106) | PermPortalAtUnit @0x005ABEA0; RoomPinSet @0x005ABECB, @0x005ABF25; SetMode @0x005ABF33; RoomSpawnLevelMon @0x005AC23E; PresetMonSpawn @0x005ACB48; QuestActive @0x005AD9A2; returns 0, 1 |
 
@@ -264,9 +266,11 @@ return 2 + (rec->CollideKill != 0);
   0x005ACF69–0x005ACF94)
 - [C] (ADR-0021; ends at the first `MissileCreate` @0x005ACA0D) **Hit 52** (`0x005AC940`): with a record,
   `HitSubMissile1 ≥ 0` and an owner (else 1): block `{flags 2, owner, source m, skill, lvl, target (16, 0)}` and **the
-  class word `+0x10` left 0** (the block is zeroed and no store reaches `+0x10`; a control that writes
-  `HitSubMissile1` there fails 120 of 120 creation cases). After, `[I]`: the loop over the 8 directions in steps of
-  `max(sHitPar1, 1)`, each created missile's `+0x28/+0x2C` set to that direction; returns 1. (run:2026-10-20-cat-emu-9d `create9d`, 0x005AC9A3–0x005ACA32,
+  class word `+0x10` left 0** (the block at `ebp−0x60` is zeroed and no store reaches `ebp−0x50`; a control that
+  writes `HitSubMissile1` there fails all 120 creation cases with `HitSubMissile1 ≠ 0`, of 173; in the other 53 it is
+  0 and the two readings agree). After, `[I]`: `MissileCreate` reads `+0x10` as the class (skills/0002 § 2), so the
+  missiles are row 0 (`arrow`); the loop over the 8 directions in steps of `max(sHitPar1, 1)`, each created
+  missile's `+0x28/+0x2C` set to that direction; returns 1. (run:2026-10-20-cat-emu-9d `create9d`, 0x005AC9A3–0x005ACA32,
   fn:sub_005AC940_MissHit52Ring8@0x005AC940)
 
 ### 6. Hit 36, 48, 51, 58: single creations
@@ -301,10 +305,12 @@ MissNovaCreate(game, n, &blk);                             // hit 40: MissScatte
 return 1;
 ```
 
-- [C] (ADR-0021; ends at `MissileCreate` @0x0056D539 or the assertion call @0x0056D50C inside
+- [C] (ADR-0021; ends at `MissileCreate` @0x0056D539 or `0x00408090` (return address 0x0056D50C) inside
   `sub_0056D4E0_MissNovaCreate`) **Hit 38** as above: `MissNovaCreate` computes `(n − 1) / 5` (signed, truncating:
-  `imul 0x66666667; sar 1`) and, when it is above 7 (`n ≥ 41`), calls `0x00408090(0xF0D)`, the assertion-message
-  helper (after, `[I]`: `0x00408A60` and the exit `0x00681E09`); else it sets the block's target `(14, −14)` and
+  `imul 0x66666667; sar 1`) and, when it is above 7 (`n ≥ 41`), pushes `0xF0D` and calls `0x00408090` (the
+  boundary, return address 0x0056D50C). After, `[I]`: `0x00408090` is `mov eax, [esp]; ret`, so it returns its own
+  return address; `0x00408A60(0x006CC837, that address, 0xF0D)` (the `0xF0D` pushed before the call is its third
+  argument, a line number by its use) and the exit `0x00681E09(−1)`; else it sets the block's target `(14, −14)` and
   creates. The block reaches the creation whole: `{flags 3, owner, cls, x, y, skill, lvl, target (14, −14), +0x54
   callback 0x005AC040}`. (run:2026-10-20-cat-emu-9d `nova9d`, fn:sub_005AC0A0_MissHit38Nova@0x005AC0A0,
   fn:sub_0056D4E0_MissNovaCreate@0x0056D4E0, tbl:Missiles.txt:sHitPar2, tbl:Skills.txt:calc4)
@@ -320,7 +326,7 @@ return 1;
   missile from its path x (`RNG_SeedInit`), sets path type 10, a range `min(MissileData range, 255)` and plans its
   path (`sub_005AC040_MissCbReseedPathX`, skills/0003 § 6).
 - [I] On stock rows: hit 38's 407 catapultchargedball (`sHitPar1` 4, `sHitPar2` 2) gives `n = 2·lvl + 2`, so a
-  missile level of 20 or more reaches the assertion (whether a catapult's missile level gets there is not read, Open
+  missile level of 20 or more reaches the fatal path (whether a catapult's missile level gets there is not read, Open
   questions); hit 45's rows give `n` 10 and 18 with the callback (`sHitPar2` 1). (`rows.txt`,
   fn:sub_0056D4E0_MissNovaCreate@0x0056D4E0, tbl:Missiles.txt:sHitPar1)
 
@@ -415,8 +421,8 @@ hit 35 object guid, hit 53 end frame); `struct:Game+0xA8`; unit `+0x00`, `+0x04`
 
 ## Open questions
 
-- [L] Whether a monster's missile level reaches 20 for 407 catapultchargedball (hit 38's assertion at `n ≥ 41`), and
-  what the assertion helper `0x00408090` prints for line `0xF0D`.
+- [L] Whether a monster's missile level reaches 20 for 407 catapultchargedball (hit 38's fatal path at `n ≥ 41`), and
+  what `0x00408A60` logs for line `0xF0D`.
 - [L] What `MissileData+0x28` holds for 368 orbmist (the object guid hit 35 finds) and who writes it; what the unit
   skill node's `+0x18` is (hit 54's monster id, by its use as `PresetMonSpawn`'s first argument).
 - [L] Why hit 52 leaves the class 0: whether blade fury's fragments in the game are `arrow` missiles, or another

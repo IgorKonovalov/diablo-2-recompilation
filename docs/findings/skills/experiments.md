@@ -268,5 +268,5 @@ Plan 0045 Phase 2's harness runs: none yet. Plan 0046's emulated runs (ADR-0015)
   any case steps before a boundary are the missile's only: hit 31 (the `EType` roll), hit 43 (one `RNG_RangeB`), hit
   58 (re-seeded from its x, two `RNG_Range`). Row 568's `pSrvHitFunc` 64 948 is a static claim: all four reads of
   the hit table sit behind a signed `test ax, ax; jle`. Not covered: what any boundary callee does and everything
-  after it; the fatal path after its assertion call; when the game runs these functions or with which seed.
+  after it; the fatal path after its first call (`0x00408090`); when the game runs these functions or with which seed.
   (fn:sub_005AC350_MissHit43HealVortex@0x005AC350, fn:sub_005ACDF0_MissHit58Reseed@0x005ACDF0)
