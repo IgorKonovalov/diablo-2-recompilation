@@ -210,6 +210,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-20 | `lane/h2b` (agent 1, tools and first sessions) | 0038 H2b | reverser-harness | 414 431 | 251 | 31 | slot 2 | accept with fixes | — (on the write-up row) |
 | 2026-10-20 | `lane/h2b` (agent 2, sessions to the pause) | 0038 H2b | reverser-harness | 231 922 | 137 | 53 | slot 2 | accept with fixes | — (on the write-up row) |
 | 2026-10-20 | `lane/h2b` (agent 3, final run and write-up) | 0038 H2b | reverser-harness | 230 202 | 101 | 21 | slot 2 | accept with fixes | 5: overclaim 3, under-claim 1, other 1 (aff 13 and aff 21 controls at the wrong item version; sock 42's write clamp never acted; five symbols left at I; dev manifest path) |
+| 2026-10-20 | `lane/p46m4` (part 1, to the checkpoint) | 0046 P1 9d | reverser-static | 332 638 | 69 | 17 | Ghidra (lane copy `ghidra-p46m4`) | accept with fixes | 4: overclaim 2, misread 1, miscount 1 (hit 52's row-0 meaning and hits 51/52's later creations under `[C]`; `0x00408090` called an assertion-message helper; `cls52` "120 of 120") |
+| 2026-10-20 | `lane/p46m4` (part 2, resume) | 0046 P1 9d | reverser-static | 277 521 | 119 | 25 | Ghidra (lane copy `ghidra-p46m4`) | accept with fixes | — (on the part 1 row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

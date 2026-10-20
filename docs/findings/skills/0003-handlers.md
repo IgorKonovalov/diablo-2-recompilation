@@ -400,6 +400,14 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
   that call); **hit 2** also returns 3 without a record or with `HitSubMissile1 < 0` (`[I]`); **hit 22** finds its unit
   by `MissileData+0x28` (type) and `+0x2C` (guid) and returns 0 when there is none (`[C]`)
   (run:2026-10-20-cat-emu-9c, [skills/0006 §§ 4, 11, 14, 16](0006-missile-hit-1-29.md#4-hit-13-hit-3--44-hit-14)).
+  *2026-10-20 (plan 0046 batch 9d), emulated:* **hit 2** returns 3 without a record or with `HitSubMissile1 < 0`, and
+  3 when the ring refuses (no owner, class outside the Missiles count) (`[C]`, was `[I]` above); its ring's first
+  creation is `{flags 0x1F and loops sHitPar3 when > 0, else 0x17; owner; source = the hit unit, or the missile at the
+  end of life; cls; that source's position; skill, lvl; direction (0, 2); velocity Param1 << 7}` (`[C]` under
+  ADR-0021, up to that `MissileCreate`; the later directions and the return 3 after it stay `[I]`); **hit 36**
+  returns 0 for a unit and creates at the end of life only (`[C]`, up to `MissileCreateAt`); **hit 58** re-seeds the
+  missile from its x and draws its two offsets before the creation (`[C]`, up to `MissileCreate`)
+  (run:2026-10-20-cat-emu-9d, [skills/0007 §§ 5, 6](0007-missile-hit-31-59.md#5-hit-2-hit-59-and-hit-52-rings)).
 
 ### 7. Summons
 

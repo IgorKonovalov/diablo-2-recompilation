@@ -205,3 +205,68 @@ Plan 0045 Phase 2's harness runs: none yet. Plan 0046's emulated runs (ADR-0015)
   covered: what any boundary callee does and everything after it; hit 2 (carried to batch 9d);
   faults (`MonsterOwnerRef` without MonsterData, `GameFindUnit` with a type above 5); when the game runs these
   functions or with which seed. (fn:sub_005A9FB0_MissHit07HolyBolt@0x005A9FB0, fn:sub_005AA650_MissHit10Guided@0x005AA650)
+
+## run:2026-10-20-cat-emu-9d
+
+- **Question:** (plan 0046 Phase 1, batch 9d) Do the missile server hit functions 31–33, 35–40, 43, 45, 47, 48,
+  50–59 and the tier-A hit 2 map their inputs (the missile's record, `MissileData` words, owner, hit unit, path, room,
+  object, stat lists, the owner's skill list, Skills and MonStats records, the game frame and the seeds) to the result
+  they return, or to the arguments, pointed-to bytes and seed states at the call they end in, exactly as
+  [skills/0007](0007-missile-hit-31-59.md) §§ 3–10 say, and do they leave the seeds the model leaves alone as they were?
+- **Setup:** as run:2026-10-20-cat-emu-9c: Ghidra 12.1.2 p-code emulator on the pinned `game.exe` (lane copy
+  `GHIDRA_PROJ_DIR=workspace/ghidra-p46m4`, symbols replayed from `re/symbols.csv`, heap 3 GB),
+  `re/ghidra_scripts/EmuBoundary.java` unchanged (`286393aa…`). No wine, nothing runs natively, no slot. Models, case
+  writers and checks: the 9d families of `tools/skills_catalogue_emu.py` (`da004a4b…`; `tools/rng.py`,
+  `tools/sweep_s4b.py`), with 9c's conventions: the call site of every boundary asserted with a site control, the
+  missile's, the owner's and the target's seeds written and compared in every case (a control moves the missile's
+  draws to the owner's seed in the two families that draw), a boundary's pointer argument into the caller's frame
+  compared by content (the `MissileCreate` block, 0x5C bytes; the packet of `MISSILE_BuildDamage`, 0x70 bytes), and
+  no model compares a callee-saved register that is not a boundary argument (`lane/p46m3` review, ruling 1). All
+  inputs synthetic (stock parameter values among them); every case-writer draw from `random.Random("cat9d-<family>")`.
+  Files in `workspace/logs/skills-cat-9d/`, `manifest.sha256` `6fa68cd0…` (29 files: cases, memory specs, expected
+  inputs, outputs, the empty `.err` logs, `check.txt` `9ec69cf5…`, `static.txt` `d909b72d…`, `rows.txt`
+  `9678d001…`, `repro.txt`); `sha256sum -c manifest.sha256` from that directory passes. `repro.txt` records that the
+  same tool revision regenerates every case, memory and expectation file of 9a, 9b and 9c byte for byte and
+  reproduces their kept `check.txt` and `static.txt` byte for byte from their kept outputs.
+- **Procedure:**
+  ```
+  D=workspace/logs/skills-cat-9d
+  python3 -I tools/skills_catalogue_emu.py cases --batch 9d
+  for f in heal9d create9d nova9d area9d event9d; do
+    GHIDRA_PROJ_DIR=workspace/ghidra-p46m4 GHIDRA_HEADLESS_MAXMEM=3G \
+      tools/ghidra.sh emuboundary $D/$f.cases $D/$f.mem > $D/$f.out 2> $D/$f.err
+  done
+  python3 -I tools/skills_catalogue_emu.py check  --batch 9d > $D/check.txt
+  python3 -I tools/skills_catalogue_emu.py static --batch 9d > $D/static.txt
+  python3 -I tools/skills_catalogue_emu.py manifest --batch 9d --write
+  ```
+  Each memory spec points `g_pDataTables` at a scratch DataTables written one field per field read (Skills,
+  ItemStatCost, MonStats, MonStats2), names the boundaries (`observe`: 9c's and nine more, skills/0007 § 2) and
+  guards the allocator; each case passes the hit unit on the stack and dumps the three seeds.
+- **Observed** (`check.txt`, `static.txt`):
+  ```
+  CAT9D heal9d   cases=1500 match=1500 bad=0 neg=246 traced=22 undeclared=0 stopped=0
+  CAT9D create9d cases=2100 match=2100 bad=0 neg=617 traced=6  undeclared=0 stopped=0
+  CAT9D nova9d   cases=1500 match=1500 bad=0 neg=462 traced=4  undeclared=0 stopped=0
+  CAT9D area9d   cases=1500 match=1500 bad=0 neg=473 traced=5  undeclared=0 stopped=0
+  CAT9D event9d  cases=1800 match=1800 bad=0 neg=211 traced=3  undeclared=0 stopped=0
+  CAT9D static pins=50 pins_ok=50 ro_reads=5 table_entries=25 tabreads=4 tabreads_signed=4
+  ```
+  8 400 cases. Every negative control fails (per-control counts on the `negative control` lines; each family has one
+  failing 53 or more cases: `nocap43` 73, `ownseed` 140 and 181, `hp_swap` 344, `unit56` 378, `mode1` 106); the site
+  control fails on all 3 796 matched boundary cases (28 `site` lines: function, boundary, return address). Development
+  runs before these files (outputs overwritten, not cited): the first check found `event9d`'s object written without
+  its type word, so `UnitGetRoom` (`0x00620BB0`) took the path branch for hit 35's object (58 cases observed
+  `SetMode` or returned 1 where the model had the room pin; the writer now sets type 2), `area9d`'s `lenlt` control
+  failing no case (no case had the rabies end frame at the length; the writer now puts 30 % of the hit-53 cases at
+  the length, one under or one over) and no `area9d` control reaching 50 (`unit56` added), and one static pin one
+  instruction off (hit 50's `jge` is at 0x005AC856). The outputs above are from the final case files.
+- **Conclusion:** bit-exact reproduction (evidence rule 4, ADR-0015) of the hit functions' maps on returning cases
+  (`[C]`: hit 37, hit 50, hit 55's refusals, every refusal path) and of their maps up to their boundary calls with the
+  call site, the arguments, the pointed-to block or packet and all three seeds asserted (`[C]` under
+  [ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md); skills/0007 names each claim's boundary). The seeds
+  any case steps before a boundary are the missile's only: hit 31 (the `EType` roll), hit 43 (one `RNG_RangeB`), hit
+  58 (re-seeded from its x, two `RNG_Range`). Row 568's `pSrvHitFunc` 64 948 is a static claim: all four reads of
+  the hit table sit behind a signed `test ax, ax; jle`. Not covered: what any boundary callee does and everything
+  after it; the fatal path after its first call (`0x00408090`); when the game runs these functions or with which seed.
+  (fn:sub_005AC350_MissHit43HealVortex@0x005AC350, fn:sub_005ACDF0_MissHit58Reseed@0x005ACDF0)

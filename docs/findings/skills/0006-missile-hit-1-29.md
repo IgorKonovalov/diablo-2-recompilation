@@ -475,6 +475,8 @@ default: return 4;
   review): skills/0003 § 6 stands; in addition, a missing record or `HitSubMissile1 < 0`
   returns 3 as the ring path does, and the ring's owner (EDX) is `UnitGetOwner(m)`. (0x005A9D80–0x005A9E05,
   fn:sub_005A9D80_MissHit02Ring@0x005A9D80)
+  *2026-10-20 (batch 9d):* hit 2 is emulated in batch 9d; its refusals are `[C]` and its map up to the ring's first
+  `MissileCreate` `[C]` under ADR-0021 (run:2026-10-20-cat-emu-9d, [skills/0007 § 5](0007-missile-hit-31-59.md#5-hit-2-hit-59-and-hit-52-rings)).
 
 ## Corrections to earlier findings
 
