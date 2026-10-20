@@ -21,7 +21,8 @@ offsets are record offsets. This batch continues [skills/0001](0001-dispatch.md)
   missiles on a local seed, 40 one missile at the target point, 41 a scatter with two inline local steps per missile.
   The missile is `srvmissilea`, `srvmissileb` or `srvmissilec` by the charge count (1, 2, 3) and the count or radius is
   `prgcalc1..3` by the same count. **37, 39, 41 and 143 step the attacker's seed once at entry, before any test**; 38
-  draws on it through the physical and elemental rolls. (fn:sub_005D3CF0_SkillSrvMissileByCharge@0x005D3CF0,
+  draws on it through the physical and elemental rolls (`RangeB(unit seed, max − min)` at `0x0056E1C4`), and each
+  unit of its area draws its own defence roll. (fn:sub_005D3CF0_SkillSrvMissileByCharge@0x005D3CF0,
   fn:sub_005D3DA0_SkillPrgCalcByCharge@0x005D3DA0, 0x005D4E80, 0x005D3F90, 0x005D5080, 0x005D4F40)
 - [I] **`0x00571AA0`** builds unit message `0xA3` (skill, level, unit, target, the finisher's peeked value, charge
   count) for the clients and changes no game state; the peek exists for it. (fn:sub_00571AA0_UnitMsgA3@0x00571AA0,
@@ -476,7 +477,7 @@ RunList(lists->a14, every); RunList(lists->bucket[4], frame);     // fifth list 
 
 | Event | Entry | Draws found in this batch | Seed |
 |---|---|---|---|
-| progressive finisher | `COMBAT_PrgFinisher` → entries | 37, 39, 41, 143: 1 inline step each at entry; 38: `RangeB` ×2 (3 for type 10) + the area's defence rolls; 39, 41: local seeds (none on game state) | attacker; local |
+| progressive finisher | `COMBAT_PrgFinisher` → entries | 37, 39, 41, 143: 1 inline step each at entry; 38: `RangeB` ×2 (3 for type 10) on the attacker, then one defence roll per unit of the area on that unit's seed; 39, 41: local seeds (none on game state) | attacker; area units; local |
 | stat-event handler | `UNIT_DispatchEvent` | 7, 14, 15, 16, 20, 30: 1 inline; 8, 9, 21, 31: 1 call; 3: the elemental roll | the handler's unit |
 | state 52 | `PreventHealHook` | none | — |
 | item cast | `ITEMSKILL_Cast` | none of its own | — |
@@ -487,8 +488,10 @@ RunList(lists->a14, every); RunList(lists->bucket[4], frame);     // fifth list 
 | summon | `SpawnOwnedMonster` | the spawn's (monsters/spawn) | game seed |
 
 - [I] Reading for Phase 2: the attacker's seed gains draws inside a finisher and in its `do…` event handlers
-  (7, 14–16, 20) between the to-hit and the delivery steps; a defender's seed gains the `damaged…` handlers' (21) and its own
-  kill/killed handlers' (30, 31). These are the extra chained pairs the stat-event kind needs. A missile seed is
+  (7–9, 14–16, 20) between the to-hit and the delivery steps, and in its `kill` handler 31; a defender's seed gains the
+  `attacked…`/`damaged…` handlers' (3, 21) and its `killed` handler's (30). *Review 2026-10-20:* first written "7,
+  14–16, 20" and "the defender's kill/killed handlers (30, 31)"; 8 and 9 run on the `do…` events too, and 31 is a `kill`
+  handler on the killer (§ 3's table). These are the extra chained pairs the stat-event kind needs. A missile seed is
   private except where § 9 re-seeds it, after which the missile's draws are a function of the creator's value, not of
   the game seed. (`handlers-scan.txt` `DRAW`, fn:sub_005BF960_StatEv07Knockback@0x005BF960, fn:COMBAT_PrgFinisher@0x005D5220)
 
@@ -562,5 +565,8 @@ are cited where the claim is theirs.
 - [L] `sub_0056B3E0_SkillUnitFilter` for a missile as the unit (the grim wards), and `0x005C3400`'s register argument
   in do 30.
 - [L] The fifth unit-event list of the frame pass (default `0x00562DA0`).
+- [L] What `SkillEntry+0x18` holds at Armageddon's first period, before do 146 has stored its `RNG_Range(1 000 000)`:
+  the setter `0x00644560` has 85 call sites (objdump, review 2026-10-20) and the writers before the first period were
+  not followed. The caster's seed after that period is a function of this word alone.
 - [L] Pet type 1's and type 7's special cases in `sub_00575850_PetLimit` (which rows they are), and where `SpawnOwnedMonster`'s
   block `+0x1C`/`+0x20` are filled by do 31 and 114 (register-passed; read as `pettype` and `petmax` by their use).

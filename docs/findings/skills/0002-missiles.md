@@ -509,7 +509,7 @@ return 1;
   (unsigned) and the entry is non-null. Its two callers pass the **missile** in `EDX`: hit function 23 (`0x005ACFC0`;
   *corrected 2026-10-20, P1.3: first written "22"; number 23 is used by no stock row, row 233's 22 is `0x005ADD20`*:
   with an owner, a skill and a level > 0, `0x00620C10(m, unit)` when there is a unit, then `n = sHitPar1` (`+0x4C`);
-  row 233 holds 0 and entry 0 is null) and do function 14 (`0x005AEF70`: `n = Param2` (`+0x3C`) when `elapsed %
+  ~~row 233 holds 0 and entry 0 is null~~ *(review 2026-10-20: row 233 does not use this function)*) and do function 14 (`0x005AEF70`: `n = Param2` (`+0x3C`) when `elapsed %
   max(Param1, 1)` is 0, then do function 1; the grim wards hold `Param1` 6, `Param2` 30, `g_SkillDoFuncs[30]` =
   `0x005C37C0`). So a skill do function can run with a missile as its unit; what 30 does there is read in
   [skills/0003 § 8](0003-handlers.md#8-skill-do-30-with-a-missile-as-its-unit-missile-do-14) (a curse state around the

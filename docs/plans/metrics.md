@@ -176,6 +176,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-20 | `lane/h2a` review | 0038 H2a | architect-review | 147 964 | 58 | 9 | — | gave accept with fixes | — (on the lane row) |
 | 2026-10-20 | `lane/p38s7` | 0038 P3 items/quality | spec-writer | 116 033 | 39 | 10 | — | accept with fixes | 2: overclaim 1, omission 1 |
 | 2026-10-20 | `lane/p38s7` review | 0038 P3 items/quality | architect-review | 77 823 | 20 | 5 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/p45h` | 0045 P1.3 | reverser-static | TBD | TBD | TBD | Ghidra (lane copy) | accept with fixes | 4: misread 1, omission 2, stale cross-reference 1 |
+| 2026-10-20 | `lane/p45h` review | 0045 P1.3 | architect-review | TBD | TBD | TBD | — | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

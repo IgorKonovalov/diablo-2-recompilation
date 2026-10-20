@@ -465,9 +465,81 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (`workspace/logs/skills/p45h-manifest.sha256`: `handlers-scan.txt` `6c2a2739…`, `handlers-rows.txt` `dd52e147…`).
   **Boundary recommendation** for Phase 2 in [skills/0003 § 14](../findings/skills/0003-handlers.md#14-boundary-recommendation-for-phase-2)
   (event entry points, value oracles, modelled set, log windows, chaining kinds), for the review's ruling. Backlog:
-  review request [to the architect](../backlog/2026-10-20-reverser-architect-lane-p45h-review-plan-0045-p1-3-handlers.md),
+  review request [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p45h-review-plan-0045-p1-3-handlers.md),
   inputs [to the spec-writer](../backlog/2026-10-20-reverser-spec-writer-skills-0003-handlers-inputs-for-combat-rng-seeds.md),
   column anchors [to the archivist](../backlog/2026-10-20-reverser-archivist-skills-columns-anchored-by-skills-0003.md);
   closed: [the P0 notes entry](../backlog/archive/2026-10-20-architect-reverser-plan-0045-p0-review-notes-for-p1-1.md)
   and [the state-52/event-9 entry](../backlog/archive/2026-10-17-reverser-reverser-a-read-which-call-applies-the.md).
   Open: `Unit+0x38`, a new missile's first frame, the unit filter for a missile unit, the fifth unit-event list.
+- **2026-10-20 — `lane/p45h` reviewed (architect): accept with fixes.** Checked on the pinned `Game.exe` in objdump:
+  the inline step on the unit's seed (`EDX`, `+0x20`/`+0x24`) at `0x005D4E80` (37) and `0x005D4F50` (143), before the
+  record test; 38's `sub_0056E170_SkillRollPhys` (`RangeB(unit seed, max − min)` at `0x0056E1C4`) then
+  `SKILLS_RollElemDamage` (`RangeB` at `0x0056E132`, type 10's extra draws in `0x0056C8E0`, skills/0001); handler 7's
+  inline step at `0x005BF9CF` on its unit (`low & 0x7F` against 64/32/128) and handler 21's `RangeB(seed, 100)` at
+  `0x005C0603`; Armageddon's `RNG_SeedInit(caster +0x20, SkillEntry+0x18)` at `0x005C8688` then `RNG_Range(1 000 000)`
+  at `0x005C8694` stored back by `0x00644560`, the caster being the do function's `EDX`; state 52: `COMBAT_ToHitRoll`'s
+  success branch (`cmp esi,edi; jge`) calls `0x0057D810` at `0x0057DB80`, whose only calls are `UnitGetStat` and
+  `STATE_ApplyTimed` (no LCG constant, no RNG call, `ret` at `0x0057D899`); `MissileEndHit` and `0x00645390`: no
+  `call`/`jmp` rel32 to either and no 4-byte occurrence in the file (an independent scan, not the lane's tool); the
+  hit table `0x0073C840` holds `0x005ADD20` at index 22 and `0x005ACFC0` at 23, and Missiles' only 22 is row 233
+  `fistoftheheavensdelay`, no row uses 23. Kept outputs pass `sha256sum -c`, the tool's hash matches, no foreign
+  names, tags honest (55 `[I]`, now 7 `[L]` under *Open questions*, no `[C]`). Merge: this log's tail kept both sides
+  (`lane/msw`'s entries first); `re/symbols.csv` has no duplicate address or name, the rename
+  `sub_005ACFC0_MissHit22CallDo` → `sub_005ACFC0_MissHit23CallDo` leaves no reference to the old name. Fixes (4),
+  written into the findings: (1) skills/0003 § 13's reading listed the attacker's `do…` handlers as 7, 14–16, 20 and
+  31 among the defender's: 8 and 9 run on the `do…` events, 31 is the killer's `kill` handler, 3 the defender's;
+  (2) § 1 and § 13: 38's area defence rolls draw on each area unit's seed, not the attacker's, and 38's `RangeB`
+  argument is named; (3) skills/0002 § 8's "row 233 holds 0 and entry 0 is null" inside the hit-23 bullet struck (row
+  233 does not use hit 23); (4) a new open question: `SkillEntry+0x18` at Armageddon's first period (the setter
+  `0x00644560` has 85 call sites, unfollowed), on which the caster's seed after that period depends.
+  **Tier A is fixed** (the Phase 1 review ruling the phase's *Done when* calls for): the 26 rows of
+  [Skills § Dispatch](../tables/Skills.md#families-and-the-tier-a-candidates) as the Phase 0 review accepted them; the
+  monster skills are those the Phase 2 sessions' attackers use through `MonSkillAttackDo` (skills/0001 § 13), named in
+  the run record, their numbered functions value oracles unless a tier-A row shares them. Summon functions other than
+  do 31 and 114 (golems, revive, valkyrie, spirits) are plan 0046's; the pet limit (`PetAdd`) is this plan's.
+  **Ruling: the Phase 2 design** (on skills/0003 § 14):
+  1. **Entry points logged** (entry and exit seeds of every seed the event touches): `SKILLS_SrvStart`,
+     `SKILLS_SrvDo`; `COMBAT_PrgFinisher` with the attacker's seed before the peek, after **each** `srvprgfunc` entry
+     and after the last, and the charge count; `sub_0059FA30_MissileCreate` (owner's and new missile's seeds, class,
+     start, target, velocity, callback); `sub_005ADBB0_MissileDoFrame` inside the window of item 4 only;
+     `MISSILE_HitUnit` (owner's, missile's and unit's seeds, result); `UNIT_DispatchEvent` (event id, each record's
+     function number, the handler unit's seed before and after each record); `sub_0057D810_PreventHealHook`;
+     `sub_0056D940_SpawnOwnedMonster` and `sub_00575D90_PetAdd`; the § 9 re-seed sites tier A reaches (the value
+     passed to `RNG_SeedInit`). `sub_005C8520_SkillDo146Armageddon` is not tier A: it is logged (caster's seed before
+     and after, `SkillEntry+0x18` before and after) whenever it fires, no session is required to cast it, and its
+     claim stays `[I]`; an Armageddon period ends the caster's chain like any resynchronisation.
+  2. **Value oracles** (logged, named in the record, taken as given): as § 14 lists (the do function's frame, the
+     AI's choice, numbered functions outside tier A with their exit seeds, the path planner's points and cell list,
+     the unit filter and `ForUnitsInRange`'s unit order as the list the callback ran on, the pet removed), plus: the
+     skill an item event casts when it is outside tier A (handlers 20, 21, 30 model their chance step and take the
+     cast as an oracle), handler 31's spawn (monsters/spawn's), `0x005CDD30`'s frame-list test, and Armageddon's first
+     `SkillEntry+0x18`.
+  3. **`tools/skills.py` models** what § 14 lists, scoped: the tier-A start, do and missile functions; the
+     `srvprgfunc` entries tier A reaches (Fists of Fire: 143, 38, 39) checked, the others (36, 37, 40, 41) modelled
+     and left `[I]` if unreached; the stat-event handlers registered on stock data (11 and 12 are not), each checked
+     where a session reaches it; state 52; `PathDirection` with `g_PathDirTable` read from the pinned image at run
+     time (never written to the repository); the velocity step and the creation-time damage.
+  4. **Missile log window**: creation, hit and end events for every missile whose owner or hit unit is the logged
+     character or its target; per-frame positions only for the first 300 missiles of the run, at most 30 per
+     session, chosen at creation by guid and followed to removal (the breakpoint conditioned on that set); the record
+     states the window and the log sizes (ADR-0014 § Log volume). The frame on which a new missile first steps
+     (skills/0003's open question on `sub_005415E0`) is a required measurement of the window, stated in game frames.
+  5. **Chaining (ADR-0014), at least 20 chained pairs each**: skill start, skill do, the progressive finisher
+     (attacker's seed, finisher exit to the next event), missile creation (owner's seed, P1.2's critical draws),
+     missile frame (the missile's own seed, consecutive frames of one missile in the window, from the rows that draw:
+     do 5 `meteorfire` among them), missile hit (missile's and defender's seeds), stat-event handler (the handler
+     unit's seed, over at least three drawing handlers), summon (the spawn's seed, monsters/spawn's chain). State 52
+     and the item-cast helpers draw nothing: they need no pairs, their absence is checked by the to-hit and handler
+     exit assertions around them. Armageddon's re-seed needs none (not tier A). A kind short of 20 keeps its
+     draw-order claims at `[I]`.
+  **Combat spec routing:** combat/README § A1 ("the finisher peeks `att.seed`") and § B, delivery § A and its open
+  question on the `srvprgfunc` entries, and README's phase-(3) open question are now stale: the entries are read and
+  37, 39, 41 and 143 step the attacker's seed and 38 draws two or three `RangeB` on it plus a defence roll per area
+  unit. The finisher's own step stays a peek; § C's `[C]` stands (the run dropped finisher events by rule and had
+  none). Written into [the spec-writer's entry](../backlog/2026-10-20-reverser-spec-writer-skills-0003-handlers-inputs-for-combat-rng-seeds.md)
+  as an `[I]` fold, ahead of Phase 3. **Status:** Phase 1's static batches P1.1–P1.3 are complete; Phase 1 closes when
+  Phase 1b (community cross-check, no Ghidra) lands, which may run now beside anything. **Phase 2 is ready** to start
+  once both harness slots are free (plan 0044·P2 holds them now); Phase 1b must land before Phase 2's last session
+  batch, since its contradicted cases are Phase 2 cases. **Plan 0046 Phase 0 (archivist) may start**: its gate (P1.3
+  reviewed, the machinery named, tier A fixed) is met. Review request
+  [closed](../backlog/archive/2026-10-20-reverser-architect-lane-p45h-review-plan-0045-p1-3-handlers.md).
