@@ -241,6 +241,33 @@ class World:
             R["ORACLE (world): " + k] += v
         for k, v in c.obj_oracles.items():
             R["ORACLE (objects window): " + k] += v
+        # plan 0048 Phase 2: room populations end to end from the game seed with no seed oracle in the window or the
+        # pass, by (difficulty, expansion); the populated end-to-end rooms that do not count, by reason
+        for pth, ln, lid, room, df, ex, n in c.populated_clean:
+            R["world: room populations end to end with no oracle (diff %d exp %d)" % (df, 1 if ex else 0)] += 1
+            R["world: room populations end to end with no oracle"] += 1
+            R["world: creations in those populations"] += n
+            LEVELS.add((lid, df, 1 if ex else 0))
+        for k, v in c.populated_unclean.items():
+            R["world: populated end-to-end rooms that do not count (%s)" % k] += v
+        for (cls, lid, src), v in sorted(c.unit_seed_taken.items()):
+            R["ORACLE 14 remainder: unit seed taken, class %d level %d, appended by %s" % (cls, lid, src)] += v
+        R["world: specials: uniques and minion packs (pass and MonPlace 2)"] += len(c.uniques)
+        R["world: specials: champion packs"] += len(c.champions)
+        for k, v in c.stats.items():
+            if k.startswith(("special mods rolls predicted", "superunique")):
+                R["world: specials: " + k] += v
+        for k, v in c.obj_stats.items():
+            if k.startswith("objects created"):
+                R["world: objects: " + k] += v
+        r3 = getattr(getattr(c, "world", None), "r3", None)
+        if r3:
+            R["oracle 20: R3 pass rooms"] += r3["rooms"]
+            R["oracle 20: R3 rooms exact"] += r3["rooms_exact"]
+            R["oracle 20: R3 rooms with a residue"] += r3["rooms_resid"]
+            for k, v in r3["resid_bits"].items():
+                R["oracle 20: R3 residue cells, snapshot/model bits %s" % k] += v
+            O20.extend(r3.get("per_room", []))
         R["world: monspawn checks"] += c.checks
         R["world: monspawn mismatches"] += c.fail
         R["world: creations"] += len(c.creations)
@@ -373,6 +400,58 @@ def gate_inputs(path, R):
 
 
 TC_STATE = {}
+LEVELS = set()        # (level id, difficulty, expansion) with an oracle-free room population
+O20 = []              # oracle 20: the R3 residue per pass room (tools/collision.py r3_check)
+INPUT_TAGS = ("SN", "LG0", "NWW", "OG", "TCR", "QKMF", "QOMF", "QMF", "PLR", "AROOM")
+
+
+def count_inputs(path, R):
+    """Plan 0048 Phase 2: the input lines (oracle 20's SN, LG0 and NWW; oracle 19's OG with its LevelRoomCount
+    reads; the drops' game seed (TCR gseed) and the killer's / summon owner's magic find (QKMF, QOMF, QMF); the
+    player's activations), counted."""
+    for line in open(path, errors="replace"):
+        tag = line.split(" ", 1)[0]
+        if tag in INPUT_TAGS:
+            R["input lines: %s" % tag] += 1
+            if tag == "OG" and '"cnt"' in line:
+                R["oracle 19: LevelRoomCount reads (OG cnt)"] += 1
+            elif tag == "TCR" and " gseed=" in line:
+                R["input: game seed at a drop (TCR gseed)"] += 1
+
+
+def o20_attribute(recs):
+    """Oracle 20: for every object-bit cell (0x400) of the R3 residue that no window mark explains, the nearest line
+    before the snapshot that names it: a CM mark whose rectangle covers the cell (the last before the snapshot), else
+    the last object creation (OU0) within 4 sub-tiles of it; else the cell is listed unexplained."""
+    out = []
+    by_path = collections.defaultdict(list)
+    for r in recs:
+        if r["objcells"]:
+            by_path[r["path"]].append(r)
+    for path, rs in by_path.items():
+        lines = open(path, errors="replace").readlines()
+        for r in rs:
+            for x, y, snap, model in r["objcells"]:
+                best = None
+                for j in range(min(r["ln"], len(lines)) - 1, -1, -1):
+                    ln = lines[j]
+                    if ln.startswith("CM "):
+                        d = json.loads(ln[3:])
+                        if d.get("m", 0) & 0x400 and d["x"] <= x < d["x"] + d.get("a", 1) and d["y"] <= y < d["y"] + d.get("b", 1):
+                            best = ("CM", j + 1, d)
+                            break
+                if best is None:
+                    for j in range(min(r["ln"], len(lines)) - 1, -1, -1):
+                        ln = lines[j]
+                        if ln.startswith("OU0 "):
+                            d = json.loads(ln[4:])
+                            if abs(d.get("x", 1 << 30) - x) <= 4 and abs(d.get("y", 1 << 30) - y) <= 4:
+                                best = ("OU0", j + 1, d)
+                                break
+                out.append({"log": os.path.basename(path), "sn_line": r["ln"], "room": r["room"], "x": x, "y": y,
+                            "snapshot": "%04x" % snap, "model": "%04x" % model,
+                            "nearest": None if best is None else {"tag": best[0], "line": best[1], "d": best[2]}})
+    return out
 
 
 def check_tc(path, ns, R):
@@ -393,6 +472,18 @@ def check_tc(path, ns, R):
     R["tc: TC_ResolveDrops calls reproduced (quality modelled)"] += ok
     R["tc: TC_ResolveDrops calls failed"] += bad
     R["tc: of them with an object source (stype 2)"] += nobj
+    # plan 0048 Phase 2: the drops of a dying unit (stype 1), with the items each made (TCEND count)
+    for call0, _err in calls:
+        if not call0 or call0[0][0] != "TCR":
+            continue
+        st = call0[0][1].get("stype")
+        end = [kv for h, kv in call0 if h == "TCEND"]
+        n = int(end[-1].get("count", 0)) if end and end[-1] else 0
+        if st == "1":
+            R["tc: drops of a dying monster (stype 1)"] += 1
+            if n > 0:
+                R["tc: drops of a dying monster with at least one item"] += 1
+                R["tc: items made by those drops"] += n
     if bad:
         sys.stdout.write(out)
     return 1 if bad else 0
@@ -415,6 +506,7 @@ def cmd_check(ns):
                 world = World(ns)
             rcs.append(("world", world.run(path)))
             gate_inputs(path, R)
+            count_inputs(path, R)
             rc = check_tc(path, ns, R)
             if rc is not None:
                 rcs.append(("tc", rc))
@@ -430,6 +522,17 @@ def cmd_check(ns):
                            or "nothing to check"))
     if world is not None:
         world.summary(R)
+    if world is not None:
+        R["world: levels with an oracle-free room population"] = len(LEVELS)
+        R["world: (level, difficulty) pairs with an oracle-free room population"] = len({(a, b) for a, b, _ in LEVELS})
+    if ns.o20 and world is not None:
+        att = o20_attribute(O20)
+        for a in att:
+            R["oracle 20: object-bit residue cells %s" % ("with a nearest line (%s)" % a["nearest"]["tag"]
+                                                          if a["nearest"] else "unexplained")] += 1
+        with open(ns.o20, "w") as fh:
+            json.dump({"per_room": [{k: v for k, v in r.items()} for r in O20], "objcells": att,
+                       "levels": sorted(LEVELS)}, fh, indent=0, sort_keys=True)
     print("== chain summary ==")
     for k in sorted(R):
         print("  %-90s %d" % (k, R[k]))
@@ -456,6 +559,8 @@ def build_parser():
     b = sub.add_parser("barrier")
     b.add_argument("logs", nargs="+")
     c.add_argument("--cf", choices=sorted(CF), help="a counterfactual model (negative control)")
+    c.add_argument("--o20", help="write oracle 20's residue per pass room, its object-bit cells with the nearest line "
+                                 "before the snapshot, and the levels with an oracle-free population (JSON) here")
     c.add_argument("-v", "--verbose", action="store_true")
     return ap
 

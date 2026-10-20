@@ -2416,7 +2416,7 @@ def cmd_explore(args):
     if args.to_pdef is not None:
         defs = {int(v) for v in str(args.to_pdef).split(",")}
         targets = [(r, rect) for r, (lp, rect) in st.rl.items() if st.pdef.get(r) in defs
-                   and lp == st.lptr.get(lid0)]
+                   and (args.pdef_any or lp == st.lptr.get(lid0))]     # --pdef-any: plan 0048 Phase 2
         print("target rooms with preset def %s: %s" % (args.to_pdef, [rect for _, rect in targets]))
         if not targets:
             return 1

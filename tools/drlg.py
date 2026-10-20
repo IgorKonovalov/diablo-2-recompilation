@@ -2112,6 +2112,8 @@ class GenModel:
                     and tag not in ROOMPREP_TAGS:
                 continue
             d = json.loads(rest)
+            if tag == "RC" and "level" not in d:
+                continue        # tools/gdb/affixes.py's RC (the rare affix count) in a combined log (plan 0048)
             try:
                 if tag in ROOMPREP_TAGS:
                     self.room_prep_event(path, tag, d)

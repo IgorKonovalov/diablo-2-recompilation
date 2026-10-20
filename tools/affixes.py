@@ -1086,6 +1086,8 @@ def read_log(path):
             continue
         if tag == "ETH0" and "rfl" in d:
             continue                          # tools/gdb/props.py's ETH0, not the affix logger's boundary
+        if tag == "RC" and "level" in d:
+            continue                          # tools/gdb/drlg-gen.py's RoomCreate in a combined log (plan 0048)
         tag = ETB_LEGACY.get(tag, tag)
         if tag == "IC0":
             last = d.get("th", 0)
