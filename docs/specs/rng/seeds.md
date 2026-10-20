@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng]
 consumed_by: [drlg/overview, drlg/room-tiles, drlg/*, monsters/spawn, objects, items/*]
-tags: {C: 79, I: 10, L: 4}
+tags: {C: 79, I: 11, L: 4}
 updated: 2026-10-20
 ---
 
@@ -519,6 +519,11 @@ separate objects.
   seeds. The sites that re-seed a unit's `+0x20` or another object's seed lie in the skill and missile code and are not
   read (*Open questions*). [I] (fn:RNG_SeedInitOne@0x00650E30, fn:RNG_SeedInit@0x00650E40,
   fn:sub_0061FCF0_AutomapTxtLoad@0x0061FCF0, [rng/0002 § Plan 0039 batch P1a](../../findings/rng/0002-seed-tree.md#the-other-initialiser-sites))
+- **The missile pierce count's seed is local.** `sub_0059F940_MissilePierceCount`, the server half of the base-stat pair,
+  initialises a stack seed with `Init(baseStat(owner, 328))` (for a player, stat 328 is raised by 1 on each of its skill requests) and steps
+  it at most four times for the missile's pierce count; it reads and writes no game, unit or missile seed. So it is a
+  classified initialiser site, not a re-seed. [I] (fn:sub_0059F940_MissilePierceCount@0x0059F940, fn:RNG_SeedInit@0x00650E40,
+  [skills/0002 § 3](../../findings/skills/0002-missiles.md#3-the-damage-the-missile-carries))
 
 ## Evidence
 
@@ -526,6 +531,7 @@ separate objects.
   [§ Other seed sites](../../findings/rng/0002-seed-tree.md#other-seed-sites-seen-not-yet-followed): game creation's
   draws 1–5, with [items/0009 § 1](../../findings/items/0009-vendors.md#1-store-records-and-the-store-seed-game-creation)
   (draw 3) and [items/0010 § 1](../../findings/items/0010-quest-drops.md#1-quest-objects-events-and-the-quest-seed) (draw 4).
+- [findings/skills/0002-missiles.md § 3](../../findings/skills/0002-missiles.md#3-the-damage-the-missile-carries): the pierce count's local seed (plan 0045 P1.2).
 - [findings/rng/0001-rng-core.md](../../findings/rng/0001-rng-core.md): the "draw" definition, `0x005BDFF0`.
 - [findings/monsters/0001-level-pool.md § 1](../../findings/monsters/0001-level-pool.md#1-where-and-when-game-creation): game-seed draw 1 and the game-creation call order (step note 7a).
 - [findings/rng/experiments.md § run:2026-10-11-seed-tree](../../findings/rng/experiments.md#run2026-10-11-seed-tree):
@@ -570,7 +576,8 @@ separate objects.
   two's-complement `u32` (so that seeds `0x80000000`…`0xFFFFFFFE` are reachable, and `0xFFFFFFFF` means "no
   override"), was not run ([rng/0002 § Plan 0038 batch H5c](../../findings/rng/0002-seed-tree.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)).
   Owner: reverser, a `D2.ini` session.
-- [L] **Skill and missile re-seeds**, narrowed: all 76 initialiser-calling functions are now classified
-  (*Reimplementation notes*); the `0x0061FCF0` global is the client automap's. Still unread are the server sites in
-  the skill and missile code that re-seed a unit's `+0x20` or another object's seed, and from what. Moved to the
-  research map's Simulation phase (3), skills and missiles.
+- [L] **Skill and missile re-seeds**, narrowed: all 76 initialiser-calling functions are classified by call shape
+  (*Reimplementation notes*); the `0x0061FCF0` global is the client automap's, and the missile pierce count
+  `0x0059F940` makes a local seed only (*Reimplementation notes*, plan 0045 P1.2). Still unread are the server sites in
+  the skill and missile code that re-seed a unit's `+0x20` or another object's seed, and from what. Owner: plan 0045
+  (P1.3, the re-seed sites), the research map's Simulation phase (3).
