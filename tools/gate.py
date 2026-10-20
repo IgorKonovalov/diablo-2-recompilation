@@ -23,16 +23,21 @@ Implements the fast tier of `.claude/skills/architect/references/evidence-rules.
                path that is not a spec, or a spec whose status is not `reviewed`
            E12 a `##` section of a docs/wiki/ page has no relative link into docs/specs/
                (pages with `based_on: [process]` are exempt)
-           E13 a docs/backlog/ entry (ADR-0018): front matter well formed (tools/backlog.py), from/to
-               known lanes, status in the enum, a resolution once closed, the date equal to the file
-               name's, context links resolving
+           E13 a docs/backlog/ or docs/backlog/archive/ entry (ADR-0018, ADR-0019): front matter well
+               formed (tools/backlog.py), from/to known lanes, status in the enum, a resolution once
+               closed, the date equal to the file name's, context links resolving, and no open entry
+               in docs/backlog/archive/
   warnings W1 a [C]/[I] line or table row with no anchor
            W2 a table with a Tag column has a row with an empty tag cell
            W3 a re/symbols.csv row cited by no spec or finding
            W4 a docs/wiki/ page's `based_on:` date is older than the spec's `updated:` date
            W5 the frozen archive docs/backlog.md holds an unstruck entry, or a struck copy of an entry
-              that has its own file: run `python3 -I tools/backlog.py migrate` (a warning, so that a
-              lane merge appending to the archive leaves main green until the orchestrator migrates)
+              that has its own file (in docs/backlog/ or its archive/): run `python3 -I tools/backlog.py
+              archive`, which migrates first (a warning, so that a lane merge appending to the archive
+              leaves main green until the orchestrator migrates)
+           W6 a closed entry (done, moved, dropped) still in docs/backlog/ instead of docs/backlog/archive/:
+              run `python3 -I tools/backlog.py archive` (ADR-0019; a warning, because a lane on an older
+              branch closes entries in place and the orchestrator sweeps them after the merge)
 
 Wiki front matter (E11, W4): `based_on: [process]`, or a list of `<repo path of a spec> <date>`, either
 `based_on: [docs/specs/rng/core.md 2026-10-11, ...]` or one `  - docs/specs/rng/core.md 2026-10-11` line
@@ -798,7 +803,7 @@ def check_wiki(rel, text, ctx, rep):
 
 # ---------------------------------------------------------------- backlog (ADR-0018)
 
-RE_BACKLOG_ENTRY = re.compile(r"docs/backlog/[^/]+\.md")
+RE_BACKLOG_ENTRY = re.compile(r"docs/backlog/(?:archive/)?[^/]+\.md")
 
 
 def check_backlog_entry(rel, text, ctx, rep):
@@ -807,6 +812,17 @@ def check_backlog_entry(rel, text, ctx, rep):
     fields, _, errs = backlog.parse_entry(text)
     for n, msg in backlog.check_entry(os.path.basename(rel), fields, errs):
         rep.err("E13", rel, n, msg)
+    archived = rel.startswith(backlog.ARCHIVED + "/")
+    status = fields.get("status")
+    if archived and status == "open":
+        rep.err("E13", rel, 1, "open entry in docs/backlog/archive/ (closed entries only): "
+                "run `python3 -I tools/backlog.py archive` to move it back")
+    if not archived and status in backlog.STATUSES[1:]:
+        rep.count("W6")
+        rep.warn("W6", rel, 1, f"closed entry (status {status}) outside docs/backlog/archive/: "
+                 "run `python3 -I tools/backlog.py archive`")
+    elif not archived:
+        rep.count("W6")
     lines = text.split("\n")
     for c in fields.get("context") or []:
         n = next((i for i, ln in enumerate(lines, 1) if ln.strip().startswith("-") and c in ln), 1)
@@ -832,13 +848,13 @@ def check_backlog_archive(text, entry_texts, rep):
         rep.count("W5")
         if not b.struck():
             rep.warn("W5", backlog.ARCHIVE, b.lineno, "unstruck entry in the frozen archive: "
-                     "run `python3 -I tools/backlog.py migrate`")
+                     "run `python3 -I tools/backlog.py archive`")
             continue
         request, _ = backlog.split_struck(backlog.entry_body(b))
         rel = keys.get(backlog.entry_key(request))
         if rel:
             rep.warn("W5", backlog.ARCHIVE, b.lineno, f"struck copy of {rel} (closed in the archive?): "
-                     "run `python3 -I tools/backlog.py migrate`")
+                     "run `python3 -I tools/backlog.py archive`")
 
 
 # ---------------------------------------------------------------- full tier
@@ -1058,6 +1074,7 @@ RULES = [
     ("W3", "symbols cited by a spec or finding"),
     ("W4", "wiki based_on dates current"),
     ("W5", "no live entry in the frozen backlog archive"),
+    ("W6", "closed backlog entries in docs/backlog/archive/"),
 ]
 
 

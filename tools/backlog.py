@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """The backlog as one file per entry (ADR-0018): docs/backlog/YYYY-MM-DD-<from>-<to>-<slug>.md.
+Open entries live in docs/backlog/, closed ones (done, moved, dropped) in docs/backlog/archive/ (ADR-0019).
 
     python3 -I tools/backlog.py new --from LANE --to LANE[,LANE] [--slug S] [--context PATH ...] [--text T]
     python3 -I tools/backlog.py list [--to LANE] [--from LANE] [--status open|done|moved|dropped|all]
     python3 -I tools/backlog.py close FILE [--status done|moved|dropped] --resolution TEXT
     python3 -I tools/backlog.py migrate [--dry-run]
+    python3 -I tools/backlog.py archive [--no-migrate] [--dry-run]
 
 Every command takes --root DIR (default: this checkout) and --today YYYY-MM-DD (default: today).
 
@@ -36,6 +38,15 @@ relative links rebased onto docs/backlog/, and the archive entry becomes one str
     its resolution text, then the archive copy becomes the pointer (or is dropped when a pointer is
     already there, e.g. after a merge kept both sides);
   - a closed file is never reopened; struck entries with no file stay in the archive untouched.
+archive (ADR-0019): the post-merge sweep, idempotent. Runs migrate first (unless --no-migrate), then
+moves every closed entry still in docs/backlog/ into docs/backlog/archive/ (a lane on an older branch
+closed it in place) and every open entry found in archive/ back out, with `git mv` when the file is
+tracked. Then it rewrites relative links so they resolve again: links from any .md under docs/, re/,
+.claude/ or the root (and entry `context` items) that point at an entry's old place, and a moved entry's
+own links (one more or one fewer `../`). An entry link that does not resolve from where the entry sits but
+does from the other folder (an annotation written on an old branch) is healed the same way. `close` moves
+the entry it closes the same way.
+
 Stdlib only.
 """
 import argparse
@@ -43,6 +54,7 @@ import datetime
 import json
 import os
 import re
+import subprocess
 import sys
 
 LANES = ("architect", "archivist", "reverser", "spec-writer", "human")
@@ -52,13 +64,14 @@ REQUIRED = ("from", "to", "date", "status")
 
 ARCHIVE = "docs/backlog.md"
 DIR = "docs/backlog"
+ARCHIVED = "docs/backlog/archive"   # closed entries (ADR-0019)
 INDEX = "README.md"          # docs/backlog/README.md: the format note, not an entry
 
 RE_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
 RE_FILENAME = re.compile(r"(\d{4}-\d{2}-\d{2})-[a-z0-9+-]+\.md")
 RE_HEADER = re.compile(r"\[(\d{4}-\d{2}-\d{2})\] from (.+?) → (.+?):(?=\s|$)")
 RE_ENTRY_START = re.compile(r"^(?:- )?(?:~~)?\[\d{4}-\d{2}-\d{2}\] from ")
-RE_POINTER = re.compile(r"^- ~~\[\d{4}-\d{2}-\d{2}\][^~]*~~ Moved to \[[^\]]*\]\(backlog/([^)#\s]+\.md)\)\.?\s*$")
+RE_POINTER = re.compile(r"^- ~~\[\d{4}-\d{2}-\d{2}\][^~]*~~ Moved to \[[^\]]*\]\(backlog/(?:archive/)?([^/)#\s]+\.md)\)\.?\s*$")
 RE_LINK = re.compile(r"(\]\()(\s*<?)([^)\s>]+)")
 RE_SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
 KEY_CHARS = 60
@@ -344,17 +357,42 @@ def file_name(date, frm, to, slug):
 
 def unique_path(root, name):
     base, n = name[:-3], 1
-    while os.path.exists(os.path.join(root, DIR, name)):
+    while any(os.path.exists(os.path.join(root, d, name)) for d in (DIR, ARCHIVED)):
         n += 1
         name = f"{base}-{n}.md"
     return name
 
 
-def entry_files(root):
-    d = os.path.join(root, DIR)
+def _md_names(d):
     if not os.path.isdir(d):
         return []
-    return sorted(f for f in os.listdir(d) if f.endswith(".md") and f != INDEX)
+    return sorted(f for f in os.listdir(d) if f.endswith(".md") and f != INDEX
+                  and os.path.isfile(os.path.join(d, f)))
+
+
+def entry_files(root):
+    """Entry names in docs/backlog/ itself (the open ones, once swept)."""
+    return _md_names(os.path.join(root, DIR))
+
+
+def archived_files(root):
+    """Entry names in docs/backlog/archive/."""
+    return _md_names(os.path.join(root, ARCHIVED))
+
+
+def entry_locations(root):
+    """-> {name: repo-relative path} for every entry, docs/backlog/ first (it wins on a duplicate name)."""
+    out = {}
+    for d, names in ((DIR, entry_files(root)), (ARCHIVED, archived_files(root))):
+        for n in names:
+            out.setdefault(n, f"{d}/{n}")
+    return out
+
+
+def entry_path(root, name):
+    """Absolute path of entry `name`, wherever it sits (docs/backlog/ when it does not exist yet)."""
+    rel = entry_locations(root).get(name, f"{DIR}/{name}")
+    return os.path.join(root, rel)
 
 
 def read(path):
@@ -378,23 +416,24 @@ def first_paragraph(body):
 
 
 def load_entries(root):
-    """-> {name: (fields, body)} for every entry file."""
+    """-> {name: (fields, body)} for every entry file, open and archived."""
     out = {}
-    for name in entry_files(root):
-        fields, body, _ = parse_entry(read(os.path.join(root, DIR, name)))
+    for name, rel in sorted(entry_locations(root).items()):
+        fields, body, _ = parse_entry(read(os.path.join(root, rel)))
         out[name] = (fields, body)
     return out
 
 
 # ---------------------------------------------------------------- migrate
 
-def pointer_line(request, name):
+def pointer_line(request, name, sub=""):
+    """sub: "" or "archive/", where the entry file sits under docs/backlog/."""
     h = header(norm(request))
     if not h:
-        return f"- ~~{norm(request)[:80].replace('~', '')}…~~ Moved to [{name}](backlog/{name})."
+        return f"- ~~{norm(request)[:80].replace('~', '')}…~~ Moved to [{name}](backlog/{sub}{name})."
     rest = h[3].strip().replace("~", "")
     rest = rest if len(rest) <= POINTER_CHARS else rest[:POINTER_CHARS].rstrip() + "…"
-    return f"- ~~[{h[0]}] from {h[1]} → {h[2]}: {rest}~~ Moved to [{name}](backlog/{name})."
+    return f"- ~~[{h[0]}] from {h[1]} → {h[2]}: {rest}~~ Moved to [{name}](backlog/{sub}{name})."
 
 
 def annotation(today, old_first, new_request):
@@ -412,6 +451,7 @@ def migrate(root, today, dry_run=False, log=print):
     apath = os.path.join(root, ARCHIVE)
     pre, blocks = parse_archive(read(apath))
     entries = load_entries(root)
+    locs = entry_locations(root)
     by_key = {}
     for name, (fields, body) in entries.items():
         k = entry_key(first_paragraph(body))
@@ -476,7 +516,8 @@ def migrate(root, today, dry_run=False, log=print):
             log(f"dropped {ARCHIVE}:{b.lineno}: a pointer to {name} is already there")
             continue
         pointed.add(name)
-        out_blocks.append(Block("entry", [pointer_line(request, name)], b.lineno))
+        sub = "archive/" if locs.get(name, "").startswith(ARCHIVED + "/") else ""
+        out_blocks.append(Block("entry", [pointer_line(request, name, sub)], b.lineno))
     counts["pointers"] = len(pointed)
     # drop blank runs left by removed entries
     lines = list(pre)
@@ -487,10 +528,164 @@ def migrate(root, today, dry_run=False, log=print):
     new_archive = "\n".join(lines).rstrip("\n") + "\n"
     if not dry_run:
         for name, (fields, body) in changed_files.items():
-            write(os.path.join(root, DIR, name), render_entry(fields, body))
+            write(entry_path(root, name), render_entry(fields, body))
         if new_archive != read(apath):
             write(apath, new_archive)
     counts["files_written"] = len(changed_files)
+    return counts
+
+
+# ---------------------------------------------------------------- archive (ADR-0019)
+
+LINK_DIRS = ("docs", "re", ".claude")    # trees whose .md files may link entries (plus root *.md)
+RE_ENTRY_REL = re.compile(r"docs/backlog/(?:archive/)?([^/]+\.md)")
+
+
+def is_closed(fields):
+    return fields.get("status", "open") != "open"
+
+
+def linking_files(root):
+    """Repo-relative .md files whose links archive keeps resolving."""
+    out = sorted(f for f in os.listdir(root) if f.endswith(".md") and os.path.isfile(os.path.join(root, f)))
+    for top in LINK_DIRS:
+        for dp, dns, fns in os.walk(os.path.join(root, top)):
+            dns[:] = sorted(d for d in dns if d not in (".git", "workspace", "node_modules"))
+            rel = os.path.relpath(dp, root).replace(os.sep, "/")
+            out += [f"{rel}/{f}" for f in sorted(fns) if f.endswith(".md")]
+    return out
+
+
+def _git_tracked(root, rel):
+    if not os.path.isdir(os.path.join(root, ".git")) and not os.path.isfile(os.path.join(root, ".git")):
+        return False
+    try:
+        r = subprocess.run(["git", "-C", root, "ls-files", "--error-unmatch", "--", rel],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except OSError:
+        return False
+    return r.returncode == 0
+
+
+def move_file(root, src, dst):
+    """git mv when src is tracked, else a rename. src, dst repo-relative."""
+    os.makedirs(os.path.dirname(os.path.join(root, dst)), exist_ok=True)
+    if _git_tracked(root, src):
+        subprocess.run(["git", "-C", root, "mv", "--", src, dst], check=True,
+                       stdout=subprocess.DEVNULL)
+    else:
+        os.rename(os.path.join(root, src), os.path.join(root, dst))
+
+
+def remap_target(root, old_rel, new_rel, target, locs, is_entry):
+    """A relative link target written in the file that sat at old_rel and now sits at new_rel -> the
+    target to write, or None to leave it as it is."""
+    if not target or RE_SCHEME.match(target) or target.startswith(("/", "//", "#")):
+        return None
+    path, sep, frag = target.partition("#")
+    lead = ""
+    if path.startswith("<"):
+        lead, path = "<", path[1:]
+    tgt = os.path.normpath(os.path.join(os.path.dirname(old_rel), path)).replace(os.sep, "/")
+    m = RE_ENTRY_REL.fullmatch(tgt)
+    if m and m.group(1) in locs and locs[m.group(1)] != tgt:
+        tgt = locs[m.group(1)]                         # an entry that moved
+    elif is_entry and not os.path.exists(os.path.join(root, tgt)):
+        other = ARCHIVED if os.path.dirname(old_rel) == DIR else DIR
+        alt = os.path.normpath(os.path.join(other, path)).replace(os.sep, "/")
+        m = RE_ENTRY_REL.fullmatch(alt)
+        if m and m.group(1) in locs:
+            alt = locs[m.group(1)]
+        if os.path.exists(os.path.join(root, alt)):
+            tgt = alt                                  # written as if the entry sat in the other folder
+        elif old_rel == new_rel:
+            return None
+    elif old_rel == new_rel:
+        return None
+    new = os.path.relpath(tgt, os.path.dirname(new_rel)).replace(os.sep, "/")
+    if new == path:
+        return None
+    return lead + new + (sep + frag if sep else "")
+
+
+def rewrite_links_in(root, old_rel, new_rel, text, locs, is_entry):
+    def fix(m):
+        new = remap_target(root, old_rel, new_rel, m.group(3), locs, is_entry)
+        return m.group(0) if new is None else m.group(1) + m.group(2) + new
+    text = RE_LINK.sub(fix, text)
+    if not is_entry or not text.startswith("---"):
+        return text
+    lines = text.split("\n")
+    end = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
+    in_ctx = False
+    for i in range(1, end or 0):
+        if re.match(r"^context:", lines[i]):
+            in_ctx = True
+            continue
+        if not in_ctx:
+            continue
+        m = re.match(r"^(\s+-\s+)(.*?)\s*$", lines[i])
+        if not m:
+            in_ctx = False
+            continue
+        try:
+            val = unquote_value(m.group(2))
+        except ValueError:
+            continue
+        new = remap_target(root, old_rel, new_rel, val, locs, True)
+        if new is not None:
+            lines[i] = m.group(1) + quote_value(new)
+    return "\n".join(lines)
+
+
+def archive(root, dry_run=False, only=None, log=print):
+    """Move closed entries into docs/backlog/archive/ and open ones out of it, then rewrite the links.
+    only: entry names to consider (default all). -> dict of counts."""
+    locs = entry_locations(root)
+    moves = {}                                         # old rel -> new rel
+    for name, rel in sorted(locs.items()):
+        if only is not None and name not in only:
+            continue
+        fields, _, errs = parse_entry(read(os.path.join(root, rel)))
+        if errs and not fields:
+            log(f"warning: {rel}: {errs[0][1]}, left")
+            continue
+        want = f"{ARCHIVED if is_closed(fields) else DIR}/{name}"
+        if want == rel:
+            continue
+        if os.path.exists(os.path.join(root, want)):
+            log(f"warning: {rel}: {want} exists too, left")
+            continue
+        moves[rel] = want
+    counts = dict(archived=sum(1 for v in moves.values() if v.startswith(ARCHIVED + "/")),
+                  unarchived=sum(1 for v in moves.values() if not v.startswith(ARCHIVED + "/")),
+                  links_files=0)
+    for old, new in moves.items():
+        log(f"{'archived' if new.startswith(ARCHIVED) else 'reopened'} {old} -> {new}")
+    new_locs = dict(locs)
+    for old, new in moves.items():
+        new_locs[os.path.basename(new)] = new
+    if not dry_run:
+        for old, new in moves.items():
+            move_file(root, old, new)
+    back = {v: k for k, v in moves.items()}
+    entry_rels = set(locs.values()) | set(new_locs.values())
+    for rel in linking_files(root):
+        if dry_run:                                    # files still sit at their old place
+            old_rel, new_rel = rel, moves.get(rel, rel)
+        else:
+            old_rel, new_rel = back.get(rel, rel), rel
+        is_entry = rel in entry_rels
+        path = os.path.join(root, rel)
+        if not os.path.isfile(path):
+            continue
+        text = read(path)
+        out = rewrite_links_in(root, old_rel, new_rel, text, new_locs, is_entry)
+        if out != text:
+            counts["links_files"] += 1
+            log(f"links   {new_rel}")
+            if not dry_run:
+                write(path, out)
     return counts
 
 
@@ -534,7 +729,7 @@ def cmd_list(args):
 def cmd_close(args):
     path = args.file if os.path.isabs(args.file) else os.path.join(args.root, args.file)
     if not os.path.exists(path):
-        path = os.path.join(args.root, DIR, os.path.basename(args.file))
+        path = entry_path(args.root, os.path.basename(args.file))
     fields, body, errs = parse_entry(read(path))
     if errs:
         print(f"backlog close: {path}: {errs[0][1]}", file=sys.stderr)
@@ -542,7 +737,23 @@ def cmd_close(args):
     fields["status"] = args.status
     fields["resolution"] = collapse(args.resolution)
     write(path, render_entry(fields, body))
-    print(os.path.relpath(path, args.root))
+    name = os.path.basename(path)
+    changed = []
+    archive(args.root, only={name},
+            log=lambda m: changed.append(m.split(None, 1)[1]) if m.startswith("links ") else None)
+    new = os.path.relpath(entry_path(args.root, name), args.root)
+    print(new)
+    for rel in changed:                 # other files whose links now follow the entry: stage them too
+        if rel != new:
+            print(rel)
+    return 0
+
+
+def cmd_archive(args):
+    if not args.no_migrate:
+        cmd_migrate(args)
+    c = archive(args.root, dry_run=args.dry_run)
+    print("archive: " + ", ".join(f"{k} {v}" for k, v in c.items()) + (" (dry run)" if args.dry_run else ""))
     return 0
 
 
@@ -568,17 +779,21 @@ def main(argv=None):
     p.add_argument("--to")
     p.add_argument("--from", dest="frm")
     p.add_argument("--status", default="open", choices=STATUSES + ("all",))
-    p = sub.add_parser("close", help="set status and resolution")
+    p = sub.add_parser("close", help="set status and resolution, move the entry into archive/")
     p.add_argument("file")
     p.add_argument("--status", default="done", choices=STATUSES[1:])
     p.add_argument("--resolution", required=True)
     p = sub.add_parser("migrate", help="move unstruck archive entries to files (idempotent)")
     p.add_argument("--dry-run", action="store_true")
+    p = sub.add_parser("archive", help="migrate, then sweep closed entries into archive/ and fix links (idempotent)")
+    p.add_argument("--no-migrate", action="store_true")
+    p.add_argument("--dry-run", action="store_true")
     args = ap.parse_args(argv)
     args.root = os.path.abspath(args.root)
     if not RE_DATE.fullmatch(args.today):
         ap.error("--today must be YYYY-MM-DD")
-    return {"new": cmd_new, "list": cmd_list, "close": cmd_close, "migrate": cmd_migrate}[args.cmd](args)
+    return {"new": cmd_new, "list": cmd_list, "close": cmd_close, "migrate": cmd_migrate,
+            "archive": cmd_archive}[args.cmd](args)
 
 
 if __name__ == "__main__":
