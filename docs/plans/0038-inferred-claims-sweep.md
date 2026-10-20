@@ -2522,3 +2522,26 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   [inventory § 7](0038-inventory/README.md#7-priority-order) hold. (2) Plan 0039 is closed; its data/excel fold is a
   Phase 3 item of the data/excel cluster (Phase 3 *Order*). The lane H2 queue is in the
   [plans index](README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049).
+- **2026-10-20 — Batch H2a paused (reverser, `lane/h2a`): harness part done, write-up left; resume note.** Slot 2
+  was yielded to plan 0044 Phase 2 at the orchestrator's request. Slot 2 is stopped, its saves directory restored to
+  empty (`aside: none`), no driver or gdb left.
+  - **Done:** run:2026-10-20-sweep-items-tc, 12 sessions on slot 2, recorded in
+    [findings/items/experiments.md](../findings/items/experiments.md#run2026-10-20-sweep-items-tc) with the logger
+    (`tools/gdb/tc-h2a.gdb`), driver (`tools/h2a_sessions.py`), pilot `corpse` command, recipe `h2afind.json`, checker
+    `tools/sweep_h2a.py` (+ 9 tests), the `tools/quality.py` clamp counterfactual keys and `tools/tc.py`'s skip of the
+    H2a tags. Logs, manifest and every check output are in `workspace/logs/h2a/` (`check/`). All checkers 0
+    mismatches: `sweep_h2a.py logs` 0 bad, `tc.py replay` 873/873, `quality.py` 720/720, `uniques.py` 1022/1022.
+  - **Proposed row states (lane's reading, for the write-up):** tc 1, 2, 11, 34 (2), 37, 45, 47, 59, 71 raised; tc 22
+    raised in part (bit 17: 113 skips, collision: 2 skips; `bonewall` fatal unreached); tc 60 raised in part
+    (gold find 202 products, `mul=` 1 product; the type-equivalence half is d-none: `gld` is the only item record of
+    or equivalent to type 4; signedness unseparated by positive values); tc 70 raised in part (types 2 and 3; type 1
+    and the outside-1–3 half unreached); quality 20 raised in part (owner from the AI block for 363/352/271, 130
+    rolls; gone owner and killer type ≥ 2: 0 cases in 8 753 rolls); quality 22 and 23 raised (the D6 clamp acts in 667
+    rolls of the S2a set and the H2a logs; no clamp breaks 138, clamp after the ratio breaks 206). That is 13 raised and
+    4 raised in part of 17 rows (18 statements with tc 34's two).
+  - **Left (static, no slot needed):** the "Plan 0038 batch H2a" sections of items/0001 and items/0002 with the row
+    ledger and anchors; the rule-12 carries into 0001 § S2a tc 34 and the TCP/IP open question, and into 0002 § Answer
+    (the clamp "never acted"), § magic-find unexercised parts and the clamp open question; `re/symbols.csv` confidence
+    (MonDeathDrop, MonDeathEvent, MonDropNoNoDrop, CorpseFindItem, DropGoldFind I → C); inventory § 2.6 entry; the
+    review request to the architect; gate. No further session is needed for the filed rows; an optional champion kill
+    (an `Act N Citem` `mul=` gold) would add `mul=` cases.

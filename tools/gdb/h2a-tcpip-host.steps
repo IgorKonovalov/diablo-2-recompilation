@@ -1,0 +1,17 @@
+# plan 0038 batch H2a: a TCP/IP game hosted alone (tools/gdb/two-host.steps without a joiner), Normal.
+# Main menu -> Other Multiplayer -> TCP/IP Game -> Host Game -> first character -> OK -> NORMAL in the difficulty box.
+# Window-relative coordinates for the 800x600 game window.
+click 700 150   # empty background: the first click only activates the window
+sleep 1
+click 400 417   # OTHER MULTIPLAYER
+sleep 2
+click 400 334   # TCP/IP GAME
+sleep 3
+click 400 189   # HOST GAME
+sleep 3
+click 690 556   # OK on the character-select screen (first character is preselected)
+sleep 2
+shot workspace/logs/h2a/tcpip-difficulty.png
+click 400 280   # NORMAL in the Select Difficulty box
+sleep 15
+shot workspace/logs/h2a/tcpip-ingame.png

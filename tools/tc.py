@@ -665,6 +665,10 @@ CLASSIC_KEYS = ("scan", "plain", "skip", "miss", "vreject", "refund", "lsd")
 
 
 B6_TAGS = ("B60", "B6O", "B6E", "B6F", "B6P", "B6G", "B6X")
+# tools/gdb/tc-h2a.gdb (plan 0038 batch H2a): the death-drop, gold and gold-find lines, checked by tools/sweep_h2a.py;
+# not TC events
+H2A_TAGS = ("MDD0", "MDDB", "MDDC", "MDDX", "MDI", "MNN", "CFI", "GTY", "GMUL", "GMULX", "GMAX", "GF0", "GF1", "GF2",
+            "GF3", "GF4", "GF5", "GF6")
 
 
 def b6_model(group):
@@ -789,6 +793,8 @@ def read_calls(path):
                     b6 = []
                 b6.append((tag, json.loads(line.partition(" ")[2])))
             continue  # a "TAG {json}" line of another logger (e.g. tools/gdb/uniques.gdb, plan 0019): not a TC event
+        if line.partition(" ")[0] in H2A_TAGS:
+            continue
         head, kv = parse(line)
         if head == "DROP":
             kv["_b6"] = b6 if b6 and b6[-1][0] == "B6X" else None

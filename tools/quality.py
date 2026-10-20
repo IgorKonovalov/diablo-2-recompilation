@@ -137,7 +137,10 @@ def roll(T, item, ilvl, ratio, seed, mf=0, linear=False, trace=None, cf=None):
     linear=True replaces ITEMS_MagicFindDiminish by its linear branch (F = mf + 100 for every mf), the
     counterfactual of plan 0010 Phase 2. trace, if a list, receives one (test, chance, draw or None, won) per test
     reached. cf (plan 0038 batch S2a counterfactuals, None for the game's roll): {"flags": "type2"|"equiv"} reads
-    the Normal/Magic/Rare bytes through type_flags; {"div": "floor"} divides d by the divisors with floor division."""
+    the Normal/Magic/Rare bytes through type_flags; {"div": "floor"} divides d by the divisors with floor division.
+    Plan 0038 batch H2a: {"clamp": "off"} drops the D6 minimum, {"clamp": "after-ratio"} applies it after the ratio
+    word (D7) instead of before; a list cf["pre"] receives one (test, chance before D6, row minimum, ratio word) per
+    test reached."""
     cf = cf or {}
     if item >= len(T.items):
         return 0, seed, "no-record", 0, None
@@ -175,6 +178,18 @@ def roll(T, item, ilvl, ratio, seed, mf=0, linear=False, trace=None, cf=None):
             use_mf = True
     m100 = mf + 100
 
+    def clamp_ratio(name, c, mn, w):
+        """D6 (c <- max(c, min)) then D7 (the ratio word), or a counterfactual of cf["clamp"]."""
+        if isinstance(cf.get("pre"), list):
+            cf["pre"].append((name, c, mn, w))
+        how = cf.get("clamp")
+        if how != "off" and how != "after-ratio" and c <= mn:
+            c = mn
+        c = s32(c - cdiv(s32(w * c), 1024))
+        if how == "after-ratio" and c <= mn:
+            c = mn
+        return c
+
     def test(name, c, code):
         nonlocal seed, draws
         if c < 1:
@@ -200,9 +215,7 @@ def roll(T, item, ilvl, ratio, seed, mf=0, linear=False, trace=None, cf=None):
                 f = m100 if linear else diminish(m100, k)
                 if f != 0:
                     c = cdiv(s32(c * 100), f)
-            if c <= s32(v[mn]):
-                c = s32(v[mn])
-            c = s32(c - cdiv(s32(ratio[w] * c), 1024))
+            c = clamp_ratio(name, c, s32(v[mn]), ratio[w])
             won, why = test(name, c, code)
             if won:
                 return code, seed, why, draws, ri
@@ -211,9 +224,7 @@ def roll(T, item, ilvl, ratio, seed, mf=0, linear=False, trace=None, cf=None):
         c = s32((v[9] - cdiv_(d, s32(v[10]))) << 7)
         if use_mf:
             c = cdiv(s32(c * 100), m100)
-        if c <= s32(v[11]):
-            c = s32(v[11])
-        c = s32(c - cdiv(s32(ratio[0] * c), 1024))
+        c = clamp_ratio("magic", c, s32(v[11]), ratio[0])
         won, why = test("magic", c, 4)
         if won:
             return 4, seed, why, draws, ri
