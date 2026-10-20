@@ -119,7 +119,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (`4b94c8ef…`); the reversed order differs only in the 20 wells listed. Carried into
     [stats/0001](../findings/stats/0001-aggregate.md) (the full-block statement raised to `[C]`) and the
     [stats experiments](../findings/stats/experiments.md#run2026-10-17-stats) record; specs and wiki to the
-    spec-writer ([backlog](../backlog/2026-10-20-reverser-spec-writer-stats-full-set-blocks-and-aura-chaining-checked.md)).
+    spec-writer ([backlog](../backlog/archive/2026-10-20-reverser-spec-writer-stats-full-set-blocks-and-aura-chaining-checked.md)).
   - **The *Fleshripper* log: not copied, re-staged.** The lane's scratch is gone; a scan of the 307 harness logs on
     the machine found none with `e001b03e…` or save `5f440622…` (`workspace/logs/combat/p47r-fleshripper-search.txt`,
     `aef49a11…`, which also holds the rebuild: commit `5871b00`'s recipe still builds `5f440622…`). Session
@@ -231,3 +231,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Ruling 6 (`h2afind`).** Fixed here (fix 3); nothing to the archivist.
   - **Phase 2 may start** in the next free harness slot (slot 1: plan 0048 Phase 2; slot 2: plan 0038 H2b), with the
     `attract` staging as its first, static step.
+- **2026-10-20 — Phase 1 specs and wiki (spec-writer, `lane/stw`; no game, no Ghidra).** Review requested
+  ([backlog](../backlog/2026-10-20-spec-writer-architect-review-lane-stw-stats-full-set-blocks-and.md)). Ruling 4 and
+  the re-check's chaining counts carried into the stats specs: [stats/README](../specs/stats/README.md) (boundary row
+  *no remainder*, `[I]` → `[C]`; the 746 chained pairs as `tools/stats.py`'s, 115 breaks, 4 with no next run; tags
+  C 13 → 14, I 4 → 2, L 3), [stats/aggregate](../specs/stats/aggregate.md) (J4 full Trang-Oul's `[C]`, the
+  broken-member set split out `[I]`, the full-block open question struck; tags C 64 → 65, I 42, L 5 → 4),
+  [stats/states](../specs/stats/states.md) (§ H note; tags unchanged) and
+  [wiki/stats-and-states](../wiki/stats-and-states.md) (`based_on` aggregate 2026-10-20). Open questions: aggregate 5 → 4,
+  README 3, states 6. The reverser's entry is closed.

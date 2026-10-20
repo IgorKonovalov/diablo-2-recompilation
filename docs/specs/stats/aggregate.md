@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [stats/overview, items/properties, items/uniques-sets, player/creation, monsters/stats, data/calc]
 consumed_by: [stats/states, combat/overview, player/creation, monsters/stats, data/calc]
-tags: {C: 64, I: 42, L: 5}
-updated: 2026-10-17
+tags: {C: 65, I: 42, L: 4}
+updated: 2026-10-20
 ---
 
 # Stat aggregation: the list tree, the cache, the `op` terms, the maxima, items and set bonuses
@@ -488,20 +488,26 @@ Step notes:
 
 - J1–J4. [C] 11 343 worn masks predicted from the inventory (a requirement-failing Soul Cage never counted; two
   Angelic Halo set one bit); 5 749 aprop toggle sequences (`add func` 0: 1 844, 1: 819, 2: 3 086) with 19 525
-  toggles; 5 749 wearer set lists, of which 5 569 equal the Sets blocks for `n = popcount(mask)` (Angelical Raiment
-  n = 1; Civerb's n = 1, 2, 3; Immortal King n = 1, 2, 3; Trang-Oul's n = 4). (fn:SETS_WornMemberMask@0x0062A370,
+  toggles; 5 749 wearer set lists, all equal to the Sets blocks for `n = popcount(mask)` (Angelical Raiment n = 1;
+  Civerb's n = 1, 2, 3; Immortal King n = 1, 2, 3; Trang-Oul's n = 4 and n = 5): 5 569 at the run, the 180 full
+  Trang-Oul's lists since the 2026-10-20 re-check. (fn:SETS_WornMemberMask@0x0062A370,
   fn:sub_00660120_SetBonusApply@0x00660120, run:2026-10-17-stats)
 - J4. [C] **Block *b* is the *b*-th partial quad of the record.** `SetBonusApply` takes `m = min(n, members − 1)`
   (0x006601A8–0x006601B5), walks `b = 0 .. 2m − 3` over the 16-byte quads from record `+0x010` (0x006601B7–0x006601F1)
   and the full quads from `+0x090` (0x00660200–0x0066022E); the compiled record holds the partial quads in `.txt`
   order `PCode2a`, `PCode2b`, `PCode3a` … at `+0x010 + 16j`, as the layout diff of
-  [Sets § Bonus blocks](../../tables/Sets.md#bonus-blocks-plan-0041-phase-0) shows. The 5 569 predicted lists are the third
+  [Sets § Bonus blocks](../../tables/Sets.md#bonus-blocks-plan-0041-phase-0) shows. The 5 749 predicted lists are the third
   leg. (fn:sub_00660120_SetBonusApply@0x00660120, tbl:Sets.txt:PCode2a, run:2026-10-17-stats)
-- J4. [I] **The full Trang-Oul's Avatar** (n = 5, 180 lists): its full blocks carry a `state` (`monsterset`) and an
-  `oskill` property; the model does not build those, so the lists were taken as logged (an unchecked remainder, not
-  an oracle) and their content rests on the code. Its mask and count were predicted, and the events after each list
-  (the propagation, the `monsterset` clear, the `oskill` passive) were. A set whose last member is broken was not
-  reached. (fn:sub_00660120_SetBonusApply@0x00660120, fn:SETS_WornMemberMask@0x0062A370, run:2026-10-17-stats)
+- J4. [C] **The full Trang-Oul's Avatar** (n = 5, 180 lists): a full block with a `state` or an `oskill` property is
+  built like the others. Its full blocks carry a `state` (`monsterset`) and an `oskill` (Fire Mastery) property; each
+  of the 180 lists equals the Sets blocks for n = 5 when every value is stored `<< ValShift` (`mana` 100 → 25 600),
+  the `state` block (property func 24) writes stat 98 with the compiled param 176 (`monsterset`, a state) and the
+  value 1, and the `oskill` block gives the skill's id and level. A reading without the shift, or with param 0, would
+  mismatch every one of the 180. The lists were taken as logged at the run and are predicted by the kept checker
+  since the 2026-10-20 re-check (0 mismatches over the 18 logs). (fn:sub_00660120_SetBonusApply@0x00660120,
+  fn:PROP_Func24_ParParam@0x0065F390, fn:sub_006336A0_PropParamCell@0x006336A0, run:2026-10-17-stats)
+- J4. [I] A set whose last member is broken (flag `0x100`) was not reached, so its full blocks are read from the code
+  only. (fn:sub_00660120_SetBonusApply@0x00660120, fn:SETS_WornMemberMask@0x0062A370)
 - J2. [I] The aprop lists are the item's own lists of states 165..169 (flags `0x2040`, made at creation,
   [items/properties § G](../items/properties.md#g-stat-storage)): pair *k* counts when its member is worn
   (`add func` 1) or when *k* other members are worn (`add func` 2). `add func` 0 (blank) puts the aprop in the main list at
@@ -592,7 +598,8 @@ tbl:CharStats.txt:LifePerVitality, run:2026-10-17-stats)
 - [stats/0001](../../findings/stats/0001-aggregate.md) § 1–8 (the code reading), § 9 (the run), *Leads used*
   (12 verdicts, one contradicted), *Phase 0 surprises* (b), (e).
 - [stats/experiments § run:2026-10-17-stats](../../findings/stats/experiments.md#run2026-10-17-stats): 18 sessions,
-  0 mismatches; the review's re-check in three orders.
+  0 mismatches; the review's re-check in three orders; the *Re-check 2026-10-20* (plan 0047 Phase 1), which builds
+  the full set blocks.
 - `tools/stats.py` (the model: `evaluate`, `recompute`, `propagate`, the take classes), `tools/stats_survey.py`.
 - Tables: [ItemStatCost § Aggregation](../../tables/ItemStatCost.md#aggregation-plan-0041-phase-0),
   [CharStats](../../tables/CharStats.md), [Sets § Bonus blocks](../../tables/Sets.md#bonus-blocks-plan-0041-phase-0),
@@ -612,7 +619,8 @@ tbl:CharStats.txt:LifePerVitality, run:2026-10-17-stats)
 - [L] Not reached in the run, each inferred above: the `fMin` floor (F2); ops 3, 6, 7, 10, 12; a decisive
   `item_req_percent`, level or class test; a broken item and a set with a broken member; an Assassin's second weapon;
   the clamp of G4 as a predicted write.
-- [L] The full Trang-Oul's blocks with a `state` or an `oskill` property: their content is code-read only (J4); a tool
-  follow-up to predict them is filed to the reverser.
+- ~~The full Trang-Oul's blocks with a `state` or an `oskill` property: their content is code-read only (J4); a tool
+  follow-up to predict them is filed to the reverser.~~ Answered: the kept checker builds them and predicts all 180
+  lists (J4, [stats/0001 § 9](../../findings/stats/0001-aggregate.md#9-the-phase-2-run-run2026-10-17-stats), plan 0047 Phase 1).
 - [L] What queues the 136-frame refresh (H4), and the weapon-switch function's own body (I3).
 - [L] Which readers read a per-level source's own (hidden) cache value (C5); the character screen is client-side.

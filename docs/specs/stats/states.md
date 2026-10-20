@@ -415,7 +415,9 @@ Step notes:
 - H. [C] **The damaging aura's draw.** Sanctuary's run calls `sub_005CF3A0_AuraHitDo`, which calls
   `SKILLS_RollElemDamage` (at 0x005CF5D5), which draws `RNG_RangeB` (at 0x0056E132) on the caster's seed once per hit.
   The checker asserted each of the 865 drawing runs' exit seed against its entry advanced by its logged draws, and
-  746 of the next runs of the same caster entered on that exit: chained pairs in the ADR-0014 sense. The game seed
+  746 of the next runs of the same caster entered on that exit: chained pairs in the ADR-0014 sense (the checker's
+  `aura_chained_pairs`, keyed by the caster unit, since the 2026-10-20 re-check; 115 next runs entered elsewhere and
+  4 drawing runs had no next run in their log). The game seed
   moved in one aura run, when a kill dropped an item; a kill also steps the dead monster's own seeds. The draw is the
   hit's damage (phase 3), outside this spec's state code. (fn:sub_005CF3A0_AuraHitDo@0x005CF3A0,
   fn:RNG_RangeB@0x0045C3E0, run:2026-10-17-stats)
