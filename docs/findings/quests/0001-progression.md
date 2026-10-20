@@ -559,8 +559,17 @@ record access.
   five-slot order once (private `+0x4A`): **quest-seed draws** `s ← lo·0x6AC690C5 + hi; i = low32(s) mod 5`, repeated
   until each of the five slots is filled, classes 17–21 (`StoneAlpha`…`StoneLambda` `[L]`) assigned in that order; so
   ≥ 5 draws, variable count. Each correct stone (`class = order[k]`) advances `k`; the fifth sets the dummy 61 to mode
-  6, removes `bkd `, and calls `0x0056EDE0(0, 1, 0x120, x+6, y−3)` at stone 21's position (what it creates is open) and
-  pins its room. (0x00592E90, 0x00593710)
+  6, removes `bkd `, and calls `sub_0056EDE0_MissileCreateAt(0, 1, 0x120, x+6, y−3)` at stone 21's position, which
+  creates missile 288 `cairnstones` (below), and pins its room. (0x00592E90, 0x00593710)
+- [I] **`sub_0056EDE0_MissileCreateAt(a, b, missile, x, y)`** (ECX game, EDX source unit; read 2026-10-20, plan 0049
+  Phase 1). With x = y = 0 it first takes a point from `0x0056D2C0`; with no point, or a point more than 100 from the
+  source (`UnitDistance`), it returns 0. Otherwise it fills a zeroed `0x5C`-byte request: `+0x00` = 1, `+0x04` = the
+  source, `+0x10` = the missile, `+0x14/+0x18` = x, y, `+0x2C` = a, `+0x30` = b. It returns
+  `sub_0059FA30_MissileCreate(game, &req)` (0x0056EDE0–0x0056EE84). The quest calls pass Missiles rows 288
+  `cairnstones` (`0x120`, the fifth stone), 332 `towerchestspawner` (`0x14C`, each of the Countess's recorded chests)
+  and 625 `baalfx control` (Baal's death). Each is a missile whose server do-function (17, 18 and 36 in
+  `g_MissileSrvDoFuncs`) does the work; those functions are not read here.
+  (fn:sub_0056EDE0_MissileCreateAt@0x0056EDE0, fn:sub_0059FA30_MissileCreate@0x0059FA30, data:g_MissileSrvDoFuncs@0x0073C768)
 - [C] **The order draw, reached by the scroll use** (run:2026-10-19-quests3, § 17): `0x00592E90` takes the quest seed
   from `QUESTS_GetSeed` once (0x00592EE1), then steps it inline until five slots are filled, slot `low mod 5`, classes
   17, 18, … in fill order; the logged order and the quest seed after it are predicted from the seed before in three
@@ -612,8 +621,8 @@ Objects: operate 6 `0x00594E70` (the tower book: object mode 1, message 0x7F to 
 - [I] `0x00595160` (sets bit 1) has no caller and no pointer: dead.
 - [I] Death side effects: timer `0x005954C0`, period 7; `0x005954F0` (at the death and on each chest event 7, frame + 10)
   spawns monster 326 at the Countess's death position (`SpawnAtPos(…, 326, 12, −1, 8)`, one retry at +5, +5) and then,
-  per recorded chest 371, calls `0x0056EDE0(0, 1, 0x14C, x, y)` at the chest and pins its room. What 326 and `0x14C`
-  produce is open. No item is created by the quest (items/0010). (0x005954F0)
+  per recorded chest 371, calls `sub_0056EDE0_MissileCreateAt(0, 1, 0x14C, x, y)` at the chest (missile 332
+  `towerchestspawner`, § 7 above) and pins its room. What 326 produces is open. No item is created by the quest (items/0010). (0x005954F0)
 - Draws: none in the quest's functions; the spawns draw on other seeds (oracles).
 
 #### Word 6 — quest object 6 (row 6, a1q6.cpp; init `0x00596990`)
@@ -673,8 +682,8 @@ Objects: operate 6 `0x00594E70` (the tower book: object mode 1, message 0x7F to 
 
 #### Open points (Act I)
 
-- `0x0056EDE0` arguments `0x120` (stones) and `0x14C` (Countess chests) and monster 326 at the Countess's death: what
-  unit each creates.
+- ~~`0x0056EDE0` arguments `0x120` (stones) and `0x14C` (Countess chests)~~: missiles 288 and 332 (read 2026-10-20).
+  Monster 326 at the Countess's death: what unit it is.
 - The block `+0x14` of e3 is the old level and `+0x18` the new (from the two raisers); handlers read `+0x14 == 1`
   as "leaving the Rogue Encampment".
 - Which monsters are hooked to quests 1, 2, 5, 6 (Levels `+0x30` hooks via `0x00545CD0`, superunique hooks of
@@ -1853,7 +1862,7 @@ Private data 0xA8 bytes (`+0x86` Worldstone portal open, `+0x88` credited count,
   InitFn 79 and its 1–10 quest-seed draws are unreachable by stock play, as NPC 377 is (§ 16); the draw stays `[I]`
   and `+0xA4` stays 0 for the e3 message. (0x0058E830, data:g_ObjInitFns@0x00731BC0)
 - [I] **Draws:** Baal's gold (plan 0032: `RNG_RandLoHi(questSeed, …)` per credited player when the killer had bit 0
-  clear) and the Zoo's 1–10 draws, both on the quest seed; `0x0056EDE0(0, 1, 625, x, y)` at Baal's death (not read),
+  clear) and the Zoo's 1–10 draws, both on the quest seed; `sub_0056EDE0_MissileCreateAt(0, 1, 625, x, y)` at Baal's death (missile 625 `baalfx control`, its do-function not read),
   `0x0058E920` (`SpawnAtPos(…, 521, 1, 4, 0x42)`, from monster code) and the objects' `SUnitCreate` are oracles.
 
 #### Word 42 (no record word) — quest object 40 (second table, init 0x0058EA50, act index 4)
@@ -2278,10 +2287,10 @@ list), and `tools/quests.py check` the part 3 rules (its docstring and `tools/te
 | word 37's `tr2 ` use (item use, § 10) | x-anya | **raised** `[C]` for the branch reached (b8 set, b7 clear): b7 at 0x0055E4F5 (run:2026-10-19-quests3, 0x0055E4CC–0x0055E4F5) |
 | level-entry steps (e3) reachable by a waypoint hop (§ 7–§ 10) | x-entry, x-entry2, h-entry (Lut Gholein, Lost City, Far Oasis, Kurast Docks, Arreat Plateau, Crystalline Passage, Glacial Trail, Halls of Pain, the palace) | **raised** `[C]` for the branches reached: word 4's "Cain lost" on the first arrival in 40 (`0x00597310` from `TownLevelLeave`, not the e3 handler: game b13, player b14); word 12 b8, b7 on entering 50 (quest 11 active); word 37's 112 → 113 → 123 steps (b3, then b14). Other e3 rows: candidates table below (run:2026-10-19-quests3, 0x00597310, 0x0059F136, 0x00589D80) |
 | word 40's e11 map (§ 10, § 16) | Anya's talks reported 0x4ED0 (x-anya, h-anya, nm-anya), Malah's 0x4ED3 (one talk) | **held** for two more messages: 0x4ED0 → b9 and 0x4ED3 → b6, as § 16's jump-table reading has them (run:2026-10-19-quests3, 0x0058D9C7) |
-| the Zoo's draws (§ 10, word 40) | static scan (`objplace`), no session | **shortfall, unreachable on stock data** `[I]`: object 567 is placed by no DS1 and created by no code (§ 10) |
+| the Zoo's draws (§ 10, word 40) | static scan (`objplace`), no session | **shortfall, unreachable on stock data** `[I]`: object 567 is placed by no DS1 and created by no code (§ 10; fn:sub_0058E830_A5Q6_ZooInit@0x0058E830) |
 
 Level-entry and item-use candidates from § 7–§ 10 (the e3 and item-use rows a waypoint hop or a town reaches; each
-reached row is `[C]` above for its branch, the rest stays `[I]`):
+reached row is `[C]` above for its branch, the rest stays `[I]`; run:2026-10-19-quests3):
 
 | word | trigger | write | part 3 |
 |---|---|---|---|
@@ -2331,8 +2340,9 @@ stays open). Party credit and every two-client case stay plan 0044's. (run:2026-
   run:2026-10-18-quests2.
 - [L] The monsters hooked to quests 1, 2, 5, 6 and 22 (Levels `+0x30` and superunique hooks) were not all re-read;
   monsters/0003 lists the superunique hooks.
-- [L] What `0x0056EDE0` creates with arguments `0x120` (the stones), `0x14C` (the Countess's chests) and 625 (Baal's
-  death).
+- ~~What `0x0056EDE0` creates with arguments `0x120` (the stones), `0x14C` (the Countess's chests) and 625 (Baal's
+  death).~~ Missiles 288 `cairnstones`, 332 `towerchestspawner` and 625 `baalfx control` (§ 7, read 2026-10-20). What
+  their server do-functions (17, 18, 36) make is not read.
 - [L] The descriptor's `+0x08` (100 or 0) has no reader in the code read.
 - [L] The AI states that call `0x00599420` and `0x0059C330` (Act II), the game-type 3 test in `0x0059EA20`, and the
   missiles column behind field `+0x96` used by the staff timer.

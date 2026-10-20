@@ -31,7 +31,9 @@ file predicts what they leave to it:
     possessed variants, berserk, strong, fast, the five enchantments, resist / spectralhit / stoneskin); every other
     handler must leave the base stats unchanged.
   * A player-count change (PCHG): each live monster's stats 7, 12, 13 and 100 (LIVE) must still equal the model's
-    last prediction for that unit (no rescale).
+    last prediction for that unit (no rescale). A hireling (monpool.HIRELINGS) is compared on stat 100 only: its
+    stats 7, 12 and 13 come from the mercenary load of its save, which this model does not cover (counted as
+    `LIVE hirelings`).
 
 Base stats are compared as sets of non-zero (stat, param, value) entries (a SetStat of 0 leaves no entry).
 Exit 0 only if every check holds. Stdlib only. Read-only.
@@ -776,6 +778,14 @@ class Checker:
         first = [V for V in self.by_id.get(U["id"], []) if V["cls"] == U["cls"] and "st" in V][0]
         if first is not U:
             self.note("LIVE monsters re-created from an inactive room (stats of the first instance)")
+        if self.T.hireling(U["cls"]):
+            # A hireling's stats 7, 12 and 13 are written by the mercenary load from its save after MonsterInit
+            # (plan 0038 H4b review follow-up (a), plan 0049): not modelled here; only stat 100 is compared.
+            self.note("LIVE hirelings: stats 7, 12, 13 from the mercenary load, not compared")
+            self.case("live_hireling", "%s cls %d: stat 7 %d, 12 %d, 13 %d (not modelled)" % (
+                where, U["cls"], s.get("7", 0), s.get("12", 0), s.get("13", 0)))
+            self.eq("live stat 100 after a player-count change", s.get("100", 0), U["st"].get(100, 0), where)
+            return
         for k in ("7", "12", "13"):
             self.eq("live stat %s after a player-count change" % k, s.get(k, 0), first["st"].get(int(k), 0), where)
         self.eq("live stat 100 after a player-count change", s.get("100", 0), U["st"].get(100, 0), where)

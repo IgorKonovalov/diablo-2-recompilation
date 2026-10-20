@@ -7,7 +7,7 @@ context:
   - ../../findings/drlg/0009-room-lifecycle.md
   - ../../findings/drlg/0008-outdoor.md
   - ../../findings/monsters/0003-special-monsters.md
-  - ../2026-10-17-architect-reverser-static-sweep-remaining.md
+  - 2026-10-17-architect-reverser-static-sweep-remaining.md
 resolution: "Reviewed 2026-10-17 (architect): accept with fixes (5: wrong anchor 2, overclaim 1, stale cross-reference 1, other 1; plan 0038 log, lane/rbs4 review). Town-follow becomes plan 0038 harness batch H7a (plan 0040 log, post-close entry; inventory § 5, § 7); outdoor 7 split, d-none in Acts I, II, IV, V and an a-run shortfall in Act III, totals unchanged (inventory § 2.6); MonPlace rows 33-35 accepted [I]; two symbol raises whole, three in part."
 ---
 

@@ -366,7 +366,9 @@ tag and the second source given here are the current ones.
   (422 functions) holds no drawing function (no LCG site, no call of a range or step primitive; 532 indirect calls in
   it, 359 through the import table). *Review note (2026-10-16):* of the other 173, 121 call a register last loaded from
   the import table in the same body; the 52 left all lie under the pool allocator 0x0040B430 (file and line
-  arguments, fatal on failure), which is passed no seed pointer. The closure is complete for direct calls and imports,
+  arguments, fatal on failure), which is passed no seed pointer. *Kept split (`lane/p49r` review, 2026-10-20):* the
+  tool's rule below gives 115 and 58 (0 unresolved), and that is the split the row cites; the 6 it moves to the residue
+  also lie under 0x0040B430. The closure is complete for direct calls and imports,
   and that residue is its stated limit. In the logs, all 876 type-1 and 3 552 type-2 rooms have the room seed
   `step(init(level.low))` and `+0x04` its low word, the dispatch running after that. (fn:sub_0067D6D0_OutRoomAlloc@0x0067D6D0,
   fn:sub_00666630_PresetRoomAlloc@0x00666630, run:2026-10-11-seed-tree)
@@ -385,9 +387,20 @@ tag and the second source given here are the current ones.
   initialiser. No log holds a client item (all 739 `CUNITPRE` are type 2), so this is the code's second reading only,
   by the S4b rule for RNG-walk claims. *Review note (2026-10-16):* the closure is the same 422 functions and 532
   indirect calls as row 3's: 359 through the import table, 121 through a register loaded from it, and the same 52
-  unresolved ones under the pool allocator 0x0040B430 (12 of them reached here first through the fatal paths 0x00681E09
+  unresolved ones (115 and 58 by the tool's rule, the kept split since the `lane/p49r` review) under the pool allocator 0x0040B430 (12 of them reached here first through the fatal paths 0x00681E09
   and 0x00408A60). None of these callers is passed a seed pointer. (fn:sub_00627C90_ItemDataAlloc@0x00627C90,
   fn:sub_00627DC0_ItemDataSeedInitOne@0x00627DC0)
+- *Tool addendum (2026-10-20, plan 0049 Phase 1, `lane/p49r`).* [I] `tools/sweep_s1b.py` (sha256 `b3b28bb1…`, see the
+  manifest) now prints the split for rows 3 and 15 and fails on any indirect call outside it. Its `static` check gives
+  359 through the import table and 115 through a register, then 58 left, all inside the closure of 0x0040B430 (that
+  closure holds 420 of the 422 functions), and 0 unresolved. The register rule is "the nearest earlier write of the
+  register in the function body, in address order, is a `mov` from the import table". The hand split of the review
+  (121 / 52) counted 6 more register calls; the tool's rule leaves those 6 in the residue (a `pop` or a call result is
+  their nearest write). `seeds` counts the `RRESEED` lines whose seed is the room's creation seed: 132 of 132 type-2
+  re-seeds and 0 of 25 type-1, the review's count, now runtime support for row 3's preset half.
+  (`workspace/logs/p49r/sweep-s1b-static-p49r-2026-10-20.txt`, `sweep-s1b-seeds-p49r-2026-10-20.txt`, manifest
+  `p49r-manifest.txt`; fn:sub_0067D6D0_OutRoomAlloc@0x0067D6D0, fn:sub_00666630_PresetRoomAlloc@0x00666630,
+  run:2026-10-11-seed-tree-p1)
 - **Row 16** (spec L392, client type 1 never goes through 0x00465FD0) **raised in part.** [C] The client creator
   0x00466730 tests the type and sends type 1 to `ClientMonCreate` (0x0046675C, 0x0046675F, 0x00466796) and every other
   type to `UnitInit` (0x004667D6), pinned; and in the three p1 logs the 739 hits inside `UnitInit` are all type 2,

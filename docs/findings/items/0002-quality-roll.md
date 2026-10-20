@@ -681,13 +681,13 @@ three `MinionsSpawn` sites. The other 17, read here:
 | 0x005B26D9 | `TentacleMinionsSpawn` | each tentacle | the monster that spawns them (its id, type 1); group add |
 | 0x005B3192 | `sub_005B3130_FormationLeaderSpawn` | a formation leader | itself (`id` = new unit's `+0x0C`, `a` = 1) |
 | 0x005B324A | `sub_005B31B0_FormationMembersSpawn` | each formation member | the leader passed in; group add |
-| 0x005B3389 | `sub_005B3270_FormationSpawn`, case 5 | a unit made by `SpawnAtPos` | the unit given as the third argument (`[ebp+0x10]`: id by `UnitGetId`, type by `sub_0044BE50_UnitGetType`) |
+| 0x005B3389 | `sub_005B3270_FormationSpawn`, case 5 | a unit made by `SpawnAtPos` | the unit given as the third argument (`[ebp+0x10]`: id by `UnitGetId`, type by `sub_0044BE50_UnitGetType`); never reached in 1.14d, since both callers pass 0 there (§ Plan 0049 Phase 1) |
 | 0x005FCAA1, 0x005FCACB | `sub_005FC860_BaalCloneSpawn` | Baal's clone (class 570) | Baal (`ESI`); group add |
-| 0x005AEEF1 | `sub_005AEDA0_MissileSpawnOwnedMonster` (pointer at `0x0073C79C`, a missile-side table) | a monster made by `SpawnOwnedMonster` | the missile's owner unit (found by id); group add, mod 15 `partydead` appended |
+| 0x005AEEF1 | `sub_005AEDA0_MissileSpawnOwnedMonster` (missile server do-function 13, `bonewallmaker`; § Plan 0049 Phase 1) | a monster made by `SpawnOwnedMonster` | the missile's owner unit (found by id); group add, mod 15 `partydead` appended |
 | 0x005C5A15 | `sub_005C58B0_SkillBoneWallDo` (`srvdofunc` 60, `Bone Wall`) | the wall piece | the caster (type and id; none → type 6, id −1); mod 15 appended |
 | 0x005C5D97, 0x005C5DAD | `sub_005C5D00_SkillBonePrisonDo` (`srvdofunc` 62, `Bone Prison`) | the prison pieces | the first piece: the caster; the others: the first piece, group add |
 | 0x005C5611 | `sub_005C55C0_SummonFinish`, called from `srvdofunc` 58 (`Revive`) at 0x005C5855 | the revived monster | the caster (none → type 6, id −1); mod 21 `killself` with its timer |
-| 0x005C08C0 | `sub_005C07A0_SkillReviveDo`, a corpse callback of `0x005C09E0` | a monster raised from a corpse | the caster, found by id |
+| 0x005C08C0 | `sub_005C07A0_SkillReviveDo`, a corpse callback of `STATEVENT_Reanimate` (`0x005C09E0`, the item property `reanimate`; § Plan 0049 Phase 1) | a monster raised from a corpse | the player at the top of the killer's owner chain, found by id |
 | 0x0058F50F | `sub_0058F4D0_MonSetOwnerRestore`, from `sub_005424F0_InactiveMonstersRestore` (0x005427FB) | a restored inactive monster | its saved owner, and the saved block `+0x34` |
 | 0x00579ADB | `sub_00579AA0_MercRevive` | the old mercenary | none (id −1): unlinked before it is freed |
 | 0x005A2CDD | `sub_005A2CC0_PartyDeadKillMember` | each member of a `partydead` group | none (id −1), then death mode |
@@ -709,14 +709,95 @@ fn:sub_005A2D10_UModPartyDeadDeath@0x005A2D10, data:g_UModEventFns@0x0073C0B8, t
   - tentacles (their spawner);
   - formation members (their leader; a leader owns itself);
   - Baal's clone (Baal);
-  - the bone wall and prison pieces, revived and raised monsters, and missile-spawned monsters (the caster or the
-    missile's owner);
+  - the bone wall and prison pieces, revived and raised monsters, and missile-spawned monsters (the caster, the
+    missile's owner, or for a `reanimate` raise the killer's owning player);
   - a restored inactive monster (its saved owner).
 
   Unique and superunique minions, MonStats party minions, hirelings and summons were already shown in P1b. The three
   "none" rows only clear a link. (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, fn:ITEMS_DropMagicFind@0x005585D0)
-- Which callers reach `FormationSpawn` (0x0054E1CB in `PresetGroupSpawn`, and 0x005B3559) and which caster
-  `0x005C09E0` belongs to are not read.
+- ~~Which callers reach `FormationSpawn` (0x0054E1CB in `PresetGroupSpawn`, and 0x005B3559) and which caster
+  `0x005C09E0` belongs to are not read.~~ Read in § Plan 0049 Phase 1: case 5 is never reached, and `0x005C09E0` is the
+  stat-event handler of the item property `reanimate`, not a skill.
+
+## Plan 0049 Phase 1 (2026-10-20, static)
+
+Static readings for the plan 0039 P1c residues (a), (b) and (e), in [plan 0049](../../plans/0049-backlog-sweep-5.md)
+Phase 1, `lane/p49r`. No game run. The image tables and the stock rows are printed by `tools/sweep_p49r.py tables` and
+`excel` (kept outputs `workspace/logs/p49r/sweep-p49r-tables-2026-10-20.txt` and `-excel-`, manifest
+`p49r-manifest.txt`).
+
+### (a) `0x005C09E0` is `itemeventfunc` 31, the `reanimate` property
+
+- [I] **Its table.** The pointer at `0x0073262C` is entry 31 of `g_StatEventFuncs` (`0x007325B0`). `sub_0056E740_AddStatEvent`
+  indexes that table by ItemStatCost `itemeventfunc`, with the bound `0x31` (`cmp eax, 0x31`; `ja` at 0x0056E746–0x0056E749;
+  `mov eax, [eax*4+0x7325b0]` at 0x0056E74B). The table has 50 slots (0 to `0x31`): 1 to 31 hold handlers, 0
+  and 32 to 49 are null. It lies past the Skills `srvdofunc` table at `0x007322B0`, which is where the earlier reading
+  placed the pointer.
+  (data:g_StatEventFuncs@0x007325B0, fn:sub_0056E740_AddStatEvent@0x0056E740)
+- [I] **Its stat.** Exactly one ItemStatCost row has `itemeventfunc` 31: stat 155 `item_reanimate`, in `itemeventfunc1`
+  with `itemevent1` = `kill`. The property that writes stat 155 is `reanimate` (Properties `func1` 24). On stock data two
+  rows carry it: the unique *Tomb Reaver* (`prop8`) and the runeword *Faith* (Runes `Runeword38`, `T1Code6`), each with
+  par 1, min 10 and max 10. (tbl:ItemStatCost.txt:itemeventfunc1, tbl:Properties.txt:stat1, tbl:UniqueItems.txt:prop1,
+  tbl:Runes.txt:T1Code1)
+- [I] **What it does** (fn:STATEVENT_Reanimate@0x005C09E0; 0x005C09E0–0x005C0A84):
+
+  ```c
+  // ECX = game, args (attacker, defender, packet, stat id << 16 | layer); trimmed
+  if (!attacker || !defender || defender->type != 1) return 0;          // a monster victim only
+  if (MonTypeFlag(defender, 0x0C)) return 0;                            // not a champion (0x04) or unique (0x08)
+  v = UnitGetStat(attacker, stat, layer);                               // 0x005C0A1F
+  if (v <= 0) return 0;
+  if (RangeB(&attacker->seed /* +0x20 */, 100) >= v) return 0;          // 0x005C0A32: one draw on the killer's seed
+  for (u = attacker; u; u = MonsterOwner(u))                            // walk up to a player
+      if (u->type == 0) {
+          UNIT_AddEvent(game, defender, 13, u->id, layer, SkillReviveDo, 0, u->id);   // 0x005C0A74
+          return 1;
+      }
+  return 0;
+  ```
+
+  The layer of stat 155 is the property's `par`, which `SkillReviveDo` gets as the event's parameter. The event id 13 is
+  past the 13 rows (0–12) of `events.txt`; its trigger is not read here. A killer that is a player's pet or hireling
+  draws on its own seed and hands the raise to the owning player.
+  (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, fn:UNIT_AddEvent@0x005C0AD0, fn:sub_005A0180_MonTypeFlag@0x005A0180,
+  fn:RNG_RangeB@0x0045C3E0)
+- So the owner that `SkillReviveDo` gives the raised monster (the table above) is the player at the top of the killer's
+  owner chain. It is not a skill's caster.
+
+### (b) `FormationSpawn` case 5 is never reached
+
+- [I] `sub_005B3270_FormationSpawn(ECX game, EDX room, x, y, owner, class, …, descriptor, flags)`. Its case 5 tests
+  the third stack argument first (`cmp [ebp+0x10], 0`; `je`, 0x005B333C–0x005B3340) and only then spawns and calls
+  `MonSetOwner` (0x005B3389). The kind of each entry comes from the descriptor (`{dx, dy, kind}`, from `+0x0C`); flag
+  bit 0 forces kind 4 (0x005B32CD–0x005B32D7). The kind table is at `0x005B34A4`. (fn:sub_005B3270_FormationSpawn@0x005B3270)
+- [I] It has two callers, and both pass 0 as that argument (0x0054E1CB, 0x005B3559):
+  - `sub_0054E190_FormationGroup` (`push 0x0` at 0x0054E1C2, the call at 0x0054E1CB) is reached only from
+    `sub_0054EC90_RoomPopulate`'s type-1 branch (0x0054EEF4), which [monsters/0002](../monsters/0002-room-population.md)
+    reads as dead code in 1.14d.
+  - `0x005B34C0` (`push 0x0` at 0x005B3553, the call at 0x005B3559) handles only class `0x154` (340, `boneprison1`)
+    and passes the descriptor `0x0073D4F0`. That descriptor holds four entries, a kind-1 leader at (1, 1) and three
+    kind-3 members at (1, −1), (−1, −1) and (−1, 1), so it has no kind 5. Its own callers (0x005CD684, and 0x005FD55B in
+    `sub_005FD470_MonSkillTargetOk`) are not followed.
+
+  (fn:sub_0054E190_FormationGroup@0x0054E190, fn:sub_0054EC90_RoomPopulate@0x0054EC90)
+- So in 1.14d no unit gets its owner from `FormationSpawn`'s case 5. The 0x005B3389 row above stays in the table as code
+  that exists.
+
+### (e) `MissileSpawnOwnedMonster` is the `bonewallmaker`'s server do-function
+
+- [I] `g_MissileSrvDoFuncs` (`0x0073C768`, 53 slots, entry 0 null) is indexed by the missile record's `pSrvDoFunc`.
+  The dispatch is `movsx eax, word [ebx+0xc]`, `mov eax, [eax*4+0x73c768]`, then `call eax`, at 0x005ADC97–0x005ADCA7, in the function at
+  `0x005ADBB0` (not named; a missile's server step by this dispatch). The Missiles loader's field descriptor puts `pCltDoFunc` at `+0x08`, `pCltHitFunc` at
+  `+0x0A`, `pSrvDoFunc` at `+0x0C`, `pSrvHitFunc` at `+0x0E` and `pSrvDmgFunc` at `+0x10` (the stores
+  0x00661D97–0x00661E27). `0x0073C79C` is entry 13. (data:g_MissileSrvDoFuncs@0x0073C768, tbl:Missiles.txt:pSrvDoFunc; the offsets agree with [Missiles](../../tables/Missiles.md), documented by plan 0045 Phase 0)
+- [I] One Missiles row has `pSrvDoFunc` 13: row 207 `bonewallmaker`. That row is Skills row 78 *Bone Wall*'s
+  `srvmissilea` (`srvdofunc` 60, `summon` `bonewall`). Each server step of the missile looks up its skill's record
+  (a byte at its `+0xBE`, bounded by the count at DataTables `+0xBF0`) and spawns a wall piece with `SpawnOwnedMonster`. It then makes
+  the piece owned by the unit the missile names, adds it to the group, appends mod 15 `partydead` and decrements the
+  missile's counter (0x005AEDA0–0x005AEF6A). (fn:sub_005AEDA0_MissileSpawnOwnedMonster@0x005AEDA0,
+  tbl:Skills.txt:srvmissilea)
+- So *Bone Wall* builds its pieces through two paths: the skill's `srvdofunc` 60 (`sub_005C58B0_SkillBoneWallDo`) and
+  this missile. Which of the two makes the pieces a player sees is not separated here.
 
 ## Open questions
 
