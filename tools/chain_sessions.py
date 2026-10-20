@@ -74,7 +74,10 @@ SESSIONS = {
 
 def act_session(save, diff, seed, tab, row, limit=15 * 60):
     classic = save == CLS
-    return S(save, diff, seed, [wp(tab, row, classic), explore(1500, diff), explore(1500, diff)], limit)
+    # the waypoint's level first (--any-level aims at far rooms of other built levels from a maze: xn2 stopped
+    # after 40 hops with 141 rooms skipped), then any level next to it
+    return S(save, diff, seed, [wp(tab, row, classic), explore(1500, diff, False), explore(1500, diff),
+                                explore(1500, diff)], limit)
 
 
 # the counted sessions: one act of one game type in one difficulty each, the waypoint chosen so that every generator
@@ -120,6 +123,8 @@ def raven(save, diff, seed):
 
 SESSIONS["raven-xn"] = raven(EXP, "normal", 4807)
 SESSIONS["raven-cn"] = raven(CLS, "normal", 4837)
+# raven-xn again on its map seed, with the DCR fix of tools/gdb/collision.py (raven-xn's log has a logger error)
+SESSIONS["raven-xn2"] = raven(EXP, "normal", 4807)
 for _n, _sv, _d, _sd, _t, _r in PLAN:
     SESSIONS[_n] = act_session(_sv, _d, _sd, _t, _r)
 
@@ -287,7 +292,7 @@ def run_session(name, slot, tag, saves, run):
            "gf_first": f0, "gf_last": f1,
            "game_min": round((f1 - f0) / 25.0 / 60.0, 2) if f0 is not None and f1 is not None else None,
            "bytes": os.path.getsize(log) if os.path.exists(log) else 0, "levels": lids,
-           "ended": stop.get("why") or "commands done", "limit_s": limit}
+           "ended": stop.get("why") or ("time" if t_end - t_entry >= limit - 5 else "commands done"), "limit_s": limit}
     with open(os.path.join(LOGS, stem + ".session.json"), "w") as fh:
         json.dump(rec, fh, indent=1, sort_keys=True)
     print("=== %s done: %s" % (name, json.dumps(rec, sort_keys=True)), flush=True)
