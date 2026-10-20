@@ -611,7 +611,7 @@ it links.
 
 ## Plan 0039 batch P1b (2026-10-17)
 
-Row Q19 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static (objdump, Ghidra on the lane's copy) and a table
+Row Q19 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md). Static (objdump, Ghidra on the lane's copy) and a table
 survey. No game run.
 
 ### Q19 (a): whose stat 80 a monster killer adds (`monsterData+0x28`)

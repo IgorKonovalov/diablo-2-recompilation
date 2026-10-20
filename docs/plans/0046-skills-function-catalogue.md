@@ -1,9 +1,9 @@
 # 0046 — Skills and missiles, the function catalogue: every numbered skill and missile function (ADR-0014 phase 3, part 2)
 
-> **Status:** proposed
+> **Status:** approved 2026-10-20 (owner)
 > **Created:** 2026-10-20
 > **Owner skill(s):** archivist, reverser, spec-writer
-> **Related ADRs:** 0001-target-toolchain-evidence-sources, 0004-boundary-oracles-in-reproduction, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0020-skills-phase-in-two-plans (proposed)
+> **Related ADRs:** 0001-target-toolchain-evidence-sources, 0004-boundary-oracles-in-reproduction, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0020-skills-phase-in-two-plans
 
 ## TL;DR
 
@@ -16,7 +16,7 @@ function a stock row uses on the machinery of plan [0045](0045-skills-missiles-m
 
 ## Context
 
-- **Why a separate plan:** [ADR-0020](../adrs/0020-skills-phase-in-two-plans.md) (proposed). Skills.txt has 64
+- **Why a separate plan:** [ADR-0020](../adrs/0020-skills-phase-in-two-plans.md). Skills.txt has 64
   distinct `srvstfunc` and 138 distinct `srvdofunc` values ([Skills](../tables/Skills.md)); the progressive functions
   and the missile functions come on top (counted by plan 0045's survey). Scripted play reaches few of them, so static
   reading and emulation carry this plan; the harness samples each family.
@@ -95,3 +95,5 @@ function a stock row uses on the machinery of plan [0045](0045-skills-missiles-m
 _(lanes append dated entries as phases land: what was found, the confidence reached, surprises)_
 
 - **2026-10-20 — Drafted (architect, `lane/plans45`).** Status `proposed`, with ADR-0020 (proposed).
+- **2026-10-20 — Approved (owner, via the orchestrator).** Plans 0045–0049 and ADR-0020 approved as proposed; the run
+  order of the [plans index](README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049) is the current queue.

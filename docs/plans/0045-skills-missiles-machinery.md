@@ -1,9 +1,9 @@
 # 0045 — Skills and missiles, the machinery: dispatch, packets, missiles, event handlers (ADR-0014 phase 3, part 1)
 
-> **Status:** proposed
+> **Status:** approved 2026-10-20 (owner)
 > **Created:** 2026-10-20
 > **Owner skill(s):** archivist, reverser, spec-writer
-> **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases, 0020-skills-phase-in-two-plans (proposed)
+> **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases, 0020-skills-phase-in-two-plans
 
 ## TL;DR
 
@@ -11,7 +11,7 @@
 resolved: which checks let it start, which function runs on which frame, which damage packet it builds, which
 missiles it creates and how they move, collide and hit, which stat-event handlers fire, which units it summons, and
 which seeds it draws on? This is phase (3) of [ADR-0014](../adrs/0014-scope-game-simulation.md), part 1 under
-[ADR-0020](../adrs/0020-skills-phase-in-two-plans.md) (proposed). When it is done:
+[ADR-0020](../adrs/0020-skills-phase-in-two-plans.md). When it is done:
 - the Missiles table and the dispatch columns of Skills are documented, with a survey;
 - `docs/findings/skills/0001-dispatch.md` and `docs/findings/skills/0002-missiles.md` name the machinery;
 - `tools/skills.py` reproduces skill-use, missile and event-handler events of a run per event;
@@ -217,10 +217,10 @@ logged input here, stated in game frames).
 
 ## Open questions
 
-- **Phase order (owner).** Animation timing (phase 5) is small, mostly data (`animdata.d2`, MonSeq, HitClass) and
-  feeds the action frame this plan takes as an input; monster AI (phase 4) is large and may need per-frame
-  observation (ADR-0014's reserve, an injected logger). The architect proposes **animation timing before AI**, which
-  ADR-0014 allows by plan; the owner decides before phase (4)'s plan is written.
+- ~~**Phase order (owner).**~~ Decided 2026-10-20 (owner): **animation and frame timing is phase (4)**, before
+  monster AI (phase (5)). It is small, mostly data (`animdata.d2`, MonSeq, HitClass), and feeds the action frame this
+  plan takes as an input; AI is large and may need per-frame observation (ADR-0014's reserve, an injected logger).
+  Recorded in [ADR-0020](../adrs/0020-skills-phase-in-two-plans.md) § Neutral.
 - **Client-only skills.** Client missiles (`cltmissile*`) and the skill description tables are presentation and stay
   out.
 - **Two clients.** Party auras and player-against-player skills stay `[I]` (plan 0044 if it stages them).
@@ -230,3 +230,5 @@ logged input here, stated in game frames).
 _(lanes append dated entries as phases land: what was found, the confidence reached, surprises)_
 
 - **2026-10-20 — Drafted (architect, `lane/plans45`).** Status `proposed`, with ADR-0020 (proposed).
+- **2026-10-20 — Approved (owner, via the orchestrator).** Plans 0045–0049 and ADR-0020 approved as proposed; the run
+  order of the [plans index](README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049) is the current queue.

@@ -1,6 +1,6 @@
 # ADR-0020 — Simulation phase 3 (skills and missiles) in two plans: the machinery, then the function catalogue
 
-> **Status:** proposed
+> **Status:** accepted 2026-10-20 (owner)
 > **Date:** 2026-10-20
 > **Amends:** [ADR-0014](0014-scope-game-simulation.md) (what "the phase's spec is reviewed" means for phase 3), [ADR-0016](0016-pipelined-simulation-phases.md) (which P2 opens phase 4)
 > **Related plan(s):** [0045-skills-missiles-machinery](../plans/0045-skills-missiles-machinery.md), [0046-skills-function-catalogue](../plans/0046-skills-function-catalogue.md)
@@ -64,9 +64,9 @@ plan as a boundary oracle under ADR-0004, named in its spec, exactly as earlier 
 ### Neutral
 
 - Evidence rules, ADR-0014's per-event evidence, the chaining floors and ADR-0015's conditions are unchanged.
-- The architect may still reorder phases 4 and 5 by plan (ADR-0014). Plan 0045 asks the owner whether animation timing
-  should come before monster AI, since skill and combat timing need frame counts first; that is a plan choice, not
-  part of this decision.
+- The architect may still reorder phases 4 and 5 by plan (ADR-0014). On accepting this ADR (2026-10-20) the owner
+  set the order: **phase (4) is animation and frame timing, phase (5) monster AI**, since skill and combat timing need
+  frame counts first. That is a plan-order choice under ADR-0014, recorded here, not part of this decision.
 
 ## Alternatives considered
 

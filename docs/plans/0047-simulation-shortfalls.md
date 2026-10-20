@@ -1,6 +1,6 @@
 # 0047 — Simulation shortfalls: the named remainders of the combat, stats and travel runs
 
-> **Status:** proposed
+> **Status:** approved 2026-10-20 (owner)
 > **Created:** 2026-10-20
 > **Owner skill(s):** reverser, spec-writer
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0017-scope-quests-travel-economy
@@ -31,8 +31,8 @@ named again with the reason it cannot be staged on stock data.
     against 50: the combat and stamina shrines, the re-arm, a cure by a well); an aura state's end (9 on and off
     events against 50); a different-state `group` clear; the 256 floor; open wounds on the player; the curse
     resistance cut and `attract`. The research map adds the expiries (123 of 300).
-  - Plan [0042](0042-quests-travel.md) Phase 2 part 3 (run:2026-10-19-quests3, on `lane/p42r`, under review when this
-    plan was drafted): **waypoint activation from mode 0** (0 of 20; the walk never reached an unvisited field
+  - Plan [0042](0042-quests-travel.md) Phase 2 part 3 (run:2026-10-19-quests3, accepted with fixes 2026-10-20 at the
+    `lane/p42r` review, its shortfalls final): **waypoint activation from mode 0** (0 of 20; the walk never reached an unvisited field
     waypoint, and field waypoints were first logged in mode 1 or 2 after a waypoint arrival), with the `Sync` 0
     object-seed draw. This plan takes it only **after 0042 closes**, and only if that close leaves it a shortfall.
 - **The backlog it absorbs:**
@@ -102,3 +102,5 @@ named again with the reason it cannot be staged on stock data.
 _(lanes append dated entries as phases land: what was found, the confidence reached, surprises)_
 
 - **2026-10-20 — Drafted (architect, `lane/plans45`).** Status `proposed`.
+- **2026-10-20 — Approved (owner, via the orchestrator).** Plans 0045–0049 and ADR-0020 approved as proposed; the run
+  order of the [plans index](README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049) is the current queue.

@@ -1,6 +1,6 @@
 # 0039 — Backlog sweep 4: the static loose ends and the open questions a reading settles
 
-> **Status:** approved (owner, 2026-10-16; unattended)
+> **Status:** done (approved 2026-10-16, closed 2026-10-20 by the owner; the data/excel fold moved to plan 0038 Phase 3)
 > **Created:** 2026-10-16
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0006-docs-gate, 0007-fetched-leads-only
@@ -28,11 +28,11 @@ harness.
   touch `[L]` open questions. About 50 of those are marked as a static reading (a writer, a caller, a field meaning, a
   survey). The others need a run (plan 0038 or the plans below), two clients (plan 0044), owner play, a simulation
   phase, or are out of scope.
-- Questions about rooms that are released and re-activated go to [plan 0040](done/0040-drlg-room-lifecycle.md); the act
-  and quest fields of `rng/seeds` go to [plan 0042](0042-quests-travel.md); gold amounts go to
-  [plan 0043](done/0043-items-economy.md).
-- Method precedent: [plan 0015](done/0015-backlog-sweep.md), [plan 0020](done/0020-backlog-sweep-2.md) and
-  [plan 0027](done/0027-backlog-sweep-3.md).
+- Questions about rooms that are released and re-activated go to [plan 0040](0040-drlg-room-lifecycle.md); the act
+  and quest fields of `rng/seeds` go to [plan 0042](../0042-quests-travel.md); gold amounts go to
+  [plan 0043](0043-items-economy.md).
+- Method precedent: [plan 0015](0015-backlog-sweep.md), [plan 0020](0020-backlog-sweep-2.md) and
+  [plan 0027](0027-backlog-sweep-3.md).
 
 ## The ledger
 
@@ -150,9 +150,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
   | # | Verdict | Where |
   |---|---|---|
-  | A1 | answered | § Combat readers in [DifficultyLevels](../tables/DifficultyLevels.md#combat-readers-plan-0037-phase-1-plan-0039-a1), [MonStats](../tables/MonStats.md#combat-readers-plan-0037-phase-1-plan-0039-a1), [States](../tables/States.md#combat-readers-plan-0037-phase-1-plan-0039-a1), [ItemStatCost](../tables/ItemStatCost.md#combat-readers-plan-0037-phase-1-plan-0039-a1); [ElemTypes § Code semantics](../tables/ElemTypes.md#code-semantics-plan-0037-phase-1-plan-0039-a1) |
-  | A2 | answered | [LvlPrest](../tables/LvlPrest.md) `Outdoors` row and open question; [LvlTypes](../tables/LvlTypes.md) § Columns |
-  | A3 | answered | [experiments § cube-saves addendum 2026-10-16](../formats/experiments.md#addendum-2026-10-16-the-whole-bin-set-the-compile-wrote-plan-0039-a3); the ten code-list docs and compcode; [tbl.md](../formats/tbl.md) and MonStats for `Lilith` |
+  | A1 | answered | § Combat readers in [DifficultyLevels](../../tables/DifficultyLevels.md#combat-readers-plan-0037-phase-1-plan-0039-a1), [MonStats](../../tables/MonStats.md#combat-readers-plan-0037-phase-1-plan-0039-a1), [States](../../tables/States.md#combat-readers-plan-0037-phase-1-plan-0039-a1), [ItemStatCost](../../tables/ItemStatCost.md#combat-readers-plan-0037-phase-1-plan-0039-a1); [ElemTypes § Code semantics](../../tables/ElemTypes.md#code-semantics-plan-0037-phase-1-plan-0039-a1) |
+  | A2 | answered | [LvlPrest](../../tables/LvlPrest.md) `Outdoors` row and open question; [LvlTypes](../../tables/LvlTypes.md) § Columns |
+  | A3 | answered | [experiments § cube-saves addendum 2026-10-16](../../formats/experiments.md#addendum-2026-10-16-the-whole-bin-set-the-compile-wrote-plan-0039-a3); the ten code-list docs and compcode; [tbl.md](../../formats/tbl.md) and MonStats for `Lilith` |
   | A4 | answered | `tools/gate.py` (`--also` repeatable), `tools/test_gate.py` |
   | A5 | stale | both 2026-10-13 entries struck with pointers (already answered 2026-10-14) |
 
@@ -212,22 +212,22 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
   | Item | Verdict | Anchor or reason |
   |---|---|---|
-  | B1 | answered (part stale, part moved) | bits 14–15 are the top of the sub-index byte, bit 30 has no reader, `LvlSub` group `unk` is `ApplyAll`'s variant count (unreached), no code views the substitution layer: [drlg/0001 § P1a](../findings/drlg/0001-ds1-dt1-readers.md#plan-0039-batch-p1a-2026-10-16) `[I]`; collision bits stale (drlg/0005); path `action` moved to the AI phase |
+  | B1 | answered (part stale, part moved) | bits 14–15 are the top of the sub-index byte, bit 30 has no reader, `LvlSub` group `unk` is `ApplyAll`'s variant count (unreached), no code views the substitution layer: [drlg/0001 § P1a](../../findings/drlg/0001-ds1-dt1-readers.md#plan-0039-batch-p1a-2026-10-16) `[I]`; collision bits stale (drlg/0005); path `action` moved to the AI phase |
   | B2 | answered in part; rest stale | a `"0"` DT1 load logs an open error and relocates an empty buffer: outcome **not determinable statically**; no checked stock room has such a bit (drlg/0001 § P1a) `[I]`; `Rooms`/`Merge` stale (drlg/0006 § Answer) |
-  | B4 | answered | three callers of `PresetInstanceCreate`; the logged `Def`s by caller split the 93 ambiguous records 30 maze / 60 outdoor / 1 both / 2 never logged (783, 795): [drlg/0004 § P1a](../findings/drlg/0004-preset-units.md#plan-0039-batch-p1a-2026-10-16) `[C]` |
-  | B11 (a) | answered | `RoomNeighboursEnsure` skips `WarpPairLink` for level 133 (0x0066C39B): [drlg/0007 § P1a](../findings/drlg/0007-warps.md#plan-0039-batch-p1a-2026-10-16) `[I]` |
-  | B11 (b) | answered: no | every stock wall and shadow cell has bit 7 (2077 DS1s, `[C]` data), so every kind-0 entry has flag `0x1` and wall/shadow merges return at 0x0066E754; the H5c logs agree merge by merge (2203 of 2203): [drlg/0002 § P1a](../findings/drlg/0002-room-build-draws.md#plan-0039-batch-p1a-2026-10-16) `[I]` + `[C]` |
+  | B4 | answered | three callers of `PresetInstanceCreate`; the logged `Def`s by caller split the 93 ambiguous records 30 maze / 60 outdoor / 1 both / 2 never logged (783, 795): [drlg/0004 § P1a](../../findings/drlg/0004-preset-units.md#plan-0039-batch-p1a-2026-10-16) `[C]` |
+  | B11 (a) | answered | `RoomNeighboursEnsure` skips `WarpPairLink` for level 133 (0x0066C39B): [drlg/0007 § P1a](../../findings/drlg/0007-warps.md#plan-0039-batch-p1a-2026-10-16) `[I]` |
+  | B11 (b) | answered: no | every stock wall and shadow cell has bit 7 (2077 DS1s, `[C]` data), so every kind-0 entry has flag `0x1` and wall/shadow merges return at 0x0066E754; the H5c logs agree merge by merge (2203 of 2203): [drlg/0002 § P1a](../../findings/drlg/0002-room-build-draws.md#plan-0039-batch-p1a-2026-10-16) `[I]` + `[C]` |
   | Q5 | stale | answered in drlg/0005 § Plan 0038 batch S4a |
-  | Q6 | answered | no writer of grid bits 3 and 14 (tiles: no DT1 bit 3; 103 writer call sites; `UNIT_GetCollMask`): [drlg/0005 § P1a](../findings/drlg/0005-collision.md#plan-0039-batch-p1a-2026-10-16) `[I]` |
+  | Q6 | answered | no writer of grid bits 3 and 14 (tiles: no DT1 bit 3; 103 writer call sites; `UNIT_GetCollMask`): [drlg/0005 § P1a](../../findings/drlg/0005-collision.md#plan-0039-batch-p1a-2026-10-16) `[I]` |
   | Q7 | answered | created-dead monsters honour `deadCol` (0x00555481); the two marks are `PATH_DynamicCreate` and `MonSetMode`; every type-1 creation is in `MonSpawnTry` or `MERC_Create`, both run `MonAlignSet` (drlg/0005 § P1a) `[I]` |
-  | Q8 | answered | `MazeRoomAdd`/`0x00670E70` dead code; sweep of 408 000 maze builds: the fatal only with equal tomb fields, which the act draw excludes (0x00642ED7): [drlg/0006 § P1a](../findings/drlg/0006-maze.md#plan-0039-batch-p1a-2026-10-16) `[I]` |
-  | Q9 | answered | node `+0xC` written once, to 0 (0x0066B7D5); the five functions are dead code: [drlg/0008 § P1a](../findings/drlg/0008-outdoor.md#plan-0039-batch-p1a-2026-10-16) `[I]` |
+  | Q8 | answered | `MazeRoomAdd`/`0x00670E70` dead code; sweep of 408 000 maze builds: the fatal only with equal tomb fields, which the act draw excludes (0x00642ED7): [drlg/0006 § P1a](../../findings/drlg/0006-maze.md#plan-0039-batch-p1a-2026-10-16) `[I]` |
+  | Q9 | answered | node `+0xC` written once, to 0 (0x0066B7D5); the five functions are dead code: [drlg/0008 § P1a](../../findings/drlg/0008-outdoor.md#plan-0039-batch-p1a-2026-10-16) `[I]` |
   | Q10 | stale, consumers added | reader found at plan 0038 S4b; its client and server callers named in drlg/0004 § P1a `[I]` |
   | Q11 | answered | the `+0xF0` points (level 17, main 10, sub 23–27; trigger corrected) have no live reader (getter chain unreferenced): drlg/0004 § P1a `[I]` |
   | Q12 | answered | `0x40000` = added to the client automap (0x00457D04); `0x20000` = client draw lists: drlg/0002 § P1a `[I]` |
   | Q13 | stale | drlg/0004 § Shared DS1 buffers (no shipped DS1 is cut two ways) |
   | Q14 | answered | `WarpPairLink`'s first stack argument has no effect; `0x0066BDA0` appends to the source room's near list (and the warp node is on the source room); `Offset*`/`ExitWalk*` subtiles, `Select*` pixels; > 9 points not in stock data (1452 logged builds): drlg/0007 § P1a `[I]` |
-  | Q15 | answered (residue noted) | `+0x28` `0x40000` = client act copy `[C]`; `+0x60` bit 0 = populated, kept across a release `[C]`; seeds `+0x48`/`+0x4C` only from the version-`0x47` item list `[I]`; the 76 initialiser functions classified; the skill and missile re-seeds of units stay unread (a skills subject): [rng/0002 § P1a](../findings/rng/0002-seed-tree.md#plan-0039-batch-p1a-2026-10-16) |
+  | Q15 | answered (residue noted) | `+0x28` `0x40000` = client act copy `[C]`; `+0x60` bit 0 = populated, kept across a release `[C]`; seeds `+0x48`/`+0x4C` only from the version-`0x47` item list `[I]`; the 76 initialiser functions classified; the skill and missile re-seeds of units stay unread (a skills subject): [rng/0002 § P1a](../../findings/rng/0002-seed-tree.md#plan-0039-batch-p1a-2026-10-16) |
 
   Surprises: drlg/warps F1's "marked … gets a warp node" describes the wrong room (the node is on the source room, the
   destination joins the source's near list); drlg/0004's level-17 points were read as "orientation 10" (main index 10,
@@ -263,7 +263,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     the plan requires. No `[L]` is raised; findings keep two leads where they were.
   - **Ruling on B11 (b), S1f and the 11 room-tiles rows.** The answer settles H5c ruling 4's precondition. The 11
     merge rows (room-tiles 4, 14, 15, 28, 30, 37) move from a-run shortfall to **d-edit** and leave the S1f candidates
-    (42 → 31), recorded in [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews). Emulating
+    (42 → 31), recorded in [inventory § 2.6](../0038-inventory/README.md#26-moves-made-by-the-batch-reviews). Emulating
     a path that stock data cannot enter adds no stock evidence. The S1e lane can still propose it as a modding aid,
     but not as an `[I]` → `[C]` route for these rows. The spec states the unreachability as `[I]`, with the `[C]` data
     survey and the `[C]` log counts as its basis. The pseudocode of 9c stays as the `[I]` code reading for edited data,
@@ -283,25 +283,25 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   | Item | Verdict | Anchor or reason |
   |---|---|---|
   | B7 (a) | stale | every `tbl:` table of items/0007, items/0008, player/0001, items/0010 has its doc (gate E4) |
-  | B7 (b) | stale | CubeMain § Output record answers it; items/0008's open question struck: [items/0008 § P1b](../findings/items/0008-cube.md#plan-0039-batch-p1b-2026-10-17) |
-  | B7 (c) | answered | `STATES_Load`'s descriptor: `attred` = bit 10, `immed` not compiled, `rfred`/`rcred`/`rlred` = 26/27/28: [data/0001 § P1b](../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17) `[I]` |
-  | B8 | answered | `RareFormat` (1718) with `name1` as `%0`, `name2` as `%1`; `%0 %1` in English: [data/0003 § P1b](../findings/data/0003-string-tables.md#plan-0039-batch-p1b-2026-10-17) `[I]` + `[C]` data |
-  | B9 | answered | the reader stores the index unmapped at `ItemData+0x38`, the writer re-runs `RUNEWORD_Match`; *Patience* never matches: [items/0007 § P1b](../findings/items/0007-sockets-runewords.md#plan-0039-batch-p1b-2026-10-17) `[I]` + `[C]` data |
-  | B10 | answered | the `CSvBits` clamp (21 bits) on a base **above** `0x1FFFFF`; 364 of 364 written entries predicted: [save/0001 § P1b](../findings/save/0001-d2s-io.md#plan-0039-batch-p1b-2026-10-17) `[C]` |
-  | B12 | answered | the cursor branch tests `quest` and stat 356 only; a missing stat is 0; a cursor-held cube counts in Normal only: [items/0010 § P1b](../findings/items/0010-quest-drops.md#plan-0039-batch-p1b-2026-10-17) `[I]` |
+  | B7 (b) | stale | CubeMain § Output record answers it; items/0008's open question struck: [items/0008 § P1b](../../findings/items/0008-cube.md#plan-0039-batch-p1b-2026-10-17) |
+  | B7 (c) | answered | `STATES_Load`'s descriptor: `attred` = bit 10, `immed` not compiled, `rfred`/`rcred`/`rlred` = 26/27/28: [data/0001 § P1b](../../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17) `[I]` |
+  | B8 | answered | `RareFormat` (1718) with `name1` as `%0`, `name2` as `%1`; `%0 %1` in English: [data/0003 § P1b](../../findings/data/0003-string-tables.md#plan-0039-batch-p1b-2026-10-17) `[I]` + `[C]` data |
+  | B9 | answered | the reader stores the index unmapped at `ItemData+0x38`, the writer re-runs `RUNEWORD_Match`; *Patience* never matches: [items/0007 § P1b](../../findings/items/0007-sockets-runewords.md#plan-0039-batch-p1b-2026-10-17) `[I]` + `[C]` data |
+  | B10 | answered | the `CSvBits` clamp (21 bits) on a base **above** `0x1FFFFF`; 364 of 364 written entries predicted: [save/0001 § P1b](../../findings/save/0001-d2s-io.md#plan-0039-batch-p1b-2026-10-17) `[C]` |
+  | B12 | answered | the cursor branch tests `quest` and stat 356 only; a missing stat is 0; a cursor-held cube counts in Normal only: [items/0010 § P1b](../../findings/items/0010-quest-drops.md#plan-0039-batch-p1b-2026-10-17) `[I]` |
   | Q1 | stale | items/0001 § 9 (`[I]`) and data/0001 § S1b (G2 `[C]`) |
   | Q2 | stale | the post-pass is `TC_BuildChestTable`; the walk is items/0001 § 4 (`[C]`); re-read agrees |
-  | Q3 | answered | the classic item index map of the version-`0x47` item reader (361 version-0 rows): [data/0001 § P1b](../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17) `[I]` |
+  | Q3 | answered | the classic item index map of the version-`0x47` item reader (361 version-0 rows): [data/0001 § P1b](../../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17) `[I]` |
   | Q16 | stale | items/0005 § Plan 0038 batch S2b (re-read at 0x005C1121–0x005C1165 here, agrees) |
-  | Q17 | answered (cell stale) | `UnitStatDelta` = stat − base stat: [items/0008 § P1b](../findings/items/0008-cube.md#plan-0039-batch-p1b-2026-10-17) `[I]`; the output cell is S2c cube 45 |
-  | Q18 | answered in part | flag bits 0/2/8/14 = update pending, use in progress, broken, requirements not met `[I]`; `kids[n]` **not determinable statically** (earlier stack contents): [items/0007 § P1b](../findings/items/0007-sockets-runewords.md#plan-0039-batch-p1b-2026-10-17) |
-  | Q19 | answered (b stale) | a minion's owner is its boss (`UniqueMinions`), a boss its own: [items/0002 § P1b](../findings/items/0002-quality-roll.md#plan-0039-batch-p1b-2026-10-17) `[I]`; the overrides survey is items/0004 § 10, counts re-derived and the "two quivers" corrected |
-  | Q20 | answered | object drop ilvl 1 with no `Levels` record; Cow King quality 0 → case 2 (`[C]` outcome); type 4 = `gold`; flag `0x1000` = monster equipment; `+0x40` reaches no builder; `0x0055CA40` = carry-one / quest duplicate test: [items/0010 § P1b](../findings/items/0010-quest-drops.md#plan-0039-batch-p1b-2026-10-17) `[I]` |
-  | Q21 | answered (parts stale) | bit 17 = no death drop and its writers; `game+0x78` = item version; bits `0x04`/`0x10` = forced ethereal / sockets; forced quality on gold/potions → 2: [items/0001 § P1b](../findings/items/0001-tc-resolution.md#plan-0039-batch-p1b-2026-10-17) `[I]`; cow bit (items/0004) and SuperUniques doc stale |
-  | Q22 | answered | quest uniques identified by `ItemInitStats`; `nolimit` plays no part: [items/0004 § P1b](../findings/items/0004-uniques-sets.md#plan-0039-batch-p1b-2026-10-17) `[I]` + `[C]` data |
-  | Q23 | answered in part, rest moved | the act change counts before the room changes; a gambled unique enters the made set: [items/0009 § P1b](../findings/items/0009-vendors.md#plan-0039-batch-p1b-2026-10-17) `[I]`; `NpcStoreRec` `+0x24..+0x26` writers read, no reader found, **moved** to plan 0043 Phase 1 |
-  | Q24 | answered in part | `SpawnMax`, `Act`: no reader in the image (operand scan); `TrapProb`: none among the 89 record fetchers; a kept record pointer stays open: [objects/0001 § P1b](../findings/objects/0001-object-population.md#plan-0039-batch-p1b-2026-10-17) `[I]` |
-  | Q25 | answered in part (ids, quest/wp slots stale) | NPC slot *d* = difficulty *d*; corpse u32 uninitialised and unread `[I]`; client `+0x480..+0x482` **not determinable statically** (host bytes); status bit 1 **moved** (client presentation, out of plan): [save/0001 § P1b](../findings/save/0001-d2s-io.md#plan-0039-batch-p1b-2026-10-17) |
+  | Q17 | answered (cell stale) | `UnitStatDelta` = stat − base stat: [items/0008 § P1b](../../findings/items/0008-cube.md#plan-0039-batch-p1b-2026-10-17) `[I]`; the output cell is S2c cube 45 |
+  | Q18 | answered in part | flag bits 0/2/8/14 = update pending, use in progress, broken, requirements not met `[I]`; `kids[n]` **not determinable statically** (earlier stack contents): [items/0007 § P1b](../../findings/items/0007-sockets-runewords.md#plan-0039-batch-p1b-2026-10-17) |
+  | Q19 | answered (b stale) | a minion's owner is its boss (`UniqueMinions`), a boss its own: [items/0002 § P1b](../../findings/items/0002-quality-roll.md#plan-0039-batch-p1b-2026-10-17) `[I]`; the overrides survey is items/0004 § 10, counts re-derived and the "two quivers" corrected |
+  | Q20 | answered | object drop ilvl 1 with no `Levels` record; Cow King quality 0 → case 2 (`[C]` outcome); type 4 = `gold`; flag `0x1000` = monster equipment; `+0x40` reaches no builder; `0x0055CA40` = carry-one / quest duplicate test: [items/0010 § P1b](../../findings/items/0010-quest-drops.md#plan-0039-batch-p1b-2026-10-17) `[I]` |
+  | Q21 | answered (parts stale) | bit 17 = no death drop and its writers; `game+0x78` = item version; bits `0x04`/`0x10` = forced ethereal / sockets; forced quality on gold/potions → 2: [items/0001 § P1b](../../findings/items/0001-tc-resolution.md#plan-0039-batch-p1b-2026-10-17) `[I]`; cow bit (items/0004) and SuperUniques doc stale |
+  | Q22 | answered | quest uniques identified by `ItemInitStats`; `nolimit` plays no part: [items/0004 § P1b](../../findings/items/0004-uniques-sets.md#plan-0039-batch-p1b-2026-10-17) `[I]` + `[C]` data |
+  | Q23 | answered in part, rest moved | the act change counts before the room changes; a gambled unique enters the made set: [items/0009 § P1b](../../findings/items/0009-vendors.md#plan-0039-batch-p1b-2026-10-17) `[I]`; `NpcStoreRec` `+0x24..+0x26` writers read, no reader found, **moved** to plan 0043 Phase 1 |
+  | Q24 | answered in part | `SpawnMax`, `Act`: no reader in the image (operand scan); `TrapProb`: none among the 89 record fetchers; a kept record pointer stays open: [objects/0001 § P1b](../../findings/objects/0001-object-population.md#plan-0039-batch-p1b-2026-10-17) `[I]` |
+  | Q25 | answered in part (ids, quest/wp slots stale) | NPC slot *d* = difficulty *d*; corpse u32 uninitialised and unread `[I]`; client `+0x480..+0x482` **not determinable statically** (host bytes); status bit 1 **moved** (client presentation, out of plan): [save/0001 § P1b](../../findings/save/0001-d2s-io.md#plan-0039-batch-p1b-2026-10-17) |
 
   Surprises: the B10 backlog premise was reversed (the base life was above the clamp, not below); monster minions *do*
   have an owner record (their boss), against items/0002's expectation; items/0001's "upgrade bits" are forced ethereal
@@ -369,11 +369,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     data/excel (Q4) and possibly items/uniques-sets (B5's check against items/0004). Fold those two last, or after P1c,
     so each is edited once; the 0038-first merge rule of Phase 2 still applies.
 - **2026-10-17 — archivist follow-ups (`lane/arc4`).** Two backlog entries of this plan cleared: the P1a format and
-  table items ([ds1.md](../formats/ds1.md) cell bits 14–15 and 30 `[I]`, the wall/shadow bit-7 survey `[C]`, the
-  group `unk` as `ApplyAll`'s variant count `[I]`; [LvlPrest](../tables/LvlPrest.md) the 93 "maze or outdoor" records
-  by logged caller `[C]`; [LvlWarp](../tables/LvlWarp.md) column units `[I]`), and the Phase 0 review's per-table
+  table items ([ds1.md](../../formats/ds1.md) cell bits 14–15 and 30 `[I]`, the wall/shadow bit-7 survey `[C]`, the
+  group `unk` as `ApplyAll`'s variant count `[I]`; [LvlPrest](../../tables/LvlPrest.md) the 93 "maze or outdoor" records
+  by logged caller `[C]`; [LvlWarp](../../tables/LvlWarp.md) column units `[I]`), and the Phase 0 review's per-table
   compare (`sweep_s1b.py compile` now prints identical/differs for the 15 code lists, `compcode` and the four pools,
-  key `codetable_identical` = 20; cited in [formats/experiments](../formats/experiments.md#addendum-2026-10-16-the-whole-bin-set-the-compile-wrote-plan-0039-a3)).
+  key `codetable_identical` = 20; cited in [formats/experiments](../../formats/experiments.md#addendum-2026-10-16-the-whole-bin-set-the-compile-wrote-plan-0039-a3)).
   No row's verdict changes.
 - **2026-10-17 — `lane/arc4` reviewed (architect, after merging `main` at `8d03310`). Verdict: accept with fixes**
   (applied in the review commit). Nine entries checked against their sources: `ToHitCalc` `[I]` (data/calc § G),
@@ -384,10 +384,10 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   DifficultyLevels 50/35/25. `sweep_s1b.py compile` re-run: `codetable_identical=20`, `bad=0`. The `economy`
   baseline adds six keys and changes none. **Sets ruling:** recording the skills-then-states order as a tool limit is
   accepted (the entry offered it; a property-based order now would be a guess); plan 0041 Phase 1 (e) now names the
-  archivist as the consumer of its answer. Fixes: [ds1.md](../formats/ds1.md) said bits 18–19 have no mapping and
+  archivist as the consumer of its answer. Fixes: [ds1.md](../../formats/ds1.md) said bits 18–19 have no mapping and
   `CellBits` maps 16/17 only, but drlg/0001 § Per-cell decision maps the 18–19 value field to `(v+1)·0x4000` (the
   layer index ORed in at load); table, bullet and *Unknown fields* row corrected, the runtime-flag cells tagged `[I]`.
-  [Levels](../tables/Levels.md): level 0 is the null level, not a town. Gate fast tier and `--full=economy,excel_layout`
+  [Levels](../../tables/Levels.md): level 0 is the null level, not a town. Gate fast tier and `--full=economy,excel_layout`
   green. Follow-up to the reverser for the two finding wordings these came from.
 - **2026-10-17, `lane/w1` review (architect): accept.** Findings W1 104 → 0, `main` `f10dca8` merged first (no
   conflict; the S1e and p39b sections add no W1; specs 15, filed to the spec-writer). Sampled more than 60 of the added anchors
@@ -520,17 +520,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
   | Item | Verdict | Anchor or reason |
   |---|---|---|
-  | B3 | stale | the ranges are in monsters/0002 § 7; the cases and `0x0054E2A0` (`PresetFallenVariant`) in monsters/0003 § 7 and § H4b special 65; the superuniques in § 6. Pointer in [monsters/0003 § P1c](../findings/monsters/0003-special-monsters.md#plan-0039-batch-p1c-2026-10-17); table-doc questions filed to the archivist |
-  | B5 | stale | (c) and (e) reproduced in run:2026-10-14-uniques-forced, [items/0004 § 10](../findings/items/0004-uniques-sets.md#10-phase-2-reproduction-plan-0019) `[C]`; the spec already states both; (d) ruled d-none 2026-10-14 |
+  | B3 | stale | the ranges are in monsters/0002 § 7; the cases and `0x0054E2A0` (`PresetFallenVariant`) in monsters/0003 § 7 and § H4b special 65; the superuniques in § 6. Pointer in [monsters/0003 § P1c](../../findings/monsters/0003-special-monsters.md#plan-0039-batch-p1c-2026-10-17); table-doc questions filed to the archivist |
+  | B5 | stale | (c) and (e) reproduced in run:2026-10-14-uniques-forced, [items/0004 § 10](../../findings/items/0004-uniques-sets.md#10-phase-2-reproduction-plan-0019) `[C]`; the spec already states both; (d) ruled d-none 2026-10-14 |
   | B6 | stale | both notes are in harness-play.md ("Every recipe needs `"game"`", "Reinstall before every launch") |
-  | Q4 | answered | the 191 `g_pMonStats` reads all index by position (177 bounded, 6 fixed `imp` classes, 5 loader post-pass, 3 alloc/free); none searches by `Id`: [data/0001 § P1c](../findings/data/0001-excel-loader.md#plan-0039-batch-p1c-2026-10-17) `[I]` |
-  | Q26 | answered | `MonsterInit` → `MonRegionFindAdd` appends a class new to its level region and rolls its sets on the unit seed; the 1 786 logged creations (1 785 as filed; review re-count) fit the found, appended or stale step count exactly, the 6 and 15 included: [monsters/0002 § P1c](../findings/monsters/0002-room-population.md#plan-0039-batch-p1c-2026-10-17) `[C]` |
-  | Q27 | answered (builds on H4b) | `OBJ_OperateDispatch` → `OBJOP_Shrine` (OperateFn 2) → `g_ShrineEffects[20]` → `0x00583050` → nearest qualifying monster (filter and distance read) → `MonMakeSpecial`: [monsters/0003 § P1c](../findings/monsters/0003-special-monsters.md#plan-0039-batch-p1c-2026-10-17) `[I]`; still d-owner for a run |
-  | Q28 | answered | 67/68/69/100/352 are MonStatsInit B5 constants and 336 is the B10 MonStats skill at level 1 + `MonsterSkillBonus` (`[C]`, 72 logged blocks); `Share` and the equipment columns have no reader `[I]`; the description is `STRTABLE(g_HireDescStrIdx[HireDesc])` `[I]`, the table `[C]` by data: [hirelings/0001 § P1c](../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17) |
-  | Q29 | answered | `ExpGrantCapped` is the Ancients reward (a5q5, word 39); 75 % of the death loss actually taken goes onto the corpse and back to its owner, and a player killer takes none; bit `0x20` comes from the class select in an expansion install plus a checkbox: [player/0001 § P1c](../findings/player/0001-creation.md#plan-0039-batch-p1c-2026-10-17) `[I]` |
-  | P1b (a) | answered | 30 direct bit-17 writers (20 plain ORs, not 21), by unit kind and MonAI row: [items/0001 § P1c](../findings/items/0001-tc-resolution.md#plan-0039-batch-p1c-2026-10-17) `[I]` |
-  | P1b (b) | answered | the 17 sites, each with its monster and owner: [items/0002 § P1c](../findings/items/0002-quality-roll.md#plan-0039-batch-p1c-2026-10-17) `[I]` |
-  | id 573 | d-none | only Act IV DS1 ids 5–7 map to 573 and no shipped DS1 uses them (2 274 parsed); the other `PresetUnitCreate` callers add none: [drlg/0004 § P1c](../findings/drlg/0004-preset-units.md#plan-0039-batch-p1c-2026-10-17) `[C]` data + `[I]` |
+  | Q4 | answered | the 191 `g_pMonStats` reads all index by position (177 bounded, 6 fixed `imp` classes, 5 loader post-pass, 3 alloc/free); none searches by `Id`: [data/0001 § P1c](../../findings/data/0001-excel-loader.md#plan-0039-batch-p1c-2026-10-17) `[I]` |
+  | Q26 | answered | `MonsterInit` → `MonRegionFindAdd` appends a class new to its level region and rolls its sets on the unit seed; the 1 786 logged creations (1 785 as filed; review re-count) fit the found, appended or stale step count exactly, the 6 and 15 included: [monsters/0002 § P1c](../../findings/monsters/0002-room-population.md#plan-0039-batch-p1c-2026-10-17) `[C]` |
+  | Q27 | answered (builds on H4b) | `OBJ_OperateDispatch` → `OBJOP_Shrine` (OperateFn 2) → `g_ShrineEffects[20]` → `0x00583050` → nearest qualifying monster (filter and distance read) → `MonMakeSpecial`: [monsters/0003 § P1c](../../findings/monsters/0003-special-monsters.md#plan-0039-batch-p1c-2026-10-17) `[I]`; still d-owner for a run |
+  | Q28 | answered | 67/68/69/100/352 are MonStatsInit B5 constants and 336 is the B10 MonStats skill at level 1 + `MonsterSkillBonus` (`[C]`, 72 logged blocks); `Share` and the equipment columns have no reader `[I]`; the description is `STRTABLE(g_HireDescStrIdx[HireDesc])` `[I]`, the table `[C]` by data: [hirelings/0001 § P1c](../../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17) |
+  | Q29 | answered | `ExpGrantCapped` is the Ancients reward (a5q5, word 39); 75 % of the death loss actually taken goes onto the corpse and back to its owner, and a player killer takes none; bit `0x20` comes from the class select in an expansion install plus a checkbox: [player/0001 § P1c](../../findings/player/0001-creation.md#plan-0039-batch-p1c-2026-10-17) `[I]` |
+  | P1b (a) | answered | 30 direct bit-17 writers (20 plain ORs, not 21), by unit kind and MonAI row: [items/0001 § P1c](../../findings/items/0001-tc-resolution.md#plan-0039-batch-p1c-2026-10-17) `[I]` |
+  | P1b (b) | answered | the 17 sites, each with its monster and owner: [items/0002 § P1c](../../findings/items/0002-quality-roll.md#plan-0039-batch-p1c-2026-10-17) `[I]` |
+  | id 573 | d-none | only Act IV DS1 ids 5–7 map to 573 and no shipped DS1 uses them (2 274 parsed); the other `PresetUnitCreate` callers add none: [drlg/0004 § P1c](../../findings/drlg/0004-preset-units.md#plan-0039-batch-p1c-2026-10-17) `[C]` data + `[I]` |
 
   Surprises:
   - The hireling spec's "skill 336 at level 1" holds only in Normal: the MonStats skill takes the difficulty's
@@ -582,9 +582,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     compelling-orb object init, `0x005E02A1` in the `MosquitoNest` AI, and the "skill sites" are MonAI self-removals.
     The 21 was the P1b review's own figure; items/0001 § P1b now carries a correction note on its count and
     its "Not read" list. The merged items/tc B1 ("occurs 21 times", the "three quest drops, 12 skill-code sites" split
-    and the *Open questions* `[L]`) and the [items](../wiki/items.md) wiki paragraph are routed to the spec-writer in
+    and the *Open questions* `[L]`) and the [items](../../wiki/items.md) wiki paragraph are routed to the spec-writer in
     the P1c fold (f), worded exactly.
-  - **Ruling 5, id 573: accepted, d-none.** Moved in [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews)
+  - **Ruling 5, id 573: accepted, d-none.** Moved in [inventory § 2.6](../0038-inventory/README.md#26-moves-made-by-the-batch-reviews)
     as a remainder of drlg-preset 18, with no change to the totals. The `[C]` on the DS1 survey is data plus the table
     re-read; the "other callers add none" bullet stays `[I]`.
   - **Ruling 6, player/0001 *Leads used*: accepted as left.** ADR-0007 asks for the page to be re-read before a verdict
@@ -621,7 +621,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   | items/uniques-sets | Q22 held half (C8, C9); B5 stale, no change | {70, 52, 6} → {71, 55, 4} |
 
   - **Corrected:** hirelings' Rogue skill "level 1" (only in *Open questions*) → 1/4/8 by difficulty; items/tc's "21"
-    bit-17 writes and the P1b split ("three quest drops", "12 skill-code sites"); the [items](../wiki/items.md) wiki
+    bit-17 writes and the P1b split ("three quest drops", "12 skill-code sites"); the [items](../../wiki/items.md) wiki
     paragraph to match.
   - **Narrowed, not closed:** player/creation (a saved corpse's stat 13 and the create screen's mode word, P1c residues
     (c) and (d)). Closed with a pointer to a reverser residue, no tag: items/tc (`0x005C09E0`'s skill), items/quality
@@ -696,7 +696,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Filed:** reverser `monplace-remaining-cases` (the unread `PresetMonSpawn` cases and case 36); archivist
     `mp-saves-mp23-strong-pair` (a strong hostile pair for MP23's bulk).
 - **2026-10-17 — `lane/arc6` MonPlace rows reviewed (architect). Verdict: accept with fixes.** Every row in
-  MonPlace § Interpretation notes matches [monsters/0003 § 7](../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20),
+  MonPlace § Interpretation notes matches [monsters/0003 § 7](../../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20),
   bullet *Every MonPlace row, from the switch*. The 37 rows are each covered once, the row names match monplace.txt,
   and every reading is `[I]`. The scope is the `lane/rbs3` review's: `PresetMonSpawn` and `PresetUnitDispatch`, reached
   from the first spawn and the restore, with four callers left unfollowed. The remaining `[L]` is narrowed to those
@@ -704,3 +704,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   bullet carried the code's outcome. It now points to the `[I]` reading below. **Filed:** reverser
   `monsters-0003-s7-stale-fixed-class-rows`: the finding's older `0x11`–`0x20` bullet still says "19–21 and 24
   class 0; 25 and 28 nothing", which the rbs3 bullet supersedes, and row 24 outside Normal needs a ruling.
+- **2026-10-20 — Closed (owner decision, via the orchestrator; architect, `lane/plans45`).** Every phase but the
+  data/excel fold is accepted. That fold (P1b (a), P1c (a) and the 11 data/excel W1 warnings, backlog
+  `2026-10-17-reverser-spec-writer-gate-w1-a-c-i-statement.md`) is an item of [plan 0038](../0038-inferred-claims-sweep.md)
+  Phase 3's data/excel cluster, after batch H3b. Moved to `done/`; links repointed.

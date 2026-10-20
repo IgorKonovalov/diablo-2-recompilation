@@ -234,6 +234,9 @@ A batch's priority is its count of T1 rows first, then its count of T2 rows.
   - It does not start before plan 0036 Phase 2 lands, because that phase writes the wiki over these specs.
   - Specs that 0037·P3 also edits (monsters/stats, player/creation, data/calc) are merged one at a time with it,
     whichever lands first.
+  - *(added 2026-10-20, owner: plan 0039 closed)* The **data/excel cluster** also folds plan 0039's remainder:
+    P1b (a), P1c (a) and the 11 data/excel W1 warnings (backlog
+    `2026-10-17-reverser-spec-writer-gate-w1-a-c-i-statement.md`), after H3b.
 - **Outputs:**
   - the re-tagged specs;
   - `updated:` dates;
@@ -2513,3 +2516,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     [2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates](../backlog/2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates.md)
     released.
   - **Next:** merge `lane/h7a`; the spec-writer updates drlg/lifecycle from the released entry.
+- **2026-10-20 — Batch order and the 0039 fold (owner decisions, via the orchestrator; architect, `lane/plans45`).**
+  (1) The remaining harness batches run **core and enabler first**: H5b (in flight) → H2a → H2b → H2c → H4a → H5d →
+  H1b → H1a → H3b, then H6e2 → H6e1 → H6b → H6a → H6c → H6f → H6g; the family rules of
+  [inventory § 7](0038-inventory/README.md#7-priority-order) hold. (2) Plan 0039 is closed; its data/excel fold is a
+  Phase 3 item of the data/excel cluster (Phase 3 *Order*). The lane H2 queue is in the
+  [plans index](README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049).

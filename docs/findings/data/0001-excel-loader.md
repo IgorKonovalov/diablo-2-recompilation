@@ -525,7 +525,7 @@ rank first (`sweep_s1b.py compile`). Several rows below rest on that.
 
 ## Plan 0039 batch P1b (2026-10-17)
 
-Rows Q1, Q2, Q3 and B7 (c) of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static: Ghidra on the lane's copy and
+Rows Q1, Q2, Q3 and B7 (c) of [plan 0039](../../plans/done/0039-backlog-sweep-4.md). Static: Ghidra on the lane's copy and
 objdump. No game run.
 
 ### Q1: the auto-TC details (stale)
@@ -633,7 +633,7 @@ it, the tag and the second source given here are the current ones.
 
 ## Plan 0039 batch P1c (2026-10-17)
 
-Row Q4 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static: an operand scan of the objdump listing of the
+Row Q4 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md). Static: an operand scan of the objdump listing of the
 pinned image (scratch script, not kept), with the odd sites read by hand. No game run.
 
 ### Q4: every reader of `g_pMonStats` uses the stored value as a position

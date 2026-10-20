@@ -4,7 +4,7 @@ to: reverser
 date: 2026-10-17
 status: done
 context:
-  - ../../plans/0039-backlog-sweep-4.md
+  - ../../plans/done/0039-backlog-sweep-4.md
 resolution: "Done [I], static, in [monsters/0003 § 7](../../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20): the switch sends rows 0, 1, 6, 7, 9, 12-16, 19-21 and 33-36 (place_group25..100, H4b's case 36) to a return with no spawn; 4 navi, 5 bloodraven, 8 maggotqueen1 (flags 8), 10/11 tentaclehead1-3 by level at the point; 25, 27, 28 place nothing. MonPlace.md update filed to the archivist."
 ---
 

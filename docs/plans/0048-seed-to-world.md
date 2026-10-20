@@ -1,6 +1,6 @@
 # 0048 — Seed to world: the core specs composed end to end, with the last in-chain oracles retired
 
-> **Status:** proposed
+> **Status:** approved 2026-10-20 (owner)
 > **Created:** 2026-10-20
 > **Owner skill(s):** reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0011-harness-slots, 0015-emulated-reproduction
@@ -113,3 +113,5 @@ boundary oracles. A reimplementer composes them. When this plan is done:
 _(lanes append dated entries as phases land: what was found, the confidence reached, surprises)_
 
 - **2026-10-20 — Drafted (architect, `lane/plans45`).** Status `proposed`.
+- **2026-10-20 — Approved (owner, via the orchestrator).** Plans 0045–0049 and ADR-0020 approved as proposed; the run
+  order of the [plans index](README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049) is the current queue.

@@ -6,7 +6,7 @@ status: open
 context:
   - ../findings/monsters/0003-special-monsters.md
   - ../tables/MonPlace.md
-  - ../plans/0039-backlog-sweep-4.md
+  - ../plans/done/0039-backlog-sweep-4.md
 resolution: ""
 ---
 

@@ -914,7 +914,7 @@ S3B spawn call_paths=3 classes_size01=58 disp_2be=1 getrecord_fns=26 getrecord_s
 
 ## Plan 0039 batch P1c (2026-10-17)
 
-Row Q26 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static (Ghidra on the lane's copy, objdump) and a re-read
+Row Q26 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md). Static (Ghidra on the lane's copy, objdump) and a re-read
 of the three kept logs of run:2026-10-13-mon-spawn. No game run.
 
 ### Q26: the callee behind the 6- and 15-step unit seeds

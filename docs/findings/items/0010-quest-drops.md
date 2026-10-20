@@ -974,7 +974,7 @@ reclassified (48 → a-run H4a). One correction (qd 8) and two refinements (qd 2
 
 ## Plan 0039 batch P1b (2026-10-17)
 
-Rows B12 and Q20 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static: objdump and Ghidra on the lane's copy, plus a
+Rows B12 and Q20 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md). Static: objdump and Ghidra on the lane's copy, plus a
 table survey. No game run.
 
 ### B12: the cursor branch of `PlayerFindItemByCode`

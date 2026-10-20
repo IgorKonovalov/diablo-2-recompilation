@@ -1112,7 +1112,7 @@ Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phas
 
 ## Plan 0039 batch P1b (2026-10-17)
 
-Row Q24 of [plan 0039](../../plans/0039-backlog-sweep-4.md): which code reads Objects `TrapProb`, `SpawnMax` and `Act`.
+Row Q24 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md): which code reads Objects `TrapProb`, `SpawnMax` and `Act`.
 Static: objdump scans of the whole image. No game run.
 
 - [I] **No direct reader of the three columns.** Every function that calls `OBJECTS_GetRecord` or reads the table
