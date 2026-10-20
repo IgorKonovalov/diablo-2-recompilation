@@ -277,7 +277,7 @@ inferred and this section raises it, the tag and the second source given here ar
 
 ## Plan 0039 batch P1b (2026-10-17)
 
-Row B8 of [plan 0039](../../plans/0039-backlog-sweep-4.md): how the client's item-name line joins a rare item's two
+Row B8 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md): how the client's item-name line joins a rare item's two
 names. Static (objdump, Ghidra on the lane's copy).
 
 - [I] **The two texts are the two arguments of `RareFormat`.** In the client builder

@@ -446,7 +446,7 @@ The mask lives in the **DRLG room**, not the level: `DRLG_LevelDt1ListBuild` run
 
 ## Plan 0039 batch P1a (2026-10-16)
 
-Rows B1 and B2 of [plan 0039](../../plans/0039-backlog-sweep-4.md): the cell bits and DS1 sections this finding left
+Rows B1 and B2 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md): the cell bits and DS1 sections this finding left
 open, and what loading a `"0"` DT1 name does.
 
 ### B1: DS1 cell bits 14–15 and 30

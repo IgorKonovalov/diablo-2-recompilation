@@ -1506,7 +1506,7 @@ Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phas
 
 ## Plan 0039 batch P1a (2026-10-16)
 
-Row Q9 of [plan 0039](../../plans/0039-backlog-sweep-4.md).
+Row Q9 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md).
 
 - [I] **Adjacency node `+0xC` is written once, to 0.** The border-adjacency nodes (`O+0x264` lists) are made only by
   `sub_0066B790_LevelAdjAdd`, called from `LevelBorderAdj` (0x00677671, 0x0067770F). It allocates 0x18 bytes and writes

@@ -1025,6 +1025,10 @@ Static and harness batches use different resources (Ghidra copies against slots)
 | 21 | H2c | 0 | 0 | 7 | forced, admitted with the § 6 conditions; after H2b (same family) |
 | 22 | H7a | 0 | 0 | 0 | plan 0040 P2 shortfalls, not inventory rows (`lane/rbs4` review); its static prep first (reverser entry (1), (2)); may pair with any batch |
 
+**Order from 2026-10-20 (owner).** The harness ranks above are superseded for the batches left: H5b (in flight) →
+H2a → H2b → H2c → H4a → H5d → H1b → H1a → H3b, then H6e2 → H6e1 → H6b → H6a → H6c → H6f → H6g. The family rules
+below and in the notes still hold ([plan 0038 log](../0038-inferred-claims-sweep.md#implementation-log)).
+
 **Ruling 3 (order).** H5c stays ahead of H5e and H5a. It has the most T1 statements and the fewest sessions of the
 three (about 10, against 16–17 for H5e), and it unblocks H5d. Its logger edits are static work: the lane makes them,
 re-runs the existing `drlg-roomk`, `collision` and `seed-tree` checkers on their original logs with 0 mismatches,

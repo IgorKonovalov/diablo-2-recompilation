@@ -1,6 +1,6 @@
 # ADR index
 
-Next free number: **0020**
+Next free number: **0021**
 
 | # | Title | Status |
 |---|---|---|
@@ -17,9 +17,10 @@ Next free number: **0020**
 | [0011](0011-harness-slots.md) | Harness slots: several game copies at once, one per display and prefix | accepted |
 | [0012](0012-human-wiki.md) | A human wiki: explanatory pages over the reviewed specs, no claims of their own, not published | accepted |
 | [0013](0013-forced-path-runs-cell-level.md) | Forced-path runs: "a table the path reads" is decided cell by cell (supersedes 0010's decision) | accepted |
-| [0014](0014-scope-game-simulation.md) | Game simulation enters scope, in five phases, with per-event reproduction as its evidence (amends 0002) | accepted |
+| [0014](0014-scope-game-simulation.md) | Game simulation enters scope, in five phases, with per-event reproduction as its evidence (amends 0002) | accepted (phase 3's gates amended by 0020; phases 4 and 5 swapped by plan, owner 2026-10-20) |
 | [0015](0015-emulated-reproduction.md) | Emulated reproduction: the binary's own code under the p-code emulator, with a declared memory image (amends 0003) | accepted |
-| [0016](0016-pipelined-simulation-phases.md) | Pipelined simulation phases: a phase's table and static work may start once the previous phase's run is accepted (amends 0014) | accepted 2026-10-16 |
+| [0016](0016-pipelined-simulation-phases.md) | Pipelined simulation phases: a phase's table and static work may start once the previous phase's run is accepted (amends 0014) | accepted 2026-10-16 (phase 3's P2 is plan 0045's, by 0020) |
 | [0017](0017-scope-quests-travel-economy.md) | Quest progression, travel and the item economy enter scope, beside the five simulation phases (amends 0002) | accepted 2026-10-16 |
 | [0018](0018-backlog-one-file-per-entry.md) | The backlog as one file per entry, with gate checks; `docs/backlog.md` frozen as the archive | accepted 2026-10-17 (closed-entry layout amended by 0019) |
 | [0019](0019-backlog-closed-entries-archive.md) | Closed backlog entries move to `docs/backlog/archive/`; `backlog.py archive` sweeps and fixes links after each merge (amends 0018) | accepted 2026-10-20 |
+| [0020](0020-skills-phase-in-two-plans.md) | Simulation phase 3 (skills and missiles) in two plans: the machinery, then the function catalogue (amends 0014, 0016) | accepted 2026-10-20 (owner) |

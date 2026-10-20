@@ -926,7 +926,7 @@ Batch H5c of [plan 0038](../../plans/0038-inferred-claims-sweep.md) Phase 2: row
 
 ## Plan 0039 batch P1a (2026-10-16)
 
-Static readings for [plan 0039](../../plans/0039-backlog-sweep-4.md) rows B11 (b) and Q12. Scratch scripts are not kept in
+Static readings for [plan 0039](../../plans/done/0039-backlog-sweep-4.md) rows B11 (b) and Q12. Scratch scripts are not kept in
 the repo; each count below names the command shape that produced it.
 
 ### B11 (b): can a stock border reach the merge remap? No.

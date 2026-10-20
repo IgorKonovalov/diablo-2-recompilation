@@ -675,7 +675,7 @@ S3B player addskill_sites=12 charstats_records=7 charstats_repeat_or_attack=0 pi
 
 ## Plan 0039 batch P1c (2026-10-17)
 
-Row Q29 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static: Ghidra on the lane's copy and objdump. No game
+Row Q29 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md). Static: Ghidra on the lane's copy and objdump. No game
 run, so every statement here is inferred.
 
 ### What triggers `ExpGrantCapped`: the Rite of Passage reward

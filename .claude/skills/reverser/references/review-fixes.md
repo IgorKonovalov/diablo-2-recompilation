@@ -11,7 +11,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
 2. **Recount every count from the binary with a kept command**, never from memory or a partial scan:
    writers, call sites, instructions, items. Copy a run's counts from the kept, hashed check output, never from an
    earlier check. Seen: bit-17 writers 5 → 21
-   ([0039](../../../../docs/plans/0039-backlog-sweep-4.md) P1b review); S4b row 17 short by 9, "7" instructions for 8 (0038);
+   ([0039](../../../../docs/plans/done/0039-backlog-sweep-4.md) P1b review); S4b row 17 short by 9, "7" instructions for 8 (0038);
    eight wear and resurrection counts one off `check-run.txt` ([0043](../../../../docs/plans/done/0043-items-economy.md) P2 review).
 3. **Take totals against `main` after merging it**, not against the totals your batch started from.
    Seen: S2c, S3b and S1a reviews (0038), each recomputed.

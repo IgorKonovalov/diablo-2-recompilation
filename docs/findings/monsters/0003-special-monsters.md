@@ -1002,7 +1002,7 @@ S3B special handler_calls=1844 handler_on_live_minion=0 minion_lists=538 packet_
 
 ## Plan 0039 batch P1c (2026-10-17)
 
-Rows Q27 and B3 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static: Ghidra on the lane's copy, objdump and
+Rows Q27 and B3 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md). Static: Ghidra on the lane's copy, objdump and
 `tools/xrefscan.py`. No game run.
 
 ### Q27: the path from a shrine to `MonMakeSpecial`

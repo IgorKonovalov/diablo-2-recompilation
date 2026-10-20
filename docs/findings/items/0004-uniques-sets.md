@@ -902,7 +902,7 @@ The batch's other ledgers are in [items/0008 § Plan 0038 batch S2c](0008-cube.m
 
 ## Plan 0039 batch P1b (2026-10-17)
 
-Row Q22 of [plan 0039](../../plans/0039-backlog-sweep-4.md): `nolimit` and automatic identification. Static (a call-site
+Row Q22 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md): `nolimit` and automatic identification. Static (a call-site
 survey of `ITEMS_SetFlag(…, 0x10, …)` with objdump) and a table check. No game run.
 
 - [I] **Who writes the identified flag (`0x10`).** 22 call sites. Clearing it: the magic, unique (0x00556855 and

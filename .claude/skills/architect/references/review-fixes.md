@@ -4,7 +4,7 @@ What later reviews or lanes had to correct in the architect's own plans and revi
 review against these before committing it. Categories are those of the [lane run ledger](../../../../docs/plans/metrics.md).
 
 1. **Recount the items a phase lists** when drafting it. Seen: plan 0039 Phase 1 said 16 for P1a's 15
-   and 20 for P1b's 18 ([0039](../../../../docs/plans/0039-backlog-sweep-4.md) P1a and P1b reviews).
+   and 20 for P1b's 18 ([0039](../../../../docs/plans/done/0039-backlog-sweep-4.md) P1a and P1b reviews).
 2. **A claim settled at review gets the lane's scrutiny.** "Open wounds halve by `0x0C` only" was settled
    at the resume-lane review; the run could not tell it from "`0x0C` or `boss`" (Andariel carries both),
    and the `lane/p37t` review had to scope it ([0037](../../../../docs/plans/done/0037-combat-formulas.md)).

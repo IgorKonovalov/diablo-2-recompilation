@@ -869,7 +869,7 @@ Per row (inventory row, spec line at the inventory's commit, outcome):
 
 ## Plan 0039 batch P1b (2026-10-17)
 
-Row Q21 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static (objdump, Ghidra on the lane's copy). No game run.
+Row Q21 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md). Static (objdump, Ghidra on the lane's copy). No game run.
 
 - [I] **`unit+0xC4` bit 17 (`0x20000`) is "no death drop".** The operand scan finds two readers (a load of `+0xC4`
   followed by `shr 0x11`; no `test` of `0x20000` on `+0xC4`): the death-drop guard `sub_005A6830_MonDeathDrop` (0x005A6861)

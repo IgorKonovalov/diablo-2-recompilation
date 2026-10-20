@@ -872,7 +872,7 @@ correction (vend 4). Symbol `NPCSTORE_FindRec` I → C (vend 7).
 
 ## Plan 0039 batch P1b (2026-10-17)
 
-Row Q23 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static (objdump, Ghidra on the lane's copy). No game run.
+Row Q23 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md). Static (objdump, Ghidra on the lane's copy). No game run.
 
 - [I] **Why an act change counts the leaving player: the call comes before the player leaves the town's room.**
   `sub_00537340_TownLevelLeave(game, unit, old, new)` counts, with `sub_005538D0` and the callback

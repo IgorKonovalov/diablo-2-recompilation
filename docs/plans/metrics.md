@@ -141,6 +141,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-20 | `lane/p42r` (part 3) | 0042 P2 part 3 | reverser-harness | 631 158 | 559 | 101 | slot 2 | accept with fixes | 3: overclaim 1, stale cross-reference 1, tool not kept 1 |
 | 2026-10-20 | `lane/p42r` (part 3) review | 0042 P2 part 3 | architect-review | 131 012 | 55 | 11 | — | gave accept with fixes | — (on the lane row) |
 | 2026-10-20 | `lane/c43` | 0043 close | architect | 88 624 | 30 | 7 | no slot | — (bookkeeping, merged directly) | — |
+| 2026-10-20 | `lane/bkarch` | ADR-0019 backlog archive | architect | 127 593 | 46 | 12 | no slot | — (owner request, merged directly) | — |
+| 2026-10-20 | `lane/plans45` | plans 0045–0049, ADR-0020 | architect | 414 851 | 76 | 27 | no slot | approved by the owner 2026-10-20 | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

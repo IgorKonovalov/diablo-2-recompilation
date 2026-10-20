@@ -397,7 +397,7 @@ tag and the second source given here are the current ones.
 
 ## Plan 0039 batch P1a (2026-10-16)
 
-Row Q15 of [plan 0039](../../plans/0039-backlog-sweep-4.md): the four `[L]` items of rng/seeds' open questions that a
+Row Q15 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md): the four `[L]` items of rng/seeds' open questions that a
 reading settles.
 
 ### Room `+0x28` bit `0x40000` marks a room of the client act copy

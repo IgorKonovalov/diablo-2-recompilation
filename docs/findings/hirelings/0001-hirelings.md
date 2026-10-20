@@ -730,7 +730,7 @@ S3B hire bands=120 firstbyid_refs=7 hirelings_check_rc=0 ids=60 pins=19 rows=120
 
 ## Plan 0039 batch P1c (2026-10-17)
 
-Row Q28 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static: Ghidra on the lane's copy and objdump. It adds a
+Row Q28 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md). Static: Ghidra on the lane's copy and objdump. It adds a
 re-read of the 72 `MSX` lines in the manifest-pinned logs of run:2026-10-16-hirelings (scratch script, not kept). No
 game run.
 

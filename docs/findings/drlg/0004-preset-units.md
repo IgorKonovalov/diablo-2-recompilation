@@ -637,7 +637,7 @@ Batch H5c, record [experiments.md § run:2026-10-16-sweep-roomk](experiments.md#
 
 ## Plan 0039 batch P1a (2026-10-16)
 
-Rows B4, Q10 and Q11 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Q13 (a cell that is a border of one view and
+Rows B4, Q10 and Q11 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md). Q13 (a cell that is a border of one view and
 interior to another) is already answered in § Shared DS1 buffers (`0x84`).
 
 ### B4: the `Def`s each generator reaches, by caller

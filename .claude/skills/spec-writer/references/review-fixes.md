@@ -14,7 +14,7 @@ against all of them before you file the review request. Categories are those of 
    whose run met one (`lane/p43s`, [0043](../../../../docs/plans/done/0043-items-economy.md)); the partial repair's
    rounding and Wirt's ilvl floor inside `[C]` notes (`lane/p43t`, 0043).
 3. **Re-read the finding for each restated condition**: who, when, which branch. Seen: `SetBoss` party
-   minions and the staff-mods type condition (`lane/wiki5`, [0039](../../../../docs/plans/0039-backlog-sweep-4.md)); warps F1's
+   minions and the staff-mods type condition (`lane/wiki5`, [0039](../../../../docs/plans/done/0039-backlog-sweep-4.md)); warps F1's
    `Warp` = −1 case (`lane/p38s2`, 0038); the store record's 4505 scoping (`lane/p43t`, 0043).
 4. **Take the order of steps from the anchored instructions**, not from a summary. Seen: the release
    order (`lane/p38s`, 0038).
