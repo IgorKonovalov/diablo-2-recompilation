@@ -24,7 +24,8 @@ every output goes to a scratch directory, nothing in workspace/ is written:
 - QuestBitsTest (plan 0032 Phase 0) covers "quest_bits": exactly the asked bits change against the base (set,
   and clear of bits that "quests" set), the refusals (word, bit, a bit both set and cleared, a difficulty), and the
   simple quest item's required "quest_diff" (stat 356). Plan 0042 Phase 0: tools/quest_saves.py check passes on
-  its 17 recipes (14 of Phase 0, 3 of Phase 1 (c)) and build writes the whole set. Plan 0044 Phase 2:
+  its 33 recipes (14 of Phase 0, 3 of Phase 1 (c), 16 of Phase 2: plan 0049 Phase 0) and build writes the
+  whole set. Plan 0044 Phase 2:
   tools/mp_saves.py check passes on its 27 recipes and 18 pairs and build writes the whole set.
 - MercTest (plan 0033 Phase 0) covers the "merc" key: the header fields 0xAF..0xBE, the mercenary item list after
   'jf' (equipped, hand item last) read back and round-trip byte for byte, the dead flag (bit 16), and the refusals
@@ -214,25 +215,44 @@ RECIPE_BASES = {
     "econt": (os.path.join(SAMPLES, "smpbar.d2s"), None),  # run:2026-10-17-economy (plan 0043 P2)
     "vendornova": (BASE_X, "eed8939c568f3db4e471220571649af51be9a7417feb918cabcf41a20365bb5c"),  # run:2026-10-15-vendors
     "vendornova75": (BASE_X, "dc2ca9397496b485df54b0547def9023d83c4b68390cd8eb91727831e82cae67"),  # run:2026-10-15-vendors
-    # plan 0042 Phase 0 (tools/quest_saves.py): not loaded yet; the first step of Phase 2 loads them and pins the hashes
-    "questfreshc": (BASE_C, None),
-    "travel-act2": (BASE_X, None),
-    "travel-act3": (BASE_X, None),
-    "travel-act4": (BASE_X, None),
-    "travel-act5": (BASE_X, None),
-    "travel-arcane": (BASE_X, None),
-    "travel-tab2": (BASE_X, None),
-    "travel-tab5d": (BASE_X, None),
-    "travel-wp1": (BASE_X, None),
-    "travel-wp2": (BASE_X, None),
-    "travel-wp3": (BASE_X, None),
-    "travel-wp4": (BASE_X, None),
-    "travel-wp5": (BASE_X, None),
-    "travel-wpnone": (BASE_X, None),
-    # plan 0042 Phase 1 (c) (tools/quest_saves.py) and plan 0044 Phase 2 pairs (tools/mp_saves.py): not loaded yet
-    "quest-w9lost": (BASE_X, None),
-    "quest-w9book": (BASE_X, None),
-    "quest-w39summit": (BASE_X, None),
+    # plan 0042 Phase 0 and Phase 1 (c) (tools/quest_saves.py): the 17 built saves loaded by plan 0042 Phase 2
+    # (run:2026-10-17-quests, workspace/logs/quests/loads/loads.txt built prefixes); pinned by plan 0049 Phase 0
+    "questfreshc": (BASE_C, "71eb65eaa6eaeb40175402bc324f2856b887421ce4d69744fd49f0f294690924"),  # run:2026-10-17-quests (loads)
+    "travel-act2": (BASE_X, "3d172a6f3e1f961fdb3b483533fa2d79d223a128a5ec4203319155f069b5e171"),  # run:2026-10-17-quests (loads)
+    "travel-act3": (BASE_X, "bd04bc2513e6e7abeccb76a16d918d616c4ec47d65ec59dcff48b2b63ae6dc7e"),  # run:2026-10-17-quests (loads)
+    "travel-act4": (BASE_X, "5b3cbe8ae6d46bb5dd91d199b09cefd0cffecb72498db5fbeffe17c94aca03e1"),  # run:2026-10-17-quests (loads)
+    "travel-act5": (BASE_X, "10155a1c27b19e9f8062b5e18da946cfd40ce390864b0df217300b19b5d6690d"),  # run:2026-10-17-quests (loads)
+    "travel-arcane": (BASE_X, "439e0f2cb9ce954b67f87099669a58abef68980e33bee52bd72687e72b95d7dc"),  # run:2026-10-17-quests (loads)
+    "travel-tab2": (BASE_X, "c2bac478d3b0475ab0360d8a32a2886c669a1f1240e20b111cd02dd0c4010ade"),  # run:2026-10-17-quests (loads)
+    "travel-tab5d": (BASE_X, "c7487a6bce6617480c9631ac30389af91f6475946c678f854a9effc5d9100f99"),  # run:2026-10-17-quests (loads)
+    "travel-wp1": (BASE_X, "a6204557593ad983c5c3c5f9ff6a9f3fba89d09bb032f730a476c6ecabb7e704"),  # run:2026-10-17-quests (loads)
+    "travel-wp2": (BASE_X, "57b84f11026fb06283a3825e5300cd8f73c90dd09570ea1aa14f8c5debe98920"),  # run:2026-10-17-quests (loads)
+    "travel-wp3": (BASE_X, "29aec1faa57f4e0d2b99a4491c84fc43d71fe846c41bc2eda6e243c521875902"),  # run:2026-10-17-quests (loads)
+    "travel-wp4": (BASE_X, "7ff3eafb6b7809723b21bc0dce076691f4addd22b288281609db5284194b0fdd"),  # run:2026-10-17-quests (loads)
+    "travel-wp5": (BASE_X, "9a0d88e802c9f8ea0f9d14109d7af4557846b628d6d33256640a3512f406c37c"),  # run:2026-10-17-quests (loads)
+    "travel-wpnone": (BASE_X, "171a6a23524e3f69fa5332b45dc85e2cd2446674aeccc4081b21e14e4fd61c93"),  # run:2026-10-17-quests (loads)
+    "quest-w9lost": (BASE_X, "20713178d063263231f536e21cca856ae11201868aefd5ae40c411ed0e22e947"),  # run:2026-10-17-quests (loads)
+    "quest-w9book": (BASE_X, "c919898aae77149a760b4a08aed0fed2785e21db902f9bbea831e7cfdfa1d092"),  # run:2026-10-17-quests (loads)
+    "quest-w39summit": (BASE_X, "f9dab74b53efdfe7eae14238dbf45eacaf9c0232cf3b080905fda76928efa7be"),  # run:2026-10-17-quests (loads)
+    # plan 0042 Phase 2 recipes (tools/quest_saves.py, plan 0049 Phase 0): the built hash is the installed save the
+    # run kept as <log>.in.d2s (hashed in the run's manifest); the sessions that loaded it in the comment
+    "quest-tpc": (BASE_C, "fa2c8ba311cf764eacb6c9ef8992bcbf004a120c7fb3ca000174baabf391f704"),  # run:2026-10-17-quests (loads; c-tp, c-wp)
+    "quest-talk1": (BASE_X, "c3dd8f0245f9038639c3f82b220d97a1f04df11c518ea20b9cf2da283e2fd441"),  # run:2026-10-18-quests2 (x-talk1, h-talk1)
+    "quest-talk2": (BASE_X, "4c7668472aba46c321578267ba79ea13810ffdb4bbd5e465f1c7a9880c4a48db"),  # run:2026-10-18-quests2 (x-talk2)
+    "quest-talk3": (BASE_X, "b12c2c9a29c3baf5cb4b1844409afe2df0b83ee47c66f3d34b281b8fbd441528"),  # run:2026-10-18-quests2 (x-talk3, x-talk3b, h-talk3)
+    "quest-talk4": (BASE_X, "f7faffb80911dc9199195c848fe026cd6f38a40ac933a2da46b9e83dc1199447"),  # run:2026-10-18-quests2 (x-talk4, h-talk4)
+    "quest-talk5": (BASE_X, "519649118d9af3a2e609cda4cbd172cabdb5f0bc9b0658ed9ed0ef1496c9f119"),  # run:2026-10-18-quests2 (x-talk5)
+    "quest-talk1c": (BASE_C, "8b4fa87c3fd463bd068b99f63dbce98d47c0a5a5bc13fab442dff36288817e95"),  # run:2026-10-18-quests2 (c-talk1)
+    "quest-talk2c": (BASE_C, None),  # built by run:2026-10-18-quests2, no session loaded it
+    "quest-talk3c": (BASE_C, None),  # built by run:2026-10-18-quests2, no session loaded it
+    "quest-talk4c": (BASE_C, "e89490978c073a481e60782e8215eee7a61684a345bcef39eb21abd615605698"),  # run:2026-10-18-quests2 (c-talk4)
+    "quest-orbwill": (BASE_X, "271f3d56260ca02d9d0f31602a98375667824c70bbc18ea1a03b6684893f1fb7"),  # run:2026-10-18-quests2 (x-orb)
+    "quest-death": (BASE_X, "4fb9af452b6c110b393f8779ea81bcaad6c6a5a386cb157d017ba8a8c2634fdd"),  # run:2026-10-19-quests3 (h-death3)
+    "quest-p3entry": (BASE_X, "9aba95c47858c951801c4b4c1380f20ded0d5ce82af6f07980ffa10ffcea18e2"),  # run:2026-10-19-quests3 (x-entry, x-entry2, h-entry)
+    "quest-p3anya": (BASE_X, "079bc38d014e3adcccb2e2406fefd9b4010fba3bd2b4533001980e361d91e7dd"),  # run:2026-10-19-quests3 (x-anya, nm-anya, h-anya)
+    "quest-p3meshif": (BASE_X, "9927619642bd21f43b44a9e5555ae433715ca5d05447d8fdc16a98b1e936d0c0"),  # run:2026-10-19-quests3 (x-meshifw)
+    "quest-p3wpact": (BASE_X, "c0371020861814b6dc9fb27a6e3edc047610d024add16f94d0b7a4884590698c"),  # run:2026-10-19-quests3 (x-wpact1-0, x-wpactr-0)
+    # plan 0044 Phase 2 pairs (tools/mp_saves.py): not loaded yet
     "mp-nova-host": (BASE_X, None),
     "mp-nova-weak": (BASE_X, None),
     "mp-nova-low": (BASE_X, None),
@@ -708,14 +728,14 @@ class QuestBitsTest(Scratch):
         self.assertEqual([it["quest_diff"] for it in mss], [2])
 
     def test_quest_saves_check(self):
-        """plan 0042 Phase 0: every Phase 0 recipe holds the state of its EXPECT row (tools/quest_saves.py check),
+        """plan 0042 Phase 0: every plan 0042 recipe holds the state of its EXPECT row (tools/quest_saves.py check),
         and every recipe of the set builds into <Name>/<Name>.d2s."""
         need(BASE_C)
         import quest_saves
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             self.assertEqual(quest_saves.main(["check", EXCEL]), 0, buf.getvalue())
-        self.assertIn("SURVEY quest_saves recipes=17 bad=0", buf.getvalue())
+        self.assertIn("SURVEY quest_saves recipes=33 bad=0", buf.getvalue())
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(quest_saves.main(["build", EXCEL, self.path("set")]), 0)
         self.assertTrue(os.path.exists(self.path("set/ActFourDurance/ActFourDurance.d2s")))
