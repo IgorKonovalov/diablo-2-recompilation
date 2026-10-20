@@ -2,11 +2,11 @@
 from: reverser
 to: archivist
 date: 2026-10-19
-status: open
+status: done
 context:
-  - ../formats/d2s.md
-  - ../findings/quests/experiments.md#run2026-10-19-quests3
-resolution: ""
+  - ../../formats/d2s.md
+  - ../../findings/quests/experiments.md#run2026-10-19-quests3
+resolution: "Plan 0049 P0 (lane/p49a): the four quest-p3* recipes in [d2s.md § Plan 0042 Phase 2 saves](../../formats/d2s.md#plan-0042-phase-2-saves) beside part 2's, in quest_saves.py SET/EXPECT and pinned in test_d2s.py."
 ---
 
 Plan 0042 Phase 2 part 3 (run:2026-10-19-quests3) added four recipes under `tools/d2s_recipes/`: `quest-p3entry`
