@@ -852,7 +852,8 @@ PROPS_HOOK = None
 
 # Plan 0038 batch S2b: when True, ITEMS_RollStaffMods is modelled (staff_mods below) instead of being the STF0/STF1
 # seed oracle: the logged STF1 seed is compared, not taken, and the free walk (tools/items_chain.py) no longer stops
-# at a StaffMods type. `check --staff model` sets it; the default keeps the plan 0021 oracle (ADR-0004 switch).
+# at a StaffMods type. `check` sets it by default since plan 0048 Phase 1 (oracle 2 retired); `check --staff oracle`
+# keeps the plan 0021 oracle (ADR-0004 switch). A caller whose namespace has no `staff` attribute keeps the oracle.
 STAFF_MODEL = False
 # Counterfactual variant of the pick (tools/items_sweep.py cf): "high-word" draws from the seed's high word,
 # "unsigned-walk" compares the running x as unsigned (never below 0). Each must FAIL; never on by default.
@@ -1244,8 +1245,9 @@ def main(argv):
     c.add_argument("logs", nargs="+")
     c.add_argument("--excel", default=EXCEL)
     c.add_argument("-v", "--verbose", action="store_true")
-    c.add_argument("--staff", choices=("oracle", "model"), default="oracle",
-                   help="ITEMS_RollStaffMods: the STF0/STF1 seed oracle (default) or the staff_mods model")
+    c.add_argument("--staff", choices=("oracle", "model"), default="model",
+                   help="ITEMS_RollStaffMods: the staff_mods model (default since plan 0048 Phase 1) or the STF0/STF1 "
+                        "seed oracle")
     v = sub.add_parser("survey")
     v.add_argument("--excel", default=EXCEL)
     ns = ap.parse_args(argv)
