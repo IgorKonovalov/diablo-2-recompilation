@@ -1,0 +1,84 @@
+{
+  "game": "expansion",
+  "class": "Amazon",
+  "seed": 3707115,
+  "name": "CombatAmaW",
+  "progression": 15,
+  "difficulty": [
+    131,
+    131,
+    131
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "stats": {
+    "strength": 400,
+    "energy": 200,
+    "dexterity": 60,
+    "vitality": 800,
+    "hitpoints": 6000,
+    "maxhp": 6000,
+    "mana": 3000,
+    "maxmana": 3000,
+    "stamina": 800,
+    "maxstamina": 800,
+    "level": 5,
+    "experience": 7875
+  },
+  "skills": {
+    "Dodge": 20,
+    "Avoid": 20,
+    "Evade": 20
+  },
+  "mouse": {
+    "left": "Attack",
+    "right": "Attack",
+    "swap_left": "Attack",
+    "swap_right": "Attack"
+  },
+  "hotkeys": [
+    "Attack"
+  ],
+  "items": [
+    {
+      "unique": "The Gnasher",
+      "equip": "rarm",
+      "roll": "max"
+    },
+    {
+      "unique": "Steelclash",
+      "equip": "larm",
+      "roll": "max"
+    },
+    {
+      "unique": "Goldwrap",
+      "equip": "belt",
+      "roll": "max"
+    },
+    {
+      "unique": "Nokozan Relic",
+      "equip": "neck",
+      "roll": "max"
+    },
+    {
+      "unique": "Raven Frost",
+      "equip": "rrin",
+      "roll": "max"
+    },
+    {
+      "unique": "Manald Heal",
+      "equip": "lrin",
+      "roll": "max"
+    }
+  ],
+  "belt_fill": [
+    "rvl",
+    "rvl",
+    "rvl",
+    "mp5"
+  ],
+  "quests": "all"
+}

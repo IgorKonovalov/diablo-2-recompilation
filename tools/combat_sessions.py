@@ -202,12 +202,30 @@ for k, wp in enumerate(("1,2", "1,3", "1,4")):
                                            (WALK + ["--hops", "25"], 200), ("wait", 90),
                                            (WALK + ["--hops", "15"], 150), ("wait", 90),
                                            (WALK + ["--hops", "15"], 150), ("wait", 90)])
+# plan 0047 Phase 2: CombatAma (level 85, dexterity 400, defence above 1 000) was hit at the to-hit floor (c = 5 in
+# every logged roll of ama-n-stand, ama-n-walk and ama-n-idle1), and every defence roll needs a hit first; CombatAmaD
+# (level 5, dexterity 15, no shield, no armour: no block roll ahead of dodge) and CombatAmaW (level 5, dexterity 60,
+# Steelclash only: the walking block) give Normal monsters a chance well above the floor
+for k, wp in enumerate(("1,2", "1,3", "1,4")):
+    SESSIONS["amad-n-idle%d" % (k + 1)] = ("CombatAmaD", "enter-normal", 4795 + k,
+                                           [(["farm", "--wp", wp, "--players", "8", "--time", "1"], 90),
+                                            (WALK + ["--hops", "25"], 200), ("wait", 90),
+                                            (WALK + ["--hops", "15"], 150), ("wait", 90),
+                                            (WALK + ["--hops", "15"], 150), ("wait", 90)])
+SESSIONS["amad-n-run"] = ("CombatAmaD", "enter-normal", 4798,
+                          [(["farm", "--wp", "1,2", "--players", "8", "--time", "1"], 90), (WALK + ["--hops", "150"], 400)])
+# ruling 3 (a)'s one more walking session: the walk toggle held, Stony Field's archers and shamans (ranged)
+SESSIONS["amaw-n-walk"] = ("CombatAmaW", "enter-normal", 4799,
+                           [(["farm", "--wp", "1,3", "--players", "8", "--time", "1"], 90), ("keys", ["r"], 1.0),
+                            (WALK + ["--hops", "150"], 500)])
 # weapon block: two claws (CombatAss) and one claw with an empty left hand (CombatAssO), standing in melee; the
 # skill check 0x0064F380 (WBS) is a value oracle and tells which weapon class it wants
 SESSIONS["ass-n-plains"] = ("CombatAss", "enter-normal", 4771,
                             [(["farm", "--wp", "1,2", "--players", "8", "--time", "1"], 90), (WALKM + ["--hops", "120"], 400)])
 SESSIONS["ass-n-plains2"] = ("CombatAss", "enter-normal", 4772,
                              [(["farm", "--wp", "1,3", "--players", "8", "--time", "1"], 90), (WALKM + ["--hops", "120"], 400)])
+SESSIONS["ass-n-plains3"] = ("CombatAss", "enter-normal", 4774,          # plan 0047 Phase 2: weapon block at 29
+                             [(["farm", "--wp", "1,4", "--players", "8", "--time", "1"], 90), (WALKM + ["--hops", "120"], 400)])
 SESSIONS["asso-n-plains"] = ("CombatAssO", "enter-normal", 4773,
                              [(["farm", "--wp", "1,2", "--players", "8", "--time", "1"], 90), (WALKM + ["--hops", "120"], 400)])
 # the set-aside Fleshripper session re-staged (the plan 0037 resume lane's log was lost with its scratch):
@@ -234,19 +252,21 @@ CASES_0047 = {
                                     ["dr-n-plains", "dr-n-darkwood"], [35, 142, 148], ()),
     "C7 negative total, life unchanged": ("CombatDR: DR and MDR above every field of weak Normal hits",
                                          ["dr-n-plains", "dr-n-darkwood", "dr-n-marsh"], [34, 35], ()),
-    "C8 evade": ("CombatAma moving (running, then walking)", ["ama-n-run", "ama-n-walk", "ama-n-walk2"], [],
+    "C8 evade": ("CombatAma moving (running, then walking)", ["ama-n-run", "ama-n-walk", "ama-n-walk2", "amad-n-run"], [],
                  ("Evade",)),
     "C9 weapon block": ("CombatAss with two claws, CombatAssO with one (the weapon class the skill check wants)",
-                        ["ass-n-plains", "ass-n-plains2", "asso-n-plains"], [], ("Weapon Block",)),
-    "C10 dodge": ("CombatAma standing in melee", ["ama-n-stand", "ama-n-idle1", "ama-n-idle2", "ama-n-idle3"], [],
+                        ["ass-n-plains", "ass-n-plains2", "ass-n-plains3", "asso-n-plains"], [], ("Weapon Block",)),
+    "C10 dodge": ("CombatAma standing in melee", ["ama-n-stand", "ama-n-idle1", "ama-n-idle2", "ama-n-idle3", "amad-n-idle1",
+                                                    "amad-n-idle2", "amad-n-idle3"], [],
                   ("Dodge",)),
     "C11 avoid": ("CombatAma standing against missiles (fallen shamans, archers)",
-                  ["ama-n-stand", "ama-n-idle1", "ama-n-idle2", "ama-n-idle3"], [], ("Avoid",)),
+                  ["ama-n-stand", "ama-n-idle1", "ama-n-idle2", "ama-n-idle3", "amad-n-idle1", "amad-n-idle2",
+                          "amad-n-idle3"], [], ("Avoid",)),
     "C12 freeze": ("CombatFrz's Frostwind (freeze 4) in melee", ["frz-n-plains", "frz-nm-plains"], [134], ()),
     "C13 flat absorb": ("CombatAbs against fire, cold and lightning attackers",
                         ["abs-n-plains", "abs-n-darkwood", "abs-n-marsh", "abs-nm-marsh"], [143, 145, 149], ()),
     "C14 a walking player's block": ("CombatAma after the run/walk toggle (mode 2), with a shield",
-                                     ["ama-n-walk", "ama-n-walk2"], [20], ()),
+                                     ["ama-n-walk", "ama-n-walk2", "amaw-n-walk"], [20], ()),
     "C15 the set-aside Fleshripper session (backlog 2026-10-17 resume-lane follow (a))":
         ("the log was lost; the session is staged again on the same recipe and seed", ["owf-n-andariel-p8"], [], ()),
 }

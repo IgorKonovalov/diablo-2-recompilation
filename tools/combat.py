@@ -868,8 +868,10 @@ class Checker:
         new = max(hp - cb, 0)
         self.eq("CB life after", r_line["lo"][0], new)
         f = d.get("f", 0) or 0
-        who = "act boss" if d["t"] == 1 and T.boss(d["c"]) else ("superunique" if f & 2 else ("unique" if f & 8 else (
-            "champion" if f & 4 else ("player" if d["t"] == 0 else "normal"))))
+        # plan 0047 Phase 2: a champion carries 0x04 with 0x08 (SpecialModsRoll adds 0x04 to a special monster;
+        # no kept combat log holds a monster with 0x04 and not 0x08), so 0x04 is tested before 0x08
+        who = "act boss" if d["t"] == 1 and T.boss(d["c"]) else ("superunique" if f & 2 else (
+            "champion (0x04)" if f & 4 else ("unique" if f & 8 else ("player" if d["t"] == 0 else "normal"))))
         self.case("crushing blow on %s" % who)
         return sa
 

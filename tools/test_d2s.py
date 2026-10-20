@@ -259,6 +259,8 @@ RECIPE_BASES = {
     "combatfrz": (BASE_X, "c1ed1c393a0bbc895def710550bf301dbeb36f187d296370a9e26af8bee58759"),
     "combatowf": (BASE_X, "77807e000c7c7c863752a795a45b446525dd38020c86a22ea1584c8c2639903c"),  # 5871b00's CombatOW, renamed
     "combatama": (os.path.join(SAMPLES, "smpama.d2s"), "5b694383e89d63d2c52d07968e1b265b4754f239b55a7fba0d2c42042e126522"),
+    "combatamad": (os.path.join(SAMPLES, "smpama.d2s"), "d4572d07d582af3dc2fea3d7091900f71a75f46030593bccc1273d8e93a68cfd"),
+    "combatamaw": (os.path.join(SAMPLES, "smpama.d2s"), "a64d6895731de239b65704e517424e3bdf77cd4f39aaa35a9766a85bfc315a10"),
     "combatass": (os.path.join(SAMPLES, "smpasn.d2s"), "e0ea31a2df0dce6a63d4c705f4cdd9ce0c2b94716d71b3e8f692d0a49fc7af48"),
     "combatasso": (os.path.join(SAMPLES, "smpasn.d2s"), "c4dc7172e72c896accb07ebf77bfe05fd460eae75e4c757374039ae675b96475"),
     "statssor": (os.path.join(SAMPLES, "smpsor.d2s"), "963ed3809c35d69f29800a1292b9f9c4f4104245e612c4632206c123760efadd"),
