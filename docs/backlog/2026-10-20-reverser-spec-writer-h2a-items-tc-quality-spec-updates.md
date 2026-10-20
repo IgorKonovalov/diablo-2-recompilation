@@ -31,3 +31,11 @@ multiplayer or TCP/IP game) and L548 (the minimum clamp among the untested), res
 (12 raised, 5 in part); tc 34's L388 stop half is `[C]` and its `Picks = 0` half stays `[I]` (d-none as tc 13); quality 20
 counts the 5 hireling rolls of the aborted H6d log. Apply (a)–(o) with the items/quality Phase 3 round now; items/tc's
 part waits for H2b and H2c.
+
+*Done in part 2026-10-20 (spec-writer, `lane/p38s7`, plan 0038 Phase 3 items/quality round):* the items/quality items
+applied to [items/quality](../specs/items/quality.md): (j) M3 split (a monster killer owned by a player `[C]`, 130 rolls;
+a missing owner, plain or minion monster killers and the type ≥ 2 return stay `[I]`); (k) D6 and its step note `[C]`
+("the clamp acts", 667 rolls, decides 138; the unique minimum reached by none); (l) the D4–D7 order `[C]`; (m) the
+*Open questions* `[L]` struck, the unique minimum noted under it untagged. The quality lines of (o) are restated in the
+[items](../wiki/items.md) wiki (the clamp step, the MF paragraph, the *Quality* line of the untested list). **Still
+open:** the items/tc items (a)–(i), (n) and the `/players` lines of (o), for when H2b and H2c are accepted.
