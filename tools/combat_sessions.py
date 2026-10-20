@@ -137,7 +137,9 @@ WALK = ["explore", "--walk", "--drink", "0.5"]
 for k, wp in enumerate(("1,2", "1,3", "1,4", "1,5", "5,2", "5,3")):
     # crushing blow on champions (type flag 0x04 without 0x08): CombatOW's 40 % in Nightmare, /players 8
     SESSIONS["ow-nm-champs%d" % (k + 1)] = ("CombatOW", "enter-nightmare", 4701 + k,
-                                            [(FARM + ["--wp", wp, "--players", "8", "--time", "270"], 340)])
+                                            [(SWEEP + ["--wp", wp, "--players", "8", "--time", "270"], 340)])
+    # plan 0047 Phase 2: --sweep (bosses and champions first, then the level), since without it farm ended once the
+    # first unique was down (ow-nm-champs1: 134 s, 21 monsters seen, no champion)
 for name, wp, seed in (("darkwood", "1,4", 4711), ("lostcity", "2,6", 4712), ("marsh", "1,5", 4713),
                        ("oasis", "2,5", 4714), ("catacombs", "1,9", 4715)):
     # the cold and lightning caps: CombatSorH's resistances (The Ward, Rockstopper, Mara's) above 75 in Normal, where
@@ -183,6 +185,15 @@ SESSIONS["ama-n-walk"] = ("CombatAma", "enter-normal", 4763,
 SESSIONS["ama-n-walk2"] = ("CombatAma", "enter-normal", 4764,
                            [(["farm", "--wp", "1,3", "--players", "8", "--time", "1"], 90), ("keys", ["r"], 1.0),
                             (WALK + ["--hops", "150"], 500)])
+# plan 0047 Phase 2: dodge and avoid roll only for a player outside modes 2 and 3 (COMBAT_AvoidRoll), and the
+# walking explore of ama-n-stand kept her moving (3 dodge and 8 avoid rolls); these sessions walk into a pack
+# (explore without --melee), then stand still ("wait") while the pack attacks
+for k, wp in enumerate(("1,2", "1,3", "1,4")):
+    SESSIONS["ama-n-idle%d" % (k + 1)] = ("CombatAma", "enter-normal", 4765 + k,
+                                          [(["farm", "--wp", wp, "--players", "8", "--time", "1"], 90),
+                                           (WALK + ["--hops", "25"], 200), ("wait", 90),
+                                           (WALK + ["--hops", "15"], 150), ("wait", 90),
+                                           (WALK + ["--hops", "15"], 150), ("wait", 90)])
 # weapon block: two claws (CombatAss) and one claw with an empty left hand (CombatAssO), standing in melee; the
 # skill check 0x0064F380 (WBS) is a value oracle and tells which weapon class it wants
 SESSIONS["ass-n-plains"] = ("CombatAss", "enter-normal", 4771,
@@ -217,8 +228,10 @@ CASES_0047 = {
                  ("Evade",)),
     "C9 weapon block": ("CombatAss with two claws, CombatAssO with one (the weapon class the skill check wants)",
                         ["ass-n-plains", "ass-n-plains2", "asso-n-plains"], [], ("Weapon Block",)),
-    "C10 dodge": ("CombatAma standing in melee", ["ama-n-stand"], [], ("Dodge",)),
-    "C11 avoid": ("CombatAma standing against missiles (fallen shamans, archers)", ["ama-n-stand"], [], ("Avoid",)),
+    "C10 dodge": ("CombatAma standing in melee", ["ama-n-stand", "ama-n-idle1", "ama-n-idle2", "ama-n-idle3"], [],
+                  ("Dodge",)),
+    "C11 avoid": ("CombatAma standing against missiles (fallen shamans, archers)",
+                  ["ama-n-stand", "ama-n-idle1", "ama-n-idle2", "ama-n-idle3"], [], ("Avoid",)),
     "C12 freeze": ("CombatFrz's Frostwind (freeze 4) in melee", ["frz-n-plains", "frz-nm-plains"], [134], ()),
     "C13 flat absorb": ("CombatAbs against fire, cold and lightning attackers",
                         ["abs-n-plains", "abs-n-darkwood", "abs-n-marsh", "abs-nm-marsh"], [143, 145, 149], ()),
@@ -243,7 +256,7 @@ def check(names):
 
     def of(n):
         save, steps, seed, cmds = SESSIONS[n]
-        return save, steps, [c[0] for c in cmds if c[0] != "keys"]
+        return save, steps, [c[0] for c in cmds if c[0] not in ("keys", "wait")]
     if names:
         cases = {"named": ("sessions named on the command line", names, [], ())}
         return session_check.run(cases, {}, of, "combat_sessions")
@@ -295,6 +308,9 @@ def run_session(name, slot, tag, saves, run):
     time.sleep(3)
     os.makedirs(os.path.join(ROOT, "workspace", "logs", "combat", "%s-%s-shots" % (run, name)), exist_ok=True)
     for step in cmds:
+        if step[0] == "wait":                 # ("wait", seconds): the game runs, nothing is pressed (plan 0047)
+            time.sleep(step[1])
+            continue
         if step[0] == "keys":                 # ("keys", [key, ...], seconds): key presses on the slot's display
             for key in step[1]:
                 sh(PY + ["tools/xdrive.py", "--slot", str(slot), "key", key], 30)

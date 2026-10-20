@@ -337,6 +337,7 @@ class Checker:
             self.eq("DRR %s chance" % label, L["ch"], ch)
             self.eq("DRR %s roll" % label, L["r"], r)
             self.eq("DRR %s seed" % label, L["s"], sd_fmt(sd))
+            self.case("defence roll %s" % label)          # plan 0047 Phase 2: rolls, beside the successes below
             return r < ch
 
         if use_block:
@@ -367,6 +368,8 @@ class Checker:
                     if drm["mv"] and d["m"] != 2:
                         b = tdiv(b, 3)
                         self.case("block divided by 3 (moving player)")
+                    elif drm["mv"]:
+                        self.case("block not divided: moving player in mode 2 (walk)")
                 if roll("block", b):
                     self.case("block")
                     return 1, sd, i
