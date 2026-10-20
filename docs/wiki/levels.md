@@ -3,7 +3,7 @@ based_on:
   - docs/specs/drlg/README.md 2026-10-17
   - docs/specs/drlg/room-tiles.md 2026-10-17
   - docs/specs/drlg/preset.md 2026-10-17
-  - docs/specs/drlg/collision.md 2026-10-17
+  - docs/specs/drlg/collision.md 2026-10-20
   - docs/specs/drlg/maze.md 2026-10-17
   - docs/specs/drlg/warps.md 2026-10-17
   - docs/specs/drlg/outdoor.md 2026-10-20

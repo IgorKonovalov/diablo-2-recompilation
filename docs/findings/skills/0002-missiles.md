@@ -247,8 +247,9 @@ return m;
 - [I] **`useAmmo` at the 33 call sites** of the line and lob creators (`AMMO` lines, the eight `?` read by hand in the
   `SITE` windows): 1 at `SKILL_AttackDo` (`srvdofunc` 1) unless the unit's ranged missile (`0x00645F00`) is 27
   (`magicarrow`), at the Throw and Left Hand Throw do functions 3 and 5 (lob for a weapon of item type 38, else line;
-  the thrown item is the hand item that is throwable or has stat 125), at four monster functions (`0x005A21D0` twice,
-  `0x005A29A0`, `0x005A35D0` once, `0x005A6D50`, `0x005A6EB0`), at `0x005CBF90` and at both calls of `0x005D88B0`; 0
+  the thrown item is the hand item that is throwable or has stat 125), at five monster functions, six sites (`0x005A21D0`
+  twice, `0x005A29A0`, `0x005A35D0` once (its two other calls pass 0), `0x005A6D50`, `0x005A6EB0`; *recounted at review
+  2026-10-20, lane/msw: the sites push 1 in objdump; first written "four"*), at `0x005CBF90` and at both calls of `0x005D88B0`; 0
   everywhere else, `SKILLS_SrvDo` included. The ammunition use only acts for a player owner. (`missiles-scan.txt` `AMMO`,
   fn:SKILL_AttackDo@0x0056F070, fn:sub_0056F460_SkillThrowDo@0x0056F460, fn:PLAYER_UseAmmo@0x0056C3F0)
 - [I] **`SKILLS_SrvDo`'s missile** (P1.1 § 6): `(rec->lob ? Lob : Line)(unit, id, lvl, dx, dy, tx, ty, 0)` with

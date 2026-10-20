@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [drlg/overview, drlg/room-tiles, drlg/preset, drlg/warps, rng]
 consumed_by: [monsters/spawn, objects]
-tags: {C: 110, I: 60, L: 9}
-updated: 2026-10-17
+tags: {C: 110, I: 61, L: 9}
+updated: 2026-10-20
 ---
 
 # Room collision grid, unit marks, logic regions and the spawn position tests
@@ -60,7 +60,7 @@ line of sight read the same grid. They are named here, not specified.
 | tbl:Levels.txt:Position | leveldefs `+0x90`: the waypoint-point branch of `NearWarpTest` (§ I) |
 | tbl:LvlPrest.txt:Logicals | which logic-region builder a preset room runs (§ G; the selection is in [preset.md](preset.md)) |
 | Objects ([table doc](../../tables/Objects.md)): `SizeX` `+0xD0`, `SizeY` `+0xD4`, `HasCollision0..7` `+0x120 + mode`, `IsDoor` `+0x13A`, `BlocksVis` `+0x13B`, `SubClass` `+0x167`, `BlockMissile` `+0x1B6` | an object's mark rectangle and mask (§ F) |
-| Missiles (no table doc yet): `Collision` `+0x184`, size `+0x18A` | a missile's mark (§ F) |
+| Missiles ([table doc](../../tables/Missiles.md)): `Collision` `+0x184`, `Size` `+0x18A`, `CollideType`, `CanDestroy` | a missile's mark and its collide mask (§ F) |
 
 ### Runtime state
 
@@ -514,6 +514,14 @@ fn:UNIT_GetSizeY@0x006205A0)
   `PATH_SetMarkMask(path, 0x40)` when it is set; that unmarks with mask 0 and marks with `0x40` by size. The run saw 5702
   `firewall` missiles (size 1) mark one cell each. 33 of 684 Missiles rows have `Collision` 1. (fn:PATH_SetMarkMask@0x00648C30,
   fn:PATH_DynamicCreate@0x00649D00, 0x004CD10A, 0x0059FD54, run:2026-10-14-collision)
+- [I] **The missile side of `0x40`** (plan 0045 P1.2, input only; the placement masks stay as above). Missile do function 3
+  (26 stock rows: the clouds, the blizzards, `plaguejavelin`) is a second writer: each frame its path is not moving, it ORs
+  `0x40` into its own cell (`COLL_CellOrAt`). When a missile ends through `MISSILE_HitUnit` (an ending result with no pierce left, or the end of its
+  life), it removes its mark by size with `COLL_SizeUnmark(…, 0x40)`; a missile that do function 1 frees without the hit
+  function is not followed here. The only missile reader of the mark would be `CollideType` 7 (mask `0x40`, the target a
+  missile whose row has `CanDestroy`), which no stock row uses. (fn:sub_005AE480_MissDo03CloudMark@0x005AE480,
+  fn:COLL_CellOrAt@0x0064CB90, fn:MISSILE_HitUnit@0x005ADF10, fn:COLL_SizeUnmark@0x0064EBA0,
+  data:g_MissileCollideTypes@0x0073C720, [skills/0002 §§ 4–5](../../findings/skills/0002-missiles.md#4-each-frame))
 - [I] **Moves and removal.** A move unmarks the old footprint, tests the new one with the move mask, and marks the new one, or the old
   one again when the move is refused (`COLL_SizeMove`, `COLL_PatternMove`). A mask change unmarks and re-marks. A revival marks
   `0x100` with the pattern by size (birds 157 and 158, the parrot 319 and wraiths get pattern 5). Room release goes through
@@ -915,6 +923,8 @@ is the R2 case of the plan, and the run had 67 such acceptances. The plan 0014 w
   the required cases, R1–R3, C1, C2 and the remaining oracles.
 - [findings/monsters/0002 §§ 6 and 9](../../findings/monsters/0002-room-population.md#6-placement-monspawntry): the callers and
   which oracles are replaced.
+- [findings/skills/0002-missiles.md §§ 4–5](../../findings/skills/0002-missiles.md#4-each-frame): the missile side of the `0x40`
+  mark (do function 3, the unmark at the end, `CollideType` 7), plan 0045 P1.2.
 - `tools/collision.py check`: the model behind the confirmed tags and the worked example.
 - Formats and tables: [fmt:dt1 § Sub-tile flags](../../formats/dt1.md#sub-tile-flags) and its survey,
   [MonStats2 § Footprint and collision columns](../../tables/MonStats2.md#footprint-and-collision-columns-plan-0017-phase-0),
@@ -929,6 +939,8 @@ is the R2 case of the plan, and the run had 67 such acceptances. The plan 0014 w
 
 - [L] **C2's reader.** The `0x40` missile mark is reproduced, but no placement test that reads bit 6 was reached: no `spawnCol` 1 ring
   placement and no `suckernest1` (`0x01C0`) ran with a `Collision` missile in the room. The masks `0x01C0` and `0` are unreached.
+  On the missile side the code has no stock reader (`CollideType` 7 is unused) and a second writer, do function 3 (§ F, plan
+  0045 P1.2).
 - ~~**Entry flag `0x80`** (cell bit 16 → grid `0x04` over the tile) was never seen; which cells carry cell bits 16, 17 and 28
   stays with drlg/0002.~~ Answered (plan 0027 Phase 2): [drlg/room-tiles](room-tiles.md) step 9d now gives the full flag word per
   entry kind, `0x80` included (1164 entries carry it in the 40 logs), from
