@@ -31,7 +31,14 @@ check held, with the commands and their output.
   `ip -br addr` is abridged to the IPv4 addresses); the baseline file was written at 11:02:31 from the same hashes;
   `drivers/ufwcheck.sh` always exits 0 (its verdict is the printed `UFW-OK`, so the drivers' `|| exit 1` never fires,
   and its `Policy="ACCEPT"` pattern cannot match the upper-case line). A changed file would still have shown as
-  `FAILED` in the log, and the log has none; a later run's check must stop the driver itself.
+  `FAILED` in the log, and the log has none; a later run's check must stop the driver itself. The fixed successor is
+  `tools/ufwcheck.sh <session> <baseline> <log>` (2026-10-20, `lane/mp26`; the run copy is kept unchanged under its
+  manifest hash `47c1d42d…`): it exits 1 with `UFW-CHANGED` unless ufw is active and enabled, the input policy line
+  is exactly `DEFAULT_INPUT_POLICY="DROP"`, `ENABLED=yes` and every baseline hash checks; it reads only the input
+  policy line (the unchanged `/etc/default/ufw` also holds `DEFAULT_OUTPUT_POLICY="ACCEPT"`, which an upper-cased
+  copy of the old pattern would match). Self-test against the kept baseline (`workspace/logs/mp26/check-mp26.txt`
+  § C): the real state exit 0; one changed hash, a copy with the input policy `ACCEPT`, a copy with `ENABLED=no`:
+  exit 1 each, and a `|| exit 1` guard stops.
 - **Setup.** Slots 1 (host: `:8`, `workspace/wineprefix-1`, gdb by `tools/d2run.py`) and 2 (joiner: `:9`,
   `workspace/wineprefix-2`, no debugger), owner's condition on ADR-0008. Both saves directories were empty and set
   aside with `tools/saves.py --slot N aside p44h` before the first session, re-set per launch, and restored at the end
@@ -89,7 +96,11 @@ check held, with the commands and their output.
     player 106, not predicted (no KILL context or a killer that is neither a player nor owned) 16.
   - `mp_check.py xpshare` (new): 690 kills; 649 with the members predicted equal to the XP_Compute calls; 770 party
     share inputs (n = 2) and 264 single inputs predicted; 40 mercenary kills and 1 kill cut off by the session's end not
-    predicted.
+    predicted. Correction (2026-10-20, `lane/mp26`): the checker's `pair:` counters are taken at each kill's XK0, before the
+    kill is predicted, so they include the cut-off kill: kills-5's last game line (9688, the log's last but one) is a
+    host kill with no XC0 after it, and the PLRK before it (9687) has the partied member 2 in level 1 (the host in 6), so
+    it is one of the 106 "in another level" pairs; 105 of those were predicted. 9 + 105 + 108 + 42 = 264 single inputs,
+    and 649 + 1 + 40 = 690 kills. Per-log counts: `workspace/logs/mp26/check-mp26.txt` § B (`106cd63e…`).
   - `player.py check`: every XP_Compute, AddExperience and LevelUp of the six kill logs reproduced.
   - `quality.py check` (the logged QKMF magic find): 427 pairs, 427 reproduced.
   - `combat.py check --no-shield 1,2` (pvp-1; new option: the two recipes hold no shield, combat/0001 § 4's "0 without a
@@ -112,7 +123,8 @@ check held, with the commands and their output.
   - **MP06** reached: kills-3, `/players 3` → 95 calls with players 3 (the joiner's `/players 5` in the middle of them
     changed nothing), `/players 8` → 13 calls with 8, `/players 1` → players 2 (two alive) for the rest.
   - **MP16** reached in all five branches: (a) 385 shares; (b) 9 kills with the other member beyond d² 6400 (5 of
-    them within 800 of the bound) and 1 member; (c) 106 with the other member in another level; (d) 42 not partied;
+    them within 800 of the bound) and 1 member; (c) 105 with the other member in another level (53 in kills-4, 52 in
+    kills-5; a 106th, kills-5's last kill, was cut off by the session's end); (d) 42 not partied;
     (e) 108 with the other member dead. Every member set and every input predicted. J4's split: the inputs equal
     `trunc(level × q)` with `q` rounded to f32 and the product **not** rounded to f32: in 98 inputs the f32-rounded
     product would give one more (e.g. E 63, levels 81 and 81: 41, where 42 would follow from rounding).
@@ -136,7 +148,12 @@ check held, with the commands and their output.
     in town.", no packet, no HD0), so the server's town test (HDO) is unreached; the level-below-9 counter case was not
     run.
   - **MP26** reached (pvp-1): not partied, the joiner's click on the host's town portal passed the 5 s gate and left it
-    in town; partied, the same click moved it to the field end (level 3).
+    in town; partied, the same click moved it to the field end (level 3). What was logged (2026-10-20, `lane/mp26`, `check-mp26.txt` § A): one click
+    each way, outcome only. Not partied (PLRS `pty` []): PH hostile 0, GP `lim` 16136301 < `now` 16193226, GPP (lines
+    7421–7423); the joiner stayed at (5680, 5847) in level 1 for the 13.6 s until the party formed (7489). Partied
+    (party 3, members 2 and 1): PH, GP, GPP (7521–7523, 22.5 s later); the next PLRS state (7663) has it in level 3 at
+    (5492, 5426). The party test itself (0x005848EB–0x0058493D, `0x00554630` and its compares) has no logged line;
+    the logger's last portal line is GPP at 0x005848E7.
   - **MP07** reached (vend-1): (a) the joiner left from the Rogue Encampment with the host in town: townEmpty 0, Gheed
     (built 351.6 s earlier) marked stale, Akara and Charsi kept; (b) the host in the Blood Moor: townEmpty 1, the three
     built stores reset. Both leaves went through the connection drop (`slots.py stop 2`) after the menu click did not

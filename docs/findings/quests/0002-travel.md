@@ -112,6 +112,8 @@ fetched and compared afterwards.
   Detail: the owner's use of the town end frees both ends (§ 6).
 - [L] src:arreat-summit-basics-travel: only party members may use a player's portal. **held with refinement**
   Detail: the owner and the operator must have the same party id; the owner is exempt from this party test (§ 6).
+  Refinement (2026-10-20, `lane/mp26`): an operator in no party is refused before the ids are compared, so two
+  players both in no party do not pass (multiplayer/0001 § 6, MP26; § 6 here).
 - [L] src:arreat-summit-basics-travel: going hostile closes the player's portal. **held with refinement**
   Detail: `0x005A5E50` closes it and sets the declarer's tick; it reads as the hostility toggle (town only, level 9
   or more on both players, relation bit 8, a 60 s stamp per pair: [multiplayer/0001 § 4](../multiplayer/0001-cases.md#4-the-hostility-declaration-and-the-two-travel-gates),
@@ -409,7 +411,10 @@ OBJOP_Portal (OperateFn 15, 0x00584870)                                         
   refuse if PlayerIsBusy
   if 0x00535B10(operator) ≠ 0 and the owner (0x00552B10) is not the operator: refuse   ; operator hostile to anyone
   if GetTickCount() < PlayerTickGet(operator, 0) + 5000: refuse   ; EDX = 0 at 0x005848BA: the operator's own +0x160
-  if an owner exists and is not the operator: refuse unless both have the same party id (0x00554630)
+  if an owner exists (0x00552B10 ≠ −1) and is not the operator:     ; 0x005848EB–0x00584908
+      if PartyId(operator) = 0xFFFF: refuse                            ; 0x00554630, 16-bit, 0x00584911
+      owner = GameFindUnit(game, owner id, player) (0x00552F60)
+      if owner found and PartyId(owner) ≠ PartyId(operator): refuse   ; 0x0058493A; no owner unit: no test
   partner = PortalPartnerGet(object) (objects only)
   dest = object data +4; def = LevelDefs[dest]
   if class 59 and object ≠ own portal and a partner exists and partner ≠ own portal:
@@ -426,6 +431,11 @@ OBJOP_Portal (OperateFn 15, 0x00584870)                                         
   timed state 102 on the operator for 75 frames (event 12 at frame + 75)
 ```
 
+- [C] **The party test, raised in part** (MP26, two clients): on the host's town portal, the joiner in no party was
+  refused after passing the 5 s gate, with the host also in no party (equal ids, so the `0xFFFF` test refused), and in
+  the host's party it passed and arrived in level 3; one click each, outcome only, the test itself unlogged. The
+  different-ids compare and the no-owner-unit pass stay `[I]`. (fn:OBJOP_Portal@0x00584870 0x00584911 0x0058493A,
+  run:2026-10-20-two-clients)
 - [I] The quest gate reads leveldefs `+0x00` (`QuestFlag`) or `+0x04` (`QuestFlagEx`) of the portal's destination
   (0x005849BB–0x005849C5, 0x00584A03–0x00584A19). The stock values: 39 (cow level) 26 / 40; 46, 66–73 13; 50–54, 74
   11; 100–102 21; 128–132 39. So another player's portal to the Durance needs word 21 bit 0, to the Arcane or the

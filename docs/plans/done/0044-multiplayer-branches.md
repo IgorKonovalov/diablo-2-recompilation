@@ -433,3 +433,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   quests/travel, and the multiplayer paragraph. **Backlog:** the review request closed; new reverser entry (MP26's § 6
   bullet, then the spec-writer's G3 re-tag; the 264/265 count); the owner-play human entry (MP12–MP14, MP17) and the
   agent-stageable reverser entry stay open, out of the plan. Gate green.
+
+- **2026-10-20 — reverser, `lane/mp26` (after the close, backlog work out of this plan).** Static only (no harness, no
+  Ghidra). (1) MP26: [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients)
+  has its bullet, `[C]` raised in part: one click each way on the host's town portal, outcome only (pvp-1 lines
+  7421–7423 refused after GPP with both players in no party; 7521–7523 passed in party 3, the joiner in level 3 at
+  7663). The party test is not logged; objdump places the refusal at 0x00584915 (the operator's `0x00554630` is
+  `0xFFFF`), the only reachable refusal after GPP for level 3; the different-ids compare (0x0058493A) and the
+  no-owner-unit pass (0x00584927) stay `[I]`. quests/0002 § 6's block now has the three steps. G3 re-tag filed to the
+  spec-writer. (2) 264/265: the cut-off kill is kills-5's last (line 9688), counted by `mp_check.py xpshare`'s
+  `pair:` counter at its XK0 in the "another level" branch, so (c) is 105 predicted; record and § 6 corrected.
+  (3) `tools/ufwcheck.sh`, the fixed successor of the run's `drivers/ufwcheck.sh` (kept unchanged): exit 1 on any
+  change; self-test exit 0 on the real state, 1 on each of three changed copies. Kept output `workspace/logs/mp26/`
+  (`manifest.sha256`, `check-mp26.txt` `106cd63e…`). The agent-stageable shortfalls entry stays open for (2)–(4).
+  Review request: [backlog](../../backlog/2026-10-20-reverser-architect-review-lane-mp26.md).
