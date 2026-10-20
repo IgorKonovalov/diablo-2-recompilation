@@ -473,3 +473,74 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   ([archive](../backlog/archive/2026-10-20-reverser-architect-lane-p46m5-review-plan-0046-batch-sor.md)); ledger rows
   added. **The next batch (amazon) may start**, with 9c, 9d and `sor`'s conventions and ruling 3's condition on
   writer scans.
+- **2026-10-20 — Phase 1 batch `ama` landed for review (reverser, `lane/p46m6`, static, no harness; resumed after the
+  first session was killed by the system's out-of-memory handler, no commit lost).** The amazon start functions 4–10
+  and do functions 6, 7, 8 and 10–16: 17 entries, all read and all emulated ([skills/0009](../findings/skills/0009-amazon.md);
+  tier A start 4, start 5, do 7, do 8 emulated too). Draws before the boundaries: none; no case steps the caster's or
+  the target's seed (start 10's elemental `RNG_RangeB` comes after its hit test). Raised by emulation
+  (run:2026-10-20-cat-emu-ama, `tools/skills_catalogue_emu.py --batch ama`, `check.txt` `03a40fde…`,
+  `manifest.sha256` `6a3181d8…`): six families, 8 300 cases, 0 mismatches, 33 boundary/call-site triples asserted
+  (site control 4 190 of 4 190), both seeds compared in every case, blocks and packets compared by content and, where
+  a boundary sits inside a helper, the batch function's frame words compared at their stack address; two to four
+  negative controls per family (each family has one failing 96 or more; the smallest, `nonorm`, 51). The calc count's
+  writer scan matches `moffs` stores and immediates too (ruling 3's condition): 0 and 0. The same tool reproduces
+  9a–9d and `sor` byte for byte (`repro.txt`). Surprises: **start 6 and start 10 pass 0 as `COMBAT_MeleeHitTest`'s
+  AR argument** (Power Strike's `ToHit` 20/12 does not reach it; combat/0001 note); **do 15 and
+  do 16 leave `SpawnOwnedMonster`'s `+0x24` word unwritten**, so it carries the mode (Dopplezon) or the Skills record
+  pointer (Valkyrie); **do 13 (Fend, Zeal, Fury) returns 0 on every path**; do 8's fan steps perpendicular to the
+  caster–point line, not along it (skills/0003 § 5 note); start 4 has no skill-record test. Tags: 31 `[C]`, 13 `[I]`,
+  4 `[L]` bullets; 22 symbols added (`I`). Review request
+  [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p46m6-review-plan-0046-batch-ama.md); column
+  readers [to the archivist](../backlog/2026-10-20-reverser-archivist-plan-0046-ama-skills-column-readers.md).
+- **2026-10-20 — Batch `ama` reviewed (architect, on `lane/p46m6` at `a6eaf75`): accept with fixes.** `main` had not
+  moved past `9b5dfa8`, so no merge. Re-run from the lane's tool (`69c01d13…`, unchanged since the checkpoint
+  `9d0263c` that committed the killed session's tool section): `check --batch ama` and `static --batch ama` reproduce
+  `check.txt` `03a40fde…` and `static.txt` `b1b51e31…` byte for byte; `sha256sum -c manifest.sha256` (`6a3181d8…`,
+  37 files) passes. Spot reads against objdump: start 6 and start 10 push `0, 0` before `COMBAT_MeleeHitTest`
+  (`0x005DA9A5`, `0x005DB08E`); start 10's `RNG_RangeB(caster+0x20, max − min)` (`0x005DB0C7`) sits inside the
+  hit branch after the test; start 4 (`0x005DA8B0`–`0x005DA8E1`) has no record test; do 8's fan
+  (`0x005DB4E8`–`0x005DB676`: the perpendicular step, the truncating halves, `0x820` with `0x10000` set for the first
+  outer group and cleared for the centre, `+0x44` = calc2); do 6's block (`0x005DB1FF`–`0x005DB2A8`); do 15's and do
+  16's blocks (`ebp−0x34`/`ebp−0x30`, the last word the `&mode` slot `ebp−0x10` and the record slot `ebp−0xC`
+  stored at `0x005DC210`; no other store reaches either); do 13's every exit runs through `xor eax, eax` at
+  `0x005DBE3F` (seven jumps to `0x005DBE3D`/`0x005DBE3E`, one `ret`). The calc count's scan: a full objdump grep of
+  `0x7457ac` gives the seven `mov reg, ds:` reads and nothing else, so the scan meets ruling 3's condition of the
+  `sor` review. Tags recounted 31 `[C]` / 13 `[I]` / 4 `[L]` bullets as filed; the 22 symbol rows are new addresses
+  and names, all `I`, evidence 0009; gate green. **Rulings:**
+  (1) **Frame words at a nested boundary are admissible as filed.** A word the batch function wrote to its own frame
+  before calling the helper that reaches the boundary is a "byte written before the call that the claim uses"
+  (ADR-0021 (c)); the case fixes the entry `ESP`, so the absolute address is the `EBP`-relative slot, and a function
+  whose frame sat elsewhere would fail the compare, not pass it. One gap: the site check (b) names the boundary's
+  return address inside the helper, not the batch function's call of the helper. It holds here because each batch
+  function calls each such helper from one site (objdump: `0x00623C60` once in do 8, do 10 and do 12; `0x0056E510`
+  once in start 9 and do 13; `0x0056C4E0` once in start 4 and start 8; `0x0056BC80` once in start 8 and start 9).
+  **Condition from the next batch on:** a nested boundary's case also compares the helper's return address into
+  the batch function at its absolute stack slot, or the finding shows from objdump that the helper has one call
+  site in that function. The words' later use (the creations' targets on the armed path) stays after, `[I]`.
+  (2) **Start 6 and start 10's `0` is `[C]` as a value**, with the AR-percent meaning and its consequence for
+  Power Strike's `ToHit` `[I]` after the boundary plus the Open question, in the body and in the Answer (reverser
+  review-fixes 13). The combat/0001 dated note is right and scoped (the argument values `[C]` for start 6, 7, 10 and
+  do 7; do 13's `SKILLS_GetToHit` is a reading, past `InMeleeRange`).
+  (3) **The summons' `+0x24` word is `[C]` as a value.** The block is compared by content at `SpawnOwnedMonster`, the
+  writer varies the mode and the record pointer is a scratch address, and `w24_zero` fails 715 cases; "no store
+  fills it" agrees with objdump. What the spawn makes of it stays the Open question.
+  (4) **`srvmissileb` is `[C]` for a caster with no inventory only, as filed.** With `+0x60` = 0, `0x00623990`
+  returns 0 before its inventory call and `0x00623C60` gives word 0; no case gives word 1, so the `cmp eax, 1` stays
+  `[I]`. The skills/0003 note had put "taken for a weapon word ≠ 1" inside its `[C]` sentence (fix 1).
+  **Also checked:** start 10's elemental draw is `[I]` in the Answer, § 4 and the run record; the Answer's
+  "do 13 returns 0 on every path" sits under "After, `[I]`" (the emulated refusal paths return 0 too; the all-paths
+  claim is the objdump reading above). **Earlier rulings held:** no claim rests on a non-argument register (9c
+  ruling 1); callee meanings sit after the boundary (9d ruling); `sor`'s conventions and its ruling 3.
+  **Fixes, made in the documents:** (1) skills/0003 § 5's dated note and skills/0009's Corrections scope
+  `srvmissileb` to word 0 and leave the test against 1 `[I]` (overclaim); (2) skills/0003 § 5's Multiple Shot row
+  still said "start points stepped along it"; the row now says perpendicular, from the point less half the fan,
+  pointing at the note (reverser review-fixes 12; stale cross-reference); (3) skills/0009 § 6's after-text named the
+  weapon word "a bow" from the stock missile names, a meaning from data alone; it now points at the Open question
+  (overclaim); (4) the archivist column-reader entry called `calc1` "the missile count" under a `[C]` that covers
+  the first creation only, and `aurarangecalc` the "search radius" `[C]`; both now split the value (`[C]`) from the
+  meaning (`[I]`) (overclaim). Counted: 4 (overclaim 3, stale cross-reference 1). Tags after the review: 31 `[C]`,
+  13 `[I]`, 4 `[L]` bullets (no tag moved). Review request closed
+  ([archive](../backlog/archive/2026-10-20-reverser-architect-lane-p46m6-review-plan-0046-batch-ama.md)); the
+  archivist entry stays open for its lane; ledger rows added. **The next batch (necromancer, `nec`) may start**, with
+  9c, 9d, `sor` and `ama`'s conventions, ruling 3 of the `sor` review on writer scans, and ruling 1's condition on
+  nested boundaries.

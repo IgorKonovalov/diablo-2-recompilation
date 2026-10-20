@@ -341,7 +341,7 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
 | 0 Attack, 5 Left Hand Swing | 1 `SKILL_AttackStart` | 1 `SKILL_AttackDo` | P1.1 § 11, P1.2 § 2 | melee chain or missile |
 | 1 Kick | 2 `0x0056CAF0`: a packet result 9, flags 2, physical `MinDam << HitShift`, hit class 1, `ResolveAndQueue(…, 128)` | 2 `SKILL_MeleeDeliverDo` | start builds, do delivers | the builder's |
 | 2 Throw, 4 Left Hand Throw | 65 `0x0056CAB0` | 3, 5 (P1.2) | start: `0x0056C4E0(unit)` (the thrown item) or the two refusal calls `0x00580310`/`0x00580380`, return 0 | none |
-| 25 Plague Javelin, 12 Multiple Shot | 4 `0x005DA8B0` (the same code as 65) | — / 8 | 8: `n = calc1` missiles (`srvmissilea`, `srvmissileb` for a weapon class ≠ 1) fanned across the line to the target: offsets `(dx, dy)` from the unit to the target, start points stepped along it, flags `0x820` (`0x10000` on the outer groups), activate `calc2`, `calc3` (or `n`) centre missiles | the creations' |
+| 25 Plague Javelin, 12 Multiple Shot | 4 `0x005DA8B0` (the same code as 65) | — / 8 | 8: `n = calc1` missiles (`srvmissilea`, `srvmissileb` for a weapon class ≠ 1) fanned across the line to the target: offsets `(dx, dy)` from the unit to the target, start points stepped perpendicular to it from the point less half the fan (corrected 2026-10-20, note below), flags `0x820` (`0x10000` on the outer groups), activate `calc2`, `calc3` (or `n`) centre missiles | the creations' |
 | 10 Jab | 5 `0x005DA8F0`: a target | 7 `0x005DB2D0` | to-hit `SKILLS_GetToHit` (and `MonAttackStats` for a monster), `edPct = calc1`, conversion `EType`/`calc4`, elemental roll, `ResolveAndQueue(SrcDam or 128)`, `DeliverQueued` | to-hit, defence, build, 1–2 |
 | 70 Raise Skeleton | 15 `0x005C3070`: a target not in town that `0x00645510` accepts (a monster corpse in mode 12 whose MonStats2 flag and MonStats `+0x32` allow it) | 31 `0x005C4B00` | § 7 | none |
 | 259 Fists of Fire | 23 `0x005D32F0`: target in melee range | 35 (P1.1 § 12) | finisher § 1 | as § 1 |
@@ -369,6 +369,17 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
   `VelLev · lvl / 8`) plus calc1; do 28 up to `COLL_WHTest(room, target point, Size, Size, 5)` inside
   `0x0056E450`. Do 27 is not emulated. Everything after those calls stays as read above, `[I]`.
   (fn:sub_005C9800_SorSkillStaticMin@0x005C9800, fn:sub_005C9B50_SkillDo22NovaAtSelf@0x005C9B50)
+  *2026-10-20 (plan 0046 batch `ama`), emulated:* start 4, start 5, do 7 and do 8 are reproduced up to their
+  boundaries (`[C]` under ADR-0021; [skills/0009](0009-amazon.md) §§ 3, 4, 6): start 4 makes **no skill-record
+  test** and returns 1 for any non-player caster, ending at `0x00580310` for a player without an inventory; do 7 up to
+  `COMBAT_MeleeHitTest(target, SKILLS_GetToHit, 0)` (a monster first at `MonAttackStats(ECX unit, EDX 8)`); do 8 up to
+  its first `MissileCreate`, with two corrections to the row above: the step between the fanned missiles is
+  **perpendicular** to the caster–point line (`0x0056D370` scales a short vector, `0x0056D3B0` rotates it to `(dy,
+  −dx)` and halves it to a square of 3 or less), and the first start point is the target point less `step · n / 2`
+  (truncating); `srvmissileb` (when ≥ 0) is taken for a caster with no inventory (weapon word 0); the test against 1
+  itself (`cmp eax, 1` at `0x005DB52C`) stays `[I]`, since only word 0 is emulated (an armed caster ends at the
+  inventory call). Everything after those calls stays as read above, `[I]`. (fn:sub_005DB410_SkillDo08MultiShot@0x005DB410,
+  fn:sub_0056D3B0_VecPerpSmall@0x0056D3B0)
 
 ### 6. Tier A: missile do, hit and damage functions
 
