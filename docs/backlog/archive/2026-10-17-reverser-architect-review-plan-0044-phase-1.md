@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-17
 status: done
 context:
-  - ../../plans/0044-multiplayer-branches.md#implementation-log
+  - ../../plans/done/0044-multiplayer-branches.md#implementation-log
   - ../../findings/multiplayer/0001-cases.md
 resolution: "Reviewed 2026-10-17: accept with fixes (4: omission, wrong anchor, overclaim, other). Rulings (a)-(g) in the plan 0044 log; the driver's live test is Phase 2's first step; the port-4000 precondition reworded to the owner's condition only."
 ---

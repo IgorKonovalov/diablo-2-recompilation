@@ -2401,7 +2401,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   0015 restated without overreach; the open-plan wording matches the plan index but for 0044. Gate green.
   **Fixes (6), applied on the lane:**
   (1) *stale cross-reference:* wiki/README's 0044 bullet said the two-client run waits until the port is shown
-  closed; the owner's `ufw` check was recorded on 2026-10-17 ([plan 0044 log](0044-multiplayer-branches.md#implementation-log),
+  closed; the owner's `ufw` check was recorded on 2026-10-17 ([plan 0044 log](done/0044-multiplayer-branches.md#implementation-log),
   `78b96a9`), so it now waits only for two free slots. The plan index row of 0044 updated likewise (architect's file).
   (2) *stale cross-reference:* how-we-know's two-client section gains the met condition and the per-session re-read.
   (3) *overclaim:* "a bound: a static argument plus an exhaustive scan" made every d-none ruling need a scan; most rest

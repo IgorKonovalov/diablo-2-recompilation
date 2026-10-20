@@ -177,8 +177,8 @@ outputs; the model predicts every draw and output and must arrive at the logged 
   exit of every event, and a kind whose seeds stay unchanged over at least 20 events has its "no draw" confirmed. A
   kind that moves a seed is re-read and must then meet the chaining minimum
   ([plan 0041, Phase 2, amended 2026-10-17](../plans/done/0041-stats-and-states.md)). In its run one kind did move a seed
-  (a damaging aura draws once per hit) and was checked through chained pairs instead. The specs of that plan are not
-  reviewed yet, so no wiki page restates them.
+  (a damaging aura draws once per hit) and was checked through chained pairs instead. The specs of that plan are
+  reviewed, and the [stats and states](stats-and-states.md) page restates them.
 
 The first simulation plan, combat formulas, checked 40 655 logged events in 40 logs with 0 mismatches
 ([plan index, plan 0037](../plans/README.md); record:
@@ -199,9 +199,10 @@ firewall rule, or a confirmed existing block) and records how in the run record.
 slots, never the owner's ([ADR-0008, status](../adrs/0008-two-client-harness.md)). The condition is met: on
 2026-10-17 the owner's firewall listing showed the port dropped on every interface but the machine's own, and before
 each hosting session the lane re-reads the firewall state and asks the owner again only if it changed
-([plan 0044 log](../plans/0044-multiplayer-branches.md#implementation-log)). Until a two-client run reaches
-them, multiplayer branches stay "read from the code"
-([ADR-0003 § Negative](../adrs/0003-runtime-experiments.md#negative)); plan 0044 is the plan that will run them.
+([plan 0044 log](../plans/done/0044-multiplayer-branches.md#implementation-log)). Plan 0044's two-client run (19 sessions,
+2026-10-20) confirmed the multiplayer branches it reached, and the specs now say so case by case; a branch it did not
+reach (three or more players, the forge and the Ancients with two players) stays "read from the code"
+([ADR-0003 § Negative](../adrs/0003-runtime-experiments.md#negative)), and trading between players is not read yet.
 
 ## "Not reachable on stock data"
 

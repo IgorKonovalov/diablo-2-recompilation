@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, player/creation, monsters/stats]
 consumed_by: [combat/overview, combat/damage, combat/delivery]
-tags: {C: 32, I: 27, L: 3}
+tags: {C: 33, I: 27, L: 3}
 updated: 2026-10-20
 ---
 
@@ -260,7 +260,10 @@ C2. DefenceRoll(def, isMissile: bool, useBlock: bool) → u32:                  
 
 - C2. The player's chance was checked against its formula in 2 523 expansion and 395 classic events, and 2 243 blocks
   occurred. The shield test was a value oracle (`UnitBlockChance`'s shield check). [C]
-  (fn:sub_00622720_UnitBlockChance@0x00622720, run:2026-10-16-combat) The `÷ 3` for a **running** player (mode 3)
+  (fn:sub_00622720_UnitBlockChance@0x00622720, run:2026-10-16-combat) **A player holding no shield has chance 0.** In plan 0044's
+  two-client run, 66 melee events between two players who held no shield (the saves' items, read with
+  `tools/d2s.py dump`, are three inventory items each, nothing equipped) logged chance 0 where the formula with
+  the shield would give more. [C] (fn:sub_00622720_UnitBlockChance@0x00622720, run:2026-10-20-two-clients) The `÷ 3` for a **running** player (mode 3)
   reproduced with 0 mismatches in 48 events (47 melee, 1 missile), with the moving test a value oracle
   (`sub_00622D00_UnitIsMoving`). [C] (fn:sub_00622D00_UnitIsMoving@0x00622D00, 0x0057E011–0x0057E01F,
   run:2026-10-16-combat) The exception for a walking player (mode 2), who keeps the full chance, is read but was not

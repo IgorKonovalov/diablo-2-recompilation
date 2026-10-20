@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, save/d2s, items/quest-drops, objects, monsters/spawn, monsters/special, quests/travel]
 consumed_by: [items/quest-drops, items/cube, objects, monsters/spawn, monsters/special, quests/travel, save/d2s]
-tags: {C: 114, I: 320, L: 6}
+tags: {C: 116, I: 321, L: 6}
 updated: 2026-10-20
 ---
 
@@ -470,13 +470,20 @@ stateDiagram-v2
 | bit | set/clear | trigger and condition | site | Tag |
 |---|---|---|---|---|
 | b13, b1 | set | e8: the level-8 monster region has every monster dead (`+0x2D0` = `+0x2CC`) and every room counted (`0x0061ABF0(act, 8)` ≤ region `+0x04`); each player of the quest's private list (players who killed a hooked monster) with b0, b1 clear | 0x00590387 | [I] (fn:sub_00590260_A1Q1_MonsterDeath@0x00590260, fn:sub_00547BB0_MonRegionGet@0x00547BB0) |
-| b13, b1 | set | the same kill: party members in Act I | 0x00590175, 0x0059017F | [I] (fn:sub_00590120_A1Q1_PartyCreditMember@0x00590120) |
+| b13, b1 | set | the same kill: party members in Act I | 0x00590175, 0x0059017F | [C] for a partied member in the Rogue Encampment (run:2026-10-20-two-clients: den-a2); [I] for the act test and an unpartied player (fn:sub_00590120_A1Q1_PartyCreditMember@0x00590120) |
 | b14 | set | the same kill: fail others | 0x005900B8 | [I] (fn:sub_00590080_A1Q1_FailOthers@0x00590080) |
 | G b13 | set | the same kill | 0x00590375 | [I] (fn:sub_00590260_A1Q1_MonsterDeath@0x00590260) |
 | b0; b1 clear; steps clear | set / clear | e11 NPC 148 (`akara`) message 0x4C with b1 set | 0x0058FF11, 0x0058FF20, 0x0058FF4B | [C] (run:2026-10-18-quests2: x-talk1, h-talk1, c-talk1) |
 | w41 b13, w41 b1 | set | the same message (word `+0xE4` = 41): the respec offer | 0x0058FF2F, 0x0058FF3E | [C] (run:2026-10-18-quests2: in the saved words) |
 | b2, b3, b4 | set | StepBits by log state (2; 3; 4 when `+0x0B` ≠ 1) | 0x0058FCDD, 0x0058FCF9, 0x0058FD0A | [I] (fn:sub_0058FC90_A1Q1_StepBits@0x0058FC90) |
 
+- [C] **The party credit with two players.** In plan 0044's two-client run the host cleared the Den with the joiner
+  partied in the Rogue Encampment, and the joiner's record got b13 and b1 from the calls at 0x00590175 and 0x0059017F
+  (one game; the cases with the member in another act and not partied were not completed). (0x00590175, 0x0059017F,
+  run:2026-10-20-two-clients, [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients))
+- [I] In the same run, the host's entry into the Den set b4 (the 0x0058FD0A site) on both players' records, partied or
+  not, in four games. This is not the case list's prediction and the event behind the call is not read, so whether
+  StepBits reaches every player of the game here stays open. (0x0058FD0A, run:2026-10-20-two-clients)
 - [I] The reward also adds 1 to stat 5 of the player (`UnitAddStat(player, 5, 1, 0)` at 0x0058FF5A). The kill registers
   timer `0x00590230` (period 8) once, a log-state change only. No draw. (fn:sub_0058FDD0_A1Q1_NpcMessage@0x0058FDD0,
   fn:sub_006272B0_UnitAddStat@0x006272B0, fn:sub_00590230_A1Q1_DoneTimer@0x00590230)

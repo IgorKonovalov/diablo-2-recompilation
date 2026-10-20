@@ -63,9 +63,15 @@ finding, write for write; § 9 lists what each claim was checked against and wha
   requirements fail are not counted, and a duplicate member counts once. (fn:SETS_UpdateOnEquip@0x00663CC0,
   fn:SETS_ToggleItemAProps@0x00663A20, fn:SETS_UpdateOwnerBonusList@0x00663B40, fn:sub_00660120_SetBonusApply@0x00660120,
   fn:SETS_WornMemberMask@0x0062A370, run:2026-10-17-stats)
-- [I] A broken member (flag `0x100`) was not reached, and a full block with a `state` or `oskill` property (the full
-  Trang-Oul's, 180 lists) was taken as logged, not predicted (§ 9). (fn:SETS_WornMemberMask@0x0062A370,
+- [I] A broken member (flag `0x100`) was not reached. (fn:SETS_WornMemberMask@0x0062A370,
   fn:sub_00660120_SetBonusApply@0x00660120)
+- [C] *Raised 2026-10-20 (plan 0047 Phase 1, re-check of the kept logs):* a full block with a `state` or `oskill`
+  property is built like the others. The full Trang-Oul's 180 lists equal the Sets blocks for `n = 5` when every value
+  is stored `<< ValShift` (`mana` 100 → 25 600) and the `state` block (func 24) writes stat 98 with the compiled param
+  (`monsterset` → 176, a state: no skill or montype has that name) and the value 1 (§ 9). A reading without the shift,
+  or with param 0, would have mismatched every one of the 180. (fn:sub_00660120_SetBonusApply@0x00660120,
+  fn:PROP_WriteStat@0x0065EA50, fn:PROP_Func24_ParParam@0x0065F390, fn:sub_006336A0_PropParamCell@0x006336A0,
+  run:2026-10-17-stats)
 
 ## Leads used
 
@@ -457,9 +463,11 @@ and predicts every line from § 1–§ 8 (method and counts in the run record). 
   sequences (add func 0: 1 844, 1: 819, 2: 3 086) with 19 525 toggles; 5 749 wearer set lists, of which 5 569 equal
   the Sets blocks for `n = popcount(mask)` (Angelical Raiment n=1 830; Civerb's n=1 22, n=2 880, n=3 1 152; Immortal
   King n=1 60, n=2 228, n=3 2 317; Trang-Oul's n=4 80). The 180 full Trang-Oul's lists (n=5, the full blocks with
-  `state` and `oskill`) were taken as logged: the model does not build a `state` or `oskill` property list (a
-  tool limit, the set's mask and count were predicted). The full blocks of a set whose last member is a broken item
-  were not reached.
+  `state` and `oskill`) were taken as logged at the run; *2026-10-20 (plan 0047 Phase 1):* the checker now builds
+  them (values `<< ValShift`, the `state` block by func 24 with the compiled param), and the re-check of the 18 logs
+  predicts all 5 749 lists, the 180 included, with 0 mismatches
+  ([experiments](experiments.md#run2026-10-17-stats), *Re-check 2026-10-20*). The full blocks of a set whose last
+  member is a broken item were not reached.
   (fn:SETS_WornMemberMask@0x0062A370, fn:SETS_ToggleItemAProps@0x00663A20, fn:sub_00660120_SetBonusApply@0x00660120,
   run:2026-10-17-stats)
 - [C] **Passives** (§ 8): 8 832 refreshes; each `passivestate` list holds `passivestat` = `passivecalc` at the level it

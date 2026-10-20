@@ -112,6 +112,8 @@ fetched and compared afterwards.
   Detail: the owner's use of the town end frees both ends (§ 6).
 - [L] src:arreat-summit-basics-travel: only party members may use a player's portal. **held with refinement**
   Detail: the owner and the operator must have the same party id; the owner is exempt from this party test (§ 6).
+  Refinement (2026-10-20, `lane/mp26`): an operator in no party is refused before the ids are compared, so two
+  players both in no party do not pass (multiplayer/0001 § 6, MP26; § 6 here).
 - [L] src:arreat-summit-basics-travel: going hostile closes the player's portal. **held with refinement**
   Detail: `0x005A5E50` closes it and sets the declarer's tick; it reads as the hostility toggle (town only, level 9
   or more on both players, relation bit 8, a 60 s stamp per pair: [multiplayer/0001 § 4](../multiplayer/0001-cases.md#4-the-hostility-declaration-and-the-two-travel-gates),
@@ -225,6 +227,34 @@ OBJINIT_Waypoint (InitFn 17)                                                    
   (fn:UNIT_SetMode@0x00624690, fn:UNIT_AnimInit@0x00624390, tbl:Objects.txt:Sync, tbl:Objects.txt:FrameDelta)
 - [I] Other writers of the waypoint record: `NPC_MenuAction` after an NPC act change (40, 75, 109; § 5),
   `DurancePortalOperate` (103), and quest code `0x005B4FF0` (quests/0001 § Act IV). (fn:WAYPOINT_Set@0x00660EC0 callers)
+- [I] *2026-10-20 (plan 0047 Phase 1, static, r2/objdump):* **a field waypoint is created in mode 0 unless the player
+  arrived in its room by waypoint.** A waypoint is a DS1 preset object. `sub_00555910_PresetUnitSpawn` passes the
+  preset unit's `+0x00` (its mode: 0 for every type-2 preset unit, [drlg/0004](../drlg/0004-preset-units.md) row 7)
+  as the fifth argument of `sub_005557D0_PresetUnitDispatch` (push at 0x0055593A), which passes it on as the mode
+  argument of `sub_00555230_SUnitCreate` (push at 0x00555837). For an object, `SUnitCreate` stores it at unit `+0x10`
+  (0x005553DF–0x005553E5) before `OBJ_ServerInit` (0x005553FE) runs the `InitFn`. `g_ObjInitFns[17]` is
+  `OBJINIT_Waypoint` (`0x00731C04` holds `0x00547210`). Reading `OBJINIT_Waypoint` again: it walks the arrival list
+  at `objrgn+0x1110` and matches an entry by room pointer (0x00547231) or by the entry's point inside the room's
+  rectangle (`+0x4C`/`+0x54` in x, `+0x50`/`+0x58` in y, 0x0054723C–0x0054725D); on a match it sets mode 1 only if the
+  mode is 0 (0x0054728C), queues object event 1 at frame + (Objects `+0xDC` >> 8) (0x005472AF–0x005472CA), frees the
+  entry and zeroes the list head (0x005472EC). With no match it sets mode 2 when `sub_0061AB00_RoomIsTown` holds
+  (0x0054726A–0x00547279), and otherwise leaves the mode alone. The function never reads the waypoint record, so a
+  waypoint the player already holds is also created in mode 0 when its room is built on foot or through a warp.
+  (fn:sub_00555910_PresetUnitSpawn@0x00555910, fn:sub_005557D0_PresetUnitDispatch@0x005557D0,
+  fn:sub_00555230_SUnitCreate@0x00555230, fn:OBJ_ServerInit@0x0054F5D0, data:g_ObjInitFns@0x00731BC0,
+  fn:OBJINIT_Waypoint@0x00547210, fn:sub_0061AB00_RoomIsTown@0x0061AB00)
+- [I] *2026-10-20 (plan 0047 Phase 1):* **a route a fresh character can walk**, for the plan's 20 activations with
+  the `Sync` 0 draw. The five waypoint rows with `Sync` 0 (429, 494, 496, 511, 539) are the expansion ones by their
+  descriptions (`expansion no snow`, `baals_waypoint`, `wilderness_waypoint`, `icecave`, `temple`), and four Act V
+  field waypoints lie one warp apart below the Arreat Plateau: LvlWarp 71 from the Plateau (112) to the Crystalline Passage (113),
+  74 to the Glacial Trail (115), 74 to the Frozen Tundra (117), 71 to the Ancients' Way (118) (Levels `Vis`/`Warp`
+  columns). A save holding only the towns and the Plateau (`TravelWpArreat`,
+  `tools/d2s_recipes/quest-p47wp.json`) arrives at the Plateau by waypoint (its own waypoint takes the arrival
+  node, the room the arrival names), then takes the warps: no arrival node names the four rooms, so each waypoint is
+  created in mode 0, and operating it is an activation (§ 2 above). The ice caves' waypoint rooms are LvlPrest Def
+  1034–1037, the tundra's 953 or 954. Sessions `x-wpact5r-0` … `-5` in `tools/quest_sessions.py` (six map seeds,
+  four activations each); not run. (tbl:Levels.txt:Warp0, tbl:Objects.txt:Sync, tbl:LvlPrest.txt:Def,
+  fn:OBJINIT_Waypoint@0x00547210)
 
 ### 3. Waypoint travel
 
@@ -381,7 +411,10 @@ OBJOP_Portal (OperateFn 15, 0x00584870)                                         
   refuse if PlayerIsBusy
   if 0x00535B10(operator) ≠ 0 and the owner (0x00552B10) is not the operator: refuse   ; operator hostile to anyone
   if GetTickCount() < PlayerTickGet(operator, 0) + 5000: refuse   ; EDX = 0 at 0x005848BA: the operator's own +0x160
-  if an owner exists and is not the operator: refuse unless both have the same party id (0x00554630)
+  if an owner exists (0x00552B10 ≠ −1) and is not the operator:     ; 0x005848EB–0x00584908
+      if PartyId(operator) = 0xFFFF: refuse                            ; 0x00554630, 16-bit, 0x00584911
+      owner = GameFindUnit(game, owner id, player) (0x00552F60)
+      if owner found and PartyId(owner) ≠ PartyId(operator): refuse   ; 0x0058493A; no owner unit: no test
   partner = PortalPartnerGet(object) (objects only)
   dest = object data +4; def = LevelDefs[dest]
   if class 59 and object ≠ own portal and a partner exists and partner ≠ own portal:
@@ -390,7 +423,9 @@ OBJOP_Portal (OperateFn 15, 0x00584870)                                         
   target = partner's position and room, or (no partner) ActLevelSpot(act(dest), dest, 0, &x, &y, 3)
   object flags |= 5
   if RoomIsTown(the operator's room): raise quest event 3 (new level, operator)
-  room = COLL_FindFreeNear(target room, target, size, 0x1C09, 0); UnitTeleport(room, x, y, 0, 0)
+  room = COLL_FindFreeNear(target room, target, size, 0x1C09, 0)   ; 0x0064E7B0
+  if room is null: return 0                                       ; 0x00584B18, no refusal call (0x00553380)
+  UnitTeleport(room, x, y, 0, 0)
   walk command to (x + 5, y + 5)
   if no partner or class 60: (mode 1) queue object event 1
   elif PlayerPortalGet(operator) == partner id:            ; the owner, through the town end
@@ -398,6 +433,11 @@ OBJOP_Portal (OperateFn 15, 0x00584870)                                         
   timed state 102 on the operator for 75 frames (event 12 at frame + 75)
 ```
 
+- [C] **The party test, raised in part** (MP26, two clients): on the host's town portal, the joiner in no party was
+  refused after passing the 5 s gate, with the host also in no party (equal ids, so the `0xFFFF` test refused), and in
+  the host's party it passed and arrived in level 3; one click each, outcome only, the test itself unlogged. The
+  different-ids compare and the no-owner-unit pass stay `[I]`. (fn:OBJOP_Portal@0x00584870 0x00584911 0x0058493A,
+  run:2026-10-20-two-clients)
 - [I] The quest gate reads leveldefs `+0x00` (`QuestFlag`) or `+0x04` (`QuestFlagEx`) of the portal's destination
   (0x005849BB–0x005849C5, 0x00584A03–0x00584A19). The stock values: 39 (cow level) 26 / 40; 46, 66–73 13; 50–54, 74
   11; 100–102 21; 128–132 39. So another player's portal to the Durance needs word 21 bit 0, to the Arcane or the

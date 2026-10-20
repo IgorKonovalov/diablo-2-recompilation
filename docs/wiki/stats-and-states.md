@@ -1,8 +1,8 @@
 ---
 based_on:
-  - docs/specs/stats/README.md 2026-10-17
-  - docs/specs/stats/aggregate.md 2026-10-17
-  - docs/specs/stats/states.md 2026-10-17
+  - docs/specs/stats/README.md 2026-10-20
+  - docs/specs/stats/aggregate.md 2026-10-20
+  - docs/specs/stats/states.md 2026-10-20
 ---
 
 # Stats and states
@@ -192,9 +192,11 @@ flowchart TD
 - **The set's own bonuses** go in a list on the wearer. With `n` members worn (the item itself included) the game
   applies the partial bonus blocks in pairs: two worn give the "2 items" pair, three worn add the "3 items" pair, and
   so on, never more than the pairs up to one member short of the full set. With every member worn it also applies the
-  full-set bonuses, up to the first empty one. Over 5 749 rebuilt lists, 5 569 equal the table's blocks for that count.
-- The other 180 are the **full Trang-Oul's Avatar**, whose full bonus puts a state (`monsterset`) on the wearer and
-  grants a skill: those lists were taken as logged, so what they contain rests on the code.
+  full-set bonuses, up to the first empty one. All 5 749 rebuilt lists equal the table's blocks for that count.
+- That includes the 180 lists of the **full Trang-Oul's Avatar**, whose full bonus puts a state (`monsterset`) on the
+  wearer and grants a skill (Fire Mastery). The test run first took those lists as logged; a later re-check of the
+  same logs rebuilt them too, and they match exactly when every value is stored in the stat's internal scale (mana
+  100 kept as 25 600) and the state bonus writes the state's stat with the `monsterset` state as its parameter.
 - **Each item's own set bonuses** are switched on and off by the item's `add func`:
   with 1, each bonus belongs to one specific other member being worn; with 2, the bonuses switch on by how many other
   members are worn. Both are confirmed (19 525 switches). With `add func` empty, the bonus is part of the item's
@@ -312,9 +314,11 @@ From [states § F](../specs/stats/states.md#f-auras), confirmed except where not
   in the "no mana regeneration" state, which stops the ordinary part of the mana tick.
 - **Sanctuary's draw.** A damaging aura draws one random number on the **caster's** unit seed per hit, for the hit's
   elemental damage roll. This is confirmed: 865 drawing runs, each one's draws accounted for, and 746 consecutive runs
-  of the same caster picking up exactly where the last one left the seed. The damage itself belongs to the skills
-  phase still to come, but a rebuild that runs Sanctuary must take that draw. A kill by the aura also moves the game
-  seed when it drops an item.
+  of the same caster picking up exactly where the last one left the seed, as the project's stats checker counts them
+  (in 115 others the next run did not start where the last one left the seed, and the record does not say why; 4 runs
+  were the caster's last in their log). The
+  damage itself belongs to the skills phase still to come, but a rebuild that runs Sanctuary must take that draw. A
+  kill by the aura also moves the game seed when it drops an item.
 
 Auras turning on and off were met only 9 times (the plan asked for 50), because Prayer and Sanctuary always reached
 the player; that is a named shortfall, and the rules it rests on are confirmed on their own counts.
@@ -369,13 +373,13 @@ From the specs' open questions ([overview](../specs/stats/README.md#open-questio
 - **Named shortfalls** of the run: shrines and wells (12 operates of 50; the combat and stamina shrines, re-arming and
   a well's cure not met), state ends (123 of 300), auras turning on and off (9 of 50), and a group clear of a different
   state.
-- **The full Trang-Oul's Avatar** bonuses: their content rests on the code.
 - What schedules the **136-frame refresh**, the weapon switch's own code, and which code reads a per-level source's
   hidden value.
 - Two flags of `MonStats` that make a monster refuse timed states, the skill shrine's +2 skills, and seven `States`
   rows nothing was found to set.
 - **Skills** (Holy Shield, the timed armours and shouts, a damaging aura's hit) belong to the skills phase still to
-  come, and **party auras and hostile states** need a run with two clients.
+  come. A two-client game confirmed that a helping aura such as Might reaches another player only while the two share
+  a party; **offensive auras on a hostile player and hostile states** still need a run with two clients.
 
 ## Where to read more
 

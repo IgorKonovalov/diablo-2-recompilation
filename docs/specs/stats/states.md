@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [stats/overview, stats/aggregate, rng, combat/delivery, data/calc, objects]
 consumed_by: [combat/delivery, combat/overview, objects]
-tags: {C: 43, I: 46, L: 6}
-updated: 2026-10-17
+tags: {C: 44, I: 47, L: 6}
+updated: 2026-10-20
 ---
 
 # States: the timed apply, expiry, the group clear, the regeneration tick, auras, shrines and wells
@@ -332,6 +332,18 @@ Step notes:
 - F3. [I] **Range and filter.** A unit counts when its squared distance to the caster (subtiles) is ≤ `range²` in the
   caster's near rooms and it passes `aurafilter` (`0x583` when 0); a monster with a MonStats flag can be excluded.
   (fn:SKILLS_ForUnitsInRange@0x0056B7E0, tbl:Skills.txt:aurafilter)
+- F3. [I] **The filter on a player target** (`sub_0056B3E0_SkillUnitFilter`, called with the caster and the target):
+  bit `0x1` must be set; `0x10000` needs the two to share a party (both with a party of the same id) or be the same
+  unit, a monster standing for its owner; `0x8000` needs the caster's pair entry for the target to carry the
+  hostility bit; `0x2000` skips the caster's near rooms that are town rooms.
+  ([multiplayer/0001 § 4, MP25 prediction](../../findings/multiplayer/0001-cases.md#mp25-prediction-which-aurafilter-bits-pass-a-player-2026-10-17-lanerbs2),
+  fn:sub_0056B3E0_SkillUnitFilter@0x0056B3E0, fn:sub_00554DE0_UnitsSameParty@0x00554DE0,
+  fn:sub_00554200_UnitsHostile@0x00554200)
+- F3. [C] **`0x10000` passes a player only in the caster's party.** In plan 0044's two-client run a Paladin's Might
+  (`aurafilter` `0x12003`) passed the filter for the other player 16 times while the two shared a party, and was refused
+  17 times with neither partied and 28 times with the two hostile. Scope: one aura of the `0x12003` group, outside town;
+  the offensive auras (`0x8000`) were not run. (fn:sub_0056B3E0_SkillUnitFilter@0x0056B3E0, run:2026-10-20-two-clients,
+  [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients))
 - F3. [I] A run stops at the first blank `aurastat`, and a 0 value is never written, so an `aurastatcalc` with no stat
   and an `aurastat` with no calc (a blank calc evaluates to 0) write nothing. Holy Shield and the progressive skills
   use other skill functions (phase 3). (fn:SKILLS_EvalCalc@0x00646CA0, tbl:Skills.txt:aurastatcalc1)
@@ -403,7 +415,9 @@ Step notes:
 - H. [C] **The damaging aura's draw.** Sanctuary's run calls `sub_005CF3A0_AuraHitDo`, which calls
   `SKILLS_RollElemDamage` (at 0x005CF5D5), which draws `RNG_RangeB` (at 0x0056E132) on the caster's seed once per hit.
   The checker asserted each of the 865 drawing runs' exit seed against its entry advanced by its logged draws, and
-  746 of the next runs of the same caster entered on that exit: chained pairs in the ADR-0014 sense. The game seed
+  746 of the next runs of the same caster entered on that exit: chained pairs in the ADR-0014 sense (the checker's
+  `aura_chained_pairs`, keyed by the caster unit, since the 2026-10-20 re-check; 115 next runs entered elsewhere and
+  4 drawing runs had no next run in their log). The game seed
   moved in one aura run, when a kill dropped an item; a kill also steps the dead monster's own seeds. The draw is the
   hit's damage (phase 3), outside this spec's state code. (fn:sub_005CF3A0_AuraHitDo@0x005CF3A0,
   fn:RNG_RangeB@0x0045C3E0, run:2026-10-17-stats)
@@ -483,4 +497,5 @@ leaves the cache. (fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-10-17-stat
   (phase 3); the aura request's `+0x48` field and `SKILLS_ForUnitsInRange`'s monster exclusion flag.
 - [L] Seven States rows (6, 25, 29, 39, 116, 164, 171) have no immediate setter in the scan of stats/0002; whether
   anything sets them is open.
-- [L] Two clients (plan 0044): party auras and hostile states.
+- [L] Two clients (plan 0044): whether an offensive aura (`0x8000`) reaches a hostile player, and hostile states;
+  the party aura's `0x10000` is F3's (run:2026-10-20-two-clients).

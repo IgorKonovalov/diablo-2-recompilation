@@ -854,6 +854,29 @@ Net effect on the totals: none (no class moves; the remainders stay counted as H
 merging `main` (`5a7feb3`, the H5b review above; nothing newer), they stand: **static 567, harness 531, c-emu awaiting a batch 0, blocked 416** (d-none 283,
 d-edit 73, d-sim 28, d-2c 14, d-owner 10, d-0032 8), **deferred 2, raised 10: 1 526.**
 
+**Plan 0044 Phase 3 (`lane/p44s`, accepted with fixes at its review, 2026-10-20): the d-2c rows raised by
+run:2026-10-20-two-clients.** No batch of this plan ran them; plan 0044's two-client run and re-tag did
+([plan 0044 log](../done/0044-multiplayer-branches.md#implementation-log), Phase 3 review ruling (c);
+[multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients)). They
+leave the blocked count for the raised column, labelled *raised by plan 0044*; Phase 3 of this plan has nothing left to
+re-tag for them.
+
+- **Raised (7 statements, d-2c → raised):** tc 46 (`/players` with real players, items/tc F2); vendors 1 (the
+  `TownPlayerRemove` entry row), 10 (the shared stock, A2), 13 (`sole` with two interactors, C1), 16 (the game leave
+  and Harrogath, C2); hirelings 11 (one table per game, § C); player/creation 31 (J4 for two members).
+- **Raised in part, stay d-2c for the remainder (3):** tc 43 (the dead member and the monster killer's owner raised;
+  three or more players and the clamp at 8 remain), tc 44 (the dead member raised; a member without a room remains),
+  player/creation 6 (the 89/256 bonus raised; the 6400 bound's edge remains).
+- **Not raised (stay d-2c):** vendors 17 (MP11, the branch with an interactor, kept `[I]`: the stale byte is not
+  logged). The partial halves stay as § 3 lists them: player/creation 33's party half (MP17), tc 27's party half
+  (MP13), quest-drops 6, 12, 36 and 25's n > 1 part (MP12–MP14), the trade part of sockets 22 (MP18); all are named
+  shortfalls of plan 0044, routed to the owner-play and reverser entries.
+
+Net effect, recomputed once at the review over every reviewed batch above, after merging `main` (up to date at
+`26d8978`; the H2a totals were the last): d-2c 14 → 7, raised 10 → 17. **Static 567, harness 531, c-emu awaiting a
+batch 0, blocked 409** (d-none 283, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17:
+1 526.**
+
 **H2b (filed 2026-10-20, reverser, `lane/h2b`; review pending): 25 statements of items/affixes, tc, uniques-sets,
 properties and sockets-runewords.** run:2026-10-20-sweep-items-chain, 13 kept sessions on slot 2 (17 launches of 20),
 stock data, 0 mismatches (`sweep_h2b.py logs` 0 bad, `tc.py replay` 1 118/1 118, `items_chain.py both`, `uniques.py`
@@ -890,7 +913,8 @@ raised 17: 1 526.**
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
-  what accepting ADR-0008 would unlock now.
+  what accepting ADR-0008 would unlock now. *(2026-10-20: 7 of them raised by plan 0044, and tc 43, 44 and
+  player/creation 6 raised in part; d-2c is now 7: [§ 2.6, Plan 0044 Phase 3](#26-moves-made-by-the-batch-reviews).)*
   - Partial rows add a few more halves: the trade part of sockets 22, the party half of player/creation 33, the
     n > 1 part of quest-drops 25.
   - Six save/d2s rows (1–3, 6, 18, 19) assume that a one-client TCP/IP host counts as one client. If the review

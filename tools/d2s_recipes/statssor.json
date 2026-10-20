@@ -1,0 +1,110 @@
+{
+  "game": "expansion",
+  "progression": 15,
+  "difficulty": [
+    131,
+    131,
+    131
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "quests": "all",
+  "class": "Sorceress",
+  "seed": 4701,
+  "name": "StatsSor",
+  "stats": {
+    "strength": 400,
+    "energy": 200,
+    "dexterity": 400,
+    "vitality": 800,
+    "hitpoints": 1500,
+    "maxhp": 6000,
+    "mana": 500,
+    "maxmana": 3000,
+    "stamina": 800,
+    "maxstamina": 800,
+    "level": 85,
+    "experience": 1145236814
+  },
+  "skills": {
+    "Teleport": 1,
+    "Nova": 20,
+    "Warmth": 20,
+    "Frozen Armor": 1,
+    "Shiver Armor": 1,
+    "Chilling Armor": 1
+  },
+  "mouse": {
+    "left": "Teleport",
+    "right": "Nova",
+    "swap_left": "Teleport",
+    "swap_right": "Nova"
+  },
+  "hotkeys": [
+    "Nova",
+    "Frozen Armor",
+    "Shiver Armor",
+    "Chilling Armor"
+  ],
+  "items": [
+    {
+      "unique": "The Gnasher",
+      "equip": "rarm",
+      "roll": "max"
+    },
+    {
+      "unique": "Steelclash",
+      "equip": "larm",
+      "roll": "max"
+    },
+    {
+      "unique": "Rockstopper",
+      "equip": "head",
+      "roll": "max"
+    },
+    {
+      "unique": "Boneflesh",
+      "equip": "tors",
+      "roll": "max"
+    },
+    {
+      "unique": "Steelrend",
+      "equip": "glov",
+      "roll": "max"
+    },
+    {
+      "unique": "Goldwrap",
+      "equip": "belt",
+      "roll": "max"
+    },
+    {
+      "unique": "Gorerider",
+      "equip": "feet",
+      "roll": "max"
+    },
+    {
+      "unique": "Nokozan Relic",
+      "equip": "neck",
+      "roll": "max"
+    },
+    {
+      "unique": "Raven Frost",
+      "equip": "rrin",
+      "roll": "max"
+    },
+    {
+      "unique": "Manald Heal",
+      "equip": "lrin",
+      "roll": "max"
+    }
+  ],
+  "belt_fill": [
+    "rvl",
+    "yps",
+    "wms",
+    "mp5"
+  ]
+}
