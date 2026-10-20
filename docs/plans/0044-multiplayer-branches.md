@@ -241,3 +241,32 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `COMBAT_MeleeHitTest`, the case's entry) and row 2 (Nova). Run both kinds of attack. The other scaled rows (fire,
     cold, magic, poison) stay a shortfall of this pair, and the session must name that shortfall rather than claim
     "every scaled field".
+- **2026-10-20 — Phase 2 run (reverser, `lane/p44h` from `main` `f8de60b`, slots 1 and 2), review requested.**
+  - **Precondition:** a confirmed existing block. The owner's 2026-10-17 listing stands; before the first hosting
+    session the lane re-read without root (ufw active and enabled, input policy DROP, no rule for 4000, `lo` accepted
+    first, every rule file unchanged since 2026-09-21) and hashed the eight files; before each later session the same
+    re-read matched the hashes (18 times). No rule was changed and no root step was repeated.
+    ([record](../findings/multiplayer/experiments.md#run2026-10-20-two-clients))
+  - **The driver's live test** (the six steps of the Phase 1 checkpoint) passed before any case session: where,
+    invite and accept, follow into the Blood Moor, leave the party, hostile (the joiner's `+0x160` and pair stamp
+    written), leave. Measured: the hostile button (103, 147), the exit item (400, 260), the trade accept (320, 103), the
+    trade check (318, 461), the offer grid (97, 316). Screenshots under `workspace/logs/p44h-live-2/`. Driver fixes: the
+    PLRS line also fires on the server frame (standing players), and `"join"` names the joiner present after a rejoin.
+  - **19 sessions**, every checker 0 mismatches (`workspace/logs/p44h-run/check-run.txt`). Done-when: 417 party kills
+    with drops, 46 vendor stock events with two players, 385 party experience shares, 12 quest-bit writes with both
+    players present, 230 player against player attack events.
+  - **Reached:** MP01, MP04, MP06–MP10, MP15, MP16 (a, b, c, d, e), MP19, MP22, MP23, MP24, MP25 (the `0x10000`
+    filter), MP26, MP28 (a), MP29; partly MP11 and MP20. **Shortfalls:** MP02, MP03, MP05 (not stageable); MP12, MP13,
+    MP14, MP17 (no session; owner play not asked); MP18 (no recipe); MP21 (no lifecycle logger); MP27; MP28 (b), (c)
+    (the Den did not complete in three of four games); MP30 (no e9/e10 line); MP31, MP32 (no prediction written before
+    the run); MP23's in-town defender and MP24's server town test (the client refuses both); MP25's offensive auras.
+  - **Found on the way:** J4's member input is the x87 product of the f32 `q` and the level, not rounded to f32 (98
+    separating inputs); a withdrawal leaves `+0x160` alone (one case); the stock client refuses a declaration outside
+    town; a dead player is mode 17 with `+0xC6` bit 0 clear; the host's Den entry sets word 1 bit 4 on every player's
+    record. All in [multiplayer/0001 § 6](../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients).
+  - **Tools:** `tools/mp_check.py` (xpshare, gates, aura, quests); loggers `two-kills`, `two-combat`, `two-vendors`,
+    `two-quests`, `two-monstats`.gdb; `two-players.py` PLRK, the MP24 gate lines, `qr`, AF; `tc-party.py` the killer's
+    owner; checker changes in `combat.py` (`--no-shield`), `monstats.py` (live players from PLRS), `vendors.py` (the
+    renamed ETB tags), `tc.py` (the owner). Saves restored on both slots; both slots stopped.
+  - **Backlog:** the review request to the architect; Phase 3's re-tags to the spec-writer; the Phase 1 follow-ups
+    entry closed.
