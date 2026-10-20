@@ -104,7 +104,8 @@ Until then, quest state, prices, repair and gold amounts stay inputs or named-on
 Multiplayer branches ([plan 0044](../plans/0044-multiplayer-branches.md); ADR-0008 accepted 2026-10-16 on the port-4000
 condition) add no row: they re-tag
 existing ones. Their case list is one cross-cutting finding, [multiplayer/0001](../findings/multiplayer/0001-cases.md)
-(32 cases, Phase 1 accepted with fixes 2026-10-17); Phase 3 re-tags the owning rows.
+(32 cases, Phase 1 accepted with fixes 2026-10-17; Phase 2, run:2026-10-20-two-clients, accepted with fixes
+2026-10-20, its § 6 lists the raises); Phase 3 re-tags the owning rows.
 
 ### Out of scope (ADR-0002, ADR-0005, ADR-0014)
 

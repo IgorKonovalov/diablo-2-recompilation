@@ -9,6 +9,7 @@
 #       one per party in the party list (game+0x1D2C -> +4 first; party +0 u16 id, +4 member list
 #       {unit id, next}, +8 next party)
 #   KILL src=<source unit> sx=<x> sy=<y> slvl=<level> killer=<unit> ktype=<type> kid=<unit id> kx= ky= klvl=
+#        [otype= oid=: a monster killer's owner as sub_0058F0D0_MonsterOwner finds it (plan 0044 Phase 2, MP04)]
 #
 # Offsets (read in the pinned game.exe, plan 0011, [I]): unit +0x0C id, +0x10 mode, +0x2C path;
 # dynamic path +0x02 u16 x, +0x06 u16 y (0x006488C0, 0x00648900), +0x1C room (0x00648A80, used by
@@ -89,6 +90,13 @@ class DropByIndex(gdb.Breakpoint):
             if killer:
                 kx, ky, kl = where(killer)
                 line += " ktype=%u kid=%u kx=%d ky=%d klvl=%d" % (u32(killer), u32(killer + 0x0C), kx, ky, kl)
+                if u32(killer) == 1:
+                    # plan 0044 Phase 2 (MP04): the owner sub_0058F0D0_MonsterOwner resolves, MonsterData (+0x14)
+                    # +0x28 -> {+0x2C id, +0x30 type} as it passes them to sub_00552F60_GameFindUnit (EDX type, id)
+                    md = u32(killer + 0x14)
+                    a = u32(md + 0x28) if md else 0
+                    if a and u32(a + 0x28):
+                        line += " otype=%u oid=%u" % (u32(a + 0x30), u32(a + 0x2C))
             out.append(line + "\n")
             gdb.write("".join(out))
         except gdb.MemoryError as ex:

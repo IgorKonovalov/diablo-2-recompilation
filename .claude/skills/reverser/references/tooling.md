@@ -441,8 +441,11 @@ python3 -I tools/d2pilot.py join workspace/logs/two-N.log follow --slot 2 --time
   hostility stamps). `--slot` is the client being driven; `--me`/`--lead` are `host`, `join` or a unit id. Actions:
   `where`, `follow`, `party invite|accept|leave|hostile` (the steps files below), `leave` (Escape, exit item),
   `trade TOKEN…`. `--me` on any other command (`wp`, `npc`, `explore`) also steers by PLRS; without it, the PLR
-  line alternates between the two players' marks. The hostile button, the exit item and the trade geometry are
-  uncalibrated until the plan 0044 live test (`tools/joiner.py`).
+  line alternates between the two players' marks. The hostile button (103,147), the exit item (400,260) and the trade
+  geometry (accept box (320,103), check button (318,461), offer grid at (97,316)) were measured at the plan 0044
+  Phase 2 live test (`tools/joiner.py`). Quote `give:` tokens: `>` is a shell redirect. A character with every
+  difficulty open needs `two-host-normal.steps` (the Select Difficulty box); the joiner joins the host's difficulty.
+  PLRS also fires on the server frame (`0x0052D870`), so standing players still update.
 - gdb goes on the **host**: it runs the server game, so `TC_ResolveDrops` and the party count run there (every
   resolver call of the two-client runs was logged by the host's gdb). The joiner is a plain client.
 - Each slot has its own driver pidfile (`d2run-driver.pid` for slot 0, `d2run-driver-slot1.pid` for slot 1), and
