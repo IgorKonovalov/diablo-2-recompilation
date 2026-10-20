@@ -153,6 +153,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-20 | `lane/p38s6` | 0038 P3 qualification check | spec-writer | 85 770 | 18 | 5 | no slot | — (log only, no cluster qualified; merged directly) | — |
 | 2026-10-20 | `lane/wiki5` | 0042 wiki: quests and travel | wiki | 167 297 | 35 | 12 | — | accept with fixes | 17: overclaim 8, misread 5, miscount 1, omission 1, stale cross-reference 1, other 1 |
 | 2026-10-20 | `lane/wiki5` review | 0042 wiki: quests and travel | architect-review | 161 239 | 41 | 9 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/p45a` | 0045 P0 | archivist | 285 972 | 103 | 26 | no slot | accept with fixes | 3: miscount 2, other 1 |
+| 2026-10-20 | `lane/p45a` review | 0045 P0 | architect-review | 137 795 | 40 | 11 | — | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
