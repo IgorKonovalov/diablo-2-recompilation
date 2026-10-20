@@ -86,6 +86,9 @@ class Follow(unittest.TestCase):
         self.assertEqual(joiner.follow_step(unit(1, 100, 100), unit(2, 140, 120)), ("move", 10, 5))
         self.assertEqual(joiner.follow_step(unit(1, 100, 100), unit(2, 60, 100), hop=12), ("move", -12, 0))
         self.assertEqual(joiner.follow_step(unit(1, 0, 0, lid=1), unit(2, 0, 0, lid=2)), ("level", 1, 2))
+        # --cross (plan 0044 Phase 2): an outdoor border is crossed like any other move
+        self.assertEqual(joiner.follow_step(unit(1, 100, 100, lid=2), unit(2, 140, 100, lid=3), cross=True),
+                         ("move", 10, 0))
         self.assertEqual(joiner.follow_step(None, unit(2, 0, 0))[0], "wait")
         self.assertEqual(joiner.follow_step(unit(1, None, None), unit(2, 0, 0))[0], "wait")
 
