@@ -68,7 +68,7 @@ cases that return; a plain `[I]` is a code reading the emulator does not reach. 
   `sub_0056BD10_NearestUnitInRange(0, 0, reach + 4, 0x20003, −1, 0)`. Do 64 (Sacrifice) finds the caster's queued hit
   on the target (`sub_0057D690_QueuedHitFind`; none → 1) and ends at `COMBAT_ApplyDamage(game, caster; caster, 0,
   &packet)` with `{+0x00 0x1000, +0x08 and +0x4C = MulDiv(min(queued +0x08, target stat 6), calc2, 100)}`; do 79
-  (Conversion) sets bit 6, and with a target and its queued hit on a non-hireling monster of alignment 0 ends at
+  (Conversion) sets bit 6, and with a target and its queued hit on a type-1 target with `HirelingType` and `0x006259B0` 0 ends at
   `0x0056E2F0(ECX target, EDX 0xB)` inside `0x005D02B0`, otherwise at `COMBAT_DeliverQueued(game, caster; target, 0)`.
 - [C] (ADR-0021; § 5) **Charge and the missiles.** Start 31 (Charge, SerpentCharge) refuses without a used skill or a
   caster path; with a target it ends at `InMeleeRange(caster, target, 0)`; without one it writes 6, 0 and 7 into the
@@ -367,7 +367,7 @@ return 1;
   into the packet's `+0x0C`, the elemental roll, `MonAttackStats` for a monster, `ResolveAndQueue(SrcDam)`,
   `DeliverQueued` and `sub_00621E40_UnitSetOverlayStat(target, 147, 0)`; returns 1. (0x005CF956–0x005CFD19)
 - [C] (ADR-0021; ends at `MissileCreate` @0x005D00ED) **Do 73** (`0x005D0040`): the record (→ 0); `m =
-  SrvMissileByCharge(ECX caster, EDX id)` (skills/0008 § 6), `m ≤ 0` → 0 (`jle`, 0x005D008A: class 0 refused);
+  SrvMissileByCharge(ECX caster, EDX id)` (skills/0008 § 7), `m ≤ 0` → 0 (`jle`, 0x005D008A: class 0 refused);
   `SKILLS_GetTargetXY` (none → 0); bit 6; `MissileCreate(ECX game, EDX &block)` with the 0x5C-byte block `{+0x00 0x20,
   +0x04 caster, +0x08 caster, +0x10 m, +0x1C x, +0x20 y, +0x2C id, +0x30 lvl}` (compared by content; `+0x14`/`+0x18`
   stay 0). (run:2026-10-20-cat-emu-pal `move_pal`, fn:sub_005D0040_SkillDo73BlessedHammer@0x005D0040)
