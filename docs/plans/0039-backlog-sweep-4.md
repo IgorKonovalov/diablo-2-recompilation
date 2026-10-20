@@ -30,7 +30,7 @@ harness.
   phase, or are out of scope.
 - Questions about rooms that are released and re-activated go to [plan 0040](done/0040-drlg-room-lifecycle.md); the act
   and quest fields of `rng/seeds` go to [plan 0042](0042-quests-travel.md); gold amounts go to
-  [plan 0043](0043-items-economy.md).
+  [plan 0043](done/0043-items-economy.md).
 - Method precedent: [plan 0015](done/0015-backlog-sweep.md), [plan 0020](done/0020-backlog-sweep-2.md) and
   [plan 0027](done/0027-backlog-sweep-3.md).
 

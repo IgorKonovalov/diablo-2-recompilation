@@ -476,7 +476,7 @@ F7. ItemRepairAll(game, item, player)  ; repairs ONE item despite the name      
 Step notes:
 
 - F1. [I] The test reads the item's **own** ItemTypes row. On stock data the `Equiv` closure gives the same set of
-  repairable bases ([plan 0043](../../plans/0043-items-economy.md) Phase 0 review), so the choice has no stock effect;
+  repairable bases ([plan 0043](../../plans/done/0043-items-economy.md) Phase 0 review), so the choice has no stock effect;
   the 13 `nodurability` crossbows of a `Repair` type are refused unless charged, and so are bows and `tpot`.
   (0x0062E6B2–0x0062E6D7, tbl:ItemTypes.txt:Repair, tbl:Weapons.txt:nodurability)
 - F3. [C] In 14 purchases checked, `PayGold`'s amount is a multiple of the purchase price. The permanent-stack count
@@ -977,7 +977,7 @@ so the amount is `5 + 19 = 24`, unchanged by `mul=`. G7: the killer's stat 79 is
   [monsters/stats § A](../monsters/stats.md#a-muldiv-and-monlvlstats), [hirelings § E](../hirelings/README.md#e-an-entry-hireling_rollentry);
   downstream [items/vendors § I](vendors.md#i-prices-and-repair), [hirelings § K](../hirelings/README.md#k-named-only),
   [items/quest-drops D6](quest-drops.md#d6-baals-first-kill), [combat/delivery § F](../combat/delivery.md#f-the-boundary-at-delivery).
-- Plan: [0043](../../plans/0043-items-economy.md).
+- Plan: [0043](../../plans/done/0043-items-economy.md).
 
 ## Open questions
 

@@ -4,7 +4,7 @@ to: archivist
 date: 2026-10-19
 status: open
 context:
-  - ../plans/0043-items-economy.md#implementation-log
+  - ../plans/done/0043-items-economy.md#implementation-log
   - 2026-10-18-reverser-archivist-document-the-plan-0042-part-2-quest-recipes.md
   - 2026-10-17-reverser-archivist-pin-the-plan-0042-save-loads.md
 resolution: ""

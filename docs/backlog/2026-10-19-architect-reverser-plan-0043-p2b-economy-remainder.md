@@ -4,7 +4,7 @@ to: reverser
 date: 2026-10-19
 status: done
 context:
-  - ../plans/0043-items-economy.md#implementation-log
+  - ../plans/done/0043-items-economy.md#implementation-log
   - ../findings/items/0011-economy.md#phase-2-runtime-results-run2026-10-17-economy
 resolution: "Done by lane/p43b (run:2026-10-19-economy2), reviewed 2026-10-19: accept with fixes (plan 0043 log)."
 ---
