@@ -2346,6 +2346,10 @@ stays open). Party credit and every two-client case stay plan 0044's. (run:2026-
 - ~~What `0x0056EDE0` creates with arguments `0x120` (the stones), `0x14C` (the Countess's chests) and 625 (Baal's
   death).~~ Missiles 288 `cairnstones`, 332 `towerchestspawner` and 625 `baalfx control` (§ 7, read 2026-10-20). What
   their server do-functions (17, 18, 36) make is not read.
+  *2026-10-20 (plan 0046 batch 9a):* do 17 (288) and do 18 (332) are read in
+  [skills/0004 §§ 7, 8](../skills/0004-missile-do-1-18.md#7-do-8-10-17-and-sub_005a9820_misssubnearreseed): the
+  stones' sky missiles and the Tristram portal (level `Param4` 38), the Countess chests' drop and the gold piles; do 36
+  (625) is batch 9b's. (fn:sub_005AF240_MissDo17CairnStones@0x005AF240, fn:sub_005AF300_MissDo18ChestSpawner@0x005AF300)
 - [L] The descriptor's `+0x08` (100 or 0) has no reader in the code read.
 - [L] The AI states that call `0x00599420` and `0x0059C330` (Act II), and the game-type 3 test in `0x0059EA20`.
   ~~The missiles column behind field `+0x96` used by the staff timer.~~ `Range` (Missiles `+0x96`, s16; answered by
