@@ -2,14 +2,14 @@
 from: reverser
 to: archivist
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../findings/skills/0002-missiles.md
-  - ../tables/Missiles.md
-resolution: ""
+  - ../../findings/skills/0002-missiles.md
+  - ../../tables/Missiles.md
+resolution: "Done 2026-10-20 (archivist, lane/p46a, plan 0046 P0): 43 Missiles meaning cells raised to skills/0002's [I] with section links (LastCollide, SrcTown, Holy reworded to the code; 64 948 open question struck; HitClass byte from § Functions); KnockBack-as-byte not written, no sentence in skills/0002 [../tables/Missiles.md#columns]"
 ---
 
-Not blocking. [skills/0002](../findings/skills/0002-missiles.md) (plan 0045 P1.2) anchors the server readers of these Missiles columns; please link them in [Missiles](../tables/Missiles.md) and raise their meanings from `[L]` to the finding's `[I]` (do not copy the finding's prose; point at the section):
+Not blocking. [skills/0002](../../findings/skills/0002-missiles.md) (plan 0045 P1.2) anchors the server readers of these Missiles columns; please link them in [Missiles](../../tables/Missiles.md) and raise their meanings from `[L]` to the finding's `[I]` (do not copy the finding's prose; point at the section):
 
 - § 2 (creation): `Vel`, `VelLev` (`(VelLev · lvl) / 8 + Vel`, then `<< 8` and × 75/100), `MaxVel` (`<< 8`), `Accel` (raw, every fifth step), `Range`/`LevRange` (lifetime in frames), `Activate` (unit collision from that frame), `SubLoop`/`SubStart`/`SubStop` (loops on request), `CollideType` (the missile unit's mode; index of `g_MissileCollideTypes`), `Collision`, `CanDestroy`, `CanSlow` (state 87, stat 161), `LastCollide` (**the code reads it as "skip the last unit hit", the owner first**, not the table's plain "keeps colliding on its last frame"), `DamageRate` (stat 327).
 - § 3 (damage at creation): `Skill`, `MissileSkill`, `SrcDamage` (`0xFF` = no weapon share for a skill missile), `SrcMissDmg`, `Half2HSrc`, `ApplyMastery`, `Holy` (bits 1/2/4 = bypass flags 0x100/0x200/0x400), `Pierce` (count from stat 328).

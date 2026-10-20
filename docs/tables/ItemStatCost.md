@@ -84,10 +84,10 @@ slot but the sign only for those three; the save columns' widths and signs are w
 | `dgrpstrpos` | 2 distinct keys, 351 blank | `+0x042` u16 string-table key | group text, positive | `.tbl` key | [C] |
 | `dgrpstrneg` | 2 distinct keys, 351 blank | `+0x044` u16 string-table key | group text, negative | `.tbl` key | [C] |
 | `dgrpstr2` | blank in every row | `+0x046` u16 string-table key (5382 = blank in every record) | second group text | `.tbl` key | [C] (slot by stride) |
-| `itemevent1` | 6 named, 338 blank | `+0x048` u16 `events` row index, blank `0xFFFF` | event that triggers `itemeventfunc1` | `events` `event` | [C] |
-| `itemevent2` | 3 named, 348 blank | `+0x04A` u16 `events` row index, blank `0xFFFF` | event that triggers `itemeventfunc2` | `events` `event` | [C] |
-| `itemeventfunc1` | 0..31, 19 distinct, 338 blank | `+0x04C` u16 | event handler | — | [C] |
-| `itemeventfunc2` | 0..21, 11 distinct, 348 blank | `+0x04E` u16 | event handler | — | [C] |
+| `itemevent1` | 6 named, 338 blank | `+0x048` u16 `events` row index, blank `0xFFFF` | event that triggers `itemeventfunc1`; `[I]` the item stat registers a `g_StatEventFuncs` handler record for this event on the unit ([skills/0003 § 3](../findings/skills/0003-handlers.md#3-the-stat-event-handlers)) | `events` `event` | [C] |
+| `itemevent2` | 3 named, 348 blank | `+0x04A` u16 `events` row index, blank `0xFFFF` | event that triggers `itemeventfunc2` (as `itemevent1`, `[I]`) | `events` `event` | [C] |
+| `itemeventfunc1` | 0..31, 19 distinct, 338 blank | `+0x04C` u16 | event handler; `[I]` the `g_StatEventFuncs` (`0x007325B0`) number (the table holds 31 non-null handlers, [skills/0003 § 3](../findings/skills/0003-handlers.md#3-the-stat-event-handlers)); 31 is `STATEVENT_Reanimate` (`0x005C09E0`), whose only row is stat 155 `item_reanimate` ([items/0002 § Plan 0049 Phase 1](../findings/items/0002-quality-roll.md#a-0x005c09e0-is-itemeventfunc-31-the-reanimate-property)) | — | [C] |
+| `itemeventfunc2` | 0..21, 11 distinct, 348 blank | `+0x04E` u16 | event handler (as `itemeventfunc1`, `[I]`) | — | [C] |
 | `op` | {0 ×275, 1 ×2, 2 ×33, 4 ×2, 5 ×2, 6 ×34, 7 ×2, 8, 9, 11 ×2, 13 ×5} | `+0x054` u8 | how this stat modifies `op stat1..3` | — | [C] |
 | `op param` | {0 ×322, 1 ×4, 3 ×33} | `+0x055` u8 | shift or divisor of the op | — | [C] |
 | `op base` | `level` ×37, 322 blank | `+0x056` u16 stat index, blank `0xFFFF` | stat the op scales by (character level) | `itemstatcost` `Stat` | [C] |

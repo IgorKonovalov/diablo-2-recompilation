@@ -6,7 +6,7 @@ status: done
 context:
   - ../../plans/0045-skills-missiles-machinery.md#phase-1--read-the-machinery
   - ../../tables/Skills.md#dispatch-plan-0045-phase-0
-resolution: "Remaining parts answered by plan 0045 P1.3 (lane/p45h) in [skills/0003](../../findings/skills/0003-handlers.md): tier-A start, do and missile functions (§§ 5–6), the progressive numbers 36–41 and 143 through g_SkillDoFuncs (§ 1; P1.1 § 12 had the shared table and its bound), the start-check columns TgtPlaceCheck, repeat, weapsel and leftskill (§ 12; InTown, startmana, usemanaondo, AttackNoMana and the item-type columns were P1.1's); column anchors sent to the archivist ([entry](../2026-10-20-reverser-archivist-skills-columns-anchored-by-skills-0003.md))."
+resolution: "Remaining parts answered by plan 0045 P1.3 (lane/p45h) in [skills/0003](../../findings/skills/0003-handlers.md): tier-A start, do and missile functions (§§ 5–6), the progressive numbers 36–41 and 143 through g_SkillDoFuncs (§ 1; P1.1 § 12 had the shared table and its bound), the start-check columns TgtPlaceCheck, repeat, weapsel and leftskill (§ 12; InTown, startmana, usemanaondo, AttackNoMana and the item-type columns were P1.1's); column anchors sent to the archivist ([entry](2026-10-20-reverser-archivist-skills-columns-anchored-by-skills-0003.md))."
 ---
 
 Not blocking; for plan 0045 P1.1 (`lane/p45r`) and P1.2, from the Phase 0 review (`lane/p45a`, 2026-10-20). Phase 0 documented the dispatch columns ([Skills § Dispatch](../../tables/Skills.md#dispatch-plan-0045-phase-0), [Missiles](../../tables/Missiles.md), [PetType](../../tables/PetType.md)); its three surprises are already in Phase 1's *Done when*. Points to pick up:

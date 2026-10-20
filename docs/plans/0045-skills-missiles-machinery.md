@@ -352,7 +352,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   even with no critical stat; the `0x40` mark has no stock missile reader (`CollideType` 7 unused) and a second writer
   (do 3); `ExplosionMissile` has no server reader by the scan. Backlog: review request
   [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p45m-review-plan-0045-p1-2-missiles.md), the Missiles
-  columns [to the archivist](../backlog/2026-10-20-reverser-archivist-missiles-columns-anchored-by-skills-0002.md), the
+  columns [to the archivist](../backlog/archive/2026-10-20-reverser-archivist-missiles-columns-anchored-by-skills-0002.md), the
   collision, combat and economy inputs
   [to the spec-writer](../backlog/archive/2026-10-20-reverser-spec-writer-missile-path-inputs-for-drlg-collision-combat-econ.md);
   [the archivist's fields entry](../backlog/archive/2026-10-20-archivist-reverser-missiles-fields-named-by-the-table-doc.md)
@@ -467,7 +467,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (event entry points, value oracles, modelled set, log windows, chaining kinds), for the review's ruling. Backlog:
   review request [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p45h-review-plan-0045-p1-3-handlers.md),
   inputs [to the spec-writer](../backlog/2026-10-20-reverser-spec-writer-skills-0003-handlers-inputs-for-combat-rng-seeds.md),
-  column anchors [to the archivist](../backlog/2026-10-20-reverser-archivist-skills-columns-anchored-by-skills-0003.md);
+  column anchors [to the archivist](../backlog/archive/2026-10-20-reverser-archivist-skills-columns-anchored-by-skills-0003.md);
   closed: [the P0 notes entry](../backlog/archive/2026-10-20-architect-reverser-plan-0045-p0-review-notes-for-p1-1.md)
   and [the state-52/event-9 entry](../backlog/archive/2026-10-17-reverser-reverser-a-read-which-call-applies-the.md).
   Open: `Unit+0x38`, a new missile's first frame, the unit filter for a missile unit, the fifth unit-event list.

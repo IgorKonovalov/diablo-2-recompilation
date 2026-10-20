@@ -47,7 +47,26 @@ function a stock row uses on the machinery of plan [0045](0045-skills-missiles-m
 - **What:** read each function of a batch, then raise what the emulator can: one lane and one review per batch.
 - **Batches** (counts from Phase 0): one per character class (seven), one for the monster-only skill functions, one
   for the missile do, hit and damage functions, one for the item, shrine and object callers of skills (`ctc`,
-  charges, shrine missiles). Ten batches.
+  charges, shrine missiles). Ten batches. *Filled 2026-10-20 (Phase 0, `lane/p46a`)*: entries of the start, do and
+  missile tables by the rule of [Skills § Function index](../tables/Skills.md#function-index-plan-0046-phase-0)
+  (`skills_survey.py --index`, `ix_batch_*`), with the tier-A entries plan 0045 already read in brackets:
+  1. `ama` 17 (start 7, do 10; tier A 4);
+  2. `sor` 18 (start 4, do 14; 5);
+  3. `nec` 19 (start 7, do 12; 3);
+  4. `pal` 15 (start 5, do 10; 3);
+  5. `bar` 19 (start 7, do 12; 2);
+  6. `dru` 16 (start 3, do 13, two of them States `srvactivefunc` 145 and 146; 2);
+  7. `ass` 29 (start 7, do 22, the seven `srvprgfunc` entries among them; 5);
+  8. `monster` 70 (start 20, do 50, `srvactivefunc` 147 among them; 0);
+  9. `missile` 97 (do 34, hit 50 with row 568's uncalled 64 948, damage 13; 10);
+  10. `item` 2 (do 113 for the scroll and book rows, do 151 for Chain Lightning's item cast; 0), plus the callers,
+     which are code paths and not function numbers (the stat-event handlers 20, 21 and 30, charges, the shrine
+     missiles of `g_ShrineEffects` 19, 21, 22, the object and quest `MissileCreateAt` sites, skills/0002 § 2).
+
+  The eight `general` entries (rows 0–5: start 1, 2, 3, 65, do 1, 3, 4, 5) are tier A but Unsummon's start 3 and do 4,
+  which this phase proposes to read with batch 10. 310 entries in all, 40 reached by tier A. Sizes for the review: the
+  `monster` (70) and `missile` (97) batches are three to five times a class batch, more than one lane run of about
+  4 h each; this phase proposes to split them (monster by start/do, missile into do and hit/damage) at the review.
 - **Outputs:** `docs/findings/skills/0003-catalogue.md` (one section per batch, one sub-section per function);
   `re/symbols.csv` rows (subsystem `skills/catalogue`); emulation cases under `tools/` with their memory specs.
 - **Done when**, per batch: each function has, with addresses and `[I]` or better: its params and calcs read, the
@@ -97,3 +116,15 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-20 — Drafted (architect, `lane/plans45`).** Status `proposed`, with ADR-0020 (proposed).
 - **2026-10-20 — Approved (owner, via the orchestrator).** Plans 0045–0049 and ADR-0020 approved as proposed; the run
   order of the [plans index](README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049) is the current queue.
+- **2026-10-20 — Phase 0 landed for review (archivist, `lane/p46a`, no harness, no Ghidra).** The function index:
+  `tools/skills_survey.py --index`, [Skills § Function index](../tables/Skills.md#function-index-plan-0046-phase-0)
+  (start table 64 entries; do table 149: `srvdofunc` 138, `srvprgfunc` 7, `ItemEffect` 2, States `srvactivefunc` 3)
+  and [Missiles § Function index](../tables/Missiles.md#function-index-plan-0046-phase-0) (do 34, hit 50, damage 13),
+  each entry with its rows, row kinds, the `Param`/`calc` cells its rows fill, tier A and batch; `[C]` as data. The
+  batch list above is filled (310 entries, 40 reached by tier A). **`skills` baseline changed** (rerun of the survey):
+  46 new `ix_*` keys, the old keys unchanged; `excel_layout` unchanged. Four reverser entries closed: the Skills,
+  Missiles, ItemStatCost, States, PetType and MonStats meanings skills/0001–0003 anchor raised to their `[I]`, and
+  MonPlace's row-24 sentence corrected. Surprises, in the batch list and the review request: the `monster` (70) and
+  `missile` (97) batches outsize one lane run (a split proposed); `ItemEffect` 36 is Claws of Thunder's progressive
+  entry 36; no Skills row has `srvdofunc` 146, which skills/0003 names so. Review request
+  [to the architect](../backlog/2026-10-20-archivist-architect-lane-p46a-review-plan-0046-phase-0.md).

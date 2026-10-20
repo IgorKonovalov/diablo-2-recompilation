@@ -2,14 +2,14 @@
 from: reverser
 to: archivist
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../findings/skills/0001-dispatch.md
-  - ../tables/Skills.md
-resolution: ""
+  - ../../findings/skills/0001-dispatch.md
+  - ../../tables/Skills.md
+resolution: "Done 2026-10-20 (archivist, lane/p46a, plan 0046 P0): the Skills dispatch and Columns meanings cite skills/0001's sections as [I] (start/do tables and bounds, costs, delay, start checks, item-cast columns, hit columns and calc1..4, SrcDam, Kick, anim 18), InGame's slot raised to [I]; MonStats SkillDamage from § 13 [../tables/Skills.md#dispatch-plan-0045-phase-0]"
 ---
 
-Plan 0045 P1.1 anchored the meaning of several [Skills](../tables/Skills.md) columns in code; Phase 0's § Dispatch can
+Plan 0045 P1.1 anchored the meaning of several [Skills](../../tables/Skills.md) columns in code; Phase 0's § Dispatch can
 link them as `[I]` instead of `[L]` (not blocking; Phase 0 is still to run):
 
 - `srvstfunc` → `g_SkillStartFuncs` `0x00732140` (bound 0x5B), `srvdofunc`, `srvprgfunc1..3` and `ItemEffect` (> 1)
