@@ -522,7 +522,18 @@ nothing to a tag.
 - [L] src:arreat-summit-experience: on death, 5 % (Nightmare) or 10 % (Hell) of the difference between the current
   and the next level's experience is lost, never a level. **held**
   Detail: `DeathExpPenalty` (0, 5, 10) in `PLAYER_DeathExpLoss`. The page's **75 % recovery** with the corpse is
-  **not covered**: a gap (no code read for it), listed under Open questions.
+  **not covered**: a gap (no code read for it), listed under Open questions. *Superseded 2026-10-20 by the next two
+  verdicts (page re-fetched, plan 0049).*
+- [L] src:arreat-summit-experience (re-fetched 2026-10-20, plan 0049 Phase 1): "if you recover your corpse at the
+  location of its demise, you can regain 75% of the experience points you lost." **held with refinement**
+  Detail: the corpse gets 75 % of the amount actually taken (the kept amount after the `T(L − 1) + 1` floor), with an
+  integer `·75/100` that switches to `(v/100)·75` above `0x100000`, and only its owner gets it back
+  ([§ Death loss and the corpse](#death-loss-and-the-corpse-75--comes-back)). The page names no player-killer case; in
+  the code a player killer, or a monster owned by a player, takes no loss at all (`PlayerDeathExpLossGate`).
+  "At the location of its demise" is not a condition in the code read: the pickup tests the owner, not the place.
+- [L] src:arreat-summit-experience (re-fetched 2026-10-20): if you "Save and Exit" to recover your body in town, "you
+  will not regain any of your lost experience." **held** Detail: the corpse record of the save carries no stats, and the
+  loader re-creates the corpse without writing stat 13 ([§ Plan 0049 Phase 1](#plan-0049-phase-1-2026-10-20-static) (d)).
 - Starting items and starting skills: no page that could be fetched lists them (search snippets are not leads under
   ADR-0007). § 4 and § 5 stand on the code and the table only.
 
@@ -737,8 +748,7 @@ run, so every statement here is inferred.
 - The 75 % that § 10 records from a community page as a gap matches this reading. The *Leads used* verdict there is
   not changed here, because this batch did not re-fetch the page (ADR-0007); the code reading stands on its own. The
   two points a reimplementer needs are that the base is the experience actually taken and that a player killer takes
-  none. Not read: whether a corpse saved with the character keeps its stat 13 (save/0001 says the corpse record's first
-  u32 is not initialised).
+  none. A corpse saved with the character does not keep its stat 13: [§ Plan 0049 Phase 1](#plan-0049-phase-1-2026-10-20-static) (d).
 
 ### Status bit `0x20` (and `0x40`) on the character screen
 
@@ -752,26 +762,105 @@ run, so every statement here is inferred.
   fn:sub_0043C540_StubBuild@0x0043C540)
 - [I] **`0x04` and `0x40`** are toggled by `sub_00430730_CreateToggleHardcore` (`xor 0x04`) and
   `sub_00430750_CreateToggleLadder` (`xor 0x40`). The class-select handler also sets `0x40` by default when the screen's
-  mode word `0x007795EC` is 1. That word is set at 0x00435B31 for a client `+0x35E` value of 2, the Battle.net path by
-  its context; not read further. The three callbacks are referenced only from the screen's control table
+  mode word `0x007795EC` is 1. That word is set at 0x00435B31 for a client `+0x35E` value of 2. Its writers are read in
+  [§ Plan 0049 Phase 1](#plan-0049-phase-1-2026-10-20-static) (c): 1 is the *Battle.net* (realm) button, so the
+  default ladder bit is a realm path's. The three callbacks are referenced only from the screen's control table
   (`0x0070B0D0`…`0x0070B4F0`, `tools/xrefscan.py`). (fn:sub_00430730_CreateToggleHardcore@0x00430730,
   fn:sub_00430750_CreateToggleLadder@0x00430750)
 - The run's counts agree with this (bit `0x20` in all 19 expansion stubs of classes 0–4 and in none of the 8 classic
   ones, § Plan 0038 batch S3a). They do not show which control set it, so the statement stays inferred.
 
+## Plan 0049 Phase 1 (2026-10-20, static)
+
+Static readings for the plan 0039 P1c residues (c) and (d) and the S1a creation question ([plan 0049](../../plans/done/0049-backlog-sweep-5.md)
+Phase 1, `lane/p49r`). No game run. The mode-word writers and the button records are printed by `tools/sweep_p49r.py
+tables`; the string indices are resolved with `tools/tbl.py index workspace/merged/data/local/lng/eng spx <index>`
+(kept outputs under `workspace/logs/p49r/`, manifest `p49r-manifest.txt`).
+
+### (c) The front-end mode word `0x007795EC`
+
+- [I] It has 11 writers (`mov ds:0x7795ec, …`, 0x00431A40 … 0x00435DB4). Five are main-menu button callbacks, identified by their records in the front-end control
+  tables. Each record holds a string index 8 bytes before its callback pointer:
+
+  | callback | records | string | value |
+  |---|---|---|---|
+  | `0x00435CD0` | `0x00708EE0`, `0x00709030` | 5106 *SINGLE PLAYER* | 0 |
+  | `0x00435D30` | `0x00708F10`, `0x00709060` | 5107 *BATTLE.NET* | 1 |
+  | `0x00435D10` | `0x0070BD00` | 5115 *OPEN BATTLE.NET* | 3 |
+  | `0x00431A40` | `0x0070BD30` | 5116 *TCP/IP GAME* | 2 |
+  | `0x00435D80` | `0x0070BE50` | 5118 *HOST GAME* | 2 (0x00435DB4) |
+
+  (0x00435CD0, 0x00435D30, 0x00435D10, 0x00431A40, 0x00435DB4)
+- [I] The front-end entry `0x004359D0` sets the word from the client's start mode `+0x35E`, which matches the
+  buttons:
+  - 2 → 1 (0x00435B31), 4 → 3 (0x00435B59), 3 → 2 (0x00435B90);
+  - otherwise 0 (0x00435C19), or, with client `+0x35D` set, `1 + 2·(registry "Skip To Open" ≠ 0)` (0x00435BF8–0x00435C04).
+  - The TCP/IP address dialog (the `LastTcpIp` value, `0x00434790`) writes 2 (0x0043491D).
+
+  (0x00435B31, 0x00435C04, 0x0043491D)
+- So the class-select handler's default ladder bit `0x40` (it sets `0x40` when the word is 1) is the *Battle.net* (realm)
+  path's. In single player, TCP/IP and Open Battle.net the default is off and only the ladder checkbox sets it. The
+  realm and ladder meanings are those of the button strings; the bit's ladder meaning stays as § Status bit gives it.
+  (fn:sub_00433BF0_CreateClassSelect@0x00433BF0, fn:sub_00430750_CreateToggleLadder@0x00430750)
+
+### (d) A saved corpse loses its experience
+
+- [I] `D2S_WriteCorpses` writes 12 bytes per corpse (an uninitialised u32, then two positions) and the corpse's item
+  list. It writes no stat (save/0001). `D2S_ReadCorpses` re-creates each corpse (0x0056A91E–0x0056A9D1) as follows:
+  - `SUnitCreate` makes a type-0 unit in mode `0x11`;
+  - the player data's `+0x9C` is set, and the corpse is named after the client;
+  - its seed is initialised, and state 7 (`playerbody`) is set (`STATE_Set(u, 7, 1)`, 0x0056A968);
+  - the inventory owner is set and the item list is read (`D2S_ReadItemList`, 0x0056A9A2);
+  - the corpse is linked to the player's inventory, and packet `0x8E` is sent.
+
+  None of the 13 calls in that loop writes a stat. So the re-created corpse has no stat 13.
+  (fn:D2S_WriteCorpses@0x005697F0, fn:D2S_ReadCorpses@0x0056A830, fn:sub_00555230_SUnitCreate@0x00555230,
+  fn:STATE_Set@0x00639DB0, fn:D2S_ReadItemList@0x0056A7E0)
+- [I] `PLAYER_CorpseCreate`, the only writer of a corpse's stat 13 read so far, is called only from
+  `sub_0057FCA0_PlayerDeathModeEnd` (0x0057FD1C). When the owner picks up a re-created corpse, `PLAYER_CorpsePickup`
+  finds stat 13 at 0 and adds no experience. So the 75 % share is lost once the character is saved with the corpse
+  on the ground, which is what the community page says for *Save and Exit* (§ 10, re-fetched).
+  (fn:PLAYER_CorpseCreate@0x0057F700, fn:PLAYER_CorpsePickup@0x0057FB70)
+
+### The S1a creation question: affix ids with an empty property list
+
+- [I] **The 48 magic items.** `sub_00534C70_StartItemCreate` creates each starting item with
+  `ITEMS_CreateForStore(…, quality 2, …)` (0x00534CA0). Then it takes the item's main property list (state 0, flags
+  `0x40`; `0x006257D0(item, 0, 0x40)` at 0x00534CB5), unlinks it and frees it (`UNIT_UnlinkStatList`,
+  `STATLIST_FreeIfPlain`, 0x00534CC2). The ring, amulet, jewel and small charm of the edited CharStats have ItemTypes
+  `Magic` = 1, so `ITEMS_CreateForStore` turns the quality-2 request into a magic item
+  ([items/0002](../items/0002-quality-roll.md): `rin`, `amu`, `jew`, `cm1`–`cm3`, quality 4). The affixes are picked
+  and their properties written to the main list, which `StartItemCreate` then frees. The item keeps its affix ids, and
+  the save writes them over an empty main list: the 40 `qit*` samples and the 8 d2s-io saves, all at ilvl 1 (the
+  player's level). Slot 0's `item_singleskill` list is made after the free, so a slot-0 item would carry that one stat.
+  (fn:sub_00534C70_StartItemCreate@0x00534C70, fn:ITEMS_CreateForStore@0x00559CE0,
+  fn:sub_00557450_ItemCreateByQuality@0x00557450, fn:UNIT_UnlinkStatList@0x006277E0,
+  fn:STATLIST_FreeIfPlain@0x00626CD0, tbl:ItemTypes.txt:Magic)
+- [I] **Not on stock data.** The stock kits (§ 5) hold no base whose type has `Magic` = 1, so a stock character starts
+  with no such item. The free still runs for every starting item, and on the stock bases it removes whatever list the
+  creation made. The question belongs here (player/creation), not in items/affixes.
+  (fn:sub_00534C70_StartItemCreate@0x00534C70, tbl:ItemTypes.txt:Magic)
+- [I] **The 5 rare items at ilvl 99 are not game creations.** They are inputs that `tools/d2s.py build` wrote into the
+  cube recipes. Rare items are given names only (the `rare` key: `cubereroll.json` 3, `cubesock.json` 1,
+  `cubeclassic.json` 1), and the builder's default `ilvl` is 99. The game loaded those saves and wrote the items back
+  unchanged (run:2026-10-15-cube-saves). They are a fact about the save corpus, not about the cube or creation.
+  `sweep_s1a.py survey` now prints the breakdown: `empty_main_list_samples_q4_ilvl1` 40, `_d2sio_q4_ilvl1` 8,
+  `_cube_q6_ilvl99` 5 (kept output `sweep-s1a-survey-p49r-2026-10-20.txt`). (run:2026-10-15-cube-saves)
+
 ## Open questions
 
 - ~~Which UI path sets status bit `0x20` for classes 0–4 in an expansion game, and bit `0x40` (ladder): the stub only
   copies the word.~~ Read in [§ Plan 0039 batch P1c](#plan-0039-batch-p1c-2026-10-17): the class select sets `0x20` in
-  an expansion install, a checkbox toggles it; `0x40` follows the screen's mode word `0x007795EC` (its writer's meaning
-  not read).
+  an expansion install, a checkbox toggles it; `0x40` follows the screen's mode word `0x007795EC`, which is 1 on the
+  *Battle.net* path ([§ Plan 0049 Phase 1](#plan-0049-phase-1-2026-10-20-static) (c)).
 - ~~What triggers `sub_0058C5C0_ExpGrantCapped` (three callers `0x0058C6D0`, `0x0058C7E0`, `0x0058C9A0`; not read).~~
   The Ancients' death (Rite of Passage, word 39): [§ Plan 0039 batch P1c](#plan-0039-batch-p1c-2026-10-17).
 - Readers of `PercentStr..PercentVit` (maybe only the client, through `0x004833E0`).
 - The player-data fields `+0x50..+0x5C` zeroed at creation, and client `+0x3D4` bit 0.
 - ~~The experience recovered with the corpse (75 % per src:arreat-summit-experience): find the code (the corpse pickup
   path) or show 1.14d has none.~~ Found: 75 % of the loss taken goes onto the corpse and back to its owner
-  ([§ Plan 0039 batch P1c](#plan-0039-batch-p1c-2026-10-17)). Whether a saved corpse keeps it is not read.
+  ([§ Plan 0039 batch P1c](#plan-0039-batch-p1c-2026-10-17)). A saved corpse does not keep it
+  ([§ Plan 0049 Phase 1](#plan-0049-phase-1-2026-10-20-static) (d)).
 - `ToHitFactor` as attacker-level bonus vs attack-rating term (§ 10, contradicted): read the chance-to-hit code.
 - Settled by run:2026-10-16-player (§ 11): nothing but `PlayerUnitInit` steps the game seed before the first item;
   `PLAYER_LevelUp` draws nothing; the starting items chain to the item model (`ITEMS_RollStaffMods` is its boundary).

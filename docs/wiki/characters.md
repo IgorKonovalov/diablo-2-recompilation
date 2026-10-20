@@ -1,9 +1,9 @@
 ---
 based_on:
   - docs/specs/player/README.md 2026-10-16
-  - docs/specs/player/creation.md 2026-10-17
+  - docs/specs/player/creation.md 2026-10-20
   - docs/specs/hirelings/README.md 2026-10-19
-  - docs/specs/save/d2s.md 2026-10-17
+  - docs/specs/save/d2s.md 2026-10-20
 ---
 
 # Characters and hirelings
@@ -64,7 +64,8 @@ Assassin (classes 5 and 6) before it builds the stub. Both are read from the cod
 ([creation § A](../specs/player/creation.md#a-the-stub-and-the-servers-checks)): in an expansion install, selecting
 any class turns the expansion bit on, and the "expansion" checkbox turns it off again, so a classic character of the
 five classic classes is made by clearing the box. The hardcore and ladder checkboxes toggle bits `0x04` and `0x40`, and
-the ladder bit is also on by default in one screen mode, which by its context is the Battle.net one. The run's stubs
+the ladder bit is also on by default in one screen mode: the one the main menu's *Battle.net* button sets (read from
+the code). In single player, a TCP/IP game and Open Battle.net only the checkbox turns it on. The run's stubs
 agree (the expansion bit in every expansion stub of those classes, in no classic one), but do not show which control
 set it.
 
@@ -241,7 +242,8 @@ These are in [player/creation § J](../specs/player/creation.md#j-other-level-an
 - **Death.** The character loses the difficulty's `DeathExpPenalty` percent of the current level's span, and the
   level never drops. Nothing is lost when the killer is a player or a player's monster. Three quarters of the
   experience actually lost (rounded down) is put on the corpse, and the owner gets it back on picking the corpse up;
-  another player picking it up gets nothing. All of this is read from the code only.
+  another player picking it up gets nothing. A corpse still on the ground when the character is saved comes back at
+  the next load without that share, so picking it up then returns nothing. All of this is read from the code only.
 - **Party share.** With two or more members (alive, in the same level, close enough, at most 8), the kill's
   experience is raised by 89/256 per extra member and split in proportion to the members' levels, and each share
   then goes through the kill formula with that member's level. This needs two clients and was not run.
@@ -427,8 +429,6 @@ The same mercenary block in another test save showed level 30, life 288 and resi
 
 From [player/creation § Open questions](../specs/player/creation.md#open-questions):
 
-- whether a corpse saved with its character keeps its share of the death loss, and what sets the screen mode that
-  turns the ladder bit on by default;
 - the first save's appearance bytes are not predicted.
 
 Also read from the code only, not run: party sharing, death loss and the corpse's share, the Ancients' reward,

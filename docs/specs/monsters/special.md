@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/spawn, monsters/pool, data/excel, drlg/collision]
 consumed_by: [monsters/stats, monsters/spawn, items/tc]
-tags: {C: 107, I: 94, L: 4}
-updated: 2026-10-17
+tags: {C: 107, I: 95, L: 3}
+updated: 2026-10-20
 ---
 
 # Special monsters: mods, minions, superuniques and names
@@ -134,7 +134,7 @@ What remains are inputs owned by other subsystems; every `[C]` below holds under
 | presets, inactive restore, objects window | seed oracle | the room and game seed after the window (`RW1` → `RW4`). Its superunique and MonPlace 2/3 spawns are modelled here from the room and game seed at their own entry; the rest of the window is the oracle | `drlg/preset`, `objects` | [C] (fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:sub_00552610_RoomObjectsPopulate@0x00552610, run:2026-10-14-mon-special) |
 | grid snapshot at each preset special | value input | the collision grids a superunique or MonPlace special is placed on | `drlg/collision`, `objects` | [C] (fn:sub_005A09E0_SpecialMonPlace@0x005A09E0, run:2026-10-14-mon-special) |
 | monster level read by `aura` | compared value | stat 12 after `leveladd`; it enters the draw only through `level ≥ 20` | [monsters/stats § D3](stats.md#d-classic-nightmare-and-hell-sub_0063eef0_monclassicdiffadjust) | [C] (fn:sub_005A1650_UModAura@0x005A1650, run:2026-10-14-mon-special) |
-| handler effects and their deep callees | seed-asserted calls | skill and AI setup, stat writes, quest hooks: no seed of unit, room or game changes across them; a change would be a failure, not a taken value | [monsters/stats § G](stats.md#g-the-mod-handlers-stat-effects), quests | [C] (fn:sub_005A2120_SpecialModsApply@0x005A2120, run:2026-10-14-mon-special) |
+| handler effects and their deep callees | seed-asserted calls | skill and AI setup, stat writes, quest hooks: no seed of unit, room or game changes across them; a change would be a failure, not a taken value | [monsters/stats § G](stats.md#g-the-mod-handlers-stat-effects), [quests/progression § B](../quests/progression.md#b-events-and-dispatch) | [C] (fn:sub_005A2120_SpecialModsApply@0x005A2120, run:2026-10-14-mon-special) |
 | placement of minions and escorts | modelled in [spawn § H](spawn.md#h-placement-spawnpospick-and-monspawntry) | `MonSpawnTry` with its room and game draws | `monsters/spawn` | [C] (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, run:2026-10-14-mon-special) |
 
 - [C] `MonTypeIsA` is not an oracle: its bit matrix is built from `montype` by code that is read (§ B4), and all 153 calls
@@ -578,13 +578,20 @@ H2. MonPlace case 3, a champion at the point:                      [C] (0x0054E8
   (fn:sub_0054E600_PresetMonSpawn@0x0054E600, fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, run:2026-10-14-mon-special)
 - [I] Cases `0x11`–`0x20` are fixed classes at the point and not specials: 17 `fallen1`, 18 `fallenshaman1`, 22
   `fetish1`, 23 `fetishshaman1`; 29 `minion1`, 30 `imp1` (`deathmauler1` in level 110), 31 `act5barb1`, 32
-  `reanimatedhorde3`, these four with mode 12; 25, 27 and 28 nothing (their table entry returns 0); 19–21
-  never reach this table (next bullet). What 24 and 26 do outside Normal is an open question. The class goes through
+  `reanimatedhorde3`, these four with mode 12; 25, 27 and 28 nothing (their table entry returns 0). Rows 19–21, 24
+  and 26 hold the class-0 entry `0x0054E9CE` in that table, but none of them reaches it: 19–21 return 0 from the outer
+  switch (the *Every MonPlace row* bullet below). The class goes through
   `LevelClassVariant` and then `PresetFallenVariant` (`fallen1` → `fallen2` in level 6, `fallen3` in 7, 12, 16;
   `fallenshaman1` → `fallenshaman2` in 6 and 7, `fallenshaman3` in 12 and 16). `reanimatedhorde3` (438) draws
-  `Range(u.seed, 50)` for an AI timer. In normal difficulty `0x18` and `0x1A` place a group in the preset's box instead.
+  `Range(u.seed, 50)` for an AI timer.
   (fn:sub_0054E2A0_PresetFallenVariant@0x0054E2A0, fn:sub_0063EC70_LevelClassVariant@0x0063EC70,
-  fn:sub_0054E090_PresetGroupSpawn@0x0054E090)
+  [monsters/0003 § 7](../../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20))
+- [I] **Rows 24 `place_impgroup` and 26 `place_miniongroup` (`0x18`, `0x1A`) are Normal-only groups.** Their outer-switch byte is 7, the case at
+  `0x0054EAA8`, which tests the difficulty byte `game+0x6D`. Outside Normal it returns 0, so both rows place nothing in
+  Nightmare and Hell. In Normal both call `PresetGroupSpawn`, with class `imp1` (`deathmauler1` in level 110) for row 24
+  and `minion1` for row 26: a leader in the preset's box and `MinGrp − 1 + RangeB(leader.seed, MaxGrp − MinGrp + 1)`
+  members around it. (0x0054EAA8–0x0054EAF9, fn:sub_0054E090_PresetGroupSpawn@0x0054E090, tbl:MonStats.txt:MinGrp, tbl:MonPlace.txt:code,
+  [monsters/0003 § 7](../../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20))
 - [I] **Every MonPlace row, from the switch.** The MonPlace branch switches on `index − 2` with the bound `0x1E`
   (0x0054E76F–0x0054E782). Rows 0, 1 and 33–36 fail the bound, and rows 6, 7, 9, 12–16 and 19–21 have byte-table entry 8;
   both go to 0x0054EAFE, which returns 0 with no call. **These rows place nothing in `PresetMonSpawn`**:
@@ -931,12 +938,9 @@ The name is format 1722 with prefix, suffix and appellation, from the keys `Fire
 - ~~What calls `sub_005A4940_MonMakeSpecial` (caller `0x00583050`)~~ answered in [§ J](#j-other-entry-paths-and-pre-existing-mods) (the Warping Shrine) from
   [monsters/0003 § Plan 0039 batch P1c](../../findings/monsters/0003-special-monsters.md#plan-0039-batch-p1c-2026-10-17); the
   path is unreached, in the list above.
-- [L] **What MonPlace rows 24 and 26 do outside Normal** (§ H). Both go to the group case, which places a group only in
-  Normal; monsters/0003 § 7's older bullet reads 24 as class 0 in the fixed-class table, the newer switch bullet does not
-  list either row, and [MonPlace](../../tables/MonPlace.md) says both placed nothing in Hell's logs. At the `lane/sw6`
-  review an objdump read gives rows 24 and 26 the group case's switch byte and that case a return of 0 when the game's
-  difficulty is not Normal, not a fixed-class entry; the finding has not taken this in. Owner: reverser (the open
-  monsters/0003 § 7 reconcile entry).
+- ~~What MonPlace rows 24 and 26 do outside Normal~~ answered in [§ H](#h-monplace-presets) from
+  [monsters/0003 § 7](../../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20) (plan
+  0049): the group case returns 0 outside Normal, so both place nothing there; neither reaches the fixed-class table.
 - [L] Where a unique's random colour is drawn, and on which client seed. It is display only and cannot reach a server seed,
   and the name roll re-initialises its own seed.
 - ~~The effects of every handler and the readers of `constants` rows 1–33~~ specified in [monsters/stats § G](stats.md#g-the-mod-handlers-stat-effects).

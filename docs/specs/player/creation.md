@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, items/uniques-sets, items/properties, items/affixes, monsters/stats, save/d2s]
 consumed_by: [save/d2s, combat/to-hit, stats/aggregate]
-tags: {C: 81, I: 45, L: 2}
-updated: 2026-10-17
+tags: {C: 81, I: 48, L: 1}
+updated: 2026-10-20
 ---
 
 # New character, starting items, experience and level-up
@@ -149,11 +149,18 @@ Step notes:
   sets `0x20` (`or word [status+0x1EF], 0x20`); the "expansion" checkbox toggles it (`xor 0x20`, only with the
   expansion MPQ present), and class 5 or 6 forces it again. So a classic character of classes 0–4 is the default
   with the box cleared. The hardcore and ladder checkboxes toggle `0x04` and `0x40`, and the class select also sets
-  `0x40` by default when the screen's mode word `0x007795EC` is 1 (set at 0x00435B31 on a path the finding places on
-  Battle.net by its context, not read further). The stub then copies the word (A1). [I] (0x00433F72–0x00433FF1,
+  `0x40` by default when the screen's mode word `0x007795EC` is 1. The stub then copies the word (A1). [I] (0x00433F72–0x00433FF1,
   fn:sub_00433BF0_CreateClassSelect@0x00433BF0, fn:sub_00430770_CreateToggleExpansion@0x00430770,
   fn:sub_00408F20_HasExpansionMpq@0x00408F20, fn:sub_00430730_CreateToggleHardcore@0x00430730,
   fn:sub_00430750_CreateToggleLadder@0x00430750; [player/0001 § Plan 0039 batch P1c](../../findings/player/0001-creation.md#plan-0039-batch-p1c-2026-10-17))
+- A1. **The mode word is 1 only on the *Battle.net* path.** Its main-menu button callbacks write 0 for *Single
+  player*, 1 for *Battle.net*, 3 for *Open Battle.net* and 2 for *TCP/IP game* and *Host game* (each button record
+  holds its string index 8 bytes before its callback). The front-end entry sets the word from the client's start mode
+  the same way (2 → 1, 4 → 3, 3 → 2, else 0, or `1 + 2·(registry "Skip To Open" ≠ 0)` with client `+0x35D` set), and
+  the TCP/IP address dialog writes 2. So the default ladder bit `0x40` is the *Battle.net* (realm) path's; in single
+  player, TCP/IP and Open Battle.net only the ladder checkbox sets it. The realm meaning is that of the button
+  strings. [I] (0x00435CD0, 0x00435D30, 0x00435D10, 0x00431A40, 0x00435DB4, 0x00435B31, 0x00435C04, 0x0043491D,
+  fn:sub_00433BF0_CreateClassSelect@0x00433BF0, [player/0001 § Plan 0049 Phase 1 (c)](../../findings/player/0001-creation.md#c-the-front-end-mode-word-0x007795ec))
 - A2. Every stub of the run passed these checks, so none of the failure codes was observed. Class 7 passes the class
   test although CharStats has records 0..6 only; see § J. [I] (0x0056A172)
 
@@ -347,6 +354,15 @@ Step notes:
   run:2026-10-16-player)
 - E3. Under `-act 2..5` the player is already level 16, 21, 27 or 33 when the items are made (C4 runs first), so the
   items get that ilvl. [C] (fn:sub_00558200_UnitDropLevel@0x00558200, run:2026-10-16-player)
+- E4. **The free drops the creation's properties.** The list removed is the item's main property list (state 0,
+  flags `0x40`), unlinked and freed after `ITEMS_CreateForStore` returns, so every property the creation wrote there is
+  lost; the item keeps its affix ids. A base whose ItemTypes row has `Magic` = 1 is turned into a magic item by
+  `ITEMS_CreateForStore` from the quality-2 request, picks its affixes, and loses their properties here: under an
+  edited CharStats that gives a ring, amulet, jewel and small charm, the saves carry magic items at ilvl 1 (the
+  player's level) with affix ids over an empty main list (48 items). The stock kits hold no such base. Slot 0's
+  `item_singleskill` list is made after the free. [I] (0x00534CB5, 0x00534CC2, fn:sub_00534C70_StartItemCreate@0x00534C70,
+  fn:ITEMS_CreateForStore@0x00559CE0, fn:UNIT_UnlinkStatList@0x006277E0, fn:STATLIST_FreeIfPlain@0x00626CD0,
+  tbl:ItemTypes.txt:Magic, [player/0001 § Plan 0049 Phase 1](../../findings/player/0001-creation.md#the-s1a-creation-question-affix-ids-with-an-empty-property-list))
 - E4. On `item1` every copy gets the `item_singleskill` list (stock: the Sorceress's staff, the Necromancer's wand;
   the other classes have no `StartSkill`). [C] (fn:sub_00534C70_StartItemCreate@0x00534C70, run:2026-10-16-player)
 - E6. **Belt.** `BeltFreeSlot` first looks for a column whose box among 0..3 already holds the same item and takes the
@@ -559,6 +575,13 @@ Step notes:
 - J3. **It returns only to the owner.** `PLAYER_CorpsePickup` needs the permission test and a corpse whose owner id is
   the picker's; a non-zero stat 13 is then zeroed and added with `sub_0057EAB0_AddExperienceDirect`. Another player's
   pickup returns nothing. [I] (fn:PLAYER_CorpsePickup@0x0057FB70, fn:sub_0057EAB0_AddExperienceDirect@0x0057EAB0)
+- J3. **A saved corpse loses the share.** `D2S_WriteCorpses` writes no stat, and `D2S_ReadCorpses` re-creates each corpse
+  (a type-0 unit in mode `0x11`, state 7 `playerbody`, its item list) with no stat write, so the re-created corpse has
+  no stat 13. `PLAYER_CorpseCreate`, the only writer of a corpse's stat 13 read so far, runs only at the death mode's end. The
+  owner's pickup of a re-created corpse therefore adds no experience: the 75 % is lost once the character is saved
+  with its corpse on the ground. [I] (0x0056A91E–0x0056A9D1, fn:D2S_WriteCorpses@0x005697F0, fn:D2S_ReadCorpses@0x0056A830,
+  fn:PLAYER_CorpseCreate@0x0057F700, fn:PLAYER_CorpsePickup@0x0057FB70,
+  [player/0001 § Plan 0049 Phase 1 (d)](../../findings/player/0001-creation.md#d-a-saved-corpse-loses-its-experience))
 - J. **Class 7** passes the header check (A2), but every CharStats reader tests `class < 7`, so it gets no attributes,
   no items and no start skill, and the experience lookups read class 0's column. [I] (0x005706FD, 0x00611808)
 
@@ -673,8 +696,9 @@ the Barbarian has one copy more (the buckler), so only its eighth copy (`isc`) t
 - ~~What triggers `ExpGrantCapped`~~, ~~whether the corpse returns part of the death loss~~ and ~~which UI path sets
   status bits `0x20` and `0x40`~~: answered from the code in J2, J3 and A1 ([player/0001 § Plan 0039 batch P1c](../../findings/player/0001-creation.md#plan-0039-batch-p1c-2026-10-17)). None was run. The corpse's 75 %
   agrees in substance with a community page; its *Leads used* verdict waits for a re-fetch (reverser backlog).
-- [L] Whether a corpse saved with its character keeps its stat 13 (the corpse record's first u32 is not initialised,
-  [save/d2s](../save/d2s.md)); and what sets the create screen's mode word `0x007795EC` (the default ladder bit). Not read (reverser backlog, the P1c residues (c) and (d)).
+- ~~Whether a corpse saved with its character keeps its stat 13, and what sets the create screen's mode word
+  `0x007795EC`~~: answered from the code in J3 and A1 ([player/0001 § Plan 0049 Phase 1](../../findings/player/0001-creation.md#plan-0049-phase-1-2026-10-20-static)):
+  it does not, and the word is 1 on the *Battle.net* path. Neither was run.
 - ~~How `UnitGetMaxHp/Mana/Stamina` add item bonuses to the base maxima (the I3 inputs).~~ Specified in
   [stats/aggregate § G](../stats/aggregate.md#g-the-maxima-the-rescale-and-the-stat-callback) (plan 0041): the
   cached full stats 7, 9 and 11, with item vitality and energy through op 9 and op 8. The I3 values of

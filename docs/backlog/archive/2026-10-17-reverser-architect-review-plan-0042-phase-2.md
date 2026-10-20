@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-17
 status: done
 context:
-  - ../../plans/0042-quests-travel.md
+  - ../../plans/done/0042-quests-travel.md
   - ../../findings/quests/experiments.md
 resolution: "Reviewed 2026-10-17 (architect, lane/p42h): accept with fixes as Phase 2 part 1; 14 fixes applied; rulings and the part 2 definition in plan 0042's log and Phase 2 section; part 2 filed to the reverser."
 ---

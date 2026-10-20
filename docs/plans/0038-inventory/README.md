@@ -419,7 +419,9 @@ with the *Steel* load of sockets 35) to **H6b**; vendors 22 (the store tab and g
 and `+0x28` of the store creation record at `IC0`) to **H6c**; quest-drops 38 (a cursor line at
 `sub_0055EEA0_CursorItemConsume`) to **H6e1**; sockets 44 (normal and rare drops requesting more than 3 and 4) to
 **H2b** with sockets 42. Static leftovers (backlog, reverser): quest-drops 8, 10 and 19 (the 45 register-word
-`SetState`/`ClearState` sites and the 12 callers of the range clear `0x0065C3E0`). The other remainders are d-none or
+`SetState`/`ClearState` sites and the 12 callers of the range clear `0x0065C3E0`). *Closed at the `lane/p49r` review (plan 0049 Phase 1, 2026-10-20):* quest-drops 10 and 19 are **raised** (the
+record-function closure, its limits stated in items/0010 qd 10); quest-drops 8 stays raised in part, its remainder
+answered `[I]` (word 41 is object 1's `+0xE4` word). No class moves; the rows stay counted as S2c. The other remainders are d-none or
 d-edit as each ledger says (sockets 4, 6, 43, 47; cube 47; properties 19 L573), or have no further route and stay `[I]`
 in Phase 3 (quality 16, the version-0 rows; sockets 2, 26; cube 55 L829, the portal object's oracle; vendors 11, 21,
 24, 28; quest-drops 21).

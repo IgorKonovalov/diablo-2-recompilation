@@ -1261,9 +1261,21 @@ TOWN_CALLBACK_LEVELS = (40, 103, 109)
 
 
 def parse_log(path):
+    """The model's events of one log. A log that holds a second game (a second `WNDARM` line with `levels`, which
+    tools/gdb/mon-spawn.py writes once per game at the regions init 0x005479C0) is refused: the DT1 lists the game
+    keeps from the first game would not match the model's fresh ones (plan 0038 H4b review follow-up (b), plan
+    0049). Split such a log at the second game's first line. Logs without that tag are not checked for it."""
     ev = []
+    games = []
     for ln, line in enumerate(open(path, errors="replace"), 1):
         tag, _, rest = line.partition(" ")
+        if tag == "WNDARM" and '"levels"' in rest:
+            games.append(ln)
+            if len(games) > 1:
+                raise SystemExit("%s: a second game starts at line %d (WNDARM at lines %s); the DRLG models check "
+                                 "one game per log: split the log at line %d" % (path, ln, ", ".join(map(str, games)),
+                                                                                 ln))
+            continue
         if tag in ("RRESEED", "LSUB", "LSUBX", "TINIT", "O89", "O89D", "RACT", "AROOM", "RTFREE", "TL", "CB") \
                 or tag in H5C_TAGS:
             d = json.loads(rest)

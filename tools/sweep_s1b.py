@@ -12,10 +12,13 @@ data/strings, rng and rng/seeds (no game run, no slot).
     python3 -I tools/sweep_s1b.py strings               the strings run per caller (GetStringByKey, gems, rare names,
                                                         runes), the font map, duplicates over every shipped key
     python3 -I tools/sweep_s1b.py calc                  the calc run per pool (tables, contexts, callers, raw pools)
-    python3 -I tools/sweep_s1b.py static                pinned instructions and image bytes (objdump), RNG-free closures,
-                                                        operand scans
+    python3 -I tools/sweep_s1b.py static                pinned instructions and image bytes (objdump), RNG-free closures
+                                                        with their indirect-call split (import table, register loaded
+                                                        from it, the 0x0040B430 residue; fails on any other), operand
+                                                        scans
     python3 -I tools/sweep_s1b.py rng                   LCG sites, the primitives' memory operands, the pow2 n = 0 cases
-    python3 -I tools/sweep_s1b.py seeds                 the seed-tree logs: room chains by type, client unit types
+    python3 -I tools/sweep_s1b.py seeds                 the seed-tree logs: room chains by type, client unit types,
+                                                        the RRESEED lines whose seed is the room's creation seed
     python3 -I tools/sweep_s1b.py all
 
 Each check prints one `S1B <check> key=value ...` line of counts plus detail lines, and exits 1 when an observation
@@ -1111,6 +1114,17 @@ def cmd_static(a):
         ind = [ic for v in G.values() for ic in v[4]]
         R.set("%s_indirect_calls_iat" % name, sum(1 for ic in ind if re.match(r"DWORD PTR ds:0x6cc", A.ins[ic][1])))
         R.set("%s_indirect_calls_other" % name, sum(1 for ic in ind if not re.match(r"DWORD PTR ds:0x6cc", A.ins[ic][1])))
+        # the indirect-call split (S1b review follow-up (a), plan 0049): through the import table; through a
+        # register whose nearest earlier write in the function body (address order) loads it from the import table;
+        # else the named residue, the closure of the allocator 0x0040B430; anything outside it fails the check
+        split = indirect_split(A, G)
+        for k in ("iat", "reg_iat", "residue_40B430", "unresolved"):
+            R.set("%s_indirect_%s" % (name, k), len(split[k]))
+        R.note("%s: the closure of 0x0040B430 holds %d of the %d functions" % (
+            name, len(set(G) & set(S4.graph([0x0040B430]))), len(G)))
+        for ic, e in split["unresolved"]:
+            R.bad("%s: indirect call 0x%08X in 0x%08X outside the import table and the 0x0040B430 residue" % (
+                name, ic, e))
         R.expect(not draws, "%s: drawing functions %s" % (name, [hex(e) for e in draws]))
         for e in inits_only:
             R.note("%s: 0x%08X only initialises a seed (%s)" % (name, e, [c[1] for c in Rf[e][1]]))
@@ -1134,6 +1148,45 @@ def cmd_static(a):
         if users:
             R.note("%s 0x%08X: %s" % (name, va, " ".join(users)))
     return R.done()
+
+
+IAT_LO, IAT_HI = 0x006CC000, 0x006CC614   # PE data directory 12 (the import address table) of the pinned image
+IND_REGS = ("eax", "ebx", "ecx", "edx", "esi", "edi", "ebp")
+
+
+def is_iat_operand(op):
+    m = re.match(r"DWORD PTR ds:0x([0-9a-f]+)$", op.strip())
+    return bool(m) and IAT_LO <= int(m.group(1), 16) < IAT_HI
+
+
+def indirect_split(A, G):
+    """{kind: [(site, function)]} for every indirect call/jmp of a walked closure G (S4.graph)."""
+    alloc = set(S4.graph([0x0040B430]))
+    out = {"iat": [], "reg_iat": [], "residue_40B430": [], "unresolved": []}
+    for e, (d, p, vas, calls, icalls) in G.items():
+        order = sorted(vas)
+        for ic in icalls:
+            op = A.ins[ic][1].strip()
+            if is_iat_operand(op):
+                out["iat"].append((ic, e))
+                continue
+            if op in IND_REGS:
+                src = None
+                for v in reversed([x for x in order if x < ic]):
+                    mn, o = A.ins[v]
+                    a = [x.strip() for x in o.split(",")]
+                    if mn == "call":
+                        if op in ("eax", "ecx", "edx"):
+                            break
+                        continue
+                    if a and a[0] == op and mn not in ("push", "cmp", "test"):
+                        src = (mn, a[1] if len(a) > 1 else "")
+                        break
+                if src and src[0] == "mov" and is_iat_operand(src[1]):
+                    out["reg_iat"].append((ic, e))
+                    continue
+            out["residue_40B430" if e in alloc else "unresolved"].append((ic, e))
+    return out
 
 
 # -------------------------------------------------------------------------------------------------------------- rng
@@ -1276,8 +1329,19 @@ def cmd_seeds(a):
     """rng/seeds rows 3, 11, 15, 16 (logs of run:2026-10-11-seed-tree and -p1)."""
     R = Report("seeds")
     for p in seed_logs():
-        for tag, kv in kvlines(p, ("ROOM", "SUNITPRE", "CUNITPRE")):
+        created = {}
+        for tag, kv in kvlines(p, ("ROOM", "SUNITPRE", "CUNITPRE", "RRESEED")):
+            if tag == "RRESEED":
+                # S1b review follow-up (b), plan 0049: a re-seed whose seed equals the room's creation seed (the ROOM
+                # line with the same r04), runtime support for rng/seeds 3's preset half
+                t = kv["type"]
+                R.add("rreseed_type%s" % t)
+                R.add("rreseed_type%s_creation_seed" % t, 0)
+                if created.get(kv["r04"]) == kv["seed"]:
+                    R.add("rreseed_type%s_creation_seed" % t)
+                continue
             if tag == "ROOM":
+                created[kv["r04"]] = kv["room"]
                 t = kv["type"]
                 R.add("rooms_type%s" % t)
                 lo = int(kv["lvlseed"].split(":")[0], 16)

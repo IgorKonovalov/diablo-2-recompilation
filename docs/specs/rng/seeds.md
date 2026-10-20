@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng]
 consumed_by: [drlg/overview, drlg/room-tiles, drlg/*, monsters/spawn, objects, items/*]
-tags: {C: 78, I: 9, L: 4}
-updated: 2026-10-17
+tags: {C: 79, I: 10, L: 4}
+updated: 2026-10-20
 ---
 
 # Seed tree: game → act → level → room → unit
@@ -250,7 +250,9 @@ flowchart TD
      dispatch on type: 1 → 0x0067D6D0, 2 → 0x00666630, else none [C] (fn:sub_0067D6D0_OutRoomAlloc@0x0067D6D0, fn:sub_00666630_PresetRoomAlloc@0x00666630, 0x0066B479–0x0066B4A8, run:2026-10-11-seed-tree)
                                                                   ; allocation only, no draw: an objdump closure
                                                                   ; with no drawing function, 876 type-1 and
-                                                                  ; 3552 type-2 rooms (rng/0002 § Plan 0038 batch S1b)
+                                                                  ; 3552 type-2 rooms (rng/0002 § Plan 0038 batch S1b);
+                                                                  ; its 532 indirect calls: 359 import table, 115
+                                                                  ; register from it, 58 under 0x0040B430 (step 5 note)
 
 6. ActivateRoom(act, R: DRLG room) → activeRoom or none:          [C] (fn:sub_0061B190_RoomActivateA@0x0061B190, fn:sub_0061B730_RoomActivateB@0x0061B730, run:2026-10-11-seed-tree-p1)
    6a. Init(R.seed, R[+0x04])                                     [C] (fn:sub_0066EE40_DrlgRoomReseed@0x0066EE40, run:2026-10-11-seed-tree-p1)
@@ -339,6 +341,15 @@ Step notes:
    fn:sub_00642C30_RoomFromCoords@0x00642C30, fn:sub_00642D10_LevelSetPosition@0x00642D10)
 5. Each DRLG room takes exactly one draw from its level's seed, so the order in which a level's
    rooms are created matters. [C] (fn:DRLG_RoomCreate@0x0066B3E0, run:2026-10-11-seed-tree, 3102 room creations)
+   The type dispatch after the room draw draws nothing: the objdump closure under the two allocators (422 functions)
+   holds no drawing function. Its 532 indirect calls split as 359 through the import table, 115 through a register
+   whose nearest earlier write is a load from the import table, and 58 left, all under the pool allocator
+   0x0040B430 (file and line arguments, fatal on failure), which is passed no seed pointer; 0 are unresolved. That
+   residue is the closure's stated limit. [C] (fn:sub_0067D6D0_OutRoomAlloc@0x0067D6D0,
+   fn:sub_00666630_PresetRoomAlloc@0x00666630, run:2026-10-11-seed-tree, [rng/0002 § Plan 0038 batch S1b](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16))
+   `tools/sweep_s1b.py seeds` counts the logged activation re-seeds whose seed is the room's creation seed: 132 of 132
+   type-2 re-seeds and 0 of 25 type-1. [I] (fn:sub_0066EE40_DrlgRoomReseed@0x0066EE40,
+   [rng/0002 § Plan 0038 batch S1b](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16), tool addendum)
 6. The active-room seed is `Init(Step^(k+1)(Init(R[+0x04])).low)`. It doesn't depend on any draw
    made on the room seed between creation and activation, because 6a restarts it from `+0x04`, but
    it does depend on k. Observed in that run: k = 50–376 over 157 activations. [C]
@@ -438,7 +449,8 @@ Step notes:
    (fn:sub_00465420_ClientRoomAt@0x00465420) Type 4 does nothing that draws before the room draw: the
    objdump closure under `ItemDataAlloc` and `ItemDataSeedInitOne` holds no drawing function, only the
    one initialiser. [C] (fn:sub_00627C90_ItemDataAlloc@0x00627C90,
-   fn:sub_00627DC0_ItemDataSeedInitOne@0x00627DC0, [rng/0002 § Plan 0038 batch S1b](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16)) Type 1 (monsters) never goes through
+   fn:sub_00627DC0_ItemDataSeedInitOne@0x00627DC0, [rng/0002 § Plan 0038 batch S1b](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16)) It is
+   the closure of step 5's allocators, with the same split of its indirect calls (step 5 note). Type 1 (monsters) never goes through
    `0x00465FD0` from the client creator `0x00466730`, which sends type 1 to `ClientMonCreate` and every
    other type to `UnitInit`; the 739 logged `UnitInit` hits are all type 2. [C] (0x0046675C, 0x00466796,
    0x004667D6, fn:sub_00466360_ClientMonCreate@0x00466360, run:2026-10-11-seed-tree-p1, [rng/0002 § Plan 0038 batch S1b](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16))
@@ -543,7 +555,7 @@ separate objects.
 - [L] Meaning of act `+0x094` vs `+0x484` (which tomb is the real one), the Act III bit `+0x474`, what
   the Act III act-seed consumers under `0x006789B0` decide, and the level-27 bit set at level 6. They are
   placed as entry points in [drlg/overview](../drlg/README.md#act-seed-consumers). Owner:
-  `drlg/warps` and the quest work.
+  `drlg/warps` and the quest work; the quest side is [quests/progression § Creation-path readers](../quests/progression.md#creation-path-readers).
 - [L] **The order of game-seed consumers**, narrowed again: game creation's draws 1–5 are fixed (step note 7a:
   monster regions, object region, store seed, quest seed, the player). Still open: the gaps between later units.
   The population pass's own game-seed draws are in [monsters/spawn](../monsters/spawn.md), and those of the restore of a

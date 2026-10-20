@@ -8,7 +8,7 @@ context:
   - ../../findings/stats/0002-states.md#surprise-f-setters-scan-plan-0041-p1-review-follow-up-b-2026-10-17
   - ../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4b-2026-10-16
   - ../../findings/drlg/0008-outdoor.md#h5e-review-static-reachability-2026-10-17-lanerbs
-resolution: "Reviewed 2026-10-17: accept with fixes (plan 0038 log). All nine closures accepted; (e) corrected (two orw lines the pattern missed), kept open with (b), (c) and (e′); state_setters and d2sio outputs kept under workspace/logs with manifest lines; sweep_s2c emu also clears flags on call and on memory cmp/sub/add; inventory § 2.6 rows room-tiles 9 and 20 recorded (no class moves). Remaining list re-filed: [static sweep, remaining](../2026-10-17-architect-reverser-static-sweep-remaining.md)."
+resolution: "Reviewed 2026-10-17: accept with fixes (plan 0038 log). All nine closures accepted; (e) corrected (two orw lines the pattern missed), kept open with (b), (c) and (e′); state_setters and d2sio outputs kept under workspace/logs with manifest lines; sweep_s2c emu also clears flags on call and on memory cmp/sub/add; inventory § 2.6 rows room-tiles 9 and 20 recorded (no class moves). Remaining list re-filed: [static sweep, remaining](2026-10-17-architect-reverser-static-sweep-remaining.md)."
 ---
 
 review request, `lane/rbs` (static backlog sweep, 2026-10-17; no game, no slot; Ghidra on `workspace/ghidra-rbs`). Commits 2d259fc, a427c7b and the checkpoint after them. Entries closed, with the evidence tag of each answer:

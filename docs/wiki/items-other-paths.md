@@ -3,7 +3,7 @@ based_on:
   - docs/specs/items/sockets-runewords.md 2026-10-17
   - docs/specs/items/cube.md 2026-10-17
   - docs/specs/items/vendors.md 2026-10-19
-  - docs/specs/items/quest-drops.md 2026-10-19
+  - docs/specs/items/quest-drops.md 2026-10-20
 ---
 
 # Items that do not come from a monster drop
@@ -378,7 +378,8 @@ page explains it.
 Quest state changes item creation in three places
 ([quest-drops § Purpose](../specs/items/quest-drops.md#purpose)): five bosses switch to a special TC, quest scripts
 create items on their own, and three NPC services rebuild an item the player hands over. When a quest bit gets set
-(dialogue, timers) is treated as an input, not modelled.
+(dialogue, timers) is treated as an input here; the quest scripts that set the bits are on the
+[quests and travel](quests.md) page.
 
 ### The quest TC of the five act bosses
 

@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/room-tiles, monsters/spawn, monsters/special, monsters/stats, objects, save/d2s]
 consumed_by: [drlg/room-tiles, drlg/preset, drlg/collision, monsters/spawn, monsters/special, monsters/stats, objects]
-tags: {C: 80, I: 73, L: 7}
-updated: 2026-10-17
+tags: {C: 86, I: 76, L: 8}
+updated: 2026-10-20
 ---
 
 # Room lifecycle: activation, release, the inactive records and the restore
@@ -86,7 +86,7 @@ stateDiagram-v2
 | room seed | `Seed` | active room `+0x6C` | [rng/seeds](../rng/seeds.md) step 6 |
 | unit list | newest first, next = unit `+0xE8` | active room `+0x74` | § E |
 | act room list, new-rooms flag | list (next = room `+0x7C`), `u32` | DUNGEON act `+0x10`, `+0x54` | § D |
-| DUNGEON act `+0x50` | `u32`; 0 on the server at every pass, non-zero on the client act | DUNGEON act `+0x50` | § E |
+| DUNGEON act `+0x50` | `u32`; the constructor's client-act argument: 1 on a client act, 0 on a server act | DUNGEON act `+0x50` | § E |
 | inactive room records | one list per act, ordered by x descending | game `+0xD8 + 4·act` | § G |
 | region counts | wanderers `+0x2C4`; `+0x2C8`, `+0x2CC` | level region | § H, § I |
 
@@ -119,7 +119,7 @@ A1. GameTick(game):                                               [I] (fn:sub_00
       if frame mod 20 = 0: 0x00543E10(game)
       if frame mod 12 = 0: RoomsDeactivate(game)                  ; § E
       if frame mod 11 = 0: level-unload tick of each act          ; § E5
-      0x0052D310(game)
+      0x0052D310(game)                                            ; every frame; when frame mod 1500 = 0: 0x00558B90 and the expiry sweep 0x00542AC0, acts 0 to 4
 ```
 
 - [I] The remainders are signed `%` on the incremented frame. A room activated in frame N by the client sync is
@@ -131,6 +131,15 @@ fn:sub_0052D240_RoomsDeactivate@0x0052D240, fn:sub_0052D160_NewRoomsUpdate@0x005
 - [I] Three other callers populate a room at once through `RoomUpdateOne` (the same body for one room): a unit spawn
 at coordinates whose room was not active (`0x0055379D`), the creation of a portal's other end at a level point
 (`0x0056CF7D`) and a quest spawn in level 40 (`0x0059E018`). (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0)
+- [I] **The expiry sweep of item records runs every 1 500 frames.** `GameTick` calls 0x0052D310 on every frame
+(0x0052D96C). That function computes `frame mod 1500` (a signed `idiv` by `0x5DC`, 0x0052D310–0x0052D320) and, when it
+is 0, calls 0x00558B90 and the sweep 0x00542AC0 for acts 0 to 4 (0x0052D322–0x0052D33D). The sweep frees an act's item
+records whose expiry is non-zero and below the game frame (0x00542AF0–0x00542AFF). The `frame mod 20` call above is
+0x00543E10, not the sweep; this spec's earlier "20-frame sweep" was that call. run:2026-10-17-h7a-lifecycle agrees and
+excludes a 20-frame sweep: five records with expiries 18 720 and 18 324 were still present at frame 19 158, and the
+1 500-frame sweep has no pass between those expiries and that frame (18 000 and 19 500). No pass fell between an expiry
+and its restore, so the period stays a reading. (fn:sub_0052D870_GameTick@0x0052D870, 0x0052D310, 0x00542AC0,
+[drlg/0009 § 11.3 (4)](../../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle))
 
 ### B. Activation: reference counts per near-list distance
 
@@ -358,11 +367,28 @@ model of E1 covers both cases. (run:2026-10-17-lifecycle, fn:sub_0061A790_RoomId
 - [C] The release test refused a pinned room 4 592 times and a town room 12 296 times in 19 328 tests; act `+0x50` was
 0 at every pass. Once the count exceeds 10 the test is retried on every pass, so a refused room goes at the first later
 pass that allows it. A new room starts at count 0. (run:2026-10-17-lifecycle, fn:sub_0061BA30_DrlgRoomReleaseTest@0x0061BA30)
-- [I] **Pins.** `RoomPinSet(room, 0)` sets `0x400000` and `RoomPinSet(room, 1)` clears it. `PortalObjectCreate` sets it
-on the rooms of both portal ends (0x0056D29E, 0x0056D2AC), and two sites that free an object unit clear it (0x005354C5,
-0x00584C12); the other sites of the 31 were not read. In the run the pin was an input: six set calls came from portal
-and object code, and no clear call was seen. (fn:sub_0061AED0_RoomPinSet@0x0061AED0,
-fn:sub_0061BAC0_DrlgRoomPinFlag@0x0061BAC0, fn:sub_0056D130_PortalObjectCreate@0x0056D130)
+- [I] **Pins.** `RoomPinSet(room, 0)` sets `0x400000` and `RoomPinSet(room, 1)` clears it (`RoomPinSet` passes the
+DRLG room and its second argument to `DrlgRoomPinFlag`, its one caller). `PortalObjectCreate` sets it on the rooms of
+both portal ends (0x0056D29E, 0x0056D2AC), and two sites that free an object unit clear it (0x005354C5, 0x00584C12).
+In the run the pin was an input: six set calls came from portal and object code, and no clear call was seen.
+(fn:sub_0061AED0_RoomPinSet@0x0061AED0, fn:sub_0061BAC0_DrlgRoomPinFlag@0x0061BAC0, fn:sub_0056D130_PortalObjectCreate@0x0056D130)
+- [I] **The 31 pin sites.** `RoomPinSet` has 31 direct call sites in 24 functions: 18 set the pin and 13 clear it. The
+setters are `PortalObjectCreate` (both ends), the quest functions `A1Q4_GibbetOperate`, `A1Q4_StoneOperate`,
+`A1Q5_DeathSpawn`, `A2Q6_StaffPlaced`, `A5Q2_MonsterDeath`, `A5Q2_CageFreed`, `A5Q3_FrozenAnyaOperate`,
+`A5Q5_StatuesArm`, one branch of `A5Q5_KeepDoorOperate` and `A5Q6_BaalDeath`, `SealObjectCreate`, a function called
+from `A3Q5_CompellingOrbOperate`, and two unnamed functions. The clearers are `PlayerPortalClose` and `OBJOP_Portal`
+(after the portal units are freed), `A2Q6_LairPortalTimer`, the keep door's other branch, `PermPortalAtUnit`, and five
+unnamed functions with no direct call (one is missile do-function 36, Missiles row 625 `baalfx control`). The quest sites set the pin when an event starts and clear it when it ends; that
+is a reading of the call order, not a traced lifetime. The per-site table is in
+[drlg/0009 § 11.4 (c)](../../findings/drlg/0009-room-lifecycle.md#114-the-plan-0040-phase-1-review-follow-ups-plan-0049-phase-1-lanep49r-static).
+(fn:sub_0061AED0_RoomPinSet@0x0061AED0, fn:sub_0061BAC0_DrlgRoomPinFlag@0x0061BAC0, fn:sub_00620BB0_UnitGetRoom@0x00620BB0)
+- [C] **DUNGEON act `+0x50` is 1 on a client act and 0 on a server act.** `DUNGEON_ActCreate` stores its third
+argument there and builds the client form of the DRLG act when it is non-zero; the server's `ActCreate` passes 0 and
+the client's `ClientActLoad` passes 1. The run gave the same values on both sides: 0 on the server at all 30 985
+checks, and the negated value 0 at every one of the 8 277 client tiles releases. No other writer of `+0x50` was
+scanned, so the values are covered for the run's window only, where neither side saw another.
+(fn:DUNGEON_ActCreate@0x006194A0, fn:sub_0053AC70_ActCreate@0x0053AC70, fn:sub_0044E100_ClientActLoad@0x0044E100,
+run:2026-10-17-lifecycle, [drlg/0009 § 11.4 (a)](../../findings/drlg/0009-room-lifecycle.md#114-the-plan-0040-phase-1-review-follow-ups-plan-0049-phase-1-lanep49r-static))
 - [I] **Level unload.** Every 11 frames on the server (every 13 ticks on the client) the level-unload tick unloads,
 after a countdown of 10 ticks, a level with no level references (`+0x0C`) and built rooms (`+0x10`) when
 `LevelUnloadCheck` allows, and otherwise re-arms the countdown. That path frees RoomTiles through `RoomFree` and
@@ -524,7 +550,7 @@ packet-beta
 |---|---|---|
 | `+0x00`, `+0x04` | x, y of the unit | [C] (run:2026-10-17-lifecycle) |
 | `+0x08`, `+0x0C` | class, unit id (the id is reused at the restore) | [C] (run:2026-10-17-lifecycle) |
-| `+0x10`, `+0x14` | unit `+0xC4`, `+0xC8` | [C] (run:2026-10-17-lifecycle) |
+| `+0x10`, `+0x14` | unit `+0xC4` as read at 0x00542498 (below), unit `+0xC8` | [C] (run:2026-10-17-lifecycle, run:2026-10-17-h7a-lifecycle) |
 | `+0x18` | record flags, below | [C] for `0x1`, `0x2`, `0x4`, `0x20`, `0x80`/`0x100`/`0x200`, `0x400`, `0x800` (run:2026-10-17-lifecycle); [I] for `0x40` (fn:sub_005421A0_InactiveMonsterSave@0x005421A0) |
 | `+0x1C` | group leader id (AI control `+0x2C` when the AI link type `+0x30` is 1), else −1 | [I] (fn:sub_005421A0_InactiveMonsterSave@0x005421A0) |
 | `+0x20`, `+0x24`, `+0x28` | AI control `+0x34`; the preset path moved out of AI control `+0x38`; the AI record's first dword | [I] (fn:sub_00541FE0_InactiveMonAiSave@0x00541FE0, 0x00542098) |
@@ -546,6 +572,16 @@ target list (`+0xD0` ≠ 11; `+0xD0` < 8 is a fatal error), `0x800` superunique.
   and moves the preset path out of the monster (`PtrMove`, 0x00542098). The alignment numbers are those `MonSpawnTry`
   sets from MonStats `Align` (0 → 0, 1 → 2, 2 → 1). (fn:sub_005421A0_InactiveMonsterSave@0x005421A0,
   fn:sub_00541FE0_InactiveMonAiSave@0x00541FE0, fn:sub_00666120_PtrMove@0x00666120, tbl:MonStats.txt:Align)
+- [C] **The record's `+0xC4` is the unit's value when 0x00542498 reads it, after the state and timer removal**, not
+  its value at the save test (0x00543403). In run:2026-10-17-h7a-lifecycle, 4 of 1 689 monster records (level 111,
+  classes 454 `minion1` and 462 `suicideminion1`) hold `+0xC4` bit `0x2000` that the unit's save-test line lacked;
+  every other field matches. (fn:sub_005421A0_InactiveMonsterSave@0x005421A0, 0x00542498,
+  [drlg/0009 § 11.3 (5)](../../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle))
+- [I] The only immediate store of bit `0x2000` into unit `+0xC4` is in 0x0064C040 (0x0064C07E–0x0064C097), which also
+  links the unit into a list of its room; which call reached those 4 units is an open question. The restore does not
+  copy the bit back (H3 ORs in only the record's `0x20000` and `0x3000000`), so a reimplementation that takes the
+  record's `+0xC4` from the unit at the save test differs from the game only in this bit of the record.
+  (0x0064C040, 0x00542498)
 - [I] **What a monster loses**: its states and timers, any mode but "dying or dead" (alive records come back in mode 1),
   any position but x and y, and its life after 7500 frames (§ H). A hit's stat or state is gone after a release.
   (fn:sub_005421A0_InactiveMonsterSave@0x005421A0, struct:InactiveMonRec+0x18)
@@ -600,7 +636,7 @@ H1. RoomInactiveUnitsRestore(game, room):                         [C] (fn:sub_00
 H2. InactiveMonstersRestore(game, room), per monster record, oldest first:   [I] (fn:sub_005424F0_InactiveMonstersRestore@0x005424F0)
       if level = 108 and DiabloQuestFlag(game) and not (rec.flags & 4) and rec.class ≠ 243: drop    ; quest 23 +0x13
       else if rec.flagsC8 & 0x100: UnitRelocate(the unit with id rec.id, room)     ; kept, nothing created
-      else if rec.flags & 0x400 and rec.flags & (0x80 | 0x100): drop             ; alignment 1 or 2
+      else if rec.flags & 0x400 and rec.flags & (0x80 | 0x100): drop             ; alignment 1 or 2; [C] for 2 (run:2026-10-17-h7a-lifecycle), [I] for 1 (0x00542609)
       else:
         cflags: u32 ← 0x6A if rec.flags & 0x40 else 0x62
         if MonStats[rec.class].flying: cflags ← cflags | 0x80
@@ -657,8 +693,17 @@ game-seed draw (`SUnitCreate`), and the unit's `+0x28` is the game seed's low wo
 (1 808); the radius-5 fallback takes 7 room draws (31). (run:2026-10-17-lifecycle,
 fn:sub_005424F0_InactiveMonstersRestore@0x005424F0, fn:sub_00555230_SUnitCreate@0x00555230, fn:sub_005B2A00_MonSpawnTry@0x005B2A00)
 - [I] The path is picked by flag `0x20` before flag `1`, so a record with both goes to `MinionRestore`
-(0x0054264A–0x0054266D). The level-108 drop, the kept units, the `0x400` drop and the failed creations were not
-reached. (fn:sub_005424F0_InactiveMonstersRestore@0x005424F0, fn:sub_005B5210_DiabloQuestFlag@0x005B5210)
+(0x0054264A–0x0054266D). The level-108 drop, the kept units, the alignment-1 half of the `0x400` drop (record bit
+`0x80`, the sign test at 0x00542609–0x0054260B) and the failed creations were not reached; no stock monster the H7a
+sessions met was saved with `+0xD0` ≥ 8 and alignment 1. (fn:sub_005424F0_InactiveMonstersRestore@0x005424F0,
+fn:sub_005B5210_DiabloQuestFlag@0x005B5210)
+- [C] **A record with flag `0x400` and alignment 2 is dropped, with no creation and no game-seed draw.** 4 records, all
+class 522 (`act5barb1`) with record flags `0x540`, saved in mode 2 with `+0xD0` = 8 and without `+0xC8` bit `0x100` (so
+not the kept path): each of their 4 restores logs no creation, and the game seed after the drop equals the seed
+before it. A creation would have taken `SUnitCreate`'s game-seed draw, so a wrong reading could not match by chance.
+The test is 0x005425F7–0x00542603 (flag `0x400`, then `0x100`). (run:2026-10-17-h7a-lifecycle,
+fn:sub_005424F0_InactiveMonstersRestore@0x005424F0,
+[drlg/0009 § 11.3 (3)](../../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle))
 
 **Stats of a restored monster.**
 
@@ -704,14 +749,17 @@ re-append are code readings; AI and movement of a restored monster are boundary 
 in mode 1 whatever record flag 4 says, with stat 6 by the 7500-frame rule. By the dead-champion reading of § F (every
 champion carries `0x08`) no stock case reaches it. (0x00542693–0x005426C3, fn:sub_005A4440_SpecialMonRestore@0x005A4440)
 - [I] A `0x400` record with alignment 0 (the only one the drop lets through) reaches the fatal error `0x691`
-(0x0054287F–0x0054288E, 0x00542990). The wanderer class `rogue2` has MonStats `Align` 1, so a saved wanderer would be
-alignment 2 and dropped if its creation path sets the alignment the same way (open question). (0x005427B8–0x005427D4,
-tbl:MonStats.txt:Align)
+(0x0054287F–0x0054288E, 0x00542990). A saved wanderer does not reach it: `WandererSpawn` creates `rogue2` through
+`SpawnAtPos` with flags 0, so `MonSpawnTry` runs its `Align` switch, and `rogue2`'s MonStats `Align` 1 gives alignment 2
+(§ I). Its record carries `0x400` with the alignment-2 bit `0x100`, and the restore drops it. No write that changes the
+wanderer's alignment between its creation and the save test was followed. (0x005427B8–0x005427D4,
+0x005B2E94–0x005B2EC2, fn:sub_005B2A00_MonSpawnTry@0x005B2A00, tbl:MonStats.txt:Align,
+[drlg/0009 § 11.4 (b)](../../findings/drlg/0009-room-lifecycle.md#114-the-plan-0040-phase-1-review-follow-ups-plan-0049-phase-1-lanep49r-static))
 
 ```
 H4. InactiveItemsRestore(game, room, recs), oldest first:         [C] except the lines tagged [I] (fn:sub_00541AC0_InactiveItemsRestore@0x00541AC0, fn:sub_00541990_InactiveItemRestoreOne@0x00541990, run:2026-10-17-lifecycle)
       for rec in recs:
-        if rec.expiry ≠ 0 and (i32) frame > (i32) rec.expiry: drop    ; [I] not reached (0x00541AC0)
+        if rec.expiry ≠ 0 and (i32) frame > (i32) rec.expiry: drop    ; [C] 5 records, no item created (run:2026-10-17-h7a-lifecycle)
         it ← ItemCreateFromSave(rec.bytes) at the saved x, y      ; SUnitCreate (type 4)
               ; game seed: draw#1 the unit seed, draw#2 ItemSeedInit
         it[+0x28] ← the saved start seed for an item stored in full, 0 for a simple (compact) item
@@ -726,6 +774,11 @@ one for an item stored in full (289) and **0** for a simple item, record flags b
 the unit seed is `Init(+0x28)` in both cases. The item comes back at its saved x, y (876), and its expiry is
 `max(saved, frame + 15000)` (876). (run:2026-10-17-lifecycle, fn:sub_00558CB0_ItemCreateFromSave@0x00558CB0,
 fn:sub_00552E90_ItemSeedInit@0x00552E90) The bit layout of the bytes is [save/d2s § I](../save/d2s.md#i-one-item).
+- [C] **An item record whose non-zero expiry has passed is dropped at the restore**: 5 records in 2 restores of one
+session at frame 19 158, with expiries 18 720 and 18 324 (four records); no item is re-created for any of them. A
+record with expiry 0, kept by the same test, was not reached. (run:2026-10-17-h7a-lifecycle,
+fn:sub_00541AC0_InactiveItemsRestore@0x00541AC0,
+[drlg/0009 § 11.3 (4)](../../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle))
 
 ### I. The wanderer tick
 
@@ -754,7 +807,7 @@ I1. RoomWandererTick(game, room):                                 [C] for the fi
         r ← Range(room.seed, count)                               ; room draw#3 (none when count < 1)
         class ← the entry of the list at 0x00731B2C picked by start and r   ; act I: 270
         (x, y) ← SpawnPosPick(no box, class, 0)                   ; monsters/spawn H1
-        u ← SpawnAtPos(x, y, class, mode 1, a new id, flags 0)
+        u ← SpawnAtPos(x, y, class, mode 1, radius −1, flags 0)   ; MonSpawnTry: Align 1 → alignment 2
         TargetListAdd(u, 8);  region[+0x2C4] ← region[+0x2C4] + 1
 ```
 
@@ -871,6 +924,13 @@ restore is not specified here.
   corrections); the plan 0040 Phase 1 and Phase 2 rulings in the [plan log](../../plans/done/0040-drlg-room-lifecycle.md#implementation-log).
 - [findings/drlg/experiments.md § run:2026-10-17-lifecycle](../../findings/drlg/experiments.md#run2026-10-17-lifecycle):
   13 sessions, 2 215 807 checks, 0 mismatches under `tools/rooms.py check` (with the monsters/stats model for stat 12).
+- [findings/drlg/experiments.md § run:2026-10-17-h7a-lifecycle](../../findings/drlg/experiments.md#run2026-10-17-h7a-lifecycle)
+  and [drlg/0009 § 11.3](../../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle)
+  (plan 0038 batch H7a): 3 sessions, 4 mismatches over 675 849 checks, all the record `+0xC4` bit `0x2000` of § G;
+  the `0x400` drop's alignment-2 half and the expired-item drop; the 1 500-frame sweep; the town-follow recipes.
+  [§ 11.1](../../findings/drlg/0009-room-lifecycle.md#111-static-follow-ups-of-the-phase-2-review-lanerbs3) and
+  [§ 11.2](../../findings/drlg/0009-room-lifecycle.md#112-the-town-follow-static-remainder-lanerbs4) hold the static
+  town-follow reads.
 - [drlg/room-tiles § Release and re-activation](room-tiles.md#release-and-re-activation): what the tiles release frees.
 - [objects § B](../objects/README.md#b-the-window-in-the-room-driver-and-the-revisit): the object save (B4) and
   re-creation (B5).
@@ -885,12 +945,20 @@ restore is not specified here.
   can, the save rule frees it without a record at the town's release (`SaveMonsters` 0, no `0x2000000`), against the
   community claim that such monsters stay "injured" (drlg/0009 *Leads used*). The run met only the other half: all 172
   monsters the save test saw in a `SaveMonsters` 0 level (120 in level 1, 52 in level 103) carried `0x2000000` and were
-  saved. The static reading so far (drlg/0009 § 11.1 (a)): the server's path planner refuses a path whose target room
-  is a town room for a monster that is not an NPC (0x006483A0), so a hostile pool monster cannot plan a path into town.
-  Three routes stay open: the test reads only the target room, never the rooms a path crosses; path types 4, 10 and 14
-  (`+0x34` bit `0x40000`) go to a straight-path planner before the test; and knockback, teleport and placement are not
-  followed. MonStats `inTown`, the earlier lead, has two readers, both in combat. Owner: reverser (the static remainder
-  first, then a recipe only if it finds a route in, per the `lane/rbs3` ruling).
+  saved. What the code shows, as readings (drlg/0009 § 11.1 (a), § 11.2): the server's path planner refuses a path
+  whose target room is a town room for a monster that is not an NPC (0x006483A0), and that target test is the only town
+  barrier on a planned walk, since the walk changes the unit's room with no town test (`PathRoomUpdate` 0x0064FAD0).
+  The straight branch (`+0x34` bit `0x40000`, path types 4, 10 and 14) reaches a monster only through 9
+  `MonAiPathOverride` calls not followed. `UnitTeleport` (0x00554EA0) and the Teleport do function (0x005CA360) test no
+  destination room. MonStats `inTown`, the earlier lead, has two readers, both in combat. Plan 0038 batch **H7a**
+  (`lifecycle`, run:2026-10-17-h7a-lifecycle, drlg/0009 § 11.3 (1)–(2)) was its route, and it left the case open:
+  the walk across a town room is a recorded shortfall, since a geometry scan of the 106 town layouts in the kept logs
+  found no shortest route through a town cell (each town's interior meets its neighbour at one gate, and on 21 camp
+  layouts at one more run of 1 or 2 cells; a sample of layouts, shortest routes only); the teleport recipe was withdrawn, since both monster AIs read that pick a teleport
+  point (the unique mod's `UModTeleportTry` 0x005B11F0 and the Zakarum priests' 0x005F72D0 through 0x005FD470) refuse
+  a town room. Not shown: whether a stock town's geometry allows such a route, and whether any monster AI teleports
+  to a town point. Unfollowed, out of plan 0038: 152 register-skill `MonAiUseSkill` calls, the 9 `MonAiPathOverride`
+  calls and 19 `UnitTeleport` calls. The case stays a named shortfall of plan 0040 Phase 2. Owner: reverser.
 - ~~A champion without monster flag `0x08`~~ answered by the § F reading from drlg/0009 § 11.1 (b): every server write of
   the champion bit follows `MonMarkSpecial`, so no champion path skips it (still a code reading; a block copy of monster data is
   not followed).
@@ -899,15 +967,18 @@ restore is not specified here.
 - [L] **Which handler flag the minion restore really applies** (§ H): stat 12 does not separate them, so H2c's flag 0
   stays a code reading. A kept lifecycle log that shows a minion's unit seed after the handlers would check it without a
   run (the `rndname` step). Owner: reverser.
-- [L] **The wanderer roll and spawn** were never reached (1 in 32 768 gate draws pass); whether `SpawnAtPos` sets a
-  wanderer's alignment from MonStats `Align` (so that a saved wanderer is dropped at the restore rather than reaching the
-  fatal `0x691`) is a static read.
-- [L] **Unreached branches**, each `[I]` above: the expired-item drop and the 0 expiry (no quest item was saved; the
-  20-frame sweep `0x00542AC0` of expired records was not reached either), the 45000 gold expiry, save tests 3, 4, 6 and 7
-  and `restore` 0, kept monsters and units, `0x400` records, the level-108 rule, a kept player corpse, a minion restored
-  without its boss, the level-120 half of the release test, the placement fallbacks after radius 5.
-- [L] The client copy's detach of a preset path (§ J), and DUNGEON act `+0x50`'s meaning beyond its values (0 on the
-  server, non-zero on the client act).
+- [L] **The wanderer roll and spawn** were never reached (1 in 32 768 gate draws pass). The wanderer's alignment is
+  answered as a code reading in § H from drlg/0009 § 11.4 (b): `MonSpawnTry` sets 2, so a saved wanderer is dropped.
+- [L] **Unreached branches**, each `[I]` above: the 0 expiry (no quest item was saved), the 1 500-frame expiry sweep
+  `0x00542AC0` freeing a record (§ A), the 45000 gold expiry, save tests 3, 4, 6 and 7 and `restore` 0, kept monsters
+  and units, the alignment-1 half of the `0x400` drop (no stock monster the H7a sessions met was saved with `+0xD0` ≥ 8
+  and alignment 1), the level-108 rule, a kept player corpse, a minion restored without its boss, the level-120 half of
+  the release test, the placement fallbacks after radius 5.
+- [L] **Which call sets unit `+0xC4` bit `0x2000`** between the save test and the monster record's copy at 0x00542498
+  (§ G): a state's removal callback is the candidate; a logger breakpoint at 0x0064C08B during a release would name it
+  (drlg/0009 § 11.3 (5)). Owner: reverser.
+- [L] The client copy's detach of a preset path (§ J). (DUNGEON act `+0x50`'s meaning is answered in § E from
+  drlg/0009 § 11.4 (a): the constructor's client-act argument.)
 - [L] The meanings of monster data `+0x58` and `+0x5C` bit 1, record `+0x2C`, the state list at DataTables `+0x174`,
   and the item record's `+0x08`.
 - [L] Multiplayer: the activation set as the union of the clients' (§ B) and `+0x78` above 1 were not logged

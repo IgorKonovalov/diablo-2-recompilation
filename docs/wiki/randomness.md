@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/rng/README.md 2026-10-17
-  - docs/specs/rng/seeds.md 2026-10-17
+  - docs/specs/rng/seeds.md 2026-10-20
   - docs/specs/drlg/room-tiles.md 2026-10-17
 ---
 
@@ -300,4 +300,5 @@ From the [RNG core open questions](../specs/rng/README.md#open-questions) and th
 - [RNG core spec](../specs/rng/README.md#algorithm) and [seed tree spec](../specs/rng/seeds.md#algorithm).
 - How k is counted: [room tiles § k](../specs/drlg/room-tiles.md#k).
 - The [glossary](../glossary.md) for seed, draw, map seed, game seed and the room terms.
-- Related wiki pages: [levels](levels.md), [monsters](monsters.md), [objects](objects.md), [items](items.md).
+- Related wiki pages: [levels](levels.md), [monsters](monsters.md), [objects](objects.md), [items](items.md), and
+  [quests and travel](quests.md) for the quest seed's draws and the level-seed step of each arrival.

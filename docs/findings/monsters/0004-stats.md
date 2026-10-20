@@ -208,11 +208,11 @@ Each loader builds the 20-byte descriptor entries `{column, type, len, offset, l
   `0x0096BCD8` (the `properties` link), `par` type 2 (s32), `chance` type 4 (u8), `min` and `max` type 2. Slot 1 normal:
   `prop1` `+0x04`, `par1` `+0x08`, `chance1` `+0x124`, `min1` `+0x0C`, `max1` `+0x10`; `prop1 (N)` `+0x64`, `par1 (N)`
   `+0x68`, `chance1 (N)` `+0x12A`; `prop1 (H)` `+0xC4`, `chance1 (H)` `+0x130`, `par1 (H)` `+0xC8`. `Id` is type `0x12` with
-  link `0x0096C85C`. The records go to `g_pMonProp` (`0x0096C860`), the count to `g_nMonProp` (`0x0096C864`), which are
+  link `g_MonPropLink` (`0x0096C85C`). The records go to `g_pMonProp` (`0x0096C860`), the count to `g_nMonProp` (`0x0096C864`), which are
   `DataTables+0xC30`/`+0xC34`. Second path: the archivist's `excel_bin.py diff monprop` places every set cell at these
   offsets. (fn:sub_00658720_MonPropLoad@0x00658720, data:g_pMonProp@0x0096C860, data:g_nMonProp@0x0096C864, tbl:MonProp.txt:chance1)
 - [C] DifficultyLevels (`0x00617DA0`–`0x006180B2`, record `0x58`, records to `g_pDifficultyLevels` `0x0096C8AC`, count
-  `0x0096C8B0`): the offsets listed in the summary, every field type 2. Second path: the archivist's diff of all 66 cells.
+  `g_nDifficultyLevels` `0x0096C8B0`): the offsets listed in the summary, every field type 2. Second path: the archivist's diff of all 66 cells.
   (fn:sub_00617D90_DifficultyLevelsLoad@0x00617D90, data:g_pDifficultyLevels@0x0096C8AC, tbl:DifficultyLevels.txt:ChampionDamageBonus)
 - [I] `g_pDifficultyLevels` has three references: the loader, the unload at `0x006192BA` and `sub_00611D30_DifficultyRec`,
   which returns record `clamp(d, 0, n − 1)`. So every reader passes through it, with `game+0x6D` at every call site read

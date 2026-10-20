@@ -2,11 +2,11 @@
 based_on:
   - docs/specs/monsters/README.md 2026-10-16
   - docs/specs/monsters/pool.md 2026-10-16
-  - docs/specs/monsters/spawn.md 2026-10-17
-  - docs/specs/monsters/special.md 2026-10-17
+  - docs/specs/monsters/spawn.md 2026-10-20
+  - docs/specs/monsters/special.md 2026-10-20
   - docs/specs/monsters/stats.md 2026-10-17
   - docs/specs/drlg/collision.md 2026-10-17
-  - docs/specs/drlg/lifecycle.md 2026-10-17
+  - docs/specs/drlg/lifecycle.md 2026-10-20
 ---
 
 # Monsters
@@ -163,7 +163,8 @@ never runs this pass is read from the code. On the client, the room's own conten
 difficulty) is 0 gets no random population, and neither does a room flagged "no population" by the map
 generator. The gate also counts every room of the level that reaches it. That count is the level's "rooms
 visited", which the special catch-up below uses. A test for Chaos Sanctuary that closes the gate when a quest
-byte is set is read from the code but was not exercised.
+byte is set is read from the code but was not exercised; the quest side of it is on
+[quests and travel](quests.md#diablo-and-the-harrogath-portal-word-26).
 
 **Density** ([spawn § C](../specs/monsters/spawn.md#c-density-attempts-per-logic-box)). The room is split into its
 [logic boxes](../glossary.md). Each box gets `(5h ÷ 3) × (5w ÷ 3)` attempts, where `h` and `w` are its size in
@@ -302,7 +303,9 @@ at the preset point, with mod 16 and a champion pack. Both were reproduced in Tr
 by the code, place nothing at all when the room's presets are spawned or restored: the group presets that the map's
 keep/drop roll keeps (see [levels](levels.md#what-a-preset-places-units-and-keepdrop-rolls)), the river, nest, guard and maggot kinds among them. Five
 place one fixed monster at the point with no special code: the rogue warner (`navi`), Blood Raven, the Maggot Queen,
-and two tentacle-head kinds whose type depends on the level. Other code that reads a room's presets is not yet followed.
+and two tentacle-head kinds whose type depends on the level. The imp-group and minion-group kinds place a leader and
+its group around the point in Normal only; in Nightmare and Hell they place nothing (read from the code). Other code
+that reads a room's presets is not yet followed.
 
 ## Unique minions and mod transfer
 
@@ -568,4 +571,4 @@ Each spec's *Open questions* has the full list: [pool](../specs/monsters/pool.md
 - The [glossary](../glossary.md) for D2 terms.
 - Related wiki pages: [randomness](randomness.md) (seeds and draws), [levels](levels.md) (rooms, logic boxes, the
   collision grid), [objects](objects.md) (what fills a room before the monsters), [items](items.md) (what a monster
-  drops) and [how we know](how-we-know.md).
+  drops), [quests and travel](quests.md) (the quest hooks and the forced deaths) and [how we know](how-we-know.md).

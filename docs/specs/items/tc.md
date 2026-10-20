@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/quality, items/quest-drops, objects]
 tags: {C: 45, I: 82, L: 6}
-updated: 2026-10-17
+updated: 2026-10-20
 ---
 
 # Treasure class resolution: from a drop source to item-creation calls
@@ -227,8 +227,8 @@ Step notes:
     (`seventombs`), `DarkWanderer` and `TrappedSoul`;
   - a monster made by a spawner: `srvdofunc` 91 (`Nest`, `EvilHutSpawner`), 135 (`MinionSpawner`), 140
     (`Baal Tentacle`), the `EvilHole` AI and Baal's clone (5);
-  - a monster brought back to life: `srvdofunc` 97 (`Resurrect`), 58 (`Revive`) and a corpse callback whose skill is
-    not identified (3);
+  - a monster brought back to life: `srvdofunc` 97 (`Resurrect`), 58 (`Revive`) and `SkillReviveDo`, the raise that the
+    item property `reanimate` queues on a kill (`STATEVENT_Reanimate`, [items/quality § M3](quality.md)) (3);
   - a hireling, at `MERC_Init` and at its resurrection (2).
 
   P1b's split of the unread writers into "three quest drops" and "12 skill-code sites" was wrong: the three are the
@@ -993,5 +993,5 @@ potions' quality calls return without drawing (H4).
   upgrade bits `0x04`/`0x10`.~~ Answered ([items/0001 § Plan 0039 batch P1b](../../findings/items/0001-tc-resolution.md#plan-0039-batch-p1b-2026-10-17)):
   no death drop (B1 note), the item version and the set-29 filter (H7 notes), forced ethereal and forced sockets (H5
   note). ~~Which units skip the death drop in full~~: the 30 direct writers are classified in the B1 notes, a lower
-  bound ([items/0001 § Plan 0039 batch P1c](../../findings/items/0001-tc-resolution.md#plan-0039-batch-p1c-2026-10-17)); the skill behind the one unidentified revive callback is a reverser residue (backlog, P1c
-  residues (a)).
+  bound ([items/0001 § Plan 0039 batch P1c](../../findings/items/0001-tc-resolution.md#plan-0039-batch-p1c-2026-10-17)); the one unidentified revive callback is
+  not a skill but the item property `reanimate`'s kill event ([items/0002 § Plan 0049 Phase 1](../../findings/items/0002-quality-roll.md#plan-0049-phase-1-2026-10-20-static)).

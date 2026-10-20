@@ -143,6 +143,28 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-20 | `lane/c43` | 0043 close | architect | 88 624 | 30 | 7 | no slot | — (bookkeeping, merged directly) | — |
 | 2026-10-20 | `lane/bkarch` | ADR-0019 backlog archive | architect | 127 593 | 46 | 12 | no slot | — (owner request, merged directly) | — |
 | 2026-10-20 | `lane/plans45` | plans 0045–0049, ADR-0020 | architect | 414 851 | 76 | 27 | no slot | approved by the owner 2026-10-20 | — |
+| 2026-10-20 | `lane/p42s` | 0042 P3 (first draft) | spec-writer | 433 404 | 84 | 32 | no slot | accept with fixes | 6: overclaim 5, other 1 (counted with the re-tag) |
+| 2026-10-20 | `lane/p42s` (re-tag) | 0042 P3 re-tag from part 3 | spec-writer | 172 009 | 97 | 27 | no slot | accept with fixes | — (on the first-draft row) |
+| 2026-10-20 | `lane/p42s` review | 0042 P3, plan close | architect-review | 156 291 | 69 | 10 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/p49a` | 0049 P0 | archivist | 150 466 | 48 | 9 | no slot | accept with fixes | 4: omission 2, other 2 |
+| 2026-10-20 | `lane/p49a` review | 0049 P0 | architect-review | 89 857 | 35 | 7 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/p38s5` | 0038 P3 drlg/lifecycle cluster | spec-writer | 131 956 | 60 | 12 | no slot | accept with fixes | 2: overclaim 1, other 1 |
+| 2026-10-20 | `lane/p38s5` review | 0038 P3 drlg/lifecycle cluster | architect-review | 92 779 | 27 | 12 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/p38s6` | 0038 P3 qualification check | spec-writer | 85 770 | 18 | 5 | no slot | — (log only, no cluster qualified; merged directly) | — |
+| 2026-10-20 | `lane/wiki5` | 0042 wiki: quests and travel | wiki | 167 297 | 35 | 12 | — | accept with fixes | 17: overclaim 8, misread 5, miscount 1, omission 1, stale cross-reference 1, other 1 |
+| 2026-10-20 | `lane/wiki5` review | 0042 wiki: quests and travel | architect-review | 161 239 | 41 | 9 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/p45a` | 0045 P0 | archivist | 285 972 | 103 | 26 | no slot | accept with fixes | 3: miscount 2, other 1 |
+| 2026-10-20 | `lane/p45a` review | 0045 P0 | architect-review | 137 795 | 40 | 11 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/p45r` | 0045 P1.1 | reverser-static | 364 775 | 135 | 37 | Ghidra (lane copy) | accept with fixes | 3: overclaim 1, omission 1, other 1 |
+| 2026-10-20 | `lane/p45r` review | 0045 P1.1 | architect-review | 126 028 | 50 | 8 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/p49r` | 0049 P1 | reverser-static | 424 722 | 256 | 58 | Ghidra (lane copy) | accept with fixes | 7: stale cross-reference 3, under-claim 2, other 2 |
+| 2026-10-20 | `lane/p49r` review | 0049 P1 | architect-review | 153 818 | 78 | 13 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/cfix` | 0045 P1.1 follow-up | spec-writer | 81 595 | 31 | 10 | no slot | accept with fixes | 4: overclaim 2, omission 1, miscount 1 |
+| 2026-10-20 | `lane/cfix` review | 0045 P1.1 follow-up | architect-review | 81 083 | 27 | 12 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/p48a` | 0048 P0 | reverser-static | 214 388 | 59 | 16 | no slot, no Ghidra | accept with fixes | 1: omission 1 |
+| 2026-10-20 | `lane/p48a` review | 0048 P0 | architect-review | 114 630 | 45 | 7 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/p49s` | 0049 P2 | spec-writer | 228 548 | 122 | 17 | no slot | accept with fixes | 4: overclaim 1, wrong anchor 1, stale cross-reference 1, other 1 |
+| 2026-10-20 | `lane/p49s` review | 0049 P2 | architect-review | 163 821 | 53 | 10 | — | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
