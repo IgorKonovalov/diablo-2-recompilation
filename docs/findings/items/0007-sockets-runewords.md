@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/sockets-runewords
 > **Question:** When a gem, rune or jewel goes into a socketed item, what does the server check, what does the item gain, and when do the inserted runes make a runeword, with which property rolls on which seed?
-> **Date:** 2026-10-15   **Plan:** 0029 (Phase 1, Phase 1b, Phase 2)   **Status:** open (Phase 1 read from the decompile and the disassembly, committed before any lead was read; Phase 1b cross-check 2026-10-15: two contradictions, one reachable on stock data; Phase 2 [run:2026-10-15-sockets](experiments.md#run2026-10-15-sockets): `tools/sockets.py` reproduces 351 inserts, 50 runewords and 357 client tests with 0 mismatches; review requested; follow-ups 2026-10-15: § 1 caller table `p5` corrected from the pushes, § 1 opcode table start from the dispatcher, § 5 per-func coverage of the run; plan 0038 batch S2c, 2026-10-16: 15 statements raised and 8 in part, 4 reclassified, one count corrected, [§ Plan 0038 batch S2c](#plan-0038-batch-s2c-2026-10-16))
+> **Date:** 2026-10-15   **Plan:** 0029 (Phase 1, Phase 1b, Phase 2)   **Status:** open (Phase 1 read from the decompile and the disassembly, committed before any lead was read; Phase 1b cross-check 2026-10-15: two contradictions, one reachable on stock data; Phase 2 [run:2026-10-15-sockets](experiments.md#run2026-10-15-sockets): `tools/sockets.py` reproduces 351 inserts, 50 runewords and 357 client tests with 0 mismatches; review requested; follow-ups 2026-10-15: § 1 caller table `p5` corrected from the pushes, § 1 opcode table start from the dispatcher, § 5 per-func coverage of the run; plan 0038 batch S2c, 2026-10-16: 15 statements raised and 8 in part, 4 reclassified, one count corrected, [§ Plan 0038 batch S2c](#plan-0038-batch-s2c-2026-10-16); plan 0038 batch H2b, 2026-10-20: 1 statement raised in part; the S2c piece of sock 44 in part; the clamps reached on the drop path, [§ Plan 0038 batch H2b](#plan-0038-batch-h2b-2026-10-20))
 
 Names of structs and fields are ours. "Parent" is the socketed item, "child" the gem, rune or jewel put into it.
 "Item seed" is the item-data seed at `ItemData+0x04` (`ITEMS_GetSeed`), not the unit seed at `Unit+0x20`
@@ -141,6 +141,8 @@ community text had been read when it was written.
   magic shield with 4, a rare crystal sword with 5 and a crafted long sword with 4 loaded with those counts (stat
   194) and took that many gems. `ITEMS_SetSockets`' own clamps are not reached by the run and stay inferred (§ 7).
   (run:2026-10-15-sockets)
+  *2026-10-20, plan 0038 batch H2b:* the size, 6 and `ItemMaxSockets` clamps and their order are now reached on the
+  drop path (34 calls, sock 42 raised in part), as steps of the cap: no request exceeded the cap; the quality clamps are not, [§ Plan 0038 batch H2b](#plan-0038-batch-h2b-2026-10-20).
 
 ## Leads used
 
@@ -709,10 +711,14 @@ ItemData->flags |= 0x800;  SetStat(item, 194, r);
 - [I] **Quality clamps.** Magic ≤ 4, rare ≤ 2, crafted and 9 ≤ 3. These are the three of items/0006 § F6, plus
   quality 9 and the set/unique case. A set or unique item with no sockets gets at most 1, and one that already has
   sockets keeps its count: the request is replaced, and the other clamps still apply. Low, normal and superior have no
-  quality clamp. (fn:ITEMS_SetSockets@0x0062BCB0)
+  quality clamp. (fn:ITEMS_SetSockets@0x0062BCB0) *2026-10-20, plan 0038 batch H2b:* no quality clamp for
+  normal and superior `[C]` (34 drop calls, 21 with a cap above 3); the clamps of qualities 4–9 stay `[I]`, [§ Plan 0038 batch H2b](#plan-0038-batch-h2b-2026-10-20).
 - [I] **Order of the clamps:** inventory size and 6, then quality, then `ItemMaxSockets` (ilvl band and `gemsockets`,
   items/0006 § 6). Then `max(n, 1)`, then the cap. When the cap is 0 nothing is written, not even the flag.
-  (fn:ITEMS_SetSockets@0x0062BCB0, fn:sub_0062BC20_ItemMaxSockets@0x0062BC20)
+  (fn:ITEMS_SetSockets@0x0062BCB0, fn:sub_0062BC20_ItemMaxSockets@0x0062BC20) *2026-10-20, plan 0038 batch H2b:* this
+  order `[C]` on the drop path for the cap's steps (size and 6, quality, `ItemMaxSockets`, each logged); `max(n, 1)`,
+  the final clamp of the request and the `cap < 1` return were not reached (every request lay in `1..cap`; scoped at
+  the `lane/h2b` review), [§ Plan 0038 batch H2b](#plan-0038-batch-h2b-2026-10-20).
 - [I] **Callers:** `sub_00556B60_ItemRollSockets` (two calls), `sub_00558D90_ItemCreate` (0x00558F60, a creation
   record's forced count), `sub_00565AB0_RecipeOutputCreate` (cube), and 0x0057A3E2 (not followed; plan 0032's quest
   reward). (fn:sub_00556B60_ItemRollSockets@0x00556B60, fn:sub_00565AB0_RecipeOutputCreate@0x00565AB0)
@@ -943,6 +949,67 @@ Call-site survey of `ITEMS_CheckFlags` (0x006280A0) and `ITEMS_SetFlag` (0x00628
   The socket insert does not read it: `ITEMS_InsertSocket` tests only `0x10` and `0x800`, sets bit 0 and clears bit 14
   (0x0056270C, 0x00562748, 0x00562765, 0x0056285D, 0x00562883). (fn:sub_005BF240_ItemUse@0x005BF240,
   fn:sub_005BE1C0_InvClearUseMark@0x005BE1C0, fn:ITEMS_InsertSocket@0x00562660)
+
+## Plan 0038 batch H2b (2026-10-20)
+
+Harness batch H2b of [plan 0038](../../plans/0038-inferred-claims-sweep.md)
+([run:2026-10-20-sweep-items-chain](experiments.md#run2026-10-20-sweep-items-chain), stock data) took one inferred
+statement of [items/sockets-runewords](../../specs/items/sockets-runewords.md), row 42 of
+[the inventory](../../plans/0038-inventory/items-sockets-runewords.md) (by
+[§ 2.6](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews), S2c), and the piece the S2c review
+routed to it from row 44 (which stays counted as S2c, raised in part). Spec lines are those of the inventory's commit
+`c3167c6`.
+
+**The lines** (`tools/gdb/h2b.py`, read with objdump; § 7's reading): `SS0` at the entry of `ITEMS_SetSockets`
+0x0062BCB0 (return address, item, request `n`, class, quality), `SSP` at 0x0062BD05 (`p = invwidth × invheight` in
+`EAX`, the cap `min(p, 6)` in `ESI`: `lea esi, [eax+2]` gives 6 for an item, kept when `p > 6`), `SSQ` at 0x0062BD79
+(after the quality switch through the table at 0x0062BDDC: quality 4 → 0x0062BD60, 5 and 7 → 0x0062BD33, 6 →
+0x0062BD54, 8 and 9 → 0x0062BD6C; cap in `ESI`, request in `EBX`), `SSM` at 0x0062BD82 (`ItemMaxSockets` in `EDX`),
+`SSN` at 0x0062BD8F (the cap after it), `SSW` at 0x0062BDC4 (the value written, `EBX`) and `SSR` at 0x0062BDD2.
+`python3 -I tools/sweep_h2b.py logs` checks each call against § 7: `p` = the record's `invwidth × invheight`, the cap
+`min(p, 6)`, the quality step (1–3: none), `ItemMaxSockets` = items/0006 § 6's F5 value from the open creation's ilvl,
+the cap `min(cap, ItemMaxSockets)`, and the value `min(max(n, 1), cap)`. Counts from `check/check-sweep_h2b.txt`:
+
+```
+SetSockets calls (ret 00556c61)                                            34
+SetSockets: the 6 clamp lowered the cap (p > 6)                             3
+SetSockets: quality 2, quality clamp none                                  30
+SetSockets: quality 2 with a cap above 3 after the quality step            19
+SetSockets: quality 3, quality clamp none                                   4
+SetSockets: quality 3 with a cap above 3 after the quality step             2
+SetSockets: ItemMaxSockets = F5 model                                      34
+SetSockets: ItemMaxSockets lowered the cap                                 34
+SetSockets: written = min(max(n, 1), cap)                                  34
+0 bad
+```
+
+- **sock 42** (L521, F1) **raised in part.** [C] 34 calls, all from the drop socket roll (return 0x00556C61), follow
+  F1 with 0 mismatches: the product `p` of the record's inventory size, the cap `min(p, 6)`, which the 6 lowered in
+  3 calls (`p` > 6), the quality step (none for qualities 2 and 3), `ItemMaxSockets` as F5 gives it, which lowered the
+  cap in all 34, and the value written `min(max(n, 1), cap)`. *Scoped at the `lane/h2b` review (2026-10-20):* every
+  request lay in `1..cap` (`n` 1–3, the final cap 1–4), so the value written equals the request in all 34 and a
+  reading that wrote `n` unclamped matches too: the `[C]` covers the cap's computation, logged at each step, not the
+  clamp of the write. **Remainder `[I]`:** `max(n, 1)` and the final `min` acting on the request; the quality branches (4, 5 and
+  7, 6, 8 and 9: no caller in the run passes those qualities; the cube rows 17, 18, 65, 149 and the quest reward at
+  0x0057A3E2 do, H6a and H6b), a request above the final cap (the drop roll asks `start mod cap + 1` with a cap already
+  at most `ItemMaxSockets`, so it never is; the only stock exception is the inventory clamp of twelve sorceress
+  orbs (`ob1`–`ob4`, `ob6`–`ob9`, `obb`–`obe`), 1 × 2 with `ItemMaxSockets` 3 above ilvl 25, `check/check-static.txt`, none dropped), and the
+  `cap < 1` return. (fn:ITEMS_SetSockets@0x0062BCB0, fn:sub_0062BC20_ItemMaxSockets@0x0062BC20,
+  fn:sub_00556B60_ItemRollSockets@0x00556B60, run:2026-10-20-sweep-items-chain)
+- **sock 44, the H2b piece** (L544; the row stays S2c's, raised in part): **in part.** [C] Normal and superior get no quality
+  clamp: in all 34 calls the cap after the quality switch equals `min(p, 6)` (normal 30, superior 4), including
+  21 with a cap above 3 (so neither the crafted clamp 3 nor the magic clamp 4 acted); the written count equals
+  `min(max(n, 1), min(p, 6), ItemMaxSockets)`. **Not met:** the piece's "drops requesting more than 3 and 4": no call of the run requests 4 or more (the drop roll's
+  request is at most its cap, and `ItemMaxSockets` lowered every cap), and low quality never calls (`ItemRollSockets`
+  returns below quality 2); the row stays raised in part as S2c filed it. (fn:ITEMS_SetSockets@0x0062BCB0, run:2026-10-20-sweep-items-chain)
+
+**Correction carried (rule 12):** the Answer's load-path bullet ("`ITEMS_SetSockets`' own clamps are not reached by the
+run and stay inferred (§ 7)") and § 7's two `[I]` bullets on the clamps and their order get dated notes pointing here:
+the size, 6 and `ItemMaxSockets` clamps and their order are now reached on the drop path, as steps of the cap (no
+request exceeded the cap, so the clamp of the write is not; review scope); the quality clamps are not
+(fn:ITEMS_SetSockets@0x0062BCB0, run:2026-10-20-sweep-items-chain).
+
+**Tally:** 1 statement: 1 raised in part (sock 42); the S2c piece of sock 44 in part.
 
 ## Data touched
 

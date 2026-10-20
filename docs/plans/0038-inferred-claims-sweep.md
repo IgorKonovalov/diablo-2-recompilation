@@ -2841,3 +2841,110 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request
     [p38s7 review](../backlog/archive/2026-10-20-spec-writer-architect-p38s7-items-quality-review.md) closed; the H2a
     spec-updates and S2a tc 64 entries stay open for items/tc and objects.
+- **2026-10-20 — Batch H2b resumed (reverser, `lane/h2b`, head `db28349`).** The lane's first agent stopped after
+  three tools-only checkpoints (`bd65fae`, `67d28a5`, `db28349`: logger `tools/gdb/h2b.py` and `items-h2b.gdb`,
+  `tools/h2b_sessions.py`, `tools/sweep_h2b.py` with 10 tests, cube recipes `h2bjewel`/`h2bthrow`). Kept sessions so
+  far (slot 2, `workspace/logs/h2b/`): `classic-a`, `throw`, `jewel`, `hell-a` (death at `/players 8` after 147 s, kept
+  and recorded as a death), `hell-b` (`/players 1`, cut off; to be checked before use), two dev logs. Still to do:
+  sessions hell-c, hell-d, classic-jail, classic-cat (cap 20); the full check set; the five findings' ledgers, run
+  record, manifest, § 2.6 entry, review request, spec-writer entry and symbol raises. Nothing below this note's
+  checkpoint is claimed yet.
+- **2026-10-20 — Batch H2b paused at the owner's request (reverser, `lane/h2b`).** Slot 2 stopped and its saves
+  directory restored (empty, no aside); no game, driver, pilot or gdb of the lane left running.
+  - **Sessions so far** (run:2026-10-20-sweep-items-chain, `workspace/logs/h2b/`, 16 launches of the 20 allowed):
+    kept 12 logs (`items-chain-run.lst`, `items-chain-manifest.sha256` `eddc187f…`, `sha256sum -c` from
+    `workspace/logs/h2b`): `classic-a`, `-b`, `-c` (classic Normal outdoor sweeps, 163, 177 and 201 creations),
+    `classic-jail` (pilot stalled in the Jail after 69 s, 23 creations), `classic-cat` (no cast in the Catacombs, 0
+    creations), `hell-a` (died at `/players 8` after 147 s), `hell-c`, `hell-d` (Eldritch at `/players 1`, 34 and 63
+    creations), `jewel` (17 transmutes), `throw` (9 transmutes), and the new expansion Normal sweeps `exp-cold` and
+    `exp-stony`. Development logs in `dev/` (`items-chain-dev-manifest.sha256` `ced144d2…`): `dev1` classic-a, `dev2` and
+    `dev3` hell-b (both cut off; `dev3` by the first agent's stop), and **`dev4` classic-d (map seed 3914): gdb aborted
+    with `i387-tdep.c:1057: internal-error: i387_supply_xsave: Assertion 'regs != NULL' failed` (log line 1200), a gdb
+    18.1 thread race under Wine; a tool failure, not a model mismatch.** No kept log has `internal-error:`.
+  - **Checks so far** (spot runs, outputs not kept yet): `sweep_h2b.py logs` 0 bad on every kept log; `uniques.py`
+    203/203, `quality.py` 185/185 and `tc.py replay` 181/181 on the first four logs; `cube.py check` of
+    run:2026-10-15-cube's two rare logs reproduces (4 rare jewels at count 3, 10 other rares).
+  - **Tools since the resume note:** `sweep_h2b.py` `tors` rule reads `SOKM` (the tors test at 0x00556BEC is reached only
+    past `ItemMaxSockets` > 0, 0x00556B96) with an expansion control, 3 new tests (13 OK); `h2b_sessions.py` sessions
+    `exp-cold`, `exp-stony`. Readings re-checked with objdump: the `ItemCreate` record-seed branch 0x00558E47, `GS1`
+    after the `ItemSeedInit` call 0x0055532A, the `SetSockets` switch table 0x0062BDDC, the jewel branch 0x005C1C74,
+    C5a/R1 0x0065E62D/0x0065E71D, `MBF` 0x0055667D, the classic `version ≥ 100` refusal 0x00558DBC (`game+0x70` = 0),
+    the type-11 call (exact type test at 0x00557DE7).
+  - **Early results (to be re-taken from kept check outputs):** classic body armour now reached the tors test 5 times
+    (`classic-b` 1, `classic-c` 4, all q 2) with no socket draw (prop 20); `throw`: 9 of 9 rare → magic → superior,
+    18 empty name scans, 11 empty magic candidate lists; `jewel`: 9 at count 3, 8 at 4.
+  - **Left:** re-run map seed 3914 (or another classic outdoor session) for the gdb crash; the full check set
+    (`scratchpad/h2b2/checks.sh`, which now refuses a kept log with `internal-error:`); the five findings' ledgers
+    (drafts for items/0001, 0004 and 0005 in `scratchpad/h2b2/s000N.md`, the first agent's in `sec000N.md`, all to be
+    re-counted from the kept outputs); run record and manifest; corrections (rule 12) into items/0005 § 5 (tests (a)
+    "refused no row in the run"), § 6, items/0006 § 6 (sockets), items/0007 § 7, items/0001 § 8; inventory § 2.6;
+    symbol raises; review request; spec-writer entry.
+- **2026-10-20 — Batch H2b filed (reverser, `lane/h2b`, resumed from the pause note above).** One more launch on slot
+  2: classic-d re-run on map seed 3914 (123 creations, Black Marsh explored after 305 s, no `internal-error:`), then
+  slot 2 stopped and its saves directory restored (empty, no aside). `grep -l "internal-error:"` over the kept and dev
+  logs: only `dev/dev4` (the aborted classic-d). 17 launches of the 20 allowed, 13 kept logs. Every count re-taken from
+  the full check set in `workspace/logs/h2b/check/` (manifest passes), not from the note or the drafts.
+  - **Ledger** ([items/0001](../findings/items/0001-tc-resolution.md#plan-0038-batch-h2b-2026-10-20),
+    [0004](../findings/items/0004-uniques-sets.md#plan-0038-batch-h2b-2026-10-20),
+    [0005](../findings/items/0005-affixes.md#plan-0038-batch-h2b-2026-10-20),
+    [0006](../findings/items/0006-properties.md#plan-0038-batch-h2b-2026-10-20),
+    [0007](../findings/items/0007-sockets-runewords.md#plan-0038-batch-h2b-2026-10-20)): 18 rows, 25 statements:
+    **14 raised** (tc 68; us 9, 39; aff 5, 13 ×2, 17, 19 ×2, 21 ×3; prop 20 ×2), **5 raised in part** (tc 58, us 7,
+    us 35, aff 24, sock 42), **1 shortfall** (prop 24), **5 reclassified d-none** (us 10, prop 7 ×3, aff 20). S2c's
+    sock 44 piece met in part; the H2c companion found no func 12, 23 or 24 slot.
+  - **Checks** (run:2026-10-20-sweep-items-chain): `sweep_h2b.py logs` 0 bad, `tc.py replay` 1 118/1 118,
+    `items_chain.py both` and `uniques.py` 1 043/1 043, `quality.py` 1 022/1 022, `cube.py` 26/26 and the 2026-10-15
+    rare logs 14/14, 13 tests OK.
+  - **Corrections carried (rule 12):** items/0005 § 3 tests (a) and the Phase 2 not-reached list; items/0004 Answer and
+    not-reached list; items/0007 Answer and § 7's clamp bullets; items/0006 § 6 tors; items/0001 § 8 item seed.
+  - **Symbols:** `sub_00558D90_ItemCreate`, `sub_0055A550_DropCreateItem` I → C.
+  - **Inventory:** [§ 2.6 H2b](0038-inventory/README.md#26-moves-made-by-the-batch-reviews), three rows (5 statements)
+    proposed a-run → d-none; totals against `main` `9ef5f84`: static 567, harness 526, blocked 414 (d-none 288),
+    deferred 2, raised 17: 1 526. `main` is not merged into the lane (the merge was refused by the session's permission
+    layer); the review merges it.
+  - **Backlog:** review request
+    [2026-10-20-reverser-architect-review-h2b-items-chain](../backlog/archive/2026-10-20-reverser-architect-review-h2b-items-chain.md);
+    spec-writer entry
+    [2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates](../backlog/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md)
+    (to be released with the review).
+  - **Next:** architect review of `lane/h2b`; then H2c.
+- **2026-10-20 — Review of `lane/h2b`, batch H2b (items: affixes, tc, uniques-sets, properties, sockets-runewords;
+  architect): accept with fixes (5).** `main` (`9ef5f84`) merged into `lane/h2b` first: one conflict, the end of
+  inventory § 2.6 (the plan 0044 Phase 3 block and the H2b block, kept in that order); the plan log merged clean;
+  `backlog.py archive` run after it. Read: the plan log entries, the run record, the five findings' H2b sections and
+  corrections, the inventory § 2.6 block, `re/symbols.csv`, the backlog entries, and the check outputs.
+  - **Re-checked** (worktree, `systemd-run --user --scope -p MemoryMax=4G`): `sha256sum -c` passes on
+    `items-chain-manifest.sha256` (13 logs), `items-chain-saves.sha256` (from `saves/`) and the dev manifest (from
+    `dev/`); every cited check-output hash and the tool hashes match the files (`tc.py` `36892d1a…` is the lane's
+    revision; `main`'s `f26df35d…` replays the same 1 118 calls with 0 failed, kept as `check/review/`). The tails of
+    `check-tc.txt`, `-items_chain`, `-uniques`, `-quality`, `-cube`, `-static`, `-rareboth`, `-tests` agree with the
+    record; the per-log sweep is 0 bad in all 13. The ledger recounts to 18 rows, 25 statements (14 + 5 + 1 + 5).
+  - **Each raise against a reading it rules out:** us 9, tc 58 and tc 68 by the `GS0`–`GS4` seed model (a record seed
+    would show `GS3` and other seeds); us 39 by `GQJ`/`GQX` (any builder step on the game or unit seed would break the
+    993/1 043 counts); aff 5 and aff 19 by 21 jewel counts (the general table matches each with odds ≤ 3/8); aff 17 by
+    `MBF` after exactly the 9 empty builds of 80; prop 20 by the expansion `tors` control (the draw is unconditional
+    past the tors test, 0x00556C0F); aff 24 and us 35 by the logged `{S, 666}` resets. aff 13 and aff 21: the lane's
+    control ("candidates at version 101") does not separate C5a/R1 from the rows' version gate; the review's control at
+    version 1 with the refusal removed finds 30–37 candidates per side, 0 with it (fix 1). The three d-none moves hold;
+    the review added a byte search of the pinned image (no `elx` code).
+  - **Rulings.** (a) The three d-none moves accepted (§ 2.6, harness 531 → 526, d-none 283 → 288). (b) prop 20 raised
+    as filed. (c) us 7 in part as filed: the fallback reached is not the one the statement names. (d) sock 44's S2c
+    piece in part as filed. (e) The rule-12 corrections are in place in items/0001 § 8, 0004 Answer and *Not reached*,
+    0005 § 3 and *Not reached*, 0006 § 6, 0007 Answer and § 7. (f) Symbols: the two raises stand; the five candidates
+    are raised too (`ItemSeedInit`, `ItemFallbackSuperior`, `ItemRollSockets`, `ItemMaxSockets`, `ITEMS_SetSockets`),
+    each by its logged output against a model, with the evidence column moved to the finding that holds the `[C]`
+    statement and the Functions tables of items/0002, 0003, 0004, 0006 and rng/0002 updated (fix 3).
+  - **Fixes applied (5):** (1, 2) overclaim: aff 13's and aff 21's controls replaced by the version-1 control
+    (`check/review/c5a_control.txt`; items/0005, run record *Review checks*). (3) overclaim: sock 42's `[C]` scoped to
+    the cap's steps; every one of the 34 requests lay in `1..cap`, so `max(n, 1)` and the clamp of the write join the
+    remainder (items/0007 sock 42, the Answer note, § 7's order note, the § 2.6 bullet, the spec-writer entry's (r)).
+    (4) under-claim: the five symbols above. (5) other: the dev manifest's path in the run record.
+  - **Totals** (recomputed once after the merge, § 2.6): **static 567, harness 526, c-emu awaiting a batch 0, blocked
+    414** (d-none 288, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.** § 5 marks
+    H2b done.
+  - **Backlog:** review request
+    [2026-10-20-reverser-architect-review-h2b-items-chain](../backlog/archive/2026-10-20-reverser-architect-review-h2b-items-chain.md)
+    closed; the spec-writer entry
+    [2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates](../backlog/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md)
+    released (open, for the Phase 3 re-tag of items/tc, uniques-sets, affixes, properties and sockets-runewords).
+  - **Next:** H2c (forced), after the H2b merge.

@@ -207,6 +207,9 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-20 | `lane/p46m3` review | 0046 P1 9c | architect-review | 131 060 | 54 | 14 | — | gave accept with fixes | — (on the lane row; three radius values kept `[I]`, register not an argument; hit 2 to 9d) |
 | 2026-10-20 | `lane/g3` | 0044 follow-up (travel G3 re-tag) | spec-writer | 69 795 | 23 | 7 | — | accept with fixes | 2: omission 2 |
 | 2026-10-20 | `lane/g3` review | 0044 follow-up (travel G3) | architect-review | 68 875 | 23 | 5 | — | gave accept with fixes | — (on the lane row; the [C] note names the refusals the partied control excludes and the 0x00554630 wrapper before `PartyIdOfUnit`) |
+| 2026-10-20 | `lane/h2b` (agent 1, tools and first sessions) | 0038 H2b | reverser-harness | 414 431 | 251 | 31 | slot 2 | accept with fixes | — (on the write-up row) |
+| 2026-10-20 | `lane/h2b` (agent 2, sessions to the pause) | 0038 H2b | reverser-harness | 231 922 | 137 | 53 | slot 2 | accept with fixes | — (on the write-up row) |
+| 2026-10-20 | `lane/h2b` (agent 3, final run and write-up) | 0038 H2b | reverser-harness | 230 202 | 101 | 21 | slot 2 | accept with fixes | 5: overclaim 3, under-claim 1, other 1 (aff 13 and aff 21 controls at the wrong item version; sock 42's write clamp never acted; five symbols left at I; dev manifest path) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
