@@ -186,6 +186,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-20 | `lane/p45b` review | 0045 P1b | architect-review | 133 429 | 52 | 12 | — | gave accept with fixes | — (on the lane row) |
 | 2026-10-20 | `lane/e5fix` | 0045 E5 fix | spec-writer | 76 507 | 30 | 7 | — | accept with fixes | 1: omission 1 |
 | 2026-10-20 | `lane/e5fix` review | 0045 E5 fix | architect-review | 67 995 | 24 | 5 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/p46m1` | 0046 P1 9a | reverser-static | TBD | TBD | TBD | Ghidra (lane copy) | accept with fixes | 3: overclaim 1, omission 1, other 1 |
+| 2026-10-20 | `lane/p46m1` review | 0046 P1 9a | architect-review | TBD | TBD | TBD | — | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

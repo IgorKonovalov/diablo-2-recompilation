@@ -98,7 +98,9 @@ function a stock row uses on the machinery of plan [0045](0045-skills-missiles-m
   helpers `re/symbols.csv` rows: none has one), and
   what removes pets when `petmax` falls (a skill shrine wearing off). Each is filed back to plan 0045's spec as a
   correction.
-- **Outputs:** `docs/findings/skills/0003-catalogue.md` (one section per batch, one sub-section per function);
+- **Outputs:** one finding per batch, `docs/findings/skills/NNNN-<batch>.md` numbered in landing order from 0004
+  (batch 9a is [skills/0004](../findings/skills/0004-missile-do-1-18.md); 0003 is P1.3's handlers; ruled at the
+  `lane/p46m1` review), one sub-section per function;
   `re/symbols.csv` rows (subsystem `skills/catalogue`); emulation cases under `tools/` with their memory specs.
 - **Done when**, per batch: each function has, with addresses and `[I]` or better: its params and calcs read, the
   states applied (with their durations' source), the missiles and units created, its draws in order and the seed of
@@ -183,5 +185,25 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   13 800 cases, 0 mismatches; do 7 in part, do 13 not emulated (named). Surprises: entry 1 is a thunk; do 17 and 18
   read the raw `Range` column; Frozen Orb's `+0x28` is a direction index, not a seed word; the cairnstones portal and
   the Countess chest gold answer quests/0001's open question. Review request
-  [to the architect](../backlog/2026-10-20-reverser-architect-lane-p46m1-review-plan-0046-batch-9a.md) (two rulings:
+  [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p46m1-review-plan-0046-batch-9a.md) (two rulings:
   the `observe` boundary under ADR-0015, and the finding's file name).
+- **2026-10-20 — `lane/p46m1` review (architect): batch 9a accepted with fixes (3: the boundary tags, the call-site check, the plan's output name).** Spot checks: objdump of
+  `sub_005A9820_MissSubNearReseed` (`RNG_SeedInit(m+0x20, SubX + elapsed)` at 0x005A9877, then two
+  `RNG_RangeB(m+0x20, 2(r − 1))` at 0x005A98C2 and 0x005A98D1, x first) and do 18 (two `RNG_RangeB(m+0x20,
+  2·Param3 + 1)`, `Param3` = record `+0x40`, at 0x005AF43A and 0x005AF44E, x then y) agree with the finding;
+  `g_Circle64X/Y` read at 0x005AF116/0x005AF11D and start `(30, 0), (29, 2)`; `sha256sum -c manifest.sha256` passes
+  (48 files); `check homing scatter` re-run from the kept outputs gives `check.txt`'s lines, and `cases homing`
+  regenerates the kept case and memory files byte for byte; `EmuTrace.java` is unchanged (`3255db0c…`, as on `main`).
+  **Ruling (1):** a case that ends at an `observe` boundary does not meet ADR-0015 (1) and (3) as written (two
+  treatments of a reached callee; no register arguments among (3)'s outputs). The method is sound, so the architect
+  drafted [ADR-0021](../adrs/0021-observed-boundaries-in-emulation.md), **proposed for the owner**; until it is
+  accepted the boundary claims of skills/0004 (Answer, §§ 3–11, the Functions table, the dated notes in skills/0002
+  §§ 4 and 8, experiments) are `[I]`, and the refusal paths that return are `[C]` (§ 2). ADR-0021 (b) needs the call
+  site checked: the review checked it from the kept outputs (`workspace/logs/skills-cat-9a-review/callsites.txt`
+  `8ea8058b…`, one site per function and boundary); **from batch 9b the checker asserts the return address of each
+  observed boundary.** **Ruling (2):** one finding file per batch, numbered in landing order (Outputs above).
+  Negative controls: homing's 22 failures of 1 500 (sizes left out of the distance) are enough to show its checker
+  live (ADR-0015 (4)), since the size term decides the threshold only near `Param2`; the step's sign and `max(Param3,
+  1)` are separated by the 208 step cases, not by the control. From 9b, a family whose control fails fewer than 50
+  cases adds a second perturbation on another claim. Batch 9b may start now (with the call-site check); its boundary
+  claims follow ADR-0021's fate like 9a's.

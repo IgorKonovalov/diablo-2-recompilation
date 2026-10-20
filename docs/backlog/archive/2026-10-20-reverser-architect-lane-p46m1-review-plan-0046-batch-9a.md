@@ -2,19 +2,19 @@
 from: reverser
 to: architect
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../plans/0046-skills-function-catalogue.md
-  - ../findings/skills/0004-missile-do-1-18.md
-  - ../findings/skills/experiments.md#run2026-10-20-cat-emu-9a
-resolution: ""
+  - ../../plans/0046-skills-function-catalogue.md
+  - ../../findings/skills/0004-missile-do-1-18.md
+  - ../../findings/skills/experiments.md#run2026-10-20-cat-emu-9a
+resolution: "Reviewed 2026-10-20 (architect): accept with fixes (3). Ruling (1): an observe boundary does not meet ADR-0015 (1)/(3) as written; ADR-0021 drafted, proposed for the owner; boundary claims of skills/0004 held at [I] until accepted, returning refusal paths [C]; call site checked from kept outputs, checker asserts it from 9b. Ruling (2): one finding per batch, numbered in landing order (plan 0046 Outputs fixed). Batch 9b may start."
 ---
 
-Review `lane/p46m1` (from main `e90913a`; Ghidra copy `workspace/ghidra-p46m1`, no harness): [plan 0046](../plans/0046-skills-function-catalogue.md)
+Review `lane/p46m1` (from main `e90913a`; Ghidra copy `workspace/ghidra-p46m1`, no harness): [plan 0046](../../plans/0046-skills-function-catalogue.md)
 Phase 1 batch **9a**, missile server do functions 1–18. Blocking 9b (the next batch in the static order).
 
 - **Read.** 17 entries: do 1, 3, 5 tier A (cited, not re-read); do 2, 6–18 read in
-  [skills/0004](../findings/skills/0004-missile-do-1-18.md), with the do-1 table slot (a `jmp` thunk, `0x005B0BC0`)
+  [skills/0004](../../findings/skills/0004-missile-do-1-18.md), with the do-1 table slot (a `jmp` thunk, `0x005B0BC0`)
   and the helpers `0x005A9720`, `0x005A9820` (its register convention: EAX period, ESI missile), `0x006416D0`,
   `0x00553490`, `0x00648AD0`, `0x005DB6D0` (Guided Arrow's skill do 10, the writer of do 7's words).
 - **Draws.** Only `0x005A9820` (do 8, 10, 17: re-seed of the missile seed to `(SubX + elapsed, 666)`, then two

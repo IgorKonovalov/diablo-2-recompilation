@@ -56,7 +56,11 @@ Plan 0045 Phase 2's harness runs: none yet. Plan 0046's emulated runs (ADR-0015)
   `CALC_Eval` jump table, `UNIT_GetSizeX`'s jump table, a target's `+0xC6`), each then declared or written by the case
   writer; the outputs above are from the final case files.
 - **Conclusion:** bit-exact reproduction (evidence rule 4, ADR-0015) of the 13 functions' maps up to their boundary
-  calls, 13 800 cases, 0 mismatches; raises skills/0004 §§ 3–11's `[C]` statements (do 7's re-plan and do 13 not
-  covered). The `observe` boundary is put to the architect (skills/0004 *Open questions*). Not covered: what any
+  calls, 13 800 cases, 0 mismatches; supports skills/0004 §§ 3–11 (do 7's re-plan and do 13 not covered).
+  *Architect ruling (`lane/p46m1` review, 2026-10-20):* the `observe` boundary does not meet ADR-0015 (1) and (3) as
+  written; the proposed [ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md) admits it. Until the owner
+  accepts it, the statements that rest on cases ending at a boundary are `[I]`; the refusal paths that return are `[C]`
+  (skills/0004 § 2). The review checked the call site of every observed boundary from the kept outputs
+  (`workspace/logs/skills-cat-9a-review/callsites.txt` `8ea8058b…`: one site per function and boundary). Not covered: what any
   boundary callee does; faults (§ 1); when the game runs these functions or with which seed.
   (fn:sub_005A9820_MissSubNearReseed@0x005A9820, fn:sub_005AF030_MissDo15OrbBolts@0x005AF030)
