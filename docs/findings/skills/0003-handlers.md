@@ -361,6 +361,14 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
 - [I] As above; each row's function is the `ST`/`DO` line of `handlers-scan.txt` and its draws the `DRAW` line.
   (fn:sub_005DB410_SkillDo08MultiShot@0x005DB410, fn:sub_005C37C0_SkillDo30Curse@0x005C37C0,
   fn:sub_005C7160_SkillDo117Firestorm@0x005C7160, fn:sub_0056E780_SkillForUnitsNearTarget@0x0056E780)
+  *2026-10-20 (plan 0046 batch `sor`), emulated:* do 18, 20, 22 and 28 are reproduced up to their boundaries (`[C]`
+  under ADR-0021; [skills/0008](0008-sorceress.md) §§ 7–8): do 18 up to `STATE_GroupClear(caster, aurastate; 1)`;
+  do 20 up to `SKILLS_ForUnitsInRange`, whose block is `{calc2, calc1, the difficulty record's +0x40, elemental
+  length, EType}` with the third word 0 when `game+0x70` is 0 (refinement: the row above has the `+0x40` term
+  always); do 22 up to `NovaAtUnit`'s first creation, its `vel` being `0x00663270(cls, lvl)` (Missiles `Vel` +
+  `VelLev · lvl / 8`) plus calc1; do 28 up to `COLL_WHTest(room, target point, Size, Size, 5)` inside
+  `0x0056E450`. Do 27 is not emulated. Everything after those calls stays as read above, `[I]`.
+  (fn:sub_005C9800_SorSkillStaticMin@0x005C9800, fn:sub_005C9B50_SkillDo22NovaAtSelf@0x005C9B50)
 
 ### 6. Tier A: missile do, hit and damage functions
 

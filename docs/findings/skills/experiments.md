@@ -270,3 +270,70 @@ Plan 0045 Phase 2's harness runs: none yet. Plan 0046's emulated runs (ADR-0015)
   the hit table sit behind a signed `test ax, ax; jle`. Not covered: what any boundary callee does and everything
   after it; the fatal path after its first call (`0x00408090`); when the game runs these functions or with which seed.
   (fn:sub_005AC350_MissHit43HealVortex@0x005AC350, fn:sub_005ACDF0_MissHit58Reseed@0x005ACDF0)
+
+## run:2026-10-20-cat-emu-sor
+
+- **Question:** (plan 0046 Phase 1, batch `sor`) Do the sorceress start functions 11–14 and do functions 17–26, 28,
+  29 and 144 (with the Inferno helpers `0x005C8CA0` and `0x005C8E30`) map their inputs (the Skills and Missiles
+  records, the caster, its path, target link, rooms, stat and state lists, skill list and used skill, the target
+  unit and its owner and alignment, the game frame, difficulty and expansion words, and the seeds) to the result they
+  return, or to the arguments, pointed-to bytes, written words and seed states at the call they end in, exactly as
+  [skills/0008](0008-sorceress.md) §§ 3–8 say, and do they leave the target's seed alone?
+- **Setup:** as run:2026-10-20-cat-emu-9d: Ghidra 12.1.2 p-code emulator on the pinned `game.exe` (lane copy
+  `GHIDRA_PROJ_DIR=workspace/ghidra-p46m5`, symbols replayed from `re/symbols.csv`, heap 3 GB),
+  `re/ghidra_scripts/EmuBoundary.java` unchanged (`286393aa…`). No wine, nothing runs natively, no slot. Models, case
+  writers and checks: the `sor` families of `tools/skills_catalogue_emu.py` (`7525830c…`; `tools/rng.py`,
+  `tools/sweep_s4b.py`), with 9d's conventions: the call site of every boundary asserted with a site control, the
+  caster's and the target's seeds written and compared in every case (a control moves do 21's draw to the target's
+  seed), a boundary's pointer argument into the caller's frame compared by content (the `MissileCreate` blocks, the
+  `STATE_ApplyTimed` block at ECX, the `SpawnOwnedMonster` block, do 20's 20-byte block, do 21's zeroed packet), and
+  no model compares a callee-saved register that is not a boundary argument. Each case calls the function with
+  `ECX` = the game, `EDX` = the caster and `(id, lvl)` on the stack (`(id, lvl, cls)` for the helpers). All inputs
+  synthetic (stock parameter values among them); every case-writer draw from `random.Random("catsor-<family>")`.
+  Files in `workspace/logs/skills-cat-sor/`, `manifest.sha256` `83d7c0f9…` (35 files: cases, memory specs, expected
+  inputs, outputs, the `.err` logs (the scope line only), `cases.txt`, `check.txt` `961ccef7…`, `static.txt`
+  `91a6de74…`, `rows.txt` `148cf553…`, `repro.txt` `9a74392b…`); `sha256sum -c manifest.sha256` from that directory
+  passes. `repro.txt` records that the same tool revision regenerates every case, memory and expectation file of 9a,
+  9b, 9c and 9d byte for byte and reproduces their kept `check.txt` and `static.txt` byte for byte from their kept
+  outputs.
+- **Procedure:**
+  ```
+  D=workspace/logs/skills-cat-sor
+  python3 -I tools/skills_catalogue_emu.py cases --batch sor > $D/cases.txt
+  for f in start_sor inferno_sor create_sor state_sor tk_sor hydra_sor; do
+    GHIDRA_PROJ_DIR=workspace/ghidra-p46m5 GHIDRA_HEADLESS_MAXMEM=3G systemd-run --user --scope -p MemoryMax=4G \
+      tools/ghidra.sh emuboundary $D/$f.cases $D/$f.mem > $D/$f.out 2> $D/$f.err
+  done
+  python3 -I tools/skills_catalogue_emu.py check  --batch sor > $D/check.txt
+  python3 -I tools/skills_catalogue_emu.py static --batch sor > $D/static.txt
+  python3 -I tools/skills_catalogue_emu.py manifest --batch sor --write
+  ```
+  Each memory spec points `g_pDataTables` at a scratch DataTables written one field per field read (Skills,
+  Missiles, ItemStatCost, MonStats, MonStats2, the States and PetType counts), the missile table `0x0096C794` and
+  the difficulty table `0x0096C8AC` at scratch tables (inputs of the claims; skills/0008 § 2), names the boundaries
+  (`observe`: 9d's less `UnitsSameParty`, and fifteen more, skills/0008 § 2) and guards the allocator.
+- **Observed** (`check.txt`, `static.txt`):
+  ```
+  CATSOR start_sor   cases=1500 match=1500 bad=0 neg=220 traced=51 undeclared=0 stopped=0
+  CATSOR inferno_sor cases=1200 match=1200 bad=0 neg=246 traced=8  undeclared=0 stopped=0
+  CATSOR create_sor  cases=1800 match=1800 bad=0 neg=330 traced=12 undeclared=0 stopped=0
+  CATSOR state_sor   cases=1600 match=1600 bad=0 neg=153 traced=32 undeclared=0 stopped=0
+  CATSOR tk_sor      cases=1200 match=1200 bad=0 neg=116 traced=65 undeclared=0 stopped=0
+  CATSOR hydra_sor   cases=1200 match=1200 bad=0 neg=228 traced=80 undeclared=0 stopped=0
+  CATSOR static data_stores=1 pins=35 pins_ok=35 ro_reads=7 table_entries=17
+  ```
+  8 500 cases. Every negative control fails (per-control counts on the `negative control` lines; each family has one
+  failing 60 or more cases: `inv14` 138, `inv18` 141, `c1lvl` 170, `a1_ge0` 79, `tseed` 93, `lvl_p2` 195); the site
+  control fails on all 2 977 matched boundary cases (27 `site` lines: function, boundary, return address).
+  Development runs before these files (outputs overwritten, not cited): two model slips (the `PlayerPairFlags`
+  registers read from the wrong tuple slot; `PartyIdOfUnit`'s likewise), `UnitsSameParty` observed through 9c's
+  boundary list (the batch now runs it emulated), do 26's second-argument slot outside the stack dump (now dumped at
+  `0x7FF00008`), and three controls failing no case (`dist_ge`, `stun_le`, `charge_a`; the writer now places targets
+  at `r`, the draw at `Param2` and charged lists on purpose). The outputs above are from the final case files.
+- **Conclusion:** bit-exact reproduction (evidence rule 4, ADR-0015) of the functions' maps on returning cases (`[C]`:
+  start 12, 13, 14, do 21's returns, every refusal path) and of their maps up to their boundary calls with the call
+  site, the arguments, the pointed-to blocks, the written words and both seeds asserted (`[C]` under
+  [ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md); skills/0008 names each claim's boundary). The only
+  draw before a boundary is do 21's `RNG_Range(caster seed, 100)`; no case steps the target's seed. Not covered: what
+  any boundary callee does and everything after it; do 27; when the game runs these functions or with which seed.
+  (fn:sub_005C98F0_SkillDo21Telekinesis@0x005C98F0, fn:sub_00554200_UnitsHostile@0x00554200)

@@ -404,3 +404,72 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   added. **The next batch (sorceress) may start**, with 9c and 9d's conventions. One addition: a meaning that a
   boundary callee gives to a compared argument or block word (a class, a mode, a monster id) is stated after the
   boundary, `[I]`, and is never part of the `[C]` sentence.
+- **2026-10-20 — Phase 1 batch `sor` landed for review (reverser, `lane/p46m5`, static, no harness).** The sorceress
+  start functions 11–14 and do functions 17–29 and 144: 18 entries, all read; 17 emulated (do 27 Teleport read only)
+  with the Inferno helpers `0x005C8CA0` and `0x005C8E30` ([skills/0008](../findings/skills/0008-sorceress.md); tier A
+  do 18, 20, 22, 28 emulated too). Draws before the boundaries: do 21 (Telekinesis) only, one
+  `RNG_Range(caster seed, 100)` against `Param2`; no case steps the target's seed. Raised by emulation
+  (run:2026-10-20-cat-emu-sor, `tools/skills_catalogue_emu.py --batch sor`, `check.txt` `961ccef7…`,
+  `manifest.sha256` `83d7c0f9…`): six families, 8 500 cases, 0 mismatches, 27 boundary/call-site triples asserted
+  (site control 2 977 of 2 977), the caster's and the target's seeds compared in every case, the blocks passed by
+  pointer compared by content, two to six negative controls per family (each family has one failing 79 or more);
+  `UnitsHostile` and `UnitsSameParty` run emulated with the alignment rule. The same tool reproduces 9a–9d's kept
+  files byte for byte (`repro.txt`). Surprises: by the alignment rule (`0x00650D70`) a player and a monster with no
+  state-105 list are not hostile (open question); Inferno's channel lives in state 12's list and the used skill's
+  `+0x18` (a monster's end frame `frame + calc2`); Thunder Storm's node `+0x18`/`+0x1C` hold the last struck guid and
+  the re-arm switch; Hydra spawns classes `summon + 0..2`; do 22's velocity is read through a second missile table at
+  `0x0096C794`; start 11's mana test covers any caster type. Tags: 34 `[C]`, 10 `[I]`, 4 `[L]` bullets; 25 symbols
+  added (`I`). Dated note in skills/0003 § 5. Review request
+  [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p46m5-review-plan-0046-batch-sor.md); column
+  readers [to the archivist](../backlog/2026-10-20-reverser-archivist-plan-0046-sor-skills-missiles-column-readers.md).
+- **2026-10-20 — Batch `sor` reviewed (architect, on `lane/p46m5` at `d240aa5`): accept with fixes.** `main` had not
+  moved past `43d534c`, so no merge. Re-run from the lane's tool (`7525830c…`): `check --batch sor` and
+  `static --batch sor` reproduce `check.txt` `961ccef7…` and `static.txt` `91a6de74…` byte for byte;
+  `sha256sum -c manifest.sha256` (`83d7c0f9…`) passes. Spot reads against objdump: do 21's draw and flag
+  (`0x005C99C0`–`0x005C99DC`: `RNG_Range(caster+0x20, 0 + 0x64)`, `SkillGetParam2`, `jge` past the flag), `UnitsHostile`
+  (`0x00554200`), the alignment rule (`0x00650D70`, `0x006259B0`), `0x00663270` and do 27 (`0x005CA360`–`0x005CA3DD`)
+  all match the finding; the 27 site lines and every control are in `check.txt`; tags recounted 34 `[C]` / 10 `[I]` /
+  4 `[L]` bullets as filed. **Rulings:**
+  (1) **Do 21's draw holds at `[C]`.** The model compares the flag `[ebp−8]` as a pre-call byte at the `SkillRollPhys`
+  boundary and both seeds; the writer puts 35 % of the reaching cases at `Param2` or one off it and draws `Param2` from
+  negative and full 32-bit values too, so `stun_le` (23) decides `<` against `≤` at the edge and the signed compare
+  is exercised; `tseed` fails all 93 draw cases. What the flag does (`|= 9`, a stun) is after, `[I]`, as filed.
+  (2) **`UnitsHostile` and `UnitsSameParty` emulated is accepted**: they read only declared records (unit, owner link,
+  stat lists) and call nothing undeclared, so running them is condition (1)'s first treatment, and the 9c boundary
+  list is a list, not a rule. The alignment reading is right by objdump: `0x006259B0` gives 0 for no unit or no
+  stat list, 2 for a type above 1, else stat 172 of the state-105 list (0 without one); `0x00650D70` calls two units
+  allied when both are 0 or both 2, and `UnitsHostile` returns the negation. The consequence for a player and a
+  monster without the list stays `[I]` plus its Open question, which is enough for the finding; **no harness check is
+  needed for the finding, but the Phase 3 spec may not state the play consequence** ("Telekinesis refuses
+  monsters") until a static read of who allocates the state-105 list (its writers) says which units carry it in play;
+  the spec states the rule as a map only. One wording fix: the missile-owner branch of `UnitsHostile`, never
+  exercised, sat inside the `[C]` bullet.
+  (3) **The `.data` inputs are admitted, but not on the writer scan.** Under the S1e review's ruling 3 (last
+  sentence), tables set on purpose as inputs of a claim that is a map from their bytes need no justification; that
+  is the ground here. The writer scan cited for them is wrong: `static_sor` (like 9a's and 9b's scans) matches only
+  `PTR`-form stores, so it misses `mov ds:0x0096C794, eax` (`0x00663139`, `DATATBLS_LoadTable("missiles", 0x1A4)`'s
+  result) and `mov ds:0x0096C8AC, eax` (`0x006180C5`), and the counts written through pushed pointers (`0x00663115`,
+  `0x00617FF8`). 9a's and 9b's scans of the calc function counts `0x007457AC`/`0x00745848` stand: a full objdump grep
+  finds only reads of either address, no `moffs` store and no address taken. **Condition for the next batch:** any
+  writer scan it cites also matches the `moffs` store form and immediate pushes or `mov reg, imm` of the address,
+  or it does not cite one.
+  (4) **The weak controls are accepted.** Each fails exactly on the edge class the finding names (`nostate`,
+  `town14`, `dist_ge`, `ign1c`, `charge_a`), the writer places that class on purpose, and a wrong reading of the
+  claim could not match those cases by chance; every family also has a control of 79 or more. A weak control stays
+  admissible only with its deciding class named, as here.
+  **Do 27 (§ 9) read only is accepted at `[I]`.** The reading matches objdump; the stated reason is thin
+  (`LEVELS_GetRecord` is a table read the emulator could serve, and a boundary at `0x006229F0`/`UnitTeleport` would
+  give `[C]` on the `Teleport` byte test), so Phase 3 keeps § 9 `[I]` or a later batch emulates it; not a fix.
+  **Earlier rulings held:** no claim rests on a non-argument register (9c ruling 1); callee meanings sit after the
+  boundary in the body and the Answer (9d ruling, reverser review-fixes 13).
+  **Fixes, made in the finding:** (1) § 2's inputs bullet no longer rests on the writer scan; it cites ruling 3 and
+  says why the scan is no justification (misread); (2) a new § 2 `[I]` bullet records the load-time writers of
+  `0x0096C794` and `g_pDifficultyLevels`, and the `0x0096C794` Open question narrows to whether the second
+  `missiles` load equals `DataTables+0xB64` (counted with (1)); (3) `UnitsHostile`'s missile branch moves out of the
+  `[C]` sentence as not exercised (overclaim); (4) § 7 states `Vel` and `VelLev` are read unsigned (`movzx`) and
+  § 9 that do 27 returns `UnitTeleport`'s value, 0 without a room or a Levels record (omission). Counted: 3
+  (misread 1, overclaim 1, omission 1). Tags after the
+  review: 34 `[C]`, 11 `[I]`, 4 `[L]` bullets. Review request closed
+  ([archive](../backlog/archive/2026-10-20-reverser-architect-lane-p46m5-review-plan-0046-batch-sor.md)); ledger rows
+  added. **The next batch (amazon) may start**, with 9c, 9d and `sor`'s conventions and ruling 3's condition on
+  writer scans.
