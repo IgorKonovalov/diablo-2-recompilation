@@ -232,3 +232,20 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-20 — Drafted (architect, `lane/plans45`).** Status `proposed`, with ADR-0020 (proposed).
 - **2026-10-20 — Approved (owner, via the orchestrator).** Plans 0045–0049 and ADR-0020 approved as proposed; the run
   order of the [plans index](README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049) is the current queue.
+- **2026-10-20 — Phase 1 batch P1.1 landed for review (reverser, `lane/p45r`, static).**
+  [skills/0001-dispatch](../findings/skills/0001-dispatch.md): the request (client packets 0x05–0x11, `PLRMSG_SkillAtXY`
+  / `PLRMSG_SkillAtUnit`, stat 328 counted per request, the dual-wield Attack alternation, the `AttackNoMana` fallback,
+  the melee-range walk), `SKILLS_CanUse` and its codes, the mode command, start and frame (players and monsters, the
+  `Unit+0xC4` bit-6 "action done" flag), `SKILLS_SrvStart` and `SKILLS_SrvDo` with `g_SkillStartFuncs` `0x00732140` and
+  `g_SkillDoFuncs` `0x007322B0`, the mana cost and its rounding (`minmana` floors only the payment; the payment's result is
+  ignored), blood mana, the delay state 121, periodic and channelled skills, item charges, item auras and item-event casts
+  (`ITEMSKILL_Cast`, the `ItemEffect` override), the skill hit packet (the writer of the conversion fields
+  `+0x65`/`+0x68`; hits built at the mode start and delivered at the action frame), progressive charges, monster skill
+  use and `MonAttackStats`' callers and owner skill damage, `PLAYER_UseAmmo`'s callers and Impale's weapon wear.
+  All `[I]` except the two tables and the full-row check (`[C]`). **Correction** carried into combat/0001 § 14: the
+  progressive finisher's `RNG_Step` is a peek (seed saved and restored), not a draw; combat/0001's open question on the
+  conversion writer answered. 83 symbol rows, `re/types/skills.h`, `tools/skills_dispatch_scan.py` with kept outputs
+  (`workspace/logs/skills/p45r-manifest.sha256`). Backlog: review request to the architect, the combat-spec change to the
+  spec-writer, the Skills column anchors to the archivist. Open (in the finding): `repeat`'s reader, the ally test's
+  inner record, `Unit+0x38`, the `srvprgfunc` entries (P1.3 / plan 0046). Phase 0 (archivist) had not run; this batch
+  read the Skills layout from the existing table doc.
