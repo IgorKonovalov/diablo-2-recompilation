@@ -118,9 +118,10 @@ A2. DeliverQueued(att, def):                                          [I] (fn:CO
 - A2. A delivery can happen on a later frame than the hit test when a skill do-function queues it (362 such events
   in the run, resynchronised); the attacker's AI may draw in between. [I] (fn:COMBAT_DeliverQueued@0x0057D4F0,
   run:2026-10-16-combat)
-- A2. Before delivery, `SKILL_AttackDo` calls the progressive-charge finisher. For each charged state (a skill whose
-  charge stat is above 0) it **peeks** the attacker's seed: it copies the seed out (`0x005D5374`), calls `RNG_Step` on
-  it (`0x005D537B`), keeps the result and copies the seed back (`0x005D538C`), then passes the kept value to
+- A2. Before delivery, `SKILL_AttackDo` calls the progressive-charge finisher. On a queued hit with result bit `0x1`
+  and the target in melee range, for each charged state (a skill, a level `max(stat 351, current level)` above 0 and a
+  charge stat) it **peeks** the attacker's seed: it copies the seed out (`0x005D5374`), calls `RNG_Step` on it
+  (`0x005D537B`), keeps the result and copies the seed back (`0x005D538C`), then passes the kept value to
   `0x00571AA0`. The finisher's own step therefore leaves the attacker's seed unchanged; the `srvprgfunc` entries it
   then calls are not read and may draw (*Open questions*). The run met no charged state, and an attacker under a
   `meleeonly` state (wolf, bear) skips the finisher. [I] (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D5368–0x005D538C,

@@ -197,9 +197,10 @@ the general formula behind it is read from the code.
 **A player's critical or deadly strike doubles physical damage only**; that is read from the code. A monster's `Crit`
 doubles physical and elemental damage alike, which is confirmed.
 
-**Conversion** of physical damage into an element exists in the build, and a skill sets it up: when the skill hits,
-its hit code copies the skill's element type and its conversion percent into the attack, if the percent comes out
-above 0. No code that sets it was found on a plain attack's path, and no logged attack converted, so all of this is read from the code only.
+**Conversion** of physical damage into an element exists in the build, and a skill with an element type sets it up:
+when the skill hits, its hit code copies that element type and the skill's conversion percent into the attack, if the
+percent comes out above 0. No code that sets it was found on a plain attack's path, and no logged attack converted, so
+all of this is read from the code only.
 
 ### A monster's attack stats
 

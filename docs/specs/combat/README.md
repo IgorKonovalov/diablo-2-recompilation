@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/stats, player/creation, items/properties, data/calc]
 consumed_by: [items/tc]
-tags: {C: 36, I: 21, L: 5}
+tags: {C: 36, I: 22, L: 5}
 updated: 2026-10-20
 ---
 
@@ -172,7 +172,7 @@ A1. PlayerAttack(att):                                                [C] (fn:SK
       PrgHooksBeforeBuild(att, pkt);  BuildDamage(att, def, pkt, 0, 128);  PrgHooksAfterBuild(att, pkt)   ; damage.md, whatever the result
       ResolveAndQueue(att, def, pkt, 128)                             ; delivery.md § A: reductions on a hit
       if att has the `meleeonly` state flag: AttackDeliverMeleeOnly(att, def)        ; [I] (fn:sub_0056C2D0_AttackDeliverMeleeOnly@0x0056C2D0), skips the finisher
-      else: PrgFinisher(att);  DeliverQueued(att, def)                ; delivery.md § A; the finisher peeks att.seed (A2)
+      else: PrgFinisher(att);  DeliverQueued(att, def)                ; delivery.md § A; the finisher peeks att.seed, [I] (A2)
 
 A2. MonsterAttack(att):                                               [C] (fn:sub_005A7670_MonAttackFrame@0x005A7670, fn:MON_MeleeHit@0x005A5490, run:2026-10-16-combat, all of A2)
       ; earlier, at the mode change: MonAttackStats(att, newMode)     ; damage.md § E
@@ -362,7 +362,7 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
 - [L] **Still owed:** the formulas of the stats `MonAttackStats` writes, and a run that checks combat against the
   aggregated stats instead of logged values.
 - [L] **Owed to phase (3), skills and missiles:** a skill's damage packet and `SrcDam`, a missile's packet, its hit
-  test and knockback draws, the full rule of the conversion writers (the skill hit builders write them, [damage § D](damage.md#d-conversion)),
+  test and knockback draws, the full rule of the conversion writers (skill hit builders write them, [damage § D](damage.md#d-conversion)),
   the event handlers other than crushing blow, open wounds and freeze (skill on hit, knockback, slow…), the
   progressive-charge hooks and the `srvprgfunc` entries the finisher calls (its own step is a peek,
   [delivery § A](delivery.md#a-queue-and-delivery)).

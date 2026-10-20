@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, combat/to-hit, monsters/stats, items/properties]
 consumed_by: [combat/reductions, combat/delivery]
-tags: {C: 34, I: 28, L: 5}
+tags: {C: 34, I: 28, L: 4}
 updated: 2026-10-20
 ---
 
@@ -234,7 +234,7 @@ D1. Convert(pkt):                                                     [I] (0x005
       t = 12: pkt.cold += m; pkt.freezeLen ← max(pkt.freezeLen, 50)
 ```
 
-- D1. The skill hit builders write the conversion fields on a hit, before `COMBAT_ResolveAndQueue`: `convType`
+- D1. Skill hit builders write the conversion fields on a hit, before `COMBAT_ResolveAndQueue`: `convType`
   (`+0x65`) ← the skill's `EType` and `convPct` (`+0x68`) ← its `calc4`, only when `EType` is set and `calc4`
   evaluates above 0. That rule is read in full in start function 32 (store at `0x005D7FA8`); the `+0x65` store is
   also mapped in start functions 6 and 7, and twelve more `EType` stores were not each mapped to the packet. [I] (fn:sub_005D7EA0_SkillSt32Hit@0x005D7EA0, 0x005D7FA8,
@@ -324,8 +324,8 @@ The exit seed `9fdf9862:101f40ba` is the one logged at the builder's return. [C]
 
 ## Open questions
 
-- ~~[L] The writer of the conversion fields (packet `+0x65`/`+0x68`), probably a skill or an aura (phase (3)); no
-  logged event converted, so § D is unexercised.~~ Answered: the skill hit builders write them (§ D1,
+- ~~The writer of the conversion fields (packet `+0x65`/`+0x68`), probably a skill or an aura (phase (3)); no
+  logged event converted, so § D is unexercised.~~ Answered: skill hit builders write them (§ D1,
   [skills/0001 § 11](../../findings/skills/0001-dispatch.md#11-the-skill-packet)).
 - [L] The twelve `EType` stores not mapped to the packet, and a run that exercises § D (plan 0045 P1.3, Phase 2).
 - [L] The chain order of step 3 beyond deadly strike: the weapon mastery's crit was a value oracle and no unit had
