@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-19
 status: done
 context:
-  - ../plans/0043-items-economy.md#phase-3--spec-itemseconomy
+  - ../plans/done/0043-items-economy.md#phase-3--spec-itemseconomy
   - ../specs/items/economy.md
 resolution: "Reviewed 2026-10-19 (architect): accept with fixes; items/economy reviewed {C 109, I 80, L 12}; rulings and the 7 fixes in the plan 0043 log; wiki owner filed (2026-10-19-architect-spec-writer-plan-0043-economy-wiki)."
 ---

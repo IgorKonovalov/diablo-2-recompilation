@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-19
 status: done
 context:
-  - ../plans/0043-items-economy.md#implementation-log
+  - ../plans/done/0043-items-economy.md#implementation-log
   - ../findings/items/0011-economy.md#phase-2-runtime-results-run2026-10-17-economy
   - ../findings/items/experiments.md#run2026-10-17-economy
 resolution: "reviewed 2026-10-19 (architect): accept with fixes; plan 0043 log. Counts corrected to the kept check output, manifest normalised to one path base, three scopings (refused resurrection's revive, sell's seed, question 9's absence) made in items/0011; Phase 2b remainder filed to the reverser; spec-writer entry released."

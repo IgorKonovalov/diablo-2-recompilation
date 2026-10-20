@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-10-19
 status: done
 context:
-  - ../plans/0043-items-economy.md#implementation-log
+  - ../plans/done/0043-items-economy.md#implementation-log
   - ../specs/items/economy.md
 resolution: "Done 2026-10-19 (spec-writer, lane/p43t): new page docs/wiki/economy.md (Prices, repair, gold and wear) from the re-tagged items/economy, linked from the wiki index and from items-other-paths' vendor section; review request 2026-10-19-spec-writer-architect-plan-0043-economy-retag-and-wiki-review."
 ---

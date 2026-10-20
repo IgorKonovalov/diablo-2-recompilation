@@ -5,7 +5,7 @@ date: 2026-10-17
 status: done
 context:
   - ../findings/items/0011-economy.md#leads-used
-  - ../plans/0043-items-economy.md#implementation-log
+  - ../plans/done/0043-items-economy.md#implementation-log
 resolution: "all five reproduced in run:2026-10-17-economy (case 1: W and 963 of 963 armour picks with 3/5/4/4/2/2/2); items/0011 § Phase 2 [../findings/items/0011-economy.md#phase-2-runtime-results-run2026-10-17-economy]"
 ---
 
