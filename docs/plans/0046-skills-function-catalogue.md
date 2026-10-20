@@ -207,3 +207,19 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   1)` are separated by the 208 step cases, not by the control. From 9b, a family whose control fails fewer than 50
   cases adds a second perturbation on another claim. Batch 9b may start now (with the call-site check); its boundary
   claims follow ADR-0021's fate like 9a's.
+- **2026-10-20 — Phase 1 batch 9b landed for review (reverser, `lane/p46m2`, static, no harness).** Missile server do
+  functions 19–36 and damage functions 1–14: 30 entries, 28 read and the two tier-A ones (do 23, damage 3) emulated
+  too ([skills/0005](../findings/skills/0005-missile-do-19-36-damage.md)). Draws before the boundaries: do 28 (re-seed
+  from `+0x28`, two `RNG_Range`), do 30 (two `RNG_Range` on the **target unit's** seed), do 34 and 35 (re-seed, one
+  inline step), do 25 (9a's `0x005A9820`); damage 3, 5, 12, 13, 14 on the missile seed; no other. Raised by emulation
+  (run:2026-10-20-cat-emu-9b, `tools/skills_catalogue_emu.py --batch 9b`): 13 families, 17 100 cases, 0 mismatches,
+  every family with two failing negative controls; **the checker asserts each observed boundary's call site** (a site
+  control fails all 8 762 matched boundary cases). Tags as the `lane/p46m1` ruling: the damage functions (all but
+  damage 8's overlay call) and the do functions' refusal paths that return are `[C]`; the do functions' maps up to
+  their boundary are `[I]` marked "(ADR-0021)" in the finding, to flip on the owner's acceptance. Surprises: do 21,
+  22, 23, 25, 26 test `SubMissile1 != 0` (a blank −1 passes); do 28's debris point goes in the creation's target words;
+  damage 1/12's 100 cap, which the decompile drops, matters only for a negative physical share; a rabies contagion
+  carries an end frame (`+0x28 − frame` is its poison length); do 19 runs Redemption's corpse callback, do 36 spawns
+  `tyrael3` under quest 36. Review request
+  [to the architect](../backlog/2026-10-20-reverser-architect-lane-p46m2-review-plan-0046-batch-9b.md); column
+  readers [to the archivist](../backlog/2026-10-20-reverser-archivist-plan-0046-9b-missiles-skills-column-readers.md).

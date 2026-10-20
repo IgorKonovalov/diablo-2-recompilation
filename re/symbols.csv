@@ -115,6 +115,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x004E6720,func,sub_004E6720_ClientGemDescMode5,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x004E67D0,func,sub_004E67D0_ClientGemDescMode2,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x004E6C50,func,MONSTATS_ValidId,,C,drlg/preset,docs/findings/drlg/0004-preset-units.md
+0x004E6CA0,func,sub_004E6CA0_SkillParamByLevel,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
 0x004E9040,func,sub_004E9040_ClientAttackRating,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x004F5610,func,sub_004F5610_WindowCreate,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x004FAB90,func,MPQ_OpenCoreArchives,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
@@ -585,6 +586,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0056D130,func,sub_0056D130_PortalObjectCreate,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x0056D400,func,sub_0056D400_SkillNovaAtUnit,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x0056D940,func,sub_0056D940_SpawnOwnedMonster,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x0056DDE0,func,sub_0056DDE0_UnitsInRangeCall,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
 0x0056DEB0,func,sub_0056DEB0_UnitSkillAdd,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x0056E0C0,func,SKILLS_RollElemDamage,,I,stats/states,docs/findings/stats/0002-states.md
 0x0056E170,func,sub_0056E170_SkillRollPhys,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
@@ -881,6 +883,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0058E6A0,func,sub_0058E6A0_A5Q6_BaalPortalOperate,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0058E740,func,sub_0058E740_A5Q6_LastPortalOperate,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0058E830,func,sub_0058E830_A5Q6_ZooInit,,I,quests/progression,docs/findings/quests/0001-progression.md
+0x0058E920,func,sub_0058E920_BaalFxSpawnTyrael,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
 0x0058E990,func,sub_0058E990_A5Q0_NpcMessage,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0058EA50,func,sub_0058EA50_A5Q0_Init,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0058F030,func,sub_0058F030_MonSetOwner,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
@@ -1249,9 +1252,13 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A8890,func,sub_005A8890_CollideMissile,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005A8910,func,sub_005A8910_MissileElemRoll,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005A89A0,func,MISSILE_BuildDamage,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005A8C70,func,sub_005A8C70_MissileRollEType,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
+0x005A91C0,func,sub_005A91C0_PacketClearDamage,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
+0x005A9270,func,sub_005A9270_PacketAddEType,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
 0x005A9370,func,sub_005A9370_MissSubRing16,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x005A9820,func,sub_005A9820_MissSubNearReseed,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x005A9930,func,sub_005A9930_PermPortalAtUnit,,I,quests/travel,docs/findings/quests/0002-travel.md
+0x005A99E0,func,sub_005A99E0_MissRetargetOwner,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
 0x005A9D80,func,sub_005A9D80_MissHit02Ring,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x005A9E10,func,sub_005A9E10_MissHit44AreaHit,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x005A9F90,func,sub_005A9F90_MissHit03EndArea,,I,skills/missiles,docs/findings/skills/0003-handlers.md
@@ -1263,9 +1270,23 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005AC040,func,sub_005AC040_MissCbReseedPathX,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x005ACDF0,func,sub_005ACDF0_MissHit58Reseed,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x005ACFC0,func,sub_005ACFC0_MissHit23CallDo,,I,skills/missiles,docs/findings/skills/0003-handlers.md
+0x005AD050,func,sub_005AD050_MissDmg01ConvertPct,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
+0x005AD0F0,func,sub_005AD0F0_MissDmg12ConvertAll,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
+0x005AD1B0,func,sub_005AD1B0_MissDmg02FreezeLen,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
 0x005AD220,func,sub_005AD220_MissDmg03Flag4000,,I,skills/missiles,docs/findings/skills/0003-handlers.md
+0x005AD290,func,sub_005AD290_MissDmg04ColdToFreeze,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
+0x005AD2B0,func,sub_005AD2B0_MissDmg10FreezeCopy,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
+0x005AD2F0,func,sub_005AD2F0_MissDmg05UndeadDemon,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
 0x005AD3A0,func,sub_005AD3A0_MonSetNoDeathDrop,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x005AD3E0,func,sub_005AD3E0_MissDmg07Stun,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
+0x005AD450,func,sub_005AD450_MissDmg08Overlay,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
+0x005AD4A0,func,sub_005AD4A0_MissDmg09StunParam2,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
+0x005AD530,func,sub_005AD530_MissDmg11PoisonLeft,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
+0x005AD5C0,func,sub_005AD5C0_MissDmg13OwnerEd,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
+0x005AD630,func,sub_005AD630_MissDmg14KnockBySize,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
 0x005AD730,func,MISSILE_ApplyDamage,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005AD8F0,func,sub_005AD8F0_RedemptionChanceCb,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
+0x005AD910,func,sub_005AD910_RedemptionAlwaysCb,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
 0x005AD9D0,func,sub_005AD9D0_MissileEndHit,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005ADA40,func,sub_005ADA40_MissileHitTypeFilter,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005ADA80,func,sub_005ADA80_MissilePierceUse,,I,skills/missiles,docs/findings/skills/0002-missiles.md
@@ -1281,10 +1302,23 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005AE520,func,sub_005AE520_MissDo05Loop,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x005AEDA0,func,sub_005AEDA0_MissileSpawnOwnedMonster,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x005AEF70,func,sub_005AEF70_MissDo14PeriodicDo,,I,skills/missiles,docs/findings/skills/0002-missiles.md
+0x005AF540,func,sub_005AF540_MissDo20FollowOwner,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
+0x005AF590,func,sub_005AF590_MissDo21SubThenDo20,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
+0x005AF620,func,sub_005AF620_MissDo22SideTrails,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
 0x005AF790,func,sub_005AF790_MissDo23SubPerCell,,I,skills/missiles,docs/findings/skills/0003-handlers.md
+0x005AF880,func,sub_005AF880_MissDo25ScatterBySkill,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
+0x005AF980,func,sub_005AF980_MissDo26PeriodicSubAt,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
+0x005AFA30,func,sub_005AFA30_MissDo27PeriodicAreaHit,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
 0x005AFB80,func,sub_005AFB80_MissDo28Reseed,,I,skills/missiles,docs/findings/skills/0003-handlers.md
+0x005AFD70,func,sub_005AFD70_MissDo29OwnerLife,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
+0x005AFEC0,func,sub_005AFEC0_MissDo33OwnerMana,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
+0x005B0010,func,sub_005B0010_MissDo30Contagion,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
+0x005B01F0,func,sub_005B01F0_MissDo31SidePair,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
+0x005B03E0,func,sub_005B03E0_MissDo32SubThenDo07,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
 0x005B04A0,func,sub_005B04A0_MissDo34Reseed,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x005B0640,func,sub_005B0640_MissDo35Reseed,,I,skills/missiles,docs/findings/skills/0003-handlers.md
+0x005B0940,func,sub_005B0940_MissDo19Redemption,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
+0x005B0A40,func,sub_005B0A40_MissDo36BaalFx,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
 0x005B11F0,func,sub_005B11F0_UModTeleportTry,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x005B13E0,func,sub_005B13E0_MonSpcWalkCheck,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005B15D0,func,sub_005B15D0_MonAiEntryGet,,I,items/tc,docs/findings/items/0001-tc-resolution.md
@@ -1592,6 +1626,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005CF010,func,sub_005CF010_PalAuraDo,,I,stats/states,docs/findings/stats/0002-states.md
 0x005CF3A0,func,sub_005CF3A0_AuraHitDo,,I,stats/states,docs/findings/stats/0002-states.md
 0x005D0180,func,sub_005D0180_SkillSt36NeedShield,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
+0x005D0C40,func,sub_005D0C40_RedemptionCorpse,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
 0x005D30A0,func,sub_005D30A0_MonEquipFirstRow,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x005D32F0,func,sub_005D32F0_SkillSt23MeleeRange,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x005D3680,func,sub_005D3680_PrgDamEd,,I,combat/formulas,docs/findings/combat/0001-formulas.md
@@ -1759,6 +1794,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00620E80,func,sub_00620E80_RunVelocityStat,,I,player/creation,docs/findings/player/0001-creation.md
 0x00621B00,func,UNIT_IsShrine,,I,objects,docs/findings/objects/0001-object-population.md
 0x00621CE0,func,sub_00621CE0_UnitSetOwner,,I,skills/missiles,docs/findings/skills/0002-missiles.md
+0x00621E40,func,sub_00621E40_UnitSetOverlayStat,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
 0x006221A0,func,UNIT_GetPlayerData,,I,player/creation,docs/findings/player/0001-creation.md
 0x006223F0,func,UNIT_GetDefense,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x00622560,func,sub_00622560_PlayerBaseToHit,,C,player/creation,docs/findings/player/0001-creation.md
@@ -2116,6 +2152,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0064AA60,func,sub_0064AA60_ScaleElemDamage,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x0064ABA0,func,sub_0064ABA0_ElemMasteryBonus,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x0064AC60,func,sub_0064AC60_MissileDamageToStats,,I,skills/missiles,docs/findings/skills/0002-missiles.md
+0x0064B0C0,func,sub_0064B0C0_MissileGetEType,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
 0x0064B860,func,sub_0064B860_MissileDamageBlock,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x0064C2C0,func,sub_0064C2C0_RoomUnitAdd,,C,objects,docs/findings/objects/0001-object-population.md
 0x0064C4C0,func,COLL_StampTile,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
@@ -2177,6 +2214,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006502D0,func,sub_006502D0_PathVelocityStep,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x006505C0,func,sub_006505C0_PathFlag08,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x00650840,func,sub_00650840_PathStep,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
+0x00650BE0,func,sub_00650BE0_PathTargetRoomXY,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
 0x00650DE0,func,RNG_EntropySeed,uint __fastcall RNG_EntropySeed(int salt),C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00650E30,func,RNG_SeedInitOne,void __fastcall RNG_SeedInitOne(uint * seed),C,rng,docs/findings/rng/0001-rng-core.md
 0x00650E40,func,RNG_SeedInit,"void __fastcall RNG_SeedInit(uint * seed, uint low)",C,rng,docs/findings/rng/0001-rng-core.md
