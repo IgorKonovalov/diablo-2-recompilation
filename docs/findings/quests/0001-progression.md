@@ -1016,6 +1016,9 @@ call or `0x6AC690C5` in them (byte scan of [0x00598000, 0x0059F840): nine LCG co
 - Word 10 b1: no constant setter found (Cain's msg 0x153 clears it, e0/+0xEC read it); probably the generic
   `0x005455F0` with a register word, not traced. Word 10 b9 is cleared at every join by word 14 and never set.
 - Missiles row 338 (`horadricstaff`) `+0x96` (the chamber-opening delay) has no table doc; column not identified.
+  *2026-10-20 (plan 0045 P1.2, skills/0002):* the field is `Range` (s16; row 338 holds 440) per
+  [Missiles](../../tables/Missiles.md); `MissileCreate` reads the same field as the missile's lifetime
+  ([skills/0002 § 2](../skills/0002-missiles.md#2-creation)).
 - `0x00599420` and `0x0059C330` are called from monster AI (0x005F2C47, 0x005F85ED): which AI state triggers them
   (Radament, the Summoner seeing a player?) was not read.
 - The guard-pass gate `0x0059F580` (called from AI 0x005E71D2) and `0x0059F510`/`0x0059DFB0`: what the guard does with
