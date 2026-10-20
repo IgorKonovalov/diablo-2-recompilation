@@ -2517,6 +2517,123 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     [2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates](../backlog/archive/2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates.md)
     released.
   - **Next:** merge `lane/h7a`; the spec-writer updates drlg/lifecycle from the released entry.
+- **2026-10-19 — H5b (`objects`) started; stopped early at the usage limit (reverser, `lane/h5b`, harness slot 1).**
+  Resume note. run:2026-10-19-h5b-objects, nothing filed yet: no finding section, run record, inventory entry or review
+  request.
+  - **Tools (committed, no claim rests on them yet):**
+    - `tools/gdb/objects.py` gains trap lines `TF`/`TFQ` (OBJ_TrapFire and its queue call), `TE0` (OBJ_TrapEvent) and
+      `TT0`/`TTX` (the trap function's entry and return), plus `f` (frame) on `OO0`.
+    - `tools/gdb/objects-h5b.gdb` is objects.gdb plus vendors.py, so objop, wpchain and npc get the OBJS lines.
+    - `tools/objects.py` gains the trap chain model (frame + 35, the OBJ_TrapEvent remap, the fires of
+      OBJTRAP_ObjectCreate, MonsterSpawn's one draw), OperateFn 26/48/68 models, windows inside no-draw operates,
+      and counters for door marks, size-0 objects and 0x27 rect tests. The old 29 logs still give 150 338 checks,
+      0 mismatches.
+    - `tools/d2pilot.py` gains `--loot-fns` and `--loot-trap`.
+    - New `tools/h5b_sessions.py` (sessions cata, jail, jail2, cave, cata2, cotd, arcane, flayer, harro, tower; built-in
+      watchdog) and `tools/sweep_h5b.py` (`static`, `logs`).
+  - **Logs kept** (`workspace/logs/h5b/`, save ObjNova `d54d5dc3…`):
+    - `run-2026-10-19-h5b-s1-3901-cata.log` (Catacombs 2, complete). It was logged before the TE0 room fix; the
+      checker falls back to the unit's level.
+    - `…-3902-jail.log` (Jail 1–2), stopped mid-session at the limit. Keep it as a record or dev log.
+  - **Found, not yet written up (all need the finding text):**
+    - (a) OBJ_TrapEvent (0x005817A0) remaps the trap type to g_ObjTrapFns[2]: type 8 in levels ≥ 75, type 3 in
+      levels < 40 other than 25, types 1 and 4 in levels < 40. The cata log has one case: type 4 in level 35 ran
+      0x005824B0.
+    - (b) OBJTRAP_ObjectCreate makes class 162, then class **160** at x+1 when that is still in the room, and sets
+      sparkle 2 on both. objects/0001 § 13.6 says 162 twice; this needs a correction.
+    - (c) The old 29 logs already hold 514 WHTest rect tests that returned 0x27 unmasked, all predicted. That
+      contradicts the "not reached" of drlg/0005 § 14 and collision row 27, so the row is raisable.
+    - (d) The same logs hold 13 compared door 0x400 marks (classes 13 and 14, no BlocksVis, no BlockMissile). No stock
+      door has BlockMissile without BlocksVis, so the 0x804 half is a d-none candidate (collision 37, objects 23).
+    - (e) No ObjGroup shrine member has Orientation 2, and OBJ_PlaceByOrientation's only caller is the shrine handler,
+      so objects 20 is a d-none candidate (`sweep_h5b.py static`).
+    - (f) Class 523 (size 0, HasCollision) stands in Harrogath's townwest.ds1. The `harro` session covers collision 39.
+    - (g) cata reached one handler-1 follower walk after a class of another size (objects 13, 51).
+    - (h) Flayer Dungeon (shrine group 66, ObjPrb 80, no health member) is the target for the forced conversion and
+      the caps.
+  - **Left:** run cata2, jail2, cave, cotd, arcane, flayer, harro and tower
+    (`python3 -I tools/h5b_sessions.py run --slot 1 --tag h5b --saves workspace/scratch-h5b/saves --run
+    run-2026-10-19-h5b <s>`). Then the checker over all logs, the finding sections (objects/0001, drlg/0005), the run
+    record in `findings/objects/experiments.md`, the manifest, inventory § 2.6, the symbols, the review request and the
+    spec-writer entry.
+  - **Gotchas:**
+    - An object's room is its static path `+0x2C` → `+0x00`; `uroom()` returns 0 for objects.
+    - `explore` ends when the level is done, and `--persist` does not continue it.
+    - Bookshelves were created but not looted, so jail2 adds objop.
+  - Slot 1 stopped, saves restored, no background process left.
+- **2026-10-20 — H5b (`objects`) done; review requested (reverser, `lane/h5b`, harness slot 1).** Resumed from the
+  entry above. Run **run:2026-10-19-h5b-objects**
+  ([objects/0001 § Plan 0038 batch H5b](../findings/objects/0001-object-population.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects),
+  [drlg/0005 § Plan 0038 batch H5b](../findings/drlg/0005-collision.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects),
+  [experiments](../findings/objects/experiments.md#run2026-10-19-h5b-objects)); manifest
+  `workspace/logs/h5b-manifest.sha256` (85 lines: logs, check and sweep outputs, the 29 + 7 older logs re-checked).
+  - **Sessions:** 20 today (cata2, jail2, cave, cotd, jail3, cave2, cotd2, flayer, tower, harro, arcane, traps1, cave3,
+    flayer2, flayer3, ice, traps2, cave4, traps3, traps4) plus the 2 of 2026-10-19: 22 logs.
+  - **Checks:** `objects.py check` on the 22 logs: **234 315 checks, 1 failure** (a logger error in the cave log, no
+    model mismatch); the 29 logs of run:2026-10-15-objects: 150 314, 0 mismatches; `collision.py check` on
+    run:2026-10-14-collision: 0 mismatches.
+  - **Raised (10 rows):** collision 27, 39; objects 13, 16, 17, 40, 45, 50, 51, 52.
+  - **Raised in part (11):** collision 37; objects 3, 4, 15, 23, 26, 27, 36, 38, 41, 42 (remainders in the finding).
+  - **Shortfall (7):** objects 6, 19, 20, 35, 39, 46, 49. Proposed d-none: objects 20, the `0x804` halves of collision
+    37 and objects 23, objects 38's PreOperate half (inventory § 2.6 entry, pending review).
+  - **Corrected:** objects/0001 § 13.6, the second trap fire is class 160. New readings: `OBJ_TrapEvent`'s level remap
+    (`[I]`, one case `[C]`); the theme table's enabled flag (theme 3 drawn 4 times, no run).
+  - **Tools:** `objects.py` (theme enable flag, monster-creating InitFns as oracles, counters), `collision.py`
+    (near lists after a DRLG room's re-activation), `d2pilot.py objop` (`--obj-mem`, `--trap-types`, `--goal`, status
+    lines), `h5b_sessions.py` (sessions, watchdog race). Symbols: 5 trap functions added, 6 raised to `C`.
+  - **Backlog:** review request
+    [2026-10-20-reverser-architect-review-h5b-objects](../backlog/archive/2026-10-20-reverser-architect-review-h5b-objects.md);
+    spec-writer entry
+    [2026-10-20-reverser-spec-writer-h5b-objects-spec-updates](../backlog/2026-10-20-reverser-spec-writer-h5b-objects-spec-updates.md).
+  - **Left:** trap types 8 and 9, the well cap and the shrine cap's `= 10` half, the class-397 operate (the pilot
+    never reached the chest), a window inside a portal-like operate, quest 13's 582 object, `InitFn` 54/55/62/68/69/79.
+  - Slot 1 stopped, saves restored (aside removed, harness idle), no background process left.
+- **2026-10-20 — Review of `lane/h5b`, batch H5b (`objects`) (architect): accept with fixes.** `main` (`f8de60b`)
+  merged first (one conflict, this log, both sides kept; `backlog.py archive` moved nothing; `re/symbols.csv` has no
+  duplicate address or name). Re-run under `systemd-run --user --scope -p MemoryMax=4G`: `sha256sum -c
+  h5b-manifest.sha256` passes from `workspace/logs/` (85 lines); the tool hashes match the record; `objects.py check`
+  on the 22 logs gives the kept `check-h5b.txt` byte for byte (234 315 checks, 1 failure), on the 29 older logs the kept
+  `check-old29.txt` up to line order (150 314, 0); `sweep_h5b.py static` and `logs` and `collision.py check` on
+  run:2026-10-14-collision (0 mismatches) match. Spot-checks with objdump: `OBJ_TrapEvent`'s three tests
+  (`0x005817CB` type 8 and level ≥ 75, `0x00581816` type 3, level < 40 and ≠ 25, `0x00581849` types 1 and 4, level
+  < 40), each jumping through `0x00732CF4`, entry 2 of `g_ObjTrapFns` (table read from the image: the ten entries of the
+  finding, count 10 at `0x00732D14`); `OBJTRAP_ObjectCreate` passes class `0xA2` then `0xA0`; the four trap functions
+  load MonStats 330, 326, 329, 369; `OBJ_TrapFire` queues event 4 at frame `+ 0x23` (`0x00582595`); `g_ObjThemeFns`
+  entries 0 and 3 are `{0, 0}`; `UNIT_GetCollMask`'s door branch (`0x806`, else `0x400` or `0x804` by `BlockMissile`);
+  `0x00552C32` is the only reference to `0x00550A30`. The six symbols raised to `C` each have the code reading and the
+  run's matched entries.
+  - **Rulings.** (a) **d-none, all four proposals**: objects 20 (one call site, member `Orientation`, none 2 in 88
+    slots), the `0x804` halves of collision 37 and objects 23 (the branch needs a door with `BlocksVis` 0 and
+    `BlockMissile` set; none of the 7 has it), objects 38's PreOperate half. Inventory § 2.6. (b) **The near-list change
+    in `tools/collision.py` is a model fix with evidence, not fitting**: it was made for a diagnosed failure (a stale
+    active room in a neighbour's near list), is conditioned on the same level, DRLG room, rect and an unreused
+    pointer, and two simpler variants were rejected by a second test of the same log (line 25087). Re-checked here with
+    the pre-fix `collision.py`: the H5b logs give the same 734 unmasked `0x27` results and only flayer3's one mismatch
+    more, and the 29 older logs are identical, so collision 27's raise does not rest on the fix and stands. On
+    run:2026-10-14-collision the fix fires 3 999 times and changes nothing, so it is not discriminated there; the game's
+    unlink stays `[I]` and an open question of drlg/0005 (the free path, `0x0052D240`'s callees), as filed. (c) **The
+    cave log is accepted, not re-run**: the failure is a logger read (`MemoryError` at `0x65`, line 22353), not a model
+    disagreement; the checker resyncs and the rest of the log matches; no raised claim rests on that log alone (`InitFn`
+    57 also in cave2 and cave4). Reported as "1 logger error, 0 model mismatches". (d) **The oracle change is
+    accepted**: the nine `InitFn`s create monsters (S4b row 25), which the objects checker does not model, so a creation
+    would fail on the room and game seeds. The oracle still counts every `OD` inside it (none for the nine; `InitFn`
+    46's 1 306 show the counter live), and the 24 checks it drops are `InitFn` 18's 3 runs in the older logs, which
+    matched before; recorded in the experiments record. A scope reduction, not a fit.
+  - **Fixes (made here):** (1) *misread:* row 39's bullet listed cave3 among the sessions that created chest 397; cave3
+    never activated its room (0 `InitFn` 57 lines); now cave, cave2, cave4. (2) *omission:* row 35 (the 582 quest
+    object) was in the ledger's shortfalls with no statement in the finding; a shortfall bullet added to H5b.3.
+    (3) *omission:* the record did not say what the oracle change removed or that it keeps the `OD` counter; added,
+    with the review's re-run and the pre-fix counterfactual (experiments record, drlg/0005's near-list bullet). The
+    d-none wording ("Proposed") set to the ruling in objects/0001 and drlg/0005.
+  - **Totals** (inventory § 2.6, § 5, after merging `main`): **static 567, harness 531, c-emu 0, blocked 416** (d-none
+    283), **deferred 2, raised 10: 1 526**. H5b: 32 statements (33 filed; 1 to d-none).
+  - **Phase 3:** frees no cluster. drlg/collision still waits for H5d, objects for H6e2.
+  - **Ledger:** 3 fixes: misread 1, omission 2 ([metrics](metrics.md)).
+  - **Backlog:** review request
+    [2026-10-20-reverser-architect-review-h5b-objects](../backlog/archive/2026-10-20-reverser-architect-review-h5b-objects.md)
+    closed; the spec-writer entry
+    [2026-10-20-reverser-spec-writer-h5b-objects-spec-updates](../backlog/2026-10-20-reverser-spec-writer-h5b-objects-spec-updates.md)
+    released (it is applied with the objects and drlg/collision Phase 3 rounds, when H6e2 and H5d are accepted).
 - **2026-10-20 — Batch order and the 0039 fold (owner decisions, via the orchestrator; architect, `lane/plans45`).**
   (1) The remaining harness batches run **core and enabler first**: H5b (in flight) → H2a → H2b → H2c → H4a → H5d →
   H1b → H1a → H3b, then H6e2 → H6e1 → H6b → H6a → H6c → H6f → H6g; the family rules of
