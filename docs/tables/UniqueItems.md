@@ -61,7 +61,7 @@ the generation ones `[I]` from [items/0004](../findings/items/0004-uniques-sets.
 | `version` | int 0..100 (2 distinct), 5 blank | `+0x024` 4-byte slot (u32 decode; read as u16) | `[I]` a row with `version` ≥ 100 is a candidate only when the item version is ≥ 100 (expansion game) | — | [C] |
 | `enabled` | int 0..1, 15 blank | `+0x02C` bit 0 | `[I]` a row with the bit clear is never a candidate | — | [C] |
 | `ladder` | int 1, 373 blank | `+0x02C` bit 3 | `[I]` a row with the bit set is a candidate only when `Game+0x6A` or `Game+0x74` (ladder) is non-zero; single player has `+0x6A` = 3 | — | [C] |
-| `carry1` | int 1, 399 blank | `+0x02C` bit 2 | not read by the builders | — | [C] |
+| `carry1` | int 1, 399 blank (Gheed's Fortune, Annihilus, Hellfire Torch) | `+0x02C` bit 2 | not read by the builders; `[I]` the carry-one flag: the inventory holder test refuses a second copy of the row, and a vendor makes no store copy of a sold `carry1` unique (§ Semantics from the unique builder, readers outside the builders) | — | [C] |
 | `nolimit` | always blank | `+0x02C` bit 1 | `[I]` when set, a built row is not marked in the game's made-uniques set, so it can be built again | — | [I] (code, `ITEMS_UniqueMarkMade`) |
 | `rarity` | int 1..20 (9 distinct), 6 blank | `+0x030` 4-byte slot (u32 decode) | `[I]` pick weight, raised to 1 when < 1 | — | [C] |
 | `lvl` | int 0..110 (76 distinct), 15 blank | `+0x034` s16 | `[I]` a row is a candidate only when `lvl` ≤ the item's ilvl (signed compare) | — | [C] |
@@ -190,6 +190,19 @@ column. The full pick (forced row, weighted draw, fallbacks) belongs to the `ite
 - `[I]` **Not read by the builders**: `carry1` (bit 2) and `lvl req`. `nolimit` is not tested in the
   filter either; it is read after the pick by `ITEMS_UniqueMarkMade`. (items/0004 § 3.2,
   0x00556895–0x00556920, tbl:UniqueItems.txt:carry1, tbl:UniqueItems.txt:lvl req)
+- `[I]` **Readers of `carry1` outside the builders** (plan 0049 Phase 0; two known readers, no full xref of the mask
+  byte 0x006CE270 or of `+0x2C` bit 2):
+  - `sub_0055CA40_InvHoldsQuestDup`, called by the item-move gate `sub_0055CC90_ItemQuestGate`: for a unique
+    (quality 7) whose row has `carry1`, it returns 1 when the inventory holds another quality-7 item of the same row
+    (not on page 1), and the gate then refuses the move. (items/0010 § Q20, 0x0055CA40–0x0055CC80,
+    fn:sub_0055CA40_InvHoldsQuestDup@0x0055CA40, fn:sub_0055CC90_ItemQuestGate@0x0055CC90,
+    tbl:UniqueItems.txt:carry1)
+  - `sub_00575FA0_ItemIsCarry1Unique`: an item unit (type 4) of quality 7 with a file index ≥ 0 whose record's flag
+    byte `+0x2C` AND the byte at 0x006CE270 (4) is non-zero. `NPC_SellItem` calls it among its store-copy tests, and a
+    match makes no store copy (0x0057962B–0x00579747). (items/0011 § Phase 2b item 8,
+    fn:sub_00575FA0_ItemIsCarry1Unique@0x00575FA0, fn:NPC_SellItem@0x00579510, tbl:UniqueItems.txt:carry1)
+  - `[C]` at runtime for the sale: *Annihilus* (`carry1`) sold to a vendor in session 4332 made no store copy and left
+    the game seed unchanged (items/0011 § Phase 2b item 8, run:2026-10-19-economy2).
 - `[I]` **Once per game**: a built row is marked in a 4096-bit set at `Game+0x1B24` unless its `nolimit`
   bit is set; a later pick of a marked row fails the build (no re-pick), except for a quest base. Stock
   data sets `nolimit` in no row. ([items/0004 § 3.3](../findings/items/0004-uniques-sets.md#33-after-the-pick),
@@ -253,4 +266,5 @@ index or no record takes the magic branch instead.
   from the unique builder).
 - `[L]` Whether any 1.14d game has `Game+0x6A` = 0 and no ladder, the only case that excludes `ladder`
   rows (items/0004 § Open questions).
-- `[L]` Whether any code outside the unique builder reads `carry1` or `lvl req`.
+- `[L]` Whether any code outside the unique builder reads `lvl req`, and whether `carry1` has readers beyond the two
+  of § Semantics from the unique builder (no full xref of 0x006CE270).

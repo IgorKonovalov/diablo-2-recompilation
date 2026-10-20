@@ -841,7 +841,8 @@ meant to hold, written apart from the recipe; `test_d2s.py` runs both). No new b
 character (SpecNova Hell build, level 80 Sorceress, progression 15) on `smpsor-l50`; `questfreshc` is the
 `specclassic` character on the classic `smpsor`. Each sets the same quest bits and waypoints in all three difficulties
 and writes the header act byte `0x80 | act` in all three (the start act, as the vendor saves do). All quest words of
-both bases are 0. Built saves are not loaded yet; their hashes are pinned only after the load (first step of Phase 2).
+both bases are 0. The built saves were loaded by Phase 2 and their hashes are pinned in `tools/test_d2s.py` (§ Plan 0042
+Phase 2 saves below).
 Two consequences of bit 7 in all three bytes (§ Header, `difficulty` and `map_seed`, `[C]`): the saved map seed is
 reused in whichever difficulty the first game is played, and the first *Save and Exit* keeps only the played byte
 (the vendor saves went `83 83 83` → `83 00 00`), so a save played once in Normal starts Nightmare and Hell in Act I.
@@ -904,10 +905,74 @@ Phase 2 runs each difficulty from a fresh copy of the built save.
   | `quest-w9book` (`QuestBookHeld`) | Act II | the same | `tbk`, `ass` (`quest_diff` 0) | the counter case: the Book of Skill held, the bits stay `[I]` (same) |
   | `quest-w39summit` (`QuestSummit`) | Act V | `quests: all` less words 39 and 40 | `tbk` | the Ancients not done: the warps out of level 120 (to 118 and 128) are refused while quest 35 is active `[I]` (quests/0001 § 10, word 39, `0x0058D090`); also the host of plan 0044's MP17 |
 
-  Built 2026-10-17 into `workspace/runtime/quest-saves-p42/`, not loaded (sha256): `quest-w9lost`
+  Built 2026-10-17 into `workspace/runtime/quest-saves-p42/`, loaded by Phase 2 (below) (sha256): `quest-w9lost`
   `20713178d063263231f536e21cca856ae11201868aefd5ae40c411ed0e22e947`, `quest-w9book`
   `c919898aae77149a760b4a08aed0fed2785e21db902f9bbea831e7cfdfa1d092`, `quest-w39summit`
   `f9dab74b53efdfe7eae14238dbf45eacaf9c0232cf3b080905fda76928efa7be`.
+
+#### Plan 0042 Phase 2 saves
+
+Plan 0042 Phase 2 loaded the 17 recipes above and added 16 more, all now in `tools/quest_saves.py` (`SET`, and an
+`EXPECT` row each written from the run records' descriptions, not from the recipes) and pinned in
+`tools/test_d2s.py` `RECIPE_BASES` (plan 0049 Phase 0). `quest_saves.py check` gives `SURVEY quest_saves recipes=33
+bad=0`; `test_d2s.py` 45 tests OK. A pinned hash is the sha256 of the save `tools/d2s.py build` writes from the recipe
+today, and it equals the save the run installed: the 8-hex built prefix in
+`workspace/logs/quests/loads/loads.txt` (`d35aa25b…`) for the loads, the `<log>.in.d2s` copies hashed in
+`quests2-manifest.sha256` (`29693c4b…`) and `quests3-manifest.sha256` (`1975e350…`) for parts 2 and 3 `[C]`.
+
+- **The loads** (run:2026-10-17-quests, [quests experiments](../findings/quests/experiments.md#run2026-10-17-quests)).
+  18 saves loaded in expansion or classic Normal and written back by *Save and Exit*: the 17 recipes above and the new
+  classic `quest-tpc` (`QuestPortalC`, the `questfreshc` character with a Tome of Town Portal `tbk` at inventory 0,0;
+  sessions c-tp and c-wp). Each written-back save keeps only the played act byte (`[act, 0, 0]`, § Header) `[C]`.
+  Quest words: word 40 bit 10 is set by the join in the eight saves with word 40 done (`TravelWpOne`–`Five`,
+  `TravelWpNone`, `QuestBookLost`, `QuestBookHeld`) `[C]` (loads.txt; the logged `QS` at `0x0058E4D0`);
+  `QuestBookLost` (word 9 bits 0 and 5, no `ass`) comes back with word 9 = 0 and `QuestBookHeld` (the same with `ass`)
+  keeps it `[C]`, the word-9 first-join check of quests/0001 § 8 both ways; `TravelWpNone` comes back with waypoint 0
+  set in all three difficulties `[C]` (§ Waypoints' forced bit). No other quest or waypoint difference `[C]`.
+- **Part 2** (run:2026-10-18-quests2, [experiments](../findings/quests/experiments.md#run2026-10-18-quests2)). Each
+  talk save is the `questfresh` character (expansion) or the `questfreshc` character (classic) with `quests: all`, then
+  per difficulty (the same in all three) the step's words with bit 0 cleared and only the bit the talk step tests set;
+  `quest-talk1`..`4` also clear bit 0 of their act's word 0, 8, 16 or 24, which `quests: all` leaves 0 already. The classic `quests: all` sets
+  no Act V word (words 1–7, 9–15, 17–23, 25–27) `[C]` (built saves).
+
+  | recipe (`Name`) | start | quest words differing from `quests: all` (all three difficulties) | waypoints | items added | loaded by |
+  |---|---|---|---|---|---|
+  | `quest-talk1` (`QuestTalkOne`) | Act I | 1, 2, 4, 6 = bit 1 | towns and 0–8 | — | x-talk1, h-talk1 |
+  | `quest-talk2` (`QuestTalkTwo`) | Act II | 9 = bit 1; 14 = bit 3 | the same | — | x-talk2 |
+  | `quest-talk3` (`QuestTalkThree`) | Act III | 19 = bit 6; 20 = bit 1; 21 = bit 4 | the same | — | x-talk3, x-talk3b, h-talk3 (no written save) |
+  | `quest-talk4` (`QuestTalkFour`) | Act IV | 25, 27 = bit 1 | the same | — | x-talk4, h-talk4 |
+  | `quest-talk5` (`QuestTalkFive`) | Act V | 35 = bit 1 | the same | — | x-talk5 |
+  | `quest-talk1c`..`quest-talk4c` (`QuestTalkOneC`..`FourC`) | Act I..IV | as `quest-talk1`..`4` | 0–29 | — | c-talk1, c-talk4; `2c` and `3c` were built but no session loaded them |
+  | `quest-orbwill` (`QuestOrbWill`) | Act III | `travel-act4`'s state (words 1–7, 9–15, 17, 19–22) | 0–26 | `qey`, `qhr`, `qbr` (`quest_diff` 0); `qf2` wielded, no `qf1` | x-orb |
+  | `quest-death` (`QuestDeath`) | Act I | none (`quests: all`) | towns and 0–8 | — (24 life; no belt potions; no head, body or shield item) | part 3's h-death3 (part 2 only in a development log) |
+
+- **Part 3** (run:2026-10-19-quests3, [experiments](../findings/quests/experiments.md#run2026-10-19-quests3)), the
+  `questfresh` character on `smpsor-l50` with every waypoint unless stated:
+
+  | recipe (`Name`) | start | quest words differing from `quests: all` | waypoints | items added | loaded by |
+  |---|---|---|---|---|---|
+  | `quest-p3entry` (`QuestEntry`) | Act I | 4, 11, 12, 37 = 0 | 0–38 | `tbk` at 0,0, the decoded scroll `bkd` (`quest_diff` 0) at 1,0 | x-entry, x-entry2, h-entry |
+  | `quest-p3anya` (`QuestAnya`) | Act V | 37 = bits 1, 8, 15 (`0x8102`) | 0–38 | `tbk`, `tr2` (`quest_diff` 0) at 1,0 | x-anya, nm-anya, h-anya |
+  | `quest-p3meshif` (`QuestMeshifW`) | Act III | none | 0–38 | — | x-meshifw |
+  | `quest-p3wpact` (`QuestWpAct`) | Act I | none | the five towns only (0, 9, 18, 27, 30) | `tbk` | x-wpact1-0, x-wpactr-0 (no written save) |
+
+- `[C]` For each of the 16 the state in the tables is what the built save holds (`quest_saves.py check`), and the
+  saved words after *Save and Exit* match the logged writes: `tools/quests.py check` compares them word by word for
+  all three difficulties (part 2: 2 304 saved-word checks over 16 sessions; part 3: 1 728 over 12; 0 mismatches).
+  What each step does with the state is quests/0001 and quests/0002's, not this section's.
+- Pinned sha256 (built today, equal to the installed save):
+
+  | recipe | sha256 | recipe | sha256 |
+  |---|---|---|---|
+  | `quest-tpc` | `fa2c8ba311cf764eacb6c9ef8992bcbf004a120c7fb3ca000174baabf391f704` | `quest-talk4c` | `e89490978c073a481e60782e8215eee7a61684a345bcef39eb21abd615605698` |
+  | `quest-talk1` | `c3dd8f0245f9038639c3f82b220d97a1f04df11c518ea20b9cf2da283e2fd441` | `quest-orbwill` | `271f3d56260ca02d9d0f31602a98375667824c70bbc18ea1a03b6684893f1fb7` |
+  | `quest-talk2` | `4c7668472aba46c321578267ba79ea13810ffdb4bbd5e465f1c7a9880c4a48db` | `quest-death` | `4fb9af452b6c110b393f8779ea81bcaad6c6a5a386cb157d017ba8a8c2634fdd` |
+  | `quest-talk3` | `b12c2c9a29c3baf5cb4b1844409afe2df0b83ee47c66f3d34b281b8fbd441528` | `quest-p3entry` | `9aba95c47858c951801c4b4c1380f20ded0d5ce82af6f07980ffa10ffcea18e2` |
+  | `quest-talk4` | `f7faffb80911dc9199195c848fe026cd6f38a40ac933a2da46b9e83dc1199447` | `quest-p3anya` | `079bc38d014e3adcccb2e2406fefd9b4010fba3bd2b4533001980e361d91e7dd` |
+  | `quest-talk5` | `519649118d9af3a2e609cda4cbd172cabdb5f0bc9b0658ed9ed0ef1496c9f119` | `quest-p3meshif` | `9927619642bd21f43b44a9e5555ae433715ca5d05447d8fdc16a98b1e936d0c0` |
+  | `quest-talk1c` | `8b4fa87c3fd463bd068b99f63dbce98d47c0a5a5bc13fab442dff36288817e95` | `quest-p3wpact` | `c0371020861814b6dc9fb27a6e3edc047610d024add16f94d0b7a4884590698c` |
+
+  `quest-talk2c` (`9eb20052…`) and `quest-talk3c` (`50825248…`) are registered with no pin: never loaded.
 
 ### Vendor saves
 

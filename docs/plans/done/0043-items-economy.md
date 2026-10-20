@@ -668,8 +668,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request and the P2b remainder entry closed; the spec-writer entry
     [2026-10-19-reverser-spec-writer-plan-0043-p2b-economy-inputs](../../backlog/archive/2026-10-19-reverser-spec-writer-plan-0043-p2b-economy-inputs.md)
     corrected and **released** for a re-tag pass of the reviewed items/economy; filed
-    [2026-10-19-architect-archivist-register-the-plan-0042-quest-recipes-in-test](../../backlog/2026-10-19-architect-archivist-register-the-plan-0042-quest-recipes-in-test.md)
-    and [2026-10-19-architect-archivist-unique-items-carry1-has-a-reader](../../backlog/2026-10-19-architect-archivist-unique-items-carry1-has-a-reader.md).
+    [2026-10-19-architect-archivist-register-the-plan-0042-quest-recipes-in-test](../../backlog/archive/2026-10-19-architect-archivist-register-the-plan-0042-quest-recipes-in-test.md)
+    and [2026-10-19-architect-archivist-unique-items-carry1-has-a-reader](../../backlog/archive/2026-10-19-architect-archivist-unique-items-carry1-has-a-reader.md).
   - **Close:** Phase 2 is done for good (no Phase 2c: the remainders are single cases or unreachable by a run). Plan
     0043 closes at the review of the items/economy re-tag pass; the wiki entry
     (`2026-10-19-architect-spec-writer-plan-0043-economy-wiki`) may ride the same spec-writer pass or follow the close.
@@ -745,8 +745,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     **Follow-ups that leave the plan:** (a) the spec's two `[L]` remainders (*Remainder of Phase 2b*, *Accepted
     shortfalls of Phase 2*) carry no run (plan 0038's sweep may take any that a kept log or a static second source
     settles); (b) two clients (trading, the party gold split, game types 1 and 2) to plan 0044; (c) the open archivist
-    entries [register the plan 0042 quest recipes in test_d2s](../../backlog/2026-10-19-architect-archivist-register-the-plan-0042-quest-recipes-in-test.md)
-    and [UniqueItems `carry1` has a reader](../../backlog/2026-10-19-architect-archivist-unique-items-carry1-has-a-reader.md);
+    entries [register the plan 0042 quest recipes in test_d2s](../../backlog/archive/2026-10-19-architect-archivist-register-the-plan-0042-quest-recipes-in-test.md)
+    and [UniqueItems `carry1` has a reader](../../backlog/archive/2026-10-19-architect-archivist-unique-items-carry1-has-a-reader.md);
     (d) quest-drops' event-7 route for Wirt's body and the other quest objects (a breakpoint on the thunk, any later
     quest run).
   - **Next:** merge `lane/p43t` (no conflict expected: `main` has not moved since `cf617f0` at this review's start).

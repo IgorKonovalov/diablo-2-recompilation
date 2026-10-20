@@ -16,8 +16,11 @@ check  builds each recipe into a temporary directory and compares the built save
 
 SET holds the 14 recipes plan 0042 Phase 0 adds, the 9 plan 0032 quest recipes the plan reuses (questfresh,
 questfreshv, questfreshvh, questb6, questdurielk, questrewards, questrewardsh, questservices, questcows), and the 3
-saves plan 0042 Phase 1 (c) asks for (quest-w9lost, quest-w9book, quest-w39summit). EXPECT covers the Phase 0 and
-Phase 1 recipes; the plan 0032 ones are checked by tools/test_d2s.py (QuestBitsTest, pinned hashes).
+saves plan 0042 Phase 1 (c) asks for (quest-w9lost, quest-w9book, quest-w39summit), and the 16 recipes of plan 0042
+Phase 2 (quest-tpc; part 2's quest-talk1..5, quest-talk1c..4c, quest-orbwill, quest-death; part 3's quest-p3entry,
+quest-p3anya, quest-p3meshif, quest-p3wpact), registered by plan 0049 Phase 0. EXPECT covers the plan 0042 recipes;
+the plan 0032 ones are checked by tools/test_d2s.py (QuestBitsTest, pinned hashes). The classic recipes' `quests:
+all` sets no Act V word (ALL_C).
 
 Bases: workspace/samples/d2s-owner/smpsor-l50.d2s (expansion Sorceress) and
 workspace/runtime/monspawn-chars/cls/smpsor.d2s (classic Sorceress), both with every quest word 0.
@@ -50,6 +53,13 @@ SET = {
     "questfresh": "x", "questfreshv": "x", "questfreshvh": "x", "questb6": "x", "questdurielk": "x",
     "questrewards": "x", "questrewardsh": "x", "questservices": "x", "questcows": "x",
     "quest-w9lost": "x", "quest-w9book": "x", "quest-w39summit": "x",
+    # plan 0042 Phase 2: the classic town-portal save (part 1), the talk, orb and death saves (part 2, 2026-10-18)
+    # and the part 3 saves (2026-10-19); registered by plan 0049 Phase 0
+    "quest-tpc": "c",
+    "quest-talk1": "x", "quest-talk2": "x", "quest-talk3": "x", "quest-talk4": "x", "quest-talk5": "x",
+    "quest-talk1c": "c", "quest-talk2c": "c", "quest-talk3c": "c", "quest-talk4c": "c",
+    "quest-orbwill": "x", "quest-death": "x",
+    "quest-p3entry": "x", "quest-p3anya": "x", "quest-p3meshif": "x", "quest-p3wpact": "x",
 }
 
 # Waypoint indices per act: levels.txt Waypoint 0..38 in act order (docs/tables/Levels.md § Travel)
@@ -64,6 +74,7 @@ ACT4 = set(range(25, 28))
 ACT5 = set(range(35, 41))
 TRAVEL_X = {7, 15, 23, 26, 28}     # acts_open in an expansion save
 ALL_X = ACT1 | ACT2 | ACT3 | ACT4 | ACT5 | TRAVEL_X
+ALL_C = ACT1 | ACT2 | ACT3 | ACT4 | {7, 15, 23}   # `quests: all` in a classic save: no Act V words
 
 # recipe -> (words with bit 0 set, waypoint bits, act of the header byte, added item codes[, {word: other bits}]); the
 # same in every difficulty; no other quest bit is set than the optional fifth element names
@@ -88,6 +99,28 @@ EXPECT = {
     "quest-w9lost": (ALL_X, ALL_WP, 1, ["tbk"], {9: 1 << 5}),
     "quest-w9book": (ALL_X, ALL_WP, 1, ["tbk", "ass"], {9: 1 << 5}),
     "quest-w39summit": (ALL_X - {39, 40}, ALL_WP, 4, ["tbk"]),
+    # plan 0042 Phase 2 part 1: the classic Act I-IV town-portal save (questfreshc with a tome)
+    "quest-tpc": ({7, 15, 23}, set(range(30)), 0, ["tbk"]),
+    # part 2 (run:2026-10-18-quests2): every quest done but the talk steps' words, bit 0 clear and only the step's
+    # bit set (1, 2, 4, 6, 9, 20, 25, 27, 35 bit 1; 14 bit 3; 19 bit 6; 21 bit 4); start act I..V
+    "quest-talk1": (ALL_X - {1, 2, 4, 6}, TOWN_WP | ACT_WP[1], 0, [], {1: 2, 2: 2, 4: 2, 6: 2}),
+    "quest-talk2": (ALL_X - {9, 14}, TOWN_WP | ACT_WP[1], 1, [], {9: 2, 14: 1 << 3}),
+    "quest-talk3": (ALL_X - {19, 20, 21}, TOWN_WP | ACT_WP[1], 2, [], {19: 1 << 6, 20: 2, 21: 1 << 4}),
+    "quest-talk4": (ALL_X - {25, 27}, TOWN_WP | ACT_WP[1], 3, [], {25: 2, 27: 2}),
+    "quest-talk5": (ALL_X - {35}, TOWN_WP | ACT_WP[1], 4, [], {35: 2}),
+    "quest-talk1c": (ALL_C - {1, 2, 4, 6}, set(range(30)), 0, [], {1: 2, 2: 2, 4: 2, 6: 2}),
+    "quest-talk2c": (ALL_C - {9, 14}, set(range(30)), 1, [], {9: 2, 14: 1 << 3}),
+    "quest-talk3c": (ALL_C - {19, 20, 21}, set(range(30)), 2, [], {19: 1 << 6, 20: 2, 21: 1 << 4}),
+    "quest-talk4c": (ALL_C - {25, 27}, set(range(30)), 3, [], {25: 2, 27: 2}),
+    # travel-act4's state with qf2 wielded instead of qf1 (the eye, heart and brain in the inventory)
+    "quest-orbwill": (ACT1 | {7} | ACT2 | {15} | (ACT3 - {18}), ACT_WP[1] | ACT_WP[2] | ACT_WP[3], 2,
+                      ["qey", "qhr", "qbr"]),
+    "quest-death": (ALL_X, TOWN_WP | ACT_WP[1], 0, []),
+    # part 3 (run:2026-10-19-quests3)
+    "quest-p3entry": (ALL_X - {4, 11, 12, 37}, ALL_WP, 0, ["tbk", "bkd"]),
+    "quest-p3anya": (ALL_X - {37}, ALL_WP, 4, ["tbk", "tr2"], {37: (1 << 1) | (1 << 8) | (1 << 15)}),
+    "quest-p3meshif": (ALL_X, ALL_WP, 2, []),
+    "quest-p3wpact": (ALL_X, TOWN_WP, 0, ["tbk"]),
 }
 
 
