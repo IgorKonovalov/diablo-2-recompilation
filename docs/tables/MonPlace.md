@@ -67,9 +67,12 @@ compares it with every cell, 37 cells, 0 mismatches.
     ([monsters/0003 § 7](../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20), [monsters/0003 § Plan 0038 batch H4b](../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b), fn:sub_0054E2A0_PresetFallenVariant@0x0054E2A0).
   - `[I]` 24 `place_impgroup` and 26 `place_miniongroup` are Normal-only group spawns (`imp1`/`deathmauler1` by
     level 110, or `minion1`: a leader in the preset's box and `MinGrp − 1 + RangeB(…)` members around it); in Hell
-    both placed nothing in the logs `[C]`. Outside Normal, 24 gives class 0 in the fixed-class table
-    ([monsters/0003 § 7](../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20)). Rows 19–21
-    never reach that table (next bullet), which corrects the earlier "19–21 class 0" reading.
+    both placed nothing in the logs `[C]`. Outside Normal both return 0: their switch byte is 7, whose case tests the
+    difficulty (0x0054EAA8–0x0054EAB1), so neither reaches the fixed-class table, though both hold its class-0 entry
+    ([monsters/0003 § 7](../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20),
+    [monsters/special § H](../specs/monsters/special.md#h-monplace-presets)). Rows 19–21 never reach that table either
+    (next bullet), and 25, 27 and 28 return 0 from it, which corrects the earlier "19–21 class 0" and "24 gives class 0"
+    readings.
   - `[I]` **Every other row, from the switch** ([monsters/0003 § 7](../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20),
     bullet *Every MonPlace row, from the switch*; `lane/rbs3`, static). The MonPlace branch switches on `index − 2` with the
     bound `0x1E` (0x0054E76F–0x0054E782). Rows the code places, all at the preset point through `SpawnAtPos`:

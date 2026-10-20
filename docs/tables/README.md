@@ -107,7 +107,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | misc | `misc.txt` (patch_d2) | `.bin` (patch_d2) | 151 | 152 | 424 | = (−1 marker) | [Misc](Misc.md) (economy) |
 | misscalc | `misscalc.txt` (patch_d2) | `.bin` (patch_d2) | 43 | 43 | 4 | = | [MissCalc](MissCalc.md) |
 | misscode | — | `.bin` (patch_d2) ⚠ no count header | — | — | — | — | — |
-| Missiles | `Missiles.txt` (patch_d2) | `.bin` (patch_d2) | 684 | 684 | 420 | = | [Missiles](Missiles.md) (layout, function numbers, motion, collision, damage, links) |
+| Missiles | `Missiles.txt` (patch_d2) | `.bin` (patch_d2) | 684 | 684 | 420 | = | [Missiles](Missiles.md) (layout, function index, motion, collision, damage, links) |
 | monai | `monai.txt` (patch_d2) | `.bin` (patch_d2) | 148 | 148 | 2 | = | — |
 | monequip | `monequip.txt` (patch_d2) | `.bin` (patch_d2) | 45 | 45 | 28 | = | — |
 | MonItemPercent | `MonItemPercent.txt` (d2exp) | `.bin` (d2exp) | 2 | 2 | 4 | = | — |
@@ -144,7 +144,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | skillcalc | `skillcalc.txt` (patch_d2) | `.bin` (patch_d2) | 73 | 73 | 4 | = | [SkillCalc](SkillCalc.md) |
 | skilldesc | `skilldesc.txt` (patch_d2) | `.bin` (patch_d2) | 221 | 221 | 288 | = | — |
 | skilldesccode | — | `.bin` (patch_d2) ⚠ no count header | — | — | — | — | — |
-| skills | `skills.txt` (patch_d2) | `.bin` (patch_d2) | 357 | 357 | 572 | = | [Skills](Skills.md) (layout, class blocks, combat survey, passive and aura columns, charge cost, dispatch) |
+| skills | `skills.txt` (patch_d2) | `.bin` (patch_d2) | 357 | 357 | 572 | = | [Skills](Skills.md) (layout, class blocks, combat survey, passive and aura columns, charge cost, dispatch, function index) |
 | skillscode | — | `.bin` (patch_d2) ⚠ no count header | — | — | — | — | — |
 | SoundEnviron | `SoundEnviron.txt` (patch_d2) | — | 50 | 50 | — | — | — |
 | sounds | `sounds.txt` (patch_d2) | `.bin` (patch_d2) | 4699 | 4699 | 2 | = | — |

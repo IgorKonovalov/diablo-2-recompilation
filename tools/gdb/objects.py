@@ -372,7 +372,7 @@ def _objects_main():
         st["game"] = game
         flags[(thn(), "oo")] = u
         push_scope()
-        d = {"fn": reg("edx"), "cls": s32(ebp + 8), "player": pl, "room": uroom(u)}
+        d = {"fn": reg("edx"), "cls": s32(ebp + 8), "player": pl, "room": uroom(u), "f": u32(game + 0xA8)}
         d.update(objinfo(u))
         d.update(seeds(uroom(u), game))
         emit("OO0", d)
@@ -419,6 +419,73 @@ def _objects_main():
     Bp(0x00585CD2, on_oct)
     Bp(0x00585CD7, on_ocx)
     Bp(0x00585BF9, on_ocx)
+
+    # --- traps (plan 0038 batch H5b) --------------------------------------------------------------------------
+    #   TF   OBJ_TrapFire entry 0x00582510: trap type (the stack byte), object, game frame (game +0xA8)
+    #   TFQ  0x00582595 its event queue call (sub_005417D0_UnitQueueEvent): object (EDX), event and frame pushed
+    #   TE0  OBJ_TrapEvent entry 0x005817A0 (object event 4): object, class, trap type (interact & 0x7F), level id,
+    #        position, frame, us, rs, os, gs
+    #   TT0/TTX  entry / return of the g_ObjTrapFns function the event jumps to (0x00582490, 0x005824B0,
+    #        0x005824D0, 0x005824F0, OBJTRAP_ObjectCreate 0x00582380, OBJTRAP_MonsterSpawn 0x005822F0): fn, seeds;
+    #        an object scope, so every SUnitCreate inside is logged (OU0/OUX)
+    def frame(game=None):
+        g = game or st["game"]
+        return u32(g + 0xA8) if g else None
+
+    def on_tf():
+        esp = reg("esp")
+        ctx = reg("edi")
+        game, u = u32(ctx), u32(ctx + 4)
+        emit("TF", {"t": u8(esp + 4), "u": u, "f": frame(game)})
+
+    def on_tfq():
+        esp = reg("esp")
+        emit("TFQ", {"u": reg("edx"), "ev": u32(esp), "at": u32(esp + 4)})
+
+    Bp(0x00582510, on_tf)
+    Bp(0x00582595, on_tfq)
+
+    def on_te0():
+        game, u = reg("ecx"), reg("edx")
+        st["game"] = game
+        od = u32(u + 0x14)
+        p = u32(u + 0x2C)                      # an object's static path: room +0x00, x +0x0C, y +0x10
+        room = u32(p) if p else 0
+        d = {"u": u, "cls": s32(u + 4), "t": (u8(od + 4) & 0x7F) if od else None, "lid": level_of(room),
+             "room": room, "x": s32(p + 0xC) if p else None, "y": s32(p + 0x10) if p else None, "f": frame(game),
+             "us": us(u)}
+        d.update(seeds(room, game))
+        emit("TE0", d)
+
+    Bp(0x005817A0, on_te0)
+    TT_RET = {0x00582490: 0x005824A4, 0x005824B0: 0x005824C4, 0x005824D0: 0x005824E4, 0x005824F0: 0x00582504,
+              0x00582380: 0x0058241C, 0x005822F0: 0x00582379}
+
+    def on_tt0():
+        fn = reg("pc")
+        game, u = reg("ecx"), reg("edx")
+        p = u32(u + 0x2C) if u else 0
+        room = u32(p) if p else 0
+        flags[(thn(), "tt")] = (fn, room, game)
+        push_scope()
+        d = {"fn": fn, "u": u}
+        d.update(seeds(room, game))
+        emit("TT0", d)
+
+    def on_ttx():
+        v = flags.get((thn(), "tt"))
+        if v is None or reg("pc") != TT_RET[v[0]]:
+            return
+        flags.pop((thn(), "tt"), None)
+        pop_scope()
+        d = {"fn": v[0]}
+        d.update(seeds(v[1], v[2]))
+        emit("TTX", d)
+
+    for a in TT_RET:
+        Bp(a, on_tt0)
+    for a in TT_RET.values():
+        Bp(a, on_ttx)
     gdb.write("OBJECTS logger armed\n")
 
 

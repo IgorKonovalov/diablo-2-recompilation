@@ -3,7 +3,7 @@ based_on:
   - docs/specs/drlg/README.md 2026-10-17
   - docs/specs/drlg/room-tiles.md 2026-10-17
   - docs/specs/drlg/preset.md 2026-10-17
-  - docs/specs/drlg/collision.md 2026-10-17
+  - docs/specs/drlg/collision.md 2026-10-20
   - docs/specs/drlg/maze.md 2026-10-17
   - docs/specs/drlg/warps.md 2026-10-17
   - docs/specs/drlg/outdoor.md 2026-10-20
@@ -495,7 +495,7 @@ saved units are restored, once per activation. A run met 1 137 first activations
 
 **When a room is released** ([lifecycle § E](../specs/drlg/lifecycle.md#e-release)). Every 12th frame a pass looks at
 each active room. If no player is near, the room's idle count goes up by one; if one is, it drops to zero. On the
-11th player-free pass in a row the room is released, unless a portal pins it, the room still holds a distance-0 or
+11th player-free pass in a row the room is released, unless it is pinned (by a portal, or, read from the code, while some quest events run), the room still holds a distance-0 or
 distance-1 reference, or it is in a town and some room of that level still does (the same rule for level 120 is read
 from the code only). In 2 224 of the run's 2 440 releases that came 120 to 131 frames after the player's room change
 took the room out of range, every value of that window seen; the others came later, after a refused pass. The rule

@@ -1,7 +1,7 @@
 ---
 based_on:
-  - docs/specs/items/tc.md 2026-10-17
-  - docs/specs/items/quality.md 2026-10-17
+  - docs/specs/items/tc.md 2026-10-20
+  - docs/specs/items/quality.md 2026-10-20
   - docs/specs/items/uniques-sets.md 2026-10-17
   - docs/specs/items/affixes.md 2026-10-17
   - docs/specs/items/properties.md 2026-10-17
@@ -89,7 +89,7 @@ writes of the flag, and 10 more that set it together with other flags. Read from
 - monsters that remove themselves through their own behaviour: nests and other spawners once they have spawned
   enough, traps, the Seven Tombs illusion, the Dark Wanderer and the trapped souls;
 - monsters spawned by another unit or by a spawner skill (including Baal's tentacles and his clone), and monsters
-  brought back to life by a resurrect or revive skill;
+  brought back to life by a resurrect or revive skill or by the `reanimate` item property;
 - hirelings (at the hire and at resurrection), and a monster restored from an inactive room that had the flag.
 
 An earlier reading had counted 21 plain writes (one of them sets a different flag) and split the unread ones into
@@ -217,7 +217,9 @@ set, rare and magic tests computes a number *c*
 
 1. *c* = (row value − *d* ÷ divisor) × 128. A higher item level relative to the base lowers *c*, which is better.
 2. Magic find divides it: *c* = *c* × 100 ÷ factor.
-3. *c* is raised to the row's minimum if it fell below it. This clamp never acted in any run and is read from the code.
+3. *c* is raised to the row's minimum if it fell below it. This comes after magic find and before the ratio word, and
+   recorded games confirm both the clamp and its place: the chance fell to the minimum in rare, set and magic tests, and
+   the clamp decided the result of 138 rolls. No roll reached the unique test's minimum.
 4. The TC's ratio word takes off its share: *c* = *c* − ratio × *c* ÷ 1024. A ratio of 1024 makes *c* zero.
 5. If *c* is below 1 the test wins with no draw; otherwise one draw from 0 to *c* − 1 wins if it is below 128.
 
@@ -227,15 +229,21 @@ magic find, no minimum and no ratio word. Losing the normal test is the only way
 tests, and the rare test if their type allows rare, with their draws, before they become magic.
 
 **[Magic find](../glossary.md) (MF)** is the killer's MF plus its owner's: a summon's kill counts the summoner's MF,
-and a [mercenary](../glossary.md)'s kill counts its own plus its player's. Both are confirmed in recorded games.
+and a [mercenary](../glossary.md)'s kill counts its own plus its player's, as does a Hydra's. These are confirmed in
+recorded games.
 Monsters can have owners too. Read from the code: the minions of a unique or superunique boss, and the MonStats
 party minions of a leader whose `MonStats` row has `SetBoss`, have their leader as owner, so a minion's kill adds the
 leader's MF while the leader is still in the game; a boss placed by the special-monster placement (a superunique, for
 example) is its own owner, so when it is the killer its own MF counts twice. Also read from the code, these
 monsters have an owner whose MF their kills add: a boss's escorts (the boss), tentacles (their spawner), formation
-members (their leader; a leader owns itself), Baal's clone (Baal), Bone Wall and Bone Prison pieces, revived and
-raised monsters and monsters a missile spawns (the caster or the missile's owner), and a monster restored from an
-inactive room (its saved owner). Whether any stock monster has MF at all is not checked
+members (their leader; a leader owns itself), Baal's clone (Baal), Bone Wall and Bone Prison pieces, revived
+monsters and monsters a missile spawns (the caster or the missile's owner), monsters raised by the `reanimate` item
+property (the player the killer belongs to), and a monster restored from an inactive room (its saved owner).
+
+That property (stock: the unique Tomb Reaver and the runeword Faith) is not a skill: on the kill of a monster that is
+neither a champion nor a unique, it draws once on the killer's own seed against its value (10 % on both stock items)
+and, when the draw passes, raises the dead monster for the player at the top of the killer's owner chain, so a pet or
+a hireling that has it raises monsters for its player. Read from the code only. Whether any stock monster has MF at all is not checked
 ([quality § C, note M3](../specs/items/quality.md#c-shared-terms-and-magic-find)). The factor is:
 
 | Test | Factor with MF ≤ 10 | Factor with MF above 10 | At MF 100 |
@@ -540,7 +548,7 @@ The main flow above is confirmed in recorded games. These parts are not, or are 
   ethereal and force sockets (see [Ethereal, sockets and automagic](#ethereal-sockets-and-automagic)); no stock data
   sets them.
 - **Quality** ([quality open questions](../specs/items/quality.md#open-questions)): Hell, negative magic find,
-  multiplayer, the minimum clamp, and the unique-only base and quest-item early returns.
+  multiplayer, a monster killer with no player owner, an object or missile killer, and the unique-only base and quest-item early returns.
 - **Uniques and sets** ([uniques-sets open questions](../specs/items/uniques-sets.md#open-questions)): the fallback
   chain past its first step; a unique-only base with no row; a quest base skipping the made test; the Cow King's set
   from a Hell Bovine; which game type, if any, excludes ladder uniques.

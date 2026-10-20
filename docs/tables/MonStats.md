@@ -726,9 +726,13 @@ blank 0) hold one value for all difficulties; `El<e>Pct`, `El<e>MinD`, `El<e>Max
   through a plain mode change ([combat/0001 § 12b (a)](../findings/combat/0001-formulas.md#12b-answers-to-the-archivists-phase-0-questions-backlog-2026-10-16-ae),
   fn:sub_005A7C20_MonSetMode@0x005A7C20, fn:sub_005A4F50_MonAttackStats@0x005A4F50, tbl:MonStats.txt:El1Mode).
 - `[L]` By the names: `ToBlock` the monster's block chance (read at creation as stat 20, § Readers; the block roll
-  reads stat 20), `DamageRegen` its life regeneration (read at creation, § Readers), `SkillDamage` a skill whose damage
-  the monster uses. **(plan 0039 A1)** `Drain`, `coldeffect`, `NoShldBlock` and `Crit` left this lead: they have
+  reads stat 20), `DamageRegen` its life regeneration (read at creation, § Readers). **(plan 0039 A1)** `Drain`, `coldeffect`, `NoShldBlock` and `Crit` left this lead: they have
   readers, below.
+- `[I]` **(plan 0045 P1.1)** `SkillDamage` (`+0x0A8`): for a monster with an owner whose own class names a skill here (the
+  four summon classes), `MonAttackStats` adds that skill's physical minimum and maximum (`SKILLS_GetPhysMin/Max >> 8`)
+  and its to-hit to the A1/A2/S1 attack before the classic and player-count adjustments (which unit's skill level is
+  read is not resolved there)
+  ([skills/0001 § 13](../findings/skills/0001-dispatch.md#13-monster-skill-use); fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050).
 
 ### Combat readers (plan 0037 Phase 1, plan 0039 A1)
 

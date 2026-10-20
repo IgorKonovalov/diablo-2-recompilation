@@ -2,10 +2,10 @@
 based_on:
   - docs/specs/monsters/README.md 2026-10-16
   - docs/specs/monsters/pool.md 2026-10-16
-  - docs/specs/monsters/spawn.md 2026-10-17
-  - docs/specs/monsters/special.md 2026-10-17
+  - docs/specs/monsters/spawn.md 2026-10-20
+  - docs/specs/monsters/special.md 2026-10-20
   - docs/specs/monsters/stats.md 2026-10-17
-  - docs/specs/drlg/collision.md 2026-10-17
+  - docs/specs/drlg/collision.md 2026-10-20
   - docs/specs/drlg/lifecycle.md 2026-10-20
 ---
 
@@ -303,7 +303,9 @@ at the preset point, with mod 16 and a champion pack. Both were reproduced in Tr
 by the code, place nothing at all when the room's presets are spawned or restored: the group presets that the map's
 keep/drop roll keeps (see [levels](levels.md#what-a-preset-places-units-and-keepdrop-rolls)), the river, nest, guard and maggot kinds among them. Five
 place one fixed monster at the point with no special code: the rogue warner (`navi`), Blood Raven, the Maggot Queen,
-and two tentacle-head kinds whose type depends on the level. Other code that reads a room's presets is not yet followed.
+and two tentacle-head kinds whose type depends on the level. The imp-group and minion-group kinds place a leader and
+its group around the point in Normal only; in Nightmare and Hell they place nothing (read from the code). Other code
+that reads a room's presets is not yet followed.
 
 ## Unique minions and mod transfer
 

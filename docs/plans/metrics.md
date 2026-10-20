@@ -163,6 +163,29 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-20 | `lane/cfix` review | 0045 P1.1 follow-up | architect-review | 81 083 | 27 | 12 | — | gave accept with fixes | — (on the lane row) |
 | 2026-10-20 | `lane/p48a` | 0048 P0 | reverser-static | 214 388 | 59 | 16 | no slot, no Ghidra | accept with fixes | 1: omission 1 |
 | 2026-10-20 | `lane/p48a` review | 0048 P0 | architect-review | 114 630 | 45 | 7 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/p49s` | 0049 P2 | spec-writer | 228 548 | 122 | 17 | no slot | accept with fixes | 4: overclaim 1, wrong anchor 1, stale cross-reference 1, other 1 |
+| 2026-10-20 | `lane/p49s` review | 0049 P2 | architect-review | 163 821 | 53 | 10 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/p45m` | 0045 P1.2 | reverser-static | 479 551 | 151 | 46 | Ghidra (lane copy) | accept with fixes | 2: miscount 1, omission 1 |
+| 2026-10-20 | `lane/p45m` review | 0045 P1.2 | architect-review | 134 588 | 55 | 10 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/h5b` | 0038 H5b | reverser-harness | 411 364 (resume agent; 2026-10-19 agent not counted) | 273 | 147 | slot 1 | accept with fixes | 3: misread 1, omission 2 |
+| 2026-10-20 | `lane/h5b` review | 0038 H5b | architect-review | 158 172 | 70 | 15 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/msw` | 0045 P1.2 folds | spec-writer | 163 194 | 77 | 17 | — | accept with fixes | 7: overclaim 2, misread 1, omission 1, wrong anchor 1, other 2 (plus 1 miscount in skills/0002, `lane/p45m`'s, fixed at this review) |
+| 2026-10-20 | `lane/msw` review | 0045 P1.2 folds | architect-review | 125 564 | 34 | 6 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/h2a` (sessions) | 0038 H2a | reverser-harness | 343 910 | 165 | 103 | slot 2 | accept with fixes | — (on the write-up row) |
+| 2026-10-20 | `lane/h2a` (write-up) | 0038 H2a | reverser-harness | 213 212 | 103 | 20 | no slot, no Ghidra | accept with fixes | 1: omission 1 |
+| 2026-10-20 | `lane/h2a` review | 0038 H2a | architect-review | 147 964 | 58 | 9 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/p38s7` | 0038 P3 items/quality | spec-writer | 116 033 | 39 | 10 | — | accept with fixes | 2: overclaim 1, omission 1 |
+| 2026-10-20 | `lane/p38s7` review | 0038 P3 items/quality | architect-review | 77 823 | 20 | 5 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/p45h` | 0045 P1.3 | reverser-static | 524 676 | 161 | 49 | Ghidra (lane copy) | accept with fixes | 4: misread 1, omission 2, stale cross-reference 1 |
+| 2026-10-20 | `lane/p45h` review | 0045 P1.3 | architect-review | 143 888 | 48 | 7 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/cfix2` | 0045 skills/0003 fold | spec-writer | 158 696 | 58 | 17 | — | accept with fixes | 9: misread 3, omission 5, wrong anchor 1 |
+| 2026-10-20 | `lane/cfix2` review | 0045 skills/0003 fold | architect-review | 145 286 | 38 | 10 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/p46a` | 0046 P0 | archivist | 292 628 | 106 | 24 | — | accept | 0 |
+| 2026-10-20 | `lane/p46a` review | 0046 P0 | architect-review | 110 941 | 42 | 10 | — | gave accept | — (on the lane row; the review's own skills/0003 rewording is a reverser-doc label, other 1) |
+| 2026-10-20 | `lane/p45b` | 0045 P1b | reverser-static | 293 045 | 121 | 25 | no Ghidra | accept with fixes | 2: wrong anchor 1, other 1 |
+| 2026-10-20 | `lane/p45b` review | 0045 P1b | architect-review | 133 429 | 52 | 12 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/e5fix` | 0045 E5 fix | spec-writer | 76 507 | 30 | 7 | — | accept with fixes | 1: omission 1 |
+| 2026-10-20 | `lane/e5fix` review | 0045 E5 fix | architect-review | 67 995 | 24 | 5 | — | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

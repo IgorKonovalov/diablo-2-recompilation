@@ -159,7 +159,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `[31]` is the expected output. (d) Activation order: accepted as an input beyond the per-room seeds, `[I]` as stated
   (§ 3.2); the open question is answered. (e) The stale *grid snapshot* row of monsters/spawn (object marks "still
   logged") is a wrong statement in a reviewed spec, routed now to the spec-writer
-  ([entry](../backlog/2026-10-20-architect-spec-writer-monsters-spawn-stale-object-marks-row.md)); the other four
+  ([entry](../backlog/archive/2026-10-20-architect-spec-writer-monsters-spawn-stale-object-marks-row.md)); the other four
   passages of § 5 stay Phase 3's. (f) Research map: the Core row `chain` is added (findings in progress).
 - **2026-10-20 — Phase 1 done, review requested (reverser, `lane/p48r`, static, Ghidra copy, no harness).**
   [chain/0002](../findings/chain/0002-retirements.md) records each assigned oracle, in the assigned order, on kept logs

@@ -92,8 +92,8 @@ Nothing ever clears bit 15 except one first-join check of the Radament quest's w
 reward pending carries bit 15 from then on; that is read from the code. *Save and Exit* writes each record as it stands: the runs checked the saved
 words against the loaded record plus every write logged during play, 2 304 word checks with no mismatch.
 
-Some words belong to no quest script: words 7, 15, 23 and 28 are the act-travel words (below), word 41 is the Hell
-respec offer, word 34 is written by no script, word 42 is held by the NPC-introduction scripts but never written, and
+Some words are no quest script's own word: words 7, 15, 23 and 28 are the act-travel words (below), word 41 (the Hell
+respec offer) is written only by the Den of Evil quest's scripts as their second word, word 34 is written by no script, word 42 is held by the NPC-introduction scripts but never written, and
 words 43 to 47 are never used.
 This is read from the code.
 

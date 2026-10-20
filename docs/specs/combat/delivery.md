@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, combat/to-hit, combat/damage, combat/reductions, monsters/stats]
 consumed_by: [combat/overview, items/tc, stats/states, items/economy]
-tags: {C: 52, I: 39, L: 4}
+tags: {C: 52, I: 54, L: 4}
 updated: 2026-10-20
 ---
 
@@ -21,7 +21,8 @@ boundary of the model ([combat/overview § Boundary](README.md#the-adr-0014-boun
 
 ```mermaid
 flowchart TD
-  q["ResolveAndQueue: build, reductions, kill pre-test, queue"] --> dq["DeliverQueued: range check"]
+  q["ResolveAndQueue: build, reductions, kill pre-test, queue"] --> fin["PrgFinisher, a player's charged state only: entries draw, 38 delivers first (A3)"]
+  fin --> dq["DeliverQueued: range check"]
   dq --> ad["ApplyDamage"]
   ad --> ev["events 5 then 1 (melee) or 6 then 2 (missile): crushing blow, open wounds, freeze"]
   ev --> cap["phys = min(phys, HP)"]
@@ -104,7 +105,7 @@ A2. DeliverQueued(att, def):                                          [I] (fn:CO
         ApplyDamage(att, def, e.pkt, doReductions: false)                     ; § B
         put overlay pkt+0x6C;  pick the hit class (a global counter, no draw)
         DurabilityLoss(att, def)                                              ; boundary oracle, § F
-      DispatchEvent(7 domeleeattack, att);  DispatchEvent(3 attackedinmelee, def)
+      DispatchEvent(7 domeleeattack, att);  DispatchEvent(3 attackedinmelee, def)      ; handlers § E5
       if hit: Knockback(att, def)                                             ; boundary oracle, § F
       GetHit(att, def, e.pkt)                                                 ; boundary oracle, § F
       remove e
@@ -118,15 +119,67 @@ A2. DeliverQueued(att, def):                                          [I] (fn:CO
 - A2. A delivery can happen on a later frame than the hit test when a skill do-function queues it (362 such events
   in the run, resynchronised); the attacker's AI may draw in between. [I] (fn:COMBAT_DeliverQueued@0x0057D4F0,
   run:2026-10-16-combat)
-- A2. Before delivery, `SKILL_AttackDo` calls the progressive-charge finisher. On a queued hit with result bit `0x1`
-  and the target in melee range, for each charged state (a skill, a level `max(stat 351, current level)` above 0 and a
-  charge stat) it **peeks** the attacker's seed: it copies the seed out (`0x005D5374`), calls `RNG_Step` on it
-  (`0x005D537B`), keeps the result and copies the seed back (`0x005D538C`), then passes the kept value to
-  `0x00571AA0`. The finisher's own step therefore leaves the attacker's seed unchanged; the `srvprgfunc` entries it
-  then calls are not read and may draw (*Open questions*). The run met no charged state, and an attacker under a
-  `meleeonly` state (wolf, bear) skips the finisher. [I] (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D5368–0x005D538C,
-  fn:sub_00650E70_Copy64Out@0x00650E70, fn:sub_00650E60_Copy64In@0x00650E60, fn:RNG_Step@0x0045C370,
-  fn:sub_0056C2D0_AttackDeliverMeleeOnly@0x0056C2D0, [skills/0001 § 12](../../findings/skills/0001-dispatch.md#12-progressive-charges))
+- A2. Before delivery, `SKILL_AttackDo` calls the progressive-charge finisher (A3); an attacker under a `meleeonly`
+  state (wolf, bear) skips it. The run met no charged state. [I] (fn:COMBAT_PrgFinisher@0x005D5220,
+  fn:sub_0056C2D0_AttackDeliverMeleeOnly@0x0056C2D0)
+
+**A3. The progressive finisher and its `srvprgfunc` entries.**
+
+```
+A3. PrgFinisher(att):                                                 [I] (fn:COMBAT_PrgFinisher@0x005D5220, all of A3)
+      if not (the queued hit has result bit 0x1 and the target is in melee range): return
+      for each charged progressive state of att (a list, a skill, lvl ← max(stat 351, current level) > 0, an aurastat1):
+        n ← clamp(charges, 1, 3)
+        peek ← Step(copy of att.seed)                                 ; att.seed itself unchanged (0x005D5368–0x005D538C)
+        if Skills.prgstack: for k in 1 .. n − 1: charge stat ← k; Entry(srvprgfunc k)
+        Entry(srvprgfunc n)                                           ; always; an entry number outside 1..0xBE runs nothing
+        UnitMsgA3(skill, lvl, peek, 0, n)                             ; a client message (0xA3), no game state, no draw
+      free the list
+
+Entry 37 or 143 (ring):                                               [I] (fn:sub_005D4E70_SkillPrgDo37Ring@0x005D4E70, fn:sub_005D4F40_SkillPrgDo143Ring@0x005D4F40, 0x005D4E80, 0x005D4F50)
+      Step(att.seed);  w ← att.seed.low                               ; draw (attacker), at entry, before any test
+      m ← srvmissile by charge;  if m ≤ 0: return
+      every ← prgcalc by charge, or aurarangecalc when 0
+      local ← Init(w);  for each `every`-th of 64 directions: Step(local); MissileCreate(m, …, callback arg: local.low)
+                                                                      ; the callback re-seeds the new missile (rng/seeds)
+Entry 38 (area hit):                                                  [I] (fn:sub_005D3E80_SkillPrgDo38AreaHit@0x005D3E80, 0x005D3E80–0x005D3F82)
+      if att has a target: DeliverQueued(att, target)                 ; A2: the queued hit's delivery and its draws (0x005D3EBF–0x005D3ED0)
+      pkt.phys ← RangeB(att.seed, max − min) + min                    ; draw (attacker), 0x0056E1C4
+      RollElemDamage(att, pkt)                                        ; draw (attacker): RangeB; EType 10: one more Step
+      for each unit u of ForUnitsInRange(target point, r, aurafilter):  ; r: prgcalc by charge or aurarangecalc
+        AreaHitUnit(u): DefenceRoll(u, isMissile: true, useBlock: false)  ; draws on u.seed (combat/to-hit § C2): no block, avoid not dodge (0x0056BA06–0x0056BA0D)
+          then MonCritDouble (combat/damage step 10), ApplyDamage on a hit (§ B), GetHit (§ F)
+Entry 39 (scatter):                                                   [I] (fn:sub_005D3F90_SkillPrgDo39Scatter@0x005D3F90, 0x005D3F90–0x005D40E7)
+      Step(att.seed);  local ← Init(att.seed.low)                     ; draw (attacker), at entry
+      r ← prgcalc by charge, or aurarangecalc
+      repeat r² times: dx ← r − Range(local, 2r); dy ← r − Range(local, 2r)
+        if dx² + dy² ≤ r² and the point has a room: MissileCreate at (tx + dx, ty + dy)
+Entry 41 (scatter):                                                   [I] (fn:sub_005D5080_SkillPrgDo41Scatter@0x005D5080, 0x005D5080–0x005D5218)
+      Step(att.seed);  local ← Init(att.seed.low)                     ; draw (attacker), at entry
+      count ← prgcalc by charge;  if count = 0: return
+      count missiles, each after two Step(local) for its offset
+Entries 36 (nova at the target) and 40 (one missile at the target point): no draw of their own
+```
+
+- A3. **The finisher's own step is a peek**: it copies the seed out (`0x005D5374`), calls `RNG_Step` on the copy
+  (`0x005D537B`), keeps the result and copies the seed back (`0x005D538C`). The kept value goes only into the client
+  message `0xA3`. [I] (fn:sub_00650E70_Copy64Out@0x00650E70, fn:sub_00650E60_Copy64In@0x00650E60, fn:RNG_Step@0x0045C370,
+  fn:sub_00571AA0_UnitMsgA3@0x00571AA0, [skills/0001 § 12](../../findings/skills/0001-dispatch.md#12-progressive-charges))
+- A3. **The entries draw.** 37, 39, 41 and 143 step the attacker's seed once at entry, before the record test, so the
+  step happens even when the entry then creates nothing (143 for Fists of Fire: its `srvmissilea` is empty). 38 draws
+  `RangeB` twice on it (physical and elemental) and a third time, an `RNG_Step`, for `EType` 10; its area units draw
+  their defence rolls on their own seeds. 36 and 40 draw nothing of their own. Every missile an entry creates adds
+  the creation's draws ([combat/overview § B4](README.md#b-draw-order-per-event)). [I] (0x005D4E80, 0x005D4F50,
+  fn:sub_0056E170_SkillRollPhys@0x0056E170, 0x0056E1C4, fn:SKILLS_RollElemDamage@0x0056E0C0,
+  fn:sub_0056B9C0_AreaHitUnit@0x0056B9C0, [skills/0003 § 1](../../findings/skills/0003-handlers.md#1-progressive-entries-srvprgfunc-and-the-finishers-tail))
+- A3. **Entry 38 delivers the queued hit itself**, before its own draws, so the attack's delivery (§ B, on both seeds)
+  comes before 38's `RangeB`; `SKILL_AttackDo`'s later `DeliverQueued` then finds no entry for the defender. [I]
+  (0x005D3E80–0x005D3F82, fn:COMBAT_DeliverQueued@0x0057D4F0)
+- A3. **Stock use**: Fists of Fire 143/38/39 and Blades of Ice −/38/39 and Claws of Thunder −/36/37 with `prgstack`
+  (an entry number 0 runs nothing), Royal Strike 40/143/41 without (only the current count's entry runs). A Fists of
+  Fire finisher at three charges therefore steps the attacker's seed once (143), delivers and draws two or three
+  times (38), and steps it once more (39). [I] (0x005D53E0–0x005D5490, tbl:Skills.txt:prgstack,
+  [skills/0003 § 1](../../findings/skills/0003-handlers.md#1-progressive-entries-srvprgfunc-and-the-finishers-tail))
 
 ### B. Delivery (`COMBAT_ApplyDamage`)
 
@@ -168,7 +221,7 @@ B4.   pkt.phys ← min(pkt.phys, stat(def, 6))
 B5.   if stat(def, 6) ≤ 0: pkt.result |= 0x2
       else: pkt.result &= ~0x2;  if def is a monster and pkt.total ≠ 0 and stat(def, 74) ≠ 0: reschedule its life tick
       if (pkt.result & 0x2) and not (pkt.result & 0x20):
-        DispatchEvent(10 killed, unit: def);  DispatchEvent(9 kill, unit: att)   ; [I] (0x0057C8DD–0x0057C970)
+        DispatchEvent(10 killed, unit: def);  DispatchEvent(9 kill, unit: att)   ; [I] (0x0057C8DD–0x0057C970); handlers § E5
 ```
 
 Step notes:
@@ -373,6 +426,46 @@ E4. MonLifeTick(game, unit):                                          [C] (fn:su
   open wounds cannot kill a player. No poisoned tick reached the floor and open wounds never hit the player.
   [I] (fn:sub_00580610_LifeRegenTick@0x00580610, 0x0058065B–0x0058066E)
 
+**E5. The other stat-event handlers.** `UNIT_DispatchEvent` runs a unit's handler records for the event, newest
+first; a handler draws on the seed of **its own unit**, the unit that owns the event (the attacker for the `do…`
+and `kill` events, the defender for `attacked…`, `damaged…` and `killed`). The handlers registered on stock data
+that draw:
+
+| # | Handler | Registered by | Events | Seed | Draw |
+|---|---|---|---|---|---|
+| 1 | missile at the source | Chilling Armor (60) | `hitbymissile` | defender | none of its own; the missile's creation ([overview § B4](README.md#b-draw-order-per-event)) |
+| 3 | shiver armour | Shiver Armor (50) | `attackedinmelee` | defender | `SKILLS_RollElemDamage`: one `RangeB`, one more `RNG_Step` for `EType` 10 |
+| 7 | knockback | stat 81 | `domeleedamage`, `domissiledamage` | attacker | one inline step; `low & 0x7F < c` sets result `0x8`, `c` 64, or 32 or 128 by MonStats2 flags |
+| 8 | howl | stat 112 | as 7 | attacker | `RangePow2(seed, 128) < stat`: the monster flees |
+| 9 | stupidity | stat 113 | as 7 | attacker | `Range(seed, 100)` against `clamp(((alvl + 4·stat − dlvl) + 6)·5 [÷ 3 for a missile], 1, 99)` |
+| 14–16 | freeze, open wounds, crushing blow | stats 134–136 | as 7 | attacker | E1–E3 |
+| 20 | skill on attack, kill or hit | stats 195, 196, 198 | the attack, kill and hit events | attacker | with no packet or packet flag `0x20`: one inline step, `low mod 100 < stat` casts the item skill |
+| 21 | skill on get-hit | stat 201 | `damagedinmelee`, `damagedbymissile` | defender | only with stat 201 > 0 and a packet whose result has bit `0x4` (tested before the draw): `RangeB(seed, 100) < stat` casts |
+| 30 | skill on death or level-up | stats 197, 199 | `killed`, `levelup` | the dying or levelling unit | one inline step, `low mod 100 < stat` casts |
+| 31 | reanimate | stat 155 | `kill` | attacker | one `RangeB` |
+
+- E5. As above. [I] (data:g_StatEventFuncs@0x007325B0, fn:UNIT_DispatchEvent@0x005C0C30, 0x005BF9CF, 0x005C04D4,
+  0x005C0603, 0x005C06BB, fn:STATEVENT_Reanimate@0x005C09E0, [skills/0003 § 3](../../findings/skills/0003-handlers.md#3-the-stat-event-handlers))
+- E5. **The other registered handlers draw nothing**: 2, 4, 5, 6, 10, 13, 17, 18, 19 and 22–29; 11 and 12 are named
+  by no stock row. Among them the `kill` handler 28 (`0x005C01D0`, stat 86, heal after kill) adds `stat · 256` to the
+  attacker's life, capped at its maximum, with no draw. [I] (fn:sub_005C01D0_StatEv28HealAfterKill@0x005C01D0,
+  tbl:ItemStatCost.txt:itemeventfunc1, [skills/0003 § 3](../../findings/skills/0003-handlers.md#3-the-stat-event-handlers))
+- E5. **An item cast of a skill with `ItemTarget` blank or 1 draws nothing of its own**: the cast helpers
+  `0x005FDCA0` (at a unit) and `0x005FDD60` (at a point) and `ITEMSKILL_Cast` hold no draw, so such a cast adds only
+  the handler's chance draw above and the cast skill's own do function and missiles. [I]
+  (fn:ITEMSKILL_Cast@0x005FDA80, fn:sub_005FDCA0_ItemCastAtUnit@0x005FDCA0, fn:sub_005FDD60_ItemCastAtXY@0x005FDD60,
+  tbl:Skills.txt:ItemTarget, [skills/0003 § 2](../../findings/skills/0003-handlers.md#2-item-event-casts))
+- E5. **`ItemTarget` 2 draws in its target helper.** `ITEMSKILL_Cast` calls the helper `0x005FD850` (call at
+  `0x005FDB9F`) before its `SKILLS_SrvDo`. Per try the helper steps the seed at `+0x20` of the unit it is given twice,
+  inline, adding `low mod 40 − 20` to x and to y, and it tries at most 10 times, until `COLL_PatternTest` returns 0:
+  2 to 20 steps, none when `sub_00620BB0_UnitGetRoom` finds no room. When it finds no room or all 10 tries fail it
+  returns 0 and the cast is refused (no `SKILLS_SrvDo`). The one stock `ItemTarget` 2 row is Teleport. Which unit
+  the helper is given is not followed (*Open questions*). [I] (fn:ITEMSKILL_Cast@0x005FDA80, 0x005FDB9F, 0x005FDBA6,
+  0x005FD900–0x005FD98A, fn:sub_00620BB0_UnitGetRoom@0x00620BB0, fn:COLL_PatternTest@0x0064D870, tbl:Skills.txt:ItemTarget,
+  [skills/0001 § 10](../../findings/skills/0001-dispatch.md#10-item-granted-skills))
+- E5. **Order on a kill**: the defender's `killed` handlers (30) run before the attacker's `kill` handlers (28, 31,
+  and 20 for stat 196), all inside `COMBAT_ApplyDamage` (B5). [I] (0x0057C8DD–0x0057C970)
+
 ### F. The boundary at delivery
 
 Durability loss (`COMBAT_DurabilityLoss`: the attacker's weapon one draw, the defender's armour a slot pick
@@ -429,9 +522,14 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
   run:2026-10-16-combat)
 - **Absorb heals from both percent and flat absorb**, and only a positive amount. [C] for the percent
   (fn:COMBAT_Absorb@0x0057BF10, run:2026-10-16-combat); [I] for the flat (fn:COMBAT_Absorb@0x0057BF10)
-- **The finisher's `RNG_Step` is a peek, not a draw.** It steps a copy of the attacker's seed and restores the seed,
-  so a reimplementation that advances the seed there shifts every later attacker draw. [I]
-  (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D5368–0x005D538C)
+- **The finisher's `RNG_Step` is a peek, not a draw, but its entries draw.** It steps a copy of the attacker's seed
+  and restores the seed, so advancing the seed there shifts every later attacker draw; the entries 37, 39, 41 and 143
+  then step the real seed once at entry, even when they create nothing, and 38 draws two or three times on it after
+  delivering the queued hit (A3). [I] (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D5368–0x005D538C, 0x005D4E80,
+  0x005D4F50, 0x0056E1C4)
+- **A handler draws on its own unit's seed**: shiver armour (3) and skill on get-hit (21) on the defender's, skill on
+  death (30) on the dying unit's, knockback, howl, stupidity, skill on attack or hit, and reanimate on the attacker's (E5). [I]
+  (data:g_StatEventFuncs@0x007325B0, 0x005BF9CF, 0x005C0603)
 - **Burning never applies from a plain attack**: the builder leaves `burn = 2` with `burnLen = 0`. [I]
   (0x0057BC2F–0x0057BC8A)
 
@@ -442,7 +540,11 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
   below-the-floor bullet), 13 (*Leads used*: crushing blow, open wounds, absorb, leech).
 - [combat/experiments § run:2026-10-16-combat](../../findings/combat/experiments.md#run2026-10-16-combat): crushing
   blow 316, open wounds 246 with 11 windows, leech 364 / 681 / 455, the stat-74 tick 6 181.
-- [skills/0001](../../findings/skills/0001-dispatch.md) § 12 (the finisher's seed save and restore).
+- [skills/0001](../../findings/skills/0001-dispatch.md) §§ 10 (item-event casts and the `ItemTarget` 2 helper's draws,
+  the dated Phase 1b note), 12 (the finisher's seed save and restore).
+- [skills/0003](../../findings/skills/0003-handlers.md) §§ 1 (the `srvprgfunc` entries, the finisher's tail and stock
+  use), 2 (item casts), 3 (the stat-event handlers, their registrations and draws), 13 (draws per event), as fixed by
+  the architect's P1.3 review (plan 0045 log).
 - Tables: [DifficultyLevels](../../tables/DifficultyLevels.md), [MonStats](../../tables/MonStats.md),
   [ItemStatCost](../../tables/ItemStatCost.md), [States](../../tables/States.md).
 - Upstream: [rng](../rng/README.md), [monsters/stats § C](../monsters/stats.md#c-the-player-count-sub_00573930_monplayerbonus).
@@ -456,7 +558,15 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
   ~~The player's life tick~~: reproduced by run:2026-10-17-stats under poison (E4); its 256 floor was not reached.
 - ~~The state end: when a timed state's stat list is freed at its end frame.~~ At `frame + duration` by unit event 12,
   one event per apply or refresh: [stats/states § C](../stats/states.md#c-expiry-and-removal) (plan 0041).
-- [L] Event handlers other than 14, 15 and 16 (skill on hit, knockback, slow and the like) draw on seeds this spec
-  does not model; they are boundary oracles until phase (3).
-- [L] The progressive server functions the finisher calls (`srvprgfunc` entries 36–41, 143) and `0x00571AA0`, which
-  receives the peeked value, are not read: their draws, if any, are unknown (plan 0045 P1.3 or plan 0046).
+- ~~Event handlers other than 14, 15 and 16 (skill on hit, knockback, slow and the like) draw on seeds this spec
+  does not model.~~ Read from the code: § E5 ([skills/0003 § 3](../../findings/skills/0003-handlers.md#3-the-stat-event-handlers)).
+- ~~The progressive server functions the finisher calls (`srvprgfunc` entries 36–41, 143) and `0x00571AA0`, which
+  receives the peeked value, are not read.~~ Read from the code: § A3; `0x00571AA0` is a client message
+  ([skills/0003 § 1](../../findings/skills/0003-handlers.md#1-progressive-entries-srvprgfunc-and-the-finishers-tail)).
+- [L] A run that reaches the finisher's entries (A3) and the handlers of E5: run:2026-10-16-combat met no charged
+  state and took these handlers as boundary oracles (plan 0045 Phase 2).
+- [L] The `ItemTarget` helpers of an item cast (E5): which unit helper 2 (`0x005FD850`) is given, the caster or the
+  target, and so whose seed its 2 to 20 steps advance; and whether helpers 3 (`0x005FD9C0`, called at `0x005FDBE1`, a
+  corpse pick through `0x0056E390`) and 4 (`0x005FDA10`, called at `0x005FDBF3`) draw, which is not read. Plan 0046
+  Phase 1's item, shrine and object batch reads them ([skills/0001 § 10](../../findings/skills/0001-dispatch.md#10-item-granted-skills),
+  plan 0045 log, Phase 1b review).

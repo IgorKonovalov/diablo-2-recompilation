@@ -61,7 +61,7 @@ Observed type and range are computed over `states.txt` (185 rows).
 | `cltevent` | str, 1 distinct (`hitbymissile`), 184 blank | `+0x030` u16 | `events.txt` row; blank → −1 | `events.txt:event` | [C] layout |
 | `clteventfunc` | int 1, 184 blank | `+0x032` u16 | function number | — | [C] layout |
 | `cltactivefunc` | int 85..90, 6 distinct, 179 blank | `+0x034` u16 | function number | — | [C] layout |
-| `srvactivefunc` | int 145..147, 3 distinct, 182 blank | `+0x036` u16 | function number | — | [C] layout |
+| `srvactivefunc` | int 145..147, 3 distinct, 182 blank | `+0x036` u16 | function number; `[I]` an index into the skill do table `g_SkillDoFuncs` (`0x007322B0`), run on unit event 5 by `sub_0056D790_StateDoFunc` ([skills/0001 § Functions](../findings/skills/0001-dispatch.md#functions); fn:sub_0056D790_StateDoFunc@0x0056D790); 146, on `armageddon`, is `sub_005C8520_SkillDo146Armageddon` ([skills/0003 § 9](../findings/skills/0003-handlers.md#9-re-seed-sites-rng0002--the-other-initialiser-sites)); the three entries: [Skills § Function index](Skills.md#function-index-plan-0046-phase-0) | — | [C] layout |
 | `skill` | str, 2 distinct (`Holy Shield`, `redemption`), 183 blank | `+0x038` u16 | [Skills](Skills.md) row, key matched case-insensitively (`redemption` → 124); blank → −1 | `skills.txt:skill` | [C] layout |
 | `missile` | str, 2 distinct, 183 blank | `+0x03A` u16 | `missiles.txt` row; blank → −1 | `missiles.txt:Missile` | [C] layout |
 | `immed` | int 1, 173 blank (12 rows) | — (not compiled) | `[I]` the descriptor has no entry for it, so the compiler ignores the column ([data/0001 § Plan 0039 batch P1b](../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17)); no byte or bit of the record follows it `[C]` (data) | — | [I] |
