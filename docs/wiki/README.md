@@ -34,6 +34,7 @@ back to it. Then follow the game from the map to the loot, and on to the charact
 | 10 | [Combat](combat.md) | what happens when one unit hits another: the chance to hit, block and avoid, the damage build, resistances and absorb, crushing blow, open wounds, leech and the life change, and whose seed each draw is on |
 | 11 | [Stats and states](stats-and-states.md) | how a character's final stats add up from items, set bonuses, passives and states, item requirements and the 136-frame refresh, how a timed state is applied, refreshed, refused, replaced and ended, group clears, the regeneration of life, mana and stamina, auras, and shrines and wells |
 | 12 | [Saves](saves.md) | what a `.d2s` save file holds and how an item is stored in it |
+| 13 | [Quests and travel](quests.md) | how the quest record is kept and loaded, which events reach the quest scripts and in what order, how the game creator's finished quests are switched off, a few quests bit by bit, the quest-seed draws, and how waypoints, act changes, town portals, warps and resurrection place a player |
 | — | [How we know](how-we-know.md) | how the project works: the one binary, the three levels of confidence, runs, bit-exact and emulated reproduction, combat events, two-client games, what "not reachable on stock data" means, the sweep of inferred claims, and what "reviewed" means. Read it any time; it is the only page not based on a spec |
 
 ## Why the pages are cut this way
@@ -61,7 +62,8 @@ Only reviewed specs are covered, and every row of the [research map](../specs/RE
 here: randomness and seeds, the excel data, string tables and calc formulas, the level generators, monsters, objects,
 item creation and the other item paths, the [item economy](../specs/items/economy.md) (plan 0043), new characters, hirelings, saves, and the first two simulation rows,
 [combat formulas](../specs/combat/README.md) (plan 0037, closed 2026-10-17) and
-[stats and states](../specs/stats/README.md) (plan 0041, closed 2026-10-17). The room lifecycle
+[stats and states](../specs/stats/README.md) (plan 0041, closed 2026-10-17), and
+[quests and travel](../specs/quests/README.md) (plan 0042, closed 2026-10-20). The room lifecycle
 ([drlg/lifecycle](../specs/drlg/lifecycle.md), reviewed at the close of plan 0040 on 2026-10-17) has no page of its
 own: it is the section [Rooms that come and go](levels.md#rooms-that-come-and-go-release-and-restore) of the Levels
 page. Rows that are not reviewed get no page; the next simulation phase, skills and missiles, has no row on the
@@ -72,7 +74,6 @@ The plans still open are listed in the [plan index](../plans/README.md):
   path; its batches are still running, and the specs are re-tagged cluster by cluster;
 - **0039**, backlog sweep 4: complete but for part of the [excel data](../specs/data/excel.md) spec, which goes with
   plan 0038's re-tag;
-- **0042** (quests and travel): its code reading is reviewed, and its runs are next;
 - **0043** (item economy): its runs are done and its spec is reviewed; the plan closes at the review of the spec's
   re-tag from the second run;
 - **0044**, the multiplayer branches: its code reading is reviewed, and the owner has confirmed that the game's

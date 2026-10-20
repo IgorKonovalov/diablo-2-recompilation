@@ -190,6 +190,9 @@ The code saves the three blocks in index order, and block *d* is difficulty *d* 
 all three sections; for the NPC blocks this comes from the code that reads them during a game. A new character's quest, waypoint and NPC sections are the same bytes for every new character
 of a game type ([player/creation § Outputs](../specs/player/creation.md#outputs)).
 
+What the quest bits mean, which events write them during a game, and how a waypoint bit gets set are on the
+[quests and travel](quests.md#the-quest-record) page ([quests/progression § A](../specs/quests/progression.md#a-the-quest-record)).
+
 ## Character stats and skills
 
 The `gf` section is the character's own stat list, packed as bits
@@ -431,4 +434,5 @@ extended item fields, the item clamps, and the less common property groups) are 
   [player/creation § Outputs](../specs/player/creation.md#outputs).
 - How a saved mercenary is rebuilt: [hirelings § H](../specs/hirelings/README.md#h-the-mercenary-from-a-save-d2s_readmercheader-merc_create).
 - How item stats are rolled before they are saved: the [items](items.md) page.
+- What the quest and waypoint records mean and which events write them: [quests and travel](quests.md).
 - Terms: the [glossary](../glossary.md).
