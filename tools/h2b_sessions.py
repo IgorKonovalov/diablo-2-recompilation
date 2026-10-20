@@ -40,9 +40,10 @@ def classic_sweep(row, players=8, t=420):
             ("pilot", ["farm", "--sweep", "--time", str(t)] + NOVA + CLASSIC_WP, t + 60)]
 
 
-def eldritch(t=300):
-    """Hell: /players 8, Frigid Highlands waypoint (tab 5 row 2), Eldritch the Rectifier's pack, then a sweep."""
-    return [("pilot", ["farm", "--wp", "5,2", "--players", "8", "--time", str(t), "--sweep"] + NOVA, t + 90)]
+def eldritch(t=300, players=8):
+    """Hell: /players N, Frigid Highlands waypoint (tab 5 row 2), Eldritch the Rectifier's pack, then a sweep. (After
+    hell-a died at /players 8: the other Hell sessions use /players 1; Eldritch's TC has NoDrop 0 either way.)"""
+    return [("pilot", ["farm", "--wp", "5,2", "--players", str(players), "--time", str(t), "--sweep"] + NOVA, t + 90)]
 
 
 def cube_plan(plan):
@@ -64,11 +65,11 @@ SESSIONS = {
     "classic-cat": ("UniqClassic", "enter-normal", 3916, classic_sweep(9, t=480)),
     # properties 24, sockets 42 and 44, the H2c carrier check, the seed lines: Hell at MF 472
     "hell-a": ("UniqNova", "uniques-hell", 3921, eldritch()),
-    "hell-b": ("UniqNova", "uniques-hell", 3922, eldritch()),
-    "hell-c": ("UniqNova", "uniques-hell", 3923, eldritch()),
-    "hell-d": ("UniqNova", "uniques-hell", 3924, eldritch()),
-    "hell-e": ("UniqNova", "uniques-hell", 3925, eldritch()),
-    "hell-f": ("UniqNova", "uniques-hell", 3926, eldritch()),
+    "hell-b": ("UniqNova", "uniques-hell", 3922, eldritch(players=1)),
+    "hell-c": ("UniqNova", "uniques-hell", 3923, eldritch(players=1)),
+    "hell-d": ("UniqNova", "uniques-hell", 3924, eldritch(players=1)),
+    "hell-e": ("UniqNova", "uniques-hell", 3925, eldritch(players=1)),
+    "hell-f": ("UniqNova", "uniques-hell", 3926, eldritch(players=1)),
     # affixes 5, 19: row 62 on one rare jewel, 17 times
     "jewel": ("H2bJewel", "cube-enter-normal", 3931, cube_plan("h2bjewel.plan")),
     # affixes 13, 17, 21, 24; uniques-sets 35: row 62 on nine built rare classic throwing weapons (classic game)

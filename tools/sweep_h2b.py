@@ -4,6 +4,7 @@ sockets-runewords rows).
 
     python3 -I tools/sweep_h2b.py logs <log> [<log> ...]     # the H2b lines of tools/gdb/items-h2b.gdb
     python3 -I tools/sweep_h2b.py static [--excel DIR]       # full-table checks behind the reclassified rows
+    python3 -I tools/sweep_h2b.py rareboth [--excel DIR]     # where a rare build can fail with both sides empty
 
 `logs` reads the lines tools/gdb/h2b.py adds, with the IC0/ICJ/ICX, CPRE/CPOST, SLOT, ROLLR, LX and BLD/FB lines of
 the other loggers, and checks, per log, in order:
@@ -17,7 +18,8 @@ the other loggers, and checks, per log, in order:
            seed (neither is stepped in ItemCreateByQuality), except that after the low builder (BLD low) the unit
            seed may be one step on (its durability draw, items/affixes G2, an oracle of items/uniques-sets);
   drops    each CPRE..CPOST pair (sub_0055A550_DropCreateItem around the TC resolver's creation call) holds exactly
-           one GS0, with return address 0x0055A6B4, arg 0 and record +0x2C 0, when CPOST names a unit;
+           one GS0, with return address 0x0055A6B4, arg 0, record +0x2C 0 and the record's item index = CPRE's item,
+           when CPOST names a unit, and CPOST's source seed equal to CPRE's;
   sockets  each ITEMS_SetSockets call (SS0 .. SSR): p = invwidth x invheight of the item's record (> 0 unless the
            call returns at once), cap = min(p, 6) at SSP; SSQ: quality 4 -> min(cap, 4), 6 -> min(cap, 2), 8 and 9 ->
            min(cap, 3), 1-3 (and no item data) -> unchanged with n unchanged, 5 and 7 not modelled (reported);
@@ -25,13 +27,15 @@ the other loggers, and checks, per log, in order:
            IC0 of the item); SSN cap = min(cap, maxs); SSW v = min(max(n, 1), cap), absent when that is < 1;
            counts which clamp decided the written value;
   builders MB0/MBF: ITEMS_BuildMagic fails (MBF) exactly when both slot ids are 0; RNE: a name scan with n = 0
-           draws nothing (the next RNE of the same build carries the same item seed); RBF counted per cause;
+           draws nothing (the next RNE of the same build, the second name scan, carries the same item seed); RBF counted per cause;
   classic  per classic creation of a stackable or Throwable weapon base (items/affixes C5a, R1), the builders entered
            (BLD) and the fallback helpers (FB) in order, and the quality at the join;
   tors     classic body armour (type 3) at qualities 2-3: SOK0 followed by no SOKR draw;
   dur      superior ethereal creations with a func-13 slot: stat 73 h, the dur% roll d, stat 72; the code's order
            h + floor(h d / 100) and the other order floor((h - 1)(100 + d) / 100) + 1, and whether they differ;
   carriers the func 12, 23 and 24 slots of stock creations (plan 0038 inventory § 6, H2c).
+`rareboth`: the rare-able bases, item versions and ilvls where both rare names exist and both affix sides are empty
+  (the only way to items/affixes E5), by tools/affixes.py survey's loop.
 `static`: the elixir type (11) against every way a stock item is made (TreasureClassEx cells and type groups,
   cubemain outputs, the vendor columns of misc.txt, the item's spawnable and quest cells), and the bases whose
   ItemMaxSockets can exceed min(6, invwidth x invheight) at some ilvl (the only clamp the drop roll can meet).
@@ -108,8 +112,9 @@ class Items:
 def read(path):
     """(tag, data) per line: JSON lines as dicts, printf lines as key=value dicts, other lines as {"raw": text}."""
     out = []
-    for ln in open(path, errors="replace"):
-        ln = ln.rstrip("\n")
+    with open(path, errors="replace") as f:
+        text = f.read().splitlines()
+    for ln in text:
         if not ln or " " not in ln:
             continue
         tag, rest = ln.split(" ", 1)
@@ -218,6 +223,7 @@ def cmd_logs(ns):
                 made[d["unit"]] = d["gseed"]
             elif tag == "BLD":
                 bld.setdefault(th, []).append(d["k"])
+                rne_last.pop(th, None)
             elif tag == "GQ0":
                 gq[th] = d
                 bld[th] = []
@@ -245,7 +251,7 @@ def cmd_logs(ns):
                 if tag == "GQX":
                     gq.pop(th, None)
             elif tag == "CPRE":
-                cpre = (k, [])
+                cpre = (k, [], int(d.get("item", "-1")), d.get("seed"))
             elif tag == "CPOST":
                 if cpre is None:
                     continue
@@ -258,7 +264,13 @@ def cmd_logs(ns):
                         g = gs[0]
                         if g["ret"] != 0x0055A6B4 or g["arg"] != 0 or g["r2c"] != 0:
                             fail(path, k, "drop GS0 ret %08x arg %d r2c %d" % (g["ret"], g["arg"], g["r2c"]))
+                        if g["idx"] != cpre[2]:
+                            fail(path, k, "drop GS0 record index %d != CPRE item %d" % (g["idx"], cpre[2]))
                         S["drop creations: one ItemCreate call (ret 0x0055A6B4, no record seed)"] += 1
+                        if d.get("seed") != cpre[3]:
+                            fail(path, k, "the source seed moved during the creation (%s -> %s)" % (cpre[3], d.get("seed")))
+                        else:
+                            S["drop creations: source seed at CPOST = at CPRE"] += 1
                 else:
                     S["drop creation calls with no unit: GS0 lines %d" % len(gs)] += 1
                 cpre = None
@@ -282,7 +294,7 @@ def cmd_logs(ns):
             elif tag == "RNE":
                 S["rare name scans: %s" % ("none" if d["n"] == 0 else "candidates")] += 1
                 prev = rne_last.get(th)
-                if prev is not None and prev[0] == k - 1 and prev[1]["n"] == 0:
+                if prev is not None and prev[1]["n"] == 0:
                     if prev[1].get("iseed") != d.get("iseed"):
                         fail(path, k, "an empty name scan drew (%s -> %s)" % (prev[1].get("iseed"), d.get("iseed")))
                     else:
@@ -467,6 +479,42 @@ def cmd_static(ns):
     return 0
 
 
+def cmd_rareboth(ns):
+    """items/affixes E5: the rare builder fails with no prefix and no suffix only when, after both names are found,
+    both sides have no candidate row. tools/affixes.py survey's loop (its Tables, side_rows, alvl_of and
+    rare_name_ok), per rare-able base, item version (1 classic, 101 expansion) and ilvl 1..99: the cases with both
+    names and both sides empty, and the least candidate count of the larger side."""
+    import affixes
+    T = affixes.Tables(ns.excel)
+    both = []
+    n = 0
+    for cls in range(len(T.items)):
+        b = T.b(cls)
+        if T.tbyte(cls, 0x16, 1) or not T.tbyte(cls, 0x15):
+            continue
+        for ver in (1, 101):
+            rows = {}
+            for ilvl in range(1, 100):
+                it = affixes.Item(T, dict(cls=cls, ilvl=ilvl, ver=ver))
+                it.q = 6
+                names = [any(affixes.rare_name_ok(T, it, T.rare[i]) for i in range(*blk))
+                         for blk in (T.rblk_p, T.rblk_s)]
+                if not all(names):
+                    continue
+                key = T.maxsock(cls, ilvl) > 0
+                if key not in rows:
+                    rows[key] = [affixes.side_rows(T, it, T.blk_p), affixes.side_rows(T, it, T.blk_s)]
+                a = affixes.alvl_of(it)
+                live = [[r for r in rs if r["level"] <= a and (r["maxlevel"] == 0 or r["maxlevel"] >= a)]
+                        for rs in rows[key]]
+                n += 1
+                if not live[0] and not live[1]:
+                    both.append((b["code"], ver, ilvl))
+    print("rare-able bases x versions x ilvls with both names: %d" % n)
+    print("of them with no prefix and no suffix candidate (items/affixes E5 reachable): %d %s" % (len(both), both[:40]))
+    return 0
+
+
 def main(argv):
     ap = argparse.ArgumentParser(prog="sweep_h2b.py")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -475,8 +523,10 @@ def main(argv):
     p.add_argument("--excel", default=EXCEL)
     p = sub.add_parser("static")
     p.add_argument("--excel", default=EXCEL)
+    p = sub.add_parser("rareboth")
+    p.add_argument("--excel", default=EXCEL)
     ns = ap.parse_args(argv[1:])
-    return {"logs": cmd_logs, "static": cmd_static}[ns.cmd](ns)
+    return {"logs": cmd_logs, "static": cmd_static, "rareboth": cmd_rareboth}[ns.cmd](ns)
 
 
 if __name__ == "__main__":
