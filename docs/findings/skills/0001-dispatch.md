@@ -431,6 +431,8 @@ return 0;
 - [I] `repeat` (`+0x05` bit 3): no server reader was found by the instruction patterns tried (a `test` of
   `[reg+0x5]` with the mask byte `0x006CE274`, or with the immediate 8, in `0x00530000`–`0x00660000`); the two hits
   are a missile record test (`0x005ADC43`) and stat-list code. It stays an open question.
+  *2026-10-20 (P1.2):* the `0x005ADC43` hit is `MissileDoFrame`'s test of Missiles `SrcTown` (`+0x05` bit 3), not
+  a Skills reader ([skills/0002 § 4](0002-missiles.md#4-each-frame)).
 - [I] **Aura select.** `sub_0056FF10_AuraSelect(_, id)` (from `sub_005701B0_PlayerSetSkill`) for an `aura` row with an
   `aurastate`: without `immediate` (`+0x05` bit 7) it sets the state and a plain list carrying the skill (stat 350)
   and level (stat 351); with it, it runs `SKILLS_SrvDo(id, lvl, 1, 0, 0)` at once; then `SKILLS_QueuePeriodic(id, lvl, 1)`.
@@ -518,7 +520,8 @@ return 1;
   DmgSymPerCalc, 100)` when that calc is non-zero, `x << HitShift`. (fn:SKILLS_GetPhysMin@0x00647BC0,
   0x00647CA6–0x00647CF1, fn:SKILLS_LevelBands@0x00644B70)
 - [I] The mastery bonus enters a skill hit through the builder (`SKILLS_GetMasteryBonus` from `COMBAT_BuildDamage` and
-  `COMBAT_ToHitRoll`, combat/0001 § 5) and through the missile path (`0x0064B860`, P1.2); the synergies enter through
+  `COMBAT_ToHitRoll`, combat/0001 § 5) and through the missile path (`0x0064B860`, read by P1.2:
+  [skills/0002 § 3](0002-missiles.md#3-the-damage-the-missile-carries)); the synergies enter through
   the calcs (`DmgSymPerCalc`, `EDmgSymPerCalc`, `skill('…'.blvl)` terms in calc1–calc4). (fn:SKILLS_GetMasteryBonus@0x00645830)
 
 ### 12. Progressive charges

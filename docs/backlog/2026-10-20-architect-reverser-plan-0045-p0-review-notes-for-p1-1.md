@@ -16,3 +16,10 @@ Not blocking; for plan 0045 P1.1 (`lane/p45r`) and P1.2, from the Phase 0 review
 - **The progressive numbers share the do-function table.** combat/0001 reads `srvprgfunc1..3` through `0x007322B0`; the numbers in use are 36–41 and 143, inside `srvdofunc`'s 1..152, so state whether `srvprgfunc` 36 and `srvdofunc` 36 are the same entry, and the table's length (≥ 153 entries) and any bounds test, with a `re/symbols.csv` row for `0x007322B0` and for the `srvstfunc` table.
 - **Bounds of the missile hit table** for row 568's 64 948 (P1.2), the same question for the hit table.
 - **Columns the start checks name with no reader yet:** `InTown` (63 rows), `TgtPlaceCheck` (2), `startmana` (3), `usemanaondo` (2), `AttackNoMana` (41), `weapsel` (15), `itypea*`/`itypeb1`/`etypea1`; the doc's meanings are `[L]` until your finding anchors them (send the archivist a backlog entry to raise them, do not edit the table doc).
+
+*2026-10-20 (reverser, `lane/p45m`, plan 0045 P1.2):* the missile parts are answered in
+[skills/0002](../findings/skills/0002-missiles.md): the three tier-A rows with no `srvdofunc` (36 Fire Bolt, 251 Fire
+Trauma, 25 Plague Javelin) get their missile only from `SKILLS_SrvDo`'s `srvmissile` branch, `g_SkillDoFuncs[0]` being
+null (§ 2; 48 stock rows in all, the survey's 50 counting `srvmissilea..c`); row 568's hit function 64 948 is skipped by
+the signed `> 0` test that precedes the bound of all four hit-table reads (§ 5; the damage table's one read is tested the same way). The tier-A, progressive-number and
+start-check parts remain with P1.3 (P1.1 answered the shared do table in skills/0001 § 12), so the entry stays open.

@@ -54,3 +54,87 @@ typedef struct SkillList {
  *   +0x184 startmana, +0x186 minmana, +0x188 manashift (low byte), +0x18A mana (s16), +0x18C lvlmana (s16)
  *   +0x18F LineOfSight (1..5), +0x190 delay calc, +0x1A5 SrcDam (0 read as 128), +0x1DC EType
  *   +0x228 restrict, +0x22A..+0x22E State1..3 */
+
+/* ---- Missiles (plan 0045 Phase 1, batch P1.2). Evidence: docs/findings/skills/0002-missiles.md. [I] unless noted. ---- */
+
+/* The request sub_0059FA30_MissileCreate reads (ECX game, EDX = this). 0x5C bytes, zeroed by every caller. */
+typedef struct MissileParams {
+    uint32_t flags;               /* +0x00 0x1 start given, 0x2 target = start + offset, 0x4 velocity given,
+                                     0x8 add loops, 0x10 velocity already in 1/256, 0x20 target absolute,
+                                     0x200 frames already run, 0x400 lob (frames left from the distance),
+                                     0x800 activate override, 0x1000 to-hit, 0x8000 range override,
+                                     0x10000 MissileData flag bit 1 */
+    void    * pOwner;             /* +0x04 player or monster (else no missile) */
+    void    * pSource;            /* +0x08 start position when flag 0x1 is clear; the SrcMissDmg source */
+    void    * pTarget;            /* +0x0C target unit, or 0 */
+    int32_t  missile;             /* +0x10 Missiles row */
+    int32_t  x, y;                /* +0x14, +0x18 start (flag 0x1) */
+    int32_t  tx, ty;              /* +0x1C, +0x20 target point or offset (flags 0x20, 0x2) */
+    uint32_t unk24;               /* +0x24 */
+    int32_t  velocity;            /* +0x28 flag 0x4 */
+    int32_t  skill;               /* +0x2C */
+    int32_t  level;               /* +0x30 */
+    int32_t  loops;               /* +0x34 flag 0x8, times (SubStop - SubStart) */
+    uint8_t  unk38[8];            /* +0x38 */
+    int32_t  framesRun;           /* +0x40 flag 0x200: range -= it, Unit+0x44 = it << 8 */
+    int32_t  activate;            /* +0x44 flag 0x800 */
+    int32_t  toHit;               /* +0x48 flag 0x1000: missile stat 19 */
+    int32_t  range;               /* +0x4C flag 0x8000 */
+    uint32_t unk50;               /* +0x50 */
+    void   (*pfnInit)(void);      /* +0x54 ECX missile, EDX cbArg; runs before the damage block */
+    uint32_t cbArg;               /* +0x58 */
+} MissileParams;
+
+/* The missile unit's data, Unit+0x14 (0x34 bytes, sub_0064A100_MissileDataAlloc). Accessors MISSDATA_* clamp s16. */
+typedef struct MissileData {
+    uint8_t  unk00[8];            /* +0x00 */
+    int16_t  activateMark;        /* +0x08 range - Activate: unit collision once frames left <= it */
+    int16_t  skill;               /* +0x0A */
+    int16_t  level;               /* +0x0C */
+    int16_t  range;               /* +0x0E total frames */
+    int16_t  remaining;           /* +0x10 frames left, decremented by do function 1 before its tests */
+    uint16_t unk12;               /* +0x12 */
+    uint32_t flags;               /* +0x14 bit 0 weapon damage (packet 0x20), bit 1 (packet 0x80) */
+    int32_t  lastHitType;         /* +0x18 LastCollide rows: the last unit hit (the owner at creation) */
+    int32_t  lastHitGuid;         /* +0x1C -1 when none */
+    int32_t  refType, refGuid;    /* +0x20, +0x24 a second unit reference (0x0064A7B0) */
+    int32_t  unk28, unk2C, unk30; /* +0x28..+0x30 used by numbered functions (plan 0046) */
+} MissileData;
+
+/* The creation-time damage block of sub_0064B860_MissileDamageBlock (0x7C bytes), written as missile stats by
+ * sub_0064AC60_MissileDamageToStats. */
+typedef struct MissileDamageBlock {
+    uint32_t flags;               /* +0x00 bit 0 weapon share, bit 1 critical (stat 141), bit 2 (MissileData bit 1),
+                                     0x100/0x200/0x400 bypass undead/demon/beast */
+    int32_t  min, max;            /* +0x04, +0x08 -> stats 21, 22 */
+    int32_t  fireMin, fireMax, fireLen;          /* +0x0C..+0x14 -> 48, 49, 315 */
+    int32_t  ltngMin, ltngMax;                   /* +0x18, +0x1C -> 50, 51 */
+    int32_t  magicMin, magicMax;                 /* +0x20, +0x24 -> 52, 53 */
+    int32_t  coldMin, coldMax, coldLen;          /* +0x28..+0x30 -> 54, 55, 56 */
+    int32_t  poisMin, poisMax, poisLen, poisCnt; /* +0x34..+0x40 -> 57, 58, 59, 326 */
+    int32_t  steal[6];                           /* +0x44..+0x58 -> 60..65 */
+    int32_t  stunLen;                            /* +0x5C -> 66 */
+    int32_t  burnMin, burnMax, burnLen;          /* +0x60..+0x68 -> 316, 317, 315 (overwrites fireLen's write) */
+    int32_t  demonPct, undeadPct, acDmg;         /* +0x6C..+0x74 -> 121, 122, 120 */
+    int32_t  edPct;                              /* +0x78 -> 25, floored at -90 */
+} MissileDamageBlock;
+
+/* g_MissileCollideTypes (0x0073C720), by Missiles CollideType (the missile unit's mode, Unit+0x10). */
+typedef struct MissileCollideType {
+    int (*pfnFilter)(void);       /* +0x00 ECX candidate, EDX {game, missile, owner, record}; 0 = no unit test */
+    uint32_t mask;                /* +0x04 CollisionTest mask and the path's collide mask */
+} MissileCollideType;
+
+/* Missiles record fields the machinery reads (docs/tables/Missiles.md gives the layout [C]; the readings are ours).
+ *   +0x004 bit 0 LastCollide (last unit hit is skipped), bit 1 Explosion (no damage without a hit function),
+ *          bit 2 Pierce, bit 3 CanSlow (state 87), bit 4 CanDestroy (Unit+0xC4 |= 4; CollideType 7 target),
+ *          bit 6 GetHit, bit 7 SoftHit
+ *   +0x005 bit 0 ApplyMastery, bit 2 Town, bit 3 SrcTown (a monster owner in town ends it), bit 6 Half2HSrc,
+ *          bit 7 MissileSkill
+ *   +0x00C pSrvDoFunc, +0x00E pSrvHitFunc, +0x010 pSrvDmgFunc (each tested > 0 as s16, then < the table's count)
+ *   +0x018 SubMissile1 (do function 2), +0x024 HitSubMissile1, +0x038/+0x03C Param1/2, +0x04C sHitPar1
+ *   +0x080 SrvCalc1, +0x094 HitClass (byte), +0x096 Range, +0x098 LevRange, +0x09A Vel, +0x09B VelLev, +0x09C MaxVel,
+ *   +0x09E Accel, +0x0AE KnockBack (byte), +0x12D SrcDamage (0xFF = none for a skill missile), +0x12E SrcMissDmg,
+ *   +0x12F Holy (bits 1, 2, 4), +0x136 Activate, +0x180..+0x182 SubLoop/SubStart/SubStop, +0x183 CollideType,
+ *   +0x184 Collision, +0x186 CollideKill, +0x187 CollideFriend, +0x188 NextHit, +0x189 NextDelay, +0x18A Size,
+ *   +0x18B ToHit, +0x18C AlwaysExplode, +0x194 Skill, +0x19C DamageRate (stat 327) */

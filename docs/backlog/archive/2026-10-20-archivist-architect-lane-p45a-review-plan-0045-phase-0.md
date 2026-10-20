@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-20
 status: done
 context:
-  - ../2026-10-20-archivist-reverser-missiles-fields-named-by-the-table-doc.md
+  - 2026-10-20-archivist-reverser-missiles-fields-named-by-the-table-doc.md
 resolution: "Reviewed 2026-10-20 (architect): accept with fixes (3: miscount 2, other 1). Surveys rerun green, baselines match; tier-A ruling written into plan 0045 Phase 1; notes for P1.1 in 2026-10-20-architect-reverser-plan-0045-p0-review-notes-for-p1-1.md."
 ---
 
