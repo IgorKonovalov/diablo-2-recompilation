@@ -2841,3 +2841,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request
     [p38s7 review](../backlog/archive/2026-10-20-spec-writer-architect-p38s7-items-quality-review.md) closed; the H2a
     spec-updates and S2a tc 64 entries stay open for items/tc and objects.
+- **2026-10-20 — Batch H2b resumed (reverser, `lane/h2b`, head `db28349`).** The lane's first agent stopped after
+  three tools-only checkpoints (`bd65fae`, `67d28a5`, `db28349`: logger `tools/gdb/h2b.py` and `items-h2b.gdb`,
+  `tools/h2b_sessions.py`, `tools/sweep_h2b.py` with 10 tests, cube recipes `h2bjewel`/`h2bthrow`). Kept sessions so
+  far (slot 2, `workspace/logs/h2b/`): `classic-a`, `throw`, `jewel`, `hell-a` (death at `/players 8` after 147 s, kept
+  and recorded as a death), `hell-b` (`/players 1`, cut off; to be checked before use), two dev logs. Still to do:
+  sessions hell-c, hell-d, classic-jail, classic-cat (cap 20); the full check set; the five findings' ledgers, run
+  record, manifest, § 2.6 entry, review request, spec-writer entry and symbol raises. Nothing below this note's
+  checkpoint is claimed yet.
