@@ -1,0 +1,10 @@
+# plan 0038 batch H2b (run:2026-10-20-sweep-items-chain): enter a classic single-player game with the only installed
+# character, built with progression 0 (no Select Difficulty box: Normal). Window-relative coordinates, 800x600.
+# tools/d2pilot.py cube plays the session's plan (tools/gdb/h2bthrow.plan) after.
+click 700 150   # empty background: the first click only activates the window
+sleep 1
+click 400 307   # SINGLE PLAYER
+sleep 3
+click 690 556   # OK on the character-select screen (the only character is preselected)
+sleep 14
+shot workspace/logs/h2b/h2b-cube-classic-enter.png
