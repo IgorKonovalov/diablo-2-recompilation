@@ -2,7 +2,7 @@
 
 > **Subsystem:** chain (seed to world, plan 0048)
 > **Question:** can each oracle the Phase 0 review assigned (chain/0001 § 4: 2, 14, 16, 17, 22, 19, 21, 20, 7, 6, 13) be replaced by a model from code the specs already cite, and does `tools/chain.py check` pass on the kept logs with those callees predicted?
-> **Date:** 2026-10-20   **Plan:** 0048 (Phase 1)   **Status:** open (Phase 1 done, review requested 2026-10-20)
+> **Date:** 2026-10-20   **Plan:** 0048 (Phase 1)   **Status:** open (Phase 1 reviewed 2026-10-20: accepted with fixes; Phase 2 next)
 
 Phase 1 runs no harness session. Each model is checked on kept logs of earlier runs (re-analysis); the logs are named
 per oracle with their manifests. `tools/chain.py` is the composition: `gen` builds what the game seed alone fixes,
@@ -15,20 +15,24 @@ oracles still taken from the log.
   `tools/items_chain.py` and `tools/chain.py`; 3 991 + 3 170 creations of the 133 kept item logs reproduce with no
   staff-mods seed from a log, 99 exit seeds and 64 skill entries predicted (§ 2). (fn:ITEMS_RollStaffMods@0x005C1260,
   run:2026-10-14-affixes, run:2026-10-15-items-chain)
-- [C] **Oracle 14 (the unit seed after `SUnitCreate`) is retired** where the region entry is known: `tools/monspawn.py`
-  predicts the unit seed at `MU` from the game-seed step, `MonRegionFindAdd` on a tracked region and `MonStatsInit`'s
-  draws; 7 953 of 8 075 creations of the 62 kept world logs, 0 mismatches; the other 122 are creations of a class
-  appended to the region by a preset monster (oracle 16) (§ 3). (fn:sub_00555230_SUnitCreate@0x00555230,
+- [C] **Oracle 14 (the unit seed after `SUnitCreate`) is retired in part**, where the region entry is known:
+  `tools/monspawn.py` predicts the unit seed at `MU` from the game-seed step, `MonRegionFindAdd` on a tracked region and
+  `MonStatsInit`'s draws; at the step of § 3, 7 953 of 8 075 creations of the 62 kept world logs, 0 mismatches; with
+  every Phase 1 model in (§ 13), **8 519 of 8 553**. The remainder, 34 creations, takes its unit seed from the log: a
+  class appended to the region by a creation outside the model (an InitFn or operate spawn), whose variant sets the
+  region snapshot does not log (§ 3, § 4). (fn:sub_00555230_SUnitCreate@0x00555230,
   fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0, fn:sub_00573CB0_MonStatsInit@0x00573CB0, run:2026-10-15-mon-stats,
   run:2026-10-15-objects)
-- [C] **Oracle 16 (the preset monsters of the presets window) is retired** except for 12 catapult windows: 299
-  class-case presets, 66 MonPlace fixed-row placements among them, 35 presets that place nothing, 11 superunique and
-  MonPlace 2/3 windows and 29 tile units are predicted from `OPU0` to `OPUX` on the 62 world logs, 0 mismatches; 1 236
-  of 1 265 objects windows now carry no oracle inside (§ 4). (fn:sub_0054E600_PresetMonSpawn@0x0054E600,
+- [C] **Oracle 16 (the preset monsters of the presets window) is retired**: at the step of § 4, 299 class-case
+  presets (66 MonPlace fixed-row placements among them), 35 presets that place nothing, 11 superunique and MonPlace
+  2/3 windows and 29 tile units are predicted from `OPU0` to `OPUX` on the 62 world logs, 0 mismatches; with the 12
+  catapult windows of § 6 in (§ 13), **311 class-case presets**. Class 434's mode (3 requests) is a quest-state input,
+  taken from the request (§ 4, § 6). (fn:sub_0054E600_PresetMonSpawn@0x0054E600,
   fn:sub_0054E490_PresetClassSpawn@0x0054E490, fn:sub_0063EC70_LevelClassVariant@0x0063EC70, run:2026-10-15-objects)
 - [C] **Oracle 17 (InitFn 46) is retired**: `tools/objects.py` models `OBJINIT_CityDamnedSpawns` (16 calls, every
   object-region draw) and `tools/monspawn.py` its 21 `MonSpawnTry` requests; InitFns 54 and 62 (11 calls, reached
-  although chain/0001 row 17 said not) stay seed oracles; 1 245 of 1 265 objects windows carry no oracle (§ 5).
+  although chain/0001 row 17 said not) stay seed oracles; 1 245 of 1 265 objects windows carry no oracle at that step
+  (§ 5), 1 253 at the end of Phase 1 (§ 13) and 1 250 after the merge of `main` (§ 14).
   (fn:OBJINIT_CityDamnedSpawns@0x005506D0, run:2026-10-15-objects)
 - [C] **Oracle 22 (the `Orient89Unit` creations) is retired**: the units its rows name come as preset units of the
   presets window (`[I]` that `Orient89Unit` itself creates none at activation), so their creations are oracle 16's
@@ -42,7 +46,7 @@ oracles still taken from the log.
 - [C] **Oracle 21 (another room's seed in a pass) is retired**: the seed is the chain's state for that room (its
   predicted activation seed, or its seed after its last pass); both calls of the world logs predicted (§ 8).
   (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, run:2026-10-14-collision)
-- [C] **Oracle 7 (the gold piles' items) is retired** in its seeds and marks: each of the 71 gold drops of `InitFn` 28
+- [C] **Oracle 7 (the gold piles' items) is retired in part**, in its seeds and marks: each of the 71 gold drops of `InitFn` 28
   is now created by the model (two game-seed steps, the item's unit seed, its `0x200` mark, no object-region draw);
   the drop spot is predicted for 69 of 71 and taken from the log for 2, where the model disagrees (§ 9).
   (fn:sub_00559300_DropGoldPile@0x00559300, fn:OBJINIT_GoldPiles@0x0054F8C0, run:2026-10-15-objects)
@@ -77,7 +81,7 @@ oracles still taken from the log.
   run:2026-10-11-seed-tree, run:2026-10-15-objects, run:2026-10-16-quest-drops)
 - [I] What `gen` stops at is what needs an input of chain/0001 § 3.3: the level layouts are built when a level is
   first needed and the rooms activate in the player's order (§ 3.2 there), so `check` replays them on logs that carry
-  that order.
+  that order. (fn:DRLG_LevelCreate@0x00642AE0, fn:DRLG_RoomActivate@0x006422A0)
 - `check <log>...` runs, per log, the line sets it carries: item lines through `tools/items_chain.py` (affixes, props
   or both, split as in the items experiments record of 2026-10-15), and the summary counts every oracle still taken.
 
@@ -305,7 +309,11 @@ oracle left when it predicted every one of them.
   the level it compares with the monster level), and a class's first row is the first record whose `monster` is the
   class (`MonStats +0x2A` is written at load, 0 in the `.bin`). `tools/monstats.py` read `+0x02` of row `+0x2A`, so its
   `MonEquipOracle` never fired; with the correction the stock table has two `oninit` classes, 234 and 267.
-  (fn:sub_005D6B60_MonEquipInit@0x005D6B60, fn:sub_005D30A0_MonEquipFirstRow@0x005D30A0, 0x005D6BA5)
+  Second source (added at the review): a full-table check of `monequip.bin` against `monequip.txt` (45 rows of 28 bytes
+  after the u32 count): the byte at `+0x04` equals the `oninit` column and the s16 at `+0x02` the `level` column in all
+  45, 0 mismatches; the two `oninit` rows are `bloodraven` (267) and `flyingscimitar` (234), each its class's first
+  row. (fn:sub_005D6B60_MonEquipInit@0x005D6B60, fn:sub_005D30A0_MonEquipFirstRow@0x005D30A0, 0x005D6BA5) The table has no doc yet: the archivist's
+  [MonEquip entry](../../backlog/2026-10-20-architect-archivist-monequip-table-doc-for-plan-0048.md) holds it.
 - [I] The model (`tools/monstats.py Model.monequip`, from monsters/0004 § 6): rows of the class from the first whose
   level is at most the monster level; per row, n = the leading locations in 1..10 (at most 3); if n > 0 one unit-seed
   step picks one (masked for a power of two, a step all the same), and a free location gets its item. In
@@ -368,6 +376,23 @@ oracle left when it predicted every one of them.
   type-11 point stay inputs), InitFns 54 and 62 (§ 5: outside the assignment), the 2 gold spots (§ 9), the class-434
   mode (quest state, § 6) and oracle 13's reach (§ 11: no logged creation).
 
+## 14. Review re-run after the merge of `main` (architect, 2026-10-20)
+
+- [C] `tools/chain.py check` over the same 195 logs with `main` merged (`main`'s plan 0038 batches H5b and H2a changed
+  `tools/objects.py`, `tools/collision.py`, `tools/tc.py` and `tools/quality.py`; tool revisions in
+  `tools-review.sha256`): 0 sub-checks failed (`review-merged-check.txt`). One count moves: **1 250** of 1 265 objects
+  windows carry no oracle (was 1 253), because `main` made the nine `InitFn`s that create monsters seed oracles (objects/0001
+  § S4b row 25); `InitFn` 18 holds 3 windows of these logs. Every other line of the summary equals `final-check.txt`.
+  (fn:OBJ_PopulateGate@0x00552560, run:2026-10-15-objects)
+- [C] The controls re-run on the merged tree fail as recorded: `--cf i46-stored` 10 mismatches, `state-stale` 2,
+  `lcv-off` 25, `overlay-off` 19 (`review-cf-*.txt`). (fn:OBJINIT_CityDamnedSpawns@0x005506D0,
+  fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:sub_0063EC70_LevelClassVariant@0x0063EC70, run:2026-10-15-objects,
+  run:2026-10-14-collision)
+- [C] The `oninit` correction (§ 11) changes no earlier result: `tools/monstats.py check` on the 9 H4b logs (35 461
+  checks) and the 6 forced-berserk logs (30 863) gives 0 monstats mismatches, with no MonEquip oracle hit; the H4b
+  session 5b's DRLG mismatches are the second-game ones recorded at H4b, reproduced unchanged with `main`'s tools.
+  (fn:sub_005D6B60_MonEquipInit@0x005D6B60, run:2026-10-15-berserk-forced)
+
 ## Kept outputs
 
 `workspace/logs/chain-p1/`, one path base, `manifest.txt` (`sha256sum -c manifest.txt` from that directory):
@@ -377,7 +402,8 @@ logs), `o14-cf-{findadd-none,monprop-off,L0}.txt` (the controls), `o16-world-che
 `o21-cf-state-stale.txt` (oracle 21), `o7-world-check.txt` (oracle 7), `o6-world-check.txt` (oracle 6), `o13-world-check.txt` (oracle 13), `o20-monspawn-r3.txt` (`tools/monspawn.py check` over the 62 world
 logs, for the R3 counts of oracle 20, same tools as `tools-o13.sha256`), `o20-barrier.txt` (`tools/chain.py barrier`,
 tools in `tools-o20.sha256`), `final-check.txt` (§ 13, tools in `tools-final.sha256`), and the input lists `inputs-world.sha256` and
-`inputs-items.sha256` (paths relative to `chain-p1/`, so `sha256sum -c` runs from there too). The tool revisions
+`inputs-items.sha256` (paths relative to `chain-p1/`, so `sha256sum -c` runs from there too). The review's re-runs (§ 14) are
+`review-*.txt` with `tools-review.sha256`, hashed in `review-manifest.txt` (`f0dd87f8…`) in the same directory. The tool revisions
 behind these outputs are recorded in `tools-o14.sha256`, `tools-o16.sha256`, `tools-o17.sha256`, `tools-o22.sha256`, `tools-o19.sha256`, `tools-o21.sha256`, `tools-o7.sha256`, `tools-o6.sha256` and `tools-o13.sha256` (paths relative to the repository
 root).
 

@@ -2,15 +2,15 @@
 from: reverser
 to: architect
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../plans/0048-seed-to-world.md#implementation-log
-  - ../findings/chain/0002-retirements.md
-  - ../findings/chain/0001-oracles.md
-resolution: ""
+  - ../../plans/0048-seed-to-world.md#implementation-log
+  - ../../findings/chain/0002-retirements.md
+  - ../../findings/chain/0001-oracles.md
+resolution: "Reviewed 2026-10-20 (architect): accept with fixes (5). Phase 1 done; Phase 2 may start in one slot. Rulings in the plan 0048 log."
 ---
 
-Review plan 0048 Phase 1 (`lane/p48r`, static, Ghidra copy `ghidra-p48r`, no harness): [chain/0002](../findings/chain/0002-retirements.md),
+Review plan 0048 Phase 1 (`lane/p48r`, static, Ghidra copy `ghidra-p48r`, no harness): [chain/0002](../../findings/chain/0002-retirements.md),
 `tools/chain.py` (`gen`, `check`, `barrier`), `tools/gdb/chain.gdb`, the model changes in `tools/affixes.py`,
 `tools/items_chain.py`, `tools/monspawn.py`, `tools/monstats.py`, `tools/objects.py`, `tools/test_chain.py`, the sections
 added to items/0005, monsters/0002, 0003, 0004, objects/0001 and drlg/0002, 8 new symbols, and the plan log entry.
