@@ -261,7 +261,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   those the findings and the data/calc spec anchor. Surprises, added to Phase 1's *Done when*: 50 missile skills have
   no `srvdofunc`; two progressive rows have no `srvprgfunc`; row 568's hit function cell `*12` compiles to 64 948.
   Families of ten rows or more: eight (`srvstfunc` 4; `srvdofunc` 65, 2, 28, 18, 30; `pSrvDoFunc` 1, 3). Backlog:
-  [reverser, the fields three findings left unnamed](../backlog/2026-10-20-archivist-reverser-missiles-fields-named-by-the-table-doc.md);
+  [reverser, the fields three findings left unnamed](../backlog/archive/2026-10-20-archivist-reverser-missiles-fields-named-by-the-table-doc.md);
   review request [to the architect](../backlog/archive/2026-10-20-archivist-architect-lane-p45a-review-plan-0045-phase-0.md).
 - **2026-10-20 — Phase 0 reviewed (architect): accept with fixes.** `gate.py --full=excel_layout,skills` and
   `test_gate.py` rerun green after merging `main`; both baselines equal the surveys' output. Anchors spot-checked
@@ -312,3 +312,28 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   and links `docs/tables/Missiles.md` once that lands). P1.3 picks up the `srvprgfunc` entries and `0x00571AA0`, the
   item-event handlers that call `ITEMSKILL_Cast` (`0x005BF170`–`0x005C0670`), `SKILLS_SrvStart`/`SKILLS_PayCost`
   callers in do functions 83, 109 and `0x005D69D0`, the twelve unmapped `EType` stores, and the routed open questions.
+- **2026-10-20 — Phase 1 batch P1.2 landed for review (reverser, `lane/p45m`, static).**
+  [skills/0002-missiles](../findings/skills/0002-missiles.md): `MissileCreate` and its 0x5C-byte request (97 call sites
+  in 82 functions: skills, shrines 19/21/22, quests, monsters, missile and skill functions; items only through
+  `ITEMSKILL_Cast`), velocity, range, activate, the `0x40` mark and the collide mask at creation; the three skill
+  creators and `useAmmo` per call site (1 at `SKILL_AttackDo`, Throw, Left Hand Throw and a few monster/skill
+  functions, 0 at `SKILLS_SrvDo`); the `ItemEffect` aim offset (a line missile starts at the target point); the 48
+  `srvmissile` rows with no `srvdofunc` (tier A 36, 251, 25) created only by `SKILLS_SrvDo`; the creation-time damage
+  block (`0x0064B860`: Missiles or Skills columns, the weapon share, the mastery bonus as enhanced damage, the owner's
+  1–3 critical draws, the elemental masteries for `ApplyMastery`); the pierce count from a local seed of stat 328; the
+  missile frame (town tests, `g_MissileSrvDoFuncs` bound 53), do function 1 (step, range countdown, cell collision),
+  the path's acceleration rule; `MISSILE_HitUnit`'s order, `justhit`, pierce, to-hit, the hit/damage tables (bounds 71
+  and 31, tested signed: **row 568's 64 948 is never called**), `BuildDamage`'s draw order on the missile seed; the two
+  `CallDoFunc` missile callers (hit 22: a null entry on stock data; do 14: the grim wards' skill do 30 every 6 frames).
+  1 `[C]` (the data join), 39 `[I]`, 7 `[L]`. 66 symbol rows (two copied from `main`'s plan 0049 names),
+  `re/types/skills.h` missile structs, `tools/skills_missiles_scan.py` with kept outputs
+  (`workspace/logs/skills/p45m-manifest.sha256`). Surprises: the critical roll at creation draws on the **owner's** seed
+  even with no critical stat; the `0x40` mark has no stock missile reader (`CollideType` 7 unused) and a second writer
+  (do 3); `ExplosionMissile` has no server reader by the scan. Backlog: review request
+  [to the architect](../backlog/2026-10-20-reverser-architect-lane-p45m-review-plan-0045-p1-2-missiles.md), the Missiles
+  columns [to the archivist](../backlog/2026-10-20-reverser-archivist-missiles-columns-anchored-by-skills-0002.md), the
+  collision, combat and economy inputs
+  [to the spec-writer](../backlog/2026-10-20-reverser-spec-writer-missile-path-inputs-for-drlg-collision-combat-econ.md);
+  [the archivist's fields entry](../backlog/archive/2026-10-20-archivist-reverser-missiles-fields-named-by-the-table-doc.md)
+  closed. Open for P1.3: the numbered tier-A functions, the re-seed sites in the missile range, the step direction
+  (`0x0064FC60`) for Phase 2's position logs.
