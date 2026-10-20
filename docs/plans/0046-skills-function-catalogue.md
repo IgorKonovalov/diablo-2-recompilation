@@ -404,3 +404,21 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   added. **The next batch (sorceress) may start**, with 9c and 9d's conventions. One addition: a meaning that a
   boundary callee gives to a compared argument or block word (a class, a mode, a monster id) is stated after the
   boundary, `[I]`, and is never part of the `[C]` sentence.
+- **2026-10-20 — Phase 1 batch `sor` landed for review (reverser, `lane/p46m5`, static, no harness).** The sorceress
+  start functions 11–14 and do functions 17–29 and 144: 18 entries, all read; 17 emulated (do 27 Teleport read only)
+  with the Inferno helpers `0x005C8CA0` and `0x005C8E30` ([skills/0008](../findings/skills/0008-sorceress.md); tier A
+  do 18, 20, 22, 28 emulated too). Draws before the boundaries: do 21 (Telekinesis) only, one
+  `RNG_Range(caster seed, 100)` against `Param2`; no case steps the target's seed. Raised by emulation
+  (run:2026-10-20-cat-emu-sor, `tools/skills_catalogue_emu.py --batch sor`, `check.txt` `961ccef7…`,
+  `manifest.sha256` `83d7c0f9…`): six families, 8 500 cases, 0 mismatches, 27 boundary/call-site triples asserted
+  (site control 2 977 of 2 977), the caster's and the target's seeds compared in every case, the blocks passed by
+  pointer compared by content, two to six negative controls per family (each family has one failing 79 or more);
+  `UnitsHostile` and `UnitsSameParty` run emulated with the alignment rule. The same tool reproduces 9a–9d's kept
+  files byte for byte (`repro.txt`). Surprises: by the alignment rule (`0x00650D70`) a player and a monster with no
+  state-105 list are not hostile (open question); Inferno's channel lives in state 12's list and the used skill's
+  `+0x18` (a monster's end frame `frame + calc2`); Thunder Storm's node `+0x18`/`+0x1C` hold the last struck guid and
+  the re-arm switch; Hydra spawns classes `summon + 0..2`; do 22's velocity is read through a second missile table at
+  `0x0096C794`; start 11's mana test covers any caster type. Tags: 34 `[C]`, 10 `[I]`, 4 `[L]` bullets; 25 symbols
+  added (`I`). Dated note in skills/0003 § 5. Review request
+  [to the architect](../backlog/2026-10-20-reverser-architect-lane-p46m5-review-plan-0046-batch-sor.md); column
+  readers [to the archivist](../backlog/2026-10-20-reverser-archivist-plan-0046-sor-skills-missiles-column-readers.md).
