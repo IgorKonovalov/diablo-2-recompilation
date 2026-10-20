@@ -1,6 +1,6 @@
 # 0044 — Multiplayer branches: the two-client cases of the reviewed specs
 
-> **Status:** approved (owner, 2026-10-16; unattended); [ADR-0008](../adrs/0008-two-client-harness.md) accepted 2026-10-16 on the port-4000 condition (Phase 2)
+> **Status:** approved (owner, 2026-10-16; unattended); [ADR-0008](../adrs/0008-two-client-harness.md) accepted 2026-10-16 on the port-4000 condition (Phase 2); Phase 2 done 2026-10-20 (run:2026-10-20-two-clients, accepted with fixes); Phase 3 open
 > **Created:** 2026-10-16
 > **Owner skill(s):** reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0008-two-client-harness, 0011-harness-slots, 0014-scope-game-simulation
@@ -245,7 +245,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Precondition:** a confirmed existing block. The owner's 2026-10-17 listing stands; before the first hosting
     session the lane re-read without root (ufw active and enabled, input policy DROP, no rule for 4000, `lo` accepted
     first, every rule file unchanged since 2026-09-21) and hashed the eight files; before each later session the same
-    re-read matched the hashes (18 times). No rule was changed and no root step was repeated.
+    re-read matched the hashes (20 re-reads for 18 sessions; corrected at review). No rule was changed and no root step was repeated.
     ([record](../findings/multiplayer/experiments.md#run2026-10-20-two-clients))
   - **The driver's live test** (the six steps of the Phase 1 checkpoint) passed before any case session: where,
     invite and accept, follow into the Blood Moor, leave the party, hostile (the joiner's `+0x160` and pair stamp
@@ -270,3 +270,67 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     renamed ETB tags), `tc.py` (the owner). Saves restored on both slots; both slots stopped.
   - **Backlog:** the review request to the architect; Phase 3's re-tags to the spec-writer; the Phase 1 follow-ups
     entry closed.
+- **2026-10-20 — Phase 2 reviewed (architect, `lane/p44h` at `b41043d`, `main` `2ebd473` merged in as `40677a6`,
+  clean): accept with fixes. Phase 2 is done; Phase 3 (spec-writer re-tag) may start.** `backlog.py archive` changed
+  nothing.
+  **The port-4000 precondition (the owner's condition on ADR-0008): met, as a confirmed existing block.** The owner's
+  root listing of 2026-10-17 (above) is the root step. The no-root re-read before live-1 ran at 10:51:34, two minutes
+  before live-1's host log opened (10:53:34); the review found the command's output in the lane's own tool output of
+  that time and it matches `p44h-ufw-initial.txt` line for line (the file itself was written at 13:14, and its
+  `ip -br addr` line drops the IPv6 addresses; § 5 shows no IPv6 listener). The eight hashes equal
+  `ufw-baseline.sha256` (written 11:02:31) and every rule file's mtime is 2026-09-21 or earlier. `p44h-ufw.log` holds
+  20 re-reads, each 1–3 s before a host log opens, covering all 18 later sessions (kills-3 and kills-5 twice, for an
+  aborted launch); 0 `FAILED`, ufw active and enabled, input policy DROP every time. No rule was edited and no root
+  step repeated. Two weaknesses, neither touching the condition: `ufwcheck.sh` always exits 0, so the drivers'
+  `|| exit 1` would not have stopped a session on a change (the log would still have shown it, and it shows none);
+  the record said "18 times" for 20 entries. Both corrected in the record; the script fix is filed to the reverser.
+  **Checks:** `sha256sum -c` of the 163-file manifest from `workspace/logs`: all OK (manifest `b6eefb02…`).
+  `drivers/check_all.sh` re-run under `systemd-run --user --scope -p MemoryMax=4G` at `40677a6`: identical to
+  `check-run.txt` but for `monspawn.py`'s count (2764 checks against 2691, both 0 mismatches; `main`'s monspawn
+  changed since `97da6a0`). Every checker 0 mismatches. Counts recomputed from `count-run.txt` and `check-run.txt`:
+  417 party kills (276 + 33 + 95 + 13), 46 vendor events, 385 shares, 12 quest writes, 230 PvP events; 686 resolver
+  calls. Anchors: 0x0058FD0A and 0x0059017F are `call 0x0065C360` with return 0x0058FD0F and 0x00590184, as the QS
+  lines give; `XP_PartyShare` 0x0057E754–0x0057E77B is `fild`/`fidiv`/`fstp dword`, then `fild` level, `fmul dword`,
+  `call CRT_ftol2`; `CRT_ftol2` (0x00682FD0) truncates on both paths.
+  **Rulings on the four checker changes (each: the checker, not the game, was wrong):**
+  - (a) `combat.py --no-shield 1,2`: **accepted.** `tools/d2s.py dump` of `MpPvpHost` (`83ad704d…`) and `MpPvpJoin`
+    (`9dbb422b…`), the hashes the record names, lists three items each (`tsc`, `isc`, `tbk`), all in the inventory,
+    nothing equipped; the recipes have no shield. The game logged DRB `b` 0 on all 66 events; without the option the
+    checker fails exactly those 66 on DRB, because it applied the shield formula to a player holding none, the case
+    combat/0001 § 4 and combat/to-hit `BlockChance` already give as 0. The option is hand-fed input; a logged shield
+    flag is filed as a later improvement.
+  - (b) `monstats.py` live players from PLRS: **accepted.** The checker hard-coded one player; the 64 earlier
+    mismatches are the four MonPlayerBonus-derived fields of exactly the 16 creations made while PLRS listed both
+    players, and the game's `[50, 50, 0, 0, 2]` is the two-player row. Scope: 8 of the other 44 fall between a
+    one-player and a two-player PLRS line, so the sampling decides them; no death in mstat-1, so the dead-mode
+    exclusion is not exercised. § 6 says so.
+  - (c) `vendors.py` ETB tags: **accepted.** A pure tag rename (plan 0027 Phase 3; `affixes.py` already maps it as
+    `ETB_LEGACY`); `two-vendors.gdb` sources no `props.py`, so the mapped `ETH0` cannot collide with that logger's
+    own `ETH0`.
+  - (d) `tc.py` the killer's owner: **accepted, as a model extension, not a repair.** Before it, a monster killer gave
+    `party=None` and the PARTY check was skipped (no mismatch); now MP04's owner path is checked on 36 of 40
+    mercenary calls (33 party 2, 3 party 1), which a "monster killer counts as party 1" reading would fail 33 times.
+  **Rulings:**
+  - (e) **The quest count, 12 ≥ 10: met, thin.** Composition (from the QS lines): 8 are the Den-entry word 1 bit 4
+    writes (two per game, four games, partied in den-a and den-a2, not in den-c and den-c2), 4 are den-a2's clear (bits
+    13 and 1 on each player's record). Every counted line is a real write on a player's record with both present, so
+    the count stands; MP28 (a)'s `[C]` rests on the one clear, which a no-credit reading could not match. The record
+    now gives the split.
+  - (f) **Shortfalls: all named, accepted.** Unstageable with the stock client or two players: MP02, MP03, MP05,
+    MP23's in-town defender, MP24's server town test and below-9 branch. Owner-play candidates MP12, MP13, MP14, MP17:
+    out of this plan, one human entry (optional). Agent-stageable later (MP18, MP21, MP27, MP28 b and c, MP30, MP25's
+    offensive auras, MP20's attribution, MP16 just inside the bound; MP31, MP32 after a prediction): out of this plan,
+    one reverser entry. None is raised.
+  - (g) **J4's float rule `[C]`**: the code reading above plus 98 separating inputs. Stated for a reimplementer: the
+    product of the integer level and the f32 `q` is exact in f64, then truncated. Routed in the Phase 3 entry.
+  - (h) **The Den-entry bit 4 `[I]`: right.** Not in the case list and not predicted (ADR-0004), seen in four games
+    with the site resolved; it stays `[I]` until a reading of 0x0058FD0A's caller names the event.
+  - (i) **Phase 3 inputs** added to the open spec-writer entry: J4's wording, combat/to-hit's no-shield line (66
+    events), and the scoping of the PvP and monster raises.
+  **Fixes, 9:** stale cross-reference 2 (multiplayer/0001's "not yet live-tested" driver line; Data touched's
+  "`+0x160`, `+0x38` not yet in save.h"), miscount 2 ("18 times" for 20 re-reads; MP16 "four of five branches" with
+  five listed), overclaim 1 (PvP "P = 17 on every reduction" with physical and lightning only, which the `lane/arc6`
+  review asked to name), omission 2 (the quest count's split; combat/to-hit's no-shield line missing from the Phase 3
+  routing), other 2 (`ufwcheck.sh`'s inert exit; the initial ufw record written after the fact without saying so).
+  **Follow-ups:** spec-writer (Phase 3, open entry, additions); human (owner play MP12–MP14, MP17, optional); reverser
+  (the shortfalls and the ufw check script).

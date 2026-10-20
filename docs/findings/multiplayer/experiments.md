@@ -23,8 +23,15 @@ check held, with the commands and their output.
   user6.rules, `d63bc8bb…` before.rules, `e31099b4…` before6.rules, `6f8e15ff…` after.rules, `70bd2895…` after6.rules,
   `254cb3ad…` ufw.conf). While hosting, `ss -ltn` showed `0.0.0.0:4000` (the listener §5 reads). Before every later
   session the same re-read (`systemctl`, the two policy lines, `sha256sum -c` against the baseline) ran and logged
-  `OK` for all eight files, 18 times; no root step was repeated and no rule was changed. Commands and output:
-  `workspace/logs/p44h-ufw-initial.txt`, `workspace/logs/p44h-ufw.log`, the baseline `p44h-run/ufw-baseline.sha256`.
+  `OK` for all eight files: 20 re-reads for the 18 later sessions (kills-3 and kills-5 were each checked twice, once
+  before an aborted launch), every one 1–3 s before its session's host log opens; no root step was repeated and no
+  rule was changed. Commands and output: `workspace/logs/p44h-ufw-initial.txt`, `workspace/logs/p44h-ufw.log`, the
+  baseline `p44h-run/ufw-baseline.sha256`. Review notes (2026-10-20): `p44h-ufw-initial.txt` was written at 13:14 from
+  the 10:51:34 command output (the review compared it with the lane's tool output of that time: identical, except that
+  `ip -br addr` is abridged to the IPv4 addresses); the baseline file was written at 11:02:31 from the same hashes;
+  `drivers/ufwcheck.sh` always exits 0 (its verdict is the printed `UFW-OK`, so the drivers' `|| exit 1` never fires,
+  and its `Policy="ACCEPT"` pattern cannot match the upper-case line). A changed file would still have shown as
+  `FAILED` in the log, and the log has none; a later run's check must stop the driver itself.
 - **Setup.** Slots 1 (host: `:8`, `workspace/wineprefix-1`, gdb by `tools/d2run.py`) and 2 (joiner: `:9`,
   `workspace/wineprefix-2`, no debugger), owner's condition on ADR-0008. Both saves directories were empty and set
   aside with `tools/saves.py --slot N aside p44h` before the first session, re-set per launch, and restored at the end
@@ -104,7 +111,7 @@ check held, with the commands and their output.
     party model from the owner gives party 2 for 33 calls and 1 for 3 (the joiner elsewhere); 0 failed.
   - **MP06** reached: kills-3, `/players 3` → 95 calls with players 3 (the joiner's `/players 5` in the middle of them
     changed nothing), `/players 8` → 13 calls with 8, `/players 1` → players 2 (two alive) for the rest.
-  - **MP16** reached in four of five branches: (a) 385 shares; (b) 9 kills with the other member beyond d² 6400 (5 of
+  - **MP16** reached in all five branches: (a) 385 shares; (b) 9 kills with the other member beyond d² 6400 (5 of
     them within 800 of the bound) and 1 member; (c) 106 with the other member in another level; (d) 42 not partied;
     (e) 108 with the other member dead. Every member set and every input predicted. J4's split: the inputs equal
     `trunc(level × q)` with `q` rounded to f32 and the product **not** rounded to f32: in 98 inputs the f32-rounded
@@ -116,7 +123,8 @@ check held, with the commands and their output.
   - **MP20** partly: the joiner explored 44 hops of the Blood Moor on its own and monspawn reproduced every room of the
     session (2691 checks), but no line names which player activated a room.
   - **MP23** reached: pvp-1, 230 attack events between the two players (70 melee with the left-button Attack, 160 Nova
-    missiles), every reduction percent P = 17 (226 RDP lines; 4 melee misses have none). The "defender in town" branch
+    missiles), every reduction percent P = 17 (226 RDP lines; 4 melee misses have none): physical and lightning only, the other
+    scaled fields are a shortfall of this pair. The "defender in town" branch
     is a shortfall: the client disables skills in town.
   - **MP24** reached (pvp-1, gates check): the declaration (HDR passed, HDS = now + 60 000, `+0x160` ← now, the pair
     entry holds the stamp: 2 of 2); a declaration again 50 s later refused by the pair stamp (stamp > now by 9.3 s, no
@@ -165,7 +173,8 @@ check held, with the commands and their output.
   party kills with drops (party ≥ 2 at the drop): **417** (309 with 2 players, 95 with 3, 13 with 8; ≥ 100); party experience shares
   (n = 2): **385** (≥ 20); vendor stock events with two players (TO, BS0, STALE, RESET while the last PLRS line listed both):
   vend-1 30 (15 TO, 6 BS0, 4 STALE, 5 RESET), vend-2 7, vend-3 9: **46** (≥ 30); quest-bit writes on a player's record
-  with both players present: den-a 2, den-a2 6, den-c 2, den-c2 2: **12** (≥ 10; qjoin-1's 2 joiner-record writes came
+  with both players present: den-a 2, den-a2 6, den-c 2, den-c2 2: **12** (≥ 10; 8 are the Den-entry word 1 bit 4
+  writes, two per game at 0x0058FD0A, and 4 are den-a2's clear, bits 13 and 1 on each player's record; qjoin-1's 2 joiner-record writes came
   before PLRS listed the joiner and are not counted); player-against-player
   attack events: **230** (≥ 200).
 - **Logs** (`workspace/logs/`, sha256 of 163 files in `workspace/logs/p44h-run/manifest.sha256`, `b6eefb02…`;

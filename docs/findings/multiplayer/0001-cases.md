@@ -8,7 +8,7 @@
 ## Answer (summary)
 
 - **Phase 2 (run:2026-10-20-two-clients, § 6).** 19 two-client sessions on slots 1 and 2 after the port-4000 record;
-  0 mismatches under every checker. Reached: MP01, MP04, MP06–MP10, MP15, MP16 (four of five branches), MP19,
+  0 mismatches under every checker. Reached: MP01, MP04, MP06–MP10, MP15, MP16 (all five branches), MP19,
   MP22–MP26, MP28 (a), MP29; partly: MP11, MP20, MP25 (the `0x10000` auras only). Shortfalls are listed in § 6.
 
 - **32 cases: 29 stageable, 3 not.** The not stageable ones need more than two players in one party (MP02, MP03) or a
@@ -46,8 +46,8 @@
 - **Driver.** `tools/d2pilot.py join` runs one client from the host's log: `where`, `follow`, `party
   invite|accept|leave|hostile` (plan 0011's steps files plus `two-party-hostile.steps`), `leave` and `trade
   TOKEN…`. `--me` on any other command (`wp`, `npc`, `explore`) also steers by the new `PLRS` lines of
-  `tools/gdb/two-players.py`. Game-free tests: `tools/test_joiner.py`, 16 OK. Not yet live-tested: see the plan log
-  checkpoint.
+  `tools/gdb/two-players.py`. Game-free tests: `tools/test_joiner.py`, 16 OK. Live-tested as Phase 2's first step
+  (run:2026-10-20-two-clients, the six steps; § 6).
 
 ## Leads used
 
@@ -357,14 +357,25 @@ readings each case reproduced:
   same level, d² ≤ 6400 of the credited player; 385 shares, 9 beyond 6400, 106 in another level, 108 dead, 42 not
   partied), every input predicted. The member's input is `trunc((float)level × q)` with `q` stored as an f32 and the
   product **not** rounded to f32 before the truncation (x87): 98 inputs separate the two (E 63, levels 81 and 81:
-  41, where an f32 product gives 42). (fn:XP_PartyShare@0x0057E6C0, fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0,
+  41, where an f32 product gives 42). The code: `q` is `fild`/`fidiv` stored by `fstp dword` (0x0057E754–0x0057E75D);
+  each member's `fild` level is multiplied by that dword (`fmul dword`, 0x0057E775–0x0057E778) and passed on the
+  FPU stack to `CRT_ftol2` (0x00682FD0), whose SSE2 path stores a qword and truncates (`cvttsd2si`, 0x00682FE2) and
+  whose x87 path (0x00683006) rounds by `fistp qword` and corrects toward zero: both truncate the unrounded product. A level (≤ 99)
+  times an f32 needs at most 31 significant bits, so the product is exact in f64: a reimplementation computes
+  `trunc((f64) level × (f64) q_f32)` (review, 2026-10-20). (fn:XP_PartyShare@0x0057E6C0, fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0,
   run:2026-10-20-two-clients)
 - [C] **Magic find is the killer's**: the joiner's kills read stat 80 = 0 while the partied host wore 472, the host's
   read 472. (fn:ITEMS_DropMagicFind@0x005585D0, run:2026-10-20-two-clients)
 - [C] **Monster player-count terms** with real players: 16 creations while the joiner was in the game had
-  MonPlayerBonus `[50, 50, 0, 0, 2]`, the 44 before and after it `[0, 0, 0, 0, 1]`. (fn:sub_00573930_MonPlayerBonus@0x00573930,
+  MonPlayerBonus `[50, 50, 0, 0, 2]`, the 44 before and after it `[0, 0, 0, 0, 1]`. Scope (review): 8 of the 44
+  came between a PLRS line listing one player and the next listing two (the join), so the logger's sampling, not the
+  count rule, decides them; no player died in mstat-1, so whether a dead player counts is not separated here and stays
+  `[I]` (the drop resolver's count, the first bullet, separates it there: MP01, players 1 with the joiner dead).
+  (fn:sub_00573930_MonPlayerBonus@0x00573930,
   run:2026-10-20-two-clients)
-- [C] **Player against player**: 230 attack events, P = 17 on every reduction. (fn:COMBAT_DamagePercent@0x0057C060,
+- [C] **Player against player**: 230 attack events, P = 17 on every reduction logged: physical (70 left-button
+  melee) and lightning (160 Nova); the fire, cold, magic and poison fields are a shortfall of this pair (`lane/arc6`
+  review, plan 0044 log). (fn:COMBAT_DamagePercent@0x0057C060,
   run:2026-10-20-two-clients)
 - [C] **The hostility declaration and the travel gates** (§ 4): the pair stamp `now + 60000`, `+0x160` ← now, a
   repeat refused while the stamp is ahead; the waypoint gate `tk + 10000` and the portal gate `tk + 5000` on every
@@ -397,8 +408,8 @@ readings each case reproduced:
 
 ## Data touched
 
-struct:Unit+0x0E4 (the player lists the PLRS line walks). PlayerData `+0x160` and `+0x38` (§ 4) are not yet in
-`re/types/save.h`'s `PlayerData`. The two-client recipes are the archivist's (backlog).
+struct:Unit+0x0E4 (the player lists the PLRS line walks). PlayerData `+0x160` and `+0x38` (§ 4) and `PlayerPair`
+are in `re/types/save.h` (`lane/rbs2`). The two-client recipes are the archivist's (backlog).
 
 ## Dead ends
 
