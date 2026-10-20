@@ -5,7 +5,7 @@
 > missile damage function 1–14 (`pSrvDmgFunc`, `g_MissileSrvDmgFuncs`) do: which Missiles and Skills columns and
 > `MissileData` words it reads, which missiles and units it creates or touches, which draws it makes on which seed,
 > and which of that the emulator can confirm?
-> **Date:** 2026-10-20   **Plan:** 0046 (Phase 1, batch 9b)   **Status:** open (the architect's review; 9c–9d follow)
+> **Date:** 2026-10-20   **Plan:** 0046 (Phase 1, batch 9b)   **Status:** reviewed 2026-10-20 (accept with fixes, `lane/p46m2`; 9c–9d follow)
 
 Static reading of the pinned `Game.exe` in Ghidra 12.1.2 (lane copy `workspace/ghidra-p46m2`, symbols replayed from
 `re/symbols.csv`) and objdump, then emulation under ADR-0015 with `re/ghidra_scripts/EmuBoundary.java` (unchanged
@@ -17,11 +17,15 @@ run:2026-10-20-cat-emu-9b in [experiments](experiments.md)). Missiles columns ar
 from `workspace/logs/skills-cat-9b/rows.txt` (`9152e7da…`, `excel_bin.py dump` of the batch's 43 rows) and, for Skills,
 `skills.txt` cells named in place.
 
-**Tag convention for this finding.** A claim marked **[I] (ADR-0021)** rests on emulated cases that end at an observed
-boundary (a declared callee's entry). It is `[I]` until the owner accepts the proposed
-[ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md); on acceptance it becomes `[C]`, scoped to the code
-before that call, with no re-run (the checker already asserts the call site, § 2). A plain `[C]` rests on cases that
-return; a plain `[I]` is a code reading the emulator does not reach. (run:2026-10-20-cat-emu-9b)
+**Tag convention for this finding.** A claim marked **[C] (ADR-0021)** rests on emulated cases that end at an observed
+boundary (a declared callee's entry), under [ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md) (accepted by
+the owner 2026-10-20): (a) nothing is patched and each boundary is a function entry reached by the program's own flow;
+(b) the checker asserts per case the boundary and its call site (§ 2, with a site control); (c) the model gives and the
+checker compares every argument, written byte and seed state the claim uses (do 30's untouched seeds were checked at
+the review from the kept outputs, § 6). Each such claim names the boundary it ends at; **the callee and all code after
+it are not covered** and keep `[I]` (from the reading), marked "after, `[I]`" in place. A plain `[C]` rests on cases
+that return; a plain `[I]` is a code reading the emulator does not reach. Raised at the `lane/p46m2` review without a
+re-run. (run:2026-10-20-cat-emu-9b)
 
 ## Answer (summary)
 
@@ -34,37 +38,45 @@ return; a plain `[I]` is a code reading the emulator does not reach. (run:2026-1
   fn:sub_005AF880_MissDo25ScatterBySkill@0x005AF880)
 - [C] **Damage functions (all but 8's overlay call are reproduced on returning cases).** 1: `v = min(DmgCalc1, 100)`
   (when > 0) percent of the physical damage moves to the missile's `EType` field; 12: the same share plus a fresh roll
-  of the `EType` element replaces the whole packet; 2: freeze length = `MulDiv(stat 56, max(dParam1, 0), 100)`, cold
+  of the `EType` element replaces the packet's damage (the fields `PacketClearDamage` zeroes, § 13); 2: freeze length = `MulDiv(stat 56, max(dParam1, 0), 100)`, cold
   length 0; 3: one step of the missile seed, `low & 0x7F < dParam1` sets result `0x4000`; 4: freeze = cold length, cold
   0; 10: freeze = cold length; 5: the `EType` roll, plus `dParam1` % of it against undead and `dParam2` % against
   demons; 13: against a monster only, the owner's stat 25 percent added to the physical damage, then 5; 7 and 9: stun
   length = `dParam1`, else Skills `Param1 + (lvl − 1)·Param2` (7) or `Param2` (9), hit class `0x60`; 11: poison length
-  = `MissileData+0x28 − frame` when in `[10, ELen(owner)]`, else poison 0; 14: knockback (result bit 8) on
+  = `MissileData+0x28 − frame` when in `[10, ELen(owner)]`, else poison 0; 14: knockback (result `|= 0x8`, a 16-bit OR at `+0x04`) on
   `RNG_Range(missile seed, 100) <` a chance from `dParam1`, `dParam2` and the target's MonStats2 `small`/`large`.
   (run:2026-10-20-cat-emu-9b `dmgconv`, `dmgelem`, `dmgpkt`, `knock`; §§ 13–16)
-- [I] (ADR-0021) **Draws.** Do 28 re-seeds the missile seed to `(MissileData+0x28, 666)` and draws two
-  `RNG_Range(2r + 1)` offsets (then stores the new low word, after the boundary); do 30 draws two
-  `RNG_Range(2·Param2 + 1)` offsets on the **target unit's** seed (the unit `MissileData+0x28/+0x2C` names); do 34
+- [C] (ADR-0021; each up to its `MissileCreate`, `PathPlan`, do-3 or `COLL_CellTestAt` boundary, §§ 6–9) **Draws.**
+  Do 28 re-seeds the missile seed to `(MissileData+0x28, 666)`, draws two `RNG_Range(2r + 1)` offsets and stores the
+  new low word in `+0x28`, all before its `MissileCreate`; do 30 draws two `RNG_Range(2·Param2 + 1)` offsets on the
+  **target unit's** seed (the unit `MissileData+0x28/+0x2C` names), leaving the missile's, the owner's and a decoy's
+  seeds as they were (on its path-less cases only: with a path the re-target boundary comes first); do 34
   re-seeds to `(SubX, 666)` and steps once to pick a sub-missile on every frame from `Param1` on; do 35 re-seeds to
   `(MissileData+0x28, 666)` and steps once for the turn's sign; do 25 goes through 9a's
   `sub_005A9820_MissSubNearReseed`. No other do function of the batch draws before its boundary (in the families
-  whose cases write no seed, no unit seed is read: the traced read set holds none). `[C]` on returning
+  whose cases write no seed, no unit seed is read: 0 undeclared reads). Draws after a boundary are not covered. `[C]` on returning
   cases: damage 3 (one inline step), damage 5/12/13 (one `RNG_RangeB` per element roll whose two stats are ≥ 1),
   damage 14 (one `RNG_Range(100)` when the chance is above 0), all on the missile's seed. (§ 3, §§ 7–9, §§ 13–16, run:2026-10-20-cat-emu-9b)
-- [I] (ADR-0021) **Sub-missile makers.** Do 21 (distraction) `MissileCreateAt` of `SubMissile1` on a path-flag-8 frame,
+- [C] (ADR-0021; up to the first creation call, §§ 3, 4, 10) **Sub-missile makers.** Do 21 (distraction) `MissileCreateAt` of `SubMissile1` on a path-flag-8 frame,
   then do 20; do 22 (lightning trailing javelins) two `SubMissile1` at offsets `±(−dy, dx)` perpendicular to its path
   target, set while `elapsed < 2`; do 23 (firestormmaker, sucfireball) one per flag-8 frame with `Param1` loops; do 26
   (vines) `MissileCreateAt` every `Param1` frames; do 31 (wake of destruction, baal cold maker) two at `±(+0x28, +0x2C)`;
   do 32 (tiger fury) one per flag-8 frame, then do 7. Do 21, 22, 23, 25 and 26 test `SubMissile1 != 0`, so a blank
-  (−1) passes; the others test `≥ 0`. (§ 3, § 4, § 10, run:2026-10-20-cat-emu-9b)
-- [I] (ADR-0021) **Owner-bound missiles.** Do 20 (blade creeper) re-targets its path to the owner's position
-  (`0x005A99E0`) and sets frames left to 10 while the owner is alive, else ends itself with an end-of-life hit; do 30
-  (rabies plague) does the same and spreads `SubMissile1` from the infected unit; do 29/33 (recycler delays) at
-  `elapsed == Param1` heal the owner's life/mana by `MulDiv(max, calc1, 100)`, capped at the maximum. (§ 5, § 6, § 11)
-- [I] (ADR-0021) **Periodic area and control missiles.** Do 27 (tornado) builds its damage packet every `Param1` (or
+  (−1) passes; the others test `≥ 0`. The second creation of do 22 and do 31 follows the first boundary and is `[I]`.
+  (§ 3, § 4, § 10, run:2026-10-20-cat-emu-9b)
+- [C] (ADR-0021; up to the re-target, `MISSILE_HitUnit`, `UnitSetStat` or do-1 boundary, §§ 5, 6, 11) **Owner-bound
+  missiles.** Do 20 (blade creeper) re-targets its path to the owner's position (`0x005A99E0`) and sets frames left to
+  10 while the owner is alive, else ends itself with an end-of-life hit; do 30 (rabies plague) re-targets and ends
+  itself the same way (it does not reset the frames left; it ends on `left < 0`) and spreads `SubMissile1` from the
+  infected unit; do 29/33 (recycler delays) at `elapsed == Param1` heal the owner's life/mana by
+  `MulDiv(max, calc1, 100)`, capped at the maximum. The return values after those calls (1 or 2) are `[I]`. (§ 5,
+  § 6, § 11)
+- [C] (ADR-0021; up to `MISSILE_BuildDamage`, the units-in-range call and `QUESTS_IsActive`, §§ 12, 17, 18) **Periodic
+  area and control missiles.** Do 27 (tornado) builds its damage packet every `Param1` (or
   `calc4`) frames; do 19 (radament death) runs Redemption's corpse callback on the units around it while 2 ≤ frames
-  left ≤ 24 and once more, without the chance roll, at 1; do 36 (baalfx control) at ≤ 100 frames left asks whether
-  quest 36 is active (then spawns `tyrael3`, class 521) and pins its room. (§ 12, § 17, § 18, run:2026-10-20-cat-emu-9b)
+  left ≤ 24 and once more, without the chance roll, at 1 (the roll and the heal are the callback's, `[I]`); do 36
+  (baalfx control) at ≤ 100 frames left sets `+0x28 = 1` and asks whether quest 36 is active (the spawn of `tyrael3`,
+  class 521, and the room pin after it are `[I]`). (§ 12, § 17, § 18, run:2026-10-20-cat-emu-9b)
 
 ## Leads used
 
@@ -166,17 +178,19 @@ call, and (do 21's cases only) `0x005AF540` do 20; 9a's nine stay declared.
 - [I] **Not reached** (from the reading): everything after each boundary (listed per function below); the
   `StatListGetValue` floor (`fMin`) branch (every ISC record's `+0x05` is 0); `GameFindUnit` with a type above 5 (do 30
   with `MissileData+0x28` > 5 reads address 0, a fault; ADR-0015 (5)); a do-35 missile without a path. (run:2026-10-20-cat-emu-9b)
-- [I] ADR-0015 (3): the `[C]` and the ADR-0021 claims cover the code as a map. What the offsets mean keeps its own tag
+- [I] ADR-0015 (3): the `[C]` claims, those marked ADR-0021 included, cover the code as a map. What the offsets mean keeps its own tag
   (Missiles columns `[C]` by layout; `MissileData` words `[I]`, skills/0002 § 1; packet fields `[I]`, combat/0001);
   nothing here says when the game runs these functions or on which seed state. (run:2026-10-20-cat-emu-9b)
 
 ### 3. Do 21, 23, 26, 32: one sub-missile
 
-- [I] (ADR-0021) **Do 21** (`0x005AF590`): with a record, when `SubMissile1 != 0` (s16) and path flag 8:
+- [C] (ADR-0021; ends at `MissileCreateAt` @0x005AF612 or at do 20's entry, a tail jump) **Do 21** (`0x005AF590`): with a record, when `SubMissile1 != 0` (s16) and path flag 8:
   `MissileCreateAt(ECX game, EDX owner; skill, lvl, SubMissile1, SubX, SubY)` (owner may be 0); then a tail jump to
   do 20 (§ 5), which has no record test. (run:2026-10-20-cat-emu-9b `create9b`,
   0x005AF5C9–0x005AF619, fn:sub_005AF590_MissDo21SubThenDo20@0x005AF590)
-- [I] (ADR-0021) **Do 23** (`0x005AF790`): `SubMissile1 != 0`; on flag 8 a block `{flags 1, owner, start = SubX/SubY,
+- [C] (ADR-0021; ends at `MissileCreate` @0x005AF859 / do 1 @0x005AF862 (do 23), `MissileCreateAt` @0x005AFA0E / do 1
+  tail (do 26), `MissileCreate` @0x005B047B / do 7 @0x005B0484 (do 32); the code after each creation is not covered)
+  **Do 23** (`0x005AF790`): `SubMissile1 != 0`; on flag 8 a block `{flags 1, owner, start = SubX/SubY,
   skill, lvl, SubMissile1}`, flags 9 and loops `Param1` when `Param1 > 0` (skills/0003 § 6's reading, now emulated);
   then do 1. **Do 26** (`0x005AF980`): `SubMissile1 != 0`; when `elapsed % max(Param1, 1) == 0`, `MissileCreateAt` as
   do 21; then do 1 (tail jump). **Do 32** (`0x005B03E0`): `SubMissile1 ≥ 0`; on flag 8 a block `{flags 1, owner,
@@ -205,7 +219,8 @@ if (PathFlag08(path)) {
 return MissileMoveCollide(game, m);
 ```
 
-- [I] (ADR-0021) As above up to the first creation: the stored pair is the direction to the path target turned by 90°
+- [C] (ADR-0021; ends at the first `MissileCreate` @0x005AF749, or do 1 @0x005AF772 off flag 8) As above up to the
+  first creation: the stored pair is the direction to the path target turned by 90°
   (32-bit differences of the u16 positions), written on frames 0 and 1 only. The second creation, with the pair
   negated, follows the boundary and is `[I]`. (run:2026-10-20-cat-emu-9b `create9b`, 0x005AF674–0x005AF749,
   fn:sub_005AF620_MissDo22SideTrails@0x005AF620)
@@ -213,12 +228,14 @@ return MissileMoveCollide(game, m);
 
 ### 5. Do 20: blade creeper
 
-- [I] (ADR-0021) With an owner that `UnitIsDead` calls alive (`+0xC6` bit 0 clear, type 0 or 1, mode neither 0 nor the
-  death mode): `sub_005A99E0_MissRetargetOwner(ECX game, EBX m)`, which with the missile's path calls
-  `0x00650BE0(path, m, UnitGetRoom(owner), owner x, owner y)`; then `SetRemaining(m, 10)`, do 1, and return **1**
-  (not do 1's value). Without an owner, or with a dead one (any type but 0 and 1 counts as dead):
-  `MISSILE_HitUnit(game, m; 0, 1)` (the end-of-life hit) and return 2. Without a path the re-target is skipped and the
-  frames left are 10 at do 1. (run:2026-10-20-cat-emu-9b `vines`, 0x005AF540–0x005AF58E, 0x005A99E0–0x005A9A6B,
+- [C] (ADR-0021; ends at `0x00650BE0` @0x005A9A66, `MISSILE_HitUnit` @0x005AF587 or do 1 @0x005AF572) With an owner
+  that `UnitIsDead` calls alive (`+0xC6` bit 0 clear, type 0 or 1, mode neither 0 nor the death mode):
+  `sub_005A99E0_MissRetargetOwner(ECX game, EBX m)`, which with the missile's path calls
+  `0x00650BE0(path, m, UnitGetRoom(owner), owner x, owner y)`; without a path the re-target is skipped and the frames
+  left are 10 at do 1. Without an owner, or with a dead one (any type but 0 and 1 counts as dead):
+  `MISSILE_HitUnit(game, m; 0, 1)` (the end-of-life hit). [I] After the boundaries (from the reading, 0x005AF561–0x005AF588):
+  on the path case `SetRemaining(m, 10)` and do 1 follow the re-target; the function returns **1** after do 1 (not do
+  1's value) and 2 after the hit. (run:2026-10-20-cat-emu-9b `vines`, 0x005AF540–0x005AF58E, 0x005A99E0–0x005A9A6B,
   fn:sub_005AF540_MissDo20FollowOwner@0x005AF540, fn:sub_005A99E0_MissRetargetOwner@0x005A99E0,
   fn:sub_00650BE0_PathTargetRoomXY@0x00650BE0)
 - [I] So a blade creeper lives as long as its owner, always 10 frames from its end. Stock 392 blade creeper
@@ -245,10 +262,15 @@ if (MISSDATA_GetElapsed(m) % max(Param1, 1) == 0) {
 MissileMoveCollide(game, m); return 1;
 ```
 
-- [I] (ADR-0021) As above up to the re-target, or (no path) to `MissileCreate`: the infected unit is the one
+- [C] (ADR-0021; ends at `MISSILE_HitUnit` @0x005B01DE, the re-target @0x005A9A66, or, without a path, `MissileCreate`
+  @0x005B0187 or do 1 @0x005B01C4; the return values after them, the creation and the state copy are not covered) As
+  above up to the re-target, or (no path) to `MissileCreate`: the infected unit is the one
   `MissileData+0x28` (type) and `+0x2C` (guid) name; the new missile's owner is that unit and its two offsets are drawn
-  on **that unit's** seed, `RNG_Range` (no step when `2·Param2 + 1 < 1`). (run:2026-10-20-cat-emu-9b `rabies`,
-  0x005B009B–0x005B0187)
+  on **that unit's** seed, `RNG_Range` (no step when `2·Param2 + 1 < 1`); the missile's, the owner's and a decoy
+  unit's seeds are left as they were (the checker compares the target's seed; the other three were checked at the
+  review from the kept `rabies.out`, 270 of 270 unchanged over the 90 creation cases, `workspace/logs/skills-cat-9b-review/seeds-do30.txt`).
+  (run:2026-10-20-cat-emu-9b `rabies`, 0x005B009B–0x005B0187; objdump `add ecx,0x20` on the `GameFindUnit` result at
+  0x005B0158)
 - [I] After the creation (from the reading): the owner's stat list of the skill's `auratargetstate` gives the new
   missile's `+0x28` its `+0x18` word, which damage 11 reads as an end frame (§ 15); `[L]` that `+0x18` is the
   state's expiry frame. Stock 515 rabiesplague (`Param1` 4, `Param2` 7) → 516 rabiescontagion. (`rows.txt`,
@@ -256,13 +278,16 @@ MissileMoveCollide(game, m); return 1;
 
 ### 7. Do 28: volcano debris
 
-- [I] (ADR-0021) With a record, `SubMissile1 ≥ 0` and a Skills row: without an owner, do 1. Else `r = Param2 > 0 ?
+- [C] (ADR-0021; ends at `MissileCreate` @0x005AFD50 or do 1 @0x005AFD5A; the creation and do 1 are not covered) With a
+  record, `SubMissile1 ≥ 0` and a Skills row: without an owner, do 1. Else `r = Param2 > 0 ?
   Param2 : max(aurarangecalc, 1)`, `period = Param1 > 0 ? Param1 : max(calc4, 1)` (`SKILLS_EvalCalc(owner, …, skill,
   lvl)`); when `Param3 < elapsed < Param4` and `elapsed % period == 0`: `RNG_SeedInit(&m->seed, +0x28)`,
-  `dx = RNG_Range(2r + 1) − r`, `dy` the same (x first), then (after, `[I]`) `+0x28 = RNG_GetLow`, and a block
+  `dx = RNG_Range(2r + 1) − r`, `dy` the same (x first), then `+0x28 = RNG_GetLow` (before the call: the checker
+  compares `+0x28` at the boundary; the review's correction of "after"), and a block
   `{flags 0x520, owner, source m, tx = SubX + dx, ty = SubY + dy, +0x24 = Param5, skill, lvl, SubMissile1}` to
   `MissileCreate`. The point goes in the **target** words (`+0x1C`, `+0x20`), not the start. (run:2026-10-20-cat-emu-9b
-  `reseed9b`, 0x005AFBC8–0x005AFD4B; objdump `lea edx,[edx+edx*1+0x1]` at 0x005AFCBF)
+  `reseed9b`, 0x005AFBC8–0x005AFD4B; objdump `lea edx,[edx+edx*1+0x1]` at 0x005AFCBF, `call 0x64a710`
+  `MISSDATA_SetSeedLow` at 0x005AFCEB before `call 0x59fa30` at 0x005AFD4B)
 - [I] Stock: 479 volcano (`Param3` 2, `Param4` 128, `Param5` 30) → 481 volcano debris 2; Skills Volcano `aurarangecalc`
   `par1` (12), `calc4` `par2` (2): a debris every 2 frames within ±12 between frames 3 and 127. `+0x28`'s first value
   is its creator's (Skills Volcano's start or do function, not read). (`rows.txt`, tbl:Skills.txt:aurarangecalc,
@@ -270,7 +295,8 @@ MissileMoveCollide(game, m); return 1;
 
 ### 8. Do 34: the Baal taunt control
 
-- [I] (ADR-0021) `n` = the count of leading pairs `(SubMissile_k ≥ 0, Param_{k+2} > 0)`, k = 1..3 (`SubMissile1..3`,
+- [C] (ADR-0021; ends at do 3 @0x005B0530 or `MissileCreate` @0x005B0614; what follows the creation is not covered)
+  `n` = the count of leading pairs `(SubMissile_k ≥ 0, Param_{k+2} > 0)`, k = 1..3 (`SubMissile1..3`,
   `Param2..4`); `n == 0` → 2. While `elapsed < Param1`, do 3 (`sub_005AE480_MissDo03CloudMark`). From then on, every
   frame: `RNG_SeedInit(&m->seed, SubX)`, one step, `k = low & (n − 1)` when `n` is a power of two, else
   `low % n` (unsigned); when `elapsed % Param_{k+2} == 0` a block `{flags 0, owner, source m, skill, lvl,
@@ -284,7 +310,8 @@ MissileMoveCollide(game, m); return 1;
 
 ### 9. Do 35: royal strike chaos ice
 
-- [I] (ADR-0021) With a record: off the `max(Param1, 1)` period, do 1. On it: `RNG_SeedInit(&m->seed, +0x28)`;
+- [C] (ADR-0021; ends at `PathPlan` @0x005B076C or do 1 @0x005B06A9; the stores after `PathPlan` are not covered) With
+  a record: off the `max(Param1, 1)` period, do 1. On it: `RNG_SeedInit(&m->seed, +0x28)`;
   `(a, b)` = the s16 halves of `+0x2C` (low, high); one step; with `low & 1`: `x' = (4a − b) / 4`, `y' = (4b + a) / 4`,
   else `x' = (4a + b) / 4`, `y' = (4b − a) / 4` (truncating; 0 becomes 1); path target = `(SubX + x', SubY + y')`
   (u16), `PathPlan(path, m, 0)`; then (after, `[I]`) `+0x28 = RNG_GetLow`, `+0x2C = (y' << 16) | (x' & 0xFFFF)` and
@@ -295,18 +322,25 @@ MissileMoveCollide(game, m); return 1;
 
 ### 10. Do 31: the wake makers
 
-- [I] (ADR-0021) `SubMissile1 ≥ 0`. With an owner, on flag 8: a block `{flags 2, owner, source m, SubMissile1, skill,
+- [C] (ADR-0021; ends at the first `MissileCreate` @0x005B03A0, do 1 @0x005B03C1, `JustHitState` @0x005B02C0 or
+  `COLL_SizeUnmark` @0x005B032A; return 2 where no boundary is reached) `SubMissile1 ≥ 0`. With an owner, on flag 8: a block `{flags 2, owner, source m, SubMissile1, skill,
   lvl, tx +0x28, ty +0x2C}` to `MissileCreate` (the second, negated, after the boundary), then do 1. Without one, the
   missile ends inline: `c = (Explosion ? 0 : 2) | (CollideKill ? 1 : 0)`; with `AlwaysExplode`, `JustHitState(m)`
   (then, `[I]`, the hit event and the hit function, whose bit 2 returns 2 at once); else, when `c & 1` and the missile
   has a room, `COLL_SizeUnmark(room, SubX, SubY, size, 0x40)`; return 2 in every case. (run:2026-10-20-cat-emu-9b
   `wake`, 0x005B023B–0x005B03B0, fn:sub_005B01F0_MissDo31SidePair@0x005B01F0)
+- [I] The `Explosion` term: the code sets bit 1 of `c` from it (0x005B0289–0x005B029A), but only bit 0 is ever
+  tested and the hit function's value replaces `c` on the `AlwaysExplode` path, so no output of do 31 depends on it.
+  The cases vary the flag byte at random and every output matches regardless, so a control on it cannot fail; the
+  `CollideKill` control replaced it (ruled acceptable at the review). The term itself is a code reading.
+  (run:2026-10-20-cat-emu-9b `wake`; objdump `test BYTE PTR [ebp-0x4],0x1` at 0x005B02F9)
 - [I] This repeats `MISSILE_HitUnit`'s end of life (skills/0002 § 5) without the to-hit and damage parts. Stock 517
   wake of destruction maker → 518, 589 baal cold maker → 590 (neither `CollideKill` nor `AlwaysExplode`). (`rows.txt`, fn:MISSILE_HitUnit@0x005ADF10)
 
 ### 11. Do 29, 33: the recycler delays
 
-- [I] (ADR-0021) With a record, a Skills row, and an owner alive: when `elapsed == Param1`, `hp = stat(owner, 6) >> 8`,
+- [C] (ADR-0021; ends at `UnitSetStat` @0x005AFE7A / @0x005AFFCA or do 1 @0x005AFEAD / @0x005AFFFD) With a record, a
+  Skills row, and an owner alive: when `elapsed == Param1`, `hp = stat(owner, 6) >> 8`,
   `max = maxhp(owner) >> 8` (arithmetic shifts; do 33: stats 8 and 9, `UNIT_GetMaxMana`); when `hp < max`,
   `hp' = min(hp + MulDiv(max, calc1(owner, skill, lvl), 100), max)` and `UnitSetStat(owner, 6, hp' << 8, 0)`; then
   (after, `[I]`) the `ProgOverlay` overlay on the owner when it is a valid Overlay row; then do 1. (run:2026-10-20-cat-emu-9b
@@ -317,8 +351,9 @@ MissileMoveCollide(game, m); return 1;
 
 ### 12. Do 27: tornado
 
-- [I] (ADR-0021) With a record and a Skills row: `period = Param1 > 0 ? Param1 : max(calc4, 1)`; on it,
-  `MISSILE_BuildDamage(ECX game, EDX owner; m, 0, &pkt)`; then (after, `[I]`) `radius = Param2 > 0 ? Param2 :
+- [C] (ADR-0021; ends at `MISSILE_BuildDamage` @0x005AFB14 or do 1 @0x005AFB75) With a record and a Skills row:
+  `period = Param1 > 0 ? Param1 : max(calc4, 1)`; on it, `MISSILE_BuildDamage(ECX game, EDX owner; m, 0, &pkt)` (the
+  third argument, a local's address, is not compared: `[I]`); then (after, `[I]`) `radius = Param2 > 0 ? Param2 :
   max(aurarangecalc, 1)`, `pkt.flags |= HitFlags`, `pkt.result |= ResultFlags`, and `sub_0056BAD0_AreaHitAt(game, m;
   0, 0, radius, &pkt, aurafilter)`; then do 1. (run:2026-10-20-cat-emu-9b `tornado`, 0x005AFA74–0x005AFB66,
   fn:sub_005AFA30_MissDo27PeriodicAreaHit@0x005AFA30)
@@ -374,7 +409,7 @@ e = MissileRollEType(game, m, unit, pkt);  PacketClearDamage(m, pkt);  PacketAdd
   fn:sub_005AD2B0_MissDmg10FreezeCopy@0x005AD2B0, fn:sub_005AD3E0_MissDmg07Stun@0x005AD3E0,
   fn:sub_005AD4A0_MissDmg09StunParam2@0x005AD4A0, fn:sub_004E6CA0_SkillParamByLevel@0x004E6CA0)
 - [C] **8** (`0x005AD450`) returns without a call when the record, the unit or `ProgOverlay > 0` (s16) is missing;
-  [I] (ADR-0021) else it calls `0x00621E40(unit, ProgOverlay, 0)` (which, `[I]` from the reading, puts the overlay as
+  [C] (ADR-0021; ends at `0x00621E40` @0x005AD498) else it calls `0x00621E40(unit, ProgOverlay, 0)` (which, `[I]` from the reading, puts the overlay as
   stat 178 on the unit's flag-`0x80` stat list). (run:2026-10-20-cat-emu-9b `dmgpkt`,
   fn:sub_005AD450_MissDmg08Overlay@0x005AD450)
 - [I] Stock: 2 on 28 icearrow, 569 royalstrikechaosice (`dParam1` 100); 3 on the six fire-wall rows (`dParam1` 19);
@@ -406,7 +441,7 @@ e = MissileRollEType(game, m, unit, pkt);  PacketClearDamage(m, pkt);  PacketAdd
   `dParam1 ≥ 1` (else none); a monster, by MonStats2 `small` (flag 10) and `large` (flag 11) through MonStats `+0x18`:
   `dParam1 < 1`: `dParam2` if small, else none; `dParam1 == 1`: small 2·`dParam2`, large none, else `dParam2`;
   `dParam1 ≥ 2`: small 3·`dParam2`, large `dParam2`, else 2·`dParam2`; other unit types none. With a chance above 0,
-  `RNG_Range(missile seed, 100) < chance` sets result bit 8 (knockback). (run:2026-10-20-cat-emu-9b `knock`,
+  `RNG_Range(missile seed, 100) < chance` sets result `|= 0x8` (knockback; `or WORD PTR [eax+0x4],0x8` at 0x005AD694). (run:2026-10-20-cat-emu-9b `knock`,
   0x005AD630–0x005AD72A, fn:sub_004638A0_MonStats2FlagTest@0x004638A0,
   fn:sub_005AD630_MissDmg14KnockBySize@0x005AD630)
 - [I] Stock: 5 on 92 blessedhammer (`EType` magic, 50/50); 13 on 640 blessedhammerex (`dParam1` 50, `EType` 0); 14 on 452
@@ -415,7 +450,8 @@ e = MissileRollEType(game, m, unit, pkt);  PacketClearDamage(m, pkt);  PacketAdd
 
 ### 17. Do 19: radament death
 
-- [I] (ADR-0021) With `r` = frames left: when `2 ≤ r ≤ 24` (unsigned `r − 2 ≤ 22`),
+- [C] (ADR-0021; ends at `sub_0056DDE0_UnitsInRangeCall` @0x005B0A2F or do 1 by tail jump; do 1 after the call is not
+  covered) With `r` = frames left: when `2 ≤ r ≤ 24` (unsigned `r − 2 ≤ 22`),
   `sub_0056DDE0_UnitsInRangeCall(ECX game, EDX 0x3002; SubX, SubY, m, 124, 1, 0x005AD8F0)`; when `r == 1` the same with
   `0x005AD910`; then do 1 (tail jump). No record test. (run:2026-10-20-cat-emu-9b `fx`, 0x005B0940–0x005B0A36,
   fn:sub_005B0940_MissDo19Redemption@0x005B0940, fn:sub_0056DDE0_UnitsInRangeCall@0x0056DDE0)
@@ -429,8 +465,9 @@ e = MissileRollEType(game, m, unit, pkt);  PacketClearDamage(m, pkt);  PacketAdd
 
 ### 18. Do 36: baalfx control
 
-- [I] (ADR-0021) With `r` = frames left: when `+0x28 == 0` and `r ≤ 100`: `+0x28 = 1`, then `QUESTS_IsActive(game,
-  36)`; then do 1 (tail jump). No record test. (run:2026-10-20-cat-emu-9b `fx`, 0x005B0A40–0x005B0A93,
+- [C] (ADR-0021; ends at `QUESTS_IsActive` @0x005B0A76 or do 1 by tail jump) With `r` = frames left: when `+0x28 == 0`
+  and `r ≤ 100` (signed): `+0x28 = 1`, then `QUESTS_IsActive(game, 36)`; otherwise do 1 (tail jump); after the quest
+  test, `[I]`, the spawn below, the room pin and do 1. No record test. (run:2026-10-20-cat-emu-9b `fx`, 0x005B0A40–0x005B0A93,
   fn:sub_005B0A40_MissDo36BaalFx@0x005B0A40)
 - [I] After (from the reading): when quest 36 (`a5q6`, quests/0001 word 40) is active, `sub_0058E920_BaalFxSpawnTyrael`
   runs a free-spot search (`0x00545340`) from the missile's position offset by (−5, −5) and spawns monster 521

@@ -123,8 +123,17 @@ Plan 0045 Phase 2's harness runs: none yet. Plan 0046's emulated runs (ADR-0015)
   written by the case writer); the outputs above are from the final case files.
 - **Conclusion:** bit-exact reproduction (evidence rule 4, ADR-0015) of the damage functions' maps on returning
   cases (`[C]`), of the do functions' refusal paths that return (`[C]`), and of the do functions' maps up to their
-  boundary calls with the call site asserted (`[I]` until the owner accepts the proposed
-  [ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md); skills/0005 marks each such claim). Not covered:
+  boundary calls with the call site asserted (`[C]` under
+  [ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md), accepted by the owner 2026-10-20 and applied at the
+  `lane/p46m2` review; skills/0005 names each claim's boundary). Not covered:
   what any boundary callee does and everything after it; the `fMin` floor of `StatListGetValue`; faults
   (`GameFindUnit` with a type above 5); when the game runs these functions or with which seed.
   (fn:sub_005AD050_MissDmg01ConvertPct@0x005AD050, fn:sub_005B0010_MissDo30Contagion@0x005B0010)
+- **Review checks** (`lane/p46m2` review, 2026-10-20; `workspace/logs/skills-cat-9b-review/`, `manifest.sha256`
+  `02466fbf…`, 9 files): `sha256sum -c` of the run's manifest passes (68 files); `check rabies reseed9b` from the kept
+  outputs gives `check.txt`'s lines; `cases --batch 9a` and `cases --batch 9b` regenerate every kept case, memory and
+  expectation file byte for byte (27 and 39); `check --batch 9a` and `static --batch 9a` reproduce 9a's kept files byte
+  for byte (tool `540cf98e…`; `EmuBoundary.java` `286393aa…`); do 30's 90 creation cases leave the missile's, the
+  owner's and the decoy's seeds unchanged (270 of 270, `seeds-do30.txt`, from the kept `rabies.out`); objdump of do 28
+  (0x005AFCAA–0x005AFD50), do 30 (0x005B0140–0x005B0187), damage 14 (0x005AD67C–0x005AD69E) and do 31's end code
+  (0x005B0289–0x005B0336) in `objdump-spot.txt`. (fn:sub_005B0010_MissDo30Contagion@0x005B0010)

@@ -385,7 +385,8 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
   fn:sub_005AE520_MissDo05Loop@0x005AE520, fn:sub_005AD220_MissDmg03Flag4000@0x005AD220)
   *2026-10-20 (plan 0046 batch 9b):* damage 3 is reproduced by emulation on returning cases (`[C]`: one inline step
   of the missile seed, `(low & 0x7F) < dParam1` signed, with a record); do 23's creation up to `MissileCreate` too
-  (`[I]` until the proposed ADR-0021 is accepted), and its test is `SubMissile1 != 0`, so a blank (−1) passes
+  (`[C]` under ADR-0021, accepted 2026-10-20, raised at the `lane/p46m2` review; the creation itself and do 1 after it
+  not covered), and its test is `SubMissile1 != 0`, so a blank (−1) passes
   (run:2026-10-20-cat-emu-9b, [skills/0005 § 3, § 14](0005-missile-do-19-36-damage.md#3-do-21-23-26-32-one-sub-missile)).
 
 ### 7. Summons
