@@ -40,6 +40,9 @@ boundary oracles. A reimplementer composes them. When this plan is done:
 - **What stays an input, by design** (Phase 0 confirms each): the player's actions (where it walks, so which rooms
   activate in which order and on which frame); a dying unit's seed at death, since combat draws on it (simulation,
   ADR-0014); quest state (plan 0042's records) where a level reads it; the client's settings that the server reads.
+  Added at the Phase 0 review (2026-10-20): the game seed at each drop (an item's seed is drawn from it, and every
+  server unit created by simulation steps it), of class simulation like the dying unit's seed; and the killer's magic
+  find (with a summon's owner's), of a new class, the player's character. Both are logged inputs of Phase 2.
 - **No new reading is planned** beyond the oracles the inventory names; each retired oracle is modelled from code the
   specs already cite, emulated (ADR-0015) where its read set is declarable.
 
@@ -115,3 +118,46 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-20 — Drafted (architect, `lane/plans45`).** Status `proposed`.
 - **2026-10-20 — Approved (owner, via the orchestrator).** Plans 0045–0049 and ADR-0020 approved as proposed; the run
   order of the [plans index](README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049) is the current queue.
+- **2026-10-20 — Phase 0 done, review requested (reverser, `lane/p48a`, static, no Ghidra, no harness).**
+  [chain/0001](../findings/chain/0001-oracles.md) lists **31 boundary oracles** of the core and enabler specs (seed 21,
+  seed and result 3, result 2, value 5; first named in items 9, monsters 8, drlg 7, objects 6, data 1), each with its
+  status: 11 already replaced in a chained check, 1 modelled behind a switch, 10 Phase 1 candidates, 5 inputs, 4 off the
+  chain. Surprises: `ITEMS_RollStaffMods` is already modelled (plan 0038 batch S2b, `--staff model`, still not the
+  default), and the object marks into the collision grid were modelled in plan 0027 Phase 2; what stays of the snapshot
+  is the player, walk-in, item and corpse marks. Activation order is an input beyond the per-room seeds (game seed,
+  object-region seed, near lists). Two input classes not in *Context* are proposed: the game seed at a drop and the
+  killer's magic find. Recount: the kept grep (162 lines, 169 matches, 22 files on `ad130d7`) and
+  `tools/oracle_ledger.py`, which checks the finding's § 6 ledger line for line (25 structural, 3 "no oracle", 134
+  naming an oracle). Proposed retirements for the review to rule: oracles 2, 16, 17 (46), 14, 22, 19, 21, 20, 7, 6, 13
+  ([§ 4](../findings/chain/0001-oracles.md#4-proposed-phase-1-retirements-for-the-architects-ruling)). Five spec
+  passages that lag the models are listed for Phase 3 (§ 5).
+- **2026-10-20 — Phase 0 reviewed (architect): accept with fixes; Phase 1 can start.** `main` merged into `lane/p48a`
+  (no conflict); `tools/oracle_ledger.py` after the merge: 162 lines, 22 files, the same hash
+  `fc6af974…`, 0 differences (cfix and p49r touched no spec under the six directories), S 25, N 3, 134 naming an
+  oracle, only oracle 31 named by no line. Spot checks: anchors of oracles 2, 7, 13, 14, 16, 17, 19, 20, 21, 22 and the
+  § 3.1 bullets resolve in `re/symbols.csv`; the rows of 14, 15, 16–21 agree with monsters/spawn, objects and
+  drlg/collision *Inputs and oracles*; the kinds, statuses and first-named tallies recount.
+  Fix: oracle 14's variant roll is already modelled by `tools/mon_sweep.py pool` (plan 0038 batch S3a, 4568 of 4568
+  unit seeds at `MonStatsInit` entry), not only "to model"; § 2 row 14 and § 4 item 3 now say so (omission 1).
+  **Phase 1 assignment** (all ten proposed, in this order): (1) oracle 2, `--staff model` the default of
+  `tools/items_chain.py`, `tools/affixes.py` and `tools/chain.py`; (2) oracle 14, chain the S3a region-append model
+  into `tools/monspawn.py` (moved ahead of 16 and 17, whose monster creations need it); (3) oracles 16 and 17, the
+  window's preset monsters and `InitFn` 46 through the monsters chain inside `tools/objects.py`'s window (47–69 stay
+  named as unreached; 79 and 582 take their class from quest state, an input); (4) oracle 22, the `Orient89Unit`
+  creation; (5) oracle 19's DRLG parts from `tools/drlg.py gen` (the Chaos Sanctuary test stays quest state); (6) oracle
+  21, another room's seed as chain state; (7) oracle 20, the grid snapshot composed, with the barrier grid
+  (`LOGIC_BarrierGridBuild` 0x0066C870, emulated under ADR-0015 or named not modelled) and the type-11 point from the
+  drlg/warps point list in the same step; the player, walk-in, item and corpse marks stay logged inputs, counted;
+  (8) oracle 7, the gold piles' items; (9) oracle 6, an object's drop; (10) oracle 13, MonEquip's item creation,
+  `[I]` at best, and it may close as "not modelled, unreached" if no stock row reaches it (archivist entry
+  [MonEquip table doc](../backlog/2026-10-20-architect-archivist-monequip-table-doc-for-plan-0048.md), not blocking).
+  Not assigned: 8, 12, 18, 24, 25 (inputs) and 9, 10, 11, 23 (off the chain), as proposed.
+  **Rulings.** (a) The S and N line classes of chain/0001 § 6 meet the Phase 0 *Done when*: a structural use or a "no
+  oracle" statement names no oracle, so "in the list or a historical sentence" applies to the 134 naming lines; no plan
+  amendment. (b) The two input classes of § 3.3 are accepted and added to *Context* above. (c) Oracle 31 stays listed
+  with no line of its own: its paragraph is historical (plan 0017 replaced it), and `oracle_ledger.py` reporting
+  `[31]` is the expected output. (d) Activation order: accepted as an input beyond the per-room seeds, `[I]` as stated
+  (§ 3.2); the open question is answered. (e) The stale *grid snapshot* row of monsters/spawn (object marks "still
+  logged") is a wrong statement in a reviewed spec, routed now to the spec-writer
+  ([entry](../backlog/2026-10-20-architect-spec-writer-monsters-spawn-stale-object-marks-row.md)); the other four
+  passages of § 5 stay Phase 3's. (f) Research map: the Core row `chain` is added (findings in progress).
