@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/tc, items/quality, items/affixes, items/uniques-sets, items/properties, items/sockets-runewords, hirelings, player/creation]
-tags: {C: 90, I: 150, L: 3}
-updated: 2026-10-17
+tags: {C: 91, I: 149, L: 3}
+updated: 2026-10-20
 ---
 
 # Character save (`.d2s`): writer, reader, header and item bitstream
@@ -434,8 +434,9 @@ packet-beta
 ```
 E1. Quests: "Woo!", u32 6, u16 0x12A, then three 96-byte blocks copied from player data
     +0x10, +0x14, +0x18 in index order (0x0065C560).                [I] (fn:D2S_WriteQuests@0x00569320)
-    On load (0x0065C4D0), in each of the 43 u16 quest words of a block: if bit 1 is set,
-    clear bits 13 and 14 and set bit 15.                             [I] (fn:D2S_ReadQuests@0x0056A370)
+    On load (0x0065C4D0), per block of 48 u16 quest words: words 0–41 get bits 13 and 14
+    cleared always and bit 15 set if bit 1 is set; words 42–47 are copied unchanged.
+                                                                     [C] (fn:D2S_ReadQuests@0x0056A370, fn:QUESTRECORD_LoadBytes@0x0065C4D0, run:2026-10-18-quests2)
 E2. Waypoints: "WS", u32 1, u16 0x50, then three 24-byte blocks: 16 bytes from the waypoint
     record at player data +0x1C, +0x20, +0x24 (WAYPOINT_Save) and 8 bytes never written.   [I] (fn:D2S_WriteWaypoints@0x005693E0, fn:WAYPOINT_Save@0x006610B0)
     record = u16 marker 0x0102, then 7 u16 words; waypoint n (< 112) is word 1 + n ÷ 16,

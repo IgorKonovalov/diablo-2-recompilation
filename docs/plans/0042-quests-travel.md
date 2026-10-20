@@ -716,3 +716,16 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   items/economy by `lane/p43s`, quests parts (a) and (c) folded by `lane/p42s`); the part 3 inputs entry is annotated
   and released to `lane/p42s`; a spec-writer entry is filed for save/d2s E1's stale load rule (assigned to
   `lane/p42s`). The archivist recipe entry stays open. The Phase 3 review follows the re-tag.
+- **2026-10-20 — Phase 3 re-tagged from part 3 (spec-writer, `lane/p42s`, `main` `d331763` merged); review requested.**
+  Tags now: [quests](../specs/quests/README.md) C 11 / I 5 / L 2, [quests/progression](../specs/quests/progression.md)
+  C 114 / I 315 / L 6, [quests/travel](../specs/quests/travel.md) C 68 / I 79 / L 4 (all `status: draft`). Raised from
+  quests/0001 § 17 and quests/0002 § 14 as reviewed: the timers (one-shots; re-arm and wrap `[I]`), the eclipse arm
+  (`15 + (low & 1)`, once per game by the state), the cairn order on the `bkd ` use (fill order; the *Open question* on
+  the other reading dropped), the Dark Wanderer (8-try branch), Anya's reward in three difficulties, the `tr2 ` and
+  `ass ` uses, "Cain lost" via `TownLevelLeave`, word 12 on entering 50, word 37's 112/113/123 steps, word 40's
+  0x4ED0/0x4ED3, the town-portal refusal in town, Meshif's stepping type 5, the Harrogath portal (n = 0 exit, word 28),
+  packet 0x48's clear, the resurrection's move and draw; NPC 367's menu `[C]` only for the logged state. Stay `[I]`: the
+  Zoo, mode-0 waypoint activation, the unreached e3 rows, the 7-try branch. save/d2s E1's load rule restated `[C]`
+  (C 91 / I 149 / L 3) and wiki/saves updated to match. Open questions: 12 `[L]` over the three quests files. Backlog
+  closed: the part 3 inputs, the part 2 inputs and the save/d2s E1 entries; review request
+  `2026-10-19-spec-writer-architect-plan-0042-phase-3-quests-spec-review.md` refreshed.

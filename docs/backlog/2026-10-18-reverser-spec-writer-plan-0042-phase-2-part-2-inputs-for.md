@@ -2,12 +2,12 @@
 from: reverser
 to: spec-writer
 date: 2026-10-18
-status: open
+status: done
 context:
   - ../findings/quests/0001-progression.md#16-phase-2-part-2-run2026-10-18-quests2
   - ../findings/quests/0002-travel.md#13-phase-2-part-2-run2026-10-18-quests2
   - ../findings/quests/experiments.md#run2026-10-18-quests2
-resolution: ""
+resolution: "Done (lane/p42s): part 2 rows taken into the Phase 3 drafts on 2026-10-19; the re-tag from part 3 that this entry waited for is done (2026-10-20, with the part 3 inputs entry)."
 ---
 
 For plan 0042 Phase 3 (quests spec), once the architect has reviewed Phase 2 part 2 (run:2026-10-18-quests2):

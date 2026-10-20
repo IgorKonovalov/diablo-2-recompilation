@@ -4,8 +4,8 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, save/d2s, items/quest-drops, objects, monsters/spawn, monsters/special, quests/travel]
 consumed_by: [items/quest-drops, items/cube, objects, monsters/spawn, monsters/special, quests/travel, save/d2s]
-tags: {C: 84, I: 327, L: 7}
-updated: 2026-10-19
+tags: {C: 114, I: 315, L: 6}
+updated: 2026-10-20
 ---
 
 # Quest progression: the record, the events, every quest's bits and the quest draws
@@ -341,18 +341,21 @@ Each quest has its own copy of these helpers; the per-quest tables below name th
 ### E. Timers
 
 ```
-E1. QUESTS_TimerAdd(fn, quest, period: u32):                        [I] (fn:QUESTS_TimerAdd@0x00543F10)
-      append {fn, quest, due ← control.tick + period, period}; adding while the list runs is fatal
-E2. QUESTS_TimersRun, when frame mod 20 = 0:                        [I] (fn:QUESTS_TimersRun@0x00543E10, fn:sub_0052D870_GameTick@0x0052D870 0x0052D912–0x0052D920)
+E1. QUESTS_TimerAdd(fn, quest, period: u32):                        [C] for the append (fn:QUESTS_TimerAdd@0x00543F10 0x00543F78–0x00543F80, run:2026-10-19-quests3)
+      append {fn, quest, due ← control.tick + period, period}; adding while the list runs is fatal   ; the fatal case: read, not run
+E2. QUESTS_TimersRun, when frame mod 20 = 0:                        [C] for one-shot timers (fn:QUESTS_TimersRun@0x00543E10 0x00543E62–0x00543ED1, fn:sub_0052D870_GameTick@0x0052D870 0x0052D912–0x0052D920, run:2026-10-19-quests3)
       control.tick ← control.tick + 1
       for each timer: if due < control.tick:
         if fn(quest) = 1: remove the timer
-        else: due ← control.tick + period
-      when control.tick reaches 0xFFFFFFFF: every due ← −1 − due
+        else: due ← control.tick + period                            ; not reached: E4
+      when control.tick reaches 0xFFFFFFFF: every due ← −1 − due      ; not reached: E4
 ```
 
-- E3. [I] So a period-*p* timer first runs *p* + 1 boundaries after the last 20-frame boundary before it was added, then
-  every *p* + 1 boundaries (20·(*p* + 1) frames). No timer was logged in either run. (fn:QUESTS_TimersRun@0x00543E10)
+- E3. [C] A timer first runs at `control.tick = due + 1`, on a frame with `frame mod 20 = 0`, so *p* + 1 boundaries after
+  the last 20-frame boundary before it was added; a run returning 1 is not repeated. Seven timer runs in four games (the
+  eclipse timer three times, the Dark Wanderer's four) held this. (run:2026-10-19-quests3; fn:QUESTS_TimersRun@0x00543E10)
+- E4. [I] A timer whose run returns 0 runs again every *p* + 1 boundaries (20·(*p* + 1) frames), and the tick wrap
+  rewrites every `due`; the two quest timers reached are one-shots, so neither branch ran. (fn:QUESTS_TimersRun@0x00543E10)
 
 ### F. NPC interaction, server side
 
@@ -380,7 +383,7 @@ sequenceDiagram
   E->>P: NPC 377 talk: 1 step
   E->>Q: NPC 331 talk, palace open: 1 step
   E->>Q: first entry to 44 or 45: eclipse period
-  E->>Q: first cairn stone or scroll: 5 or more steps
+  E->>Q: first bkd use or cairn stone: 5 or more steps
   E->>Q: Anya's reward: 1
   E->>Q: Dark Wanderer timer: 1
   E->>Q: Zoo init: 1 to 10
@@ -392,11 +395,11 @@ sequenceDiagram
 | e0 talk to NPC 266 | two runs of one handler (quest objects 25 and 30), each one draw: `Range(2)` or an inline `Step` (§ Word 29) | player unit seed | 0x00596B23, 0x00596B48 | [C] (run:2026-10-18-quests2) |
 | e0 talk to NPC 377 | one draw per talk (§ Word 30) | player unit seed | 0x0059E1CE–0x0059E257 | [I] (0x0059E1CE) |
 | e0 talk to NPC 331 with the palace open | one inline `Step`, message `low mod 3 + 8` | quest seed | 0x0059B229 | [C] (run:2026-10-17-quests) |
-| e3 first entry to level 44 or 45 with word 11's state 0 | `RandLoHi(15, 17)` = 15 + `Range(2)`, the eclipse timer period, once per game | quest seed | 0x0059EDE1 | [I] (fn:sub_0059EDC0_A2Q3_EclipseArm@0x0059EDC0) |
-| first cairn-stone operate or scroll send | inline `Step`s, `low mod 5`, until five distinct slots are filled | quest seed | 0x00592E90 | [I] (fn:sub_00592E90_A1Q4_StoneOrderDraw@0x00592E90) |
-| e11 Anya's reward | `Range(count[class])` | quest seed | 0x00589937 | [I] (0x00589937) |
-| the Dark Wanderer timer | one inline `Step` | quest seed | 0x005BD3E6 | [I] (fn:sub_005BD390_A3Q7_AfterglowTimer@0x005BD390) |
-| the Zoo (`InitFn` 79) | 1–10 `RandLoHi(1, nMonStats)` | quest seed | 0x0058E87C | [I] (fn:sub_0058E830_A5Q6_ZooInit@0x0058E830) |
+| e3 entry to level 44 or 45 with word 11's state 0 | `RandLoHi(15, 17)`: one `Step`, period `15 + (low & 1)` (15 or 16), once per game by the state (W11) | quest seed | 0x0059EDE1 | [C] for level 44 (run:2026-10-19-quests3; fn:sub_0059EDC0_A2Q3_EclipseArm@0x0059EDC0) |
+| first use of `bkd ` (or first cairn-stone operate, `[I]`) | inline `Step`s, `low mod 5`, until five distinct slots are filled (W4) | quest seed | 0x00592E90 | [C] for the `bkd ` use (run:2026-10-19-quests3; fn:sub_00592E90_A1Q4_StoneOrderDraw@0x00592E90) |
+| e11 Anya's reward | `Range(count[class])` (W37) | quest seed | 0x00589937 | [C] (run:2026-10-19-quests3: Normal, Nightmare, Hell) |
+| the Dark Wanderer timer | one inline `Step` (W32) | quest seed | 0x005BD3E6 | [C] (run:2026-10-19-quests3; fn:sub_005BD390_A3Q7_AfterglowTimer@0x005BD390) |
+| the Zoo (`InitFn` 79) | 1–10 `RandLoHi(1, nMonStats)` (W40; object 567 is placed by no stock DS1) | quest seed | 0x0058E87C | [I] (fn:sub_0058E830_A5Q6_ZooInit@0x0058E830) |
 | quest chests, Wirt, Andariel, Baal, the Hellforge, the Cow King | [items/quest-drops](../items/quest-drops.md#draw-order-on-the-quest-seed) | quest seed | — | as there |
 | every other quest event | none in quest code | — | — | [I] (fn:QUESTS_DispatchEvent@0x005438E0; § 11 of [quests/0001](../../findings/quests/0001-progression.md#11-which-events-draw-all-acts)) |
 
@@ -412,6 +415,8 @@ Step notes:
   (game-seed draw 4, `{low, 666}`). (fn:QUESTS_InitGame@0x00545D80, run:2026-10-16-quest-drops)
 - G4. [C] The NPC 331 step chained: 44 talks, 42 chained pairs, one step per talk, each talk's exit seed the next talk's
   entry in Normal and Nightmare. (0x0059B229, run:2026-10-17-quests)
+- G4a. [C] The eclipse arm, the cairn order on the `bkd ` use, the Dark Wanderer timer and Anya's reward were each
+  predicted from the quest seed before it (W11, W4, W32, W37). (run:2026-10-19-quests3; quests/0001 § 11)
 - G5. [I] **Chaining.** The quest seed is one object per game: its value at any draw depends on which of the drawing
   events above, and the item draws of [items/quest-drops](../items/quest-drops.md), ran before. The player-seed draws of
   NPCs 266 and 377 chain with every other user of the player's unit seed. A reimplementation asserts the quest seed on
@@ -558,8 +563,8 @@ stateDiagram-v2
 | b13, b1 | set | `Gibbet` operate (object 26, `OperateFn` 10) by a player with b0, b1 clear; party members in Act I | 0x00593587, 0x00593591 | [I] (fn:sub_00593480_A1Q4_GibbetOperate@0x00593480) |
 | b13, b1 | set | the Gibbet's object event 7 (frame + 17): every player in level 38 with b0, b1 clear, and their Act I party | 0x0059317D, 0x00593187 | [I] (fn:sub_00593130_A1Q4_CreditTristram@0x00593130) |
 | b14 | set | the same event: fail others | 0x005931F7 | [I] (fn:sub_005931C0_A1Q4_FailOthers@0x005931C0) |
-| b14 | set | Cain lost: e3 entry to level 40 by a player with b0, b1 clear while Cain is not rescued, or `0x00597310` (from `TownLevelLeave` and the Warriv travel branch) for every player with b0, b1 clear | 0x00592B46 | [I] (fn:sub_00592B10_A1Q4_FailPlayer@0x00592B10, fn:sub_00597310_A1Q4_FailOnActLeave@0x00597310) |
-| G b13 | set | the two "Cain lost" paths | 0x00597005, 0x005973D2 | [I] (fn:sub_00597310_A1Q4_FailOnActLeave@0x00597310) |
+| b14, G b13 | set | Cain lost, the `TownLevelLeave` path: the first arrival in level 40 from Act I with word 4 = 0 runs `0x00597310` from `TownLevelLeave` inside `PlayerChangeLevel`: G w4 b13, then b14 for the player (one client; the pass over every player with b0, b1 clear is read from the code); the e3 level-40 branch then finds state 7 and writes nothing, and later arrivals in 40 write nothing | 0x005973D2, 0x00592B46 | [C] (run:2026-10-19-quests3: x-entry, x-entry2, h-entry, and c-wp in the part 1 re-check; fn:sub_00597310_A1Q4_FailOnActLeave@0x00597310, 0x0053743D) |
+| b14, G b13 | set | Cain lost, the other paths: e3 entry to level 40 by a player with b0, b1 clear while Cain is not rescued (`+0x50` = 0, `+0x0C` < 6), and `0x00597310` from the Warriv travel branch | 0x00592B46, 0x00597005 | [I] (fn:sub_00592B10_A1Q4_FailPlayer@0x00592B10, fn:sub_005467E0_NpcActTravel@0x005467E0 0x00546A35, 0x00546AA9) |
 | b0; b1 clear | set / clear | e11 NPC 148 message 0x76 with b1 set; the ring reward (oracle) | 0x005923AC, 0x005923B6 | [C] (run:2026-10-18-quests2: x-talk1, h-talk1, c-talk1) |
 | G b13 | set | the same message: if G w4 b13 was clear (then `+0xF0`), and if the creator had b15 | 0x00592483, 0x005924D8 | [I] (fn:sub_00592250_A1Q4_NpcMessage@0x00592250) |
 | G b13 | set | FirstJoin when the creator has b0 | 0x00597081 | [I] (fn:sub_00597030_A1Q4_FirstJoin@0x00597030) |
@@ -569,7 +574,9 @@ stateDiagram-v2
 | b2, b3 | set | StepBits | 0x0059217C, 0x00592195 | [I] (fn:sub_00592130_A1Q4_StepBits@0x00592130) |
 
 ```
-W4. StoneOrderDraw (first stone operate or first scroll send, once per game):   [I] (fn:sub_00592E90_A1Q4_StoneOrderDraw@0x00592E90)
+W4. StoneOrderDraw (first use of the decoded scroll `bkd `, or first stone operate; once per game, private +0x4A):
+                                                                    [C] for the `bkd ` use (fn:sub_00592E90_A1Q4_StoneOrderDraw@0x00592E90 0x00592E90–0x00592F61, run:2026-10-19-quests3)
+      QUESTS_GetSeed once (0x00592EE1)
       order[0 ..< 5] ← empty;  next: i32 ← 17                        ; stone classes 17–21
       while some slot is empty:
         Step(questSeed)                                              ; draw (inline LCG)
@@ -579,8 +586,16 @@ W4. StoneOrderDraw (first stone operate or first scroll send, once per game):   
       ; bkd removed, 0x0056EDE0(0, 1, 0x120, x + 6, y − 3) at stone 21, its room pinned
 ```
 
-- W4. [I] The draw count is at least 5 and variable (draws that hit a filled slot are spent). The order therefore differs
-  per game. (fn:sub_00592E90_A1Q4_StoneOrderDraw@0x00592E90, fn:sub_00593CB0_A1Q4_SendStoneOrder@0x00593CB0)
+- W4. [C] The draw count is at least 5 and variable (draws that hit a filled slot are spent); the slot drawn takes the
+  next class of 17…21, so the classes go in fill order. In three first uses of `bkd ` the logged order and the quest seed
+  after it were predicted from the seed before (28 steps in all: 15, 6, 7), and a second use (private `+0x4A` set) drew
+  nothing and left the order. (run:2026-10-19-quests3: x-entry, x-entry2, h-entry; 0x00592E90–0x00592F61)
+- W4a. [C] The trigger reached is the item use: the client's use of `bkd ` reaches `0x00544840` (from the packet code at
+  0x0054C060, after the player-near test), which looks the item up by id and dispatches on its code; `bkd ` →
+  `0x00593CB0`, which draws the order (W4) and sends packet `0x50` with it. (run:2026-10-19-quests3;
+  fn:sub_00544840_QuestsItemUseCode@0x00544840, fn:sub_00593CB0_A1Q4_SendStoneOrder@0x00593CB0 0x00593CD5–0x00593CE1)
+- W4b. [I] The first stone operate draws the order the same way (not reached), and `0x00544840`'s `trs ` branch
+  calls `0x0059D6A0` (not run). (fn:sub_00593710_A1Q4_StoneOperate@0x00593710, fn:sub_00544840_QuestsItemUseCode@0x00544840)
 - [I] **Items.** Message 0x70 with `bks ` held removes it and gives `bkd ` (`QUESTS_GiveItem(bkd, 0, 2, 1)`); message 0x76
   gives the ring of [items/quest-drops § F](../items/quest-drops.md#f-npc-item-services-and-given-items); the Inifuss
   tree drops `bks `; Wirt's gold draws `RandLoHi(questSeed, 10, 20)`. (fn:sub_00592250_A1Q4_NpcMessage@0x00592250,
@@ -712,7 +727,7 @@ stateDiagram-v2
 | b14 | set | e8: every other player with b0, b1 clear | 0x00598DF7 | [I] (0x00598DC0) |
 | b0; b1 clear | set / clear | e11 NPC 176 (`atma`) message 0x14E with b1 set | 0x00598BFE, 0x00598C0D | [C] (run:2026-10-18-quests2: x-talk2) |
 | b0, b1, b15, b5 | clear | e13: the first joiner has b0 and b5 and holds no `ass ` | 0x0059927F–0x0059929D | [I] (fn:sub_00599230_A2Q1_FirstJoin@0x00599230) |
-| b5 | clear | the player uses the item `ass ` (Book of Skill) | 0x0055E3FB | [I] (0x0055E3FB) |
+| b5 | clear | the player uses the item `ass ` (Book of Skill): the item-use code tests the code, removes the book and clears b5 when set | 0x0055E3FB | [C] for the branch reached, b5 set (run:2026-10-19-quests3: x-book; 0x0055E3D0–0x0055E3FB) |
 | G b13 | set | Radament's death; message 0x14E while the quest is off; first joiner with b0 | 0x0059906E, 0x00598BB1, 0x005992AC | [I] (fn:sub_00599020_A2Q1_RadamentDeath@0x00599020) |
 
 - [I] So a creator who saved with the Book unread **loses the quest** at his next first join and can redo it. Radament's
@@ -750,7 +765,7 @@ stateDiagram-v2
 ```mermaid
 stateDiagram-v2
   [*] --> open
-  open --> eclipse: first entry to level 44 or 45, timer drawn
+  open --> eclipse: first entry to level 44 or 45, timer drawn, b2 at the timer
   eclipse --> pending: altar operated, b1 b13, b14 cleared
   open --> pending: altar operated
   pending --> done: report message 0x16A to 0x174, b0, b1 cleared
@@ -759,7 +774,8 @@ stateDiagram-v2
 
 | bit | set/clear | trigger and condition | site | Tag |
 |---|---|---|---|---|
-| b2, b3, b4 | set | per player with b0, b1 clear, by quest state (≥ 1, = 2, = 3) | 0x0059A53D, 0x0059A54E, 0x0059A563 | [I] (0x0059A4F0) |
+| b2 | set | per player with b0, b1 clear, at quest state ≥ 1: reached from the eclipse timer at state 1, one client | 0x0059A53D | [C] (run:2026-10-19-quests3: x-entry, x-entry2, h-entry; 0x0059A4F0, fn:sub_0059A350_A2Q3_EclipseOn@0x0059A350) |
+| b3, b4 | set | the same pass at quest state = 2, = 3 | 0x0059A54E, 0x0059A563 | [I] (0x0059A4F0) |
 | b1, b13; b14 clear | set / clear | altar operate (`OperateFn` 24, object 149), the operator with b0 clear | 0x0059AAA3, 0x0059AAAD, 0x0059AAB7 | [I] (fn:sub_0059A7E0_A2Q3_ViperChest@0x0059A7E0) |
 | b13, b1 | set | the same: every player in the altar's level with b0, b15 clear; party | 0x0059A6E5, 0x0059A6EF | [I] (fn:sub_0059A680_A2Q3_LevelCredit@0x0059A680) |
 | b14 | set | other players with b0, b1 clear | 0x0059A017 | [I] (0x00599FE0) |
@@ -767,10 +783,26 @@ stateDiagram-v2
 | G b13 | set | altar; first join with b0 or b1; report | 0x0059AAFF, 0x0059A66C, 0x0059ED73 | [I] (fn:sub_0059A5D0_A2Q3_FirstJoin@0x0059A5D0) |
 
 ```
-W11. EclipseArm — e3, entering level 44 or 45 while the quest is active and its state is 0, once per game (private +0x01):   [I] (fn:sub_0059EDC0_A2Q3_EclipseArm@0x0059EDC0 0x0059EDD3–0x0059EDE1)
-       period: u32 ← RandLoHi(questSeed, 15, 17)                     ; = 15 + Range(questSeed, 2): one draw, 15 or 16
-       QUESTS_TimerAdd(0x0059ED80, period)                            ; the timer turns the eclipse on (game +0xC0), one shot
+W11. EclipseArm — e3, entering level 44 or 45 while the quest is active and its state is 0:
+                                                                    [C] for level 44 (fn:sub_0059EDC0_A2Q3_EclipseArm@0x0059EDC0 0x0059EDC0–0x0059EDF3, 0x0059EE26–0x0059EE32, run:2026-10-19-quests3)
+       if private +0x01 ≠ 0: return                                   ; set here, cleared by the timer: guards only between the two
+       private +0x01 ← 1
+       Step(questSeed)                                                ; QUESTS_GetSeed, one draw
+       period: u32 ← 15 + (questSeed.low & 1)                        ; RandLoHi(15, 17), power-of-two path: 15 or 16, never 17
+       QUESTS_TimerAdd(0x0059ED80, period)
+W11a. EclipseTimer, one shot:                                       [C] (fn:sub_0059ED80_A2Q3_EclipseTimer@0x0059ED80 0x0059ED80–0x0059EDB3, run:2026-10-19-quests3)
+       private +0x01 ← 0
+       eclipse on (game +0xC0) and per player 0x0059A4F0, through 0x0059A350: QUESTS_SetStep(1), so state 1
+       return 1                                                       ; removed from the timer list
 ```
+
+- W11. [C] Three arms (x-entry and x-entry2 in Normal, h-entry in Hell; periods 15, 16, 16): the draw and the period were
+  predicted from the quest seed at the e3 entry to level 44 by waypoint, the timer ran once at `tick = due + 1`, the
+  eclipse started and b2 was set at state 1. A second entry to 44 in the same game drew nothing: what keeps the arm once
+  per game is the state (1, and the e3 test needs 0), not private `+0x01`, which the timer cleared. (run:2026-10-19-quests3;
+  fn:sub_0059EDC0_A2Q3_EclipseArm@0x0059EDC0, fn:sub_0059A350_A2Q3_EclipseOn@0x0059A350)
+- [I] The level-45 entry takes the same branch (not logged), and the b3/b4 branches (states 2, 3) and the altar's
+  states were not reached. (fn:sub_0059EE00_A2Q3_LevelChange@0x0059EE00)
 
 - [I] The altar refuses (unit event) a player who already has b1 or b0 and (w10 b0, or holds `vip ` or `hst `);
   otherwise it turns the eclipse off, takes one quest-seed step for 5–9 gold piles and registers timer `0x0059A700`
@@ -793,7 +825,7 @@ stateDiagram-v2
 |---|---|---|---|---|
 | b8 | set | e11 NPC 331 (`act2guard2`) messages 0xBB–0xBD; no `+0x09` test, so also with the quest switched off | 0x0059AFB2 | [C] (run:2026-10-17-quests: 44 writes, quest off) |
 | b7 | set | e11 NPC 331 message 0xBA | 0x0059AFC3 | [I] (fn:sub_0059AF50_A2Q4_NpcMessage@0x0059AF50) |
-| b8, b7 | set | e3 entering level 50; no `+0x09` test | 0x0059F155, 0x0059F173 | [I] (fn:sub_0059F0C0_A2Q4_LevelChange@0x0059F0C0 0x0059F136–0x0059F173) |
+| b8, b7 | set | e3 entering level 50, b8 then b7; no state, bit or `+0x09` test on the path (reached with quest 11 active, word 12 = 0, and in part 2's development log switched off) | 0x0059F155, 0x0059F173 | [C] (run:2026-10-19-quests3: x-entry, x-entry2; fn:sub_0059F0C0_A2Q4_LevelChange@0x0059F0C0 0x0059F136–0x0059F173) |
 | b2–b5 | set | per player with b0, b1 clear, by quest state | 0x0059ADFD, 0x0059AE13, 0x0059AE49, 0x0059AE38 | [I] (0x0059ADB0) |
 | b13, b1, b0, b8, b7; steps clear | set / clear | the journal operate (`OperateFn` 42, object 357): every player in level 74 with b0, b1 clear; party members in Act II | 0x0059B3D1–0x0059B46D | [I] (fn:sub_0059B970_A2Q4_JournalOperate@0x0059B970, fn:sub_0059B3F0_A2Q4_JournalCredit@0x0059B3F0) |
 | b14 | set | the journal: every other player with b0, b1 clear | 0x0059B354 | [I] (fn:sub_0059B970_A2Q4_JournalOperate@0x0059B970) |
@@ -1118,11 +1150,12 @@ stateDiagram-v2
 
 | bit | set/clear | trigger and condition | site | Tag |
 |---|---|---|---|---|
-| b0 | set | the Dark Wanderer timer fires: every player in Act III with b0 clear | 0x005BD2AB | [I] (fn:sub_005BD260_A3Q7_SetSeen@0x005BD260) |
+| b0 | set | the Dark Wanderer timer fires: every player in Act III with b0 clear, before the step | 0x005BD2AB | [C] for one player (run:2026-10-19-quests3: x-entry, x-entry2, h-entry, x-wpact3r-0; fn:sub_005BD260_A3Q7_SetSeen@0x005BD260) |
 | G b13 | set | e13: the first joiner has b0 (and then no Dark Wanderer this game) | 0x005BD2EE | [I] (fn:sub_005BD2C0_A3Q7_FirstJoin@0x005BD2C0) |
 
 ```
-W32. AfterglowTimer — registered once, period 2, by the darkwanderer AI (0x005BD4A0); runs once:   [I] (fn:sub_005BD390_A3Q7_AfterglowTimer@0x005BD390 0x005BD3DD–0x005BD3F7)
+W32. AfterglowTimer — registered once, period 2, by the darkwanderer AI (0x005BD4A0); runs once:
+                                                                    [C] for the 8-try branch (fn:sub_005BD390_A3Q7_AfterglowTimer@0x005BD390 0x005BD390–0x005BD486, run:2026-10-19-quests3)
        SetSeen on every player
        if the Dark Wanderer unit still exists:
          Step(questSeed)                                              ; one draw (inline LCG)
@@ -1133,6 +1166,12 @@ W32. AfterglowTimer — registered once, period 2, by the darkwanderer AI (0x005
        T = (−3,−3), (−3,0), (−3,3), (0,−3), (0,3), (3,−3), (3,0), (−3,3)   ; the last repeats the third
 ```
 
+- W32. [C] Four games (a save with word 32 = 0, the Kurast Docks by waypoint, the player next to the Dark Wanderer at
+  the Spider Forest edge): the timer ran once at `tick = due + 1`, b0 was set, the quest seed stepped once (the logged
+  low word one step of the seed before, `QUESTS_GetSeed` at 0x005BD3DD) and the targets were tried from `low & 1` in
+  order, one free-spot search each. `low & 1` was 0 in all four (8 tries). (run:2026-10-19-quests3: x-entry, x-entry2,
+  h-entry, x-wpact3r-0; fn:sub_005BD390_A3Q7_AfterglowTimer@0x005BD390)
+- [I] The 7-try branch (`low & 1` = 1) was not reached. (fn:sub_005BD390_A3Q7_AfterglowTimer@0x005BD390)
 - [I] The init writes `+0xE0` = 16 although the code uses word 32; only the quest log is affected. `InitFn` 43 spawns the
   Dark Wanderer at (x + 7, y) while the private flag is set. (fn:sub_005BD300_A3Q7_Init@0x005BD300,
   fn:sub_005BD1F0_A3Q7_WandererSpawnInit@0x005BD1F0)
@@ -1224,9 +1263,11 @@ W26b. SealOperate (OperateFn 52; 54–56 first store a boss point and create obj
   refused until the game ends. **Progression:** the classic credit raises the client's status progression to
   `step·d + 4` (step 5 with the expansion bit, else 4), never lowering it. (fn:sub_005B5810_A4Q2_ClassicEndLock@0x005B5810,
   fn:sub_00538680_PlayerProgressionRaise@0x00538680)
-- [I] **The Harrogath portal** (object 566, expansion only) is created near NPC 367 by message 0x4E20; its operate is
-  [quests/travel § F](travel.md#f-the-durance-portal-and-the-other-travel-objects)'s and writes w28 b0, b13.
-  (fn:sub_005B45E0_A4Q2_HarrogathPortalCreate@0x005B45E0, fn:sub_005B5880_A4Q2_HarrogathPortalOperate@0x005B5880)
+- [C] **The Harrogath portal** (object 566, expansion only) is created near NPC 367 by message 0x4E20; its operate is
+  [quests/travel § F](travel.md#f-the-durance-portal-and-the-other-travel-objects)'s and writes w28 b0 then b13 on the
+  first trip only (word 28 b0 clear): it, not NPC 367's menu, is the Act IV → V travel in stock play. (run:2026-10-19-quests3:
+  x-tyrael3, five trips; fn:sub_005B45E0_A4Q2_HarrogathPortalCreate@0x005B45E0,
+  fn:sub_005B5880_A4Q2_HarrogathPortalOperate@0x005B5880 0x005B590F, 0x005B5919)
 
 ##### Word 27: the Hellforge (quest object 24)
 
@@ -1324,20 +1365,28 @@ stateDiagram-v2
 | bit | set/clear | trigger and condition | site | Tag |
 |---|---|---|---|---|
 | b13, b1 | set | `OperateFn` 67 on object 558 by a player with b0, b1 clear **holding `ice `** (removed); party members in Act V | 0x0058ACD3, 0x0058ACE0, 0x00589055, 0x0058905F | [I] (fn:sub_0058ABC0_A5Q3_FrozenAnyaOperate@0x0058ABC0) |
-| b14 | set | the rest of the game at the thaw; on entering levels 121–124 at state below 5 | 0x00589AE6 | [I] (fn:sub_00589D80_A5Q3_LevelChange@0x00589D80) |
-| b2, b3 | set | log states | 0x00588F5C, 0x00588F71 | [I] (fn:sub_00588EB0_A5Q3_StepBits@0x00588EB0) |
+| b14 | set | e3 entering level 123 (Halls of Pain) at state below 5: `0x00589AA0`, state 6 | 0x00589AE6 | [C] (run:2026-10-19-quests3: x-entry2, h-entry; fn:sub_00589D80_A5Q3_LevelChange@0x00589D80 0x00589D80–0x00589EFE) |
+| b14 | set | the rest of the game at the thaw; entering 121, 122 or 124 at state below 5 | 0x00589AE6 | [I] (fn:sub_00589D80_A5Q3_LevelChange@0x00589D80) |
+| b3 | set | e3 entering level 113 (state to 3): `0x00588F10` for the player; the entry into 112 before it moves the state to 1 with no write | 0x00588F71 | [C] (run:2026-10-19-quests3: x-entry, x-entry2, h-entry; 0x00589D80–0x00589EFE) |
+| b2 | set | log state | 0x00588F5C | [I] (fn:sub_00588EB0_A5Q3_StepBits@0x00588EB0) |
+| b3 | set | e3 entering 114, or the old-level-109 branch (not reached) | 0x00588F71 | [I] (fn:sub_00589D80_A5Q3_LevelChange@0x00589D80) |
 | b8 | set | e11 NPC 513 message 0x4EA4 with b1 set, b0 clear: `tr2 ` given | 0x005896F1 | [I] (fn:sub_00589580_A5Q3_NpcMessage@0x00589580) |
-| b9, b10 | set | e11 NPC 512 message 0x4EA8 with b1 set, b0 and b10 clear: the reward item made (W37) | 0x005899BA, 0x005899E6 | [I] (fn:sub_00589580_A5Q3_NpcMessage@0x00589580) |
-| b0; b1 clear | set / clear | whichever of the two talks comes second (b8 and b9 both set) | 0x00589744, 0x0058973A, 0x005899DC, 0x005899D2 | [I] (fn:sub_00589580_A5Q3_NpcMessage@0x00589580) |
-| b7 | set | the player uses `tr2 ` with b8 set and b7 clear | 0x0055E4F5 | [I] (0x0055E4F5) |
+| b9, b10 | set | e11 NPC 512 message 0x4EA8 with b1 set, b0 and b10 clear, no `+0x09` test: the reward item made (W37), then b9, and b10 last; a second talk gives nothing (b10) | 0x005899BA, 0x005899E6 | [C] (run:2026-10-19-quests3: x-anya, nm-anya, h-anya, quest 33 switched off; fn:sub_00589580_A5Q3_NpcMessage@0x00589580) |
+| b0; b1 clear | set / clear | the reward talk coming second (b8 already set): b1 cleared, b0 set, between b9 and b10 | 0x005899D2, 0x005899DC | [C] (run:2026-10-19-quests3: x-anya, nm-anya, h-anya) |
+| b0; b1 clear | set / clear | the NPC 513 talk coming second (b9 already set) | 0x0058973A, 0x00589744 | [I] (fn:sub_00589580_A5Q3_NpcMessage@0x00589580) |
+| b7 | set | the player uses `tr2 ` with b8 set and b7 clear; then `0x0058A0A0` builds the resistance list | 0x0055E4F5 | [C] for the branch reached (run:2026-10-19-quests3: x-anya; 0x0055E4CC–0x0055E501) |
 
 ```
-W37. AnyaReward — e11 NPC 512 message 0x4EA8:                        [I] (fn:sub_00589580_A5Q3_NpcMessage@0x00589580 0x00589937)
+W37. AnyaReward — e11 NPC 512 message 0x4EA8:                        [C] (fn:sub_00589580_A5Q3_NpcMessage@0x00589580 0x00589883–0x005899E6, run:2026-10-19-quests3)
+       QUESTS_GetSeed                                                 ; 0x00589929
        table ← Nightmare if d = 1 and (game+0x6A = 3 or clvl > 45); Hell if d = 2 and (game+0x6A = 3 or clvl > 65); else Normal
        k ← Range(questSeed, count[class] of table)                    ; one draw
        QUESTS_GiveItem(table[class][k], UnitDropLevel, quality 6, 1)  ; items/quest-drops § F
 ```
 
+- W37. [C] One reward in each difficulty (Normal, Nightmare, Hell; clvl 80, so each difficulty's own table): the table,
+  the count, the draw and the item code were predicted from the quest seed before the talk. The `game+0x6A` = 3 branch
+  of the table choice was not separated by the run. (run:2026-10-19-quests3: x-anya, nm-anya, h-anya)
 - [I] **The scroll's bonus.** `0x0058A0A0` counts the difficulty records (Normal, Nightmare, Hell) whose word 37 has b7
   and puts 10 per record into stats 39, 41, 43 and 45 of a stat list linked to the player, at the scroll use and on the
   player load path; so +10/+20/+30 in every difficulty. (fn:sub_0058A0A0_A5Q3_ResistBonusApply@0x0058A0A0)
@@ -1425,7 +1474,8 @@ stateDiagram-v2
 | b14 | set | the rest | 0x0058DE08 | [I] (fn:sub_0058DF20_A5Q6_BaalDeath@0x0058DF20) |
 | b2 / b3 | set | log state 2 / 3, players in Act V | 0x0058D91D, 0x0058D933 | [I] (fn:sub_0058D8B0_A5Q6_StepBitsByState@0x0058D8B0) |
 | b4 | set | e11 message 0x4ED2 (jump table at 0x0058D9D0, index `msg − 0x4ECF`; no NPC or `+0x09` test) | 0x0058D9C7 | [C] (run:2026-10-18-quests2: x-talk5) |
-| b7, b9, b5, b6, b8 | set | e11 messages 0x4ECF, 0x4ED0, 0x4ED1, 0x4ED3, 0x4ED4 by the same table | 0x0058D9C7 | [I] (fn:sub_0058D940_A5Q6_NpcMessage@0x0058D940) |
+| b9, b6 | set | e11 messages 0x4ED0 (Anya's talk), 0x4ED3 (Malah's talk) by the same table | 0x0058D9C7 | [C] (run:2026-10-19-quests3: x-anya, nm-anya, h-anya; one Malah talk) |
+| b7, b5, b8 | set | e11 messages 0x4ECF, 0x4ED1, 0x4ED4 by the same table | 0x0058D9C7 | [I] (fn:sub_0058D940_A5Q6_NpcMessage@0x0058D940) |
 | b10 | set | the last portal (object 565) used by a player with b13; a first join or a later join with b0 (or b15 at the first) | 0x0058E7FC, 0x0058E4CB, 0x0058E424 | [I] (fn:sub_0058E740_A5Q6_LastPortalOperate@0x0058E740, fn:sub_0058E430_A5Q6_PlayerJoin@0x0058E430) |
 
 ```
@@ -1440,6 +1490,10 @@ W40. ZooInit — InitFn 79 (object 567), once per game (private +0xA0):   [I] (f
 - [I] Every Baal credit, and the first join of a player with b0 or b15, raises the client's status progression to at least
   `5d + 5`. Baal's gold draws on the quest seed ([items/quest-drops](../items/quest-drops.md)). The consumer of the Zoo's
   class beyond its message is not traced. (fn:sub_00538680_PlayerProgressionRaise@0x00538680, tbl:MonStats.txt:zoo)
+- [I] **The Zoo does not run on stock data**: no DS1 places object 567 (2 274 DS1 files scanned) and no immediate in the
+  code creates class `0x237`, so W40 and its 1–10 quest-seed draws are not reached by stock play (a computed class is
+  not excluded), and `+0xA4` stays 0 for the level-109 message. (fn:sub_0058E830_A5Q6_ZooInit@0x0058E830,
+  data:g_ObjInitFns@0x00731BC0; quests/0001 § 10, `objplace`)
 - [I] The Worldstone Chamber portal (objects 563, 569) moves a player from 131 to 132 only after Baal's AI opened it; the
   warp gate into 132 refuses until then ([quests/travel § F](travel.md#f-the-durance-portal-and-the-other-travel-objects)).
   (fn:sub_0058E640_A5Q6_ChamberWarpBlocked@0x0058E640)
@@ -1542,11 +1596,13 @@ pinned by each run's manifest and checked by `tools/quests.py check` with 0 mism
 
 ## Evidence
 
-- Findings: [quests/0001](../../findings/quests/0001-progression.md) (§ 1–§ 14 the reading, § 15 run 1, § 16 run 2),
+- Findings: [quests/0001](../../findings/quests/0001-progression.md) (§ 1–§ 14 the reading, § 15 run 1, § 16 run 2,
+  § 17 run 3),
   [items/0010](../../findings/items/0010-quest-drops.md) (the quest seed and the item draws),
   [save/0002](../../findings/save/0002-quest-words.md) (the record and the loader).
 - Runs: [run:2026-10-17-quests](../../findings/quests/experiments.md#run2026-10-17-quests),
-  [run:2026-10-18-quests2](../../findings/quests/experiments.md#run2026-10-18-quests2); the quest seed's start from
+  [run:2026-10-18-quests2](../../findings/quests/experiments.md#run2026-10-18-quests2),
+  [run:2026-10-19-quests3](../../findings/quests/experiments.md#run2026-10-19-quests3); the quest seed's start from
   run:2026-10-16-quest-drops ([items/quest-drops](../items/quest-drops.md)).
 - Tables: [MonStats](../../tables/MonStats.md), [Levels § Travel](../../tables/Levels.md#travel-plan-0042-phase-0),
   [Objects](../../tables/Objects.md), [Misc](../../tables/Misc.md).
@@ -1554,8 +1610,6 @@ pinned by each run's manifest and checked by `tools/quests.py check` with 0 mism
 
 ## Open questions
 
-- [L] Which of the two readings of the cairn order is right: the drawn slot takes the next class (W4 as written), or
-  slot *k* takes the class drawn; Phase 2 part 3 logs the draw. ([quests/0001 § 7](../../findings/quests/0001-progression.md#word-4--quest-object-4-row-4-a1q4cpp-init-0x005971b0))
 - [L] The monsters hooked to quests 1, 2, 5, 6 and 22 (Levels `+0x30` and superunique hooks) were not all re-read.
 - [L] What `0x0056EDE0` creates with arguments `0x120` (the stones), `0x14C` (the Countess's chests) and 625 (Baal's death).
 - [L] The descriptor's `+0x08` (100 or 0) has no reader in the code read.

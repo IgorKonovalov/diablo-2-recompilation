@@ -4,8 +4,8 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, save/d2s, items/quest-drops, drlg/collision, drlg/warps, objects]
 consumed_by: [items/quest-drops, items/cube, objects, monsters/spawn, monsters/special, rng/seeds, save/d2s]
-tags: {C: 9, I: 5, L: 2}
-updated: 2026-10-19
+tags: {C: 11, I: 5, L: 2}
+updated: 2026-10-20
 ---
 
 # Quests and travel: the game rules that move a character through the acts
@@ -73,11 +73,17 @@ flowchart TD
   waypoint rows, the object's seed ([progression § G](progression.md#g-the-draws),
   [travel § Draws by event kind](travel.md#draws-by-event-kind)). (fn:QUESTS_GetSeed@0x005438B0,
   fn:sub_0066AC40_LevelPointPick@0x0066AC40)
+- [C] The quest-seed draws the runs reached (NPC 331's talk, the eclipse arm, the cairn order on the `bkd ` use, the
+  Dark Wanderer timer, Anya's reward in the three difficulties) and NPC 266's two player-seed draws were each predicted
+  from the seed before them; the Zoo's and NPC 377's draws are not reached on stock data ([progression § G](progression.md#g-the-draws)).
+  (run:2026-10-17-quests, run:2026-10-18-quests2, run:2026-10-19-quests3)
 - [C] **One placement routine.** The waypoint, NPC and join arrivals and the portals' town ends the runs logged went
   through `ActLevelSpot`: a level point, the subtile `5·t + 3`, then the nearest free cell (124 placements)
   ([travel § A](travel.md#a-placement)). (fn:sub_0061B060_ActLevelSpot@0x0061B060, run:2026-10-17-quests)
-- [I] A resurrection and the Durance portal place the player the same way, read from the code.
-  (fn:sub_0054C0E0_Pkt41Resurrect@0x0054C0E0, fn:sub_00546AC0_DuranceActTravel@0x00546AC0)
+- [C] A resurrection places the player the same way, at the town's type-0 point with one level-seed step: three in
+  Hell ([travel § I](travel.md#i-death-resurrection-and-joining)). (fn:sub_0054C0E0_Pkt41Resurrect@0x0054C0E0,
+  run:2026-10-19-quests3)
+- [I] The Durance portal places the player the same way, read from the code. (fn:sub_00546AC0_DuranceActTravel@0x00546AC0)
 
 ## Inputs and oracles
 
@@ -92,12 +98,16 @@ flowchart TD
 ## Evidence and status
 
 The reading is [quests/0001](../../findings/quests/0001-progression.md) and [quests/0002](../../findings/quests/0002-travel.md);
-two runs reproduce it with 0 mismatches: [run:2026-10-17-quests](../../findings/quests/experiments.md#run2026-10-17-quests)
-(16 199 checks, 11 sessions) and [run:2026-10-18-quests2](../../findings/quests/experiments.md#run2026-10-18-quests2)
-(23 348 checks, 21 sessions). The talk steps reached, the record's load and save, the dispatch order, the join's pass,
-the NPC 331 and NPC 266 draws, the portal's three draws, placement and the "no draw" travel rows are `[C]`; the quest
-steps triggered by kills, operates, item use and level entry, the timers, the mode-0 waypoint activation, the stepping
-type-5 lookup, packet 0x48, Tyrael's act travel and death are `[I]`, some of them awaiting plan 0042 Phase 2 part 3.
+three runs reproduce it with 0 mismatches: [run:2026-10-17-quests](../../findings/quests/experiments.md#run2026-10-17-quests)
+(16 199 checks, 11 sessions), [run:2026-10-18-quests2](../../findings/quests/experiments.md#run2026-10-18-quests2)
+(23 348 checks, 21 sessions) and [run:2026-10-19-quests3](../../findings/quests/experiments.md#run2026-10-19-quests3)
+(6 167 checks, 13 sessions). `[C]`: the talk steps reached, the record's load and save, the dispatch order, the join's
+pass, the quest timers (one-shots), the quest-seed draws of NPC 331, the eclipse arm, the cairn order on the `bkd ` use,
+the Dark Wanderer and Anya's reward, the NPC 266 draws, the level-entry and item-use steps reached, the portal's three
+draws and its refusal in a town, placement, Meshif's stepping type-5 return, the Harrogath portal, packet 0x48's clear,
+the resurrection's move and the "no draw" travel rows. `[I]` for this plan: the steps triggered by kills, boss events
+and far operates, the timer re-arm and wrap, the Zoo (placed by no stock DS1), the mode-0 waypoint activation, NPC 367's
+travel branch, the unreached level-entry rows and the Dark Wanderer's 7-try branch.
 
 ## Cross-references
 

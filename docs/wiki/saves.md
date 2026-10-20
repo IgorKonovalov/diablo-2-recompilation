@@ -1,6 +1,6 @@
 ---
 based_on:
-  - docs/specs/save/d2s.md 2026-10-17
+  - docs/specs/save/d2s.md 2026-10-20
   - docs/specs/player/creation.md 2026-10-17
   - docs/specs/hirelings/README.md 2026-10-19
 ---
@@ -169,8 +169,9 @@ This matters for anyone who wants a loaded game to behave like the original
 These three sections are blocks of bytes copied in and out, one per difficulty
 ([save/d2s § E](../specs/save/d2s.md#e-fixed-sections)). All of it is read from the code:
 
-- **Quests** (`Woo!`): three 96-byte blocks, one [quest record](../glossary.md) each. On load, in each of the 43
-  quest words of a block, a word whose bit 1 is set has bits 13 and 14 cleared and bit 15 set.
+- **Quests** (`Woo!`): three 96-byte blocks, one [quest record](../glossary.md) each, 48 words. On load, the first
+  42 words of a block have bits 13 and 14 cleared, and bit 15 set when bit 1 is set; the last six are copied as they
+  are. This load rule is the exception to the line above: it is confirmed in the game.
 - **Waypoints** (`WS`): three 24-byte blocks. Each starts with a marker, then one bit per waypoint for up to 112
   waypoints; the last 8 bytes are never written. On load, the first waypoint is always switched on.
 - **NPCs** (`01 77`): two 8-byte records per difficulty.
