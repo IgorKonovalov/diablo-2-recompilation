@@ -155,6 +155,14 @@ for name, wp, seed in (("upperk", "3,7", 4716), ("travincal", "3,8", 4717), ("sp
     # and the City of the Damned (bighead5 100, batdemon5 85)
     SESSIONS["sorh-n-" + name] = ("CombatSorH", "enter-normal", seed,
                                   [(SWEEP + ["--wp", wp, "--players", "8", "--time", "270"], 340)])
+for name, wp, seed in (("travincal2", "3,8", 4791), ("travincal3", "3,8", 4792), ("catacombs2", "1,9", 4793),
+                       ("catacombs3", "1,9", 4794)):
+    # plan 0047 Phase 2: Levels picks NumMon (3) of a level's rows per game, so only levels whose every row adds the
+    # element give hits on every seed: Travincal (cantor3, cantor3, vampire2: cold) and the Catacombs Level 2
+    # (bighead2 among 3 rows of 3: lightning); the Lost City drew sandleaper3, zombie5, slinger6 on seed 4712, and
+    # wp 3,2 is the Spider Forest (76), not the Spider Cave (84) whose row batdemon2 was meant
+    SESSIONS["sorh-n-" + name] = ("CombatSorH", "enter-normal", seed,
+                                  [(SWEEP + ["--wp", wp, "--players", "8", "--time", "270"], 340)])
 for k in range(6):                            # 4-6: plan 0047 Phase 2, ruling 3 (d) (up to six seeds)
     # magic immunity: CombatSorH's Ginther's Rift (magic damage) on the Lost City's Plague Bearers (zombie5, Hell
     # ResMa 100), Hell
@@ -213,10 +221,12 @@ CASES_0047 = {
     "C1 crushing blow on champions": ("CombatOW in Nightmare, bosses first (the champion flag), /players 8",
                                       ["ow-nm-champs%d" % k for k in range(1, 7)], [136], ()),
     "C2 cold cap (cold resistance above 75)": ("CombatSorH in Normal (no penalty), cold attackers",
-                                               ["sorh-n-darkwood", "sorh-n-lostcity", "sorh-n-upperk", "sorh-n-travincal"],
+                                               ["sorh-n-darkwood", "sorh-n-lostcity", "sorh-n-upperk", "sorh-n-travincal",
+                                                "sorh-n-travincal2", "sorh-n-travincal3"],
                                                [43, 41], ()),
     "C3 lightning cap": ("CombatSorH in Normal, lightning attackers",
-                         ["sorh-n-marsh", "sorh-n-oasis", "sorh-n-catacombs", "sorh-n-spider", "sorh-n-cityd"],
+                         ["sorh-n-marsh", "sorh-n-oasis", "sorh-n-catacombs", "sorh-n-spider", "sorh-n-cityd",
+                          "sorh-n-catacombs2", "sorh-n-catacombs3"],
                          [41], ()),
     "C5 magic immunity": ("CombatSorH's magic damage on Hell Plague Bearers (ResMa(H) 100)",
                           ["sorh-h-lostcity%d" % k for k in range(1, 7)], [52, 53], ()),
