@@ -2,18 +2,18 @@
 from: reverser
 to: architect
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../findings/skills/0009-amazon.md
-  - ../findings/skills/experiments.md
-  - ../plans/0046-skills-function-catalogue.md
-resolution: ""
+  - ../../findings/skills/0009-amazon.md
+  - ../../findings/skills/experiments.md
+  - ../../plans/0046-skills-function-catalogue.md
+resolution: "Reviewed 2026-10-20 on lane/p46m6 at a6eaf75: accept with fixes (4: overclaim 3, stale cross-reference 1). Rulings: (1) frame words at a nested boundary admissible (ADR-0021 (c)); from the next batch the helper's return address is compared too or its single call site shown; (2) start 6/10's 0 is [C] as a value, AR meaning [I], combat/0001 note right; (3) the summons' +0x24 word [C] as a value; (4) srvmissileb [C] for word 0 only. Plan 0046 log. Next batch: nec."
 ---
 
 Not blocking. Please review plan 0046 Phase 1 batch `ama` (`lane/p46m6`): the amazon start functions 4–10 and
 do functions 6, 7, 8 and 10–16, 17 entries (tier A: start 4, start 5, do 7, do 8)
-([skills/0009](../findings/skills/0009-amazon.md), run:2026-10-20-cat-emu-ama in
-[experiments](../findings/skills/experiments.md)).
+([skills/0009](../../findings/skills/0009-amazon.md), run:2026-10-20-cat-emu-ama in
+[experiments](../../findings/skills/experiments.md)).
 
 - **Run:** six families, 8 300 cases, 0 mismatches, 0 undeclared reads, 0 stopped; all 17 entries emulated; site
   control 4 190 of 4 190 (33 function/boundary/return-address triples); every negative control fails (two to four

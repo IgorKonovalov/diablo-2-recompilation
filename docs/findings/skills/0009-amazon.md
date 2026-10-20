@@ -316,7 +316,7 @@ return 1;
   groups as above; the first creation is the first non-empty group's, block `{flags 0x10820 (outer) or 0x820
   (centre), owner and source the caster, cls, target (x0, y0), skill, lvl, +0x44 calc2}`; no group → 1.
   After, `[I]`: the further `n − 1` creations, each at the point stepped by `(sx, sy)`; a caster with an inventory
-  takes `srvmissilea` when the weapon word is 1 (a bow, from the stock pair `multipleshotarrow`/`bolt`).
+  takes `srvmissilea` when the weapon word is 1 (what the word names is an Open question).
   (run:2026-10-20-cat-emu-ama `create_ama`, fn:sub_0056D370_VecScaleShort@0x0056D370,
   fn:sub_0056D3B0_VecPerpSmall@0x0056D3B0, tbl:Skills.txt:calc1, tbl:Skills.txt:calc2, tbl:Skills.txt:calc3,
   tbl:Skills.txt:srvmissileb)
@@ -384,7 +384,7 @@ return 1;
 - skills/0003 § 5 (tier A), carried there as a dated note: start 4, start 5, do 7 and do 8 are now `[C]` up to their
   boundaries (ADR-0021), with three details: start 4 makes no skill-record test; do 8's step is perpendicular to the
   caster–point line (`0x0056D3B0` rotates it), not along it, and its start point is the point less half the fan;
-  `srvmissileb` is taken for a caster whose weapon word is not 1, which includes a caster with no inventory.
+  `srvmissileb` is taken for a caster with no inventory (weapon word 0, `[C]`); the test against 1 stays `[I]`.
 - combat/0001 (skill melee hits), carried there as a dated note: not every skill hit passes `SKILLS_GetToHit`; start
   6 and start 10 pass 0 as `COMBAT_MeleeHitTest`'s second argument (§ 4).
 
