@@ -630,3 +630,71 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   checker rules: part 3 item 6). Status lines of both findings updated. Reverser review-fixes 12 promoted ("carry a
   correction into the section it corrects", seen at the part 1 review and here). The review request and the part 2
   entry are closed; part 3 is filed to the reverser; the owner entry stays open with a note.
+- **2026-10-19 — Phase 2 part 3 checkpoint (reverser, `lane/p42r`, slot 2; in progress).** run:2026-10-19-quests3:
+  logger revision E (timers, the cairn order, the Dark Wanderer's step and tries, Anya's reward, the quest state byte),
+  checker rules and `tools/test_quests.py` (16 tests) committed; recorded so far x-entry (the eclipse arm and timer, the
+  bkd order, "Cain lost", level 50, word 37's 113 step, the Dark Wanderer), x-anya, h-anya, nm-anya (Anya's three tables,
+  the `tr2` use, the town-portal refusal), x-meshifw (six westward trips, type 5); 0 mismatches; the 32 part 1 and 2
+  logs 0 over 39 568 under the extended checker. Found: Meshif's Act III menu has no trade line; Tyrael's menu has no
+  travel line (the Act IV → V travel is the red portal, object 566, `0x005B5880`); the Zoo's object 567 is placed
+  nowhere. **Resume note:** sessions at the end of `tools/quest_sessions.py` (part 3 block); running x-tyrael3,
+  x-death3, x-entry2, h-entry, x-wpact1-0; development logs `dev-p42r-*`; the finding sections hold `@@` markers until
+  the final pass.
+- **2026-10-19 — Phase 2 part 3 (reverser, `lane/p42r`, slot 2; review requested).** run:2026-10-19-quests3
+  ([experiments](../findings/quests/experiments.md#run2026-10-19-quests3)): 13 recorded sessions, **0 mismatches over
+  6 167 checks** under the extended `tools/quests.py check` (`quests3-check.txt`, `7cde7b36…`); the 32 part 1 and 2
+  logs 0 over 39 568 under the same checker (`quests3-recheck-p12.txt`, `3f2b7de7…`; the 16 beyond part 2's 39 552
+  are the new "Cain lost" rule); 12 development logs 0 over 2 498. Raises, corrections and shortfalls:
+  [quests/0001 § 17](../findings/quests/0001-progression.md#17-phase-2-part-3-run2026-10-19-quests3),
+  [quests/0002 § 14](../findings/quests/0002-travel.md#14-phase-2-part-3-run2026-10-19-quests3).
+
+  | Part 3 item | Result |
+  |---|---|
+  | 1. quest-seed draws | the eclipse arm (3, periods 15/16/16; **correction**: once per game by the state, not private `+0x01`), the cairn order by the `bkd ` use (3 orders, 28 steps; trigger **refined**), the Dark Wanderer (4 games, 8 tries each; the 7-try branch not reached), Anya's reward in Normal, Nightmare and Hell, each `[C]`; quest timers raised in part (7 runs, one-shots only); the Zoo **unreachable** (object 567 placed by no DS1, created by no code: `objplace`, kept) |
+  | 2. waypoint activation from mode 0 | **shortfall**: three attempts (the Cold Plains twice from the camp, the Spider Forest waypoint logged in mode 0 at 110 sub-tiles), no operate; `wpmodes` (kept) shows field waypoints first logged in mode 1/2 after a waypoint arrival and 0 without, `[I]` |
+  | 3. act travel | Meshif west: six trips, one Lut Gholein level-seed step each (type 5) `[C]`; Tyrael: **correction**, the travel is the Harrogath portal (object 566, `0x005B5880`), the stock menu has no travel line; five trips, word 28 b0/b13 once, packet 0x48's clear (one case per travel word now: raised in part) |
+  | 4. e3 / item-use steps | "Cain lost" on arrival in 40 (from `TownLevelLeave`), word 12 on entering 50, word 37's 112/113/123 steps, the `tr2 ` and `ass ` uses `[C]`; candidates table in § 17; word 40's map holds for 0x4ED0 and 0x4ED3 too |
+  | 5. cheap travel remainders | town portal refused in a town (6) `[C]`; death and resurrection (3, Hell) `[C]` for the branch reached |
+  | 6. unit tests | `tools/test_quests.py` 19 tests (part 2's talk steps, saved words, NPC 266's runs, word 40's map; part 3's rules) |
+
+  Tools: `questev.py` revision E (`TMA`/`TMR`/`TMX`, `CRN0`/`CRN`, `DWS`/`DWF`, `ANL`/`ANY`, the state byte),
+  `quests.py` (part 3 rules, `objplace`, `wpmodes`), `quest_sessions.py` (`use`, `tpuse`, `clickobj`, `walkto`,
+  `pathto`, `push`, `toward`; `die` next to monsters; the part 3 block), `d2pilot.py` (Meshif's menu, `tyraelgo`, the
+  waypoint walk's stop, `--exclude-xy`, the menu screenshot); four recipes `quest-p3*.json` (archivist entry for
+  d2s.md). Manifests: `quests3-manifest.sha256` (43 lines, `1975e350…`), `dev-p42r-manifest.sha256` (26 lines,
+  `38d3aaa5…`), one path base (`workspace/logs/quests/`). Symbols: nine quest functions raised to C, one added. One
+  slot used; slot 2 stopped, its aside restored. No part 4 is planned: the shortfalls of § 17 and § 14 stay `[I]` in
+  this plan. The part 3 backlog entry is left open for the reviewer.
+  **Resume note (lane stopped at the owner's usage limit, 2026-10-19):** part 3 is complete as recorded above; nothing
+  is left running (slot 2 stopped, aside restored). Logs kept: `workspace/logs/quests/2026-10-19-quests3-*` (13
+  sessions with their saves and outputs) and `dev-p42r-*` (12 development logs, 2 screenshots), both manifests checked
+  OK. What is left: the architect review only (the review request is filed). Gotchas for any later harness work: Save
+  and Exit ends the game process (the watchdog then reports "the game exited"); walking clicks near a town waypoint
+  open its menu; the `act` driver does not know the save's name, so copy `<log>.out.d2s` by hand; Harrogath's type-5
+  lookup takes its single type-0 point without a draw.
+- **2026-10-20 — Phase 2 part 3 reviewed (architect, `lane/p42r` review): accept with fixes.** Anchors spot-checked in
+  the image (r2, no Ghidra): the eclipse arm `0x0059EDC0` (gate `+0x0C` = 0 and private `+0x01` = 0, `QUESTS_GetSeed`
+  at 0x0059EDD3, `RNG_RandLoHi(15, 17)` at 0x0059EDE1, `QUESTS_TimerAdd` at 0x0059EDEE) behind e3's `+0x0C` = 0 and
+  `+0x09` = 1 test (0x0059EE26–0x0059EE32), and the timer `0x0059ED80` calling `0x0059A350`; `0x00592EE1` (the
+  order draw's seed); `0x00544840` → `0x00593CB0` at 0x0054488B; `0x0053743D` → `0x00597310`; Harrogath portal's
+  word 28 write at 0x005B590F (`QUESTRECORD_SetState`); `LevelPointPick`'s n = 0 exit at 0x0066AC90; the town-portal
+  town test at 0x005BE2E2; `UNIT_SetMode`'s unchanged-mode `je` at 0x006246AB. Re-run (kept in the run record): both
+  manifests OK, the checker's outputs over the 13 logs and the 32 part 1 and 2 logs byte-identical to the kept files,
+  12 development logs 0 over 2 498, 19 tests OK. Nine symbols raised and one added: no clash with `main`.
+  **Rulings.** (1) The four corrections hold: the eclipse's once-per-game is the state (the run separates it: the
+  second entry to 44 had private `+0x01` cleared and state 1, and drew nothing); the cairn order on the `bkd ` use,
+  classes 17–21 in fill order `[C]` (the predicted order is that reading; plan 0042 P3's *Open question* on the other
+  reading can close); the Act IV → V travel through object 566; Meshif's menu. (2) Shortfalls ruled final and `[I]` for
+  this plan: the Zoo (object 567 placed by no DS1, created by no immediate: `[I]`, a computed class is not excluded),
+  waypoint activation from mode 0 (`wpmodes` stays `[I]`), the unreached e3 rows, the 7-try branch, the timer re-arm
+  and wrap. (3) The driver deviations are accepted: the logs are continuous, the hand-copied saves are in the manifest
+  and the checker re-runs identically. (4) Symbols `QUESTS_TimersRun`/`TimerAdd` at `C` stand as names; the re-arm
+  branch stays `[I]` in the text.
+  **Fixes applied (3):** quests/0002's summary "town portal creation: five" corrected to three (stale since Phase 2
+  § 12; raised by `lane/p42s`); NPC 367's "no travel line" scoped to the state logged, "never offered" `[I]` (the
+  client's menu builder was not read; § 5 summary and the § 5 bullet); the checker and logger hashes named in the run
+  record's review re-run line.
+  **Backlog:** the review request is closed; the rbs2 quests/economy entry is closed (economy part (b) done in
+  items/economy by `lane/p43s`, quests parts (a) and (c) folded by `lane/p42s`); the part 3 inputs entry is annotated
+  and released to `lane/p42s`; a spec-writer entry is filed for save/d2s E1's stale load rule (assigned to
+  `lane/p42s`). The archivist recipe entry stays open. The Phase 3 review follows the re-tag.

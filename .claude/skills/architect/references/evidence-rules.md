@@ -143,7 +143,7 @@ Errors (fast tier):
 | E10 | No confidence tag (`[C]`, `[I]`, `[L]`), no `fn:`/`data:`/`tbl:`/`struct:` anchor and no `0x00XXXXXX` address appears anywhere in the page body, code spans, code blocks and diagrams included (ADR-0012) | every `.md` under `docs/wiki/` |
 | E11 | A page has a `based_on:` front-matter list, either the single entry `process` or entries `<repo path> <YYYY-MM-DD>` (flow list or one `  - ` line each); each path is a spec and its `status:` is `reviewed` | `docs/wiki/` except `docs/wiki/README.md` |
 | E12 | Every `##` section (its `###` subsections included) holds a relative link, inline or reference-style, into `docs/specs/` | `docs/wiki/` except `README.md` and pages with `based_on: [process]` |
-| E13 | A backlog entry (ADR-0018): front matter as `tools/backlog.py` writes it (only the keys `from`, `to`, `date`, `status`, `context`, `resolution`); `from` and each `to` a lane (`architect`, `archivist`, `reverser`, `spec-writer`, `human`); `status` ∈ {`open`, `done`, `moved`, `dropped`}; a `resolution` when the status is not `open`, none when it is; the file named `YYYY-MM-DD-<from>-<to>-<slug>.md` with `date` equal to its prefix; each `context` link resolves as in E8 | `docs/backlog/*.md` except `README.md` |
+| E13 | A backlog entry (ADR-0018): front matter as `tools/backlog.py` writes it (only the keys `from`, `to`, `date`, `status`, `context`, `resolution`); `from` and each `to` a lane (`architect`, `archivist`, `reverser`, `spec-writer`, `human`); `status` ∈ {`open`, `done`, `moved`, `dropped`}; a `resolution` when the status is not `open`, none when it is; the file named `YYYY-MM-DD-<from>-<to>-<slug>.md` with `date` equal to its prefix; each `context` link resolves as in E8; no `open` entry in `docs/backlog/archive/` (ADR-0019) | `docs/backlog/*.md` and `docs/backlog/archive/*.md` except `README.md` |
 
 Warnings (fast tier):
 
@@ -153,7 +153,8 @@ Warnings (fast tier):
 | W2 | A table with a `Tag` column has a row whose tag cell is empty | specs, findings |
 | W3 | A `re/symbols.csv` row whose name appears in no spec or finding (plans and the backlog don't count) | `re/symbols.csv` |
 | W4 | A `based_on:` date is older than that spec's `updated:` date (the page may be stale) | `docs/wiki/` |
-| W5 | The frozen archive holds an unstruck entry, or a struck copy of an entry that has its own file. A warning, not an error, so that a lane merge appending to the archive leaves `main` green; the orchestrator then runs `python3 -I tools/backlog.py migrate` | `docs/backlog.md` |
+| W5 | The frozen archive holds an unstruck entry, or a struck copy of an entry that has its own file. A warning, not an error, so that a lane merge appending to the archive leaves `main` green; the orchestrator then runs `python3 -I tools/backlog.py archive`, which migrates first | `docs/backlog.md` |
+| W6 | A closed entry (`done`, `moved`, `dropped`) still in `docs/backlog/` instead of `docs/backlog/archive/` (ADR-0019). A warning, so that a lane merged from an older branch, which closed the entry in place, leaves `main` green; the orchestrator then runs `python3 -I tools/backlog.py archive` | `docs/backlog/*.md` |
 
 Full tier (`--full`): each registered `survey` ends with one `SURVEY <tool> key=value …` line of
 integer counts, compared with `tools/gate/baselines/<tool>.txt`. Any difference is an error. A

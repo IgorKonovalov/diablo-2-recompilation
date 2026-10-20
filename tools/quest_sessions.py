@@ -45,7 +45,8 @@ if HERE not in sys.path:
 PY = [sys.executable, "-I"]
 SAVES = [os.path.join(ROOT, "workspace", "runtime", "quest-saves-p42"),      # quest_saves.py build (plan 0042 P0)
          os.path.join(ROOT, "workspace", "runtime", "quest-saves-p42h"),     # d2s.py build of quest-tpc (Phase 2)
-         os.path.join(ROOT, "workspace", "runtime", "quest-saves-p42q")]     # part 2's step recipes (build_part2)
+         os.path.join(ROOT, "workspace", "runtime", "quest-saves-p42q"),     # part 2's step recipes (build_part2)
+         os.path.join(ROOT, "workspace", "runtime", "quest-saves-p42r")]     # part 3's recipes (quest-p3*.json)
 CLASSIC_WP = ["--wp-tab-x0", "120", "--wp-tab-w", "78"]
 TOWNS = {1, 40, 75, 103, 109}
 # a warp's place where it is fixed (Lut Gholein is one preset; part 1 and part 2 logs, WRP lines): a walking goal
@@ -551,6 +552,10 @@ class Driver:
                     self.p.dpy.key("Escape")
                     got = t.wait(lambda tag, d: tag == "EV" and d.get("k") == "p41" and d.get("ph") == 1, 8)
                     print("die: dead; packet 0x41 %s" % ("logged" if got else "not logged"), flush=True)
+                    if not got:               # part 3: a false reading; the Escape opened the game menu: close it
+                        self.p.dpy.key("Escape")
+                        time.sleep(1.0)
+                        continue
                     done += bool(got)
                     time.sleep(3)
                     if done < n:
@@ -560,8 +565,55 @@ class Driver:
             if pos and pos[2] in TOWNS:
                 time.sleep(1)
                 continue
+            # part 3: stand still next to the nearest live monster (hopping away, part 2's explore never let them
+            # hit); explore a little only when none is logged near
+            mons = [m for m in self.st.mon if m.get("mode") not in (0, 12)] if pos else []
+            if mons:
+                m = min(mons, key=lambda m: math.hypot(m["x"] - pos[0], m["y"] - pos[1]))
+                d = math.hypot(m["x"] - pos[0], m["y"] - pos[1])
+                if d > 3:                     # one hop at a time, so the life check above comes often
+                    k = min(9.0, d - 2) / d
+                    self.p.teleport(int(round((m["x"] - pos[0]) * k)), int(round((m["y"] - pos[1]) * k)))
+                time.sleep(2.0)
+                continue
             self.pilot(["explore", "--hops", "4", "--nova", "0", "--drink", "0"], timeout=90)
         print("die: %d deaths" % done, flush=True)
+
+    def jump_path(self, pos, goal, hop=8, step=2):
+        """Part 3: the first hop of a breadth-first path of Teleport jumps (to any known cell free of the player's
+        blocking bits within `hop` sub-tiles, on a `step` grid) from the player to within 4 of goal, inside the box
+        around both plus 30; None when there is none."""
+        import collections
+        cells, block = self.st.cells, self.d2p.BLOCK
+        x0, x1 = min(pos[0], goal[0]) - 30, max(pos[0], goal[0]) + 30
+        y0, y1 = min(pos[1], goal[1]) - 30, max(pos[1], goal[1]) + 30
+
+        def free(c):
+            v = cells.get(c)
+            return v is not None and not v & block and all(
+                (cells.get((c[0] + a, c[1] + b)) or 0) & block == 0 for a in (-1, 0, 1) for b in (-1, 0, 1))
+        start = (pos[0], pos[1])
+        prev = {start: None}
+        q = collections.deque([start])
+        offs = [(a, b) for a in range(-hop, hop + 1, step) for b in range(-hop, hop + 1, step)
+                if 4 <= math.hypot(a, b) <= hop]
+        end = None
+        while q:
+            c = q.popleft()
+            if math.hypot(c[0] - goal[0], c[1] - goal[1]) <= 4:
+                end = c
+                break
+            for a, b in offs:
+                n = (c[0] + a, c[1] + b)
+                if n in prev or not (x0 <= n[0] <= x1 and y0 <= n[1] <= y1) or not free(n):
+                    continue
+                prev[n] = c
+                q.append(n)
+        if end is None:
+            return None
+        while prev[end] is not None and prev[end] != start:
+            end = prev[end]
+        return end
 
     def pilot(self, args, timeout=900):
         return sh(PY + [os.path.join(HERE, "d2pilot.py")] + args[:1] + [self.log] + args[1:] +
@@ -649,15 +701,123 @@ class Driver:
                             self.pilot(["explore", "--hops", "15", "--nova", "2"], timeout=240)
             elif kind == "die":               # die:N  N deaths: hop among monsters without casting until the life
                 self.die(int(rest))           # orb is empty, then Escape (the client's packet 0x41: back in town)
-            elif kind == "approach":          # approach:CLS[:PDEFS]  Teleport next to object class CLS (no click)
+            elif kind == "approach":          # approach:CLS[:PDEFS[:EX,EY]]  Teleport next to object class CLS (no click)
                 c, *pd = rest.split(":")
                 self.pilot(["objop", "--obj-cls", c, "--approach", "--time", "240", "--obj-near", "6"] +
-                           (["--to-pdef", pd[0]] if pd else []), timeout=320)
+                           (["--to-pdef", pd[0]] if pd else []) + (["--exclude-xy", pd[1]] if len(pd) > 1 else []),
+                           timeout=320)
             elif kind == "goto":              # goto:X:Y  walk (town) or Teleport next to a sub-tile position
                 x, y = rest.split(":")
                 print("goto: %s" % self.move_near(int(x), int(y), 7), flush=True)
             elif kind == "saveexit":          # Save and Exit; keep the written save beside the log (<log>.out.d2s)
                 self.saveexit()
+            elif kind == "use":               # part 3: use:C,R  right-click the inventory item at cell (C, R)
+                import d2pilot
+                t = Tail(self.log)
+                self.p.dpy.key("i")
+                time.sleep(0.6)
+                x, y = d2pilot.cell_xy("inv:" + rest)
+                self.p.dpy.click(self.p.off[0] + x, self.p.off[1] + y, button=3, hold=0.08)
+                time.sleep(1.0)
+                got = [tag for tag, d in t.lines() if tag in ("CRN", "CRN0", "QS", "EV")]
+                # the decoded scroll opens its panel beside the inventory: Escape closes both (an Escape with
+                # nothing open would open the game menu, so only then); otherwise 'i' closes the inventory
+                self.p.dpy.key("Escape" if "CRN" in got else "i")
+                time.sleep(0.6)
+                print("use %s: %s" % (rest, ",".join(got[:12]) or "nothing logged"), flush=True)
+            elif kind == "tpuse":             # part 3: right-click the tome at inventory (0, 0) once (a town: refused)
+                import d2pilot
+                t = Tail(self.log)
+                self.p.dpy.key("i")
+                time.sleep(0.6)
+                x, y = d2pilot.cell_xy("inv:0,0")
+                self.p.dpy.click(self.p.off[0] + x, self.p.off[1] + y, button=3, hold=0.08)
+                time.sleep(0.5)
+                self.p.dpy.key("i")
+                d = t.wait(lambda tag, d: tag == "EV" and d.get("k") == "tp" and d.get("ph") == 1, 6)
+                print("tpuse: %s" % (("exit eax %s" % d.get("eax")) if d else "no tp event"), flush=True)
+                time.sleep(0.5)
+            elif kind == "toward":            # part 3: toward:X,Y,W,H:HOPS  explore --any-level --to-rect (a tile rect)
+                rect, hops = rest.rsplit(":", 1)
+                self.pilot(["explore", "--any-level", "--to-rect", rect, "--hops", hops, "--nova", "2"], timeout=900)
+            elif kind == "push":              # part 3: push:X:Y:N  straight Teleport hops towards (X, Y) (walking out of
+                x, y, n = (int(v) for v in rest.split(":"))   # a town first), a short exploration when blocked
+                for _ in range(n):
+                    pos = self.pos()
+                    if not pos:
+                        time.sleep(1)
+                        continue
+                    if math.hypot(x - pos[0], y - pos[1]) <= 25:
+                        break
+                    if pos[2] in TOWNS:
+                        self.pilot(["explore", "--any-level", "--walk", "--hops", "8"], timeout=180)
+                        continue
+                    p0 = (pos[0], pos[1])
+                    self.move_near(x, y, 25)
+                    pos = self.pos()
+                    if pos and math.hypot(pos[0] - p0[0], pos[1] - p0[1]) < 20:
+                        self.pilot(["explore", "--any-level", "--hops", "4", "--nova", "2"], timeout=150)
+                pos = self.pos()
+                print("push: at %s, goal (%d, %d)" % (pos, x, y), flush=True)
+            elif kind == "walkto":            # part 3: walkto:X:Y  walking clicks 12 sub-tiles towards (X, Y): the
+                x, y = (int(v) for v in rest.split(":"))   # game's own path search goes round what the logged cells miss
+                ok = False
+                for _ in range(80):
+                    pos = self.pos()
+                    if not pos:
+                        time.sleep(0.5)
+                        continue
+                    d = math.hypot(x - pos[0], y - pos[1])
+                    if d <= 5:
+                        ok = True
+                        break
+                    k = min(12.0, d) / d
+                    self.click_rel((x - pos[0]) * k, (y - pos[1]) * k)
+                    time.sleep(1.2)
+                print("walkto (%d, %d): %s at %s" % (x, y, "arrived" if ok else "stopped", self.pos()), flush=True)
+            elif kind == "pathto":            # part 3: pathto:X:Y  Teleport along a breadth-first walking path over the
+                x, y = (int(v) for v in rest.split(":"))   # known free cells (d2pilot.path_near), 9 sub-tiles a hop
+                ok = False
+                for _ in range(60):
+                    pos = self.pos()
+                    if not pos:
+                        time.sleep(0.5)
+                        continue
+                    if math.hypot(x - pos[0], y - pos[1]) <= 4:
+                        ok = True
+                        break
+                    tgt = self.d2p.path_near(self.st, (x, y), 3, 9.0) or self.jump_path(pos, (x, y))
+                    if tgt is None:
+                        break
+                    self.p.teleport(tgt[0] - pos[0], tgt[1] - pos[1])
+                    time.sleep(0.6)
+                print("pathto (%d, %d): %s at %s" % (x, y, "arrived" if ok else "stopped", self.pos()), flush=True)
+            elif kind == "clickobj":          # part 3: clickobj:CLS  walk next to the object of class CLS (OBJS
+                cls = int(rest)               # lines) and click it until its operate (OOP) is logged
+                objs = []
+                for _ in range(20):           # the OBJS line lags a new object (Tyrael's portal) by a few seconds
+                    o = last(self.log, "OBJS")
+                    objs = [u for u in (o or {}).get("o", []) if u[0] == cls]
+                    if objs:
+                        break
+                    time.sleep(0.5)
+                pos = self.pos()
+                if not objs or not pos:
+                    print("clickobj %d: not logged" % cls, flush=True)
+                    continue
+                ox, oy = min(objs, key=lambda u: math.hypot(u[1] - pos[0], u[2] - pos[1]))[1:]
+                self.move_near(ox, oy, 4)
+                ok = False
+                for k in range(8):
+                    pos = self.pos()
+                    t = Tail(self.log)
+                    self.click_rel(ox - pos[0], oy - pos[1], up=(25, 40, 55, 10)[k % 4])
+                    if t.wait(lambda tag, d: (tag == "OOP" and d.get("cls") == cls) or
+                              (tag == "EV" and d.get("ph") == 0 and d.get("k") in ("npcmove", "chlevel", "portal")), 4):
+                        ok = True
+                        break
+                print("clickobj %d at (%d, %d): %s" % (cls, ox, oy, "operated" if ok else "no operate"), flush=True)
+                time.sleep(2.0)
             elif kind == "key":
                 self.p.dpy.key(rest)
                 time.sleep(0.5)
@@ -944,6 +1104,55 @@ sess("x-tristram", "TravelWpOne", "enter-normal", 4372, ["towp2", "wp:1,3", "app
 
 sess("x-tristram2", "TravelWpOne", "enter-normal", 4373, ["towp2", "wp:1,3", "approach:17:160", "sleep:6", "saveexit"])
 sess("x-talk3b", "QuestTalkThree", "enter-normal", 4326, ["talk:254:2", "talk:245:2", "talk:252:2", "saveexit"])
+
+# ---- part 3, run:2026-10-19-quests3 (plan 0042 Phase 2 part 3): saves from tools/d2s_recipes/quest-p3*.json
+# QuestEntry (Act I; words 4, 11, 12, 37 clear; tome at 0,0, bkd at 1,0): a refused town portal in the camp, the bkd use
+# (the cairn order's quest-seed draws) twice, Lut Gholein (word 4's "Cain lost"), Lost City (word 11's eclipse arm and
+# its timer), Far Oasis and Lost City again, the Kurast Docks and the Dark Wanderer (word 32's timer), Arreat Plateau,
+# Crystalline Passage, Halls of Pain (word 37's level-entry steps), the palace last (word 12, level 50; x-entry ran an
+# older order with the palace second and `5,5`, Glacial Trail, for Halls of Pain)
+P3_ENTRY = ["tpuse", "use:1,0", "use:1,0", "towp2", "wp:2,1", "towp2", "wp:2,6", "sleep:22", "nearwp", "wp:2,5", "nearwp",
+            "wp:2,6", "nearwp", "wp:3,1", "goto:5150:4966", "sleep:15", "goto:5159:5054", "towp2", "wp:5,3", "nearwp",
+            "wp:5,4", "nearwp", "wp:5,6", "nearwp", "wp:2,1", "warp1:24", "saveexit"]
+sess("x-entry", "QuestEntry", "enter-normal", 4401, P3_ENTRY)
+sess("x-entry2", "QuestEntry", "enter-normal", 4402, P3_ENTRY)
+sess("h-entry", "QuestEntry", "enter-hell", 4403, P3_ENTRY, ["--es", "30"])
+# QuestAnya (Act V; word 37 bits 1, 8, 15; tr2 at 1,0): Anya's reward (one quest-seed draw), the tr2 use (word 37 b7)
+P3_ANYA = ["goto:5088:5060", "goto:5096:5108", "talk:512:1", "use:1,0", "tpuse", "saveexit"]   # around the waypoint (5114, 5069)
+sess("x-anya", "QuestAnya", "enter-normal", 4411, P3_ANYA)
+sess("h-anya", "QuestAnya", "enter-hell", 4412, P3_ANYA, ["--es", "30"])
+sess("nm-anya", "QuestAnya", "enter-nightmare", 4413, P3_ANYA, ["--es", "30"])
+# Meshif west (NPC 264: NpcTravelMove(40, 5), the type-5 point) and back east, from the Kurast Docks
+sess("x-meshifw", "QuestMeshifW", "enter-normal", 4421, ["talk:264:1"] + (["menu:meshif2:2:1", "sleep:3",
+                                                          "goto:5205:5060", "menu:meshif:2:1", "sleep:3"] * 6) +
+     ["saveexit"])
+# Tyrael's Act IV -> V travel (word 28 first set, then set) and back by waypoint
+# (part 3: Tyrael's menu offers only talk and cancel; the travel is the red portal, object 566, OperateFn
+# 0x005B5880, next to him)
+sess("x-tyrael3", "ActFiveTyrael", "enter-normal", 4431, ["talk:367:1"] + (["clickobj:566", "sleep:3", "towp",
+                                                                         "wp:4,1", "sleep:2"] * 5) + ["saveexit"])
+# the Book of Skill (word 9 b5 clear at its use; part 1's QuestBookHeld: ass at inventory 1,0, Act II)
+sess("x-book", "QuestBookHeld", "enter-normal", 4451, ["use:1,0", "saveexit"])
+sess("dev-meshif", "QuestMeshifW", "enter-normal", 4429, ["talk:264:1", "sleep:600"])   # menu probe (development)
+sess("dev-tyrael", "ActFiveTyrael", "enter-normal", 4439, ["talk:367:1", "sleep:600"])   # menu probe (development)
+# death and resurrection (packet 0x41): the 24-life save in the Cold Plains
+sess("x-death3", "QuestDeath", "enter-normal", 4441, ["towp2", "wp:1,2", "die:3", "saveexit"])
+# (part 3: in Normal the Cold Plains monsters seldom hit the 24-life save; Hell kills it)
+sess("h-death3", "QuestDeath", "enter-hell", 4442, ["towp2", "wp:1,2", "die:3", "saveexit"])
+# waypoint activation from mode 0: Act I, the towns' waypoints only; walk out and explore to the Cold Plains waypoint
+for k in range(12):
+    sess("x-wpact1-%d" % k, "QuestWpAct", "enter-normal", 4322 + 100 * k, ["activate:1:9", "saveexit"])
+sess("x-wpact1-0", "QuestWpAct", "enter-normal", 4322, ["toward:1020,935,14,14:160", "activate:1:4", "saveexit"])
+# map seed 4361 (part 2's x-wpact3): the Spider Forest waypoint (class 237) stands in the preset room Def 581 at
+# (5099, 4769); from the Kurast Docks, walk to the forest edge, then objop --approach plans over the level's rooms
+for k in range(20):
+    sess("x-wpact3r-%d" % k, "TravelWpOne", "enter-normal", 4361, ["towp2", "wp:3,1", "goto:5150:4966",
+                                                                  "approach:237:581:5159,5049", "pathto:5099:4772", "activate:1:3",
+                                                                  "saveexit"])
+# map seed 4322: the Cold Plains waypoint stands at sub-tile (5134, 4709) (an older log of that seed, economy-s1-4322);
+# head for its tile rect from the camp, then activate it
+for k in range(12):
+    sess("x-wpactr-%d" % k, "QuestWpAct", "enter-normal", 4322, ["push:5134:4709:12", "activate:1:4", "saveexit"])
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

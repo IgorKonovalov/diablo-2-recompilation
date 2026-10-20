@@ -624,13 +624,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   review request closed. Follow-ups open: spec-writer (wiki page and refresh), reverser (shrine-and-well addendum;
   checker chaining count and tests; op 6/7 emulation, optional).
 - **2026-10-17 — Wiki page written (spec-writer, `lane/wiki7`, from `main` `a3a5abe`).** The backlog entry
-  [plan-0041-wiki-after-review](../../backlog/2026-10-17-spec-writer-spec-writer-plan-0041-wiki-after-review.md) is
+  [plan-0041-wiki-after-review](../../backlog/archive/2026-10-17-spec-writer-spec-writer-plan-0041-wiki-after-review.md) is
   closed: [wiki/stats-and-states](../../wiki/stats-and-states.md) (new, `based_on` the three stats specs at
   2026-10-17, 16 sections, four diagrams, six worked examples from the specs), indexed in the
   [wiki README](../../wiki/README.md) (stats and states now covered, the second simulation row), and linked from
   [wiki/combat](../../wiki/combat.md) (inputs, the player's life tick, *not known*) and
   [wiki/characters](../../wiki/characters.md) (the level-up maxima). Review requested:
-  [wiki7 review](../../backlog/2026-10-17-spec-writer-architect-wiki7-stats-and-states-review.md).
+  [wiki7 review](../../backlog/archive/2026-10-17-spec-writer-architect-wiki7-stats-and-states-review.md).
   - **Next:** architect review of `lane/wiki7`.
 - **2026-10-17 — `lane/wiki7` review (architect): accept with fixes.** Checked against stats/README, stats/aggregate
   and stats/states statement by statement, the combat poison tick against [combat/delivery § E](../../specs/combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze)
