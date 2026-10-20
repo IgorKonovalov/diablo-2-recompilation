@@ -181,8 +181,40 @@ class Tables:
         return bool(self.ms[c][0x0C] & 0x04)
 
     def monequip_oninit(self, c):
-        r = self.m16(c, 0x2A)
-        return 0 <= r < len(self.me) and self.me[r][2] != 0
+        """MonEquip `oninit` of the class's first row: the byte at +0x04 (plan 0048 Phase 1: MonEquipInit 0x005D6B60
+        tests `(char) row[+4]`; +0x02 is the s16 level; the earlier reading of +0x02 made this false for every class)."""
+        r = self.monequip_first(c)
+        return r is not None and self.me[r][4] != 0
+
+    def monequip_first(self, c):
+        """MonStats +0x2A as MONEQUIP_Load (0x0065A070) fills it at load: the first monequip row whose `monster` is c
+        (the .bin holds no value there), else None."""
+        if not hasattr(self, "_me_first"):
+            self._me_first = {}
+            for i, row in enumerate(self.me):
+                m = struct.unpack_from("<h", row, 0)[0]
+                if 0 <= m < len(self.ms) and m not in self._me_first:
+                    self._me_first[m] = i
+        return self._me_first.get(c)
+
+    def monequip_rows(self, c, lvl):
+        """The rows MonEquipInit walks for class c at monster level lvl (0x005D6B60): from the class's first row
+        (+0x2A), skip the rows of the class whose level (+0x02, s16) is above lvl, then every following row of the class."""
+        r = self.monequip_first(c)
+        out = []
+        if r is None:
+            return out
+        mon = lambda i: struct.unpack_from("<h", self.me[i], 0)[0] if i < len(self.me) else -1  # noqa: E731
+        lev = lambda i: struct.unpack_from("<h", self.me[i], 2)[0]  # noqa: E731
+        while mon(r) == c and lvl < lev(r):
+            r += 1
+        while mon(r) == c:
+            out.append(self.me[r])
+            r += 1
+        return out
+
+
+MONEQUIP_MODEL = True    # plan 0048 oracle 13: MonEquipInit's unit-seed draws modelled ([I]); False: the seed oracle
 
 
 class MonEquipOracle(Exception):
@@ -225,9 +257,34 @@ class Model:
         o = self.monlvl_stats(cls, L, d, lvl)
         seed.rangeb(o[1] - o[0] + 1)
         self.monprop(seed, cls, d)
+        self.equip_items = 0
         if self.T.monequip_oninit(cls):
-            raise MonEquipOracle(cls)
+            if not MONEQUIP_MODEL:
+                raise MonEquipOracle(cls)
+            self.equip_items = self.monequip(seed, cls, lvl)
         return seed
+
+    def monequip(self, seed, cls, lvl):
+        """Plan 0048 Phase 1, oracle 13 ([I], no logged case): MonEquipInit 0x005D6B60 as called from MonStatsInit
+        (0x00574235: oninit only, item level = monster level). Per row: the leading locations +0x14..+0x16 in 1..10
+        give a count n; if n > 0, i = Range(unit seed, n) (a power of two masks, but steps all the same); when that
+        inventory location is still free, item i (code +0x08 + 4i, modifier +0x17 + i) is created (FUN_00573B20).
+        Returns the number of items created; each one's creation is the item chain's (two game-seed steps at its
+        SUnitCreate, rng/seeds 7a, then its own builds on its item seed)."""
+        used, n_items = set(), 0
+        for row in self.T.monequip_rows(cls, lvl):
+            n = 0
+            while n < 3 and 1 <= struct.unpack_from("b", row, 0x14 + n)[0] <= 10:
+                n += 1
+            if n <= 0:
+                continue
+            i = seed.rangeb(n) if n & (n - 1) else (seed.step() & (n - 1))
+            loc = struct.unpack_from("b", row, 0x14 + i)[0]
+            if loc in used:
+                continue
+            used.add(loc)
+            n_items += 1
+        return n_items
 
     def player_bonus(self, cls, g6d, pset, g6a, alive=1):
         """sub_00573930_MonPlayerBonus -> [hpPct, xpPct, skillBonus, difficulty, players]."""

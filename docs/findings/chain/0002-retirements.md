@@ -51,6 +51,14 @@ oracles still taken from the log.
   seeds: the object's unit seed after the drop equals the resolver's predicted exit seed, and the game seed after it is
   predicted from the items the drop creates; 59 object drops, 0 mismatches (§ 10). (fn:TC_ResolveDrops@0x0055A6D0,
   run:2026-10-15-objects)
+- [I] **Oracle 13 (MonEquip's items) is modelled but unreached**: its draws on the unit seed and the two game-seed
+  steps per item are in the chain; the two stock classes with an `oninit` row (234 and 267, Blood Raven) were not
+  created on the kept logs. A reading error of `tools/monstats.py` (the `oninit` byte) is corrected on the way (§ 11).
+  (fn:sub_005D6B60_MonEquipInit@0x005D6B60)
+- [I] **Oracle 20 (the pass-entry grid snapshot) is not retired**: the composed grid (activation stamp plus the
+  logged window marks) already equals the snapshot in 3 871 of 3 998 pass rooms; the predicates still read the
+  snapshot, the barrier grid of the flood stays an input (its builder is read, not modelled) and so does the type-11
+  point (§ 12). (fn:sub_0054EC90_RoomPopulate@0x0054EC90, fn:LOGIC_BarrierGridBuild@0x0066C870)
 - [C] **`tools/chain.py gen`** reproduces the seed tree the rng/seeds worked example logged from `-seed N` alone (game
   seed, the four game-creation draws, act bases, Act II tombs, level seeds) (§ 1). (fn:GAME_InitSeeds@0x0052C280,
   fn:DRLG_ActCreate@0x00642DA0, fn:DRLG_LevelCreate@0x00642AE0, run:2026-10-11-seed-tree)
@@ -290,15 +298,60 @@ oracle left when it predicted every one of them.
   `CM` lines are applied from the log), and the item builds' own draws, which are the item chain's and need the item
   lines this logger does not write. (fn:sub_00558D90_ItemCreate@0x00558D90)
 
+## 11. Oracle 13: MonEquip's items
+
+- [C] The `monequip` record's `oninit` byte is at `+0x04` (`MonEquipInit` tests `(char) row[+4]`; the s16 at `+0x02` is
+  the level it compares with the monster level), and a class's first row is the first record whose `monster` is the
+  class (`MonStats +0x2A` is written at load, 0 in the `.bin`). `tools/monstats.py` read `+0x02` of row `+0x2A`, so its
+  `MonEquipOracle` never fired; with the correction the stock table has two `oninit` classes, 234 and 267.
+  (fn:sub_005D6B60_MonEquipInit@0x005D6B60, fn:sub_005D30A0_MonEquipFirstRow@0x005D30A0, 0x005D6BA5)
+- [I] The model (`tools/monstats.py Model.monequip`, from monsters/0004 § 6): rows of the class from the first whose
+  level is at most the monster level; per row, n = the leading locations in 1..10 (at most 3); if n > 0 one unit-seed
+  step picks one (masked for a power of two, a step all the same), and a free location gets its item. In
+  `tools/monspawn.py` each item adds two game-seed steps inside the creation. `tools/test_chain.py` checks the walk
+  on stub rows. No creation of class 234 or 267 is in the 62 world logs (`grep` of their `MU` lines finds none), so
+  the model is unreached and stays `[I]`; the item builds themselves are the item chain's. (fn:sub_005D6B60_MonEquipInit@0x005D6B60,
+  fn:sub_00573B20_MonEquipItemCreate@0x00573B20, fn:sub_00555230_SUnitCreate@0x00555230)
+- The archivist's MonEquip table doc ([backlog entry](../../backlog/2026-10-20-architect-archivist-monequip-table-doc-for-plan-0048.md))
+  should record the `+0x04` `oninit` byte and the load-time `MonStats +0x2A`; a note is added to that entry.
+
+## 12. Oracle 20: the grid snapshot, the barrier grid, the type-11 point (named, not modelled)
+
+- [C] How far the composition already reaches: `tools/monspawn.py`'s R3 comparison over the 62 world logs
+  (`o20-monspawn-r3.txt`) puts the activation model (every active room's stamp from its tile entries) beside the
+  pass-entry snapshot in 3 998 pass rooms: 21 205 cells differ before the window's marks, 447 after them (20 758
+  explained by the logged preset and object marks); 3 871 rooms are exact and 127 keep a residue of unit bits
+  (`0x80` 260 cells, `0x100` 92, `0x1080` 65, `0x1100` 16, `0x404` 9, `0x400` 5): the players, monsters that walked in,
+  items and corpses the assignment keeps as logged inputs. (fn:sub_0054EC90_RoomPopulate@0x0054EC90,
+  fn:COLL_StampTileList@0x0064C790, run:2026-10-14-collision, run:2026-10-15-objects)
+- [I] **Not modelled, with the reason.** The pass's predicates still read the logged snapshot (`SN`): replacing it with
+  the composed grid needs the residue's cells as an explicit input list per pass room (a new input record), and the
+  window's monster marks applied from the model rather than from the `CM` lines; neither is in the checkers yet. The
+  residue also holds 14 cells of object bits (`0x400`, `0x404`) that no window mark explains, whose source is not
+  followed. (fn:sub_0054EC90_RoomPopulate@0x0054EC90)
+- [I] **The barrier grid** of the logic flood, `LOGIC_BarrierGridBuild` (read in the decompile): for each tile entry
+  of the room (`RoomTile +0x14`, 0x30-byte records, count `+0x18`) whose flags `+0x14` have `& 0x1C000 = 0x4000`,
+  whose orientation `+0x1C` is not 15 and whose bit 11 is clear, `sub_0067C4F0_GridCellOp(grid, position, 1, op 0)`;
+  then the same test on the tile lists of the near rooms, at the position relative to the room when
+  `sub_0066B9D0_RectContainsIncl` holds. It is a pure function of the tile entries `tools/drlg.py` builds, so it is
+  modellable (or emulable under ADR-0015 with the entries as the declared read set); it stays a logged input of the flood
+  (`LG0`) here. (fn:LOGIC_BarrierGridBuild@0x0066C870, fn:sub_0067C4F0_GridCellOp@0x0067C4F0,
+  fn:sub_0066B9D0_RectContainsIncl@0x0066B9D0)
+- [I] **The type-11 point** (`NWW`) stays logged: drlg/warps § D1 gives its rule (the waypoint object's tile for a
+  `Position`-0 level, a level-seed draw among the level's slot-33 points otherwise), but the chain does not yet carry
+  the level's preset unit lists to the walk that needs them. (fn:sub_0066B2B0_LevelPointFind@0x0066B2B0,
+  fn:sub_0054DB50_NearWarpTest@0x0054DB50)
+
 ## Kept outputs
 
 `workspace/logs/chain-p1/`, one path base, `manifest.txt` (`sha256sum -c manifest.txt` from that directory):
 `o2-items-check.txt` (`tools/chain.py check` over the 133 item logs), `o14-world-check.txt` (over the 62 world
 logs), `o14-cf-{findadd-none,monprop-off,L0}.txt` (the controls), `o16-world-check.txt` and
 `o16-cf-{lcv-off,overlay-off}.txt` (oracle 16), `o17-world-check.txt` and `o17-cf-i46-stored.txt` (oracle 17), `o22-world-check.txt` (oracle 22), `o19-world-check.txt` (oracle 19), `o21-world-check.txt` and
-`o21-cf-state-stale.txt` (oracle 21), `o7-world-check.txt` (oracle 7), `o6-world-check.txt` (oracle 6), and the input lists `inputs-world.sha256` and
+`o21-cf-state-stale.txt` (oracle 21), `o7-world-check.txt` (oracle 7), `o6-world-check.txt` (oracle 6), `o13-world-check.txt` (oracle 13), `o20-monspawn-r3.txt` (`tools/monspawn.py check` over the 62 world
+logs, for the R3 counts of oracle 20, same tools as `tools-o13.sha256`), and the input lists `inputs-world.sha256` and
 `inputs-items.sha256` (paths relative to `chain-p1/`, so `sha256sum -c` runs from there too). The tool revisions
-behind these outputs are recorded in `tools-o14.sha256`, `tools-o16.sha256`, `tools-o17.sha256`, `tools-o22.sha256`, `tools-o19.sha256`, `tools-o21.sha256`, `tools-o7.sha256` and `tools-o6.sha256` (paths relative to the repository
+behind these outputs are recorded in `tools-o14.sha256`, `tools-o16.sha256`, `tools-o17.sha256`, `tools-o22.sha256`, `tools-o19.sha256`, `tools-o21.sha256`, `tools-o7.sha256`, `tools-o6.sha256` and `tools-o13.sha256` (paths relative to the repository
 root).
 
 ## Open questions

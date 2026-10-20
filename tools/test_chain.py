@@ -8,6 +8,7 @@ No game file is read.
   - the items oracle switch: chain.py check's default is the staff-mods model (oracle 2 retired);
   - oracle 14: monstats.Model.init_seed's draw count on a stub table (variant set, per-component counts, doomknight,
     an HP range below 1, MonProp off) and the MonEquip oracle it raises;
+  - oracle 13: monstats.Tables' MonEquip row walk (oninit at +0x04, the level skip) and Model.monequip's draws;
   - oracle 16: monspawn.PresetMonPass's class chain (sub_00651040), LevelClassVariant and PresetFallenVariant on stub
     MonStats / Levels records.
 """
@@ -115,8 +116,54 @@ class InitSeed(unittest.TestCase):
 
     def test_monequip(self):
         monstats, M = self.model([1], oninit=True)
-        with self.assertRaises(monstats.MonEquipOracle):
-            M.init_seed(monstats.Seed((1, rng.INIT_HIGH)), 5, 2, 0, 1, 1, 0)
+        monstats.MONEQUIP_MODEL = False                  # the switch restores the seed oracle
+        try:
+            with self.assertRaises(monstats.MonEquipOracle):
+                M.init_seed(monstats.Seed((1, rng.INIT_HIGH)), 5, 2, 0, 1, 1, 0)
+        finally:
+            monstats.MONEQUIP_MODEL = True
+
+
+class MonEquip(unittest.TestCase):
+    def tables(self):
+        import struct
+        import monstats
+
+        def row(mon, lvl, oninit, locs):
+            r = bytearray(0x1C)
+            struct.pack_into("<hh", r, 0, mon, lvl)
+            r[4] = oninit
+            for i, l in enumerate(locs):
+                r[0x14 + i] = l
+            return bytes(r)
+        T = monstats.Tables.__new__(monstats.Tables)
+        T.ms = [bytes(0x1A8)] * 20
+        T.me = [row(5, 0, 1, [4]), row(7, 30, 1, [1, 2, 3]), row(7, 10, 0, [1, 1]), row(7, 0, 0, [11]),
+                row(8, 0, 0, [4]), row(-1, 0, 0, [])]
+        return monstats, T
+
+    def test_rows(self):
+        monstats, T = self.tables()
+        self.assertTrue(T.monequip_oninit(5))
+        self.assertTrue(T.monequip_oninit(7))           # only the class's first row is tested
+        self.assertFalse(T.monequip_oninit(8))
+        self.assertEqual(len(T.monequip_rows(7, 40)), 3)
+        self.assertEqual(len(T.monequip_rows(7, 20)), 2)  # the level-30 row is skipped
+        self.assertEqual(len(T.monequip_rows(9, 20)), 0)
+
+    def test_draws(self):
+        monstats, T = self.tables()
+        M = monstats.Model(T)
+        sd = monstats.Seed((7, rng.INIT_HIGH))
+        self.assertEqual(M.monequip(sd, 7, 20), 1)       # row (1, 1): one draw over two locations, one item;
+        self.assertEqual(sd.t(), rng.step(7, rng.INIT_HIGH))   # row (11): no location in 1..10, no draw
+        T.me[3] = T.me[2]                                # a second row on the same location: a draw, no item
+        sd = monstats.Seed((7, rng.INIT_HIGH))
+        self.assertEqual(M.monequip(sd, 7, 20), 1)
+        self.assertEqual(sd.t(), rng.step(*rng.step(7, rng.INIT_HIGH)))
+        sd = monstats.Seed((7, rng.INIT_HIGH))
+        self.assertEqual(M.monequip(sd, 5, 1), 1)        # one location: a draw all the same
+        self.assertEqual(sd.t(), rng.step(7, rng.INIT_HIGH))
 
 
 class PresetVariants(unittest.TestCase):

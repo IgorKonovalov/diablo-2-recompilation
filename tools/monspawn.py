@@ -722,10 +722,19 @@ class Pass:
         self.eq("MU0 gs", mu0["gs"], fmt(self.gs.t()))
         g_after = step(self.gs.lo, self.gs.hi)
         mu = self.take("MU")
-        self.eq("SUnitCreate game-seed draw (one step)", mu["gs"], fmt(g_after))
-        self.gs = S(g_after) if self.gs is not None else None
-        self.eq("MU rs", mu["rs"], fmt(rsd.t()))
         u = mu["unit"]
+        n_eq = 0
+        if u and u["cls"] == cls:
+            # plan 0048: the unit seed first (oracle 14); MonEquipInit's items (oracle 13, [I]) step the game seed twice
+            # each inside the creation
+            n_eq = self.chk.unit_seed(self, cls, (g_after[0], INIT_HIGH), u["us"]) or 0
+        g_end = g_after
+        for _ in range(2 * n_eq):
+            g_end = step(*g_end)
+        self.eq("SUnitCreate game-seed draw (one step%s)" % (", and two per MonEquip item" if n_eq else ""), mu["gs"],
+                fmt(g_end))
+        self.gs = S(g_end) if self.gs is not None else None
+        self.eq("MU rs", mu["rs"], fmt(rsd.t()))
         if not u:
             self.guard("H2 unit = none")
             return 0
@@ -736,7 +745,6 @@ class Pass:
             except collision.NotLogged as e:
                 self.chk.oracle("creation mark (model needs %s)" % str(e).split(" of room")[0])
         us0 = (g_after[0], INIT_HIGH)
-        self.chk.unit_seed(self, cls, us0, u["us"])
         j = drlg_steps(us0, seed_t(u["us"]))
         self.chk.unit_steps[j] = self.chk.unit_steps.get(j, 0) + 1
         if j != 2:
@@ -1708,6 +1716,10 @@ class Checker:
         self.checks += 1
         k = "unit seeds after SUnitCreate predicted (oracle 14 retired)"
         self.stats[k] = self.stats.get(k, 0) + 1
+        if self.msm.equip_items:
+            k = "MonEquipInit items (oracle 13, [I] model)"
+            self.stats[k] = self.stats.get(k, 0) + self.msm.equip_items
+        return self.msm.equip_items
 
     def region_check(self, path, reg, diff, exp):
         if reg is None:
