@@ -4324,6 +4324,9 @@ def area9d(rnd, game):
                 for i, v in enumerate(el):
                     c.put(base + 0x214 + 4 * i, le32(v))
                 row["el"] = el
+                if rnd.random() < 0.3:      # the end frame at the length, one under or one over (the `jg` edge)
+                    md["w28"] = (frame + elem_len9d(json.loads(json.dumps(row))) + rnd.choice((-1, 0, 0, 1))) & M32
+                    c.put(MD + 0x28, le32(md["w28"]))
         row.update(put_hit_unit(c, rnd))
         put_monstats(c, rnd, row)
         row = json.loads(json.dumps(row))
@@ -4380,7 +4383,8 @@ def area9d_model(row, game, br, neg=None):
         return ret9c(row, 1)
     if w == "hit56":
         br["build56"] += 1
-        return obs9c(row, "BuildDamage", {"ecx": game, "edx": own}, [MU, 0, None], 0x005ACD38)
+        return obs9c(row, "BuildDamage", {"ecx": game, "edx": own}, [MU, 0 if neg != "unit56" else unit, None],
+                     0x005ACD38)
     if unit and (row["utype"] != 1 or not ms2_flag(row, 11 if neg != "flag10" else 10)):
         br["pass_ret2"] += 1
         return ret9c(row, 2)
@@ -4411,6 +4415,7 @@ def event9d(rnd, game):
             if rnd.random() < 0.8:
                 put_unit_found(c, rnd, OBJ, 2, w28 & M32, decoy=(w28 ^ 0x40) & M32 if rnd.random() < 0.2 else None)
                 orm = rnd.choice([0x13000000 + 0x100 * rnd.randrange(16), 0, 0])
+                c.put(OBJ + 0x00, le32(2))          # the type UnitGetRoom (0x00620BB0) tests: 2 reads the static path
                 c.put(OBJ + 0x2C, le32(OBJP))
                 c.put(OBJP + 0x00, le32(orm))
                 mode = rnd.choice([0, 0, 1, rnd.getrandbits(32)])
@@ -4536,7 +4541,7 @@ CHECKS.update({
                                                                   "ownseed"],
                         [RS_HASH, RS_RING16T, RS_RING8B]),
     "nova9d": check9b("nova9d", nova9d_model, ["cb45", "hp_swap", "fatal8"], [RS_HASH, RS_SKN, RS_CALC_JT]),
-    "area9d": check9b("area9d", area9d_model, ["s10", "lenlt", "flag10"],
+    "area9d": check9b("area9d", area9d_model, ["s10", "lenlt", "flag10", "unit56"],
                       [RS_HASH, RS_SKN, RS_CALC_JT, RS_BITMASK9C]),
     "event9d": check9b("event9d", event9d_model, ["p3portal", "skillfirst", "mode1"], [RS_HASH]),
 })
@@ -4554,7 +4559,7 @@ PINS9D = [  # (address, mnemonic, operand substring): instructions the 9d claims
     (0x005AC456, "jl", ""), (0x00647CF1, "shl", "eax,cl"), (0x00647BF0, "mov", "al,ds:0x6ce26c"),
     (0x005AC4CD, "jle", ""), (0x005AC523, "je", ""),                                               # hit 45
     (0x005AC5AC, "jne", ""), (0x005AC5B5, "mov", "edx,0xb"),                                       # hit 47
-    (0x005AC855, "jge", ""), (0x005AC850, "sub", "eax,DWORD PTR [esi+0x4c]"),                     # hit 50
+    (0x005AC856, "jge", ""), (0x005AC850, "sub", "eax,DWORD PTR [esi+0x4c]"),                     # hit 50
     (0x005AC9F0, "mov", "ecx,DWORD PTR [esi+0x6e2a58]"), (0x005AC9BE, "mov", "DWORD PTR [ebp-0x58],esi"),  # hit 52
     (0x005ACA91, "cmp", "esi,0xa"), (0x005ACA94, "jl", ""), (0x005ACAA5, "jg", ""),               # hit 53
     (0x00644FD8, "jae", ""),                                                                        # GetElemLen

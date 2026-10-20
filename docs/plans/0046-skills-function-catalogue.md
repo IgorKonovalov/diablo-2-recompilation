@@ -342,3 +342,25 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `workspace/logs/skills-cat-9d/rows.txt` (stock rows) with `manifest.sha256`. **Resume:** run the five families
   under EmuBoundary (procedure of 9c, `GHIDRA_PROJ_DIR=workspace/ghidra-p46m4`), fix model mismatches, then write the
   finding and the rest as the batch prompt lists.
+- **2026-10-20 — Phase 1 batch 9d landed for review (reverser, `lane/p46m4`, static, no harness; resumed from the
+  checkpoint above).** Missile server hit functions 31–59: the 24 filled entries (30, 34, 41, 42, 46, 49 and 60–70
+  null, count 71), all read; 23 emulated (hit 44 is 9c's) and **hit 2** (tier A, carried from 9c by ruling 3)
+  ([skills/0007](../findings/skills/0007-missile-hit-31-59.md)). Draws before the boundaries: hit 31 (the `EType`
+  roll), hit 43 (one `RNG_RangeB(PhysMax − PhysMin)`), hit 58 (re-seed from x, two `RNG_Range(2r + 1)`), all on the
+  missile's seed; no case steps the owner's or the target's. Raised by emulation (run:2026-10-20-cat-emu-9d,
+  `tools/skills_catalogue_emu.py --batch 9d`, `check.txt` `9ec69cf5…`, `manifest.sha256` `6fa68cd0…`): five
+  families, 8 400 cases, 0 mismatches, 28 boundary/call-site triples asserted (site control 3 796 of 3 796), the three
+  seeds compared in every case, the `MissileCreate` block and hit 47's packet compared by content, two to six
+  negative controls per family (each family has one failing 53 or more); no model compares a non-argument register
+  (ruling 1 of the 9c review). Fixes during the run: `event9d`'s object lacked its type word (58 hit-35 cases), the
+  rabies length edge was never hit (writer now targets it), `area9d` had no control reaching 50 (`unit56` added), one
+  static pin off by one instruction. The same tool regenerates 9a/9b/9c's case files and reproduces their `check.txt`
+  and `static.txt` byte for byte (`repro.txt`). Surprises: **hit 52 (blade fury) creates Missiles class 0 (`arrow`)**,
+  its block's class word never written; hit 38/45's nova helper asserts (`0x00408090(0xF0D)`) for `n ≥ 41`, which
+  stock hit 38 reaches at missile level 20; hit 43 (healing vortex) heals any hit unit with no owner or ally test;
+  hit 47 (molten boulder) explodes only on MonStats2 `large` monsters or at the end of life; hit 39 spawns on every
+  call; the Skills `Kick` maximum divides by 3, not 4 (`[I]`). Row 568's 64 948: the four hit-table reads sit behind a
+  signed `test ax, ax; jle` (scan `[C]`, meaning `[I]`). Tags: 38 `[C]`, 10 `[I]`, 4 `[L]` bullets; 28 symbols added
+  (`I`). Dated notes in skills/0003 § 6 and skills/0006 § 16. Review request
+  [to the architect](../backlog/2026-10-20-reverser-architect-lane-p46m4-review-plan-0046-batch-9d.md); column
+  readers [to the archivist](../backlog/2026-10-20-reverser-archivist-plan-0046-9d-missiles-skills-column-readers.md).
