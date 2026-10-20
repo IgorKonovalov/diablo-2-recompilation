@@ -145,6 +145,14 @@ for name, wp, seed in (("darkwood", "1,4", 4711), ("lostcity", "2,6", 4712), ("m
     # the Far Oasis and the Catacombs
     SESSIONS["sorh-n-" + name] = ("CombatSorH", "enter-normal", seed,
                                   [(SWEEP + ["--wp", wp, "--players", "8", "--time", "270"], 340)])
+for name, wp, seed in (("upperk", "3,7", 4716), ("travincal", "3,8", 4717), ("spider", "3,2", 4718),
+                       ("cityd", "4,2", 4719)):
+    # plan 0047 Phase 2: the Dark Wood's cold rows (fallen2, quillrat2) and the Black Marsh's lightning row (goatman2)
+    # have an empty El1Pct, so they never add the element; levels whose MonStats rows add it (El1Pct > 0): cold in
+    # Upper Kurast (cantor2 55) and Travincal (cantor3 65, vampire2 65), lightning in the Spider Forest (batdemon2 70)
+    # and the City of the Damned (bighead5 100, batdemon5 85)
+    SESSIONS["sorh-n-" + name] = ("CombatSorH", "enter-normal", seed,
+                                  [(SWEEP + ["--wp", wp, "--players", "8", "--time", "270"], 340)])
 for k in range(3):
     # magic immunity: CombatSorH's Ginther's Rift (magic damage) on the Lost City's Plague Bearers (zombie5, Hell
     # ResMa 100), Hell
@@ -194,9 +202,11 @@ CASES_0047 = {
     "C1 crushing blow on champions": ("CombatOW in Nightmare, bosses first (the champion flag), /players 8",
                                       ["ow-nm-champs%d" % k for k in range(1, 7)], [136], ()),
     "C2 cold cap (cold resistance above 75)": ("CombatSorH in Normal (no penalty), cold attackers",
-                                               ["sorh-n-darkwood", "sorh-n-lostcity"], [43, 41], ()),
+                                               ["sorh-n-darkwood", "sorh-n-lostcity", "sorh-n-upperk", "sorh-n-travincal"],
+                                               [43, 41], ()),
     "C3 lightning cap": ("CombatSorH in Normal, lightning attackers",
-                         ["sorh-n-marsh", "sorh-n-oasis", "sorh-n-catacombs"], [41], ()),
+                         ["sorh-n-marsh", "sorh-n-oasis", "sorh-n-catacombs", "sorh-n-spider", "sorh-n-cityd"],
+                         [41], ()),
     "C5 magic immunity": ("CombatSorH's magic damage on Hell Plague Bearers (ResMa(H) 100)",
                           ["sorh-h-lostcity%d" % k for k in range(1, 4)], [52, 53], ()),
     "C6 negative absorbed amount": ("CombatDR: MDR above the field, then percent absorb on the negative field",

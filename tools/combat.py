@@ -886,7 +886,16 @@ class Checker:
             # a deferred delivery that COMBAT_ApplyDamage left at once (0x0057C6D5..0x0057C78E: hostility, town,
             # killable or dead at the delivery frame; the reason is not logged)
             self.case("deferred delivery: COMBAT_ApplyDamage returned at once (reason not logged)")
-        if d["m"] in (0, 12) or not ld[0] or early:
+        if "c4" in d:
+            # sub_005541B0_UnitIsDead (0x005541B0): unit +0xC6 bit 0, or mode 0 or 12 (monster) / 0 or 17 (player), or
+            # another unit type; life is not read (plan 0047 Phase 2: a monster at life 0 not yet in its death mode
+            # takes the events), from the defender's EV0 snapshot
+            dead = bool((d["c4"] >> 16) & 1) or d["t"] not in (0, 1) or d["m"] in ((0, 17) if d["t"] == 0 else (0, 12))
+            if not dead and not ld[0]:
+                self.case("defender at life 0 not dead (events run)")
+        else:                           # logger r1, r2 (no +0xC4 field): the old approximation
+            dead = d["m"] in (0, 12) or not ld[0]
+        if dead or early:
             # dead defender: COMBAT_ApplyDamage returns before the events (0x0057C77D)
             if lines[i][0] != "AD1":
                 self.fail("dead defender: expected AD1, got %s" % lines[i][0])
@@ -988,6 +997,11 @@ class Checker:
         if tot > 0:
             v = ld[0] - tot
             ld[0] = 0 if v < 256 else v
+        else:                           # delivery B4 (backlog 2026-10-17 resume-lane follow (b)): life left as is,
+            # asserted at AD1
+            self.case("delivery total %s (life unchanged) on the %s" % (
+                "negative" if tot < 0 else "zero", "player" if d["t"] == 0 else "monster" if d["t"] == 1 else
+                "unit type %d" % d["t"]))
         # stun, cold, freeze, poison, burn
         if pget(p, F_STUN) > 0 and d["t"] == 1 and (d.get("f", 0) or 0) & 8:
             _, sa = rng_range(sa, 100)          # COMBAT_ApplyStun on a unique: one draw on the attacker's seed
