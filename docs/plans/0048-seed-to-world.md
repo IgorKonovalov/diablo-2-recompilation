@@ -239,3 +239,36 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   preset unit's, `[I]`). No entry to the spec-writer now.
   **Phase 1 is done; Phase 2 may start in one slot** when plan 0044 releases one (the queue's order holds). Ledger
   rows added (usage TBD). Review request [closed](../backlog/archive/2026-10-20-reverser-architect-review-plan-0048-phase-1-in-chain-oracles.md).
+- **2026-10-20 — Phase 2 paused at the owner's request: checkpoint and resume note (reverser, `lane/p48h`, harness
+  slot 1).** Not a phase close; no review requested yet.
+  **Smoke session** (`p2-s1-4801-smoke`, UniqNova, Normal, Act I, `tools/gdb/chain.gdb`): 36 406 lines, 7.8 MB,
+  3.45 game minutes (game frames of the `PLR` lines, 25 per second) in 8.4 wall minutes from game entry: **2.26 MB per
+  game minute, 2.4 wall minutes per game minute**; the largest tags `TINIT` 1.66 MB, `CB` 0.98 MB, `SN` 0.72 MB,
+  `LSUB` 0.47 MB (`chain_sessions.py volume`). Cap per session set at 500 MB raw (a 15-minute session writes about
+  15 MB, so no session is near it), `MONSPAWN_WATCH` empty, wall limit 15 minutes.
+  **Sessions kept** (`workspace/logs/chain-p2/`, `manifest-ckpt1.txt` `bf6a3a70…`, tools in `out/tools-ckpt1.sha256`,
+  paths from the repository root): smoke, xn2 (Halls of the Dead 2), xn3 (Spider Forest), xn4 (City of the Damned),
+  xn5 (Crystalline Passage), xm1 (Catacombs 2, Nightmare), raven-xn (Cold Plains to the Burial Grounds). Development
+  logs: `dev-p2-s1-4803-xn3-aborted` (the driver restarted), `dev-p2-s1-4812-xm2-paused` (cut by this pause). No log
+  holds `internal-error:` (gdb's i387 assertion).
+  **`tools/chain.py check` on the six counted logs** (`out/ckpt1-check.txt`): 0 sub-checks failed; 300 room populations
+  end to end with no oracle; 36 (level, difficulty, game type) built (DrlgType 1: 14, 2: 8, 3: 14; Normal expansion acts
+  I–V, Nightmare expansion acts I and IV); 1 994 objects created (421 populate, 1 573 preset); 242 monster drops with an
+  item, 336 item creations reproduced from both line sets; specials 6 champion packs, 10 unique packs, 13 mod rolls.
+  **raven-xn** fails on one logger error (`LOGERR collision MemoryError`, a corpse re-dump `DCR` on a freed room, fixed
+  in `tools/gdb/collision.py` as `DCRF`); it is a development log for the counts. It holds the first **oracle 13**
+  case: Blood Raven (267), `MonEquipInit` with one `oninit` row, the unit seed after it predicted at `SIX` by the model
+  (one location draw; `--cf monequip-off` fails it), the item it creates reproduced by the item chain.
+  **Tool fixes on the way** (commits `cc613e4`..`7778dcb`): the `RC` tag of `drlg-gen.py` and `affixes.py` collide in
+  one log (each reader skips the other's); objects resync stops at `OPU0` (a cascade of 16 on xn2); a locked chest
+  reaching its OperateFn with only the lock bit cleared and no key is a counted oracle (xn2, the writer not read);
+  Izual's creation increments the special count (taken, counted); a presets-window monster or request whose predicates
+  took a value no longer confirms its window — on the Phase 1 logs **1 241** objects windows oracle-free (was 1 250),
+  512 populations (`out/p1world-check.txt`). New logged inputs: `TCR gseed` (the game seed at each drop), `PLR gf`;
+  the killer's and owner's magic find are the existing `QKMF`/`QOMF`/`QMF` lines.
+  **Next (resume):** `python3 -I tools/chain_sessions.py run --slot 1 --tag p48h --saves workspace/runtime/p48h-chars
+  --run p2 xm2 xm3 xm4 xm5 xh1 xh2 xh3 xh4 xh5 raven-xn2 cn1 cn2 cn3 cn4 cm1 cm2 cm3 cm4 ch1 ch2 ch3 ch4` (saves built
+  from `uniqnova.json` / `uniqclassic.json`, see the session driver); then `chain.py check --o20` over all counted logs,
+  the run record `run:2026-10-20-chain` (no `experiments.md` entry written yet), and the review request. Maze waypoints
+  finish their level in 5–8 minutes; about 70 oracle-free populations per 15-minute outdoor session, so 2 000 needs
+  roughly 25 more sessions.
