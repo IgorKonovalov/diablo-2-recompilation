@@ -893,11 +893,15 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
 - [L] The player's per-frame tick of stat 74 (`sub_00580610_LifeRegenTick`, § 14) under poison or open wounds, and its
   interaction with `DamageRegen`: read, not exercised (no window on the player in run:2026-10-16-combat). The monster
   tick is answered (§ 14, `[C]` in § 15).
-- [L] Event handlers other than 14, 15 and 16 (skill on hit, knockback 7, howl 8, slow 19, …) draw on seeds that this
-  finding does not model; Phase 2 treats them as boundary oracles.
-- [L] An item's prevent-heal stat (117, *Fleshripper*) applies a timed state 52 (`preventheal`, `STATE_ApplyTimed`
-  logged with stat 31, value 0, length 120 000) on a melee hit between the to-hit roll and the defence roll. Why it
-  precedes the block roll (which call applies it) is unread.
+- ~~Event handlers other than 14, 15 and 16 draw on seeds that this finding does not model.~~ *2026-10-20 (plan 0045
+  P1.3):* read in [skills/0003 § 3](../skills/0003-handlers.md#3-the-stat-event-handlers): handlers 7, 20 and 30 step the
+  handler unit's seed inline, 8, 9, 21 and 31 call the RNG once, 3 rolls the element; the rest draw nothing.
+  (fn:sub_005BF960_StatEv07Knockback@0x005BF960, fn:sub_005C0470_StatEv20SkillOnEvent@0x005C0470)
+- ~~Which call applies the prevent-heal state 52 between the to-hit roll and the defence roll.~~ *2026-10-20 (plan 0045
+  P1.3):* `COMBAT_ToHitRoll` calls `sub_0057D810_PreventHealHook` on a successful roll (`0x0057DB80`); the hook applies
+  state 52 for 120 000 frames with stat 31 = 0 for a player attacker with stat 117 against a monster outside classes
+  704–709, with no draw ([skills/0003 § 3](../skills/0003-handlers.md#3-the-stat-event-handlers);
+  fn:sub_0057D810_PreventHealHook@0x0057D810).
 - [I] *Answered in part 2026-10-17* (the set-aside *Fleshripper* session only, outside the run: its log, the first
   `ow-n-andariel-p8` of save `5f440622…`, sha256 `e001b03e…`, 861 events, lies in the lane's session scratch and not
   under `workspace/logs/combat/`; re-checked at the review with the same 133 skips and 101 mismatches): applying state 52
@@ -905,6 +909,9 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
   it), all 133 "expected `DRB`" events of that session check: the defender's seed at `DRR` and the attacker's at
   `RPE`/`BD1` equal the model with no step between them. (fn:COMBAT_DefenceRoll@0x0057DFB0, run:2026-10-16-combat)
 - [L] The same session's remaining 101 mismatches are a different gap: an event-9 (kill) handler at `0x005C01D0` runs
-  inside the delivery before `AD1` with that revision's items (*Fleshripper*, *Dracul's Grasp*); not read, not
-  modelled.
+  inside the delivery before `AD1` with that revision's items (*Fleshripper*, *Dracul's Grasp*); not modelled.
+  *2026-10-20 (plan 0045 P1.3):* read: it is function 28 (`item_healafterkill`), life `+= stat · 256` capped, no draw;
+  a reanimate stat (function 31) on the same event would draw one `RangeB` on the attacker's seed
+  ([skills/0003 § 3](../skills/0003-handlers.md#3-the-stat-event-handlers); fn:sub_005C01D0_StatEv28HealAfterKill@0x005C01D0,
+  fn:STATEVENT_Reanimate@0x005C09E0). Modelling it in `tools/combat.py` is plan 0045 Phase 2's re-check.
 - [L] Whether `0x00621190` returns the player's mode (the "moving" test in block) or a separate state.

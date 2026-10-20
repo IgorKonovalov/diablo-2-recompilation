@@ -12,7 +12,12 @@ typedef struct SkillEntry {
                                      assassin's Left Hand Swing (class 6, skill 5), else Skills `anim` (+0x10) */
     uint32_t flags;               /* +0x0C bit 0: move to the target first, do on arrival; bit 1: arrived (set by the
                                      frame functions when the move step returns 2) */
-    uint8_t  unk10[0x14];         /* +0x10 */
+    uint8_t  unk10[0x08];         /* +0x10 */
+    int32_t  state18;             /* +0x18 per-skill state word of the do functions (0x006444A0 get, 0x00644560 set;
+                                     skills/0003): Blade Fury's next fragment frame, Frenzy's last hit (1/0),
+                                     Armageddon's re-seed value (do 146), start 55's rolled value */
+    int32_t  unk1C;               /* +0x1C also a re-seed word for 0x00645390 (+7 per repeat), and set by start 55 */
+    int32_t  unk20;               /* +0x20 */
     int32_t  altHand;             /* +0x24 dual-wield Attack alternation: 0 or 5 (sub_00549960_DualAttackAlternate) */
     int32_t  baseLevel;           /* +0x28 hard points; 1 when added */
     int32_t  unk2C;               /* +0x2C */
@@ -98,7 +103,11 @@ typedef struct MissileData {
     int32_t  lastHitType;         /* +0x18 LastCollide rows: the last unit hit (the owner at creation) */
     int32_t  lastHitGuid;         /* +0x1C -1 when none */
     int32_t  refType, refGuid;    /* +0x20, +0x24 a second unit reference (0x0064A7B0) */
-    int32_t  unk28, unk2C, unk30; /* +0x28..+0x30 used by numbered functions (plan 0046) */
+    uint32_t seedLow;             /* +0x28 a stored seed low word (MISSDATA_SetSeedLow / GetSeedLow): written at creation
+                                     by the progressive rings (Param2 + 1), do 41, hit 36 and after the draws of do 28
+                                     and 35, read back by them to re-seed Unit+0x20 (skills/0003 § 9) */
+    uint32_t param2C;             /* +0x2C a packed (dy << 16 | dx) offset, or a unit guid (hit 22) */
+    int32_t  unk30;               /* +0x30 used by numbered functions (plan 0046) */
 } MissileData;
 
 /* The creation-time damage block of sub_0064B860_MissileDamageBlock (0x7C bytes), written as missile stats by

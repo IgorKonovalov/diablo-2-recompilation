@@ -271,7 +271,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   anchors them. Fixes (3): the plan names 18 tier-A rows, not 17 (this log and the survey's comment); Skills §
   Families: "the first 22 rows" of the 26; PetType row 17's sentry wording. Tier A: ruling in Phase 1's tier-A
   bullet (all 26 accepted, Meteor and Amplify Damage on the attack-click condition). Notes for P1.1/P1.2:
-  [backlog to the reverser](../backlog/2026-10-20-architect-reverser-plan-0045-p0-review-notes-for-p1-1.md).
+  [backlog to the reverser](../backlog/archive/2026-10-20-architect-reverser-plan-0045-p0-review-notes-for-p1-1.md).
 - **2026-10-20 — Phase 1 batch P1.1 landed for review (reverser, `lane/p45r`, static).**
   [skills/0001-dispatch](../findings/skills/0001-dispatch.md): the request (client packets 0x05–0x11, `PLRMSG_SkillAtXY`
   / `PLRMSG_SkillAtUnit`, stat 328 counted per request, the dual-wield Attack alternation, the `AttackNoMana` fallback,
@@ -387,3 +387,29 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   recommendation. Review request
   [closed](../backlog/archive/2026-10-20-reverser-architect-lane-p45m-review-plan-0045-p1-2-missiles.md); the
   [p49r names entry](../backlog/archive/2026-10-20-architect-reverser-plan-0045-p1-2-reuse-the-p49r-missile.md) closed.
+- **2026-10-20 — Phase 1 batch P1.3 landed for review (reverser, `lane/p45h`, static).**
+  [skills/0003-handlers](../findings/skills/0003-handlers.md): the progressive entries 36–41 and 143 (missile and calc
+  picked by the charge count; **37, 39, 41 and 143 step the attacker's seed once at entry**, 38 draws `RangeB` on it
+  and runs an area hit; 39 and 41 on local seeds) and `0x00571AA0` (a client message `0xA3`); the 31 stat-event
+  handlers with their registrations (18 by ItemStatCost, 11 by Skills `auraeventfunc`; 11 and 12 unused) and their
+  draws; the item-cast helpers; **state 52 is applied inside `COMBAT_ToHitRoll`'s success branch**
+  (`sub_0057D810_PreventHealHook`, no draw); the event-9 handler `0x005C01D0` is handler 28 (heal after kill, no draw);
+  `SrvStart` in do 83 and 109, `PayCost` in start 26 (Blade Fury); all 15 `EType` stores at packet `+0x65`; the tier-A
+  start, do and missile functions; skill do 30 with a missile as unit; the re-seed census of rng/0002's server sites
+  (missiles and stack seeds, except Armageddon's do 146 which re-seeds the caster); summons and the pet limit
+  (`PetType` `group`, `petmax`); `PathDirection` and its table, the frame pass (missiles before players and
+  monsters); `MissileEndHit` and `0x00645390` unreferenced; `repeat`, `leftskill`, `weapsel` client-side,
+  `TgtPlaceCheck` a monster AI test, the ally test never refusing from `StartUsedSkill`. 55 `[I]`, 6 `[L]`, no `[C]`.
+  **Correction** to skills/0002: hit function 22 is `0x005ADD20`; the `CallDoFunc` caller `0x005ACFC0` is hit **23**
+  (unused on stock data; symbol renamed `sub_005ACFC0_MissHit23CallDo`); carried into its summary, § 8, Functions table
+  and open questions (the P1.2 log line above stays as history). Dated notes in skills/0001 and combat/0001. 118 symbol
+  rows, `re/types/skills.h`, `tools/skills_handlers_scan.py` (sha256 `39b09e52…`) with kept outputs
+  (`workspace/logs/skills/p45h-manifest.sha256`: `handlers-scan.txt` `6c2a2739…`, `handlers-rows.txt` `dd52e147…`).
+  **Boundary recommendation** for Phase 2 in [skills/0003 § 14](../findings/skills/0003-handlers.md#14-boundary-recommendation-for-phase-2)
+  (event entry points, value oracles, modelled set, log windows, chaining kinds), for the review's ruling. Backlog:
+  review request [to the architect](../backlog/2026-10-20-reverser-architect-lane-p45h-review-plan-0045-p1-3-handlers.md),
+  inputs [to the spec-writer](../backlog/2026-10-20-reverser-spec-writer-skills-0003-handlers-inputs-for-combat-rng-seeds.md),
+  column anchors [to the archivist](../backlog/2026-10-20-reverser-archivist-skills-columns-anchored-by-skills-0003.md);
+  closed: [the P0 notes entry](../backlog/archive/2026-10-20-architect-reverser-plan-0045-p0-review-notes-for-p1-1.md)
+  and [the state-52/event-9 entry](../backlog/archive/2026-10-17-reverser-reverser-a-read-which-call-applies-the.md).
+  Open: `Unit+0x38`, a new missile's first frame, the unit filter for a missile unit, the fifth unit-event list.

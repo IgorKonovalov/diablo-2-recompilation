@@ -74,9 +74,14 @@ this batch continues from.
   of an item cast moves the start of a line missile to the target point and its target as far again; a lob keeps the
   caster as its start. (fn:SKILLS_SrvDo@0x0056F7F0, 0x0056F9D0–0x0056FA29, `missiles-rows.txt`)
 - [I] **The two `CallDoFunc` missile callers** run a **skill** do function with the missile as the unit: hit function
-  22 calls `g_SkillDoFuncs[sHitPar1]` (row 233 `fistoftheheavensdelay` holds 0, a null entry, so nothing runs on stock
-  data), and do function 14 (the three grim wards) calls `g_SkillDoFuncs[Param2]` (30) every `Param1` (6) frames.
-  (fn:sub_005ACFC0_MissHit22CallDo@0x005ACFC0, fn:sub_005AEF70_MissDo14PeriodicDo@0x005AEF70)
+  23 calls `g_SkillDoFuncs[sHitPar1]` (no stock row uses hit function 23, so it never runs on stock data; first written
+  "22", see the correction below), and do function 14 (the three grim wards) calls `g_SkillDoFuncs[Param2]` (30) every `Param1` (6) frames.
+  (fn:sub_005ACFC0_MissHit23CallDo@0x005ACFC0, fn:sub_005AEF70_MissDo14PeriodicDo@0x005AEF70)
+  *Corrected 2026-10-20 (P1.3, [skills/0003](0003-handlers.md)):* `0x005ACFC0` is entry **23** of
+  `g_MissileSrvHitFuncs` (`0x0073C89C`), a number no stock row uses; row 233's hit function 22 is `0x005ADD20`
+  (`0x0073C898`), a chained area hit that calls no skill do function. So on stock data only do function 14 runs a skill
+  do function with a missile as the unit. The symbol is renamed `sub_005ACFC0_MissHit23CallDo`.
+  (data:g_MissileSrvHitFuncs@0x0073C840, fn:sub_005ADD20_MissHit22Chain@0x005ADD20)
 - [I] **The `0x40` mark's readers.** The only stock missile reader would be `CollideType` 7 (mask `0x40`, filter: a
   `CanDestroy` missile), which no stock row uses; do function 3 (26 rows: the clouds, blizzards, `plaguejavelin`) also
   **writes** `0x40` on its cell each frame while its path is not moving. The placement masks (`0x01C0`) stay drlg/collision's.
@@ -111,7 +116,7 @@ None. No community document was opened for this batch; the cross-check is Phase 
 | `0x005AE400` | `sub_005AE400_MissDo02SubMissile` | do function 2: `SubMissile1` per new cell, then do 1 | I |
 | `0x005AE480` | `sub_005AE480_MissDo03CloudMark` | do function 3: the `0x40` cell mark while still, then do 1 | I |
 | `0x005AEF70` | `sub_005AEF70_MissDo14PeriodicDo` | do function 14: a skill do function every `Param1` frames | I |
-| `0x005ACFC0` | `sub_005ACFC0_MissHit22CallDo` | hit function 22: retarget, a skill do function by `sHitPar1` | I |
+| `0x005ACFC0` | `sub_005ACFC0_MissHit23CallDo` | hit function 23 (*corrected 2026-10-20*, was "22"): retarget, a skill do function by `sHitPar1` | I |
 | `0x005ADF10` | `MISSILE_HitUnit` | (combat name) the hit: filters, pierce, to-hit, hit/damage functions | I |
 | `0x005ADA40` | `sub_005ADA40_MissileHitTypeFilter` | `CollideType` 0 none, 1 players, 2 monsters, other all | I |
 | `0x005ADA80` | `sub_005ADA80_MissilePierceUse` | stat 328 − 1 on a `Pierce` row | I |
@@ -500,11 +505,14 @@ return 1;
 ### 8. `CallDoFunc` from missiles
 
 - [I] `sub_0056D810_CallDoFunc(n, skill, lvl)` (ECX/EDX passed through) calls `g_SkillDoFuncs[n]` when `n ≤ 0xBE`
-  (unsigned) and the entry is non-null. Its two callers pass the **missile** in `EDX`: hit function 22 (`0x005ACFC0`:
+  (unsigned) and the entry is non-null. Its two callers pass the **missile** in `EDX`: hit function 23 (`0x005ACFC0`;
+  *corrected 2026-10-20, P1.3: first written "22"; number 23 is used by no stock row, row 233's 22 is `0x005ADD20`*:
   with an owner, a skill and a level > 0, `0x00620C10(m, unit)` when there is a unit, then `n = sHitPar1` (`+0x4C`);
   row 233 holds 0 and entry 0 is null) and do function 14 (`0x005AEF70`: `n = Param2` (`+0x3C`) when `elapsed %
   max(Param1, 1)` is 0, then do function 1; the grim wards hold `Param1` 6, `Param2` 30, `g_SkillDoFuncs[30]` =
-  `0x005C37C0`). So a skill do function can run with a missile as its unit; what 30 does there is P1.3/0046.
+  `0x005C37C0`). So a skill do function can run with a missile as its unit; what 30 does there is read in
+  [skills/0003 § 8](0003-handlers.md#8-skill-do-30-with-a-missile-as-its-unit-missile-do-14) (a curse state around the
+  missile's target point).
   (0x0056D810–0x0056D835, 0x005AD012–0x005AD03C, 0x005AEFAF–0x005AF009, tbl:Missiles.txt:sHitPar1, tbl:Missiles.txt:Param2)
 
 ### 9. Draws, seeds and the chaining reading (ADR-0014)
@@ -554,12 +562,19 @@ return 1;
 
 ## Open questions
 
-- [L] `0x0064FC60`, the step direction (`dir` of § 4) and its scale; Phase 2 logs positions per frame in a window.
-- [L] `0x006505C0` (do function 2's "new cell" test) and `0x00620C10` (hit function 22) were not read.
-- [L] `0x005A43B0` → `0x005A4270(…, 5)` for a monster owner at the end of creation, not read.
-- [L] Where the missile pass sits among the unit-type passes of the frame (`0x00540F60` and the calls after it).
-- [L] `sub_005AD9D0_MissileEndHit` has no direct call and no absolute pointer in the image: unreached, or reached by a
-  computed address not found.
-- [L] The numbered do, hit and damage functions (tier A at P1.3, the rest plan 0046), and the re-seed sites
-  `0x005ACDF0`, `0x005AC073`, `0x005A9820` and the others of rng/0002 (P1.3).
-- [L] `0x00645F00` (the unit's ranged missile and its level, from which `SKILL_AttackDo` picks `useAmmo`) was not read.
+- ~~`0x0064FC60`, the step direction (`dir` of § 4) and its scale.~~ Answered 2026-10-20 in
+  [skills/0003 § 10](0003-handlers.md#10-helpers-p12-left-unread) (a 128-entry slope table, `g_PathDirTable`).
+- ~~`0x006505C0` (do function 2's "new cell" test) and `0x00620C10` (hit function 22) were not read.~~ Answered
+  2026-10-20 in [skills/0003 § 10](0003-handlers.md#10-helpers-p12-left-unread) (path `+0x34 & 8`; the path's target
+  unit); `0x00620C10`'s caller is hit function 23, not 22.
+- ~~`0x005A43B0` → `0x005A4270(…, 5)` for a monster owner at the end of creation.~~ Answered 2026-10-20 in
+  [skills/0003 § 10](0003-handlers.md#10-helpers-p12-left-unread) (unique-mod event slot 5).
+- ~~Where the missile pass sits among the unit-type passes of the frame.~~ Answered 2026-10-20 in
+  [skills/0003 § 11](0003-handlers.md#11-the-frame-pass) (missiles first).
+- ~~`sub_005AD9D0_MissileEndHit` reachability.~~ Settled 2026-10-20 in [skills/0003 § 10](0003-handlers.md#10-helpers-p12-left-unread):
+  no call, `jmp`, immediate or 4-byte pointer in the file; unreached.
+- [L] The numbered do, hit and damage functions outside tier A (plan 0046). *2026-10-20:* tier A's and the re-seed
+  sites `0x005ACDF0`, `0x005AC073` (inside the callback `0x005AC040`), `0x005A9820` and the others of rng/0002 are read
+  in [skills/0003 §§ 6, 9](0003-handlers.md#9-re-seed-sites-rng0002--the-other-initialiser-sites).
+- ~~`0x00645F00` (the unit's ranged missile and its level).~~ Answered 2026-10-20 in
+  [skills/0003 § 10](0003-handlers.md#10-helpers-p12-left-unread).
