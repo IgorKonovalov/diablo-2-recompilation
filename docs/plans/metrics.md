@@ -213,6 +213,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-20 | `lane/p46m4` (part 1, to the checkpoint) | 0046 P1 9d | reverser-static | 332 638 | 69 | 17 | Ghidra (lane copy `ghidra-p46m4`) | accept with fixes | 4: overclaim 2, misread 1, miscount 1 (hit 52's row-0 meaning and hits 51/52's later creations under `[C]`; `0x00408090` called an assertion-message helper; `cls52` "120 of 120") |
 | 2026-10-20 | `lane/p46m4` (part 2, resume) | 0046 P1 9d | reverser-static | 277 521 | 119 | 25 | Ghidra (lane copy `ghidra-p46m4`) | accept with fixes | — (on the part 1 row) |
 | 2026-10-20 | `lane/s38h2b` | 0038 P3 items/affixes | spec-writer | 209 089 | 65 | 11 | — | accept with fixes | 4: overclaim 2, omission 1, other 1 (C5a/R1's two halves under one `[C]` though every logged base is both; C4i's forced row "still passes every other test"; wiki untested line without the throw-damage cut; G4's "both lines" anchor) |
+| 2026-10-20 | `lane/p46m5` | 0046 P1 sor | reverser-static | 502 633 | 131 | 49 | Ghidra (lane copy `ghidra-p46m5`) | accept with fixes | 3: misread 1, overclaim 1, omission 1 (the `.data` inputs justified by a writer scan that misses `moffs` stores; `UnitsHostile`'s unexercised missile branch under `[C]`; `Vel`/`VelLev` signedness and do 27's return value) |
+| 2026-10-20 | `lane/p46m5` review | 0046 P1 sor | architect-review | not reported | not reported | not reported | — | gave accept with fixes | — (on the lane row; writer scans must match the `moffs` form and pushed addresses from the next batch on) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

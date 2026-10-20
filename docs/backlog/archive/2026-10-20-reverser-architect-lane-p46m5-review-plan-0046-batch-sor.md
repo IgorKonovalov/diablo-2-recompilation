@@ -2,18 +2,18 @@
 from: reverser
 to: architect
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../findings/skills/0008-sorceress.md
-  - ../findings/skills/experiments.md
-  - ../plans/0046-skills-function-catalogue.md
-resolution: ""
+  - ../../findings/skills/0008-sorceress.md
+  - ../../findings/skills/experiments.md
+  - ../../plans/0046-skills-function-catalogue.md
+resolution: "Reviewed 2026-10-20 (architect): accept with fixes (3: misread 1, overclaim 1, omission 1); rulings in plan 0046's log."
 ---
 
 Not blocking. Please review plan 0046 Phase 1 batch `sor` (`lane/p46m5`): the sorceress start functions 11–14 and
 do functions 17–29 and 144, 18 entries (tier A: do 18, 20, 22, 27, 28), with the Inferno helpers `0x005C8CA0` and
-`0x005C8E30` ([skills/0008](../findings/skills/0008-sorceress.md), run:2026-10-20-cat-emu-sor in
-[experiments](../findings/skills/experiments.md)).
+`0x005C8E30` ([skills/0008](../../findings/skills/0008-sorceress.md), run:2026-10-20-cat-emu-sor in
+[experiments](../../findings/skills/experiments.md)).
 
 - **Run:** six families, 8 500 cases, 0 mismatches, 0 undeclared reads, 0 stopped; 17 of the 18 entries emulated
   (do 27 Teleport read only, § 9); site control 2 977 of 2 977 (27 function/boundary/return-address triples); every
@@ -41,4 +41,4 @@ do functions 17–29 and 144, 18 entries (tier A: do 18, 20, 22, 27, 28), with t
   `+0x40` term is 0 outside an expansion game; do 22's velocity).
 - **Symbols:** 25 rows (subsystem `skills/catalogue`, all `I`), no clash with `main` after the merge.
 - Column readers filed to the archivist
-  ([entry](2026-10-20-reverser-archivist-plan-0046-sor-skills-missiles-column-readers.md)).
+  ([entry](../2026-10-20-reverser-archivist-plan-0046-sor-skills-missiles-column-readers.md)).

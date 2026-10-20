@@ -196,9 +196,17 @@ Observed (new for this batch): `0x005C8E30`, `0x005C8CA0` (from start 11 and do 
   units are scratch records written one field per field read.
 - [C] **Inputs set in the memory spec** (ADR-0015, S1e review ruling 3): `g_pDataTables`, the missile table pointer
   and count `0x0096C794`/`0x0096C79C` that `0x00663270` reads, and `g_pDifficultyLevels`/`g_nDifficultyLevels`
-  (`0x0096C8AC`/`0x0096C8B0`) are inputs of the claims, pointed at scratch tables; the writer scan finds one `.text`
-  store to `0x0096C79C` (`0x0066325F`, the table free setting it to 0) and none to the other three. The security
-  cookie is written as in 9a.
+  (`0x0096C8AC`/`0x0096C8B0`) are inputs of the claims, pointed at scratch tables: inputs set on purpose, which the
+  S1e ruling 3 admits with no justification beyond the claim's own domain (the claims are maps from those tables'
+  bytes, not statements of what the game stores there). The kept writer scan (`static.txt`) is no justification: it
+  matches only `PTR`-form stores and misses the `mov ds:moffs, eax` form and addresses passed as out-parameters
+  (architect review of `lane/p46m5`). The security cookie is written as in 9a.
+- [I] Those globals are written at load (from the reading; objdump, architect review): `0x0096C794` takes
+  `DATATBLS_LoadTable`'s result for the file `missiles` with record size `0x1A4` (`0x0066312C`, stored at
+  `0x00663139`; the count through the pointer `0x0096C79C` pushed at `0x00663115`; `0x0096C798` beside it at
+  `0x0066311A`), and is zeroed with its count at the table free (`0x0066325F`); `g_pDifficultyLevels` takes
+  `DATATBLS_LoadTable`'s result at `0x006180C5`, its count through the pointer pushed at `0x00617FF8`.
+  (fn:DATATBLS_LoadTable@0x006122F0, 0x00663139, 0x006180C5)
 - [C] The weak controls each decide their claim deterministically: `nostate` (8) on the cases with state 12 on and
   mana below `startmana`; `town14` (6) on a caster's room and point room of different town status; `dist_ge` (9) on
   the cases exactly at `r²` (the writer places 45 % of the near targets at `r` or one off); `ign1c` (14) on the
@@ -255,11 +263,13 @@ return InfernoStart(game, unit; id, lvl, rec->srvmissilea);          // 0x005C8E
   tbl:Skills.txt:aurarangecalc)
 - [C] (emulated inside start 12 and do 21; ends at `PlayerPairFlags` @0x00554297 for two players)
   **`UnitsHostile(game, a; b)`**: `a` a monster with an owner (`MonsterData+0x28` → a link `{+0x28 game, +0x2C guid,
-  +0x30 type}` found by `GameFindUnit`) is replaced by it (a missile by its owner; not exercised); `b` by its owner while it is a monster with one; the same
+  +0x30 type}` found by `GameFindUnit`) is replaced by it; `b` by its owner while it is a monster with one; the same
   unit → 0; two players → `PlayerPairFlags(a, b; 8)`; else 1 unless `0x00650D70` calls them allied: both alignments 0
   or both 2, where a unit's alignment (`0x006259B0`) is 0 without a stat list, 2 for a type above 1, else the stat
   172 of its state-105 list (0 without one). (run:2026-10-20-cat-emu-sor `start_sor`, `tk_sor`,
   fn:sub_00554200_UnitsHostile@0x00554200)
+  Not exercised, so outside the `[C]`: `a` a missile with bit 10 of `+0xC8` is replaced by the unit `GameFindUnit`
+  finds from its `+0x94`/`+0x98` (its owner, from the reading; 0x0055421C–0x00554245).
 - [I] By that rule a player and a monster that carry no state-105 list are both alignment 0 and **not** hostile;
   which units carry the list in play is not read here (Open questions). (0x00650D70–0x00650DC8, 0x006259B0)
 - [C] **Do 21** (`0x005C98F0`): the record; a caster that is not a player (type 0), or `PlayerIsBusy` (the unit's
@@ -330,7 +340,8 @@ return InfernoStart(game, unit; id, lvl, rec->srvmissilea);          // 0x005C8E
   index (skills/0003 § 9); returns 1. (fn:sub_005C9300_SkillDo17ChargedBolt@0x005C9300, tbl:Skills.txt:calc1)
 - [C] (ADR-0021; ends at `MissileCreate` @0x0056D4CC inside `sub_0056D400_SkillNovaAtUnit`) **Do 22** (tier A): bit 6
   first; the class; `vel = 0x00663270(cls, lvl) + calc1`, where `0x00663270` is `VelLev · lvl / 8` (signed, truncating:
-  `cdq; and 7; sar 3`) `+ Vel` of the record in the table at `0x0096C794` (Missiles `+0x9A`, `+0x9B`), 0 out of
+  `cdq; and 7; sar 3`) `+ Vel` of the record in the table at `0x0096C794` (Missiles `+0x9A`, `+0x9B`, both read as
+  unsigned bytes, `movzx`), 0 out of
   range; `NovaAtUnit(game, caster; caster, cls, id, lvl, vel)`'s first block `{flags 3, or 7 when vel ≠ 0, owner
   caster, cls, the caster's position, target (30, 0), +0x28 vel, skill, lvl}`. After, `[I]`: 63 more creations over
   the offsets of `0x006E1288`/`0x006E1388`; returns 1. (fn:sub_005C9B50_SkillDo22NovaAtSelf@0x005C9B50,
@@ -376,7 +387,8 @@ return InfernoStart(game, unit; id, lvl, rec->srvmissilea);          // 0x005C8E
 
 - [I] `sub_005CA360_SkillTeleportDo`: the target point, the caster's room's level `Teleport` byte (`LEVELS_GetRecord`
   `+0x04`; 0 → 0), for 2 a line test `0x006229F0(caster, x, y, 0x804)` that refuses, then `UnitTeleport(game, caster;
-  0, x, y, 0, 0)` as drlg/0009 § 11 reads it. Not emulated: its first test needs `LEVELS_GetRecord` and its call
+  0, x, y, 0, 0)` as drlg/0009 § 11 reads it, whose value it returns; no room or no Levels record also gives 0. Not
+  emulated: its first test needs `LEVELS_GetRecord` and its call
   `UnitTeleport`, whose room search is the route; the ending call would be its only claim. (0x005CA360–0x005CA3DD,
   tbl:Levels.txt:Teleport)
 
@@ -415,6 +427,6 @@ static path `+0x00` room, `+0x0C`, `+0x10`), `+0x44`, `+0x5C` stat list, `+0x60`
   alignment 0, which `UnitsHostile` calls not hostile (§ 4), so Telekinesis and Dragon Flight would refuse them.
 - [L] What `0x00553C70(game, unit; 1)` does (the end of an Inferno cast and the restart branch) and what `0x005C8C10`'s
   mode event is; which frames run do 19 against start 11 for a channelled skill.
-- [L] What the table at `0x0096C794` is (a second copy of the Missiles records, freed at `0x00663240`) and whether it
-  equals `DataTables+0xB64` at run time.
+- [L] Whether the second load of `missiles` at `0x0096C794` (§ 2, freed at `0x00663240`) holds the same records as
+  `DataTables+0xB64` at run time.
 - [L] Everything after each boundary (§§ 3–8), for a later batch or the harness.
