@@ -933,8 +933,8 @@ restore is not specified here.
   destination room. MonStats `inTown`, the earlier lead, has two readers, both in combat. Plan 0038 batch **H7a**
   (`lifecycle`, run:2026-10-17-h7a-lifecycle, drlg/0009 § 11.3 (1)–(2)) was its route, and it left the case open:
   the walk across a town room is a recorded shortfall, since a geometry scan of the 106 town layouts in the kept logs
-  found no shortest route through a town cell (each town's interior meets its neighbour at one gate; a sample of
-  layouts, shortest routes only); the teleport recipe was withdrawn, since both monster AIs read that pick a teleport
+  found no shortest route through a town cell (each town's interior meets its neighbour at one gate, and on 21 camp
+  layouts at one more run of 1 or 2 cells; a sample of layouts, shortest routes only); the teleport recipe was withdrawn, since both monster AIs read that pick a teleport
   point (the unique mod's `UModTeleportTry` 0x005B11F0 and the Zakarum priests' 0x005F72D0 through 0x005FD470) refuse
   a town room. Not shown: whether a stock town's geometry allows such a route, and whether any monster AI teleports
   to a town point. Unfollowed, out of plan 0038: 152 register-skill `MonAiUseSkill` calls, the 9 `MonAiPathOverride`

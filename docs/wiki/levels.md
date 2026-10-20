@@ -663,7 +663,7 @@ section.
   monster can follow a player into a town room at all (if it can, the town's release frees it instead of saving it).
   Read from the code: such a monster cannot plan a path whose goal is in town, but nothing tests the rooms a path only
   crosses, and the teleport code tests no destination room. A scan of the town layouts in the kept logs found no
-  shortest route that crosses a town (each town meets its neighbour at one gate), and the two monster AIs read that
+  shortest route that crosses a town (each town meets its neighbour at one gate, some camp layouts at one more opening a cell or two wide), and the two monster AIs read that
   choose a teleport point both refuse one in town; neither covers every case, so the question stays open. Also open:
   which form of the mod handlers a restored minion gets, the wanderer roll and spawn, a quest item that never expires,
   the dropped-record case for one alignment, which call sets one monster flag before the record is written, several

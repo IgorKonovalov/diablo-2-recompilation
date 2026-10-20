@@ -1788,9 +1788,9 @@ are the `Range(6 or 2)` and seven first uses. Blood Moor is 12 × 7 cells (its l
   pass). For the vertex merge, the layout bound of
   [drlg/0008 § H5e (a)](../../findings/drlg/0008-outdoor.md#h5e-reachability-a-the-layout-bound-2026-10-17-lanerbs4)
   leaves no stock case in Acts I, II, IV and V (a reading, C5), so only its Act III half stays a shortfall, on the
-  600-seed sample; the full waypoint pass has no static bound and stays a shortfall. Also the reads past a table that the stock tables never reach: a second side bit on
-  one jungle cell (J2e), a river-column `Def` above 15 (H3), and `LinkOutdoorFlags`' `B.dir[i + 1]` past link entry 14
-  (H0), where the code reads the next slot.
+  600-seed sample; the full waypoint pass has no static bound and stays a shortfall. Also the reads past a table
+  that the stock tables never reach: a second side bit on one jungle cell (J2e), a river-column `Def` above 15 (H3),
+  and `LinkOutdoorFlags`' `B.dir[i + 1]` past link entry 14 (H0), where the code reads the next slot.
 - ~~Roads with 5 or 6 endpoints or an exhausted pool (H6)~~ answered in H6 from drlg/0008's H5e reachability reads (c)
   and (d): no stock case (at most 4 endpoints, at most 45 pool nodes against 900).
 - ~~The swapped cliff-cave scan on a non-square level (H2)~~ answered in H2 from drlg/0008's H5e reachability reads (e)

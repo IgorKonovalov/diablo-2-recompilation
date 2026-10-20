@@ -2539,5 +2539,25 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Wiki:** [levels](../wiki/levels.md) restated (town-follow, expired item, vertex merge); levels, monsters and
     objects `based_on` dates set to 2026-10-20.
   - **Backlog:** both entries closed; review request
-    [p38s5 review](../backlog/2026-10-20-spec-writer-architect-p38s5-drlg-lifecycle-review.md).
+    [p38s5 review](../backlog/archive/2026-10-20-spec-writer-architect-p38s5-drlg-lifecycle-review.md).
   - **Next:** architect review of `lane/p38s5`.
+- **2026-10-20 — Review of `lane/p38s5`, the drlg/lifecycle cluster (architect): accept with fixes.** `main` merged
+  first (clean; `backlog.py archive` moved nothing). Read: the full spec, wiki and plan diff against
+  [drlg/0009 § 11.3](../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle),
+  the `lane/h7a` rulings above and drlg/0008's
+  [H5e (a) layout bound](../findings/drlg/0008-outdoor.md#h5e-reachability-a-the-layout-bound-2026-10-17-lanerbs4).
+  Tag counts recomputed by script: drlg/lifecycle {C 85, I 75, L 8} (5 raised, 3 new `[I]`, 1 removed, 1 new `[L]`),
+  drlg/outdoor unchanged {C 180, I 19, L 2}. Anchors resolve in `re/symbols.csv` (0x005424F0, 0x00541AC0, 0x0052D870,
+  0x005421A0, 0x005B11F0, 0x005F72D0, 0x00554EA0, 0x005CA360, 0x0064FAD0, 0x006772C0).
+  - **Spot-checks.** The `0x400` bullet matches § 11.3 (3) (4 records, class 522, flags `0x540`, `+0xD0` = 8, no
+    creation, seed unchanged; alignment 1 kept `[I]`). The `+0xC4` bullet carries ruling (a)'s wording, and which call
+    sets bit `0x2000` sits under *Open questions*. The § A sweep bullet is `[I]` per ruling (b), with the run's
+    exclusion of the 20-frame reading and no confirmation of 1 500. The outdoor C5 split follows H5e (a), Act III on the
+    sample. The wiki levels paragraphs carry no tags and say "read from the code" where the spec has `[I]`.
+  - **Fixes (made here):** (1) *overclaim:* the town-follow open question and the wiki said each town's interior meets
+    its neighbour "at one gate"; § 11.3 (1) has one more run of 1 or 2 cells on 21 camp layouts; both scoped.
+    (2) *other:* outdoor's *Branches no log reached* bullet rewrapped (two over-long lines). Research-map rows for
+    drlg/lifecycle and drlg/outdoor rewritten whole (counts, date, the H7a raises, the Act split).
+  - **Ledger:** 2 fixes: overclaim 1, other 1 ([metrics](metrics.md)).
+  - **Backlog:** review request
+    [p38s5 review](../backlog/archive/2026-10-20-spec-writer-architect-p38s5-drlg-lifecycle-review.md) closed.
