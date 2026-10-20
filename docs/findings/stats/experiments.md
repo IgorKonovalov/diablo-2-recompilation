@@ -134,7 +134,8 @@ event open at a log's end (the session killed inside it).
 - **Reads:** 891 844 in the 50-frame windows after each list change, 120 stat ids. **Ops** in predicted writes: 1 348,
   2 1 490, 4 2 568, 5 26, 8 919, 9 3 784, 11 92, 13 136 (every stock op ≥ 20). Ops 3, 6, 7, 10, 12: no reachable row.
 - **Recomputes:** 26 087 links and unlinks, 232 042 CacheAdd/CacheWrite, 9 level changes. **Sets:** 5 749 wearer
-  lists (5 569 predicted, 180 full Trang-Oul's taken as logged), 19 525 aprop toggles by add func 0/1/2.
+  lists (5 569 predicted at the run, 180 full Trang-Oul's taken as logged; all 5 749 predicted at the *Re-check
+  2026-10-20* above), 19 525 aprop toggles by add func 0/1/2.
 - **States:** 3 643 applies (refresh 2 608, refuse 1 013, replace 2, new 20), 2 749 expiry runs (123 lists freed,
   lateness 0), 3 629 aura runs on the `≡ 1 (mod 50)` grid, 6 207 aura durations = `perdelay + 1`.
 - **Counted shortfalls** (P2 review): the plan's 300 expiries read as freed lists are **123** (potion states 178–180

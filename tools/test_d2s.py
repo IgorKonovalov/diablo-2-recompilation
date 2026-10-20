@@ -143,6 +143,7 @@ RECIPE_BASES = {
     "cubereroll": (BASE_X, "1a1ec8918f4860bb026b3346b7ad5143026eb6303b8505ae2f4d79d03021a17d"),  # run:2026-10-15-cube-saves
     "cuberunes": (BASE_X, "416cb60e442bf2e13bfeaeace0f322206d4344e2a35f0094b175340693261b7c"),  # run:2026-10-15-cube-saves
     "cubesock": (BASE_X, "fc5674f780e62ac90791636433212c4cbbc39348a963c42aaac367da1ef3d52d"),  # run:2026-10-15-cube-saves
+    "h2afind": (os.path.join(SAMPLES, "smpbar.d2s"), "38f0fc5792475a073a9da3838c5dd6864c687f4b5484f6d2cfc2cfbf14f426db"),  # run:2026-10-20-sweep-items-tc (H2a FindBar)
     "keynova": (BASE_X, "88ebd25f6db285ef3d863377e4cf4fe9a0554664d448cb6b53f762585e46d635"),  # run:2026-10-15-drlg-outdoor
     "cownova": (BASE_X, "8c66964bb82a2cc5757bac9b154756571af953ca960d5847ecc77c99389efbc8"),  # plan 0027 Phase 3 (level 39)
     "lightsorc": (BASE_X, None),

@@ -2,15 +2,15 @@
 from: reverser
 to: architect
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../plans/0047-simulation-shortfalls.md#implementation-log
-  - ../findings/quests/0002-travel.md#2-waypoint-activation
-  - ../findings/stats/experiments.md#run2026-10-17-stats
-resolution: ""
+  - ../../plans/0047-simulation-shortfalls.md#implementation-log
+  - ../../findings/quests/0002-travel.md#2-waypoint-activation
+  - ../../findings/stats/experiments.md#run2026-10-17-stats
+resolution: "2026-10-20 architect review of lane/p47r: accept with fixes (2: attract reason refused and staged in Phase 2's first step; stats Results line); h2afind pinned; rulings 1-6 in plan 0047 log; Phase 2 may start in the next free slot."
 ---
 
-Review plan 0047 Phase 1 (`lane/p47r`, static: no game, no slot, no Ghidra): the [plan log entry](../plans/0047-simulation-shortfalls.md#implementation-log) and its case list, `tools/stats.py` and `tools/test_stats.py`, `tools/session_check.py` and the `check` commands of `tools/combat_sessions.py`, `tools/stats_sessions.py` and `tools/quest_sessions.py`, the 14 new recipes (pinned in `tools/test_d2s.py`), [quests/0002 § 2](../findings/quests/0002-travel.md#2-waypoint-activation) (`InitFn` 17's creation mode and the Act V route), the stats/0001 raise and the [stats record](../findings/stats/experiments.md#run2026-10-17-stats)'s re-check, the combat/0001 *Fleshripper* note. Blocking Phase 2.
+Review plan 0047 Phase 1 (`lane/p47r`, static: no game, no slot, no Ghidra): the [plan log entry](../../plans/0047-simulation-shortfalls.md#implementation-log) and its case list, `tools/stats.py` and `tools/test_stats.py`, `tools/session_check.py` and the `check` commands of `tools/combat_sessions.py`, `tools/stats_sessions.py` and `tools/quest_sessions.py`, the 14 new recipes (pinned in `tools/test_d2s.py`), [quests/0002 § 2](../../findings/quests/0002-travel.md#2-waypoint-activation) (`InitFn` 17's creation mode and the Act V route), the stats/0001 raise and the [stats record](../../findings/stats/experiments.md#run2026-10-17-stats)'s re-check, the combat/0001 *Fleshripper* note. Blocking Phase 2.
 
 Asked of the review in particular:
 - **The case list** (Done-when): 21 cases staged in 62 distinct sessions (combat 14 in 31, stats 6 in 25, travel 1 in 6), 3 not staged with a reason (the magic cap: no stock source of player magic resistance reaches 75; open wounds on the player and `attract`: no stock monster carries them, two clients, plan 0044). Is each reason acceptable as a final shortfall reason, and is moving the two player-against-player cases to plan 0044 the right home?

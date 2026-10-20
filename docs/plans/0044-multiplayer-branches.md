@@ -241,3 +241,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `COMBAT_MeleeHitTest`, the case's entry) and row 2 (Nova). Run both kinds of attack. The other scaled rows (fire,
     cold, magic, poison) stay a shortfall of this pair, and the session must name that shortfall rather than claim
     "every scaled field".
+- **2026-10-20 — Case added from plan 0047 (architect, P1 review of `lane/p47r`).** For the case list: **open wounds
+  on the player** (stats/states *Open questions*): stat 135 is written only by item properties, and no MonStats,
+  MonProp or MonUMod cell names it, so only a hostile player wounds a player. The case: player B, hostile, wearing an
+  open-wounds item (tool-built, ADR-0013 § Neutral), hits player A; the stats logger's state and tick lines on A.
+  ([plan 0047 log](0047-simulation-shortfalls.md#implementation-log), Phase 1 review, ruling 2)
