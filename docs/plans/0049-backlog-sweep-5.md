@@ -76,10 +76,14 @@ its test match the recipes on disk, and the gate's outstanding W1 and W3 warning
 
 ### Phase 2 — Spec wording
 - **Owner skill:** spec-writer
-- **Items (1):**
-  1. `2026-10-17-architect-spec-writer-rbs4-town-follow-and-outdoor-7.md` (drlg/lifecycle's town-follow question,
-     drlg/outdoor 7). (The rbs2 readings entry drafted here was closed at the `lane/p42r` review, 2026-10-20.)
-- **Done when:** the entry closed; the specs' changes tagged; the architect's review passes.
+- **Items (2):**
+  1. ~~`2026-10-17-architect-spec-writer-rbs4-town-follow-and-outdoor-7.md` (drlg/lifecycle's town-follow question,
+     drlg/outdoor 7).~~ Done by `lane/p38s5` (merged 2026-10-20), so nothing is left of it here. (The rbs2 readings
+     entry drafted here was closed at the `lane/p42r` review, 2026-10-20.)
+  2. `2026-10-20-reverser-spec-writer-plan-0049-phase-1-inputs-for-the-specs.md` (added at the Phase 1 review): the
+     Phase 1 readings for monsters/special, drlg/room-tiles, drlg/lifecycle, items/quest-drops, player/creation,
+     items/tc and quests/progression, and rng/seeds row 3, with the review's tags.
+- **Done when:** the entries closed; the specs' changes tagged; the architect's review passes.
 
 ## Resources and limits
 
@@ -128,3 +132,54 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `[0x80 | act, 0, 0]`; the word-40 bit-10 join is in Normal, the played difficulty; the classic note attributed to
   `d2s.py`'s keys; UniqueItems.md the gate refuses when another player of the game holds the copy too
   (items/0010 § 5). Phase 0 done.
+- **2026-10-20 — Phase 1 landed (reverser, `lane/p49r`; review requested).** Static only: no slot. Ghidra ran on its
+  own project copy (`-Xmx3G`), with objdump as the second tool. Kept outputs are under `workspace/logs/p49r/` (manifest
+  `p49r-manifest.txt`, `sha256sum -c` clean); the new tool is `tools/sweep_p49r.py` (`tables`, `excel`, `qsites`).
+  - **Entries:** 12 of the 13 are closed, and the queue entry (item 1) is pruned and closed. Items 6 (op 6/7 emulation)
+    and 13 (S1e (b)) are optional, not taken, and annotated as out of this plan.
+  - **Readings** (all `[I]`):
+    - MonPlace rows 19–21, 24–28 ([monsters/0003 § 7](../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20)).
+    - `0x005C09E0` = `STATEVENT_Reanimate`, the item property `reanimate`, not a skill; `FormationSpawn` case 5 is never
+      reached; `MissileSpawnOwnedMonster` = `bonewallmaker` ([items/0002](../findings/items/0002-quality-roll.md#plan-0049-phase-1-2026-10-20-static)).
+    - Mode word 1 = *Battle.net*; a saved corpse loses its stat 13; the starting items' freed property list explains the
+      48 empty lists, and the other 5 are `d2s.py`-built ([player/0001](../findings/player/0001-creation.md#plan-0049-phase-1-2026-10-20-static)).
+    - The 45 register sites and 12 steps clears are traced for qd 8, 10 and 19 ([items/0010](../findings/items/0010-quest-drops.md#plan-0049-phase-1-2026-10-20-static-the-s2c-static-leftovers)).
+    - Act `+0x50`, the wanderer's alignment, the 31 pin sites ([drlg/0009 § 11.4](../findings/drlg/0009-room-lifecycle.md#114-the-plan-0040-phase-1-review-follow-ups-plan-0049-phase-1-lanep49r-static)).
+    - The H5c release order ([drlg/0002](../findings/drlg/0002-room-build-draws.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)).
+    - `0x0056EDE0` = `MissileCreateAt`: missiles 288, 332 and 625 ([quests/0001 § 7](../findings/quests/0001-progression.md)).
+    - The src:arreat-summit-experience re-fetch (ADR-0007): two verdicts, held with refinement and held.
+  - **Tools:** `sweep_s1a.py` (breakdown, admission note), `sweep_s1b.py` (indirect-call split 359/115/58/0;
+    re-seeds 132/132 and 0/25), `monstats.py` (hireling `LIVE`), `drlg.py` (refuses a second game in one log).
+  - **Gate:** the W1 at items/0001:992 and the three `lane/p42r` W1 got anchors. The ten W3 symbols are now cited where
+    they are used. The W1/W3 count outside `docs/specs/data/excel.md` is 0.
+  - **Symbols:** 3 new `I` rows (`sub_0056EDE0_MissileCreateAt`, `STATEVENT_Reanimate`, `g_MissileSrvDoFuncs`); none
+    in lane A's skills-dispatch area.
+  - **Surprise:** the "five rare cube outputs" were never game creations.
+- **2026-10-20 — Phase 1 reviewed (architect, `lane/p49r` review): accept with fixes.** `main` merged first (one
+  conflict, this log; both sides kept); `backlog.py archive` clean. Kept outputs `sha256sum -c` clean (11 of 11), and the
+  five tool hashes of the manifest match the files; `test_sweep_s1a.py` (5) and `test_sweep_s1b.py` (6) pass. Anchors
+  read again with objdump on the pinned `Game.exe`: `AddStatEvent`'s bound and table (0x0056E746–0x0056E74B), entry 31
+  = 0x005C09E0 at 0x0073262C, the missile dispatch at 0x005ADC97–0x005ADCA7 and entry 13 = 0x005AEDA0, `MissileCreateAt`
+  calling `MissileCreate` (0x0056EE79), `STATEVENT_Reanimate`'s draw and event calls, `DUNGEON_ActCreate`'s store and
+  both callers' third push, `StartItemCreate`'s `(4, 2)` and free, the MonPlace difficulty test at 0x0054EAA8, and the
+  register-bit sites 0x005BB96B, 0x005BBA6F and 0x005BA2DB. `re/symbols.csv` after the merge: no duplicate address or
+  name; the three new rows do not clash with `lane/p45r`'s (a reuse note for `lane/p45m` is filed:
+  `2026-10-20-architect-reverser-plan-0045-p1-2-reuse-the-p49r-missile.md`). The re-fetch is recorded in
+  `docs/sources.md`; no external decompiled code.
+  - **Rulings.** (1) **qd 10 and qd 19 raised** (S2c: raised +2, raised in part −2). The trace is a closure over every
+    call of the five record functions, the kind of objdump closure the S1b review accepted for "no draw", with S2c's
+    logged writes behind it; its limits (a store outside the five functions, the A3Q4 party bit bounded by its quest's
+    code window) are written beside qd 10. qd 8 stays raised in part; its remainder is answered `[I]`. (2) **Act
+    `+0x50` settled `[C]`**: the writer and both callers' constants plus § 11's run values on both sides (30 985 server
+    checks, 8 277 client releases) are two sources; the unscanned other writers are covered for the run's window
+    only, as written. (3) **The tool's split is the kept split** (359 / 115 / 58 / 0): mechanical, reproducible, and
+    larger on the residue side, so it claims less than the hand split; rows 3 and 15 now cite it. (4) **No S1a row
+    counted the 5 rare items** as creations (the S1a review: rows 101 and 137 check only the 85 items with a list), so no
+    row note is needed; the two sentences that called them cube outputs (save/0001, the S1a review entry in plan 0038's
+    log) are corrected. (5) The optional items 6 and 13 stay open, out of this plan.
+  - **Fixes (7, made in the docs):** items/0002 the dispatch is `mov eax, [eax*4+0x73c768]` then `call eax`, and
+    Missiles now has a table doc (`tbl:` anchor); save/0001 the "rare cube outputs" sentence; rng/0002 rows 3 and 15
+    carry the kept split; the qd 10/19 raise and the act `+0x50` `[C]` written into items/0010 and drlg/0009 (with the
+    inventory § S2c note); the archivist entry's item (2) annotated as done by plan 0045 Phase 0; the spec-writer inputs
+    entry annotated with the review's tags. Phase 2 gains that entry as its item 2 (its item 1 was done by `lane/p38s5`).
+  - **Phase 1 done.** Phase 2 (spec-writer) can start.

@@ -602,7 +602,15 @@ At `0x0054E651` the function overwrites its first argument with the room's level
   `ChampionModPick`: a preset champion is always mod 16. Reproduced in the same four games. (0x0054E8A0–0x0054E909, fn:sub_0054E1E0_ChampionPack@0x0054E1E0, run:2026-10-14-mon-special)
 - [I] **`0x11`–`0x20`** (fixed classes at the point): 17 `fallen1`, 18 `fallenshaman1`, 22 `fetish1`, 23 `fetishshaman1`;
   29 `minion1`, 30 `imp1` (`deathmauler1` in level 110), 31 `act5barb1`, 32 `reanimatedhorde3`, these four with mode 12;
-  19–21 and 24 class 0; 25 and 28 nothing. The class goes through `sub_0063EC70_LevelClassVariant(room, class)` (the level's
+  25, 27 and 28 nothing (their entries in the fixed-class table `0x0054EB74`, indexed by row − 17 with the bound `0xF` at
+  0x0054E973–0x0054E97D, are `0x0054EAB1`: `xor eax, eax`, return). Corrected 2026-10-20 (plan 0049): rows 19–21, 24
+  and 26 have the entry `0x0054E9CE` (class 0) in that table, but none of them reaches it. Rows 19–21 have byte 8 in the
+  outer switch (next bullet but one) and return 0. Rows 24 and 26 have byte 7, the case at `0x0054EAA8`, which tests
+  the difficulty `game+0x6D` (`cmp byte [ecx+0x6d], 0`; `jbe`) and, outside Normal, jumps to `0x0054EAB1` and returns 0:
+  outside Normal both place nothing, and in Normal both take the group spawn (next bullet). The earlier reading
+  "19–21 and 24 class 0; 25 and 28 nothing" is withdrawn (both tables and the two windows are in the kept output
+  `sweep-rbs3-monplace-2026-10-17.txt`: `switch 0x54eb30 0x54eb0c 2 31 9`, `switch - 0x54eb74 17 16`, `window 0x0054E973`,
+  `window 0x0054EAA8`). The class goes through `sub_0063EC70_LevelClassVariant(room, class)` (the level's
   `mon` entry with the same `BaseId`, else the `NextInClass` chain while `Level` ≤ the level's `MonLvl1Ex` + 1) and then
   `sub_0054E2A0_PresetFallenVariant(class, levelId)`: `fallen1` → `fallen2` in level 6 and `fallen3` in levels 7, 12, 16;
   `fallenshaman1` → `fallenshaman2` in 6 and 7, `fallenshaman3` in 12 and 16. The spawn is `SpawnAtPos(…, −1)` then radius 4,

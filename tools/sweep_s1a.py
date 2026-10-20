@@ -275,6 +275,9 @@ def chk_corpus(a):
         by[g] += 1
     R.set("left_out", len(left))
     R.note("groups: " + ", ".join("%s %d" % kv for kv in by.items()))
+    R.note("admitted under ADR-0013 (edited tables the save code reads no cell of): run:2026-10-14-props-forced "
+           "(edited ItemRatio); the run:2026-10-11-d2s-samples item saves qit*.d2s and the saves written from them "
+           "(edited charstats.txt and cubemain.txt under -direct -txt, tools/d2s_samples.py)")
     for p, g in left:
         R.note("left out (no WDONE buffer, no recorded hash): %s (%s)" % (rel(p), g))
     return R.done()
@@ -508,7 +511,10 @@ def chk_survey(a):
             # rows 101, 137: stored prefix p is MagicPrefix record p - 1 (firstPrefix added back), suffix s is
             # MagicSuffix record s - 1 (stored unchanged): the records' stats are in the item's main list
             if it["quality"] in (4, 6, 8) and not it["props"]:
-                R.add("affix_items_empty_main_list")      # nothing to compare (the qit samples' cube outputs)
+                # nothing to compare: the edited-CharStats starting items (StartItemCreate frees the main list,
+                # 0x00534CB5) and the tools/d2s.py-built rare inputs of the cube saves (player/0001, plan 0049)
+                R.add("affix_items_empty_main_list")
+                R.add("empty_main_list_%s_q%d_ilvl%d" % (g, it["quality"], it["ilvl"]))
             elif it["quality"] in (4, 6, 8):
                 R.add("affix_items")
                 c0, m0 = affix_hits(it)

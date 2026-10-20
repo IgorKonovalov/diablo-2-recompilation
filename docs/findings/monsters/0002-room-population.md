@@ -257,7 +257,7 @@ flowchart TD
 ```
 
 - [C] `sub_0052D160_NewRoomsUpdate` (server game in `EDI`) loops over the five act slots `game+0xBC`. For each act whose
-  `+0x54` is non-zero it walks the list from `0x0061A180` (next = room `+0x7C`), then clears `act+0x54`. For each room it
+  `+0x54` is non-zero it walks the list from `sub_0061A180_ActRoomsHead` (`0x0061A180`; next = room `+0x7C`), then clears `act+0x54`. For each room it
   calls `sub_0054F060_RoomWandererTick` **unconditionally**. If room `+0x34` bit 0 is clear it then calls
   `sub_005559A0_RoomPresetUnits`, `sub_00542B40_RoomInactiveUnitsRestore`, `sub_00552610_RoomObjectsPopulate` and
   `sub_0054EC90_RoomPopulate` (all `ECX` = game, `EDX` = room), sets bit 0 and calls `0x0061A510(room, 1)`. If bit 0 is

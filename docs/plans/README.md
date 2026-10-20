@@ -54,7 +54,7 @@ Lane runs (agent usage, review verdicts, fix counts by category) are logged in t
 | [0046](0046-skills-function-catalogue.md) | Skills and missiles, the function catalogue: every numbered skill and missile function (ADR-0014 phase 3, part 2) | approved | approved 2026-10-20 (owner); drafted 2026-10-20 (`lane/plans45`); starts after 0045·P1.3's review (P0/P1), its P2 after 0045·P3's; ten static batches, P2 one slot |
 | [0047](0047-simulation-shortfalls.md) | Simulation shortfalls: the named remainders of the combat, stats and travel runs | approved | approved 2026-10-20 (owner); drafted 2026-10-20 (`lane/plans45`); P1 tools and staging (no slot), P2 one slot, P3 re-tag |
 | [0048](0048-seed-to-world.md) | Seed to world: the core specs composed end to end, with the last in-chain oracles retired | approved | approved 2026-10-20 (owner); drafted 2026-10-20 (`lane/plans45`); P0 oracle inventory, P1 models and `tools/chain.py`, P2 one slot, P3 spec, P4 wiki |
-| [0049](0049-backlog-sweep-5.md) | Backlog sweep 5: the static loose ends, the recipe register and the gate warnings | approved | approved 2026-10-20 (owner); drafted 2026-10-20 (`lane/plans45`); no slot (P0 archivist, P1 one static lane, P2 spec) |
+| [0049](0049-backlog-sweep-5.md) | Backlog sweep 5: the static loose ends, the recipe register and the gate warnings | approved | approved 2026-10-20 (owner); drafted 2026-10-20 (`lane/plans45`); no slot (P0 archivist, P1 one static lane, P2 spec); P0 and P1 reviewed 2026-10-20, P2 next |
 
 ## Run order (unattended queue, set 2026-10-20, plans 0038–0049)
 
