@@ -1719,6 +1719,14 @@ class Checker:
             # cleared and no logged line in between (no key in the inventory); the writer is not read: taken, counted
             u["it"] = d["it"]
             self.oracle("lock bit cleared before the operate (writer not logged; interact byte taken)")
+        elif (fn == 4 and (d["mode"], d["sp"]) == (u["mode"], u["sp"]) and u["it"] is not None
+              and d["it"] != u["it"] and (d["it"] == u["it"] | 0x80 or d["it"] == 0)):
+            # plan 0048 Phase 2 (run:2026-10-20-chain, xm3 and xm5): a chest (OperateFn 4) reached its OperateFn with
+            # the lock bit set after its creation (xm3: 0 -> 0x80, twice) or its interact byte cleared (xm5: 0x86 -> 0);
+            # no logged line writes it in between and the writer is not read: taken, counted per kind
+            self.oracle("chest interact byte %s before the operate (writer not logged; interact byte taken)"
+                        % ("lock bit set" if d["it"] else "cleared to 0"))
+            u["it"] = d["it"]
         self.ok((d["mode"], d["it"], d["sp"]) == (u["mode"], u["it"], u["sp"]),
                 "line %d: operate mode/interact/sparkle %s, model %s" % (self.ln, (d["mode"], d["it"], d["sp"]), (u["mode"], u["it"], u["sp"])))
         self.lid = u["lid"]
