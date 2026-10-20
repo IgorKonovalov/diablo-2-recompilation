@@ -6,8 +6,8 @@ based_on:
   - docs/specs/drlg/collision.md 2026-10-17
   - docs/specs/drlg/maze.md 2026-10-17
   - docs/specs/drlg/warps.md 2026-10-17
-  - docs/specs/drlg/outdoor.md 2026-10-17
-  - docs/specs/drlg/lifecycle.md 2026-10-17
+  - docs/specs/drlg/outdoor.md 2026-10-20
+  - docs/specs/drlg/lifecycle.md 2026-10-20
 ---
 
 # How a level is built
@@ -530,7 +530,8 @@ re-applies its mods in full, as at its first creation, but makes no new minions 
 code). A minion's restore re-applies its mods in the lighter form, which also skips the step a random name takes on
 the monster's own seed; its level does not show which form it gets, so that is read from the code only. States, timers and anything a hit left behind are lost. Each restored item takes two game-seed draws; an item
 saved in full keeps its seed, while a simple one (gold, potions, keys) comes back with seed 0. Its expiry becomes the
-later of the saved one and 15 000 frames from now. A run reproduced 2 035 monster, 876 item and 1 799 object restores.
+later of the saved one and 15 000 frames from now; an item whose expiry has already passed is not re-created (5 seen
+in a run). A run reproduced 2 035 monster, 876 item and 1 799 object restores.
 
 **Wanderers** ([lifecycle § I](../specs/drlg/lifecycle.md#i-the-wanderer-tick)). Each time a room is handled at the
 start of a frame it takes one room-seed draw for the wandering monster; that draw passes 1 time in 32 768. What
@@ -619,8 +620,10 @@ section.
   branches once missing are now reached in runs and match the model: the Frigid Highlands prisons placed by the
   fallback scan, a road search that fails in the Black Marsh, and the bridge search on the non-square Blood Moor. A
   link-builder back-up was never reached. A vertex merge in the level outline and a waypoint pass with no free cell
-  were never reached either, in the logged games or in 52 200 windows of an offline scan, and nothing yet shows that
-  the shipped data cannot reach them. Three other branches have no case in the shipped data, by a reading of the code
+  were never reached either, in the logged games or in 52 200 windows of an offline scan. For the vertex merge, an
+  enumeration of every layout the act link builder can give rules out a case in Acts I, II, IV and V (a reading of
+  the code, since the merge rule is read, not run); Act III's layouts cannot be enumerated that way and keep only the
+  scan. Nothing yet shows that the shipped data cannot reach the waypoint pass. Three other branches have no case in the shipped data, by a reading of the code
   that the scan agrees with: roads with 5 or 6 endpoints (an Act I level has at most 4, since its border pieces never
   take the opening's variant), an exhausted road search (it uses at most 45 of its 900 nodes), and the cliff-cave scan's
   swapped bounds, which only a non-square level would show (of the Act I levels 2–7 only the Blood Moor is non-square,
@@ -658,10 +661,13 @@ section.
   that out.
 - **Room lifecycle** ([lifecycle § Open questions](../specs/drlg/lifecycle.md#open-questions)): whether a hostile
   monster can follow a player into a town room at all (if it can, the town's release frees it instead of saving it).
-  The code bars such a monster from planning a path whose goal is in town, but three other ways in are not read yet: a
-  path that only crosses a town room, the straight-line path kinds, and knockback, teleport or placement. Also open:
-  which form of the mod handlers a restored minion gets, the wanderer roll and spawn, an expired item, several save tests and restore paths,
-  and multiplayer games, none of which a run met.
+  Read from the code: such a monster cannot plan a path whose goal is in town, but nothing tests the rooms a path only
+  crosses, and the teleport code tests no destination room. A scan of the town layouts in the kept logs found no
+  shortest route that crosses a town (each town meets its neighbour at one gate), and the two monster AIs read that
+  choose a teleport point both refuse one in town; neither covers every case, so the question stays open. Also open:
+  which form of the mod handlers a restored minion gets, the wanderer roll and spawn, a quest item that never expires,
+  the dropped-record case for one alignment, which call sets one monster flag before the record is written, several
+  save tests and restore paths, and multiplayer games, none of which a run met.
 - **Collision** ([collision § Open questions](../specs/drlg/collision.md#open-questions)): the reader of the missile
   mark in spawn tests, the clear-and-restamp of a merged tile, single-cell placement tests, three special-class spawn
   checks, NPC footprints, the level-seed step in the Arcane Sanctuary and Canyon of the Magi (seen only in Tristram),
