@@ -2561,3 +2561,19 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Ledger:** 2 fixes: overclaim 1, other 1 ([metrics](metrics.md)).
   - **Backlog:** review request
     [p38s5 review](../backlog/archive/2026-10-20-spec-writer-architect-p38s5-drlg-lifecycle-review.md) closed.
+- **2026-10-20 — Phase 3, qualification check (spec-writer, `lane/p38s6`, from `main` `0adbb2e`).** No cluster
+  qualifies; nothing is re-tagged. Accepted batches: S1a, S1b, S1e, S1f, S2a, S2b, S2c, S3a, S3b, S4a, S4b, H4b, H5a,
+  H5c, H5e, H6d, H7a. Every spec whose batches are all among them is already re-tagged: rng/seeds, monsters/README,
+  drlg/README and drlg/room-tiles (`lane/p38s`), drlg/outdoor (`lane/p38s2`), drlg/maze, drlg/preset and drlg/warps
+  (`lane/p38s3`), data/calc and rng/README (`lane/p38s4`), drlg/lifecycle (`lane/p38s5`); player/README has no tags.
+  Checked against the *Batch* column of each per-spec inventory file and inventory § 5 with the § 2.6 moves. The open
+  spec-writer entries for done clusters hold only parts for waiting ones (S4a (b) collision; S4b (a) objects, (d)
+  collision, (f) items/tc).
+  - **Waiting** (missing batches): items/tc H2a, H2b, H2c; items/quality H2a; items/affixes H2b; items/uniques-sets
+    H2b, H1a (us 21); items/properties H2b, H2c; items/sockets-runewords H2b, H6b; items/cube H6a; items/vendors H6c;
+    items/quest-drops H4a, H6e1, H6e2; save/d2s H1a, H1b; data/excel H3b (and the plan 0039 fold); data/strings and
+    data/README H3b; monsters/pool, monsters/special and monsters/stats H4a; monsters/spawn H4a, H5d; hirelings H1a,
+    H1b, H6f; player/creation H1a, H6g; drlg/collision H5b, H5d; objects H5b, H6e2.
+  - **Backlog:** unchanged; no review request (no spec changed).
+  - **Next:** the next Phase 3 round after H5b's review (objects still waits for H6e2, drlg/collision for H5d), then per
+    cluster as H2a–H2c, H4a and the rest are accepted.
