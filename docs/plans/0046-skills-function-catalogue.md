@@ -616,3 +616,25 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   9c, 9d, `sor`, `ama` and `nec`'s conventions, ruling 3 of the `sor` review on writer scans, and ruling 1's
   condition of the `ama` review on nested boundaries (a stack-slot compare or a single call site shown at each
   level of a helper chain).
+- **2026-10-20 — Phase 1 batch `pal` landed for review (reverser, `lane/p46m8`, static, no harness).** The paladin
+  start functions 29, 31, 35, 36, 37 and do functions 64–67, 73, 79–82 and 150: 15 entries, all read and all emulated
+  ([skills/0011](../findings/skills/0011-paladin.md); tier A start 36, do 65, do 66 emulated too). Draws before the
+  boundaries: none; no case steps the caster's or the target's seed (the aura target passes, start 35's weapon roll
+  and do 79's conversion roll draw after their boundaries, `[I]`). Raised by emulation (run:2026-10-20-cat-emu-pal,
+  `tools/skills_catalogue_emu.py --batch pal`, `check.txt` `989e5367…`, `manifest.sha256` `12c8d5c0…`): three
+  families, 4 950 cases, 0 mismatches, 21 boundary/call-site triples asserted (site control 2 615 of 2 615), both seeds
+  compared in every case, blocks, the aura context and packets compared by content; nested boundaries by the helper's
+  return address at its stack slot (`0x0056B740`, `0x005D02B0`) or single call sites listed by `static`
+  (`0x0056E510`, `0x00622870`); five negative controls per family (each family has one failing 134 or more; the weak
+  ones named with their deciding class). The calc count's writer scan matches `moffs` stores and immediates (0 and 0).
+  The same tool reproduces 9a–9d, `sor`, `ama` and `nec` byte for byte (`repro.txt`). Surprises: the aura functions
+  reach `AURA_ApplyToTarget` through `0x0056B740` (a context `{game, unit, 0, &block}` and an indirect call), the
+  boundary of this batch; do 65's `aurastat` values are gated by mana as its `passivestat`s are, `aurastate` 0 is
+  skipped and `auratargetstate` 0 admitted; do 66 rolls `SKILLS_RollElemDamage` once per run, not per unit (`[I]`,
+  stats/0002 § 7 note); start 36 reads no skill record; start 35 has no range test; do 73 and do 80 refuse missile
+  class 0; do 81's callback rolls a 20 % state 107 on each unit's own seed. Class-3 self-hit (skills/0010): nothing in
+  the batch tests the class or calls `0x005C2FF0`; Sacrifice's own self-hit has the same packet shape without the
+  result word (`[I]`). Tags: 25 `[C]`, 12 `[I]`, 4 `[L]` bullets; 29 symbols added (`I`). Dated notes in skills/0003 § 5
+  (rows 98, 102, 117 in step) and stats/0002 §§ 4, 7. Review request
+  [to the architect](../backlog/2026-10-20-reverser-architect-lane-p46m8-review-plan-0046-batch-pal.md); column
+  readers [to the archivist](../backlog/2026-10-20-reverser-archivist-plan-0046-pal-skills-charstats-column-readers.md).

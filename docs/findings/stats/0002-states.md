@@ -227,6 +227,11 @@ stateDiagram-v2
   `SKILLS_NextPeriodicFrame + 1 − frame`, so a target keeps the state one frame past the next run. For a player
   caster with a positive mana cost, state 85 `nomanaregen` is set while the run wrote at least one stat on a target
   (the context's counter at `+0x40`, which `AURA_ApplyToTarget` increments) and cleared otherwise. (fn:sub_005CF010_PalAuraDo@0x005CF010, tbl:Skills.txt:aurastatcalc1)
+  *2026-10-20 (plan 0046 batch `pal`, [skills/0011](../skills/0011-paladin.md) § 3):* emulated up to the caster's own
+  `AURA_ApplyToTarget` (`[C]` under ADR-0021 there): the mana check also gates the `aurastat` evaluation (a player
+  whose stat 8 is below the cost gets the `aurastate` with no values), `aurastate` must be above 0 (0 is skipped, and
+  the run goes straight to `auratargetstate`, which admits 0), and a `passivestate` above 0 goes in the block's
+  `+0x48`, the state `AURA_ApplyToTarget` removes. (fn:sub_005CF010_PalAuraDo@0x005CF010)
 - [I] **Range and filter.** The caster's near rooms; a unit counts when its squared distance to the caster
   (subtiles) is ≤ `range²` and it passes the filter (`aurafilter`, `0x583` when 0); a monster with a MonStats flag
   can be excluded. (fn:SKILLS_ForUnitsInRange@0x0056B7E0, tbl:Skills.txt:aurafilter)
@@ -320,6 +325,10 @@ stateDiagram-v2
   which draws `RNG_RangeB` at 0x0056E132 on the caster's seed, once per hit. Every other kind of the table is
   draw-free by the run. (fn:sub_005CF3A0_AuraHitDo@0x005CF3A0, fn:SKILLS_RollElemDamage@0x0056E0C0,
   fn:RNG_RangeB@0x0045C3E0, run:2026-10-17-stats)
+  *2026-10-20 (plan 0046 batch `pal`, [skills/0011](../skills/0011-paladin.md) § 3), `[I]` from the reading:* the call
+  at 0x005CF5D5 is made once per run of do 66, before its target pass, and the packet it fills is copied to every unit
+  the pass hits (`0x005CF2A0`, `rep movs` at 0x005CF367); so "once per hit" is once per aura run, whatever the number
+  of units hit. (fn:sub_005CF2A0_AuraHitUnitCb@0x005CF2A0)
 
 ### 8. The Phase 2 run (`run:2026-10-17-stats`)
 
