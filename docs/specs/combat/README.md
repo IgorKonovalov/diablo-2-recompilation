@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/stats, player/creation, items/properties, data/calc]
 consumed_by: [items/tc]
-tags: {C: 36, I: 35, L: 5}
+tags: {C: 36, I: 42, L: 5}
 updated: 2026-10-20
 ---
 
@@ -175,7 +175,7 @@ A1. PlayerAttack(att):                                                [C] (fn:SK
       PrgHooksBeforeBuild(att, pkt);  BuildDamage(att, def, pkt, 0, 128);  PrgHooksAfterBuild(att, pkt)   ; damage.md, whatever the result
       ResolveAndQueue(att, def, pkt, 128)                             ; delivery.md § A: reductions on a hit
       if att has the `meleeonly` state flag: AttackDeliverMeleeOnly(att, def)        ; [I] (fn:sub_0056C2D0_AttackDeliverMeleeOnly@0x0056C2D0), skips the finisher
-      else: PrgFinisher(att);  DeliverQueued(att, def)                ; delivery.md § A; the finisher peeks att.seed, [I] (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D5368–0x005D538C)
+      else: PrgFinisher(att);  DeliverQueued(att, def)                ; delivery.md § A3: the finisher's own step peeks att.seed, its srvprgfunc entries draw (§ B5), [I] (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D5368–0x005D538C, 0x005D4E80)
 
 A2. MonsterAttack(att):                                               [C] (fn:sub_005A7670_MonAttackFrame@0x005A7670, fn:MON_MeleeHit@0x005A5490, run:2026-10-16-combat, all of A2)
       ; earlier, at the mode change: MonAttackStats(att, newMode)     ; damage.md § E
@@ -216,6 +216,7 @@ sequenceDiagram
   A->>A: to-hit Range(100)
   M->>M: on a hit: block Range(100) if b > 0, then avoidance rolls if > 0
   A->>A: build, hit or miss: phys RangeB, crit chain Range(100) each, fire, light, cold, magic RangeB, poison RangeB, RangeB(1)
+  Note over A: a charged progressive state: the finisher's entries draw here (B5)
   A->>A: on a hit: open wounds, crushing blow Range(100) each if chance > 0
   A->>A: leech overlay Range(2) if life and mana gains
   A->>A: stun Range(100) if the monster is a unique
@@ -228,7 +229,10 @@ sequenceDiagram
 the leech overlay and the stun; on the monster's seed: the defence rolls (on a hit), then the cold draw at delivery.
 Each draw happens only under the condition given in its file. (fn:SKILL_AttackDo@0x0056F070, fn:COMBAT_ApplyDamage@0x0057C6C0,
 run:2026-10-16-combat) The weapon durability and the get-hit draws are boundary oracles (§ The ADR-0014 boundary).
-[I] (fn:COMBAT_DurabilityLoss@0x0057D3D0, fn:sub_0057CB00_GetHitRoll@0x0057CB00)
+[I] (fn:COMBAT_DurabilityLoss@0x0057D3D0, fn:sub_0057CB00_GetHitRoll@0x0057CB00) Under a charged progressive state
+the finisher's entries draw on the player's seed between the build and the delivery, and entry 38 delivers the
+queued hit itself (B5); the other stat-event handlers draw on the seed of the unit that owns them (B6). [I]
+(fn:COMBAT_PrgFinisher@0x005D5220, 0x005D4E80, data:g_StatEventFuncs@0x007325B0)
 
 **B2. A monster's melee attack on the player.**
 
@@ -325,6 +329,50 @@ CritChain(u, w) → bool:                                              [I] (fn:s
   drawn ([rng/seeds](../rng/seeds.md), *Reimplementation notes*). [I] (fn:sub_0059F940_MissilePierceCount@0x0059F940,
   tbl:Missiles.txt:Pierce)
 
+**B5. The progressive finisher (the attacker's seed).** A player's normal attack under a charged progressive
+state (a Monk's charge-up skills) runs `COMBAT_PrgFinisher` between the queue and the delivery (A1); the run met
+none (§ The ADR-0014 boundary). Its own `RNG_Step` is a **peek**, but the `srvprgfunc` entries it calls **draw on the
+attacker's seed**; the full algorithm is [delivery § A3](delivery.md#a-queue-and-delivery).
+
+```mermaid
+sequenceDiagram
+  participant A as attacker seed
+  participant L as local seed
+  participant U as area unit seed
+  A->>A: finisher: Step on a copy, seed restored (peek)
+  A->>A: entry 143: one Step at entry (Fists of Fire, charge 1)
+  Note over A: entry 38 (charge 2): the queued hit is delivered first (delivery § B)
+  A->>A: entry 38: phys RangeB, elemental RangeB, one more Step for EType 10
+  U->>U: entry 38, per area unit: the defence rolls
+  A->>A: entry 39 (charge 3): one Step at entry, its low word seeds a local seed
+  L->>L: entry 39: two Range per point
+```
+
+- B5. **Entries 37, 39, 41 and 143 step the attacker's seed once at entry**, before any test, so the step happens
+  even when the entry then does nothing (143 for Fists of Fire, whose `srvmissilea` is empty). 37 and 143 pass the
+  stepped low word to a missile ring, 39 and 41 initialise a local seed with it (39 then draws two `Range` per
+  scatter point on it); the missiles they create are re-seeded or drawn from that local seed, not from the
+  attacker's. On stock data Fists of Fire runs 143, 38 and 39 at charges 1, 2 and 3 (with `prgstack`, every entry up
+  to the current count). [I] (0x005D4E80, 0x005D4F50, 0x005D3F90,
+  0x005D5080, 0x005D53E0–0x005D5490, [skills/0003 § 1](../../findings/skills/0003-handlers.md#1-progressive-entries-srvprgfunc-and-the-finishers-tail))
+- B5. **Entry 38 draws two or three times on the attacker's seed**: it first delivers the queued hit
+  (`COMBAT_DeliverQueued`, so that hit's delivery draws of B1 come before 38's), then builds an area packet with
+  `RangeB(att.seed, max − min)` for the physical damage and `SKILLS_RollElemDamage`'s `RangeB` for the elemental, plus
+  one `RNG_Step` for `EType` 10; each unit of the area then draws its own defence rolls on its own seed. [I]
+  (fn:sub_0056E170_SkillRollPhys@0x0056E170, 0x0056E1C4, fn:SKILLS_RollElemDamage@0x0056E0C0,
+  fn:sub_0056B9C0_AreaHitUnit@0x0056B9C0, [skills/0003 § 1](../../findings/skills/0003-handlers.md#1-progressive-entries-srvprgfunc-and-the-finishers-tail))
+- B5. Entries 36 and 40 draw nothing of their own; every entry that creates missiles adds the creations' draws (B4).
+  The finisher's tail, `sub_00571AA0_UnitMsgA3`, queues a client message carrying the peeked value and changes no game
+  state. [I] (fn:sub_00571AA0_UnitMsgA3@0x00571AA0, 0x005D5465)
+
+**B6. The other stat-event handlers.** Besides crushing blow, open wounds and freeze ([delivery § E](delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze)),
+the handlers registered on stock data that draw do so on the **handler's unit**, the unit that owns the event. On
+the attacker's seed: its `do…` handlers 7 knockback, 8 howl and 9 stupidity, 20 skill on attack, hit or kill, and
+its `kill` handler 31 reanimate; on the defender's: 3 shiver armour (`attacked…`), 21 skill on get-hit (`damaged…`) and
+its `killed` handler 30. In run:2026-10-16-combat these handlers were boundary oracles (§ The ADR-0014 boundary); the
+list and their draws are [delivery § E5](delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze). [I]
+(data:g_StatEventFuncs@0x007325B0, [skills/0003 §§ 3, 13](../../findings/skills/0003-handlers.md#3-the-stat-event-handlers))
+
 ### C. Chaining events on one seed
 
 [C] **The player's seed chains.** Consecutive in-scope events on the player's seed (its attacks, the monster attacks'
@@ -332,6 +380,11 @@ defence part, the missile defence, its Nova missiles) follow each other with no 
 taken: chained pairs `pa` 1 796, `ma` 4 235, `md` 1 505, `pm` 519 (as first event), each ≥ 20 on both ends.
 (run:2026-10-16-combat) A resynchronisation was needed where something out of scope drew in between (213 player
 attacks). (run:2026-10-16-combat)
+
+[I] The run had no finisher events (they were dropped by rule and none occurred), so this chaining does not cover a
+charged progressive state: there the finisher's entries 37, 39, 41 and 143 add one draw each and 38 two or three on the
+player's seed inside the attack (B5), and the drawing stat-event handlers of B6 add theirs inside a hit or a kill. Plan 0045 Phase 2
+tests both kinds. (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D4E80, 0x0056E1C4, data:g_StatEventFuncs@0x007325B0)
 
 [I] A weapon-share missile the player creates (a bow or crossbow attack, a javelin, a throw, a `SrcDam` skill
 missile) inserts the 1–3 critical draws of B4 on the player's seed at its creation frame, between the player's other
@@ -415,6 +468,10 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   0x0057BC2F–0x0057BC8A, 0x0057C560–0x0057C568, 0x0057B0FA–0x0057B124, run:2026-10-16-combat)
 - **Draws that do not happen**: a chance of 0 (block, dodge, deadly strike, crushing blow, open wounds) and a
   degenerate damage range draw nothing, on the paths the run checked: § B1, B2 and the player's side of B3. [C] (run:2026-10-16-combat)
+- **The finisher peeks; its entries draw.** `COMBAT_PrgFinisher` steps a copy of the attacker's seed and restores
+  it, but entries 37, 39, 41 and 143 step the real seed once at entry and 38 draws two or three times on it (B5). A
+  reimplementation advances the seed for the entries and not for the peek. [I] (0x005D5368–0x005D538C, 0x005D4E80,
+  0x005D4F50, 0x0056E1C4)
 - **The missile creation's critical strike draws at 0.** A weapon-share missile always steps its owner's seed once
   for stat 337, whatever its value (B4); its deadly strike and mastery steps still need a chance above 0. [I]
   (fn:sub_0064A850_MissileCritRoll@0x0064A850, 0x0064A864–0x0064A890)
@@ -434,6 +491,8 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   architect review: 19 sessions, 15 358 events, 0 mismatches; the resume-lane addendum (40 logs, 40 655 events,
   0 mismatches) and its review; the shortfalls.
 - [skills/0001](../../findings/skills/0001-dispatch.md) §§ 11 (the conversion writers), 12 (the finisher's seed peek).
+- [skills/0003](../../findings/skills/0003-handlers.md) §§ 1 (the `srvprgfunc` entries and the finisher's tail), 3 (the
+  stat-event handlers and their draws), 13 (draws per event), and the architect's P1.3 review (plan 0045 log).
 - [skills/0002](../../findings/skills/0002-missiles.md) §§ 2 (creation), 3 (the damage block, `MissileCritRoll`, the
   pierce count), 5 (the hit, the to-hit roll), 6 (`MISSILE_BuildDamage`'s draw order), 9 (draws per event), and the
   architect's ruling on the creation draws (plan 0045 P1.2 review).
@@ -455,9 +514,9 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   and its hit, damage and do functions (its draw order at creation and at the hit is § B3–B4, read from the code
   only); whether a missile's creation draws anything beyond B4 (the request's callback, the path plan, `0x005A43B0`
   for a monster owner, all unread) and whether its draws chain, which plan 0045 Phase 2 tests; the full rule of the
-  conversion writers (skill hit builders write them, [damage § D](damage.md#d-conversion)); the event handlers other
-  than crushing blow, open wounds and freeze (skill on hit, knockback, slow…); the progressive-charge hooks and the
-  `srvprgfunc` entries the finisher calls (its own step is a peek, [delivery § A](delivery.md#a-queue-and-delivery)).
+  conversion writers (skill hit builders write them, [damage § D](damage.md#d-conversion)); a run that reaches the
+  progressive finisher and the stat-event handlers other than crushing blow and open wounds, whose draws B5 and B6
+  give from the code only, and the progressive-charge hooks around the build.
 - [L] **Owed to phase (5), animation:** hit recovery, knockback and stun lengths in time, the hit class, the get-hit
   and durability draws.
 - [L] **Shortfalls of run:2026-10-16-combat** (plan 0037 Phase 2, after the resume lane; 40 655 events): crushing

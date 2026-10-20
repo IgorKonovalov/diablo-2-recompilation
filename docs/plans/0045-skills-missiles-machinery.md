@@ -466,7 +466,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   **Boundary recommendation** for Phase 2 in [skills/0003 § 14](../findings/skills/0003-handlers.md#14-boundary-recommendation-for-phase-2)
   (event entry points, value oracles, modelled set, log windows, chaining kinds), for the review's ruling. Backlog:
   review request [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p45h-review-plan-0045-p1-3-handlers.md),
-  inputs [to the spec-writer](../backlog/2026-10-20-reverser-spec-writer-skills-0003-handlers-inputs-for-combat-rng-seeds.md),
+  inputs [to the spec-writer](../backlog/archive/2026-10-20-reverser-spec-writer-skills-0003-handlers-inputs-for-combat-rng-seeds.md),
   column anchors [to the archivist](../backlog/2026-10-20-reverser-archivist-skills-columns-anchored-by-skills-0003.md);
   closed: [the P0 notes entry](../backlog/archive/2026-10-20-architect-reverser-plan-0045-p0-review-notes-for-p1-1.md)
   and [the state-52/event-9 entry](../backlog/archive/2026-10-17-reverser-reverser-a-read-which-call-applies-the.md).
@@ -536,10 +536,23 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   question on the `srvprgfunc` entries, and README's phase-(3) open question are now stale: the entries are read and
   37, 39, 41 and 143 step the attacker's seed and 38 draws two or three `RangeB` on it plus a defence roll per area
   unit. The finisher's own step stays a peek; § C's `[C]` stands (the run dropped finisher events by rule and had
-  none). Written into [the spec-writer's entry](../backlog/2026-10-20-reverser-spec-writer-skills-0003-handlers-inputs-for-combat-rng-seeds.md)
+  none). Written into [the spec-writer's entry](../backlog/archive/2026-10-20-reverser-spec-writer-skills-0003-handlers-inputs-for-combat-rng-seeds.md)
   as an `[I]` fold, ahead of Phase 3. **Status:** Phase 1's static batches P1.1–P1.3 are complete; Phase 1 closes when
   Phase 1b (community cross-check, no Ghidra) lands, which may run now beside anything. **Phase 2 is ready** to start
   once both harness slots are free (plan 0044·P2 holds them now); Phase 1b must land before Phase 2's last session
   batch, since its contradicted cases are Phase 2 cases. **Plan 0046 Phase 0 (archivist) may start**: its gate (P1.3
   reviewed, the machinery named, tier A fixed) is met. Review request
   [closed](../backlog/archive/2026-10-20-reverser-architect-lane-p45h-review-plan-0045-p1-3-handlers.md).
+- **2026-10-20 — skills/0003 folded into combat and rng/seeds (spec-writer, `lane/cfix2`), for review.** All `[I]`,
+  ahead of Phase 3, from [skills/0003](../findings/skills/0003-handlers.md) §§ 1, 2, 3, 9, 12, 13 as fixed by the P1.3
+  review: [combat/README](../specs/combat/README.md) A1, B1, new B5 (the finisher's `srvprgfunc` entries: 37, 39, 41,
+  143 one step on the attacker's seed at entry, 38 two or three draws after delivering the queued hit, its area
+  units' defence rolls on their own seeds) and B6 (the drawing stat-event handlers by unit), an `[I]` note under § C's
+  unchanged `[C]`, the phase-(3) open question rewritten; [combat/delivery](../specs/combat/delivery.md) new A3
+  (pseudocode) and E5 (handler table, 28 heal after kill with no draw), two open questions struck, one `[L]` added;
+  [combat/to-hit](../specs/combat/to-hit.md) A6 (state 52); [combat/damage](../specs/combat/damage.md) D1 (15 `EType`
+  stores at `+0x65`); [rng/seeds](../specs/rng/seeds.md) the re-seed sites, its open question struck, the
+  Armageddon first-period `[L]` added; wiki/randomness rewritten where it said the sites were unread. Tags: README
+  I 35 → 42, delivery I 39 → 53 and L 4 → 3, seeds I 11 → 12; damage and to-hit unchanged. Entry
+  [closed](../backlog/archive/2026-10-20-reverser-spec-writer-skills-0003-handlers-inputs-for-combat-rng-seeds.md);
+  review request [to the architect](../backlog/2026-10-20-spec-writer-architect-review-lane-cfix2-skills-0003-fold-into-combat.md).
