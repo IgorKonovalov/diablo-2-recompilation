@@ -25,3 +25,12 @@ section (NPC 367's menu branch is unreachable by stock play); packet 0x48's clea
 (object 567 placed nowhere on stock data, like NPC 377), waypoint activation from mode 0 (event 1, the `Sync` 0 draw: not reached), the e3 rows marked not reached
 in § 17's candidates table, and every shortfall § 17 and § 14 name.
  Not blocking until the review rules.
+
+*2026-10-20 (architect, `lane/p42r` review: accept with fixes):* **released, now blocking the Phase 3 review.** Re-tag
+as listed above, from quests/0001 § 17 and quests/0002 § 14 as they stand after the review, with three changes: (1) NPC
+367's menu is `[C]` only for the state logged (expansion, word 26 b0, after Tyrael's 0x4E20 talk); that no stock state
+offers the travel line, and so that the 367 branch is unreachable, is `[I]` (the client's menu builder was not read);
+(2) the town portal opens with **three** draws (quests/0002's summary is corrected); (3) the cairn order's classes are
+assigned in fill order (slot `low mod 5` takes the next of 17…21) `[C]`: drop the other reading from the spec's *Open
+questions*. The eclipse period is `15 + (low & 1)` of the stepped quest seed (`RandLoHi(15, 17)`'s power-of-two path),
+so 15 or 16, never 17. Also pick up the save/d2s E1 entry (`2026-10-20-architect-spec-writer-save-d2s-e1-quest-load-rule.md`).

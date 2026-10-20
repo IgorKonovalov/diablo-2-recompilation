@@ -467,6 +467,11 @@ Runtime records for [quests/0001](0001-progression.md) and [quests/0002](0002-tr
   stopped by hand. The driver supervises each session (part 2's watchdog), run under `timeout`.
 - **Not reached / out of scope:** the two findings' part 3 sections name the shortfalls (final for this plan);
   two-client cases stay plan 0044's.
+- **Review re-run** (architect, `lane/p42r` review, 2026-10-20, at `8ce7e28`): both manifests pass `sha256sum -c` from
+  `workspace/logs/quests/` (43 and 26 OK); `tools/quests.py check` (sha256 `b6dfb1a3…`; logger `tools/gdb/questev.py`
+  revision E, `f177f890…`) over the 13 logs and over the 32 part 1 and 2 logs gives output byte-identical to
+  `quests3-check.txt` and `quests3-recheck-p12.txt`; over the 12 development logs 0 over 2 498;
+  `tools/test_quests.py` 19 tests OK.
 - **Conclusion:** raises, corrections and shortfalls in
   [quests/0001 § 17](0001-progression.md#17-phase-2-part-3-run2026-10-19-quests3) and
   [quests/0002 § 14](0002-travel.md#14-phase-2-part-3-run2026-10-19-quests3).

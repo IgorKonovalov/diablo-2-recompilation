@@ -672,3 +672,29 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   and Exit ends the game process (the watchdog then reports "the game exited"); walking clicks near a town waypoint
   open its menu; the `act` driver does not know the save's name, so copy `<log>.out.d2s` by hand; Harrogath's type-5
   lookup takes its single type-0 point without a draw.
+- **2026-10-20 — Phase 2 part 3 reviewed (architect, `lane/p42r` review): accept with fixes.** Anchors spot-checked in
+  the image (r2, no Ghidra): the eclipse arm `0x0059EDC0` (gate `+0x0C` = 0 and private `+0x01` = 0, `QUESTS_GetSeed`
+  at 0x0059EDD3, `RNG_RandLoHi(15, 17)` at 0x0059EDE1, `QUESTS_TimerAdd` at 0x0059EDEE) behind e3's `+0x0C` = 0 and
+  `+0x09` = 1 test (0x0059EE26–0x0059EE32), and the timer `0x0059ED80` calling `0x0059A350`; `0x00592EE1` (the
+  order draw's seed); `0x00544840` → `0x00593CB0` at 0x0054488B; `0x0053743D` → `0x00597310`; Harrogath portal's
+  word 28 write at 0x005B590F (`QUESTRECORD_SetState`); `LevelPointPick`'s n = 0 exit at 0x0066AC90; the town-portal
+  town test at 0x005BE2E2; `UNIT_SetMode`'s unchanged-mode `je` at 0x006246AB. Re-run (kept in the run record): both
+  manifests OK, the checker's outputs over the 13 logs and the 32 part 1 and 2 logs byte-identical to the kept files,
+  12 development logs 0 over 2 498, 19 tests OK. Nine symbols raised and one added: no clash with `main`.
+  **Rulings.** (1) The four corrections hold: the eclipse's once-per-game is the state (the run separates it: the
+  second entry to 44 had private `+0x01` cleared and state 1, and drew nothing); the cairn order on the `bkd ` use,
+  classes 17–21 in fill order `[C]` (the predicted order is that reading; plan 0042 P3's *Open question* on the other
+  reading can close); the Act IV → V travel through object 566; Meshif's menu. (2) Shortfalls ruled final and `[I]` for
+  this plan: the Zoo (object 567 placed by no DS1, created by no immediate: `[I]`, a computed class is not excluded),
+  waypoint activation from mode 0 (`wpmodes` stays `[I]`), the unreached e3 rows, the 7-try branch, the timer re-arm
+  and wrap. (3) The driver deviations are accepted: the logs are continuous, the hand-copied saves are in the manifest
+  and the checker re-runs identically. (4) Symbols `QUESTS_TimersRun`/`TimerAdd` at `C` stand as names; the re-arm
+  branch stays `[I]` in the text.
+  **Fixes applied (3):** quests/0002's summary "town portal creation: five" corrected to three (stale since Phase 2
+  § 12; raised by `lane/p42s`); NPC 367's "no travel line" scoped to the state logged, "never offered" `[I]` (the
+  client's menu builder was not read; § 5 summary and the § 5 bullet); the checker and logger hashes named in the run
+  record's review re-run line.
+  **Backlog:** the review request is closed; the rbs2 quests/economy entry is closed (economy part (b) done in
+  items/economy by `lane/p43s`, quests parts (a) and (c) folded by `lane/p42s`); the part 3 inputs entry is annotated
+  and released to `lane/p42s`; a spec-writer entry is filed for save/d2s E1's stale load rule (assigned to
+  `lane/p42s`). The archivist recipe entry stays open. The Phase 3 review follows the re-tag.

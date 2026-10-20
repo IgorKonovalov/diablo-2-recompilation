@@ -44,9 +44,10 @@ and writers of the act changes are also listed per quest in [quests/0001](0001-p
   `meshif2`, `cain6`, `[L]` as identities). The player is moved
   **before** the words are written. (fn:NPC_MenuAction@0x00579D60 0x0057A650–0x0057A7D6, 0x0054B830,
   fn:sub_005467E0_NpcActTravel@0x005467E0)
-- [C] **Part 3** (run:2026-10-19-quests3, § 14): the stock client offers NPC 367 no travel line, so the expansion Act IV
-  → V travel is the Harrogath portal (object 566, `0x005B5880`: word 28 b0 and b13 once, `+0x4C`, then
-  `NpcTravelMove(109, 5)`), not the 367 branch (which stays `[I]`, unreachable by stock play); Meshif's return
+- [C] **Part 3** (run:2026-10-19-quests3, § 14): in the state logged (expansion, word 26 b0, after Tyrael's 0x4E20 talk)
+  the stock client offers NPC 367 no travel line (that the line is never offered is `[I]`: the client's menu builder
+  was not read; architect review), and the expansion Act IV → V travel is the Harrogath portal (object 566, `0x005B5880`: word 28 b0 and b13 once, `+0x4C`, then
+  `NpcTravelMove(109, 5)`), not the 367 branch (which stays `[I]`, not reached by stock play); Meshif's return
   (`NpcTravelMove(40, 5)`) steps Lut Gholein's level seed once per trip (a type-5 point found). (0x005B5880, 0x0054B830)
 - [I] **The Durance portal** (`OperateFn` 46) needs word 22 bit 13 or bit 0; on level 102 it writes word 23 (and 18),
   sets waypoint 103 and moves the player to level 103 at point type 0. On any other level the same handler only calls
@@ -80,7 +81,8 @@ and writers of the act changes are also listed per quest in [quests/0001](0001-p
 - [I] **Draws by event kind** (§ 10): waypoint operate: none, or the waypoint's unit seed (five `Sync` 0 rows); waypoint
   travel, NPC act change, death, join, the lair, Arcane and Durance portals: the destination's level seed when it has
   `Position` (plus a full level or room build when the level or room does not exist yet, DRLG oracles); town portal
-  creation: five (above); portal use: none of its own (a room activation is an oracle); warp: none.
+  creation: three (above; corrected from five by Phase 2, § 12; a town room updated for the first time adds its
+  population's game-seed draws, an oracle); portal use: none of its own (a room activation is an oracle); warp: none.
   (fn:sub_0054C5D0_Pkt49WaypointTravel@0x0054C5D0, fn:sub_005467E0_NpcActTravel@0x005467E0,
   fn:sub_0066AC40_LevelPointPick@0x0066AC40, fn:sub_0056D130_PortalObjectCreate@0x0056D130, 0x00584870)
 
@@ -328,7 +330,8 @@ NpcTravelMove(level, type) (0x0054B830)
   happened in `NpcTravelMove`. (fn:sub_005467E0_NpcActTravel@0x005467E0)
 - [C] **Tyrael's travel is the red portal, not the menu** (part 3 correction, run:2026-10-19-quests3, § 14): the stock
   client's menu for NPC 367 in an expansion game after Diablo (word 26 b0) has only *talk* and *cancel* (screenshot
-  `workspace/logs/quests/dev-p42r-tyrael-menu.png`), so the 367 branch above is not reached by stock play (like packet 0x58 on word 33). The Act
+  `workspace/logs/quests/dev-p42r-tyrael-menu.png`), so the 367 branch above is not reached by stock play in that state (like packet 0x58 on word 33; that no stock state
+  offers the line is `[I]`, the client's menu builder not read: architect review). The Act
   IV → V travel is the operate of the Harrogath portal (object 566, `0x005B5880`, made by Tyrael's 0x4E20 talk, quests/0001
   § 10): expansion only (`game +0x70`), word 26 b0 or b13 (else message 0x13 to the player), the player in Act IV; with
   word 28 b0 clear it sets word 28 b0 then b13 (0x005B590F, 0x005B5919), sends the record and sets player data `+0x4C`

@@ -2,13 +2,13 @@
 from: reverser
 to: architect
 date: 2026-10-19
-status: open
+status: done
 context:
   - ../plans/0042-quests-travel.md
   - ../findings/quests/experiments.md#run2026-10-19-quests3
   - ../findings/quests/0001-progression.md#17-phase-2-part-3-run2026-10-19-quests3
   - ../findings/quests/0002-travel.md#14-phase-2-part-3-run2026-10-19-quests3
-resolution: ""
+resolution: "Reviewed 2026-10-20 (architect, lane/p42r review): accept with fixes (3). See the plan 0042 log, Phase 2 part 3 reviewed."
 ---
 
 Review plan 0042 Phase 2 part 3 (run:2026-10-19-quests3, `lane/p42r`, slot 2): the run record, quests/0001 § 17,
