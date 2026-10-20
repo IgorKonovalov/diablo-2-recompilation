@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/quality, items/uniques-sets, data/excel]
 consumed_by: [items/properties, items/vendors, items/cube, save/d2s]
-tags: {C: 152, I: 27, L: 4}
+tags: {C: 152, I: 28, L: 4}
 updated: 2026-10-20
 ---
 
@@ -323,7 +323,7 @@ C8. if applyProps: ItemApplyProps(item, record(id + 1))                   [C] OR
 **C5. The type test `MagicAffixTypeOk(item, r)`**, in order:
 
 ```
-C5a. if itemVersion < 100 and (base.stackable or ItemTypes[type].Throwable): return false      [C] (fn:ITEMS_MagicAffixTypeOk@0x0065E620, 0x0065E62D–0x0065E645, run:2026-10-20-sweep-items-chain)
+C5a. if itemVersion < 100 and (base.stackable or ItemTypes[type].Throwable): return false      [C] (fn:ITEMS_MagicAffixTypeOk@0x0065E620, 0x0065E62D–0x0065E645, run:2026-10-20-sweep-items-chain; each half alone: C5a notes)
 C5b. if not base.hasinv or ItemMaxSockets(item) = 0:                                            [I] (fn:ITEMS_MagicAffixTypeOk@0x0065E620, 0x0065E64E)
        if r.mod1code ≥ 0 and (mod1code out of range, or no Properties record,
                               or the property's first stat = 194): return false
@@ -358,8 +358,8 @@ Step notes:
   excludes itself. Stock prefix groups (101–142), suffix groups (1–45) and automagic groups (300–305) do not overlap,
   so the cross-table comparisons never bite with stock data. [C] (fn:sub_005C1500_AffixGroupTaken@0x005C1500,
   tbl:MagicPrefix.txt:group, tbl:AutoMagic.txt:group, run:2026-10-14-affixes)
-- C4i. **The forced row** (`forcedId` > 0, block-relative) still passes every other test, and when it does the pick
-  returns it with no draw 2: the 12 forced picks of run:2026-10-15-cube (rows 6–10, 17, 18, 19) leave the item seed
+- C4i. **The forced row** (`forcedId` > 0, block-relative): a forced row that passes every other test is returned
+  with no draw 2: the 12 forced picks of run:2026-10-15-cube (rows 6–10, 17, 18, 19) leave the item seed
   as the model has it with no weighted draw. On the drop path `forcedId` is always 0, because
   `sub_0055A550_DropCreateItem` zeroes the record and nothing on the path writes `+0x68..+0x7C`. [C]
   (0x005C180B–0x005C181B, struct:ItemCreateRec+0x68, fn:ITEMS_PickMagicAffix@0x005C1560, run:2026-10-15-cube,
@@ -389,6 +389,10 @@ Step notes:
   them. [C] (0x0065E62D–0x0065E645, fn:sub_006289F0_ItemBaseStackable@0x006289F0,
   fn:sub_0062BA80_ItemTypeThrowable@0x0062BA80, tbl:Weapons.txt:stackable, run:2026-10-20-sweep-items-chain,
   [items/0005 § Plan 0038 batch H2b](../../findings/items/0005-affixes.md#plan-0038-batch-h2b-2026-10-20), aff 13)
+- C5a, R1. Each half of the test alone is read from the code: the logged `tkf` and `tax`, like all 18 classic
+  throwing weapons, are both `stackable` and of a `Throwable` type, so no run tells the two-part test from a test on
+  one half (a stackable base whose type is not `Throwable`, or the reverse). [I] (0x0065E62D–0x0065E645,
+  0x0065E71D–0x0065E737, tbl:Weapons.txt:stackable, tbl:ItemTypes.txt:Throwable)
 - C5a. With stock data only classic throwing weapons then have no affix and no rare name at all: the survey of every
   base at item version 1 lists, among the weapons, exactly the 18 classic throwing weapons (types `tkni`, `taxe`,
   `jave`), each with no prefix, no suffix and no name candidate; its other entries are expansion records, which no
@@ -499,7 +503,7 @@ E7. RollStaffMods(item, rec); return true                                       
 **E2. `PickRareName(isPrefix, item)`**:
 
 ```
-R1. if itemVersion < 100 and (base.stackable or ItemTypes[type].Throwable): no row passes    [C] (0x0065E71D–0x0065E737, run:2026-10-20-sweep-items-chain)
+R1. if itemVersion < 100 and (base.stackable or ItemTypes[type].Throwable): no row passes    [C] (0x0065E71D–0x0065E737, run:2026-10-20-sweep-items-chain; each half alone: C5a notes)
 R2. cand ← every row r of the block, in table order, with                                  [C] (fn:ITEMS_PickRareName@0x005C1AB0, fn:ITEMS_RareNameTypeOk@0x0065E710, run:2026-10-14-affixes)
       not (r.version ≥ 100 and itemVersion < 100),
       no etype1..4 (while ≥ 1) that the item is,
@@ -607,7 +611,7 @@ G2. if the item has durability:                                             [C] 
 G3. if item is type 45 (weapon): each damage stat ← stat × 75 ÷ 100         ; [C] signed; floors 2/1/2/1 (run:2026-10-14-props-forced)
       if the type is throwable: the throw damage alike                      ; [I] (fn:ITEMS_BuildLowPick@0x005C2D40, also the armour line)
     else if item is type 50 (armour): defense ← max(1, defense × 75 ÷ 100)
-G4. RollStaffMods(item, rec)                                                ; [C] § I, always called (run:2026-10-14-affixes, run:2026-10-15-cube, both lines)
+G4. RollStaffMods(item, rec)                                                ; [C] § I, always called (run:2026-10-14-affixes, run:2026-10-15-cube, the call and the return)
     return true for a weapon or an armour, else false                       ; false → normal fallback
 ```
 

@@ -560,7 +560,7 @@ The main flow above is confirmed in recorded games. These parts are not, or are 
   chain past its first step; a unique-only base with no row; a quest base skipping the made test; the Cow King's set
   from a Hell Bovine; which game type, if any, excludes ladder uniques.
 - **Affixes** ([affixes open questions](../specs/items/affixes.md#open-questions)): the socket test on affixes, a rare
-  with names but no affix, charms reaching the normal builder, the low-quality armour cut, automagic on unique items
+  with names but no affix, charms reaching the normal builder, the low-quality armour and throw-damage cuts, automagic on unique items
   (set items skip it, seen once with edited quality odds), a forced affix outside its level window, and which text a
   rare name id is shown as (the [game data](game-data.md) page has the name line).
 - **Properties** ([properties open questions](../specs/items/properties.md#open-questions)): several property kinds

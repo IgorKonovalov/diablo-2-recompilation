@@ -2965,5 +2965,33 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     H5d; objects H6e2.
   - **Backlog:** the H2b spec-updates, S2b corrections, S2c corrections and S1f entries annotated (done in part);
     review request
-    [s38h2b review](../backlog/2026-10-20-spec-writer-architect-s38h2b-items-affixes-review.md).
+    [s38h2b review](../backlog/archive/2026-10-20-spec-writer-architect-s38h2b-items-affixes-review.md).
   - **Next:** architect review of `lane/s38h2b`; the remaining items clusters after H2c, H1a and H6b.
+- **2026-10-20 — Review of `lane/s38h2b`, Phase 3 items/affixes cluster (architect): accept with fixes (4).** `main`
+  had not moved past the lane's base (`33484f8`), so no merge. Read: the spec diff against the S2b, S2c, S1f, Plan 0048
+  Phase 1 and H2b sections of [items/0005](../findings/items/0005-affixes.md), the H2b review above, the inventory row
+  27 and § 2.6, the wiki diff and the four annotated backlog entries. Anchors spot-checked in `re/symbols.csv`
+  (`ITEMS_GetBaseType`, `ITEMS_RareNameTypeOk`, `sub_00557380_ItemFallbackMagic`, `sub_005C0D00_AffixCandAdd`,
+  `RNG_RangeB`, the stackable and throwable accessors): all resolve.
+  - **Against the reviewed H2b ledger:** aff 13's and aff 21's controls are the review's version-1 ones (30–35 affix
+    and 18–37 name candidates per side, from `tkf` 32/35, `tax` 30/34, `tkf` 36/19, `tax` 37/18), not the lane's
+    version-101 control; sock 42 is not in this cluster. aff 15's 188/135, aff 19's 21 jewels (13 at 3, 8 at 4), aff
+    17's 9/71, aff 24's split (the `{S, 666}` reset `[C]`, the discard and E5 `[I]`) and every S2b/S2c/S1f raise match
+    their ledgers, remainders kept `[I]`.
+  - **Ruling (aff 27):** the lane's weaker reading stands. The S2c review's "raised in full" accepted the false return
+    only; G3's armour and throw-damage lines were never logged, so aff 27 stays raised in part with those lines `[I]`
+    (no class moves; the row stays counted as S2b). A dated note in items/0005 § S2c corrects the sentence.
+  - **Cluster readiness:** confirmed. items/affixes waited on H2b only (aff 14's window remainder is an H6a piece, the
+    row counted as S2c); items/tc and items/properties wait H2c, items/uniques-sets H1a (us 21), items/sockets-runewords
+    H6b.
+  - **Fixes applied (4):** (1) overclaim: C5a and R1 test `stackable or Throwable`, but every logged base (all 18
+    classic throwing weapons) is both, so each half alone is split out `[I]` (spec C5a, R1 note; items/0005 aff 13 note).
+    (2) overclaim: C4i's "still passes every other test" reworded to "a forced row that passes every other test", the
+    `[C]` part of S2c aff 14. (3) omission: the wiki's untested *Affixes* line names the throw-damage cut with the
+    armour cut. (4) other: G4's "both lines" anchor reads "the call and the return". Research map row rewritten whole
+    (C 152 / I 28 / L 4).
+  - **Counts** (gate E6, script over the body): items/affixes **{C 152, I 28, L 4}**.
+  - **Backlog:** review request
+    [s38h2b review](../backlog/archive/2026-10-20-spec-writer-architect-s38h2b-items-affixes-review.md) closed; the H2b
+    spec-updates, S2b, S2c and S1f entries stay open (done in part, their other clusters pending).
+  - **Next:** merge `lane/s38h2b`; the remaining items clusters after H2c, H1a and H6b.
