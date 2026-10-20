@@ -194,7 +194,7 @@ column. The full pick (forced row, weighted draw, fallbacks) belongs to the `ite
   byte 0x006CE270 or of `+0x2C` bit 2):
   - `sub_0055CA40_InvHoldsQuestDup`, called by the item-move gate `sub_0055CC90_ItemQuestGate`: for a unique
     (quality 7) whose row has `carry1`, it returns 1 when the inventory holds another quality-7 item of the same row
-    (not on page 1), and the gate then refuses the move. (items/0010 § Q20, 0x0055CA40–0x0055CC80,
+    (not on page 1); the gate refuses the move when this holds for the player or for any other player of the game. (items/0010 § Q20, 0x0055CA40–0x0055CC80,
     fn:sub_0055CA40_InvHoldsQuestDup@0x0055CA40, fn:sub_0055CC90_ItemQuestGate@0x0055CC90,
     tbl:UniqueItems.txt:carry1)
   - `sub_00575FA0_ItemIsCarry1Unique`: an item unit (type 4) of quality 7 with a file index ≥ 0 whose record's flag

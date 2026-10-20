@@ -118,4 +118,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     keeps `lvl req` and a full xref of 0x006CE270.
   - **Surprise:** the classic `quests: all` sets no Act V word (EXPECT's `ALL_C`); a second reader (`0x0055CA40`)
     was already in items/0010, which the entry did not name.
-
+- **2026-10-20 — Phase 0 reviewed (architect, `lane/p49a` review): accept with fixes.** Re-run after merging `main`:
+  `test_d2s.py` 45 tests OK, `quest_saves.py check` 33 recipes 0 bad. Pins spot-checked: 10 hashes against
+  `quests2-manifest.sha256`, `quests3-manifest.sha256` and `loads.txt` (full-length matches for `quest-talk1` and
+  `quest-p3wpact`; `quest-talk2c`/`3c` in no manifest, as stated). The three `carry1` rows (Gheed's Fortune, Annihilus,
+  Hellfire Torch) recounted over the table; both readers resolve in `re/symbols.csv` and are tagged as their findings
+  tag them. The classic `quests: all` note is right: it is `tools/d2s.py`'s documented rule (words 28 and 35–40 only
+  in an expansion save), now said so. Fixes (4, made in the docs): d2s.md the written-back act bytes are
+  `[0x80 | act, 0, 0]`; the word-40 bit-10 join is in Normal, the played difficulty; the classic note attributed to
+  `d2s.py`'s keys; UniqueItems.md the gate refuses when another player of the game holds the copy too
+  (items/0010 § 5). Phase 0 done.

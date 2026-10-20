@@ -923,8 +923,8 @@ today, and it equals the save the run installed: the 8-hex built prefix in
 - **The loads** (run:2026-10-17-quests, [quests experiments](../findings/quests/experiments.md#run2026-10-17-quests)).
   18 saves loaded in expansion or classic Normal and written back by *Save and Exit*: the 17 recipes above and the new
   classic `quest-tpc` (`QuestPortalC`, the `questfreshc` character with a Tome of Town Portal `tbk` at inventory 0,0;
-  sessions c-tp and c-wp). Each written-back save keeps only the played act byte (`[act, 0, 0]`, § Header) `[C]`.
-  Quest words: word 40 bit 10 is set by the join in the eight saves with word 40 done (`TravelWpOne`–`Five`,
+  sessions c-tp and c-wp). Each written-back save keeps only the played act byte (`[0x80 | act, 0, 0]`, § Header) `[C]`.
+  Quest words (Normal, the played difficulty): word 40 bit 10 is set by the join in the eight saves with word 40 done (`TravelWpOne`–`Five`,
   `TravelWpNone`, `QuestBookLost`, `QuestBookHeld`) `[C]` (loads.txt; the logged `QS` at `0x0058E4D0`);
   `QuestBookLost` (word 9 bits 0 and 5, no `ass`) comes back with word 9 = 0 and `QuestBookHeld` (the same with `ass`)
   keeps it `[C]`, the word-9 first-join check of quests/0001 § 8 both ways; `TravelWpNone` comes back with waypoint 0
@@ -933,7 +933,8 @@ today, and it equals the save the run installed: the 8-hex built prefix in
   talk save is the `questfresh` character (expansion) or the `questfreshc` character (classic) with `quests: all`, then
   per difficulty (the same in all three) the step's words with bit 0 cleared and only the bit the talk step tests set;
   `quest-talk1`..`4` also clear bit 0 of their act's word 0, 8, 16 or 24, which `quests: all` leaves 0 already. The classic `quests: all` sets
-  no Act V word (words 1–7, 9–15, 17–23, 25–27) `[C]` (built saves).
+  no Act V word (words 1–7, 9–15, 17–23, 25–27) `[C]` (built saves): `tools/d2s.py`'s `quests` and `acts_open` keys set
+  words 28 and 35–40 in an expansion save only, by design, so a classic talk save differs from an expansion one there.
 
   | recipe (`Name`) | start | quest words differing from `quests: all` (all three difficulties) | waypoints | items added | loaded by |
   |---|---|---|---|---|---|

@@ -2,12 +2,12 @@
 from: archivist
 to: architect
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../plans/0049-backlog-sweep-5.md#implementation-log
-  - ../formats/d2s.md#plan-0042-phase-2-saves
-  - ../tables/UniqueItems.md
-resolution: ""
+  - ../../plans/0049-backlog-sweep-5.md#implementation-log
+  - ../../formats/d2s.md#plan-0042-phase-2-saves
+  - ../../tables/UniqueItems.md
+resolution: "Reviewed 2026-10-20 (architect): accept with fixes (4, made in d2s.md and UniqueItems.md); plan 0049 implementation log."
 ---
 
 Please review plan 0049 Phase 0 (`lane/p49a`): the 16 plan 0042 Phase 2 recipes registered in `tools/quest_saves.py`
