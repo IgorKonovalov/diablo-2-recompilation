@@ -2088,6 +2088,89 @@ def cmd_hunt(args):
     return 1
 
 
+def cmd_corpse(args):
+    """Plan 0038 batch H2a: a Barbarian's Find Item on fresh corpses (the noNoDrop drop path). The right skill is War
+    Cry, cast on the player like Nova (--nova-key, Shift + right click, --nova-hold) at whatever live monster is within
+    --radius; each corpse (MON mode 12) within --corpse-r sub-tiles gets Find Item (--find-key: the skill's F-key, then
+    Shift + right click on the corpse's cell, a few pixel offsets per try, --corpse-tries tries), once per unit id; with
+    nothing in range the character walks (a left click, --walk) or Teleports towards the nearest live monster within
+    --chase, else towards the nearest unactivated room. Stops after --time s or --corpse-max corpses tried. Nothing
+    here feeds a model."""
+    st = LogState(args.log)
+    p = Pilot(args)
+    p.walk = bool(args.walk)
+    p.nova_hold = args.nova_hold
+    if args.nova_key:
+        p.nova_key = args.nova_key
+    tried = {}
+    bad = set()
+    t0 = time.time()
+    n_done = 0
+    offs = ((0, -6), (0, -16), (10, -10), (-10, -10), (0, 4))
+    while time.time() - t0 < args.time and n_done < args.corpse_max:
+        st.poll()
+        if not st.pos:
+            time.sleep(0.5)
+            continue
+        upkeep(args, p, st)
+        px, py = st.pos[0], st.pos[1]
+        mons = list(st.mon)
+        near_live = [m for m in mons if live(m) and m["cls"] not in HIRE_CLS
+                     and math.hypot(m["x"] - px, m["y"] - py) <= args.radius]
+        if near_live:
+            p.nova()
+            time.sleep(0.1)
+            continue
+        corpses = [m for m in mons if m["mode"] == 12 and tried.get(m["id"], 0) < args.corpse_tries
+                   and math.hypot(m["x"] - px, m["y"] - py) <= args.corpse_r]
+        if corpses:
+            m = min(corpses, key=lambda m: math.hypot(m["x"] - px, m["y"] - py))
+            k = tried.get(m["id"], 0)
+            tried[m["id"]] = k + 1
+            sx, sy = p.screen(m["x"] - px, m["y"] - py)
+            ox, oy = offs[k % len(offs)]
+            sx, sy = max(10, min(790, sx + ox)), max(10, min(int(540 * p.vs), sy + oy))
+            p.dpy.key(args.find_key)
+            time.sleep(0.1)
+            p.dpy.keystate("Shift_L", True)
+            time.sleep(0.05)
+            p.dpy.click(p.off[0] + int(sx), p.off[1] + int(sy), button=3, hold=0.12)
+            time.sleep(0.05)
+            p.dpy.keystate("Shift_L", False)
+            time.sleep(1.2)
+            if args.nova_key:
+                p.dpy.key(args.nova_key)
+            if k == 0:
+                n_done += 1
+            print("corpse: Find Item on unit %d (class %d) at (%d, %d), try %d" % (m["id"], m["cls"], m["x"], m["y"],
+                                                                                 k + 1))
+            continue
+        far = [m for m in mons if live(m) and m["cls"] not in HIRE_CLS
+               and math.hypot(m["x"] - px, m["y"] - py) <= args.chase]
+        if far:
+            m = min(far, key=lambda m: math.hypot(m["x"] - px, m["y"] - py))
+            d = math.hypot(m["x"] - px, m["y"] - py)
+            k = min(1.0, args.hop / max(d, 1.0))
+            c = (int(px + (m["x"] - px) * k), int(py + (m["y"] - py) * k))
+        else:
+            fr = [rect for r, rect in st.frontier(st.pos[2])]
+            if not fr:
+                time.sleep(0.5)
+                continue
+            goal = min(fr, key=lambda rc: math.hypot(room_centre(rc)[0] - px, room_centre(rc)[1] - py))
+            c = optimistic_hop(st, room_centre(goal), args.hop, bad, step=2)
+            if c is None:
+                time.sleep(0.5)
+                continue
+        p.teleport(c[0] - px, c[1] - py)
+        time.sleep(args.wait)
+        st.poll()
+        if st.pos and math.hypot(st.pos[0] - px, st.pos[1] - py) < 2:
+            bad.add(c)
+    print("corpse: %d corpses tried in %.0f s" % (n_done, time.time() - t0))
+    return 0
+
+
 def cube_outcome(text):
     """The last transmute in tools/gdb/cube.gdb lines: None until its CUBX line, else a summary dict."""
     res = None
@@ -2950,7 +3033,7 @@ def main():
         sys.argv = sys.argv[:k] + opts
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=("where", "explore", "hop", "farm", "mons", "wp", "wpchain", "players", "insert",
-                                    "cube", "npc", "objop", "hunt", "join"))
+                                    "cube", "npc", "objop", "hunt", "join", "corpse"))
     ap.add_argument("log")
     ap.add_argument("dx", nargs="?", default="0")
     ap.add_argument("dy", nargs="?", default="0")
@@ -3081,6 +3164,10 @@ def main():
                     "earlier game on the same map seed)")
     ap.add_argument("--summon-key", help="hunt --pet: F-key of a placed summon (Hydra), cast towards the target")
     ap.add_argument("--summon-every", type=float, default=3.0, help="hunt --pet: seconds between summon casts")
+    ap.add_argument("--find-key", default="F2", help="corpse (plan 0038 H2a): F-key of Find Item")
+    ap.add_argument("--corpse-r", type=float, default=6.0, help="corpse: Find Item on corpses within this many sub-tiles")
+    ap.add_argument("--corpse-tries", type=int, default=3, help="corpse: Find Item clicks per corpse")
+    ap.add_argument("--corpse-max", type=int, default=40, help="corpse: stop after this many corpses")
     ap.add_argument("--no-nova", action="store_true", help="objop: never stop to cast Nova (Hell: Teleport through)")
     ap.add_argument("--approach", action="store_true", help="objop: stop within --obj-near of the object, no click")
     ap.add_argument("--me", help="two clients (plan 0044): steer by this player's PLRS entry (tools/gdb/two-players.py): "
@@ -3117,7 +3204,7 @@ def main():
         return cmd_join(args, tokens or [])
     return {"where": cmd_where, "explore": cmd_explore, "hop": cmd_hop, "farm": cmd_farm,
             "mons": cmd_mons, "wp": cmd_wp, "wpchain": cmd_wpchain, "players": cmd_players, "npc": cmd_npc,
-            "objop": cmd_objop, "hunt": cmd_hunt}[args.cmd](args)
+            "objop": cmd_objop, "hunt": cmd_hunt, "corpse": cmd_corpse}[args.cmd](args)
 
 
 if __name__ == "__main__":

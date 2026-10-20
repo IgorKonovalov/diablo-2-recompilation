@@ -171,6 +171,9 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-20 | `lane/h5b` review | 0038 H5b | architect-review | 158 172 | 70 | 15 | — | gave accept with fixes | — (on the lane row) |
 | 2026-10-20 | `lane/msw` | 0045 P1.2 folds | spec-writer | 163 194 | 77 | 17 | — | accept with fixes | 7: overclaim 2, misread 1, omission 1, wrong anchor 1, other 2 (plus 1 miscount in skills/0002, `lane/p45m`'s, fixed at this review) |
 | 2026-10-20 | `lane/msw` review | 0045 P1.2 folds | architect-review | 125 564 | 34 | 6 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/h2a` (sessions) | 0038 H2a | reverser-harness | 343 910 | 165 | 103 | slot 2 | accept with fixes | — (on the write-up row) |
+| 2026-10-20 | `lane/h2a` (write-up) | 0038 H2a | reverser-harness | 213 212 | 103 | 20 | no slot, no Ghidra | accept with fixes | 1: omission 1 |
+| 2026-10-20 | `lane/h2a` review | 0038 H2a | architect-review | 147 964 | 58 | 9 | — | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

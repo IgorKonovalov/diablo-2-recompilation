@@ -831,6 +831,29 @@ counted as H5b, as outdoor 13's half did at the `lane/rbs2` review. After mergin
 inventory row since H7a, the totals are: **static 567, harness 531, c-emu awaiting a batch 0, blocked 416** (d-none 283,
 d-edit 73, d-sim 28, d-2c 14, d-owner 10, d-0032 8), **deferred 2, raised 10: 1 526.**
 
+**H2a (filed 2026-10-20, reverser, `lane/h2a`; accepted with fixes at the `lane/h2a` review, 2026-10-20): 15 rows, 17 statements of items/tc and items/quality.**
+run:2026-10-20-sweep-items-tc, 12 sessions on slot 2, stock data, 0 mismatches (`sweep_h2a.py logs` 0 bad, `tc.py
+replay` 873/873, `quality.py` 720/720, `uniques.py` 1022/1022). The lane files **12 raised, 5 raised in part, 0
+shortfall, 0 reclassified**. The evidence is in the "Plan 0038 batch H2a" sections of
+[items/0001](../../findings/items/0001-tc-resolution.md#plan-0038-batch-h2a-2026-10-20) and
+[items/0002](../../findings/items/0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20).
+
+- **Raised (12):** tc 1, 2, 11, 34 (L361), 37, 45, 47, 59, 71; quality 22 (2), 23.
+- **Raised in part (5):** tc 22 (remainder the `bonewall` fatal error, shortfall), tc 34 (L388; remainder `Picks = 0`,
+  d-none as row 13), tc 60 (the type-equivalence half d-none on stock data, signedness `[I]`), tc 70 (game type 1,
+  types outside 1–3, a floor below the live count), quality 20 (a missing owner, plain and minion monster killers,
+  killer type ≥ 2).
+- **Correction carried (rule 12):** quality 22's "the clamp never acted" held for the plan 0010 runs only; the clamp
+  acts in 667 rolls of the later item runs and the H2a logs, and decides 138 of them.
+
+The review re-ran the checkers on the kept logs (same outputs) and moved no row: tc 34's `Picks = 0` half is the
+statement of tc 13 (already d-none) and stays counted as H2a, as the H5b halves did; quality 20's 5 hireling rolls from
+the aborted H6d log under `failed/` count (kept, hashed, in the H6d run list; the raise stands without them).
+
+Net effect on the totals: none (no class moves; the remainders stay counted as H2a). Recomputed at the review, after
+merging `main` (`5a7feb3`, the H5b review above; nothing newer), they stand: **static 567, harness 531, c-emu awaiting a batch 0, blocked 416** (d-none 283,
+d-edit 73, d-sim 28, d-2c 14, d-owner 10, d-0032 8), **deferred 2, raised 10: 1 526.**
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
@@ -907,7 +930,7 @@ a letter suffix and its own run id, as the plan requires.
 |---|---|---|---|---|---|---|---|
 | **H1a** | `d2s-load` | 46 (45 filed; uniques-sets 21 from H6d, § 2.6) | 0/3/43 | save/d2s 9–10, 17, 22–23, 26–30, 36, 38, 44, 46–47, 49–50, 52–54, 59, 62, 65, 68, 80, 90–91, 105–107, 126, 132, 139–140; hirelings 3, 30, 32–33; player/creation 1, 8–9, 11, 20, 34; uniques-sets 21 (from H6d) | `d2s-io.gdb` + `d2sio.py check`. Tool-built saves from `d2sio_saves.py`: bad magic or version, wrong name, class 7 and 8, act 5, status mismatches, waypoint markers, out-of-range unique and set ids, legacy v94 and versions 71 and 87 (builder support needed; from H6d, a version-`0x47` item list holding a unique, under `uniques.py`, if a version-71 load reaches `0x00533350`), item version < 93, ear, personalized, realm, > 8 KiB, checksum and size wrong; `MercMF` loaded | `findings/save/experiments.md` | ~18 |
 | **H1b** | `d2s-play` | 48 | 0/22/26 | save/d2s 1–4, 6, 18–19, 21, 25, 31, 33–35, 37, 39–43, 48, 55–57, 60, 72–73, 77–78, 83, 88, 102, 108, 110–116, 117 (from S1a), 118, 124 (from S1a), 125, 127; hirelings 24 | same family. A one-client TCP/IP host, weapon swap, hotkeys, the hirelings mercenary saves (write side, dead flag), iron golem, corpse, runeword, the `questdiffcheck` item, `maxhp`/`maxmana` and poison items, the bit-13 case, and section writer, reader and join breakpoints. **Also:** load `questrewards` and `questrewardsh` (built `246515c5…`, `14c28526…`; backlog 2026-10-16, archivist `lane/abl`) and pin both in `tools/test_d2s.py` with the run id, as the plan 0032 recipes were pinned. From S1a (§ 2.6; 117 and 124 counted here, the other pieces stay counted as S1a): a set item with one damage group in its main and a bonus list; a lone `fire-max` and a lone `fire-min`; magic damage (group 52); a hired mercenary, a swapped weapon set, a left-button hotkey, an item on the cursor and a class item with an automagic affix at *Save and Exit* | `findings/save/experiments.md` | ~14–17 |
-| **H2a** | `items-tc` | 17 | 10/0/7 | quality 20, 22–23; tc 1–2, 11, 22, 34 (2, from S2a), 37, 45, 47, 59–60, 70–71 | `tc-drops.gdb` + `tc.py`. New lines: the caller, gold (stat 14), the MonDeathDrop exit. A Find Item barbarian, `/players 8` host and chests, Hell mfnecro, skeleton or Valkyrie kills; a classic Countess kill (tc 34, § 2.6) | `findings/items/experiments.md` | ~6 |
+| **H2a** (done) | `items-tc` | 17 | 10/0/7 | quality 20, 22–23; tc 1–2, 11, 22, 34 (2, from S2a), 37, 45, 47, 59–60, 70–71 | `tc-drops.gdb` + `tc.py`. New lines: the caller, gold (stat 14), the MonDeathDrop exit. A Find Item barbarian, `/players 8` host and chests, Hell mfnecro, skeleton or Valkyrie kills; a classic Countess kill (tc 34, § 2.6) | `findings/items/experiments.md` | ~6 |
 | **H2b** | `items-chain` | 25 | 7/1/17 | affixes 5, 13, 17, 19–21, 24; properties 7, 20, 24 (from S2b); sockets 42 (from S2c); tc 58, 68 (from S2a); uniques-sets 7, 9, 10, 35, 39 (9, 39 from S2b) | `items-chain.gdb` + `items_chain.py both`. A classic hunt (classicsorc) and a long Hell hunt (also a superior ethereal `dur%` item where the two orders differ, properties 24; magic drops requesting 5 or 6 sockets, sockets 42; from the S2c review, a piece with the row counted as S2c: normal and rare drops requesting more than 3 and 4, sockets 44). New line (tc 58, 68, uniques-sets 9, 39; § 2.6): `game+0xD0` at `sub_00558D90_ItemCreate` entry and after `sub_00552E90_ItemSeedInit`, and `Unit+0x20` with the game seed at `IC0` and `ICJ` | `findings/items/experiments.md` | 6–10 |
 | **H2c** | `items-forced` (id ends `-forced`) | 7 | 0/0/7 | properties 12 (spec L390 only), 14–15; tc 10, 55–56 | **forced, admitted with conditions** (§ 6): `items-chain.gdb` + `tc.py`, `props.py` on a loose `treasureclassex.bin` under `-direct`; two edits (classic throwables; TC-named uniques), each its own `-forced` session set | `findings/items/experiments.md` | few |
 | **H3b** | `data-load` | 25 | 0/16/9 | data/README 2–5; data/excel 1–8, 17–18, 20, 24–25, 27, 50, 71, 74; data/strings 2, 6, 22, 29 | **new** `excel`/startup logger that also sources `strings.py`. **First piece (review ruling 3):** a `d2run.py` mode that has gdb on the game before `DATATBLS_LoadAll`, built and tested off-slot; if it cannot be made to work, the 9 startup rows are a recorded shortfall and stay `[I]` (they have an observable, so not d-none). Covers `FindFile`, loose files without `-direct`, `-txt`, record-byte dumps, the rare-item hover, `STRTABLE_Unload`. From the S1b review (§ 2.6, rows stay counted as S1b): the remainders of data/README 1 ("only under `-direct`") and data/excel 30 (the code-list tables' names at `DATATBLS_LoadTable` in a stock start) | `findings/data/experiments.md` | ~6 |

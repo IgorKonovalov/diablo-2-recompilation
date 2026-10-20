@@ -2543,3 +2543,139 @@ logs; shortfalls under *Limits*.
   logged); crafted items tool-built (no recipe mods); one Wirt game (count 18; `MonLvl1` = `MonLvl1Ex` = 6 in Normal);
   question 9 covers only the windows listed in items/0011 § Phase 2b; the `Cracked` and `0x0055F590` copy refusals not
   reached.
+
+## run:2026-10-20-sweep-items-tc
+
+- **Question:** (plan 0038 Phase 2, batch H2a, [inventory § 5](../../plans/0038-inventory/README.md#5-batch-list))
+  Which function chain makes a monster's death drop and a corpse skill's re-drop, and when is the death drop skipped?
+  What do `mul=` and gold find do to a gold pile's stat 14, and does the item that reaches `max` get gold find? Does
+  `/players` apply in a TCP/IP game hosted alone, and is an object source left uncapped? Does the negative-`Picks`
+  stop fire on the classic Countess? Does a `noNoDrop` call leave NoDrop out of the range? And, over the kept stock
+  logs and the new ones, does the quality roll's minimum (D6) act, and where? Boundary as in run:2026-10-11-tc-drops:
+  the resolver is replayed from the source seed it starts with (`tools/tc.py replay`); item creation is the
+  `tools/uniques.py` model.
+- **Setup:** agent-driven sessions on harness **slot 2** (display `:9`, `workspace/wineprefix-2`, game in
+  `workspace/runtime/game`), one game at a time, the Xwayland window kept on `special:d2harness`, stock data (no loose
+  data file, no `-direct`), pinned `game.exe`, gdb by `tools/d2run.py`. Driven by `tools/h2a_sessions.py run --slot 2
+  --tag h2a --saves workspace/logs/h2a/saves --run items-tc <session>` (final `c2cdec89…`; it reuses the session
+  machinery of `tools/h6d_sessions.py` `3677d586…` with the logger changed). Per session it restores and sets aside
+  the slot's empty saves directory (tag `h2a`), starts `d2run.py --seed N --gdb tools/gdb/tc-h2a.gdb --steps
+  tools/gdb/<steps>.steps --after 1500 --install h2a <save>`, plays the listed `tools/d2pilot.py` commands and ends
+  with `tools/slots.py stop 2`. Sessions were added to the driver between runs (additions only: `andy`, `andy-b`,
+  `andy-c`, `countess-goal`, and the `hunt` step that ends `countess`, first used by session 8); each session's commands
+  are in its `.pilot.txt` beside the log. Sorceress pilot options `--nova-key F1 --es-key F2 --es 25 --radius 9
+  --mana-col 4 --drink 0.5 --nova-hold 1.6 --max-res 1000` (classic: `--wp-tab-x0 120 --wp-tab-w 78`).
+  - **Pilot addition** (`tools/d2pilot.py` `f7e805d9…`; it decides where to click only, nothing feeds a model):
+    `corpse`, a Barbarian's loop: War Cry (the right skill, F1, cast on the player like Nova) at what comes within
+    `--radius`, Find Item (F2, Shift + right click on the corpse's cell, up to three offsets) on each MON corpse (mode
+    12) within `--corpse-r`, walking (`--walk`) towards the nearest live monster within `--chase` sub-tiles otherwise.
+  - **Logger** `tools/gdb/tc-h2a.gdb` (`39306661…`): the `tools/gdb/quests.gdb` chain (`pilot.py` `1ad48a4c…`,
+    `uniques.py` `9b3e988f…`, `affixes.py` `f2ac1c63…`, `vendors.py` `eddbff8c…`, `mon-pool.py` `2c17c655…`,
+    `quests.py` `7f07110b…`), the H2a lines, then `tc-drops.gdb` (`842f8613…`, unchanged). New lines (addresses read with objdump on the pinned image; the readings are in
+    [items/0001 § Plan 0038 batch H2a](0001-tc-resolution.md#plan-0038-batch-h2a-2026-10-20)): `MDD0` 0x005A6830
+    (return address, monster, class, `+0xC4`), `MDDB` 0x005A686D (the bit-17 test), `MDDC` 0x005A68A3 (the collision
+    test), `MDDX` 0x005A68D1, `MDI` 0x005A6600 (return address, monster, `noNoDrop`), `MNN` 0x005A8000, `CFI`
+    0x005D8780, `GTY` 0x0055AEFA, `GMUL` 0x0055AF21, `GMULX` 0x0055AF2F, `GMAX` 0x0055AF4F, `GF0`–`GF6`
+    0x005589A0–0x00558A02. `tools/tc.py` skips these tags (additions only, `36892d1a…`).
+  - **Steps:** `enter-normal.steps` (`96942bdc…`), `uniques-hell.steps` (`afb60595…`), and the new
+    `h2a-tcpip-host.steps` (`54c76ede…`: `two-host.steps` plus the Normal click of the difficulty box, no joiner).
+  - **Characters** (`tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/<recipe>.json <base>
+    <out>`; kept in `workspace/logs/h2a/saves/`, manifest `items-tc-saves.sha256` `a973acf1…`): `UniqNova`
+    (`uniqnova.json` `95c8be4e…` on `smpsor-l50.d2s`; save `2c793a3d…`, byte-identical to run:2026-10-14-uniques rev
+    4; QMF 472, gold find 440 in GF2), `UniqClassic` (`uniqclassic.json` `0a6efe81…` on the classic `smpsor.d2s`;
+    save `68e46a96…`, as in run:2026-10-14-affixes; status byte classic; gold find 355), and the new `FindBar`
+    (`h2afind.json` `d8115721…`: `combatbar.json`'s Barbarian on `workspace/samples/d2s/smpbar.d2s` with War Cry 20
+    and Find Item 20 on F1/F2; save `38f0fc57…`; gold find 80). No test-state key, no table edit.
+
+| # | Log (`workspace/logs/h2a/`) | Save, game | What | Result |
+|---|---|---|---|---|
+| 1 | `items-tc-s2-3811-gold-normal.log` | UniqNova, Normal, `/players 8` | Cold Plains: Nova sweep 240 s, then 8 container clicks | 148 calls; 4 chests operated |
+| 2 | `items-tc-s2-3821-eldritch-hell.log` | UniqNova, Hell, `/players 8` | Frigid Highlands, Eldritch's pack (`farm --wp 5,2`) | 35 calls |
+| 3 | `items-tc-s2-3822-eldritch-hell-b.log` | the same | the same, map seed 3822 | 32 calls |
+| 4 | `items-tc-s2-3823-eldritch-hell-c.log` | the same | the same, map seed 3823 | 31 calls |
+| 5 | `items-tc-s2-3811-tcpip.log` | UniqNova, TCP/IP host alone, Normal, `/players 8` | as session 1 | 161 calls, `g6a` 2; no container reached |
+| 6 | `items-tc-s2-3811-find.log` | FindBar, Normal | Cold Plains: War Cry, Find Item on 36 corpses (`corpse`, 420 s) | 64 calls, 12 Find Item drops |
+| 7 | `items-tc-s2-3811-countess.log` | UniqClassic, classic Normal | Black Marsh → Tower Cellar Level 5, sweep | her room never activated |
+| 8 | `items-tc-s2-3811-countess-r2.log` | the same | the same, then `hunt --mon-cls 45` | seen at 57 sub-tiles, not reached |
+| 9 | `items-tc-s2-3811-andy.log` | UniqNova, Normal, `/players 8` | Andariel (`h6d_sessions.andariel("nova")`) | killed; quest TC (`Andarielq`, 833) |
+| 10 | `items-tc-s2-3811-countess-goal.log` | UniqClassic, classic Normal | the route, then `hunt --goal 12517,11064 --hop 16` | **the Countess killed** |
+| 11 | `items-tc-s2-3812-andy-b.log` | UniqNova, Normal, `/players 8` | Andariel, map seed 3812, `hunt` without a goal | killed; quest TC |
+| 12 | `items-tc-s2-3813-andy-c.log` | the same | the same, map seed 3813 | killed; quest TC |
+
+- **Procedure** (in `workspace/logs/h2a`; the S2a log set from `workspace/logs`):
+  ```
+  python3 -I tools/sweep_h2a.py logs $(cat items-tc-run.lst)                         # check/check-sweep_h2a.txt
+  python3 -I tools/sweep_h2a.py static ../../runtime/game/game.exe                   # check/check-static.txt
+  python3 -I tools/sweep_h2a.py clamp $(cat items-tc-run.lst)                        # check/check-clamp-h2a.txt
+  python3 -I tools/sweep_h2a.py clamp <the S2a manifest's logs less tc-champion-1, tc-quality-1>   # check-clamp-s2a.txt
+  python3 -I tools/sweep_h2a.py clamp --mf 100 tc-champion-1.log tc-quality-1.log    # check-clamp-s2a-mf100.txt
+  python3 -I tools/sweep_h2a.py killers <the S2a logs> <the 19 H6d logs> <the 12 H2a logs>   # check-killers.txt
+  for l in $(cat items-tc-run.lst); do python3 -I tools/tc.py replay $l; done        # check/tc-<log>.txt, check-tc.txt
+  python3 -I tools/quality.py check $(cat items-tc-run.lst)                          # check/check-quality.txt
+  python3 -I tools/uniques.py check $(cat items-tc-run.lst)                          # check/check-uniques.txt
+  python3 -I tools/test_sweep_h2a.py                                                 # check/check-tests.txt
+  ```
+  The S2a log set is the 195 logs of `workspace/logs/sweep-s2a-manifest.txt` (`850698f9…`; 7 326 quality rolls
+  in all, the two plan 0010 logs at their MF 100). The replays and the clamp scans ran under `systemd-run --user --scope
+  -p MemoryMax=4G`.
+- **Observed** (12 logs: list `items-tc-run.lst` `1d2d40c9…`, per-file sha256 in `items-tc-manifest.sha256`
+  `94957d46…`, `sha256sum -c` from `workspace/logs/h2a`; checker `tools/sweep_h2a.py` `983ed539…`, tests
+  `tools/test_sweep_h2a.py` `b361cae9…`, 9 tests OK; `tools/quality.py` `4837f4f8…` with the H2a counterfactual keys;
+  reports in `check/`, sha256 `check-sweep_h2a.txt` `7ea37c28…`, `check-static.txt` `d1bc1830…`, `check-clamp-h2a.txt`
+  `1c8c2ffb…`, `check-clamp-s2a.txt` `2bd668e1…`, `check-clamp-s2a-mf100.txt` `eb92745d…`, `check-killers.txt`
+  `f41476c9…`, `check-tc.txt` `0e6017ab…`, `check-quality.txt` `5c2de726…`, `check-uniques.txt` `9fe300cc…`). From
+  `check-sweep_h2a.txt` (lines abridged; the `MDD0 ret` and per-type lines left out):
+  ```
+  MDD0 973 (ret 005a702c 973): bit 17 skipped 113 (fallen1 79, fallen4 34), collision skipped 2, MDDX 858
+  MDI ret 005a68d6 858 (nonodrop 0), ret 005a801c 12 (nonodrop 1); DROP 870
+  CFI 31: CFI -> MNN 12, CFI without MNN 19; nonodrop calls 12, range = total (nd' 100 not added) 12
+  PLAYERS g6a=2 pover=8 players=8 159; g6a=3 pover=8 players=8 376; g6a=3 pover=0 players=1 319
+  object calls 4: no CAP line, NDIN n=4 16
+  NEG pick 63, NEG stop (roll >= total) 1
+  created units 713: gold 207; mul= products 1 (word 1280); gold find products 202 (factors 540 162, 455 37, 180 3)
+    gold find skipped: own type not 4 489, no killer 14; max reached (count 6) 8, none followed by GF0
+  0 bad
+  ```
+  ```
+  check-static: MonDeathDrop: call 0x005A7027; DropItems: calls 0x005A68D1, 0x005A8017; MonDropNoNoDrop: call
+                0x005D888F; CorpseFindItem: no rel32, absolute 0x007323D0 (.data); MonDeathEvent: absolute 0x006E2260
+                (.rdata); DropGoldFind: call 0x0055AF59; the seven instruction patterns ok
+  clamp (H2a logs): 720 rolls reproduced; the clamp acts in 39; without it 9 break, after the ratio word 7 break
+  clamp (S2a set): 6479 + 847 rolls reproduced; the clamp acts in 628 (0 in the two MF-100 logs); without it 129 break,
+                   after the ratio word 199 break
+  killers: ktype 1 kclass 363 / 352 / 271 with QOWN the player: 85 / 6 / 39 rolls, mf = kmf + omf in all;
+           killer none 89; no killer type other than 0 and 1 in 8 753 rolls
+  tc.py replay: 873 calls, 873 reproduced, 0 failed (109 classic); B6 reproduced in the three Andariel kills
+  quality.py check: 720 pairs, 720 reproduced, 0 failed
+  uniques.py check: 1022 creations reproduced, 0 failed
+  ```
+- **Shortfalls** (claims stay `[I]`; run:2026-10-20-sweep-items-tc): `mul=` reached once (the Countess's `Countess Item` gold; no champion was killed,
+  and the three Andariel kills took her quest TC, whose gold has no `mul=`); `bonewall`'s fatal error (class 344 never
+  died); a monster-killer owner missing or gone, and a killer of type 2 or more (no case in 8 753 rolls); game type 1
+  and the types outside 1–3. Sessions 7 and 8 are kept in the record: their calls replay with 0 failures and are in
+  the counts above.
+- **Conclusion:** the death-drop chain and its two skips, the Find Item re-drop with `noNoDrop`, `GOLD_TYPE`, the
+  gold-find product and its skip at `max`, `/players` in a TCP/IP game, the uncapped object source, the classic
+  Countess's negative-`Picks` stop and the quality roll's minimum with its place reproduce with 0 mismatches over 12
+  sessions and the kept S2a set. The per-row ledger (raised, raised in part, shortfall) is in
+  [items/0001 § Plan 0038 batch H2a](0001-tc-resolution.md#plan-0038-batch-h2a-2026-10-20) and
+  [items/0002 § Plan 0038 batch H2a](0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20).
+- **Addendum 2026-10-20 (write-up, static; no session).** Three further checks, outputs in `workspace/logs/h2a/check/`:
+  ```
+  python3 -I tools/sweep_h2a.py clamp $(cat items-tc-run.lst)                 # check-clamp-h2a-r2.txt       37b8e962…
+  python3 -I tools/sweep_h2a.py clamp <the 193 S2a logs>                     # check-clamp-s2a-r2.txt       f82f2e6a…
+  python3 -I tools/sweep_h2a.py clamp --mf 100 tc-champion-1.log tc-quality-1.log   # check-clamp-s2a-mf100-r2.txt fec4a734…
+  for l in <the 193 S2a logs>; do echo "## $l"; python3 -I tools/sweep_h2a.py clamp $l | grep -E 'acting|no D6'; done
+                                                                             # check-clamp-s2a-perlog.txt   b6fa1eaa…
+  python3 -I tools/sweep_h2a.py goldtypes                                    # check-goldtypes.txt          0afea2e6…
+  python3 -I tools/quality.py check $(cat items-tc-run.lst)                  # check-quality-r2.txt         5c2de726…
+  python3 -I tools/test_sweep_h2a.py                                         # check-tests-r2.txt           67cfe670…, 9 tests OK
+  ```
+  `tools/quality.py` `ed525200…` adds the counterfactual key `{"clamp": "before-mf"}` (D6 before magic find; additions
+  only, the game's roll unchanged: `check-quality-r2.txt` equals `check-quality.txt`); `tools/sweep_h2a.py` `9e3785ca…`
+  adds it to `clamp` and adds the `goldtypes` full-table check (additions only; the per-log split ran on `983ed539…`).
+  Results: the earlier two counterfactual counts are unchanged; D6 before magic find breaks 9 (H2a) + 129 (S2a) rolls
+  and 0 of the MF-100 rolls; per log, the clamp acts in run:2026-10-14-affixes (479), run:2026-10-14-uniques (66),
+  run:2026-10-14-props (43) and run:2026-10-15-items-chain (40), in none of the plan 0010, objects and quest-drop logs;
+  `goldtypes`: of 659 item records only `gld` is of itemtypes record 4 by its type, `type2` or their `Equiv` ancestors.
+  The replays and scans ran under `systemd-run --user --scope -p MemoryMax=4G`.
