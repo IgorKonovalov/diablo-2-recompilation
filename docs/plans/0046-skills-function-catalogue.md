@@ -561,6 +561,58 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `AiCurseDivisor` only for states 23 and 56 (Dim Vision, Terror), Confuse's always, and Confuse's block skips
   `aurastat1`; do 63 returns 1 when `srvmissilea` is out of range; seven do functions test `id ≠ 0` and not the
   record; do 31 reads `pettype` signed; the corpse test also refuses a `udead`-set state and a MonStats `+0x32` of 0;
-  the spawn blocks' `+0x24` is the game pointer (do 56, 60), a frame word do 57 never writes, or the mode (do 62).
+  the spawn blocks' `+0x24` is the game pointer (do 56, 60), a frame word do 57 does not write before the call, or the mode (do 62) (wording fixed at the review).
   Tags: 28 `[C]`, 11 `[I]`, 5 `[L]` bullets; 31 symbols added (`I`). Dated note in skills/0003 § 5 (row 70 kept in
   step).
+- **2026-10-20 — Batch `nec` reviewed (architect, on `lane/p46m7` at `4118630`): accept with fixes.** `main` had not
+  moved past `9183232`, so no merge. Re-run from the lane's tool (`27b93f23…`): `check --batch nec` and
+  `static --batch nec` reproduce `check.txt` `10fec33a…` and `static.txt` `c8bdc9e9…` byte for byte;
+  `sha256sum -c manifest.sha256` (`792c0cb4…`, 28 files) passes; 17 `site` lines, site control 236 + 630 + 268 + 757 =
+  1 891. Spot reads against objdump: start 20 (`0x005C32A0`–`0x005C32F2`) has one call of `0x00629CC0`
+  (`0x005C32C3`), and `0x00629CC0` one call of `0x00408090` (`0x00629CD5`, return `0x00629CDA`); do 57's block
+  (`ebp−0x34`…`ebp−0x14` stored at `0x005C52EE`–`0x005C5350`, `ebp−0x10` first written after the spawn, through
+  `0x0062EA80` at `0x005C53B9`); `0x005C2FF0` (type 0, class 3, `cdq; and edx, 7; add; sar 3`, the packet words at
+  `ebp−0x68`/`ebp−0x24`, then `COMBAT_GetHit` at `0x005C305A`); do 30's `cmp ax, 0xFFFF; jl` (`0x005C3803`) and
+  `0x005C3400` (0x17 or 0x38); do 61's `lea ecx, [edi+0x56]` and `esi = 1`; do 63's two range jumps to `0x005C5EFC`;
+  do 31's `movsx` of `+0xBE` (`0x005C4B97`) against do 56's and do 57's `movzx` with the stored 0; the seven `id ≠ 0`
+  tests at the seven addresses § 1 lists; `0x00645510`'s `+0x32` word compare and `0x0063A770`'s `DataTables+0x150`.
+  From the kept `corpse_nec.json` through the tool's own model, the eight class-3 cases have `maxhp` −9, 7 and 8,
+  so −9 separates truncation from `sar`'s floor and the "signed, truncating" `[C]` holds. **Rulings:**
+  (1) **Do 57's fatal path meets ruling 1's condition** by its second branch: each helper on the path has one call
+  site in its caller (do 57 → start 20 once, `0x005C5265`, the only call in the image; start 20 → `0x00629CC0` once;
+  `0x00629CC0` → `0x00408090` once, the site compared). A chain of single-site helpers needs no stack-slot compare;
+  the finding now says so with the addresses (§ 2).
+  (2) **Do 57's `+0x24` is `[C]` as a value**: the map from the slot's bytes at entry to the block word (19 cases,
+  a random word, `w24_zero` 741). What the game leaves in that slot when it runs do 57 is not covered (it is the
+  previous callee frames' residue), and what the spawn makes of it stays the Open question. The finding's Open
+  question said do 57 "never wrote" the slot; it writes it after the call (fix 3).
+  (3) **The class-3 self-hit stands as filed**: `[C]` up to `COMBAT_ApplyDamage` with the packet by content and the
+  helper return address `0x005C4B3F` compared; the paladin and the 1/8-life hit `[I]`; the play consequence an Open
+  question. The after-text omitted the `COMBAT_GetHit` call that follows (fix 5).
+  (4) **The weak controls are enough**, under the `sor` review's ruling 4: each names its deciding class, and each
+  family has one control failing 76 or more.
+  (5) **`0x0056E2F0` as a boundary is admitted**; start 21, do 58 and do 59 are `[C]` up to their target tests
+  (start 21's and do 58's shared site `0x005C3340` told apart by the helper return addresses `0x005C3366` and
+  `0x005C5738`), and their results, Revive's life roll and Attract's state after, `[I]`.
+  **Also checked:** do 55's and do 58's `RNG_RangeB` on the target's seed sit after their boundaries under
+  "after, `[I]`"; the tags recount 28 `[C]` / 11 `[I]` / 5 `[L]` bullets; the 31 symbol rows are new addresses, all
+  `I`, evidence 0010; skills/0003 § 5's dated note and its Raise Skeleton row agree. **Earlier rulings held:** no
+  claim rests on a non-argument register (9c ruling 1); callee meanings sit after the boundary (9d ruling, reverser
+  review-fixes 13); `sor`'s conventions and its ruling 3; `ama`'s rulings.
+  **Fixes, made in the documents:** (1) § 3's start 15 `[C]` and § 4's do 30 `[C]` carried the meaning anchors
+  `tbl:MonStats2.txt:corpseSel`, `tbl:MonStats.txt:Velocity` and `tbl:DifficultyLevels.txt:AiCurseDivisor`; they now
+  sit on the `[I]` layout bullets beside them (overclaim); (2) § 6's do 56 said an out-of-range `pettype` "→ 0", the
+  finding's notation for a refusal; the code stores 0 and goes on (`pet_keep`), and the text now says so (misread);
+  (3) the Open question and the landing entry above said do 57 "never" writes `ebp−0x10`; now "not before the call"
+  (overclaim); (4) the Answer sent the after-boundary draws to "§§ 5, 6"; both are § 5 (wrong anchor); (5) § 5's
+  after-text now names `COMBAT_GetHit(game, caster; caster, &packet)` after `COMBAT_ApplyDamage` (omission);
+  (6) § 3 now states that `0x00645510` reads `+0x32` through a null record for a class outside the MonStats count
+  (`0x0064557F`), unmodelled, as § 1 does for the ids (omission); (7) § 2 names the single call sites behind
+  ruling 1 (other); (8) the archivist entry's context now links MonStats and States, which it asks about (other).
+  Counted: 8 (overclaim 2, misread 1, wrong anchor 1, omission 2, other 2). Tags after the review: 28 `[C]`,
+  11 `[I]`, 5 `[L]` bullets (no tag moved). Review request closed
+  ([archive](../backlog/archive/2026-10-20-reverser-architect-lane-p46m7-review-plan-0046-batch-nec.md)); the
+  archivist entry stays open for its lane; ledger row added. **The next batch (paladin, `pal`) may start**, with
+  9c, 9d, `sor`, `ama` and `nec`'s conventions, ruling 3 of the `sor` review on writer scans, and ruling 1's
+  condition of the `ama` review on nested boundaries (a stack-slot compare or a single call site shown at each
+  level of a helper chain).

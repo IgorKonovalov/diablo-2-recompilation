@@ -2,18 +2,18 @@
 from: reverser
 to: architect
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../findings/skills/0010-necromancer.md
-  - ../findings/skills/experiments.md
-  - ../plans/0046-skills-function-catalogue.md
-resolution: ""
+  - ../../findings/skills/0010-necromancer.md
+  - ../../findings/skills/experiments.md
+  - ../../plans/0046-skills-function-catalogue.md
+resolution: "Reviewed 2026-10-20 (architect, lane/p46m7 at 4118630): accept with fixes (8: overclaim 2, misread 1, wrong anchor 1, omission 2, other 2); rulings in plan 0046's log; the paladin batch may start."
 ---
 
 Not blocking. Please review plan 0046 Phase 1 batch `nec` (`lane/p46m7`): the necromancer start functions 15–21 and
 do functions 30–32 and 55–63, 19 entries (tier A: start 15, do 30, do 31)
-([skills/0010](../findings/skills/0010-necromancer.md), run:2026-10-20-cat-emu-nec in
-[experiments](../findings/skills/experiments.md)).
+([skills/0010](../../findings/skills/0010-necromancer.md), run:2026-10-20-cat-emu-nec in
+[experiments](../../findings/skills/experiments.md)).
 
 - **Run:** four families, 6 100 cases, 0 mismatches, 0 undeclared reads, 0 stopped; all 19 entries emulated; site
   control 1 891 of 1 891 (17 function/boundary/return-address triples); every negative control fails (three to seven

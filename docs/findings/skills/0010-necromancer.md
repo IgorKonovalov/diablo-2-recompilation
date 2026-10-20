@@ -44,7 +44,7 @@ code reading the emulator does not reach. (run:2026-10-20-cat-emu-nec)
   data:g_SkillDoFuncs@0x007322B0, `static.txt`)
 - [C] **No draw before the boundaries.** No function of the batch steps the caster's or the target's seed before its
   boundary or return (6 100 cases, both seeds compared in each). Draws after a boundary are not covered: do 55 and
-  do 58 each draw one `RNG_RangeB` on **the target's** seed after theirs (§§ 5, 6, after, `[I]`).
+  do 58 each draw one `RNG_RangeB` on **the target's** seed after theirs (§ 5, after, `[I]`).
   (run:2026-10-20-cat-emu-nec)
 - [C] **The target tests** (§ 3). Start 15 returns `0x00645510(target, 0)` for a target outside town, start 17
   `0x00645680(target)`; start 19 returns whether the target's room is not a town room; start 18 returns 1 with no
@@ -176,7 +176,9 @@ do 31 `0x005C4B3F` at `0x7FEFFFA8`, do 62 `0x005C5D69` at `0x7FEFFFC8`); `static
 helper (`0x005C2FF0`: do 31 and do 58 once each; `0x005C3300`: start 21 and do 58 once each; `0x005C31F0`: do 59 and
 the callback `0x005C3B30` once each; `0x005C5BC0`: do 62 once; start 20: do 57 once). Do 57's fatal-path cases end two
 helpers deep (start 20, then `0x00629CC0`); each is called once on that path (`static.txt`, objdump `0x005C32C3`), and
-their return addresses are not compared.
+their return addresses are not compared. Ruling 1's condition is met by the single-site branch: do 57 calls start 20
+  once (`static.txt`, `0x005C5265`, its only call in the image) and start 20 calls `0x00629CC0` once (objdump,
+  `0x005C32C3`, the only call in `0x005C32A0`–`0x005C32F2`; `0x00629CC0` calls `0x00408090` once, `0x00629CD5`).
 
 - [C] Four families, **6 100 cases, 0 mismatches**, 0 traced reads outside the declared set, 0 cases stopped other
   than at a boundary; every negative control fails, and the site control fails on all 1 891 matched boundary cases
@@ -231,11 +233,13 @@ return MonStats[u->class].w32 != 0;                     // +0x32
   set-33 state, MonStats2 flag bit 7 → 1. **Start 19** (`0x005C3270`): no target → 0, else `RoomIsTown(…) ? 0 : 1`
   (`neg; sbb; add 1`). **Start 18** (`0x005C3260`) returns 1. (run:2026-10-20-cat-emu-nec `start_nec`,
   fn:sub_00645510_MonCorpseTest@0x00645510, fn:sub_00645680_MonCorpseTestDead@0x00645680,
-  fn:sub_0063A130_UnitHasStateInMask@0x0063A130, tbl:MonStats2.txt:corpseSel, tbl:MonStats.txt:Velocity)
+  fn:sub_0063A130_UnitHasStateInMask@0x0063A130)
 - [I] By the layouts, MonStats2 `+0x04` bit 7 is `corpseSel` and bit 8 (`+0x05` bit 0) `revive`
   ([MonStats2](../../tables/MonStats2.md)); MonStats `+0x32` is `Velocity`; set 33 is the States flag `udead`
   ([States](../../tables/States.md)); mode 12 is a monster's death mode as skills/0003 § 5 reads it. Why the corpse
-  test reads `Velocity` is not read. (tbl:States.txt:udead)
+  test reads `Velocity` is not read. A class outside `[0, MonStats count)` makes `0x00645510` read `+0x32` through a
+  null record (0x0064557F), a fault the emulator does not model (the case writers give classes in range).
+  (tbl:States.txt:udead, tbl:MonStats2.txt:corpseSel, tbl:MonStats.txt:Velocity, 0x00645554)
 - [C] **Start 20** (`0x005C32A0`): the target (none → 0) must be type 4 with `+0x10` = 3; `0x00629CC0(class)` returns
   `ITEMS_GetRecord(class)+0xDC & 2` (0 → refuse), and with no record (class at or past `0x0096CA58`, unsigned) ends at
   the fatal path (ADR-0021, `0x00408090` @0x00629CDA, its pushed word `0x104A`); `ITEMS_CheckFlags(t, 0x10, 0x100,
@@ -287,7 +291,7 @@ return SkillForUnitsNearTarget(game, aurafilter; unit, r, 0x005C35C0, &blk);
   `+0x50..+0x64` `auraevent1..3` and `auraeventfunc1..3` (each `movsx`). `ECX` game, `EDX` `aurafilter` (`+0x50`),
   stack `(caster, aurarangecalc, 0x005C35C0, &block)`. (run:2026-10-20-cat-emu-nec `curse_nec`,
   fn:sub_005C3400_CurseStateDiffFlag@0x005C3400, fn:sub_005C37A0_DiffDivide@0x005C37A0,
-  tbl:DifficultyLevels.txt:AiCurseDivisor, tbl:Skills.txt:auratargetstate, tbl:Skills.txt:aurastat1)
+  tbl:Skills.txt:auratargetstate, tbl:Skills.txt:aurastat1)
 - [C] (ADR-0021; ends at `ForUnitsNearTarget` @0x005C40AF) **Do 61** (`0x005C3F20`): the same tests and bit 6; `len`
   divided always; the block at `ebp−0x78` with `+0x08` 0, `+0x0C s`, the stat loop from `aurastat2` (`lea ecx,
   [edi+0x56]`, `esi = 1`, pinned) into words 1–5 (word 0 stays 0) with `aurastatcalc2..6`, `+0x4C` the state, no event
@@ -296,7 +300,7 @@ return SkillForUnitsNearTarget(game, aurafilter; unit, r, 0x005C35C0, &blk);
   and always to Confuse; `+0x1C` is `AiCurseDivisor` (1/2/4 by difficulty, [DifficultyLevels](../../tables/DifficultyLevels.md)).
   ItemStatCost byte `+5` bit 1 is `UpdateAnimRate` by the layout (Decrepify's `velocitypercent`). After, `[I]`: the
   callbacks (`sub_005C35C0_CurseApplyCb`, skills/0003 § 5; `0x005C3DE0`, not read) apply the state per unit.
-  (tbl:ItemStatCost.txt:UpdateAnimRate)
+  (tbl:ItemStatCost.txt:UpdateAnimRate, tbl:DifficultyLevels.txt:AiCurseDivisor)
 
 ### 5. Corpses: do 31, 55, 58, 59, 63
 
@@ -313,10 +317,11 @@ return SkillForUnitsNearTarget(game, aurafilter; unit, r, 0x005C35C0, &blk);
   (run:2026-10-20-cat-emu-nec `corpse_nec`, fn:sub_005C2FF0_SkillClass3SelfHit@0x005C2FF0,
   fn:sub_00625D10_UnitGetMaxHp@0x00625D10, tbl:Skills.txt:pettype)
 - [I] What the packet means to `COMBAT_ApplyDamage`: `+0x08` the physical damage and `+0x4C` the life removed
-  (1/256 units, `re/types/combat.h`), result 4 a get-hit; class 3 is the paladin in the PlayerClass order the Skills
+  (1/256 units, `re/types/combat.h`), result 4 a get-hit; after `COMBAT_ApplyDamage` returns, `0x005C2FF0` calls
+  `COMBAT_GetHit(ECX game, EDX caster; caster, &packet)` with the same packet (0x005C305A); class 3 is the paladin in the PlayerClass order the Skills
   `charclass` codes follow. So a paladin casting Raise Skeleton, Raise Skeletal Mage or Revive (an item charge) loses
   1/8 of its maximum life as a hit on itself; no other class does. (`rows.txt`, re/types/combat.h,
-  fn:COMBAT_ApplyDamage@0x0057C6C0)
+  fn:COMBAT_ApplyDamage@0x0057C6C0, fn:COMBAT_GetHit@0x0057CEE0)
 - [C] (ADR-0021; ends at `STATE_Set` @0x005C4E29 or @0x005C5EDA) **Do 55** (`0x005C4DF0`): the target (none → 0),
   `0x00645680(t)` (0 → 0), `STATE_Set(t, 0x68, 1)`. **Do 63** (`0x005C5E60`): id 0 → 0; `srvmissilea` (`+0x48`, s16)
   outside `[0, Missiles count)` → **1** (both tests jump to the `mov eax, 1` exit at 0x005C5EFC); the target (none →
@@ -352,7 +357,7 @@ return SkillForUnitsNearTarget(game, aurafilter; unit, r, 0x005C35C0, &blk);
 
 - [C] (ADR-0021; ends at `SpawnOwnedMonster` @0x005C51E8) **Do 56** (`0x005C5100`): bit 6 first; id 0 → 0; `summon`
   (`+0xBC`, a signed 16-bit compare with 0, then against the MonStats count) out of range → 0; `pettype` (`movzx`) at or
-  past the count → 0; `summode` (unsigned byte) 16 or more → 1 (pinned 0x005C5186); the block at `ebp−0x28`: `{0,
+  past the count becomes 0 (stored, not refused; pinned by `pet_keep`); `summode` (unsigned byte) 16 or more → 1 (pinned 0x005C5186); the block at `ebp−0x28`: `{0,
   caster, summon, 0, mode, 0, 0, pettype, petmax, game}`, the last word being the slot `ebp−0x4` where the function
   stored `ECX` at 0x005C510F (pinned). (run:2026-10-20-cat-emu-nec `summon_nec`, fn:sub_005C5100_SkillDo56Golem@0x005C5100)
 - [C] (ADR-0021; ends at `SpawnOwnedMonster` @0x005C537C, or at the fatal path @0x00629CDA inside start 20) **Do 57**
@@ -409,7 +414,7 @@ path, `+0x5C` stat list (`+0x34`, `+0x58` state words), `+0xC4` bit 6, `+0xC6` b
 - [L] What `0x0056E2F0` (its `0x005DD480`) tests for the codes 7 and `0x13`, and so which monsters Revive and Attract
   refuse (§§ 3, 5).
 - [L] What `SpawnOwnedMonster` does with a block `+0x24` holding the game pointer (do 56, 60), a frame word do 57
-  never wrote, or the mode (do 62) (§ 6; skills/0009's Open question on `+0x24`).
+  had not written before the call (it writes it after, through `0x0062EA80`), or the mode (do 62) (§ 6; skills/0009's Open question on `+0x24`).
 - [L] Whether the class-3 self-hit of § 5 is seen in play (a paladin with Raise Skeleton or Revive charges), a
   harness check.
 - [L] Which item column `+0xDC` bit 1 is and what item mode 3 is (start 20), and why the corpse test reads MonStats

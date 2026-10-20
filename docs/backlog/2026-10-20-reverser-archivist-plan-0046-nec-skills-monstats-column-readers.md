@@ -8,6 +8,8 @@ context:
   - ../tables/Skills.md
   - ../tables/MonStats2.md
   - ../tables/DifficultyLevels.md
+  - ../tables/MonStats.md
+  - ../tables/States.md
 resolution: ""
 ---
 
