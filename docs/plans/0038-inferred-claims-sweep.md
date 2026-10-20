@@ -2517,6 +2517,123 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     [2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates](../backlog/archive/2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates.md)
     released.
   - **Next:** merge `lane/h7a`; the spec-writer updates drlg/lifecycle from the released entry.
+- **2026-10-19 — H5b (`objects`) started; stopped early at the usage limit (reverser, `lane/h5b`, harness slot 1).**
+  Resume note. run:2026-10-19-h5b-objects, nothing filed yet: no finding section, run record, inventory entry or review
+  request.
+  - **Tools (committed, no claim rests on them yet):**
+    - `tools/gdb/objects.py` gains trap lines `TF`/`TFQ` (OBJ_TrapFire and its queue call), `TE0` (OBJ_TrapEvent) and
+      `TT0`/`TTX` (the trap function's entry and return), plus `f` (frame) on `OO0`.
+    - `tools/gdb/objects-h5b.gdb` is objects.gdb plus vendors.py, so objop, wpchain and npc get the OBJS lines.
+    - `tools/objects.py` gains the trap chain model (frame + 35, the OBJ_TrapEvent remap, the fires of
+      OBJTRAP_ObjectCreate, MonsterSpawn's one draw), OperateFn 26/48/68 models, windows inside no-draw operates,
+      and counters for door marks, size-0 objects and 0x27 rect tests. The old 29 logs still give 150 338 checks,
+      0 mismatches.
+    - `tools/d2pilot.py` gains `--loot-fns` and `--loot-trap`.
+    - New `tools/h5b_sessions.py` (sessions cata, jail, jail2, cave, cata2, cotd, arcane, flayer, harro, tower; built-in
+      watchdog) and `tools/sweep_h5b.py` (`static`, `logs`).
+  - **Logs kept** (`workspace/logs/h5b/`, save ObjNova `d54d5dc3…`):
+    - `run-2026-10-19-h5b-s1-3901-cata.log` (Catacombs 2, complete). It was logged before the TE0 room fix; the
+      checker falls back to the unit's level.
+    - `…-3902-jail.log` (Jail 1–2), stopped mid-session at the limit. Keep it as a record or dev log.
+  - **Found, not yet written up (all need the finding text):**
+    - (a) OBJ_TrapEvent (0x005817A0) remaps the trap type to g_ObjTrapFns[2]: type 8 in levels ≥ 75, type 3 in
+      levels < 40 other than 25, types 1 and 4 in levels < 40. The cata log has one case: type 4 in level 35 ran
+      0x005824B0.
+    - (b) OBJTRAP_ObjectCreate makes class 162, then class **160** at x+1 when that is still in the room, and sets
+      sparkle 2 on both. objects/0001 § 13.6 says 162 twice; this needs a correction.
+    - (c) The old 29 logs already hold 514 WHTest rect tests that returned 0x27 unmasked, all predicted. That
+      contradicts the "not reached" of drlg/0005 § 14 and collision row 27, so the row is raisable.
+    - (d) The same logs hold 13 compared door 0x400 marks (classes 13 and 14, no BlocksVis, no BlockMissile). No stock
+      door has BlockMissile without BlocksVis, so the 0x804 half is a d-none candidate (collision 37, objects 23).
+    - (e) No ObjGroup shrine member has Orientation 2, and OBJ_PlaceByOrientation's only caller is the shrine handler,
+      so objects 20 is a d-none candidate (`sweep_h5b.py static`).
+    - (f) Class 523 (size 0, HasCollision) stands in Harrogath's townwest.ds1. The `harro` session covers collision 39.
+    - (g) cata reached one handler-1 follower walk after a class of another size (objects 13, 51).
+    - (h) Flayer Dungeon (shrine group 66, ObjPrb 80, no health member) is the target for the forced conversion and
+      the caps.
+  - **Left:** run cata2, jail2, cave, cotd, arcane, flayer, harro and tower
+    (`python3 -I tools/h5b_sessions.py run --slot 1 --tag h5b --saves workspace/scratch-h5b/saves --run
+    run-2026-10-19-h5b <s>`). Then the checker over all logs, the finding sections (objects/0001, drlg/0005), the run
+    record in `findings/objects/experiments.md`, the manifest, inventory § 2.6, the symbols, the review request and the
+    spec-writer entry.
+  - **Gotchas:**
+    - An object's room is its static path `+0x2C` → `+0x00`; `uroom()` returns 0 for objects.
+    - `explore` ends when the level is done, and `--persist` does not continue it.
+    - Bookshelves were created but not looted, so jail2 adds objop.
+  - Slot 1 stopped, saves restored, no background process left.
+- **2026-10-20 — H5b (`objects`) done; review requested (reverser, `lane/h5b`, harness slot 1).** Resumed from the
+  entry above. Run **run:2026-10-19-h5b-objects**
+  ([objects/0001 § Plan 0038 batch H5b](../findings/objects/0001-object-population.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects),
+  [drlg/0005 § Plan 0038 batch H5b](../findings/drlg/0005-collision.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects),
+  [experiments](../findings/objects/experiments.md#run2026-10-19-h5b-objects)); manifest
+  `workspace/logs/h5b-manifest.sha256` (85 lines: logs, check and sweep outputs, the 29 + 7 older logs re-checked).
+  - **Sessions:** 20 today (cata2, jail2, cave, cotd, jail3, cave2, cotd2, flayer, tower, harro, arcane, traps1, cave3,
+    flayer2, flayer3, ice, traps2, cave4, traps3, traps4) plus the 2 of 2026-10-19: 22 logs.
+  - **Checks:** `objects.py check` on the 22 logs: **234 315 checks, 1 failure** (a logger error in the cave log, no
+    model mismatch); the 29 logs of run:2026-10-15-objects: 150 314, 0 mismatches; `collision.py check` on
+    run:2026-10-14-collision: 0 mismatches.
+  - **Raised (10 rows):** collision 27, 39; objects 13, 16, 17, 40, 45, 50, 51, 52.
+  - **Raised in part (11):** collision 37; objects 3, 4, 15, 23, 26, 27, 36, 38, 41, 42 (remainders in the finding).
+  - **Shortfall (7):** objects 6, 19, 20, 35, 39, 46, 49. Proposed d-none: objects 20, the `0x804` halves of collision
+    37 and objects 23, objects 38's PreOperate half (inventory § 2.6 entry, pending review).
+  - **Corrected:** objects/0001 § 13.6, the second trap fire is class 160. New readings: `OBJ_TrapEvent`'s level remap
+    (`[I]`, one case `[C]`); the theme table's enabled flag (theme 3 drawn 4 times, no run).
+  - **Tools:** `objects.py` (theme enable flag, monster-creating InitFns as oracles, counters), `collision.py`
+    (near lists after a DRLG room's re-activation), `d2pilot.py objop` (`--obj-mem`, `--trap-types`, `--goal`, status
+    lines), `h5b_sessions.py` (sessions, watchdog race). Symbols: 5 trap functions added, 6 raised to `C`.
+  - **Backlog:** review request
+    [2026-10-20-reverser-architect-review-h5b-objects](../backlog/archive/2026-10-20-reverser-architect-review-h5b-objects.md);
+    spec-writer entry
+    [2026-10-20-reverser-spec-writer-h5b-objects-spec-updates](../backlog/2026-10-20-reverser-spec-writer-h5b-objects-spec-updates.md).
+  - **Left:** trap types 8 and 9, the well cap and the shrine cap's `= 10` half, the class-397 operate (the pilot
+    never reached the chest), a window inside a portal-like operate, quest 13's 582 object, `InitFn` 54/55/62/68/69/79.
+  - Slot 1 stopped, saves restored (aside removed, harness idle), no background process left.
+- **2026-10-20 — Review of `lane/h5b`, batch H5b (`objects`) (architect): accept with fixes.** `main` (`f8de60b`)
+  merged first (one conflict, this log, both sides kept; `backlog.py archive` moved nothing; `re/symbols.csv` has no
+  duplicate address or name). Re-run under `systemd-run --user --scope -p MemoryMax=4G`: `sha256sum -c
+  h5b-manifest.sha256` passes from `workspace/logs/` (85 lines); the tool hashes match the record; `objects.py check`
+  on the 22 logs gives the kept `check-h5b.txt` byte for byte (234 315 checks, 1 failure), on the 29 older logs the kept
+  `check-old29.txt` up to line order (150 314, 0); `sweep_h5b.py static` and `logs` and `collision.py check` on
+  run:2026-10-14-collision (0 mismatches) match. Spot-checks with objdump: `OBJ_TrapEvent`'s three tests
+  (`0x005817CB` type 8 and level ≥ 75, `0x00581816` type 3, level < 40 and ≠ 25, `0x00581849` types 1 and 4, level
+  < 40), each jumping through `0x00732CF4`, entry 2 of `g_ObjTrapFns` (table read from the image: the ten entries of the
+  finding, count 10 at `0x00732D14`); `OBJTRAP_ObjectCreate` passes class `0xA2` then `0xA0`; the four trap functions
+  load MonStats 330, 326, 329, 369; `OBJ_TrapFire` queues event 4 at frame `+ 0x23` (`0x00582595`); `g_ObjThemeFns`
+  entries 0 and 3 are `{0, 0}`; `UNIT_GetCollMask`'s door branch (`0x806`, else `0x400` or `0x804` by `BlockMissile`);
+  `0x00552C32` is the only reference to `0x00550A30`. The six symbols raised to `C` each have the code reading and the
+  run's matched entries.
+  - **Rulings.** (a) **d-none, all four proposals**: objects 20 (one call site, member `Orientation`, none 2 in 88
+    slots), the `0x804` halves of collision 37 and objects 23 (the branch needs a door with `BlocksVis` 0 and
+    `BlockMissile` set; none of the 7 has it), objects 38's PreOperate half. Inventory § 2.6. (b) **The near-list change
+    in `tools/collision.py` is a model fix with evidence, not fitting**: it was made for a diagnosed failure (a stale
+    active room in a neighbour's near list), is conditioned on the same level, DRLG room, rect and an unreused
+    pointer, and two simpler variants were rejected by a second test of the same log (line 25087). Re-checked here with
+    the pre-fix `collision.py`: the H5b logs give the same 734 unmasked `0x27` results and only flayer3's one mismatch
+    more, and the 29 older logs are identical, so collision 27's raise does not rest on the fix and stands. On
+    run:2026-10-14-collision the fix fires 3 999 times and changes nothing, so it is not discriminated there; the game's
+    unlink stays `[I]` and an open question of drlg/0005 (the free path, `0x0052D240`'s callees), as filed. (c) **The
+    cave log is accepted, not re-run**: the failure is a logger read (`MemoryError` at `0x65`, line 22353), not a model
+    disagreement; the checker resyncs and the rest of the log matches; no raised claim rests on that log alone (`InitFn`
+    57 also in cave2 and cave4). Reported as "1 logger error, 0 model mismatches". (d) **The oracle change is
+    accepted**: the nine `InitFn`s create monsters (S4b row 25), which the objects checker does not model, so a creation
+    would fail on the room and game seeds. The oracle still counts every `OD` inside it (none for the nine; `InitFn`
+    46's 1 306 show the counter live), and the 24 checks it drops are `InitFn` 18's 3 runs in the older logs, which
+    matched before; recorded in the experiments record. A scope reduction, not a fit.
+  - **Fixes (made here):** (1) *misread:* row 39's bullet listed cave3 among the sessions that created chest 397; cave3
+    never activated its room (0 `InitFn` 57 lines); now cave, cave2, cave4. (2) *omission:* row 35 (the 582 quest
+    object) was in the ledger's shortfalls with no statement in the finding; a shortfall bullet added to H5b.3.
+    (3) *omission:* the record did not say what the oracle change removed or that it keeps the `OD` counter; added,
+    with the review's re-run and the pre-fix counterfactual (experiments record, drlg/0005's near-list bullet). The
+    d-none wording ("Proposed") set to the ruling in objects/0001 and drlg/0005.
+  - **Totals** (inventory § 2.6, § 5, after merging `main`): **static 567, harness 531, c-emu 0, blocked 416** (d-none
+    283), **deferred 2, raised 10: 1 526**. H5b: 32 statements (33 filed; 1 to d-none).
+  - **Phase 3:** frees no cluster. drlg/collision still waits for H5d, objects for H6e2.
+  - **Ledger:** 3 fixes: misread 1, omission 2 ([metrics](metrics.md)).
+  - **Backlog:** review request
+    [2026-10-20-reverser-architect-review-h5b-objects](../backlog/archive/2026-10-20-reverser-architect-review-h5b-objects.md)
+    closed; the spec-writer entry
+    [2026-10-20-reverser-spec-writer-h5b-objects-spec-updates](../backlog/2026-10-20-reverser-spec-writer-h5b-objects-spec-updates.md)
+    released (it is applied with the objects and drlg/collision Phase 3 rounds, when H6e2 and H5d are accepted).
 - **2026-10-20 — Batch order and the 0039 fold (owner decisions, via the orchestrator; architect, `lane/plans45`).**
   (1) The remaining harness batches run **core and enabler first**: H5b (in flight) → H2a → H2b → H2c → H4a → H5d →
   H1b → H1a → H3b, then H6e2 → H6e1 → H6b → H6a → H6c → H6f → H6g; the family rules of
@@ -2578,3 +2695,149 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** unchanged; no review request (no spec changed).
   - **Next:** the next Phase 3 round after H5b's review (objects still waits for H6e2, drlg/collision for H5d), then per
     cluster as H2a–H2c, H4a and the rest are accepted.
+- **2026-10-20 — Batch H2a paused (reverser, `lane/h2a`): harness part done, write-up left; resume note.** Slot 2
+  was yielded to plan 0044 Phase 2 at the orchestrator's request. Slot 2 is stopped, its saves directory restored to
+  empty (`aside: none`), no driver or gdb left.
+  - **Done:** run:2026-10-20-sweep-items-tc, 12 sessions on slot 2, recorded in
+    [findings/items/experiments.md](../findings/items/experiments.md#run2026-10-20-sweep-items-tc) with the logger
+    (`tools/gdb/tc-h2a.gdb`), driver (`tools/h2a_sessions.py`), pilot `corpse` command, recipe `h2afind.json`, checker
+    `tools/sweep_h2a.py` (+ 9 tests), the `tools/quality.py` clamp counterfactual keys and `tools/tc.py`'s skip of the
+    H2a tags. Logs, manifest and every check output are in `workspace/logs/h2a/` (`check/`). All checkers 0
+    mismatches: `sweep_h2a.py logs` 0 bad, `tc.py replay` 873/873, `quality.py` 720/720, `uniques.py` 1022/1022.
+  - **Proposed row states (lane's reading, for the write-up):** tc 1, 2, 11, 34 (2), 37, 45, 47, 59, 71 raised; tc 22
+    raised in part (bit 17: 113 skips, collision: 2 skips; `bonewall` fatal unreached); tc 60 raised in part
+    (gold find 202 products, `mul=` 1 product; the type-equivalence half is d-none: `gld` is the only item record of
+    or equivalent to type 4; signedness unseparated by positive values); tc 70 raised in part (types 2 and 3; type 1
+    and the outside-1–3 half unreached); quality 20 raised in part (owner from the AI block for 363/352/271, 130
+    rolls; gone owner and killer type ≥ 2: 0 cases in 8 753 rolls); quality 22 and 23 raised (the D6 clamp acts in 667
+    rolls of the S2a set and the H2a logs; no clamp breaks 138, clamp after the ratio breaks 206). That is 13 raised and
+    4 raised in part of 17 rows (18 statements with tc 34's two).
+  - **Left (static, no slot needed):** the "Plan 0038 batch H2a" sections of items/0001 and items/0002 with the row
+    ledger and anchors; the rule-12 carries into 0001 § S2a tc 34 and the TCP/IP open question, and into 0002 § Answer
+    (the clamp "never acted"), § magic-find unexercised parts and the clamp open question; `re/symbols.csv` confidence
+    (MonDeathDrop, MonDeathEvent, MonDropNoNoDrop, CorpseFindItem, DropGoldFind I → C); inventory § 2.6 entry; the
+    review request to the architect; gate. No further session is needed for the filed rows; an optional champion kill
+    (an `Act N Citem` `mul=` gold) would add `mul=` cases.
+- **2026-10-20 — Batch H2a filed (reverser, `lane/h2a`, write-up resumed from the note above; `main` `5a7feb3`
+  merged).** Static only: no slot, no Ghidra. Every count re-taken from the kept logs and check outputs in
+  `workspace/logs/h2a/` (manifest passes), not from the note.
+  - **Ledger** ([items/0001 § Plan 0038 batch H2a](../findings/items/0001-tc-resolution.md#plan-0038-batch-h2a-2026-10-20),
+    [items/0002 § Plan 0038 batch H2a](../findings/items/0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20)):
+    15 rows, 17 statements: **12 raised** (tc 1, 2, 11, 34 L361, 37, 45, 47, 59, 71; quality 22 ×2, 23), **5 raised in
+    part** (tc 22, 34 L388, 60, 70; quality 20), 0 shortfall. The note's "13 raised, 4 in part of 17 rows (18
+    statements)" miscounted: tc 34's L388 carries the `Picks = 0` half (d-none, row 13), so it is in part (rule 8).
+  - **New checks** (additions only; run record addendum): `quality.py` counterfactual `before-mf` (D6 before magic find
+    breaks 9 + 129 rolls, which raises quality 23's MF-before-minimum half), `sweep_h2a.py goldtypes` (only `gld` is of
+    type 4 by any route: tc 60's equivalence half d-none), and a per-log clamp split (the clamp acts in the affixes,
+    uniques, props and items-chain runs, never in the plan 0010 runs).
+  - **Corrections carried (rule 12):** items/0002 Answer, § 4 order, § 7, the Reproduction note, the clamp open question
+    and the header (the clamp "never acted" → acts in 667 rolls, decides 138); items/0001 header, Answer (negative-Picks
+    stop), Functions table, § 3 (bit 17), § 8 (gold), S2a tc 34 and tc 51, and the TCP/IP `/players` open question
+    (answered).
+  - **Symbols:** `MonDeathEvent`, `MonDeathDrop`, `MonDropNoNoDrop`, `CorpseFindItem`, `DropGoldFind` I → C.
+  - **Inventory:** [§ 2.6 H2a](0038-inventory/README.md#26-moves-made-by-the-batch-reviews), no class moves; totals
+    as after the H5b review (static 567, harness 531, blocked 416, deferred 2, raised 10: 1 526).
+  - **Backlog:** review request
+    [2026-10-20-reverser-architect-review-h2a-items-tc-quality](../backlog/archive/2026-10-20-reverser-architect-review-h2a-items-tc-quality.md);
+    spec-writer entry
+    [2026-10-20-reverser-spec-writer-h2a-items-tc-quality-spec-updates](../backlog/2026-10-20-reverser-spec-writer-h2a-items-tc-quality-spec-updates.md)
+    (to be released with the review).
+  - **Next:** architect review of `lane/h2a`; then H2b.
+- **2026-10-20 — Review of `lane/h2a`, batch H2a (items: tc and quality; architect): accept with fixes.** `main` merged
+  first (already up to date at `5a7feb3`; `backlog.py archive` moved nothing). Read: the plan, inventory, items/0001,
+  items/0002, experiments and backlog diffs, the logger, `tools/quality.py`'s diff and `sweep_h2a.py clamp`/`killers`.
+  - **Re-run** (from the worktree, `systemd-run --user --scope -p MemoryMax=4G python3 -I …`): `sha256sum -c` passes on
+    `items-tc-manifest.sha256` (12 logs), `items-tc-saves.sha256` (from `saves/`), the H6d manifest (19) and the S2a
+    manifest (195). `tc.py replay` 873 calls, 873 reproduced, 0 failed (B6 in the three Andariel kills);
+    `quality.py check` 720/720; `uniques.py check` 1022/1022; `sweep_h2a.py logs` 0 bad; `clamp` over the H2a logs, the
+    193 S2a logs and the two MF-100 logs, `goldtypes` and `static` byte-identical to `check-sweep_h2a.txt`,
+    `check-clamp-h2a-r2.txt`, `check-clamp-s2a-r2.txt`, `check-clamp-s2a-mf100-r2.txt`, `check-goldtypes.txt`,
+    `check-static.txt`, `check-quality-r2.txt`, `check-uniques.txt`; `test_sweep_h2a.py` 9 OK. The cited check-output
+    and tool hashes match the files (`d2pilot.py` `f7e805d9…` is the run's revision, `43df448`; the merge of H5b changed it
+    after).
+  - **Symbols** (two sources each, spot-checked with objdump and r2 on the pinned image): `call 0x5A6830` at 0x005A7027
+    and all 973 `MDD0` returns at 0x005A702C; the dword at 0x006E2260 is 0x005A6FF0 (`MonDeathEvent`, no `call rel32`);
+    the dword at 0x007323D0 is 0x005D8780 (`g_SkillDoFuncs` 0x007322B0 + 72 × 4) and all 31 `CFI` return to 0x0056F96A;
+    `call 0x5A8000` at 0x005D888F; `call 0x5589A0` at 0x0055AF59 and all 705 `GF0` return to 0x0055AF5E. The five I → C
+    stand.
+  - **Rulings.** (a) *Row count:* the § 5 row lists 13 tc and 4 quality statements on 15 rows (tc 34 and quality 22 two
+    each): 17 statements, 12 raised and 5 in part, as filed; the resume note's 13 + 4 of 18 was its miscount, corrected
+    by the lane before filing. (b) *tc 34 (L361), how it is decided:* 0x0055AB35 is the join of every exit of the entry
+    scan (the classic path at 0x0055AAD8 and 0x0055AAEB, the expansion loop's exits and fall-through at
+    0x0055AB00–0x0055AB33), and the logger's `SEL` there prints misses too, so a reading without the `jge 0x0055AF73`
+    at 0x0055AAC4 would log a `SEL` after `NEG roll=1 total=1`; there is none, and the 62 other negative picks each
+    show one (the control). The stop's frame end is the same either way, which is why only the missing line decides;
+    not by chance (rule 10). Raised. (c) *Rule 8, tc 34 (L388):* the step note carries two claims; the stop half is
+    `[C]`, the `Picks = 0` half is tc 13's statement (d-none since S2a), so L388 is raised in part and stays counted as
+    H2a (no class move, as the H5b halves). (d) *Clamp correction (rule 12):* carried in items/0002 (header, Answer,
+    § 4, § 7, unexercised parts, the plan 0010 run note, open question); the plan 0010 run record in experiments.md
+    (its own run, still true) needs none. It was not carried to the specs' open questions or the wiki: fix 1. "Acts"
+    counts the rolls with the pre-clamp chance at or below the minimum; the evidence for the raise is the 138 it
+    decides. (e) *Tool additions:* `quality.py`'s `clamp_ratio` refactor and `before-mf` key leave the game's roll
+    unchanged (`check-quality-r2.txt` = `check-quality.txt`, the uniques check unchanged); `goldtypes` is a full-table
+    check. Accepted as additions. `before-mf` breaking the same 9 + 129 as `off` is a result, not a tool fault: it
+    still separates "minimum after magic find" from "before". (f) *quality 20, the aborted H6d log:* the 5 hireling
+    rolls of `failed/quest-b6-s2-3811-andy-warriv.log` (`QOMF omf=100`, so the owner term is non-zero) count: the log
+    is a kept development log (reverser rule 6), hashed in the H6d manifest and in its run list, made by the same logger;
+    the session failed on navigation, not on the logger. Per log the 39 are 5 + 3 + 4 + 7 + 7 + 4 + 9 over seven H6d
+    logs; without the 5 the raise stands (34 + 6 + 85).
+  - **Fixes (made here):** (1) *omission:* the spec-writer entry gained (m)–(o): items/quality's `[L]` clamp open
+    question (L638), items/tc's `[L]` `game.type` / TCP/IP `/players` open question (L968–L970) and the wiki items page
+    (L177–L179, L220, L542, L548), each contradicted by the corrections. Entry released.
+  - **Totals** (once, after the rulings, against `main` `5a7feb3`): unchanged, **static 567, harness 531, c-emu 0,
+    blocked 416** (d-none 283, d-edit 73, d-sim 28, d-2c 14, d-owner 10, d-0032 8), **deferred 2, raised 10: 1 526**
+    ([§ 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews)); H2a marked done in § 5.
+  - **Phase 3 clusters freed:** items/quality (waited on H2a only) is ready for its re-tag round; items/tc still waits
+    on H2b and H2c.
+  - **Ledger:** 1 fix: omission 1 ([metrics](metrics.md)).
+  - **Backlog:** review request
+    [h2a review](../backlog/archive/2026-10-20-reverser-architect-review-h2a-items-tc-quality.md) closed; spec-writer entry
+    [h2a spec updates](../backlog/2026-10-20-reverser-spec-writer-h2a-items-tc-quality-spec-updates.md) released.
+- **2026-10-20 — Phase 3, the items/quality cluster (spec-writer, `lane/p38s7`, from `main` `f32742c`).** The cluster
+  waited on H2a only (accepted above). Inputs: the items/quality parts of the released H2a spec-updates entry ((j)–(m)
+  and the quality lines of (o)) and the items/quality note of the S2a tc 64 entry ((b), unblocked by S4b's raise in
+  items/0001 § 2). Each raise checked against
+  [items/0002 § Plan 0038 batch H2a](../findings/items/0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20) and the
+  review's rulings (d) and (f). The plan 0049 M3 notes folded by `lane/p49s` are kept as they were.
+  - **items/quality** {C 64, I 42, L 2} → **{C 69, I 39, L 1}**. Raised `[C]`: the D6 line and its step note
+    (quality 22, "the clamp acts": 667 rolls, decides 138, no unique case), the D4–D7 order note (quality 23). Split:
+    M3, a monster killer owned by a player `[C]` (quality 20 in part, 130 rolls), the missing-owner, plain or minion
+    killer and type ≥ 2 cases staying `[I]`; C1, the chest tier as `ilvl` `[C]` (S2a (b), run:2026-10-15-objects), its
+    consequence for the odds `[I]`. Open questions: the `*Min` clamp `[L]` struck.
+  - **Wiki:** [items](../wiki/items.md) step 3 of *One test*, the MF paragraph and the *Quality* line of the untested
+    list restated; `based_on` for quality already 2026-10-20.
+  - **Waiting** (missing batches): items/tc H2b, H2c; items/affixes H2b; items/uniques-sets H2b, H1a (us 21);
+    items/properties H2b, H2c; items/sockets-runewords H2b, H6b; items/cube H6a; items/vendors H6c; items/quest-drops
+    H4a, H6e1, H6e2; save/d2s H1a, H1b; data/excel H3b (and the plan 0039 fold); data/strings and data/README H3b;
+    monsters/pool, monsters/special and monsters/stats H4a; monsters/spawn H4a, H5d; hirelings H1a, H1b, H6f;
+    player/creation H1a, H6g; drlg/collision H5d; objects H6e2.
+  - **Backlog:** the H2a spec-updates entry and the S2a tc 64 entry annotated (done in part; their items/tc and objects
+    parts wait); review request
+    [p38s7 review](../backlog/archive/2026-10-20-spec-writer-architect-p38s7-items-quality-review.md).
+  - **Next:** architect review of `lane/p38s7`; items/tc after H2b and H2c.
+- **2026-10-20 — Review of `lane/p38s7`, Phase 3 items/quality cluster (spec-writer; architect): accept with fixes.**
+  `main` merged first (already up to date at `f32742c`; `backlog.py archive` moved nothing). Read: the spec, wiki,
+  backlog and plan diffs against
+  [items/0002 § Plan 0038 batch H2a](../findings/items/0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20), the
+  `lane/h2a` rulings (d) and (f) and [items/0001 § 2](../findings/items/0001-tc-resolution.md#2-entry-points).
+  - **Raises.** D6 line and step note: 667 = 39 + 628, by test rare 622 (37 + 585), set 646 (38 + 608), magic 13
+    (2 + 11), decides 138 (9 + 129), 7 199 = 720 + 6 479; the unique minimum reached by none; the plan 0010 runs'
+    "no chance near a minimum" kept as scoped (ruling (d)). D4–D7: after D7 206 (7 + 199), before D5 138 (9 + 129).
+    M3: 130 rolls (85 + 39 + 6, the 5 `failed/` hireling rolls counted per ruling (f)); remainder `[I]` scoped to the
+    8 753 rolls. C1: two sources hold, the code at 0x00585CD2 and run:2026-10-15-objects (59 of 59 `TCR ilvl` = the
+    modelled tier, items/0001 § 2 `[C]` since S4b); the consequence for `d` split `[I]`. All stand.
+  - **Anchors** spot-checked in `re/symbols.csv`: `ITEMS_DropMagicFind` 0x005585D0, `sub_0058F0D0_MonsterOwner`,
+    `sub_00585B90_ObjectChestDrop`; the six cited run ids exist in the experiments files.
+  - **Counts** by script over the body, struck text removed: {C 64, I 42, L 2} → {C 69, I 39, L 1} (+3 raised, +1 M3,
+    +1 C1 in place with a new `[I]`). The struck clamp open question carries no live tag. The two annotated entries'
+    remaining parts (items/tc (a)–(i), (n), the `/players` lines of (o); items/tc § J and objects § J3) are correct.
+  - **Fixes (made here):** (1) *overclaim:* wiki step 3 said the clamp decided 138 rolls "in the rare, set and magic
+    tests"; the finding splits by test only the rolls that reach the minimum, not the 138: restated. (2) *omission:* the
+    wiki's untested *Quality* line names a monster killer with no player owner, but the spec's open questions did not
+    list it: the M3 remainder (no player owner; an object or missile killer) added to the `[L]` *Not exercised* bullet
+    (no count change) and the object or missile killer to the wiki line.
+  - **Research map:** the items/quality row rewritten whole (C 69 / I 39 / L 1, the H2a raises).
+  - **Ledger:** 2 fixes: overclaim 1, omission 1 ([metrics](metrics.md)).
+  - **Backlog:** review request
+    [p38s7 review](../backlog/archive/2026-10-20-spec-writer-architect-p38s7-items-quality-review.md) closed; the H2a
+    spec-updates and S2a tc 64 entries stay open for items/tc and objects.

@@ -354,7 +354,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p45m-review-plan-0045-p1-2-missiles.md), the Missiles
   columns [to the archivist](../backlog/2026-10-20-reverser-archivist-missiles-columns-anchored-by-skills-0002.md), the
   collision, combat and economy inputs
-  [to the spec-writer](../backlog/2026-10-20-reverser-spec-writer-missile-path-inputs-for-drlg-collision-combat-econ.md);
+  [to the spec-writer](../backlog/archive/2026-10-20-reverser-spec-writer-missile-path-inputs-for-drlg-collision-combat-econ.md);
   [the archivist's fields entry](../backlog/archive/2026-10-20-archivist-reverser-missiles-fields-named-by-the-table-doc.md)
   closed. Open for P1.3: the numbered tier-A functions, the re-seed sites in the missile range, the step direction
   (`0x0064FC60`) for Phase 2's position logs.
@@ -376,7 +376,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   spec's draw order, separate from the melee chain; § C's `[C]` chaining stands for the run's paths with an `[I]` note
   that a player's weapon-share missile inserts 1–3 draws at its creation; monster archers draw too (337 at 0), so B2
   and the monster chain are scoped to melee. Written into
-  [the spec-writer's entry](../backlog/2026-10-20-reverser-spec-writer-missile-path-inputs-for-drlg-collision-combat-econ.md).
+  [the spec-writer's entry](../backlog/archive/2026-10-20-reverser-spec-writer-missile-path-inputs-for-drlg-collision-combat-econ.md).
   For Phase 2: "missile create" is an event kind that draws on the owner's seed and needs its 20 chained pairs; log the
   owner's and the missile's seeds at creation and at the hit. **P1.3 may start once this lane is in `main`** and picks
   up: the tier-A missiles' numbered do/hit/damage functions (`firebolt`, `bomb in air`, `plaguejavelin` and their
@@ -387,6 +387,64 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   recommendation. Review request
   [closed](../backlog/archive/2026-10-20-reverser-architect-lane-p45m-review-plan-0045-p1-2-missiles.md); the
   [p49r names entry](../backlog/archive/2026-10-20-architect-reverser-plan-0045-p1-2-reuse-the-p49r-missile.md) closed.
+- **2026-10-20 — P1.2's spec inputs folded, for review (spec-writer, `lane/msw`).** The
+  [reverser's entry](../backlog/archive/2026-10-20-reverser-spec-writer-missile-path-inputs-for-drlg-collision-combat-econ.md)
+  and the P1.2 ruling are closed, all `[I]` from skills/0002, with nothing raised.
+  [combat/README § B](../specs/combat/README.md#b-draw-order-per-event):
+  - B4 "missile creation" is a new event on the owner's seed: a diagram plus pseudocode for the weapon-share test and
+    the 337 (always), 141, mastery chain; a `SrcMissDmg` missile draws on its source's seed.
+  - B3 gives the to-hit roll on the owner's seed and `BuildDamage`'s seven `RangeB` in order.
+  - B2 and § C's monster chain are scoped to melee, with notes on the archers' creation draws.
+  - § C's `[C]` stands, with an `[I]` note on the player's creation draws. That note does not name them as the cause
+    of the 213 resynchronisations: Phase 2 tests it.
+  - The "draws that do not happen" note is scoped, and the phase (3) open question is rewritten.
+
+  Elsewhere:
+  - [combat/damage](../specs/combat/damage.md) step 3 notes that missiles do not use it.
+  - [rng/seeds](../specs/rng/seeds.md) classifies the pierce count's local seed (`RNG_SeedInit` from stat 328) and
+    narrows the re-seed open question.
+  - [items/economy](../specs/items/economy.md) H3 gives the `useAmmo` gates; the gates question is struck and
+    `SkillWeaponWear` stays `[L]`.
+  - [drlg/collision](../specs/drlg/collision.md) § F gets the missile side of `0x40`: do 3 writes it, `HitUnit`
+    unmarks it, `CollideType` 7 is unused. **drlg/collision is held by plan 0038 Phase 3 (waits H5b+H5d).** This
+    lane only adds the 0045 input: no 0038 row was re-tagged, and C2's `[L]` stands.
+  - Wiki: economy updated (which shots use ammunition, the stale arrows item dropped); levels and monsters get a
+    `based_on` bump only; combat not edited (no contradiction).
+
+  Tags:
+
+  | Spec | Before | After |
+  |---|---|---|
+  | combat/README | {C: 36, I: 22, L: 5} | {C: 36, I: 35, L: 5} |
+  | damage | {C: 34, I: 28, L: 4} | {C: 34, I: 29, L: 4} |
+  | rng/seeds | {C: 79, I: 10, L: 4} | {C: 79, I: 11, L: 4} |
+  | drlg/collision | {C: 110, I: 60, L: 9} | {C: 110, I: 61, L: 9} |
+  | items/economy | {C: 125, I: 83, L: 12} | {C: 125, I: 84, L: 12} |
+
+  The live open-question counts are unchanged. Review:
+  [request](../backlog/archive/2026-10-20-spec-writer-architect-review-lane-msw-missile-creation-draws-in-combat.md).
+- **2026-10-20 — `lane/msw` reviewed (architect): accept with fixes.** Every new statement checked against skills/0002
+  §§ 2–6 and 9 and skills/0001 § 6: B4's weapon-share test, the 337 (always) / 141 / mastery order and the first-success
+  stop, the `SrcMissDmg` source branch with no weapon, the creation order (`SUnitCreate`, callback, damage block, pierce),
+  B3's to-hit on the owner's seed and `BuildDamage`'s seven `RangeB` in order, the do-3 writer and the `HitUnit` unmark,
+  and the 33 `useAmmo` sites (the six monster sites and both `0x005D88B0` calls re-read in objdump on the pinned
+  `Game.exe`, the two other `0x005A35D0` calls push 0). The P1.2 ruling holds: B4 is its own owner-seed event, not
+  damage step 3's chain; § C's `[C]` is unchanged with an `[I]` note that does not claim the 213 resyncs; B2 and the
+  monster chain are melee. The diagrams match the text; the struck economy question has no tag; the wiki has no tags or
+  anchors. No tag moved, so the five specs keep status `reviewed` and their tag counts. Fixes (7): (1) combat A3 "the
+  critical chance" is fixed at creation → "the critical strike's result"; (2) the B4 entry-point row names
+  `sub_0059F900_MissileInitDamage` between `MissileCreate` and the damage block; (3) "Draws that do not happen" `[C]`
+  scoped to what the run checked (B1, B2 and the player's side of B3), not all of B3, whose missile draws are `[I]`;
+  (4) `CritChain`'s mastery local renamed `mc` (it shadowed the missile `m`); (5) drlg/collision § F: the `HitUnit` unmark
+  is scoped to a missile ending through `HitUnit`, a do-1 free without the hit function not followed; (6) rng/seeds: the
+  "client/server base-stat pair" now cites rng/0002 (it came from there, not from skills/0002); (7) economy H3's
+  "on its paying path" is spelt out: `SKILLS_SrvDo` with `pay` set and a player or monster unit (skills/0001 § 6's
+  `if (pay) { if (actor) … decquant … }`), the use acting only for a player. **Rulings:** (a) skills/0002 § 2's "four
+  monster functions" listing five was the finding's miscount: five functions, six sites, verified in objdump; fixed in
+  the finding with a review note, no backlog entry (the spec says "a few" and stands). (b) `decquant`'s reading is
+  right, only the wording was vague (fix 7). (c) drlg/collision stays held by plan 0038 Phase 3; the lane re-tagged no
+  0038 row. Review request
+  [closed](../backlog/archive/2026-10-20-spec-writer-architect-review-lane-msw-missile-creation-draws-in-combat.md).
 - **2026-10-20 — Phase 1 batch P1.3 landed for review (reverser, `lane/p45h`, static).**
   [skills/0003-handlers](../findings/skills/0003-handlers.md): the progressive entries 36–41 and 143 (missile and calc
   picked by the charge count; **37, 39, 41 and 143 step the attacker's seed once at entry**, 38 draws `RangeB` on it

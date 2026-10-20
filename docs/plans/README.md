@@ -72,7 +72,7 @@ about 4 h checkpoint and a fresh lane resumes on the same branch.
 **Owner decisions (2026-10-20):**
 - **0039:** closed; its data/excel fold (P1b (a), P1c (a), the 11 data/excel W1) is an item of plan 0038 Phase 3's
   data/excel cluster, after H3b.
-- **0038:** every remaining batch is kept, **core and enabler batches first**: H5b (in flight) → H2a → H2b → H2c →
+- **0038:** every remaining batch is kept, **core and enabler batches first**: H5b (accepted 2026-10-20) → H2a (accepted 2026-10-20) → H2b → H2c →
   H4a → H5d → H1b → H1a → H3b, then the creation-path batches H6e2 → H6e1 → H6b → H6a → H6c → H6f → H6g. The family
   rules of [§ 7](0038-inventory/README.md#7-priority-order) still hold (H2a → H2b → H2c; H5d after H5b; H1b before
   H1a; H6e1 and H6e2 one at a time).

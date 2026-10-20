@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, combat/to-hit, monsters/stats, items/properties]
 consumed_by: [combat/reductions, combat/delivery]
-tags: {C: 34, I: 28, L: 4}
+tags: {C: 34, I: 29, L: 4}
 updated: 2026-10-20
 ---
 
@@ -145,6 +145,10 @@ Step notes:
   unit had stat 337, so the chain order is [I]. [C] for deadly strike (fn:RNG_RangeOffset@0x00472280,
   run:2026-10-16-combat); [I] for the order (0x0057B8A9–0x0057B92F)
 - 3. The doubling applies to physical damage only, and only when step 2 ran. [I] (0x0057B8A9–0x0057B92F)
+- 3. **A missile does not use this step.** Its critical chain runs once, when the missile is created, on the owner's
+  seed, in another order (stat 337 drawn even at 0, then stat 141, then the mastery crit), and its result doubles the
+  physical damage at the hit ([overview § B, B4](README.md#b-draw-order-per-event)). [I]
+  (fn:sub_0064A850_MissileCritRoll@0x0064A850, fn:sub_0064B860_MissileDamageBlock@0x0064B860)
 - 4. The element order is **fire, lightning, cold, magic**, not the stat-id order. [C] (0x0057B932–0x0057BA4C,
   run:2026-10-16-combat)
 - 5. A player's or a hireling's steal fields are the percents of stats 60 and 62 as they stand; the leech itself is
@@ -315,6 +319,7 @@ The exit seed `9fdf9862:101f40ba` is the one logged at the builder's return. [C]
   builder), 12 and 12b (a), (b), (d) (`MonAttackStats` modes, `noRatio`, element types), 14 (the monster `Crit`
   flag), 15 (the confirmed raises).
 - [skills/0001](../../findings/skills/0001-dispatch.md) § 11 (the conversion writers).
+- [skills/0002](../../findings/skills/0002-missiles.md) § 3 (the missile's critical chain, which is not step 3's).
 - [combat/experiments § run:2026-10-16-combat](../../findings/combat/experiments.md#run2026-10-16-combat): 3 732
   builds, 386 on a miss, 250 deadly strikes, 89 monster doublings, 5 060 `MonAttackStats` calls.
 - Tables: [Weapons](../../tables/Weapons.md), [MonStats](../../tables/MonStats.md), [ElemTypes](../../tables/ElemTypes.md),

@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/properties, items/tc, items/vendors, stats/aggregate, monsters/stats, hirelings, combat/delivery, data/excel]
 consumed_by: [items/vendors, hirelings, items/quest-drops, combat/delivery]
-tags: {C: 125, I: 83, L: 12}
-updated: 2026-10-19
+tags: {C: 125, I: 84, L: 12}
+updated: 2026-10-20
 ---
 
 # Item economy: prices, repair, gold, costs and wear
@@ -785,8 +785,18 @@ H6. SkillWeaponWear (from 0x005DAB40), with the skill's calcs +0x13C chance and 
 
 - H4. [C] 130 thrown uses (a throwing axe, through 142 `PLAYER_UseAmmo` calls) write `q − 1` with no draw.
   (fn:sub_0056C310_ItemConsumeOne@0x0056C310, fn:PLAYER_UseAmmo@0x0056C3F0, run:2026-10-17-economy)
-- H3. [I] Bows, crossbows and quivers were not met. The gates of `PLAYER_UseAmmo`'s missile call sites (0x0056ECB0,
-  0x0056F7F0) are not followed. (fn:PLAYER_UseAmmo@0x0056C3F0)
+- H3. [I] Bows, crossbows and quivers were not met in the run. (fn:PLAYER_UseAmmo@0x0056C3F0)
+- H3. [I] **The missile gates.** The line and lob missile creators take a `useAmmo` argument; with it set and a player
+  owner, `PLAYER_UseAmmo` must return ≥ 1 or no missile is made. Of their 33 call sites, `useAmmo` is 1 at
+  `SKILL_AttackDo` (the normal attack) unless the unit's ranged missile is 27 `magicarrow`, at the Throw and Left Hand
+  Throw do functions, at a few monster functions and at two skill functions (`0x005CBF90`, both calls of `0x005D88B0`),
+  and 0 everywhere else, `SKILLS_SrvDo`'s `srvmissile` included; there a `decquant` skill uses one through
+  `SKILLS_SrvDo`'s own `PLAYER_UseAmmo` call, made after the missile when `SKILLS_SrvDo` runs with its `pay` argument
+  set and the unit is a player or a monster (the use acts only for a player). In the creators the
+  ammunition use acts only for a player owner.
+  (fn:sub_0056ECB0_SkillMissileCreate@0x0056ECB0, fn:sub_0056EE90_SkillMissileCreateLob@0x0056EE90,
+  fn:SKILL_AttackDo@0x0056F070, fn:sub_0056F460_SkillThrowDo@0x0056F460, fn:SKILLS_SrvDo@0x0056F7F0,
+  tbl:Skills.txt:decquant, [skills/0002 § 2](../../findings/skills/0002-missiles.md#2-creation))
 - H5–H6. [I] No charge was used and no skill wear was met in the run; which skill reaches `SkillWeaponWear` is not
   read. (fn:sub_0056BEC0_UseCharge@0x0056BEC0, fn:sub_005DAA40_SkillWeaponWear@0x005DAA40)
 
@@ -958,6 +968,8 @@ so the amount is `5 + 19 = 24`, unchanged by `mul=`. G7: the killer's stat 79 is
 
 - Finding: [items/0011](../../findings/items/0011-economy.md) (§ 1–§ 8, § The writer of `game+0x6A`, § Phase 2,
   § Phase 2b).
+- [skills/0002 § 2](../../findings/skills/0002-missiles.md#2-creation) (`useAmmo` per missile call site, plan 0045 P1.2) and
+  [skills/0001](../../findings/skills/0001-dispatch.md) (`SKILLS_SrvDo`'s `decquant` use).
 - Runs: [run:2026-10-17-economy](../../findings/items/experiments.md#run2026-10-17-economy): 33 claim logs, 0
   mismatches; `tools/economy.py check` (manifest `workspace/logs/economy-run-manifest.txt`).
   [run:2026-10-19-economy2](../../findings/items/experiments.md#run2026-10-19-economy2): 5 claim logs, 0 mismatches
@@ -997,7 +1009,9 @@ so the amount is `5 + 19 = 24`, unchanged by `mul=`. G7: the killer's stat 79 is
   (plan 0044) settles it.
 - [L] The party gold split (`PartyGoldShare`) and trading gold between players: plan 0044, two clients.
 - [L] Which code sets the broken flag of a melee weapon at durability 0, if any (H2), and what the client shows.
-- [L] The missile gates of `PLAYER_UseAmmo` and which skill reaches `SkillWeaponWear` (H3, H6).
+- ~~The missile gates of `PLAYER_UseAmmo` (H3).~~ Answered from the code (H3, [skills/0002 § 2](../../findings/skills/0002-missiles.md#2-creation));
+  the unit's ranged missile behind `SKILL_AttackDo`'s gate (`0x00645F00`) is plan 0045 P1.3's.
+- [L] Which skill reaches `SkillWeaponWear` (H6).
 
 ### Community sources: differences of 1.14d
 
