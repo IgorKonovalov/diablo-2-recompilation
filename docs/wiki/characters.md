@@ -2,7 +2,7 @@
 based_on:
   - docs/specs/player/README.md 2026-10-16
   - docs/specs/player/creation.md 2026-10-17
-  - docs/specs/hirelings/README.md 2026-10-17
+  - docs/specs/hirelings/README.md 2026-10-19
   - docs/specs/save/d2s.md 2026-10-17
 ---
 
@@ -306,8 +306,9 @@ as another; only the numbers, not the text, were compared.
 **The hire** ([hirelings § F](../specs/hirelings/README.md#f-the-hire-hire_hire-merc_init)) pays the price from the
 gold you carry first, spawns the seller's monster class next to you, and records three values with the player: the
 seed, the name and the type Id. Any earlier mercenary is released. A hire takes no store-seed draw unless the list
-is rebuilt. Several parts are read from the code only: paying the rest from the stash, refusing when gold is short,
-Qual-Kehk's quest gate, Kashya's quest gate for a player below level 8, and hiring a name that is in the table but
+is rebuilt. The rest of the price comes from the stash, and a payment that gold and stash together cannot cover is
+refused with both unchanged; the economy run showed this on purchases and resurrections. Several parts are read from
+the code only: refusing a hire when gold is short, Qual-Kehk's quest gate, Kashya's quest gate for a player below level 8, and hiring a name that is in the table but
 not listed. Hires at Greiz and classic-game hires were not made in the run.
 
 ## The mercenary's stats per level
@@ -365,9 +366,10 @@ The load side was checked on 33 headers. The write side (no save was written in 
 name past the end of its range, and the empty-header rule (all zeros means no mercenary) are read from the code
 only. The header layout is on the [saves](saves.md) page.
 
-Some things are named in the spec only: the free mercenary from the Act I and Act III quests, resurrection (price
-`min(50000, (L² ÷ 2) × 15)`), death (the mercenary stays in the pet list as dead), and how it chooses skills in
-combat. All are read from the code and none was run
+Resurrection costs `min(50000, (L² ÷ 2) × 15)` gold, with `L` the mercenary's level, paid like a hire; the economy
+run checked the price and the payment, and a resurrection you cannot afford takes no gold. Some things are named in
+the spec only: the free mercenary from the Act I and Act III quests, death (the mercenary stays in the pet list as
+dead), and how it chooses skills in combat. These are read from the code and none was run
 ([hirelings § K](../specs/hirelings/README.md#k-named-only)).
 
 ## Worked examples
@@ -434,8 +436,7 @@ attribute spending, the experience cap, and the edge cases of kill experience li
 
 From [hirelings § Open questions](../specs/hirelings/README.md#open-questions):
 
-- not reached by a run: classic hire lists and hires, a Greiz hire, the free mercenary, refused hires, paying from
-  the stash, hiring an unlisted entry, the table built from Asheara's trade window, levelling in play and the share
+- not reached by a run: classic hire lists and hires, a Greiz hire, the free mercenary, refused hires, hiring an unlisted entry, the table built from Asheara's trade window, levelling in play and the share
   of the owner's experience, a dead or empty saved header, the written header, sharing the table in multiplayer, and
   the list window's odd name;
 - whether the client ever shows its own rolled values instead of the server's.

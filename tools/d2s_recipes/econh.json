@@ -1,0 +1,228 @@
+{
+ "game": "expansion",
+ "class": "Sorceress",
+ "seed": 743000302,
+ "name": "EconH",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 60,
+  "energy": 60,
+  "dexterity": 25,
+  "vitality": 100,
+  "hitpoints": 500,
+  "maxhp": 500,
+  "mana": 300,
+  "maxmana": 300,
+  "stamina": 200,
+  "maxstamina": 200,
+  "level": 75,
+  "experience": 481128591,
+  "gold": 700000,
+  "goldbank": 2000000
+ },
+ "skills": {
+  "Charged Bolt": 1,
+  "Static Field": 1,
+  "Telekinesis": 1,
+  "Teleport": 1
+ },
+ "mouse": {
+  "left": "Teleport",
+  "right": "Telekinesis"
+ },
+ "keep_items": [],
+ "items": [
+  {
+   "code": "xap",
+   "crafted": [
+    160,
+    121
+   ],
+   "prefix": 316,
+   "suffix": 53,
+   "dur": 3,
+   "equip": "head"
+  },
+  {
+   "code": "xtp",
+   "crafted": [
+    160,
+    121
+   ],
+   "suffix": 53,
+   "dur": 10,
+   "equip": "tors"
+  },
+  {
+   "code": "hgl",
+   "dur": 2,
+   "equip": "glov"
+  },
+  {
+   "code": "lbt",
+   "dur": 1,
+   "equip": "feet"
+  },
+  {
+   "code": "lbl",
+   "crafted": [
+    160,
+    121
+   ],
+   "suffix": 53,
+   "dur": 4,
+   "equip": "belt"
+  },
+  {
+   "code": "buc",
+   "dur": 2,
+   "equip": "larm"
+  },
+  {
+   "code": "wnd",
+   "crafted": [
+    160,
+    121
+   ],
+   "prefix": 316,
+   "dur": 4,
+   "equip": "rarm"
+  },
+  {
+   "code": "amu",
+   "crafted": [
+    160,
+    121
+   ],
+   "prefix": 327,
+   "equip": "neck"
+  },
+  {
+   "code": "rin",
+   "crafted": [
+    160,
+    121
+   ],
+   "suffix": 120,
+   "equip": "rrin"
+  },
+  {
+   "code": "rin",
+   "crafted": [
+    160,
+    121
+   ],
+   "prefix": 316,
+   "suffix": 120,
+   "equip": "lrin"
+  },
+  {
+   "code": "cap",
+   "dur": 0,
+   "broken": true,
+   "store": "inventory",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "code": "xea",
+   "ethereal": true,
+   "dur": 5,
+   "store": "inventory",
+   "x": 2,
+   "y": 0
+  },
+  {
+   "code": "rin",
+   "crafted": [
+    160,
+    121
+   ],
+   "suffix": 120,
+   "store": "inventory",
+   "x": 4,
+   "y": 0
+  },
+  {
+   "code": "rin",
+   "crafted": [
+    160,
+    121
+   ],
+   "prefix": 316,
+   "store": "inventory",
+   "x": 5,
+   "y": 0
+  },
+  {
+   "code": "amu",
+   "crafted": [
+    160,
+    121
+   ],
+   "prefix": 327,
+   "suffix": 53,
+   "store": "inventory",
+   "x": 6,
+   "y": 0
+  },
+  {
+   "code": "xap",
+   "crafted": [
+    160,
+    121
+   ],
+   "suffix": 53,
+   "store": "inventory",
+   "x": 7,
+   "y": 0
+  },
+  {
+   "code": "wnd",
+   "crafted": [
+    160,
+    121
+   ],
+   "suffix": 53,
+   "dur": 2,
+   "store": "inventory",
+   "x": 9,
+   "y": 0
+  },
+  {
+   "code": "xtp",
+   "crafted": [
+    160,
+    121
+   ],
+   "prefix": 316,
+   "suffix": 53,
+   "dur": 7,
+   "store": "inventory",
+   "x": 4,
+   "y": 1
+  },
+  {
+   "code": "cap",
+   "crafted": [
+    160,
+    121
+   ],
+   "dur": 5,
+   "store": "inventory",
+   "x": 7,
+   "y": 2
+  }
+ ]
+}

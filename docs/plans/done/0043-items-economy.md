@@ -1,6 +1,6 @@
 # 0043 — Item economy: prices, repair, gold and durability wear
 
-> **Status:** approved (owner, 2026-10-16; unattended); [ADR-0017](../adrs/0017-scope-quests-travel-economy.md) accepted 2026-10-16
+> **Status:** done (approved 2026-10-16, closed 2026-10-20; P0, P1/1b, P2, P2b, P3 and the P2b re-tag accepted with fixes; the economy wiki page written); [ADR-0017](../../adrs/0017-scope-quests-travel-economy.md) accepted 2026-10-16
 > **Created:** 2026-10-16
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0017-scope-quests-travel-economy
@@ -21,11 +21,11 @@ quantity and charges in use, and get them back? When it is done:
 
 - Scope comes from ADR-0017 (accepted 2026-10-16). Research map: a new row `items/economy` in the **Game rules (ADR-0017)** band,
   added when this plan starts.
-- **Named, not specified:** [items/vendors § I](../specs/items/vendors.md) (`sub_0062FDC0_ItemTradePrice`,
+- **Named, not specified:** [items/vendors § I](../../specs/items/vendors.md) (`sub_0062FDC0_ItemTradePrice`,
   `sub_00656900_NpcGetByClass`, `sub_00578050_NpcRepair`, `sub_0062FE60_RepairCost` (L)); hirelings (the hire and
-  resurrect costs, `sub_00576D90_PayGold`); [items/quest-drops](../specs/items/quest-drops.md) open question:
+  resurrect costs, `sub_00576D90_PayGold`); [items/quest-drops](../../specs/items/quest-drops.md) open question:
   `sub_0055A090_DropGoldAmount` and Baal's, Wirt's (`sub_00594630_A1Q4_WirtGold`) and the quest chests' gold;
-  [items/tc](../specs/items/tc.md) (the gold `mul=` and gold find, `sub_005589A0_DropGoldFind`);
+  [items/tc](../../specs/items/tc.md) (the gold `mul=` and gold find, `sub_005589A0_DropGoldFind`);
   `sub_00559300_DropGoldPile`, `sub_0055B030_DropGold`, `OBJINIT_GoldPiles` (C); combat/0001 (`COMBAT_DurabilityLoss`,
   `ITEMS_DurabilityLossRoll`); repairs by quest and cube (`sub_005761C0_ItemRepairAll`, `sub_0055F900_ItemRepairBroken`);
   `sub_00625E00_ItemMaxDurability` (I), `sub_00629930_ItemHasDurability` (C).
@@ -39,13 +39,13 @@ quantity and charges in use, and get them back? When it is done:
 ### Phase 0 — Price, cost and durability columns
 - **Owner skill:** archivist
 - **What:** document the columns the economy code is expected to read.
-- **Outputs:** [Weapons](../tables/Weapons.md), [Armor](../tables/Armor.md), [Misc](../tables/Misc.md) § Economy (the
-  cost, gamble cost, durability, quantity, stack and repair columns); [ItemStatCost](../tables/ItemStatCost.md) § Price
-  (the per-stat price columns); [MagicPrefix](../tables/MagicPrefix.md), [MagicSuffix](../tables/MagicSuffix.md),
-  [UniqueItems](../tables/UniqueItems.md), [SetItems](../tables/SetItems.md) § Price (the cost multiply and add
-  columns); [Npc](../tables/Npc.md) § Multipliers (buy, sell, repair, the quest multipliers, max buy);
-  [ItemTypes](../tables/ItemTypes.md) § Repair and throwing columns; [Hireling](../tables/Hireling.md) § Costs;
-  [Skills](../tables/Skills.md) § Charge cost columns if any row uses them; `tools/economy_survey.py` (gate survey
+- **Outputs:** [Weapons](../../tables/Weapons.md), [Armor](../../tables/Armor.md), [Misc](../../tables/Misc.md) § Economy (the
+  cost, gamble cost, durability, quantity, stack and repair columns); [ItemStatCost](../../tables/ItemStatCost.md) § Price
+  (the per-stat price columns); [MagicPrefix](../../tables/MagicPrefix.md), [MagicSuffix](../../tables/MagicSuffix.md),
+  [UniqueItems](../../tables/UniqueItems.md), [SetItems](../../tables/SetItems.md) § Price (the cost multiply and add
+  columns); [Npc](../../tables/Npc.md) § Multipliers (buy, sell, repair, the quest multipliers, max buy);
+  [ItemTypes](../../tables/ItemTypes.md) § Repair and throwing columns; [Hireling](../../tables/Hireling.md) § Costs;
+  [Skills](../../tables/Skills.md) § Charge cost columns if any row uses them; `tools/economy_survey.py` (gate survey
   `economy`).
 - **Done when:** each named section lists its columns with offsets and ranges; the survey's `SURVEY` line matches the
   docs; meanings stay `[L]` unless a finding anchors them; the gate is green.
@@ -102,7 +102,7 @@ quantity and charges in use, and get them back? When it is done:
 ### Phase 2b — Shortfall remainder (added at the Phase 2 review, 2026-10-19)
 - **Owner skill:** reverser (harness, **1 slot**)
 - **What:** the stock-reachable items of Phase 2's *Done when* that the run missed and that are not rare branches,
-  listed in backlog [2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder](../backlog/2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder.md):
+  listed in backlog [2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder](../../backlog/2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder.md):
   crafted prices, the Hell repair price, the gamble at clvl 3, partial/ethereal/broken repairs, the quest repair (or
   its absence shown), Wirt's gold, question 9 with a control live to the session's end, the two unchanged-seed sales.
 - **Done when:** each listed item reproduces with 0 mismatches on the same manifest, or is named again as a shortfall
@@ -132,20 +132,20 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-17 — Phase 0 landed (archivist, `lane/p43a`), review requested.** Gate survey `economy`
   (`tools/economy_survey.py`, sections `items`, `types`, `stats`, `affixes`, `npc`, `hireling`, `skills`, `books`;
   baseline `tools/gate/baselines/economy.txt`); every count in the sections below is a key of its `SURVEY` line.
-  - [Weapons § Economy](../tables/Weapons.md#economy-plan-0043-phase-0) (the shared table of `cost`, `gamble cost`,
+  - [Weapons § Economy](../../tables/Weapons.md#economy-plan-0043-phase-0) (the shared table of `cost`, `gamble cost`,
     `durability`, `nodurability`, `durwarning`, `qntwarning`, `stackable`, `minstack`/`maxstack`/`spawnstack`,
-    `multibuy`, `quest` with offsets and per-file ranges), [Armor § Economy](../tables/Armor.md#economy-plan-0043-phase-0),
-    [Misc § Economy](../tables/Misc.md#economy-plan-0043-phase-0).
-  - [ItemTypes § Repair and throwing columns](../tables/ItemTypes.md#repair-and-throwing-columns-plan-0043-phase-0):
+    `multibuy`, `quest` with offsets and per-file ranges), [Armor § Economy](../../tables/Armor.md#economy-plan-0043-phase-0),
+    [Misc § Economy](../../tables/Misc.md#economy-plan-0043-phase-0).
+  - [ItemTypes § Repair and throwing columns](../../tables/ItemTypes.md#repair-and-throwing-columns-plan-0043-phase-0):
     `Repair` (32 types), `Throwable`, `Reload`, `ReEquip`, `AutoStack`, `Shoots`, `Quiver`, `CostFormula`, with the
     item bases' own type against `nodurability`.
-  - [ItemStatCost § Price](../tables/ItemStatCost.md#price-plan-0043-phase-0) (`Divide`/`Multiply`/`Add`, 190 priced
-    rows, cross-checked with `prop_survey.py`'s stat use); [MagicPrefix § Price](../tables/MagicPrefix.md#price-plan-0043-phase-0)
+  - [ItemStatCost § Price](../../tables/ItemStatCost.md#price-plan-0043-phase-0) (`Divide`/`Multiply`/`Add`, 190 priced
+    rows, cross-checked with `prop_survey.py`'s stat use); [MagicPrefix § Price](../../tables/MagicPrefix.md#price-plan-0043-phase-0)
     (with MagicSuffix, AutoMagic, and the uncompiled QualityItems and RareSuffix price cells),
-    [UniqueItems § Price](../tables/UniqueItems.md#price-plan-0043-phase-0), [SetItems § Price](../tables/SetItems.md#price-plan-0043-phase-0);
-    [Npc § Multipliers](../tables/Npc.md#multipliers-plan-0043-phase-0) (every row);
-    [Hireling § Costs](../tables/Hireling.md#costs-plan-0043-phase-0); [Skills § Charge cost columns](../tables/Skills.md#charge-cost-columns-plan-0043-phase-0).
-  - **New table: [Books](../tables/Books.md)** (`BaseCost`, `CostPerCharge`, the tome and scroll codes and skills): a
+    [UniqueItems § Price](../../tables/UniqueItems.md#price-plan-0043-phase-0), [SetItems § Price](../../tables/SetItems.md#price-plan-0043-phase-0);
+    [Npc § Multipliers](../../tables/Npc.md#multipliers-plan-0043-phase-0) (every row);
+    [Hireling § Costs](../../tables/Hireling.md#costs-plan-0043-phase-0); [Skills § Charge cost columns](../../tables/Skills.md#charge-cost-columns-plan-0043-phase-0).
+  - **New table: [Books](../../tables/Books.md)** (`BaseCost`, `CostPerCharge`, the tome and scroll codes and skills): a
     price table the plan did not name, found by a header scan of every `.txt` for cost, price, gold, repair and charge
     columns (the only other hits are MonStats' `El*Dur` and QualityItems' `Dur%`, not prices). New `books` layout in
     `tools/excel_layouts.py` (3 × 9 cells, 0 mismatches); `excel_layout` baseline regenerated: tables 66 → 67,
@@ -215,7 +215,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   except the resurrection line, now fixed); gate green (met). Phase 1/1b may start (static lane B's queue).
 - **2026-10-17 — Phase 1 and Phase 1b done (reverser, `lane/p43r`, static).** No game run, no slot; Ghidra on the lane's
   copy (`ghidra-p43r`, `-Xmx3G`, own log), objdump for the instruction-level reads; `main` `419929a` merged in. Finding:
-  [items/0011](../findings/items/0011-economy.md) (66 `[I]`, 22 `[L]` lead verdicts, 0 `[C]`). 46 symbols added (44
+  [items/0011](../../findings/items/0011-economy.md) (66 `[I]`, 22 `[L]` lead verdicts, 0 `[C]`). 46 symbols added (44
   functions, 2 data; subsystem `items/economy`), no address or name clash with `main` or `lane/p42r`'s committed CSV.
   New tool `tools/economy_scan.py` (call sites, Books readers, draws in the 37 functions read, 4-byte pointer search,
   store-record byte reads); its output is `workspace/logs/economy-scan/economy-scan.out`, sha256 in
@@ -385,8 +385,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   Phase 1 inputs entry (answered) and the plan 0039 Q23 entry (moved to P2 question 9) closed; filed architect →
   reverser `game-type-writer`. **Phase 2 may start** (harness lane H1, 1 slot).
 - **2026-10-17 — Phase 2 started; rotation checkpoint (reverser, `lane/p43h`, harness slot 1).** Not done; no review
-  request yet. Record: [run:2026-10-17-economy](../findings/items/experiments.md#run2026-10-17-economy) (status in
-  progress); finding section [items/0011 § Phase 2](../findings/items/0011-economy.md#phase-2-runtime-results-run2026-10-17-economy).
+  request yet. Record: [run:2026-10-17-economy](../../findings/items/experiments.md#run2026-10-17-economy) (status in
+  progress); finding section [items/0011 § Phase 2](../../findings/items/0011-economy.md#phase-2-runtime-results-run2026-10-17-economy).
   Tools: logger `tools/gdb/economy.py` (+ `economy.gdb`, `economy-hire.gdb`), checker `tools/economy.py` (test
   `tools/test_economy.py`), driver `tools/economy_sessions.py` (`act`, `tour`, `die`), `d2s.py` key `"dur"`,
   `d2pilot.py` NPC rows `cain2`/`cain5`/`cain6`/`tyrael` and the `identify`/`resurrect` confirmations (untested),
@@ -424,9 +424,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   Gotchas: `--save` is `action=append` (one per flag); store cells are skipped when empty by a brightness test (26);
   Escape after a sale may need a second press; `d2pilot.py npc` stops when a trade window is still open.
 - **2026-10-19 — Phase 2 done (reverser, `lane/p43h`, harness slot 1).** Record:
-  [run:2026-10-17-economy](../findings/items/experiments.md#run2026-10-17-economy) (status done; 33 claim logs and 7
+  [run:2026-10-17-economy](../../findings/items/experiments.md#run2026-10-17-economy) (status done; 33 claim logs and 7
   development logs, sha256 in `workspace/logs/economy-run-manifest.txt`); finding
-  [items/0011 § Phase 2](../findings/items/0011-economy.md#phase-2-runtime-results-run2026-10-17-economy).
+  [items/0011 § Phase 2](../../findings/items/0011-economy.md#phase-2-runtime-results-run2026-10-17-economy).
   `tools/economy.py check`: **0 mismatches** — 26 525 price calls (3 762 distinct inputs, all three difficulties,
   quest groups A and B on and off, set, rare, socketed, charged, ethereal, stacks, `item_reducedprices`), 138 repair-all
   sums, 54 `PayGold`, 43 sales and 14 purchases checked, 22 hires, 14 resurrections (10 paid, 4 refused), 20 death
@@ -439,12 +439,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   4, the recharge cost; charges and skill wear; gamble at clvl 3; Cain one case. Tools: `tools/economy.py` (checker
   additions), `tools/economy_sessions.py` (`die --resurrect`, retries, walking deaths), `tools/gdb/economy.py` (watch pc
   fix), `tools/d2pilot.py` (`qualres`, Tyrael's menu order). Review request
-  [2026-10-19-reverser-architect-plan-0043-p2-review](../backlog/2026-10-19-reverser-architect-plan-0043-p2-review.md);
-  spec-writer entry [2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs](../backlog/2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs.md);
+  [2026-10-19-reverser-architect-plan-0043-p2-review](../../backlog/2026-10-19-reverser-architect-plan-0043-p2-review.md);
+  spec-writer entry [2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs](../../backlog/2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs.md);
   the required-cases entry closed.
 - **2026-10-19 — Phase 2 review (architect, `lane/p43h` at `50a0eaf`, `main` `02d790d` merged): accept with fixes.**
-  Read: [items/0011 § Phase 2](../findings/items/0011-economy.md#phase-2-runtime-results-run2026-10-17-economy) and its
-  open questions, the [run record](../findings/items/experiments.md#run2026-10-17-economy), the manifest, the review
+  Read: [items/0011 § Phase 2](../../findings/items/0011-economy.md#phase-2-runtime-results-run2026-10-17-economy) and its
+  open questions, the [run record](../../findings/items/experiments.md#run2026-10-17-economy), the manifest, the review
   request, the spec-writer entry and the tool diffs (`tools/economy.py`, `economy_sessions.py`, `gdb/economy.py`,
   `d2pilot.py`). Re-run: `tools/economy.py check` over the 33 claim logs gives a byte-identical `check-run.txt`
   (0 mismatches); `tools/test_economy.py` 9 tests OK. Anchors checked in the pinned `Game.exe` with r2:
@@ -496,7 +496,267 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     run's counts from the kept output" (fix 1), rule 4 gains "an absence counts only with a control live over the whole
     window" (fixes 4–5), rule 6's one-path-base manifest recurred (fix 2, after H7a).
   - **Backlog:** review request closed; the spec-writer entry
-    [2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs](../backlog/2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs.md)
+    [2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs](../../backlog/2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs.md)
     released with the three scopings; filed
-    [2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder](../backlog/2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder.md).
+    [2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder](../../backlog/2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder.md).
   - **Next:** merge `lane/p43h`; Phase 3 (spec-writer) from the released entry; Phase 2b when harness slot 1 frees.
+- **2026-10-19 — Phase 3 written (spec-writer, `lane/p43s`, from `main` `7aeeafd`), review requested.** New
+  [items/economy](../../specs/items/economy.md), draft, {C 106, I 81, L 12}: the `Scale` primitive, the price core
+  (early returns and base, value terms with the per-stat table by `Encode`, mode steps, NPC row and quest groups,
+  quantity, recharge, `max buy`, result), the gamble price, buy, sell and repair, gold (payment, caps, pile amount,
+  `DropGoldAmount`, the death loss with the `game+0x6A` writer of rbs2 (b), corpse, hire, resurrect and Cain costs),
+  wear (armour pick, rolls, quantity, charges, replenish) and a draws-per-event table; eight worked examples from
+  run:2026-10-17-economy. The three released scopings are applied; Phase 2b's items and the accepted shortfalls are
+  `[I]` in the body and listed under *Open questions* (6 `[L]` items plus 6 community differences). Cross-links:
+  items/vendors § I (renamed "Prices and repair", now a link), hirelings § K and F3 (`PayGold` and resurrection
+  raised to `[C]` from the run), items/quest-drops D6 and its `DropGoldAmount` question (struck), the items README
+  Files row, two glossary terms, and the two inbound links the § I rename broke. Research map: `items/economy` →
+  `draft spec` (the architect's row, proposed in the review request). Backlog: the inputs entry closed, the rbs2
+  readings entry annotated (part (b) folded), review request
+  [2026-10-19-spec-writer-architect-plan-0043-p3-economy-spec-review](../../backlog/2026-10-19-spec-writer-architect-plan-0043-p3-economy-spec-review.md).
+- **2026-10-19 — Phase 3 review (architect, `lane/p43s` at `6607069`, from `main` `7aeeafd`): accept with fixes.**
+  [items/economy](../../specs/items/economy.md) is `reviewed`, {C 109, I 80, L 12} after the fixes. Read: the spec whole,
+  [items/0011](../../findings/items/0011-economy.md) § 1–§ 8 and § Phase 2, the
+  [run record](../../findings/items/experiments.md#run2026-10-17-economy), the Phase 2 rulings above, the review request
+  and the cross-link diffs. Re-run: `tools/economy.py check` over the 33 claim logs gives an output byte-identical to
+  `check-run.txt` (0 mismatches). Worked examples recomputed with `tools/economy.py price` against the logged results:
+  1 (11 442), 2 (1040), 3 (5278 and 80) and 4 (52 943); 5–8 by hand from the logged seeds and values (EconK1/K9,
+  18 750, 24 → 129, `u` 4, `w` 0, rolls 80 and 51): all agree. Anchors checked with r2 in the pinned `Game.exe`:
+  0x00559E30–0x0055A07A (`ITEMS_DurabilityLossRoll`: the `IsType(50)`/`IsType(45)` gate, the chances, the inline
+  step, the branch order), 0x00629044/0x0062904E and 0x00628D6A (the param shift and mask), 0x0062FAAC–0x0062FAF2 (the
+  NPC step and `S`'s `sell mult` test), 0x005782C0–0x00578370 (the partial repair pays stat 14 through `PayGold`),
+  0x0057F72D (the corpse cap). The three released scopings are applied: the refused resurrection "pays nothing" `[C]`
+  and "revives nothing" `[I]` (G13); sell's seed movement `[I]` (§ I); question 9 only as the `+0x27` read, in the
+  vendors open question. The six community differences each cite a registered source (`maxroll-d2r-items`,
+  `d2dfg-blizzard`, both with plan 0043 notes in `docs/sources.md`); no transliterated code.
+  - **Ruling 1, the indestructible item: holds; the record is amended and the clause raised.** All 50 of the run's
+    "no durability" rolls are on two items of session 4381 with stat 152 = 1 in the full cache (a set `xtb`, 12 rolls,
+    first at frame 791; a unique `uit`, 38), whose bases have `nodurability` 0, `durability` 18 and 86 and a non-zero
+    maximum; every roll on an item without stat 152 drew (counted from the `DL0`/`DL1` pairs of the 33 logs). Only
+    stat 152 explains the 50, so the clause is `[C]` (H2's new note); the record's *Limits* carries a review note and
+    items/0011's Phase 2 remainder is corrected. `ItemHasDurability`'s other terms (F2) stay `[I]`.
+  - **Ruling 2, the param packing: holds, re-anchored.** The shift and mask are not the checker's: the code reads them
+    from the data tables' `+0xC6C` and `+0xC70` (0x00629044, 0x0062904E; `RechargeCost` 0x00628D6A), and the logger's
+    `ECON` line reads 6 and 63 in all 8 games. The Encode 2/3 row now says so (items/0011 § 3 notes it); the term stays
+    `[C]`, the recharge cost `[I]`.
+  - **Ruling 3, the last wear branches: the checker's order is the code's.** The break branch tests "not `weap`"
+    (0x00559F15) and "not broken", so a broken `armo` item falls to the version test; the two version-≠-0 branches
+    then arm the durability timer when `ITEMS_GetMaxStack` > 0 (0x0055A031–0x0055A040), which neither items/0011 nor
+    the spec stated. H2 rewritten and items/0011 § 7 noted; the branches stay `[I]` (single cases or none).
+  - **Ruling 4, branches at `[I]` under a `[C]` parent.** The large form of `Scale` is separated at the NPC step and
+    in the stat terms: a copy of `tools/economy.py` with the `0xFFFF` test made false reports 1 846 (line 491) and
+    2 737 (line 295) mismatch lines on the claim logs, so those two and the `LARGE` constant are `[C]`. The same edit
+    in `AddTerm` (line 417) reports 0, so the affix/set/unique large form is not separated (the request's "50 inputs
+    above 0xFFFF at the affix step" counts base values) and stays `[I]` with the staff-mod and recharge forms. The
+    writer's scratch count (`workspace/scratch-p43s/cov.py`, re-run here) shows zero cases of B1–B3, D1, the stat-252
+    and full-durability repair branches, `r` on a repair and `L2 = 5`: those stay `[I]`, correctly. The mutation
+    commands are in the record's review note.
+  - **Ruling 5, the combat/delivery link: made.** One sentence in [combat/delivery § F](../../specs/combat/delivery.md#f-the-boundary-at-delivery)
+    links items/economy § H (no claim, no tag); `consumed_by` gains `items/economy`; the combat wiki's `based_on`
+    date follows (its text is unchanged and still true).
+  - **Cross-links.** items/vendors § I `[C]`: the routing is logged in the run, kept. quest-drops D6 and its struck
+    question: kept. hirelings F3 `[C]`: 10 `PayGold` calls in the run took the rest from the stash (gold short, stash
+    enough), kept; § K `[C]` covered the four other resurrection NPCs read from the code only: scoped (fix 5). The
+    0038 inventory row 35's anchor fix resolves (E8). The wiki's stale-page warnings are cleared, not left: see fix 6.
+  - **Fixes (made here):** (1) *under-claim:* the indestructible clause `[C]`, the record and items/0011 corrected.
+    (2) *under-claim:* `Scale`'s large form `[C]` at the NPC step and in the stat terms, `LARGE` `[C]`. (3) *wrong
+    anchor:* the Encode 2/3 packing cited the checker's decoder; now the code's two globals. (4) *miscount:* "22 claims:
+    10 held, 5 with refinement, 6 contradicted" left out the 1 not covered. (5) *overclaim:* hirelings § K's `[C]`
+    named five NPCs; the run resurrected at Qual-Kehk only. (6) *stale cross-reference:* the wiki kept "how Baal's
+    gold is split into piles is unknown" twice (items-other-paths) and the stash payment and resurrection as
+    code-only or named-only (characters); rewritten, and the `based_on` dates of items-other-paths, characters and
+    saves moved to 2026-10-19 (saves: § H unchanged); "not yet reviewed" dropped now that the spec is. (7)
+    *omission:* the combat/delivery link (the writer's point 5) and the H2 timer arm. Not the lane's: items/0011's
+    Leads-used detail said the partial repair "takes all carried and stashed gold"; the code passes stat 14 to
+    `PayGold` (0x005782C0–0x0057832F), so § 5 and the spec are right and the detail is corrected.
+  - **Ledger:** 7 fixes: under-claim 2, overclaim 1, wrong anchor 1, miscount 1, stale cross-reference 1, omission 1.
+    Spec-writer review-fixes: rules 2, 5, 7 and 8 recurred (fixes 5, 4, 6 and 1–2) and gain this review as a
+    citation; rule 9 gains fix 3.
+  - **Backlog:** review request closed; filed
+    [2026-10-19-architect-spec-writer-plan-0043-economy-wiki](../../backlog/2026-10-19-architect-spec-writer-plan-0043-economy-wiki.md)
+    (wiki owner, architect rule 8). Phase 2b (`lane/p43b`) runs on; its items stay `[I]` in the spec and under
+    *Open questions* until it lands, and the spec is re-tagged then.
+  - **Research map:** `items/economy` → `reviewed`. Plan stays open for Phase 2b.
+  - **Next:** merge `lane/p43s`; Phase 2b review when `lane/p43b` reports; then the spec re-tag and the wiki entry.
+- **2026-10-19 — Phase 2b started; resume note (reverser, `lane/p43b`, harness slot 1).** Not done. Run id
+  run:2026-10-19-economy2. Tools: logger `tools/gdb/economy.py` (+ `economy2.gdb` = `economy.gdb` with `quests.py`;
+  new lines `NSX` sale copy decision, `WG0/WG1/WGS/WGN` Wirt's gold, `DUL`, the control watch `SWC` rate-limited to
+  one line per 10 frames with no cap, item `id` and `ind`), checker `tools/economy.py` (NpcRepair one item and the
+  partial repair, `ItemRepairAll` by caller, `ItemRepairBroken`, the sale copy decision, Wirt's piles, the watch span),
+  `tools/economy_scan.py qrepair`, driver `tools/economy_sessions.py` (`--watchdog`, `fix:` with the repair confirm
+  box, service stops `imbue@inv=c,r`, `wirt`), `tools/d2s.py` keys `crafted` and `broken`, recipes `econq.json`,
+  `econh.json`. Sessions so far: 4501 (quest services, sales, question 9), 4503 (partial repairs, sales, question 9),
+  dev 4502 (repair box measured); 4504 (Hell, crafted) running. Left: gamble at clvl 3 (EconDL3), Wirt (`wirt`
+  with EconN), the record and finding. Saves in `workspace/scratch-p43b/saves/` (rebuild from the recipes).
+- **2026-10-19 — Phase 2b done (reverser, `lane/p43b`, harness slot 1).** Record:
+  [run:2026-10-19-economy2](../../findings/items/experiments.md#run2026-10-19-economy2) (5 claim logs, 1 development log;
+  manifest `workspace/logs/economy2-run-manifest.txt`, repository-root paths); finding
+  [items/0011 § Phase 2b](../../findings/items/0011-economy.md#phase-2b-runtime-results-run2026-10-19-economy2).
+  `tools/economy.py check`: **0 mismatches** — 7 376 price calls (distinct: mode 0 542, mode 1 79, mode 2 153, mode 3
+  59), counts from `check-run.txt`. By item: (1) quest repair: no quest script repairs (`economy_scan.py qrepair`);
+  the socket and personalize services repaired their result (1 case each), the imbue's call is a no-op on the
+  unidentified new item; (2) Wirt's gold: 18 piles, the count and the 18 ilvls reproduce (one game); (3) crafted: 55
+  distinct inputs (sale 35, repair 17, purchase 3), tool-built items; (4) Hell repair: 25 distinct mode-3 inputs;
+  (5) gamble at clvl 3: 125 distinct; (6) 4 single-item repairs: 2 partial, 1 refused at gold 0, 1 broken (paid);
+  ethereal refused by the client (no call), `[I]`; (7) question 9: control live to each log's end in 4 sessions, the
+  watch fired only at the `+0x27` read (5), no `+0x24..+0x26` reader in the windows played; (8) the two P2 sales: no
+  store copy (ethereal; `carry1` unique, `sub_00575FA0_ItemIsCarry1Unique`); 11 sales separate copied (+2, 6) from
+  refused (+0, 5). **Shortfalls:** single cases (broken repair, each service repair, one Wirt game); the ethereal server
+  refusal and the `Cracked`/`0x0055F590` copy refusals not reached. Tools: `tools/economy.py`, `economy_scan.py`
+  (`qrepair`), `economy_sessions.py` (`--watchdog`, `fix:`, service stops, `wirt`), `gdb/economy.py`, `gdb/economy2.gdb`,
+  `d2s.py` (`crafted`, `broken`), recipes `econq`, `econh`. Symbols +2. Review request
+  [2026-10-19-reverser-architect-plan-0043-p2b-review](../../backlog/2026-10-19-reverser-architect-plan-0043-p2b-review.md);
+  spec-writer entry [2026-10-19-reverser-spec-writer-plan-0043-p2b-economy-inputs](../../backlog/2026-10-19-reverser-spec-writer-plan-0043-p2b-economy-inputs.md).
+  Game stopped, slot 1 saves restored (empty), no background process.
+- **2026-10-19 — Phase 2b review (architect, `lane/p43b` at `22ea490`, from `main` `7aeeafd`; `main` not merged in):
+  accept with fixes. Phase 2 is closed.** Read: [items/0011 § Phase 2b](../../findings/items/0011-economy.md#phase-2b-runtime-results-run2026-10-19-economy2),
+  the [run record](../../findings/items/experiments.md#run2026-10-19-economy2), the manifest, the kept `check-run.txt`, the
+  review request, the spec-writer entry, the Phase 2b definition and the Phase 2 review above. Re-run:
+  `sha256sum -c workspace/logs/economy2-run-manifest.txt` from the repository root, 20 of 20 OK (manifest
+  `cb72ac21…`); `tools/economy.py check` over the five claim logs gives an output byte-identical to `check-run.txt`
+  (`4cb39d92…30b4`, 0 mismatches); `tools/test_economy.py` 9 tests OK. Anchors checked with r2 in the pinned `Game.exe`:
+  `ItemRepairAll` returns at once when `ItemCanRepair` fails (0x005761CB), and `ItemCanRepair` needs an item unit with
+  flag `0x10` (identified) and not `0x400000` (0x0062E66B–0x0062E691); the imbue calls `ItemRepairAll` at 0x0057A0F9
+  and `ItemIdentifyAttach` after it at 0x0057A103; the socket call at 0x0057A3ED; `A1Q4_WirtGold` draws
+  `RNG_RandLoHi(QUESTS_GetSeed(…), 10, 20)` once (0x00594651–0x00594664, `+0x90` latch) and makes one `DropItemAtUnit`
+  pile per event (0x00594695, `+0x8C` decremented); `DropItemAtUnit` takes ilvl from `LevelMonLvl`, at least 1
+  (0x00559AE3–0x00559AF8); `NPC_SellItem`'s copy tests 0x0057962B–0x0057971B; `sub_00575FA0` (type 4, quality 7,
+  file index ≥ 0, UniqueItems `+0x2C` AND 0x006CE270 = 4, the `carry1` bit of UniqueItems.md); the thunk 0x005762B0
+  (frame and `jmp 0x005761C0`); the partial repair's unsigned `div` for `k` and signed `idiv` for the gain
+  (0x005782DA–0x00578309).
+  - **Ruling 1, the quest repair: accepted as written.** No quest script repairs (`[I]`, the scan; no second source),
+    and the repair is the services' shared `ItemRepairAll` step. Larzuk's socket and Anya's personalization each took
+    a cap from durability 1 to 12 (`[C]`, one case each: a wrong reading leaves 1, reverser rule 10). The imbue's call
+    is a no-op `[C]`: the code refuses an unidentified item and identifies after the call, and the run shows flags
+    `0x82000` (no `0x10`) and 10 of 12 unchanged, which the alternative (a repair) could not give.
+  - **Ruling 2, Wirt's gold: `[C]`, as scoped.** The count draw is matched by the logged quest seed's step (a
+    32-bit match, not a one-in-ten chance) and the range is the code's immediates, so one game suffices for the draw;
+    10..19 piles; the 18 piles' ilvl 6 and their amounts (among the 40 gold creations checked) reproduce. Which Levels column `LevelMonLvl` read here stays
+    unseparated (both 6), stated.
+  - **Ruling 3, question 9: `[C]` for the windows played; not raised further.** The control (uncapped, rate-limited)
+    wrote 66 lines and a line after the last window of each log, so the P2 objection (a cap reached in two frames) is
+    met. One scoping: in 4505 the watch was set at frame 1769 as the first Gheed gamble window opened and the control's
+    first line is at 2729, so that window is bracketed by the setting and the next control line rather than holding
+    one (fix 4). A reader of `+0x24..+0x26` outside the played windows cannot be excluded by a run; that remainder is
+    out of this plan (the open question stays in items/0011).
+  - **Ruling 4, the sales and sell's seed: raised in part to `[C]`.** The 11 logged decisions give 6 copies (`+2`
+    each; 3 placed, 3 freed) and 5 refusals (`+0`: ethereal 2, broken 2, `carry1` 1), the check output's counts; the
+    two P2 sales are of the refused kinds (flags `0xC00010`; *Annihilus*). But the copy decision runs **every** test
+    (eight, each clearing `[ebp-4]`), not "the first matching" one (fix 1), and five refusal tests were not reached
+    (fix 3); sell's seed is `[C]` for the copy and the three reached refusals and `[I]` for the five others (fix 2,
+    reverser rule 8).
+  - **Ruling 5, the single cases: accepted as `[I]` where stated.** The broken repair (one case, its `IB` line misread
+    by the earlier logger) keeps "no draw" `[I]`; its `ItemRepairAll` lines and the paid amount reproduce. The two
+    partial repairs are `[C]` (code and two cases; the arithmetic's rounding rests on the code). The ethereal server
+    refusal stays `[I]` (client-side in practice). Each service repair is one case and decides (ruling 1).
+  - **Symbols:** both new rows checked; neither address is named on `main` (4af9f86); names, kinds and `[I]` fit.
+  - **`tools/test_d2s.py`:** confirmed on `main` (4af9f86): `test_every_recipe_has_a_base` fails on twelve plan 0042
+    recipes with no `RECIPE_BASES` row (`quest-tpc`, `quest-death`, `quest-orbwill`, `quest-talk1`..`5`,
+    `quest-talk1c`..`4c`); not this lane's. Filed to the archivist.
+  - **Fixes (made here):** (1) *misread:* "refuses the store copy at its first matching test": every test runs; the
+    eight listed in order. (2) *overclaim:* "sell's seed reading is raised" (untagged, covering unreached refusals):
+    now "raised in part", `[C]` with a remainder, and Phase 2's § 8 remainder points to it. (3) *omission:* the
+    not-reached list lacked base type 7, flag `0x1000000` and the store record's byte `+4`. (4) *overclaim:* question
+    9's control "from the frame the watch was set" in all four logs; 4505 scoped (finding and record). (5) *overclaim:*
+    the spec-writer entry's "each now `[C]` unless noted" carried the scan (`[I]`), the unreached refusals ("…") and
+    Wirt's ilvl column unscoped; corrected. (6) *omission:* `sub_00575FA0`'s description lacked its unit-type and
+    file-index tests. (7) *other:* the record's *Observed* block, labelled "trimmed from", is a summary; relabelled,
+    the exact lines being in the hashed output.
+  - **Ledger:** 7 fixes: overclaim 3, omission 2, misread 1, other 1. Reverser review-fixes: rule 4 (a control live
+    over the whole window) recurred (fix 4, after the P2 review) and rule 8 (split a raise) recurred (fix 2); both gain
+    this review as a citation.
+  - **Backlog:** review request and the P2b remainder entry closed; the spec-writer entry
+    [2026-10-19-reverser-spec-writer-plan-0043-p2b-economy-inputs](../../backlog/2026-10-19-reverser-spec-writer-plan-0043-p2b-economy-inputs.md)
+    corrected and **released** for a re-tag pass of the reviewed items/economy; filed
+    [2026-10-19-architect-archivist-register-the-plan-0042-quest-recipes-in-test](../../backlog/2026-10-19-architect-archivist-register-the-plan-0042-quest-recipes-in-test.md)
+    and [2026-10-19-architect-archivist-unique-items-carry1-has-a-reader](../../backlog/2026-10-19-architect-archivist-unique-items-carry1-has-a-reader.md).
+  - **Close:** Phase 2 is done for good (no Phase 2c: the remainders are single cases or unreachable by a run). Plan
+    0043 closes at the review of the items/economy re-tag pass; the wiki entry
+    (`2026-10-19-architect-spec-writer-plan-0043-economy-wiki`) may ride the same spec-writer pass or follow the close.
+  - **Merge note:** this branch's plan log conflicts with `main`'s (the P3 entries of `lane/p43s`, appended after
+    `7aeeafd`): keep both sides, in either order; the ledger rows likewise.
+  - **Next:** merge `lane/p43b`; the spec-writer re-tag pass; harness slot 1 to the next H2 batch (plan 0038 H5b).
+- **2026-10-19 — Phase 2b re-tag and economy wiki (spec-writer, `lane/p43t`, from `main` `cf617f0`), review
+  requested.** [items/economy](../../specs/items/economy.md) re-tagged from
+  [run:2026-10-19-economy2](../../findings/items/experiments.md#run2026-10-19-economy2): {C 109, I 80, L 12} →
+  {C 125, I 83, L 12}. Changed: Entry points (quest services' repair, Wirt's body), C4 crafted, D2 Hell repair, E2
+  `L2 = 5`, F4 (the eight copy tests, all evaluated; three reached `[C]`, five `[I]`), F6 single-item and partial
+  repairs `[C]` (ethereal server refusal `[I]`), F7 (the quest repair: socket and personalize `[C]`, the imbue no-op
+  `[C]`, no quest script repairs `[I]`; the broken repair's draws `[I]`), a § F note on the store record (`[C]` for
+  the windows played), G8/G8a Wirt's gold `[C]` (ilvl column unseparated), § I (sell split, Wirt row), a
+  reimplementation note, Evidence, *Open questions* (Phase 2b struck; its remainder one `[L]` bullet). Stale text
+  closed: [items/quest-drops](../../specs/items/quest-drops.md) F0, F1, Outputs and the Wirt row ({C 81, I 88, L 2} →
+  {C 84, I 87, L 2}), [items/vendors](../../specs/items/vendors.md)' store-record question (tags unchanged). Wiki: new
+  [economy](../../wiki/economy.md) page, index row 8, items-other-paths' vendor link and services paragraph. Gate green.
+  Backlog: the P2b inputs and the wiki entries closed; review request
+  [2026-10-19-spec-writer-architect-plan-0043-economy-retag-and-wiki-review](../../backlog/2026-10-19-spec-writer-architect-plan-0043-economy-retag-and-wiki-review.md),
+  which notes that the plan can close at this review. Research map: no status change (`reviewed`); the tag counts
+  for the architect.
+- **2026-10-19 — P2b re-tag and economy wiki review (architect, `lane/p43t` at `49a2dfc`, from `main` `cf617f0`):
+  accept with fixes. Plan 0043 can close; the close bookkeeping is left (below).** Read: the review request, the three lane commits' diffs, the Phase 2b
+  review above (rulings 1–5), [items/0011 § Phase 2b](../../findings/items/0011-economy.md#phase-2b-runtime-results-run2026-10-19-economy2),
+  the [run record](../../findings/items/experiments.md#run2026-10-19-economy2), ADR-0012, and both lanes' review-fixes.
+  - **Counts:** recounted by script over the bracketed tags: items/economy {C 125, I 83, L 12}, items/quest-drops
+    {C 84, I 87, L 2}, items/vendors {C 71, I 38, L 2}, each equal to its front matter (the fixes below move none). The
+    raised numbers match the kept outputs as the finding copies them: C4 55 crafted inputs (35/17/3), D2 25 mode-3
+    inputs, E2 125 gamble prices (ten windows), F6 the 4 calls (300 for 14 464, 1 → 2; 7 936 for 14 208, 2 → 34; gold
+    0; the broken cap 0 → 12), F4 11 decisions (6 copied, 5 refused: 2/2/1), G8a 18 piles at ilvl 6, the second run's
+    7 376 price calls; the wiki's 33 901 is 26 525 (run 1) + 7 376.
+  - **Tags against the rulings.** Ruling 1: the socket and personalize repairs and the imbue's no-op `[C]` (F7 note,
+    quest-drops F0 and Outputs), "no quest script repairs" `[I]`: held. Ruling 2: G8a `[C]`, the Levels column `[I]`
+    (G8 note), the `DropItemAtUnit` floor `[I]`: held, but see fix 3. Ruling 3: the store-record note `[C]` scoped to
+    the windows played, the reader elsewhere `[L]`: held, but see fix 2. Ruling 4: F4 lists the eight tests, every one
+    evaluated; three reached `[C]`, five `[I]` (inline marker, F4 note, § I's split rows): held; the § I sell row's
+    "+4 with a gold re-drop" is the finding's own `[C]` sentence (§ 8, the first run's 3 cases) and stays. Ruling 5:
+    the partial repairs `[C]`, the ethereal server refusal `[I]`, the broken repair's "no draw" `[I]`: held, but see
+    fix 1. F7's header stays `[I]` with the `[C]` parts in notes (the writer's point 2): right, since quantity and
+    charge refills are code-read. The writer's point 1 (§ I's buy and death rows cite the first run only): right, the
+    second run's check output lists no new buy or death seeds to cite.
+  - **Wiki (ADR-0012).** [economy](../../wiki/economy.md): `based_on` items/economy 2026-10-19, the spec's `updated:`;
+    every statement traced to the spec, code-read points said "read from the code", the *What is not known yet* list
+    equal to the spec's two `[L]` shortfall bullets and its other open questions. The six worked numbers equal
+    examples 1 (11 442), 3 (5278), 4 (52 943), 5 (139 850 and 59 400; 0), 7 (24, 129) and 8 (slot 4, offset 0, roll
+    80). The index's renumbered rows 8–12 are not cited by number anywhere in `docs/` (searched); every link resolves
+    (gate). [items-other-paths](../../wiki/items-other-paths.md) `based_on` already names quest-drops and vendors at
+    2026-10-19, which this lane's edits keep (both specs' `updated:` is 2026-10-19).
+  - **The writer's open point, quest-drops' event-7 route bullet:** not struck. The run logged `A1Q4_WirtGold`, not the
+    thunk or `QUESTS_ObjectEvent`, so the route is still unobserved; but the bullet's "a run that clicks Wirt's body
+    would settle it" is stale (fix 4).
+  - **Fixes (made here):** (1) *overclaim:* F6's `[C]` note gave the partial repair "with `k` and `D` as above" while
+    ruling 5 said the rounding rests on the code; the F6 `[I]` note now adds "the rounding of its two divisions (two
+    cases fit them but do not separate it)" with the `div`/`idiv` range. (2) *omission:* the store-record `[C]` note
+    lacked the 4505 scoping of the P2b review's fix 4 (the first Gheed gamble window bracketed by the watch's setting at
+    1769 and the control's first line at 2729); added. (3) *overclaim:* G8's pseudocode line gave Wirt's ilvl "at
+    least 1" inside the `[C]` block with only "note G8"; the comment now says "notes G8, G8a; the floor code only".
+    (4) *stale cross-reference:* [quest-drops](../../specs/items/quest-drops.md)' event-7 route `[L]` bullet rewritten
+    whole: the economy2 run operated Wirt's body and logged `A1Q4_WirtGold` 18 times, 10 frames apart, but not the
+    route, which stays open; a breakpoint on the thunk settles it. No tag count moves.
+  - **Ledger:** 4 fixes: overclaim 2, omission 1, stale cross-reference 1. Spec-writer review-fixes: rule 2 (split a
+    code-read part out of a `[C]`) recurred in fixes 1 and 3, rule 3 (re-read the finding for each restated
+    condition) in fix 2 and rule 7 (close what your change makes stale) in fix 4; each gains this review as a
+    citation. No new rule.
+  - **Research map (left):** `items/economy` row to {C 125 / I 83 / L 12} with the P2b raises; `items/quest-drops`
+    row to {C 84 / I 87 / L 2} (it still says L 3).
+  - **Backlog:** the review request closed.
+  - **Close (left, the session stopped at the usage limit):** every phase is accepted (P0, P1/1b, P2, P2b, P3 and this
+    re-tag; the wiki page written). Still to do: status `done`, the move to `docs/plans/done/` with inbound links fixed,
+    the plan index row in the closed format and the *Gates* text, the research-map rows above, the two ledger rows
+    (`lane/p43t` accept with fixes, 4 fixes as below, usage at merge; its review) and the review-fixes citations.
+    **Follow-ups that leave the plan:** (a) the spec's two `[L]` remainders (*Remainder of Phase 2b*, *Accepted
+    shortfalls of Phase 2*) carry no run (plan 0038's sweep may take any that a kept log or a static second source
+    settles); (b) two clients (trading, the party gold split, game types 1 and 2) to plan 0044; (c) the open archivist
+    entries [register the plan 0042 quest recipes in test_d2s](../../backlog/2026-10-19-architect-archivist-register-the-plan-0042-quest-recipes-in-test.md)
+    and [UniqueItems `carry1` has a reader](../../backlog/2026-10-19-architect-archivist-unique-items-carry1-has-a-reader.md);
+    (d) quest-drops' event-7 route for Wirt's body and the other quest objects (a breakpoint on the thunk, any later
+    quest run).
+  - **Next:** merge `lane/p43t` (no conflict expected: `main` has not moved since `cf617f0` at this review's start).
+- **2026-10-20 — Plan closed (architect, `lane/c43`, from `main` `9d23296`, where `lane/p43t` merged).** Close
+  bookkeeping only, no claim moves. Plan moved to `docs/plans/done/`, its own links and the inbound links (ADR-0017,
+  the research map, `items/economy`, plan 0039, the plan index, the backlog entries and archive, three lanes'
+  review-fixes) repointed. Plan index row closed and the *Gates* text updated. Research map: `items/economy`
+  {C 109 / I 80 / L 12} → {C 125 / I 83 / L 12} and `items/quest-drops` {C 81 / I 88 / L 3} → {C 84 / I 87 / L 2},
+  each checked against the spec's `tags:` front matter and a count of the body's tags (they agree). Ledger: the
+  `lane/p43t` row (accept with fixes, 4 fixes: overclaim 2, omission 1, stale cross-reference 1) and its review row.
+  Spec-writer review-fixes rules 2, 3 and 7 cite the `lane/p43t` review. Backlog: no 0043 entry was left open; the
+  `lane/rbs2` readings entry stays open for its plan 0042 parts (a) and (c). The follow-ups (a)–(d) of the review
+  entry above leave the plan. Gate green.

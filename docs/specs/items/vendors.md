@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/quality, items/uniques-sets, items/affixes, items/properties, data/excel]
 consumed_by: [hirelings]
-tags: {C: 70, I: 39, L: 2}
-updated: 2026-10-17
+tags: {C: 71, I: 38, L: 2}
+updated: 2026-10-19
 ---
 
 # Vendor stock and gambling
@@ -20,7 +20,7 @@ the gamble level, the gamble base and the gamble quality) from one **store seed*
 through the ordinary item creation of [uniques-sets](uniques-sets.md), [affixes](affixes.md) and
 [properties](properties.md), seeded from the game seed exactly as a drop is. This spec gives when stock is built and
 rebuilt, the stock build and the gamble build as pseudocode with their draw order, and the hand-off to item creation.
-Prices, the buy/sell multipliers and repair costs are named only (§ I).
+Prices, the buy/sell multipliers and repair costs are specified in [items/economy](economy.md) (§ I).
 
 Vendor stock and gambling never reach the treasure-class resolver ([items/README](README.md#entry-points)). Names of
 functions, structs and fields are ours ([items/0009](../../findings/items/0009-vendors.md), `re/types/vendors.h`).
@@ -667,14 +667,13 @@ Step notes:
   refused by `0x0055F590`/`0x00575FA0`, the player is in the gamble view, or it is permanent stock. Not exercised.
   (fn:VENDOR_IsPermanent@0x00576ED0, fn:sub_00576F50_StoreItemSold@0x00576F50, 0x00579510)
 
-### I. Named only: prices and repair
+### I. Prices and repair
 
-- [I] Buy, sell and gamble prices go through `sub_0062FDC0_ItemTradePrice(player, item, difficulty, questWord,
-  npcClass, mode)`; the Npc.txt multipliers and quest overrides are its inputs, found by
-  `sub_00656900_NpcGetByClass`. Repair goes through `sub_00578050_NpcRepair` and `sub_0062FE60_RepairCost`. These are
-  game economy, not item creation (ADR-0002), and are not specified here. (fn:sub_0062FDC0_ItemTradePrice@0x0062FDC0,
-  fn:sub_00656900_NpcGetByClass@0x00656900, fn:sub_00578050_NpcRepair@0x00578050,
-  [items/0009 § 9](../../findings/items/0009-vendors.md#9-named-only-prices-and-repair))
+- [C] Buy, sell and gamble prices go through `sub_0062FDC0_ItemTradePrice(player, item, difficulty, questRecord,
+  npcClass, mode)`, with the NPC's Npc.txt row found by `sub_00656900_NpcGetByClass`; repair goes through
+  `sub_00578050_NpcRepair` and `sub_0062FE60_RepairCost`. They are specified in [items/economy](economy.md): the price
+  core in § B–§ D, the gamble price in § E, buy, sell and repair in § F. (fn:sub_0062FDC0_ItemTradePrice@0x0062FDC0,
+  fn:sub_00656900_NpcGetByClass@0x00656900, fn:sub_00578050_NpcRepair@0x00578050, run:2026-10-17-economy)
 
 ## Outputs
 
@@ -803,7 +802,8 @@ on each of slots 0 and 1, 4 on each of the eight slots with one upgrade draw, an
   left in town are code-read only (§ C).
 - ~~**The made-uniques set**: whether a gambled unique enters it as a dropped unique does.~~ Answered: yes, at the
   window's build (§ G).
-- [L] `NpcStoreRec` bytes `+0x24`..`+0x26` (writers read in [items/0009 § Plan 0039 batch P1b](../../findings/items/0009-vendors.md#plan-0039-batch-p1b-2026-10-17),
-  no reader found among the record fetchers; the reader search moved to plan 0043 Phase 1) and the `HIRE_BuildStock`
-  draw count are not followed (plan 0033 owns the
-  hireling generator).
+- [L] `NpcStoreRec` bytes `+0x24`..`+0x26`: the writers are read in [items/0009 § Plan 0039 batch P1b](../../findings/items/0009-vendors.md#plan-0039-batch-p1b-2026-10-17);
+  plan 0043's read watchpoint, rerun with a control live to each session's end, found only `NPC_TradeOpen`'s read of
+  `+0x27` (the stale byte of § C) and no read of `+0x24..+0x26` in the windows played
+  ([items/economy § F](economy.md#f-callers-buy-sell-repair)); a reader in other NPC actions or game states stays open.
+  The `HIRE_BuildStock` draw count is not followed (plan 0033 owns the hireling generator).

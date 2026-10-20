@@ -58,7 +58,7 @@ drlg/collision (Open questions), save/d2s (§ E1 note), drlg/warps (§ G); gloss
 `Position` level, town portal pair.
 
 **Research map** (`docs/specs/README.md`, architect's): rows `quests/progression` and `quests/travel` can read "draft ·
-[quests/progression](quests/progression.md) / [quests/travel](quests/travel.md), overview [quests](quests/README.md);
+[quests/progression](../specs/quests/progression.md) / [quests/travel](../specs/quests/travel.md), overview [quests](../specs/quests/README.md);
 review after Phase 2 part 3's review".
 
 **Backlog:** the plan 0044 gates entry is closed (folded into travel § D, § G, § J); the rbs2 entry is annotated (its

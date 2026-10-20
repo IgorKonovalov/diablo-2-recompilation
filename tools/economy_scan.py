@@ -9,6 +9,7 @@ Usage:
   python3 -I tools/economy_scan.py <game.exe> pointers   # 4-byte image search for each target address
   python3 -I tools/economy_scan.py <game.exe> storerec   # byte reads at +0x24..+0x26 / +0x10..+0x12 in the read functions
   python3 -I tools/economy_scan.py <game.exe> reach      # (not in `all`) drawing code reachable through direct callees
+  python3 -I tools/economy_scan.py <game.exe> qrepair    # (not in `all`; plan 0043 P2b) every site of the repair functions
 
 Runs `objdump -d -M intel --no-show-raw-insn` on the pinned Game.exe and prints one line per finding, then a
 `SCAN` summary line per section. Prints addresses only, no game data. Patterns:
@@ -229,6 +230,58 @@ def pointers(exe):
     print("SCAN pointers targets=%d hits=%d" % (len(TARGETS), total))
 
 
+QREPAIR = {0x005761C0: "sub_005761C0_ItemRepairAll", 0x005762B0: "ItemRepairAll thunk (NpcRepair's callback)",
+           0x0055F900: "sub_0055F900_ItemRepairBroken", 0x00578050: "sub_00578050_NpcRepair",
+           0x0062FE60: "sub_0062FE60_RepairCost", 0x0062E660: "ItemCanRepair"}
+
+
+def qrepair(rows, exe):
+    """(plan 0043 Phase 2b, the quest repair) every direct call/jmp to, and every immediate naming, a repair function;
+    the function holding each site (the nearest lower func row of re/symbols.csv); the 4-byte image search; and the
+    calls from the quest functions (symbols of subsystem quests/* or with an A<act>Q<n> name) to any of them."""
+    import bisect
+    import csv
+    import os
+    import struct
+    sym = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "re", "symbols.csv")
+    funcs = sorted((int(r["address"], 16), r["name"], r["subsystem"]) for r in csv.DictReader(open(sym))
+                   if r["kind"] == "func")
+    starts = [f[0] for f in funcs]
+
+    def owner(a):
+        i = bisect.bisect_right(starts, a) - 1
+        return funcs[i] if i >= 0 else (0, "?", "?")
+
+    data = open(exe, "rb").read()
+    total = 0
+    for t, name in QREPAIR.items():
+        pat = re.compile(r"^(call|jmp)\s+0x%x$" % t)
+        imm = re.compile(r"(?<![0-9a-fx])0x%x(?![0-9a-f])" % t)
+        sites = [(a, "call") for a, ins in rows if pat.match(ins)]
+        sites += [(a, "imm") for a, ins in rows if imm.search(ins) and not pat.match(ins)]
+        b = struct.pack("<I", t)
+        offs, i = [], data.find(b)
+        while i != -1:
+            offs.append(i)
+            i = data.find(b, i + 1)
+        total += len(sites)
+        print("QREPAIR %s 0x%08X sites=%d ptr=%d" % (name, t, len(sites), len(offs)))
+        for a, k in sorted(sites):
+            f = owner(a)
+            print("QREPAIR   0x%08X %s in 0x%08X %s (%s)" % (a, k, f[0], f[1], f[2]))
+    quest = [f for f in funcs if f[2].startswith("quests") or re.search(r"_A[1-5]Q[0-9]", f[1])]
+    qset = {f[0] for f in quest}
+    callpat = re.compile(r"^(call|jmp)\s+0x([0-9a-f]+)$")
+    qhits = []
+    for a, ins in rows:
+        m = callpat.match(ins)
+        if m and int(m.group(2), 16) in QREPAIR and owner(a)[0] in qset:
+            qhits.append(a)
+    print("QREPAIR quest functions=%d calls to a repair function=%d %s"
+          % (len(quest), len(qhits), " ".join("0x%08X" % a for a in qhits)))
+    print("SCAN qrepair targets=%d sites=%d questcalls=%d" % (len(QREPAIR), total, len(qhits)))
+
+
 def main(argv):
     if len(argv) < 2:
         print(__doc__)
@@ -247,6 +300,8 @@ def main(argv):
         storerec(rows)
     if which == "reach":
         reach(rows)
+    if which == "qrepair":
+        qrepair(rows, argv[1])
     return 0
 
 

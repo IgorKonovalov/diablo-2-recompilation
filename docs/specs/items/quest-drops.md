@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/tc, items/quality, items/affixes, items/properties, items/sockets-runewords, items/cube, save/d2s]
 consumed_by: [items/tc, objects, monsters/pool]
-tags: {C: 81, I: 88, L: 3}
-updated: 2026-10-17
+tags: {C: 84, I: 87, L: 2}
+updated: 2026-10-19
 ---
 
 # Quest drops, quest rewards and special drops
@@ -454,8 +454,10 @@ D6. BaalDeath, killer present, killer word 40 bit 0 clear:          [I] (fn:sub_
         DropGold(amount) at Baal                                   ; up to 32 piles
 ```
 
-- D6. [I] Not run (Baal was not killed). `DropGold` is `sub_0055A090_DropGoldAmount(amount, 32)`; how it splits the
-  amount into piles is not read (*Open questions*). (fn:sub_0055B030_DropGold@0x0055B030, fn:sub_0055A090_DropGoldAmount@0x0055A090)
+- D6. [I] Not run (Baal was not killed). `DropGold` is `sub_0055A090_DropGoldAmount(amount, 32)`: piles of at most
+  2 000 000 000, at most 32, each a created gold item whose stat 14 is set to its share, so each pile draws as an item
+  creation ([items/economy § G](economy.md#g-gold-payment-caps-piles-and-the-death-loss), G9).
+  (fn:sub_0055B030_DropGold@0x0055B030, fn:sub_0055A090_DropGoldAmount@0x0055A090)
 
 #### D7. Scripts that create nothing, and Uber Tristram
 
@@ -471,7 +473,7 @@ D6. BaalDeath, killer present, killer word 40 bit 0 clear:          [I] (fn:sub_
 | item | source | the script's gate | count | quality | draws | Tag |
 |---|---|---|---|---|---|---|
 | `leg` | its object's operate | object not yet used | 1 | 2 | — | [I] (fn:sub_00583E70_WirtLegDrop@0x00583E70) |
-| gold | Wirt's body (object 268) | first operate | `RandLoHi(questSeed, 10, 20)` piles (10–19), one per timer | 2 | 1 | [I] (fn:sub_00594630_A1Q4_WirtGold@0x00594630) |
+| gold | Wirt's body (object 268) | first operate | `RandLoHi(questSeed, 10, 20)` piles (10–19), one per timer ([items/economy](economy.md#g-gold-payment-caps-piles-and-the-death-loss) G8a) | 2 | 1 | [C] (fn:sub_00594630_A1Q4_WirtGold@0x00594630, run:2026-10-19-economy2) |
 | `bks` | the Inifuss tree | word 4 bits 0, 1 clear, no `bks`/`bkd` held | 1 | 2 | — | [I] (fn:sub_00593AF0_A1Q4_InifussDrop@0x00593AF0) |
 | `bkd` | Akara (npc 148), for `bks` | — | 1 (`GiveItem`) | 2 | — | [I] (fn:sub_00592250_A1Q4_NpcMessage@0x00592250 0x00592313) |
 | `hdm` | the Malus object | word 3 bits 0, 1 clear, clvl ≥ 8 | 1 | 2 | — | [I] (fn:sub_00591AC0_A1Q3_MalusDrop@0x00591AC0) |
@@ -567,7 +569,7 @@ F1. Imbue(player, item):                                          [C] (fn:NPC_Me
       if ilvl > 5: ilvl ← ilvl + 4
       rec.ilvl ← ilvl
       new ← ItemCreate(rec)                                        ; restore 0: unit and item seeds from game.seed
-      repair, identify (F0); place in the inventory or drop
+      repair, identify (F0); place in the inventory or drop      ; the repair finds the item unidentified: no-op (F0)
       ImbueDone: word 3 bit 0 set, bit 1 cleared
 ```
 
@@ -650,10 +652,14 @@ F3. Personalize(player, item):                                    [C] (fn:NPC_Me
 #### F0. The shared tail
 
 - [I] Before the result is placed, each of the three services calls `sub_005761C0_ItemRepairAll` (a throwable stack to
-  its maximum, charges refilled, the broken flag cleared, durability to its maximum) and `sub_0055FE00_ItemIdentifyAttach`
-  (identified; socketed children attached). So an imbued, socketed or personalized item comes back repaired and
-  recharged. (fn:sub_005761C0_ItemRepairAll@0x005761C0, fn:sub_0055FE00_ItemIdentifyAttach@0x0055FE00, 0x0057A0F9,
-  0x0057A3ED, 0x0057A581)
+  its maximum, charges refilled, the broken flag cleared, durability to its maximum), then
+  `sub_0055FE00_ItemIdentifyAttach` (identified; socketed children attached). (fn:sub_005761C0_ItemRepairAll@0x005761C0,
+  fn:sub_0055FE00_ItemIdentifyAttach@0x0055FE00, 0x0057A0F9, 0x0057A3ED, 0x0057A581)
+- [C] A socketed or personalized item comes back repaired: a damaged magic cap went from durability 1 to 12 of 12 at
+  each service, one case each. An imbued item does not: `ItemRepairAll` refuses an unidentified item, and the new rare
+  is identified only after the call (0x0057A103), so the imbued cap kept durability 10 of 12
+  ([items/economy § F](economy.md#f-callers-buy-sell-repair) F7). (fn:NPC_MenuAction@0x00579D60,
+  fn:sub_0062E660_ItemCanRepair@0x0062E660, run:2026-10-19-economy2)
 
 #### F4. Given items (`QUESTS_GiveItem`)
 
@@ -732,8 +738,9 @@ sequenceDiagram
   source's ilvl; for given items a code, an ilvl (fixed, or clvl) and a quality. [I] (fn:sub_00559A30_DropItemAtUnit@0x00559A30,
   fn:QUESTS_GiveItem@0x005466B0)
 - For the services: a new rare of the same base (imbue), a copy with `n` sockets (Larzuk) or a copy with flag
-  `0x1000000` and a name (Anya), each repaired and identified, and the service's quest word moved from bit 1 to bit 0.
-  [C] (fn:NPC_MenuAction@0x00579D60, run:2026-10-16-quest-drops)
+  `0x1000000` and a name (Anya), each identified, and the service's quest word moved from bit 1 to bit 0.
+  [C] (fn:NPC_MenuAction@0x00579D60, run:2026-10-16-quest-drops) The socketed and personalized copies are also
+  repaired; the imbued item is not (F0). [C] (fn:NPC_MenuAction@0x00579D60, run:2026-10-19-economy2)
 - The quest seed, advanced by one step per pick. [C] (fn:QUESTS_GetSeed@0x005438B0, run:2026-10-16-quest-drops)
 
 ## Worked example
@@ -862,9 +869,12 @@ logs of run:2026-10-16-quest-drops (`workspace/logs/quests-s3-<seed>-….log`, p
 - [L] **Not attempted:** a kill by a hireling, a golem or an `exp`-state caster (B6a); a party (B6b, and the forge's
   `n` > 1); a classic game (the Cow King's word 26 test, no forge rune); the imbue below clvl 6 and of an ethereal
   item; Larzuk on a non-magic item; Diablo's and Baal's kills; Baal's gold; Anya's and Qual-Kehk's items; the quest
-  chests' gold and Wirt's gold; Mephisto's kill-time bit 0 for a fresh killer; the Countess in Hell; the Cow King's two
+  chests' gold (Wirt's gold is run in [items/economy](economy.md#g-gold-payment-caps-piles-and-the-death-loss) G8a);
+  Mephisto's kill-time bit 0 for a fresh killer; the Countess in Hell; the Cow King's two
   refusals.
-- [L] How `sub_0055A090_DropGoldAmount` splits Baal's amount into piles, and whether it draws.
+- ~~How `sub_0055A090_DropGoldAmount` splits Baal's amount into piles, and whether it draws.~~ Answered in
+  [items/economy § G](economy.md#g-gold-payment-caps-piles-and-the-death-loss) (G9): piles of at most 2 000 000 000, at
+  most 32, one item creation each; Baal's gold itself stays unrun.
 - ~~The ilvl `DropItemAtUnit` gives a drop from an object in a level without a `Levels` record, and which
   `ItemCreateByQuality` case takes the Cow King's quality 0.~~ Answered: ilvl 1 (C1 note), case 2 (D3 note).
 - ~~The meaning of `ITEMS_GetType` = 4 and item flag `0x1000` in the three service tests, and whether the imbue
@@ -872,6 +882,9 @@ logs of run:2026-10-16-quest-drops (`workspace/logs/quests-s3-<seed>-….log`, p
 - ~~`0x0055CA40` (the holder test of the quest-item gate) is not read.~~ Answered: the carry-one and quest-duplicate
   test (§ E step notes). All three from [items/0010 § Plan 0039 batch P1b](../../findings/items/0010-quest-drops.md#plan-0039-batch-p1b-2026-10-17).
 - [L] The event-7 route at run time for the quest objects other than the Hellforge (Wirt's gold, classes 26, 122, 131,
-  189, 341, 367, 371, 459–461, 474–476): no breakpoint sat on the thunk or `QUESTS_ObjectEvent`; a run that clicks
-  Wirt's body would settle it. The first event-7 queue of classes 122, 371 and 459–461 is not read.
+  189, 341, 367, 371, 459–461, 474–476): no breakpoint sat on the thunk or `QUESTS_ObjectEvent`.
+  run:2026-10-19-economy2 operated Wirt's body and logged `A1Q4_WirtGold` 18 times, 10 frames apart
+  ([items/economy](economy.md#g-gold-payment-caps-piles-and-the-death-loss) G8a), but not the route to it, so the
+  route stays open for Wirt too; a run with a breakpoint on the thunk would settle it. The first event-7 queue of
+  classes 122, 371 and 459–461 is not read.
   ([items/0010 § Open questions](../../findings/items/0010-quest-drops.md#open-questions))

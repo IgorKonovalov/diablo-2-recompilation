@@ -1,0 +1,154 @@
+{
+ "game": "expansion",
+ "class": "Sorceress",
+ "seed": 743000301,
+ "name": "EconQ",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 60,
+  "energy": 60,
+  "dexterity": 25,
+  "vitality": 100,
+  "hitpoints": 500,
+  "maxhp": 500,
+  "mana": 300,
+  "maxmana": 300,
+  "stamina": 200,
+  "maxstamina": 200,
+  "level": 30,
+  "experience": 5493363,
+  "gold": 300,
+  "goldbank": 0
+ },
+ "skills": {
+  "Charged Bolt": 1,
+  "Static Field": 1,
+  "Telekinesis": 1,
+  "Teleport": 1
+ },
+ "mouse": {
+  "left": "Teleport",
+  "right": "Telekinesis"
+ },
+ "keep_items": [],
+ "quest_bits": {
+  "normal": {
+   "3": {
+    "set": [
+     1
+    ],
+    "clear": [
+     0
+    ]
+   },
+   "35": {
+    "set": [
+     1,
+     3
+    ],
+    "clear": [
+     0
+    ]
+   },
+   "38": {
+    "set": [
+     1
+    ],
+    "clear": [
+     0
+    ]
+   }
+  }
+ },
+ "items": [
+  {
+   "code": "uap",
+   "equip": "head",
+   "dur": 3
+  },
+  {
+   "code": "ltp",
+   "equip": "tors",
+   "dur": 20
+  },
+  {
+   "code": "lbt",
+   "equip": "feet",
+   "dur": 1
+  },
+  {
+   "code": "wnd",
+   "equip": "rarm",
+   "dur": 4
+  },
+  {
+   "code": "cap",
+   "dur": 1,
+   "store": "inventory",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "code": "cap",
+   "suffix": 53,
+   "dur": 1,
+   "store": "inventory",
+   "x": 2,
+   "y": 0
+  },
+  {
+   "code": "cap",
+   "suffix": 53,
+   "dur": 1,
+   "store": "inventory",
+   "x": 4,
+   "y": 0
+  },
+  {
+   "code": "xtp",
+   "dur": 1,
+   "store": "inventory",
+   "x": 6,
+   "y": 0
+  },
+  {
+   "code": "xea",
+   "ethereal": true,
+   "dur": 5,
+   "store": "inventory",
+   "x": 8,
+   "y": 0
+  },
+  {
+   "unique": "Annihilus",
+   "store": "inventory",
+   "x": 0,
+   "y": 2
+  },
+  {
+   "code": "cap",
+   "dur": 0,
+   "broken": true,
+   "store": "inventory",
+   "x": 1,
+   "y": 2
+  },
+  {
+   "code": "cap",
+   "store": "inventory",
+   "x": 3,
+   "y": 2
+  }
+ ]
+}

@@ -2462,7 +2462,84 @@ named under *Limits*.
     repair clicks gave `NpcRepair` 2;
   - gold: no Wirt's gold, no Baal's gold, no stash cap; no `GoldPickup` or stash move (pickup and stash UI not
     scripted); Hell monster gold 65;
-  - wear: no indestructible item, no classic throwable, no version-0 item, no stack refill (`q > 1` at `D′ < 1`); the
-    weapon that reached 0 had no broken flag at the roll's exit (one case);
+  - wear: no classic throwable, no version-0 item, no stack refill (`q > 1` at `D′ < 1`); the weapon that reached 0
+    had no broken flag at the roll's exit (one case). Review note (architect, 2026-10-19, plan 0043 Phase 3 review):
+    the lane listed "no indestructible item", but all 50 of the "no durability" rolls are on two indestructible items
+    of session 4381 (stat 152 = 1 in the full cache: a set `xtb`, 12 rolls, first at frame 791; a unique `uit`, 38),
+    whose bases have `nodurability` 0 and `durability` 18 and 86; every roll without stat 152 drew. Counted from the
+    `DL0`/`DL1` pairs of the 33 claim logs (seed unchanged = no draw), so the indestructible clause is met, not short.
+    Also at that review: the stat-term and NPC-step large forms of `Scale` are separated by the run (a copy of
+    `tools/economy.py` with the `0xFFFF` test made false at line 295, or at line 491, reports 2 737 or 1 846 mismatch
+    lines on the same claim logs; the same edit at line 417, `AddTerm`, reports 0, so that form is not separated);
   - no charge use (`UseCharge`), no skill wear; no gamble at clvl 3 (EconDL3 not run);
   - Cain one case (paid; the free path not run).
+
+## run:2026-10-19-economy2
+
+**Status: done** (plan 0043 Phase 2b, harness lane `lane/p43b`, slot 1, 2026-10-19). 0 mismatches over the five claim
+logs; shortfalls under *Limits*.
+
+- **Question:** plan 0043 Phase 2b (backlog `2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder`): the quest
+  repair (or its absence), Wirt's gold, crafted prices, the Hell repair price, the gamble at clvl 3, partial, broken and
+  ethereal repairs, question 9 with a control live to the session's end, and the two P2 sales that left the game seed
+  unchanged.
+- **Setup:** agent-driven sessions on harness **slot 1** (display `:8`, `workspace/wineprefix-1`), single player, pinned
+  `game.exe`, stock data, one game at a time, `-seed` per session. Logger `tools/gdb/economy2.gdb` = `pilot.py`,
+  `vendors.py`, `quests.py` (the service lines `IMBX`/`LZY`/`PZ`, `OOP`, `QDI`/`QDX`) and `economy.py`, which adds for
+  this phase `NSX` (the sale's store-copy decision), `WG0`/`WG1`/`WGS`/`WGN` (Wirt's gold), `DUL` (the ilvl
+  `DropItemAtUnit` computes), item `id` and `ind` (stat 152), and the control watch `SWC` at most one line per 10 frames
+  with no cap. Logger revisions: 4501 ran `tools/gdb/economy.py` of commit 02e65c3; 4503 and 4504 that of 2635d28
+  (adds `ind`); 4505 and 4506 that of 55eebbc, which reads `ItemRepairBroken`'s item from the stack (the earlier
+  revisions read EDX, the player: 4504's one `IB` line is on the player and is not used). Driver
+  `tools/economy_sessions.py --watchdog 120,LIMIT` (each session in its own process group; abort on a log quiet 120 s,
+  gdb's exit line or the limit, then `slots.py stop 1` and `saves.py restore`; it fired on gdb's exit line at the end
+  of each session, after the session's own stop), every run under `timeout`. Characters built with `tools/d2s.py build`
+  on `workspace/samples/d2s-owner/smpsor-l50.d2s` from `tools/d2s_recipes/econq.json` (EconQ: Normal, quest services
+  pending, 300 gold, no stash, damaged and sale items), `econh.json` (EconH: Hell, clvl 75, tool-built crafted items with
+  the new `crafted` key, a broken cap with the new `broken` key, an ethereal armour), `econdl3.json`, `econn.json`; tag
+  `p43b`.
+- **Sessions** (logs `workspace/logs/<name>.log`; manifest `workspace/logs/economy2-run-manifest.txt`, sha256
+  `cb72ac21…31e6f9`, every path relative to the repository root, `sha256sum -c` 20 of 20 OK from there; it also hashes
+  the check output, the scan output, the logger, checker, driver, scan and builder and the four recipes):
+
+  | name | save | difficulty | what was played | status |
+  |---|---|---|---|---|
+  | `economy2-s1-4501-quest` | EconQ | Normal | Charsi trade (fix attempts, sales, repair-all, store), imbue; Gheed trade and gamble, Akara, Kashya's list; Larzuk trade, socket; Anya personalize; Malah; Charsi again | run (the `fix:` token clicked no confirm box yet: no single repair) |
+  | `economy2-dev1-4502` | EconQ | Normal | the repair confirm box measured by hand (one paid, one partial repair) | development log, no claim |
+  | `economy2-s1-4503-repair` | EconQ | Normal | Charsi: partial repair, ethereal fix, four sales (Annihilus, broken, plain, ethereal), partial again, cheap fix at gold 0, repair-all; Gheed, Akara, Kashya, Gheed gamble, Charsi again | run |
+  | `economy2-s1-4504-hell` | EconH | Hell | Larzuk: hovers, broken and ethereal fixes, repair-all, four crafted sales, store; Malah, Anya, Halbu, Charsi | run |
+  | `economy2-s1-4505-gamble3` | EconDL3 (clvl 3) | Normal | ten gamble windows: Gheed ×3, Anya ×3, Jamella ×2, Alkor ×2 | run |
+  | `economy2-s1-4506-wirt` | EconN | Normal | Stony Field waypoint, the cairn stones (`objop --obj-cls 17 --to-pdef 160 --approach`), the Tristram portal (class 60), Wirt's body (`objop --obj-cls 268 --to-pdef 300 --done WG0`) | run |
+
+  Command line (4501; the others alike with their stops): `timeout 3400 python3 -I tools/economy_sessions.py --watchdog
+  120,3200 --slot 1 tour --tag p43b --seed 4501 --diff normal --gdb tools/gdb/economy2.gdb --log
+  workspace/logs/economy2-s1-4501-quest.log --save workspace/scratch-p43b/saves/EconQ.d2s "1:charsi:trade:…" …`; 4506:
+  `… wirt --tag p43b --seed 4506 --diff normal --log workspace/logs/economy2-s1-4506-wirt.log --save …/EconN.d2s`.
+- **Procedure:** `python3 -I tools/economy.py check workspace/merged/data/global/excel $(cat
+  workspace/logs/economy2/claim-logs.txt)` (output `workspace/logs/economy2/check-run.txt`, sha256 `4cb39d92…30b4`,
+  checker of commit 7451f64); `python3 -I tools/economy_scan.py workspace/install/app/game.exe qrepair` (output
+  `workspace/logs/economy-scan/economy-qrepair.out`). `tools/test_economy.py` 9 tests OK. The checker of this phase
+  also re-reads Phase 2's 33 claim logs with 0 mismatches (its added store-stock restoration check was dropped to a
+  count after 2 of 2 565 P2 stock items kept D < M with no stat 152 logged).
+- **Observed** (summarised from `check-run.txt`, not verbatim; the exact lines are in the hashed output):
+  ```
+  logs 5; games 4
+  price calls 7376; distinct: mode 0 542, mode 1 79, mode 2 153, mode 3 59
+    quality 8 55 (mode 0 diff 2 3, mode 1 diff 2 35, mode 3 diff 2 17); mode 3 diff 2 25; gamble at clvl 3 125
+  repair-all sums 193; NpcRepair one item 4 (partial taken 2, partial refused 1, paid (broken) 1); repair all 2
+  ItemRepairAll from socket (quest) 1, personalize (quest) 1 (damaged, restored); imbue (quest) 1 (not identified,
+    unchanged); restorations checked 10
+  sales 11: copied, game seed +2 6; copy refused, +0: carry1 unique 1, flag 0x100 2, flag 0x400000 2
+  Wirt gold events 18; pile counts 1; piles (ilvl checked) 18; gold amounts at creation 40
+  seeds: PR 7376, RC 193, IR 894, NR 6, PG 8, GG 11, UG 15, RP 12, IB 1: game and player seed unchanged;
+         NS 11: +2 in 6, same in 5; WG 18: game seed +2
+  watch: SWW 5 hits, all at 0x005794A2; control SWC 66 lines, from the watch's setting to the last line of
+         each log (4501 1207..12694, 4503 2275..7648, 4504 1313..9446, 4505 2729..7738;
+         4505's watch set at 1769)
+  economy: 0 mismatches
+  ```
+- **Limits:** the imbue's repair acts on an unidentified item and changes nothing (one case); one broken repair (its
+  `ItemRepairBroken` line misread, the `ItemRepairAll` lines used); the ethereal refusal is client-side (no server call
+  logged); crafted items tool-built (no recipe mods); one Wirt game (count 18; `MonLvl1` = `MonLvl1Ex` = 6 in Normal);
+  question 9 covers only the windows listed in items/0011 § Phase 2b; the `Cracked` and `0x0055F590` copy refusals not
+  reached.
