@@ -2813,5 +2813,31 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     player/creation H1a, H6g; drlg/collision H5d; objects H6e2.
   - **Backlog:** the H2a spec-updates entry and the S2a tc 64 entry annotated (done in part; their items/tc and objects
     parts wait); review request
-    [p38s7 review](../backlog/2026-10-20-spec-writer-architect-p38s7-items-quality-review.md).
+    [p38s7 review](../backlog/archive/2026-10-20-spec-writer-architect-p38s7-items-quality-review.md).
   - **Next:** architect review of `lane/p38s7`; items/tc after H2b and H2c.
+- **2026-10-20 — Review of `lane/p38s7`, Phase 3 items/quality cluster (spec-writer; architect): accept with fixes.**
+  `main` merged first (already up to date at `f32742c`; `backlog.py archive` moved nothing). Read: the spec, wiki,
+  backlog and plan diffs against
+  [items/0002 § Plan 0038 batch H2a](../findings/items/0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20), the
+  `lane/h2a` rulings (d) and (f) and [items/0001 § 2](../findings/items/0001-tc-resolution.md#2-entry-points).
+  - **Raises.** D6 line and step note: 667 = 39 + 628, by test rare 622 (37 + 585), set 646 (38 + 608), magic 13
+    (2 + 11), decides 138 (9 + 129), 7 199 = 720 + 6 479; the unique minimum reached by none; the plan 0010 runs'
+    "no chance near a minimum" kept as scoped (ruling (d)). D4–D7: after D7 206 (7 + 199), before D5 138 (9 + 129).
+    M3: 130 rolls (85 + 39 + 6, the 5 `failed/` hireling rolls counted per ruling (f)); remainder `[I]` scoped to the
+    8 753 rolls. C1: two sources hold, the code at 0x00585CD2 and run:2026-10-15-objects (59 of 59 `TCR ilvl` = the
+    modelled tier, items/0001 § 2 `[C]` since S4b); the consequence for `d` split `[I]`. All stand.
+  - **Anchors** spot-checked in `re/symbols.csv`: `ITEMS_DropMagicFind` 0x005585D0, `sub_0058F0D0_MonsterOwner`,
+    `sub_00585B90_ObjectChestDrop`; the six cited run ids exist in the experiments files.
+  - **Counts** by script over the body, struck text removed: {C 64, I 42, L 2} → {C 69, I 39, L 1} (+3 raised, +1 M3,
+    +1 C1 in place with a new `[I]`). The struck clamp open question carries no live tag. The two annotated entries'
+    remaining parts (items/tc (a)–(i), (n), the `/players` lines of (o); items/tc § J and objects § J3) are correct.
+  - **Fixes (made here):** (1) *overclaim:* wiki step 3 said the clamp decided 138 rolls "in the rare, set and magic
+    tests"; the finding splits by test only the rolls that reach the minimum, not the 138: restated. (2) *omission:* the
+    wiki's untested *Quality* line names a monster killer with no player owner, but the spec's open questions did not
+    list it: the M3 remainder (no player owner; an object or missile killer) added to the `[L]` *Not exercised* bullet
+    (no count change) and the object or missile killer to the wiki line.
+  - **Research map:** the items/quality row rewritten whole (C 69 / I 39 / L 1, the H2a raises).
+  - **Ledger:** 2 fixes: overclaim 1, omission 1 ([metrics](metrics.md)).
+  - **Backlog:** review request
+    [p38s7 review](../backlog/archive/2026-10-20-spec-writer-architect-p38s7-items-quality-review.md) closed; the H2a
+    spec-updates and S2a tc 64 entries stay open for items/tc and objects.

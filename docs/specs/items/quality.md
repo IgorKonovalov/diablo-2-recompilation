@@ -658,7 +658,8 @@ that tell the two models apart. [C] (run:2026-10-12-quality)
   ([items/0002 § Plan 0038 batch H2a](../../findings/items/0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20)). The
   unique test's minimum was reached by no roll; it is the same compare.
 - [L] **Not exercised:** Hell, negative magic find (including the `mf ≤ −100` bypass), multiplayer, the early
-  returns A4–A5 (unique flag, `Magic` type with `quest`), code 0 and the fatal errors.
+  returns A4–A5 (unique flag, `Magic` type with `quest`), code 0 and the fatal errors; in M3, a monster killer with no
+  player owner (a plain monster, a minion, an owner gone) and an object or missile killer.
 - Note, not an open behaviour question (bookkeeping; this bullet is removed when the two backlog corrections
   land). **Doc inconsistencies found while writing** (backlog entries 2026-10-14): [ItemRatio](../../tables/ItemRatio.md)
   says the `Version` 1 `Uber` pairs hold identical values and that the uber key changes no drop, but the
