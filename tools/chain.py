@@ -2,7 +2,8 @@
 """Seed to world: the reviewed models composed, with no boundary oracle inside the chain (plan 0048 Phase 1).
 
     python3 -I tools/chain.py gen --seed N [--diff 0|1|2] [--exp 0|1] [--excel DIR] [--levels ID,...] [--json]
-    python3 -I tools/chain.py check <log> [<log> ...] [--excel DIR] [--root DIR] [--staff model|oracle] [-v]
+    python3 -I tools/chain.py check <log> [<log> ...] [--excel DIR] [--root DIR] [--staff model|oracle] [--cf NAME] [-v]
+    python3 -I tools/chain.py barrier <log> [<log> ...]        # oracle 20 probe: the LG0 barrier grids
 
 gen: everything the game builds from the game seed alone, before any input of the chain (docs/findings/chain/0001
   § 3.1 and § 3.3): under `-seed N` the game seed and the map seed (rng/seeds step 1: Init(N), map seed N), the four
@@ -289,6 +290,63 @@ def apply_cf(name):
         monspawn.PresetMonPass.overlay = lambda self: self.chk.world.model
 
 
+def barrier_pred_ok(fl, o):
+    """LOGIC_BarrierGridBuild 0x0066C870's tile test: flags (+0x14) & 0x1C000 = 0x4000, orientation (+0x1C) not 15,
+    flag bit 11 clear."""
+    return (fl & 0x1C000) == 0x4000 and o != 15 and not (fl >> 11) & 1
+
+
+def cmd_barrier(ns):
+    """Oracle 20, the barrier grid (a probe, not part of `check`): every LG0 barrier grid of the logs (tools/gdb/
+    collision.py, before LOGIC_FloodAll) against LOGIC_BarrierGridBuild as read, on the wall entries of the room's
+    last activation dump (CB): the room's own walls at their tile, the near rooms' walls at their tile relative to the
+    room when inside its tile rect (bounds included, sub_0066B9D0_RectContainsIncl)."""
+    from collision import unz
+    c = collections.Counter()
+    for path in ns.logs:
+        cb = {}
+        for line in open(path, errors="replace"):
+            tag, _, rest = line.partition(" ")
+            if tag == "CB":
+                d = json.loads(rest)
+                cb[d["dr"]] = d
+            elif tag == "LG0":
+                d = json.loads(rest)
+                bar = unz(d["z"])["barrier"]
+                if bar is None or bar[2] is None:
+                    c["LG0 with no barrier grid logged"] += 1
+                    continue
+                b = cb.get(d["dr"])
+                if b is None:
+                    c["LG0 of a room with no activation dump (CB) in the log"] += 1
+                    continue
+                tx, ty, tw, th = d["t"]
+                W, H = bar[0], bar[1]
+                g = [[0] * W for _ in range(H)]
+                for n, ndr, trect, walls, _f, _s in unz(b["z"])["near"]:
+                    for x, y, fl, _tp, o in walls:
+                        if not barrier_pred_ok(fl, o):
+                            continue
+                        if n == b["room"]:
+                            rx, ry = x, y
+                        else:
+                            ax, ay = x + trect[0], y + trect[1]
+                            if not (tx <= ax <= tx + tw and ty <= ay <= ty + th):
+                                continue
+                            rx, ry = ax - tx, ay - ty
+                        if 0 <= rx < W and 0 <= ry < H:
+                            g[ry][rx] = 1
+                diff = [(x, y) for y in range(H) for x in range(W) if (1 if bar[2][y][x] else 0) != g[y][x]]
+                if not diff:
+                    c["LG0 barrier grids equal to the model"] += 1
+                else:
+                    edge = all(x in (0, W - 1) or y in (0, H - 1) for x, y in diff)
+                    c["LG0 barrier grids that differ (%s)" % ("on the grid's edge only" if edge else "inside")] += 1
+    for k in sorted(c):
+        print("  %-80s %d" % (k, c[k]))
+    return 0
+
+
 TOWNS = {1, 40, 75, 103, 109}          # sub_006426A0_LevelIsTown
 
 
@@ -395,6 +453,8 @@ def build_parser():
     c.add_argument("--root", default=DEFAULT_ROOT)
     c.add_argument("--staff", choices=("model", "oracle"), default="model",
                    help="ITEMS_RollStaffMods: the model (default, oracle 2 retired) or the plan 0021 seed oracle")
+    b = sub.add_parser("barrier")
+    b.add_argument("logs", nargs="+")
     c.add_argument("--cf", choices=sorted(CF), help="a counterfactual model (negative control)")
     c.add_argument("-v", "--verbose", action="store_true")
     return ap
@@ -402,7 +462,7 @@ def build_parser():
 
 def main(argv):
     ns = build_parser().parse_args(argv[1:])
-    return {"gen": cmd_gen, "check": cmd_check}[ns.cmd](ns)
+    return {"gen": cmd_gen, "check": cmd_check, "barrier": cmd_barrier}[ns.cmd](ns)
 
 
 if __name__ == "__main__":

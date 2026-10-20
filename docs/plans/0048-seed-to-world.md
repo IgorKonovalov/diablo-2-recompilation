@@ -161,3 +161,26 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   logged") is a wrong statement in a reviewed spec, routed now to the spec-writer
   ([entry](../backlog/2026-10-20-architect-spec-writer-monsters-spawn-stale-object-marks-row.md)); the other four
   passages of § 5 stay Phase 3's. (f) Research map: the Core row `chain` is added (findings in progress).
+- **2026-10-20 — Phase 1 done, review requested (reverser, `lane/p48r`, static, Ghidra copy, no harness).**
+  [chain/0002](../findings/chain/0002-retirements.md) records each assigned oracle, in the assigned order, on kept logs
+  only (133 item logs, 62 world logs; input lists and every output hashed in `workspace/logs/chain-p1/manifest.txt`,
+  `8c219e82…`). `tools/chain.py` is written: `gen` builds the seed tree, the four game-creation draws, the monster
+  regions and every level seed from `-seed N` (the rng/seeds worked example reproduced in `tools/test_chain.py`);
+  `check` runs the item chain, `tools/tc.py` (quality modelled) and the world chain (`tools/monspawn.py` with
+  `tools/objects.py`, `tools/drlg.py`, `tools/monstats.py`) per log and lists every oracle still taken. **Over the 195
+  logs: 0 sub-checks failed**; 8 519 of 8 553 unit seeds and 1 253 of 1 265 objects windows predicted with no oracle
+  inside. Retired: **2** (staff mods the default), **14** (unit seed after `SUnitCreate`: FindAdd on tracked regions
+  plus `MonStatsInit`'s draws), **16** (the presets window's monsters: the class case `sub_0054E490_PresetClassSpawn`,
+  the MonPlace fixed rows with `LevelClassVariant`, tile units), **17** (InitFn 46, read in the disassembly; its
+  direction draw is never stored), **22** (the `Orient89Unit` units come as presets; the objects under catapults 432 and
+  433 modelled), **21** (another room's seed as chain state), **7** (gold items' seeds and marks; 69 of 71 spots),
+  **6** (an object's drop: the unit seed is tc.py's `TCEND`, the game seed predicted from the items). **13** modelled
+  `[I]`, unreached; `tools/monstats.py` read `oninit` at the wrong offset, so the old oracle never fired (corrected).
+  **19** read (the gate's four DRLG tests), its logged inputs checked against the reading on 1 265 gates, still
+  logged; **20** named, not modelled (R3: composed grid = snapshot in 3 871 of 3 998 pass rooms; the barrier grid read
+  and probed, 258 of 307; the type-11 point's rule not carried). Corrections to chain/0001 § 2: InitFns 54 and 62 were
+  reached (7 and 4 calls); oracle 22's creation is a preset unit's. Surprises: the model needed no change for the odd
+  unit-seed step counts (6 to 17): all are FindAdd appends or MonProp; `L` does not change the HP draw count. 8 symbols
+  added (`sub_0054E490_PresetClassSpawn`, `sub_0054E3A0_PresetRetryAllowed`, the gate's six DRLG tests);
+  `OBJINIT_CityDamnedSpawns` raised to `C`. `tools/gdb/chain.gdb` written (not run). Review request:
+  [entry](../backlog/2026-10-20-reverser-architect-review-plan-0048-phase-1-in-chain-oracles.md).

@@ -2,7 +2,7 @@
 
 > **Subsystem:** chain (seed to world, plan 0048)
 > **Question:** can each oracle the Phase 0 review assigned (chain/0001 § 4: 2, 14, 16, 17, 22, 19, 21, 20, 7, 6, 13) be replaced by a model from code the specs already cite, and does `tools/chain.py check` pass on the kept logs with those callees predicted?
-> **Date:** 2026-10-20   **Plan:** 0048 (Phase 1)   **Status:** open (Phase 1 in progress)
+> **Date:** 2026-10-20   **Plan:** 0048 (Phase 1)   **Status:** open (Phase 1 done, review requested 2026-10-20)
 
 Phase 1 runs no harness session. Each model is checked on kept logs of earlier runs (re-analysis); the logs are named
 per oracle with their manifests. `tools/chain.py` is the composition: `gen` builds what the game seed alone fixes,
@@ -30,9 +30,9 @@ oracles still taken from the log.
   object-region draw) and `tools/monspawn.py` its 21 `MonSpawnTry` requests; InitFns 54 and 62 (11 calls, reached
   although chain/0001 row 17 said not) stay seed oracles; 1 245 of 1 265 objects windows carry no oracle (§ 5).
   (fn:OBJINIT_CityDamnedSpawns@0x005506D0, run:2026-10-15-objects)
-- [C] **Oracle 22 (the `Orient89Unit` creations) is retired**: `Orient89Unit` adds no unit at activation; it adds a
-  preset unit that the presets window creates, so its creations are oracle 16's windows, and the last 12 (the objects
-  571 and 572 under catapults 432 and 433) are now modelled too; 1 255 of 1 265 objects windows carry no oracle (§ 6).
+- [C] **Oracle 22 (the `Orient89Unit` creations) is retired**: the units its rows name come as preset units of the
+  presets window (`[I]` that `Orient89Unit` itself creates none at activation), so their creations are oracle 16's
+  windows, and the last 12 (the objects 571 and 572 under catapults 432 and 433) are now modelled too; 1 255 of 1 265 objects windows carry no oracle (§ 6).
   (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, fn:sub_0054E490_PresetClassSpawn@0x0054E490, run:2026-10-15-objects)
 - [I] **Oracle 19 (the gate's DRLG parts) is read but not retired**: `OBJ_PopulateGate`'s four DRLG tests are now
   read to the room fields they test (flags `0x30000`, flag `0x800000`, the out room's `0x80`, the level id), and the
@@ -199,7 +199,8 @@ oracle left when it predicted every one of them.
 
 ## 6. Oracle 22: the `Orient89Unit` creations
 
-- [C] What `sub_0066D9E0_Orient89Unit` makes at activation is a **preset unit** of the room, not a unit: the units
+- [I] What `sub_0066D9E0_Orient89Unit` makes at activation is a **preset unit** of the room, not a unit (the code
+  that adds it is not read here; the logs show the flagged classes created later, as below): the units
   its rows name (`tools/drlg.py roomk` on objects sessions 5, 25 and 28: entry flag `0x20` set for classes 432 ×25,
   433 ×14, 434 ×8, 435 ×43, 524 ×14 and object 60 ×2) are created later in the presets window, through
   `PresetUnitDispatch`, as `OPU0` windows of type 1 (or 2 for the object: session 5, line 21663, an `OPU0` of id 60
@@ -333,14 +334,39 @@ oracle left when it predicted every one of them.
   of the room (`RoomTile +0x14`, 0x30-byte records, count `+0x18`) whose flags `+0x14` have `& 0x1C000 = 0x4000`,
   whose orientation `+0x1C` is not 15 and whose bit 11 is clear, `sub_0067C4F0_GridCellOp(grid, position, 1, op 0)`;
   then the same test on the tile lists of the near rooms, at the position relative to the room when
-  `sub_0066B9D0_RectContainsIncl` holds. It is a pure function of the tile entries `tools/drlg.py` builds, so it is
-  modellable (or emulable under ADR-0015 with the entries as the declared read set); it stays a logged input of the flood
-  (`LG0`) here. (fn:LOGIC_BarrierGridBuild@0x0066C870, fn:sub_0067C4F0_GridCellOp@0x0067C4F0,
+  `sub_0066B9D0_RectContainsIncl` holds. It is a function of the tile entries `tools/drlg.py` builds, so it is
+  modellable (or emulable under ADR-0015 with the entries as the declared read set). A probe, `tools/chain.py barrier`
+  (`o20-barrier.txt`), builds it from the wall entries of the room's last activation dump: of the 307 `LG0` grids
+  whose room has a dump in the 62 world logs, 258 equal the probe, 17 differ on the grid's edge only and 32 inside
+  (1 814 `LG0` lines are of rooms with no dump: the flood runs for rooms never activated). The near rooms' lists the
+  code walks (`[+0x54]` → groups of type 0 → tiles linked at `+0x20`) are not the activation dump's lists, which
+  likely explains the rest; not followed. It stays a logged input of the flood (`LG0`). (fn:LOGIC_BarrierGridBuild@0x0066C870, fn:sub_0067C4F0_GridCellOp@0x0067C4F0,
   fn:sub_0066B9D0_RectContainsIncl@0x0066B9D0)
 - [I] **The type-11 point** (`NWW`) stays logged: drlg/warps § D1 gives its rule (the waypoint object's tile for a
   `Position`-0 level, a level-seed draw among the level's slot-33 points otherwise), but the chain does not yet carry
   the level's preset unit lists to the walk that needs them. (fn:sub_0066B2B0_LevelPointFind@0x0066B2B0,
   fn:sub_0054DB50_NearWarpTest@0x0054DB50)
+
+## 13. The composition over every kept log
+
+- [C] `tools/chain.py check` over the 195 kept logs of § 2 and § 3 (133 item logs, 62 world logs; the input lists
+  with their sha256 are `inputs-items.sha256` and `inputs-world.sha256`), with the final tool revisions
+  (`tools-final.sha256`), passes: 0 sub-checks failed. Items: 3 991 creations from the affix lines and 3 170 from the
+  property lines, 0 failed, 99 staff-mods exit seeds and 64 skill entries predicted. Tc: 510 `TC_ResolveDrops` calls
+  reproduced with the quality roll modelled, 59 with an object source. World: 1 187 297 monspawn checks and 62 991
+  monstats checks, 0 mismatches; 8 553 creations, **8 519 unit seeds predicted** (34 still taken: classes appended by
+  creations outside the model); 311 class-case presets predicted (229 placed, the 12 catapult windows of § 6 now
+  among them, so the counts of § 4 and § 3 grow by those), 35 that place nothing, 11 specials, 29 tile units; 21
+  InitFn 46 requests; 2 other-room seeds from the chain state; 71 gold drops and 59 object drops with their seeds
+  predicted; **1 253 of 1 265 objects windows with no oracle left inside**. The summary lists every oracle still
+  taken from a log, by name and count; besides the ones named below, they are the plan's inputs (player actions,
+  quest state, simulation: the state InitFns, the timer draws, the operate spawns) and, on the logs without a pass
+  snapshot (plan 0014's), the position predicates and the whole window (oracle 15's older logs). (run:2026-10-14-affixes, run:2026-10-15-items-chain, run:2026-10-15-mon-stats,
+  run:2026-10-14-collision, run:2026-10-15-objects)
+- What remains of the assignment, with the reason: oracle 19's DRLG room flags and `LevelRoomCount` (§ 7: not handed
+  from `tools/drlg.py` to the chain), oracle 20 (§ 12: the predicates still read the snapshot; the barrier grid and the
+  type-11 point stay inputs), InitFns 54 and 62 (§ 5: outside the assignment), the 2 gold spots (§ 9), the class-434
+  mode (quest state, § 6) and oracle 13's reach (§ 11: no logged creation).
 
 ## Kept outputs
 
@@ -349,7 +375,8 @@ oracle left when it predicted every one of them.
 logs), `o14-cf-{findadd-none,monprop-off,L0}.txt` (the controls), `o16-world-check.txt` and
 `o16-cf-{lcv-off,overlay-off}.txt` (oracle 16), `o17-world-check.txt` and `o17-cf-i46-stored.txt` (oracle 17), `o22-world-check.txt` (oracle 22), `o19-world-check.txt` (oracle 19), `o21-world-check.txt` and
 `o21-cf-state-stale.txt` (oracle 21), `o7-world-check.txt` (oracle 7), `o6-world-check.txt` (oracle 6), `o13-world-check.txt` (oracle 13), `o20-monspawn-r3.txt` (`tools/monspawn.py check` over the 62 world
-logs, for the R3 counts of oracle 20, same tools as `tools-o13.sha256`), and the input lists `inputs-world.sha256` and
+logs, for the R3 counts of oracle 20, same tools as `tools-o13.sha256`), `o20-barrier.txt` (`tools/chain.py barrier`,
+tools in `tools-o20.sha256`), `final-check.txt` (§ 13, tools in `tools-final.sha256`), and the input lists `inputs-world.sha256` and
 `inputs-items.sha256` (paths relative to `chain-p1/`, so `sha256sum -c` runs from there too). The tool revisions
 behind these outputs are recorded in `tools-o14.sha256`, `tools-o16.sha256`, `tools-o17.sha256`, `tools-o22.sha256`, `tools-o19.sha256`, `tools-o21.sha256`, `tools-o7.sha256`, `tools-o6.sha256` and `tools-o13.sha256` (paths relative to the repository
 root).
