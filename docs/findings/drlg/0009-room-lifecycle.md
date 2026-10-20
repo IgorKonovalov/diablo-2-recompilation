@@ -972,10 +972,12 @@ Static, no session. Kept outputs under `workspace/logs/p49r/` (manifest `p49r-ma
 
   (fn:DUNGEON_ActCreate@0x006194A0, fn:sub_0053AC70_ActCreate@0x0053AC70, fn:sub_0044E100_ClientActLoad@0x0044E100,
   fn:DRLG_ActCreate@0x00642DA0)
-- So `+0x50` is 1 on a client act and 0 on a server act. That matches § 11's values: 0 on the server at all 30 985
-  checks, and `EDX` 0 (the negated `+0x50`) at every client tiles release. The name moves from `[L]` to this reading.
-  No other writer of `+0x50` was scanned: the offset is too common for an operand scan.
-  (fn:DUNGEON_ActCreate@0x006194A0, run:2026-10-17-lifecycle)
+- [C] So `+0x50` is 1 on a client act and 0 on a server act (*raised at the `lane/p49r` review, 2026-10-20*: the
+  constructor's writer and both callers' constants, read again with objdump at the review, are one source; § 11's run
+  values are the second: 0 on the server at all 30 985 checks, and `EDX` 0 (the negated `+0x50`) at every one of the
+  8 277 client tiles releases). The name "client act" is settled. No other writer of `+0x50` was scanned (the offset is
+  too common for an operand scan); that limit is covered for the run's window only, where neither side saw another
+  value. (fn:DUNGEON_ActCreate@0x006194A0, run:2026-10-17-lifecycle)
 
 **(b) A wanderer gets alignment 2 at its creation, so a saved wanderer is dropped at the restore.**
 
@@ -1090,7 +1092,7 @@ Each is a Phase 2 question (§ P2 questions in the plan log) unless it says othe
   the flag-0 reading of `MinionRestore` can be checked from the logs without a run.
 - [L] Which client-copy code detached the path of the client-copy units of drlg/0004's 19 (§ 8); code still to read.
 - ~~DUNGEON act `+0x50` reads as "client act".~~ The act constructor is read in § 11.4 (a): the client's caller
-  passes 1, the server's 0.
+  passes 1, the server's 0 (raised at the `lane/p49r` review; fn:DUNGEON_ActCreate@0x006194A0).
 - [L] The meanings of monster data `+0x58` and `+0x5C` bit 1, record `+0x2C`, and the state list
   at DataTables `+0x174`; code still to read.
 - `MonRegionUnitLeave` at the restore and the restored item's position: answered in § 11.

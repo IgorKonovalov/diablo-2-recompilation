@@ -913,7 +913,7 @@ the 7 of its owner-played addendum, sha256 checked against `quests-run-manifest.
   gold and Baal's death call `RNG_RandLoHi`, whose `lo + Range(hi − lo)` reproduces the 7 513 store-seed draws of
   run:2026-10-15-vendors. (fn:RNG_Range@0x0045C390, fn:RNG_RandLoHi@0x004BC500, run:2026-10-16-quest-drops,
   run:2026-10-15-vendors; `sweep_s2c.py static inline`)
-- **qd 10** (L141) **raised in part.** [C] Among the 378 `QUESTRECORD_SetState`/`ClearState` calls, the only constant
+- **qd 10** (L141) **raised** (in part at S2c; the remainder closed at the `lane/p49r` review, 2026-10-20). [C] Among the 378 `QUESTRECORD_SetState`/`ClearState` calls, the only constant
   bit-15 set is `QuestsPlayerJoin`'s (0x00546339, on the game record), and the only constant bit-15 clear is word 9's
   (0x00599293); the 1 626 logged writes set bit 15 only on the game record (913) and never on a player's record. The
   loader's copy was seen in the run's five saves. (fn:QUESTRECORD_LoadBytes@0x0065C4D0, fn:QUESTRECORD_SetState@0x0065C360,
@@ -921,17 +921,22 @@ the 7 of its owner-played addendum, sha256 checked against `quests-run-manifest.
   from a register (the scripts' own `Quest+0xE0` words, and ten with a computed bit), and the range clear `0x0065C3E0`
   (bits 2–11) has 12 callers; these were not traced. *Traced 2026-10-20*
   ([§ Plan 0049 Phase 1](#plan-0049-phase-1-2026-10-20-static-the-s2c-static-leftovers)): no register site and no
-  steps clear touches bit 15 (0x0065C3E0).
+  steps clear touches bit 15 (0x0065C3E0). *Raised at the `lane/p49r` review:* the enumeration is a closure over every
+  call of the five record functions (the 378 sites, the 45 register operands each read from its window, the 12 steps
+  clears), accepted as a second reading by the S1b ruling on objdump closures, with S2c's 1 626 logged writes behind it.
+  Its stated limit: a store to a record outside the five functions (the loader aside), and the A3Q4 party bit, bounded by
+  the stores in its quest's code window 0x005B9E00–0x005BA800.
 - **qd 14** (L222) **raised.** [C] The fresh Mephisto kill (3356) wrote the killer's word 22 bits 13, 0 and 11 from
   `sub_005BC140_A3Q6_SetDone` (returns 0x005BC14D, 0x005BC157, 0x005BC161), the constant set sites 0x005BC148,
   0x005BC152, 0x005BC15C. (fn:sub_005BC140_A3Q6_SetDone@0x005BC140, run:2026-10-16-quest-drops)
-- **qd 19** (L244) **raised in part.** [C] "The others set bit 0": the constant set sites of word 22 bit 0
+- **qd 19** (L244) **raised** (in part at S2c; the remainder closed at the `lane/p49r` review, 2026-10-20). [C] "The others set bit 0": the constant set sites of word 22 bit 0
   (0x005BC152, Mephisto), word 26 bit 0 (0x005B4D32 in `0x005B4D20`, Diablo) and word 40 bit 0 (0x0058DCB6 in
   `0x0058DC60`, 0x0058DD42 in `0x0058DD30`, Baal), the functions the statement names; no constant site clears word 14
   bit 5 or sets word 14 bit 1. **Remainder:** the 45 register-word sites and the range clear (qd 10), so "never" for
   Duriel's bits stays inferred. *Traced 2026-10-20*
   ([§ Plan 0049 Phase 1](#plan-0049-phase-1-2026-10-20-static-the-s2c-static-leftovers)): none writes word 14
-  (0x0065C3E0).
+  (0x0065C3E0). *Raised at the `lane/p49r` review*, by the same closure as qd 10 and with its first limit (a store
+  outside the five record functions).
 - **qd 20** (L248) **raised.** [C] MonStats has exactly five rows with a `TCQuestId`: `andariel` 6, `duriel` 14,
   `mephisto` 22, `diablo` 26, `baalcrab` 40 (rule 2); the owner-played Countess and Cow King kills logged no `B60` line.
   (tbl:MonStats.txt:TCQuestId, run:2026-10-16-quest-drops)
@@ -1026,12 +1031,12 @@ scope: a record write by any other route is not covered.
 
 The S2c remainders, read from this:
 
-- **qd 10 remainder answered.** [I] No register site clears bit 15: the register-bit clears are bit 0 (word 9) and the
+- **qd 10 remainder answered.** [C] (raised at the review, the closure limits under qd 10 above) No register site clears bit 15: the register-bit clears are bit 0 (word 9) and the
   `+0xE0` clears carry constant bits 1 and 4, and the steps clear stops at bit 11. No register site sets bit 15 on a
   player's record either: the register bits are 0, 1, 2 and 4, plus bit 12 from the client and the packet. So
   "only word 9 clears bit 15" (0x00599293) and "bit 15 is set only on the game record" hold over all 378 sites and the
   12 steps clears. (fn:QUESTRECORD_ClearState@0x0065C3A0, 0x00599293, fn:QUESTRECORD_ClearSteps@0x0065C3E0)
-- **qd 19 remainder answered.** [I] No register site writes word 14, and no steps clear is on word 14. With S2c's
+- **qd 19 remainder answered.** [C] (raised at the review, as qd 10) No register site writes word 14, and no steps clear is on word 14. With S2c's
   constant result (no constant site clears word 14 bit 5 or sets word 14 bit 1), Duriel's bit 5 is never cleared and
   his bit 1 never set through the record functions. The only route outside them is the save loader. The constant
   word-14 sites are listed in the kept S2c output; they set bits 0, 2–11, 13, 14 and clear 3 and 4. A whole-record

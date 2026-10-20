@@ -196,6 +196,10 @@ SURVEYS = [
     # stacks, ItemTypes Repair and throwing flags, ItemStatCost Divide/Multiply/Add, affix and unique/set cost
     # columns, Npc multipliers, Hireling Gold, Skills cost mult/add, Books) (docs/tables/Weapons.md § Economy)
     Survey("economy", ["tools/economy_survey.py", "summary", "workspace/merged/data/global/excel"]),
+    # plan 0045 P0: the skill and missile dispatch columns (Skills srvstfunc/srvdofunc/srvprgfunc and the columns the
+    # start checks name, Missiles server do/hit/damage functions, motion, collision, damage and link columns, PetType),
+    # the function family sizes and the tier-A candidate rows (docs/tables/Missiles.md, Skills.md § Dispatch, PetType.md)
+    Survey("skills", ["tools/skills_survey.py", "summary", "workspace/merged/data/global/excel"]),
 ]
 
 # E9: Mermaid parser shipped with VS Code (no download); cache under the checkout's workspace/

@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/warps]
 consumed_by: [drlg/overview, drlg/warps, drlg/room-tiles, drlg/collision, monsters/spawn, objects]
 tags: {C: 180, I: 19, L: 2}
-updated: 2026-10-17
+updated: 2026-10-20
 ---
 
 # Outdoor generators: the cell grid, borders, placements and the act layouts
@@ -298,10 +298,17 @@ C5. OutVertsToCells(ring): every vertex ÷ 8 (signed);                [C] (fn:su
 - [C] `VertexMarkSeam(v, isPreset)` (`EAX` the vertex, one stack argument) is the only writer of these two bits here:
   `v.flags |= 1`, then `v.flags |= 2` when `isPreset` is non-zero; its caller is `VertexRingSeams`.
   (fn:sub_0067CE00_VertexMarkSeam@0x0067CE00, fn:sub_0067CE20_VertexRingSeams@0x0067CE20, run:2026-10-15-drlg-outdoor)
-- [I] A vertex merge in `OutVertsToCells` happened in no logged window, and in none of the 52 200 windows of the offline
-  scan (every outdoor level of the five acts, map seeds 1–600, three difficulties); whether stock data can reach it is
-  an open question. (fn:sub_00675080_OutVertsToCells@0x00675080, run:2026-10-16-sweep-mazes,
-  [drlg/0008 § Plan 0038 batch H5e](../../findings/drlg/0008-outdoor.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes))
+- [I] A vertex merge in `OutVertsToCells` happened in no logged window. It needs an adjacency overlap of exactly 8 tiles
+  along an edge, or a level size or neighbour origin off the 8-tile grid. **In Acts I, II, IV and V no layout the link
+  builder can give meets that condition**: `sweep_rbs4.py layouts` enumerates each of the builder's draws over the bits
+  it is masked with, a superset of the layouts any map seed gives, and finds 0 such seams on the three difficulties
+  (the smallest overlap is 24 tiles). The link model is confirmed by its run and the merge rule is a code reading, so this
+  bound is a reading too. **Act III is not covered**: its jungle layout takes ranged draws and restarts, so levels
+  76–83 keep the sample of the offline scan (0 of 52 200 windows over every outdoor level of the five acts, map seeds
+  1–600, three difficulties), and whether stock data reaches the merge there is an open question.
+  (fn:sub_00675080_OutVertsToCells@0x00675080, fn:sub_006772C0_LevelLinkBuild@0x006772C0, run:2026-10-16-sweep-mazes,
+  [drlg/0008 § H5e (a) layout bound](../../findings/drlg/0008-outdoor.md#h5e-reachability-a-the-layout-bound-2026-10-17-lanerbs4),
+  [§ Plan 0038 batch H5e](../../findings/drlg/0008-outdoor.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes))
 - [I] `LevelAdjInsert` compares against the head only while the list holds one node. No logged window tells this from a
   full compare: of the 177 modelled inserts, the 5 the quirk decides all meet a head on another side, and the ring reads
   the list's order only within a side. (fn:sub_0066B720_LevelAdjInsert@0x0066B720,
@@ -1775,12 +1782,15 @@ are the `Range(6 or 2)` and seven first uses. Blood Moor is 12 × 7 cells (its l
 - [L] **Branches no log reached**: a link-builder backtrack, a vertex merge (C5) and a waypoint pass with no free cell
   (F1). The prisons' fallback scan (L6), a failed road search (H6) and `BridgeFind` on the non-square Blood Moor (H2)
   were reached in run:2026-10-16-sweep-mazes. The vertex merge and the full waypoint pass were not met in 52 200
-  offline-scan windows either, and no static bound shows them unreachable: each has a scan condition in
+  offline-scan windows either; each has a scan condition in
   [drlg/0008 § H5e](../../findings/drlg/0008-outdoor.md#h5e-review-static-reachability-2026-10-17-lanerbs) ((a) an
   adjacency overlap of exactly 8 tiles or a rect off the 8-tile grid; (b) a level with no free interior cell at the
-  pass), so they stay shortfalls. Also the reads past a table that the stock tables never reach: a second side bit on
-  one jungle cell (J2e), a river-column `Def` above 15 (H3), and `LinkOutdoorFlags`' `B.dir[i + 1]` past link entry 14
-  (H0), where the code reads the next slot.
+  pass). For the vertex merge, the layout bound of
+  [drlg/0008 § H5e (a)](../../findings/drlg/0008-outdoor.md#h5e-reachability-a-the-layout-bound-2026-10-17-lanerbs4)
+  leaves no stock case in Acts I, II, IV and V (a reading, C5), so only its Act III half stays a shortfall, on the
+  600-seed sample; the full waypoint pass has no static bound and stays a shortfall. Also the reads past a table
+  that the stock tables never reach: a second side bit on one jungle cell (J2e), a river-column `Def` above 15 (H3),
+  and `LinkOutdoorFlags`' `B.dir[i + 1]` past link entry 14 (H0), where the code reads the next slot.
 - ~~Roads with 5 or 6 endpoints or an exhausted pool (H6)~~ answered in H6 from drlg/0008's H5e reachability reads (c)
   and (d): no stock case (at most 4 endpoints, at most 45 pool nodes against 900).
 - ~~The swapped cliff-cave scan on a non-square level (H2)~~ answered in H2 from drlg/0008's H5e reachability reads (e)

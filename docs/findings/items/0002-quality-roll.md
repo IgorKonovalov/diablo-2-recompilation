@@ -786,10 +786,10 @@ Phase 1, `lane/p49r`. No game run. The image tables and the stock rows are print
 ### (e) `MissileSpawnOwnedMonster` is the `bonewallmaker`'s server do-function
 
 - [I] `g_MissileSrvDoFuncs` (`0x0073C768`, 53 slots, entry 0 null) is indexed by the missile record's `pSrvDoFunc`.
-  The dispatch is `movsx eax, word [ebx+0xc]` then `call [eax*4+0x73c768]`, at 0x005ADC97–0x005ADCA7, in the function at
+  The dispatch is `movsx eax, word [ebx+0xc]`, `mov eax, [eax*4+0x73c768]`, then `call eax`, at 0x005ADC97–0x005ADCA7, in the function at
   `0x005ADBB0` (not named; a missile's server step by this dispatch). The Missiles loader's field descriptor puts `pCltDoFunc` at `+0x08`, `pCltHitFunc` at
   `+0x0A`, `pSrvDoFunc` at `+0x0C`, `pSrvHitFunc` at `+0x0E` and `pSrvDmgFunc` at `+0x10` (the stores
-  0x00661D97–0x00661E27). `0x0073C79C` is entry 13. (data:g_MissileSrvDoFuncs@0x0073C768; Missiles.txt has no table doc yet)
+  0x00661D97–0x00661E27). `0x0073C79C` is entry 13. (data:g_MissileSrvDoFuncs@0x0073C768, tbl:Missiles.txt:pSrvDoFunc; the offsets agree with [Missiles](../../tables/Missiles.md), documented by plan 0045 Phase 0)
 - [I] One Missiles row has `pSrvDoFunc` 13: row 207 `bonewallmaker`. That row is Skills row 78 *Bone Wall*'s
   `srvmissilea` (`srvdofunc` 60, `summon` `bonewall`). Each server step of the missile looks up its skill's record
   (a byte at its `+0xBE`, bounded by the count at DataTables `+0xBF0`) and spawns a wall piece with `SpawnOwnedMonster`. It then makes

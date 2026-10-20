@@ -1,6 +1,6 @@
 ---
 based_on:
-  - docs/specs/save/d2s.md 2026-10-17
+  - docs/specs/save/d2s.md 2026-10-20
   - docs/specs/player/creation.md 2026-10-17
   - docs/specs/hirelings/README.md 2026-10-19
 ---
@@ -169,8 +169,9 @@ This matters for anyone who wants a loaded game to behave like the original
 These three sections are blocks of bytes copied in and out, one per difficulty
 ([save/d2s § E](../specs/save/d2s.md#e-fixed-sections)). All of it is read from the code:
 
-- **Quests** (`Woo!`): three 96-byte blocks, one [quest record](../glossary.md) each. On load, in each of the 43
-  quest words of a block, a word whose bit 1 is set has bits 13 and 14 cleared and bit 15 set.
+- **Quests** (`Woo!`): three 96-byte blocks, one [quest record](../glossary.md) each, 48 words. On load, the first
+  42 words of a block have bits 13 and 14 cleared, and bit 15 set when bit 1 is set; the last six are copied as they
+  are. This load rule is the exception to the line above: it is confirmed in the game.
 - **Waypoints** (`WS`): three 24-byte blocks. Each starts with a marker, then one bit per waypoint for up to 112
   waypoints; the last 8 bytes are never written. On load, the first waypoint is always switched on.
 - **NPCs** (`01 77`): two 8-byte records per difficulty.
@@ -188,6 +189,9 @@ packet-beta
 The code saves the three blocks in index order, and block *d* is difficulty *d* (0 Normal, 1 Nightmare, 2 Hell) in
 all three sections; for the NPC blocks this comes from the code that reads them during a game. A new character's quest, waypoint and NPC sections are the same bytes for every new character
 of a game type ([player/creation § Outputs](../specs/player/creation.md#outputs)).
+
+What the quest bits mean, which events write them during a game, and how a waypoint bit gets set are on the
+[quests and travel](quests.md#the-quest-record) page ([quests/progression § A](../specs/quests/progression.md#a-the-quest-record)).
 
 ## Character stats and skills
 
@@ -430,4 +434,5 @@ extended item fields, the item clamps, and the less common property groups) are 
   [player/creation § Outputs](../specs/player/creation.md#outputs).
 - How a saved mercenary is rebuilt: [hirelings § H](../specs/hirelings/README.md#h-the-mercenary-from-a-save-d2s_readmercheader-merc_create).
 - How item stats are rolled before they are saved: the [items](items.md) page.
+- What the quest and waypoint records mean and which events write them: [quests and travel](quests.md).
 - Terms: the [glossary](../glossary.md).

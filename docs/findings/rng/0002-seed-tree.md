@@ -366,7 +366,9 @@ tag and the second source given here are the current ones.
   (422 functions) holds no drawing function (no LCG site, no call of a range or step primitive; 532 indirect calls in
   it, 359 through the import table). *Review note (2026-10-16):* of the other 173, 121 call a register last loaded from
   the import table in the same body; the 52 left all lie under the pool allocator 0x0040B430 (file and line
-  arguments, fatal on failure), which is passed no seed pointer. The closure is complete for direct calls and imports,
+  arguments, fatal on failure), which is passed no seed pointer. *Kept split (`lane/p49r` review, 2026-10-20):* the
+  tool's rule below gives 115 and 58 (0 unresolved), and that is the split the row cites; the 6 it moves to the residue
+  also lie under 0x0040B430. The closure is complete for direct calls and imports,
   and that residue is its stated limit. In the logs, all 876 type-1 and 3 552 type-2 rooms have the room seed
   `step(init(level.low))` and `+0x04` its low word, the dispatch running after that. (fn:sub_0067D6D0_OutRoomAlloc@0x0067D6D0,
   fn:sub_00666630_PresetRoomAlloc@0x00666630, run:2026-10-11-seed-tree)
@@ -385,7 +387,7 @@ tag and the second source given here are the current ones.
   initialiser. No log holds a client item (all 739 `CUNITPRE` are type 2), so this is the code's second reading only,
   by the S4b rule for RNG-walk claims. *Review note (2026-10-16):* the closure is the same 422 functions and 532
   indirect calls as row 3's: 359 through the import table, 121 through a register loaded from it, and the same 52
-  unresolved ones under the pool allocator 0x0040B430 (12 of them reached here first through the fatal paths 0x00681E09
+  unresolved ones (115 and 58 by the tool's rule, the kept split since the `lane/p49r` review) under the pool allocator 0x0040B430 (12 of them reached here first through the fatal paths 0x00681E09
   and 0x00408A60). None of these callers is passed a seed pointer. (fn:sub_00627C90_ItemDataAlloc@0x00627C90,
   fn:sub_00627DC0_ItemDataSeedInitOne@0x00627DC0)
 - *Tool addendum (2026-10-20, plan 0049 Phase 1, `lane/p49r`).* [I] `tools/sweep_s1b.py` (sha256 `b3b28bb1…`, see the
