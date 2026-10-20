@@ -339,3 +339,53 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   MonProp or MonUMod cell names it, so only a hostile player wounds a player. The case: player B, hostile, wearing an
   open-wounds item (tool-built, ADR-0013 § Neutral), hits player A; the stats logger's state and tick lines on A.
   ([plan 0047 log](0047-simulation-shortfalls.md#implementation-log), Phase 1 review, ruling 2)
+- **2026-10-20 — Phase 3 re-tag (spec-writer, `lane/p44s` from `main` `26d8978`), review requested.** Source:
+  [multiplayer/0001 § 6](../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients) as fixed by
+  the Phase 2 review, each raise checked against it and the run record; every raised statement cites
+  run:2026-10-20-two-clients. Front-matter `[C]` +28 over 11 specs (before → after):
+  - **items/tc** C 45 → 49, I 82 → 81: F1 the monster killer's owner (the mercenary, 33 + 3 calls); F3 a dead member not
+    counted; F2 `/players` on a TCP/IP host, the host's setting only, a dead player not in `PlayerCount`, and the
+    maximum rule with two live players; the reimplementation note on `/players` (types 2 and 3; type 1 stays `[I]`).
+    More than two players, the clamp at 8 and a member without a room stay `[I]`.
+  - **player/creation** C 81 → 85: the party bonus constant (89/256; the 6400 bound split out and kept `[I]`: no kill
+    inside it came within 800); J4 `[C]` for n = 2, with the member's input rewritten as
+    `trunc((f64) level_i × (f64) q_f32)` (the review's wording, the 98 separating inputs) and `q` as the
+    `fild`/`fidiv`/`fstp dword` the finding reads; the J2–J5 "not run" note narrowed.
+  - **items/quality** C 69 → 70: M2, the magic find is the killer's alone with a partied second player.
+  - **monsters/stats** C 105 → 106, I 57 → 58: C1, real players counted with one and two live players (16 / 44
+    creations; the 8 sampling-decided ones named); whether a dead player counts stays `[I]`, as the review scoped.
+  - **combat/reductions** C 38 → 40: P = 17 between two players for physical and lightning only (constants row and an A2
+    note); fire, cold, magic, poison, a hireling attacker and a defender in town stay open.
+  - **combat/to-hit** C 32 → 33: `BlockChance`'s "holds no shield → 0" cites the 66 pvp-1 events (review addition 2).
+  - **quests/travel** C 68 → 73, I 80 → 82: D1 and G3 the two gates with a declared stamp; G3 the hostile operator
+    refused before the gate; J2 widened to two clients; a new J3 for the declaration (pair stamp, `+0x160`, the repeat
+    refused) `[C]`, its town and level conditions, the portal close and the party leave `[I]` (code; the client's
+    outside-town refusal named), and the withdrawal `[I]` (one case).
+  - **quests/progression** C 114 → 116, I 320 → 321: word 1's Den party credit `[C]` for a partied member in the Rogue
+    Encampment (the act test and the unpartied case stay `[I]`); the Den-entry b4 on both records added as `[I]`.
+  - **stats/states** C 43 → 44, I 46 → 47: F3 the filter's player bits as an `[I]` reading (MP25 prediction), and
+    `0x10000` `[C]` for Might (16 / 17 / 28).
+  - **items/vendors** C 71 → 77, I 38 → 37: the TownPlayerRemove entry row; A2 the shared stock; C1 a built store kept
+    at the other player's open (the same player's reopen stays `[I]`) and the two-interactor stale case; C2 the leave
+    with and without a player left in town and Harrogath's missing case (the drop versus *Save and Exit* scope named);
+    C3 split, the MP11 branch kept `[I]`.
+  - **hirelings** C 94 → 95: one hire table per game with two players (Kashya).
+- **Open questions narrowed, 11** (none struck, so no `[L]` count changed): items/tc 2 (parties; `game.type` and
+  `/players`), items/quality 1, combat/reductions 1, combat/README 1, quests/travel 1 (the un-declare path),
+  quests/README 1 and its *Not covered* paragraph, stats/states 1, stats/README 1, items/vendors 1, hirelings 1.
+- **Not raised, as the review ruled:** MP12–MP14, MP17, MP18, MP21, MP27, MP28 (b, c), MP30, MP31, MP32, MP25's
+  offensive auras, MP20's attribution, MP16's inside edge, the dead player in the monster count, the Den-entry bit and
+  the withdrawal. Also not raised: **MP26** (the portal's party gate): the run record reaches it, but § 6 has no
+  bullet for it, so quests/travel's party test stays `[I]` (a point for the review). MP29 (the join) and MP11 stay
+  `[I]` as § 6 tags them.
+- **Overlap with plan 0038 Phase 3:** these raises cover 0038 inventory d-2c rows items/tc 43, 44, 46; items/vendors
+  1, 10, 13, 16, 17; hirelings 11; player/creation 6, 31 (the party half of 33 too). The inventory files were not
+  edited and no non-0044 row was re-tagged; 0038's ledger can mark them raised by plan 0044. quest-drops 6, 12, 36, tc
+  27's party half and sockets 22 are shortfalls (MP12–MP14, MP18) and stay.
+- **Wiki** (contradictions only, `based_on` bumped): combat (P = 17, the shieldless block, the open list), characters
+  (party share, the shared hire table), items (the party count, the open lists), items-other-paths (the vendor
+  multiplayer cases), monsters (real players), quests (party credit, hostility check, the real-time waits, the open
+  list), stats-and-states (the party aura); saves only the date. The process pages how-we-know and README said the
+  two-client run had not happened: reworded.
+- **Plan status:** with this phase accepted, every phase of plan 0044 is done; the shortfalls are routed out of the
+  plan (human and reverser entries of the Phase 2 review). The architect closes it at review.

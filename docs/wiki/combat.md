@@ -3,7 +3,7 @@ based_on:
   - docs/specs/combat/README.md 2026-10-20
   - docs/specs/combat/to-hit.md 2026-10-20
   - docs/specs/combat/damage.md 2026-10-20
-  - docs/specs/combat/reductions.md 2026-10-17
+  - docs/specs/combat/reductions.md 2026-10-20
   - docs/specs/combat/delivery.md 2026-10-20
 ---
 
@@ -142,7 +142,8 @@ flowchart TD
 **Shield block** is confirmed. For a player holding a shield the chance is the block stat plus the class's
 `BlockFactor`; in an expansion game that is multiplied by `(dexterity − 15)` and divided by `2 × level` (classic games
 skip this step); the result is capped at 75. A monster blocks with its block stat if it has a shield or its class
-allows blocking without one. The formula was checked in 2 523 expansion and 395 classic events, with 2 243 blocks.
+allows blocking without one. The formula was checked in 2 523 expansion and 395 classic events, with 2 243 blocks. A
+player holding no shield cannot block: 66 hits between two shieldless players in a two-client game all had chance 0.
 
 Two rules for a running player are confirmed:
 
@@ -252,9 +253,10 @@ What is confirmed:
 it is the difficulty's `HireableBossDamagePercent`: 50 in Normal, 35 in Nightmare and 25 in Hell are all confirmed.
 Hell's 25 is also what shows the game reads this column and not a neighbouring one that is 20 in Hell. When a prime
 evil hits a unit carrying a certain internal mark the percent is raised: 200 against a mercenary, confirmed over 154
-hits of Andariel on the mercenary. The other cases are read from the code only: 400 against a marked unit that is not
-a mercenary (what the mark means is not known), 17 % for player against player, and 25 % for a hireling hitting a
-hireling.
+hits of Andariel on the mercenary. A player hitting another player deals 17 %: confirmed in a two-client game for physical and lightning
+damage (230 hits between two hostile players), while the other damage types were not tried. The other cases are read
+from the code only: 400 against a marked unit that is not a mercenary (what the mark means is not known), 17 % from a
+hireling hitting a player, and 25 % for a hireling hitting a hireling.
 
 Read from the code only: pierce (no attacker had it), the half-freeze stat, and two states that cancel poison and
 burning lengths. That nothing on this path keeps a hit above zero is also read from the code. An "absorb damage"
@@ -369,7 +371,7 @@ From [overview § D](../specs/combat/README.md#d-branches):
 | a monster's attack values | classic Nightmare and Hell factors; expansion bonus per player | read from the code |
 | chill and freeze lengths on monsters | the difficulty's divisors | read from the code |
 | chance to hit, block, crushing blow, open wounds | no difficulty branch | read from the code |
-| player against player | 17 % damage | read from the code; needs a two-client run |
+| player against player | 17 % damage | confirmed for physical and lightning damage in a two-client run; the other types read from the code |
 
 "Players" for a monster always means the count it was created for, not the current `/players` setting; that is
 confirmed.
@@ -416,7 +418,8 @@ From the specs' open questions ([overview](../specs/combat/README.md#open-questi
   the resistance cap for cold, lightning and magic; magic immunity; a negative absorbed amount; evade, weapon block,
   dodge and avoid; pierce, flat absorb, conversion and freeze; a walking player's full block chance; a negative total
   leaving life unchanged; the floor of one point on the player's life tick. A later run may settle some of these.
-- **Player against player** and hostile auras need a run with two clients.
+- **Player against player** beyond physical and lightning damage (fire, cold, magic, poison, a defender standing in
+  town), and the hostile auras, need another two-client run.
 
 ## Where to read more
 

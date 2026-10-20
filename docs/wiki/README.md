@@ -72,8 +72,8 @@ research map yet.
 The plans still open are listed in the [plan index](../plans/README.md):
 - **0038**, a sweep that tries to confirm inferred claims with another run, a re-check of kept logs or a second code
   path; its batches are still running, and the specs are re-tagged cluster by cluster;
-- **0044**, the multiplayer branches: its code reading is reviewed, and the owner has confirmed that the game's
-  network port is closed to everything but the machine itself, so its two-client run waits only for two free slots;
+- **0044**, the multiplayer branches: its two-client run is reviewed, and the specs it raises are re-tagged (under
+  review);
 - **0045** and **0046**, skills and missiles (the machinery, then the function catalogue): approved 2026-10-20, with no
   spec yet;
 - **0047**, the simulation shortfalls (the named remainders of the combat, stats and travel runs), **0048**, seed to

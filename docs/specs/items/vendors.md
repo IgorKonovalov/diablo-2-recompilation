@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/quality, items/uniques-sets, items/affixes, items/properties, data/excel]
 consumed_by: [hirelings]
-tags: {C: 71, I: 38, L: 2}
-updated: 2026-10-19
+tags: {C: 77, I: 37, L: 2}
+updated: 2026-10-20
 ---
 
 # Vendor stock and gambling
@@ -61,7 +61,7 @@ flowchart TD
 | Item tables loaded: the 17 candidate lists, once per process | fn:VENDOR_BuildAllLists@0x00536F80 → fn:VENDOR_BuildList@0x00536D50, run:2026-10-15-vendors | [C] |
 | NPC menu packet: action 1 trade, 2 gamble, 3 hire | fn:NPC_MenuAction@0x00579D60 → fn:NPC_TradeOpen@0x00579430 → fn:NPC_OpenStore@0x00578B30, run:2026-10-15-vendors | [C] |
 | A player leaves a town level (level or act change) | fn:sub_00537340_TownLevelLeave@0x00537340 → fn:NPCSTORE_ActStale@0x00537230, run:2026-10-15-vendors | [C] |
-| A player leaves the game from a town of Acts I–IV | fn:sub_00537580_TownPlayerRemove@0x00537580 → fn:NPCSTORE_ActStale@0x00537230 | [I] |
+| A player leaves the game from a town of Acts I–IV | fn:sub_00537580_TownPlayerRemove@0x00537580 → fn:NPCSTORE_ActStale@0x00537230, run:2026-10-20-two-clients | [C] |
 | The gamble window closes (cancel packet) | fn:sub_00572F20_NpcInteractRemove@0x00572F20 → fn:sub_00537190_GambleInvFree@0x00537190, run:2026-10-15-vendors | [C] |
 | The player's interaction with the NPC ends | fn:sub_00555500_PlayerInteractEnd@0x00555500 → fn:sub_00536B50_NpcStorePlayerLeave@0x00536B50 | [I] |
 
@@ -161,6 +161,9 @@ Step notes:
   all 64 slots. **One stock per NPC class per game, shared by every player**; gambling keeps one inventory per player
   and NPC (§ H). (fn:NPCSTORE_FindRec@0x00535EA0, data:g_NpcStoreTable@0x00731184,
   [items/0009 § 1](../../findings/items/0009-vendors.md#1-store-records-and-the-store-seed-game-creation))
+- A2. [C] **The stock is shared with a second player**: in plan 0044's two-client run each store the host built was the
+  one the joiner's open of the same NPC found, with no second build (12 opens, C1). Scope: two players, the trade
+  stock; per-player gambling was not run with two players. (fn:NPCSTORE_FindRec@0x00535EA0, run:2026-10-20-two-clients)
 
 **`VENDOR_INDEX`** (NPC class → vendor index):
 
@@ -253,11 +256,18 @@ Step notes:
 - C1. [C] Every one of the 94 logged trade opens built: 81 first opens (`built` = 0), 6 opens after a reset and 7
   opens of a stale store by the sole interactor (`NPCSTORE_Reset`, then the build), each predicted from the record's
   state at the open. (run:2026-10-15-vendors, fn:NPCSTORE_Reset@0x00536D10)
-- C1. [I] An open of a built, non-stale store keeps the stock (opening the window again rebuilds nothing). No such
-  open happened in the run. (fn:NPC_TradeOpen@0x00579430)
+- C1. [C] **An open of a built, non-stale store keeps the stock.** In plan 0044's two-client run each store the host
+  built at its first open was kept, with no build, at the joiner's open of the same NPC (12 opens). Scope: the second
+  open by another player. (fn:NPCSTORE_FindRec@0x00535EA0, fn:NPC_TradeOpen@0x00579430, run:2026-10-20-two-clients,
+  [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients))
+- C1. [I] The same player opening the window again rebuilds nothing either. No such open happened in
+  run:2026-10-15-vendors. (fn:NPC_TradeOpen@0x00579430)
 - C1. [I] `sole` is computed by `NPC_MenuAction` before the call (0x00579E08) from the NPC's interaction list
-  (`MonsterData+0x30`). With two players interacting, a stale store is not rebuilt and keeps its stock; the run is
-  single player. (fn:sub_00572DA0_NpcInteractCount@0x00572DA0)
+  (`MonsterData+0x30`). (fn:sub_00572DA0_NpcInteractCount@0x00572DA0)
+- C1. [C] **With two players interacting, a stale store is not rebuilt and keeps its stock.** In the two-client run,
+  Akara's store, marked stale 266.5 s after its build by the joiner's town leave, was opened by the host while the
+  joiner was talking to her: `sole` 0, no reset and no build. Once the joiner's talk ended, the host's next open had
+  `sole` 1, a reset, then a build. (0x00579E08, fn:sub_00572DA0_NpcInteractCount@0x00572DA0, run:2026-10-20-two-clients)
 - C1. [I] For Asheara (252, a store and hirelings), the first trade open builds the stock first and the hireling list
   second, both on `S`. Opening her hire list first (action 3, `0x00576770`) builds the hirelings first.
   `HIRE_BuildStock` is a boundary oracle here (ADR-0004; the hireling generator is plan 0033): a reimplementation
@@ -282,14 +292,24 @@ Step notes:
   fn:sub_00536820_CountPlayersInLevelCb@0x00536820, fn:sub_0053AEC0_PlayerChangeLevel@0x0053AEC0,
   fn:sub_0053ACC0_PlayerChangeAct@0x0053ACC0, [items/0009 § Plan 0039 batch P1b](../../findings/items/0009-vendors.md#plan-0039-batch-p1b-2026-10-17))
 - C2. [I] `sub_00537580_TownPlayerRemove` (a player leaving the game) does the same with `count − 1 = 0`, for the
-  towns of Acts I–IV only: Harrogath (109) is missing from its switch, so leaving the game from Harrogath triggers
-  nothing. (fn:sub_00537580_TownPlayerRemove@0x00537580, 0x00537580–0x005375FB)
+  towns of Acts I–IV only: Harrogath (109) is missing from its switch. (fn:sub_00537580_TownPlayerRemove@0x00537580,
+  0x00537580–0x005375FB)
+- C2. [C] **A player leaving the game, with two players.** In the two-client run the joiner left from the Rogue
+  Encampment (a) with the host in town: `townEmpty` 0, and only Gheed's store (built 351.6 s earlier) was marked stale,
+  Akara's and Charsi's kept; (b) with the host in the Blood Moor: `townEmpty` 1, and the three built stores were reset.
+  A leave from Harrogath, in two sessions, called no `NPCSTORE_ActStale`. Scope: the leaves of (a) and (b) were
+  connection drops (the joiner's process stopped) and Harrogath's were *Save and Exit*; whether both paths take the same
+  removal call is not logged. (fn:sub_00537580_TownPlayerRemove@0x00537580, fn:NPCSTORE_ActStale@0x00537230,
+  0x005375FC, run:2026-10-20-two-clients, [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients))
 - C3. [C] The 240 000 ms test: the code compares `now` with `buildTick + 0x3A980` unsigned; in the run 7 stores were
   marked, at 252.5–375.7 s after their build, and none sooner. `buildTick` is written at the start of each build and
   by the stale mark. (0x0053730A, fn:NPCSTORE_ActStale@0x00537230, run:2026-10-15-vendors)
-- C3. [I] The stale branch with `townEmpty` 1 and someone still interacting, and the multiplayer case with players
-  left in town (stale only after 240 s, rebuilt at the next trade open by a sole interactor), were not reached.
-  (fn:NPCSTORE_ActStale@0x00537230)
+- C3. [C] The multiplayer case with a player left in town (stale only after 240 s, rebuilt at the next trade open by a
+  sole interactor) is C2's (a) and C1's two-player open. (fn:NPCSTORE_ActStale@0x00537230, run:2026-10-20-two-clients)
+- C3. [I] The stale branch with `townEmpty` 1 and someone still interacting: the run's one such leave (the joiner alone
+  in town with Akara's trade open, its connection dropped) logged the stale call before the interaction ended and no
+  reset, the branch with an interactor, but the logged record list was empty there, so the stale byte itself was not
+  seen. (fn:NPCSTORE_ActStale@0x00537230, run:2026-10-20-two-clients)
 - [I] **What rebuilds nothing.** Entering a town, a quest event, opening the window again and a level-up. A level-up
   (`0x00570880`) calls `sub_00536850_NpcStoreLevelUpNote`, which queues a note on each built store; the queue's
   consumer `sub_005368F0_NpcStorePendingDead` has no caller, nor does `sub_00579090_StockRebuildDead`. So the stock
@@ -798,8 +818,9 @@ on each of slots 0 and 1, 4 on each of the eight slots with one upgrade draw, an
 - ~~**Why an act change still counts the leaving player in the town** at `sub_00537340_TownLevelLeave`.~~ Answered:
   the call comes before the player leaves its town room (§ C, C2 notes;
   [items/0009 § Plan 0039 batch P1b](../../findings/items/0009-vendors.md#plan-0039-batch-p1b-2026-10-17)).
-- [L] **Multiplayer**: the shared stock, the sole-interactor test with two players, and the stale mark with players
-  left in town are code-read only (§ C).
+- [L] **Multiplayer**: the shared stock, the sole-interactor test and the stale mark with a player left in town are
+  § C's (run:2026-10-20-two-clients). Still open: the stale byte of the leave with a trade window open (C3), whether a
+  dropped connection and *Save and Exit* take the same removal call (C2), and more than two players.
 - ~~**The made-uniques set**: whether a gambled unique enters it as a dropped unique does.~~ Answered: yes, at the
   window's build (§ G).
 - [L] `NpcStoreRec` bytes `+0x24`..`+0x26`: the writers are read in [items/0009 § Plan 0039 batch P1b](../../findings/items/0009-vendors.md#plan-0039-batch-p1b-2026-10-17);

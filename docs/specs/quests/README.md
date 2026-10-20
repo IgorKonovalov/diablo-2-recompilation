@@ -28,8 +28,10 @@ below.
 | [travel.md](travel.md) | placement (`ActLevelSpot`, the level-point lookup, the free-cell search), waypoint activation and travel, act change through an NPC, the Durance and other travel portals, town portals (open, use, close), warps, resurrection and join placement, the real-time gates | reviewed |
 
 Not covered: the quest drops, rewards and item services ([items/quest-drops](../items/quest-drops.md)), the dialogue
-text and the quest log's presentation, the AI and combat that decide when a boss dies (inputs here), and every two-client
-case (party credit, the portal party and quest-word gates, hostility): [plan 0044](../../plans/0044-multiplayer-branches.md).
+text and the quest log's presentation, the AI and combat that decide when a boss dies (inputs here). The two-client
+cases are [plan 0044](../../plans/0044-multiplayer-branches.md)'s; its run reached the Den's party credit
+([progression § Word 1](progression.md#word-1-the-level-8-monster-region-and-the-hell-respec-offer-quest-object-1)),
+hostility and the two gates with a declared stamp ([travel § J](travel.md#j-operate-gates-and-real-time-gates)).
 
 ## Data flow
 
@@ -127,5 +129,6 @@ travel branch, the unreached level-entry rows and the Dark Wanderer's 7-try bran
 
 ## Open questions
 
-- [L] The two-client cases (party credit, the portal's party and quest-word gates, a non-zero travel stamp) are plan 0044's.
+- [L] The two-client cases not reached by run:2026-10-20-two-clients (plan 0044): party credit beyond the Den's partied
+  member in town, the portal's party and quest-word gates, and the un-declare path.
 - [L] The per-file open questions: [progression](progression.md#open-questions), [travel](travel.md#open-questions).

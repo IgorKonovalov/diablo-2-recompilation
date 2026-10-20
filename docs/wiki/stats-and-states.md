@@ -1,8 +1,8 @@
 ---
 based_on:
-  - docs/specs/stats/README.md 2026-10-17
+  - docs/specs/stats/README.md 2026-10-20
   - docs/specs/stats/aggregate.md 2026-10-17
-  - docs/specs/stats/states.md 2026-10-17
+  - docs/specs/stats/states.md 2026-10-20
 ---
 
 # Stats and states
@@ -375,7 +375,8 @@ From the specs' open questions ([overview](../specs/stats/README.md#open-questio
 - Two flags of `MonStats` that make a monster refuse timed states, the skill shrine's +2 skills, and seven `States`
   rows nothing was found to set.
 - **Skills** (Holy Shield, the timed armours and shouts, a damaging aura's hit) belong to the skills phase still to
-  come, and **party auras and hostile states** need a run with two clients.
+  come. A two-client game confirmed that a helping aura such as Might reaches another player only while the two share
+  a party; **offensive auras on a hostile player and hostile states** still need a run with two clients.
 
 ## Where to read more
 

@@ -2,11 +2,11 @@
 from: reverser
 to: spec-writer
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients
-  - ../findings/multiplayer/experiments.md#run2026-10-20-two-clients
-resolution: ""
+  - ../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients
+  - ../../findings/multiplayer/experiments.md#run2026-10-20-two-clients
+resolution: "Re-tagged on lane/p44s (2026-10-20): 11 specs, [C] +28, each raise citing run:2026-10-20-two-clients; the review's additions applied (J4 wording, the no-shield line, the PvP and monster scoping); entry in [plan 0044 log](../../plans/0044-multiplayer-branches.md#implementation-log)."
 ---
 
 For plan 0044 Phase 3, after the architect's review of Phase 2: re-tag the multiplayer statements that

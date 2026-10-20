@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/tc, data/excel]
 consumed_by: [items/tc, items/uniques-sets, items/affixes, items/vendors]
-tags: {C: 69, I: 39, L: 1}
+tags: {C: 70, I: 39, L: 1}
 updated: 2026-10-20
 ---
 
@@ -258,6 +258,11 @@ Step notes:
   nothing else is added for a player. Each session reproduces at its save's MF and at no other value of the
   scanned range (−150…400 and −20…100). [C] (fn:ITEMS_DropMagicFind@0x005585D0, run:2026-10-12-quality,
   run:2026-10-13-quality)
+- M2. **In a party, the magic find is the killer's alone.** In plan 0044's two-client run the joiner's 10 drops read
+  stat 80 = 0 while the partied host wore 472, and the host's 20 read 472; `quality.py` reproduced all 427 logged
+  rolls of the run from the logged magic find. Scope: two players, player killers. [C] (fn:ITEMS_DropMagicFind@0x005585D0,
+  run:2026-10-20-two-clients,
+  [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients))
 - M3. **A summon kill counts its owner's magic find.** For 85 kills by Raise Skeleton skeletons (monster class
   363, stat 80 = 0) `MonsterOwner` returned the Necromancer and the roll used 0 + 10; dropping the owner's 10
   breaks 27 of them. [C] (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, run:2026-10-13-quality)
@@ -657,7 +662,8 @@ that tell the two models apart. [C] (run:2026-10-12-quality)
   667 rolls and decides 138, and its place between magic find and the ratio word is settled
   ([items/0002 § Plan 0038 batch H2a](../../findings/items/0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20)). The
   unique test's minimum was reached by no roll; it is the same compare.
-- [L] **Not exercised:** Hell, negative magic find (including the `mf ≤ −100` bypass), multiplayer, the early
+- [L] **Not exercised:** Hell, negative magic find (including the `mf ≤ −100` bypass), more than two players (two
+  are M2's, run:2026-10-20-two-clients), the early
   returns A4–A5 (unique flag, `Magic` type with `quest`), code 0 and the fatal errors; in M3, a monster killer with no
   player owner (a plain monster, a minion, an owner gone) and an object or missile killer.
 - Note, not an open behaviour question (bookkeeping; this bullet is removed when the two backlog corrections

@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/vendors, monsters/pool, monsters/stats, data/strings, data/excel, save/d2s]
 consumed_by: [items/quality, monsters/pool, save/d2s]
-tags: {C: 94, I: 39, L: 6}
-updated: 2026-10-19
+tags: {C: 95, I: 39, L: 6}
+updated: 2026-10-20
 ---
 
 # Hirelings: the hire list, the hire, the mercenary's stats and its creation from a save
@@ -209,8 +209,12 @@ Step notes:
   the list, from the chained `S`, and the list opened after it showed the new table. Nothing else clears the table
   during a game. (fn:HIRE_RebuildIfEmpty@0x00577010, run:2026-10-16-hirelings)
 - C4. [I] It also runs after a free mercenary (§ K), not exercised. (fn:HIRE_GiveFreeMerc@0x00579180)
-- [I] The table lives in the game's NPC record, so all players of a game share it; only single-player games were
-  run. (fn:HIRE_SendList@0x00576770, struct:NpcRecord+0x10)
+- [I] The table lives in the game's NPC record, so all players of a game share it. (fn:HIRE_SendList@0x00576770,
+  struct:NpcRecord+0x10)
+- [C] **One list per game, with two players.** In plan 0044's two-client run Kashya's table was built once, at the
+  host's first open, and the joiner's open received the listed entries of that table with no second build. Scope: one
+  seller, two players. (fn:HIRE_SendList@0x00576770, run:2026-10-20-two-clients,
+  [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients))
 
 ### D. The stock build (`HIRE_BuildStock`)
 
@@ -704,7 +708,7 @@ on the in-game screen.
 - [L] **Not reached by a run** (each one inferred above): classic hire lists and hires, a Greiz hire, the free mercenary,
   refused hires (quest gates, gold), a hire of an unlisted entry, the build through
   `NPC_OpenStore`, a level-up in play (`MERC_AddExp`, and the input share of the owner's experience, not read), a dead
-  or empty header and a name past the range, the written header, multiplayer sharing of the table, the list window's
+  or empty header and a name past the range, the written header, a hire by a second player from the shared table, the list window's
   name 1057. Each needs a harness session; none changes the draw order of § D.
 - ~~**MonStatsInit leftovers**~~ answered in [§ I](#i-monster-class-and-the-monster-level): MonStatsInit B5 constants and the
   B10 MonStats skill, whose level is 1/4/8 by difficulty, not 1 as this entry said ([hirelings/0001 § Plan 0039 batch P1c](../../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17)).

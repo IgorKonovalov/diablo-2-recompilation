@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/properties, items/uniques-sets, player/creation, monsters/stats, data/calc, combat/overview]
 consumed_by: [combat/overview, player/creation, monsters/stats, data/calc, objects]
 tags: {C: 13, I: 4, L: 3}
-updated: 2026-10-17
+updated: 2026-10-20
 ---
 
 # Stats and states: how a unit's stats add up, and how timed states live and die
@@ -108,6 +108,7 @@ damage roll (phase 3's): 865 drawing runs, each exit asserted against the logged
 
 - [L] Phase (3): a skill's own effect, Holy Shield and the progressive skills, the timed self-states (armours,
   shouts), a damaging aura's hit, charged and item-granted skills.
-- [L] Two clients (plan 0044): party auras and hostile states.
+- [L] Two clients (plan 0044): offensive auras on a hostile player and hostile states; the party aura filter is
+  [states F3](states.md)'s (run:2026-10-20-two-clients).
 - [L] The named shortfalls of run:2026-10-17-stats (shrines and wells, an aura state's end, a different-state `group`
   clear) are listed in each file; an optional harness addendum is filed to the reverser.

@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, monsters/spawn, monsters/special, items/properties, data/excel]
 consumed_by: [items/tc, hirelings, combat/overview, combat/damage, stats/aggregate]
-tags: {C: 105, I: 57, L: 4}
-updated: 2026-10-17
+tags: {C: 106, I: 58, L: 4}
+updated: 2026-10-20
 ---
 
 # Monster stats: hit points, defence, experience, resistances, MonProp and the mod effects
@@ -302,6 +302,16 @@ C1. The bonus is **+50 % per player beyond the first**, for hit points and exper
 gain 350 %. [C] (data:g_PlayerHpPct@0x006E1590, data:g_PlayerXpPct@0x006E15B4, run:2026-10-15-mon-stats) `Align` 1 (town
 NPCs, critters, hirelings, player summons) and 2 (`cow`, `camel`) get no bonus and `players` 1. [I] (0x0057396C,
 tbl:MonStats.txt:Align)
+
+C1. **Real players count as `/players` does.** In plan 0044's two-client run (no `/players`), the 16 creations made while
+the joiner was in the game had `MonPlayerBonus` `[50, 50, 0, 0, 2]` (hpPct, xpPct, skillBonus, difficulty, players)
+and the 44 made before the join and after the leave `[0, 0, 0, 0, 1]`; `monstats.py` reproduced the run's 780 checks
+with the live players taken from the host's player lines. Scope: one and two live players; 8 of the 44 fell between a
+one-player and a two-player line, so the logger's sampling, not the count rule, decides those. [C]
+(fn:sub_00573930_MonPlayerBonus@0x00573930, run:2026-10-20-two-clients,
+[multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients))
+Whether a dead player counts here is not separated (no player died in that session); by the code it does not,
+through `PlayerCount` ([items/tc F2](../items/tc.md)). [I] (fn:sub_00535790_PlayerCount@0x00535790)
 
 C2. **The count is applied once, at creation. A live monster is never rescaled.** `PlayerCount` has two callers, this
 function and the TC drop code, and stat 100 keeps the creation count. The run changed `/players` 13 times in nine games

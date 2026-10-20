@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/collision, drlg/warps, objects, quests/progression, save/d2s]
 consumed_by: [quests/progression, monsters/spawn, objects]
-tags: {C: 68, I: 80, L: 4}
+tags: {C: 73, I: 82, L: 4}
 updated: 2026-10-20
 ---
 
@@ -68,8 +68,8 @@ events (quest words written, quest gates) is [quests/progression](progression.md
 
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
-| waypoint travel wait | 10 000 ms after the stamp | 0x0054C60F | [C] (run:2026-10-17-quests, one client) |
-| portal use wait | 5000 ms after the stamp | 0x005848CD | [C] (run:2026-10-17-quests, one client) |
+| waypoint travel wait | 10 000 ms after the stamp | 0x0054C60F | [C] (run:2026-10-17-quests, one client; run:2026-10-20-two-clients, a declared stamp) |
+| portal use wait | 5000 ms after the stamp | 0x005848CD | [C] (run:2026-10-17-quests, one client; run:2026-10-20-two-clients, a declared stamp) |
 | placement mask, radius, step | `0x1C09`, 50, 1 | fn:sub_0061B060_ActLevelSpot@0x0061B060 | [I] |
 | act-change second search | mask `0x1C89`, radius 50, step 5 | fn:sub_0053ACC0_PlayerChangeAct@0x0053ACC0 | [I] |
 | portal field end search | size 3, masks `0x3E01`/`0xC01`, no fallback | fn:sub_0056D130_PortalObjectCreate@0x0056D130 | [I] |
@@ -86,7 +86,7 @@ events (quest words written, quest gates) is [quests/progression](progression.md
 | the collision grid around a search | input (logged) | [drlg/collision](../drlg/collision.md)'s grid; the search reads it | [C] (run:2026-10-17-quests: 545 searches) |
 | a level or act built on first arrival, a room activated by the lookup | DRLG oracle | its draws are [drlg](../drlg/README.md)'s and [drlg/collision § I](../drlg/collision.md#i-nearwarptestgame-room-x-y-and-its-side-effects)'s | [I] (fn:sub_0053AC70_ActCreate@0x0053AC70, fn:sub_0066B2B0_LevelPointFind@0x0066B2B0) |
 | the town room's population when a portal's town end first updates it | boundary oracle (ADR-0004) | game-seed draws between the two portal creations | [C] (run:2026-10-17-quests: 41 draws in 9 opens) |
-| party membership, hostility, a second player's portal | input | two-client cases, [plan 0044](../../plans/0044-multiplayer-branches.md) | [I] (fn:OBJOP_Portal@0x00584870) |
+| party membership, hostility, a second player's portal | input | two-client cases, [plan 0044](../../plans/0044-multiplayer-branches.md) | [C] for hostility (run:2026-10-20-two-clients); [I] for the party and quest-word tests (fn:OBJOP_Portal@0x00584870) |
 
 ## Algorithm
 
@@ -309,6 +309,9 @@ Step notes:
 - D1. [C] With one client the stamp is 0 in every read and the gate passes when `stamp + 10000 ≤ GetTickCount()`
   (unsigned): 61 gate reads in run 1, 47 in run 2. A non-zero stamp needs a hostility declaration, a two-client case.
   (fn:sub_0054C5D0_Pkt49WaypointTravel@0x0054C5D0 0x0054C60F, run:2026-10-17-quests, run:2026-10-18-quests2)
+- D1. [C] **With a declared stamp** the gate compares against `stamp + 10000` on every logged compare (4 of 4): the
+  declarer's waypoint travel was refused 4.4 s after its declaration and passed 33 s after. (0x0054C60F,
+  run:2026-10-20-two-clients, [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients))
 - D3. [C] Waypoint travel reads no quest word and draws nothing but the destination's level seed of § A: the game, quest
   and player seeds were unchanged across 108 travels (61 + 47). (fn:sub_00584F60_WaypointTravel@0x00584F60,
   run:2026-10-17-quests, run:2026-10-18-quests2)
@@ -536,7 +539,13 @@ Step notes:
   room activated by the arrival is an oracle. (fn:OBJOP_Portal@0x00584870, run:2026-10-17-quests)
 - G3. [C] With one client the 5000 ms gate passes on every read: stamp 0, `stamp + 5000 ≤ GetTickCount()` (unsigned),
   122 reads. (fn:OBJOP_Portal@0x00584870 0x005848CD, run:2026-10-17-quests)
-- G3. [I] The hostility, party and quest-word tests need a second player ([plan 0044](../../plans/0044-multiplayer-branches.md)).
+- G3. [C] **With a declared stamp** the gate compares against `stamp + 5000` on every logged compare (4 of 4): a
+  portal use 2.4 s after a declaration and withdrawal was refused, and uses at 62 s and 84 s passed. (0x005848CD,
+  run:2026-10-20-two-clients)
+- G3. [C] **A hostile operator is refused on another player's portal before the gate**: the hostile joiner's click on
+  the host's portal was refused with no gate compare, while the hostile host's use of its own portal went on to the
+  gate. (0x0058488F, 0x00535B10–0x00535B44, run:2026-10-20-two-clients)
+- G3. [I] The party and quest-word tests need a second player ([plan 0044](../../plans/0044-multiplayer-branches.md)).
   The stock `QuestFlag`/`QuestFlagEx` values: level 39 26 / 40; 46 and 66–73 13; 50–54 and 74 11; 100–102 21;
   128–132 39. The owner, and anyone using the owner's own end, is not tested. (fn:OBJOP_Portal@0x00584870 0x005849BB–0x00584A20,
   tbl:Levels.txt:QuestFlag, tbl:Levels.txt:QuestFlagEx)
@@ -622,11 +631,27 @@ I2. PlayerPlaceInAct(player, given = 0):                              [C] (fn:su
   item (except class 267), and never operates classes 121, 122 and 22; it fetches the object-region seed before calling
   the handler. (fn:OBJ_OperateDispatch@0x00584420)
 - J2. [C] Both real-time gates (waypoint travel, 10 000 ms; portal use, 5000 ms) read `GetTickCount` against the
-  operator's own player data `+0x160` (`PlayerTickGet(player, 0)`), for one client. (fn:sub_0055B6C0_PlayerTickGet@0x0055B6C0,
-  0x0054C5F5, 0x005848BA, run:2026-10-17-quests)
+  operator's own player data `+0x160` (`PlayerTickGet(player, 0)`), with one client (stamp 0) and with a stamp a
+  declaration wrote (two clients). (fn:sub_0055B6C0_PlayerTickGet@0x0055B6C0, 0x0054C5F5, 0x005848BA,
+  run:2026-10-17-quests, run:2026-10-20-two-clients)
 - J2. [I] The stamp is written only by `PlayerTickSet`, whose one caller is the hostility declaration `0x005A5E50`
   ([multiplayer/0001 § 4](../../findings/multiplayer/0001-cases.md#4-the-hostility-declaration-and-the-two-travel-gates));
   no portal is exempt, the operator's own included. (fn:sub_0055B720_PlayerTickSet@0x0055B720)
+- J3. [C] **The hostility declaration** (`0x005A5E50`, hostile = 1) writes the pair's stamp `now + 60000` and the
+  declarer's `+0x160` ← `now`, and refuses a second declaration while the pair's stamp is ahead: in the two-client run
+  both declarations wrote both stamps as predicted (2 of 2), and one made 50 s after the first was refused with the
+  stamp 9.3 s ahead and no new stamp written. The community lead's single 10 s delay holds for waypoints and is
+  contradicted for portals (5 s, G3). (0x005A5F20, 0x005A5F47, run:2026-10-20-two-clients,
+  [multiplayer/0001 § 4, § 6](../../findings/multiplayer/0001-cases.md#4-the-hostility-declaration-and-the-two-travel-gates))
+- J3. [I] Its other conditions and effects are read from the code: the declarer must stand in a town, and both
+  players' base level (stat 12) must be 9 or more; toward a player not yet hostile the other's full level must be 9 or
+  more too; it closes the declarer's portal pair (G4 d) and leaves the party when both share one. The stock client
+  sends no declaration outside town ("Must be toggled in town."), so the server's town test is not reached with it, and
+  the level-below-9 case was not run. (0x005A5E5F–0x005A5E9D, 0x005A5EE4–0x005A5EFF, 0x005A5F0F–0x005A5F96,
+  run:2026-10-20-two-clients)
+- J3. [I] **The withdrawal** (hostile = 0, 0x005A5FA4) left the declarer's `+0x160` unchanged in the one case run, so
+  the 5 s portal gate still runs from the declaration after a withdrawal; that path's code is not read. (0x005A5FA4,
+  run:2026-10-20-two-clients)
 
 ### Draws by event kind
 
@@ -702,10 +727,12 @@ manifest, and checked by `tools/quests.py check` with 0 mismatches.
   run 3),
   [quests/0001](../../findings/quests/0001-progression.md) (the quest gates and objects), [drlg/0005 § 9](../../findings/drlg/0005-collision.md#9-nearwarptestgame-room-x-y-and-the-warp-points)
   (the type-11 lookup), [multiplayer/0001 § 4](../../findings/multiplayer/0001-cases.md#4-the-hostility-declaration-and-the-two-travel-gates)
-  (the stamp), [objects/0001](../../findings/objects/0001-object-population.md) (`UNIT_AnimInit`).
+  (the stamp) and [§ 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients) (the
+  two-client run), [objects/0001](../../findings/objects/0001-object-population.md) (`UNIT_AnimInit`).
 - Runs: [run:2026-10-17-quests](../../findings/quests/experiments.md#run2026-10-17-quests),
   [run:2026-10-18-quests2](../../findings/quests/experiments.md#run2026-10-18-quests2),
-  [run:2026-10-19-quests3](../../findings/quests/experiments.md#run2026-10-19-quests3).
+  [run:2026-10-19-quests3](../../findings/quests/experiments.md#run2026-10-19-quests3),
+  [run:2026-10-20-two-clients](../../findings/multiplayer/experiments.md#run2026-10-20-two-clients).
 - Tables: [Levels § Travel](../../tables/Levels.md#travel-plan-0042-phase-0), [Objects § Waypoints and
   portals](../../tables/Objects.md#waypoints-and-portals-plan-0042-phase-0), [Misc](../../tables/Misc.md),
   [LvlWarp](../../tables/LvlWarp.md).
@@ -719,5 +746,5 @@ manifest, and checked by `tools/quests.py check` with 0 mismatches.
   ([quests/0002 § Open questions](../../findings/quests/0002-travel.md#open-questions))
 - [L] The exact distance metrics of the operate (`0x00641530` below 51, `0x00623660`) and of the warp click (below 5).
 - [L] The `Levels.Portal` column has no server reader found; `Levels.Teleport` is the skill's.
-- [L] The un-declare path of the hostility toggle (`0x005A5E50`, hostile = 0) and its effect on the stamp; multiplayer,
-  plan 0044.
+- [L] The un-declare path of the hostility toggle (`0x005A5E50`, hostile = 0): its code is not read. Narrowed by
+  run:2026-10-20-two-clients: one withdrawal left the stamp unchanged (J3).
