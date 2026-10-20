@@ -106,10 +106,13 @@ def check_xpshare(paths, verbose):
         snap = None
         open_k = None
 
-        def close(k):
+        def close(k, eof=False):
             if k is None:
                 return
             S["kills (XK0)"] += 1
+            if eof and not k["xc"]:
+                S["  not predicted: cut off by the end of the log (the session stopped)"] += 1
+                return
             if k["skip"]:
                 S["  not predicted: %s" % k["skip"]] += 1
                 return
@@ -201,7 +204,7 @@ def check_xpshare(paths, verbose):
                 continue
             if tag == "XC0" and open_k is not None and d.get("th") == open_k["th"]:
                 open_k["xc"].append(d)
-        close(open_k)
+        close(open_k, eof=True)
     for b in bad[:30]:
         print("MISMATCH " + b)
     print("SURVEY mp_check xpshare logs=%d %s mismatches=%d" % (
