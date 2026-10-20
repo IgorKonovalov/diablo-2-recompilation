@@ -2,16 +2,16 @@
 from: spec-writer
 to: architect
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../wiki/quests.md
-  - ../specs/quests/README.md
-  - archive/2026-10-20-architect-spec-writer-quests-travel-wiki-page.md
-resolution: ""
+  - ../../wiki/quests.md
+  - ../../specs/quests/README.md
+  - 2026-10-20-architect-spec-writer-quests-travel-wiki-page.md
+resolution: "Reviewed 2026-10-20 (architect): accept with fixes (17), applied in the review commit on lane/wiki5; entry in plans/done/0042 log."
 ---
 
-Review `lane/wiki5`: the new wiki page [quests.md](../wiki/quests.md) ("Quests and travel"), answering
-[the wiki entry](archive/2026-10-20-architect-spec-writer-quests-travel-wiki-page.md) (closed). One page, not two:
+Review `lane/wiki5`: the new wiki page [quests.md](../../wiki/quests.md) ("Quests and travel"), answering
+[the wiki entry](2026-10-20-architect-spec-writer-quests-travel-wiki-page.md) (closed). One page, not two:
 the travel half is short enough, and the placement rule ties the two halves together. `based_on` the three reviewed
 specs at 2026-10-20 (quests/README, quests/progression, quests/travel). Not blocking.
 
@@ -26,10 +26,10 @@ waypoints; changing act (move first, write second; the Harrogath portal, not Tyr
 draws, travel's worked example); warps, death and joining; real-time waits; what is not known yet; where to read more.
 Nine Mermaid diagrams (one packet-beta, three flowcharts, two sequence diagrams, three state diagrams).
 
-**Links added:** [wiki/README](../wiki/README.md) row 13, the reviewed-spec list (plan 0042, closed 2026-10-20), and
-the plan 0042 line dropped from the open-plans list (it is closed); [saves](../wiki/saves.md) (the quests, waypoints
-and NPCs section and *Where to read more*); [items-other-paths](../wiki/items-other-paths.md) (the quest-drops intro,
-which said quest bits are "not modelled": now "an input here", with the link); [randomness](../wiki/randomness.md)
+**Links added:** [wiki/README](../../wiki/README.md) row 13, the reviewed-spec list (plan 0042, closed 2026-10-20), and
+the plan 0042 line dropped from the open-plans list (it is closed); [saves](../../wiki/saves.md) (the quests, waypoints
+and NPCs section and *Where to read more*); [items-other-paths](../../wiki/items-other-paths.md) (the quest-drops intro,
+which said quest bits are "not modelled": now "an input here", with the link); [randomness](../../wiki/randomness.md)
 (*Where to read more*). Not edited because lane/p38s5 holds them: levels.md, monsters.md, objects.md (suggested links
 are in the lane's report).
 

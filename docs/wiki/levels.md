@@ -682,4 +682,6 @@ section.
 - The [glossary](../glossary.md) for every term linked above.
 - Related wiki pages: [randomness](randomness.md) (the seed tree behind the level and room seeds),
   [monsters](monsters.md) (the population pass that uses the logic boxes and the collision grid),
-  [objects](objects.md) (how preset and random objects are created) and [how we know](how-we-know.md).
+  [objects](objects.md) (how preset and random objects are created), [quests and travel](quests.md#warps-death-and-joining)
+  (where a player lands after a warp, a waypoint or a portal, and the quest gates on five warps) and
+  [how we know](how-we-know.md).

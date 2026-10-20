@@ -27,7 +27,8 @@ read from the code, and so does this page: where a step was not met in a run, th
 The game keeps two kinds of quest state: one record per player and difficulty, loaded from the save and written back
 at *Save and Exit*, and one game-wide record that lives only as long as the game
 ([overview § Data flow](../specs/quests/README.md#data-flow)). Events reach the quest scripts, the scripts write both
-records, and the game-wide record is read by the code that builds objects and monsters and by the warp gates.
+records, and the game-wide record and the scripts' own state are read by the code that builds objects and monsters and
+by the warp gates.
 
 ```mermaid
 flowchart TD
@@ -40,7 +41,7 @@ flowchart TD
   qobj --> rec
   qobj --> grec["the game record"]
   grec --> readers["object set-up, the spawn gate, warp gates"]
-  click["waypoint, NPC menu, scroll, warp, resurrect, join"] --> place["one placement routine"]
+  click["waypoint, NPC menu, scroll, resurrect, join"] --> place["one placement routine"]
   place --> lseed["a step of the level seed on some levels"]
   place --> e3["a level-change event"]
   e3 --> qobj
@@ -49,7 +50,7 @@ flowchart TD
 
 The confirmed core, from the overview's shared model: the record's load rule, the fixed order in which events reach
 the quests, the first join's treatment of the game creator's history, the quest-seed draws the runs reached, and the one
-placement routine every arrival the runs logged went through
+placement routine that the logged waypoint, NPC and join arrivals and the town portals' town ends went through
 ([overview § Shared model](../specs/quests/README.md#shared-model)).
 
 ## The quest record
@@ -88,7 +89,7 @@ entry opened, and the loader's handling of bits 13, 14 and 15.
 **The load rule** is confirmed. For the first 42 words of a saved record, the loader clears bits 13 and 14 (they only
 mean something inside one game) and sets bit 15 wherever bit 1 is set; the last six words are copied as they are.
 Nothing ever clears bit 15 except one first-join check of the Radament quest's word, so a character that saved with a
-reward pending carries bit 15 from then on. *Save and Exit* writes each record as it stands: the runs checked the saved
+reward pending carries bit 15 from then on; that is read from the code. *Save and Exit* writes each record as it stands: the runs checked the saved
 words against the loaded record plus every write logged during play, 2 304 word checks with no mismatch.
 
 Some words belong to no quest script: words 7, 15, 23 and 28 are the act-travel words (below), word 41 is the Hell
@@ -120,8 +121,8 @@ The order is fixed and confirmed: an event runs through the scripts from the las
 down to the first (Warriv's), so later acts hear an event first. Talk, message and level-change events are **forced**:
 they reach every script with a slot for them, even one that has been switched off for this game. The runs logged 503
 such dispatches and 8 203 calls. The other half, an unforced event skipping a switched-off script, was not logged and
-is read from the code; so is the list of special deaths that are forced too (Diablo, Baal and a fixed set of
-superuniques among them).
+is read from the code; so is the list of special deaths that are forced too (four monster classes, Diablo's among them,
+and a fixed set of superuniques).
 
 ```mermaid
 flowchart TD
@@ -232,7 +233,8 @@ the code.
 "Cain lost" is confirmed for one client: the first arrival in Lut Gholein from Act I with word 4 still empty marks the
 game record and gives the player bit 14. Akara's reward talk is confirmed. The stone and Gibbet credits, Cain's rescue
 spawn, the Tristram portal that reappears in later games, and the Cow King bit (set on his death only for a killer who
-has beaten Diablo in a classic game or Baal in an expansion game) are read from the code.
+has beaten Diablo in a classic game or Baal in an expansion game, and for the players then in the cow level) are read
+from the code.
 
 ### The eclipse (word 11)
 
@@ -278,8 +280,7 @@ code. Anya's reward talk is confirmed in all three difficulties: the reward item
 the entries for the player's class in that difficulty's table, then bits 9 and 10 are set (and bits 0 and 1 settle when
 this talk comes second); a second talk gives nothing. Reading the scroll sets bit 7, confirmed for the branch reached.
 That each difficulty whose word has bit 7 adds 10 to all four resistances, so +10, +20 or +30, is read from the code.
-So is the table choice when the game is of the third network type, which the run did not separate from the
-character-level rule.
+So is the table choice in a game of type 3, which the run did not separate from the character-level rule.
 
 ### The Dark Wanderer (word 32)
 
@@ -314,8 +315,8 @@ that a quest creates draw on their own seeds.
 
 The spec's first worked example: in one session the game seed at creation steps once, so the quest seed starts at
 `41772032:0000029a`. The first talk to NPC 331 steps it to `fd73e914:1b4e1a7c`, and the line is that low half modulo 3,
-plus 8: line 8. The second talk steps on to `e613b6e0:69b6957c`: line 9. In the confirmed runs, 44 talks chained like
-this, each talk's exit seed the next talk's entry.
+plus 8: line 8. The second talk steps on to `e613b6e0:69b6957c`: line 9. The runs logged 44 such talks, one step each;
+in all 42 pairs of consecutive talks, each talk's exit seed was the next talk's entry.
 
 ## What quest state opens and closes
 
@@ -341,7 +342,7 @@ spawn gate is the one in Diablo's story above; the cow portal reads the Diablo o
 
 ## Where a player lands
 
-Every arrival goes through one placement routine
+Arrivals by waypoint, NPC, resurrection and join, and a town portal's town end, go through one placement routine
 ([travel § A](../specs/quests/travel.md#a-placement), [§ B](../specs/quests/travel.md#b-the-free-cell-search)): look up a
 point in the destination level, turn its tile into the subtile at the tile's centre (five subtiles per tile, plus 3), then
 take the nearest free cell around it. This is confirmed over 124 placements (waypoints, NPC act changes and joins).
@@ -353,7 +354,7 @@ flowchart TD
   p -->|"yes, another type"| n{"how many points of that type?"}
   n -->|"none"| p0["the first point, no draw"]
   n -->|"one or more"| d["one step of the level seed picks one"]
-  p -->|"no"| f["the waypoint room, else an entry-warp room, else the middle room"]
+  p -->|"no"| f["the waypoint room, else an entry-warp room, else the middle room, else a random room"]
   wr --> sub["centre of the tile"]
   p0 --> sub
   d --> sub
@@ -363,7 +364,7 @@ flowchart TD
 
 The point is where the seed comes in. On the 18 levels whose `Position` column is set (all five towns among them; see
 the glossary's [Position level](../glossary.md)), an arrival of any point type other than "waypoint" takes **one step
-of that level's seed** to choose among the matching points. A waypoint arrival into a town draws nothing (28 confirmed),
+of that level's seed** to choose among the matching points. A waypoint arrival into a town, the Canyon of the Magi or the Arcane Sanctuary draws nothing (28 confirmed),
 point types 0 and 11 (used by joins, resurrections and NPC trips, and by a town portal's partner) step the seed once
 when a point matches (356 lookups, chained from one to the next), and Meshif's westward return to Lut Gholein steps it
 too, while the same kind of arrival in Harrogath, which has no point of that kind, takes the first point with no draw. On other levels the lookup draws nothing (1 958 confirmed); its
@@ -377,7 +378,7 @@ cell by the sum of the horizontal and vertical distances; the ring order beyond 
 A waypoint is **activated by operating it**, not by walking near it
 ([travel § C](../specs/quests/travel.md#c-waypoint-activation)). Every operate sets the player's bit for that waypoint
 first. A waypoint that is already lit opens the menu and draws on no seed: confirmed for 108 operates, all on waypoints
-already lit. A waypoint that has not yet been lit by anyone starts its animation on the first operate, and only the
+already in their final mode (the one a town waypoint is built in). A waypoint that has not yet been lit by anyone starts its animation on the first operate, and only the
 next operate opens the menu; no unlit waypoint was operated in the runs, so this is read from the code. Five waypoint
 object rows take a draw on the object's own seed when their animation changes; the other eleven never do (read from
 the code).
@@ -421,15 +422,16 @@ sequenceDiagram
   C->>N: "act loaded": the block lifted
 ```
 
-The trips back by boat (Meshif to Lut Gholein, the Act I return) use the same placement; Meshif's steps Lut
+The trips back (Meshif's sail west to Lut Gholein, Warriv's return to Act I) use the same placement; Meshif's steps Lut
 Gholein's level seed once per trip and the Act I return draws nothing (confirmed). Warriv's, Meshif's and Tyrael's
 boss-word tests were not run on their refusing side.
 
 **Act IV to Act V goes through the Harrogath portal**, not Tyrael's menu
 ([travel § F](../specs/quests/travel.md#f-the-durance-portal-and-the-other-travel-objects)). In five confirmed trips the
 portal Tyrael creates moved the player to Harrogath with no draw, and wrote the act-travel word on the first trip only.
-Tyrael's own menu has a travel branch in the code, but in the state the run reached his menu offered only *talk* and
-*cancel*; that no stock state offers his travel line comes from a screenshot of the client and is read, not
+Tyrael's own menu has a travel branch in the code, and in the state the run reached the server never took it (confirmed).
+A screenshot of the client in that state shows his menu with only *talk* and *cancel*; but a screenshot is not a reading
+of the client's menu code, so the menu's lines, and that no stock state offers his travel line, are read, not
 confirmed. The Durance portal to Act IV, Duriel's lair portal, the Arcane Sanctuary portal and Baal's portals are read
 from the code.
 
@@ -466,15 +468,15 @@ takes the game seed to `d6fbed07:33fa3ebe`. The session's next portal found the 
 left it.
 
 **Using a portal** ([using a portal](../specs/quests/travel.md#using-a-portal)) draws on no seed of its own (122 uses
-confirmed). Going in from a town raises the level-change event. When the owner goes back through the town end, both
-ends are freed. With one player, the hostility, party and quest checks for using someone else's portal never come into
+confirmed). Going in from a town raises the level-change event, and when the owner goes back through the town end both
+ends are freed; those two are read from the code. With one player, the hostility, party and quest checks for using someone else's portal never come into
 play; they are read from the code and belong to the two-player work.
 
 A pair is closed when the owner goes back through the town end, opens a new one, leaves, declares hostility, or when
 the Ancients' altar closes every portal on the summit ([closing](../specs/quests/travel.md#closing-and-permanent-portals)).
 The runs saw a new pair after the owner used the town end, consistent with that; the rest is read from the code. The
 permanent portals (Tristram, the cow level, the Arcane Sanctuary, Duriel's lair, Nihlathak's and the Act V side
-levels) are never closed this way. See the glossary's [town portal pair](../glossary.md).
+levels) are never closed this way, also read from the code. See the glossary's [town portal pair](../glossary.md).
 
 ## Warps, death and joining
 
@@ -494,8 +496,8 @@ put was not separated in the runs.
 
 Two travel gates count real milliseconds, not game frames
 ([travel § J](../specs/quests/travel.md#j-operate-gates-and-real-time-gates)): waypoint travel waits 10 seconds and a
-portal use 5 seconds after a time stamp. The stamp is written only when a player declares hostility, so with one
-player it stays 0 and both gates always pass (confirmed for one client). While the act-change block is set, or the
+portal use 5 seconds after a time stamp. The stamp is written only when a player declares hostility (read from the code); with one
+player it stayed 0 and both gates always passed (confirmed for one client). While the act-change block is set, or the
 player is talking to an NPC or holds an item on the cursor, no object can be operated; that is read from the code.
 
 ## What is not known yet

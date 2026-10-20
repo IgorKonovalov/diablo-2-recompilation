@@ -761,3 +761,23 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (optional, shares plan 0038's d-owner sessions); the archivist's recipe entries stay open; a wiki page for quests and
   travel is filed to the spec-writer (architect review-fixes 8). Backlog closed: the review request and the part 3 run
   entry.
+- **2026-10-20 — Review: the quests and travel wiki page (architect, `lane/wiki5` at `a7fd4a3`, `main` merged at
+  `0adbb2e`).** **Verdict: accept with fixes (17).** Read: `docs/wiki/quests.md` whole against the three reviewed specs
+  (overview, progression § A–G, the word sections 1, 4, 11, 22, 26, 32, 37 and 41, the gates, worked examples 1 and 3;
+  travel whole), the four link edits, the nine diagrams against the text. `based_on` names the three specs at
+  2026-10-20; every `##` but the index sections links its spec section. On the request's points: (1) the hedges hold for
+  most `[I]` steps, but four code readings were stated flat; (2) the NPC names are the specs' labels, fine; (3) the
+  open-plans list is fixed here. **Fixes (overclaim 8, misread 5, miscount 1, omission 1, stale cross-reference 1,
+  other 1):** "every arrival" goes through the placement routine (twice, the big picture and *Where a player lands*;
+  warps take the paired warp, so the big-picture diagram drops "warp" from the placement input) scoped to the waypoint,
+  NPC, resurrection and join arrivals and the town ends; bit 15's "carried from then on", the portal use's event 3 and
+  both-ends free, the permanent portals and "the stamp is written only at hostility" said read from the code; the forced
+  deaths named Baal, which the spec does not (now "four monster classes, Diablo's among them"); Tyrael's menu reworded to
+  the p42s ruling (the server never took the branch, confirmed; the menu's lines rest on a screenshot and are read, not
+  confirmed); the Cow King's bit also goes to the players in the cow level; the 108 waypoint operates were on mode-2
+  waypoints, not "already lit"; the 28 type-13 arrivals include levels 46 and 74; Warriv's return is not "by boat"; the
+  spawn gate reads the script's own state, not the game record; worked example 1's 44 talks give 42 chained pairs;
+  the placement diagram's last fallback (a random room) added; Anya's "third network type" is "a game of type 3"; the
+  wiki index's open-plans list (0039 and 0043 closed, 0042 closed, 0045–0049 approved). With lane/p38s5 merged, the
+  page's links from levels, monsters and objects are added here (no follow-up entry). Spec-writer review-fixes rule 1
+  cites this review. Backlog closed: the review request.
