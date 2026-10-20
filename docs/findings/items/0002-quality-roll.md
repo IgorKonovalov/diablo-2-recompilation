@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/quality
 > **Question:** Once `TC_ResolveDrops` has picked an item, how does `ITEMS_DropRollQuality` choose its quality, what does it draw, and what does each returned code mean?
-> **Date:** 2026-10-12   **Plan:** 0010 (Phases 1, 1b, 2)   **Status:** open (Phase 1 read; Phase 1b cross-check, one contradiction (classic row); Phase 2: run:2026-10-12-quality and run:2026-10-13-quality reproduce 1916 rolls with no oracle and promote the roll to `[C]` for single player, Normal and Nightmare, expansion and classic, a player or summon killer, MF 0, 10 and 100; the classic rows, MF 1–10 and the owner's MF are settled; MF < 0, hireling/minion killers, Hell and the `*Min` clamp stay `[I]`; plan 0038 batch S2a, 2026-10-16: 9 statements raised and 7 in part, [§ Plan 0038 batch S2a](#plan-0038-batch-s2a-2026-10-16); plan 0038 batch S2c, 2026-10-16: 1 statement raised in part, [§ Plan 0038 batch S2c](#plan-0038-batch-s2c-2026-10-16))
+> **Date:** 2026-10-12   **Plan:** 0010 (Phases 1, 1b, 2)   **Status:** open (Phase 1 read; Phase 1b cross-check, one contradiction (classic row); Phase 2: run:2026-10-12-quality and run:2026-10-13-quality reproduce 1916 rolls with no oracle and promote the roll to `[C]` for single player, Normal and Nightmare, expansion and classic, a player or summon killer, MF 0, 10 and 100; the classic rows, MF 1–10 and the owner's MF are settled; MF < 0, hireling/minion killers, Hell and the `*Min` clamp stay `[I]`; plan 0038 batch S2a, 2026-10-16: 9 statements raised and 7 in part, [§ Plan 0038 batch S2a](#plan-0038-batch-s2a-2026-10-16); plan 0038 batch S2c, 2026-10-16: 1 statement raised in part, [§ Plan 0038 batch S2c](#plan-0038-batch-s2c-2026-10-16); plan 0038 batch H2a, 2026-10-20: the `*Min` clamp and its place `[C]` (3 statements raised, 1 in part), [§ Plan 0038 batch H2a](#plan-0038-batch-h2a-2026-10-20))
 
 Names of structs and fields are ours. "Source unit" and "unit seed" (`unit+0x20`) are as in
 [items/0001](0001-tc-resolution.md). The "ratio words" are the four u16 of the TC frame passed by the resolver, in TC
@@ -60,9 +60,14 @@ further statements; where it lists one, its tag and evidence take precedence ove
   classic calls stop at the TC pick, which `tc.py` does not model for classic games).
   (fn:ITEMS_DropRollQuality@0x00558640 0x0055872F–0x00558986, run:2026-10-12-quality, run:2026-10-11-tc-drops,
   run:2026-10-13-quality)
-- [I] **The minimum clamp** (raise `c` to the row's `*Min` after magic find and before the ratio) never acted: every
-  pre-clamp chance in the runs stayed above `UniqueMin` 6400, `RareMin` 3200, `SetMin` 5600 and `MagicMin` 192.
-  (0x00558767–0x0055876E, tbl:ItemRatio.txt:RareMin, tbl:ItemRatio.txt:SetMin)
+- [C] **The minimum clamp** (raise `c` to the row's `*Min` after magic find and before the ratio) **acts**: over the
+  later item runs and the H2a sessions the pre-clamp chance is at or below the minimum in 667 rolls, and without the
+  clamp 138 of them break; placed after the ratio word 206 break, placed before magic find 138. It never acted in the
+  plan 0010 runs (every pre-clamp chance there stayed above `UniqueMin` 6400, `RareMin` 3200, `SetMin` 5600 and
+  `MagicMin` 192). (0x00558767–0x0055876E, tbl:ItemRatio.txt:RareMin, tbl:ItemRatio.txt:SetMin,
+  run:2026-10-20-sweep-items-tc, run:2026-10-14-affixes, run:2026-10-14-uniques; [§ Plan 0038 batch H2a](#plan-0038-batch-h2a-2026-10-20))
+  *Corrected 2026-10-20 (plan 0038 batch H2a):* this line said the clamp "never acted" and was `[I]`; that held for the
+  plan 0010 runs only (0 of their 847 MF-100 rolls; `check-clamp-s2a-perlog.txt`).
   *Corrected 2026-10-14 (backlog spec-writer → reverser):* this line named the minima `SetMin` 3200 and `RareMin` 5600.
   The table has `RareMin` 3200 at `+0x14` and `SetMin` 5600 at `+0x20` (§ 4; `excel_bin.py dump … itemratio`). No tag moves.
 - [C] **Magic find with diminishing returns (player killer, MF 100 and 0):** the roll uses the player killer's stat 80
@@ -79,10 +84,12 @@ further statements; where it lists one, its tag and evidence take precedence ove
 - [C] **A summon kill uses its owner's MF.** The 85 rolls of kills by the Necromancer's skeletons (monster class 363,
   stat 80 = 0) log the owner path (`QOWN` the player, `QOMF` 10, `QMF` 10). Dropping the owner's 10 breaks 27 of them.
   (fn:ITEMS_DropMagicFind@0x005585D0, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, run:2026-10-13-quality)
-- [I] **Magic find, unexercised parts:** hireling and monster-minion killers (whether they have an owner); killers
-  that are neither players nor monsters count 0; `mf ≤ −100` skips the unique, set, rare and magic tests; and the
-  order magic find **before** the minimum (the clamp never acted). (fn:ITEMS_DropMagicFind@0x005585D0,
-  fn:ITEMS_MagicFindDiminish@0x00558610)
+- [I] **Magic find, unexercised parts:** ~~hireling and~~ monster-minion killers (whether they have an owner); killers
+  that are neither players nor monsters count 0; `mf ≤ −100` skips the unique, set, rare and magic tests; ~~and the
+  order magic find **before** the minimum (the clamp never acted)~~. (fn:ITEMS_DropMagicFind@0x005585D0,
+  fn:ITEMS_MagicFindDiminish@0x00558610) *2026-10-20, plan 0038 batch H2a:* the order magic find before the minimum is
+  `[C]` (the clamp acts; D6 before D5 breaks 138 rolls), and hireling (class 271) and Hydra (352) killers add their
+  owner's stat 80 (45 rolls, run:2026-10-17-sweep-quest-b6), [§ Plan 0038 batch H2a](#plan-0038-batch-h2a-2026-10-20).
 - [C] **Low, normal, superior:** superior wins when `(HiQuality − d / HiQualityDivisor) × 128 < 1` or its draw is `< 128`
   (code 3); otherwise `n = (Normal − d / NormalDivisor) × 128`: `n < 1` → 2 with no draw, else one draw, `< 128` → 2,
   `≥ 128` → 1. Two draws at most. Observed: superior 4 + 13 (all on a draw), low 8 + 2 + 2, normal with no draw
@@ -284,8 +291,10 @@ if (c < 1) return code;                                  // no draw
 if (RNG_RangeB(&src->seed, c) < 128) return code;        // draw; unsigned compare (jb)
 ```
 
-- [I] Order of operations: base term, magic find, minimum, ratio, then the draw. The minimum is applied **after** magic
-  find and **before** the ratio, so a ratio word can still push `c` below the minimum. (0x00558740–0x0055878C for unique)
+- [C] Order of operations: base term, magic find, minimum, ratio, then the draw. The minimum is applied **after** magic
+  find and **before** the ratio, so a ratio word can still push `c` below the minimum. (0x00558740–0x0055878C for unique,
+  run:2026-10-20-sweep-items-tc: the minimum after the ratio breaks 206 rolls, before magic find 138; *raised
+  2026-10-20*, [§ Plan 0038 batch H2a](#plan-0038-batch-h2a-2026-10-20))
 - [I] The ratio subtraction is `c − trunc(ratio·c / 1024)`; `c ≥ min > 0` there, so the truncation is a floor.
   (0x00558770–0x0055878C)
 - [C] A ratio word of 1024 makes `c = 0`, a win with no draw: 61 logged rolls (magic and rare tests under
@@ -372,6 +381,10 @@ return (ecx - 100) * k / (ecx - 100 + k) + 100;          // int, cdq/idiv
   `sub_0058F0D0_MonsterOwner` returns, which reads `monsterData+0x28` (the owner record) and looks the unit up through
   `0x00552F60`. Which monsters have that owner record filled: summons, hirelings, and also the minions of unique and
   superunique bosses ([§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17)). Any other killer type (an object, a missile) gives 0. Layer 0 of stat 80 (`item_magicbonus`). (fn:ITEMS_DropMagicFind@0x005585D0, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0)
+  *2026-10-20, plan 0038 batch H2a (quality 20, raised in part):* `[C]` for monster killers whose owner is the player
+  (skeletons 85, a hireling 39, a Hydra 6 rolls, `QMF = QKMF + QOMF` in all); a missing owner, plain and minion monster
+  killers and the type ≥ 2 return stay `[I]`, [§ Plan 0038 batch H2a](#plan-0038-batch-h2a-2026-10-20)
+  (run:2026-10-17-sweep-quest-b6, run:2026-10-13-quality).
 - [C] **A summon has an owner:** for 85 kills by Raise Skeleton skeletons (monster class 363), `MonsterOwner`
   returned the Necromancer (`QOWN otype=0 oclass=2`). The roll used the skeleton's stat 80 (0) plus the owner's (10)
   and reproduces only with the owner's part. (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, run:2026-10-13-quality)
@@ -384,7 +397,8 @@ return (ecx - 100) * k / (ecx - 100 + k) + 100;          // int, cdq/idiv
 - [I] `F == 0` skips the division (unreachable: `mf > −100` there). (0x00558613–0x0055861B)
 - [I] **Negative magic find** between −99 and −1 makes `F < 100`, so `c` grows (worse odds); `−100` or lower bypasses
   all four tests and goes straight to superior/normal/low. `mf = 0` skips the division altogether (same result as `F` = 100). (0x0055871F–0x00558722, 0x00558963)
-- [I] Before or after the minimum: **before** (§4). (0x00558740–0x0055876E)
+- [C] Before or after the minimum: **before** (§4; D6 before D5 breaks 138 rolls, run:2026-10-20-sweep-items-tc,
+  [§ Plan 0038 batch H2a](#plan-0038-batch-h2a-2026-10-20)). (0x00558740–0x0055876E)
 
 ### 8. The other quality roll and the creation fallbacks (named only)
 
@@ -462,7 +476,8 @@ normal, the linear chance 23104 wins on 12. So the diminishing step decides outc
   `Version` 0 rows → 39, codes 1 and 2 swapped → 26.
 - The killers' MF in the old logs is 0 by their saves (run:2026-10-12-quality, *Killers' MF*); the `navi` killer's roll
   and A's null-killer roll give the same result at MF 0 and 100, so they test nothing about owners.
-- No roll reached a `*Min` clamp (§4), and no roll took the unique-flag or quest early returns (§1).
+- No roll reached a `*Min` clamp (§4), and no roll took the unique-flag or quest early returns (§1). (These runs only:
+  the clamp acts in later runs, [§ Plan 0038 batch H2a](#plan-0038-batch-h2a-2026-10-20).)
 
 **run:2026-10-13-quality: MF 10, a summon killer, a classic game.** Two owner-played sessions under the logger below:
 MfNecro (expansion, Nightmare, MF 10 from `Wisp`, Raise Skeleton) and ClassicSorc (classic, Normal, MF 0).
@@ -721,7 +736,7 @@ fn:sub_005A2D10_UModPartyDeadDeath@0x005A2D10, data:g_UModEventFns@0x0073C0B8, t
 
 ## Plan 0049 Phase 1 (2026-10-20, static)
 
-Static readings for the plan 0039 P1c residues (a), (b) and (e), in [plan 0049](../../plans/0049-backlog-sweep-5.md)
+Static readings for the plan 0039 P1c residues (a), (b) and (e), in [plan 0049](../../plans/done/0049-backlog-sweep-5.md)
 Phase 1, `lane/p49r`. No game run. The image tables and the stock rows are printed by `tools/sweep_p49r.py tables` and
 `excel` (kept outputs `workspace/logs/p49r/sweep-p49r-tables-2026-10-20.txt` and `-excel-`, manifest
 `p49r-manifest.txt`).
@@ -799,15 +814,69 @@ Phase 1, `lane/p49r`. No game run. The image tables and the stock rows are print
 - So *Bone Wall* builds its pieces through two paths: the skill's `srvdofunc` 60 (`sub_005C58B0_SkillBoneWallDo`) and
   this missile. Which of the two makes the pieces a player sees is not separated here.
 
+## Plan 0038 batch H2a (2026-10-20)
+
+Harness batch H2a of [plan 0038](../../plans/0038-inferred-claims-sweep.md)
+([run:2026-10-20-sweep-items-tc](experiments.md#run2026-10-20-sweep-items-tc)) took four inferred statements of
+[items/quality](../../specs/items/quality.md), rows 20, 22 (2) and 23 of [the inventory](../../plans/0038-inventory/items-quality.md);
+spec lines are those of the inventory's commit `f9f28e9`. The tc rows of the batch are in
+[items/0001 § Plan 0038 batch H2a](0001-tc-resolution.md#plan-0038-batch-h2a-2026-10-20).
+
+**The checks.** `tools/sweep_h2a.py clamp` replays each logged roll with `tools/quality.py` (no oracle; magic find from
+the logged `QMF`), records the chance before D6 and the row minimum of every test reached, and replays the roll again
+under three counterfactuals: no D6 minimum (`off`), D6 after the ratio word D7 (`after-ratio`), D6 before magic find D5
+(`before-mf`). It ran over the 12 H2a logs (720 rolls), over the 193 logs of the S2a set
+(`workspace/logs/sweep-s2a-manifest.txt` less the two plan 0010 MF-100 logs; 6 479 rolls) and over those two at
+`--mf 100` (847 rolls). Outputs in `workspace/logs/h2a/check/`: `check-clamp-h2a-r2.txt` (`37b8e962…`),
+`check-clamp-s2a-r2.txt` (`f82f2e6a…`), `check-clamp-s2a-mf100-r2.txt` (`fec4a734…`), with `tools/sweep_h2a.py`
+`9e3785ca…` and `tools/quality.py` `ed525200…` (the `before-mf` key added to the run's revisions; the two earlier
+counterfactual counts are unchanged from `check-clamp-*.txt`). The per-log split is `check-clamp-s2a-perlog.txt`
+(`b6fa1eaa…`, `sweep_h2a.py` `983ed539…`). `sweep_h2a.py killers` over the S2a set, the 19 logs of the H6d run list and
+the 12 H2a logs gives the killer kinds (`check-killers.txt`, `f41476c9…`).
+
+```
+clamp, H2a logs:  720 rolls reproduced; c <= min in 39; no D6 breaks 9, D6 after D7 breaks 7, D6 before D5 breaks 9
+clamp, S2a set:   6479 rolls reproduced; c <= min in 628; no D6 breaks 129, after D7 199, before D5 129
+clamp, MF 100:    847 rolls reproduced; c <= min in 0
+per log (S2a):    run:2026-10-14-affixes 474 + 5, run:2026-10-14-uniques 66, run:2026-10-14-props 43,
+                  run:2026-10-15-items-chain 40; 0 in the plan 0010 runs, the objects and the quest-drop runs
+```
+
+- **quality 22**, both statements (L292 the D6 line, L308 its step note) **raised.** [C] D6 `c ← max(c, min)` (signed
+  compare) acts: the pre-clamp chance is at or below the row minimum in 667 rolls (39 + 628; by test: rare 37 + 585,
+  set 38 + 608, magic 2 + 11), and in 138 of them the minimum decides the outcome: the model without D6 breaks 9 + 129 rolls,
+  the model with it reproduces all 7 199. The step note's "it never acted in the runs" was true only of the plan 0010
+  runs it was written on (0 of 847 MF-100 rolls, 0 in the per-log split for `tc-*`); it is corrected below.
+  (0x00558767–0x0055876E, tbl:ItemRatio.txt:RareMin, tbl:ItemRatio.txt:SetMin, run:2026-10-20-sweep-items-tc,
+  run:2026-10-14-affixes, run:2026-10-14-uniques)
+- **quality 23** (L303) **raised.** [C] The order base, magic find, minimum, ratio, draw: D6 after D7 breaks 7 + 199
+  rolls, D6 before D5 breaks 9 + 129, so the minimum sits between magic find and the ratio word, and a non-zero ratio word can take
+  the clamped chance below the minimum again; base before magic find and the draw last are `[C]` already (§ 4, § 7).
+  (0x00558740–0x0055878C, run:2026-10-20-sweep-items-tc)
+- **quality 20** (L263) **raised in part.** [C] A monster killer with an owner adds the owner's stat 80: in 130 rolls
+  the killer was a monster, `QOWN` named the player, and `QMF = QKMF + QOMF` in every one: Raise Skeleton skeletons
+  (class 363, 85 rolls, run:2026-10-13-quality), a Rogue hireling (class 271, 39) and a Hydra (class 352, 6), the last
+  two from the H6d sessions (run:2026-10-17-sweep-quest-b6; 5 of the hireling rolls in one of its aborted session logs,
+  kept under `failed/` and listed in its run list). (fn:ITEMS_DropMagicFind@0x005585D0 0x005585E4–0x005585FB,
+  fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, run:2026-10-13-quality, run:2026-10-17-sweep-quest-b6)
+  **Remainder `[I]`, shortfall:** a monster killer whose owner is missing or gone, a plain or minion monster killer, and
+  a killer of type 2 or more (object, missile): of 8 753 rolls, every killer is of type 0 or 1 or none (89).
+
+**Tally:** 4 statements: 3 raised (quality 22 ×2, 23), 1 raised in part (quality 20), 0 shortfall. No symbol changes
+(`ITEMS_DropRollQuality`, `ITEMS_DropMagicFind` and `sub_0058F0D0_MonsterOwner` keep their tags).
+
 ## Open questions
 
 - ~~Which other monsters have an owner for magic find (`monsterData+0x28`)? A summon (skeleton) does (§7). Hirelings are
   expected to, monster minions are not. Resolve by reading where `+0x28` is written, or by a hireling kill under the
   `QOWN`/`QOMF` lines.~~ Read in [§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17): minions of unique and superunique bosses do have one (their boss), and a boss
   is its own owner.
-- The `*Min` clamp and the order MF-before-minimum: no logged chance came near a minimum; it needs a large
+- ~~The `*Min` clamp and the order MF-before-minimum: no logged chance came near a minimum; it needs a large
   `ilvl − qlvl` (about 300 for the unique test) or a very high MF, or a different table, so it may stay `[I]`.
-  (0x00558767–0x0055876E, run:2026-10-12-quality, run:2026-10-13-quality)
+  (0x00558767–0x0055876E, run:2026-10-12-quality, run:2026-10-13-quality)~~ *Answered 2026-10-20, plan 0038 batch
+  H2a:* the clamp acts in 667 rolls of the later item runs (rare and set tests mostly), and its place is settled
+  ([§ Plan 0038 batch H2a](#plan-0038-batch-h2a-2026-10-20); 0x00558767–0x0055876E, run:2026-10-20-sweep-items-tc). The unique test's
+  minimum never acted (no unique row in the count).
 - Normal and Hell difficulty with magic find, negative MF, and the two unexercised early returns (unique flag, quest).
 - The creation-side roll `sub_00556F60_ItemRollQualityCreate` and the pre-switch overrides in
   `sub_00557450_ItemCreateByQuality`: read with the creation rows (`items/uniques-sets`, `items/affixes`).

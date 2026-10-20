@@ -1,0 +1,112 @@
+{
+  "game": "expansion",
+  "class": "Barbarian",
+  "seed": 3802001,
+  "name": "FindBar",
+  "progression": 15,
+  "difficulty": [
+    131,
+    131,
+    131
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "stats": {
+    "strength": 400,
+    "energy": 200,
+    "dexterity": 400,
+    "vitality": 800,
+    "hitpoints": 6000,
+    "maxhp": 6000,
+    "mana": 3000,
+    "maxmana": 3000,
+    "stamina": 800,
+    "maxstamina": 800,
+    "level": 85,
+    "experience": 1145236814
+  },
+  "skills": {
+    "War Cry": 20,
+    "Find Item": 20,
+    "Battle Cry": 1,
+    "Shout": 1,
+    "Battle Orders": 1,
+    "Howl": 1,
+    "Taunt": 1,
+    "Find Potion": 1,
+    "Battle Command": 1,
+    "Grim Ward": 1
+  },
+  "mouse": {
+    "left": "Attack",
+    "right": "War Cry",
+    "swap_left": "Attack",
+    "swap_right": "War Cry"
+  },
+  "hotkeys": [
+    "War Cry",
+    "Find Item"
+  ],
+  "items": [
+    {
+      "unique": "Ginther's Rift",
+      "equip": "rarm",
+      "roll": "max"
+    },
+    {
+      "unique": "Steelclash",
+      "equip": "larm",
+      "roll": "max"
+    },
+    {
+      "unique": "Rockstopper",
+      "equip": "head",
+      "roll": "max"
+    },
+    {
+      "unique": "Rockfleece",
+      "equip": "tors",
+      "roll": "max"
+    },
+    {
+      "unique": "Venom Grip",
+      "equip": "glov",
+      "roll": "max"
+    },
+    {
+      "unique": "Goldwrap",
+      "equip": "belt",
+      "roll": "max"
+    },
+    {
+      "unique": "Gorerider",
+      "equip": "feet",
+      "roll": "max"
+    },
+    {
+      "unique": "Nokozan Relic",
+      "equip": "neck",
+      "roll": "max"
+    },
+    {
+      "unique": "Raven Frost",
+      "equip": "rrin",
+      "roll": "max"
+    },
+    {
+      "unique": "Manald Heal",
+      "equip": "lrin",
+      "roll": "max"
+    }
+  ],
+  "belt_fill": [
+    "rvl",
+    "rvl",
+    "rvl",
+    "mp5"
+  ],
+  "quests": "all"
+}

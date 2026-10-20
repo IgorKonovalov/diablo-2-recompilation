@@ -98,8 +98,10 @@ boundary oracles. A reimplementer composes them. When this plan is done:
 
 - **Static:** Phase 0 needs no Ghidra; Phase 1 holds **one** Ghidra lane (`-Xmx3G`) when it reads or emulates.
 - **Harness:** Phase 2 takes **one slot from 1–2** (two only when no other harness lane runs); at most two games at
-  once across all plans; the end-to-end logger sets only entry and exit breakpoints (no per-frame path, ADR-0014 § Log
-  volume applies by analogy).
+  once across all plans; ~~the end-to-end logger sets only entry and exit breakpoints~~ (amended at the Phase 1 review:
+  `tools/gdb/chain.gdb` keeps the full loggers, because the checkers consume the lines inside each boundary; the smoke
+  session and the caps of the Phase 1 review's ruling 5 bound its volume); no per-frame path, ADR-0014 § Log volume
+  applies by analogy.
 - **Replays:** `tools/chain.py check` over many kept logs runs under `MemoryMax=4G`.
 - **Rotation:** past about 4 h the lane checkpoints and a fresh lane resumes.
 - **Estimate** (an estimate): Phase 0 one short lane; Phase 1 one or two lane runs; Phase 2 one or two lane runs.
@@ -159,5 +161,81 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `[31]` is the expected output. (d) Activation order: accepted as an input beyond the per-room seeds, `[I]` as stated
   (§ 3.2); the open question is answered. (e) The stale *grid snapshot* row of monsters/spawn (object marks "still
   logged") is a wrong statement in a reviewed spec, routed now to the spec-writer
-  ([entry](../backlog/2026-10-20-architect-spec-writer-monsters-spawn-stale-object-marks-row.md)); the other four
+  ([entry](../backlog/archive/2026-10-20-architect-spec-writer-monsters-spawn-stale-object-marks-row.md)); the other four
   passages of § 5 stay Phase 3's. (f) Research map: the Core row `chain` is added (findings in progress).
+- **2026-10-20 — Phase 1 done, review requested (reverser, `lane/p48r`, static, Ghidra copy, no harness).**
+  [chain/0002](../findings/chain/0002-retirements.md) records each assigned oracle, in the assigned order, on kept logs
+  only (133 item logs, 62 world logs; input lists and every output hashed in `workspace/logs/chain-p1/manifest.txt`,
+  `8c219e82…`). `tools/chain.py` is written: `gen` builds the seed tree, the four game-creation draws, the monster
+  regions and every level seed from `-seed N` (the rng/seeds worked example reproduced in `tools/test_chain.py`);
+  `check` runs the item chain, `tools/tc.py` (quality modelled) and the world chain (`tools/monspawn.py` with
+  `tools/objects.py`, `tools/drlg.py`, `tools/monstats.py`) per log and lists every oracle still taken. **Over the 195
+  logs: 0 sub-checks failed**; 8 519 of 8 553 unit seeds and 1 253 of 1 265 objects windows predicted with no oracle
+  inside. Retired: **2** (staff mods the default), **14** (unit seed after `SUnitCreate`: FindAdd on tracked regions
+  plus `MonStatsInit`'s draws), **16** (the presets window's monsters: the class case `sub_0054E490_PresetClassSpawn`,
+  the MonPlace fixed rows with `LevelClassVariant`, tile units), **17** (InitFn 46, read in the disassembly; its
+  direction draw is never stored), **22** (the `Orient89Unit` units come as presets; the objects under catapults 432 and
+  433 modelled), **21** (another room's seed as chain state), **7** (gold items' seeds and marks; 69 of 71 spots),
+  **6** (an object's drop: the unit seed is tc.py's `TCEND`, the game seed predicted from the items). **13** modelled
+  `[I]`, unreached; `tools/monstats.py` read `oninit` at the wrong offset, so the old oracle never fired (corrected).
+  **19** read (the gate's four DRLG tests), its logged inputs checked against the reading on 1 265 gates, still
+  logged; **20** named, not modelled (R3: composed grid = snapshot in 3 871 of 3 998 pass rooms; the barrier grid read
+  and probed, 258 of 307; the type-11 point's rule not carried). Corrections to chain/0001 § 2: InitFns 54 and 62 were
+  reached (7 and 4 calls); oracle 22's creation is a preset unit's. Surprises: the model needed no change for the odd
+  unit-seed step counts (6 to 17): all are FindAdd appends or MonProp; `L` does not change the HP draw count. 8 symbols
+  added (`sub_0054E490_PresetClassSpawn`, `sub_0054E3A0_PresetRetryAllowed`, the gate's six DRLG tests);
+  `OBJINIT_CityDamnedSpawns` raised to `C`. `tools/gdb/chain.gdb` written (not run). Review request:
+  [entry](../backlog/archive/2026-10-20-reverser-architect-review-plan-0048-phase-1-in-chain-oracles.md).
+- **2026-10-20 — Phase 1 review (architect, on `lane/p48r` after merging `main`): accept with fixes (5).** Re-run on
+  the merged tree under `MemoryMax=4G`: `tools/chain.py check` over the 195 logs, 0 sub-checks failed; every summary
+  line equals `final-check.txt` but one: **1 250** of 1 265 objects windows oracle-free (was 1 253), because `main`'s
+  objects/0001 § S4b row 25 made the nine monster-creating `InitFn`s seed oracles (`InitFn` 18: 3 windows here).
+  `tools/test_chain.py` 11 tests OK; `sha256sum -c` clean on `manifest.txt` (`8c219e82…`, unchanged) and both input
+  lists (195 logs); the lane head's tools equal `tools-final.sha256` (4 differ on the merged tree, as expected).
+  Controls re-run, each failing as claimed: `i46-stored` 10, `state-stale` 2, `lcv-off` 25, `overlay-off` 19; the kept
+  `findadd-none` output holds the 416 monspawn mismatches stated. Anchors checked in the image: `cmp byte [ebx+4], 0` at
+  0x005D6BA5, `sub_0066BB20_DrlgRoomPopLevelId`'s `0x800000` / `[+0x58] → +0x1D0`, `sub_0054E490_PresetClassSpawn`'s
+  class bound; `re/symbols.csv` has no duplicate address after the merge. Review outputs: `workspace/logs/chain-p1/review-*.txt`,
+  `review-manifest.txt` (`f0dd87f8…`); chain/0002 § 14.
+  **Fixes** (written into chain/0002 and monsters/0004): (1) oracle 14 headed "retired in part", with the final
+  8 519 of 8 553 and the 34-creation remainder named; (2) oracle 7 headed "retired in part" (the spot `[I]`, 2 of 71
+  from the log); (3) the Answer's counts of 14, 16 and 17 were the intermediate steps' — the final ones added (311
+  class-case presets; 1 253 then 1 250 windows); (4) § 11's `[C]` (`oninit` at `+0x04`) had only the code reading:
+  its second source is now the full-table check of `monequip.bin` against `monequip.txt` (45 of 45 rows,
+  `+0x04` = `oninit`, `+0x02` = `level`), run at the review; (5) § 1's `[I]` on what `gen` stops at had no anchor
+  (gate W1): anchored.
+  **Rulings.** (1) **The equality chain is acceptable for `[C]`.** Where `tools/objects.py` takes a seed at
+  `OPUX`/`MTX`/`OCX` and `tools/monspawn.py` or `tools/tc.py` predicts and asserts it at the same line, both run in
+  one `check`, a failed assert fails the run, and the window counts as oracle-free only when every taken line was
+  asserted; the composed value therefore equals the model's, and the `lcv-off` and `i46-stored` controls show the
+  asserts are live. No model has to carry the value for Phase 1 or Phase 2. Phase 3's spec states the single call
+  order, not the two checkers; a log-free world build from `gen` would need the hand-off and is out of this plan.
+  (2) **Oracles 13, 19 and 20 stay Phase 2 inputs; no follow-up phase before Phase 2.** Phase 2 must: count each in
+  the run record by name; for 19, assert every `OG` line's DRLG inputs against chain/0002 § 7's reading
+  (`gate_inputs`) and count `LevelRoomCount` reads; for 20, keep `SN`, `LG0` and `NWW` as inputs, report the R3
+  residue per pass room by bit, and for every object-bit cell (`0x400`, `0x404`) that no window mark explains (14 on
+  the kept logs) name the creation line nearest before the snapshot, or list the cell as unexplained (a named item,
+  not blocking); for 13, include at least one session that creates class 267 or 234 — a reproduced creation raises the
+  MonEquip model to `[C]`, otherwise it stays `[I]`, named unreached. The 34 unit seeds taken (classes appended by
+  creations outside the model) are a counted remainder: the record gives, per class, the creation that appended it.
+  The windows holding `InitFn` 18, 54 or 62, and the 2 gold spots, are counted remaining oracles and do not count
+  toward the 2 000 oracle-free room populations. (3) **`chain.gdb`'s volume**: the full loggers are accepted (the
+  *Resources* line is amended above). Phase 2's first session is a smoke session (one act, one difficulty, at most
+  20 minutes of game time) that records lines per tag, MB per game minute and wall time per game minute before any
+  counted session; the run record then sets a cap per session (raw log at most 500 MB; the kept world logs are at
+  most 13 MB each), `MONSPAWN_WATCH` empty, and a session that reaches the cap stops logging and is kept as a
+  development log. (4) **The `oninit` fix changes no earlier result**: no `SI0` log (11 mon-stats, 9 H4b, 6
+  forced-berserk) creates class 234 or 267; `tools/monstats.py check` re-run on the 9 H4b logs (35 461 checks) and the
+  6 forced-berserk logs (30 863), 0 mismatches, no MonEquip oracle hit (the H4b session 5b DRLG mismatches are the
+  second-game ones recorded at H4b, the same with `main`'s tools). (5) **Stale spec passages, routed to Phase 3**
+  (its *What* already updates each core spec's *Inputs and oracles* table; none states a wrong behaviour, they name
+  as oracles what is now modelled): items/affixes § I, its table row and the `ORACLE` markers of D4, E7, G4, H2 and
+  the D4/E7 example rows; items/properties *Inputs* (`ITEMS_RollStaffMods`) and § 875's sentence; player/creation's
+  staff-mods row, its § 350 sentence and Example 1; monsters/stats' MonEquip row, B12 and its three diagrams (and the
+  `oninit` byte at `+0x04`); monsters/spawn's rows "seed of another room" and "unit seed after `SUnitCreate`";
+  monsters/special's unit-seed row; drlg/collision's "seed of another room" row and the gold-drop sentence of § F;
+  objects/README's rows for the presets window's monsters, the monster `InitFn`s (46), `TC_ResolveDrops` and the gold
+  drop, and `InitFn` 46's row; drlg/room-tiles' `Orient89Unit` step 11 and its § 746 sentence (the creation is a
+  preset unit's, `[I]`). No entry to the spec-writer now.
+  **Phase 1 is done; Phase 2 may start in one slot** when plan 0044 releases one (the queue's order holds). Ledger
+  rows added (usage TBD). Review request [closed](../backlog/archive/2026-10-20-reverser-architect-review-plan-0048-phase-1-in-chain-oracles.md).

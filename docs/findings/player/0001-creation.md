@@ -772,7 +772,7 @@ run, so every statement here is inferred.
 
 ## Plan 0049 Phase 1 (2026-10-20, static)
 
-Static readings for the plan 0039 P1c residues (c) and (d) and the S1a creation question ([plan 0049](../../plans/0049-backlog-sweep-5.md)
+Static readings for the plan 0039 P1c residues (c) and (d) and the S1a creation question ([plan 0049](../../plans/done/0049-backlog-sweep-5.md)
 Phase 1, `lane/p49r`). No game run. The mode-word writers and the button records are printed by `tools/sweep_p49r.py
 tables`; the string indices are resolved with `tools/tbl.py index workspace/merged/data/local/lng/eng spx <index>`
 (kept outputs under `workspace/logs/p49r/`, manifest `p49r-manifest.txt`).

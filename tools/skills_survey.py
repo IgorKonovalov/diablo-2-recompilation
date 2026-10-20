@@ -7,6 +7,7 @@ Usage:
   python3 -I tools/skills_survey.py families <excel-dir>
   python3 -I tools/skills_survey.py tiera    <excel-dir>
   python3 -I tools/skills_survey.py summary  <excel-dir>
+  python3 -I tools/skills_survey.py index    <excel-dir>     (also spelt --index)
 
 skills    Skills § Dispatch: rows per srvstfunc, srvdofunc and srvprgfunc1..3 number (each number with its rows),
           the progressive, missile, param, animation, cost, requirement and summon columns: rows set and values.
@@ -19,6 +20,11 @@ families  the family sizes: per function number (Skills srvstfunc, srvdofunc, sr
           pSrvHitFunc, pSrvDmgFunc) the number of stock rows, largest first, and the families of ten rows or more.
 tiera     the tier-A candidate rows of plan 0045 (the general rows, the per-class pairs, one row for each function
           family of ten rows or more that no candidate covers): their dispatch columns and their missiles' functions.
+index     plan 0046 Phase 0, the function index: one entry per function-table entry a stock row uses. The start
+          table (srvstfunc); the do table (srvdofunc, srvprgfunc1..3, ItemEffect > 1 and States srvactivefunc all
+          index g_SkillDoFuncs, skills/0001 and skills/0003); the missile do, hit and damage tables (pSrvDoFunc,
+          pSrvHitFunc, pSrvDmgFunc). Per entry: its rows by column, the row kinds, the params and calcs those rows
+          fill (rows set per column), whether a tier-A row reaches it, and its plan-0046 batch (rule in BATCH_RULE).
 summary   the counts of every section only.
 
 Every command ends with `SURVEY skills key=value ...`; tools/gate.py --full compares the summary line with its
@@ -54,9 +60,9 @@ MS_CALCS = ("SrvCalc1", "SHitCalc1", "DmgCalc1", "DmgSymPerCalc", "EDmgSymPerCal
 MS_CLT_CALCS = ("CltCalc1", "CHitCalc1")
 
 # plan 0045 Phase 1 "tier A": the general rows and per class the skills the pilot can cast (self-centred, directional,
-# melee or summon). The plan names the first 18; the Druid and Assassin pairs are this phase's proposal (rows by their
-# skills.txt names: Fire Trauma is Fire Blast). The review
-# of Phase 1 fixes the list.
+# melee or summon). The plan names the first 18; the Druid and Assassin pairs were plan 0045 Phase 0's proposal (rows
+# by their skills.txt names: Fire Trauma is Fire Blast). Tier A is fixed (plan 0045 P1.3 review): these 22 rows and
+# the four family rows of TIER_A_ADDED, 26 in all.
 TIER_A = [
     ("general", ["Attack", "Kick", "Throw", "Left Hand Throw", "Left Hand Swing"]),
     ("sor", ["Nova", "Frost Nova", "Static Field", "Teleport", "Fire Bolt"]),
@@ -68,6 +74,10 @@ TIER_A = [
     ("ass", ["Fire Trauma", "Fists of Fire"]),   # Fire Blast (internal name) and a progressive melee skill
 ]
 FAMILY_MIN = 10
+# the four rows `tiera` adds for the families of ten rows or more the named rows miss (fixed by the P1.3 review); the
+# index asserts that `tiera` still adds exactly these (ix_tiera_added_match)
+TIER_A_ADDED = ["Meteor", "Amplify Damage", "Might", "Plague Javelin"]
+CLASSES = ("ama", "sor", "nec", "pal", "bar", "dru", "ass")   # PlayerClass row order
 
 
 class Data:
@@ -84,6 +94,7 @@ class Data:
         self.sk = self.t["skills"]
         self.ms = self.t["missiles"]
         self.pt = self.t["pettype"]
+        self.states = Table(excel_dir, "states", self.refs)   # srvactivefunc (the do table, skills/0003 § 9)
         self.skn = [r["skill"] for r in self.sk.txt]
         self.msn = [r["Missile"] for r in self.ms.txt]
         self.ptn = [r["pet type"] for r in self.pt.txt]
@@ -584,9 +595,226 @@ def sec_tiera(d):
     return out, kv
 
 
+# ---------------------------------------------------------------- function index (plan 0046 Phase 0)
+
+BATCH_RULE = """batch of a start or do entry: the class with most rows among the Skills rows that use it as srvstfunc,
+srvdofunc or srvprgfunc (a tie goes to the first in PlayerClass order: ama sor nec pal bar dru ass); with no class
+row, `monster` when a monster row uses it (charclass blank, neither the general bit nor a `1` in scroll: 159
+MaggotEgg, whose scroll bit a space cell sets, is a monster row); else `item` when a scroll row or an ItemEffect cast uses it; else `general` (rows 0-5, the general bit). An entry only a States
+srvactivefunc names takes the batch, by the same rule, of the Skills rows whose aurastate is that state (`states` if
+none). Every missile do, hit and damage entry is batch `missile`. Tier A: a tier-A row uses the entry as srvstfunc,
+srvdofunc or srvprgfunc (an ItemEffect is an item cast's, not the pilot's)."""
+BATCHES = CLASSES + ("monster", "missile", "item", "general", "states")
+SK_PARAMS = ["Param%d" % k for k in range(1, 9)]
+SK_CALCS = ["calc%d" % k for k in range(1, 5)]
+SK_PRG_CALCS = ["prgcalc1", "prgcalc2", "prgcalc3"]
+MS_KIND_COLS = {"pSrvDoFunc": (["Param%d" % k for k in range(1, 6)], ["SrvCalc1"]),
+                "pSrvHitFunc": (["sHitPar1", "sHitPar2", "sHitPar3"], ["SHitCalc1"]),
+                "pSrvDmgFunc": (["dParam1", "dParam2"], ["DmgCalc1"])}
+MS_SUB_LINKS = ("SubMissile1", "SubMissile2", "SubMissile3", "HitSubMissile1", "HitSubMissile2", "HitSubMissile3",
+                "HitSubMissile4")   # created by do and hit functions; ExplosionMissile has no server reader (skills/0002)
+
+
+def row_kind(d, i):
+    sk = d.sk
+    c = sk.txt[i]["charclass"].strip()
+    if c:
+        return c
+    if sk.rec[i]["general"]:
+        return "general"
+    if sk.rec[i]["scroll"] and sk.txt[i]["scroll"].strip():   # 159 MaggotEgg's bit comes from a space cell
+        return "item"
+    return "monster"
+
+
+def tier_a_rows(d):
+    idx = {}
+    for i, nm in enumerate(d.skn):
+        idx.setdefault(nm.lower(), i)
+    names = [nm for _, nms in TIER_A for nm in nms] + TIER_A_ADDED
+    return [idx.get(nm.lower(), -1) for nm in names]
+
+
+def tier_a_missiles(d, rows):
+    """(direct, linked): missiles a tier-A row names in srvmissile*, and those reached from them through the server
+    sub-missile links (transitively)."""
+    ms = d.ms
+    direct = {m for i in rows if i >= 0 for m in skill_missiles(d, i)}
+    seen, todo = set(direct), list(direct)
+    while todo:
+        m = todo.pop()
+        for c in MS_SUB_LINKS:
+            if not ms.blank(m, c) and ms.rec[m][c] >= 0 and ms.rec[m][c] not in seen:
+                seen.add(ms.rec[m][c])
+                todo.append(ms.rec[m][c])
+    return direct, seen - direct
+
+
+def fill(t, rows, cols):
+    """'col n' for each column set on n > 0 of rows."""
+    xs = []
+    for c in cols:
+        k = sum(1 for i in rows if not t.blank(i, c))
+        if k:
+            xs.append("%s %d" % (c, k))
+    return xs
+
+
+def index_entries(d):
+    """[dict] one per (table, number): table, number, users {column: [row]}, rows, kinds, batch, tier, params,
+    calcs, via (missile entries: the classes of the skills that name or own its rows)."""
+    sk, ms = d.sk, d.ms
+    st = d.states
+    ta = [i for i in tier_a_rows(d) if i >= 0]
+    ta_set = set(ta)
+    ta_direct, ta_linked = tier_a_missiles(d, ta)
+    ents = []
+
+    def skill_entry(table, users, prg):
+        rows = sorted({i for c, rs in users.items() if c != "srvactivefunc" for i in rs})
+        kinds = collections.Counter(row_kind(d, i) for c, rs in users.items()
+                                    if c not in ("srvactivefunc", "ItemEffect") for i in rs)
+        state_skills = []
+        if list(users) == ["srvactivefunc"]:   # the skills whose aura state the entry runs on
+            sts = set(users["srvactivefunc"])
+            state_skills = [i for i in set_rows(sk, "aurastate") if sk.rec[i]["aurastate"] in sts]
+            kinds = collections.Counter(row_kind(d, i) for i in state_skills)
+        cls = [(-kinds[c], CLASSES.index(c), c) for c in CLASSES if kinds[c]]
+        if cls:
+            batch = min(cls)[2]
+        elif kinds["monster"]:
+            batch = "monster"
+        elif kinds["item"] or users.get("ItemEffect"):
+            batch = "item"
+        elif kinds["general"]:
+            batch = "general"
+        else:
+            batch = "states"
+        tier = "A" if ta_set & {i for c, rs in users.items() if c not in ("srvactivefunc", "ItemEffect")
+                                for i in rs} else "-"
+        calcs = SK_CALCS + (SK_PRG_CALCS if prg else [])
+        return dict(table=table, users=users, rows=rows, kinds=kinds, batch=batch, tier=tier, state_skills=state_skills,
+                    params=fill(sk, rows, SK_PARAMS), calcs=fill(sk, rows, calcs), via=None)
+
+    # start table
+    for n, rows in by_number(sk, ["srvstfunc"], d.skn).items():
+        e = skill_entry("start", {"srvstfunc": rows}, False)
+        e["number"] = n
+        ents.append(e)
+    # do table: srvdofunc, srvprgfunc1..3, ItemEffect > 1, States srvactivefunc
+    users = collections.defaultdict(lambda: collections.OrderedDict())
+    for n, rows in by_number(sk, ["srvdofunc"], d.skn).items():
+        users[n]["srvdofunc"] = rows
+    for n, rows in by_number(sk, SK_FUNCS[2:], d.skn).items():
+        users[n]["srvprgfunc"] = rows
+    for i, r in enumerate(sk.rec):
+        if r["ItemEffect"] > 1:
+            users[r["ItemEffect"]].setdefault("ItemEffect", []).append(i)
+    for i, r in enumerate(st.rec):
+        if not st.blank(i, "srvactivefunc"):
+            users[r["srvactivefunc"]].setdefault("srvactivefunc", []).append(i)
+    for n in sorted(users):
+        e = skill_entry("do", users[n], "srvprgfunc" in users[n])
+        e["number"] = n
+        ents.append(e)
+    # missile tables
+    owners = collections.defaultdict(set)   # missile -> skill rows that name it (srvmissile*) or own it (Skill)
+    for c in SK_MISSILES:
+        for i in set_rows(sk, c):
+            if sk.rec[i][c] >= 0:
+                owners[sk.rec[i][c]].add(i)
+    for m in set_rows(ms, "Skill"):
+        if ms.rec[m]["Skill"] >= 0:
+            owners[m].add(ms.rec[m]["Skill"])
+    for col in MS_SRV_FUNCS:
+        pcols, ccols = MS_KIND_COLS[col]
+        for n, rows in by_number(ms, [col], d.msn).items():
+            via = collections.Counter(row_kind(d, s) for s in set().union(*(owners.get(m, set()) for m in rows)))
+            tier = "A" if ta_direct & set(rows) else ("A-link" if ta_linked & set(rows) else "-")
+            ents.append(dict(table=col, number=n, users={col: rows}, rows=rows, kinds=None, batch="missile",
+                             tier=tier, params=fill(ms, rows, pcols), calcs=fill(ms, rows, ccols), via=via))
+    return ents
+
+
+def entry_rows_str(d, e, limit=None):
+    parts = []
+    for c, rs in e["users"].items():
+        if c == "srvactivefunc":
+            nm = [d.states.txt[i]["state"] for i in rs]
+            parts.append("States.srvactivefunc: " + ", ".join("%d %s" % (i, n) for i, n in zip(rs, nm)))
+            if e.get("state_skills"):
+                parts.append("aurastate of: " + rows_str(e["state_skills"], d.skn))
+        elif c in MS_SRV_FUNCS:
+            parts.append(rows_str(rs, d.msn, limit))
+        else:
+            parts.append("%s: %s" % (c, rows_str(rs, d.skn, limit)))
+    return "; ".join(parts)
+
+
+def kinds_str(c):
+    return ", ".join("%s %d" % (k, c[k]) for k in CLASSES + ("monster", "item", "general") if c and c[k]) or "-"
+
+
+def sec_index(d):
+    out, kv = [], collections.OrderedDict()
+    ents = index_entries(d)
+    ta = tier_a_rows(d)
+    kv["ix_tiera_rows"] = sum(1 for i in ta if i >= 0)
+    # the rows `tiera` adds must be TIER_A_ADDED
+    tlines, tkv = sec_tiera(d)
+    added = [int(ln.split()[1]) for ln in tlines if ln.startswith("  added ")]
+    kv["ix_tiera_added_match"] = int(sorted(added) == sorted(i for i in ta[-len(TIER_A_ADDED):])
+                                     and tkv["ta_big_uncovered"] == 0)
+    out.append("rule: " + " ".join(BATCH_RULE.split()))
+    out.append("tier A: %d rows (%s); tier A on a missile entry: A = a missile a tier-A row names, A-link = reached "
+               "from one through SubMissile*/HitSubMissile*" % (
+                   kv["ix_tiera_rows"], ", ".join("%d %s" % (i, d.skn[i]) for i in ta if i >= 0)))
+    for table in ("start", "do") + MS_SRV_FUNCS:
+        mine = [e for e in ents if e["table"] == table]
+        key = table.lower()
+        kv["ix_%s_entries" % key] = len(mine)
+        kv["ix_%s_tiera" % key] = sum(1 for e in mine if e["tier"] != "-")
+        out.append("%s table: %d entries, %d reached by tier A" % (table, len(mine), kv["ix_%s_tiera" % key]))
+        for e in mine:
+            if table in ("start", "do"):
+                extra = "kinds %s" % kinds_str(e["kinds"])
+            else:
+                extra = "via skills %s" % kinds_str(e["via"])
+            out.append("  %s %d (%d rows) batch %s tier %s | %s | params %s | calcs %s | %s" % (
+                table, e["number"], len(e["rows"]), e["batch"], e["tier"], extra, ", ".join(e["params"]) or "-",
+                ", ".join(e["calcs"]) or "-", entry_rows_str(d, e, 12 if len(e["rows"]) > 40 else None)))
+    do = [e for e in ents if e["table"] == "do"]
+    kv["ix_do_srvdofunc"] = sum(1 for e in do if "srvdofunc" in e["users"])
+    kv["ix_do_srvprgfunc"] = sum(1 for e in do if "srvprgfunc" in e["users"])
+    kv["ix_do_prg_also_do"] = sum(1 for e in do if "srvprgfunc" in e["users"] and "srvdofunc" in e["users"])
+    kv["ix_do_itemeffect"] = sum(1 for e in do if "ItemEffect" in e["users"])
+    kv["ix_do_itemeffect_only"] = sum(1 for e in do if list(e["users"]) == ["ItemEffect"])
+    kv["ix_do_srvactivefunc"] = sum(1 for e in do if "srvactivefunc" in e["users"])
+    kv["ix_do_srvactivefunc_only"] = sum(1 for e in do if list(e["users"]) == ["srvactivefunc"])
+    kv["ix_multiclass"] = sum(1 for e in ents if e["kinds"] and sum(1 for c in CLASSES if e["kinds"][c]) > 1)
+    kv["ix_class_and_monster"] = sum(1 for e in ents if e["kinds"] and e["kinds"]["monster"]
+                                     and any(e["kinds"][c] for c in CLASSES))
+    out.append("do table: srvdofunc %d, srvprgfunc %d (also a srvdofunc %d), ItemEffect %d (only %d), "
+               "States srvactivefunc %d (only %d); entries with rows of two classes or more %d, with class and "
+               "monster rows %d" % (kv["ix_do_srvdofunc"], kv["ix_do_srvprgfunc"], kv["ix_do_prg_also_do"],
+                                    kv["ix_do_itemeffect"], kv["ix_do_itemeffect_only"], kv["ix_do_srvactivefunc"],
+                                    kv["ix_do_srvactivefunc_only"], kv["ix_multiclass"], kv["ix_class_and_monster"]))
+    kv["ix_entries"] = len(ents)
+    out.append("batches (entries, of them reached by tier A, rows):")
+    for b in BATCHES:
+        mine = [e for e in ents if e["batch"] == b]
+        kv["ix_batch_%s" % b] = len(mine)
+        kv["ix_batch_%s_tiera" % b] = sum(1 for e in mine if e["tier"] != "-")
+        per = collections.Counter(e["table"] for e in mine)
+        out.append("  %-8s %3d entries (%s), tier A %d" % (b, len(mine), ", ".join(
+            "%s %d" % (t, per[t]) for t in ("start", "do") + MS_SRV_FUNCS if per[t]) or "-",
+            kv["ix_batch_%s_tiera" % b]))
+    return out, kv
+
+
 SECTIONS = collections.OrderedDict([
     ("skills", sec_skills), ("missiles", sec_missiles), ("pettype", sec_pettype), ("families", sec_families),
-    ("tiera", sec_tiera)])
+    ("tiera", sec_tiera), ("index", sec_index)])
 
 
 def survey_line(kv):
@@ -594,6 +822,8 @@ def survey_line(kv):
 
 
 def main(argv):
+    if len(argv) == 3 and argv[1] == "--index":
+        argv = [argv[0], "index", argv[2]]
     if len(argv) != 3 or (argv[1] not in SECTIONS and argv[1] != "summary"):
         print(__doc__)
         return 2

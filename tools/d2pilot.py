@@ -108,11 +108,13 @@ class LogState:
         self.warps = {}             # DRLG room -> warp nodes (RL / RRESEED "warps", tools/gdb/pilot.py)
         self.wrp = {}               # (level id, LvlWarp row, x, y): warp units (WRP, tools/gdb/pilot.py)
         self.objs = {}              # object unit -> (class, x, y, mode at creation) (OU0/OUX, tools/gdb/objects.py)
+        self.obj_it = {}            # object unit -> interact byte at creation (OUX; trap type & 0x7F, lock 0x80)
         self.operated = set()       # object units operated (OO0)
         self.ou0 = None
         self.npcs = {}              # MonStats class -> [(unit id, mode, x, y)] (NPC lines, tools/gdb/vendors.py)
         self.objs_xy = []           # every object unit's position (OBJS lines, tools/gdb/vendors.py)
         self.objs_cls = []          # the same with the object class: [class, x, y]
+        self.objs_seen = {}         # (class, x, y) -> the entry, over every OBJS line so far
         self.visited = set()        # (level id, x // 10, y // 10) of every PLR line
 
     def poll(self):
@@ -192,12 +194,15 @@ class LogState:
                 o = d.get("o") or {}
                 if getattr(self, "ou0", None) and o.get("u"):
                     self.objs[o["u"]] = self.ou0 + (o["mode"],)
+                    self.obj_it[o["u"]] = o.get("it") or 0
                 self.ou0 = None
             elif tag == "OO0":
                 self.operated.add(d["u"])
             elif tag == "OBJS":
                 self.objs_xy = [(o[1], o[2]) for o in d["o"]]
                 self.objs_cls = d["o"]
+                for o in d["o"]:                    # every object any OBJS line listed (objop --obj-mem)
+                    self.objs_seen.setdefault((o[0], o[1], o[2]), list(o))
             elif tag == "NPC":
                 npcs = {}
                 for c, i, m, x, y in d["n"]:
@@ -834,12 +839,13 @@ def cmd_hop(args):
 LOOT_FNS = None
 
 
-def loot_fns(excel):
-    """Objects records whose OperateFn is a container (1 casket, 3 urn, 4 chest, 5 barrel), plan 0023."""
+def loot_fns(excel, fns=(1, 3, 4, 5)):
+    """Objects records whose OperateFn is a container (1 casket, 3 urn, 4 chest, 5 barrel), plan 0023; plan 0038
+    batch H5b: --loot-fns adds others (26 bookshelves, 48 trapped souls, 68 evil urns)."""
     global LOOT_FNS
     if LOOT_FNS is None:
         from obj_survey import decode
-        LOOT_FNS = {i for i, o in enumerate(decode(excel, "objects")) if o["OperateFn"] in (1, 3, 4, 5)}
+        LOOT_FNS = {i for i, o in enumerate(decode(excel, "objects")) if o["OperateFn"] in fns}
     return LOOT_FNS
 
 
@@ -849,14 +855,17 @@ def loot(args, st, p, tried):
     to it first; then a plain left click on it (the character walks there and operates it). Returns the count clicked."""
     if not args.loot or not st.pos:
         return 0
-    fns = loot_fns(args.excel)
+    fns = loot_fns(args.excel, tuple(int(f) for f in str(getattr(args, "loot_fns", "1,3,4,5")).split(",") if f))
+    prio = {int(t) for t in str(getattr(args, "loot_trap", "") or "").split(",") if t}
     n = 0
     for _ in range(args.loot_max):
         st.poll()
         px, py = st.pos[0], st.pos[1]
-        cand = [(math.hypot(x - px, y - py), u, x, y) for u, (c, x, y, m) in st.objs.items()
+        # --loot-trap T,..: containers whose trap type is one of T come first, from twice as far (plan 0038 H5b)
+        cand = [(math.hypot(x - px, y - py) - (1000 if (st.obj_it.get(u, 0) & 0x7F) in prio else 0), u, x, y)
+                for u, (c, x, y, m) in st.objs.items()
                 if c in fns and m == 0 and u not in st.operated and u not in tried
-                and math.hypot(x - px, y - py) <= args.loot]
+                and math.hypot(x - px, y - py) <= args.loot * (2 if (st.obj_it.get(u, 0) & 0x7F) in prio else 1)]
         if not cand:
             break
         _, u, x, y = min(cand)
@@ -1845,9 +1854,15 @@ def cmd_objop(args):
     misses = [0]
     gate = NovaGate(args.radius, args.give_up)
     p.nova_hold = args.nova_hold
+    t_note = [time.time(), 0]
     while time.time() - t0 < args.time and done < args.times:
         st.poll()
+        if time.time() - t_note[0] > 20:              # a status line every 20 s (plan 0038 H5b: silent objops)
+            print("objop: %.0f s, player %s, %d Nova bursts since the last note" % (
+                time.time() - t0, st.pos and st.pos[:3], t_note[1]), flush=True)
+            t_note[0], t_note[1] = time.time(), 0
         if not args.no_nova and gate.cast(p, st):    # Nova first at whatever it can hurt in range
+            t_note[1] += 1
             upkeep(args, p)
             continue
         objs = [o for o in getattr(st, "objs_cls", []) if o[0] in classes and (o[1], o[2]) not in visited]
@@ -1863,6 +1878,23 @@ def cmd_objop(args):
             time.sleep(0.5)
             continue
         px, py = st.pos[0], st.pos[1]
+        if not objs and getattr(args, "goal", None) and not getattr(args, "trap_types", None) and not (
+                getattr(args, "obj_mem", False) and any(o[0] in classes for o in st.objs_seen.values())):
+            # plan 0038 H5b: no object of the classes known yet; head for a fixed point (a preset object's position
+            # from an earlier session on the same map seed) so that its room activates
+            gx, gy = (int(v) for v in args.goal.split(","))
+            if math.hypot(gx - px, gy - py) > 6:
+                upkeep(args, p)
+                c = optimistic_hop(st, (gx, gy), args.hop, blind[1])
+                if c is None:
+                    a = math.atan2(gy - py, gx - px) + random.uniform(-0.8, 0.8)
+                    c = (int(px + args.hop * math.cos(a)), int(py + args.hop * math.sin(a)))
+                p.teleport(c[0] - px, c[1] - py)
+                time.sleep(args.wait)
+                st.poll()
+                if st.pos and math.hypot(st.pos[0] - px, st.pos[1] - py) < 3:
+                    blind[1].add(c)
+                continue
         if not objs and args.to_pdef:
             # the object's room is not active yet: head for the preset room (RL pdef), over known cells when a
             # greedy hop exists, else a blind Teleport of --hop towards it (lava and gaps are crossed that way)
@@ -1887,6 +1919,18 @@ def cmd_objop(args):
             if st.pos and math.hypot(st.pos[0] - px, st.pos[1] - py) < 3:
                 blind[1].add(c)
             continue
+        if getattr(args, "trap_types", None):
+            # plan 0038 H5b: the containers whose trap type (interact & 0x7F at creation, OUX) is one of
+            # --trap-types, created closed, not operated yet, on this level (within 400 sub-tiles)
+            tt = {int(t) for t in str(args.trap_types).split(",") if t}
+            objs = [(c, x, y) for u, (c, x, y, m) in st.objs.items()
+                    if m == 0 and u not in st.operated and (st.obj_it.get(u, 0) & 0x7F) in tt
+                    and (x, y) not in visited and math.hypot(x - px, y - py) < 400]
+        if not objs and getattr(args, "obj_mem", False):
+            # plan 0038 H5b: an OBJS line lists only the objects near the player; head for one an earlier line
+            # listed (same level: within 400 sub-tiles)
+            objs = [o for o in st.objs_seen.values() if o[0] in classes and (o[1], o[2]) not in visited
+                    and math.hypot(o[1] - px, o[2] - py) < 400]
         if not objs:
             time.sleep(0.5)
             continue
@@ -1930,7 +1974,8 @@ def cmd_objop(args):
                 break
         done += ok
         misses[0] = 0 if ok else misses[0] + 1
-        if len(classes) > 1 and (ok or misses[0] >= 4):
+        if (len(classes) > 1 or getattr(args, "trap_types", None) or getattr(args, "obj_mem", False)) \
+                and (ok or misses[0] >= 4):
             visited.add((o[1], o[2]))
             misses[0] = 0
         print("objop: click %d at (%d, %d) d %.1f: %s" % (done, o[1], o[2], d, "done" if ok else "no %s line" % args.done))
@@ -2041,6 +2086,89 @@ def cmd_hunt(args):
             bad.add(c)
     print("hunt: time out (class %d %s)" % (args.mon_cls, "seen" if seen else "never seen"))
     return 1
+
+
+def cmd_corpse(args):
+    """Plan 0038 batch H2a: a Barbarian's Find Item on fresh corpses (the noNoDrop drop path). The right skill is War
+    Cry, cast on the player like Nova (--nova-key, Shift + right click, --nova-hold) at whatever live monster is within
+    --radius; each corpse (MON mode 12) within --corpse-r sub-tiles gets Find Item (--find-key: the skill's F-key, then
+    Shift + right click on the corpse's cell, a few pixel offsets per try, --corpse-tries tries), once per unit id; with
+    nothing in range the character walks (a left click, --walk) or Teleports towards the nearest live monster within
+    --chase, else towards the nearest unactivated room. Stops after --time s or --corpse-max corpses tried. Nothing
+    here feeds a model."""
+    st = LogState(args.log)
+    p = Pilot(args)
+    p.walk = bool(args.walk)
+    p.nova_hold = args.nova_hold
+    if args.nova_key:
+        p.nova_key = args.nova_key
+    tried = {}
+    bad = set()
+    t0 = time.time()
+    n_done = 0
+    offs = ((0, -6), (0, -16), (10, -10), (-10, -10), (0, 4))
+    while time.time() - t0 < args.time and n_done < args.corpse_max:
+        st.poll()
+        if not st.pos:
+            time.sleep(0.5)
+            continue
+        upkeep(args, p, st)
+        px, py = st.pos[0], st.pos[1]
+        mons = list(st.mon)
+        near_live = [m for m in mons if live(m) and m["cls"] not in HIRE_CLS
+                     and math.hypot(m["x"] - px, m["y"] - py) <= args.radius]
+        if near_live:
+            p.nova()
+            time.sleep(0.1)
+            continue
+        corpses = [m for m in mons if m["mode"] == 12 and tried.get(m["id"], 0) < args.corpse_tries
+                   and math.hypot(m["x"] - px, m["y"] - py) <= args.corpse_r]
+        if corpses:
+            m = min(corpses, key=lambda m: math.hypot(m["x"] - px, m["y"] - py))
+            k = tried.get(m["id"], 0)
+            tried[m["id"]] = k + 1
+            sx, sy = p.screen(m["x"] - px, m["y"] - py)
+            ox, oy = offs[k % len(offs)]
+            sx, sy = max(10, min(790, sx + ox)), max(10, min(int(540 * p.vs), sy + oy))
+            p.dpy.key(args.find_key)
+            time.sleep(0.1)
+            p.dpy.keystate("Shift_L", True)
+            time.sleep(0.05)
+            p.dpy.click(p.off[0] + int(sx), p.off[1] + int(sy), button=3, hold=0.12)
+            time.sleep(0.05)
+            p.dpy.keystate("Shift_L", False)
+            time.sleep(1.2)
+            if args.nova_key:
+                p.dpy.key(args.nova_key)
+            if k == 0:
+                n_done += 1
+            print("corpse: Find Item on unit %d (class %d) at (%d, %d), try %d" % (m["id"], m["cls"], m["x"], m["y"],
+                                                                                 k + 1))
+            continue
+        far = [m for m in mons if live(m) and m["cls"] not in HIRE_CLS
+               and math.hypot(m["x"] - px, m["y"] - py) <= args.chase]
+        if far:
+            m = min(far, key=lambda m: math.hypot(m["x"] - px, m["y"] - py))
+            d = math.hypot(m["x"] - px, m["y"] - py)
+            k = min(1.0, args.hop / max(d, 1.0))
+            c = (int(px + (m["x"] - px) * k), int(py + (m["y"] - py) * k))
+        else:
+            fr = [rect for r, rect in st.frontier(st.pos[2])]
+            if not fr:
+                time.sleep(0.5)
+                continue
+            goal = min(fr, key=lambda rc: math.hypot(room_centre(rc)[0] - px, room_centre(rc)[1] - py))
+            c = optimistic_hop(st, room_centre(goal), args.hop, bad, step=2)
+            if c is None:
+                time.sleep(0.5)
+                continue
+        p.teleport(c[0] - px, c[1] - py)
+        time.sleep(args.wait)
+        st.poll()
+        if st.pos and math.hypot(st.pos[0] - px, st.pos[1] - py) < 2:
+            bad.add(c)
+    print("corpse: %d corpses tried in %.0f s" % (n_done, time.time() - t0))
+    return 0
 
 
 def cube_outcome(text):
@@ -2912,7 +3040,7 @@ def main():
         sys.argv = sys.argv[:k] + opts
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=("where", "explore", "hop", "farm", "mons", "wp", "wpchain", "players", "insert",
-                                    "cube", "npc", "objop", "hunt", "join"))
+                                    "cube", "npc", "objop", "hunt", "join", "corpse"))
     ap.add_argument("log")
     ap.add_argument("dx", nargs="?", default="0")
     ap.add_argument("dy", nargs="?", default="0")
@@ -2986,6 +3114,10 @@ def main():
                                                           "before each hop (needs tools/gdb/objects.py's lines; plan 0023)")
     ap.add_argument("--persist", type=int, default=0, help="explore: on 'no target', make a random hop and plan again, "
                                                            "up to this many times in a row, before stopping")
+    ap.add_argument("--loot-fns", default="1,3,4,5", help="explore --loot: the OperateFn values operated (plan 0038 "
+                    "H5b adds 26 bookshelves, 48 trapped souls, 68 evil urns)")
+    ap.add_argument("--loot-trap", default="", help="explore --loot: trap types (interact & 0x7F) operated first and "
+                    "from twice --loot, e.g. 5,7,8 (plan 0038 H5b)")
     ap.add_argument("--loot-max", type=int, default=4, help="explore: most containers operated at one stop")
     ap.add_argument("--loot-wait", type=float, default=2.5, help="explore: seconds to wait for the operate (OO0) line")
     ap.add_argument("--loot-dy", type=int, default=20, help="explore: click this many pixels above the object's cell")
@@ -3020,6 +3152,10 @@ def main():
     ap.add_argument("--done-wait", type=float, default=6.0, help="npc: seconds to wait for the logger's confirmation")
     ap.add_argument("--linger-open", type=float, default=0.3, help="npc: seconds the window stays open")
     ap.add_argument("--close-wait", type=float, default=0.6, help="npc: seconds after the Escape")
+    ap.add_argument("--trap-types", default=None, help="objop: operate the containers whose trap type (interact & "
+                    "0x7F, from the OUX lines) is one of these, in place of --obj-cls (plan 0038 H5b)")
+    ap.add_argument("--obj-mem", action="store_true", help="objop: when the latest OBJS line lists no object of "
+                    "the classes, head for one an earlier OBJS line listed (within 400 sub-tiles; plan 0038 H5b)")
     ap.add_argument("--obj-cls", default="376", help="objop: the object class (objects.txt row), or several "
                     "comma-separated (plan 0041 Phase 2: any shrine or well); each object clicked once (by position)")
     ap.add_argument("--obj-near", type=float, default=4.0, help="objop: click the object from this close (sub-tiles)")
@@ -3031,10 +3167,14 @@ def main():
                     "target stand still and cast nothing (the mercenary or a summon kills it); never Nova on the way")
     ap.add_argument("--pdef-any", action="store_true", help="objop --to-pdef: preset rooms of any built level (plan "
                     "0038 H6d: the Chaos Sanctuary's wings from the River of Flame), not only the current one")
-    ap.add_argument("--goal", help="hunt: X,Y sub-tiles to head for while the target is not seen (its place in an "
+    ap.add_argument("--goal", help="hunt, objop: X,Y sub-tiles to head for while the target is not seen (its place in an "
                     "earlier game on the same map seed)")
     ap.add_argument("--summon-key", help="hunt --pet: F-key of a placed summon (Hydra), cast towards the target")
     ap.add_argument("--summon-every", type=float, default=3.0, help="hunt --pet: seconds between summon casts")
+    ap.add_argument("--find-key", default="F2", help="corpse (plan 0038 H2a): F-key of Find Item")
+    ap.add_argument("--corpse-r", type=float, default=6.0, help="corpse: Find Item on corpses within this many sub-tiles")
+    ap.add_argument("--corpse-tries", type=int, default=3, help="corpse: Find Item clicks per corpse")
+    ap.add_argument("--corpse-max", type=int, default=40, help="corpse: stop after this many corpses")
     ap.add_argument("--no-nova", action="store_true", help="objop: never stop to cast Nova (Hell: Teleport through)")
     ap.add_argument("--approach", action="store_true", help="objop: stop within --obj-near of the object, no click")
     ap.add_argument("--me", help="two clients (plan 0044): steer by this player's PLRS entry (tools/gdb/two-players.py): "
@@ -3075,7 +3215,7 @@ def main():
         return cmd_join(args, tokens or [])
     return {"where": cmd_where, "explore": cmd_explore, "hop": cmd_hop, "farm": cmd_farm,
             "mons": cmd_mons, "wp": cmd_wp, "wpchain": cmd_wpchain, "players": cmd_players, "npc": cmd_npc,
-            "objop": cmd_objop, "hunt": cmd_hunt}[args.cmd](args)
+            "objop": cmd_objop, "hunt": cmd_hunt, "corpse": cmd_corpse}[args.cmd](args)
 
 
 if __name__ == "__main__":

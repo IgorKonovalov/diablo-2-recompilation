@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, player/creation, monsters/stats]
 consumed_by: [combat/overview, combat/damage, combat/delivery]
 tags: {C: 32, I: 27, L: 3}
-updated: 2026-10-17
+updated: 2026-10-20
 ---
 
 # Combat: the hit test, chance to hit and the defence rolls
@@ -146,8 +146,11 @@ Step notes:
 - A6. The draw is the inlined LCG on `att.seed` with the unsigned `low mod 100`, the same value as `Range(att.seed,
   100)`. Before the test the binary passes `c` and `r` to an empty debug stub. [C] (0x0057DB35–0x0057DB79,
   fn:DEBUG_ToHitRollStub@0x005347B0, run:2026-10-16-combat)
-- A6. On a hit, `PreventHealHook` puts a state on a monster defender when the attacker has stat 117; it draws
-  nothing. [I] (fn:sub_0057D810_PreventHealHook@0x0057D810)
+- A6. On a hit, `PreventHealHook` runs inside `COMBAT_ToHitRoll`'s success branch, after the draw: for a player
+  attacker with stat 117 ≠ 0 and a monster defender whose class is outside 704–709, it applies state 52 (`STATE_ApplyTimed`)
+  for 120 000 frames with stat 31 = 0. It draws nothing, so the state is applied between the to-hit draw and the
+  defence rolls. [I] (fn:sub_0057D810_PreventHealHook@0x0057D810, 0x0057DB80, 0x0057D869–0x0057D891,
+  [skills/0003 § 3](../../findings/skills/0003-handlers.md#3-the-stat-event-handlers))
 
 **A7. Target modifiers (players only).**
 

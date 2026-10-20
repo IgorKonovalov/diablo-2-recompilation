@@ -40,8 +40,9 @@ objgroup, objects, shrines), decoded with tools/excel_layouts.py, from --excel.
     are predicted from the model's rooms and near lists.
   * Creation: SUnitCreate class, position, flags and mode (OU0) and the unit's seed, mode, interact byte and sparkle
     flag at OIX / OUX; the InitFn draws (1 shrine, 2 trap byte, 3 chest lock and re-seed, 57 sparkly chest, 27, 28 gold
-    piles with the gold drop as a seed oracle, 34, 58); the monster-spawning and quest InitFns (46, 47, 54, 55, 62, 66,
-    68, 69, 79) are seed oracles (seeds asserted at OI0 and taken at OIX). A mode change draws RangeB(unit seed,
+    piles with the gold drop as a seed oracle, 34, 58, and since plan 0048 46: City of the Damned, whose MonSpawnTry
+    requests are compared here and predicted by tools/monspawn.py); the other monster-spawning and quest InitFns (47,
+    54, 55, 62, 66, 68, 69, 79) are seed oracles (seeds asserted at OI0 and taken at OIX). A mode change draws RangeB(unit seed,
     FrameDelta[mode] >> 3) when Sync is 0 (UNIT_AnimInit).
   * Operate (OO0 .. OOX): OperateFn 1 (casket), 3 (urn), 4 (chest: the sparkle quality, the 25 % empty chest, locked
     chests, the class-397 table) and 5 (barrel) on the object-region seed up to each ObjectChestDrop: the forced quality
@@ -69,9 +70,13 @@ from obj_survey import decode, txt_col  # noqa: E402
 M = 0x6AC690C5
 INIT_HIGH = 666
 TOWNS = {1, 40, 75, 103, 109}
-ORACLE_INITFNS = {46, 47, 54, 55, 62, 66, 68, 69, 79}
-MODELLED_INITFNS = {1, 2, 3, 27, 28, 34, 57, 58}
+TC_CHAIN = True          # plan 0048 oracle 6: an object's drop chained (tools/tc.py inside, the items' game-seed steps)
+GOLD_MODEL = True        # plan 0048 oracle 7: the gold drop of InitFn 28 modelled (False: the plan 0023 seed oracle)
+ORACLE_INITFNS = {47, 54, 55, 62, 66, 68, 69, 79,
+                  18, 19, 25, 43, 49, 50, 52, 60, 71}   # + the nine that create monsters (objects/0001 § S4b row 25)
+MODELLED_INITFNS = {1, 2, 3, 27, 28, 34, 46, 57, 58}       # 46: plan 0048 Phase 1 (oracle 17)
 INIT_TABLE = (set(range(1, 80)) - {35, 36, 40})       # g_ObjInitFns 0x00731BC0: the non-null entries
+THEMES_ENABLED = {1, 2, 4, 5, 6}           # g_ObjThemeFns 0x00731E68 entries with enabled 1 (read from the image)
 CLUSTER = {3: ([3, 28], 18, 5, 5, False), 1: ([79, 53, 1], 12, 5, 5, False), 79: ([79, 53, 1], 12, 5, 5, False),
            4: ([4, 9, 52, 94, 95], 12, 0, 1, True), 89: ([89, 284], 12, 5, 5, False),
            208: ([208, 209], 12, 0, 1, True), 209: ([208, 209], 12, 0, 1, True)}   # g_ObjClusterLists 0x00731D50
@@ -256,11 +261,20 @@ class Mismatch(Exception):
 
 
 OBJ_TAGS = {"OGC", "OD", "OG", "OS", "OK", "OH0", "OHX", "OT", "OPU0", "OPUX", "OU0", "OUX", "OI0", "OIX", "OGP0",
-            "OGPX", "OO0", "OOX", "OC0", "OCT", "OCX", "RW0", "RW1", "RW2", "RW3", "RW4", "P0"}
-PASS_TAGS = ("HDR", "GAME", "RW0", "P0")
+            "OGPX", "OO0", "OOX", "OC0", "OCT", "OCX", "RW0", "RW1", "RW2", "RW3", "RW4", "P0",
+            "MT0", "MTX",             # plan 0048: InitFn 46's MonSpawnTry requests (tools/monspawn.py models inside)
+            "TF", "TFQ", "TE0", "TT0", "TTX"}
+TRAP_Q = ("TF", "TFQ")                                 # OBJ_TrapFire and its queue call: recorded wherever they occur
+PASS_TAGS = ("HDR", "GAME", "RW0", "P0", "TCEND") + TRAP_Q     # TCEND: plan 0048, read only inside a chest drop
 COLL_SIDE = ("TL", "CB", "TCU", "RRESEED", "CM")     # tools/gdb/collision.py lines fed to the grid model (plan 0027)
 SKIP_TAGS = PASS_TAGS + COLL_SIDE
 RET_COLLMARKRECT = 0x00620ACF                          # return address of COLL_RectOrWH in UNIT_CollMarkRect
+# g_ObjTrapFns 0x00732CEC (10 entries, plan 0038 batch H5b): 0 none; 1, 2, 3, 4, 6 a monster at a free spot
+# (0x00582420 with MonStats 330, 326, 329, 369, 326); 5, 7 OBJTRAP_ObjectCreate; 8, 9 OBJTRAP_MonsterSpawn
+TRAP_FNS = [0, 0x00582490, 0x005824B0, 0x005824D0, 0x005824F0, 0x00582380, 0x005824B0, 0x00582380, 0x005822F0,
+            0x005822F0]
+TRAP_OBJCREATE, TRAP_MONSPAWN = 0x00582380, 0x005822F0
+TRAP_DELAY = 35                                        # OBJ_TrapFire: event 4 at frame + 0x23 (0x0058258C)
 
 
 class Tables:
@@ -291,6 +305,12 @@ class Seed:
             self.od(self.s)
         return self.s[0]
 
+    def draw_unstored(self):
+        """A step whose low word the code keeps in a register and never stores (the next step's store is the one the
+        OD watchpoint sees): InitFn 46's direction draw (0x005508EC..0x00550928)."""
+        self.s = step(self.s)
+        return self.s[0]
+
     def rng(self, n):
         """RNG_Range / RNG_RangeB: 0 without a draw when n < 1, else low mod n (low & (n-1) for a power of two)."""
         n = s32(n)
@@ -318,6 +338,10 @@ class Checker:
         self.cov = {}
         self.msgs = []
         self.pred_rw4 = set()     # (log, line) of every RW4 the model reached with all three seeds predicted
+        # plan 0048 Phase 1: per RW4 of pred_rw4, the oracle exits this checker took inside the window: ("OPUX", line)
+        # of a preset monster, ("OIX", line, InitFn) of a monster or quest InitFn, ("GOLD", line) of a gold drop
+        self.rw4_oracles = {}
+        self.win_oracles = []
 
     # --- bookkeeping --------------------------------------------------------------------------------------------
     def hit(self, k, n=1):
@@ -345,6 +369,10 @@ class Checker:
                 lines.append(("HDR", {"text": line.strip()}, ln))
             elif tag == "GAME":
                 lines.append(("GAME", {"text": rest.strip()}, ln))
+            elif tag == "TCEND":
+                # tools/gdb/tc-drops.py's resolver exit (key=value): its source seed, which tools/tc.py predicts
+                kv = dict(x.split("=", 1) for x in rest.split() if "=" in x)
+                lines.append(("TCEND", {"seed": kv.get("seed")}, ln))
             elif tag in OBJ_TAGS or tag in COLL_SIDE:
                 try:
                     lines.append((tag, json.loads(rest), ln))
@@ -417,6 +445,10 @@ class Checker:
         want, why = self.mark_of(u["cls"], u["mode"], u["room"], u["x"], u["y"], force)
         if want is None:
             self.hit("object marks: none (%s)" % why)
+            if why == "size 0":
+                # plan 0038 H5b (drlg/collision row 39): HasCollision set for the mode, SizeX or SizeY 0; in a window
+                # the next side line must not be this object's CM (the following CM check then catches a stray one)
+                self.covk("size-0 objects with HasCollision (no mark)", (self.lid, u["cls"], u["mode"], self.in_window))
             return
         m = want["m"]
         if self.in_window:
@@ -437,6 +469,12 @@ class Checker:
             self.ok(ok and got["ret"] == RET_COLLMARKRECT and all(got[k] == want[k] for k in keys),
                     "line %d: object mark %s, model %s" % (self.ln, json.dumps(got), json.dumps(want)))
             self.hit("object marks predicted and compared with the logged CM (mask 0x%04x)" % m)
+            o = self.t.objs[u["cls"]]
+            if o["IsDoor"]:
+                # plan 0038 H5b (drlg/collision row 37): the door branch of UNIT_GetCollMask
+                self.hit("door marks compared (IsDoor 1, BlocksVis %d, BlockMissile %d): mask 0x%04x"
+                         % (o["BlocksVis"], o["BlockMissile"], m))
+                self.covk("door marks compared", (self.lid, u["cls"], m))
         else:
             self.hit("object marks predicted outside a logged window (no CM line to compare)")
         self.cw.apply_model_mark(want)
@@ -455,6 +493,8 @@ class Checker:
                 if tag == "P0":
                     self.room_lid[d["room"]] = d["lid"]
                     self.de = (d["diff"], d["exp"])
+                elif tag in TRAP_Q:
+                    self.trapq(tag, d, ln)
                 self.i += 1
                 continue
             if tag == "LOGERR":
@@ -464,6 +504,8 @@ class Checker:
                 raise Mismatch("line %d: expected %s, got %s %s" % (ln, "/".join(sorted(wants)), tag, json.dumps(d)[:160]))
             self.i += 1
             self.ln = ln
+            if tag == "OG":
+                self.room_rect[d["room"]] = d["rect"]
             return tag, d
         raise Mismatch("log ended while expecting %s" % "/".join(sorted(wants)))
 
@@ -506,6 +548,8 @@ class Checker:
                 self.side("OU0x", d, ln, oracle=True)
             elif tg == "OUX":
                 self.orc_obj = None
+            elif tg in TRAP_Q:
+                self.trapq(tg, d, ln)
             if tg == tag:
                 self.ln = ln
                 self.oracle(oracle_name)
@@ -533,6 +577,8 @@ class Checker:
         self._restore_last = None
         self.cw = collision.World(self.root, None)       # the grid model (one game process per log)
         self.in_window = False
+        self.tq = {}              # object unit -> its last OBJ_TrapFire (TF) and queue (TFQ) lines
+        self.room_rect = {}       # room -> rect from its OG line
         chk0, fail0 = self.checks, self.fail
         while self.i < len(self.L):
             tag, d, ln = self.L[self.i]
@@ -552,6 +598,10 @@ class Checker:
                     self.de = (d["diff"], d["exp"])
                 elif tag == "OD":
                     self.stray(d, ln)
+                elif tag in TRAP_Q:
+                    self.trapq(tag, d, ln)
+                elif tag == "TE0":
+                    self.trap_event(d)
                 elif tag in COLL_SIDE:
                     self.side(tag, d, ln)
                 elif tag == "LOGERR":
@@ -631,6 +681,7 @@ class Checker:
         self.G = Seed(parse_seed(d1["gs"]), "game")
         self.seeds_eq(d1, "RW1", rs=False, gs=False)
         self._np0 = self.stats.get("objects created (populate)", 0)
+        self.win_oracles = []
         while True:
             tag, d = self.next_obj({"OPU0", "RW2"})
             if tag == "RW2":
@@ -645,6 +696,7 @@ class Checker:
         self.seeds_eq(d, "RW4")
         self.in_window = False
         self.pred_rw4.add((self.path, self.ln))
+        self.rw4_oracles[(self.path, self.ln)] = list(self.win_oracles)
         self.hit("windows predicted RW1 -> RW4 (room, object-region and game seed)")
         self.covk("windows by level", (self.lid, self.de))
         if self.stats.get("objects created (populate)", 0) > self._np0:
@@ -698,14 +750,48 @@ class Checker:
         elif typ == 2:
             u = self.pseudo(uid, d)
         else:
-            dx = self.skip_until("OPUX", "preset unit of type %d (monsters: tools/monspawn.py)" % typ)
-            self.take(dx)
+            dx = self.monster_window(typ)
+            self.win_oracles.append(("OPUX", self.ln))
+            self.take(dx, os_=False)
+            self.seeds_eq(dx, "OPUX (object-region seed)", rs=False, gs=False)
             return
         tag, dx = self.next_obj("OPUX")
         self.seeds_eq(dx, "OPUX")
         if u is not None and dx.get("o"):
             self.check_unit(dx["o"], u, "OPUX")
         return u
+
+    def monster_window(self, typ):
+        """A preset unit that is not an object (OPU0 .. OPUX): its monster (or tile unit) is tools/monspawn.py's, which
+        predicts the room and game seeds at OPUX; here they are taken there. The object-region seed is predicted: no
+        draw may happen inside except in an object created inside (plan 0048, oracle 22: the object 571 or 572 under
+        a catapult 432 or 433), which is modelled here like any creation (create: its game-seed step, InitFn,
+        PreOperate and mark) from the game seed at its OU0, which tools/monspawn.py predicts."""
+        name = "preset unit of type %d (monsters: tools/monspawn.py)" % typ
+        while self.i < len(self.L):
+            tg, d, ln = self.L[self.i]
+            if tg == "OPUX":
+                self.i += 1
+                self.ln = ln
+                self.oracle(name)
+                return d
+            if tg == "OU0" and d["type"] == 2:
+                self.G = Seed(parse_seed(d["gs"]), "game")
+                if self.rs is not None and d.get("rs"):
+                    self.rs.s = parse_seed(d["rs"])
+                self.create(d["cls"], d["x"], d["y"], 1, 0)
+                self.hit("objects created under a preset monster (Orient89Unit catapults), modelled")
+                continue
+            self.i += 1
+            if tg in COLL_SIDE:
+                self.side(tg, d, ln, oracle=True)
+            elif tg == "OU0":
+                self.side("OU0x", d, ln, oracle=True)
+            elif tg == "OUX":
+                self.orc_obj = None
+            elif tg == "OD":
+                raise Mismatch("line %d: object-region draw inside a preset monster's window" % ln)
+        raise Mismatch("log ended inside %s" % name)
 
     def pseudo(self, uid, d):
         lid = self.lid
@@ -768,6 +854,7 @@ class Checker:
             self.ok(parse_seed(di["us"]) == u["us"].s, "line %d: unit seed at InitFn %s, model %s" % (self.ln, di["us"], fmt(u["us"].s)))
             if fn in ORACLE_INITFNS:
                 dx = self.skip_until("OIX", "InitFn %d (monster spawns / quest state)" % fn)
+                self.win_oracles.append(("OIX", self.ln, fn))
                 self.take(dx)
                 u["us"].s = parse_seed(dx["o"]["us"])
                 u["it"], u["mode"], u["sp"] = dx["o"]["it"], dx["o"]["mode"], dx["o"]["sp"]
@@ -928,11 +1015,172 @@ class Checker:
                         % (self.ln, dg["x"], dg["y"], px, py))
                 self.seeds_eq(dg, "OGP0", rs=False)
                 self.ok(parse_seed(dg["us"]) == u["us"].s, "line %d: gold-pile unit seed" % self.ln)
-                dx_ = self.skip_until("OGPX", "gold drop (item creation)")
-                self.take(dx_, rs=False)
-                u["us"].s = parse_seed(dx_["us"])
+                if GOLD_MODEL:
+                    self.gold_drop(px, py, u)
+                else:
+                    dx_ = self.skip_until("OGPX", "gold drop (item creation)")
+                    self.take(dx_, rs=False)
+                    u["us"].s = parse_seed(dx_["us"])
                 piles += 1
         self.covk("gold piles (InitFn 28)", (self.lid, n, piles))
+
+    def init_46(self, u, o):
+        """OBJINIT_CityDamnedSpawns 0x005506D0 (plan 0048 Phase 1, oracle 17), read in the disassembly
+        (0x005506D0-0x00550A2C). Context {game, unit, room, objrgn seed, rec, x, y}; every draw is on the object-region
+        seed (the context's +0x0C is OBJRGN_GetSeed's). Only when the object's mode is 0: (rx, ry, w, h) = the room's
+        rect; n = ((h * w >> 7) * 30) >> 8 (signed); up to 12 tries while n > 0: x = rx + Range(w - 4), y = ry +
+        Range(h - 4); if OBJ_PosTestPadded(x, y, 3, 3): class 404 if Step & 1 else 403, SpawnAtPos at the OBJECT's
+        cell (mode 1, radius -1, flags 0), on success UNIT_SetMode(object, 2) and n - 1; then k = 1, ok = 1 and a
+        walk: m = k >> 1; if m > 0 and Range(m) != 0, stop; if not ok, stop; ok = 0; up to max(n, 4) * 3 steps of
+        (d = Step & 7; x += (Step % 5 + 5) * DX[d] * 2; y += (Step % 5 + 5) * DY[d] * 2; ok = OBJ_PosTestPadded(x, y,
+        3, 3)) until ok; when ok: the class draw, k + 1, SpawnAtPos at (x, y), on success SetMode 2 and n - 1."""
+        if u["mode"] != 0:
+            self.hit("InitFn 46: object mode not 0, no spawn")
+            return
+        rect = self.cw.rects.get(self.room)
+        if rect is None:
+            raise Mismatch("line %d: InitFn 46: the room's rect is not logged" % self.ln)
+        rx, ry, w, h = rect
+        saved = self.rect
+        self.rect = rect
+        try:
+            n = s32((s32(s32(h * w) >> 7) * 30)) >> 8
+            tries = 12
+            while n > 0 and tries > 0:
+                x = rx + self.O.rng(w - 4)
+                y = ry + self.O.rng(h - 4)
+                if self.pos_padded(x, y, 3, 3):
+                    cls = 404 if self.O.draw() & 1 else 403
+                    if self.mon_spawn_46(u["x"], u["y"], cls):
+                        self.set_mode(u, 2)
+                        n -= 1
+                    k, ok = 1, True
+                    while True:
+                        m = k >> 1
+                        if m > 0 and self.O.rng(m) != 0:
+                            break
+                        if not ok:
+                            break
+                        ok = False
+                        lim = max(n, 4) * 3
+                        for _ in range(lim):
+                            dr = self.O.draw_unstored() & 7     # stored only with the next step (one OD)
+                            x += (self.O.draw() % 5 + 5) * DX[dr] * 2
+                            y += (self.O.draw() % 5 + 5) * DY[dr] * 2
+                            if self.pos_padded(x, y, 3, 3):
+                                ok = True
+                                break
+                        if not ok:
+                            continue
+                        cls = 404 if self.O.draw() & 1 else 403
+                        k += 1
+                        if self.mon_spawn_46(x, y, cls):
+                            self.set_mode(u, 2)
+                            n -= 1
+                tries -= 1
+        finally:
+            self.rect = saved
+
+    def mon_spawn_46(self, x, y, cls):
+        """SpawnAtPos(game, room, x, y, class, mode 1, radius -1, flags 0): the request (MT0) is compared with the
+        model; inside, MonSpawnTry is tools/monspawn.py's (it predicts the window from MT0 to MTX); here the room
+        and game seeds are taken at MTX, and the object-region seed must not move."""
+        tag, d = self.next_obj("MT0")
+        self.ok((d["room"], d["box"], d["cls"], d["a10"], d["a14"], d["x"], d["y"], d["rad"], d["fl"]) ==
+                (self.room, 0, cls, 1, 0, s32(x), s32(y), -1, 0),
+                "line %d: InitFn 46 request %s, model class %d at (%d, %d)" % (self.ln, json.dumps(d)[:160], cls, x, y))
+        self.seeds_eq(d, "MT0 (InitFn 46)", os_=False)
+        j = self.i
+        while j < len(self.L) and self.L[j][0] != "MTX":
+            if self.L[j][0] == "OD":
+                raise Mismatch("line %d: object-region draw inside InitFn 46's MonSpawnTry" % self.L[j][2])
+            j += 1
+        dx = self.skip_until("MTX", "InitFn 46 MonSpawnTry: seeds taken at MTX here, predicted by tools/monspawn.py")
+        self.win_oracles.append(("MTX", self.ln))
+        self.take(dx, os_=False)
+        self.hit("InitFn 46 requests")
+        return dx["eax"] != 0
+
+    def gold_drop(self, px, py, u):
+        """sub_00559300_DropGoldPile (plan 0048 Phase 1, oracle 7), read in the decompile: the start cell is (px + 2,
+        py + 3) when RoomAtSubtile finds a room there, else (px, py); sub_0064E810_FreeNearPair(room, start, size 1,
+        masks 0x3E01 and 0x801) finds the spot; ItemCreate of `gld` (mode 3, item level LevelMonLvl - 1 when above 1)
+        there. Modelled: the start cell, the spot when the start cell itself is free (COLL_WHTest 1 x 1 with both masks
+        on the grid model; a ring search is taken from the log and counted), SUnitCreate's two game-seed steps (rng/seeds
+        7a: the unit seed Init(low of the first)), the item's 0x200 mark at the spot, and no object-region draw. The
+        gold amount draws on the item's own seed, which these logs do not show."""
+        try:
+            with self.cw.model_state():
+                r = self.cw.room_at(self.room, px + 2, py + 3)
+                sx, sy = (px + 2, py + 3) if r else (px, py)
+                rr = self.cw.room_at(self.room, sx, sy) or self.room
+                v1 = self.cw.wh_test(rr, sx, sy, 1, 1, 0x3E01) & 0xFFFF
+                v2 = self.cw.wh_test(rr, sx, sy, 1, 1, 0x801) & 0xFFFF
+        except collision.NotLogged as e:
+            raise Mismatch("line %d: gold drop: the grid model lacks %s" % (self.ln, e))
+        tag, d = self.next_obj("OU0")
+        if v1 == 0 and v2 == 0 and (d["x"], d["y"]) == (sx, sy):
+            self.hit("gold drops: spot predicted (the start cell is free)")
+        elif v1 == 0 and v2 == 0:
+            # an open divergence, not a failure: the grid model finds the start cell free and the game placed the
+            # pile elsewhere (FreeNearPair's second mask and its `other` argument are not read); the spot is taken
+            self.oracle("gold drop spot: the model finds the start cell free, the log has another cell (not read)")
+            self.win_oracles.append(("GOLD", self.ln))
+            self.covk("gold drop spot divergences", (self.ln, (sx, sy), (d["x"], d["y"])))
+            sx, sy = d["x"], d["y"]
+        else:
+            ring = self.gold_ring(rr, sx, sy)
+            if ring == (d["x"], d["y"]):
+                self.hit("gold drops: spot predicted (the ring search of COLL_FindFreeNear, mask 0x3E01 | 0x801)")
+            else:
+                self.oracle("gold drop spot (FreeNearPair ring search: start cell blocked; model %s)" % (ring,))
+                self.win_oracles.append(("GOLD", self.ln))
+            sx, sy = d["x"], d["y"]
+        self.ok((d["type"], d["cls"], d["fl"], d["mode"]) == (4, 523, 1, 3), "line %d: gold item %s" % (self.ln, json.dumps(d)[:120]))
+        self.seeds_eq(d, "OU0 (gold)", rs=False)
+        g1 = self.G.draw()
+        self.G.draw()
+        want = {"f": "RO", "room": d["room"], "x": sx, "y": sy, "a": 1, "b": 1, "m": 0x200}
+        j = self.i
+        while j < len(self.L) and self.L[j][0] in SKIP_TAGS and self.L[j][0] != "CM":
+            j += 1
+        got = self.L[j][1] if j < len(self.L) and self.L[j][0] == "CM" else None
+        keys = ("f", "room", "x", "y", "a", "b", "m")
+        self.ok(got is not None and all(got[k] == want[k] for k in keys), "line %d: gold mark %s, model %s"
+                % (self.ln, json.dumps(got), json.dumps(want)))
+        while self.i < j:
+            tg, dd, ll = self.L[self.i]
+            self.i += 1
+            if tg in COLL_SIDE:
+                self.side(tg, dd, ll)
+        self.i = j + 1
+        self.cw.apply_model_mark(want)
+        self.hit("gold drops: item mark 0x200 predicted")
+        tag, dx = self.next_obj("OUX")
+        self.ok(dx["o"]["us"] == fmt((g1, INIT_HIGH)), "line %d: gold item unit seed %s, model %s"
+                % (self.ln, dx["o"]["us"], fmt((g1, INIT_HIGH))))
+        self.seeds_eq(dx, "OUX (gold)", rs=False)
+        tag, dg = self.next_obj("OGPX")
+        self.seeds_eq(dg, "OGPX", rs=False)
+        self.ok(parse_seed(dg["us"]) == u["us"].s, "line %d: gold-pile unit seed at OGPX" % self.ln)
+        self.hit("gold drops: item creation predicted (two game-seed steps, unit seed)")
+
+    def gold_ring(self, room, x0, y0):
+        """COLL_FindFreeNear's ring (tools/quests.py free_near, quests/0002 § 4) on the grid model, a cell blocked when
+        COLL_WHTest 1 x 1 with mask 0x3E01 or 0x801 is not 0; None when the model lacks a cell."""
+        import quests
+        cw = self
+
+        class Win:
+            def blocked(self, x, y, size, mask):
+                with cw.cw.model_state():
+                    r = cw.cw.room_at(room, x, y) or room
+                    return bool(cw.cw.wh_test(r, x, y, 1, 1, 0x3E01) & 0xFFFF or cw.cw.wh_test(r, x, y, 1, 1, 0x801) & 0xFFFF)
+        try:
+            x, y, best = quests.free_near(Win(), x0, y0, 1, 0x3E01, 50, 1)
+        except (collision.NotLogged, KeyError):
+            return None
+        return (x, y) if best >= 0 else None
 
     def init_34(self, u, o):
         if self.O.draw() & 1:
@@ -960,6 +1208,12 @@ class Checker:
                 % (self.ln, site, s32(x), s32(y), w, h, m, d["res"], v))
         self.hit("position tests predicted by the grid model (COLL_WHTest, %s)" % ("free" if v == 0 else "blocked"))
         self.hit("position tests")
+        if (w > 1 or h > 1) and (v & 0x27) == 0x27 and (v & ~m & 0x27):
+            # plan 0038 H5b (drlg/collision row 27): a rectangle test with a footprint cell in no room reachable from
+            # the hint, whose 0x27 comes back whatever the mask
+            self.hit("rect position tests returning OUT_OF_ROOM 0x27 unmasked (predicted)")
+            self.hit("  0x27 rect tests by level and site: level %d site %08x" % (self.lid, site))
+            self.covk("rect tests with 0x27 unmasked", (self.lid, site, w, h, m, v))
         return v
 
     def pos_padded(self, x, y, sx, sy):
@@ -1163,8 +1417,11 @@ class Checker:
         if r < thr:
             lst = [t for t in range(1, 8) if themes & (1 << (t - 1))]
             i = self.O.rng(len(lst))
-            if i < len(lst) and lst[i] < len(lst):
+            # g_ObjThemeFns 0x00731E68: 8-byte {enabled, fn} entries; 1, 2, 4, 5, 6 enabled, 0 and 3 {0, 0}
+            if i < len(lst) and lst[i] < len(lst) and lst[i] in THEMES_ENABLED:
                 raise Mismatch("line %d: theme %d would run (not modelled)" % (self.ln, lst[i]))
+            if i < len(lst) and lst[i] < len(lst):
+                self.hit("theme rolls that drew theme %d below the count, disabled (entry {0, 0}): no run" % lst[i])
             self.hit("theme rolls that drew a theme (none runs on stock data)")
         return 1
 
@@ -1224,10 +1481,17 @@ class Checker:
         r = self.rs.p100()
         forced = L["cnt"] > 0 and idiv(L["vis"] << 7, L["cnt"]) > 96 and L["hs"] == 0
         tries = 30 if forced else 3
+        if forced:
+            self.hit("shrine handler calls with the due rule on (HealthShrineDue)")
+            self.covk("shrine handler calls with the due rule on", (self.lid, L["vis"], L["cnt"], L["nsh"]))
         if not forced and r > 100:
             return
         if L["nsh"] == 10 or L["nsh"] > idiv(L["cnt"], 8):
             self.hit("shrine handler at its cap")
+            self.hit("  shrine cap by half: %s (nShrine %d, roomCount %d)" % (
+                "= 10" if L["nsh"] == 10 else "> roomCount / 8", L["nsh"], L["cnt"]))
+            if forced:
+                self.hit("  shrine cap with the forced rule on (the cap returns first)")
             return
 
         def dist(x, y):
@@ -1240,16 +1504,20 @@ class Checker:
             u = self.place_orient(cls, o["SizeX"], o["SizeY"], o["Orientation"], dist)
             if u is None:
                 continue
+            if forced:
+                self.hit("shrines placed with the due rule on: code %s" % ("2 (health), kept" if u["it"] == 2
+                                                                            else "not 2, converted"))
             if u["it"] != 2:
                 if not forced:
                     L["shp"].append((u["x"], u["y"]))
                     L["nsh"] += 1
                     return
+                c0, it0 = u["cls"], u["it"]
                 p1 = s32(self.t.objs[u["cls"]]["Parm1"])
                 u["cls"] = p1 if 0 < p1 < 573 else 84
                 self.shrine_pick(2, 1)
                 u["it"] = 2
-                self.covk("forced health shrines", (self.lid, u["cls"]))
+                self.covk("forced health shrines (level, placed class, its code, new class)", (self.lid, c0, it0, u["cls"]))
             L["hs"] += 1
             L["shp"].append((u["x"], u["y"]))
             L["nsh"] += 1
@@ -1400,6 +1668,8 @@ class Checker:
         L = self.L_
         if L["nwl"] == 4 or L["nwl"] > idiv(L["cnt"], 8):
             self.hit("well handler at its cap")
+            self.hit("  well cap by half: %s (nWell %d, roomCount %d)" % (
+                "= 4" if L["nwl"] == 4 else "> roomCount / 8", L["nwl"], L["cnt"]))
             return
         if self.rs.p100() > 100:
             return
@@ -1447,10 +1717,10 @@ class Checker:
                 "line %d: operate mode/interact/sparkle %s, model %s" % (self.ln, (d["mode"], d["it"], d["sp"]), (u["mode"], u["it"], u["sp"])))
         self.lid = u["lid"]
         rec = {"lid": u["lid"], "cls": u["cls"], "fn": fn, "it": u["it"], "sp": u["sp"], "mode": u["mode"], "drops": []}
-        if fn in (1, 3, 4, 5):
+        if fn in (1, 3, 4, 5, 26, 48, 68):
             getattr(self, "op_%d" % fn)(u, rec)
         else:
-            dx = self.skip_until("OOX", "OperateFn %d (not a container)" % fn)
+            dx = self.no_draw_operate(fn)
             self.ok(parse_seed(dx["os"]) == self.O.s, "line %d: OperateFn %d moved the object-region seed" % (self.ln, fn))
             u["mode"] = dx["mode"]
             u["us"].s = parse_seed(dx["us"])
@@ -1461,6 +1731,206 @@ class Checker:
         self.ok(dx["mode"] == u["mode"], "line %d: mode after operate %d, model %d" % (self.ln, dx["mode"], u["mode"]))
         self.hit("operates predicted (OperateFn %d)" % fn)
         self.covk("operates", rec)
+
+    def no_draw_operate(self, fn):
+        """An OperateFn that draws nothing on the object-region seed (objects/0001 § 13.6), up to its OOX. Plan 0038
+        batch H5b: a room the handler activates (the portals, stairs and pads that move the player through
+        sub_0052D0F0_RoomUpdateOne) runs its window RW1 -> RW4 inside the operate: it is predicted like any other
+        window, on the object-region seed carried in; a revisit's re-creations (OPU0 outside a window) likewise. Any
+        other object-region draw before OOX is a mismatch. Everything else (monsters, items, quest state) is an
+        oracle, as before."""
+        n_win = 0
+        while self.i < len(self.L):
+            tg, dd, ll = self.L[self.i]
+            if tg == "OOX":
+                self.i += 1
+                self.ln = ll
+                self.oracle("OperateFn %d (not a container)" % fn)
+                if n_win:
+                    self.hit("windows predicted inside an operate (OperateFn %d)" % fn, n_win)
+                return dd
+            self.i += 1
+            self.ln = ll
+            if tg == "RW1":
+                saved = (self.room, self.lid, self.G, self.rs)
+                self.window(dd)
+                self.room, self.lid, self.G, self.rs = saved
+                n_win += 1
+                self.covk("windows inside an operate", (fn, self.room_lid.get(dd["room"]), dd["room"]))
+            elif tg == "OPU0":
+                saved = (self.room, self.lid, self.G, self.rs)
+                self.lone_preset(dd)
+                self.room, self.lid, self.G, self.rs = saved
+                self.hit("preset units inside an operate (OperateFn %d)" % fn)
+            elif tg == "OD":
+                raise Mismatch("line %d: OperateFn %d drew the object-region seed outside a window (pc %08x)"
+                               % (ll, fn, dd["pc"]))
+            elif tg in COLL_SIDE:
+                self.side(tg, dd, ll, oracle=True)
+            elif tg == "OU0":
+                self.side("OU0x", dd, ll, oracle=True)
+            elif tg == "OUX":
+                self.orc_obj = None
+            elif tg in TRAP_Q:
+                self.trapq(tg, dd, ll)
+        raise Mismatch("log ended inside OperateFn %d" % fn)
+
+    def oracle_until(self, stops, name):
+        """Lines up to (not including) the next one whose tag is in `stops`, as an oracle that must not draw the
+        object-region seed (an OD line is a mismatch)."""
+        while self.i < len(self.L):
+            tg, dd, ll = self.L[self.i]
+            if tg in stops:
+                self.oracle(name)
+                return
+            self.i += 1
+            if tg == "OD":
+                raise Mismatch("line %d: object-region draw inside %s (pc %08x)" % (ll, name, dd["pc"]))
+            if tg in COLL_SIDE:
+                self.side(tg, dd, ll, oracle=True)
+            elif tg == "OU0":
+                self.side("OU0x", dd, ll, oracle=True)
+            elif tg == "OUX":
+                self.orc_obj = None
+            elif tg in TRAP_Q:
+                self.trapq(tg, dd, ll)
+        raise Mismatch("log ended inside %s" % name)
+
+    def op_26(self, u, rec):
+        """OBJOP_Bookshelf 0x00584060 (classes 179, 180): in mode 0 only, SetMode(2) (its unit-seed draw), then
+        r = low mod 20 and b = low & 1 on the object-region seed; r <= 12 -> scroll (tsc / isc), else a book
+        (tbk / ibk); then the item drop 0x00559A30, an oracle that must not draw the object-region seed (the unit
+        seed is taken after it). No quest state is read."""
+        if u["mode"] != 0:
+            return
+        self.set_mode(u, 2)
+        r = self.O.draw() % 20
+        b = self.O.draw() & 1
+        rec["r"], rec["b"] = r, b
+        rec["item"] = ("isc " if b else "tsc ") if r <= 12 else ("ibk " if b else "tbk ")
+        self.hit("bookshelf operates (OperateFn 26): r = %d (%s), b = %d -> %s" % (
+            r, "<= 12" if r <= 12 else "> 12", b, rec["item"].strip()))
+        self.oracle_until({"OOX"}, "bookshelf item drop 0x00559A30 (item creation)")
+        u["us"].s = parse_seed(self.L[self.i][1]["us"])
+
+    def op_48(self, u, rec):
+        """OBJOP_TrappedSoul 0x005869F0 (380, 381): in mode 0 only, r = P100(O); r < 90 -> ObjectChestDrop(0),
+        then mode 5 if it made an item; r >= 90 -> mode 1 and object events 1 and 9 (no draw)."""
+        if u["mode"] != 0:
+            return
+        r = self.O.p100()
+        rec["r"] = r
+        if r < 90:
+            if self.drop(u, 0, rec) is not None:
+                self.set_mode(u, 5)
+                self.hit("trapped soul operates (OperateFn 48): r < 90, an item, mode 5")
+            else:
+                self.hit("trapped soul operates (OperateFn 48): r < 90, no item")
+        else:
+            self.set_mode(u, 1)
+            self.hit("trapped soul operates (OperateFn 48): r >= 90, mode 1")
+
+    def op_68(self, u, rec):
+        """OBJOP_EvilUrn 0x00586520 (466): in mode 0 only, ObjectChestDrop(0) first; only if it made an item: mode 1,
+        event 1, r = low mod 255 (O); r <= Parm7 (u32) -> a special monster from the region's list (oracle; it
+        must not draw the object-region seed); then OBJ_TrapFire."""
+        if u["mode"] != 0:
+            return
+        if self.drop(u, 0, rec) is None:
+            self.hit("evil urn operates (OperateFn 68): no item")
+            return
+        self.set_mode(u, 1)
+        r = self.O.draw() % 255
+        rec["r255"] = r
+        self.hit("evil urn operates (OperateFn 68): an item, r = low mod 255 %s Parm7" % (
+            "<=" if r <= (self.t.objs[u["cls"]]["Parm7"] & 0xFFFFFFFF) else ">"))
+        if r <= (self.t.objs[u["cls"]]["Parm7"] & 0xFFFFFFFF):
+            rec["monster"] = True
+            self.oracle_until({"OOX", "TF"}, "evil urn special monster (SpecialMonSpawn)")
+
+    # --- traps (plan 0038 batch H5b) ----------------------------------------------------------------------------
+    def trapq(self, tag, d, ln):
+        """OBJ_TrapFire 0x00582510 (TF: type, object, frame) and its queue call (TFQ): event 4 at frame + 35."""
+        if tag == "TF":
+            self.tq[d["u"]] = {"tf": d}
+            self.hit("OBJ_TrapFire calls (TF), trap type %d" % d["t"])
+            return
+        e = self.tq.get(d["u"])
+        self.ok(e is not None and "tfq" not in e, "line %d: trap queue call without its OBJ_TrapFire" % ln)
+        self.ok(d["ev"] == 4 and d["at"] == e["tf"]["f"] + TRAP_DELAY,
+                "line %d: trap queued event %d at %d, model event 4 at %d + %d" % (ln, d["ev"], d["at"], e["tf"]["f"], TRAP_DELAY))
+        e["tfq"] = d
+        self.hit("trap events queued (event 4 at frame + 35)")
+
+    @staticmethod
+    def trap_fn(t, lid):
+        """OBJ_TrapEvent 0x005817A0: the trap type t (interact & 0x7F) and the object's level id choose the function:
+        t 8 in a level >= 75, t 3 in a level < 40 other than 25, and t 1 or 4 in a level < 40 run entry 2 instead."""
+        if (t == 8 and lid >= 75) or (t == 3 and lid < 40 and lid != 25) or (t in (1, 4) and lid < 40):
+            return TRAP_FNS[2]
+        return TRAP_FNS[t]
+
+    def trap_event(self, d):
+        if self.O is None:
+            raise Mismatch("line %d: trap event before OGC" % self.ln)
+        t, lid = d["t"], d["lid"]
+        u0 = self.units.get(d["u"])
+        if lid is None and u0 is not None:
+            lid = u0["lid"]                          # the first H5b session's TE0 lines lack the room (fixed later)
+        if not d.get("room") and u0 is not None:
+            d = dict(d, room=u0["room"])
+        e = self.tq.pop(d["u"], None)
+        if e and "tfq" in e:
+            self.ok(d["f"] == e["tfq"]["at"], "line %d: trap event at frame %s, queued for %s" % (self.ln, d["f"], e["tfq"]["at"]))
+            self.ok(t == e["tf"]["t"], "line %d: trap event type %s, OBJ_TrapFire type %s" % (self.ln, t, e["tf"]["t"]))
+            self.hit("trap events run at the queued frame (operate frame + 35)")
+            self.covk("trap events", (lid, d["cls"], t, d["f"] - e["tf"]["f"]))
+        else:
+            self.hit("trap events whose OBJ_TrapFire is not in the log")
+        self.seeds_eq(d, "TE0", rs=False, gs=False)
+        tag, dt = self.next_obj("TT0")
+        want = self.trap_fn(t, lid)
+        self.ok(dt["fn"] == want, "line %d: trap function %08x for type %d in level %d, model %08x" % (self.ln, dt["fn"], t, lid, want))
+        self.hit("trap functions chosen as modelled (type %d, level %s 75 / 40, -> %08x)" % (t, lid, want))
+        if want != TRAP_FNS[t]:
+            self.hit("trap types replaced by entry 2 (type %d in level %d)" % (t, lid))
+        self.seeds_eq(dt, "TT0", rs=False, gs=False)
+        if want == TRAP_OBJCREATE:
+            saved = (self.room, self.lid, self.G)
+            self.room, self.lid, self.G = d["room"], lid, Seed(parse_seed(dt["gs"]), "game")
+            f1 = self.create(162, d["x"], d["y"], 1, 1)
+            f1["sp"] = 2                                 # UNIT_SetSparkle(fire, 2) after the creation (0x005823C6)
+            n = 1
+            rect = self.room_rect.get(d["room"])
+            if self.peek_tag() == "OU0":
+                if rect:
+                    self.ok(rect[0] <= d["x"] + 1 < rect[0] + rect[2],
+                            "line %d: second fire at x + 1 = %d outside the room %s" % (self.ln, d["x"] + 1, rect))
+                f2 = self.create(160, d["x"] + 1, d["y"], 1, 1)
+                f2["sp"] = 2
+                n = 2
+            elif rect:
+                self.ok(not (rect[0] <= d["x"] + 1 < rect[0] + rect[2]),
+                        "line %d: no second fire although x + 1 = %d is in the room %s" % (self.ln, d["x"] + 1, rect))
+            tag, dx = self.next_obj("TTX")
+            self.seeds_eq(dx, "TTX", rs=False)
+            self.room, self.lid, self.G = saved
+            self.hit("OBJTRAP_ObjectCreate runs predicted (fires created: %d)" % n)
+            self.covk("trap fires", (lid, d["cls"], t, n))
+        elif want == TRAP_MONSPAWN:
+            v = self.O.draw()
+            k = (v & 1) + 1
+            self.oracle_until({"TTX"}, "trap monster spawns (0x00582280)")
+            tag, dx = self.next_obj("TTX")
+            self.seeds_eq(dx, "TTX", rs=False, gs=False)
+            self.hit("OBJTRAP_MonsterSpawn runs predicted (one object-region draw)")
+            self.covk("trap monster spawns", (lid, d["cls"], t, k))
+        else:
+            self.oracle_until({"TTX"}, "trap monster at a free spot (0x00582420)")
+            tag, dx = self.next_obj("TTX")
+            self.seeds_eq(dx, "TTX", rs=False, gs=False)
+            self.hit("trap functions 0x00582420 with no object-region draw")
+            self.covk("trap free-spot monsters", (lid, d["cls"], t, dt["fn"]))
 
     def drop(self, u, q, rec):
         tag, d = self.next_obj("OC0")
@@ -1476,12 +1946,57 @@ class Checker:
         k = (dt["tc"] or 0) - 161
         name = self.t.tc_names[k] if 0 <= k < len(self.t.tc_names) else None
         self.ok(name is not None and "Chest" in name, "line %d: chest drop TC %s (%s) is not an act chest TC" % (self.ln, dt["tc"], name))
-        dx = self.skip_until("OCX", "TC_ResolveDrops (items/tc)")
-        self.ok(parse_seed(dx["os"]) == self.O.s, "line %d: the resolver moved the object-region seed" % self.ln)
-        u["us"].s = parse_seed(dx["us"])
-        self.G = Seed(parse_seed(dx["gs"]), "game")
+        if not TC_CHAIN:
+            dx = self.skip_until("OCX", "TC_ResolveDrops (items/tc)")
+            self.ok(parse_seed(dx["os"]) == self.O.s, "line %d: the resolver moved the object-region seed" % self.ln)
+            u["us"].s = parse_seed(dx["us"])
+            self.G = Seed(parse_seed(dx["gs"]), "game")
+        else:
+            dx = self.tc_window(u)
         rec["drops"].append({"q": q, "tc": name, "item_q": dx["q"] if dx["item"] else None})
         return dx["q"] if dx["item"] else None
+
+    def tc_window(self, u):
+        """Plan 0048 Phase 1, oracle 6: TC_ResolveDrops at an object's drop, OCT .. OCX. The resolver's draws on the
+        object's unit seed are tools/tc.py's (tools/chain.py check runs `tc.py replay --quality model` on the same log and
+        requires every call, its TCEND seed included, to reproduce); here the unit seed is taken at OCX, which equals
+        that TCEND. Modelled here: each item the resolver creates (OU0 type 4 .. OUX) is SUnitCreate's two game-seed
+        steps (rng/seeds 7a) with the unit seed Init(low) of the first; the game seed at OCX is predicted; nothing draws
+        on the object-region seed."""
+        n_items = 0
+        while self.i < len(self.L):
+            tg, d, ln = self.L[self.i]
+            self.i += 1
+            self.ln = ln
+            if tg in COLL_SIDE:
+                self.side(tg, d, ln, oracle=True)
+            elif tg == "OD":
+                raise Mismatch("line %d: object-region draw inside TC_ResolveDrops" % ln)
+            elif tg == "OU0":
+                self.ok(d["type"] == 4, "line %d: a unit of type %d created by TC_ResolveDrops" % (ln, d["type"]))
+                self.seeds_eq(d, "OU0 (dropped item)", rs=False)
+                g1 = self.G.draw()
+                self.G.draw()
+                self._tc_us = fmt((g1, INIT_HIGH))
+                n_items += 1
+            elif tg == "OUX":
+                self.ok(d["o"]["us"] == self._tc_us, "line %d: dropped item unit seed %s, model %s" % (ln, d["o"]["us"], self._tc_us))
+                self.seeds_eq(d, "OUX (dropped item)", rs=False)
+            elif tg == "TCEND":
+                self._tc_end = d["seed"]
+            elif tg == "OCX":
+                self.ok(getattr(self, "_tc_end", None) == d["us"], "line %d: the object's unit seed at OCX %s is not the "
+                        "resolver's exit seed (TCEND %s)" % (ln, d["us"], getattr(self, "_tc_end", None)))
+                self._tc_end = None
+                self.hit("object drops: unit seed at OCX = the resolver's TCEND seed (tools/tc.py predicts it)")
+                self.ok(parse_seed(d["os"]) == self.O.s, "line %d: the resolver moved the object-region seed" % ln)
+                self.seeds_eq(d, "OCX (game seed after the drop's items)", rs=False, os_=False)
+                u["us"].s = parse_seed(d["us"])
+                self.hit("object drops: game seed at OCX predicted (%d items, two steps each)" % n_items)
+                return d
+            elif tg in ("OGP0", "OI0", "OIX", "OPU0", "OPUX"):
+                raise Mismatch("line %d: %s inside TC_ResolveDrops" % (ln, tg))
+        raise Mismatch("log ended inside TC_ResolveDrops")
 
     @staticmethod
     def magic(qr):
@@ -1589,10 +2104,13 @@ class Checker:
             return
         v = self.drop(u, 0, rec)
         if v is None:
+            self.hit("casket operates (OperateFn 1): no item, no further draw")
             return
         self.set_mode(u, 1)
         r = self.O.draw() % 10000
         rec["r10000"] = r
+        self.hit("casket operates (OperateFn 1) after an item: Range(O, 10000) %s 8192"
+                 % (">=" if r & 0xFFFFE000 else "<"))
         if r & 0xFFFFE000:
             rec["monster"] = True
             self.monster_oracle(u)
@@ -1607,6 +2125,10 @@ class Checker:
             self.i += 1
             if tg in COLL_SIDE:
                 self.side(tg, dd, ll, oracle=True)
+            elif tg == "MTX" and dd.get("gs"):
+                # plan 0048: the spawn's game seed after it (oracle 8, a player action: taken here), so that a chest
+                # drop after it starts from it
+                self.G = Seed(parse_seed(dd["gs"]), "game")
         self.oracle("operate monster spawn (0x00582280)")
         self.covk("operate monster spawns", (self.lid, u["cls"]))
 

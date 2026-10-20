@@ -1064,6 +1064,23 @@ The 2026-10-12 archivist entry asked what each MonPreset range does. Its three o
 
 Nothing new was read. The archivist's two table docs still carry the open question (backlog entry to the archivist).
 
+## Plan 0048 Phase 1: the presets window's monsters chained (2026-10-20)
+
+The preset monsters of the presets window (oracle 16 of [chain/0001](../chain/0001-oracles.md)) are now predicted by
+`tools/monspawn.py` from `OPU0` to `OPUX`; the full record is [chain/0002 § 4](../chain/0002-retirements.md#4-oracle-16-the-preset-monsters-of-the-presets-window).
+What it adds to § 7 here:
+
+- [C] The class case of `sub_0054E600_PresetMonSpawn` is `sub_0054E490_PresetClassSpawn`: class 434 one cell left and
+  mode 12 unless `QUESTS_IsActive(game, 0x20)`; MonStats2 flag 13 places nothing; flags 8 for neverCount;
+  `SpawnAtPos` radius −1, then radius 4 when `sub_0054E3A0_PresetRetryAllowed`; an object under classes 432 and 433
+  (flag 18). 217 placements predicted on run:2026-10-15-objects. (fn:sub_0054E490_PresetClassSpawn@0x0054E490,
+  run:2026-10-15-objects)
+- [C] The fixed rows 17–32: rows 17, 18, 23, 29, 30 and 31 were reached (66 placements) and reproduce with
+  `LevelClassVariant` as read (the BaseId match in the level's `mon` list, else the NextInClass walk up to the chain
+  length MonStats `+0x4A`, each step while Level ≤ `MonLvlEx` + 1) and `PresetFallenVariant`; the § 7 bullet's
+  "level-dependent class" for row 30 is class 492, or 529 in level 110. (fn:sub_0063EC70_LevelClassVariant@0x0063EC70,
+  fn:sub_00651040_MonClassChain@0x00651040, run:2026-10-15-objects)
+
 ## Open questions
 
 - ~~[L] The monster level the aura handler reads in a classic game~~ answered in

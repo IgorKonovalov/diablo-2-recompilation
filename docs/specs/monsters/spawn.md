@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, data/excel, drlg/collision, objects]
 consumed_by: [monsters/special, monsters/stats, items/tc]
 tags: {C: 112, I: 64, L: 4}
-updated: 2026-10-17
+updated: 2026-10-20
 ---
 
 # Random population of a room
@@ -133,7 +133,7 @@ inside the presets window are predicted, with 0 mismatches on the logs of this s
 | game seed at pass entry | run-time state | `+0xD0` after every earlier consumer in the game | every game-seed consumer ([rng/seeds](../rng/seeds.md) step note 7a) | [C] (run:2026-10-13-mon-spawn) |
 | gate's DRLG parts | value oracle | `RoomPopLevelId` (0 when DRLG room `+0x28` has bit `0x800000`), the level's DRLG room count, the Chaos Sanctuary quest test | `drlg/preset`, `drlg/overview`, [quests/progression § Word 26](../quests/progression.md#word-26-diablo-the-seals-and-the-harrogath-portal-quest-object-23) | [C] (fn:sub_0061A1F0_RoomPopLevelId@0x0061A1F0, fn:sub_00642BE0_LevelRoomCount@0x00642BE0, run:2026-10-13-mon-spawn) |
 | logic boxes | DRLG state | the list at DRLG room `+0x64` → `+0x30`: per box the tile rectangle `+0x10`, kind `+0x20`, region id `+0x28`, next `+0x2C`. Built by the room's `Logicals` builder, [drlg/collision § G](../drlg/collision.md#g-logic-regions) | `drlg/collision` | [C] (struct:LogicBox+0x10, struct:LogicBox+0x20, struct:LogicBox+0x28, struct:LogicBox+0x2C, run:2026-10-13-mon-spawn, run:2026-10-14-collision) |
-| grid snapshot at pass entry | value oracle | the u16 collision grids of the room and the rooms within two hops: the tile stamp of activation plus every mark made before the pass (preset units, objects, players, walk-ins). The object marks are still logged values: [objects](../objects/README.md) predicts which objects are created and where, but its marks are not yet fed to the collision model (plan 0023 Phase 2 ruling) | `drlg/collision`, [objects](../objects/README.md) | [C] (fn:sub_0054EC90_RoomPopulate@0x0054EC90, run:2026-10-14-collision, run:2026-10-15-objects) |
+| grid snapshot at pass entry | value oracle | the u16 collision grids of the room and the rooms within two hops: the tile stamp of activation plus every mark made before the pass (preset units, objects, players, walk-ins). The object marks are modelled: [objects](../objects/README.md) gives each object's class, position and mode and [drlg/collision § F](../drlg/collision.md#f-unit-marks) makes its mark, and all 1847 object marks of run:2026-10-15-objects are predicted (plan 0027 Phase 2). What stays a value oracle is the rest of the snapshot: the marks of players, walk-ins, items and corpses ([chain/0001](../../findings/chain/0001-oracles.md) oracle 20) | `drlg/collision`, [objects](../objects/README.md) | [C] (fn:sub_0054EC90_RoomPopulate@0x0054EC90, fn:UNIT_CollMarkRect@0x00620A70, run:2026-10-14-collision, run:2026-10-15-objects) |
 | `CollisionTest(room, x, y, size, mask)` | modelled, [drlg/collision § E](../drlg/collision.md#e-collisiontest-by-size) | 0 = free; the grid snapshot plus the marks of the monsters the pass has created ([§ F](../drlg/collision.md#f-unit-marks)) | `drlg/collision` | [C] (fn:sub_0064D9B0_CollisionTest@0x0064D9B0, run:2026-10-14-collision) |
 | `LogicRegionIdAt(room, x, y)` | modelled, [drlg/collision § G](../drlg/collision.md#g-logic-regions) step G4 | region id of the logic box at a subtile, −1 if none, 0 if no room holds it | `drlg/collision` | [C] (fn:sub_0061B130_LogicRegionIdAt@0x0061B130, run:2026-10-14-collision) |
 | `SpawnClassCellTest(class, room, x, y, 1)` | modelled, [drlg/collision § H](../drlg/collision.md#h-spawnclasscelltestclass-room-x-y-flag) | an extra cell test for five `BaseId`s, true for every other class | `drlg/collision` | [C] (fn:sub_005FD350_SpawnClassCellTest@0x005FD350, run:2026-10-14-collision) |
@@ -951,8 +951,7 @@ draw (leader seed → `219966E1:68C8AB12`).
   ([§ C](../drlg/lifecycle.md#c-the-client-lists-0x78)), and `0x0061A4D0` reads active-room flags bit 1, which the
   restore sets once per activation ([§ D](../drlg/lifecycle.md#d-the-new-rooms-walk-populate-once-restore-once-per-activation)).
 - [L] The positions still depend on inputs that no spec produces end to end: the grid snapshot at pass entry (its object
-  marks are logged: [objects](../objects/README.md) predicts the objects, but feeding their marks to the collision model is a
-  reverser backlog item) and the type-11 waypoint point. The warp points are [drlg/warps](../drlg/warps.md), outdoor
+  marks are modelled since plan 0027 Phase 2; the marks of players, walk-ins, items and corpses stay inputs) and the type-11 waypoint point. The warp points are [drlg/warps](../drlg/warps.md), outdoor
   rooms' included since [drlg/outdoor](../drlg/outdoor.md) (run:2026-10-15-drlg-outdoor). The unreached parts of the
   predicates (sizes 0 and 1, `BaseId`s 228, 334 and 528, the masks `0x01C0` and `0`) are listed in
   [drlg/collision § Open questions](../drlg/collision.md#open-questions).

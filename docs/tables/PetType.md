@@ -45,7 +45,7 @@ The six behaviour columns are bits of `+0x004` (bit order = header order: `warp`
 
 | Column | Observed | `.bin` field | Meaning | References | Layout tag |
 |---|---|---|---|---|---|
-| `group` | int {1}, 17 blank | `+0x008` u16 | pet group: types of one group share a limit (set on `spiritwolf`, `fenris`, `grizzly`) | — | [C] |
+| `group` | int {1}, 17 blank | `+0x008` u16 | pet group (set on `spiritwolf`, `fenris`, `grizzly`); `[I]` adding a pet of a type with a non-zero `group` removes the owner's pets of every other type of the same group (`PetGroupClear` in `sub_00575D90_PetAdd`, [skills/0003 § 7](../findings/skills/0003-handlers.md#7-summons)) | — | [C] |
 | `basemax` | int {0, 1}, 1 blank | `+0x00A` u16 | base count limit of the type (1 on `single` and `hireable`, 0 elsewhere: the limit then comes from the summoning skill's `petmax`) | — | [C] |
 | `warp` | int {1}, 5 blank | `+0x004` bit 0 | the pet follows its owner through warps | — | [C] |
 | `range` | int {1}, 17 blank | `+0x004` bit 1 | the pet is removed when its owner is out of range | — | [C] |

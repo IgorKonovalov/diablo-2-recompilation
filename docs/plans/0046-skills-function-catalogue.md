@@ -47,8 +47,60 @@ function a stock row uses on the machinery of plan [0045](0045-skills-missiles-m
 - **What:** read each function of a batch, then raise what the emulator can: one lane and one review per batch.
 - **Batches** (counts from Phase 0): one per character class (seven), one for the monster-only skill functions, one
   for the missile do, hit and damage functions, one for the item, shrine and object callers of skills (`ctc`,
-  charges, shrine missiles). Ten batches.
-- **Outputs:** `docs/findings/skills/0003-catalogue.md` (one section per batch, one sub-section per function);
+  charges, shrine missiles). Ten batches, fifteen after the review's split. *Filled 2026-10-20 (Phase 0, `lane/p46a`)*: entries of the start, do and
+  missile tables by the rule of [Skills § Function index](../tables/Skills.md#function-index-plan-0046-phase-0)
+  (`skills_survey.py --index`, `ix_batch_*`), with the tier-A entries plan 0045 already read in brackets:
+  1. `ama` 17 (start 7, do 10; tier A 4);
+  2. `sor` 18 (start 4, do 14; 5);
+  3. `nec` 19 (start 7, do 12; 3);
+  4. `pal` 15 (start 5, do 10; 3);
+  5. `bar` 19 (start 7, do 12; 2);
+  6. `dru` 16 (start 3, do 13, two of them States `srvactivefunc` 145 and 146; 2);
+  7. `ass` 29 (start 7, do 22, the seven `srvprgfunc` entries among them; 5);
+  8. `monster` 70 (start 20, do 50, `srvactivefunc` 147 among them; 0), **split at the review** (below) into 8a–8c;
+  9. `missile` 97 (do 34, hit 50 with row 568's uncalled 64 948, damage 13; 10), **split at the review** into 9a–9d;
+  10. `item` 2 (do 113 for the scroll and book rows, do 151 for Chain Lightning's item cast; 0), plus the callers,
+     which are code paths and not function numbers (the stat-event handlers 20, 21 and 30, charges, the shrine
+     missiles of `g_ShrineEffects` 19, 21, 22, the object and quest `MissileCreateAt` sites, skills/0002 § 2), plus
+     **Unsummon's start 3 and do 4** (ruled at the review), the two `general` entries plan 0045 did not read.
+
+  The eight `general` entries (rows 0–5: start 1, 2, 3, 65, do 1, 3, 4, 5) are tier A but Unsummon's start 3 and do 4,
+  which batch 10 reads. 310 entries in all, 40 reached by tier A. Batch 7 also states the data join of `ItemEffect`
+  36: it is Claws of Thunder's `srvprgfunc2` entry, so the Nova and Frost Nova item casts run progressive entry 36
+  (for a non-progressive row its missile is `srvmissilea`, skills/0003 § 1).
+
+  **Split (architect ruling, `lane/p46a` review, 2026-10-20).** A class batch is 15–29 entries; `monster` (70) and
+  `missile` (97) are cut to that size. The monster batch goes by the lowest Skills row that uses the entry (for
+  States `srvactivefunc` 147, the row whose `aurastate` is `attached`, 330 Imp Teleport), so a skill's start and do
+  entries mostly fall in one sub-batch; the missile batch goes by table and number, so each sub-batch reads one kind
+  of function. Counts from `skills_survey.py --index` (tier A in brackets):
+  - **8a** monster rows 156–189 (acts 1–3 monsters and the shared monster skills): 30 entries, start 42–53, do 83–98,
+    110, 111 (0). Start 53 is also 193 DiabLight's, whose do 152 is 8b's.
+  - **8b** monster rows 190–289 (Diablo, act 4 and act 5 towers, curses, the Wake and Imp rows): 22 entries, start 54,
+    55, 59, 60, 64, do 99–109, 112, 125–127, 141, 152 (0).
+  - **8c** monster rows 290–338 (act 5 monsters and Baal): 18 entries, start 61–63, do 128–137, 139, 140, 147–149 (0).
+  - **9a** missile do 1–18 (17 numbers; 4 unused): 17 entries (3: do 1, 3, 5).
+  - **9b** missile do 19–36 (17 numbers; 24 unused) and damage 1–14 (13 numbers; 6 unused): 30 entries (2: do 23,
+    damage 3).
+  - **9c** missile hit 1–29 (25 numbers): 25 entries (4: hit 2, 3, 14, 17).
+  - **9d** missile hit 31–59 (24 numbers) and row 568's 64 948 (uncalled, stated as such): 25 entries (1: hit 36).
+
+  Fifteen batches in all (7 class, 3 monster, 4 missile, item), 310 entries; each one lane run and one review.
+  **Order for the static lane** (one batch at a time; plan 0048 holds the other Ghidra lane): 9a, 9b, 9c, 9d (the
+  missile functions every class skill creates, so the class batches can cite them), then 2 `sor`, 1 `ama`, 3 `nec`,
+  4 `pal`, 5 `bar`, 6 `dru`, 7 `ass` (tier-A count first, then PlayerClass order; `ass` last as the largest, with the
+  progressive entries), then 10 `item` (with Unsummon), then 8a, 8b, 8c (monster AI is phase (5), after animation;
+  its plan may pull a monster sub-batch forward, or take the function as a boundary oracle under ADR-0020).
+  *Carried from plan 0045's P1b review (2026-10-20):* the Assassin batch reads the five finishing-move calls of
+  `COMBAT_PrgFinisher` (start 25 at `0x005D6399` and `0x005D63E1`; do 42 `0x005D5A8C`, 50 `0x005D71F2`, 52
+  `0x005D79DF`); the item, shrine and object batch reads which unit `ITEMSKILL_Cast` gives the `ItemTarget` 2 helper
+  `0x005FD850` (it draws 2–20 steps on that unit's seed), whether helpers 3 `0x005FD9C0` and 4 `0x005FDA10` draw (and gives the three
+  helpers `re/symbols.csv` rows: none has one), and
+  what removes pets when `petmax` falls (a skill shrine wearing off). Each is filed back to plan 0045's spec as a
+  correction.
+- **Outputs:** one finding per batch, `docs/findings/skills/NNNN-<batch>.md` numbered in landing order from 0004
+  (batch 9a is [skills/0004](../findings/skills/0004-missile-do-1-18.md); 0003 is P1.3's handlers; ruled at the
+  `lane/p46m1` review), one sub-section per function;
   `re/symbols.csv` rows (subsystem `skills/catalogue`); emulation cases under `tools/` with their memory specs.
 - **Done when**, per batch: each function has, with addresses and `[I]` or better: its params and calcs read, the
   states applied (with their durations' source), the missiles and units created, its draws in order and the seed of
@@ -82,7 +134,8 @@ function a stock row uses on the machinery of plan [0045](0045-skills-missiles-m
   lane only when plans 0045, 0048 and 0049 hold none.
 - **Harness:** Phase 2 takes **one slot from 1–2**; at most two games at once across all plans.
 - **Rotation:** each batch is sized for one lane run of about 4 h; a batch that runs over checkpoints and resumes.
-- **Estimate** (an estimate): ten static batches, one harness lane run.
+- **Estimate** (an estimate): fifteen static batches (ten, with 8 and 9 split at the Phase 0 review), one harness
+  lane run.
 
 ## Open questions
 
@@ -97,3 +150,60 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-20 — Drafted (architect, `lane/plans45`).** Status `proposed`, with ADR-0020 (proposed).
 - **2026-10-20 — Approved (owner, via the orchestrator).** Plans 0045–0049 and ADR-0020 approved as proposed; the run
   order of the [plans index](README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049) is the current queue.
+- **2026-10-20 — Phase 0 landed for review (archivist, `lane/p46a`, no harness, no Ghidra).** The function index:
+  `tools/skills_survey.py --index`, [Skills § Function index](../tables/Skills.md#function-index-plan-0046-phase-0)
+  (start table 64 entries; do table 149: `srvdofunc` 138, `srvprgfunc` 7, `ItemEffect` 2, States `srvactivefunc` 3)
+  and [Missiles § Function index](../tables/Missiles.md#function-index-plan-0046-phase-0) (do 34, hit 50, damage 13),
+  each entry with its rows, row kinds, the `Param`/`calc` cells its rows fill, tier A and batch; `[C]` as data. The
+  batch list above is filled (310 entries, 40 reached by tier A). **`skills` baseline changed** (rerun of the survey):
+  46 new `ix_*` keys, the old keys unchanged; `excel_layout` unchanged. Four reverser entries closed: the Skills,
+  Missiles, ItemStatCost, States, PetType and MonStats meanings skills/0001–0003 anchor raised to their `[I]`, and
+  MonPlace's row-24 sentence corrected. Surprises, in the batch list and the review request: the `monster` (70) and
+  `missile` (97) batches outsize one lane run (a split proposed); `ItemEffect` 36 is Claws of Thunder's progressive
+  entry 36; no Skills row has `srvdofunc` 146, which skills/0003 names so. Review request
+  [to the architect](../backlog/archive/2026-10-20-archivist-architect-lane-p46a-review-plan-0046-phase-0.md).
+- **2026-10-20 — Phase 0 reviewed: accept (architect, `lane/p46a` review).** Reran `gate.py --full=skills,excel_layout`
+  (green) and `skills_survey.py --index`: the `skills` baseline is the survey's own output byte for byte (regenerated,
+  not hand-edited; 46 `ix_*` keys added, none changed). An independent join over Skills, States and Missiles gives the
+  same entry sets: start 64 (id 30 the only gap), do 149 (`srvdofunc` 138, `srvprgfunc` 7 disjoint from it, `ItemEffect`
+  above 1 adds 151, States 145–147; 53, 138 and 142 unused, as skills/0001 § Answer), missile do 34, hit 50 (the `*12`
+  cell is the 64 948 record), damage 13; both docs list each entry once (310, no duplicate numbers per table). Meanings
+  raised in Skills, Missiles, ItemStatCost, States, PetType, MonStats and MonPlace match their findings' `[I]` (spot
+  checks: `Holy`, `SrcTown`, `LastCollide`, `repeat`/`weapsel`/`leftskill`, `TgtPlaceCheck`, `SkillDamage`, `group`,
+  `itemeventfunc` 31, rows 24/26); anchors `g_SkillStartFuncs`, `g_SkillDoFuncs`, `g_StatEventFuncs`,
+  `STATEVENT_Reanimate`, `PetAdd`, `StateDoFunc`, `MonOwnerSkillDamage` resolve in `re/symbols.csv`. No values dumped
+  (row names and cell counts only). Rulings: the `monster` and `missile` batches split into 8a–8c and 9a–9d and the
+  static order set (Phase 1 above); Unsummon's start 3 and do 4 go with batch 10; the `ItemEffect` 36 join is batch
+  7's. The skills/0003 Functions-table label of `0x005C8520` ("`srvdofunc` 146") was a pure wording fix the review made
+  itself after checking the data (no Skills row has `srvdofunc` 146; Armageddon and Hurricane both have 124; entry 146
+  is state 145 `armageddon`'s `srvactivefunc`). Point (4) of the request (the `KnockBack` byte) stays as laid out.
+- **2026-10-20 — Phase 1 batch 9a landed for review (reverser, `lane/p46m1`, static, no harness).** Missile server do
+  functions 1–18: 17 entries, 14 read ([skills/0004](../findings/skills/0004-missile-do-1-18.md); do 1, 3, 5 tier A,
+  cited). Draws: only `sub_005A9820_MissSubNearReseed` (do 8, 10, 17: the missile seed re-seeded from its position
+  plus the elapsed frames, then two `RNG_RangeB`) and do 18 (two `RNG_RangeB` per gold drop). Raised by emulation
+  (run:2026-10-20-cat-emu-9a, `tools/skills_catalogue_emu.py`, new `EmuBoundary.java`): 13 functions in nine families,
+  13 800 cases, 0 mismatches; do 7 in part, do 13 not emulated (named). Surprises: entry 1 is a thunk; do 17 and 18
+  read the raw `Range` column; Frozen Orb's `+0x28` is a direction index, not a seed word; the cairnstones portal and
+  the Countess chest gold answer quests/0001's open question. Review request
+  [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p46m1-review-plan-0046-batch-9a.md) (two rulings:
+  the `observe` boundary under ADR-0015, and the finding's file name).
+- **2026-10-20 — `lane/p46m1` review (architect): batch 9a accepted with fixes (3: the boundary tags, the call-site check, the plan's output name).** Spot checks: objdump of
+  `sub_005A9820_MissSubNearReseed` (`RNG_SeedInit(m+0x20, SubX + elapsed)` at 0x005A9877, then two
+  `RNG_RangeB(m+0x20, 2(r − 1))` at 0x005A98C2 and 0x005A98D1, x first) and do 18 (two `RNG_RangeB(m+0x20,
+  2·Param3 + 1)`, `Param3` = record `+0x40`, at 0x005AF43A and 0x005AF44E, x then y) agree with the finding;
+  `g_Circle64X/Y` read at 0x005AF116/0x005AF11D and start `(30, 0), (29, 2)`; `sha256sum -c manifest.sha256` passes
+  (48 files); `check homing scatter` re-run from the kept outputs gives `check.txt`'s lines, and `cases homing`
+  regenerates the kept case and memory files byte for byte; `EmuTrace.java` is unchanged (`3255db0c…`, as on `main`).
+  **Ruling (1):** a case that ends at an `observe` boundary does not meet ADR-0015 (1) and (3) as written (two
+  treatments of a reached callee; no register arguments among (3)'s outputs). The method is sound, so the architect
+  drafted [ADR-0021](../adrs/0021-observed-boundaries-in-emulation.md), **proposed for the owner**; until it is
+  accepted the boundary claims of skills/0004 (Answer, §§ 3–11, the Functions table, the dated notes in skills/0002
+  §§ 4 and 8, experiments) are `[I]`, and the refusal paths that return are `[C]` (§ 2). ADR-0021 (b) needs the call
+  site checked: the review checked it from the kept outputs (`workspace/logs/skills-cat-9a-review/callsites.txt`
+  `8ea8058b…`, one site per function and boundary); **from batch 9b the checker asserts the return address of each
+  observed boundary.** **Ruling (2):** one finding file per batch, numbered in landing order (Outputs above).
+  Negative controls: homing's 22 failures of 1 500 (sizes left out of the distance) are enough to show its checker
+  live (ADR-0015 (4)), since the size term decides the threshold only near `Param2`; the step's sign and `max(Param3,
+  1)` are separated by the 208 step cases, not by the control. From 9b, a family whose control fails fewer than 50
+  cases adds a second perturbation on another claim. Batch 9b may start now (with the call-site check); its boundary
+  claims follow ADR-0021's fate like 9a's.

@@ -1,6 +1,6 @@
 # ADR index
 
-Next free number: **0021**
+Next free number: **0022**
 
 | # | Title | Status |
 |---|---|---|
@@ -24,3 +24,4 @@ Next free number: **0021**
 | [0018](0018-backlog-one-file-per-entry.md) | The backlog as one file per entry, with gate checks; `docs/backlog.md` frozen as the archive | accepted 2026-10-17 (closed-entry layout amended by 0019) |
 | [0019](0019-backlog-closed-entries-archive.md) | Closed backlog entries move to `docs/backlog/archive/`; `backlog.py archive` sweeps and fixes links after each merge (amends 0018) | accepted 2026-10-20 |
 | [0020](0020-skills-phase-in-two-plans.md) | Simulation phase 3 (skills and missiles) in two plans: the machinery, then the function catalogue (amends 0014, 0016) | accepted 2026-10-20 (owner) |
+| [0021](0021-observed-boundaries-in-emulation.md) | Observed boundaries in emulated reproduction: a case may end at a declared callee's entry (amends 0015) | proposed (for the owner; drafted at the `lane/p46m1` review, 2026-10-20) |

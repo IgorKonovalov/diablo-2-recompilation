@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/tc
 > **Question:** Which TC does a kill use, how does the game walk it (picks, NoDrop, recursion, ratios), which seed does each draw come from, and what does item creation receive?
-> **Date:** 2026-10-11   **Plan:** 0004 (Phase 1)   **Status:** open (Phase 1 read `[I]`; Phase 1b cross-check done; Phase 2 done: 328/328 resolver calls of run:2026-10-11-tc-drops reproduced by `tools/tc.py replay`, since plan 0010 Phase 2 also with the quality roll modelled and no oracle; plan 0011: party count `[C]` by run:2026-10-12-tc-party (175/175 calls, two clients); champion column and champion-before-unique order `[C]` by run:2026-10-12-tc-champion (124/124 calls, Nightmare, 2 champions); superunique-first order and Normal/Hell champions stay `[I]`; plan 0020 Phase 2: the classic total, the classic scan with no skipped entry, and the throwable refund `[C]` by run:2026-10-13-quality (485/485 classic calls); the classic skip, miss, `version` reject and Long Sword fallback stay `[I]`; plan 0038 batch S2a, 2026-10-16: 20 statements raised and 18 in part over 166 kept stock logs, tables and a second xref tool, 8 reclassified, [§ Plan 0038 batch S2a](#plan-0038-batch-s2a-2026-10-16))
+> **Date:** 2026-10-11   **Plan:** 0004 (Phase 1)   **Status:** open (Phase 1 read `[I]`; Phase 1b cross-check done; Phase 2 done: 328/328 resolver calls of run:2026-10-11-tc-drops reproduced by `tools/tc.py replay`, since plan 0010 Phase 2 also with the quality roll modelled and no oracle; plan 0011: party count `[C]` by run:2026-10-12-tc-party (175/175 calls, two clients); champion column and champion-before-unique order `[C]` by run:2026-10-12-tc-champion (124/124 calls, Nightmare, 2 champions); superunique-first order and Normal/Hell champions stay `[I]`; plan 0020 Phase 2: the classic total, the classic scan with no skipped entry, and the throwable refund `[C]` by run:2026-10-13-quality (485/485 classic calls); the classic skip, miss, `version` reject and Long Sword fallback stay `[I]`; plan 0038 batch S2a, 2026-10-16: 20 statements raised and 18 in part over 166 kept stock logs, tables and a second xref tool, 8 reclassified, [§ Plan 0038 batch S2a](#plan-0038-batch-s2a-2026-10-16); plan 0038 batch H2a, 2026-10-20: 9 statements raised and 4 in part by run:2026-10-20-sweep-items-tc, [§ Plan 0038 batch H2a](#plan-0038-batch-h2a-2026-10-20))
 
 Names of structs and fields are ours. "Game" is the server game object passed in ECX (`game+0x6D`, `game+0x70`, seed
 `+0xD0` as in [rng/0002](../rng/0002-seed-tree.md)). "Source unit" is the unit the drop comes from (the dying monster, or
@@ -72,6 +72,9 @@ further statements; where it lists one, its tag and evidence take precedence ove
 - [I] **Picks, unobserved edges.** A negative-`Picks` walk stops early when `k ≥ total` (every negative-`Picks` TC in the
   run had `total == |Picks|`: `Act 1 Unique A/B` 3/3, `Act 1 Super A` / `Act 1 (N) Super B` 4/4, so the stop never
   fired), and `Picks = 0` is stored as 1 at load (no such TC was hit). (fn:TC_ResolveDrops@0x0055A6D0, tbl:TreasureClassEx.txt:Picks)
+  *2026-10-20, plan 0038 batch H2a:* the stop is now `[C]`: it fired on the classic Countess (`Picks` −2, classic total
+  1; `NEG roll=1 total=1`, then `TCEND` with no `SEL`), [§ Plan 0038 batch H2a](#plan-0038-batch-h2a-2026-10-20) tc 34
+  (fn:TC_ResolveDrops@0x0055A6D0 0x0055AABC–0x0055AAC4, run:2026-10-20-sweep-items-tc). `Picks = 0` stays `[I]`, d-none.
 - [I] **NoDrop scaling** (positive picks, `NoDrop ≠ 0`, recomputed on every pick): `n = party + (players − party) / 2`
   (C signed division), where `party` = alive members of the killer's party in the killer's level, 1 if none, clamped to
   ≤ 8, and `players` = alive player units in the game, raised to the `/players` value in some game types. A monster
@@ -179,10 +182,10 @@ data/0001). Phase 1b (2026-10-11) then compared the finished claims with two reg
 
 | Address | Name | Role | Tag |
 |---|---|---|---|
-| `0x005A6FF0` | `sub_005A6FF0_MonDeathEvent` | monster death event (reached through the table at `0x006E2260`); calls the death drop | I |
-| `0x005A6830` | `sub_005A6830_MonDeathDrop` | death drop guard: skips if `unit+0xC4` bit 17 is set or the spot is blocked; `noNoDrop = 0` | I |
-| `0x005A8000` | `sub_005A8000_MonDropNoNoDrop` | the same drop with `noNoDrop = 1`; called by the corpse skill `0x005D8780` | I |
-| `0x005D8780` | `sub_005D8780_CorpseFindItem` | skill on a corpse (`skills` record, corpse state `0x76`), rolls `RNG_Range(monster seed, 100)` | I |
+| `0x005A6FF0` | `sub_005A6FF0_MonDeathEvent` | monster death event (reached through the table at `0x006E2260`); calls the death drop | C |
+| `0x005A6830` | `sub_005A6830_MonDeathDrop` | death drop guard: skips if `unit+0xC4` bit 17 is set or the spot is blocked; `noNoDrop = 0` | C |
+| `0x005A8000` | `sub_005A8000_MonDropNoNoDrop` | the same drop with `noNoDrop = 1`; called by the corpse skill `0x005D8780` | C |
+| `0x005D8780` | `sub_005D8780_CorpseFindItem` | skill on a corpse (`skills` record, corpse state `0x76`), rolls `RNG_Range(monster seed, 100)` (that roll unmodelled, `[I]`) | C |
 | `0x005A6600` | `MONSTER_DropItems` | TC column choice, ilvl, calls `TC_DropByIndex` | C |
 | `0x0055AFA0` | `TC_DropByIndex` | level-upgrade gate, `TC_GetByIndex`, `TC_ResolveDrops` | C |
 | `0x00654E00` | `TC_GetByIndex` | index → TC, with the group/level walk | I |
@@ -190,7 +193,7 @@ data/0001). Phase 1b (2026-10-11) then compared the finished claims with two reg
 | `0x00558640` | `ITEMS_DropRollQuality` | quality code 1–7 (0 on a missing record) from `itemratio`, ratios, MF; 0–6 draws on the source seed; read in [items/0002](0002-quality-roll.md) | I |
 | `0x0055A550` | `sub_0055A550_DropCreateItem` | builds the creation record, calls item creation | I |
 | `0x00558D90` | `sub_00558D90_ItemCreate` | `.\ITEMS\Items.cpp` creation; seeds from the record only if asked | I |
-| `0x005589A0` | `sub_005589A0_DropGoldFind` | gold × (100 + GF) / 100 | I |
+| `0x005589A0` | `sub_005589A0_DropGoldFind` | gold × (100 + GF) / 100 | C |
 | `0x00558200` | `sub_00558200_UnitDropLevel` | ilvl source: monster/player `level` stat, else area level; ≥ 1 | I |
 | `0x0061DCA0` | `sub_0061DCA0_LevelMonLvl` | `levels` `MonLvl[diff]` or `MonLvlEx[diff]` | I |
 | `0x00535790` | `sub_00535790_PlayerCount` | alive players, raised to the `/players` override in game types 1–3 | I |
@@ -358,6 +361,9 @@ TC_DropByIndex(game, monster, ctx->killer, tc, /*forcedQuality*/0, ilvl, noNoDro
   keeps the normal TC. The quest-state semantics are left to `items/quest-drops`. (0x005A6705–0x005A67F1, 0x0065C310)
 - [I] The death drop is skipped when the monster unit has `+0xC4` bit 17 set, or when a collision test at its position
   (mask `0x801`) fails. Class 344 (`bonewall`) is a fatal error there. (0x005A6830)
+  *2026-10-20, plan 0038 batch H2a:* both skips are now `[C]` (113 bit-17 and 2 collision skips of 973 death drops);
+  the `bonewall` fatal error stays `[I]`, [§ Plan 0038 batch H2a](#plan-0038-batch-h2a-2026-10-20) tc 22 (fn:sub_005A6830_MonDeathDrop@0x005A6830,
+  run:2026-10-20-sweep-items-tc).
 
 ### 4. Level upgrade — `TC_DropByIndex` (0x0055AFA0) and `TC_GetByIndex` (0x00654E00)
 
@@ -575,6 +581,10 @@ sub_005589A0_DropGoldFind(killer, unit);
   on the signed product. Gold find applies only to items whose `type` is exactly 4. It is
   `gold = gold × (100 + GF(killer) + GF(owner of killer)) / 100` (signed, `imul 0x51EB851F` = exact `/ 100`), with GF
   = stat 79 `item_goldbonus`. It is **skipped for the item that reaches `max`**. (0x0055AEF2–0x0055AF59, 0x005589A0)
+  *2026-10-20, plan 0038 batch H2a:* `[C]` now for `GOLD_TYPE` 4, the `mul=` product (one case), the gold-find product
+  on own type 4 (202 cases) and its skip at `max` (8 calls); the equivalence half is d-none on stock data (only `gld`
+  is of type 4 by any route) and signedness stays `[I]`, [§ Plan 0038 batch H2a](#plan-0038-batch-h2a-2026-10-20) tc 11, 59, 60, 71
+  (fn:sub_005589A0_DropGoldFind@0x005589A0, run:2026-10-20-sweep-items-tc).
 - [I] **Creation record** built by `sub_0055A550_DropCreateItem` (0x84 bytes, zeroed): `+0x00` source unit, `+0x08`
   game, `+0x0C` ilvl = `sub_00558200`-style level of the source (monster: stat 12; player: base stat 12; other:
   `MonLvl[Ex][diff]` of its level; minimum 1), `+0x14` item record index, `+0x18` = 3, `+0x1C/+0x20` drop position
@@ -767,6 +777,9 @@ Per row (inventory row, spec line at the inventory's commit, outcome):
   stock data only by the three `Countess` TCs in a **classic** game (`Picks` −2, classic total 1); it never fired in the
   1374 negative picks of the log set. Route: a classic Countess kill (a new recipe on the `tc-drops` logger). The
   `Picks = 0` half of L388 is d-none (tc 13). (fn:TC_ResolveDrops@0x0055A6D0, tbl:TreasureClassEx.txt:Picks)
+  **2026-10-20, batch H2a:** L361 **raised**, L388 **raised in part** (remainder `Picks = 0`, d-none): the stop fired
+  once, on the classic Countess of session 10, [§ Plan 0038 batch H2a](#plan-0038-batch-h2a-2026-10-20)
+  (fn:TC_ResolveDrops@0x0055A6D0 0x0055AABC–0x0055AAC4, run:2026-10-20-sweep-items-tc).
 - **tc 35** (L370), **tc 36** (L377) **raised.** [C] Each pick decrements `picksLeft` (every pick of the 9390 calls), and
   the call returns `count` when frame 0 runs out (`TCEND` count and seed, 9390 calls). (fn:TC_ResolveDrops@0x0055A6D0)
 - **tc 38** (L397) **raised in part.** [C] A pick that ends on a sub-TC is consumed (28 617 pushes). (fn:TC_ResolveDrops@0x0055A6D0)
@@ -804,7 +817,8 @@ Per row (inventory row, spec line at the inventory's commit, outcome):
 - **tc 51** (L589) **raised in part.** [C] H1, H4 (the quality roll in 6967 picks, a forced quality in 57), H5 (no
   upgrade draw, `up = 0` in every `CPRE`), H6 (the refund, already `[C]`), H7 and the `count ≥ max` end of H8.
   (0x0055AC5F–0x0055AF59) **Remainder `[I]`:** H2's reject (unreachable, tc 74), H3 (d-edit), the `mul=` and gold find of
-  H8–H9 (the gold line of H2a), unique and set entries (d-edit).
+  H8–H9 (the gold line of H2a), unique and set entries (d-edit). *2026-10-20:* H8–H9 raised and raised in part by
+  [batch H2a](#plan-0038-batch-h2a-2026-10-20) (tc 59, 60, 71; run:2026-10-20-sweep-items-tc).
 - **tc 52** (L637) **raised.** [C] The quality roll steps `src.seed` 0 to 6 times with `RangeB`: 6967 rolls modelled with
   no oracle inside whole calls, with every draw count from 0 to 6 (5100, 24, 133, 651, 184, 709, 166), in the three
   difficulties, classic and expansion. (fn:ITEMS_DropRollQuality@0x00558640, fn:RNG_RangeB@0x0045C3E0,
@@ -996,6 +1010,107 @@ evidence is the B6 groups of the run, ledger in [items/0010 § Plan 0038 batch H
   `exp`-state killer (shortfall, stays `[I]`: `B6E` was 0 in both kills) and the party (d-2c, as filed). (fn:MONSTER_DropItems@0x005A6600
   0x005A6705–0x005A67F1, run:2026-10-17-sweep-quest-b6)
 
+## Plan 0038 batch H2a (2026-10-20)
+
+Harness batch H2a of [plan 0038](../../plans/0038-inferred-claims-sweep.md)
+([run:2026-10-20-sweep-items-tc](experiments.md#run2026-10-20-sweep-items-tc), 12 sessions on harness slot 2, stock data)
+took 13 inferred statements of [items/tc](../../specs/items/tc.md), rows of [the inventory](../../plans/0038-inventory/items-tc.md)
+(tc 34 by [§ 2.6](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews)); the quality rows are in
+[items/0002 § Plan 0038 batch H2a](0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20). Spec lines are those of the
+inventory's commit `a398945`.
+
+**The checks** (in `workspace/logs/h2a`; outputs in `check/`, each cited by sha256 in the run record; the 12 logs pass
+`sha256sum -c items-tc-manifest.sha256` from that directory):
+
+```
+python3 -I tools/sweep_h2a.py logs $(cat items-tc-run.lst)          # chain, deathx, gold, players, objects, nonodrop, negstop
+python3 -I tools/sweep_h2a.py static ../../runtime/game/game.exe    # call sites, table references, seven instruction patterns
+python3 -I tools/sweep_h2a.py goldtypes                             # item records of type 4 (full table)
+for l in $(cat items-tc-run.lst); do python3 -I tools/tc.py replay $l; done   # 873 calls, 873 reproduced, 0 failed
+```
+
+`sweep_h2a.py logs` ends `0 bad`: every rule its docstring lists holds on every line of the 12 logs. Its counts below
+are copied from `check/check-sweep_h2a.txt` (`7ea37c28…`), the static ones from `check/check-static.txt` (`d1bc1830…`).
+
+Per row (inventory row, spec line, outcome):
+
+- **tc 1** (L28) **raised.** [C] The monster death drop runs death event → `MonDeathDrop` → `MONSTER_DropItems`. All 973
+  `MDD0` lines (the entry of `MonDeathDrop`) return to 0x005A702C, after the one `call rel32` to 0x005A6830 in the image
+  (0x005A7027, inside `MonDeathEvent`); `MonDeathEvent` has no `call rel32` and one 4-byte reference, 0x006E2260 in
+  `.rdata`, so it is reached through that table. The 858 death drops that pass the guard (`MDDX`) are the 858
+  `MONSTER_DropItems` entries returning to 0x005A68D6, each with `noNoDrop = 0`; with the 12 of tc 2 they are the 870
+  `DROP` lines, each after its `MDI`. (fn:sub_005A6FF0_MonDeathEvent@0x005A6FF0, fn:sub_005A6830_MonDeathDrop@0x005A6830,
+  fn:MONSTER_DropItems@0x005A6600, run:2026-10-20-sweep-items-tc)
+- **tc 2** (L29) **raised.** [C] A corpse skill re-drops through `MonDropNoNoDrop` with `noNoDrop = 1`. Session 6 (the
+  `FindBar` Barbarian, Find Item on corpses) logged 31 `CorpseFindItem` entries, all returning to 0x0056F96A in
+  `SKILLS_SrvDo`; the function has no `call rel32` and one reference, 0x007323D0 in `.data`, entry 72 of
+  `g_SkillDoFuncs` (0x007322B0). 12 of them call `MonDropNoNoDrop` (`MNN`, return 0x005D8894 after the only call,
+  0x005D888F), and each of the 12 enters `MONSTER_DropItems` from 0x005A801C with `noNoDrop = 1` and a `TCR` with
+  `nonodrop=1`. The other 19 make no drop (the skill's own `RNG_Range(…, 100)` test is not modelled here). No `CFI`
+  line occurs in the other 11 sessions. (fn:sub_005D8780_CorpseFindItem@0x005D8780,
+  fn:sub_005A8000_MonDropNoNoDrop@0x005A8000, fn:SKILLS_SrvDo@0x0056F7F0, data:g_SkillDoFuncs@0x007322B0,
+  run:2026-10-20-sweep-items-tc)
+- **tc 11** (L86) **raised.** [C] `GOLD_TYPE` is itemtypes record 4 (`gold`): 0x0055AEF2 pushes 4 to
+  `ITEMS_UnitIsType`, and over all 713 created units the `GTY` line gives `is4 = 1` for the 207 `gld` units (item class
+  523, own type 4) and 0 for the 506 others. (0x0055AEF2, fn:ITEMS_UnitIsType@0x00629BB0, tbl:ItemTypes.txt:Code,
+  run:2026-10-20-sweep-items-tc)
+- **tc 22** (L201) **raised in part.** [C] The death drop is skipped on `unit+0xC4` bit 17 or a failed collision test:
+  of the 973 `MDD0`, 113 stop at the bit-17 test (`MDDB bit17=1` exactly when the logged `+0xC4` has bit 17; classes 19
+  `fallen1` 79 and 22 `fallen4` 34), 2 at the collision test (mask `0x801`, `MDDC coll=0001`), and 858 go on; no
+  `MONSTER_DropItems` entry follows a skipped one. (fn:sub_005A6830_MonDeathDrop@0x005A6830 0x005A6867, 0x005A687F,
+  run:2026-10-20-sweep-items-tc) **Remainder `[I]`, shortfall:** the `bonewall` (class 344) fatal error; no class 344
+  died.
+- **tc 34**, first statement (L361) **raised.** [C] A negative-`Picks` frame stops when `roll ≥ total`: in the classic
+  Normal Countess kill (session 10, monster class 45, `Picks` −2, classic total 1) the second pick logged
+  `NEG roll=1 total=1` and went straight to `TCEND`, with no `SEL` line (0x0055AB35, where the entry scan ends) and the
+  seed of the pick before it. The other 62 negative picks of the 12 logs (roll < total) are each followed by `SEL`, so a
+  reading without the stop (`jge 0x0055AF73` at 0x0055AAC4) would have logged one there too. `tools/tc.py replay`
+  reproduces the call. (fn:TC_ResolveDrops@0x0055A6D0 0x0055AABC–0x0055AAC4, tbl:TreasureClassEx.txt:Picks,
+  run:2026-10-20-sweep-items-tc)
+- **tc 34**, second statement (L388) **raised in part.** [C] Its stop half, as above: the stop has now fired once.
+  (fn:TC_ResolveDrops@0x0055A6D0 0x0055AAC4, run:2026-10-20-sweep-items-tc)
+  **Remainder, d-none:** `Picks = 0` stored as 1 (row 13; no loaded row has `Picks` 0).
+- **tc 37** (L395) **raised.** [C] With `noNoDrop` the NoDrop term is computed but neither widens the range nor rejects:
+  in all 12 `nonodrop=1` calls the `NDP` total `nd'` is above 0, the first `PICK` range equals the TC total (`nd'` not
+  added), and no pick is rejected as NoDrop; the 12 calls replay. (fn:TC_ResolveDrops@0x0055A6D0 0x0055A9D9–0x0055AA59,
+  fn:sub_005A8000_MonDropNoNoDrop@0x005A8000, run:2026-10-20-sweep-items-tc)
+- **tc 45** (L517) **raised.** [C] The `/players` override applies in a TCP/IP game: in session 5 (one client hosting a
+  TCP/IP game alone, Normal, `/players 8`) all 161 resolver calls have `g6a = 2` and `pover = 8`, the 159 `PLAYERS` lines
+  are 8 (one player in the game), and the NoDrop picks replay at `n = 4` (161 of 161). (fn:sub_00535790_PlayerCount@0x00535790,
+  data:g_PlayersOverride@0x00883D70, run:2026-10-20-sweep-items-tc)
+- **tc 47** (L523) **raised.** [C] The `monster_playercount` cap applies only to a monster source: the 4 object calls
+  (`stype = 2`, the chests of session 1, `pover = 8`) have no `CAP` line and 16 `NDIN` lines at `n = 4`, while the
+  monster calls of the same log carry 142 `CAP` lines. (0x0055A926, fn:TC_ResolveDrops@0x0055A6D0,
+  run:2026-10-20-sweep-items-tc)
+- **tc 59** (L671) **raised.** [C] Reaching `max` ends the call and that item gets no gold find: 8 calls reached
+  `count = 6` (`GMAX`); each goes from `GMAX` to `TCEND` with no `DropGoldFind` entry (`GF0`), while the 705 items below
+  `max` each enter it (713 `GMAX`, 705 `GF0`, every one from 0x0055AF5E). (0x0055AF4F, fn:sub_005589A0_DropGoldFind@0x005589A0,
+  run:2026-10-20-sweep-items-tc)
+- **tc 60** (L674) **raised in part.** [C] `mul=` on gold and gold find on the item's own type 4. One `mul=` product:
+  the Countess's `gld,mul=1280` pile, 45 × 1280 `sar 8` = 225; then its gold find, 225 × 455 ÷ 100 = 1023. Gold find:
+  202 products, each `gold × (100 + GF) ÷ 100` truncated (factors 540 ×162, 455 ×37, 180 ×3, the three characters'
+  gold find 440, 355, 80); skipped for the 489 items whose own type is not 4 (no `GF2` follows `GF1`) and for the 14
+  items of sources with no killer (`GF0` with killer 0). (0x0055AF21–0x0055AF2F, fn:sub_005589A0_DropGoldFind@0x005589A0 0x005589AE,
+  0x005589E9, run:2026-10-20-sweep-items-tc) **Remainder:** the type-equivalence half is d-none (`sweep_h2a.py
+  goldtypes`: of 659 item records only `gld` is of type 4 by its type, `type2` or their `Equiv` ancestors, so the
+  equivalence test and an own-type test agree on stock data); signedness stays `[I]` (every product is positive, so
+  signed and unsigned arithmetic agree).
+- **tc 70** (L861) **raised in part.** [C] `/players` acts as a floor in game types 2 and 3 for a lone player: `PLAYERS`
+  is 8 with `pover = 8` in game type 2 (159 lines) and type 3 (376 lines), and 1 with `pover = 0` (319 lines).
+  (fn:sub_00535790_PlayerCount@0x00535790, run:2026-10-20-sweep-items-tc) **Remainder `[I]`:** game type 1 and a type
+  outside 1–3 (shortfall: no such game was hosted), and a floor below the live player count (one-player games only).
+- **tc 71** (L869) **raised.** [C] `max` is global to the call and the sixth item skips gold find: the 8 calls of tc 59 each
+  made their six items at the ends of separate sub-TC descents (12 to 59 `SUB` pushes per call, at least one between
+  any two items), and each stops at the sixth created item with no `GF0`. (0x0055AEF2–0x0055AF59, run:2026-10-20-sweep-items-tc)
+
+**Tally:** 13 statements: 9 raised (tc 1, 2, 11, 34 L361, 37, 45, 47, 59, 71), 4 raised in part (tc 22, 34 L388, 60,
+70; the remainder named on each line), 0 shortfall, 0 reclassified.
+
+**Symbols:** `sub_005A6FF0_MonDeathEvent`, `sub_005A6830_MonDeathDrop`, `sub_005A8000_MonDropNoNoDrop`,
+`sub_005D8780_CorpseFindItem` and `sub_005589A0_DropGoldFind` move to `C` in `re/symbols.csv`: each role holds on two
+sources, the logged entries and return addresses of the run and the static call-site and reference scan
+(`sweep_h2a.py static`).
+
 ## Open questions
 
 - **x87 precision control** in other renderers. Every logged evaluation shows control word `0x027F` (53-bit, round
@@ -1014,8 +1129,11 @@ evidence is the B6 groups of the run, ledger in [items/0010 § Plan 0038 batch H
 - `game+0x6A` values: 3 in every single-player call ([run:2026-10-11-tc-drops](experiments.md#run2026-10-11-tc-drops))
   and 2 in every call of a TCP/IP game logged on the host, Normal and Nightmare
   ([run:2026-10-12-two-clients](experiments.md#run2026-10-12-two-clients),
-  [run:2026-10-12-tc-party](experiments.md#run2026-10-12-tc-party)). Value 1 is unobserved. Whether
-  `/players` applies in a TCP/IP game was not tested (no `/players` typed; `pover=0` throughout).
+  [run:2026-10-12-tc-party](experiments.md#run2026-10-12-tc-party)). Value 1 is unobserved. ~~Whether
+  `/players` applies in a TCP/IP game was not tested (no `/players` typed; `pover=0` throughout).~~ *Answered
+  2026-10-20, plan 0038 batch H2a:* it applies: a lone TCP/IP host (`g6a` 2) with `/players 8` logs `PLAYERS` 8 in 159
+  lines and every call replays at `n = 4` ([§ Plan 0038 batch H2a](#plan-0038-batch-h2a-2026-10-20) tc 45; fn:sub_00535790_PlayerCount@0x00535790,
+  run:2026-10-20-sweep-items-tc). Still open: game type 1 and the override below a larger live player count.
 - ~~Quest-drop tests (`0x0065C310` with 15, 1 and `TCQuestCP`), and the killer resolution through `0x0063A690` /
   `0x00625760(…, 0x800)`~~: answered statically in [items/0010 § 2–3](0010-quest-drops.md#2-b6-the-quest-tc-switch-and-the-killer)
   (`[I]`; the record is the resolved killer's own; `0x0063A690` tests the states with `states.txt` `exp`; the bits per boss).

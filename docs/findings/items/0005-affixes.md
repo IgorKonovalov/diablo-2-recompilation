@@ -1030,6 +1030,25 @@ whose property functions are indirect calls) is not reached; no case stopped.
   (14). No case had a total `W + 1` ≤ 0.
   (fn:ITEMS_PickMagicAffix@0x005C1560, fn:RNG_RangeOffset@0x00472280, run:2026-10-17-sweep-emu2)
 
+## Plan 0048 Phase 1: the staff-mods model is the default (2026-10-20)
+
+Oracle 2 of [chain/0001](../chain/0001-oracles.md) (`ITEMS_RollStaffMods` as a seed oracle) is retired in the chained
+tools: `tools/affixes.py check`, `tools/items_chain.py` and the new `tools/chain.py check` run `affixes.staff_mods` by
+default, and `--staff oracle` restores the plan 0021 switch (ADR-0004). No reading changed; no new run.
+
+- [C] With the model as the default, every kept item log reproduces with no staff-mods exit seed taken from a log:
+  `tools/chain.py check` over the 133 logs of run:2026-10-14-affixes, run:2026-10-14-props, run:2026-10-14-props-forced
+  and run:2026-10-15-items-chain (manifests `affixes-manifest.txt`, `props-stock-manifest.txt`,
+  `props-forced-manifest.txt`, `items-chain-manifest.txt`, all `sha256sum -c` clean) gives 3 991 creations from the
+  affix lines and 3 170 from the property lines, 0 failed; 99 `STF1` exit seeds and 64 `item_singleskill` (107) entries
+  at `LX` predicted; 14 logs carry no creation. The props pass's former "staff mods: exit not checkable" count (42 on
+  the props runs) is now 0. (fn:ITEMS_RollStaffMods@0x005C1260, fn:sub_005C0F90_StaffModsRoll@0x005C0F90,
+  run:2026-10-14-affixes, run:2026-10-15-items-chain; output `workspace/logs/chain-p1/o2-items-check.txt`, manifest
+  `workspace/logs/chain-p1/manifest.txt`)
+- [I] The classic body `sub_005C0D70_StaffModsRollV0` stays unmodelled: `staff_mods` raises on an item of version 0, and
+  no created item has version 0 (the item version split of § 10), so no chain run reaches it.
+  (fn:sub_005C0D70_StaffModsRollV0@0x005C0D70)
+
 ## Data touched
 
 - Affix records: tbl:MagicPrefix.txt:spawnable, tbl:MagicPrefix.txt:version, tbl:MagicPrefix.txt:level,

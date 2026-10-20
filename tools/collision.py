@@ -229,6 +229,7 @@ class World:
         self.maps_override = None
         self.nears_override = None
         self.model_near = {}      # active room -> near list as the model keeps it (CB, then DUNGEON_NearRoomsBuild)
+        self.dr_room = {}         # DRLG room -> its active room at the latest CB (plan 0038 H5b)
         self.lg0 = {}
         self.nw = None
         self.nw_cbs = []
@@ -318,6 +319,20 @@ class World:
         # the model's near lists (plan 0027): the room's list at activation; DUNGEON_NearRoomsBuild adds the new room to
         # the list of each active neighbour
         nl = [e[0] for e in z["near"]]
+        # plan 0038 H5b: a DRLG room activated again under a new active room while the old one is still listed as a
+        # neighbour: the new room takes the old one's place in those lists
+        key = (d["lid"], dr, tuple(d["rect"]))
+        old = self.dr_room.get(key)
+        if old is not None and old != room and self.rects.get(old) == (x0, y0, w, h) and self.cb_info.get(old, {}).get(
+                "dr") == dr:                     # the old pointer is not reused by another room since
+            for k in self.model_near:
+                lst = self.model_near[k]
+                if old in lst:
+                    lst[lst.index(old)] = room
+                    if lst.count(room) > 1:
+                        del lst[len(lst) - 1 - lst[::-1].index(room)]
+                    self.hit("near lists: a DRLG room's new active room in its old one's place")
+        self.dr_room[key] = room
         self.model_near[room] = list(nl)
         for n in nl:
             if n != room and n in self.model_near and room not in self.model_near[n]:

@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/tc, items/quality, items/affixes, items/properties, items/sockets-runewords, items/cube, save/d2s]
 consumed_by: [items/tc, objects, monsters/pool]
-tags: {C: 84, I: 87, L: 2}
-updated: 2026-10-19
+tags: {C: 86, I: 86, L: 2}
+updated: 2026-10-20
 ---
 
 # Quest drops, quest rewards and special drops
@@ -144,10 +144,16 @@ Step notes:
   `mod 5`) or call `RNG_Range`/`RNG_RandLoHi` on the quest seed; all are `Step` then `low mod n` of
   [rng](../rng/README.md) step 2, and `RandLoHi(s, lo, hi)` is `lo + Range(s, hi − lo)`
   ([objects § E](../objects/README.md#e-the-populatefn-handlers)). (fn:RNG_Range@0x0045C390, fn:RNG_RandLoHi@0x004BC500)
-- A3. [I] Bit 15 of a word is set by the save loader alone, from a saved bit 1 (words 0–41), and only word 9's script
-  clears it; so bit 15 means "this character saved the game while bit 1 was set". The loaded quest saves of the run
-  came back with exactly that bit 15 added. (fn:QUESTRECORD_LoadBytes@0x0065C4D0, fn:QUESTRECORD_SetState@0x0065C360,
-  0x00599293, run:2026-10-16-quest-drops)
+- A3. [C] On a player's record bit 15 of a word is set by the save loader alone, from a saved bit 1 (words 0–41), and
+  only word 9's script clears it (0x00599293); the one record-function set of bit 15 is the join's, on the game record.
+  So bit 15 means "this character saved the game while bit 1 was set". The loaded quest saves of the run came back
+  with exactly that bit 15 added, and the 1 626 logged writes set bit 15 only on the game record. The "only" is a
+  closure over every call of the five record functions (the 378 sites, the 45 register operands read one by one, the
+  12 steps clears, which stop at bit 11). Its limits: a store to a record outside those functions (the loader aside)
+  is not covered, and the A3Q4 party bit is bounded by the stores in its quest's code window (bits 2, 4 and 1).
+  (fn:QUESTRECORD_LoadBytes@0x0065C4D0, fn:QUESTRECORD_SetState@0x0065C360, fn:QUESTRECORD_ClearState@0x0065C3A0,
+  fn:QUESTRECORD_ClearSteps@0x0065C3E0, 0x00599293, run:2026-10-16-quest-drops,
+  [items/0010 § Plan 0049 Phase 1](../../findings/items/0010-quest-drops.md#plan-0049-phase-1-2026-10-20-static-the-s2c-static-leftovers))
 
 ### B. The quest TC switch (items/tc B6)
 
@@ -247,10 +253,14 @@ Step notes:
   0, and nothing else writes bits 0, 1 or 15 of word 6. With `TCQuestCP` 1 the test is "bits 15 and 1 clear", so after
   the report every later game gives the quest TC again; a save between the kill and the report sets bit 15 at the next
   load and ends it. (fn:sub_00595C60_A1Q6_NpcMessage@0x00595C60 0x00595D92, 0x00595D9C, fn:QUESTRECORD_LoadBytes@0x0065C4D0)
-- [I] **The others do not.** Duriel's bit 5 is never cleared and his bit 1 is never set; Mephisto's, Diablo's and
-  Baal's scripts set bit 0, which `TCQuestCP` 0 tests. So for these four the quest TC is used until the killer's first
-  kill in that difficulty. (fn:sub_0059D050_A2Q6_DurielDeath@0x0059D050 0x0059CD2F–0x0059CEA5,
-  fn:sub_005BC8B0_A3Q6_MephistoDeath@0x005BC8B0)
+- [C] **Duriel's bits stay.** Duriel's bit 5 is never cleared and his bit 1 is never set through the record functions:
+  no constant site clears word 14 bit 5 or sets bit 1, no register site writes word 14 and no steps clear is on it, by
+  the closure of A3; the only route outside those functions is the save loader. A whole-record reset outside the five
+  functions is not covered. (fn:sub_0059D050_A2Q6_DurielDeath@0x0059D050 0x0059CD2F–0x0059CEA5, 0x0059D0F0,
+  fn:QUESTRECORD_ClearSteps@0x0065C3E0, [items/0010 § Plan 0049 Phase 1](../../findings/items/0010-quest-drops.md#plan-0049-phase-1-2026-10-20-static-the-s2c-static-leftovers))
+- [I] **The others do not.** Mephisto's, Diablo's and Baal's scripts set bit 0, which `TCQuestCP` 0 tests. So for
+  these four (Duriel included) the quest TC is used until the killer's first kill in that difficulty.
+  (fn:sub_0059D050_A2Q6_DurielDeath@0x0059D050, fn:sub_005BC8B0_A3Q6_MephistoDeath@0x005BC8B0)
 - [I] **No quest TC.** The Countess (`corruptrogue3`), the Cow King, Nihlathak (`nihlathakboss`) and every other
   class have `TCQuestId` 0: B6 never applies and their drop is their ordinary (superunique) TC. (tbl:MonStats.txt:TCQuestId,
   tbl:SuperUniques.txt:TC, fn:MONSTER_DropItems@0x005A6600)

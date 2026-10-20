@@ -3,7 +3,7 @@ based_on:
   - docs/specs/items/sockets-runewords.md 2026-10-17
   - docs/specs/items/cube.md 2026-10-17
   - docs/specs/items/vendors.md 2026-10-19
-  - docs/specs/items/quest-drops.md 2026-10-19
+  - docs/specs/items/quest-drops.md 2026-10-20
 ---
 
 # Items that do not come from a monster drop

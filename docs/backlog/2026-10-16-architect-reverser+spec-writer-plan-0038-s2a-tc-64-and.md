@@ -14,3 +14,12 @@ resolution: ""
 *2026-10-20 (reverser, `lane/p49r`, plan 0049 Phase 1, pruning the static-sweep queue):* nothing is left for the
 reverser here, since (a) was done on 2026-10-16 (above). The entry stays open for the spec-writer's raise of the
 items/tc § J and objects § J3 hand-off from `[I]`.
+
+*Routing (architect, `lane/p49s` review, 2026-10-20):* plan 0049 is closed; this entry's spec-writer raise belongs to
+plan 0038 Phase 3's items cluster and stays open there.
+
+*Done in part 2026-10-20 (spec-writer, `lane/p38s7`, plan 0038 Phase 3 items/quality round):* the items/quality note
+is raised: [items/quality](../specs/items/quality.md) C1's chest hand-off (tier as `ilvl`, the item's own level from
+the source) is `[C]` by run:2026-10-15-objects (items/0001 § 2), and its consequence for `d` and the odds is split off
+as `[I]` (derived, no run compares it). **Still open:** the raises in [items/tc § J](../specs/items/tc.md#j-object-drops-named-only)
+(with items/tc's Phase 3 round, after H2b and H2c) and [objects § J3](../specs/objects/README.md#j-operate-chests-and-containers-up-to-the-drop) (with the objects round).

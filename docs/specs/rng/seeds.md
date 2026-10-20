@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng]
 consumed_by: [drlg/overview, drlg/room-tiles, drlg/*, monsters/spawn, objects, items/*]
-tags: {C: 78, I: 9, L: 4}
-updated: 2026-10-17
+tags: {C: 79, I: 12, L: 4}
+updated: 2026-10-20
 ---
 
 # Seed tree: game → act → level → room → unit
@@ -250,7 +250,9 @@ flowchart TD
      dispatch on type: 1 → 0x0067D6D0, 2 → 0x00666630, else none [C] (fn:sub_0067D6D0_OutRoomAlloc@0x0067D6D0, fn:sub_00666630_PresetRoomAlloc@0x00666630, 0x0066B479–0x0066B4A8, run:2026-10-11-seed-tree)
                                                                   ; allocation only, no draw: an objdump closure
                                                                   ; with no drawing function, 876 type-1 and
-                                                                  ; 3552 type-2 rooms (rng/0002 § Plan 0038 batch S1b)
+                                                                  ; 3552 type-2 rooms (rng/0002 § Plan 0038 batch S1b);
+                                                                  ; its 532 indirect calls: 359 import table, 115
+                                                                  ; register from it, 58 under 0x0040B430 (step 5 note)
 
 6. ActivateRoom(act, R: DRLG room) → activeRoom or none:          [C] (fn:sub_0061B190_RoomActivateA@0x0061B190, fn:sub_0061B730_RoomActivateB@0x0061B730, run:2026-10-11-seed-tree-p1)
    6a. Init(R.seed, R[+0x04])                                     [C] (fn:sub_0066EE40_DrlgRoomReseed@0x0066EE40, run:2026-10-11-seed-tree-p1)
@@ -339,6 +341,15 @@ Step notes:
    fn:sub_00642C30_RoomFromCoords@0x00642C30, fn:sub_00642D10_LevelSetPosition@0x00642D10)
 5. Each DRLG room takes exactly one draw from its level's seed, so the order in which a level's
    rooms are created matters. [C] (fn:DRLG_RoomCreate@0x0066B3E0, run:2026-10-11-seed-tree, 3102 room creations)
+   The type dispatch after the room draw draws nothing: the objdump closure under the two allocators (422 functions)
+   holds no drawing function. Its 532 indirect calls split as 359 through the import table, 115 through a register
+   whose nearest earlier write is a load from the import table, and 58 left, all under the pool allocator
+   0x0040B430 (file and line arguments, fatal on failure), which is passed no seed pointer; 0 are unresolved. That
+   residue is the closure's stated limit. [C] (fn:sub_0067D6D0_OutRoomAlloc@0x0067D6D0,
+   fn:sub_00666630_PresetRoomAlloc@0x00666630, run:2026-10-11-seed-tree, [rng/0002 § Plan 0038 batch S1b](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16))
+   `tools/sweep_s1b.py seeds` counts the logged activation re-seeds whose seed is the room's creation seed: 132 of 132
+   type-2 re-seeds and 0 of 25 type-1. [I] (fn:sub_0066EE40_DrlgRoomReseed@0x0066EE40,
+   [rng/0002 § Plan 0038 batch S1b](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16), tool addendum)
 6. The active-room seed is `Init(Step^(k+1)(Init(R[+0x04])).low)`. It doesn't depend on any draw
    made on the room seed between creation and activation, because 6a restarts it from `+0x04`, but
    it does depend on k. Observed in that run: k = 50–376 over 157 activations. [C]
@@ -438,7 +449,8 @@ Step notes:
    (fn:sub_00465420_ClientRoomAt@0x00465420) Type 4 does nothing that draws before the room draw: the
    objdump closure under `ItemDataAlloc` and `ItemDataSeedInitOne` holds no drawing function, only the
    one initialiser. [C] (fn:sub_00627C90_ItemDataAlloc@0x00627C90,
-   fn:sub_00627DC0_ItemDataSeedInitOne@0x00627DC0, [rng/0002 § Plan 0038 batch S1b](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16)) Type 1 (monsters) never goes through
+   fn:sub_00627DC0_ItemDataSeedInitOne@0x00627DC0, [rng/0002 § Plan 0038 batch S1b](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16)) It is
+   the closure of step 5's allocators, with the same split of its indirect calls (step 5 note). Type 1 (monsters) never goes through
    `0x00465FD0` from the client creator `0x00466730`, which sends type 1 to `ClientMonCreate` and every
    other type to `UnitInit`; the 739 logged `UnitInit` hits are all type 2. [C] (0x0046675C, 0x00466796,
    0x004667D6, fn:sub_00466360_ClientMonCreate@0x00466360, run:2026-10-11-seed-tree-p1, [rng/0002 § Plan 0038 batch S1b](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16))
@@ -504,9 +516,37 @@ separate objects.
   Besides the tree above, they are: the client automap's global seed `init(0)` (`AutomapTxtLoad`, drawn only by the
   automap cell pick); two title-screen globals from `RNG_EntropySeed`; and local stack seeds in client/server pairs
   (constant `0x53454953`, a unit base stat, or other values). None of these feeds the act, level, room, unit or item
-  seeds. The sites that re-seed a unit's `+0x20` or another object's seed lie in the skill and missile code and are not
-  read (*Open questions*). [I] (fn:RNG_SeedInitOne@0x00650E30, fn:RNG_SeedInit@0x00650E40,
+  seeds. The sites that re-seed a unit's `+0x20` or another object's seed lie in the skill and missile code
+  (*Skill and missile re-seeds* below). [I] (fn:RNG_SeedInitOne@0x00650E30, fn:RNG_SeedInit@0x00650E40,
   fn:sub_0061FCF0_AutomapTxtLoad@0x0061FCF0, [rng/0002 § Plan 0039 batch P1a](../../findings/rng/0002-seed-tree.md#the-other-initialiser-sites))
+- **The missile pierce count's seed is local.** `sub_0059F940_MissilePierceCount`, the server half of the base-stat pair,
+  initialises a stack seed with `Init(baseStat(owner, 328))` (for a player, stat 328 is raised by 1 on each of its skill requests) and steps
+  it at most four times for the missile's pierce count; it reads and writes no game, unit or missile seed. So it is a
+  classified initialiser site, not a re-seed. [I] (fn:sub_0059F940_MissilePierceCount@0x0059F940, fn:RNG_SeedInit@0x00650E40,
+  [skills/0002 § 3](../../findings/skills/0002-missiles.md#3-the-damage-the-missile-carries),
+  [rng/0002 § Plan 0039 batch P1a](../../findings/rng/0002-seed-tree.md#the-other-initialiser-sites) for the client/server pair)
+
+- **Skill and missile re-seeds.** The server sites of the skill and missile code re-seed a **missile's** seed or a
+  local stack seed, with one exception among the reached sites, Armageddon:
+
+  | Site | Re-seeds | From |
+  |---|---|---|
+  | missile-creation callbacks `0x005D40F0`, `0x005D4680` (the rings of progressive entries 37 and 143) | the new missile's `+0x20` | the creator's local seed's low word |
+  | callbacks `0x005C9290` (Firestorm and others), `0x005CD110`, `0x005AC040` | the new missile's `+0x20` | the path position `+0x10`, plus an index for the first two |
+  | missile do 28 and 35 | the missile's `+0x20` | the low word kept in `MissileData+0x28`, stored back after the draws |
+  | hit 58, do 34 | the missile's `+0x20` | its position (hit 58 its `SubX`, do 34 its path X) |
+  | `0x005A9820` (missile do 8, 10, 17, 25) | the parent missile's `+0x20` | its `SubX + elapsed` |
+  | Armageddon's periodic function (`srvactivefunc` 146) | the **caster's** `+0x20` | the skill entry's `+0x18`, then a fresh `RNG_Range(1 000 000)` is stored back there |
+  | `0x00645390` | a unit's `+0x20` | a skill entry's `+0x18`/`+0x1C`; no reference in the image |
+
+  So a missile's draws after such a re-seed are a function of the creator's value, not of the game seed, and an
+  Armageddon period sets the caster's seed from a stored word: a reimplementation keeps that word per skill entry.
+  The one other server site of rng/0002's register-seed list, `0x005C276A` in the version-0 set builder, re-seeds an **item's** seed from
+  its own saved low word, restoring it on failure.
+  [I] (fn:sub_005C2740_ItemBuildSetV0@0x005C2740, 0x005C276A, fn:sub_005D40F0_MissCbReseedFromArg@0x005D40F0, fn:sub_005D4680_MissCbReseedZigzag@0x005D4680,
+  fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290, fn:sub_005CD110_MissCbReseedRoll@0x005CD110,
+  fn:sub_005AC040_MissCbReseedPathX@0x005AC040, fn:sub_005C8520_SkillDo146Armageddon@0x005C8520, 0x005C8688–0x005C8694,
+  [skills/0003 § 9](../../findings/skills/0003-handlers.md#9-re-seed-sites-rng0002--the-other-initialiser-sites))
 
 ## Evidence
 
@@ -514,6 +554,8 @@ separate objects.
   [§ Other seed sites](../../findings/rng/0002-seed-tree.md#other-seed-sites-seen-not-yet-followed): game creation's
   draws 1–5, with [items/0009 § 1](../../findings/items/0009-vendors.md#1-store-records-and-the-store-seed-game-creation)
   (draw 3) and [items/0010 § 1](../../findings/items/0010-quest-drops.md#1-quest-objects-events-and-the-quest-seed) (draw 4).
+- [findings/skills/0002-missiles.md § 3](../../findings/skills/0002-missiles.md#3-the-damage-the-missile-carries): the pierce count's local seed (plan 0045 P1.2).
+- [findings/skills/0003-handlers.md § 9](../../findings/skills/0003-handlers.md#9-re-seed-sites-rng0002--the-other-initialiser-sites): the skill and missile re-seed sites (plan 0045 P1.3, and its review).
 - [findings/rng/0001-rng-core.md](../../findings/rng/0001-rng-core.md): the "draw" definition, `0x005BDFF0`.
 - [findings/monsters/0001-level-pool.md § 1](../../findings/monsters/0001-level-pool.md#1-where-and-when-game-creation): game-seed draw 1 and the game-creation call order (step note 7a).
 - [findings/rng/experiments.md § run:2026-10-11-seed-tree](../../findings/rng/experiments.md#run2026-10-11-seed-tree):
@@ -558,7 +600,10 @@ separate objects.
   two's-complement `u32` (so that seeds `0x80000000`…`0xFFFFFFFE` are reachable, and `0xFFFFFFFF` means "no
   override"), was not run ([rng/0002 § Plan 0038 batch H5c](../../findings/rng/0002-seed-tree.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)).
   Owner: reverser, a `D2.ini` session.
-- [L] **Skill and missile re-seeds**, narrowed: all 76 initialiser-calling functions are now classified
-  (*Reimplementation notes*); the `0x0061FCF0` global is the client automap's. Still unread are the server sites in
-  the skill and missile code that re-seed a unit's `+0x20` or another object's seed, and from what. Moved to the
-  research map's Simulation phase (3), skills and missiles.
+- ~~**Skill and missile re-seeds**: the server sites in the skill and missile code that re-seed a unit's `+0x20` or
+  another object's seed, and from what.~~ Read from the code (*Reimplementation notes*, *Skill and missile re-seeds*;
+  plan 0045 P1.3): missiles and local seeds, and the caster at Armageddon's periods.
+- [L] **Armageddon's first period**: what the skill entry's `+0x18` holds before the first period has stored its
+  `RNG_Range(1 000 000)`. Its setter `0x00644560` has 85 call sites and the writers before the first period were not
+  followed; the caster's seed after that period is a function of this word alone. Owner: plan 0045 Phase 2 (logged
+  whenever it fires) or plan 0046.

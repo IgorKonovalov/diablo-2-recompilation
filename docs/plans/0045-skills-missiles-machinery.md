@@ -261,7 +261,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   those the findings and the data/calc spec anchor. Surprises, added to Phase 1's *Done when*: 50 missile skills have
   no `srvdofunc`; two progressive rows have no `srvprgfunc`; row 568's hit function cell `*12` compiles to 64 948.
   Families of ten rows or more: eight (`srvstfunc` 4; `srvdofunc` 65, 2, 28, 18, 30; `pSrvDoFunc` 1, 3). Backlog:
-  [reverser, the fields three findings left unnamed](../backlog/2026-10-20-archivist-reverser-missiles-fields-named-by-the-table-doc.md);
+  [reverser, the fields three findings left unnamed](../backlog/archive/2026-10-20-archivist-reverser-missiles-fields-named-by-the-table-doc.md);
   review request [to the architect](../backlog/archive/2026-10-20-archivist-architect-lane-p45a-review-plan-0045-phase-0.md).
 - **2026-10-20 — Phase 0 reviewed (architect): accept with fixes.** `gate.py --full=excel_layout,skills` and
   `test_gate.py` rerun green after merging `main`; both baselines equal the surveys' output. Anchors spot-checked
@@ -271,7 +271,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   anchors them. Fixes (3): the plan names 18 tier-A rows, not 17 (this log and the survey's comment); Skills §
   Families: "the first 22 rows" of the 26; PetType row 17's sentry wording. Tier A: ruling in Phase 1's tier-A
   bullet (all 26 accepted, Meteor and Amplify Damage on the attack-click condition). Notes for P1.1/P1.2:
-  [backlog to the reverser](../backlog/2026-10-20-architect-reverser-plan-0045-p0-review-notes-for-p1-1.md).
+  [backlog to the reverser](../backlog/archive/2026-10-20-architect-reverser-plan-0045-p0-review-notes-for-p1-1.md).
 - **2026-10-20 — Phase 1 batch P1.1 landed for review (reverser, `lane/p45r`, static).**
   [skills/0001-dispatch](../findings/skills/0001-dispatch.md): the request (client packets 0x05–0x11, `PLRMSG_SkillAtXY`
   / `PLRMSG_SkillAtUnit`, stat 328 counted per request, the dual-wield Attack alternation, the `AttackNoMana` fallback,
@@ -333,3 +333,352 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (README {C: 36, I: 22, L: 5}); "the skill hit builders" scoped to "skill hit builders" in damage D1 and README, the
   wiki to "a skill with an element type". The wiki carries no tags or anchors and says "read from the code only". The
   combat specs stay `reviewed`: the change narrows and corrects at `[I]` from reviewed findings and raises nothing.
+- **2026-10-20 — Phase 1 batch P1.2 landed for review (reverser, `lane/p45m`, static).**
+  [skills/0002-missiles](../findings/skills/0002-missiles.md): `MissileCreate` and its 0x5C-byte request (97 call sites
+  in 82 functions: skills, shrines 19/21/22, quests, monsters, missile and skill functions; items only through
+  `ITEMSKILL_Cast`), velocity, range, activate, the `0x40` mark and the collide mask at creation; the three skill
+  creators and `useAmmo` per call site (1 at `SKILL_AttackDo`, Throw, Left Hand Throw and a few monster/skill
+  functions, 0 at `SKILLS_SrvDo`); the `ItemEffect` aim offset (a line missile starts at the target point); the 48
+  `srvmissile` rows with no `srvdofunc` (tier A 36, 251, 25) created only by `SKILLS_SrvDo`; the creation-time damage
+  block (`0x0064B860`: Missiles or Skills columns, the weapon share, the mastery bonus as enhanced damage, the owner's
+  1–3 critical draws, the elemental masteries for `ApplyMastery`); the pierce count from a local seed of stat 328; the
+  missile frame (town tests, `g_MissileSrvDoFuncs` bound 53), do function 1 (step, range countdown, cell collision),
+  the path's acceleration rule; `MISSILE_HitUnit`'s order, `justhit`, pierce, to-hit, the hit/damage tables (bounds 71
+  and 31, tested signed: **row 568's 64 948 is never called**), `BuildDamage`'s draw order on the missile seed; the two
+  `CallDoFunc` missile callers (hit 22: a null entry on stock data; do 14: the grim wards' skill do 30 every 6 frames).
+  1 `[C]` (the data join), 39 `[I]`, 7 `[L]`. 66 symbol rows (two copied from `main`'s plan 0049 names),
+  `re/types/skills.h` missile structs, `tools/skills_missiles_scan.py` with kept outputs
+  (`workspace/logs/skills/p45m-manifest.sha256`). Surprises: the critical roll at creation draws on the **owner's** seed
+  even with no critical stat; the `0x40` mark has no stock missile reader (`CollideType` 7 unused) and a second writer
+  (do 3); `ExplosionMissile` has no server reader by the scan. Backlog: review request
+  [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p45m-review-plan-0045-p1-2-missiles.md), the Missiles
+  columns [to the archivist](../backlog/archive/2026-10-20-reverser-archivist-missiles-columns-anchored-by-skills-0002.md), the
+  collision, combat and economy inputs
+  [to the spec-writer](../backlog/archive/2026-10-20-reverser-spec-writer-missile-path-inputs-for-drlg-collision-combat-econ.md);
+  [the archivist's fields entry](../backlog/archive/2026-10-20-archivist-reverser-missiles-fields-named-by-the-table-doc.md)
+  closed. Open for P1.3: the numbered tier-A functions, the re-seed sites in the missile range, the step direction
+  (`0x0064FC60`) for Phase 2's position logs.
+- **2026-10-20 — `lane/p45m` reviewed (architect): accept with fixes.** Spot-checked on the pinned `Game.exe`
+  (objdump): the signed `movzx; test ax,ax; jle; movsx; cmp bound` before every read of the three tables (hit
+  0x005ADA0D, 0x005AE09B, 0x005AE106, 0x005B02CF; damage 0x005AE158; do 0x005ADBEE), so row 568's 64 948 (−588) is
+  never called; the bounds 53/71/31 at `0x0073C71C`/`0x0073C83C`/`0x0073C95C` and the non-null counts 36/53/14 from the
+  image; `sub_0064A850_MissileCritRoll`'s three inline LCG steps on `ESI`'s `+0x20`/`+0x24` (stat 337 by
+  `STATS_GetUnitStat` unconditionally, 141 and the mastery critical each only when non-zero, return 1 at the first
+  success); `sub_0059F940_MissilePierceCount`'s `RNG_SeedInit(STATS_GetUnitBaseStat(owner, 328))` local seed, at most
+  four steps, the count written as stat 328. Ghidra's 97 call sites in 82 functions recounted from the kept xrefs;
+  `sha256sum -c p45m-manifest.sha256` OK; the tool's hash matches. The one `[C]` is a full-table data join and is scoped
+  (the column-to-table mapping stays `[I]`); no leads, no foreign names. Fixes: (1) the hit-table count: four reads
+  (one in `MissileEndHit`) and one damage read, not "five hit-table sites" (skills/0002 summary and § 5, the P0 notes
+  entry); (2) skills/0002 § 3 states that the missile crit chain is not the melee build's (order 337, 141, mastery;
+  337 drawn at 0); (3) quests/0001's `+0x96` open question struck as answered (`Range`), and the § 7 timer row names the
+  column. Merge: `re/symbols.csv` kept one copy of the two shared rows (no duplicate address or name), this log's tail
+  kept both sides. **Ruling (the creation crit draws):** a new owner-seed event, "missile creation", in the combat
+  spec's draw order, separate from the melee chain; § C's `[C]` chaining stands for the run's paths with an `[I]` note
+  that a player's weapon-share missile inserts 1–3 draws at its creation; monster archers draw too (337 at 0), so B2
+  and the monster chain are scoped to melee. Written into
+  [the spec-writer's entry](../backlog/archive/2026-10-20-reverser-spec-writer-missile-path-inputs-for-drlg-collision-combat-econ.md).
+  For Phase 2: "missile create" is an event kind that draws on the owner's seed and needs its 20 chained pairs; log the
+  owner's and the missile's seeds at creation and at the hit. **P1.3 may start once this lane is in `main`** and picks
+  up: the tier-A missiles' numbered do/hit/damage functions (`firebolt`, `bomb in air`, `plaguejavelin` and their
+  sub-missiles and explosions), skill do 30 (`0x005C37C0`) run with a missile as its unit (do 14), the re-seed sites
+  (`0x005A9820`, `0x005ACDF0`, `0x005AC073` and rng/0002's others), `0x006505C0`, `0x00620C10`, `0x005A43B0`,
+  `0x00645F00`, the step direction `0x0064FC60` and the missile pass's place in the frame (`0x00540F60`…) for the log
+  windows, `MissileEndHit`'s reachability, the P0 notes entry's remainder and P1.1's list above, and the boundary
+  recommendation. Review request
+  [closed](../backlog/archive/2026-10-20-reverser-architect-lane-p45m-review-plan-0045-p1-2-missiles.md); the
+  [p49r names entry](../backlog/archive/2026-10-20-architect-reverser-plan-0045-p1-2-reuse-the-p49r-missile.md) closed.
+- **2026-10-20 — P1.2's spec inputs folded, for review (spec-writer, `lane/msw`).** The
+  [reverser's entry](../backlog/archive/2026-10-20-reverser-spec-writer-missile-path-inputs-for-drlg-collision-combat-econ.md)
+  and the P1.2 ruling are closed, all `[I]` from skills/0002, with nothing raised.
+  [combat/README § B](../specs/combat/README.md#b-draw-order-per-event):
+  - B4 "missile creation" is a new event on the owner's seed: a diagram plus pseudocode for the weapon-share test and
+    the 337 (always), 141, mastery chain; a `SrcMissDmg` missile draws on its source's seed.
+  - B3 gives the to-hit roll on the owner's seed and `BuildDamage`'s seven `RangeB` in order.
+  - B2 and § C's monster chain are scoped to melee, with notes on the archers' creation draws.
+  - § C's `[C]` stands, with an `[I]` note on the player's creation draws. That note does not name them as the cause
+    of the 213 resynchronisations: Phase 2 tests it.
+  - The "draws that do not happen" note is scoped, and the phase (3) open question is rewritten.
+
+  Elsewhere:
+  - [combat/damage](../specs/combat/damage.md) step 3 notes that missiles do not use it.
+  - [rng/seeds](../specs/rng/seeds.md) classifies the pierce count's local seed (`RNG_SeedInit` from stat 328) and
+    narrows the re-seed open question.
+  - [items/economy](../specs/items/economy.md) H3 gives the `useAmmo` gates; the gates question is struck and
+    `SkillWeaponWear` stays `[L]`.
+  - [drlg/collision](../specs/drlg/collision.md) § F gets the missile side of `0x40`: do 3 writes it, `HitUnit`
+    unmarks it, `CollideType` 7 is unused. **drlg/collision is held by plan 0038 Phase 3 (waits H5b+H5d).** This
+    lane only adds the 0045 input: no 0038 row was re-tagged, and C2's `[L]` stands.
+  - Wiki: economy updated (which shots use ammunition, the stale arrows item dropped); levels and monsters get a
+    `based_on` bump only; combat not edited (no contradiction).
+
+  Tags:
+
+  | Spec | Before | After |
+  |---|---|---|
+  | combat/README | {C: 36, I: 22, L: 5} | {C: 36, I: 35, L: 5} |
+  | damage | {C: 34, I: 28, L: 4} | {C: 34, I: 29, L: 4} |
+  | rng/seeds | {C: 79, I: 10, L: 4} | {C: 79, I: 11, L: 4} |
+  | drlg/collision | {C: 110, I: 60, L: 9} | {C: 110, I: 61, L: 9} |
+  | items/economy | {C: 125, I: 83, L: 12} | {C: 125, I: 84, L: 12} |
+
+  The live open-question counts are unchanged. Review:
+  [request](../backlog/archive/2026-10-20-spec-writer-architect-review-lane-msw-missile-creation-draws-in-combat.md).
+- **2026-10-20 — `lane/msw` reviewed (architect): accept with fixes.** Every new statement checked against skills/0002
+  §§ 2–6 and 9 and skills/0001 § 6: B4's weapon-share test, the 337 (always) / 141 / mastery order and the first-success
+  stop, the `SrcMissDmg` source branch with no weapon, the creation order (`SUnitCreate`, callback, damage block, pierce),
+  B3's to-hit on the owner's seed and `BuildDamage`'s seven `RangeB` in order, the do-3 writer and the `HitUnit` unmark,
+  and the 33 `useAmmo` sites (the six monster sites and both `0x005D88B0` calls re-read in objdump on the pinned
+  `Game.exe`, the two other `0x005A35D0` calls push 0). The P1.2 ruling holds: B4 is its own owner-seed event, not
+  damage step 3's chain; § C's `[C]` is unchanged with an `[I]` note that does not claim the 213 resyncs; B2 and the
+  monster chain are melee. The diagrams match the text; the struck economy question has no tag; the wiki has no tags or
+  anchors. No tag moved, so the five specs keep status `reviewed` and their tag counts. Fixes (7): (1) combat A3 "the
+  critical chance" is fixed at creation → "the critical strike's result"; (2) the B4 entry-point row names
+  `sub_0059F900_MissileInitDamage` between `MissileCreate` and the damage block; (3) "Draws that do not happen" `[C]`
+  scoped to what the run checked (B1, B2 and the player's side of B3), not all of B3, whose missile draws are `[I]`;
+  (4) `CritChain`'s mastery local renamed `mc` (it shadowed the missile `m`); (5) drlg/collision § F: the `HitUnit` unmark
+  is scoped to a missile ending through `HitUnit`, a do-1 free without the hit function not followed; (6) rng/seeds: the
+  "client/server base-stat pair" now cites rng/0002 (it came from there, not from skills/0002); (7) economy H3's
+  "on its paying path" is spelt out: `SKILLS_SrvDo` with `pay` set and a player or monster unit (skills/0001 § 6's
+  `if (pay) { if (actor) … decquant … }`), the use acting only for a player. **Rulings:** (a) skills/0002 § 2's "four
+  monster functions" listing five was the finding's miscount: five functions, six sites, verified in objdump; fixed in
+  the finding with a review note, no backlog entry (the spec says "a few" and stands). (b) `decquant`'s reading is
+  right, only the wording was vague (fix 7). (c) drlg/collision stays held by plan 0038 Phase 3; the lane re-tagged no
+  0038 row. Review request
+  [closed](../backlog/archive/2026-10-20-spec-writer-architect-review-lane-msw-missile-creation-draws-in-combat.md).
+- **2026-10-20 — Phase 1 batch P1.3 landed for review (reverser, `lane/p45h`, static).**
+  [skills/0003-handlers](../findings/skills/0003-handlers.md): the progressive entries 36–41 and 143 (missile and calc
+  picked by the charge count; **37, 39, 41 and 143 step the attacker's seed once at entry**, 38 draws `RangeB` on it
+  and runs an area hit; 39 and 41 on local seeds) and `0x00571AA0` (a client message `0xA3`); the 31 stat-event
+  handlers with their registrations (18 by ItemStatCost, 11 by Skills `auraeventfunc`; 11 and 12 unused) and their
+  draws; the item-cast helpers; **state 52 is applied inside `COMBAT_ToHitRoll`'s success branch**
+  (`sub_0057D810_PreventHealHook`, no draw); the event-9 handler `0x005C01D0` is handler 28 (heal after kill, no draw);
+  `SrvStart` in do 83 and 109, `PayCost` in start 26 (Blade Fury); all 15 `EType` stores at packet `+0x65`; the tier-A
+  start, do and missile functions; skill do 30 with a missile as unit; the re-seed census of rng/0002's server sites
+  (missiles and stack seeds, except Armageddon's do 146 which re-seeds the caster); summons and the pet limit
+  (`PetType` `group`, `petmax`); `PathDirection` and its table, the frame pass (missiles before players and
+  monsters); `MissileEndHit` and `0x00645390` unreferenced; `repeat`, `leftskill`, `weapsel` client-side,
+  `TgtPlaceCheck` a monster AI test, the ally test never refusing from `StartUsedSkill`. 55 `[I]`, 6 `[L]`, no `[C]`.
+  **Correction** to skills/0002: hit function 22 is `0x005ADD20`; the `CallDoFunc` caller `0x005ACFC0` is hit **23**
+  (unused on stock data; symbol renamed `sub_005ACFC0_MissHit23CallDo`); carried into its summary, § 8, Functions table
+  and open questions (the P1.2 log line above stays as history). Dated notes in skills/0001 and combat/0001. 118 symbol
+  rows, `re/types/skills.h`, `tools/skills_handlers_scan.py` (sha256 `39b09e52…`) with kept outputs
+  (`workspace/logs/skills/p45h-manifest.sha256`: `handlers-scan.txt` `6c2a2739…`, `handlers-rows.txt` `dd52e147…`).
+  **Boundary recommendation** for Phase 2 in [skills/0003 § 14](../findings/skills/0003-handlers.md#14-boundary-recommendation-for-phase-2)
+  (event entry points, value oracles, modelled set, log windows, chaining kinds), for the review's ruling. Backlog:
+  review request [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p45h-review-plan-0045-p1-3-handlers.md),
+  inputs [to the spec-writer](../backlog/archive/2026-10-20-reverser-spec-writer-skills-0003-handlers-inputs-for-combat-rng-seeds.md),
+  column anchors [to the archivist](../backlog/archive/2026-10-20-reverser-archivist-skills-columns-anchored-by-skills-0003.md);
+  closed: [the P0 notes entry](../backlog/archive/2026-10-20-architect-reverser-plan-0045-p0-review-notes-for-p1-1.md)
+  and [the state-52/event-9 entry](../backlog/archive/2026-10-17-reverser-reverser-a-read-which-call-applies-the.md).
+  Open: `Unit+0x38`, a new missile's first frame, the unit filter for a missile unit, the fifth unit-event list.
+- **2026-10-20 — `lane/p45h` reviewed (architect): accept with fixes.** Checked on the pinned `Game.exe` in objdump:
+  the inline step on the unit's seed (`EDX`, `+0x20`/`+0x24`) at `0x005D4E80` (37) and `0x005D4F50` (143), before the
+  record test; 38's `sub_0056E170_SkillRollPhys` (`RangeB(unit seed, max − min)` at `0x0056E1C4`) then
+  `SKILLS_RollElemDamage` (`RangeB` at `0x0056E132`, type 10's extra draws in `0x0056C8E0`, skills/0001); handler 7's
+  inline step at `0x005BF9CF` on its unit (`low & 0x7F` against 64/32/128) and handler 21's `RangeB(seed, 100)` at
+  `0x005C0603`; Armageddon's `RNG_SeedInit(caster +0x20, SkillEntry+0x18)` at `0x005C8688` then `RNG_Range(1 000 000)`
+  at `0x005C8694` stored back by `0x00644560`, the caster being the do function's `EDX`; state 52: `COMBAT_ToHitRoll`'s
+  success branch (`cmp esi,edi; jge`) calls `0x0057D810` at `0x0057DB80`, whose only calls are `UnitGetStat` and
+  `STATE_ApplyTimed` (no LCG constant, no RNG call, `ret` at `0x0057D899`); `MissileEndHit` and `0x00645390`: no
+  `call`/`jmp` rel32 to either and no 4-byte occurrence in the file (an independent scan, not the lane's tool); the
+  hit table `0x0073C840` holds `0x005ADD20` at index 22 and `0x005ACFC0` at 23, and Missiles' only 22 is row 233
+  `fistoftheheavensdelay`, no row uses 23. Kept outputs pass `sha256sum -c`, the tool's hash matches, no foreign
+  names, tags honest (55 `[I]`, now 7 `[L]` under *Open questions*, no `[C]`). Merge: this log's tail kept both sides
+  (`lane/msw`'s entries first); `re/symbols.csv` has no duplicate address or name, the rename
+  `sub_005ACFC0_MissHit22CallDo` → `sub_005ACFC0_MissHit23CallDo` leaves no reference to the old name. Fixes (4),
+  written into the findings: (1) skills/0003 § 13's reading listed the attacker's `do…` handlers as 7, 14–16, 20 and
+  31 among the defender's: 8 and 9 run on the `do…` events, 31 is the killer's `kill` handler, 3 the defender's;
+  (2) § 1 and § 13: 38's area defence rolls draw on each area unit's seed, not the attacker's, and 38's `RangeB`
+  argument is named; (3) skills/0002 § 8's "row 233 holds 0 and entry 0 is null" inside the hit-23 bullet struck (row
+  233 does not use hit 23); (4) a new open question: `SkillEntry+0x18` at Armageddon's first period (the setter
+  `0x00644560` has 85 call sites, unfollowed), on which the caster's seed after that period depends.
+  **Tier A is fixed** (the Phase 1 review ruling the phase's *Done when* calls for): the 26 rows of
+  [Skills § Dispatch](../tables/Skills.md#families-and-the-tier-a-candidates) as the Phase 0 review accepted them; the
+  monster skills are those the Phase 2 sessions' attackers use through `MonSkillAttackDo` (skills/0001 § 13), named in
+  the run record, their numbered functions value oracles unless a tier-A row shares them. Summon functions other than
+  do 31 and 114 (golems, revive, valkyrie, spirits) are plan 0046's; the pet limit (`PetAdd`) is this plan's.
+  **Ruling: the Phase 2 design** (on skills/0003 § 14):
+  1. **Entry points logged** (entry and exit seeds of every seed the event touches): `SKILLS_SrvStart`,
+     `SKILLS_SrvDo`; `COMBAT_PrgFinisher` with the attacker's seed before the peek, after **each** `srvprgfunc` entry
+     and after the last, and the charge count; `sub_0059FA30_MissileCreate` (owner's and new missile's seeds, class,
+     start, target, velocity, callback); `sub_005ADBB0_MissileDoFrame` inside the window of item 4 only;
+     `MISSILE_HitUnit` (owner's, missile's and unit's seeds, result); `UNIT_DispatchEvent` (event id, each record's
+     function number, the handler unit's seed before and after each record); `sub_0057D810_PreventHealHook`;
+     `sub_0056D940_SpawnOwnedMonster` and `sub_00575D90_PetAdd`; the § 9 re-seed sites tier A reaches (the value
+     passed to `RNG_SeedInit`). `sub_005C8520_SkillDo146Armageddon` is not tier A: it is logged (caster's seed before
+     and after, `SkillEntry+0x18` before and after) whenever it fires, no session is required to cast it, and its
+     claim stays `[I]`; an Armageddon period ends the caster's chain like any resynchronisation.
+  2. **Value oracles** (logged, named in the record, taken as given): as § 14 lists (the do function's frame, the
+     AI's choice, numbered functions outside tier A with their exit seeds, the path planner's points and cell list,
+     the unit filter and `ForUnitsInRange`'s unit order as the list the callback ran on, the pet removed), plus: the
+     skill an item event casts when it is outside tier A (handlers 20, 21, 30 model their chance step and take the
+     cast as an oracle), handler 31's spawn (monsters/spawn's), `0x005CDD30`'s frame-list test, and Armageddon's first
+     `SkillEntry+0x18`.
+  3. **`tools/skills.py` models** what § 14 lists, scoped: the tier-A start, do and missile functions; the
+     `srvprgfunc` entries tier A reaches (Fists of Fire: 143, 38, 39) checked, the others (36, 37, 40, 41) modelled
+     and left `[I]` if unreached; the stat-event handlers registered on stock data (11 and 12 are not), each checked
+     where a session reaches it; state 52; `PathDirection` with `g_PathDirTable` read from the pinned image at run
+     time (never written to the repository); the velocity step and the creation-time damage.
+  4. **Missile log window**: creation, hit and end events for every missile whose owner or hit unit is the logged
+     character or its target; per-frame positions only for the first 300 missiles of the run, at most 30 per
+     session, chosen at creation by guid and followed to removal (the breakpoint conditioned on that set); the record
+     states the window and the log sizes (ADR-0014 § Log volume). The frame on which a new missile first steps
+     (skills/0003's open question on `sub_005415E0`) is a required measurement of the window, stated in game frames.
+  5. **Chaining (ADR-0014), at least 20 chained pairs each**: skill start, skill do, the progressive finisher
+     (attacker's seed, finisher exit to the next event), missile creation (owner's seed, P1.2's critical draws),
+     missile frame (the missile's own seed, consecutive frames of one missile in the window, from the rows that draw:
+     do 5 `meteorfire` among them), missile hit (missile's and defender's seeds), stat-event handler (the handler
+     unit's seed, over at least three drawing handlers), summon (the spawn's seed, monsters/spawn's chain). State 52
+     and the item-cast helpers draw nothing: they need no pairs, their absence is checked by the to-hit and handler
+     exit assertions around them. *(Scoped at the P1b review, 2026-10-20: the `ItemTarget` 2 helper `0x005FD850`
+     draws 2 to 20 steps; see ruling 3 there.)* Armageddon's re-seed needs none (not tier A). A kind short of 20 keeps its
+     draw-order claims at `[I]`.
+  **Combat spec routing:** combat/README § A1 ("the finisher peeks `att.seed`") and § B, delivery § A and its open
+  question on the `srvprgfunc` entries, and README's phase-(3) open question are now stale: the entries are read and
+  37, 39, 41 and 143 step the attacker's seed and 38 draws two or three `RangeB` on it plus a defence roll per area
+  unit. The finisher's own step stays a peek; § C's `[C]` stands (the run dropped finisher events by rule and had
+  none). Written into [the spec-writer's entry](../backlog/archive/2026-10-20-reverser-spec-writer-skills-0003-handlers-inputs-for-combat-rng-seeds.md)
+  as an `[I]` fold, ahead of Phase 3. **Status:** Phase 1's static batches P1.1–P1.3 are complete; Phase 1 closes when
+  Phase 1b (community cross-check, no Ghidra) lands, which may run now beside anything. **Phase 2 is ready** to start
+  once both harness slots are free (plan 0044·P2 holds them now); Phase 1b must land before Phase 2's last session
+  batch, since its contradicted cases are Phase 2 cases. **Plan 0046 Phase 0 (archivist) may start**: its gate (P1.3
+  reviewed, the machinery named, tier A fixed) is met. Review request
+  [closed](../backlog/archive/2026-10-20-reverser-architect-lane-p45h-review-plan-0045-p1-3-handlers.md).
+- **2026-10-20 — skills/0003 folded into combat and rng/seeds (spec-writer, `lane/cfix2`), for review.** All `[I]`,
+  ahead of Phase 3, from [skills/0003](../findings/skills/0003-handlers.md) §§ 1, 2, 3, 9, 12, 13 as fixed by the P1.3
+  review: [combat/README](../specs/combat/README.md) A1, B1, new B5 (the finisher's `srvprgfunc` entries: 37, 39, 41,
+  143 one step on the attacker's seed at entry, 38 two or three draws after delivering the queued hit, its area
+  units' defence rolls on their own seeds) and B6 (the drawing stat-event handlers by unit), an `[I]` note under § C's
+  unchanged `[C]`, the phase-(3) open question rewritten; [combat/delivery](../specs/combat/delivery.md) new A3
+  (pseudocode) and E5 (handler table, 28 heal after kill with no draw), two open questions struck, one `[L]` added;
+  [combat/to-hit](../specs/combat/to-hit.md) A6 (state 52); [combat/damage](../specs/combat/damage.md) D1 (15 `EType`
+  stores at `+0x65`); [rng/seeds](../specs/rng/seeds.md) the re-seed sites, its open question struck, the
+  Armageddon first-period `[L]` added; wiki/randomness rewritten where it said the sites were unread. Tags: README
+  I 35 → 42, delivery I 39 → 53 and L 4 → 3, seeds I 11 → 12; damage and to-hit unchanged. Entry
+  [closed](../backlog/archive/2026-10-20-reverser-spec-writer-skills-0003-handlers-inputs-for-combat-rng-seeds.md);
+  review request [to the architect](../backlog/archive/2026-10-20-spec-writer-architect-review-lane-cfix2-skills-0003-fold-into-combat.md).
+- **2026-10-20 — `lane/cfix2` reviewed (architect): accept with fixes.** Every changed statement checked against
+  skills/0003 §§ 1, 2, 3, 9, 12, 13 (as fixed by the P1.3 review) and skills/0001 §§ 11, 12 (`SKILLS_AddElemToPacket`'s
+  type-10 `RNG_Step`); § C's `[C]` is unchanged; struck open questions carry no tag; the B5 sequence diagram and the
+  delivery flowchart agree with the text after fix (2). Rulings on the two points, on the pinned `Game.exe` in objdump:
+  (a) `COMBAT_DefenceRoll` takes the defender at `[ebp+0x8]`, `isMissile` at `[ebp+0xC]` (passed to `AvoidRoll`) and
+  `useBlock` at `[ebp+0x10]` (the melee site `0x0057ECE1` pushes 1, 0, def; the missile site `0x005AD7FF` pushes
+  phys ≠ 0, 1, def), so `AreaHitUnit`'s `push 0; push 1; push ebx` (`0x0056BA06`–`0x0056BA0D`) is
+  `DefenceRoll(u, isMissile: true, useBlock: false)`: entry 38's area units cannot block and roll avoid, not dodge;
+  (b) handler 21 returns before its draw when the stat is ≤ 0 (`0x005C05C3`–`0x005C05C8`), the packet is null or its result lacks
+  bit `0x4` (`0x005C05F1`–`0x005C05F9`); the `RangeB` at `0x005C0603` comes after, so the finding's order is right.
+  Fixes (9), written into the specs: (1) B5's "a Monk's charge-up skills" is the Assassin's; (2) README B1's note and
+  `[I]` sentence and delivery's flowchart said the entries draw between the build and the delivery: when 38 runs it
+  delivers first, so its draws and later entries' follow the delivery's; (3) A3 and B5 name `DefenceRoll`'s arguments
+  (ruling a); (4) E5 row 21 states its gates (ruling b); (5) A3's 38 delivers only when the unit has a target
+  (`UNIT_GetTargetUnit`, `0x005D3EBF`–`0x005D3ED0`); (6) § C's `[I]` paragraph adds the entries' missile creation
+  draws (B4); (7) to-hit A6's anchor widened to `0x0057D891`, the `STATE_ApplyTimed` call; (8) rng/seeds: `0x005A9820`
+  re-seeds the parent missile from `SubX + elapsed`, split from hit 58 and do 34; (9) rng/seeds: the item site
+  `0x005C276A` (version-0 set builder) added, the one register-seed site outside skill and missile code. combat/README,
+  delivery, to-hit, damage and rng/seeds **stay reviewed** (only `[I]` added, anchored; no tag count changed by the
+  fixes). Review request [closed](../backlog/archive/2026-10-20-spec-writer-architect-review-lane-cfix2-skills-0003-fold-into-combat.md).
+- **2026-10-20 — Phase 1b landed for review (reverser, `lane/p45b`, no Ghidra, no harness).** Community cross-check of
+  [skills/0001](../findings/skills/0001-dispatch.md#leads-used), [skills/0002](../findings/skills/0002-missiles.md#leads-used),
+  [skills/0003](../findings/skills/0003-handlers.md#leads-used) and [combat/0001](../findings/combat/0001-formulas.md#leads-used),
+  each page fetched and read in the session after the findings were written (ADR-0007); none shows code.
+  - **Sources**: four new in [sources](../sources.md): `arreat-summit-skill-basics`, `arreat-summit-casting-delays` and
+    `arreat-summit-skill-trees` (LoD, 1.13-era pages), and `purediablo-piercing` (2023, Resurrected-era, no patch named).
+    Two re-fetched: `d2dfg-blizzard` (§ Missiles.txt, § skills.txt, § pettype.txt; a Resurrected data guide) and
+    `arreat-summit-amazon-passive` (§ Pierce). Tried and not used: diablowiki.net "Pierce" and three PureDiablo d2wiki
+    pages (HTTP 403), the Fextralife D2R "Pierce" page (nothing the findings cover), a Blizzard D2R forum thread
+    (anecdotal, about Diablo Clone).
+  - **Verdicts** (evidence-rules' four words; *version-different* kept as a detail marker, used by none): 61 claims.
+    27 held, 25 held with refinement, 5 contradicted, 4 not covered. skills/0001: 23 claims (9 / 13 / 0 / 1);
+    skills/0002: 25 (12 / 9 / 4 / 0); skills/0003: 12 (5 / 3 / 1 / 3); combat/0001: 1 (`KnockBack`, held). No source
+    covers the rng specs' claims (seeds and draw order), so none was compared there. Agreement promoted nothing.
+  - **Quick re-reads** (objdump only, recorded): `tools/skills_crosscheck_reread.py` (sha256 `8361a4c1…`), kept outputs
+    `workspace/logs/skills/p45b-manifest.sha256` (`p45b-reread.txt` `427ca8d7…`, code windows R1–R7; `p45b-rows.txt`
+    `cbf9c64a…`, the stock-row values compared). Every contradicted reading stands as written: R1 velocity, R2 range,
+    R3 acceleration, R4 summon level.
+  - **Gaps the leads exposed** (noted in the findings, dated, no tag change). (a) The `ItemTarget` 2 helper
+    `0x005FD850` steps the seed at `+0x20` of its unit 2–20 times (item Teleport), so skills/0003 § 2's "no draw"
+    misses a path: noted in skills/0001 § 10 and skills/0003 § 2, open question in skills/0001. (b)
+    `COMBAT_PrgFinisher` has six direct callers, not one: the five others are finishing moves (start 25; do 42, 50,
+    52), noted in skills/0001 § 12. (c) What removes pets when `petmax` falls: open question in skills/0003.
+  - **Phase 2 required cases** from the contradicted claims, all reachable on stock data
+    ([backlog](../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md)):
+    - **C1** Raise Skeleton's summon level is `min(max(L · 3/4 + skill level, 1), L)`, against "generated at the
+      caster's level" (src:arreat-summit-skill-trees). Case: a Necromancer with character level L above 4 × the skill
+      level; log the summon's stat 12.
+    - **C2** Missile velocity is `((VelLev · lvl) / 8 + Vel) << 8`, against `Vel` + `VelLev` per level beyond 1
+      (src:d2dfg-blizzard). Case: a `spike1`–`spike4` monster missile; log its creation velocity and request level.
+    - **C3** `Accel` is added on every fifth path step, against "per frame" (src:d2dfg-blizzard). Case: Nova, Frost
+      Nova or Howl missiles (tier A) in the position window, one followed past its fifth step.
+    - **C4** Range is `LevRange · lvl + Range`, against `LevRange` per caster level beyond 1 (src:d2dfg-blizzard).
+      Case: one of the 32 `LevRange` rows. None is in tier A (`blaze`, `firewallmaker`, …), so this case needs the
+      review's ruling.
+    - **C5** A missed `ToHit` piercing missile ends at that unit, against "keeps traveling but doesn't deal any damage"
+      (src:purediablo-piercing). Case: a `Pierce` arrow with a pierce stat above 0 whose to-hit fails; log the free
+      and stat 328.
+  - Review: [request](../backlog/archive/2026-10-20-reverser-architect-lane-p45b-review-plan-0045-p1b-cross-check.md).
+- **2026-10-20 — `lane/p45b` reviewed (architect): accept with fixes.** Checked: the four new and two re-fetched
+  [sources](../sources.md) rows follow the registry (title and author, URL, sections used, game version stated or "no
+  patch named", fetched date and plan, "prose only, no code", used-for links; short quoted phrases only), and none
+  points at decompiled code; the comparison was blind (every verdict compares a section written at P1.1–P1.3, the
+  lane added only dated notes, an `[I]` re-read and two `[L]` open questions, and raised no tag); the verdicts use
+  evidence-rules' four words, recounted from the four *Leads used* sections: 61 (27 / 25 / 5 / 4; skills/0001 9 / 13
+  / 0 / 1, skills/0002 12 / 9 / 4 / 0, skills/0003 5 / 3 / 1 / 3, combat/0001 1 held). Kept outputs: `sha256sum -c
+  p45b-manifest.sha256` passes in `workspace/logs/skills/` (both files), and the tool's sha256 is `8361a4c1…` as cited.
+  Spot-checks on the pinned `Game.exe` (sha256 `631066c1…`, objdump): **C2** `0x0059FB1B`–`0x0059FB3B` is
+  `((VelLev · [esi+0x30]) / 8` (signed, `cdq; and edx,7; sar 3`) `+ Vel) << 8`; **C3** `0x006502E6`–`0x00650320`
+  adds `Accel` to `+0x7C` only when the counter `+0x8C` reaches 5, caps at `+0x84` (and zeroes `Accel`), floors at 0,
+  resets the counter; **C5** `MISSILE_HitUnit` takes the pierce charge (`0x005AE029`, `MissilePierceUse`) before the
+  to-hit roll (`0x005AE06F`), and a failed roll returns 2 at `0x005AE0C7` whatever the pierce result, unless an
+  `AlwaysExplode` hit function returns bit 2. R6's count holds over the whole image: six `call 0x5D5220`. `ITEMSKILL_Cast`
+  calls helper 2 at `0x005FDB9F` (3 at `0x005FDBE1`, 4 at `0x005FDBF3`), so the gap is on the item-cast path.
+  **Fixes (2), written into the docs:** (1) skills/0001's `ItemTarget` verdict linked skills/0003 § 3 for the "no
+  draw" sentence that is § 2's; (2) sources' `arreat-summit-amazon-passive` row ran its re-fetch note into the previous
+  sentence without a full stop. **Rulings:**
+  1. **C4: add a non-tier-A cast.** No tier-A row has `LevRange`, so no tier-A creation can tell `lvl` from `lvl − 1`.
+     Phase 2 adds **Blaze** (`blaze`, `LevRange` 25) at a skill level of at least 2, about 30 creations, the stored
+     range and the request level logged. Blaze is not added to tier A: its do function is a value oracle (design item
+     2's "numbered functions outside tier A"), and only C4 and the shared creation code are checked on it. Fire Wall
+     (`LevRange` 2) is the fallback if the pilot cannot cast Blaze.
+  2. **C2: accepted as a monster-session case.** A session whose attackers include a `spike1`–`spike4` user, about 30
+     creations, the creation velocity and the request level logged, the row named in the record; it rides on the 200
+     monster skill uses already required. If no reachable monster of the session uses a `VelLev` row, C2 is a named
+     shortfall and the formula stays `[I]`.
+  3. **The two gaps.** (a) The `ItemTarget` helpers are machinery, but which unit helper 2 is given and whether 3 and
+     4 draw are reads of the item callers of skills: **moved to plan 0046 Phase 1's item, shrine and object batch**,
+     filed back to this plan's spec as that batch's *Done when* says. Not a Phase 2 case: no stock item event cast of
+     an `ItemTarget` 2–4 skill is shown reachable. Phase 2 does not assume the helpers draw-free: an item cast of an
+     `ItemTarget` 2–4 skill, if a session meets one, is logged with the given unit's seed before and after the helper
+     and checked against helper 2's 2–20 steps as `[I]`; otherwise the record names it. Design item 5 is scoped above.
+     combat/delivery E5 ("an item cast draws nothing of its own", from `lane/cfix2`, now on main) is wrong for
+     `ItemTarget` 2: routed to the spec-writer
+     ([entry](../backlog/archive/2026-10-20-architect-spec-writer-combat-delivery-e5-item-target-2-draws.md)). (b) The
+     finisher's five other callers (start 25 Dragon Claw, do 42 Dragon Talon, 50 Dragon Tail, 52 Dragon Flight) are
+     Assassin finishing moves, none in tier A: **moved to plan 0046 Phase 1's Assassin batch**, which reads each
+     function's path into `COMBAT_PrgFinisher` (this plan models the finisher through `SKILL_AttackDo` only). (c) Pet
+     removal when `petmax` falls (a skill shrine wearing off): stays `[L]` in skills/0003's *Open questions*;
+     **moved to plan 0046 Phase 1's item, shrine and object batch** (the shrine path), and Phase 3 lists it under
+     *Open questions*.
+  4. **Verdict vocabulary:** the four evidence-rules words stand. *version-different* may be added to a
+     `contradicted` detail only after the Phase 2 case confirms the 1.14d reading and the source names another
+     version; it never replaces the verdict word. None is used now.
+  The cases entry ([reverser](../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md)) stays open
+  for Phase 2, with rulings 1 and 2 appended. **Phase 1 is closed** (P1.1, P1.2, P1.3 and P1b reviewed): Phase 2 waits
+  only for both harness slots (plan 0044·P2 holds them). Review request
+  [closed](../backlog/archive/2026-10-20-reverser-architect-lane-p45b-review-plan-0045-p1b-cross-check.md).
+- **2026-10-20 — combat/delivery E5 item-cast correction (spec-writer, `lane/e5fix`), for review.** From the P1b
+  review's gap (a): [combat/delivery § E5](../specs/combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze)'s
+  "an item cast draws nothing of its own" scoped to `ItemTarget` blank or 1 (`[I]`); a new `[I]` bullet for the
+  `ItemTarget` 2 helper `0x005FD850` (2 to 20 steps on the given unit's seed, [skills/0001 § 10](../findings/skills/0001-dispatch.md#10-item-granted-skills));
+  one `[L]` open question for helper 2's unit and helpers 3 and 4 (plan 0046 Phase 1, item batch). combat/README B6,
+  rng/seeds and wiki/combat hold no such claim: unchanged. Tags: delivery I 53 → 54, L 3 → 4; open questions 4 live
+  of 7. Entry [closed](../backlog/archive/2026-10-20-architect-spec-writer-combat-delivery-e5-item-target-2-draws.md);
+  review request [to the architect](../backlog/archive/2026-10-20-spec-writer-architect-review-lane-e5fix-combat-delivery-e5-item-target.md).
+- **2026-10-20 — `lane/e5fix` review (architect): accept with fixes (1).** Checked on the pinned `Game.exe`: the call
+  at `0x005FDB9F` (`ecx` = `ebx`, `edx` = `esi`), the loop `0x005FD900`–`0x005FD98A` (two inline steps per try on the
+  seed at `edx+0x20`, `0xCCCCCCCD`/`shr 5` = ÷ 40, `− 0x14` on the path x and y, 10-try cap, success on a 0 from
+  `0x0064D870`); Skills `ItemTarget` holds 2 only on Teleport (3 Corpse Explosion, Poison Explosion; 4 Bone Spirit,
+  Fist of the Heavens; 1 one row); `0x005FDCA0`, `0x005FDD60`, `0x005FDA80`, `0x0064D870` resolve in `re/symbols.csv`.
+  Fix (omission): the bullet now says the helper returns 0 with no room (`sub_00620BB0_UnitGetRoom`, 0 steps) or after
+  10 failed tries, and `ITEMSKILL_Cast` then skips `SKILLS_SrvDo` (`je` at `0x005FDBA6`). Helpers 2–4 have no symbol
+  rows: added to plan 0046 Phase 1's item, shrine and object batch. combat/delivery stays `reviewed`, tags
+  {C 52, I 54, L 4} recounted. Review request closed.

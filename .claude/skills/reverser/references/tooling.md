@@ -97,6 +97,16 @@ GHIDRA_PROJ_DIR=workspace/ghidra-<lane> GHIDRA_HEADLESS_MAXMEM=3G \
   lane on its own project copy (`GHIDRA_PROJ_DIR=workspace/ghidra-<lane>`) never truncates or greps another lane's log;
   set `GHIDRA_LOG` to override it. `import-symbols`, `export-symbols` and `decompile-range` read their result from it.
 
+### `tools/ghidra.sh emuboundary <cases> <mem>` (`EmuBoundary.java`, plan 0046)
+
+`EmuTrace.java` (left unchanged, its records cite its hash) plus one memory-spec directive, `observe <addr>`: a case
+whose pc reaches that address ends there and prints `C <n> <fn> OBS <pc> steps= eax= ebx= ecx= edx= esi= edi= ebp=
+esp=` and an `A <64 bytes at ESP>` line (the return address, then the stack arguments); `d` dumps follow as usual, so
+dump the stack (`d 7feffc00 1024`) to read a parameter block passed by pointer. Use it for a function that ends in a
+call whose read set is not declarable (MissileCreate, the path planner, a spawn): the case's claim is the map up to that
+call, nothing after it (skills/0004 § 2; the architect rules on the reading at the 9a review). Models and checks:
+`tools/skills_catalogue_emu.py` (its own output reader; `sweep_s1e.read_out` does not parse `OBS` lines).
+
 ## radare2 / rizin quick looks
 
 ```bash

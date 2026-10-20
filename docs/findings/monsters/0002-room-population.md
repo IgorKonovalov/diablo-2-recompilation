@@ -962,6 +962,34 @@ of the three kept logs of run:2026-10-13-mon-spawn. No game run.
 - The finding's statement "Which callee of `SUnitCreate` makes them is not read" (§ 6, creation draws) is answered by
   this section; the spawn spec's J1 note and *Open questions* entry can name `MonRegionFindAdd` (backlog, P2).
 
+## Plan 0048 Phase 1: the unit seed after `SUnitCreate` predicted (2026-10-20)
+
+Oracle 14 of [chain/0001](../chain/0001-oracles.md): `tools/monspawn.py` took each new monster's unit seed from its `MU`
+line and only reported how many steps it lay past `Init(step(game).low)`. It now predicts it. No new reading, no new run.
+
+- [C] **The unit seed `SUnitCreate` leaves is predicted** from three reviewed models in order: `Init(low)` of the
+  game-seed step; `sub_00547BC0_MonRegionFindAdd` on the unit seed (an append rolls `MonVariantRoll(unit seed, entry, 3)`;
+  `tools/mon_sweep.py findadd`, plan 0038 S3a) on a region the checker now tracks per game (`tools/monpool.py`'s regions
+  from `-seed N`, plus every append); then the draws of `sub_00573CB0_MonStatsInit` (`tools/monstats.py`
+  `Model.init_seed`: the appearance pick on the entry's set count or one draw per MonStats2 component, the doomknight
+  `Range(4)`, the HP `RangeB`, the MonProp slots). Over the 62 kept world logs (§ 2 of
+  [chain/0002](../chain/0002-retirements.md)) it predicts **7 953 of 8 075** unit seeds at `MU` with 0 mismatches, the
+  odd step counts included (193 of 3 steps and 30 between 5 and 17 on the baseline). FindAdd found the class 7 251 times,
+  appended it 32 times and returned the stale slot 792 times (`nvar` 0: per-component draws). The other **122** take
+  their seed from the log: their class was appended to the region by a creation the checker does not run (a preset
+  monster of the presets window, oracle 16), so the entry's sets are unknown; the 117 appends are counted, the class
+  taken from the region snapshot. (fn:sub_00555230_SUnitCreate@0x00555230, fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0,
+  fn:sub_005BDB20_MonVariantRoll@0x005BDB20, fn:sub_00573CB0_MonStatsInit@0x00573CB0,
+  fn:sub_005739D0_MonComponentsPick@0x005739D0, run:2026-10-13-mon-spawn, run:2026-10-14-mon-special,
+  run:2026-10-15-mon-stats, run:2026-10-15-objects)
+- [C] **Every region snapshot** (`P0`, `SU0`, `PM0`: 4 555) equals the tracked region's class list, appends applied.
+  (fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0, run:2026-10-15-objects)
+- [C] Controls (`tools/chain.py check --cf`, on the 11 mon-stats logs and objects sessions 3 and 5): FindAdd replaced by
+  "no entry" gives 416 mismatches and MonProp off 26; `L` = 0 changes nothing, because `L` only selects the MonLvl column of the HP range and the draw
+  count is 1 for any range of at least one value. (fn:sub_006538A0_MonLvlStats@0x006538A0, run:2026-10-15-mon-stats)
+- [I] `MonEquipInit` (oracle 13) is not modelled: a class with an `oninit` MonEquip row raises and its unit seed is taken
+  (none was created on these logs). (fn:sub_005D6B60_MonEquipInit@0x005D6B60)
+
 ## Open questions
 
 - [L] What room `+0x78` is (it must be 0 for a wanderer), and when `0x0061A4D0` lets an already populated room restore its inactive units. Code still to read.
