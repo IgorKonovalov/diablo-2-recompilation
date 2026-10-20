@@ -241,7 +241,12 @@ for k in range(2):
                                            ("keys", ["F1", "F2", "F3"] * 10, 3.0), ("wait", 5)], FIELD)
 for k in range(4):
     # the expiries: StatsPot drinks 56 potions in town, each state ending before the next of its kind
-    SESSIONS["pot-town%d" % (k + 1)] = ("StatsPot", "enter-normal", 4741 + k, [("plan", "statspot", 1), ("wait", 35)],
+    # plan 0047 Phase 2: the saves start in the Pandemonium Fortress, whose dark floor under the inventory grid fools
+    # inv:open (pot-town1: "inventory not open after four presses", the potion clicks walked her out to her death); the
+    # Rogue Encampment's waypoint first
+    SESSIONS["pot-town%d" % (k + 1)] = ("StatsPot", "enter-normal", 4741 + k,
+                                        [("pilot", ["farm", "--wp", "1,1", "--time", "1"], 90), ("plan", "statspot", 1),
+                                         ("wait", 35)],
                                         FIELD)
 # different states of one group: the Sorceress armours (group 1: frozenarmor 10, shiverarmor 88, chillingarmor 20),
 # Fade and Quickness (group 2: fade 159, quickness 157), the Druid's shapes (group 3: wolf 139, bear 140)
@@ -263,11 +268,13 @@ for k in range(2):
                                           [("pilot", PAL_WALK + ["--hops", "60"], 600)], FIELD)
 for k, wp in enumerate(("3,2", "2,5")):
     # the 256 floor: StatsFloor (life 30 of 3000, DR 58 flat: Normal hits take nothing) poisoned by the Spider Forest's
-    # and the Far Oasis' monsters; no potion in the belt
+    # and the Far Oasis' monsters; no potion in the belt; plan 0047 Phase 2: --dead-below 0, since the pilot took the
+    # 1 % life orb for a death and stopped at the first hop (the first floor-poison1, kept as a dev log)
     SESSIONS["floor-poison%d" % (k + 1)] = ("StatsFloor", "enter-normal", 4771 + k,
                                             [("pilot", ["farm", "--wp", wp, "--time", "1", "--mana-col", "0"], 90),
                                              ("pilot", ["explore", "--walk", "--melee", "--melee-hold", "1.2", "--radius",
-                                                        "9", "--drink", "0", "--mana-col", "0", "--hops", "80"], 600)],
+                                                        "9", "--drink", "0", "--mana-col", "0", "--hops", "80",
+                                                        "--dead-below", "0"], 600)],
                                             FIELD)
 
 # attract (plan 0047 Phase 1 review ruling 2, Phase 2's first step): StatsNecA casts Attract (F1) on the nearest

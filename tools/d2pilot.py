@@ -2550,9 +2550,9 @@ def cmd_explore(args):
         if args.potion and k % args.potion == 0:
             p.potion(1 + (k // args.potion) % 4)
         hp = p.hp()
-        if hp is not None and hp < 0.05:
+        if hp is not None and hp < args.dead_below:
             time.sleep(0.5)
-            if (p.hp() or 0) < 0.05:
+            if (p.hp() or 0) < args.dead_below:
                 print("hop %d: the life orb is empty (death); stop" % k)
                 break
         if hp is not None and hp < args.drink:
@@ -3066,6 +3066,8 @@ def main():
     ap.add_argument("--merc-drink", type=float, default=0, help="farm, hunt: give the mercenary a belt potion "
                     "(Shift + column key) below this fill of its most seen MON life (0: never)")
     ap.add_argument("--drink", type=float, default=0.6, help="drink a belt potion below this life-orb fill")
+    ap.add_argument("--dead-below", type=float, default=0.05,
+                    help="explore: stop as dead below this life-orb fill (0: never; plan 0047 Phase 2, StatsFloor at 1 %%)")
     ap.add_argument("--to-pdef", help="go to the room of this LvlPrest Def (or any of a comma-separated list) in the "
                                       "current level, then stop")
     ap.add_argument("--exclude-xy", help="objop: ignore objects of the class within 20 sub-tiles of X,Y")
