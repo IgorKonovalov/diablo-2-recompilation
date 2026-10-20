@@ -53,7 +53,7 @@ from excel_bin import find_file, read_bin  # noqa: E402
 from rng import INIT_HIGH, step  # noqa: E402
 
 DEFAULT_EXCEL = os.path.join(os.path.dirname(HERE), "workspace", "merged", "data", "global", "excel")
-TAGS = {"SI0", "SI1", "SI2", "SI3", "SI4", "SI5", "SIX", "HST", "TST", "PCHG", "LIVE"}
+TAGS = {"SI0", "SI1", "SI2", "SI3", "SI4", "SI5", "SIX", "HST", "TST", "PCHG", "LIVE", "PLRS"}
 M32 = 0xFFFFFFFF
 # handler addresses of g_UModHandlers 0x0073C008 (read from the exe) -> our names
 H_NAMES = {0x5A0CE0: "rndname", 0x5A0DC0: "hpmultiply", 0x5A0E40: "leveladd", 0x5A17E0: "strong", 0x5A1910: "fast",
@@ -603,9 +603,15 @@ class Checker:
         base = os.path.basename(path)
         cur = None
         self.units, self.by_id = {}, {}        # unit addresses and ids belong to one game
+        self.alive = 1                         # live players at creation: 1 unless PLRS lines (two clients) say more
         for tag, d, ln in lines:
             where = "%s:%d" % (base, ln)
             try:
+                if tag == "PLRS":
+                    # plan 0044 Phase 2 (MP22): tools/gdb/two-players.py's player list (at most 0.25 s old) gives
+                    # PlayerCount's live players (mode 0 and 17 are death modes)
+                    self.alive = max(1, sum(1 for e in d["p"] if e.get("mode") not in (0, 17)))
+                    continue
                 if tag == "SI0":
                     cur = self.si0(d, where)
                 elif tag in ("SI1", "SI2", "SI3", "SI4", "SI5", "SIX"):
@@ -657,7 +663,7 @@ class Checker:
         self.eq("unit seed after the appearance pick", d["us"], fmt(U["seed"].t()), where)
         if U["app"] is not None and d.get("app") is not None:
             self.eq("appearance bytes", d["app"], U["app"].hex(), where)
-        pb = M.player_bonus(U["cls"], U["g6d"], U["pset"], U["g6a"])
+        pb = M.player_bonus(U["cls"], U["g6d"], U["pset"], U["g6a"], getattr(self, "alive", 1))
         self.eq("MonPlayerBonus", d["pb"], pb, where)
         U["pb"] = pb
         if U["nvar"]:
