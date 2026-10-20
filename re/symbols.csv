@@ -486,14 +486,14 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00558A10,func,sub_00558A10_ItemGroundExpiry,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x00558C50,func,sub_00558C50_ItemRemoveRuneword,,I,items/cube,docs/findings/items/0008-cube.md
 0x00558CB0,func,sub_00558CB0_ItemCreateFromSave,,C,save/d2s,docs/findings/save/0001-d2s-io.md
-0x00558D90,func,sub_00558D90_ItemCreate,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00558D90,func,sub_00558D90_ItemCreate,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00559300,func,sub_00559300_DropGoldPile,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00559A30,func,sub_00559A30_DropItemAtUnit,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00559CE0,func,ITEMS_CreateForStore,,C,items/vendors,docs/findings/items/0009-vendors.md
 0x00559E30,func,ITEMS_DurabilityLossRoll,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0055A090,func,sub_0055A090_DropGoldAmount,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0055A2A0,func,sub_0055A2A0_ItemCopy,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x0055A550,func,sub_0055A550_DropCreateItem,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x0055A550,func,sub_0055A550_DropCreateItem,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0055A6D0,func,TC_ResolveDrops,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0055AFA0,func,TC_DropByIndex,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0055B030,func,sub_0055B030_DropGold,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md

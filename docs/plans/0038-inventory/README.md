@@ -854,6 +854,39 @@ Net effect on the totals: none (no class moves; the remainders stay counted as H
 merging `main` (`5a7feb3`, the H5b review above; nothing newer), they stand: **static 567, harness 531, c-emu awaiting a batch 0, blocked 416** (d-none 283,
 d-edit 73, d-sim 28, d-2c 14, d-owner 10, d-0032 8), **deferred 2, raised 10: 1 526.**
 
+**H2b (filed 2026-10-20, reverser, `lane/h2b`; review pending): 25 statements of items/affixes, tc, uniques-sets,
+properties and sockets-runewords.** run:2026-10-20-sweep-items-chain, 13 kept sessions on slot 2 (17 launches of 20),
+stock data, 0 mismatches (`sweep_h2b.py logs` 0 bad, `tc.py replay` 1 118/1 118, `items_chain.py both`, `uniques.py`
+and the seed model 1 043/1 043, `quality.py` 1 022/1 022, `cube.py` 26/26). The lane files **14 raised, 5 raised in
+part, 1 shortfall, 5 reclassified (d-none)**. The evidence is in the "Plan 0038 batch H2b" sections of
+[items/0001](../../findings/items/0001-tc-resolution.md#plan-0038-batch-h2b-2026-10-20),
+[0004](../../findings/items/0004-uniques-sets.md#plan-0038-batch-h2b-2026-10-20),
+[0005](../../findings/items/0005-affixes.md#plan-0038-batch-h2b-2026-10-20),
+[0006](../../findings/items/0006-properties.md#plan-0038-batch-h2b-2026-10-20) and
+[0007](../../findings/items/0007-sockets-runewords.md#plan-0038-batch-h2b-2026-10-20).
+
+- **Raised (14):** tc 68; uniques-sets 9, 39; affixes 5, 13 (2), 17, 19 (2), 21 (3); properties 20 (2).
+- **Raised in part (5):** tc 58 (the classic `version ≥ 100` refusal, d-none as row 74), uniques-sets 7 (entry from a
+  failed unique or set; the normal builder), uniques-sets 35 (a failed superior step and the normal step; `Rare` 0),
+  affixes 24 (the "no affix" cause, d-none as aff 20; the discard of a rare's draws), sockets 42 (the quality branches,
+  a request above the final cap, the `cap < 1` return).
+- **Shortfall (1):** properties 24 (no superior ethereal `dur%` item in 1 043 creations).
+- **S2c's piece of sockets 44** (the row stays S2c's, raised in part): normal and superior unclamped `[C]`; no request of
+  4 or more and no low-quality call, so the piece is met in part.
+- **H2c companion** (§ 6): no func 12, 23 or 24 slot in the run's creations.
+
+| Row | Was | Now (proposed) | Why |
+|---|---|---|---|
+| items-uniques-sets 10 (type-11 setup draws on the item seed first; 1) | a-run, H2b | **d-none** | `ItemInitStats` calls the setup only for base type 11 (`cmp eax, 0xB` at 0x00557DE7, an exact test). Type 11 is `elix`, one record `elx`: no TreasureClassEx cell names it, `elix` has `TreasureClass` 0, no cubemain output names it or its type, no vendor cell, no other table (`sweep_h2b.py static`). |
+| items-properties 7 (the type-11 setup, A5 line, A5 note, H3; 3) | a-run, H2b | **d-none** | The same function and the same full-table check. |
+| items-affixes 20 (rare build fails with no prefix and no suffix, E5; 1) | a-run, H2b | **d-none** | `sweep_h2b.py rareboth`: the only base x version x ilvl with both names and no affix on either side is `jew` at item version 1 (99 cases), a jewel in a classic game, which no stock path makes; the classic throwables fail at the names first (aff 21). |
+
+Net effect on the totals: harness −5 (531 → 526), d-none +5 (283 → 288), blocked 409 → 414; the remainders of the
+raised-in-part rows and the shortfall stay counted as H2b. Taken against `main` at `9ef5f84` (the plan 0044 Phase 3
+totals above; `main` not merged into `lane/h2b`, the merge is left to the review): **static 567, harness 526, c-emu
+awaiting a batch 0, blocked 414** (d-none 288, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2,
+raised 17: 1 526.**
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is

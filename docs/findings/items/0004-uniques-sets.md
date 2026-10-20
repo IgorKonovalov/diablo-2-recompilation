@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/uniques-sets
 > **Question:** Once a dropped item reaches creation with quality 7 (unique) or 5 (set), which `UniqueItems` or `SetItems` row does it become, what does the choice draw, and what happens when no row fits?
-> **Date:** 2026-10-14   **Plan:** 0019 (Phase 1)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14; Phase 2 reproduced 2026-10-14, § 10; plan 0038 batch S2b, 2026-10-16: 14 statements raised and 6 in part, 1 shortfall, 5 reclassified, [§ Plan 0038 batch S2b](#plan-0038-batch-s2b-2026-10-16); plan 0038 batch S2c, 2026-10-16: 1 statement raised, [§ Plan 0038 batch S2c](#plan-0038-batch-s2c-2026-10-16))
+> **Date:** 2026-10-14   **Plan:** 0019 (Phase 1)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14; Phase 2 reproduced 2026-10-14, § 10; plan 0038 batch S2b, 2026-10-16: 14 statements raised and 6 in part, 1 shortfall, 5 reclassified, [§ Plan 0038 batch S2b](#plan-0038-batch-s2b-2026-10-16); plan 0038 batch S2c, 2026-10-16: 1 statement raised, [§ Plan 0038 batch S2c](#plan-0038-batch-s2c-2026-10-16); plan 0038 batch H2b, 2026-10-20: 2 statements raised and 2 in part, 1 reclassified (d-none), [§ Plan 0038 batch H2b](#plan-0038-batch-h2b-2026-10-20))
 
 Names of structs and fields are ours. "Record" is the 0x84-byte creation record that `sub_0055A550_DropCreateItem`
 builds ([items/0001 § 8](0001-tc-resolution.md#8-item-pick-and-hand-off-0x0055ac5f0x0055af59), `struct:ItemCreateRec`
@@ -79,6 +79,9 @@ further statements; where it lists one, its tag and evidence take precedence ove
   entry seed of each fallback builder matched. Not reached in the runs, so `[I]`: a fallback builder that fails in
   turn (the chain past its first step), and the success with no row on a base with the `unique` flag. (§ 5, § 10,
   fn:sub_00557450_ItemCreateByQuality@0x00557450, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
+  *2026-10-20, plan 0038 batch H2b:* a fallback builder failing in turn is now reached: rare → magic (failed) →
+  superior, nine classic throwing weapons, each entry seed `{S, 666}` reproduced (us 35 and us 7 raised in part; the
+  superior step failing and the normal step stay `[I]`), [§ Plan 0038 batch H2b](#plan-0038-batch-h2b-2026-10-20).
 - [I] **TC-named unique.** A TC cell that is a unique name becomes an entry with flags `0x11`, `index` = the base item
   of that row's `code`, `aux` = the row. The name tree keeps the **first** row of a duplicated name, so `Rainbow
   Facet` resolves to record 392 and `Azurewrath` to record 29 (disabled). Row 0 cannot be named, because the parser
@@ -991,6 +994,95 @@ and [items/0001](0001-tc-resolution.md#plan-0038-batch-h6d-2026-10-17).
   (fn:sub_00530F40_ItemCreateFromOldRec@0x00530F40, fn:sub_0055A2A0_ItemCopy@0x0055A2A0,
   fn:sub_00558CB0_ItemCreateFromSave@0x00558CB0, fn:ITEMS_BuildUnique@0x005566B0, run:2026-10-16-quest-drops)
 
+## Plan 0038 batch H2b (2026-10-20)
+
+Harness batch H2b of [plan 0038](../../plans/0038-inferred-claims-sweep.md)
+([run:2026-10-20-sweep-items-chain](experiments.md#run2026-10-20-sweep-items-chain), 13 kept sessions on harness slot
+2, stock data) took five inferred statements of [items/uniques-sets](../../specs/items/uniques-sets.md), rows 7, 9, 10,
+35 and 39 of [the inventory](../../plans/0038-inventory/items-uniques-sets.md) (9 and 39 by
+[§ 2.6](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews)); spec lines are those of the
+inventory's commit `3b1433f`. The batch's other ledgers are in [items/0005](0005-affixes.md#plan-0038-batch-h2b-2026-10-20),
+[items/0006](0006-properties.md#plan-0038-batch-h2b-2026-10-20),
+[items/0007](0007-sockets-runewords.md#plan-0038-batch-h2b-2026-10-20) and
+[items/0001](0001-tc-resolution.md#plan-0038-batch-h2b-2026-10-20).
+
+**The seed lines** (`tools/gdb/h2b.py`; addresses read with objdump on the pinned image):
+- `GS0` at 0x00558D90, the entry of `sub_00558D90_ItemCreate` (`ECX` game, `EDX` the creation record): the game seed
+  `game+0xD0`, the record's item index (`+0x14`), its seed switch `+0x2C` and the stack argument. The two decide the
+  branch at 0x00558E47 (`cmp [ebp+8], 0; jne 0x00558E53; cmp [esi+0x2C], 0; je 0x00558E7E`) that re-seeds the unit
+  from the record's `+0x48` and the item from `+0x4C` (0x00558E53–0x00558E79);
+- `GS1` at 0x0055532F in `sub_00555230_SUnitCreate`, the instruction after `call sub_00552E90_ItemSeedInit`
+  (0x0055532A). The unit-seed init (`call 0x00552DF0`, 0x0055530E) and the item-seed init are both on `game+0xD0`
+  (`lea edx, [edi+0xD0]`); 0x0055532F is also reached for other unit types, so the logger tests `EBX` = 4. It logs the
+  game seed, the unit seed `Unit+0x20`, `Unit+0x28`, the item seed `ItemData+0x04` and the start `ItemData+0x10`;
+- `GS2` at 0x00558E1F (back in `ItemCreate` after `SUnitCreate`), `GS3` at 0x00558E53 (inside the record-seed branch),
+  `GS4` at 0x00558E7E (after it);
+- `GQ0` at 0x00557450 (`ItemCreateByQuality` entry), `GQJ` at its join 0x00557943 and `GQX` at its returns
+  (0x00557A1C, 0x00557A27, 0x00557482): the game seed and the unit seed of the item `GQ0` names.
+
+`python3 -I tools/sweep_h2b.py logs` checks every `GS0` against [rng/seeds](../../specs/rng/seeds.md) step 7a with `g`
+the game seed at `GS0`, `g1 = Step(g)`, `g2 = Step(g1)`: `GS1` game seed `g2`, unit seed `{g1.low, 666}`,
+`Unit+0x28 = g1.low`, item seed `{g2.low, 666}`, start `g2.low`; `GS2` = `GS1`; no `GS3` unless the argument or
+`+0x2C` is non-zero; `GS4` = `GS2` without `GS3`; `GQ0`'s game seed = `GS4`'s; `GQJ` and `GQX` with `GQ0`'s game and
+unit seeds (the low builder's one unit-seed step allowed). Counts from `check/check-sweep_h2b.txt`:
+
+```
+GS0 ItemCreate calls                                                     1043
+  (return 0x0055A6B4 in DropCreateItem 988, 0x0055947A in DropGoldPile 29, 0x00566045 in RecipeOutputCreate 26;
+   argument 0 and record +0x2C 0 in all; no GS3)
+GS1 seeds = two game-seed steps (unit {g1.low, 666}, item {g2.low, 666}) 1043
+GS2 = GS1 (nothing drew after ItemSeedInit in SUnitCreate)              1043
+GS4 = GS2 (no record seed)                                              1043
+GQ0 game seed = GS4 (ItemInitStats drew no game seed)                   1043
+GQJ / GQX game and unit seed = GQ0                                       993 / 993
+GQJ / GQX game and unit seed = GQ0 (low builder)                           6 / 6
+GQJ / GQX game seed = GQ0, unit seed one step on (low builder)            44 / 44
+drop creations: one ItemCreate call (ret 0x0055A6B4, no record seed)     988
+drop creations: source seed at CPOST = at CPRE                           988
+GS1 outside ItemCreate (other SUnitCreate callers, not checked)         1189
+0 bad
+```
+
+- **us 9** (L175, A1–A2) **raised.** [C] A drop passes no seed in its record, so the unit seed and the item seed both
+  come from the game seed: the 988 drop creations (each `GS0` between `CPRE` and `CPOST`, return 0x0055A6B4 in
+  `sub_0055A550_DropCreateItem`) have argument 0 and `+0x2C` 0, no `GS3`, and the unit and item seeds of the model
+  above; the 26 cube outputs of `jewel` and `throw` (return 0x00566045 in `sub_00565AB0_RecipeOutputCreate`) and the
+  29 gold piles (return 0x0055947A in `sub_00559300_DropGoldPile`) do the same: 1 043 of 1 043. (fn:sub_00558D90_ItemCreate@0x00558D90,
+  fn:sub_00552E90_ItemSeedInit@0x00552E90, fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-20-sweep-items-chain)
+- **us 39** (L511) **raised.** [C] From the entry of `ItemCreateByQuality` to the return of the builder chain the game
+  seed is never stepped (1 043 of 1 043 creations, at `GQJ` and `GQX`), and the unit seed is stepped only by
+  the low-quality builder's durability draw (an oracle of this spec, items/affixes G2): the 993 creations by other
+  builders keep it, 44 low builds show it exactly one step on, and 6 low builds kept it. No other unit-seed step occurs in any builder or
+  fallback, the nine failure chains of `throw` included. (fn:sub_00557450_ItemCreateByQuality@0x00557450,
+  fn:ITEMS_BuildLow@0x005C2FB0, run:2026-10-20-sweep-items-chain)
+- **us 35** (L439, E2) **raised in part.** [C] The steps past the first follow the same helpers: in the nine `throw`
+  creations the rare build failed (no name, items/0005 aff 21), `sub_00557380_ItemFallbackMagic` reset the item to
+  `{S, 666}` and its builder failed too (prefix and suffix 0, `MBF`); then `sub_00557320_ItemFallbackSuperior` reset
+  the item to `{S, 666}` again, file index −1 and quality 3, and the superior builder succeeded (`ICJ` quality 3), its
+  draws and the join seed reproduced by `tools/items_chain.py both` and `tools/cube.py check`. **Remainder `[I]`:** a
+  superior step that fails, and so the normal step (`sub_005572A0_ItemFallbackNormal`); the rare builder's at-once
+  failure on a type whose `ItemTypes.Rare` is 0 (no rare step met such a type). (fn:sub_00557380_ItemFallbackMagic@0x00557380,
+  fn:sub_00557320_ItemFallbackSuperior@0x00557320, fn:ITEMS_BuildSuperior@0x005C2AD0, run:2026-10-20-sweep-items-chain)
+- **us 7** (L150) **raised in part.** [C] The superior builder is a seed and result oracle entered at `{S, 666}` as a
+  fallback: the nine `throw` creations above, after a failed rare and a failed magic step. **Remainder `[I]`:** the
+  entry from a failed unique or set (no unique or set failure of the run fell past its first step) and the normal
+  builder as a fallback. (fn:ITEMS_BuildSuperior@0x005C2AD0, fn:ITEMS_BuildNormal@0x00556E80,
+  run:2026-10-20-sweep-items-chain)
+- **us 10** (L181, A3) **reclassified d-none.** The type-11 setup has no stock carrier. `ItemInitStats` calls it only
+  when `ITEMS_GetBaseType` is 11 (`cmp eax, 0xB` at 0x00557DE7, call 0x00557DEF), an exact type test. Type 11 is
+  `elix`, whose only record is `elx`; no TreasureClassEx cell names it, `elix` has `TreasureClass` 0 (no type group),
+  no cubemain output names it or its type, its vendor columns are empty, and no other table names it
+  (`python3 -I tools/sweep_h2b.py static`, `check/check-static.txt`). The statement stays `[I]`. (0x00557DE2–0x00557DEF,
+  fn:sub_0065E8E0_ItemType11Setup@0x0065E8E0, fn:sub_00557AB0_ItemInitStats@0x00557AB0, tbl:ItemTypes.txt:TreasureClass,
+  tbl:Misc.txt:type)
+
+**Corrections carried (rule 12):** the Answer's fallback bullet and the Phase 2 *Not reached* list say "a fallback
+builder that fails in turn (the chain past its first step)" was not reached; it now is (rare → magic → superior, nine
+times), with dated notes there pointing here. The same list's "an item of type 11 drawing on the item seed" is now
+d-none (us 10).
+
+**Tally:** 5 statements: 2 raised (us 9, 39), 2 raised in part (us 7, 35), 1 reclassified d-none (us 10).
+
 ## Data touched
 
 - `tbl:UniqueItems.txt:version` (`+0x24` u16), `enabled` (`+0x2C` bit 0), `ladder` (bit 3), `nolimit` (bit 1),
@@ -1038,6 +1130,8 @@ and [items/0001](0001-tc-resolution.md#plan-0038-batch-h6d-2026-10-17).
 - Not reached by the Phase 2 runs, so these keep their Phase 1 tag: a fallback builder failing in turn (the chain past its first step); a
   `unique`-flag base with no candidate; a quest base skipping the made test; a set-29 row;
   an item of type 11 drawing on the item seed before the pick.
+  *2026-10-20, plan 0038 batch H2b:* the chain past its first step is now reached (rare → magic → superior, nine
+  times; a failed superior step is not); the type-11 item is d-none (no stock path makes an `elx`), [§ Plan 0038 batch H2b](#plan-0038-batch-h2b-2026-10-20).
 - ~~`nolimit` and automatic identification (`src:d2dfg-blizzard`): the builder clears the identified flag of every unique.
   Whether a `nolimit` or quest unique is identified later is not read. Every stock row has `nolimit` blank, so no drop
   reaches it.~~ Read in [§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17): a quest unique is identified by `ItemInitStats`; `nolimit` takes no part.

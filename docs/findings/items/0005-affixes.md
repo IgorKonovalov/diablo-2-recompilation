@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/affixes
 > **Question:** Once an item's quality is settled (or a builder has fallen back), which `MagicPrefix`, `MagicSuffix`, `RarePrefix`, `RareSuffix` and `AutoMagic` rows does it get, and in which draw order on the item seed?
-> **Date:** 2026-10-14   **Plan:** 0021 (Phase 1, Phase 1b)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14, three contradictions with `src:arreat-summit-magic-items` and one with `src:d2dfg-blizzard`; Phase 2 bit-exact reproduction run:2026-10-14-affixes, 3 102 creations, 0 mismatches; plan 0038 batch S2b, 2026-10-16: `ITEMS_RollStaffMods` modelled with no oracle over 105 stock rolls, 9 statements raised and 8 in part (after the S2b review), 2 reclassified, [§ Plan 0038 batch S2b](#plan-0038-batch-s2b-2026-10-16); plan 0038 batch S2c, 2026-10-16: 2 statements raised and 1 in part, [§ Plan 0038 batch S2c](#plan-0038-batch-s2c-2026-10-16))
+> **Date:** 2026-10-14   **Plan:** 0021 (Phase 1, Phase 1b)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14, three contradictions with `src:arreat-summit-magic-items` and one with `src:d2dfg-blizzard`; Phase 2 bit-exact reproduction run:2026-10-14-affixes, 3 102 creations, 0 mismatches; plan 0038 batch S2b, 2026-10-16: `ITEMS_RollStaffMods` modelled with no oracle over 105 stock rolls, 9 statements raised and 8 in part (after the S2b review), 2 reclassified, [§ Plan 0038 batch S2b](#plan-0038-batch-s2b-2026-10-16); plan 0038 batch S2c, 2026-10-16: 2 statements raised and 1 in part, [§ Plan 0038 batch S2c](#plan-0038-batch-s2c-2026-10-16); plan 0038 batch H2b, 2026-10-20: 9 statements raised and 1 in part, 1 reclassified (d-none); tests (a) and the not-reached list corrected, [§ Plan 0038 batch H2b](#plan-0038-batch-h2b-2026-10-20))
 
 Names of structs and fields are ours. As in [items/0004](0004-uniques-sets.md): "record" is the 0x84-byte creation
 record (`struct:ItemCreateRec`), "item seed" is the item-data seed at `ItemData+0x04` (not the unit seed at
@@ -386,6 +386,8 @@ return id + 1;
   logged candidate list of every pick. Tests (a) and (b) refused no row in the run: no classic throwable base reached
   a pick, and no `sock` row fell in a socketless base's level window. (fn:ITEMS_MagicAffixTypeOk@0x0065E620,
   fn:ITEMS_UnitIsType@0x00629BB0, run:2026-10-14-affixes)
+  *Corrected 2026-10-20 (plan 0038 batch H2b):* that held for run:2026-10-14-affixes; test (a) refuses every row on the
+  nine classic throwing weapons of run:2026-10-20-sweep-items-chain (11 candidate lists of 0, aff 13 `[C]`), [§ Plan 0038 batch H2b](#plan-0038-batch-h2b-2026-10-20).
 - [C] **`classspecific`**: 0xFF (blank) passes; otherwise the row passes when the item type's `Class` is 7 (none)
   or equals it. So a class-specific row is not refused on a classless type by this test; its `itype` list is what
   keeps it off such items. (0x005C1781–0x005C179E, fn:sub_0062C0B0_ItemTypeClass@0x0062C0B0,
@@ -751,6 +753,8 @@ from a logged seed.
   empty rare name list, a failed magic builder, the charm path of the normal builder, automagic skipped on qualities
   5 and 7, the forced rows (every drop pick had `forcedId` 0) and the version-0 bodies. (0x005C1C77, 0x0065E62D,
   0x0065E64E, 0x005C1B7E, 0x0055667D, 0x00556E8D, 0x005579B8, 0x005C16FE, 0x005C12F0)
+  *Corrected 2026-10-20 (plan 0038 batch H2b):* the jewel count, the classic stackable/throwable refusal, an empty rare
+  name list and a failed magic builder are now reached and `[C]` (aff 5, 13, 17, 19, 21), [§ Plan 0038 batch H2b](#plan-0038-batch-h2b-2026-10-20).
 - [C] **Chained with the property model** (re-analysis 2026-10-15, `tools/items_chain.py`, items/experiments.md
   *Re-analysis 2026-10-15: the affix and property models chained*): with the `ItemApplyProps` oracle replaced by
   `tools/props.py`'s table walk, all 3 102 creations still reproduce and the 1 034 property-roll exit seeds are
@@ -1048,6 +1052,85 @@ default, and `--staff oracle` restores the plan 0021 switch (ADR-0004). No readi
 - [I] The classic body `sub_005C0D70_StaffModsRollV0` stays unmodelled: `staff_mods` raises on an item of version 0, and
   no created item has version 0 (the item version split of § 10), so no chain run reaches it.
   (fn:sub_005C0D70_StaffModsRollV0@0x005C0D70)
+
+## Plan 0038 batch H2b (2026-10-20)
+
+Harness batch H2b of [plan 0038](../../plans/0038-inferred-claims-sweep.md)
+([run:2026-10-20-sweep-items-chain](experiments.md#run2026-10-20-sweep-items-chain), harness slot 2, stock data) took
+11 inferred statements of [items/affixes](../../specs/items/affixes.md), rows 5, 13, 17, 19, 20, 21 and 24 of
+[the inventory](../../plans/0038-inventory/items-affixes.md); spec lines are those of the inventory's commit `3b1433f`.
+The batch's other ledgers are in [items/0004](0004-uniques-sets.md#plan-0038-batch-h2b-2026-10-20),
+[items/0006](0006-properties.md#plan-0038-batch-h2b-2026-10-20),
+[items/0007](0007-sockets-runewords.md#plan-0038-batch-h2b-2026-10-20) and
+[items/0001](0001-tc-resolution.md#plan-0038-batch-h2b-2026-10-20).
+
+**The sessions behind these rows** are the run's two cube sessions: `jewel` (an expansion game; cube row 62 on one
+rare jewel 17 times, each output the next input) and `throw` (a classic game; row 62 once on each of nine rare
+throwing weapons, five `tkf` and four `tax`). The inputs are built (ADR-0003); each output is a new item made by
+`sub_00557450_ItemCreateByQuality` with quality 6 on the input's base, so the builders below run on stock tables from
+a stock seed. Both logs reproduce with 0 failures from both line sets (`tools/items_chain.py both`) and from the game
+seed at `CUBE_Transmute` (`tools/cube.py check`, H2b tags stripped: 17 and 9 transmutes). The counts below are those
+of `check/check-sweep_h2b-perlog.txt`, `check/check-items_chain.txt`, `check/check-cube.txt` and
+`check/check-survey.txt` (hashes in the run record), and of the `throw` log's own lines where named.
+
+- **aff 5** (L124) **raised.** [C] `TYPE_JEWEL` is 58: after `ITEMS_GetBaseType` the count branch compares with
+  `0x3A` (0x005C1C74) and, on equal, calls `RNG_RangeOffset(seed, 3, 2)` (`EDX` 3, push 2, 0x005C1C79–0x005C1C80).
+  All 17 `jew` rares of `jewel` and the 4 of run:2026-10-15-cube (`cube-rare1`, `cube-rare2`, re-checked:
+  `check/check-cube-rare-2026-10-15.txt`) reproduce with that branch, and the 10 non-jewel rares of the same 2026-10-15
+  logs (counts 4, 5, 6) with `g_RareAffixCountTable[low & 7]`. (0x005C1C6F–0x005C1C80, fn:ITEMS_GetBaseType@0x0062B400,
+  run:2026-10-20-sweep-items-chain, run:2026-10-15-cube)
+- **aff 19** (L415 E3, L466 the step note; 2 statements) **raised.** [C] A rare jewel's count is `3 + low % 2` after
+  one step: 9 of the 17 `jewel` rerolls drew 3 and 8 drew 4 (`RC` equals the model each time), and each got that
+  many affixes, the join seed predicted. With the 4 jewels of run:2026-10-15-cube (all 3) that is 21 rare jewels, 13
+  at 3 and 8 at 4, none at 5 or 6. A reading through the general table gives the logged count with odds at most 3/8
+  per jewel (3 is 1/8, 4 is 2/8), so 21 matches do not come by chance (rule 10).
+  (0x005C1C77, fn:ITEMS_BuildRareAffixes@0x005C1BF0, run:2026-10-20-sweep-items-chain, run:2026-10-15-cube)
+- **aff 13** (L293 C5a, L341 the step note; 2 statements) **raised.** [C] On a classic item a stackable or `Throwable`
+  base is refused by `ITEMS_MagicAffixTypeOk` before any row test: in the 9 magic fallbacks of `throw` (5 `tkf`, 4
+  `tax`, ilvl 45) the 11 candidate lists logged all have `n = 0` (`pick no-candidate magic` 11), the other 7 picks
+  drew their attempt bit and declined before a list (`pick no-roll magic` 7), and all 9 magic builds end with no affix
+  (`magic none` 9, `check-cube.txt`). Control: `tools/affixes.py survey` lists `tkf` and `tax` with no magic candidate on either side only at
+  item version 1; at version 101 both sides have rows, so a reading without C5a would have found candidates at these
+  alvls. The step note's "with stock data only classic throwing weapons then have no affix and no rare name at all" is
+  the survey's version-1 list (`check-survey.txt`, read against the tables): its weapon records of table version 0
+  are the 18 classic throwing weapons (types `tkni`, `taxe`, `jave`: `tkf`, `tax`, `bkf`, `bal`, `jav`, `pil`, `ssp`,
+  `glv`, `tsp` and the exceptional `9bk`, `9tk`, `9b8`, `9ta`, `9ja`, `9pi`, `9s9`, `9gl`, `9ts`), each with no prefix,
+  no suffix and no name; the other version-1 entries are expansion records (`7*`, `am*`, `jew`, the charms, the
+  essences), which no classic game creates, and misc records whose type has no `Rare` flag (quest items, `elx`). (0x0065E62D–0x0065E645, fn:ITEMS_MagicAffixTypeOk@0x0065E620,
+  fn:sub_0062BA80_ItemTypeThrowable@0x0062BA80, run:2026-10-20-sweep-items-chain)
+- **aff 17** (L384) **raised.** [C] `ITEMS_BuildMagic` fails exactly when both slots are 0 (`test di, di` / `test bx,
+  bx` at 0x00556673–0x0055667B, return 0 at 0x0055667D): the 9 `MB0` lines with prefix and suffix 0 (all `throw`) are
+  each followed by `MBF`, and the 71 `MB0` lines with one or both slots set (16 both, 19 prefix, 36 suffix; the drops of the run) by none
+  (`sweep_h2b.py logs`, rule "builders"). (0x00556673–0x00556684, fn:ITEMS_BuildMagic@0x005565E0,
+  run:2026-10-20-sweep-items-chain)
+- **aff 21** (L442 R1, L447 R3, L463 the step note; 3 statements) **raised.** [C] A classic `tkf` or `tax` has no
+  rare-name candidate, and an empty scan returns 0 with no draw: in all 9 rare builds of `throw` both scans of
+  `ITEMS_PickRareName` count 0 candidates (`RNE n 0`, the run's 18 empty scans), the second scan carries the item seed of the
+  first (9 of 9: the empty first scan drew nothing), and the build returns at 0x005C1E71 (`RBF`, 9; `rare: no name` 9
+  in `check-cube.txt`). R1's refusal is the same instruction pattern as C5a (version < 100, then stackable, then
+  `Throwable`, 0x0065E71D–0x0065E737). Control: the same bases have name candidates at item version 101 (survey). The
+  step note (L463) is the survey's list, as for aff 13. (0x0065E71D–0x0065E737, 0x005C1B7E,
+  fn:ITEMS_PickRareName@0x005C1AB0, fn:ITEMS_RareNameTypeOk@0x0065E710, run:2026-10-20-sweep-items-chain)
+- **aff 24** (L483) **raised in part.** [C] A rare build that fails for want of a name falls back to magic with the
+  item seed reset to `{S, 666}`: in all 9, `FB magic` gives `S` = the item's start and the magic builder's entry seed
+  (`BLD magic`) is `{S, 666}`, with the file index reset to −1. **Remainder `[I]`:** the "no affix" cause (E5, aff
+  20, d-none below) and "discarding the rare builder's draws": a name failure draws nothing, so these 9 cases cannot
+  show a discard (the discard on a failed unique's fallback is items/uniques-sets E2, `[C]`).
+  (0x005C1E71, fn:sub_00557380_ItemFallbackMagic@0x00557380, run:2026-10-20-sweep-items-chain)
+- **aff 20** (L431, E5) **reclassified d-none.** The rare builder reaches E5 (no prefix and no suffix after both
+  names) only where both affix sides are empty while both name blocks have a row. `python3 -I tools/sweep_h2b.py
+  rareboth` (the loop of `tools/affixes.py survey` over every rare-able base, item versions 1 and 101, ilvl 1–99)
+  finds 99 such cases (`check/check-rareboth.txt`), all `jew` at item version 1: a jewel in a classic game, which no stock path makes (`jew`
+  is an expansion record; classic creation refuses it and the classic TC scan skips it, items/tc). The classic
+  throwables fail at the names (aff 21) before E5. The statement stays `[I]`. (0x005C1E71,
+  fn:ITEMS_BuildRareAffixes@0x005C1BF0)
+
+**Corrections carried (rule 12):** § 3's tests bullet ("tests (a) and (b) refused no row in the run") and the Phase 2
+*Not reached, so still as read* list (the jewel count, the classic stackable/throwable refusal, an empty rare name
+list, a failed magic builder) are out of date for those items; dated notes there point here.
+
+**Tally:** 11 statements: 9 raised (aff 5, 13 ×2, 17, 19 ×2, 21 ×3), 1 raised in part (aff 24), 1 reclassified
+d-none (aff 20).
 
 ## Data touched
 

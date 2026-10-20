@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/properties
 > **Question:** Once an item's base, quality and rows are chosen, which base stats and property stats does it get, and which draws on the unit seed and the item seed produce them?
-> **Date:** 2026-10-14   **Plan:** 0024 (Phase 1, Phase 1b, Phase 2)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14: five contradictions with `src:d2dfg-blizzard`, none with the other three sources; Phase 2 reproduction done 2026-10-14, [run:2026-10-14-props](experiments.md#run2026-10-14-props) and [run:2026-10-14-props-forced](experiments.md#run2026-10-14-props-forced), 2 281 creations with 0 mismatches, § 9; review requested; plan 0038 batch S2b, 2026-10-16: the staff mods modelled, 7 statements raised and 4 in part, 2 reclassified, one correction (mode 6 is the runeword path), [§ Plan 0038 batch S2b](#plan-0038-batch-s2b-2026-10-16); plan 0038 batch S2c, 2026-10-16: 2 statements raised and 1 in part, [§ Plan 0038 batch S2c](#plan-0038-batch-s2c-2026-10-16))
+> **Date:** 2026-10-14   **Plan:** 0024 (Phase 1, Phase 1b, Phase 2)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14: five contradictions with `src:d2dfg-blizzard`, none with the other three sources; Phase 2 reproduction done 2026-10-14, [run:2026-10-14-props](experiments.md#run2026-10-14-props) and [run:2026-10-14-props-forced](experiments.md#run2026-10-14-props-forced), 2 281 creations with 0 mismatches, § 9; review requested; plan 0038 batch S2b, 2026-10-16: the staff mods modelled, 7 statements raised and 4 in part, 2 reclassified, one correction (mode 6 is the runeword path), [§ Plan 0038 batch S2b](#plan-0038-batch-s2b-2026-10-16); plan 0038 batch S2c, 2026-10-16: 2 statements raised and 1 in part, [§ Plan 0038 batch S2c](#plan-0038-batch-s2c-2026-10-16); plan 0038 batch H2b, 2026-10-20: 2 statements raised, 1 shortfall, 3 reclassified (d-none), [§ Plan 0038 batch H2b](#plan-0038-batch-h2b-2026-10-20))
 
 Names of structs and fields are ours. As in [items/0004](0004-uniques-sets.md) and [items/0005](0005-affixes.md):
 "record" is the 0x84-byte creation record (`struct:ItemCreateRec`), "item seed" is the item-data seed at
@@ -745,7 +745,8 @@ if (Version(item) >= 100 || !IsType(item, 3 /*tors*/)) {
   - `ItemMaxSockets = min(gemsockets, MaxSock1 | MaxSock25 | MaxSock40)`, by ilvl: ≤ 25, ≤ 40, else.
   - The difficulty cap is 3, 4 or 6.
   - Low quality never qualifies, despite the 1..3 call range.
-  - Classic body armour (`tors`, version < 100) makes no draw.
+  - Classic body armour (`tors`, version < 100) makes no draw. *2026-10-20, plan 0038 batch H2b:* reproduced past
+    `ItemMaxSockets` > 0 in 10 classic drops with an expansion control (prop 20), [§ Plan 0038 batch H2b](#plan-0038-batch-h2b-2026-10-20).
   - The 33 % test draws once. The count is **not** drawn: it is `ItemData+0x10 % cap + 1`, from the low word the item
     seed was initialised from.
   - `ITEMS_SetSockets` then clamps to `min(6, invwidth · invheight, ItemMaxSockets)` and writes stat 194. Its quality
@@ -1027,6 +1028,43 @@ stock drop logs of `tools/tc_sweep.py` (166, of which run:2026-10-14-props and r
   rolls of the stock drop logs had `rec+0x80 & 0x14`, nor any player start item. (struct:ItemCreateRec+0x80,
   run:2026-10-14-props, run:2026-10-15-items-chain) **Remainder:** that the ethereal roll tests the forced bits after
   its draw (no stock record sets them: d-none).
+
+## Plan 0038 batch H2b (2026-10-20)
+
+Harness batch H2b of [plan 0038](../../plans/0038-inferred-claims-sweep.md)
+([run:2026-10-20-sweep-items-chain](experiments.md#run2026-10-20-sweep-items-chain), stock data) took six inferred
+statements of [items/properties](../../specs/items/properties.md), rows 7 (3), 20 (2) and 24 of
+[the inventory](../../plans/0038-inventory/items-properties.md) (24 by
+[§ 2.6](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews)); spec lines are those of the
+inventory's commit `3b1433f`. The batch's other ledgers are in
+[items/0004](0004-uniques-sets.md#plan-0038-batch-h2b-2026-10-20) and the files it links. Counts are from
+`check/check-sweep_h2b.txt` and `check/check-items_chain.txt`. § 6's sockets bullet ("classic body armour makes no draw")
+gets a dated note pointing here.
+
+- **prop 20** (L547 F4's pseudocode line, L591 the F4 note; 2 statements) **raised.** [C] A classic body armour (`tors`, item
+  version < 100) makes no socket draw: the 10 classic `tors` drops of qualities 2 (9) and 3 (1) each reached the tors
+  test, past `ItemMaxSockets` > 0 (`SOKM` with `ms` > 0 at 0x00556BA3; the test at 0x00556BEC–0x00556BFC is reached only
+  past 0x00556B96), and none has a `SOKR` draw (`sweep_h2b.py logs`, rule "tors"). Control: the 5 expansion `tors` drops
+  of quality 2 past `SOKM` > 0 each drew (`SOKR` 1). A reading without the test would have drawn in all 10, as the
+  control does, so the absence is not by chance (rule 10). (0x00556C0F, fn:sub_00556B60_ItemRollSockets@0x00556B60,
+  run:2026-10-20-sweep-items-chain)
+
+- **prop 24** (L823) **shortfall.** The run made no superior ethereal item with a `dur%` slot (rule "dur" of
+  `sweep_h2b.py logs` prints no case over the 1 043 creations), so the two orders `h + ⌊h · d/100⌋` and
+  `⌊(h − 1)(100 + d)/100⌋ + 1` were not put to the test.
+  The statement stays `[I]` on the code reading (0x00556D41–0x00556D6E), and run:2026-10-15-items-chain's three
+  cases (none separating) stay its runtime support. The route's fallback (a longer Hell hunt) stays open.
+- **prop 7** (L213 A5's pseudocode line, L252 the A5 note, L647 H3; 3 statements) **reclassified d-none.** The type-11
+  setup `sub_0065E8E0_ItemType11Setup` runs only for an item of type 11, `elix`, whose only record is `elx`; no stock
+  path makes one: no TreasureClassEx cell names it and `elix` has `TreasureClass` 0, no cubemain output names it or
+  its type, its vendor columns are empty, no other table names it (`python3 -I tools/sweep_h2b.py static`,
+  `check/check-static.txt`). The three statements stay `[I]`. (fn:sub_0065E8E0_ItemType11Setup@0x0065E8E0,
+  tbl:ItemTypes.txt:TreasureClass, tbl:Misc.txt:type)
+- **The H2c companion** ([inventory § 6](../../plans/0038-inventory/README.md#6-forced-run-candidates-ruled-at-the-review),
+  "H2b's long Hell hunt also checks for a stock func-12, 23 or 24 carrier"): none. No property slot of the run's
+  1 043 creations has func 12, 23 or 24 (rule "carriers" prints no case); the H2c rows keep their forced route.
+
+**Tally:** 6 statements: 2 raised (prop 20 ×2), 1 shortfall (prop 24), 3 reclassified d-none (prop 7 ×3).
 
 ## Data touched
 

@@ -2879,3 +2879,32 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     re-counted from the kept outputs); run record and manifest; corrections (rule 12) into items/0005 § 5 (tests (a)
     "refused no row in the run"), § 6, items/0006 § 6 (sockets), items/0007 § 7, items/0001 § 8; inventory § 2.6;
     symbol raises; review request; spec-writer entry.
+- **2026-10-20 — Batch H2b filed (reverser, `lane/h2b`, resumed from the pause note above).** One more launch on slot
+  2: classic-d re-run on map seed 3914 (123 creations, Black Marsh explored after 305 s, no `internal-error:`), then
+  slot 2 stopped and its saves directory restored (empty, no aside). `grep -l "internal-error:"` over the kept and dev
+  logs: only `dev/dev4` (the aborted classic-d). 17 launches of the 20 allowed, 13 kept logs. Every count re-taken from
+  the full check set in `workspace/logs/h2b/check/` (manifest passes), not from the note or the drafts.
+  - **Ledger** ([items/0001](../findings/items/0001-tc-resolution.md#plan-0038-batch-h2b-2026-10-20),
+    [0004](../findings/items/0004-uniques-sets.md#plan-0038-batch-h2b-2026-10-20),
+    [0005](../findings/items/0005-affixes.md#plan-0038-batch-h2b-2026-10-20),
+    [0006](../findings/items/0006-properties.md#plan-0038-batch-h2b-2026-10-20),
+    [0007](../findings/items/0007-sockets-runewords.md#plan-0038-batch-h2b-2026-10-20)): 18 rows, 25 statements:
+    **14 raised** (tc 68; us 9, 39; aff 5, 13 ×2, 17, 19 ×2, 21 ×3; prop 20 ×2), **5 raised in part** (tc 58, us 7,
+    us 35, aff 24, sock 42), **1 shortfall** (prop 24), **5 reclassified d-none** (us 10, prop 7 ×3, aff 20). S2c's
+    sock 44 piece met in part; the H2c companion found no func 12, 23 or 24 slot.
+  - **Checks** (run:2026-10-20-sweep-items-chain): `sweep_h2b.py logs` 0 bad, `tc.py replay` 1 118/1 118,
+    `items_chain.py both` and `uniques.py` 1 043/1 043, `quality.py` 1 022/1 022, `cube.py` 26/26 and the 2026-10-15
+    rare logs 14/14, 13 tests OK.
+  - **Corrections carried (rule 12):** items/0005 § 3 tests (a) and the Phase 2 not-reached list; items/0004 Answer and
+    not-reached list; items/0007 Answer and § 7's clamp bullets; items/0006 § 6 tors; items/0001 § 8 item seed.
+  - **Symbols:** `sub_00558D90_ItemCreate`, `sub_0055A550_DropCreateItem` I → C.
+  - **Inventory:** [§ 2.6 H2b](0038-inventory/README.md#26-moves-made-by-the-batch-reviews), three rows (5 statements)
+    proposed a-run → d-none; totals against `main` `9ef5f84`: static 567, harness 526, blocked 414 (d-none 288),
+    deferred 2, raised 17: 1 526. `main` is not merged into the lane (the merge was refused by the session's permission
+    layer); the review merges it.
+  - **Backlog:** review request
+    [2026-10-20-reverser-architect-review-h2b-items-chain](../backlog/2026-10-20-reverser-architect-review-h2b-items-chain.md);
+    spec-writer entry
+    [2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates](../backlog/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md)
+    (to be released with the review).
+  - **Next:** architect review of `lane/h2b`; then H2c.
