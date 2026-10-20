@@ -379,6 +379,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0054E190,func,sub_0054E190_FormationGroup,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x0054E1E0,func,sub_0054E1E0_ChampionPack,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x0054E2A0,func,sub_0054E2A0_PresetFallenVariant,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x0054E3A0,func,sub_0054E3A0_PresetRetryAllowed,,I,monsters/spawn,docs/findings/chain/0002-retirements.md
+0x0054E490,func,sub_0054E490_PresetClassSpawn,,C,monsters/spawn,docs/findings/chain/0002-retirements.md
 0x0054E600,func,sub_0054E600_PresetMonSpawn,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x0054EBC0,func,sub_0054EBC0_RoomPopulateGate,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x0054EC40,func,sub_0054EC40_IsFallenScarab,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
@@ -404,7 +406,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005502F0,func,OBJ_PosTestTight,,C,objects,docs/findings/objects/0001-object-population.md
 0x00550380,func,OBJ_PlaceRandom,,C,objects,docs/findings/objects/0001-object-population.md
 0x00550540,func,OBJ_PlaceRandomRoomSeed,,C,objects,docs/findings/objects/0001-object-population.md
-0x005506D0,func,OBJINIT_CityDamnedSpawns,,I,objects,docs/findings/objects/0001-object-population.md
+0x005506D0,func,OBJINIT_CityDamnedSpawns,,C,objects,docs/findings/objects/0001-object-population.md
 0x00550A30,func,OBJ_PlaceByOrientation,,C,objects,docs/findings/objects/0001-object-population.md
 0x00550C20,func,OBJPOP_Clusters,,C,objects,docs/findings/objects/0001-object-population.md
 0x00551150,func,OBJ_FliesAdd,,C,objects,docs/findings/objects/0001-object-population.md
@@ -1692,6 +1694,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0061A180,func,sub_0061A180_ActRoomsHead,,I,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0061A1B0,func,sub_0061A1B0_RoomGetLevelId,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0061A1F0,func,sub_0061A1F0_RoomPopLevelId,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
+0x0061A210,func,sub_0061A210_RoomWarpFlagsTest,,I,objects,docs/findings/chain/0002-retirements.md
 0x0061A3F0,func,sub_0061A3F0_RoomReleaseAllowed,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0061A4D0,func,sub_0061A4D0_RoomRestoredGet,,I,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0061A510,func,sub_0061A510_RoomRestoredSet,,I,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
@@ -1704,6 +1707,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0061AAF0,func,sub_0061AAF0_LevelIsTown,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x0061AB00,func,sub_0061AB00_RoomIsTown,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x0061AB70,func,sub_0061AB70_ActTownLevel,,I,quests/travel,docs/findings/quests/0002-travel.md
+0x0061ABB0,func,sub_0061ABB0_RoomPresetPopTest,,I,objects,docs/findings/chain/0002-retirements.md
 0x0061AC10,func,sub_0061AC10_RoomLevelWarpPoints,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x0061AD10,func,sub_0061AD10_DungeonRoomL17Points,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x0061AD50,func,sub_0061AD50_RoomLogicBoxes,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
@@ -2350,7 +2354,10 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0066B980,func,sub_0066B980_RectContains,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0066B9D0,func,sub_0066B9D0_RectContainsIncl,,C,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0066BA70,func,sub_0066BA70_RoomIsOutdoors,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
+0x0066BA90,func,sub_0066BA90_DrlgRoomPresetPopTest,,I,objects,docs/findings/chain/0002-retirements.md
 0x0066BAB0,func,sub_0066BAB0_RoomLevelId,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x0066BB20,func,sub_0066BB20_DrlgRoomPopLevelId,,I,objects,docs/findings/chain/0002-retirements.md
+0x0066BB60,func,sub_0066BB60_DrlgRoomWarpFlags,,I,objects,docs/findings/chain/0002-retirements.md
 0x0066BBC0,func,sub_0066BBC0_RoomNearListSort,,I,drlg/warps,docs/findings/drlg/0007-warps.md
 0x0066BC20,func,sub_0066BC20_RoomNearListBuild,,I,drlg/warps,docs/findings/drlg/0007-warps.md
 0x0066BD50,func,DRLG_RoomNoPopNearTown,,C,drlg/preset,docs/findings/drlg/0004-preset-units.md
@@ -2556,6 +2563,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0067D680,func,sub_0067D680_OutRoomGridsFree,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0067D6D0,func,sub_0067D6D0_OutRoomAlloc,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0067D710,func,sub_0067D710_OutRoomTilesBuild,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x0067D7A0,func,sub_0067D7A0_OutRoomFlag80,,I,objects,docs/findings/chain/0002-retirements.md
 0x0067D830,func,sub_0067D830_LinkPick,,C,rng/seeds,docs/findings/drlg/0007-warps.md
 0x0067D8E0,func,sub_0067D8E0_LinkPick,,C,drlg/warps,docs/findings/drlg/0007-warps.md
 0x0067D980,func,sub_0067D980_LinkPick,,C,rng/seeds,docs/findings/drlg/0007-warps.md

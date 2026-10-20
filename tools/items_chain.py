@@ -8,7 +8,8 @@
 affixes: tools/affixes.py check, with its ItemApplyProps boundary oracle (APR0 -> APR1) replaced by tools/props.py's
   table model of the call (props.apply_seed: the block walk of the affix or QualityItems row, every PROP_RollValue
   draw on the item seed). The logged APR1 seed is compared with the model's, no longer taken. Everything else is
-  affixes.py's own check (ITEMS_RollStaffMods, the ethereal and socket rolls stay its boundary oracles).
+  affixes.py's own check (the ethereal and socket rolls stay its boundary oracles; ITEMS_RollStaffMods is modelled by
+  default since plan 0048 Phase 1, `--staff oracle` restores the plan 0021 oracle).
 
 props: tools/props.py check first (unchanged: base stats, every ItemApplyProps call between APE and APX, ethereal,
   sockets, the final lists). Then, per creation, the builders tools/props.py takes as seed oracles (magic, rare,
@@ -287,11 +288,11 @@ def main(argv):
         p.add_argument("logs", nargs="+")
         p.add_argument("--excel", default=uniques.EXCEL)
         p.add_argument("-v", "--verbose", action="store_true")
-        p.add_argument("--staff", choices=("oracle", "model"), default="oracle",
-                       help="ITEMS_RollStaffMods: the seed oracle (default) or tools/affixes.py's staff_mods model")
+        p.add_argument("--staff", choices=("oracle", "model"), default="model",
+                       help="ITEMS_RollStaffMods: tools/affixes.py's staff_mods model (default since plan 0048 "
+                            "Phase 1) or the seed oracle")
     ns = ap.parse_args(argv[1:])
-    if ns.staff == "model":
-        affixes.STAFF_MODEL = True
+    affixes.STAFF_MODEL = ns.staff == "model"
     return {"affixes": cmd_affixes, "props": cmd_props, "both": cmd_both}[ns.cmd](ns)
 
 

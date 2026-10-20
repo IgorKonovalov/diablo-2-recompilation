@@ -764,6 +764,27 @@ condition 5: the emulator returns 0 where the processor traps).
   holds with one precision the note does not state: a 64-bit quotient outside the 32-bit range is returned wrapped
   (its low 32 bits), not saturated. (fn:sub_00483360_MulDiv@0x00483360, run:2026-10-17-sweep-emu2)
 
+## Plan 0048 Phase 1: MonEquip's draws modelled, the `oninit` offset corrected (2026-10-20)
+
+Oracle 13 of [chain/0001](../chain/0001-oracles.md). Record: [chain/0002 § 11](../chain/0002-retirements.md#11-oracle-13-monequips-items).
+
+- [C] **`oninit` is the byte at `+0x04` of a `monequip` record**, not `+0x02`: `MonEquipInit` tests `(char) row[+4]`
+  (`psVar6[2]` of the s16 view) and reads the level as the s16 at `+0x02`; `MonStats +0x2A` (the class's first row) is
+  written at load by `MONEQUIP_Load` and is 0 in the `.bin`. `tools/monstats.py` read `+0x02` of row `+0x2A` from the
+  `.bin`, so its `oninit` test was false for every class, and with `+0x04` alone it would be true for every class (row
+  0). Corrected: the first row whose `monster` is the class, its `+0x04`. On the stock table exactly two classes have
+  an `oninit` first row: 234 (`flyingscimitar`) and 267 (`bloodraven`). The second source is the full-table check of
+  [chain/0002 § 11](../chain/0002-retirements.md#11-oracle-13-monequips-items) (the `.bin`'s `+0x04` and `+0x02` against
+  the `oninit` and `level` columns, 45 of 45 rows). The correction changes no earlier result: no log with `SI0` lines
+  (the 11 mon-stats, 9 H4b and 6 forced-berserk logs) creates class 234 or 267, so the old test's "no draw" assert was
+  never wrong where it ran; re-run at the review, 0 mismatches. (fn:sub_005D6B60_MonEquipInit@0x005D6B60,
+  fn:sub_005D30A0_MonEquipFirstRow@0x005D30A0, 0x0065A070, 0x005D6BA5, run:2026-10-15-mon-stats)
+- [I] `Model.init_seed` now runs § 6's MonEquip walk for those classes (one unit-seed step per row with a location,
+  the item when the location is free) instead of raising the seed oracle, and `tools/monspawn.py` steps the game seed
+  twice per item inside the creation (rng/seeds 7a). No logged creation reaches it: neither class was created in the
+  62 world logs of plan 0048, so the model is untested. (fn:sub_005D6B60_MonEquipInit@0x005D6B60,
+  fn:sub_00573B20_MonEquipItemCreate@0x00573B20)
+
 ## Open questions
 
 - ~~Whether champion-pack members get a champion leader's flag-0 handlers~~ answered in § 12: they do not; each member
