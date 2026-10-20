@@ -2903,8 +2903,48 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     deferred 2, raised 17: 1 526. `main` is not merged into the lane (the merge was refused by the session's permission
     layer); the review merges it.
   - **Backlog:** review request
-    [2026-10-20-reverser-architect-review-h2b-items-chain](../backlog/2026-10-20-reverser-architect-review-h2b-items-chain.md);
+    [2026-10-20-reverser-architect-review-h2b-items-chain](../backlog/archive/2026-10-20-reverser-architect-review-h2b-items-chain.md);
     spec-writer entry
     [2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates](../backlog/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md)
     (to be released with the review).
   - **Next:** architect review of `lane/h2b`; then H2c.
+- **2026-10-20 — Review of `lane/h2b`, batch H2b (items: affixes, tc, uniques-sets, properties, sockets-runewords;
+  architect): accept with fixes (5).** `main` (`9ef5f84`) merged into `lane/h2b` first: one conflict, the end of
+  inventory § 2.6 (the plan 0044 Phase 3 block and the H2b block, kept in that order); the plan log merged clean;
+  `backlog.py archive` run after it. Read: the plan log entries, the run record, the five findings' H2b sections and
+  corrections, the inventory § 2.6 block, `re/symbols.csv`, the backlog entries, and the check outputs.
+  - **Re-checked** (worktree, `systemd-run --user --scope -p MemoryMax=4G`): `sha256sum -c` passes on
+    `items-chain-manifest.sha256` (13 logs), `items-chain-saves.sha256` (from `saves/`) and the dev manifest (from
+    `dev/`); every cited check-output hash and the tool hashes match the files (`tc.py` `36892d1a…` is the lane's
+    revision; `main`'s `f26df35d…` replays the same 1 118 calls with 0 failed, kept as `check/review/`). The tails of
+    `check-tc.txt`, `-items_chain`, `-uniques`, `-quality`, `-cube`, `-static`, `-rareboth`, `-tests` agree with the
+    record; the per-log sweep is 0 bad in all 13. The ledger recounts to 18 rows, 25 statements (14 + 5 + 1 + 5).
+  - **Each raise against a reading it rules out:** us 9, tc 58 and tc 68 by the `GS0`–`GS4` seed model (a record seed
+    would show `GS3` and other seeds); us 39 by `GQJ`/`GQX` (any builder step on the game or unit seed would break the
+    993/1 043 counts); aff 5 and aff 19 by 21 jewel counts (the general table matches each with odds ≤ 3/8); aff 17 by
+    `MBF` after exactly the 9 empty builds of 80; prop 20 by the expansion `tors` control (the draw is unconditional
+    past the tors test, 0x00556C0F); aff 24 and us 35 by the logged `{S, 666}` resets. aff 13 and aff 21: the lane's
+    control ("candidates at version 101") does not separate C5a/R1 from the rows' version gate; the review's control at
+    version 1 with the refusal removed finds 30–37 candidates per side, 0 with it (fix 1). The three d-none moves hold;
+    the review added a byte search of the pinned image (no `elx` code).
+  - **Rulings.** (a) The three d-none moves accepted (§ 2.6, harness 531 → 526, d-none 283 → 288). (b) prop 20 raised
+    as filed. (c) us 7 in part as filed: the fallback reached is not the one the statement names. (d) sock 44's S2c
+    piece in part as filed. (e) The rule-12 corrections are in place in items/0001 § 8, 0004 Answer and *Not reached*,
+    0005 § 3 and *Not reached*, 0006 § 6, 0007 Answer and § 7. (f) Symbols: the two raises stand; the five candidates
+    are raised too (`ItemSeedInit`, `ItemFallbackSuperior`, `ItemRollSockets`, `ItemMaxSockets`, `ITEMS_SetSockets`),
+    each by its logged output against a model, with the evidence column moved to the finding that holds the `[C]`
+    statement and the Functions tables of items/0002, 0003, 0004, 0006 and rng/0002 updated (fix 3).
+  - **Fixes applied (5):** (1, 2) overclaim: aff 13's and aff 21's controls replaced by the version-1 control
+    (`check/review/c5a_control.txt`; items/0005, run record *Review checks*). (3) overclaim: sock 42's `[C]` scoped to
+    the cap's steps; every one of the 34 requests lay in `1..cap`, so `max(n, 1)` and the clamp of the write join the
+    remainder (items/0007 sock 42, the Answer note, § 7's order note, the § 2.6 bullet, the spec-writer entry's (r)).
+    (4) under-claim: the five symbols above. (5) other: the dev manifest's path in the run record.
+  - **Totals** (recomputed once after the merge, § 2.6): **static 567, harness 526, c-emu awaiting a batch 0, blocked
+    414** (d-none 288, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.** § 5 marks
+    H2b done.
+  - **Backlog:** review request
+    [2026-10-20-reverser-architect-review-h2b-items-chain](../backlog/archive/2026-10-20-reverser-architect-review-h2b-items-chain.md)
+    closed; the spec-writer entry
+    [2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates](../backlog/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md)
+    released (open, for the Phase 3 re-tag of items/tc, uniques-sets, affixes, properties and sockets-runewords).
+  - **Next:** H2c (forced), after the H2b merge.

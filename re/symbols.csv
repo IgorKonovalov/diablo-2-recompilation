@@ -429,7 +429,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00552AC0,func,OBJ_ShrineClassSubst,,I,objects,docs/findings/objects/0001-object-population.md
 0x00552B50,func,OBJPOP_Shrine,,C,objects,docs/findings/objects/0001-object-population.md
 0x00552DF0,func,sub_00552DF0_UnitSeedInit,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
-0x00552E90,func,sub_00552E90_ItemSeedInit,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00552E90,func,sub_00552E90_ItemSeedInit,,C,rng/seeds,docs/findings/items/0004-uniques-sets.md
 0x00552F60,func,sub_00552F60_GameFindUnit,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00552FD0,func,sub_00552FD0_UnitGetOwner,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x00553220,func,sub_00553220_UnitFrameReset,,I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -468,7 +468,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005565E0,func,ITEMS_BuildMagic,,C,items/affixes,docs/findings/items/0005-affixes.md
 0x005566B0,func,ITEMS_BuildUnique,"int __stdcall ITEMS_BuildUnique(void * game, void * item, void * rec)",C,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00556A60,func,sub_00556A60_CharmForcedAffixes,,I,items/affixes,docs/findings/items/0005-affixes.md
-0x00556B60,func,sub_00556B60_ItemRollSockets,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x00556B60,func,sub_00556B60_ItemRollSockets,,C,items/uniques-sets,docs/findings/items/0006-properties.md
 0x00556CA0,func,sub_00556CA0_ItemRollEthereal,,C,items/uniques-sets,docs/findings/items/0006-properties.md
 0x00556D80,func,sub_00556D80_ItemBuildNormalV0,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00556E80,func,ITEMS_BuildNormal,,C,items/affixes,docs/findings/items/0005-affixes.md
@@ -476,7 +476,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00556F60,func,sub_00556F60_ItemRollQualityCreate,,C,items/quality,docs/findings/items/0002-quality-roll.md
 0x00557250,func,sub_00557250_ItemClearAffixes,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x005572A0,func,sub_005572A0_ItemFallbackNormal,,I,items/quality,docs/findings/items/0002-quality-roll.md
-0x00557320,func,sub_00557320_ItemFallbackSuperior,,I,items/quality,docs/findings/items/0002-quality-roll.md
+0x00557320,func,sub_00557320_ItemFallbackSuperior,,C,items/quality,docs/findings/items/0004-uniques-sets.md
 0x00557380,func,sub_00557380_ItemFallbackMagic,,C,items/quality,docs/findings/items/0004-uniques-sets.md
 0x005573F0,func,sub_005573F0_ItemFallbackRare,,C,items/quality,docs/findings/items/0004-uniques-sets.md
 0x00557450,func,sub_00557450_ItemCreateByQuality,,C,items/quality,docs/findings/items/0004-uniques-sets.md
@@ -1984,8 +1984,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0062B4D0,func,sub_0062B4D0_ItemRatioUber,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x0062BA80,func,sub_0062BA80_ItemTypeThrowable,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x0062BBD0,func,sub_0062BBD0_ItemTypeStaffMods,,C,items/affixes,docs/findings/items/0005-affixes.md
-0x0062BC20,func,sub_0062BC20_ItemMaxSockets,,I,items/graphics,docs/findings/items/0003-item-graphics.md
-0x0062BCB0,func,ITEMS_SetSockets,,I,items/properties,docs/findings/items/0006-properties.md
+0x0062BC20,func,sub_0062BC20_ItemMaxSockets,,C,items/graphics,docs/findings/items/0006-properties.md
+0x0062BCB0,func,ITEMS_SetSockets,,C,items/properties,docs/findings/items/0007-sockets-runewords.md
 0x0062BE00,func,ITEMS_SetSocketsOnLoad,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0062BEB0,func,ITEMS_IsSocketFiller,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0062BED0,func,RUNEWORD_Match,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md

@@ -2739,8 +2739,9 @@ logs; shortfalls under *Limits*.
 | 12 | `items-chain-s2-3951-exp-cold.log` | UniqNova, expansion Normal, `/players 8` | Cold Plains sweep, level explored after 216 s | 89 creations |
 | 13 | `items-chain-s2-3952-exp-stony.log` | the same | Stony Field sweep, level explored after 299 s | 130 creations |
 
-  Development logs (no claim rests on them), in `workspace/logs/h2b/dev/`, manifest `items-chain-dev-manifest.sha256`
-  (`ced144d2…`, `sha256sum -c` from `workspace/logs/h2b/dev`): `dev1` classic-a (the first launch: the town
+  Development logs (no claim rests on them), in `workspace/logs/h2b/dev/`, manifest
+  `workspace/logs/h2b/items-chain-dev-manifest.sha256` (`ced144d2…`; from `workspace/logs/h2b/dev`, `sha256sum -c
+  ../items-chain-dev-manifest.sha256`; path corrected at the review): `dev1` classic-a (the first launch: the town
   waypoint list never opened, so no sweep), `dev2` and `dev3` hell-b (both cut off, `dev3` by the first agent's stop), `dev4` classic-d (map seed
   3914): gdb aborted with `i387-tdep.c:1057: internal-error: i387_supply_xsave: Assertion 'regs != NULL' failed` (log
   line 1200), a gdb 18.1 thread race under Wine, a tool failure. Session 4 is its re-run on the same map seed; it has no
@@ -2817,3 +2818,13 @@ logs; shortfalls under *Limits*.
   [items/0005](0005-affixes.md#plan-0038-batch-h2b-2026-10-20),
   [items/0006](0006-properties.md#plan-0038-batch-h2b-2026-10-20) and
   [items/0007](0007-sockets-runewords.md#plan-0038-batch-h2b-2026-10-20).
+- **Review checks (`lane/h2b` review, 2026-10-20; in `workspace/logs/h2b/check/review/`, manifest
+  `review-manifest.sha256` `d1dfe024…`, `sha256sum -c` from that directory):** (1) `c5a_control.py` (`11ed27d6…`,
+  importing the lane's `tools/affixes.py` `44c1faf9…`; `python3 -I c5a_control.py <repo>/tools
+  workspace/merged/data/global/excel`): the magic and rare-name candidates of `tkf` and `tax` at item version 1,
+  ilvl 45, with and without the stackable/`Throwable` refusal; output `c5a_control.txt` (`8583478c…`), the control of
+  aff 13 and aff 21. (2) `tools/tc.py replay` re-run per log with `main`'s `tc.py` (`f26df35d…`, plan 0044's party
+  model) after the merge: the same 1 118 calls, 0 failed (`check-tc-merged-main.txt`, `b0398ac5…`). (3) The 34
+  `ITEMS_SetSockets` calls re-read: every request `n` lay in `1..cap` (final cap 1–4), so the written value is the
+  request each time (items/0007 sock 42, scoped). (4) No `elx` item code in the pinned image as a string or an
+  immediate (`elx `, `elx\0`, byte search), with `check-static.txt` for the type-11 d-none moves.

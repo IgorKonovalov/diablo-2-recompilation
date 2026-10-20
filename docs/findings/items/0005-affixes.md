@@ -1089,9 +1089,12 @@ of `check/check-sweep_h2b-perlog.txt`, `check/check-items_chain.txt`, `check/che
   base is refused by `ITEMS_MagicAffixTypeOk` before any row test: in the 9 magic fallbacks of `throw` (5 `tkf`, 4
   `tax`, ilvl 45) the 11 candidate lists logged all have `n = 0` (`pick no-candidate magic` 11), the other 7 picks
   drew their attempt bit and declined before a list (`pick no-roll magic` 7), and all 9 magic builds end with no affix
-  (`magic none` 9, `check-cube.txt`). Control: `tools/affixes.py survey` lists `tkf` and `tax` with no magic candidate on either side only at
-  item version 1; at version 101 both sides have rows, so a reading without C5a would have found candidates at these
-  alvls. The step note's "with stock data only classic throwing weapons then have no affix and no rare name at all" is
+  (`magic none` 9, `check-cube.txt`). Control (*corrected at the `lane/h2b` review, 2026-10-20*: the lane's control,
+  "at version 101 both sides have rows", does not separate C5a from the rows' own version gate): at item version 1,
+  ilvl 45, with C5a removed and every other test of `tools/affixes.py` kept, `tkf` has 32 prefix and 35 suffix
+  candidates and `tax` 30 and 34 (alvl 44 and 42), against 0 with C5a
+  (`check/review/c5a_control.txt`, script `c5a_control.py`, manifest `check/review/review-manifest.sha256`), so a
+  reading without C5a would have found candidates. The step note's "with stock data only classic throwing weapons then have no affix and no rare name at all" is
   the survey's version-1 list (`check-survey.txt`, read against the tables): its weapon records of table version 0
   are the 18 classic throwing weapons (types `tkni`, `taxe`, `jave`: `tkf`, `tax`, `bkf`, `bal`, `jav`, `pil`, `ssp`,
   `glv`, `tsp` and the exceptional `9bk`, `9tk`, `9b8`, `9ta`, `9ja`, `9pi`, `9s9`, `9gl`, `9ts`), each with no prefix,
@@ -1108,7 +1111,9 @@ of `check/check-sweep_h2b-perlog.txt`, `check/check-items_chain.txt`, `check/che
   `ITEMS_PickRareName` count 0 candidates (`RNE n 0`, the run's 18 empty scans), the second scan carries the item seed of the
   first (9 of 9: the empty first scan drew nothing), and the build returns at 0x005C1E71 (`RBF`, 9; `rare: no name` 9
   in `check-cube.txt`). R1's refusal is the same instruction pattern as C5a (version < 100, then stackable, then
-  `Throwable`, 0x0065E71D–0x0065E737). Control: the same bases have name candidates at item version 101 (survey). The
+  `Throwable`, 0x0065E71D–0x0065E737). Control (*corrected at the `lane/h2b` review*, as for aff 13): at item version
+  1 with that refusal removed, `tkf` has 36 prefix-name and 19 suffix-name candidates and `tax` 37 and 18, against 0
+  with it (`check/review/c5a_control.txt`). The
   step note (L463) is the survey's list, as for aff 13. (0x0065E71D–0x0065E737, 0x005C1B7E,
   fn:ITEMS_PickRareName@0x005C1AB0, fn:ITEMS_RareNameTypeOk@0x0065E710, run:2026-10-20-sweep-items-chain)
 - **aff 24** (L483) **raised in part.** [C] A rare build that fails for want of a name falls back to magic with the

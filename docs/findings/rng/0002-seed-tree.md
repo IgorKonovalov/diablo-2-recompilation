@@ -229,7 +229,7 @@ No struct in `re/types/` exists yet.
 | `0x006427F0` | `DRLG_ActFromLevelId` | act index from level ID (threshold table at `0x006EB2F0`) | I |
 | `0x00555230` | `sub_00555230_SUnitCreate` | server unit constructor; seeds every non-player unit from game `+0xD0` | C |
 | `0x00552DF0` | `sub_00552DF0_UnitSeedInit` | `unit+0x20 = init(step(parent).low)`, `+0x28 = low`; null parent → entropy | C |
-| `0x00552E90` | `sub_00552E90_ItemSeedInit` | items: one more game-seed draw seeds the item data | I |
+| `0x00552E90` | `sub_00552E90_ItemSeedInit` | items: one more game-seed draw seeds the item data | (`C` since the `lane/h2b` review: run:2026-10-20-sweep-items-chain) | C |
 | `0x008846E8` | `g_UnitSeedSaltCounter` | salt counter for the null-parent path (`2 × counter`) | I |
 | `0x00465FD0` | `sub_00465FD0_UnitInit` | **client** unit constructor: seed `+0x20` from client room `+0x6C` if (x, y) ≠ (0, 0) | C |
 | `0x00466200` | `sub_00466200_UnitInitB` | same derivation, second client constructor | C |

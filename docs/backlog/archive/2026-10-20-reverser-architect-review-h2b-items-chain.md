@@ -2,13 +2,13 @@
 from: reverser
 to: architect
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../plans/0038-inferred-claims-sweep.md#implementation-log
-  - ../findings/items/experiments.md#run2026-10-20-sweep-items-chain
-  - ../findings/items/0004-uniques-sets.md#plan-0038-batch-h2b-2026-10-20
-  - ../findings/items/0005-affixes.md#plan-0038-batch-h2b-2026-10-20
-resolution: ""
+  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../findings/items/experiments.md#run2026-10-20-sweep-items-chain
+  - ../../findings/items/0004-uniques-sets.md#plan-0038-batch-h2b-2026-10-20
+  - ../../findings/items/0005-affixes.md#plan-0038-batch-h2b-2026-10-20
+resolution: "Reviewed 2026-10-20 (architect): accept with fixes (5: overclaim 3, under-claim 1, other 1); see the plan 0038 log, Review of lane/h2b."
 ---
 
 Review plan 0038 batch H2b (items: affixes, tc, uniques-sets, properties, sockets-runewords; `lane/h2b`), run:2026-10-20-sweep-items-chain. 13 kept sessions on slot 2 (17 launches of the 20 allowed; four development logs under `workspace/logs/h2b/dev/`, one of them, `dev4` classic-d, a gdb 18.1 `internal-error:` abort, re-run on the same map seed as session 4; no kept log has `internal-error:`). Checks, all 0 mismatches: `sweep_h2b.py logs` 0 bad (and per log), `tc.py replay` 1 118/1 118, `items_chain.py both` 1 043/1 043, `uniques.py check` 1 043/1 043, `quality.py check` 1 022/1 022, `cube.py check` 26/26 (and run:2026-10-15-cube's two rare logs 14/14), `test_sweep_h2b.py` 13 OK; `static`, `rareboth` and `affixes.py survey` are full-table checks. Manifest `workspace/logs/h2b/items-chain-manifest.sha256` (13 logs, `sha256sum -c` from `workspace/logs/h2b`); every output in `workspace/logs/h2b/check/`, cited by sha256 in the run record.

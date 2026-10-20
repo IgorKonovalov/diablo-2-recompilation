@@ -142,7 +142,7 @@ community text had been read when it was written.
   194) and took that many gems. `ITEMS_SetSockets`' own clamps are not reached by the run and stay inferred (§ 7).
   (run:2026-10-15-sockets)
   *2026-10-20, plan 0038 batch H2b:* the size, 6 and `ItemMaxSockets` clamps and their order are now reached on the
-  drop path (34 calls, sock 42 raised in part); the quality clamps are not, [§ Plan 0038 batch H2b](#plan-0038-batch-h2b-2026-10-20).
+  drop path (34 calls, sock 42 raised in part), as steps of the cap: no request exceeded the cap; the quality clamps are not, [§ Plan 0038 batch H2b](#plan-0038-batch-h2b-2026-10-20).
 
 ## Leads used
 
@@ -716,7 +716,9 @@ ItemData->flags |= 0x800;  SetStat(item, 194, r);
 - [I] **Order of the clamps:** inventory size and 6, then quality, then `ItemMaxSockets` (ilvl band and `gemsockets`,
   items/0006 § 6). Then `max(n, 1)`, then the cap. When the cap is 0 nothing is written, not even the flag.
   (fn:ITEMS_SetSockets@0x0062BCB0, fn:sub_0062BC20_ItemMaxSockets@0x0062BC20) *2026-10-20, plan 0038 batch H2b:* this
-  order `[C]` on the drop path (34 calls; the `cap < 1` return not reached), [§ Plan 0038 batch H2b](#plan-0038-batch-h2b-2026-10-20).
+  order `[C]` on the drop path for the cap's steps (size and 6, quality, `ItemMaxSockets`, each logged); `max(n, 1)`,
+  the final clamp of the request and the `cap < 1` return were not reached (every request lay in `1..cap`; scoped at
+  the `lane/h2b` review), [§ Plan 0038 batch H2b](#plan-0038-batch-h2b-2026-10-20).
 - [I] **Callers:** `sub_00556B60_ItemRollSockets` (two calls), `sub_00558D90_ItemCreate` (0x00558F60, a creation
   record's forced count), `sub_00565AB0_RecipeOutputCreate` (cube), and 0x0057A3E2 (not followed; plan 0032's quest
   reward). (fn:sub_00556B60_ItemRollSockets@0x00556B60, fn:sub_00565AB0_RecipeOutputCreate@0x00565AB0)
@@ -984,7 +986,10 @@ SetSockets: written = min(max(n, 1), cap)                                  34
 - **sock 42** (L521, F1) **raised in part.** [C] 34 calls, all from the drop socket roll (return 0x00556C61), follow
   F1 with 0 mismatches: the product `p` of the record's inventory size, the cap `min(p, 6)`, which the 6 lowered in
   3 calls (`p` > 6), the quality step (none for qualities 2 and 3), `ItemMaxSockets` as F5 gives it, which lowered the
-  cap in all 34, and the value written `min(max(n, 1), cap)`. **Remainder `[I]`:** the quality branches (4, 5 and
+  cap in all 34, and the value written `min(max(n, 1), cap)`. *Scoped at the `lane/h2b` review (2026-10-20):* every
+  request lay in `1..cap` (`n` 1–3, the final cap 1–4), so the value written equals the request in all 34 and a
+  reading that wrote `n` unclamped matches too: the `[C]` covers the cap's computation, logged at each step, not the
+  clamp of the write. **Remainder `[I]`:** `max(n, 1)` and the final `min` acting on the request; the quality branches (4, 5 and
   7, 6, 8 and 9: no caller in the run passes those qualities; the cube rows 17, 18, 65, 149 and the quest reward at
   0x0057A3E2 do, H6a and H6b), a request above the final cap (the drop roll asks `start mod cap + 1` with a cap already
   at most `ItemMaxSockets`, so it never is; the only stock exception is the inventory clamp of twelve sorceress
@@ -1000,7 +1005,8 @@ SetSockets: written = min(max(n, 1), cap)                                  34
 
 **Correction carried (rule 12):** the Answer's load-path bullet ("`ITEMS_SetSockets`' own clamps are not reached by the
 run and stay inferred (§ 7)") and § 7's two `[I]` bullets on the clamps and their order get dated notes pointing here:
-the size, 6 and `ItemMaxSockets` clamps and their order are now reached on the drop path; the quality clamps are not
+the size, 6 and `ItemMaxSockets` clamps and their order are now reached on the drop path, as steps of the cap (no
+request exceeded the cap, so the clamp of the write is not; review scope); the quality clamps are not
 (fn:ITEMS_SetSockets@0x0062BCB0, run:2026-10-20-sweep-items-chain).
 
 **Tally:** 1 statement: 1 raised in part (sock 42); the S2c piece of sock 44 in part.

@@ -262,7 +262,7 @@ after the `enabled` bit test (`test [0x6CE268], eax` / `je` skip at `0x005568AD`
 | `0x005C2740` | `sub_005C2740_ItemBuildSetV0` | version-0 set builder (by set membership) | I |
 | `0x005573F0` | `sub_005573F0_ItemFallbackRare` | reset, quality 6, `ITEMS_BuildRare` | C |
 | `0x00557380` | `sub_00557380_ItemFallbackMagic` | reset, quality 4, `ITEMS_BuildMagic` | C |
-| `0x00557320` | `sub_00557320_ItemFallbackSuperior` | reset, quality 3, `ITEMS_BuildSuperior` | I |
+| `0x00557320` | `sub_00557320_ItemFallbackSuperior` | reset, quality 3, `ITEMS_BuildSuperior` | (`C` since the `lane/h2b` review: run:2026-10-20-sweep-items-chain) | C |
 | `0x005572A0` | `sub_005572A0_ItemFallbackNormal` | reset, quality 2, normal builder | I |
 | `0x00557250` | `sub_00557250_ItemClearAffixes` | 3 prefixes, 3 suffixes, the two rare names, file index −1 | I |
 | `0x005C21A0` | `ITEMS_BuildRare` | fails at once if the type cannot be rare; else the rare builder | I |
@@ -274,7 +274,7 @@ after the `enabled` bit test (`test [0x6CE268], eax` / `je` skip at `0x005568AD`
 | `0x00556D80` | `sub_00556D80_ItemBuildNormalV0` | normal builder, version 0 | I |
 | `0x0065FEC0` | `sub_0065FEC0_ItemApplyProps` | unique (mode 3, 12 slots) and set (mode 4) properties, `items/properties` | I |
 | `0x00556CA0` | `sub_00556CA0_ItemRollEthereal` | post-switch ethereal roll (item seed); `[C]` in [items/0006 § 6](0006-properties.md) (run:2026-10-14-props, run:2026-10-14-props-forced) | C |
-| `0x00556B60` | `sub_00556B60_ItemRollSockets` | post-switch socket roll for qualities 1..3 (item seed) | I |
+| `0x00556B60` | `sub_00556B60_ItemRollSockets` | post-switch socket roll for qualities 1..3 (item seed) | (`C` since the `lane/h2b` review: run:2026-10-20-sweep-items-chain) | C |
 | `0x0062E9E0` | `sub_0062E9E0_ItemTypeMagic` | `ItemTypes.Magic` (`+0x14`) | I |
 | `0x0062E990` | `sub_0062E990_ItemTypeRare` | `ItemTypes.Rare` (`+0x15`) | I |
 | `0x0062EA30` | `sub_0062EA30_ItemTypeNormal` | `ItemTypes.Normal` (`+0x16`); 1 when the type has no record | C |
@@ -1082,6 +1082,17 @@ times), with dated notes there pointing here. The same list's "an item of type 1
 d-none (us 10).
 
 **Tally:** 5 statements: 2 raised (us 9, 39), 2 raised in part (us 7, 35), 1 reclassified d-none (us 10).
+
+**Symbols, ruled at the `lane/h2b` review (2026-10-20): five more I → C**, each by its logged entry or output against
+a model with 0 mismatches in run:2026-10-20-sweep-items-chain; the evidence column moves to the finding holding the
+`[C]` statement. `sub_00552E90_ItemSeedInit` (its item seed at `GS1` = `{g2.low, 666}` in 1 043 creations, here) and
+`sub_00557320_ItemFallbackSuperior` (nine logged resets to `{S, 666}`, index −1, quality 3, us 35, here);
+`sub_00556B60_ItemRollSockets` (the tors draw and its control, items/0006 prop 20) and
+`sub_0062BC20_ItemMaxSockets` (its result at `SSM` = the F5 model in 34 calls, items/0006 § 6 and items/0007 sock 42);
+`ITEMS_SetSockets` (34 logged calls, the cap's steps as § 7 reads them, items/0007 sock 42).
+(fn:sub_00552E90_ItemSeedInit@0x00552E90, fn:sub_00557320_ItemFallbackSuperior@0x00557320,
+fn:sub_00556B60_ItemRollSockets@0x00556B60, fn:sub_0062BC20_ItemMaxSockets@0x0062BC20, fn:ITEMS_SetSockets@0x0062BCB0,
+run:2026-10-20-sweep-items-chain)
 
 ## Data touched
 

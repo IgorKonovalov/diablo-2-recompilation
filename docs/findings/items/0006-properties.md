@@ -264,7 +264,7 @@ backlog entry 2026-10-14 reverser → architect (plan 0024 Phase 1b contradictio
 | `0x0065EB30`–`0x0065FD20` | `PROP_Func01_Roll` … `PROP_Func36_RandClassSkill` | the handlers, § 4 | I |
 | `0x0065E4D0` | `ITEMS_MakeEthereal` | flag `0x400000`, base damage or defense × 3 / 2 | I |
 | `0x0062A8D0` | `ITEMS_IsEthereal` | `ItemData+0x18 & 0x400000` | I |
-| `0x0062BCB0` | `ITEMS_SetSockets` | clamps and stat 194 | I |
+| `0x0062BCB0` | `ITEMS_SetSockets` | clamps and stat 194 | (`C` since the `lane/h2b` review: run:2026-10-20-sweep-items-chain) | C |
 | `0x00627DF0` | `ITEMS_GetStartSeed` | `ItemData+0x10` | I |
 | `0x00625E00` | `sub_00625E00_ItemMaxDurability` | evaluated stat 73 | I |
 | `0x00624F60` | `sub_00624F60_StatListGetValue` | a stat's cached full value (list `+0x48`, or the base array `+0x24`) | I |
