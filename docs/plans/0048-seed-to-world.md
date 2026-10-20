@@ -115,3 +115,16 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-20 — Drafted (architect, `lane/plans45`).** Status `proposed`.
 - **2026-10-20 — Approved (owner, via the orchestrator).** Plans 0045–0049 and ADR-0020 approved as proposed; the run
   order of the [plans index](README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049) is the current queue.
+- **2026-10-20 — Phase 0 done, review requested (reverser, `lane/p48a`, static, no Ghidra, no harness).**
+  [chain/0001](../findings/chain/0001-oracles.md) lists **31 boundary oracles** of the core and enabler specs (seed 21,
+  seed and result 3, result 2, value 5; first named in items 9, monsters 8, drlg 7, objects 6, data 1), each with its
+  status: 11 already replaced in a chained check, 1 modelled behind a switch, 10 Phase 1 candidates, 5 inputs, 4 off the
+  chain. Surprises: `ITEMS_RollStaffMods` is already modelled (plan 0038 batch S2b, `--staff model`, still not the
+  default), and the object marks into the collision grid were modelled in plan 0027 Phase 2; what stays of the snapshot
+  is the player, walk-in, item and corpse marks. Activation order is an input beyond the per-room seeds (game seed,
+  object-region seed, near lists). Two input classes not in *Context* are proposed: the game seed at a drop and the
+  killer's magic find. Recount: the kept grep (162 lines, 169 matches, 22 files on `ad130d7`) and
+  `tools/oracle_ledger.py`, which checks the finding's § 6 ledger line for line (25 structural, 3 "no oracle", 134
+  naming an oracle). Proposed retirements for the review to rule: oracles 2, 16, 17 (46), 14, 22, 19, 21, 20, 7, 6, 13
+  ([§ 4](../findings/chain/0001-oracles.md#4-proposed-phase-1-retirements-for-the-architects-ruling)). Five spec
+  passages that lag the models are listed for Phase 3 (§ 5).
