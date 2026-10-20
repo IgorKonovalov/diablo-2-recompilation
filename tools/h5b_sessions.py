@@ -47,6 +47,10 @@ def shelves(n):
                       "180"], 210)
 
 
+def traps(types="5,7,8", n=3):
+    return ("pilot", ["objop", "--trap-types", types, "--times", str(n), "--done", "OO0", "--time", "150"], 180)
+
+
 def descend(lid, rows, extra=()):
     return ("until", (lid, ["farm", "--sweep", "--descend", rows, "--descend-time", "240", "--time", "5"] + NOVA
                       + list(extra), 300, 4), 0)
@@ -88,6 +92,10 @@ SESSIONS = {
                                                descend(37, "18"), explore(120)]),
     # objects 41, 42: trapped souls 380 (OperateFn 48) in the City of the Damned; fissure 399 if its Mesa room comes
     "cotd": ("ObjNova", "enter-normal", 3903, [wp(4, 2), explore(160, "1,3,4,5,48")]),
+    # trapped souls again: cotd's explore operated 1 of 8, so objop on 380/381 from the OBJS lines after the explore
+    "cotd2": ("ObjNova", "enter-normal", 3916, [wp(4, 2), explore(120, "1,3,4,5,48"),
+                                               ("pilot", ["objop", "--obj-cls", "380,381", "--obj-mem", "--times",
+                                                          "8", "--done", "OO0", "--time", "300"], 330)]),
     # objects 6, 35: the Arcane Sanctuary's teleport pads (OperateFn 27) and the Summoner's room (582)
     "arcane": ("ObjNova", "enter-normal", 3904, [wp(2, 8),
                                                 ("pilot", ["objop", "--obj-cls", "192,304,305,306", "--times", "4",
@@ -95,8 +103,31 @@ SESSIONS = {
                                                 explore(120)]),
     # objects 3, 15, 16, 17, 50: Flayer Dungeon (shrine group 66 on slot 0 at ObjPrb 80, members Parm0 3 only, so
     # no health shrine and the due rule's forced conversion once 75 % of the rooms are gated; small levels for caps)
-    "flayer": ("ObjNova", "enter-normal", 3905, [wp(3, 4), descend(88, "53,54"), explore(140),
+    "flayer": ("ObjNova", "enter-normal", 3905, [wp(3, 4), descend(88, "54"), explore(140),
                                                 descend(89, "56"), explore(100)]),
+    # the Swampy Pit (levels 86, 87: the same slot-0 group 66 at ObjPrb 80 and slot-2 group 62 as 88, 89); flayer's
+    # first descend took row 53 into 86 (LvlWarp 53 is 78 -> 86, 54 is 78 -> 88), so it is a target of its own
+    "flayer2": ("ObjNova", "enter-normal", 3917, [wp(3, 4), descend(86, "53"), explore(140),
+                                                 descend(87, "56"), explore(100)]),
+    # the flayer session again, with a new map seed, after its descend was fixed
+    "flayer3": ("ObjNova", "enter-normal", 3918, [wp(3, 4), descend(88, "54"), explore(140),
+                                                 descend(89, "56"), explore(100)]),
+    # sparkly chest a third time (cave2's objop gave no status lines; objop now prints one every 20 s)
+    "cave3": ("ObjNova", "enter-normal", 3913, [wp(1, 2), descend(9, "0,1,2,3"), explore(40), descend(13, "5"),
+                                               explore(40),
+                                               ("pilot", ["objop", "--obj-cls", "397", "--obj-mem", "--times", "1",
+                                                          "--done", "OO0", "--time", "180"], 210)]),
+    # objects 4, 40, 45, 46, 52: trapped containers of types 5, 7 (OBJTRAP_ObjectCreate) and 8 (OBJTRAP_MonsterSpawn,
+    # levels < 75 only) in the Catacombs; after each level's explore, objop on the ones the OUX lines list
+    "traps1": ("ObjNova", "enter-normal", 3921, [wp(1, 9), explore(120), traps(), descend(36, "18"), explore(120),
+                                                traps(), descend(37, "18"), explore(120), traps()]),
+    "traps2": ("ObjNova", "enter-normal", 3922, [wp(1, 9), explore(120), traps(), descend(36, "18"), explore(120),
+                                                traps(), descend(37, "18"), explore(120), traps()]),
+    # objects 41, 42: evil urns 466 (ObjGroup 107, slot 0 of levels 113-119 at ObjPrb 25): Crystalline Passage (113)
+    # straight from the waypoint (harro's second waypoint trip failed after its NPC walks), then objop on 466
+    "ice": ("ObjNova", "enter-normal", 3923, [wp(5, 4), explore(160, "1,3,4,5,68"),
+                                             ("pilot", ["objop", "--obj-cls", "466", "--obj-mem", "--times", "3",
+                                                        "--done", "OO0", "--time", "200"], 230)]),
     # collision 39, objects 23, 27: Harrogath (class 523, size 0 with HasCollision; InitFn 66, 68) then the ice caves
     "harro": ("ObjNova", "enter-normal", 3906, [wp(5, 1), ("pilot", ["npc", "larzuk", "trade", "--stay"], 150),
                                                ("pilot", ["npc", "anya", "trade", "--stay"], 150),

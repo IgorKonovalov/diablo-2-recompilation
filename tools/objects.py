@@ -69,7 +69,8 @@ from obj_survey import decode, txt_col  # noqa: E402
 M = 0x6AC690C5
 INIT_HIGH = 666
 TOWNS = {1, 40, 75, 103, 109}
-ORACLE_INITFNS = {46, 47, 54, 55, 62, 66, 68, 69, 79}
+ORACLE_INITFNS = {46, 47, 54, 55, 62, 66, 68, 69, 79,
+                  18, 19, 25, 43, 49, 50, 52, 60, 71}   # + the nine that create monsters (objects/0001 § S4b row 25)
 MODELLED_INITFNS = {1, 2, 3, 27, 28, 34, 57, 58}
 INIT_TABLE = (set(range(1, 80)) - {35, 36, 40})       # g_ObjInitFns 0x00731BC0: the non-null entries
 THEMES_ENABLED = {1, 2, 4, 5, 6}           # g_ObjThemeFns 0x00731E68 entries with enabled 1 (read from the image)
@@ -1584,6 +1585,8 @@ class Checker:
         b = self.O.draw() & 1
         rec["r"], rec["b"] = r, b
         rec["item"] = ("isc " if b else "tsc ") if r <= 12 else ("ibk " if b else "tbk ")
+        self.hit("bookshelf operates (OperateFn 26): r = %d (%s), b = %d -> %s" % (
+            r, "<= 12" if r <= 12 else "> 12", b, rec["item"].strip()))
         self.oracle_until({"OOX"}, "bookshelf item drop 0x00559A30 (item creation)")
         u["us"].s = parse_seed(self.L[self.i][1]["us"])
 
@@ -1597,8 +1600,12 @@ class Checker:
         if r < 90:
             if self.drop(u, 0, rec) is not None:
                 self.set_mode(u, 5)
+                self.hit("trapped soul operates (OperateFn 48): r < 90, an item, mode 5")
+            else:
+                self.hit("trapped soul operates (OperateFn 48): r < 90, no item")
         else:
             self.set_mode(u, 1)
+            self.hit("trapped soul operates (OperateFn 48): r >= 90, mode 1")
 
     def op_68(self, u, rec):
         """OBJOP_EvilUrn 0x00586520 (466): in mode 0 only, ObjectChestDrop(0) first; only if it made an item: mode 1,
@@ -1607,10 +1614,13 @@ class Checker:
         if u["mode"] != 0:
             return
         if self.drop(u, 0, rec) is None:
+            self.hit("evil urn operates (OperateFn 68): no item")
             return
         self.set_mode(u, 1)
         r = self.O.draw() % 255
         rec["r255"] = r
+        self.hit("evil urn operates (OperateFn 68): an item, r = low mod 255 %s Parm7" % (
+            "<=" if r <= (self.t.objs[u["cls"]]["Parm7"] & 0xFFFFFFFF) else ">"))
         if r <= (self.t.objs[u["cls"]]["Parm7"] & 0xFFFFFFFF):
             rec["monster"] = True
             self.oracle_until({"OOX", "TF"}, "evil urn special monster (SpecialMonSpawn)")

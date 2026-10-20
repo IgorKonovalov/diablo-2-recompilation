@@ -1851,9 +1851,15 @@ def cmd_objop(args):
     misses = [0]
     gate = NovaGate(args.radius, args.give_up)
     p.nova_hold = args.nova_hold
+    t_note = [time.time(), 0]
     while time.time() - t0 < args.time and done < args.times:
         st.poll()
+        if time.time() - t_note[0] > 20:              # a status line every 20 s (plan 0038 H5b: silent objops)
+            print("objop: %.0f s, player %s, %d Nova bursts since the last note" % (
+                time.time() - t0, st.pos and st.pos[:3], t_note[1]), flush=True)
+            t_note[0], t_note[1] = time.time(), 0
         if not args.no_nova and gate.cast(p, st):    # Nova first at whatever it can hurt in range
+            t_note[1] += 1
             upkeep(args, p)
             continue
         objs = [o for o in getattr(st, "objs_cls", []) if o[0] in classes and (o[1], o[2]) not in visited]
@@ -1890,6 +1896,13 @@ def cmd_objop(args):
             if st.pos and math.hypot(st.pos[0] - px, st.pos[1] - py) < 3:
                 blind[1].add(c)
             continue
+        if getattr(args, "trap_types", None):
+            # plan 0038 H5b: the containers whose trap type (interact & 0x7F at creation, OUX) is one of
+            # --trap-types, created closed, not operated yet, on this level (within 400 sub-tiles)
+            tt = {int(t) for t in str(args.trap_types).split(",") if t}
+            objs = [(c, x, y) for u, (c, x, y, m) in st.objs.items()
+                    if m == 0 and u not in st.operated and (st.obj_it.get(u, 0) & 0x7F) in tt
+                    and (x, y) not in visited and math.hypot(x - px, y - py) < 400]
         if not objs and getattr(args, "obj_mem", False):
             # plan 0038 H5b: an OBJS line lists only the objects near the player; head for one an earlier line
             # listed (same level: within 400 sub-tiles)
@@ -1938,7 +1951,8 @@ def cmd_objop(args):
                 break
         done += ok
         misses[0] = 0 if ok else misses[0] + 1
-        if len(classes) > 1 and (ok or misses[0] >= 4):
+        if (len(classes) > 1 or getattr(args, "trap_types", None) or getattr(args, "obj_mem", False)) \
+                and (ok or misses[0] >= 4):
             visited.add((o[1], o[2]))
             misses[0] = 0
         print("objop: click %d at (%d, %d) d %.1f: %s" % (done, o[1], o[2], d, "done" if ok else "no %s line" % args.done))
@@ -3024,6 +3038,8 @@ def main():
     ap.add_argument("--done-wait", type=float, default=6.0, help="npc: seconds to wait for the logger's confirmation")
     ap.add_argument("--linger-open", type=float, default=0.3, help="npc: seconds the window stays open")
     ap.add_argument("--close-wait", type=float, default=0.6, help="npc: seconds after the Escape")
+    ap.add_argument("--trap-types", default=None, help="objop: operate the containers whose trap type (interact & "
+                    "0x7F, from the OUX lines) is one of these, in place of --obj-cls (plan 0038 H5b)")
     ap.add_argument("--obj-mem", action="store_true", help="objop: when the latest OBJS line lists no object of "
                     "the classes, head for one an earlier OBJS line listed (within 400 sub-tiles; plan 0038 H5b)")
     ap.add_argument("--obj-cls", default="376", help="objop: the object class (objects.txt row), or several "
