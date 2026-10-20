@@ -26,6 +26,10 @@ oracles still taken from the log.
   MonPlace 2/3 windows and 29 tile units are predicted from `OPU0` to `OPUX` on the 62 world logs, 0 mismatches; 1 236
   of 1 265 objects windows now carry no oracle inside (§ 4). (fn:sub_0054E600_PresetMonSpawn@0x0054E600,
   fn:sub_0054E490_PresetClassSpawn@0x0054E490, fn:sub_0063EC70_LevelClassVariant@0x0063EC70, run:2026-10-15-objects)
+- [C] **Oracle 17 (InitFn 46) is retired**: `tools/objects.py` models `OBJINIT_CityDamnedSpawns` (16 calls, every
+  object-region draw) and `tools/monspawn.py` its 21 `MonSpawnTry` requests; InitFns 54 and 62 (11 calls, reached
+  although chain/0001 row 17 said not) stay seed oracles; 1 245 of 1 265 objects windows carry no oracle (§ 5).
+  (fn:OBJINIT_CityDamnedSpawns@0x005506D0, run:2026-10-15-objects)
 - [C] **`tools/chain.py gen`** reproduces the seed tree the rng/seeds worked example logged from `-seed N` alone (game
   seed, the four game-creation draws, act bases, Act II tombs, level seeds) (§ 1). (fn:GAME_InitSeeds@0x0052C280,
   fn:DRLG_ActCreate@0x00642DA0, fn:DRLG_LevelCreate@0x00642AE0, run:2026-10-11-seed-tree)
@@ -145,14 +149,33 @@ oracle left when it predicted every one of them.
   later creations of those classes are not mispredicted; 34 such creations still take their unit seed from the log
   (§ 3 had 122). (fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0, run:2026-10-15-objects)
 
+## 5. Oracle 17: InitFn 46, City of the Damned
+
+- [C] `tools/objects.py init_46` models `OBJINIT_CityDamnedSpawns` as read in the disassembly (the walk and its
+  draws are in [objects/0001 § Plan 0048 Phase 1](../objects/0001-object-population.md#plan-0048-phase-1-initfn-46-modelled-2026-10-20)):
+  all 16 calls of run:2026-10-15-objects (session 25, level 106) reproduce on the object-region seed, with each
+  `OBJ_PosTestPadded` call's two position tests predicted on the grid model and each request (`MT0`: room, class,
+  position, mode 1, radius −1, flags 0, entry room and game seeds) compared. (fn:OBJINIT_CityDamnedSpawns@0x005506D0,
+  fn:OBJ_PosTestPadded@0x00550220, run:2026-10-15-objects)
+- [C] `tools/monspawn.py` predicts the 21 requests from `MT0` to `MTX` (`RequestPass`: every `MonSpawnTry` draw on
+  the room seed, the creation's game-seed step and unit seed), so the window's seeds after each request are
+  predicted, not taken. (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:sub_00555230_SUnitCreate@0x00555230,
+  run:2026-10-15-objects)
+- [C] Over the 62 world logs, 1 245 of 1 265 objects windows now have no oracle left inside; the 20 others hold
+  InitFn 54 (7 windows), InitFn 62 (3) or a catapult preset (12 `OPUX`, in 12 windows). Control: `--cf i46-stored`
+  fails (10 mismatches). (fn:OBJINIT_CityDamnedSpawns@0x005506D0, run:2026-10-15-objects)
+- [I] InitFns 54 and 62 (7 and 4 calls on run:2026-10-15-objects; chain/0001 § 2 row 17 says 47–69 were not reached,
+  which is wrong for these two) and 47, 55, 66, 68, 69 (not reached) stay seed oracles: the assignment named InitFn 46
+  only. (data:g_ObjInitFns@0x00731BC0, run:2026-10-15-objects)
+
 ## Kept outputs
 
 `workspace/logs/chain-p1/`, one path base, `manifest.txt` (`sha256sum -c manifest.txt` from that directory):
 `o2-items-check.txt` (`tools/chain.py check` over the 133 item logs), `o14-world-check.txt` (over the 62 world
 logs), `o14-cf-{findadd-none,monprop-off,L0}.txt` (the controls), `o16-world-check.txt` and
-`o16-cf-{lcv-off,overlay-off}.txt` (oracle 16), and the input lists `inputs-world.sha256` and
+`o16-cf-{lcv-off,overlay-off}.txt` (oracle 16), `o17-world-check.txt` and `o17-cf-i46-stored.txt` (oracle 17), and the input lists `inputs-world.sha256` and
 `inputs-items.sha256` (paths relative to `chain-p1/`, so `sha256sum -c` runs from there too). The tool revisions
-behind these outputs are recorded in `tools-o14.sha256` and `tools-o16.sha256` (paths relative to the repository
+behind these outputs are recorded in `tools-o14.sha256`, `tools-o16.sha256` and `tools-o17.sha256` (paths relative to the repository
 root).
 
 ## Open questions

@@ -192,7 +192,7 @@ def check_items(path, ns, R):
 WORLD_PRED = ("unit seeds after SUnitCreate predicted", "region snapshots equal to the tracked region",
               "presets / restore / objects window predicted by tools/objects.py", "preset monsters",
               "windows RW1 -> RW4", "predicted by the collision model (presets window)",
-              "preset tile units")
+              "preset tile units", "requests of ")
 
 
 class World:
@@ -252,6 +252,7 @@ CF = {
     "L0": "oracle 14: the MonLvl column set L = 0 (a control that must NOT fail: L does not change the draw count)",
     "lcv-off": "oracle 16: the MonPlace fixed rows without LevelClassVariant and PresetFallenVariant",
     "overlay-off": "oracle 16: the presets-window predicates on the activation model without the window's marks",
+    "i46-stored": "oracle 17: InitFn 46's direction draw stored like the others (one OD line per step)",
 }
 
 
@@ -268,6 +269,9 @@ def apply_cf(name):
     elif name == "lcv-off":
         monspawn.PresetMonPass.level_class_variant = lambda self, cls: cls
         monspawn.PresetMonPass.fallen_variant = lambda self, cls: cls
+    elif name == "i46-stored":
+        import objects
+        objects.Seed.draw_unstored = objects.Seed.draw
     elif name == "overlay-off":
         monspawn.PresetMonPass.overlay = lambda self: self.chk.world.model
 

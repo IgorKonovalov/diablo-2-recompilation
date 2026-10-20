@@ -406,7 +406,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005502F0,func,OBJ_PosTestTight,,C,objects,docs/findings/objects/0001-object-population.md
 0x00550380,func,OBJ_PlaceRandom,,C,objects,docs/findings/objects/0001-object-population.md
 0x00550540,func,OBJ_PlaceRandomRoomSeed,,C,objects,docs/findings/objects/0001-object-population.md
-0x005506D0,func,OBJINIT_CityDamnedSpawns,,I,objects,docs/findings/objects/0001-object-population.md
+0x005506D0,func,OBJINIT_CityDamnedSpawns,,C,objects,docs/findings/objects/0001-object-population.md
 0x00550A30,func,OBJ_PlaceByOrientation,,C,objects,docs/findings/objects/0001-object-population.md
 0x00550C20,func,OBJPOP_Clusters,,C,objects,docs/findings/objects/0001-object-population.md
 0x00551150,func,OBJ_FliesAdd,,C,objects,docs/findings/objects/0001-object-population.md

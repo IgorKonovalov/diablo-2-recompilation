@@ -83,7 +83,7 @@ SPAWN_TAGS = {"P0", "PG", "PR", "PB", "PN", "PA", "PC", "PT", "PSP", "PGR", "PGX
               "MTI", "MPK", "HD0", "HDX", "TH0", "TH1", "AUR", "AUR2", "XF", "SU0", "SU1", "SUT", "SUX", "PM0", "PMC", "PMX"}
 CLIENT_TAGS = {"CN0", "CNR", "CNH"}
 SIDE_TAGS = {"SCI", "SCD", "WND", "WNDARM", "WRL", "RW0", "RW1", "RW2", "RW3", "RW4", "LC0", "RL", "AROOM",
-             "RRESEED", "OPU0", "OPUX"} | collision.COLL_TAGS | CLIENT_TAGS
+             "RRESEED", "OPU0", "OPUX", "OI0", "OIX"} | collision.COLL_TAGS | CLIENT_TAGS
 # plan 0048 Phase 1: the unit seed at MU is predicted (oracle 14); False restores the plan 0014 seed oracle
 UNIT_SEED_MODEL = True
 GAME_L = 1          # monsters/stats input L: game +0x6A or +0x74 not 0 (1 in every logged single-player game)
@@ -1320,6 +1320,30 @@ class PresetMonPass(Pass):
         return v
 
 
+class RequestPass(PresetMonPass):
+    """Plan 0048 Phase 1, oracle 17: one MonSpawnTry request (MT0 .. MTX) made by a caller tools/objects.py models
+    (InitFn 46's SpawnAtPos calls): the request's arguments and its entry room and game seeds are the caller model's,
+    asserted there against MT0; this predicts the request from MT0 to MTX (the draws, the creation, the unit seed)."""
+
+    def run(self):
+        mt = self.ev[0][1]
+        self.room, self.game = mt["room"], mt["game"]
+        self.lid = self.chk.room_lid_cur.get(self.room)
+        self.rs, self.gs = S(seed_t(mt["rs"])), S(seed_t(mt["gs"]))
+        self.diff, self.exp = self.chk.game_de.get(self.path, (None, None))
+        if self.diff is None or self.lid is None:
+            raise NotModelled("difficulty, game type or level not known")
+        self.rect = self.chk.world.rects.get(self.room)
+        if self.rect is None:
+            raise NotModelled("room rect not known")
+        self.rect = list(self.rect)
+        self.sci, self.groups, self.region, self.nspec = [], [], None, 0
+        u = self.spawn_try(self.room, None, mt["cls"], mt["a10"], mt["a14"], mt["x"], mt["y"], mt["rad"], mt["fl"])
+        if self.sci:
+            raise Mismatch("%d special-count increments not modelled" % len(self.sci))
+        return u
+
+
 class PresetPass(Pass):
     """Plan 0018: a special spawned in the presets window (RW1 -> RW2): a superunique (SU0 .. SUX) or a MonPlace 2 or 3
     preset (PM0 .. PMX). The room and game seeds are taken at the entry line (the window before it stays a seed
@@ -1755,6 +1779,7 @@ class Checker:
         W = self.world
         i = 0
         self.room_lid_cur, self.mt_room_cur, self.game_cur = {}, None, None
+        self.init_fn_cur = None
         while i < len(lines):
             tag, d, ln = lines[i]
             if "room" in d and "lid" in d and isinstance(d.get("room"), int):
@@ -1796,7 +1821,7 @@ class Checker:
                 # plan 0048: the window counts as predicted with no oracle inside when every oracle exit
                 # tools/objects.py took in it is one this checker predicted (a preset monster's OPUX)
                 left = [o for o in self.obj_rw4_oracles.get((path, ln), [])
-                        if not (o[0] == "OPUX" and (path, o[1]) in self.opu_confirmed)]
+                        if not (o[0] in ("OPUX", "MTX") and (path, o[1]) in self.opu_confirmed)]
                 k = ("windows RW1 -> RW4 with no oracle left inside" if not left else
                      "windows RW1 -> RW4 with an oracle left inside: " + ", ".join(sorted({
                          "InitFn %d" % o[2] if o[0] == "OIX" else o[0] for o in left})))
@@ -1859,6 +1884,13 @@ class Checker:
                 i = end
             elif tag == "OPU0" and d["type"] == 1:
                 i = self.preset_monster(lines, i, path)
+                continue
+            elif tag == "OI0":
+                self.init_fn_cur = d["fn"]
+            elif tag == "OIX":
+                self.init_fn_cur = None
+            elif tag == "MT0" and self.init_fn_cur == 46:
+                i = self.request(lines, i, path, "InitFn 46")
                 continue
             elif tag == "OPU0" and d["type"] == 5:
                 i = self.preset_tile(lines, i, path)
@@ -1963,6 +1995,29 @@ class Checker:
         except (Mismatch, collision.CollMismatch) as e:
             self.fail_("%s:%d preset monster class %d level %d room %08x: %s" % (path, ln, d["id"], d["lid"], d["room"], e))
             self.results["mismatch"] = self.results.get("mismatch", 0) + 1
+            self.skip_side(win[P.i:], path)
+        return end + 1
+
+    def request(self, lines, i, path, what):
+        """A MonSpawnTry request (MT0 .. MTX) of a caller tools/objects.py models: RequestPass predicts it; the MTX line
+        is added to opu_confirmed (the objects window's accounting) when it does."""
+        end = i + 1
+        while end < len(lines) and lines[end][0] != "MTX":
+            end += 1
+        win = lines[i:end + 1]
+        P = RequestPass(self, win, self.t, path)
+        f0 = self.fail
+        k = "requests of %s predicted MT0 -> MTX" % what
+        try:
+            P.run()
+            if self.fail == f0:
+                self.opu_confirmed.add((path, lines[end][2]))
+                self.stats[k] = self.stats.get(k, 0) + 1
+        except NotModelled as e:
+            self.oracle("request of %s not modelled: %s" % (what, e))
+            self.skip_side(win[P.i:], path)
+        except (Mismatch, collision.CollMismatch) as e:
+            self.fail_("%s:%d request of %s: %s" % (path, lines[i][2], what, e))
             self.skip_side(win[P.i:], path)
         return end + 1
 

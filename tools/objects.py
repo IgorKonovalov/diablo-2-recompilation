@@ -40,8 +40,9 @@ objgroup, objects, shrines), decoded with tools/excel_layouts.py, from --excel.
     are predicted from the model's rooms and near lists.
   * Creation: SUnitCreate class, position, flags and mode (OU0) and the unit's seed, mode, interact byte and sparkle
     flag at OIX / OUX; the InitFn draws (1 shrine, 2 trap byte, 3 chest lock and re-seed, 57 sparkly chest, 27, 28 gold
-    piles with the gold drop as a seed oracle, 34, 58); the monster-spawning and quest InitFns (46, 47, 54, 55, 62, 66,
-    68, 69, 79) are seed oracles (seeds asserted at OI0 and taken at OIX). A mode change draws RangeB(unit seed,
+    piles with the gold drop as a seed oracle, 34, 58, and since plan 0048 46: City of the Damned, whose MonSpawnTry
+    requests are compared here and predicted by tools/monspawn.py); the other monster-spawning and quest InitFns (47,
+    54, 55, 62, 66, 68, 69, 79) are seed oracles (seeds asserted at OI0 and taken at OIX). A mode change draws RangeB(unit seed,
     FrameDelta[mode] >> 3) when Sync is 0 (UNIT_AnimInit).
   * Operate (OO0 .. OOX): OperateFn 1 (casket), 3 (urn), 4 (chest: the sparkle quality, the 25 % empty chest, locked
     chests, the class-397 table) and 5 (barrel) on the object-region seed up to each ObjectChestDrop: the forced quality
@@ -69,8 +70,8 @@ from obj_survey import decode, txt_col  # noqa: E402
 M = 0x6AC690C5
 INIT_HIGH = 666
 TOWNS = {1, 40, 75, 103, 109}
-ORACLE_INITFNS = {46, 47, 54, 55, 62, 66, 68, 69, 79}
-MODELLED_INITFNS = {1, 2, 3, 27, 28, 34, 57, 58}
+ORACLE_INITFNS = {47, 54, 55, 62, 66, 68, 69, 79}
+MODELLED_INITFNS = {1, 2, 3, 27, 28, 34, 46, 57, 58}       # 46: plan 0048 Phase 1 (oracle 17)
 INIT_TABLE = (set(range(1, 80)) - {35, 36, 40})       # g_ObjInitFns 0x00731BC0: the non-null entries
 CLUSTER = {3: ([3, 28], 18, 5, 5, False), 1: ([79, 53, 1], 12, 5, 5, False), 79: ([79, 53, 1], 12, 5, 5, False),
            4: ([4, 9, 52, 94, 95], 12, 0, 1, True), 89: ([89, 284], 12, 5, 5, False),
@@ -256,7 +257,8 @@ class Mismatch(Exception):
 
 
 OBJ_TAGS = {"OGC", "OD", "OG", "OS", "OK", "OH0", "OHX", "OT", "OPU0", "OPUX", "OU0", "OUX", "OI0", "OIX", "OGP0",
-            "OGPX", "OO0", "OOX", "OC0", "OCT", "OCX", "RW0", "RW1", "RW2", "RW3", "RW4", "P0"}
+            "OGPX", "OO0", "OOX", "OC0", "OCT", "OCX", "RW0", "RW1", "RW2", "RW3", "RW4", "P0",
+            "MT0", "MTX"}             # plan 0048: InitFn 46's MonSpawnTry requests (tools/monspawn.py models inside)
 PASS_TAGS = ("HDR", "GAME", "RW0", "P0")
 COLL_SIDE = ("TL", "CB", "TCU", "RRESEED", "CM")     # tools/gdb/collision.py lines fed to the grid model (plan 0027)
 SKIP_TAGS = PASS_TAGS + COLL_SIDE
@@ -289,6 +291,12 @@ class Seed:
         self.s = step(self.s)
         if self.od is not None:
             self.od(self.s)
+        return self.s[0]
+
+    def draw_unstored(self):
+        """A step whose low word the code keeps in a register and never stores (the next step's store is the one the
+        OD watchpoint sees): InitFn 46's direction draw (0x005508EC..0x00550928)."""
+        self.s = step(self.s)
         return self.s[0]
 
     def rng(self, n):
@@ -941,6 +949,83 @@ class Checker:
                 u["us"].s = parse_seed(dx_["us"])
                 piles += 1
         self.covk("gold piles (InitFn 28)", (self.lid, n, piles))
+
+    def init_46(self, u, o):
+        """OBJINIT_CityDamnedSpawns 0x005506D0 (plan 0048 Phase 1, oracle 17), read in the disassembly
+        (0x005506D0-0x00550A2C). Context {game, unit, room, objrgn seed, rec, x, y}; every draw is on the object-region
+        seed (the context's +0x0C is OBJRGN_GetSeed's). Only when the object's mode is 0: (rx, ry, w, h) = the room's
+        rect; n = ((h * w >> 7) * 30) >> 8 (signed); up to 12 tries while n > 0: x = rx + Range(w - 4), y = ry +
+        Range(h - 4); if OBJ_PosTestPadded(x, y, 3, 3): class 404 if Step & 1 else 403, SpawnAtPos at the OBJECT's
+        cell (mode 1, radius -1, flags 0), on success UNIT_SetMode(object, 2) and n - 1; then k = 1, ok = 1 and a
+        walk: m = k >> 1; if m > 0 and Range(m) != 0, stop; if not ok, stop; ok = 0; up to max(n, 4) * 3 steps of
+        (d = Step & 7; x += (Step % 5 + 5) * DX[d] * 2; y += (Step % 5 + 5) * DY[d] * 2; ok = OBJ_PosTestPadded(x, y,
+        3, 3)) until ok; when ok: the class draw, k + 1, SpawnAtPos at (x, y), on success SetMode 2 and n - 1."""
+        if u["mode"] != 0:
+            self.hit("InitFn 46: object mode not 0, no spawn")
+            return
+        rect = self.cw.rects.get(self.room)
+        if rect is None:
+            raise Mismatch("line %d: InitFn 46: the room's rect is not logged" % self.ln)
+        rx, ry, w, h = rect
+        saved = self.rect
+        self.rect = rect
+        try:
+            n = s32((s32(s32(h * w) >> 7) * 30)) >> 8
+            tries = 12
+            while n > 0 and tries > 0:
+                x = rx + self.O.rng(w - 4)
+                y = ry + self.O.rng(h - 4)
+                if self.pos_padded(x, y, 3, 3):
+                    cls = 404 if self.O.draw() & 1 else 403
+                    if self.mon_spawn_46(u["x"], u["y"], cls):
+                        self.set_mode(u, 2)
+                        n -= 1
+                    k, ok = 1, True
+                    while True:
+                        m = k >> 1
+                        if m > 0 and self.O.rng(m) != 0:
+                            break
+                        if not ok:
+                            break
+                        ok = False
+                        lim = max(n, 4) * 3
+                        for _ in range(lim):
+                            dr = self.O.draw_unstored() & 7     # stored only with the next step (one OD)
+                            x += (self.O.draw() % 5 + 5) * DX[dr] * 2
+                            y += (self.O.draw() % 5 + 5) * DY[dr] * 2
+                            if self.pos_padded(x, y, 3, 3):
+                                ok = True
+                                break
+                        if not ok:
+                            continue
+                        cls = 404 if self.O.draw() & 1 else 403
+                        k += 1
+                        if self.mon_spawn_46(x, y, cls):
+                            self.set_mode(u, 2)
+                            n -= 1
+                tries -= 1
+        finally:
+            self.rect = saved
+
+    def mon_spawn_46(self, x, y, cls):
+        """SpawnAtPos(game, room, x, y, class, mode 1, radius -1, flags 0): the request (MT0) is compared with the
+        model; inside, MonSpawnTry is tools/monspawn.py's (it predicts the window from MT0 to MTX); here the room
+        and game seeds are taken at MTX, and the object-region seed must not move."""
+        tag, d = self.next_obj("MT0")
+        self.ok((d["room"], d["box"], d["cls"], d["a10"], d["a14"], d["x"], d["y"], d["rad"], d["fl"]) ==
+                (self.room, 0, cls, 1, 0, s32(x), s32(y), -1, 0),
+                "line %d: InitFn 46 request %s, model class %d at (%d, %d)" % (self.ln, json.dumps(d)[:160], cls, x, y))
+        self.seeds_eq(d, "MT0 (InitFn 46)", os_=False)
+        j = self.i
+        while j < len(self.L) and self.L[j][0] != "MTX":
+            if self.L[j][0] == "OD":
+                raise Mismatch("line %d: object-region draw inside InitFn 46's MonSpawnTry" % self.L[j][2])
+            j += 1
+        dx = self.skip_until("MTX", "InitFn 46 MonSpawnTry: seeds taken at MTX here, predicted by tools/monspawn.py")
+        self.win_oracles.append(("MTX", self.ln))
+        self.take(dx, os_=False)
+        self.hit("InitFn 46 requests")
+        return dx["eax"] != 0
 
     def init_34(self, u, o):
         if self.O.draw() & 1:

@@ -1129,6 +1129,27 @@ Static: objdump scans of the whole image. No game run.
 - Not covered, for `TrapProb`: a function that keeps an Objects record pointer from elsewhere (an object unit's data)
   and reads `+0xCC` later. The question narrows to that; it stays in § Open questions.
 
+## Plan 0048 Phase 1: InitFn 46 modelled (2026-10-20)
+
+`OBJINIT_CityDamnedSpawns` (InitFn 46, oracle 17 of [chain/0001](../chain/0001-oracles.md)) is no longer a seed oracle:
+`tools/objects.py init_46` models it, and `tools/monspawn.py` predicts each of its `MonSpawnTry` requests. Record:
+[chain/0002 § 5](../chain/0002-retirements.md#5-oracle-17-initfn-46-city-of-the-damned).
+
+- [C] Read in the disassembly (0x005506D0–0x00550A2C): only for an object in mode 0; the room's rect (x, y, w, h);
+  n = ((h·w >> 7)·30) >> 8; up to 12 tries while n > 0, each x = rx + Range(O, w − 4), y = ry + Range(O, h − 4)
+  and `OBJ_PosTestPadded(x, y, 3, 3)`; on a pass, class 404 if `Step(O)` is odd else 403, `SpawnAtPos` at the
+  **object's** cell (mode 1, radius −1, flags 0), and on success `UNIT_SetMode(object, 2)` and n − 1; then a walk from
+  (x, y): with k = 1, stop when `Range(O, k >> 1)` (no draw while k >> 1 = 0) is not 0 or the last walk failed; up to
+  max(n, 4)·3 steps of d = `Step(O)` & 7, x += (`Step(O)` % 5 + 5)·DX[d]·2, y += (`Step(O)` % 5 + 5)·DY[d]·2
+  (`g_ObjDir8X/Y`), until `OBJ_PosTestPadded` passes; then the class draw, k + 1 and `SpawnAtPos` at (x, y). Every
+  draw is on the object-region seed: the context's `+0x0C` is the seed `OBJRGN_GetSeed` returns. The 16 calls of
+  run:2026-10-15-objects (session 25) reproduce: 1 373 object-region draws matched in that log, 21 requests
+  compared, 0 mismatches. (fn:OBJINIT_CityDamnedSpawns@0x005506D0, fn:OBJ_PosTestPadded@0x00550220,
+  fn:OBJRGN_GetSeed@0x00546FA0, fn:UNIT_SetMode@0x00624690, data:g_ObjDir8X@0x00731B7C, run:2026-10-15-objects)
+- [C] The direction draw is not stored: the code keeps its low word in a register and stores only the next step, so
+  the `OD` watchpoint shows two lines for the three steps of a walk step (0x005508EC–0x00550928). The model that
+  stores every step fails (`tools/chain.py check --cf i46-stored`, 10 mismatches). (0x005508EC, run:2026-10-15-objects)
+
 ## Data touched
 
 - Levels: `tbl:Levels.txt:ObjGrp0` and `tbl:Levels.txt:ObjPrb0` (`..7`, `+0x0E5`, `+0x0ED`), `tbl:Levels.txt:Themes`
