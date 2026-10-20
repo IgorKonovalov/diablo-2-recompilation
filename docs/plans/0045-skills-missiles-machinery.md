@@ -543,3 +543,42 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   batch, since its contradicted cases are Phase 2 cases. **Plan 0046 Phase 0 (archivist) may start**: its gate (P1.3
   reviewed, the machinery named, tier A fixed) is met. Review request
   [closed](../backlog/archive/2026-10-20-reverser-architect-lane-p45h-review-plan-0045-p1-3-handlers.md).
+- **2026-10-20 — Phase 1b landed for review (reverser, `lane/p45b`, no Ghidra, no harness).** Community cross-check of
+  [skills/0001](../findings/skills/0001-dispatch.md#leads-used), [skills/0002](../findings/skills/0002-missiles.md#leads-used),
+  [skills/0003](../findings/skills/0003-handlers.md#leads-used) and [combat/0001](../findings/combat/0001-formulas.md#leads-used),
+  each page fetched and read in the session after the findings were written (ADR-0007); none shows code.
+  - **Sources**: four new in [sources](../sources.md): `arreat-summit-skill-basics`, `arreat-summit-casting-delays` and
+    `arreat-summit-skill-trees` (LoD, 1.13-era pages), and `purediablo-piercing` (2023, Resurrected-era, no patch named).
+    Two re-fetched: `d2dfg-blizzard` (§ Missiles.txt, § skills.txt, § pettype.txt; a Resurrected data guide) and
+    `arreat-summit-amazon-passive` (§ Pierce). Tried and not used: diablowiki.net "Pierce" and three PureDiablo d2wiki
+    pages (HTTP 403), the Fextralife D2R "Pierce" page (nothing the findings cover), a Blizzard D2R forum thread
+    (anecdotal, about Diablo Clone).
+  - **Verdicts** (evidence-rules' four words; *version-different* kept as a detail marker, used by none): 61 claims.
+    27 held, 25 held with refinement, 5 contradicted, 4 not covered. skills/0001: 23 claims (9 / 13 / 0 / 1);
+    skills/0002: 25 (12 / 9 / 4 / 0); skills/0003: 12 (5 / 3 / 1 / 3); combat/0001: 1 (`KnockBack`, held). No source
+    covers the rng specs' claims (seeds and draw order), so none was compared there. Agreement promoted nothing.
+  - **Quick re-reads** (objdump only, recorded): `tools/skills_crosscheck_reread.py` (sha256 `8361a4c1…`), kept outputs
+    `workspace/logs/skills/p45b-manifest.sha256` (`p45b-reread.txt` `427ca8d7…`, code windows R1–R7; `p45b-rows.txt`
+    `cbf9c64a…`, the stock-row values compared). Every contradicted reading stands as written: R1 velocity, R2 range,
+    R3 acceleration, R4 summon level.
+  - **Gaps the leads exposed** (noted in the findings, dated, no tag change). (a) The `ItemTarget` 2 helper
+    `0x005FD850` steps the seed at `+0x20` of its unit 2–20 times (item Teleport), so skills/0003 § 2's "no draw"
+    misses a path: noted in skills/0001 § 10 and skills/0003 § 2, open question in skills/0001. (b)
+    `COMBAT_PrgFinisher` has six direct callers, not one: the five others are finishing moves (start 25; do 42, 50,
+    52), noted in skills/0001 § 12. (c) What removes pets when `petmax` falls: open question in skills/0003.
+  - **Phase 2 required cases** from the contradicted claims, all reachable on stock data
+    ([backlog](../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md)):
+    - **C1** Raise Skeleton's summon level is `min(max(L · 3/4 + skill level, 1), L)`, against "generated at the
+      caster's level" (src:arreat-summit-skill-trees). Case: a Necromancer with character level L above 4 × the skill
+      level; log the summon's stat 12.
+    - **C2** Missile velocity is `((VelLev · lvl) / 8 + Vel) << 8`, against `Vel` + `VelLev` per level beyond 1
+      (src:d2dfg-blizzard). Case: a `spike1`–`spike4` monster missile; log its creation velocity and request level.
+    - **C3** `Accel` is added on every fifth path step, against "per frame" (src:d2dfg-blizzard). Case: Nova, Frost
+      Nova or Howl missiles (tier A) in the position window, one followed past its fifth step.
+    - **C4** Range is `LevRange · lvl + Range`, against `LevRange` per caster level beyond 1 (src:d2dfg-blizzard).
+      Case: one of the 32 `LevRange` rows. None is in tier A (`blaze`, `firewallmaker`, …), so this case needs the
+      review's ruling.
+    - **C5** A missed `ToHit` piercing missile ends at that unit, against "keeps traveling but doesn't deal any damage"
+      (src:purediablo-piercing). Case: a `Pierce` arrow with a pierce stat above 0 whose to-hit fails; log the free
+      and stat 328.
+  - Review: [request](../backlog/2026-10-20-reverser-architect-lane-p45b-review-plan-0045-p1b-cross-check.md).

@@ -61,7 +61,54 @@ offsets are record offsets. This batch continues [skills/0001](0001-dispatch.md)
 
 ## Leads used
 
-None. No community document was opened for this batch; the cross-check is Phase 1b.
+No community document was opened for P1.1–P1.3. *Phase 1b (plan 0045), 2026-10-20:* the pages below were fetched and
+read in that session (ADR-0007), after the batch's sections were written, and none shows code. One verdict per compared
+claim. The verdict words are evidence-rules' (`held`, `held with refinement`, `contradicted`, `not covered`). A
+claim from another game version that differs from 1.14d for that reason only would be marked *version-different* in
+its detail. None is marked: no source says its claim is version-specific, and none of their versions can be checked
+here. Two sources are Resurrected-era (src:d2dfg-blizzard, src:purediablo-piercing), so a contradiction from them
+may be a Resurrected change; the Phase 2 case settles 1.14d only. Agreement adds nothing to a tag. The quick objdump re-reads behind a contradiction or a gap are `tools/skills_crosscheck_reread.py`
+(sha256 `8361a4c1…`), kept under `workspace/logs/skills/` (`p45b-manifest.sha256`: `p45b-reread.txt` `427ca8d7…`, the
+code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compared).
+
+- [L] src:arreat-summit-skill-trees: one golem of any type at a time; a new golem replaces the old. **held**
+  Detail: the four golem rows share pet type 3 with `petmax` 1; `PetLimit` removes the oldest (§ 7).
+- [L] src:arreat-summit-skill-trees: skeleton and skeletal-mage counts 1, 2, 3, 3, 3, 4, … 8 by skill level, raised
+  by item skill bonuses. **held**
+  Detail: `petmax` `(lvl < 4) ? lvl : (2 + lvl/3)` gives the page's 20 values (`p45b-rows.txt` `PET`); `PetAdd` takes
+  the evaluated count as `max` (§ 7).
+- [L] src:arreat-summit-skill-trees: extra skeletons disintegrate when a skill shrine wears off. **not covered**
+  Detail: § 7 reads the limit at `PetAdd` only; what removes pets when `petmax` falls is unread (src:d2dfg-blizzard's
+  `basemax`, "when skill levels are reset or changed", points the same way). A gap, in *Open questions*.
+- [L] src:arreat-summit-skill-trees: golems, skeletons and skeletal mages are "generated at the caster's level".
+  **contradicted** (for Raise Skeleton)
+  Detail: do 31 calls `SummonSetLevel(m, 0, lvl)`, which gives `min(max(L · 3/4 + skill level, 1), L)` with `L` the
+  owner's stat 12 (R4: `lea eax,[ecx+ecx*2]`, `sar 2`, the clamps); so the caster's level only when the skill level is
+  at least `L/4`. Golems and mages are not read (plan 0046). Phase 2 case C1,
+  [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md).
+- [L] src:arreat-summit-skill-trees: a Druid has one spirit and one vine at a time, and spirit wolves, dire wolves and
+  a grizzly exclude each other. **held**
+  Detail: the totem and vine rows have `petmax` 1; `group` 1 on `spiritwolf`, `fenris` and `grizzly` makes
+  `PetGroupClear` remove the other two types (§ 7).
+- [L] src:d2dfg-blizzard: pet types of one `group` allow only one pet of the group alive. **held with refinement**
+  Detail: one **type** of the group at a time; within it the count is the type's `max` (up to five spirit wolves), as
+  src:arreat-summit-skill-trees puts it (§ 7).
+- [L] src:d2dfg-blizzard: `petmax` is how many summons the skill allows at a time. **held** (§ 7)
+- [L] src:arreat-summit-skill-trees: Revived monsters expire after 180 seconds; minions far from the owner disappear.
+  **not covered**
+  Detail: Revive is plan 0046's; the `warp`/`range` bits of PetType have no reader here.
+- [L] src:arreat-summit-skill-trees: a skeleton's life is `((level − 3) · 0.5 + 1) · base` above level 3.
+  **held with refinement**
+  Detail: `SummonInitStats` adds `maxhp · calc1 / 100` to the maximum life; `calc1`'s values were not evaluated.
+- [L] src:arreat-summit-skill-trees: a raised skeleton has a 5 % chance of a shield. **not covered**
+  Detail: a summon's components and equipment are monsters/stats' (the spawn and `sub_005D6B60_MonEquipInit`), not
+  read for summons here.
+- [L] src:arreat-summit-skill-trees: the Blood Golem heals itself and the Necromancer from its attacks. **held with refinement**
+  Detail: handler 23 heals both (§ 3); the page's 70 / 30 split is not read.
+- [L] src:d2dfg-blizzard: `TgtPlaceCheck` serves monster skills that spawn units; `repeat` repeats the mode on the
+  client; `leftskill` lists the skill for the left button. **held**
+  Detail: one server reader of `TgtPlaceCheck`, the monster AI's target test; `repeat` and `leftskill` have client
+  readers only (§ 12).
 
 ## Functions
 
@@ -191,6 +238,10 @@ return rec->srvmissilea;                                                // +0x48
 - [I] No draw in the two helpers or in `ITEMSKILL_Cast` itself (`DRAW` lines: `lcg=0`, no RNG call); the draws of an
   item cast are the handler's chance step and whatever the cast skill's do function and missile draw.
   (fn:ITEMSKILL_Cast@0x005FDA80, fn:sub_005FDCA0_ItemCastAtUnit@0x005FDCA0, fn:sub_005FDD60_ItemCastAtXY@0x005FDD60)
+  *2026-10-20 (Phase 1b):* this misses one draw path. `ITEMSKILL_Cast` calls the `ItemTarget` helpers, and helper 2
+  (`0x005FD850`, an item Teleport) steps the seed at `+0x20` of the unit it is given 2 to 20 times
+  ([skills/0001 § 10](0001-dispatch.md#10-item-granted-skills); `p45b-reread.txt` R5). Helpers 3 and 4 are unread.
+  (0x005FD900–0x005FD98A)
 
 ### 3. The stat-event handlers
 
@@ -568,5 +619,8 @@ are cited where the claim is theirs.
 - [L] What `SkillEntry+0x18` holds at Armageddon's first period, before do 146 has stored its `RNG_Range(1 000 000)`:
   the setter `0x00644560` has 85 call sites (objdump, review 2026-10-20) and the writers before the first period were
   not followed. The caster's seed after that period is a function of this word alone.
+- [L] *2026-10-20 (Phase 1b):* what removes pets when `petmax` falls, for example extra skeletons when a skill shrine
+  wears off (src:arreat-summit-skill-trees). § 7 reads the limit at `PetAdd` only; PetType `basemax`'s reader is
+  not read.
 - [L] Pet type 1's and type 7's special cases in `sub_00575850_PetLimit` (which rows they are), and where `SpawnOwnedMonster`'s
   block `+0x1C`/`+0x20` are filled by do 31 and 114 (register-passed; read as `pettype` and `petmax` by their use).
