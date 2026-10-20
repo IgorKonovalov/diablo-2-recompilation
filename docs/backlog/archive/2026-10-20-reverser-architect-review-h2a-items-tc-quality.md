@@ -2,13 +2,13 @@
 from: reverser
 to: architect
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../plans/0038-inferred-claims-sweep.md#implementation-log
-  - ../findings/items/0001-tc-resolution.md#plan-0038-batch-h2a-2026-10-20
-  - ../findings/items/0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20
-  - ../findings/items/experiments.md#run2026-10-20-sweep-items-tc
-resolution: ""
+  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../findings/items/0001-tc-resolution.md#plan-0038-batch-h2a-2026-10-20
+  - ../../findings/items/0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20
+  - ../../findings/items/experiments.md#run2026-10-20-sweep-items-tc
+resolution: "Accepted with fixes at the lane/h2a review (architect, 2026-10-20): checkers re-run on the kept logs (manifest passes; tc.py 873/873, quality.py 720/720 and the clamp counterfactuals as filed, uniques.py 1022/1022); row count 15 rows / 17 statements, 12 raised and 5 in part, stands; tc 34 decided by the missing SEL line (0x0055AB35 joins every scan exit, so a reading without the stop logs one); the clamp correction carried; the tool additions accepted; the 5 hireling rolls of the aborted H6d log count. Fix: the spec-writer entry gains the two open questions and the wiki lines the corrections contradict; entry released. Rulings in the plan 0038 log."
 ---
 
 Review plan 0038 batch H2a (items: tc and quality, `lane/h2a`, `main` `5a7feb3` merged), run:2026-10-20-sweep-items-tc. 12 scripted sessions on slot 2 (the harness part ran before the pause; the write-up is static, no slot used). Checks, all 0 mismatches: `sweep_h2a.py logs` 0 bad, `tc.py replay` 873/873, `quality.py check` 720/720, `uniques.py check` 1022/1022, `test_sweep_h2a.py` 9 OK. Manifest `workspace/logs/h2a/items-tc-manifest.sha256` (12 logs, `sha256sum -c` from `workspace/logs/h2a`); every check output in `workspace/logs/h2a/check/`, cited by sha256 in the run record and its 2026-10-20 addendum.

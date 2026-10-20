@@ -2738,8 +2738,58 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Inventory:** [§ 2.6 H2a](0038-inventory/README.md#26-moves-made-by-the-batch-reviews), no class moves; totals
     as after the H5b review (static 567, harness 531, blocked 416, deferred 2, raised 10: 1 526).
   - **Backlog:** review request
-    [2026-10-20-reverser-architect-review-h2a-items-tc-quality](../backlog/2026-10-20-reverser-architect-review-h2a-items-tc-quality.md);
+    [2026-10-20-reverser-architect-review-h2a-items-tc-quality](../backlog/archive/2026-10-20-reverser-architect-review-h2a-items-tc-quality.md);
     spec-writer entry
     [2026-10-20-reverser-spec-writer-h2a-items-tc-quality-spec-updates](../backlog/2026-10-20-reverser-spec-writer-h2a-items-tc-quality-spec-updates.md)
     (to be released with the review).
   - **Next:** architect review of `lane/h2a`; then H2b.
+- **2026-10-20 — Review of `lane/h2a`, batch H2a (items: tc and quality; architect): accept with fixes.** `main` merged
+  first (already up to date at `5a7feb3`; `backlog.py archive` moved nothing). Read: the plan, inventory, items/0001,
+  items/0002, experiments and backlog diffs, the logger, `tools/quality.py`'s diff and `sweep_h2a.py clamp`/`killers`.
+  - **Re-run** (from the worktree, `systemd-run --user --scope -p MemoryMax=4G python3 -I …`): `sha256sum -c` passes on
+    `items-tc-manifest.sha256` (12 logs), `items-tc-saves.sha256` (from `saves/`), the H6d manifest (19) and the S2a
+    manifest (195). `tc.py replay` 873 calls, 873 reproduced, 0 failed (B6 in the three Andariel kills);
+    `quality.py check` 720/720; `uniques.py check` 1022/1022; `sweep_h2a.py logs` 0 bad; `clamp` over the H2a logs, the
+    193 S2a logs and the two MF-100 logs, `goldtypes` and `static` byte-identical to `check-sweep_h2a.txt`,
+    `check-clamp-h2a-r2.txt`, `check-clamp-s2a-r2.txt`, `check-clamp-s2a-mf100-r2.txt`, `check-goldtypes.txt`,
+    `check-static.txt`, `check-quality-r2.txt`, `check-uniques.txt`; `test_sweep_h2a.py` 9 OK. The cited check-output
+    and tool hashes match the files (`d2pilot.py` `f7e805d9…` is the run's revision, `43df448`; the merge of H5b changed it
+    after).
+  - **Symbols** (two sources each, spot-checked with objdump and r2 on the pinned image): `call 0x5A6830` at 0x005A7027
+    and all 973 `MDD0` returns at 0x005A702C; the dword at 0x006E2260 is 0x005A6FF0 (`MonDeathEvent`, no `call rel32`);
+    the dword at 0x007323D0 is 0x005D8780 (`g_SkillDoFuncs` 0x007322B0 + 72 × 4) and all 31 `CFI` return to 0x0056F96A;
+    `call 0x5A8000` at 0x005D888F; `call 0x5589A0` at 0x0055AF59 and all 705 `GF0` return to 0x0055AF5E. The five I → C
+    stand.
+  - **Rulings.** (a) *Row count:* the § 5 row lists 13 tc and 4 quality statements on 15 rows (tc 34 and quality 22 two
+    each): 17 statements, 12 raised and 5 in part, as filed; the resume note's 13 + 4 of 18 was its miscount, corrected
+    by the lane before filing. (b) *tc 34 (L361), how it is decided:* 0x0055AB35 is the join of every exit of the entry
+    scan (the classic path at 0x0055AAD8 and 0x0055AAEB, the expansion loop's exits and fall-through at
+    0x0055AB00–0x0055AB33), and the logger's `SEL` there prints misses too, so a reading without the `jge 0x0055AF73`
+    at 0x0055AAC4 would log a `SEL` after `NEG roll=1 total=1`; there is none, and the 62 other negative picks each
+    show one (the control). The stop's frame end is the same either way, which is why only the missing line decides;
+    not by chance (rule 10). Raised. (c) *Rule 8, tc 34 (L388):* the step note carries two claims; the stop half is
+    `[C]`, the `Picks = 0` half is tc 13's statement (d-none since S2a), so L388 is raised in part and stays counted as
+    H2a (no class move, as the H5b halves). (d) *Clamp correction (rule 12):* carried in items/0002 (header, Answer,
+    § 4, § 7, unexercised parts, the plan 0010 run note, open question); the plan 0010 run record in experiments.md
+    (its own run, still true) needs none. It was not carried to the specs' open questions or the wiki: fix 1. "Acts"
+    counts the rolls with the pre-clamp chance at or below the minimum; the evidence for the raise is the 138 it
+    decides. (e) *Tool additions:* `quality.py`'s `clamp_ratio` refactor and `before-mf` key leave the game's roll
+    unchanged (`check-quality-r2.txt` = `check-quality.txt`, the uniques check unchanged); `goldtypes` is a full-table
+    check. Accepted as additions. `before-mf` breaking the same 9 + 129 as `off` is a result, not a tool fault: it
+    still separates "minimum after magic find" from "before". (f) *quality 20, the aborted H6d log:* the 5 hireling
+    rolls of `failed/quest-b6-s2-3811-andy-warriv.log` (`QOMF omf=100`, so the owner term is non-zero) count: the log
+    is a kept development log (reverser rule 6), hashed in the H6d manifest and in its run list, made by the same logger;
+    the session failed on navigation, not on the logger. Per log the 39 are 5 + 3 + 4 + 7 + 7 + 4 + 9 over seven H6d
+    logs; without the 5 the raise stands (34 + 6 + 85).
+  - **Fixes (made here):** (1) *omission:* the spec-writer entry gained (m)–(o): items/quality's `[L]` clamp open
+    question (L638), items/tc's `[L]` `game.type` / TCP/IP `/players` open question (L968–L970) and the wiki items page
+    (L177–L179, L220, L542, L548), each contradicted by the corrections. Entry released.
+  - **Totals** (once, after the rulings, against `main` `5a7feb3`): unchanged, **static 567, harness 531, c-emu 0,
+    blocked 416** (d-none 283, d-edit 73, d-sim 28, d-2c 14, d-owner 10, d-0032 8), **deferred 2, raised 10: 1 526**
+    ([§ 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews)); H2a marked done in § 5.
+  - **Phase 3 clusters freed:** items/quality (waited on H2a only) is ready for its re-tag round; items/tc still waits
+    on H2b and H2c.
+  - **Ledger:** 1 fix: omission 1 ([metrics](metrics.md)).
+  - **Backlog:** review request
+    [h2a review](../backlog/archive/2026-10-20-reverser-architect-review-h2a-items-tc-quality.md) closed; spec-writer entry
+    [h2a spec updates](../backlog/2026-10-20-reverser-spec-writer-h2a-items-tc-quality-spec-updates.md) released.
