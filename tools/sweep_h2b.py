@@ -401,6 +401,10 @@ def check_ss(I, ss, ic0, S, fail):
     if qq["cap"] != want or (qq["n"] & 0xFFFFFFFF) != (wn & 0xFFFFFFFF):
         fail("SSQ q %s cap %d n %d, model %d %d" % (q, qq["cap"], qq["n"], want, wn))
     S["SetSockets: quality %s, quality clamp %s" % (q, "acted" if want < cap else "none")] += 1
+    if qq["cap"] > 3:
+        S["SetSockets: quality %s with a cap above 3 after the quality step" % q] += 1
+    if n >= 4:
+        S["SetSockets: quality %s with a request of 4 or more" % q] += 1
     m = ss.get("SSM")
     if m and ic0 and ic0.get("it") == s0.get("it") and cls is not None:
         ms = I.maxsock(cls, ic0["ilvl"])
