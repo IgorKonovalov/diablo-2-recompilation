@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/combat/README.md 2026-10-20
-  - docs/specs/combat/to-hit.md 2026-10-17
+  - docs/specs/combat/to-hit.md 2026-10-20
   - docs/specs/combat/damage.md 2026-10-20
   - docs/specs/combat/reductions.md 2026-10-17
   - docs/specs/combat/delivery.md 2026-10-20
