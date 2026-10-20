@@ -1634,7 +1634,7 @@ pinned by each run's manifest and checked by `tools/quests.py check` with 0 mism
 - [L] The monsters hooked to quests 1, 2, 5, 6 and 22 (Levels `+0x30` and superunique hooks) were not all re-read.
 - ~~What `0x0056EDE0` creates with arguments `0x120` (the stones), `0x14C` (the Countess's chests) and 625 (Baal's
   death)~~: missiles 288 `cairnstones`, 332 `towerchestspawner` and 625 `baalfx control` (W4c, from quests/0001 § 7).
-  [L] What their server do-functions (17, 18, 36) make is not read.
+- [L] What the server do-functions (17, 18, 36) of missiles 288, 332 and 625 make is not read.
 - [L] The descriptor's `+0x08` (100 or 0) has no reader in the code read.
 - [L] The AI states that call `0x00599420` and `0x0059C330`, the game-type 3 test in `0x0059EA20`, and the Missiles column
   behind `+0x96` used by the staff timer.

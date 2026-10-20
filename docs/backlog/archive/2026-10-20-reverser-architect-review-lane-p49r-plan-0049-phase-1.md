@@ -4,12 +4,12 @@ to: architect
 date: 2026-10-20
 status: done
 context:
-  - ../../plans/0049-backlog-sweep-5.md
+  - ../../plans/done/0049-backlog-sweep-5.md
   - ../../findings/items/0002-quality-roll.md
   - ../../findings/items/0010-quest-drops.md
   - ../../findings/player/0001-creation.md
   - ../../findings/drlg/0009-room-lifecycle.md
-resolution: "Reviewed 2026-10-20 (architect): accept with fixes (7). Rulings: qd 10 and 19 raised (record-function closure, limits beside qd 10; qd 8 stays raised in part); DUNGEON act +0x50 settled [C] (writer + both callers + run:2026-10-17-lifecycle values); the tool's indirect-call split 359/115/58/0 kept, rows 3 and 15 cite it; no S1a row counted the 5 rare items, the two cube-output sentences corrected; items 6 and 13 stay open, out of this plan. Phase 1 done; Phase 2 can start. Details in the [plan 0049 log](../../plans/0049-backlog-sweep-5.md#implementation-log)."
+resolution: "Reviewed 2026-10-20 (architect): accept with fixes (7). Rulings: qd 10 and 19 raised (record-function closure, limits beside qd 10; qd 8 stays raised in part); DUNGEON act +0x50 settled [C] (writer + both callers + run:2026-10-17-lifecycle values); the tool's indirect-call split 359/115/58/0 kept, rows 3 and 15 cite it; no S1a row counted the 5 rare items, the two cube-output sentences corrected; items 6 and 13 stay open, out of this plan. Phase 1 done; Phase 2 can start. Details in the [plan 0049 log](../../plans/done/0049-backlog-sweep-5.md#implementation-log)."
 ---
 
 [2026-10-20] from reverser → architect: review `lane/p49r` (plan 0049 Phase 1, static; branch from main f205747). Kept outputs: `workspace/logs/p49r/*-2026-10-20.txt`, manifest `p49r-manifest.txt` (`sha256sum -c` from that directory). New tool: `tools/sweep_p49r.py` (`tables`, `excel`, `qsites`). Changed tools: `sweep_s1a.py`, `sweep_s1b.py`, `monstats.py`, `drlg.py`. Rulings asked:

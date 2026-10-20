@@ -577,7 +577,7 @@ Step notes:
   pickup returns nothing. [I] (fn:PLAYER_CorpsePickup@0x0057FB70, fn:sub_0057EAB0_AddExperienceDirect@0x0057EAB0)
 - J3. **A saved corpse loses the share.** `D2S_WriteCorpses` writes no stat, and `D2S_ReadCorpses` re-creates each corpse
   (a type-0 unit in mode `0x11`, state 7 `playerbody`, its item list) with no stat write, so the re-created corpse has
-  no stat 13. `PLAYER_CorpseCreate`, the only writer of a corpse's stat 13 read, runs only at the death mode's end. The
+  no stat 13. `PLAYER_CorpseCreate`, the only writer of a corpse's stat 13 read so far, runs only at the death mode's end. The
   owner's pickup of a re-created corpse therefore adds no experience: the 75 % is lost once the character is saved
   with its corpse on the ground. [I] (0x0056A91E–0x0056A9D1, fn:D2S_WriteCorpses@0x005697F0, fn:D2S_ReadCorpses@0x0056A830,
   fn:PLAYER_CorpseCreate@0x0057F700, fn:PLAYER_CorpsePickup@0x0057FB70,

@@ -1,6 +1,6 @@
 # 0049 — Backlog sweep 5: the static loose ends, the recipe register and the gate warnings
 
-> **Status:** approved 2026-10-20 (owner)
+> **Status:** done (closed 2026-10-20; approved 2026-10-20 by the owner)
 > **Created:** 2026-10-20
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0006-docs-gate, 0007-fetched-leads-only, 0015-emulated-reproduction, 0018-backlog-one-file-per-entry
@@ -59,7 +59,7 @@ its test match the recipes on disk, and the gate's outstanding W1 and W3 warning
   6. `2026-10-17-reverser-reverser-plan-0041-op-6-7-emulation.md` (optional: ops 6 and 7 under ADR-0015);
   7. `2026-10-16-architect-reverser-plan-0038-s1a-review-creation-question.md`;
   8. `2026-10-16-architect-reverser-plan-0038-s2c-review-static-leftovers.md`: check it against
-     [quests/0001 § 1](../findings/quests/0001-progression.md) (1 592 record-function calls, the register bits by act
+     [quests/0001 § 1](../../findings/quests/0001-progression.md) (1 592 record-function calls, the register bits by act
      section) and close what that answers;
   9. `2026-10-16-architect-reverser-plan-0038-phase-3-review-wording.md` (drlg/0002, the logic-record wording);
   10. `2026-10-16-architect-reverser-plan-0038-s1a-review-tool-follow.md` (a) and (c);
@@ -105,7 +105,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-20 — Drafted (architect, `lane/plans45`).** Status `proposed`; three stale entries closed at the triage.
 - **2026-10-20 — Approved (owner, via the orchestrator).** Plans 0045–0049 and ADR-0020 approved as proposed; the run
-  order of the [plans index](README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049) is the current queue.
+  order of the [plans index](../README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049) is the current queue.
 - **2026-10-20 — Phase 0 landed (archivist, `lane/p49a`).** Items 1–5 done, no harness, no Ghidra.
   - **Register:** 16 plan 0042 Phase 2 recipes (`quest-tpc`; part 2's `quest-talk1`..`5`, `quest-talk1c`..`4c`,
     `quest-orbwill`, `quest-death`; part 3's four `quest-p3*`) added to `tools/quest_saves.py` SET and EXPECT (rows
@@ -115,9 +115,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `quest-tpc` against `loads.txt`'s built prefixes (18 of 18), part 2 and 3 against the `<log>.in.d2s` hashes of
     their manifests (14 of 14 loaded). 32 pinned; `quest-talk2c` and `quest-talk3c` were never loaded and stay
     unpinned.
-  - **Docs:** [d2s.md § Plan 0042 Phase 2 saves](../formats/d2s.md#plan-0042-phase-2-saves) (the loads' outcome, the
+  - **Docs:** [d2s.md § Plan 0042 Phase 2 saves](../../formats/d2s.md#plan-0042-phase-2-saves) (the loads' outcome, the
     part 2 and 3 tables, the hashes); the two "not loaded" sentences above it updated.
-    [UniqueItems.md](../tables/UniqueItems.md) cites two `carry1` readers (`0x0055CA40` through the item-move gate, from
+    [UniqueItems.md](../../tables/UniqueItems.md) cites two `carry1` readers (`0x0055CA40` through the item-move gate, from
     items/0010; `0x00575FA0` in `NPC_SellItem`, from items/0011, with the Annihilus sale `[C]`); the open question
     keeps `lvl req` and a full xref of 0x006CE270.
   - **Surprise:** the classic `quests: all` sets no Act V word (EXPECT's `ALL_C`); a second reader (`0x0055CA40`)
@@ -138,15 +138,15 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Entries:** 12 of the 13 are closed, and the queue entry (item 1) is pruned and closed. Items 6 (op 6/7 emulation)
     and 13 (S1e (b)) are optional, not taken, and annotated as out of this plan.
   - **Readings** (all `[I]`):
-    - MonPlace rows 19–21, 24–28 ([monsters/0003 § 7](../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20)).
+    - MonPlace rows 19–21, 24–28 ([monsters/0003 § 7](../../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20)).
     - `0x005C09E0` = `STATEVENT_Reanimate`, the item property `reanimate`, not a skill; `FormationSpawn` case 5 is never
-      reached; `MissileSpawnOwnedMonster` = `bonewallmaker` ([items/0002](../findings/items/0002-quality-roll.md#plan-0049-phase-1-2026-10-20-static)).
+      reached; `MissileSpawnOwnedMonster` = `bonewallmaker` ([items/0002](../../findings/items/0002-quality-roll.md#plan-0049-phase-1-2026-10-20-static)).
     - Mode word 1 = *Battle.net*; a saved corpse loses its stat 13; the starting items' freed property list explains the
-      48 empty lists, and the other 5 are `d2s.py`-built ([player/0001](../findings/player/0001-creation.md#plan-0049-phase-1-2026-10-20-static)).
-    - The 45 register sites and 12 steps clears are traced for qd 8, 10 and 19 ([items/0010](../findings/items/0010-quest-drops.md#plan-0049-phase-1-2026-10-20-static-the-s2c-static-leftovers)).
-    - Act `+0x50`, the wanderer's alignment, the 31 pin sites ([drlg/0009 § 11.4](../findings/drlg/0009-room-lifecycle.md#114-the-plan-0040-phase-1-review-follow-ups-plan-0049-phase-1-lanep49r-static)).
-    - The H5c release order ([drlg/0002](../findings/drlg/0002-room-build-draws.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)).
-    - `0x0056EDE0` = `MissileCreateAt`: missiles 288, 332 and 625 ([quests/0001 § 7](../findings/quests/0001-progression.md)).
+      48 empty lists, and the other 5 are `d2s.py`-built ([player/0001](../../findings/player/0001-creation.md#plan-0049-phase-1-2026-10-20-static)).
+    - The 45 register sites and 12 steps clears are traced for qd 8, 10 and 19 ([items/0010](../../findings/items/0010-quest-drops.md#plan-0049-phase-1-2026-10-20-static-the-s2c-static-leftovers)).
+    - Act `+0x50`, the wanderer's alignment, the 31 pin sites ([drlg/0009 § 11.4](../../findings/drlg/0009-room-lifecycle.md#114-the-plan-0040-phase-1-review-follow-ups-plan-0049-phase-1-lanep49r-static)).
+    - The H5c release order ([drlg/0002](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)).
+    - `0x0056EDE0` = `MissileCreateAt`: missiles 288, 332 and 625 ([quests/0001 § 7](../../findings/quests/0001-progression.md)).
     - The src:arreat-summit-experience re-fetch (ADR-0007): two verdicts, held with refinement and held.
   - **Tools:** `sweep_s1a.py` (breakdown, admission note), `sweep_s1b.py` (indirect-call split 359/115/58/0;
     re-seeds 132/132 and 0/25), `monstats.py` (hireling `LIVE`), `drlg.py` (refuses a second game in one log).
@@ -207,3 +207,26 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Wiki:** characters (the ladder default, the saved corpse; the answered unknown removed), items (the `reanimate`
     owner and death-drop skip), monsters (the Normal-only group presets), quests (word 41's writer), saves (the saved corpse) changed;
     objects, randomness and items-other-paths checked and their `based_on` dates bumped.
+- **2026-10-20 — Phase 2 reviewed (architect, `lane/p49s` review): accept with fixes.** `main` merged first (already up
+  to date); `backlog.py archive` clean. Each fold checked against its finding and the `lane/p49r` rulings: monsters/0003
+  § 7 (rows 24 and 26, case 0x0054EAA8), drlg/0009 § 11.4 (a)–(c) (the 31 sites recounted from the per-site table: 18
+  set, 13 clear, 24 functions; `+0x50` `[C]` scoped to the run's window as ruled), items/0010 qd 10 and qd 19 (A3 and
+  Duriel's bullet `[C]` with the closure's two limits beside them; qd 8's remainder `[I]`), quests/0001 § 7
+  (`MissileCreateAt`), player/0001 (c), (d) and the S1a question, items/0002 (a), (b), (e), rng/0002 rows 3 and 15 (the
+  kept 359 / 115 / 58 / 0 split). Mephisto's, Diablo's and Baal's bit-0 sets stay `[I]`: qd 19's constant half is
+  plan 0038's S2c re-tag, not this plan's. The "rare cube outputs" wording is in no spec: save/d2s I6's "cube outputs"
+  is the bit-13 reading and matches save/0001. No tag is stronger than its finding; struck open questions carry no
+  live tag after fix 2; the wiki edits carry no tags or anchors and say "read from the code".
+  - **Plan 0038 check.** No plan 0038 file is touched, and no 0038 inventory row was re-tagged; the six 0038 re-tag
+    specs touched are named in the Phase 2 entry above for its later rounds.
+  - **Fixes (4, made in the docs):** monsters/special § H the fixed-class bullet's "(next bullet)" now points to the
+    *Every MonPlace row* bullet (the new row-24/26 bullet came between); quests/progression the do-function `[L]` split
+    out of the struck open question into its own bullet; player/creation J3 "the only writer … read so far", as the
+    finding says; wiki levels the release's pin is a portal's or, read from the code, a quest event's.
+  - **Research map:** the nine touched rows' counts and dates updated (items/tc, items/quality, monsters/spawn,
+    monsters/special, rng/seeds, drlg/lifecycle, items/quest-drops, player/creation, quests/progression; combat/README's
+    counts unchanged).
+  - **Plan 0049 closed.** All three phases accepted. Left open outside the plan: P1 items 6 (ops 6/7 emulation) and 13
+    (S1e (b)), optional; the archivist entry `2026-10-20-reverser-archivist-monplace-row-24-and-a-missiles-table-doc.md`
+    items (1) and (3) for the next archivist lane; the plan 0038 S2a entry, which waits for plan 0038 Phase 3's items
+    cluster; the plan 0045 reuse note, plan 0045's.

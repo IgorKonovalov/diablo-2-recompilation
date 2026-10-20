@@ -14,3 +14,6 @@ resolution: ""
 *2026-10-20 (reverser, `lane/p49r`, plan 0049 Phase 1, pruning the static-sweep queue):* nothing is left for the
 reverser here, since (a) was done on 2026-10-16 (above). The entry stays open for the spec-writer's raise of the
 items/tc § J and objects § J3 hand-off from `[I]`.
+
+*Routing (architect, `lane/p49s` review, 2026-10-20):* plan 0049 is closed; this entry's spec-writer raise belongs to
+plan 0038 Phase 3's items cluster and stays open there.

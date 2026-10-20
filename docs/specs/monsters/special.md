@@ -580,7 +580,7 @@ H2. MonPlace case 3, a champion at the point:                      [C] (0x0054E8
   `fetish1`, 23 `fetishshaman1`; 29 `minion1`, 30 `imp1` (`deathmauler1` in level 110), 31 `act5barb1`, 32
   `reanimatedhorde3`, these four with mode 12; 25, 27 and 28 nothing (their table entry returns 0). Rows 19–21, 24
   and 26 hold the class-0 entry `0x0054E9CE` in that table, but none of them reaches it: 19–21 return 0 from the outer
-  switch (next bullet). The class goes through
+  switch (the *Every MonPlace row* bullet below). The class goes through
   `LevelClassVariant` and then `PresetFallenVariant` (`fallen1` → `fallen2` in level 6, `fallen3` in 7, 12, 16;
   `fallenshaman1` → `fallenshaman2` in 6 and 7, `fallenshaman3` in 12 and 16). `reanimatedhorde3` (438) draws
   `Range(u.seed, 50)` for an AI timer.

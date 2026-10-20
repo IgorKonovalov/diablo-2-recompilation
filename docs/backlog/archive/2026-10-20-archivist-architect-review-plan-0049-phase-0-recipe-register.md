@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-20
 status: done
 context:
-  - ../../plans/0049-backlog-sweep-5.md#implementation-log
+  - ../../plans/done/0049-backlog-sweep-5.md#implementation-log
   - ../../formats/d2s.md#plan-0042-phase-2-saves
   - ../../tables/UniqueItems.md
 resolution: "Reviewed 2026-10-20 (architect): accept with fixes (4, made in d2s.md and UniqueItems.md); plan 0049 implementation log."
