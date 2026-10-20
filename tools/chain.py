@@ -16,6 +16,9 @@ check: per log, the composition on the line sets the log carries (each sub-model
   oracle the plan retires switched to its model):
     * item lines (tools/gdb/affixes.gdb, props*.gdb, items-chain.gdb): tools/items_chain.py (affixes, props or both,
       by the line sets present) with ITEMS_RollStaffMods modelled (oracle 2, `--staff model`, the default);
+    * TC lines (TCR .. TCEND, in the world logs that load tools/gdb/tc-drops.gdb): tools/tc.py replay with the quality
+      roll modelled, every call to its TCEND seed (oracle 6: an object's drop; tools/objects.py takes the object's
+      unit seed at OCX, which this predicts);
     * world lines (an RW1 or P0 line: tools/gdb/mon-spawn.gdb and its successors, objects.gdb): tools/monspawn.py's
       checker, which runs tools/drlg.py gen and roomk and tools/objects.py on the same log, then the population pass,
       with the unit seed SUnitCreate leaves predicted (oracle 14: MonRegionFindAdd on the tracked regions, then
@@ -231,7 +234,7 @@ class World:
         for k, v in c.obj_grid.items():
             R["world: objects grid: " + k] += v
         for k, v in c.obj_stats.items():
-            if k.startswith("gold drops"):
+            if k.startswith(("gold drops", "object drops")):
                 R["world: objects: " + k] += v
         for k, v in c.oracles.items():
             R["ORACLE (world): " + k] += v
@@ -311,6 +314,32 @@ def gate_inputs(path, R):
                 R["oracle 19: preset test value in {0, 0x80}: %s" % (d["pre"] in (0, 0x80))] += 1
 
 
+TC_STATE = {}
+
+
+def check_tc(path, ns, R):
+    """Every TC_ResolveDrops call of the log (TCR .. TCEND, tools/gdb/tc-drops.gdb) through tools/tc.py with the
+    quality roll modelled (oracle 5 already retired): for an object's drop (oracle 6) this is the resolver
+    tools/objects.py no longer needs as an oracle."""
+    if not any(line.startswith("TCR ") for line in open(path, errors="replace")):
+        return None
+    import quality
+    import tc
+    if "T" not in TC_STATE:
+        TC_STATE["T"] = tc.Tables(ns.excel)
+        TC_STATE["q"] = (quality.Tables(ns.excel), 0, False)
+    calls = tc.read_calls(path)
+    res, out = run_quiet(lambda: tc.replay_calls(TC_STATE["T"], calls, TC_STATE["q"], False))
+    ok, bad = res[0], res[1]
+    nobj = sum(1 for call0, _err in calls if call0 and call0[0][0] == "TCR" and call0[0][1].get("stype") == "2")
+    R["tc: TC_ResolveDrops calls reproduced (quality modelled)"] += ok
+    R["tc: TC_ResolveDrops calls failed"] += bad
+    R["tc: of them with an object source (stype 2)"] += nobj
+    if bad:
+        sys.stdout.write(out)
+    return 1 if bad else 0
+
+
 def cmd_check(ns):
     if ns.cf:
         apply_cf(ns.cf)
@@ -328,6 +357,9 @@ def cmd_check(ns):
                 world = World(ns)
             rcs.append(("world", world.run(path)))
             gate_inputs(path, R)
+            rc = check_tc(path, ns, R)
+            if rc is not None:
+                rcs.append(("tc", rc))
         if not rcs:
             R["logs with no line set of the composition"] += 1
             print("%s: no line set of the composition (no creation, no room window)" % os.path.basename(path))

@@ -70,6 +70,7 @@ from obj_survey import decode, txt_col  # noqa: E402
 M = 0x6AC690C5
 INIT_HIGH = 666
 TOWNS = {1, 40, 75, 103, 109}
+TC_CHAIN = True          # plan 0048 oracle 6: an object's drop chained (tools/tc.py inside, the items' game-seed steps)
 GOLD_MODEL = True        # plan 0048 oracle 7: the gold drop of InitFn 28 modelled (False: the plan 0023 seed oracle)
 ORACLE_INITFNS = {47, 54, 55, 62, 66, 68, 69, 79}
 MODELLED_INITFNS = {1, 2, 3, 27, 28, 34, 46, 57, 58}       # 46: plan 0048 Phase 1 (oracle 17)
@@ -260,7 +261,7 @@ class Mismatch(Exception):
 OBJ_TAGS = {"OGC", "OD", "OG", "OS", "OK", "OH0", "OHX", "OT", "OPU0", "OPUX", "OU0", "OUX", "OI0", "OIX", "OGP0",
             "OGPX", "OO0", "OOX", "OC0", "OCT", "OCX", "RW0", "RW1", "RW2", "RW3", "RW4", "P0",
             "MT0", "MTX"}             # plan 0048: InitFn 46's MonSpawnTry requests (tools/monspawn.py models inside)
-PASS_TAGS = ("HDR", "GAME", "RW0", "P0")
+PASS_TAGS = ("HDR", "GAME", "RW0", "P0", "TCEND")     # TCEND: plan 0048, read only inside a chest drop
 COLL_SIDE = ("TL", "CB", "TCU", "RRESEED", "CM")     # tools/gdb/collision.py lines fed to the grid model (plan 0027)
 SKIP_TAGS = PASS_TAGS + COLL_SIDE
 RET_COLLMARKRECT = 0x00620ACF                          # return address of COLL_RectOrWH in UNIT_CollMarkRect
@@ -358,6 +359,10 @@ class Checker:
                 lines.append(("HDR", {"text": line.strip()}, ln))
             elif tag == "GAME":
                 lines.append(("GAME", {"text": rest.strip()}, ln))
+            elif tag == "TCEND":
+                # tools/gdb/tc-drops.py's resolver exit (key=value): its source seed, which tools/tc.py predicts
+                kv = dict(x.split("=", 1) for x in rest.split() if "=" in x)
+                lines.append(("TCEND", {"seed": kv.get("seed")}, ln))
             elif tag in OBJ_TAGS or tag in COLL_SIDE:
                 try:
                     lines.append((tag, json.loads(rest), ln))
@@ -1687,12 +1692,57 @@ class Checker:
         k = (dt["tc"] or 0) - 161
         name = self.t.tc_names[k] if 0 <= k < len(self.t.tc_names) else None
         self.ok(name is not None and "Chest" in name, "line %d: chest drop TC %s (%s) is not an act chest TC" % (self.ln, dt["tc"], name))
-        dx = self.skip_until("OCX", "TC_ResolveDrops (items/tc)")
-        self.ok(parse_seed(dx["os"]) == self.O.s, "line %d: the resolver moved the object-region seed" % self.ln)
-        u["us"].s = parse_seed(dx["us"])
-        self.G = Seed(parse_seed(dx["gs"]), "game")
+        if not TC_CHAIN:
+            dx = self.skip_until("OCX", "TC_ResolveDrops (items/tc)")
+            self.ok(parse_seed(dx["os"]) == self.O.s, "line %d: the resolver moved the object-region seed" % self.ln)
+            u["us"].s = parse_seed(dx["us"])
+            self.G = Seed(parse_seed(dx["gs"]), "game")
+        else:
+            dx = self.tc_window(u)
         rec["drops"].append({"q": q, "tc": name, "item_q": dx["q"] if dx["item"] else None})
         return dx["q"] if dx["item"] else None
+
+    def tc_window(self, u):
+        """Plan 0048 Phase 1, oracle 6: TC_ResolveDrops at an object's drop, OCT .. OCX. The resolver's draws on the
+        object's unit seed are tools/tc.py's (tools/chain.py check runs `tc.py replay --quality model` on the same log and
+        requires every call, its TCEND seed included, to reproduce); here the unit seed is taken at OCX, which equals
+        that TCEND. Modelled here: each item the resolver creates (OU0 type 4 .. OUX) is SUnitCreate's two game-seed
+        steps (rng/seeds 7a) with the unit seed Init(low) of the first; the game seed at OCX is predicted; nothing draws
+        on the object-region seed."""
+        n_items = 0
+        while self.i < len(self.L):
+            tg, d, ln = self.L[self.i]
+            self.i += 1
+            self.ln = ln
+            if tg in COLL_SIDE:
+                self.side(tg, d, ln, oracle=True)
+            elif tg == "OD":
+                raise Mismatch("line %d: object-region draw inside TC_ResolveDrops" % ln)
+            elif tg == "OU0":
+                self.ok(d["type"] == 4, "line %d: a unit of type %d created by TC_ResolveDrops" % (ln, d["type"]))
+                self.seeds_eq(d, "OU0 (dropped item)", rs=False)
+                g1 = self.G.draw()
+                self.G.draw()
+                self._tc_us = fmt((g1, INIT_HIGH))
+                n_items += 1
+            elif tg == "OUX":
+                self.ok(d["o"]["us"] == self._tc_us, "line %d: dropped item unit seed %s, model %s" % (ln, d["o"]["us"], self._tc_us))
+                self.seeds_eq(d, "OUX (dropped item)", rs=False)
+            elif tg == "TCEND":
+                self._tc_end = d["seed"]
+            elif tg == "OCX":
+                self.ok(getattr(self, "_tc_end", None) == d["us"], "line %d: the object's unit seed at OCX %s is not the "
+                        "resolver's exit seed (TCEND %s)" % (ln, d["us"], getattr(self, "_tc_end", None)))
+                self._tc_end = None
+                self.hit("object drops: unit seed at OCX = the resolver's TCEND seed (tools/tc.py predicts it)")
+                self.ok(parse_seed(d["os"]) == self.O.s, "line %d: the resolver moved the object-region seed" % ln)
+                self.seeds_eq(d, "OCX (game seed after the drop's items)", rs=False, os_=False)
+                u["us"].s = parse_seed(d["us"])
+                self.hit("object drops: game seed at OCX predicted (%d items, two steps each)" % n_items)
+                return d
+            elif tg in ("OGP0", "OI0", "OIX", "OPU0", "OPUX"):
+                raise Mismatch("line %d: %s inside TC_ResolveDrops" % (ln, tg))
+        raise Mismatch("log ended inside TC_ResolveDrops")
 
     @staticmethod
     def magic(qr):
@@ -1818,6 +1868,10 @@ class Checker:
             self.i += 1
             if tg in COLL_SIDE:
                 self.side(tg, dd, ll, oracle=True)
+            elif tg == "MTX" and dd.get("gs"):
+                # plan 0048: the spawn's game seed after it (oracle 8, a player action: taken here), so that a chest
+                # drop after it starts from it
+                self.G = Seed(parse_seed(dd["gs"]), "game")
         self.oracle("operate monster spawn (0x00582280)")
         self.covk("operate monster spawns", (self.lid, u["cls"]))
 

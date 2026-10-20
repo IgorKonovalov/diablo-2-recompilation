@@ -46,6 +46,11 @@ oracles still taken from the log.
   is now created by the model (two game-seed steps, the item's unit seed, its `0x200` mark, no object-region draw);
   the drop spot is predicted for 69 of 71 and taken from the log for 2, where the model disagrees (§ 9).
   (fn:sub_00559300_DropGoldPile@0x00559300, fn:OBJINIT_GoldPiles@0x0054F8C0, run:2026-10-15-objects)
+- [C] **Oracle 6 (an object's drop) is retired**: `tools/chain.py check` replays every `TC_ResolveDrops` call of the
+  world logs through `tools/tc.py` with the quality roll modelled, and `tools/objects.py` no longer takes the drop's
+  seeds: the object's unit seed after the drop equals the resolver's predicted exit seed, and the game seed after it is
+  predicted from the items the drop creates; 59 object drops, 0 mismatches (§ 10). (fn:TC_ResolveDrops@0x0055A6D0,
+  run:2026-10-15-objects)
 - [C] **`tools/chain.py gen`** reproduces the seed tree the rng/seeds worked example logged from `-seed N` alone (game
   seed, the four game-creation draws, act bases, Act II tombs, level seeds) (§ 1). (fn:GAME_InitSeeds@0x0052C280,
   fn:DRLG_ActCreate@0x00642DA0, fn:DRLG_LevelCreate@0x00642AE0, run:2026-10-11-seed-tree)
@@ -267,15 +272,33 @@ oracle left when it predicted every one of them.
 - [I] The gold amount draws on the item's own seed, which these logs do not log; it is items/economy's.
   (fn:sub_00559300_DropGoldPile@0x00559300)
 
+## 10. Oracle 6: an object's drop
+
+- [C] All 510 `TC_ResolveDrops` calls of the 62 world logs (59 with an object source; the objects logs load
+  `tools/gdb/tc-drops.gdb`) reproduce under `tools/tc.py replay --quality model`, each to its `TCEND` seed, with no
+  quality oracle (`tools/chain.py check` runs it per log and fails on any failed call). (fn:TC_ResolveDrops@0x0055A6D0,
+  fn:ITEMS_DropRollQuality@0x00558640, run:2026-10-15-objects; output `o6-world-check.txt`)
+- [C] In `tools/objects.py` the chest drop (`OCT` → `OCX`) is no longer a seed oracle: the object's unit seed at `OCX`
+  must equal the resolver's `TCEND` seed (59 of 59), so it is the tc model's; each item the resolver creates is
+  `SUnitCreate`'s two game-seed steps with the unit seed `Init(low)` of the first (rng/seeds 7a), and the game seed at
+  `OCX` is predicted (15 drops with no item, 29 with one, 14 with two, 1 with three); the object-region seed does not
+  move. (fn:TC_ResolveDrops@0x0055A6D0, fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-15-objects)
+- [C] A casket or barrel that spawns a monster before its drop (the operate monster spawn, oracle 8, a player-action
+  input) now hands its exit game seed (its last `MTX`) to the drop that follows; before, that game seed was taken at
+  `OCX` with the drop's. (0x00582280, run:2026-10-15-objects)
+- [I] Still logged inside the drop: the dropped items' cells and marks (their drop-spot search is not modelled; their
+  `CM` lines are applied from the log), and the item builds' own draws, which are the item chain's and need the item
+  lines this logger does not write. (fn:sub_00558D90_ItemCreate@0x00558D90)
+
 ## Kept outputs
 
 `workspace/logs/chain-p1/`, one path base, `manifest.txt` (`sha256sum -c manifest.txt` from that directory):
 `o2-items-check.txt` (`tools/chain.py check` over the 133 item logs), `o14-world-check.txt` (over the 62 world
 logs), `o14-cf-{findadd-none,monprop-off,L0}.txt` (the controls), `o16-world-check.txt` and
 `o16-cf-{lcv-off,overlay-off}.txt` (oracle 16), `o17-world-check.txt` and `o17-cf-i46-stored.txt` (oracle 17), `o22-world-check.txt` (oracle 22), `o19-world-check.txt` (oracle 19), `o21-world-check.txt` and
-`o21-cf-state-stale.txt` (oracle 21), `o7-world-check.txt` (oracle 7), and the input lists `inputs-world.sha256` and
+`o21-cf-state-stale.txt` (oracle 21), `o7-world-check.txt` (oracle 7), `o6-world-check.txt` (oracle 6), and the input lists `inputs-world.sha256` and
 `inputs-items.sha256` (paths relative to `chain-p1/`, so `sha256sum -c` runs from there too). The tool revisions
-behind these outputs are recorded in `tools-o14.sha256`, `tools-o16.sha256`, `tools-o17.sha256`, `tools-o22.sha256`, `tools-o19.sha256`, `tools-o21.sha256` and `tools-o7.sha256` (paths relative to the repository
+behind these outputs are recorded in `tools-o14.sha256`, `tools-o16.sha256`, `tools-o17.sha256`, `tools-o22.sha256`, `tools-o19.sha256`, `tools-o21.sha256`, `tools-o7.sha256` and `tools-o6.sha256` (paths relative to the repository
 root).
 
 ## Open questions
