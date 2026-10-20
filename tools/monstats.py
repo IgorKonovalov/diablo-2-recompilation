@@ -185,6 +185,10 @@ class Tables:
         return 0 <= r < len(self.me) and self.me[r][2] != 0
 
 
+class MonEquipOracle(Exception):
+    """MonEquipInit on a class with an `oninit` MonEquip row: its item creation draws on the unit seed (oracle 13)."""
+
+
 class Model:
     """The stat model; every function takes the inputs it needs and returns predictions."""
 
@@ -206,6 +210,24 @@ class Model:
             low = seed.step()
             out[k] = (low & (cnt - 1)) if cnt & (cnt - 1) == 0 else low % cnt
         return bytes(out)
+
+    def init_seed(self, seed, cls, lid, g6d, exp, L, nvar):
+        """Plan 0048 Phase 1 (oracle 14): the unit-seed draws of MonStatsInit 0x00573CB0 with no log line, in the order
+        the SI0 .. SIX checks above consume them: the appearance pick (RangeB(nvar) on a region entry with variant
+        sets, else one draw per MonStats2 component with a count >= 1), the doomknight Range(4) (311, 312), the HP draw
+        RangeB(maxHp - minHp + 1) of MonLvlStats at the monster level, then the MonProp slots. `seed` (a Seed) is
+        stepped in place. Raises MonEquipOracle for a class with an `oninit` MonEquip row (oracle 13: MonEquipInit's
+        item creation is not modelled)."""
+        self.appearance(seed, cls, nvar, None)
+        if cls in (311, 312):
+            seed.rangeb(4)
+        lvl, d = self.level(cls, lid, g6d, exp)
+        o = self.monlvl_stats(cls, L, d, lvl)
+        seed.rangeb(o[1] - o[0] + 1)
+        self.monprop(seed, cls, d)
+        if self.T.monequip_oninit(cls):
+            raise MonEquipOracle(cls)
+        return seed
 
     def player_bonus(self, cls, g6d, pset, g6a, alive=1):
         """sub_00573930_MonPlayerBonus -> [hpPct, xpPct, skillBonus, difficulty, players]."""

@@ -15,6 +15,12 @@ oracles still taken from the log.
   `tools/items_chain.py` and `tools/chain.py`; 3 991 + 3 170 creations of the 133 kept item logs reproduce with no
   staff-mods seed from a log, 99 exit seeds and 64 skill entries predicted (§ 2). (fn:ITEMS_RollStaffMods@0x005C1260,
   run:2026-10-14-affixes, run:2026-10-15-items-chain)
+- [C] **Oracle 14 (the unit seed after `SUnitCreate`) is retired** where the region entry is known: `tools/monspawn.py`
+  predicts the unit seed at `MU` from the game-seed step, `MonRegionFindAdd` on a tracked region and `MonStatsInit`'s
+  draws; 7 953 of 8 075 creations of the 62 kept world logs, 0 mismatches; the other 122 are creations of a class
+  appended to the region by a preset monster (oracle 16) (§ 3). (fn:sub_00555230_SUnitCreate@0x00555230,
+  fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0, fn:sub_00573CB0_MonStatsInit@0x00573CB0, run:2026-10-15-mon-stats,
+  run:2026-10-15-objects)
 - [C] **`tools/chain.py gen`** reproduces the seed tree the rng/seeds worked example logged from `-seed N` alone (game
   seed, the four game-creation draws, act bases, Act II tombs, level seeds) (§ 1). (fn:GAME_InitSeeds@0x0052C280,
   fn:DRLG_ActCreate@0x00642DA0, fn:DRLG_LevelCreate@0x00642AE0, run:2026-10-11-seed-tree)
@@ -50,11 +56,44 @@ oracles still taken from the log.
 - [I] The classic body `sub_005C0D70_StaffModsRollV0` is not modelled; it runs only for an item of version 0, which no
   created item has (items/0005 § 10). (fn:sub_005C0D70_StaffModsRollV0@0x005C0D70)
 
+## 3. Oracle 14: the unit seed after `SUnitCreate`
+
+The world logs: the 62 kept logs of run:2026-10-13-mon-spawn (3), run:2026-10-14-mon-special (12),
+run:2026-10-15-mon-stats (11), run:2026-10-14-collision (sessions 1–7) and run:2026-10-15-objects (sessions 2–30),
+listed with their sha256 in `workspace/logs/chain-p1/inputs-world.sha256` (the first three checked against their
+records by `tools/mon_sweep.py`'s run table).
+
+- [C] `tools/monspawn.py` no longer takes the new monster's unit seed from `MU`. It computes `Init(low)` of the
+  game-seed step, runs `sub_00547BC0_MonRegionFindAdd` on the unit seed against a region it tracks per game (the
+  `tools/monpool.py` regions of `-seed N` and the difficulty, plus every append; an append rolls `MonVariantRoll(unit
+  seed, entry, 3)`, `tools/mon_sweep.py findadd`), then the draws of `sub_00573CB0_MonStatsInit`
+  (`tools/monstats.py Model.init_seed`: the appearance pick, the doomknight `Range(4)`, the HP draw, MonProp), and
+  compares the result with `MU`. `tools/chain.py check` over the 62 logs: 8 075 creations, **7 953 unit seeds
+  predicted**, 0 mismatches in 1 169 391 monspawn checks and 62 991 monstats checks; FindAdd found 7 251, appended 32,
+  stale 792. The baseline step counts (7 852 of 2 steps, 193 of 3, 30 of 5 to 17) are all among the predicted ones but
+  the 122 below. (fn:sub_00555230_SUnitCreate@0x00555230, fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0,
+  fn:sub_005BDB20_MonVariantRoll@0x005BDB20, fn:sub_00573CB0_MonStatsInit@0x00573CB0, run:2026-10-13-mon-spawn,
+  run:2026-10-14-mon-special, run:2026-10-15-mon-stats, run:2026-10-14-collision, run:2026-10-15-objects)
+- [C] The tracked region equals all 4 555 logged region snapshots (`P0`, `SU0`, `PM0`) once 117 appends made by
+  creations the checker does not run are taken from the snapshot (class only: the region snapshot logs no sets). Those
+  creations are the preset monsters of the presets window (oracle 16); a later creation of such a class takes its unit
+  seed from the log (122, counted `ORACLE (world): unit seed after SUnitCreate (region entry appended outside the
+  model: sets unknown)`). (fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0, run:2026-10-15-objects)
+- [C] Negative controls, `tools/chain.py check --cf` on the 11 mon-stats logs and objects sessions 3 and 5:
+  `findadd-none` fails (416 monspawn mismatches, 663 unit seeds still equal) and `monprop-off` fails (26 monspawn
+  mismatches; the SI checks of `tools/monstats.py`, which share the MonProp model, fail too); `L0` passes, as it should: `L` selects the MonLvl column of the HP range,
+  and the HP draw is one step whatever the range when the range holds at least one value.
+  (fn:sub_006538A0_MonLvlStats@0x006538A0, run:2026-10-15-mon-stats)
+- [I] `MonEquipInit` (oracle 13) is still not modelled: a class with an `oninit` MonEquip row keeps its unit seed from
+  the log (0 such creations on these logs). (fn:sub_005D6B60_MonEquipInit@0x005D6B60)
+
 ## Kept outputs
 
 `workspace/logs/chain-p1/`, one path base, `manifest.txt` (`sha256sum -c manifest.txt` from that directory):
-`o2-items-check.txt` (`tools/chain.py check` over the 133 item logs; `tools/chain.py` `f69b7f02…`,
-`tools/items_chain.py` `f72af367…`, `tools/affixes.py` `44c1faf9…`).
+`o2-items-check.txt` (`tools/chain.py check` over the 133 item logs), `o14-world-check.txt` (over the 62 world
+logs), `o14-cf-{findadd-none,monprop-off,L0}.txt` (the controls), and the input lists `inputs-world.sha256` and
+`inputs-items.sha256` (paths relative to `chain-p1/`, so `sha256sum -c` runs from there too). The tool revisions
+behind these outputs are recorded in `tools-o14.sha256` (paths relative to the repository root).
 
 ## Open questions
 

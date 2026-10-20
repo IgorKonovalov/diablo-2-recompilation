@@ -68,6 +68,8 @@ import collision  # noqa: E402
 import drlg  # noqa: E402
 import monpool  # noqa: E402
 import monspecial  # noqa: E402
+import monstats  # noqa: E402
+import mon_sweep  # noqa: E402
 import objects  # noqa: E402
 from excel_bin import find_file, read_bin  # noqa: E402
 from rng import INIT_HIGH, MASK, step  # noqa: E402
@@ -82,6 +84,9 @@ SPAWN_TAGS = {"P0", "PG", "PR", "PB", "PN", "PA", "PC", "PT", "PSP", "PGR", "PGX
 CLIENT_TAGS = {"CN0", "CNR", "CNH"}
 SIDE_TAGS = {"SCI", "SCD", "WND", "WNDARM", "WRL", "RW0", "RW1", "RW2", "RW3", "RW4", "LC0", "RL", "AROOM",
              "RRESEED"} | collision.COLL_TAGS | CLIENT_TAGS
+# plan 0048 Phase 1: the unit seed at MU is predicted (oracle 14); False restores the plan 0014 seed oracle
+UNIT_SEED_MODEL = True
+GAME_L = 1          # monsters/stats input L: game +0x6A or +0x74 not 0 (1 in every logged single-player game)
 MASK_BY_SPAWNCOL = {0: 0x3C01, 1: 0x01C0, 2: 0x3F11, 3: 0}     # jump table 0x005B2F04
 # Plan 0014 FS2: the guard exits of the spec's [C] blocks, counted and printed even at 0 (counters only, no effect
 # on any check). A closed gate is classified from the region state at P0 and PX: +0x0C (nRooms) is read only past
@@ -264,6 +269,7 @@ class Pass:
         self.sci = []
         reg = p0["reg"]
         self.chk.region_check(self.path, reg, self.diff, p0["exp"])
+        self.chk.region_snapshot(self, reg)
         pg = self.take("PG")
         if reg is None or reg["den"] == 0:
             self.eq("gate (no region or MonDen 0)", pg["r"], 0)
@@ -718,6 +724,7 @@ class Pass:
             except collision.NotLogged as e:
                 self.chk.oracle("creation mark (model needs %s)" % str(e).split(" of room")[0])
         us0 = (g_after[0], INIT_HIGH)
+        self.chk.unit_seed(self, cls, us0, u["us"])
         j = drlg_steps(us0, seed_t(u["us"]))
         self.chk.unit_steps[j] = self.chk.unit_steps.get(j, 0) + 1
         if j != 2:
@@ -1108,6 +1115,7 @@ class PresetPass(Pass):
         self.chk.room_rects[self.room] = self.rect
         self.sci = []
         self.region = d["reg"]
+        self.chk.region_snapshot(self, d["reg"])
         self.nspec = d["reg"]["nspec"] if d["reg"] else 0
         self.groups = []
         if tg == "SU0":
@@ -1302,7 +1310,14 @@ class Checker:
         self.levels, self.seeds_used, self.diffs = set(), set(), set()
         self.regions_checked = {}
         self.world = collision.World(root, self.t)
+        # plan 0048 Phase 1, oracle 14: the unit seed at MU from Init(step(game).low), MonRegionFindAdd on the tracked
+        # regions (tools/mon_sweep.py findadd, plan 0038 S3a) and MonStatsInit's draws (tools/monstats.py init_seed)
+        self.msm = monstats.Model(monstats.Tables(excel))
+        self.regions = {}             # (log, game, diff, exp) -> {level id: [[class, rarity, sets]]}, appends applied
+        self.unit_seed_model = UNIT_SEED_MODEL
+        self.game_L = GAME_L
         self.obj_grid = {}            # plan 0027: tools/objects.py's grid-model counters over the logs
+        self.obj_oracles = {}         # plan 0048: tools/objects.py's oracle counters over the logs
         # plan 0018
         self.sp = monspecial.Data(excel)
         self.new_tags = False
@@ -1329,6 +1344,63 @@ class Checker:
         key = "%s level %d at %s" % (d["what"], d["lid"], what or ("UNEXPECTED pc 0x%08x" % d["pc"]))
         self.wnd_hits[key] = self.wnd_hits.get(key, 0) + 1
         self.ok(what is not None, "MonWndr watchpoint hit outside the two known accesses: %s" % d)
+
+    def tracked_regions(self, P):
+        key = (P.path, P.game, P.diff, P.exp)
+        regs = self.regions.get(key)
+        if regs is None:
+            low = monpool.first_draw_low(self.n_seed, 1).low
+            regs = {lid: [[c, r, [bytes.fromhex(v) for v in sets]] for c, r, sets in reg["ents"]]
+                    for lid, reg, _ in monpool.build_all(self.t.pool, low, P.diff, P.exp)}
+            self.regions[key] = regs
+        return regs
+
+    def region_snapshot(self, P, reg):
+        """Every logged region snapshot (P0, SU0, PM0) against the tracked region (the monpool model of the game plus
+        every FindAdd append so far): the class list must match."""
+        if not self.unit_seed_model or reg is None or self.n_seed is None:
+            return
+        tr = self.tracked_regions(P).setdefault(reg["lid"], [])
+        want = [e[0] for e in tr]
+        got = [e[0] for e in reg["ents"]]
+        if len(got) > len(want) and got[:len(want)] == want:
+            # appended by a creation the model did not run (a preset monster of the presets window, before oracle 16
+            # is chained, or a unit of another path): the class is taken from the snapshot, its variant sets are not
+            # known (None), so a later creation of that class takes its unit seed from the log
+            for c in got[len(want):]:
+                tr.append([c, 0, None])
+                self.oracle("region append by a creation outside the model (class from the snapshot, sets unknown)")
+            want = got
+        self.ok(want == got, "%s: region of level %d at the pass entry %s, tracked model %s" % (P.path, reg["lid"], got, want))
+        k = "region snapshots equal to the tracked region (FindAdd appends applied)"
+        self.stats[k] = self.stats.get(k, 0) + 1
+
+    def unit_seed(self, P, cls, us0, logged):
+        """Oracle 14 retired: predict the unit seed SUnitCreate leaves (MU) and compare it with the log."""
+        if not self.unit_seed_model or self.n_seed is None:
+            self.oracle("unit seed after SUnitCreate (taken from MU)")
+            return
+        reg = self.tracked_regions(P).setdefault(P.lid, [])
+        s = monpool.Seed(*us0)
+        kind, e = mon_sweep.findadd(self.t.pool, reg, cls, s)
+        k = "unit seeds: FindAdd %s" % kind
+        self.stats[k] = self.stats.get(k, 0) + 1
+        if e is not None and e[2] is None:
+            self.oracle("unit seed after SUnitCreate (region entry appended outside the model: sets unknown)")
+            return
+        nvar = len(e[2]) if e is not None else 0
+        ms = monstats.Seed((s.low, s.high))
+        try:
+            self.msm.init_seed(ms, cls, P.lid, P.diff, 1 if P.exp else 0, self.game_L, nvar)
+        except monstats.MonEquipOracle:
+            self.oracle("MonEquipInit item creation (oracle 13; unit seed taken from MU)")
+            return
+        if fmt(ms.t()) != logged:
+            raise Mismatch("unit seed after SUnitCreate class %d level %d (FindAdd %s, nvar %d): log %s, model %s"
+                           % (cls, P.lid, kind, nvar, logged, fmt(ms.t())))
+        self.checks += 1
+        k = "unit seeds after SUnitCreate predicted (oracle 14 retired)"
+        self.stats[k] = self.stats.get(k, 0) + 1
 
     def region_check(self, path, reg, diff, exp):
         if reg is None:
@@ -1366,6 +1438,7 @@ class Checker:
                 except ValueError:
                     pass
         self.seeds_used.add(n_seed)
+        self.n_seed = n_seed
         # plan 0023: logs written with tools/gdb/objects.gdb carry the objects window; tools/objects.py predicts it.
         # mon-spawn.py's RW lines carry "os" since plan 0023 whatever else is loaded, so the objects logger is known by
         # its OGC line (plan 0027 Phase 3: tools/gdb/mon-stats.gdb logs have "os" and no objects window)
@@ -1379,6 +1452,7 @@ class Checker:
                 if k.startswith(("position tests predicted", "object marks", "gold-pile room tests", "marks applied from the log")):
                     self.obj_grid[k] = self.obj_grid.get(k, 0) + v
             for k, v in oc.oracles.items():
+                self.obj_oracles[k] = self.obj_oracles.get(k, 0) + v       # plan 0048: every objects.py oracle
                 if k.startswith("position test result"):
                     self.obj_grid["ORACLE " + k] = self.obj_grid.get("ORACLE " + k, 0) + v
             self.ok(oc.fail == 0, "%s: tools/objects.py has %d mismatches on this log" % (path, oc.fail))

@@ -17,7 +17,9 @@ check: per log, the composition on the line sets the log carries (each sub-model
     * item lines (tools/gdb/affixes.gdb, props*.gdb, items-chain.gdb): tools/items_chain.py (affixes, props or both,
       by the line sets present) with ITEMS_RollStaffMods modelled (oracle 2, `--staff model`, the default);
     * world lines (an RW1 or P0 line: tools/gdb/mon-spawn.gdb and its successors, objects.gdb): tools/monspawn.py's
-      checker, which runs tools/drlg.py gen and roomk and tools/objects.py on the same log, then the population pass;
+      checker, which runs tools/drlg.py gen and roomk and tools/objects.py on the same log, then the population pass,
+      with the unit seed SUnitCreate leaves predicted (oracle 14: MonRegionFindAdd on the tracked regions, then
+      MonStatsInit's draws); then tools/monstats.py's SI checks on logs that carry SI lines;
   and prints, per oracle of docs/findings/chain/0001 § 2 still taken from a log, the count (the remaining oracles).
   Exit 0 only if every sub-check passes.
 
@@ -118,24 +120,27 @@ def cmd_gen(ns):
 
 # --- check ----------------------------------------------------------------------------------------------------------
 CREATIONS = re.compile(r"^(chain: )?(\d+) creations reproduced, (\d+) failed")
+# an item line set counts only in a log with an item creation (IC0): a world log can carry a short tag of the same name
 AFFIX_TAGS = {"AF0", "AFC", "RN", "RC", "SUPD", "LOWR", "APR0"}     # the split of items/experiments.md (2026-10-15)
 PROPS_TAGS = {"APE", "SLOT", "WR", "ROLL", "IIS0", "EVD"}
 
 
 def line_sets(path):
     """Which of the composition's line sets the log carries."""
-    aff = props = world = False
+    aff = props = world = ic = False
     for line in open(path, errors="replace"):
         tag = line.split(" ", 1)[0]
+        if tag == "IC0":
+            ic = True
         if tag in AFFIX_TAGS:
             aff = True
         elif tag in PROPS_TAGS:
             props = True
         elif tag in ("RW1", "P0"):
             world = True
-        if aff and props and world:
+        if aff and props and world and ic:
             break
-    return aff, props, world
+    return aff and ic, props and ic, world
 
 
 class NS:
@@ -183,14 +188,97 @@ def check_items(path, ns, R):
     return rc
 
 
+# the counters of tools/monspawn.py (and tools/objects.py inside it) that say an oracle was retired
+WORLD_PRED = ("unit seeds after SUnitCreate predicted", "region snapshots equal to the tracked region",
+              "presets / restore / objects window predicted by tools/objects.py")
+
+
+class World:
+    """The world part: tools/monspawn.py's checker (DRLG gen and roomk, tools/objects.py's window, the population
+    pass, the special monsters), then tools/monstats.py's SI checks on logs that carry them (no second monspawn run)."""
+
+    def __init__(self, ns):
+        import monspawn
+        import monstats
+        self.monspawn, self.monstats = monspawn, monstats
+        self.c = monspawn.Checker(ns.excel, ns.root, False)
+        self.ms = None
+        self.ns = ns
+
+    def run(self, path):
+        f0 = self.c.fail
+        rc, out = run_quiet(self.c.run, path)
+        if self.ns.verbose or self.c.fail > f0:
+            sys.stdout.write(out)
+        bad = self.c.fail > f0
+        if any(line.startswith("SI0 ") for line in open(path, errors="replace")):
+            if self.ms is None:
+                self.ms = self.monstats.Checker(self.ns.excel, False)
+            m0 = self.ms.fail
+            rc, out = run_quiet(self.ms.run, path)
+            if self.ms.fail > m0:
+                sys.stdout.write(out)
+                bad = True
+        return 1 if bad else 0
+
+    def summary(self, R):
+        c = self.c
+        for k, v in c.stats.items():
+            if k.startswith(WORLD_PRED):
+                R["world: " + k] += v
+        for k, v in c.obj_grid.items():
+            R["world: objects grid: " + k] += v
+        for k, v in c.oracles.items():
+            R["ORACLE (world): " + k] += v
+        for k, v in c.obj_oracles.items():
+            R["ORACLE (objects window): " + k] += v
+        R["world: monspawn checks"] += c.checks
+        R["world: monspawn mismatches"] += c.fail
+        R["world: creations"] += len(c.creations)
+        if self.ms is not None:
+            R["world: monstats checks"] += self.ms.checks
+            R["world: monstats mismatches"] += self.ms.fail
+            for k, v in self.ms.n.items():
+                if k.startswith("MonEquip"):
+                    R["ORACLE (world): monstats " + k] += v
+
+
+CF = {
+    # counterfactual models (negative controls): each must FAIL on logs where its rule decides
+    "findadd-none": "oracle 14: MonRegionFindAdd returns no entry (no append, no variant draws)",
+    "monprop-off": "oracle 14: MonStatsInit without its MonProp slots",
+    "L0": "oracle 14: the MonLvl column set L = 0 (a control that must NOT fail: L does not change the draw count)",
+}
+
+
+def apply_cf(name):
+    import mon_sweep
+    import monspawn
+    import monstats
+    if name == "findadd-none":
+        mon_sweep.findadd = lambda T, reg, cls, s: ("none", None)
+    elif name == "monprop-off":
+        monstats.Model.monprop = lambda self, seed, cls, d: ({}, [])
+    elif name == "L0":
+        monspawn.GAME_L = 0
+
+
 def cmd_check(ns):
+    if ns.cf:
+        apply_cf(ns.cf)
+        print("counterfactual: %s" % CF[ns.cf])
     R = collections.Counter()
     bad = 0
+    world = None
     for path in ns.logs:
         rcs = []
         rc = check_items(path, ns, R)
         if rc is not None:
             rcs.append(("items", rc))
+        if line_sets(path)[2]:
+            if world is None:
+                world = World(ns)
+            rcs.append(("world", world.run(path)))
         if not rcs:
             R["logs with no line set of the composition"] += 1
             print("%s: no line set of the composition (no creation, no room window)" % os.path.basename(path))
@@ -201,6 +289,8 @@ def cmd_check(ns):
                 print("FAIL %s: %s" % (os.path.basename(path), what))
         print("%s: %s" % (os.path.basename(path), ", ".join("%s %s" % (w, "ok" if not r else "FAIL") for w, r in rcs)
                            or "nothing to check"))
+    if world is not None:
+        world.summary(R)
     print("== chain summary ==")
     for k in sorted(R):
         print("  %-90s %d" % (k, R[k]))
@@ -224,6 +314,7 @@ def build_parser():
     c.add_argument("--root", default=DEFAULT_ROOT)
     c.add_argument("--staff", choices=("model", "oracle"), default="model",
                    help="ITEMS_RollStaffMods: the model (default, oracle 2 retired) or the plan 0021 seed oracle")
+    c.add_argument("--cf", choices=sorted(CF), help="a counterfactual model (negative control)")
     c.add_argument("-v", "--verbose", action="store_true")
     return ap
 
