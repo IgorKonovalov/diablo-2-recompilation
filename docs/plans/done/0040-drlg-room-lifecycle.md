@@ -523,7 +523,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     whose route crosses a camp room, goes first, after an offline geometry check picks the seed and points; recipe (c),
     a teleporting unique, waits on a static read of the AI's teleport target. Not owner play: both are scripted
     recipes for the `rooms.gdb` family. Until H7a runs, the case stays a named shortfall in the spec's *Open
-    questions* (spec-writer entry [rbs4 town-follow and outdoor 7](../../backlog/2026-10-17-architect-spec-writer-rbs4-town-follow-and-outdoor-7.md)).
+    questions* (spec-writer entry [rbs4 town-follow and outdoor 7](../../backlog/archive/2026-10-17-architect-spec-writer-rbs4-town-follow-and-outdoor-7.md)).
   - (2) **The `0x400` drop rides on H7a** (close follow-ups item (2); entry closed).
   - (3) **Symbols:** `DrlgRefAdd` and `DrlgStatusRecompute` raised to `C`; `RoomsDeactivate`, `InactiveMonstersRestore`
     and `RoomInactiveUnitsRestore` raised **in part** (the unreached branches § 11 lists stay `[I]`, written into
