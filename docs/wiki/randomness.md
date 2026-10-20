@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/rng/README.md 2026-10-17
-  - docs/specs/rng/seeds.md 2026-10-17
+  - docs/specs/rng/seeds.md 2026-10-20
   - docs/specs/drlg/room-tiles.md 2026-10-17
 ---
 

@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/objects/README.md 2026-10-17
-  - docs/specs/items/tc.md 2026-10-17
+  - docs/specs/items/tc.md 2026-10-20
   - docs/specs/drlg/lifecycle.md 2026-10-20
 ---
 

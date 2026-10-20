@@ -183,3 +183,27 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     inventory § S2c note); the archivist entry's item (2) annotated as done by plan 0045 Phase 0; the spec-writer inputs
     entry annotated with the review's tags. Phase 2 gains that entry as its item 2 (its item 1 was done by `lane/p38s5`).
   - **Phase 1 done.** Phase 2 (spec-writer) can start.
+- **2026-10-20 — Phase 2 landed (spec-writer, `lane/p49s`; review requested).** Item 2's entry folded and closed, with
+  the review's tags; the orchestrator's extra item (the monsters/spawn object-marks row) done and closed; the
+  combat/README A1 W1 (the finisher-peek comment) anchored.
+  - **Specs** (front-matter tags before → after): monsters/special {107, 94, 4} → {107, 95, 3} (§ H rows 24 and 26:
+    Normal-only groups, nothing outside Normal; the open question struck); drlg/lifecycle {85, 75, 8} → {86, 76, 8}
+    (§ E act `+0x50` `[C]` for the run's window, the 31 pin sites; § H/§ I the wanderer's alignment 2, its open
+    question narrowed; the `+0x50` meaning struck); items/quest-drops {84, 87, 2} → {86, 86, 2} (A3 and Duriel's bits
+    `[C]` with the closure's limits beside them); quests/progression {114, 316, 6} → {114, 320, 6} (A7 and word 41 are
+    object 1's second word, word 32's one write, `MissileCreateAt` W4c and missiles 288/332/625, the open question
+    struck with a narrower `[L]` for the do-functions); player/creation {81, 45, 2} → {81, 48, 1} (A1 the mode word, E4
+    the freed main list behind the ilvl-1 magic starting items, J3 the saved corpse; the open question struck);
+    items/quality {64, 39, 2} → {64, 42, 2} (M3 `STATEVENT_Reanimate`, `FormationSpawn` case 5, `bonewallmaker`);
+    rng/seeds {78, 9, 4} → {79, 10, 4} (step 5 note: the kept split 359/115/58/0, the 132/132 and 0/25 re-seed count);
+    items/tc, monsters/spawn and combat/README wording only (counts unchanged).
+  - **Nothing to change:** drlg/room-tiles already states the corrected release order (plan 0038 Phase 3 review); no
+    spec carried the "rare cube outputs" wording (save/d2s I6's "cube outputs" is the bit-13 reading, not the 5 items).
+  - **Plan 0038 note:** items/quest-drops, items/quality, items/tc, monsters/special, monsters/spawn and player/creation
+    are 0038 Phase 3 re-tag specs; only the 0049 readings above were folded, and no 0038 inventory row was re-tagged.
+    Its later rounds should see A3 and the Duriel bullet of items/quest-drops at `[C]` (the `lane/p49r` ruling), the
+    new M3 notes of items/quality and the § H row-24/26 bullet of monsters/special.
+  - **Gate:** green, 11 warnings (the 11 W1 of `docs/specs/data/excel.md`, held by plan 0038); the combat/README W1 is gone.
+  - **Wiki:** characters (the ladder default, the saved corpse; the answered unknown removed), items (the `reanimate`
+    owner and death-drop skip), monsters (the Normal-only group presets), quests (word 41's writer), saves (the saved corpse) changed;
+    objects, randomness and items-other-paths checked and their `based_on` dates bumped.

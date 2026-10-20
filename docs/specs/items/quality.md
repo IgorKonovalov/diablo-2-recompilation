@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/tc, data/excel]
 consumed_by: [items/tc, items/uniques-sets, items/affixes, items/vendors]
-tags: {C: 64, I: 39, L: 2}
-updated: 2026-10-17
+tags: {C: 64, I: 42, L: 2}
+updated: 2026-10-20
 ---
 
 # The drop quality roll: from a picked item to a quality code
@@ -289,15 +289,40 @@ Step notes:
   fn:sub_005C55C0_SummonFinish@0x005C55C0, fn:sub_005C07A0_SkillReviveDo@0x005C07A0,
   fn:sub_005AEDA0_MissileSpawnOwnedMonster@0x005AEDA0, fn:sub_0058F4D0_MonSetOwnerRestore@0x0058F4D0; [items/0002 § Plan 0039 batch P1c](../../findings/items/0002-quality-roll.md#plan-0039-batch-p1c-2026-10-17))
   - a boss's escorts (the boss), and tentacles (the monster that spawns them);
-  - formation members (their leader; a formation leader owns itself, as a placed boss does), and the unit
-    `FormationSpawn`'s case 5 makes (the unit passed to it);
+  - formation members (their leader; a formation leader owns itself, as a placed boss does); `FormationSpawn`'s case 5
+    would give its unit the unit passed to it, but no caller reaches it (M3 notes);
   - Baal's clone, class 570 (Baal);
   - the Bone Wall and Bone Prison pieces (the caster; the later prison pieces the first one), a monster revived with
-    `Revive` or raised from a corpse (the caster), and a monster a missile spawns (the missile's owner);
+    `Revive` (the caster) or raised by the item property `reanimate` (the killer's owning player, M3 notes), and a
+    monster a missile spawns (the missile's owner);
   - a restored inactive monster (its saved owner).
 
   The remaining three of the 17 only clear the link (owner id −1): an old mercenary replaced at resurrection, and the members and
   the dying monster of a `partydead` group.
+- M3. **The `reanimate` raise.** `0x005C09E0` is `STATEVENT_Reanimate`, entry 31 of the item-stat event table that
+  ItemStatCost `itemeventfunc` indexes; one row has 31, stat 155 `item_reanimate` with event `kill`, written by the
+  property `reanimate` (stock: the unique Tomb Reaver and the runeword Faith, par 1, min = max = 10). On a kill it
+  returns with no draw unless the victim is a monster that is neither champion nor unique and the killer's stat 155
+  (at the property's `par` as its layer) is above 0. It then draws once on the **killer's** unit seed and raises only
+  when `RangeB(killer.seed, 100) < value`; it walks the killer's owner chain up to the first player and queues event 13
+  on the victim for that player with `SkillReviveDo`, which raises the monster with that player as its owner. A pet or
+  hireling killer draws on its own seed and hands the raise to its owning player; with no player in the chain nothing
+  is queued. Event 13's trigger is not read. [I] (0x005C09E0–0x005C0A84, 0x005C0A32, fn:STATEVENT_Reanimate@0x005C09E0,
+  fn:sub_0056E740_AddStatEvent@0x0056E740, data:g_StatEventFuncs@0x007325B0, fn:RNG_RangeB@0x0045C3E0,
+  fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, fn:UNIT_AddEvent@0x005C0AD0, fn:sub_005C07A0_SkillReviveDo@0x005C07A0,
+  tbl:ItemStatCost.txt:itemeventfunc1, tbl:Properties.txt:stat1, [items/0002 § Plan 0049 Phase 1 (a)](../../findings/items/0002-quality-roll.md#a-0x005c09e0-is-itemeventfunc-31-the-reanimate-property))
+- M3. **`FormationSpawn` case 5 is never reached.** The case tests its third stack argument before it spawns, and both
+  callers pass 0: `FormationGroup` (reached only from `RoomPopulate`'s type-1 branch, dead code in 1.14d) and the
+  `boneprison1` formation, whose descriptor has no kind-5 entry. So no unit takes its owner from case 5. [I]
+  (0x005B333C–0x005B3340, 0x0054E1CB, 0x005B3559, fn:sub_005B3270_FormationSpawn@0x005B3270,
+  fn:sub_0054E190_FormationGroup@0x0054E190, [items/0002 § Plan 0049 Phase 1 (b)](../../findings/items/0002-quality-roll.md#b-formationspawn-case-5-is-never-reached))
+- M3. **The missile that spawns a monster** is row 207 `bonewallmaker` (the one Missiles row with `pSrvDoFunc` 13, entry
+  13 of the server do-function table), Bone Wall's `srvmissilea`: each server step spawns a wall piece with
+  `SpawnOwnedMonster`, makes it owned by the unit the missile names, adds it to the group, appends mod 15 `partydead`
+  and decrements the missile's counter. So Bone Wall builds pieces by its `srvdofunc` 60 and by this missile; which
+  of the two makes the pieces a player sees is not separated. [I] (0x005ADC97–0x005ADCA7, 0x005AEDA0–0x005AEF6A,
+  fn:sub_005AEDA0_MissileSpawnOwnedMonster@0x005AEDA0, data:g_MissileSrvDoFuncs@0x0073C768, tbl:Missiles.txt:pSrvDoFunc,
+  tbl:Skills.txt:srvmissilea, [items/0002 § Plan 0049 Phase 1](../../findings/items/0002-quality-roll.md#plan-0049-phase-1-2026-10-20-static))
 - K1–K2. At MF 100 the factors are 171 (unique), 183 (set) and 185 (rare); a linear factor of 200 in those three
   tests gets 34 of 847 rolls wrong. At MF 10 the factor is 110 in every test; the diminishing form there (109)
   breaks 24 of 574 rolls. [C] (0x0055861E–0x0055862C, 0x00558613–0x0055861B, run:2026-10-12-quality,
@@ -607,8 +632,9 @@ that tell the two models apart. [C] (run:2026-10-12-quality)
 ## Open questions
 
 - ~~**Other monster killers' owners**~~ answered (M3): every `MonSetOwner` site is followed ([items/0002 § Plan 0039 batch P1c](../../findings/items/0002-quality-roll.md#plan-0039-batch-p1c-2026-10-17)).
-  Which callers reach `FormationSpawn` and which skill owns the corpse-raise callback are reverser residues (backlog,
-  P1c residues (a) and (b)); they name the paths, not the owner rule.
+  ~~Which callers reach `FormationSpawn` and which skill owns the corpse-raise callback~~ answered in the M3 notes
+  ([items/0002 § Plan 0049 Phase 1](../../findings/items/0002-quality-roll.md#plan-0049-phase-1-2026-10-20-static)): case 5 is never reached, and the raise is the item property
+  `reanimate`, not a skill.
 - [L] **The `*Min` clamp (D6) and its place after magic find.** No logged chance came near a minimum; it needs
   a very large `ilvl − qlvl`, a very high MF or edited data. It may stay code-read.
 - [L] **Not exercised:** Hell, negative magic find (including the `mf ≤ −100` bypass), multiplayer, the early

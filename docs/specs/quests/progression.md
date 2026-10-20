@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, save/d2s, items/quest-drops, objects, monsters/spawn, monsters/special, quests/travel]
 consumed_by: [items/quest-drops, items/cube, objects, monsters/spawn, monsters/special, quests/travel, save/d2s]
-tags: {C: 114, I: 316, L: 6}
+tags: {C: 114, I: 320, L: 6}
 updated: 2026-10-20
 ---
 
@@ -158,9 +158,9 @@ Step notes:
   quest (set at the same event as the players' bits), bit 15 "the creator had it done" (§ C), and word 4 bit 11 "the cow
   portal was opened". It is sent to the clients after every NPC message. (fn:sub_00544720_GameQuestSet@0x00544720,
   fn:sub_00544760_GameQuestGet@0x00544760, fn:QUESTS_SendGameRecord@0x00544520)
-- A7. [I] Words written by no quest object: 7, 15, 23, 28 (the act-travel words, [quests/travel § E](travel.md#e-act-change-through-an-npc)),
-  34, 41 (the Hell respec, § Word 41), 42 (carried by the introduction objects, never written); 43–47 are never
-  addressed. No quest script writes word 33 (only packet `0x58` could). (fn:QUESTRECORD_SetState@0x0065C360,
+- A7. [I] Words written by no quest object as its own word: 7, 15, 23, 28 (the act-travel words, [quests/travel § E](travel.md#e-act-change-through-an-npc)),
+  34, 41 (the Hell respec, written by quest object 1's scripts as their second word, § Word 41), 42 (carried by the
+  introduction objects, never written); 43–47 are never addressed. No quest script writes word 33 (only packet `0x58` could). (fn:QUESTRECORD_SetState@0x0065C360,
   data:g_QuestDescs@0x00731510)
 
 ### B. Events and dispatch
@@ -481,7 +481,7 @@ stateDiagram-v2
   timer `0x00590230` (period 8) once, a log-state change only. No draw. (fn:sub_0058FDD0_A1Q1_NpcMessage@0x0058FDD0,
   fn:sub_006272B0_UnitAddStat@0x006272B0, fn:sub_00590230_A1Q1_DoneTimer@0x00590230)
 
-##### Word 41: the Hell respec (no quest object writes it)
+##### Word 41: the Hell respec (quest object 1's second word)
 
 ```mermaid
 stateDiagram-v2
@@ -495,6 +495,12 @@ stateDiagram-v2
 | b13, b1 | set | word 1's reward (above) | 0x0058FF2F, 0x0058FF3E | [C] (run:2026-10-18-quests2) |
 | b13, b1 | set | `NPC_MenuAction` in Hell (`game+0x6D` = 2): w1 b1 set and w41 b0, b1 clear | 0x0057A21E (`0x0058FD20`) | [I] (fn:sub_0058FD20_A1Q1_RespecOffer@0x0058FD20) |
 | b0; b1 clear | set / clear | `NPC_MenuAction` in Hell with w41 b1 set: the respec runs (`0x00570360`, `0x00570C80`), then this write; if b15 is clear, quest object 30's `+0x0A` ← 0 | `0x0058FD50` | [I] (fn:sub_0058FD50_A1Q1_RespecDone@0x0058FD50, fn:NPC_MenuAction@0x00579D60 0x0057A1D0–0x0057A266) |
+
+- [I] **Every write of word 41 is quest object 1's.** Over every call of the record functions, word 41 is written at
+  the `+0xE4` sites 0x0058FF2F and 0x0058FF3E (b13, b1: object 1 keeps 41 as its second word) and the constant sites
+  0x0058FD36, 0x0058FD40 (b13, b1), 0x0058FD67 (b0 set) and 0x0058FD71 (b1 clear), all in object 1's scripts; quest
+  object 30 (whose own word is 29) writes none. (0x0058FF2F, 0x0058FD36, fn:QUESTRECORD_SetState@0x0065C360,
+  [items/0010 § Plan 0049 Phase 1](../../findings/items/0010-quest-drops.md#plan-0049-phase-1-2026-10-20-static-the-s2c-static-leftovers))
 
 ##### Word 2: the hooked Act I boss and the free hireling (quest object 2)
 
@@ -583,7 +589,7 @@ W4. StoneOrderDraw (first use of the decoded scroll `bkd `, or first stone opera
         i: u32 ← questSeed.low mod 5
         if order[i] is empty: order[i] ← next;  next ← next + 1
       ; then each operated stone whose class = order[k] advances k; the fifth: dummy 61 to mode 6,
-      ; bkd removed, 0x0056EDE0(0, 1, 0x120, x + 6, y − 3) at stone 21, its room pinned
+      ; bkd removed, MissileCreateAt(0, 1, 288, x + 6, y − 3) at stone 21, its room pinned
 ```
 
 - W4. [C] The draw count is at least 5 and variable (draws that hit a filled slot are spent); the slot drawn takes the
@@ -596,6 +602,15 @@ W4. StoneOrderDraw (first use of the decoded scroll `bkd `, or first stone opera
   fn:sub_00544840_QuestsItemUseCode@0x00544840, fn:sub_00593CB0_A1Q4_SendStoneOrder@0x00593CB0 0x00593CD5–0x00593CE1)
 - W4b. [I] The first stone operate draws the order the same way (not reached), and `0x00544840`'s `trs ` branch
   calls `0x0059D6A0` (not run). (fn:sub_00593710_A1Q4_StoneOperate@0x00593710, fn:sub_00544840_QuestsItemUseCode@0x00544840)
+- W4c. [I] **`MissileCreateAt(a, b, missile, x, y)`** (game in `ECX`, the source unit in `EDX`) creates a missile at a
+  point. With x = y = 0 it first takes a point from `0x0056D2C0`; with no point, or one more than 100 from the source
+  (`UnitDistance`), it returns 0. Otherwise it fills a zeroed `0x5C`-byte request (`+0x00` = 1, `+0x04` the source,
+  `+0x10` the missile, `+0x14`/`+0x18` x and y, `+0x2C` = a, `+0x30` = b) and returns `MissileCreate`'s result. The
+  quest calls create Missiles rows 288 `cairnstones` (the fifth stone, `0x120`), 332 `towerchestspawner` (each of the
+  Countess's recorded chests, `0x14C`) and 625 `baalfx control` (Baal's death); each does its work in its server
+  do-function (17, 18 and 36 of the server do-function table), which is not read.
+  (0x0056EDE0–0x0056EE84, fn:sub_0056EDE0_MissileCreateAt@0x0056EDE0, fn:sub_0059FA30_MissileCreate@0x0059FA30,
+  data:g_MissileSrvDoFuncs@0x0073C768, tbl:Missiles.txt:pSrvDoFunc, [quests/0001 § 7](../../findings/quests/0001-progression.md))
 - [I] **Items.** Message 0x70 with `bks ` held removes it and gives `bkd ` (`QUESTS_GiveItem(bkd, 0, 2, 1)`); message 0x76
   gives the ring of [items/quest-drops § F](../items/quest-drops.md#f-npc-item-services-and-given-items); the Inifuss
   tree drops `bks `; Wirt's gold draws `RandLoHi(questSeed, 10, 20)`. (fn:sub_00592250_A1Q4_NpcMessage@0x00592250,
@@ -633,7 +648,7 @@ stateDiagram-v2
 
 - [I] The tower book (`OperateFn` 6) puts the object in mode 1 and sends message 0x7F; `0x00595160` (bit 1) is dead code.
   The death registers timer `0x005954C0` (period 7) and spawns monster 326 at the death position and calls
-  `0x0056EDE0(0, 1, 0x14C, x, y)` at each recorded chest 371 (oracles). (fn:sub_00594E70_A1Q5_BookOperate@0x00594E70,
+  `MissileCreateAt(0, 1, 332, x, y)` (missile `towerchestspawner`, W4c) at each recorded chest 371 (oracles). (fn:sub_00594E70_A1Q5_BookOperate@0x00594E70,
   fn:sub_005954F0_A1Q5_DeathSpawn@0x005954F0)
 
 ##### Word 6: Andariel (quest object 6)
@@ -1172,6 +1187,8 @@ W32. AfterglowTimer — registered once, period 2, by the darkwanderer AI (0x005
   order, one free-spot search each. `low & 1` was 0 in all four (8 tries). (run:2026-10-19-quests3: x-entry, x-entry2,
   h-entry, x-wpact3r-0; fn:sub_005BD390_A3Q7_AfterglowTimer@0x005BD390)
 - [I] The 7-try branch (`low & 1` = 1) was not reached. (fn:sub_005BD390_A3Q7_AfterglowTimer@0x005BD390)
+- [I] Word 32 has one write through the record functions: b0 at 0x005BD2AB (`SetSeen`). Beyond the join's bit-15
+  pass it holds only that bit. (fn:sub_005BD260_A3Q7_SetSeen@0x005BD260, [items/0010 § Plan 0049 Phase 1](../../findings/items/0010-quest-drops.md#plan-0049-phase-1-2026-10-20-static-the-s2c-static-leftovers))
 - [I] The init writes `+0xE0` = 16 although the code uses word 32; only the quest log is affected. `InitFn` 43 spawns the
   Dark Wanderer at (x + 7, y) while the private flag is set. (fn:sub_005BD300_A3Q7_Init@0x005BD300,
   fn:sub_005BD1F0_A3Q7_WandererSpawnInit@0x005BD1F0)
@@ -1478,6 +1495,10 @@ stateDiagram-v2
 | b7, b5, b8 | set | e11 messages 0x4ECF, 0x4ED1, 0x4ED4 by the same table | 0x0058D9C7 | [I] (fn:sub_0058D940_A5Q6_NpcMessage@0x0058D940) |
 | b10 | set | the last portal (object 565) used by a player with b13; a first join or a later join with b0 (or b15 at the first) | 0x0058E7FC, 0x0058E4CB, 0x0058E424 | [I] (fn:sub_0058E740_A5Q6_LastPortalOperate@0x0058E740, fn:sub_0058E430_A5Q6_PlayerJoin@0x0058E430) |
 
+- [I] Baal's death also calls `MissileCreateAt(0, 1, 625, x, y)` (missile `baalfx control`, W4c); its do-function is
+  not read. (fn:sub_0058DF20_A5Q6_BaalDeath@0x0058DF20, fn:sub_0056EDE0_MissileCreateAt@0x0056EDE0,
+  [quests/0001 § 7](../../findings/quests/0001-progression.md))
+
 ```
 W40. ZooInit — InitFn 79 (object 567), once per game (private +0xA0):   [I] (fn:sub_0058E830_A5Q6_ZooInit@0x0058E830 0x0058E830–0x0058E90B)
        cls: i32 ← 0
@@ -1611,7 +1632,9 @@ pinned by each run's manifest and checked by `tools/quests.py check` with 0 mism
 ## Open questions
 
 - [L] The monsters hooked to quests 1, 2, 5, 6 and 22 (Levels `+0x30` and superunique hooks) were not all re-read.
-- [L] What `0x0056EDE0` creates with arguments `0x120` (the stones), `0x14C` (the Countess's chests) and 625 (Baal's death).
+- ~~What `0x0056EDE0` creates with arguments `0x120` (the stones), `0x14C` (the Countess's chests) and 625 (Baal's
+  death)~~: missiles 288 `cairnstones`, 332 `towerchestspawner` and 625 `baalfx control` (W4c, from quests/0001 § 7).
+  [L] What their server do-functions (17, 18, 36) make is not read.
 - [L] The descriptor's `+0x08` (100 or 0) has no reader in the code read.
 - [L] The AI states that call `0x00599420` and `0x0059C330`, the game-type 3 test in `0x0059EA20`, and the Missiles column
   behind `+0x96` used by the staff timer.
