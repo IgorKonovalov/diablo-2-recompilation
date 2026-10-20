@@ -25,7 +25,8 @@ Counts from `python3 -I tools/calc_survey.py summary workspace/merged/data/globa
 offsets are in `tools/excel_layouts.py` (`K` fields): the item and skills ones were found by earlier plans; the
 missiles and skilldesc ones are the loaders' descriptor offsets read in data/0005 § 1, and the layouts added here
 (partial: formula fields only) check them over every record (`excel_bin.py diff … missiles` 4 788 cells,
-`… skilldesc` 9 282 cells, 0 unexplained; one explained cell, below). `itemstatcost` has no formula column (data/0005).
+`… skilldesc` 9 282 cells, 0 unexplained; one explained cell, below). Plan 0045 Phase 0 completed the missiles layout
+around the same seven offsets ([Missiles](../tables/Missiles.md): 99 864 cells, 0 unexplained). `itemstatcost` has no formula column (data/0005).
 
 ## Pairing cells with bytes
 
