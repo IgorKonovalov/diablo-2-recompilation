@@ -54,7 +54,7 @@ MS_CALCS = ("SrvCalc1", "SHitCalc1", "DmgCalc1", "DmgSymPerCalc", "EDmgSymPerCal
 MS_CLT_CALCS = ("CltCalc1", "CHitCalc1")
 
 # plan 0045 Phase 1 "tier A": the general rows and per class the skills the pilot can cast (self-centred, directional,
-# melee or summon). The plan names the first 17; the Druid and Assassin pairs are this phase's proposal (rows by their
+# melee or summon). The plan names the first 18; the Druid and Assassin pairs are this phase's proposal (rows by their
 # skills.txt names: Fire Trauma is Fire Blast). The review
 # of Phase 1 fixes the list.
 TIER_A = [

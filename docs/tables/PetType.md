@@ -98,7 +98,7 @@ The six behaviour columns are bits of `+0x004` (bit order = header order: `warp`
 | 14 | `vine` | 0 | 0 | W-PUAH | 3 | 426 cycleoflife, 427 vinecreature | 222 Plague Poppy, 231 Cycle of Life, 241 Vines (1) |
 | 15 | `grizzly` | 1 | 0 | W-PUAH | 1 | — | 247 Summon Grizzly (`druidbear`; 1) |
 | 16 | `shadowwarrior` | 0 | 0 | W-PUAH | 1 | — | 268 Shadow Warrior, 279 Shadow Master (1) |
-| 17 | `assassintrap` | 0 | 0 | -R---- | 0 | — | 257 Blade Sentinel, 261, 262, 271, 272, 276 (the five sentries; 5) |
+| 17 | `assassintrap` | 0 | 0 | -R---- | 0 | — | 257 Blade Sentinel and the five `… Sentry` rows 261, 262, 271, 272, 276 (5) |
 | 18 | `pettrap` | 0 | 0 | -R---- | 0 | — | — |
 | 19 | `hydra` | 0 | 0 | -R---- | 0 | — | 62 Hydra (`hydra1`; 99) |
 

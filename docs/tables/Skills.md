@@ -950,7 +950,7 @@ The client columns are presentation and stay out of scope (plan 0045 *Open quest
   28 × 12, 18 × 11, 30 × 10 (98 of 138 numbers have one row); no `srvprgfunc` number has more than 2 rows; Missiles
   `pSrvDoFunc` 1 × 551 and 3 × 26 (23 of 34 numbers have one row); no `pSrvHitFunc` or `pSrvDmgFunc` number has ten
   rows (largest 8 and 6). Eight families in all. (tbl:Skills.txt:srvdofunc, tbl:Missiles.txt:pSrvDoFunc)
-- `[C]` **The candidates.** The 22 rows below are the plan's named skills (the general rows and per class; the Druid
+- `[C]` **The candidates.** The first 22 rows below are the plan's named skills (the general rows and per class; the Druid
   and Assassin pairs are this phase's proposal: 221 Raven and 225 Firestorm, 251 Fire Trauma, which is *Fire Blast*,
   and 259 Fists of Fire, a progressive melee skill with `srvprgfunc`); they cover four of the eight families
   (`srvstfunc` 4, `srvdofunc` 2 and 18, `pSrvDoFunc` 1). One row per uncovered family is added, a class row first:

@@ -149,7 +149,15 @@ logged input here, stated in game frames).
     (self-centred, directional, melee or summon; for example Nova, Frost Nova, Static Field, Teleport, Fire Bolt;
     Bash, Howl; Jab, Multiple Shot; Raise Skeleton, Bone Armor; the Paladin's Holy Fire and Holy Shield; a Druid and
     an Assassin pair); every function family with ten or more stock rows represented once; the monster skills of the
-    combat logs' attackers;
+    combat logs' attackers. **Phase 0 review ruling (2026-10-20):** the 26 candidate rows of
+    [Skills § Dispatch](../tables/Skills.md#families-and-the-tier-a-candidates) are this phase's starting list: the
+    Druid pair 221 Raven, 225 Firestorm and the Assassin pair 251 Fire Trauma (*Fire Blast*), 259 Fists of Fire are
+    accepted; of the four family rows, 98 Might (aura) and 25 Plague Javelin (directional, like Throw) are accepted
+    as castable, and 56 Meteor and 66 Amplify Damage (cast at a point or a unit) are accepted on condition that
+    Phase 2 casts them with the pilot's attack click at a monster's screen position (plan 0037 Phase 2); if it
+    cannot, the Phase 2 lane says so and this phase's review substitutes another row of the same `srvdofunc`
+    family (28 or 30). Phase 2 equips a claw for 259 (`itypea1` `h2h`, `weapsel` 3) and javelins for 25
+    (`itypea1` `jave`);
   - for each event kind (start, do, progressive, missile create, move, collide, hit, handler, summon), its inputs,
     outputs, draws, seeds and the chaining reading (ADR-0014);
   - the community cross-check (Phase 1b) done;
@@ -244,7 +252,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   numbers printed per number. [PetType](../tables/PetType.md) (new): layout complete (224 B, 400 cells, 0
   mismatches), the 20 rows with the 31 Skills rows that name them. [Skills § Dispatch](../tables/Skills.md#dispatch-plan-0045-phase-0):
   the 75 named columns, the rows per `srvstfunc`/`srvdofunc`/`srvprgfunc` number, the family sizes and 26 tier-A
-  candidate rows (the plan's 17 named, a Druid pair 221 Raven/225 Firestorm and an Assassin pair 251 Fire Trauma/259
+  candidate rows (the plan's 18 named, a Druid pair 221 Raven/225 Firestorm and an Assassin pair 251 Fire Trauma/259
   Fists of Fire proposed, four rows added for the four families of ten rows or more the named rows miss: 56 Meteor,
   66 Amplify Damage, 98 Might, 25 Plague Javelin); the stale "no skills subsystem is planned" rewritten.
   `tools/skills_survey.py` registered as gate survey `skills` (new baseline). **`excel_layout` baseline changed**
@@ -254,4 +262,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   no `srvdofunc`; two progressive rows have no `srvprgfunc`; row 568's hit function cell `*12` compiles to 64 948.
   Families of ten rows or more: eight (`srvstfunc` 4; `srvdofunc` 65, 2, 28, 18, 30; `pSrvDoFunc` 1, 3). Backlog:
   [reverser, the fields three findings left unnamed](../backlog/2026-10-20-archivist-reverser-missiles-fields-named-by-the-table-doc.md);
-  review request [to the architect](../backlog/2026-10-20-archivist-architect-lane-p45a-review-plan-0045-phase-0.md).
+  review request [to the architect](../backlog/archive/2026-10-20-archivist-architect-lane-p45a-review-plan-0045-phase-0.md).
+- **2026-10-20 — Phase 0 reviewed (architect): accept with fixes.** `gate.py --full=excel_layout,skills` and
+  `test_gate.py` rerun green after merging `main`; both baselines equal the surveys' output. Anchors spot-checked
+  against `re/symbols.csv` and the findings (`MISS_CalcVar`, `MISS_GetDamMin`, `MISS_GetElemLen`, `UNIT_GetSizeX`,
+  `PATH_SetMarkMask`, `PermPortalAtUnit`, `SKILLS_CalcVar` `pets`; combat/0001 for `srvstfunc` 42, `srvdofunc` 7 and
+  67, `COMBAT_PrgFinisher`, the knockback roll); meanings default to `[L]`, raised only where a finding or data/calc
+  anchors them. Fixes (3): the plan names 18 tier-A rows, not 17 (this log and the survey's comment); Skills §
+  Families: "the first 22 rows" of the 26; PetType row 17's sentry wording. Tier A: ruling in Phase 1's tier-A
+  bullet (all 26 accepted, Meteor and Amplify Damage on the attack-click condition). Notes for P1.1/P1.2:
+  [backlog to the reverser](../backlog/2026-10-20-architect-reverser-plan-0045-p0-review-notes-for-p1-1.md).

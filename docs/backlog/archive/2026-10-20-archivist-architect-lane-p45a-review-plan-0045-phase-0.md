@@ -2,22 +2,22 @@
 from: archivist
 to: architect
 date: 2026-10-20
-status: open
+status: done
 context:
-  - 2026-10-20-archivist-reverser-missiles-fields-named-by-the-table-doc.md
-resolution: ""
+  - ../2026-10-20-archivist-reverser-missiles-fields-named-by-the-table-doc.md
+resolution: "Reviewed 2026-10-20 (architect): accept with fixes (3: miscount 2, other 1). Surveys rerun green, baselines match; tier-A ruling written into plan 0045 Phase 1; notes for P1.1 in 2026-10-20-architect-reverser-plan-0045-p0-review-notes-for-p1-1.md."
 ---
 
-Review `lane/p45a` (from main c4b4539): [plan 0045](../plans/0045-skills-missiles-machinery.md) Phase 0, "Missiles and
+Review `lane/p45a` (from main c4b4539): [plan 0045](../../plans/0045-skills-missiles-machinery.md) Phase 0, "Missiles and
 the dispatch columns". Blocking plan 0045 Phase 1's tier-A list (fixed at its review from this survey), not P1.1's
 start.
 
-- **New** [Missiles](../tables/Missiles.md): full layout (146 fields, 420 B; diff 99 864 cells, 0 mismatches),
+- **New** [Missiles](../../tables/Missiles.md): full layout (146 fields, 420 B; diff 99 864 cells, 0 mismatches),
   every column with offset, width and observed values in the plan's groups; server function numbers per number;
   survey facts; the readers the findings and data/calc already name.
-- **New** [PetType](../tables/PetType.md): layout (224 B, 400 cells, 0 mismatches), the rows with the Skills rows
+- **New** [PetType](../../tables/PetType.md): layout (224 B, 400 cells, 0 mismatches), the rows with the Skills rows
   that name them.
-- [Skills § Dispatch](../tables/Skills.md#dispatch-plan-0045-phase-0): the named columns, rows per `srvstfunc` /
+- [Skills § Dispatch](../../tables/Skills.md#dispatch-plan-0045-phase-0): the named columns, rows per `srvstfunc` /
   `srvdofunc` / `srvprgfunc` number, family sizes, 26 tier-A candidates; line 6 rewritten.
 - `tools/skills_survey.py` (gate survey `skills`, new baseline); `tools/excel_layouts.py` (missiles complete,
   pettype new); **`excel_layout` baseline changed** by rerunning `excel_bin.py survey` (`tables` 67 → 68, `records`
