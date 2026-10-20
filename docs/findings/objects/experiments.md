@@ -384,6 +384,15 @@
     `0x0001`, model `0x0027`): a stale active room of a re-activated DRLG room stood in a neighbour's near list. Two
     first attempts (dropping the stale room; replacing it without the pointer-reuse test) failed another test of the
     same log (line 25087) and were discarded.
+  - Checker scope change: `InitFn` 18, 19, 25, 43, 49, 50, 52, 60 and 71 (the monster-creating `InitFn`s of objects/0001
+    § S4b row 25) joined the seed oracles. The oracle takes the room, game and unit seeds from `OIX` but still counts
+    every object-region draw (`OD`) inside it; none of the nine drew one (`InitFn` 46's 1 306 show the counter live).
+    The 24 checks it removes from the 29 older logs are `InitFn` 18's 3 runs, which matched before the change.
+- **Review re-run (architect, 2026-10-20, `lane/h5b` after merging `main`):** `sha256sum -c h5b-manifest.sha256` from
+  `workspace/logs/` passes (85 lines); the five commands above, under `systemd-run --user --scope -p MemoryMax=4G`, give
+  the kept outputs (the older-log outputs differ only in line order and the order inside coverage lists). With the
+  pre-fix `collision.py` (`fcf3f80~1`), the H5b logs give 234 283 checks, 2 failures (the logger error and flayer3's
+  line 44192) and the same 734 unmasked `0x27` results; the 29 older logs give identical output.
 - **Conclusion:** [objects/0001 § Plan 0038 batch H5b](0001-object-population.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects)
   and [drlg/0005 § Plan 0038 batch H5b](../drlg/0005-collision.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects).
   Not reached: trap types 8 and 9, type 3 below level 40, the well cap, the shrine cap's `= 10` half, the class-397

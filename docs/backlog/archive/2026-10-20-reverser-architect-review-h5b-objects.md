@@ -2,13 +2,13 @@
 from: reverser
 to: architect
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../plans/0038-inferred-claims-sweep.md#implementation-log
-  - ../findings/objects/0001-object-population.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects
-  - ../findings/drlg/0005-collision.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects
-  - ../findings/objects/experiments.md#run2026-10-19-h5b-objects
-resolution: ""
+  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../findings/objects/0001-object-population.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects
+  - ../../findings/drlg/0005-collision.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects
+  - ../../findings/objects/experiments.md#run2026-10-19-h5b-objects
+resolution: "Reviewed 2026-10-20 (architect): accept with fixes (3: misread 1, omission 2). d-none: objects 20, the 0x804 halves of collision 37 and objects 23, objects 38's PreOperate half. The collision.py near-list change is a model fix with evidence; collision 27 stands without it (re-checked with the pre-fix model). The cave log's logger error is accepted. The oracle change is accepted. Spec-writer entry released. Plan 0038 log, H5b review."
 ---
 
 Review plan 0038 batch H5b (`objects`, `lane/h5b`, `main` not merged into the lane: the lane may not merge), run:2026-10-19-h5b-objects. 22 scripted sessions on slot 1 (2 on 2026-10-19, 20 on 2026-10-20), `tools/objects.py check`: **234 315 checks, 1 failure**, a logger error (the cave log's `LOGERR collision MemoryError`, no model mismatch); the 29 logs of run:2026-10-15-objects re-checked: 150 314 checks, 0 mismatches (150 338 before the nine monster-creating `InitFn`s of S4b row 25 became seed oracles). Manifest `workspace/logs/h5b-manifest.sha256` (85 lines, `sha256sum -c` from `workspace/logs/`).

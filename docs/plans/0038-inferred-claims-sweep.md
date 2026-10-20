@@ -2582,12 +2582,58 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (near lists after a DRLG room's re-activation), `d2pilot.py objop` (`--obj-mem`, `--trap-types`, `--goal`, status
     lines), `h5b_sessions.py` (sessions, watchdog race). Symbols: 5 trap functions added, 6 raised to `C`.
   - **Backlog:** review request
-    [2026-10-20-reverser-architect-review-h5b-objects](../backlog/2026-10-20-reverser-architect-review-h5b-objects.md);
+    [2026-10-20-reverser-architect-review-h5b-objects](../backlog/archive/2026-10-20-reverser-architect-review-h5b-objects.md);
     spec-writer entry
     [2026-10-20-reverser-spec-writer-h5b-objects-spec-updates](../backlog/2026-10-20-reverser-spec-writer-h5b-objects-spec-updates.md).
   - **Left:** trap types 8 and 9, the well cap and the shrine cap's `= 10` half, the class-397 operate (the pilot
     never reached the chest), a window inside a portal-like operate, quest 13's 582 object, `InitFn` 54/55/62/68/69/79.
   - Slot 1 stopped, saves restored (aside removed, harness idle), no background process left.
+- **2026-10-20 — Review of `lane/h5b`, batch H5b (`objects`) (architect): accept with fixes.** `main` (`f8de60b`)
+  merged first (one conflict, this log, both sides kept; `backlog.py archive` moved nothing; `re/symbols.csv` has no
+  duplicate address or name). Re-run under `systemd-run --user --scope -p MemoryMax=4G`: `sha256sum -c
+  h5b-manifest.sha256` passes from `workspace/logs/` (85 lines); the tool hashes match the record; `objects.py check`
+  on the 22 logs gives the kept `check-h5b.txt` byte for byte (234 315 checks, 1 failure), on the 29 older logs the kept
+  `check-old29.txt` up to line order (150 314, 0); `sweep_h5b.py static` and `logs` and `collision.py check` on
+  run:2026-10-14-collision (0 mismatches) match. Spot-checks with objdump: `OBJ_TrapEvent`'s three tests
+  (`0x005817CB` type 8 and level ≥ 75, `0x00581816` type 3, level < 40 and ≠ 25, `0x00581849` types 1 and 4, level
+  < 40), each jumping through `0x00732CF4`, entry 2 of `g_ObjTrapFns` (table read from the image: the ten entries of the
+  finding, count 10 at `0x00732D14`); `OBJTRAP_ObjectCreate` passes class `0xA2` then `0xA0`; the four trap functions
+  load MonStats 330, 326, 329, 369; `OBJ_TrapFire` queues event 4 at frame `+ 0x23` (`0x00582595`); `g_ObjThemeFns`
+  entries 0 and 3 are `{0, 0}`; `UNIT_GetCollMask`'s door branch (`0x806`, else `0x400` or `0x804` by `BlockMissile`);
+  `0x00552C32` is the only reference to `0x00550A30`. The six symbols raised to `C` each have the code reading and the
+  run's matched entries.
+  - **Rulings.** (a) **d-none, all four proposals**: objects 20 (one call site, member `Orientation`, none 2 in 88
+    slots), the `0x804` halves of collision 37 and objects 23 (the branch needs a door with `BlocksVis` 0 and
+    `BlockMissile` set; none of the 7 has it), objects 38's PreOperate half. Inventory § 2.6. (b) **The near-list change
+    in `tools/collision.py` is a model fix with evidence, not fitting**: it was made for a diagnosed failure (a stale
+    active room in a neighbour's near list), is conditioned on the same level, DRLG room, rect and an unreused
+    pointer, and two simpler variants were rejected by a second test of the same log (line 25087). Re-checked here with
+    the pre-fix `collision.py`: the H5b logs give the same 734 unmasked `0x27` results and only flayer3's one mismatch
+    more, and the 29 older logs are identical, so collision 27's raise does not rest on the fix and stands. On
+    run:2026-10-14-collision the fix fires 3 999 times and changes nothing, so it is not discriminated there; the game's
+    unlink stays `[I]` and an open question of drlg/0005 (the free path, `0x0052D240`'s callees), as filed. (c) **The
+    cave log is accepted, not re-run**: the failure is a logger read (`MemoryError` at `0x65`, line 22353), not a model
+    disagreement; the checker resyncs and the rest of the log matches; no raised claim rests on that log alone (`InitFn`
+    57 also in cave2 and cave4). Reported as "1 logger error, 0 model mismatches". (d) **The oracle change is
+    accepted**: the nine `InitFn`s create monsters (S4b row 25), which the objects checker does not model, so a creation
+    would fail on the room and game seeds. The oracle still counts every `OD` inside it (none for the nine; `InitFn`
+    46's 1 306 show the counter live), and the 24 checks it drops are `InitFn` 18's 3 runs in the older logs, which
+    matched before; recorded in the experiments record. A scope reduction, not a fit.
+  - **Fixes (made here):** (1) *misread:* row 39's bullet listed cave3 among the sessions that created chest 397; cave3
+    never activated its room (0 `InitFn` 57 lines); now cave, cave2, cave4. (2) *omission:* row 35 (the 582 quest
+    object) was in the ledger's shortfalls with no statement in the finding; a shortfall bullet added to H5b.3.
+    (3) *omission:* the record did not say what the oracle change removed or that it keeps the `OD` counter; added,
+    with the review's re-run and the pre-fix counterfactual (experiments record, drlg/0005's near-list bullet). The
+    d-none wording ("Proposed") set to the ruling in objects/0001 and drlg/0005.
+  - **Totals** (inventory § 2.6, § 5, after merging `main`): **static 567, harness 531, c-emu 0, blocked 416** (d-none
+    283), **deferred 2, raised 10: 1 526**. H5b: 32 statements (33 filed; 1 to d-none).
+  - **Phase 3:** frees no cluster. drlg/collision still waits for H5d, objects for H6e2.
+  - **Ledger:** 3 fixes: misread 1, omission 2 ([metrics](metrics.md)).
+  - **Backlog:** review request
+    [2026-10-20-reverser-architect-review-h5b-objects](../backlog/archive/2026-10-20-reverser-architect-review-h5b-objects.md)
+    closed; the spec-writer entry
+    [2026-10-20-reverser-spec-writer-h5b-objects-spec-updates](../backlog/2026-10-20-reverser-spec-writer-h5b-objects-spec-updates.md)
+    released (it is applied with the objects and drlg/collision Phase 3 rounds, when H6e2 and H5d are accepted).
 - **2026-10-20 — Batch order and the 0039 fold (owner decisions, via the orchestrator; architect, `lane/plans45`).**
   (1) The remaining harness batches run **core and enabler first**: H5b (in flight) → H2a → H2b → H2c → H4a → H5d →
   H1b → H1a → H3b, then H6e2 → H6e1 → H6b → H6a → H6c → H6f → H6g; the family rules of

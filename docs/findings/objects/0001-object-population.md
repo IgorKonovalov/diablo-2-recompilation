@@ -1230,8 +1230,8 @@ OBJTRAP_ObjectCreate (0x00582380):
 - [I] **Orientation 2 has no stock case** (row 20). `OBJ_PlaceByOrientation`'s only call is in `OBJPOP_Shrine`
   (`0x00552C32`), which passes `Orientation` (`+0x13C`) of the record of the class it was called with, the ObjGroup
   member. Of the 88 member slots of `PopulateFn`-2 members named by ObjGroup, 9 have `Orientation` 1 and 79 have 3;
-  none has 2 (`sweep_h5b.py static`, `orient`). So the orientation-2 branch runs only on modified data. Proposed
-  d-none. (fn:OBJ_PlaceByOrientation@0x00550A30, fn:OBJPOP_Shrine@0x00552B50, tbl:Objects.txt:Orientation,
+  none has 2 (`sweep_h5b.py static`, `orient`). So the orientation-2 branch runs only on modified data. d-none
+  (H5b review; inventory § 2.6). (fn:OBJ_PlaceByOrientation@0x00550A30, fn:OBJPOP_Shrine@0x00552B50, tbl:Objects.txt:Orientation,
   tbl:ObjGroup.txt:ID0)
 
 ### H5b.3 Creation and marks (rows 23, 26, 27; drlg-collision 27, 37, 39)
@@ -1241,7 +1241,8 @@ OBJTRAP_ObjectCreate (0x00582380):
   logs; the 29 logs of run:2026-10-15-objects already held 13 more, counted by the new counter. (fn:UNIT_GetCollMask@0x006209D0,
   tbl:Objects.txt:BlocksVis, tbl:Objects.txt:BlockMissile, run:2026-10-19-h5b-objects)
 - [I] **`0x804` has no stock case** (that row's other half): of the 25 `IsDoor` records, the 7 with `BlocksVis` 0 all
-  have `BlockMissile` 0 (`sweep_h5b.py static`, `doors`). Proposed d-none. (fn:UNIT_GetCollMask@0x006209D0,
+  have `BlockMissile` 0 (`sweep_h5b.py static`, `doors`); `UNIT_GetCollMask` returns `0x804` only for a door with
+  `BlocksVis` 0 and `BlockMissile` non-zero (`0x00620A37`). d-none (H5b review; inventory § 2.6). (fn:UNIT_GetCollMask@0x006209D0,
   tbl:Objects.txt:IsDoor)
 - [C] **An object with `HasCollision` set and a zero size makes no mark** (row 23's third half; drlg-collision 39):
   class 523 (0 × 0, `HasCollision` 1 in every mode) in Harrogath's DS1 and the fissure 399 (City of the Damned) were
@@ -1271,7 +1272,10 @@ OBJTRAP_ObjectCreate (0x00582380):
   unchanged (class 371 has no `PreOperate`). The `interact` byte was 0 before (`OIX`), so the run cannot tell a whole-byte
   write from an OR (`[I]` for that). Row 38's "after a `PreOperate`" half: neither 371 nor any class the 581 handler
   draws has `PreOperate`, so the opened-chest case has no stock data. (fn:OBJ_PresetSuperChest@0x0054F370,
-  tbl:Objects.txt:PreOperate, run:2026-10-19-h5b-objects)
+  tbl:Objects.txt:PreOperate, run:2026-10-19-h5b-objects) d-none for that half at the H5b review (inventory § 2.6).
+- [I] **The 582 quest object from quest 13's state** (row 35) was not reached: no DS1 582 pseudo-object was placed
+  in any of the 22 logs (the checker's pseudo-object coverage lists 580 only), and no tool-built quest-13 save was
+  run. Shortfall. (fn:OBJ_PresetQuestObject@0x0054F430, run:2026-10-19-h5b-objects)
 
 ### H5b.4 Operates (rows 6, 39, 41, 42, 49)
 
@@ -1291,8 +1295,8 @@ OBJTRAP_ObjectCreate (0x00582380):
   did not predict would have put its unit lines before `OOX`.
   (fn:OBJOP_Casket@0x00586410, run:2026-10-19-h5b-objects)
 - [I] **The class-397 operate table** (row 39) was not reached: the chest was created three times, but the pilot
-  never reached it (cave, cave2, cave3, cave4; its room lies past the treasure room's entrance, where Teleport did not
-  move the character). Shortfall. (fn:OBJOP_Chest@0x00585F60, run:2026-10-19-h5b-objects)
+  never reached it (created in cave, cave2 and cave4; cave3's explore stopped short of the chest's room, which was never
+  activated; the room lies past the treasure room's entrance, where Teleport did not move the character). Shortfall. (fn:OBJOP_Chest@0x00585F60, run:2026-10-19-h5b-objects)
 - [I] **Bookshelves read no quest state** (row 49) stays as read: one operate cannot separate it.
   (fn:OBJOP_Bookshelf@0x00584060)
 - [I] **Windows inside a portal-like operate** (row 6) were not reached: the 19 operates of the Arcane Sanctuary's pads

@@ -930,13 +930,17 @@ Each statement below corrects the "not reached" of § 14 for its case.
   game gave `0x0001`. The model now puts the new active room in the old one's place in every near list (same level,
   DRLG room and rect, and only while the old pointer has not been reused by another room). With that, 0 mismatches on
   all the H5b logs and on the 29 older ones; `tools/collision.py check` on the seven run:2026-10-14-collision logs stays
-  at 0 mismatches. The game's own unlink of a freed room was not read; [I] that the game keeps the near-list slot and
+  at 0 mismatches. Checked at the H5b review: with the pre-fix `collision.py` (`fcf3f80~1`) the H5b logs give the
+  same 734 unmasked `0x27` results, all predicted, and flayer3's one mismatch; the 29 older logs give identical
+  output. So row 27 does not rest on the fix. On run:2026-10-14-collision the fix fires 3 999 times and changes no
+  result, so those logs do not discriminate it; flayer3's two tests (lines 25087 and 44192) are its evidence.
+  The game's own unlink of a freed room was not read; [I] that the game keeps the near-list slot and
   replaces the pointer (*Open questions*). (fn:COLL_RectTest@0x0064CEB0, run:2026-10-19-h5b-objects)
 - [C] **Row 37, the `0x400` half: a door with neither `BlocksVis` nor `BlockMissile` marks `0x400`.** 60 marks of
   classes 13 and 14 matched their `CM` line in the H5b logs, and 13 more in the older logs (counted now). (fn:UNIT_GetCollMask@0x006209D0,
   run:2026-10-19-h5b-objects)
 - [I] **Row 37, the `0x804` half: no stock data.** Among the 25 `IsDoor` records, the 7 with `BlocksVis` 0 all have
-  `BlockMissile` 0 (`python3 -I tools/sweep_h5b.py static`). Proposed d-none. (fn:UNIT_GetCollMask@0x006209D0,
+  `BlockMissile` 0 (`python3 -I tools/sweep_h5b.py static`). d-none (H5b review; inventory § 2.6). (fn:UNIT_GetCollMask@0x006209D0,
   tbl:Objects.txt:IsDoor, tbl:Objects.txt:BlockMissile)
 - [C] **Row 39: an object with `HasCollision` set and a zero size makes no mark.** Class 523 (0 × 0, `HasCollision` 1 in
   every mode) in Harrogath's DS1 and the fissure 399 in the City of the Damned were created in mode 0 inside a logged
