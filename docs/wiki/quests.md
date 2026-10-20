@@ -472,7 +472,9 @@ left it.
 confirmed). Going in from a town raises the level-change event, and when the owner goes back through the town end both
 ends are freed; those two are read from the code. With one player, the hostility, party and quest checks for using someone else's portal never come into
 play. A two-client game confirmed the hostility check: a player hostile to anyone is refused at another player's
-portal before any wait. The party and quest checks are read from the code.
+portal before any wait. The same game confirmed the first half of the party check, in one refused click and one that
+passed: a player in no party is refused at another player's portal, and a player in the owner's party goes through.
+The refusal for two different parties, which needs a third player, and the quest check are read from the code.
 
 A pair is closed when the owner goes back through the town end, opens a new one, leaves, declares hostility, or when
 the Ancients' altar closes every portal on the summit ([closing](../specs/quests/travel.md#closing-and-permanent-portals)).
