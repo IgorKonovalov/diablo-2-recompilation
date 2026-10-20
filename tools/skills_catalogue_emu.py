@@ -62,6 +62,12 @@ the necromancer start functions 15-21 and do functions 30-32 and 55-63:
   corpse_nec do 31, 55, 58, 59, 63                                            summon_nec do 56, 57, 60, 62 (spawn blocks)
 A boundary inside a helper the batch function called is checked with the helper's return address at its stack slot.
 
+Batch pal (`--batch pal`, files under workspace/logs/skills-cat-pal/, draws from random.Random("catpal-<family>")):
+the paladin start functions 29, 31, 35, 36, 37 and do functions 64-67, 73, 79-82 and 150:
+  aura_pal   do 65, 66, 81, 82 (the aura block, up to AURA_ApplyToTarget through 0x0056B740)
+  melee_pal  start 29, 35, 36, 37, do 64, 79, 150 (used skill, target, queued hit)
+  move_pal   start 31, do 67, 73, 80 (Charge's speed, the hammer and the fist's MissileCreate blocks)
+
 Each check prints `CAT9A <family> key=value ...`: cases, matches, mismatches (bad), the negative control's mismatch
 count (neg, must be > 0), traced accesses outside the stack, spec and case memory (traced), those outside the declared
 read set (undeclared, must be 0), cases stopped other than at a boundary (stopped, must be 0), then the outcome and
@@ -7631,6 +7637,576 @@ def cmd_static_nec(a):
     return 1 if rep.c["bad"] else 0
 
 
+# ##################################################################################################################
+# Batch pal (plan 0046 Phase 1, the paladin class batch): the start functions 29, 31, 35, 36, 37 and the do functions
+# 64-67, 73, 79-82 and 150 of g_SkillStartFuncs (0x00732140) and g_SkillDoFuncs (0x007322B0); each (ECX game, EDX
+# unit; skill id, level), `ret 8`. The conventions of 9c-nec: the call site of every boundary asserted (site control),
+# the caster's and the target's seeds compared in every case, a pointer argument compared by content, where a boundary
+# sits inside a helper the batch function called the helper's return address compared at its stack slot (ruling 1 of
+# the lane/p46m6 review), two or more negative controls per family. New here: the aura functions' self-application
+# goes through 0x0056B740 (emulated: a 16-byte context {game, unit, 0, &block} and an indirect call of its first
+# argument), so AURA_ApplyToTarget (0x005CEDC0) is the boundary, entered with ECX = &context and EDX = the caster
+# (its two register arguments). Emulated, not observed (new for this batch): 0x0056B740, sub_0057D690_QueuedHitFind
+# (with UnitGetType 0x0044BE50 and UnitGetId 0x00451F50), 0x005D02B0 (Conversion's test, up to 0x0056E2F0) with
+# sub_0063EE90_HirelingType, the mana cost 0x00644B10, SKILLS_NextPeriodicFrame, the used-skill node setters
+# (0x00644560, 0x006445A0, 0x006445E0, 0x00644620), CHARSTATS_GetRecord, MONSTATS_GetRecord, the Param1 getter
+# 0x004C9460, sub_00483360_MulDiv. Observed (new): AURA_ApplyToTarget, the inventory call 0x0063C8F0, 0x006633B0
+# (do 67's first call: the animation data), sub_00648690_PathSetSpeed, 0x00649050 (a path call).
+# ##################################################################################################################
+FNP = {
+    "st29": 0x005CE790, "st31": 0x005CF6B0, "st35": 0x005CFE10, "st36": 0x005D0180, "st37": 0x005DAF40,
+    "do64": 0x005CE8E0, "do65": 0x005CF010, "do66": 0x005CF3A0, "do67": 0x005CF900, "do73": 0x005D0040,
+    "do79": 0x005D0350, "do80": 0x005D0670, "do81": 0x005D0920, "do82": 0x005D0E90, "do150": 0x005CE9F0,
+}
+BOUNDS_P = dict(BOUNDS_N)
+BOUNDS_P.update({
+    0x005CEDC0: "AuraApply", 0x0063C8F0: "InvShield", 0x006633B0: "AnimSeq", 0x00648690: "PathSetSpeed",
+    0x00649050: "Path9050",
+})
+BOUND_BY_NAME.update({v: k for k, v in BOUNDS_P.items()})
+ALLBOUND.update(BOUNDS_P)
+CHREC = 0x12640000                   # CharStats records (0xC4), DataTables+0xBC4 / +0xBC8
+NCH = 7
+QH = OWN + 0x3000                    # the caster's queued hits (+0xAC chain; next +0x84; packet at +0x14)
+RS_PAL = [RS_HASH, RS_SKN, RS_CALC_JT, RS_BITMASK9C, RS_TOWN]
+HIRE_CLS = (0x10F, 0x152, 0x167, 0x230, 0x231)   # sub_0063EE90_HirelingType's monster classes (1, 2, 3, 4, 4)
+
+
+def mem_pal():
+    lines = ["dword %08x %08x" % (G_PDATATABLES, DT),
+             "dword %08x %08x" % (DT + 0xB64, MREC), "dword %08x %08x" % (DT + 0xB6C, NREC),
+             "dword %08x 6b3a11f5" % COOKIE,
+             "dword %08x %08x" % (DT + 0xB98, SREC), "dword %08x %08x" % (DT + 0xBA0, NSREC),
+             "dword %08x %08x" % (DT + 0x40, SPOOL),
+             "dword %08x %08x" % (DT + 0xBCC, ISC), "dword %08x %08x" % (DT + 0xBD4, NISC),
+             "dword %08x %08x" % (DT + 0xA78, MSREC), "dword %08x %08x" % (DT + 0xA80, NMON),
+             "dword %08x %08x" % (DT + 0xA90, MS2REC), "dword %08x %08x" % (DT + 0xA98, NMON2),
+             "dword %08x %08x" % (DT + 0xC4, NSTATES), "dword %08x %08x" % (DT + 0xBF0, NPET),
+             "dword %08x %08x" % (DT + 0xBC4, CHREC), "dword %08x %08x" % (DT + 0xBC8, NCH)]
+    lines += ["observe %08x" % a for a in sorted(BOUNDS_P)]
+    lines += ["guard %08x" % a for a in FATAL + ALLOC if a not in BOUNDS_P]
+    return lines
+
+
+def finish_p(c, rnd, row, game, cases, exp, dumps=()):
+    finish_s(c, rnd, row, game, cases, exp, [row["sid"], row["lvl"]], dumps=dumps)
+
+
+def ret_p(row, eax, bit6=False, mem=None):
+    return ret_s(row, eax, bit6=bit6, mem=mem)
+
+
+NODE_DUMP = (UNODE + 0x18, 16)
+
+
+def put_node_full(c, rnd, row, p=0.9):
+    """put_used_node plus the node's +0x24 word (written so that a setter's store is compared, never a stale word)."""
+    put_used_node(c, rnd, row, p=p)
+    if row["node"] is not None:
+        w24 = rnd.getrandbits(32)
+        c.put(UNODE + 0x24, le32(w24))
+        row["node"]["w24"] = w24
+
+
+def node_bytes(row, n18=None, ty=None, g=None, w24=None):
+    nd = row["node"]
+    vals = [nd["n18"] if n18 is None else n18, nd["ty"] if ty is None else ty, nd["g"] if g is None else g,
+            nd["w24"] if w24 is None else w24]
+    return {UNODE + 0x18: b"".join(le32(v) for v in vals)}
+
+
+# ------------------------------------------------------------------------------------------- the aura functions
+AURA_ORDER_P = ("do65", "do66", "do81", "do82")
+AURA_FS = {"do65": 0x64, "do66": 0x12C, "do81": 0x128, "do82": 0x70}         # frame sizes (sub esp)
+AURA_BLK = {"do65": -0x64, "do66": -0xBC, "do81": -0xB8, "do82": -0x70}      # the 0x50-byte block (ebp-relative)
+AURA_RET = {"do65": 0x005CF148, "do66": 0x005CF4FA, "do81": 0x005D0A80, "do82": 0x005D0FD2}   # after 0x0056B740
+
+
+def put_cost(c, rnd, row):
+    """Skills manashift +0x188 (the byte is read), mana +0x18A, lvlmana +0x18C (s16)."""
+    b = srec(row)
+    msh = rnd.choice([8, 4, 2, rnd.randrange(32), rnd.getrandbits(16)])
+    mn = rnd.choice([0, 0, rnd.randint(1, 76), rnd.randint(-0x8000, 0x7FFF)])
+    lm = rnd.choice([0, 0, rnd.randint(-3, 10), rnd.randint(-0x8000, 0x7FFF)])
+    c.put(b + 0x188, le16(msh) + le16(mn) + le16(lm))
+    row.update(msh=msh, mn=mn, lm=lm)
+
+
+def cost_p(row, neg=None):
+    """0x00644B10(id, lvl): ((lvl - 1) * lvlmana + mana) << (manashift byte & 31), 32-bit."""
+    v = s32(s32(s16(row["lm"]) * s32(s32(row["lvl"]) - 1)) + s16(row["mn"]))
+    return s32(v << ((row["msh"] & 0xFF) & 31))
+
+
+def npf_end(row, neg=None):
+    """SKILLS_NextPeriodicFrame(ECX game, EDX unit; rec, id, lvl) + 1 - frame: p = perdelay calc, 5 when <= 5;
+    ((frame + p - 1) / p) * p + 1 (idiv, truncating)."""
+    p = ev_s(row, 0x128)
+    if p <= (5 if neg != "npf6" else 6):
+        p = 5 if neg != "npf6" else 6
+    f = s32(row["frame"])
+    n = s32(s32(cdiv(s32(f + p - 1), p) * p) + 1)
+    return s32(n + 1 - f)
+
+
+@family("aura_pal", "pal")
+def aura_pal(rnd, game):
+    """Do 65 (the paladin auras, Barbs, Wolverine and Oak Sage), do 66 (Holy Fire, Holy Shock, Sanctuary,
+    Conviction), do 81 (Holy Freeze), do 82 (Redemption): the mana cost and gate, the period end, the 0x50-byte
+    block, up to AURA_ApplyToTarget through 0x0056B740 (or do 65's SKILLS_ForUnitsInRange)."""
+    cases, exp = [], []
+    for k in range(1600):
+        w = AURA_ORDER_P[k % 4]
+        c = Case(FNP[w])
+        row = {"w": w, "sid": pick_skill(rnd), "lvl": pick_lvl(rnd)}
+        put_caster(c, rnd, row, types=(0, 0, 0, 1, 3))
+        fields = (0x68, 0x6C, 0x70, 0x74, 0x78, 0x7C, 0x128, 0x64) if w == "do65" else \
+            (0xA4, 0xA8, 0xAC, 0xB0, 0xB4, 0x128)
+        row["cal"] = sor_calcs(c, rnd, row["sid"], fields)
+        frame = rnd.choice([rnd.randint(0, 30), rnd.randint(0, 100000), rnd.getrandbits(31)])
+        c.put(game + 0xA8, le32(frame))
+        row["frame"] = frame
+        mana = None
+        if sid_ok(row):
+            b = srec(row)
+            put_cost(c, rnd, row)
+            cost = cost_p(row)
+            mana = rnd.choice([cost, cost - 1, cost + 1, rnd.randint(0, 0x7FFFF), rnd.getrandbits(32)]) & M32
+            st = [rnd.choice([rnd.randrange(NISC)] * 6 + [-1, rnd.randint(-0x8000, -2), rnd.randint(NISC, 0x7FFF)])
+                  for _ in range(6)]
+            c.put(b + 0x54, b"".join(le16(s) for s in st))
+            pst = [rnd.choice([rnd.randrange(NISC)] * 4 + [-1, rnd.randint(-0x8000, -2), rnd.randint(NISC, 0x7FFF)])
+                   for _ in range(5)]
+            c.put(b + 0x98, b"".join(le16(s) for s in pst))
+            states = [rnd.choice([rnd.randrange(1, NSTATES)] * 5 + [0, -1, NSTATES, rnd.randint(-0x8000, -2)])
+                      for _ in range(2)]
+            c.put(b + 0x80, le16(states[0]) + le16(states[1]))
+            ps = rnd.choice([-1, -1, 0, rnd.randrange(1, NSTATES), rnd.randint(-0x8000, 0x7FFF)])
+            c.put(b + 0x94, le16(ps))
+            filt = rnd.getrandbits(32)
+            c.put(b + 0x50, le32(filt))
+            row.update(st=st, pst=pst, ast=states[0], tst=states[1], ps=ps, filt=filt)
+        sv = put_stats(c, rnd, U, {8: mana})
+        row["mana"] = stat_of(sv, 8)
+        finish_p(c, rnd, row, game, cases, exp)
+    return cases, mem_pal(), {"cases": exp}
+
+
+def aura_gate(row, neg=None):
+    """The stats are evaluated unless the caster is a player (type 0) whose mana is below the cost (signed)."""
+    if neg == "nogate":
+        return True
+    return row["ut"] != 0 or s32(row["mana"]) >= cost_p(row)
+
+
+def aura_pal_model(row, game, br, neg=None):
+    w = row["w"]
+    br[w] += 1
+    if not sid_ok(row):
+        br["nosid"] += 1
+        return ret_p(row, 0)
+    sid, lv = s16(row["sid"]), row["lvl"]
+    ast, tst = s16(row["ast"]), s16(row["tst"])
+    if w != "do65" and not 0 <= ast < NSTATES:
+        br["nostate"] += 1
+        return ret_p(row, 0)
+    blk = bytearray(0x50)
+    struct.pack_into("<III", blk, 4, sid & M32, lv & M32, npf_end(row, neg) & M32)
+    gate = aura_gate(row, neg)
+    br["gate" if gate else "nogate"] += 1
+    if w == "do65":
+        if s16(row["ps"]) > 0:
+            struct.pack_into("<i", blk, 0x48, s16(row["ps"]))
+        if gate:
+            for i in range(6 if neg != "len5" else 5):
+                s = s16(row["st"][i])
+                if s < 0:
+                    break
+                struct.pack_into("<i", blk, 0x10 + 4 * i, s)
+                struct.pack_into("<i", blk, 0x28 + 4 * i, ev_s(row, 0x68 + 4 * i))
+        if (0 < ast or (neg == "as0" and ast == 0)) and ast < NSTATES:
+            struct.pack_into("<i", blk, 0, ast)
+        elif 0 <= tst < NSTATES:
+            struct.pack_into("<i", blk, 0, tst)
+            br["search"] += 1
+            return obs_a(row, "ForUnitsInRange", {"ecx": game, "edx": U},
+                         [0, 0, ev_s(row, 0x64), row["filt"], 0x005CEDC0, fr(-0x64), 1, 0x006E323C, 0x1F6],
+                         0x005CF229, ptrs={5: bytes(blk)})
+        else:
+            br["nostates"] += 1
+            return ret_p(row, 1)
+    else:
+        struct.pack_into("<i", blk, 0, ast)
+        if w == "do81":
+            struct.pack_into("<I", blk, 0x4C, 0x005D0770)
+        for i in range(5):
+            s = s16(row["pst"][i])
+            struct.pack_into("<i", blk, 0x10 + 4 * i, s)
+            if w == "do82" and s < 0 and neg != "neg82":
+                continue
+            if gate:
+                struct.pack_into("<i", blk, 0x28 + 4 * i, ev_s(row, 0xA4 + 4 * i))
+    slot = (FRAME_EBP - AURA_FS[w] - 0x18) & M32
+    ctx = (slot - 0x14) & M32
+    cb = le32(game) + le32(U) + le32(0) + le32(fr(AURA_BLK[w]))
+    br["apply"] += 1
+    return obs_a(row, "AuraApply", {"ecx": ctx, "edx": U}, [], 0x0056B75F, stk={"ecx": (0, cb)},
+                 frame={fr(AURA_BLK[w]): bytes(blk), slot: le32(AURA_RET[w])})
+
+
+# ------------------------------------------------------------------------------------------- melee and hit tests
+MELEE_ORDER_P = ("st29", "st35", "st36", "st37", "do64", "do79", "do150")
+
+
+def put_queued(c, rnd, row):
+    """The caster's queued hits (U+0xAC): 0-3 nodes {+4 type, +8 guid, +0xC target type, +0x10 target guid, packet
+    at +0x14 (+0x1C its +0x08), +0x84 next}; one matches the caster and the target at times, the others differ in one
+    word."""
+    n = rnd.choice([0, 1, 1, 2, 3])
+    nodes = [QH + 0x100 * i for i in range(n)]
+    c.put(U + 0xAC, le32(nodes[0] if nodes else 0))
+    t = row["t"]
+    tt, tg = (row["tt"], u32f(c, T + 0x0C)) if t else (6, 0xFFFFFFFF)
+    match = rnd.randrange(n) if n and t and rnd.random() < 0.7 else -1
+    q = []
+    for i, nd in enumerate(nodes):
+        w = [row["ut"], row["ug"], tt, tg]
+        if i != match:
+            j = rnd.randrange(4)
+            w[j] = (w[j] + rnd.choice([1, 2, 0x80, rnd.getrandbits(32) | 1])) & M32
+        dmg = rnd.choice([rnd.randint(0, 0x10000), rnd.getrandbits(32), rnd.randint(0, 255) << 8])
+        c.put(nd + 0x04, b"".join(le32(v) for v in w))
+        c.put(nd + 0x1C, le32(dmg))
+        c.put(nd + 0x84, le32(nodes[i + 1] if i + 1 < n else 0))
+        q.append({"w": w, "dmg": dmg, "a": nd})
+    row["q"] = q
+
+
+def qhf(row, neg=None):
+    """sub_0057D690_QueuedHitFind(ECX caster, EDX target): the first node whose four words are the caster's type and
+    guid and the target's type and guid -> node + 0x14 (the packet), else 0."""
+    t = row["t"]
+    want = [row["ut"], row["ug"], row["tt"] if t else 6, row["tguid"] if t else 0xFFFFFFFF]
+    for nd in row["q"]:
+        w = nd["w"]
+        if (w == want) or (neg == "qhf_tgt" and w[:2] == want[:2]):
+            return nd
+    return None
+
+
+@family("melee_pal", "pal")
+def melee_pal(rnd, game):
+    """Start 29 (Sacrifice), 35 (Vengeance), 36 (Holy Shield), 37 (Zeal, Fury), do 64 (Sacrifice), do 79
+    (Conversion), do 150 (Smite): the used skill, the target, the queued hit, up to InMeleeRange, MeleeHitTest, the
+    inventory call, the nearest-unit search, COMBAT_ApplyDamage, 0x0056E2F0 or COMBAT_DeliverQueued."""
+    cases, exp = [], []
+    for k in range(1750):
+        w = MELEE_ORDER_P[k % 7]
+        c = Case(FNP[w])
+        row = {"w": w, "sid": pick_skill(rnd), "lvl": pick_lvl(rnd)}
+        put_caster(c, rnd, row, types=(0, 0, 1) if w != "do79" else (0, 0, 1, 3))
+        put_inv_a(c, rnd, row)
+        put_target_a(c, rnd, row, game, types=(0, 1, 1, 1, 2, 3, 4, 5) if w != "do79" else (1, 1, 1, 1, 0, 2, 4))
+        row["tguid"] = u32f(c, T + 0x0C) if row["t"] else None
+        dumps = ()
+        if w in ("st29", "st35", "st37"):
+            put_node_full(c, rnd, row)
+            dumps = (NODE_DUMP,)
+        if w == "st35":
+            row["cal"] = sor_calcs(c, rnd, row["sid"], (0x1A0,))
+            put_tohit(c, rnd, row)
+        if w == "st37":
+            row["cal"] = sor_calcs(c, rnd, row["sid"], (0x138,))
+            put_reach(c, rnd, row)
+        if w in ("do64", "do79"):
+            put_queued(c, rnd, row)
+        if w == "do64":
+            row["cal"] = sor_calcs(c, rnd, row["sid"], (0x13C,))
+            if row["t"]:
+                hp = rnd.choice([rnd.randint(0, 0x10000), rnd.getrandbits(32), rnd.randint(0, 2000) << 8])
+                if row["q"] and rnd.random() < 0.3:
+                    hp = (row["q"][0]["dmg"] + rnd.choice([-1, 0, 1])) & M32
+                row["thp"] = stat_of(put_stats(c, rnd, T, {6: hp}), 6)
+        if w == "do79":
+            if sid_ok(row):
+                c.put(srec(row) + 0x82, le16(rnd.choice([rnd.randrange(NSTATES), -1, NSTATES])))
+            if row["t"]:
+                tcls = rnd.choice([rnd.randrange(NMON), rnd.randrange(600)] * 3 + list(HIRE_CLS))
+                c.put(T + 0x04, le32(tcls))
+                row["tcls"] = tcls
+                ta = put_state_list_s(c, rnd, T, TSL, 105, p_found=0.5, stat=172)
+                row["talign"] = align_of(row["tt"], ta, c, T)
+        finish_p(c, rnd, row, game, cases, exp, dumps=dumps)
+    return cases, mem_pal(), {"cases": exp}
+
+
+def hire_type_p(cls_t, tt):
+    """sub_0063EE90_HirelingType(unit): a monster of class 271, 338, 359, 560 or 561 -> 1, 2, 3, 4, 4; else 0."""
+    if tt != 1:
+        return 0
+    return {0x10F: 1, 0x152: 2, 0x167: 3, 0x230: 4, 0x231: 4}.get(cls_t & M32, 0)
+
+
+def melee_pal_model(row, game, br, neg=None):
+    w = row["w"]
+    br[w] += 1
+    t = tgt_unit(row)
+    if w == "st36":
+        if not row["inv"]:
+            br["noinv"] += 1
+            return ret_p(row, 0 if neg != "inv_any" else 1)
+        br["invshield"] += 1
+        return obs_a(row, "InvShield", {}, [row["inv"], 0], 0x005D0192)
+    if not sid_ok(row):
+        br["nosid"] += 1
+        return ret_p(row, 0, bit6=False)
+    if w in ("st29", "st35", "st37") and row["node"] is None:
+        br["noused"] += 1
+        return ret_p(row, 0)
+    if w == "st37":
+        a = reach_a(row, None)
+        if a[0] == "obs":
+            br["reach_" + a[1]] += 1
+            return sub_obs(row, a)
+        r = s32(a[1] + (4 if neg != "reach0" else 0))
+        if not t:
+            br["near"] += 1
+            return obs_a(row, "NearestUnit", {"ecx": game, "edx": U}, [0, 0, r, 0x20003, 0xFFFFFFFF, 0], 0x005DAFAE)
+        br["settarget"] += 1
+        return ret_p(row, 1, mem=node_bytes(row, n18=ev_s(row, 0x138), ty=row["tt"], g=row["tguid"]))
+    if w == "do79":
+        if not t:
+            br["notarget"] += 1
+            return ret_p(row, 0, bit6=True)
+        q = qhf(row, neg)
+        if q is not None and hire_type_p(row["tcls"], row["tt"]) == 0 and row["tt"] == 1 and \
+                (row["talign"] == 0 or neg == "align_any"):
+            br["montest"] += 1
+            return obs_a(row, "MonTest2F0", {"ecx": T, "edx": 0xB}, [], 0x005D0305, bit6=True,
+                         frame=abs_ret(0x7FEFFFD4, 0x005D03CC))
+        br["deliver_" + ("found" if q is not None else "none")] += 1
+        return obs_a(row, "DeliverQueued", {"ecx": game, "edx": U}, [T, 0], 0x005D03FF, bit6=True)
+    if not t:
+        br["notarget"] += 1
+        return ret_p(row, 0)
+    if w in ("st29", "do150"):
+        br["meleerange"] += 1
+        return obs_a(row, "InMeleeRange", {}, [U, T, 0], 0x005CE7F1 if w == "st29" else 0x005CEA46)
+    if w == "st35":
+        br["hittest"] += 1
+        return obs_a(row, "MeleeHitTest", {"ecx": game, "edx": U}, [T, tohit_a(row), 0], 0x005CFE9A,
+                     frame={fr(-0x80): bytes(0x70)})
+    # do 64
+    q = qhf(row, neg)
+    if q is None:
+        br["noqueued"] += 1
+        return ret_p(row, 1)
+    v = s32(q["dmg"])
+    hp = s32(row["thp"])
+    if hp < v and neg != "hp_nomin":
+        v = hp
+    d = muldiv(v, ev_s(row, 0x13C), 100)
+    pkt = bytearray(0x70)
+    struct.pack_into("<I", pkt, 0, 0x1000)
+    struct.pack_into("<i", pkt, 8, d)
+    struct.pack_into("<i", pkt, 0x4C, d)
+    br["selfhit"] += 1
+    return obs_a(row, "ApplyDamage", {"ecx": game, "edx": U}, [U, 0, fr(-0x78)], 0x005CE9C1, ptrs={2: bytes(pkt)})
+
+
+# ------------------------------------------------------------------------------------------- charge and missiles
+MOVE_ORDER_P = ("st31", "do67", "do73", "do80")
+
+
+@family("move_pal", "pal")
+def move_pal(rnd, game):
+    """Start 31 (Charge, SerpentCharge: the used skill's words, the run speed, up to PathSetSpeed, 0x00649050 or
+    InMeleeRange), do 67 (Charge: up to its animation-data call 0x006633B0), do 73 (Blessed Hammer) and do 80 (Fist of
+    the Heavens) up to MissileCreate."""
+    cases, exp = [], []
+    for k in range(1600):
+        w = MOVE_ORDER_P[k % 4]
+        c = Case(FNP[w])
+        row = {"w": w, "sid": pick_skill(rnd), "lvl": pick_lvl(rnd)}
+        put_caster(c, rnd, row, types=(0, 0, 1, 1))
+        dumps = ()
+        if w in ("st31", "do67"):
+            put_node_full(c, rnd, row)
+            dumps = (NODE_DUMP,)
+        if w == "st31":
+            if rnd.random() < 0.08:
+                c.put(U + 0x2C, le32(0))
+                row["upath"] = 0
+            else:
+                row["upath"] = UP
+            if row["ut"] == 0:
+                row["ucls"] = rnd.choice([rnd.randrange(NCH)] * 6 + [NCH, rnd.randint(NCH, 300)])
+                c.put(U + 0x04, le32(row["ucls"]))
+            elif rnd.random() < 0.6:
+                row["ucls"] = rnd.randrange(NMON)
+                c.put(U + 0x04, le32(row["ucls"]))
+            run = [rnd.getrandbits(8) for _ in range(NCH)]
+            for i in range(NCH):
+                c.put(CHREC + 0xC4 * i + 0x41, bytes([run[i]]))
+            mrun = [rnd.choice([rnd.randint(0, 20), rnd.randint(-0x8000, 0x7FFF)]) for _ in range(NMON)]
+            for i in range(NMON):
+                c.put(MSREC + 0x1A8 * i + 0x34, le16(mrun[i]))
+            row.update(run=run, mrun=mrun)
+            if sid_ok(row):
+                p1 = rnd.choice([rnd.randint(-50, 3600), 180, rnd.getrandbits(32)])
+                c.put(srec(row) + 0x148, le32(p1))
+                row["p1"] = p1
+            v67 = rnd.choice([None, 0, rnd.randint(-100, 49), 50, 51, rnd.randint(51, 400), rnd.getrandbits(32)])
+            row["v67"] = stat_of(put_stats(c, rnd, U, {67: v67}), 67)
+        put_target_a(c, rnd, row, game)
+        if w in ("do73", "do80") and sid_ok(row):
+            put_bycharge(c, rnd, row)
+        finish_p(c, rnd, row, game, cases, exp, dumps=dumps)
+    return cases, mem_pal(), {"cases": exp}
+
+
+def charge_speed(row, neg=None):
+    """Start 31's speed: MulDiv(base, max(stat 67, 50) + Param1, 100); base = CharStats +0x41 << 8 for a player,
+    MonStats +0x34 (s16) << 8 for a monster, 0x100 without a record."""
+    if row["ut"] == 0:
+        cl = row["ucls"]
+        base = (row["run"][cl] << 8) if 0 <= s32(cl) < NCH and neg != "base100" else 0x100
+    else:
+        cl = row["ucls"]
+        base = s32(s16(row["mrun"][cl]) << 8) if 0 <= s32(cl) < NMON else 0x100
+    v = s32(row["v67"])
+    if v <= 50 and neg != "v67_floor":
+        v = 50
+    return muldiv(base, s32(v + row["p1"]), 100)
+
+
+def move_pal_model(row, game, br, neg=None):
+    w = row["w"]
+    br[w] += 1
+    if not sid_ok(row):
+        br["nosid"] += 1
+        return ret_p(row, 0)
+    sid, lv = s16(row["sid"]), row["lvl"]
+    t = tgt_unit(row)
+    if w in ("st31", "do67") and row["node"] is None:
+        br["noused"] += 1
+        return ret_p(row, 0)
+    if w == "do67":
+        br["anim"] += 1
+        return obs_a(row, "AnimSeq", {}, [U], 0x005CF956)
+    if w == "st31":
+        if not row["upath"]:
+            br["nopath"] += 1
+            return ret_p(row, 0)
+        if t:
+            br["meleerange"] += 1
+            return obs_a(row, "InMeleeRange", {}, [U, T, 0], 0x005CF728)
+        nb = node_bytes(row, n18=6, ty=0, w24=7)
+        if row["ut"] != 0 and 0 <= s32(row["ucls"]) < NMON:
+            br["mon_path"] += 1
+            return obs_a(row, "Path9050", {}, [UP], 0x005CF82B, mem=nb)
+        br["speed_" + ("player" if row["ut"] == 0 else "mon_norec")] += 1
+        return obs_a(row, "PathSetSpeed", {}, [UP, charge_speed(row, neg)], 0x005CF873, mem=nb)
+    m = bycharge(row)
+    if m <= 0 and not (neg == "m0" and m == 0):
+        br["nomiss"] += 1
+        return ret_p(row, 0)
+    if w == "do73":
+        x, y, ok = target_xy(row)
+        if not ok:
+            br["noxy"] += 1
+            return ret_p(row, 0)
+        kw = dict(flags=0x20, owner=U, source=U, cls=m, tx=x, ty=y, skill=sid, lvl=lv)
+        if neg == "xy73":
+            kw.update(x=row["ux"], y=row["uy"])
+        br["hammer"] += 1
+        return obs_a(row, "MissileCreate", {"ecx": game}, [], 0x005D00ED, bit6=True, stk={"edx": (0, blk9d(**kw))})
+    if not t:
+        br["notarget"] += 1
+        return ret_p(row, 0)
+    blk = blk9d(flags=1, owner=U, cls=m, x=row["tx"], y=row["ty"], skill=sid, lvl=lv)
+    br["fist"] += 1
+    return obs_a(row, "MissileCreate", {"ecx": game}, [], 0x005D071B, bit6=(neg == "bit6_80"),
+                 stk={"edx": (0, blk)})
+
+
+CHECKS.update({
+    "aura_pal": check9b("aura_pal", aura_pal_model, ["nogate", "npf6", "len5", "as0", "neg82"], RS_PAL,
+                        md_masked=False),
+    "melee_pal": check9b("melee_pal", melee_pal_model, ["inv_any", "reach0", "qhf_tgt", "hp_nomin", "align_any"],
+                         RS_PAL, md_masked=False),
+    "move_pal": check9b("move_pal", move_pal_model, ["base100", "v67_floor", "m0", "xy73", "bit6_80"], RS_PAL,
+                        md_masked=False),
+})
+
+PINS_PAL = [  # (address, mnemonic, operand substring): instructions the pal claims turn on (ADR-0015 (5))
+    (0x00644B4B, "imul", "eax,edx"), (0x00644B5D, "shl", "eax,cl"), (0x00644B55, "mov", "cl,BYTE PTR [ecx+0x188]"),
+    (0x0056CD70, "cmp", "ecx,0x5"), (0x0056CD73, "jg", ""), (0x0056CD85, "idiv", "ecx"),             # NPF
+    (0x0056B75C, "call", "DWORD PTR [ebp+0x8]"), (0x0056B755, "mov", "DWORD PTR [ebp-0x8],0x0"),     # 0x0056B740
+    (0x005CF0C4, "jl", ""), (0x005CF0DF, "jl", ""), (0x005CF117, "jle", ""), (0x005CF1D8, "jl", ""),  # do 65
+    (0x005CF0AD, "jle", ""), (0x005CF0B2, "mov", "DWORD PTR [ebp-0x1c],edx"),
+    (0x005CF3EC, "jl", ""), (0x005CF4E2, "jl", ""), (0x005CF4B1, "jl", ""),                            # do 66
+    (0x005D0A02, "mov", "DWORD PTR [ebp-0x6c],0x5d0770"), (0x005D0A62, "cmp", "eax,0x5"),              # do 81
+    (0x005D0F7C, "jl", ""), (0x005D0FB7, "cmp", "ecx,0x5"),                                            # do 82
+    (0x0057D6F0, "lea", "eax,[esi+0x14]"), (0x0057D6E0, "mov", "esi,DWORD PTR [esi+0x84]"),           # QHF
+    (0x005CE973, "jge", ""), (0x005CE954, "or", "DWORD PTR [ebp-0x78],0x1000"),                       # do 64
+    (0x005D02FB, "lea", "edx,[eax+0xb]"), (0x005D02DC, "push", "ebx"),                                # 0x005D02B0
+    (0x005D0390, "or", "DWORD PTR [edi+0xc4],0x40"),                                                   # do 79
+    (0x005D0180, "mov", "eax,DWORD PTR [edx+0x60]"),                                                   # start 36
+    (0x005DAF9F, "push", "0x20003"),                                                                   # start 37
+    (0x005CF844, "mov", "edi,0x32"), (0x005CF842, "jg", ""), (0x005CF7F2, "mov", "ch,BYTE PTR [eax+0x41]"),  # st 31
+    (0x005CF808, "movsx", "eax,WORD PTR [eax+0x34]"), (0x005CF7DB, "mov", "DWORD PTR [ebp-0x4],0x100"),
+    (0x004C9484, "mov", "eax,DWORD PTR [ecx+0x148]"),
+    (0x005D008A, "jle", ""), (0x005D00D2, "mov", "DWORD PTR [ebp-0x64],0x20"),                        # do 73
+    (0x005D06BE, "jle", ""), (0x005D06E5, "mov", "DWORD PTR [ebp-0x64],0x1"),                         # do 80
+]
+
+
+def cmd_static_pal(a):
+    rep = Report("static")
+    rep.batch = "PAL"
+    A = S4.asm()
+    for va, mn, sub in PINS_PAL:
+        ins = A.at(va)
+        rep.c["pins"] += 1
+        if ins is None or ins[0] != mn or sub not in ins[1]:
+            rep.bad("pin 0x%08X: %r, want %s %s" % (va, ins, mn, sub))
+        else:
+            rep.c["pins_ok"] += 1
+    for lo, n, name in ((BITMASK, 128, "g_BitMask32"), (0x006E10E0, 20, "hash offsets"),
+                        (0x006C1164, 88, "CALC_Eval jump table"), (0x006426C0, 8 + 0x6D, "town tables")):
+        sec = S4.section_of(lo)
+        flags = [x[5] for x in S4.image()[2] if x[4] == sec][0]
+        rep.c["ro_reads"] += 1
+        if flags & 0x80000000:
+            rep.bad("%s 0x%08X in writable %s" % (name, lo, sec))
+        rep.notes.append("%s 0x%08X: %s" % (name, lo, sec))
+    st, im, rd = ref_scan(A, SK_NFUNCS)
+    rep.c["data_stores"] += len(st)
+    rep.c["data_imms"] += len(im)
+    rep.notes.append("skills calc function count 0x%08X: %d stores (PTR or moffs), %d immediates, %d reads in .text"
+                     % (SK_NFUNCS, len(st), len(im), len(rd)))
+    rng = {name: (va, va + 0x800) for name, va in FNP.items()}
+    for hlp in (0x56B740, 0x5D02B0, 0x56E510, 0x622870):
+        sites = sorted(va for va, (mn, ops) in A.ins.items() if mn == "call" and ops.strip() == "0x%x" % hlp)
+        rep.notes.append("calls of 0x%08X: %s" % (hlp, " ".join("0x%08X" % s for s in sites)))
+        rep.c["helper_sites"] += len(sites)
+    for name, va in sorted(FNP.items(), key=lambda kv: kv[1]):
+        tab = START_TABLE if name.startswith("st") else DO_TABLE
+        num = int(name[2:])
+        rep.c["table_entries"] += 1
+        if S4.dword(tab + 4 * num) != va:
+            rep.bad("%s: table entry 0x%08X, model address 0x%08X" % (name, S4.dword(tab + 4 * num), va))
+    rep.notes.append("start table 29, 31, 35, 36, 37: %s" % " ".join(
+        "%d:0x%08X" % (i, S4.dword(START_TABLE + 4 * i)) for i in (29, 31, 35, 36, 37)))
+    rep.notes.append("do table 64-67, 73, 79-82, 150: %s" % " ".join(
+        "%d:0x%08X" % (i, S4.dword(DO_TABLE + 4 * i)) for i in (64, 65, 66, 67, 73, 79, 80, 81, 82, 150)))
+    print("CATPAL static " + " ".join("%s=%d" % (k, rep.c[k]) for k in sorted(rep.c)))
+    for n in rep.notes:
+        print("  " + n)
+    return 1 if rep.c["bad"] else 0
+
+
 # ================================================================================================= commands
 def batch_families(a):
     if a.family:
@@ -7749,6 +8325,8 @@ def cmd_static(a):
         return cmd_static_ama(a)
     if a.batch == "nec":
         return cmd_static_nec(a)
+    if a.batch == "pal":
+        return cmd_static_pal(a)
     rep = Report("static")
     A = S4.asm()
     for va, mn, sub in PINS:
@@ -7810,7 +8388,7 @@ def main(argv):
     ap.add_argument("cmd", choices=["cases", "check", "static", "manifest"])
     ap.add_argument("family", nargs="*")
     ap.add_argument("--dir", default=None, help="default workspace/logs/skills-cat-<batch>")
-    ap.add_argument("--batch", default="9a", choices=["9a", "9b", "9c", "9d", "sor", "ama", "nec"], help="the families of one batch (default 9a)")
+    ap.add_argument("--batch", default="9a", choices=["9a", "9b", "9c", "9d", "sor", "ama", "nec", "pal"], help="the families of one batch (default 9a)")
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args(argv)
     return {"cases": cmd_cases, "check": cmd_check, "static": cmd_static, "manifest": cmd_manifest}[a.cmd](a)

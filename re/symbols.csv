@@ -3089,6 +3089,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00994C88,data,g_Sse2Available,,I,data/calc,docs/findings/data/0005-calc.md
 0x0046ACE0,func,sub_0046ACE0_MissileRec,,C,data/calc,docs/findings/data/0005-calc.md
 0x004A89D0,func,sub_004A89D0_SkillDescRec,,C,data/calc,docs/findings/data/0005-calc.md
+0x004C9460,func,sub_004C9460_SkillGetParam1,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
 0x00540E60,func,UNIT_CancelEvents,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x005496F0,func,sub_005496F0_PktReadXY,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x00549830,func,sub_00549830_PktReadUnit,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
@@ -3112,6 +3113,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00553490,func,sub_00553490_PathTargetRevalidate,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
 0x00553540,func,UNIT_GetTargetUnit,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x00554D20,func,sub_00554D20_SkillAllyTest,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056B740,func,sub_0056B740_SkillCallOnSelf,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
 0x0056BFE0,func,SKILLS_PayCost,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x0056C160,func,SKILLS_SrvManaCheck,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x0056C8E0,func,SKILLS_AddElemToPacket,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
@@ -3153,6 +3155,25 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005AF300,func,sub_005AF300_MissDo18ChestSpawner,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
 0x005B0BC0,func,sub_005B0BC0_MissDo01Thunk,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
 0x005C6CC0,func,SKILLS_ApplyAuraStats,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x005CE790,func,sub_005CE790_SkillSt29Sacrifice,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
+0x005CE8E0,func,sub_005CE8E0_SkillDo64SacrificeSelfHit,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
+0x005CE9F0,func,sub_005CE9F0_SkillDo150Smite,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
+0x005CF2A0,func,sub_005CF2A0_AuraHitUnitCb,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
+0x005CF6B0,func,sub_005CF6B0_SkillSt31Charge,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
+0x005CF8C0,func,sub_005CF8C0_ChargeAnimIndex,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
+0x005CF900,func,sub_005CF900_SkillDo67Charge,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
+0x005CFD20,func,sub_005CFD20_VengeanceWeaponRoll,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
+0x005CFE10,func,sub_005CFE10_SkillSt35Vengeance,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
+0x005D0040,func,sub_005D0040_SkillDo73BlessedHammer,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
+0x005D01A0,func,sub_005D01A0_ConversionRemoveCb,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
+0x005D02B0,func,sub_005D02B0_ConversionTest,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
+0x005D0350,func,sub_005D0350_SkillDo79Conversion,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
+0x005D0670,func,sub_005D0670_SkillDo80FistHeavens,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
+0x005D0770,func,sub_005D0770_HolyFreezeRemoveCb,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
+0x005D07C0,func,sub_005D07C0_HolyFreezeUnitCb,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
+0x005D0920,func,sub_005D0920_SkillDo81HolyFreeze,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
+0x005D0D70,func,sub_005D0D70_RedemptionUnitCb,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
+0x005D0E90,func,sub_005D0E90_SkillDo82Redemption,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
 0x005D2B60,func,sub_005D2B60_BloodManaPay,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x005D3320,func,SKILLS_AddProgressiveCharge,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x005D3490,func,sub_005D3490_PrgChargeHitDo,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
@@ -3160,6 +3181,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005D7EA0,func,sub_005D7EA0_SkillSt32Hit,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x005DA940,func,sub_005DA940_SkillSt06Hit,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x005DAB40,func,sub_005DAB40_SkillSt07ImpaleHit,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x005DAF40,func,sub_005DAF40_SkillSt37Zeal,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
 0x005DB6D0,func,sub_005DB6D0_SkillDo10GuidedMissile,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
 0x005FDA80,func,ITEMSKILL_Cast,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x00611760,func,sub_00611760_CalcNameToCode,,I,data/calc,docs/findings/data/0005-calc.md
@@ -3183,6 +3205,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00631430,func,sub_00631430_ItemCalcFnLookup,,C,data/calc,docs/findings/data/0005-calc.md
 0x00631490,func,sub_00631490_ItemCalcFnArity,,C,data/calc,docs/findings/data/0005-calc.md
 0x006314A0,func,sub_006314A0_ItemCalcIdent,,C,data/calc,docs/findings/data/0005-calc.md
+0x0063C8F0,func,sub_0063C8F0_InvItemQuery,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
 0x006416D0,func,sub_006416D0_UnitEdgeDistance,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
 0x006436E0,func,sub_006436E0_SkillsCalcMin,,C,data/calc,docs/findings/data/0005-calc.md
 0x006436F0,func,sub_006436F0_SkillsCalcMax,,C,data/calc,docs/findings/data/0005-calc.md
@@ -3197,7 +3220,11 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00644060,func,SKILLS_RestrictOk,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x006440F0,func,SKILLS_StartManaOk,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x006442A0,func,SKILLS_GetSkillLevel,"int __stdcall SKILLS_GetSkillLevel(void * unit, void * skill, int withBonus)",I,data/calc,docs/findings/data/0005-calc.md
+0x00644620,func,sub_00644620_UnitSkillSet24,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
+0x00644660,func,sub_00644660_UnitSkillSet0C,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
+0x006446A0,func,sub_006446A0_UnitSkillGet0C,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
 0x006449F0,func,SKILLS_GetToHit,,I,data/calc,docs/findings/data/0005-calc.md
+0x00644B10,func,sub_00644B10_SkillManaCost,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
 0x00644B70,func,SKILLS_LevelBands,,C,data/calc,docs/findings/data/0005-calc.md
 0x00644C90,func,sub_00644C90_ElemMasteryBonus,,I,data/calc,docs/findings/data/0005-calc.md
 0x00644D50,func,SKILLS_GetElemMin,,I,data/calc,docs/findings/data/0005-calc.md
@@ -3223,6 +3250,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00648AD0,func,sub_00648AD0_PathSetTargetPoint,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
 0x00648BB0,func,sub_00648BB0_PathGetTargetTypeGuid,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
 0x00648BF0,func,sub_00648BF0_PathGetTargetUnit,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
+0x00649050,func,sub_00649050_PathOp9050,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
 0x0064AF20,func,MISS_GetDamMin,,I,data/calc,docs/findings/data/0005-calc.md
 0x0064AFF0,func,MISS_GetDamMax,,I,data/calc,docs/findings/data/0005-calc.md
 0x0064B100,func,MISS_GetElemMin,,C,data/calc,docs/findings/data/0005-calc.md
@@ -3241,6 +3269,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00661800,func,sub_00661800_MissCalcFnLookup,,C,data/calc,docs/findings/data/0005-calc.md
 0x00661880,func,sub_00661880_MissCalcIdent,,C,data/calc,docs/findings/data/0005-calc.md
 0x006619A0,func,sub_006619A0_MissCalcCell,,C,data/calc,docs/findings/data/0005-calc.md
+0x006633B0,func,sub_006633B0_UnitAnimData,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
 0x006C0B80,func,CALC_Push,,C,data/calc,docs/findings/data/0005-calc.md
 0x006C0BA0,func,CALC_Pop,,C,data/calc,docs/findings/data/0005-calc.md
 0x006C0BC0,func,CALC_Eval,"int __stdcall CALC_Eval(byte * code, int len, void * varFn, void * funcs, int nFuncs, void * ctx)",C,data/calc,docs/findings/data/0005-calc.md

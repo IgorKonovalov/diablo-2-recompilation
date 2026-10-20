@@ -474,3 +474,66 @@ Plan 0045 Phase 2's harness runs: none yet. Plan 0046's emulated runs (ADR-0015)
   seed. Not covered: what any boundary callee does and everything after it (do 55's and do 58's draws on the target's
   seed among it); when the game runs these functions or with which seed. (fn:sub_005C37C0_SkillDo30Curse@0x005C37C0,
   fn:sub_00645510_MonCorpseTest@0x00645510)
+
+## run:2026-10-20-cat-emu-pal
+
+- **Question:** (plan 0046 Phase 1, batch `pal`) Do the paladin start functions 29, 31, 35, 36, 37 and do functions
+  64–67, 73, 79–82 and 150 map their inputs (the Skills, CharStats and MonStats records, the caster, its path, used
+  skill node, queued hits, stat list and inventory word, the target unit, its stat lists and room, the game frame, and
+  the seeds) to the result they return, or to the arguments, pointed-to blocks, node and frame words and seed states at
+  the call they end in, exactly as [skills/0011](0011-paladin.md) §§ 3–5 say, and do they leave both seeds alone?
+- **Setup:** as run:2026-10-20-cat-emu-nec: Ghidra 12.1.2 p-code emulator on the pinned `game.exe` (lane copy
+  `GHIDRA_PROJ_DIR=workspace/ghidra-p46m8`, heap 3 GB, one instance at a time, each under a 4 GB scope),
+  `re/ghidra_scripts/EmuBoundary.java` unchanged (`286393aa…`). No wine, nothing runs natively, no slot. Models, case
+  writers and checks: the `pal` families of `tools/skills_catalogue_emu.py` (`c1630af4…`), with `nec`'s conventions (the
+  call site of every boundary asserted with a site control, both seeds written and compared in every case, a
+  boundary's pointer argument compared by content: the aura functions' 0x50-byte blocks and their 16-byte context
+  passed in `ECX`, the `COMBAT_ApplyDamage` packet, the zeroed hit packet, the `MissileCreate` blocks; the used skill's
+  node words dumped and compared; no model compares a callee-saved register that is not a boundary argument; a boundary
+  inside a helper compares the helper's return address at its stack slot, or the helper's single call site is listed by
+  `static`). New: `0x0056B740` runs emulated, so the aura boundary is `AURA_ApplyToTarget` entered through an indirect
+  call. All inputs synthetic (stock parameter values among them); every case-writer draw from
+  `random.Random("catpal-<family>")`. Files in `workspace/logs/skills-cat-pal/`, `manifest.sha256` `12c8d5c0…` (23
+  files: cases, memory specs, expected inputs, outputs, the `.err` logs, `cases.txt`, `check.txt` `989e5367…`,
+  `static.txt` `5fd43532…`, `rows.txt` `dc96db87…` with its `rows.sh`, `repro.txt` `daf042cc…` with its `repro.sh`, the
+  run script `run_pal.sh`); `sha256sum -c manifest.sha256` from that directory passes. `repro.txt` records that the
+  same tool revision regenerates every case, memory and expectation file of 9a, 9b, 9c, 9d, `sor`, `ama` and `nec` byte
+  for byte and reproduces their kept `check.txt` and `static.txt` byte for byte from their kept outputs.
+- **Procedure:**
+  ```
+  D=workspace/logs/skills-cat-pal
+  python3 -I tools/skills_catalogue_emu.py cases --batch pal > $D/cases.txt
+  for f in aura_pal melee_pal move_pal; do      # one at a time ($D/run_pal.sh)
+    GHIDRA_PROJ_DIR=workspace/ghidra-p46m8 GHIDRA_HEADLESS_MAXMEM=3G systemd-run --user --scope -p MemoryMax=4G \
+      tools/ghidra.sh emuboundary $D/$f.cases $D/$f.mem > $D/$f.out 2> $D/$f.err
+  done
+  python3 -I tools/skills_catalogue_emu.py check  --batch pal > $D/check.txt
+  python3 -I tools/skills_catalogue_emu.py static --batch pal > $D/static.txt
+  python3 -I tools/skills_catalogue_emu.py manifest --batch pal --write
+  ```
+  Each memory spec points `g_pDataTables` at a scratch DataTables written one field per field read (Skills, Missiles,
+  ItemStatCost, MonStats, MonStats2, CharStats, the calc pool, the States and PetType counts), names the boundaries
+  (`observe`: `nec`'s plus `AURA_ApplyToTarget`, `0x0063C8F0`, `0x006633B0`, `sub_00648690_PathSetSpeed`,
+  `0x00649050`) and guards the allocator and the fatal path.
+- **Observed** (`check.txt`, `static.txt`):
+  ```
+  CATPAL aura_pal  cases=1600 match=1600 bad=0 neg=907 traced=3 undeclared=0 stopped=0
+  CATPAL melee_pal cases=1750 match=1750 bad=0 neg=213 traced=9 undeclared=0 stopped=0
+  CATPAL move_pal  cases=1600 match=1600 bad=0 neg=381 traced=8 undeclared=0 stopped=0
+  CATPAL static data_imms=0 data_stores=0 helper_sites=16 pins=40 pins_ok=40 ro_reads=4 table_entries=15
+  ```
+  4 950 cases. Every negative control fails (per-control counts on the `negative control` lines; each family has one
+  failing 134 or more cases: `npf6` 552, `inv_any` 134, `xy73` 153; the weak ones fail on the deciding class
+  skills/0011 § 2 names); the site control fails on all 2 615 matched boundary cases (21 `site` lines: function,
+  boundary, return address). The skills calc function count's scan names every operand form (`PTR` and `moffs` stores,
+  immediates, reads): 0 stores, 0 immediates, 7 reads. Every family matched on its first emulation; one tool fault (a
+  pal model helper that shadowed a `sor` helper of the same name) was caught by `repro.sh` before the kept files were
+  written and renamed; the case files did not change.
+- **Conclusion:** bit-exact reproduction (evidence rule 4, ADR-0015) of the functions' maps on returning cases (`[C]`:
+  start 36's and start 37's results, do 64's and do 65's 1, every refusal path) and of their maps up to their boundary
+  calls with the call site, the helper return addresses, the arguments, the pointed-to blocks and context, the node and
+  frame words and both seeds asserted (`[C]` under [ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md);
+  skills/0011 names each claim's boundary). No function draws before its boundary or return; no case steps either
+  seed. Not covered: what any boundary callee does and everything after it (the aura target passes and their draws on
+  the caster's and the units' seeds, start 35's and do 79's draws on the caster's seed among it); when the game runs
+  these functions or with which seed. (fn:sub_005CF010_PalAuraDo@0x005CF010, fn:sub_005CE8E0_SkillDo64SacrificeSelfHit@0x005CE8E0)
