@@ -452,6 +452,10 @@ def compare(rep, c, exp, br):
                 got = stack_bytes(c, (c["regs"][reg] + off) & M32, len(b))
                 if got != b:
                     ok, why = False, "[%s+%x]=%s want %s" % (reg, off, got.hex() if got else None, b.hex())
+            for i, b in (exp[7] if len(exp) > 7 else {}).items():     # 9c: a pointer argument's bytes
+                got = stack_bytes(c, arg(c, i), len(b))
+                if got != b:
+                    ok, why = False, "*arg%d=%s want %s" % (i, got.hex() if got else None, b.hex())
     if ok:
         rep.c["match"] += 1
         rep.br.update(br)
@@ -2742,6 +2746,1045 @@ PINS9B = [  # (address, mnemonic, operand substring): instructions the 9b claims
 ]
 
 
+# ##################################################################################################################
+# Batch 9c (plan 0046): missile server hit functions 1-29 (g_MissileSrvHitFuncs, `pSrvHitFunc`). A hit function is
+# (ECX game, EDX missile; unit) -> result, `ret 4` (skills/0002 § 5). Conventions of 9b: the return address of every
+# observed boundary asserted (with a site control), two negative controls per family, plus (lane/p46m2 review) the
+# untouched-seed comparison: every 9c case writes and dumps the missile's, the owner's and the target's seeds and the
+# model gives all three at the boundary or the return, so a family that steps a seed it should not fails. A boundary
+# argument that is a pointer to the caller's frame (a packet, a context block) is compared by content (exp[7]).
+# ##################################################################################################################
+FN9C = {
+    "hit1": 0x005A9A70, "hit2": 0x005A9D80, "hit3": 0x005A9F90, "hit4": 0x005B07A0, "hit7": 0x005A9FB0,
+    "hit8": 0x005AA180, "hit9": 0x005AA250, "hit10": 0x005AA650, "hit12": 0x005AA730, "hit13": 0x005AA8B0,
+    "hit14": 0x005AABB0, "hit15": 0x005AAD40, "hit16": 0x005AAE10, "hit17": 0x005AAFB0, "hit18": 0x005AB0B0,
+    "hit19": 0x005AB110, "hit20": 0x005AB370, "hit21": 0x005AB500, "hit22": 0x005ADD20, "hit24": 0x005A9BF0,
+    "hit25": 0x005AB820, "hit26": 0x005AB8D0, "hit27": 0x005ABA00, "hit28": 0x005ABA10, "hit29": 0x005ABB00,
+}
+HIT_TABLE = 0x0073C840
+BOUND9C = dict(BOUND9B)
+BOUND9C.update({
+    0x0056BAD0: "AreaHitAt", 0x00554D20: "AllyTest", 0x0056BD10: "NearestUnit", 0x006251F0: "StatListAlloc",
+    0x005C6CC0: "ApplyAuraStats", 0x005DDD00: "Flee", 0x0056B3E0: "UnitFilter", 0x00554DE0: "SameParty",
+    0x0056B7E0: "ForUnitsInRange", 0x005AA5B0: "GuidedRetarget", 0x0064D9B0: "CollisionTest",
+})
+BOUND_BY_NAME.update({v: k for k, v in BOUND9C.items()})
+ALLBOUND.update(BOUND9C)
+NSTATES = 190                      # DataTables+0xC4, the States count the hit functions test a state index against
+RING16 = (0x006E2618, 0x006E25F8)  # hit 25's eight (x, y) offsets (.rdata)
+RING64 = (0x006E2738, 0x006E2638)  # hit 29's 64 (x, y) offsets (.rdata)
+RS_RING16 = (0x006E25F8, 0x006E2638, "r", "hit 25's offsets 0x006E25F8/0x006E2618 (.rdata)")
+RS_RING64 = (0x006E2638, 0x006E2838, "r", "hit 29's offsets 0x006E2638/0x006E2738 (.rdata)")
+RS_JT8F20 = (0x005A8F84, 0x005A8F84 + 4 * 9, "r", "0x005A8F20's EType jump table 0x005A8F84, EType 4-12 (.text)")
+RS_BITMASK9C = (BITMASK, BITMASK + 32 * 4, "r", "g_BitMask32 0x006CE268 (.rdata): 1 << i, the state-bit and "
+                "Skills-flag masks")
+
+
+def put_rec9c(c, cls, **kw):
+    """put_rec9 plus the hit fields: hsub (HitSubMissile1..4 +0x24..+0x2A s16, a list), hp1..hp3 (sHitPar1..3
+    +0x4C/+0x50/+0x54), hcalc (SHitCalc1 +0x88), hflags (HitFlags +0xA8 u32), rflags (ResultFlags +0xAC u16)."""
+    base = MREC + 0x1A4 * cls
+    nine = {}
+    for k, v in kw.items():
+        if k == "hsub":
+            for i, s in enumerate(v):
+                c.put(base + 0x24 + 2 * i, le16(s))
+        elif k in ("hp1", "hp2", "hp3"):
+            c.put(base + {"hp1": 0x4C, "hp2": 0x50, "hp3": 0x54}[k], le32(v))
+        elif k == "hcalc":
+            c.put(base + 0x88, le32(v))
+        elif k == "hflags":
+            c.put(base + 0xA8, le32(v))
+        elif k == "rflags":
+            c.put(base + 0xAC, le16(v))
+        else:
+            nine[k] = v
+    put_rec9(c, cls, **nine)
+    return base
+
+
+def mem9c(extra=(), isc=False, mons=False, skills=False, states=False):
+    ex = list(extra)
+    if skills:
+        ex += ["dword %08x %08x" % (DT + 0xB98, SREC), "dword %08x %08x" % (DT + 0xBA0, NSREC),
+               "dword %08x %08x" % (DT + 0x40, SPOOL)]
+    if isc:
+        ex += ["dword %08x %08x" % (DT + 0xBCC, ISC), "dword %08x %08x" % (DT + 0xBD4, NISC)]
+    if mons:
+        ex += ["dword %08x %08x" % (DT + 0xA78, MSREC), "dword %08x %08x" % (DT + 0xA80, NMON),
+               "dword %08x %08x" % (DT + 0xA90, MS2REC), "dword %08x %08x" % (DT + 0xA98, NMON2)]
+    if states:
+        ex += ["dword %08x %08x" % (DT + 0xC4, NSTATES)]
+    return mem_spec(ex, bounds=BOUND9C)
+
+
+SEEDS9C = (MU + 0x20, OWN + 0x20, TGT + 0x20)
+
+
+def put_seeds9c(c, rnd):
+    """The three seeds every 9c case writes and dumps (the missile's is dumped by Case.lines already)."""
+    s = [(rnd.getrandbits(32), rnd.getrandbits(32)) for _ in SEEDS9C]
+    for a, v in zip(SEEDS9C, s):
+        c.put(a, le32(v[0]) + le32(v[1]))
+    return s
+
+
+def seeds_mem(row, mseed=None):
+    """The seeds at the boundary or return: the missile's as given (unchanged when None), the others unchanged."""
+    s = [tuple(x) for x in row["seeds"]]
+    if mseed is not None:
+        s[0] = tuple(mseed)
+    return {a: le32(v[0]) + le32(v[1]) for a, v in zip(SEEDS9C, s)}
+
+
+def lines9c(c, game, unit, dumps=()):
+    return c.lines(game, MU, extra_dumps=[(OWN + 0x20, 8), (TGT + 0x20, 8)] + list(dumps), args=[unit])
+
+
+def ret9c(row, eax, mseed=None, mem=None):
+    m = seeds_mem(row, mseed)
+    m.update(mem or {})
+    return ("ret", eax, 4, m)
+
+
+def obs9c(row, name, regs, args, site, mseed=None, ptrs=None, mem=None, blk=None):
+    """An observed boundary: blk is a MissileCreate block at EDX (compared whole)."""
+    m = seeds_mem(row, mseed)
+    m.update(mem or {})
+    return ("obs", name, regs, args, m, {"edx": (0, blk)} if blk is not None else {}, site, ptrs or {})
+
+
+def put_hit_unit(c, rnd, types=(1, 1, 1, 0, 0, 2, 3, 4, 5), p0=0.08):
+    """The hit's unit argument: 0, or TGT of a type and a MonStats class (+0x04), guid +0x0C."""
+    if rnd.random() < p0:
+        return {"unit": 0, "utype": None, "ucls": None, "uguid": None}
+    utype = rnd.choice(types)
+    ucls = rnd.choice([rnd.randrange(NMON)] * 8 + [NMON, -1])
+    guid = rnd.getrandbits(32)
+    c.put(TGT + 0x00, le32(utype))
+    c.put(TGT + 0x04, le32(ucls))
+    c.put(TGT + 0x0C, le32(guid))
+    return {"unit": TGT, "utype": utype, "ucls": ucls, "uguid": guid}
+
+
+def rnd_par(rnd):
+    return rnd.choice([0, 0, rnd.randint(1, 30), rnd.randint(1, 30), rnd.randint(-5, -1), rnd.getrandbits(32), 1])
+
+
+def cal_or(row, p, field, floor):
+    """`p > 0 ? p : max(calc(field), floor)` (floor None: no clamp)."""
+    if s32(p) > 0:
+        return s32(p)
+    v = ev_skill(row["cal"], field)
+    if floor is not None and v < floor:
+        v = floor
+    return v
+
+
+# =============================================================================================== area9c
+AREA_ORDER = ("hit1", "hit3", "hit9", "hit13", "hit14", "hit24")
+
+
+@family("area9c", "9c")
+def area9c(rnd, game):
+    """Hits 1, 9, 13 (EType roll, then AreaHitAt), hits 14, 24 and 3 -> 44 (BuildDamage, then AreaHitAt)."""
+    cases, exp = [], []
+    for k in range(1800):
+        w = AREA_ORDER[k % 6]
+        c = Case(FN9C[w])
+        cls, invalid = pick_cls(rnd)
+        has_path = rnd.random() > 0.06
+        st = put_missile(c, rnd, cls, path=has_path)
+        sub = rnd.choice([rnd.randrange(700)] * 4 + [0, -1, -1, -0x8000])
+        hp1, hp2 = rnd_par(rnd), rnd_par(rnd)
+        et = rnd.choice(list(range(13)) * 2 + [13, 0xFF])
+        hfl = rnd.choice([rnd.getrandbits(32), 0, 2, 5])
+        rfl = rnd.choice([rnd.getrandbits(16), 0, 4, 9])
+        if not invalid:
+            put_rec9c(c, cls, hsub=[sub], hp1=hp1, hp2=hp2, etype=et, hflags=hfl, rflags=rfl)
+        own = put_owner(c, rnd)
+        md = put_mdata(c, rnd, skill=pick_skill(rnd), lvl=small(rnd, 0, 40))
+        cal = put_skill_calcs(c, rnd, md["skill"], (0x138, 0x13C, 0x64, 0x60))
+        row = {"w": w, "invalid": invalid, "st": st, "sub": sub, "hp1": hp1, "hp2": hp2, "et": et, "hfl": hfl,
+               "rfl": rfl, "own": own, "md": md, "cal": cal}
+        row.update(put_hit_unit(c, rnd, p0=0.5 if w == "hit3" else 0.08))
+        put_monstats(c, rnd, row)
+        row["sv"] = put_stats(c, rnd, MU, {s: rnd.choice([rnd_stat(rnd), rnd.randint(1, 300)]) for s in STATS_DMG}) \
+            if w in ("hit1", "hit9", "hit13") else {}
+        row["seeds"] = put_seeds9c(c, rnd)
+        cases += lines9c(c, game, row["unit"])
+        exp.append(row)
+    return cases, mem9c(isc=True, mons=True, skills=True), {"cases": exp}
+
+
+def area_pkt(row, neg=None):
+    """The packet the EType hits hand to AreaHitAt: zeroed, the EType roll on the hit unit, then the flags."""
+    p = bytearray(0x70)
+    e, seed = elem_8c70(p, row["et"], row, svi(row), tuple(row["seeds"][0]))
+    return p, seed
+
+
+def or_flags(p, row, neg=None):
+    struct.pack_into("<I", p, 0, struct.unpack_from("<I", p, 0)[0] | (row["hfl"] & M32))
+    if neg != "noresult":
+        struct.pack_into("<H", p, 4, struct.unpack_from("<H", p, 4)[0] | (row["rfl"] & 0xFFFF))
+
+
+def len_by_etype(p, et, v):
+    """0x005A8F20 (ECX game, EDX m; packet, v): the length field of the missile's EType."""
+    off = {4: 0x30, 5: 0x2C, 9: 0x44, 11: 0x18, 12: 0x34}.get(et)
+    if off is not None:
+        pk_set(p, off, v)
+
+
+def area9c_model(row, game, br, neg=None):
+    w, md, st = row["w"], row["md"], row["st"]
+    sk, lv = s16(md["skill"]), s16(md["lvl"])
+    x, y = subxy(st)
+    own, unit = row["own"], row["unit"]
+    br[w] += 1
+    if w == "hit3" and unit:
+        br["hit3_unit_ret0"] += 1
+        return ret9c(row, 0)
+    if row["invalid"]:
+        br["norec"] += 1
+        return ret9c(row, 1)
+    if w == "hit1":
+        if not own:
+            br["noowner"] += 1
+            return ret9c(row, 1)
+        if s32(row["hp1"]) <= 0 and not skill_ok(md):
+            br["noskill"] += 1
+            return ret9c(row, 1)
+        r = cal_or(row, row["hp1"], 0x138 if neg != "calc64" else 0x64, 1)
+        p, seed = area_pkt(row)
+        or_flags(p, row, neg)
+        br["area_hp1" if s32(row["hp1"]) > 0 else "area_calc"] += 1
+        return obs9c(row, "AreaHitAt", {"ecx": game, "edx": own}, [x, y, r, None, 0], 0x005A9BE1, seed, {3: bytes(p)})
+    if w == "hit24":
+        if not own:
+            br["noowner"] += 1
+            return ret9c(row, 1)
+        if s32(row["hp1"]) <= 0 and not skill_ok(md):
+            br["noskill"] += 1
+            return ret9c(row, 1)
+        r = cal_or(row, row["hp1"], 0x138, 1)
+        br["build"] += 1
+        return obs9c(row, "BuildDamage", {"ecx": game, "edx": own, "ebx": r}, [MU, unit, None], 0x005A9D36,
+                     ptrs={2: bytes(0x70)})
+    if w == "hit3":                    # unit 0: hit 44 with unit 0 (no owner test; sHitPar1 != 0, not > 0)
+        h1 = s32(row["hp1"])
+        if (h1 > 0) if neg == "hp1pos" else (h1 != 0):
+            r = h1
+        else:
+            if not skill_ok(md):
+                br["noskill"] += 1
+                return ret9c(row, 1)
+            r = max(ev_skill(row["cal"], 0x64), 1)
+        br["build44_hp1neg" if s32(row["hp1"]) < 0 else "build44"] += 1
+        return obs9c(row, "BuildDamage", {"ecx": game, "edx": own, "edi": r, "ebx": y}, [MU, 0, None], 0x005A9F4C,
+                     ptrs={2: bytes(0x70)})
+    if w == "hit14":
+        if not skill_ok(md):
+            br["noskill"] += 1
+            return ret9c(row, 1)
+        if not own:
+            br["noowner"] += 1
+            return ret9c(row, 1)
+        r = cal_or(row, row["hp1"], 0x64, 1)
+        br["build14"] += 1
+        return obs9c(row, "BuildDamage", {"ecx": game, "edx": own, "esi": r}, [MU, unit, None], 0x005AACB7,
+                     ptrs={2: bytes(0x70)})
+    if not skill_ok(md):
+        br["noskill"] += 1
+        return ret9c(row, 1)
+    if w == "hit9":
+        if row["sub"] >= 0:
+            br["setstat56"] += 1
+            return obs9c(row, "UnitSetStat", {}, [MU, 0x38 if neg != "stat86" else 0x86, 0, 0], 0x005AA2FA)
+        r = cal_or(row, row["hp2"], 0x13C, 1)
+        p, seed = area_pkt(row)
+        or_flags(p, row, neg)
+        br["area9"] += 1
+        return obs9c(row, "AreaHitAt", {"ecx": game, "edx": own}, [x, y, r, None, 0], 0x005AA44D, seed, {3: bytes(p)})
+    # hit13
+    r = cal_or(row, row["hp1"], 0x64, 1)
+    ln = s32(row["hp2"]) if s32(row["hp2"]) > 0 else ev_skill(row["cal"], 0x60)
+    p, seed = area_pkt(row)
+    if ln > 0 and neg != "nolen":
+        len_by_etype(p, row["et"] if 0 <= row["et"] < 256 else 0, ln)
+        br["len_et%d" % row["et"]] += 1
+    or_flags(p, row, neg)
+    br["area13"] += 1
+    return obs9c(row, "AreaHitAt", {"ecx": game, "edx": own}, [x, y, r, None, 0], 0x005AAA7C, seed, {3: bytes(p)})
+
+
+# =============================================================================================== holy9c (hits 7, 8)
+@family("holy9c", "9c")
+def holy9c(rnd, game):
+    """Hit 7 (holy bolt: heal a pet, else the undead/demon test) and hit 8 (blaze: the owner in state 13)."""
+    cases, exp = [], []
+    for k in range(1500):
+        w = ("hit7", "hit7", "hit8")[k % 3]
+        c = Case(FN9C[w])
+        cls, invalid = pick_cls(rnd)
+        st = put_missile(c, rnd, cls)
+        hp1 = rnd.choice([0, 1, 1, 1, rnd.getrandbits(32)])
+        hp2 = rnd.choice([0, 1, 2, 2, rnd.randint(3, 9)])
+        if not invalid and w == "hit7":
+            put_rec9c(c, cls, hp1=hp1, hp2=hp2, ovl=rnd.choice([rnd.randrange(1, 40), 0, -1]))
+        row = {"w": w, "invalid": invalid, "hp1": hp1, "hp2": hp2}
+        if w == "hit8":
+            own = put_owner(c, rnd, 0.9)
+            row.update(put_hit_unit(c, rnd))
+            if own and rnd.random() < 0.6:          # the owner is hit by its own blaze
+                row.update(unit=OWN, utype=None)
+            if own:
+                otyp = u32f(c, MU + 0x94)
+                c.put(OWN + 0x00, le32(otyp))
+                row["otyp"] = otyp
+                row["st13"] = put_state_bits(c, rnd, OWN, [13])
+            row["own"] = own
+            row["seeds"] = put_seeds9c(c, rnd)
+            cases += lines9c(c, game, row["unit"])
+            exp.append(row)
+            continue
+        own = put_owner(c, rnd, 0.9)
+        row["own"] = own
+        md = put_mdata(c, rnd, skill=pick_skill(rnd), lvl=small(rnd, 0, 40))
+        row["md"] = md
+        row.update(put_hit_unit(c, rnd, types=(0, 1, 1, 1, 1, 2, 3)))
+        put_monstats(c, rnd, row)
+        if own:
+            otyp = u32f(c, MU + 0x94)
+            c.put(OWN + 0x00, le32(otyp))
+            c.put(OWN + 0x0C, le32(u32f(c, MU + 0x98)))
+            row["otyp"], row["oguid"] = otyp, u32f(c, MU + 0x98)
+        if skill_ok(md):
+            fl = rnd.getrandbits(8)
+            c.put(SREC + 0x23C * s16(md["skill"]) + 0x07, bytes([fl]))
+            row["sflags"] = fl
+        row["cal"] = put_skill_calcs(c, rnd, md["skill"], (0x138, 0x13C))
+        if row["unit"] and row["utype"] == 1:        # MonsterOwnerRef: MonsterData+0x28 -> {+0x28 set, +0x2C, +0x30}
+            mdat = TGT + 0x300
+            c.put(TGT + 0x14, le32(mdat))
+            if True:                                 # MonsterData+0x28 is read through: never 0 here
+                ref = TGT + 0x380
+                c.put(mdat + 0x28, le32(ref))
+                on = rnd.random() < 0.85
+                c.put(ref + 0x28, le32(1 if on else 0))
+                if on:
+                    rt = rnd.choice([0, 0, 0, 1])
+                    rg = row.get("oguid", 0) if rnd.random() < 0.7 else rnd.getrandbits(32)
+                    c.put(ref + 0x2C, le32(rg))
+                    c.put(ref + 0x30, le32(rt))
+                    row["oref"] = (rg, rt)
+                else:
+                    row["oref"] = None
+        if row["unit"]:
+            mx = rnd.choice([rnd.randint(1, 3000) << 8, rnd.getrandbits(32), 0])
+            cur = rnd.choice([rnd.randint(0, 3000) << 8 | rnd.getrandbits(8), mx, rnd.getrandbits(32)])
+            row["tsv"] = {str(k_): v for k_, v in put_stats(c, rnd, TGT, {6: cur if rnd.random() < 0.95 else None,
+                                                                          7: mx if rnd.random() < 0.95 else None}).items()}
+        row["sv"] = put_stats(c, rnd, MU, {21: rnd_stat(rnd), 22: rnd_stat(rnd)})
+        row["seeds"] = put_seeds9c(c, rnd)
+        cases += lines9c(c, game, row["unit"])
+        exp.append(row)
+    return cases, mem9c(isc=True, mons=True, skills=True, states=True), {"cases": exp}
+
+
+def put_state_bits(c, rnd, unit, states):
+    """unit+0x5C -> a stat list with +0x10 bit 31 and +0x58 -> state bit words; -> {state: bit}."""
+    sl = SLIST[unit]
+    k = rnd.random()
+    if k < 0.06:
+        c.put(unit + 0x5C, le32(0))
+        return {s: 0 for s in states}
+    fl = rnd.getrandbits(32)
+    if k < 0.12:
+        fl &= 0x7FFFFFFF
+    else:
+        fl |= 0x80000000
+    c.put(unit + 0x5C, le32(sl))
+    c.put(sl + 0x10, le32(fl))
+    if not fl & 0x80000000:
+        return {s: 0 for s in states}
+    words = sl + 0x200
+    c.put(sl + 0x58, le32(words))
+    out = {}
+    for wi in sorted({s >> 5 for s in states}):
+        v = rnd.getrandbits(32)
+        c.put(words + 4 * wi, le32(v))
+        for s in states:
+            if s >> 5 == wi:
+                out[s] = (v >> (s & 31)) & 1
+    return out
+
+
+def holy9c_model(row, game, br, neg=None):
+    w, unit, own = row["w"], row["unit"], row["own"]
+    br[w] += 1
+    if w == "hit8":
+        if unit and own and unit == own and row["st13"].get("13", 0) and row["otyp"] in (0, 1, 3):
+            br["owner_blaze_0"] += 1
+            return ret9c(row, 0 if neg != "always2" else 2)
+        br["ret2"] += 1
+        return ret9c(row, 2)
+    if row["invalid"] or not unit:
+        br["norec" if row["invalid"] else "nounit"] += 1
+        return ret9c(row, 1)
+    md = row["md"]
+    sk, lv = s16(md["skill"]), s16(md["lvl"])
+    if s32(row["hp1"]) != 0 and own:
+        pet = (row["otyp"] == 0 or row["utype"] == 1) and skill_ok(md) and row["sflags"] & 2
+        if pet:
+            ref = row.get("oref") if row["utype"] == 1 else None
+            rg, rt = (ref if ref else (-1 & M32, None))
+            pet = ref is not None and rt == 0 and rg == row["oguid"]
+        if not pet:
+            br["allytest"] += 1
+            return obs9c(row, "AllyTest", {"ecx": game, "edx": own}, [unit, sk], 0x005AA053)
+        if not skill_ok(md):
+            return ret9c(row, 1)
+        lo = s32(ev_skill(row["cal"], 0x138) << 8)
+        hi = s32(ev_skill(row["cal"], 0x13C) << 8)
+        r, l2, h2 = rangeb(row["seeds"][0][0], row["seeds"][0][1], s32(hi - lo))
+        seed = (l2, h2)
+        heal = s32(r + lo)
+        if heal <= 0 and neg != "noroll":
+            heal, seed = elem_roll(svi(row), 22, 21, -1, seed)
+            br["heal_elemroll"] += 1
+        tsv = {int(k_): v for k_, v in row["tsv"].items()}
+        cur, mx = stat_of(tsv, 6), stat_of(tsv, 7)
+        nv = s32(cur + heal)
+        if nv >= mx and neg != "nocap":
+            nv = mx
+            br["heal_capped"] += 1
+        br["heal"] += 1
+        return obs9c(row, "UnitSetStat", {}, [unit, 6, nv, 0], 0x005AA0EC, seed)
+    t = row["utype"]
+    if t == 0:
+        r = 3 if s32(row["hp2"]) == 0 else 4
+    elif t == 1:
+        h2 = s32(row["hp2"])
+        if h2 == 0:
+            r = 3
+        elif h2 == 2:
+            r = 3 if is_demon(row) else 4
+        else:
+            und = is_undead(row) if neg != "undead8" else (0 <= row["ucls"] < NMON and
+                                                          bool(row["mflags"][row["ucls"]] & 0x08))
+            r = 3 if und else 4
+    else:
+        r = 4
+    br["type%d_ret%d" % (t, r)] += 1
+    return ret9c(row, r)
+
+
+# =============================================================================================== create9c
+CREATE_ORDER = ("hit4", "hit15", "hit25", "hit26", "hit29", "hit12")
+
+
+@family("create9c", "9c")
+def create9c(rnd, game):
+    """Hits 4, 15, 25, 26, 29 (sub-missiles up to the first MissileCreate) and 12 (up to the nearest-unit search)."""
+    cases, exp = [], []
+    for k in range(1800):
+        w = CREATE_ORDER[k % 6]
+        c = Case(FN9C[w])
+        cls, invalid = pick_cls(rnd)
+        has_path = rnd.random() > 0.06
+        st = put_missile(c, rnd, cls, path=has_path)
+        subs = [rnd.choice([rnd.randrange(NREC)] * 3 + [rnd.randrange(700), 0, -1, -1]) for _ in range(4)]
+        hp1 = rnd_par(rnd)
+        if not invalid:
+            put_rec9c(c, cls, hsub=subs, hp1=hp1)
+        p1s = {}
+        if w == "hit25":
+            for i in range(NREC):
+                p1s[i] = rnd.choice([rnd.randint(0, 40), rnd.getrandbits(32)])
+                c.put(MREC + 0x1A4 * i + 0x38, le32(p1s[i]))
+        own = put_owner(c, rnd, 0.9)
+        rng_ = rnd.randint(0, 60)
+        left = rnd.choice([0, 0, rnd.randint(-3, 60)])
+        md = put_mdata(c, rnd, skill=pick_skill(rnd), lvl=small(rnd, 0, 40), range=rng_, left=left & 0xFFFF,
+                       w28=rnd.choice([0, 1, 2, rnd.randint(3, 8), rnd.getrandbits(32)]))
+        cal = put_skill_calcs(c, rnd, md["skill"], (0x138, 0x64))
+        row = {"w": w, "invalid": invalid, "st": st, "subs": subs, "hp1": hp1, "own": own, "md": md, "cal": cal,
+               "p1s": p1s, "cls": cls}
+        row.update(put_hit_unit(c, rnd))
+        if row["unit"] and w == "hit25":
+            tp = rnd.random() < 0.85 or row["utype"] in (2, 4, 5)   # types 2, 4, 5 read the path unchecked
+            c.put(TGT + 0x2C, le32(TGTP if tp else 0))
+            tx, ty = rnd.getrandbits(16), rnd.getrandbits(16)
+            if tp:
+                c.put(TGTP + 0x02, le16(tx))
+                c.put(TGTP + 0x06, le16(ty))
+                c.put(TGTP + 0x0C, le32(rnd.getrandbits(32)))
+                c.put(TGTP + 0x10, le32(rnd.getrandbits(32)))
+            row["tpos"] = (tx, ty) if tp else (0, 0)
+            row["tstatic"] = (u32f(c, TGTP + 0x0C), u32f(c, TGTP + 0x10)) if tp else None
+        row["seeds"] = put_seeds9c(c, rnd)
+        cases += lines9c(c, game, row["unit"])
+        exp.append(row)
+    return cases, mem9c(skills=True), {"cases": exp}
+
+
+def unit_pos9c(row):
+    """UnitGetSubX/Y of the hit unit (types 2, 4, 5: the static path's +0x0C/+0x10; else the path's +0x02/+0x06)."""
+    if row["utype"] in (2, 4, 5):
+        return row["tstatic"] if row["tstatic"] else None
+    return row["tpos"]
+
+
+def create9c_model(row, game, br, neg=None):
+    w, md, st, own, unit = row["w"], row["md"], row["st"], row["own"], row["unit"]
+    sk, lv = s16(md["skill"]), s16(md["lvl"])
+    x, y = subxy(st)
+    s1 = s16(row["subs"][0] & 0xFFFF)
+    br[w] += 1
+    if row["invalid"]:
+        br["norec"] += 1
+        return ret9c(row, 1)
+    if w == "hit4":
+        for i, s in enumerate(row["subs"]):
+            if s16(s & 0xFFFF) > 0 or (neg == "ge0" and s16(s & 0xFFFF) == 0):
+                br["create_sub%d" % (i + 1)] += 1
+                return obs9c(row, "MissileCreate", {"ecx": game}, [], 0x005B0838,
+                             blk=block(owner=own, source=MU, cls=s, skill=sk, lvl=lv))
+        br["none_ret3"] += 1
+        return ret9c(row, 3)
+    if w == "hit12":
+        if not own or not unit:
+            br["noowner" if not own else "nounit"] += 1
+            return ret9c(row, 3)
+        n = s32(md["w28"])
+        if n <= (0 if neg == "count0" else 1):
+            br["count_le1"] += 1
+            return ret9c(row, 3)
+        if s32(row["hp1"]) > 0:
+            r = s32(row["hp1"])
+        else:
+            if not skill_ok(md):
+                br["noskill"] += 1
+                return ret9c(row, 3)
+            r = max(ev_skill(row["cal"], 0x64), 1)
+        br["nearest"] += 1
+        return obs9c(row, "NearestUnit", {"ecx": game, "edx": own}, [x, y, r, 0x88583, row["uguid"], 0], 0x005AA819)
+    if s1 < 0:
+        br["sub_neg"] += 1
+        return ret9c(row, 1)
+    if w == "hit29" and ((s16(md["left"]) > 0) if neg == "leftpos" else (s16(md["left"]) != 0)):
+        br["left_ret2"] += 1
+        return ret9c(row, 2)
+    if not own:
+        br["noowner"] += 1
+        return ret9c(row, 1)
+    if w == "hit15":
+        br["create15"] += 1
+        return obs9c(row, "MissileCreate", {"ecx": game}, [], 0x005AADF5,
+                     blk=block(flags=1, owner=own, x=x, y=y, skill=sk, lvl=lv, cls=s1))
+    if w == "hit25":
+        src = unit or MU
+        step = max(s32(row["hp1"]), 1)
+        if not 0 <= s1 < NREC:
+            br["sub_norec"] += 1
+            return ret9c(row, 3)
+        if src == MU:
+            sx, sy = x, y
+        else:
+            pos = unit_pos9c(row)
+            sx, sy = pos if pos else (0, 0)
+        b = bytearray(block(flags=0x1F, owner=own, source=src, cls=s1, x=sx, y=sy, skill=sk, lvl=lv,
+                            loops=s32(lv - 1)))
+        r16x, r16y = S4.dword(RING16[0]), S4.dword(RING16[1])
+        struct.pack_into("<I", b, 0x1C, r16x)
+        struct.pack_into("<I", b, 0x20, r16y)
+        struct.pack_into("<I", b, 0x28, (row["p1s"][str(s1)] << 7) & M32 if neg != "vel" else row["p1s"][str(s1)])
+        br["create25_unit" if unit else "create25_self"] += 1
+        return obs9c(row, "MissileCreate", {"ecx": game}, [], 0x005AB7FD, blk=bytes(b))
+    if w == "hit26":
+        if not skill_ok(md):
+            br["noskill"] += 1
+            return ret9c(row, 1)
+        rg = cal_or(row, row["hp1"], 0x138, 5)
+        b = bytearray(block(flags=0x8001, owner=own, cls=s1, x=x, y=y, skill=sk, lvl=lv, range=rg))
+        br["create26"] += 1
+        return obs9c(row, "MissileCreate", {"ecx": game}, [], 0x005AB9ED, blk=bytes(b))
+    # hit29
+    b = bytearray(block(flags=2, owner=own, source=MU, skill=sk, lvl=lv, cls=s1))
+    struct.pack_into("<I", b, 0x1C, S4.dword(RING64[0]))
+    struct.pack_into("<I", b, 0x20, S4.dword(RING64[1]))
+    br["create29"] += 1
+    return obs9c(row, "MissileCreate", {"ecx": game}, [], 0x005ABBED, blk=bytes(b))
+
+
+# =============================================================================================== state9c
+STATE_ORDER = ("hit16", "hit19", "hit17", "hit28", "hit21", "hit18")
+WARD = OBJ                        # hit 28's grim ward: a missile found by MissileData+0x28 as a type-3 guid
+WARDP = OBJ + 0x400
+
+
+def put_state_lists(c, rnd, unit, state):
+    """unit+0x5C -> a stat list (+0x10 bit 31) whose +0x3C and +0x40 chains (next +0x2C) hold lists of states
+    (+0x14), the asked state among them or not. -> the list UNIT_FindStatListByState returns (0 when none)."""
+    sl = SLIST[unit]
+    k = rnd.random()
+    if k < 0.06:
+        c.put(unit + 0x5C, le32(0))
+        return 0
+    fl = rnd.getrandbits(32) | 0x80000000
+    if k < 0.12:
+        fl &= 0x7FFFFFFF
+    c.put(unit + 0x5C, le32(sl))
+    c.put(sl + 0x10, le32(fl))
+    if not fl & 0x80000000:
+        return 0
+    found = 0
+    nodes = [sl + 0x400 + 0x40 * i for i in range(8)]
+    pos = 0
+    for head in (0x3C, 0x40):
+        n = rnd.randrange(4)
+        chain = nodes[pos:pos + n]
+        pos += n
+        c.put(sl + head, le32(chain[0] if chain else 0))
+        for i, nd in enumerate(chain):
+            stv = rnd.choice([state, rnd.randrange(NSTATES)]) if rnd.random() < 0.35 else rnd.randrange(NSTATES)
+            if not found and (stv == state) and state != 0:
+                found = nd
+            c.put(nd + 0x14, le32(stv))
+            c.put(nd + 0x2C, le32(chain[i + 1] if i + 1 < len(chain) else 0))
+        if found:
+            break
+    return found
+
+
+def add_state_words(c, rnd, unit, states):
+    """The state bit words at stat list +0x58 (the list put_stats wrote, when its +0x10 bit 31 is set)."""
+    a = u32f(c, unit + 0x5C) if (unit + 0x5C) in c.fields else 0
+    if not a or not u32f(c, a + 0x10) & 0x80000000:
+        return {s: 0 for s in states}
+    words = a + 0x200
+    c.put(a + 0x58, le32(words))
+    out = {}
+    for wi in sorted({s >> 5 for s in states}):
+        v = rnd.getrandbits(32)
+        c.put(words + 4 * wi, le32(v))
+        for s in states:
+            if s >> 5 == wi:
+                out[s] = (v >> (s & 31)) & 1
+    return out
+
+
+@family("state9c", "9c")
+def state9c(rnd, game):
+    """Hits 16, 19 (a timed state on the unit), 17, 28 (flee), 21 (battle cry's filter) and 18 (the party test)."""
+    cases, exp = [], []
+    for k in range(1800):
+        w = STATE_ORDER[k % 6]
+        c = Case(FN9C[w])
+        cls = rnd.randrange(NREC)
+        st = put_missile(c, rnd, cls)
+        own = put_owner(c, rnd, 0.9)
+        md = put_mdata(c, rnd, skill=pick_skill(rnd), lvl=small(rnd, 0, 40),
+                       w28=rnd.getrandbits(32))
+        row = {"w": w, "st": st, "own": own, "md": md}
+        row.update(put_hit_unit(c, rnd, types=(1, 1, 1, 1, 0, 3), p0=0.1))
+        state = rnd.choice([rnd.randrange(1, NSTATES)] * 6 + [0, -1, NSTATES, NSTATES + 5])
+        row["state"] = state
+        if skill_ok(md):
+            sb = SREC + 0x23C * s16(md["skill"])
+            c.put(sb + 0x82, le16(state))
+            sp = {"p1": rnd.randint(-5, 30), "p2": rnd.randint(-3, 10), "p3": rnd.randint(-50, 300),
+                  "p4": rnd.randint(-10, 50), "p5": rnd.randint(-75, 300), "p6": rnd.randint(-1, 30),
+                  "pp2": rnd.randint(-2, 40), "filt": rnd.choice([0, 0, 2, rnd.getrandbits(32)])}
+            for f, o in (("p1", 0x148), ("pp2", 0x14C), ("p3", 0x150), ("p4", 0x154), ("p5", 0x158),
+                         ("p6", 0x15C), ("filt", 0x50)):
+                c.put(sb + o, le32(sp[f]))
+            sp["p2"] = sp["pp2"]
+            row["sp"] = sp
+        row["cal"] = put_skill_calcs(c, rnd, md["skill"], (0x144, 0x60))
+        if own:
+            otyp = u32f(c, MU + 0x94)
+            c.put(OWN + 0x00, le32(otyp))
+            row["otyp"], row["oguid"] = otyp, u32f(c, MU + 0x98)
+        if w in ("hit16", "hit19"):
+            c.put(game + 0x1C, le32(0x12A00000 + rnd.randrange(16)))
+            frame = rnd.choice([rnd.randrange(100000), rnd.getrandbits(32)])
+            c.put(game + FRAME, le32(frame))
+            row["pool"], row["frame"] = u32f(c, game + 0x1C), frame
+            if row["unit"] and 0 <= state < NSTATES:
+                row["found"] = put_state_lists(c, rnd, TGT, state)
+        if w == "hit17" and row["unit"] and row["utype"] == 1:
+            ol = rnd.choice([rnd.randint(1, 99), rnd.getrandbits(32)])
+            osv = put_stats(c, rnd, OWN, {12: ol}) if own else {}
+            near = s32(stat_of(osv, 12) + s16(md["lvl"]) + row.get("sp", {}).get("p2", 0)) + rnd.randint(-3, 3)
+            tsv = put_stats(c, rnd, TGT, {12: rnd.choice([rnd.randint(1, 99), rnd.getrandbits(32), near, near])})
+            row["osv"] = {str(a): b for a, b in osv.items()}
+            row["tsv"] = {str(a): b for a, b in tsv.items()}
+            row["bits"] = add_state_words(c, rnd, TGT, [state]) if 0 <= state < NSTATES else {}
+        if w == "hit28":
+            wguid = md["w28"]
+            if rnd.random() < 0.85:
+                put_unit_found(c, rnd, WARD, 3, wguid)
+                c.put(WARD + 0x00, le32(3))
+                c.put(WARD + 0x2C, le32(WARDP))
+                wx, wy = rnd.getrandbits(16), rnd.getrandbits(16)
+                if rnd.random() < 0.5 and row["unit"]:
+                    wx, wy = None, None
+                row["ward"] = True
+            else:
+                put_unit_absent(c, rnd, 3, wguid)
+                row["ward"] = False
+            if row["unit"] and row["utype"] == 1:
+                tx, ty = rnd.getrandbits(16), rnd.getrandbits(16)
+                c.put(TGT + 0x2C, le32(TGTP))
+                c.put(TGTP + 0x02, le16(tx))
+                c.put(TGTP + 0x06, le16(ty))
+                row["tpos"] = (tx, ty)
+                if row["ward"] and wx is None:          # close to the unit, or exactly r away on x
+                    r = lvl_param(row["sp"], s16(md["lvl"]), "p1", "p2") if "sp" in row else 0
+                    if rnd.random() < 0.4 and 0 < r < 0x7000:
+                        wx, wy = (tx + rnd.choice([r, -r])) & 0xFFFF, ty
+                    else:
+                        wx = (tx + rnd.randint(-12, 12)) & 0xFFFF
+                        wy = (ty + rnd.randint(-12, 12)) & 0xFFFF
+            if row["ward"]:
+                wx = rnd.getrandbits(16) if wx is None else wx
+                wy = rnd.getrandbits(16) if wy is None else wy
+                c.put(WARDP + 0x02, le16(wx))
+                c.put(WARDP + 0x06, le16(wy))
+                row["wpos"] = (wx, wy)
+        row["seeds"] = put_seeds9c(c, rnd)
+        cases += lines9c(c, game, row["unit"])
+        exp.append(row)
+    return cases, mem9c(isc=True, skills=True, states=True), {"cases": exp}
+
+
+def lvl_param(sp, lv, a, b):
+    """0x004CC7C0 / 0x004EFCB0 / SkillParamByLevel: sp[a] + (lvl - 1) * sp[b], 0 when lvl <= 0."""
+    if lv <= 0:
+        return 0
+    return s32(s32((lv - 1) * sp[b]) + sp[a])
+
+
+def state9c_model(row, game, br, neg=None):
+    w, md, own, unit = row["w"], row["md"], row["own"], row["unit"]
+    sk, lv = s16(md["skill"]), s16(md["lvl"])
+    state = row["state"]
+    br[w] += 1
+    if w == "hit18":
+        if not own:
+            br["noowner"] += 1
+            return ret9c(row, 1)
+        if not unit:
+            br["nounit"] += 1
+            return ret9c(row, 0)
+        br["sameparty"] += 1
+        return obs9c(row, "SameParty", {"ecx": game, "edx": own}, [unit], 0x005AB0E0)
+    if w == "hit21":
+        if not own or not unit:
+            br["noowner" if not own else "nounit"] += 1
+            return ret9c(row, 1)
+        hi = NSTATES if neg != "state_lt" else NSTATES - 1
+        if not skill_ok(md) or not 0 <= s16(state & 0xFFFF) <= hi:
+            br["noskill" if not skill_ok(md) else "badstate"] += 1
+            return ret9c(row, 1)
+        filt = 0xA783 if row["sp"]["filt"] else 0
+        br["filter_a783" if filt else "filter_0"] += 1
+        br["state_eq_count"] += s16(state & 0xFFFF) == NSTATES
+        return obs9c(row, "UnitFilter", {"ecx": own, "edx": unit}, [filt], 0x005AB599)
+    if not skill_ok(md):
+        br["noskill"] += 1
+        return ret9c(row, 1)
+    if not own:
+        br["noowner"] += 1
+        return ret9c(row, 1)
+    sp = row["sp"]
+    if w == "hit28":
+        if not unit or row["utype"] != 1:
+            br["notmonster"] += 1
+            return ret9c(row, 1)
+        if not row["ward"]:
+            br["noward"] += 1
+            return ret9c(row, 1)
+        r = lvl_param(sp, lv, "p1", "p2")
+        (tx, ty), (wx, wy) = row["tpos"], row["wpos"]
+        d2 = s32(s32((ty - wy) * (ty - wy)) + s32((tx - wx) * (tx - wx)))
+        if not d2 < s32(r * r) if neg != "le" else not d2 <= s32(r * r):
+            br["far"] += 1
+            return ret9c(row, 1)
+        br["flee28"] += 1
+        return obs9c(row, "Flee", {"ecx": game, "edx": WARD}, [unit, sk, sp["p5"], sp["p6"]], 0x005ABAF0)
+    if w == "hit17":
+        if not unit or row["utype"] != 1:
+            br["notmonster"] += 1
+            return ret9c(row, 0)
+        if not 0 <= s16(state & 0xFFFF) < NSTATES:
+            br["badstate"] += 1
+            return ret9c(row, 1)
+        if row["bits"].get(str(state), row["bits"].get(state, 0)):
+            br["hasstate"] += 1
+            return ret9c(row, 0)
+        ol = s32(row["osv"].get("12", 0))
+        ul = s32(row["tsv"].get("12", 0))
+        lhs = s32(sp["p2"] + s32(ol + lv)) if neg != "nolvl" else s32(sp["p2"] + ol)
+        if not lhs > ul:
+            br["toohigh"] += 1
+            return ret9c(row, 0)
+        br["flee17"] += 1
+        return obs9c(row, "Flee", {"ecx": game, "edx": own},
+                     [unit, sk, lvl_param(sp, lv, "p3", "p4"), lvl_param(sp, lv, "p5", "p6")], 0x005AB09B)
+    # hit16, hit19
+    if not unit:
+        br["nounit"] += 1
+        return ret9c(row, 0 if w == "hit16" else 1)
+    if not 0 <= s16(state & 0xFFFF) < NSTATES:
+        br["badstate"] += 1
+        return ret9c(row, 1)
+    field = 0x144 if w == "hit16" else 0x60
+    if neg == "swapcalc":
+        field = 0x60 if w == "hit16" else 0x144
+    ln = max(ev_skill(row["cal"], field), 5)
+    end = s32(row["frame"] + ln)
+    if row["found"]:
+        br["found"] += 1
+        return obs9c(row, "ApplyAuraStats", {"ecx": unit, "edx": row["found"]},
+                     [SREC + 0x23C * sk, sk, lv], 0x005AAF58 if w == "hit16" else 0x005AB24E)
+    br["alloc"] += 1
+    return obs9c(row, "StatListAlloc", {}, [row["pool"], 2, end, row["otyp"], row["oguid"]],
+                 0x005AAEF9 if w == "hit16" else 0x005AB1F6)
+
+
+# =============================================================================================== range9c
+RANGE_ORDER = ("hit20", "hit22", "hit10", "hit10", "hit27")
+
+
+@family("range9c", "9c")
+def range9c(rnd, game):
+    """Hit 20 (lightning fury: ForUnitsInRange), 22 (the stored unit's BuildDamage), 10 (guided arrow's keep/end
+    test) and 27 (returns 1)."""
+    cases, exp = [], []
+    for k in range(1500):
+        w = RANGE_ORDER[k % 5]
+        c = Case(FN9C[w])
+        row = {"w": w}
+        if w == "hit10":
+            room = rnd.choice([ROOM] * 10 + [0])
+            st = put_missile(c, rnd, rnd.randrange(NREC), room=room)
+            lid = None
+            if room:
+                lid = rnd.choice([1, 40, 75, 103, 109] + [rnd.randint(2, 39)] * 6 + [rnd.randint(0, 140)])
+                c.put(ROOM + 0x10, le32(RLEV))
+                c.put(RLEV + 0x58, le32(LEVEL))
+                c.put(LEVEL + 0x1D0, le32(lid))
+            s28 = rnd.getrandbits(32) if rnd.random() < 0.5 else rnd.randrange(8)
+            left = rnd.choice([0, rnd.randint(-5, 5), rnd.randint(1, 100)])
+            md = put_mdata(c, rnd, w28=s28, left=left & 0xFFFF)
+            p7c = rnd.choice([1, 1, 1, rnd.getrandbits(32), 0])
+            c.put(MP + 0x7C, le32(p7c))
+            coll = rnd.getrandbits(16)
+            if p7c:
+                c.put(MP + 0x54, le16(coll))
+            else:
+                c.put(MP + 0x44, le32(rnd.getrandbits(32)))
+                if not room:
+                    c.put(MP + 0x1C, le32(0))
+            t = put_target_link(c, rnd, MU, MP, TGT, TGTP)
+            unit = rnd.choice([0, 0, TGT, TGT, OBJ])
+            row.update(st=st, room=room, lid=lid, md=md, p7c=p7c, coll=coll, t=t, unit=unit,
+                       p44=u32f(c, MP + 0x44) if not p7c else None, proom=u32f(c, MP + 0x1C) if not p7c else None)
+            row["seeds"] = put_seeds9c(c, rnd)
+            cases += lines9c(c, game, unit)
+            exp.append(row)
+            continue
+        cls, invalid = pick_cls(rnd)
+        st = put_missile(c, rnd, cls)
+        sub = rnd.choice([rnd.randrange(700)] * 5 + [0, -1, -0x8000])
+        hp1, hp2 = rnd_par(rnd), rnd_par(rnd)
+        if not invalid:
+            put_rec9c(c, cls, hsub=[sub], hp1=hp1, hp2=hp2)
+        own = put_owner(c, rnd, 0.9)
+        md = put_mdata(c, rnd, skill=pick_skill(rnd), lvl=small(rnd, 0, 40), w28=rnd.randrange(6),
+                       w2c=rnd.getrandbits(32))
+        cal = put_skill_calcs(c, rnd, md["skill"], (0x64, 0x138, 0x144))
+        filt = rnd.choice([0, 0, 2, rnd.getrandbits(32)])
+        if skill_ok(md):
+            c.put(SREC + 0x23C * s16(md["skill"]) + 0x50, le32(filt))
+        row.update(invalid=invalid, st=st, sub=sub, hp1=hp1, hp2=hp2, own=own, md=md, cal=cal, filt=filt)
+        if w == "hit22":
+            while (MU + 0x94) in c.fields and md["w28"] == u32f(c, MU + 0x94) and hash_slot(md["w28"], md["w2c"]) == \
+                    hash_slot(u32f(c, MU + 0x94), u32f(c, MU + 0x98)):     # keep the owner's bucket apart
+                md["w2c"] = rnd.getrandbits(32)
+                c.put(MD + 0x2C, le32(md["w2c"]))
+            if rnd.random() < 0.8:                       # no decoy: DECOY may be in the owner's chain
+                put_unit_found(c, rnd, TGT, md["w28"], md["w2c"])
+                row["t"] = TGT
+            else:
+                c.put(hash_slot(md["w28"], md["w2c"]), le32(0))
+                row["t"] = 0
+        unit = rnd.choice([0, TGT, OBJ])
+        row["unit"] = unit
+        row["seeds"] = put_seeds9c(c, rnd)
+        cases += lines9c(c, game, unit)
+        exp.append(row)
+    return cases, mem9c(skills=True), {"cases": exp}
+
+
+def range9c_model(row, game, br, neg=None):
+    w, unit = row["w"], row["unit"]
+    br[w] += 1
+    if w == "hit27":
+        return ret9c(row, 1)
+    if w == "hit10":
+        md = row["md"]
+        if row["room"] and is_town(row["lid"]):
+            br["town"] += 1
+            return ret9c(row, 1)
+        s = md["w28"] & M32
+        if not unit and s & 4:
+            br["nounit_s4"] += 1
+            return ret9c(row, 1)
+        if not row["p7c"]:
+            br["collisiontest"] += 1
+            st = row["st"]
+            return obs9c(row, "CollisionTest", {}, [row["proom"], st["x"], st["y"], row["p44"], 0x7FFF], 0x00648ED9)
+        if not unit and row["coll"] & 4:
+            br["nounit_coll4"] += 1
+            return ret9c(row, 1)
+        if s & 1:
+            if not unit:
+                br["s1_nounit"] += 1
+                return ret9c(row, 3)
+            r = 3 if unit == row["t"] else 4
+            if neg == "tgt_inv":
+                r = 7 - r
+            br["s1_ret%d" % r] += 1
+            return ret9c(row, r)
+        if s & 2:
+            if s16(md["left"]) <= 0 if neg != "left_lt0" else s16(md["left"]) < 0:
+                br["s2_retarget"] += 1
+                return obs9c(row, "GuidedRetarget", {"eax": MU}, [game], 0x005AA6ED)
+            r = 3 if s & 4 else 4
+            br["s2_ret%d" % r] += 1
+            return ret9c(row, r)
+        br["plain_ret3"] += 1
+        return ret9c(row, 3)
+    md, own = row["md"], row["own"]
+    sk, lv = s16(md["skill"]), s16(md["lvl"])
+    x, y = subxy(row["st"])
+    sub = s16(row["sub"] & 0xFFFF)
+    if row["invalid"] or sub < 0:
+        br["norec" if row["invalid"] else "sub_neg"] += 1
+        return ret9c(row, 1)
+    if w == "hit20":
+        if not skill_ok(md) or not own:
+            br["noskill" if not skill_ok(md) else "noowner"] += 1
+            return ret9c(row, 1)
+        r = cal_or(row, row["hp1"], 0x64, 1)
+        n = cal_or(row, row["hp2"], 0x138 if neg != "calc144" else 0x144, 1)
+        fl = (row["filt"] & M32) or 0xA783
+        ctx = le32(own) + le32(MU) + le32(sk) + le32(lv) + le32(n) + le32(sub)
+        br["range20"] += 1
+        return obs9c(row, "ForUnitsInRange", {"ecx": game, "edx": own},
+                     [x, y, r, fl, 0x005AB2A0, None, 1, 0x006E25E0, 0xEC3], 0x005AB4D6, ptrs={5: ctx})
+    # hit22
+    if not own:
+        br["noowner"] += 1
+        return ret9c(row, 1)
+    if not skill_ok(md):
+        br["noskill"] += 1
+        return ret9c(row, 1)
+    if not row["t"]:
+        br["notarget"] += 1
+        return ret9c(row, 0 if neg != "notgt1" else 1)
+    br["build22"] += 1
+    return obs9c(row, "BuildDamage", {"ecx": game, "edx": own}, [MU, row["t"], None], 0x005ADE82)
+
+
+def ownseed_neg(model):
+    """A seed control (the untouched-seed comparison is live): neg 'ownseed' moves the missile's draws to the
+    owner's seed (the missile's left as written, the owner's stepped as the missile's would be)."""
+    def m(row, game, br, neg=None):
+        if neg != "ownseed":
+            return model(row, game, br, neg)
+        e = model(row, game, br, None)
+        mem = dict(e[4] if e[0] == "obs" else e[3])
+        if MU + 0x20 in mem and mem[MU + 0x20] != seeds_mem(row)[MU + 0x20]:     # only where the missile drew
+            mem[MU + 0x20], mem[OWN + 0x20] = seeds_mem(row)[MU + 0x20], mem[MU + 0x20]
+        return e[:4] + (mem,) + e[5:] if e[0] == "obs" else e[:3] + (mem,) + e[4:]
+    return m
+
+
+CHECKS.update({
+    "area9c": check9b("area9c", ownseed_neg(area9c_model), ["calc64", "noresult", "hp1pos", "stat86", "nolen", "ownseed"],
+                      [RS_HASH, RS_SKN, RS_CALC_JT, RS_BITMASK, RS_JT8C70, RS_JT8F20]),
+    "holy9c": check9b("holy9c", ownseed_neg(holy9c_model), ["nocap", "undead8", "noroll", "always2", "ownseed"],
+                      [RS_HASH, RS_SKN, RS_CALC_JT, RS_BITMASK9C]),
+    "create9c": check9b("create9c", create9c_model, ["ge0", "count0", "vel", "leftpos"],
+                        [RS_HASH, RS_SKN, RS_CALC_JT, RS_RING16, RS_RING64]),
+    "state9c": check9b("state9c", state9c_model, ["state_lt", "le", "nolvl", "swapcalc"],
+                       [RS_HASH, RS_SKN, RS_CALC_JT, RS_BITMASK9C]),
+    "range9c": check9b("range9c", range9c_model, ["tgt_inv", "left_lt0", "calc144", "notgt1"],
+                       [RS_HASH, RS_SKN, RS_CALC_JT, RS_TOWN]),
+})
+
+PINS9C = [  # (address, mnemonic, operand substring): instructions the 9c claims turn on (ADR-0015 (5))
+    (0x005A9AD6, "jg", ""), (0x005A9E6D, "jne", ""),                                 # hit 1: > 0; hit 44: != 0
+    (0x005A9EAE, "mov", "eax,DWORD PTR [ecx+0x64]"), (0x005A9B15, "mov", "eax,DWORD PTR [ecx+0x138]"),
+    (0x005AA091, "shl", "esi,0x8"), (0x005AA09C, "shl", "eax,0x8"), (0x005AA0A1, "sub", "edx,esi"),   # hit 7
+    (0x005AA0B1, "jg", ""), (0x005AA0DD, "jl", ""),
+    (0x00554301, "mov", "dl,BYTE PTR ds:0x6ce26c"),                                  # TargetPet mask 2
+    (0x005AA795, "cmp", "eax,0x1"), (0x005AA804, "push", "0x88583"),                 # hit 12
+    (0x005AAEB9, "cmp", "ebx,0x5"), (0x005AB1B3, "cmp", "eax,0x5"),                  # hits 16, 19: max(.., 5)
+    (0x005AB073, "cmp", "edi,eax"), (0x005AB075, "jle", ""),                         # hit 17
+    (0x005AB57C, "jg", ""),                                                           # hit 21: state <= count
+    (0x005ABAD0, "cmp", "eax,edx"), (0x005ABAD2, "jge", ""),                         # hit 28: d2 < r*r
+    (0x005ABBC2, "lea", "ebx,[edi*4+0x0]"), (0x005ABC0F, "cmp", "esi,0x100"),        # hit 29
+    (0x005AB7D4, "shl", "ecx,0x7"), (0x005AB7FF, "cmp", "esi,0x20"),                 # hit 25's helper
+    (0x005AA700, "and", "bl,0x4"), (0x005AA6E8, "call", "0x5aa5b0"),                 # hit 10
+    (0x005B0826, "jle", ""),                                                          # hit 4: > 0
+]
+
+
+def cmd_static9c(a):
+    rep = Report("static")
+    rep.batch = "9C"
+    A = S4.asm()
+    for va, mn, sub in PINS9C:
+        ins = A.at(va)
+        rep.c["pins"] += 1
+        if ins is None or ins[0] != mn or sub not in ins[1]:
+            rep.bad("pin 0x%08X: %r, want %s %s" % (va, ins, mn, sub))
+        else:
+            rep.c["pins_ok"] += 1
+    for lo, n, name in ((BITMASK, 128, "g_BitMask32"), (0x006E10E0, 20, "hash offsets"),
+                        (0x006C1164, 88, "CALC_Eval jump table"), (0x006426C0, 8 + 0x6D, "town tables"),
+                        (RING16[1], 64, "hit 25 offsets"), (RING64[1], 512, "hit 29 offsets")):
+        sec = S4.section_of(lo)
+        flags = [x[5] for x in S4.image()[2] if x[4] == sec][0]
+        rep.c["ro_reads"] += 1
+        if flags & 0x80000000:
+            rep.bad("%s 0x%08X in writable %s" % (name, lo, sec))
+        rep.notes.append("%s 0x%08X: %s" % (name, lo, sec))
+    rep.notes.append("hit 25 offsets x: %s" % " ".join(str(s32(S4.dword(RING16[0] + 4 * i))) for i in range(8)))
+    rep.notes.append("hit 25 offsets y: %s" % " ".join(str(s32(S4.dword(RING16[1] + 4 * i))) for i in range(8)))
+    rep.notes.append("hit 29 offsets x: %s" % " ".join(str(s32(S4.dword(RING64[0] + 4 * i))) for i in range(64)))
+    rep.notes.append("hit 29 offsets y: %s" % " ".join(str(s32(S4.dword(RING64[1] + 4 * i))) for i in range(64)))
+    rep.notes.append("hit table 0..30: %s" % " ".join("%d:0x%08X" % (i, S4.dword(HIT_TABLE + 4 * i))
+                                                     for i in range(31)))
+    rep.notes.append("hit table count 0x0073C83C: %d" % S4.dword(0x0073C83C))
+    for name, va in sorted(FN9C.items(), key=lambda kv: kv[1]):
+        rep.c["table_entries"] += 1
+        if S4.dword(HIT_TABLE + 4 * int(name[3:])) != va:
+            rep.bad("%s: table entry 0x%08X, model address 0x%08X" % (name, S4.dword(HIT_TABLE + 4 * int(name[3:])),
+                                                                      va))
+    print("CAT9C static " + " ".join("%s=%d" % (k, rep.c[k]) for k in sorted(rep.c)))
+    for n in rep.notes:
+        print("  " + n)
+    return 1 if rep.c["bad"] else 0
+
+
 # ================================================================================================= commands
 def batch_families(a):
     if a.family:
@@ -2850,6 +3893,8 @@ def cmd_static9b(a):
 def cmd_static(a):
     if a.batch == "9b":
         return cmd_static9b(a)
+    if a.batch == "9c":
+        return cmd_static9c(a)
     rep = Report("static")
     A = S4.asm()
     for va, mn, sub in PINS:
@@ -2911,7 +3956,7 @@ def main(argv):
     ap.add_argument("cmd", choices=["cases", "check", "static", "manifest"])
     ap.add_argument("family", nargs="*")
     ap.add_argument("--dir", default=None, help="default workspace/logs/skills-cat-<batch>")
-    ap.add_argument("--batch", default="9a", choices=["9a", "9b"], help="the families of one batch (default 9a)")
+    ap.add_argument("--batch", default="9a", choices=["9a", "9b", "9c"], help="the families of one batch (default 9a)")
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args(argv)
     return {"cases": cmd_cases, "check": cmd_check, "static": cmd_static, "manifest": cmd_manifest}[a.cmd](a)
