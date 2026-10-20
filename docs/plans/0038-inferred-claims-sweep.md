@@ -2849,3 +2849,33 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   sessions hell-c, hell-d, classic-jail, classic-cat (cap 20); the full check set; the five findings' ledgers, run
   record, manifest, § 2.6 entry, review request, spec-writer entry and symbol raises. Nothing below this note's
   checkpoint is claimed yet.
+- **2026-10-20 — Batch H2b paused at the owner's request (reverser, `lane/h2b`).** Slot 2 stopped and its saves
+  directory restored (empty, no aside); no game, driver, pilot or gdb of the lane left running.
+  - **Sessions so far** (run:2026-10-20-sweep-items-chain, `workspace/logs/h2b/`, 16 launches of the 20 allowed):
+    kept 12 logs (`items-chain-run.lst`, `items-chain-manifest.sha256` `eddc187f…`, `sha256sum -c` from
+    `workspace/logs/h2b`): `classic-a`, `-b`, `-c` (classic Normal outdoor sweeps, 163, 177 and 201 creations),
+    `classic-jail` (pilot stalled in the Jail after 69 s, 23 creations), `classic-cat` (no cast in the Catacombs, 0
+    creations), `hell-a` (died at `/players 8` after 147 s), `hell-c`, `hell-d` (Eldritch at `/players 1`, 34 and 63
+    creations), `jewel` (17 transmutes), `throw` (9 transmutes), and the new expansion Normal sweeps `exp-cold` and
+    `exp-stony`. Development logs in `dev/` (`items-chain-dev-manifest.sha256` `ced144d2…`): `dev1` classic-a, `dev2` and
+    `dev3` hell-b (both cut off; `dev3` by the first agent's stop), and **`dev4` classic-d (map seed 3914): gdb aborted
+    with `i387-tdep.c:1057: internal-error: i387_supply_xsave: Assertion 'regs != NULL' failed` (log line 1200), a gdb
+    18.1 thread race under Wine; a tool failure, not a model mismatch.** No kept log has `internal-error:`.
+  - **Checks so far** (spot runs, outputs not kept yet): `sweep_h2b.py logs` 0 bad on every kept log; `uniques.py`
+    203/203, `quality.py` 185/185 and `tc.py replay` 181/181 on the first four logs; `cube.py check` of
+    run:2026-10-15-cube's two rare logs reproduces (4 rare jewels at count 3, 10 other rares).
+  - **Tools since the resume note:** `sweep_h2b.py` `tors` rule reads `SOKM` (the tors test at 0x00556BEC is reached only
+    past `ItemMaxSockets` > 0, 0x00556B96) with an expansion control, 3 new tests (13 OK); `h2b_sessions.py` sessions
+    `exp-cold`, `exp-stony`. Readings re-checked with objdump: the `ItemCreate` record-seed branch 0x00558E47, `GS1`
+    after the `ItemSeedInit` call 0x0055532A, the `SetSockets` switch table 0x0062BDDC, the jewel branch 0x005C1C74,
+    C5a/R1 0x0065E62D/0x0065E71D, `MBF` 0x0055667D, the classic `version ≥ 100` refusal 0x00558DBC (`game+0x70` = 0),
+    the type-11 call (exact type test at 0x00557DE7).
+  - **Early results (to be re-taken from kept check outputs):** classic body armour now reached the tors test 5 times
+    (`classic-b` 1, `classic-c` 4, all q 2) with no socket draw (prop 20); `throw`: 9 of 9 rare → magic → superior,
+    18 empty name scans, 11 empty magic candidate lists; `jewel`: 9 at count 3, 8 at 4.
+  - **Left:** re-run map seed 3914 (or another classic outdoor session) for the gdb crash; the full check set
+    (`scratchpad/h2b2/checks.sh`, which now refuses a kept log with `internal-error:`); the five findings' ledgers
+    (drafts for items/0001, 0004 and 0005 in `scratchpad/h2b2/s000N.md`, the first agent's in `sec000N.md`, all to be
+    re-counted from the kept outputs); run record and manifest; corrections (rule 12) into items/0005 § 5 (tests (a)
+    "refused no row in the run"), § 6, items/0006 § 6 (sockets), items/0007 § 7, items/0001 § 8; inventory § 2.6;
+    symbol raises; review request; spec-writer entry.

@@ -78,9 +78,10 @@ SESSIONS = {
     "hell-d": ("UniqNova", "uniques-hell", 3924, eldritch(players=1)),
     "hell-e": ("UniqNova", "uniques-hell", 3925, eldritch(players=1)),
     "hell-f": ("UniqNova", "uniques-hell", 3926, eldritch(players=1)),
-    # (added after hell-c) sockets 42 and 44, properties 24: expansion Normal sweeps of the Jail and the Catacombs
-    "exp-jail": ("UniqNova", "enter-normal", 3951, exp_sweep(7)),
-    "exp-cat": ("UniqNova", "enter-normal", 3952, exp_sweep(9)),
+    # (added after hell-c) sockets 42 and 44, properties 24: expansion Normal sweeps of the Cold Plains and the Stony
+    # Field (outdoor: the indoor classic-jail and classic-cat sweeps stalled)
+    "exp-cold": ("UniqNova", "enter-normal", 3951, exp_sweep(2)),
+    "exp-stony": ("UniqNova", "enter-normal", 3952, exp_sweep(3)),
     # affixes 5, 19: row 62 on one rare jewel, 17 times
     "jewel": ("H2bJewel", "cube-enter-normal", 3931, cube_plan("h2bjewel.plan")),
     # affixes 13, 17, 21, 24; uniques-sets 35: row 62 on nine built rare classic throwing weapons (classic game)
