@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-20
 status: done
 context:
-  - ../../plans/0044-multiplayer-branches.md#implementation-log
+  - ../../plans/done/0044-multiplayer-branches.md#implementation-log
   - ../../findings/multiplayer/experiments.md#run2026-10-20-two-clients
   - ../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients
 resolution: "Reviewed 2026-10-20 (architect): accept with fixes (9); port-4000 precondition met as the owner's condition asks (owner's 2026-10-17 root listing; no-root re-read and hashes before live-1 and before each of the 18 later sessions, 20 entries, 0 FAILED; no rule changed); the four checker changes ruled the checker's errors; Phase 2 done, Phase 3 may start. Plan 0044 log, 2026-10-20 review entry."

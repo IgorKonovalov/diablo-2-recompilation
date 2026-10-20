@@ -199,9 +199,10 @@ firewall rule, or a confirmed existing block) and records how in the run record.
 slots, never the owner's ([ADR-0008, status](../adrs/0008-two-client-harness.md)). The condition is met: on
 2026-10-17 the owner's firewall listing showed the port dropped on every interface but the machine's own, and before
 each hosting session the lane re-reads the firewall state and asks the owner again only if it changed
-([plan 0044 log](../plans/0044-multiplayer-branches.md#implementation-log)). Until a two-client run reaches
-them, multiplayer branches stay "read from the code"
-([ADR-0003 § Negative](../adrs/0003-runtime-experiments.md#negative)); plan 0044 is the plan that will run them.
+([plan 0044 log](../plans/done/0044-multiplayer-branches.md#implementation-log)). Plan 0044's two-client run (19 sessions,
+2026-10-20) confirmed the multiplayer branches it reached, and the specs now say so case by case; a branch it did not
+reach (three or more players, the forge and the Ancients with two players) stays "read from the code"
+([ADR-0003 § Negative](../adrs/0003-runtime-experiments.md#negative)), and trading between players is not read yet.
 
 ## "Not reachable on stock data"
 

@@ -197,6 +197,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-20 | `lane/p46m2` | 0046 P1 9b | reverser-static | 469 297 | 115 | 48 | Ghidra (lane copy) | accept with fixes | 5: misread 3, overclaim 2 |
 | 2026-10-20 | `lane/p46m2` review | 0046 P1 9b | architect-review | 152 151 | 59 | 11 | — | gave accept with fixes | — (on the lane row; 18 ADR-0021 claims raised, in part where code follows a boundary) |
 | 2026-10-20 | `lane/adr21` | ADR-0021 accepted; 0046 P1 9a tags | architect | 119 444 | 35 | 13 | no slot | — (owner decision, bookkeeping) | — |
+| 2026-10-20 | `lane/p44s` | 0044 P3 | spec-writer | 222 787 | 110 | 16 | no slot | accept with fixes | 6: misread 2, overclaim 2, miscount 1, other 1 |
+| 2026-10-20 | `lane/p44s` review | 0044 P3 | architect-review | 183 072 | 57 | 9 | — | gave accept with fixes | — (on the lane row; plan 0044 closed; plan 0038 d-2c 14 → 7) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

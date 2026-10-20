@@ -72,14 +72,13 @@ research map yet.
 The plans still open are listed in the [plan index](../plans/README.md):
 - **0038**, a sweep that tries to confirm inferred claims with another run, a re-check of kept logs or a second code
   path; its batches are still running, and the specs are re-tagged cluster by cluster;
-- **0044**, the multiplayer branches: its code reading is reviewed, and the owner has confirmed that the game's
-  network port is closed to everything but the machine itself, so its two-client run waits only for two free slots;
 - **0045** and **0046**, skills and missiles (the machinery, then the function catalogue): approved 2026-10-20, with no
   spec yet;
 - **0047**, the simulation shortfalls (the named remainders of the combat, stats and travel runs), **0048**, seed to
   world (the core specs composed end to end), and **0049**, backlog sweep 5: approved 2026-10-20.
 
-Plans 0039 (backlog sweep 4), 0042 (quests and travel) and 0043 (item economy) are closed.
+Plans 0039 (backlog sweep 4), 0042 (quests and travel), 0043 (item economy) and 0044 (the multiplayer branches, whose
+two-client run re-tagged the specs it reached) are closed.
 
 When one of them changes a spec, the page over it is refreshed.
 

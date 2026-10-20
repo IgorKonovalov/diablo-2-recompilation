@@ -174,9 +174,10 @@ When *n* is above 1, the new NoDrop is computed in floating point from the old o
 r = NoDrop ÷ (NoDrop + total), p = rⁿ and q = 1 − p, the new NoDrop is (1 − q) × total ÷ q, truncated. It is
 recomputed on every pick, from the unscaled NoDrop and the current TC's total.
 
-Confirmed for a party of one (alone or with `/players 8`) and a party of two in a two-client game. Read from the code
-only: a dead party member, three or more players, the cap at 8, a monster killer counted through its owning player,
-and whether `/players` works in a multiplayer game.
+Confirmed for a party of one (alone or with `/players 8`) and a party of two in a two-client game. A second two-client
+run also confirmed that a dead party member is not counted, that a mercenary's kill counts its owner's party, and that
+`/players` works on the host of a network game (the joiner's setting changes nothing). Read from the code only: three
+or more players and the cap at 8.
 
 ## The quality roll and magic find
 
@@ -538,17 +539,17 @@ Vendors, gambling, the Horadric Cube and quest rewards reach the same builders b
 The main flow above is confirmed in recorded games. These parts are not, or are still open:
 
 - **Treasure classes** ([TC open questions](../specs/items/tc.md#open-questions)): Hell drops; parties of three or
-  more, a dead party member, the cap at 8 and a monster killer counted through its owner; champions outside one
+  more and the cap at 8; champions outside one
   Nightmare class and in classic games; the superunique-before-champion order; the early stop of a negative-Picks TC
   and `Picks = 0`; the untested classic cases (expansion-only entries before the chosen one, the Long Sword, the
   ratio raises); a TC entry naming a unique (`Annihilus`) in stock data; the floating-point precision under other game
-  types or renderers; whether `/players` works in a TCP/IP game; the quest TC for a kill by a pet, a hireling or a
+  types or renderers; the quest TC for a kill by a pet, a hireling or a
   party member, and for Mephisto, Diablo and Baal after their quest is done; and whether any monster skips the death
   drop beyond the lower bound above. The two "upgrade" bits a TC can set turned out, by the code, to force the item
   ethereal and force sockets (see [Ethereal, sockets and automagic](#ethereal-sockets-and-automagic)); no stock data
   sets them.
 - **Quality** ([quality open questions](../specs/items/quality.md#open-questions)): Hell, negative magic find,
-  multiplayer, a monster killer with no player owner, an object or missile killer, and the unique-only base and quest-item early returns.
+  games of three or more players (with two, the magic find is the killer's alone), a monster killer with no player owner, an object or missile killer, and the unique-only base and quest-item early returns.
 - **Uniques and sets** ([uniques-sets open questions](../specs/items/uniques-sets.md#open-questions)): the fallback
   chain past its first step; a unique-only base with no row; a quest base skipping the made test; the Cow King's set
   from a Hell Bovine; which game type, if any, excludes ladder uniques.

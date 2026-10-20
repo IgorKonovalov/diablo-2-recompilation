@@ -4,7 +4,7 @@ to: archivist
 date: 2026-10-17
 status: done
 context:
-  - ../../plans/0044-multiplayer-branches.md#implementation-log
+  - ../../plans/done/0044-multiplayer-branches.md#implementation-log
   - ../../findings/multiplayer/0001-cases.md#2-the-case-list
 resolution: "Done: 25 recipes, 17 pairs (a)-(f) built by tools/mp_saves.py and checked against their cases, hashes in [d2s.md § Two-client pairs](../../formats/d2s.md#two-client-pairs); not loaded (first step of Phase 2)."
 ---
