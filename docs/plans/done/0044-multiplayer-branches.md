@@ -484,4 +484,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   quest-word test stay `[I]`. G3's pseudocode follows quests/0002 § 6's block, the free-spot exit at 0x00584B18 included
   (its own `[I]` note). Inputs row and wiki/quests' portal paragraph updated. Tags C 73 → 74, I 82 → 84, L 4; no open
   question changed. Review request:
-  [backlog](../../backlog/2026-10-20-spec-writer-architect-review-lane-g3.md).
+  [backlog](../../backlog/archive/2026-10-20-spec-writer-architect-review-lane-g3.md).
+  - **Review (architect, 2026-10-20): accept with fixes (2).** Checked against multiplayer/0001 § 6's MP26 bullet and
+    quests/0002 § 6's block; ruling 1 held (the `[C]` rests on the run and the code; the different-ids compare and the
+    no-owner pass stay `[I]`); tags recounted C 74, I 84, L 4; wiki/quests carries no tags or anchors; the spec stays
+    `reviewed`. (1) *omission*: the `[C]` note's code argument said "the only party-dependent refusal"; it now names
+    the other refusals after the gate (two null-record guards, the quest gate, the free-spot search), which read no
+    party state and which the partied click passed at the same end. (2) *omission*: the party id at the test is read
+    through 0x00554630, which returns `0xFFFF` for a non-player unit and otherwise jumps to `PartyIdOfUnit`
+    (0x00554645, objdump); the note now cites both.

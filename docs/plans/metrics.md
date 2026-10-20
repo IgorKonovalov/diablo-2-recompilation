@@ -205,6 +205,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-20 | `lane/mp26` review | 0044 follow-ups | architect-review | 107 131 | 39 | 9 | — | gave accept with fixes | — (on the lane row; ufwcheck fails closed, hosting drivers must call it under an exit guard) |
 | 2026-10-20 | `lane/p46m3` | 0046 P1 9c | reverser-static | 446 051 | 118 | 37 | Ghidra (lane copy) | accept with fixes | 2: overclaim 1, other 1 |
 | 2026-10-20 | `lane/p46m3` review | 0046 P1 9c | architect-review | 131 060 | 54 | 14 | — | gave accept with fixes | — (on the lane row; three radius values kept `[I]`, register not an argument; hit 2 to 9d) |
+| 2026-10-20 | `lane/g3` | 0044 follow-up (travel G3 re-tag) | spec-writer | TBD | TBD | TBD | — | accept with fixes | 2: omission 2 |
+| 2026-10-20 | `lane/g3` review | 0044 follow-up (travel G3) | architect-review | TBD | TBD | TBD | — | gave accept with fixes | — (on the lane row; the [C] note names the refusals the partied control excludes and the 0x00554630 wrapper before `PartyIdOfUnit`) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

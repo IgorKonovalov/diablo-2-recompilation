@@ -553,11 +553,13 @@ Step notes:
 - G3. [C] **An operator in no party is refused on another player's portal; an operator in the owner's party passes.**
   With neither player in a party, the joiner's click on the host's town portal passed the 5 s gate and was refused;
   in the host's party, the same click 22.5 s later passed and arrived at the field end. Scope: one refusal and one pass,
-  outcome only; the party test itself was not logged. The branch is the code's, held by the run: after the gate the
-  only party-dependent refusal is this test, and with both ids `0xFFFF` the id compare would pass, so the refusal is
-  the operator's `0xFFFF` test, which comes before the compare. `PartyIdOfUnit` returns `0xFFFF` for a unit in no
-  party (read from the code). (fn:OBJOP_Portal@0x00584870 0x00584911 0x00584915, 0x00554630,
-  fn:sub_00540710_PartyIdOfUnit@0x00540710, run:2026-10-20-two-clients;
+  outcome only; the party test itself was not logged. The branch is the code's, held by the run: the other refusals
+  after the gate (two null-record guards, the quest gate, which tests nothing for level 3, and the free-spot search)
+  read no party state, and the partied click passed them at the same end; with both ids `0xFFFF` the id compare would
+  pass, so the refusal is the operator's `0xFFFF` test, which comes before the compare. The party id read at the test
+  comes from 0x00554630, which returns `0xFFFF` for a unit that is not a player and otherwise jumps to `PartyIdOfUnit`,
+  `0xFFFF` for a unit in no party (read from the code). (fn:OBJOP_Portal@0x00584870 0x00584911 0x00584915 0x005849B9
+  0x005849CE 0x00584B18, 0x00554630 0x00554645, fn:sub_00540710_PartyIdOfUnit@0x00540710, run:2026-10-20-two-clients;
   [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients))
 - G3. [I] The compare of two different party ids needs a third player, since two players hold at most one party; the
   pass with no compare when the owner unit is not found (the owner gone from the game) and the skip for an owner id of
