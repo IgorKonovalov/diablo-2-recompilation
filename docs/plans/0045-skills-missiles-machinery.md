@@ -312,3 +312,24 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   and links `docs/tables/Missiles.md` once that lands). P1.3 picks up the `srvprgfunc` entries and `0x00571AA0`, the
   item-event handlers that call `ITEMSKILL_Cast` (`0x005BF170`–`0x005C0670`), `SKILLS_SrvStart`/`SKILLS_PayCost`
   callers in do functions 83, 109 and `0x005D69D0`, the twelve unmapped `EType` stores, and the routed open questions.
+- **2026-10-20 — Combat spec fixes from P1.1 landed for review (spec-writer, `lane/cfix`).** The
+  [reverser's entry](../backlog/archive/2026-10-20-reverser-spec-writer-combat-finisher-peek-and-conversion-writer.md)
+  closed: [combat/delivery § A](../specs/combat/delivery.md#a-queue-and-delivery) A2 says the finisher peeks the
+  attacker's seed (`[I]`, ruling (2)), with a reimplementation note and a new `[L]` for the `srvprgfunc` entries and
+  `0x00571AA0`; [combat/damage § D](../specs/combat/damage.md#d-conversion) D1 names the skill hit builders as the
+  conversion writers (`[I]`), the old `[L]` struck and a narrower one added; combat/README and
+  [wiki/combat](../wiki/combat.md) follow. Tags: delivery {C: 52, I: 38, L: 3} → {C: 52, I: 39, L: 4}, damage
+  {C: 34, I: 27, L: 4} → {C: 34, I: 28, L: 5}, README unchanged. Open questions: delivery 3 → 4 live, damage 4 live
+  (one struck, one added). No combat or rng call-order table listed the finisher as a draw. Review:
+  [request](../backlog/archive/2026-10-20-spec-writer-architect-review-lane-cfix-combat-finisher-peek-and-conversi.md).
+- **2026-10-20 — `lane/cfix` reviewed (architect): accept with fixes.** Checked against combat/0001 § 14 (the dated
+  correction) and skills/0001 §§ 11–12: the peek's copy-out / `RNG_Step` / copy-back addresses, the `EType`/`calc4`
+  store rule of start function 32 and the 3-of-15 mapping match; `sub_00650E70_Copy64Out`, `sub_00650E60_Copy64In`,
+  `sub_005D7EA0_SkillSt32Hit`, `COMBAT_PrgFinisher` and `RNG_Step` resolve in `re/symbols.csv`; no other spec or wiki
+  page states the finisher as a draw. Ruling on the struck question: an answered open question stays struck as history
+  (as in drlg/maze, drlg/lifecycle, objects), but without its tag, so the front matter counts live leads only; damage
+  goes to {C: 34, I: 28, L: 4}. Fixes: that tag dropped; A2 states the finisher's gate (queued hit with `0x1`, target in
+  melee range, level `max(stat 351, current)` > 0); combat/README A1's peek comment carries `[I]` inside the `[C]` block
+  (README {C: 36, I: 22, L: 5}); "the skill hit builders" scoped to "skill hit builders" in damage D1 and README, the
+  wiki to "a skill with an element type". The wiki carries no tags or anchors and says "read from the code only". The
+  combat specs stay `reviewed`: the change narrows and corrects at `[I]` from reviewed findings and raises nothing.
