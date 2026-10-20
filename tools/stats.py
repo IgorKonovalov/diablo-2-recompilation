@@ -131,7 +131,9 @@ class Tables:
         self.states_rows = load_txt(excel, "states.txt")
         self.states = [r["state"] for r in self.states_rows]
         self.shrines = load_txt(excel, "shrines.txt")
-        self.itypes = [r["Code"] for r in load_txt(excel, "itemtypes.txt")]
+        # the "Expansion" separator row is not a record of the loaded table (plan 0047 Phase 2: the Assassin's claw
+        # mastery passive, param h2h = 67, was predicted one high)
+        self.itypes = [r["Code"] for r in load_txt(excel, "itemtypes.txt") if r.get("ItemType") != "Expansion"]
         self.montypes = {}
         for i, r in enumerate(load_txt(excel, "montype.txt")):
             self.montypes.setdefault(r["type"], i)
