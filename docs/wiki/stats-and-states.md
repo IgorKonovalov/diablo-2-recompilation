@@ -315,7 +315,8 @@ From [states § F](../specs/stats/states.md#f-auras), confirmed except where not
 - **Sanctuary's draw.** A damaging aura draws one random number on the **caster's** unit seed per hit, for the hit's
   elemental damage roll. This is confirmed: 865 drawing runs, each one's draws accounted for, and 746 consecutive runs
   of the same caster picking up exactly where the last one left the seed, as the project's stats checker counts them
-  (in 115 others the next run started from a different seed, and 4 runs were the caster's last in their log). The
+  (in 115 others the next run did not start where the last one left the seed, and the record does not say why; 4 runs
+  were the caster's last in their log). The
   damage itself belongs to the skills phase still to come, but a rebuild that runs Sanctuary must take that draw. A
   kill by the aura also moves the game seed when it drops an item.
 
