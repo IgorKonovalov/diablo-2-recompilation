@@ -89,7 +89,75 @@ this batch continues from.
 
 ## Leads used
 
-None. No community document was opened for this batch; the cross-check is Phase 1b.
+No community document was opened for P1.1–P1.3. *Phase 1b (plan 0045), 2026-10-20:* the pages below were fetched and
+read in that session (ADR-0007), after the batch's sections were written, and none shows code. One verdict per compared
+claim. The verdict words are evidence-rules' (`held`, `held with refinement`, `contradicted`, `not covered`). A
+claim from another game version that differs from 1.14d for that reason only would be marked *version-different* in
+its detail. None is marked: no source says its claim is version-specific, and none of their versions can be checked
+here. Two sources are Resurrected-era (src:d2dfg-blizzard, src:purediablo-piercing), so a contradiction from them
+may be a Resurrected change; the Phase 2 case settles 1.14d only. Agreement adds nothing to a tag. The quick objdump re-reads behind a contradiction or a gap are `tools/skills_crosscheck_reread.py`
+(sha256 `8361a4c1…`), kept under `workspace/logs/skills/` (`p45b-manifest.sha256`: `p45b-reread.txt` `427ca8d7…`, the
+code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compared).
+
+- [L] src:d2dfg-blizzard: velocity is `Vel` plus `VelLev` per caster level beyond 1. **contradicted**
+  Detail: `((VelLev · lvl) / 8 + Vel) << 8`, `lvl` the request's level (R1: `imul [esi+0x30]`, `cdq; and edx,7;
+  sar 3`); four stock rows (`spike1`–`spike4`). Phase 2 case C2,
+  [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md).
+- [L] src:d2dfg-blizzard: `MaxVel` caps the velocity. **held**
+- [L] src:d2dfg-blizzard: `Accel` changes the velocity per frame. **contradicted**
+  Detail: `Accel` is added on every **fifth** path step (R3: the counter `+0x8C` reaches 5), the result capped at
+  `MaxVel << 8` (acceleration then stops) and floored at 0 (§ 4); 21 stock rows, Nova, Frost Nova and Howl in tier A.
+  Phase 2 case C3, [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md).
+- [L] src:d2dfg-blizzard: `Range` is the lifetime in frames. **held**
+- [L] src:d2dfg-blizzard: `LevRange` adds to `Range` per caster level beyond 1. **contradicted**
+  Detail: `LevRange · lvl + Range`, `lvl` the request's level, with no `− 1` (R2: `movsx [edx+0x98]; imul [esi+0x30]`);
+  32 stock rows, none in tier A. Phase 2 case C4,
+  [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md).
+- [L] src:d2dfg-blizzard: `Activate` is the frame count before the missile collides. **held**
+- [L] src:d2dfg-blizzard: `CollideType` codes 0–8, 7 being missile collision. **held with refinement**
+  Detail: 7's mask is `0x40` with a `CanDestroy` filter, and no stock row uses it (§ 2).
+- [L] src:d2dfg-blizzard: a `CollideKill` missile is destroyed when it collides. **held with refinement**
+  Detail: unless a pierce succeeds or the hit function's return replaces the result (§ 5).
+- [L] src:d2dfg-blizzard: `CollideFriend` lets the missile hit friendly units. **held**
+- [L] src:d2dfg-blizzard: `LastCollide` keeps the missile from hitting its last unit twice. **held with refinement**
+  Detail: the owner is the first last-hit unit, and the unit is recorded before the type and hostility filters (§ 5).
+- [L] src:d2dfg-blizzard: `NextHit` with `NextDelay` frames before the same unit can be hit again. **held**
+  Detail: state 86 on the unit for `NextDelay` frames, tested for any `NextHit` missile (§ 5).
+- [L] src:d2dfg-blizzard: `SrcTown` destroys the missile when its caster is in town; `Town` 0 destroys it in town.
+  **held** (§ 4)
+- [L] src:d2dfg-blizzard: `ToHit` 1 tests the caster's attack rating, 0 always hits. **held with refinement**
+  Detail: `COMBAT_ToHitRoll` on the owner's seed with the missile's stat 19; a miss ends the missile (§ 5).
+- [L] src:d2dfg-blizzard: `AlwaysExplode` runs the hit function when the missile ends. **held with refinement**
+  Detail: also on a missed hit, where a hit-function return with bit 2 keeps the missile (§ 5).
+- [L] src:d2dfg-blizzard: `CanSlow` rows obey the slow-missiles state. **held** (state 87, § 2)
+- [L] src:d2dfg-blizzard: `Pierce` 1 lets the pierce modifier work; `MissileSkill`/`Skill` take a skill's damage;
+  `ApplyMastery` adds the elemental masteries; `SrcDamage` in 128ths; `Half2HSrc` halves it with a two-handed weapon.
+  **held with refinement**
+  Detail: the masteries enter at creation and again at the hit; `SrcDamage` 0xFF on a skill missile means no weapon
+  share; the three stock `−1` rows all name a `Skill` (§§ 3, 6).
+- [L] src:arreat-summit-amazon-passive: Pierce gives a missile a chance to continue through its victim. **held**
+- [L] src:purediablo-piercing: at most 4 pierces, 5 targets. **held**
+  Detail: at most four steps of the count (§ 3).
+- [L] src:purediablo-piercing: the chance is checked at each target, the chain ending at the first failure.
+  **held with refinement**
+  Detail: the same distribution, drawn once at **creation** on a local seed from the owner's base stat 328, up to four
+  steps while `low % 100 < p`; no game or unit seed is drawn (§ 3).
+- [L] src:purediablo-piercing: pierce happens only after a successful hit. **held with refinement**
+  Detail: the pierce charge is taken before the to-hit roll, so a miss spends one (§ 5).
+- [L] src:purediablo-piercing: a missile that misses but pierces "keeps traveling but doesn't deal any damage".
+  **contradicted**
+  Detail: a `ToHit` missile whose roll fails returns 2 and is freed at that unit, pierce or not (§ 5). Phase 2 case
+  C5, [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md).
+- [L] src:purediablo-piercing: a blocked hit still pierces. **held**
+  Detail: the pierce result is fixed before `MISSILE_ApplyDamage`'s defence roll (§ 5).
+- [L] src:purediablo-piercing: pierce sources add up and above 100 % do nothing more. **held**
+  Detail: `p = stat 166 + stat 156`, `low % 100 < p` (§ 3).
+- [L] src:purediablo-piercing: pierce works for ranged physical attacks only; Bone Spear and Lightning always pass
+  through, Fire Bolt stops at its first target. **held with refinement**
+  Detail: the row's `Pierce` flag decides (60 rows, `lightningfury` among them), not the attack type; a row without
+  `CollideKill` continues (`bonespear`, `lightningbolt`), a `CollideKill` row ends (`firebolt`) (`p45b-rows.txt`).
+- [L] src:arreat-summit-skill-trees: Guided Arrow does not work with Pierce. **held**
+  Detail: `guidedarrow` has no `Pierce` flag (`p45b-rows.txt`).
 
 ## Functions
 

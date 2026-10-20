@@ -125,6 +125,8 @@ backlog entries (2026-10-16 "combat contradictions").
   Detail: the bonus is `+50 %` per extra player on the divisor, so four players give 1/10 of 2.5× life, not 1/16.
 - [L] src:fextralife-d2r-crushing-blow: no Hell cap on crushing blow. **held**
   Detail: no difficulty branch.
+- [L] src:d2dfg-blizzard: a missile's `KnockBack` is a percent chance. **held** (*plan 0045 Phase 1b, 2026-10-20*)
+  Detail: `RNG_Range(missile seed, 100) < KnockBack` in `MISSILE_ApplyDamage`, unless the unit is in state 54.
 
 ## Functions
 

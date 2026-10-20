@@ -60,7 +60,83 @@ Skills columns are named as in [Skills](../../tables/Skills.md); offsets are rec
 
 ## Leads used
 
-None. No community document was opened for this batch; the cross-check is Phase 1b.
+No community document was opened for P1.1–P1.3. *Phase 1b (plan 0045), 2026-10-20:* the pages below were fetched and
+read in that session (ADR-0007), after the batch's sections were written, and none shows code. One verdict per compared
+claim. The verdict words are evidence-rules' (`held`, `held with refinement`, `contradicted`, `not covered`). A
+claim from another game version that differs from 1.14d for that reason only would be marked *version-different* in
+its detail. None is marked: no source says its claim is version-specific, and none of their versions can be checked
+here. Two sources are Resurrected-era (src:d2dfg-blizzard, src:purediablo-piercing), so a contradiction from them
+may be a Resurrected change; the Phase 2 case settles 1.14d only. Agreement adds nothing to a tag. The quick objdump re-reads behind a contradiction or a gap are `tools/skills_crosscheck_reread.py`
+(sha256 `8361a4c1…`), kept under `workspace/logs/skills/` (`p45b-manifest.sha256`: `p45b-reread.txt` `427ca8d7…`, the
+code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compared).
+
+- [L] src:d2dfg-blizzard: the mana cost is `mana` at level 1 plus `lvlmana` per level gained, in 256ths shifted by
+  `manashift` (8 = not shifted). **held**
+  Detail: `(lvlmana · max(lvl − 1, 0) + mana) << manashift` in 1/256 mana (§ 7).
+- [L] src:arreat-summit-skill-trees: Teleport costs 24 mana at level 1 and one less per level (5 at level 20); Charged
+  Bolt 3, then +0.5 per level. **held with refinement**
+  Detail: § 7's formula on the rows gives both tables (`p45b-rows.txt` `MANA`), except Charged Bolt's level-20 cell
+  (page 12, formula 12.5); the cost is kept in 1/256 mana, so half points are real.
+- [L] src:d2dfg-blizzard: `minmana` keeps a falling cost from going below it. **held with refinement**
+  Detail: the floor binds the payment only; the checks use the unfloored cost, and a failed payment is ignored (§ 7,
+  the P1.1 review's Phase 2 case).
+- [L] src:d2dfg-blizzard: `startmana` is the mana needed to start, used by some start functions (Inferno 11, Blade
+  Fury 26). **held with refinement**
+  Detail: `SKILLS_StartManaOk` tests it in `SKILLS_CanUse` for any row, except in state 12; three stock rows set it (§ 2).
+- [L] src:arreat-summit-skill-basics: a skill cannot be used without mana, without its required item, during a casting
+  delay, or in town. **held with refinement**
+  Detail: codes 1, 2 and 8 of `SKILLS_CanUse` at the request; the town test is `SKILLS_SrvStart`'s `InTown`, at the
+  start (§§ 2, 4).
+- [L] src:d2dfg-blizzard: a row with `InTown` 0 cannot be used in town. **held**
+- [L] src:arreat-summit-casting-delays: after casting a delayed spell it cannot be re-cast for a while, a spell with
+  no delay can be used meanwhile, and delayed spells are "connected". **held with refinement**
+  Detail: state 121 refuses every skill whose own `delay` is ≥ 1, not only the one cast, and no other (§ 8).
+- [L] src:arreat-summit-casting-delays: the 23 skills with a delay and their delays in seconds. **held**
+  Detail: the 23 stock `delay` rows are the same 23 skills, and each `delay` (frames) is the page's seconds × 25
+  (`p45b-rows.txt` `SKILLS delay`); state 121 lasts `delay` frames (§ 8).
+- [L] src:arreat-summit-skill-basics: item skill bonuses do not add to synergies. **held**
+  Detail: the synergy calcs read `skill('…'.blvl)` (§ 11; the `blvl` code is data/0005's reading).
+- [L] src:d2dfg-blizzard: `DmgSymPerCalc`, `EDmgSymPerCalc` and `ELenSymPerCalc` are percentage increases.
+  **held with refinement**
+  Detail: `x += MulDiv(x, calc, 100)` on min and max apart (the elemental min only when `x > 256` or `EMinLev1` ≠ 0),
+  after the level bands; after the shift for skills, before it for missiles (§ 11, data/0005 § 7).
+- [L] src:d2dfg-blizzard: `SrcDam` is the weapon damage share in 128ths; `HitShift` scales damage in 256ths
+  (8 = 256/256). **held**
+- [L] src:d2dfg-blizzard: a `Kick` row computes its physical damage from Strength and Dexterity (a monster's level).
+  **held with refinement**
+  Detail: `max(x, 1) / 4 << 8` with `x` = `str + dex − 20` for a player, `3 · level` for other units (§ 11).
+- [L] src:d2dfg-blizzard: `periodic` and `aura` rows run every `perdelay` frames, minimum 5. **held with refinement**
+  Detail: 5 when the calc gives less than 6, on the grid `((frame − 1 + p) / p) · p + 1` (§ 9).
+- [L] src:d2dfg-blizzard: with `immediate` the function runs at once when the periodic skill starts. **held**
+  Detail: aura select and item auras run `SKILLS_SrvDo` at once (§§ 9, 10).
+- [L] src:d2dfg-blizzard: a `passive` row runs no server do function. **held with refinement**
+  Detail: `SKILLS_CanUse` refuses it with code 5 at the request (§ 2).
+- [L] src:d2dfg-blizzard: `restrict` ties the skill to the States `restrict` column. **held**
+  Detail: code 4 of `SKILLS_CanUse` (§ 2).
+- [L] src:d2dfg-blizzard: `decquant` uses ammunition each time the server do function runs. **held with refinement**
+  Detail: only on `SKILLS_SrvDo`'s paying path (`pay` set); an item cast never uses it (§§ 6, 10, 14).
+- [L] src:d2dfg-blizzard: `ItemEffect` is the do function an item trigger runs; `ItemCheckStart` 1 runs the start
+  function first. **held with refinement**
+  Detail: `ItemEffect` replaces the do function only when > 1 and the effect flag is set; a failed start refuses the
+  cast (§ 10).
+- [L] src:d2dfg-blizzard: `ItemTarget` 0 the attacker, 1 the caster, 2 a random location within 20 (collision
+  tested), 3 a random nearby corpse, 4 the attacker or a previous one. **not covered**
+  Detail: § 10 names the helpers without reading them. Re-read for 2 (R5): `0x005FD850` steps the seed at `+0x20` of
+  the unit it is given twice per try inline, adds `low % 40 − 20` to x and to y, and tries at most 10 times until
+  `0x0064D870` returns 0; so an item Teleport (the one stock `ItemTarget` 2 row) draws 2 to 20 steps that
+  [skills/0003 § 2](0003-handlers.md#2-item-event-casts) does not count (its "no draw" sentence). The unit's role (caster or target)
+  and 3's corpse pick are unfollowed: a gap, in *Open questions*.
+- [L] src:d2dfg-blizzard: `prgstack` 1 runs every `srvprgfunc` up to the charge count, 0 only the count's own.
+  **held** (§ 12)
+- [L] src:arreat-summit-skill-trees: martial-arts charges build up to three, last for a time limit and are released
+  by a normal attack or a finishing move. **held with refinement**
+  Detail: the cap 3 and the `auralencalc` timed list (§ 12). The finisher has **six** direct call sites (R6):
+  `SKILL_AttackDo` (`0x0056F1CE`), named in § 12, and five in finishing-move functions (R7): start function 25 (Dragon
+  Claw, two sites) and do functions 42 (Dragon Talon), 50 (Dragon Tail), 52 (Dragon Flight); those are plan 0046's.
+- [L] src:arreat-summit-skill-trees: Phoenix Strike releases only the active charge. **held**
+  Detail: Royal Strike's row has no `prgstack`, so only `srvprgfunc n` runs (§ 12, `p45b-rows.txt` `prgstack`).
+- [L] src:arreat-summit-skill-trees: Impale raises the chance that the weapon loses durability. **held with refinement**
+  Detail: `calc2` chance, `calc3` amount, one draw on the unit's seed, a break at 0 (§ 14).
 
 ## Functions
 
@@ -464,6 +540,10 @@ return 0;
   Its two callers `0x005FDCA0` (at a unit) and `0x005FDD60` (at a point) skip a caster in state 54
   (`uninterruptable`) and are reached from the stat-event handlers at `0x005BF170`–`0x005C0670` (P1.3).
   (fn:ITEMSKILL_Cast@0x005FDA80, tbl:Skills.txt:ItemEffect, tbl:Skills.txt:ItemTarget)
+- [I] *2026-10-20 (Phase 1b):* the `ItemTarget` 2 helper draws. `0x005FD850` steps the seed at `+0x20` of the unit
+  it is given twice per try, inline (`low % 40 − 20` added to x and to y). It tries at most 10 times, until
+  `0x0064D870` returns 0. The one stock `ItemTarget` 2 row is Teleport. Which unit it is given (caster or target) is
+  unfollowed, and so are 3's and 4's helpers (`p45b-reread.txt` R5). (0x005FD900–0x005FD98A)
 - [I] So an item cast pays no mana, uses no ammunition and sets no delay (`pay` = 0), and with the effect flag runs
   the do function `ItemEffect` when it is > 1: Frost Nova and Nova (36), Chain Lightning (151); the other 69 stock
   `ItemEffect` rows hold 1. (fn:SKILLS_SrvDo@0x0056F7F0, dispatch-rows.txt)
@@ -558,6 +638,10 @@ return 1;
   0x005D4E80, fn:sub_00571AA0_UnitMsgA3@0x00571AA0). combat/0001's "draws at least once more on the
   attacker's seed" is corrected there. (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D5368–0x005D538C,
   0x005D544E–0x005D5465, fn:sub_00650E70_Copy64Out@0x00650E70, fn:sub_00650E60_Copy64In@0x00650E60, dispatch-scan.txt `SITE`)
+  *2026-10-20 (Phase 1b):* `SKILL_AttackDo` is one of **six** direct callers. Five more sites are in finishing-move
+  functions: start function 25 (Dragon Claw, two sites) and do functions 42 (Dragon Talon), 50 (Dragon Tail) and 52
+  (Dragon Flight). Those functions are not read; they are plan 0046's (`p45b-reread.txt` R6, R7; src:arreat-summit-skill-trees
+  in *Leads used*). (0x005D5A8C, 0x005D6399, 0x005D63E1, 0x005D71F2, 0x005D79DF)
 
 ### 13. Monster skill use
 
@@ -654,6 +738,10 @@ return 1;
 - ~~Which record the ally test's inner lookup reads.~~ *2026-10-20 (P1.3):* the same skill id (`ECX = [ebp+0xC]`), so
   the refusal never fires from `SKILLS_StartUsedSkill` ([skills/0003 § 12](0003-handlers.md#12-routed-questions-from-p11)).
 - [L] What `Unit+0x38` holds (the sequence-delay gate of § 6 and the dual-claw parity of `srvdofunc` 35).
+- [L] *2026-10-20 (Phase 1b):* the `ItemTarget` helpers' draws. 2 (`0x005FD850`) steps the seed at `+0x20` of
+  the unit it is given 2 to 20 times; which unit that is (caster or target) is unfollowed. Whether 3 (`0x005FD9C0`,
+  a corpse pick through `0x0056E390`) or 4 (`0x005FDA10`) draws is not read. Phase 2 meets 2 only through an item
+  Teleport cast.
 - [L] Which frame of a mode carries event code 1 or 2, and `Unit+0x4E` for monsters: phase (4) (animation timing);
   Phase 2 logs it.
 - ~~The `srvprgfunc` entries the finisher calls (36–41, 143) and `0x00571AA0`.~~ *2026-10-20:* read in
