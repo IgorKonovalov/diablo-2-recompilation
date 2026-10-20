@@ -72,6 +72,7 @@ TOWNS = {1, 40, 75, 103, 109}
 ORACLE_INITFNS = {46, 47, 54, 55, 62, 66, 68, 69, 79}
 MODELLED_INITFNS = {1, 2, 3, 27, 28, 34, 57, 58}
 INIT_TABLE = (set(range(1, 80)) - {35, 36, 40})       # g_ObjInitFns 0x00731BC0: the non-null entries
+THEMES_ENABLED = {1, 2, 4, 5, 6}           # g_ObjThemeFns 0x00731E68 entries with enabled 1 (read from the image)
 CLUSTER = {3: ([3, 28], 18, 5, 5, False), 1: ([79, 53, 1], 12, 5, 5, False), 79: ([79, 53, 1], 12, 5, 5, False),
            4: ([4, 9, 52, 94, 95], 12, 0, 1, True), 89: ([89, 284], 12, 5, 5, False),
            208: ([208, 209], 12, 0, 1, True), 209: ([208, 209], 12, 0, 1, True)}   # g_ObjClusterLists 0x00731D50
@@ -1199,8 +1200,11 @@ class Checker:
         if r < thr:
             lst = [t for t in range(1, 8) if themes & (1 << (t - 1))]
             i = self.O.rng(len(lst))
-            if i < len(lst) and lst[i] < len(lst):
+            # g_ObjThemeFns 0x00731E68: 8-byte {enabled, fn} entries; 1, 2, 4, 5, 6 enabled, 0 and 3 {0, 0}
+            if i < len(lst) and lst[i] < len(lst) and lst[i] in THEMES_ENABLED:
                 raise Mismatch("line %d: theme %d would run (not modelled)" % (self.ln, lst[i]))
+            if i < len(lst) and lst[i] < len(lst):
+                self.hit("theme rolls that drew theme %d below the count, disabled (entry {0, 0}): no run" % lst[i])
             self.hit("theme rolls that drew a theme (none runs on stock data)")
         return 1
 
@@ -1264,6 +1268,10 @@ class Checker:
             return
         if L["nsh"] == 10 or L["nsh"] > idiv(L["cnt"], 8):
             self.hit("shrine handler at its cap")
+            self.hit("  shrine cap by half: %s (nShrine %d, roomCount %d)" % (
+                "= 10" if L["nsh"] == 10 else "> roomCount / 8", L["nsh"], L["cnt"]))
+            if forced:
+                self.hit("  shrine cap with the forced rule on (the cap returns first)")
             return
 
         def dist(x, y):
@@ -1436,6 +1444,8 @@ class Checker:
         L = self.L_
         if L["nwl"] == 4 or L["nwl"] > idiv(L["cnt"], 8):
             self.hit("well handler at its cap")
+            self.hit("  well cap by half: %s (nWell %d, roomCount %d)" % (
+                "= 4" if L["nwl"] == 4 else "> roomCount / 8", L["nwl"], L["cnt"]))
             return
         if self.rs.p100() > 100:
             return
@@ -1816,10 +1826,13 @@ class Checker:
             return
         v = self.drop(u, 0, rec)
         if v is None:
+            self.hit("casket operates (OperateFn 1): no item, no further draw")
             return
         self.set_mode(u, 1)
         r = self.O.draw() % 10000
         rec["r10000"] = r
+        self.hit("casket operates (OperateFn 1) after an item: Range(O, 10000) %s 8192"
+                 % (">=" if r & 0xFFFFE000 else "<"))
         if r & 0xFFFFE000:
             rec["monster"] = True
             self.monster_oracle(u)

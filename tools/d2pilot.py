@@ -114,6 +114,7 @@ class LogState:
         self.npcs = {}              # MonStats class -> [(unit id, mode, x, y)] (NPC lines, tools/gdb/vendors.py)
         self.objs_xy = []           # every object unit's position (OBJS lines, tools/gdb/vendors.py)
         self.objs_cls = []          # the same with the object class: [class, x, y]
+        self.objs_seen = {}         # (class, x, y) -> the entry, over every OBJS line so far
         self.visited = set()        # (level id, x // 10, y // 10) of every PLR line
 
     def poll(self):
@@ -200,6 +201,8 @@ class LogState:
             elif tag == "OBJS":
                 self.objs_xy = [(o[1], o[2]) for o in d["o"]]
                 self.objs_cls = d["o"]
+                for o in d["o"]:                    # every object any OBJS line listed (objop --obj-mem)
+                    self.objs_seen.setdefault((o[0], o[1], o[2]), list(o))
             elif tag == "NPC":
                 npcs = {}
                 for c, i, m, x, y in d["n"]:
@@ -1887,6 +1890,11 @@ def cmd_objop(args):
             if st.pos and math.hypot(st.pos[0] - px, st.pos[1] - py) < 3:
                 blind[1].add(c)
             continue
+        if not objs and getattr(args, "obj_mem", False):
+            # plan 0038 H5b: an OBJS line lists only the objects near the player; head for one an earlier line
+            # listed (same level: within 400 sub-tiles)
+            objs = [o for o in st.objs_seen.values() if o[0] in classes and (o[1], o[2]) not in visited
+                    and math.hypot(o[1] - px, o[2] - py) < 400]
         if not objs:
             time.sleep(0.5)
             continue
@@ -3016,6 +3024,8 @@ def main():
     ap.add_argument("--done-wait", type=float, default=6.0, help="npc: seconds to wait for the logger's confirmation")
     ap.add_argument("--linger-open", type=float, default=0.3, help="npc: seconds the window stays open")
     ap.add_argument("--close-wait", type=float, default=0.6, help="npc: seconds after the Escape")
+    ap.add_argument("--obj-mem", action="store_true", help="objop: when the latest OBJS line lists no object of "
+                    "the classes, head for one an earlier OBJS line listed (within 400 sub-tiles; plan 0038 H5b)")
     ap.add_argument("--obj-cls", default="376", help="objop: the object class (objects.txt row), or several "
                     "comma-separated (plan 0041 Phase 2: any shrine or well); each object clicked once (by position)")
     ap.add_argument("--obj-near", type=float, default=4.0, help="objop: click the object from this close (sub-tiles)")

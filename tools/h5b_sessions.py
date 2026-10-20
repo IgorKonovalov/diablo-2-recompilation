@@ -42,6 +42,11 @@ def explore(hops, fns="1,3,4,5", extra=()):
     return ("pilot", ["explore", "--hops", str(hops)] + NOVA + LOOT + ["--loot-fns", fns] + list(extra), 60 + 6 * hops)
 
 
+def shelves(n):
+    return ("pilot", ["objop", "--obj-cls", "179,180", "--obj-mem", "--times", str(n), "--done", "OO0", "--time",
+                      "180"], 210)
+
+
 def descend(lid, rows, extra=()):
     return ("until", (lid, ["farm", "--sweep", "--descend", rows, "--descend-time", "240", "--time", "5"] + NOVA
                       + list(extra), 300, 4), 0)
@@ -61,6 +66,17 @@ SESSIONS = {
                                                descend(28, "13"), explore(100, "1,3,4,5,26"),
                                                ("pilot", ["objop", "--obj-cls", "179,180", "--times", "4", "--done",
                                                           "OO0", "--time", "200"], 230)]),
+    # bookshelves a third time: objop with --obj-mem (an OBJS line lists only the objects near the player, so jail2's
+    # objop after the explore found none) after each of Jail 1, 2 and 3
+    "jail3": ("ObjNova", "enter-normal", 3914, [wp(1, 7), explore(80, "1,3,4,5,26"), shelves(3),
+                                               descend(30, "14"), explore(100, "1,3,4,5,26"), shelves(3),
+                                               descend(31, "14"), explore(100, "1,3,4,5,26"), shelves(3)]),
+    # the cave session again on its map seed: its objop ran before the chest's room was active (no OBJS line with 397),
+    # so explore Level 2 first and then go to the chest from the OBJS lines (--obj-mem)
+    "cave2": ("ObjNova", "enter-normal", 3913, [wp(1, 2), descend(9, "0,1,2,3"), explore(40), descend(13, "5"),
+                                               explore(40),
+                                               ("pilot", ["objop", "--obj-cls", "397", "--obj-mem", "--times", "1",
+                                                          "--done", "OO0", "--time", "180"], 210)]),
     # objects 26, 39: the sparkly chest 397 (InitFn 57; OperateFn 4's class-397 table) of Cave Level 2's treasure
     # room (LvlPrest 104), through the Cold Plains waypoint and Cave Level 1
     "cave": ("ObjNova", "enter-normal", 3913, [wp(1, 2), descend(9, "0,1,2,3"), explore(40), descend(13, "5"),
@@ -145,6 +161,8 @@ def watchdog(log, holder, stop):
     size, t_size = -1, time.time()
     while not stop.get("done"):
         time.sleep(3)
+        if stop.get("done"):
+            return   # the session ended during the sleep: its own slot stop kills the game, which is no abort
         now = time.time()
         try:
             n = os.path.getsize(log)
