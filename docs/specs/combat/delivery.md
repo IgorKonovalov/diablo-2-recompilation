@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, combat/to-hit, combat/damage, combat/reductions, monsters/stats]
 consumed_by: [combat/overview, items/tc, stats/states, items/economy]
-tags: {C: 52, I: 38, L: 3}
-updated: 2026-10-19
+tags: {C: 52, I: 39, L: 4}
+updated: 2026-10-20
 ---
 
 # Combat: queue, delivery, on-hit effects and the life change
@@ -118,10 +118,14 @@ A2. DeliverQueued(att, def):                                          [I] (fn:CO
 - A2. A delivery can happen on a later frame than the hit test when a skill do-function queues it (362 such events
   in the run, resynchronised); the attacker's AI may draw in between. [I] (fn:COMBAT_DeliverQueued@0x0057D4F0,
   run:2026-10-16-combat)
-- A2. Before delivery, `SKILL_AttackDo` calls the progressive-charge finisher, which steps the attacker's seed once
-  per charged state (with a skill whose charge stat is above 0); the run met none, and an attacker under a `meleeonly`
-  state (wolf, bear) skips the finisher. [I] (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D537B,
-  fn:sub_0056C2D0_AttackDeliverMeleeOnly@0x0056C2D0)
+- A2. Before delivery, `SKILL_AttackDo` calls the progressive-charge finisher. For each charged state (a skill whose
+  charge stat is above 0) it **peeks** the attacker's seed: it copies the seed out (`0x005D5374`), calls `RNG_Step` on
+  it (`0x005D537B`), keeps the result and copies the seed back (`0x005D538C`), then passes the kept value to
+  `0x00571AA0`. The finisher's own step therefore leaves the attacker's seed unchanged; the `srvprgfunc` entries it
+  then calls are not read and may draw (*Open questions*). The run met no charged state, and an attacker under a
+  `meleeonly` state (wolf, bear) skips the finisher. [I] (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D5368–0x005D538C,
+  fn:sub_00650E70_Copy64Out@0x00650E70, fn:sub_00650E60_Copy64In@0x00650E60, fn:RNG_Step@0x0045C370,
+  fn:sub_0056C2D0_AttackDeliverMeleeOnly@0x0056C2D0, [skills/0001 § 12](../../findings/skills/0001-dispatch.md#12-progressive-charges))
 
 ### B. Delivery (`COMBAT_ApplyDamage`)
 
@@ -424,16 +428,20 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
   run:2026-10-16-combat)
 - **Absorb heals from both percent and flat absorb**, and only a positive amount. [C] for the percent
   (fn:COMBAT_Absorb@0x0057BF10, run:2026-10-16-combat); [I] for the flat (fn:COMBAT_Absorb@0x0057BF10)
+- **The finisher's `RNG_Step` is a peek, not a draw.** It steps a copy of the attacker's seed and restores the seed,
+  so a reimplementation that advances the seed there shifts every later attacker draw. [I]
+  (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D5368–0x005D538C)
 - **Burning never applies from a plain attack**: the builder leaves `burn = 2` with `burnLen = 0`. [I]
   (0x0057BC2F–0x0057BC8A)
 
 ## Evidence
 
 - [combat/0001](../../findings/combat/0001-formulas.md) §§ 6 (resolve, queue, deliver), 8 (delivery), 9 (leech, stun,
-  cold, freeze, poison, burn), 10 (stat events), 14 (the finisher, the ticks), 15 (the confirmed raises and the
+  cold, freeze, poison, burn), 10 (stat events), 14 (the finisher and its dated 2026-10-20 correction, the ticks), 15 (the confirmed raises and the
   below-the-floor bullet), 13 (*Leads used*: crushing blow, open wounds, absorb, leech).
 - [combat/experiments § run:2026-10-16-combat](../../findings/combat/experiments.md#run2026-10-16-combat): crushing
   blow 316, open wounds 246 with 11 windows, leech 364 / 681 / 455, the stat-74 tick 6 181.
+- [skills/0001](../../findings/skills/0001-dispatch.md) § 12 (the finisher's seed save and restore).
 - Tables: [DifficultyLevels](../../tables/DifficultyLevels.md), [MonStats](../../tables/MonStats.md),
   [ItemStatCost](../../tables/ItemStatCost.md), [States](../../tables/States.md).
 - Upstream: [rng](../rng/README.md), [monsters/stats § C](../monsters/stats.md#c-the-player-count-sub_00573930_monplayerbonus).
@@ -449,3 +457,5 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
   one event per apply or refresh: [stats/states § C](../stats/states.md#c-expiry-and-removal) (plan 0041).
 - [L] Event handlers other than 14, 15 and 16 (skill on hit, knockback, slow and the like) draw on seeds this spec
   does not model; they are boundary oracles until phase (3).
+- [L] The progressive server functions the finisher calls (`srvprgfunc` entries 36–41, 143) and `0x00571AA0`, which
+  receives the peeked value, are not read: their draws, if any, are unknown (plan 0045 P1.3 or plan 0046).

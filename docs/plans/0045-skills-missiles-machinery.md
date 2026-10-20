@@ -312,3 +312,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   and links `docs/tables/Missiles.md` once that lands). P1.3 picks up the `srvprgfunc` entries and `0x00571AA0`, the
   item-event handlers that call `ITEMSKILL_Cast` (`0x005BF170`–`0x005C0670`), `SKILLS_SrvStart`/`SKILLS_PayCost`
   callers in do functions 83, 109 and `0x005D69D0`, the twelve unmapped `EType` stores, and the routed open questions.
+- **2026-10-20 — Combat spec fixes from P1.1 landed for review (spec-writer, `lane/cfix`).** The
+  [reverser's entry](../backlog/archive/2026-10-20-reverser-spec-writer-combat-finisher-peek-and-conversion-writer.md)
+  closed: [combat/delivery § A](../specs/combat/delivery.md#a-queue-and-delivery) A2 says the finisher peeks the
+  attacker's seed (`[I]`, ruling (2)), with a reimplementation note and a new `[L]` for the `srvprgfunc` entries and
+  `0x00571AA0`; [combat/damage § D](../specs/combat/damage.md#d-conversion) D1 names the skill hit builders as the
+  conversion writers (`[I]`), the old `[L]` struck and a narrower one added; combat/README and
+  [wiki/combat](../wiki/combat.md) follow. Tags: delivery {C: 52, I: 38, L: 3} → {C: 52, I: 39, L: 4}, damage
+  {C: 34, I: 27, L: 4} → {C: 34, I: 28, L: 5}, README unchanged. Open questions: delivery 3 → 4 live, damage 4 live
+  (one struck, one added). No combat or rng call-order table listed the finisher as a draw. Review:
+  [request](../backlog/2026-10-20-spec-writer-architect-review-lane-cfix-combat-finisher-peek-and-conversi.md).
