@@ -2571,8 +2571,8 @@ logs; shortfalls under *Limits*.
     12) within `--corpse-r`, walking (`--walk`) towards the nearest live monster within `--chase` sub-tiles otherwise.
   - **Logger** `tools/gdb/tc-h2a.gdb` (`39306661…`): the `tools/gdb/quests.gdb` chain (`pilot.py` `1ad48a4c…`,
     `uniques.py` `9b3e988f…`, `affixes.py` `f2ac1c63…`, `vendors.py` `eddbff8c…`, `mon-pool.py` `2c17c655…`,
-    `quests.py` `7f07110b…`), the H2a lines, then `tc-drops.gdb` (`842f8613…`, unchanged). New lines (addresses read with objdump on the pinned image; the finding
-    section items/0001 § Plan 0038 batch H2a is still to be written, see the plan 0038 log, 2026-10-20 resume note): `MDD0` 0x005A6830
+    `quests.py` `7f07110b…`), the H2a lines, then `tc-drops.gdb` (`842f8613…`, unchanged). New lines (addresses read with objdump on the pinned image; the readings are in
+    [items/0001 § Plan 0038 batch H2a](0001-tc-resolution.md#plan-0038-batch-h2a-2026-10-20)): `MDD0` 0x005A6830
     (return address, monster, class, `+0xC4`), `MDDB` 0x005A686D (the bit-17 test), `MDDC` 0x005A68A3 (the collision
     test), `MDDX` 0x005A68D1, `MDI` 0x005A6600 (return address, monster, `noNoDrop`), `MNN` 0x005A8000, `CFI`
     0x005D8780, `GTY` 0x0055AEFA, `GMUL` 0x0055AF21, `GMULX` 0x0055AF2F, `GMAX` 0x0055AF4F, `GF0`–`GF6`
@@ -2649,7 +2649,7 @@ logs; shortfalls under *Limits*.
   quality.py check: 720 pairs, 720 reproduced, 0 failed
   uniques.py check: 1022 creations reproduced, 0 failed
   ```
-- **Shortfalls** (claims stay `[I]`): `mul=` reached once (the Countess's `Countess Item` gold; no champion was killed,
+- **Shortfalls** (claims stay `[I]`; run:2026-10-20-sweep-items-tc): `mul=` reached once (the Countess's `Countess Item` gold; no champion was killed,
   and the three Andariel kills took her quest TC, whose gold has no `mul=`); `bonewall`'s fatal error (class 344 never
   died); a monster-killer owner missing or gone, and a killer of type 2 or more (no case in 8 753 rolls); game type 1
   and the types outside 1–3. Sessions 7 and 8 are kept in the record: their calls replay with 0 failures and are in
@@ -2657,5 +2657,25 @@ logs; shortfalls under *Limits*.
 - **Conclusion:** the death-drop chain and its two skips, the Find Item re-drop with `noNoDrop`, `GOLD_TYPE`, the
   gold-find product and its skip at `max`, `/players` in a TCP/IP game, the uncapped object source, the classic
   Countess's negative-`Picks` stop and the quality roll's minimum with its place reproduce with 0 mismatches over 12
-  sessions and the kept S2a set. The per-row ledger (raised, raised in part, shortfall) goes into "Plan 0038 batch H2a" sections of items/0001 and
-  items/0002, not yet written (lane paused to yield slot 2; plan 0038 log, 2026-10-20 resume note).
+  sessions and the kept S2a set. The per-row ledger (raised, raised in part, shortfall) is in
+  [items/0001 § Plan 0038 batch H2a](0001-tc-resolution.md#plan-0038-batch-h2a-2026-10-20) and
+  [items/0002 § Plan 0038 batch H2a](0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20).
+- **Addendum 2026-10-20 (write-up, static; no session).** Three further checks, outputs in `workspace/logs/h2a/check/`:
+  ```
+  python3 -I tools/sweep_h2a.py clamp $(cat items-tc-run.lst)                 # check-clamp-h2a-r2.txt       37b8e962…
+  python3 -I tools/sweep_h2a.py clamp <the 193 S2a logs>                     # check-clamp-s2a-r2.txt       f82f2e6a…
+  python3 -I tools/sweep_h2a.py clamp --mf 100 tc-champion-1.log tc-quality-1.log   # check-clamp-s2a-mf100-r2.txt fec4a734…
+  for l in <the 193 S2a logs>; do echo "## $l"; python3 -I tools/sweep_h2a.py clamp $l | grep -E 'acting|no D6'; done
+                                                                             # check-clamp-s2a-perlog.txt   b6fa1eaa…
+  python3 -I tools/sweep_h2a.py goldtypes                                    # check-goldtypes.txt          0afea2e6…
+  python3 -I tools/quality.py check $(cat items-tc-run.lst)                  # check-quality-r2.txt         5c2de726…
+  python3 -I tools/test_sweep_h2a.py                                         # check-tests-r2.txt           67cfe670…, 9 tests OK
+  ```
+  `tools/quality.py` `ed525200…` adds the counterfactual key `{"clamp": "before-mf"}` (D6 before magic find; additions
+  only, the game's roll unchanged: `check-quality-r2.txt` equals `check-quality.txt`); `tools/sweep_h2a.py` `9e3785ca…`
+  adds it to `clamp` and adds the `goldtypes` full-table check (additions only; the per-log split ran on `983ed539…`).
+  Results: the earlier two counterfactual counts are unchanged; D6 before magic find breaks 9 (H2a) + 129 (S2a) rolls
+  and 0 of the MF-100 rolls; per log, the clamp acts in run:2026-10-14-affixes (479), run:2026-10-14-uniques (66),
+  run:2026-10-14-props (43) and run:2026-10-15-items-chain (40), in none of the plan 0010, objects and quest-drop logs;
+  `goldtypes`: of 659 item records only `gld` is of itemtypes record 4 by its type, `type2` or their `Equiv` ancestors.
+  The replays and scans ran under `systemd-run --user --scope -p MemoryMax=4G`.

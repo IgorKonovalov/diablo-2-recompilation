@@ -831,6 +831,25 @@ counted as H5b, as outdoor 13's half did at the `lane/rbs2` review. After mergin
 inventory row since H7a, the totals are: **static 567, harness 531, c-emu awaiting a batch 0, blocked 416** (d-none 283,
 d-edit 73, d-sim 28, d-2c 14, d-owner 10, d-0032 8), **deferred 2, raised 10: 1 526.**
 
+**H2a (filed 2026-10-20, reverser, `lane/h2a`; review pending): 17 statements of items/tc and items/quality.**
+run:2026-10-20-sweep-items-tc, 12 sessions on slot 2, stock data, 0 mismatches (`sweep_h2a.py logs` 0 bad, `tc.py
+replay` 873/873, `quality.py` 720/720, `uniques.py` 1022/1022). The lane files **12 raised, 5 raised in part, 0
+shortfall, 0 reclassified**. The evidence is in the "Plan 0038 batch H2a" sections of
+[items/0001](../../findings/items/0001-tc-resolution.md#plan-0038-batch-h2a-2026-10-20) and
+[items/0002](../../findings/items/0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20).
+
+- **Raised (12):** tc 1, 2, 11, 34 (L361), 37, 45, 47, 59, 71; quality 22 (2), 23.
+- **Raised in part (5):** tc 22 (remainder the `bonewall` fatal error, shortfall), tc 34 (L388; remainder `Picks = 0`,
+  d-none as row 13), tc 60 (the type-equivalence half d-none on stock data, signedness `[I]`), tc 70 (game type 1,
+  types outside 1–3, a floor below the live count), quality 20 (a missing owner, plain and minion monster killers,
+  killer type ≥ 2).
+- **Correction carried (rule 12):** quality 22's "the clamp never acted" held for the plan 0010 runs only; the clamp
+  acts in 667 rolls of the later item runs and the H2a logs, and decides 138 of them.
+
+Net effect on the totals: none (no class moves; the remainders stay counted as H2a). After merging `main` (`5a7feb3`,
+the H5b review above), they stand: **static 567, harness 531, c-emu awaiting a batch 0, blocked 416** (d-none 283,
+d-edit 73, d-sim 28, d-2c 14, d-owner 10, d-0032 8), **deferred 2, raised 10: 1 526.**
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is

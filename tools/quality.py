@@ -139,7 +139,7 @@ def roll(T, item, ilvl, ratio, seed, mf=0, linear=False, trace=None, cf=None):
     reached. cf (plan 0038 batch S2a counterfactuals, None for the game's roll): {"flags": "type2"|"equiv"} reads
     the Normal/Magic/Rare bytes through type_flags; {"div": "floor"} divides d by the divisors with floor division.
     Plan 0038 batch H2a: {"clamp": "off"} drops the D6 minimum, {"clamp": "after-ratio"} applies it after the ratio
-    word (D7) instead of before; a list cf["pre"] receives one (test, chance before D6, row minimum, ratio word) per
+    word (D7) instead of before, {"clamp": "before-mf"} applies it before magic find (D5) instead of after; a list cf["pre"] receives one (test, chance before D6, row minimum, ratio word) per
     test reached."""
     cf = cf or {}
     if item >= len(T.items):
@@ -183,7 +183,7 @@ def roll(T, item, ilvl, ratio, seed, mf=0, linear=False, trace=None, cf=None):
         if isinstance(cf.get("pre"), list):
             cf["pre"].append((name, c, mn, w))
         how = cf.get("clamp")
-        if how != "off" and how != "after-ratio" and c <= mn:
+        if how not in ("off", "after-ratio", "before-mf") and c <= mn:
             c = mn
         c = s32(c - cdiv(s32(w * c), 1024))
         if how == "after-ratio" and c <= mn:
@@ -211,6 +211,8 @@ def roll(T, item, ilvl, ratio, seed, mf=0, linear=False, trace=None, cf=None):
             if need is not None and not ty[need]:
                 continue
             c = s32((v[b] - cdiv_(d, s32(v[dv]))) << 7)
+            if cf.get("clamp") == "before-mf" and c <= s32(v[mn]):
+                c = s32(v[mn])
             if use_mf:
                 f = m100 if linear else diminish(m100, k)
                 if f != 0:
@@ -222,6 +224,8 @@ def roll(T, item, ilvl, ratio, seed, mf=0, linear=False, trace=None, cf=None):
         if ty[0x14]:
             return 4, seed, "magic-type", draws, ri
         c = s32((v[9] - cdiv_(d, s32(v[10]))) << 7)
+        if cf.get("clamp") == "before-mf" and c <= s32(v[11]):
+            c = s32(v[11])
         if use_mf:
             c = cdiv(s32(c * 100), m100)
         c = clamp_ratio("magic", c, s32(v[11]), ratio[0])

@@ -5,6 +5,7 @@
     python3 -I tools/sweep_h2a.py clamp <log> [<log> ...]      # the D6 minimum and its place (items/quality D4-D7)
     python3 -I tools/sweep_h2a.py static <game.exe>            # call sites and constants behind the H2a lines
     python3 -I tools/sweep_h2a.py killers <log> [<log> ...]    # killer kinds of the quality rolls (items/quality M3)
+    python3 -I tools/sweep_h2a.py goldtypes                    # item records of type 4 through type, type2, Equiv
 
 `logs` reads the lines tools/gdb/tc-h2a.gdb adds and checks, per log, in order:
   chain    every MONSTER_DropItems call (MDI) comes from 0x005A68D6 (sub_005A6830_MonDeathDrop, after MDDX, whose
@@ -340,7 +341,7 @@ def cmd_clamp(ns):
                 if w and cpre < mn and quality.s32(cpre - quality.cdiv(quality.s32(w * cpre), 1024)) != \
                         quality.s32(mn - quality.cdiv(quality.s32(w * mn), 1024)):
                     acts["%s: ratio word non-zero and pre-clamp c < min" % name] += 1
-            for how in ("off", "after-ratio"):
+            for how in ("off", "after-ratio", "before-mf"):
                 c2, a2, _, _, _ = quality.roll(T, item, ilvl, ratio, seed, mf, False, None, {"clamp": how})
                 if (c2, a2) != want:
                     brk[how] += 1
@@ -352,6 +353,7 @@ def cmd_clamp(ns):
         print("  clamp acted: %-47s %d" % (k, acts[k]))
     print("  counterfactual: no D6 minimum breaks %d of these rolls" % brk["off"])
     print("  counterfactual: D6 after the ratio word (D7) breaks %d of these rolls" % brk["after-ratio"])
+    print("  counterfactual: D6 before magic find (D5) breaks %d of these rolls" % brk["before-mf"])
     return 0 if model_fail == 0 or ns.allow_unlogged_mf else 1
 
 
@@ -436,6 +438,31 @@ def cmd_static(ns):
     return 0
 
 
+def cmd_goldtypes(ns):
+    """Full-table check: which item records are of itemtypes record 4 by their own type, by type2, or through the
+    Equiv1/Equiv2 ancestors of either (the type-equivalence half of items/tc H8-H9)."""
+    T = quality.Tables(ns.excel)
+    own, any_ = [], []
+    for i, r in enumerate(T.items):
+        t1, t2 = struct.unpack_from("<h", r, 0x11E)[0], struct.unpack_from("<h", r, 0x120)[0]
+        if t1 == 4:
+            own.append(i)
+        todo, seen = [t1, t2], set()
+        while todo:
+            x = todo.pop()
+            if x <= 0 or x >= len(T.itypes) or x in seen:
+                continue
+            seen.add(x)
+            todo += [struct.unpack_from("<H", T.itypes[x], 4)[0], struct.unpack_from("<H", T.itypes[x], 6)[0]]
+        if 4 in seen:
+            any_.append(i)
+    code = lambda i: T.items[i][0x80:0x84].decode(errors="replace").strip()  # noqa: E731
+    print("item records %d, itemtypes records %d" % (len(T.items), len(T.itypes)))
+    print("own type 4: %d %s" % (len(own), [code(i) for i in own]))
+    print("type 4 through type, type2 or Equiv: %d %s" % (len(any_), [code(i) for i in any_]))
+    return 0
+
+
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -446,10 +473,12 @@ def main(argv):
         if name == "clamp":
             a.add_argument("--allow-unlogged-mf", action="store_true")
             a.add_argument("--mf", type=int, default=0, help="magic find for rolls whose log has no QMF line")
+    a = sub.add_parser("goldtypes")
+    a.add_argument("--excel", default=quality.EXCEL)
     a = sub.add_parser("static")
     a.add_argument("exe")
     ns = ap.parse_args(argv)
-    return {"logs": cmd_logs, "clamp": cmd_clamp, "static": cmd_static, "killers": cmd_killers}[ns.cmd](ns)
+    return {"logs": cmd_logs, "clamp": cmd_clamp, "static": cmd_static, "killers": cmd_killers, "goldtypes": cmd_goldtypes}[ns.cmd](ns)
 
 
 if __name__ == "__main__":

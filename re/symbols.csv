@@ -480,7 +480,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005585D0,func,ITEMS_DropMagicFind,,C,items/quality,docs/findings/items/0002-quality-roll.md
 0x00558610,func,ITEMS_MagicFindDiminish,,C,items/quality,docs/findings/items/0002-quality-roll.md
 0x00558640,func,ITEMS_DropRollQuality,,C,items/quality,docs/findings/items/0002-quality-roll.md
-0x005589A0,func,sub_005589A0_DropGoldFind,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x005589A0,func,sub_005589A0_DropGoldFind,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00558A10,func,sub_00558A10_ItemGroundExpiry,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x00558C50,func,sub_00558C50_ItemRemoveRuneword,,I,items/cube,docs/findings/items/0008-cube.md
 0x00558CB0,func,sub_00558CB0_ItemCreateFromSave,,C,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -1215,14 +1215,14 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A6290,func,sub_005A6290_MonPathPlanType,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x005A63F0,func,sub_005A63F0_MonMovePlan,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x005A6600,func,MONSTER_DropItems,,C,items/tc,docs/findings/items/0001-tc-resolution.md
-0x005A6830,func,sub_005A6830_MonDeathDrop,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x005A6830,func,sub_005A6830_MonDeathDrop,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A6920,func,sub_005A6920_MonRegenEvent,,C,combat/formulas,docs/findings/combat/0001-formulas.md
-0x005A6FF0,func,sub_005A6FF0_MonDeathEvent,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x005A6FF0,func,sub_005A6FF0_MonDeathEvent,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A7670,func,sub_005A7670_MonAttackFrame,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005A78A0,func,sub_005A78A0_MonModeRecord,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005A7C20,func,sub_005A7C20_MonSetMode,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005A7E60,func,sub_005A7E60_MonCmdInit,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
-0x005A8000,func,sub_005A8000_MonDropNoNoDrop,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x005A8000,func,sub_005A8000_MonDropNoNoDrop,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A8730,func,sub_005A8730_CollideUnitFilter,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005A87B0,func,sub_005A87B0_CollideMonster,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005A87F0,func,sub_005A87F0_CollidePlayerOrAlly,,I,skills/missiles,docs/findings/skills/0002-missiles.md
@@ -1517,7 +1517,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005D3BA0,func,COMBAT_PrgHooksAfterBuild,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005D5220,func,COMBAT_PrgFinisher,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005D6B60,func,sub_005D6B60_MonEquipInit,,I,monsters/stats,docs/findings/monsters/0004-stats.md
-0x005D8780,func,sub_005D8780_CorpseFindItem,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x005D8780,func,sub_005D8780_CorpseFindItem,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005D9C80,func,sub_005D9C80_MonSkillAttackDo,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005DAA40,func,sub_005DAA40_SkillWeaponWear,,I,items/economy,docs/findings/items/0011-economy.md
 0x005DD220,func,sub_005DD220_AiCtlFlagTest,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md

@@ -2718,3 +2718,28 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (MonDeathDrop, MonDeathEvent, MonDropNoNoDrop, CorpseFindItem, DropGoldFind I → C); inventory § 2.6 entry; the
     review request to the architect; gate. No further session is needed for the filed rows; an optional champion kill
     (an `Act N Citem` `mul=` gold) would add `mul=` cases.
+- **2026-10-20 — Batch H2a filed (reverser, `lane/h2a`, write-up resumed from the note above; `main` `5a7feb3`
+  merged).** Static only: no slot, no Ghidra. Every count re-taken from the kept logs and check outputs in
+  `workspace/logs/h2a/` (manifest passes), not from the note.
+  - **Ledger** ([items/0001 § Plan 0038 batch H2a](../findings/items/0001-tc-resolution.md#plan-0038-batch-h2a-2026-10-20),
+    [items/0002 § Plan 0038 batch H2a](../findings/items/0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20)):
+    15 rows, 17 statements: **12 raised** (tc 1, 2, 11, 34 L361, 37, 45, 47, 59, 71; quality 22 ×2, 23), **5 raised in
+    part** (tc 22, 34 L388, 60, 70; quality 20), 0 shortfall. The note's "13 raised, 4 in part of 17 rows (18
+    statements)" miscounted: tc 34's L388 carries the `Picks = 0` half (d-none, row 13), so it is in part (rule 8).
+  - **New checks** (additions only; run record addendum): `quality.py` counterfactual `before-mf` (D6 before magic find
+    breaks 9 + 129 rolls, which raises quality 23's MF-before-minimum half), `sweep_h2a.py goldtypes` (only `gld` is of
+    type 4 by any route: tc 60's equivalence half d-none), and a per-log clamp split (the clamp acts in the affixes,
+    uniques, props and items-chain runs, never in the plan 0010 runs).
+  - **Corrections carried (rule 12):** items/0002 Answer, § 4 order, § 7, the Reproduction note, the clamp open question
+    and the header (the clamp "never acted" → acts in 667 rolls, decides 138); items/0001 header, Answer (negative-Picks
+    stop), Functions table, § 3 (bit 17), § 8 (gold), S2a tc 34 and tc 51, and the TCP/IP `/players` open question
+    (answered).
+  - **Symbols:** `MonDeathEvent`, `MonDeathDrop`, `MonDropNoNoDrop`, `CorpseFindItem`, `DropGoldFind` I → C.
+  - **Inventory:** [§ 2.6 H2a](0038-inventory/README.md#26-moves-made-by-the-batch-reviews), no class moves; totals
+    as after the H5b review (static 567, harness 531, blocked 416, deferred 2, raised 10: 1 526).
+  - **Backlog:** review request
+    [2026-10-20-reverser-architect-review-h2a-items-tc-quality](../backlog/2026-10-20-reverser-architect-review-h2a-items-tc-quality.md);
+    spec-writer entry
+    [2026-10-20-reverser-spec-writer-h2a-items-tc-quality-spec-updates](../backlog/2026-10-20-reverser-spec-writer-h2a-items-tc-quality-spec-updates.md)
+    (to be released with the review).
+  - **Next:** architect review of `lane/h2a`; then H2b.
