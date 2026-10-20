@@ -1,6 +1,6 @@
 # Plans index
 
-Next free number: **0045**
+Next free number: **0050**
 
 Lane runs (agent usage, review verdicts, fix counts by category) are logged in the [lane run ledger](metrics.md).
 
@@ -50,6 +50,51 @@ Lane runs (agent usage, review verdicts, fix counts by category) are logged in t
 | [0042](0042-quests-travel.md) | Quests and travel: the quest state machines, waypoints, town portals and level entry | approved | approved 2026-10-16 (owner, unattended); ADR-0017 accepted; P0 reviewed 2026-10-16, P1/1b reviewed 2026-10-17 (accept with fixes); P2 part 1 (run:2026-10-17-quests) reviewed 2026-10-17 (accept with fixes); P2 part 2 (run:2026-10-18-quests2) reviewed 2026-10-19 (accept with fixes); P2 part 3 (the draw-bearing remainder, final) open, 2 slots; P3 may start in parallel, its review after part 3's; owner play optional |
 | [0043](0043-items-economy.md) | Item economy: prices, repair, gold and durability wear | approved | approved 2026-10-16 (owner, unattended); ADR-0017 accepted; P0 reviewed 2026-10-17 (accept with fixes); P1/1b reviewed 2026-10-17 (accept with fixes, `lane/p43r`); P2 reviewed 2026-10-19 (accept with fixes, `lane/p43h`); P3 reviewed 2026-10-19 (accept with fixes, `lane/p43s`; items/economy reviewed); P2b (shortfall remainder, 1 slot, `lane/p43b`) open |
 | [0044](0044-multiplayer-branches.md) | Multiplayer branches: the two-client cases of the reviewed specs | approved | approved 2026-10-16 (owner, unattended); ADR-0008 accepted on the port-4000 condition; P1 reviewed 2026-10-17 (accept with fixes; multiplayer/0001, 32 cases, 29 stageable); P2 open, both harness lanes on two non-zero slots; port-4000 precondition met 2026-10-17 (owner's `ufw status verbose`, plan log), so it waits only for two free slots; first step the driver's live test |
+| [0045](0045-skills-missiles-machinery.md) | Skills and missiles, the machinery: dispatch, packets, missiles, event handlers (ADR-0014 phase 3, part 1) | proposed | drafted 2026-10-20 (`lane/plans45`); with ADR-0020 (proposed); P0 archivist, P1 three static batches, P1b, P2 two slots, P3 spec, P4 wiki |
+| [0046](0046-skills-function-catalogue.md) | Skills and missiles, the function catalogue: every numbered skill and missile function (ADR-0014 phase 3, part 2) | proposed | drafted 2026-10-20; starts after 0045·P1.3's review (P0/P1), its P2 after 0045·P3's; ten static batches, P2 one slot |
+| [0047](0047-simulation-shortfalls.md) | Simulation shortfalls: the named remainders of the combat, stats and travel runs | proposed | drafted 2026-10-20; P1 tools and staging (no slot), P2 one slot, P3 re-tag |
+| [0048](0048-seed-to-world.md) | Seed to world: the core specs composed end to end, with the last in-chain oracles retired | proposed | drafted 2026-10-20; P0 oracle inventory, P1 models and `tools/chain.py`, P2 one slot, P3 spec, P4 wiki |
+| [0049](0049-backlog-sweep-5.md) | Backlog sweep 5: the static loose ends, the recipe register and the gate warnings | proposed | drafted 2026-10-20; no slot (P0 archivist, P1 one static lane, P2 spec) |
+
+## Proposed run order (plans 0045–0049, drafted 2026-10-20, for the owner's approval)
+
+This section proposes a queue for plans 0045–0049. It does not replace the 2026-10-16 table below until the owner
+approves the plans. It assumes plan 0043 closes (`lane/c43`) and plan 0042 closes after the reviews of `lane/p42r`
+(Phase 2 part 3) and `lane/p42s` (Phase 3) and their re-tag; the branches in flight (`lane/h5b`, `lane/p42r`,
+`lane/p42s`, `lane/c43`) are not changed by it.
+
+**Limits** (unchanged): at most **two harness lanes**, on slots **1 and 2** (slot 0 is the owner's), so at most two
+games at once; at most **two static Ghidra lanes** (`-Xmx3G` each); heavy replays under `MemoryMax=4G`; lanes past
+about 4 h checkpoint and a fresh lane resumes on the same branch.
+
+**Proposed changes to open plans** (owner decisions):
+- **0039:** close it; its data/excel fold (P1b (a), P1c (a), the 11 data/excel W1) becomes an item of plan 0038
+  Phase 3's data/excel cluster, after H3b.
+- **0038:** keep every remaining batch, but run the **core and enabler batches first**: H5b (in flight) → H2a → H2b →
+  H2c → H4a → H5d → H1b → H1a → H3b, then the creation-path batches H6e2 → H6e1 → H6b → H6a → H6c → H6f → H6g. The
+  family rules of § 7 still hold (H2a → H2b → H2c; H5d after H5b; H1b before H1a; H6e1 and H6e2 one at a time). The
+  alternative is to drop the seven H6 batches and leave those statements `[I]`.
+- **0044:** unchanged; its P2 takes both slots at the first point both are free, which is expected when H5b ends.
+- **0042:** no new phase. The waypoint activation from mode 0, if still short at the close, moves to plan 0047.
+
+| Lane | Queue, in order | Notes |
+|---|---|---|
+| **architect** | `lane/p42r` → `lane/p42s` → H5b → then each phase below in landing order | Each review fills the ledger row. |
+| **archivist** (no slots) | 0049·P0 (item 4 after `lane/p42r` merges) → 0045·P0 → 0046·P0 (after 0045·P1.3's review) | 0045·P0 changes layouts: regenerate the `excel_layout` baseline and merge alone. |
+| **reverser, static lane A** (Ghidra 1) | 0045·P1.1 → 0045·P1.2 → 0045·P1.3, with 0045·P1b beside them → 0046·P1 batches | 0045·P1 is the critical path of phase 3. |
+| **reverser, static lane B** (Ghidra 2) | 0049·P1 → 0048·P0 → 0048·P1 → 0047·P1's waypoint reading (if 0042 leaves it short) → 0046·P1 batches | 0048·P0 needs no Ghidra and may run in this lane's idle time. |
+| **reverser, harness lane H1** (slot 1) | H5b (in flight) → **0044·P2 (both slots)** → 0047·P1 → 0047·P2 → 0048·P2 → **0045·P2 (both slots)** → 0046·P2 | 0047·P1 is tools and staging, no game. A phase whose prerequisite has not landed is skipped, not waited on. |
+| **reverser, harness lane H2** (slot 2) | plan 0038 batches in the order above | Yields its slot to 0044·P2 and to 0045·P2 while they run; resumes the next batch after. |
+| **spec-writer** | 0042·P3 re-tag (`lane/p42s`) → 0038·P3 clusters as their batches land (drlg/lifecycle first: the H7a entry is released) → 0049·P2 → 0047·P3 → 0045·P3 → 0045·P4 → 0048·P3 → 0048·P4 → 0046·P3 → 0046·P4 | Specs edited by two plans merge one at a time, the earlier plan's first. |
+
+**Why this order.** 0045 is the next simulation phase and the single largest block of value: it retires the most-cited
+oracles of the reviewed specs (the skill and missile packets, the event handlers, `MonAttackStats`). Its static
+phases fill both Ghidra lanes' near future while the harness lanes finish 0038, 0044 and the cheap 0047 cases, so
+0045·P2 starts with its P1 reviewed. 0048 is the core areas' conformance check and needs only one slot. 0049 and 0047·P1
+need no slot and clear the backlog and the checkers before the next harness work.
+
+**Phase 4 and 5.** No plan is written for monster AI or animation timing yet: ADR-0016 lets phase (4)'s plan follow
+0045·P2's acceptance (ADR-0020, proposed). The architect proposes animation timing first (plan 0045 *Open questions*).
 
 ## Run order (unattended queue, set 2026-10-16, plans 0037–0044)
 

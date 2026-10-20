@@ -75,7 +75,10 @@ re-seed a unit (`+0x20`) or another object's seed, left unread by plan 0039 Q15
 ([rng/0002 § Plan 0039 batch P1a](../findings/rng/0002-seed-tree.md#plan-0039-batch-p1a-2026-10-16)). A simulation `[C]` is a per-event reproduction
 with logged inputs at a named boundary; `stats/aggregate` models the stat values (reviewed 2026-10-17), and the values the
 earlier runs logged stay value oracles. Phase (2) is [plan 0041](../plans/done/0041-stats-and-states.md) (done, closed 2026-10-17; rows `stats/aggregate` and `stats/states` below); [ADR-0016](../adrs/0016-pipelined-simulation-phases.md) (accepted 2026-10-16) lets its table and static phases
-start before plan 0037's spec is reviewed.
+start before plan 0037's spec is reviewed. Phase (3) is proposed (2026-10-20) as [plan 0045](../plans/0045-skills-missiles-machinery.md) (the
+machinery: rows `skills/dispatch` and `skills/missiles`) and [plan 0046](../plans/0046-skills-function-catalogue.md) (the
+function catalogue: row `skills/catalogue`), under [ADR-0020](../adrs/0020-skills-phase-in-two-plans.md) (proposed); the
+rows are added when 0045 starts. [Plan 0048](../plans/0048-seed-to-world.md) (proposed) would add a Core row `chain`.
 
 | Subsystem | Depends on | Key tables | Status |
 |---|---|---|---|

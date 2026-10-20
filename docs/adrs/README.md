@@ -1,6 +1,6 @@
 # ADR index
 
-Next free number: **0019**
+Next free number: **0021** (0019 reserved for the backlog-archive change on `lane/bkarch`)
 
 | # | Title | Status |
 |---|---|---|
@@ -22,3 +22,4 @@ Next free number: **0019**
 | [0016](0016-pipelined-simulation-phases.md) | Pipelined simulation phases: a phase's table and static work may start once the previous phase's run is accepted (amends 0014) | accepted 2026-10-16 |
 | [0017](0017-scope-quests-travel-economy.md) | Quest progression, travel and the item economy enter scope, beside the five simulation phases (amends 0002) | accepted 2026-10-16 |
 | [0018](0018-backlog-one-file-per-entry.md) | The backlog as one file per entry, with gate checks; `docs/backlog.md` frozen as the archive | accepted 2026-10-17 |
+| [0020](0020-skills-phase-in-two-plans.md) | Simulation phase 3 (skills and missiles) in two plans: the machinery, then the function catalogue (amends 0014, 0016) | proposed |
