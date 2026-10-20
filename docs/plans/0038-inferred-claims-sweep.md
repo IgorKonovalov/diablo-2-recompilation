@@ -2260,7 +2260,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     - *Omission 1:* monsters/0003 § 7 names `PresetUnitDispatch`'s two callers and `PresetMonSpawn`'s four other callers
       (`sweep_rbs3.py callers 0x0054E600 0x005557D0`).
   - **Backlog.** The review request is closed. The *static sweep, remaining* entry is annotated. New reverser entry:
-    [rbs3 review static remainders](../backlog/2026-10-17-architect-reverser-rbs3-review-static-remainders.md)
+    [rbs3 review static remainders](../backlog/archive/2026-10-17-architect-reverser-rbs3-review-static-remainders.md)
     (town-follow remainder, outdoor 7 layout bound, MonPlace readers, the optional unit-seed search). The lane's
     spec-writer entry is annotated with the lifecycle rewording. Ledger rows are in [metrics](metrics.md) (usage "—").
   - **Next:** merge `lane/rbs3`.
@@ -2284,7 +2284,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     rows stay `[I]`; two answered open questions struck. Rows 7 and 11 unchanged. No inventory row changes class.
   - **Wiki:** [levels](../wiki/levels.md) and [monsters](../wiki/monsters.md) restated; W4 0.
   - **Backlog:** both entries closed. Review request:
-    [sw6 review](../backlog/2026-10-17-spec-writer-architect-sw6-rbs3-readings-and-outdoor-h5e-review.md). The
+    [sw6 review](../backlog/archive/2026-10-17-spec-writer-architect-sw6-rbs3-readings-and-outdoor-h5e-review.md). The
     rbs2 quests/economy readings entry is left for the 0042 and 0043 Phase 3 passes.
   - **Commits:** `c210e90` (specs and research map), `e99c773` (wiki), then backlog and this log. Gate green.
   - **Next:** architect review of `lane/sw6` (backlog).
@@ -2317,7 +2317,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     monsters/0003 § 7 reconcile entry (reverser) annotated with the rows 24/26 objdump lead. Ledger rows added.
 - **2026-10-17 — `lane/rbs4` review (architect, static backlog sweep, fourth pass): accept with fixes.** `main`
   (`af90ea8`) merged into the lane first (clean; `backlog.py migrate` moved nothing). Request:
-  [rbs4 review](../backlog/2026-10-17-reverser-architect-review-lane-rbs4-static-sweep-pass-4.md).
+  [rbs4 review](../backlog/archive/2026-10-17-reverser-architect-review-lane-rbs4-static-sweep-pass-4.md).
   - **Re-runs.** Every `sweep-rbs4-*` output re-run against `workspace/logs/sweep-rbs4-manifest.txt`: `layouts` (under
     `MemoryMax=4G`, 5 min) byte-identical, and `dwords`, both `tree`, both `stackfield`, both `regarg` and the
     `xrefscan` loop identical; `sweep_rbs3.py pushes 0x00648CF0 2` identical but for two caller names `lane/rbs4` added
@@ -2373,7 +2373,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog.** The review request is closed; plan 0040 close follow-ups closed ((1) done, (2) to H7a); the *static
     sweep, remaining* entry annotated. New: spec-writer
     [rbs4 town-follow and outdoor 7](../backlog/2026-10-17-architect-spec-writer-rbs4-town-follow-and-outdoor-7.md);
-    reverser [rbs4 review static remainders](../backlog/2026-10-17-architect-reverser-rbs4-review-static-remainders.md)
+    reverser [rbs4 review static remainders](../backlog/archive/2026-10-17-architect-reverser-rbs4-review-static-remainders.md)
     (H7a geometry prep, the teleport-target read, optional unfollowed calls). Ledger rows in [metrics](metrics.md)
     (usage "—").
   - **Next:** merge `lane/rbs4`.
@@ -2385,7 +2385,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   and S1f), simulation per event and the plan 0041 seed-invariance rule (ADR-0014), two clients (ADR-0008), d-none
   bounds and the outdoor 7 split, shortfalls and open questions, this sweep, the review loop; ADR list gains 0008,
   0011, 0014, 0015, 0018. No spec changed. Commit `2b8a67f`; gate green. Review request:
-  [wiki6 review](../backlog/2026-10-17-spec-writer-architect-wiki6-index-and-how-we-know-review.md).
+  [wiki6 review](../backlog/archive/2026-10-17-spec-writer-architect-wiki6-index-and-how-we-know-review.md).
   - **Next:** architect review of `lane/wiki6`.
 - **2026-10-17 — `lane/wiki6` reviewed (architect, on the lane at `b2aa52d`; `main` `407758a` already merged): accept
   with fixes.** Every number checked against its source at the same strength: 28 643 calls in ten families (S1e
@@ -2461,7 +2461,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Tools:** `townfollow_geom.py summary` (new mode, per-town table of a scan output); `sweep_h7a.py`,
     `rooms_sessions.py` `rec400` unchanged since the checkpoint.
   - **Backlog:** review request
-    [2026-10-18-reverser-architect-review-h7a-lifecycle](../backlog/2026-10-18-reverser-architect-review-h7a-lifecycle.md);
+    [2026-10-18-reverser-architect-review-h7a-lifecycle](../backlog/archive/2026-10-18-reverser-architect-review-h7a-lifecycle.md);
     spec-writer entry
     [2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates](../backlog/2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates.md);
     the `lane/rbs4` static-remainders entry closed ((1), (2) answered; (3) deferred).

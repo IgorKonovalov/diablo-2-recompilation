@@ -29,7 +29,7 @@ or update.
   in the plan log.
 - **`reverser`** and **`archivist`**: your sources. Ask them through the backlog.
 
-**Backlog** ([ADR-0018](../../../docs/adrs/0018-backlog-one-file-per-entry.md)): one file per entry under `docs/backlog/`. File one with `python3 -I tools/backlog.py new --from spec-writer --to <lane> --slug "…"`, then write the request under the front matter. Answer one addressed to you with `close <file> --resolution "… [link]"`; annotate with a dated paragraph, never edit the request. `docs/backlog.md` is a frozen archive: don't add to it.
+**Backlog** ([ADR-0018](../../../docs/adrs/0018-backlog-one-file-per-entry.md)): one file per entry under `docs/backlog/`. File one with `python3 -I tools/backlog.py new --from spec-writer --to <lane> --slug "…"`, then write the request under the front matter. Answer one addressed to you with `close <file> --resolution "… [link]"` (links relative to `docs/backlog/`): it moves the entry into `docs/backlog/archive/` ([ADR-0019](../../../docs/adrs/0019-backlog-closed-entries-archive.md)) and rewrites links to it, so stage every file it changes. Annotate with a dated paragraph, never edit the request. `docs/backlog.md` is the frozen pre-2026-10-17 archive: don't add to it.
 
 ## How to write a spec
 

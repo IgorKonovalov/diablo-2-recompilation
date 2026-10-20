@@ -102,7 +102,7 @@ quantity and charges in use, and get them back? When it is done:
 ### Phase 2b — Shortfall remainder (added at the Phase 2 review, 2026-10-19)
 - **Owner skill:** reverser (harness, **1 slot**)
 - **What:** the stock-reachable items of Phase 2's *Done when* that the run missed and that are not rare branches,
-  listed in backlog [2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder](../../backlog/2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder.md):
+  listed in backlog [2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder](../../backlog/archive/2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder.md):
   crafted prices, the Hell repair price, the gamble at clvl 3, partial/ethereal/broken repairs, the quest repair (or
   its absence shown), Wirt's gold, question 9 with a control live to the session's end, the two unchanged-seed sales.
 - **Done when:** each listed item reproduces with 0 mismatches on the same manifest, or is named again as a shortfall
@@ -439,8 +439,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   4, the recharge cost; charges and skill wear; gamble at clvl 3; Cain one case. Tools: `tools/economy.py` (checker
   additions), `tools/economy_sessions.py` (`die --resurrect`, retries, walking deaths), `tools/gdb/economy.py` (watch pc
   fix), `tools/d2pilot.py` (`qualres`, Tyrael's menu order). Review request
-  [2026-10-19-reverser-architect-plan-0043-p2-review](../../backlog/2026-10-19-reverser-architect-plan-0043-p2-review.md);
-  spec-writer entry [2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs](../../backlog/2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs.md);
+  [2026-10-19-reverser-architect-plan-0043-p2-review](../../backlog/archive/2026-10-19-reverser-architect-plan-0043-p2-review.md);
+  spec-writer entry [2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs](../../backlog/archive/2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs.md);
   the required-cases entry closed.
 - **2026-10-19 — Phase 2 review (architect, `lane/p43h` at `50a0eaf`, `main` `02d790d` merged): accept with fixes.**
   Read: [items/0011 § Phase 2](../../findings/items/0011-economy.md#phase-2-runtime-results-run2026-10-17-economy) and its
@@ -496,9 +496,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     run's counts from the kept output" (fix 1), rule 4 gains "an absence counts only with a control live over the whole
     window" (fixes 4–5), rule 6's one-path-base manifest recurred (fix 2, after H7a).
   - **Backlog:** review request closed; the spec-writer entry
-    [2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs](../../backlog/2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs.md)
+    [2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs](../../backlog/archive/2026-10-19-reverser-spec-writer-plan-0043-p3-economy-inputs.md)
     released with the three scopings; filed
-    [2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder](../../backlog/2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder.md).
+    [2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder](../../backlog/archive/2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder.md).
   - **Next:** merge `lane/p43h`; Phase 3 (spec-writer) from the released entry; Phase 2b when harness slot 1 frees.
 - **2026-10-19 — Phase 3 written (spec-writer, `lane/p43s`, from `main` `7aeeafd`), review requested.** New
   [items/economy](../../specs/items/economy.md), draft, {C 106, I 81, L 12}: the `Scale` primitive, the price core
@@ -513,7 +513,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   Files row, two glossary terms, and the two inbound links the § I rename broke. Research map: `items/economy` →
   `draft spec` (the architect's row, proposed in the review request). Backlog: the inputs entry closed, the rbs2
   readings entry annotated (part (b) folded), review request
-  [2026-10-19-spec-writer-architect-plan-0043-p3-economy-spec-review](../../backlog/2026-10-19-spec-writer-architect-plan-0043-p3-economy-spec-review.md).
+  [2026-10-19-spec-writer-architect-plan-0043-p3-economy-spec-review](../../backlog/archive/2026-10-19-spec-writer-architect-plan-0043-p3-economy-spec-review.md).
 - **2026-10-19 — Phase 3 review (architect, `lane/p43s` at `6607069`, from `main` `7aeeafd`): accept with fixes.**
   [items/economy](../../specs/items/economy.md) is `reviewed`, {C 109, I 80, L 12} after the fixes. Read: the spec whole,
   [items/0011](../../findings/items/0011-economy.md) § 1–§ 8 and § Phase 2, the
@@ -573,7 +573,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     Spec-writer review-fixes: rules 2, 5, 7 and 8 recurred (fixes 5, 4, 6 and 1–2) and gain this review as a
     citation; rule 9 gains fix 3.
   - **Backlog:** review request closed; filed
-    [2026-10-19-architect-spec-writer-plan-0043-economy-wiki](../../backlog/2026-10-19-architect-spec-writer-plan-0043-economy-wiki.md)
+    [2026-10-19-architect-spec-writer-plan-0043-economy-wiki](../../backlog/archive/2026-10-19-architect-spec-writer-plan-0043-economy-wiki.md)
     (wiki owner, architect rule 8). Phase 2b (`lane/p43b`) runs on; its items stay `[I]` in the spec and under
     *Open questions* until it lands, and the spec is re-tagged then.
   - **Research map:** `items/economy` → `reviewed`. Plan stays open for Phase 2b.
@@ -605,8 +605,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   refusal and the `Cracked`/`0x0055F590` copy refusals not reached. Tools: `tools/economy.py`, `economy_scan.py`
   (`qrepair`), `economy_sessions.py` (`--watchdog`, `fix:`, service stops, `wirt`), `gdb/economy.py`, `gdb/economy2.gdb`,
   `d2s.py` (`crafted`, `broken`), recipes `econq`, `econh`. Symbols +2. Review request
-  [2026-10-19-reverser-architect-plan-0043-p2b-review](../../backlog/2026-10-19-reverser-architect-plan-0043-p2b-review.md);
-  spec-writer entry [2026-10-19-reverser-spec-writer-plan-0043-p2b-economy-inputs](../../backlog/2026-10-19-reverser-spec-writer-plan-0043-p2b-economy-inputs.md).
+  [2026-10-19-reverser-architect-plan-0043-p2b-review](../../backlog/archive/2026-10-19-reverser-architect-plan-0043-p2b-review.md);
+  spec-writer entry [2026-10-19-reverser-spec-writer-plan-0043-p2b-economy-inputs](../../backlog/archive/2026-10-19-reverser-spec-writer-plan-0043-p2b-economy-inputs.md).
   Game stopped, slot 1 saves restored (empty), no background process.
 - **2026-10-19 — Phase 2b review (architect, `lane/p43b` at `22ea490`, from `main` `7aeeafd`; `main` not merged in):
   accept with fixes. Phase 2 is closed.** Read: [items/0011 § Phase 2b](../../findings/items/0011-economy.md#phase-2b-runtime-results-run2026-10-19-economy2),
@@ -666,7 +666,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     over the whole window) recurred (fix 4, after the P2 review) and rule 8 (split a raise) recurred (fix 2); both gain
     this review as a citation.
   - **Backlog:** review request and the P2b remainder entry closed; the spec-writer entry
-    [2026-10-19-reverser-spec-writer-plan-0043-p2b-economy-inputs](../../backlog/2026-10-19-reverser-spec-writer-plan-0043-p2b-economy-inputs.md)
+    [2026-10-19-reverser-spec-writer-plan-0043-p2b-economy-inputs](../../backlog/archive/2026-10-19-reverser-spec-writer-plan-0043-p2b-economy-inputs.md)
     corrected and **released** for a re-tag pass of the reviewed items/economy; filed
     [2026-10-19-architect-archivist-register-the-plan-0042-quest-recipes-in-test](../../backlog/2026-10-19-architect-archivist-register-the-plan-0042-quest-recipes-in-test.md)
     and [2026-10-19-architect-archivist-unique-items-carry1-has-a-reader](../../backlog/2026-10-19-architect-archivist-unique-items-carry1-has-a-reader.md).
@@ -689,7 +689,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   {C 84, I 87, L 2}), [items/vendors](../../specs/items/vendors.md)' store-record question (tags unchanged). Wiki: new
   [economy](../../wiki/economy.md) page, index row 8, items-other-paths' vendor link and services paragraph. Gate green.
   Backlog: the P2b inputs and the wiki entries closed; review request
-  [2026-10-19-spec-writer-architect-plan-0043-economy-retag-and-wiki-review](../../backlog/2026-10-19-spec-writer-architect-plan-0043-economy-retag-and-wiki-review.md),
+  [2026-10-19-spec-writer-architect-plan-0043-economy-retag-and-wiki-review](../../backlog/archive/2026-10-19-spec-writer-architect-plan-0043-economy-retag-and-wiki-review.md),
   which notes that the plan can close at this review. Research map: no status change (`reviewed`); the tag counts
   for the architect.
 - **2026-10-19 — P2b re-tag and economy wiki review (architect, `lane/p43t` at `49a2dfc`, from `main` `cf617f0`):
