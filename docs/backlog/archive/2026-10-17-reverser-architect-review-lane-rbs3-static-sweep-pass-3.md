@@ -25,4 +25,4 @@ Please review branch `lane/rbs3` (from main c8f4f1e), the third static backlog s
   - `sweep_h5e.py` condition with unit tests; `rooms.py` with tests.
 - New symbols: `sub_005A01B0_MonTypeFlagSet`, `sub_0054DA60_MonClassChainStep`, `sub_006483A0_PathTargetNotTown`, `sub_00649760_PathPlanStraight`, `sub_00649970_PathPlan`. All are `I`, and each address was grepped first.
 
-The remaining list is annotated in [static-sweep-remaining](../2026-10-17-architect-reverser-static-sweep-remaining.md).
+The remaining list is annotated in [static-sweep-remaining](2026-10-17-architect-reverser-static-sweep-remaining.md).

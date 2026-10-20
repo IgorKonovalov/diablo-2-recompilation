@@ -583,6 +583,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0056E740,func,sub_0056E740_AddStatEvent,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0056E900,func,STATE_DefaultRemoveCB,,I,stats/states,docs/findings/stats/0002-states.md
 0x0056E970,func,STATE_ApplyTimed,,C,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0056EDE0,func,sub_0056EDE0_MissileCreateAt,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0056F070,func,SKILL_AttackDo,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0056FCB0,func,EVENT_SelectedAuraTick,,C,stats/states,docs/findings/stats/0002-states.md
 0x0056FE40,func,EVENT_ItemAuraTick,,C,stats/states,docs/findings/stats/0002-states.md
@@ -1442,6 +1443,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005BFE60,func,STATEVENT_OpenWounds,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005BFFC0,func,STATEVENT_CrushingBlow,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005C07A0,func,sub_005C07A0_SkillReviveDo,,I,items/quality,docs/findings/items/0002-quality-roll.md
+0x005C09E0,func,STATEVENT_Reanimate,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x005C0AD0,func,UNIT_AddEvent,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005C0C30,func,UNIT_DispatchEvent,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005C0D00,func,sub_005C0D00_AffixCandAdd,,C,items/affixes,docs/findings/items/0005-affixes.md
@@ -2577,6 +2579,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0073BF68,data,g_UModAuraTable,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x0073C008,data,g_UModHandlers,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x0073C0B8,data,g_UModEventFns,,I,items/quality,docs/findings/items/0002-quality-roll.md
+0x0073C768,data,g_MissileSrvDoFuncs,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x0073CA18,data,g_MonAiTable,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0073E114,data,g_ForgeRunesNormal,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0073E514,data,g_ForgeRunesNightmare,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md

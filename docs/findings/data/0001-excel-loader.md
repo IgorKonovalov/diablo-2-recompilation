@@ -67,7 +67,7 @@
 | `0x00612750` | `DATATBLS_LoadCodeLists` | `compcode` always; 15 code-list tables only under `-txt` | I |
 | `0x00619300` | `DATATBLS_LoadAll` | the fixed call sequence of every table loader (the "registration list") | I |
 | `0x0044D9C0` | `sub_0044D9C0_ApplyTxtOption` | `DATATBLS_SetCompileTxt(cfg[0x215] == 0)` | I |
-| `0x0044D9F0` | `sub_0044D9F0_ApplyOptions` | calls the 52 option handlers at `0x0070F488` | I |
+| `0x0044D9F0` | `sub_0044D9F0_ApplyOptions` | calls the 52 option handlers at `g_OptionApplyTable` (`0x0070F488`) | I |
 | `0x006BD040` | `EXCEL_LinkCreate` | 16-byte link `{count, capacity, codeArray, nameTreeRoot}` | I |
 | `0x006BD0B0` | `EXCEL_LinkFree` | | I |
 | `0x006BD130` | `EXCEL_FindCode` | code → index, binary search, −1 if absent | I |
@@ -255,13 +255,13 @@ All per-table globals are fields of one data-tables block at `0x0096BC30`, whose
 |---|---|---|---|---|
 | treasureclassex | (local; freed after conversion) | (local) | runtime TCs: `g_pTreasureClasses` `0x0096C5EC` (+0x9BC), `g_nTreasureClasses` `0x0096C5F0` (+0x9C0), `g_TCLink` `0x0096C5E8` (+0x9B8) | `0x006547D0` |
 | itemratio | `g_pItemRatio` `0x0096CC4C` (+0x101C) | `0x0096CC48` (+0x1018) | | `0x00637620` |
-| itemtypes | `g_pItemTypes` `0x0096C828` (+0xBF8) | `0x0096C82C` (+0xBFC) | | `0x00638D80` |
-| weapons | `g_pWeapons` `0x0096CA60` (+0xE30) | `0x0096CA64` (+0xE34) | copied into `g_pItems` | `0x006315D0` |
-| armor | `g_pArmor` `0x0096CA68` (+0xE38) | `0x0096CA6C` (+0xE3C) | copied into `g_pItems` | `0x006315D0` |
-| misc | `g_pMisc` `0x0096CA70` (+0xE40) | `0x0096CA74` (+0xE44) | copied into `g_pItems` | `0x006315D0` |
+| itemtypes | `g_pItemTypes` `0x0096C828` (+0xBF8) | `g_nItemTypes` `0x0096C82C` (+0xBFC) | | `0x00638D80` |
+| weapons | `g_pWeapons` `0x0096CA60` (+0xE30) | `g_nWeapons` `0x0096CA64` (+0xE34) | copied into `g_pItems` | `0x006315D0` |
+| armor | `g_pArmor` `0x0096CA68` (+0xE38) | `g_nArmor` `0x0096CA6C` (+0xE3C) | copied into `g_pItems` | `0x006315D0` |
+| misc | `g_pMisc` `0x0096CA70` (+0xE40) | `g_nMisc` `0x0096CA74` (+0xE44) | copied into `g_pItems` | `0x006315D0` |
 | (combined items) | `g_pItems` `0x0096CA5C` (+0xE2C) | `g_nItems` `0x0096CA58` (+0xE28) | `g_ItemCodeLink` `0x0096BCC4` (+0x94) | `0x006315D0` |
 | monstats | `g_pMonStats` `0x0096C6A8` (+0xA78) | `0x0096C6B0` (+0xA80) | `g_MonStatsLink` `0x0096C6AC` (+0xA7C) | `0x00651210` |
-| levels | `g_pLevels` `0x0096C888` (+0xC58) | `0x0096C88C` (+0xC5C) | | `0x0061C540` |
+| levels | `g_pLevels` `0x0096C888` (+0xC58) | `g_nLevels` `0x0096C88C` (+0xC5C) | | `0x0061C540` |
 | leveldefs | `g_pLevelDefs` `0x0096C890` (+0xC60) | not stored (count arg = 0) | same count as levels | `0x0061DE00` |
 
 - [I] Items: `ITEMS_LoadItemTables` loads the three `.bin`s, allocates `(nW + nA + nM) × 0x1A8`, `memcpy`s weapons,

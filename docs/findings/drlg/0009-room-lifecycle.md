@@ -59,8 +59,8 @@
   fatal error (`0x691`). The numbers are the unit alignment that `MonSpawnTry` sets from MonStats `Align` (0 → 0,
   1 → 2, 2 → 1; [MonStats](../../tables/MonStats.md) `Align`), so the hostile pool classes are alignment 0 and the
   allies (MonStats `Align` 1) alignment 2; the names "hostile/ally/neutral" stay a reading. The wanderer class
-  (`rogue2`) has MonStats `Align` 1. Whether `WandererSpawn`'s creation path applies that rule, so that a saved
-  wanderer is dropped, is not read. (0x005425F7–0x0054260B, 0x005427B8–0x005427D4, 0x0054287F–0x0054288E,
+  (`rogue2`) has MonStats `Align` 1. `WandererSpawn`'s creation path applies that rule, so a saved wanderer is
+  alignment 2 and is dropped (§ 11.4 (b), plan 0049). (0x005425F7–0x0054260B, 0x005427B8–0x005427D4, 0x0054287F–0x0054288E,
   0x00542990, tbl:MonStats.txt:Align)
 
 ## Leads used
@@ -122,7 +122,7 @@ written from the code before they were read. Little exists beyond anecdotes; not
 | `0x0052D240` | `sub_0052D240_RoomsDeactivate` | the release pass | C in part (level-120 half I) |
 | `0x0061A790` | `sub_0061A790_RoomIdleCount` | room `+0x0C`: 0 if `+0x78` ≠ 0, else +1; returns it | C |
 | `0x0061A3F0` / `0x0061BA30` | `sub_0061A3F0_RoomReleaseAllowed` / `sub_0061BA30_DrlgRoomReleaseTest` | DUNGEON act `+0x50` must be 0; pin, status and town tests | C |
-| `0x0061BAC0` / `0x0061AED0` | `sub_0061BAC0_DrlgRoomPinFlag` / `sub_0061AED0_RoomPinSet` | DRLG `+0x28` `0x400000` set (arg 0) or cleared (arg ≠ 0); 31 call sites, portal and object code | C (`0x0061BAC0`), I |
+| `0x0061BAC0` / `0x0061AED0` | `sub_0061BAC0_DrlgRoomPinFlag` / `sub_0061AED0_RoomPinSet` | DRLG `+0x28` `0x400000` set (arg 0) or cleared (arg ≠ 0); 31 call sites in portal, object, quest and missile code (§ 11.4 (c)) | C (`0x0061BAC0`), I |
 | `0x0061A910` | `sub_0061A910_ActiveRoomFree` | unlink from the act list and the neighbours' near lists, `RoomReleaseWrap`, `DUNGEON_RoomFree` | C |
 | `0x00642A00` | `sub_00642A00_ActIsClient` | DRLG act `+0x8C` bit 0 | I |
 | `0x00643200` | `sub_00643200_ActLevelsUnloadTick` | per level with no references and built rooms: countdown 10, then `LevelUnload(keep)` | I |
@@ -274,7 +274,8 @@ byte `+0x44`.
   (fn:sub_0061A3F0_RoomReleaseAllowed@0x0061A3F0, fn:sub_0061BA30_DrlgRoomReleaseTest@0x0061BA30)
 - [I] `0x400000` pins a room: `RoomPinSet(room, 0)` sets it and `RoomPinSet(room, 1)` clears it. Its 31 call sites are
   in object code: `PortalObjectCreate` sets it on the rooms of both ends (0x0056D29E, 0x0056D2AC), and two sites that
-  free an object unit clear it (0x005354C5, 0x00584C12). Not every site was read. (fn:sub_0061AED0_RoomPinSet@0x0061AED0,
+  free an object unit clear it (0x005354C5, 0x00584C12). Every site is listed in § 11.4 (c): 18 set, 13 clear (plan
+  0049). (fn:sub_0061AED0_RoomPinSet@0x0061AED0,
   fn:sub_0061BAC0_DrlgRoomPinFlag@0x0061BAC0, fn:sub_0056D130_PortalObjectCreate@0x0056D130)
 - [I] **What the free does.** `ActiveRoomFree` unlinks the room from the act list, removes it from each neighbour's near
   list (swap with the last entry), calls `RoomReleaseWrap(drlg, EDX = DUNGEON act +0x50, flags)`, then `DUNGEON_RoomFree`.
@@ -956,6 +957,89 @@ had `+0x78` = 1 and `MonWndr` 0, so both tests refused it, and the case does not
 rest of the gate stands. The save-test census of `SaveMonsters` 0 levels met 12 monsters in level 103, all carrying
 `0x2000000` and saved: the other half of that rule is still unmet.
 
+### 11.4 The plan 0040 Phase 1 review follow-ups (plan 0049 Phase 1, `lane/p49r`, static)
+
+Static, no session. Kept outputs under `workspace/logs/p49r/` (manifest `p49r-manifest.txt`): the pin call sites
+(`sweep_rbs3.py callers 0x61aed0 0x61bac0` and one `window` per site), the constructor and the wanderer windows.
+
+**(a) DUNGEON act `+0x50` is the constructor's "client act" argument.**
+
+- [I] `DUNGEON_ActCreate` stores its third stack argument at act `+0x50` (`mov [esi+0x50], ecx`, 0x006194DA). When
+  that argument is non-zero it builds the DRLG act in its client form (`DRLG_ActCreate(…, 0, 1, …)`, 0x006194E5–0x006194FE);
+  otherwise it builds the server form and also stores act `+0x08` (0x00619505–0x00619524). It has two callers:
+  - the server's `sub_0053AC70_ActCreate` passes 0 (`push 0x0` at 0x0053AC9C, the third push before the call at 0x0053ACA0);
+  - the client's `sub_0044E100_ClientActLoad` passes 1 (`push 0x1` at 0x0044E139, before the call at 0x0044E13D).
+
+  (fn:DUNGEON_ActCreate@0x006194A0, fn:sub_0053AC70_ActCreate@0x0053AC70, fn:sub_0044E100_ClientActLoad@0x0044E100,
+  fn:DRLG_ActCreate@0x00642DA0)
+- So `+0x50` is 1 on a client act and 0 on a server act. That matches § 11's values: 0 on the server at all 30 985
+  checks, and `EDX` 0 (the negated `+0x50`) at every client tiles release. The name moves from `[L]` to this reading.
+  No other writer of `+0x50` was scanned: the offset is too common for an operand scan.
+  (fn:DUNGEON_ActCreate@0x006194A0, run:2026-10-17-lifecycle)
+
+**(b) A wanderer gets alignment 2 at its creation, so a saved wanderer is dropped at the restore.**
+
+- [I] `sub_005B2F20_SpawnAtPos` only fills a spawn request on its stack and calls `sub_005B2A00_MonSpawnTry` with it
+  (0x005B2F20–0x005B2F5E). `WandererSpawn` calls it with mode 1, radius −1 and flags 0
+  (`SpawnAtPos(game, room, x, y, class, 1, −1, 0)`, 0x0054EFB3–0x0054EFC0).
+- [I] Flags 0 has no bit 0 (probe only), so `MonSpawnTry` creates the unit and runs its `Align` switch on MonStats
+  `+0x4C` unconditionally (0x005B2E94–0x005B2EC2):
+  - `Align` 1 → `MonAlignSet(2)` and unit `+0xC4 |= 0x20000`;
+  - `Align` 2 → `MonAlignSet(1)`;
+  - otherwise `MonAlignSet(0)`.
+- [I] The wanderer class list at `0x00731B2C` holds 270 `rogue2` (§ 7), and `rogue2` has `Align` 1. A wanderer is
+  therefore created with alignment 2 and put in target list 8 (`TargetListAdd(…, 0, 8)`, 0x0054EFC9–0x0054EFD1).
+- [I] When its room is released with the wanderer saved, the record carries flag `0x400` with alignment bit `0x100`.
+  The restore drops it (§ 6, 0x005425F7–0x0054260B), and it never reaches the fatal `0x691`.
+- No write that changes the wanderer's alignment between creation and the save test was followed. The answer holds
+  for the alignment the creation sets.
+
+  (fn:sub_005B2F20_SpawnAtPos@0x005B2F20, fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:sub_005543B0_MonAlignSet@0x005543B0,
+  fn:sub_0054EF50_WandererSpawn@0x0054EF50, tbl:MonStats.txt:Align)
+
+**(c) The 31 calls of `RoomPinSet`.**
+
+- [I] `sub_0061AED0_RoomPinSet(room, clear)` is `__stdcall`. It passes room `+0x10` (the DRLG room) and `clear` in
+  `EDX` to `sub_0061BAC0_DrlgRoomPinFlag`, which has that one caller (0x0061AEE0): `clear` = 0 sets `0x400000`, any
+  other value clears it.
+- [I] `RoomPinSet` has 31 direct call sites in 24 functions. At most sites the room argument is
+  `sub_00620BB0_UnitGetRoom(unit)`, called just before with its own push; the `clear` argument is the push before that
+  one (read per site from the window; fn:sub_0061AED0_RoomPinSet@0x0061AED0).
+- [I] 18 sites set the pin (`clear` = 0) and 13 clear it (`clear` = 1) (the table; fn:sub_0061BAC0_DrlgRoomPinFlag@0x0061BAC0).
+
+  (fn:sub_0061AED0_RoomPinSet@0x0061AED0, fn:sub_0061BAC0_DrlgRoomPinFlag@0x0061BAC0, fn:sub_00620BB0_UnitGetRoom@0x00620BB0)
+
+| function | sites | set (0) / clear (1) | what is pinned |
+|---|---|---|---|
+| `sub_00535430_PlayerPortalClose` | 0x005354C5, 0x005354FB | clear, clear | the two portal rooms, after each portal unit is freed (`UnitFree` 0x00555600) |
+| `sub_0056D130_PortalObjectCreate` | 0x0056D29E, 0x0056D2AC | set, set | the rooms of both portal ends |
+| `0x00581410` (in a table at `0x006E19DC`) | 0x00581471, 0x0058147F | set, set | two units' rooms |
+| `OBJOP_Portal` | 0x00584C12, 0x00584C40 | clear, clear | the portal rooms, after the portal units are freed |
+| `sub_00588040_A5Q2_MonsterDeath` | 0x00588081 | set | the room of a unit of class `0x1B2` |
+| `sub_005888D0_A5Q2_CageFreed` | 0x00588ADF | set | the freed unit's room |
+| `sub_0058ABC0_A5Q3_FrozenAnyaOperate` | 0x0058AD72 | set | the operated object's room |
+| `sub_0058BF40_A5Q5_StatuesArm` | 0x0058BF75 | set | each found unit's room |
+| `sub_0058D400_A5Q5_KeepDoorOperate` | 0x0058D4B7, 0x0058D4D6 | clear, set | the door's room, by branch |
+| `sub_0058DF20_A5Q6_BaalDeath` | 0x0058E10B | set | a unit's room |
+| `sub_00593480_A1Q4_GibbetOperate` | 0x0059357D | set | the gibbet's room |
+| `sub_00593710_A1Q4_StoneOperate` | 0x00593A41 | set | a unit's room |
+| `sub_005954F0_A1Q5_DeathSpawn` | 0x0059568F | set | the unit's room |
+| `sub_0059D870_A2Q6_LairPortalTimer` | 0x0059D99A, 0x0059D9A5 | clear, clear | two rooms |
+| `sub_0059DD80_A2Q6_StaffPlaced` | 0x0059DF15, 0x0059DF22 | set, set | two rooms (registers, no `UnitGetRoom`) |
+| `sub_005A9930_PermPortalAtUnit` | 0x005A99CB | clear | the unit's room, after `PortalObjectCreate` has pinned both ends |
+| `0x005ABEB0` (no direct reference) | 0x005ABEC6 | clear | a unit's room |
+| `0x005ABEE0` (pointer at `0x0073C8CC`) | 0x005ABF20 | clear | a unit's room |
+| `0x005AD930` (no direct reference) | 0x005AD95A | clear | a room, after `0x0058E920` |
+| `0x005AD970` (pointer at `0x0073C924`) | 0x005AD9B3 | clear | a room, after `0x0058E920` |
+| `0x005B0A40` (missile do-function 36, `g_MissileSrvDoFuncs`; Missiles row 625 `baalfx control`) | 0x005B0A87 | clear | a room, after `0x0058E920` |
+| `sub_005B6AD0_SealObjectCreate` | 0x005B6B52 | set | the new seal's room |
+| `0x005DFEE0` (called from `sub_005BB980_A3Q5_CompellingOrbOperate`) | 0x005DFFCB | set | a unit's room |
+| `0x005EEAA0` (no direct reference) | 0x005EEAD1 | set | a unit's room, when it does not have state `0x92` |
+
+Unnamed functions are given by address. Their callers, as far as Ghidra's xrefs and the image's pointer tables give
+them, are in the first column; their purpose is not read. The quest sites set the pin when an event starts and clear
+it when it ends. That is a reading of the call order, not a traced lifetime.
+
 ## Data touched
 
 - tbl:Levels.txt:SaveMonsters (leveldefs `+0x94`), tbl:Levels.txt:MonWndr (`+0x2E`), Levels `+0x03` (act).
@@ -977,9 +1061,9 @@ rest of the gate stands. The save-test census of `SaveMonsters` 0 levels met 12 
 
 Each is a Phase 2 question (§ P2 questions in the plan log) unless it says otherwise.
 
-- [L] Whether a wanderer (target list 8) is saved as alignment 2 (dropped at the restore) or 0 (the fatal `0x691`):
-  a static read of `SpawnAtPos`'s alignment write answers it (MonStats `Align` 1 for `rogue2` predicts 2). A run will
-  hardly see one: the gate passes 1 in 32768 room updates and the roll 3 in 100 (§ 7).
+- ~~Whether a wanderer (target list 8) is saved as alignment 2 (dropped at the restore) or 0 (the fatal `0x691`).~~
+  Read in § 11.4 (b): alignment 2 at the creation, so it is dropped. A run will hardly see one: the gate passes 1 in
+  32768 room updates and the roll 3 in 100 (§ 7).
 - [L] The town-follow case (§ 11 shortfall, § 11.1 (a)): a hostile monster in a town room by a route the path
   planner's target test does not cover. Recipe leads, for a harness addendum: a monster whose chase target is outside
   the camp while its route crosses a town room (a player at the Rogue Encampment's edge, inside the Blood Moor), or a
@@ -1005,9 +1089,8 @@ Each is a Phase 2 question (§ P2 questions in the plan log) unless it says othe
 - [L] Whether a kept lifecycle log shows the minion restore's unit seed after the handlers (§ 11.1 (c)). If it does,
   the flag-0 reading of `MinionRestore` can be checked from the logs without a run.
 - [L] Which client-copy code detached the path of the client-copy units of drlg/0004's 19 (§ 8); code still to read.
-- [L] DUNGEON act `+0x50` reads as "client act". The values are settled by § 11 (0 on the server at every pass, and
-  `EDX` 0 at every client tiles release, so non-zero there); the name stays a reading until the act constructor is
-  read.
+- ~~DUNGEON act `+0x50` reads as "client act".~~ The act constructor is read in § 11.4 (a): the client's caller
+  passes 1, the server's 0.
 - [L] The meanings of monster data `+0x58` and `+0x5C` bit 1, record `+0x2C`, and the state list
   at DataTables `+0x174`; code still to read.
 - `MonRegionUnitLeave` at the restore and the restored item's position: answered in § 11.

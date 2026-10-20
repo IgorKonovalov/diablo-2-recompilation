@@ -892,7 +892,7 @@ Batch H5c of [plan 0038](../../plans/0038-inferred-claims-sweep.md) Phase 2: row
 - [C] **Release.** On a built room `RoomTilesRelease` clears `0x100000`, adds 1 to `[act+0x468]`, leaves `+0x54 = 0`,
   zeroes `+0x0C`/`+0x14` of every warp node (35 rooms with nodes), keeps `0x1000000`, `0x2000000`, `+0x2C` and `+0x04`,
   zeroes `+0x30`, and sets `0x200000` iff `EDX` ≠ 0 (626 of 1516): 1516 releases compared field by field. On an unbuilt
-  room it only zeroes `+0x30` (539), besides the logic-record free that every call makes first (`0x0066F1D4`). At every exit `+0x64` is 0 (374 calls logged it: 267 freed a record, 107 found
+  room it only zeroes `+0x30` (539), besides the logic-record free that every call makes. *Order corrected 2026-10-20 (plan 0049):* the call does not free the logic record first. In code order it (1) frees the active room when `EDX` = 0 and `+0x30` ≠ 0 (`0x0061A910` at 0x0066F1CA, where the call nests, below), (2) writes `+0x30` ← 0 (0x0066F1D1), (3) frees the logic record (`0x0066C6E0` at 0x0066F1D4), then (4) tests `0x100000` (0x0066F1DC) for the built-room part. At every exit `+0x64` is 0 (374 calls logged it: 267 freed a record, 107 found
   none), the logic record S4a reads as freed here ([drlg/0005 § Plan 0038 batch S4a](0005-collision.md#plan-0038-batch-s4a-2026-10-16)).
   Every built-room release came through the wrapper `sub_0066B4C0_RoomReleaseWrap`, which first writes `+0x60` = the
   active room's flags bit 0. **Correction to the static reading:** the call nests. A release with `EDX` 0 frees the

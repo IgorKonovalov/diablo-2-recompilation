@@ -102,3 +102,26 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-20 — Drafted (architect, `lane/plans45`).** Status `proposed`; three stale entries closed at the triage.
 - **2026-10-20 — Approved (owner, via the orchestrator).** Plans 0045–0049 and ADR-0020 approved as proposed; the run
   order of the [plans index](README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049) is the current queue.
+- **2026-10-20 — Phase 1 landed (reverser, `lane/p49r`; review requested).** Static only: no slot. Ghidra ran on its
+  own project copy (`-Xmx3G`), with objdump as the second tool. Kept outputs are under `workspace/logs/p49r/` (manifest
+  `p49r-manifest.txt`, `sha256sum -c` clean); the new tool is `tools/sweep_p49r.py` (`tables`, `excel`, `qsites`).
+  - **Entries:** 12 of the 13 are closed, and the queue entry (item 1) is pruned and closed. Items 6 (op 6/7 emulation)
+    and 13 (S1e (b)) are optional, not taken, and annotated as out of this plan.
+  - **Readings** (all `[I]`):
+    - MonPlace rows 19–21, 24–28 ([monsters/0003 § 7](../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20)).
+    - `0x005C09E0` = `STATEVENT_Reanimate`, the item property `reanimate`, not a skill; `FormationSpawn` case 5 is never
+      reached; `MissileSpawnOwnedMonster` = `bonewallmaker` ([items/0002](../findings/items/0002-quality-roll.md#plan-0049-phase-1-2026-10-20-static)).
+    - Mode word 1 = *Battle.net*; a saved corpse loses its stat 13; the starting items' freed property list explains the
+      48 empty lists, and the other 5 are `d2s.py`-built ([player/0001](../findings/player/0001-creation.md#plan-0049-phase-1-2026-10-20-static)).
+    - The 45 register sites and 12 steps clears are traced for qd 8, 10 and 19 ([items/0010](../findings/items/0010-quest-drops.md#plan-0049-phase-1-2026-10-20-static-the-s2c-static-leftovers)).
+    - Act `+0x50`, the wanderer's alignment, the 31 pin sites ([drlg/0009 § 11.4](../findings/drlg/0009-room-lifecycle.md#114-the-plan-0040-phase-1-review-follow-ups-plan-0049-phase-1-lanep49r-static)).
+    - The H5c release order ([drlg/0002](../findings/drlg/0002-room-build-draws.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)).
+    - `0x0056EDE0` = `MissileCreateAt`: missiles 288, 332 and 625 ([quests/0001 § 7](../findings/quests/0001-progression.md)).
+    - The src:arreat-summit-experience re-fetch (ADR-0007): two verdicts, held with refinement and held.
+  - **Tools:** `sweep_s1a.py` (breakdown, admission note), `sweep_s1b.py` (indirect-call split 359/115/58/0;
+    re-seeds 132/132 and 0/25), `monstats.py` (hireling `LIVE`), `drlg.py` (refuses a second game in one log).
+  - **Gate:** the W1 at items/0001:992 and the three `lane/p42r` W1 got anchors. The ten W3 symbols are now cited where
+    they are used. The W1/W3 count outside `docs/specs/data/excel.md` is 0.
+  - **Symbols:** 3 new `I` rows (`sub_0056EDE0_MissileCreateAt`, `STATEVENT_Reanimate`, `g_MissileSrvDoFuncs`); none
+    in lane A's skills-dispatch area.
+  - **Surprise:** the "five rare cube outputs" were never game creations.

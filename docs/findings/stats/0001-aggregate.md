@@ -140,6 +140,7 @@ Phase 1b, compared after the code reading of § 4 – § 8 (blind first).
 | `0x0055F850` | `sub_0055F850_ItemBreak` | flag `0x100`, durability 0, unlink, set update | I |
 | `0x00663CC0`, `0x00663A20`, `0x00663B40`, `0x00660120` | `SETS_UpdateOnEquip`, `SETS_ToggleItemAProps`, `SETS_UpdateOwnerBonusList`, `sub_00660120_SetBonusApply` | the set activation | C |
 | `0x00535D10`, `0x00623C80` | `sub_00535D10_WeaponListsRelink`, `sub_00623C80_WeaponListsRelink2` | relink the two hands of a dual-wielder | I |
+| `0x0063BF90` | `INV_GetOtherWeapon` | given an inventory (magic `0x01020304`), the hand item (body-slot record `+0x10` or `+0x14`, each kept only when `ITEMS_UnitIsType(item, 0x2D)`) other than the one whose unit id (`+0x0C`) equals inventory `+0x1C`, else 0; called by both relinks (0x00535D41, 0x00535DB3, 0x00623CE1) and by `0x00535E20` (0x00535E51) | I |
 
 ## Walkthrough
 
