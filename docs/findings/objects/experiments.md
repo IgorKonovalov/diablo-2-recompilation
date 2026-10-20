@@ -277,3 +277,115 @@
 - Backs pool 23 of [monsters/0001 § Plan 0038 batch S3b](../monsters/0001-level-pool.md#plan-0038-batch-s3b-2026-10-16) and
   spawn 2 of [monsters/0002](../monsters/0002-room-population.md#plan-0038-batch-s3b-2026-10-16).
 
+
+## run:2026-10-19-h5b-objects
+
+- **Question:** (plan 0038 batch H5b) Do the objects claims still `[I]` after run:2026-10-15-objects hold where the
+  game reaches them: the trap chain from the operate to its effect (`OBJ_TrapFire`, `OBJ_TrapEvent`, the trap
+  functions), `OperateFn` 26, 48 and 68, the casket after an item, the casket-group cluster lists, the shrine and well
+  caps, the forced health shrine, `InitFn` 57, 58 and the quest-object `InitFn`s, the level-25 super chest, the door
+  masks, an object of size 0 with `HasCollision`, and a rectangle test that returns `0x27`?
+- **Setup:** ADR-0003 harness, slot 1 (`:8`, `workspace/wineprefix-1`), the pinned `game.exe`, Normal, expansion.
+  - Logger `tools/gdb/objects-h5b.gdb` (sha256 prefix `d15d54d80f15cef1`): `objects.gdb` plus `vendors.py` (the `OBJS`
+    and `NPC` lines the pilot reads). `tools/gdb/objects.py` (`7d78c5e341bbe04e`) adds the trap lines `TF`/`TFQ`
+    (`OBJ_TrapFire` and its queue call), `TE0` (`OBJ_TrapEvent`: type, level, frame) and `TT0`/`TTX` (the trap
+    function's entry and return). Run with `MONSPAWN_WATCH=` empty, as before.
+  - Character `ObjNova`, the save of run:2026-10-15-objects (`d54d5dc3…`, built with `tools/d2s.py build` from
+    `tools/d2s_recipes/objnova.json`), installed per session (`saves.py --slot 1` aside / install / restore, tag `h5b`).
+  - Scripted play per [harness-play](../../../.claude/skills/reverser/references/harness-play.md):
+    `tools/h5b_sessions.py run --slot 1 --tag h5b --saves workspace/scratch-h5b/saves --run run-2026-10-19-h5b <s>`,
+    one game per session, a built-in watchdog (log silent for 90 s or gdb's exit line). Each session's commands
+    (waypoint, `explore` with `--loot`, `--loot-fns`, `--loot-trap`, descents, `objop` with `--obj-mem`, `--trap-types`
+    or `--goal`) are the session's row in that file's `SESSIONS`; the pilot is `tools/d2pilot.py`. The first two
+    sessions (cata, jail) ran on 2026-10-19 with commit `fcf3f80`'s tools; the other 20 on 2026-10-20 with the
+    revisions of `fcf3f80`, `7e30469`, `f516383` and `e22b8ee` (each row is unchanged in the last).
+  - Checker `tools/objects.py check` (`67f4853ddd88da11`), with `tools/collision.py` (`5a304a8723a856e9`: the near-list
+    fix of [drlg/0005 § Plan 0038 batch H5b](../drlg/0005-collision.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects)).
+    Counts: `tools/sweep_h5b.py` (`4d01cb921edb1a6d`, modes `static` and `logs`). Tables from
+    `workspace/merged/data/global/excel`.
+- **Procedure:** the 22 sessions below, then (from `workspace/logs/h5b/`, outputs kept beside the logs):
+  ```
+  python3 -I tools/objects.py check $(ls -tr workspace/logs/h5b/run-*.log)          > check-h5b.txt
+  python3 -I tools/objects.py check workspace/logs/objects-s{2..30}-*.log           > check-old29.txt
+  python3 -I tools/sweep_h5b.py static                                               > sweep-h5b-static.txt
+  python3 -I tools/sweep_h5b.py logs $(ls -tr workspace/logs/h5b/run-*.log)         > sweep-h5b-logs.txt
+  python3 -I tools/collision.py check workspace/logs/collision-s*.log                > collision-check-run-2026-10-14.txt
+  ```
+  Manifest `workspace/logs/h5b-manifest.sha256` (sha256 prefix `b3b8dc90d9360789`; 85 lines, paths relative to
+  `workspace/logs/`, so `sha256sum -c h5b-manifest.sha256` passes from there): the 22 logs and pilot outputs, the five
+  outputs above (`check-h5b.txt` `2cd472fb90a2a128`, `check-old29.txt` `8d935bfff7864125`, `sweep-h5b-static.txt`
+  `62d5fd18b3c58cf7`, `sweep-h5b-logs.txt` `7a518b6b4fd00572`, `collision-check-run-2026-10-14.txt`
+  `d1167a8509cb6124`), the 29 logs of run:2026-10-15-objects and the 7 of run:2026-10-14-collision.
+
+| Log (`workspace/logs/h5b/`) | Levels | Objects created | Operates modelled | Checks |
+|---|---|---|---|---|
+| `run-2026-10-19-h5b-s1-3901-cata.log` | 103, 35 | 151 | 10 | 6667, 0 mismatches |
+| `run-2026-10-19-h5b-s1-3902-jail.log` | 103, 29, 30, 31 | 249 | 25 | 9050, 0 mismatches |
+| `run-2026-10-19-h5b-s1-3911-cata2.log` | 103, 35, 36, 37 | 424 | 37 | 17441, 0 mismatches |
+| `run-2026-10-19-h5b-s1-3912-jail2.log` | 103, 29, 28 | 195 | 7 | 8212, 0 mismatches |
+| `run-2026-10-19-h5b-s1-3913-cave.log` | 103, 3, 9, 13 | 109 | 0 | 6085, 1 logger error |
+| `run-2026-10-19-h5b-s1-3903-cotd.log` | 103, 106 | 229 | 2 | 10365, 0 mismatches |
+| `run-2026-10-19-h5b-s1-3914-jail3.log` | 103, 29, 30, 31 | 394 | 31 | 14729, 0 mismatches |
+| `run-2026-10-19-h5b-s1-3913-cave2.log` | 103, 3, 9, 13 | 99 | 0 | 5443, 0 mismatches |
+| `run-2026-10-19-h5b-s1-3916-cotd2.log` | 103, 106 | 518 | 11 | 19683, 0 mismatches |
+| `run-2026-10-19-h5b-s1-3905-flayer.log` | 103, 78, 86 | 77 | 0 | 4236, 0 mismatches |
+| `run-2026-10-19-h5b-s1-3907-tower.log` | 103, 6, 20–25 | 212 | 8 | 10432, 0 mismatches |
+| `run-2026-10-19-h5b-s1-3906-harro.log` | 103, 109 | 60 | 0 | 1907, 0 mismatches |
+| `run-2026-10-19-h5b-s1-3904-arcane.log` | 103, 74 | 119 | 1 | 5918, 0 mismatches |
+| `run-2026-10-19-h5b-s1-3921-traps1.log` | 103, 35, 36, 37 | 469 | 39 | 25389, 0 mismatches |
+| `run-2026-10-19-h5b-s1-3913-cave3.log` | 103, 3, 9, 13 | 108 | 0 | 6159, 0 mismatches |
+| `run-2026-10-19-h5b-s1-3917-flayer2.log` | 103, 78, 86, 87 | 110 | 3 | 7045, 0 mismatches |
+| `run-2026-10-19-h5b-s1-3918-flayer3.log` | 103, 78, 88, 89 | 244 | 2 | 19790, 0 mismatches |
+| `run-2026-10-19-h5b-s1-3923-ice.log` | 103, 113 | 249 | 15 | 9779, 0 mismatches |
+| `run-2026-10-19-h5b-s1-3922-traps2.log` | 103, 35, 36, 37 | 506 | 30 | 26264, 0 mismatches |
+| `run-2026-10-19-h5b-s1-3913-cave4.log` | 103, 3, 9, 13 | 134 | 0 | 7057, 0 mismatches |
+| `run-2026-10-19-h5b-s1-3924-traps3.log` | 103, 57 | 139 | 32 | 6269, 0 mismatches |
+| `run-2026-10-19-h5b-s1-3925-traps4.log` | 103, 57 | 151 | 34 | 6395, 0 mismatches |
+
+  - The jail session stopped mid-session at the 2026-10-19 usage limit; its log checks through its last line and is
+    part of the record. The cave log's one failure is a logger error, not a model mismatch: the collision logger could
+    not read a monster's cell list (`LOGERR collision MemoryError`, line 22353), which the checker counts as a
+    failure; nothing after it disagrees.
+  - Session details that fell short: flayer's first descent took LvlWarp row 53 into level 86 (fixed in flayer3); the
+    harro session's NPC walks failed and its second waypoint trip did not open the list (the ice session took the
+    Crystalline Passage waypoint directly); the arcane session's 19 pad operates activated no room inside an operate;
+    the sparkly chest 397 was created in cave, cave2 and cave4 but never reached by the pilot.
+- **Observed** (`check-h5b.txt`, `check-old29.txt`, trimmed):
+  ```
+  objects: 234315 checks, 1 mismatches          (22 logs; the 1 is the cave log's logger error)
+  objects: 150314 checks, 0 mismatches          (the 29 logs of run:2026-10-15-objects; 150338 before the nine
+                                                 monster-creating InitFns became seed oracles)
+  windows predicted RW1 -> RW4 (room, object-region and game seed)           1319
+  OBJ_TrapFire calls (TF): type 0 204, 1 1, 2 2, 3 1, 4 1, 5 3, 6 1, 7 1
+  trap events queued (event 4 at frame + 35) 10; run at the queued frame 10
+  trap functions chosen as modelled: type 4 level 35 -> 005824b0 (remap); type 1 level 57 -> 00582490;
+      types 2, 6 levels 57, 74 -> 005824b0; type 3 level 113 -> 005824d0; types 5, 7 levels 36, 113 -> 00582380
+  OBJTRAP_ObjectCreate runs predicted (fires created: 2)                     4
+  trap functions 0x00582420 with no object-region draw                       6
+  PopulateFn 1 follower walks after a class whose size differs from the member's 32
+  shrine handler at its cap 2 (both > roomCount / 8: nShrine 2, roomCount 15)
+  shrine handler calls with the due rule on 3; placed: code 2 kept 1, converted 1
+  cov forced health shrines (level, placed class, its code, new class) [(106, 231, 14, 96)]
+  theme rolls 301; drew a theme 45; drew theme 3 below the count, disabled (entry {0, 0}): no run 4
+  door marks compared (IsDoor 1, BlocksVis 0, BlockMissile 0): mask 0x0400   60   (old logs: 13)
+  rect position tests returning OUT_OF_ROOM 0x27 unmasked (predicted)        734  (old logs: 514)
+  cov size-0 objects with HasCollision (no mark) [(106, 399, 0, True), (106, 399, 2, False), (109, 523, 0, True)]
+  InitFn 57 runs 3; InitFn 58 runs 2; InitFn oracles 43 (46: 39, 25: 1, 47: 1, 66: 1, 71: 1)
+  casket operates (OperateFn 1): after an item, r < 8192 41, r >= 8192 3; no item 14
+  bookshelf operates (OperateFn 26): r = 13 (> 12), b = 1 -> ibk             1
+  trapped soul operates (OperateFn 48): r < 90, an item, mode 5              9
+  evil urn operates (OperateFn 68): an item, r = low mod 255 <= Parm7        1
+  ```
+  `sweep-h5b-static.txt`: `doors=25 doors_no_blocksvis=7 doors_mask_0x804=0 shrine_members=88 orient1=9 orient3=79
+  placebyorient_sites=1 size0_hascollision=12 trapfns=10 trapfire_sites=6`. `sweep-h5b-logs.txt`: 217 operates call
+  `OBJ_TrapFire`, all as their last call. `collision-check-run-2026-10-14.txt`: `monspawn: 75838 checks, 0 mismatches;
+  collision: 20537 checks, 0 mismatches` with the near-list fix.
+  - Grid model fix during the run: before it, flayer3 failed one `COLL_WHTest` (line 44192, site `0x00550B89`, game
+    `0x0001`, model `0x0027`): a stale active room of a re-activated DRLG room stood in a neighbour's near list. Two
+    first attempts (dropping the stale room; replacing it without the pointer-reuse test) failed another test of the
+    same log (line 25087) and were discarded.
+- **Conclusion:** [objects/0001 § Plan 0038 batch H5b](0001-object-population.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects)
+  and [drlg/0005 § Plan 0038 batch H5b](../drlg/0005-collision.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects).
+  Not reached: trap types 8 and 9, type 3 below level 40, the well cap, the shrine cap's `= 10` half, the class-397
+  operate, `OperateFn` 48's `r ≥ 90` and no-item branches, 68's no-item branch, the bookshelf scroll side, a window
+  inside a portal-like operate, `InitFn` 54, 55, 62, 68, 69, 79, and the 582 quest object.

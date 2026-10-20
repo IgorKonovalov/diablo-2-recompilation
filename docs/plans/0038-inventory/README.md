@@ -811,6 +811,14 @@ Net effect: none on the totals. After merging `main` (`c0c99f6`), which moved no
 567, harness 532, c-emu awaiting a batch 0, blocked 415** (d-none 282, d-edit 73, d-sim 28, d-2c 14, d-owner 10,
 d-0032 8), **deferred 2, raised 10: 1 526.**
 
+**H5b (`objects`, run:2026-10-19-h5b-objects, pending review).** 28 rows, 33 statements
+([objects/0001 § Plan 0038 batch H5b](../../findings/objects/0001-object-population.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects),
+[drlg/0005 § Plan 0038 batch H5b](../../findings/drlg/0005-collision.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects)):
+raised 10 rows (collision 27, 39; objects 13, 16, 17, 40, 45, 50, 51, 52), raised in part 11 (collision 37; objects 3,
+4, 15, 23, 26, 27, 36, 38, 41, 42), shortfall 7 (objects 6, 19, 20, 35, 39, 46, 49). Proposed moves, for the review to
+rule: objects 20 → d-none; the `0x804` halves of collision 37 and objects 23 → d-none; objects 38's PreOperate half →
+d-none. No row moved here; totals unchanged until the review.
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is

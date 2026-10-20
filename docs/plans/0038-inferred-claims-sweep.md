@@ -2557,3 +2557,30 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     - `explore` ends when the level is done, and `--persist` does not continue it.
     - Bookshelves were created but not looted, so jail2 adds objop.
   - Slot 1 stopped, saves restored, no background process left.
+- **2026-10-20 — H5b (`objects`) done; review requested (reverser, `lane/h5b`, harness slot 1).** Resumed from the
+  entry above. Run **run:2026-10-19-h5b-objects**
+  ([objects/0001 § Plan 0038 batch H5b](../findings/objects/0001-object-population.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects),
+  [drlg/0005 § Plan 0038 batch H5b](../findings/drlg/0005-collision.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects),
+  [experiments](../findings/objects/experiments.md#run2026-10-19-h5b-objects)); manifest
+  `workspace/logs/h5b-manifest.sha256` (85 lines: logs, check and sweep outputs, the 29 + 7 older logs re-checked).
+  - **Sessions:** 20 today (cata2, jail2, cave, cotd, jail3, cave2, cotd2, flayer, tower, harro, arcane, traps1, cave3,
+    flayer2, flayer3, ice, traps2, cave4, traps3, traps4) plus the 2 of 2026-10-19: 22 logs.
+  - **Checks:** `objects.py check` on the 22 logs: **234 315 checks, 1 failure** (a logger error in the cave log, no
+    model mismatch); the 29 logs of run:2026-10-15-objects: 150 314, 0 mismatches; `collision.py check` on
+    run:2026-10-14-collision: 0 mismatches.
+  - **Raised (10 rows):** collision 27, 39; objects 13, 16, 17, 40, 45, 50, 51, 52.
+  - **Raised in part (11):** collision 37; objects 3, 4, 15, 23, 26, 27, 36, 38, 41, 42 (remainders in the finding).
+  - **Shortfall (7):** objects 6, 19, 20, 35, 39, 46, 49. Proposed d-none: objects 20, the `0x804` halves of collision
+    37 and objects 23, objects 38's PreOperate half (inventory § 2.6 entry, pending review).
+  - **Corrected:** objects/0001 § 13.6, the second trap fire is class 160. New readings: `OBJ_TrapEvent`'s level remap
+    (`[I]`, one case `[C]`); the theme table's enabled flag (theme 3 drawn 4 times, no run).
+  - **Tools:** `objects.py` (theme enable flag, monster-creating InitFns as oracles, counters), `collision.py`
+    (near lists after a DRLG room's re-activation), `d2pilot.py objop` (`--obj-mem`, `--trap-types`, `--goal`, status
+    lines), `h5b_sessions.py` (sessions, watchdog race). Symbols: 5 trap functions added, 6 raised to `C`.
+  - **Backlog:** review request
+    [2026-10-20-reverser-architect-review-h5b-objects](../backlog/2026-10-20-reverser-architect-review-h5b-objects.md);
+    spec-writer entry
+    [2026-10-20-reverser-spec-writer-h5b-objects-spec-updates](../backlog/2026-10-20-reverser-spec-writer-h5b-objects-spec-updates.md).
+  - **Left:** trap types 8 and 9, the well cap and the shrine cap's `= 10` half, the class-397 operate (the pilot
+    never reached the chest), a window inside a portal-like operate, quest 13's 582 object, `InitFn` 54/55/62/68/69/79.
+  - Slot 1 stopped, saves restored (aside removed, harness idle), no background process left.

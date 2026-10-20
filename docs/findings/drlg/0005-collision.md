@@ -708,7 +708,9 @@ OBJINIT_Portal (InitFn 12, 0x0054FE70): a portal in mode 0 is set to mode 1 and 
   applied without a line to compare. (run:2026-10-15-objects, fn:sub_00554850_SUnitPathCreate@0x00554850)
 - [I] Not reached: a door with `BlockMissile` and no `BlocksVis` (`0x804`), a door with neither (`0x400`), an object
   whose `SizeX` or `SizeY` is 0 with `HasCollision` set, and a rectangle test that leaves every room reachable from the
-  hint (`0x27`). Units that move between their room's activation and its window (players, wandering monsters) are not
+  hint (`0x27`). (Superseded in [§ Plan 0038 batch H5b](#plan-0038-batch-h5b-run2026-10-19-h5b-objects): the `0x400`
+  door, the zero size and the `0x27` test are reached and `[C]`, the last one already in these logs; `0x804` has no
+  stock door.) Units that move between their room's activation and its window (players, wandering monsters) are not
   modelled, because their moves are not logged. None of the 5859 tests needed one: R3's residue (§ 13) sits in cells
   no object box covered. (fn:UNIT_GetCollMask@0x006209D0, fn:COLL_RectTest@0x0064CEB0, run:2026-10-15-objects)
 - Inputs that stay logged (ADR-0004): the tile choice and the entry flags at activation (drlg/room-tiles; the flags are
@@ -907,6 +909,40 @@ struck there.
   monster. (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:MERC_Create@0x005774F0, fn:MERC_Init@0x00573270,
   fn:sub_005543B0_MonAlignSet@0x005543B0, fn:sub_005557D0_PresetUnitDispatch@0x005557D0)
 
+## Plan 0038 batch H5b (run:2026-10-19-h5b-objects)
+
+Harness batch H5b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), rows drlg-collision 27, 37 and 39 of
+[inventory drlg-collision](../../plans/0038-inventory/drlg-collision.md). Record:
+[objects experiments § run:2026-10-19-h5b-objects](../objects/experiments.md#run2026-10-19-h5b-objects); the objects
+side is [objects/0001 § Plan 0038 batch H5b](../objects/0001-object-population.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects).
+Each statement below corrects the "not reached" of § 14 for its case.
+
+- [C] **Row 27: a rectangle test with a footprint cell in no room reachable from the hint returns `0x27`
+  unmasked.** `tools/objects.py check` predicts every `COLL_WHTest` of the objects window on the grid model of § 14; a
+  rectangle result with `(r & 0x27) = 0x27` and bits outside the mask is this case, since a cell result is masked. The
+  29 logs of run:2026-10-15-objects already held 514 of them (sites `0x005504B3`, `0x0055062D`, `0x00550B89`, `0x0055029E`,
+  levels 3–125); the H5b logs add 734. All were predicted, by the piece logic of § 4: the first piece's room by
+  `RoomAtSubtile` from the hint, the right and bottom pieces from that room. (fn:COLL_RectTest@0x0064CEB0,
+  fn:COLL_RectSplit@0x0064CDF0, fn:COLL_WHTest@0x0064D800, run:2026-10-15-objects, run:2026-10-19-h5b-objects)
+- **The grid model's near lists after a revisit** (a model fix, not a game claim). In session flayer3 a DRLG room of
+  the Flayer Jungle was activated a second time under a new active room while the first one still stood in a
+  neighbour's near list in the model; a bottom piece was then looked up from the stale room and gave `0x27` where the
+  game gave `0x0001`. The model now puts the new active room in the old one's place in every near list (same level,
+  DRLG room and rect, and only while the old pointer has not been reused by another room). With that, 0 mismatches on
+  all the H5b logs and on the 29 older ones; `tools/collision.py check` on the seven run:2026-10-14-collision logs stays
+  at 0 mismatches. The game's own unlink of a freed room was not read; [I] that the game keeps the near-list slot and
+  replaces the pointer (*Open questions*). (fn:COLL_RectTest@0x0064CEB0, run:2026-10-19-h5b-objects)
+- [C] **Row 37, the `0x400` half: a door with neither `BlocksVis` nor `BlockMissile` marks `0x400`.** 60 marks of
+  classes 13 and 14 matched their `CM` line in the H5b logs, and 13 more in the older logs (counted now). (fn:UNIT_GetCollMask@0x006209D0,
+  run:2026-10-19-h5b-objects)
+- [I] **Row 37, the `0x804` half: no stock data.** Among the 25 `IsDoor` records, the 7 with `BlocksVis` 0 all have
+  `BlockMissile` 0 (`python3 -I tools/sweep_h5b.py static`). Proposed d-none. (fn:UNIT_GetCollMask@0x006209D0,
+  tbl:Objects.txt:IsDoor, tbl:Objects.txt:BlockMissile)
+- [C] **Row 39: an object with `HasCollision` set and a zero size makes no mark.** Class 523 (0 × 0, `HasCollision` 1 in
+  every mode) in Harrogath's DS1 and the fissure 399 in the City of the Damned were created in mode 0 inside a logged
+  window, and no `CM` line followed either.
+  (fn:sub_00554850_SUnitPathCreate@0x00554850, tbl:Objects.txt:SizeX, run:2026-10-19-h5b-objects)
+
 ## Data touched
 
 - tbl:MonStats2.txt:SizeX (`+0x08`, s8; `+0x09` as Y), tbl:MonStats2.txt:spawnCol (`+0x0A`, through monsters/0002).
@@ -939,6 +975,9 @@ struck there.
   `0x02` (grid `0x10`, 4962) over whole tiles, never `0x80`. Which DS1/maze cells carry them stays with drlg/0002.~~ Answered in
   [drlg/0002](0002-room-build-draws.md) § Entry flags (plan 0027 Phase 2): the full formula per entry kind, reproduced on every
   logged entry; `0x80` (cell bit 16) occurs on 467 entries of those logs (floors and walls).
+- (H5b) How the game unlinks a freed active room from its neighbours' near lists. The grid model puts a re-activated
+  DRLG room's new active room in the old one's place (§ Plan 0038 batch H5b), which fits every logged test; the free
+  path (`0x0052D240`'s callees) was not read.
 - No writer of bits 3 and 14 was found in the code read (bit 6: missiles, found at Phase 1b). No cell of the run's snapshots needed one.
 - Phase 1b: whether a monster created dead (`0x0063EA40`, re-marked at the end of `SUnitCreate`) also honours `deadCol`; five of the seven
   `UnitCorpseColl` callers are unread. Also whether any spawn path tests `flying` (not reached in Phase 2).
