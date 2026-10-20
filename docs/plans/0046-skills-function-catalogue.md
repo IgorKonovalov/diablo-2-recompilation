@@ -259,3 +259,15 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   ([archive](../backlog/archive/2026-10-20-reverser-architect-lane-p46m2-review-plan-0046-batch-9b.md)); ledger rows
   added. **Batch 9c may start** (missile hit 1–29), with 9b's checker conventions (call site asserted, two controls per
   family) and the untouched-seed check added to the model wherever a family writes seeds it should not step.
+- **2026-10-20 — ADR-0021 accepted by the owner (architect, `lane/adr21`, no run).** The owner accepted
+  [ADR-0021](../adrs/0021-observed-boundaries-in-emulation.md) (observed boundaries in emulated reproduction; amends
+  ADR-0015 (1) and (3)). As the 9a review specified, the batch 9a claims held at `[I]` pending it return to `[C]`
+  without a re-run, (b) supplied by the review's call-site check (`callsites.txt` `8ea8058b…`), each naming its
+  boundary and covering nothing after it: [skills/0004](../findings/skills/0004-missile-do-1-18.md) Answer 6 bullets
+  (draws, sub-missiles, Frozen Orb, scatter, towerchestspawner, homing), §§ 3–11 11 statements (§ 3 1, § 4 1, § 5 1,
+  § 6 1, § 7 2, § 8 1, § 9 2, § 10 1, § 11 1), the Functions table 16 rows (do 7's row stays `I`, gates `[C]`, re-plan
+  `[I]`), with § 2 recording the acceptance and the return address of every boundary; the dated notes in skills/0002
+  §§ 4 and 8; the experiments conclusion; the spec-writer backlog entry on quests/0001's open question. Kept `[I]`:
+  do 7's re-plan, do 13, what follows `COLL_CellTestAt` in `0x005A9820`, the gold item after the free spot, do 16's
+  stores after the plan, do 18's return value, and everything after a boundary. Batch 9b's `[I] (ADR-0021)` claims are
+  its own review's. Evidence rules and the reverser's `emuboundary` text now cite ADR-0021.
