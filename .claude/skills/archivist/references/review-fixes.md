@@ -6,7 +6,7 @@ against all of them before you file the review request. Categories are those of 
 
 1. **Check the findings before tagging a meaning.** Where a finding states it with addresses, write
    `[I]` and cite it; where a reviewed spec settles it, state it. Seen: the resurrection price `[L]`
-   ([0043](../../../../docs/plans/done/0043-items-economy.md) P0); the four `SubWaypoint` levels ([0042](../../../../docs/plans/0042-quests-travel.md) P0); a
+   ([0043](../../../../docs/plans/done/0043-items-economy.md) P0); the four `SubWaypoint` levels ([0042](../../../../docs/plans/done/0042-quests-travel.md) P0); a
    raise missed ([0039](../../../../docs/plans/0039-backlog-sweep-4.md) P0).
 2. **A sentence about code with no finding is `[L]`**; "no reader" needs a full xref, otherwise write a
    scope note ("combat/0001 reads none of these"). Seen: "set by code" ([0041](../../../../docs/plans/done/0041-stats-and-states.md) P0);

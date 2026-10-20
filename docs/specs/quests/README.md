@@ -1,10 +1,10 @@
 ---
 spec: quests/overview
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, save/d2s, items/quest-drops, drlg/collision, drlg/warps, objects]
 consumed_by: [items/quest-drops, items/cube, objects, monsters/spawn, monsters/special, rng/seeds, save/d2s]
-tags: {C: 11, I: 5, L: 2}
+tags: {C: 11, I: 6, L: 2}
 updated: 2026-10-20
 ---
 
@@ -24,8 +24,8 @@ below.
 
 | File | Covers | Status |
 |---|---|---|
-| [progression.md](progression.md) | the quest record and its load rule, the 41 quest objects and the event dispatch, the join's game-wide pass, timers, NPC interaction, the quest-seed and player-seed draws, a section per quest (bit table and state diagram), the warp and portal gates, the creation-path readers | draft |
-| [travel.md](travel.md) | placement (`ActLevelSpot`, the level-point lookup, the free-cell search), waypoint activation and travel, act change through an NPC, the Durance and other travel portals, town portals (open, use, close), warps, resurrection and join placement, the real-time gates | draft |
+| [progression.md](progression.md) | the quest record and its load rule, the 41 quest objects and the event dispatch, the join's game-wide pass, timers, NPC interaction, the quest-seed and player-seed draws, a section per quest (bit table and state diagram), the warp and portal gates, the creation-path readers | reviewed |
+| [travel.md](travel.md) | placement (`ActLevelSpot`, the level-point lookup, the free-cell search), waypoint activation and travel, act change through an NPC, the Durance and other travel portals, town portals (open, use, close), warps, resurrection and join placement, the real-time gates | reviewed |
 
 Not covered: the quest drops, rewards and item services ([items/quest-drops](../items/quest-drops.md)), the dialogue
 text and the quest log's presentation, the AI and combat that decide when a boss dies (inputs here), and every two-client
@@ -75,8 +75,11 @@ flowchart TD
   fn:sub_0066AC40_LevelPointPick@0x0066AC40)
 - [C] The quest-seed draws the runs reached (NPC 331's talk, the eclipse arm, the cairn order on the `bkd ` use, the
   Dark Wanderer timer, Anya's reward in the three difficulties) and NPC 266's two player-seed draws were each predicted
-  from the seed before them; the Zoo's and NPC 377's draws are not reached on stock data ([progression § G](progression.md#g-the-draws)).
-  (run:2026-10-17-quests, run:2026-10-18-quests2, run:2026-10-19-quests3)
+  from the seed before them ([progression § G](progression.md#g-the-draws)). (run:2026-10-17-quests,
+  run:2026-10-18-quests2, run:2026-10-19-quests3)
+- [I] The Zoo's quest-seed draws and NPC 377's player-seed draw are not reached on stock data: object 567 and NPC 377
+  are placed by no stock DS1 ([progression § G](progression.md#g-the-draws)). (fn:sub_0058E830_A5Q6_ZooInit@0x0058E830,
+  0x0059E1CE)
 - [C] **One placement routine.** The waypoint, NPC and join arrivals and the portals' town ends the runs logged went
   through `ActLevelSpot`: a level point, the subtile `5·t + 3`, then the nearest free cell (124 placements)
   ([travel § A](travel.md#a-placement)). (fn:sub_0061B060_ActLevelSpot@0x0061B060, run:2026-10-17-quests)

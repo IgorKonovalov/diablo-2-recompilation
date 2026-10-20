@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-18
 status: done
 context:
-  - ../../plans/0042-quests-travel.md
+  - ../../plans/done/0042-quests-travel.md
   - ../../findings/quests/experiments.md#run2026-10-18-quests2
   - ../../findings/quests/0001-progression.md#16-phase-2-part-2-run2026-10-18-quests2
   - ../../findings/quests/0002-travel.md#13-phase-2-part-2-run2026-10-18-quests2

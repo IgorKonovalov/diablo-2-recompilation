@@ -43,5 +43,5 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     (0039 P1b ruling 4); a closed entry's "(3) deferred" with no home (H7a review, 0038).
 12. **Carry a correction into the section it corrects**, not only into the run's ledger section: the claim, its
     tables and the summary lists that repeat it. Seen: the summit door and the P1b summit-warp verdict
-    ([0042](../../../../docs/plans/0042-quests-travel.md) P2 part 1 review); NPC 266's two draws, word 40's bit map and
+    ([0042](../../../../docs/plans/done/0042-quests-travel.md) P2 part 1 review); NPC 266's two draws, word 40's bit map and
     the switched-off reward writes, left in § 16 only (0042 P2 part 2 review).

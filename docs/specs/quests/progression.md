@@ -1,10 +1,10 @@
 ---
 spec: quests/progression
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, save/d2s, items/quest-drops, objects, monsters/spawn, monsters/special, quests/travel]
 consumed_by: [items/quest-drops, items/cube, objects, monsters/spawn, monsters/special, quests/travel, save/d2s]
-tags: {C: 114, I: 315, L: 6}
+tags: {C: 114, I: 316, L: 6}
 updated: 2026-10-20
 ---
 
@@ -563,7 +563,7 @@ stateDiagram-v2
 | b13, b1 | set | `Gibbet` operate (object 26, `OperateFn` 10) by a player with b0, b1 clear; party members in Act I | 0x00593587, 0x00593591 | [I] (fn:sub_00593480_A1Q4_GibbetOperate@0x00593480) |
 | b13, b1 | set | the Gibbet's object event 7 (frame + 17): every player in level 38 with b0, b1 clear, and their Act I party | 0x0059317D, 0x00593187 | [I] (fn:sub_00593130_A1Q4_CreditTristram@0x00593130) |
 | b14 | set | the same event: fail others | 0x005931F7 | [I] (fn:sub_005931C0_A1Q4_FailOthers@0x005931C0) |
-| b14, G b13 | set | Cain lost, the `TownLevelLeave` path: the first arrival in level 40 from Act I with word 4 = 0 runs `0x00597310` from `TownLevelLeave` inside `PlayerChangeLevel`: G w4 b13, then b14 for the player (one client; the pass over every player with b0, b1 clear is read from the code); the e3 level-40 branch then finds state 7 and writes nothing, and later arrivals in 40 write nothing | 0x005973D2, 0x00592B46 | [C] (run:2026-10-19-quests3: x-entry, x-entry2, h-entry, and c-wp in the part 1 re-check; fn:sub_00597310_A1Q4_FailOnActLeave@0x00597310, 0x0053743D) |
+| b14, G b13 | set | Cain lost, the `TownLevelLeave` path: the first arrival in level 40 from Act I with word 4 = 0 runs `0x00597310` from `TownLevelLeave` inside `PlayerChangeLevel`: G w4 b13, then b14 for the player (one client; the pass over every player with b0, b1 clear is read from the code); the e3 level-40 branch then finds state 7 and writes nothing, and later arrivals in 40 write nothing | 0x005973D2, 0x00592B46 | [C] for one client (run:2026-10-19-quests3: x-entry, x-entry2, h-entry, and c-wp in the part 1 re-check; fn:sub_00597310_A1Q4_FailOnActLeave@0x00597310, 0x0053743D) |
 | b14, G b13 | set | Cain lost, the other paths: e3 entry to level 40 by a player with b0, b1 clear while Cain is not rescued (`+0x50` = 0, `+0x0C` < 6), and `0x00597310` from the Warriv travel branch | 0x00592B46, 0x00597005 | [I] (fn:sub_00592B10_A1Q4_FailPlayer@0x00592B10, fn:sub_005467E0_NpcActTravel@0x005467E0 0x00546A35, 0x00546AA9) |
 | b0; b1 clear | set / clear | e11 NPC 148 message 0x76 with b1 set; the ring reward (oracle) | 0x005923AC, 0x005923B6 | [C] (run:2026-10-18-quests2: x-talk1, h-talk1, c-talk1) |
 | G b13 | set | the same message: if G w4 b13 was clear (then `+0xF0`), and if the creator had b15 | 0x00592483, 0x005924D8 | [I] (fn:sub_00592250_A1Q4_NpcMessage@0x00592250) |
@@ -785,7 +785,7 @@ stateDiagram-v2
 ```
 W11. EclipseArm — e3, entering level 44 or 45 while the quest is active and its state is 0:
                                                                     [C] for level 44 (fn:sub_0059EDC0_A2Q3_EclipseArm@0x0059EDC0 0x0059EDC0–0x0059EDF3, 0x0059EE26–0x0059EE32, run:2026-10-19-quests3)
-       if private +0x01 ≠ 0: return                                   ; set here, cleared by the timer: guards only between the two
+       if private +0x01 ≠ 0: return                                   ; set here, cleared by the timer: guards only between the two; not reached
        private +0x01 ← 1
        Step(questSeed)                                                ; QUESTS_GetSeed, one draw
        period: u32 ← 15 + (questSeed.low & 1)                        ; RandLoHi(15, 17), power-of-two path: 15 or 16, never 17
@@ -825,7 +825,7 @@ stateDiagram-v2
 |---|---|---|---|---|
 | b8 | set | e11 NPC 331 (`act2guard2`) messages 0xBB–0xBD; no `+0x09` test, so also with the quest switched off | 0x0059AFB2 | [C] (run:2026-10-17-quests: 44 writes, quest off) |
 | b7 | set | e11 NPC 331 message 0xBA | 0x0059AFC3 | [I] (fn:sub_0059AF50_A2Q4_NpcMessage@0x0059AF50) |
-| b8, b7 | set | e3 entering level 50, b8 then b7; no state, bit or `+0x09` test on the path (reached with quest 11 active, word 12 = 0, and in part 2's development log switched off) | 0x0059F155, 0x0059F173 | [C] (run:2026-10-19-quests3: x-entry, x-entry2; fn:sub_0059F0C0_A2Q4_LevelChange@0x0059F0C0 0x0059F136–0x0059F173) |
+| b8, b7 | set | e3 entering level 50, b8 then b7; no state, bit or `+0x09` test on the path, read from the code (a part 2 development log, not part of the record, met it with the quest switched off) | 0x0059F155, 0x0059F173 | [C] for the branch reached, quest 11 active and word 12 = 0 (run:2026-10-19-quests3: x-entry, x-entry2; fn:sub_0059F0C0_A2Q4_LevelChange@0x0059F0C0 0x0059F136–0x0059F173) |
 | b2–b5 | set | per player with b0, b1 clear, by quest state | 0x0059ADFD, 0x0059AE13, 0x0059AE49, 0x0059AE38 | [I] (0x0059ADB0) |
 | b13, b1, b0, b8, b7; steps clear | set / clear | the journal operate (`OperateFn` 42, object 357): every player in level 74 with b0, b1 clear; party members in Act II | 0x0059B3D1–0x0059B46D | [I] (fn:sub_0059B970_A2Q4_JournalOperate@0x0059B970, fn:sub_0059B3F0_A2Q4_JournalCredit@0x0059B3F0) |
 | b14 | set | the journal: every other player with b0, b1 clear | 0x0059B354 | [I] (fn:sub_0059B970_A2Q4_JournalOperate@0x0059B970) |
@@ -1377,7 +1377,7 @@ stateDiagram-v2
 | b7 | set | the player uses `tr2 ` with b8 set and b7 clear; then `0x0058A0A0` builds the resistance list | 0x0055E4F5 | [C] for the branch reached (run:2026-10-19-quests3: x-anya; 0x0055E4CC–0x0055E501) |
 
 ```
-W37. AnyaReward — e11 NPC 512 message 0x4EA8:                        [C] (fn:sub_00589580_A5Q3_NpcMessage@0x00589580 0x00589883–0x005899E6, run:2026-10-19-quests3)
+W37. AnyaReward — e11 NPC 512 message 0x4EA8:                        [C] for the clvl branch of the table choice (fn:sub_00589580_A5Q3_NpcMessage@0x00589580 0x00589883–0x005899E6, run:2026-10-19-quests3); [I] for game+0x6A = 3
        QUESTS_GetSeed                                                 ; 0x00589929
        table ← Nightmare if d = 1 and (game+0x6A = 3 or clvl > 45); Hell if d = 2 and (game+0x6A = 3 or clvl > 65); else Normal
        k ← Range(questSeed, count[class] of table)                    ; one draw

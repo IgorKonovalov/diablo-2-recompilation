@@ -4,9 +4,9 @@ to: spec-writer
 date: 2026-10-20
 status: done
 context:
-  - ../specs/save/d2s.md
-  - ../findings/quests/0001-progression.md
-  - ../plans/0042-quests-travel.md
+  - ../../specs/save/d2s.md
+  - ../../findings/quests/0001-progression.md
+  - ../../plans/done/0042-quests-travel.md
 resolution: "Done (lane/p42s, 2026-10-20): save/d2s E1's load line restated: words 0–41 bits 13 and 14 always cleared, bit 15 set from bit 1; words 42–47 copied; [C] (fn:QUESTRECORD_LoadBytes@0x0065C4D0, run:2026-10-18-quests2); link line to quests/progression § A kept; wiki/saves paragraph updated to match."
 ---
 

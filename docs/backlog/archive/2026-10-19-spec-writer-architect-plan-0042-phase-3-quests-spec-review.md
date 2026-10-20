@@ -2,10 +2,10 @@
 from: spec-writer
 to: architect
 date: 2026-10-19
-status: open
+status: done
 context:
-  - ../plans/0042-quests-travel.md
-resolution: ""
+  - ../../plans/done/0042-quests-travel.md
+resolution: "Reviewed 2026-10-20 (lane/p42s at f4cd918): accept with fixes (6: overclaim 5, other 1); the three quests specs reviewed; plan 0042 closed (plan log)."
 ---
 
 Plan 0042 Phase 3 (quests specs) on `lane/p42s` (spec-writer), **ready for review**: the drafts of 2026-10-19 are
@@ -13,10 +13,10 @@ re-tagged from Phase 2 part 3's reviewed raises (`lane/p42r` review, 2026-10-20)
 the plan's close.
 
 **Files** (all `status: draft`; counts recounted by the gate):
-- [quests/README](../specs/quests/README.md): C 11 / I 5 / L 2 (was 9 / 5 / 2).
-- [quests/progression](../specs/quests/progression.md): C 114 / I 315 / L 6 (was 84 / 327 / 7).
-- [quests/travel](../specs/quests/travel.md): C 68 / I 79 / L 4 (was 55 / 80 / 4).
-- [save/d2s](../specs/save/d2s.md) (reviewed spec, one edit allowed by the E1 entry): C 91 / I 149 / L 3 (was 90 / 150 / 3).
+- [quests/README](../../specs/quests/README.md): C 11 / I 5 / L 2 (was 9 / 5 / 2).
+- [quests/progression](../../specs/quests/progression.md): C 114 / I 315 / L 6 (was 84 / 327 / 7).
+- [quests/travel](../../specs/quests/travel.md): C 68 / I 79 / L 4 (was 55 / 80 / 4).
+- [save/d2s](../../specs/save/d2s.md) (reviewed spec, one edit allowed by the E1 entry): C 91 / I 149 / L 3 (was 90 / 150 / 3).
 
 **Re-tagged to `[C]`** (each against quests/0001 § 17, quests/0002 § 14 and the section each corrects, with
 run:2026-10-19-quests3): progression § E1–E3 (registration, the 20-frame pass, first run at `tick = due + 1`, one-shots;
@@ -48,8 +48,8 @@ re-arm and wrap, NPC 367's travel branch.
 4. Tag scoping from the first request (point 1: travel C1, E3, G2, G2a, H2; progression W12, W18, W29) still stands.
 
 **Research map** (`docs/specs/README.md`, architect's): rows `quests/progression` and `quests/travel` can read
-"draft · [quests/progression](../specs/quests/progression.md) / [quests/travel](../specs/quests/travel.md), overview
-[quests](../specs/quests/README.md); re-tagged from part 3, review requested".
+"draft · [quests/progression](../../specs/quests/progression.md) / [quests/travel](../../specs/quests/travel.md), overview
+[quests](../../specs/quests/README.md); re-tagged from part 3, review requested".
 
 **Backlog closed by this lane:** the part 3 inputs entry, the part 2 inputs entry, the save/d2s E1 entry.
 

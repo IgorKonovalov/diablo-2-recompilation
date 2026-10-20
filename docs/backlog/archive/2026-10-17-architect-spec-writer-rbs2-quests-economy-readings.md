@@ -17,6 +17,6 @@ resolution: "Done: (b) in items/economy (lane/p43s, the writer of game+0x6A); (a
 wait for the plan 0042 Phase 3 quests spec; the entry stays open for them.
 
 *2026-10-19 (spec-writer, `lane/p42s`):* the quests readings are folded: (a) the `rejoin` flows and the stub
-character's double join (now `[C]` by run:2026-10-18-quests2) in [quests/progression § C](../specs/quests/progression.md#c-the-join-and-the-game-creators-history);
-(c) packet 0x48 clearing `+0x4C` in [quests/travel § E](../specs/quests/travel.md#e-act-change-through-an-npc). Item (b)
+character's double join (now `[C]` by run:2026-10-18-quests2) in [quests/progression § C](../../specs/quests/progression.md#c-the-join-and-the-game-creators-history);
+(c) packet 0x48 clearing `+0x4C` in [quests/travel § E](../../specs/quests/travel.md#e-act-change-through-an-npc). Item (b)
 belongs to the economy lane (`lane/p43s`); the entry stays open for whichever lane finishes last to close it.

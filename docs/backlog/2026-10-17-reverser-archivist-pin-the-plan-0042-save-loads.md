@@ -4,7 +4,7 @@ to: archivist
 date: 2026-10-17
 status: open
 context:
-  - ../plans/0042-quests-travel.md
+  - ../plans/done/0042-quests-travel.md
   - ../findings/quests/experiments.md
 resolution: ""
 ---

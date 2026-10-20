@@ -1,10 +1,10 @@
 ---
 spec: quests/travel
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/collision, drlg/warps, objects, quests/progression, save/d2s]
 consumed_by: [quests/progression, monsters/spawn, objects]
-tags: {C: 68, I: 79, L: 4}
+tags: {C: 68, I: 80, L: 4}
 updated: 2026-10-20
 ---
 
@@ -368,12 +368,15 @@ Step notes:
 - E1. [C] The player is moved before the travel word is written: 22 Warriv trips (11 east, 11 west) in run 1, and Meshif
   east in run 2. (fn:NPC_MenuAction@0x00579D60, fn:sub_005467E0_NpcActTravel@0x005467E0, run:2026-10-17-quests,
   run:2026-10-18-quests2)
-- E1. [C] In the state logged (expansion, word 26 bit 0, after Tyrael's message 0x4E20), the stock client's menu for NPC
-  367 has only *talk* and *cancel*: it offers no travel line, so E1's 367 branch was not reached; the expansion Act IV → V
-  travel is the Harrogath portal (object 566, § F). Meshif's Act III menu (NPC 264) has *talk*, *sail west* and
-  *cancel*. (run:2026-10-19-quests3: x-tyrael3, x-meshifw, the menu screenshots; fn:sub_005B5880_A4Q2_HarrogathPortalOperate@0x005B5880)
-- E1. [I] That no stock state offers NPC 367's travel line, and so that the 367 branch is unreachable by stock play, is
-  read from the logged state only: the client's menu builder was not read. (fn:NPC_MenuAction@0x00579D60 0x0057A650–0x0057A7D6)
+- E1. [C] In the state logged (expansion, word 26 bit 0, after Tyrael's message 0x4E20), E1's 367 branch was not reached:
+  the five Act IV → V trips each logged `NpcTravelMove(109, 5)` from the Harrogath portal's operate (object 566, § F),
+  never the branch's `NpcTravelMove(109, 0)`. (run:2026-10-19-quests3: x-tyrael3; fn:sub_005B5880_A4Q2_HarrogathPortalOperate@0x005B5880
+  0x005B598F, fn:sub_0054B830_NpcTravelMove@0x0054B830)
+- E1. [I] The client's menus, as screenshotted in the run's development logs, explain it: NPC 367's has only *talk* and
+  *cancel* in that state, and Meshif's Act III menu (NPC 264) *talk*, *sail west* and *cancel*. A screenshot is an
+  observation of the client, whose menu builder was not read, so the menus' lines, that no stock state offers NPC 367's
+  travel line and that the 367 branch is unreachable by stock play are `[I]`. (fn:NPC_MenuAction@0x00579D60
+  0x0057A650–0x0057A7D6, run:2026-10-19-quests3: the two menu screenshots)
 - E1. [I] The quest-word tests of NPCs 155, 210 and 367 were not run on their refusing side; NPCs 175, 264 and 520 test no
   quest word (264 and 520 only for action 0). The NPC classes are `monstats` rows; their names (Warriv, Meshif, Tyrael,
   Cain) are labels only. (fn:NPC_MenuAction@0x00579D60)

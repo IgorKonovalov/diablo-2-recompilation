@@ -1,6 +1,6 @@
 # 0042 — Quests and travel: the quest state machines, waypoints, town portals and level entry
 
-> **Status:** approved (owner, 2026-10-16; unattended); [ADR-0017](../adrs/0017-scope-quests-travel-economy.md) accepted 2026-10-16
+> **Status:** done (approved 2026-10-16, owner, unattended; closed 2026-10-20; P0, P1/1b, P2 parts 1–3 and P3 accepted with fixes); [ADR-0017](../../adrs/0017-scope-quests-travel-economy.md) accepted 2026-10-16
 > **Created:** 2026-10-16
 > **Owner skill(s):** archivist, reverser, spec-writer, human (fallback only)
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0017-scope-quests-travel-economy
@@ -20,10 +20,10 @@ use a town portal, and where is a player placed on entering a level? When it is 
 
 - Scope comes from ADR-0017 (accepted 2026-10-16). Research map: a new **Game rules (ADR-0017)** band, rows `quests/progression`
   and `quests/travel`, added when this plan starts.
-- **What exists.** [save/0002](../findings/save/0002-quest-words.md): the quest record is 16 bits per quest, block
-  *d* is difficulty *d* (`[C]`), the act-travel words and the waypoint tab gate. [items/quest-drops](../specs/items/quest-drops.md)
+- **What exists.** [save/0002](../../findings/save/0002-quest-words.md): the quest record is 16 bits per quest, block
+  *d* is difficulty *d* (`[C]`), the act-travel words and the waypoint tab gate. [items/quest-drops](../../specs/items/quest-drops.md)
   (reviewed): the quest seed (game-seed draw 4), the quest drops, imbue, sockets, personalisation, the Hellforge, the
-  Cow King, and "when quest bits get set is simulation and an input". [objects § L](../specs/objects/README.md): the
+  Cow King, and "when quest bits get set is simulation and an input". [objects § L](../../specs/objects/README.md): the
   quest objects, named only.
 - **Code already named** (grep `re/symbols.csv`): `QUESTS_InitGame` (C), `QUESTS_GetSeed` (C),
   `QUESTS_DispatchEvent`, `QUESTS_DispatchUnitEvent`, `QUESTS_MonsterDeathEvent`, `QUESTS_ObjectEvent`,
@@ -50,8 +50,8 @@ use a town portal, and where is a player placed on entering a level? When it is 
 - **Owner skill:** archivist
 - **What:** document the columns the travel and quest code is expected to read, and build the saves Phase 2 starts
   from.
-- **Outputs:** [Levels](../tables/Levels.md) § Travel (the waypoint, town and act columns and which levels have a
-  waypoint, per act); [Objects](../tables/Objects.md) § Waypoints and portals (the rows by class, `SubClass` bit 6);
+- **Outputs:** [Levels](../../tables/Levels.md) § Travel (the waypoint, town and act columns and which levels have a
+  waypoint, per act); [Objects](../../tables/Objects.md) § Waypoints and portals (the rows by class, `SubClass` bit 6);
   table docs for any quest table Phase 0 finds loaded; a `tools/d2s.py` recipe set for quest saves: for each quest, a
   save of each class needed with the quest words set to just before each step Phase 1 names (stock tables, built
   quest words: built saves, not forced-path runs), and saves with each act's waypoints set.
@@ -213,13 +213,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-16 — Drafted (architect, `lane/plans39`).** Status `proposed`; gated on ADR-0017.
 - **2026-10-16 — Approved (owner, via the main session).** Plans 0039–0044 approved to run unattended, like 0027–0038. ADR-0017 accepted the same day.
 - **2026-10-16 — Phase 0 landed (archivist, `lane/p42a`), review requested.**
-  - [Levels § Travel](../tables/Levels.md#travel-plan-0042-phase-0): `Act`, `Waypoint`, `QuestFlag`/`QuestFlagEx`,
+  - [Levels § Travel](../../tables/Levels.md#travel-plan-0042-phase-0): `Act`, `Waypoint`, `QuestFlag`/`QuestFlagEx`,
     `Portal`, `Position`, `SubWaypoint`, `Teleport`, `IsInside`/`Quest` with offsets and stock ranges; the 39 waypoint
     indices per act (I 0–8, II 9–17, III 18–26, IV 27–29, V 30–38, town first, `[C]` data); towns are the code's list
     (`LevelIsTown`), not a column. Readers named only for `Waypoint` (`[I]`), `Position` (`[C]`) and `SubWaypoint`
     (`[I]`); `QuestFlag`/`QuestFlagEx` (values 11, 13, 21, 39 and the cow level's 26 / 40, the only differing row),
     `Portal` (16 levels, Acts I–II and 134), `Teleport` and the act byte stay `[L]` for Phase 1.
-  - [Objects § Waypoints and portals](../tables/Objects.md#waypoints-and-portals-plan-0042-phase-0): the 16 waypoint
+  - [Objects § Waypoints and portals](../../tables/Objects.md#waypoints-and-portals-plan-0042-phase-0): the 16 waypoint
     rows (bit 6 = `OperateFn` 23 = `InitFn` 17, `[C]` data), the town portals 59/60 (bit 2, `OperateFn` 15, `InitFn`
     11 vs 12), the bit-4 portals 298 and 342, and the handler address of each index read from `g_ObjInitFns` /
     `g_ObjOperateFns`. Surprise: **410 `Siege Control` shares `OperateFn` 46 (`DurancePortalOperate`) and `Parm0` 18
@@ -228,7 +228,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     nothing to document. The plan 0038 H1b batch names no quest-reward table either.
   - `tools/travel_survey.py` (`levels`, `objects`, `summary`), registered as gate survey `travel` with its baseline;
     `excel_layout` is unchanged (no layout edit).
-  - Saves ([d2s.md § Quest and travel saves](../formats/d2s.md#quest-and-travel-saves)): 14 new recipes, built into
+  - Saves ([d2s.md § Quest and travel saves](../../formats/d2s.md#quest-and-travel-saves)): 14 new recipes, built into
     `workspace/runtime/quest-saves-p42/` with `tools/quest_saves.py build` (which also rebuilds the 9 plan 0032 quest
     saves to their hashes): `travel-wp1`..`5` (each act's waypoints plus the five towns, every quest done),
     `travel-wpnone`, `travel-tab2` and `travel-tab5d` (save/0002's per-word tab gate run case), `travel-arcane`
@@ -280,10 +280,10 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (`[0x00543400, 0x00548200)`, `[0x00586E00, 0x005A0000)`, `[0x005B3000, 0x005BE200)`) and read in four passes (Act I,
   Act II, Act III, Acts IV–V) beside the core and travel reading; every bit write was checked at the pushed constants of
   its call (1592 calls of the five record functions scanned; the 353 setter sites the findings cite all match). Findings:
-  [quests/0001](../findings/quests/0001-progression.md) (core § 1–6, per quest § 7–10, draws § 11, creation readers
+  [quests/0001](../../findings/quests/0001-progression.md) (core § 1–6, per quest § 7–10, draws § 11, creation readers
   § 12, boundary § 13, function index § 14; 142 `[I]`, no `[C]`; 14 lead verdicts) and
-  [quests/0002](../findings/quests/0002-travel.md) (48 `[I]`, one `[C]` restating drlg/0005's run; 11 lead verdicts);
-  [quests/experiments](../findings/quests/experiments.md) (empty heading). **601 symbols** added (subsystems
+  [quests/0002](../../findings/quests/0002-travel.md) (48 `[I]`, one `[C]` restating drlg/0005's run; 11 lead verdicts);
+  [quests/experiments](../../findings/quests/experiments.md) (empty heading). **601 symbols** added (subsystems
   `quests/progression` and `quests/travel`; about 530 are per-quest callbacks, listed by name in quests/0001 § 14);
   types in `re/types/quests.h` (`QuestDesc`, `QuestObject`, `QuestControl`, `QuestEvent`, `QuestTimer`, `PlayerTravel`).
 
@@ -443,12 +443,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   column readers) are answered by the Phase 1 table above and closed. Follow-ups filed: the 31 W1 lines and three
   static leftovers to the reverser (backlog).
 - **2026-10-17 — Phase 2 (reverser, `lane/p42h`, slots 1 and 2; review requested).** run:2026-10-17-quests
-  ([experiments](../findings/quests/experiments.md#run2026-10-17-quests)): 11 sessions, **0 mismatches over
+  ([experiments](../../findings/quests/experiments.md#run2026-10-17-quests)): 11 sessions, **0 mismatches over
   16 199 checks** under `tools/quests.py check`. Tools: `tools/gdb/questev.py` and `quest-state.gdb` (the logger,
   beside plan 0032's `quests.py`), `tools/quests.py` with `tools/test_quests.py`, `tools/quest_sessions.py` (sessions,
   actions, the save loads), recipe `quest-tpc` (classic, a tome of town portal), three NPC rows in `d2pilot.py`.
-  Raises and corrections: [quests/0001 § 15](../findings/quests/0001-progression.md#15-phase-2-run2026-10-17-quests),
-  [quests/0002 § 12](../findings/quests/0002-travel.md#12-phase-2-run2026-10-17-quests).
+  Raises and corrections: [quests/0001 § 15](../../findings/quests/0001-progression.md#15-phase-2-run2026-10-17-quests),
+  [quests/0002 § 12](../../findings/quests/0002-travel.md#12-phase-2-run2026-10-17-quests).
 
   | Required case | Result |
   |---|---|
@@ -539,11 +539,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `tools/quest_sessions.py`; `workspace/scratch-p42q/agg.py` lists the talk steps per log; the finding sections hold
   `@@` markers for the activation row and the shortfalls until the final pass.
 - **2026-10-19 — Phase 2 part 2 (reverser, `lane/p42q`, slot 2; review requested).** run:2026-10-18-quests2
-  ([experiments](../findings/quests/experiments.md#run2026-10-18-quests2)): 21 recorded sessions, **0 mismatches over
+  ([experiments](../../findings/quests/experiments.md#run2026-10-18-quests2)): 21 recorded sessions, **0 mismatches over
   23 348 checks** under the extended `tools/quests.py check`; part 1's 11 logs unchanged (manifest 11 OK) and 0 over
   16 204 under the same checker; 11 development logs 0 over 2 480. Raises and corrections:
-  [quests/0001 § 16](../findings/quests/0001-progression.md#16-phase-2-part-2-run2026-10-18-quests2),
-  [quests/0002 § 13](../findings/quests/0002-travel.md#13-phase-2-part-2-run2026-10-18-quests2).
+  [quests/0001 § 16](../../findings/quests/0001-progression.md#16-phase-2-part-2-run2026-10-18-quests2),
+  [quests/0002 § 13](../../findings/quests/0002-travel.md#13-phase-2-part-2-run2026-10-18-quests2).
 
   | Part 2 item | Result |
   |---|---|
@@ -631,8 +631,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   correction into the section it corrects", seen at the part 1 review and here). The review request and the part 2
   entry are closed; part 3 is filed to the reverser; the owner entry stays open with a note.
 - **2026-10-19 — Phase 3 drafted (spec-writer, `lane/p42s`, from `main` `1679654`); review requested, to follow Phase 2
-  part 3's review.** Three specs, all `status: draft`: [quests](../specs/quests/README.md) (overview, C 9 / I 5 / L 2),
-  [quests/progression](../specs/quests/progression.md) (C 84 / I 327 / L 7) and [quests/travel](../specs/quests/travel.md)
+  part 3's review.** Three specs, all `status: draft`: [quests](../../specs/quests/README.md) (overview, C 9 / I 5 / L 2),
+  [quests/progression](../../specs/quests/progression.md) (C 84 / I 327 / L 7) and [quests/travel](../../specs/quests/travel.md)
   (C 55 / I 80 / L 4). Progression has the record (bit grammar, the loader rule and the saved words `[C]`), the registry
   and dispatch order (`[C]` for the forced half), the join (`[C]` for the branch reached and the stub double join),
   timers, NPC interaction, the draws, a section per quest (41 word sections: bit tables with a setter site and a tag per
@@ -659,12 +659,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   x-death3, x-entry2, h-entry, x-wpact1-0; development logs `dev-p42r-*`; the finding sections hold `@@` markers until
   the final pass.
 - **2026-10-19 — Phase 2 part 3 (reverser, `lane/p42r`, slot 2; review requested).** run:2026-10-19-quests3
-  ([experiments](../findings/quests/experiments.md#run2026-10-19-quests3)): 13 recorded sessions, **0 mismatches over
+  ([experiments](../../findings/quests/experiments.md#run2026-10-19-quests3)): 13 recorded sessions, **0 mismatches over
   6 167 checks** under the extended `tools/quests.py check` (`quests3-check.txt`, `7cde7b36…`); the 32 part 1 and 2
   logs 0 over 39 568 under the same checker (`quests3-recheck-p12.txt`, `3f2b7de7…`; the 16 beyond part 2's 39 552
   are the new "Cain lost" rule); 12 development logs 0 over 2 498. Raises, corrections and shortfalls:
-  [quests/0001 § 17](../findings/quests/0001-progression.md#17-phase-2-part-3-run2026-10-19-quests3),
-  [quests/0002 § 14](../findings/quests/0002-travel.md#14-phase-2-part-3-run2026-10-19-quests3).
+  [quests/0001 § 17](../../findings/quests/0001-progression.md#17-phase-2-part-3-run2026-10-19-quests3),
+  [quests/0002 § 14](../../findings/quests/0002-travel.md#14-phase-2-part-3-run2026-10-19-quests3).
 
   | Part 3 item | Result |
   |---|---|
@@ -717,8 +717,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   and released to `lane/p42s`; a spec-writer entry is filed for save/d2s E1's stale load rule (assigned to
   `lane/p42s`). The archivist recipe entry stays open. The Phase 3 review follows the re-tag.
 - **2026-10-20 — Phase 3 re-tagged from part 3 (spec-writer, `lane/p42s`, `main` `d331763` merged); review requested.**
-  Tags now: [quests](../specs/quests/README.md) C 11 / I 5 / L 2, [quests/progression](../specs/quests/progression.md)
-  C 114 / I 315 / L 6, [quests/travel](../specs/quests/travel.md) C 68 / I 79 / L 4 (all `status: draft`). Raised from
+  Tags now: [quests](../../specs/quests/README.md) C 11 / I 5 / L 2, [quests/progression](../../specs/quests/progression.md)
+  C 114 / I 315 / L 6, [quests/travel](../../specs/quests/travel.md) C 68 / I 79 / L 4 (all `status: draft`). Raised from
   quests/0001 § 17 and quests/0002 § 14 as reviewed: the timers (one-shots; re-arm and wrap `[I]`), the eclipse arm
   (`15 + (low & 1)`, once per game by the state), the cairn order on the `bkd ` use (fill order; the *Open question* on
   the other reading dropped), the Dark Wanderer (8-try branch), Anya's reward in three difficulties, the `tr2 ` and
@@ -729,3 +729,35 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (C 91 / I 149 / L 3) and wiki/saves updated to match. Open questions: 12 `[L]` over the three quests files. Backlog
   closed: the part 3 inputs, the part 2 inputs and the save/d2s E1 entries; review request
   `2026-10-19-spec-writer-architect-plan-0042-phase-3-quests-spec-review.md` refreshed.
+- **2026-10-20 — Phase 3 review (architect, `lane/p42s` at `f4cd918`, `main` `e3dce6f` merged as `47204a3`): accept
+  with fixes; plan 0042 closes.** [quests](../../specs/quests/README.md), [quests/progression](../../specs/quests/progression.md)
+  and [quests/travel](../../specs/quests/travel.md) are `reviewed`: C 11 / I 6 / L 2, C 114 / I 316 / L 6 and C 68 / I 80 /
+  L 4 after the fixes (recounted by script and the gate's E6); [save/d2s](../../specs/save/d2s.md) stays `reviewed`,
+  C 91 / I 149 / L 3. Merge: clean; `tools/backlog.py archive` moved four closed entries into `archive/` and fixed five
+  files' links. Read: the re-tag commit whole, every raise against [quests/0001 § 17](../../findings/quests/0001-progression.md#17-phase-2-part-3-run2026-10-19-quests3)
+  and [quests/0002 § 14](../../findings/quests/0002-travel.md#14-phase-2-part-3-run2026-10-19-quests3), the part 3
+  rulings above, save/0002 § 1 against save/d2s E1, the two wiki edits. Anchors resolved in `re/symbols.csv`:
+  `0x0059EDC0`, `0x0059ED80`, `0x00597310`, `0x005BD390`, `0x005B5880`, `0x0054C0E0`, `0x00544840`, `0x00589580`.
+  **Rulings on the request.** (1) *Mixed blocks:* the "[C] for …" tag line with an untagged "not reached" comment and
+  the `[I]` in the step notes is the right form; it overreached in two places, fixed: W37's table choice (the
+  `game+0x6A` = 3 condition was not separated: "[C] for the clvl branch; [I] for game+0x6A = 3") and W11's
+  `private +0x01` return (now commented "not reached"). (2) *A screenshot is not enough for a `[C]`:* `[C]` needs a code
+  anchor in `Game.exe` plus a corroboration; a screenshot corroborates, but the client's menu builder is unread, so the
+  menus' lines have no code anchor. Travel E1's `[C]` now carries only the server side the logger saw (five
+  `NpcTravelMove(109, 5)` from object 566's operate, never the 367 branch's `(109, 0)`); the two menus' lines move to the
+  `[I]` note with the unreachability; quests/0002 § 5's Meshif bullet is lowered to `[I]` the same way (my part 3
+  ruling had let it stand). (3) *Packet 0x48's question stays `[L]`:* the runs logged the clear, not the client's
+  trigger; the reworded question is right. (4) The first request's scopings stand.
+  **Fixes applied (6, all overclaim but one):** the overview's draws bullet carried the Zoo's and NPC 377's
+  unreachability (an `[I]` per the part 3 ruling) inside a `[C]`: split; word 4's `TownLevelLeave` row scoped
+  "[C] for one client"; word 12's level-50 row cited a development log (not part of the record) and a code-read "no
+  test" in a `[C]` row: scoped to the branch reached, the code reading said so; W37 and W11 (above); travel E1's menu
+  sentence (above). Front matter recounted. Both findings' status lines read "answered" with the part 3 review (stale
+  since that review; mine).
+  **Close.** Done-when met: the template's sections, every statement tagged, 41 word sections with bit tables and 35
+  state diagrams (the six without state write none), the travel paths in pseudocode with their draws, worked examples
+  from the runs; the quest-state open questions of the creation specs narrowed by the Phase 3 links. What stays `[I]` is
+  final for this plan (part 3 ruling 2). Follow-ups: two-client cases, plan 0044; the owner-play entry stays open
+  (optional, shares plan 0038's d-owner sessions); the archivist's recipe entries stay open; a wiki page for quests and
+  travel is filed to the spec-writer (architect review-fixes 8). Backlog closed: the review request and the part 3 run
+  entry.
