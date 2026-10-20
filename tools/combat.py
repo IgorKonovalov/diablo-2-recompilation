@@ -598,6 +598,46 @@ class Checker:
             diff = ["+0x%02X: %d vs %d" % (4 * k, got[k], want[k]) for k in range(28) if got[k] != want[k]]
             self.fail("%s (logged vs model): %s" % (what, ", ".join(diff)))
 
+    def freeze_check(self, h, lines, j, a, d):
+        """STATEVENT_Freeze (0x005BFC60, plan 0047 Phase 2), checked up to its nested delivery, which stays a boundary
+        oracle: x = the attacker's stat (EVH par: 134, layer 0); x <= 0 -> no draw; c = ((max(x - 1, 0)·4 - dlvl +
+        alvl [- 6 missile] + 10)·5 [/3 missile, toward zero]), negative -> 0, capped at 100; one draw on the
+        attacker's seed, r = low % 100; r >= c -> no freeze; else len = (c - r)·2 + 25 clamped 25..250 into a fresh
+        packet's freeze length (+0x34) and COMBAT_ApplyDamage(defender, reductions = 1) (the nested AD0)."""
+        x = stat(a, h["par"] >> 16)
+        su = sd_parse(h["su"])
+        if x <= 0:
+            self.case("freeze handler: no stat, no draw")
+            if lines[j][0] == "EVR":
+                self.eq("freeze handler exit seed (no stat)", lines[j][1]["su"], h["su"])
+            else:
+                self.fail("freeze handler without the stat: nested lines")
+            return
+        miss = h["e"] == 6
+        c = (max(x - 1, 0) * 4 - stat(d, 12) + stat(a, 12) - (6 if miss else 0) + 10) * 5
+        if miss:
+            c = tdiv(c, 3)
+        c = min(max(c, 0), 100)
+        r, s1 = rng_range(su, 100)
+        self.case("freeze handler roll (%s)" % ("missile" if miss else "melee"))
+        if r >= c:
+            if lines[j][0] != "EVR":
+                self.fail("freeze handler: r %d >= c %d, but nested lines" % (r, c))
+            else:
+                self.eq("freeze handler exit seed (no freeze)", lines[j][1]["su"], sd_fmt(s1))
+            return
+        L = min(max((c - r) * 2 + 25, 25), 250)
+        if lines[j][0] != "AD0":
+            self.fail("freeze handler: r %d < c %d, expected the nested AD0, got %s" % (r, c, lines[j][0]))
+            return
+        ad = lines[j][1]
+        got, _ = pk(ad["p"])
+        self.eq("freeze nested packet freeze length", pget(got, F_FLEN), L)
+        self.eq("freeze nested reductions flag", ad["red"], 1)
+        self.eq("freeze nested AD0 attacker seed", ad["sa"], sd_fmt(s1))
+        self.case("freeze handler: freeze delivered (len %s)" % ("25" if L == 25 else "250" if L == 250 else
+                                                                 "26..249"))
+
     def oracle_handler(self, lines, i, s_unit_pred, s_other_pred, a, d):
         """An EVH .. EVR pair taken as a boundary oracle: assert the unit's entry seed, take the exits."""
         h = lines[i][1]
@@ -776,6 +816,10 @@ class Checker:
         self.eq_packet("RD1 packet", got, p)
         if any(x for kind, _, x in absorb_log if kind == "pct" and x > 0) and d["t"] == 0:
             self.case("percent absorb on the player (heal amount > 0)")
+        for kind, k, x in absorb_log:   # plan 0047 Phase 2: flat absorb (the f = stat << 8 step) taken per element
+            if kind == "flat" and x > 0:
+                self.case("flat absorb %s on the %s (amount > 0)" % (ELEM_ROWS.get(k, k),
+                                                                    "player" if d["t"] == 0 else "monster"))
         if stat(d, 34) or stat(d, 35) or any(x for _, _, x in absorb_log):
             self.case("events with DR, MDR or absorb non-zero")
         if not g["exp"] and g["diff"] and d["t"] == 0:
@@ -918,6 +962,8 @@ class Checker:
             if j < len(lines) and lines[j][0] == "STA":
                 sta = lines[j][1]
                 j += 1
+            if h["fn"] == FN_FRZ and h["u"] == a["u"]:
+                self.freeze_check(h, lines, j, a, d)
             if lines[j][0] != "EVR":
                 if h["fn"] in (FN_CB, FN_OW):
                     self.fail("handler %08x: nested lines not modelled" % h["fn"])

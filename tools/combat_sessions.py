@@ -153,7 +153,7 @@ for name, wp, seed in (("upperk", "3,7", 4716), ("travincal", "3,8", 4717), ("sp
     # and the City of the Damned (bighead5 100, batdemon5 85)
     SESSIONS["sorh-n-" + name] = ("CombatSorH", "enter-normal", seed,
                                   [(SWEEP + ["--wp", wp, "--players", "8", "--time", "270"], 340)])
-for k in range(3):
+for k in range(6):                            # 4-6: plan 0047 Phase 2, ruling 3 (d) (up to six seeds)
     # magic immunity: CombatSorH's Ginther's Rift (magic damage) on the Lost City's Plague Bearers (zombie5, Hell
     # ResMa 100), Hell
     SESSIONS["sorh-h-lostcity%d" % (k + 1)] = ("CombatSorH", "enter-hell", 4721 + k,
@@ -208,7 +208,7 @@ CASES_0047 = {
                          ["sorh-n-marsh", "sorh-n-oasis", "sorh-n-catacombs", "sorh-n-spider", "sorh-n-cityd"],
                          [41], ()),
     "C5 magic immunity": ("CombatSorH's magic damage on Hell Plague Bearers (ResMa(H) 100)",
-                          ["sorh-h-lostcity%d" % k for k in range(1, 4)], [52, 53], ()),
+                          ["sorh-h-lostcity%d" % k for k in range(1, 7)], [52, 53], ()),
     "C6 negative absorbed amount": ("CombatDR: MDR above the field, then percent absorb on the negative field",
                                     ["dr-n-plains", "dr-n-darkwood"], [35, 142, 148], ()),
     "C7 negative total, life unchanged": ("CombatDR: DR and MDR above every field of weak Normal hits",
