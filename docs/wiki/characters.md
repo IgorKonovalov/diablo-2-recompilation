@@ -3,7 +3,7 @@ based_on:
   - docs/specs/player/README.md 2026-10-16
   - docs/specs/player/creation.md 2026-10-17
   - docs/specs/hirelings/README.md 2026-10-19
-  - docs/specs/save/d2s.md 2026-10-17
+  - docs/specs/save/d2s.md 2026-10-20
 ---
 
 # Characters and hirelings

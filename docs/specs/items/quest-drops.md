@@ -20,7 +20,7 @@ Horadric parts, Wirt's Leg, the scrolls) and gold from quest chests. Their draws
 Three NPC services rebuild an item the player hands over: Charsi's imbue, Larzuk's socket and Anya's personalization.
 Other NPCs give fixed items. This spec covers what each path reads, which seed it draws, and what it hands to item
 creation. When a quest bit gets set (dialogue, timers, who stands where) is game simulation (ADR-0002) and an input
-here.
+here; which event sets each bit is [quests/progression](../quests/progression.md).
 
 ## Entry points
 

@@ -543,7 +543,7 @@ separate objects.
 - [L] Meaning of act `+0x094` vs `+0x484` (which tomb is the real one), the Act III bit `+0x474`, what
   the Act III act-seed consumers under `0x006789B0` decide, and the level-27 bit set at level 6. They are
   placed as entry points in [drlg/overview](../drlg/README.md#act-seed-consumers). Owner:
-  `drlg/warps` and the quest work.
+  `drlg/warps` and the quest work; the quest side is [quests/progression § Creation-path readers](../quests/progression.md#creation-path-readers).
 - [L] **The order of game-seed consumers**, narrowed again: game creation's draws 1–5 are fixed (step note 7a:
   monster regions, object region, store seed, quest seed, the player). Still open: the gaps between later units.
   The population pass's own game-seed draws are in [monsters/spawn](../monsters/spawn.md), and those of the restore of a

@@ -4,7 +4,7 @@ to: reverser
 date: 2026-10-17
 status: done
 context:
-  - ../../plans/0042-quests-travel.md
+  - ../../plans/done/0042-quests-travel.md
   - ../../findings/quests/experiments.md
 resolution: "Done by lane/p42q, run:2026-10-18-quests2 (quests/0001 § 16, quests/0002 § 13), accepted with fixes at the 2026-10-19 review; the unreached items are named shortfalls or moved to Phase 2 part 3 (2026-10-19-architect-reverser-plan-0042-phase-2-part-3.md)."
 ---
