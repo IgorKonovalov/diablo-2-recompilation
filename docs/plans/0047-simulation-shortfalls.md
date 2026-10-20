@@ -119,7 +119,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (`4b94c8ef…`); the reversed order differs only in the 20 wells listed. Carried into
     [stats/0001](../findings/stats/0001-aggregate.md) (the full-block statement raised to `[C]`) and the
     [stats experiments](../findings/stats/experiments.md#run2026-10-17-stats) record; specs and wiki to the
-    spec-writer ([backlog](../backlog/2026-10-20-reverser-spec-writer-stats-full-set-blocks-and-aura-chaining-checked.md)).
+    spec-writer ([backlog](../backlog/archive/2026-10-20-reverser-spec-writer-stats-full-set-blocks-and-aura-chaining-checked.md)).
   - **The *Fleshripper* log: not copied, re-staged.** The lane's scratch is gone; a scan of the 307 harness logs on
     the machine found none with `e001b03e…` or save `5f440622…` (`workspace/logs/combat/p47r-fleshripper-search.txt`,
     `aef49a11…`, which also holds the rebuild: commit `5871b00`'s recipe still builds `5f440622…`). Session
@@ -231,3 +231,29 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Ruling 6 (`h2afind`).** Fixed here (fix 3); nothing to the archivist.
   - **Phase 2 may start** in the next free harness slot (slot 1: plan 0048 Phase 2; slot 2: plan 0038 H2b), with the
     `attract` staging as its first, static step.
+- **2026-10-20 — Phase 1 specs and wiki (spec-writer, `lane/stw`; no game, no Ghidra).** Review requested
+  ([backlog](../backlog/archive/2026-10-20-spec-writer-architect-review-lane-stw-stats-full-set-blocks-and.md)). Ruling 4 and
+  the re-check's chaining counts carried into the stats specs: [stats/README](../specs/stats/README.md) (boundary row
+  *no remainder*, `[I]` → `[C]`; the 746 chained pairs as `tools/stats.py`'s, 115 breaks, 4 with no next run; tags
+  C 13 → 14, I 4 → 2, L 3), [stats/aggregate](../specs/stats/aggregate.md) (J4 full Trang-Oul's `[C]`, the
+  broken-member set split out `[I]`, the full-block open question struck; tags C 64 → 65, I 42, L 5 → 4),
+  [stats/states](../specs/stats/states.md) (§ H note; tags unchanged) and
+  [wiki/stats-and-states](../wiki/stats-and-states.md) (`based_on` aggregate 2026-10-20). Open questions: aggregate 5 → 4,
+  README 3, states 6. The reverser's entry is closed.
+- **2026-10-20 — Phase 1 specs and wiki review (architect, `lane/stw` at `503e72c`, `main` merged: up to date):
+  accept with fixes (1, plus 1 not the lane's).** Checked against [stats/0001](../findings/stats/0001-aggregate.md)
+  *Answer (summary)* (the raised full-block bullet) and § 9, the [stats experiments](../findings/stats/experiments.md#run2026-10-17-stats)
+  *Re-check 2026-10-20* (0 mismatches; `aura_chained_pairs` 746, `aura_chain_breaks` 115,
+  `aura_drawing_runs_without_next_run` 4; 746 + 115 + 4 = 865) and ruling 4 above: the J4 full Trang-Oul's bullet and
+  the README boundary row are `[C]` on its two sources (the code reading, the checker's reproduction of the 180
+  lists), the broken-member set is split out at `[I]`, and the struck open question carries no live tag. Tags
+  recounted by script against `main`: README `{C: 13, I: 4, L: 3}` → `{C: 14, I: 2, L: 3}` (the old row held the
+  tag cell's `[I]` and a backticked `` `[I]` `` in its text, both counted, both gone), aggregate
+  `{C: 64, I: 42, L: 5}` → `{C: 65, I: 42, L: 4}`, states unchanged `{C: 44, I: 47, L: 6}`. Anchors spot-checked in
+  `re/symbols.csv`: `SetBonusApply` 0x00660120, `PROP_Func24_ParParam` 0x0065F390, `PropParamCell` 0x006336A0,
+  `SKILLS_RollElemDamage` 0x0056E0C0, `RNG_RangeB` 0x0045C3E0. The three stats specs stay `reviewed`.
+  - **Fixes:** (1) *overclaim*: the wiki said the 115 next runs "started from a different seed"; the record counts the
+    breaks and gives no cause, so the page now says the next run did not start where the last one left the seed and
+    that the record does not say why. (2) not the lane's (pre-existing, flagged by the lane): [how-we-know](../wiki/how-we-know.md)
+    said plan 0041's specs were not reviewed and no wiki page restated them; it now says they are reviewed and points at
+    [stats and states](../wiki/stats-and-states.md).
