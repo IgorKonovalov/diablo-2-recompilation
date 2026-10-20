@@ -423,7 +423,9 @@ OBJOP_Portal (OperateFn 15, 0x00584870)                                         
   target = partner's position and room, or (no partner) ActLevelSpot(act(dest), dest, 0, &x, &y, 3)
   object flags |= 5
   if RoomIsTown(the operator's room): raise quest event 3 (new level, operator)
-  room = COLL_FindFreeNear(target room, target, size, 0x1C09, 0); UnitTeleport(room, x, y, 0, 0)
+  room = COLL_FindFreeNear(target room, target, size, 0x1C09, 0)   ; 0x0064E7B0
+  if room is null: return 0                                       ; 0x00584B18, no refusal call (0x00553380)
+  UnitTeleport(room, x, y, 0, 0)
   walk command to (x + 5, y + 5)
   if no partner or class 60: (mode 1) queue object event 1
   elif PlayerPortalGet(operator) == partner id:            ; the owner, through the town end

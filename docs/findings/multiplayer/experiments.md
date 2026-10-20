@@ -38,7 +38,11 @@ check held, with the commands and their output.
   policy line (the unchanged `/etc/default/ufw` also holds `DEFAULT_OUTPUT_POLICY="ACCEPT"`, which an upper-cased
   copy of the old pattern would match). Self-test against the kept baseline (`workspace/logs/mp26/check-mp26.txt`
   § C): the real state exit 0; one changed hash, a copy with the input policy `ACCEPT`, a copy with `ENABLED=no`:
-  exit 1 each, and a `|| exit 1` guard stops.
+  exit 1 each, and a `|| exit 1` guard stops (revision `90aaded7…`). Review revision (`lane/mp26` review,
+  `3fda9b40…`): `sha256sum --strict`, since the first revision passed a baseline with a malformed line beside one good
+  line, and exit 2 when the log cannot be appended to, which the first revision passed with exit 0; both holes and
+  their fixes, an empty baseline, an unreadable policy file and a missing argument are in
+  `workspace/logs/mp26-review/selftest-review.txt` (manifest `mp26-review/manifest.sha256`, base `workspace/logs/`).
 - **Setup.** Slots 1 (host: `:8`, `workspace/wineprefix-1`, gdb by `tools/d2run.py`) and 2 (joiner: `:9`,
   `workspace/wineprefix-2`, no debugger), owner's condition on ADR-0008. Both saves directories were empty and set
   aside with `tools/saves.py --slot N aside p44h` before the first session, re-set per launch, and restored at the end

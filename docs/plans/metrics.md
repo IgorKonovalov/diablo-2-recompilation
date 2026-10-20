@@ -201,6 +201,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-20 | `lane/p44s` review | 0044 P3 | architect-review | 183 072 | 57 | 9 | — | gave accept with fixes | — (on the lane row; plan 0044 closed; plan 0038 d-2c 14 → 7) |
 | 2026-10-20 | `lane/stw` | 0047 P1 | spec-writer | 97 146 | 38 | 7 | no slot | accept with fixes | 1: overclaim 1 (plus 1 not the lane's: the how-we-know stale sentence, stale cross-reference, pre-existing and flagged by the lane) |
 | 2026-10-20 | `lane/stw` review | 0047 P1 | architect-review | 72 705 | 21 | 4 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/mp26` | 0044 follow-ups (MP26, 264, ufwcheck) | reverser-static | TBD | TBD | TBD | no slot | accept with fixes | 3: overclaim 1, omission 2 |
+| 2026-10-20 | `lane/mp26` review | 0044 follow-ups | architect-review | TBD | TBD | TBD | — | gave accept with fixes | — (on the lane row; ufwcheck fails closed, hosting drivers must call it under an exit guard) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

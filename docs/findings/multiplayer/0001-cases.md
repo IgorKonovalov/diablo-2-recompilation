@@ -392,7 +392,9 @@ readings each case reproduced:
   party test (0x005848EB–0x0058493D) is not logged, so the refusal is placed by the code: after GPP the only refusals
   before the teleport are the party test's two jumps to 0x00584A22 (0x00584915: the operator's `0x00554630` is
   `0xFFFF`; 0x0058493D: the owner's and the operator's 16-bit party ids differ), two null-record guards (0x005849B9,
-  0x005849CE: the operator's quest record, the destination's level record; the partied click passed both) and the quest gate, which tests nothing for level 3 (`QuestFlag` and `QuestFlagEx` empty). The refusal
+  0x005849CE: the operator's quest record, the destination's level record; the partied click passed both) the quest gate, which tests nothing for level 3 (`QuestFlag` and `QuestFlagEx` empty), and the free-spot search at
+  the destination (`0x0064E7B0` returns 0: return 0 at 0x00584B18, with no `0x00553380` call; it reads no party
+  state, and the partied click 22.5 s later passed it at the same end). The refusal
   separates the code's order from a plain id compare: both players had no party, so their ids were equal and a
   compare alone would have passed; the operator's `0xFFFF` test (0x00584911) refuses first. Not separated, `[I]`: the
   compare of two different party ids (0x0058493A; with two players there is at most one party, so it needs a third

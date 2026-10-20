@@ -8,7 +8,9 @@
 #   Appends the re-read to <log>, prints UFW-OK and exits 0 only when every test holds:
 #   ufw active and enabled, DEFAULT_INPUT_POLICY="DROP", ENABLED=yes, every baseline hash OK.
 #   Otherwise prints UFW-CHANGED with the failed tests and exits 1, so a driver's
-#   `tools/ufwcheck.sh ... || exit 1` stops before hosting. A missing argument or file exits 2.
+#   `tools/ufwcheck.sh ... || exit 1` stops before hosting. A missing argument or file exits 2, and so
+#   does a log that cannot be appended to (the verdict is not recorded, so the check fails).
+#   Read-only: no root, no ufw command; the only write is the append to <log>.
 # UFW_DEFAULT and UFW_CONF override /etc/default/ufw and /etc/ufw/ufw.conf (for the self-test only).
 set -u
 if [ $# -ne 3 ]; then echo "usage: $0 <session> <baseline.sha256> <log>" >&2; exit 2; fi
@@ -23,10 +25,11 @@ pol=$(grep -E '^[[:space:]]*DEFAULT_INPUT_POLICY=' "$DEF" 2>&1 | tail -1)
 [ "$pol" = 'DEFAULT_INPUT_POLICY="DROP"' ] || fail+=("policy: ${pol:-missing}")
 en=$(grep -E '^[[:space:]]*ENABLED=' "$CONF" 2>&1 | tail -1)
 [ "$en" = 'ENABLED=yes' ] || fail+=("ufw.conf: ${en:-missing}")
-sums=$(sha256sum -c "$BASE" 2>&1); rc=$?
+sums=$(sha256sum --strict -c "$BASE" 2>&1); rc=$?
 [ $rc -eq 0 ] || fail+=("sha256sum -c exit $rc")
-{ echo "== $(date -Is) session $SESSION"; echo "is-active $act is-enabled $ena"
+{ echo "== $(date -Is) session $SESSION (read $DEF $CONF)"; echo "is-active $act is-enabled $ena"
   echo "$pol"; echo "$en"; echo "$sums"
-  if [ ${#fail[@]} -eq 0 ]; then echo "UFW-OK"; else echo "UFW-CHANGED: ${fail[*]}"; fi; } >> "$LOG"
+  if [ ${#fail[@]} -eq 0 ]; then echo "UFW-OK"; else echo "UFW-CHANGED: ${fail[*]}"; fi; } >> "$LOG" ||
+  { echo "ufwcheck: cannot append to $LOG" >&2; exit 2; }
 if [ ${#fail[@]} -eq 0 ]; then echo UFW-OK; exit 0; fi
 echo "UFW-CHANGED: ${fail[*]}"; exit 1
