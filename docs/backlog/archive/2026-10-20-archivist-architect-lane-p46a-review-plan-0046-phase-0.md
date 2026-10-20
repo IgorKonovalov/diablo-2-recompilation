@@ -2,24 +2,24 @@
 from: archivist
 to: architect
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../plans/0046-skills-function-catalogue.md
-  - ../tables/Skills.md#function-index-plan-0046-phase-0
-  - ../tables/Missiles.md#function-index-plan-0046-phase-0
-resolution: ""
+  - ../../plans/0046-skills-function-catalogue.md
+  - ../../tables/Skills.md#function-index-plan-0046-phase-0
+  - ../../tables/Missiles.md#function-index-plan-0046-phase-0
+resolution: "Accepted 2026-10-20 (architect, lane/p46a review): Phase 0 done; monster and missile batches split into 8a-8c and 9a-9d, Phase 1 static order 9a, 9b, 9c, 9d, sor, ama, nec, pal, bar, dru, ass, item (with Unsummon), 8a, 8b, 8c (plan 0046 Phase 1); skills/0003 label of 0x005C8520 reworded by the review."
 ---
 
-Review `lane/p46a` (from main 407184c): [plan 0046](../plans/0046-skills-function-catalogue.md) Phase 0, "The function
+Review `lane/p46a` (from main 407184c): [plan 0046](../../plans/0046-skills-function-catalogue.md) Phase 0, "The function
 index". Blocking plan 0046 Phase 1 (its batches).
 
 - **Index.** `tools/skills_survey.py --index` (also `index`): one entry per function-table entry a stock row uses, 310
   in all. Start table 64 (`srvstfunc`); do table 149 (`srvdofunc` 138, `srvprgfunc` 7, `ItemEffect` 2 (36 and 151),
   States `srvactivefunc` 3 (145–147), following skills/0001 and 0003 on which columns index `g_SkillDoFuncs`); missile
   do 34, hit 50 (with 64 948), damage 13. Each entry has its rows, row kinds, the `Param`/`calc` cells its rows fill
-  (rows set per column), tier A and batch. Docs: [Skills § Function index](../tables/Skills.md#function-index-plan-0046-phase-0)
+  (rows set per column), tier A and batch. Docs: [Skills § Function index](../../tables/Skills.md#function-index-plan-0046-phase-0)
   (it replaces the old "Rows per function number" tables) and
-  [Missiles § Function index](../tables/Missiles.md#function-index-plan-0046-phase-0) (it replaces § Function numbers).
+  [Missiles § Function index](../../tables/Missiles.md#function-index-plan-0046-phase-0) (it replaces § Function numbers).
 - **Batches** (plan 0046 Phase 1 list filled): `ama` 17, `sor` 18, `nec` 19, `pal` 15, `bar` 19, `dru` 16, `ass` 29,
   `monster` 70, `missile` 97, `item` 2, plus 8 `general` (6 tier A). Rule: class with most rows (tie by PlayerClass
   order), else monster, else item, else general; a `srvactivefunc`-only entry goes by the skills whose `aurastate` is

@@ -47,7 +47,7 @@ function a stock row uses on the machinery of plan [0045](0045-skills-missiles-m
 - **What:** read each function of a batch, then raise what the emulator can: one lane and one review per batch.
 - **Batches** (counts from Phase 0): one per character class (seven), one for the monster-only skill functions, one
   for the missile do, hit and damage functions, one for the item, shrine and object callers of skills (`ctc`,
-  charges, shrine missiles). Ten batches. *Filled 2026-10-20 (Phase 0, `lane/p46a`)*: entries of the start, do and
+  charges, shrine missiles). Ten batches, fifteen after the review's split. *Filled 2026-10-20 (Phase 0, `lane/p46a`)*: entries of the start, do and
   missile tables by the rule of [Skills § Function index](../tables/Skills.md#function-index-plan-0046-phase-0)
   (`skills_survey.py --index`, `ix_batch_*`), with the tier-A entries plan 0045 already read in brackets:
   1. `ama` 17 (start 7, do 10; tier A 4);
@@ -57,16 +57,40 @@ function a stock row uses on the machinery of plan [0045](0045-skills-missiles-m
   5. `bar` 19 (start 7, do 12; 2);
   6. `dru` 16 (start 3, do 13, two of them States `srvactivefunc` 145 and 146; 2);
   7. `ass` 29 (start 7, do 22, the seven `srvprgfunc` entries among them; 5);
-  8. `monster` 70 (start 20, do 50, `srvactivefunc` 147 among them; 0);
-  9. `missile` 97 (do 34, hit 50 with row 568's uncalled 64 948, damage 13; 10);
+  8. `monster` 70 (start 20, do 50, `srvactivefunc` 147 among them; 0), **split at the review** (below) into 8a–8c;
+  9. `missile` 97 (do 34, hit 50 with row 568's uncalled 64 948, damage 13; 10), **split at the review** into 9a–9d;
   10. `item` 2 (do 113 for the scroll and book rows, do 151 for Chain Lightning's item cast; 0), plus the callers,
      which are code paths and not function numbers (the stat-event handlers 20, 21 and 30, charges, the shrine
-     missiles of `g_ShrineEffects` 19, 21, 22, the object and quest `MissileCreateAt` sites, skills/0002 § 2).
+     missiles of `g_ShrineEffects` 19, 21, 22, the object and quest `MissileCreateAt` sites, skills/0002 § 2), plus
+     **Unsummon's start 3 and do 4** (ruled at the review), the two `general` entries plan 0045 did not read.
 
   The eight `general` entries (rows 0–5: start 1, 2, 3, 65, do 1, 3, 4, 5) are tier A but Unsummon's start 3 and do 4,
-  which this phase proposes to read with batch 10. 310 entries in all, 40 reached by tier A. Sizes for the review: the
-  `monster` (70) and `missile` (97) batches are three to five times a class batch, more than one lane run of about
-  4 h each; this phase proposes to split them (monster by start/do, missile into do and hit/damage) at the review.
+  which batch 10 reads. 310 entries in all, 40 reached by tier A. Batch 7 also states the data join of `ItemEffect`
+  36: it is Claws of Thunder's `srvprgfunc2` entry, so the Nova and Frost Nova item casts run progressive entry 36
+  (for a non-progressive row its missile is `srvmissilea`, skills/0003 § 1).
+
+  **Split (architect ruling, `lane/p46a` review, 2026-10-20).** A class batch is 15–29 entries; `monster` (70) and
+  `missile` (97) are cut to that size. The monster batch goes by the lowest Skills row that uses the entry (for
+  States `srvactivefunc` 147, the row whose `aurastate` is `attached`, 330 Imp Teleport), so a skill's start and do
+  entries mostly fall in one sub-batch; the missile batch goes by table and number, so each sub-batch reads one kind
+  of function. Counts from `skills_survey.py --index` (tier A in brackets):
+  - **8a** monster rows 156–189 (acts 1–3 monsters and the shared monster skills): 30 entries, start 42–53, do 83–98,
+    110, 111 (0). Start 53 is also 193 DiabLight's, whose do 152 is 8b's.
+  - **8b** monster rows 190–289 (Diablo, act 4 and act 5 towers, curses, the Wake and Imp rows): 22 entries, start 54,
+    55, 59, 60, 64, do 99–109, 112, 125–127, 141, 152 (0).
+  - **8c** monster rows 290–338 (act 5 monsters and Baal): 18 entries, start 61–63, do 128–137, 139, 140, 147–149 (0).
+  - **9a** missile do 1–18 (17 numbers; 4 unused): 17 entries (3: do 1, 3, 5).
+  - **9b** missile do 19–36 (17 numbers; 24 unused) and damage 1–14 (13 numbers; 6 unused): 30 entries (2: do 23,
+    damage 3).
+  - **9c** missile hit 1–29 (25 numbers): 25 entries (4: hit 2, 3, 14, 17).
+  - **9d** missile hit 31–59 (24 numbers) and row 568's 64 948 (uncalled, stated as such): 25 entries (1: hit 36).
+
+  Fifteen batches in all (7 class, 3 monster, 4 missile, item), 310 entries; each one lane run and one review.
+  **Order for the static lane** (one batch at a time; plan 0048 holds the other Ghidra lane): 9a, 9b, 9c, 9d (the
+  missile functions every class skill creates, so the class batches can cite them), then 2 `sor`, 1 `ama`, 3 `nec`,
+  4 `pal`, 5 `bar`, 6 `dru`, 7 `ass` (tier-A count first, then PlayerClass order; `ass` last as the largest, with the
+  progressive entries), then 10 `item` (with Unsummon), then 8a, 8b, 8c (monster AI is phase (5), after animation;
+  its plan may pull a monster sub-batch forward, or take the function as a boundary oracle under ADR-0020).
 - **Outputs:** `docs/findings/skills/0003-catalogue.md` (one section per batch, one sub-section per function);
   `re/symbols.csv` rows (subsystem `skills/catalogue`); emulation cases under `tools/` with their memory specs.
 - **Done when**, per batch: each function has, with addresses and `[I]` or better: its params and calcs read, the
@@ -101,7 +125,8 @@ function a stock row uses on the machinery of plan [0045](0045-skills-missiles-m
   lane only when plans 0045, 0048 and 0049 hold none.
 - **Harness:** Phase 2 takes **one slot from 1–2**; at most two games at once across all plans.
 - **Rotation:** each batch is sized for one lane run of about 4 h; a batch that runs over checkpoints and resumes.
-- **Estimate** (an estimate): ten static batches, one harness lane run.
+- **Estimate** (an estimate): fifteen static batches (ten, with 8 and 9 split at the Phase 0 review), one harness
+  lane run.
 
 ## Open questions
 
@@ -127,4 +152,19 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   MonPlace's row-24 sentence corrected. Surprises, in the batch list and the review request: the `monster` (70) and
   `missile` (97) batches outsize one lane run (a split proposed); `ItemEffect` 36 is Claws of Thunder's progressive
   entry 36; no Skills row has `srvdofunc` 146, which skills/0003 names so. Review request
-  [to the architect](../backlog/2026-10-20-archivist-architect-lane-p46a-review-plan-0046-phase-0.md).
+  [to the architect](../backlog/archive/2026-10-20-archivist-architect-lane-p46a-review-plan-0046-phase-0.md).
+- **2026-10-20 — Phase 0 reviewed: accept (architect, `lane/p46a` review).** Reran `gate.py --full=skills,excel_layout`
+  (green) and `skills_survey.py --index`: the `skills` baseline is the survey's own output byte for byte (regenerated,
+  not hand-edited; 46 `ix_*` keys added, none changed). An independent join over Skills, States and Missiles gives the
+  same entry sets: start 64 (id 30 the only gap), do 149 (`srvdofunc` 138, `srvprgfunc` 7 disjoint from it, `ItemEffect`
+  above 1 adds 151, States 145–147; 53, 138 and 142 unused, as skills/0001 § Answer), missile do 34, hit 50 (the `*12`
+  cell is the 64 948 record), damage 13; both docs list each entry once (310, no duplicate numbers per table). Meanings
+  raised in Skills, Missiles, ItemStatCost, States, PetType, MonStats and MonPlace match their findings' `[I]` (spot
+  checks: `Holy`, `SrcTown`, `LastCollide`, `repeat`/`weapsel`/`leftskill`, `TgtPlaceCheck`, `SkillDamage`, `group`,
+  `itemeventfunc` 31, rows 24/26); anchors `g_SkillStartFuncs`, `g_SkillDoFuncs`, `g_StatEventFuncs`,
+  `STATEVENT_Reanimate`, `PetAdd`, `StateDoFunc`, `MonOwnerSkillDamage` resolve in `re/symbols.csv`. No values dumped
+  (row names and cell counts only). Rulings: the `monster` and `missile` batches split into 8a–8c and 9a–9d and the
+  static order set (Phase 1 above); Unsummon's start 3 and do 4 go with batch 10; the `ItemEffect` 36 join is batch
+  7's. The skills/0003 Functions-table label of `0x005C8520` ("`srvdofunc` 146") was a pure wording fix the review made
+  itself after checking the data (no Skills row has `srvdofunc` 146; Armageddon and Hurricane both have 124; entry 146
+  is state 145 `armageddon`'s `srvactivefunc`). Point (4) of the request (the `KnockBack` byte) stays as laid out.

@@ -178,6 +178,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-20 | `lane/p38s7` review | 0038 P3 items/quality | architect-review | 77 823 | 20 | 5 | — | gave accept with fixes | — (on the lane row) |
 | 2026-10-20 | `lane/p45h` | 0045 P1.3 | reverser-static | 524 676 | 161 | 49 | Ghidra (lane copy) | accept with fixes | 4: misread 1, omission 2, stale cross-reference 1 |
 | 2026-10-20 | `lane/p45h` review | 0045 P1.3 | architect-review | 143 888 | 48 | 7 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/p46a` | 0046 P0 | archivist | TBD | TBD | TBD | — | accept | 0 |
+| 2026-10-20 | `lane/p46a` review | 0046 P0 | architect-review | TBD | TBD | TBD | — | gave accept | — (on the lane row; the review's own skills/0003 rewording is a reverser-doc label, other 1) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
