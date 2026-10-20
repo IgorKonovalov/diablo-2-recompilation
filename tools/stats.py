@@ -5,7 +5,7 @@ Usage:
   python3 -I tools/stats.py check <log> [...] [--excel DIR] [-v] [--json OUT]
   python3 -I tools/stats.py manifest <log> [...]          # sha256, size and line count of each log
   python3 -I tools/stats.py isc [--excel DIR]             # the op graph ITEMSTATCOST_Load builds, from the table
-  python3 -I tools/stats.py oracle-player <log> [...]     # run:2026-10-16-player's maxima against the own entries
+  python3 -I tools/stats.py oracle-player <log> [...]     # run:2026-10-16-player's maxima: consistent with own entries?
 
 <log> is written by tools/d2run.py with tools/gdb/stats.gdb (the tags of tools/gdb/stats.py). The model mirrors the
 player's stat-list tree (the unit list and every list under it) and replays the logged events on it:
@@ -28,9 +28,12 @@ player's stat-list tree (the unit list and every list under it) and replays the 
     logged required level (RQL) and self contribution (RQS, RQD) as value oracles;
   * UOE/MSK/TIP/TGL (sets): the worn mask from the inventory listing (page 3, quality 5, not 0x4000 or 0x100, same
     set id, bit = member index), and the toggle sequence of the item's aprop lists by add func (§ 7);
-  * SBX: the wearer's set list predicted from the Sets blocks for n = popcount(mask) (partial pairs and full);
+  * SBX: the wearer's set list predicted from the Sets blocks for n = popcount(mask) (partial pairs and full; values
+    << ValShift, the `state` block by func 24 with the compiled param);
   * WEL0/WEL1 (a well, 0x00585720): life (Parm3 bit 1), mana (bit 0) and stamina each raised by Parm1 * max >> 8,
     capped, and the return 1 only when something changed; SHR0/SHR1 of the recharge codes 1-3: life and/or mana to max;
+  * AU0/AU1: a drawing aura run's exit asserted against its entry advanced by its logged draws, and the ADR-0014
+    chained pairs counted (the caster's next run entering on that exit);
   * seeds: the game seed and the player's seed at the entry and exit of every top-level event (LNK, ULK, TGL, PRP,
     TK) must be equal (stats/0002 § 7, the P1 review's draw-freedom amendment).
 Exit 0 only if every check holds. Stdlib only. Read-only.
@@ -129,6 +132,33 @@ class Tables:
         self.states = [r["state"] for r in self.states_rows]
         self.shrines = load_txt(excel, "shrines.txt")
         self.itypes = [r["Code"] for r in load_txt(excel, "itemtypes.txt")]
+        self.montypes = {}
+        for i, r in enumerate(load_txt(excel, "montype.txt")):
+            self.montypes.setdefault(r["type"], i)
+        self.state_index = {}
+        for i, n in enumerate(self.states):
+            self.state_index.setdefault(n, i)
+        self.valshift = {int(r["ID"]): int(r["ValShift"] or 0) for r in self.isc}
+
+    def par_value(self, par):
+        """A Sets/SetItems param cell as sub_006336A0_PropParamCell compiles it (stats/0001 Phase 0 surprise (e)): a
+        cell starting with '-' or a digit is atol; otherwise the first hit in the skills, montype and states links, in
+        that order; a blank cell or a name in none of them is 0."""
+        par = (par or "").strip()
+        if not par:
+            return 0
+        if par[0] == "-" or par[0].isdigit():
+            k = 1
+            while k < len(par) and par[k].isdigit():
+                k += 1
+            try:
+                return int(par[:k])
+            except ValueError:
+                return 0
+        for table in (self.skill_id, self.montypes, self.state_index):
+            if par in table:
+                return table[par]
+        return 0
 
     def isc_graph(self):
         """What ITEMSTATCOST_Load builds (stats/0001 § 4): per stat [targets(3), dependents, opIn, b51, b52, b53]."""
@@ -528,6 +558,9 @@ class Checker:
         self.exp_late = collections.Counter()
         self.tick_cases = collections.Counter()
         self.au = {}
+        self.au_gaps = collections.defaultdict(collections.Counter)    # (who, event) -> gap -> count, within a log
+        self.au_log = {}
+        self.au_pend = {}
         self.sta_unlinked = None
         self.au_sites = collections.Counter()
         self.levels_seen = set()
@@ -583,6 +616,8 @@ class Checker:
         self.cur_line = 0
         # an event left open at the end of the previous log (the session was killed inside it) is not continued
         self.au_open = self.shr = self.wel = self.grp = self.rq = None
+        self.au_log = {}           # this log's aura run frames, for the grid's gaps (keyed per log)
+        self.au_pend = {}          # caster unit -> the unit seed a drawing aura run left, for the chained pairs
         M = None
         isc = None
         stack = []                 # frames: dict(tag, gen, pend (expected tuple or None), top, seeds)
@@ -625,6 +660,9 @@ class Checker:
                     r = None
         if stack:
             self.notes["frames open at end of log"] += len(stack)
+        for k, frs in self.au_log.items():
+            self.au_gaps[k].update(b - a for a, b in zip(frs, frs[1:]))
+        self.n["aura_drawing_runs_without_next_run"] += len(self.au_pend)
         if M is not None:
             self.opcount.update(M.opcount)
             self.takes.update(M.takes)
@@ -1045,6 +1083,12 @@ class Checker:
             return
         if tag == "AU0":
             self.au.setdefault((d["w"], d["k"]), []).append(d["fr"])
+            self.au_log.setdefault((d["w"], d["k"]), []).append(d["fr"])
+            # ADR-0014 chaining: the caster's next aura run (either event) after a run that drew enters on the unit
+            # seed that run left
+            prev = self.au_pend.pop(d.get("u"), None)
+            if prev is not None:
+                self.n["aura_chained_pairs" if prev == d["us"] else "aura_chain_breaks"] += 1
             self.au_open = d
             self.au_rng = []
             return
@@ -1066,6 +1110,8 @@ class Checker:
             # the run drew: chain it (ADR-0014). Each RNGA line is one LCG step; the caster's seed must have moved
             # by exactly that many steps and the game seed not at all
             self.seeds["aura"][1] += 1
+            if a["us"] != d["us"]:
+                self.au_pend[a.get("u")] = d["us"]
             k = lcg_distance(a["us"], d["us"], 256)
             sites = collections.Counter((r["pc"], r.get("ra2")) for r in self.au_rng)
             for site in sites:
@@ -1124,11 +1170,7 @@ class Checker:
                 # code is the object data's second dword
                 code = int.from_bytes(bytes.fromhex(a["od"])[4:8], "little") if a.get("od") else None
                 if code in (1, 2, 3) and a.get("v") and d.get("v"):
-                    want = list(a["v"][:6])
-                    if code in (1, 2):
-                        want[0] = want[1]
-                    if code in (1, 3):
-                        want[2] = want[3]
+                    want = predict_refill(code, a["v"])
                     self.n["shrine_refill_checked"] += 1
                     self.refill_cases[(code, tuple(x != y for x, y in zip(a["v"][:6], want)))] += 1
                     if list(d["v"][:6]) != want:
@@ -1149,11 +1191,7 @@ class Checker:
                 # stamina, each capped at its maximum; the return is 1 when something changed
                 p, v = a.get("p"), a.get("v")
                 if p and v and d.get("v"):
-                    want = list(v[:6])
-                    for i, on in ((0, p[2] & 2), (2, p[2] & 1), (4, True)):
-                        if on and want[i] < want[i + 1]:
-                            want[i] = min(want[i] + ((p[0] * want[i + 1]) >> 8), want[i + 1])
-                    r = int(want != list(v[:6]))
+                    want, r = predict_well(p, v)
                     self.n["well_checked"] += 1
                     self.well_cases[tuple(i for i in (0, 2, 4) if want[i] != v[i]) or ("full",)] += 1
                     if list(d["v"][:6]) != want or d.get("r") != r:
@@ -1548,23 +1586,38 @@ class Checker:
         if lo != hi:
             return None
         v = lo
+        pv = self.t.par_value(par)
         out = collections.Counter()
+        prev = 0
         for fn, stat, val in slots:
             sid = self.t.stat_id.get(stat) if stat else None
+            # PROP_WriteStat (0x0065EA50, items/0006 § 7) stores value << ValShift (funcs 18-20 bypass it)
+            sh = self.t.valshift.get(sid, 0) if sid is not None else 0
             if fn in (1, 2, 3, 8) and sid is not None:
-                out[(sid, 0)] += v
+                out[(sid, 0)] += v << sh
+                prev = v
             elif fn == 17 and sid is not None:
-                out[(sid, 0)] += int(par)
+                out[(sid, 0)] += pv << sh
+                prev = pv
             elif fn == 21 and sid is not None:
-                out[(sid, int(val))] += v
+                out[(sid, int(val))] += v << sh
+                prev = v
             elif fn == 22 and sid is not None:
-                out[(sid, self.t.skill_id.get(par, int(par) if par.isdigit() else 0))] += v
+                out[(sid, pv)] += v << sh
+                prev = v
+            elif fn == 24 and sid is not None:
+                # PROP_Func24_ParParam (0x0065F390, items/0006 § 4): Write(stat, par, prev or v); the param is the
+                # compiled par cell (for `state`, a state row: monsterset 176)
+                w = prev or v
+                out[(sid, pv)] += w << sh
+                prev = w
             elif fn == 10 and sid is not None:
-                pv = int(par)
-                out[(sid, pv % 3 + (pv // 3) * 8)] += v
+                out[(sid, pv % 3 + (pv // 3) * 8)] += v << sh
+                prev = v
             elif fn == 7 and sid is None:
                 out[(17, 0)] += v
                 out[(18, 0)] += v
+                prev = v
             else:
                 return None
         return out
@@ -1685,10 +1738,11 @@ class Checker:
         return None
 
     def aura_grid(self):
-        """Per (who, event): the run frames modulo the period seen (the perdelay grid ((f - 1 + p) / p) p + 1)."""
+        """Per (who, event): the run frames modulo the period seen (the perdelay grid ((f - 1 + p) / p) p + 1), and the
+        gaps between consecutive runs within one log (a log's frame counter starts again, so no gap spans two logs)."""
         out = {}
         for k, frs in self.au.items():
-            gaps = collections.Counter(b - a for a, b in zip(frs, frs[1:]))
+            gaps = self.au_gaps.get(k, collections.Counter())
             res = collections.Counter(f % 50 for f in frs)
             out["%s/%s" % k] = {"runs": len(frs), "gaps": dict(gaps.most_common(5)), "mod50": dict(res.most_common(3))}
         return out
@@ -1727,6 +1781,28 @@ class Checker:
         return 0 if not self.bad else 1
 
 
+def predict_refill(code, v):
+    """SHRINE_Refill (0x005828E0, stats/0002 § 5) for the recharge codes 1-3 on the vitals [life, max life, mana, max
+    mana, stamina, max stamina]: code 1 refills life and mana, 2 life, 3 mana, each to its maximum."""
+    want = list(v[:6])
+    if code in (1, 2):
+        want[0] = want[1]
+    if code in (1, 3):
+        want[2] = want[3]
+    return want
+
+
+def predict_well(p, v):
+    """A well (0x00585720, stats/0002 § 5) with the object's params p = [Parm1, Parm2, Parm3] on the vitals v: life
+    (Parm3 bit 1), mana (bit 0) and stamina are each raised by Parm1 * max >> 8 when below the maximum, capped; the
+    return is 1 only when something changed. Returns (vitals, return)."""
+    want = list(v[:6])
+    for i, on in ((0, p[2] & 2), (2, p[2] & 1), (4, True)):
+        if on and want[i] < want[i + 1]:
+            want[i] = min(want[i] + ((p[0] * want[i + 1]) >> 8), want[i + 1])
+    return want, int(want != list(v[:6]))
+
+
 TAGS = {"ISC", "TREE0", "TREE", "LNK", "LNX", "ULK", "ULX", "TGL", "TGX", "PRP", "PRX", "CA", "CW", "SCB", "RD",
         "RQ0", "RQ91", "RQS", "RQD", "RQL", "RQF", "RQX", "EQR", "EQX", "UOE", "UOX", "MSK", "TIP", "UOB", "SBA", "SBX",
         "DMG", "PAS", "PAX", "TK0", "TK1", "STA0", "STA1", "EXP0", "EXP1", "AU0", "AU1", "GRP", "GRX", "SHR0", "SHR1",
@@ -1734,11 +1810,12 @@ TAGS = {"ISC", "TREE0", "TREE", "LNK", "LNX", "ULK", "ULX", "TGL", "TGX", "PRP",
 
 
 def oracle_player(paths):
-    """The oracle replacement for run:2026-10-16-player (plan 0041 Phase 2): the level-up refill reads
-    UnitGetMaxHp/Mana/Stamina (LUM lines, value oracles there). Its logs hold the player's own entries after the
-    level-up (LUX "b") but no child list, so a maximum is predicted (the full value of stats 7, 9, 11 = own entry plus
-    children plus op terms, stats/0001 § 4-5) only where no child can contribute: a character with no equipped item
-    and no passive or state list. Prints, per level-up, whether the logged maxima equal the own entries."""
+    """A consistency check on run:2026-10-16-player (plan 0041 Phase 2), not an oracle replacement: the level-up
+    refill reads UnitGetMaxHp/Mana/Stamina (LUM lines, value oracles there). Its logs hold the player's own entries
+    after the level-up (LUX "b") but no child list, so whether a linked child adds to stats 7, 9 or 11 (stats/0001
+    § 4-5) cannot be read from them; equality with the own entries is only consistent with "no child contributes",
+    which would have to be shown from the log or the recipe and its items' requirements before a maximum could be
+    replaced. Prints, per level-up, whether the logged maxima are consistent with the own entries."""
     tot = same = 0
     for path in paths:
         lum = {}
@@ -1755,9 +1832,9 @@ def oracle_player(paths):
                 tot += 1
                 same += got == own
                 print("%s maxima %r own %r %s" % (os.path.basename(path), got, own,
-                                                   "equal" if got == own else "differ: a child list contributes"))
+                                                   "consistent (equal)" if got == own else "not consistent (differ)"))
                 lum = {}
-    print("ORACLE player level-ups=%d own_equal=%d child_lists_needed=%d" % (tot, same, tot - same))
+    print("CONSISTENCY player level-ups=%d consistent=%d not_consistent=%d replaced=0" % (tot, same, tot - same))
     return 0
 
 

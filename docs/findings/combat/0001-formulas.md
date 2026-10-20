@@ -910,6 +910,12 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
   takes **no draw on either seed**. With the `STA` state-52 line skipped (`tools/combat.py` now does so and counts
   it), all 133 "expected `DRB`" events of that session check: the defender's seed at `DRR` and the attacker's at
   `RPE`/`BD1` equal the model with no step between them. (fn:COMBAT_DefenceRoll@0x0057DFB0, run:2026-10-16-combat)
+  *2026-10-20 (plan 0047 Phase 1):* the log could not be copied to `workspace/logs/combat/`: the lane's session
+  scratch is gone, and a scan of every harness log on the machine (307 files beginning `# d2run seed=`) found none
+  with that hash or that save (`workspace/logs/combat/p47r-fleshripper-search.txt`, `aef49a11…`). Commit `5871b00`'s
+  `CombatOW` recipe still builds `5f440622…` byte for byte, so the session is staged again as `owf-n-andariel-p8`
+  (`tools/combat_sessions.py`, save `CombatOWF`, the same recipe renamed, seed 3712) for plan 0047 Phase 2; until it
+  runs, this bullet rests on the review's re-check of the lost log.
 - [L] The same session's remaining 101 mismatches are a different gap: an event-9 (kill) handler at `0x005C01D0` runs
   inside the delivery before `AD1` with that revision's items (*Fleshripper*, *Dracul's Grasp*); not modelled.
   *2026-10-20 (plan 0045 P1.3):* read: it is function 28 (`item_healafterkill`), life `+= stat · 256` capped, no draw;

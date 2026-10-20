@@ -252,6 +252,21 @@ RECIPE_BASES = {
     "quest-p3anya": (BASE_X, "079bc38d014e3adcccb2e2406fefd9b4010fba3bd2b4533001980e361d91e7dd"),  # run:2026-10-19-quests3 (x-anya, nm-anya, h-anya)
     "quest-p3meshif": (BASE_X, "9927619642bd21f43b44a9e5555ae433715ca5d05447d8fdc16a98b1e936d0c0"),  # run:2026-10-19-quests3 (x-meshifw)
     "quest-p3wpact": (BASE_X, "c0371020861814b6dc9fb27a6e3edc047610d024add16f94d0b7a4884590698c"),  # run:2026-10-19-quests3 (x-wpact1-0, x-wpactr-0)
+    # plan 0047 Phase 1 (tools/combat_sessions.py, tools/stats_sessions.py, tools/quest_sessions.py): built, not run yet
+    "combatdr": (BASE_X, "639afd6a6c38a2e865c0ea61d2b859d15ca55d276a541c2267d6a3ce0670f297"),
+    "combatabs": (BASE_X, "05f4741c6f17e3260868aac6c761f0a5523aa0670bc3210ca28d9daa1b6cc431"),
+    "combatfrz": (BASE_X, "c1ed1c393a0bbc895def710550bf301dbeb36f187d296370a9e26af8bee58759"),
+    "combatowf": (BASE_X, "77807e000c7c7c863752a795a45b446525dd38020c86a22ea1584c8c2639903c"),  # 5871b00's CombatOW, renamed
+    "combatama": (os.path.join(SAMPLES, "smpama.d2s"), "5b694383e89d63d2c52d07968e1b265b4754f239b55a7fba0d2c42042e126522"),
+    "combatass": (os.path.join(SAMPLES, "smpasn.d2s"), "e0ea31a2df0dce6a63d4c705f4cdd9ce0c2b94716d71b3e8f692d0a49fc7af48"),
+    "combatasso": (os.path.join(SAMPLES, "smpasn.d2s"), "c4dc7172e72c896accb07ebf77bfe05fd460eae75e4c757374039ae675b96475"),
+    "statssor": (os.path.join(SAMPLES, "smpsor.d2s"), "963ed3809c35d69f29800a1292b9f9c4f4104245e612c4632206c123760efadd"),
+    "statspald": (os.path.join(SAMPLES, "smppal.d2s"), "9fd320d2eb0859fa1f75b4b0cbd274a1ff85a2551fa5b8d2a0a5e4e3c3729870"),
+    "statsass": (os.path.join(SAMPLES, "smpasn.d2s"), "5eb48cc0be61071d9e1e64549a365f58ecb6b62f5e12fa0b8a49f5cfc3ccdbde"),
+    "statsdru": (os.path.join(SAMPLES, "smpdru.d2s"), "58cc838b578534b0d0dd0329bfb54188e737a6994576d3957ff0c9bbfebd312c"),
+    "statsfloor": (os.path.join(SAMPLES, "smppal.d2s"), "82db5212c3cc57367313a0e731336ffd83234dd94a55781070bf90e093eac5ca"),
+    "statspot": (os.path.join(SAMPLES, "smpbar.d2s"), "a18f03a9f2dacaa2218ac200e1f555b3aca5a79cebf7a0e706298d5ab010dc6c"),
+    "quest-p47wp": (BASE_X, "f3c935c349d44ca2fcaad2c803626b7bf62d56657d20036a39a98351b64a31d0"),
     # plan 0044 Phase 2 pairs (tools/mp_saves.py): not loaded yet
     "mp-nova-host": (BASE_X, None),
     "mp-nova-weak": (BASE_X, None),

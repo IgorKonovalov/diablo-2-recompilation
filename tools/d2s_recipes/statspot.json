@@ -1,0 +1,286 @@
+{
+  "game": "expansion",
+  "progression": 15,
+  "difficulty": [
+    131,
+    131,
+    131
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "quests": "all",
+  "class": "Barbarian",
+  "seed": 4706,
+  "name": "StatsPot",
+  "stats": {
+    "strength": 400,
+    "energy": 200,
+    "dexterity": 400,
+    "vitality": 800,
+    "hitpoints": 200,
+    "maxhp": 6000,
+    "mana": 3000,
+    "maxmana": 3000,
+    "stamina": 800,
+    "maxstamina": 800,
+    "level": 85,
+    "experience": 1145236814
+  },
+  "skills": {},
+  "mouse": {
+    "left": "Attack",
+    "right": "Attack",
+    "swap_left": "Attack",
+    "swap_right": "Attack"
+  },
+  "items": [
+    {
+      "code": "hbl",
+      "equip": "belt"
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 1,
+      "y": 0
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 3,
+      "y": 0
+    },
+    {
+      "code": "yps",
+      "store": "inventory",
+      "x": 4,
+      "y": 0
+    },
+    {
+      "code": "wms",
+      "store": "inventory",
+      "x": 5,
+      "y": 0
+    },
+    {
+      "code": "vps",
+      "store": "inventory",
+      "x": 6,
+      "y": 0
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 7,
+      "y": 0
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 8,
+      "y": 0
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 9,
+      "y": 0
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 0,
+      "y": 1
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 1,
+      "y": 1
+    },
+    {
+      "code": "yps",
+      "store": "inventory",
+      "x": 2,
+      "y": 1
+    },
+    {
+      "code": "wms",
+      "store": "inventory",
+      "x": 3,
+      "y": 1
+    },
+    {
+      "code": "vps",
+      "store": "inventory",
+      "x": 4,
+      "y": 1
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 5,
+      "y": 1
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 6,
+      "y": 1
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 7,
+      "y": 1
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 8,
+      "y": 1
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 9,
+      "y": 1
+    },
+    {
+      "code": "yps",
+      "store": "inventory",
+      "x": 0,
+      "y": 2
+    },
+    {
+      "code": "wms",
+      "store": "inventory",
+      "x": 1,
+      "y": 2
+    },
+    {
+      "code": "vps",
+      "store": "inventory",
+      "x": 2,
+      "y": 2
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 3,
+      "y": 2
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 4,
+      "y": 2
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 5,
+      "y": 2
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 6,
+      "y": 2
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 7,
+      "y": 2
+    },
+    {
+      "code": "yps",
+      "store": "inventory",
+      "x": 8,
+      "y": 2
+    },
+    {
+      "code": "wms",
+      "store": "inventory",
+      "x": 9,
+      "y": 2
+    },
+    {
+      "code": "vps",
+      "store": "inventory",
+      "x": 0,
+      "y": 3
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 1,
+      "y": 3
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 2,
+      "y": 3
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 3,
+      "y": 3
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 4,
+      "y": 3
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 5,
+      "y": 3
+    },
+    {
+      "code": "yps",
+      "store": "inventory",
+      "x": 6,
+      "y": 3
+    },
+    {
+      "code": "wms",
+      "store": "inventory",
+      "x": 7,
+      "y": 3
+    },
+    {
+      "code": "vps",
+      "store": "inventory",
+      "x": 8,
+      "y": 3
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 9,
+      "y": 3
+    }
+  ],
+  "belt_fill": "hp1"
+}

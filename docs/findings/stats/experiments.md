@@ -83,6 +83,7 @@ Paladin sessions, side by side, one session per slot.
 | `workspace/logs/stats/s1017-run.lst` | `a42758f3…` | the 18 session logs of the run, in check order |
 | `workspace/logs/stats/s1017-manifest.txt` | `7fd7a93a…` | per log: sha256, size, line count (`tools/stats.py manifest`) |
 | `workspace/logs/stats/s1017-check.json` | `677e12a6…` | the checker's report over the 18 logs |
+| `workspace/logs/stats/s1017-check-p47r.json`, `.txt` | `4b94c8ef…`, `bf0d4613…` | the 2026-10-20 re-check (plan 0047 Phase 1) |
 | `workspace/logs/stats/s1017-<session>.log` | in the manifest | the logger's output, one per session |
 | `workspace/logs/stats/s1017-<session>.plan`, `.pilot.txt`, `-shots/` | — | the click plan, the driver's output, screenshots |
 | `workspace/logs/stats/p41h-saves/*.d2s` | `tools/test_d2s.py` | the built characters |
@@ -93,18 +94,32 @@ workspace/logs/stats/s1017-run.lst) --json workspace/logs/stats/s1017-check.json
 checks: 180 full Trang-Oul's set lists not predicted (the model builds no `state` or `oskill` property list), one
 event open at a log's end (the session killed inside it).
 
-- **Not an oracle** (P2 review): the 180 full Trang-Oul's lists are not an ADR-0004 boundary oracle (the set list is
-  in scope, and ADR-0004 never oracles in-scope code). They are an **unchecked remainder**: the model takes each
+- **Not an oracle** (P2 review; *checked since the 2026-10-20 re-check*, below): the 180 full Trang-Oul's lists are not
+  an ADR-0004 boundary oracle (the set list is in scope, and ADR-0004 never oracles in-scope code). They were an
+  **unchecked remainder** at the run: the model takes each
   logged list as the input of the events after it (its propagation, the `monsterset` clear, the `oskill` passive),
   which are predicted; the seeds are checked at the link around it; the Sets count excludes them (5 569 of 5 749),
-  and the content of a full block with a `state` or `oskill` property stays `[I]`.
-  (fn:sub_00660120_SetBonusApply@0x00660120, run:2026-10-17-stats)
+  and the content of a full block with a `state` or `oskill` property stayed `[I]` until the 2026-10-20 re-check
+  predicted all 180. (fn:sub_00660120_SetBonusApply@0x00660120, run:2026-10-17-stats)
 - **Re-check at the review** (2026-10-17, `main` `af90ea8` merged): the manifest re-hashed (18 logs: sha256, size
   and line count equal); `tools/stats.py check` over the 18 logs in this order gives a report byte-identical to
   `s1017-check.json`, and in the reversed order and in a shuffled order (`random.Random(41)`) 0 mismatches with
   identical counts and seed tallies (only the aura grid's cross-log gaps and the first 20 wells of the report differ).
   The pre-fix checker (`27f49ad^`) on the shuffled order fails once (`aura_rng`, `s1017-pal-tundra.log:613`: the
   open aura run at the end of `palc-oasis` carried into the next log), so the per-log reset is the fix.
+- **Re-check 2026-10-20** (plan 0047 Phase 1, `lane/p47r`; the checker items of the P2 review's backlog entry):
+  `tools/stats.py` `98538acf…` and `tools/test_stats.py` `d7d6b0c6…` (15 tests, the well and recharge-shrine
+  predictions, the negative stat-74 tick and the 256 floor, the set blocks, and two written logs for the per-log
+  reset, the per-log aura gaps and the chained pairs). The same command, `--json
+  workspace/logs/stats/s1017-check-p47r.json` (`4b94c8ef…`; printed report `s1017-check-p47r.txt`, `bf0d4613…`):
+  **0 mismatches**. Against `s1017-check.json` only these change: the set-list note is gone (the 180 full
+  Trang-Oul's lists are predicted, so all 5 749 wearer lists are checked); the aura grid's gaps are taken within each
+  log (`h/sel` 1 014, `p/item` 893, `p/sel` 1 699 gaps, all 50; the negative cross-log gaps are gone); three counts
+  are new: `aura_chained_pairs` 746, `aura_chain_breaks` 115 and `aura_drawing_runs_without_next_run` 4 (865 drawing
+  runs). In the reversed order the report differs only in the first 20 wells listed. `oracle-player` now prints a
+  consistency count, not a replacement: `CONSISTENCY player level-ups=20 consistent=13 not_consistent=7 replaced=0`.
+  (fn:sub_00660120_SetBonusApply@0x00660120, fn:PROP_Func24_ParParam@0x0065F390, fn:SKILLS_RollElemDamage@0x0056E0C0,
+  run:2026-10-17-stats)
 
 ### Results
 
@@ -113,8 +128,9 @@ event open at a log's end (the session killed inside it).
   fall short** of 20. The aura kind moved the caster's seed in 865 runs, each by exactly the `RNG_RangeB` calls of
   `SKILLS_RollElemDamage` from `sub_005CF3A0_AuraHitDo` (Sanctuary's hit): each such run's exit is asserted
   against its entry advanced by its logged draws (865). Chained pairs in the ADR-0014 sense (the next run of the
-  same caster entering on that exit): 746, counted at the review by a scratch pass over the AU0/AU1 lines; the
-  checker does not report them (follow-up). The game seed moved in one aura run (a kill dropped an item).
+  same caster entering on that exit): 746, counted at the review by a scratch pass over the AU0/AU1 lines and, since
+  the 2026-10-20 re-check, by the checker (`aura_chained_pairs` 746, keyed by the caster unit; 115 next runs entered
+  elsewhere, 4 drawing runs had no next run in their log). The game seed moved in one aura run (a kill dropped an item).
 - **Reads:** 891 844 in the 50-frame windows after each list change, 120 stat ids. **Ops** in predicted writes: 1 348,
   2 1 490, 4 2 568, 5 26, 8 919, 9 3 784, 11 92, 13 136 (every stock op ≥ 20). Ops 3, 6, 7, 10, 12: no reachable row.
 - **Recomputes:** 26 087 links and unlinks, 232 042 CacheAdd/CacheWrite, 9 level changes. **Sets:** 5 749 wearer

@@ -225,6 +225,34 @@ OBJINIT_Waypoint (InitFn 17)                                                    
   (fn:UNIT_SetMode@0x00624690, fn:UNIT_AnimInit@0x00624390, tbl:Objects.txt:Sync, tbl:Objects.txt:FrameDelta)
 - [I] Other writers of the waypoint record: `NPC_MenuAction` after an NPC act change (40, 75, 109; § 5),
   `DurancePortalOperate` (103), and quest code `0x005B4FF0` (quests/0001 § Act IV). (fn:WAYPOINT_Set@0x00660EC0 callers)
+- [I] *2026-10-20 (plan 0047 Phase 1, static, r2/objdump):* **a field waypoint is created in mode 0 unless the player
+  arrived in its room by waypoint.** A waypoint is a DS1 preset object. `sub_00555910_PresetUnitSpawn` passes the
+  preset unit's `+0x00` (its mode: 0 for every type-2 preset unit, [drlg/0004](../drlg/0004-preset-units.md) row 7)
+  as the fifth argument of `sub_005557D0_PresetUnitDispatch` (push at 0x0055593A), which passes it on as the mode
+  argument of `sub_00555230_SUnitCreate` (push at 0x00555837). For an object, `SUnitCreate` stores it at unit `+0x10`
+  (0x005553DF–0x005553E5) before `OBJ_ServerInit` (0x005553FE) runs the `InitFn`. `g_ObjInitFns[17]` is
+  `OBJINIT_Waypoint` (`0x00731C04` holds `0x00547210`). Reading `OBJINIT_Waypoint` again: it walks the arrival list
+  at `objrgn+0x1110` and matches an entry by room pointer (0x00547231) or by the entry's point inside the room's
+  rectangle (`+0x4C`/`+0x54` in x, `+0x50`/`+0x58` in y, 0x0054723C–0x0054725D); on a match it sets mode 1 only if the
+  mode is 0 (0x0054728C), queues object event 1 at frame + (Objects `+0xDC` >> 8) (0x005472AF–0x005472CA), frees the
+  entry and zeroes the list head (0x005472EC). With no match it sets mode 2 when `sub_0061AB00_RoomIsTown` holds
+  (0x0054726A–0x00547279), and otherwise leaves the mode alone. The function never reads the waypoint record, so a
+  waypoint the player already holds is also created in mode 0 when its room is built on foot or through a warp.
+  (fn:sub_00555910_PresetUnitSpawn@0x00555910, fn:sub_005557D0_PresetUnitDispatch@0x005557D0,
+  fn:sub_00555230_SUnitCreate@0x00555230, fn:OBJ_ServerInit@0x0054F5D0, data:g_ObjInitFns@0x00731BC0,
+  fn:OBJINIT_Waypoint@0x00547210, fn:sub_0061AB00_RoomIsTown@0x0061AB00)
+- [I] *2026-10-20 (plan 0047 Phase 1):* **a route a fresh character can walk**, for the plan's 20 activations with
+  the `Sync` 0 draw. The five waypoint rows with `Sync` 0 (429, 494, 496, 511, 539) are the expansion ones by their
+  descriptions (`expansion no snow`, `baals_waypoint`, `wilderness_waypoint`, `icecave`, `temple`), and four Act V
+  field waypoints lie one warp apart below the Arreat Plateau: LvlWarp 71 from the Plateau (112) to the Crystalline Passage (113),
+  74 to the Glacial Trail (115), 74 to the Frozen Tundra (117), 71 to the Ancients' Way (118) (Levels `Vis`/`Warp`
+  columns). A save holding only the towns and the Plateau (`TravelWpArreat`,
+  `tools/d2s_recipes/quest-p47wp.json`) arrives at the Plateau by waypoint (its own waypoint takes the arrival
+  node, the room the arrival names), then takes the warps: no arrival node names the four rooms, so each waypoint is
+  created in mode 0, and operating it is an activation (§ 2 above). The ice caves' waypoint rooms are LvlPrest Def
+  1034–1037, the tundra's 953 or 954. Sessions `x-wpact5r-0` … `-5` in `tools/quest_sessions.py` (six map seeds,
+  four activations each); not run. (tbl:Levels.txt:Warp0, tbl:Objects.txt:Sync, tbl:LvlPrest.txt:Def,
+  fn:OBJINIT_Waypoint@0x00547210)
 
 ### 3. Waypoint travel
 
