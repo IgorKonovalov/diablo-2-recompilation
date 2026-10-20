@@ -2915,6 +2915,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0054A140,func,sub_0054A140_Pkt0FRightSkillXYAlt,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x0054A1A0,func,sub_0054A1A0_Pkt10RightSkillUnitAlt,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x0054A200,func,sub_0054A200_Pkt11RightSkillUnitAlt2,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00553490,func,sub_00553490_PathTargetRevalidate,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
 0x00553540,func,UNIT_GetTargetUnit,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x00554D20,func,sub_00554D20_SkillAllyTest,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x0056BFE0,func,SKILLS_PayCost,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
@@ -2944,6 +2945,19 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00580A70,func,PLAYER_ModeCmdUnit,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x005A75C0,func,sub_005A75C0_MonModeStartSkill,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x005A8670,func,sub_005A8670_MonSeqFrame,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x005A9720,func,sub_005A9720_MissSubAtSelf,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
+0x005AE680,func,sub_005AE680_MissDo06SubPerCell,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
+0x005AE780,func,sub_005AE780_MissDo07Homing,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
+0x005AE8A0,func,sub_005AE8A0_MissDo08ScatterByLevel,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
+0x005AE940,func,sub_005AE940_MissDo09SubPerCell,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
+0x005AEA60,func,sub_005AEA60_MissDo10ScatterBySkill,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
+0x005AEB60,func,sub_005AEB60_MissDo11StepToTarget,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
+0x005AECA0,func,sub_005AECA0_MissDo12SubPerCell,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
+0x005AF030,func,sub_005AF030_MissDo15OrbBolts,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
+0x005AF170,func,sub_005AF170_MissDo16TurnTarget,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
+0x005AF240,func,sub_005AF240_MissDo17CairnStones,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
+0x005AF300,func,sub_005AF300_MissDo18ChestSpawner,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
+0x005B0BC0,func,sub_005B0BC0_MissDo01Thunk,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
 0x005C6CC0,func,SKILLS_ApplyAuraStats,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x005D2B60,func,sub_005D2B60_BloodManaPay,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x005D3320,func,SKILLS_AddProgressiveCharge,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
@@ -2952,6 +2966,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005D7EA0,func,sub_005D7EA0_SkillSt32Hit,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x005DA940,func,sub_005DA940_SkillSt06Hit,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x005DAB40,func,sub_005DAB40_SkillSt07ImpaleHit,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x005DB6D0,func,sub_005DB6D0_SkillDo10GuidedMissile,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
 0x005FDA80,func,ITEMSKILL_Cast,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x00611760,func,sub_00611760_CalcNameToCode,,I,data/calc,docs/findings/data/0005-calc.md
 0x006118B0,func,sub_006118B0_CalcPoolAppend,,C,data/calc,docs/findings/data/0005-calc.md
@@ -2964,6 +2979,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006201D0,func,UNIT_GetRightSkill,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x00620210,func,UNIT_SetUsedSkill,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x00620250,func,UNIT_GetUsedSkill,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00620870,func,sub_00620870_UnitGetPos,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
 0x00627B40,func,sub_00627B40_ItemCalcVar,,C,data/calc,docs/findings/data/0005-calc.md
 0x00627B50,func,sub_00627B50_ItemCalcMin,,C,data/calc,docs/findings/data/0005-calc.md
 0x00627B60,func,sub_00627B60_ItemCalcMax,,C,data/calc,docs/findings/data/0005-calc.md
@@ -2973,6 +2989,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00631430,func,sub_00631430_ItemCalcFnLookup,,C,data/calc,docs/findings/data/0005-calc.md
 0x00631490,func,sub_00631490_ItemCalcFnArity,,C,data/calc,docs/findings/data/0005-calc.md
 0x006314A0,func,sub_006314A0_ItemCalcIdent,,C,data/calc,docs/findings/data/0005-calc.md
+0x006416D0,func,sub_006416D0_UnitEdgeDistance,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
 0x006436E0,func,sub_006436E0_SkillsCalcMin,,C,data/calc,docs/findings/data/0005-calc.md
 0x006436F0,func,sub_006436F0_SkillsCalcMax,,C,data/calc,docs/findings/data/0005-calc.md
 0x00643700,func,sub_00643700_SkillsCalcRand,,C,data/calc,docs/findings/data/0005-calc.md
@@ -3009,6 +3026,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00647BC0,func,SKILLS_GetPhysMin,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x00647D00,func,SKILLS_GetPhysMax,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x00647E00,func,SKILLS_GetMasteryCalc,,I,data/calc,docs/findings/data/0005-calc.md
+0x00648AD0,func,sub_00648AD0_PathSetTargetPoint,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
+0x00648BB0,func,sub_00648BB0_PathGetTargetTypeGuid,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
+0x00648BF0,func,sub_00648BF0_PathGetTargetUnit,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
 0x0064AF20,func,MISS_GetDamMin,,I,data/calc,docs/findings/data/0005-calc.md
 0x0064AFF0,func,MISS_GetDamMax,,I,data/calc,docs/findings/data/0005-calc.md
 0x0064B100,func,MISS_GetElemMin,,C,data/calc,docs/findings/data/0005-calc.md
@@ -3036,7 +3056,10 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006C19C0,func,CALC_EmitConst,,C,data/calc,docs/findings/data/0005-calc.md
 0x006C1A50,func,CALC_EmitVar,,C,data/calc,docs/findings/data/0005-calc.md
 0x006C1AE0,func,CALC_Compile,"int __stdcall CALC_Compile(char * text, byte * out, int max, void * fnLookup, void * fnArity, void * ident)",C,data/calc,docs/findings/data/0005-calc.md
+0x006E10E0,data,g_UnitHashOffsets,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
 0x006E1740,data,g_PlayerModeStartFuncs,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x006E2A78,data,g_Circle64Y,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
+0x006E2B78,data,g_Circle64X,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
 0x006FC874,data,g_CalcPrecedence,,C,data/calc,docs/findings/data/0005-calc.md
 0x00732140,data,g_SkillStartFuncs,,C,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x007322B0,data,g_SkillDoFuncs,,C,skills/dispatch,docs/findings/skills/0001-dispatch.md
