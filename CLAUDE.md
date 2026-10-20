@@ -55,7 +55,7 @@ docs/
   wiki/              # human-readable pages over the reviewed specs; no claims of their own, not published (ADR-0012)
   sources.md         # registry of external references used as leads (see sources policy)
   glossary.md        # D2 terms (ilvl, alvl, TC, DRLG, act/level/room…)
-  backlog/           # cross-lane requests, one file per entry (tools/backlog.py); backlog.md is the frozen archive
+  backlog/           # cross-lane requests, one file per entry (tools/backlog.py); closed ones in backlog/archive/; backlog.md is the frozen pre-2026-10-17 archive
 re/
   symbols.csv        # SINGLE SOURCE OF TRUTH for named addresses (the Ghidra project is disposable)
   types/             # C headers for recovered structs, imported into Ghidra
