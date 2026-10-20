@@ -419,7 +419,9 @@ with the *Steel* load of sockets 35) to **H6b**; vendors 22 (the store tab and g
 and `+0x28` of the store creation record at `IC0`) to **H6c**; quest-drops 38 (a cursor line at
 `sub_0055EEA0_CursorItemConsume`) to **H6e1**; sockets 44 (normal and rare drops requesting more than 3 and 4) to
 **H2b** with sockets 42. Static leftovers (backlog, reverser): quest-drops 8, 10 and 19 (the 45 register-word
-`SetState`/`ClearState` sites and the 12 callers of the range clear `0x0065C3E0`). The other remainders are d-none or
+`SetState`/`ClearState` sites and the 12 callers of the range clear `0x0065C3E0`). *Closed at the `lane/p49r` review (plan 0049 Phase 1, 2026-10-20):* quest-drops 10 and 19 are **raised** (the
+record-function closure, its limits stated in items/0010 qd 10); quest-drops 8 stays raised in part, its remainder
+answered `[I]` (word 41 is object 1's `+0xE4` word). No class moves; the rows stay counted as S2c. The other remainders are d-none or
 d-edit as each ledger says (sockets 4, 6, 43, 47; cube 47; properties 19 L573), or have no further route and stay `[I]`
 in Phase 3 (quality 16, the version-0 rows; sockets 2, 26; cube 55 L829, the portal object's oracle; vendors 11, 21,
 24, 28; quest-drops 21).
@@ -914,7 +916,7 @@ a letter suffix and its own run id, as the plan requires.
 | **H6e2** | `quest-items` | 24 | 0/23/1 | quest-drops 1, 30, 33–35; objects 48 | `quests.gdb` with `objop`/`hunt` on tool-built quest saves: the 16 quest items, chests, duplicates, the item-move gate; the quest objects ride the same sessions; a backtrace at `QUESTS_ObjectEvent` (quest-drops 1). objects/0001 cites the record | `findings/items/experiments.md` | ~20, at the cap |
 | **H6f** | `hirelings` | 23 | 0/17/6 | hirelings 1–2, 5–6, 9–10, 14–18, 20–21, 23, 25, 27–29, 31, 35–37 | `hirelings.gdb` + `hireling_sessions.py`: Asheara's trade first, Greiz, classic lists, the free mercenary, the level floor, quest, level and gold gates, stash payment, `MERC_AddExp`, `merc_saves.py` saves, resurrection | `findings/hirelings/experiments.md` | ≤ 20 |
 | **H6g** | `player` | 17 | 0/8/9 | player/creation 2–4, 12, 16 (from S3b), 18, 22–23, 25, 27–30, 32–33, 35 | `player.gdb` + `player_sessions.py`: death loss, a stat point, two skill points on one skill and one skill to its maximum (16, § 2.6), stat 85, the level-99 cap and a level-98 save, the capped grant (trigger read statically first), client `+0x3D4`, the belt column, the monster's experience at the kill | `findings/player/experiments.md` | ≤ 20 |
-| **H7a** | `lifecycle` | 0 inventory rows (plan 0040 P2 shortfalls, `lane/rbs4` review) | — | none: drlg/lifecycle open questions, the town-follow case and the `0x400` drop ([drlg/0009 § 11.2](../../findings/drlg/0009-room-lifecycle.md#112-the-town-follow-static-remainder-lanerbs4), § 11) | `rooms.gdb` + `rooms.py check`, `rooms_sessions.py` (run:2026-10-17-lifecycle's family). (1) Town-follow, recipe (b): a chaser in the Blood Moor whose planned route to the player crosses a Rogue Encampment room; then the player leaves until the camp's rooms release, and the save rule's `SaveMonsters` 0 half is checked. Its map seed and points come from an offline geometry check made before a slot is taken (reverser entry [rbs4 review static remainders](../../backlog/2026-10-17-architect-reverser-rbs4-review-static-remainders.md) (1)); if no stock layout allows the route, (b) is a recorded shortfall. Recipe (c), a teleporting unique chasing a player inside the camp, only if that entry's (2) shows an AI teleport target can lie in a town room. (2) The `0x400` drop: re-enter an `h-highlands` room holding a class 522 record with flags `0x540`. | `findings/drlg/experiments.md` | ~4 (estimate) |
+| **H7a** | `lifecycle` | 0 inventory rows (plan 0040 P2 shortfalls, `lane/rbs4` review) | — | none: drlg/lifecycle open questions, the town-follow case and the `0x400` drop ([drlg/0009 § 11.2](../../findings/drlg/0009-room-lifecycle.md#112-the-town-follow-static-remainder-lanerbs4), § 11) | `rooms.gdb` + `rooms.py check`, `rooms_sessions.py` (run:2026-10-17-lifecycle's family). (1) Town-follow, recipe (b): a chaser in the Blood Moor whose planned route to the player crosses a Rogue Encampment room; then the player leaves until the camp's rooms release, and the save rule's `SaveMonsters` 0 half is checked. Its map seed and points come from an offline geometry check made before a slot is taken (reverser entry [rbs4 review static remainders](../../backlog/archive/2026-10-17-architect-reverser-rbs4-review-static-remainders.md) (1)); if no stock layout allows the route, (b) is a recorded shortfall. Recipe (c), a teleporting unique chasing a player inside the camp, only if that entry's (2) shows an AI teleport target can lie in a town room. (2) The `0x400` drop: re-enter an `h-highlands` room holding a class 522 record with flags `0x540`. | `findings/drlg/experiments.md` | ~4 (estimate) |
 
 **Logger-family conflicts.** Two batches may run at once only when they share no recipe save, logger file or checker
 under edit. Inside one family the batches run one after the other:
@@ -1032,6 +1034,10 @@ Static and harness batches use different resources (Ghidra copies against slots)
 | 20 | H1a | 0 | 3 | 46 | after H1b (same family); +1 from H6d (§ 2.6) |
 | 21 | H2c | 0 | 0 | 7 | forced, admitted with the § 6 conditions; after H2b (same family) |
 | 22 | H7a | 0 | 0 | 0 | plan 0040 P2 shortfalls, not inventory rows (`lane/rbs4` review); its static prep first (reverser entry (1), (2)); may pair with any batch |
+
+**Order from 2026-10-20 (owner).** The harness ranks above are superseded for the batches left: H5b (in flight) →
+H2a → H2b → H2c → H4a → H5d → H1b → H1a → H3b, then H6e2 → H6e1 → H6b → H6a → H6c → H6f → H6g. The family rules
+below and in the notes still hold ([plan 0038 log](../0038-inferred-claims-sweep.md#implementation-log)).
 
 **Ruling 3 (order).** H5c stays ahead of H5e and H5a. It has the most T1 statements and the fewest sessions of the
 three (about 10, against 16–17 for H5e), and it unblocks H5d. Its logger edits are static work: the lane makes them,

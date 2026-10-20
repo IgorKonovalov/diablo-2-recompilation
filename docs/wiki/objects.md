@@ -2,7 +2,7 @@
 based_on:
   - docs/specs/objects/README.md 2026-10-17
   - docs/specs/items/tc.md 2026-10-17
-  - docs/specs/drlg/lifecycle.md 2026-10-17
+  - docs/specs/drlg/lifecycle.md 2026-10-20
 ---
 
 # Objects: shrines, chests, barrels and the rest
@@ -355,7 +355,8 @@ right script by object class. Their item creations roll the [quest seed](../glos
 ([objects § L](../specs/objects/README.md#l-quest-objects-the-hellforge-and-the-quest-item-objects-named-only)).
 That timer event is entry 7 of the object timer events
 ([objects § K](../specs/objects/README.md#k-object-timer-events)).
-The objects spec only places them; their drops are explained on the [other item paths page](items-other-paths.md).
+The objects spec only places them; their drops are explained on the [other item paths page](items-other-paths.md), and
+the quest scripts behind them, the waypoints and the portals on [quests and travel](quests.md).
 That routing is read from the code. For the Hellforge it is confirmed, for one player in Normal, Nightmare and Hell:
 its click reaches its operate function and its waves come through the timer event, its 25 item creations in a test
 run left the quest seed unchanged on each entry and exit and drew nothing from the object-region seed, and in Hell its
@@ -434,5 +435,6 @@ From the spec's [open questions](../specs/objects/README.md#open-questions) and 
 - What happens after the hand-off: [treasure class spec § J](../specs/items/tc.md#j-object-drops-named-only) and the
   [items page](items.md).
 - How rooms and map pieces come to exist: [levels](levels.md). The monster pass that follows the object window:
-  [monsters](monsters.md). Seeds and draws: [randomness](randomness.md).
+  [monsters](monsters.md). Seeds and draws: [randomness](randomness.md). Quest scripts, waypoints and portals:
+  [quests and travel](quests.md).
 - Terms: the [glossary](../glossary.md).

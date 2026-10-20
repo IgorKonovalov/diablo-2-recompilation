@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/properties, items/tc, items/vendors, stats/aggregate, monsters/stats, hirelings, combat/delivery, data/excel]
 consumed_by: [items/vendors, hirelings, items/quest-drops, combat/delivery]
-tags: {C: 109, I: 80, L: 12}
+tags: {C: 125, I: 83, L: 12}
 updated: 2026-10-19
 ---
 
@@ -15,8 +15,8 @@ updated: 2026-10-19
 This spec gives what an item costs to buy, sell, gamble and repair; what hiring, resurrecting and identifying cost;
 how much gold a pile holds, what caps hold gold and what a player loses on death; and how items lose durability,
 quantity and charges in use and get them back. One function prices everything an NPC trades. The gold, cost and
-price paths draw nothing of their own: only the wear rolls draw, and gold piles draw through the item creation that
-makes them. Names of functions, structs and fields are ours ([items/0011](../../findings/items/0011-economy.md)).
+price paths draw nothing of their own: only the wear rolls and the count of Wirt's piles draw, and gold piles and
+the store's copy of a sold item draw through the item creation that makes them. Names of functions, structs and fields are ours ([items/0011](../../findings/items/0011-economy.md)).
 
 Notation. All arithmetic is signed 32-bit (`i32`) with wrap-around on multiplication, and `÷` truncates toward zero,
 unless a step says otherwise. `Range` and `Step` are the primitives of [rng](../rng/README.md#algorithm); `RangeB` is
@@ -48,9 +48,11 @@ flowchart LR
 | A price is needed (trade window, purchase, sale, repair, corpse choice) | fn:sub_0062FDC0_ItemTradePrice@0x0062FDC0 → fn:ITEMS_TradePriceCore@0x0062EFB0, run:2026-10-17-economy | [C] |
 | The player buys or gambles (packet) | fn:NPC_BuyItem@0x00577830, run:2026-10-17-economy | [C] |
 | The player sells (packet) | fn:NPC_SellItem@0x00579510, run:2026-10-17-economy | [C] |
-| The player repairs one item or all (packet bit 31) | fn:sub_00578050_NpcRepair@0x00578050 → fn:sub_0062FE60_RepairCost@0x0062FE60, run:2026-10-17-economy | [C] |
+| The player repairs one item or all (packet bit 31) | fn:sub_00578050_NpcRepair@0x00578050 → fn:sub_0062FE60_RepairCost@0x0062FE60, run:2026-10-17-economy, run:2026-10-19-economy2 | [C] |
+| A quest service (Charsi's imbue, Larzuk's socket, Anya's personalization) finishes its item | fn:NPC_MenuAction@0x00579D60 → fn:sub_005761C0_ItemRepairAll@0x005761C0, run:2026-10-19-economy2 | [C] |
 | Hire, resurrect, identify at Cain | fn:HIRE_Hire@0x005770E0, fn:MERC_Resurrect@0x00579C00, fn:NPC_CainIdentify@0x00578460, run:2026-10-17-economy | [C] |
 | A gold item is created; a monster's gold drop is scaled | fn:sub_00557AB0_ItemInitStats@0x00557AB0, fn:sub_005589A0_DropGoldFind@0x005589A0, run:2026-10-17-economy | [C] |
+| Wirt's body is operated (object 268; one object event 7 per pile) | fn:sub_00594630_A1Q4_WirtGold@0x00594630 → fn:sub_00559A30_DropItemAtUnit@0x00559A30, run:2026-10-19-economy2 | [C] |
 | An amount is dropped as piles (Baal, overflow, death) | fn:sub_0055A090_DropGoldAmount@0x0055A090, run:2026-10-17-economy | [C] |
 | A player dies | fn:PLAYER_DeathGoldLoss@0x005357D0, run:2026-10-17-economy | [C] |
 | A melee hit is delivered | fn:COMBAT_DeliverQueued@0x0057D4F0 → fn:COMBAT_DurabilityLoss@0x0057D3D0, run:2026-10-17-economy | [C] |
@@ -259,8 +261,13 @@ Step notes:
 - C3–C4. [C] The run reproduces qualities 1–7 (the low halving, the set row's terms in 66 inputs, the rare item's
   six affixes in 18), the automagic, magic and unique terms over 1024, and unidentified items (no terms).
   (0x0062F391–0x0062F994, run:2026-10-17-economy)
-- C4. [I] Quality 8 (crafted) and a unique with no file index or no record (the magic branch) were not priced in the
-  run. (0x0062F391–0x0062F994)
+- C4. [C] Quality 8 (crafted) takes the rare branch: 55 distinct crafted price inputs reproduce in Hell (sale 35,
+  repair 17, purchase 3, the last the store copies of crafted items sold), with prefixes and suffixes in slots 0 and 1
+  through `AddTerm` and the stat terms of C5. The items were tool-built (quality 8 with affixes, no recipe mods), a
+  state the cube's crafting does not make. (0x0062F391–0x0062F994, fn:ITEMS_TradePriceCore@0x0062EFB0,
+  run:2026-10-19-economy2)
+- C4. [I] A unique with no file index or no record (the magic branch) was not priced in either run.
+  (0x0062F391–0x0062F994)
 - C4. [I] Unique and set items get no per-stat terms; superior and tempered items do. (jump table 0x0062FD9C)
 - C5–C6. [C] The stat terms are computed on `P`, `S` and `R` as they stand **before** the affix sums enter, and are
   added first, with an **unsigned** division by `n`; the affix sums follow with a signed division.
@@ -359,8 +366,9 @@ Step notes:
 - D2. [C] The plain durability fraction `((M − D) × R) ÷ M` is reproduced (107 distinct inputs); the run met no
   repair input at full durability or with stat 252, so those two branches stay [I] (read from the code).
   (0x0062F9B6–0x0062FA8E, run:2026-10-17-economy)
-- D2. [I] The repair price in Hell (mode 3 with `d` = 2) was not met; the code has no difficulty term on this path.
-  (0x0062F9B6–0x0062FA8E)
+- D2. [C] The repair price in Hell reproduces: 25 distinct mode-3 inputs at `d` = 2 (Larzuk, Halbu, Charsi) and the
+  repair-all sums of those windows, so with the first run's Normal and Nightmare inputs mode 3 is covered in all three
+  difficulties. (0x0062F9B6–0x0062FA8E, fn:sub_0062FE60_RepairCost@0x0062FE60, run:2026-10-19-economy2)
 - D3. [C] The NPC multipliers of 15 classes and quest groups A and B, each both on and off, reproduce. Quest group C
   is set by no stock Npc row, so it is unreachable on stock data. (0x0062FAAC–0x0062FAE2, tbl:Npc.txt:questflag A,
   run:2026-10-17-economy)
@@ -403,7 +411,9 @@ E2. GamblePrice(item, L):                  b ← NormBase(item) = the normcode b
   dividend is a multiple of 100, so the shift and a truncating division agree. `x + e` is not capped, so
   `10000 − e − x` goes negative at high `L` (an elite base reached). `÷ 10000` and `÷ 15` are magic-number divisions
   (`0x68DB8BAD` `sar 12`, `0x88888889` `sar 3`). (0x006293B2–0x00629552)
-- E2. [I] The floor `L2 = max(L, 5)` (a character below level 5) was not met in the run. (0x006293B2–0x00629552)
+- E2. [C] The floor `L2 = max(L, 5)` holds below level 5: 125 distinct gamble prices of a level-3 character (Gheed,
+  Anya, Jamella and Alkor, ten windows) reproduce with `L2` = 5. (fn:sub_00629370_GamblePrice@0x00629370,
+  run:2026-10-19-economy2)
 - E1. [I] No version-0 item was gambled; none is expected on stock data. (0x0062F062–0x0062F0BB)
 
 ### F. Callers: buy, sell, repair
@@ -433,24 +443,29 @@ F3. Buy (mode 0) and gamble purchase (mode 2):                                  
       price ← ItemTradePrice(…, mode);  refuse if gold + stash < price
       a permanent stackable store item: priced at quantity 1, bought min((gold + stash) ÷ unit price, room) at a time
       PayGold(price × count)
-F4. Sell (mode 1):                                                                   [C] (fn:NPC_SellItem@0x00579510, run:2026-10-17-economy)
+F4. Sell (mode 1):                                                                   [C] (fn:NPC_SellItem@0x00579510, run:2026-10-17-economy, run:2026-10-19-economy2)
       price ← ItemTradePrice(…, 1)
-      if the item is copied into the store: the copy is repaired (durability and quantity to maximum) and priced
-        again; price ← min(price, copy price)
+      copy: bool ← true
+      for each test, in this order, every one evaluated (no early exit):             ; tests 2, 5, 7 [C], the rest [I]: note F4 (0x0057962B–0x00579747)
+        1 quality 1 named Cracked;  2 flag 0x100 (broken);  3 base type 7;  4 flag 0x1000000;
+        5 flag 0x400000 (ethereal);  6 0x0055F590;  7 ItemIsCarry1Unique;  8 the store record's byte +4
+        if it matches: copy ← false
+      if copy: ItemCopy (an item creation), then the copy is repaired (durability and quantity to maximum) and
+        priced again; price ← min(price, copy price)
       PlayerGiveGold(price)                          ; clipped to the carried cap, the rest dropped (§ G)
 F5. Repair all (packet bit 31):                                                      [C] (fn:sub_0062FE60_RepairCost@0x0062FE60, run:2026-10-17-economy)
       cost ← Σ over the 13 body slots of ItemTradePrice(…, 3) for each item that has durability below a non-zero
              maximum and ItemCanRepair, or is a repairable stack below MaxStack, or has a charged skill with missing charges
       PayGold(cost);  then walk the slots again with the one-item repair (F7)
-F6. Repair one item:                                                                 [I] (fn:sub_00578050_NpcRepair@0x00578050, 0x0057822C–0x00578325)
+F6. Repair one item:                                                                 [C] (fn:sub_00578050_NpcRepair@0x00578050, 0x005782C0–0x0057834F, run:2026-10-19-economy2)
       refuse unless ItemCanRepair and one of: a throwable, stackable, non-ethereal item below MaxStack; missing
-        charges; M ≠ 0 and D < M
+        charges; M ≠ 0 and D < M                             ; [I], note F6 (0x0057822C–0x00578325)
       cost ← ItemTradePrice(…, 3);  if PayGold(cost): repair (F7)
       else if D < M:                                         ; partial repair
-        k: u32 ← (cost << 10) ÷ (M − D)
+        k: u32 ← (cost << 10) ÷ (M − D)                      ; unsigned div
         if gold > 0 and 0 < k < gold × 1024 and not broken:
-          pay all carried gold;  D ← min(M, D + (gold × 1024) ÷ k)
-F7. ItemRepairAll(game, item, player)  ; repairs ONE item despite the name          [I] (fn:sub_005761C0_ItemRepairAll@0x005761C0)
+          PayGold(gold);  D ← min(M, D + (gold × 1024) ÷ k)  ; all carried gold; signed idiv
+F7. ItemRepairAll(game, item, player)  ; repairs ONE item despite the name          [I] (fn:sub_005761C0_ItemRepairAll@0x005761C0, 0x005761CB)
       if not ItemCanRepair(item): return
       if throwable and stackable: quantity ← MaxStack(item)
       refill every charged skill (ItemRefillCharges)
@@ -461,22 +476,68 @@ F7. ItemRepairAll(game, item, player)  ; repairs ONE item despite the name      
 Step notes:
 
 - F1. [I] The test reads the item's **own** ItemTypes row. On stock data the `Equiv` closure gives the same set of
-  repairable bases ([plan 0043](../../plans/0043-items-economy.md) Phase 0 review), so the choice has no stock effect;
+  repairable bases ([plan 0043](../../plans/done/0043-items-economy.md) Phase 0 review), so the choice has no stock effect;
   the 13 `nodurability` crossbows of a `Repair` type are refused unless charged, and so are bows and `tpot`.
   (0x0062E6B2–0x0062E6D7, tbl:ItemTypes.txt:Repair, tbl:Weapons.txt:nodurability)
 - F3. [C] In 14 purchases checked, `PayGold`'s amount is a multiple of the purchase price. The permanent-stack count
   rule is read from the code only. (fn:NPC_BuyItem@0x00577830, 0x00577944, 0x00577B03, run:2026-10-17-economy)
 - F4. [C] In 43 sales checked, the gold given equals the lower of the two sale prices computed inside `NPC_SellItem`.
   (fn:NPC_SellItem@0x00579510, 0x005798CD, run:2026-10-17-economy)
+- F4. [C] **The store copy's decision.** In 11 sales with the decision logged, 6 items were copied (each an
+  `ItemCopy`; 3 placed, 3 freed when no store page took them) and 5 were refused the copy: flag `0x400000` (ethereal)
+  2, flag `0x100` (broken) 2 and `ItemIsCarry1Unique` 1 (*Annihilus*). The first run's two sales that left the game
+  seed unchanged are of these kinds (an ethereal throwing stack, flags `0xC00010`; *Annihilus*). Every test runs and
+  each match clears the copy flag, so the result is the same whichever tests match. (0x0057962B–0x00579747,
+  fn:NPC_SellItem@0x00579510, run:2026-10-17-economy, run:2026-10-19-economy2)
+- F4. [I] The other five tests (`Cracked` 0x00579630, base type 7 0x00579677, flag `0x1000000` 0x00579688,
+  `0x0055F590` 0x005796D4, the store record's byte `+4` from 0x00536CB0, tested at 0x0057970E) were not reached; that
+  they refuse the copy is read from the code. `ItemIsCarry1Unique` is true for an item unit of quality 7 with a file
+  index ≥ 0 whose UniqueItems record has the `carry1` bit (the flag byte `+0x2C` AND the byte at 0x006CE270, 4),
+  read from the code. (fn:sub_00575FA0_ItemIsCarry1Unique@0x00575FA0, tbl:UniqueItems.txt:carry1)
 - F5. [C] 138 repair-all sums equal the sum of the mode-3 price calls made inside them.
   (fn:sub_0062FE60_RepairCost@0x0062FE60, run:2026-10-17-economy)
-- F6. [I] The partial repair reads `gold` as stat 14 alone, although `PayGold` takes gold first. A partial repair, an
-  ethereal item and a broken item at a repairer were not met in the run; the single-item clicks reached
-  `NpcRepair` twice. (0x0057822C–0x00578325)
-- F7. [C] `ItemRepairAll` leaves the game and player seeds unchanged (3 115 calls). What it restores is read from
-  the code. (fn:sub_005761C0_ItemRepairAll@0x005761C0, run:2026-10-17-economy)
-- F7. [I] `ItemRepairBroken` reaches drawing code through its callees (0x0055C5C0, six calls deep); no broken item
-  was repaired in the run. (fn:sub_0055F900_ItemRepairBroken@0x0055F900)
+- F6. [C] `NpcRepair` with one item (flags word 0; repair-all has bit 31) reproduces in 4 calls: two partial
+  repairs, gold 300 for a cost of 14 464 (durability 1 → 2) and gold 7 936 for 14 208 (2 → 34), each taking all the
+  carried gold (stat 14 alone, through a second `PayGold`) with `k` and `D` as above; one refused at gold 0, item
+  unchanged; one paid repair of a broken cap in Hell (flag `0x100` cleared, durability 0 → 12). The stock client's
+  repair box asks for the full cost even when the gold is short, and both partial repairs were reached through it.
+  (0x005782C0–0x0057834F, fn:sub_00578050_NpcRepair@0x00578050, run:2026-10-19-economy2)
+- F6. [I] The entry refusals, the partial branch's tests other than `gold > 0` (the bounds on `k`, "not broken") and
+  the rounding of its two divisions (two cases fit them but do not separate it) are read from the code.
+  (0x0057822C–0x00578325, 0x005782DA–0x00578309)
+- F6. [I] **An ethereal item** gets no repair box from the client, so no packet and no `NpcRepair` call came (two
+  attempts); the server's own refusal (`ItemCanRepair` at 0x00578201) is read from the code only.
+  (fn:sub_0062E660_ItemCanRepair@0x0062E660, 0x00578201)
+- F7. [C] `ItemRepairAll` leaves the game and player seeds unchanged (3 115 calls in the first run, 894 in the
+  second). It restores the durability to the maximum: the quest services' two caps went from 1 to 12 of 12 and the
+  broken cap from 0 to 12 with flag `0x100` cleared, one case each. The quantity and charge refills are read from the
+  code. (fn:sub_005761C0_ItemRepairAll@0x005761C0, run:2026-10-17-economy, run:2026-10-19-economy2)
+- F7. [I] `ItemRepairBroken` reaches drawing code through its callees (0x0055C5C0, six calls deep). The one broken
+  repair of the runs left both seeds unchanged at `ItemRepairAll`'s entry and exit, but it is a single case and the
+  logger read `ItemRepairBroken`'s own line from the wrong register, so "it draws nothing" stays inferred.
+  (fn:sub_0055F900_ItemRepairBroken@0x0055F900, run:2026-10-19-economy2)
+- F7. [C] **The quest repair is the services' repair.** Larzuk's socket service and Anya's personalization each
+  call `ItemRepairAll` on the service's item at the end (0x0057A3ED, 0x0057A581): a damaged magic cap came back at
+  durability 12 of 12, seeds unchanged, one case each. Charsi's imbue calls it too (0x0057A0F9), on the new rare item
+  before `ItemIdentifyAttach` runs (0x0057A103); the item is not yet identified (flags `0x82000`, no `0x10`), so F1
+  refuses it and the call does nothing: the imbued item kept durability 10 of 12. (fn:NPC_MenuAction@0x00579D60,
+  fn:sub_0062E660_ItemCanRepair@0x0062E660, run:2026-10-19-economy2)
+- F7. [I] **No quest script repairs.** A call-site scan of the six repair functions finds `ItemRepairAll` called
+  only from `NpcRepair` (directly and, for repair-all, through the thunk `sub_005762B0_ItemRepairAllThunk`), the
+  store and gamble stock builders and the three services above; of 642 quest functions only the NPC packet's
+  dispatch to `NpcRepair` (0x0054BB87) reaches a repair function, and that is the repair window itself. One scan, no
+  second source. (fn:sub_005762B0_ItemRepairAllThunk@0x005762B0, fn:sub_00578050_NpcRepair@0x00578050,
+  [items/0011 § Phase 2b](../../findings/items/0011-economy.md#phase-2b-runtime-results-run2026-10-19-economy2))
+- [C] **The store record's bytes `+0x24..+0x26` are not read in the windows played.** A read watchpoint on
+  Charsi's `NpcStoreRec` `+0x24..+0x27`, with a control watch on `+0x00` writing to the end of each session, fired 5
+  times, each at `NPC_TradeOpen`'s compare of the byte `+0x27` (the stale byte of
+  [items/vendors § C](vendors.md#c-when-stock-is-built-reset-and-marked-stale)), and never on `+0x24..+0x26`. The windows: Charsi's trade, sale,
+  single-item and partial repairs, repair-all and imbue; Gheed's trade and gamble; Akara; Kashya's list; Larzuk,
+  his socket service, Anya, her personalization and Malah in Normal; Larzuk, Malah, Anya, Halbu and Charsi in Hell;
+  ten gamble windows. In session 4505 the watch was set at frame 1769 as the first Gheed gamble window opened and
+  the control's first line is at 2729, so that window is bracketed by the two rather than holding a control line. Other NPC
+  actions and game states are not covered. (fn:NPC_TradeOpen@0x00579430,
+  fn:NPCSTORE_FindRec@0x00535EA0, run:2026-10-19-economy2)
 - [I] `D2S_WriteCorpses` sums mode-0 prices with difficulty **3** and class 513 (Malah) to choose the most valuable
   corpse; difficulty 3 indexes past `Level(H)` and `max buy (H)`, neither of which mode 0 reads for an ordinary
   item. (0x005698B4)
@@ -518,8 +579,12 @@ G7. monster drop, own type exactly 4 gold: amount ← amount × (100 + full(79, 
 G8. ilvl of other gold creators:                                                       [C] (fn:sub_00559300_DropGoldPile@0x00559300, run:2026-10-17-economy)
       DropGoldPile (OBJINIT_GoldPiles): the level's monster level − 1 when that is above 1
         (LevelMonLvl: MonLvl or MonLvlEx by the expansion flag)
-      DropItemAtUnit (Wirt's 10–19 piles): the level's monster level                    ; code only, note G8
+      DropItemAtUnit (Wirt's piles): LevelMonLvl of the body's level, at least 1         ; notes G8, G8a; the floor code only
       DropItemCodeAt (the quest chests' piles): UnitDropLevel of the source              ; code only, note G8
+G8a. Wirt's gold (sub_00594630_A1Q4_WirtGold, on Wirt's body, object 268):           [C] (fn:sub_00594630_A1Q4_WirtGold@0x00594630, 0x00594651–0x00594695, run:2026-10-19-economy2)
+      on its first event 7 (latch +0x90): count +0x8C ← RandLoHi(questSeed, 10, 20)      ; draw: 10 … 19
+      each event 7, every 10 frames, while count > 0:
+        DropItemAtUnit(gold, quality 2, ilvl passed 0);  count ← count − 1               ; an item creation (G5)
 ```
 
 - G5. [C] 545 amounts at creation reproduce with the seed after the draw; this is the A1 step of
@@ -530,10 +595,17 @@ G8. ilvl of other gold creators:                                                
   difficulty term. (fn:sub_005589A0_DropGoldFind@0x005589A0, run:2026-10-17-economy)
 - G8. [C] 102 object piles take the level's monster level minus 1 as ilvl, all in levels whose monster level is
   above 1. (fn:sub_00559300_DropGoldPile@0x00559300, fn:OBJINIT_GoldPiles@0x0054F8C0, run:2026-10-17-economy)
-- G8. [I] The case "monster level 1 or less" and the ilvl of Wirt's piles and the quest chests' piles were not met.
-  (fn:sub_00559A30_DropItemAtUnit@0x00559A30, fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0,
-  fn:sub_00585970_DropItemCodeAt@0x00585970, fn:sub_00558200_UnitDropLevel@0x00558200,
-  fn:sub_00594630_A1Q4_WirtGold@0x00594630)
+- G8. [I] The case "monster level 1 or less", the floor of 1 on `DropItemAtUnit`'s ilvl (0x00559AE3–0x00559AF8)
+  and the ilvl of the quest chests' piles were not met. (fn:sub_00585970_DropItemCodeAt@0x00585970,
+  fn:sub_00558200_UnitDropLevel@0x00558200)
+- G8, G8a. [C] **Wirt's gold**, one game (Normal, expansion): operating the body ran `A1Q4_WirtGold` 18 times, one
+  event 7 every 10 frames. The first drew the count, `RandLoHi(questSeed, 10, 20)` = 18, matched by the quest seed's
+  logged step; each event made one pile with `DropItemAtUnit` and moved the game seed 2 steps (18 of 18). The 18
+  piles have ilvl 6 (`LevelMonLvl` of Tristram), and each amount reproduces as G5. `RandLoHi` and the quest seed are
+  those of [items/quest-drops § E](quest-drops.md#e-quest-items). (fn:sub_00559A30_DropItemAtUnit@0x00559A30,
+  fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0, run:2026-10-19-economy2)
+- G8. [I] Which Levels column `LevelMonLvl` read for Wirt's piles is not separated: Tristram's `MonLvl1` and
+  `MonLvl1Ex` are both 6. (tbl:Levels.txt:MonLvl1Ex, fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0)
 
 **Dropping an amount (`DropGoldAmount`).**
 
@@ -741,11 +813,13 @@ H8. ITEMEVENT_Replenish(item):                                                  
 
 | Event kind | Draws | Tag |
 |---|---|---|
-| price (modes 0–3), gamble price, `RepairCost`, `ItemRepairAll`, `NpcRepair`, `PayGold`, `UnitAddGoldStat`, resurrect cost and `MERC_Resurrect`, Cain, replenish tick, `ItemConsumeOne`, `PLAYER_UseAmmo` | none: game and player seed unchanged from entry to exit | [C] (run:2026-10-17-economy) |
+| price (modes 0–3), gamble price, `RepairCost`, `ItemRepairAll`, `NpcRepair`, `PayGold`, `UnitAddGoldStat`, resurrect cost and `MERC_Resurrect`, Cain, replenish tick, `ItemConsumeOne`, `PLAYER_UseAmmo` | none: game and player seed unchanged from entry to exit | [C] (run:2026-10-17-economy, run:2026-10-19-economy2) |
 | buy (`NPC_BuyItem`) | the store copy's creation only: game seed +2 (15 of 15) | [C] (fn:NPC_BuyItem@0x00577830, run:2026-10-17-economy) |
-| sell (`NPC_SellItem`) | game seed +2 in 41, +4 in 3 (one extra gold re-drop each), unchanged in 2 (not explained) | [I] (fn:NPC_SellItem@0x00579510, run:2026-10-17-economy) |
+| sell (`NPC_SellItem`), copied or refused by flag `0x100`, flag `0x400000` or `carry1` | the store copy's creation only: game seed +2 when copied, even when no store page takes it (6 of 6), +0 when refused (5 of 5); +4 with a gold re-drop (3 in the first run); the first run's 41 at +2 and 2 at +0 agree | [C] (fn:NPC_SellItem@0x00579510, 0x005796F6–0x00579747, run:2026-10-17-economy, run:2026-10-19-economy2) |
+| sell, refused by one of the five tests not reached (F4) | none (the refusal skips `ItemCopy`) | [I] (0x0057962B–0x00579747) |
 | `PlayerGiveGold` | +2 in 3 of 46 (a re-drop over the cap) | [I] (fn:sub_0055B060_PlayerGiveGold@0x0055B060, run:2026-10-17-economy) |
 | `DropGoldAmount`, death loss | one item creation per pile (+2 each); a death draws only when it drops a pile | [C] (fn:sub_0055A090_DropGoldAmount@0x0055A090, fn:PLAYER_DeathGoldLoss@0x005357D0, run:2026-10-17-economy) |
+| Wirt's gold (G8a) | one `RandLoHi(questSeed, 10, 20)` on the first event; one item creation per pile (game seed +2, 18 of 18) | [C] (fn:sub_00594630_A1Q4_WirtGold@0x00594630, run:2026-10-19-economy2) |
 | gold pile created | `Range(item unit seed, 5 × ilvl)` (G5) | [C] (0x00557AC1–0x00557B4C, run:2026-10-17-economy) |
 | hire | from the hireling entry seed ([hirelings § E](../hirelings/README.md#e-an-entry-hireling_rollentry)), not the game seed | [C] (fn:HIRELING_RollEntry@0x006637F0, run:2026-10-17-economy) |
 | weapon wear | one step of the attacker's seed (none without durability or for a classic throwing weapon) | [C] (fn:ITEMS_DurabilityLossRoll@0x00559E30, run:2026-10-17-economy) |
@@ -869,6 +943,9 @@ so the amount is `5 + 19 = 24`, unchanged by `mul=`. G7: the killer's stat 79 is
   [C] (0x0062F391–0x0062F994, run:2026-10-17-economy)
 - **The sale takes the lower of two prices** when the item enters the store, so a damaged item does not sell for
   more than its repaired copy. [C] (fn:NPC_SellItem@0x00579510, run:2026-10-17-economy)
+- **A sale's copy draws even when it is thrown away.** The copy is created (2 game-seed steps) before a store page
+  is sought, so a copy no page takes still moves the seed; a refused copy moves nothing. [C] (fn:NPC_SellItem@0x00579510,
+  run:2026-10-19-economy2)
 - **A gold add over a cap writes 0**, not the cap; the callers clip first. A reimplementation that clamps instead
   differs only on paths that skip the clip (the PvP death write). [I] (fn:sub_0053FF00_UnitAddGoldStat@0x0053FF00)
 - **The armour pick is cyclic from a random start**, not a plain weighted pick: `u` chooses the start slot, `w` the
@@ -879,9 +956,13 @@ so the amount is `5 + 19 = 24`, unchanged by `mul=`. G7: the killer's stat 79 is
 
 ## Evidence
 
-- Finding: [items/0011](../../findings/items/0011-economy.md) (§ 1–§ 8, § The writer of `game+0x6A`, § Phase 2).
-- Run: [run:2026-10-17-economy](../../findings/items/experiments.md#run2026-10-17-economy): 33 claim logs, 0
+- Finding: [items/0011](../../findings/items/0011-economy.md) (§ 1–§ 8, § The writer of `game+0x6A`, § Phase 2,
+  § Phase 2b).
+- Runs: [run:2026-10-17-economy](../../findings/items/experiments.md#run2026-10-17-economy): 33 claim logs, 0
   mismatches; `tools/economy.py check` (manifest `workspace/logs/economy-run-manifest.txt`).
+  [run:2026-10-19-economy2](../../findings/items/experiments.md#run2026-10-19-economy2): 5 claim logs, 0 mismatches
+  (7 376 price calls); the same checker and `tools/economy_scan.py qrepair` (manifest
+  `workspace/logs/economy2-run-manifest.txt`).
 - Tables: [Weapons § Economy](../../tables/Weapons.md#economy-plan-0043-phase-0),
   [Armor § Economy](../../tables/Armor.md#economy-plan-0043-phase-0), [Misc § Economy](../../tables/Misc.md#economy-plan-0043-phase-0),
   [ItemTypes](../../tables/ItemTypes.md#repair-and-throwing-columns-plan-0043-phase-0),
@@ -896,15 +977,18 @@ so the amount is `5 + 19 = 24`, unchanged by `mul=`. G7: the killer's stat 79 is
   [monsters/stats § A](../monsters/stats.md#a-muldiv-and-monlvlstats), [hirelings § E](../hirelings/README.md#e-an-entry-hireling_rollentry);
   downstream [items/vendors § I](vendors.md#i-prices-and-repair), [hirelings § K](../hirelings/README.md#k-named-only),
   [items/quest-drops D6](quest-drops.md#d6-baals-first-kill), [combat/delivery § F](../combat/delivery.md#f-the-boundary-at-delivery).
-- Plan: [0043](../../plans/0043-items-economy.md).
+- Plan: [0043](../../plans/done/0043-items-economy.md).
 
 ## Open questions
 
-- [L] **Phase 2b, in flight** ([backlog](../../backlog/2026-10-19-architect-reverser-plan-0043-p2b-economy-remainder.md);
-  each item is inferred above and is raised when it lands): crafted prices (C4); the repair price in Hell (D2); the
-  gamble at clvl 3, `L2 = 5` (E2); the partial, ethereal and broken repairs (F6, F7); whether 1.14d has a quest
-  repair at all (none is named in items/0011); Wirt's gold (G8); the reader of `NpcStoreRec` `+0x24..+0x26`; the two
-  sales that left the game seed unchanged (§ I).
+- ~~**Phase 2b, in flight**: crafted prices, the repair price in Hell, the gamble at clvl 3, the partial, ethereal and
+  broken repairs, the quest repair, Wirt's gold, the reader of `NpcStoreRec` `+0x24..+0x26`, the two sales that left
+  the game seed unchanged.~~ Answered by [run:2026-10-19-economy2](../../findings/items/experiments.md#run2026-10-19-economy2):
+  C4, D2, E2, F4, F6, F7, G8a, § I and the store-record note of § F; the remainder is the next item.
+- [L] **Remainder of Phase 2b** (inferred above, Phase 2 closed with no further run): the five copy refusals not
+  reached (F4); the server-side refusal of an ethereal repair, which the client never sends (F6); whether
+  `ItemRepairBroken` draws (one case, F7); a second source for "no quest script repairs" (F7); which Levels column
+  gives Wirt's piles their ilvl (G8); a reader of `NpcStoreRec` `+0x24..+0x26` outside the windows played (§ F).
 - [L] **Accepted shortfalls of Phase 2** (inferred above, no run planned): ears and body parts, Encode 4,
   version-0 items, the recharge cost, charges used, skill wear, Baal's gold, the caps, pickup and the stash move,
   PvP and non-single-player deaths, the classic throwing weapon, the stack refill, Cain's

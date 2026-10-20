@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/stats, player/creation, items/properties, data/calc]
 consumed_by: [items/tc]
-tags: {C: 36, I: 21, L: 5}
-updated: 2026-10-17
+tags: {C: 36, I: 22, L: 5}
+updated: 2026-10-20
 ---
 
 # Combat formulas: the attack event, its seeds and its branches
@@ -172,7 +172,7 @@ A1. PlayerAttack(att):                                                [C] (fn:SK
       PrgHooksBeforeBuild(att, pkt);  BuildDamage(att, def, pkt, 0, 128);  PrgHooksAfterBuild(att, pkt)   ; damage.md, whatever the result
       ResolveAndQueue(att, def, pkt, 128)                             ; delivery.md § A: reductions on a hit
       if att has the `meleeonly` state flag: AttackDeliverMeleeOnly(att, def)        ; [I] (fn:sub_0056C2D0_AttackDeliverMeleeOnly@0x0056C2D0), skips the finisher
-      else: PrgFinisher(att);  DeliverQueued(att, def)                ; delivery.md § A
+      else: PrgFinisher(att);  DeliverQueued(att, def)                ; delivery.md § A; the finisher peeks att.seed, [I] (A2)
 
 A2. MonsterAttack(att):                                               [C] (fn:sub_005A7670_MonAttackFrame@0x005A7670, fn:MON_MeleeHit@0x005A5490, run:2026-10-16-combat, all of A2)
       ; earlier, at the mode change: MonAttackStats(att, newMode)     ; damage.md § E
@@ -346,6 +346,7 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
 - [combat/experiments § run:2026-10-16-combat](../../findings/combat/experiments.md#run2026-10-16-combat) and its
   architect review: 19 sessions, 15 358 events, 0 mismatches; the resume-lane addendum (40 logs, 40 655 events,
   0 mismatches) and its review; the shortfalls.
+- [skills/0001](../../findings/skills/0001-dispatch.md) §§ 11 (the conversion writers), 12 (the finisher's seed peek).
 - `tools/combat.py` (the model behind the confirmed tags, `check` over the run list), `tools/gdb/combat.gdb`.
 - Types: `re/types/combat.h`. Plan: [0037](../../plans/done/0037-combat-formulas.md).
 - Upstream: [rng](../rng/README.md), [rng/seeds](../rng/seeds.md), [monsters/stats](../monsters/stats.md),
@@ -361,8 +362,10 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
 - [L] **Still owed:** the formulas of the stats `MonAttackStats` writes, and a run that checks combat against the
   aggregated stats instead of logged values.
 - [L] **Owed to phase (3), skills and missiles:** a skill's damage packet and `SrcDam`, a missile's packet, its hit
-  test and knockback draws, the conversion fields, the event handlers other than crushing blow, open wounds and
-  freeze (skill on hit, knockback, slow…), the progressive-charge hooks and the finisher's draw.
+  test and knockback draws, the full rule of the conversion writers (skill hit builders write them, [damage § D](damage.md#d-conversion)),
+  the event handlers other than crushing blow, open wounds and freeze (skill on hit, knockback, slow…), the
+  progressive-charge hooks and the `srvprgfunc` entries the finisher calls (its own step is a peek,
+  [delivery § A](delivery.md#a-queue-and-delivery)).
 - [L] **Owed to phase (5), animation:** hit recovery, knockback and stun lengths in time, the hit class, the get-hit
   and durability draws.
 - [L] **Shortfalls of run:2026-10-16-combat** (plan 0037 Phase 2, after the resume lane; 40 655 events): crushing

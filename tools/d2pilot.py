@@ -1054,7 +1054,7 @@ NPCS = {
     "warriv": (155, ["talk", "go east", "cancel"], None),    # plan 0038 H6d: the report after Andariel
     "warriv2": (175, ["talk", "go west", "cancel"], None),   # plan 0042 Phase 2: the act change back to Act I
     "meshif": (210, ["talk", "sail east", "cancel"], None),  # plan 0042 Phase 2: Act II -> Act III
-    "meshif2": (264, ["talk", "trade", "sail west", "cancel"], None),   # plan 0042 Phase 2: Act III -> Act II
+    "meshif2": (264, ["talk", "sail west", "cancel"], None),   # plan 0042 Phase 2: Act III -> Act II (part 3: no trade line)
     "tyrael": (367, ["talk", "travel to harrogath", "cancel"], None),  # plan 0042 P2 part 2: Act IV -> Act V
     "kashya": (150, ["talk", "hire", "cancel"], None),
     "fara": (178, ["talk", "trade", "cancel"], (49, -7)),
@@ -1081,6 +1081,7 @@ NPCS = {
     # a dead mercenary puts "Resurrect <name>: <cost>" second, before the seller's own lines (Qual-Kehk's menu
     # measured in run:2026-10-17-economy: talk, resurrect, hire, cancel); Tyrael's travel line assumed to follow it
     "tyrael": (367, ["talk", "resurrect", "travel", "cancel"], None),
+    "tyraelgo": (367, ["talk", "travel to harrogath", "cancel"], None),   # plan 0042 P2 part 3: no mercenary
     "qualres": (515, ["talk", "resurrect", "hire", "cancel"], (-56, 12)),   # Qual-Kehk with a dead mercenary
     "waypoint": (None, [], None),       # npc <log> waypoint walk: walk next to the town waypoint (OBJP lines)
 }
@@ -1427,7 +1428,7 @@ def walk_to_wp(args):
         px, py = st.pos[0], st.pos[1]
         dx, dy = w[0] - px, w[1] - py
         d = math.hypot(dx, dy)
-        if d <= 4:
+        if d <= 5:                      # part 3: 4.1 away the walking click opened the waypoint menu, endlessly
             print("npc: at the waypoint (%d, %d), player (%d, %d)" % (w[0], w[1], px, py))
             return 0
         tgt = path_near(st, (w[0], w[1] + 2), 3, args.hop)
@@ -1686,6 +1687,8 @@ def cmd_npc(args):
                     escape(p, args.log)
                     return 1
             my = y1 + 15 * (ln - 1)
+            if args.shots:              # plan 0042 P2 part 3: the menu as clicked
+                p.shot(os.path.join(args.shots, "npc%s-%s-open.png" % (tag, name)))
             start = os.path.getsize(args.log)
             p.dpy.move(p.off[0] + mx, p.off[1] + my)
             time.sleep(0.1)
@@ -1863,6 +1866,9 @@ def cmd_objop(args):
             upkeep(args, p)
             continue
         objs = [o for o in getattr(st, "objs_cls", []) if o[0] in classes and (o[1], o[2]) not in visited]
+        if args.exclude_xy:          # plan 0042 P2 part 3: skip an object of the same class elsewhere (a town waypoint)
+            ex, ey = (int(v) for v in args.exclude_xy.split(","))
+            objs = [o for o in objs if math.hypot(o[1] - ex, o[2] - ey) >= 20]
         if len(classes) > 1 and st.pos:
             # several classes (shrines and wells): unused ones only (mode 0, when the line carries it) and within
             # 300 sub-tiles (the object lists hold every level's objects)
@@ -2966,6 +2972,7 @@ def main():
     ap.add_argument("--drink", type=float, default=0.6, help="drink a belt potion below this life-orb fill")
     ap.add_argument("--to-pdef", help="go to the room of this LvlPrest Def (or any of a comma-separated list) in the "
                                       "current level, then stop")
+    ap.add_argument("--exclude-xy", help="objop: ignore objects of the class within 20 sub-tiles of X,Y")
     ap.add_argument("--to-rect", help="explore: go to this tile rect x,y,w,h (several: concatenated), then stop")
     ap.add_argument("--any-level", action="store_true",
                     help="explore: aim at unactivated rooms of any level that has an activated room (leaves a town)")

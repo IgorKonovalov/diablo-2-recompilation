@@ -1253,14 +1253,78 @@ LAYOUTS["chartemplate"] = dict(size=0xF0, fields=[
     txt_only=_CT_SKIP)
 
 
-# ------------------------------------------------------------------ missiles, skilldesc: formula columns only
-# Plan 0035 Phase 0 (docs/formats/calc.md). Partial layouts: only the s32 offsets into misscode.bin /
-# skilldesccode.bin. The record offsets are those of the loaders' descriptors read in data/0005 section 1 (plan 0035
-# Phase 1); excel_bin.py diff and tools/calc_survey.py check them against every record.
-LAYOUTS["missiles"] = dict(size=420, partial=True, fields=[
+# ------------------------------------------------------------------ missiles (420 B = 0x1A4)
+# Plan 0035 Phase 0 placed the seven calc offsets (docs/formats/calc.md; the loader's descriptor, data/0005 section 1).
+# Plan 0045 Phase 0 (docs/tables/Missiles.md) maps the rest with `excel_bin.py probe`. One record per missiles.txt row
+# (684, no Expansion marker); Id equals the row index. 23 boolean columns are bits of the flags at +0x004..+0x006
+# (any non-zero cell sets the bit: Explosion and NoMultiShot hold 2 on one row each). Columns blank in every row
+# (xoffset, SubMissile3, HitSubMissile2..4) are placed by the stride of their run; see Missiles.md.
+_MS = "missiles:Missile"
+_MS_BITS = [  # (column, byte, bit) of the packed flags at +0x004..+0x006
+    ("LastCollide", 4, 0), ("Explosion", 4, 1), ("Pierce", 4, 2), ("CanSlow", 4, 3), ("CanDestroy", 4, 4),
+    ("ClientSend", 4, 5), ("GetHit", 4, 6), ("SoftHit", 4, 7),
+    ("ApplyMastery", 5, 0), ("ReturnFire", 5, 1), ("Town", 5, 2), ("SrcTown", 5, 3), ("NoMultiShot", 5, 4),
+    ("NoUniqueMod", 5, 5), ("Half2HSrc", 5, 6), ("MissileSkill", 5, 7),
+]
+LAYOUTS["missiles"] = dict(size=420, fields=[
+    I("Id", 0x000, "u16"), U("unk_002", 0x002, "u16"),
+] + [B(c, by, bit) for c, by, bit in _MS_BITS] + [
+    U("unk_006", 0x006, "u16"),
+    I("pCltDoFunc", 0x008, "u16"), I("pCltHitFunc", 0x00A, "u16"),
+    I("pSrvDoFunc", 0x00C, "u16"), I("pSrvHitFunc", 0x00E, "u16"), I("pSrvDmgFunc", 0x010, "u16"),
+    R("TravelSound", 0x012, "sounds:Sound", "u16", blank=0), R("HitSound", 0x014, "sounds:Sound", "u16", blank=0),
+    R("ExplosionMissile", 0x016, _MS, "u16"),
+    R("SubMissile1", 0x018, _MS, "u16"), R("SubMissile2", 0x01A, _MS, "u16"), R("SubMissile3", 0x01C, _MS, "u16"),
+    R("CltSubMissile1", 0x01E, _MS, "u16"), R("CltSubMissile2", 0x020, _MS, "u16"),
+    R("CltSubMissile3", 0x022, _MS, "u16"),
+] + [R("HitSubMissile%d" % (k + 1), 0x024 + 2 * k, _MS, "u16") for k in range(4)] \
+  + [R("CltHitSubMissile%d" % (k + 1), 0x02C + 2 * k, _MS, "u16") for k in range(4)] + [
+    R("ProgSound", 0x034, "sounds:Sound", "u16", blank=0), R("ProgOverlay", 0x036, "overlay:overlay", "u16"),
+] + [I("Param%d" % (k + 1), 0x038 + 4 * k, "s32") for k in range(5)] \
+  + [I("sHitPar%d" % (k + 1), 0x04C + 4 * k, "s32") for k in range(3)] \
+  + [I("CltParam%d" % (k + 1), 0x058 + 4 * k, "s32") for k in range(5)] \
+  + [I("cHitPar%d" % (k + 1), 0x06C + 4 * k, "s32") for k in range(3)] \
+  + [I("dParam%d" % (k + 1), 0x078 + 4 * k, "s32") for k in range(2)] + [
     K("SrvCalc1", 0x080, "misscode"), K("CltCalc1", 0x084, "misscode"), K("SHitCalc1", 0x088, "misscode"),
     K("CHitCalc1", 0x08C, "misscode"), K("DmgCalc1", 0x090, "misscode"),
-    K("DmgSymPerCalc", 0x0E0, "misscode"), K("EDmgSymPerCalc", 0x118, "misscode")])
+    I("HitClass", 0x094, "u16"), I("Range", 0x096, "s16"), I("LevRange", 0x098, "s16"),
+    I("Vel", 0x09A, "u8"), I("VelLev", 0x09B, "u8"), I("MaxVel", 0x09C, "u16"), I("Accel", 0x09E, "s16"),
+    I("animrate", 0x0A0, "u16"), I("xoffset", 0x0A2, "s16"), I("yoffset", 0x0A4, "s16"), I("zoffset", 0x0A6, "s16"),
+    I("HitFlags", 0x0A8, "u32"), I("ResultFlags", 0x0AC, "u16"), I("KnockBack", 0x0AE, "u16"),
+    I("MinDamage", 0x0B0, "s32"), I("MaxDamage", 0x0B4, "s32"),
+] + [I("MinLevDam%d" % (k + 1), 0x0B8 + 4 * k, "s32") for k in range(5)] \
+  + [I("MaxLevDam%d" % (k + 1), 0x0CC + 4 * k, "s32") for k in range(5)] + [
+    K("DmgSymPerCalc", 0x0E0, "misscode"),
+    R("EType", 0x0E4, "elemtypes:Code", "u8", code4=True), U("unk_0E5", 0x0E5, "u8"), U("unk_0E6", 0x0E6, "u16"),
+    I("EMin", 0x0E8, "s32"), I("Emax", 0x0EC, "s32"),
+] + [I("MinELev%d" % (k + 1), 0x0F0 + 4 * k, "s32") for k in range(5)] \
+  + [I("MaxELev%d" % (k + 1), 0x104 + 4 * k, "s32") for k in range(5)] + [
+    K("EDmgSymPerCalc", 0x118, "misscode"),
+    I("ELen", 0x11C, "s32"),
+] + [I("ELevLen%d" % (k + 1), 0x120 + 4 * k, "s32") for k in range(3)] + [
+    I("CltSrcTown", 0x12C, "u8"), I("SrcDamage", 0x12D, "u8"), I("SrcMissDmg", 0x12E, "u8"), I("Holy", 0x12F, "u8"),
+    I("Light", 0x130, "u8"), I("Flicker", 0x131, "u8"), I("Red", 0x132, "u8"), I("Green", 0x133, "u8"),
+    I("Blue", 0x134, "u8"), I("InitSteps", 0x135, "u8"), I("Activate", 0x136, "u8"), I("LoopAnim", 0x137, "u8"),
+    S("CelFile", 0x138, 64),
+    I("AnimLen", 0x178, "u32"), I("RandStart", 0x17C, "u32"),
+    I("SubLoop", 0x180, "u8"), I("SubStart", 0x181, "u8"), I("SubStop", 0x182, "u8"), I("CollideType", 0x183, "u8"),
+    I("Collision", 0x184, "u8"), I("ClientCol", 0x185, "u8"), I("CollideKill", 0x186, "u8"),
+    I("CollideFriend", 0x187, "u8"), I("NextHit", 0x188, "u8"), I("NextDelay", 0x189, "u8"), I("Size", 0x18A, "u8"),
+    I("ToHit", 0x18B, "u8"), I("AlwaysExplode", 0x18C, "u8"), I("Trans", 0x18D, "u8"), I("Qty", 0x18E, "u8"),
+    U("unk_18F", 0x18F, "u8"),
+    I("SpecialSetup", 0x190, "u32"),
+    R("Skill", 0x194, "skills:skill", "u16"), I("HitShift", 0x196, "u8"), U("unk_197", 0x197, "u8"),
+    U("unk_198", 0x198, "u32"),
+    I("DamageRate", 0x19C, "u32"),
+    I("NumDirections", 0x1A0, "u8"), I("AnimSpeed", 0x1A1, "u8"), I("LocalBlood", 0x1A2, "u8"),
+    U("unk_1A3", 0x1A3, "u8"),
+], txt_only={"Missile": "key; the record holds Id (= row index) instead",
+             "EOL": "end-of-line marker column; not compiled"})
+
+# ------------------------------------------------------------------ skilldesc: formula columns only
+# Plan 0035 Phase 0 (docs/formats/calc.md). Partial layout: only the s32 offsets into skilldesccode.bin. The record
+# offsets are those of the loader's descriptor read in data/0005 section 1 (plan 0035 Phase 1); excel_bin.py diff and
+# tools/calc_survey.py check them against every record.
 _SDC = "skilldesccode"
 LAYOUTS["skilldesc"] = dict(size=288, partial=True, fields=[
     K("ddam calc1", 0x018, _SDC), K("ddam calc2", 0x01C, _SDC),
@@ -1411,3 +1475,20 @@ LAYOUTS["plrmode"] = dict(size=0x34, fields=[
     S("Name", 0x000, 32), C("Token", 0x020), U("unk_024", 0x024, "str", len=16)],
     txt_only={"Code": "the mode's code (Skills anim, seqtrans); not in the 52-byte record, and absent from the "
                       "d2exp .txt the shipped .bin was compiled from"})
+
+# ------------------------------------------------------------------ pettype (224 B = 0xE0)
+# Plan 0045 Phase 0 (docs/tables/PetType.md). One record per pettype.txt row (20); idx equals the row index. The six
+# boolean columns are bits of +0x004. The icon names are 32-byte char arrays; mclass1..4 are monstats row indices.
+# mclass4 and micon4 are blank in every row: their slots follow the stride.
+LAYOUTS["pettype"] = dict(size=0xE0, fields=[
+    I("idx", 0x000, "u32"),
+    B("warp", 0x004, 0), B("range", 0x004, 1), B("partysend", 0x004, 2), B("unsummon", 0x004, 3),
+    B("automap", 0x004, 4), B("drawhp", 0x004, 5), U("unk_005", 0x005, "u8"), U("unk_006", 0x006, "u16"),
+    I("group", 0x008, "u16"), I("basemax", 0x00A, "u16"), T("name", 0x00C), I("icontype", 0x00E, "u8"),
+    S("baseicon", 0x00F, 32), S("micon1", 0x02F, 32), S("micon2", 0x04F, 32), S("micon3", 0x06F, 32),
+    S("micon4", 0x08F, 32), U("unk_0AF", 0x0AF, "u8"), U("unk_0B0", 0x0B0, "u16"),
+    I("mclass1", 0x0B2, "u16"), I("mclass2", 0x0B4, "u16"), I("mclass3", 0x0B6, "u16"), I("mclass4", 0x0B8, "u16"),
+    U("unk_0BA", 0x0BA, "u16"),
+] + [U("unk_%03X" % o, o, "u32") for o in range(0x0BC, 0x0E0, 4)],
+    txt_only={"pet type": "key; the record holds idx (= row index) instead",
+              "eol": "end-of-line marker column; not compiled"})

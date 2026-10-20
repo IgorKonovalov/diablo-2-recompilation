@@ -903,7 +903,9 @@ the 7 of its owner-played addendum, sha256 checked against `quests-run-manifest.
   **Correction for Phase 3:** object 28 (Act III, `g_QuestDescs` word 32) stores **16**, and object 30 (Act I, word 41)
   shares its init function with object 25 and stores **29**: their scripts' word is not the table's. (data:g_QuestDescs@0x00731510,
   fn:sub_00546270_QuestsPlayerJoin@0x00546270, fn:QUESTS_InitGame@0x00545D80; `sweep_s2c.py static questinit`)
-  **Remainder:** what words 32 and 41 hold for objects 28 and 30 beyond the join path.
+  **Remainder:** what words 32 and 41 hold for objects 28 and 30 beyond the join path. *Answered 2026-10-20* in
+  [§ Plan 0049 Phase 1](#plan-0049-phase-1-2026-10-20-static-the-s2c-static-leftovers): word 41 is object 1's `+0xE4`
+  word, and word 32 is written once, bit 0 at 0x005BD2AB.
 - **qd 9** (L137) **raised.** [C] The run's 28 scripted draws (Andariel's three `mod 7`, the forge's 20 `mod 7` waves
   and 5 `RNG_Range(·, 11)` runes) reproduce as `Step` then `low mod n`. The other inline forms use exact divisions:
   every quest-seed function's multiply-shift constant is `0xCCCCCCCD` (8 sites, `>> 34`: exact `/ 5`) or
@@ -911,21 +913,30 @@ the 7 of its owner-played addendum, sha256 checked against `quests-run-manifest.
   gold and Baal's death call `RNG_RandLoHi`, whose `lo + Range(hi − lo)` reproduces the 7 513 store-seed draws of
   run:2026-10-15-vendors. (fn:RNG_Range@0x0045C390, fn:RNG_RandLoHi@0x004BC500, run:2026-10-16-quest-drops,
   run:2026-10-15-vendors; `sweep_s2c.py static inline`)
-- **qd 10** (L141) **raised in part.** [C] Among the 378 `QUESTRECORD_SetState`/`ClearState` calls, the only constant
+- **qd 10** (L141) **raised** (in part at S2c; the remainder closed at the `lane/p49r` review, 2026-10-20). [C] Among the 378 `QUESTRECORD_SetState`/`ClearState` calls, the only constant
   bit-15 set is `QuestsPlayerJoin`'s (0x00546339, on the game record), and the only constant bit-15 clear is word 9's
   (0x00599293); the 1 626 logged writes set bit 15 only on the game record (913) and never on a player's record. The
   loader's copy was seen in the run's five saves. (fn:QUESTRECORD_LoadBytes@0x0065C4D0, fn:QUESTRECORD_SetState@0x0065C360,
   run:2026-10-16-quest-drops; `sweep_s2c.py static setstate`) **Remainder:** 45 call sites take the word or the bit
   from a register (the scripts' own `Quest+0xE0` words, and ten with a computed bit), and the range clear `0x0065C3E0`
-  (bits 2–11) has 12 callers; these were not traced.
+  (bits 2–11) has 12 callers; these were not traced. *Traced 2026-10-20*
+  ([§ Plan 0049 Phase 1](#plan-0049-phase-1-2026-10-20-static-the-s2c-static-leftovers)): no register site and no
+  steps clear touches bit 15 (0x0065C3E0). *Raised at the `lane/p49r` review:* the enumeration is a closure over every
+  call of the five record functions (the 378 sites, the 45 register operands each read from its window, the 12 steps
+  clears), accepted as a second reading by the S1b ruling on objdump closures, with S2c's 1 626 logged writes behind it.
+  Its stated limit: a store to a record outside the five functions (the loader aside), and the A3Q4 party bit, bounded by
+  the stores in its quest's code window 0x005B9E00–0x005BA800.
 - **qd 14** (L222) **raised.** [C] The fresh Mephisto kill (3356) wrote the killer's word 22 bits 13, 0 and 11 from
   `sub_005BC140_A3Q6_SetDone` (returns 0x005BC14D, 0x005BC157, 0x005BC161), the constant set sites 0x005BC148,
   0x005BC152, 0x005BC15C. (fn:sub_005BC140_A3Q6_SetDone@0x005BC140, run:2026-10-16-quest-drops)
-- **qd 19** (L244) **raised in part.** [C] "The others set bit 0": the constant set sites of word 22 bit 0
+- **qd 19** (L244) **raised** (in part at S2c; the remainder closed at the `lane/p49r` review, 2026-10-20). [C] "The others set bit 0": the constant set sites of word 22 bit 0
   (0x005BC152, Mephisto), word 26 bit 0 (0x005B4D32 in `0x005B4D20`, Diablo) and word 40 bit 0 (0x0058DCB6 in
   `0x0058DC60`, 0x0058DD42 in `0x0058DD30`, Baal), the functions the statement names; no constant site clears word 14
   bit 5 or sets word 14 bit 1. **Remainder:** the 45 register-word sites and the range clear (qd 10), so "never" for
-  Duriel's bits stays inferred.
+  Duriel's bits stays inferred. *Traced 2026-10-20*
+  ([§ Plan 0049 Phase 1](#plan-0049-phase-1-2026-10-20-static-the-s2c-static-leftovers)): none writes word 14
+  (0x0065C3E0). *Raised at the `lane/p49r` review*, by the same closure as qd 10 and with its first limit (a store
+  outside the five record functions).
 - **qd 20** (L248) **raised.** [C] MonStats has exactly five rows with a `TCQuestId`: `andariel` 6, `duriel` 14,
   `mephisto` 22, `diablo` 26, `baalcrab` 40 (rule 2); the owner-played Countess and Cow King kills logged no `B60` line.
   (tbl:MonStats.txt:TCQuestId, run:2026-10-16-quest-drops)
@@ -972,9 +983,75 @@ the 7 of its owner-played addendum, sha256 checked against `quests-run-manifest.
 **Tally:** 16 statements: 10 raised (7, 9, 14, 20, 28, 31, 37, 41, 47, 49), 5 raised in part (8, 10, 19, 21, 38), 1
 reclassified (48 → a-run H4a). One correction (qd 8) and two refinements (qd 28, 49).
 
+## Plan 0049 Phase 1 (2026-10-20, static): the S2c static leftovers
+
+The remainders of qd 8, 10 and 19 (backlog *plan 0038 S2c review, static leftovers*). They are settled by tracing the 45
+`QUESTRECORD_SetState`/`ClearState` sites whose word or bit is not a constant in the pushes, and the 12 callers of
+`QUESTRECORD_ClearSteps` (`0x0065C3E0`, bits 2–11). No game run. Tool: `tools/sweep_p49r.py qsites` (kept output
+`workspace/logs/p49r/sweep-p49r-qsites-2026-10-20.txt`, manifest `p49r-manifest.txt`). It reuses `sweep_s2c.py`'s
+site list (`setstate_sites`), the quest objects' init stores and their callback graphs. Each site is mapped to the
+objects whose callback graph reaches it and the word each object stores at `Quest+0xE0`. Every site that the graphs
+leave unmapped, and every register bit, was read from its window (`sweep_rbs3.py window`). The record functions are the
+scope: a record write by any other route is not covered.
+
+- [I] **The 45 sites, by what the word resolves to** (the site lists of the kept output; fn:QUESTRECORD_SetState@0x0065C360):
+  - **The quest's own word, `Quest+0xE0`**: 29 sites. Word 1: 0x0058FF11, 0x0058FF20. Word 2: 0x00590AB3, 0x00590AC2.
+    Word 5: 0x005951CF, and 0x0059547A/0x00595483, whose function's only caller, `sub_00595710_A1Q5_CountessDeath`,
+    passes `+0xE0` (0x005957DE). Word 9: 0x00598BFE, 0x00598C0D, 0x00598F10, 0x00598F1F. Word 25: 0x005B3AF8, 0x005B3B07,
+    0x005B3B86. Word 27: 0x005B6287, 0x005B6296. Word 35: 0x00586F36. Word 36: 0x00587CAB, 0x00587CBA, 0x00588491.
+    Word 39: 0x0058C40B, 0x0058C885, 0x0058C897. Word 40: 0x0058D9C7, 0x0058E424, 0x0058E4CB, 0x0058E7FC.
+
+    Five of these functions are not reached from an init's callbacks. Each takes its quest object from
+    `QUESTS_FindById` with a constant id (object 5 → word 5 at 0x00595168, 8 → 9 at 0x00598E40, 24 → 27 at 0x005B5C1C,
+    35 → 39 at 0x0058C7FB, 36 → 40 at 0x0058E74C), or is reached by a callback pointer that a quest function pushes
+    (`0x0058C7E0` from `sub_0058C9A0_A5Q5_AncientDeath`, `0x00598E20` from `sub_00599020_A2Q1_RadamentDeath`), or sits
+    in the object-operate table at `0x00732E38` (`sub_0058E740_A5Q6_LastPortalOperate`).
+  - **Object 1's second word, `Quest+0xE4` = 41**: 0x0058FF2F (bit 13) and 0x0058FF3E (bit 1).
+  - **A register word from the caller**: `0x005455F0` sets bits 13 and 1 (0x0054565C, 0x00545665) of the word that its
+    only caller, `sub_00590260_A1Q1_MonsterDeath`, passes from `+0xE0`: word 1 (0x0059037A).
+  - **A constant word with a register bit**: 9 sites.
+    - Words 28, 10, 7 and 18 in the travel functions (0x0054685D, 0x005468FB, 0x00546997, 0x00546B18), word 28 at
+      0x005B590F, word 21 at 0x005BB96B and 0x005BBA6F: bit 0 at each. The pushed `eax` is the 0 left by the
+      `test eax, eax` / `jne` before it.
+    - Word 9's clear at 0x0059927F: bit 0, the same way.
+    - Word 20 at 0x005BA2DB (`sub_005BA290_A3Q4_PartySetBit`): the bit is the party context's `+0x18`. The only
+      writes of `[reg+0x18]` in 0x005B9E00–0x005BA800 store 2, 4 and 1 (0x005BA3C5, 0x005BA422, 0x005BA4DF).
+  - **Not a player's record, or not a quest bit of interest**:
+    - `sub_00544720_GameQuestSet` (0x00544757) writes the game-wide record (`QuestControl+0x0C`; 40 call sites in 38 functions);
+    - `QuestsPlayerJoin`'s bit 15 (0x00546339) writes the game record;
+    - the client's two bit-12 sets (0x004A2785, 0x004A38A3) write the client copy;
+    - the packet handler at `0x0054C9C0` (0x0054C9EF) sets bit 12 of a word read from the packet (below 42).
+
+  (fn:QUESTRECORD_SetState@0x0065C360, fn:QUESTRECORD_ClearState@0x0065C3A0, fn:QUESTS_FindById@0x00543640,
+  fn:sub_00544720_GameQuestSet@0x00544720, fn:sub_005BA290_A3Q4_PartySetBit@0x005BA290)
+- [I] **The 12 steps clears** (`0x0065C3E0`, bits 2–11) act on words 35 (0x00586F27), 36 (0x00587CC7), 1 (0x0058FF4B),
+  12 (0x0059B3D1, 0x0059B459), 25 (0x005B3B14, 0x005B40D1), 26 (0x005B4D3A), 27 (0x005B5B84; 0x005B5D59 in
+  `sub_005B5C10_A4Q3_ForgeOperate`, object 24 by `QUESTS_FindById(24)`) and 20 (0x005BA54C). None is word 9 or 14.
+  (fn:QUESTRECORD_ClearSteps@0x0065C3E0, fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10)
+
+The S2c remainders, read from this:
+
+- **qd 10 remainder answered.** [C] (raised at the review, the closure limits under qd 10 above) No register site clears bit 15: the register-bit clears are bit 0 (word 9) and the
+  `+0xE0` clears carry constant bits 1 and 4, and the steps clear stops at bit 11. No register site sets bit 15 on a
+  player's record either: the register bits are 0, 1, 2 and 4, plus bit 12 from the client and the packet. So
+  "only word 9 clears bit 15" (0x00599293) and "bit 15 is set only on the game record" hold over all 378 sites and the
+  12 steps clears. (fn:QUESTRECORD_ClearState@0x0065C3A0, 0x00599293, fn:QUESTRECORD_ClearSteps@0x0065C3E0)
+- **qd 19 remainder answered.** [C] (raised at the review, as qd 10) No register site writes word 14, and no steps clear is on word 14. With S2c's
+  constant result (no constant site clears word 14 bit 5 or sets word 14 bit 1), Duriel's bit 5 is never cleared and
+  his bit 1 never set through the record functions. The only route outside them is the save loader. The constant
+  word-14 sites are listed in the kept S2c output; they set bits 0, 2–11, 13, 14 and clear 3 and 4. A whole-record
+  reset outside the five functions is not covered. (fn:sub_0059D050_A2Q6_DurielDeath@0x0059D050, 0x0059D0F0)
+- **qd 8 remainder answered.** [I] Word 41 is written by object 1's own scripts (Den of Evil, Akara's respec offer),
+  not by object 30. The writes are the `+0xE4` sites 0x0058FF2F and 0x0058FF3E (bits 13 and 1), the constant sites
+  0x0058FD36 and 0x0058FD40 (13, 1) and 0x0058FD67 (bit 0 set), and 0x0058FD71 (bit 1 clear). Word 32 has one write, bit
+  0 at 0x005BD2AB in `sub_005BD260_A3Q7_SetSeen`, the Dark Wanderer timer's bit
+  ([quests/0001 § 9](../quests/0001-progression.md)). So beyond the join path, word 32 holds object 28's (Act III)
+  bit 0 written by constant pushes, and word 41 is object 1's second word. Objects 28 and 30 store 16 and 29 at
+  `+0xE0`, as S2c found. (fn:sub_005BD260_A3Q7_SetSeen@0x005BD260, 0x0058FD36, 0x0058FF2F)
+
 ## Plan 0039 batch P1b (2026-10-17)
 
-Rows B12 and Q20 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static: objdump and Ghidra on the lane's copy, plus a
+Rows B12 and Q20 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md). Static: objdump and Ghidra on the lane's copy, plus a
 table survey. No game run.
 
 ### B12: the cursor branch of `PlayerFindItemByCode`

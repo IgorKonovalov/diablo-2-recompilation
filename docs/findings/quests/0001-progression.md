@@ -4,8 +4,8 @@
 > **Question:** for each quest, which server event sets, clears or reads each bit of its record, per difficulty; which
 > game-wide quest flags exist and what reads them; which events draw, on which seed; and which creation code reads the
 > quest state?
-> **Date:** 2026-10-17   **Plan:** 0042 (Phase 1 and 1b, static; Phase 2 run:2026-10-17-quests, § 15; part 2 run:2026-10-18-quests2, § 16)   **Status:**
-> open (Phase 2 part 1 reviewed 2026-10-17, accept with fixes; part 2 reviewed 2026-10-19, accept with fixes; part 3 open)
+> **Date:** 2026-10-17   **Plan:** 0042 (Phase 1 and 1b, static; Phase 2 run:2026-10-17-quests, § 15; part 2 run:2026-10-18-quests2, § 16; part 3 run:2026-10-19-quests3, § 17)   **Status:**
+> answered (Phase 2 part 1 reviewed 2026-10-17, accept with fixes; part 2 reviewed 2026-10-19, accept with fixes; part 3 reviewed 2026-10-20, accept with fixes; plan 0042 closed 2026-10-20)
 
 Static reading of the pinned `Game.exe`: Ghidra's decompile of the quest code (`[0x00543400, 0x00548200)`,
 `[0x00586E00, 0x005A0000)`, `[0x005B3000, 0x005BE200)`) on the lane's copy, objdump for the instruction-level reads;
@@ -49,15 +49,16 @@ record (§ 3). The quest drops, rewards and the quest seed's item draws are [ite
   fn:sub_005B5880_A4Q2_HarrogathPortalOperate@0x005B5880, fn:sub_0058C6D0_A5Q5_PartyExpGrant@0x0058C6D0,
   fn:sub_0054C9C0_Pkt58QuestSeen@0x0054C9C0)
 - [I] **Draws.** On the **quest seed**, besides plan 0032's item draws: the cairn-stone order (≥ 5 `mod 5` steps, first
-  stone or scroll), the Act II eclipse timer (`RandLoHi(15, 17)`, once per game), each talk to NPC 331 once the palace is
-  open (`mod 3`), the Act III Dark Wanderer timer (one step per game), Anya's reward (`Range`), the Zoo (1–10
-  `RandLoHi`). On the **player's unit seed**: every talk to NPC 266 (two draws, `Range(2)` or one step each: its e0 handler runs once
+  stone or the decoded scroll's use), the Act II eclipse timer (`RandLoHi(15, 17)`, once per game), each talk to NPC
+  331 once the palace is open (`mod 3`), the Act III Dark Wanderer timer (one step per game), Anya's reward (`Range`),
+  the Zoo (1–10 `RandLoHi`; its object is placed nowhere on stock data, § 10). The cairn order, the eclipse, the Dark
+  Wanderer and Anya's draws are `[C]` from part 3 (§ 17). On the **player's unit seed**: every talk to NPC 266 (two draws, `Range(2)` or one step each: its e0 handler runs once
   for each of quest objects 25 and 30, `[C]` § 16) and to NPC 377. Every other
   quest event draws nothing in quest code; the spawns, portals and items it creates draw on their own seeds (oracles).
   (§ 11; fn:sub_00592E90_A1Q4_StoneOrderDraw@0x00592E90, 0x0059EDC0, 0x0059B1C0, fn:sub_005BD390_A3Q7_AfterglowTimer@0x005BD390,
   0x00589937, fn:sub_0058E830_A5Q6_ZooInit@0x0058E830, 0x00596B23, 0x0059E1CE)
 - [I] **Creation-path readers** (§ 12): object inits that read the game record (Hratli's two InitFns by G16:13, InitFn
-  52 by G22:13, the Tristram portal when quest 4 is inactive, the Zoo), the Chaos Sanctuary gate (Diablo's private
+  52 by G22:13, the Tristram portal when quest 4 is inactive, the Zoo, whose object no stock map places), the Chaos Sanctuary gate (Diablo's private
   `+0x13`, set when the five seals are open and three seal bosses dead), Nihlathak's boss spawn (Anya rescued), the warp
   gates into 73, 100, 118/128 and 132, the true-tomb index (act `+0x094`) used by quest 12 and the client; act `+0x484`
   and `+0x474` are DRLG fields that no quest code reads. (fn:sub_005B70B0_A3Q0_HratliSpawnA@0x005B70B0,
@@ -348,6 +349,12 @@ QuestsPlayerJoin(game, player, rejoin) (0x00546270)                             
   timer runs `p + 1` boundaries after the last 20-frame boundary before it was added, then every `p + 1` boundaries
   (`20·(p + 1)` frames). When the tick reaches `0xFFFFFFFF` every `due` is replaced by `−1 − due`.
   Adding a timer while the list runs is fatal. (0x00543E10, 0x00543F10, fn:sub_0052D870_GameTick@0x0052D870)
+- [C] **Raised in part** (run:2026-10-19-quests3, § 17): the registration (`due = tick + period`), the pass on frames
+  with `frame mod 20 = 0` and the first run at `tick = due + 1` (the `due < tick` test, one tick per pass) hold for every
+  timer run logged (7 runs in four games: the eclipse timer three times, the Dark Wanderer's four), and a timer
+  returning 1 is not run again; the two quest timers reached (the eclipse
+  `0x0059ED80`, the Dark Wanderer `0x005BD390`) are one-shots, so the re-arm branch (`due = tick + period` after a 0)
+  and the tick wrap stay `[I]`. (0x00543E62–0x00543ED1, 0x00543F78–0x00543F80)
 
 ### 6. NPC interaction, server side
 
@@ -546,16 +553,40 @@ record access.
 - [I] **Rewards and items.** NPC 148 msg 0x70 with `bks ` held: removes it, gives `bkd ` (`QUESTS_GiveItem(bkd, 0, 2, 1)`).
   Msg 0x76: gives `rin ` with ilvl 7 / 30 / 60 and quality 4 / 6 / 6 in Normal / Nightmare / Hell ,
   as items/0010 § 6 (Akara). The Inifuss tree drops `bks ` (items/0010). (sub_00592250_A1Q4_NpcMessage@0x00592250)
-- [I] **Cairn stones.** On the first stone operate or the first scroll send (`0x00593CB0`), `0x00592E90` fills the
+- [I] **Cairn stones.** On the first stone operate or the first use of the decoded scroll (`0x00593CB0`: the item-use
+  path `0x00544840` from `0x0054C060`, item code `bkd `, which also sends packet `0x50` with the order; part 3
+  refinement), `0x00592E90` fills the
   five-slot order once (private `+0x4A`): **quest-seed draws** `s ← lo·0x6AC690C5 + hi; i = low32(s) mod 5`, repeated
   until each of the five slots is filled, classes 17–21 (`StoneAlpha`…`StoneLambda` `[L]`) assigned in that order; so
   ≥ 5 draws, variable count. Each correct stone (`class = order[k]`) advances `k`; the fifth sets the dummy 61 to mode
-  6, removes `bkd `, and calls `0x0056EDE0(0, 1, 0x120, x+6, y−3)` at stone 21's position (what it creates is open) and
-  pins its room. (0x00592E90, 0x00593710)
+  6, removes `bkd `, and calls `sub_0056EDE0_MissileCreateAt(0, 1, 0x120, x+6, y−3)` at stone 21's position, which
+  creates missile 288 `cairnstones` (below), and pins its room. (0x00592E90, 0x00593710)
+- [I] **`sub_0056EDE0_MissileCreateAt(a, b, missile, x, y)`** (ECX game, EDX source unit; read 2026-10-20, plan 0049
+  Phase 1). With x = y = 0 it first takes a point from `0x0056D2C0`; with no point, or a point more than 100 from the
+  source (`UnitDistance`), it returns 0. Otherwise it fills a zeroed `0x5C`-byte request: `+0x00` = 1, `+0x04` = the
+  source, `+0x10` = the missile, `+0x14/+0x18` = x, y, `+0x2C` = a, `+0x30` = b. It returns
+  `sub_0059FA30_MissileCreate(game, &req)` (0x0056EDE0–0x0056EE84). The quest calls pass Missiles rows 288
+  `cairnstones` (`0x120`, the fifth stone), 332 `towerchestspawner` (`0x14C`, each of the Countess's recorded chests)
+  and 625 `baalfx control` (Baal's death). Each is a missile whose server do-function (17, 18 and 36 in
+  `g_MissileSrvDoFuncs`) does the work; those functions are not read here.
+  (fn:sub_0056EDE0_MissileCreateAt@0x0056EDE0, fn:sub_0059FA30_MissileCreate@0x0059FA30, data:g_MissileSrvDoFuncs@0x0073C768)
+- [C] **The order draw, reached by the scroll use** (run:2026-10-19-quests3, § 17): `0x00592E90` takes the quest seed
+  from `QUESTS_GetSeed` once (0x00592EE1), then steps it inline until five slots are filled, slot `low mod 5`, classes
+  17, 18, … in fill order; the logged order and the quest seed after it are predicted from the seed before in three
+  first uses, and a second use (private `+0x4A` set) draws nothing and leaves the order. The stone-operate trigger
+  stays `[I]` (not reached). `0x00544840` (from packet code at 0x0054C060, after the player-near test) looks up the used
+  item by id and dispatches on its code: `bkd ` → `0x00593CB0`, `trs ` → `0x0059D6A0` (not run). (0x00592E90–0x00592F61,
+  0x00593CD5–0x00593CE1, fn:sub_00544840_QuestsItemUseCode@0x00544840)
 - [I] **Tristram portal in later games.** The stones' init (`0x005935E0`) on class 17: when quest 4 is inactive
   (`+0x09` = 0: the creator had it done) or private `+0x4C` is set, it registers timer `0x00592D50` (period 1) once,
   which creates `fn:sub_0056D130_PortalObjectCreate@0x0056D130`(room, x+4, y+4, dest 38, 0, class 60, 1) at stone 17.
   (0x00593646–0x00593677, 0x00592D50)
+- [C] **"Cain lost" on the arrival in Lut Gholein** (run:2026-10-19-quests3, § 17, x-entry, x-entry2, h-entry): the first waypoint
+  travel from Act I into 40 with word 4 = 0 runs `0x00597310` from `TownLevelLeave` (0x0053743D) inside
+  `PlayerChangeLevel`: game word 4 b13 (`GameQuestSet`, 0x005973D2) and the player's b14 (0x00592B46); the e3 handler's
+  own level-40 branch then finds the state at 7 and writes nothing; later arrivals in 40 write nothing. The re-check of
+  part 1 adds a classic Nightmare case (c-wp, `QuestPortalC`). The Warriv branch and the e3 branch stay `[I]`.
+  (0x00597310–0x005973E2)
 - [I] **Gibbet event** (`0x00593290`): spawns monster 146 (`cain1` `[L]`) by `sub_005B2F20_SpawnAtPos` at the gibbet
   (+3, +3), retried once at a `0x00545340` free spot; if both fail it opens a class-59 portal to level 1 at (+6, +6).
   Cain in town: `0x00592960` spawns monster 265 near the dummy-189 position with up to 22 `SpawnAtPos` tries (radius
@@ -590,8 +621,8 @@ Objects: operate 6 `0x00594E70` (the tower book: object mode 1, message 0x7F to 
 - [I] `0x00595160` (sets bit 1) has no caller and no pointer: dead.
 - [I] Death side effects: timer `0x005954C0`, period 7; `0x005954F0` (at the death and on each chest event 7, frame + 10)
   spawns monster 326 at the Countess's death position (`SpawnAtPos(…, 326, 12, −1, 8)`, one retry at +5, +5) and then,
-  per recorded chest 371, calls `0x0056EDE0(0, 1, 0x14C, x, y)` at the chest and pins its room. What 326 and `0x14C`
-  produce is open. No item is created by the quest (items/0010). (0x005954F0)
+  per recorded chest 371, calls `sub_0056EDE0_MissileCreateAt(0, 1, 0x14C, x, y)` at the chest (missile 332
+  `towerchestspawner`, § 7 above) and pins its room. What 326 produces is open. No item is created by the quest (items/0010). (0x005954F0)
 - Draws: none in the quest's functions; the spawns draw on other seeds (oracles).
 
 #### Word 6 — quest object 6 (row 6, a1q6.cpp; init `0x00596990`)
@@ -634,7 +665,7 @@ Objects: operate 6 `0x00594E70` (the tower book: object mode 1, message 0x7F to 
 | event | function | seed | draws |
 |---|---|---|---|
 | NPC 266 talk (e0) | `0x00596A90` | player unit seed (`+0x20`) | 2: one per quest object (25, 30), each `RNG_Range(…, 2)` or one LCG step (§ 16) |
-| first cairn-stone operate / scroll send | `0x00592E90` | quest seed | ≥ 5 (`mod 5` until 5 distinct) |
+| first cairn-stone operate / first use of `bkd ` | `0x00592E90` | quest seed | ≥ 5 (`mod 5` until 5 distinct; `[C]` for the scroll use, § 17) |
 | Wirt's body event 7 (first) | `sub_00594630_A1Q4_WirtGold` | quest seed | 1 (items/0010) |
 | Andariel's death (e8) | `sub_005965A0_A1Q6_AndarielDeath` | quest seed | gems (items/0010) |
 | Gibbet event 7, Cain in town, Countess death/chests | `SpawnAtPos`, `0x0056EDE0`, `PortalObjectCreate` | other seeds | oracles |
@@ -651,8 +682,8 @@ Objects: operate 6 `0x00594E70` (the tower book: object mode 1, message 0x7F to 
 
 #### Open points (Act I)
 
-- `0x0056EDE0` arguments `0x120` (stones) and `0x14C` (Countess chests) and monster 326 at the Countess's death: what
-  unit each creates.
+- ~~`0x0056EDE0` arguments `0x120` (stones) and `0x14C` (Countess chests)~~: missiles 288 and 332 (read 2026-10-20).
+  Monster 326 at the Countess's death: what unit it is.
 - The block `+0x14` of e3 is the old level and `+0x18` the new (from the two raisers); handlers read `+0x14 == 1`
   as "leaving the Rogue Encampment".
 - Which monsters are hooked to quests 1, 2, 5, 6 (Levels `+0x30` hooks via `0x00545CD0`, superunique hooks of
@@ -743,7 +774,7 @@ id 8 → 13, id 10 → 11, id 11 → 13, id 13 → 10 (constant). `0x00546270` s
 | b0 | set | `0x00598A70` (`SetState(+0xE0, 0)`) | e11 msg 0x14E with bit 1 | e13, `0x0059E140`/`0x0059E2C0` (word 30 NPC 377) |
 | b1 | clear | same | e11 msg 0x14E | e0, +0xEC |
 | b0, b1, b15, b5 | clear | `0x0059927F`–`0x0059929D` | e13: first joiner with b0 and b5 set and no `ass` item | — |
-| b5 | clear | `0x0055E3FB` | the player uses the item `ass ` (Book of Skill), in the item-use code (function around 0x0055E170, not read further) | `0x00598FA0` |
+| b5 | clear | `0x0055E3FB` | the player uses the item `ass ` (Book of Skill), in the item-use code `0x0055E3D0` (code `ass ` tested, the book removed, b5 cleared when set; `[C]` from part 3, § 17) | `0x00598FA0` |
 | game w9 b13 | set | `0x0059906E`, `0x00598BB1`, `0x005992AC` | Radament's death; msg 0x14E when inactive; first joiner with b0 | `0x0059E1BC` (word 30), `0x0059F4D3` (Jerhyn placement) |
 
 - [I] e13 (`0x00599230`): b0 → (b5 and no `ass` → clear b0, b1, b15, b5), game w9 b13, deactivate (`+0x09` = `+0x0C` = 0);
@@ -822,7 +853,16 @@ id 8 → 13, id 10 → 11, id 11 → 13, id 13 → 10 (constant). `0x00546270` s
   `0x0059AC40` (called at 0x0053ACB3 on act entry) re-arms it while private `+0x03` is set.
 - **Draws:** (1) e3 on the first entry to level 44 or 45 while state is 0: **one quest-seed draw**
   `RNG_RandLoHi(quest seed, 15, 17)` = 15 + R(2), the eclipse timer period (`0x0059EDD3`–`0x0059EDE1`); once per game
-  (private `+0x01`). (2) The altar's gold count (one quest-seed step, items/0010).
+  (private `+0x01`; **corrected in part 3**: `+0x01` guards only between the registration and the timer, which clears
+  it; what keeps it once per game is the state: the timer starts the eclipse through `0x0059A350`, whose
+  `QUESTS_SetStep(1)` makes `+0x0C` = 1, and the e3 test needs 0). (2) The altar's gold count (one quest-seed step,
+  items/0010).
+- [C] **The eclipse arm** (run:2026-10-19-quests3, § 17, x-entry, x-entry2, h-entry: periods 15, 16, 16): on the first entry to level 44 by waypoint with word
+  11 = 0 (quest 10 active, state 0), one quest-seed draw inside the e3 dispatch (`QUESTS_GetSeed` returns at
+  0x0059EDD8), the timer `0x0059ED80` registered with period `15 + (low & 1)` of the stepped seed (`RandLoHi`'s
+  power-of-two path, n = 2), run once at `tick = due + 1`, the eclipse started and b2 set for the player
+  (0x0059A53D, state 1); a later entry to 44 in the same game (state 1) draws nothing. The b3/b4 branches (states 2, 3)
+  stay `[I]`. (0x0059EE26–0x0059EE32, 0x0059EDC0–0x0059EDF3, 0x0059ED80–0x0059EDB3, 0x0059A350–0x0059A3A9)
 
 #### Word 12 — quest object 11 (row 12, a2q4.cpp): the palace, Horazon's journal, the Canyon portal
 
@@ -854,6 +894,9 @@ id 8 → 13, id 10 → 11, id 11 → 13, id 13 → 10 (constant). `0x00546270` s
   (`0x0059BA40`, InitFn 29) and `0x0059BAF0` (called from `0x00584722`/`0x00584745`, OperateFn 34 `0x005846B0`) only
   sync the mode of the portal pair in levels 74 and 54 through private `+0x42`/`+0x44`; no record read. This matches
   [save/0002 § 5](../save/0002-quest-words.md) (no quest gate on waypoint 16).
+- [C] **Entering level 50** (run:2026-10-19-quests3, § 17, x-entry, x-entry2): quest 11's e3 sets word 12 b8 then b7
+  (0x0059F155, 0x0059F173) with quest 11 active (word 12 = 0), as part 2's development log showed it switched off;
+  no state, bit or `+0x09` test on the path. (0x0059F136–0x0059F173)
 - [I] **Palace access** is not a record gate either: the harem blocker object 318 is created by `0x0059B710` (object
   event 7 of the Jerhyn placeholder 122 via `QUESTS_ObjectEvent`, `SUnitCreate(type 2, class 318)` at the placeholder
   −2/−1, once, while private `+0x0E` = 0) and removed by `0x0059AEF0` (mode 2, collision unmarked) when the palace opens
@@ -967,7 +1010,7 @@ id 8 → 13, id 10 → 11, id 11 → 13, id 13 → 10 (constant). `0x00546270` s
 
 | event | quest | seed | draws | site |
 |---|---|---|---|---|
-| e3 first entry to level 44 or 45 (state 0) | word 11 | quest seed | 1 (`RandLoHi(15, 17)`, once per game) | 0x0059EDE1 |
+| e3 first entry to level 44 or 45 (state 0) | word 11 | quest seed | 1 (`RandLoHi(15, 17)`, once per game by the state; `[C]`, § 17) | 0x0059EDE1 |
 | e0 talk to NPC 331 with the palace open | word 12 | quest seed | 1 per talk (`low mod 3`) | 0x0059B229 |
 | e0 talk to NPC 377 | word 30 | the player's unit seed `+0x20` | 1 per talk | 0x0059E1CE, 0x0059E1FC, 0x0059E232, 0x0059E257 |
 | object operate: chests 354–356, altar 149 | words 10, 11 | quest seed | 1 each (gold count; items/0010) | 0x00599C97, 0x00599D8D, 0x00599E83, 0x0059A93A/0x0059AB97 |
@@ -987,7 +1030,8 @@ call or `0x6AC690C5` in them (byte scan of [0x00598000, 0x0059F840): nine LCG co
 - The guard-pass gate `0x0059F580` (called from AI 0x005E71D2) and `0x0059F510`/`0x0059DFB0`: what the guard does with
   `*param_1/*param_2` is AI (out of scope), named only.
 - Game byte `+0x6A` = 3 in `0x0059EA20` (message 8 vs 9) is a game-type value not identified.
-- `0x0055E3D0` (b5 cleared on reading `ass`) lies in an item-use function starting near 0x0055E170, not read further.
+- `0x0055E3D0` (b5 cleared on reading `ass`) lies in an item-use function starting near 0x0055E170; the `ass ` branch is
+  read and run in part 3 (§ 17: the book removed, b5 cleared when set, then a stat change at 0x0055E407).
 
 ### 9. Act III (rows 17–24, second-table object 39)
 
@@ -1269,6 +1313,12 @@ new level at `+0x18`, the player at `+0xC`. So e3 handlers test `+0x18` = level 
   1), two of them on the same target. This is the `0x005BD390` non-item quest-seed draw of items/0010 § 1. Object 131's
   event 7 spawns monster 301 on level 76 (items/0010 § 9 `QUESTS_ObjectEvent` table). (0x005BD390–0x005BD48F,
   0x00741538 read from the image)
+- [C] **The Dark Wanderer's step and objects** (run:2026-10-19-quests3, § 17): in four games (a save with word 32 = 0,
+  the Kurast Docks reached by waypoint and the player next to the Dark Wanderer at the Spider Forest edge) the AI
+  registered timer `0x005BD390` with period 2, the timer ran once at `tick = due + 1`, stepped the quest seed once
+  (`QUESTS_GetSeed` at 0x005BD3DD, the logged low word = one step of the seed before) and tried the targets
+  `i = low & 1 … 7` in order, one free-spot search each; word 32 b0 was set for the player (0x005BD2AB) before the
+  step. `low & 1` was 0 in all four (8 tries), so the 7-try branch stays `[I]`. The objects created are `SUnitCreate`'s (game seed: oracle). (0x005BD390–0x005BD486)
 - [I] `0x005BD0D0` (AI, 0x005EA156) returns the walk target: the stored position, moved down by 20, probing four
   points with `0x006229F0(…, 0x3C01)` the first time. Movement, not quest state.
 
@@ -1304,7 +1354,7 @@ new level at `+0x18`, the player at `+0xC`. So e3 handlers test `+0x18` = level 
 | quest | draw | seed | where |
 |---|---|---|---|
 | W18 | 1 LCG step per Khalim chest opened (`5 + low mod 5` gold piles) | quest seed | 0x005B8881, 0x005B8961, 0x005B8A41 (plan 0032) |
-| W32 | 1 LCG step per game, when the Dark Wanderer timer fires (`low & 1` = start index) | quest seed | 0x005BD3E6 |
+| W32 | 1 LCG step per game, when the Dark Wanderer timer fires (`low & 1` = start index; `[C]`, § 17) | quest seed | 0x005BD3E6 |
 | W16, W17, W19, W20, W21, W22, x39 | **none in the quest code** | — | oracles only: SpawnAtPos (Hratli 0xFD, 0x129, Dark Wanderer 0x170), `0x005B3090` (orb 0x16E), SpecialMonSpawn (0x197), DropAtUnit / GiveItem / DropItemCodeAt (items) |
 
 No `RNG_Range`, `RNG_RangeB` or `RNG_RandLoHi` call lies in 0x005B6C10–0x005BDB20 (call scan). `[I]`
@@ -1640,6 +1690,10 @@ Private data 0x114 bytes (`+0x84` Anya state: 1 thawed, 2 back in town; `+0x88` 
 | 0 / 1 | set / clr | 0x00589744 / 0x0058973A and 0x005899DC / 0x005899D2 | whichever of the two talks comes second (8 and 9 both set) | everything |
 | 7 | set | 0x0055E4F5 | the player **uses** `tr2 ` with bit 8 set and bit 7 clear (item-use code `0x0055E170`) | `0x0058A0A0` |
 
+- [C] **Level-entry steps of word 37** (run:2026-10-19-quests3, § 17, x-entry: 113; x-entry2, h-entry: 113 and 123): with word 37 = 0 (quest 33 active,
+  state 0), the waypoint entry into 112 moves the state to 1 (no write), the entry into 113 to 3 and runs `0x00588F10`
+  for the player: b3 (0x00588F71); the entry into 123 (Halls of Pain) with the state below 5 runs `0x00589AA0`: b14
+  (0x00589AE6), state 6. The old-level-109 branch and the 114/121/122/124 entries stay `[I]`. (0x00589D80–0x00589EFE)
 - [I] **Scroll of resistance:** `0x0058A0A0` adds 10 per difficulty record (Normal, Nightmare, Hell: player data
   `+0x10`, `+0x14`, `+0x18`) whose word 37 has bit 7, and puts that total into stats 39, 41, 43, 45 of a new stat list
   linked to the player (`0x00589FF0`). It runs at the scroll use (0x0055E501) and from 0x00539A1B (player load path,
@@ -1648,6 +1702,13 @@ Private data 0x114 bytes (`+0x84` Anya state: 1 thawed, 2 back in town; `+0x88` 
 - [I] **Anya's reward** (plan 0032, items/0010 § 6): table by difficulty and clvl (`game+0x6D` = 1 and (`game+0x6A`
   = 3 or clvl > 45) → Nightmare table; 2 and (`+0x6A` = 3 or clvl > 65) → Hell table; else Normal), **one quest-seed
   draw** `RNG_Range(questSeed, count[class])` (0x00589937), then `QUESTS_GiveItem(code, UnitDropLevel, 6, 1)`.
+- [C] **Anya's reward reached** (run:2026-10-19-quests3, § 17, x-anya, nm-anya, h-anya): with word 37 = b1, b8, b15 (the loader's
+  copy puts Anya in town through e13, quest 33 switched off) the e11 handler for NPC 512 message 0x4EA8 runs with no
+  `+0x09` test: the table chosen by difficulty and clvl as above, one `RNG_Range(quest seed, count[class])` on the seed
+  `QUESTS_GetSeed` returns (0x00589929), the code `codes[draw]` given, then b9 (0x005899BA), with b8 set b1 cleared and
+  b0 set (0x005899D2, 0x005899DC), and b10 (0x005899E6); a second talk gives nothing (b10). (0x00589883–0x005899E6)
+- [C] **The `tr2 ` use** (run:2026-10-19-quests3, x-anya): the item use `0x0055E4B4` sets word 37 b7 (0x0055E4F5)
+  with b8 set and b7 clear, then `0x0058A0A0` builds the resistance list. (0x0055E4CC–0x0055E501)
 - [I] **Malah's potion** is given at most once per game while no player holds one (`+0xD8` = 0), and `tr2 ` once more
   per game (`+0x102`) to a player who already did the quest, has bit 8 and not bit 7.
   (fn:sub_00589580_A5Q3_NpcMessage@0x00589580, 0x00589F10)
@@ -1779,7 +1840,7 @@ Private data 0xA8 bytes (`+0x86` Worldstone portal open, `+0x88` credited count,
 | 13, 0 | set | 0x0058DD38/0x0058DD42 (`0x0058DD30`: each player **on level 132**, bits 0, 1 clear, via `0x0058DEA0`), 0x0058DCB6/0x0058DCC0 (party `0x0058DC60`, act index 4) | e8, Baal dies | `fn:CUBE_CowPortalOpen@0x00594140` (0x005941BE, expansion cow gate, items/0008), 0x0058E740 (bit 13), `MONSTER_DropItems` B6 (items/0010) |
 | 14 | set | 0x0058DE08 | the rest | log |
 | 2 / 3 | set | 0x0058D91D/0x0058D933 (`0x0058D8B0`, act index 4) | log state 2/3 | e13 |
-| 4–9 | set | 0x0058D9C7 | e11 messages 0x4ECF → b7, 0x4ED0 → b9, 0x4ED1 → b5, 0x4ED2 → b4, 0x4ED3 → b6, 0x4ED4 → b8 (§ 16) | 0x0058D9F0, 0x0058E2B0 |
+| 4–9 | set | 0x0058D9C7 | e11 messages 0x4ECF → b7, 0x4ED0 → b9, 0x4ED1 → b5, 0x4ED2 → b4, 0x4ED3 → b6, 0x4ED4 → b8 (§ 16; `[C]` for 0x4ED2 in § 16, 0x4ED0 and 0x4ED3 in § 17, the other three `[I]`) | 0x0058D9F0, 0x0058E2B0 |
 | 10 | set | 0x0058E7FC (the last portal), 0x0058E4CB (first join), 0x0058E424 (later join) | see slots | 0x0058D9F0, 0x0058E2B0 |
 
 - [I] **Progression:** every Baal credit calls `0x00538680(client, 5, d)` (status progression ≥ 5d + 5), and so does
@@ -1794,8 +1855,14 @@ Private data 0xA8 bytes (`+0x86` Worldstone portal open, `+0x88` credited count,
   `zoo` (`+0x00E` bit 6, mask `0x006CE280` = `0x40`); after 10 failures it stores class 0. The class goes to `+0xA4`
   and every player gets message `0x0058E120` (also sent on each entry to level 109). The consumer of `+0xA4` beyond
   that message is not traced. (0x0058E830–0x0058E90B, tbl:MonStats.txt:zoo)
+- [I] **The Zoo never runs on stock data** (part 3, static): no DS1 places object 567 (`tools/quests.py objplace 567
+  368`, output `workspace/logs/quests/2026-10-19-quests3-objplace.txt`: 2 274 DS1 files, object 368 twice in
+  `act3/jungle/transl.ds1`/`transu.ds1`, object 567 nowhere) and no code pushes class `0x237` to a creator (the three
+  `push 0x237` in the image are source-line arguments, `workspace/logs/quests/2026-10-19-quests3-zoo-imm.txt`). So
+  InitFn 79 and its 1–10 quest-seed draws are unreachable by stock play, as NPC 377 is (§ 16); the draw stays `[I]`
+  and `+0xA4` stays 0 for the e3 message. (0x0058E830, data:g_ObjInitFns@0x00731BC0)
 - [I] **Draws:** Baal's gold (plan 0032: `RNG_RandLoHi(questSeed, …)` per credited player when the killer had bit 0
-  clear) and the Zoo's 1–10 draws, both on the quest seed; `0x0056EDE0(0, 1, 625, x, y)` at Baal's death (not read),
+  clear) and the Zoo's 1–10 draws, both on the quest seed; `sub_0056EDE0_MissileCreateAt(0, 1, 625, x, y)` at Baal's death (missile 625 `baalfx control`, its do-function not read),
   `0x0058E920` (`SpawnAtPos(…, 521, 1, 4, 0x42)`, from monster code) and the objects' `SUnitCreate` are oracles.
 
 #### Word 42 (no record word) — quest object 40 (second table, init 0x0058EA50, act index 4)
@@ -1824,7 +1891,7 @@ Private data 0xA8 bytes (`+0x86` Worldstone portal open, `+0x88` credited count,
 |---|---|
 | NPC talk (e0, e2), messages (e11), level change (e3), join (e13, e14), leave (e9, e10) | none in quest code, except e11 Anya reward (1 quest-seed `Range`) |
 | monster death (e8) | none in quest code except Baal's gold (quest seed, per credited player); creations by spawners/`SUnitCreate` are oracles |
-| object operate / object event 7 / quest timers | Hellforge (quest seed, plan 0032); the Zoo InitFn (1–10 quest-seed `RandLoHi`); spawns are oracles |
+| object operate / object event 7 / quest timers | Hellforge (quest seed, plan 0032); the Zoo InitFn (1–10 quest-seed `RandLoHi`; object 567 placed nowhere on stock data, part 3); spawns are oracles |
 
 ### 11. Which events draw (all acts)
 
@@ -1838,13 +1905,17 @@ and for the LCG multiplier `0x6AC690C5` (per-act scans in § 7–§ 10); the res
 | e0 NPC talk | NPC 331 (word 12), palace open: one step, message `low mod 3 + 8` | quest seed | 0x0059B229 |
 | e11 NPC message | Anya's reward (word 37): `Range(count[class])` | quest seed | 0x00589937 |
 | e3 level change | first entry to 44 or 45 (word 11, state 0): `RandLoHi(15, 17)`, the eclipse timer's period | quest seed | 0x0059EDE1 |
-| object operate, event 7 | first cairn stone or scroll (word 4): `mod 5` until five distinct, ≥ 5 steps | quest seed | 0x00592E90 |
+| object operate, item use | first cairn stone, or the first use of the decoded scroll `bkd ` (word 4): `mod 5` until five distinct, ≥ 5 steps | quest seed | 0x00592E90 |
 | object operate, event 7 | quest chests, Wirt's gold, the Hellforge | quest seed | items/0010 § 4, § 9 |
-| object init | the Zoo (InitFn 79, word 40): 1–10 `RandLoHi(1, nMonStats)` until a `zoo` row | quest seed | 0x0058E87C, 0x0058E888 |
+| object init | the Zoo (InitFn 79, word 40): 1–10 `RandLoHi(1, nMonStats)` until a `zoo` row; object 567 is placed by no DS1 and created by no code, so never on stock data (part 3, § 10) | quest seed | 0x0058E87C, 0x0058E888 |
 | quest timer | the Dark Wanderer (word 32): one step, start index `low & 1` | quest seed | 0x005BD3E6 |
 | e8 monster death | Andariel's gems, Baal's gold | quest seed | items/0010 § 4 |
 | every other e0, e2, e3, e4, e5, e8, e9, e10, e11, e13, e14, timer | none in quest code | — | — |
 
+- [C] **Raised by part 3** (run:2026-10-19-quests3, § 17): the eclipse arm (one draw, the period), the cairn order by
+  the `bkd ` use (the count and the order), the Dark Wanderer timer (one step) and Anya's reward (one `Range`), each
+  predicted from the quest seed before it; the timer callbacks other than the Dark Wanderer's drew nothing on the quest
+  seed in its three runs. The NPC 266 row is § 16's. The other rows stay `[I]` (the Zoo unreachable, NPC 377 unplaced).
 - [I] So the **quest seed** is drawn by both item and non-item quest events, as items/0010 § 1 said; the five
   non-item sites it listed are now placed: `0x00592E90` cairn order, `0x0059B1C0` NPC 331, `0x0059EDC0` the eclipse
   timer, `0x005BD390` the Dark Wanderer, `0x0058E830` the Zoo. (items/0010 § 1)
@@ -1866,7 +1937,7 @@ The reviewed specs that take quest state as an oracle, and what reads it:
 | spec | oracle | reader found | quest state read |
 |---|---|---|---|
 | items/quest-drops | B6 bits at kill time; quest seed on entry | `MONSTER_DropItems` (items/0010 § 2) | killer's word `TCQuestId` bits 15, 1, `TCQuestCP`, read before the boss's script writes (unchanged) |
-| objects | quest-state `InitFn`s | InitFn 49 / 50 (Hratli, G16:13 clear / set), InitFn 52 (NPC 297, skipped when G22:13), the cairn stones' init (Tristram portal when quest 4 is inactive), InitFn 55 (Diablo's start point), InitFn 69 (Nihlathak's boss after Anya's rescue, quest 33 private `+0x88`), InitFn 79 (the Zoo), InitFn 44 (hellgate 342) | game record and quest private state; § 9, § 10 |
+| objects | quest-state `InitFn`s | InitFn 49 / 50 (Hratli, G16:13 clear / set), InitFn 52 (NPC 297, skipped when G22:13), the cairn stones' init (Tristram portal when quest 4 is inactive), InitFn 55 (Diablo's start point), InitFn 69 (Nihlathak's boss after Anya's rescue, quest 33 private `+0x88`), InitFn 79 (the Zoo; object 567 placed nowhere on stock data, § 10), InitFn 44 (hellgate 342) | game record and quest private state; § 9, § 10 |
 | monsters/spawn | the Chaos Sanctuary gate | `sub_005B5210_DiabloQuestFlag` reads Diablo's private `+0x13`, set by `0x005B5230` when the five seals are open and three seal bosses are dead | quest 23 private state; § 10 |
 | monsters/special | superunique quest hooks | `QUESTS_HookMonster` callers; forced death dispatch (§ 2) | — |
 | rng/seeds | act `+0x094`, `+0x484`, `+0x474`, the level-27 bit | `+0x094` (via `0x0061AEB0`): quest 12's "true tomb" entry, the join's tomb index, `OBJINIT_Portal`'s Duriel-lair pair; `+0x484`: maze code only; `+0x474`: the outdoor Kurast gates only; the level-27 bit: no quest code | § 8, § 9 |
@@ -2196,6 +2267,56 @@ Ancients and the summit door's open path, the Nightmare and Hell boss steps, Dia
 133–136 and the portal refusal on 136 (backlog entry to the owner still open). Party credit and the portal party gate
 stay plan 0044's. (run:2026-10-18-quests2)
 
+### 17. Phase 2 part 3 (run:2026-10-19-quests3)
+
+The last reproduction pass ([experiments](experiments.md#run2026-10-19-quests3)) targeted the quest-seed draws and the
+quest steps a waypoint hop, a town talk or an item use reaches, from tool-built saves (`quest-p3*.json`). The logger
+gained revision E (`tools/gdb/questev.py`: the timer list `TMA`/`TMR`/`TMX`, the cairn order `CRN0`/`CRN`, the Dark
+Wanderer's step and tries `DWS`/`DWF`, Anya's reward `ANL`/`ANY`, and the quest state byte `+0x0C` in every quest-object
+list), and `tools/quests.py check` the part 3 rules (its docstring and `tools/test_quests.py`). The travel half is
+[quests/0002 § 14](0002-travel.md#14-phase-2-part-3-run2026-10-19-quests3).
+
+| Claim (section) | Run | Result |
+|---|---|---|
+| quest timers: registration, the 20-frame pass, `due < tick` (§ 5) | every timer line of the run: x-entry, x-entry2, h-entry, x-wpact3r-0: 7 runs (the eclipse 3, the Dark Wanderer 4) | **raised in part** `[C]`: each timer ran first at `tick = registration tick + period + 1`, on a frame with `frame mod 20 = 0`, and a run returning 1 was not repeated; only one-shot timers were reached, so the re-arm after a 0 and the tick wrap stay `[I]` (run:2026-10-19-quests3, 0x00543E10, 0x00543F10) |
+| word 11's eclipse arm: one quest-seed `RandLoHi(15, 17)`, the timer, once per game (§ 8) | x-entry, x-entry2 (Normal), h-entry (Hell): three arms, periods 15, 16, 16; a second entry to 44 in each | **raised** `[C]` with a **correction**: the draw and the period `15 + (low & 1)` predicted from the quest seed at the e3 entry, the timer run once, b2 set by `0x0059A4F0` at state 1; the second entry to 44 drew nothing because the state was 1, not because of private `+0x01` (cleared by the timer); carried into § 8 (run:2026-10-19-quests3, 0x0059EDC0, 0x0059ED80) |
+| word 4's cairn order: ≥ 5 quest-seed steps, slot `low mod 5` (§ 7) | the decoded scroll used twice at the start of x-entry, x-entry2, h-entry | **raised** `[C]` for the scroll path, with a **refinement** of the trigger (the `bkd ` item use through `0x00544840`, not a "scroll send"; carried into § 7 and § 11): order and seed after predicted, 28 steps in all (15, 6, 7); the second use draws nothing (private `+0x4A`). The stone-operate trigger stays `[I]` (run:2026-10-19-quests3, 0x00592E90, 0x00593CB0) |
+| word 32's Dark Wanderer timer: one quest-seed step, targets `low & 1 … 7` (§ 9) | x-entry, x-entry2, h-entry, x-wpact3r-0: the timer once per game, `low & 1` = 0 each time (8 tries; the 7-try branch not reached) | **raised** `[C]`: one step per game, the tries from `low & 1` in order, word 32 b0 for the player first (run:2026-10-19-quests3, 0x005BD390, 0x005BD4A0) |
+| word 37's Anya reward: table by difficulty and clvl, one `RNG_Range` (§ 10) | x-anya (Normal table), nm-anya (Nightmare), h-anya (Hell): one reward each, clvl 80 | **raised** `[C]`: table, count, draw and item code predicted in each difficulty; the writes b9, b1 cleared, b0, b10 at their call sites with b8 set (switched off by the join, no `+0x09` test); the second talk gave nothing (run:2026-10-19-quests3, 0x00589883–0x005899E6) |
+| word 9's `ass ` use (item use, § 8) | x-book (`QuestBookHeld`: word 9 b0, b5) | **raised** `[C]` for the branch reached (b5 set): the item use `0x0055E3D0` removes the book and clears b5 at 0x0055E3FB (run:2026-10-19-quests3, 0x0055E3D0–0x0055E3FB) |
+| word 37's `tr2 ` use (item use, § 10) | x-anya | **raised** `[C]` for the branch reached (b8 set, b7 clear): b7 at 0x0055E4F5 (run:2026-10-19-quests3, 0x0055E4CC–0x0055E4F5) |
+| level-entry steps (e3) reachable by a waypoint hop (§ 7–§ 10) | x-entry, x-entry2, h-entry (Lut Gholein, Lost City, Far Oasis, Kurast Docks, Arreat Plateau, Crystalline Passage, Glacial Trail, Halls of Pain, the palace) | **raised** `[C]` for the branches reached: word 4's "Cain lost" on the first arrival in 40 (`0x00597310` from `TownLevelLeave`, not the e3 handler: game b13, player b14); word 12 b8, b7 on entering 50 (quest 11 active); word 37's 112 → 113 → 123 steps (b3, then b14). Other e3 rows: candidates table below (run:2026-10-19-quests3, 0x00597310, 0x0059F136, 0x00589D80) |
+| word 40's e11 map (§ 10, § 16) | Anya's talks reported 0x4ED0 (x-anya, h-anya, nm-anya), Malah's 0x4ED3 (one talk) | **held** for two more messages: 0x4ED0 → b9 and 0x4ED3 → b6, as § 16's jump-table reading has them (run:2026-10-19-quests3, 0x0058D9C7) |
+| the Zoo's draws (§ 10, word 40) | static scan (`objplace`), no session | **shortfall, unreachable on stock data** `[I]`: object 567 is placed by no DS1 and created by no code (§ 10; fn:sub_0058E830_A5Q6_ZooInit@0x0058E830) |
+
+Level-entry and item-use candidates from § 7–§ 10 (the e3 and item-use rows a waypoint hop or a town reaches; each
+reached row is `[C]` above for its branch, the rest stays `[I]`; run:2026-10-19-quests3):
+
+| word | trigger | write | part 3 |
+|---|---|---|---|
+| 4 | first arrival in 40 with b0, b1 clear, Cain not rescued | game b13, b14 | reached (`TownLevelLeave` path) |
+| 4 | use of `bkd ` | the order draw (no bit) | reached |
+| 11 | entering 44/45 at state 0 | the draw; b2 at the timer | reached |
+| 11 | leaving 40 at state 2; entering 40 with private `+0x03` | log state; eclipse re-armed | not reached (states set by the altar) |
+| 12 | entering 50 | b8, b7 | reached |
+| 14 | entering 46 at state 0; the true tomb | state only; state 2 | not reached (no write on 46; the tomb is a walk) |
+| 17, 18, 21 | entering 79, 77, 82 | state only | not attempted (no write) |
+| 19 | entering 78; leaving 75 at state 2 | state; log bits | not reached (state 2 from a quest step not taken) |
+| 25, 26, 27 | entering 103 at log state 2; 108 | log bits | not reached (log state 2 from boss steps; 108 is a walk) |
+| 35, 36 | entering 110–112 at state 1/2 | state 3, log bits | not reached (states from Larzuk's and Qual-Kehk's quest talks, not built) |
+| 37 | entering 112, 113/114, 121–124; leaving 109 at state 2 | state; b3; b14 | 112, 113, 123 reached; 114, 121, 122, 124 and the 109 branch not |
+| 37 | use of `tr2 ` | b7 | reached |
+| 38, 39, 40 | entering 121 (+0x0B 1), 120, > 130 | state, log bits | not reached (need Anya's portal, the Ancients, Baal) |
+| 9 | use of `ass ` | b5 clear | reached (x-book) |
+
+**Shortfalls (named, final for this plan).** No further pass is planned (plan 0042 Phase 2 part 3 ruling): these stay `[I]` in
+this plan. The Zoo's draws (object 567 placed nowhere on stock data) and NPC 377's (no stock placement, § 16); the
+cairn stones' operate trigger (the order was drawn by the scroll use only); the eclipse's b3/b4 branches and the
+altar's states; the timer re-arm after a 0 and the tick wrap (only one-shot timers ran); the e3 rows of the candidates
+table not reached; every step triggered by a kill, a
+boss or a far operate; Nightmare beyond Anya's reward; classic Acts II and III; the owner-play steps (the owner entry
+stays open). Party credit and every two-client case stay plan 0044's. (run:2026-10-19-quests3)
+
 ## Data touched
 
 - `tbl:MonStats.txt:TCQuestId`, `tbl:MonStats.txt:TCQuestCP` (through items/0010), `tbl:MonStats.txt:zoo` (the Zoo)
@@ -2219,8 +2340,9 @@ stay plan 0044's. (run:2026-10-18-quests2)
   run:2026-10-18-quests2.
 - [L] The monsters hooked to quests 1, 2, 5, 6 and 22 (Levels `+0x30` and superunique hooks) were not all re-read;
   monsters/0003 lists the superunique hooks.
-- [L] What `0x0056EDE0` creates with arguments `0x120` (the stones), `0x14C` (the Countess's chests) and 625 (Baal's
-  death).
+- ~~What `0x0056EDE0` creates with arguments `0x120` (the stones), `0x14C` (the Countess's chests) and 625 (Baal's
+  death).~~ Missiles 288 `cairnstones`, 332 `towerchestspawner` and 625 `baalfx control` (§ 7, read 2026-10-20). What
+  their server do-functions (17, 18, 36) make is not read.
 - [L] The descriptor's `+0x08` (100 or 0) has no reader in the code read.
 - [L] The AI states that call `0x00599420` and `0x0059C330` (Act II), the game-type 3 test in `0x0059EA20`, and the
   missiles column behind field `+0x96` used by the staff timer.

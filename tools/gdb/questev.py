@@ -68,6 +68,20 @@
 #   QOBJ   at the join's exit and on request: every quest object (id, act, +0x09, +0x0A, +0x0B, word +0xE0)
 #   QK     0x0065C3E0 QUESTRECORD_ClearSteps entry (stdcall rec, word; bits 2-11 cleared by BITFIELD_Clear, no QC
 #          line): ret, rec, word, the word before (part 2, run:2026-10-18-quests2)
+#   Revision E (part 3, run:2026-10-19-quests3); QOBJ/qobj entries gain the quest state byte +0x0C as a 7th element:
+#   TMA    0x00543F10 timer add (ECX quest object, EDX fn, [esp+4] period): quest id, fn, period, the control's tick
+#          (game +0x10F4 -> +0x14), qs
+#   TMR    0x00543E85 a timer about to run in the 20-frame pass 0x00543E10 (ESI timer {fn, quest, due, period}, EDI
+#          control): fn, quest id, due, period, tick, qs; TMX at 0x00543E87 after it: fn, the result (AL; 1 removes
+#          it), qs
+#   CRN0   0x00593CD5 the bkd-use path 0x00593CB0 (EDI quest 4's private block): +0x4A (order already filled), qs;
+#          CRN at 0x00593CE6 after the fill: the five order slots (private +0..+8, u16), qs
+#   DWS    0x005BD40F the Dark Wanderer timer 0x005BD390 after its quest-seed step (ESI low word): low, the
+#          Dark Wanderer's position ([ebp-0x14], [ebp-0x10]), qs; DWF at 0x005BD458 after each free-spot search
+#          (ESI i, [ebp-4] room, [ebp-0xC]/[ebp-8] the target): i, room, x, y
+#   ANL    0x005898D0 Anya's reward (e11 512 msg 0x4EA8) after the clvl read (EAX); ANY at 0x0058993C after
+#          RNG_Range(quest seed, count): class (EDI), table ([ebp-4]), count, draw (EAX), the item code, qs, difficulty
+#          (game +0x6D), game +0x6A
 #   LOGERR on a handler exception (the game goes on)
 import json
 import struct
@@ -181,8 +195,8 @@ def _questev_main():
         out = []
         k = 0
         while q and k < 64:
-            b = mem(q, 0x0C)
-            out.append([u32(q), b[8], b[9], b[10], b[11], u32(q + 0xE0)])
+            b = mem(q, 0x0D)
+            out.append([u32(q), b[8], b[9], b[10], b[11], u32(q + 0xE0), b[12]])   # rev. E: + the state +0x0C
             q = u32(q + 0xF4)
             k += 1
         return out
@@ -648,6 +662,71 @@ def _questev_main():
         emit("NPCQ", {"n": out})
 
     Bp(0x0064EA90, on_npcq)
+
+    # ---- revision E (plan 0042 P2 part 3): timers, the cairn order, the Dark Wanderer's objects, Anya's reward
+    def qs_now():
+        g = st["game"]
+        qc = u32(g + 0x10F4) if g else 0
+        return seed(qc + 0x18) if qc else None
+
+    def on_tma():
+        q, fn, esp = reg("ecx"), reg("edx"), reg("esp")
+        g = u32(q + 4) if q else 0
+        qc = u32(g + 0x10F4) if g else 0
+        emit("TMA", {"q": u32(q) if q else None, "fn": "%08x" % fn, "per": u32(esp + 4),
+                     "tick": u32(qc + 0x14) if qc else None, "qs": qs_now()})
+
+    def on_tmr():
+        t, c = reg("esi"), reg("edi")
+        q = u32(t + 4)
+        emit("TMR", {"fn": "%08x" % u32(t), "q": u32(q) if q else None, "due": u32(t + 8), "per": u32(t + 0xC),
+                     "tick": u32(c + 0x14), "qs": qs_now()})
+
+    def on_tmx():
+        t = reg("esi")
+        emit("TMX", {"fn": "%08x" % u32(t), "r": reg("eax") & 0xFF, "qs": qs_now()})
+
+    Bp(0x00543F10, on_tma)
+    Bp(0x00543E85, on_tmr)
+    Bp(0x00543E87, on_tmx)
+
+    def on_crn0():
+        emit("CRN0", {"a4a": u8(reg("edi") + 0x4A), "qs": qs_now()})
+
+    def on_crn():
+        e = reg("edi")
+        emit("CRN", {"order": list(struct.unpack("<5H", mem(e, 10))), "qs": qs_now()})
+
+    Bp(0x00593CD5, on_crn0)
+    Bp(0x00593CE6, on_crn)
+
+    def on_dws():
+        bp = reg("ebp")
+        emit("DWS", {"low": reg("esi"), "pos": [s32(bp - 0x14), s32(bp - 0x10)], "qs": qs_now()})
+
+    def on_dwf():
+        bp = reg("ebp")
+        emit("DWF", {"i": reg("esi"), "room": u32(bp - 4), "x": s32(bp - 0xC), "y": s32(bp - 8)})
+
+    Bp(0x005BD40F, on_dws)
+    Bp(0x005BD458, on_dwf)
+
+    def on_anl():
+        emit("ANL", {"clvl": reg("eax")})
+
+    def on_any():
+        bp, cls, r = reg("ebp"), reg("edi"), reg("eax")
+        tbl = u32(bp - 4)
+        n = u32(tbl + 8 * cls + 4)
+        codes = u32(tbl + 8 * cls)
+        c = u32(codes + 4 * r) if codes and r < 64 else 0
+        g = st["game"]
+        emit("ANY", {"cls": cls, "tbl": "%08x" % tbl, "n": n, "r": r,
+                     "code": struct.pack("<I", c).decode("latin1") if c else None, "qs": qs_now(),
+                     "diff": u8(g + 0x6D) if g else None, "g6a": u8(g + 0x6A) if g else None})
+
+    Bp(0x005898D0, on_anl)
+    Bp(0x0058993C, on_any)
 
     def on_game():
         st["game"] = reg("edi")

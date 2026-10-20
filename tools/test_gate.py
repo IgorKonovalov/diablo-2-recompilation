@@ -24,6 +24,7 @@ FIX = os.path.join(HERE, "gate", "fixtures")
 REPO = os.path.dirname(HERE)   # E9 keeps its parser cache under this checkout's workspace/
 
 BACKLOG_ENTRY = "docs/backlog/2026-10-16-reverser-spec-writer-re-tag-the-core-spec.md"
+ARCHIVED_ENTRY = "docs/backlog/archive/2026-10-15-architect-reverser-seed-run-follow-up.md"
 
 # rule -> (file, line) the fixture must report
 EXPECT = {
@@ -45,6 +46,7 @@ EXPECT = {
     "W3": ("re/symbols.csv", 4),
     "W4": ("docs/wiki/randomness.md", 2),     # based_on date older than the spec's updated:
     "W5": ("docs/backlog.md", 7),             # an unstruck entry appended to the frozen archive
+    "W6": (BACKLOG_ENTRY, 1),                 # a closed entry left outside docs/backlog/archive/
 }
 
 # overlay -> (rule, file, line), for overlays that test a second case of a rule
@@ -57,6 +59,8 @@ EXPECT_MORE = {
     "E13-date": ("E13", BACKLOG_ENTRY, 1),                 # date differs from the file name's
     "E13-context": ("E13", BACKLOG_ENTRY, 7),              # a context link with no such heading
     "W5-struck": ("W5", "docs/backlog.md", 7),             # a struck archive copy of an entry with a file
+    "W5-archived": ("W5", "docs/backlog.md", 7),           # a struck archive copy of an archived entry
+    "E13-archive": ("E13", ARCHIVED_ENTRY, 1),             # an open entry in docs/backlog/archive/
 }
 
 
@@ -78,7 +82,7 @@ class GateTest(unittest.TestCase):
         rep = self.run_on()
         self.assertEqual(rep.errors, {})
         self.assertEqual(rep.warnings, {})
-        for rule in ("E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E10", "E11", "E12", "E13", "W4", "W5"):
+        for rule in ("E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E10", "E11", "E12", "E13", "W4", "W5", "W6"):
             self.assertGreater(rep.checked.get(rule, 0), 0, rule)
 
     def test_each_fixture_raises_its_rule(self):

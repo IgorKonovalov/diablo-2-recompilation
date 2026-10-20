@@ -11,7 +11,8 @@ nothing reaches `docs/specs/` without evidence that holds up.
 
 The orientation map is `CLAUDE.md`. Decisions are in `docs/adrs/`, work in flight in
 `docs/plans/`, the research map in `docs/specs/README.md`, cross-lane requests in `docs/backlog/`
-(one file per entry, ADR-0018; `docs/backlog.md` is the frozen archive).
+(one file per entry, ADR-0018; closed ones in `docs/backlog/archive/`, ADR-0019; `docs/backlog.md` is the frozen
+pre-2026-10-17 archive).
 
 ## On bare invocation — wait for instructions
 
@@ -100,10 +101,13 @@ the review entry so the orchestrator can copy it. **Every ~5 reviews**, read the
 promote any fix seen twice into that lane's `references/review-fixes.md` (one-line rule, one or two
 review entries cited); drop a rule that has not recurred in the last 30 reviews.
 
-**Backlog after a merge.** After merging a lane, the orchestrator runs `python3 -I tools/backlog.py migrate`
-(idempotent). It moves an entry a lane appended to the frozen `docs/backlog.md` into its own file and closes a
-file whose archive copy a lane struck; on a conflict in the archive, keep both sides and let it dedupe. Gate W5
-flags what is left. Then commit `docs/backlog/` and `docs/backlog.md`.
+**Backlog after a merge.** Merge a lane with `--no-commit`, then run `python3 -I tools/backlog.py archive`
+(idempotent; [ADR-0019](../../../docs/adrs/0019-backlog-closed-entries-archive.md)). It first runs `migrate`, which
+moves an entry a lane appended to the frozen `docs/backlog.md` into its own file and closes a file whose archive copy a
+lane struck (on a conflict in the archive, keep both sides and let it dedupe). Then it moves every closed entry a lane
+left in `docs/backlog/` into `docs/backlog/archive/` and rewrites the links that pointed at the old paths. Gates W5 and
+W6 flag what is left. Stage `docs/backlog/`, `docs/backlog.md` and the files it reports under `links`, then commit the
+merge.
 
 ## Output locations
 
@@ -111,7 +115,8 @@ flags what is left. Then commit `docs/backlog/` and `docs/backlog.md`.
 docs/adrs/NNNN-slug.md + README.md        # next free number tracked in README
 docs/plans/NNNN-slug.md + README.md       # done/ after close
 docs/specs/README.md                      # research map (you own this file only)
-docs/backlog/                             # you triage entries addressed to you: tools/backlog.py list --to architect
+docs/backlog/                             # open entries; you triage those addressed to you: tools/backlog.py list --to architect
+docs/backlog/archive/                     # closed entries (moved there by close / archive, ADR-0019)
 docs/plans/metrics.md                     # lane run ledger: you fill verdicts and fix categories
 ```
 

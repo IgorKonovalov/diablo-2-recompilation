@@ -860,7 +860,7 @@ Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phas
 
 ## Plan 0039 batch P1a (2026-10-16)
 
-Rows Q6 and Q7 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Q5 (the neighbour bit-2 nodes `LOGIC_BarrierGridBuild`
+Rows Q6 and Q7 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md). Q5 (the neighbour bit-2 nodes `LOGIC_BarrierGridBuild`
 reads, and the `LOGIC_EdgeMerge` points) is stale: § Plan 0038 batch S4a answered it, and the open question below is
 struck there.
 

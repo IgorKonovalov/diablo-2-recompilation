@@ -1019,7 +1019,7 @@ ids (prefix id = 747 + the prefix block row + 1); rare-name ids are merged rare 
   bonus itself, or only the following mod line's `ITEMS_MakeEthereal` does; the run upgraded no ethereal item
   ([items/0008 § Open questions](../../findings/items/0008-cube.md#open-questions)).
 - [L] **The cow portal's oracles.** How many draws the free-spot search and the portal object take from the game seed,
-  and on what; and the classic word-26 gate, not exercised.
+  and on what; and the classic word-26 gate, not exercised (the words' writers: [quests/progression § Word 4](../quests/progression.md#word-4-cain-the-cairn-stones-tristram-and-the-cow-king-quest-object-4)).
 - ~~**The output cell.** The search order of `sub_00560200_InvPlaceItem` in the cube grid.~~ Answered: § G, step note
   G4 (the player spot search on the empty grid; items/0008 § Plan 0038 batch S2c, cube 45).
 - ~~**The stat-delta ops.** `sub_00625560_UnitStatDelta`'s two stat-list reads are not identified.~~ Answered: stat

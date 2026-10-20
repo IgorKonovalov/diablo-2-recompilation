@@ -592,7 +592,7 @@ tests 36 and the 48 `RectTouch` tests 24 (review note, 2026-10-17).
 
 ## Plan 0039 batch P1a (2026-10-16)
 
-Rows B11 (a) and Q14 of [plan 0039](../../plans/0039-backlog-sweep-4.md).
+Rows B11 (a) and Q14 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md).
 
 ### B11 (a): `RoomNeighboursEnsure` skips level 133
 

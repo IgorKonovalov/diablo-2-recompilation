@@ -3,8 +3,8 @@
 > **Subsystem:** quests/travel
 > **Question:** how does a player activate and use a waypoint, change act, open and use a town portal, and where is a
 > player placed on entering a level (by waypoint, NPC, portal, warp, death or joining), with which draws?
-> **Date:** 2026-10-17   **Plan:** 0042 (Phase 1 and 1b, static; Phase 2 run:2026-10-17-quests, § 12; part 2 run:2026-10-18-quests2, § 13)   **Status:**
-> open (Phase 2 part 1 reviewed 2026-10-17, accept with fixes; part 2 reviewed 2026-10-19, accept with fixes; part 3 open)
+> **Date:** 2026-10-17   **Plan:** 0042 (Phase 1 and 1b, static; Phase 2 run:2026-10-17-quests, § 12; part 2 run:2026-10-18-quests2, § 13; part 3 run:2026-10-19-quests3, § 14)   **Status:**
+> answered (Phase 2 part 1 reviewed 2026-10-17, accept with fixes; part 2 reviewed 2026-10-19, accept with fixes; part 3 reviewed 2026-10-20, accept with fixes; plan 0042 closed 2026-10-20)
 
 Static reading of the pinned `Game.exe` (Ghidra on the lane's copy, objdump for the instruction-level reads); no game
 run. Names are ours. "Record" and "word *q*, bit *s*" are as in [save/0002](../save/0002-quest-words.md): bit `16q + s`
@@ -44,6 +44,11 @@ and writers of the act changes are also listed per quest in [quests/0001](0001-p
   `meshif2`, `cain6`, `[L]` as identities). The player is moved
   **before** the words are written. (fn:NPC_MenuAction@0x00579D60 0x0057A650–0x0057A7D6, 0x0054B830,
   fn:sub_005467E0_NpcActTravel@0x005467E0)
+- [C] **Part 3** (run:2026-10-19-quests3, § 14): in the state logged (expansion, word 26 b0, after Tyrael's 0x4E20 talk)
+  the stock client offers NPC 367 no travel line (that the line is never offered is `[I]`: the client's menu builder
+  was not read; architect review), and the expansion Act IV → V travel is the Harrogath portal (object 566, `0x005B5880`: word 28 b0 and b13 once, `+0x4C`, then
+  `NpcTravelMove(109, 5)`), not the 367 branch (which stays `[I]`, not reached by stock play); Meshif's return
+  (`NpcTravelMove(40, 5)`) steps Lut Gholein's level seed once per trip (a type-5 point found). (0x005B5880, 0x0054B830)
 - [I] **The Durance portal** (`OperateFn` 46) needs word 22 bit 13 or bit 0; on level 102 it writes word 23 (and 18),
   sets waypoint 103 and moves the player to level 103 at point type 0. On any other level the same handler only calls
   `0x005BCFD0`, which opens the Mephisto portal and bridge objects and moves no one; so `Siege Control` (410), which
@@ -76,7 +81,8 @@ and writers of the act changes are also listed per quest in [quests/0001](0001-p
 - [I] **Draws by event kind** (§ 10): waypoint operate: none, or the waypoint's unit seed (five `Sync` 0 rows); waypoint
   travel, NPC act change, death, join, the lair, Arcane and Durance portals: the destination's level seed when it has
   `Position` (plus a full level or room build when the level or room does not exist yet, DRLG oracles); town portal
-  creation: five (above); portal use: none of its own (a room activation is an oracle); warp: none.
+  creation: three (above; corrected from five by Phase 2, § 12; a town room updated for the first time adds its
+  population's game-seed draws, an oracle); portal use: none of its own (a room activation is an oracle); warp: none.
   (fn:sub_0054C5D0_Pkt49WaypointTravel@0x0054C5D0, fn:sub_005467E0_NpcActTravel@0x005467E0,
   fn:sub_0066AC40_LevelPointPick@0x0066AC40, fn:sub_0056D130_PortalObjectCreate@0x0056D130, 0x00584870)
 
@@ -322,6 +328,19 @@ NpcTravelMove(level, type) (0x0054B830)
   packet 0x48 clears it (§ 9). For NPC 155 it also runs quest 6's event-3 callback when word 6 bits 13 and 0 are set, and
   `0x00597310` (the Act I "Cain not rescued" mark, quests/0001). It does **not** move the player: the move has already
   happened in `NpcTravelMove`. (fn:sub_005467E0_NpcActTravel@0x005467E0)
+- [C] **Tyrael's travel is the red portal, not the menu** (part 3 correction, run:2026-10-19-quests3, § 14): the stock
+  client's menu for NPC 367 in an expansion game after Diablo (word 26 b0) has only *talk* and *cancel* (screenshot
+  `workspace/logs/quests/dev-p42r-tyrael-menu.png`), so the 367 branch above is not reached by stock play in that state (like packet 0x58 on word 33; that no stock state
+  offers the line is `[I]`, the client's menu builder not read: architect review). The Act
+  IV → V travel is the operate of the Harrogath portal (object 566, `0x005B5880`, made by Tyrael's 0x4E20 talk, quests/0001
+  § 10): expansion only (`game +0x70`), word 26 b0 or b13 (else message 0x13 to the player), the player in Act IV; with
+  word 28 b0 clear it sets word 28 b0 then b13 (0x005B590F, 0x005B5919), sends the record and sets player data `+0x4C`
+  = 1 (0x005B5960, `0x0053D940`), and in every case `NpcTravelMove(109, 5)` (0x005B598F) and `0x005B4FF0` (the
+  waypoint record). The run: x-tyrael3, five trips (§ 14). (0x005B5880–0x005B59A5)
+- [I] **Meshif's Act III menu** (part 3, run:2026-10-19-quests3): *talk*, *sail west*, *cancel* (no trade line; part 2's
+  driver clicked *cancel*). A screenshot of the client, whose menu builder was not read, so `[I]` (Phase 3 review); the
+  *sail west* line's server side is § 14's `[C]`. (fn:NPC_MenuAction@0x00579D60, screenshot
+  `workspace/logs/quests/dev-p42r-meshif-menu.png`)
 - [I] The NPC classes are `monstats` rows; their names (Warriv, Meshif, Tyrael, …) are `[L]`.
   (fn:sub_005467E0_NpcActTravel@0x005467E0)
 - [I] `TownLevelLeave(old, new)` marks the old town's store stale (vendors) and, on arrival in town 1, 40, 75 or 109,
@@ -399,6 +418,10 @@ OBJOP_Portal (OperateFn 15, 0x00584870)                                         
   no quest test; `OperateFn` 34 (`0x005846B0`): from 74 to 54 at type 0, from 54 to 74 at type 11, then `0x0059BAF0`
   (Act II quest code). Both set mode 1 and queue event 1 when the object is in mode 0. (0x00584D00, 0x005846B0)
 
+- [C] **The town refusal** (part 3, run:2026-10-19-quests3, § 14): a tome used in the Rogue Encampment or Harrogath
+  returns at the town test (0x005BE2E2 → 0x005BE3CE) with no portal and no draw. The level-136 refusal stays `[I]`.
+  (0x005BE2DB–0x005BE2E2)
+
 ### 7. Warps
 
 ```text
@@ -420,6 +443,10 @@ QUESTS_WarpGate(src, dest) (0x00545B80)
 
 ### 8. Death, resurrection and joining
 
+- [C] **Raised in part** (part 3, run:2026-10-19-quests3, § 14): three resurrections (h-death3, Hell) each moved the
+  player to level 1 by `PlayerChangeLevel(1, type 0)` with one step of the town's level seed, chained from one death to
+  the next, and no game, quest or player seed draw across the handler; the life, mana and state writes were not logged
+  and stay `[I]`. (0x0054C0E0)
 - [I] Packet `0x41` with the player in mode 17: life, mana, stamina to their maxima, unit `+0xC4 |= 2`, state 54 set
   and cleared, `PlayerChangeLevel(ActTownLevel(act of the player's level), type 0)`, a mode command, the skills
   re-selected. Type 0 in a town (all `Position` levels) draws the town's level seed. (0x0054C0E0)
@@ -535,6 +562,29 @@ the refusal into 100 (the client offered no warp); `NpcActTravel` 20 events (1 i
 Tyrael's Act IV → V travel and more Warriv trips were not taken by the driver), packet 0x48 on word 28, a type-5 lookup
 that steps; death and resurrection; a portal refused in a town and the Durance, Arcane and lair portals (not
 attempted); the free-cell search's far rings (named at part 1). Two-client cases stay plan 0044's.
+
+### 14. Phase 2 part 3 (run:2026-10-19-quests3)
+
+The last pass ([experiments](experiments.md#run2026-10-19-quests3); quest half
+[quests/0001 § 17](0001-progression.md#17-phase-2-part-3-run2026-10-19-quests3)) logged the travel events with the
+part 2 lines (logger revision E adds only quest lines) on slot 2, one client; `tools/quests.py check` predicts them with
+the part 1 and 2 rules plus the town-portal refusal in a town.
+
+| Claim (section) | Run | Result |
+|---|---|---|
+| a town portal refused in a town (§ 6) | the tome used in the Rogue Encampment (x-entry, x-entry2, h-entry) and in Harrogath (x-anya, h-anya, nm-anya): 6 uses | **raised** `[C]`: `ITEMUSE_TownPortal` returns at the town test (0x005BE2E2 → 0x005BE3CE) with no portal created (no `PU` line), the player's portal unchanged and no draw on the game, quest or player seed (run:2026-10-19-quests3, 0x005BE2DB–0x005BE2E2) |
+| the type-5 lookup that steps: Meshif's return to 40 (§ 4, § 5) | x-meshifw: six westward trips (NPC 264, `NpcTravelMove(40, 5)`) and six back east (word 15 already set) | **raised** `[C]`: each westward trip's `LevelPointFind(40, type 5)` found a point and stepped Lut Gholein's level seed once, the point picked as `LevelPointPick` predicts, the level seed chained from one trip to the next; no other seed moved; the eastward trips wrote nothing (word 15 already set, `+0x4C` 0) (run:2026-10-19-quests3, fn:sub_0054B830_NpcTravelMove@0x0054B830, 0x0066B2B0) |
+| Tyrael's Act IV → V travel, word 28, packet 0x48 (§ 5, § 9) | x-tyrael3 (`ActFiveTyrael`: word 26 b0, word 28 clear): Tyrael talked to (his 0x4E20 makes the portal), then five trips through the red portal (object 566) and back by waypoint | **corrected and raised** `[C]`: the travel is object 566's operate, not the NPC menu (above, § 5); the first trip set word 28 b0 then b13 (0x005B590F, 0x005B5919), `+0x4C` = 1, and the client's packet 0x48 cleared it (1 → 0, return 0); the four later trips wrote nothing and sent no 0x48; every trip's `NpcTravelMove(109, 5)` found no point matching type 5 among Harrogath's points (one, of type 0) and took the first point without a draw (`LevelPointPick`'s n = 0 exit, 0x0066AC90), the level seed unchanged, as part 1's rule predicts. Packet 0x48's clear now has one case per travel word (7 in part 1, 15 in part 2, 28 here): **raised in part** `[C]` for the clear branch; the 20-event floor stays out of this plan (run:2026-10-19-quests3, 0x005B5880–0x005B59A5, fn:sub_0054C590_Pkt48ActChangeClear@0x0054C590) |
+| death and resurrection (packet 0x41, § 8) | h-death3: the 24-life save (`QuestDeath`) killed three times in Hell's Cold Plains, Escape each time (x-death3 in Normal: the monsters seldom hit the character, two development logs) | **raised** `[C]` for the branch reached: packet 0x41 with the player dead moves him to the town by `PlayerChangeLevel(1, type 0)`: one step of the town's level seed (type 0, a `Position` level), the free search predicted, the game, quest and player seeds unchanged across the handler, three of three; the life, mana and state-54 writes were not logged (`[I]`) (run:2026-10-19-quests3, fn:sub_0054C0E0_Pkt41Resurrect@0x0054C0E0) |
+| waypoint activation from mode 0 (§ 2) | three sessions with a save lacking the act's field waypoints: x-wpact1-0 (`QuestWpAct`, map seed 4322: exploration from the Rogue Encampment, 4 min, the Cold Plains never reached), x-wpactr-0 (the same seed, straight Teleport hops towards the Cold Plains waypoint's place known from an older log of that seed: stopped at a river in the Blood Moor, stopped by hand), x-wpact3r-0 (`TravelWpOne`, map seed 4361: from the Kurast Docks towards the Spider Forest waypoint, Def 581 at (5099, 4769), logged in mode 0 at 110 sub-tiles; the driver ended in a pocket of the jungle with no walking or 8-sub-tile jump path over the logged cells, and walking clicks did not move the player) | **not reached**: no operate of a mode-0 waypoint, so event 1 and the `Sync` 0 draw stay `[I]`. What the logs show about `InitFn` 17's creation mode, without a raise: over the 45 part 1–3 logs, a field waypoint first seen after a waypoint arrival in its level was in mode 1 (87) or already 2 (8, seen after its event 1), and one first seen with no arrival was in mode 0 (4) (`tools/quests.py wpmodes`, output `workspace/logs/quests/2026-10-19-quests3-wpmodes.txt`; the `OBJP` lines are periodic, so first seen is not the creation, and the reading stays `[I]`; run:2026-10-19-quests3, fn:OBJINIT_Waypoint@0x00547210) |
+
+**Shortfalls (named, final for this plan).** No further pass is planned; these stay `[I]` in this plan. Waypoint
+activation from mode 0, its event 1 and the `Sync` 0 object-seed draw (above: the driver reaches no mode-0 waypoint by
+a hop or a short walk; the mode 1 → 2 draw is logged by no revision); NPC 367's menu travel branch (the stock client
+offers no line); the 150-travel, 150-warp, 60-activation and 20-`NpcActTravel` floors; level 120's warp tiles and the
+118/128 branch, the gates into 73, 100 and 132; the Durance, Arcane and lair portals; the level-136 portal refusal; the
+resurrection's life, mana and state writes (not logged); the free-cell search's far rings. Two-client cases stay plan
+0044's. (run:2026-10-19-quests3)
 
 ## Data touched
 

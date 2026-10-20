@@ -6,7 +6,7 @@ based_on:
   - docs/specs/monsters/special.md 2026-10-17
   - docs/specs/monsters/stats.md 2026-10-17
   - docs/specs/drlg/collision.md 2026-10-17
-  - docs/specs/drlg/lifecycle.md 2026-10-17
+  - docs/specs/drlg/lifecycle.md 2026-10-20
 ---
 
 # Monsters
@@ -163,7 +163,8 @@ never runs this pass is read from the code. On the client, the room's own conten
 difficulty) is 0 gets no random population, and neither does a room flagged "no population" by the map
 generator. The gate also counts every room of the level that reaches it. That count is the level's "rooms
 visited", which the special catch-up below uses. A test for Chaos Sanctuary that closes the gate when a quest
-byte is set is read from the code but was not exercised.
+byte is set is read from the code but was not exercised; the quest side of it is on
+[quests and travel](quests.md#diablo-and-the-harrogath-portal-word-26).
 
 **Density** ([spawn § C](../specs/monsters/spawn.md#c-density-attempts-per-logic-box)). The room is split into its
 [logic boxes](../glossary.md). Each box gets `(5h ÷ 3) × (5w ÷ 3)` attempts, where `h` and `w` are its size in
@@ -568,4 +569,4 @@ Each spec's *Open questions* has the full list: [pool](../specs/monsters/pool.md
 - The [glossary](../glossary.md) for D2 terms.
 - Related wiki pages: [randomness](randomness.md) (seeds and draws), [levels](levels.md) (rooms, logic boxes, the
   collision grid), [objects](objects.md) (what fills a room before the monsters), [items](items.md) (what a monster
-  drops) and [how we know](how-we-know.md).
+  drops), [quests and travel](quests.md) (the quest hooks and the forced deaths) and [how we know](how-we-know.md).

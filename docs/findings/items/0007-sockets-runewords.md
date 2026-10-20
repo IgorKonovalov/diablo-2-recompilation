@@ -876,7 +876,7 @@ sock 25's count is 422.
 
 ## Plan 0039 batch P1b (2026-10-17)
 
-Rows B9 and Q18 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static: objdump and Ghidra on the lane's copy, plus a
+Rows B9 and Q18 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md). Static: objdump and Ghidra on the lane's copy, plus a
 survey of the item-flag call sites. No game run.
 
 ### B9: which `Runeword95` row a save maps back to

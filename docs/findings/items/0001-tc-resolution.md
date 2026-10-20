@@ -869,7 +869,7 @@ Per row (inventory row, spec line at the inventory's commit, outcome):
 
 ## Plan 0039 batch P1b (2026-10-17)
 
-Row Q21 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static (objdump, Ghidra on the lane's copy). No game run.
+Row Q21 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md). Static (objdump, Ghidra on the lane's copy). No game run.
 
 - [I] **`unit+0xC4` bit 17 (`0x20000`) is "no death drop".** The operand scan finds two readers (a load of `+0xC4`
   followed by `shr 0x11`; no `test` of `0x20000` on `+0xC4`): the death-drop guard `sub_005A6830_MonDeathDrop` (0x005A6861)
@@ -972,8 +972,9 @@ scan of the objdump listing (scratch script, not kept), Ghidra on the lane's cop
 - [I] **For items/tc:** the units that skip the death drop are those in the table, read off the code. That covers the
   113 `Align` 1 classes when made through `MonSpawnTry`, the AI self-removals, spawned and raised minions, hirelings
   and the two compelling-orb sites. It is a lower bound for the reason above. The bit's meaning still rests on its two
-  readers (§ Plan 0039 batch P1b). The identity of `0x005C09E0`'s skill (its pointer sits at `0x0073262C`, past the
-  `srvdofunc` table) is not read.
+  readers (§ Plan 0039 batch P1b). `0x005C09E0` is not a skill. It is `STATEVENT_Reanimate`, the
+  `itemeventfunc` 31 handler of the item property `reanimate` (stat 155), which stock *Tomb Reaver* and *Faith* carry
+  ([items/0002 § Plan 0049 Phase 1](0002-quality-roll.md#plan-0049-phase-1-2026-10-20-static), fn:STATEVENT_Reanimate@0x005C09E0).
 ## Plan 0038 batch H6d (2026-10-17)
 
 Harness batch H6d of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (run:2026-10-17-sweep-quest-b6,
@@ -992,7 +993,8 @@ evidence is the B6 groups of the run, ledger in [items/0010 § Plan 0038 batch H
 - **tc 27** (L244: the pet, hireling, `exp`-state and party killers were not run) **raised in part.** [C] Pet (a Hydra)
   and hireling (the Rogue Scout) kills now ran (sessions 9 and 6). Each was resolved to the owner, and the TC walk still
   got the unresolved killer (`B6X` killer and the drop's `TCR ktype=1 kclass=271`/`352`). **Remainder:** the
-  `exp`-state killer (shortfall, stays `[I]`: `B6E` was 0 in both kills) and the party (d-2c, as filed).
+  `exp`-state killer (shortfall, stays `[I]`: `B6E` was 0 in both kills) and the party (d-2c, as filed). (fn:MONSTER_DropItems@0x005A6600
+  0x005A6705–0x005A67F1, run:2026-10-17-sweep-quest-b6)
 
 ## Open questions
 

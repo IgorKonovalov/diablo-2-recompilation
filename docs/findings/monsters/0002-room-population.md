@@ -257,7 +257,7 @@ flowchart TD
 ```
 
 - [C] `sub_0052D160_NewRoomsUpdate` (server game in `EDI`) loops over the five act slots `game+0xBC`. For each act whose
-  `+0x54` is non-zero it walks the list from `0x0061A180` (next = room `+0x7C`), then clears `act+0x54`. For each room it
+  `+0x54` is non-zero it walks the list from `sub_0061A180_ActRoomsHead` (`0x0061A180`; next = room `+0x7C`), then clears `act+0x54`. For each room it
   calls `sub_0054F060_RoomWandererTick` **unconditionally**. If room `+0x34` bit 0 is clear it then calls
   `sub_005559A0_RoomPresetUnits`, `sub_00542B40_RoomInactiveUnitsRestore`, `sub_00552610_RoomObjectsPopulate` and
   `sub_0054EC90_RoomPopulate` (all `ECX` = game, `EDX` = room), sets bit 0 and calls `0x0061A510(room, 1)`. If bit 0 is
@@ -914,7 +914,7 @@ S3B spawn call_paths=3 classes_size01=58 disp_2be=1 getrecord_fns=26 getrecord_s
 
 ## Plan 0039 batch P1c (2026-10-17)
 
-Row Q26 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static (Ghidra on the lane's copy, objdump) and a re-read
+Row Q26 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md). Static (Ghidra on the lane's copy, objdump) and a re-read
 of the three kept logs of run:2026-10-13-mon-spawn. No game run.
 
 ### Q26: the callee behind the 6- and 15-step unit seeds

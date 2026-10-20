@@ -497,7 +497,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     non-NPC monster (`sub_006483A0`, read at the review), but three routes stay open. No P2 addendum and no owner-play
     candidate now: the recipe would be a guess, and the static remainder (the `0x40000` branch, the knockback, teleport
     and placement writers) is cheaper and could settle it. Routed to the static sweep queue
-    ([rbs3 review static remainders](../../backlog/2026-10-17-architect-reverser-rbs3-review-static-remainders.md) (1));
+    ([rbs3 review static remainders](../../backlog/archive/2026-10-17-architect-reverser-rbs3-review-static-remainders.md) (1));
     a harness case, if that read finds a route in, would be a plan 0038 harness batch, not a 0040 addendum.
   - (2) **The dead champion "not saved on stock data" stays `[I]`.** Every server write of champion bit `0x04` follows
     `MonMarkSpecial` (0x005A0375, `or [esi+0x16], dx` with `EDX` = 8 from 0x005A034A, read at the review), but the
@@ -508,7 +508,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     applies the flag-1 handlers through `SpecialModsApply` (0x005A4558)" to `[C]`: the code reading plus the run's 15
     champion restores, which flag 0 would miss. "The pushed 0 is `minions`" stays `[I]`. drlg/lifecycle repeats the
     old wording (H2b note, § H champion bullet, two open questions): routed to the spec-writer (annotated
-    [rbs3 lifecycle and MonPlace readings](../../backlog/2026-10-17-reverser-spec-writer-rbs3-lifecycle-and-monplace-readings.md)).
+    [rbs3 lifecycle and MonPlace readings](../../backlog/archive/2026-10-17-reverser-spec-writer-rbs3-lifecycle-and-monplace-readings.md)).
   - (4) `rooms.py check` re-run at the review: 0 mismatches over 2 215 807 checks; census and expiry branches as kept.
 
 - **2026-10-17 — post-close: the town-follow static remainder and the close follow-ups, reviewed with `lane/rbs4`
@@ -523,7 +523,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     whose route crosses a camp room, goes first, after an offline geometry check picks the seed and points; recipe (c),
     a teleporting unique, waits on a static read of the AI's teleport target. Not owner play: both are scripted
     recipes for the `rooms.gdb` family. Until H7a runs, the case stays a named shortfall in the spec's *Open
-    questions* (spec-writer entry [rbs4 town-follow and outdoor 7](../../backlog/2026-10-17-architect-spec-writer-rbs4-town-follow-and-outdoor-7.md)).
+    questions* (spec-writer entry [rbs4 town-follow and outdoor 7](../../backlog/archive/2026-10-17-architect-spec-writer-rbs4-town-follow-and-outdoor-7.md)).
   - (2) **The `0x400` drop rides on H7a** (close follow-ups item (2); entry closed).
   - (3) **Symbols:** `DrlgRefAdd` and `DrlgStatusRecompute` raised to `C`; `RoomsDeactivate`, `InactiveMonstersRestore`
     and `RoomInactiveUnitsRestore` raised **in part** (the unreached branches § 11 lists stay `[I]`, written into
