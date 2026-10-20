@@ -2686,6 +2686,10 @@ class GenModel:
         head = open(path, errors="replace").readline()
         self.mapseed = int(head.split("seed=")[1].split()[0]) if "seed=" in head else None
         n = os.path.basename(path)
+        # the d2run header names the steps file (plan 0048 Phase 2's logs, e.g. p2-s1-4851-ch1.log, carry the
+        # difficulty there only); older logs carry it in the file name
+        st = head.split("steps=")[1].split()[0] if "steps=" in head else ""
+        n = os.path.basename(st) + " " + n
         self.diff_hint = 2 if "hell" in n else 1 if "nightmare" in n else 0
         self.diff = None
         with open(path, errors="replace") as f:
