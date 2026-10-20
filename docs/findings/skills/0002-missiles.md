@@ -491,6 +491,11 @@ return 1;
   **Do function 3** (26 rows) ORs `0x40` into its cell (`COLL_CellOrAt`) when its path is not moving, then do function 1.
   **Do function 14** is § 8. (fn:sub_005AE400_MissDo02SubMissile@0x005AE400, fn:sub_005AE480_MissDo03CloudMark@0x005AE480,
   fn:COLL_CellOrAt@0x0064CB90)
+  *2026-10-20 (plan 0046 batch 9a, [skills/0004](0004-missile-do-1-18.md)):* do 2's map up to `MissileCreate` is
+  reproduced by emulation (run:2026-10-20-cat-emu-9a `sublob`), `[I]` until the proposed
+  [ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md) is accepted (the case ends at that call); the loop count `2·lvl − 2` is written whether or not the
+  value is above 0, and only flag 8 depends on it. Table entry 1 is a thunk, `0x005B0BC0` → `jmp 0x005AE1F0`
+  (fn:sub_005B0BC0_MissDo01Thunk@0x005B0BC0).
 
 ### 5. The hit
 
@@ -583,6 +588,9 @@ return 1;
   [skills/0003 § 8](0003-handlers.md#8-skill-do-30-with-a-missile-as-its-unit-missile-do-14) (a curse state around the
   missile's target point).
   (0x0056D810–0x0056D835, 0x005AD012–0x005AD03C, 0x005AEFAF–0x005AF009, tbl:Missiles.txt:sHitPar1, tbl:Missiles.txt:Param2)
+  *2026-10-20 (plan 0046 batch 9a):* do 14's call is reproduced by emulation up to `CallDoFunc` (`[I]` until the
+  proposed ADR-0021 is accepted), and with a skill or a level ≤ 0 it returns 2 without calling do 1 (`[C]`: those cases
+  return) (run:2026-10-20-cat-emu-9a `periodic`, [skills/0004 § 11](0004-missile-do-1-18.md#11-do-14)).
 
 ### 9. Draws, seeds and the chaining reading (ADR-0014)
 
