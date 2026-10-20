@@ -46,6 +46,9 @@ class Plrs(unittest.TestCase):
         pl.feed(joiner.parse_plrs(plrs([unit(7, 1, 1)])))                  # the joiner left
         self.assertIsNone(pl.get("join"))
         self.assertEqual(pl.resolve("join"), 3)
+        pl.feed(joiner.parse_plrs(plrs([unit(7, 1, 1), unit(9, 2, 2)])))   # it rejoined with a new unit id
+        self.assertEqual(pl.resolve("join"), 9)
+        self.assertEqual(pl.get("join")["x"], 2)
 
     def test_party(self):
         pl = joiner.Players()

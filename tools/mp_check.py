@@ -3,6 +3,8 @@
 
     python3 -I tools/mp_check.py xpshare <log> [<log> ...] [-v]
     python3 -I tools/mp_check.py gates <log> [<log> ...] [-v]
+    python3 -I tools/mp_check.py aura <log> [<log> ...]
+    python3 -I tools/mp_check.py quests <log> [--word W --join-bits B,B|none --host-bits B,B]
 
 xpshare: the party share of kill experience (docs/findings/player/0001-creation.md, the Party bullet; spec
 docs/specs/player/creation.md J4; case MP16 of docs/findings/multiplayer/0001-cases.md), from a host log of
@@ -30,6 +32,15 @@ HD0..GPP lines and its PLRS lines (each player's PlayerData +0x160 "tk" and pair
     passed) is the one lim > now predicts;
   - the portal operate: PH (hostile to any) then, when non-zero, PO (operator id vs owner id): a hostile operator that
     does not own the portal is refused before the gate, so no GP follows; else GP: lim = tk + 5000, outcome as above.
+aura: case MP25 (multiplayer/0001 § 4, *MP25 prediction*), from the AF lines of tools/gdb/two-players.py (a player
+  source's SkillUnitFilter result on another player): with the target alive (mode not 0 or 0x11) and outside town (its
+  logged level id not a town), a filter with 0x10000 passes iff the two share a party (PLRS "pty"), and one with 0x8000
+  passes iff the pair is hostile (from the HD0/HDS lines: hostile after an HDS of the pair, neutral after an HD0
+  hostile=0 of either side); the other bits are not modelled here, so a line whose filter has neither is only counted.
+quests: whose quest record each quest-bit write (QS set / QC clear of tools/gdb/quests.py) touches, from the PLRS "qr"
+  pointers (PlayerData +0x10 + 4 * difficulty, QUESTS_PlayerRecord 0x00543520), with both players' presence at the
+  write; with --word, the bits set in that word on each player's record are compared with --host-bits / --join-bits
+  (a case's prediction, e.g. MP28 (a): the Den of Evil's word 1 bits 1 and 13 on the partied joiner's record).
 Prints one SURVEY line per check; exit 1 on any mismatch. Stdlib only; reads only the logs named.
 """
 import collections
@@ -168,7 +179,7 @@ def check_xpshare(paths, verbose):
                         continue
                     d2 = None if e["x"] is None or me["x"] is None else \
                         (e["x"] - me["x"]) ** 2 + (e["y"] - me["y"]) ** 2
-                    if e["dead"]:
+                    if e["dead"] or e.get("mode") in (0, 17):
                         why.append("%s dead" % uid)
                         kind = "partied, other member dead"
                     elif e["lid"] != me["lid"]:
@@ -346,7 +357,127 @@ def check_gates(paths, verbose):
     return 1 if bad else 0
 
 
+def check_aura(paths):
+    S = collections.Counter()
+    bad = []
+    for path in paths:
+        players, pty, hostile = {}, [], set()
+        with open(path, errors="replace") as f:
+            for n, line in enumerate(f, 1):
+                tag, _, rest = line.rstrip("\n").partition(" ")
+                if tag not in ("PLRS", "PLRK", "HD0", "HDS", "AF"):
+                    continue
+                try:
+                    d = json.loads(rest)
+                except ValueError:
+                    continue
+                if tag in ("PLRS", "PLRK"):
+                    players = {e["id"]: e for e in d["p"]}
+                    pty = d.get("pty", [])
+                    continue
+                if tag == "HDS":
+                    hostile.add(frozenset((d["p"], d["o"])))
+                    continue
+                if tag == "HD0":
+                    if not d["hostile"]:
+                        hostile.discard(frozenset((d["p"], d["o"])))
+                    continue
+                t = players.get(d["tgt"])
+                if t is None or t.get("mode") in (0, 0x11) or t.get("lid") in TOWNS:
+                    S["AF lines not predicted (target dead, in town or not listed)"] += 1
+                    continue
+                same = any(d["src"] in p["m"] and d["tgt"] in p["m"] for p in pty)
+                hos = frozenset((d["src"], d["tgt"])) in hostile
+                fl, got = d["filter"], bool(d["pass"])
+                if fl & 0x10000:
+                    want, why = same, "0x10000 (same party)"
+                elif fl & 0x8000:
+                    want, why = hos, "0x8000 (hostile)"
+                else:
+                    S["AF lines, filter 0x%X without 0x10000 or 0x8000 (counted only)" % fl] += 1
+                    continue
+                state = "partied" if same else ("hostile" if hos else "neither")
+                if want != got:
+                    bad.append("%s:%d: filter 0x%X, %s: pass %s, predicted %s" % (path, n, fl, state, got, want))
+                else:
+                    S["filter 0x%X %s: %s, %s as predicted" % (fl, why, state, "passed" if got else "refused")] += 1
+    for b in bad[:30]:
+        print("MISMATCH " + b)
+    print("SURVEY mp_check aura logs=%d mismatches=%d" % (len(paths), len(bad)))
+    for k, v in sorted(S.items()):
+        print("  %-90s %d" % (k, v))
+    return 1 if bad else 0
+
+
+def check_quests(paths, word, expect):
+    S = collections.Counter()
+    bad = []
+    for path in paths:
+        owner, present, roles, order = {}, set(), {}, []
+        sets = collections.defaultdict(set)
+        with open(path, errors="replace") as f:
+            for line in f:
+                tag, _, rest = line.rstrip("\n").partition(" ")
+                if tag not in ("PLRS", "PLRK", "QS", "QC"):
+                    continue
+                try:
+                    d = json.loads(rest)
+                except ValueError:
+                    continue
+                if tag in ("PLRS", "PLRK"):
+                    present = set()
+                    for e in d["p"]:
+                        if e["id"] not in order:
+                            order.append(e["id"])
+                        present.add(e["id"])
+                        for r in e.get("qr") or []:
+                            if r:
+                                owner[r] = e["id"]
+                    continue
+                pid = owner.get(d["rec"])
+                role = "unknown record" if pid is None else ("host" if pid == order[0] else "joiner")
+                both = len(present) >= 2
+                S["%s writes on the %s's record%s" % (tag, role, ", both players present" if both else "")] += 1
+                S["  word %d bit %d %s on the %s's record" % (d["w"], d["b"], "set" if tag == "QS" else "cleared",
+                                                               role)] += 1
+                if tag == "QS" and pid is not None:
+                    sets[(role, d["w"])].add(d["b"])
+        if word is not None:
+            for role in ("host", "joiner"):
+                want = expect.get(role)
+                if want is None:
+                    continue
+                got = sets.get((role, word), set())
+                if set(want) != got:
+                    bad.append("%s: word %d on the %s's record: bits set %s, predicted %s" % (
+                        path, word, role, sorted(got), sorted(want)))
+                else:
+                    S["prediction held: word %d bits %s on the %s's record" % (word, sorted(want) or "none", role)] += 1
+    for b in bad:
+        print("MISMATCH " + b)
+    print("SURVEY mp_check quests logs=%d mismatches=%d" % (len(paths), len(bad)))
+    for k, v in sorted(S.items()):
+        print("  %-90s %d" % (k, v))
+    return 1 if bad else 0
+
+
 def main(argv):
+    if len(argv) >= 3 and argv[1] == "aura":
+        return check_aura(argv[2:])
+    if len(argv) >= 3 and argv[1] == "quests":
+        args, word, expect, k = [], None, {}, 2
+        while k < len(argv):
+            a = argv[k]
+            if a == "--word":
+                word, k = int(argv[k + 1]), k + 2
+            elif a in ("--join-bits", "--host-bits"):
+                v = argv[k + 1]
+                expect["joiner" if a == "--join-bits" else "host"] = [] if v == "none" else [int(x) for x in v.split(",")]
+                k += 2
+            else:
+                args.append(a)
+                k += 1
+        return check_quests(args, word, expect)
     if len(argv) >= 3 and argv[1] == "gates":
         return check_gates([a for a in argv[2:] if a != "-v"], "-v" in argv)
     if len(argv) < 3 or argv[1] not in ("xpshare",):

@@ -71,6 +71,12 @@ class Players:
         if w == "host":
             return self.order[0] if self.order else None
         if w == "join":
+            # the joiner present now: after a leave and a rejoin it has a new unit id (plan 0044 Phase 2), so take
+            # the latest non-host id of the last PLRS line, else the first other id ever seen
+            live = [e.get("id") for e in (self.last or {}).get("p", [])]
+            later = [i for i in self.order[1:] if i in live]
+            if later:
+                return later[-1]
             return self.order[1] if len(self.order) > 1 else None
         return int(w, 0)
 

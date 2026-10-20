@@ -18,6 +18,8 @@
 #           (0x0055B6F3-0x0055B710; 0x005A5F41 writes GetTickCount() + 60000 for the pair);
 #         "pty": the party list (game +0x1D2C -> +4 first; party +0 u16 id, +4 member list {unit id, next}, +8 next),
 #           as tc-party.py reads it.
+#   "qr": PlayerData +0x10 + 4 * difficulty, the player's quest record per difficulty (QUESTS_PlayerRecord 0x00543520:
+#         game +0x6D picks it), so QS "rec" names a player.
 #   "u" is the unit pointer (the XC0/XA0 lines of tools/gdb/player.py name players by pointer).
 #   PLRK  the same list, unthrottled, at XP_OnMonsterKill entry 0x0057E990 (plan 0044 Phase 2: the party share check).
 #   HD0 HDR HDS HDO  the hostility declaration 0x005A5E50 (entry; the pair-stamp compare 0x005A5F20; the new stamp
@@ -25,6 +27,9 @@
 #         refused, 0x0054C633 passed); PH PO GP GPR GPP the portal operate (0x00584894 hostile-to-any result,
 #         0x005848AF operator id vs owner id, 0x005848CD gate compare, 0x005848D1 refused, 0x005848E7 passed).
 #         Checked by tools/mp_check.py gates (case MP24).
+#   AF    0x0056B967 in SKILLS_ForUnitsInRange, after sub_0056B3E0_SkillUnitFilter (ECX source = [ebp-8], ESI target,
+#         [ebp+0x14] the filter, EAX the result), only for a player source and another player target: src, tgt,
+#         filter, pass. Checked by tools/mp_check.py aura (case MP25).
 #   The game pointer comes from GAME_InitSeeds 0x0052C312 (EDI), as pilot.py's GPTR line.
 #   Readings: docs/findings/multiplayer/0001-cases.md.
 import json
@@ -64,6 +69,7 @@ def _two_players_main():
         pd = u32(u + 0x14)
         if pd:
             d["tk"] = u32(pd + 0x160)
+            d["qr"] = [u32(pd + 0x10 + 4 * k) for k in range(3)]   # the quest records per difficulty (0x00543520)
             e, k = u32(pd + 0x38), 0
             while e and k < 16:
                 d["hl"].append([u32(e), u32(e + 8)])
@@ -177,6 +183,14 @@ def _two_players_main():
 
     def on_gpp():       # 0x005848E7: passed
         emit("GPP", {})
+
+    def on_af():        # 0x0056B967 in SKILLS_ForUnitsInRange, after sub_0056B3E0_SkillUnitFilter: player on player only
+        src, tgt = u32(reg("ebp") - 8), reg("esi")
+        if not src or not tgt or u32(src) != 0 or u32(tgt) != 0 or src == tgt:
+            return
+        emit("AF", {"src": uid(src), "tgt": uid(tgt), "filter": u32(reg("ebp") + 0x14), "pass": reg("eax")})
+
+    Bp(0x0056B967, on_af)
 
     for a, f in ((0x005A5E50, on_hd0), (0x005A5F20, on_hdr), (0x005A5F4C, on_hds), (0x005A5FDE, on_hdo),
                  (0x0054C60F, on_gw), (0x0054C614, on_gwr), (0x0054C633, on_gwp),
