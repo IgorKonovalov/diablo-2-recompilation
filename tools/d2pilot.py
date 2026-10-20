@@ -293,6 +293,7 @@ class MeleeGate:
         self.casts = {}
         self.ignored = set()
         self.skipped_immune = 0
+        self.keys = []                           # --curse-keys: a skill hotkey pressed before each click, in turn
 
     def cast(self, p, st):
         if not st.pos or st.pos[2] in TOWNS:     # town NPCs are monsters too: a click would talk to them
@@ -311,6 +312,9 @@ class MeleeGate:
         if m["hp"] != hp0:
             n, hp0 = 0, m["hp"]
         self.casts[m["id"]] = (n + 1, hp0)
+        if self.keys:                            # plan 0047 Phase 2: Attract, then another curse on the same monster
+            p.dpy.key(self.keys[n % len(self.keys)])
+            time.sleep(0.15)
         sx, sy = p.screen(m["x"] - px, m["y"] - py)
         sx, sy = max(10, min(790, sx)), max(10, min(int(540 * p.vs), sy))
         p.dpy.click(p.off[0] + int(sx), p.off[1] + int(sy) - 20, button=self.button, hold=self.hold)
@@ -2404,6 +2408,8 @@ def cmd_explore(args):
     targets = None
     gate = (MeleeGate(args.radius, args.give_up, button=args.melee_button or 1, hold=args.melee_hold)
             if args.melee else NovaGate(args.radius, args.give_up))
+    if args.melee and args.curse_keys:
+        gate.keys = args.curse_keys.split(",")
     if args.to_warp:
         targets = [(r, rect) for r, (lp, rect) in st.rl.items() if r in st.warps and lp == st.lptr.get(lid0)]
         print("target rooms with a warp: %s" % [(rect, st.warps[r]) for r, rect in targets])
@@ -3074,6 +3080,8 @@ def main():
                     help="the old behaviour: Nova every --nova hops whatever is (or is not) in range")
     ap.add_argument("--melee-button", type=int, default=0, help="farm, hunt: attack with this mouse button (3: Attack "
                     "on the right button) instead of Nova; explore --melee: the button (default 1)")
+    ap.add_argument("--curse-keys", help="explore --melee: skill hotkeys pressed in turn before each click on a "
+                    "monster (plan 0047 Phase 2: F1,F2,F2 = Attract, then the other curse twice)")
     ap.add_argument("--melee-hold", type=float, default=0.12, help="melee: seconds the attack button is held per click")
     ap.add_argument("--radius", type=float, default=9.0, help="Nova range in sub-tiles for the target test")
     ap.add_argument("--give-up", type=int, default=6, help="abandon a target after this many casts with no life change")

@@ -266,6 +266,7 @@ RECIPE_BASES = {
     "statsass": (os.path.join(SAMPLES, "smpasn.d2s"), "5eb48cc0be61071d9e1e64549a365f58ecb6b62f5e12fa0b8a49f5cfc3ccdbde"),
     "statsdru": (os.path.join(SAMPLES, "smpdru.d2s"), "58cc838b578534b0d0dd0329bfb54188e737a6994576d3957ff0c9bbfebd312c"),
     "statsfloor": (os.path.join(SAMPLES, "smppal.d2s"), "82db5212c3cc57367313a0e731336ffd83234dd94a55781070bf90e093eac5ca"),
+    "statsneca": (os.path.join(SAMPLES, "smpnec.d2s"), "21b42e85994cfb5e6e6bac3f4d812294944f9b96e73dc58b847fb7df9e54ea54"),  # plan 0047 P2: Attract
     "statspot": (os.path.join(SAMPLES, "smpbar.d2s"), "a18f03a9f2dacaa2218ac200e1f555b3aca5a79cebf7a0e706298d5ab010dc6c"),
     "quest-p47wp": (BASE_X, "f3c935c349d44ca2fcaad2c803626b7bf62d56657d20036a39a98351b64a31d0"),
     # plan 0044 Phase 2 pairs (tools/mp_saves.py): not loaded yet

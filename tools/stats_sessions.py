@@ -270,6 +270,18 @@ for k, wp in enumerate(("3,2", "2,5")):
                                                         "9", "--drink", "0", "--mana-col", "0", "--hops", "80"], 600)],
                                             FIELD)
 
+# attract (plan 0047 Phase 1 review ruling 2, Phase 2's first step): StatsNecA casts Attract (F1) on the nearest
+# monster, then Amplify Damage (F2) twice on the same monster (tools/d2pilot.py explore --melee --curse-keys, the right
+# button); logger rev 9 with STATS_MONSTA logs STATE_ApplyTimed on monsters, so a curse on a monster in state 57 is
+# seen refused, and Amplify Damage's radius (22 at level 20 against Attract's 9) gives the control outside attract
+NEC_CURSE = ["explore", "--walk", "--melee", "--melee-button", "3", "--curse-keys", "F1,F2,F2", "--give-up", "6",
+             "--radius", "12", "--melee-hold", "0.3", "--drink", "0.5", "--mana-col", "4"]
+for k, wp in enumerate(("1,2", "1,3", "1,4")):
+    SESSIONS["nec-attract%d" % (k + 1)] = ("StatsNecA", "enter-normal", 4781 + k,
+                                           [("pilot", ["farm", "--wp", wp, "--time", "1"], 90),
+                                            ("pilot", NEC_CURSE + ["--hops", "80"], 600)],
+                                           dict(FIELD, STATS_MONSTA="1"))
+
 # stats the cases read from the built saves (tbl:ItemStatCost.txt:ID): 6 life, 7 max life, 8 mana, 9 max mana; 34 DR
 CASES_0047 = {
     "S1 shrines and wells (the combat and stamina shrines, the re-arm, a well's cure)":
@@ -284,13 +296,14 @@ CASES_0047 = {
     "S5 the 256 floor": ("StatsFloor poisoned at 30 life", ["floor-poison1", "floor-poison2"], [34], ()),
     "S7 the curse resistance cut": ("StatsAss under Fade cursed by the Worldstone Keep's witches",
                                     ["ass-curses1", "ass-curses2"], [], ("Fade",)),
+    "S8 attract (Phase 1 review ruling 2)": ("StatsNecA: Attract, then Amplify Damage on the same monster",
+                                             ["nec-attract1", "nec-attract2", "nec-attract3"], [],
+                                             ("Attract", "Amplify Damage")),
 }
 UNSTAGED_0047 = {
     "S6 open wounds on the player": "no stock monster carries open wounds: stat 135 is written only by item properties "
                                     "(gems, runes, sets, cube recipes; no MonStats, MonProp or MonUMod cell names it), "
                                     "so a player is wounded only by another player: two clients, plan 0044",
-    "S8 attract": "no stock monster has the Attract skill (the name is in skills.txt only, no MonStats Skill cell), so "
-                  "the state reaches a player only from another player's curse: two clients, plan 0044",
 }
 
 

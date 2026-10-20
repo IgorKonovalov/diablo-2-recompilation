@@ -53,7 +53,8 @@
 #   STA0/1  STATE_ApplyTimed 0x0056E970 entry (ECX request: source, target, skill, level, duration, stat, value,
 #           state, remove callback) for a target that is the player ("w": "p") or a hireling ("h"), with the
 #           target's states-on bits and the game, target and source seeds / returns 0x0056E9C2, 0x0056EAD2,
-#           0x0056EBCD, 0x0056EBDD (EAX the list: flags, state, expiry frame +0x18, skill, level, entries)
+#           0x0056EBCD, 0x0056EBDD (EAX the list: flags, state, expiry frame +0x18, skill, level, entries);
+#           with STATS_MONSTA set (rev 9, plan 0047 Phase 2) also for a monster target ("w": "m", "mc" its class)
 #   EXP0/1  EVENT_TimedListExpire 0x00580800 (ECX game, EDX unit) for the player: its +0x3C children [list,
 #           flags, state, +0x18] and seeds / return 0x0058080D
 #   AU0/1   EVENT_SelectedAuraTick 0x0056FCB0 ("sel") and EVENT_ItemAuraTick 0x0056FE40 ("item") (EDX unit) for the
@@ -658,11 +659,19 @@ def _stats_main():
                     out.append(32 * i + b)
         return out
 
+    MONSTA = bool(os.environ.get("STATS_MONSTA"))   # plan 0047 Phase 2 (attract): requests on monsters too
+
     def on_sta0():
         blk = reg("ecx")
         v = struct.unpack("<9i", mem(blk, 36))
         tgt = v[1] & 0xFFFFFFFF
         w = who(tgt)
+        if not w and MONSTA and tgt:
+            try:
+                if u32(tgt) == 1:
+                    w = "m"
+            except gdb.MemoryError:
+                w = None
         if not w:
             return
         src = v[0] & 0xFFFFFFFF
@@ -672,6 +681,8 @@ def _stats_main():
              "sk": v[2], "sl": v[3], "len": v[4], "stat": v[5], "val": v[6], "state": v[7], "rm": v[8] & 0xFFFFFFFF,
              "sb": state_bits(tgt), "gs": sd(st["game"] + 0xD0), "us": sd(tgt + 0x20), "ss": sd(src + 0x20) if src
              else None}
+        if w == "m":
+            d["mc"] = s32(tgt + 4)                   # the monster's MonStats class
         emit("STA0", d)
 
     def on_sta1():
@@ -862,7 +873,7 @@ def _stats_main():
         Bp(a, on_shr1)
     Bp(0x00585720, on_wel0)
     Bp(0x0058589B, on_wel1)
-    emit("STATSLOG", {"rev": 8})
+    emit("STATSLOG", {"rev": 9})
     gdb.write("STATS logger armed\n")
 
 
