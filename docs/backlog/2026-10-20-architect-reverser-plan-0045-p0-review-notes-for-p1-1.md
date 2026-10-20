@@ -21,5 +21,5 @@ Not blocking; for plan 0045 P1.1 (`lane/p45r`) and P1.2, from the Phase 0 review
 [skills/0002](../findings/skills/0002-missiles.md): the three tier-A rows with no `srvdofunc` (36 Fire Bolt, 251 Fire
 Trauma, 25 Plague Javelin) get their missile only from `SKILLS_SrvDo`'s `srvmissile` branch, `g_SkillDoFuncs[0]` being
 null (§ 2; 48 stock rows in all, the survey's 50 counting `srvmissilea..c`); row 568's hit function 64 948 is skipped by
-the signed `> 0` test that precedes the bound of all five hit-table call sites (§ 5). The tier-A, progressive-number and
+the signed `> 0` test that precedes the bound of all four hit-table reads (§ 5; the damage table's one read is tested the same way). The tier-A, progressive-number and
 start-check parts remain with P1.3 (P1.1 answered the shared do table in skills/0001 § 12), so the entry stays open.

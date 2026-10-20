@@ -13,3 +13,7 @@ resolution: ""
 *Annotation (archive copy, migrated 2026-10-17):* **(a) done 2026-10-17** (reverser, `lane/s1f`): [tooling.md § emutrace](../../.claude/skills/reverser/references/tooling.md), with the new `guard` directive; (b) and (c) remain.
 
 *2026-10-17 (reverser, `lane/rbs3`):* **(c) done.** `sweep_s1e.py static` runs both clamp copies under the explicit operand map (value EDX → ESI, width ECX, result EDX → ESI): 69 531 cases, 0 differences ([save/0001](../findings/save/0001-d2s-io.md#data-touched), tool addendum above *Data touched*). (b), the optional calc-emu re-run under `emutrace`, is not taken: it needs a Ghidra emulation pass. It stays open.
+
+*2026-10-20 (reverser, `lane/p49r`, plan 0049 Phase 1):* (b), the optional calc-emu re-run under `emutrace`, is not
+taken in this pass. (a) and (c) are done (above). (b) is out of plan 0049 and stays open, optional, for a later static
+lane with Ghidra emulation time.

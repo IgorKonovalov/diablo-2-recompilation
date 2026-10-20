@@ -903,3 +903,16 @@
   and the shrine-table entry 20 (`0x006E1940` → `0x00583050`), the tentacle call and its `o` (0x005B2903–0x005B290A), and
   the `HWT` write (`0x0066E37E`); `g_UModAuraTable`, `g_ChampionNameStr` and `g_ClientUModHandlers` read from the file
   match the ledger. Verdict and rulings in the [plan 0038 log](../../plans/0038-inferred-claims-sweep.md#implementation-log).
+- **Tool addendum (2026-10-20, plan 0049 Phase 1, `lane/p49r`; the H4b review's tool follow-ups).** No session. Two
+  changes:
+  - (a) `tools/monstats.py` compares a hireling's `LIVE` line on stat 100 only. Its stats 7, 12 and 13 come from the
+    mercenary load of the save and are counted as `LIVE hirelings` (`case live_hireling`). s5a + s8 now check with 1 718
+    checks and 0 mismatches; the hireling, class 271, is the one case.
+  - (b) `tools/drlg.py`'s `parse_log` refuses a log that holds a second game. The marker is a second `WNDARM` line with
+    `levels`, which `tools/gdb/mon-spawn.py` writes once per game. The unsplit s5 log stops the `monspawn.py` chain with
+    "a second game starts at line 9516 … split the log at line 9516", and the split s5a still checks clean (4 238
+    checks, 0 mismatches).
+
+  Logs without that tag are not tested for a second game. Outputs `workspace/logs/p49r/monstats-h4b-s5a-s8-p49r-2026-10-20.txt`,
+  `monspawn-h4b-s5a-p49r-2026-10-20.txt` and `monspawn-h4b-s5-refused-p49r-2026-10-20.txt`, with tool hashes in
+  `p49r-manifest.txt`.

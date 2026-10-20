@@ -1339,7 +1339,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     writer reorders. The cursor item and refusal stay `[I]` as filed. (6) **The 53 empty lists need an entry.** The
     lane's characterisation was wrong: 48 are magic items at ilvl 1 with non-zero affix ids, the ring, amulet, jewel and
     charm the edited CharStats gives at creation (40 in the samples, 8 in d2s-io's written saves). The other 5 are rare
-    cube outputs at ilvl 99 (run:2026-10-15-cube-saves). Affix ids with no stats in a game-written save is a creation
+    cube outputs at ilvl 99 (run:2026-10-15-cube-saves; *corrected at the `lane/p49r` review, plan 0049:* recipe inputs
+    built by `tools/d2s.py`, not cube outputs). Affix ids with no stats in a game-written save is a creation
     behaviour a reimplementer must reproduce, so it goes to the reverser (backlog). No S1a row depends on it: rows 101
     and 137 check only the 85 items with a list.
   - **Fixes on the lane:** the ledger's corpus note, row 12 operands, rows 32, 98, 99 and 87 review notes (87: the

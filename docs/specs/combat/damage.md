@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, combat/to-hit, monsters/stats, items/properties]
 consumed_by: [combat/reductions, combat/delivery]
-tags: {C: 34, I: 27, L: 4}
-updated: 2026-10-16
+tags: {C: 34, I: 28, L: 4}
+updated: 2026-10-20
 ---
 
 # Combat: the attacker's damage build
@@ -14,8 +14,8 @@ updated: 2026-10-16
 
 `COMBAT_BuildDamage` fills the damage packet of one attack from the attacker's stats: physical damage with enhanced
 damage and the weapon's strength and dexterity shares, critical and deadly strike, the four elements, the drain or
-steal fields, poison, cold and stun lengths, an unconditional seed step, the monster physical-to-element conversion
-and the monster `Crit` doubling. Every draw is on the **attacker's** seed. The player's normal attack builds even
+steal fields, poison, cold and stun lengths, an unconditional seed step, the physical-to-element conversion a
+skill's hit builder sets up, and the monster `Crit` doubling. Every draw is on the **attacker's** seed. The player's normal attack builds even
 when the hit test missed; a monster builds only on a hit. The packet then goes through [combat/reductions](reductions.md)
 and [combat/delivery](delivery.md). A skill's own packet (phase (3)) and a missile's packet are inputs, not built
 here ([combat/overview](README.md)).
@@ -234,8 +234,15 @@ D1. Convert(pkt):                                                     [I] (0x005
       t = 12: pkt.cold += m; pkt.freezeLen ← max(pkt.freezeLen, 50)
 ```
 
-- D1. No writer of `convType`/`convPct` (packet `+0x65`/`+0x68`) was found on the attack paths read, and no logged
-  event converted. [I] (struct:DamagePacket+0x65)
+- D1. Skill hit builders write the conversion fields on a hit, before `COMBAT_ResolveAndQueue`: `convType`
+  (`+0x65`) ← the skill's `EType` and `convPct` (`+0x68`) ← its `calc4`, only when `EType` is set and `calc4`
+  evaluates above 0. That rule is read in full in start function 32 (store at `0x005D7FA8`); the `+0x65` store is
+  also mapped in start functions 6 and 7, and twelve more `EType` stores were not each mapped to the packet. [I] (fn:sub_005D7EA0_SkillSt32Hit@0x005D7EA0, 0x005D7FA8,
+  struct:DamagePacket+0x65, struct:DamagePacket+0x68, tbl:Skills.txt:EType, tbl:Skills.txt:calc4,
+  [skills/0001 § 11](../../findings/skills/0001-dispatch.md#11-the-skill-packet))
+- D1. No store to either field was found on the normal attack's paths read ([combat/overview § A](README.md#a-the-attack-events)),
+  and no logged event converted, so § D is unexercised. [I] (struct:DamagePacket+0x65,
+  [combat/0001 § Open questions](../../findings/combat/0001-formulas.md#open-questions))
 
 ### E. A monster's attack stats (`MonAttackStats`)
 
@@ -307,6 +314,7 @@ The exit seed `9fdf9862:101f40ba` is the one logged at the builder's return. [C]
 - [combat/0001](../../findings/combat/0001-formulas.md) §§ 2 (the attack events, the build on a miss), 5 (the
   builder), 12 and 12b (a), (b), (d) (`MonAttackStats` modes, `noRatio`, element types), 14 (the monster `Crit`
   flag), 15 (the confirmed raises).
+- [skills/0001](../../findings/skills/0001-dispatch.md) § 11 (the conversion writers).
 - [combat/experiments § run:2026-10-16-combat](../../findings/combat/experiments.md#run2026-10-16-combat): 3 732
   builds, 386 on a miss, 250 deadly strikes, 89 monster doublings, 5 060 `MonAttackStats` calls.
 - Tables: [Weapons](../../tables/Weapons.md), [MonStats](../../tables/MonStats.md), [ElemTypes](../../tables/ElemTypes.md),
@@ -316,8 +324,10 @@ The exit seed `9fdf9862:101f40ba` is the one logged at the builder's return. [C]
 
 ## Open questions
 
-- [L] The writer of the conversion fields (packet `+0x65`/`+0x68`), probably a skill or an aura (phase (3)); no
-  logged event converted, so § D is unexercised.
+- ~~The writer of the conversion fields (packet `+0x65`/`+0x68`), probably a skill or an aura (phase (3)); no
+  logged event converted, so § D is unexercised.~~ Answered: skill hit builders write them (§ D1,
+  [skills/0001 § 11](../../findings/skills/0001-dispatch.md#11-the-skill-packet)).
+- [L] The twelve `EType` stores not mapped to the packet, and a run that exercises § D (plan 0045 P1.3, Phase 2).
 - [L] The chain order of step 3 beyond deadly strike: the weapon mastery's crit was a value oracle and no unit had
   stat 337.
 - [L] The formulas of the stats `MonAttackStats` writes (to-hit, damage, the classic factors, the expansion

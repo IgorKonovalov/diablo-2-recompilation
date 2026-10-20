@@ -55,11 +55,13 @@ this batch continues from.
   damaging result `MISSILE_BuildDamage` (up to seven `RNG_RangeB` draws on the **missile's** seed), the `pSrvDmgFunc`
   entry and `MISSILE_ApplyDamage`; a result with "end" and no pierce left unmarks the `0x40` mark and frees the missile.
   At the end of life (range out, blocked path, a wall cell) the hit function runs with no unit. (fn:MISSILE_HitUnit@0x005ADF10)
-- [I] **Row 568's hit function 64 948 is never called.** All five call sites of `g_MissileSrvHitFuncs` (`0x0073C840`,
-  bound 71) read `pSrvHitFunc` as a word and test it signed (`test ax,ax; jle`) before the bound: 64 948 is −588 as
-  s16 and skips the call, so `royalstrikechainlightning` behaves as a row with no hit function. The damage table
-  (`0x0073C960`, bound 31) is tested the same way. (0x005ADA0D–0x005ADA1F, 0x005AE09B–0x005AE0AD, 0x005AE106–0x005AE118,
-  0x005B02CF–0x005B02E1, 0x005AE158–0x005AE16A, `missiles-scan.txt` `TABREAD`)
+- [I] **Row 568's hit function 64 948 is never called.** All four reads of `g_MissileSrvHitFuncs` (`0x0073C840`,
+  bound 71; one of them in `sub_005AD9D0_MissileEndHit`) read `pSrvHitFunc` as a word and test it signed (`test ax,ax;
+  jle`) before the bound: 64 948 is −588 as s16 and skips the call, so `royalstrikechainlightning` behaves as a row with
+  no hit function. The damage table's one read (`0x0073C960`, bound 31) and the do table's (§ 4) are tested the same
+  way. (hit: 0x005ADA0D–0x005ADA1F, 0x005AE09B–0x005AE0AD, 0x005AE106–0x005AE118, 0x005B02CF–0x005B02E1; damage:
+  0x005AE158–0x005AE16A; do: 0x005ADBEE–0x005ADBFE; `missiles-scan.txt` `TABREAD`; *corrected at review 2026-10-20:*
+  the five sites first listed counted the damage read as a hit read)
 - [C] **As data** (table bytes read from the image against `missiles.bin`, all 684 rows): every non-zero
   `pSrvDoFunc`, `pSrvHitFunc` and `pSrvDmgFunc` that is positive as s16 is below its table's bound and names a non-null
   entry (0 out of table); one cell (row 568 `pSrvHitFunc`) is ≤ 0 as s16. Non-null entries: do 36 (ids 1..37, 4 null;
@@ -339,7 +341,9 @@ else if (srcMiss && source) { AddOwnerElemDamage(blk, source, shift 0); ScaleEle
   (`low' = low · 0x6AC690C5 + high`, `high'` = the carry), `if (low' % 100 < c) return 1` (the remainder is unsigned,
   compared signed); then, only when `UnitGetStat(unit, 141)` ≠ 0, one more step against it; then, with a weapon and
   `SKILLS_GetMasteryBonus(unit, weapon, 0, 2)` ≠ 0, one more. So 1 to 3 draws on the owner's seed per missile that takes
-  weapon damage (an arrow, a javelin, a `SrcDam` skill missile), the first unconditional. (0x0064A850–0x0064A92D)
+  weapon damage (an arrow, a javelin, a `SrcDam` skill missile), the first unconditional. This is not the melee
+  build's chain (combat/0001 § 5: mastery critical, stat 337, stat 141, each only when > 0): the order differs and the
+  stat-337 draw happens at 0 (*review note 2026-10-20*). (0x0064A850–0x0064A92D, 0x0064A864–0x0064A890)
 - [I] **The pierce count** (`MissilePierceCount(EAX owner, missile)`): for an owner of type 0 or 1 and a `Pierce` row
   (`+0x04` bit 2), `p = stat(owner, 166) + UnitGetStat(owner, 156)`; when `p` ≠ 0, a **local** seed
   `RNG_SeedInit(baseStat(owner, 328))` is stepped up to four times while `low % 100 < p`, and the count is the missile's
@@ -467,7 +471,7 @@ return 1;
   KnockBack` when the unit is not in state 54, the defence roll, `COMBAT_ApplyDamage`, `COMBAT_GetHit`), then for a
   non-hireling monster with missile stat 120 ≠ 0, the monster's stat 31 (defence) += it, floored at 0.
   (fn:sub_005ADCD0_MissileApplyAndAc@0x005ADCD0, fn:MISSILE_ApplyDamage@0x005AD730)
-- [I] **The 64 948 cell** (Phase 0's question): the five hit-table sites, and `sub_005AD9D0_MissileEndHit`'s
+- [I] **The 64 948 cell** (Phase 0's question): the four hit-table reads, `sub_005AD9D0_MissileEndHit`'s among them
   (Ghidra: `if (0 < sVar1 && sVar1 < DAT_0073c83c)`), read the word with `movzx` and test `test ax,ax; jle` before
   `movsx` and the bound; −588 fails the first test, so row 568 never calls a hit function: a bounds test of the signed
   value, not an out-of-table call. (`missiles-scan.txt` `TABREAD`, `missiles-rows.txt` `ROWSKIP`,
