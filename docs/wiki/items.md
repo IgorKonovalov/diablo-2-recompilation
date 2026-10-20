@@ -217,7 +217,9 @@ set, rare and magic tests computes a number *c*
 
 1. *c* = (row value − *d* ÷ divisor) × 128. A higher item level relative to the base lowers *c*, which is better.
 2. Magic find divides it: *c* = *c* × 100 ÷ factor.
-3. *c* is raised to the row's minimum if it fell below it. This clamp never acted in any run and is read from the code.
+3. *c* is raised to the row's minimum if it fell below it. This comes after magic find and before the ratio word, and
+   recorded games confirm both the clamp and its place: it decides the result of 138 rolls, in the rare, set and magic
+   tests. No roll reached the unique test's minimum.
 4. The TC's ratio word takes off its share: *c* = *c* − ratio × *c* ÷ 1024. A ratio of 1024 makes *c* zero.
 5. If *c* is below 1 the test wins with no draw; otherwise one draw from 0 to *c* − 1 wins if it is below 128.
 
@@ -227,7 +229,8 @@ magic find, no minimum and no ratio word. Losing the normal test is the only way
 tests, and the rare test if their type allows rare, with their draws, before they become magic.
 
 **[Magic find](../glossary.md) (MF)** is the killer's MF plus its owner's: a summon's kill counts the summoner's MF,
-and a [mercenary](../glossary.md)'s kill counts its own plus its player's. Both are confirmed in recorded games.
+and a [mercenary](../glossary.md)'s kill counts its own plus its player's, as does a Hydra's. These are confirmed in
+recorded games.
 Monsters can have owners too. Read from the code: the minions of a unique or superunique boss, and the MonStats
 party minions of a leader whose `MonStats` row has `SetBoss`, have their leader as owner, so a minion's kill adds the
 leader's MF while the leader is still in the game; a boss placed by the special-monster placement (a superunique, for
@@ -545,7 +548,7 @@ The main flow above is confirmed in recorded games. These parts are not, or are 
   ethereal and force sockets (see [Ethereal, sockets and automagic](#ethereal-sockets-and-automagic)); no stock data
   sets them.
 - **Quality** ([quality open questions](../specs/items/quality.md#open-questions)): Hell, negative magic find,
-  multiplayer, the minimum clamp, and the unique-only base and quest-item early returns.
+  multiplayer, a monster killer with no player owner, and the unique-only base and quest-item early returns.
 - **Uniques and sets** ([uniques-sets open questions](../specs/items/uniques-sets.md#open-questions)): the fallback
   chain past its first step; a unique-only base with no row; a quest base skipping the made test; the Cow King's set
   from a Hell Bovine; which game type, if any, excludes ladder uniques.

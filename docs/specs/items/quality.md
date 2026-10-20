@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/tc, data/excel]
 consumed_by: [items/tc, items/uniques-sets, items/affixes, items/vendors]
-tags: {C: 64, I: 42, L: 2}
+tags: {C: 69, I: 39, L: 1}
 updated: 2026-10-20
 ---
 
@@ -245,11 +245,14 @@ Step notes:
 - C1. `d` is signed and may be negative (an item whose `qlvl` is above `ilvl`). `rec.level` is a u8. [I]
   (0x0055872F–0x00558733, tbl:Weapons.txt:level)
 - C1. **A chest drop rolls at `ilvl` 0–2.** `ObjectChestDrop` passes its chest tier (0, 1 or 2) as the resolver's
-  `ilvl` ([items/tc § J](tc.md#j-object-drops-named-only)), so for every chest, urn, barrel or casket drop `d` is the
-  tier minus the base's `level`: strongly negative for most bases, which makes the `− d ÷ div` term of D4 non-negative and every
-  `c` at least as large (odds no better) as for a monster drop of the same base at the area's level. The created item's own level
-  is still taken from the source. [I] (0x00585CD2, fn:sub_00585B90_ObjectChestDrop@0x00585B90,
+  `ilvl` ([items/tc § J](tc.md#j-object-drops-named-only)): the 59 chest calls of run:2026-10-15-objects log the
+  modelled tier as the resolver's `ilvl` in every call. The created item's own level is still taken from the source.
+  [C] (0x00585CD2, fn:sub_00585B90_ObjectChestDrop@0x00585B90, run:2026-10-15-objects,
   [items/0001 § 2](../../findings/items/0001-tc-resolution.md#2-entry-points))
+- C1. So for every chest, urn, barrel or casket drop `d` is the tier minus the base's `level`: strongly negative for
+  most bases, which makes the `− d ÷ div` term of D4 non-negative and every `c` at least as large (odds no better) as
+  for a monster drop of the same base at the area's level. This follows from C1 and D4; no run compares the two. [I]
+  (0x00585CD2, 0x0055872F–0x00558733, [items/0001 § 2](../../findings/items/0001-tc-resolution.md#2-entry-points))
 - M2. For a player killer, stat 80 is the sum of its equipped items' `item_magicbonus` (MF 100 from two items
   in run:2026-10-12-quality, 10 from one item in run:2026-10-13-quality, 0 for the earlier characters), and
   nothing else is added for a player. Each session reproduces at its save's MF and at no other value of the
@@ -264,9 +267,17 @@ Step notes:
   bonus): total 40 ([hirelings § J](../hirelings/README.md#j-magic-find-on-a-mercenarys-kill)). [C]
   (fn:sub_0058F030_MonSetOwner@0x0058F030, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, fn:ITEMS_DropMagicFind@0x005585D0,
   run:2026-10-16-hirelings)
+- M3. **A monster killer owned by a player adds that player's stat 80.** In 130 rolls the killer was a monster whose
+  owner was the player, and the roll's magic find was the killer's plus the owner's in every one: Raise Skeleton
+  skeletons (class 363, 85 rolls), a Rogue hireling (class 271, 39) and a Hydra (class 352, 6). [C]
+  (fn:ITEMS_DropMagicFind@0x005585D0 0x005585E4–0x005585FB, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0,
+  run:2026-10-13-quality, run:2026-10-17-sweep-quest-b6,
+  [items/0002 § Plan 0038 batch H2a](../../findings/items/0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20))
 - M3. For a player, `MonsterOwner` returns none. For a monster killer the owner is the unit that its AI block
   (`monsterData+0x28`) names by game, id and type (`+0x28`, `+0x2C`, `+0x30`); a block with no game, or a unit no
-  longer in the game, gives none. A killer that is neither a player nor a monster (an object, a missile) gives 0. [I]
+  longer in the game, gives none. A killer that is neither a player nor a monster (an object, a missile) gives 0. These
+  cases, and plain or minion monster killers, are read from the code: in the 8 753 rolls of the check every killer is
+  a player, a monster or none. [I]
   (0x0058F0E5–0x0058F0FA, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, fn:sub_0058F030_MonSetOwner@0x0058F030,
   fn:ITEMS_DropMagicFind@0x005585D0)
 - M3. **Monster minions have an owner: their leader.** `UniqueMinions` sets each minion's owner to its unique boss
@@ -350,7 +361,7 @@ D4.   c: i32 ← (row.base − d ÷ row.div) << 7
 D5.   if useMF:
         f: i32 ← F
         if f ≠ 0: c ← c × 100 ÷ f                                           ; magic: no zero test (m100 ≥ 1 here)
-D6.   if c ≤ row.min: c ← row.min                                           [I] (0x00558767–0x0055876E)
+D6.   if c ≤ row.min: c ← row.min                                           [C] (0x00558767–0x0055876E, run:2026-10-20-sweep-items-tc, run:2026-10-14-affixes)
 D7.   c ← c − ((i32)(u32) ratio[w] × c) ÷ 1024                              [C] (0x00558770–0x0055878C, run:2026-10-12-quality)
 D8.   if c < 1: return code                                                  ; win, NO draw
 D9.   x: u32 ← RNG.RangeB(seed: src.seed, n: c)                              ; draw#k
@@ -361,12 +372,19 @@ D11. go to E1
 Step notes:
 
 - D4–D7. The order is base term, magic find, minimum, ratio, then the draw: the minimum is applied **after**
-  magic find and **before** the ratio, so a ratio word can still take `c` below the minimum. [I]
-  (0x00558740–0x0055878C)
+  magic find and **before** the ratio, so a ratio word can still take `c` below the minimum. In the replay check of the
+  clamp (7 199 rolls), moving D6 after D7 breaks 206 rolls and moving it before D5 breaks 138, while this order
+  reproduces every one. [C] (0x00558740–0x0055878C, run:2026-10-20-sweep-items-tc,
+  [items/0002 § Plan 0038 batch H2a](../../findings/items/0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20))
 - D5. `c × 100` and `÷ f` are i32 (`imul`, `cdq; idiv`), so the result truncates toward zero. [C]
   (0x0055875F–0x00558763, 0x005588DD–0x005588E3, run:2026-10-12-quality)
-- D6. The clamp is a signed compare, `c ← max(c, min)`. It never acted in the runs: every pre-clamp chance
-  stayed above the minimum (6400, 5600, 3200, 192), so this step is code-read only. [I] (0x00558767–0x0055876E)
+- D6. The clamp is a signed compare, `c ← max(c, min)`, and it acts. In 667 replayed rolls the chance after magic
+  find is at or below the row minimum (by test, rare 622, set 646 and magic 13, a roll counting once per test it clamps; the unique
+  test's 6400 was reached in none), and in 138 of them the minimum decides the outcome: the model without D6 gets those 138 wrong, the model with
+  it reproduces all 7 199 rolls of the check. The rolls come from the later item runs and the H2a sessions; in the first
+  runs (MF 0, 10 and 100) no chance came near a minimum. [C] (0x00558767–0x0055876E, tbl:ItemRatio.txt:RareMin,
+  tbl:ItemRatio.txt:SetMin, run:2026-10-20-sweep-items-tc, run:2026-10-14-affixes, run:2026-10-14-uniques,
+  [items/0002 § Plan 0038 batch H2a](../../findings/items/0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20))
 - D7. The ratio word is zero-extended, the product is i32, and `÷ 1024` is a signed division done as
   `cdq; and 0x3FF; add; sar 10` (truncation toward zero). With `c ≥ min > 0` it is a floor. A ratio word of
   1024 makes `c = 0`: a win with no draw, observed on 61 rolls of magic and rare tests under
@@ -635,8 +653,10 @@ that tell the two models apart. [C] (run:2026-10-12-quality)
   ~~Which callers reach `FormationSpawn` and which skill owns the corpse-raise callback~~ answered in the M3 notes
   ([items/0002 § Plan 0049 Phase 1](../../findings/items/0002-quality-roll.md#plan-0049-phase-1-2026-10-20-static)): case 5 is never reached, and the raise is the item property
   `reanimate`, not a skill.
-- [L] **The `*Min` clamp (D6) and its place after magic find.** No logged chance came near a minimum; it needs
-  a very large `ilvl − qlvl`, a very high MF or edited data. It may stay code-read.
+- ~~**The `*Min` clamp (D6) and its place after magic find.**~~ Answered (D6 and the D4–D7 note): the clamp acts in
+  667 rolls and decides 138, and its place between magic find and the ratio word is settled
+  ([items/0002 § Plan 0038 batch H2a](../../findings/items/0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20)). The
+  unique test's minimum was reached by no roll; it is the same compare.
 - [L] **Not exercised:** Hell, negative magic find (including the `mf ≤ −100` bypass), multiplayer, the early
   returns A4–A5 (unique flag, `Magic` type with `quest`), code 0 and the fatal errors.
 - Note, not an open behaviour question (bookkeeping; this bullet is removed when the two backlog corrections

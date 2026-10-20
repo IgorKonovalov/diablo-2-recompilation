@@ -2793,3 +2793,25 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request
     [h2a review](../backlog/archive/2026-10-20-reverser-architect-review-h2a-items-tc-quality.md) closed; spec-writer entry
     [h2a spec updates](../backlog/2026-10-20-reverser-spec-writer-h2a-items-tc-quality-spec-updates.md) released.
+- **2026-10-20 — Phase 3, the items/quality cluster (spec-writer, `lane/p38s7`, from `main` `f32742c`).** The cluster
+  waited on H2a only (accepted above). Inputs: the items/quality parts of the released H2a spec-updates entry ((j)–(m)
+  and the quality lines of (o)) and the items/quality note of the S2a tc 64 entry ((b), unblocked by S4b's raise in
+  items/0001 § 2). Each raise checked against
+  [items/0002 § Plan 0038 batch H2a](../findings/items/0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20) and the
+  review's rulings (d) and (f). The plan 0049 M3 notes folded by `lane/p49s` are kept as they were.
+  - **items/quality** {C 64, I 42, L 2} → **{C 69, I 39, L 1}**. Raised `[C]`: the D6 line and its step note
+    (quality 22, "the clamp acts": 667 rolls, decides 138, no unique case), the D4–D7 order note (quality 23). Split:
+    M3, a monster killer owned by a player `[C]` (quality 20 in part, 130 rolls), the missing-owner, plain or minion
+    killer and type ≥ 2 cases staying `[I]`; C1, the chest tier as `ilvl` `[C]` (S2a (b), run:2026-10-15-objects), its
+    consequence for the odds `[I]`. Open questions: the `*Min` clamp `[L]` struck.
+  - **Wiki:** [items](../wiki/items.md) step 3 of *One test*, the MF paragraph and the *Quality* line of the untested
+    list restated; `based_on` for quality already 2026-10-20.
+  - **Waiting** (missing batches): items/tc H2b, H2c; items/affixes H2b; items/uniques-sets H2b, H1a (us 21);
+    items/properties H2b, H2c; items/sockets-runewords H2b, H6b; items/cube H6a; items/vendors H6c; items/quest-drops
+    H4a, H6e1, H6e2; save/d2s H1a, H1b; data/excel H3b (and the plan 0039 fold); data/strings and data/README H3b;
+    monsters/pool, monsters/special and monsters/stats H4a; monsters/spawn H4a, H5d; hirelings H1a, H1b, H6f;
+    player/creation H1a, H6g; drlg/collision H5d; objects H6e2.
+  - **Backlog:** the H2a spec-updates entry and the S2a tc 64 entry annotated (done in part; their items/tc and objects
+    parts wait); review request
+    [p38s7 review](../backlog/2026-10-20-spec-writer-architect-p38s7-items-quality-review.md).
+  - **Next:** architect review of `lane/p38s7`; items/tc after H2b and H2c.
