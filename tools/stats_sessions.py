@@ -241,9 +241,8 @@ for k in range(2):
                                            ("keys", ["F1", "F2", "F3"] * 10, 3.0), ("wait", 5)], FIELD)
 for k in range(4):
     # the expiries: StatsPot drinks 56 potions in town, each state ending before the next of its kind
-    # plan 0047 Phase 2: the saves start in the Pandemonium Fortress, whose dark floor under the inventory grid fools
-    # inv:open (pot-town1: "inventory not open after four presses", the potion clicks walked her out to her death); the
-    # Rogue Encampment's waypoint first
+    # plan 0047 Phase 2: the saves start in the Pandemonium Fortress; the first pot-town1 (kept as a dev log) walked
+    # out of it to her death when inv:open failed (see plan_tokens), so the Rogue Encampment's waypoint first
     SESSIONS["pot-town%d" % (k + 1)] = ("StatsPot", "enter-normal", 4741 + k,
                                         [("pilot", ["farm", "--wp", "1,1", "--time", "1"], 90), ("plan", "statspot", 1),
                                          ("wait", 35)],
@@ -339,6 +338,10 @@ def sh(args, timeout=None, log=None):
 
 
 def plan_tokens(name, cycles):
+    if name == "statspot":
+        # plan 0047 Phase 2: the 40 potions fill the inventory grid, so inv:open's dark-centre test never sees it
+        # open (it pressed I four times); one plain press opens it, one closes it
+        return ["key:i", "sleep:1.0", "settle:1"] + PLANS[name]() * cycles + ["key:i", "sleep:0.5"]
     t = ["inv:open", "settle:1"]
     for _ in range(cycles):
         t += PLANS[name]()
