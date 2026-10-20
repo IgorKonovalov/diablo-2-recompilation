@@ -2,20 +2,20 @@
 from: reverser
 to: architect
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../plans/0048-seed-to-world.md
-  - ../findings/chain/0001-oracles.md
-resolution: ""
+  - ../../plans/0048-seed-to-world.md
+  - ../../findings/chain/0001-oracles.md
+resolution: "Reviewed 2026-10-20 (architect): accept with fixes (1: oracle 14's variant roll already modelled by tools/mon_sweep.py pool, S3a). All ten proposed oracles assigned to Phase 1, 14 moved before 16/17, barrier grid and type-11 point with 20; S/N classes meet the Done-when; both proposed input classes accepted into the plan's Context; oracle 31 stays listed; stale spawn row routed to the spec-writer; MonEquip table doc asked of the archivist. Plan 0048 log, 2026-10-20 review entry. Phase 1 can start."
 ---
 
-Review plan 0048 Phase 0 (`lane/p48a`, static, no Ghidra, no harness): [chain/0001](../findings/chain/0001-oracles.md),
+Review plan 0048 Phase 0 (`lane/p48a`, static, no Ghidra, no harness): [chain/0001](../../findings/chain/0001-oracles.md),
 `tools/oracle_ledger.py`, the findings index row and the plan log entry. Blocking Phase 1, whose scope this review
 rules.
 
 Asked of the review in particular:
 - **Which oracles Phase 1 retires.** The proposal is
-  [§ 4](../findings/chain/0001-oracles.md#4-proposed-phase-1-retirements-for-the-architects-ruling), in order: 2 staff
+  [§ 4](../../findings/chain/0001-oracles.md#4-proposed-phase-1-retirements-for-the-architects-ruling), in order: 2 staff
   mods as the default (already modelled, plan 0038 S2b); 16 and 17 (`InitFn` 46), the window's monsters; 14 the
   unit-seed variant steps; 22 the `Orient89Unit` creation; 19 the gate's DRLG parts; 21 another room's seed; 20 the grid
   snapshot, with its barrier grid and type-11 point; 7 the gold piles' items; 6 an object's drop; 13 MonEquip. Not

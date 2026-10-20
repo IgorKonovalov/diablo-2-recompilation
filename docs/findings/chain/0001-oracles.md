@@ -2,7 +2,7 @@
 
 > **Subsystem:** chain (seed to world, plan 0048)
 > **Question:** which ADR-0004 boundary oracles do the core and enabler specs still name, which of them a reviewed model already replaces in a chained check, which a model could replace, and which stay inputs?
-> **Date:** 2026-10-20   **Plan:** 0048 (Phase 0)   **Status:** open (Phase 0 inventory, static; the architect's review rules which oracles Phase 1 retires)
+> **Date:** 2026-10-20   **Plan:** 0048 (Phase 0)   **Status:** open (Phase 0 inventory reviewed 2026-10-20, accepted with fixes; the Phase 1 assignment and the rulings on § 3.3 and § 4 are in the [plan 0048 log](../../plans/0048-seed-to-world.md#implementation-log))
 
 Phase 0 reads; it makes no new code reading and runs nothing. Every row below rests on the spec or finding that names
 the oracle, and carries that spec's anchors. The inventory was taken on `main` at `ad130d7`.
@@ -88,7 +88,7 @@ with its class; **off chain**, outside the seed-to-world chain, left as it is.
 | 11 | `HIRE_BuildStock` on the store seed | [items/vendors § C1](../../specs/items/vendors.md) | seed | off chain | modelled by [hirelings](../../specs/hirelings/README.md) (`tools/hirelings.py`, run:2026-10-16-hirelings); a creation path the plan leaves as it is | [C] (fn:HIRE_BuildStock@0x00576070, run:2026-10-15-vendors, run:2026-10-16-hirelings) |
 | 12 | the quest seed on entry to a scripted drop | [items/quest-drops § Inputs and oracles](../../specs/items/quest-drops.md#inputs-and-oracles) | seed (asserted; no value was taken) | input (quest state) | quest code that creates no item draws it too (0x0058E830, 0x00592E90, 0x0059B1C0, 0x0059EDC0, 0x005BD390), so its value at a drop is the game's quest history | [C] (run:2026-10-16-quest-drops) |
 | 13 | `MonEquipInit`'s item creation | [monsters/stats § Inputs and oracles](../../specs/monsters/stats.md#inputs-and-oracles), B12, the diagrams | seed | Phase 1 candidate | the item chain (`tools/items_chain.py`) on the unit seed; never reached on the runs (no class with an `oninit` MonEquip row was met), so it stays `[I]` unless a run reaches one | [I] (fn:sub_005D6B60_MonEquipInit@0x005D6B60) |
-| 14 | the unit seed after `SUnitCreate` | [monsters/spawn § Inputs and oracles](../../specs/monsters/spawn.md#inputs-and-oracles), § J; [monsters/special § Inputs and oracles](../../specs/monsters/special.md#inputs-and-oracles) | seed | Phase 1 candidate | the usual 2 steps are `MonStatsInit`'s, predicted by `tools/monstats.py`; the variant steps (6 and 15 on 2 of 916; 22 creations of run:2026-10-15-mon-stats) are `MonVariantRoll` on the unit seed for a class appended to the region, [monsters/pool § D](../../specs/monsters/pool.md#d-appearance-sets-sub_005bdb20_monvariantroll) | [C] (fn:sub_00555230_SUnitCreate@0x00555230, fn:sub_005BDB20_MonVariantRoll@0x005BDB20, run:2026-10-13-mon-spawn, run:2026-10-15-mon-stats) |
+| 14 | the unit seed after `SUnitCreate` | [monsters/spawn § Inputs and oracles](../../specs/monsters/spawn.md#inputs-and-oracles), § J; [monsters/special § Inputs and oracles](../../specs/monsters/special.md#inputs-and-oracles) | seed | Phase 1 candidate | the usual 2 steps are `MonStatsInit`'s, predicted by `tools/monstats.py`; the variant steps (6 and 15 on 2 of 916; 22 creations of run:2026-10-15-mon-stats) are `MonVariantRoll` on the unit seed for a class appended to the region, [monsters/pool § D](../../specs/monsters/pool.md#d-appearance-sets-sub_005bdb20_monvariantroll); that append and its draws are already modelled by `tools/mon_sweep.py pool` (plan 0038 batch S3a: the unit seed at `MonStatsInit` entry reproduced in 4568 of 4568 creations, [monsters/0001 § Plan 0038 batch S3a](../monsters/0001-level-pool.md#plan-0038-batch-s3a-2026-10-16)), but not inside `tools/monspawn.py`'s chain | [C] (fn:sub_00555230_SUnitCreate@0x00555230, fn:sub_005BDB20_MonVariantRoll@0x005BDB20, run:2026-10-13-mon-spawn, run:2026-10-15-mon-stats) |
 | 15 | the presets, inactive-restore and objects window before the pass (room and game seed at `RW4`) | [monsters/spawn § Inputs and oracles](../../specs/monsters/spawn.md#inputs-and-oracles), § A2; [monsters/special § Inputs and oracles](../../specs/monsters/special.md#inputs-and-oracles) | seed | chained (except 16 and 17) | [objects](../../specs/objects/README.md) inside `tools/monspawn.py` on logs that carry the object-region seed: 338 pass entries predicted from the map seed; older logs keep the oracle | [C] (fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:sub_00552610_RoomObjectsPopulate@0x00552610, run:2026-10-15-objects) |
 | 16 | the preset monsters of the presets window (`PresetUnitDispatch` type 1) | [objects § Inputs and oracles](../../specs/objects/README.md#inputs-and-oracles), § B mark, G4 (12 marks under them) | seed | Phase 1 candidate | the monsters chain (`MonSpawnTry`/`SUnitCreate`, `tools/monspecial.py`, `tools/monstats.py`) run inside `tools/objects.py`'s window; the superunique and MonPlace 2/3 spawns already are | [C] (fn:sub_0054E600_PresetMonSpawn@0x0054E600, run:2026-10-15-objects) |
 | 17 | the monster and quest `InitFn`s: 46, 47, 54, 55, 62, 66, 68, 69, Zoo 79, pseudo-object 582 | [objects § Inputs and oracles](../../specs/objects/README.md#inputs-and-oracles), the `InitFn` table | seed | Phase 1 candidate (46); the others [I] | `InitFn` 46 (16 calls, 584 object-region draws) through the monsters chain; 47–69 were not reached; 79 and 582 pick their class from quest state (an input), their creation is modelled | [C] (fn:OBJINIT_CityDamnedSpawns@0x005506D0, run:2026-10-15-objects) |
@@ -199,7 +199,7 @@ phase (ADR-0014), or **proposed** where none fits.
 
 ## 4. Proposed Phase 1 retirements (for the architect's ruling)
 
-Proposed, not decided. In order of what each one unblocks for Phase 2's counts:
+Proposed by the lane; the review of 2026-10-20 assigned all ten, with oracle 14 moved before 16 and 17 and the barrier grid and the type-11 point with oracle 20 (the [plan 0048 log](../../plans/0048-seed-to-world.md#implementation-log) holds the ruling). The proposal, in order of what each one unblocks for Phase 2's counts:
 
 1. **Oracle 2, staff mods.** Make `--staff model` the default of the chained tools and of `tools/chain.py`. No new
    modelling: the model and its check exist (items/0005 § Plan 0038 batch S2b). Unblocks: 500 drops with **no**
@@ -207,8 +207,9 @@ Proposed, not decided. In order of what each one unblocks for Phase 2's counts:
 2. **Oracles 16 and 17 (46), the window's monsters.** Run the monsters chain (`MonSpawnTry`, `SUnitCreate`'s game
    step, `tools/monspecial.py`, `tools/monstats.py`) inside `tools/objects.py`'s window, so that the room and game seed
    at pass entry are predicted in every room. Unblocks: 2 000 room populations with no seed oracle in the window.
-3. **Oracle 14, the unit-seed variant steps.** Model `MonVariantRoll` on the unit seed for a class appended to the
-   region (pool § D), so that no creation takes its unit seed from the log.
+3. **Oracle 14, the unit-seed variant steps.** Chain the region append and `MonVariantRoll` on the unit seed for a
+   class appended to the region (pool § D), already modelled by `tools/mon_sweep.py pool` (plan 0038 batch S3a), into
+   `tools/monspawn.py`, so that no creation takes its unit seed from the log.
 4. **Oracle 22, the `Orient89Unit` creation.** Its game-seed step and the object or monster creation, so that the game
    seed stays chained through activation.
 5. **Oracle 19, the gate's DRLG parts**, from the rooms `tools/drlg.py gen` builds; the Chaos Sanctuary quest test stays
@@ -295,6 +296,8 @@ oracle 14, tbl:Levels.txt:cmon1 behind oracle 23).
 
 - Whether any stock MonEquip row with `oninit` set can reach `MonEquipInit`'s item creation (oracle 13): needs the
   MonEquip rows, which have no table doc yet (an archivist question, if Phase 1 is assigned oracle 13).
-- The two proposed input classes of § 3.3 (the game seed at a drop, the killer's magic find): for the architect.
+- ~~The two proposed input classes of § 3.3 (the game seed at a drop, the killer's magic find): for the architect.~~
+  Ruled at the Phase 0 review: both are logged inputs of Phase 2, the first of class simulation, the second of the
+  player's character (plan 0048 *Context*).
 - Oracle 9's draws on the game seed are unread; a level-39 chain run would need them, or would take the game seed after
   the transmute as an input.

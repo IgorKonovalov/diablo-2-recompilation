@@ -161,6 +161,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-20 | `lane/p49r` review | 0049 P1 | architect-review | 153 818 | 78 | 13 | — | gave accept with fixes | — (on the lane row) |
 | 2026-10-20 | `lane/cfix` | 0045 P1.1 follow-up | spec-writer | 81 595 | 31 | 10 | no slot | accept with fixes | 4: overclaim 2, omission 1, miscount 1 |
 | 2026-10-20 | `lane/cfix` review | 0045 P1.1 follow-up | architect-review | 81 083 | 27 | 12 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/p48a` | 0048 P0 | reverser-static | TBD | TBD | TBD | no slot, no Ghidra | accept with fixes | 1: omission 1 |
+| 2026-10-20 | `lane/p48a` review | 0048 P0 | architect-review | TBD | TBD | TBD | — | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
