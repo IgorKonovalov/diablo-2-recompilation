@@ -721,7 +721,7 @@ fn:sub_005A2D10_UModPartyDeadDeath@0x005A2D10, data:g_UModEventFns@0x0073C0B8, t
 
 ## Plan 0049 Phase 1 (2026-10-20, static)
 
-Static readings for the plan 0039 P1c residues (a), (b) and (e), in [plan 0049](../../plans/0049-backlog-sweep-5.md)
+Static readings for the plan 0039 P1c residues (a), (b) and (e), in [plan 0049](../../plans/done/0049-backlog-sweep-5.md)
 Phase 1, `lane/p49r`. No game run. The image tables and the stock rows are printed by `tools/sweep_p49r.py tables` and
 `excel` (kept outputs `workspace/logs/p49r/sweep-p49r-tables-2026-10-20.txt` and `-excel-`, manifest
 `p49r-manifest.txt`).

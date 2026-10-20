@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/save/d2s.md 2026-10-20
-  - docs/specs/player/creation.md 2026-10-17
+  - docs/specs/player/creation.md 2026-10-20
   - docs/specs/hirelings/README.md 2026-10-19
 ---
 
@@ -240,7 +240,8 @@ Each list starts with `JM` and a count ([save/d2s § H](../specs/save/d2s.md#h-i
   read back on load, and its first value is whatever the writer's stack held, so a reimplementation may write
   anything there. In play a corpse carries three quarters of the experience its death cost, returned to its owner on
   pickup ([player/creation § J](../specs/player/creation.md#j-other-level-and-experience-changes), read from the
-  code); whether a saved corpse keeps that amount is not known.
+  code). A saved corpse does not keep it: the reader re-creates the corpse with no experience on it, so picking it up
+  after a load returns nothing (read from the code).
 - In an expansion game, `jf` carries the mercenary's items, and `kf` carries one byte and, when the player has an
   Iron Golem holding an item, that item.
 

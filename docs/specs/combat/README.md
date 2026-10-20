@@ -172,7 +172,7 @@ A1. PlayerAttack(att):                                                [C] (fn:SK
       PrgHooksBeforeBuild(att, pkt);  BuildDamage(att, def, pkt, 0, 128);  PrgHooksAfterBuild(att, pkt)   ; damage.md, whatever the result
       ResolveAndQueue(att, def, pkt, 128)                             ; delivery.md § A: reductions on a hit
       if att has the `meleeonly` state flag: AttackDeliverMeleeOnly(att, def)        ; [I] (fn:sub_0056C2D0_AttackDeliverMeleeOnly@0x0056C2D0), skips the finisher
-      else: PrgFinisher(att);  DeliverQueued(att, def)                ; delivery.md § A; the finisher peeks att.seed, [I] (A2)
+      else: PrgFinisher(att);  DeliverQueued(att, def)                ; delivery.md § A; the finisher peeks att.seed, [I] (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D5368–0x005D538C)
 
 A2. MonsterAttack(att):                                               [C] (fn:sub_005A7670_MonAttackFrame@0x005A7670, fn:MON_MeleeHit@0x005A5490, run:2026-10-16-combat, all of A2)
       ; earlier, at the mode change: MonAttackStats(att, newMode)     ; damage.md § E

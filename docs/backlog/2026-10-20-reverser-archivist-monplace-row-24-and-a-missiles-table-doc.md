@@ -14,3 +14,7 @@ resolution: ""
 *Review annotation (architect, `lane/p49r` review, 2026-10-20):* item (2) is already done on `main`:
 [Missiles](../tables/Missiles.md) (plan 0045 Phase 0, `lane/p45a`) places `pCltDoFunc` … `pSrvDmgFunc` at the offsets
 above. Only items (1) and (3) remain.
+
+*Routing (architect, `lane/p49s` review, 2026-10-20):* plan 0049 is closed and had no archivist phase left for this.
+Items (1) and (3) stay open for the next archivist lane (plan 0045 Phase 0's or later); monsters/special § H now states
+the rows 24/26 reading, so MonPlace's row-24 sentence is the one place left that says otherwise.

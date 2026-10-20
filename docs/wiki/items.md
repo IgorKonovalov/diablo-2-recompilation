@@ -1,7 +1,7 @@
 ---
 based_on:
-  - docs/specs/items/tc.md 2026-10-17
-  - docs/specs/items/quality.md 2026-10-17
+  - docs/specs/items/tc.md 2026-10-20
+  - docs/specs/items/quality.md 2026-10-20
   - docs/specs/items/uniques-sets.md 2026-10-17
   - docs/specs/items/affixes.md 2026-10-17
   - docs/specs/items/properties.md 2026-10-17
@@ -89,7 +89,7 @@ writes of the flag, and 10 more that set it together with other flags. Read from
 - monsters that remove themselves through their own behaviour: nests and other spawners once they have spawned
   enough, traps, the Seven Tombs illusion, the Dark Wanderer and the trapped souls;
 - monsters spawned by another unit or by a spawner skill (including Baal's tentacles and his clone), and monsters
-  brought back to life by a resurrect or revive skill;
+  brought back to life by a resurrect or revive skill or by the `reanimate` item property;
 - hirelings (at the hire and at resurrection), and a monster restored from an inactive room that had the flag.
 
 An earlier reading had counted 21 plain writes (one of them sets a different flag) and split the unread ones into
@@ -233,9 +233,14 @@ party minions of a leader whose `MonStats` row has `SetBoss`, have their leader 
 leader's MF while the leader is still in the game; a boss placed by the special-monster placement (a superunique, for
 example) is its own owner, so when it is the killer its own MF counts twice. Also read from the code, these
 monsters have an owner whose MF their kills add: a boss's escorts (the boss), tentacles (their spawner), formation
-members (their leader; a leader owns itself), Baal's clone (Baal), Bone Wall and Bone Prison pieces, revived and
-raised monsters and monsters a missile spawns (the caster or the missile's owner), and a monster restored from an
-inactive room (its saved owner). Whether any stock monster has MF at all is not checked
+members (their leader; a leader owns itself), Baal's clone (Baal), Bone Wall and Bone Prison pieces, revived
+monsters and monsters a missile spawns (the caster or the missile's owner), monsters raised by the `reanimate` item
+property (the player the killer belongs to), and a monster restored from an inactive room (its saved owner).
+
+That property (stock: the unique Tomb Reaver and the runeword Faith) is not a skill: on the kill of a monster that is
+neither a champion nor a unique, it draws once on the killer's own seed against its value (10 % on both stock items)
+and, when the draw passes, raises the dead monster for the player at the top of the killer's owner chain, so a pet or
+a hireling that has it raises monsters for its player. Read from the code only. Whether any stock monster has MF at all is not checked
 ([quality § C, note M3](../specs/items/quality.md#c-shared-terms-and-magic-find)). The factor is:
 
 | Test | Factor with MF ≤ 10 | Factor with MF above 10 | At MF 100 |
