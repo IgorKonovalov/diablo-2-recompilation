@@ -172,6 +172,9 @@ for name, wp, seed in (("plains", "1,2", 4731), ("darkwood", "1,4", 4732), ("mar
     # fields driven negative by DR and MDR (the negative total) and percent absorb on a negative field (Dwarf Star
     # fire 15 %, Raven Frost cold 20 %): CombatDR against Normal Act I monsters, one player
     SESSIONS["dr-n-" + name] = ("CombatDR", "enter-normal", seed, [(SWEEP + ["--wp", wp, "--time", "270"], 340)])
+# plan 0047 Phase 2: the Act I fields gave 5 negative absorbed amounts in dr-n-plains and dr-n-darkwood (few elemental
+# hits); Travincal's rows all add cold (cantor3, vampire2: El1Pct 65), under Raven Frost's cold absorb
+SESSIONS["dr-n-travincal"] = ("CombatDR", "enter-normal", 4734, [(SWEEP + ["--wp", "3,8", "--time", "270"], 340)])
 for name, steps, wp, seed in (("n-plains", "enter-normal", "1,2", 4741), ("n-darkwood", "enter-normal", "1,4", 4742),
                               ("n-marsh", "enter-normal", "1,5", 4743), ("nm-marsh", "enter-nightmare", "1,5", 4744)):
     # flat absorb (fire 15 Hellmouth, cold 11 Spirit Ward, lightning 20 + 20 Blackhorn's Face and Thudergod's Vigor);
@@ -251,7 +254,7 @@ CASES_0047 = {
     "C5 magic immunity": ("CombatSorH's magic damage on Hell Plague Bearers (ResMa(H) 100)",
                           ["sorh-h-lostcity%d" % k for k in range(1, 7)], [52, 53], ()),
     "C6 negative absorbed amount": ("CombatDR: MDR above the field, then percent absorb on the negative field",
-                                    ["dr-n-plains", "dr-n-darkwood"], [35, 142, 148], ()),
+                                    ["dr-n-plains", "dr-n-darkwood", "dr-n-travincal"], [35, 142, 148], ()),
     "C7 negative total, life unchanged": ("CombatDR: DR and MDR above every field of weak Normal hits",
                                          ["dr-n-plains", "dr-n-darkwood", "dr-n-marsh"], [34, 35], ()),
     "C8 evade": ("CombatAma moving (running, then walking)", ["ama-n-run", "ama-n-walk", "ama-n-walk2", "amad-n-run"], [],

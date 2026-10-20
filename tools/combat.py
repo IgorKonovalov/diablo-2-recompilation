@@ -1227,6 +1227,15 @@ class Checker:
         if not g["exp"]:
             self.case("classic event diff %d" % g["diff"])
         p = None
+        while i < len(lines) and lines[i][0] == "MASA":
+            # the inner MAS event checks its draws from MAS0's seed to MAS1's; here MAS0 must enter on the attacker's
+            # running seed, and the build takes MAS1's stats (value oracle, as at EV0)
+            m = lines[i][1]
+            self.eq("own MonAttackStats entry seed", m["mas0"]["u"]["s"], sd_fmt(sa))
+            sa = sd_parse(m["mas1"]["s"])
+            a = dict(a, st=dict(m["mas1"]["st"]))
+            self.case("attacker's own MonAttackStats inside its event (build stats from MAS1)")
+            i += 1
         if i < len(lines) and lines[i][0] == "BD0":
             if not (res & 1):
                 self.case("builder ran on a miss")
@@ -1258,7 +1267,7 @@ class Checker:
             p[0] = 0x20
             sa, sd, i, _ = self.apply(ev, a, d, p, sa, sd, lines, i, g, False)
         sa, sd, i = self.extras(sa, sd, lines, i)
-        while i < len(lines) and lines[i][0] in ("MAS0", "MAS1"):
+        while i < len(lines) and lines[i][0] in ("MAS0", "MAS1", "MASA"):
             i += 1
         if ev.deferred:
             while i < len(lines) and lines[i][0] != "EVX":
@@ -1371,6 +1380,10 @@ class Checker:
                 while q < len(body):
                     if body[q][0] == "MAS0" and q + 1 < len(body) and body[q + 1][0] == "MAS1":
                         inner.append(("mas", body[q][1], [body[q + 1]], True, lines[k][2]))
+                        if (head.get("a") or {}).get("u") == body[q][1]["u"]["u"]:
+                            # plan 0047 Phase 2: the attacker's own MonAttackStats inside its attack event (a monster
+                            # in mode 14 calling it for mode 8): its output stats feed the build after it
+                            rest_.append(("MASA", {"mas0": body[q][1], "mas1": body[q + 1][1]}))
                         q += 2
                         continue
                     if body[q][0] not in ("MAS0", "MAS1"):
@@ -1391,10 +1404,24 @@ class Checker:
                     continue
             if tag == "RGN":
                 evs.append(("rgn", lines[k][1], [], True, lines[k][2]))
+            if tag == "CAP" and lines[k][1].get("k") == "mas":
+                evs.append(("capmas", lines[k][1], [], True, lines[k][2]))
             k += 1
+        mas_capped = False
         for kind, head, body, ok, no in evs:
             if kind == "rgn":
                 self.tick(head)
+                continue
+            if kind == "capmas":
+                mas_capped = True
+                continue
+            if (mas_capped and kind == "ma" and head.get("ret") == 0x005CAED8
+                    and not any(t == "MASA" for t, _ in body)):
+                # plan 0047 Phase 2: an attack returning to 0x005CAED8 (sandraider2 in mode 14) may call
+                # MonAttackStats inside the event and build from its output (6 of 14 such events before a MAS cap);
+                # past the logger's MAS cap that call is not logged, so the build has no stats input
+                self.kc(kind, "events")
+                self.kc(kind, "dropped: own MonAttackStats unlogged (past the MAS cap)")
                 continue
             self.kc(kind, "events")
             if not ok:
