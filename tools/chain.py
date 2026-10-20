@@ -252,6 +252,7 @@ CF = {
     "L0": "oracle 14: the MonLvl column set L = 0 (a control that must NOT fail: L does not change the draw count)",
     "lcv-off": "oracle 16: the MonPlace fixed rows without LevelClassVariant and PresetFallenVariant",
     "overlay-off": "oracle 16: the presets-window predicates on the activation model without the window's marks",
+    "state-stale": "oracle 21: another room's seed from its activation seed only (its passes and windows ignored)",
     "i46-stored": "oracle 17: InitFn 46's direction draw stored like the others (one OD line per step)",
 }
 
@@ -269,11 +270,42 @@ def apply_cf(name):
     elif name == "lcv-off":
         monspawn.PresetMonPass.level_class_variant = lambda self, cls: cls
         monspawn.PresetMonPass.fallen_variant = lambda self, cls: cls
+    elif name == "state-stale":
+        class Frozen(dict):
+            def __setitem__(self, k, v):
+                if k not in self:
+                    dict.__setitem__(self, k, v)
+        monspawn.STATE_FROZEN = Frozen
     elif name == "i46-stored":
         import objects
         objects.Seed.draw_unstored = objects.Seed.draw
     elif name == "overlay-off":
         monspawn.PresetMonPass.overlay = lambda self: self.chk.world.model
+
+
+TOWNS = {1, 40, 75, 103, 109}          # sub_006426A0_LevelIsTown
+
+
+def gate_inputs(path, R):
+    """Oracle 19 (plan 0048 Phase 1, in part): the OG line's DRLG inputs of OBJ_PopulateGate 0x00552560 against the
+    reading: closed by flags & 0x30000 (sub_0066BB60) before anything else; pop = 0 when the DRLG room has 0x800000,
+    else the room's level id (sub_0066BB20, the same field as sub_0066BAB0_RoomLevelId); the preset test only for a
+    type-1 room (sub_0066BA90: +0x20 -> +0x54 & 0x80); the town test LevelIsTown(level id). What the reading does not
+    give (which rooms carry 0x30000, 0x800000 or the out room's 0x80, and LevelRoomCount) stays logged."""
+    for line in open(path, errors="replace"):
+        if not line.startswith("OG "):
+            continue
+        d = json.loads(line[3:])
+        if d.get("f"):
+            R["oracle 19: gates closed by the room flags 0x30000 (no pop read: %s)" % ("ok" if "pop" not in d else "WRONG")] += 1
+            continue
+        pop = d.get("pop")
+        R["oracle 19: pop is 0 or the room's level id: %s" % (pop in (0, d["lid"]))] += 1
+        if pop:
+            if "town" in d:
+                R["oracle 19: town test equals LevelIsTown(level id): %s" % (bool(d["town"]) == (d["lid"] in TOWNS))] += 1
+            if "pre" in d:
+                R["oracle 19: preset test value in {0, 0x80}: %s" % (d["pre"] in (0, 0x80))] += 1
 
 
 def cmd_check(ns):
@@ -292,6 +324,7 @@ def cmd_check(ns):
             if world is None:
                 world = World(ns)
             rcs.append(("world", world.run(path)))
+            gate_inputs(path, R)
         if not rcs:
             R["logs with no line set of the composition"] += 1
             print("%s: no line set of the composition (no creation, no room window)" % os.path.basename(path))

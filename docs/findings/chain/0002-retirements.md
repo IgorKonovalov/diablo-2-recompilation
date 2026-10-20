@@ -34,6 +34,14 @@ oracles still taken from the log.
   preset unit that the presets window creates, so its creations are oracle 16's windows, and the last 12 (the objects
   571 and 572 under catapults 432 and 433) are now modelled too; 1 255 of 1 265 objects windows carry no oracle (§ 6).
   (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, fn:sub_0054E490_PresetClassSpawn@0x0054E490, run:2026-10-15-objects)
+- [I] **Oracle 19 (the gate's DRLG parts) is read but not retired**: `OBJ_PopulateGate`'s four DRLG tests are now
+  read to the room fields they test (flags `0x30000`, flag `0x800000`, the out room's `0x80`, the level id), and the
+  logged values agree with the reading on every gate of the 62 world logs; which rooms carry those flags, and
+  `LevelRoomCount`, are DRLG state that `tools/drlg.py` does not yet hand to the chain, so they stay logged (§ 7).
+  (fn:OBJ_PopulateGate@0x00552560, fn:sub_0066BB20_DrlgRoomPopLevelId@0x0066BB20, run:2026-10-15-objects)
+- [C] **Oracle 21 (another room's seed in a pass) is retired**: the seed is the chain's state for that room (its
+  predicted activation seed, or its seed after its last pass); both calls of the world logs predicted (§ 8).
+  (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, run:2026-10-14-collision)
 - [C] **`tools/chain.py gen`** reproduces the seed tree the rng/seeds worked example logged from `-seed N` alone (game
   seed, the four game-creation draws, act bases, Act II tombs, level seeds) (§ 1). (fn:GAME_InitSeeds@0x0052C280,
   fn:DRLG_ActCreate@0x00642DA0, fn:DRLG_LevelCreate@0x00642AE0, run:2026-10-11-seed-tree)
@@ -196,14 +204,51 @@ oracle left when it predicted every one of them.
 - [I] Class 434's mode (`QUESTS_IsActive(game, 0x20)`) stays a quest-state input, taken from the request (3).
   (fn:QUESTS_IsActive@0x005444B0)
 
+## 7. Oracle 19: the gate's DRLG parts (read; inputs kept)
+
+- [I] `OBJ_PopulateGate` (0x00552560) tests, in order: `sub_0061A210_RoomWarpFlagsTest` → `sub_0066BB60_DrlgRoomWarpFlags`
+  (the DRLG room's `+0x28 & 0x30000` not 0 closes the gate); `pop = sub_0061A1F0_RoomPopLevelId(room)` →
+  `sub_0066BB20_DrlgRoomPopLevelId`, which is 0 when `+0x28 & 0x800000`, else the level id `[+0x58] → +0x1D0` (the field
+  `sub_0066BAB0_RoomLevelId` reads); pop = 0 closes it; `sub_0061ABB0_RoomPresetPopTest` → `sub_0066BA90_DrlgRoomPresetPopTest`,
+  0 unless the room's type `+0x48` is 1, then `sub_0067D7A0_OutRoomFlag80` (`[+0x20] → +0x54 & 0x80`); pop ≥ nLevels;
+  `sub_0061AB00_RoomIsTown` → `sub_006426A0_LevelIsTown` on the level id (1, 40, 75, 103, 109). Then the level counters
+  and `LevelRoomCount`, which counts the level's DRLG rooms without `0x800000` (and builds the level first when it is
+  not built). (fn:OBJ_PopulateGate@0x00552560, fn:sub_0066BB60_DrlgRoomWarpFlags@0x0066BB60,
+  fn:sub_0066BB20_DrlgRoomPopLevelId@0x0066BB20, fn:sub_0066BA90_DrlgRoomPresetPopTest@0x0066BA90,
+  fn:sub_0067D7A0_OutRoomFlag80@0x0067D7A0, fn:sub_006426A0_LevelIsTown@0x006426A0, fn:sub_00642BE0_LevelRoomCount@0x00642BE0)
+- [C] The logged gate inputs agree with that reading on all 1 265 `OG` lines of the 62 world logs (`tools/chain.py
+  gate_inputs`): the 46 gates closed by `0x30000` read nothing further; `pop` is 0 or the room's level id in all
+  1 219 others; the 869 town tests equal `LevelIsTown(level id)`; the 904 preset tests are 0 or `0x80`.
+  (fn:OBJ_PopulateGate@0x00552560, run:2026-10-15-objects; output `o19-world-check.txt`)
+- [I] **Not modelled, with the reason**: which DRLG rooms carry `0x30000` (a waypoint's room: `tools/drlg.py
+  room_flags` predicts it for preset rooms from the DS1 scan, and for out rooms from the outdoor model's grid0),
+  `0x800000` (the hidden-warp rooms of `HiddenWarpTilesAdd` and, on the logs, many rooms of levels 3, 42–44 and 103,
+  whose setter is not read here) and the out room's `0x80`, and `LevelRoomCount`, are DRLG room state; the chain would
+  need `tools/drlg.py`'s per-room predictions mapped to the active rooms through the `AROOM` lines. Until then they
+  stay values taken from the `OG` line (1 265 gates, 26 `LevelRoomCount` reads), now checked against the reading.
+  (fn:sub_0066BB20_DrlgRoomPopLevelId@0x0066BB20, fn:sub_00642BE0_LevelRoomCount@0x00642BE0)
+
+## 8. Oracle 21: another room's seed in a pass
+
+- [C] A request on a room other than the pass room (a frog demon placed on a neighbour's tile) took that room's seed
+  from its first `MT0`. `tools/monspawn.py` now carries every room's seed as chain state: the roomk model's predicted
+  activation seed at its `AROOM` line, then the pass model's seed at the end of each pass (`PX`), for the pass room and
+  for every other room it drew on. Both such requests of the world logs (collision sessions 2 and 3, level 77) take
+  the state's seed, which `MT0` then confirms, 0 mismatches. (fn:sub_005B2A00_MonSpawnTry@0x005B2A00,
+  fn:sub_005B2700_SpawnPosOnTile@0x005B2700, fn:DRLG_RoomActivate@0x006422A0, run:2026-10-14-collision)
+- [C] Control: `--cf state-stale` (a room keeps its first seed, its passes ignored) fails both (`MT0 rs` mismatches),
+  so the requests read a seed the earlier pass of that room had moved. (run:2026-10-14-collision; output
+  `o21-cf-state-stale.txt`)
+
 ## Kept outputs
 
 `workspace/logs/chain-p1/`, one path base, `manifest.txt` (`sha256sum -c manifest.txt` from that directory):
 `o2-items-check.txt` (`tools/chain.py check` over the 133 item logs), `o14-world-check.txt` (over the 62 world
 logs), `o14-cf-{findadd-none,monprop-off,L0}.txt` (the controls), `o16-world-check.txt` and
-`o16-cf-{lcv-off,overlay-off}.txt` (oracle 16), `o17-world-check.txt` and `o17-cf-i46-stored.txt` (oracle 17), `o22-world-check.txt` (oracle 22), and the input lists `inputs-world.sha256` and
+`o16-cf-{lcv-off,overlay-off}.txt` (oracle 16), `o17-world-check.txt` and `o17-cf-i46-stored.txt` (oracle 17), `o22-world-check.txt` (oracle 22), `o19-world-check.txt` (oracle 19), `o21-world-check.txt` and
+`o21-cf-state-stale.txt` (oracle 21), and the input lists `inputs-world.sha256` and
 `inputs-items.sha256` (paths relative to `chain-p1/`, so `sha256sum -c` runs from there too). The tool revisions
-behind these outputs are recorded in `tools-o14.sha256`, `tools-o16.sha256`, `tools-o17.sha256` and `tools-o22.sha256` (paths relative to the repository
+behind these outputs are recorded in `tools-o14.sha256`, `tools-o16.sha256`, `tools-o17.sha256`, `tools-o22.sha256`, `tools-o19.sha256` and `tools-o21.sha256` (paths relative to the repository
 root).
 
 ## Open questions

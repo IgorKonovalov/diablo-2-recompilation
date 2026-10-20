@@ -86,6 +86,8 @@ SIDE_TAGS = {"SCI", "SCD", "WND", "WNDARM", "WRL", "RW0", "RW1", "RW2", "RW3", "
              "RRESEED", "OPU0", "OPUX", "OI0", "OIX", "OU0"} | collision.COLL_TAGS | CLIENT_TAGS
 # plan 0048 Phase 1: the unit seed at MU is predicted (oracle 14); False restores the plan 0014 seed oracle
 UNIT_SEED_MODEL = True
+STATE_FROZEN = None       # a counterfactual (tools/chain.py --cf state-stale): a room's first seed is kept for good
+ROOM_STATE_MODEL = True   # plan 0048 oracle 21: another room's seed from the chain state (False: taken from MT0)
 GAME_L = 1          # monsters/stats input L: game +0x6A or +0x74 not 0 (1 in every logged single-player game)
 MASK_BY_SPAWNCOL = {0: 0x3C01, 1: 0x01C0, 2: 0x3F11, 3: 0}     # jump table 0x005B2F04
 # Plan 0014 FS2: the guard exits of the spec's [C] blocks, counted and printed even at 0 (counters only, no effect
@@ -220,6 +222,8 @@ class Pass:
             self.chk.fail_("%s: SCD (special count decrement) inside a pass: %s" % (self.path, d))
         elif tg == "WND":
             self.chk.wnd(d)
+        elif tg == "AROOM":
+            self.chk.on_aroom(d)
 
     def guard(self, k):
         self.stats["guard " + k] += 1
@@ -515,8 +519,16 @@ class Pass:
             return self.rs
         s = self.other_rs.get(room)
         if s is None:
-            s = self.other_rs[room] = S(seed_t(mt["rs"]))
-            self.chk.oracle("seed of another room at its first request in a pass (taken from MT0)")
+            st = self.chk.room_state.get(room) if self.chk.room_state_model else None
+            if st is not None:
+                # plan 0048 Phase 1, oracle 21: that room's seed carried as chain state (its activation seed, or its
+                # seed at the end of its last pass, as the model predicted it); MT0's rs is the check
+                s = self.other_rs[room] = S(st)
+                k = "seed of another room at its first request in a pass, from the chain state (oracle 21)"
+                self.stats[k] = self.stats.get(k, 0) + 1
+            else:
+                s = self.other_rs[room] = S(seed_t(mt["rs"]))
+                self.chk.oracle("seed of another room at its first request in a pass (taken from MT0)")
         return s
 
     def spawn_try_body(self, room, box, cls, a10, a14, cx, cy, rad, fl, rsd):
@@ -1573,6 +1585,8 @@ class Checker:
         self.opu_pending = None
         self.game_de = {}             # log -> (difficulty, expansion) of its games (an input: the game's settings)
         self.room_lid_cur, self.mt_room_cur, self.game_cur = {}, None, None
+        self.room_state, self.active_pred_cur = {}, {}
+        self.room_state_model = ROOM_STATE_MODEL
         self.obj_grid = {}            # plan 0027: tools/objects.py's grid-model counters over the logs
         self.obj_oracles = {}         # plan 0048: tools/objects.py's oracle counters over the logs
         # plan 0018
@@ -1631,6 +1645,14 @@ class Checker:
         self.ok(want == got, "%s: region of level %d at the pass entry %s, tracked model %s" % (P.path, reg["lid"], got, want))
         k = "region snapshots equal to the tracked region (FindAdd appends applied)"
         self.stats[k] = self.stats.get(k, 0) + 1
+
+    def on_aroom(self, d):
+        """An activation (in log order): the active room's seed is the roomk model's prediction, when it made one."""
+        p = self.active_pred_cur.get(d["aroom"]) if self.active_pred_cur else None
+        if p is not None:
+            self.room_state[d["aroom"]] = p
+        else:
+            self.room_state.pop(d["aroom"], None)
 
     def note_unmodelled(self, path, mu, ln):
         """A creation the model did not run (an MU line outside the modelled windows: a monster-spawning InitFn, an
@@ -1789,6 +1811,7 @@ class Checker:
         i = 0
         self.room_lid_cur, self.mt_room_cur, self.game_cur = {}, None, None
         self.init_fn_cur = None
+        self.room_state, self.active_pred_cur = (STATE_FROZEN or dict)(), active_pred
         while i < len(lines):
             tag, d, ln = lines[i]
             if "room" in d and "lid" in d and isinstance(d.get("room"), int):
@@ -1799,6 +1822,8 @@ class Checker:
                 self.mt_room_cur = d["room"]
             if tag in collision.COLL_TAGS or tag == "RRESEED":
                 W.event(tag, d, ln, path)
+            if tag == "AROOM":
+                self.on_aroom(d)
             if tag == "RW0":
                 pred = rw0_pred.get(ln)
                 if pred is not None:
@@ -1863,10 +1888,17 @@ class Checker:
                     end += 1
                 win = lines[i:end + 1]
                 P = Pass(self, win, self.t, path)
+                f_pass = self.fail
                 e2e, self.room_e2e = self.room_e2e, False
                 n_cr = len(self.creations)
                 try:
                     res = P.run()
+                    if self.fail == f_pass:
+                        self.room_state[P.room] = P.rs.t()
+                        for r_, s_ in P.other_rs.items():
+                            self.room_state[r_] = s_.t()
+                    else:
+                        self.room_state.pop(P.room, None)
                     self.results[res] = self.results.get(res, 0) + 1
                     if res in ("populated", "empty"):
                         self.levels.add((d["lid"], d["diff"]))
