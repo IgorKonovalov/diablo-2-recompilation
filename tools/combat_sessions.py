@@ -205,7 +205,9 @@ for k, wp in enumerate(("1,2", "1,3", "1,4")):
 # plan 0047 Phase 2: CombatAma (level 85, dexterity 400, defence above 1 000) was hit at the to-hit floor (c = 5 in
 # every logged roll of ama-n-stand, ama-n-walk and ama-n-idle1), and every defence roll needs a hit first; CombatAmaD
 # (level 5, dexterity 15, no shield, no armour: no block roll ahead of dodge) and CombatAmaW (level 5, dexterity 60,
-# Steelclash only: the walking block) give Normal monsters a chance well above the floor
+# Pelta Lunata only, level 2: the walking block; Steelclash's level 17 left it unusable, block 0 in the first
+# amaw-n-walk, kept as workspace/logs/combat/dev-p47h-amaw-n-walk-steelclash.log) give Normal monsters a chance well
+# above the floor
 for k, wp in enumerate(("1,2", "1,3", "1,4")):
     SESSIONS["amad-n-idle%d" % (k + 1)] = ("CombatAmaD", "enter-normal", 4795 + k,
                                            [(["farm", "--wp", wp, "--players", "8", "--time", "1"], 90),
