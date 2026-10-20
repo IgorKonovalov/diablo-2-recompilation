@@ -475,3 +475,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     checks" — `sha256sum -c` without `--strict` passed a baseline holding a malformed line beside one good line
     (exit 0, shown with the lane's revision); now `--strict`. (3) *omission*: a log that could not be appended to left
     the verdict unrecorded and still exited 0; now exit 2. The experiments record names both revisions.
+
+- **2026-10-20 — spec-writer, `lane/g3` (after the close, backlog work out of this plan).** Static only. The
+  [G3 re-tag entry](../../backlog/archive/2026-10-20-reverser-spec-writer-travel-g3-party-test-re-tag-mp26.md) done in
+  [quests/travel § Using a portal](../../specs/quests/travel.md#using-a-portal): the operator's `0xFFFF` (no party)
+  refusal is `[C]`, scoped as ruling 1 (two outcome-only clicks, the partied one the control, and the code at
+  0x00584911/0x00584915); the different-ids compare (0x0058493A/0x0058493D), the no-owner pass (0x00584927) and the
+  quest-word test stay `[I]`. G3's pseudocode follows quests/0002 § 6's block, the free-spot exit at 0x00584B18 included
+  (its own `[I]` note). Inputs row and wiki/quests' portal paragraph updated. Tags C 73 → 74, I 82 → 84, L 4; no open
+  question changed. Review request:
+  [backlog](../../backlog/2026-10-20-spec-writer-architect-review-lane-g3.md).

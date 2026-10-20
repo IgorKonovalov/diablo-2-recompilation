@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/collision, drlg/warps, objects, quests/progression, save/d2s]
 consumed_by: [quests/progression, monsters/spawn, objects]
-tags: {C: 73, I: 82, L: 4}
+tags: {C: 74, I: 84, L: 4}
 updated: 2026-10-20
 ---
 
@@ -86,7 +86,7 @@ events (quest words written, quest gates) is [quests/progression](progression.md
 | the collision grid around a search | input (logged) | [drlg/collision](../drlg/collision.md)'s grid; the search reads it | [C] (run:2026-10-17-quests: 545 searches) |
 | a level or act built on first arrival, a room activated by the lookup | DRLG oracle | its draws are [drlg](../drlg/README.md)'s and [drlg/collision § I](../drlg/collision.md#i-nearwarptestgame-room-x-y-and-its-side-effects)'s | [I] (fn:sub_0053AC70_ActCreate@0x0053AC70, fn:sub_0066B2B0_LevelPointFind@0x0066B2B0) |
 | the town room's population when a portal's town end first updates it | boundary oracle (ADR-0004) | game-seed draws between the two portal creations | [C] (run:2026-10-17-quests: 41 draws in 9 opens) |
-| party membership, hostility, a second player's portal | input | two-client cases, [plan 0044](../../plans/done/0044-multiplayer-branches.md) | [C] for hostility (run:2026-10-20-two-clients); [I] for the party and quest-word tests (fn:OBJOP_Portal@0x00584870) |
+| party membership, hostility, a second player's portal | input | two-client cases, [plan 0044](../../plans/done/0044-multiplayer-branches.md) | [C] for hostility and for the no-party refusal (run:2026-10-20-two-clients); [I] for the different-ids compare and the quest-word test (fn:OBJOP_Portal@0x00584870) |
 
 ## Algorithm
 
@@ -517,7 +517,10 @@ G3. OBJOP_Portal(game, object, operator) (OperateFn 15):             [I] (fn:OBJ
       if PlayerIsBusy(operator): refuse
       if 0x00535B10(game, operator) ≠ 0 and the owner is not the operator: refuse      ; the operator is hostile to someone
       if GetTickCount() < PlayerTickGet(operator, 0) + 5000: refuse                     ; the operator's own stamp (§ J)
-      if the portal has an owner who is not the operator and their party ids differ: refuse
+      if the portal has an owner (≠ −1) who is not the operator:
+        if PartyId(operator) = 0xFFFF: refuse                            ; in no party; 16-bit
+        owner ← GameFindUnit(game, owner id, player)
+        if owner found and PartyId(owner) ≠ PartyId(operator): refuse  ; no owner unit: no compare
       partner ← PortalPartnerGet(object);  dest ← object data +4
       if class = 59 and object ≠ the operator's own portal and a partner exists and partner ≠ the operator's own portal:
         q ← Levels[dest].QuestFlagEx if expansion else Levels[dest].QuestFlag
@@ -525,7 +528,9 @@ G3. OBJOP_Portal(game, object, operator) (OperateFn 15):             [I] (fn:OBJ
       target ← the partner's room and position, or with no partner ActLevelSpot(act(dest), dest, 0, size 3)
       object flags |= 5
       if RoomIsTown(the operator's room): raise quest event 3 (new level, operator)
-      room ← COLL_FindFreeNear(target room, target, size, 0x1C09, fallback 0);  UnitTeleport(room, x, y, 0, 0)
+      room ← COLL_FindFreeNear(target room, target, size, 0x1C09, fallback 0)
+      if room is null: return 0                                      ; no refusal call
+      UnitTeleport(room, x, y, 0, 0)
       walk command to (x + 5, y + 5)                                 ; § H
       if no partner or class = 60: if the object is in mode 1, queue object event 1
       else if PlayerPortalGet(operator) = partner id:                 ; the owner, through the town end
@@ -545,7 +550,22 @@ Step notes:
 - G3. [C] **A hostile operator is refused on another player's portal before the gate**: the hostile joiner's click on
   the host's portal was refused with no gate compare, while the hostile host's use of its own portal went on to the
   gate. (0x0058488F, 0x00535B10–0x00535B44, run:2026-10-20-two-clients)
-- G3. [I] The party and quest-word tests need a second player ([plan 0044](../../plans/done/0044-multiplayer-branches.md)).
+- G3. [C] **An operator in no party is refused on another player's portal; an operator in the owner's party passes.**
+  With neither player in a party, the joiner's click on the host's town portal passed the 5 s gate and was refused;
+  in the host's party, the same click 22.5 s later passed and arrived at the field end. Scope: one refusal and one pass,
+  outcome only; the party test itself was not logged. The branch is the code's, held by the run: after the gate the
+  only party-dependent refusal is this test, and with both ids `0xFFFF` the id compare would pass, so the refusal is
+  the operator's `0xFFFF` test, which comes before the compare. `PartyIdOfUnit` returns `0xFFFF` for a unit in no
+  party (read from the code). (fn:OBJOP_Portal@0x00584870 0x00584911 0x00584915, 0x00554630,
+  fn:sub_00540710_PartyIdOfUnit@0x00540710, run:2026-10-20-two-clients;
+  [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients))
+- G3. [I] The compare of two different party ids needs a third player, since two players hold at most one party; the
+  pass with no compare when the owner unit is not found (the owner gone from the game) and the skip for an owner id of
+  −1 or the operator's own are read from the code. (fn:OBJOP_Portal@0x00584870 0x0058493A 0x0058493D 0x00584927
+  0x005848F5 0x00584906, fn:sub_00552F60_GameFindUnit@0x00552F60)
+- G3. [I] When the free-spot search at the destination finds no room, the use returns 0 with no refusal call; the
+  runs did not meet it. (fn:OBJOP_Portal@0x00584870 0x00584B18, fn:sub_0064E7B0_FreeNearFallback@0x0064E7B0, 0x00553380)
+- G3. [I] The quest-word test needs a second player ([plan 0044](../../plans/done/0044-multiplayer-branches.md), MP27).
   The stock `QuestFlag`/`QuestFlagEx` values: level 39 26 / 40; 46 and 66–73 13; 50–54 and 74 11; 100–102 21;
   128–132 39. The owner, and anyone using the owner's own end, is not tested. (fn:OBJOP_Portal@0x00584870 0x005849BB–0x00584A20,
   tbl:Levels.txt:QuestFlag, tbl:Levels.txt:QuestFlagEx)
