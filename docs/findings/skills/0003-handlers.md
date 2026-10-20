@@ -343,7 +343,7 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
 | 2 Throw, 4 Left Hand Throw | 65 `0x0056CAB0` | 3, 5 (P1.2) | start: `0x0056C4E0(unit)` (the thrown item) or the two refusal calls `0x00580310`/`0x00580380`, return 0 | none |
 | 25 Plague Javelin, 12 Multiple Shot | 4 `0x005DA8B0` (the same code as 65) | — / 8 | 8: `n = calc1` missiles (`srvmissilea`, `srvmissileb` for a weapon class ≠ 1) fanned across the line to the target: offsets `(dx, dy)` from the unit to the target, start points stepped perpendicular to it from the point less half the fan (corrected 2026-10-20, note below), flags `0x820` (`0x10000` on the outer groups), activate `calc2`, `calc3` (or `n`) centre missiles | the creations' |
 | 10 Jab | 5 `0x005DA8F0`: a target | 7 `0x005DB2D0` | to-hit `SKILLS_GetToHit` (and `MonAttackStats` for a monster), `edPct = calc1`, conversion `EType`/`calc4`, elemental roll, `ResolveAndQueue(SrcDam or 128)`, `DeliverQueued` | to-hit, defence, build, 1–2 |
-| 70 Raise Skeleton | 15 `0x005C3070`: a target not in town that `0x00645510` accepts (a monster corpse in mode 12 whose MonStats2 flag and MonStats `+0x32` allow it) | 31 `0x005C4B00` | § 7 | none |
+| 70 Raise Skeleton | 15 `0x005C3070`: a target not in town that `0x00645510` accepts (a monster corpse in mode 12 with no state of the `DataTables+0x150` set, whose MonStats2 flag 7 and MonStats `+0x32` allow it; refined 2026-10-20, note below) | 31 `0x005C4B00` | § 7; first `0x005C2FF0` (note below) | none |
 | 259 Fists of Fire | 23 `0x005D32F0`: target in melee range | 35 (P1.1 § 12) | finisher § 1 | as § 1 |
 | 117 Holy Shield | 36 `0x005D0180`: inventory `0x0063C8F0(inv, 0)` (a shield) | 18 `0x005C9480` | 18: bit 6, `STATE_GroupClear(1)`, `STATE_ApplyTimed(aurastate, auralencalc)`, `SKILLS_ApplyAuraStats`, `0x005C6DC0` (`passivestat`s), stats 350/351, the `auraevent`s registered | none |
 | 68 Bone Armor | — | 18 | as above; event 22 | none |
@@ -380,6 +380,14 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
   itself (`cmp eax, 1` at `0x005DB52C`) stays `[I]`, since only word 0 is emulated (an armed caster ends at the
   inventory call). Everything after those calls stays as read above, `[I]`. (fn:sub_005DB410_SkillDo08MultiShot@0x005DB410,
   fn:sub_0056D3B0_VecPerpSmall@0x0056D3B0)
+  *2026-10-20 (plan 0046 batch `nec`), emulated:* start 15, do 30 and do 31 are reproduced up to their boundaries
+  (`[C]` under ADR-0021; [skills/0010](0010-necromancer.md) §§ 3–5): start 15 returns `0x00645510(target, 0)`, which
+  also refuses a monster carrying a state of the `DataTables+0x150` bit-set (refinement of the Raise Skeleton row);
+  do 30 up to `sub_0056E780_SkillForUnitsNearTarget`, its `aurastat1` test admitting −1 and its block carrying the
+  `0x005C3400` flag at `+0x08` and an ItemStatCost-byte flag at `+0x0C`; do 31 calls `0x005C2FF0` before its record
+  test (a player caster of class 3 ends there at `COMBAT_ApplyDamage` with a packet of `maxhp / 8`) and reads
+  `pettype` signed, ending at `0x0061A270` before its spawn. Everything after those calls stays as read above, `[I]`.
+  (fn:sub_005C37C0_SkillDo30Curse@0x005C37C0, fn:sub_005C2FF0_SkillClass3SelfHit@0x005C2FF0)
 
 ### 6. Tier A: missile do, hit and damage functions
 

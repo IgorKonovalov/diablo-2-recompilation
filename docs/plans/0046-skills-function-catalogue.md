@@ -544,3 +544,23 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   archivist entry stays open for its lane; ledger rows added. **The next batch (necromancer, `nec`) may start**, with
   9c, 9d, `sor` and `ama`'s conventions, ruling 3 of the `sor` review on writer scans, and ruling 1's condition on
   nested boundaries.
+- **2026-10-20 — Phase 1 batch `nec` landed for review (reverser, `lane/p46m7`, static, no harness).** The necromancer
+  start functions 15–21 and do functions 30–32 and 55–63: 19 entries, all read and all emulated
+  ([skills/0010](../findings/skills/0010-necromancer.md); tier A start 15, do 30, do 31 emulated too). Draws before the
+  boundaries: none; no case steps the caster's or the target's seed (do 55's damage roll and do 58's life roll draw on
+  the target's seed after their boundaries). Raised by emulation (run:2026-10-20-cat-emu-nec,
+  `tools/skills_catalogue_emu.py --batch nec`, `check.txt` `10fec33a…`, `manifest.sha256` `792c0cb4…`): four families,
+  6 100 cases, 0 mismatches, 17 boundary/call-site triples asserted (site control 1 891 of 1 891), both seeds compared
+  in every case, blocks and packets compared by content; **where a boundary sits inside a helper, the helper's return
+  address into the batch function is compared at its stack slot** (ruling 1's condition of the `ama` review), and
+  `static` lists every call of each helper; two to seven negative controls per family (each family has one failing 76
+  or more; the weak ones named with their deciding class). The calc count's writer scan matches `moffs` stores and
+  immediates (0 and 0). The same tool reproduces 9a–9d, `sor` and `ama` byte for byte (`repro.txt`). Surprises:
+  **`0x005C2FF0`, run by Raise Skeleton and Revive before anything else, hits a player caster of class 3 for `maxhp /
+  8`** (the paladin in PlayerClass order, `[I]`); do 30's `aurastat1` test admits −1 and its length is divided by
+  `AiCurseDivisor` only for states 23 and 56 (Dim Vision, Terror), Confuse's always, and Confuse's block skips
+  `aurastat1`; do 63 returns 1 when `srvmissilea` is out of range; seven do functions test `id ≠ 0` and not the
+  record; do 31 reads `pettype` signed; the corpse test also refuses a `udead`-set state and a MonStats `+0x32` of 0;
+  the spawn blocks' `+0x24` is the game pointer (do 56, 60), a frame word do 57 never writes, or the mode (do 62).
+  Tags: 28 `[C]`, 11 `[I]`, 5 `[L]` bullets; 31 symbols added (`I`). Dated note in skills/0003 § 5 (row 70 kept in
+  step).
