@@ -1005,6 +1005,14 @@ Both writers are client code, outside the DRLG build, which is why only a later 
   Neither bit is read by the DRLG build or the collision stamp, so neither changes k or the grid.
   (0x004DDE86, 0x004DF3DD, fn:COLL_StampTileList@0x0064C790)
 
+## Plan 0048 Phase 1: what `Orient89Unit` creates (2026-10-20)
+
+- [C] `sub_0066D9E0_Orient89Unit` creates no unit during the activation: the classes of its rows (catapults 432–435
+  and 524, object 60 on objects sessions 5, 25 and 28) are created in the room's presets window as preset units, so
+  their game-seed steps and creation draws belong to the presets window, which plan 0048 chains (oracles 16 and 22,
+  [chain/0002 § 6](../chain/0002-retirements.md#6-oracle-22-the-orient89unit-creations)). (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0,
+  fn:sub_005557D0_PresetUnitDispatch@0x005557D0, run:2026-10-15-objects)
+
 ## Data touched
 
 - tbl:LvlPrest.txt:KillEdge (`+0x18`), tbl:LvlPrest.txt:FillBlanks (`+0x1C`), tbl:LvlPrest.txt:Animate

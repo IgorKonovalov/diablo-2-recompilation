@@ -30,6 +30,10 @@ oracles still taken from the log.
   object-region draw) and `tools/monspawn.py` its 21 `MonSpawnTry` requests; InitFns 54 and 62 (11 calls, reached
   although chain/0001 row 17 said not) stay seed oracles; 1 245 of 1 265 objects windows carry no oracle (§ 5).
   (fn:OBJINIT_CityDamnedSpawns@0x005506D0, run:2026-10-15-objects)
+- [C] **Oracle 22 (the `Orient89Unit` creations) is retired**: `Orient89Unit` adds no unit at activation; it adds a
+  preset unit that the presets window creates, so its creations are oracle 16's windows, and the last 12 (the objects
+  571 and 572 under catapults 432 and 433) are now modelled too; 1 255 of 1 265 objects windows carry no oracle (§ 6).
+  (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, fn:sub_0054E490_PresetClassSpawn@0x0054E490, run:2026-10-15-objects)
 - [C] **`tools/chain.py gen`** reproduces the seed tree the rng/seeds worked example logged from `-seed N` alone (game
   seed, the four game-creation draws, act bases, Act II tombs, level seeds) (§ 1). (fn:GAME_InitSeeds@0x0052C280,
   fn:DRLG_ActCreate@0x00642DA0, fn:DRLG_LevelCreate@0x00642AE0, run:2026-10-11-seed-tree)
@@ -168,14 +172,38 @@ oracle left when it predicted every one of them.
   which is wrong for these two) and 47, 55, 66, 68, 69 (not reached) stay seed oracles: the assignment named InitFn 46
   only. (data:g_ObjInitFns@0x00731BC0, run:2026-10-15-objects)
 
+## 6. Oracle 22: the `Orient89Unit` creations
+
+- [C] What `sub_0066D9E0_Orient89Unit` makes at activation is a **preset unit** of the room, not a unit: the units
+  its rows name (`tools/drlg.py roomk` on objects sessions 5, 25 and 28: entry flag `0x20` set for classes 432 ×25,
+  433 ×14, 434 ×8, 435 ×43, 524 ×14 and object 60 ×2) are created later in the presets window, through
+  `PresetUnitDispatch`, as `OPU0` windows of type 1 (or 2 for the object: session 5, line 21663, an `OPU0` of id 60
+  in level 111). The other `SUnitCreate` lines outside every window and pass of the 29 objects logs are 5 (objects
+  60, 160 and 162; one is a portal, class 60 in mode 2, created after a pass ended); their origin is not followed. Its own draw, the `Range(3)` and the `0x20` flag were
+  already modelled (plan 0027 Phase 2). (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0,
+  fn:sub_005557D0_PresetUnitDispatch@0x005557D0, run:2026-10-15-objects)
+- [C] So their creations are the preset monster windows of § 4, whose class case now also creates the object under a
+  catapult (0x0054E558–0x0054E5EF): after a placement of a class with MonStats2 flag 18, class 432 creates object 571 and
+  class 433 object 572 with `SUnitCreate(2, class, UnitGetSubX(unit), UnitGetSubY(unit), game, room, 1, 0, 0)`.
+  `tools/monspawn.py` checks the object's `OU0` (type, class, the monster's cell and room, the game seed) and steps
+  the game seed; `tools/objects.py` models the creation itself inside the window (its unit seed, InitFn, PreOperate and
+  mark, and the object-region seed, now asserted at `OPUX` instead of taken). 12 creations (8 under 432, 4 under 433)
+  predicted on the 62 world logs, 0 mismatches. (fn:sub_0054E490_PresetClassSpawn@0x0054E490,
+  fn:sub_0045ADF0_UnitGetSubX@0x0045ADF0, fn:sub_0045AE20_UnitGetSubY@0x0045AE20, fn:sub_00555230_SUnitCreate@0x00555230,
+  run:2026-10-15-objects)
+- [C] After this step 1 255 of 1 265 objects windows have no oracle left inside; the other 10 hold InitFn 54 (7) or
+  InitFn 62 (3). (run:2026-10-15-objects)
+- [I] Class 434's mode (`QUESTS_IsActive(game, 0x20)`) stays a quest-state input, taken from the request (3).
+  (fn:QUESTS_IsActive@0x005444B0)
+
 ## Kept outputs
 
 `workspace/logs/chain-p1/`, one path base, `manifest.txt` (`sha256sum -c manifest.txt` from that directory):
 `o2-items-check.txt` (`tools/chain.py check` over the 133 item logs), `o14-world-check.txt` (over the 62 world
 logs), `o14-cf-{findadd-none,monprop-off,L0}.txt` (the controls), `o16-world-check.txt` and
-`o16-cf-{lcv-off,overlay-off}.txt` (oracle 16), `o17-world-check.txt` and `o17-cf-i46-stored.txt` (oracle 17), and the input lists `inputs-world.sha256` and
+`o16-cf-{lcv-off,overlay-off}.txt` (oracle 16), `o17-world-check.txt` and `o17-cf-i46-stored.txt` (oracle 17), `o22-world-check.txt` (oracle 22), and the input lists `inputs-world.sha256` and
 `inputs-items.sha256` (paths relative to `chain-p1/`, so `sha256sum -c` runs from there too). The tool revisions
-behind these outputs are recorded in `tools-o14.sha256`, `tools-o16.sha256` and `tools-o17.sha256` (paths relative to the repository
+behind these outputs are recorded in `tools-o14.sha256`, `tools-o16.sha256`, `tools-o17.sha256` and `tools-o22.sha256` (paths relative to the repository
 root).
 
 ## Open questions

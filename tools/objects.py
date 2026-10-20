@@ -712,15 +712,48 @@ class Checker:
         elif typ == 2:
             u = self.pseudo(uid, d)
         else:
-            dx = self.skip_until("OPUX", "preset unit of type %d (monsters: tools/monspawn.py)" % typ)
+            dx = self.monster_window(typ)
             self.win_oracles.append(("OPUX", self.ln))
-            self.take(dx)
+            self.take(dx, os_=False)
+            self.seeds_eq(dx, "OPUX (object-region seed)", rs=False, gs=False)
             return
         tag, dx = self.next_obj("OPUX")
         self.seeds_eq(dx, "OPUX")
         if u is not None and dx.get("o"):
             self.check_unit(dx["o"], u, "OPUX")
         return u
+
+    def monster_window(self, typ):
+        """A preset unit that is not an object (OPU0 .. OPUX): its monster (or tile unit) is tools/monspawn.py's, which
+        predicts the room and game seeds at OPUX; here they are taken there. The object-region seed is predicted: no
+        draw may happen inside except in an object created inside (plan 0048, oracle 22: the object 571 or 572 under
+        a catapult 432 or 433), which is modelled here like any creation (create: its game-seed step, InitFn,
+        PreOperate and mark) from the game seed at its OU0, which tools/monspawn.py predicts."""
+        name = "preset unit of type %d (monsters: tools/monspawn.py)" % typ
+        while self.i < len(self.L):
+            tg, d, ln = self.L[self.i]
+            if tg == "OPUX":
+                self.i += 1
+                self.ln = ln
+                self.oracle(name)
+                return d
+            if tg == "OU0" and d["type"] == 2:
+                self.G = Seed(parse_seed(d["gs"]), "game")
+                if self.rs is not None and d.get("rs"):
+                    self.rs.s = parse_seed(d["rs"])
+                self.create(d["cls"], d["x"], d["y"], 1, 0)
+                self.hit("objects created under a preset monster (Orient89Unit catapults), modelled")
+                continue
+            self.i += 1
+            if tg in COLL_SIDE:
+                self.side(tg, d, ln, oracle=True)
+            elif tg == "OU0":
+                self.side("OU0x", d, ln, oracle=True)
+            elif tg == "OUX":
+                self.orc_obj = None
+            elif tg == "OD":
+                raise Mismatch("line %d: object-region draw inside a preset monster's window" % ln)
+        raise Mismatch("log ended inside %s" % name)
 
     def pseudo(self, uid, d):
         lid = self.lid

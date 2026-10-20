@@ -83,7 +83,7 @@ SPAWN_TAGS = {"P0", "PG", "PR", "PB", "PN", "PA", "PC", "PT", "PSP", "PGR", "PGX
               "MTI", "MPK", "HD0", "HDX", "TH0", "TH1", "AUR", "AUR2", "XF", "SU0", "SU1", "SUT", "SUX", "PM0", "PMC", "PMX"}
 CLIENT_TAGS = {"CN0", "CNR", "CNH"}
 SIDE_TAGS = {"SCI", "SCD", "WND", "WNDARM", "WRL", "RW0", "RW1", "RW2", "RW3", "RW4", "LC0", "RL", "AROOM",
-             "RRESEED", "OPU0", "OPUX", "OI0", "OIX"} | collision.COLL_TAGS | CLIENT_TAGS
+             "RRESEED", "OPU0", "OPUX", "OI0", "OIX", "OU0"} | collision.COLL_TAGS | CLIENT_TAGS
 # plan 0048 Phase 1: the unit seed at MU is predicted (oracle 14); False restores the plan 0014 seed oracle
 UNIT_SEED_MODEL = True
 GAME_L = 1          # monsters/stats input L: game +0x6A or +0x74 not 0 (1 in every logged single-player game)
@@ -1160,9 +1160,18 @@ class PresetMonPass(Pass):
                 u = self.spawn_try(self.room, None, cls, mode, 0, x, y, 4, fl)
                 self.guard_preset("retry with radius 4")
             if u and flag(18) and cls in (432, 433):
-                # 0x0054E562..0x0054E5EF: class 432 (or 433, sub_00463900 returns the class itself) creates an object
-                # under it (SUnitCreate type 2, class 571 for 432): tools/objects.py's creation, not chained here
-                raise NotModelled("the object under class %d (MonStats2 flag 18)" % cls)
+                # 0x0054E562..0x0054E5EF (oracle 22, the Orient89Unit catapults): class 432 creates object 571, 433
+                # object 572 (sub_00463900 returns the class itself), SUnitCreate(2, class, UnitGetSubX/Y(unit), game,
+                # room, 1, 0, 0) at the monster's cell: one game-seed step here; its InitFn, PreOperate and mark are
+                # tools/objects.py's, which models that creation inside the window
+                U = self.units[u]
+                ou = self.take("OU0")
+                ocls = 571 if cls == 432 else 572
+                self.eq("object under class %d" % cls, (ou["type"], ou["cls"], ou["x"], ou["y"], ou["room"]),
+                        (2, ocls, U["x"], U["y"], U["room"]))
+                self.eq("OU0 gs (object under the catapult)", ou["gs"], fmt(self.gs.t()))
+                self.gs = S(step(self.gs.lo, self.gs.hi))
+                self.guard_preset("the object under class %d (Orient89Unit catapult) created" % cls)
         px = self.take("OPUX")
         self.seeds(px, "OPUX")
         self.guard_preset("placed" if u else "nothing placed")
