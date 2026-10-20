@@ -406,3 +406,71 @@ Plan 0045 Phase 2's harness runs: none yet. Plan 0046's emulated runs (ADR-0015)
   function draws before its boundary or return; no case steps either seed. Not covered: what any boundary callee does
   and everything after it (start 10's elemental draw among it); when the game runs these functions or with which
   seed. (fn:sub_005DB410_SkillDo08MultiShot@0x005DB410, fn:SKILLS_GetToHit@0x006449F0)
+
+## run:2026-10-20-cat-emu-nec
+
+- **Question:** (plan 0046 Phase 1, batch `nec`) Do the necromancer start functions 15–21 and do functions 30–32 and
+  55–63 map their inputs (the Skills, ItemStatCost, MonStats, MonStats2 and item records, the difficulty table, the
+  bit-set `DataTables+0x150`, the caster, its path, room and stat list, the target unit, its mode, flags, stat lists,
+  state words, item data and room, and the seeds) to the result they return, or to the arguments, pointed-to blocks,
+  frame words and seed states at the call they end in, exactly as [skills/0010](0010-necromancer.md) §§ 3–6 say, and
+  do they leave both seeds alone?
+- **Setup:** as run:2026-10-20-cat-emu-ama: Ghidra 12.1.2 p-code emulator on the pinned `game.exe` (lane copy
+  `GHIDRA_PROJ_DIR=workspace/ghidra-p46m7`, heap 3 GB, one instance at a time, each under a 4 GB scope),
+  `re/ghidra_scripts/EmuBoundary.java` unchanged (`286393aa…`). No wine, nothing runs natively, no slot. Models, case
+  writers and checks: the `nec` families of `tools/skills_catalogue_emu.py` (`27b93f23…`), with `ama`'s conventions (the call site of
+  every boundary asserted with a site control, both seeds written and compared in every case, a boundary's pointer
+  argument compared by content: do 30's and do 61's 0x68-byte blocks, the `SpawnOwnedMonster` blocks, the
+  `COMBAT_ApplyDamage` packet, the zeroed hit packet; frame words at their absolute stack address; no model compares a
+  callee-saved register that is not a boundary argument). New: a boundary inside a helper the batch function called
+  (`0x005C2FF0`, `0x005C3300`, `0x005C31F0`, `0x005C5BC0`) also compares the helper's return address into the batch
+  function at its absolute stack slot (ruling 1 of the `lane/p46m6` review); `static` lists every call of each helper.
+  All inputs synthetic (stock parameter values among them); every case-writer draw from
+  `random.Random("catnec-<family>")`. Files in `workspace/logs/skills-cat-nec/`, `manifest.sha256` `792c0cb4…` (28 files: cases, memory
+  specs, expected inputs, outputs, the `.err` logs, `cases.txt`, `check.txt` `10fec33a…`, `static.txt` `c8bdc9e9…`,
+  `rows.txt` `2e561e99…` with its `rows.sh`, `repro.txt` `387455f3…` with its `repro.sh`, the run script
+  `run_nec.sh`); `sha256sum -c
+  manifest.sha256` from that directory passes. `repro.txt` records that the same tool revision regenerates every case,
+  memory and expectation file of 9a, 9b, 9c, 9d, `sor` and `ama` byte for byte and reproduces their kept `check.txt`
+  and `static.txt` byte for byte from their kept outputs.
+- **Procedure:**
+  ```
+  D=workspace/logs/skills-cat-nec
+  python3 -I tools/skills_catalogue_emu.py cases --batch nec > $D/cases.txt
+  for f in start_nec curse_nec corpse_nec summon_nec; do      # one at a time ($D/run_nec.sh)
+    GHIDRA_PROJ_DIR=workspace/ghidra-p46m7 GHIDRA_HEADLESS_MAXMEM=3G systemd-run --user --scope -p MemoryMax=4G \
+      tools/ghidra.sh emuboundary $D/$f.cases $D/$f.mem > $D/$f.out 2> $D/$f.err
+  done
+  python3 -I tools/skills_catalogue_emu.py check  --batch nec > $D/check.txt
+  python3 -I tools/skills_catalogue_emu.py static --batch nec > $D/static.txt
+  python3 -I tools/skills_catalogue_emu.py manifest --batch nec --write
+  ```
+  Each memory spec points `g_pDataTables` at a scratch DataTables written one field per field read (Skills, Missiles,
+  ItemStatCost, MonStats, MonStats2, the calc pool, the States and PetType counts, the bit-set at `+0x150`), sets
+  `g_pDifficultyLevels`/`g_nDifficultyLevels` and `ITEMS_GetRecord`'s count and table, names the boundaries
+  (`observe`: `ama`'s plus `sub_0056E780_SkillForUnitsNearTarget`, `COMBAT_ApplyDamage`, `0x0061A270`, `STATE_Set`,
+  `0x0056E2F0`) and guards the allocator and the fatal path.
+- **Observed** (`check.txt`, `static.txt`):
+  ```
+  CATNEC start_nec  cases=1600 match=1600 bad=0 neg=295 traced=84 undeclared=0 stopped=0
+  CATNEC curse_nec  cases=1400 match=1400 bad=0 neg=485 traced=4  undeclared=0 stopped=0
+  CATNEC corpse_nec cases=1500 match=1500 bad=0 neg=238 traced=8  undeclared=0 stopped=0
+  CATNEC summon_nec cases=1600 match=1600 bad=0 neg=1332 traced=90 undeclared=0 stopped=0
+  CATNEC static data_imms=0 data_stores=0 helper_sites=8 pins=38 pins_ok=38 ro_reads=5 table_entries=19
+  ```
+  6 100 cases. Every negative control fails (per-control counts on the `negative control` lines; each family has one
+  failing 76 or more cases: `town_inv` 274, `aura1_read` 319, `nomiss0` 80, `w24_zero` 741; the weak ones fail on the
+  deciding class skills/0010 § 2 names); the site control fails on all 1 891 matched boundary cases (17 `site` lines:
+  function, boundary, return address). The skills calc function count's scan names every operand form (`PTR` and
+  `moffs` stores, immediates, reads): 0 stores, 0 immediates, 7 reads. The first runs of the four families found three
+  model faults (do 63's range exit returns 1, do 31's `0x0061A270` takes three stack words, the fatal path's return
+  address is `0x00629CDA`) and low reach on the corpse and room paths; the models and case writers were fixed and every
+  family re-run; the kept outputs are the last runs'.
+- **Conclusion:** bit-exact reproduction (evidence rule 4, ADR-0015) of the functions' maps on returning cases (`[C]`:
+  start 15's, 17's, 18's, 19's and 20's results and every refusal path) and of their maps up to their boundary calls
+  with the call site, the helper return addresses, the arguments, the pointed-to blocks, the frame words, the written
+  words and both seeds asserted (`[C]` under [ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md);
+  skills/0010 names each claim's boundary). No function draws before its boundary or return; no case steps either
+  seed. Not covered: what any boundary callee does and everything after it (do 55's and do 58's draws on the target's
+  seed among it); when the game runs these functions or with which seed. (fn:sub_005C37C0_SkillDo30Curse@0x005C37C0,
+  fn:sub_00645510_MonCorpseTest@0x00645510)

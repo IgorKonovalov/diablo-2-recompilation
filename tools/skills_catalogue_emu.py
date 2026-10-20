@@ -56,6 +56,12 @@ the sorceress start functions 11-14 and do functions 17-29 and 144 (g_SkillStart
 The caster's and the target's seeds are compared in every case; UnitsHostile and UnitsSameParty run emulated
 (PlayerPairFlags and PartyIdOfUnit observed); `static --batch sor` pins the instructions and reads the tables.
 
+Batch nec (`--batch nec`, files under workspace/logs/skills-cat-nec/, draws from random.Random("catnec-<family>")):
+the necromancer start functions 15-21 and do functions 30-32 and 55-63:
+  start_nec  start 15-21, do 32 (target, town, corpse, item, revive tests)   curse_nec  do 30, 61 (the curse block)
+  corpse_nec do 31, 55, 58, 59, 63                                            summon_nec do 56, 57, 60, 62 (spawn blocks)
+A boundary inside a helper the batch function called is checked with the helper's return address at its stack slot.
+
 Each check prints `CAT9A <family> key=value ...`: cases, matches, mismatches (bad), the negative control's mismatch
 count (neg, must be > 0), traced accesses outside the stack, spec and case memory (traced), those outside the declared
 read set (undeclared, must be 0), cases stopped other than at a boundary (stopped, must be 0), then the outcome and
@@ -6772,6 +6778,859 @@ def cmd_static_ama(a):
     return 1 if rep.c["bad"] else 0
 
 
+# ##################################################################################################################
+# Batch nec (plan 0046): the necromancer start functions 15-21 and do functions 30-32 and 55-63 of g_SkillStartFuncs
+# (0x00732140) and g_SkillDoFuncs (0x007322B0), each (ECX game, EDX unit; skill id, level), `ret 8`. The conventions
+# of 9c, 9d, sor and ama: the call site of every observed boundary asserted (site control), the caster's and the
+# target's seeds compared in every case, a boundary pointer argument compared by content, two or more negative
+# controls per family (one failing >= 50 cases), no callee-saved register compared that is not a boundary argument,
+# no meaning a boundary callee gives to a compared word in the claim. Where a boundary sits inside a helper the batch
+# function called (0x005C2FF0, 0x005C3300, 0x005C31F0, 0x005C5BC0), the helper's return address into the batch
+# function is compared at its absolute stack slot (the condition of ruling 1 of the lane/p46m6 review), with the batch
+# function's frame words.
+# Emulated, not observed: UNIT_GetTargetUnit, SKILLS_GetTargetXY, UnitGetRoom, RoomIsTown, RoomAtSubtile, UnitGetSubX/Y
+# (sor's); the corpse tests 0x00645510 / 0x00645680 with MonStats2FlagTest, 0x0063A770 (DataTables+0x150's state
+# set) and UnitIsDead; 0x005C3300 (start 21's test); 0x005C31F0 (do 59's test) with 0x006259B0; start 20's item test
+# (ITEMS_GetRecord, 0x00629CC0, ITEMS_CheckFlags, STATLIST_GetOwnerUnit); 0x005C2FF0 up to its COMBAT_ApplyDamage,
+# with UnitGetMaxHp; the curse helpers 0x005C3400, 0x005C37A0 (0x00611D30), 0x0045C4F0; SkillSummonClass.
+# Observed (new here): SkillForUnitsNearTarget, COMBAT_ApplyDamage, 0x0061A270 (the corpse's room removal), STATE_Set,
+# 0x0056E2F0 (a monster test not read).
+# ##################################################################################################################
+FNN = {
+    "st15": 0x005C3070, "st16": 0x005C30A0, "st17": 0x005C31C0, "st18": 0x005C3260, "st19": 0x005C3270,
+    "st20": 0x005C32A0, "st21": 0x005C3350,
+    "do30": 0x005C37C0, "do31": 0x005C4B00, "do32": 0x005C4CD0, "do55": 0x005C4DF0, "do56": 0x005C5100,
+    "do57": 0x005C5250, "do58": 0x005C56C0, "do59": 0x005C3B90, "do60": 0x005C58B0, "do61": 0x005C3F20,
+    "do62": 0x005C5D00, "do63": 0x005C5E60,
+}
+BOUNDS_N = dict(BOUNDS_A)
+BOUNDS_N.update({
+    0x0056E780: "NearTarget", 0x0057C6C0: "ApplyDamage", 0x0061A270: "RoomUnitRemove", 0x00639DB0: "StateSet",
+    0x0056E2F0: "MonTest2F0",
+})
+BOUND_BY_NAME.update({v: k for k, v in BOUNDS_N.items()})
+ALLBOUND.update(BOUNDS_N)
+ITREC = 0x12620000                   # item records (0x1A8), ITEMS_GetRecord's table (0x0096CA5C) in the spec
+NITEM = 4
+IDATA = TGT + 0xA00                  # the target item's data (+0x18 flags)
+TSL2 = TSL + 0x800                   # the stat list STATLIST_GetOwnerUnit follows (+0x34)
+MASK33 = 0x12630000                  # DataTables+0x150: state bit-set 33, 6 words for 190 states
+NSW = (NSTATES + 31) // 32
+BP_OFF = (0x006E304C, 0x006E307C)    # do 62's twelve (x, y) offsets (.rdata)
+RS_BP = (0x006E304C, 0x006E30AC, "r", "do 62's offsets 0x006E304C/0x006E307C (.rdata)")
+RS_ITEMS = (0x0096CA58, 0x0096CA60, "r", "ITEMS_GetRecord's count and table 0x0096CA58/0x0096CA5C (.data, set in "
+            "the spec)")
+RS_NEC = [RS_HASH, RS_SKN, RS_CALC_JT, RS_BITMASK9C, RS_TOWN, RS_DIFF, RS_ITEMS, RS_BP]
+
+
+def abs_ret(a, v):
+    """A return address (or any word) at an absolute stack address."""
+    return {a: le32(v)}
+
+
+def mem_nec():
+    lines = ["dword %08x %08x" % (G_PDATATABLES, DT),
+             "dword %08x %08x" % (DT + 0xB64, MREC), "dword %08x %08x" % (DT + 0xB6C, NREC),
+             "dword %08x 6b3a11f5" % COOKIE,
+             "dword %08x %08x" % (DT + 0xB98, SREC), "dword %08x %08x" % (DT + 0xBA0, NSREC),
+             "dword %08x %08x" % (DT + 0x40, SPOOL),
+             "dword %08x %08x" % (DT + 0xBCC, ISC), "dword %08x %08x" % (DT + 0xBD4, NISC),
+             "dword %08x %08x" % (DT + 0xA78, MSREC), "dword %08x %08x" % (DT + 0xA80, NMON),
+             "dword %08x %08x" % (DT + 0xA90, MS2REC), "dword %08x %08x" % (DT + 0xA98, NMON2),
+             "dword %08x %08x" % (DT + 0xC4, NSTATES), "dword %08x %08x" % (DT + 0xBF0, NPET),
+             "dword %08x %08x" % (DT + 0x150, MASK33),
+             "dword %08x %08x" % (0x0096C8AC, DIFF), "dword %08x %08x" % (0x0096C8B0, NDIFF),
+             "dword %08x %08x" % (0x0096CA58, NITEM), "dword %08x %08x" % (0x0096CA5C, ITREC)]
+    lines += ["observe %08x" % a for a in sorted(BOUNDS_N)]
+    lines += ["guard %08x" % a for a in FATAL + ALLOC if a not in BOUNDS_N]
+    return lines
+
+
+def pick_sid_n(rnd, w):
+    """The ids a function's own code admits without a fault: do 55-63 read the record (0 when the id is out of range)
+    after testing only id != 0, and SkillSummonClass faults on a player for a refused id."""
+    if w in ("do56", "do57", "do58", "do60", "do62", "do63", "do31"):
+        return rnd.choice([rnd.randrange(1, NSREC)] * 6 + [0]) if w != "do31" else pick_skill(rnd)
+    return pick_skill(rnd)
+
+
+def put_mon_tables(c, rnd, row):
+    """MonStats +0x18 (the MonStats2 row, s16) and +0x32 (u16), MonStats2 +0x04/+0x05 (flag bits 0-15)."""
+    m2i = [rnd.choice([rnd.randrange(NMON2)] * 6 + [NMON2, -1]) for _ in range(NMON)]
+    w32 = [rnd.choice([0, 1, rnd.getrandbits(16)]) for _ in range(NMON)]
+    m2f = [rnd.getrandbits(16) for _ in range(NMON2)]
+    for i in range(NMON):
+        c.put(MSREC + 0x1A8 * i + 0x18, le16(m2i[i]))
+        c.put(MSREC + 0x1A8 * i + 0x32, le16(w32[i]))
+    for i in range(NMON2):
+        c.put(MS2REC + 0x134 * i + 0x04, le16(m2f[i]))
+    row.update(m2i=m2i, w32=w32, m2f=m2f)
+
+
+def ms2bit(row, cls, bit):
+    """sub_004638A0_MonStats2FlagTest(ECX class, EDX bit): MonStats2 byte +4 + bit / 8, bit bit % 8."""
+    if not 0 <= s32(cls) < NMON:
+        return 0
+    i = s16(row["m2i"][cls])
+    if not 0 <= i < NMON2:
+        return 0
+    return (row["m2f"][i] >> bit) & 1
+
+
+def put_corpse(c, rnd, row):
+    """The target monster's class, mode, +0xC6 and state words (stat list +0x58, the list's +0x10 bit 31), and the
+    bit-set DataTables+0x150; MonStats/MonStats2 rows."""
+    put_mon_tables(c, rnd, row)
+    mask = [rnd.choice([0, 0, 1 << rnd.randrange(32), rnd.getrandbits(32)]) for _ in range(NSW)]
+    for i, m in enumerate(mask):
+        c.put(MASK33 + 4 * i, le32(m))
+    row["mask"] = mask
+    if not row["t"]:
+        return
+    cls = rnd.choice([rnd.randrange(NMON)] * 7 + [NMON, rnd.randint(NMON, 700)])
+    mode = rnd.choice([12] * 5 + [0, 0, rnd.randrange(1, 18), 17])
+    c6 = rnd.choice([0, 0, 0, 0, 1, rnd.getrandbits(8)])
+    c.put(T + 0x04, le32(cls))
+    if row["tt"] == 4:
+        mode = row["tmode"]                # an item keeps the mode its target link was revalidated with
+    else:
+        c.put(T + 0x10, le32(mode))
+    c.put(T + 0xC6, bytes([c6]))
+    k = rnd.random()
+    words = None
+    if k < 0.07:
+        c.put(T + 0x5C, le32(0))
+    else:
+        fl = rnd.getrandbits(32) | 0x80000000
+        if k < 0.13:
+            fl &= 0x7FFFFFFF
+        c.put(T + 0x5C, le32(TSL))
+        c.put(TSL + 0x10, le32(fl))
+        if fl & 0x80000000:
+            wa = TSL + 0x200
+            c.put(TSL + 0x58, le32(wa))
+            words = []
+            for i in range(NSW):
+                v = rnd.getrandbits(32) if rnd.random() < 0.3 else 0
+                words.append(v)
+                c.put(wa + 4 * i, le32(v))
+    if row["tt"] == 1 and rnd.random() < 0.55:
+        # a corpse the tests pass more often: mode 12, a class whose MonStats2 row has flags 7 and 8, MonStats +0x32
+        cls = rnd.randrange(NMON)
+        c.put(T + 0x04, le32(cls))
+        if not 0 <= s16(row["m2i"][cls]) < NMON2:
+            row["m2i"][cls] = rnd.randrange(NMON2)
+            c.put(MSREC + 0x1A8 * cls + 0x18, le16(row["m2i"][cls]))
+        i2 = row["m2i"][cls]
+        row["m2f"][i2] |= (0x80 if rnd.random() < 0.92 else 0) | (0x100 if rnd.random() < 0.85 else 0)
+        c.put(MS2REC + 0x134 * i2 + 0x04, le16(row["m2f"][i2]))
+        if row["w32"][cls] == 0 and rnd.random() < 0.9:
+            row["w32"][cls] = rnd.randint(1, 0xFFFF)
+            c.put(MSREC + 0x1A8 * cls + 0x32, le16(row["w32"][cls]))
+        mode = 12 if rnd.random() < 0.85 else rnd.choice([0, 17])
+        c.put(T + 0x10, le32(mode))
+        c6 = 0 if rnd.random() < 0.9 else 1
+        c.put(T + 0xC6, bytes([c6]))
+        if words is not None and rnd.random() < 0.8:
+            words = [0] * NSW
+            for i in range(NSW):
+                c.put(TSL + 0x200 + 4 * i, le32(0))
+    row.update(tcls=cls, tmode=mode, c6=c6, twords=words)
+
+
+def set33(row):
+    """0x0063A770 -> sub_0063A130_UnitHasStateInMask(EAX unit, EBX DataTables+0x150)."""
+    if row["twords"] is None:
+        return 0
+    return int(any(w & m for w, m in zip(row["twords"], row["mask"])))
+
+
+def corpse510(row, flag):
+    """0x00645510(unit, flag): a monster (type 1) in mode 12, or in mode 0 when flag != 0; not in set 33;
+    MonStats2 flag 7; MonStats +0x32 != 0."""
+    if not row["t"] or row["tt"] != 1:
+        return 0
+    if row["tmode"] != 12 and not (flag and row["tmode"] == 0):
+        return 0
+    if set33(row) or not ms2bit(row, row["tcls"], 7):
+        return 0
+    return int(row["w32"][row["tcls"]] != 0)
+
+
+def corpse680(row, neg=None):
+    """0x00645680(unit): a monster in mode 12, not in set 33 (unless the control), MonStats2 flag 7."""
+    if not row["t"] or row["tt"] != 1 or row["tmode"] != 12:
+        return 0
+    if set33(row) and neg != "set33_skip":
+        return 0
+    return ms2bit(row, row["tcls"], 7)
+
+
+def is_dead_t(row):
+    """sub_005541B0_UnitIsDead(ECX unit) on the target: +0xC6 bit 0; a player in mode 0 or 17, a monster in mode 0
+    or 12; any other type dead."""
+    if row["c6"] & 1:
+        return 1
+    if row["tt"] == 0:
+        return int(row["tmode"] in (0, 17))
+    if row["tt"] == 1:
+        return int(row["tmode"] in (0, 12))
+    return 1
+
+
+def test3300(row, neg=None):
+    """0x005C3300 (ESI unit): a monster, MonStats2 flag 8, dead, 0x00645510(unit, 0), then 0x0056E2F0(unit, 7)."""
+    if not row["t"] or row["tt"] != 1:
+        return ("v", 0)
+    if not ms2bit(row, row["tcls"], 7 if neg == "flag7" else 8):
+        return ("v", 0)
+    dead = is_dead_t(row)
+    if neg == "notdead":
+        dead = 1 - dead
+    if not dead or not corpse510(row, 0):
+        return ("v", 0)
+    return ("obs",)
+
+
+def ret_n(row, eax, bit6=False):
+    return ret_s(row, eax, bit6=bit6)
+
+
+def finish_n(c, rnd, row, game, cases, exp):
+    finish_s(c, rnd, row, game, cases, exp, [row["sid"], row["lvl"]])
+
+
+def town_t(row):
+    return town_of(row, room_of_t(row)) if row["t"] else 0
+
+
+# ------------------------------------------------------------------------------------------- the item test (st 20)
+def put_item_t(c, rnd, row):
+    """For an item target: its class (ITEMS_GetRecord, record +0xDC bit 1), its data (+0x14, flags +0x18) and the
+    stat list STATLIST_GetOwnerUnit follows (+0x5C, +0x34, +0x10 bit 31, +0x44)."""
+    rec_dc = [rnd.choice([2, 2, 2, 0, rnd.getrandbits(32)]) for _ in range(NITEM)]
+    for i in range(NITEM):
+        c.put(ITREC + 0x1A8 * i + 0xDC, le32(rec_dc[i]))
+    row["rec_dc"] = rec_dc
+    if not row["t"] or row["tt"] != 4:
+        return
+    mode = rnd.choice([3] * 6 + [0, 4, 5])
+    c.put(T + 0x10, le32(mode))
+    row["tmode"] = mode
+    cls = rnd.choice([rnd.randrange(NITEM)] * 12 + [NITEM])
+    c.put(T + 0x04, le32(cls))
+    row["icls"] = cls
+    if rnd.random() < 0.9:
+        c.put(T + 0x14, le32(IDATA))
+        fl = rnd.choice([0x10] * 4 + [0, rnd.getrandbits(32)])
+        c.put(IDATA + 0x18, le32(fl))
+        row["iflags"] = fl
+    else:
+        c.put(T + 0x14, le32(0))
+        row["iflags"] = None
+    k = rnd.random()
+    own = 0
+    if k < 0.3:
+        c.put(T + 0x5C, le32(0))
+    else:
+        c.put(T + 0x5C, le32(TSL))
+        if k < 0.45:
+            c.put(TSL + 0x34, le32(0))
+        else:
+            c.put(TSL + 0x34, le32(TSL2))
+            fl2 = rnd.getrandbits(32)
+            c.put(TSL2 + 0x10, le32(fl2))
+            if fl2 & 0x80000000:
+                own = rnd.choice([0, 0, U, rnd.getrandbits(32)])
+                c.put(TSL2 + 0x44, le32(own))
+    if rnd.random() < 0.4 and (cls & M32) < NITEM:
+        # an item the test admits: record bit 1, flag 0x10, no owner list
+        rec_dc[cls] |= 2
+        c.put(ITREC + 0x1A8 * cls + 0xDC, le32(rec_dc[cls]))
+        c.put(T + 0x14, le32(IDATA))
+        row["iflags"] = 0x10 | (rnd.getrandbits(32) if rnd.random() < 0.3 else 0)
+        c.put(IDATA + 0x18, le32(row["iflags"]))
+        c.put(T + 0x5C, le32(0))
+        own = 0
+    row["iown"] = own
+
+
+def item_test(row, neg=None):
+    """Start 20 (0x005C32A0) after the target: type 4, mode 3, 0x00629CC0 (ITEMS_GetRecord's +0xDC bit 1; no record
+    -> the fatal path), ITEMS_CheckFlags(0x10), STATLIST_GetOwnerUnit == 0. -> ('v', r) or the fatal boundary."""
+    t = tgt_unit(row)
+    if not t:
+        return ("v", 0)
+    if row["tt"] != 4 or (row["tmode"] != 3 and neg != "item_mode"):
+        return ("v", 0)
+    cls = row["icls"]
+    if (cls & M32) >= NITEM:
+        return ("fatal",)
+    if not row["rec_dc"][cls] & 2:
+        return ("v", 0)
+    if row["iflags"] is None or not row["iflags"] & 0x10:
+        return ("v", 0)
+    return ("v", int(row["iown"] == 0))
+
+
+# ------------------------------------------------------------------------------------------- start family
+START_ORDER_N = ("st15", "st16", "st17", "st18", "st19", "st20", "st21", "do32")
+
+
+@family("start_nec", "nec")
+def start_nec(rnd, game):
+    """Start 15 (Raise Skeleton), 16 (Poison Dagger), 17 (Corpse Explosion), 18 (Attract), 19 (Bone Prison), 20
+    (IronGolem), 21 (Revive) and do 32 (Poison Dagger): the target, the town, corpse, item and revive tests, up to
+    their returns, COMBAT_MeleeHitTest, 0x0056E2F0 or COMBAT_DeliverQueued."""
+    cases, exp = [], []
+    for k in range(1600):
+        w = START_ORDER_N[k % 8]
+        c = Case(FNN[w])
+        row = {"w": w, "sid": pick_skill(rnd), "lvl": pick_lvl(rnd)}
+        put_caster(c, rnd, row, types=(0, 0, 1))
+        ttypes = (4, 4, 4, 4, 1, 0, 2) if w == "st20" else (1, 1, 1, 1, 1, 0, 2, 3, 4)
+        put_target_a(c, rnd, row, game, types=ttypes)
+        if w == "st16":
+            row["cal"] = sor_calcs(c, rnd, row["sid"], (0x1A0,))
+            put_tohit(c, rnd, row)
+        if w == "st20":
+            put_item_t(c, rnd, row)
+        else:
+            put_corpse(c, rnd, row)
+        finish_n(c, rnd, row, game, cases, exp)
+    return cases, mem_nec(), {"cases": exp}
+
+
+def start_nec_model(row, game, br, neg=None):
+    w = row["w"]
+    br[w] += 1
+    t = tgt_unit(row)
+    town = town_t(row)
+    if neg == "town_inv":
+        town = 1 - town
+    if w == "st18":
+        br["ret1"] += 1
+        return ret_n(row, 1)
+    if w == "do32":
+        if not t:
+            br["notarget"] += 1
+            return ret_n(row, 0, bit6=True)
+        br["deliver"] += 1
+        return obs_a(row, "DeliverQueued", {"ecx": game, "edx": U}, [T, 0], 0x005C4CFD, bit6=True)
+    if w == "st20":
+        r = item_test(row, neg)
+        if r[0] == "fatal":
+            br["fatal"] += 1
+            return obs_a(row, "Fatal", {}, [0x104A], 0x00629CDA)
+        br["item%d" % r[1]] += 1
+        return ret_n(row, r[1])
+    if not t:
+        br["notarget"] += 1
+        return ret_n(row, 0)
+    if w == "st21":
+        r = test3300(row, neg)
+        if r[0] == "v":
+            br["norevive"] += 1
+            return ret_n(row, 0)
+        br["montest"] += 1
+        return obs_a(row, "MonTest2F0", {"ecx": T, "edx": 7}, [], 0x005C3340, frame=abs_ret(0x7FEFFFF8, 0x005C3366))
+    if w == "st19":
+        br["town" if town else "outside"] += 1
+        return ret_n(row, 0 if town else 1)
+    if town:
+        br["town"] += 1
+        return ret_n(row, 0)
+    if w == "st15":
+        r = corpse510(row, 0) if neg != "set33_skip" else corpse510(dict(row, twords=None), 0)
+        br["corpse%d" % r] += 1
+        return ret_n(row, r)
+    if w == "st17":
+        r = corpse680(row, neg)
+        br["corpse%d" % r] += 1
+        return ret_n(row, r)
+    # st16
+    if not sid_ok(row):
+        br["nosid"] += 1
+        return ret_n(row, 0)
+    br["hittest"] += 1
+    return obs_a(row, "MeleeHitTest", {"ecx": game, "edx": U}, [T, tohit_a(row), 0], 0x005C3130,
+                 frame={fr(-0x78): bytes(0x70)})
+
+
+# ------------------------------------------------------------------------------------------- the curses
+CURSE_ORDER_N = ("do30", "do61")
+
+
+def diff_div(row, v):
+    """0x005C37A0 (AL difficulty, ESI v): 0x00611D30(d) clamps d to [0, n - 1]; the record's +0x1C non-zero -> v /
+    it (idiv, truncating), else v."""
+    d = row["diff"]
+    d = d if d > 0 else 0
+    d = min(d, NDIFF - 1)
+    q = row["div"][d]
+    if q == 0:
+        return v
+    return s32(cdiv(s32(v), s32(q)))
+
+
+@family("curse_nec", "nec")
+def curse_nec(rnd, game):
+    """Do 30 (the eight curses, Defense Curse, Blood Mana) and do 61 (Confuse): the state and stat range tests, the
+    length (divided by the difficulty record's +0x1C for states 23 and 56, always for do 61), the block, up to
+    sub_0056E780_SkillForUnitsNearTarget."""
+    cases, exp = [], []
+    for k in range(1400):
+        w = CURSE_ORDER_N[k % 2]
+        c = Case(FNN[w])
+        row = {"w": w, "sid": pick_skill(rnd), "lvl": pick_lvl(rnd)}
+        put_caster(c, rnd, row, types=(0, 0, 1, 3))
+        row["cal"] = sor_calcs(c, rnd, row["sid"], (0x60, 0x64, 0x68, 0x6C, 0x70, 0x74, 0x78, 0x7C))
+        diff = rnd.choice([0, 1, 2, 3, 0xFF, 0x80])
+        c.put(GAME + 0x6D, bytes([diff]))
+        row["diff"] = diff if diff < 0x80 else diff     # movzx: 0..255, never negative
+        div = [rnd.choice([1, 2, 3, 4, 0, rnd.randint(5, 40), rnd.randint(-9, -2)]) for _ in range(NDIFF)]
+        for i, q in enumerate(div):
+            c.put(DIFF + 0x58 * i + 0x1C, le32(q))
+        row["div"] = div
+        if sid_ok(row):
+            b = srec(row)
+            stats = []
+            for i in range(6):
+                s = rnd.choice([rnd.randrange(NISC)] * 8 + [-1, NISC, rnd.randint(-0x8000, -2), rnd.randint(NISC, 0x7FFF)])
+                stats.append(s)
+                c.put(b + 0x54 + 2 * i, le16(s))
+            ts = rnd.choice([rnd.randrange(NSTATES)] * 4 + [23, 23, 56, 56, -1, NSTATES, rnd.randint(-0x8000, -2)])
+            c.put(b + 0x82, le16(ts))
+            evs = [rnd.getrandbits(16) for _ in range(6)]
+            c.put(b + 0x84, b"".join(le16(v) for v in evs))
+            filt = rnd.getrandbits(32)
+            c.put(b + 0x50, le32(filt))
+            isc5 = {}
+            for s in stats:
+                if 0 <= s < NISC and s not in isc5:
+                    isc5[s] = rnd.getrandbits(8)
+                    c.put(ISC + 0x144 * s + 5, bytes([isc5[s]]))
+            row.update(stats=stats, ts=ts, evs=evs, filt=filt, isc5={str(k2): v for k2, v in isc5.items()})
+        finish_n(c, rnd, row, game, cases, exp)
+    return cases, mem_nec(), {"cases": exp}
+
+
+def curse_nec_model(row, game, br, neg=None):
+    w = row["w"]
+    br[w] += 1
+    if not sid_ok(row):
+        br["nosid"] += 1
+        return ret_n(row, 0)
+    a1, ts = s16(row["stats"][0]), s16(row["ts"])
+    if a1 < (-1 if neg != "minus1" else 0) or a1 >= NISC:
+        br["norange_stat"] += 1
+        return ret_n(row, 0)
+    if not 0 <= ts < NSTATES:
+        br["norange_state"] += 1
+        return ret_n(row, 0)
+    sid, lv = s16(row["sid"]), row["lvl"]
+    r, ln = ev_s(row, 0x64), ev_s(row, 0x60)
+    flag = int(ts in (23, 56))
+    if w == "do61" or (flag and neg != "noflag"):
+        ln = diff_div(row, ln)
+    blk = bytearray(0x68)
+    struct.pack_into("<IIi", blk, 0, game, U, flag if w == "do30" else 0)
+    struct.pack_into("<IIi", blk, 0x10, sid & M32, lv & M32, ln)
+    first = 0 if (w == "do30" or neg == "aura1_read") else 1
+    sflag = 0
+    for i in range(first, 6):
+        s = s16(row["stats"][i])
+        if not 0 <= s < NISC:
+            struct.pack_into("<i", blk, 0x1C + 4 * i, -1)
+            break
+        if row["isc5"][str(s)] & 2:
+            sflag = 1
+        struct.pack_into("<i", blk, 0x1C + 4 * i, s)
+        struct.pack_into("<i", blk, 0x34 + 4 * i, ev_s(row, 0x68 + 4 * i))
+    struct.pack_into("<i", blk, 0x0C, sflag)
+    struct.pack_into("<i", blk, 0x4C, ts)
+    if w == "do30":
+        for i, v in enumerate(row["evs"]):
+            struct.pack_into("<i", blk, 0x50 + 4 * i, s16(v))
+    br["search_%s" % ("div" if (w == "do61" or flag) else "len")] += 1
+    if w == "do30":
+        return obs_a(row, "NearTarget", {"ecx": game, "edx": row["filt"]}, [U, r, 0x005C35C0, fr(-0x7C)],
+                     0x005C39A3, bit6=True, ptrs={3: bytes(blk)})
+    return obs_a(row, "NearTarget", {"ecx": game, "edx": row["filt"]}, [U, r, 0x005C3DE0, fr(-0x78)],
+                 0x005C40AF, bit6=True, ptrs={3: bytes(blk)})
+
+
+# ------------------------------------------------------------------------------------------- corpses
+CORPSE_ORDER_N = ("do31", "do55", "do58", "do59", "do63")
+
+
+@family("corpse_nec", "nec")
+def corpse_nec(rnd, game):
+    """Do 31 (Raise Skeleton, Raise Skeletal Mage: up to COMBAT_ApplyDamage inside 0x005C2FF0 or the corpse's room
+    removal 0x0061A270), do 55 (Corpse Explosion) and do 63 (Poison Explosion) up to STATE_Set, do 58 (Revive) up to
+    0x0056E2F0 inside 0x005C3300, do 59 (Attract) up to 0x0056E2F0 inside 0x005C31F0."""
+    cases, exp = [], []
+    for k in range(1500):
+        w = CORPSE_ORDER_N[k % 5]
+        c = Case(FNN[w])
+        row = {"w": w, "sid": pick_sid_n(rnd, w), "lvl": pick_lvl(rnd)}
+        put_caster(c, rnd, row, types=(0, 0, 0, 1))
+        if row["ut"] == 0:
+            row["ucls"] = rnd.choice([3, 3, 3, 2, 0, 1, 4, 5, 6])
+            c.put(U + 0x04, le32(row["ucls"]))
+        put_target_a(c, rnd, row, game, types=(1, 1, 1, 1, 1, 1, 0, 2, 3, 4))
+        put_corpse(c, rnd, row)
+        if w == "do31":
+            sv = put_stats(c, rnd, U, {7: rnd.choice([rnd.randint(0, 1 << 20), rnd.getrandbits(32), 8, 7, -9])})
+            row["maxhp"] = stat_of(sv, 7)
+        if w == "do59" and row["t"]:
+            ta = put_state_list_s(c, rnd, T, TSL, 105, p_found=0.5, stat=172)
+            row["talign"] = align_of(row["tt"], ta, c, T)
+        if w in ("do31", "do58") and sid_ok(row):
+            b = srec(row)
+            summ = rnd.randrange(NMON)
+            pet = rnd.choice([rnd.randrange(NPET)] * 7 + [0xFF, 0x80, NPET, rnd.randint(NPET, 0x7F)])
+            mode = rnd.choice([rnd.randrange(16), rnd.randrange(16), 0xFF, 16, rnd.randint(17, 255)])
+            c.put(b + 0xBC, le16(summ))
+            c.put(b + 0xBE, bytes([pet, mode]))
+            row.update(summ=summ, pet=pet, mode=mode)
+            row["cal"] = sor_calcs(c, rnd, row["sid"], (0xC0,))
+        if w == "do63" and sid_ok(row):
+            ma = rnd.choice([rnd.randrange(NREC)] * 6 + [-1, NREC, rnd.randint(-0x8000, -2)])
+            c.put(srec(row) + 0x48, le16(ma))
+            row["ma"] = ma
+        finish_n(c, rnd, row, game, cases, exp)
+    return cases, mem_nec(), {"cases": exp}
+
+
+def sum_mode(m):
+    """SkillSummonClass's mode out-value: summode (+0xBF, movsx) in 0..15, else 1."""
+    v = m - 0x100 if m & 0x80 else m
+    return v if 0 <= v < 16 else 1
+
+
+def corpse_nec_model(row, game, br, neg=None):
+    w = row["w"]
+    br[w] += 1
+    t = tgt_unit(row)
+    if w == "do59":
+        if not sid_ok(row):
+            br["nosid"] += 1
+            return ret_n(row, 0)
+        if not t:
+            br["notarget"] += 1
+            return ret_n(row, 0)
+        if row["talign"] != 0 and neg != "align_any":
+            br["aligned"] += 1
+            return ret_n(row, 0)
+        br["montest"] += 1
+        return obs_a(row, "MonTest2F0", {"ecx": T, "edx": 0x13}, [], 0x005C321E,
+                     frame=abs_ret(0x7FEFFF98, 0x005C3BE1))
+    if w == "do55":
+        if not t:
+            br["notarget"] += 1
+            return ret_n(row, 0)
+        if not corpse680(row, neg):
+            br["nocorpse"] += 1
+            return ret_n(row, 0)
+        br["stateset"] += 1
+        return obs_a(row, "StateSet", {}, [T, 0x68, 1], 0x005C4E29)
+    if w == "do63":
+        if s16(row["sid"]) == 0:
+            br["id0"] += 1
+            return ret_n(row, 0)
+        ma = s16(row["ma"])
+        if not 0 <= ma < NREC:
+            br["nomiss"] += 1                  # both range tests jump to the `mov eax, 1` exit (0x005C5EFC)
+            return ret_n(row, 1 if neg != "nomiss0" else 0)
+        if not t:
+            br["notarget"] += 1
+            return ret_n(row, 0)
+        if not corpse680(row, neg):
+            br["nocorpse"] += 1
+            return ret_n(row, 0)
+        br["stateset"] += 1
+        return obs_a(row, "StateSet", {}, [T, 0x76, 1], 0x005C5EDA)
+    if w == "do58":
+        if s16(row["sid"]) == 0:
+            br["id0"] += 1
+            return ret_n(row, 0)
+        pet = row["pet"] if row["pet"] < NPET else 0
+        if not t:
+            br["notarget"] += 1
+            return ret_n(row, 0)
+        r = test3300(row, neg)
+        if r[0] == "v":
+            br["norevive"] += 1
+            return ret_n(row, 0)
+        br["montest"] += 1
+        fr_ = abs_ret(0x7FEFFFA4, 0x005C5738)
+        fr_[fr(-0x1)] = bytes([pet])
+        return obs_a(row, "MonTest2F0", {"ecx": T, "edx": 7}, [], 0x005C3340, frame=fr_)
+    # do 31
+    if not t:
+        br["notarget"] += 1
+        return ret_n(row, 0)
+    if not corpse510(row, 0 if neg != "flag1" else 1):
+        br["nocorpse"] += 1
+        return ret_n(row, 0)
+    if row["ut"] == 0 and row["ucls"] == 3:
+        hp = row["maxhp"]
+        q = s32(hp) // 8 if s32(hp) >= 0 else -((-s32(hp)) // 8)
+        if neg == "hp4":
+            q = s32(hp) >> 2
+        pkt = bytearray(0x70)
+        struct.pack_into("<I", pkt, 0, 0x1000)
+        struct.pack_into("<H", pkt, 4, 4)
+        struct.pack_into("<i", pkt, 8, q)
+        struct.pack_into("<i", pkt, 0x4C, q)
+        br["apply"] += 1
+        return obs_a(row, "ApplyDamage", {"ecx": game, "edx": U}, [U, 0, None], 0x005C3051, ptrs={2: bytes(pkt)},
+                     frame=abs_ret(0x7FEFFFA8, 0x005C4B3F))
+    if not sid_ok(row):
+        br["nosid"] += 1
+        return ret_n(row, 0)
+    p = row["pet"]
+    ps = p - 0x100 if p & 0x80 else p
+    if ps < 0 or ps >= NPET:
+        if neg != "pet_zero":
+            br["nopet"] += 1
+            return ret_n(row, 0)
+        ps = 0
+    tx, ty = row["tx"], row["ty"]
+    room = room_of_t(row)
+    br["remove"] += 1
+    frame = {fr(-0x4): le32(srec(row)), fr(-0x8): le32(row["summ"]), fr(-0xC): le32(sum_mode(row["mode"])),
+             fr(-0x10): le32(tx), fr(-0x14): le32(ty), fr(-0x18): le32(ps)}
+    return obs_a(row, "RoomUnitRemove", {}, [room, row["tt"], row["tg"]], 0x005C4BE2, frame=frame)
+
+
+# ------------------------------------------------------------------------------------------- summons
+SUMMON_ORDER_N = ("do56", "do57", "do60", "do62")
+
+
+@family("summon_nec", "nec")
+def summon_nec(rnd, game):
+    """Do 56 (Clay, Blood and Fire Golem), do 57 (IronGolem, after start 20's item test), do 60 (Bone Wall) and do 62
+    (Bone Prison, its twelve pieces through 0x005C5BC0): up to the first SpawnOwnedMonster."""
+    cases, exp = [], []
+    for k in range(1600):
+        w = SUMMON_ORDER_N[k % 4]
+        c = Case(FNN[w])
+        row = {"w": w, "sid": pick_sid_n(rnd, w), "lvl": pick_lvl(rnd)}
+        put_caster(c, rnd, row, types=(0, 0, 1))
+        put_target_a(c, rnd, row, game, types=(4, 4, 4, 1, 0) if w == "do57" else (0, 1, 1, 2, 3, 4, 5))
+        if w in ("do60", "do62") and rnd.random() < 0.65:
+            put_point_in_room(c, rnd, row, edge=(w == "do62"))
+        if w == "do57":
+            put_item_t(c, rnd, row)
+            g = rnd.getrandbits(32)
+            c.put(fr(-0x10), le32(g))         # the block's last word: a slot do 57 does not write before the spawn
+            row["slot10"] = g
+        if sid_ok(row):
+            b = srec(row)
+            summ = rnd.choice([rnd.randrange(NMON)] * 8 + [-1, NMON, rnd.randint(-0x8000, -2)]) if w == "do56" \
+                else rnd.randrange(NMON)
+            pet = rnd.choice([rnd.randrange(NPET)] * 7 + [0xFF, 0x80, NPET, rnd.randint(NPET, 0x7F)])
+            mode = rnd.choice([rnd.randrange(16), rnd.randrange(16), 0xFF, 16, rnd.randint(17, 255)])
+            c.put(b + 0xBC, le16(summ))
+            c.put(b + 0xBE, bytes([pet, mode]))
+            row.update(summ=summ, pet=pet, mode=mode)
+            row["cal"] = sor_calcs(c, rnd, row["sid"], (0xC0,))
+        finish_n(c, rnd, row, game, cases, exp)
+    return cases, mem_nec(), {"cases": exp}
+
+
+def put_point_in_room(c, rnd, row, edge=False):
+    """No target unit; the caster's path target point inside a room the caster's room reaches (itself or a near
+    room); for do 62 near a room's lower or right edge and the room made a town at times, so that the first pieces
+    fall in town and a later one outside it."""
+    c.put(UP + 0x58, le32(0))
+    row.update(t=0, tlink=None)
+    rooms = [r for r in ROOMS if row["rooms"][str(r)][3] >= 10 and row["rooms"][str(r)][4] >= 10]
+    if not rooms:
+        return
+    r = rnd.choice(rooms)
+    if rnd.random() < 0.7:
+        c.put(UP + 0x1C, le32(r))
+        row["uroom"] = r
+    lid, x0, y0, ww, hh = row["rooms"][str(r)][:5]
+    if edge and rnd.random() < 0.6:
+        lev = 0x13200000 + 0x1000 * ROOMS.index(r)
+        c.put(lev + 0x1D0, le32(1))
+        row["rooms"][str(r)][0] = 1
+    if edge:
+        if rnd.random() < 0.5:
+            x, y = x0 + rnd.randrange(4, ww - 4), y0 + hh - 1 - rnd.randrange(4)
+        else:
+            x, y = x0 + ww - 1 - rnd.randrange(4), y0 + rnd.randrange(4, hh - 4)
+    else:
+        x, y = x0 + rnd.randrange(ww), y0 + rnd.randrange(hh)
+    px, py = x & 0xFFFF, y & 0xFFFF
+    c.put(UP + 0x10, le16(px) + le16(py))
+    row.update(px=px, py=py)
+
+
+def summon_nec_model(row, game, br, neg=None):
+    w = row["w"]
+    br[w] += 1
+    sid, lv = s16(row["sid"]), row["lvl"]
+    pet = row.get("pet", 0)
+    pet = pet if (pet < NPET or neg == "pet_keep") else 0
+    if w == "do56":
+        if sid == 0:
+            br["id0"] += 1
+            return ret_n(row, 0, bit6=True)
+        summ = s16(row["summ"])
+        if not 0 <= summ < NMON:
+            br["nosumm"] += 1
+            return ret_n(row, 0, bit6=True)
+        mode = row["mode"] if row["mode"] < 16 else 1
+        w24 = game if neg != "w24_zero" else 0
+        blk = b"".join(le32(v) for v in (0, U, summ, 0, mode, 0, 0, pet, ev_s(row, 0xC0), w24))
+        br["spawn"] += 1
+        return obs_a(row, "SpawnOwned", {"ecx": game}, [], 0x005C51E8, bit6=True, stk={"edx": (0, blk)})
+    if w == "do57":
+        r = item_test(row)
+        if r[0] == "fatal":
+            br["fatal"] += 1
+            return obs_a(row, "Fatal", {}, [0x104A], 0x00629CDA)
+        if not r[1]:
+            br["noitem"] += 1
+            return ret_n(row, 0)
+        if sid == 0:
+            br["id0"] += 1
+            return ret_n(row, 0, bit6=True)
+        x, y = row["tx"], row["ty"]
+        w24 = row["slot10"] if neg != "w24_zero" else 0
+        blk = b"".join(le32(v) for v in (1, U, row["summ"], 0, sum_mode(row["mode"]), x, y, pet, ev_s(row, 0xC0),
+                                         w24))
+        br["spawn"] += 1
+        return obs_a(row, "SpawnOwned", {"ecx": game}, [], 0x005C537C, bit6=True, stk={"edx": (0, blk)})
+    x, y, ok = target_xy(row)
+    if not ok:
+        br["noxy"] += 1
+        return ret_n(row, 0)
+    if w == "do60":
+        room = room_at(row, row["uroom"], x, y)
+        if not room:
+            br["noroom"] += 1
+            return ret_n(row, 0)
+        if town_of(row, room):
+            br["town"] += 1
+            return ret_n(row, 0)
+        if sid == 0:
+            br["id0"] += 1
+            return ret_n(row, 0, bit6=True)
+        w24 = game if neg != "w24_zero" else 0
+        blk = b"".join(le32(v) for v in (9, U, row["summ"], 0, sum_mode(row["mode"]), x, y, pet, ev_s(row, 0xC0),
+                                         w24))
+        br["spawn"] += 1
+        return obs_a(row, "SpawnOwned", {"ecx": game}, [], 0x005C59F0, bit6=True, stk={"edx": (0, blk)})
+    # do 62
+    if sid == 0:
+        br["id0"] += 1
+        return ret_n(row, 1, bit6=True)
+    for i in range(12):
+        dx, dy = s32(S4.dword(BP_OFF[0] + 4 * i)), s32(S4.dword(BP_OFF[1] + 4 * i))
+        X, Y = s32(x + dx), s32(y + dy)
+        if neg == "bp_swap":
+            X, Y = s32(x + dy), s32(y + dx)
+        room = room_at(row, row["uroom"], X, Y)
+        if town_of(row, room):
+            continue
+        mode = sum_mode(row["mode"])
+        w24 = mode if neg != "w24_zero" else 0
+        blk = b"".join(le32(v) for v in (9, U, row["summ"], 0, mode, X, Y, pet, ev_s(row, 0xC0), w24))
+        br["spawn_piece%d" % i] += 1
+        return obs_a(row, "SpawnOwned", {"ecx": game}, [], 0x005C5CBA, bit6=True, stk={"edx": (0, blk)},
+                     frame={0x7FEFFFC8: le32(0x005C5D69), fr(-0x8): le32(4 * i), fr(-0xC): le32(0)})
+    br["alltown"] += 1
+    return ret_n(row, 1, bit6=True)
+
+
+CHECKS.update({
+    "start_nec": check9b("start_nec", start_nec_model, ["town_inv", "set33_skip", "flag7", "item_mode"], RS_NEC,
+                         md_masked=False),
+    "curse_nec": check9b("curse_nec", curse_nec_model, ["noflag", "aura1_read", "minus1"], RS_NEC, md_masked=False),
+    "corpse_nec": check9b("corpse_nec", corpse_nec_model, ["notdead", "set33_skip", "hp4", "pet_zero",
+                                                           "align_any", "flag1", "nomiss0"], RS_NEC, md_masked=False),
+    "summon_nec": check9b("summon_nec", summon_nec_model, ["w24_zero", "pet_keep", "bp_swap"], RS_NEC,
+                          md_masked=False),
+})
+
+PINS_NEC = [  # (address, mnemonic, operand substring): instructions the nec claims turn on (ADR-0015 (5))
+    (0x00645523, "cmp", "eax,0xc"), (0x00645528, "cmp", "DWORD PTR [ebp+0xc],0x0"),               # 0x00645510
+    (0x0064553F, "lea", "edx,[eax+0x7]"), (0x00645573, "cmp", "WORD PTR [esi+0x32],ax"),
+    (0x006456A5, "lea", "edx,[eax+0x7]"), (0x00645692, "cmp", "DWORD PTR [esi+0x10],0xc"),          # 0x00645680
+    (0x0063A779, "mov", "ebx,DWORD PTR [eax+0x150]"),                                                # set 33
+    (0x005C330F, "mov", "edx,0x8"), (0x005C331F, "call", "0x5541b0"), (0x005C3334, "mov", "edx,0x7"),  # 0x005C3300
+    (0x005C32B4, "cmp", "DWORD PTR [esi],0x4"), (0x005C32B9, "cmp", "DWORD PTR [esi+0x10],0x3"),    # start 20
+    (0x00629CEF, "mov", "eax,DWORD PTR [eax+0xdc]"), (0x00629CF5, "and", "eax,0x2"),
+    (0x005C3803, "cmp", "ax,0xffff"), (0x005C3803 + 4, "jl", ""),                                    # do 30
+    (0x005C3400, "cmp", "ecx,0x17"), (0x005C3407, "cmp", "ecx,0x38"), (0x005C37B7, "idiv", "ecx"),
+    (0x005C38F4, "mov", "cl,BYTE PTR ds:0x6ce26c"),
+    (0x005C400C, "mov", "esi,0x1"), (0x005C3FF6, "lea", "ecx,[edi+0x56]"), (0x005C3FD0, "call", "0x5c37a0"),  # do 61
+    (0x005C3005, "cmp", "DWORD PTR [esi+0x4],0x3"), (0x005C303C, "sar", "eax,0x3"),                 # 0x005C2FF0
+    (0x005C3021, "or", "DWORD PTR [ebp-0x70],0x1000"), (0x005C3028, "or", "WORD PTR [ebp-0x6c],0x4"),
+    (0x005C4B97, "movsx", "eax,BYTE PTR [ecx+0xbe]"),                                                # do 31 pettype
+    (0x005C5144, "je", ""), (0x005C510F, "mov", "DWORD PTR [ebp-0x4],ecx"),                          # do 56
+    (0x005C5186, "cmp", "dl,0x10"),
+    (0x005C58C9, "mov", "DWORD PTR [ebp-0x14],ebx"), (0x005C59C8, "mov", "DWORD PTR [ebp-0x38],0x9"),  # do 60
+    (0x005C5C8E, "mov", "DWORD PTR [ebp-0x30],0x9"), (0x005C5E3B, "cmp", "eax,0x30"),               # do 62
+    (0x005C4E21, "push", "0x68"), (0x005C5ED2, "push", "0x76"),                                      # do 55, 63
+    (0x005C3214, "lea", "edx,[eax+0x13]"),                                                           # 0x005C31F0
+]
+
+
+def cmd_static_nec(a):
+    rep = Report("static")
+    rep.batch = "NEC"
+    A = S4.asm()
+    for va, mn, sub in PINS_NEC:
+        ins = A.at(va)
+        rep.c["pins"] += 1
+        if ins is None or ins[0] != mn or sub not in ins[1]:
+            rep.bad("pin 0x%08X: %r, want %s %s" % (va, ins, mn, sub))
+        else:
+            rep.c["pins_ok"] += 1
+    for lo, n, name in ((BITMASK, 128, "g_BitMask32"), (0x006E10E0, 20, "hash offsets"),
+                        (0x006C1164, 88, "CALC_Eval jump table"), (0x006426C0, 8 + 0x6D, "town tables"),
+                        (BP_OFF[0], 96, "do 62's offsets")):
+        sec = S4.section_of(lo)
+        flags = [x[5] for x in S4.image()[2] if x[4] == sec][0]
+        rep.c["ro_reads"] += 1
+        if flags & 0x80000000:
+            rep.bad("%s 0x%08X in writable %s" % (name, lo, sec))
+        rep.notes.append("%s 0x%08X: %s" % (name, lo, sec))
+    rep.notes.append("do 62's offsets x: %s" % " ".join(str(s32(S4.dword(BP_OFF[0] + 4 * i))) for i in range(12)))
+    rep.notes.append("do 62's offsets y: %s" % " ".join(str(s32(S4.dword(BP_OFF[1] + 4 * i))) for i in range(12)))
+    st, im, rd = ref_scan(A, SK_NFUNCS)
+    rep.c["data_stores"] += len(st)
+    rep.c["data_imms"] += len(im)
+    rep.notes.append("skills calc function count 0x%08X: %d stores (PTR or moffs), %d immediates, %d reads in .text"
+                     % (SK_NFUNCS, len(st), len(im), len(rd)))
+    for hlp, n_in in ((0x5C2FF0, ("do31", "do58")), (0x5C3300, ("st21", "do58")), (0x5C31F0, ("do59",)),
+                      (0x5C5BC0, ("do62",)), (0x5C32A0, ("do57",))):
+        sites = sorted(va for va, (mn, ops) in A.ins.items() if mn == "call" and ops.strip() == "0x%x" % hlp)
+        rep.notes.append("calls of 0x%08X: %s" % (hlp, " ".join("0x%08X" % s for s in sites)))
+        rep.c["helper_sites"] += len(sites)
+    for name, va in sorted(FNN.items(), key=lambda kv: kv[1]):
+        tab = START_TABLE if name.startswith("st") else DO_TABLE
+        num = int(name[2:])
+        rep.c["table_entries"] += 1
+        if S4.dword(tab + 4 * num) != va:
+            rep.bad("%s: table entry 0x%08X, model address 0x%08X" % (name, S4.dword(tab + 4 * num), va))
+    rep.notes.append("start table 15..21: %s" % " ".join("%d:0x%08X" % (i, S4.dword(START_TABLE + 4 * i))
+                                                        for i in range(15, 22)))
+    rep.notes.append("do table 30..32, 55..63: %s" % " ".join("%d:0x%08X" % (i, S4.dword(DO_TABLE + 4 * i))
+                                                             for i in list(range(30, 33)) + list(range(55, 64))))
+    print("CATNEC static " + " ".join("%s=%d" % (k, rep.c[k]) for k in sorted(rep.c)))
+    for n in rep.notes:
+        print("  " + n)
+    return 1 if rep.c["bad"] else 0
+
+
 # ================================================================================================= commands
 def batch_families(a):
     if a.family:
@@ -6888,6 +7747,8 @@ def cmd_static(a):
         return cmd_static_sor(a)
     if a.batch == "ama":
         return cmd_static_ama(a)
+    if a.batch == "nec":
+        return cmd_static_nec(a)
     rep = Report("static")
     A = S4.asm()
     for va, mn, sub in PINS:
@@ -6949,7 +7810,7 @@ def main(argv):
     ap.add_argument("cmd", choices=["cases", "check", "static", "manifest"])
     ap.add_argument("family", nargs="*")
     ap.add_argument("--dir", default=None, help="default workspace/logs/skills-cat-<batch>")
-    ap.add_argument("--batch", default="9a", choices=["9a", "9b", "9c", "9d", "sor", "ama"], help="the families of one batch (default 9a)")
+    ap.add_argument("--batch", default="9a", choices=["9a", "9b", "9c", "9d", "sor", "ama", "nec"], help="the families of one batch (default 9a)")
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args(argv)
     return {"cases": cmd_cases, "check": cmd_check, "static": cmd_static, "manifest": cmd_manifest}[a.cmd](a)
