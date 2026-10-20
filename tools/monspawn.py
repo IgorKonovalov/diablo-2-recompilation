@@ -1196,7 +1196,11 @@ class PresetMonPass(Pass):
         self.seeds(px, "OPUX")
         self.guard_preset("placed" if u else "nothing placed")
         if self.sci:
-            raise Mismatch("%d special-count increments not modelled" % len(self.sci))
+            # plan 0048 Phase 2 (xn4, Izual 256): the creation path's MonMarkSpecial (ModAppendApply 0x005A4850 from
+            # 0x0057340B, not read) increments the special count; the increment is taken from the SCI line, counted,
+            # and the window keeps an oracle
+            self.sci_taken = len(self.sci)
+            self.sci = []
         return "preset class"
 
     # sub_0054E600 0x0054E973..0x0054EA9D: MonPlace rows 17..32, the fixed-class table 0x0054EB74 (index row - 17)
@@ -2057,6 +2061,7 @@ class Checker:
         win = lines[i:end + 1]
         P = PresetMonPass(self, win, self.t, path)
         f0 = self.fail
+        o0 = sum(self.oracles.values())
         try:
             P.run()
             rest = [w[0] for w in win[P.i:] if w[0] not in SIDE_TAGS]
@@ -2064,7 +2069,16 @@ class Checker:
             for tg, dd, ll in win[P.i:]:
                 if tg in SIDE_TAGS:
                     P.side(tg, dd, ll)
-            if self.fail == f0:
+            if self.fail == f0 and getattr(P, "sci_taken", 0):
+                for _ in range(P.sci_taken):
+                    self.oracle("special-count increment inside a preset monster's creation (SCI taken; class %d)"
+                                % d["id"])
+            elif self.fail == f0 and sum(self.oracles.values()) != o0:
+                # plan 0048 Phase 2: a value taken inside (a presets-window predicate on a room the model has no cells
+                # for): the OPUX is checked but the window keeps an oracle
+                self.stats["preset monsters (class case) predicted OPU0 -> OPUX with a value taken inside"] = \
+                    self.stats.get("preset monsters (class case) predicted OPU0 -> OPUX with a value taken inside", 0) + 1
+            elif self.fail == f0:
                 self.opu_confirmed.add((path, lines[end][2]))
                 self.stats["preset monsters (class case) predicted OPU0 -> OPUX"] = \
                     self.stats.get("preset monsters (class case) predicted OPU0 -> OPUX", 0) + 1
@@ -2086,10 +2100,13 @@ class Checker:
         win = lines[i:end + 1]
         P = RequestPass(self, win, self.t, path)
         f0 = self.fail
+        o0 = sum(self.oracles.values())
         k = "requests of %s predicted MT0 -> MTX" % what
         try:
             P.run()
-            if self.fail == f0:
+            if self.fail == f0 and sum(self.oracles.values()) != o0:
+                self.stats[k + " with a value taken inside"] = self.stats.get(k + " with a value taken inside", 0) + 1
+            elif self.fail == f0:
                 self.opu_confirmed.add((path, lines[end][2]))
                 self.stats[k] = self.stats.get(k, 0) + 1
         except NotModelled as e:
