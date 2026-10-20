@@ -184,6 +184,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-20 | `lane/p46a` review | 0046 P0 | architect-review | 110 941 | 42 | 10 | — | gave accept | — (on the lane row; the review's own skills/0003 rewording is a reverser-doc label, other 1) |
 | 2026-10-20 | `lane/p45b` | 0045 P1b | reverser-static | 293 045 | 121 | 25 | no Ghidra | accept with fixes | 2: wrong anchor 1, other 1 |
 | 2026-10-20 | `lane/p45b` review | 0045 P1b | architect-review | 133 429 | 52 | 12 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/e5fix` | 0045 E5 fix | spec-writer | 76 507 | 30 | 7 | — | accept with fixes | 1: omission 1 |
+| 2026-10-20 | `lane/e5fix` review | 0045 E5 fix | architect-review | 67 995 | 24 | 5 | — | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

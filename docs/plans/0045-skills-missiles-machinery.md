@@ -651,7 +651,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
      and checked against helper 2's 2–20 steps as `[I]`; otherwise the record names it. Design item 5 is scoped above.
      combat/delivery E5 ("an item cast draws nothing of its own", from `lane/cfix2`, now on main) is wrong for
      `ItemTarget` 2: routed to the spec-writer
-     ([entry](../backlog/2026-10-20-architect-spec-writer-combat-delivery-e5-item-target-2-draws.md)). (b) The
+     ([entry](../backlog/archive/2026-10-20-architect-spec-writer-combat-delivery-e5-item-target-2-draws.md)). (b) The
      finisher's five other callers (start 25 Dragon Claw, do 42 Dragon Talon, 50 Dragon Tail, 52 Dragon Flight) are
      Assassin finishing moves, none in tier A: **moved to plan 0046 Phase 1's Assassin batch**, which reads each
      function's path into `COMBAT_PrgFinisher` (this plan models the finisher through `SKILL_AttackDo` only). (c) Pet
@@ -665,3 +665,20 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   for Phase 2, with rulings 1 and 2 appended. **Phase 1 is closed** (P1.1, P1.2, P1.3 and P1b reviewed): Phase 2 waits
   only for both harness slots (plan 0044·P2 holds them). Review request
   [closed](../backlog/archive/2026-10-20-reverser-architect-lane-p45b-review-plan-0045-p1b-cross-check.md).
+- **2026-10-20 — combat/delivery E5 item-cast correction (spec-writer, `lane/e5fix`), for review.** From the P1b
+  review's gap (a): [combat/delivery § E5](../specs/combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze)'s
+  "an item cast draws nothing of its own" scoped to `ItemTarget` blank or 1 (`[I]`); a new `[I]` bullet for the
+  `ItemTarget` 2 helper `0x005FD850` (2 to 20 steps on the given unit's seed, [skills/0001 § 10](../findings/skills/0001-dispatch.md#10-item-granted-skills));
+  one `[L]` open question for helper 2's unit and helpers 3 and 4 (plan 0046 Phase 1, item batch). combat/README B6,
+  rng/seeds and wiki/combat hold no such claim: unchanged. Tags: delivery I 53 → 54, L 3 → 4; open questions 4 live
+  of 7. Entry [closed](../backlog/archive/2026-10-20-architect-spec-writer-combat-delivery-e5-item-target-2-draws.md);
+  review request [to the architect](../backlog/archive/2026-10-20-spec-writer-architect-review-lane-e5fix-combat-delivery-e5-item-target.md).
+- **2026-10-20 — `lane/e5fix` review (architect): accept with fixes (1).** Checked on the pinned `Game.exe`: the call
+  at `0x005FDB9F` (`ecx` = `ebx`, `edx` = `esi`), the loop `0x005FD900`–`0x005FD98A` (two inline steps per try on the
+  seed at `edx+0x20`, `0xCCCCCCCD`/`shr 5` = ÷ 40, `− 0x14` on the path x and y, 10-try cap, success on a 0 from
+  `0x0064D870`); Skills `ItemTarget` holds 2 only on Teleport (3 Corpse Explosion, Poison Explosion; 4 Bone Spirit,
+  Fist of the Heavens; 1 one row); `0x005FDCA0`, `0x005FDD60`, `0x005FDA80`, `0x0064D870` resolve in `re/symbols.csv`.
+  Fix (omission): the bullet now says the helper returns 0 with no room (`sub_00620BB0_UnitGetRoom`, 0 steps) or after
+  10 failed tries, and `ITEMSKILL_Cast` then skips `SKILLS_SrvDo` (`je` at `0x005FDBA6`). Helpers 2–4 have no symbol
+  rows: added to plan 0046 Phase 1's item, shrine and object batch. combat/delivery stays `reviewed`, tags
+  {C 52, I 54, L 4} recounted. Review request closed.
