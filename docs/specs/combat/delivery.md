@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, combat/to-hit, combat/damage, combat/reductions, monsters/stats]
 consumed_by: [combat/overview, items/tc, stats/states, items/economy]
-tags: {C: 52, I: 53, L: 3}
+tags: {C: 52, I: 54, L: 4}
 updated: 2026-10-20
 ---
 
@@ -450,9 +450,17 @@ that draw:
   by no stock row. Among them the `kill` handler 28 (`0x005C01D0`, stat 86, heal after kill) adds `stat · 256` to the
   attacker's life, capped at its maximum, with no draw. [I] (fn:sub_005C01D0_StatEv28HealAfterKill@0x005C01D0,
   tbl:ItemStatCost.txt:itemeventfunc1, [skills/0003 § 3](../../findings/skills/0003-handlers.md#3-the-stat-event-handlers))
-- E5. **An item cast draws nothing of its own**: the cast helpers and `ITEMSKILL_Cast` hold no draw, so a cast adds
-  only the handler's chance draw above and the cast skill's own do function and missiles. [I]
-  (fn:ITEMSKILL_Cast@0x005FDA80, fn:sub_005FDCA0_ItemCastAtUnit@0x005FDCA0, [skills/0003 § 2](../../findings/skills/0003-handlers.md#2-item-event-casts))
+- E5. **An item cast of a skill with `ItemTarget` blank or 1 draws nothing of its own**: the cast helpers
+  `0x005FDCA0` (at a unit) and `0x005FDD60` (at a point) and `ITEMSKILL_Cast` hold no draw, so such a cast adds only
+  the handler's chance draw above and the cast skill's own do function and missiles. [I]
+  (fn:ITEMSKILL_Cast@0x005FDA80, fn:sub_005FDCA0_ItemCastAtUnit@0x005FDCA0, fn:sub_005FDD60_ItemCastAtXY@0x005FDD60,
+  tbl:Skills.txt:ItemTarget, [skills/0003 § 2](../../findings/skills/0003-handlers.md#2-item-event-casts))
+- E5. **`ItemTarget` 2 draws in its target helper.** `ITEMSKILL_Cast` calls the helper `0x005FD850` (call at
+  `0x005FDB9F`) before its `SKILLS_SrvDo`. Per try the helper steps the seed at `+0x20` of the unit it is given twice,
+  inline, adding `low mod 40 − 20` to x and to y, and it tries at most 10 times, until `COLL_PatternTest` returns 0:
+  2 to 20 steps. The one stock `ItemTarget` 2 row is Teleport. Which unit the helper is given is not followed (*Open
+  questions*). [I] (fn:ITEMSKILL_Cast@0x005FDA80, 0x005FDB9F, 0x005FD900–0x005FD98A, fn:COLL_PatternTest@0x0064D870,
+  tbl:Skills.txt:ItemTarget, [skills/0001 § 10](../../findings/skills/0001-dispatch.md#10-item-granted-skills))
 - E5. **Order on a kill**: the defender's `killed` handlers (30) run before the attacker's `kill` handlers (28, 31,
   and 20 for stat 196), all inside `COMBAT_ApplyDamage` (B5). [I] (0x0057C8DD–0x0057C970)
 
@@ -530,7 +538,8 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
   below-the-floor bullet), 13 (*Leads used*: crushing blow, open wounds, absorb, leech).
 - [combat/experiments § run:2026-10-16-combat](../../findings/combat/experiments.md#run2026-10-16-combat): crushing
   blow 316, open wounds 246 with 11 windows, leech 364 / 681 / 455, the stat-74 tick 6 181.
-- [skills/0001](../../findings/skills/0001-dispatch.md) § 12 (the finisher's seed save and restore).
+- [skills/0001](../../findings/skills/0001-dispatch.md) §§ 10 (item-event casts and the `ItemTarget` 2 helper's draws,
+  the dated Phase 1b note), 12 (the finisher's seed save and restore).
 - [skills/0003](../../findings/skills/0003-handlers.md) §§ 1 (the `srvprgfunc` entries, the finisher's tail and stock
   use), 2 (item casts), 3 (the stat-event handlers, their registrations and draws), 13 (draws per event), as fixed by
   the architect's P1.3 review (plan 0045 log).
@@ -554,3 +563,8 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
   ([skills/0003 § 1](../../findings/skills/0003-handlers.md#1-progressive-entries-srvprgfunc-and-the-finishers-tail)).
 - [L] A run that reaches the finisher's entries (A3) and the handlers of E5: run:2026-10-16-combat met no charged
   state and took these handlers as boundary oracles (plan 0045 Phase 2).
+- [L] The `ItemTarget` helpers of an item cast (E5): which unit helper 2 (`0x005FD850`) is given, the caster or the
+  target, and so whose seed its 2 to 20 steps advance; and whether helpers 3 (`0x005FD9C0`, called at `0x005FDBE1`, a
+  corpse pick through `0x0056E390`) and 4 (`0x005FDA10`, called at `0x005FDBF3`) draw, which is not read. Plan 0046
+  Phase 1's item, shrine and object batch reads them ([skills/0001 § 10](../../findings/skills/0001-dispatch.md#10-item-granted-skills),
+  plan 0045 log, Phase 1b review).
