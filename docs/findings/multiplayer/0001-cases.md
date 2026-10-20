@@ -354,8 +354,10 @@ readings each case reproduced:
   changed nothing. (fn:TC_ResolveDrops@0x0055A6D0, fn:sub_005408E0_PartyCountInLevel@0x005408E0,
   fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, fn:sub_00535790_PlayerCount@0x00535790, run:2026-10-20-two-clients)
 - [C] **The party experience share** (J4): 690 kills, every member set predicted from the logged positions (alive,
-  same level, d² ≤ 6400 of the credited player; 385 shares, 9 beyond 6400, 106 in another level, 108 dead, 42 not
-  partied), every input predicted. The member's input is `trunc((float)level × q)` with `q` stored as an f32 and the
+  same level, d² ≤ 6400 of the credited player; 385 shares, 9 beyond 6400, 105 in another level, 108 dead, 42 not
+  partied: 649 kills, 264 single inputs), every input predicted; of the other 41, 40 are mercenary kills and 1 (kills-5's
+  last, the other member in another level) was cut off by the session's end, which the record's first count of 106
+  included (correction, `lane/mp26`). The member's input is `trunc((float)level × q)` with `q` stored as an f32 and the
   product **not** rounded to f32 before the truncation (x87): 98 inputs separate the two (E 63, levels 81 and 81:
   41, where an f32 product gives 42). The code: `q` is `fild`/`fidiv` stored by `fstp dword` (0x0057E754–0x0057E75D);
   each member's `fild` level is multiplied by that dword (`fmul dword`, 0x0057E775–0x0057E778) and passed on the
@@ -382,6 +384,23 @@ readings each case reproduced:
   compare, each gate refused inside its wait and passed after it; a hostile operator refused on another player's portal
   before the gate. The community lead (10 s for both) is contradicted for portals by the logged compare.
   (0x005A5F20, 0x005A5F47, 0x0054C60F, 0x005848CD, 0x0058488F, run:2026-10-20-two-clients)
+- [C] **The portal's party gate** (MP26; raised in part): on another player's portal, an operator in no party is
+  refused and an operator in the owner's party passes. Not partied (PLRS `pty` [], neither player in a party), the
+  joiner's click on the host's town portal passed the 5 s gate (GP, GPP) and left it at the same cell in level 1;
+  partied (party 3 holding both), the same click 22.5 s later passed the gate and the next PLRS has it in level 3, the
+  field end. Scope: one refusal and one pass, outcome only. The logger's last portal line is GPP (0x005848E7); the
+  party test (0x005848EB–0x0058493D) is not logged, so the refusal is placed by the code: after GPP the only refusals
+  before the teleport are the party test's two jumps to 0x00584A22 (0x00584915: the operator's `0x00554630` is
+  `0xFFFF`; 0x0058493D: the owner's and the operator's 16-bit party ids differ), two null-record guards (0x005849B9,
+  0x005849CE: the operator's quest record, the destination's level record; the partied click passed both) the quest gate, which tests nothing for level 3 (`QuestFlag` and `QuestFlagEx` empty), and the free-spot search at
+  the destination (`0x0064E7B0` returns 0: return 0 at 0x00584B18, with no `0x00553380` call; it reads no party
+  state, and the partied click 22.5 s later passed it at the same end). The refusal
+  separates the code's order from a plain id compare: both players had no party, so their ids were equal and a
+  compare alone would have passed; the operator's `0xFFFF` test (0x00584911) refuses first. Not separated, `[I]`: the
+  compare of two different party ids (0x0058493A; with two players there is at most one party, so it needs a third
+  player), and the pass with no compare when the owner unit is not found (`0x00552F60` returns 0, 0x00584927; the owner
+  gone from the game). An owner id of −1 or the operator's own (0x005848F5, 0x00584906) skips the test (code only).
+  (fn:OBJOP_Portal@0x00584870 0x00584911 0x0058493A, 0x00554630, run:2026-10-20-two-clients)
 - [I] **The withdrawal** (hostile = 0, 0x005A5FA4) left the declarer's `+0x160` unchanged in the one case run, so the
   5 s portal gate still applies after a withdrawal. (0x005A5FA4, run:2026-10-20-two-clients)
 - [I] **The stock client refuses a declaration outside town** ("Must be toggled in town."; no request reaches the

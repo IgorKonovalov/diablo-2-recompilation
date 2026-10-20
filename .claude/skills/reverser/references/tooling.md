@@ -424,6 +424,11 @@ loopback (the owner's `sudo ufw status verbose`, or the deny rule the owner adde
 output; before each later session the lane re-reads the ufw state and file hashes without root and logs them:
 [multiplayer/0001 § 5](../../../../docs/findings/multiplayer/0001-cases.md#5-the-hosts-binding-and-the-port-4000-precondition).
 No hosting session starts before that line is in the record.
+The per-session re-read is `tools/ufwcheck.sh <session> <baseline.sha256> <log> || exit 1`, called by every
+hosting driver before it launches the host: the script is read-only (no root, no ufw command; it only appends to
+`<log>`), prints `UFW-OK` and exits 0 only when every test holds, and exits non-zero on any change or error. Never
+use a copied or ad-hoc check, and never call it without `|| exit 1` (the run copy of 2026-10-20 always exited 0;
+[multiplayer/experiments](../../../../docs/findings/multiplayer/experiments.md#run2026-10-20-two-clients)).
 
 ```bash
 python3 -I tools/d2run.py --slot 1 --seed 1 --gdb tools/gdb/two-pilot.gdb --steps tools/gdb/two-host.steps \

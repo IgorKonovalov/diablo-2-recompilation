@@ -433,3 +433,45 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   quests/travel, and the multiplayer paragraph. **Backlog:** the review request closed; new reverser entry (MP26's § 6
   bullet, then the spec-writer's G3 re-tag; the 264/265 count); the owner-play human entry (MP12–MP14, MP17) and the
   agent-stageable reverser entry stay open, out of the plan. Gate green.
+
+- **2026-10-20 — reverser, `lane/mp26` (after the close, backlog work out of this plan).** Static only (no harness, no
+  Ghidra). (1) MP26: [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients)
+  has its bullet, `[C]` raised in part: one click each way on the host's town portal, outcome only (pvp-1 lines
+  7421–7423 refused after GPP with both players in no party; 7521–7523 passed in party 3, the joiner in level 3 at
+  7663). The party test is not logged; objdump places the refusal at 0x00584915 (the operator's `0x00554630` is
+  `0xFFFF`), the only reachable refusal after GPP for level 3; the different-ids compare (0x0058493A) and the
+  no-owner-unit pass (0x00584927) stay `[I]`. quests/0002 § 6's block now has the three steps. G3 re-tag filed to the
+  spec-writer. (2) 264/265: the cut-off kill is kills-5's last (line 9688), counted by `mp_check.py xpshare`'s
+  `pair:` counter at its XK0 in the "another level" branch, so (c) is 105 predicted; record and § 6 corrected.
+  (3) `tools/ufwcheck.sh`, the fixed successor of the run's `drivers/ufwcheck.sh` (kept unchanged): exit 1 on any
+  change; self-test exit 0 on the real state, 1 on each of three changed copies. Kept output `workspace/logs/mp26/`
+  (`manifest.sha256`, `check-mp26.txt` `106cd63e…`). The agent-stageable shortfalls entry stays open for (2)–(4).
+  Review request: [backlog](../../backlog/archive/2026-10-20-reverser-architect-review-lane-mp26.md).
+
+- **2026-10-20 — review (architect, `lane/mp26` at `7354b09`, `main` merged at `461dcc2`): accept with fixes (3).**
+  Checked against the kept logs (`workspace/logs/p44h-run/manifest.sha256` and `mp26/manifest.sha256` pass from
+  `workspace/logs/`): pvp-1 host lines 7421–7423 (PH hostile 0, GP `lim` 16136301 < `now` 16193226, GPP), 7489 (party 3
+  formed, the joiner still at (5680, 5847) in level 1), 7521–7523 and 7663 (level 3, (5492, 5426)) read as cited;
+  kills-5 host line 9688 is the last XK0 (161 XK0, last XC0 at 9529, line 9689 the debugger's exit), 9687 its PLRK
+  (host level 6, member 2 level 1). Arithmetic from `check-mp26.txt` § B: another-level counters 53 + 53 = 106, 105
+  predicted; single inputs 9 + 95 + 160 = 264 = 9 + 105 + 108 + 42; shares 18 + 151 + 148 + 68 = 385, inputs 770;
+  649 + 1 + 40 = 690. objdump of 0x005848E7–0x00584A39 and 0x00540710 (`PartyIdOfUnit`: `0xFFFF` when the unit is in
+  no party) matches the § 6 bullet; the function tail read to 0x00584BC0.
+  - **Ruling 1 (MP26 `[C]`, raised in part).** Two sources: the run (one refusal and one pass whose only logged
+    difference is the party, the partied click a control through every later step) and the code (after GPP, the only
+    party-dependent refusal; with both ids `0xFFFF` the id compare would pass, so the refusal is the `0xFFFF` test at
+    0x00584911/0x00584915). Two outcome-only clicks suffice here because the control passes the same portal and
+    destination 22.5 s later and no other refusal after GPP reads party state; the branch attribution is the code's,
+    held by the run's elimination. The different-ids compare and the no-owner pass stay `[I]`, as filed.
+  - **Ruling 2 (264).** The record's correction holds; (c) is 105.
+  - **Ruling 3 (`tools/ufwcheck.sh`).** Read-only (no root, no ufw command; one append to the log). It now fails
+    closed on every error tried: `workspace/logs/mp26-review/selftest-review.txt` (manifest
+    `mp26-review/manifest.sha256`, base `workspace/logs/`; revision `3fda9b40…`). Every future hosting driver calls
+    it as `tools/ufwcheck.sh … || exit 1` before launching the host; the rule is in the reverser's
+    [tooling reference](../../../.claude/skills/reverser/references/tooling.md) (two-client section).
+  - **Fixes:** (1) *omission*: the list of refusals after GPP left out the free-spot search's exit at 0x00584B18
+    (`0x0064E7B0` returns 0: return 0, no refusal call); added to the multiplayer/0001 § 6 bullet (party-independent,
+    passed by the partied click) and to quests/0002 § 6's OBJOP_Portal block. (2) *overclaim*: "every baseline hash
+    checks" — `sha256sum -c` without `--strict` passed a baseline holding a malformed line beside one good line
+    (exit 0, shown with the lane's revision); now `--strict`. (3) *omission*: a log that could not be appended to left
+    the verdict unrecorded and still exited 0; now exit 2. The experiments record names both revisions.
