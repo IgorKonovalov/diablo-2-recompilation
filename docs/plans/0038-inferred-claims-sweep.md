@@ -2375,7 +2375,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
       test reads the caster's level (0x005CA37C–0x005CA395), never the target's.
   - **Backlog.** The review request is closed; plan 0040 close follow-ups closed ((1) done, (2) to H7a); the *static
     sweep, remaining* entry annotated. New: spec-writer
-    [rbs4 town-follow and outdoor 7](../backlog/2026-10-17-architect-spec-writer-rbs4-town-follow-and-outdoor-7.md);
+    [rbs4 town-follow and outdoor 7](../backlog/archive/2026-10-17-architect-spec-writer-rbs4-town-follow-and-outdoor-7.md);
     reverser [rbs4 review static remainders](../backlog/archive/2026-10-17-architect-reverser-rbs4-review-static-remainders.md)
     (H7a geometry prep, the teleport-target read, optional unfollowed calls). Ledger rows in [metrics](metrics.md)
     (usage "—").
@@ -2466,7 +2466,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request
     [2026-10-18-reverser-architect-review-h7a-lifecycle](../backlog/archive/2026-10-18-reverser-architect-review-h7a-lifecycle.md);
     spec-writer entry
-    [2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates](../backlog/2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates.md);
+    [2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates](../backlog/archive/2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates.md);
     the `lane/rbs4` static-remainders entry closed ((1), (2) answered; (3) deferred).
   - **Inventory:** § 2.6 entry (pending review), no row moves, totals unchanged at 1 526.
   - **Left:** the alignment-1 `0x400` record, the `+0xC4` bit-`0x2000` writer (a breakpoint at 0x0064C08B), the
@@ -2513,7 +2513,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Ledger:** 4 fixes: tool not kept 1, omission 1, other 2. Rule 11 of the reverser's review-fixes recurred
     (fix 4) and rule 6 gains the manifest check (fix 1); both cite this review.
   - **Backlog:** review request closed; the spec-writer entry
-    [2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates](../backlog/2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates.md)
+    [2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates](../backlog/archive/2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates.md)
     released.
   - **Next:** merge `lane/h7a`; the spec-writer updates drlg/lifecycle from the released entry.
 - **2026-10-20 — Batch order and the 0039 fold (owner decisions, via the orchestrator; architect, `lane/plans45`).**
@@ -2522,3 +2522,42 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   [inventory § 7](0038-inventory/README.md#7-priority-order) hold. (2) Plan 0039 is closed; its data/excel fold is a
   Phase 3 item of the data/excel cluster (Phase 3 *Order*). The lane H2 queue is in the
   [plans index](README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049).
+- **2026-10-20 — Phase 3, the drlg/lifecycle cluster (spec-writer, `lane/p38s5`, from `main` `c4b4539`).** First
+  spec-writer item of the 2026-10-20 queue. Two entries: the released H7a spec updates and the `lane/rbs4` town-follow
+  and outdoor 7 entry. Each restated statement checked against
+  [drlg/0009 § 11.2, § 11.3](../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle)
+  and the `lane/h7a` review rulings, and drlg/0008's H5e (a) layout bound.
+  - **drlg/lifecycle** {C 80, I 73, L 7} → **{C 85, I 75, L 8}**. Raised `[C]` (run:2026-10-17-h7a-lifecycle): the
+    `0x400` drop's alignment-2 half (H2 line and a § H bullet), the expired-item drop (H4 line, `[I]` → `[C]`, and a
+    bullet), the record's `+0xC4` as read at 0x00542498 (§ G, ruling (a)'s wording). New `[I]`: the 1 500-frame expiry
+    sweep from 0x0052D310 in § A (ruling (b); the A1 line annotated), the alignment-1 half on the H2 line, the
+    0x0064C040 store of bit `0x2000`. New `[L]`: which call sets that bit. Open questions: town-follow restated from
+    § 11.2 and § 11.3 (H7a its route; still a named shortfall of plan 0040 Phase 2), the unreached-branches bullet
+    rewritten (the 20-frame sweep struck).
+  - **drlg/outdoor** {C 180, I 19, L 2} unchanged: row 7's C5 bullet and its shortfall bullet split by act (no stock
+    case in Acts I, II, IV, V by the layout bound, `[I]`; Act III on the 600-seed sample). No inventory row moves.
+  - **Wiki:** [levels](../wiki/levels.md) restated (town-follow, expired item, vertex merge); levels, monsters and
+    objects `based_on` dates set to 2026-10-20.
+  - **Backlog:** both entries closed; review request
+    [p38s5 review](../backlog/archive/2026-10-20-spec-writer-architect-p38s5-drlg-lifecycle-review.md).
+  - **Next:** architect review of `lane/p38s5`.
+- **2026-10-20 — Review of `lane/p38s5`, the drlg/lifecycle cluster (architect): accept with fixes.** `main` merged
+  first (clean; `backlog.py archive` moved nothing). Read: the full spec, wiki and plan diff against
+  [drlg/0009 § 11.3](../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle),
+  the `lane/h7a` rulings above and drlg/0008's
+  [H5e (a) layout bound](../findings/drlg/0008-outdoor.md#h5e-reachability-a-the-layout-bound-2026-10-17-lanerbs4).
+  Tag counts recomputed by script: drlg/lifecycle {C 85, I 75, L 8} (5 raised, 3 new `[I]`, 1 removed, 1 new `[L]`),
+  drlg/outdoor unchanged {C 180, I 19, L 2}. Anchors resolve in `re/symbols.csv` (0x005424F0, 0x00541AC0, 0x0052D870,
+  0x005421A0, 0x005B11F0, 0x005F72D0, 0x00554EA0, 0x005CA360, 0x0064FAD0, 0x006772C0).
+  - **Spot-checks.** The `0x400` bullet matches § 11.3 (3) (4 records, class 522, flags `0x540`, `+0xD0` = 8, no
+    creation, seed unchanged; alignment 1 kept `[I]`). The `+0xC4` bullet carries ruling (a)'s wording, and which call
+    sets bit `0x2000` sits under *Open questions*. The § A sweep bullet is `[I]` per ruling (b), with the run's
+    exclusion of the 20-frame reading and no confirmation of 1 500. The outdoor C5 split follows H5e (a), Act III on the
+    sample. The wiki levels paragraphs carry no tags and say "read from the code" where the spec has `[I]`.
+  - **Fixes (made here):** (1) *overclaim:* the town-follow open question and the wiki said each town's interior meets
+    its neighbour "at one gate"; § 11.3 (1) has one more run of 1 or 2 cells on 21 camp layouts; both scoped.
+    (2) *other:* outdoor's *Branches no log reached* bullet rewrapped (two over-long lines). Research-map rows for
+    drlg/lifecycle and drlg/outdoor rewritten whole (counts, date, the H7a raises, the Act split).
+  - **Ledger:** 2 fixes: overclaim 1, other 1 ([metrics](metrics.md)).
+  - **Backlog:** review request
+    [p38s5 review](../backlog/archive/2026-10-20-spec-writer-architect-p38s5-drlg-lifecycle-review.md) closed.

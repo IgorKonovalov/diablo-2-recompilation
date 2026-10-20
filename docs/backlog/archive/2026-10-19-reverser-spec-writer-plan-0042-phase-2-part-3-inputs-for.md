@@ -2,12 +2,12 @@
 from: reverser
 to: spec-writer
 date: 2026-10-19
-status: open
+status: done
 context:
-  - ../findings/quests/experiments.md#run2026-10-19-quests3
-  - ../findings/quests/0001-progression.md#17-phase-2-part-3-run2026-10-19-quests3
-  - ../findings/quests/0002-travel.md#14-phase-2-part-3-run2026-10-19-quests3
-resolution: ""
+  - ../../findings/quests/experiments.md#run2026-10-19-quests3
+  - ../../findings/quests/0001-progression.md#17-phase-2-part-3-run2026-10-19-quests3
+  - ../../findings/quests/0002-travel.md#14-phase-2-part-3-run2026-10-19-quests3
+resolution: "Done (lane/p42s, 2026-10-20): re-tagged from quests/0001 § 17 and quests/0002 § 14 as reviewed, in quests/progression (§ E timers, W4 cairn order on the bkd use, W11 eclipse 15 + (low & 1), W12 level 50, W9 ass, W32, W37 Anya, tr2 and the 112/113/123 entries, W40 e11 map, the Harrogath portal) and quests/travel (A3/E2 type 5, E1 NPC 367 scoped to the logged state, E4 packet 0x48, F Harrogath portal, G1 town refusal, I1 resurrection); the cairn Open question dropped; the Zoo, mode-0 waypoints, unreached e3 rows and the 7-try branch stay [I]."
 ---
 
 For plan 0042 Phase 3 (quests spec), once the architect has reviewed Phase 2 part 3 (run:2026-10-19-quests3): re-tag

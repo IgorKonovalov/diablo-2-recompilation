@@ -31,7 +31,7 @@ named again with the reason it cannot be staged on stock data.
     against 50: the combat and stamina shrines, the re-arm, a cure by a well); an aura state's end (9 on and off
     events against 50); a different-state `group` clear; the 256 floor; open wounds on the player; the curse
     resistance cut and `attract`. The research map adds the expiries (123 of 300).
-  - Plan [0042](0042-quests-travel.md) Phase 2 part 3 (run:2026-10-19-quests3, accepted with fixes 2026-10-20 at the
+  - Plan [0042](done/0042-quests-travel.md) Phase 2 part 3 (run:2026-10-19-quests3, accepted with fixes 2026-10-20 at the
     `lane/p42r` review, its shortfalls final): **waypoint activation from mode 0** (0 of 20; the walk never reached an unvisited field
     waypoint, and field waypoints were first logged in mode 1 or 2 after a waypoint arrival), with the `Sync` 0
     object-seed draw. This plan takes it only **after 0042 closes**, and only if that close leaves it a shortfall.

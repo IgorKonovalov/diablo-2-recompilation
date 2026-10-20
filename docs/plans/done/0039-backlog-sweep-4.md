@@ -29,7 +29,7 @@ harness.
   survey). The others need a run (plan 0038 or the plans below), two clients (plan 0044), owner play, a simulation
   phase, or are out of scope.
 - Questions about rooms that are released and re-activated go to [plan 0040](0040-drlg-room-lifecycle.md); the act
-  and quest fields of `rng/seeds` go to [plan 0042](../0042-quests-travel.md); gold amounts go to
+  and quest fields of `rng/seeds` go to [plan 0042](0042-quests-travel.md); gold amounts go to
   [plan 0043](0043-items-economy.md).
 - Method precedent: [plan 0015](0015-backlog-sweep.md), [plan 0020](0020-backlog-sweep-2.md) and
   [plan 0027](0027-backlog-sweep-3.md).
