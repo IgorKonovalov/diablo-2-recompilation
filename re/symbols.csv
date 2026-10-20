@@ -379,6 +379,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0054E190,func,sub_0054E190_FormationGroup,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x0054E1E0,func,sub_0054E1E0_ChampionPack,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x0054E2A0,func,sub_0054E2A0_PresetFallenVariant,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x0054E3A0,func,sub_0054E3A0_PresetRetryAllowed,,I,monsters/spawn,docs/findings/chain/0002-retirements.md
+0x0054E490,func,sub_0054E490_PresetClassSpawn,,C,monsters/spawn,docs/findings/chain/0002-retirements.md
 0x0054E600,func,sub_0054E600_PresetMonSpawn,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x0054EBC0,func,sub_0054EBC0_RoomPopulateGate,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x0054EC40,func,sub_0054EC40_IsFallenScarab,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md

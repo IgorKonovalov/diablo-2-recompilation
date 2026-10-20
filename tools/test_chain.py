@@ -7,7 +7,9 @@ No game file is read.
   - chain.line_sets on synthetic logs: affix lines, property lines, world lines, none;
   - the items oracle switch: chain.py check's default is the staff-mods model (oracle 2 retired);
   - oracle 14: monstats.Model.init_seed's draw count on a stub table (variant set, per-component counts, doomknight,
-    an HP range below 1, MonProp off) and the MonEquip oracle it raises.
+    an HP range below 1, MonProp off) and the MonEquip oracle it raises;
+  - oracle 16: monspawn.PresetMonPass's class chain (sub_00651040), LevelClassVariant and PresetFallenVariant on stub
+    MonStats / Levels records.
 """
 import os
 import sys
@@ -115,6 +117,59 @@ class InitSeed(unittest.TestCase):
         monstats, M = self.model([1], oninit=True)
         with self.assertRaises(monstats.MonEquipOracle):
             M.init_seed(monstats.Seed((1, rng.INIT_HIGH)), 5, 2, 0, 1, 1, 0)
+
+
+class PresetVariants(unittest.TestCase):
+    def pass_(self, lid, mon, lvlex):
+        import struct
+        import monspawn
+
+        def rec(base, nxt, level):
+            r = bytearray(0x1A8)
+            struct.pack_into("<hh", r, 2, base, nxt)
+            struct.pack_into("<h", r, 0xAA, level)
+            return bytes(r)
+        ms = [rec(i, -1, 1) for i in range(70)]
+        # a chain 19 -> 20 -> 21 (levels 1, 5, 9) and 58 -> 59 -> 60 (levels 2, 6, 30)
+        ms[19], ms[20], ms[21] = rec(19, 20, 1), rec(19, 21, 5), rec(19, 21, 9)
+        ms[58], ms[59], ms[60] = rec(58, 59, 2), rec(58, 60, 6), rec(58, -1, 30)
+        lv = bytearray(0x220)
+        struct.pack_into("<h", lv, 0x16, lvlex)
+
+        class Pool:
+            def slots(self, lid_, off):
+                return list(mon)
+
+        class T:
+            pass
+        t = T()
+        t.ms, t.lv, t.pool = ms, {lid: bytes(lv)}, Pool()
+        t.valid = lambda c: 0 <= c < len(ms)
+        t.m = lambda c, off, f: struct.unpack_from(f, ms[c], off)[0]
+        P = monspawn.PresetMonPass.__new__(monspawn.PresetMonPass)
+        P.t, P.lid = t, lid
+        return P
+
+    def test_chain_len(self):
+        P = self.pass_(2, [], 0)
+        self.assertEqual(P.chain_len(19), 3)       # 19, 20, 21 (21 is its own next)
+        self.assertEqual(P.chain_len(58), 3)       # 58, 59, 60 (next -1)
+        self.assertEqual(P.chain_len(5), 1)
+
+    def test_level_class_variant(self):
+        self.assertEqual(self.pass_(2, [], 0).level_class_variant(19), 19)          # no mon entries: unchanged
+        self.assertEqual(self.pass_(2, [3, 20], 0).level_class_variant(19), 20)     # the entry with BaseId 19
+        self.assertEqual(self.pass_(2, [3], 4).level_class_variant(19), 20)         # chain: level 5 <= 4 + 1
+        self.assertEqual(self.pass_(2, [3], 3).level_class_variant(19), 19)         # level 5 > 3 + 1: first step refused
+        self.assertEqual(self.pass_(2, [3], 8).level_class_variant(19), 21)         # both steps accepted
+        self.assertEqual(self.pass_(2, [3], 8).level_class_variant(58), 59)         # 60 has level 30
+
+    def test_fallen_variant(self):
+        self.assertEqual(self.pass_(6, [], 0).fallen_variant(19), 0x14)
+        self.assertEqual(self.pass_(12, [], 0).fallen_variant(20), 0x15)          # by BaseId
+        self.assertEqual(self.pass_(7, [], 0).fallen_variant(58), 0x3B)
+        self.assertEqual(self.pass_(16, [], 0).fallen_variant(58), 0x3C)
+        self.assertEqual(self.pass_(5, [], 0).fallen_variant(19), 19)
 
 
 if __name__ == "__main__":

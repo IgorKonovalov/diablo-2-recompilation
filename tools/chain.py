@@ -190,7 +190,9 @@ def check_items(path, ns, R):
 
 # the counters of tools/monspawn.py (and tools/objects.py inside it) that say an oracle was retired
 WORLD_PRED = ("unit seeds after SUnitCreate predicted", "region snapshots equal to the tracked region",
-              "presets / restore / objects window predicted by tools/objects.py")
+              "presets / restore / objects window predicted by tools/objects.py", "preset monsters",
+              "windows RW1 -> RW4", "predicted by the collision model (presets window)",
+              "preset tile units")
 
 
 class World:
@@ -248,6 +250,8 @@ CF = {
     "findadd-none": "oracle 14: MonRegionFindAdd returns no entry (no append, no variant draws)",
     "monprop-off": "oracle 14: MonStatsInit without its MonProp slots",
     "L0": "oracle 14: the MonLvl column set L = 0 (a control that must NOT fail: L does not change the draw count)",
+    "lcv-off": "oracle 16: the MonPlace fixed rows without LevelClassVariant and PresetFallenVariant",
+    "overlay-off": "oracle 16: the presets-window predicates on the activation model without the window's marks",
 }
 
 
@@ -261,6 +265,11 @@ def apply_cf(name):
         monstats.Model.monprop = lambda self, seed, cls, d: ({}, [])
     elif name == "L0":
         monspawn.GAME_L = 0
+    elif name == "lcv-off":
+        monspawn.PresetMonPass.level_class_variant = lambda self, cls: cls
+        monspawn.PresetMonPass.fallen_variant = lambda self, cls: cls
+    elif name == "overlay-off":
+        monspawn.PresetMonPass.overlay = lambda self: self.chk.world.model
 
 
 def cmd_check(ns):

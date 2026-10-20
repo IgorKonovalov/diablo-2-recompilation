@@ -318,6 +318,10 @@ class Checker:
         self.cov = {}
         self.msgs = []
         self.pred_rw4 = set()     # (log, line) of every RW4 the model reached with all three seeds predicted
+        # plan 0048 Phase 1: per RW4 of pred_rw4, the oracle exits this checker took inside the window: ("OPUX", line)
+        # of a preset monster, ("OIX", line, InitFn) of a monster or quest InitFn, ("GOLD", line) of a gold drop
+        self.rw4_oracles = {}
+        self.win_oracles = []
 
     # --- bookkeeping --------------------------------------------------------------------------------------------
     def hit(self, k, n=1):
@@ -631,6 +635,7 @@ class Checker:
         self.G = Seed(parse_seed(d1["gs"]), "game")
         self.seeds_eq(d1, "RW1", rs=False, gs=False)
         self._np0 = self.stats.get("objects created (populate)", 0)
+        self.win_oracles = []
         while True:
             tag, d = self.next_obj({"OPU0", "RW2"})
             if tag == "RW2":
@@ -645,6 +650,7 @@ class Checker:
         self.seeds_eq(d, "RW4")
         self.in_window = False
         self.pred_rw4.add((self.path, self.ln))
+        self.rw4_oracles[(self.path, self.ln)] = list(self.win_oracles)
         self.hit("windows predicted RW1 -> RW4 (room, object-region and game seed)")
         self.covk("windows by level", (self.lid, self.de))
         if self.stats.get("objects created (populate)", 0) > self._np0:
@@ -699,6 +705,7 @@ class Checker:
             u = self.pseudo(uid, d)
         else:
             dx = self.skip_until("OPUX", "preset unit of type %d (monsters: tools/monspawn.py)" % typ)
+            self.win_oracles.append(("OPUX", self.ln))
             self.take(dx)
             return
         tag, dx = self.next_obj("OPUX")
@@ -768,6 +775,7 @@ class Checker:
             self.ok(parse_seed(di["us"]) == u["us"].s, "line %d: unit seed at InitFn %s, model %s" % (self.ln, di["us"], fmt(u["us"].s)))
             if fn in ORACLE_INITFNS:
                 dx = self.skip_until("OIX", "InitFn %d (monster spawns / quest state)" % fn)
+                self.win_oracles.append(("OIX", self.ln, fn))
                 self.take(dx)
                 u["us"].s = parse_seed(dx["o"]["us"])
                 u["it"], u["mode"], u["sp"] = dx["o"]["it"], dx["o"]["mode"], dx["o"]["sp"]

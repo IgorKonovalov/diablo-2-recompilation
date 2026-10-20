@@ -83,7 +83,7 @@ SPAWN_TAGS = {"P0", "PG", "PR", "PB", "PN", "PA", "PC", "PT", "PSP", "PGR", "PGX
               "MTI", "MPK", "HD0", "HDX", "TH0", "TH1", "AUR", "AUR2", "XF", "SU0", "SU1", "SUT", "SUX", "PM0", "PMC", "PMX"}
 CLIENT_TAGS = {"CN0", "CNR", "CNH"}
 SIDE_TAGS = {"SCI", "SCD", "WND", "WNDARM", "WRL", "RW0", "RW1", "RW2", "RW3", "RW4", "LC0", "RL", "AROOM",
-             "RRESEED"} | collision.COLL_TAGS | CLIENT_TAGS
+             "RRESEED", "OPU0", "OPUX"} | collision.COLL_TAGS | CLIENT_TAGS
 # plan 0048 Phase 1: the unit seed at MU is predicted (oracle 14); False restores the plan 0014 seed oracle
 UNIT_SEED_MODEL = True
 GAME_L = 1          # monsters/stats input L: game +0x6A or +0x74 not 0 (1 in every logged single-player game)
@@ -194,7 +194,7 @@ class Pass:
         while self.i < len(self.ev):
             tg, d, ln = self.ev[self.i]
             self.i += 1
-            if tg in SIDE_TAGS:
+            if tg in SIDE_TAGS and tg != tag:
                 self.side(tg, d, ln)
                 continue
             if tg != tag:
@@ -718,7 +718,7 @@ class Pass:
             self.guard("H2 unit = none")
             return 0
         self.eq("created class", u["cls"], cls)
-        if self.snap():
+        if self.snap() and not isinstance(self, PresetMonPass):
             try:
                 self.chk.world.creation_mark(room, x, y, cls, self.path, self.ev[self.i - 1][2])
             except collision.NotLogged as e:
@@ -737,7 +737,7 @@ class Pass:
                               "mods": mods}
         U = self.units[u["u"]]
         mup = self.take("MUP")
-        if self.snap():
+        if self.snap() and not isinstance(self, PresetMonPass):
             try:
                 self.chk.world.creation_remark(room, x, y, cls, self.path, self.ev[self.i - 1][2])
             except collision.NotLogged as e:
@@ -1101,6 +1101,225 @@ class Pass:
         self.chk.champions.append((self.path, self.lid, cls, n, made, self.diff, self.exp))
 
 
+RETRY_NONE = {229, 284, 285, 286, 287, 288, 392, 393}   # sub_0054E3A0: the byte table 0x0054E3E0 gives 0 (no retry)
+
+
+class NotModelled(Exception):
+    pass
+
+
+class PresetMonPass(Pass):
+    """Plan 0048 Phase 1, oracle 16: one preset monster of the presets window with a MonStats class id (OPU0 type 1
+    .. OPUX), sub_0054E600_PresetMonSpawn's class case 0x0054E490, read in the disassembly: class 434 starts one cell
+    to the left and takes mode 12 when QUESTS_IsActive(game, 0x20) is 0 (quest state: the mode is taken from the MT0
+    request and counted); a class with MonStats2 flag 13 (sub_004638A0_MonStats2FlagTest(class, 13)) is not placed;
+    flags = 8 when MonStats +0x0E & 4 (neverCount); SpawnAtPos(x, y, class, mode, radius -1, flags), and when that
+    places nothing and sub_0054E3A0 allows it (every class but 229, 284-288, 392, 393), the same with radius 4. After a
+    placement, a class with MonStats2 flag 18 that is 432 or whose sub_00463900_MonClassCheck is 433 creates an object
+    under it (SUnitCreate type 2, class 571 for 432): that object's creation is tools/objects.py's and is not chained
+    here (NotModelled, the window keeps the oracle). The room and game seeds start from OPU0 (which tools/objects.py
+    predicts) and are compared at OPUX. The position predicates run on the activation model (no pass snapshot in the
+    presets window); a predicate the model cannot answer is taken from the log and counted."""
+
+    def run(self):
+        d = self.take("OPU0")
+        self.room, self.lid = d["room"], d["lid"]
+        self.rs, self.gs = S(seed_t(d["rs"])), S(seed_t(d["gs"]))
+        self.diff, self.exp = self.chk.game_de.get(self.path, (None, None))
+        if self.diff is None:
+            raise NotModelled("difficulty and game type not logged in this log")
+        mt = next((x[1] for x in self.ev if x[0] == "MT0"), None)
+        self.game = mt["game"] if mt else None
+        # the room's rect from its activation dump (CB, this process); chk.room_rects spans logs, and room pointers
+        # are reused across game processes
+        self.rect = self.chk.world.rects.get(self.room)
+        if self.rect is None:
+            raise NotModelled("room rect not known")
+        self.rect = list(self.rect)
+        self.sci, self.groups, self.region, self.nspec = [], [], None, 0
+        t = self.t
+        cls, x, y, mode = d["id"], d["x"], d["y"], d["mode"]
+        if cls >= len(t.ms):
+            return self.fixed_row(d, cls - len(t.ms) - self.chk.n_super, x, y, mode, mt)
+        if not t.valid(cls):
+            raise NotModelled("class %d not valid" % cls)
+        if cls == 434:
+            x -= 1
+            if mt is not None and mt["a10"] != mode:
+                self.chk.oracle("preset class 434 mode (QUESTS_IsActive(game, 0x20): quest state)")
+                mode = mt["a10"]
+        m2 = t.m2(cls)
+        flag = lambda k: bool(m2 is not None and m2[4 + (k >> 3)] & (1 << (k & 7)))  # noqa: E731
+        if flag(13):
+            u = 0
+            self.guard_preset("MonStats2 flag 13: not placed")
+        else:
+            fl = 8 if t.ms[cls][0x0E] & F_NEVERCOUNT else 0
+            u = self.spawn_try(self.room, None, cls, mode, 0, x, y, -1, fl)
+            if not u and cls not in RETRY_NONE:
+                u = self.spawn_try(self.room, None, cls, mode, 0, x, y, 4, fl)
+                self.guard_preset("retry with radius 4")
+            if u and flag(18) and cls in (432, 433):
+                # 0x0054E562..0x0054E5EF: class 432 (or 433, sub_00463900 returns the class itself) creates an object
+                # under it (SUnitCreate type 2, class 571 for 432): tools/objects.py's creation, not chained here
+                raise NotModelled("the object under class %d (MonStats2 flag 18)" % cls)
+        px = self.take("OPUX")
+        self.seeds(px, "OPUX")
+        self.guard_preset("placed" if u else "nothing placed")
+        if self.sci:
+            raise Mismatch("%d special-count increments not modelled" % len(self.sci))
+        return "preset class"
+
+    # sub_0054E600 0x0054E973..0x0054EA9D: MonPlace rows 17..32, the fixed-class table 0x0054EB74 (index row - 17)
+    FIXED = {17: (19, False), 18: (58, False), 22: (141, False), 23: (278, False), 29: (453, True),
+             30: (None, True), 31: (522, True), 32: (438, True)}      # class, mode 12
+
+    def fixed_row(self, d, row, x, y, mode, mt):
+        t = self.t
+        if row not in self.FIXED:
+            raise NotModelled("MonPlace row %d" % row)
+        cls, m12 = self.FIXED[row]
+        if row == 30:
+            cls = 529 if self.lid == 110 else 492            # 0x0054E9A7: neg/sbb on lid - 0x6E
+        if m12:
+            mode = 12
+        cls = self.level_class_variant(cls)
+        cls = self.fallen_variant(cls)
+        fl = 8 if t.ms[cls][0x0E] & F_NEVERCOUNT else 0
+        u = self.spawn_try(self.room, None, cls, mode, 0, x, y, -1, fl)
+        if not u:
+            u = self.spawn_try(self.room, None, cls, mode, 0, x, y, 4, fl)
+            self.guard_preset("MonPlace fixed row: retry with radius 4")
+        if u and cls == 438:
+            # 0x0054EA5F: Range(unit seed, 50) for the AI timer event (sub_005417D0), after the creation
+            self.units[u]["us"].rangeb(50)
+            self.guard_preset("MonPlace fixed row: reanimatedhorde3 Range(unit seed, 50)")
+        px = self.take("OPUX")
+        self.seeds(px, "OPUX")
+        self.guard_preset("MonPlace fixed row %d: %s" % (row, "placed" if u else "nothing placed"))
+        if self.sci:
+            raise Mismatch("%d special-count increments not modelled" % len(self.sci))
+        return "preset fixed row"
+
+    def level_class_variant(self, cls):
+        """sub_0063EC70_LevelClassVariant(room, class): with Levels +0x33 entries in the level's `mon` list (+0x36,
+        s16): the entry whose BaseId equals the class's BaseId; else from the BaseId record's NextInClass (+0x04), up to
+        MonStats +0x4A steps (MONSTATS_GetClassChainPos), each accepted while its Level (+0xAA) <= Levels +0x16 + 1."""
+        t = self.t
+        lv = t.lv[self.lid]
+        mon = t.pool.slots(self.lid, 0x36)        # Levels +0x36 `mon`, its count +0x33 filled at load
+        n = len(mon)
+        if n == 0:
+            return cls
+        base = t.m(cls, 0x02, "<h") if t.valid(cls) else cls
+        if not (0 <= base < len(t.ms)):
+            return cls
+        for e in mon:
+            eb = t.m(e, 0x02, "<h") if t.valid(e) else e
+            if eb == base:
+                return e
+        nxt = t.m(base, 0x04, "<h")
+        pos = self.chain_len(cls)                 # MonStats +0x4A, filled at load by sub_00651040_MonClassChain
+        lim = struct.unpack_from("<h", lv, 0x16)[0] + 1
+        cur = cls
+        for _ in range(pos):
+            if not (0 <= nxt < len(t.ms)):
+                return cur
+            if t.m(nxt, 0xAA, "<h") > lim:
+                return cur
+            cur = nxt
+            nxt = t.m(nxt, 0x04, "<h")
+        return cur
+
+    def chain_len(self, cls):
+        """sub_00651040_MonClassChain: the number of records on the BaseId -> NextInClass walk (<= 256 steps; the walk
+        ends on a record that is its own next or a negative next)."""
+        t = self.t
+        if not t.valid(cls):
+            return 0
+        sv = t.m(cls, 0x02, "<h")
+        k = 0
+        while True:
+            nx = t.m(sv, 0x04, "<h") if 0 <= sv < len(t.ms) else -1
+            k += 1
+            if sv == nx or k >= 0x100 or nx < 0:
+                break
+            sv = nx
+        return k & 0xFF
+
+    def fallen_variant(self, cls):
+        """sub_0054E2A0_PresetFallenVariant(class, level id)."""
+        t = self.t
+        base = t.m(cls, 0x02, "<h") if t.valid(cls) else cls
+        n = len(t.ms)
+        if base == 0x13:
+            if self.lid == 6:
+                return 0x14 if n > 0x14 else -1
+            if self.lid in (7, 12, 16):
+                return 0x15 if n > 0x15 else -1
+        elif base == 0x3A:
+            if self.lid in (6, 7):
+                return 0x3B if n > 0x3B else -1
+            if self.lid in (12, 16):
+                return 0x3C if n > 0x3C else -1
+        return cls
+
+    def guard_preset(self, k):
+        k = "preset monsters (class case): " + k
+        self.stats[k] = self.stats.get(k, 0) + 1
+
+    def snap(self):
+        return False        # no pass snapshot: the predicates go to the activation model (pred below)
+
+    def overlay(self):
+        """The activation model with the window's marks so far (the CM lines since the last pass entry, pre_cm) on
+        copies of the rooms' cells: the marks of the earlier preset monsters and objects of the window. The model
+        itself is left as it is (the pass's R3 comparison applies the window marks itself)."""
+        W = self.chk.world
+        key = (id(W.model), len(W.pre_cm))
+        if getattr(self.chk, "_ov_key", None) == key:
+            return self.chk._ov
+        maps = {r: collision.Map(m.x0, m.y0, m.w, m.h, list(m.c) if m.c is not None else None)
+                for r, m in W.model.items()}
+        for cm, _ln in W.pre_cm:
+            try:
+                W.apply_cm(cm, maps, W.model_near)
+            except collision.NotLogged:
+                pass
+        self.chk._ov_key, self.chk._ov = key, maps
+        return maps
+
+    def pred(self, name, logged, fn, need_snap=True):
+        W = self.chk.world
+        # the cell of the predicate (its MK0 / MC0 / MR0 / SPW0 line): when an activated room of this process (W.rects)
+        # holds the cell and the model has no cells for it, the model cannot answer
+        a = next((dd for tg, dd, _ in reversed(self.ev[:self.i]) if tg in ("MK0", "MC0", "MR0", "SPW0", "SPR0")), None)
+        if a is not None and "x" in a:
+            ov = self.overlay()
+            for r, (x0, y0, w, h) in W.rects.items():
+                if x0 <= a["x"] < x0 + w and y0 <= a["y"] < y0 + h and (r not in ov or ov[r].c is None):
+                    self.chk.oracle("presets window %s (the cell's room has no cells in the model)" % name)
+                    return logged
+        try:
+            maps = self.overlay()
+            W.maps_override, W.nears_override = maps, W.model_near
+            try:
+                v = fn()
+            finally:
+                W.maps_override = W.nears_override = None
+        except collision.NotLogged as e:
+            self.chk.oracle("presets window %s (model needs %s)" % (name, str(e).split(" of room")[0]))
+            return logged
+        except IndexError:
+            # a cell the copied map does not hold (the model's room list differs from the game's at this cell)
+            self.chk.oracle("presets window %s (the model holds no cell there)" % name)
+            return logged
+        self.eq(name + " (collision model, presets window)", logged, v)
+        k = "predicted by the collision model (presets window): " + name
+        self.stats[k] = self.stats.get(k, 0) + 1
+        return v
+
+
 class PresetPass(Pass):
     """Plan 0018: a special spawned in the presets window (RW1 -> RW2): a superunique (SU0 .. SUX) or a MonPlace 2 or 3
     preset (PM0 .. PMX). The room and game seeds are taken at the entry line (the window before it stays a seed
@@ -1313,9 +1532,14 @@ class Checker:
         # plan 0048 Phase 1, oracle 14: the unit seed at MU from Init(step(game).low), MonRegionFindAdd on the tracked
         # regions (tools/mon_sweep.py findadd, plan 0038 S3a) and MonStatsInit's draws (tools/monstats.py init_seed)
         self.msm = monstats.Model(monstats.Tables(excel))
+        self.n_super = len(read_bin(find_file(excel, "superuniques", ".bin"))[0])
         self.regions = {}             # (log, game, diff, exp) -> {level id: [[class, rarity, sets]]}, appends applied
         self.unit_seed_model = UNIT_SEED_MODEL
         self.game_L = GAME_L
+        self.opu_confirmed = set()    # plan 0048 oracle 16: (log, OPUX line) of every preset monster the model reached
+        self.opu_pending = None
+        self.game_de = {}             # log -> (difficulty, expansion) of its games (an input: the game's settings)
+        self.room_lid_cur, self.mt_room_cur, self.game_cur = {}, None, None
         self.obj_grid = {}            # plan 0027: tools/objects.py's grid-model counters over the logs
         self.obj_oracles = {}         # plan 0048: tools/objects.py's oracle counters over the logs
         # plan 0018
@@ -1374,6 +1598,33 @@ class Checker:
         self.ok(want == got, "%s: region of level %d at the pass entry %s, tracked model %s" % (P.path, reg["lid"], got, want))
         k = "region snapshots equal to the tracked region (FindAdd appends applied)"
         self.stats[k] = self.stats.get(k, 0) + 1
+
+    def note_unmodelled(self, path, mu, ln):
+        """A creation the model did not run (an MU line outside the modelled windows: a monster-spawning InitFn, an
+        operate spawn, a preset window kept as an oracle). Its FindAdd effect on the tracked region is applied with
+        the sets unknown, so that a later creation of the class is not mispredicted as an append."""
+        u = mu.get("unit")
+        if not u or u.get("type", 1) != 1 or not self.unit_seed_model or self.n_seed is None:
+            return
+        de = self.game_de.get(path)
+        lid = self.room_lid_cur.get(self.mt_room_cur)
+        if de is None or lid is None or self.game_cur is None:
+            self.oracle("creation outside the model with no level known (region not updated)")
+            return
+
+        class _P:
+            pass
+        P = _P()
+        P.path, P.game, P.diff, P.exp = path, self.game_cur, de[0], de[1]
+        reg = self.tracked_regions(P).setdefault(lid, [])
+        cls = u["cls"]
+        if cls in mon_sweep.FINDADD_NONE or any(e[0] == cls for e in reg) or len(reg) > 12:
+            return
+        m2 = self.t.pool.ms2rec(cls)
+        if m2 is None or m2[0xEC] <= 2:
+            return
+        reg.append([cls, 0, None])
+        self.oracle("region append by a creation outside the model (an MU line not in a modelled window; sets unknown)")
 
     def unit_seed(self, P, cls, us0, logged):
         """Oracle 14 retired: predict the unit seed SUnitCreate leaves (MU) and compare it with the log."""
@@ -1439,14 +1690,20 @@ class Checker:
                     pass
         self.seeds_used.add(n_seed)
         self.n_seed = n_seed
+        for tg, dd, _ln in lines:
+            if tg in ("P0", "SU0", "PM0") and "diff" in dd:
+                self.game_de[path] = (dd["diff"], dd["exp"])
+                break
         # plan 0023: logs written with tools/gdb/objects.gdb carry the objects window; tools/objects.py predicts it.
         # mon-spawn.py's RW lines carry "os" since plan 0023 whatever else is loaded, so the objects logger is known by
         # its OGC line (plan 0027 Phase 3: tools/gdb/mon-stats.gdb logs have "os" and no objects window)
         self.obj_pred = set()
+        self.obj_rw4_oracles = {}
         if has_ogc and any(tg == "RW1" and "os" in d for tg, d, _ln in lines):
             oc = objects.Checker(self.excel, self.root, False)
             oc.run(path)
             self.obj_pred = oc.pred_rw4
+            self.obj_rw4_oracles = oc.rw4_oracles
             # plan 0027: the objects window on the grid model (object marks and COLL_WHTest predicted by tools/objects.py)
             for k, v in oc.stats.items():
                 if k.startswith(("position tests predicted", "object marks", "gold-pile room tests", "marks applied from the log")):
@@ -1497,8 +1754,15 @@ class Checker:
         # second walk: the room driver and the passes (collision events go to the collision model in line order)
         W = self.world
         i = 0
+        self.room_lid_cur, self.mt_room_cur, self.game_cur = {}, None, None
         while i < len(lines):
             tag, d, ln = lines[i]
+            if "room" in d and "lid" in d and isinstance(d.get("room"), int):
+                self.room_lid_cur[d["room"]] = d["lid"]
+            if tag in ("MT0", "P0", "SU0", "PM0") and "game" in d:
+                self.game_cur = d["game"]
+            if tag == "MT0":
+                self.mt_room_cur = d["room"]
             if tag in collision.COLL_TAGS or tag == "RRESEED":
                 W.event(tag, d, ln, path)
             if tag == "RW0":
@@ -1529,6 +1793,14 @@ class Checker:
                 # plan 0023: tools/objects.py predicted this window (presets, restore, objects) from RW1
                 self.stats["presets / restore / objects window predicted by tools/objects.py"] = self.stats.get(
                     "presets / restore / objects window predicted by tools/objects.py", 0) + 1
+                # plan 0048: the window counts as predicted with no oracle inside when every oracle exit
+                # tools/objects.py took in it is one this checker predicted (a preset monster's OPUX)
+                left = [o for o in self.obj_rw4_oracles.get((path, ln), [])
+                        if not (o[0] == "OPUX" and (path, o[1]) in self.opu_confirmed)]
+                k = ("windows RW1 -> RW4 with no oracle left inside" if not left else
+                     "windows RW1 -> RW4 with an oracle left inside: " + ", ".join(sorted({
+                         "InitFn %d" % o[2] if o[0] == "OIX" else o[0] for o in left})))
+                self.stats[k] = self.stats.get(k, 0) + 1
                 self.room_e2e = bool(self.room_predicted and self.rw1_rs is not None)
                 if self.room_e2e:
                     self.rooms_e2e.append((path, self.rw0_line, self.rw0_room))
@@ -1585,6 +1857,19 @@ class Checker:
                             self.client.append((tg, dd, ll))
                 W.pass_end()
                 i = end
+            elif tag == "OPU0" and d["type"] == 1:
+                i = self.preset_monster(lines, i, path)
+                continue
+            elif tag == "OPU0" and d["type"] == 5:
+                i = self.preset_tile(lines, i, path)
+                continue
+            elif tag == "OPUX" and self.opu_pending is not None and self.opu_pending[0] == ln:
+                _l, f0, ok0 = self.opu_pending
+                self.opu_pending = None
+                if ok0 and self.fail == f0:
+                    self.opu_confirmed.add((path, ln))
+                    self.stats["preset monsters (special case): OPUX seeds equal to the special's exit"] = \
+                        self.stats.get("preset monsters (special case): OPUX seeds equal to the special's exit", 0) + 1
             elif tag in ("SU0", "PM0"):
                 # plan 0018: a special spawned in the presets window
                 close = "SUX" if tag == "SU0" else "PMX"
@@ -1615,12 +1900,110 @@ class Checker:
                 self.client.append((tag, d, ln))
             elif tag in ("MT0", "MTX", "MC0", "MC"):
                 self.window_cell_test(tag, d, ln, path)
+            elif tag == "MU":
+                self.note_unmodelled(path, d, ln)
             elif tag == "WND":
                 self.wnd(d)
             elif tag == "PDEAD":
                 self.fail_("%s:%d the dead type-1 branch ran" % (path, ln))
             i += 1
         self.client_check(path)
+
+    def preset_monster(self, lines, i, path):
+        """Plan 0048 oracle 16: a preset unit of type 1 in the presets window (OPU0 .. OPUX). A superunique (SU0 .. SUX)
+        or MonPlace 2 / 3 (PM0 .. PMX) inside is modelled by PresetPass; its entry and exit seeds must equal OPU0's
+        and OPUX's. A MonStats class runs PresetMonPass. A MonPlace row with no request inside must leave the seeds
+        alone. Returns the index after the window (or the next line, for the special case, whose lines the loop
+        walks). Each OPUX the model reached is added to opu_confirmed; tools/objects.py's windows whose every preset
+        monster OPUX is confirmed are counted as predicted with no oracle."""
+        tag, d, ln = lines[i]
+        end = i + 1
+        while end < len(lines) and lines[end][0] != "OPUX":
+            end += 1
+        if end >= len(lines):
+            self.oracle("preset monster window not closed in the log")
+            return i + 1
+        inner = lines[i + 1:end]
+        dx = lines[end][1]
+        sp = [x for x in inner if x[0] in ("SU0", "PM0")]
+        if sp:
+            s0 = sp[0][1]
+            closer = "SUX" if sp[0][0] == "SU0" else "PMX"
+            sx = [x for x in inner if x[0] == closer]
+            ok = (s0["rs"], s0["gs"]) == (d["rs"], d["gs"]) and len(sp) == 1 and len(sx) == 1 and \
+                (sx[0][1]["rs"], sx[0][1]["gs"]) == (dx["rs"], dx["gs"])
+            self.ok(ok, "%s:%d preset special: entry or exit seeds differ from OPU0 / OPUX" % (path, ln))
+            self.opu_pending = (lines[end][2], self.fail, ok)
+            return i + 1
+        if d["id"] >= len(self.t.ms) and not any(x[0] == "MT0" for x in inner):
+            self.ok((dx["rs"], dx["gs"]) == (d["rs"], d["gs"]), "%s:%d preset id %d placed nothing but moved a seed"
+                    % (path, ln, d["id"]))
+            self.opu_confirmed.add((path, lines[end][2]))
+            self.stats["preset monsters (MonPlace row or superunique, nothing placed): seeds unchanged"] = \
+                self.stats.get("preset monsters (MonPlace row or superunique, nothing placed): seeds unchanged", 0) + 1
+            self.skip_side(lines[i + 1:end + 1], path)
+            return end + 1
+        win = lines[i:end + 1]
+        P = PresetMonPass(self, win, self.t, path)
+        f0 = self.fail
+        try:
+            P.run()
+            rest = [w[0] for w in win[P.i:] if w[0] not in SIDE_TAGS]
+            self.ok(not rest, "%s:%d %d line(s) of the preset monster not consumed: %s" % (path, ln, len(rest), rest[:8]))
+            for tg, dd, ll in win[P.i:]:
+                if tg in SIDE_TAGS:
+                    P.side(tg, dd, ll)
+            if self.fail == f0:
+                self.opu_confirmed.add((path, lines[end][2]))
+                self.stats["preset monsters (class case) predicted OPU0 -> OPUX"] = \
+                    self.stats.get("preset monsters (class case) predicted OPU0 -> OPUX", 0) + 1
+        except NotModelled as e:
+            self.oracle("preset monster not modelled: %s" % e)
+            self.skip_side(win[P.i:], path)
+        except (Mismatch, collision.CollMismatch) as e:
+            self.fail_("%s:%d preset monster class %d level %d room %08x: %s" % (path, ln, d["id"], d["lid"], d["room"], e))
+            self.results["mismatch"] = self.results.get("mismatch", 0) + 1
+            self.skip_side(win[P.i:], path)
+        return end + 1
+
+    def preset_tile(self, lines, i, path):
+        """Plan 0048: a preset unit of type 5 (a tile unit) in the presets window: PresetUnitDispatch creates it with
+        SUnitCreate (rng/seeds 7a: one game-seed step, unit seed Init(low)); nothing else draws (the room and
+        object-region seeds are unchanged). OPUX must show exactly that."""
+        tag, d, ln = lines[i]
+        end = i + 1
+        while end < len(lines) and lines[end][0] != "OPUX":
+            end += 1
+        if end >= len(lines):
+            self.oracle("preset tile window not closed in the log")
+            return i + 1
+        dx = lines[end][1]
+        g = step(*seed_t(d["gs"]))
+        o = dx.get("o") or {}
+        ok = (dx["rs"] == d["rs"] and dx["gs"] == fmt(g) and o.get("us") == fmt((g[0], INIT_HIGH))
+              and not any(x[0] in ("MT0", "MU0") for x in lines[i + 1:end]))
+        self.ok(ok, "%s:%d preset tile unit %d: OPUX %s, model gs %s us %s" % (path, ln, d["id"], dx, fmt(g),
+                                                                                fmt((g[0], INIT_HIGH))))
+        if ok:
+            self.opu_confirmed.add((path, lines[end][2]))
+            self.stats["preset tile units (type 5): one game-seed step, unit seed Init(low)"] = \
+                self.stats.get("preset tile units (type 5): one game-seed step, unit seed Init(low)", 0) + 1
+        self.skip_side(lines[i + 1:end + 1], path)
+        return end + 1
+
+    def skip_side(self, win, path):
+        for tg, dd, ll in win:
+            if tg == "MT0":
+                self.mt_room_cur = dd["room"]
+                self.game_cur = dd.get("game", self.game_cur)
+            elif tg == "MU":
+                self.note_unmodelled(path, dd, ll)
+            if tg in collision.COLL_TAGS or tg == "RRESEED":
+                self.world.event(tg, dd, ll, path)
+            elif tg in CLIENT_TAGS:
+                self.client.append((tg, dd, ll))
+            elif tg in ("MT0", "MTX", "MC0", "MC"):
+                self.window_cell_test(tg, dd, ll, path)
 
     def window_cell_test(self, tag, d, ln, path):
         """plan 0038 batch H4b (spawn 42): a MonSpawnTry outside a pass (the presets window: DS1 preset monsters such

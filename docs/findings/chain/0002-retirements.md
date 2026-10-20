@@ -21,6 +21,11 @@ oracles still taken from the log.
   appended to the region by a preset monster (oracle 16) (§ 3). (fn:sub_00555230_SUnitCreate@0x00555230,
   fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0, fn:sub_00573CB0_MonStatsInit@0x00573CB0, run:2026-10-15-mon-stats,
   run:2026-10-15-objects)
+- [C] **Oracle 16 (the preset monsters of the presets window) is retired** except for 12 catapult windows: 299
+  class-case presets, 66 MonPlace fixed-row placements among them, 35 presets that place nothing, 11 superunique and
+  MonPlace 2/3 windows and 29 tile units are predicted from `OPU0` to `OPUX` on the 62 world logs, 0 mismatches; 1 236
+  of 1 265 objects windows now carry no oracle inside (§ 4). (fn:sub_0054E600_PresetMonSpawn@0x0054E600,
+  fn:sub_0054E490_PresetClassSpawn@0x0054E490, fn:sub_0063EC70_LevelClassVariant@0x0063EC70, run:2026-10-15-objects)
 - [C] **`tools/chain.py gen`** reproduces the seed tree the rng/seeds worked example logged from `-seed N` alone (game
   seed, the four game-creation draws, act bases, Act II tombs, level seeds) (§ 1). (fn:GAME_InitSeeds@0x0052C280,
   fn:DRLG_ActCreate@0x00642DA0, fn:DRLG_LevelCreate@0x00642AE0, run:2026-10-11-seed-tree)
@@ -87,13 +92,68 @@ records by `tools/mon_sweep.py`'s run table).
 - [I] `MonEquipInit` (oracle 13) is still not modelled: a class with an `oninit` MonEquip row keeps its unit seed from
   the log (0 such creations on these logs). (fn:sub_005D6B60_MonEquipInit@0x005D6B60)
 
+## 4. Oracle 16: the preset monsters of the presets window
+
+`tools/objects.py` takes the room, object-region and game seeds at the `OPUX` of every preset unit that is not an
+object. `tools/monspawn.py` now models each of those windows from the seeds at its `OPU0` (which `tools/objects.py`
+predicts and asserts) to its `OPUX` (which it asserts), so the objects window holds no oracle where both checks pass.
+`tools/objects.py` records, per window, the `OPUX` lines it took; `tools/monspawn.py` counts a window as having no
+oracle left when it predicted every one of them.
+
+- [C] **The class case**, `sub_0054E490_PresetClassSpawn` (called by `sub_0054E600_PresetMonSpawn` for an id below
+  `nMonStats`), read in the disassembly (0x0054E490–0x0054E5EF): class 434 starts one cell to the left and, when
+  `QUESTS_IsActive(game, 0x20)` is 0, takes mode 12; a class with MonStats2 flag 13 (`sub_004638A0_MonStats2FlagTest`,
+  byte `+0x05` bit 5) places nothing; the request flags are 8 when MonStats `+0x0E` & 4 (neverCount), else 0;
+  `SpawnAtPos(x, y, class, mode, −1, flags)`, and when it places nothing and `sub_0054E3A0_PresetRetryAllowed(class)`
+  is 1, the same with radius 4; after a placement, MonStats2 flag 18 with class 432 (object class 571 under it) or 433
+  creates an object. Predicted on the 62 world logs: 217 placed, 16 nothing placed, 16 refused by flag 13, 3 retries
+  with radius 4; each creation's unit seed and every draw of `MonSpawnTry` predicted (§ 3's model).
+  (fn:sub_0054E490_PresetClassSpawn@0x0054E490, fn:sub_004638A0_MonStats2FlagTest@0x004638A0,
+  fn:sub_005B2F20_SpawnAtPos@0x005B2F20, fn:QUESTS_IsActive@0x005444B0, run:2026-10-15-objects)
+- [I] `sub_0054E3A0_PresetRetryAllowed(class)` returns 0 for classes 229, 284–288, 392 and 393 (the byte table
+  `0x0054E3E0` over classes 229–393, two jump targets at `0x0054E3D8`) and 1 for every other class, out-of-range ids
+  included (the unsigned bound jumps to `mov eax, 1`). The 3 retries are of classes outside that list.
+  (fn:sub_0054E3A0_PresetRetryAllowed@0x0054E3A0)
+- [C] **The MonPlace fixed rows 17–32** (0x0054E973–0x0054EAA5): the class from the jump table `0x0054EB74` (17
+  class 19, 18 class 58, 22 class 141, 23 class 278, 29 class 453, 30 class 492, or 529 in level 110, 31 class 522,
+  32 class 438; rows 29–32 take mode 12), then `sub_0063EC70_LevelClassVariant` and `sub_0054E2A0_PresetFallenVariant`,
+  flags 8 when neverCount, `SpawnAtPos` with radius −1 then 4 (no retry test on this path), and class 438 draws
+  `Range(unit seed, 50)` after the creation. LevelClassVariant, read in the decompile: with no `mon` entries the class
+  is kept; else the level's `mon` entry whose BaseId equals the class's BaseId; else from the BaseId record's
+  NextInClass, up to the chain length (MonStats `+0x4A`, written at load by `sub_00651040_MonClassChain`) steps, each
+  accepted while its Level (`+0xAA`) is at most Levels `MonLvlEx` (`+0x16`) + 1. Predicted: 66 placements (rows 17,
+  18, 23, 29, 30, 31), the fallen and shaman variants of levels 5 and 76 among them. (fn:sub_0054E600_PresetMonSpawn@0x0054E600,
+  fn:sub_0063EC70_LevelClassVariant@0x0063EC70, fn:sub_00651040_MonClassChain@0x00651040,
+  fn:sub_0054E2A0_PresetFallenVariant@0x0054E2A0, run:2026-10-15-objects)
+- [C] A preset whose MonPlace row or superunique places nothing (no request in the window) leaves the room and game
+  seeds unchanged (35); a superunique or MonPlace 2/3 window (`SU0`/`PM0`, the plan 0018 model) has the `OPU0` seeds
+  at its entry and the `OPUX` seeds at its exit (11). A tile unit (preset type 5, 29) steps the game seed once and
+  gets `Init(low)` as its unit seed, with no other draw (rng/seeds 7a). (fn:sub_005557D0_PresetUnitDispatch@0x005557D0,
+  fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-15-objects)
+- [C] The window's position predicates (737 `CollisionTest`, 737 `SpawnClassCellTest`) are predicted on the
+  activation model with the window's marks so far (the earlier presets' and objects' `CM` lines) on a copy of the
+  cells; 15 whose cell lies in an activated room with no cells in the model are taken from the log and counted.
+  Controls (`--cf`, objects sessions 2, 4 and 7): `lcv-off` (no LevelClassVariant or PresetFallenVariant) 25
+  mismatches, `overlay-off` (no window marks) 19. (fn:sub_0064D9B0_CollisionTest@0x0064D9B0, run:2026-10-15-objects)
+- [I] **Left as oracles**: the 12 placements of classes 432 and 433, whose object (class 571 under 432) is created
+  inside the monster's window and belongs to `tools/objects.py`; the 3 `mode` values of class 434, taken from the
+  request because `QUESTS_IsActive(game, 0x20)` is quest state (an input). Correction to chain/0001 § 2 row 17:
+  InitFns 54 (7 calls) and 62 (4 calls) were reached on run:2026-10-15-objects; with InitFn 46 (16 calls) they are
+  the oracles left in 19 windows. (fn:OBJINIT_CityDamnedSpawns@0x005506D0, run:2026-10-15-objects)
+- [C] Creations the checker does not run (an `MU` line outside a modelled window: the InitFn spawns, the operate
+  spawns, the 12 catapult windows) now update the tracked region (90 appends, sets unknown), so the unit seeds of
+  later creations of those classes are not mispredicted; 34 such creations still take their unit seed from the log
+  (§ 3 had 122). (fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0, run:2026-10-15-objects)
+
 ## Kept outputs
 
 `workspace/logs/chain-p1/`, one path base, `manifest.txt` (`sha256sum -c manifest.txt` from that directory):
 `o2-items-check.txt` (`tools/chain.py check` over the 133 item logs), `o14-world-check.txt` (over the 62 world
-logs), `o14-cf-{findadd-none,monprop-off,L0}.txt` (the controls), and the input lists `inputs-world.sha256` and
+logs), `o14-cf-{findadd-none,monprop-off,L0}.txt` (the controls), `o16-world-check.txt` and
+`o16-cf-{lcv-off,overlay-off}.txt` (oracle 16), and the input lists `inputs-world.sha256` and
 `inputs-items.sha256` (paths relative to `chain-p1/`, so `sha256sum -c` runs from there too). The tool revisions
-behind these outputs are recorded in `tools-o14.sha256` (paths relative to the repository root).
+behind these outputs are recorded in `tools-o14.sha256` and `tools-o16.sha256` (paths relative to the repository
+root).
 
 ## Open questions
 
