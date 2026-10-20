@@ -259,3 +259,21 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   ([archive](../backlog/archive/2026-10-20-reverser-architect-lane-p46m2-review-plan-0046-batch-9b.md)); ledger rows
   added. **Batch 9c may start** (missile hit 1–29), with 9b's checker conventions (call site asserted, two controls per
   family) and the untouched-seed check added to the model wherever a family writes seeds it should not step.
+- **2026-10-20 — Phase 1 batch 9c landed for review (reverser, `lane/p46m3`, static, no harness).** Missile server
+  hit functions 1–29: 25 entries, all read ([skills/0006](../findings/skills/0006-missile-hit-1-29.md); hit 2, 3, 14,
+  17 tier A, 3, 14, 17 emulated too, 2 not). Draws before the boundaries: hits 1, 9, 13 roll the missile's `EType` on
+  its seed; hit 7's heal one `RNG_RangeB` (and the `MissileElemRoll` fallback) on the missile's seed; no other; no
+  case steps the owner's or the target's seed. Raised by emulation (run:2026-10-20-cat-emu-9c,
+  `tools/skills_catalogue_emu.py --batch 9c`): five families, 8 400 cases, 0 mismatches, the call site of every
+  boundary asserted (site control 3 941 of 3 941), two to six negative controls per family, **the three seeds
+  compared in every case** (the untouched-seed check of the `lane/p46m2` review, with a control on it) and the packet
+  or context behind a pointer argument compared by content. Returning paths `[C]`; the maps up to `AreaHitAt`,
+  `BuildDamage`, `MissileCreate`, `STATLIST_Alloc`, the flee call and the other boundaries `[C]` (ADR-0021), code
+  after them `[I]`. Surprises: hit 44 takes a negative `sHitPar1` as its radius and has no owner test; hit 7 heals
+  only the owner's pets (`TargetPet`) or allies, ending without damage, and passes through non-undead (4); hit 29
+  returns 2 (damage, flies on) until its frames run out; hits 16/19 apply the aura stats to the search's result, 0
+  for a new list; hit 21's state test admits the States count; hit 4 reads all four `HitSubMissile` slots (the
+  stride the table doc had as `[L]`). Corrections in skills/0003 § 6 (hits 2, 3, 14, 17, 22, 44). Review request
+  [to the architect](../backlog/2026-10-20-reverser-architect-lane-p46m3-review-plan-0046-batch-9c.md) (three
+  rulings: register values at a boundary, two weak controls, hit 2 unemulated); column readers
+  [to the archivist](../backlog/2026-10-20-reverser-archivist-plan-0046-9c-missiles-skills-column-readers.md).

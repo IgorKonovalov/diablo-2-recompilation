@@ -137,3 +137,68 @@ Plan 0045 Phase 2's harness runs: none yet. Plan 0046's emulated runs (ADR-0015)
   owner's and the decoy's seeds unchanged (270 of 270, `seeds-do30.txt`, from the kept `rabies.out`); objdump of do 28
   (0x005AFCAA–0x005AFD50), do 30 (0x005B0140–0x005B0187), damage 14 (0x005AD67C–0x005AD69E) and do 31's end code
   (0x005B0289–0x005B0336) in `objdump-spot.txt`. (fn:sub_005B0010_MissDo30Contagion@0x005B0010)
+
+## run:2026-10-20-cat-emu-9c
+
+- **Question:** (plan 0046 Phase 1, batch 9c) Do the missile server hit functions 1, 3 (and 44), 4, 7–10, 12–22 and
+  24–29 map their inputs (the missile's record, `MissileData` words, owner, hit unit, path, stat lists, state lists,
+  Skills and MonStats records and the seeds) to the result they return, or to the arguments, pointed-to bytes and
+  seed states at the call they end in, exactly as [skills/0006](0006-missile-hit-1-29.md) §§ 3–16 say, and do they
+  leave the owner's and the target's seeds as they were?
+- **Setup:** as run:2026-10-20-cat-emu-9b: Ghidra 12.1.2 p-code emulator on the pinned `game.exe` (lane copy
+  `GHIDRA_PROJ_DIR=workspace/ghidra-p46m3`, symbols replayed from `re/symbols.csv`, heap 3 GB, under
+  `systemd-run --user --scope -p MemoryMax=4G`), `re/ghidra_scripts/EmuBoundary.java` unchanged (`286393aa…`;
+  `EmuTrace.java` `3255db0c…`). No wine, nothing runs natively, no slot. Models, case writers and checks: the 9c
+  families of `tools/skills_catalogue_emu.py` (`412e3e5c…`; `tools/rng.py`, `tools/sweep_s4b.py`), which keep 9b's
+  call-site assertion and site control, run two to six negative controls per family, compare the missile's, the
+  owner's and the target's seeds in every case (written and dumped by every case; a control moves the missile's draws
+  to the owner's seed), and compare the bytes behind a boundary argument that points into the caller's frame (the
+  packet of `AreaHitAt` and `MISSILE_BuildDamage`, hit 20's context block). All inputs synthetic (stock parameter
+  values among them); every case-writer draw from `random.Random("cat9c-<family>")`. Files in
+  `workspace/logs/skills-cat-9c/`, `manifest.sha256` `343ef0d7…` (28 files: cases, memory specs, expected inputs,
+  outputs, the empty `.err` logs, `check.txt` `733ad44a…`, `static.txt` `1644c5cb…`, `rows.txt` `eaec0e1a…`);
+  `sha256sum -c manifest.sha256` from that directory passes. The same tool revision reproduces 9a's and 9b's
+  `check.txt` and `static.txt` byte for byte from their kept outputs, and its `cases --batch 9a` / `--batch 9b`
+  regenerate their 27 and 39 case, memory and expectation files byte for byte.
+- **Procedure:**
+  ```
+  D=workspace/logs/skills-cat-9c
+  python3 -I tools/skills_catalogue_emu.py cases --batch 9c
+  for f in area9c holy9c create9c state9c range9c; do
+    systemd-run --user --scope -q -p MemoryMax=4G env GHIDRA_PROJ_DIR=workspace/ghidra-p46m3 GHIDRA_HEADLESS_MAXMEM=3G \
+      tools/ghidra.sh emuboundary $D/$f.cases $D/$f.mem > $D/$f.out 2> $D/$f.err
+  done
+  python3 -I tools/skills_catalogue_emu.py check  --batch 9c > $D/check.txt
+  python3 -I tools/skills_catalogue_emu.py static --batch 9c > $D/static.txt
+  python3 -I tools/skills_catalogue_emu.py manifest --batch 9c --write
+  ```
+  Each memory spec points `g_pDataTables` at a scratch DataTables written one field per field read (Skills, States
+  count 190, ItemStatCost, MonStats as each family needs), names the boundaries (`observe`: 9b's and eleven more,
+  skills/0006 § 2) and guards the allocator and fatal-path entries; each case passes the hit unit on the stack and
+  dumps the three seeds.
+- **Observed** (`check.txt`):
+  ```
+  CAT9C area9c   cases=1800 match=1800 bad=0 neg=829 traced=30 undeclared=0 stopped=0
+  CAT9C holy9c   cases=1500 match=1500 bad=0 neg=218 traced=10 undeclared=0 stopped=0
+  CAT9C create9c cases=1800 match=1800 bad=0 neg=284 traced=8  undeclared=0 stopped=0
+  CAT9C state9c  cases=1800 match=1800 bad=0 neg=153 traced=30 undeclared=0 stopped=0
+  CAT9C range9c  cases=1500 match=1500 bad=0 neg=182 traced=74 undeclared=0 stopped=0
+  CAT9C static pins=26 pins_ok=26 ro_reads=6 table_entries=25
+  ```
+  8 400 cases. Every negative control fails (counts per control on its `negative control` lines, the weakest hit
+  29's `left > 0` with 4 and hit 7's undead mask with 8, each beside a stronger control on another claim); the site
+  control fails on all 3 941 matched boundary cases (27 `site` lines: function, boundary, return address); the
+  seed control fails on the 155 and 39 cases whose missile drew. Development runs before these files (outputs in the
+  session scratch, not cited): the first check found hit 44's EBX holding the y position (the model had the owner;
+  corrected), `0x005A8F20`'s jump table undeclared (declared), the States count missing from `holy9c`'s spec (hit 8's
+  `UNIT_HasState` read it; added), keys of JSON-loaded dicts read as integers in two models, and a decoy shared by
+  the owner's hash chain and hit 22's stored unit (the writer now keeps them apart); the outputs above are from the
+  final case files.
+- **Conclusion:** bit-exact reproduction (evidence rule 4, ADR-0015) of the hit functions' maps on returning cases
+  (`[C]`: hit 3 with a unit, 7's type tests, 8, 10, 27 and every refusal path), and of their maps up to their boundary
+  calls with the call site, the arguments, the pointed-to packet or context and all three seeds asserted (`[C]` under
+  [ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md); skills/0006 names each claim's boundary). The only
+  seed any case steps before a boundary is the missile's (hits 1, 9, 13 through the `EType` roll; hit 7's heal); no
+  case steps the owner's or the target's. Not covered: what any boundary callee does and everything after it; hit 2;
+  faults (`MonsterOwnerRef` without MonsterData, `GameFindUnit` with a type above 5); when the game runs these
+  functions or with which seed. (fn:sub_005A9FB0_MissHit07HolyBolt@0x005A9FB0, fn:sub_005AA650_MissHit10Guided@0x005AA650)

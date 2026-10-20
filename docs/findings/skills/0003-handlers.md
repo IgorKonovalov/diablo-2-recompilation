@@ -368,15 +368,15 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
 |---|---|---|---|---|
 | `firebolt` (58) | 1 | — | — | P1.2 § 4; `ExplosionMissile` `fireexplode` has no server reader (P1.2) |
 | `nova` (90), `frostnova` (119), `multipleshotarrow`/`bolt`, `firestorm` (457), `fistsoffirefirewall` (557) | 1 | — | — | P1.2 § 4 |
-| `howl` (148) | 1 | 17 `0x005AAFB0` | — | a monster target without `auratargetstate`, whose level is below `owner level + Param2 + lvl`, flees (`0x005DDD00`, the skill and its `0x004EFCB0` length); returns 0 (no damage, no end) |
+| `howl` (148) | 1 | 17 `0x005AAFB0` | — | a monster target without `auratargetstate`, whose level is below `owner level + Param2 + lvl`, flees (`0x005DDD00(owner; unit, skill, Param3 + (lvl−1)·Param4, Param5 + (lvl−1)·Param6)`, corrected by batch 9c below); returns 0 (no damage, no end) |
 | `plaguejavelin` (43) | 3 | 2 `0x005A9D80` | — | do 3 (P1.2); hit 2: `HitSubMissile1` (`plaguejavcloud`) by `sub_005A9370_MissSubRing16` from the hit unit (or the missile): every `sHitPar2`-th of 16 directions at velocity `Param1 · 128` of the sub-missile row, a second ring at every `sHitPar1`-th (none when 0) at `Param2 · 128`, `sHitPar3` loops; returns 3 (end, damage) |
 | `plaguejavcloud` (221) | 3 | — | — | do 3 |
 | `bomb in air` (385) | 1 | 36 `0x005ABF70` | — | at the end of life only (`unit` 0): `MissileCreateAt(HitSubMissile1 = bomb on ground)` at its position, the new missile's `+0x28` = its own; returns 1 |
-| `bomb on ground` (386) | 1 | 3 `0x005A9F90` | — | at the end only: hit 44 (`0x005A9E10`): `MISSILE_BuildDamage` (missile seed) and an area hit of radius `sHitPar1` (or `aurarangecalc`) with the row's `HitFlags`/`ResultFlags` (`sub_0056BAD0_AreaHitAt` → `AreaHitUnit` per unit: defence roll, damage) |
-| `meteorcenter` (101) | 1 | 14 `0x005AABB0` | — | the area hit as hit 44 with radius `sHitPar1` (0: `aurarangecalc`), then `HitSubMissile1` (`meteorfire`) by `sub_005AAA90_MissSubRing18` at every `sHitPar2`-th of 18 offsets (`0x006E2598`/`0x006E2550`) |
+| `bomb on ground` (386) | 1 | 3 `0x005A9F90` | — | at the end only: hit 44 (`0x005A9E10`): `MISSILE_BuildDamage` (missile seed) and an area hit of radius `sHitPar1` when non-zero (else `max(aurarangecalc, 1)`; no owner test; batch 9c below) with the row's `HitFlags`/`ResultFlags` (`sub_0056BAD0_AreaHitAt` → `AreaHitUnit` per unit: defence roll, damage) |
+| `meteorcenter` (101) | 1 | 14 `0x005AABB0` | — | with an owner, the area hit as hit 44 with radius `sHitPar1` when > 0 (else `max(aurarangecalc, 1)`), then `HitSubMissile1` (`meteorfire`) by `sub_005AAA90_MissSubRing18` at every `sHitPar2`-th of 18 offsets (`0x006E2598`/`0x006E2550`), range `Param3 + (lvl−1)·Param4` (batch 9c below) |
 | `meteorfire` (240) | 5 `0x005AE520` | — | 3 `0x005AD220` | do 5: marks `0x40` on its cell each frame (`COLL_SizeMark`), loops its frame counter `Unit+0x44` between `SubStart` and `SubStop` with one `RangeB(missile seed, SubStop − SubStart)` per loop, then do 1; damage 3: one inline step of the missile seed, `low & 0x7F < dParam1` sets packet result `0x4000` |
 | `firestormmaker` (458) | 23 `0x005AF790` | — | — | when the path flag `0x006505C0` (path `+0x34` bit 3) is set, `SubMissile1` (`firestorm`) at its position (flags 1, or 9 with `Param1` loops), then do 1 |
-| `fistoftheheavensdelay` (233) | 1 | 22 `0x005ADD20` | — | (not tier A; the correction) the unit stored at `MissileData+0x2C`, `BuildDamage`, `MissileApplyAndAc`, then `ForUnitsInRange` with callback `0x005AB630` (`HitSubMissile1` chain) |
+| `fistoftheheavensdelay` (233) | 1 | 22 `0x005ADD20` | — | (not tier A; the correction) the unit stored at `MissileData+0x28` (type) and `+0x2C` (guid; none: returns 0), `BuildDamage`, `MissileApplyAndAc`, then `ForUnitsInRange` with callback `0x005AB630` (`HitSubMissile1` chain) |
 | grim wards (250, 253, 256) | 14 | 27 `0x005ABA00` | — | hit 27 returns 1 (end, no damage); do 14 runs skill do 30 every 6 frames (§ 8) |
 
 - [I] As above (`MDO`/`MHIT`/`MDMG` lines of `handlers-scan.txt` give each function, `DRAW` its calls). The ring
@@ -388,6 +388,17 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
   (`[C]` under ADR-0021, accepted 2026-10-20, raised at the `lane/p46m2` review; the creation itself and do 1 after it
   not covered), and its test is `SubMissile1 != 0`, so a blank (−1) passes
   (run:2026-10-20-cat-emu-9b, [skills/0005 § 3, § 14](0005-missile-do-19-36-damage.md#3-do-21-23-26-32-one-sub-missile)).
+  *2026-10-20 (plan 0046 batch 9c), corrections to the rows above:* **hit 3** returns 0 for any unit (no record
+  test) and runs hit 44 only with unit 0 (`[C]`); **hit 44** takes any non-zero `sHitPar1` as its radius (a negative
+  one included; 0 gives `max(aurarangecalc, 1)`) and has no owner test, and builds the damage with
+  `MISSILE_BuildDamage(owner; m, 0, packet)` before any draw (`[C]` under ADR-0021, up to that call); **hit 14** needs
+  an owner (else 1), its radius is `sHitPar1 > 0 ? : max(aurarangecalc, 1)` (`[C]` under ADR-0021, up to
+  `BuildDamage`), and after the area hit (`[I]`) it passes `Param3 + (lvl−1)·Param4` to the 18-ring, which gives each
+  fire flags `0x8001` and that range; **hit 17**'s flee call is `0x005DDD00(owner; unit, skill, Param3 + (lvl−1)·Param4,
+  Param5 + (lvl−1)·Param6)`, two level-scaled values, not "its `0x004EFCB0` length" alone (`[C]` under ADR-0021, up to
+  that call); **hit 2** also returns 3 without a record or with `HitSubMissile1 < 0` (`[I]`); **hit 22** finds its unit
+  by `MissileData+0x28` (type) and `+0x2C` (guid) and returns 0 when there is none (`[C]`)
+  (run:2026-10-20-cat-emu-9c, [skills/0006 §§ 4, 11, 14, 16](0006-missile-hit-1-29.md#4-hit-13-hit-3--44-hit-14)).
 
 ### 7. Summons
 
