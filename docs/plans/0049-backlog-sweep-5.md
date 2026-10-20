@@ -102,3 +102,29 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-20 — Drafted (architect, `lane/plans45`).** Status `proposed`; three stale entries closed at the triage.
 - **2026-10-20 — Approved (owner, via the orchestrator).** Plans 0045–0049 and ADR-0020 approved as proposed; the run
   order of the [plans index](README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049) is the current queue.
+- **2026-10-20 — Phase 0 landed (archivist, `lane/p49a`).** Items 1–5 done, no harness, no Ghidra.
+  - **Register:** 16 plan 0042 Phase 2 recipes (`quest-tpc`; part 2's `quest-talk1`..`5`, `quest-talk1c`..`4c`,
+    `quest-orbwill`, `quest-death`; part 3's four `quest-p3*`) added to `tools/quest_saves.py` SET and EXPECT (rows
+    written from the run records; `check` 33 recipes 0 bad) and to `tools/test_d2s.py` `RECIPE_BASES`; the suite is
+    green again (45 tests OK; `test_every_recipe_has_a_base` passes with all 213 recipes registered).
+  - **Pins `[C]`:** today's build of each recipe equals the save the run installed: the 17 Phase 0/1 recipes and
+    `quest-tpc` against `loads.txt`'s built prefixes (18 of 18), part 2 and 3 against the `<log>.in.d2s` hashes of
+    their manifests (14 of 14 loaded). 32 pinned; `quest-talk2c` and `quest-talk3c` were never loaded and stay
+    unpinned.
+  - **Docs:** [d2s.md § Plan 0042 Phase 2 saves](../formats/d2s.md#plan-0042-phase-2-saves) (the loads' outcome, the
+    part 2 and 3 tables, the hashes); the two "not loaded" sentences above it updated.
+    [UniqueItems.md](../tables/UniqueItems.md) cites two `carry1` readers (`0x0055CA40` through the item-move gate, from
+    items/0010; `0x00575FA0` in `NPC_SellItem`, from items/0011, with the Annihilus sale `[C]`); the open question
+    keeps `lvl req` and a full xref of 0x006CE270.
+  - **Surprise:** the classic `quests: all` sets no Act V word (EXPECT's `ALL_C`); a second reader (`0x0055CA40`)
+    was already in items/0010, which the entry did not name.
+- **2026-10-20 — Phase 0 reviewed (architect, `lane/p49a` review): accept with fixes.** Re-run after merging `main`:
+  `test_d2s.py` 45 tests OK, `quest_saves.py check` 33 recipes 0 bad. Pins spot-checked: 10 hashes against
+  `quests2-manifest.sha256`, `quests3-manifest.sha256` and `loads.txt` (full-length matches for `quest-talk1` and
+  `quest-p3wpact`; `quest-talk2c`/`3c` in no manifest, as stated). The three `carry1` rows (Gheed's Fortune, Annihilus,
+  Hellfire Torch) recounted over the table; both readers resolve in `re/symbols.csv` and are tagged as their findings
+  tag them. The classic `quests: all` note is right: it is `tools/d2s.py`'s documented rule (words 28 and 35–40 only
+  in an expansion save), now said so. Fixes (4, made in the docs): d2s.md the written-back act bytes are
+  `[0x80 | act, 0, 0]`; the word-40 bit-10 join is in Normal, the played difficulty; the classic note attributed to
+  `d2s.py`'s keys; UniqueItems.md the gate refuses when another player of the game holds the copy too
+  (items/0010 § 5). Phase 0 done.

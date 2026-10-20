@@ -6,7 +6,7 @@ based_on:
   - docs/specs/monsters/special.md 2026-10-17
   - docs/specs/monsters/stats.md 2026-10-17
   - docs/specs/drlg/collision.md 2026-10-17
-  - docs/specs/drlg/lifecycle.md 2026-10-17
+  - docs/specs/drlg/lifecycle.md 2026-10-20
 ---
 
 # Monsters
