@@ -102,6 +102,29 @@ class Builders(unittest.TestCase):
         self.assertEqual(run([a, j("RNE", v=1, n=0, iseed="00000002:0000029a")])[0], 1)
 
 
+class Tors(unittest.TestCase):
+    def blk(self, exp, ms, sokr):
+        I = sweep_h2b.Items(sweep_h2b.EXCEL)
+        cls = next(i for i, r in enumerate(I.recs) if r["code"] == "qui")      # quilted armor, type tors
+        lines = [j("IC0", cls=cls, q=0, exp=exp, ilvl=10, seed="00000001:0000029a", start=1),
+                 j("SOK0", q=2, rfl=0, r44=0, seed="00000001:0000029a"), j("SOKM", ms=ms)]
+        if sokr:
+            lines.append(j("SOKR", r=50, seed="00000002:0000029a"))
+        return lines + [j("ICJ", q=2, seed="00000003:0000029a"), j("ICX", ret=0)]
+
+    def test_classic_reaching_the_test(self):
+        rc, out = run(self.blk(0, 2, False))
+        self.assertIn("reaching the tors test (SOKM ms > 0): yes, SOKR 0", out)
+
+    def test_classic_roll_is_bad(self):
+        rc, out = run(self.blk(0, 2, True))
+        self.assertNotEqual(rc, 0)
+
+    def test_expansion_control(self):
+        rc, out = run(self.blk(1, 2, True))
+        self.assertIn("control: expansion tors q2 past SOKM ms > 0, SOKR 1", out)
+
+
 class Sockets(unittest.TestCase):
     def ss(self, q, n, p, cap, qcap, qn, maxs, ncap, w):
         out = [j("SS0", ret=0x00556C61, it=5, n=n, cls=0, q=q), j("SSP", p=p, cap=cap), j("SSQ", cap=qcap, n=qn),

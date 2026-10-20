@@ -40,6 +40,14 @@ def classic_sweep(row, players=8, t=420):
             ("pilot", ["farm", "--sweep", "--time", str(t)] + NOVA + CLASSIC_WP, t + 60)]
 
 
+def exp_sweep(row, players=8, t=480):
+    """Expansion Normal (added after hell-c gave no ITEMS_SetSockets call): the Act I waypoint of the given row, /players
+    N, a Nova sweep: normal and superior drops of an expansion game (sockets 42 and 44; ethereal dur%, properties 24)."""
+    return [("players", players, 0),
+            ("pilot", ["wpchain", "--chain", "1,%d" % row, "--linger", "2"], 120),
+            ("pilot", ["farm", "--sweep", "--time", str(t)] + NOVA, t + 60)]
+
+
 def eldritch(t=300, players=8):
     """Hell: /players N, Frigid Highlands waypoint (tab 5 row 2), Eldritch the Rectifier's pack, then a sweep. (After
     hell-a died at /players 8: the other Hell sessions use /players 1; Eldritch's TC has NoDrop 0 either way.)"""
@@ -70,6 +78,9 @@ SESSIONS = {
     "hell-d": ("UniqNova", "uniques-hell", 3924, eldritch(players=1)),
     "hell-e": ("UniqNova", "uniques-hell", 3925, eldritch(players=1)),
     "hell-f": ("UniqNova", "uniques-hell", 3926, eldritch(players=1)),
+    # (added after hell-c) sockets 42 and 44, properties 24: expansion Normal sweeps of the Jail and the Catacombs
+    "exp-jail": ("UniqNova", "enter-normal", 3951, exp_sweep(7)),
+    "exp-cat": ("UniqNova", "enter-normal", 3952, exp_sweep(9)),
     # affixes 5, 19: row 62 on one rare jewel, 17 times
     "jewel": ("H2bJewel", "cube-enter-normal", 3931, cube_plan("h2bjewel.plan")),
     # affixes 13, 17, 21, 24; uniques-sets 35: row 62 on nine built rare classic throwing weapons (classic game)

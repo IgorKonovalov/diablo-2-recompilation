@@ -30,7 +30,8 @@ the other loggers, and checks, per log, in order:
            draws nothing (the next RNE of the same build, the second name scan, carries the same item seed); RBF counted per cause;
   classic  per classic creation of a stackable or Throwable weapon base (items/affixes C5a, R1), the builders entered
            (BLD) and the fallback helpers (FB) in order, and the quality at the join;
-  tors     classic body armour (type 3) at qualities 2-3: SOK0 followed by no SOKR draw;
+  tors     classic body armour (type 3) at qualities 2-3: SOK0 followed by no SOKR draw, and whether the case
+           reached the tors test (SOKM with ItemMaxSockets > 0); control: expansion body armour past SOKM > 0 draws;
   dur      superior ethereal creations with a func-13 slot: stat 73 h, the dur% roll d, stat 72; the code's order
            h + floor(h d / 100) and the other order floor((h - 1)(100 + d) / 100) + 1, and whether they differ;
   carriers the func 12, 23 and 24 slots of stock creations (plan 0038 inventory § 6, H2c).
@@ -162,7 +163,7 @@ def cmd_logs(ns):
         bld = {}           # thread -> builders entered since GQ0
         for k, (tag, d) in enumerate(L, 1):
             th = d.get("th", 1) if isinstance(d, dict) else 1
-            if tag in ("IC0", "ICJ", "ICX", "BLD", "FB", "SLOT", "ROLLR", "LX", "SOK0", "SOKR", "SOKX", "ETHX",
+            if tag in ("IC0", "ICJ", "ICX", "BLD", "FB", "SLOT", "ROLLR", "LX", "SOK0", "SOKM", "SOKR", "SOKX", "ETHX",
                        "MB0", "MBF", "RNE", "RBF", "APE", "APX"):
                 if tag == "IC0":
                     ic[th] = d
@@ -330,8 +331,20 @@ def cmd_logs(ns):
                     n0 = tags.count("SOK0")
                     nr = tags.count("SOKR")
                     S["classic tors q%s: SOK0 %d, SOKR %d" % (q, n0, nr)] += 1
+                    # the tors test (0x00556BEC-0x00556BFC) is reached only past ItemMaxSockets > 0 (0x00556B96):
+                    # SOKM (0x00556BA3) with ms > 0 marks a case where a roll without the test would have drawn
+                    ms = [d.get("ms") for t, d in blk if t == "SOKM"]
+                    S["classic tors q%s reaching the tors test (SOKM ms > 0): %s, SOKR %d" % (
+                        q, "yes" if any(m and m > 0 for m in ms) else "no", nr)] += 1
                     if nr:
                         bad.append("%s: classic tors %s drew a socket roll" % (os.path.basename(path), r["code"]))
+            elif not classic and I.tidx(cls) == 3:
+                # control: an expansion body armour past ItemMaxSockets > 0 draws the roll (SOKR)
+                q = next((d.get("q") for t, d in blk if t == "ICJ"), None)
+                if q in (2, 3):
+                    ms = [d.get("ms") for t, d in blk if t == "SOKM"]
+                    if any(m and m > 0 for m in ms):
+                        S["control: expansion tors q%s past SOKM ms > 0, SOKR %d" % (q, tags.count("SOKR"))] += 1
             q = next((d.get("q") for t, d in blk if t == "ICJ"), None)
             eth = any(t == "ETHX" and d["fl"] & 0x400000 for t, d in blk)
             mode = None
