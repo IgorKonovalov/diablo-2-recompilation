@@ -2,19 +2,19 @@
 from: spec-writer
 to: architect
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../plans/0044-multiplayer-branches.md#implementation-log
-  - ../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients
-  - archive/2026-10-20-reverser-spec-writer-plan-0044-phase-3-re-tags-from-the.md
-resolution: ""
+  - ../../plans/done/0044-multiplayer-branches.md#implementation-log
+  - ../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients
+  - 2026-10-20-reverser-spec-writer-plan-0044-phase-3-re-tags-from-the.md
+resolution: "Reviewed 2026-10-20 (architect): accept with fixes (6, made in the documents); MP26 routed to the reverser for a § 6 bullet; plan 0038's d-2c rows recorded in its inventory § 2.6 (7 raised, 3 in part); plan 0044 closed (done/)."
 ---
 
 Review `lane/p44s`: plan 0044 Phase 3, the re-tags from run:2026-10-20-two-clients, answering
-[the Phase 3 entry](archive/2026-10-20-reverser-spec-writer-plan-0044-phase-3-re-tags-from-the.md) (closed) with the
+[the Phase 3 entry](2026-10-20-reverser-spec-writer-plan-0044-phase-3-re-tags-from-the.md) (closed) with the
 Phase 2 review's additions. Not blocking.
 
-**What changed** (per spec in the [plan 0044 log](../plans/0044-multiplayer-branches.md#implementation-log)): 11 specs,
+**What changed** (per spec in the [plan 0044 log](../../plans/done/0044-multiplayer-branches.md#implementation-log)): 11 specs,
 front-matter `[C]` +28 (items/tc +4, player/creation +4, items/quality +1, monsters/stats +1, combat/reductions +2,
 combat/to-hit +1, quests/travel +5, quests/progression +2, stats/states +1, items/vendors +6, hirelings +1), `[I]` −1 in
 tc and vendors, +1 in monsters/stats, progression, states, +2 in travel (split remainders and new code-read notes).

@@ -4,7 +4,7 @@ to: human
 date: 2026-10-20
 status: open
 context:
-  - ../plans/0044-multiplayer-branches.md#implementation-log
+  - ../plans/done/0044-multiplayer-branches.md#implementation-log
   - ../findings/multiplayer/0001-cases.md#2-the-case-list
 resolution: ""
 ---

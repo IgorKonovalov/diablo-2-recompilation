@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, items/uniques-sets, items/properties, items/affixes, monsters/stats, save/d2s]
 consumed_by: [save/d2s, combat/to-hit, stats/aggregate]
-tags: {C: 85, I: 48, L: 1}
+tags: {C: 85, I: 49, L: 1}
 updated: 2026-10-20
 ---
 
@@ -539,7 +539,7 @@ J3. PLAYER_DeathExpLoss (character level lvl > 1):                       [I] (fn
       ; the level never drops
 J4. XP_PartyShare with n ≥ 2 members (alive, same level, distance² ≤ 6400, at most 8):   [C] for n = 2 (fn:XP_PartyShare@0x0057E6C0, fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0, 0x0057E736–0x0057E79D, run:2026-10-20-two-clients)
       total: i32 ← exp + ((n − 1) × exp × 89) ÷ 256
-      q: f32 ← (f32) (total ÷ Σ levels)                                    ; fild total, fidiv Σ levels, stored by fstp dword
+      q: f32 ← (f32) ((f64) total / (f64) Σ levels)                        ; real division, not ÷: fild total, fidiv Σ levels, rounded once to f32 by fstp dword
       for each member i in collection order:
         in_i: i32 ← trunc((f64) level_i × (f64) q)                         ; exact in f64, never rounded to f32; CRT_ftol2 truncates
         PLAYER_AddExperience(XP_Compute(in_i, level_i, mlvl))
@@ -554,9 +554,11 @@ Step notes:
 - J1. The `-act` grants run on game-made characters (no built save), through `PLAYER_AddExperience` and one
   `PLAYER_LevelUp` call each. [C] (fn:PLAYER_GrantLevel@0x0057EB10, run:2026-10-16-player)
 - J4. **The party share with two players.** In plan 0044's two-client run, 690 kills were logged, and the 649 with a
-  player killer and a complete log had every member set predicted from the logged positions: 385 shares to two members (alive, same level, d² ≤ 6400 of the credited player), and the
-  killer alone with the other member beyond 6400 (9 kills), in another level (106), dead (108) or not partied (42);
-  each of the 770 share inputs and 264 single inputs was predicted, and `player.py` reproduced every `XP_Compute`,
+  player killer and a complete log had every member set predicted from the logged positions: 385 shares to two members
+  (alive, same level, d² ≤ 6400 of the credited player), and the killer alone in the others, with the other member
+  beyond 6400, in another level, dead or not partied;
+  each of the 770 share inputs and 264 single inputs was predicted (the record's branch counts 9 + 106 + 108 + 42 sum to
+  265, one more than the single inputs; filed to the reverser), and `player.py` reproduced every `XP_Compute`,
   `AddExperience` and `LevelUp`. Scope: n = 2. [C] (fn:XP_PartyShare@0x0057E6C0,
   fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0, run:2026-10-20-two-clients,
   [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients))
@@ -566,6 +568,10 @@ Step notes:
   needs at most 31 significant bits, so the product is exact in f64: compute `trunc((f64) level_i × (f64) q_f32)`.
   98 inputs of the run separate this from an f32 product (exp 63, levels 81 and 81: 41, where an f32 product gives
   42). [C] (fn:XP_PartyShare@0x0057E6C0, fn:CRT_ftol2@0x00682FD0, run:2026-10-20-two-clients)
+- J4. `q` itself is the quotient rounded once to the nearest f32: the `fidiv` result is rounded to the x87 precision
+  and the `fstp dword` rounds it to f32, and at 24-, 53- or 64-bit precision that equals one rounding of the exact
+  quotient (an f64 or wider intermediate has at least 2 × 24 + 2 bits), so the f64 division then the f32 cast above
+  gives the game's `q`. [I] (fn:XP_PartyShare@0x0057E6C0, 0x0057E754–0x0057E75D)
 - J4. The distance bound is bracketed, not met at its edge: 5 of the 9 kills beyond it were within 800 of 6400, and
   no kill inside it came that close. More than two members and the cap at 8 need a third client. [I]
   (fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0)

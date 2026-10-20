@@ -297,7 +297,8 @@ Step notes:
 - C2. [C] **A player leaving the game, with two players.** In the two-client run the joiner left from the Rogue
   Encampment (a) with the host in town: `townEmpty` 0, and only Gheed's store (built 351.6 s earlier) was marked stale,
   Akara's and Charsi's kept; (b) with the host in the Blood Moor: `townEmpty` 1, and the three built stores were reset.
-  A leave from Harrogath, in two sessions, called no `NPCSTORE_ActStale`. Scope: the leaves of (a) and (b) were
+  A leave from Harrogath, in two sessions, logged no `NPCSTORE_ActStale` call from `TownPlayerRemove` (no stale line
+  with the return 0x005375FC). Scope: the leaves of (a) and (b) were
   connection drops (the joiner's process stopped) and Harrogath's were *Save and Exit*; whether both paths take the same
   removal call is not logged. (fn:sub_00537580_TownPlayerRemove@0x00537580, fn:NPCSTORE_ActStale@0x00537230,
   0x005375FC, run:2026-10-20-two-clients, [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients))

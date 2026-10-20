@@ -71,7 +71,7 @@ named again with the reason it cannot be staged on stock data.
   - stats: 50 shrine or well operates over the combat and stamina shrines, the re-arm and a well's cure; 50 aura on
     and off events; 300 expiries in total with the kept run; 20 different-state `group` clears; the curse resistance
     cut; 30 curses refused on a target in `attract` (Phase 1 review: a Necromancer's own Attract, then another curse on
-    the same monster; open wounds on the player moved to plan [0044](0044-multiplayer-branches.md));
+    the same monster; open wounds on the player moved to plan [0044](done/0044-multiplayer-branches.md));
   - travel (after 0042 closes, if still short): 20 waypoint activations from mode 0, with the object-seed draw
     chained (ADR-0014).
 
@@ -204,7 +204,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     review's `grep -l -w -i 'res-mag\|magicresist'` over the excel tables gives only `itemstatcost`, `properties`
     and `cubemain`, and the one cube row is the Safety Shield craft's `res-mag` 5–10): the cap stays `[I]`, named in
     Phase 3 as unreachable on stock data, homed nowhere. *Open wounds on the player*: accepted, moved to plan
-    [0044](0044-multiplayer-branches.md) (log entry there; it needs hostility, as plan 0044's hostility case from plan 0042 does).
+    [0044](done/0044-multiplayer-branches.md) (log entry there; it needs hostility, as plan 0044's hostility case from plan 0042 does).
     *Attract*: not a shortfall; Phase 2's first step, before its first game, adds a Necromancer recipe with Attract
     and one other curse (tool-built, ADR-0013 § Neutral, pinned in `tools/test_d2s.py`), a session that casts Attract
     and then the other curse on the same Normal monster, the `stats_sessions.py check` dry run, and counts the `STA`

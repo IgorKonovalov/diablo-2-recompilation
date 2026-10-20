@@ -4,7 +4,7 @@ to: reverser
 date: 2026-10-17
 status: done
 context:
-  - ../../plans/0044-multiplayer-branches.md#implementation-log
+  - ../../plans/done/0044-multiplayer-branches.md#implementation-log
   - ../../findings/multiplayer/0001-cases.md
 resolution: "(1) the driver's live test passed as Phase 2's first step (six steps, four positions measured) and (5) the no-root ufw re-read with the rule-file hashes ran before every session, all unchanged: run:2026-10-20-two-clients ([record](../../findings/multiplayer/experiments.md#run2026-10-20-two-clients)); (2)-(4) done at lane/rbs2."
 ---

@@ -86,7 +86,7 @@ events (quest words written, quest gates) is [quests/progression](progression.md
 | the collision grid around a search | input (logged) | [drlg/collision](../drlg/collision.md)'s grid; the search reads it | [C] (run:2026-10-17-quests: 545 searches) |
 | a level or act built on first arrival, a room activated by the lookup | DRLG oracle | its draws are [drlg](../drlg/README.md)'s and [drlg/collision § I](../drlg/collision.md#i-nearwarptestgame-room-x-y-and-its-side-effects)'s | [I] (fn:sub_0053AC70_ActCreate@0x0053AC70, fn:sub_0066B2B0_LevelPointFind@0x0066B2B0) |
 | the town room's population when a portal's town end first updates it | boundary oracle (ADR-0004) | game-seed draws between the two portal creations | [C] (run:2026-10-17-quests: 41 draws in 9 opens) |
-| party membership, hostility, a second player's portal | input | two-client cases, [plan 0044](../../plans/0044-multiplayer-branches.md) | [C] for hostility (run:2026-10-20-two-clients); [I] for the party and quest-word tests (fn:OBJOP_Portal@0x00584870) |
+| party membership, hostility, a second player's portal | input | two-client cases, [plan 0044](../../plans/done/0044-multiplayer-branches.md) | [C] for hostility (run:2026-10-20-two-clients); [I] for the party and quest-word tests (fn:OBJOP_Portal@0x00584870) |
 
 ## Algorithm
 
@@ -545,7 +545,7 @@ Step notes:
 - G3. [C] **A hostile operator is refused on another player's portal before the gate**: the hostile joiner's click on
   the host's portal was refused with no gate compare, while the hostile host's use of its own portal went on to the
   gate. (0x0058488F, 0x00535B10–0x00535B44, run:2026-10-20-two-clients)
-- G3. [I] The party and quest-word tests need a second player ([plan 0044](../../plans/0044-multiplayer-branches.md)).
+- G3. [I] The party and quest-word tests need a second player ([plan 0044](../../plans/done/0044-multiplayer-branches.md)).
   The stock `QuestFlag`/`QuestFlagEx` values: level 39 26 / 40; 46 and 66–73 13; 50–54 and 74 11; 100–102 21;
   128–132 39. The owner, and anyone using the owner's own end, is not tested. (fn:OBJOP_Portal@0x00584870 0x005849BB–0x00584A20,
   tbl:Levels.txt:QuestFlag, tbl:Levels.txt:QuestFlagEx)

@@ -4,7 +4,7 @@ to: archivist
 date: 2026-10-17
 status: done
 context:
-  - ../../plans/0044-multiplayer-branches.md
+  - ../../plans/done/0044-multiplayer-branches.md
 resolution: "Done in [d2s.md § Two-client pairs](../../formats/d2s.md#two-client-pairs) (lane/arc6): mp-pvp-host + mp-pvp-join, level 80, life 8000, Nova 1, no gear; check bounds 200 events at 17 %; 27 recipes, 18 pairs."
 ---
 

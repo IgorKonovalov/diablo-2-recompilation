@@ -29,7 +29,7 @@ below.
 
 Not covered: the quest drops, rewards and item services ([items/quest-drops](../items/quest-drops.md)), the dialogue
 text and the quest log's presentation, the AI and combat that decide when a boss dies (inputs here). The two-client
-cases are [plan 0044](../../plans/0044-multiplayer-branches.md)'s; its run reached the Den's party credit
+cases are [plan 0044](../../plans/done/0044-multiplayer-branches.md)'s; its run reached the Den's party credit
 ([progression § Word 1](progression.md#word-1-the-level-8-monster-region-and-the-hell-respec-offer-quest-object-1)),
 hostility and the two gates with a declared stamp ([travel § J](travel.md#j-operate-gates-and-real-time-gates)).
 

@@ -502,8 +502,8 @@ portal use 5 seconds after a time stamp. The stamp is written only when a player
 player it stayed 0 and both gates always passed (confirmed for one client). In a two-client game a declaration wrote
 the stamp, and both gates refused inside their wait and passed after it, so the community's single 10-second delay
 holds for waypoints but not for portals (confirmed). The declaration also starts a 60-second wait before the same pair
-can declare again (confirmed). It needs both players at level 9 or more, and the game client sends it only from a
-town (both read from the code; the client's refusal outside town was seen). Withdrawing hostility left the stamp
+can declare again (confirmed). By the code it needs both players at level 9 or more and the declarer in a town; the
+game client itself refuses to send it outside town, which was seen, so the server's own town check was not reached. Withdrawing hostility left the stamp
 alone in the one case tried. While the act-change block is set, or the
 player is talking to an NPC or holds an item on the cursor, no object can be operated; that is read from the code.
 
