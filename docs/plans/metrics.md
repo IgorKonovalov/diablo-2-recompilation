@@ -138,6 +138,9 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-19 | `lane/p43b` review | 0043 P2b | architect-review | 156 950 | 68 | 14 | — | gave accept with fixes | — (on the lane row) |
 | 2026-10-19 | `lane/p43t` | 0043 P2b re-tag and wiki | spec-writer | 185 413 | 61 | 17 | no slot | accept with fixes | 4: overclaim 2, omission 1, stale cross-reference 1 |
 | 2026-10-19 | `lane/p43t` review | 0043 P2b re-tag and wiki | architect-review | 133 311 | 37 | 9 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/p42r` (part 3) | 0042 P2 part 3 | reverser-harness | 631 158 | 559 | 101 | slot 2 | accept with fixes | 3: overclaim 1, stale cross-reference 1, tool not kept 1 |
+| 2026-10-20 | `lane/p42r` (part 3) review | 0042 P2 part 3 | architect-review | 131 012 | 55 | 11 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/c43` | 0043 close | architect | 88 624 | 30 | 7 | no slot | — (bookkeeping, merged directly) | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

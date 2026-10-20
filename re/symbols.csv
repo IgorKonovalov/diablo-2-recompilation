@@ -292,8 +292,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00543D80,func,QUESTS_RaiseItemPlaced,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00543DB0,func,QUESTS_RaiseItemDropped,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00543DE0,func,QUESTS_RaiseUnitEvent6,,I,quests/progression,docs/findings/quests/0001-progression.md
-0x00543E10,func,QUESTS_TimersRun,,I,quests/progression,docs/findings/quests/0001-progression.md
-0x00543F10,func,QUESTS_TimerAdd,,I,quests/progression,docs/findings/quests/0001-progression.md
+0x00543E10,func,QUESTS_TimersRun,,C,quests/progression,docs/findings/quests/0001-progression.md
+0x00543F10,func,QUESTS_TimerAdd,,C,quests/progression,docs/findings/quests/0001-progression.md
 0x00543F90,func,QUESTS_DefaultLogState,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00544160,func,sub_00544160_PlayerRemoveItemByCode,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00544190,func,QUESTS_SendLogState,,I,quests/progression,docs/findings/quests/0001-progression.md
@@ -306,6 +306,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00544590,func,QUESTS_NpcHasQuest,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00544720,func,sub_00544720_GameQuestSet,,I,items/cube,docs/findings/items/0008-cube.md
 0x00544760,func,sub_00544760_GameQuestGet,,I,items/cube,docs/findings/items/0008-cube.md
+0x00544840,func,sub_00544840_QuestsItemUseCode,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005449D0,func,sub_005449D0_JoinMarkFlagClear,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005449E0,func,QUESTS_ObjectEvent,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00544E80,func,sub_00544E80_A3Q4_FigurineArmHook,,I,quests/progression,docs/findings/quests/0001-progression.md
@@ -943,7 +944,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00592D50,func,sub_00592D50_A1Q4_TristramPortalTimer,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00592E20,func,sub_00592E20_A1Q4_ItemEvent,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00592E60,func,sub_00592E60_A1Q4_Event6,,I,quests/progression,docs/findings/quests/0001-progression.md
-0x00592E90,func,sub_00592E90_A1Q4_StoneOrderDraw,,I,quests/progression,docs/findings/quests/0001-progression.md
+0x00592E90,func,sub_00592E90_A1Q4_StoneOrderDraw,,C,quests/progression,docs/findings/quests/0001-progression.md
 0x00592F80,func,sub_00592F80_A1Q4_StoneDummyHook,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00592FB0,func,sub_00592FB0_A1Q4_NpcGate,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005930B0,func,sub_005930B0_A1Q4_PartyCreditMember,,I,quests/progression,docs/findings/quests/0001-progression.md
@@ -956,7 +957,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005936B0,func,sub_005936B0_A1Q4_StonePartyBit4,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00593710,func,sub_00593710_A1Q4_StoneOperate,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00593AF0,func,sub_00593AF0_A1Q4_InifussDrop,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
-0x00593CB0,func,sub_00593CB0_A1Q4_SendStoneOrder,,I,quests/progression,docs/findings/quests/0001-progression.md
+0x00593CB0,func,sub_00593CB0_A1Q4_SendStoneOrder,,C,quests/progression,docs/findings/quests/0001-progression.md
 0x00593D70,func,sub_00593D70_A1Q4_ChainNext,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00593E30,func,sub_00593E30_A1Q4_CowLevelCredit,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00593E70,func,sub_00593E70_A1Q4_CowKingDeath,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
@@ -1020,7 +1021,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00596DE0,func,sub_00596DE0_A1Q4_LevelChange,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00597030,func,sub_00597030_A1Q4_FirstJoin,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005971B0,func,sub_005971B0_A1Q4_Init,,I,quests/progression,docs/findings/quests/0001-progression.md
-0x00597310,func,sub_00597310_A1Q4_FailOnActLeave,,I,quests/progression,docs/findings/quests/0001-progression.md
+0x00597310,func,sub_00597310_A1Q4_FailOnActLeave,,C,quests/progression,docs/findings/quests/0001-progression.md
 0x005973F0,func,sub_005973F0_ItemFlagUpdateSend,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x005984C0,func,sub_005984C0_A2Intro_NpcTalk,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005985B0,func,sub_005985B0_A2Intro_LogState,,I,quests/progression,docs/findings/quests/0001-progression.md
@@ -1130,8 +1131,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0059EA20,func,sub_0059EA20_A2Q2_ItemLeave,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0059EB00,func,sub_0059EB00_A2Q2_Init,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0059EBE0,func,sub_0059EBE0_A2Q3_NpcMessage,,I,quests/progression,docs/findings/quests/0001-progression.md
-0x0059ED80,func,sub_0059ED80_A2Q3_EclipseTimer,,I,quests/progression,docs/findings/quests/0001-progression.md
-0x0059EDC0,func,sub_0059EDC0_A2Q3_EclipseArm,,I,quests/progression,docs/findings/quests/0001-progression.md
+0x0059ED80,func,sub_0059ED80_A2Q3_EclipseTimer,,C,quests/progression,docs/findings/quests/0001-progression.md
+0x0059EDC0,func,sub_0059EDC0_A2Q3_EclipseArm,,C,quests/progression,docs/findings/quests/0001-progression.md
 0x0059EE00,func,sub_0059EE00_A2Q3_LevelChange,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0059EEA0,func,sub_0059EEA0_A2Q3_Init,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0059EF70,func,sub_0059EF70_A2Q4_JerhynMove,,I,quests/progression,docs/findings/quests/0001-progression.md
@@ -1420,8 +1421,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005BD260,func,sub_005BD260_A3Q7_SetSeen,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005BD2C0,func,sub_005BD2C0_A3Q7_FirstJoin,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005BD300,func,sub_005BD300_A3Q7_Init,,I,quests/progression,docs/findings/quests/0001-progression.md
-0x005BD390,func,sub_005BD390_A3Q7_AfterglowTimer,,I,quests/progression,docs/findings/quests/0001-progression.md
-0x005BD4A0,func,sub_005BD4A0_A3Q7_TimerStart,,I,quests/progression,docs/findings/quests/0001-progression.md
+0x005BD390,func,sub_005BD390_A3Q7_AfterglowTimer,,C,quests/progression,docs/findings/quests/0001-progression.md
+0x005BD4A0,func,sub_005BD4A0_A3Q7_TimerStart,,C,quests/progression,docs/findings/quests/0001-progression.md
 0x005BD500,func,sub_005BD500_A3Q2_NpcGate,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005BD630,func,sub_005BD630_A3Q2_NpcTalk,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005BD850,func,sub_005BD850_A3Q2_LogState,,I,quests/progression,docs/findings/quests/0001-progression.md
