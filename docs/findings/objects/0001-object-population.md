@@ -1150,6 +1150,18 @@ Static: objdump scans of the whole image. No game run.
   the `OD` watchpoint shows two lines for the three steps of a walk step (0x005508EC–0x00550928). The model that
   stores every step fails (`tools/chain.py check --cf i46-stored`, 10 mismatches). (0x005508EC, run:2026-10-15-objects)
 
+## Plan 0048 Phase 1: the gold piles' items modelled (2026-10-20)
+
+The gold drop of `InitFn` 28 (oracle 7 of [chain/0001](../chain/0001-oracles.md)) is now modelled by
+`tools/objects.py gold_drop`; record: [chain/0002 § 9](../chain/0002-retirements.md#9-oracle-7-the-gold-piles-items).
+
+- [C] Each gold drop creates one item (type 4, class 523, mode 3) with two game-seed steps and the unit seed
+  `Init(low)` of the first, marks its cell with `0x200` and draws nothing on the object-region seed: 71 of 71 on
+  run:2026-10-15-objects. (fn:sub_00559300_DropGoldPile@0x00559300, run:2026-10-15-objects)
+- [I] Its cell: `(px + 2, py + 3)` when a room holds it, else `(px, py)`, then `sub_0064E810_FreeNearPair` (masks
+  `0x3E01`, `0x801`); predicted for 69 of 71 on the grid model, 2 disagree. (fn:sub_0064E810_FreeNearPair@0x0064E810,
+  run:2026-10-15-objects)
+
 ## Data touched
 
 - Levels: `tbl:Levels.txt:ObjGrp0` and `tbl:Levels.txt:ObjPrb0` (`..7`, `+0x0E5`, `+0x0ED`), `tbl:Levels.txt:Themes`

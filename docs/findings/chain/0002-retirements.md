@@ -42,6 +42,10 @@ oracles still taken from the log.
 - [C] **Oracle 21 (another room's seed in a pass) is retired**: the seed is the chain's state for that room (its
   predicted activation seed, or its seed after its last pass); both calls of the world logs predicted (§ 8).
   (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, run:2026-10-14-collision)
+- [C] **Oracle 7 (the gold piles' items) is retired** in its seeds and marks: each of the 71 gold drops of `InitFn` 28
+  is now created by the model (two game-seed steps, the item's unit seed, its `0x200` mark, no object-region draw);
+  the drop spot is predicted for 69 of 71 and taken from the log for 2, where the model disagrees (§ 9).
+  (fn:sub_00559300_DropGoldPile@0x00559300, fn:OBJINIT_GoldPiles@0x0054F8C0, run:2026-10-15-objects)
 - [C] **`tools/chain.py gen`** reproduces the seed tree the rng/seeds worked example logged from `-seed N` alone (game
   seed, the four game-creation draws, act bases, Act II tombs, level seeds) (§ 1). (fn:GAME_InitSeeds@0x0052C280,
   fn:DRLG_ActCreate@0x00642DA0, fn:DRLG_LevelCreate@0x00642AE0, run:2026-10-11-seed-tree)
@@ -240,15 +244,38 @@ oracle left when it predicted every one of them.
   so the requests read a seed the earlier pass of that room had moved. (run:2026-10-14-collision; output
   `o21-cf-state-stale.txt`)
 
+## 9. Oracle 7: the gold piles' items
+
+- [I] `sub_00559300_DropGoldPile`, read in the decompile: the item level is `LevelMonLvl(level, difficulty,
+  expansion)` − 1 when above 1; the start cell is `(px + 2, py + 3)` when `RoomAtSubtile` finds a room there, else
+  `(px, py)`; `sub_0064E810_FreeNearPair(room, start, size 1, masks 0x3E01 and 0x801)` gives the spot; then
+  `ItemCreate` of `gld` in mode 3 at the spot, and the item flag `0x2000`. (fn:sub_00559300_DropGoldPile@0x00559300,
+  fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0, fn:sub_00463740_RoomAtSubtile@0x00463740, fn:sub_0064E810_FreeNearPair@0x0064E810,
+  fn:sub_00558D90_ItemCreate@0x00558D90)
+- [C] `tools/objects.py gold_drop` replaces the plan 0023 seed oracle (`OGP0` → `OGPX`): for all 71 drops of the 29
+  objects logs the item's `SUnitCreate` (type 4, class 523, flags 1, mode 3) steps the game seed twice and gets the unit
+  seed `Init(low)` of the first step (rng/seeds 7a), its mark is `RO 1 × 1` mask `0x200` at the spot, and the
+  object-region seed does not move; all compared, 0 mismatches. (fn:sub_00559300_DropGoldPile@0x00559300,
+  fn:sub_00555230_SUnitCreate@0x00555230, fn:UNIT_CollMarkRect@0x00620A70, run:2026-10-15-objects)
+- [I] The spot: 49 drops land on a start cell the grid model finds free; 20 on the cell `COLL_FindFreeNear`'s ring
+  (`tools/quests.py free_near`, quests/0002 § 4) gives on the grid model, a cell counted blocked when `COLL_WHTest`
+  1 × 1 with either mask is not 0. Two disagree (objects session 29 line 19985: the model finds the start cell free and
+  the game moved the pile one cell; one ring answer elsewhere); the second mask's exact role and `FreeNearPair`'s
+  other argument are not read. There the spot is taken from the log and counted, and its window now counts as holding an oracle: 1 253 of
+  1 265 windows have none left (§ 6 had 1 255 before the gold drops were followed into). (fn:COLL_FindFreeNear@0x0064DEA0,
+  run:2026-10-15-objects)
+- [I] The gold amount draws on the item's own seed, which these logs do not log; it is items/economy's.
+  (fn:sub_00559300_DropGoldPile@0x00559300)
+
 ## Kept outputs
 
 `workspace/logs/chain-p1/`, one path base, `manifest.txt` (`sha256sum -c manifest.txt` from that directory):
 `o2-items-check.txt` (`tools/chain.py check` over the 133 item logs), `o14-world-check.txt` (over the 62 world
 logs), `o14-cf-{findadd-none,monprop-off,L0}.txt` (the controls), `o16-world-check.txt` and
 `o16-cf-{lcv-off,overlay-off}.txt` (oracle 16), `o17-world-check.txt` and `o17-cf-i46-stored.txt` (oracle 17), `o22-world-check.txt` (oracle 22), `o19-world-check.txt` (oracle 19), `o21-world-check.txt` and
-`o21-cf-state-stale.txt` (oracle 21), and the input lists `inputs-world.sha256` and
+`o21-cf-state-stale.txt` (oracle 21), `o7-world-check.txt` (oracle 7), and the input lists `inputs-world.sha256` and
 `inputs-items.sha256` (paths relative to `chain-p1/`, so `sha256sum -c` runs from there too). The tool revisions
-behind these outputs are recorded in `tools-o14.sha256`, `tools-o16.sha256`, `tools-o17.sha256`, `tools-o22.sha256`, `tools-o19.sha256` and `tools-o21.sha256` (paths relative to the repository
+behind these outputs are recorded in `tools-o14.sha256`, `tools-o16.sha256`, `tools-o17.sha256`, `tools-o22.sha256`, `tools-o19.sha256`, `tools-o21.sha256` and `tools-o7.sha256` (paths relative to the repository
 root).
 
 ## Open questions

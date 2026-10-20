@@ -192,7 +192,7 @@ def check_items(path, ns, R):
 WORLD_PRED = ("unit seeds after SUnitCreate predicted", "region snapshots equal to the tracked region",
               "presets / restore / objects window predicted by tools/objects.py", "preset monsters",
               "windows RW1 -> RW4", "predicted by the collision model (presets window)",
-              "preset tile units", "requests of ")
+              "preset tile units", "requests of ", "seed of another room")
 
 
 class World:
@@ -230,6 +230,9 @@ class World:
                 R["world: " + k] += v
         for k, v in c.obj_grid.items():
             R["world: objects grid: " + k] += v
+        for k, v in c.obj_stats.items():
+            if k.startswith("gold drops"):
+                R["world: objects: " + k] += v
         for k, v in c.oracles.items():
             R["ORACLE (world): " + k] += v
         for k, v in c.obj_oracles.items():

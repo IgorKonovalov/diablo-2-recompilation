@@ -70,6 +70,7 @@ from obj_survey import decode, txt_col  # noqa: E402
 M = 0x6AC690C5
 INIT_HIGH = 666
 TOWNS = {1, 40, 75, 103, 109}
+GOLD_MODEL = True        # plan 0048 oracle 7: the gold drop of InitFn 28 modelled (False: the plan 0023 seed oracle)
 ORACLE_INITFNS = {47, 54, 55, 62, 66, 68, 69, 79}
 MODELLED_INITFNS = {1, 2, 3, 27, 28, 34, 46, 57, 58}       # 46: plan 0048 Phase 1 (oracle 17)
 INIT_TABLE = (set(range(1, 80)) - {35, 36, 40})       # g_ObjInitFns 0x00731BC0: the non-null entries
@@ -977,9 +978,12 @@ class Checker:
                         % (self.ln, dg["x"], dg["y"], px, py))
                 self.seeds_eq(dg, "OGP0", rs=False)
                 self.ok(parse_seed(dg["us"]) == u["us"].s, "line %d: gold-pile unit seed" % self.ln)
-                dx_ = self.skip_until("OGPX", "gold drop (item creation)")
-                self.take(dx_, rs=False)
-                u["us"].s = parse_seed(dx_["us"])
+                if GOLD_MODEL:
+                    self.gold_drop(px, py, u)
+                else:
+                    dx_ = self.skip_until("OGPX", "gold drop (item creation)")
+                    self.take(dx_, rs=False)
+                    u["us"].s = parse_seed(dx_["us"])
                 piles += 1
         self.covk("gold piles (InitFn 28)", (self.lid, n, piles))
 
@@ -1059,6 +1063,87 @@ class Checker:
         self.take(dx, os_=False)
         self.hit("InitFn 46 requests")
         return dx["eax"] != 0
+
+    def gold_drop(self, px, py, u):
+        """sub_00559300_DropGoldPile (plan 0048 Phase 1, oracle 7), read in the decompile: the start cell is (px + 2,
+        py + 3) when RoomAtSubtile finds a room there, else (px, py); sub_0064E810_FreeNearPair(room, start, size 1,
+        masks 0x3E01 and 0x801) finds the spot; ItemCreate of `gld` (mode 3, item level LevelMonLvl - 1 when above 1)
+        there. Modelled: the start cell, the spot when the start cell itself is free (COLL_WHTest 1 x 1 with both masks
+        on the grid model; a ring search is taken from the log and counted), SUnitCreate's two game-seed steps (rng/seeds
+        7a: the unit seed Init(low of the first)), the item's 0x200 mark at the spot, and no object-region draw. The
+        gold amount draws on the item's own seed, which these logs do not show."""
+        try:
+            with self.cw.model_state():
+                r = self.cw.room_at(self.room, px + 2, py + 3)
+                sx, sy = (px + 2, py + 3) if r else (px, py)
+                rr = self.cw.room_at(self.room, sx, sy) or self.room
+                v1 = self.cw.wh_test(rr, sx, sy, 1, 1, 0x3E01) & 0xFFFF
+                v2 = self.cw.wh_test(rr, sx, sy, 1, 1, 0x801) & 0xFFFF
+        except collision.NotLogged as e:
+            raise Mismatch("line %d: gold drop: the grid model lacks %s" % (self.ln, e))
+        tag, d = self.next_obj("OU0")
+        if v1 == 0 and v2 == 0 and (d["x"], d["y"]) == (sx, sy):
+            self.hit("gold drops: spot predicted (the start cell is free)")
+        elif v1 == 0 and v2 == 0:
+            # an open divergence, not a failure: the grid model finds the start cell free and the game placed the
+            # pile elsewhere (FreeNearPair's second mask and its `other` argument are not read); the spot is taken
+            self.oracle("gold drop spot: the model finds the start cell free, the log has another cell (not read)")
+            self.win_oracles.append(("GOLD", self.ln))
+            self.covk("gold drop spot divergences", (self.ln, (sx, sy), (d["x"], d["y"])))
+            sx, sy = d["x"], d["y"]
+        else:
+            ring = self.gold_ring(rr, sx, sy)
+            if ring == (d["x"], d["y"]):
+                self.hit("gold drops: spot predicted (the ring search of COLL_FindFreeNear, mask 0x3E01 | 0x801)")
+            else:
+                self.oracle("gold drop spot (FreeNearPair ring search: start cell blocked; model %s)" % (ring,))
+                self.win_oracles.append(("GOLD", self.ln))
+            sx, sy = d["x"], d["y"]
+        self.ok((d["type"], d["cls"], d["fl"], d["mode"]) == (4, 523, 1, 3), "line %d: gold item %s" % (self.ln, json.dumps(d)[:120]))
+        self.seeds_eq(d, "OU0 (gold)", rs=False)
+        g1 = self.G.draw()
+        self.G.draw()
+        want = {"f": "RO", "room": d["room"], "x": sx, "y": sy, "a": 1, "b": 1, "m": 0x200}
+        j = self.i
+        while j < len(self.L) and self.L[j][0] in SKIP_TAGS and self.L[j][0] != "CM":
+            j += 1
+        got = self.L[j][1] if j < len(self.L) and self.L[j][0] == "CM" else None
+        keys = ("f", "room", "x", "y", "a", "b", "m")
+        self.ok(got is not None and all(got[k] == want[k] for k in keys), "line %d: gold mark %s, model %s"
+                % (self.ln, json.dumps(got), json.dumps(want)))
+        while self.i < j:
+            tg, dd, ll = self.L[self.i]
+            self.i += 1
+            if tg in COLL_SIDE:
+                self.side(tg, dd, ll)
+        self.i = j + 1
+        self.cw.apply_model_mark(want)
+        self.hit("gold drops: item mark 0x200 predicted")
+        tag, dx = self.next_obj("OUX")
+        self.ok(dx["o"]["us"] == fmt((g1, INIT_HIGH)), "line %d: gold item unit seed %s, model %s"
+                % (self.ln, dx["o"]["us"], fmt((g1, INIT_HIGH))))
+        self.seeds_eq(dx, "OUX (gold)", rs=False)
+        tag, dg = self.next_obj("OGPX")
+        self.seeds_eq(dg, "OGPX", rs=False)
+        self.ok(parse_seed(dg["us"]) == u["us"].s, "line %d: gold-pile unit seed at OGPX" % self.ln)
+        self.hit("gold drops: item creation predicted (two game-seed steps, unit seed)")
+
+    def gold_ring(self, room, x0, y0):
+        """COLL_FindFreeNear's ring (tools/quests.py free_near, quests/0002 § 4) on the grid model, a cell blocked when
+        COLL_WHTest 1 x 1 with mask 0x3E01 or 0x801 is not 0; None when the model lacks a cell."""
+        import quests
+        cw = self
+
+        class Win:
+            def blocked(self, x, y, size, mask):
+                with cw.cw.model_state():
+                    r = cw.cw.room_at(room, x, y) or room
+                    return bool(cw.cw.wh_test(r, x, y, 1, 1, 0x3E01) & 0xFFFF or cw.cw.wh_test(r, x, y, 1, 1, 0x801) & 0xFFFF)
+        try:
+            x, y, best = quests.free_near(Win(), x0, y0, 1, 0x3E01, 50, 1)
+        except (collision.NotLogged, KeyError):
+            return None
+        return (x, y) if best >= 0 else None
 
     def init_34(self, u, o):
         if self.O.draw() & 1:

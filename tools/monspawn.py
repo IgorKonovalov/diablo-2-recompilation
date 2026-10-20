@@ -1589,6 +1589,7 @@ class Checker:
         self.room_state_model = ROOM_STATE_MODEL
         self.obj_grid = {}            # plan 0027: tools/objects.py's grid-model counters over the logs
         self.obj_oracles = {}         # plan 0048: tools/objects.py's oracle counters over the logs
+        self.obj_stats = {}           # and its other counters
         # plan 0018
         self.sp = monspecial.Data(excel)
         self.new_tags = False
@@ -1763,6 +1764,8 @@ class Checker:
             for k, v in oc.stats.items():
                 if k.startswith(("position tests predicted", "object marks", "gold-pile room tests", "marks applied from the log")):
                     self.obj_grid[k] = self.obj_grid.get(k, 0) + v
+            for k, v in oc.stats.items():
+                self.obj_stats[k] = self.obj_stats.get(k, 0) + v
             for k, v in oc.oracles.items():
                 self.obj_oracles[k] = self.obj_oracles.get(k, 0) + v       # plan 0048: every objects.py oracle
                 if k.startswith("position test result"):
