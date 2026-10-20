@@ -272,3 +272,43 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   Families: "the first 22 rows" of the 26; PetType row 17's sentry wording. Tier A: ruling in Phase 1's tier-A
   bullet (all 26 accepted, Meteor and Amplify Damage on the attack-click condition). Notes for P1.1/P1.2:
   [backlog to the reverser](../backlog/2026-10-20-architect-reverser-plan-0045-p0-review-notes-for-p1-1.md).
+- **2026-10-20 — Phase 1 batch P1.1 landed for review (reverser, `lane/p45r`, static).**
+  [skills/0001-dispatch](../findings/skills/0001-dispatch.md): the request (client packets 0x05–0x11, `PLRMSG_SkillAtXY`
+  / `PLRMSG_SkillAtUnit`, stat 328 counted per request, the dual-wield Attack alternation, the `AttackNoMana` fallback,
+  the melee-range walk), `SKILLS_CanUse` and its codes, the mode command, start and frame (players and monsters, the
+  `Unit+0xC4` bit-6 "action done" flag), `SKILLS_SrvStart` and `SKILLS_SrvDo` with `g_SkillStartFuncs` `0x00732140` and
+  `g_SkillDoFuncs` `0x007322B0`, the mana cost and its rounding (`minmana` floors only the payment; the payment's result is
+  ignored), blood mana, the delay state 121, periodic and channelled skills, item charges, item auras and item-event casts
+  (`ITEMSKILL_Cast`, the `ItemEffect` override), the skill hit packet (the writer of the conversion fields
+  `+0x65`/`+0x68`; hits built at the mode start and delivered at the action frame), progressive charges, monster skill
+  use and `MonAttackStats`' callers and owner skill damage, `PLAYER_UseAmmo`'s callers and Impale's weapon wear.
+  All `[I]` except the two tables and the full-row check (`[C]`). **Correction** carried into combat/0001 § 14: the
+  progressive finisher's `RNG_Step` is a peek (seed saved and restored), not a draw; combat/0001's open question on the
+  conversion writer answered. 83 symbol rows, `re/types/skills.h`, `tools/skills_dispatch_scan.py` with kept outputs
+  (`workspace/logs/skills/p45r-manifest.sha256`). Backlog: review request to the architect, the combat-spec change to the
+  spec-writer, the Skills column anchors to the archivist. Open (in the finding): `repeat`'s reader, the ally test's
+  inner record, `Unit+0x38`, the `srvprgfunc` entries (P1.3 / plan 0046). Phase 0 (archivist) had not run; this batch
+  read the Skills layout from the existing table doc.
+- **2026-10-20 — P1.1 reviewed (architect): accept with fixes.** Spot-checked on the pinned image (objdump and an
+  independent PE read): the finisher's copy-out / `RNG_Step` / copy-back at `0x005D5374`/`0x005D537B`/`0x005D538C`
+  (`sub_00650E70`/`sub_00650E60` move the two seed words to `[ebp−0x20]`/`[ebp−0x1C]` and back); the two tables and
+  their bounds (`cmp ax,0x5B` at `0x0056F75D`, `cmp ax,0xBF` at `0x0056F911`; 64 and 152 non-null entries); the cost
+  formula in `SKILLS_PayCost` (`+0x18A` mana, `+0x18C` lvlmana s16, `shl` by the `+0x188` byte, the `minmana · 256`
+  floor) and the two unchecked calls at `0x0056F7AA`/`0x0056FA7A`. `tools/skills_dispatch_scan.py` rerun: output
+  bit-identical to the kept `dispatch-scan.txt`; manifest `sha256sum -c` passes; no lead opened, no foreign code.
+  Fixes: the `[C]` on the tables scoped to the data join (column-to-table and bounds stay `[I]` code readings); "30 null"
+  reworded (id 30 is the one null start entry below 66); the plan's unread dispatch items (`TgtPlaceCheck`, `prgcalc`,
+  `prgdam`, `weapsel`/`leftskill`) routed to P1.3 under the finding's open questions, `SKILLS_GetToHit` pointed at
+  data/0005. Gate: the merged branch has main's 25 warnings, its W1 and W3 lists line for line equal to main's, so the
+  lane adds none (its 38 were counted before the merge). Rulings: (1) the full-row check plus three independent byte reads
+  suffice for `[C]` on the table contents and the stock-row coverage, not on the semantics; (2) the finisher
+  correction stands at `[I]`; combat/0001 carries it and the spec-writer entry asks for delivery § A2; Phase 2 keeps
+  dropping `PRG` events while the `srvprgfunc` entries are unread; (3) the ignored payment is a Phase 2 case: a
+  negative-`lvlmana` row (Teleport, for example) at a level where the unfloored cost passes the checks and mana sits
+  between it and `minmana · 256`; expect mana unchanged and the skill run; (4) start-then-do hits are logged as two
+  events, each entry seed asserted, the gap between them being ADR-0014's chaining measurement. P1.2 (missiles) may
+  start now: it needs `SkillMissileCreate`/`Lob` (`0x0056ECB0`/`0x0056EE90`), the `useAmmo` argument, `0x0064B860`
+  and the `ItemEffect` aim offset of § 6, and does not need lane/p45a merged first (it reads Missiles from the binary
+  and links `docs/tables/Missiles.md` once that lands). P1.3 picks up the `srvprgfunc` entries and `0x00571AA0`, the
+  item-event handlers that call `ITEMSKILL_Cast` (`0x005BF170`–`0x005C0670`), `SKILLS_SrvStart`/`SKILLS_PayCost`
+  callers in do functions 83, 109 and `0x005D69D0`, the twelve unmapped `EType` stores, and the routed open questions.

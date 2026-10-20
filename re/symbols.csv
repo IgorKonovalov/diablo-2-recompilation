@@ -2705,6 +2705,64 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00994C88,data,g_Sse2Available,,I,data/calc,docs/findings/data/0005-calc.md
 0x0046ACE0,func,sub_0046ACE0_MissileRec,,C,data/calc,docs/findings/data/0005-calc.md
 0x004A89D0,func,sub_004A89D0_SkillDescRec,,C,data/calc,docs/findings/data/0005-calc.md
+0x00540E60,func,UNIT_CancelEvents,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x005496F0,func,sub_005496F0_PktReadXY,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00549830,func,sub_00549830_PktReadUnit,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00549960,func,sub_00549960_DualAttackAlternate,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00549A60,func,sub_00549A60_NoManaMsg,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00549AD0,func,PLRMSG_SkillAtXY,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00549BA0,func,PLRMSG_SkillAtUnit,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00549D00,func,sub_00549D00_Pkt05LeftSkillXY,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00549D80,func,sub_00549D80_Pkt06LeftSkillUnit,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00549E00,func,sub_00549E00_Pkt07LeftSkillUnitNoWalk,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00549E80,func,sub_00549E80_Pkt08LeftSkillXYAlt,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00549EE0,func,sub_00549EE0_Pkt09LeftSkillUnitAlt,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00549F40,func,sub_00549F40_Pkt0ALeftSkillUnitAlt2,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00549FA0,func,sub_00549FA0_Pkt0BNoop,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00549FC0,func,sub_00549FC0_Pkt0CRightSkillXY,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0054A040,func,sub_0054A040_Pkt0DRightSkillUnit,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0054A0C0,func,sub_0054A0C0_Pkt0ERightSkillUnitNoWalk,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0054A140,func,sub_0054A140_Pkt0FRightSkillXYAlt,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0054A1A0,func,sub_0054A1A0_Pkt10RightSkillUnitAlt,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0054A200,func,sub_0054A200_Pkt11RightSkillUnitAlt2,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00553540,func,UNIT_GetTargetUnit,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00554D20,func,sub_00554D20_SkillAllyTest,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056BFE0,func,SKILLS_PayCost,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056C160,func,SKILLS_SrvManaCheck,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056C8E0,func,SKILLS_AddElemToPacket,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056CC60,func,SKILLS_TargetCheck,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056CDA0,func,SKILLS_QueuePeriodic,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056D2C0,func,SKILLS_GetTargetXY,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056D790,func,sub_0056D790_StateDoFunc,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056D810,func,sub_0056D810_CallDoFunc,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056E000,func,sub_0056E000_SkillDamagePair,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056E050,func,sub_0056E050_MonOwnerSkillDamage,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056E520,func,sub_0056E520_SkillAttackRateList,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056ECB0,func,sub_0056ECB0_SkillMissileCreate,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056EE90,func,sub_0056EE90_SkillMissileCreateLob,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056EF90,func,SKILLS_SetDelayState,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056F020,func,sub_0056F020_SkillDelayFromCalc,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056F1F0,func,SKILL_MeleeDeliverDo,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056F640,func,SKILLS_SrvStart,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056F7F0,func,SKILLS_SrvDo,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056FAF0,func,SKILLS_StartUsedSkill,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056FC50,func,SKILLS_DoUsedSkill,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056FF10,func,sub_0056FF10_AuraSelect,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0057FE90,func,sub_0057FE90_PlrModeStartSkillXY,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0057FEF0,func,sub_0057FEF0_PlrModeStartSkillUnit,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00580460,func,sub_00580460_PlrModeSkillFrame,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00580A70,func,PLAYER_ModeCmdUnit,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x005A75C0,func,sub_005A75C0_MonModeStartSkill,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x005A8670,func,sub_005A8670_MonSeqFrame,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x005C6CC0,func,SKILLS_ApplyAuraStats,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x005D2B60,func,sub_005D2B60_BloodManaPay,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x005D3320,func,SKILLS_AddProgressiveCharge,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x005D3490,func,sub_005D3490_PrgChargeHitDo,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x005D35D0,func,sub_005D35D0_PrgChargeHitDualDo,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x005D7EA0,func,sub_005D7EA0_SkillSt32Hit,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x005DA940,func,sub_005DA940_SkillSt06Hit,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x005DAB40,func,sub_005DAB40_SkillSt07ImpaleHit,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x005FDA80,func,ITEMSKILL_Cast,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x00611760,func,sub_00611760_CalcNameToCode,,I,data/calc,docs/findings/data/0005-calc.md
 0x006118B0,func,sub_006118B0_CalcPoolAppend,,C,data/calc,docs/findings/data/0005-calc.md
 0x00611930,func,sub_00611930_SkillsCalcFnLookup,,C,data/calc,docs/findings/data/0005-calc.md
@@ -2712,6 +2770,10 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006119F0,func,sub_006119F0_SkillsCalcIdent,,C,data/calc,docs/findings/data/0005-calc.md
 0x00611BD0,func,sub_00611BD0_SkillsCalcCell,,C,data/calc,docs/findings/data/0005-calc.md
 0x00611C70,func,sub_00611C70_SkillDescCalcCell,,C,data/calc,docs/findings/data/0005-calc.md
+0x00620190,func,UNIT_GetLeftSkill,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x006201D0,func,UNIT_GetRightSkill,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00620210,func,UNIT_SetUsedSkill,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00620250,func,UNIT_GetUsedSkill,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x00627B40,func,sub_00627B40_ItemCalcVar,,C,data/calc,docs/findings/data/0005-calc.md
 0x00627B50,func,sub_00627B50_ItemCalcMin,,C,data/calc,docs/findings/data/0005-calc.md
 0x00627B60,func,sub_00627B60_ItemCalcMax,,C,data/calc,docs/findings/data/0005-calc.md
@@ -2727,6 +2789,12 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00643740,func,sub_00643740_SkillsCalcMiss,,I,data/calc,docs/findings/data/0005-calc.md
 0x00643770,func,sub_00643770_SkillsCalcStat,,I,data/calc,docs/findings/data/0005-calc.md
 0x00643810,func,SKILLS_FindUnitSkill,,I,data/calc,docs/findings/data/0005-calc.md
+0x00643860,func,SKILLS_GetEntryMode,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x006439B0,func,sub_006439B0_SkillFindByOwner,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00643B00,func,SKILLS_GetItemSkillInfo,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00643F80,func,SKILLS_WeaponTypeOk,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00644060,func,SKILLS_RestrictOk,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x006440F0,func,SKILLS_StartManaOk,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x006442A0,func,SKILLS_GetSkillLevel,"int __stdcall SKILLS_GetSkillLevel(void * unit, void * skill, int withBonus)",I,data/calc,docs/findings/data/0005-calc.md
 0x006449F0,func,SKILLS_GetToHit,,I,data/calc,docs/findings/data/0005-calc.md
 0x00644B70,func,SKILLS_LevelBands,,C,data/calc,docs/findings/data/0005-calc.md
@@ -2734,6 +2802,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00644D50,func,SKILLS_GetElemMin,,I,data/calc,docs/findings/data/0005-calc.md
 0x00644E40,func,SKILLS_GetElemMax,,I,data/calc,docs/findings/data/0005-calc.md
 0x00644F20,func,SKILLS_GetElemLen,,I,data/calc,docs/findings/data/0005-calc.md
+0x00645460,func,SKILLS_GetRangeType,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00645950,func,SKILLS_LineOfSightOk,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x00645B20,func,SKILLS_DimReturns,"int __stdcall SKILLS_DimReturns(int lvl, int a, int b)",C,data/calc,docs/findings/data/0005-calc.md
 0x00646460,func,SKILLS_CalcVar,"int __stdcall SKILLS_CalcVar(void * unit, byte code, int skill, int lvl)",I,data/calc,docs/findings/data/0005-calc.md
 0x00646BE0,func,sub_00646BE0_SkillsCalcVar,,C,data/calc,docs/findings/data/0005-calc.md
@@ -2741,6 +2811,13 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00646C60,func,sub_00646C60_SkillsCalcSklvl,,C,data/calc,docs/findings/data/0005-calc.md
 0x00646CA0,func,SKILLS_EvalCalc,"int __stdcall SKILLS_EvalCalc(void * unit, uint offset, int skill, int lvl)",C,data/calc,docs/findings/data/0005-calc.md
 0x00646D00,func,SKILLS_EvalDescCalc,"int __stdcall SKILLS_EvalDescCalc(void * unit, uint offset, int skill, int lvl)",C,data/calc,docs/findings/data/0005-calc.md
+0x00647540,func,SKILLS_ManaOk,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00647640,func,sub_00647640_SkillAmmoOk,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00647840,func,SKILLS_ItemChargesOk,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x006478F0,func,SKILLS_DelayOk,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00647960,func,SKILLS_CanUse,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00647BC0,func,SKILLS_GetPhysMin,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00647D00,func,SKILLS_GetPhysMax,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x00647E00,func,SKILLS_GetMasteryCalc,,I,data/calc,docs/findings/data/0005-calc.md
 0x0064AF20,func,MISS_GetDamMin,,I,data/calc,docs/findings/data/0005-calc.md
 0x0064AFF0,func,MISS_GetDamMax,,I,data/calc,docs/findings/data/0005-calc.md
@@ -2754,6 +2831,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0064B720,func,sub_0064B720_MissCalcRand,,C,data/calc,docs/findings/data/0005-calc.md
 0x0064B760,func,sub_0064B760_MissCalcSkill,,I,data/calc,docs/findings/data/0005-calc.md
 0x0064B7C0,func,MISS_EvalCalc,"int __stdcall MISS_EvalCalc(void * missile, void * owner, uint offset, int missileId, int lvl)",C,data/calc,docs/findings/data/0005-calc.md
+0x00650E60,func,sub_00650E60_Copy64In,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00650E70,func,sub_00650E70_Copy64Out,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x006617B0,func,sub_006617B0_CalcNameToCode2,,I,data/calc,docs/findings/data/0005-calc.md
 0x00661800,func,sub_00661800_MissCalcFnLookup,,C,data/calc,docs/findings/data/0005-calc.md
 0x00661880,func,sub_00661880_MissCalcIdent,,C,data/calc,docs/findings/data/0005-calc.md
@@ -2767,7 +2846,11 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006C19C0,func,CALC_EmitConst,,C,data/calc,docs/findings/data/0005-calc.md
 0x006C1A50,func,CALC_EmitVar,,C,data/calc,docs/findings/data/0005-calc.md
 0x006C1AE0,func,CALC_Compile,"int __stdcall CALC_Compile(char * text, byte * out, int max, void * fnLookup, void * fnArity, void * ident)",C,data/calc,docs/findings/data/0005-calc.md
+0x006E1740,data,g_PlayerModeStartFuncs,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x006FC874,data,g_CalcPrecedence,,C,data/calc,docs/findings/data/0005-calc.md
+0x00732140,data,g_SkillStartFuncs,,C,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x007322B0,data,g_SkillDoFuncs,,C,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00732C10,data,g_PlayerModeFrameFuncs,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x0074463C,data,g_ItemCalcFuncs,,C,data/calc,docs/findings/data/0005-calc.md
 0x0074465C,data,g_nItemCalcFuncs,,C,data/calc,docs/findings/data/0005-calc.md
 0x00745774,data,g_SkillsCalcFuncs,,C,data/calc,docs/findings/data/0005-calc.md

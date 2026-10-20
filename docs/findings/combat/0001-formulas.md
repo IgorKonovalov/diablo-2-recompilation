@@ -689,6 +689,13 @@ Read on 2026-10-16 before the Phase 2 logs (objdump of the pinned image, Ghidra 
   and frees the state (`0x006277E0`, `0x00626CD0`). So an attack with a charged state draws at least once more on the
   attacker's seed. Phase 2 logs the four hooks and the `RNG_Step` site (`PRG` lines) and drops any event that has one.
   (fn:COMBAT_PrgFinisher@0x005D5220, fn:RNG_Step@0x0045C370, 0x005D537B, tbl:Skills.txt:aurastat1)
+  *Corrected 2026-10-20 (plan 0045 P1.1, [skills/0001 § 12](../skills/0001-dispatch.md#12-progressive-charges)):*
+  the step is a **peek**. The finisher copies the attacker's seed out (`sub_00650E70_Copy64Out` at `0x005D5374`), calls
+  `RNG_Step` (`0x005D537B`), keeps its result and copies the seed back (`sub_00650E60_Copy64In` at `0x005D538C`), then
+  passes the kept value to `0x00571AA0`; the attacker's seed is unchanged by that step. Draws of the `srvprgfunc` entries
+  it then calls are not read. So "draws at least once more" above does not hold for the finisher's own step. [I]
+  (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D5368–0x005D538C, fn:sub_00650E70_Copy64Out@0x00650E70,
+  fn:sub_00650E60_Copy64In@0x00650E60)
 - [I] **"State 38" is a state flag.** The test at `0x0056F19A` is `UNIT_HasStateFlag(attacker, 38)` (`0x0063A7B0` →
   `sub_0063A130_UnitHasStateInMask` over the 40 flag bit-sets): flag bit 38 is States `meleeonly`, set on `wolf` (139)
   and `bear` (140), not state row 38 (`thunderstorm`). With it, `sub_0056C2D0_AttackDeliverMeleeOnly` sets attacker
@@ -876,8 +883,11 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
 
 ## Open questions
 
-- [L] The writer of the packet's conversion fields (`+0x65`/`+0x68`): no store to them was found in the attack paths
-  read; a skill or an aura probably sets them (phase 3). Phase 2 logs them at the builder's entry.
+- ~~[L] The writer of the packet's conversion fields (`+0x65`/`+0x68`): no store to them was found in the attack paths
+  read; a skill or an aura probably sets them (phase 3). Phase 2 logs them at the builder's entry.~~ *Answered
+  2026-10-20 (plan 0045 P1.1):* the skill hit builders write `+0x65 = EType` and `+0x68 = calc4` (when calc4 > 0) on a
+  hit, before `COMBAT_ResolveAndQueue`; 15 such stores in 15 functions, three mapped to the packet field. [I]
+  (fn:sub_005D7EA0_SkillSt32Hit@0x005D7EA0, 0x005D7FA8, [skills/0001 § 11](../skills/0001-dispatch.md#11-the-skill-packet))
 - [L] `0x00645270` (the owner/type lookup that picks the monster leech branch) and `0x0064F380` (the skill check that
   gates weapon block, value 13) were not read in full.
 - [L] The player's per-frame tick of stat 74 (`sub_00580610_LifeRegenTick`, § 14) under poison or open wounds, and its
