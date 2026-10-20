@@ -337,3 +337,72 @@ Plan 0045 Phase 2's harness runs: none yet. Plan 0046's emulated runs (ADR-0015)
   draw before a boundary is do 21's `RNG_Range(caster seed, 100)`; no case steps the target's seed. Not covered: what
   any boundary callee does and everything after it; do 27; when the game runs these functions or with which seed.
   (fn:sub_005C98F0_SkillDo21Telekinesis@0x005C98F0, fn:sub_00554200_UnitsHostile@0x00554200)
+
+## run:2026-10-20-cat-emu-ama
+
+- **Question:** (plan 0046 Phase 1, batch `ama`) Do the amazon start functions 4–10 and do functions 6, 7, 8 and
+  10–16 map their inputs (the Skills, Missiles, MonStats and MonStats2 records, the caster, its path, target link,
+  inventory word, skill list and used skill's node, the target unit and its owner and alignment, the units the node
+  names, and the seeds) to the result they return, or to the arguments, pointed-to bytes, frame words, written words
+  and seed states at the call they end in, exactly as [skills/0009](0009-amazon.md) §§ 3–8 say, and do they leave
+  both seeds alone?
+- **Setup:** as run:2026-10-20-cat-emu-sor: Ghidra 12.1.2 p-code emulator on the pinned `game.exe` (lane copy
+  `GHIDRA_PROJ_DIR=workspace/ghidra-p46m6`, heap 3 GB, one instance at a time, each under a 4 GB scope),
+  `re/ghidra_scripts/EmuBoundary.java` unchanged (`286393aa…`). No wine, nothing runs natively, no slot. Models, case
+  writers and checks: the `ama` families of `tools/skills_catalogue_emu.py` (`69c01d13…`), with `sor`'s conventions
+  (the call site of every boundary asserted with a site control, the caster's and the target's seeds written and
+  compared in every case, a boundary's pointer argument compared by content: the `MissileCreate` blocks, do 6's
+  24-byte block, the `SpawnOwnedMonster` blocks, the zeroed hit packets, the counter `n`; no model compares a
+  callee-saved register that is not a boundary argument). New: a boundary inside a helper (`0x00623990`,
+  `0x00622870`, `0x0056BC80`, `UnitGetWeapon`) also compares the batch function's frame words written before it at
+  their absolute stack address (`compare`'s ninth expectation field; every function's `EBP` is `0x7FEFFFFC`). All
+  inputs synthetic (stock parameter values among them); every case-writer draw from
+  `random.Random("catama-<family>")`. Files in `workspace/logs/skills-cat-ama/`, `manifest.sha256` `6a3181d8…` (37
+  files: cases, memory specs, expected inputs, outputs, the `.err` logs (the scope line only), `cases.txt`,
+  `check.txt` `03a40fde…`, `static.txt` `b1b51e31…`, `rows.txt` `d441af4c…` with its `rows.sh`, `repro.txt`
+  `9b03d065…` with its `repro.sh`, the run script `run_ama.sh`); `sha256sum -c manifest.sha256` from that directory
+  passes. `repro.txt` records that the same tool revision regenerates every case, memory and expectation file of 9a,
+  9b, 9c, 9d and `sor` byte for byte and reproduces their kept `check.txt` and `static.txt` byte for byte from their
+  kept outputs.
+- **Procedure:**
+  ```
+  D=workspace/logs/skills-cat-ama
+  python3 -I tools/skills_catalogue_emu.py cases --batch ama > $D/cases.txt
+  for f in start_ama hit_ama aura_ama create_ama node_ama summon_ama; do      # one at a time ($D/run_ama.sh)
+    GHIDRA_PROJ_DIR=workspace/ghidra-p46m6 GHIDRA_HEADLESS_MAXMEM=3G systemd-run --user --scope -p MemoryMax=4G \
+      tools/ghidra.sh emuboundary $D/$f.cases $D/$f.mem > $D/$f.out 2> $D/$f.err
+  done
+  python3 -I tools/skills_catalogue_emu.py check  --batch ama > $D/check.txt
+  python3 -I tools/skills_catalogue_emu.py static --batch ama > $D/static.txt
+  python3 -I tools/skills_catalogue_emu.py manifest --batch ama --write
+  ```
+  Each memory spec points `g_pDataTables` at a scratch DataTables written one field per field read (Skills,
+  Missiles, ItemStatCost, MonStats, MonStats2, the calc pool, the States and PetType counts), names the boundaries
+  (`observe`: `sor`'s less `0x00623990`, plus `0x0063C9B0`, `0x00580310`, `0x0064F380`, `COMBAT_MeleeHitTest`,
+  `MonAttackStats`, `COMBAT_DeliverQueued`, `UnitSetPathTargetUnit`, `InMeleeRange`) and guards the allocator and the
+  fatal path.
+- **Observed** (`check.txt`, `static.txt`):
+  ```
+  CATAMA start_ama  cases=1600 match=1600 bad=0 neg=1030 traced=7 undeclared=0 stopped=0
+  CATAMA hit_ama    cases=1600 match=1600 bad=0 neg=385  traced=8 undeclared=0 stopped=0
+  CATAMA aura_ama   cases=900  match=900  bad=0 neg=559  traced=2 undeclared=0 stopped=0
+  CATAMA create_ama cases=1800 match=1800 bad=0 neg=513  traced=7 undeclared=0 stopped=0
+  CATAMA node_ama   cases=1200 match=1200 bad=0 neg=218  traced=7 undeclared=0 stopped=0
+  CATAMA summon_ama cases=1200 match=1200 bad=0 neg=915  traced=2 undeclared=0 stopped=0
+  CATAMA static data_imms=0 data_stores=0 pins=34 pins_ok=34 ro_reads=4 table_entries=17
+  ```
+  8 300 cases. Every negative control fails (per-control counts on the `negative control` lines; each family has one
+  failing 96 or more cases: `filt_swap` 335, `tohit0` 175, `blk_swap` 295, `src_a` 323, `g_any` 122, `w24_zero` 715;
+  the smallest, `nonorm`, 51); the site control fails on all 4 190 matched boundary cases (33 `site` lines: function,
+  boundary, return address). The skills calc function count's scan names every operand form (`PTR` and `moffs`
+  stores, immediates, reads): 0 stores, 0 immediates, 7 reads. The first session of this lane ran the six families at
+  once and was killed by the system's out-of-memory handler before checking; the resumed lane regenerated its case
+  files (byte-identical), re-ran the families one at a time and compared the new outputs with that session's before
+  replacing them: byte-identical, so nothing of it is lost.
+- **Conclusion:** bit-exact reproduction (evidence rule 4, ADR-0015) of the functions' maps on returning cases (`[C]`:
+  start 4's and 5's results and every refusal path) and of their maps up to their boundary calls with the call site,
+  the arguments, the pointed-to blocks, the frame words, the written words and both seeds asserted (`[C]` under
+  [ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md); skills/0009 names each claim's boundary). No
+  function draws before its boundary or return; no case steps either seed. Not covered: what any boundary callee does
+  and everything after it (start 10's elemental draw among it); when the game runs these functions or with which
+  seed. (fn:sub_005DB410_SkillDo08MultiShot@0x005DB410, fn:SKILLS_GetToHit@0x006449F0)

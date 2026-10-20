@@ -255,6 +255,11 @@ flowchart TD
 - [I] **Skill melee hits** (`0x005C7690` and the other do-functions that call `COMBAT_MeleeHitTest`) pass
   `SKILLS_GetToHit` as the AR percent and their own SrcDam to `COMBAT_ResolveAndQueue`; the skill's damage packet is
   phase (3)'s input. (fn:SKILLS_GetToHit@0x006449F0, 0x005C76B0)
+  *2026-10-20 (plan 0046 batch `ama`), correction:* not all of them. Start 6 (Power Strike, Charged Strike,
+  MonPowerStrike, MonIceSpear) and start 10 (Lightning Strike) pass **0** as the second argument; start 7 (Impale),
+  do 7 (Jab) and do 13 (Fend, Zeal, Fury) pass `SKILLS_GetToHit` ([skills/0009 § 4](../skills/0009-amazon.md#4-the-melee-hits-start-6-7-10-and-do-7);
+  the argument values `[C]` under ADR-0021 for start 6, 7, 10 and do 7, the AR-percent meaning still this bullet's
+  `[I]`). (fn:sub_005DA940_SkillSt06Hit@0x005DA940, fn:sub_005DB020_SkillSt10LightningStrike@0x005DB020)
 - [I] **Monster melee** (`MON_MeleeHit`): target, zeroed packet, `result = COMBAT_MeleeHitTest(target, 0, 0)`,
   `COMBAT_ResolveAndQueue(target, packet, 128)`; the builder runs **only when** the result has `0x1` and none of
   `0x8380`. `sub_005A7670_MonAttackFrame` (no skill) and `sub_005D9C80_MonSkillAttackDo` then call

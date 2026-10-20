@@ -369,6 +369,16 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
   `VelLev · lvl / 8`) plus calc1; do 28 up to `COLL_WHTest(room, target point, Size, Size, 5)` inside
   `0x0056E450`. Do 27 is not emulated. Everything after those calls stays as read above, `[I]`.
   (fn:sub_005C9800_SorSkillStaticMin@0x005C9800, fn:sub_005C9B50_SkillDo22NovaAtSelf@0x005C9B50)
+  *2026-10-20 (plan 0046 batch `ama`), emulated:* start 4, start 5, do 7 and do 8 are reproduced up to their
+  boundaries (`[C]` under ADR-0021; [skills/0009](0009-amazon.md) §§ 3, 4, 6): start 4 makes **no skill-record
+  test** and returns 1 for any non-player caster, ending at `0x00580310` for a player without an inventory; do 7 up to
+  `COMBAT_MeleeHitTest(target, SKILLS_GetToHit, 0)` (a monster first at `MonAttackStats(ECX unit, EDX 8)`); do 8 up to
+  its first `MissileCreate`, with two corrections to the row above: the step between the fanned missiles is
+  **perpendicular** to the caster–point line (`0x0056D370` scales a short vector, `0x0056D3B0` rotates it to `(dy,
+  −dx)` and halves it to a square of 3 or less), and the first start point is the target point less `step · n / 2`
+  (truncating); `srvmissileb` (when ≥ 0) is taken for a weapon word ≠ 1, which a caster with no inventory gives (0).
+  Everything after those calls stays as read above, `[I]`. (fn:sub_005DB410_SkillDo08MultiShot@0x005DB410,
+  fn:sub_0056D3B0_VecPerpSmall@0x0056D3B0)
 
 ### 6. Tier A: missile do, hit and damage functions
 

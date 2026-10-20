@@ -473,3 +473,22 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   ([archive](../backlog/archive/2026-10-20-reverser-architect-lane-p46m5-review-plan-0046-batch-sor.md)); ledger rows
   added. **The next batch (amazon) may start**, with 9c, 9d and `sor`'s conventions and ruling 3's condition on
   writer scans.
+- **2026-10-20 — Phase 1 batch `ama` landed for review (reverser, `lane/p46m6`, static, no harness; resumed after the
+  first session was killed by the system's out-of-memory handler, no commit lost).** The amazon start functions 4–10
+  and do functions 6, 7, 8 and 10–16: 17 entries, all read and all emulated ([skills/0009](../findings/skills/0009-amazon.md);
+  tier A start 4, start 5, do 7, do 8 emulated too). Draws before the boundaries: none; no case steps the caster's or
+  the target's seed (start 10's elemental `RNG_RangeB` comes after its hit test). Raised by emulation
+  (run:2026-10-20-cat-emu-ama, `tools/skills_catalogue_emu.py --batch ama`, `check.txt` `03a40fde…`,
+  `manifest.sha256` `6a3181d8…`): six families, 8 300 cases, 0 mismatches, 33 boundary/call-site triples asserted
+  (site control 4 190 of 4 190), both seeds compared in every case, blocks and packets compared by content and, where
+  a boundary sits inside a helper, the batch function's frame words compared at their stack address; two to four
+  negative controls per family (each family has one failing 96 or more; the smallest, `nonorm`, 51). The calc count's
+  writer scan matches `moffs` stores and immediates too (ruling 3's condition): 0 and 0. The same tool reproduces
+  9a–9d and `sor` byte for byte (`repro.txt`). Surprises: **start 6 and start 10 pass 0 as `COMBAT_MeleeHitTest`'s
+  AR argument** (Power Strike's `ToHit` 20/12 does not reach it; combat/0001 note); **do 15 and
+  do 16 leave `SpawnOwnedMonster`'s `+0x24` word unwritten**, so it carries the mode (Dopplezon) or the Skills record
+  pointer (Valkyrie); **do 13 (Fend, Zeal, Fury) returns 0 on every path**; do 8's fan steps perpendicular to the
+  caster–point line, not along it (skills/0003 § 5 note); start 4 has no skill-record test. Tags: 31 `[C]`, 13 `[I]`,
+  4 `[L]` bullets; 22 symbols added (`I`). Review request
+  [to the architect](../backlog/2026-10-20-reverser-architect-lane-p46m6-review-plan-0046-batch-ama.md); column
+  readers [to the archivist](../backlog/2026-10-20-reverser-archivist-plan-0046-ama-skills-column-readers.md).
