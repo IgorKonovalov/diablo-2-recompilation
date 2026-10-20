@@ -1490,7 +1490,7 @@ Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phas
 - **Row 3** (spec L53) **raised.** [C] All 12 call sites of `PortalObjectCreate` (Ghidra and the raw scan agree) were
   traced to the level they pass (the 4th stack argument, tested at 0x0056D181). Seven pass constants: 1, 1, 38, 39, 46,
   121 and 121. Two pass the act's town (`0x0061AB70`), one passes 40, and `0x0054B830` is called only with 40, 75, 103,
-  109 and 109. `0x005A9930` passes Missiles `+0x44` from two missile functions, and that column holds 0, 38 or 128 in all
+  109 and 109. `0x005A9930` passes Missiles `+0x44` (`Param4`, [Missiles](../../tables/Missiles.md), noted 2026-10-20) from two missile functions, and that column holds 0, 38 or 128 in all
   684 records. None is in 133–136 (`sweep_s4b.py portal`). (fn:sub_0056D130_PortalObjectCreate@0x0056D130)
 - **Row 5** (spec L194) **raised.** [C] Under `OutdoorLevelBuild` (543 functions, `OutdoorRoomsCreate` excluded), every
   operand at `+0x40` or `add reg, 0x40` is one of these: grid3's allocation before the act switch (0x006753E1), a

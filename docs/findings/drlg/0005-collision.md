@@ -914,7 +914,8 @@ struck there.
   tbl:MonStats.txt:opendoors (`+0x0C` bit 3), `BaseId` `+0x02`.
 - Objects (no table doc): `SizeX` `+0xD0`, `SizeY` `+0xD4`, `HasCollision0..7` `+0x120`, `IsDoor` `+0x13A`, `BlocksVis` `+0x13B`,
   `SubClass` `+0x167`, `BlockMissile` `+0x1B6` (probe matches above).
-- Missiles (no table doc): `+0x18A` as the footprint size.
+- Missiles: `+0x18A` as the footprint size (*2026-10-20:* the column is `Size`, and `+0x184` is `Collision`, per
+  [Missiles](../../tables/Missiles.md); the missile machinery that reads them is [skills/0002](../skills/0002-missiles.md)).
 - tbl:Levels.txt:WarpDist (`+0x0C`), tbl:Levels.txt:Position (leveldefs `+0x90`), tbl:LvlPrest.txt:Logicals.
 - fmt:dt1#sub-tile-flags-survey-plan-0017-phase-0: the 25 sub-tile bytes (tile `+0x28`).
 - struct:CollMap+0x00, struct:CollMap+0x10, struct:CollMap+0x20, struct:DungeonRoom+0x08, struct:DungeonRoom+0x10, struct:DungeonRoom+0x20,

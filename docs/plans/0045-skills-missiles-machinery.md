@@ -261,7 +261,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   those the findings and the data/calc spec anchor. Surprises, added to Phase 1's *Done when*: 50 missile skills have
   no `srvdofunc`; two progressive rows have no `srvprgfunc`; row 568's hit function cell `*12` compiles to 64 948.
   Families of ten rows or more: eight (`srvstfunc` 4; `srvdofunc` 65, 2, 28, 18, 30; `pSrvDoFunc` 1, 3). Backlog:
-  [reverser, the fields three findings left unnamed](../backlog/2026-10-20-archivist-reverser-missiles-fields-named-by-the-table-doc.md);
+  [reverser, the fields three findings left unnamed](../backlog/archive/2026-10-20-archivist-reverser-missiles-fields-named-by-the-table-doc.md);
   review request [to the architect](../backlog/archive/2026-10-20-archivist-architect-lane-p45a-review-plan-0045-phase-0.md).
 - **2026-10-20 — Phase 0 reviewed (architect): accept with fixes.** `gate.py --full=excel_layout,skills` and
   `test_gate.py` rerun green after merging `main`; both baselines equal the surveys' output. Anchors spot-checked
@@ -333,3 +333,57 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (README {C: 36, I: 22, L: 5}); "the skill hit builders" scoped to "skill hit builders" in damage D1 and README, the
   wiki to "a skill with an element type". The wiki carries no tags or anchors and says "read from the code only". The
   combat specs stay `reviewed`: the change narrows and corrects at `[I]` from reviewed findings and raises nothing.
+- **2026-10-20 — Phase 1 batch P1.2 landed for review (reverser, `lane/p45m`, static).**
+  [skills/0002-missiles](../findings/skills/0002-missiles.md): `MissileCreate` and its 0x5C-byte request (97 call sites
+  in 82 functions: skills, shrines 19/21/22, quests, monsters, missile and skill functions; items only through
+  `ITEMSKILL_Cast`), velocity, range, activate, the `0x40` mark and the collide mask at creation; the three skill
+  creators and `useAmmo` per call site (1 at `SKILL_AttackDo`, Throw, Left Hand Throw and a few monster/skill
+  functions, 0 at `SKILLS_SrvDo`); the `ItemEffect` aim offset (a line missile starts at the target point); the 48
+  `srvmissile` rows with no `srvdofunc` (tier A 36, 251, 25) created only by `SKILLS_SrvDo`; the creation-time damage
+  block (`0x0064B860`: Missiles or Skills columns, the weapon share, the mastery bonus as enhanced damage, the owner's
+  1–3 critical draws, the elemental masteries for `ApplyMastery`); the pierce count from a local seed of stat 328; the
+  missile frame (town tests, `g_MissileSrvDoFuncs` bound 53), do function 1 (step, range countdown, cell collision),
+  the path's acceleration rule; `MISSILE_HitUnit`'s order, `justhit`, pierce, to-hit, the hit/damage tables (bounds 71
+  and 31, tested signed: **row 568's 64 948 is never called**), `BuildDamage`'s draw order on the missile seed; the two
+  `CallDoFunc` missile callers (hit 22: a null entry on stock data; do 14: the grim wards' skill do 30 every 6 frames).
+  1 `[C]` (the data join), 39 `[I]`, 7 `[L]`. 66 symbol rows (two copied from `main`'s plan 0049 names),
+  `re/types/skills.h` missile structs, `tools/skills_missiles_scan.py` with kept outputs
+  (`workspace/logs/skills/p45m-manifest.sha256`). Surprises: the critical roll at creation draws on the **owner's** seed
+  even with no critical stat; the `0x40` mark has no stock missile reader (`CollideType` 7 unused) and a second writer
+  (do 3); `ExplosionMissile` has no server reader by the scan. Backlog: review request
+  [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p45m-review-plan-0045-p1-2-missiles.md), the Missiles
+  columns [to the archivist](../backlog/2026-10-20-reverser-archivist-missiles-columns-anchored-by-skills-0002.md), the
+  collision, combat and economy inputs
+  [to the spec-writer](../backlog/2026-10-20-reverser-spec-writer-missile-path-inputs-for-drlg-collision-combat-econ.md);
+  [the archivist's fields entry](../backlog/archive/2026-10-20-archivist-reverser-missiles-fields-named-by-the-table-doc.md)
+  closed. Open for P1.3: the numbered tier-A functions, the re-seed sites in the missile range, the step direction
+  (`0x0064FC60`) for Phase 2's position logs.
+- **2026-10-20 — `lane/p45m` reviewed (architect): accept with fixes.** Spot-checked on the pinned `Game.exe`
+  (objdump): the signed `movzx; test ax,ax; jle; movsx; cmp bound` before every read of the three tables (hit
+  0x005ADA0D, 0x005AE09B, 0x005AE106, 0x005B02CF; damage 0x005AE158; do 0x005ADBEE), so row 568's 64 948 (−588) is
+  never called; the bounds 53/71/31 at `0x0073C71C`/`0x0073C83C`/`0x0073C95C` and the non-null counts 36/53/14 from the
+  image; `sub_0064A850_MissileCritRoll`'s three inline LCG steps on `ESI`'s `+0x20`/`+0x24` (stat 337 by
+  `STATS_GetUnitStat` unconditionally, 141 and the mastery critical each only when non-zero, return 1 at the first
+  success); `sub_0059F940_MissilePierceCount`'s `RNG_SeedInit(STATS_GetUnitBaseStat(owner, 328))` local seed, at most
+  four steps, the count written as stat 328. Ghidra's 97 call sites in 82 functions recounted from the kept xrefs;
+  `sha256sum -c p45m-manifest.sha256` OK; the tool's hash matches. The one `[C]` is a full-table data join and is scoped
+  (the column-to-table mapping stays `[I]`); no leads, no foreign names. Fixes: (1) the hit-table count: four reads
+  (one in `MissileEndHit`) and one damage read, not "five hit-table sites" (skills/0002 summary and § 5, the P0 notes
+  entry); (2) skills/0002 § 3 states that the missile crit chain is not the melee build's (order 337, 141, mastery;
+  337 drawn at 0); (3) quests/0001's `+0x96` open question struck as answered (`Range`), and the § 7 timer row names the
+  column. Merge: `re/symbols.csv` kept one copy of the two shared rows (no duplicate address or name), this log's tail
+  kept both sides. **Ruling (the creation crit draws):** a new owner-seed event, "missile creation", in the combat
+  spec's draw order, separate from the melee chain; § C's `[C]` chaining stands for the run's paths with an `[I]` note
+  that a player's weapon-share missile inserts 1–3 draws at its creation; monster archers draw too (337 at 0), so B2
+  and the monster chain are scoped to melee. Written into
+  [the spec-writer's entry](../backlog/2026-10-20-reverser-spec-writer-missile-path-inputs-for-drlg-collision-combat-econ.md).
+  For Phase 2: "missile create" is an event kind that draws on the owner's seed and needs its 20 chained pairs; log the
+  owner's and the missile's seeds at creation and at the hit. **P1.3 may start once this lane is in `main`** and picks
+  up: the tier-A missiles' numbered do/hit/damage functions (`firebolt`, `bomb in air`, `plaguejavelin` and their
+  sub-missiles and explosions), skill do 30 (`0x005C37C0`) run with a missile as its unit (do 14), the re-seed sites
+  (`0x005A9820`, `0x005ACDF0`, `0x005AC073` and rng/0002's others), `0x006505C0`, `0x00620C10`, `0x005A43B0`,
+  `0x00645F00`, the step direction `0x0064FC60` and the missile pass's place in the frame (`0x00540F60`…) for the log
+  windows, `MissileEndHit`'s reachability, the P0 notes entry's remainder and P1.1's list above, and the boundary
+  recommendation. Review request
+  [closed](../backlog/archive/2026-10-20-reverser-architect-lane-p45m-review-plan-0045-p1-2-missiles.md); the
+  [p49r names entry](../backlog/archive/2026-10-20-architect-reverser-plan-0045-p1-2-reuse-the-p49r-missile.md) closed.

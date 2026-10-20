@@ -948,7 +948,7 @@ id 8 → 13, id 10 → 11, id 11 → 13, id 13 → 10 (constant). `0x00546270` s
 | +0xEC | `0x0059D300` | NPC 201 (state 1, b3, b4 clear, or b3), 210 (b4), 251 (after the death, portal not made), others by b13 and b6–b11 |
 | +0xF0 | `0x0059D450` | state 1, chain to id 10 |
 | timer | `0x0059CEE0`, period 8 | at the death; state 3 broadcast unless `+0x0B` ∈ {3, 4, 5}; one-shot |
-| timer | `0x0059D870`, period `(Missiles[338] +0x96 − 75) / 20` | registered by `sub_0059DD80_A2Q6_StaffPlaced` (and `0x0059DB50`, InitFn 21 of the orifice, period 1, when the staff was already placed); opens the chamber: door object (private `+0x28`, mode 1 + object event 1) and **creates object 100** (`SUnitCreate(type 2, class 100)` at the orifice's x − 13, y + 3, mode 1, rooms pinned) |
+| timer | `0x0059D870`, period `(Missiles[338] +0x96 (Range) − 75) / 20` | registered by `sub_0059DD80_A2Q6_StaffPlaced` (and `0x0059DB50`, InitFn 21 of the orifice, period 1, when the staff was already placed); opens the chamber: door object (private `+0x28`, mode 1 + object event 1) and **creates object 100** (`SUnitCreate(type 2, class 100)` at the orifice's x − 13, y + 3, mode 1, rooms pinned) |
 
 | bit | set/clear | by | trigger | readers |
 |---|---|---|---|---|
@@ -1025,6 +1025,9 @@ call or `0x6AC690C5` in them (byte scan of [0x00598000, 0x0059F840): nine LCG co
 - Word 10 b1: no constant setter found (Cain's msg 0x153 clears it, e0/+0xEC read it); probably the generic
   `0x005455F0` with a register word, not traced. Word 10 b9 is cleared at every join by word 14 and never set.
 - Missiles row 338 (`horadricstaff`) `+0x96` (the chamber-opening delay) has no table doc; column not identified.
+  *2026-10-20 (plan 0045 P1.2, skills/0002):* the field is `Range` (s16; row 338 holds 440) per
+  [Missiles](../../tables/Missiles.md); `MissileCreate` reads the same field as the missile's lifetime
+  ([skills/0002 § 2](../skills/0002-missiles.md#2-creation)).
 - `0x00599420` and `0x0059C330` are called from monster AI (0x005F2C47, 0x005F85ED): which AI state triggers them
   (Radament, the Summoner seeing a player?) was not read.
 - The guard-pass gate `0x0059F580` (called from AI 0x005E71D2) and `0x0059F510`/`0x0059DFB0`: what the guard does with
@@ -2344,8 +2347,9 @@ stays open). Party credit and every two-client case stay plan 0044's. (run:2026-
   death).~~ Missiles 288 `cairnstones`, 332 `towerchestspawner` and 625 `baalfx control` (§ 7, read 2026-10-20). What
   their server do-functions (17, 18, 36) make is not read.
 - [L] The descriptor's `+0x08` (100 or 0) has no reader in the code read.
-- [L] The AI states that call `0x00599420` and `0x0059C330` (Act II), the game-type 3 test in `0x0059EA20`, and the
-  missiles column behind field `+0x96` used by the staff timer.
+- [L] The AI states that call `0x00599420` and `0x0059C330` (Act II), and the game-type 3 test in `0x0059EA20`.
+  ~~The missiles column behind field `+0x96` used by the staff timer.~~ `Range` (Missiles `+0x96`, s16; answered by
+  [skills/0002 § 2](../skills/0002-missiles.md#2-creation), 2026-10-20).
 - [L] The Anya quest's party callback writes into quest object 3's private data (`+0xE2`) instead of quest 33's; whether
   that block is large enough, and whether anything reads it, is open (§ 10).
 - Per-act open points are listed at the end of § 7–§ 10.
