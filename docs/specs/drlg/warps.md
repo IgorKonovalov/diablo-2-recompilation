@@ -551,7 +551,9 @@ F1. WarpPairLink(srcRoom, m):                                        [C] (fn:sub
 - [C] A unit leaving through a warp is put on the paired warp unit's position and given the exit position, that
   position plus `ExitWalkX/ExitWalkY`, as a walk target (server): four trips between Halls of the Dead 1 and 2 (rows
   45 and 46, offsets (5, 0) and (0, 5)). (fn:sub_005550B0_WarpExitPos@0x005550B0, tbl:LvlWarp.txt:ExitWalkX,
-  tbl:LvlWarp.txt:ExitWalkY, run:2026-10-16-sweep-roomk, [drlg/0007 § Plan 0038 batch H5c](../../findings/drlg/0007-warps.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk))
+  tbl:LvlWarp.txt:ExitWalkY, run:2026-10-16-sweep-roomk, [drlg/0007 § Plan 0038 batch H5c](../../findings/drlg/0007-warps.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)).
+  The player's side of the trip (the free-cell search, the quest gates into 73, 100, 118, 128 and 132) is
+  [quests/travel § H](../quests/travel.md#h-warps).
 - [I] `SelectX/Y/DX/DY` are read only by the client, which draws the warp's selection box. The client reaches the
   records through a pointer not traced, so no reader search bounds them. (fn:sub_0045B1E0_WarpSelectBoxDraw@0x0045B1E0,
   [drlg/0007 § Plan 0038 batch S4b](../../findings/drlg/0007-warps.md#plan-0038-batch-s4b-2026-10-16))

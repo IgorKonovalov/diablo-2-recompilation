@@ -1111,7 +1111,8 @@ fn:sub_00585B90_ObjectChestDrop@0x00585B90, run:2026-10-15-objects)
   uniform pick over all codes where the guide says health shrine. Only modified data reaches either.
 - [L] Multiplayer games were not logged; quest-state objects (582, Zoo, the quest `InitFn`s) stay inputs. The quest
   objects' operates and drops are § L and [items/quest-drops](../items/quest-drops.md), whose open questions hold the
-  event-7 route at run time for the quest objects other than the Hellforge.
+  event-7 route at run time for the quest objects other than the Hellforge. The quest state each quest `InitFn` reads is
+  [quests/progression § Creation-path readers](../quests/progression.md#creation-path-readers).
 - [L] **The chest tier's exact cut** (J3): the `÷ 3` rounding and which bound is inclusive, and a check against the tiers
   logged in run:2026-10-15-objects (the Jail chest's tier 2) and run:2026-10-11-tc-drops; until the reverser writes the
   arithmetic of 0x00585C01–0x00585C87 into a finding, the tier formula and the tier-as-`ilvl` hand-off stay inferred

@@ -143,6 +143,9 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-20 | `lane/c43` | 0043 close | architect | 88 624 | 30 | 7 | no slot | — (bookkeeping, merged directly) | — |
 | 2026-10-20 | `lane/bkarch` | ADR-0019 backlog archive | architect | 127 593 | 46 | 12 | no slot | — (owner request, merged directly) | — |
 | 2026-10-20 | `lane/plans45` | plans 0045–0049, ADR-0020 | architect | 414 851 | 76 | 27 | no slot | approved by the owner 2026-10-20 | — |
+| 2026-10-20 | `lane/p42s` | 0042 P3 (first draft) | spec-writer | 433 404 | 84 | 32 | no slot | accept with fixes | 6: overclaim 5, other 1 (counted with the re-tag) |
+| 2026-10-20 | `lane/p42s` (re-tag) | 0042 P3 re-tag from part 3 | spec-writer | 172 009 | 97 | 27 | no slot | accept with fixes | — (on the first-draft row) |
+| 2026-10-20 | `lane/p42s` review | 0042 P3, plan close | architect-review | 156 291 | 69 | 10 | — | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

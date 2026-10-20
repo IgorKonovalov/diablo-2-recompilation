@@ -4,7 +4,7 @@
 > **Question:** how does a player activate and use a waypoint, change act, open and use a town portal, and where is a
 > player placed on entering a level (by waypoint, NPC, portal, warp, death or joining), with which draws?
 > **Date:** 2026-10-17   **Plan:** 0042 (Phase 1 and 1b, static; Phase 2 run:2026-10-17-quests, § 12; part 2 run:2026-10-18-quests2, § 13; part 3 run:2026-10-19-quests3, § 14)   **Status:**
-> open (Phase 2 part 1 reviewed 2026-10-17, accept with fixes; part 2 reviewed 2026-10-19, accept with fixes; part 3 review requested 2026-10-19)
+> answered (Phase 2 part 1 reviewed 2026-10-17, accept with fixes; part 2 reviewed 2026-10-19, accept with fixes; part 3 reviewed 2026-10-20, accept with fixes; plan 0042 closed 2026-10-20)
 
 Static reading of the pinned `Game.exe` (Ghidra on the lane's copy, objdump for the instruction-level reads); no game
 run. Names are ours. "Record" and "word *q*, bit *s*" are as in [save/0002](../save/0002-quest-words.md): bit `16q + s`
@@ -337,8 +337,10 @@ NpcTravelMove(level, type) (0x0054B830)
   word 28 b0 clear it sets word 28 b0 then b13 (0x005B590F, 0x005B5919), sends the record and sets player data `+0x4C`
   = 1 (0x005B5960, `0x0053D940`), and in every case `NpcTravelMove(109, 5)` (0x005B598F) and `0x005B4FF0` (the
   waypoint record). The run: x-tyrael3, five trips (§ 14). (0x005B5880–0x005B59A5)
-- [C] **Meshif's Act III menu** (part 3, run:2026-10-19-quests3): *talk*, *sail west*, *cancel* (no trade line; part 2's
-  driver clicked *cancel*). (screenshot `workspace/logs/quests/dev-p42r-meshif-menu.png`)
+- [I] **Meshif's Act III menu** (part 3, run:2026-10-19-quests3): *talk*, *sail west*, *cancel* (no trade line; part 2's
+  driver clicked *cancel*). A screenshot of the client, whose menu builder was not read, so `[I]` (Phase 3 review); the
+  *sail west* line's server side is § 14's `[C]`. (fn:NPC_MenuAction@0x00579D60, screenshot
+  `workspace/logs/quests/dev-p42r-meshif-menu.png`)
 - [I] The NPC classes are `monstats` rows; their names (Warriv, Meshif, Tyrael, …) are `[L]`.
   (fn:sub_005467E0_NpcActTravel@0x005467E0)
 - [I] `TownLevelLeave(old, new)` marks the old town's store stale (vendors) and, on arrival in town 1, 40, 75 or 109,

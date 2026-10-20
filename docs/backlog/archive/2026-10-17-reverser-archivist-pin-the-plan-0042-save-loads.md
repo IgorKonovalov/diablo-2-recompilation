@@ -4,7 +4,7 @@ to: archivist
 date: 2026-10-17
 status: done
 context:
-  - ../../plans/0042-quests-travel.md
+  - ../../plans/done/0042-quests-travel.md
   - ../../findings/quests/experiments.md
 resolution: "Plan 0049 P0 (lane/p49a): the 17 loaded recipes and quest-tpc pinned in tools/test_d2s.py (built sha256 equals loads.txt's built prefixes); quest-tpc in tools/quest_saves.py SET/EXPECT; the load outcome in [d2s.md § Plan 0042 Phase 2 saves](../../formats/d2s.md#plan-0042-phase-2-saves)."
 ---

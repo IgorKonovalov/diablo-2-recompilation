@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/tc, items/quality, items/affixes, items/uniques-sets, items/properties, items/sockets-runewords, hirelings, player/creation]
-tags: {C: 90, I: 150, L: 3}
-updated: 2026-10-17
+tags: {C: 91, I: 149, L: 3}
+updated: 2026-10-20
 ---
 
 # Character save (`.d2s`): writer, reader, header and item bitstream
@@ -434,8 +434,9 @@ packet-beta
 ```
 E1. Quests: "Woo!", u32 6, u16 0x12A, then three 96-byte blocks copied from player data
     +0x10, +0x14, +0x18 in index order (0x0065C560).                [I] (fn:D2S_WriteQuests@0x00569320)
-    On load (0x0065C4D0), in each of the 43 u16 quest words of a block: if bit 1 is set,
-    clear bits 13 and 14 and set bit 15.                             [I] (fn:D2S_ReadQuests@0x0056A370)
+    On load (0x0065C4D0), per block of 48 u16 quest words: words 0–41 get bits 13 and 14
+    cleared always and bit 15 set if bit 1 is set; words 42–47 are copied unchanged.
+                                                                     [C] (fn:D2S_ReadQuests@0x0056A370, fn:QUESTRECORD_LoadBytes@0x0065C4D0, run:2026-10-18-quests2)
 E2. Waypoints: "WS", u32 1, u16 0x50, then three 24-byte blocks: 16 bytes from the waypoint
     record at player data +0x1C, +0x20, +0x24 (WAYPOINT_Save) and 8 bytes never written.   [I] (fn:D2S_WriteWaypoints@0x005693E0, fn:WAYPOINT_Save@0x006610B0)
     record = u16 marker 0x0102, then 7 u16 words; waypoint n (< 112) is word 1 + n ÷ 16,
@@ -446,6 +447,8 @@ E3. NPCs: 01 77, u16 0x34, then 3 × 8 bytes (first record of player data +0x60 
     and 3 × 8 bytes (second record), d = 0, 1, 2; read back in the same order.            [I] (fn:D2S_WriteNpcs@0x00569490, fn:D2S_ReadNpcs@0x0056A470)
 ```
 
+- E1. The quest load rule as the quest runs check it, and what the game writes into the record before Save and Exit,
+  are [quests/progression § A](../quests/progression.md#a-the-quest-record).
 - E1–E3. [I] **Slot d is difficulty d** for all three sections. For quests and waypoints this is
   [save/0002](../../findings/save/0002-quest-words.md); for the NPC records, the three game-time readers index player
   data `+0x60 + 4·d` with the game's difficulty byte `Game+0x6D`. (0x0057236C–0x00572370, 0x005723CC–0x005723D0,
