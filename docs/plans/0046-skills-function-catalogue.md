@@ -94,7 +94,8 @@ function a stock row uses on the machinery of plan [0045](0045-skills-missiles-m
   *Carried from plan 0045's P1b review (2026-10-20):* the Assassin batch reads the five finishing-move calls of
   `COMBAT_PrgFinisher` (start 25 at `0x005D6399` and `0x005D63E1`; do 42 `0x005D5A8C`, 50 `0x005D71F2`, 52
   `0x005D79DF`); the item, shrine and object batch reads which unit `ITEMSKILL_Cast` gives the `ItemTarget` 2 helper
-  `0x005FD850` (it draws 2–20 steps on that unit's seed), whether helpers 3 `0x005FD9C0` and 4 `0x005FDA10` draw, and
+  `0x005FD850` (it draws 2–20 steps on that unit's seed), whether helpers 3 `0x005FD9C0` and 4 `0x005FDA10` draw (and gives the three
+  helpers `re/symbols.csv` rows: none has one), and
   what removes pets when `petmax` falls (a skill shrine wearing off). Each is filed back to plan 0045's spec as a
   correction.
 - **Outputs:** `docs/findings/skills/0003-catalogue.md` (one section per batch, one sub-section per function);

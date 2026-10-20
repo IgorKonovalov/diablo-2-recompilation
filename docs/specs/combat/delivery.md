@@ -458,9 +458,11 @@ that draw:
 - E5. **`ItemTarget` 2 draws in its target helper.** `ITEMSKILL_Cast` calls the helper `0x005FD850` (call at
   `0x005FDB9F`) before its `SKILLS_SrvDo`. Per try the helper steps the seed at `+0x20` of the unit it is given twice,
   inline, adding `low mod 40 − 20` to x and to y, and it tries at most 10 times, until `COLL_PatternTest` returns 0:
-  2 to 20 steps. The one stock `ItemTarget` 2 row is Teleport. Which unit the helper is given is not followed (*Open
-  questions*). [I] (fn:ITEMSKILL_Cast@0x005FDA80, 0x005FDB9F, 0x005FD900–0x005FD98A, fn:COLL_PatternTest@0x0064D870,
-  tbl:Skills.txt:ItemTarget, [skills/0001 § 10](../../findings/skills/0001-dispatch.md#10-item-granted-skills))
+  2 to 20 steps, none when `sub_00620BB0_UnitGetRoom` finds no room. When it finds no room or all 10 tries fail it
+  returns 0 and the cast is refused (no `SKILLS_SrvDo`). The one stock `ItemTarget` 2 row is Teleport. Which unit
+  the helper is given is not followed (*Open questions*). [I] (fn:ITEMSKILL_Cast@0x005FDA80, 0x005FDB9F, 0x005FDBA6,
+  0x005FD900–0x005FD98A, fn:sub_00620BB0_UnitGetRoom@0x00620BB0, fn:COLL_PatternTest@0x0064D870, tbl:Skills.txt:ItemTarget,
+  [skills/0001 § 10](../../findings/skills/0001-dispatch.md#10-item-granted-skills))
 - E5. **Order on a kill**: the defender's `killed` handlers (30) run before the attacker's `kill` handlers (28, 31,
   and 20 for stat 196), all inside `COMBAT_ApplyDamage` (B5). [I] (0x0057C8DD–0x0057C970)
 

@@ -2,18 +2,18 @@
 from: spec-writer
 to: architect
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../specs/combat/delivery.md
-  - archive/2026-10-20-architect-spec-writer-combat-delivery-e5-item-target-2-draws.md
-  - ../plans/0045-skills-missiles-machinery.md#implementation-log
-resolution: ""
+  - ../../specs/combat/delivery.md
+  - 2026-10-20-architect-spec-writer-combat-delivery-e5-item-target-2-draws.md
+  - ../../plans/0045-skills-missiles-machinery.md#implementation-log
+resolution: "Accepted with fixes (1) at the lane/e5fix review: anchors checked on the pinned Game.exe; E5 bullet now states the helper's failure exits (no room, 10 failed tries) refuse the cast; helper symbol rows routed to plan 0046 Phase 1 item batch. See plan 0045 log."
 ---
 
 Review request for `lane/e5fix` (spec-writer): the E5 correction routed from the plan 0045 Phase 1b review
-([entry](archive/2026-10-20-architect-spec-writer-combat-delivery-e5-item-target-2-draws.md)). Not blocking.
+([entry](2026-10-20-architect-spec-writer-combat-delivery-e5-item-target-2-draws.md)). Not blocking.
 
-1. [combat/delivery § E5](../specs/combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze): the
+1. [combat/delivery § E5](../../specs/combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze): the
    "an item cast draws nothing of its own" bullet is scoped to a skill with `ItemTarget` blank or 1, naming both cast
    helpers (`0x005FDCA0`, `0x005FDD60`) and `ITEMSKILL_Cast`; `[I]`, anchors plus `fn:sub_005FDD60_ItemCastAtXY` and
    `tbl:Skills.txt:ItemTarget`.
