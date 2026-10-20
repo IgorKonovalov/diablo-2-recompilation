@@ -57,7 +57,7 @@ toward zero unless stated. Life, mana and damage fields are in 1/256 points.
 | A monster's or a mercenary's plain attack, at the hit frame | fn:sub_005A7670_MonAttackFrame@0x005A7670 → fn:MON_MeleeHit@0x005A5490, fn:COMBAT_DeliverQueued@0x0057D4F0 | [C] (run:2026-10-16-combat: 4 533 monster, 1 259 mercenary) |
 | A monster skill's melee hit | fn:sub_005D9C80_MonSkillAttackDo@0x005D9C80 | [I] |
 | A monster enters an attack mode (its to-hit, damage and `El` stats) | fn:sub_005A7C20_MonSetMode@0x005A7C20 → fn:sub_005A4F50_MonAttackStats@0x005A4F50 | [C] for the draws (run:2026-10-16-combat: 5 060) |
-| A missile that takes a weapon share is created (its critical chain, § B4) | fn:sub_0059FA30_MissileCreate@0x0059FA30 → fn:sub_0064B860_MissileDamageBlock@0x0064B860 → fn:sub_0064A850_MissileCritRoll@0x0064A850 | [I] |
+| A missile that takes a weapon share is created (its critical chain, § B4) | fn:sub_0059FA30_MissileCreate@0x0059FA30 → fn:sub_0059F900_MissileInitDamage@0x0059F900 → fn:sub_0064B860_MissileDamageBlock@0x0064B860 → fn:sub_0064A850_MissileCritRoll@0x0064A850 | [I] |
 | A missile's damage reaches a unit (the defender's side) | fn:MISSILE_ApplyDamage@0x005AD730 | [C] (run:2026-10-16-combat: 1 957 on the player or the mercenary, 519 Nova missiles) |
 | A player skill's melee hit (packet and `SrcDam` from the skill) | `0x005C7690` and the other do-functions that call fn:COMBAT_MeleeHitTest@0x0057EC10 | [I] |
 
@@ -201,7 +201,7 @@ A2. MonsterAttack(att):                                               [C] (fn:su
   That path is phase (3); here its packet is an input. [I] (fn:MISSILE_HitUnit@0x005ADF10,
   fn:MISSILE_BuildDamage@0x005A89A0, fn:MISSILE_ApplyDamage@0x005AD730)
 - A3. **A missile's weapon terms are taken at its creation**, not at the hit: the weapon share, the enhanced damage
-  and the critical chance are fixed when `MissileCreate` builds the damage block and are stored as the missile's own
+  and the critical strike's result are fixed when `MissileCreate` builds the damage block and are stored as the missile's own
   stats. The critical chain draws then, on the owner's seed (§ B4). [I] (fn:sub_0064B860_MissileDamageBlock@0x0064B860,
   fn:sub_0064AC60_MissileDamageToStats@0x0064AC60)
 
@@ -304,8 +304,8 @@ CritChain(u, w) → bool:                                              [I] (fn:s
       Step(u.seed);  if (i32)(u.seed.low mod 100) < stat(u, 337): return true      ; draw, always
       if stat(u, 141) ≠ 0:
         Step(u.seed);  if (i32)(u.seed.low mod 100) < stat(u, 141): return true    ; draw
-      if w and m ← SKILLS_GetMasteryBonus(u, w, 0, 2) ≠ 0:
-        Step(u.seed);  if (i32)(u.seed.low mod 100) < m: return true               ; draw
+      if w and mc ← SKILLS_GetMasteryBonus(u, w, 0, 2) ≠ 0:
+        Step(u.seed);  if (i32)(u.seed.low mod 100) < mc: return true              ; draw
       return false
 ```
 
@@ -414,7 +414,7 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   leech overlay `Range(2)`, the cold shatter roll on a monster that cannot shatter. [C] (fn:SKILL_AttackDo@0x0056F070,
   0x0057BC2F–0x0057BC8A, 0x0057C560–0x0057C568, 0x0057B0FA–0x0057B124, run:2026-10-16-combat)
 - **Draws that do not happen**: a chance of 0 (block, dodge, deadly strike, crushing blow, open wounds) and a
-  degenerate damage range draw nothing, on the paths of § B1–B3. [C] (run:2026-10-16-combat)
+  degenerate damage range draw nothing, on the paths the run checked: § B1, B2 and the player's side of B3. [C] (run:2026-10-16-combat)
 - **The missile creation's critical strike draws at 0.** A weapon-share missile always steps its owner's seed once
   for stat 337, whatever its value (B4); its deadly strike and mastery steps still need a chance above 0. [I]
   (fn:sub_0064A850_MissileCritRoll@0x0064A850, 0x0064A864–0x0064A890)

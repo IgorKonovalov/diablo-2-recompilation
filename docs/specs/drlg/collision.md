@@ -516,8 +516,9 @@ fn:UNIT_GetSizeY@0x006205A0)
   fn:PATH_DynamicCreate@0x00649D00, 0x004CD10A, 0x0059FD54, run:2026-10-14-collision)
 - [I] **The missile side of `0x40`** (plan 0045 P1.2, input only; the placement masks stay as above). Missile do function 3
   (26 stock rows: the clouds, the blizzards, `plaguejavelin`) is a second writer: each frame its path is not moving, it ORs
-  `0x40` into its own cell (`COLL_CellOrAt`). When a missile ends, `MISSILE_HitUnit` removes its mark by size with
-  `COLL_SizeUnmark(…, 0x40)`. The only missile reader of the mark would be `CollideType` 7 (mask `0x40`, the target a
+  `0x40` into its own cell (`COLL_CellOrAt`). When a missile ends through `MISSILE_HitUnit` (an ending result with no pierce left, or the end of its
+  life), it removes its mark by size with `COLL_SizeUnmark(…, 0x40)`; a missile that do function 1 frees without the hit
+  function is not followed here. The only missile reader of the mark would be `CollideType` 7 (mask `0x40`, the target a
   missile whose row has `CanDestroy`), which no stock row uses. (fn:sub_005AE480_MissDo03CloudMark@0x005AE480,
   fn:COLL_CellOrAt@0x0064CB90, fn:MISSILE_HitUnit@0x005ADF10, fn:COLL_SizeUnmark@0x0064EBA0,
   data:g_MissileCollideTypes@0x0073C720, [skills/0002 §§ 4–5](../../findings/skills/0002-missiles.md#4-each-frame))

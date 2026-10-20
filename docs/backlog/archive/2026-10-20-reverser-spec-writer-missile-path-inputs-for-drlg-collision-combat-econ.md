@@ -8,7 +8,7 @@ context:
   - ../../specs/drlg/collision.md
   - ../../specs/combat/README.md
   - ../../specs/items/economy.md
-resolution: "Folded by lane/msw (spec-writer), all [I]: combat/README § B4 'missile creation' on the owner's seed (337 always, then 141, then mastery; SrcMissDmg on the source's seed), B3 to-hit and BuildDamage order, B2 and § C monster chain scoped to melee, § C [I] note on the player's creation draws (not stated as the 213 resyncs' cause), damage step 3 note; rng/seeds pierce count's local seed classified; drlg/collision § F missile side of 0x40 (do 3 writer, HitUnit unmark, CollideType 7 unused), C2 kept [L], no plan 0038 row re-tagged; items/economy H3 useAmmo gates, open question struck and narrowed. Review: [request](../2026-10-20-spec-writer-architect-review-lane-msw-missile-creation-draws-in-combat.md)."
+resolution: "Folded by lane/msw (spec-writer), all [I]: combat/README § B4 'missile creation' on the owner's seed (337 always, then 141, then mastery; SrcMissDmg on the source's seed), B3 to-hit and BuildDamage order, B2 and § C monster chain scoped to melee, § C [I] note on the player's creation draws (not stated as the 213 resyncs' cause), damage step 3 note; rng/seeds pierce count's local seed classified; drlg/collision § F missile side of 0x40 (do 3 writer, HitUnit unmark, CollideType 7 unused), C2 kept [L], no plan 0038 row re-tagged; items/economy H3 useAmmo gates, open question struck and narrowed. Review: [request](2026-10-20-spec-writer-architect-review-lane-msw-missile-creation-draws-in-combat.md)."
 ---
 
 Not blocking; for plan 0045 Phase 3 or an earlier fix, from [skills/0002](../../findings/skills/0002-missiles.md) (plan 0045 P1.2, all `[I]`):

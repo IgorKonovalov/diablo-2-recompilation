@@ -523,7 +523,8 @@ separate objects.
   initialises a stack seed with `Init(baseStat(owner, 328))` (for a player, stat 328 is raised by 1 on each of its skill requests) and steps
   it at most four times for the missile's pierce count; it reads and writes no game, unit or missile seed. So it is a
   classified initialiser site, not a re-seed. [I] (fn:sub_0059F940_MissilePierceCount@0x0059F940, fn:RNG_SeedInit@0x00650E40,
-  [skills/0002 § 3](../../findings/skills/0002-missiles.md#3-the-damage-the-missile-carries))
+  [skills/0002 § 3](../../findings/skills/0002-missiles.md#3-the-damage-the-missile-carries),
+  [rng/0002 § Plan 0039 batch P1a](../../findings/rng/0002-seed-tree.md#the-other-initialiser-sites) for the client/server pair)
 
 ## Evidence
 

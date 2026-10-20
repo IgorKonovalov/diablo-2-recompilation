@@ -791,7 +791,8 @@ H6. SkillWeaponWear (from 0x005DAB40), with the skill's calcs +0x13C chance and 
   `SKILL_AttackDo` (the normal attack) unless the unit's ranged missile is 27 `magicarrow`, at the Throw and Left Hand
   Throw do functions, at a few monster functions and at two skill functions (`0x005CBF90`, both calls of `0x005D88B0`),
   and 0 everywhere else, `SKILLS_SrvDo`'s `srvmissile` included; there a `decquant` skill uses one through
-  `SKILLS_SrvDo`'s own `PLAYER_UseAmmo` call, after the missile, on its paying path. In the creators the
+  `SKILLS_SrvDo`'s own `PLAYER_UseAmmo` call, made after the missile when `SKILLS_SrvDo` runs with its `pay` argument
+  set and the unit is a player or a monster (the use acts only for a player). In the creators the
   ammunition use acts only for a player owner.
   (fn:sub_0056ECB0_SkillMissileCreate@0x0056ECB0, fn:sub_0056EE90_SkillMissileCreateLob@0x0056EE90,
   fn:SKILL_AttackDo@0x0056F070, fn:sub_0056F460_SkillThrowDo@0x0056F460, fn:SKILLS_SrvDo@0x0056F7F0,

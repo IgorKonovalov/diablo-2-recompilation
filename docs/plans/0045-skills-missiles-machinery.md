@@ -422,4 +422,26 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   | items/economy | {C: 125, I: 83, L: 12} | {C: 125, I: 84, L: 12} |
 
   The live open-question counts are unchanged. Review:
-  [request](../backlog/2026-10-20-spec-writer-architect-review-lane-msw-missile-creation-draws-in-combat.md).
+  [request](../backlog/archive/2026-10-20-spec-writer-architect-review-lane-msw-missile-creation-draws-in-combat.md).
+- **2026-10-20 — `lane/msw` reviewed (architect): accept with fixes.** Every new statement checked against skills/0002
+  §§ 2–6 and 9 and skills/0001 § 6: B4's weapon-share test, the 337 (always) / 141 / mastery order and the first-success
+  stop, the `SrcMissDmg` source branch with no weapon, the creation order (`SUnitCreate`, callback, damage block, pierce),
+  B3's to-hit on the owner's seed and `BuildDamage`'s seven `RangeB` in order, the do-3 writer and the `HitUnit` unmark,
+  and the 33 `useAmmo` sites (the six monster sites and both `0x005D88B0` calls re-read in objdump on the pinned
+  `Game.exe`, the two other `0x005A35D0` calls push 0). The P1.2 ruling holds: B4 is its own owner-seed event, not
+  damage step 3's chain; § C's `[C]` is unchanged with an `[I]` note that does not claim the 213 resyncs; B2 and the
+  monster chain are melee. The diagrams match the text; the struck economy question has no tag; the wiki has no tags or
+  anchors. No tag moved, so the five specs keep status `reviewed` and their tag counts. Fixes (7): (1) combat A3 "the
+  critical chance" is fixed at creation → "the critical strike's result"; (2) the B4 entry-point row names
+  `sub_0059F900_MissileInitDamage` between `MissileCreate` and the damage block; (3) "Draws that do not happen" `[C]`
+  scoped to what the run checked (B1, B2 and the player's side of B3), not all of B3, whose missile draws are `[I]`;
+  (4) `CritChain`'s mastery local renamed `mc` (it shadowed the missile `m`); (5) drlg/collision § F: the `HitUnit` unmark
+  is scoped to a missile ending through `HitUnit`, a do-1 free without the hit function not followed; (6) rng/seeds: the
+  "client/server base-stat pair" now cites rng/0002 (it came from there, not from skills/0002); (7) economy H3's
+  "on its paying path" is spelt out: `SKILLS_SrvDo` with `pay` set and a player or monster unit (skills/0001 § 6's
+  `if (pay) { if (actor) … decquant … }`), the use acting only for a player. **Rulings:** (a) skills/0002 § 2's "four
+  monster functions" listing five was the finding's miscount: five functions, six sites, verified in objdump; fixed in
+  the finding with a review note, no backlog entry (the spec says "a few" and stands). (b) `decquant`'s reading is
+  right, only the wording was vague (fix 7). (c) drlg/collision stays held by plan 0038 Phase 3; the lane re-tagged no
+  0038 row. Review request
+  [closed](../backlog/archive/2026-10-20-spec-writer-architect-review-lane-msw-missile-creation-draws-in-combat.md).
