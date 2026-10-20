@@ -526,5 +526,6 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   the negative total that leaves life unchanged (25); the player's life tick (no window here; reproduced under
   poison by run:2026-10-17-stats, [stats/states § E](../stats/states.md#e-the-regeneration-tick)); the mode-2 (walking)
   exception of the block `÷ 3` (no walking player attacked).
-- [L] Player against player and hostile auras need two clients (ADR-0008, accepted 2026-10-16 on the port-4000
-  condition; no such run yet).
+- [L] Player against player beyond run:2026-10-20-two-clients (plan 0044), which reached the 17 % on physical and
+  lightning damage ([reductions A2](reductions.md)) and a shieldless player's block chance 0 ([to-hit C2](to-hit.md)):
+  the fire, cold, magic and poison fields, a defender in town, and the hostile (offensive) auras.

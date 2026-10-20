@@ -1,6 +1,6 @@
 # 0044 — Multiplayer branches: the two-client cases of the reviewed specs
 
-> **Status:** approved (owner, 2026-10-16; unattended); [ADR-0008](../adrs/0008-two-client-harness.md) accepted 2026-10-16 on the port-4000 condition (Phase 2)
+> **Status:** done (approved 2026-10-16, owner, unattended; closed 2026-10-20; P1, P2 and P3 accepted with fixes); [ADR-0008](../../adrs/0008-two-client-harness.md) accepted 2026-10-16 on the port-4000 condition (Phase 2)
 > **Created:** 2026-10-16
 > **Owner skill(s):** reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0008-two-client-harness, 0011-harness-slots, 0014-scope-game-simulation
@@ -47,7 +47,7 @@ reason they could not be reached, and the specs are re-tagged. No new subsystem.
 - **Precondition (owner's condition on ADR-0008, 2026-10-16):** before the first hosting session of the run, the lane
   makes sure TCP port 4000 cannot be reached from outside loopback: a host firewall rule that leaves loopback open,
   or a confirmed existing block. The run record states which, with the commands used and their output. No hosting
-  session starts until this is recorded. The steps are [multiplayer/0001 § 5](../findings/multiplayer/0001-cases.md#5-the-hosts-binding-and-the-port-4000-precondition)
+  session starts until this is recorded. The steps are [multiplayer/0001 § 5](../../findings/multiplayer/0001-cases.md#5-the-hosts-binding-and-the-port-4000-precondition)
   (Phase 1 review, 2026-10-17): the owner's root listing, or the owner's deny rule; the lane re-checks the ufw state
   and file hashes without root before each later session, and repeats the owner's step only if they changed.
 - **First step: the driver's live test** (Phase 1's checkpoint, carried here by the Phase 1 review): the six steps
@@ -78,7 +78,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-16 — Drafted (architect, `lane/plans39`).** Status `proposed`; gated on ADR-0008.
 - **2026-10-16 — Approved (owner, via the main session).** Plans 0039–0044 approved to run unattended, like 0027–0038. ADR-0008 accepted the same day on the port-4000 condition, now Phase 2's precondition; host and joiner on two non-zero slots, slot 0 stays the owner's.
 - **2026-10-17 — Case added from plan 0042 (architect, P1 review of `lane/p42r`).** For Phase 1's list: the hostility
-  delays and the portal closing ([quests/0002 § Phase 1b verdicts](../findings/quests/0002-travel.md#phase-1b-verdicts),
+  delays and the portal closing ([quests/0002 § Phase 1b verdicts](../../findings/quests/0002-travel.md#phase-1b-verdicts),
   § 9). Two stamps gate leaving town: waypoint travel waits 10 000 ms (`0x0054C5D0`) and another player's portal 5000 ms
   (`0x00584870` via `0x0055B6C0`), both on `GetTickCount`; the only writer is `0x0055B720`, called once, from
   `0x005A5E50`, which also closes the player's portal. The community lead (one 10-second delay for both) is contradicted
@@ -88,7 +88,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   the quest (the portal gate of quests/0002 § 6).
 - **2026-10-17 — Phase 1 landed (reverser, `lane/p44r` from `main` `1083b92`, static), review requested; the live
   driver test is a checkpoint below.**
-  - **Case list:** [multiplayer/0001](../findings/multiplayer/0001-cases.md), one finding rather than a section in each
+  - **Case list:** [multiplayer/0001](../../findings/multiplayer/0001-cases.md), one finding rather than a section in each
     owning finding, because the cases share sessions. It has **32 cases**:
     - **29 stageable.** Three of these have no prediction yet, because the code is not read: MP25 (`aurafilter` with
       a second player) and MP31–MP32 (trade and party gold, plan 0043 Phase 1 on `lane/p43r`). MP18 depends on
@@ -224,7 +224,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   No rule names 4000, no range contains it, and no rule is portless. So TCP 4000 is dropped on every non-loopback interface, and loopback is accepted by `before.rules`. This meets ADR-0008's condition. Before each hosting session, the lane re-reads the ufw state and the rule-file hashes without root. It asks the owner again only if they changed.
 - **2026-10-17 — `lane/arc6` MP23 pair reviewed (architect, `main` `925d060` already in). Verdict: accept with fixes.**
   - **Ruling: the low-damage pair is right for MP23.** The prediction is P = 17 % on every scaled field
-    ([combat/0001 § 7](../findings/combat/0001-formulas.md#7-reductions-combat_applyreductions)). `combat.gdb` logs the
+    ([combat/0001 § 7](../../findings/combat/0001-formulas.md#7-reductions-combat_applyreductions)). `combat.gdb` logs the
     packet in 1/256 life and `combat.py` checks the RDP percent and the RD1 packet exactly after `MulDiv(v, 17, 100)`,
     so a 1-point field is already 256 units. A Nova 1 lightning field of 256 to 5120 separates P = 17 from 16 or 18 and
     from any other rounding. Large hits would reach only `MulDiv`'s large-value branch (more than 4096 life in one
@@ -241,8 +241,195 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `COMBAT_MeleeHitTest`, the case's entry) and row 2 (Nova). Run both kinds of attack. The other scaled rows (fire,
     cold, magic, poison) stay a shortfall of this pair, and the session must name that shortfall rather than claim
     "every scaled field".
+- **2026-10-20 — Phase 2 run (reverser, `lane/p44h` from `main` `f8de60b`, slots 1 and 2), review requested.**
+  - **Precondition:** a confirmed existing block. The owner's 2026-10-17 listing stands; before the first hosting
+    session the lane re-read without root (ufw active and enabled, input policy DROP, no rule for 4000, `lo` accepted
+    first, every rule file unchanged since 2026-09-21) and hashed the eight files; before each later session the same
+    re-read matched the hashes (20 re-reads for 18 sessions; corrected at review). No rule was changed and no root step was repeated.
+    ([record](../../findings/multiplayer/experiments.md#run2026-10-20-two-clients))
+  - **The driver's live test** (the six steps of the Phase 1 checkpoint) passed before any case session: where,
+    invite and accept, follow into the Blood Moor, leave the party, hostile (the joiner's `+0x160` and pair stamp
+    written), leave. Measured: the hostile button (103, 147), the exit item (400, 260), the trade accept (320, 103), the
+    trade check (318, 461), the offer grid (97, 316). Screenshots under `workspace/logs/p44h-live-2/`. Driver fixes: the
+    PLRS line also fires on the server frame (standing players), and `"join"` names the joiner present after a rejoin.
+  - **19 sessions**, every checker 0 mismatches (`workspace/logs/p44h-run/check-run.txt`). Done-when: 417 party kills
+    with drops, 46 vendor stock events with two players, 385 party experience shares, 12 quest-bit writes with both
+    players present, 230 player against player attack events.
+  - **Reached:** MP01, MP04, MP06–MP10, MP15, MP16 (a, b, c, d, e), MP19, MP22, MP23, MP24, MP25 (the `0x10000`
+    filter), MP26, MP28 (a), MP29; partly MP11 and MP20. **Shortfalls:** MP02, MP03, MP05 (not stageable); MP12, MP13,
+    MP14, MP17 (no session; owner play not asked); MP18 (no recipe); MP21 (no lifecycle logger); MP27; MP28 (b), (c)
+    (the Den did not complete in three of four games); MP30 (no e9/e10 line); MP31, MP32 (no prediction written before
+    the run); MP23's in-town defender and MP24's server town test (the client refuses both); MP25's offensive auras.
+  - **Found on the way:** J4's member input is the x87 product of the f32 `q` and the level, not rounded to f32 (98
+    separating inputs); a withdrawal leaves `+0x160` alone (one case); the stock client refuses a declaration outside
+    town; a dead player is mode 17 with `+0xC6` bit 0 clear; the host's Den entry sets word 1 bit 4 on every player's
+    record. All in [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients).
+  - **Tools:** `tools/mp_check.py` (xpshare, gates, aura, quests); loggers `two-kills`, `two-combat`, `two-vendors`,
+    `two-quests`, `two-monstats`.gdb; `two-players.py` PLRK, the MP24 gate lines, `qr`, AF; `tc-party.py` the killer's
+    owner; checker changes in `combat.py` (`--no-shield`), `monstats.py` (live players from PLRS), `vendors.py` (the
+    renamed ETB tags), `tc.py` (the owner). Saves restored on both slots; both slots stopped.
+  - **Backlog:** the review request to the architect; Phase 3's re-tags to the spec-writer; the Phase 1 follow-ups
+    entry closed.
+- **2026-10-20 — Phase 2 reviewed (architect, `lane/p44h` at `b41043d`, `main` `2ebd473` merged in as `40677a6`,
+  clean): accept with fixes. Phase 2 is done; Phase 3 (spec-writer re-tag) may start.** `backlog.py archive` changed
+  nothing.
+  **The port-4000 precondition (the owner's condition on ADR-0008): met, as a confirmed existing block.** The owner's
+  root listing of 2026-10-17 (above) is the root step. The no-root re-read before live-1 ran at 10:51:34, two minutes
+  before live-1's host log opened (10:53:34); the review found the command's output in the lane's own tool output of
+  that time and it matches `p44h-ufw-initial.txt` line for line (the file itself was written at 13:14, and its
+  `ip -br addr` line drops the IPv6 addresses; § 5 shows no IPv6 listener). The eight hashes equal
+  `ufw-baseline.sha256` (written 11:02:31) and every rule file's mtime is 2026-09-21 or earlier. `p44h-ufw.log` holds
+  20 re-reads, each 1–3 s before a host log opens, covering all 18 later sessions (kills-3 and kills-5 twice, for an
+  aborted launch); 0 `FAILED`, ufw active and enabled, input policy DROP every time. No rule was edited and no root
+  step repeated. Two weaknesses, neither touching the condition: `ufwcheck.sh` always exits 0, so the drivers'
+  `|| exit 1` would not have stopped a session on a change (the log would still have shown it, and it shows none);
+  the record said "18 times" for 20 entries. Both corrected in the record; the script fix is filed to the reverser.
+  **Checks:** `sha256sum -c` of the 163-file manifest from `workspace/logs`: all OK (manifest `b6eefb02…`).
+  `drivers/check_all.sh` re-run under `systemd-run --user --scope -p MemoryMax=4G` at `40677a6`: identical to
+  `check-run.txt` but for `monspawn.py`'s count (2764 checks against 2691, both 0 mismatches; `main`'s monspawn
+  changed since `97da6a0`). Every checker 0 mismatches. Counts recomputed from `count-run.txt` and `check-run.txt`:
+  417 party kills (276 + 33 + 95 + 13), 46 vendor events, 385 shares, 12 quest writes, 230 PvP events; 686 resolver
+  calls. Anchors: 0x0058FD0A and 0x0059017F are `call 0x0065C360` with return 0x0058FD0F and 0x00590184, as the QS
+  lines give; `XP_PartyShare` 0x0057E754–0x0057E77B is `fild`/`fidiv`/`fstp dword`, then `fild` level, `fmul dword`,
+  `call CRT_ftol2`; `CRT_ftol2` (0x00682FD0) truncates on both paths.
+  **Rulings on the four checker changes (each: the checker, not the game, was wrong):**
+  - (a) `combat.py --no-shield 1,2`: **accepted.** `tools/d2s.py dump` of `MpPvpHost` (`83ad704d…`) and `MpPvpJoin`
+    (`9dbb422b…`), the hashes the record names, lists three items each (`tsc`, `isc`, `tbk`), all in the inventory,
+    nothing equipped; the recipes have no shield. The game logged DRB `b` 0 on all 66 events; without the option the
+    checker fails exactly those 66 on DRB, because it applied the shield formula to a player holding none, the case
+    combat/0001 § 4 and combat/to-hit `BlockChance` already give as 0. The option is hand-fed input; a logged shield
+    flag is filed as a later improvement.
+  - (b) `monstats.py` live players from PLRS: **accepted.** The checker hard-coded one player; the 64 earlier
+    mismatches are the four MonPlayerBonus-derived fields of exactly the 16 creations made while PLRS listed both
+    players, and the game's `[50, 50, 0, 0, 2]` is the two-player row. Scope: 8 of the other 44 fall between a
+    one-player and a two-player PLRS line, so the sampling decides them; no death in mstat-1, so the dead-mode
+    exclusion is not exercised. § 6 says so.
+  - (c) `vendors.py` ETB tags: **accepted.** A pure tag rename (plan 0027 Phase 3; `affixes.py` already maps it as
+    `ETB_LEGACY`); `two-vendors.gdb` sources no `props.py`, so the mapped `ETH0` cannot collide with that logger's
+    own `ETH0`.
+  - (d) `tc.py` the killer's owner: **accepted, as a model extension, not a repair.** Before it, a monster killer gave
+    `party=None` and the PARTY check was skipped (no mismatch); now MP04's owner path is checked on 36 of 40
+    mercenary calls (33 party 2, 3 party 1), which a "monster killer counts as party 1" reading would fail 33 times.
+  **Rulings:**
+  - (e) **The quest count, 12 ≥ 10: met, thin.** Composition (from the QS lines): 8 are the Den-entry word 1 bit 4
+    writes (two per game, four games, partied in den-a and den-a2, not in den-c and den-c2), 4 are den-a2's clear (bits
+    13 and 1 on each player's record). Every counted line is a real write on a player's record with both present, so
+    the count stands; MP28 (a)'s `[C]` rests on the one clear, which a no-credit reading could not match. The record
+    now gives the split.
+  - (f) **Shortfalls: all named, accepted.** Unstageable with the stock client or two players: MP02, MP03, MP05,
+    MP23's in-town defender, MP24's server town test and below-9 branch. Owner-play candidates MP12, MP13, MP14, MP17:
+    out of this plan, one human entry (optional). Agent-stageable later (MP18, MP21, MP27, MP28 b and c, MP30, MP25's
+    offensive auras, MP20's attribution, MP16 just inside the bound; MP31, MP32 after a prediction): out of this plan,
+    one reverser entry. None is raised.
+  - (g) **J4's float rule `[C]`**: the code reading above plus 98 separating inputs. Stated for a reimplementer: the
+    product of the integer level and the f32 `q` is exact in f64, then truncated. Routed in the Phase 3 entry.
+  - (h) **The Den-entry bit 4 `[I]`: right.** Not in the case list and not predicted (ADR-0004), seen in four games
+    with the site resolved; it stays `[I]` until a reading of 0x0058FD0A's caller names the event.
+  - (i) **Phase 3 inputs** added to the open spec-writer entry: J4's wording, combat/to-hit's no-shield line (66
+    events), and the scoping of the PvP and monster raises.
+  **Fixes, 9:** stale cross-reference 2 (multiplayer/0001's "not yet live-tested" driver line; Data touched's
+  "`+0x160`, `+0x38` not yet in save.h"), miscount 2 ("18 times" for 20 re-reads; MP16 "four of five branches" with
+  five listed), overclaim 1 (PvP "P = 17 on every reduction" with physical and lightning only, which the `lane/arc6`
+  review asked to name), omission 2 (the quest count's split; combat/to-hit's no-shield line missing from the Phase 3
+  routing), other 2 (`ufwcheck.sh`'s inert exit; the initial ufw record written after the fact without saying so).
+  **Follow-ups:** spec-writer (Phase 3, open entry, additions); human (owner play MP12–MP14, MP17, optional); reverser
+  (the shortfalls and the ufw check script).
 - **2026-10-20 — Case added from plan 0047 (architect, P1 review of `lane/p47r`).** For the case list: **open wounds
   on the player** (stats/states *Open questions*): stat 135 is written only by item properties, and no MonStats,
   MonProp or MonUMod cell names it, so only a hostile player wounds a player. The case: player B, hostile, wearing an
   open-wounds item (tool-built, ADR-0013 § Neutral), hits player A; the stats logger's state and tick lines on A.
-  ([plan 0047 log](0047-simulation-shortfalls.md#implementation-log), Phase 1 review, ruling 2)
+  ([plan 0047 log](../0047-simulation-shortfalls.md#implementation-log), Phase 1 review, ruling 2)
+- **2026-10-20 — Phase 3 re-tag (spec-writer, `lane/p44s` from `main` `26d8978`), review requested.** Source:
+  [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients) as fixed by
+  the Phase 2 review, each raise checked against it and the run record; every raised statement cites
+  run:2026-10-20-two-clients. Front-matter `[C]` +28 over 11 specs (before → after):
+  - **items/tc** C 45 → 49, I 82 → 81: F1 the monster killer's owner (the mercenary, 33 + 3 calls); F3 a dead member not
+    counted; F2 `/players` on a TCP/IP host, the host's setting only, a dead player not in `PlayerCount`, and the
+    maximum rule with two live players; the reimplementation note on `/players` (types 2 and 3; type 1 stays `[I]`).
+    More than two players, the clamp at 8 and a member without a room stay `[I]`.
+  - **player/creation** C 81 → 85: the party bonus constant (89/256; the 6400 bound split out and kept `[I]`: no kill
+    inside it came within 800); J4 `[C]` for n = 2, with the member's input rewritten as
+    `trunc((f64) level_i × (f64) q_f32)` (the review's wording, the 98 separating inputs) and `q` as the
+    `fild`/`fidiv`/`fstp dword` the finding reads; the J2–J5 "not run" note narrowed.
+  - **items/quality** C 69 → 70: M2, the magic find is the killer's alone with a partied second player.
+  - **monsters/stats** C 105 → 106, I 57 → 58: C1, real players counted with one and two live players (16 / 44
+    creations; the 8 sampling-decided ones named); whether a dead player counts stays `[I]`, as the review scoped.
+  - **combat/reductions** C 38 → 40: P = 17 between two players for physical and lightning only (constants row and an A2
+    note); fire, cold, magic, poison, a hireling attacker and a defender in town stay open.
+  - **combat/to-hit** C 32 → 33: `BlockChance`'s "holds no shield → 0" cites the 66 pvp-1 events (review addition 2).
+  - **quests/travel** C 68 → 73, I 80 → 82: D1 and G3 the two gates with a declared stamp; G3 the hostile operator
+    refused before the gate; J2 widened to two clients; a new J3 for the declaration (pair stamp, `+0x160`, the repeat
+    refused) `[C]`, its town and level conditions, the portal close and the party leave `[I]` (code; the client's
+    outside-town refusal named), and the withdrawal `[I]` (one case).
+  - **quests/progression** C 114 → 116, I 320 → 321: word 1's Den party credit `[C]` for a partied member in the Rogue
+    Encampment (the act test and the unpartied case stay `[I]`); the Den-entry b4 on both records added as `[I]`.
+  - **stats/states** C 43 → 44, I 46 → 47: F3 the filter's player bits as an `[I]` reading (MP25 prediction), and
+    `0x10000` `[C]` for Might (16 / 17 / 28).
+  - **items/vendors** C 71 → 77, I 38 → 37: the TownPlayerRemove entry row; A2 the shared stock; C1 a built store kept
+    at the other player's open (the same player's reopen stays `[I]`) and the two-interactor stale case; C2 the leave
+    with and without a player left in town and Harrogath's missing case (the drop versus *Save and Exit* scope named);
+    C3 split, the MP11 branch kept `[I]`.
+  - **hirelings** C 94 → 95: one hire table per game with two players (Kashya).
+- **Open questions narrowed, 11** (none struck, so no `[L]` count changed): items/tc 2 (parties; `game.type` and
+  `/players`), items/quality 1, combat/reductions 1, combat/README 1, quests/travel 1 (the un-declare path),
+  quests/README 1 and its *Not covered* paragraph, stats/states 1, stats/README 1, items/vendors 1, hirelings 1.
+- **Not raised, as the review ruled:** MP12–MP14, MP17, MP18, MP21, MP27, MP28 (b, c), MP30, MP31, MP32, MP25's
+  offensive auras, MP20's attribution, MP16's inside edge, the dead player in the monster count, the Den-entry bit and
+  the withdrawal. Also not raised: **MP26** (the portal's party gate): the run record reaches it, but § 6 has no
+  bullet for it, so quests/travel's party test stays `[I]` (a point for the review). MP29 (the join) and MP11 stay
+  `[I]` as § 6 tags them.
+- **Overlap with plan 0038 Phase 3:** these raises cover 0038 inventory d-2c rows items/tc 43, 44, 46; items/vendors
+  1, 10, 13, 16, 17; hirelings 11; player/creation 6, 31 (the party half of 33 too). *(Corrected at the review: vendors
+  17 is MP11, kept `[I]`, and 33's party half is MP17, a shortfall; neither is raised. tc 43, 44 and player/creation 6
+  are raised in part.)* The inventory files were not
+  edited and no non-0044 row was re-tagged; 0038's ledger can mark them raised by plan 0044. quest-drops 6, 12, 36, tc
+  27's party half and sockets 22 are shortfalls (MP12–MP14, MP18) and stay.
+- **Wiki** (contradictions only, `based_on` bumped): combat (P = 17, the shieldless block, the open list), characters
+  (party share, the shared hire table), items (the party count, the open lists), items-other-paths (the vendor
+  multiplayer cases), monsters (real players), quests (party credit, hostility check, the real-time waits, the open
+  list), stats-and-states (the party aura); saves only the date. The process pages how-we-know and README said the
+  two-client run had not happened: reworded.
+- **Plan status:** with this phase accepted, every phase of plan 0044 is done; the shortfalls are routed out of the
+  plan (human and reverser entries of the Phase 2 review). The architect closes it at review.
+- **2026-10-20 — Phase 3 review (architect, `lane/p44s` at `d3205f3`, `main` merged: up to date): accept with fixes.
+  Plan 0044 closed.** `backlog.py archive`: nothing to move. Every raise checked against
+  [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients) and the
+  run record: the counts quoted (686 resolver calls, 253 party-1 calls, 33 + 3 owner calls, 95 / 13 `/players` calls,
+  385 shares and 98 separating inputs, 16 / 44 creations, 230 PvP events and 226 RDP lines, 66 shieldless events,
+  16 / 17 / 28 filter calls, 12 opens, 351.6 s and 266.5 s, 4 of 4 compares per gate) match. Scoping as the Phase 2
+  review ruled: P = 17 physical and lightning only (reductions A2 and the constants row, the 17 from a hireling and the 25
+  kept `[I]`); the monster count with the 8 sampling-decided creations named and a dead player `[I]`; the 6400 bound
+  split out and kept `[I]`. The new `[I]` code readings (states F3's filter bits, travel J3's conditions, progression's
+  Den-entry b4) carry the finding's tags. The shieldless block (to-hit C2) rests on Phase 2 ruling (a)'s `d2s.py dump`
+  of the two recipes; accepted.
+  **Rulings:**
+  - (a) **MP26 stays `[I]` until § 6 has a bullet: routed to the reverser.** The run record reaches it in one sentence
+    (one click each way, outcome only: "left it in town", "moved it to the field end"); the party test's compare
+    (`0x00554630`) is not a logged line. § 6 is where the finding states what each case reproduced and with what scope,
+    and a spec raise cites that conclusion, not a record line the reverser has not concluded on (the record's
+    *Conclusion* is the finding's to write, evidence-rules § Experiments). The entry asks for the bullet with its scope
+    (pvp-1, one refusal and one pass, which lines show the outcome), then a one-line re-tag of travel G3's party test.
+  - (b) **J4's wording.** `trunc((f64) level_i × (f64) q_f32)` says no more than the finding (§ 6 and the Phase 2
+    ruling (g)). The new `q` line wrote `(f32) (total ÷ Σ levels)`, and `÷` is integer division in the pseudocode
+    conventions, so it read as an integer quotient: rewritten `(f32) ((f64) total / (f64) Σ levels)` with the `fidiv`
+    noted, and a step note `[I]` that this one rounding to f32 equals the x87 `fidiv` and `fstp dword` at any precision
+    (f64 has at least 2 × 24 + 2 bits). player/creation I 48 → 49.
+  - (c) **Plan 0038 overlap: the architect records it now** (inventory § 2.6, "Plan 0044 Phase 3"): 7 statements move
+    d-2c → raised (tc 46; vendors 1, 10, 13, 16; hirelings 11; player/creation 31); tc 43, 44 and player/creation 6
+    are raised in part and stay d-2c for their remainders (three or more players and the clamp at 8; a member without
+    a room; the 6400 edge); vendors 17 (MP11 `[I]`) and player/creation 33's party half (MP17) are not raised. Totals
+    recomputed once there: blocked 409 (d-2c 7), raised 17.
+  - (d) **The plan 0047 case added to this log** (open wounds on a player, from a hostile player's item) was never run:
+    it joins the open reverser entry of agent-stageable shortfalls, out of this plan.
+  **Fixes, 6** (made in the documents): misread 2 (J4's `q` written with integer `÷`; how-we-know's "a trade" among the
+  branches "read from the code", while plan 0043 left trading unread); overclaim 2 (the overlap note counting vendors 17
+  and player/creation 33's party half as covered; vendors C2's Harrogath leave "called no `NPCSTORE_ActStale`", where
+  the log shows no call from `TownPlayerRemove`, return 0x005375FC); miscount 1 (J4's note gave the branch counts as a
+  partition of the 649 kills, but 9 + 106 + 108 + 42 = 265 against 264 single inputs; the run record's one-kill
+  difference is filed to the reverser); other 1 (wiki/quests called the client's refusal outside town a code reading).
+  The wiki README's 0044 bullet is moved to the closed plans by the close.
+  **Close:** status done, moved to `done/`, links fixed; plan index row closed; research map rows refreshed for items/tc,
+  items/quality, items/vendors, monsters/stats, hirelings, player/creation, combat, stats/states, quests/progression and
+  quests/travel, and the multiplayer paragraph. **Backlog:** the review request closed; new reverser entry (MP26's § 6
+  bullet, then the spec-writer's G3 re-tag; the 264/265 count); the owner-play human entry (MP12–MP14, MP17) and the
+  agent-stageable reverser entry stay open, out of the plan. Gate green.

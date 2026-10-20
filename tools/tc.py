@@ -329,9 +329,14 @@ def party_model(ctx, tcr):
     pover = int(tcr.get("pover", "0"))
     if int(tcr.get("g6a", "0")) in (1, 2, 3) and pover > players:
         players = pover
-    if not kill or kill.get("ktype") != "0":
+    if kill and kill.get("ktype") == "1" and kill.get("otype") == "0":
+        # plan 0044 Phase 2 (MP04): TC_ResolveDrops counts the party of the monster killer's owner
+        # (sub_0058F0D0_MonsterOwner), logged on the KILL line by tools/gdb/tc-party.py
+        kid = int(kill["oid"])
+    elif not kill or kill.get("ktype") != "0":
         return dict(party=None, players=players, notes="killer not a player")
-    kid = int(kill["kid"])
+    else:
+        kid = int(kill["kid"])
     me = plr.get(kid)
     party = 1
     notes = []

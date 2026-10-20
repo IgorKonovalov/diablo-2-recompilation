@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [combat/overview, combat/damage, monsters/stats]
 consumed_by: [combat/delivery]
-tags: {C: 38, I: 25, L: 4}
-updated: 2026-10-17
+tags: {C: 40, I: 25, L: 4}
+updated: 2026-10-20
 ---
 
 # Combat: the defender's reductions
@@ -66,7 +66,7 @@ freeze, cannot be frozen), 142–149 (absorb percent and flat), 327 (a missile's
 | resistance floor | −100 (below −99) | fn:COMBAT_ResistFor@0x0057BE00 | [I] |
 | classic penalty | −20 Nightmare, −50 Hell | fn:COMBAT_ResistFor@0x0057BE00 | [C] (run:2026-10-16-combat) |
 | absorb percent cap | 40 | 0x0057BF2A–0x0057BF6F | [C] (run:2026-10-16-combat) |
-| PvP percent; hireling against hireling | 17; 25 | 0x0057C0B6, 0x0057C0D4 | [I] |
+| PvP percent; hireling against hireling | 17; 25 | 0x0057C0B6, 0x0057C0D4 | [C] for 17 between two players, physical and lightning (run:2026-10-20-two-clients); [I] for 17 from a hireling or bit-31 attacker, and for 25 |
 | prime evil against a bit-31 unit | 200 (hireling defender) or 400 | 0x0057C129–0x0057C132 | [C] for 200 (run:2026-10-16-combat), [I] for 400 |
 
 ## Algorithm
@@ -141,9 +141,15 @@ A2. DamagePercent(ctx) → i32:                                         [I] (fn:
   25 is what tells this column from `MonsterCEDamagePercent` (20 in Hell): all 33 Hell events logged P = 25. [C]
   (0x0057C0FE, run:2026-10-16-combat)
 - A2. The prime-evil 200 (Andariel against the mercenary) reproduced with 0 mismatches in 154 events. [C]
-  (0x0057C129–0x0057C132, run:2026-10-16-combat) The 400 against a non-hireling, the 17 % of player against player
-  and the 25 % of hireling against hireling were not reached. [I] (0x0057C129–0x0057C132, 0x0057C0B6,
-  0x0057C0D4, run:2026-10-16-combat) `Unit+0xC4` bit 31's meaning is not named by the finding. [I] (0x0057C0B6)
+  (0x0057C129–0x0057C132, run:2026-10-16-combat) The 400 against a non-hireling and the 25 % of hireling against
+  hireling were not reached. [I] (0x0057C129–0x0057C132, 0x0057C0D4, run:2026-10-16-combat) `Unit+0xC4` bit 31's
+  meaning is not named by the finding. [I] (0x0057C0B6)
+- A2. **P = 17 for a player hitting a player.** Plan 0044's two-client run logged 230 attack events between two
+  hostile players, 70 melee hits with the left-button Attack and 160 Nova missiles, and every logged reduction percent
+  was 17 (226 lines; 4 melee misses have none). Scope: the physical and lightning fields, a player attacker; the fire,
+  cold, magic and poison fields, a hireling or bit-31 attacker against a player, and a defender standing in town were
+  not reached. [C] (fn:COMBAT_DamagePercent@0x0057C060, 0x0057C0B6, run:2026-10-20-two-clients,
+  [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients))
 - A2. "Boss" is MonStats `boss` (`+0x0C` bit 6), not a unique or superunique. [I] (fn:MONSTATS_IsBoss@0x0063E9F0)
 
 **A3. Length immunities (`COMBAT_LengthImmunities`).**
@@ -328,7 +334,8 @@ poison 153 pass unreduced. No penalty and no cap apply to the monster. [C] (run:
 - [L] Branches reproduced under the plan's floor of about 30 events: the negative absorbed amount (4), the
   resistance cap reached for cold (27) and lightning (17).
 - [L] Not reached: magic at or above the cap and magic immunity, pierce, flat absorb, the stat-118 halving, states
-  131 and 133, sanctuary, the PvP 17 % and the hireling-against-hireling 25 %. PvP needs two clients (ADR-0008).
+  131 and 133, sanctuary, the hireling-against-hireling 25 %, and the PvP 17 % on the fire, cold, magic and poison
+  fields and from a hireling attacker (physical and lightning are A2's, run:2026-10-20-two-clients).
 - [L] The handlers of event 11 (`absorbdamage`): energy shield and the bone and cyclone armours by the community's
   account; their code is skills, phase (3).
 - [L] The meaning of `Unit+0xC4` bit 31, which P tests for the PvP and prime-evil cases.
