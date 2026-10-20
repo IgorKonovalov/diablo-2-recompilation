@@ -149,7 +149,7 @@ Step notes:
 - A6. On a hit, `PreventHealHook` runs inside `COMBAT_ToHitRoll`'s success branch, after the draw: for a player
   attacker with stat 117 ≠ 0 and a monster defender whose class is outside 704–709, it applies state 52 (`STATE_ApplyTimed`)
   for 120 000 frames with stat 31 = 0. It draws nothing, so the state is applied between the to-hit draw and the
-  defence rolls. [I] (fn:sub_0057D810_PreventHealHook@0x0057D810, 0x0057DB80, 0x0057D869–0x0057D88A,
+  defence rolls. [I] (fn:sub_0057D810_PreventHealHook@0x0057D810, 0x0057DB80, 0x0057D869–0x0057D891,
   [skills/0003 § 3](../../findings/skills/0003-handlers.md#3-the-stat-event-handlers))
 
 **A7. Target modifiers (players only).**

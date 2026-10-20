@@ -21,7 +21,7 @@ boundary of the model ([combat/overview § Boundary](README.md#the-adr-0014-boun
 
 ```mermaid
 flowchart TD
-  q["ResolveAndQueue: build, reductions, kill pre-test, queue"] --> fin["PrgFinisher, a player's charged state only: entries draw (A3)"]
+  q["ResolveAndQueue: build, reductions, kill pre-test, queue"] --> fin["PrgFinisher, a player's charged state only: entries draw, 38 delivers first (A3)"]
   fin --> dq["DeliverQueued: range check"]
   dq --> ad["ApplyDamage"]
   ad --> ev["events 5 then 1 (melee) or 6 then 2 (missile): crushing blow, open wounds, freeze"]
@@ -143,11 +143,11 @@ Entry 37 or 143 (ring):                                               [I] (fn:su
       local ← Init(w);  for each `every`-th of 64 directions: Step(local); MissileCreate(m, …, callback arg: local.low)
                                                                       ; the callback re-seeds the new missile (rng/seeds)
 Entry 38 (area hit):                                                  [I] (fn:sub_005D3E80_SkillPrgDo38AreaHit@0x005D3E80, 0x005D3E80–0x005D3F82)
-      DeliverQueued(att, target)                                      ; A2: the queued hit's delivery and its draws
+      if att has a target: DeliverQueued(att, target)                 ; A2: the queued hit's delivery and its draws (0x005D3EBF–0x005D3ED0)
       pkt.phys ← RangeB(att.seed, max − min) + min                    ; draw (attacker), 0x0056E1C4
       RollElemDamage(att, pkt)                                        ; draw (attacker): RangeB; EType 10: one more Step
       for each unit u of ForUnitsInRange(target point, r, aurafilter):  ; r: prgcalc by charge or aurarangecalc
-        AreaHitUnit(u): DefenceRoll(u, 1, 0)                          ; draws on u.seed (combat/to-hit § C2)
+        AreaHitUnit(u): DefenceRoll(u, isMissile: true, useBlock: false)  ; draws on u.seed (combat/to-hit § C2): no block, avoid not dodge (0x0056BA06–0x0056BA0D)
           then MonCritDouble (combat/damage step 10), ApplyDamage on a hit (§ B), GetHit (§ F)
 Entry 39 (scatter):                                                   [I] (fn:sub_005D3F90_SkillPrgDo39Scatter@0x005D3F90, 0x005D3F90–0x005D40E7)
       Step(att.seed);  local ← Init(att.seed.low)                     ; draw (attacker), at entry
@@ -440,7 +440,7 @@ that draw:
 | 9 | stupidity | stat 113 | as 7 | attacker | `Range(seed, 100)` against `clamp(((alvl + 4·stat − dlvl) + 6)·5 [÷ 3 for a missile], 1, 99)` |
 | 14–16 | freeze, open wounds, crushing blow | stats 134–136 | as 7 | attacker | E1–E3 |
 | 20 | skill on attack, kill or hit | stats 195, 196, 198 | the attack, kill and hit events | attacker | with no packet or packet flag `0x20`: one inline step, `low mod 100 < stat` casts the item skill |
-| 21 | skill on get-hit | stat 201 | `damagedinmelee`, `damagedbymissile` | defender | with result bit `0x4`: `RangeB(seed, 100) < stat` casts |
+| 21 | skill on get-hit | stat 201 | `damagedinmelee`, `damagedbymissile` | defender | only with stat 201 > 0 and a packet whose result has bit `0x4` (tested before the draw): `RangeB(seed, 100) < stat` casts |
 | 30 | skill on death or level-up | stats 197, 199 | `killed`, `levelup` | the dying or levelling unit | one inline step, `low mod 100 < stat` casts |
 | 31 | reanimate | stat 155 | `kill` | attacker | one `RangeB` |
 

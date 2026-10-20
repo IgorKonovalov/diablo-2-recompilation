@@ -216,7 +216,7 @@ sequenceDiagram
   A->>A: to-hit Range(100)
   M->>M: on a hit: block Range(100) if b > 0, then avoidance rolls if > 0
   A->>A: build, hit or miss: phys RangeB, crit chain Range(100) each, fire, light, cold, magic RangeB, poison RangeB, RangeB(1)
-  Note over A: a charged progressive state: the finisher's entries draw here (B5)
+  Note over A: a charged progressive state: the finisher's entries draw here, 38 delivers the hit first (B5)
   A->>A: on a hit: open wounds, crushing blow Range(100) each if chance > 0
   A->>A: leech overlay Range(2) if life and mana gains
   A->>A: stun Range(100) if the monster is a unique
@@ -230,8 +230,8 @@ the leech overlay and the stun; on the monster's seed: the defence rolls (on a h
 Each draw happens only under the condition given in its file. (fn:SKILL_AttackDo@0x0056F070, fn:COMBAT_ApplyDamage@0x0057C6C0,
 run:2026-10-16-combat) The weapon durability and the get-hit draws are boundary oracles (§ The ADR-0014 boundary).
 [I] (fn:COMBAT_DurabilityLoss@0x0057D3D0, fn:sub_0057CB00_GetHitRoll@0x0057CB00) Under a charged progressive state
-the finisher's entries draw on the player's seed between the build and the delivery, and entry 38 delivers the
-queued hit itself (B5); the other stat-event handlers draw on the seed of the unit that owns them (B6). [I]
+the finisher's entries draw on the player's seed after the build; when entry 38 runs it delivers the queued hit
+itself first, so the delivery's draws come before 38's and those of any later entry (B5); the other stat-event handlers draw on the seed of the unit that owns them (B6). [I]
 (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D4E80, data:g_StatEventFuncs@0x007325B0)
 
 **B2. A monster's melee attack on the player.**
@@ -330,7 +330,7 @@ CritChain(u, w) → bool:                                              [I] (fn:s
   tbl:Missiles.txt:Pierce)
 
 **B5. The progressive finisher (the attacker's seed).** A player's normal attack under a charged progressive
-state (a Monk's charge-up skills) runs `COMBAT_PrgFinisher` between the queue and the delivery (A1); the run met
+state (an Assassin's charge-up skills) runs `COMBAT_PrgFinisher` between the queue and the delivery (A1); the run met
 none (§ The ADR-0014 boundary). Its own `RNG_Step` is a **peek**, but the `srvprgfunc` entries it calls **draw on the
 attacker's seed**; the full algorithm is [delivery § A3](delivery.md#a-queue-and-delivery).
 
@@ -358,9 +358,10 @@ sequenceDiagram
 - B5. **Entry 38 draws two or three times on the attacker's seed**: it first delivers the queued hit
   (`COMBAT_DeliverQueued`, so that hit's delivery draws of B1 come before 38's), then builds an area packet with
   `RangeB(att.seed, max − min)` for the physical damage and `SKILLS_RollElemDamage`'s `RangeB` for the elemental, plus
-  one `RNG_Step` for `EType` 10; each unit of the area then draws its own defence rolls on its own seed. [I]
+  one `RNG_Step` for `EType` 10; each unit of the area then draws its own defence rolls on its own seed, as a missile with no block (evade, weapon
+  block or avoid only, [delivery § A3](delivery.md#a-queue-and-delivery)). [I]
   (fn:sub_0056E170_SkillRollPhys@0x0056E170, 0x0056E1C4, fn:SKILLS_RollElemDamage@0x0056E0C0,
-  fn:sub_0056B9C0_AreaHitUnit@0x0056B9C0, [skills/0003 § 1](../../findings/skills/0003-handlers.md#1-progressive-entries-srvprgfunc-and-the-finishers-tail))
+  fn:sub_0056B9C0_AreaHitUnit@0x0056B9C0, 0x0056BA06–0x0056BA0D, [skills/0003 § 1](../../findings/skills/0003-handlers.md#1-progressive-entries-srvprgfunc-and-the-finishers-tail))
 - B5. Entries 36 and 40 draw nothing of their own; every entry that creates missiles adds the creations' draws (B4).
   The finisher's tail, `sub_00571AA0_UnitMsgA3`, queues a client message carrying the peeked value and changes no game
   state. [I] (fn:sub_00571AA0_UnitMsgA3@0x00571AA0, 0x005D5465)
@@ -383,7 +384,7 @@ attacks). (run:2026-10-16-combat)
 
 [I] The run had no finisher events (they were dropped by rule and none occurred), so this chaining does not cover a
 charged progressive state: there the finisher's entries 37, 39, 41 and 143 add one draw each and 38 two or three on the
-player's seed inside the attack (B5), and the drawing stat-event handlers of B6 add theirs inside a hit or a kill. Plan 0045 Phase 2
+player's seed inside the attack, besides the creation draws of the missiles they create (B5, B4), and the drawing stat-event handlers of B6 add theirs inside a hit or a kill. Plan 0045 Phase 2
 tests both kinds. (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D4E80, 0x0056E1C4, data:g_StatEventFuncs@0x007325B0)
 
 [I] A weapon-share missile the player creates (a bow or crossbow attack, a javelin, a throw, a `SrcDam` skill

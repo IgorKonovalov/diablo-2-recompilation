@@ -534,13 +534,16 @@ separate objects.
   | missile-creation callbacks `0x005D40F0`, `0x005D4680` (the rings of progressive entries 37 and 143) | the new missile's `+0x20` | the creator's local seed's low word |
   | callbacks `0x005C9290` (Firestorm and others), `0x005CD110`, `0x005AC040` | the new missile's `+0x20` | the path position `+0x10`, plus an index for the first two |
   | missile do 28 and 35 | the missile's `+0x20` | the low word kept in `MissileData+0x28`, stored back after the draws |
-  | hit 58, do 34, `0x005A9820` (missile do 8, 10, 17, 25) | the missile's `+0x20` | its position |
+  | hit 58, do 34 | the missile's `+0x20` | its position (hit 58 its `SubX`, do 34 its path X) |
+  | `0x005A9820` (missile do 8, 10, 17, 25) | the parent missile's `+0x20` | its `SubX + elapsed` |
   | Armageddon's periodic function (`srvactivefunc` 146) | the **caster's** `+0x20` | the skill entry's `+0x18`, then a fresh `RNG_Range(1 000 000)` is stored back there |
   | `0x00645390` | a unit's `+0x20` | a skill entry's `+0x18`/`+0x1C`; no reference in the image |
 
   So a missile's draws after such a re-seed are a function of the creator's value, not of the game seed, and an
   Armageddon period sets the caster's seed from a stored word: a reimplementation keeps that word per skill entry.
-  [I] (fn:sub_005D40F0_MissCbReseedFromArg@0x005D40F0, fn:sub_005D4680_MissCbReseedZigzag@0x005D4680,
+  The one other server site of rng/0002's register-seed list, `0x005C276A` in the version-0 set builder, re-seeds an **item's** seed from
+  its own saved low word, restoring it on failure.
+  [I] (fn:sub_005C2740_ItemBuildSetV0@0x005C2740, 0x005C276A, fn:sub_005D40F0_MissCbReseedFromArg@0x005D40F0, fn:sub_005D4680_MissCbReseedZigzag@0x005D4680,
   fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290, fn:sub_005CD110_MissCbReseedRoll@0x005CD110,
   fn:sub_005AC040_MissCbReseedPathX@0x005AC040, fn:sub_005C8520_SkillDo146Armageddon@0x005C8520, 0x005C8688–0x005C8694,
   [skills/0003 § 9](../../findings/skills/0003-handlers.md#9-re-seed-sites-rng0002--the-other-initialiser-sites))
