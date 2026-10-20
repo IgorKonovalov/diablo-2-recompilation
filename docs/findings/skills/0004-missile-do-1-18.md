@@ -18,51 +18,66 @@ and are not re-read here. Stock values below come from `workspace/logs/skills-ca
 
 ## Answer (summary)
 
-- *Tags (architect, `lane/p46m1` review):* the emulated claims below that end at a boundary call are `[I]` until
-  the owner accepts the proposed [ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md); then `[C]` up to
-  that call. The refusal paths that return are `[C]` now (§ 2). (run:2026-10-20-cat-emu-9a)
+- *Tags (architect; [ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md) accepted by the owner
+  2026-10-20):* the emulated claims below that end at a boundary call are `[C]` up to that call, raised without a
+  re-run (an observed boundary, § 2; the review's call-site check supplies ADR-0021 (b)). Each names its boundary and
+  covers **nothing after it**: not the callee, not the function's code after the callee returns, not its return value.
+  The refusal paths that return are `[C]` under ADR-0015 as written (§ 2). (run:2026-10-20-cat-emu-9a)
 - [I] **The batch.** 17 entries (numbers 1–18, 4 unused): do 1, 3, 5 are tier A (not re-read); this batch reads
   the other 14 and the do-1 table slot. Entry 1 of `g_MissileSrvDoFuncs` is a 5-byte thunk, `jmp 0x005AE1F0`, so
   "do 1 is `sub_005AE1F0_MissileMoveCollide`" holds through the thunk. Every function read here ends with a call of
   do 1 (the path step, the range count and the collision) and returns its result (do 18 after its cookie check); a
   missing record, owner or sub-missile returns 2 (free) instead. (data:g_MissileSrvDoFuncs@0x0073C768, fn:sub_005B0BC0_MissDo01Thunk@0x005B0BC0,
   `static.txt` `do table`)
-- [I] **Draws.** Only three code paths of the batch draw: `sub_005A9820_MissSubNearReseed` (do 8, 10, 17)
+- [C] **Draws.** Only three code paths of the batch draw: `sub_005A9820_MissSubNearReseed` (do 8, 10, 17)
   re-seeds the **missile's** seed to `(SubX + elapsed, 666)` and draws two `RNG_RangeB(seed, 2(r − 1))` offsets
   (none when `r ≤ 1`); do 18 draws two `RNG_RangeB(seed, 2·Param3 + 1)` offsets on the missile's seed per gold drop,
   with no re-seed. Every other function makes no draw of its own before the creation, spawn or path call it ends in:
   no unit seed is read on those paths (the traced read set holds none). The draws of the callees (MissileCreate's
   `SUnitCreate` and critical rolls, the path planner, the spawn, the item creation) are theirs (skills/0002 § 9).
+  Boundaries: `COLL_CellTestAt` inside `0x005A9820` (do 8, 10, 17), the free spot `0x00555DA0` (do 18), and for the
+  others the first boundary each case reaches (§ 2). Not covered: any draw after a boundary; do 13 and do 7's re-plan
+  path, which no case reaches, stay `[I]` from the reading.
   (run:2026-10-20-cat-emu-9a, fn:sub_005A9820_MissSubNearReseed@0x005A9820, fn:sub_005AF300_MissDo18ChestSpawner@0x005AF300)
-- [I] **Sub-missiles at the missile.** Do 6 (firewallmaker and its kin), 9 (bat lightning bolt) and 12 (diabwallmaker)
+- [C] **Sub-missiles at the missile.** Do 6 (firewallmaker and its kin), 9 (bat lightning bolt) and 12 (diabwallmaker)
   create `SubMissile1` at the missile's own sub-tile on each frame whose path flag 8 is set (path `+0x34 & 8`), with
   the missile's skill and level; do 6 and 12 need an owner and `SubMissile1 ≥ 0` (else 2), do 9 tests neither. Do 2
   (poisonjav) does the same through `sub_005A9720_MissSubAtSelf` with velocity 0, the parent as source, the loop
-  count `2·lvl − 2`, and creation flag 8 only when `SrvCalc1` evaluates above 0. (§ 3, § 4; run:2026-10-20-cat-emu-9a)
-- [I] **Frozen Orb** (do 15): every `Param1` frames (1 on stock data: each frame) one `SubMissile1`
+  count `2·lvl − 2`, and creation flag 8 only when `SrvCalc1` evaluates above 0. Boundary: `MissileCreate`, or do 1
+  on a frame without a creation; do 1 after a creation is not covered. (§ 3, § 4; run:2026-10-20-cat-emu-9a)
+- [C] **Frozen Orb** (do 15): every `Param1` frames (1 on stock data: each frame) one `SubMissile1`
   (`frozenorbbolt`) aimed at offset `g_Circle64[k]` (64 points on a radius-30 circle) from the orb, `k = |w % 64|` with
   `w = MissileData+0x28`; `+0x28` becomes `(Param2 + k) % 64` (C remainder; stock `Param2` 19). The orb nova (do 16)
   turns its path target `(a, b)` = `(+0x28, +0x2C)` into `((a − b) / 2, (a + b) / 2)` (truncating) on the frames
-  `elapsed < Param1` with `elapsed % Param2 == 0` and re-plans its path. (§ 5, § 6; run:2026-10-20-cat-emu-9a,
+  `elapsed < Param1` with `elapsed % Param2 == 0` and re-plans its path. Boundaries: `MissileCreate` (do 15),
+  `PathPlan` (do 16), else do 1; do 1 after them and do 16's `+0x28`/`+0x2C` stores after the plan are not covered.
+  (§ 5, § 6; run:2026-10-20-cat-emu-9a,
   fn:sub_005AF030_MissDo15OrbBolts@0x005AF030, fn:sub_005AF170_MissDo16TurnTarget@0x005AF170)
-- [I] **Scatter around the missile** (do 8 monblizcenter, do 10 blizzardcenter, do 17 cairnstones): one
+- [C] **Scatter around the missile** (do 8 monblizcenter, do 10 blizzardcenter, do 17 cairnstones): one
   `SubMissile1` per period at a random offset in `[−(r − 1), r − 1)` on each axis, refused where
   `COLL_CellTestAt(room, x, y, 5)` is non-zero. Do 8: `r = Param1 + max(lvl / Param3', 2)`, period
   `max(Param2 − lvl / Param3', 3)` (`Param3' = max(Param3, 1)`); do 10: `r` = the skill's `calc1`, period its `calc2`
   (Blizzard's); do 17: `r = Param3`, period `Param2`, only while `Param1 < left < Range − Param1`, then once a
-  permanent portal to level `Param4` (38, Tristram) when `left ≤ Param5 + Param1` and `+0x28` is 0. (§ 7;
+  permanent portal to level `Param4` (38, Tristram) when `left ≤ Param5 + Param1` and `+0x28` is 0. Boundaries:
+  `COLL_CellTestAt`, do 17's `PermPortalAtUnit`, do 1. Not covered: what follows the cell test (the refusal on a
+  non-zero result and the creation stay `[I]`, § 7), the portal function's own work, and do 1 after either. (§ 7;
   run:2026-10-20-cat-emu-9a, fn:sub_005AE8A0_MissDo08ScatterByLevel@0x005AE8A0, fn:sub_005AEA60_MissDo10ScatterBySkill@0x005AEA60,
   fn:sub_005AF240_MissDo17CairnStones@0x005AF240)
-- [I] **towerchestspawner** (do 18): at `left == Range − Param1` (raw `Range`) it runs the chest's drop function
+- [C] **towerchestspawner** (do 18): at `left == Range − Param1` (raw `Range`) it runs the chest's drop function
   (`0x00585E00`) on the chest whose guid is `+0x28` and starts the gold phase (`+0x2C = 1`; set even when the chest is
   gone); then every `4·Param2` frames (8) a gold pile at a random offset `[−Param3, Param3]` (±5) is placed through
-  `0x00555DA0`; at `left == 1` the chest gets unit event `0x5C`. (§ 8)
-- [I] **Homing.** Do 11 (fingermagespider) steps its path target `max(Param3, 1)` sub-tiles towards its (or its
-  owner's) target on each axis every `Param1` frames when the edge distance is ≤ `Param2`, and re-plans. Do 7 is
-  raised in part: its refusals are `[C]` (§ 2: no record, no owner, owner dead, a town room); its re-plan,
+  `0x00555DA0`; at `left == 1` the chest gets unit event `0x5C`. Boundaries: `UnitSetEvent`, the chest drop, the free
+  spot, do 1. Not covered: anything after them, so the gold item after the free spot (`[I]`, § 8), the `+0x2C` store
+  after a drop of a found chest (the chest-gone cases cover it), and do 1 after any of them.
+  (§ 8; run:2026-10-20-cat-emu-9a)
+- [C] **Homing.** Do 11 (fingermagespider) steps its path target `max(Param3, 1)` sub-tiles towards its (or its
+  owner's) target on each axis every `Param1` frames when the edge distance is ≤ `Param2`, and re-plans (boundary
+  `PathPlan`, else do 1; do 1 after the plan is not covered). Do 7 is raised in part: its gates are `[C]` (§ 10: the refusals
+  of § 2, and the call of do 1, its boundary, with bit 0 clear or a missile target); its re-plan,
   which needs a live hostile target, stays `[I]`, and so does the writer of bit 0 (Guided Arrow's and Bone Spirit's
   skill do 10, set when cast at a unit) (§ 9, § 10). Do 14's
-  call `CallDoFunc(Param2, skill, lvl)` every `Param1` frames with a skill and level above 0 (§ 11).
+  call `CallDoFunc(Param2, skill, lvl)` every `Param1` frames with a skill and level above 0 is `[C]` up to that
+  call (its boundary; do 1 after it is not covered) (§ 11).
   (run:2026-10-20-cat-emu-9a, fn:sub_005AEB60_MissDo11StepToTarget@0x005AEB60, fn:sub_005AE780_MissDo07Homing@0x005AE780,
   fn:sub_005AEF70_MissDo14PeriodicDo@0x005AEF70)
 - [I] **Bone Wall** (do 13): on each path-flag-8 frame while `+0x2C` (pieces left) is non-zero, a monster of the
@@ -76,28 +91,31 @@ None. No community document was opened for this batch.
 
 ## Functions
 
+A `C` row of a function that ends at an observed boundary covers its code up to that boundary only, nothing after it
+(ADR-0021; the boundaries and call sites are in § 2; do 18's return value is not covered, § 1).
+
 | Address | Name | Role | Tag |
 |---|---|---|---|
 | `0x005B0BC0` | `sub_005B0BC0_MissDo01Thunk` | do-table entry 1: `jmp sub_005AE1F0_MissileMoveCollide` | I |
-| `0x005AE400` | `sub_005AE400_MissDo02SubMissile` | (P1.2 name) do 2 | I |
-| `0x005A9720` | `sub_005A9720_MissSubAtSelf` | do 2's helper: `SubMissile1` at the parent, velocity 0, loops `2·lvl − 2` | I |
-| `0x005AE680` | `sub_005AE680_MissDo06SubPerCell` | do 6 | I |
-| `0x005AE780` | `sub_005AE780_MissDo07Homing` | do 7 (refusals `[C]`, § 2) | I |
-| `0x005AE8A0` | `sub_005AE8A0_MissDo08ScatterByLevel` | do 8 | I |
-| `0x005AE940` | `sub_005AE940_MissDo09SubPerCell` | do 9 | I |
-| `0x005AEA60` | `sub_005AEA60_MissDo10ScatterBySkill` | do 10 | I |
-| `0x005AEB60` | `sub_005AEB60_MissDo11StepToTarget` | do 11 | I |
-| `0x005AECA0` | `sub_005AECA0_MissDo12SubPerCell` | do 12 | I |
+| `0x005AE400` | `sub_005AE400_MissDo02SubMissile` | (P1.2 name) do 2 | C |
+| `0x005A9720` | `sub_005A9720_MissSubAtSelf` | do 2's helper: `SubMissile1` at the parent, velocity 0, loops `2·lvl − 2` | C |
+| `0x005AE680` | `sub_005AE680_MissDo06SubPerCell` | do 6 | C |
+| `0x005AE780` | `sub_005AE780_MissDo07Homing` | do 7 (gates `[C]`, re-plan `[I]`) | I |
+| `0x005AE8A0` | `sub_005AE8A0_MissDo08ScatterByLevel` | do 8 | C |
+| `0x005AE940` | `sub_005AE940_MissDo09SubPerCell` | do 9 | C |
+| `0x005AEA60` | `sub_005AEA60_MissDo10ScatterBySkill` | do 10 | C |
+| `0x005AEB60` | `sub_005AEB60_MissDo11StepToTarget` | do 11 | C |
+| `0x005AECA0` | `sub_005AECA0_MissDo12SubPerCell` | do 12 | C |
 | `0x005AEDA0` | `sub_005AEDA0_MissileSpawnOwnedMonster` | (items/0002 name) do 13 | I |
-| `0x005AEF70` | `sub_005AEF70_MissDo14PeriodicDo` | (P1.2 name) do 14 (refusals `[C]`, § 2) | I |
-| `0x005AF030` | `sub_005AF030_MissDo15OrbBolts` | do 15 | I |
-| `0x005AF170` | `sub_005AF170_MissDo16TurnTarget` | do 16 | I |
-| `0x005AF240` | `sub_005AF240_MissDo17CairnStones` | do 17 | I |
-| `0x005AF300` | `sub_005AF300_MissDo18ChestSpawner` | do 18 | I |
-| `0x005A9820` | `sub_005A9820_MissSubNearReseed` | (P1.3 name) re-seed, two offsets, cell test, `SubMissile1` | I |
-| `0x006416D0` | `sub_006416D0_UnitEdgeDistance` | distance between two units' footprints (do 7, 11) | I |
+| `0x005AEF70` | `sub_005AEF70_MissDo14PeriodicDo` | (P1.2 name) do 14 | C |
+| `0x005AF030` | `sub_005AF030_MissDo15OrbBolts` | do 15 | C |
+| `0x005AF170` | `sub_005AF170_MissDo16TurnTarget` | do 16 | C |
+| `0x005AF240` | `sub_005AF240_MissDo17CairnStones` | do 17 | C |
+| `0x005AF300` | `sub_005AF300_MissDo18ChestSpawner` | do 18 | C |
+| `0x005A9820` | `sub_005A9820_MissSubNearReseed` | (P1.3 name) re-seed, two offsets, cell test, `SubMissile1` | C |
+| `0x006416D0` | `sub_006416D0_UnitEdgeDistance` | distance between two units' footprints (do 7, 11) | C |
 | `0x00553490` | `sub_00553490_PathTargetRevalidate` | drops a path's target unit that is gone or a picked-up item | I |
-| `0x00648AD0` | `sub_00648AD0_PathSetTargetPoint` | path `+0x10`, `+0x12` (u16) = the point, `+0x58` = 0 | I |
+| `0x00648AD0` | `sub_00648AD0_PathSetTargetPoint` | path `+0x10`, `+0x12` (u16) = the point, `+0x58` = 0 | C |
 | `0x00648BF0`, `0x00648BB0` | `sub_00648BF0_PathGetTargetUnit`, `sub_00648BB0_PathGetTargetTypeGuid` | path `+0x58`; `+0x5C`/`+0x60` | I |
 | `0x00620870` | `sub_00620870_UnitGetPos` | a unit's sub-tile pair (path `+0x02`/`+0x06`, or the static path's) | I |
 | `0x005DB6D0` | `sub_005DB6D0_SkillDo10GuidedMissile` | `srvdofunc` 10 (Guided Arrow, Bone Spirit): writes do 7's `+0x28`/`+0x2C` | I |
@@ -170,6 +188,18 @@ UnitSetEvent, `0x00585E00` the chest drop, `0x00555DA0` the free spot, `0x0056D8
   (`workspace/logs/skills-cat-9a-review/callsites.txt` `8ea8058b…`, from `callsites.py` `9eb02fb7…` beside it; do 8's
   do-1 call is its tail jump, the case's own return sentinel). Later batches add the site to the checker.
   (run:2026-10-20-cat-emu-9a, fn:sub_005A9820_MissSubNearReseed@0x005A9820)
+- *ADR-0021 accepted by the owner (2026-10-20):* the boundary claims of the Answer and §§ 3–11 return to `[C]`
+  without a re-run, scoped to their boundaries. (a) No instruction is patched and every boundary is a function entry
+  reached by the program's own flow (`EmuBoundary.java`, above); (b) the boundary is checked by `check.txt` per case and
+  the call site by the review (`callsites.txt`: one return address per function and boundary: do 2 `0x005A980D`
+  MissileCreate, `0x005AE47A` do 1; do 6 `0x005AE75E`, `0x005AE76B`; do 7 `0x005AE88B` do 1; do 8 `0x005A9908`
+  COLL_CellTestAt, do 1 by tail jump; do 9 `0x005AEA47`, `0x005AEA51`; do 10 `0x005A9908`, `0x005AEB4C`; do 11
+  `0x005AEC8E` PathPlan, `0x005AEC98`; do 12 `0x005AED7C`, `0x005AED89`; do 14 `0x005AF005` CallDoFunc, `0x005AEFD6`;
+  do 15 `0x005AF150` MissileCreate, `0x005AF0C3` do 1; do 16 `0x005AF221` PathPlan, `0x005AF239`; do 17 `0x005AF2E2`
+  PermPortalAtUnit, `0x005A9908`, `0x005AF2EC`; do 18 `0x005AF38F` UnitSetEvent, `0x005AF3EB` the chest drop,
+  `0x005AF479` the free spot, `0x005AF526` do 1); (c) the checkers compare the arguments, the bytes written and the
+  missile seed each claim uses at the boundary. Not covered: the code after each boundary (§ Not reached above).
+  (run:2026-10-20-cat-emu-9a)
 - [C] **The paths that return** (compared on EAX and the bytes popped, no boundary reached; `check.txt` outcomes
   `ret2*` and `skill_invalid`): do 6 and 12 return 2 with no record, `SubMissile1 < 0` or no owner (do 6 also with no
   path); do 15 with no record, `SubMissile1 < 0` or no owner; do 16 with no record; do 10 when the missile's skill is
@@ -191,11 +221,12 @@ if (PathFlag08(m->path)) {                                                   // 
 return MissileMoveCollide(game, m);
 ```
 
-- [I] As above for do 6 and do 12 (do 12 tests the record, `SubMissile1` and the owner before the flag; a null path
+- [C] As above for do 6 and do 12 (do 12 tests the record, `SubMissile1` and the owner before the flag; a null path
   reads as flag 0 there, while do 6 returns 2). Do 9 (`0x005AE940`) creates with flags `1` (start given; the target
   then defaults to the start, skills/0002 § 2), takes its point from the path (`PathGetX/Y`, the same `+0x02`/`+0x06`
   words), and tests neither the owner nor `SubMissile1` (`MissileCreate` itself refuses an owner of 0 or a class below
-  0). Flags `0x21` and `1` give the same start and target. (run:2026-10-20-cat-emu-9a `cellsub`,
+  0; that refusal is `MissileCreate`'s, not covered). Flags `0x21` and `1` give the same start and target. Boundary:
+  `MissileCreate`, or do 1 on a frame without flag 8; do 1 after a creation is not covered. (run:2026-10-20-cat-emu-9a `cellsub`,
   0x005AE6E6–0x005AE766, 0x005AE994–0x005AEA4C, 0x005AECEB–0x005AED84)
 - [I] Stock rows: do 6 68 firewallmaker → 69 firewall, 130 vampirefirewallmaker → 131, 452 moltenboulder → 455
   moltenboulderfirepath, 653 countessfirewallmaker → 331 countessfirewall; do 9 123 bat lightning bolt → 124 bat
@@ -205,11 +236,12 @@ return MissileMoveCollide(game, m);
 
 ### 4. Do 2 and `sub_005A9720_MissSubAtSelf`
 
-- [I] Do 2: with a record and `SubMissile1 ≥ 0`, `v = MISS_EvalCalc(m, owner, SrvCalc1, class, lvl)`, then
+- [C] Do 2: with a record and `SubMissile1 ≥ 0`, `v = MISS_EvalCalc(m, owner, SrvCalc1, class, lvl)`, then
   `0x005A9720(ECX game, EDX m; SubMissile1, 0, v)`: when path flag 8 is set and the owner exists, a block with flags
   `5` (`| 8` when `v > 0`), owner, source = the parent, `cls`, start = the parent's sub-tile, skill, level and loops
   `2·lvl − 2` (written whether or not flag 8 is set; read only with it). Then do 1. The second argument, a range
-  override (`> 0` → flag `0x8000`), is 0 from do 2. This raises skills/0002 § 4's do-2 reading.
+  override (`> 0` → flag `0x8000`), is 0 from do 2. This raises skills/0002 § 4's do-2 reading. Boundary:
+  `MissileCreate` (called in the helper), or do 1 without a creation; do 1 after a creation is not covered.
   (run:2026-10-20-cat-emu-9a `sublob`, 0x005A9720–0x005A9812, fn:sub_005AE400_MissDo02SubMissile@0x005AE400)
 - [I] Stock rows 38 poisonjav and 648 viper_poisjav (→ 39, 649 the clouds), 245/246 trap poison balls (no
   `SubMissile1`: only do 1). (tbl:Missiles.txt:SrvCalc1)
@@ -227,11 +259,12 @@ MISSDATA_SetSeedLow(m, (Param2 + k) % 64);                                      
 MissileCreate(game, &p);  return MissileMoveCollide(game, m);
 ```
 
-- [I] As above: the period test creates on a remainder ≤ 0, so a negative elapsed with a remainder below 0 creates
+- [C] As above: the period test creates on a remainder ≤ 0, so a negative elapsed with a remainder below 0 creates
   too; `k` is the absolute C remainder; the stored index is the plain C remainder of `Param2 + k` (no absolute value,
   32-bit sum). `g_Circle64X/Y` are image data, `(30, 0), (29, 2) … (29, −2)`: `round(30·cos, 30·sin)` of 64 steps
   (`static.txt` lists them; the rounding reading is `[I]`). `MissileData+0x28` is a direction index here, not a seed
-  word. (run:2026-10-20-cat-emu-9a `orb`, 0x005AF099–0x005AF154)
+  word. Boundary: `MissileCreate`, or do 1 off the period; do 1 after the creation is not covered.
+  (run:2026-10-20-cat-emu-9a `orb`, 0x005AF099–0x005AF154)
 - [I] Stock: row 260 frozenorb, `Param1` 1, `Param2` 19, `SubMissile1` 261 frozenorbbolt; Skills 64 Frozen Orb has
   `srvdofunc` 0, so the orb is `SKILLS_SrvDo`'s `srvmissile` with no callback and `+0x28` starts at 0
   (`sub_0064A100_MissileDataAlloc` zeroes the 0x34 bytes). So the bolts go in directions 0, 19, 38, 57, 12, 31 …,
@@ -239,11 +272,12 @@ MissileCreate(game, &p);  return MissileMoveCollide(game, m);
 
 ### 6. Do 16: the orb nova's turn
 
-- [I] With a record: `step = max(Param2, 1)`; when `elapsed < Param1` (signed) and `elapsed % step == 0`, with
+- [C] With a record: `step = max(Param2, 1)`; when `elapsed < Param1` (signed) and `elapsed % step == 0`, with
   `a = +0x28`, `b = +0x2C`: `a' = (a − b) / 2`, `b' = (a + b) / 2` (32-bit sums, division truncating toward zero),
   path target point = `(SubX + a', SubY + b')` (u16 stores, `+0x58` cleared by `sub_00648AD0_PathSetTargetPoint`),
-  `PathPlan(path, m, 0)`; then `+0x28 = a'`, `+0x2C = b'` (after the plan, not covered; the registers at the plan's entry
-  carry `a'` and `b'`) and do 1. (run:2026-10-20-cat-emu-9a `spiral`, 0x005AF1AF–0x005AF22F)
+  `PathPlan(path, m, 0)`; then `+0x28 = a'`, `+0x2C = b'` and do 1. Boundary: `PathPlan`, or do 1 off the turn; the
+  `+0x28`/`+0x2C` stores and do 1 after the plan are not covered (`[I]`; the registers at the plan's entry carry `a'`
+  and `b'`). (run:2026-10-20-cat-emu-9a `spiral`, 0x005AF1AF–0x005AF22F)
 - [I] Stock: 262 frozenorbnova, `Param1` 6, `Param2` 2: a 45° turn of the offset, scaled by 1/√2, at elapsed
   0, 2 and 4. The starting `(a, b)` is written by its creator, hit function 29 of the orb (batch 9c). (tbl:Missiles.txt:Param1)
 
@@ -262,20 +296,23 @@ if (COLL_CellTestAt(UnitGetRoom(m), p.x, p.y, mask)) return 0;
 return MissileCreate(game, &p);
 ```
 
-- [I] As above up to `COLL_CellTestAt` (its four arguments and the missile's seed at that call are compared): the
+- [C] As above up to `COLL_CellTestAt` (its four arguments and the missile's seed at that call are compared): the
   period and radius come in EAX and on the stack (a register convention Ghidra's decompile drops); the re-seed uses
   the missile's own sub-tile x plus the elapsed frame count; `RNG_RangeB(n ≤ 0)` returns 0 without a step, so a
   radius of 1 or less draws nothing and puts the sub-missile on the missile's x offset by `1 − r`; the cell test is on
-  the missile's room, not the target point's. The block after the test is `[I]`. (run:2026-10-20-cat-emu-9a `scatter`,
+  the missile's room, not the target point's. Boundary: `COLL_CellTestAt`; the block after the test (the refusal and
+  `MissileCreate`) is not covered and stays `[I]`. (run:2026-10-20-cat-emu-9a `scatter`,
   0x005A9820–0x005A990C; objdump `lea edx,[eax+eax*1]` at 0x005A98B7, `idiv edi` at 0x005A983D)
-- [I] **Do 8** (`0x005AE8A0`): `q = lvl / max(Param3, 1)` (signed), `r = Param1 + max(q, 2)`, period
+- [C] **Do 8** (`0x005AE8A0`): `q = lvl / max(Param3, 1)` (signed), `r = Param1 + max(q, 2)`, period
   `max(Param2 − q, 3)`, mask 5, `SubMissile1`; then do 1 (tail jump). No owner or sub-missile test of its own.
   **Do 10** (`0x005AEA60`): the missile's skill must be a Skills row (else 2); `r = SKILLS_EvalCalc(owner, calc1,
   skill, lvl)`, period `SKILLS_EvalCalc(owner, calc2, skill, lvl)` (Skills `+0x138`, `+0x13C`), mask 5; then do 1.
   **Do 17** (`0x005AF240`): with `left` = frames left, when `SubMissile1 > 0`, `left < Range − Param1` and
   `left > Param1`: period `Param2`, `r = Param3`; then, when `Param4 ≥ 0`, `+0x28 == 0` and `left ≤ Param5 + Param1`,
   `sub_005A9930_PermPortalAtUnit(game, m, Param4)` (which sets `+0x28 = 1` first, quests/0002); then do 1. `Range`
-  here is the raw column (`+0x96`), not the creation range. (run:2026-10-20-cat-emu-9a `scatter`, 0x005AE8E9–0x005AE936,
+  here is the raw column (`+0x96`), not the creation range. Boundaries: the helper's cell test, do 17's
+  `PermPortalAtUnit`, do 1 (do 8's by tail jump). Not covered: the portal function's own work (its `+0x28 = 1` is
+  quests/0002's reading) and do 1 after the helper's cell test or the portal. (run:2026-10-20-cat-emu-9a `scatter`, 0x005AE8E9–0x005AE936,
   0x005AEAB5–0x005AEB47, 0x005AF27E–0x005AF2E7, tbl:Missiles.txt:Param3, tbl:Skills.txt:calc1, tbl:Skills.txt:calc2)
 - [I] Stock: 106 monblizcenter (`Param1` 5, `Param2` 8, `Param3` 4: radius `5 + max(lvl/4, 2)`, period
   `max(8 − lvl/4, 3)`) → 107 monbliz1; 158 blizzardcenter (Skills 59 Blizzard's `calc1`/`calc2`) → 159 blizzard1;
@@ -305,9 +342,11 @@ if (+0x2C && left % max(4 * Param2, 1) == 0) {
 return MissileMoveCollide(game, m);
 ```
 
-- [I] As above up to each boundary (`UnitSetEvent`'s registers, the chest-drop block, the two draws and the point
+- [C] As above up to each boundary (`UnitSetEvent`'s registers, the chest-drop block, the two draws and the point
   passed to `0x00555DA0`); the gold phase starts at the `Range − Param1` frame even when the chest is not found; the
-  period is `4·Param2` (32-bit) floored at 1. (run:2026-10-20-cat-emu-9a `chest`, 0x005AF359–0x005AF474)
+  period is `4·Param2` (32-bit) floored at 1. Boundaries: `UnitSetEvent`, the chest drop `0x00585E00`, the free spot
+  `0x00555DA0`, do 1. Not covered: the code after each (the `+0x2C` store after a found chest's drop, the item block
+  below, do 1 after any of them). (run:2026-10-20-cat-emu-9a `chest`, 0x005AF359–0x005AF474)
 - [I] After the free spot: the item block (`0x84` bytes) is the drop record of items/0001's `DropCreateItem` with
   item `gld ` (`sub_00633680_ItemIndexByCode(0x20646C67)`), `+0x18` = 3, `+0x28` = 1, `+0x2A` = `game+0x78`, `+0x30`
   = 2, ilvl = `sub_0061DCA0_LevelMonLvl(level, game+0x6D, game+0x70)`; the item seed comes from the game seed
@@ -321,13 +360,15 @@ return MissileMoveCollide(game, m);
 
 ### 9. Do 11: stepping towards a target
 
-- [I] `t = UNIT_GetTargetUnit(game, m)`, or, when 0 and an owner exists, the owner's; without one, do 1. With
+- [C] `t = UNIT_GetTargetUnit(game, m)`, or, when 0 and an owner exists, the owner's; without one, do 1. With
   `period = Param1 > 0 ? Param1 : 5`, when `left % period == 0` and `UnitEdgeDistance(m, t) ≤ Param2`:
   `s = max(Param3, 1)`, `dx = sign(SubX(t) − SubX(m))·s`, `dy` the same, path target point `(SubX(m) + dx,
-  SubY(m) + dy)`, `PathPlan(path, m, 0)`; then do 1. (run:2026-10-20-cat-emu-9a `homing`, 0x005AEBA1–0x005AEC93)
-- [I] `sub_006416D0_UnitEdgeDistance(a, b)`: `dx = |x_b − x_a|`, `dy = |y_b − y_a|`, each minus `size_b/2 + size_a/2`
+  SubY(m) + dy)`, `PathPlan(path, m, 0)`; then do 1. Boundary: `PathPlan`, or do 1 without a step; do 1 after the
+  plan is not covered. (run:2026-10-20-cat-emu-9a `homing`, 0x005AEBA1–0x005AEC93)
+- [C] `sub_006416D0_UnitEdgeDistance(a, b)`: `dx = |x_b − x_a|`, `dy = |y_b − y_a|`, each minus `size_b/2 + size_a/2`
   (`UNIT_GetSizeX`, signed halves) and floored at 0; the result is `(max·2 + min) / 2`. Covered for missile-type
-  units (size = Missiles `Size`); other unit types `[I]`. (0x006416D0–0x006417AF)
+  units (size = Missiles `Size`); other unit types `[I]`. Run emulated inside do 11's cases, before their boundary.
+  (run:2026-10-20-cat-emu-9a `homing`, 0x006416D0–0x006417AF)
 - [I] `UNIT_GetTargetUnit` first runs `sub_00553490_PathTargetRevalidate`: the path's stored target is cleared when
   `GameFindUnit` by its stored type and guid no longer finds that unit, or finds an item in mode 1 or 2; it returns
   the target unless it is the unit itself. (0x00553490–0x00553515, 0x00553540)
@@ -335,11 +376,13 @@ return MissileMoveCollide(game, m);
 
 ### 10. Do 7: Guided Arrow and Bone Spirit
 
-- [I] **Gates:** with a record, an owner that `UnitIsDead` calls alive (`Unit+0xC6` bit 0 clear, and mode not 0 nor
+- [C] **Gates:** with a record, an owner that `UnitIsDead` calls alive (`Unit+0xC6` bit 0 clear, and mode not 0 nor
   the death mode: 0x11 for a player, 0xC for a monster; any other type counts as dead), and a missile room that is not
   a town (`sub_006426A0_LevelIsTown` of the room's level: 1, 40, 75, 103, 109); else 2. Then, only when `+0x28` bit 0
   is set: `0x00553490`, the target from `UNIT_GetTargetUnit`, dropped when dead or not hostile to the owner; a
-  missile target is always dropped (`UnitIsDead` is 1 for type 3). (run:2026-10-20-cat-emu-9a `guided`,
+  missile target is always dropped (`UnitIsDead` is 1 for type 3). Boundary: do 1, reached with bit 0 clear or a
+  missile target; the drop of a live target not hostile to the owner (`UnitsHostile`, not emulated) stays `[I]`, and
+  nothing past the gates with a live hostile target is covered (the re-plan below). (run:2026-10-20-cat-emu-9a `guided`,
   0x005AE780–0x005AE843, fn:sub_005541B0_UnitIsDead@0x005541B0)
 - [I] **Re-plan:** with a live hostile target, `period = Param1 > 0 ? Param1 : 5`; when `left % period == 0` and the
   edge distance is in `[4, 24]`, `PathPlan(path, m, 0)` towards the path's target unit. Not emulated (`UnitsHostile`
@@ -353,9 +396,10 @@ return MissileMoveCollide(game, m);
 
 ### 11. Do 14
 
-- [I] With a record: `period = Param1 > 0 ? Param1 : 1`; when `elapsed % period == 0` and the missile's skill and
+- [C] With a record: `period = Param1 > 0 ? Param1 : 1`; when `elapsed % period == 0` and the missile's skill and
   level are both above 0, `CallDoFunc(ECX game, EDX m; Param2, skill, lvl)` and then do 1; when they are not, 2; off
-  the period, do 1. Raises skills/0002 § 8's do-14 reading. (run:2026-10-20-cat-emu-9a `periodic`,
+  the period, do 1. Boundary: `CallDoFunc`, or do 1 off the period; do 1 after `CallDoFunc` is not covered. Raises
+  skills/0002 § 8's do-14 reading. (run:2026-10-20-cat-emu-9a `periodic`,
   0x005AEFC0–0x005AF020)
 
 ### 12. Do 13: Bone Wall's pieces
@@ -395,7 +439,8 @@ mode, do 13 piece guid, do 15 direction, do 16 `a`, do 17 portal done, do 18 che
 ## Open questions
 
 - ~~[L] **The `observe` boundary under ADR-0015.**~~ Ruled at the `lane/p46m1` review (§ 2): not met as written;
-  ADR-0021 proposed; the boundary claims are `[I]` until the owner accepts it. (run:2026-10-20-cat-emu-9a)
+  ADR-0021 proposed, and accepted by the owner 2026-10-20: the boundary claims are `[C]` up to their boundaries.
+  (run:2026-10-20-cat-emu-9a)
 - [L] What sets path flag 8 (`+0x34 & 8`) and so how often do 2, 6, 9, 12 and 13 create (the path step's; skills/0003
   § 10).
 - [L] The `(a, b)` hit 29 gives each frozenorbnova (batch 9c) and the starting index of an orb created by anything but

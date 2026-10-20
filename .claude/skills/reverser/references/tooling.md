@@ -104,7 +104,12 @@ whose pc reaches that address ends there and prints `C <n> <fn> OBS <pc> steps= 
 esp=` and an `A <64 bytes at ESP>` line (the return address, then the stack arguments); `d` dumps follow as usual, so
 dump the stack (`d 7feffc00 1024`) to read a parameter block passed by pointer. Use it for a function that ends in a
 call whose read set is not declarable (MissileCreate, the path planner, a spawn): the case's claim is the map up to that
-call, nothing after it (skills/0004 § 2; the architect rules on the reading at the 9a review). Models and checks:
+call, nothing after it ([ADR-0021](../../../../docs/adrs/0021-observed-boundaries-in-emulation.md), skills/0004 § 2).
+ADR-0021's conditions: no patch, the boundary a function entry reached by the program's own flow; the checker asserts
+per case the boundary **and the call site** (the return address in the `A` line, or the case's own return sentinel for
+a tail jump) and fails a different boundary, site, or a return where the model predicts a boundary (and the reverse);
+the model predicts every argument, pre-call byte and seed state the claim uses. Each claim names its boundary and the
+finding lists the code after it as not covered. Models and checks:
 `tools/skills_catalogue_emu.py` (its own output reader; `sweep_s1e.read_out` does not parse `OBS` lines).
 
 ## radare2 / rizin quick looks
