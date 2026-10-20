@@ -1872,6 +1872,23 @@ def cmd_objop(args):
             time.sleep(0.5)
             continue
         px, py = st.pos[0], st.pos[1]
+        if not objs and getattr(args, "goal", None) and not getattr(args, "trap_types", None) and not (
+                getattr(args, "obj_mem", False) and any(o[0] in classes for o in st.objs_seen.values())):
+            # plan 0038 H5b: no object of the classes known yet; head for a fixed point (a preset object's position
+            # from an earlier session on the same map seed) so that its room activates
+            gx, gy = (int(v) for v in args.goal.split(","))
+            if math.hypot(gx - px, gy - py) > 6:
+                upkeep(args, p)
+                c = optimistic_hop(st, (gx, gy), args.hop, blind[1])
+                if c is None:
+                    a = math.atan2(gy - py, gx - px) + random.uniform(-0.8, 0.8)
+                    c = (int(px + args.hop * math.cos(a)), int(py + args.hop * math.sin(a)))
+                p.teleport(c[0] - px, c[1] - py)
+                time.sleep(args.wait)
+                st.poll()
+                if st.pos and math.hypot(st.pos[0] - px, st.pos[1] - py) < 3:
+                    blind[1].add(c)
+                continue
         if not objs and args.to_pdef:
             # the object's room is not active yet: head for the preset room (RL pdef), over known cells when a
             # greedy hop exists, else a blind Teleport of --hop towards it (lava and gaps are crossed that way)
@@ -3053,7 +3070,7 @@ def main():
                     "target stand still and cast nothing (the mercenary or a summon kills it); never Nova on the way")
     ap.add_argument("--pdef-any", action="store_true", help="objop --to-pdef: preset rooms of any built level (plan "
                     "0038 H6d: the Chaos Sanctuary's wings from the River of Flame), not only the current one")
-    ap.add_argument("--goal", help="hunt: X,Y sub-tiles to head for while the target is not seen (its place in an "
+    ap.add_argument("--goal", help="hunt, objop: X,Y sub-tiles to head for while the target is not seen (its place in an "
                     "earlier game on the same map seed)")
     ap.add_argument("--summon-key", help="hunt --pet: F-key of a placed summon (Hydra), cast towards the target")
     ap.add_argument("--summon-every", type=float, default=3.0, help="hunt --pet: seconds between summon casts")

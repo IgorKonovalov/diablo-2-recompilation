@@ -128,6 +128,16 @@ SESSIONS = {
     "ice": ("ObjNova", "enter-normal", 3923, [wp(5, 4), explore(160, "1,3,4,5,68"),
                                              ("pilot", ["objop", "--obj-cls", "466", "--obj-mem", "--times", "3",
                                                         "--done", "OO0", "--time", "200"], 230)]),
+    # cave3 left the chest's room inactive (the explore stopped short of it), so head for the chest's position in
+    # cave and cave2 (the same map seed puts the DS1 chest at (7612, 12522))
+    "cave4": ("ObjNova", "enter-normal", 3913, [wp(1, 2), descend(9, "0,1,2,3"), explore(40), descend(13, "5"),
+                                               ("pilot", ["objop", "--obj-cls", "397", "--obj-mem", "--goal",
+                                                          "7612,12522", "--times", "1", "--done", "OO0", "--time",
+                                                          "200"], 230)]),
+    # type 8 (OBJTRAP_MonsterSpawn) needs a level below 75: Halls of the Dead Level 2 (57; urns, caskets) from its
+    # waypoint
+    "traps3": ("ObjNova", "enter-normal", 3924, [wp(2, 4), explore(160), traps("8,5,7", 4)]),
+    "traps4": ("ObjNova", "enter-normal", 3925, [wp(2, 4), explore(160), traps("8,5,7", 4)]),
     # collision 39, objects 23, 27: Harrogath (class 523, size 0 with HasCollision; InitFn 66, 68) then the ice caves
     "harro": ("ObjNova", "enter-normal", 3906, [wp(5, 1), ("pilot", ["npc", "larzuk", "trade", "--stay"], 150),
                                                ("pilot", ["npc", "anya", "trade", "--stay"], 150),

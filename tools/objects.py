@@ -1265,6 +1265,9 @@ class Checker:
         r = self.rs.p100()
         forced = L["cnt"] > 0 and idiv(L["vis"] << 7, L["cnt"]) > 96 and L["hs"] == 0
         tries = 30 if forced else 3
+        if forced:
+            self.hit("shrine handler calls with the due rule on (HealthShrineDue)")
+            self.covk("shrine handler calls with the due rule on", (self.lid, L["vis"], L["cnt"], L["nsh"]))
         if not forced and r > 100:
             return
         if L["nsh"] == 10 or L["nsh"] > idiv(L["cnt"], 8):
@@ -1285,16 +1288,20 @@ class Checker:
             u = self.place_orient(cls, o["SizeX"], o["SizeY"], o["Orientation"], dist)
             if u is None:
                 continue
+            if forced:
+                self.hit("shrines placed with the due rule on: code %s" % ("2 (health), kept" if u["it"] == 2
+                                                                            else "not 2, converted"))
             if u["it"] != 2:
                 if not forced:
                     L["shp"].append((u["x"], u["y"]))
                     L["nsh"] += 1
                     return
+                c0, it0 = u["cls"], u["it"]
                 p1 = s32(self.t.objs[u["cls"]]["Parm1"])
                 u["cls"] = p1 if 0 < p1 < 573 else 84
                 self.shrine_pick(2, 1)
                 u["it"] = 2
-                self.covk("forced health shrines", (self.lid, u["cls"]))
+                self.covk("forced health shrines (level, placed class, its code, new class)", (self.lid, c0, it0, u["cls"]))
             L["hs"] += 1
             L["shp"].append((u["x"], u["y"]))
             L["nsh"] += 1
