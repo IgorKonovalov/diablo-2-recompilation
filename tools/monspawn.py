@@ -1692,7 +1692,8 @@ class Checker:
             return
         reg.append([cls, 0, None])
         # plan 0048 Phase 2: the creation that appended the class, for the remainder of oracle 14
-        self.append_src[(path, lid, cls)] = "MU line %d (class %d, outside a modelled window)" % (ln, cls)
+        self.append_src[(path, lid, cls)] = "%s MU line %d (class %d, outside a modelled window)" % (
+            os.path.basename(path), ln, cls)
         self.oracle("region append by a creation outside the model (an MU line not in a modelled window; sets unknown)")
 
     def unit_seed(self, P, cls, us0, logged):

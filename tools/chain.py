@@ -251,7 +251,8 @@ class World:
         for k, v in c.populated_unclean.items():
             R["world: populated end-to-end rooms that do not count (%s)" % k] += v
         for (cls, lid, src), v in sorted(c.unit_seed_taken.items()):
-            R["ORACLE 14 remainder: unit seed taken, class %d level %d, appended by %s" % (cls, lid, src)] += v
+            R["ORACLE 14 remainder: unit seed taken, class %d level %d, appended by %s%s" % (
+                cls, lid, src, creation_context(src))] += v
         R["world: specials: uniques and minion packs (pass and MonPlace 2)"] += len(c.uniques)
         R["world: specials: champion packs"] += len(c.champions)
         for k, v in c.stats.items():
@@ -275,8 +276,10 @@ class World:
             R["world: monstats checks"] += self.ms.checks
             R["world: monstats mismatches"] += self.ms.fail
             for k, v in self.ms.n.items():
-                if k.startswith("MonEquip"):
+                if k.startswith("MonEquip seed oracle"):
                     R["ORACLE (world): monstats " + k] += v
+                elif k.startswith("MonEquipInit"):
+                    R["oracle 13: monstats " + k] += v
 
 
 CF = {
@@ -288,6 +291,7 @@ CF = {
     "overlay-off": "oracle 16: the presets-window predicates on the activation model without the window's marks",
     "state-stale": "oracle 21: another room's seed from its activation seed only (its passes and windows ignored)",
     "i46-stored": "oracle 17: InitFn 46's direction draw stored like the others (one OD line per step)",
+    "monequip-off": "oracle 13: MonEquipInit draws nothing on the unit seed (no location pick)",
 }
 
 
@@ -313,6 +317,8 @@ def apply_cf(name):
     elif name == "i46-stored":
         import objects
         objects.Seed.draw_unstored = objects.Seed.draw
+    elif name == "monequip-off":
+        monstats.Model.monequip = lambda self, seed, cls, lvl: 0
     elif name == "overlay-off":
         monspawn.PresetMonPass.overlay = lambda self: self.chk.world.model
 
@@ -405,6 +411,28 @@ O20 = []              # oracle 20: the R3 residue per pass room (tools/collision
 INPUT_TAGS = ("SN", "LG0", "NWW", "OG", "TCR", "QKMF", "QOMF", "QMF", "PLR", "AROOM")
 
 
+BUILT = set()         # (level id, DrlgType, difficulty, expansion) built by the server (LI0 client 0) in a checked log
+
+
+def act_of(lid):
+    return 1 if lid < 40 else 2 if lid < 75 else 3 if lid < 103 else 4 if lid < 109 else 5
+
+
+def levels_built(path):
+    de, ids = None, set()
+    for line in open(path, errors="replace"):
+        if line.startswith("LI0 "):
+            d = json.loads(line[4:])
+            if not d.get("client"):
+                ids.add((d["id"], d["drlg"]))
+        elif de is None and line.startswith("P0 "):
+            d = json.loads(line[3:])
+            de = (d["diff"], 1 if d["exp"] else 0)
+    if de is not None:
+        for lid, k in ids:
+            BUILT.add((lid, k, de[0], de[1]))
+
+
 def count_inputs(path, R):
     """Plan 0048 Phase 2: the input lines (oracle 20's SN, LG0 and NWW; oracle 19's OG with its LevelRoomCount
     reads; the drops' game seed (TCR gseed) and the killer's / summon owner's magic find (QKMF, QOMF, QMF); the
@@ -417,6 +445,39 @@ def count_inputs(path, R):
                 R["oracle 19: LevelRoomCount reads (OG cnt)"] += 1
             elif tag == "TCR" and " gseed=" in line:
                 R["input: game seed at a drop (TCR gseed)"] += 1
+
+
+LOGDIRS = []
+
+
+def creation_context(src):
+    """For an appender 'LOG MU line N ...': where the creation ran, from the last scope line before it (within 2 000
+    lines): an object's InitFn (OI0), operate (OO0) or trap event (TT0), or the room driver's window (RW1: the presets
+    window, up to RW2; RW2..RW4: the restore and objects window) or the population pass (P0)."""
+    m = re.match(r"(\S+) MU line (\d+)", src)
+    if not m:
+        return ""
+    path = next((p for p in LOGDIRS if os.path.basename(p) == m.group(1)), None)
+    if path is None:
+        return ""
+    n = int(m.group(2))
+    last = None
+    for k, line in enumerate(open(path, errors="replace"), 1):
+        if k >= n:
+            break
+        if k >= n - 2000 and line.startswith(("OI0 ", "OO0 ", "TT0 ", "RW1 ", "RW2 ", "RW4 ", "P0 ", "PX ")):
+            last = (k, line)
+    if last is None:
+        return " (no scope line in the 2 000 lines before)"
+    k, line = last
+    tag = line.split(" ", 1)[0]
+    d = json.loads(line.split(" ", 1)[1])
+    what = {"OI0": "InitFn %s of object class %s" % (d.get("fn"), d.get("cls")),
+            "OO0": "OperateFn %s of object class %s" % (d.get("fn"), d.get("cls")),
+            "TT0": "trap event fn %s" % d.get("fn"),
+            "RW1": "the presets window (RW1 -> RW2)", "RW2": "the restore / objects window (RW2 -> RW4)",
+            "RW4": "after the objects window, before the pass", "P0": "the population pass", "PX": "after a pass"}[tag]
+    return " in %s (%s line %d)" % (what, tag, k)
 
 
 def o20_attribute(recs):
@@ -496,6 +557,7 @@ def cmd_check(ns):
     R = collections.Counter()
     bad = 0
     world = None
+    LOGDIRS.extend(ns.logs)
     for path in ns.logs:
         rcs = []
         rc = check_items(path, ns, R)
@@ -507,6 +569,7 @@ def cmd_check(ns):
             rcs.append(("world", world.run(path)))
             gate_inputs(path, R)
             count_inputs(path, R)
+            levels_built(path)
             rc = check_tc(path, ns, R)
             if rc is not None:
                 rcs.append(("tc", rc))
@@ -525,6 +588,17 @@ def cmd_check(ns):
     if world is not None:
         R["world: levels with an oracle-free room population"] = len(LEVELS)
         R["world: (level, difficulty) pairs with an oracle-free room population"] = len({(a, b) for a, b, _ in LEVELS})
+    if BUILT:
+        R["levels built (level, difficulty, game type)"] = len({(a, c, d) for a, _, c, d in BUILT})
+        for k in (1, 2, 3):
+            R["levels built (level, difficulty, game type), DrlgType %d" % k] = len({(a, c, d) for a, kk, c, d in BUILT
+                                                                                       if kk == k})
+        for c in (0, 1, 2):
+            for d in (0, 1):
+                acts = sorted({act_of(a) for a, _, cc, dd in BUILT if (cc, dd) == (c, d)})
+                if acts:
+                    R["levels built: difficulty %d game type %d: acts %s" % (c, d, "".join(map(str, acts)))] = len(
+                        {a for a, _, cc, dd in BUILT if (cc, dd) == (c, d)})
     if ns.o20 and world is not None:
         att = o20_attribute(O20)
         for a in att:
@@ -532,7 +606,7 @@ def cmd_check(ns):
                                                           if a["nearest"] else "unexplained")] += 1
         with open(ns.o20, "w") as fh:
             json.dump({"per_room": [{k: v for k, v in r.items()} for r in O20], "objcells": att,
-                       "levels": sorted(LEVELS)}, fh, indent=0, sort_keys=True)
+                       "levels": sorted(LEVELS), "built": sorted(BUILT)}, fh, indent=0, sort_keys=True)
     print("== chain summary ==")
     for k in sorted(R):
         print("  %-90s %d" % (k, R[k]))

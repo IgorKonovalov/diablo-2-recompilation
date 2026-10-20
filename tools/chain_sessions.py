@@ -7,6 +7,7 @@ Usage:
   python3 -I tools/chain_sessions.py list
   python3 -I tools/chain_sessions.py run --slot N --tag TAG --saves DIR --run RUN SESSION [SESSION ...]
   python3 -I tools/chain_sessions.py volume LOG [LOG ...]      # lines and MB per tag, game minutes (PLR "gf")
+  python3 -I tools/chain_sessions.py table REC.session.json ...  # the run record's session table
 
 Each SESSION names a row of SESSIONS below: the save (<DIR>/<Name>.d2s), the difficulty steps file, the map seed, the
 commands run in order, and the session's wall-time limit. The log goes to workspace/logs/chain-p2/<RUN>-s<slot>-<seed>-
@@ -311,7 +312,21 @@ def volume(paths):
     return 0
 
 
+def table(paths):
+    """A markdown row per session record (.session.json)."""
+    print("| Log | Seed | Character | Difficulty | Levels (PLR order) | Wall min | Game min | MB | Ended |")
+    print("|---|---|---|---|---|---|---|---|---|")
+    for p in paths:
+        r = json.load(open(p))
+        print("| `%s` | %d | %s | %s | %s | %.1f | %s | %.1f | %s |" % (
+            r["log"], r["seed"], r["save"], r["steps"].replace("enter-", ""), ", ".join(map(str, r["levels"])),
+            r["wall_from_entry_s"] / 60.0, r["game_min"], r["bytes"] / 1e6, r["ended"]))
+    return 0
+
+
 def main(argv):
+    if argv and argv[0] == "table":
+        return table(argv[1:])
     if not argv or argv[0] not in ("list", "run", "volume"):
         print(__doc__)
         return 2
