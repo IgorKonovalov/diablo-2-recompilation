@@ -97,7 +97,7 @@ None. No community document was opened for this batch; the cross-check is Phase 
 | `0x005C37C0`, `0x005C35C0` | `sub_005C37C0_SkillDo30Curse`, `sub_005C35C0_CurseApplyCb` | `srvdofunc` 30 and its per-unit callback | I |
 | `0x005C4B00`, `0x005C6910` | `sub_005C4B00_SkillDo31RaiseSkeleton`, `sub_005C6910_SkillDo114Summon` | `srvdofunc` 31, 114 | I |
 | `0x005C7160` | `sub_005C7160_SkillDo117Firestorm` | `srvdofunc` 117 | I |
-| `0x005C8520` | `sub_005C8520_SkillDo146Armageddon` | `srvdofunc` 146, Armageddon's state `srvactivefunc` | I |
+| `0x005C8520` | `sub_005C8520_SkillDo146Armageddon` | do-table entry 146, reached only as the `armageddon` state's `srvactivefunc` (no Skills row has `srvdofunc` 146; Armageddon's is 124) | I |
 | `0x005C4470`, `0x005C49E0` | `sub_005C4470_SummonInitStats`, `sub_005C49E0_SummonSetLevel` | the summon's stats and level | I |
 | `0x0056E620`, `0x0063EA70` | `sub_0056E620_SkillSummonClass`, `sub_0063EA70_SkillSummonRec` | `summon`, `summode` (or the monster's own) | I |
 | `0x0056E780` | `sub_0056E780_SkillForUnitsNearTarget` | callback on units within a radius of the target point | I |

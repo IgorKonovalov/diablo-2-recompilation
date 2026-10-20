@@ -50,16 +50,16 @@ their run (`xoffset`, `SubMissile3`, `HitSubMissile2..4`, `DmgSymPerCalc` by the
 ### Function-number columns
 
 The server columns are the machinery plan 0045 reads; the client columns are presentation and stay out of scope
-(plan 0045 *Open questions*, "Client-only skills"). Which rows use each server number: § [Function numbers](#function-numbers).
+(plan 0045 *Open questions*, "Client-only skills"). Which rows use each server number, with their parameters and plan 0046 batch: § [Function index](#function-index-plan-0046-phase-0).
 
 | Column | Observed | `.bin` field | Meaning | References | Layout tag |
 |---|---|---|---|---|---|
-| `pSrvDoFunc` | int 1..36 (34 distinct), 53 blank | `+0x00C` u16 | server per-frame (do) function number | — | [C] |
-| `pSrvHitFunc` | int 1..59 (49 distinct) and `*12`, 591 blank | `+0x00E` u16 | server hit function number (run when the missile hits) | — | [C] |
-| `pSrvDmgFunc` | int 1..14 (13 distinct), 661 blank | `+0x010` u16 | server damage function number | — | [C] |
+| `pSrvDoFunc` | int 1..36 (34 distinct), 53 blank | `+0x00C` u16 | server per-frame (do) function number; `[I]` an index into `g_MissileSrvDoFuncs` (`0x0073C768`), called each frame when the s16 value is > 0 and < 53, the result 2 freeing the missile ([skills/0002 § 4](../findings/skills/0002-missiles.md#4-each-frame); § [Function index](#function-index-plan-0046-phase-0)) | — | [C] |
+| `pSrvHitFunc` | int 1..59 (49 distinct) and `*12`, 591 blank | `+0x00E` u16 | server hit function number; `[I]` an index into the hit table, called when the s16 value is > 0 and < 71; its result replaces the hit's end, damage and keep bits; row 568's 64 948 (−588 as s16) is never called ([skills/0002 § 5](../findings/skills/0002-missiles.md#5-the-hit)) | — | [C] |
+| `pSrvDmgFunc` | int 1..14 (13 distinct), 661 blank | `+0x010` u16 | server damage function number; `[I]` an index into the damage table, called on the hit's packet when the s16 value is > 0 and < 31 ([skills/0002 § 5](../findings/skills/0002-missiles.md#5-the-hit)) | — | [C] |
 | `pCltDoFunc` | int 1..68 (65 distinct), 2 blank | `+0x008` u16 | client do function number (presentation) | — | [C] |
 | `pCltHitFunc` | int 1..63 (46 distinct) and `*16`, 568 blank | `+0x00A` u16 | client hit function number (presentation) | — | [C] |
-| `SrvCalc1` | formula, 3 distinct, 680 blank | `+0x080` s32 calc | server formula for the do function | `misscode.bin` | [C] |
+| `SrvCalc1` | formula, 3 distinct, 680 blank | `+0x080` s32 calc | server formula for the do function; `[I]` do function 2 only tests its value > 0 ([skills/0002 § 4](../findings/skills/0002-missiles.md#4-each-frame)) | `misscode.bin` | [C] |
 | `SHitCalc1` | formula, 1 distinct, 683 blank | `+0x088` s32 calc | server formula for the hit function | `misscode.bin` | [C] |
 | `DmgCalc1` | formula, 1 distinct, 680 blank | `+0x090` s32 calc | formula for the damage function | `misscode.bin` | [C] |
 | `CltCalc1` | formula, 2 distinct, 681 blank | `+0x084` s32 calc | client formula (presentation) | `misscode.bin` | [C] |
@@ -69,18 +69,18 @@ The server columns are the machinery plan 0045 reads; the client columns are pre
 
 | Column | Observed | `.bin` field | Meaning | References | Layout tag |
 |---|---|---|---|---|---|
-| `Vel` | int 1..32 (23 distinct), 337 blank | `+0x09A` u8 | starting velocity | — | [C] |
-| `VelLev` | int 4..8 (4 distinct), 680 blank | `+0x09B` u8 | velocity added per level | — | [C] |
-| `MaxVel` | int 1..64 (25 distinct), 336 blank | `+0x09C` u16 | velocity cap | — | [C] |
-| `Accel` | int -1000..250 (5 distinct), 663 blank | `+0x09E` s16 | acceleration per step | — | [C] |
-| `Range` | int 1..2048 (71 distinct), 10 blank | `+0x096` s16 | lifetime (frames) at level 0; `[C]` the misscalc variable `rang` (28) is `LevRange × lvl + Range` ([data/calc § G2](../specs/data/calc.md), fn:MISS_CalcVar@0x0064B340); `[I]` the Horadric staff timer's period is `(Missiles[338].Range − 75) / 20` ([quests/0001](../findings/quests/0001-progression.md)) | — | [C] |
-| `LevRange` | int 1..100 (11 distinct), 652 blank | `+0x098` s16 | lifetime added per level (the `rang` term above) | — | [C] |
+| `Vel` | int 1..32 (23 distinct), 337 blank | `+0x09A` u8 | starting velocity; `[I]` read as a byte: the creation velocity, unless the caller passes one, is `((VelLev · lvl) / 8 + Vel) << 8`, scaled by state 87's stat 161 for a `CanSlow` row, then × 75 / 100 ([skills/0002 § 2](../findings/skills/0002-missiles.md#2-creation)); progressive entry 36 reads the same bytes ([skills/0003 § 1](../findings/skills/0003-handlers.md#1-progressive-entries-srvprgfunc-and-the-finishers-tail)) | — | [C] |
+| `VelLev` | int 4..8 (4 distinct), 680 blank | `+0x09B` u8 | velocity added per level, `[I]` a byte, the `(VelLev · lvl) / 8` term of `Vel` (signed division) ([skills/0002 § 2](../findings/skills/0002-missiles.md#2-creation)) | — | [C] |
+| `MaxVel` | int 1..64 (25 distinct), 336 blank | `+0x09C` u16 | velocity cap; `[I]` the path's maximum speed, `MaxVel << 8` ([skills/0002 § 2](../findings/skills/0002-missiles.md#2-creation), [skills/0002 § 4](../findings/skills/0002-missiles.md#4-each-frame)) | — | [C] |
+| `Accel` | int -1000..250 (5 distinct), 663 blank | `+0x09E` s16 | acceleration per step; `[I]` the raw s16 is added to the speed on every fifth step, the speed then capped at the maximum (and the acceleration cleared) or set to 0 when negative ([skills/0002 § 4](../findings/skills/0002-missiles.md#4-each-frame)) | — | [C] |
+| `Range` | int 1..2048 (71 distinct), 10 blank | `+0x096` s16 | lifetime (frames) at level 0; `[C]` the misscalc variable `rang` (28) is `LevRange × lvl + Range` ([data/calc § G2](../specs/data/calc.md), fn:MISS_CalcVar@0x0064B340); `[I]` the missile's range is the same sum (plus the sub-loop frames, or the caller's override), counted in do-function calls ([skills/0002 § 2](../findings/skills/0002-missiles.md#2-creation), [skills/0002 § 4](../findings/skills/0002-missiles.md#4-each-frame)); `[I]` the Horadric staff timer's period is `(Missiles[338].Range − 75) / 20` ([quests/0001](../findings/quests/0001-progression.md)) | — | [C] |
+| `LevRange` | int 1..100 (11 distinct), 652 blank | `+0x098` s16 | lifetime added per level (the `rang` term above; `[I]` the creation range, [skills/0002 § 2](../findings/skills/0002-missiles.md#2-creation)) | — | [C] |
 | `InitSteps` | int 0..40 (11 distinct), 4 blank | `+0x135` u8 | steps taken before the missile is shown or acts | — | [C] |
-| `Activate` | int 0..30 (5 distinct), 4 blank | `+0x136` u8 | frame on which the missile becomes active | — | [C] |
+| `Activate` | int 0..30 (5 distinct), 4 blank | `+0x136` u8 | frame on which the missile becomes active; `[I]` unit collision starts once the frames left are ≤ range − `Activate` (a caller may override it) ([skills/0002 § 2](../findings/skills/0002-missiles.md#2-creation), [skills/0002 § 4](../findings/skills/0002-missiles.md#4-each-frame)) | — | [C] |
 | `LoopAnim` | int {0, 1, 2}, 4 blank | `+0x137` u8 | animation loop mode | — | [C] |
-| `SubLoop` | int {1}, 599 blank | `+0x180` u8 | the animation loops a sub-range | — | [C] |
-| `SubStart` | int 1..25 (10 distinct), 613 blank | `+0x181` u8 | first frame of the looped sub-range | — | [C] |
-| `SubStop` | int 1..36 (12 distinct), 599 blank | `+0x182` u8 | last frame of the looped sub-range | — | [C] |
+| `SubLoop` | int {1}, 599 blank | `+0x180` u8 | `[I]` with creation flag `0x8`, the range gains `(SubStop − SubStart) · loops` ([skills/0002 § 2](../findings/skills/0002-missiles.md#2-creation)) | — | [C] |
+| `SubStart` | int 1..25 (10 distinct), 613 blank | `+0x181` u8 | first frame of the looped sub-range; `[I]` the `SubLoop` term ([skills/0002 § 2](../findings/skills/0002-missiles.md#2-creation)); missile do 5 loops its frame counter between `SubStart` and `SubStop`, one `RangeB` per loop ([skills/0003 § 6](../findings/skills/0003-handlers.md#6-tier-a-missile-do-hit-and-damage-functions)) | — | [C] |
+| `SubStop` | int 1..36 (12 distinct), 599 blank | `+0x182` u8 | last frame of the looped sub-range (as `SubStart`, `[I]`) | — | [C] |
 | `RandStart` | int {1, 5}, 676 blank | `+0x17C` u32 | random start frame of the animation | — | [C] |
 | `NumDirections` | int 1..32 (5 distinct), 10 blank | `+0x1A0` u8 | number of facing directions of the art | — | [C] |
 | `xoffset` | blank in all rows | `+0x0A2` s16 | spawn offset x | — | [C] value; slot by stride `[L]` |
@@ -91,24 +91,24 @@ The server columns are the machinery plan 0045 reads; the client columns are pre
 
 | Column | Observed | `.bin` field | Meaning | References | Layout tag |
 |---|---|---|---|---|---|
-| `CollideType` | int 1..8 (4 distinct), 301 blank | `+0x183` u8 | what the missile collides with (a kind number) | — | [C] |
+| `CollideType` | int 1..8 (4 distinct), 301 blank | `+0x183` u8 | `[I]` the missile unit's mode and the index of `g_MissileCollideTypes` (unit filter, collision mask): 0 none, 1 player or ally, 2 and 5 monster, 3 and 8 unit, 6 walls only, 7 a `CanDestroy` missile ([skills/0002 § 4](../findings/skills/0002-missiles.md#4-each-frame)) | — | [C] |
 | `Collision` | int {1}, 651 blank | `+0x184` u8 | `[I]` when non-zero the missile is created with the collision mark `0x40` on its footprint (`PATH_SetMarkMask`, [drlg/0005](../findings/drlg/0005-collision.md); fn:PATH_SetMarkMask@0x00648C30, fn:sub_0059FA30_MissileCreate@0x0059FA30); the mark's reader is plan 0045 Phase 1 | — | [C] |
 | `ClientCol` | int {1}, 391 blank | `+0x185` u8 | the client tests collision too (presentation) | — | [C] |
-| `CollideKill` | int {1}, 448 blank | `+0x186` u8 | the missile ends on collision | — | [C] |
-| `CollideFriend` | int {1}, 659 blank | `+0x187` u8 | collides with allies too | — | [C] |
-| `LastCollide` | int {1}, 277 blank | `+0x004` bit 0 | keeps colliding on its last frame | — | [C] |
-| `NextHit` | int {1}, 635 blank | `+0x188` u8 | can hit the same unit again | — | [C] |
-| `NextDelay` | int 3..25 (6 distinct), 633 blank | `+0x189` u8 | frames before the next hit | — | [C] |
+| `CollideKill` | int {1}, 448 blank | `+0x186` u8 | `[I]` the hit result gets the end bit (the missile ends) unless a pierce is used ([skills/0002 § 5](../findings/skills/0002-missiles.md#5-the-hit)) | — | [C] |
+| `CollideFriend` | int {1}, 659 blank | `+0x187` u8 | `[I]` without it a unit not hostile to the owner is skipped ([skills/0002 § 4](../findings/skills/0002-missiles.md#4-each-frame), [skills/0002 § 5](../findings/skills/0002-missiles.md#5-the-hit)) | — | [C] |
+| `LastCollide` | int {1}, 277 blank | `+0x004` bit 0 | `[I]` the missile records the last unit it hit (the owner at creation) and skips that unit: the code's reading, not "keeps colliding on its last frame" ([skills/0002 § 2](../findings/skills/0002-missiles.md#2-creation), [skills/0002 § 5](../findings/skills/0002-missiles.md#5-the-hit)) | — | [C] |
+| `NextHit` | int {1}, 635 blank | `+0x188` u8 | `[I]` a unit in state 86 (`justhit`) is skipped, and a hit puts state 86 on the unit for `NextDelay` frames ([skills/0002 § 5](../findings/skills/0002-missiles.md#5-the-hit)) | — | [C] |
+| `NextDelay` | int 3..25 (6 distinct), 633 blank | `+0x189` u8 | `[I]` the length of that state 86, in frames ([skills/0002 § 5](../findings/skills/0002-missiles.md#5-the-hit)) | — | [C] |
 | `Size` | int {1, 2, 3}, 183 blank | `+0x18A` u8 | `[I]` the footprint size: `UNIT_GetSizeX` of a missile is this byte ([drlg/0005](../findings/drlg/0005-collision.md); fn:UNIT_GetSizeX@0x00620510) | — | [C] |
-| `Pierce` | int {1}, 624 blank | `+0x004` bit 2 | passes through the units it hits | — | [C] |
-| `CanDestroy` | int {1}, 662 blank | `+0x004` bit 4 | can be destroyed | — | [C] |
-| `AlwaysExplode` | int {1}, 513 blank | `+0x18C` u8 | explodes at the end of life even without a hit | — | [C] |
-| `Explosion` | int {1, 2}, 552 blank | `+0x004` bit 1 | explosion flag (not the same set as the `ExplosionMissile` targets) | — | [C] |
-| `Town` | int {1}, 675 blank | `+0x005` bit 2 | may exist in town | — | [C] |
-| `SrcTown` | int {1}, 674 blank | `+0x005` bit 3 | may be fired from town (server) | — | [C] |
+| `Pierce` | int {1}, 624 blank | `+0x004` bit 2 | `[I]` the pierce count, drawn at creation from the owner's stats 166 and 156 on a local seed of stat 328; a pierce used at a hit keeps the missile going ([skills/0002 § 3](../findings/skills/0002-missiles.md#3-the-damage-the-missile-carries), [skills/0002 § 5](../findings/skills/0002-missiles.md#5-the-hit)) | — | [C] |
+| `CanDestroy` | int {1}, 662 blank | `+0x004` bit 4 | `[I]` sets `Unit+0xC4` bit 2 at creation; collide type 7 hits only missiles of `CanDestroy` rows ([skills/0002 § 2](../findings/skills/0002-missiles.md#2-creation)) | — | [C] |
+| `AlwaysExplode` | int {1}, 513 blank | `+0x18C` u8 | `[I]` the hit function also runs on a missed to-hit roll and on a unit-less (end-of-life) call ([skills/0002 § 5](../findings/skills/0002-missiles.md#5-the-hit)) | — | [C] |
+| `Explosion` | int {1, 2}, 552 blank | `+0x004` bit 1 | explosion flag (not the same set as the `ExplosionMissile` targets); `[I]` without a hit function an `Explosion` row's hit deals no damage (the result is `CollideKill` only) ([skills/0002 § 5](../findings/skills/0002-missiles.md#5-the-hit)) | — | [C] |
+| `Town` | int {1}, 675 blank | `+0x005` bit 2 | `[I]` without it the missile ends in a town room ([skills/0002 § 4](../findings/skills/0002-missiles.md#4-each-frame)) | — | [C] |
+| `SrcTown` | int {1}, 674 blank | `+0x005` bit 3 | `[I]` with it a monster owner's missile ends while the owner is in town (a player owner's always does) ([skills/0002 § 4](../findings/skills/0002-missiles.md#4-each-frame)) | — | [C] |
 | `CltSrcTown` | int 1..25 (4 distinct), 670 blank | `+0x12C` u8 | client town flag (presentation) | — | [C] |
-| `ToHit` | int {1}, 613 blank | `+0x18B` u8 | `[I]` when set, `MISSILE_HitUnit` runs the to-hit roll before the hit ([combat/0001](../findings/combat/0001-formulas.md); fn:MISSILE_HitUnit@0x005ADF10) | — | [C] |
-| `CanSlow` | int {1}, 211 blank | `+0x004` bit 3 | slowed by the slow-missiles effect | — | [C] |
+| `ToHit` | int {1}, 613 blank | `+0x18B` u8 | `[I]` when set, `MISSILE_HitUnit` runs the owner's to-hit roll (`COMBAT_ToHitRoll`) with missile stat 19 before the hit, and a miss ends the missile ([combat/0001](../findings/combat/0001-formulas.md); [skills/0002 § 5](../findings/skills/0002-missiles.md#5-the-hit); fn:MISSILE_HitUnit@0x005ADF10) | — | [C] |
+| `CanSlow` | int {1}, 211 blank | `+0x004` bit 3 | `[I]` with the owner in state 87, the creation velocity is scaled by that list's stat 161 percent ([skills/0002 § 2](../findings/skills/0002-missiles.md#2-creation)) | — | [C] |
 | `ReturnFire` | int {0, 1}, 406 blank | `+0x005` bit 1 | can be returned (reflected) | — | [C] |
 | `GetHit` | int {1}, 366 blank | `+0x004` bit 6 | puts the target in get-hit | — | [C] |
 | `SoftHit` | int {1}, 682 blank | `+0x004` bit 7 | a soft hit (no get-hit) | — | [C] |
@@ -116,8 +116,8 @@ The server columns are the machinery plan 0045 reads; the client columns are pre
 | `NoUniqueMod` | int {1}, 677 blank | `+0x005` bit 5 | not changed by unique monster mods | — | [C] |
 | `ClientSend` | int {1}, 593 blank | `+0x004` bit 5 | sent to the client | — | [C] |
 | `SpecialSetup` | int {1}, 676 blank | `+0x190` u32 | needs a special creation step | — | [C] |
-| `MissileSkill` | int {1}, 680 blank | `+0x005` bit 7 | the missile carries its skill | — | [C] |
-| `Skill` | str, 82 distinct, 556 blank | `+0x194` u16 index | skill the missile belongs to | `skills:skill` | [C] |
+| `MissileSkill` | int {1}, 680 blank | `+0x005` bit 7 | `[I]` the damage comes from the missile's own skill (the creator's), else from `Skill` ([skills/0002 § 3](../findings/skills/0002-missiles.md#3-the-damage-the-missile-carries)) | — | [C] |
+| `Skill` | str, 82 distinct, 556 blank | `+0x194` u16 index | skill the missile belongs to; `[I]` when ≥ 1 (or `MissileSkill`), the missile's damage comes from that Skills row instead of the Missiles damage columns ([skills/0002 § 3](../findings/skills/0002-missiles.md#3-the-damage-the-missile-carries)) | `skills:skill` | [C] |
 | `Qty` | int {1}, 644 blank | `+0x18E` u8 | consumes a quantity | — | [C] |
 
 ### Damage and elemental columns
@@ -156,26 +156,26 @@ The server columns are the machinery plan 0045 reads; the client columns are pre
 | `ELevLen2` | int 10..250 (5 distinct), 667 blank | `+0x124` s32 | band 2 | — | [C] |
 | `ELevLen3` | int 10..250 (4 distinct), 667 blank | `+0x128` s32 | band 3 | — | [C] |
 | `HitShift` | int 1..8 (7 distinct), 235 blank | `+0x196` u8 | `[C]` the shift applied to the elemental min/max (see `EMin`) | — | [C] |
-| `SrcDamage` | int {-1, 96, 128}, 600 blank | `+0x12D` u8 | share of the source's (weapon) damage, out of 128 | — | [C] |
-| `SrcMissDmg` | int {128}, 683 blank | `+0x12E` u8 | share of the source missile's damage, out of 128 | — | [C] |
-| `Half2HSrc` | int {1}, 675 blank | `+0x005` bit 6 | halves a two-handed source's damage | — | [C] |
-| `ApplyMastery` | int {1}, 682 blank | `+0x005` bit 0 | applies the elemental mastery | — | [C] |
+| `SrcDamage` | int {-1, 96, 128}, 600 blank | `+0x12D` u8 | share of the source's (weapon) damage, out of 128; `[I]` for a Missiles-damage row; a skill-damage row takes the Skills `SrcDam`, and `0xFF` (−1) here means no weapon share ([skills/0002 § 3](../findings/skills/0002-missiles.md#3-the-damage-the-missile-carries)) | — | [C] |
+| `SrcMissDmg` | int {128}, 683 blank | `+0x12E` u8 | `[I]` share of the source unit's damage, out of 128, used when there is no weapon share ([skills/0002 § 3](../findings/skills/0002-missiles.md#3-the-damage-the-missile-carries)) | — | [C] |
+| `Half2HSrc` | int {1}, 675 blank | `+0x005` bit 6 | `[I]` halves the weapon share for a two-handed weapon ([skills/0002 § 3](../findings/skills/0002-missiles.md#3-the-damage-the-missile-carries)) | — | [C] |
+| `ApplyMastery` | int {1}, 682 blank | `+0x005` bit 0 | `[I]` adds the owner's elemental mastery to the elemental minimum and maximum at creation ([skills/0002 § 3](../findings/skills/0002-missiles.md#3-the-damage-the-missile-carries)) | — | [C] |
 | `KnockBack` | int {1, 33, 75}, 662 blank | `+0x0AE` u16 | `[I]` knockback chance: `MISSILE_ApplyDamage` knocks back when `RNG_Range(missile seed, 100) < KnockBack` ([combat/0001](../findings/combat/0001-formulas.md); fn:MISSILE_ApplyDamage@0x005AD730) | — | [C] |
-| `HitClass` | int 2..176 (8 distinct), 492 blank | `+0x094` u16 | hit class (hit sound and effect) | — | [C] |
+| `HitClass` | int 2..176 (8 distinct), 492 blank | `+0x094` u16 | hit class (hit sound and effect); `[I]` read as a byte by `sub_0064A5A0_MissileHitClass` ([skills/0002 § Functions](../findings/skills/0002-missiles.md#functions)) | — | [C] |
 | `HitFlags` | int {2, 5}, 656 blank | `+0x0A8` u32 | flags of the hit | — | [C] |
 | `ResultFlags` | int 4..9 (4 distinct), 362 blank | `+0x0AC` u16 | flags of the hit's result | — | [C] |
-| `DamageRate` | int {41, 82, 205}, 660 blank | `+0x19C` u32 | damage-rate scale | — | [C] |
-| `Holy` | int {1, 3}, 681 blank | `+0x12F` u8 | affects only the undead / demons (a kind number) | — | [C] |
+| `DamageRate` | int {41, 82, 205}, 660 blank | `+0x19C` u32 | damage-rate scale; `[I]` stored as the missile's stat 327 at creation ([skills/0002 § 2](../findings/skills/0002-missiles.md#2-creation)) | — | [C] |
+| `Holy` | int {1, 3}, 681 blank | `+0x12F` u8 | `[I]` bits 1, 2, 4 set the damage block's bypass flags `0x100`, `0x200`, `0x400` ([skills/0002 § 3](../findings/skills/0002-missiles.md#3-the-damage-the-missile-carries)) | — | [C] |
 
 ### Sub-missile and explosion links
 
 | Column | Observed | `.bin` field | Meaning | References | Layout tag |
 |---|---|---|---|---|---|
-| `ExplosionMissile` | str, 43 distinct, 588 blank | `+0x016` u16 index | missile created when this one explodes | `missiles:Missile` | [C] |
-| `SubMissile1` | str, 30 distinct, 654 blank | `+0x018` u16 index | sub-missile 1 (created by the do function) | `missiles:Missile` | [C] |
+| `ExplosionMissile` | str, 43 distinct, 588 blank | `+0x016` u16 index | missile created when this one explodes; `[I]` no server reader by the pattern scan (one client site): the server's explosions are the hit functions' `HitSubMissile1` ([skills/0002 § Dead ends](../findings/skills/0002-missiles.md#dead-ends)) | `missiles:Missile` | [C] |
+| `SubMissile1` | str, 30 distinct, 654 blank | `+0x018` u16 index | sub-missile 1; `[I]` created by do function 2 ([skills/0002 § 4](../findings/skills/0002-missiles.md#4-each-frame)) and do function 23 ([skills/0003 § 6](../findings/skills/0003-handlers.md#6-tier-a-missile-do-hit-and-damage-functions)) | `missiles:Missile` | [C] |
 | `SubMissile2` | str {`baal taunt poison control`, `bigblood2`, `teethexplode`}, 681 blank | `+0x01A` u16 index | sub-missile 2 | `missiles:Missile` | [C] |
 | `SubMissile3` | blank in all rows | `+0x01C` u16 index | sub-missile 3 | `missiles:Missile` | [C] value; slot by stride `[L]` |
-| `HitSubMissile1` | str, 39 distinct, 644 blank | `+0x024` u16 index | missile created on a hit, 1 | `missiles:Missile` | [C] |
+| `HitSubMissile1` | str, 39 distinct, 644 blank | `+0x024` u16 index | missile created on a hit, 1; `[I]` read by the hit functions (hits 2, 14, 22, 36 among them, [skills/0003 § 6](../findings/skills/0003-handlers.md#6-tier-a-missile-do-hit-and-damage-functions)) | `missiles:Missile` | [C] |
 | `HitSubMissile2` | blank in all rows | `+0x026` u16 index | on a hit, 2 | `missiles:Missile` | [C] value; slot by stride `[L]` |
 | `HitSubMissile3` | blank in all rows | `+0x028` u16 index | on a hit, 3 | `missiles:Missile` | [C] value; slot by stride `[L]` |
 | `HitSubMissile4` | blank in all rows | `+0x02A` u16 index | on a hit, 4 | `missiles:Missile` | [C] value; slot by stride `[L]` |
@@ -191,12 +191,12 @@ The server columns are the machinery plan 0045 reads; the client columns are pre
 
 | Column | Observed | `.bin` field | Meaning | References | Layout tag |
 |---|---|---|---|---|---|
-| `Param1` | int 0..193 (19 distinct), 606 blank | `+0x038` s32 | parameter 1 of the server do function; `[C]` misscalc `par1` (0) and the pair codes `sl12`/`sd12` read it ([data/calc § G2](../specs/data/calc.md)) | — | [C] |
-| `Param2` | int 0..150 (14 distinct), 630 blank | `+0x03C` s32 | parameter 2; `[C]` `par2` (1), `sl12`/`sd12` | — | [C] |
+| `Param1` | int 0..193 (19 distinct), 606 blank | `+0x038` s32 | parameter 1 of the server do function; `[C]` misscalc `par1` (0) and the pair codes `sl12`/`sd12` read it ([data/calc § G2](../specs/data/calc.md)); `[I]` do function 14: its period in frames ([skills/0002 § 8](../findings/skills/0002-missiles.md#8-calldofunc-from-missiles)) | — | [C] |
+| `Param2` | int 0..150 (14 distinct), 630 blank | `+0x03C` s32 | parameter 2; `[C]` `par2` (1), `sl12`/`sd12`; `[I]` do function 14: the skill do-table entry it calls ([skills/0002 § 8](../findings/skills/0002-missiles.md#8-calldofunc-from-missiles)) | — | [C] |
 | `Param3` | int 2..45 (5 distinct), 678 blank | `+0x040` s32 | parameter 3; `[C]` `par3` (2), `sl34`/`sd34` | — | [C] |
 | `Param4` | int {0, 38, 128}, 681 blank | `+0x044` s32 | parameter 4; `[C]` `par4` (3), `sl34`/`sd34`; `[I]` `PermPortalAtUnit` takes its level number from this field when two missile functions call it ([drlg/0008](../findings/drlg/0008-outdoor.md), fn:sub_005A9930_PermPortalAtUnit@0x005A9930) | — | [C] |
 | `Param5` | int {30, 100}, 682 blank | `+0x048` s32 | parameter 5; `[C]` `par5` (4) | — | [C] |
-| `sHitPar1` | int -1..50 (13 distinct), 624 blank | `+0x04C` s32 | parameter 1 of the server hit function; `[C]` `hpa1` (10), `shl1`/`shd1` | — | [C] |
+| `sHitPar1` | int -1..50 (13 distinct), 624 blank | `+0x04C` s32 | parameter 1 of the server hit function; `[C]` `hpa1` (10), `shl1`/`shd1`; `[I]` hit function 23: the skill do-table entry it calls ([skills/0002 § 8](../findings/skills/0002-missiles.md#8-calldofunc-from-missiles)) | — | [C] |
 | `sHitPar2` | int {0, 1, 2}, 662 blank | `+0x050` s32 | parameter 2; `[C]` `hpa2` (11), `shl1`/`shd1` | — | [C] |
 | `sHitPar3` | int {3}, 678 blank | `+0x054` s32 | parameter 3; `[C]` `hpa3` (12) | — | [C] |
 | `dParam1` | int 0..100 (6 distinct), 667 blank | `+0x078` s32 | parameter 1 of the damage function; `[C]` `dpa1` (16), `dl12`/`dd12` | — | [C] |
@@ -245,7 +245,8 @@ The server columns are the machinery plan 0045 reads; the client columns are pre
 - `[C]` **A non-digit function cell.** Row 568 `royalstrikechainlightning` holds `*16` in `pCltHitFunc` and `*12` in
   `pSrvHitFunc`; the compiler's integer parse turns them into 64 952 and 64 948 (u16; −584 and −588 as s16: every
   character adds `byte − 0x30` to `value × 10`, [excel-bin.md § Integers](../formats/excel-bin.md#integers)), so the
-  record names server hit function 64 948. What the game does with it is plan 0045 Phase 1.2 (`ms_func_nondigit_cells=1`). (tbl:Missiles.txt:pSrvHitFunc)
+  record names server hit function 64 948. `[I]` The server never calls it: the hit-table reads test the s16 value
+(−588) > 0 first ([skills/0002 § 5](../findings/skills/0002-missiles.md#5-the-hit); `ms_func_nondigit_cells=1`). (tbl:Missiles.txt:pSrvHitFunc)
 - `[C]` **`EType`** is an [ElemTypes](ElemTypes.md) row index (u8), matched on the 4-character code: the 20 cells that
   hold a single space store 0, the row of the blank code (`None`), like the blank cells (`ms_etype_space=20`).
   (tbl:Missiles.txt:EType)
@@ -254,128 +255,146 @@ The server columns are the machinery plan 0045 reads; the client columns are pre
   `EDmgSymPerCalc`) are s32 offsets into `misscode.bin`, −1 when blank ([calc.md](../formats/calc.md)); no stock row
   sets `DmgSymPerCalc`. Their variables are [MissCalc](MissCalc.md) rows. (tbl:Missiles.txt:EDmgSymPerCalc)
 
-## Function numbers
+## Function index (plan 0046 Phase 0)
 
-`[C]` as data: `python3 -I tools/skills_survey.py missiles workspace/merged/data/global/excel` (gate survey `skills`),
-from the decoded records. 632 rows have a server function (631 a `pSrvDoFunc`; 563 `royalstrikemeteor` has only a hit
-function); 52 have none (blood, debris, explosions, trails, the Anya and vine-beast effects). What
-each number does is plan 0045 Phase 1.2 (the machinery) and plan [0046](../plans/0046-skills-function-catalogue.md)
-(the catalogue). (tbl:Missiles.txt:pSrvDoFunc)
+`[C]` as data: `python3 -I tools/skills_survey.py --index workspace/merged/data/global/excel` (gate survey `skills`,
+the `ix_*` keys; the plain row lists are `skills_survey.py missiles`, the `ms_*` keys), from the decoded records. One
+entry per server function number a stock row uses, in its table: `pSrvDoFunc` indexes `g_MissileSrvDoFuncs`
+(`0x0073C768`), `pSrvHitFunc` `g_MissileSrvHitFuncs` (`0x0073C840`), `pSrvDmgFunc` `g_MissileSrvDmgFuncs`
+(`0x0073C960`) (`[I]`, [skills/0002 § 4, § 5, § 7](../findings/skills/0002-missiles.md#7-the-function-tables)).
+632 rows have a server function (631 a `pSrvDoFunc`; 563 `royalstrikemeteor` has only a hit function); 52 have none
+(blood, debris, explosions, trails, the Anya and vine-beast effects). (tbl:Missiles.txt:pSrvDoFunc,
+tbl:Missiles.txt:pSrvHitFunc, tbl:Missiles.txt:pSrvDmgFunc)
 
-### `pSrvDoFunc` (`+0x00C`): 631 rows, 34 numbers (1..36; 4 and 24 unused)
+- **Entries:** 97: do 34 (1..36; 4 and 24 unused), hit 50 (49 numbers 1..59 and row 568's 64 948, which the server
+  never calls, [skills/0002 § 5](../findings/skills/0002-missiles.md#5-the-hit)), damage 13 (1..14; 6 unused)
+  (`ix_psrvdofunc_entries`, `ix_psrvhitfunc_entries`, `ix_psrvdmgfunc_entries`).
+- **Batch:** every entry is plan 0046's missile batch (`ix_batch_missile=97`).
+- **Tier A:** `A` when a missile one of the 26 tier-A rows names in `srvmissile*` uses the number, `A (link)` when only
+  a missile reached from those through `SubMissile1..3` or `HitSubMissile1..4` does (transitively; `ExplosionMissile`
+  has no server reader). Ten entries: do 1, 3, 23 and 5 (link); hit 2, 14, 17, 36 and 3 (link); damage 3 (link). They
+  are the functions [skills/0003 § 6](../findings/skills/0003-handlers.md#6-tier-a-missile-do-hit-and-damage-functions)
+  read (`ix_psrvdofunc_tiera=4`, `ix_psrvhitfunc_tiera=5`, `ix_psrvdmgfunc_tiera=1`).
+- **Skills that name or own its rows:** the distinct Skills rows whose `srvmissile`, `srvmissilea..c` names one of the
+  entry's missiles or that a missile's `Skill` names, by kind (a class code; `monster` for a row with no `charclass`).
+  A missile created by another missile, a monster function, a shrine or an object is counted under no skill.
+- **Params, calcs:** the number of the entry's rows that set each parameter and formula of its kind: `Param1..5` and
+  `SrvCalc1` for a do entry, `sHitPar1..3` and `SHitCalc1` for a hit entry, `dParam1..2` and `DmgCalc1` for a damage
+  entry. A set cell is data; which of them the function reads is plan 0046 Phase 1's.
+- `[C]` Client functions (counted only, presentation): `pCltDoFunc` 682 rows / 65 numbers, `pCltHitFunc` 116 rows / 47
+  numbers. (tbl:Missiles.txt:pCltDoFunc)
 
-| Number | Rows | Row ids and names |
-|---:|---:|---|
-| 1 | 551 | 551 rows (every row with a `pSrvDoFunc` not listed below) |
-| 2 | 4 | 38 poisonjav, 245 trap poison ball right, 246 trap poison ball left, 648 viper_poisjav |
-| 3 | 26 | 39 poisonjavcloud, 43 plaguejavelin, 107 monbliz1, 108 monbliz2, 109 monbliz3, 110 monbliz4, 155 corpsepoisoncloud, 159 blizzard1, 160 blizzard2, 161 blizzard3, 162 blizzard4, 166 thunderstorm1, 167 thunderstorm2, 168 thunderstorm3, 169 thunderstorm4, 175 handofgod, 217 poisonexplosioncloud, 220 primepoisoncloud, 221 plaguejavcloud, 222 rancidgascloud, 223 chokinggascloud, 224 stranglinggascloud, 649 viper_poisjavcloud, 654 baal taunt lightning control, 655 baal taunt poison control, 677 trappoisonjavcloud |
-| 5 | 9 | 67 blaze, 69 firewall, 131 vampirefirewall, 230 immolationfire, 240 meteorfire, 331 countessfirewall, 423 catapult meteor fire, 455 moltenboulderfirepath, 681 vampiremeteorfire |
-| 6 | 4 | 68 firewallmaker, 130 vampirefirewallmaker, 452 moltenboulder, 653 countessfirewallmaker |
-| 7 | 3 | 86 guidedarrow, 193 bonespirit, 329 monbonespirit |
-| 8 | 1 | 106 monblizcenter |
-| 9 | 1 | 123 bat lightning bolt |
-| 10 | 1 | 158 blizzardcenter |
-| 11 | 1 | 177 fingermagespider |
-| 12 | 1 | 179 diabwallmaker |
-| 13 | 1 | 207 bonewallmaker |
-| 14 | 3 | 250 grimwardsmall, 253 grimwardmedium, 256 grimwardlarge |
-| 15 | 1 | 260 frozenorb |
-| 16 | 1 | 262 frozenorbnova |
-| 17 | 1 | 288 cairnstones |
-| 18 | 1 | 332 towerchestspawner |
-| 19 | 1 | 347 radamentdeath |
-| 20 | 1 | 392 blade creeper |
-| 21 | 1 | 393 distraction |
-| 22 | 2 | 431 lightingtrailingjavalin, 438 advlighttrailingjav |
-| 23 | 2 | 441 sucfireball, 458 firestormmaker |
-| 25 | 1 | 461 erruption center |
-| 26 | 2 | 471 vines, 474 plague vines |
-| 27 | 1 | 478 tornado |
-| 28 | 1 | 479 volcano |
-| 29 | 1 | 498 recycler delay |
-| 30 | 1 | 515 rabiesplague |
-| 31 | 2 | 517 wake of destruction maker, 589 baal cold maker |
-| 32 | 1 | 520 tigerfury |
-| 33 | 1 | 540 vine recycler delay |
-| 34 | 1 | 546 baal taunt control |
-| 35 | 1 | 569 royalstrikechaosice |
-| 36 | 1 | 625 baalfx control |
+### `pSrvDoFunc` (`+0x00C`): 631 rows, 34 numbers
+
+| Number | Rows | Tier A | Skills that name or own its rows | Params (rows set) | Calcs (rows set) | Rows |
+|---:|---:|---|---|---|---|---|
+| 1 | 551 | A | ama 13, sor 15, nec 4, pal 3, bar 9, dru 12, ass 18, monster 62 | Param1 35, Param2 24 | — | 551 rows (every row with a `pSrvDoFunc` not listed below) |
+| 2 | 4 | — | ama 1, monster 1 | — | SrvCalc1 4 | 38 poisonjav, 245 trap poison ball right, 246 trap poison ball left, 648 viper_poisjav |
+| 3 | 26 | A | ama 2, sor 2, nec 1, pal 1, monster 1 | Param1 10, Param2 10 | — | 39 poisonjavcloud, 43 plaguejavelin, 107 monbliz1, 108 monbliz2, 109 monbliz3, 110 monbliz4, 155 corpsepoisoncloud, 159 blizzard1, 160 blizzard2, 161 blizzard3, 162 blizzard4, 166 thunderstorm1, 167 thunderstorm2, 168 thunderstorm3, 169 thunderstorm4, 175 handofgod, 217 poisonexplosioncloud, 220 primepoisoncloud, 221 plaguejavcloud, 222 rancidgascloud, 223 chokinggascloud, 224 stranglinggascloud, 649 viper_poisjavcloud, 654 baal taunt lightning control, 655 baal taunt poison control, 677 trappoisonjavcloud |
+| 5 | 9 | A (link) | sor 2, monster 4 | — | — | 67 blaze, 69 firewall, 131 vampirefirewall, 230 immolationfire, 240 meteorfire, 331 countessfirewall, 423 catapult meteor fire, 455 moltenboulderfirepath, 681 vampiremeteorfire |
+| 6 | 4 | — | sor 1, dru 1, monster 3 | Param1 1 | — | 68 firewallmaker, 130 vampirefirewallmaker, 452 moltenboulder, 653 countessfirewallmaker |
+| 7 | 3 | — | ama 1, nec 1, monster 1 | Param1 3, Param2 2 | — | 86 guidedarrow, 193 bonespirit, 329 monbonespirit |
+| 8 | 1 | — | monster 1 | Param1 1, Param2 1, Param3 1 | — | 106 monblizcenter |
+| 9 | 1 | — | sor 1 | — | — | 123 bat lightning bolt |
+| 10 | 1 | — | sor 1 | — | — | 158 blizzardcenter |
+| 11 | 1 | — | monster 1 | Param1 1, Param2 1, Param3 1 | — | 177 fingermagespider |
+| 12 | 1 | — | monster 1 | — | — | 179 diabwallmaker |
+| 13 | 1 | — | nec 1 | — | — | 207 bonewallmaker |
+| 14 | 3 | — | — | Param1 3, Param2 3 | — | 250 grimwardsmall, 253 grimwardmedium, 256 grimwardlarge |
+| 15 | 1 | — | sor 1 | Param1 1, Param2 1 | — | 260 frozenorb |
+| 16 | 1 | — | sor 1 | Param1 1, Param2 1 | — | 262 frozenorbnova |
+| 17 | 1 | — | — | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1 | — | 288 cairnstones |
+| 18 | 1 | — | — | Param1 1, Param2 1, Param3 1 | — | 332 towerchestspawner |
+| 19 | 1 | — | — | — | — | 347 radamentdeath |
+| 20 | 1 | — | ass 1 | — | — | 392 blade creeper |
+| 21 | 1 | — | — | — | — | 393 distraction |
+| 22 | 2 | — | — | Param1 2 | — | 431 lightingtrailingjavalin, 438 advlighttrailingjav |
+| 23 | 2 | A | sor 1, dru 1 | Param1 1 | — | 441 sucfireball, 458 firestormmaker |
+| 25 | 1 | — | dru 1 | — | — | 461 erruption center |
+| 26 | 2 | — | monster 1 | Param1 2 | — | 471 vines, 474 plague vines |
+| 27 | 1 | — | dru 1 | Param1 1, Param2 1 | — | 478 tornado |
+| 28 | 1 | — | dru 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1 | — | 479 volcano |
+| 29 | 1 | — | monster 1 | Param1 1 | — | 498 recycler delay |
+| 30 | 1 | — | dru 1 | Param1 1, Param2 1 | — | 515 rabiesplague |
+| 31 | 2 | — | ass 1, monster 2 | — | — | 517 wake of destruction maker, 589 baal cold maker |
+| 32 | 1 | — | ass 1 | Param1 1 | — | 520 tigerfury |
+| 33 | 1 | — | monster 1 | Param1 1 | — | 540 vine recycler delay |
+| 34 | 1 | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1 | — | 546 baal taunt control |
+| 35 | 1 | — | ass 1 | Param1 1 | — | 569 royalstrikechaosice |
+| 36 | 1 | — | — | — | — | 625 baalfx control |
 
 ### `pSrvHitFunc` (`+0x00E`): 93 rows, 50 numbers
 
-| Number | Rows | Row ids and names |
-|---:|---:|---|
-| 1 | 8 | 62 fireball, 129 vampirefireball, 283 desertfireball, 404 impfireball, 416 catapult cold ball, 441 sucfireball, 656 explodingarrowexp2, 657 freezingarrowexp3 |
-| 2 | 6 | 43 plaguejavelin, 47 rancidgasepotion, 48 chokinggaspoition, 49 stranglinggaspotion, 419 catapult plague ball, 436 plaguejavelin2 |
-| 3 | 4 | 44 oilpotion, 45 explosivepotion, 46 fulminatingpotion, 386 bomb on ground |
-| 4 | 3 | 41 explodingarrow, 87 freezingarrow, 564 royalstrikemeteorcenter |
-| 7 | 2 | 55 holybolt, 234 fistoftheheavensbolt |
-| 8 | 1 | 67 blaze |
-| 9 | 1 | 85 immolationarrow |
-| 10 | 3 | 86 guidedarrow, 193 bonespirit, 329 monbonespirit |
-| 12 | 3 | 93 chainlightning, 232 lightningstrike, 267 chainlightning2 |
-| 13 | 3 | 96 glacialspike, 271 monglacialspike, 336 hellmeteordown |
-| 14 | 4 | 101 meteorcenter, 133 vampiremeteorcenter, 422 catapult meteor ball, 563 royalstrikemeteor |
-| 15 | 1 | 143 spidergoolay |
-| 16 | 3 | 146 spidergoo, 472 vines trail, 473 vines wither |
-| 17 | 1 | 148 howl |
-| 18 | 3 | 149 shout, 236 battlecommand, 237 battleorders |
-| 19 | 1 | 177 fingermagespider |
-| 20 | 1 | 206 lightningfury |
-| 21 | 1 | 219 battlecry |
-| 22 | 1 | 233 fistoftheheavensdelay |
-| 24 | 1 | 238 pantherpotorange |
-| 25 | 1 | 239 pantherpotgreen |
-| 26 | 3 | 249 grimwardsmallstart, 252 grimwardmediumstart, 255 grimwardlargestart |
-| 27 | 3 | 250 grimwardsmall, 253 grimwardmedium, 256 grimwardlarge |
-| 28 | 1 | 259 grimwardscare |
-| 29 | 1 | 260 frozenorb |
-| 31 | 1 | 277 firehead |
-| 32 | 1 | 288 cairnstones |
-| 33 | 1 | 332 towerchestspawner |
-| 35 | 1 | 368 orbmist |
-| 36 | 4 | 385 bomb in air, 388 shock field in air, 412 catapult spike in air, 496 sentryspikeinair |
-| 37 | 1 | 392 blade creeper |
-| 38 | 1 | 407 catapultchargedball |
-| 39 | 1 | 409 imp spawn monsters |
-| 40 | 1 | 411 catapult spike ball |
-| 43 | 1 | 425 healing vortex |
-| 44 | 2 | 429 explodingjavalin, 434 icejavalin |
-| 45 | 2 | 431 lightingtrailingjavalin, 438 advlighttrailingjav |
-| 47 | 1 | 452 moltenboulder |
-| 48 | 1 | 453 moltenboulderemerge |
-| 50 | 1 | 475 plague vines trail |
-| 51 | 1 | 481 volcano debris 2 |
-| 52 | 3 | 505 bladefury1, 507 bladefury2, 509 bladefury3 |
-| 53 | 1 | 516 rabiescontagion |
-| 54 | 1 | 550 baal spawn monsters |
-| 55 | 1 | 554 baal inferno |
-| 56 | 2 | 577 armageddoncontrol, 670 diablogeddoncontrol |
-| 57 | 1 | 625 baalfx control |
-| 58 | 1 | 654 baal taunt lightning control |
-| 59 | 1 | 655 baal taunt poison control |
-| 64948 | 1 | 568 royalstrikechainlightning |
+| Number | Rows | Tier A | Skills that name or own its rows | Params (rows set) | Calcs (rows set) | Rows |
+|---:|---:|---|---|---|---|---|
+| 1 | 8 | — | ama 2, sor 1, monster 4 | sHitPar1 7 | — | 62 fireball, 129 vampirefireball, 283 desertfireball, 404 impfireball, 416 catapult cold ball, 441 sucfireball, 656 explodingarrowexp2, 657 freezingarrowexp3 |
+| 2 | 6 | A | ama 1, monster 1 | sHitPar1 6, sHitPar2 6, sHitPar3 6 | — | 43 plaguejavelin, 47 rancidgasepotion, 48 chokinggaspoition, 49 stranglinggaspotion, 419 catapult plague ball, 436 plaguejavelin2 |
+| 3 | 4 | A (link) | ass 1 | sHitPar1 4 | — | 44 oilpotion, 45 explosivepotion, 46 fulminatingpotion, 386 bomb on ground |
+| 4 | 3 | — | ama 2, ass 1, monster 2 | sHitPar1 2 | — | 41 explodingarrow, 87 freezingarrow, 564 royalstrikemeteorcenter |
+| 7 | 2 | — | pal 1 | sHitPar1 2, sHitPar2 2 | — | 55 holybolt, 234 fistoftheheavensbolt |
+| 8 | 1 | — | sor 1, monster 1 | sHitPar1 1 | — | 67 blaze |
+| 9 | 1 | — | ama 1 | sHitPar1 1, sHitPar2 1 | SHitCalc1 1 | 85 immolationarrow |
+| 10 | 3 | — | ama 1, nec 1, monster 1 | — | — | 86 guidedarrow, 193 bonespirit, 329 monbonespirit |
+| 12 | 3 | — | ama 1, sor 1 | sHitPar1 3 | — | 93 chainlightning, 232 lightningstrike, 267 chainlightning2 |
+| 13 | 3 | — | sor 1, monster 3 | sHitPar1 3, sHitPar2 3 | — | 96 glacialspike, 271 monglacialspike, 336 hellmeteordown |
+| 14 | 4 | A | sor 1, monster 2 | sHitPar1 4, sHitPar2 3 | — | 101 meteorcenter, 133 vampiremeteorcenter, 422 catapult meteor ball, 563 royalstrikemeteor |
+| 15 | 1 | — | — | — | — | 143 spidergoolay |
+| 16 | 3 | — | — | — | — | 146 spidergoo, 472 vines trail, 473 vines wither |
+| 17 | 1 | A | bar 1 | — | — | 148 howl |
+| 18 | 3 | — | bar 3 | — | — | 149 shout, 236 battlecommand, 237 battleorders |
+| 19 | 1 | — | monster 1 | — | — | 177 fingermagespider |
+| 20 | 1 | — | ama 1 | sHitPar1 1, sHitPar2 1 | — | 206 lightningfury |
+| 21 | 1 | — | bar 1 | — | — | 219 battlecry |
+| 22 | 1 | — | pal 1 | sHitPar1 1, sHitPar2 1 | — | 233 fistoftheheavensdelay |
+| 24 | 1 | — | — | — | — | 238 pantherpotorange |
+| 25 | 1 | — | — | sHitPar1 1 | — | 239 pantherpotgreen |
+| 26 | 3 | — | bar 1 | sHitPar1 3 | — | 249 grimwardsmallstart, 252 grimwardmediumstart, 255 grimwardlargestart |
+| 27 | 3 | — | — | sHitPar1 2 | — | 250 grimwardsmall, 253 grimwardmedium, 256 grimwardlarge |
+| 28 | 1 | — | — | — | — | 259 grimwardscare |
+| 29 | 1 | — | sor 1 | sHitPar1 1 | — | 260 frozenorb |
+| 31 | 1 | — | monster 1 | — | — | 277 firehead |
+| 32 | 1 | — | — | — | — | 288 cairnstones |
+| 33 | 1 | — | — | — | — | 332 towerchestspawner |
+| 35 | 1 | — | — | — | — | 368 orbmist |
+| 36 | 4 | A | ass 2 | — | — | 385 bomb in air, 388 shock field in air, 412 catapult spike in air, 496 sentryspikeinair |
+| 37 | 1 | — | ass 1 | — | — | 392 blade creeper |
+| 38 | 1 | — | monster 1 | sHitPar1 1, sHitPar2 1 | — | 407 catapultchargedball |
+| 39 | 1 | — | — | — | — | 409 imp spawn monsters |
+| 40 | 1 | — | monster 1 | sHitPar1 1, sHitPar2 1 | — | 411 catapult spike ball |
+| 43 | 1 | — | monster 1 | — | — | 425 healing vortex |
+| 44 | 2 | — | — | sHitPar1 2 | — | 429 explodingjavalin, 434 icejavalin |
+| 45 | 2 | — | — | sHitPar1 2, sHitPar2 2 | — | 431 lightingtrailingjavalin, 438 advlighttrailingjav |
+| 47 | 1 | — | dru 1 | sHitPar1 1, sHitPar2 1 | — | 452 moltenboulder |
+| 48 | 1 | — | dru 1 | — | — | 453 moltenboulderemerge |
+| 50 | 1 | — | dru 1 | sHitPar1 1 | — | 475 plague vines trail |
+| 51 | 1 | — | — | — | — | 481 volcano debris 2 |
+| 52 | 3 | — | ass 1 | sHitPar1 3 | — | 505 bladefury1, 507 bladefury2, 509 bladefury3 |
+| 53 | 1 | — | dru 1 | — | — | 516 rabiescontagion |
+| 54 | 1 | — | monster 1 | — | — | 550 baal spawn monsters |
+| 55 | 1 | — | monster 1 | sHitPar1 1 | — | 554 baal inferno |
+| 56 | 2 | — | dru 1, monster 1 | sHitPar1 2 | — | 577 armageddoncontrol, 670 diablogeddoncontrol |
+| 57 | 1 | — | — | — | — | 625 baalfx control |
+| 58 | 1 | — | — | sHitPar1 1 | — | 654 baal taunt lightning control |
+| 59 | 1 | — | — | sHitPar1 1 | — | 655 baal taunt poison control |
+| 64948 | 1 | — | ass 1 | sHitPar1 1 | — | 568 royalstrikechainlightning |
 
-### `pSrvDmgFunc` (`+0x010`): 23 rows, 13 numbers (1..14; 6 unused)
+### `pSrvDmgFunc` (`+0x010`): 23 rows, 13 numbers
 
-| Number | Rows | Row ids and names |
-|---:|---:|---|
-| 1 | 3 | 12 firearrow, 27 magicarrow, 40 coldarrow |
-| 2 | 2 | 28 icearrow, 569 royalstrikechaosice |
-| 3 | 6 | 67 blaze, 69 firewall, 131 vampirefirewall, 230 immolationfire, 240 meteorfire, 681 vampiremeteorfire |
-| 4 | 1 | 91 iceblast |
-| 5 | 1 | 92 blessedhammer |
-| 7 | 2 | 235 warcry, 511 shockwave |
-| 8 | 2 | 462 erruption crack 1, 463 erruption crack 2 |
-| 9 | 1 | 477 twister |
-| 10 | 1 | 561 bladesoficecubes |
-| 11 | 1 | 516 rabiescontagion |
-| 12 | 1 | 205 lightningjavelin |
-| 13 | 1 | 640 blessedhammerex |
-| 14 | 1 | 452 moltenboulder |
-
-- `[C]` Client functions (counted only, presentation): `pCltDoFunc` 682 rows / 65 numbers, `pCltHitFunc` 116 rows / 47
-  numbers. (tbl:Missiles.txt:pCltDoFunc)
+| Number | Rows | Tier A | Skills that name or own its rows | Params (rows set) | Calcs (rows set) | Rows |
+|---:|---:|---|---|---|---|---|
+| 1 | 3 | — | ama 3, monster 2 | dParam1 3, dParam2 3 | DmgCalc1 3 | 12 firearrow, 27 magicarrow, 40 coldarrow |
+| 2 | 2 | — | ama 1, ass 1 | dParam1 2 | — | 28 icearrow, 569 royalstrikechaosice |
+| 3 | 6 | A (link) | sor 2, monster 3 | dParam1 6 | — | 67 blaze, 69 firewall, 131 vampirefirewall, 230 immolationfire, 240 meteorfire, 681 vampiremeteorfire |
+| 4 | 1 | — | sor 1 | — | — | 91 iceblast |
+| 5 | 1 | — | pal 1 | dParam1 1, dParam2 1 | — | 92 blessedhammer |
+| 7 | 2 | — | bar 1, dru 1 | dParam1 1 | — | 235 warcry, 511 shockwave |
+| 8 | 2 | — | dru 1 | — | — | 462 erruption crack 1, 463 erruption crack 2 |
+| 9 | 1 | — | dru 1 | dParam1 1 | — | 477 twister |
+| 10 | 1 | — | ass 1 | — | — | 561 bladesoficecubes |
+| 11 | 1 | — | dru 1 | — | — | 516 rabiescontagion |
+| 12 | 1 | — | ama 1 | dParam1 1, dParam2 1 | DmgCalc1 1 | 205 lightningjavelin |
+| 13 | 1 | — | — | dParam1 1, dParam2 1 | — | 640 blessedhammerex |
+| 14 | 1 | — | dru 1 | dParam1 1, dParam2 1 | — | 452 moltenboulder |
 
 ## Survey (plan 0045 Phase 0)
 
@@ -415,7 +434,11 @@ each number does is plan 0045 Phase 1.2 (the machinery) and plan [0046](../plans
 
 ## Readers known so far
 
-Collected from the findings and specs the columns touch (review rule 4); the full readers are plan 0045 Phase 1.2.
+Collected from the findings and specs the columns touch (review rule 4). Plan 0045 Phase 1 read the server readers
+of the function, motion, collision, hit, damage-at-creation and link columns: their meanings in § [Columns](#columns)
+cite [skills/0002](../findings/skills/0002-missiles.md) §§ 2–5 and 8 and
+[skills/0003](../findings/skills/0003-handlers.md) §§ 1 and 6, `[I]`; what each numbered function reads is plan 0046
+(§ [Function index](#function-index-plan-0046-phase-0)).
 
 - `[C]` `data/calc` reads `Param1..5`, `CltParam1..5`, `sHitPar1..3`, `cHitPar1..3`, `dParam1/2`, `Range`/`LevRange`
   (`rang`) through `MISS_CalcVar`, and `EMin`/`Emax`, the elemental bands, `EDmgSymPerCalc` and `HitShift` through
@@ -439,9 +462,10 @@ Collected from the findings and specs the columns touch (review rule 4); the ful
 
 ## Open questions
 
-- `[L]` Every meaning not tagged in the tables: the function numbers, the motion, collision and kill columns, the links
-  and the parameters as the do, hit and damage functions use them. Owner: reverser, plan 0045 Phase 1.2.
-- `[L]` What the server does with hit function 64 948 (row 568's `*12` cell): a bounds test, an out-of-table call, or
-  never reached. Owner: reverser, plan 0045 Phase 1.2.
+- `[L]` Every meaning not tagged in the tables, and the parameters, calcs and links as each numbered do, hit and damage
+  function uses them. Owner: reverser, plan [0046](../plans/0046-skills-function-catalogue.md) Phase 1 (by the batches
+  of § [Function index](#function-index-plan-0046-phase-0)).
+- ~~What the server does with hit function 64 948.~~ *2026-10-20:* never called, a bounds test of the signed value
+  ([skills/0002 § 5](../findings/skills/0002-missiles.md#5-the-hit)).
 - `[L]` Whether `Id` is a u16 or a u32 (`+0x002` is 0 in every record), and whether `HitShift` (`+0x196`) is read as a
   byte (the readers so far mask it with 31).

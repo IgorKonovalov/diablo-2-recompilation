@@ -72,7 +72,7 @@ columns are not listed (not compiled).
 | `skilldesc` | str, 221 distinct, 135 blank | `+0x194` u16 index | row of `skilldesc` (UI description) | `skilldesc:skilldesc` | [C] |
 | `srvstfunc` | int 1..65 (64 distinct), 245 blank | `+0x02C` u16 | server start / do / progressive function number | — | [C] |
 | `srvdofunc` | int 1..152 (138 distinct), 83 blank | `+0x02E` u16 | server start / do / progressive function number | — | [C] |
-| `prgstack` | int {1}, 354 blank | `+0x004` bit 7 | progressive-charge values | — | [C] (the other probe candidates lie inside fields other columns pin) |
+| `prgstack` | int {1}, 354 blank | `+0x004` bit 7 | progressive-charge values; `[I]` the finisher runs every `srvprgfunc` up to the charge count, not only the last ([skills/0001 § 12](../findings/skills/0001-dispatch.md#12-progressive-charges), [skills/0003 § 1](../findings/skills/0003-handlers.md#1-progressive-entries-srvprgfunc-and-the-finishers-tail)) | — | [C] (the other probe candidates lie inside fields other columns pin) |
 | `srvprgfunc1` | int {40, 143}, 355 blank | `+0x030` u16 | server start / do / progressive function number | — | [C] |
 | `srvprgfunc2` | int {36, 38, 143}, 353 blank | `+0x032` u16 | server start / do / progressive function number | — | [C] |
 | `srvprgfunc3` | int {37, 39, 41}, 353 blank | `+0x034` u16 | server start / do / progressive function number | — | [C] |
@@ -81,8 +81,8 @@ columns are not listed (not compiled).
 | `prgcalc3` | formula, 3 distinct, 353 blank | `+0x040` s32 calc | progressive-charge values | `skillscode.bin` | [C] |
 | `prgdam` | int {1, 2, 4}, 352 blank | `+0x044` u16 | progressive-charge values | — | [C] |
 | `srvmissile` | str, 42 distinct, 309 blank | `+0x046` u16 index | missiles the server side launches | `missiles:Missile` | [C] |
-| `decquant` | int {1}, 345 blank | `+0x004` bit 0 | consumes item quantity (throws) | — | [C] |
-| `lob` | int {1}, 354 blank | `+0x004` bit 1 | lobbed missile | — | [C] |
+| `decquant` | int {1}, 345 blank | `+0x004` bit 0 | consumes item quantity (throws); `[I]` `SKILLS_SrvDo` calls `PLAYER_UseAmmo` when it pays ([skills/0001 § 6](../findings/skills/0001-dispatch.md#6-skills_srvdo)) | — | [C] |
+| `lob` | int {1}, 354 blank | `+0x004` bit 1 | lobbed missile; `[I]` `SKILLS_SrvDo` creates `srvmissile` with the lob creator ([skills/0001 § 6](../findings/skills/0001-dispatch.md#6-skills_srvdo), [skills/0002 § 2](../findings/skills/0002-missiles.md#2-creation)) | — | [C] |
 | `srvmissilea` | str, 93 distinct, 260 blank | `+0x048` u16 index | missiles the server side launches | `missiles:Missile` | [C] |
 | `srvmissileb` | str, 26 distinct, 330 blank | `+0x04A` u16 index | missiles the server side launches | `missiles:Missile` | [C] |
 | `srvmissilec` | str, 20 distinct, 337 blank | `+0x04C` u16 index | missiles the server side launches | `missiles:Missile` | [C] |
@@ -104,12 +104,12 @@ columns are not listed (not compiled).
 | `aurastatcalc5` | formula, 2 distinct, 355 blank | `+0x078` s32 calc | aura stat 5 and its value formula | `skillscode.bin` | [C] value; slot by stride `[L]` |
 | `aurastat6` | str {`damageresist`, `poisonresist`}, 355 blank | `+0x05E` u16 index | aura stat 6 and its value formula | `itemstatcost:Stat` | [C] |
 | `aurastatcalc6` | formula, 2 distinct, 355 blank | `+0x07C` s32 calc | aura stat 6 and its value formula | `skillscode.bin` | [C] value; slot by stride `[L]` |
-| `auraevent1` | str, 5 distinct, 347 blank | `+0x084` u16 index | aura event 1 and its handler number | `events:event` | [C] |
-| `auraeventfunc1` | int 1..27 (10 distinct), 347 blank | `+0x08A` u16 | aura event 1 and its handler number | — | [C] |
-| `auraevent2` | str {`damagedbymissile`, `damagedinmelee`}, 355 blank | `+0x086` u16 index | aura event 2 and its handler number | `events:event` | [C] |
-| `auraeventfunc2` | int {5, 26}, 355 blank | `+0x08C` u16 | aura event 2 and its handler number | — | [C] |
-| `auraevent3` | str {`damagedbymissile`}, 356 blank | `+0x088` u16 index | aura event 3 and its handler number | `events:event` | [C] |
-| `auraeventfunc3` | int {26}, 356 blank | `+0x08E` u16 | aura event 3 and its handler number | — | [C] |
+| `auraevent1` | str, 5 distinct, 347 blank | `+0x084` u16 index | aura event 1 and its handler number; `[I]` registered on the unit as a `g_StatEventFuncs` (`0x007325B0`) record carrying (skill, level) ([skills/0003 § 3](../findings/skills/0003-handlers.md#3-the-stat-event-handlers)) | `events:event` | [C] |
+| `auraeventfunc1` | int 1..27 (10 distinct), 347 blank | `+0x08A` u16 | aura event 1's handler: `[I]` the `g_StatEventFuncs` number ([skills/0003 § 3](../findings/skills/0003-handlers.md#3-the-stat-event-handlers)) | — | [C] |
+| `auraevent2` | str {`damagedbymissile`, `damagedinmelee`}, 355 blank | `+0x086` u16 index | aura event 2 (as `auraevent1`, `[I]`) | `events:event` | [C] |
+| `auraeventfunc2` | int {5, 26}, 355 blank | `+0x08C` u16 | aura event 2's handler (as `auraeventfunc1`, `[I]`) | — | [C] |
+| `auraevent3` | str {`damagedbymissile`}, 356 blank | `+0x088` u16 index | aura event 3 (as `auraevent1`, `[I]`) | `events:event` | [C] |
+| `auraeventfunc3` | int {26}, 356 blank | `+0x08E` u16 | aura event 3's handler (as `auraeventfunc1`, `[I]`) | — | [C] |
 | `auratgtevent` | blank in all rows | `+0x090` u16 index | aura target event and handler number | `events:event` | [C] value; slot by stride `[L]` |
 | `auratgteventfunc` | blank in all rows | `+0x092` u16 | aura target event and handler number | — | [C] value; slot by stride `[L]` |
 | `passivestate` | str, 28 distinct, 328 blank | `+0x094` u16 index | state of a passive skill | `states:state` | [C] |
@@ -171,7 +171,7 @@ columns are not listed (not compiled).
 | `cltcalc2` | formula, 5 distinct, 351 blank | `+0x118` s32 calc | client-side formula | `skillscode.bin` | [C] |
 | `cltcalc3` | int {3, 6, 15}, 353 blank | `+0x11C` s32 calc | client-side formula | `skillscode.bin` | [C] |
 | `warp` | int {1}, 355 blank | `+0x008` bit 6 | behaviour flag (name reading) | — | [C] |
-| `immediate` | int {1}, 347 blank | `+0x005` bit 7 | behaviour flag (name reading) | — | [C] |
+| `immediate` | int {1}, 347 blank | `+0x005` bit 7 | `[I]` an aura select or an item aura with it runs the do function at once ([skills/0001 § 9](../findings/skills/0001-dispatch.md#9-periodic-aura-and-channelled-skills-repeat), [skills/0001 § 10](../findings/skills/0001-dispatch.md#10-item-granted-skills)) | — | [C] |
 | `enhanceable` | int {1}, 11 blank | `+0x006` bit 1 | behaviour flag (name reading) | — | [C] |
 | `attackrank` | int 0..10 (11 distinct), 0 blank | `+0x18E` u8 | AI attack rank | — | [C] |
 | `noammo` | int {1}, 356 blank | `+0x006` bit 0 | behaviour flag (name reading) | — | [C] |
@@ -194,23 +194,23 @@ columns are not listed (not compiled).
 | `seqinput` | int {8, 10, 12}, 353 blank | `+0x016` u16 | player / monster animation mode and sequence | — | [C] |
 | `durability` | int {1}, 344 blank | `+0x006` bit 2 | behaviour flag (name reading) | — | [C] |
 | `UseAttackRate` | int {1}, 205 blank | `+0x006` bit 3 | behaviour flag (name reading) | — | [C] |
-| `LineOfSight` | int {4}, 309 blank | `+0x18F` u8 | behaviour flag (name reading) | — | [C] |
-| `TargetableOnly` | int {1}, 312 blank | `+0x006` bit 4 | behaviour flag (name reading) | — | [C] |
+| `LineOfSight` | int {4}, 309 blank | `+0x18F` u8 | `[I]` 1..5 select one of five collision masks for a line test from the target point to the unit at the start; another non-zero value refuses ([skills/0001 § 4](../findings/skills/0001-dispatch.md#4-skills_startusedskill-and-skills_srvstart)) | — | [C] |
+| `TargetableOnly` | int {1}, 312 blank | `+0x006` bit 4 | `[I]` the start needs a hostile target (or one two other tests accept) ([skills/0001 § 4](../findings/skills/0001-dispatch.md#4-skills_startusedskill-and-skills_srvstart)) | — | [C] |
 | `SearchEnemyXY` | int {1}, 308 blank | `+0x006` bit 5 | behaviour flag (name reading) | — | [C] |
 | `SearchEnemyNear` | int {1}, 337 blank | `+0x006` bit 6 | behaviour flag (name reading) | — | [C] |
 | `SearchOpenXY` | int {1}, 347 blank | `+0x006` bit 7 | behaviour flag (name reading) | — | [C] |
 | `SelectProc` | int 1..6 (6 distinct), 348 blank | `+0x015` u8 | target selection procedure number | — | [C] |
-| `TargetCorpse` | int {1}, 339 blank | `+0x007` bit 0 | behaviour flag (name reading) | — | [C] |
+| `TargetCorpse` | int {1}, 339 blank | `+0x007` bit 0 | `[I]` a dead target is kept only with it, else the target is cleared ([skills/0001 § 4](../findings/skills/0001-dispatch.md#4-skills_startusedskill-and-skills_srvstart)) | — | [C] |
 | `TargetPet` | int {1}, 354 blank | `+0x007` bit 1 | behaviour flag (name reading) | — | [C] |
-| `TargetAlly` | int {1}, 355 blank | `+0x007` bit 2 | behaviour flag (name reading) | — | [C] |
-| `TargetItem` | int {1}, 354 blank | `+0x007` bit 3 | behaviour flag (name reading) | — | [C] |
+| `TargetAlly` | int {1}, 355 blank | `+0x007` bit 2 | `[I]` read by the start's ally test, which refuses only without it; that refusal never fires from `SKILLS_StartUsedSkill` ([skills/0001 § 4](../findings/skills/0001-dispatch.md#4-skills_startusedskill-and-skills_srvstart), [skills/0003 § 12](../findings/skills/0003-handlers.md#12-routed-questions-from-p11)) | — | [C] |
+| `TargetItem` | int {1}, 354 blank | `+0x007` bit 3 | `[I]` the request at a unit accepts any target type with it, else only a player, monster or missile ([skills/0001 § 1](../findings/skills/0001-dispatch.md#1-the-request-client-packets-0x050x11)) | — | [C] |
 | `AttackNoMana` | int {1}, 316 blank | `+0x007` bit 4 | behaviour flag (name reading) | — | [C] |
 | `TgtPlaceCheck` | int {1}, 355 blank | `+0x008` bit 0 | behaviour flag (name reading) | — | [C] |
-| `ItemEffect` | int {1, 36, 151}, 285 blank | `+0x16A` u16 | behaviour when cast from an item (charges, procs) | — | [C] |
+| `ItemEffect` | int {1, 36, 151}, 285 blank | `+0x16A` u16 | `[I]` an item cast (`ITEMSKILL_Cast`) refuses a row with 0; with the cast's effect flag, a value above 1 replaces `srvdofunc` as the `g_SkillDoFuncs` index (36 on Frost Nova and Nova, 151 on Chain Lightning) ([skills/0001 § 6](../findings/skills/0001-dispatch.md#6-skills_srvdo), [skills/0001 § 10](../findings/skills/0001-dispatch.md#10-item-granted-skills); § [Function index](#function-index-plan-0046-phase-0)) | — | [C] |
 | `ItemCltEffect` | int {10, 96}, 354 blank | `+0x16C` u16 | behaviour when cast from an item (charges, procs) | — | [C] |
 | `ItemTgtDo` | int {1}, 356 blank | `+0x007` bit 5 | behaviour when cast from an item (charges, procs) | — | [C] |
-| `ItemTarget` | int {1, 2, 3, 4}, 351 blank | `+0x120` u16 | behaviour when cast from an item (charges, procs) | — | [C] |
-| `ItemCheckStart` | int {1}, 355 blank | `+0x008` bit 1 | behaviour when cast from an item (charges, procs) | — | [C] |
+| `ItemTarget` | int {1, 2, 3, 4}, 351 blank | `+0x120` u16 | `[I]` the item cast's aim: 1 the caster, 2–4 three target helpers that may refuse ([skills/0001 § 10](../findings/skills/0001-dispatch.md#10-item-granted-skills)) | — | [C] |
+| `ItemCheckStart` | int {1}, 355 blank | `+0x008` bit 1 | `[I]` with it the item cast runs `SKILLS_SrvStart` (no cost) first and stops when it fails ([skills/0001 § 10](../findings/skills/0001-dispatch.md#10-item-granted-skills)) | — | [C] |
 | `ItemCltCheckStart` | int {1}, 355 blank | `+0x008` bit 2 | behaviour when cast from an item (charges, procs) | — | [C] |
 | `ItemCastSound` | str, 16 distinct, 309 blank | `+0x122` u16 index | sound | `sounds:Sound` | [C] |
 | `ItemCastOverlay` | str, 9 distinct, 344 blank | `+0x124` u16 index | overlay (graphic effect) | `overlay:overlay` | [C] |
@@ -224,10 +224,10 @@ columns are not listed (not compiled).
 | `reqskill1` | str, 130 distinct, 211 blank | `+0x17E` u16 index | prerequisite skill | `skills:skill` | [C] |
 | `reqskill2` | str, 24 distinct, 331 blank | `+0x180` u16 index | prerequisite skill | `skills:skill` | [C] |
 | `reqskill3` | blank in all rows | `+0x182` u16 index | prerequisite skill | `skills:skill` | [C] value; slot by stride `[L]` |
-| `restrict` | int {1, 2}, 331 blank | `+0x228` u8 | shapeshift restriction | — | [C] |
-| `State1` | str {`bear`, `wolf`}, 350 blank | `+0x22A` u16 index | states the restriction refers to | `states:state` | [C] |
-| `State2` | str {`bear`}, 355 blank | `+0x22C` u16 index | states the restriction refers to | `states:state` | [C] |
-| `State3` | blank in all rows | `+0x22E` u16 index | states the restriction refers to | `states:state` | [C] value; slot by stride `[L]` |
+| `restrict` | int {1, 2}, 331 blank | `+0x228` u8 | shapeshift restriction; `[I]` 0 refuses while the restricted-state test holds, 1 passes, 2 passes only while it holds and the unit has one of `State1..3` ([skills/0001 § 2](../findings/skills/0001-dispatch.md#2-skills_canuse-16-call-sites-4-of-them-in-the-request-handlers)) | — | [C] |
+| `State1` | str {`bear`, `wolf`}, 350 blank | `+0x22A` u16 index | `[I]` the states `restrict` 2 requires, the first invalid one ending the list ([skills/0001 § 2](../findings/skills/0001-dispatch.md#2-skills_canuse-16-call-sites-4-of-them-in-the-request-handlers)) | `states:state` | [C] |
+| `State2` | str {`bear`}, 355 blank | `+0x22C` u16 index | as `State1` (`[I]`) | `states:state` | [C] |
+| `State3` | blank in all rows | `+0x22E` u16 index | as `State1` (`[I]`) | `states:state` | [C] value; slot by stride `[L]` |
 | `delay` | int 15..150 (9 distinct), 334 blank | `+0x190` s32 calc | cast delay formula | `skillscode.bin` | [C] |
 | `leftskill` | int {1}, 261 blank | `+0x007` bit 6 | behaviour flag (name reading) | — | [C] |
 | `repeat` | int {1}, 354 blank | `+0x005` bit 3 | behaviour flag (name reading) | — | [C] (the other probe candidates lie inside fields other columns pin) |
@@ -242,17 +242,17 @@ columns are not listed (not compiled).
 | `interrupt` | int {1}, 22 blank | `+0x007` bit 7 | behaviour flag (name reading) | — | [C] |
 | `InTown` | int {1}, 294 blank | `+0x005` bit 0 | behaviour flag (name reading) | — | [C] |
 | `aura` | int {1}, 331 blank | `+0x004` bit 5 | behaviour flag (name reading) | — | [C] |
-| `periodic` | int {1}, 355 blank | `+0x004` bit 6 | behaviour flag (name reading) | — | [C] |
+| `periodic` | int {1}, 355 blank | `+0x004` bit 6 | `[I]` the start cancels all the unit's event-8 entries, and `SKILLS_QueuePeriodic` queues the row on the `perdelay` grid ([skills/0001 § 9](../findings/skills/0001-dispatch.md#9-periodic-aura-and-channelled-skills-repeat)) | — | [C] |
 | `perdelay` | formula, 3 distinct, 335 blank | `+0x128` s32 calc | `[I]` the aura period in frames: `SKILLS_NextPeriodicFrame = ((frame − 1 + p) / p)·p + 1` with `p` = this calc, 5 when it gives less than 6; the item-aura and selected-aura events requeue at it ([stats/0002 § 4](../findings/stats/0002-states.md#4-auras-and-passives), fn:SKILLS_NextPeriodicFrame@0x0056CD50) | `skillscode.bin` | [C] |
 | `finishing` | int {1}, 352 blank | `+0x004` bit 3 | behaviour flag (name reading) | — | [C] |
 | `passive` | int {1}, 331 blank | `+0x004` bit 4 | behaviour flag (name reading) | — | [C] |
 | `progressive` | int {1}, 351 blank | `+0x004` bit 2 | behaviour flag (name reading) | — | [C] (the other probe candidates lie inside fields other columns pin) |
 | `general` | int {1}, 351 blank | `+0x008` bit 3 | behaviour flag (name reading) | — | [C] |
-| `scroll` | str {`␠`, `1`}, 352 blank | `+0x008` bit 4 | behaviour flag (name reading) | — | [C] |
-| `calc1` | formula, 65 distinct, 237 blank | `+0x138` s32 calc | general formula 1 (referenced by other formulas) | `skillscode.bin` | [C] |
-| `calc2` | formula, 31 distinct, 297 blank | `+0x13C` s32 calc | general formula 2 (referenced by other formulas) | `skillscode.bin` | [C] |
-| `calc3` | formula, 12 distinct, 336 blank | `+0x140` s32 calc | general formula 3 (referenced by other formulas) | `skillscode.bin` | [C] |
-| `calc4` | formula, 11 distinct, 339 blank | `+0x144` s32 calc | general formula 4 (referenced by other formulas) | `skillscode.bin` | [C] |
+| `scroll` | str {`␠`, `1`}, 352 blank | `+0x008` bit 4 | `[I]` a `scroll` row needs the skill entry's quantity (`SkillEntry+0x30`) above 0 ([skills/0001 § 2](../findings/skills/0001-dispatch.md#2-skills_canuse-16-call-sites-4-of-them-in-the-request-handlers)) | — | [C] |
+| `calc1` | formula, 65 distinct, 237 blank | `+0x138` s32 calc | general formula 1 (referenced by other formulas); `[I]` the skill hit's `edPct` where a start or do function builds one (`srvstfunc` 32's form, [skills/0001 § 11](../findings/skills/0001-dispatch.md#11-the-skill-packet)) | `skillscode.bin` | [C] |
+| `calc2` | formula, 31 distinct, 297 blank | `+0x13C` s32 calc | general formula 2 (referenced by other formulas); `[I]` in `srvstfunc` 32, flat physical damage added to the queued hit after the reductions, `<< 8` ([skills/0001 § 11](../findings/skills/0001-dispatch.md#11-the-skill-packet)) | `skillscode.bin` | [C] |
+| `calc3` | formula, 12 distinct, 336 blank | `+0x140` s32 calc | general formula 3 (referenced by other formulas); `[I]` in `srvstfunc` 32, the attack rate (stat 68 on a new list) ([skills/0001 § 11](../findings/skills/0001-dispatch.md#11-the-skill-packet)) | `skillscode.bin` | [C] |
+| `calc4` | formula, 11 distinct, 339 blank | `+0x144` s32 calc | general formula 4 (referenced by other formulas); `[I]` the conversion percent stored with `EType` when it is above 0 ([skills/0001 § 11](../findings/skills/0001-dispatch.md#11-the-skill-packet)) | `skillscode.bin` | [C] |
 | `Param1` | int -50..3600 (46 distinct), 97 blank | `+0x148` s32 | general parameter 1 | — | [C] |
 | `Param2` | int -2..1500 (35 distinct), 119 blank | `+0x14C` s32 | general parameter 2 | — | [C] |
 | `Param3` | int -50..4500 (44 distinct), 165 blank | `+0x150` s32 | general parameter 3 | — | [C] |
@@ -261,16 +261,16 @@ columns are not listed (not compiled).
 | `Param6` | int -1..300 (22 distinct), 257 blank | `+0x15C` s32 | general parameter 6 | — | [C] |
 | `Param7` | int -50..250 (19 distinct), 316 blank | `+0x160` s32 | general parameter 7 | — | [C] |
 | `Param8` | int 1..125 (23 distinct), 245 blank | `+0x164` s32 | general parameter 8 | — | [C] |
-| `InGame` | int {1}, 0 blank | `+0x005` bit 2 | behaviour flag (name reading) | — | [C] value; slot `[L]` (1 in every row: the last free bit of the flag run) |
+| `InGame` | int {1}, 0 blank | `+0x005` bit 2 | `[I]` `SKILLS_CanUse` refuses a row without it (code 3); set on every stock row ([skills/0001 § 2](../findings/skills/0001-dispatch.md#2-skills_canuse-16-call-sites-4-of-them-in-the-request-handlers)) | — | [C] value; slot `[I]` (1 in every row; `SKILLS_CanUse` tests `+0x005` bit 2, skills/0001 § 2) |
 | `ToHit` | int 10..300 (11 distinct), 299 blank | `+0x198` s32 | attack rating bonus (base, per level, formula) | — | [C] |
 | `LevToHit` | int 5..35 (9 distinct), 298 blank | `+0x19C` s32 | attack rating bonus (base, per level, formula) | — | [C] |
 | `ToHitCalc` | formula, 3 distinct, 354 blank | `+0x1A0` s32 calc | attack rating bonus (base, per level, formula) | `skillscode.bin` | [C] |
-| `ResultFlags` | int 1..16385 (7 distinct), 342 blank | `+0x12E` u16 | hit result / hit flags / hit class | — | [C] |
-| `HitFlags` | int {2}, 354 blank | `+0x130` u32 | hit result / hit flags / hit class | — | [C] |
-| `HitClass` | int 3..157 (6 distinct), 351 blank | `+0x134` u32 | hit result / hit flags / hit class | — | [C] |
-| `Kick` | int {1}, 353 blank | `+0x005` bit 1 | behaviour flag (name reading) | — | [C] |
+| `ResultFlags` | int 1..16385 (7 distinct), 342 blank | `+0x12E` u16 | hit result; `[I]` ORed into the skill hit's packet result ([skills/0001 § 11](../findings/skills/0001-dispatch.md#11-the-skill-packet)) | — | [C] |
+| `HitFlags` | int {2}, 354 blank | `+0x130` u32 | hit flags; `[I]` ORed into the skill hit's packet flags ([skills/0001 § 11](../findings/skills/0001-dispatch.md#11-the-skill-packet)) | — | [C] |
+| `HitClass` | int 3..157 (6 distinct), 351 blank | `+0x134` u32 | hit class; `[I]` the skill hit's hit class when non-zero ([skills/0001 § 11](../findings/skills/0001-dispatch.md#11-the-skill-packet)) | — | [C] |
+| `Kick` | int {1}, 353 blank | `+0x005` bit 1 | `[I]` `SKILLS_GetPhysMin/Max` give `max(str + dex − 20, 1) / 4 << 8` for a player, `3 · level` otherwise, instead of the damage columns ([skills/0001 § 11](../findings/skills/0001-dispatch.md#11-the-skill-packet)) | — | [C] |
 | `HitShift` | int 1..8 (8 distinct), 7 blank | `+0x1A4` u8 | damage shift (fractional damage) | — | [C] |
-| `SrcDam` | int {32, 48, 96, 128}, 294 blank | `+0x1A5` u8 | share of weapon damage | — | [C] |
+| `SrcDam` | int {32, 48, 96, 128}, 294 blank | `+0x1A5` u8 | share of weapon damage; `[I]` out of 128, 0 read as 128 by most hit builders (`srvstfunc` 6 passes it as stored) ([skills/0001 § 11](../findings/skills/0001-dispatch.md#11-the-skill-packet)) | — | [C] |
 | `MinDam` | int 1..30 (13 distinct), 328 blank | `+0x1A8` s32 | physical damage (base, per-level bands, synergy formula) | — | [C] |
 | `MinLevDam1` | int 1..10 (9 distinct), 329 blank | `+0x1B0` s32 | physical damage (base, per-level bands, synergy formula) | — | [C] |
 | `MinLevDam2` | int 1..15 (11 distinct), 329 blank | `+0x1B4` s32 | physical damage (base, per-level bands, synergy formula) | — | [C] |
@@ -284,7 +284,7 @@ columns are not listed (not compiled).
 | `MaxLevDam4` | int 1..26 (13 distinct), 329 blank | `+0x1D0` s32 | physical damage (base, per-level bands, synergy formula) | — | [C] |
 | `MaxLevDam5` | int 1..30 (13 distinct), 329 blank | `+0x1D4` s32 | physical damage (base, per-level bands, synergy formula) | — | [C] |
 | `DmgSymPerCalc` | formula, 6 distinct, 351 blank | `+0x1D8` s32 calc | physical damage (base, per-level bands, synergy formula) | `skillscode.bin` | [C] |
-| `EType` | str, 6 distinct, 257 blank | `+0x1DC` u8 index | elemental damage (type, base, per-level bands, synergy formula) | `elemtypes:Code` | [C] |
+| `EType` | str, 6 distinct, 257 blank | `+0x1DC` u8 index | elemental damage (type, base, per-level bands, synergy formula); `[I]` also the skill hit's conversion type (`DamagePacket+0x65`), stored by 15 start and do functions ([skills/0001 § 11](../findings/skills/0001-dispatch.md#11-the-skill-packet), [skills/0003 § 12](../findings/skills/0003-handlers.md#12-routed-questions-from-p11)) | `elemtypes:Code` | [C] |
 | `EMin` | int 0..150 (25 distinct), 265 blank | `+0x1E0` s32 | elemental damage (type, base, per-level bands, synergy formula) | — | [C] |
 | `EMinLev1` | int 0..48 (23 distinct), 266 blank | `+0x1E8` s32 | elemental damage (type, base, per-level bands, synergy formula) | — | [C] |
 | `EMinLev2` | int 0..48 (28 distinct), 266 blank | `+0x1EC` s32 | elemental damage (type, base, per-level bands, synergy formula) | — | [C] |
@@ -560,21 +560,22 @@ animation and timing columns, the costs, the start checks and the summon columns
 § [Columns](#columns) (`[C]`, `excel_bin.py diff`), repeated here with the observed values (from the `.txt`, by
 script). The counts are `python3 -I tools/skills_survey.py skills workspace/merged/data/global/excel` (gate survey
 `skills`, the `sk_*` keys), `[C]` as data. **Meaning** is the column name's plain reading, `[L]`, unless it carries its
-own tag; which code reads each column, and how, is plan 0045 Phase 1.1 ([skills/0001](../plans/0045-skills-missiles-machinery.md#phase-1--read-the-machinery)).
+own tag; plan 0045 Phase 1 read the server readers ([skills/0001](../findings/skills/0001-dispatch.md),
+[skills/0003](../findings/skills/0003-handlers.md)), and the meanings cite their sections, `[I]`.
 The client columns are presentation and stay out of scope (plan 0045 *Open questions*, "Client-only skills").
 
 ### Function numbers and progressive columns
 
 | Column | Observed | `.bin` field | Meaning | References | Layout tag |
 |---|---|---|---|---|---|
-| `srvstfunc` | int 1..65 (64 distinct), 245 blank | `+0x02C` u16 | server start function number; `[I]` 1 is `SKILL_AttackStart` ([combat/0001](../findings/combat/0001-formulas.md); fn:SKILL_AttackStart@0x0056CA40); 42 (Fire Hit) is a start function that calls `MonAttackStats` with mode 8 ([combat/0001](../findings/combat/0001-formulas.md)) | — | [C] |
-| `srvdofunc` | int 1..152 (138 distinct), 83 blank | `+0x02E` u16 | server do function number; `[I]` an index into the do-function table at `0x007322B0` (4-byte entries, `0x007322B0 + 4·n`): 1 is `SKILL_AttackDo` (`[C]`, [combat](../specs/combat/README.md); fn:SKILL_AttackDo@0x0056F070), 7 (Jab) `0x005DB2D0`, 67 (Charge) `0x005CF900` ([combat/0001](../findings/combat/0001-formulas.md)), 60 `SkillBoneWallDo`, 62 `SkillBonePrisonDo` ([items/0002](../findings/items/0002-quality-roll.md); fn:sub_005C58B0_SkillBoneWallDo@0x005C58B0, fn:sub_005C5D00_SkillBonePrisonDo@0x005C5D00), 98 `SkillMonTeleportDo` ([drlg/0009](../findings/drlg/0009-room-lifecycle.md); fn:sub_005CCC80_SkillMonTeleportDo@0x005CCC80); 58 (Revive), 91, 97, 135 and 140 create or revive monsters ([items/0001](../findings/items/0001-tc-resolution.md)) | — | [C] |
-| `srvprgfunc1` | int {40, 143}, 355 blank | `+0x030` u16 | progressive function 1; `[I]` `COMBAT_PrgFinisher` runs `srvprgfunc1..3` through the do-function table `0x007322B0` on a charged state ([combat/0001](../findings/combat/0001-formulas.md); fn:COMBAT_PrgFinisher@0x005D5220) | — | [C] |
+| `srvstfunc` | int 1..65 (64 distinct), 245 blank | `+0x02C` u16 | server start function number; `[I]` an index into `g_SkillStartFuncs` (`0x00732140`), called by `SKILLS_SrvStart` when 0 ≤ n < `0x5B`, a null entry passing ([skills/0001 § 4](../findings/skills/0001-dispatch.md#4-skills_startusedskill-and-skills_srvstart)); `[C]` every stock value names a non-null entry ([skills/0001](../findings/skills/0001-dispatch.md#answer-summary)); 1 is `SKILL_AttackStart` ([combat/0001](../findings/combat/0001-formulas.md); fn:SKILL_AttackStart@0x0056CA40); 42 (Fire Hit) is a start function that calls `MonAttackStats` with mode 8 ([combat/0001](../findings/combat/0001-formulas.md)); per number: § [Function index](#function-index-plan-0046-phase-0) | — | [C] |
+| `srvdofunc` | int 1..152 (138 distinct), 83 blank | `+0x02E` u16 | server do function number; `[I]` an index into `g_SkillDoFuncs` (`0x007322B0`, 4-byte entries), called by `SKILLS_SrvDo` when 0 ≤ n < `0xBF` ([skills/0001 § 6](../findings/skills/0001-dispatch.md#6-skills_srvdo)); `[C]` every stock value names a non-null entry ([skills/0001](../findings/skills/0001-dispatch.md#answer-summary)); `[I]` 1 is `SKILL_AttackDo` (`[C]`, [combat](../specs/combat/README.md); fn:SKILL_AttackDo@0x0056F070), 7 (Jab) `0x005DB2D0`, 67 (Charge) `0x005CF900` ([combat/0001](../findings/combat/0001-formulas.md)), 60 `SkillBoneWallDo`, 62 `SkillBonePrisonDo` ([items/0002](../findings/items/0002-quality-roll.md); fn:sub_005C58B0_SkillBoneWallDo@0x005C58B0, fn:sub_005C5D00_SkillBonePrisonDo@0x005C5D00), 98 `SkillMonTeleportDo` ([drlg/0009](../findings/drlg/0009-room-lifecycle.md); fn:sub_005CCC80_SkillMonTeleportDo@0x005CCC80); 58 (Revive), 91, 97, 135 and 140 create or revive monsters ([items/0001](../findings/items/0001-tc-resolution.md)); per number: § [Function index](#function-index-plan-0046-phase-0) | — | [C] |
+| `srvprgfunc1` | int {40, 143}, 355 blank | `+0x030` u16 | progressive function 1; `[I]` `COMBAT_PrgFinisher` runs, at charge count `n` (1..3), `srvprgfunc n` through `g_SkillDoFuncs`, and before it `srvprgfunc1..n−1` when `prgstack` is set ([skills/0001 § 12](../findings/skills/0001-dispatch.md#12-progressive-charges), [skills/0003 § 1](../findings/skills/0003-handlers.md#1-progressive-entries-srvprgfunc-and-the-finishers-tail); fn:COMBAT_PrgFinisher@0x005D5220) | — | [C] |
 | `srvprgfunc2` | int {36, 38, 143}, 353 blank | `+0x032` u16 | progressive function 2 (as `srvprgfunc1`) | — | [C] |
 | `srvprgfunc3` | int {37, 39, 41}, 353 blank | `+0x034` u16 | progressive function 3 (as `srvprgfunc1`) | — | [C] |
-| `prgcalc1` | formula, 2 distinct, 355 blank | `+0x038` s32 calc | progressive formula 1 | `skillscode.bin` | [C] |
-| `prgcalc2` | formula, 2 distinct, 354 blank | `+0x03C` s32 calc | progressive formula 2 | `skillscode.bin` | [C] |
-| `prgcalc3` | formula, 3 distinct, 353 blank | `+0x040` s32 calc | progressive formula 3 | `skillscode.bin` | [C] |
+| `prgcalc1` | formula, 2 distinct, 355 blank | `+0x038` s32 calc | progressive formula 1; `[I]` the formula of charge count 1 (or of no charge state) for the functions that call `sub_005D3DA0_SkillPrgCalcByCharge` ([skills/0003 § 1](../findings/skills/0003-handlers.md#1-progressive-entries-srvprgfunc-and-the-finishers-tail)) | `skillscode.bin` | [C] |
+| `prgcalc2` | formula, 2 distinct, 354 blank | `+0x03C` s32 calc | progressive formula 2; `[I]` charge count 2 (as `prgcalc1`) | `skillscode.bin` | [C] |
+| `prgcalc3` | formula, 3 distinct, 353 blank | `+0x040` s32 calc | progressive formula 3; `[I]` charge count 3 (as `prgcalc1`) | `skillscode.bin` | [C] |
 | `prgdam` | int {1, 2, 4}, 352 blank | `+0x044` u16 | `[I]` which progressive damage hook runs when the packet's result has bit `0x1`: 1 `PrgDamEd`, 2 `PrgDamSteal`, 3 `PrgDamFreeze`, 4 `PrgDamRelease` ([combat/0001](../findings/combat/0001-formulas.md); fn:COMBAT_PrgHooksAfterBuild@0x005D3BA0, fn:sub_005D3680_PrgDamEd@0x005D3680) | — | [C] |
 | `progressive` | int {1}, 351 blank | `+0x004` bit 2 | a progressive (charge-up) skill | — | [C] |
 | `cltstfunc` | int 0..82 (52 distinct), 250 blank | `+0x0F2` u16 | client start function (presentation) | — | [C] |
@@ -587,10 +588,10 @@ The client columns are presentation and stay out of scope (plan 0045 *Open quest
 
 | Column | Observed | `.bin` field | Meaning | References | Layout tag |
 |---|---|---|---|---|---|
-| `srvmissile` | str, 42 distinct, 309 blank | `+0x046` u16 index | missile the server function creates | `missiles:Missile` | [C] |
-| `srvmissilea` | str, 93 distinct, 260 blank | `+0x048` u16 index | second server missile | `missiles:Missile` | [C] |
-| `srvmissileb` | str, 26 distinct, 330 blank | `+0x04A` u16 index | third server missile | `missiles:Missile` | [C] |
-| `srvmissilec` | str, 20 distinct, 337 blank | `+0x04C` u16 index | fourth server missile | `missiles:Missile` | [C] |
+| `srvmissile` | str, 42 distinct, 309 blank | `+0x046` u16 index | missile the server function creates; `[I]` `SKILLS_SrvDo` creates it after the do function (the line creator, or the lob creator with `lob`), also on rows with no `srvdofunc` ([skills/0001 § 6](../findings/skills/0001-dispatch.md#6-skills_srvdo), [skills/0002 § 2](../findings/skills/0002-missiles.md#2-creation)) | `missiles:Missile` | [C] |
+| `srvmissilea` | str, 93 distinct, 260 blank | `+0x048` u16 index | second server missile; `[I]` the missile of charge count 1 or less, and of every non-progressive row, for the do functions that call `sub_005D3CF0_SkillSrvMissileByCharge` ([skills/0003 § 1](../findings/skills/0003-handlers.md#1-progressive-entries-srvprgfunc-and-the-finishers-tail)) | `missiles:Missile` | [C] |
+| `srvmissileb` | str, 26 distinct, 330 blank | `+0x04A` u16 index | third server missile; `[I]` charge count 2 (as `srvmissilea`) | `missiles:Missile` | [C] |
+| `srvmissilec` | str, 20 distinct, 337 blank | `+0x04C` u16 index | fourth server missile; `[I]` charge count 3 (as `srvmissilea`) | `missiles:Missile` | [C] |
 | `cltmissile` | str, 41 distinct, 306 blank | `+0x0E8` u16 index | client missile (presentation) | `missiles:Missile` | [C] |
 | `cltmissilea` | str, 102 distinct, 238 blank | `+0x0EA` u16 index | client missile a (presentation) | `missiles:Missile` | [C] |
 | `cltmissileb` | str, 36 distinct, 316 blank | `+0x0EC` u16 index | client missile b (presentation) | `missiles:Missile` | [C] |
@@ -614,31 +615,31 @@ The client columns are presentation and stay out of scope (plan 0045 *Open quest
 
 | Column | Observed | `.bin` field | Meaning | References | Layout tag |
 |---|---|---|---|---|---|
-| `anim` | str, 10 distinct, 23 blank | `+0x010` u8 index | player mode the skill puts the caster in | `plrmode:Code` | [C] |
+| `anim` | str, 10 distinct, 23 blank | `+0x010` u8 index | player mode the skill puts the caster in; `[I]` a skill with `anim` 18 (the sequence mode) sets its delay only while `Unit+0x38 & 0xFFFFFF00` is 0 ([skills/0001 § 6](../findings/skills/0001-dispatch.md#6-skills_srvdo)) | `plrmode:Code` | [C] |
 | `seqtrans` | str, 10 distinct, 23 blank | `+0x012` u8 index | player mode used for a sequence's transitions | `plrmode:Code` | [C] |
 | `monanim` | str, 8 distinct, 0 blank | `+0x011` u8 index | monster mode the skill puts a monster in (`xx` = none) | `monmode:code` | [C] |
 | `seqnum` | int 1..41 (23 distinct), 323 blank | `+0x013` u8 | animation sequence number | — | [C] |
 | `seqinput` | int {8, 10, 12}, 353 blank | `+0x016` u16 | sequence input frame | — | [C] |
-| `range` | str, 4 distinct, 0 blank | `+0x014` u8 keyword | attack range class (`none`, `h2h`, `rng`, `both`) | — | [C] |
-| `delay` | formula, 9 distinct, 334 blank | `+0x190` s32 calc | cooldown formula (the delay before the skill can be used again) | `skillscode.bin` | [C] |
+| `range` | str, 4 distinct, 0 blank | `+0x014` u8 keyword | attack range class (`none`, `h2h`, `rng`, `both`); `[I]` `SKILLS_GetRangeType`: 0, 1, 2, and `both` 2 with a missile weapon, else 1 (1 in a `meleeonly` state); a request at a unit for a type-1 skill out of melee reach walks to the target first ([skills/0001 § 1](../findings/skills/0001-dispatch.md#1-the-request-client-packets-0x050x11)) | — | [C] |
+| `delay` | formula, 9 distinct, 334 blank | `+0x190` s32 calc | cooldown formula; `[I]` a player whose skill gives `delay` > 0 gets state 121 (`skilldelay`) for that many frames, during which every skill whose own `delay` is ≥ 1 is refused ([skills/0001 § 6](../findings/skills/0001-dispatch.md#6-skills_srvdo), [skills/0001 § 8](../findings/skills/0001-dispatch.md#8-the-delay-state)) | `skillscode.bin` | [C] |
 
 ### Costs
 
 | Column | Observed | `.bin` field | Meaning | References | Layout tag |
 |---|---|---|---|---|---|
-| `startmana` | int {6}, 354 blank | `+0x184` u16 | mana needed to start | — | [C] |
-| `minmana` | int {0, 1}, 141 blank | `+0x186` u16 | minimum mana cost | — | [C] |
-| `manashift` | int 2..8 (6 distinct), 141 blank | `+0x188` u16 | fixed-point shift of the cost; `[C]` read as the byte at `+0x188`, masked to 5 bits, by the variables `mana`, `usmc`, `mps` ([data/calc § G](../specs/data/calc.md#g-variables)) | — | [C] |
-| `mana` | int 0..76 (39 distinct), 141 blank | `+0x18A` s16 | base mana cost; `[C]` `usmc` = `(lvlmana × (lvl − 1) + mana) << (manashift & 31)`, `mana` = `usmc >> 8` ([data/calc § G](../specs/data/calc.md#g-variables); fn:SKILLS_CalcVar@0x00646460) | — | [C] |
-| `lvlmana` | int -3..10 (8 distinct), 141 blank | `+0x18C` s16 | mana cost per level (the `usmc` term above) | — | [C] |
-| `AttackNoMana` | int {1}, 316 blank | `+0x007` bit 4 | the skill falls back to a plain attack without mana | — | [C] |
-| `usemanaondo` | int {1}, 355 blank | `+0x008` bit 5 | the mana is taken at the do function, not at the start | — | [C] |
+| `startmana` | int {6}, 354 blank | `+0x184` u16 | mana needed to start; `[I]` a player is refused below `startmana · 256` mana unless in state 12 (`inferno`) ([skills/0001 § 2](../findings/skills/0001-dispatch.md#2-skills_canuse-16-call-sites-4-of-them-in-the-request-handlers)) | — | [C] |
+| `minmana` | int {0, 1}, 141 blank | `+0x186` u16 | minimum mana cost; `[I]` the payment's floor, `minmana · 256`; the checks do not floor ([skills/0001 § 7](../findings/skills/0001-dispatch.md#7-costs-and-their-rounding)) | — | [C] |
+| `manashift` | int 2..8 (6 distinct), 141 blank | `+0x188` u16 | fixed-point shift of the cost; `[C]` read as the byte at `+0x188`, masked to 5 bits, by the variables `mana`, `usmc`, `mps` ([data/calc § G](../specs/data/calc.md#g-variables)); `[I]` the payment reads it the same way ([skills/0001 § 7](../findings/skills/0001-dispatch.md#7-costs-and-their-rounding)) | — | [C] |
+| `mana` | int 0..76 (39 distinct), 141 blank | `+0x18A` s16 | base mana cost; `[C]` `usmc` = `(lvlmana × (lvl − 1) + mana) << (manashift & 31)`, `mana` = `usmc >> 8` ([data/calc § G](../specs/data/calc.md#g-variables); fn:SKILLS_CalcVar@0x00646460); `[I]` the payment is `(lvlmana · max(lvl − 1, 0) + mana) << (manashift & 31)` in 1/256 mana (s16 terms, s32 arithmetic), floored at `minmana · 256`, and its result is ignored ([skills/0001 § 7](../findings/skills/0001-dispatch.md#7-costs-and-their-rounding)) | — | [C] |
+| `lvlmana` | int -3..10 (8 distinct), 141 blank | `+0x18C` s16 | mana cost per level (the `usmc` term above; `[I]` the payment's, [skills/0001 § 7](../findings/skills/0001-dispatch.md#7-costs-and-their-rounding)) | — | [C] |
+| `AttackNoMana` | int {1}, 316 blank | `+0x007` bit 4 | `[I]` when the use check fails with code 1, 2 or 4, the request falls back to the unit's Attack ([skills/0001 § 1](../findings/skills/0001-dispatch.md#1-the-request-client-packets-0x050x11)) | — | [C] |
+| `usemanaondo` | int {1}, 355 blank | `+0x008` bit 5 | `[I]` the cost is checked and paid at the do function, not at the start ([skills/0001 § 4](../findings/skills/0001-dispatch.md#4-skills_startusedskill-and-skills_srvstart), [skills/0001 § 6](../findings/skills/0001-dispatch.md#6-skills_srvdo)) | — | [C] |
 
 ### Start checks: town, item types, hands
 
 | Column | Observed | `.bin` field | Meaning | References | Layout tag |
 |---|---|---|---|---|---|
-| `InTown` | int {1}, 294 blank | `+0x005` bit 0 | usable in town | — | [C] |
+| `InTown` | int {1}, 294 blank | `+0x005` bit 0 | `[I]` without it the start and the do refuse in a town room ([skills/0001 § 4](../findings/skills/0001-dispatch.md#4-skills_startusedskill-and-skills_srvstart), [skills/0001 § 6](../findings/skills/0001-dispatch.md#6-skills_srvdo)) | — | [C] |
 | `itypea1` | str, 9 distinct, 303 blank | `+0x018` u16 index (code) | item type required, group A, 1; `[I]` the staff-mods roll tests it (§ [Class blocks](#class-blocks)) | `itemtypes:Code` | [C] |
 | `itypea2` | str {`miss`}, 355 blank | `+0x01A` u16 index (code) | item type, group A, 2 | `itemtypes:Code` | [C] |
 | `itypea3` | blank in all rows | `+0x01C` u16 index (code) | item type, group A, 3 | `itemtypes:Code` | [C] value; slot by stride `[L]` |
@@ -649,19 +650,19 @@ The client columns are presentation and stay out of scope (plan 0045 *Open quest
 | `etypea2` | blank in all rows | `+0x026` u16 index (code) | excluded item type, group A, 2 | `itemtypes:Code` | [C] value; slot by stride `[L]` |
 | `etypeb1` | blank in all rows | `+0x028` u16 index (code) | excluded item type, group B, 1 | `itemtypes:Code` | [C] value; slot by stride `[L]` |
 | `etypeb2` | blank in all rows | `+0x02A` u16 index (code) | excluded item type, group B, 2 | `itemtypes:Code` | [C] value; slot by stride `[L]` |
-| `weapsel` | int 1..4 (4 distinct), 342 blank | `+0x168` u16 | weapon selection (which hand or both) | — | [C] |
-| `leftskill` | int {1}, 261 blank | `+0x007` bit 6 | can be the left-hand skill | — | [C] |
-| `repeat` | int {1}, 354 blank | `+0x005` bit 3 | repeats while the button is held | — | [C] |
-| `TgtPlaceCheck` | int {1}, 355 blank | `+0x008` bit 0 | the target position is checked before the start | — | [C] |
+| `weapsel` | int 1..4 (4 distinct), 342 blank | `+0x168` u16 | weapon selection (which hand or both); `[I]` no server read of `+0x168` ([skills/0003 § 12](../findings/skills/0003-handlers.md#12-routed-questions-from-p11)) | — | [C] |
+| `leftskill` | int {1}, 261 blank | `+0x007` bit 6 | can be the left-hand skill; `[I]` one test, in the client ([skills/0003 § 12](../findings/skills/0003-handlers.md#12-routed-questions-from-p11)) | — | [C] |
+| `repeat` | int {1}, 354 blank | `+0x005` bit 3 | repeats while the button is held (the name's reading); `[I]` no server reader, the only readers are client tests; set on the three `startmana` rows ([skills/0003 § 12](../findings/skills/0003-handlers.md#12-routed-questions-from-p11)) | — | [C] |
+| `TgtPlaceCheck` | int {1}, 355 blank | `+0x008` bit 0 | `[I]` read by the monster AI's target test `sub_005FD470_MonSkillTargetOk`: the target must be dead and its cell free for its pattern; not a player start check ([skills/0003 § 12](../findings/skills/0003-handlers.md#12-routed-questions-from-p11)) | — | [C] |
 
 ### Summon columns
 
 | Column | Observed | `.bin` field | Meaning | References | Layout tag |
 |---|---|---|---|---|---|
 | `summon` | str, 31 distinct, 325 blank | `+0x0BC` u16 index | monster class summoned | `monstats:Id` | [C] |
-| `pettype` | str, 16 distinct, 326 blank | `+0x0BE` u8 index | [PetType](PetType.md) of the summon | `pettype:pet type` | [C] |
+| `pettype` | str, 16 distinct, 326 blank | `+0x0BE` u8 index | [PetType](PetType.md) of the summon; `[I]` the type the pet limit counts, and PetType `group` clears the owner's pets of the group's other types ([skills/0003 § 7](../findings/skills/0003-handlers.md#7-summons)) | `pettype:pet type` | [C] |
 | `summode` | str {`NU`, `S1`, `S2`}, 325 blank | `+0x0BF` u8 index | mode the summon spawns in | `monmode:code` | [C] |
-| `petmax` | formula, 7 distinct, 329 blank | `+0x0C0` s32 calc | pet count limit formula; `[C]` the skill variable `pets` (71) ([data/calc § G](../specs/data/calc.md#g-variables)) | `skillscode.bin` | [C] |
+| `petmax` | formula, 7 distinct, 329 blank | `+0x0C0` s32 calc | pet count limit formula; `[C]` the skill variable `pets` (71) ([data/calc § G](../specs/data/calc.md#g-variables)); `[I]` the limit `PetAdd` enforces: above it the owner's first pet of the type is removed ([skills/0003 § 7](../findings/skills/0003-handlers.md#7-summons)) | `skillscode.bin` | [C] |
 | `sumskill1` | str, 14 distinct, 341 blank | `+0x0C4` u16 index | skill 1 given to the summon | `skills:skill` | [C] |
 | `sumsk1calc` | formula, 4 distinct, 341 blank | `+0x0D0` s32 calc | level formula of `sumskill1` | `skillscode.bin` | [C] |
 | `sumskill2` | str, 7 distinct, 348 blank | `+0x0C6` u16 index | skill 2 given to the summon | `skills:skill` | [C] |
@@ -713,233 +714,8 @@ The client columns are presentation and stay out of scope (plan 0045 *Open quest
 
 ### Rows per function number
 
-`[C]` as data (`skills_survey.py skills`); a row is listed once per number. What each number does is plan 0045 Phase 1
-(the machinery and tier A) and plan [0046](../plans/0046-skills-function-catalogue.md) (the catalogue).
-(tbl:Skills.txt:srvdofunc)
-
-#### `srvstfunc` (`+0x02C`): 112 rows, 64 numbers
-
-| Number | Rows | Row ids and names |
-|---:|---:|---|
-| 1 | 2 | 0 Attack, 5 Left Hand Swing |
-| 2 | 1 | 1 Kick |
-| 3 | 1 | 3 Unsummon |
-| 4 | 18 | 7 Fire Arrow, 11 Cold Arrow, 12 Multiple Shot, 15 Poison Javelin, 16 Exploding Arrow, 20 Lightning Bolt, 21 Ice Arrow, 22 Guided Arrow, 25 Plague Javelin, 27 Immolation Arrow, 31 Freezing Arrow, 35 Lightning Fury, 339 MonBow, 340 MonFireArrow, 341 MonColdArrow, 342 MonExplodingArrow, 343 MonFreezingArrow, 345 SuccubusBolt |
-| 5 | 1 | 10 Jab |
-| 6 | 4 | 14 Power Strike, 24 Charged Strike, 344 MonPowerStrike, 347 MonIceSpear |
-| 7 | 1 | 19 Impale |
-| 8 | 1 | 26 Strafe |
-| 9 | 1 | 30 Fend |
-| 10 | 1 | 34 Lightning Strike |
-| 11 | 2 | 41 Inferno, 230 Arctic Blast |
-| 12 | 2 | 43 Telekinesis, 275 Dragon Flight |
-| 13 | 1 | 57 Thunder Storm |
-| 14 | 1 | 62 Hydra |
-| 15 | 2 | 70 Raise Skeleton, 80 Raise Skeletal Mage |
-| 16 | 1 | 73 Poison Dagger |
-| 17 | 3 | 74 Corpse Explosion, 83 Poison Explosion, 351 NihlathakCorpseExplosion |
-| 18 | 1 | 86 Attract |
-| 19 | 1 | 88 Bone Prison |
-| 20 | 1 | 90 IronGolem |
-| 21 | 1 | 95 Revive |
-| 22 | 1 | 253 Psychic Hammer |
-| 23 | 6 | 254 Tiger Strike, 259 Fists of Fire, 265 Cobra Strike, 269 Claws of Thunder, 274 Blades of Ice, 280 Royal Strike |
-| 24 | 1 | 255 Dragon Talon |
-| 25 | 1 | 260 Dragon Claw |
-| 26 | 1 | 266 Blade Fury |
-| 27 | 1 | 270 Dragon Tail |
-| 28 | 1 | 277 Blade Shield |
-| 29 | 1 | 96 Sacrifice |
-| 31 | 2 | 107 Charge, 352 SerpentCharge |
-| 32 | 5 | 116 Conversion, 126 Bash, 139 Stun, 144 Concentrate, 326 BearSmite |
-| 33 | 2 | 131 Find Potion, 150 Grim Ward |
-| 34 | 1 | 142 Find Item |
-| 35 | 1 | 111 Vengeance |
-| 36 | 1 | 117 Holy Shield |
-| 37 | 3 | 106 Zeal, 248 Fury, 328 BloodLordFrenzy |
-| 38 | 1 | 151 Whirlwind |
-| 39 | 1 | 152 Berserk |
-| 40 | 1 | 132 Leap |
-| 41 | 1 | 143 Leap Attack |
-| 42 | 1 | 156 Fire Hit |
-| 43 | 1 | 159 MaggotEgg |
-| 44 | 1 | 161 MagottUp |
-| 45 | 1 | 162 MagottDown |
-| 46 | 1 | 164 AndrialSpray |
-| 47 | 1 | 165 Jump |
-| 48 | 1 | 166 Swarm Move |
-| 49 | 2 | 167 Nest, 320 EvilHutSpawner |
-| 50 | 1 | 168 Quick Strike |
-| 51 | 1 | 176 Submerge |
-| 52 | 1 | 180 Emerge |
-| 53 | 6 | 178 FetishInferno, 193 DiabLight, 311 mon inferno sentry, 317 Baal Inferno, 319 MegademonInferno, 323 Horror Arctic Blast |
-| 54 | 1 | 198 DiabRun |
-| 55 | 1 | 206 Mosquito |
-| 56 | 2 | 232 Feral Rage, 233 Maul |
-| 57 | 1 | 238 Rabies |
-| 58 | 1 | 239 Fire Claws |
-| 59 | 1 | 282 Imp Inferno |
-| 60 | 1 | 289 Suck Blood |
-| 61 | 1 | 293 Self-resurrect |
-| 62 | 1 | 302 MinionSpawner |
-| 63 | 2 | 307 CorpseCycler, 325 VineCycler |
-| 64 | 1 | 215 MonFrenzy |
-| 65 | 2 | 2 Throw, 4 Left Hand Throw |
-
-#### `srvdofunc` (`+0x02E`): 274 rows, 138 numbers
-
-| Number | Rows | Row ids and names |
-|---:|---:|---|
-| 1 | 2 | 0 Attack, 5 Left Hand Swing |
-| 2 | 12 | 1 Kick, 14 Power Strike, 19 Impale, 111 Vengeance, 126 Bash, 139 Stun, 144 Concentrate, 152 Berserk, 239 Fire Claws, 326 BearSmite, 344 MonPowerStrike, 347 MonIceSpear |
-| 3 | 1 | 2 Throw |
-| 4 | 1 | 3 Unsummon |
-| 5 | 1 | 4 Left Hand Throw |
-| 6 | 2 | 8 Inner Sight, 17 Slow Missiles |
-| 7 | 1 | 10 Jab |
-| 8 | 4 | 12 Multiple Shot, 67 Teeth, 191 PrimePoisonball, 243 Shock Wave |
-| 9 | 1 | 147 Frenzy |
-| 10 | 3 | 22 Guided Arrow, 93 Bone Spirit, 211 MonBoneSpirit |
-| 11 | 1 | 24 Charged Strike |
-| 12 | 1 | 26 Strafe |
-| 13 | 3 | 30 Fend, 106 Zeal, 248 Fury |
-| 14 | 1 | 34 Lightning Strike |
-| 15 | 1 | 28 Dopplezon |
-| 16 | 1 | 32 Valkyrie |
-| 17 | 4 | 38 Charged Bolt, 186 PrimeBolt, 306 BoltSentry, 322 ImpBolt |
-| 18 | 11 | 40 Frozen Armor, 50 Shiver Armor, 60 Chilling Armor, 68 Bone Armor, 117 Holy Shield, 209 MonFrozenArmor, 210 MonBoneArmor, 235 Cyclone Armor, 258 Quickness, 267 Fade, 278 Venom |
-| 19 | 2 | 41 Inferno, 230 Arctic Blast |
-| 20 | 1 | 42 Static Field |
-| 21 | 1 | 43 Telekinesis |
-| 22 | 9 | 44 Frost Nova, 48 Nova, 92 Poison Nova, 130 Howl, 190 PrimeIceNova, 195 DiabFire, 316 Baal Nova, 346 MephFrostNova, 353 Trap Nova |
-| 23 | 4 | 46 Blaze, 58 Energy Shield, 173 SpiderLay, 187 PrimeBlaze |
-| 24 | 4 | 51 Fire Wall, 170 VampireFirewall, 188 PrimeFirewall, 321 CountessFirewall |
-| 25 | 1 | 52 Enchant |
-| 26 | 1 | 53 Chain Lightning |
-| 27 | 1 | 54 Teleport |
-| 28 | 12 | 56 Meteor, 59 Blizzard, 171 VampireMeteor, 205 MonBlizzard, 213 HellMeteor, 234 Eruption, 284 Baal Taunt, 287 Catapult Charged Ball, 288 Catapult Spike Ball, 303 CatapultBlizzard, 304 CatapultPlague, 305 CatapultMeteor |
-| 29 | 1 | 57 Thunder Storm |
-| 30 | 10 | 66 Amplify Damage, 71 Dim Vision, 72 Weaken, 76 Iron Maiden, 77 Terror, 82 Life Tap, 87 Decrepify, 91 Lower Resist, 309 Defense Curse, 310 Blood Mana |
-| 31 | 2 | 70 Raise Skeleton, 80 Raise Skeletal Mage |
-| 32 | 1 | 73 Poison Dagger |
-| 33 | 1 | 253 Psychic Hammer |
-| 34 | 3 | 254 Tiger Strike, 265 Cobra Strike, 280 Royal Strike |
-| 35 | 3 | 259 Fists of Fire, 269 Claws of Thunder, 274 Blades of Ice |
-| 42 | 1 | 255 Dragon Talon |
-| 43 | 1 | 256 Shock Field |
-| 44 | 1 | 257 Blade Sentinel |
-| 45 | 5 | 261 Charged Bolt Sentry, 262 Wake of Fire Sentry, 271 Lightning Sentry, 272 Inferno Sentry, 276 Death Sentry |
-| 46 | 1 | 260 Dragon Claw |
-| 47 | 1 | 264 Cloak of Shadows |
-| 48 | 1 | 266 Blade Fury |
-| 49 | 2 | 268 Shadow Warrior, 279 Shadow Master |
-| 50 | 1 | 270 Dragon Tail |
-| 51 | 1 | 273 Mind Blast |
-| 52 | 1 | 275 Dragon Flight |
-| 54 | 1 | 277 Blade Shield |
-| 55 | 3 | 74 Corpse Explosion, 312 mon death sentry, 351 NihlathakCorpseExplosion |
-| 56 | 3 | 75 Clay Golem, 85 BloodGolem, 94 FireGolem |
-| 57 | 1 | 90 IronGolem |
-| 58 | 1 | 95 Revive |
-| 59 | 1 | 86 Attract |
-| 60 | 1 | 78 Bone Wall |
-| 61 | 1 | 81 Confuse |
-| 62 | 1 | 88 Bone Prison |
-| 63 | 1 | 83 Poison Explosion |
-| 64 | 1 | 96 Sacrifice |
-| 65 | 17 | 98 Might, 99 Prayer, 100 Resist Fire, 103 Thorns, 104 Defiance, 105 Resist Cold, 108 Blessed Aim, 109 Cleansing, 110 Resist Lightning, 113 Concentration, 115 Vigor, 120 Meditation, 122 Fanaticism, 125 Salvation, 296 Barbs Aura, 297 Wolverine Aura, 298 Oak Sage Aura |
-| 66 | 4 | 102 Holy Fire, 118 Holy Shock, 119 Sanctuary, 123 Conviction |
-| 67 | 2 | 107 Charge, 352 SerpentCharge |
-| 68 | 5 | 138 Shout, 146 Battle Cry, 149 Battle Orders, 154 War Cry, 155 Battle Command |
-| 69 | 1 | 131 Find Potion |
-| 70 | 1 | 133 Double Swing |
-| 71 | 1 | 137 Taunt |
-| 72 | 1 | 142 Find Item |
-| 73 | 1 | 112 Blessed Hammer |
-| 74 | 1 | 140 Double Throw |
-| 75 | 1 | 150 Grim Ward |
-| 76 | 1 | 151 Whirlwind |
-| 77 | 1 | 132 Leap |
-| 78 | 1 | 143 Leap Attack |
-| 79 | 1 | 116 Conversion |
-| 80 | 1 | 121 Fist of the Heavens |
-| 81 | 1 | 114 Holy Freeze |
-| 82 | 1 | 124 Redemption |
-| 83 | 1 | 156 Fire Hit |
-| 84 | 1 | 159 MaggotEgg |
-| 85 | 2 | 157 UnHolyBolt, 160 ShamanFire |
-| 86 | 1 | 162 MagottDown |
-| 87 | 1 | 163 MagottLay |
-| 88 | 1 | 164 AndrialSpray |
-| 89 | 1 | 165 Jump |
-| 90 | 1 | 166 Swarm Move |
-| 91 | 2 | 167 Nest, 320 EvilHutSpawner |
-| 92 | 1 | 168 Quick Strike |
-| 93 | 1 | 172 GargoyleTrap |
-| 94 | 1 | 176 Submerge |
-| 95 | 5 | 178 FetishInferno, 311 mon inferno sentry, 317 Baal Inferno, 319 MegademonInferno, 323 Horror Arctic Blast |
-| 96 | 2 | 179 ZakarumHeal, 182 Bestow |
-| 97 | 2 | 181 Resurrect, 327 Resurrect2 |
-| 98 | 4 | 184 MonTeleport, 292 Teleport 2, 329 Baal Teleport, 331 Baal Clone Teleport |
-| 99 | 1 | 192 PrimePoisonNova |
-| 100 | 1 | 194 DiabCold |
-| 101 | 1 | 196 FingerMageSpider |
-| 102 | 1 | 197 DiabWall |
-| 103 | 1 | 198 DiabRun |
-| 104 | 1 | 199 DiabPrison |
-| 105 | 1 | 203 DesertTurret |
-| 106 | 1 | 204 ArcaneTower |
-| 107 | 1 | 206 Mosquito |
-| 108 | 1 | 214 RegurgitatorEat |
-| 109 | 2 | 215 MonFrenzy, 328 BloodLordFrenzy |
-| 110 | 3 | 183 MissileSkill1, 202 HireableMissile, 336 RogueMissile |
-| 111 | 1 | 177 FetishAura |
-| 112 | 1 | 212 MonCurseCast |
-| 113 | 4 | 217 Scroll of Identify, 218 Book of Identify, 219 Scroll of Townportal, 220 Book of Townportal |
-| 114 | 1 | 221 Raven |
-| 115 | 3 | 222 Plague Poppy, 231 Cycle of Life, 241 Vines |
-| 116 | 3 | 223 Wearwolf, 228 Wearbear, 350 Delerium Change |
-| 117 | 1 | 225 Firestorm |
-| 118 | 2 | 240 Twister, 245 Tornado |
-| 119 | 6 | 226 Oak Sage, 227 Summon Spirit Wolf, 236 Heart of Wolverine, 237 Summon Fenris, 246 Spirit of Barbs, 247 Summon Grizzly |
-| 120 | 2 | 232 Feral Rage, 233 Maul |
-| 121 | 1 | 238 Rabies |
-| 122 | 1 | 242 Hunger |
-| 123 | 1 | 244 Volcano |
-| 124 | 3 | 249 Armageddon, 250 Hurricane, 349 Diablogeddon |
-| 125 | 1 | 281 Wake Of Destruction Sentry |
-| 126 | 1 | 282 Imp Inferno |
-| 127 | 1 | 289 Suck Blood |
-| 128 | 1 | 290 Cry Help |
-| 129 | 1 | 330 Imp Teleport |
-| 130 | 1 | 294 Vine Attack |
-| 131 | 1 | 295 Overseer Whip |
-| 132 | 1 | 299 Imp Fire Missile |
-| 133 | 1 | 300 Impregnate |
-| 134 | 1 | 301 Siege Beast Stomp |
-| 135 | 1 | 302 MinionSpawner |
-| 136 | 1 | 308 DeathMaul |
-| 137 | 1 | 314 fenris rage |
-| 139 | 1 | 318 Baal Cold Missiles |
-| 140 | 1 | 315 Baal Tentacle |
-| 141 | 1 | 285 Baal Corpse Explode |
-| 144 | 1 | 62 Hydra |
-| 148 | 1 | 335 DoomKnightMissile |
-| 149 | 1 | 338 NecromageMissile |
-| 150 | 1 | 97 Smite |
-| 152 | 1 | 193 DiabLight |
-
-#### `srvprgfunc1..3` (`+0x030..+0x034`): 4 rows, 7 numbers
-
-| Number | Rows | Row ids and names |
-|---:|---:|---|
-| 36 | 1 | 269 Claws of Thunder |
-| 37 | 1 | 269 Claws of Thunder |
-| 38 | 2 | 259 Fists of Fire, 274 Blades of Ice |
-| 39 | 2 | 259 Fists of Fire, 274 Blades of Ice |
-| 40 | 1 | 280 Royal Strike |
-| 41 | 1 | 280 Royal Strike |
-| 143 | 2 | 259 Fists of Fire, 280 Royal Strike |
+Moved to § [Function index](#function-index-plan-0046-phase-0) (plan 0046 Phase 0), which lists each number's rows
+with their kinds, parameters and batch. (tbl:Skills.txt:srvdofunc)
 
 ### Families and the tier-A candidates
 
@@ -956,7 +732,8 @@ The client columns are presentation and stay out of scope (plan 0045 *Open quest
   (`srvstfunc` 4, `srvdofunc` 2 and 18, `pSrvDoFunc` 1). One row per uncovered family is added, a class row first:
   56 Meteor (`srvdofunc` 28), 66 Amplify Damage (30), 98 Might (65) and 25 Plague Javelin (its missile's
   `pSrvDoFunc` 3); then none is uncovered (`ta_big_uncovered=0`). The monster skills of the combat logs' attackers
-  are not in the excel data: Phase 1.3 adds them from the kept logs. The plan's Phase 1 review fixes the list.
+  are not in the excel data: Phase 1.3 adds them from the kept logs. Tier A is fixed (plan 0045 P1.3 review): these 26
+rows, the monster skills being those the Phase 2 sessions' attackers use.
   (tbl:Skills.txt:srvdofunc, tbl:Skills.txt:skill)
 
 | Group | Id | Skill | `srvstfunc` | `srvdofunc` | `srvprgfunc` | `anim` | `range` | Server missiles (`pSrvDoFunc` / `pSrvHitFunc`) |
@@ -988,13 +765,296 @@ The client columns are presentation and stay out of scope (plan 0045 *Open quest
 | added (family) | 98 | Might | - | 65 | - | - | none | — |
 | added (family) | 25 | Plague Javelin | 4 | - | - | TH | rng | `plaguejavelin` 3 / 2 |
 
+## Function index (plan 0046 Phase 0)
+
+`[C]` as data: `python3 -I tools/skills_survey.py --index workspace/merged/data/global/excel` (gate survey `skills`,
+the `ix_*` keys). One entry per function-table entry a stock row uses, in its table (`[I]`, the code readings of
+[skills/0001](../findings/skills/0001-dispatch.md#answer-summary) §§ 4, 6, 10 and 12 and
+[skills/0003](../findings/skills/0003-handlers.md#9-re-seed-sites-rng0002--the-other-initialiser-sites) § 9):
+
+- the **start table** `g_SkillStartFuncs` (`0x00732140`), indexed by `srvstfunc`: 64 entries;
+- the **do table** `g_SkillDoFuncs` (`0x007322B0`), indexed by `srvdofunc`, by `srvprgfunc1..3` (the progressive
+  finisher), by `ItemEffect` when it is above 1 (an item cast with the effect flag) and by States `srvactivefunc`:
+  149 entries, of them 138 `srvdofunc` numbers, 7 `srvprgfunc` numbers (none is also a `srvdofunc`), 2 `ItemEffect`
+  numbers (36, also Claws of Thunder's `srvprgfunc2`, and 151, named by nothing else) and 3 `srvactivefunc` numbers
+  (145 `hurricane`, 146 `armageddon`, 147 `attached`, named by no Skills row: the do entries skills/0001 found used by
+  no stock row are these and 53, 138, 142) (`ix_start_entries=64`, `ix_do_entries=149`, `ix_do_*`).
+
+The missile tables are [Missiles § Function index](Missiles.md#function-index-plan-0046-phase-0) (97 entries).
+(tbl:Skills.txt:srvstfunc, tbl:Skills.txt:srvdofunc, tbl:Skills.txt:srvprgfunc1, tbl:Skills.txt:ItemEffect,
+tbl:States.txt:srvactivefunc)
+
+The columns of the tables below:
+
+- **Rows**: the Skills rows that name the entry (for a do entry, by column when more than `srvdofunc` names it); the
+  States rows are listed and not counted.
+- **Row kinds**: the rows by kind, a class code (`ama`, `sor`, `nec`, `pal`, `bar`, `dru`, `ass`), `monster` (no
+  `charclass`, neither the `general` bit nor a `1` in `scroll`; 159 MaggotEgg, whose `scroll` bit a single space sets,
+  counts here), `item` (the four scroll and book rows) or `general` (rows 0–5, the `general` bit). `ItemEffect` users
+  are not counted (an item cast of another row's skill); a `srvactivefunc`-only entry counts the Skills rows whose
+  `aurastate` is that state.
+- **Batch**: the plan [0046](../plans/0046-skills-function-catalogue.md) Phase 1 batch, by rule: the class with most
+  rows (a tie goes to the first in PlayerClass order), else `monster` when a monster row uses it, else `item` (a scroll
+  row or an `ItemEffect` cast), else `general`. 12 entries have rows of two classes or more and 22 have class and
+  monster rows; the rule puts them with the class (`ix_multiclass=12`, `ix_class_and_monster=22`).
+- **Tier A**: `A` when one of the 26 tier-A rows (plan 0045, § [Families](#families-and-the-tier-a-candidates)) names
+  it as `srvstfunc`, `srvdofunc` or `srvprgfunc`; these are the functions
+  [skills/0003 § 5](../findings/skills/0003-handlers.md#5-tier-a-start-and-do-functions) and § 1 read. 9 start and 21
+  do entries (`ix_start_tiera`, `ix_do_tiera`).
+- **Params, Calcs**: how many of the entry's rows set each of `Param1..8` and `calc1..4` (and `prgcalc1..3` for a
+  `srvprgfunc` entry). A set cell is data; which of them the function reads is plan 0046 Phase 1's.
+
+### Batches
+
+| Batch | Entries | Start | Do | Missile do / hit / damage | Reached by tier A |
+|---|---:|---:|---:|---|---:|
+| `ama` | 17 | 7 | 10 | — | 4 |
+| `sor` | 18 | 4 | 14 | — | 5 |
+| `nec` | 19 | 7 | 12 | — | 3 |
+| `pal` | 15 | 5 | 10 | — | 3 |
+| `bar` | 19 | 7 | 12 | — | 2 |
+| `dru` | 16 | 3 | 13 | — | 2 |
+| `ass` | 29 | 7 | 22 | — | 5 |
+| `monster` | 70 | 20 | 50 | — | 0 |
+| `missile` | 97 | — | — | 34 / 50 / 13 | 10 |
+| `item` | 2 | 0 | 2 | — | 0 |
+| `general` | 8 | 4 | 4 | — | 6 |
+| all | 310 | 64 | 149 | 34 / 50 / 13 | 40 |
+
+`[C]` as data (`ix_batch_*`, `ix_entries=310`). The `item` entries are do 113 (the four scroll and book rows) and do
+151 (Chain Lightning's item cast); the `general` entries are start 1, 2, 3, 65 and do 1, 3, 4, 5, all tier A but
+Unsummon's start 3 and do 4. (tbl:Skills.txt:charclass, tbl:Skills.txt:general, tbl:Skills.txt:scroll)
+
+### Start table (`srvstfunc`)
+
+| Number | Rows | Batch | Tier A | Row kinds | Params (rows set) | Calcs (rows set) | Rows |
+|---:|---:|---|---|---|---|---|---|
+| 1 | 2 | general | A | general 2 | — | — | 0 Attack, 5 Left Hand Swing |
+| 2 | 1 | general | A | general 1 | — | — | 1 Kick |
+| 3 | 1 | general | — | general 1 | — | — | 3 Unsummon |
+| 4 | 18 | ama | A | ama 12, monster 6 | Param1 5, Param2 3, Param3 3, Param4 1, Param7 2, Param8 10 | calc1 6, calc2 2, calc3 1 | 7 Fire Arrow, 11 Cold Arrow, 12 Multiple Shot, 15 Poison Javelin, 16 Exploding Arrow, 20 Lightning Bolt, 21 Ice Arrow, 22 Guided Arrow, 25 Plague Javelin, 27 Immolation Arrow, 31 Freezing Arrow, 35 Lightning Fury, 339 MonBow, 340 MonFireArrow, 341 MonColdArrow, 342 MonExplodingArrow, 343 MonFreezingArrow, 345 SuccubusBolt |
+| 5 | 1 | ama | A | ama 1 | Param3 1, Param4 1 | calc1 1 | 10 Jab |
+| 6 | 4 | ama | — | ama 2, monster 2 | Param1 1, Param2 1, Param8 2 | calc1 1 | 14 Power Strike, 24 Charged Strike, 344 MonPowerStrike, 347 MonIceSpear |
+| 7 | 1 | ama | — | ama 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1 | calc1 1, calc2 1, calc3 1 | 19 Impale |
+| 8 | 1 | ama | — | ama 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1 | calc1 1, calc2 1, calc3 1 | 26 Strafe |
+| 9 | 1 | ama | — | ama 1 | Param1 1, Param2 1, Param3 1, Param4 1 | calc1 1, calc2 1 | 30 Fend |
+| 10 | 1 | ama | — | ama 1 | Param1 1, Param3 1, Param4 1, Param8 1 | calc1 1, calc2 1 | 34 Lightning Strike |
+| 11 | 2 | sor | — | sor 1, dru 1 | Param1 2, Param2 2, Param3 2, Param8 2 | calc1 2, calc2 2 | 41 Inferno, 230 Arctic Blast |
+| 12 | 2 | sor | — | sor 1, ass 1 | Param1 2, Param2 2, Param7 1 | — | 43 Telekinesis, 275 Dragon Flight |
+| 13 | 1 | sor | — | sor 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1, Param7 1 | — | 57 Thunder Storm |
+| 14 | 1 | sor | — | sor 1 | Param1 1, Param2 1, Param8 1 | — | 62 Hydra |
+| 15 | 2 | nec | A | nec 2 | Param1 1, Param2 2, Param3 1, Param4 1, Param5 2 | calc1 2 | 70 Raise Skeleton, 80 Raise Skeletal Mage |
+| 16 | 1 | nec | — | nec 1 | Param8 1 | — | 73 Poison Dagger |
+| 17 | 3 | nec | — | nec 2, monster 1 | Param1 2, Param2 2, Param3 1, Param4 1, Param5 2, Param8 1 | calc1 2, calc2 2, calc3 2 | 74 Corpse Explosion, 83 Poison Explosion, 351 NihlathakCorpseExplosion |
+| 18 | 1 | nec | — | nec 1 | Param1 1, Param2 1, Param3 1, Param4 1 | — | 86 Attract |
+| 19 | 1 | nec | — | nec 1 | Param1 1, Param2 1, Param8 1 | calc1 1 | 88 Bone Prison |
+| 20 | 1 | nec | — | nec 1 | Param1 1, Param2 1, Param8 1 | calc1 1 | 90 IronGolem |
+| 21 | 1 | nec | — | nec 1 | Param1 1, Param3 1, Param4 1, Param5 1 | calc1 1, calc2 1 | 95 Revive |
+| 22 | 1 | ass | — | ass 1 | Param1 1, Param3 1, Param4 1, Param5 1, Param6 1 | calc1 1, calc2 1, calc3 1, calc4 1 | 253 Psychic Hammer |
+| 23 | 6 | ass | A | ass 6 | Param1 6, Param2 5, Param3 6, Param4 6, Param5 2, Param6 1, Param7 1, Param8 3 | calc1 3 | 254 Tiger Strike, 259 Fists of Fire, 265 Cobra Strike, 269 Claws of Thunder, 274 Blades of Ice, 280 Royal Strike |
+| 24 | 1 | ass | — | ass 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1 | calc1 1, calc2 1, calc3 1, calc4 1 | 255 Dragon Talon |
+| 25 | 1 | ass | — | ass 1 | Param1 1, Param2 1, Param8 1 | calc1 1 | 260 Dragon Claw |
+| 26 | 1 | ass | — | ass 1 | Param1 1, Param2 1, Param3 1, Param4 1 | — | 266 Blade Fury |
+| 27 | 1 | ass | — | ass 1 | Param1 1, Param2 1, Param3 1, Param4 1 | calc1 1 | 270 Dragon Tail |
+| 28 | 1 | ass | — | ass 1 | Param1 1, Param2 1, Param3 1, Param4 1 | — | 277 Blade Shield |
+| 29 | 1 | pal | — | pal 1 | Param1 1, Param2 1, Param3 1, Param7 1, Param8 1 | calc1 1, calc2 1 | 96 Sacrifice |
+| 31 | 2 | pal | — | pal 1, monster 1 | Param1 2, Param2 1, Param3 2, Param4 2, Param5 1, Param6 1, Param8 1 | calc1 1 | 107 Charge, 352 SerpentCharge |
+| 32 | 5 | bar | A | pal 1, bar 3, monster 1 | Param1 5, Param2 5, Param3 4, Param4 4, Param5 1, Param6 2, Param7 3, Param8 3 | calc1 5, calc2 2, calc4 1 | 116 Conversion, 126 Bash, 139 Stun, 144 Concentrate, 326 BearSmite |
+| 33 | 2 | bar | — | bar 2 | Param1 2, Param2 2, Param3 2, Param4 2, Param5 1, Param6 1 | calc1 2 | 131 Find Potion, 150 Grim Ward |
+| 34 | 1 | bar | — | bar 1 | Param1 1, Param2 1, Param3 1, Param4 1 | calc1 1 | 142 Find Item |
+| 35 | 1 | pal | — | pal 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1, Param7 1, Param8 1 | calc1 1, calc2 1, calc3 1 | 111 Vengeance |
+| 36 | 1 | pal | A | pal 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1, Param8 1 | calc1 1 | 117 Holy Shield |
+| 37 | 3 | pal | — | pal 1, dru 1, monster 1 | Param1 1, Param2 3, Param3 3, Param4 3, Param5 2, Param6 2, Param8 1 | calc1 2, calc2 2 | 106 Zeal, 248 Fury, 328 BloodLordFrenzy |
+| 38 | 1 | bar | — | bar 1 | Param1 1, Param2 1, Param3 1 | calc1 1 | 151 Whirlwind |
+| 39 | 1 | bar | — | bar 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param8 1 | calc1 1, calc2 1, calc4 1 | 152 Berserk |
+| 40 | 1 | bar | — | bar 1 | Param1 1, Param2 1, Param3 1, Param4 1 | calc1 1 | 132 Leap |
+| 41 | 1 | bar | — | bar 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1, Param8 1 | calc1 1 | 143 Leap Attack |
+| 42 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1 | — | 156 Fire Hit |
+| 43 | 1 | monster | — | monster 1 | — | calc1 1 | 159 MaggotEgg |
+| 44 | 1 | monster | — | monster 1 | — | — | 161 MagottUp |
+| 45 | 1 | monster | — | monster 1 | — | calc1 1 | 162 MagottDown |
+| 46 | 1 | monster | — | monster 1 | — | — | 164 AndrialSpray |
+| 47 | 1 | monster | — | monster 1 | — | calc1 1 | 165 Jump |
+| 48 | 1 | monster | — | monster 1 | — | calc1 1, calc2 1 | 166 Swarm Move |
+| 49 | 2 | monster | — | monster 2 | — | — | 167 Nest, 320 EvilHutSpawner |
+| 50 | 1 | monster | — | monster 1 | — | — | 168 Quick Strike |
+| 51 | 1 | monster | — | monster 1 | — | — | 176 Submerge |
+| 52 | 1 | monster | — | monster 1 | — | — | 180 Emerge |
+| 53 | 6 | monster | — | monster 6 | Param1 6, Param2 1, Param3 2, Param4 1, Param8 1 | calc1 1, calc2 6, calc3 6, calc4 1 | 178 FetishInferno, 193 DiabLight, 311 mon inferno sentry, 317 Baal Inferno, 319 MegademonInferno, 323 Horror Arctic Blast |
+| 54 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1 | calc1 1 | 198 DiabRun |
+| 55 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1 | calc1 1, calc2 1, calc3 1 | 206 Mosquito |
+| 56 | 2 | dru | — | dru 2 | Param1 1, Param2 1, Param3 2, Param4 2, Param5 2, Param6 2, Param7 2, Param8 2 | calc1 2, calc2 2 | 232 Feral Rage, 233 Maul |
+| 57 | 1 | dru | — | dru 1 | Param8 1 | — | 238 Rabies |
+| 58 | 1 | dru | — | dru 1 | Param8 1 | calc1 1 | 239 Fire Claws |
+| 59 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1 | calc1 1, calc2 1 | 282 Imp Inferno |
+| 60 | 1 | monster | — | monster 1 | Param1 1 | calc1 1 | 289 Suck Blood |
+| 61 | 1 | monster | — | monster 1 | — | — | 293 Self-resurrect |
+| 62 | 1 | monster | — | monster 1 | — | — | 302 MinionSpawner |
+| 63 | 2 | monster | — | monster 2 | Param1 2, Param2 2 | calc1 2 | 307 CorpseCycler, 325 VineCycler |
+| 64 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1 | — | 215 MonFrenzy |
+| 65 | 2 | general | A | general 2 | — | — | 2 Throw, 4 Left Hand Throw |
+
+### Do table (`srvdofunc`, `srvprgfunc1..3`, `ItemEffect`, States `srvactivefunc`)
+
+| Number | Rows | Batch | Tier A | Row kinds | Params (rows set) | Calcs (rows set) | Rows |
+|---:|---:|---|---|---|---|---|---|
+| 1 | 2 | general | A | general 2 | — | — | 0 Attack, 5 Left Hand Swing |
+| 2 | 12 | bar | A | ama 2, pal 1, bar 4, dru 1, monster 3, general 1 | Param1 7, Param2 7, Param3 6, Param4 6, Param5 3, Param6 3, Param7 4, Param8 7 | calc1 8, calc2 5, calc3 2, calc4 2 | 1 Kick, 14 Power Strike, 19 Impale, 111 Vengeance, 126 Bash, 139 Stun, 144 Concentrate, 152 Berserk, 239 Fire Claws, 326 BearSmite, 344 MonPowerStrike, 347 MonIceSpear |
+| 3 | 1 | general | A | general 1 | — | — | 2 Throw |
+| 4 | 1 | general | — | general 1 | — | — | 3 Unsummon |
+| 5 | 1 | general | A | general 1 | — | — | 4 Left Hand Throw |
+| 6 | 2 | ama | — | ama 2 | Param1 2, Param2 2, Param3 2, Param4 2, Param5 2, Param6 2 | — | 8 Inner Sight, 17 Slow Missiles |
+| 7 | 1 | ama | A | ama 1 | Param3 1, Param4 1 | calc1 1 | 10 Jab |
+| 8 | 4 | ama | A | ama 1, nec 1, dru 1, monster 1 | Param1 4, Param2 4, Param3 3, Param4 1, Param8 2 | calc1 4, calc2 3, calc3 1 | 12 Multiple Shot, 67 Teeth, 191 PrimePoisonball, 243 Shock Wave |
+| 9 | 1 | bar | — | bar 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1, Param7 1, Param8 1 | calc1 1, calc4 1 | 147 Frenzy |
+| 10 | 3 | ama | — | ama 1, nec 1, monster 1 | Param1 1, Param2 1, Param3 2, Param4 2, Param5 1, Param6 1, Param8 1 | calc1 2 | 22 Guided Arrow, 93 Bone Spirit, 211 MonBoneSpirit |
+| 11 | 1 | ama | — | ama 1 | Param1 1, Param2 1, Param8 1 | calc1 1 | 24 Charged Strike |
+| 12 | 1 | ama | — | ama 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1 | calc1 1, calc2 1, calc3 1 | 26 Strafe |
+| 13 | 3 | ama | — | ama 1, pal 1, dru 1 | Param1 1, Param2 3, Param3 3, Param4 3, Param5 2, Param6 2, Param8 1 | calc1 3, calc2 3 | 30 Fend, 106 Zeal, 248 Fury |
+| 14 | 1 | ama | — | ama 1 | Param1 1, Param3 1, Param4 1, Param8 1 | calc1 1, calc2 1 | 34 Lightning Strike |
+| 15 | 1 | ama | — | ama 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param7 1 | calc1 1, calc2 1, calc3 1 | 28 Dopplezon |
+| 16 | 1 | ama | — | ama 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1, Param7 1, Param8 1 | calc1 1, calc2 1 | 32 Valkyrie |
+| 17 | 4 | sor | — | sor 1, monster 3 | Param1 2, Param2 2, Param8 2 | calc1 4, calc4 1 | 38 Charged Bolt, 186 PrimeBolt, 306 BoltSentry, 322 ImpBolt |
+| 18 | 11 | sor | A | sor 3, nec 1, pal 1, dru 1, ass 3, monster 2 | Param1 11, Param2 11, Param3 9, Param4 9, Param5 7, Param6 7, Param7 4, Param8 7 | calc1 2 | 40 Frozen Armor, 50 Shiver Armor, 60 Chilling Armor, 68 Bone Armor, 117 Holy Shield, 209 MonFrozenArmor, 210 MonBoneArmor, 235 Cyclone Armor, 258 Quickness, 267 Fade, 278 Venom |
+| 19 | 2 | sor | — | sor 1, dru 1 | Param1 2, Param2 2, Param3 2, Param8 2 | calc1 2, calc2 2 | 41 Inferno, 230 Arctic Blast |
+| 20 | 1 | sor | A | sor 1 | Param1 1, Param2 1, Param3 1, Param4 1 | calc1 1, calc2 1 | 42 Static Field |
+| 21 | 1 | sor | — | sor 1 | Param1 1, Param2 1 | — | 43 Telekinesis |
+| 22 | 9 | sor | A | sor 2, nec 1, bar 1, monster 5 | Param1 7, Param2 7, Param3 3, Param4 3, Param5 1, Param6 1, Param8 2 | calc1 1 | 44 Frost Nova, 48 Nova, 92 Poison Nova, 130 Howl, 190 PrimeIceNova, 195 DiabFire, 316 Baal Nova, 346 MephFrostNova, 353 Trap Nova |
+| 23 | 4 | sor | — | sor 2, monster 2 | Param1 4, Param2 4, Param3 1, Param4 1, Param5 1, Param7 1, Param8 1 | calc1 1, calc2 1, calc4 1 | 46 Blaze, 58 Energy Shield, 173 SpiderLay, 187 PrimeBlaze |
+| 24 | 4 | sor | — | sor 1, monster 3 | Param1 1, Param2 1, Param3 1, Param4 1, Param7 1, Param8 1 | — | 51 Fire Wall, 170 VampireFirewall, 188 PrimeFirewall, 321 CountessFirewall |
+| 25 | 1 | sor | — | sor 1 | Param1 1, Param2 1, Param3 1, Param8 1 | — | 52 Enchant |
+| 26 | 1 | sor | — | sor 1 | Param1 1, Param3 1, Param4 1, Param5 1, Param8 1 | calc1 1 | 53 Chain Lightning |
+| 27 | 1 | sor | A | sor 1 | — | — | 54 Teleport |
+| 28 | 12 | sor | A | sor 2, dru 1, monster 9 | Param1 10, Param2 7, Param3 7, Param4 6, Param5 2, Param6 2, Param8 3 | calc1 5, calc2 3, calc4 1 | 56 Meteor, 59 Blizzard, 171 VampireMeteor, 205 MonBlizzard, 213 HellMeteor, 234 Eruption, 284 Baal Taunt, 287 Catapult Charged Ball, 288 Catapult Spike Ball, 303 CatapultBlizzard, 304 CatapultPlague, 305 CatapultMeteor |
+| 29 | 1 | sor | — | sor 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1, Param7 1 | — | 57 Thunder Storm |
+| 30 | 10 | nec | A | nec 8, monster 2 | Param1 10, Param2 10, Param3 10, Param4 10, Param5 9, Param6 5 | calc1 2, calc2 1, calc3 1 | 66 Amplify Damage, 71 Dim Vision, 72 Weaken, 76 Iron Maiden, 77 Terror, 82 Life Tap, 87 Decrepify, 91 Lower Resist, 309 Defense Curse, 310 Blood Mana |
+| 31 | 2 | nec | A | nec 2 | Param1 1, Param2 2, Param3 1, Param4 1, Param5 2 | calc1 2 | 70 Raise Skeleton, 80 Raise Skeletal Mage |
+| 32 | 1 | nec | — | nec 1 | Param8 1 | — | 73 Poison Dagger |
+| 33 | 1 | ass | — | ass 1 | Param1 1, Param3 1, Param4 1, Param5 1, Param6 1 | calc1 1, calc2 1, calc3 1, calc4 1 | 253 Psychic Hammer |
+| 34 | 3 | ass | — | ass 3 | Param1 3, Param2 3, Param3 3, Param4 3, Param5 1, Param6 1, Param7 1 | calc1 2 | 254 Tiger Strike, 265 Cobra Strike, 280 Royal Strike |
+| 35 | 3 | ass | A | ass 3 | Param1 3, Param2 2, Param3 3, Param4 3, Param5 1, Param8 3 | calc1 1 | 259 Fists of Fire, 269 Claws of Thunder, 274 Blades of Ice |
+| 36 | 3 | ass | — | ass 1 | Param1 3, Param2 2, Param3 1, Param4 1, Param8 2 | prgcalc3 1 | `srvprgfunc`: 269 Claws of Thunder; `ItemEffect`: 44 Frost Nova, 48 Nova |
+| 37 | 1 | ass | — | ass 1 | Param1 1, Param3 1, Param4 1, Param8 1 | prgcalc3 1 | `srvprgfunc`: 269 Claws of Thunder |
+| 38 | 2 | ass | A | ass 2 | Param1 2, Param2 2, Param3 2, Param4 2, Param5 1, Param8 2 | calc1 1, prgcalc2 2, prgcalc3 2 | `srvprgfunc`: 259 Fists of Fire, 274 Blades of Ice |
+| 39 | 2 | ass | A | ass 2 | Param1 2, Param2 2, Param3 2, Param4 2, Param5 1, Param8 2 | calc1 1, prgcalc2 2, prgcalc3 2 | `srvprgfunc`: 259 Fists of Fire, 274 Blades of Ice |
+| 40 | 1 | ass | — | ass 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1, Param7 1 | calc1 1, prgcalc2 1, prgcalc3 1 | `srvprgfunc`: 280 Royal Strike |
+| 41 | 1 | ass | — | ass 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1, Param7 1 | calc1 1, prgcalc2 1, prgcalc3 1 | `srvprgfunc`: 280 Royal Strike |
+| 42 | 1 | ass | — | ass 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1 | calc1 1, calc2 1, calc3 1, calc4 1 | 255 Dragon Talon |
+| 43 | 1 | ass | — | ass 1 | Param1 1, Param2 1, Param8 1 | — | 256 Shock Field |
+| 44 | 1 | ass | — | ass 1 | Param1 1, Param2 1, Param3 1, Param4 1 | calc4 1 | 257 Blade Sentinel |
+| 45 | 5 | ass | — | ass 5 | Param1 5, Param3 1, Param4 1, Param7 1, Param8 5 | calc4 1 | 261 Charged Bolt Sentry, 262 Wake of Fire Sentry, 271 Lightning Sentry, 272 Inferno Sentry, 276 Death Sentry |
+| 46 | 1 | ass | — | ass 1 | Param1 1, Param2 1, Param8 1 | calc1 1 | 260 Dragon Claw |
+| 47 | 1 | ass | — | ass 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1, Param7 1, Param8 1 | — | 264 Cloak of Shadows |
+| 48 | 1 | ass | — | ass 1 | Param1 1, Param2 1, Param3 1, Param4 1 | — | 266 Blade Fury |
+| 49 | 2 | ass | — | ass 2 | Param1 2, Param2 2, Param3 2, Param4 2, Param5 2, Param6 2 | — | 268 Shadow Warrior, 279 Shadow Master |
+| 50 | 1 | ass | — | ass 1 | Param1 1, Param2 1, Param3 1, Param4 1 | calc1 1 | 270 Dragon Tail |
+| 51 | 1 | ass | — | ass 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1, Param7 1 | — | 273 Mind Blast |
+| 52 | 1 | ass | — | ass 1 | Param1 1, Param2 1, Param7 1 | — | 275 Dragon Flight |
+| 54 | 1 | ass | — | ass 1 | Param1 1, Param2 1, Param3 1, Param4 1 | — | 277 Blade Shield |
+| 55 | 3 | nec | — | nec 1, monster 2 | Param1 3, Param2 3, Param3 2, Param4 2, Param5 2, Param8 1 | calc1 3, calc2 3, calc3 3, calc4 1 | 74 Corpse Explosion, 312 mon death sentry, 351 NihlathakCorpseExplosion |
+| 56 | 3 | nec | — | nec 3 | Param1 3, Param2 3, Param3 3, Param4 3, Param5 2, Param6 2, Param8 3 | calc1 3 | 75 Clay Golem, 85 BloodGolem, 94 FireGolem |
+| 57 | 1 | nec | — | nec 1 | Param1 1, Param2 1, Param8 1 | calc1 1 | 90 IronGolem |
+| 58 | 1 | nec | — | nec 1 | Param1 1, Param3 1, Param4 1, Param5 1 | calc1 1, calc2 1 | 95 Revive |
+| 59 | 1 | nec | — | nec 1 | Param1 1, Param2 1, Param3 1, Param4 1 | — | 86 Attract |
+| 60 | 1 | nec | — | nec 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param8 1 | calc1 1, calc2 1 | 78 Bone Wall |
+| 61 | 1 | nec | — | nec 1 | Param1 1, Param2 1, Param3 1, Param4 1 | — | 81 Confuse |
+| 62 | 1 | nec | — | nec 1 | Param1 1, Param2 1, Param8 1 | calc1 1 | 88 Bone Prison |
+| 63 | 1 | nec | — | nec 1 | Param8 1 | — | 83 Poison Explosion |
+| 64 | 1 | pal | — | pal 1 | Param1 1, Param2 1, Param3 1, Param7 1, Param8 1 | calc1 1, calc2 1 | 96 Sacrifice |
+| 65 | 17 | pal | A | pal 14, monster 3 | Param1 17, Param2 17, Param3 16, Param4 16, Param5 10, Param6 10, Param8 1 | — | 98 Might, 99 Prayer, 100 Resist Fire, 103 Thorns, 104 Defiance, 105 Resist Cold, 108 Blessed Aim, 109 Cleansing, 110 Resist Lightning, 113 Concentration, 115 Vigor, 120 Meditation, 122 Fanaticism, 125 Salvation, 296 Barbs Aura, 297 Wolverine Aura, 298 Oak Sage Aura |
+| 66 | 4 | pal | A | pal 4 | Param1 4, Param2 4, Param3 2, Param4 2, Param5 4, Param6 3, Param7 2, Param8 3 | — | 102 Holy Fire, 118 Holy Shock, 119 Sanctuary, 123 Conviction |
+| 67 | 2 | pal | — | pal 1, monster 1 | Param1 2, Param2 1, Param3 2, Param4 2, Param5 1, Param6 1, Param8 1 | calc1 1 | 107 Charge, 352 SerpentCharge |
+| 68 | 5 | bar | — | bar 5 | Param1 5, Param2 5, Param3 3, Param4 3, Param5 1, Param6 1, Param8 4 | — | 138 Shout, 146 Battle Cry, 149 Battle Orders, 154 War Cry, 155 Battle Command |
+| 69 | 1 | bar | — | bar 1 | Param1 1, Param2 1, Param3 1, Param4 1 | calc1 1 | 131 Find Potion |
+| 70 | 1 | bar | — | bar 1 | Param1 1, Param5 1, Param8 1 | calc1 1, calc3 1 | 133 Double Swing |
+| 71 | 1 | bar | — | bar 1 | Param1 1, Param2 1, Param3 1, Param4 1 | — | 137 Taunt |
+| 72 | 1 | bar | — | bar 1 | Param1 1, Param2 1, Param3 1, Param4 1 | calc1 1 | 142 Find Item |
+| 73 | 1 | pal | — | pal 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1, Param8 1 | — | 112 Blessed Hammer |
+| 74 | 1 | bar | — | bar 1 | Param1 1, Param2 1, Param8 1 | calc1 1 | 140 Double Throw |
+| 75 | 1 | bar | — | bar 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1 | calc1 1 | 150 Grim Ward |
+| 76 | 1 | bar | — | bar 1 | Param1 1, Param2 1, Param3 1 | calc1 1 | 151 Whirlwind |
+| 77 | 1 | bar | — | bar 1 | Param1 1, Param2 1, Param3 1, Param4 1 | calc1 1 | 132 Leap |
+| 78 | 1 | bar | — | bar 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1, Param8 1 | calc1 1 | 143 Leap Attack |
+| 79 | 1 | pal | — | pal 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1 | calc1 1 | 116 Conversion |
+| 80 | 1 | pal | — | pal 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1, Param8 1 | calc1 1, calc2 1, calc4 1 | 121 Fist of the Heavens |
+| 81 | 1 | pal | — | pal 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1, Param7 1, Param8 1 | — | 114 Holy Freeze |
+| 82 | 1 | pal | — | pal 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1 | calc1 1, calc2 1, calc3 1 | 124 Redemption |
+| 83 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1 | — | 156 Fire Hit |
+| 84 | 1 | monster | — | monster 1 | — | calc1 1 | 159 MaggotEgg |
+| 85 | 2 | monster | — | monster 2 | — | — | 157 UnHolyBolt, 160 ShamanFire |
+| 86 | 1 | monster | — | monster 1 | — | calc1 1 | 162 MagottDown |
+| 87 | 1 | monster | — | monster 1 | — | — | 163 MagottLay |
+| 88 | 1 | monster | — | monster 1 | — | — | 164 AndrialSpray |
+| 89 | 1 | monster | — | monster 1 | — | calc1 1 | 165 Jump |
+| 90 | 1 | monster | — | monster 1 | — | calc1 1, calc2 1 | 166 Swarm Move |
+| 91 | 2 | monster | — | monster 2 | — | — | 167 Nest, 320 EvilHutSpawner |
+| 92 | 1 | monster | — | monster 1 | — | — | 168 Quick Strike |
+| 93 | 1 | monster | — | monster 1 | — | — | 172 GargoyleTrap |
+| 94 | 1 | monster | — | monster 1 | — | — | 176 Submerge |
+| 95 | 5 | monster | — | monster 5 | Param1 5, Param3 1, Param8 1 | calc1 1, calc2 5, calc3 5, calc4 1 | 178 FetishInferno, 311 mon inferno sentry, 317 Baal Inferno, 319 MegademonInferno, 323 Horror Arctic Blast |
+| 96 | 2 | monster | — | monster 2 | Param1 1, Param2 1, Param3 1, Param4 1 | calc1 1, calc2 1 | 179 ZakarumHeal, 182 Bestow |
+| 97 | 2 | monster | — | monster 2 | — | — | 181 Resurrect, 327 Resurrect2 |
+| 98 | 4 | monster | — | monster 4 | — | — | 184 MonTeleport, 292 Teleport 2, 329 Baal Teleport, 331 Baal Clone Teleport |
+| 99 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1 | calc1 1, calc2 1 | 192 PrimePoisonNova |
+| 100 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1 | — | 194 DiabCold |
+| 101 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1 | calc1 1 | 196 FingerMageSpider |
+| 102 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1 | calc1 1 | 197 DiabWall |
+| 103 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1 | calc1 1 | 198 DiabRun |
+| 104 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1 | — | 199 DiabPrison |
+| 105 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1 | calc1 1 | 203 DesertTurret |
+| 106 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1 | — | 204 ArcaneTower |
+| 107 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1 | calc1 1, calc2 1, calc3 1 | 206 Mosquito |
+| 108 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1 | calc1 1 | 214 RegurgitatorEat |
+| 109 | 2 | monster | — | monster 2 | Param1 2, Param2 2, Param3 2, Param4 2, Param5 1, Param6 1 | — | 215 MonFrenzy, 328 BloodLordFrenzy |
+| 110 | 3 | monster | — | monster 3 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1 | — | 183 MissileSkill1, 202 HireableMissile, 336 RogueMissile |
+| 111 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1 | — | 177 FetishAura |
+| 112 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1, Param7 1 | — | 212 MonCurseCast |
+| 113 | 4 | item | — | item 4 | Param1 4, Param2 4, Param3 4, Param4 4, Param5 4, Param6 4 | — | 217 Scroll of Identify, 218 Book of Identify, 219 Scroll of Townportal, 220 Book of Townportal |
+| 114 | 1 | dru | A | dru 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1 | calc1 1, calc2 1 | 221 Raven |
+| 115 | 3 | dru | — | dru 3 | Param1 3, Param2 3, Param3 3, Param4 3, Param5 3, Param6 3 | calc1 3, calc2 3 | 222 Plague Poppy, 231 Cycle of Life, 241 Vines |
+| 116 | 3 | dru | — | dru 2, monster 1 | Param1 2, Param2 2, Param3 2, Param4 2, Param5 2, Param6 1 | — | 223 Wearwolf, 228 Wearbear, 350 Delerium Change |
+| 117 | 1 | dru | A | dru 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1, Param8 1 | calc1 1 | 225 Firestorm |
+| 118 | 2 | dru | — | dru 2 | Param1 2, Param2 2, Param8 2 | calc1 2, calc4 1 | 240 Twister, 245 Tornado |
+| 119 | 6 | dru | — | dru 6 | Param1 6, Param2 6, Param3 5, Param4 5, Param5 4, Param6 4, Param7 6, Param8 6 | calc1 6, calc2 6 | 226 Oak Sage, 227 Summon Spirit Wolf, 236 Heart of Wolverine, 237 Summon Fenris, 246 Spirit of Barbs, 247 Summon Grizzly |
+| 120 | 2 | dru | — | dru 2 | Param1 1, Param2 1, Param3 2, Param4 2, Param5 2, Param6 2, Param7 2, Param8 2 | calc1 2, calc2 2 | 232 Feral Rage, 233 Maul |
+| 121 | 1 | dru | — | dru 1 | Param8 1 | — | 238 Rabies |
+| 122 | 1 | dru | — | dru 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1 | calc1 1, calc2 1, calc3 1 | 242 Hunger |
+| 123 | 1 | dru | — | dru 1 | Param1 1, Param2 1, Param7 1, Param8 1 | calc4 1 | 244 Volcano |
+| 124 | 3 | dru | — | dru 2, monster 1 | Param1 3, Param2 3, Param3 3, Param4 3, Param7 2, Param8 2 | — | 249 Armageddon, 250 Hurricane, 349 Diablogeddon |
+| 125 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param4 1, Param8 1 | calc4 1 | 281 Wake Of Destruction Sentry |
+| 126 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1 | calc1 1, calc2 1 | 282 Imp Inferno |
+| 127 | 1 | monster | — | monster 1 | Param1 1 | calc1 1 | 289 Suck Blood |
+| 128 | 1 | monster | — | monster 1 | Param1 1, Param2 1 | calc1 1 | 290 Cry Help |
+| 129 | 1 | monster | — | monster 1 | — | — | 330 Imp Teleport |
+| 130 | 1 | monster | — | monster 1 | Param1 1, Param2 1 | calc1 1, calc4 1 | 294 Vine Attack |
+| 131 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1, Param6 1 | calc1 1 | 295 Overseer Whip |
+| 132 | 1 | monster | — | monster 1 | — | calc1 1 | 299 Imp Fire Missile |
+| 133 | 1 | monster | — | monster 1 | — | — | 300 Impregnate |
+| 134 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1 | — | 301 Siege Beast Stomp |
+| 135 | 1 | monster | — | monster 1 | — | — | 302 MinionSpawner |
+| 136 | 1 | monster | — | monster 1 | — | calc1 1 | 308 DeathMaul |
+| 137 | 1 | monster | — | monster 1 | Param1 1, Param2 1 | — | 314 fenris rage |
+| 139 | 1 | monster | — | monster 1 | — | — | 318 Baal Cold Missiles |
+| 140 | 1 | monster | — | monster 1 | — | — | 315 Baal Tentacle |
+| 141 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1, Param5 1 | — | 285 Baal Corpse Explode |
+| 143 | 2 | ass | A | ass 2 | Param1 2, Param2 2, Param3 2, Param4 2, Param5 1, Param6 1, Param7 1, Param8 1 | calc1 2, prgcalc2 2, prgcalc3 2 | `srvprgfunc`: 259 Fists of Fire, 280 Royal Strike |
+| 144 | 1 | sor | — | sor 1 | Param1 1, Param2 1, Param8 1 | — | 62 Hydra |
+| 145 | 0 | dru | — | dru 1 | — | — | States `srvactivefunc`: 144 hurricane (the `aurastate` of 250 Hurricane) |
+| 146 | 0 | dru | — | dru 1, monster 1 | — | — | States `srvactivefunc`: 145 armageddon (the `aurastate` of 249 Armageddon, 349 Diablogeddon) |
+| 147 | 0 | monster | — | monster 1 | — | — | States `srvactivefunc`: 143 attached (the `aurastate` of 330 Imp Teleport) |
+| 148 | 1 | monster | — | monster 1 | — | — | 335 DoomKnightMissile |
+| 149 | 1 | monster | — | monster 1 | — | — | 338 NecromageMissile |
+| 150 | 1 | pal | — | pal 1 | Param1 1, Param2 1, Param3 1, Param4 1 | calc1 1, calc2 1 | 97 Smite |
+| 151 | 1 | item | — | — | Param1 1, Param3 1, Param4 1, Param5 1, Param8 1 | calc1 1 | `ItemEffect`: 53 Chain Lightning |
+| 152 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1 | calc2 1, calc3 1 | 193 DiabLight |
+
 ## Open questions
 
 - `[L]` How the per-class lists at `DataTables+0xBA4..+0xBAC` are built at load (their builder is not read). What
   `firstSkill(class)` returns is settled for classes 1–6 in [§ Class blocks](#class-blocks); class 0 was not logged.
 - `[L]` Whether `Id` is a u16 or a u32 (`+0x002` is 0 in every record).
-- `[L]` Every meaning not tagged in the tables. The dispatch columns' readers (the start checks, the do and progressive
-  function tables, the costs and their rounding, the summon limit) are plan 0045 Phase 1.1 and 1.3; the per-number
-  behaviour is plan 0046. Owner: reverser.
+- `[L]` Every meaning not tagged in the tables, and what each numbered function reads of its rows (the parameters,
+  calcs, missiles and states of § [Function index](#function-index-plan-0046-phase-0)). Owner: reverser, plan
+  [0046](../plans/0046-skills-function-catalogue.md) Phase 1, by its batches.
 - `[L]` `manashift` is laid out as a u16 (`+0x188`, values 2..8) and read as a byte by the formula variables; whether
   any reader takes the high byte (`+0x189`, 0 in every record).
