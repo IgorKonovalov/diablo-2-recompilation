@@ -2948,3 +2948,22 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     [2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates](../backlog/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md)
     released (open, for the Phase 3 re-tag of items/tc, uniques-sets, affixes, properties and sockets-runewords).
   - **Next:** H2c (forced), after the H2b merge.
+- **2026-10-20 — Phase 3, the items/affixes cluster (spec-writer, `lane/s38h2b`, from `main` `33484f8`).** The cluster
+  waited on H2b only (accepted above; S2b, S2c and S1f were accepted earlier; aff 14's level-window remainder is an H6a
+  piece, its row counted as S2c). Inputs: the affixes parts of the H2b spec-updates entry ((h)–(n)), the S2b
+  corrections entry ((c), (f)), the S2c corrections entry ((h)) and the S1f entry ((a)), each raise checked against
+  the "Plan 0038 batch S2b, S2c, S1f, H2b" sections of [items/0005](../findings/items/0005-affixes.md) and the reviews.
+  - **items/affixes** {C 112, I 46, L 4} → **{C 152, I 27, L 4}**. Raised: aff 2, 3, 5, 8–11, 12 and 6 (S1f), 13 ×2,
+    15 (188/135 correction), 17, 19 ×2, 21 ×3, 22, 30 L600, 35, 37. Split along their remainders: aff 1, 4, 14, 24, 27,
+    28 ×2, 30 I1 and I2–I6, 34. Restated `[I]`: aff 7/16 (C5b split from C5a), 20 (E5). aff 27: G3's armour and throw
+    lines kept `[I]` pending a ruling (review request). Stale oracle wording of § I closed.
+  - **Wiki:** [items](../wiki/items.md) affix paragraphs and the untested *Affixes* line; `based_on` 2026-10-20.
+  - **Waiting** (missing batches): items/tc H2c; items/uniques-sets H1a (us 21); items/properties H2c;
+    items/sockets-runewords H6b; items/cube H6a; items/vendors H6c; items/quest-drops H4a, H6e1, H6e2; save/d2s H1a,
+    H1b; data/excel H3b (and the plan 0039 fold); data/strings and data/README H3b; monsters/pool, monsters/special and
+    monsters/stats H4a; monsters/spawn H4a, H5d; hirelings H1a, H1b, H6f; player/creation H1a, H6g; drlg/collision
+    H5d; objects H6e2.
+  - **Backlog:** the H2b spec-updates, S2b corrections, S2c corrections and S1f entries annotated (done in part);
+    review request
+    [s38h2b review](../backlog/2026-10-20-spec-writer-architect-s38h2b-items-affixes-review.md).
+  - **Next:** architect review of `lane/s38h2b`; the remaining items clusters after H2c, H1a and H6b.

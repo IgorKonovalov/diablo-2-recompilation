@@ -3,7 +3,7 @@ based_on:
   - docs/specs/items/tc.md 2026-10-20
   - docs/specs/items/quality.md 2026-10-20
   - docs/specs/items/uniques-sets.md 2026-10-17
-  - docs/specs/items/affixes.md 2026-10-17
+  - docs/specs/items/affixes.md 2026-10-20
   - docs/specs/items/properties.md 2026-10-17
 ---
 
@@ -344,7 +344,7 @@ flowchart LR
 The durability step only touches bases that have durability. Before each fallback the item seed is reset to
 `{start, 666}`, so the draw the failed builder made is thrown away and the fallback starts exactly where the unique or
 set pick started. All of this is confirmed in recorded games: 39 failed uniques became rare and 47 failed sets became
-magic. No fallback rare or magic build ever failed in a run, so the steps further down the chain are read from the code
+magic. No fallback rare or magic build of a failed unique or set ever failed in a run, so the steps further down the chain are read from the code
 only, as is the rule that a failed item keeps no unique or set row. This is the [failed unique / failed
 set](../glossary.md) of the
 glossary.
@@ -380,7 +380,7 @@ prefix only, a half suffix only. Each pick rolls its own property values before 
 1. The two [rare name](../glossary.md) words come first, one uniform draw each over the `RarePrefix` and `RareSuffix`
    rows that fit the item type. They do not depend on the affixes.
 2. The affix count: 3, 4, 5 or 6 with chances 1/8, 2/8, 3/8, 2/8. Rares have 3 to 6 affixes, not 2 to 6. Jewels get
-   3 or 4 (read from the code; no rare jewel was logged).
+   3 or 4 (confirmed on 21 rare jewels rebuilt by the cube).
 3. For each slot, a coin picks prefix or suffix while both sides are open; a side closes after three affixes or when
    a pick finds no row, and the slot is then retried on the other side.
 4. Only after all picks are the property values rolled, in the order prefix 1, suffix 1, prefix 2, suffix 2 and so on.
@@ -388,23 +388,28 @@ prefix only, a half suffix only. Each pick rolls its own property values before 
 **Superior** picks a `QualityItems` row that fits the item type, redrawing rows it has already tried; throwables and
 bases without durability use only the first four rows, which hold no durability bonus
 ([affixes § F](../specs/items/affixes.md#f-the-superior-builder--items_buildsuperior--items_buildsuperiorpick)).
-**Low quality** draws a `LowQualityItems` row (confirmed). By the code, it then cuts damage or defense to 75 %, sets
-the maximum durability to 33 % of the base value and draws the current durability on the unit seed; those steps are
-not yet confirmed by a run
+**Low quality** draws a `LowQualityItems` row (confirmed). It then cuts a weapon's damage to 75 % and sets the
+maximum durability to 33 % of the base value (confirmed on one recorded item, in a session whose only edit was to the
+quality odds), and an item that is neither weapon nor armour fails over to normal (confirmed once, in the cube). The
+current durability is drawn off the item seed (confirmed); that it uses the unit seed, and the armour and throw-damage
+cuts, are read from the code only
 ([affixes § G](../specs/items/affixes.md#g-the-low-quality-builder--items_buildlow--items_buildlowpick)). **Normal**
 draws nothing for most bases ([affixes § H](../specs/items/affixes.md#h-the-normal-builder--items_buildnormal)).
 
 **[Staff mods](../glossary.md)**: every builder ends by giving an item whose type names a class in `StaffMods` up to
 three class skill bonuses ([affixes § I](../specs/items/affixes.md#i-staff-mods--items_rollstaffmods)). Where
-these draws sit in the order is confirmed; the draws themselves are read from the code and not yet reproduced. Each
-bonus gets up to 6 tries. A drawn skill is refused if the skill names an item type and the item is not of it, or if it repeats one
+these draws sit in the order is confirmed, and the draws themselves are now reproduced on 105 recorded rolls; the
+bonus that some creation records add, and whether each threshold is "above" or "at least", are read from the code
+only. Each bonus gets up to 6 tries. A drawn skill is refused if the skill names an item type and the item is not of it, or if it repeats one
 of the skills already stored; a skill index out of range or without a record skips the type test and goes straight
 to the repeat test. If all 6 tries fail, the last skill drawn is written anyway but is not stored for later repeat
 tests; that fallback was never reached. This test was read again in the disassembly, so the earlier doubt about the
 decompile is settled, but it is still read from the code only.
 
 A magic build fails only if neither slot gets an affix, and a rare one if no name or no affix fits; both then fall back
-one step with the seed reset. Neither happened in a run.
+one step with the seed reset. In a classic game, throwing weapons get no affix and no rare name at all: nine of them
+rebuilt as rares by the cube failed for want of a name, and each magic fallback failed with no affix, as confirmed. A
+rare failing for want of an affix happens with no stock item and is read from the code only.
 
 ## Property values
 
@@ -447,8 +452,9 @@ After the builder, three more steps run on the item seed, in this order
    Classic body armour makes no socket draw at all; that is read from the code.
 3. **[Automagic](../glossary.md)** (expansion games only, not set or unique): a base whose `auto prefix` names a group
    (class items such as orbs) gets one affix from `AutoMagic`, picked like any affix with the same alvl. It always
-   spends its coin draw. That set and unique items skip it, and that it does not check `spawnable`, are read from the
-   code; every stock automagic row is spawnable, so the second point cannot show in a normal game.
+   spends its coin draw. That set items skip it was seen once, in a session with edited quality odds; that unique items
+   skip it, and that it does not check `spawnable`, are read from the code; every stock automagic row is spawnable, so
+   the last point cannot show in a normal game.
 
 A TC can also hand the item two flags that force the outcome of the first two steps: one makes the ethereal roll
 succeed, the other replaces the socket draw by 0 so that sockets are always added. These flags come only from TC
@@ -553,11 +559,10 @@ The main flow above is confirmed in recorded games. These parts are not, or are 
 - **Uniques and sets** ([uniques-sets open questions](../specs/items/uniques-sets.md#open-questions)): the fallback
   chain past its first step; a unique-only base with no row; a quest base skipping the made test; the Cow King's set
   from a Hell Bovine; which game type, if any, excludes ladder uniques.
-- **Affixes** ([affixes open questions](../specs/items/affixes.md#open-questions)): rare jewels, the classic
-  refusal of throwing weapons, the socket test on affixes, an empty rare-name list, a failed magic build, charms
-  reaching
-  the normal builder, automagic on set and unique items, and which text a rare name id is shown as (the
-  [game data](game-data.md) page has the name line).
+- **Affixes** ([affixes open questions](../specs/items/affixes.md#open-questions)): the socket test on affixes, a rare
+  with names but no affix, charms reaching the normal builder, the low-quality armour cut, automagic on unique items
+  (set items skip it, seen once with edited quality odds), a forced affix outside its level window, and which text a
+  rare name id is shown as (the [game data](game-data.md) page has the name line).
 - **Properties** ([properties open questions](../specs/items/properties.md#open-questions)): several property kinds
   never reached, the type-11 setup, classic body armour at the socket roll, the second ethereal, and the exact
   rounding of a superior ethereal item with a durability bonus, where the code and a community page disagree (for
