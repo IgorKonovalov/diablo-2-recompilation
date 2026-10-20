@@ -124,7 +124,7 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
   Detail: § 10 names the helpers without reading them. Re-read for 2 (R5): `0x005FD850` steps the seed at `+0x20` of
   the unit it is given twice per try inline, adds `low % 40 − 20` to x and to y, and tries at most 10 times until
   `0x0064D870` returns 0; so an item Teleport (the one stock `ItemTarget` 2 row) draws 2 to 20 steps that
-  [skills/0003 § 3](0003-handlers.md#3-the-stat-event-handlers) does not count. The unit's role (caster or target)
+  [skills/0003 § 2](0003-handlers.md#2-item-event-casts) does not count (its "no draw" sentence). The unit's role (caster or target)
   and 3's corpse pick are unfollowed: a gap, in *Open questions*.
 - [L] src:d2dfg-blizzard: `prgstack` 1 runs every `srvprgfunc` up to the charge count, 0 only the count's own.
   **held** (§ 12)

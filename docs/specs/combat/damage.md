@@ -240,8 +240,10 @@ D1. Convert(pkt):                                                     [I] (0x005
 
 - D1. Skill hit builders write the conversion fields on a hit, before `COMBAT_ResolveAndQueue`: `convType`
   (`+0x65`) ← the skill's `EType` and `convPct` (`+0x68`) ← its `calc4`, only when `EType` is set and `calc4`
-  evaluates above 0. That rule is read in full in start function 32 (store at `0x005D7FA8`); the `+0x65` store is
-  also mapped in start functions 6 and 7, and twelve more `EType` stores were not each mapped to the packet. [I] (fn:sub_005D7EA0_SkillSt32Hit@0x005D7EA0, 0x005D7FA8,
+  evaluates above 0. That rule is read in full in start function 32 (store at `0x005D7FA8`). All 15 byte stores of
+  `EType` write the cleared packet's `+0x65`: start functions 6, 7, 10, 16, 29, 32, 39 and 56, do functions 7, 13, 67
+  and 150, and the helpers `0x005D6200`, `0x005D8B10`, `0x005DA660`, so every one is a conversion writer
+  ([skills/0003 § 12](../../findings/skills/0003-handlers.md#12-routed-questions-from-p11)). [I] (fn:sub_005D7EA0_SkillSt32Hit@0x005D7EA0, 0x005D7FA8, 0x005C3175, 0x005DBD87,
   struct:DamagePacket+0x65, struct:DamagePacket+0x68, tbl:Skills.txt:EType, tbl:Skills.txt:calc4,
   [skills/0001 § 11](../../findings/skills/0001-dispatch.md#11-the-skill-packet))
 - D1. No store to either field was found on the normal attack's paths read ([combat/overview § A](README.md#a-the-attack-events)),
@@ -332,7 +334,8 @@ The exit seed `9fdf9862:101f40ba` is the one logged at the builder's return. [C]
 - ~~The writer of the conversion fields (packet `+0x65`/`+0x68`), probably a skill or an aura (phase (3)); no
   logged event converted, so § D is unexercised.~~ Answered: skill hit builders write them (§ D1,
   [skills/0001 § 11](../../findings/skills/0001-dispatch.md#11-the-skill-packet)).
-- [L] The twelve `EType` stores not mapped to the packet, and a run that exercises § D (plan 0045 P1.3, Phase 2).
+- ~~The twelve `EType` stores not mapped to the packet.~~ All 15 write `+0x65` (§ D1, [skills/0003 § 12](../../findings/skills/0003-handlers.md#12-routed-questions-from-p11)).
+- [L] A run that exercises § D (plan 0045 Phase 2).
 - [L] The chain order of step 3 beyond deadly strike: the weapon mastery's crit was a value oracle and no unit had
   stat 337.
 - [L] The formulas of the stats `MonAttackStats` writes (to-hit, damage, the classic factors, the expansion

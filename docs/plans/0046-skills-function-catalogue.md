@@ -48,6 +48,12 @@ function a stock row uses on the machinery of plan [0045](0045-skills-missiles-m
 - **Batches** (counts from Phase 0): one per character class (seven), one for the monster-only skill functions, one
   for the missile do, hit and damage functions, one for the item, shrine and object callers of skills (`ctc`,
   charges, shrine missiles). Ten batches.
+  *Carried from plan 0045's P1b review (2026-10-20):* the Assassin batch reads the five finishing-move calls of
+  `COMBAT_PrgFinisher` (start 25 at `0x005D6399` and `0x005D63E1`; do 42 `0x005D5A8C`, 50 `0x005D71F2`, 52
+  `0x005D79DF`); the item, shrine and object batch reads which unit `ITEMSKILL_Cast` gives the `ItemTarget` 2 helper
+  `0x005FD850` (it draws 2–20 steps on that unit's seed), whether helpers 3 `0x005FD9C0` and 4 `0x005FDA10` draw, and
+  what removes pets when `petmax` falls (a skill shrine wearing off). Each is filed back to plan 0045's spec as a
+  correction.
 - **Outputs:** `docs/findings/skills/0003-catalogue.md` (one section per batch, one sub-section per function);
   `re/symbols.csv` rows (subsystem `skills/catalogue`); emulation cases under `tools/` with their memory specs.
 - **Done when**, per batch: each function has, with addresses and `[I]` or better: its params and calcs read, the

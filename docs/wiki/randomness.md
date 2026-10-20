@@ -285,9 +285,10 @@ From the [RNG core open questions](../specs/rng/README.md#open-questions) and th
 - Which Act II tomb field is the real tomb, what the Act III bit means, and what decides the other Act III act-seed
   consumers, and what the level-27 bit set while building level 6 means, are open.
 - Every function that initialises a seed is now classified, by reading the code. Besides the tree above there are seeds that never feed
-  gameplay: the client automap's own seed, two title-screen seeds and short-lived local seeds. Still unread are the
-  places in the skill and missile code that re-seed a unit or another object, and from what; they belong to a later
-  phase of the project.
+  gameplay: the client automap's own seed, two title-screen seeds and short-lived local seeds. The places in the
+  skill and missile code that re-seed something are read from the code too: they restart a missile's seed or a
+  short-lived one, except Armageddon, which restarts its caster's seed from a number it keeps. What that number holds
+  the first time Armageddon fires is still open.
 - Read from the code but not confirmed by a run: the "power-of-two range plus a base" helper and eight other
   pieces of code with inlined draws being unused, three of the six on-demand level creators, a room with no tiles at all, which
   player-creation paths run and what they pass, the clock fallback for a unit without a parent, and the room
