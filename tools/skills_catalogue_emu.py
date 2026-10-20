@@ -3785,6 +3785,848 @@ def cmd_static9c(a):
     return 1 if rep.c["bad"] else 0
 
 
+# ##################################################################################################################
+# Batch 9d (plan 0046): missile server hit functions 31-59 (g_MissileSrvHitFuncs) and hit 2 (tier A, carried from 9c,
+# lane/p46m3 review ruling 3). 9c's conventions: the return address of every observed boundary asserted (site
+# control), the missile's, the owner's and the target's seeds written and compared in every case, a boundary pointer
+# argument compared by content, two or more negative controls per family (one failing >= 50 cases). A value that
+# reaches a boundary only in a callee-saved register is not a boundary argument (lane/p46m3 review ruling 1): no 9d
+# model compares one. Row 568's 64 948 is a static claim (`static --batch 9d`: every read of the hit table and its
+# signed test).
+# ##################################################################################################################
+FN9D = {
+    "hit31": 0x005ABD70, "hit32": 0x005ABE50, "hit33": 0x005ABEB0, "hit35": 0x005ABEE0, "hit36": 0x005ABF70,
+    "hit37": 0x005AC020, "hit38": 0x005AC0A0, "hit39": 0x005AC1D0, "hit40": 0x005AC250, "hit43": 0x005AC350,
+    "hit44": 0x005A9E10, "hit45": 0x005AC480, "hit47": 0x005AC550, "hit48": 0x005AC6D0, "hit50": 0x005AC800,
+    "hit51": 0x005AC870, "hit52": 0x005AC940, "hit53": 0x005ACA50, "hit54": 0x005ACAF0, "hit55": 0x005ACB60,
+    "hit56": 0x005ACC50, "hit57": 0x005AD970, "hit58": 0x005ACDF0, "hit59": 0x005ACF20,
+    "hit2": 0x005A9D80,
+}
+BOUND9D = dict(BOUND9C)
+BOUND9D.update({
+    0x0061AED0: "RoomPinSet", 0x00624690: "SetMode", 0x005B3570: "RoomSpawnLevelMon", 0x005D5BF0: "ScatterAtTarget",
+    0x005C7DB0: "RabiesApply", 0x0054E600: "PresetMonSpawn", 0x00623990: "WeaponGet", 0x00644C20: "KickMax",
+    0x00408090: "Fatal",
+})
+BOUND_BY_NAME.update({v: k for k, v in BOUND9D.items()})
+ALLBOUND.update(BOUND9D)
+OBJP = OBJ + 0x400                 # the object's static path (+0x00 room)
+OSK = OWN + 0x2000                 # the owner's skill list (+0x04 first node) and its nodes
+RING16T = (0x006E2510, 0x006E24D0)  # MissSubRing16's 16 (x, y) directions, first ring (.rdata)
+RING8B = (0x006E2A58, 0x006E2A38)   # hit 52's 8 (x, y) directions (.rdata)
+RS_RING16T = (0x006E24D0, 0x006E2550, "r", "MissSubRing16's offsets 0x006E24D0/0x006E2510 (.rdata)")
+RS_RING8B = (0x006E2A38, 0x006E2A78, "r", "hit 52's offsets 0x006E2A38/0x006E2A58 (.rdata)")
+
+
+def mem9d(states=False):
+    ex = ["dword %08x %08x" % (DT + 0xB98, SREC), "dword %08x %08x" % (DT + 0xBA0, NSREC),
+          "dword %08x %08x" % (DT + 0x40, SPOOL),
+          "dword %08x %08x" % (DT + 0xBCC, ISC), "dword %08x %08x" % (DT + 0xBD4, NISC),
+          "dword %08x %08x" % (DT + 0xA78, MSREC), "dword %08x %08x" % (DT + 0xA80, NMON),
+          "dword %08x %08x" % (DT + 0xA90, MS2REC), "dword %08x %08x" % (DT + 0xA98, NMON2)]
+    if states:
+        ex += ["dword %08x %08x" % (DT + 0xC4, NSTATES)]
+    return mem_spec(ex, bounds=BOUND9D)
+
+
+def common9d(rnd, w, p_path=0.94, room=None):
+    """The case, the missile (class, path, room), its record (HitSubMissile1..4, sHitPar1..3, EType, ProgOverlay,
+    CollideKill, Param1..4), the owner (its type at +0x00 and guid at +0x0C) and MissileData; -> (case, row)."""
+    c = Case(FN9D[w])
+    cls, invalid = pick_cls(rnd)
+    has_path = rnd.random() < p_path
+    st = put_missile(c, rnd, cls, path=has_path, room=room)
+    subs = [rnd.choice([rnd.randrange(NREC)] * 4 + [rnd.randrange(700), 0, -1, -1, -0x8000]) for _ in range(4)]
+    hp = [rnd_par(rnd) for _ in range(3)]
+    ps = [rnd.choice([rnd.randint(0, 200), rnd.getrandbits(32), 0]) for _ in range(4)]
+    et = rnd.choice(list(range(13)) * 2 + [13, 0xFF])
+    ovl = rnd.choice([rnd.randrange(1, 200), 0, -1, rnd.randint(-0x8000, -1)])
+    ck = rnd.choice([0, 1, 1, rnd.getrandbits(8)])
+    if not invalid:
+        put_rec9c(c, cls, hsub=subs, hp1=hp[0], hp2=hp[1], hp3=hp[2], etype=et, ovl=ovl, ckill=ck,
+                  p1=ps[0], p2=ps[1], p3=ps[2], p4=ps[3])
+    own = put_owner(c, rnd, 0.88)
+    row = {"w": w, "invalid": invalid, "cls": cls, "st": st, "subs": subs, "hp": hp, "ps": ps, "et": et, "ovl": ovl,
+           "ck": ck, "own": own, "otyp": None}
+    if own:
+        otyp = u32f(c, MU + 0x94)
+        c.put(OWN + 0x00, le32(otyp))
+        c.put(OWN + 0x0C, le32(u32f(c, MU + 0x98)))
+        row["otyp"] = otyp
+    return c, row
+
+
+def put_sub_vel(c, rnd, row):
+    """Param1 and Param2 (+0x38, +0x3C) of every record: the sub-missile row's velocity in MissSubRing16."""
+    v = {}
+    for i in range(NREC):
+        if row["invalid"] or i != row["cls"]:
+            p1 = rnd.choice([rnd.randint(0, 40), rnd.getrandbits(32)])
+            c.put(MREC + 0x1A4 * i + 0x38, le32(p1))
+        else:
+            p1 = row["ps"][0]
+        v[i] = p1
+    row["p1s"] = v
+
+
+def put_tgt_pos(c, rnd, row, force_path=False):
+    """The hit unit's position (UnitGetSubX/Y: types 2, 4, 5 read the static path's +0x0C/+0x10 unchecked)."""
+    if not row["unit"]:
+        return
+    tp = force_path or rnd.random() < 0.85 or row["utype"] in (2, 4, 5)
+    c.put(TGT + 0x2C, le32(TGTP if tp else 0))
+    tx, ty = rnd.getrandbits(16), rnd.getrandbits(16)
+    if tp:
+        c.put(TGTP + 0x02, le16(tx))
+        c.put(TGTP + 0x06, le16(ty))
+        c.put(TGTP + 0x0C, le32(rnd.getrandbits(32)))
+        c.put(TGTP + 0x10, le32(rnd.getrandbits(32)))
+    row["tpos"] = (tx, ty) if tp else (0, 0)
+    row["tstatic"] = (u32f(c, TGTP + 0x0C), u32f(c, TGTP + 0x10)) if tp else None
+
+
+def finish9d(c, rnd, row, game, cases, exp):
+    row["seeds"] = put_seeds9c(c, rnd)
+    cases += lines9c(c, game, row["unit"])
+    exp.append(row)
+
+
+def blk9d(**kw):
+    """A MissileCreate block (block()) plus +0x28 (vel) and +0x54 (cb, the creation callback)."""
+    vel, cb = kw.pop("vel", None), kw.pop("cb", None)
+    b = bytearray(block(**kw))
+    if vel is not None:
+        struct.pack_into("<I", b, 0x28, vel & M32)
+    if cb is not None:
+        struct.pack_into("<I", b, 0x54, cb & M32)
+    return bytes(b)
+
+
+def level_bands(lvl, b):
+    """SKILLS_LevelBands(ECX lvl, EDX bands): lvl <= 1 -> 0; bands 2-8, 9-16, 17-22, 23-28, 29+ (32-bit)."""
+    if lvl <= 1:
+        return 0
+    if lvl > 28:
+        return s32((lvl - 28) * b[4] + 6 * b[3] + 6 * b[2] + 8 * b[1] + 7 * b[0])
+    if lvl > 22:
+        return s32((lvl - 22) * b[3] + 6 * b[2] + 8 * b[1] + 7 * b[0])
+    if lvl > 16:
+        return s32((lvl - 16) * b[2] + 8 * b[1] + 7 * b[0])
+    if lvl > 8:
+        return s32((lvl - 8) * b[1] + 7 * b[0])
+    return s32((lvl - 1) * b[0])
+
+
+# =============================================================================================== heal9d
+HEAL_ORDER = ("hit31", "hit43", "hit55", "hit37", "hit50")
+
+
+def put_phys_rec(c, rnd, row, md):
+    """Skills +0x05 (Kick bit 1), HitShift +0x1A4, SrcDam +0x1A5, MinDam/MaxDam +0x1A8/+0x1AC, the level bands
+    +0x1B0/+0x1C4 (5 each), DmgSymPerCalc +0x1D8 (a constant program)."""
+    row["cal"] = put_skill_calcs(c, rnd, md["skill"], (0x1D8,))
+    if not skill_ok(md):
+        row["srec"] = None
+        return
+    base = SREC + 0x23C * s16(md["skill"])
+    b05 = rnd.getrandbits(8) & ~2
+    if rnd.random() < 0.15 and row["own"]:
+        b05 |= 2
+    sh = rnd.choice([0, 0, 8, rnd.randint(1, 8), rnd.randint(9, 255)])
+    src = 0 if rnd.random() < 0.9 else rnd.randint(1, 255)
+    mn, mx = rnd.choice([rnd.randint(0, 30), rnd.getrandbits(32)]), rnd.choice([rnd.randint(0, 60), rnd.getrandbits(32)])
+    bmin = [rnd.choice([rnd.randint(0, 10), rnd.getrandbits(32)]) for _ in range(5)]
+    bmax = [rnd.choice([rnd.randint(0, 10), rnd.getrandbits(32)]) for _ in range(5)]
+    c.put(base + 0x05, bytes([b05]))
+    c.put(base + 0x1A4, bytes([sh]))
+    c.put(base + 0x1A5, bytes([src]))
+    c.put(base + 0x1A8, le32(mn))
+    c.put(base + 0x1AC, le32(mx))
+    for i in range(5):
+        c.put(base + 0x1B0 + 4 * i, le32(bmin[i]))
+        c.put(base + 0x1C4 + 4 * i, le32(bmax[i]))
+    row["srec"] = {"b05": b05, "sh": sh, "src": src, "mn": mn, "mx": mx, "bmin": bmin, "bmax": bmax}
+
+
+@family("heal9d", "9d")
+def heal9d(rnd, game):
+    """Hit 31 (firehead: the owner's life + the EType roll), 43 (healing vortex: RangeB of the skill's physical
+    damage), 55 (baal inferno: the player's mana drained by sHitPar1 %), 37 (blade creeper) and 50 (plague vines)."""
+    cases, exp = [], []
+    for k in range(1500):
+        w = HEAL_ORDER[k % 5]
+        c, row = common9d(rnd, w)
+        md = put_mdata(c, rnd, skill=pick_skill(rnd), lvl=small(rnd, 0, 40), range=rnd.randint(-5, 120) & 0xFFFF,
+                       left=rnd.choice([rnd.randint(-5, 120), 0, rnd.getrandbits(16)]) & 0xFFFF)
+        row["md"] = md
+        if w == "hit55":
+            row["hp"][0] = rnd.choice([rnd.randint(1, 100), 1, 100, 101, rnd.randint(101, 1000), 0, -1,
+                                       rnd.getrandbits(32)])
+            if not row["invalid"]:
+                c.put(MREC + 0x1A4 * row["cls"] + 0x4C, le32(row["hp"][0]))
+            row.update(put_hit_unit(c, rnd, types=(0, 0, 0, 0, 1, 2)))
+        else:
+            row.update(put_hit_unit(c, rnd))
+        put_monstats(c, rnd, row)
+        if w == "hit31":
+            row["sv"] = put_stats(c, rnd, MU, {s: rnd.choice([rnd_stat(rnd), rnd.randint(1, 300)]) for s in STATS_DMG})
+            mxh = rnd.choice([rnd.randint(1, 3000) << 8, rnd.getrandbits(32), 0])
+            cur = rnd.choice([rnd.randint(0, 3000) << 8, mxh, rnd.getrandbits(32)])
+            row["osv"] = put_stats(c, rnd, OWN, {6: cur, 7: mxh})
+        elif w == "hit43":
+            put_phys_rec(c, rnd, row, md)
+            row["osv"] = put_stats(c, rnd, OWN, {0: rnd_stat(rnd), 2: rnd_stat(rnd), 12: rnd_stat(rnd)})
+            if row["unit"]:
+                mxh = rnd.choice([rnd.randint(1, 3000) << 8, rnd.getrandbits(32), 0])
+                cur = rnd.choice([rnd.randint(0, 3000) << 8, mxh, mxh, rnd.getrandbits(32)])
+                row["tsv"] = put_stats(c, rnd, TGT, {6: cur, 7: mxh})
+        elif w == "hit55" and row["unit"]:
+            row["tsv"] = put_stats(c, rnd, TGT, {8: rnd.choice([rnd.randint(1, 500) << 8, rnd.randint(-3, 3),
+                                                                 rnd.getrandbits(32), 0])})
+        row = json.loads(json.dumps(row))
+        finish9d(c, rnd, row, game, cases, exp)
+    return cases, mem9d(), {"cases": exp}
+
+
+def isv(d):
+    return {int(k): v for k, v in (d or {}).items()}
+
+
+def phys9d(row, which, own):
+    """SKILLS_GetPhysMin/Max(owner, skill, lvl, 1): -> ('v', value) or ('obs', name, args, site)."""
+    md = row["md"]
+    sk, lv = s16(md["skill"]), s16(md["lvl"])
+    r = row["srec"]
+    if r is None:
+        return ("v", 1 if which == "min" else 2)
+    osv = isv(row.get("osv"))
+    if r["b05"] & 2:
+        if which == "max":
+            return ("obs", "KickMax", [0], 0x00647D46)
+        if own and row["otyp"] == 0:
+            v = s32(stat_of(osv, 2) - 20 + stat_of(osv, 0))
+        else:
+            v = s32(stat_of(osv, 12) * 3) if own else 0
+        v = max(v, 1)
+        return ("v", s32(cdiv(v, 4) << 8))
+    if r["src"]:
+        return ("obs", "WeaponGet", [own, 0], 0x00647C66 if which == "min" else 0x00647D66)
+    bands = r["bmin"] if which == "min" else r["bmax"]
+    v = s32(level_bands(lv, [s32(x) for x in bands]) + s32(r["mn"] if which == "min" else r["mx"]))
+    cv = ev_skill(row["cal"], 0x1D8)
+    if (row["cal"]["offs"][0] & M32) != M32 and cv:
+        v = s32(v + muldiv(v, cv, 100))
+    return ("v", s32(v << (r["sh"] & 31)))
+
+
+def heal9d_model(row, game, br, neg=None):
+    w, unit, own = row["w"], row["unit"], row["own"]
+    br[w] += 1
+    if w == "hit37":
+        r = 2 if unit else 0
+        br["ret%d" % r] += 1
+        return ret9c(row, r)
+    if w == "hit55":
+        if not unit or row["utype"] != 0:
+            br["notplayer"] += 1
+            return ret9c(row, 2)
+        if row["invalid"] or s32(row["hp"][0]) <= 0:
+            br["norec" if row["invalid"] else "par_le0"] += 1
+            return ret9c(row, 1)
+        mana = stat_of(isv(row.get("tsv")), 8)
+        if mana <= 0:
+            br["nomana"] += 1
+            return ret9c(row, 1)
+        pct = s32(row["hp"][0])
+        pct = 1 if pct <= 1 else (100 if pct >= 100 and neg != "pct100" else pct)
+        v = muldiv(mana, pct, 100)
+        d = max(v, 1) if neg != "nofloor55" else v
+        d = d if d < mana else mana
+        br["drain_capped" if d == mana else "drain"] += 1
+        return obs9c(row, "UnitSetStat", {}, [unit, 8, s32(mana - d), 0], 0x005ACC29)
+    if row["invalid"]:
+        br["norec"] += 1
+        return ret9c(row, 1)
+    md = row["md"]
+    if w == "hit50":
+        el = s16(md["range"]) - s16(md["left"])
+        lim = s32(s16(md["range"]) - s32(row["hp"][0]))
+        if unit and (el < lim if neg != "le50" else el <= lim):
+            br["ret2"] += 1
+            return ret9c(row, 2)
+        br["ret0"] += 1
+        return ret9c(row, 0)
+    if w == "hit31":
+        if not own or not unit:
+            br["noowner" if not own else "nounit"] += 1
+            return ret9c(row, 1)
+        p = bytearray(0x70)
+        e, seed = elem_8c70(p, row["et"], row, svi(row), tuple(row["seeds"][0]))
+        e = s32(e)
+        h = e if (e >= 0 or neg == "nofloor31") else 0
+        osv = isv(row["osv"])
+        v = s32(stat_of(osv, 6) + h)
+        mx = stat_of(osv, 7)
+        if not v < mx:
+            v = mx
+            br["capped"] += 1
+        br["heal_owner"] += 1
+        return obs9c(row, "UnitSetStat", {}, [OWN, 6, v, 0], 0x005ABE1C, seed)
+    # hit43
+    if not unit:
+        br["nounit"] += 1
+        return ret9c(row, 1)
+    if not skill_ok(md):
+        br["noskill"] += 1
+        return ret9c(row, 1)
+    mn = phys9d(row, "min", own)
+    if mn[0] == "obs":
+        br["min_" + mn[1]] += 1
+        return obs9c(row, mn[1], {}, mn[2], mn[3])
+    mx = phys9d(row, "max", own)
+    if mx[0] == "obs":
+        br["max_" + mx[1]] += 1
+        return obs9c(row, mx[1], {}, mx[2], mx[3])
+    s0 = row["seeds"][0]
+    r, l2, h2 = rangeb(s0[0], s0[1], s32(mx[1] - mn[1]))
+    seed = (l2, h2)
+    h = s32(r + mn[1])
+    tsv = isv(row.get("tsv"))
+    life, mxh = stat_of(tsv, 6), stat_of(tsv, 7)
+    if life != mxh and s16(row["ovl"]) > 0:
+        br["overlay"] += 1
+        return obs9c(row, "OverlaySet", {}, [unit, s16(row["ovl"]), 0], 0x005AC452, seed)
+    v = s32(life + h)
+    if not v < mxh and neg != "nocap43":
+        v = mxh
+        br["capped"] += 1
+    br["heal_unit_drew" if seed != tuple(s0) else "heal_unit"] += 1
+    return obs9c(row, "UnitSetStat", {}, [unit, 6, v, 0], 0x005AC468, seed)
+
+
+# =============================================================================================== create9d
+CREATE9D_ORDER = ("hit2", "hit36", "hit48", "hit51", "hit52", "hit58", "hit59")
+
+
+@family("create9d", "9d")
+def create9d(rnd, game):
+    """Hit 2 and 59 (MissSubRing16, up to its first MissileCreate), 36 (MissileCreateAt at the end of life), 48, 51,
+    52 and 58 (up to the first MissileCreate; 58 re-seeds the missile and draws two offsets)."""
+    cases, exp = [], []
+    for k in range(2100):
+        w = CREATE9D_ORDER[k % 7]
+        c, row = common9d(rnd, w, p_path=1.0 if w == "hit48" else 0.94)
+        if w in ("hit2", "hit59"):
+            put_sub_vel(c, rnd, row)
+        if w == "hit58":
+            row["hp"][0] = rnd.choice([rnd.randint(-2, 20), 10, 0, rnd.getrandbits(32)])
+            if not row["invalid"]:
+                c.put(MREC + 0x1A4 * row["cls"] + 0x4C, le32(row["hp"][0]))
+        md = put_mdata(c, rnd, skill=pick_skill(rnd), lvl=small(rnd, 0, 40))
+        row["md"] = md
+        if w == "hit48":
+            row["p10"], row["p12"] = rnd.getrandbits(16), rnd.getrandbits(16)
+            c.put(MP + 0x10, le16(row["p10"]) + le16(row["p12"]))
+        row.update(put_hit_unit(c, rnd, p0=0.3 if w == "hit36" else 0.08))
+        if w == "hit2":
+            put_tgt_pos(c, rnd, row)
+        row = json.loads(json.dumps(row))
+        finish9d(c, rnd, row, game, cases, exp)
+    return cases, mem9d(), {"cases": exp}
+
+
+def ring16_9d(row, game, own, src, sx, sy, a5, a6, a7, neg=None):
+    """sub_005A9370_MissSubRing16(ECX game, EDX owner; src, cls, skill, lvl, a5, a6, a7) up to its first
+    MissileCreate (@0x005A945D): -> the outcome, or None when it returns 0."""
+    md = row["md"]
+    s1 = s16(row["subs"][0])
+    if not 0 <= s1 < NREC or not own or not src:
+        return None
+    a7 = s32(a7)
+    fl, loops = (0x1F, a7) if a7 > 0 and neg != "loops0" else (0x17, None)
+    kw = dict(flags=fl, owner=own, source=src, cls=s1, x=sx, y=sy, skill=s16(md["skill"]), lvl=s16(md["lvl"]),
+              tx=S4.dword(RING16T[0]), ty=S4.dword(RING16T[1]), vel=(row["p1s"][str(s1)] << 7))
+    if loops is not None:
+        kw["loops"] = loops
+    return obs9c(row, "MissileCreate", {"ecx": game}, [], 0x005A945D, blk=blk9d(**kw))
+
+
+def create9d_model(row, game, br, neg=None):
+    w, md, st, own, unit = row["w"], row["md"], row["st"], row["own"], row["unit"]
+    br[w] += 1
+    s1 = s16(row["subs"][0])
+    sk, lv = s16(md["skill"]), s16(md["lvl"])
+    x, y = subxy(st)
+    if w == "hit2":
+        if row["invalid"] or s1 < 0:
+            br["norec" if row["invalid"] else "sub_neg"] += 1
+            return ret9c(row, 3)
+        src = unit if unit and neg != "ring_self" else MU
+        if src == MU:
+            sx, sy = x, y
+        else:
+            pos = unit_pos9c(row)
+            sx, sy = pos if pos else (0, 0)
+        e = ring16_9d(row, game, own, src, sx, sy, row["hp"][0], row["hp"][1], row["hp"][2], neg)
+        if e is None:
+            br["ring_refused"] += 1
+            return ret9c(row, 3)
+        br["ring_unit" if unit else "ring_self"] += 1
+        return e
+    if row["invalid"] or s1 < 0:
+        br["norec" if row["invalid"] else "sub_neg"] += 1
+        return ret9c(row, 1)
+    if w == "hit36":
+        if unit:
+            br["unit_ret0"] += 1
+            return ret9c(row, 0)
+        br["create_at"] += 1
+        return obs9c(row, "MissileCreateAt", {"ecx": game, "edx": own}, [sk, lv, s1, x, y], 0x005ABFF2)
+    if w == "hit48":
+        br["create48"] += 1
+        return obs9c(row, "MissileCreate", {"ecx": game}, [], 0x005AC7E6,
+                     blk=blk9d(flags=0x21, owner=own, cls=s1, x=x, y=y, skill=sk, lvl=lv, tx=row["p10"],
+                               ty=row["p12"]))
+    if w == "hit51":
+        br["create51"] += 1
+        return obs9c(row, "MissileCreate", {"ecx": game}, [], 0x005AC8FB,
+                     blk=blk9d(owner=own, source=MU, cls=s1, skill=sk, lvl=lv))
+    if not own:
+        br["noowner"] += 1
+        return ret9c(row, 1)
+    if w == "hit52":
+        kw = dict(flags=2, owner=own, source=MU, skill=sk, lvl=lv, tx=S4.dword(RING8B[0]), ty=S4.dword(RING8B[1]))
+        if neg == "cls52":
+            kw["cls"] = s1
+        br["create52"] += 1
+        return obs9c(row, "MissileCreate", {"ecx": game}, [], 0x005ACA0D, blk=blk9d(**kw))
+    if w == "hit58":
+        r = s32(row["hp"][0])
+        r = r if r >= 1 else 1
+        lo, hi = x & M32, 666
+        n = s32(2 * r + 1)
+        dx, lo, hi = rrange(lo, hi, n)
+        dy, lo, hi = rrange(lo, hi, n)
+        if neg == "swap58":
+            dx, dy = dy, dx
+        br["create58"] += 1
+        return obs9c(row, "MissileCreate", {"ecx": game}, [], 0x005ACF0A, (lo, hi),
+                     blk=blk9d(flags=0x20, owner=own, source=MU, skill=sk, lvl=lv, cls=s1, tx=s32(dx + x - r),
+                               ty=s32(dy + y - r)))
+    # hit59
+    a5 = s32(row["hp"][0])
+    e = ring16_9d(row, game, own, MU, x, y, a5 if a5 >= 1 else 1, 2, 0, neg)
+    if e is None:
+        br["ring_refused"] += 1
+        return ret9c(row, 1)
+    br["ring59"] += 1
+    return e
+
+
+# =============================================================================================== nova9d
+NOVA_ORDER = ("hit38", "hit45", "hit40")
+
+
+@family("nova9d", "9d")
+def nova9d(rnd, game):
+    """Hits 38 and 45 (sub_0056D4E0_MissNovaCreate up to its first MissileCreate, or its fatal path) and 40 (up to
+    sub_005D5BF0_MissScatterAtTarget)."""
+    cases, exp = [], []
+    for k in range(1500):
+        w = NOVA_ORDER[k % 3]
+        c, row = common9d(rnd, w)
+        hp1 = rnd.choice([rnd.randint(1, 40), rnd.randint(-5, 0), rnd.randint(36, 46), rnd.getrandbits(32), 4, 10])
+        hp2 = rnd.choice([0, 0, 1, 2, rnd.randint(-3, 6), rnd.getrandbits(32)])
+        row["hp"][0], row["hp"][1] = hp1, hp2
+        if not row["invalid"]:
+            c.put(MREC + 0x1A4 * row["cls"] + 0x4C, le32(hp1) + le32(hp2))
+        md = put_mdata(c, rnd, skill=pick_skill(rnd), lvl=rnd.choice([rnd.randint(0, 12), 1, 1, rnd.randint(-3, 40)]))
+        row["md"] = md
+        row["cal"] = put_skill_calcs(c, rnd, md["skill"], (0x144,))
+        row.update(put_hit_unit(c, rnd))
+        row = json.loads(json.dumps(row))
+        finish9d(c, rnd, row, game, cases, exp)
+    return cases, mem9d(), {"cases": exp}
+
+
+def nova_n(row):
+    """(lvl - 1) * sHitPar2 + sHitPar1 (32-bit), else max(calc4, 1) (None: no Skills row, returns 1)."""
+    md = row["md"]
+    n = s32(s32((s16(md["lvl"]) - 1) * s32(row["hp"][1])) + s32(row["hp"][0]))
+    if n > 0:
+        return n
+    if not skill_ok(md):
+        return None
+    return max(ev_skill(row["cal"], 0x144), 1)
+
+
+def nova9d_model(row, game, br, neg=None):
+    w, md, st, own = row["w"], row["md"], row["st"], row["own"]
+    br[w] += 1
+    s1 = s16(row["subs"][0])
+    sk, lv = s16(md["skill"]), s16(md["lvl"])
+    x, y = subxy(st)
+    if row["invalid"] or s1 < 0:
+        br["norec" if row["invalid"] else "sub_neg"] += 1
+        return ret9c(row, 1)
+    if w == "hit45":
+        n = s32(row["hp"][0])
+        if n <= 0:
+            br["par_le0"] += 1
+            return ret9c(row, 1)
+        cb = 0x005AC040 if (s32(row["hp"][1]) != 0 or neg == "cb45") else None
+    else:
+        if not own:
+            br["noowner"] += 1
+            return ret9c(row, 1)
+        if neg == "hp_swap":
+            row = dict(row, hp=[row["hp"][1], row["hp"][0], row["hp"][2]])
+        n = nova_n(row)
+        if n is None:
+            br["noskill"] += 1
+            return ret9c(row, 1)
+        if w == "hit40":
+            br["scatter"] += 1
+            return obs9c(row, "ScatterAtTarget", {"ecx": game, "edx": MU}, [own, s1, n, cdiv(n, 4), sk, lv],
+                         0x005AC334)
+        cb = 0x005AC040
+    if cdiv(n - 1, 5) > (7 if neg != "fatal8" else 8):
+        br["fatal"] += 1
+        return obs9c(row, "Fatal", {}, [0xF0D], 0x0056D50C)
+    br["nova_" + w] += 1
+    return obs9c(row, "MissileCreate", {"ecx": game}, [], 0x0056D539,
+                 blk=blk9d(flags=3, owner=own, cls=s1, x=x, y=y, skill=sk, lvl=lv, tx=0xE, ty=-0xE, cb=cb))
+
+
+# =============================================================================================== area9d
+AREA9D_ORDER = ("hit47", "hit56", "hit53")
+
+
+@family("area9d", "9d")
+def area9d(rnd, game):
+    """Hits 47 (molten boulder) and 56 (armageddon control) up to MISSILE_BuildDamage, 53 (rabies contagion) up to
+    sub_005C7DB0 (the contagion's end frame against SKILLS_GetElemLen)."""
+    cases, exp = [], []
+    for k in range(1500):
+        w = AREA9D_ORDER[k % 3]
+        c, row = common9d(rnd, w)
+        frame = rnd.getrandbits(32) if rnd.random() < 0.2 else rnd.randint(0, 100000)
+        c.put(GAME + FRAME, le32(frame))
+        d = rnd.choice([rnd.randint(-5, 30), 9, 10, 11, rnd.randint(30, 400), rnd.getrandbits(32)])
+        md = put_mdata(c, rnd, skill=pick_skill(rnd), lvl=rnd.choice([rnd.randint(-2, 30), 1, 8, 9, 16, 17]),
+                       w28=(frame + d) & M32)
+        row.update(md=md, frame=frame)
+        if w == "hit53":
+            row["cal"] = put_skill_calcs(c, rnd, md["skill"], (0x224,))
+            if skill_ok(md):
+                base = SREC + 0x23C * s16(md["skill"])
+                el = [rnd.choice([rnd.randint(0, 200), rnd.randint(0, 20), rnd.getrandbits(32)]) for _ in range(4)]
+                for i, v in enumerate(el):
+                    c.put(base + 0x214 + 4 * i, le32(v))
+                row["el"] = el
+        row.update(put_hit_unit(c, rnd))
+        put_monstats(c, rnd, row)
+        row = json.loads(json.dumps(row))
+        finish9d(c, rnd, row, game, cases, exp)
+    return cases, mem9d(), {"cases": exp}
+
+
+def elem_len9d(row):
+    """SKILLS_GetElemLen(owner, skill, lvl, 1): ELen + the bands 1-8, 9-16, 17+ of ELevLen1..3, plus
+    ELenSymPerCalc % (MulDiv) when the calc is set and non-zero."""
+    md = row["md"]
+    lv = s16(md["lvl"])
+    if not skill_ok(md) or lv <= 0:
+        return 0
+    e = [s32(v) for v in row["el"]]
+    if lv > 16:
+        b = s32((lv - 16) * e[3] + 8 * e[2] + 7 * e[1])
+    elif lv > 8:
+        b = s32((lv - 8) * e[2] + 7 * e[1])
+    else:
+        b = s32((lv - 1) * e[1])
+    v = s32(e[0] + b)
+    off = row["cal"]["offs"][0] & M32
+    if off != M32 and off < row["cal"]["pool"]:
+        cv = ev_skill(row["cal"], 0x224)
+        if cv:
+            v = s32(v + muldiv(v, cv, 100))
+    return v
+
+
+def area9d_model(row, game, br, neg=None):
+    w, md, own, unit = row["w"], row["md"], row["own"], row["unit"]
+    br[w] += 1
+    sk, lv = s16(md["skill"]), s16(md["lvl"])
+    if w == "hit53":
+        if not own or not unit:
+            br["noowner" if not own else "nounit"] += 1
+            return ret9c(row, 1)
+        s = s32(md["w28"] - row["frame"])
+        if s < 10 if neg != "s10" else s <= 10:
+            br["early"] += 1
+            return ret9c(row, 1)
+        ln = elem_len9d(row)
+        if s > ln if neg != "lenlt" else s >= ln:
+            br["over_len"] += 1
+            return ret9c(row, 1)
+        br["apply"] += 1
+        return obs9c(row, "RabiesApply", {"ecx": game, "edx": own}, [unit, s, sk, lv], 0x005ACAB9)
+    if row["invalid"]:
+        br["norec"] += 1
+        return ret9c(row, 1)
+    if not own:
+        br["noowner"] += 1
+        return ret9c(row, 1)
+    if w == "hit56":
+        br["build56"] += 1
+        return obs9c(row, "BuildDamage", {"ecx": game, "edx": own}, [MU, 0, None], 0x005ACD38)
+    if unit and (row["utype"] != 1 or not ms2_flag(row, 11 if neg != "flag10" else 10)):
+        br["pass_ret2"] += 1
+        return ret9c(row, 2)
+    br["build47_unit" if unit else "build47_end"] += 1
+    return obs9c(row, "BuildDamage", {"ecx": game, "edx": own}, [MU, unit, None], 0x005AC609, ptrs={2: bytes(0x70)})
+
+
+# =============================================================================================== event9d
+EVENT_ORDER = ("hit32", "hit33", "hit35", "hit39", "hit54", "hit57")
+
+
+@family("event9d", "9d")
+def event9d(rnd, game):
+    """Hits 32 (cairnstones portal), 33 and 35 (room pins; 35's object mode and event), 39 (imp spawn), 54 (baal
+    spawn: the owner's unit skill) and 57 (baalfx control's quest test)."""
+    cases, exp = [], []
+    for k in range(1800):
+        w = EVENT_ORDER[k % 6]
+        room = rnd.choice([0x13000000 + 0x100 * rnd.randrange(16)] * 6 + [0])
+        c, row = common9d(rnd, w, room=room)
+        row["room"] = room if row["st"]["path"] else 0
+        w28 = rnd.choice([0, 0, 1, rnd.getrandbits(32)])
+        md = put_mdata(c, rnd, skill=rnd.choice([rnd.randrange(400), 0x7FFF, -1, rnd.randrange(8)]),
+                       lvl=small(rnd, 0, 40), w28=w28)
+        row["md"] = md
+        row.update(put_hit_unit(c, rnd, p0=0.7 if w != "hit54" else 0.5))
+        if w == "hit35":
+            if rnd.random() < 0.8:
+                put_unit_found(c, rnd, OBJ, 2, w28 & M32, decoy=(w28 ^ 0x40) & M32 if rnd.random() < 0.2 else None)
+                orm = rnd.choice([0x13000000 + 0x100 * rnd.randrange(16), 0, 0])
+                c.put(OBJ + 0x2C, le32(OBJP))
+                c.put(OBJP + 0x00, le32(orm))
+                mode = rnd.choice([0, 0, 1, rnd.getrandbits(32)])
+                c.put(OBJ + 0x10, le32(mode))
+                row.update(obj=OBJ, oroom=orm, omode=mode)
+            else:
+                put_unit_absent(c, rnd, 2, w28 & M32)
+                row["obj"] = 0
+        if w == "hit54" and row["own"]:
+            nodes = []
+            if rnd.random() < 0.9:
+                c.put(OWN + 0xA8, le32(OSK))
+                n = rnd.randrange(0, 5)
+                for i in range(n):
+                    a = OSK + 0x100 + 0x40 * i
+                    sid = s16(md["skill"]) if rnd.random() < 0.6 else rnd.randrange(400)
+                    rec = OSK + 0x800 + 0x10 * i
+                    c.put(a + 0x00, le32(rec))
+                    c.put(rec, le16(sid))
+                    v3c = 0 if rnd.random() < 0.8 else rnd.getrandbits(32)
+                    v34 = rnd.choice([0xFFFFFFFF, rnd.randrange(8), rnd.getrandbits(32)])
+                    v28 = rnd.choice([rnd.randint(0, 30), rnd.getrandbits(32)])
+                    v18 = rnd.getrandbits(32)
+                    c.put(a + 0x3C, le32(v3c))
+                    c.put(a + 0x34, le32(v34))
+                    c.put(a + 0x28, le32(v28))
+                    c.put(a + 0x18, le32(v18))
+                    nodes.append({"a": a, "sid": sid, "v3c": v3c, "v34": v34, "v28": v28, "v18": v18})
+                for i in range(n):
+                    c.put(OSK + 0x100 + 0x40 * i + 0x04, le32(OSK + 0x100 + 0x40 * (i + 1) if i + 1 < n else 0))
+                c.put(OSK + 0x04, le32(OSK + 0x100 if n else 0))
+                row["skl"] = nodes
+            else:
+                c.put(OWN + 0xA8, le32(0))
+                row["skl"] = None
+        row = json.loads(json.dumps(row))
+        finish9d(c, rnd, row, game, cases, exp)
+    return cases, mem9d(), {"cases": exp}
+
+
+def find_unit_skill9d(row, sid, neg=None):
+    """SKILLS_FindUnitSkill(EAX unit, ESI id): the node of that id with +0x3C == 0; a later match replaces the best
+    one when the best is unset or the match's +0x34 is -1, is skipped when the best's +0x34 is -1, and else wins on
+    a higher +0x28 (signed)."""
+    if row.get("skl") is None:
+        return None
+    best = None
+    for nd in row["skl"]:
+        if nd["sid"] != sid or nd["v3c"] != 0:
+            continue
+        if neg == "skillfirst":
+            if best is None:
+                best = nd
+            continue
+        if best is None or nd["v34"] == 0xFFFFFFFF:
+            best = nd
+        elif best["v34"] == 0xFFFFFFFF:
+            continue
+        elif s32(nd["v28"]) > s32(best["v28"]):
+            best = nd
+    return best
+
+
+def event9d_model(row, game, br, neg=None):
+    w, md, st, own, unit = row["w"], row["md"], row["st"], row["own"], row["unit"]
+    br[w] += 1
+    x, y = subxy(st)
+    room = row["room"]
+    if w == "hit39":
+        br["spawn39"] += 1
+        return obs9c(row, "RoomSpawnLevelMon", {"ecx": game, "edx": room}, [x, y], 0x005AC23E)
+    if w == "hit54":
+        if unit or not own:
+            br["unit" if unit else "noowner"] += 1
+            return ret9c(row, 1)
+        nd = find_unit_skill9d(row, s16(md["skill"]), neg)
+        if nd is None:
+            br["noskill"] += 1
+            return ret9c(row, 1)
+        br["spawn54"] += 1
+        return obs9c(row, "PresetMonSpawn", {"ecx": game, "edx": room}, [nd["v18"], x, y, 1], 0x005ACB48)
+    if unit:
+        br["unit_ret0"] += 1
+        return ret9c(row, 0)
+    if w == "hit32":
+        if row["invalid"] or md["w28"] != 0:
+            br["norec" if row["invalid"] else "done"] += 1
+            return ret9c(row, 0)
+        br["portal"] += 1
+        return obs9c(row, "PermPortalAtUnit", {"ecx": game, "edx": MU}, [row["ps"][3 if neg != "p3portal" else 2]],
+                     0x005ABEA0)
+    if w == "hit33":
+        if not room:
+            br["noroom"] += 1
+            return ret9c(row, 0)
+        br["pin33"] += 1
+        return obs9c(row, "RoomPinSet", {}, [room, 1], 0x005ABECB)
+    if w == "hit57":
+        if md["w28"] != 0:
+            br["done"] += 1
+            return ret9c(row, 0)
+        br["quest57"] += 1
+        return obs9c(row, "QuestActive", {}, [game, 0x24], 0x005AD9A2, mem={MD: mdbytes(md, w28=1)})
+    # hit35
+    if not row["obj"]:
+        br["noobj"] += 1
+        return ret9c(row, 0)
+    if row["oroom"]:
+        br["pin35"] += 1
+        return obs9c(row, "RoomPinSet", {}, [row["oroom"], 1], 0x005ABF25)
+    if (row["omode"] == 0) != (neg == "mode1"):
+        br["setmode"] += 1
+        return obs9c(row, "SetMode", {}, [OBJ, 1], 0x005ABF33)
+    br["mode_ret1"] += 1
+    return ret9c(row, 1)
+
+
+CHECKS.update({
+    "heal9d": check9b("heal9d", ownseed_neg(heal9d_model), ["nofloor31", "nocap43", "nofloor55", "pct100", "le50",
+                                                            "ownseed"],
+                      [RS_HASH, RS_SKN, RS_CALC_JT, RS_BITMASK9C, RS_JT8C70]),
+    "create9d": check9b("create9d", ownseed_neg(create9d_model), ["ring_self", "loops0", "cls52", "swap58",
+                                                                  "ownseed"],
+                        [RS_HASH, RS_RING16T, RS_RING8B]),
+    "nova9d": check9b("nova9d", nova9d_model, ["cb45", "hp_swap", "fatal8"], [RS_HASH, RS_SKN, RS_CALC_JT]),
+    "area9d": check9b("area9d", area9d_model, ["s10", "lenlt", "flag10"],
+                      [RS_HASH, RS_SKN, RS_CALC_JT, RS_BITMASK9C]),
+    "event9d": check9b("event9d", event9d_model, ["p3portal", "skillfirst", "mode1"], [RS_HASH]),
+})
+
+PINS9D = [  # (address, mnemonic, operand substring): instructions the 9d claims turn on (ADR-0015 (5))
+    (0x005ABE01, "setl", "dl"), (0x005ABE04, "sub", "edx,0x1"), (0x005ABE0D, "jl", ""),          # hit 31
+    (0x005ABE87, "jne", ""), (0x005ABE93, "mov", "eax,DWORD PTR [esi+0x44]"),                     # hit 32: Param4
+    (0x005AC026, "neg", "eax"), (0x005AC028, "sbb", "eax,eax"), (0x005AC02A, "and", "eax,0x2"),   # hit 37
+    (0x005AC15A, "imul", "eax,DWORD PTR [edi+0x50]"), (0x005AC163, "jg", ""),                     # hit 38
+    (0x005AC180, "mov", "edx,DWORD PTR [eax+0x144]"), (0x005AC14B, "mov", "DWORD PTR [ebp-0xc],0x5ac040"),
+    (0x0056D4EA, "mov", "eax,0x66666667"), (0x0056D4F1, "sar", "edx,1"), (0x0056D4FA, "cmp", "eax,0x7"),
+    (0x0056D500, "jle", ""), (0x0056D526, "mov", "DWORD PTR [esi+0x1c],0xe"),                    # the nova helper
+    (0x005AC30B, "cdq", ""), (0x005AC30C, "and", "edx,0x3"), (0x005AC314, "sar", "eax,0x2"),      # hit 40: n / 4
+    (0x005AC40E, "sub", "edx,ebx"), (0x005AC435, "je", ""), (0x005AC441, "jle", ""),              # hit 43
+    (0x005AC456, "jl", ""), (0x00647CF1, "shl", "eax,cl"), (0x00647BF0, "mov", "al,ds:0x6ce26c"),
+    (0x005AC4CD, "jle", ""), (0x005AC523, "je", ""),                                               # hit 45
+    (0x005AC5AC, "jne", ""), (0x005AC5B5, "mov", "edx,0xb"),                                       # hit 47
+    (0x005AC855, "jge", ""), (0x005AC850, "sub", "eax,DWORD PTR [esi+0x4c]"),                     # hit 50
+    (0x005AC9F0, "mov", "ecx,DWORD PTR [esi+0x6e2a58]"), (0x005AC9BE, "mov", "DWORD PTR [ebp-0x58],esi"),  # hit 52
+    (0x005ACA91, "cmp", "esi,0xa"), (0x005ACA94, "jl", ""), (0x005ACAA5, "jg", ""),               # hit 53
+    (0x00644FD8, "jae", ""),                                                                        # GetElemLen
+    (0x005ACB72, "jne", ""), (0x005ACBDD, "cmp", "eax,0x64"), (0x005ACC0C, "jge", ""),            # hit 55
+    (0x005ACE8F, "lea", "edx,[edx+edx*1+0x1]"), (0x005ACE64, "call", "0x650e40"),                 # hit 58
+    (0x005ACF78, "push", "0x2"), (0x005A93DC, "jle", ""), (0x005A941A, "shl", "ecx,0x7"),         # hits 59, 2 / ring
+    (0x005A9DC3, "mov", "ebx,edi"), (0x005A9DFC, "mov", "eax,0x3"),
+    (0x005AD987, "jne", ""), (0x005AD98A, "push", "0x1"),                                          # hit 57
+]
+
+
+def tabread_scan(A, rep):
+    """Row 568's 64 948: every .text instruction that reads g_MissileSrvHitFuncs (0x0073C840), and the signed test
+    `test ax,ax; jle` of the function word ahead of it (within 12 instructions)."""
+    vas = sorted(A.ins)
+    idx = {va: i for i, va in enumerate(vas)}
+    sites = [va for va in vas if "0x73c840" in A.ins[va][1]]
+    for va in sites:
+        i = idx[va]
+        back = [(vas[j], A.ins[vas[j]]) for j in range(max(0, i - 12), i)]
+        t = [b for b, (mn, ops) in back if mn == "test" and ops == "ax,ax"]
+        ok = False
+        if t:
+            nxt = vas[idx[t[-1]] + 1]
+            ok = A.ins[nxt][0] == "jle"
+        rep.c["tabreads"] += 1
+        rep.c["tabreads_signed"] += 1 if ok else 0
+        rep.notes.append("hit-table read 0x%08X: %s %s; signed test %s" % (
+            va, A.ins[va][0], A.ins[va][1], ("at 0x%08X (test ax,ax; jle)" % t[-1]) if ok else "MISSING"))
+        if not ok:
+            rep.bad("hit-table read 0x%08X without a signed test" % va)
+
+
+def cmd_static9d(a):
+    rep = Report("static")
+    rep.batch = "9D"
+    A = S4.asm()
+    for va, mn, sub in PINS9D:
+        ins = A.at(va)
+        rep.c["pins"] += 1
+        if ins is None or ins[0] != mn or sub not in ins[1]:
+            rep.bad("pin 0x%08X: %r, want %s %s" % (va, ins, mn, sub))
+        else:
+            rep.c["pins_ok"] += 1
+    for lo, n, name in ((BITMASK, 128, "g_BitMask32"), (0x006E10E0, 20, "hash offsets"),
+                        (0x006C1164, 88, "CALC_Eval jump table"), (RING16T[1], 128, "MissSubRing16 offsets"),
+                        (RING8B[1], 64, "hit 52 offsets")):
+        sec = S4.section_of(lo)
+        flags = [x[5] for x in S4.image()[2] if x[4] == sec][0]
+        rep.c["ro_reads"] += 1
+        if flags & 0x80000000:
+            rep.bad("%s 0x%08X in writable %s" % (name, lo, sec))
+        rep.notes.append("%s 0x%08X: %s" % (name, lo, sec))
+    rep.notes.append("MissSubRing16 offsets x: %s" % " ".join(str(s32(S4.dword(RING16T[0] + 4 * i))) for i in range(17)))
+    rep.notes.append("MissSubRing16 offsets y: %s" % " ".join(str(s32(S4.dword(RING16T[1] + 4 * i))) for i in range(17)))
+    rep.notes.append("hit 52 offsets x: %s" % " ".join(str(s32(S4.dword(RING8B[0] + 4 * i))) for i in range(8)))
+    rep.notes.append("hit 52 offsets y: %s" % " ".join(str(s32(S4.dword(RING8B[1] + 4 * i))) for i in range(8)))
+    rep.notes.append("hit table 30..70: %s" % " ".join("%d:0x%08X" % (i, S4.dword(HIT_TABLE + 4 * i))
+                                                      for i in range(30, 71)))
+    rep.notes.append("hit table count 0x0073C83C: %d" % S4.dword(0x0073C83C))
+    for name, va in sorted(FN9D.items(), key=lambda kv: kv[1]):
+        rep.c["table_entries"] += 1
+        if S4.dword(HIT_TABLE + 4 * int(name[3:])) != va:
+            rep.bad("%s: table entry 0x%08X, model address 0x%08X" % (name, S4.dword(HIT_TABLE + 4 * int(name[3:])),
+                                                                      va))
+    tabread_scan(A, rep)
+    print("CAT9D static " + " ".join("%s=%d" % (k, rep.c[k]) for k in sorted(rep.c)))
+    for n in rep.notes:
+        print("  " + n)
+    return 1 if rep.c["bad"] else 0
+
+
 # ================================================================================================= commands
 def batch_families(a):
     if a.family:
@@ -3895,6 +4737,8 @@ def cmd_static(a):
         return cmd_static9b(a)
     if a.batch == "9c":
         return cmd_static9c(a)
+    if a.batch == "9d":
+        return cmd_static9d(a)
     rep = Report("static")
     A = S4.asm()
     for va, mn, sub in PINS:
@@ -3956,7 +4800,7 @@ def main(argv):
     ap.add_argument("cmd", choices=["cases", "check", "static", "manifest"])
     ap.add_argument("family", nargs="*")
     ap.add_argument("--dir", default=None, help="default workspace/logs/skills-cat-<batch>")
-    ap.add_argument("--batch", default="9a", choices=["9a", "9b", "9c"], help="the families of one batch (default 9a)")
+    ap.add_argument("--batch", default="9a", choices=["9a", "9b", "9c", "9d"], help="the families of one batch (default 9a)")
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args(argv)
     return {"cases": cmd_cases, "check": cmd_check, "static": cmd_static, "manifest": cmd_manifest}[a.cmd](a)

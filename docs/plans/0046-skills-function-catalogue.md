@@ -326,3 +326,19 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   added. **Batch 9d may start** (missile hit 31–59 and row 568's 64 948), with 9c's conventions (call site asserted,
   three seeds compared, pointed-to bytes compared, two controls per family). It also emulates hit 2, and it tags any
   value read from a non-argument register at a boundary `[I]`.
+- **2026-10-20 — Phase 1 batch 9d checkpoint (reverser, `lane/p46m4`, static, no harness; paused for the owner, resume
+  note).** Read from objdump and the lane's Ghidra copy (`workspace/ghidra-p46m4`): all 24 hit functions 31–59 of the
+  batch (table entries checked: 30, 34, 41, 42, 46, 49 and 60–70 are null, count 71) and hit 2 (tier A, carried from
+  9c), with their callees `0x0056D4E0` (a nova of creations, fatal path for `(n − 1)/5 > 7`), `sub_005A9370_MissSubRing16`,
+  `SKILLS_GetPhysMin/Max`, `SKILLS_GetElemLen`, `SKILLS_FindUnitSkill`, `0x005D5BF0`, `0x005B3570`, `0x005C7DB0`.
+  Draws before the boundaries found so far: hit 31 (the `EType` roll, missile seed), hit 43 (one `RNG_RangeB` of
+  `PhysMax − PhysMin`, missile seed), hit 58 (re-seed from `SubX`, two `RNG_Range(2r + 1)`); hit 40's callee re-seeds
+  and draws (after its boundary). Surprise to confirm: hit 52 tests `HitSubMissile1` but leaves the block's class
+  word 0. Tool: the 9d section of `tools/skills_catalogue_emu.py` (`--batch 9d`; families `heal9d`, `create9d`,
+  `nova9d`, `area9d`, `event9d`, 8 400 cases; static pins and the hit-table read scan for row 568) is written and its
+  case writers run; `cases --batch 9c` still regenerates 9c's kept files byte for byte. **Not yet done:** the
+  emulation runs, the check (models untested against the emulator), the 9a/9b check/static reproduction, the finding
+  (`docs/findings/skills/0007-missile-hit-31-59.md`), symbols, review request, gate. Kept so far:
+  `workspace/logs/skills-cat-9d/rows.txt` (stock rows) with `manifest.sha256`. **Resume:** run the five families
+  under EmuBoundary (procedure of 9c, `GHIDRA_PROJ_DIR=workspace/ghidra-p46m4`), fix model mismatches, then write the
+  finding and the rest as the batch prompt lists.
