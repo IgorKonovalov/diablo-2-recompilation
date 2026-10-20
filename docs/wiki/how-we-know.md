@@ -177,8 +177,8 @@ outputs; the model predicts every draw and output and must arrive at the logged 
   exit of every event, and a kind whose seeds stay unchanged over at least 20 events has its "no draw" confirmed. A
   kind that moves a seed is re-read and must then meet the chaining minimum
   ([plan 0041, Phase 2, amended 2026-10-17](../plans/done/0041-stats-and-states.md)). In its run one kind did move a seed
-  (a damaging aura draws once per hit) and was checked through chained pairs instead. The specs of that plan are not
-  reviewed yet, so no wiki page restates them.
+  (a damaging aura draws once per hit) and was checked through chained pairs instead. The specs of that plan are
+  reviewed, and the [stats and states](stats-and-states.md) page restates them.
 
 The first simulation plan, combat formulas, checked 40 655 logged events in 40 logs with 0 mismatches
 ([plan index, plan 0037](../plans/README.md); record:
