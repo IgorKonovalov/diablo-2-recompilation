@@ -7,8 +7,8 @@
 > summons, re-seeds and tier A follow)
 
 Static reading of the pinned `Game.exe` in Ghidra (project copy `workspace/ghidra-p45r`) and objdump. The counts and
-instruction windows below come from `tools/skills_dispatch_scan.py` (sha256 `f3f83453…`), kept under
-`workspace/logs/skills/` (`p45r-manifest.sha256`: `dispatch-scan.txt` `2c5c1efd…`, `dispatch-rows.txt` `2d8bd18a…`).
+instruction windows below come from `tools/skills_dispatch_scan.py` (sha256 `a26f5993…`), kept under
+`workspace/logs/skills/` (`p45r-manifest.sha256`: `dispatch-scan.txt` `2c5c1efd…`, `dispatch-rows.txt` `844d186d…`).
 Skills columns are named as in [Skills](../../tables/Skills.md); offsets are record offsets.
 
 ## Answer (summary)
@@ -391,7 +391,7 @@ return 0;
   the product and sum are s32, the shift is a logical left shift of the s32; stat 8 is mana in 1/256. The floor at
   `minmana · 256` applies only to the payment; seven stock rows have a negative `lvlmana` (Magic Arrow, Guided Arrow,
   Dopplezon, Teleport, Bone Prison, Summon Resist, Double Swing), the rows where the floor can bind.
-  (fn:SKILLS_PayCost@0x0056BFE0, tbl:Skills.txt:lvlmana, tbl:Skills.txt:minmana)
+  (fn:SKILLS_PayCost@0x0056BFE0, tbl:Skills.txt:lvlmana, tbl:Skills.txt:minmana, dispatch-rows.txt)
 - [I] `lvl` in the payment is the level passed by the caller (the start's or the do's `lvl`); the checks of § 2 and § 4
   recompute it from the entry. (fn:SKILLS_PayCost@0x0056BFE0, fn:SKILLS_ManaOk@0x00647540)
 - [I] **The result is not tested** by `SKILLS_SrvStart` (`0x0056F7AA`, then `0x0056F7AF` loads the periodic mask) nor

@@ -238,6 +238,8 @@ def sec_rows(dw, txt):
               cnt("startmana"), cnt("delay"), cnt("periodic"), cnt("aura"), cnt("progressive"),
               cnt("ItemEffect", lambda v: v not in ("",) and int(v) > 1), cnt("ItemCheckStart"),
               cnt("AttackNoMana"), cnt("TargetableOnly")))
+    print("ROWS lvlmana_negative=%d ItemEffect_eq1=%d" % (
+        cnt("lvlmana", lambda v: v not in ("",) and int(v) < 0), cnt("ItemEffect", lambda v: v == "1")))
     print("SCAN rows rows=%d out_of_table=%d" % (len(recs), bad))
 
 
