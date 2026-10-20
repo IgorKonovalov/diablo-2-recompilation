@@ -30,8 +30,11 @@ Skills columns are named as in [Skills](../../tables/Skills.md); offsets are rec
   the start did not, uses ammunition (`decquant`) and sets the delay state. (fn:SKILLS_SrvDo@0x0056F7F0,
   fn:SKILLS_DoUsedSkill@0x0056FC50, fn:sub_00580460_PlrModeSkillFrame@0x00580460)
 - [C] Every stock Skills row's `srvstfunc`, `srvdofunc`, `srvprgfunc1..3` and `ItemEffect` (> 1) indexes a non-null
-  entry of those two tables: 357 rows, 0 out of table; 64 start entries (ids 1..65, 30 null) and 152 do entries (ids
-  1..152; 53, 138, 142, 145, 146 and 147 used by no stock row). (data:g_SkillStartFuncs@0x00732140,
+  entry of those two tables: 357 rows, 0 out of table; 64 non-null start entries among ids 1..65 (id 30 null, and
+  ids 0 and 66..0x5A null) and 152 non-null do entries (ids 1..152; 53, 138, 142, 145, 146 and 147 used by no stock
+  row). The `[C]` is the data join (the tables' bytes read by Ghidra, by the scan and by the review's own PE read, against
+  every Skills row); which column indexes which table, and the bounds `0x5B`/`0xBF` (`0x0056F75D`, `0x0056F911`), are
+  the code readings of §§ 4, 6 and 12, `[I]`. (data:g_SkillStartFuncs@0x00732140,
   data:g_SkillDoFuncs@0x007322B0, tbl:Skills.txt:srvstfunc, tbl:Skills.txt:srvdofunc)
 - [I] **Mana cost** = `(lvlmana · max(lvl − 1, 0) + mana) << manashift` in 1/256 mana; the payment floors it at
   `minmana · 256`, the checks do not. Under `blood_mana` (state 114) it is paid from life. The payment's result is
@@ -638,5 +641,8 @@ return 1;
 - [L] Which frame of a mode carries event code 1 or 2, and `Unit+0x4E` for monsters: phase (4) (animation timing);
   Phase 2 logs it.
 - [L] The `srvprgfunc` entries the finisher calls (36–41, 143) and `0x00571AA0`: P1.3 / plan 0046.
+- [L] Not read in P1.1, routed to P1.3: the `TgtPlaceCheck` start check (the plan's "target place"), `prgcalc1..3`
+  and `prgdam` (with the `srvprgfunc` entries), and `weapsel`/`leftskill`. The to-hit term `SKILLS_GetToHit`
+  (`0x006449F0`) is data/0005's reading.
 - [L] `SKILLS_SrvStart`'s callers inside do functions 83 and 109 (`0x005CAF72`, `0x005CDF70`) and `SKILLS_PayCost`'s
   inside `0x005D69D0`.

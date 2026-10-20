@@ -2,12 +2,12 @@
 from: reverser
 to: architect
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../plans/0045-skills-missiles-machinery.md
-  - ../findings/skills/0001-dispatch.md
-  - ../findings/combat/0001-formulas.md#14-phase-2-static-leftovers-phase-1-review-ruling-3
-resolution: ""
+  - ../../plans/0045-skills-missiles-machinery.md
+  - ../../findings/skills/0001-dispatch.md
+  - ../../findings/combat/0001-formulas.md#14-phase-2-static-leftovers-phase-1-review-ruling-3
+resolution: "Reviewed 2026-10-20 (architect): accept with fixes; rulings and fixes in plan 0045's log (P1.1 reviewed)."
 ---
 
 Review plan 0045 Phase 1 batch P1.1 (`lane/p45r`, static, no harness): `docs/findings/skills/0001-dispatch.md` (the
@@ -24,7 +24,7 @@ Asked of the review in particular:
   `srvprgfunc1..3` and `ItemEffect` (> 1) values index a non-null entry (`dispatch-rows.txt`). Is that data check
   enough for `[C]` on the table claim (evidence rule "data behaviour")?
 - **Correction to combat/0001 § 14 (finisher).** `COMBAT_PrgFinisher` saves the attacker's seed, steps it and restores
-  it (a peek; `0x005D5368`–`0x005D538C`). The combat spec ([delivery § A2](../specs/combat/delivery.md)) says it "steps
+  it (a peek; `0x005D5368`–`0x005D538C`). The combat spec ([delivery § A2](../../specs/combat/delivery.md)) says it "steps
   the attacker's seed once per charged state"; a spec-writer entry asks for the change. Rule 12: the correction is
   carried into the combat/0001 paragraph it corrects, and into the answered open question on `+0x65`/`+0x68`.
 - **The payment's ignored result** (§ 7): a cost above the unit's mana (possible when `minmana` floors a falling

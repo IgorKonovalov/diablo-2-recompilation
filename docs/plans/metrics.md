@@ -150,6 +150,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-20 | `lane/p49a` review | 0049 P0 | architect-review | 89 857 | 35 | 7 | — | gave accept with fixes | — (on the lane row) |
 | 2026-10-20 | `lane/p38s5` | 0038 P3 drlg/lifecycle cluster | spec-writer | 131 956 | 60 | 12 | no slot | accept with fixes | 2: overclaim 1, other 1 |
 | 2026-10-20 | `lane/p38s5` review | 0038 P3 drlg/lifecycle cluster | architect-review | 92 779 | 27 | 12 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-20 | `lane/p45r` | 0045 P1.1 | reverser-static | TBD | TBD | TBD | Ghidra (lane copy) | accept with fixes | 3: overclaim 1, omission 1, other 1 |
+| 2026-10-20 | `lane/p45r` review | 0045 P1.1 | architect-review | TBD | TBD | TBD | — | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
