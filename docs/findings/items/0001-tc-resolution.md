@@ -551,7 +551,7 @@ if (f->ratio[5] && (RNG_Next(&src->seed) & 0x3FF) < f->ratio[5]) up |= 0x10;
 item = e->index;
 if (!expansion && ITEMTYPES_IsThrowable(ITEMS_GetType(item))) {
     if (throwRetries++ < 10) { f->picksLeft++; continue; }    // refund the pick
-    item = ITEMS_GetByCode('lsd ');                           // Long Sword
+    item = sub_00633680_ItemIndexByCode('lsd ');              // Long Sword (0x0055AEBA; the index)
 }
 unit = sub_0055A550_DropCreateItem(game, item, src, quality, uidx, up);
 if (!unit) continue;
@@ -577,6 +577,37 @@ sub_005589A0_DropGoldFind(killer, unit);
   485 calls break. Not exercised: the Long Sword after the tenth throwable, and the `version ≥ 100` reject (classic
   TCs reached no such item record). (0x0055AE6E–0x0055AEC2, tbl:ItemTypes.txt:Throwable, run:2026-10-13-quality,
   `tools/tc.py replay`, added check)
+- **ADR-0013 read list of the throwable re-pick** (plan 0038 batch H2c, written 2026-10-21 before its forced run;
+  inventory § 6 ruling 1). The code is 0x0055AE6E–0x0055AEC7, from the expansion test to the `lsd ` index store; the
+  creation call at 0x0055AEC8 and the loop's next pick at 0x0055AF5E are outside it. `tools/sweep_h2c.py reads` walks it
+  and its callees (output `workspace/logs/h2c/check/check-reads.txt`). Every memory operand of the code itself:
+  - `[EBP−0x528]` the game and `game+0x70` its expansion flag (0x0055AE6E, 0x0055AE74);
+  - `[EBP−0x50C]` (u16) the picked item index, which 0x0055AC69 stored from the entry's `index` (the pick's output,
+    read at 0x0055AE7A, written with the `lsd ` index at 0x0055AEC2);
+  - `[EBP−0x53C]` the call's throwable counter, zeroed once at the call's entry (0x0055A71D, the only other write) and
+    read and incremented at 0x0055AE91/0x0055AE9F;
+  - `[EBP−0x51C]` the frame's picks-left pointer, through which 0x0055AEAD adds 1 to `f->picksLeft`. The value is not
+    read: the add does not depend on it.
+  - The `lsd ` code is an immediate (`push $0x2064736c`).
+  - Callees: `ITEMS_GetType` (0x00628700: `ITEMS_GetRecord`, Items record `+0x11E`), `ITEMTYPES_IsThrowable`
+    (0x00628860: `*g_pDataTables` `+0xBF8`/`+0xBFC`, the ItemTypes array and count, record × 0xE4, `+0x10` read by
+    a data-indexed row, so the whole stock `Throwable` column), `ITEMS_GetRecord` (0x006335F0: the Items count
+    0x0096CA58 and base 0x0096CA5C), and `sub_00633680_ItemIndexByCode` (0x00633680: the code tree 0x0096BCC4,
+    `EXCEL_FindCode` 0x006BD130). The excerpt above named `ITEMS_GetByCode` until 2026-10-21; the call is
+    `sub_00633680_ItemIndexByCode`, which returns the index. The fatal-error stops (0x00408090, 0x00408A60,
+    0x00681E09) are not followed.
+  - **No TreasureClassEx read.** Six functions and 131 instructions. None of them references `g_TCLink`,
+    `g_pTreasureClasses` or `g_nTreasureClasses` (0x0096C5E8/EC/F0), or a register operand at DataTables `+0x9B8`,
+    `+0x9BC` or `+0x9C0`. None calls a `TC_` function, and there is no indirect call. Those globals are the only route
+    to TC data after load: the `.bin` buffer is local to `TC_LoadTreasureClassEx` and freed, data/0001. Over the whole
+    `.text` the three globals are referenced only by eight `TC_` functions and `MONSTATS_Load` (`g_TCLink`, the TC
+    name lookup at load). The other ten sites at `+0x9B8`/`+0x9BC` (0x006B088A–0x006B1235) are fields of some other
+    structure, not DataTables: the same base is also indexed at `+0x27CC` and `+0x49D2`. All 50 sites are the
+    `TCREF` lines of the same output.
+  - The code's inputs from the resolver are the item index (the pick's decision) and the frame's picks-left word
+    (written from the TC's `Picks` at the frame's push, only incremented here). The ruling's reading: the edited cells
+    choose which item is picked, and the claims are about any throwable once picked.
+  (0x0055AE6E–0x0055AEC7, 0x0055A71D, fn:ITEMTYPES_IsThrowable@0x00628860, fn:sub_00633680_ItemIndexByCode@0x00633680)
 - [I] `mul=` applies to any item that is of type `gold` (type 4, via the type-equivalence test); the shift is `sar 8`
   on the signed product. Gold find applies only to items whose `type` is exactly 4. It is
   `gold = gold × (100 + GF(killer) + GF(owner of killer)) / 100` (signed, `imul 0x51EB851F` = exact `/ 100`), with GF

@@ -618,6 +618,50 @@ return value;
     value `val`.
 
   (fn:PROP_Func12_SkillRand@0x0065FC40, fn:PROP_Func36_RandClassSkill@0x0065FBA0, tbl:Properties.txt:val1)
+- **ADR-0013 read lists of funcs 12, 23 and 24** (plan 0038 batch H2c, written 2026-10-21 before its forced run;
+  inventory § 6 ruling 2). `tools/sweep_h2c.py reads` walks each handler and its callees, with the stops listed
+  there (output `workspace/logs/h2c/check/check-reads.txt`). The stops are the fatal-error triple, the pool
+  allocator and its free 0x0040B430/0x0040B4B0, memset 0x00681EF0 and memmove 0x00683840; none of them reads a data
+  table. Per handler, cell by cell:
+  - **Func 12** (0x0065FC40, 41 functions, 2 523 instructions):
+    - the block (stack argument 2): `par` `+0x04`, `min` `+0x08`, `max` `+0x0C`;
+    - the caller's arguments: item, EDX, `set`, `stat`, `state`;
+    - `PROP_RollValue`: unit type, `ITEMS_GetSeed` (ItemData `+0x04`), `RNG_RangeB`;
+    - `PROP_WriteStat`: `ITEMSTATCOST_GetRecord` (`ValShift`, by the stat), `sub_0065CBF0_PropTargetList` (the item's
+      lists by state and flags), and the stat-list code.
+    - The stat-list code reads ItemStatCost by stat and the `op` table, and calls `CHARSTATS_GetRecord`,
+      `sub_0061C100_ActTimeOfDay` (the by-time stats) and `MulDiv`.
+    - The Properties row is read by the caller, `PROP_ApplyBlock`, and the block comes from the UniqueItems row the
+      builder chose.
+  - **Func 23** (0x0065FD20, 34 functions, 2 028 instructions):
+    - the item's unit type (`+0x00`), `ITEMS_IsEthereal` (ItemData `+0x18` & `0x400000`), and
+      `sub_00629930_ItemHasDurability`;
+    - `ItemHasDurability` reads the Items record (by `Unit+0x04`) `+0x113` (nodurability) and `+0x112` (durability),
+      `sub_00625E00_ItemMaxDurability` (stat 73) and `STATS_GetUnitStat(item, 152)` (`item_indestruct`, ≤ 0);
+    - `ITEMS_MakeEthereal` sets flag `0x400000` (`ITEMS_SetFlag`). On a weapon (type test 45, `ITEMS_UnitIsType`) it
+      sets the base stats 21, 22, 23, 24, 159 and 160 to `(3·x − sign) / 2`, a signed truncating `× 3 / 2`
+      (`STATS_GetUnitBaseStat` then `sub_00627260_UnitSetStat`). Otherwise it does the same to base stat 31.
+    - The block is only tested for non-null.
+  - **Func 24** (0x0065F390, 41 functions, 2 526 instructions):
+    - the block `par`, `min` and `max`, and the `prev` argument (`[EBP+0x1C]`);
+    - the roll (`PROP_RollValue`) only when `prev` is 0;
+    - the write as func 12's, with param `par` and value `prev` or the roll.
+  - **No TreasureClassEx read.** No function of the three closures references `g_TCLink`, `g_pTreasureClasses` or
+    `g_nTreasureClasses`, or a register operand at DataTables `+0x9B8`/`+0x9BC`/`+0x9C0`, and none calls a `TC_`
+    function (items/0001 § 8's read list gives the whole-`.text` sites).
+  - Each closure has two or three indirect calls: `STATLIST_CacheAdd` 0x0062513E and `STATLIST_CacheWrite` 0x006251E4
+    (all three handlers), and `STATLIST_Unlink` 0x00626BE7 (funcs 12 and 24). They are read by hand:
+    - The two cache calls go through a list's stat callback `+0x5C`. `sub_00626D40_UnitStatListCreate` sets one for
+      players and monsters only, none for items (stats/0001 Answer, `[C]` there, fn:sub_00626D40_UnitStatListCreate@0x00626D40).
+    - The `Unlink` call goes through the remove callback `+0x38`. `STATLIST_Alloc` (0x006251F0) zeroes the 0x3C-byte
+      list, and `sub_0065CBF0_PropTargetList`'s two calls (0x0065CC1C, 0x0065CC5B) set no callback.
+    - So on an item that no player holds, which is every drop at creation, all three are null and not taken.
+  - **The handlers' inputs at entry** are the item's state (flags, stats, lists) and the block. The edited cells choose
+    which UniqueItems row the builder takes, so the H2c logger records that state at each handler's entry
+    (`tools/gdb/h2c.py` `E12`/`E23`/`E24`, with `props.py`'s `APE` lists and `SLOT` block) rather than assume it is
+    stock (ADR-0013, third negative consequence).
+  (fn:PROP_Func12_SkillRand@0x0065FC40, fn:PROP_Func23_Ethereal@0x0065FD20, fn:PROP_Func24_ParParam@0x0065F390,
+  fn:ITEMS_MakeEthereal@0x0065E4D0, fn:sub_00629930_ItemHasDurability@0x00629930, fn:STATLIST_Alloc@0x006251F0)
 - [C] **Multi-slot codes** (0x0065FD70).
   - `res-all`, `all-stats`, `dmg-elem-min` and `dmg-elem-max`: slot 1 (func 1) draws once and slots 2..4 (func 3)
     reuse the value, unless slot 1 wrote nothing, i.e. rolled 0, in which case each func-3 slot rolls its own value.

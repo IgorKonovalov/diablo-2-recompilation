@@ -560,6 +560,16 @@ flowchart TD
   of 0 is rejected. The `Azurewrath` case is logged on a forced path: record `+0x40` = 30, base `crs`
   (run:2026-10-15-uniques-tcnamed-forced; agrees, `[I]` under ADR-0010).
   (0x006BD4CE–0x006BD4F2, 0x006BD44A–0x006BD473, 0x00634D30–0x00634D85, fn:EXCEL_FindName@0x006BD3C0)
+- **ADR-0013 boundary for plan 0038 batch H2c** (written 2026-10-21 before its forced run, inventory § 6 ruling 2).
+  The H2c edit names *Ormus' Robes*, *Ethereal Edge*, *Tomb Reaver*, *Shadowkiller* and *Ghostflame* in TC `Item`
+  cells. The path from such a cell to the builder's choice reads the edited cell:
+  - `TC_ParseItemCell` turns the name into the entry's `aux`;
+  - the resolver copies it into record `+0x40`;
+  - the builder prefers that row.
+  So the TC-named selection, the filter test on the named row and the fallback stay `[I]`, and the H2c run raises
+  none of them. Its claims start where the builder hands a block of the chosen row to a func handler. Those read lists
+  are in [items/0006 § 4](0006-properties.md#4-the-handlers-per-func). (fn:TC_ParseItemCell@0x00654440,
+  0x005568EB–0x005568FC)
 
 ### 7. Load-time slots in `uniqueitems`, `setitems` and `sets` (the backlog questions)
 
