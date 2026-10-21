@@ -260,8 +260,14 @@ def _collision_main():
         snap(reg("edx"), "SN")
         keep = []
         for dd in dead:
+            try:
+                cells = around(dd[0], dd[1], dd[2])
+            except gdb.MemoryError as e:
+                # plan 0048 Phase 2: the corpse's room was freed since (a diagnostic line only; the entry is dropped)
+                emit("DCRF", {"room": dd[0], "u": dd[3], "n": dd[5], "err": str(e)})
+                continue
             emit("DCR", {"room": dd[0], "x": dd[1], "y": dd[2], "u": dd[3], "cls": dd[4], "n": dd[5],
-                         "cells": around(dd[0], dd[1], dd[2])})
+                         "cells": cells})
             dd[5] += 1
             if dd[5] < 6:
                 keep.append(dd)
