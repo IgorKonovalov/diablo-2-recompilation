@@ -458,9 +458,20 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   of each game type in each difficulty; 2 189 populations (2 000); 13 056 objects (300); 63 champion and 162 unique
   packs with 217 mods rolls (100 special monsters); 1 314 drops with an item (500) with no builder oracle; the record
   lists each input and remaining oracle with its count (after fix 1). **Phase 2 closed.**
-  **Next: Phase 3** (spec-writer, [entry](../backlog/2026-10-21-architect-spec-writer-plan-0048-phase-3-seed-to-world-spec.md)):
+  **Next: Phase 3** (spec-writer, [entry](../backlog/archive/2026-10-21-architect-spec-writer-plan-0048-phase-3-seed-to-world-spec.md)):
   `docs/specs/chain/README.md` and the *Inputs and oracles* updates, the re-creation marks in the owning spec, the
   chest writer and oracle 13's unreached branches under *Open questions*; then Phase 4. Reverser `review-fixes.md`
   rule 6 extended (a kept file renamed under a manifest's name; seen with `lane/p46m9`'s overwritten dev outputs).
   Review request [closed](../backlog/archive/2026-10-21-reverser-architect-review-plan-0048-phase-2-run-2.md); the
   lane's two ledger rows added (the review's row is the orchestrator's, with its usage).
+- **2026-10-21 — Phase 3 written, review requested (spec-writer, `lane/s48p3`, static, no harness).**
+  [specs/chain](../specs/chain/README.md) (`draft`, C 89 / I 7 / L 6): the call order A–H from the game seed to a
+  populated level and a drop, as a flowchart and a sequence diagram; the inputs by class with run 2's counts (oracle 25:
+  7 290 re-creations, 103 no unit); the retired oracles linked to their models and the remaining ones counted; an
+  entry-contract table; four worked examples from kept logs (`-seed 4802` to level 57, one oracle-free population of
+  it, a gold drop, two r2-xn2 re-creations with their marks). Re-creation marks in
+  [drlg/lifecycle § H5](../specs/drlg/lifecycle.md#h5-the-grid-marks-of-a-re-created-monster): `[C]` on the 1 903
+  compared, the dead sequences on the 140 outside r2-xn1, the call path `[I]`. *Inputs and oracles* and the stale
+  passages of the Phase 1 review's ruling 5 and chain/0001 § 5 updated in 13 specs. 6 open questions, the chest
+  interact-byte writer and MonEquip's unreachable branches among them. Phase 4 not started. Review request
+  [entry](../backlog/2026-10-21-spec-writer-architect-review-plan-0048-phase-3-seed-to-world.md).
