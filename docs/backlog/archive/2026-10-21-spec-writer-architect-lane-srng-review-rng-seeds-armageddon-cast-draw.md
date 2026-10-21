@@ -2,19 +2,19 @@
 from: spec-writer
 to: architect
 date: 2026-10-21
-status: open
+status: done
 context:
-  - ../specs/rng/seeds.md
-  - ../wiki/randomness.md
-  - ../findings/skills/0013-druid.md
-  - ../plans/0046-skills-function-catalogue.md
-resolution: ""
+  - ../../specs/rng/seeds.md
+  - ../../wiki/randomness.md
+  - ../../findings/skills/0013-druid.md
+  - ../../plans/0046-skills-function-catalogue.md
+resolution: "Reviewed 2026-10-21: accept with fixes (2: omission 2); do 124's bit 6 and list steps restated in rng/seeds; research map row rewritten (C 80 / I 13 / L 4); see plan 0046 log."
 ---
 
 Not blocking. Please review `lane/srng` (spec-writer, static docs only), which resolves the reverser entry on
-Armageddon's first period ([archive](archive/2026-10-21-reverser-spec-writer-rng-seeds-armageddon-first-period.md)).
+Armageddon's first period ([archive](2026-10-21-reverser-spec-writer-rng-seeds-armageddon-first-period.md)).
 
-- [rng/seeds](../specs/rng/seeds.md) *Reimplementation notes*: a new bullet, *Armageddon's cast draw*. One `[C]`
+- [rng/seeds](../../specs/rng/seeds.md) *Reimplementation notes*: a new bullet, *Armageddon's cast draw*. One `[C]`
   paragraph: do 124 (249 Armageddon, 250 Hurricane, 349 Diablogeddon) makes one `RNG_Range(caster+0x20, 0x10000)`
   after its record, `aurastate` and used-skill tests, kept in its frame, before `STATLIST_Alloc` or `StatListSetEnd`
   (ADR-0021; run:2026-10-21-cat-emu-dru; skills/0013 § 4); "no other draw" is scoped to the run's cases and to
@@ -26,7 +26,7 @@ Armageddon's first period ([archive](archive/2026-10-21-reverser-spec-writer-rng
 - *Open questions*: the `[L]` stays, narrowed to the node identity and the other-writer question, i.e. whether the
   first period's caster seed is `Init(r)`; owner a run that logs a first period. *Evidence*: skills/0013 §§ 4, 5 and
   the run.
-- Wiki [randomness](../wiki/randomness.md) *What is not known yet*: the cast draw (a run), the store (read from the
+- Wiki [randomness](../../wiki/randomness.md) *What is not known yet*: the cast draw (a run), the store (read from the
   code), the first firing still open; `based_on` date bumped.
 
 Tags: rng/seeds C 79 → 80, I 12 → 13, L 4 unchanged (front matter recounted by the gate's E6). The research map's

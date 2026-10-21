@@ -550,8 +550,8 @@ separate objects.
   [skills/0003 § 9](../../findings/skills/0003-handlers.md#9-re-seed-sites-rng0002--the-other-initialiser-sites))
 
 - **Armageddon's cast draw.** Skill do function 124 (`srvdofunc` 124: 249 Armageddon, 250 Hurricane, 349 Diablogeddon),
-  after its record test, its `aurastate` range test and its used-skill tests, makes one `r = RNG_Range(caster+0x20,
-  0x10000)` on the **caster's** seed and keeps `r` in its frame, before its `STATLIST_Alloc` or `StatListSetEnd`. In
+  after its record test, its `aurastate` range test, its used-skill tests and the setting of bit 6 of the caster's
+  `+0xC4`, makes one `r = RNG_Range(caster+0x20, 0x10000)` on the **caster's** seed and keeps `r` in its frame, before its `STATLIST_Alloc` or `StatListSetEnd`. In
   the run's cases it makes no other draw on the caster's seed before that call; the `auralencalc` it evaluates between
   the draw and that call ran on constant programs only, so a calc function's own draws are not covered. [C]
   (ADR-0021, up to `STATLIST_Alloc` @0x005C8295 or `StatListSetEnd` @0x005C82E1;
@@ -559,7 +559,8 @@ separate objects.
   [skills/0013 § 4](../../findings/skills/0013-druid.md#4-the-shape-and-timed-state-functions-do-116-120-124))
 
   After that call, from the reading: a `STATLIST_Alloc` giving 0 makes do 124 return 0 with nothing queued or stored;
-  otherwise it cancels the caster's unit events 5 for the skill id, queues unit event 5 at `frame + Param4` with
+  otherwise, after its list steps (`StatListSetEnd`, event 12, `SKILLS_ApplyAuraStats`, stats 350 and 351), it
+  cancels the caster's unit events 5 for the skill id, queues unit event 5 at `frame + Param4` with
   `(id, lvl)`, and stores `r` with `UnitSkillSet18(used node, r)`. For Armageddon and Diablogeddon (state 145,
   `srvactivefunc` 146) that event runs the periodic function above, which reads the `+0x18` of
   `SKILLS_GetUnitSkill(caster, id)`'s node and seeds the caster with `Init` of it. So the first period re-seeds the

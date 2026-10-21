@@ -18,7 +18,8 @@ against all of them before you file the review request. Categories are those of 
    minions and the staff-mods type condition (`lane/wiki5`, [0039](../../../../docs/plans/done/0039-backlog-sweep-4.md)); warps F1's
    `Warp` = −1 case (`lane/p38s2`, 0038); the store record's 4505 scoping (`lane/p43t`, 0043).
 4. **Take the order of steps from the anchored instructions**, not from a summary. Seen: the release
-   order (`lane/p38s`, 0038).
+   order (`lane/p38s`, 0038); do 124's bit 6 and list steps dropped around its draw and store (`lane/srng`,
+   [0046](../../../../docs/plans/0046-skills-function-catalogue.md)). Restate every step between two anchored calls.
 5. **Recount with a script**: front-matter tags, every number you restate, numbers in commit subjects.
    Seen: six primitives for seven (`lane/wiki5`, 0039); "dispatch" listed as raised in a subject
    (`lane/p38s3`, 0038); "22 claims" listed as 10 + 5 + 6 (`lane/p43s`, 0043).
