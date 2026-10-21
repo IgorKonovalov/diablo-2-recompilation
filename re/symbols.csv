@@ -82,6 +82,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00472280,func,RNG_RangeOffset,"uint __fastcall RNG_RangeOffset(uint * seed, int base, int n)",C,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00473C90,func,sub_00473C90_ClientSetOutdoors,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x00477CA0,func,sub_00477CA0_ClientGameCreateMsg,,I,items/economy,docs/findings/items/0011-economy.md
+0x00478A20,func,sub_00478A20_PetTypeRecord,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x00483360,func,sub_00483360_MulDiv,,C,monsters/pool,docs/findings/monsters/0004-stats.md
 0x004833E0,func,CHARSTATS_GetRecord,,I,stats/aggregate,docs/findings/stats/0001-aggregate.md
 0x00483410,func,SETS_GetRecord,,I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -433,6 +434,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00552E90,func,sub_00552E90_ItemSeedInit,,C,rng/seeds,docs/findings/items/0004-uniques-sets.md
 0x00552F60,func,sub_00552F60_GameFindUnit,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00552FD0,func,sub_00552FD0_UnitGetOwner,,I,skills/missiles,docs/findings/skills/0002-missiles.md
+0x00553010,func,sub_00553010_UnitStoredUnit9C,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x00553220,func,sub_00553220_UnitFrameReset,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00553380,func,sub_00553380_UnitSetEvent,,I,items/cube,docs/findings/items/0008-cube.md
 0x00553720,func,sub_00553720_PortalPartnerGet,,I,quests/travel,docs/findings/quests/0002-travel.md
@@ -514,6 +516,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0055C730,func,ITEMS_DetachFromOwner,,I,stats/aggregate,docs/findings/stats/0001-aggregate.md
 0x0055C850,func,sub_0055C850_GoldPickup,,I,items/economy,docs/findings/items/0011-economy.md
 0x0055CC90,func,sub_0055CC90_ItemQuestGate,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x0055E170,func,sub_0055E170_PlayerUseInvItem,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x0055E9B0,func,sub_0055E9B0_ItemToBelt,,C,player/creation,docs/findings/player/0001-creation.md
 0x0055EEA0,func,sub_0055EEA0_CursorItemConsume,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0055CA00,func,sub_0055CA00_QuestCodePairTest,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
@@ -527,6 +530,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00560200,func,sub_00560200_InvPlaceItem,,C,items/cube,docs/findings/items/0008-cube.md
 0x005606B0,func,sub_005606B0_ItemEquip,,I,player/creation,docs/findings/player/0001-creation.md
 0x005616A0,func,sub_005616A0_PlayerSwapWeapons,,I,stats/aggregate,docs/findings/stats/0001-aggregate.md
+0x00562390,func,sub_00562390_PlayerUseBeltItem,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x00562660,func,ITEMS_InsertSocket,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x00562C40,func,sub_00562C40_ReplenishStep,,I,items/economy,docs/findings/items/0011-economy.md
 0x00562D30,func,ITEMEVENT_Replenish,,I,items/economy,docs/findings/items/0011-economy.md
@@ -584,6 +588,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0056BC70,func,sub_0056BC70_CountUnitsCb,,I,skills/catalogue,docs/findings/skills/0009-amazon.md
 0x0056BC80,func,sub_0056BC80_CountUnitsInRange,,I,skills/catalogue,docs/findings/skills/0009-amazon.md
 0x0056BD10,func,sub_0056BD10_NearestUnitInRange,,I,skills/catalogue,docs/findings/skills/0006-missile-hit-1-29.md
+0x0056BD90,func,sub_0056BD90_PetLimitForSkill,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x0056BEC0,func,sub_0056BEC0_UseCharge,,I,items/economy,docs/findings/items/0011-economy.md
 0x0056C2D0,func,sub_0056C2D0_AttackDeliverMeleeOnly,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0056C310,func,sub_0056C310_ItemConsumeOne,,I,items/economy,docs/findings/items/0011-economy.md
@@ -593,6 +598,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0056CA40,func,SKILL_AttackStart,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0056CAB0,func,sub_0056CAB0_SkillSt65AmmoCheck,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x0056CAF0,func,sub_0056CAF0_SkillSt02Kick,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
+0x0056CBA0,func,sub_0056CBA0_SkillSt03Unsummon,,I,skills/catalogue,docs/findings/skills/0015-item.md
+0x0056CC20,func,sub_0056CC20_SkillDo04Unsummon,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x0056CD50,func,SKILLS_NextPeriodicFrame,,C,stats/states,docs/findings/stats/0002-states.md
 0x0056CF40,func,sub_0056CF40_PortalPartnerCreate,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x0056D130,func,sub_0056D130_PortalObjectCreate,,I,save/d2s,docs/findings/save/0002-quest-words.md
@@ -602,10 +609,12 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0056D4E0,func,sub_0056D4E0_MissNovaCreate,,I,skills/catalogue,docs/findings/skills/0007-missile-hit-31-59.md
 0x0056D940,func,sub_0056D940_SpawnOwnedMonster,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0056DDE0,func,sub_0056DDE0_UnitsInRangeCall,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
+0x0056DE40,func,sub_0056DE40_PassivesPetRefresh,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x0056DEB0,func,sub_0056DEB0_UnitSkillAdd,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x0056E0C0,func,SKILLS_RollElemDamage,,I,stats/states,docs/findings/stats/0002-states.md
 0x0056E170,func,sub_0056E170_SkillRollPhys,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x0056E2F0,func,sub_0056E2F0_MonTestN,,I,skills/catalogue,docs/findings/skills/0010-necromancer.md
+0x0056E390,func,sub_0056E390_CorpsePickNear,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x0056E450,func,sub_0056E450_SkillTargetCellFree,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x0056E510,func,sub_0056E510_UnitMeleeReachPlus4,,I,skills/catalogue,docs/findings/skills/0009-amazon.md
 0x0056E5B0,func,sub_0056E5B0_UnitWalkVelocity,,I,player/creation,docs/findings/player/0001-creation.md
@@ -650,11 +659,14 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00573CB0,func,sub_00573CB0_MonStatsInit,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00574250,func,sub_00574250_MonsterInit,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x005749B0,func,PETS_SetInfo,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
+0x00574A20,func,sub_00574A20_PetTypeOfGuid,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x00574BD0,func,PETS_GetInfo,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00574EC0,func,PETS_GetUnitOfType,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
+0x005750E0,func,sub_005750E0_PetRemove,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x005751A0,func,PETS_OnDeath,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00575720,func,sub_00575720_PetGroupClear,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x00575850,func,sub_00575850_PetLimit,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
+0x00575900,func,sub_00575900_PetLimitRefresh,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x00575D90,func,sub_00575D90_PetAdd,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x00575E90,func,PETS_Add,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00575FA0,func,sub_00575FA0_ItemIsCarry1Unique,,I,items/economy,docs/findings/items/0011-economy.md
@@ -775,12 +787,16 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00582940,func,SHRINE_HealthExchange,,I,stats/states,docs/findings/stats/0002-states.md
 0x005829A0,func,SHRINE_ManaExchange,,I,stats/states,docs/findings/stats/0002-states.md
 0x00582A30,func,sub_00582A30_PortalToTownAtUnit,,I,quests/travel,docs/findings/quests/0002-travel.md
+0x00582DA0,func,SHRINE_Storm,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x00583050,func,sub_00583050_ShrineWarping,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x005830E0,func,SHRINE_Exploding,,I,skills/catalogue,docs/findings/skills/0015-item.md
+0x00583410,func,SHRINE_Poison,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x00583740,func,sub_00583740_AttackRatingCalc,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x00583840,func,SHRINE_StatValue,,I,stats/states,docs/findings/stats/0002-states.md
 0x005839B0,func,SHRINE_Combat,,I,stats/states,docs/findings/stats/0002-states.md
 0x00583A70,func,SHRINE_Stamina,,I,stats/states,docs/findings/stats/0002-states.md
 0x00583B30,func,SHRINE_TimedStat,,I,stats/states,docs/findings/stats/0002-states.md
+0x00583BD0,func,sub_00583BD0_ShrineSkillRemoveCB,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x00583BF0,func,SHRINE_Skill,,I,stats/states,docs/findings/stats/0002-states.md
 0x00583C70,func,OBJOP_Shrine,,I,stats/states,docs/findings/stats/0002-states.md
 0x00583E70,func,sub_00583E70_WirtLegDrop,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
@@ -873,6 +889,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0058C290,func,sub_0058C290_A5Q5_NpcMessage,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0058C440,func,sub_0058C440_A5Q5_NpcTalk,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0058C5C0,func,sub_0058C5C0_ExpGrantCapped,,I,player/creation,docs/findings/player/0001-creation.md
+0x0058C8D0,func,sub_0058C8D0_A5Q5_AncientDeathMissile,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x0058CBA0,func,sub_0058CBA0_A5Q5_LevelChange,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0058CCF0,func,sub_0058CCF0_A5Q5_NpcGate,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0058CF00,func,sub_0058CF00_A5Q5_SummitPortalAdd,,I,quests/progression,docs/findings/quests/0001-progression.md
@@ -1604,7 +1621,10 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005BE1C0,func,sub_005BE1C0_InvClearUseMark,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x005BE290,func,ITEMUSE_TownPortal,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x005BEDA0,func,sub_005BEDA0_ItemUseTimedState,,C,data/calc,docs/findings/data/0005-calc.md
+0x005BF170,func,sub_005BF170_ItemUseCastFireBall,,I,skills/catalogue,docs/findings/skills/0015-item.md
+0x005BF1F0,func,sub_005BF1F0_ItemUseCastFireBallXY,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x005BF240,func,sub_005BF240_ItemUse,,I,data/calc,docs/findings/data/0005-calc.md
+0x005BF3D0,func,sub_005BF3D0_SkillDo113UseBookScroll,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x005BF510,func,ITEMAURA_Start,,I,stats/states,docs/findings/stats/0002-states.md
 0x005BF5D0,func,ITEMAURA_Stop,,I,stats/states,docs/findings/stats/0002-states.md
 0x005BF670,func,sub_005BF670_StatEv06ThornsPhys,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
@@ -1736,6 +1756,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005C9EA0,func,sub_005C9EA0_SkillDo24FireWall,,I,skills/catalogue,docs/findings/skills/0008-sorceress.md
 0x005CA030,func,sub_005CA030_SkillDo25Enchant,,I,skills/catalogue,docs/findings/skills/0008-sorceress.md
 0x005CA1B0,func,sub_005CA1B0_SkillDo26ChainLightning,,I,skills/catalogue,docs/findings/skills/0008-sorceress.md
+0x005CA260,func,sub_005CA260_SkillDo151ItemChainLightning,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x005CA360,func,sub_005CA360_SkillTeleportDo,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x005CA3E0,func,sub_005CA3E0_SkillDo28MissileAtTarget,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x005CA470,func,sub_005CA470_StormStrikeAt,,I,skills/catalogue,docs/findings/skills/0008-sorceress.md
@@ -1863,6 +1884,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005FC860,func,sub_005FC860_BaalCloneSpawn,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x005FD350,func,sub_005FD350_SpawnClassCellTest,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005FD470,func,sub_005FD470_MonSkillTargetOk,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
+0x005FD850,func,sub_005FD850_ItemTargetRandomPoint,,I,skills/catalogue,docs/findings/skills/0015-item.md
+0x005FD9C0,func,sub_005FD9C0_ItemTargetCorpse,,I,skills/catalogue,docs/findings/skills/0015-item.md
+0x005FDA10,func,sub_005FDA10_ItemTargetStoredUnit,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x005FDCA0,func,sub_005FDCA0_ItemCastAtUnit,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x005FDD60,func,sub_005FDD60_ItemCastAtXY,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x005FDF80,func,sub_005FDF80_FileSize,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
@@ -2248,6 +2272,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0063DA70,func,sub_0063DA70_CompositeItemLayer,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0063DFA0,func,INV_GetNextItem,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0063DFD0,func,sub_0063DFD0_InvNodeItem,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x0063E020,func,sub_0063E020_ItemNodePage,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x0063E510,func,sub_0063E510_CompositeFromEquip,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0063E860,func,sub_0063E860_MonIsNpc,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x0063E940,func,MONSTATS_IsDemon,,I,combat/formulas,docs/findings/combat/0001-formulas.md
@@ -2482,6 +2507,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0065A390,func,TC_LoadAll,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0065A400,func,sub_0065A400_MonsterTablesLoad,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x0065A800,func,sub_0065A800_NearestUnitFind,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x0065A950,func,sub_0065A950_RoomUnitSearchInit,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x0065B5E0,func,sub_0065B5E0_CompositRecord,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0065B620,func,sub_0065B620_ArmTypeRecord,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0065C310,func,QUESTRECORD_GetState,,I,save/d2s,docs/findings/save/0002-quest-words.md

@@ -999,3 +999,27 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   stat-event handlers 20, 21, 30, charges, the shrine missiles, the object and quest `MissileCreateAt` sites, with the
   carried `ITEMSKILL_Cast` helper items), on all the class batches' conventions; then 8a, 8b, 8c, unless the
   monster-AI plan pulls one forward. Phase 2 still waits for 0045·P3's review.
+- **2026-10-21 — Phase 1 batch 10 `item` landed for review (reverser, `lane/p46m12`, static, no harness).** Unsummon's
+  start 3 and do 4, do 113 (rows 217–220) and do 151 (row 53's `ItemEffect`), and the callers: `ITEMSKILL_Cast` with
+  its `ItemTarget` helpers 2–4 and its two callers, the stat-event handlers 20, 21, 30, `SKILLS_PayCost`'s charge path,
+  the shrine functions 19, 21, 22 and the object and quest `MissileCreateAt` sites
+  ([skills/0015](../findings/skills/0015-item.md)). All four entries and eleven callers emulated
+  (run:2026-10-21-cat-emu-item, `tools/skills_catalogue_emu.py --batch item`, `check.txt` `22402718…`,
+  `manifest.sha256` `3e974e32…`): five families, 12 000 cases, 0 mismatches, 31 boundary/call-site triples (site
+  control 4 936 of 4 936), three seeds compared in every case; five to nine negative controls per family, the thin
+  ones equal to their deciding classes on the `CLASS` lines. The quest sites and `0x0058C8D0` are read and pinned, not
+  emulated (inside quest handlers). The same tool reproduces 9a–9d and the seven class batches byte for byte
+  (`repro.txt`). **Carried items:** `ITEMSKILL_Cast` gives the `ItemTarget` 2 helper **its own caster**
+  (`0x005FDB9B`), the handler's unit or, for handler 20 with `ItemTgtDo` (Teleport), the event's other unit; helpers 3
+  and 4 do not draw (run and static closures); `sub_00575900_PetLimitRefresh`, run by `STATE_DefaultRemoveCB` and the
+  skill shrine's remove callback, recomputes the pet limits and removes pets above a lowered `petmax` (`[I]`);
+  helpers' symbols added. Draws before the boundaries: handlers 20/30 one inline step and 21 `RNG_RangeB(100)` on the
+  handler's unit, helper 2 two steps on the caster's seed, shrines 21/22 `RNG_RangeB(Arg1 − Arg0)` on the shrine's.
+  Surprises: the item effect flag is 1 only from handler 20 without `ItemTgtDo`; `ItemTarget`'s low byte only; the
+  exploding and poison shrines drop 5–9 potions; Unsummon's `PetRemove` flag is a `push 1` left across
+  `UnitSkillGet18`. Tags: 29 `[C]`, 22 `[I]`, 4 `[L]` bullets; 26 symbols added (`I`). Dated notes in skills/0001
+  § 10 and skills/0003 §§ 2, 3. Review request
+  [to the architect](../backlog/2026-10-21-reverser-architect-lane-p46m12-review-plan-0046-batch-item.md); column
+  readers [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-item-skills-pettype-books-shrines-column.md);
+  [to the spec-writer](../backlog/2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md)
+  on combat/delivery E5.

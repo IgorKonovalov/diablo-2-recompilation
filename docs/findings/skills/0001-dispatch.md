@@ -545,6 +545,13 @@ return 0;
   it is given twice per try, inline (`low % 40 − 20` added to x and to y). It tries at most 10 times, until
   `0x0064D870` returns 0. The one stock `ItemTarget` 2 row is Teleport. Which unit it is given (caster or target) is
   unfollowed, and so are 3's and 4's helpers (`p45b-reread.txt` R5). (0x005FD900–0x005FD98A)
+  *2026-10-21 (plan 0046 batch `item`), emulated:* `ITEMSKILL_Cast` gives helper 2 **its own caster** (`EDX = ESI`,
+  `0x005FDB9B`), whose seed the two steps per try advance before the first collision test (`[C]` under ADR-0021);
+  the caster is the handler's unit, or the other unit for handler 20 with `ItemTgtDo`, which Teleport has
+  ([skills/0015 § 5](0015-item.md#5-itemskill_cast-its-itemtarget-helpers-and-its-callers)). Helpers 3 and 4 make no
+  draw before their boundaries and their static closures hold none. The effect flag is 1 only from handler 20 without
+  `ItemTgtDo`, so `ItemEffect` 36 and 151 apply only on attack, kill or hit ([skills/0015 § 6](0015-item.md#6-the-stat-event-handlers-20-21-30)).
+  (0x005FDB9B, 0x005C054E, fn:sub_005FD850_ItemTargetRandomPoint@0x005FD850)
 - [I] So an item cast pays no mana, uses no ammunition and sets no delay (`pay` = 0), and with the effect flag runs
   the do function `ItemEffect` when it is > 1: Frost Nova and Nova (36), Chain Lightning (151); the other 69 stock
   `ItemEffect` rows hold 1. (fn:SKILLS_SrvDo@0x0056F7F0, dispatch-rows.txt)
@@ -757,7 +764,8 @@ return 1;
 - [L] *2026-10-20 (Phase 1b):* the `ItemTarget` helpers' draws. 2 (`0x005FD850`) steps the seed at `+0x20` of
   the unit it is given 2 to 20 times; which unit that is (caster or target) is unfollowed. Whether 3 (`0x005FD9C0`,
   a corpse pick through `0x0056E390`) or 4 (`0x005FDA10`) draws is not read. Phase 2 meets 2 only through an item
-  Teleport cast.
+  Teleport cast. *2026-10-21 (plan 0046 batch `item`):* answered in [skills/0015 § 5](0015-item.md#5-itemskill_cast-its-itemtarget-helpers-and-its-callers)
+  (helper 2 is given the cast's caster; 3 and 4 do not draw). (0x005FDB9B, fn:sub_005FD9C0_ItemTargetCorpse@0x005FD9C0)
 - [L] Which frame of a mode carries event code 1 or 2, and `Unit+0x4E` for monsters: phase (4) (animation timing);
   Phase 2 logs it.
 - ~~The `srvprgfunc` entries the finisher calls (36–41, 143) and `0x00571AA0`.~~ *2026-10-20:* read in

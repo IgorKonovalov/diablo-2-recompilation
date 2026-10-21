@@ -94,6 +94,18 @@ the assassin start functions 22-28, do functions 33-52 and 54, and the progressi
   trap_ass   do 43, 44, 45, 47, 48, 49, 51, 54 (the traps' spawn helper, Cloak of Shadows, Blade Fury, the shadows,
              Mind Blast, Blade Shield)
 
+Batch item (`--batch item`, files under workspace/logs/skills-cat-item/, draws from random.Random("catitem-<family>")):
+the item and general entries and the callers of skills that are code paths (plan 0046 batch 10):
+  use_item    start 3, do 4 (Unsummon: the pet lists, PetType unsummon, PetRemove), do 113 (the scroll and book rows:
+              the inventory walk up to InvUse / BeltUse), do 151 (Chain Lightning's item effect: SkillMissileCreate)
+  cast_item   ITEMSKILL_Cast called directly and through ItemCastAtUnit / ItemCastAtXY (the aim, the out words,
+              ItemTarget 1-4: helper 2's two steps up to COLL_PatternTest, helper 3 up to its corpse pick, helper 4;
+              ItemCheckStart; up to SKILLS_SrvStart / SKILLS_SrvDo; the restore after a refusal)
+  event_item  the stat-event handlers 20, 21, 30 up to ItemCastAtUnit / ItemCastAtXY
+  shrine_item the shrine functions 19 (up to the unit search), 21 and 22 (the count drawn on the shrine's seed, up to
+              ItemIndexByCode or the first MissileCreate)
+  cost_item   SKILLS_PayCost (the charge path up to UseCharge, the mana cost up to BloodManaPay / UnitAddStat)
+
 Each check prints `CAT9A <family> key=value ...`: cases, matches, mismatches (bad), the negative control's mismatch
 count (neg, must be > 0), traced accesses outside the stack, spec and case memory (traced), those outside the declared
 read set (undeclared, must be 0), cases stopped other than at a boundary (stopped, must be 0), then the outcome and
@@ -10862,6 +10874,1334 @@ def cmd_static_ass(a):
 
 
 
+# ##################################################################################################################
+# Batch item (plan 0046 Phase 1 batch 10, lane/p46m12): the item and general entries Unsummon start 3 (0x0056CBA0)
+# and do 4 (0x0056CC20), do 113 (0x005BF3D0, the scroll and book rows) and do 151 (0x005CA260, Chain Lightning's
+# ItemEffect), and the callers of skills that are code paths: ITEMSKILL_Cast (0x005FDA80) with its ItemTarget
+# helpers 2-4 (0x005FD850, 0x005FD9C0, 0x005FDA10) and its two callers ItemCastAtUnit / ItemCastAtXY (0x005FDCA0,
+# 0x005FDD60), the stat-event handlers 20, 21, 30 (0x005C0470, 0x005C05A0, 0x005C0670), the shrine functions 19,
+# 21, 22 of g_ShrineEffects (0x00582DA0, 0x005830E0, 0x00583410) and SKILLS_PayCost (0x0056BFE0, the charge path).
+# Emulated (new): MonsterOwner on the target, 0x00574A20 (the pet type of a guid), 0x00478A20 (the PetType record),
+# INV_GetFirstItem, INV_GetNextItem, 0x0063DFD0, ITEMS_UnitIsType with ITEMS_GetType and ITEMS_GetRecord,
+# ITEMS_GetSuffix, BOOKS_GetRecord, 0x0063E020, UnitGetSubX/Y, UnitGetGame, UNIT_HasState, UnitSetPathTargetUnit,
+# PathSetTargetPoint, 0x00553010, StatListGetStat, SKILLS_GetRecord, UnitGetRoom on objects, SkillNodeId and
+# 0x00643AD0. Observed (new): 0x005750E0 (PetRemove), 0x0055E170 (InvUse), 0x00562390 (BeltUse), SKILLS_SrvStart,
+# SKILLS_SrvDo, COLL_PatternTest, 0x0056E390 (CorpsePick), ItemCastAtUnit / ItemCastAtXY (from the handlers),
+# 0x0065A950 (UnitSearch), ItemIndexByCode, UseCharge, BloodManaPay, UnitAddStat.
+# ##################################################################################################################
+FNI = {
+    "st3": 0x0056CBA0, "do4": 0x0056CC20, "do113": 0x005BF3D0, "do151": 0x005CA260,
+    "cast": 0x005FDA80, "atunit": 0x005FDCA0, "atxy": 0x005FDD60,
+    "ev20": 0x005C0470, "ev21": 0x005C05A0, "ev30": 0x005C0670,
+    "sh19": 0x00582DA0, "sh21": 0x005830E0, "sh22": 0x00583410,
+    "pay": 0x0056BFE0,
+}
+BOUNDS_I = {
+    0x005750E0: "PetRemove", 0x0055E170: "InvUse", 0x00562390: "BeltUse", 0x0056ECB0: "SkillMissileCreate",
+    0x0056F640: "SrvStart", 0x0056F7F0: "SrvDo", 0x0064D870: "PatternTest", 0x0056E390: "CorpsePick",
+    0x005717C0: "UnitMsg99", 0x00571840: "UnitMsg9A", 0x0065A950: "UnitSearch", 0x0059FA30: "MissileCreate",
+    0x00633680: "ItemIndexByCode", 0x0056BEC0: "UseCharge", 0x005D2B60: "BloodManaPay", 0x006272B0: "UnitAddStat",
+}
+CASTERS_I = {0x005FDCA0: "ItemCastAtUnit", 0x005FDD60: "ItemCastAtXY"}   # boundaries of the handler family only
+BOUND_BY_NAME.update({v: k for k, v in BOUNDS_I.items()})
+BOUND_BY_NAME.update({v: k for k, v in CASTERS_I.items()})
+ALLBOUND.update(BOUNDS_I)
+ALLBOUND.update(CASTERS_I)
+ITM = [0x12700000 + 0x1000 * i for i in range(4)]   # items: +0x14 data (+0x400), +0x2C path (+0x800), +0x5C list (+0xC00)
+INVI = 0x12740000                    # the caster's inventory (+0x00 magic, +0x0C first item)
+ITREC_I = 0x12750000                 # item records (0x1A8): +0x11E type, +0x120 second type
+NITEMI = 6
+EQ_I = 0x12760000                    # DataTables+0xC04: the item-type equivalence words (stride +0xC00, count +0xBFC)
+NITYPE = 40
+EQW = (NITYPE + 31) // 32
+BOOKREC = 0x12770000                 # Books records (0x20): +0x08 ScrollSkill, +0x0C BookSkill
+NBOOK = 3
+BOOKS = (0x0096CC60, 0x0096CC64)     # BOOKS_GetRecord's count and table (.data, set in the spec)
+PTREC = 0x12780000                   # DataTables+0xBE8: PetType records (0xE0), +0x04 the behaviour bits
+PETS = 0x12790000                    # PlayerData+0x44: the pet lists (+0x00 the array, 12 bytes per type)
+PARR = PETS + 0x100
+PNODE = [PETS + 0x400 + 0x40 * i for i in range(8)]   # pet nodes: +0x04 guid, +0x14 next
+OUTP = 0x127A0000                    # ITEMSKILL_Cast's out words (type, guid, x, y) when called directly
+X2 = 0x127B0000                      # a second unit (an aim or the stored attacker)
+X2P = X2 + 0x400
+PKT2 = 0x127C0000                    # a stat event's packet (+0x00 bit 5, +0x04 bit 2)
+CTX = 0x127D0000                     # a shrine call's context: +0x00 game, +0x04 the shrine, +0x08 the operator
+SHO = 0x127E0000                     # the shrine object and its path
+SHOP = SHO + 0x400
+SHREC = 0x127F0000                   # the Shrines record (+0x04 Arg0, +0x08 Arg1)
+SKR_I = OSK + 0x700                  # the used node's record (+0x00 s16 id), cost family
+SEEDS_I = (U + 0x20, T + 0x20, SHO + 0x20)
+RS_BOOKS = (BOOKS[0], BOOKS[1] + 4, "r", "BOOKS_GetRecord's count and table 0x0096CC60/0x0096CC64 (.data, set in "
+            "the spec)")
+RS_JTCAST = (0x005FDC88, 0x005FDC98, "r", "ITEMSKILL_Cast's ItemTarget jump table 0x005FDC88, 4 entries (.text)")
+RS_ITEM = [RS_HASH, RS_SKN, RS_CALC_JT, RS_BITMASK9C, RS_ITEMS, RS_BOOKS, RS_JTCAST, RS_COOKIE]
+SHIFT_I, MASKL_I = 6, 0x3F           # DataTables+0xC6C / +0xC70 (the item-skill layer's shift and mask), stock-like
+
+
+def mem_item(observe):
+    lines = ["dword %08x %08x" % (G_PDATATABLES, DT),
+             "dword %08x %08x" % (DT + 0xB64, MREC), "dword %08x %08x" % (DT + 0xB6C, NREC),
+             "dword %08x 6b3a11f5" % COOKIE,
+             "dword %08x %08x" % (DT + 0xB98, SREC), "dword %08x %08x" % (DT + 0xBA0, NSREC),
+             "dword %08x %08x" % (DT + 0x40, SPOOL),
+             "dword %08x %08x" % (DT + 0xBCC, ISC), "dword %08x %08x" % (DT + 0xBD4, NISC),
+             "dword %08x %08x" % (DT + 0xC4, NSTATES), "dword %08x %08x" % (DT + 0xBF0, NPET),
+             "dword %08x %08x" % (DT + 0xBE8, PTREC),
+             "dword %08x %08x" % (DT + 0xBFC, NITYPE), "dword %08x %08x" % (DT + 0xC00, EQW),
+             "dword %08x %08x" % (DT + 0xC04, EQ_I),
+             "dword %08x %08x" % (DT + 0xC6C, SHIFT_I), "dword %08x %08x" % (DT + 0xC70, MASKL_I),
+             "dword %08x %08x" % (0x0096CA58, NITEMI), "dword %08x %08x" % (0x0096CA5C, ITREC_I),
+             "dword %08x %08x" % (BOOKS[0], NBOOK), "dword %08x %08x" % (BOOKS[1], BOOKREC)]
+    lines += ["observe %08x" % a for a in sorted(observe)]
+    lines += ["guard %08x" % a for a in FATAL + ALLOC if a not in observe]
+    return lines
+
+
+def lines_i(c, ecx, edx, args, dumps=()):
+    out = list(c.w)
+    out.append("d %08x %d" % (STK_LO, STK_LEN))
+    for a in SEEDS_I:
+        out.append("d %08x 8" % a)
+    out.append("d %08x 4" % (U + 0xC4))
+    out.append("d %08x 4" % ARG2)
+    for a, n in dumps:
+        out.append("d %08x %d" % (a, n))
+    out.append("call %08x %08x %08x" % (c.fn, ecx & M32, edx & M32) + "".join(" %08x" % (a & M32) for a in args))
+    return out
+
+
+def put_seeds_i(c, rnd, row):
+    s = [(rnd.getrandbits(32), rnd.getrandbits(32)) for _ in SEEDS_I]
+    for a, v in zip(SEEDS_I, s):
+        c.put(a, le32(v[0]) + le32(v[1]))
+    row["seeds"] = s
+
+
+def finish_i(c, rnd, row, cases, exp, ecx, edx, args, dumps=()):
+    if "seeds" not in row:
+        put_seeds_i(c, rnd, row)
+    row["dumps"] = [list(d) for d in dumps]
+    cases += lines_i(c, ecx, edx, args, dumps)
+    exp.append(json.loads(json.dumps(row)))
+
+
+def mem_i(row, seeds=None, bit6=None, mem=None):
+    """The words compared in every case: the three seeds (as given, else unchanged), U+0xC4 (bit 6 set or cleared
+    when bit6 is True or False, unchanged when None), plus `mem`."""
+    s = [tuple(x) for x in row["seeds"]]
+    for i, v in (seeds or {}).items():
+        s[i] = tuple(v)
+    m = {a: le32(v[0]) + le32(v[1]) for a, v in zip(SEEDS_I, s)}
+    c4 = row["c4"]
+    if bit6 is True:
+        c4 |= 0x40
+    elif bit6 is False:
+        c4 &= ~0x40 & M32
+    m[U + 0xC4] = le32(c4)
+    m.update(mem or {})
+    return m
+
+
+def ret_i(row, eax, pop, seeds=None, bit6=None, mem=None):
+    return ("ret", eax, pop, mem_i(row, seeds, bit6, mem))
+
+
+def obs_i(row, name, regs, args, site, seeds=None, bit6=None, mem=None, stk=None, ptrs=None, frame=None):
+    return ("obs", name, regs, args, mem_i(row, seeds, bit6, mem), stk or {}, site, ptrs or {}, frame or {})
+
+
+def put_keys(c, unit, sl, keys, flags):
+    """unit+0x5C -> a stat list holding {key: value} (key = stat << 16 | layer), sorted, at +0x24/+0x28 (or
+    +0x48/+0x4C with flags bit 31); each key's ISC record's +0x05 written 0 (no floor)."""
+    c.put(unit + 0x5C, le32(sl))
+    ao, co = (0x48, 0x4C) if flags & 0x80000000 else (0x24, 0x28)
+    ks = sorted(keys)
+    arr = sl + 0x100
+    c.put(sl + 0x10, le32(flags))
+    c.put(sl + ao, le32(arr))
+    c.put(sl + co, le16(len(ks)))
+    for i, k in enumerate(ks):
+        c.put(arr + 8 * i, le32(k) + le32(keys[k] & M32))
+    for k in ks:
+        if (k >> 16) < NISC:
+            c.put(ISC + 0x144 * (k >> 16) + 5, b"\x00")
+
+
+def stat_key(row, key):
+    """StatListGetStat's value for a key the case wrote (0 when absent or no list)."""
+    kv = row.get("keys") or {}
+    return s32(kv.get(str(key), 0))
+
+
+def find_i(row, typ, guid):
+    """GameFindUnit over the units the case put in the hash (row["hash"]: 'type:guid' -> address)."""
+    return row["hash"].get("%d:%d" % (typ, guid & M32), 0)
+
+
+def put_found(c, rnd, row, base, typ, guid):
+    put_unit_found(c, rnd, base, typ, guid)
+    row.setdefault("hash", {})["%d:%d" % (typ, guid & M32)] = base
+
+
+# ------------------------------------------------------------------------------------------- the four entries
+USE_ORDER_I = ("st3", "do4", "do113", "do151")
+
+
+def put_pets(c, rnd, row, tg):
+    """PlayerData (U+0x14) +0x44 -> the pet lists: the array's entries 1..NPET-1 (12 bytes each, +0x00 the list
+    head; nodes +0x04 guid, +0x14 next); the target's guid in one list (the type) or none."""
+    c.put(U + 0x14, le32(UDATA))
+    if rnd.random() < 0.08:
+        c.put(UDATA + 0x44, le32(0))
+        row["ptype"] = 0
+        return
+    c.put(UDATA + 0x44, le32(PETS))
+    c.put(PETS, le32(PARR))
+    want = tg is not None and rnd.random() < 0.75
+    ptype = rnd.randrange(1, NPET) if want else 0
+    heads = {i: [] for i in range(1, NPET)}
+    used = 0
+    for i in rnd.sample(range(1, NPET), 3):
+        heads[i] = [PNODE[used + j] for j in range(rnd.randrange(1, 3))]
+        used += len(heads[i])
+    if want and not heads[ptype]:
+        heads[ptype] = [PNODE[used]]
+        used += 1
+    for i in range(1, NPET):
+        ch = heads[i]
+        c.put(PARR + 12 * i, le32(ch[0] if ch else 0))
+        for j, nd in enumerate(ch):
+            g = (rnd.getrandbits(32) | 1) ^ 0x80 if tg is None else (tg ^ (0x100 << j) ^ i)
+            c.put(nd + 0x04, le32(g))
+            c.put(nd + 0x14, le32(ch[j + 1] if j + 1 < len(ch) else 0))
+    if want:
+        nd = rnd.choice(heads[ptype])
+        c.put(nd + 0x04, le32(tg))
+    row["ptype"] = ptype
+
+
+def put_owner_t(c, rnd, row):
+    """MonsterOwner(T) (0x0058F0D0): T+0x14 -> data +0x28 -> a link whose +0x28 game, +0x2C guid, +0x30 type find
+    the owner (U, an absent unit, or none)."""
+    row["towner"] = 0
+    if not row["t"] or row["tt"] != 1:
+        return
+    k = rnd.random()
+    if k < 0.08:
+        c.put(T + 0x14, le32(0))
+        return
+    c.put(T + 0x14, le32(TDATA))
+    if k < 0.15:
+        c.put(TDATA + 0x28, le32(0))
+        return
+    c.put(TDATA + 0x28, le32(TLINK))
+    if k < 0.2:
+        c.put(TLINK + 0x28, le32(0))
+        return
+    c.put(TLINK + 0x28, le32(GAME))
+    if k < 0.85:
+        c.put(TLINK + 0x2C, le32(row["ug"]))
+        c.put(TLINK + 0x30, le32(row["ut"]))
+        put_found(c, rnd, row, U, row["ut"], row["ug"])
+        row["towner"] = U
+    else:
+        og = (rnd.getrandbits(32) & ~0x7F) | 0x44
+        c.put(TLINK + 0x2C, le32(og))
+        c.put(TLINK + 0x30, le32(0))
+        c.put(hash_slot(0, og), le32(0))
+
+
+def put_items(c, rnd, row):
+    """U+0x60 -> the inventory (magic 0x01020304, +0x0C the first item) and a chain of up to four items (type,
+    class, guid, data +0x3E suffix, +0x64 next, +0x69 location; static path +0x0C/+0x10; stat 70 on a list);
+    the item records' two types, the equivalence words, the Books records."""
+    if rnd.random() < 0.06:
+        c.put(U + 0x60, le32(0))
+        row["inv"] = 0
+        return
+    c.put(U + 0x60, le32(INVI))
+    magic = 0x01020304 if rnd.random() < 0.95 else rnd.getrandbits(32)
+    c.put(INVI, le32(magic))
+    n = rnd.choice([0, 1, 2, 2, 3, 4, 4])
+    c.put(INVI + 0x0C, le32(ITM[0] if n else 0))
+    row["inv"] = INVI
+    row["magic"] = magic
+    sid = s32(row["sid"])
+    items = []
+    for i in range(n):
+        it = ITM[i]
+        typ = 4 if rnd.random() < 0.93 else rnd.choice([0, 1, 2, 5])
+        cls = rnd.randrange(NITEMI)
+        guid = (rnd.getrandbits(32) & ~0xFF) | (0x10 + i)
+        c.put(it + 0x00, le32(typ))
+        c.put(it + 0x04, le32(cls))
+        c.put(it + 0x0C, le32(guid))
+        d = {"a": it, "typ": typ, "cls": cls, "guid": guid}
+        if typ == 4:
+            hasdata = rnd.random() < 0.96
+            c.put(it + 0x14, le32(it + 0x400 if hasdata else 0))
+            d["data"] = hasdata
+            if hasdata:
+                suf = rnd.choice([0, 1, 1, 2, 2, NBOOK, rnd.getrandbits(16)])
+                loc = rnd.choice([1, 1, 1, 2, 2, 2, 0, 3, 0xFF, rnd.getrandbits(8)])
+                c.put(it + 0x400 + 0x3E, le16(suf))
+                c.put(it + 0x400 + 0x64, le32(ITM[i + 1] if i + 1 < n else 0))
+                c.put(it + 0x400 + 0x69, bytes([loc]))
+                d.update(suf=suf, loc=loc)
+            c.put(it + 0x2C, le32(it + 0x800))
+            ix, iy = rnd.getrandbits(32), rnd.getrandbits(32)
+            c.put(it + 0x800 + 0x0C, le32(ix) + le32(iy))
+            d.update(x=ix, y=iy)
+            k = rnd.random()
+            if k < 0.08:
+                c.put(it + 0x5C, le32(0))
+                d["q"] = 0
+            else:
+                q = rnd.choice([0, 1, rnd.randint(2, 20), -1, rnd.getrandbits(32)])
+                keys = {70 << 16: q} if rnd.random() < 0.9 else {}
+                keys[(71 << 16)] = rnd.getrandbits(32)
+                put_keys(c, it, it + 0xC00, keys, rnd.getrandbits(32) & 0x7FFFFFFF)
+                c.put(ISC + 0x144 * 70 + 5, b"\x00")
+                d["q"] = s32(keys.get(70 << 16, 0))
+        items.append(d)
+    row["items"] = items
+    # the item records' types; the equivalence words (bits 18 book and 22 scroll set at times); the Books records
+    t1 = [rnd.choice([18, 22, rnd.randrange(NITYPE)]) for _ in range(NITEMI)]
+    t2 = [rnd.choice([0, 0, rnd.randrange(1, NITYPE), 18, 22, NITYPE, 0x8000 | rnd.getrandbits(15)])
+          for _ in range(NITEMI)]
+    for i in range(NITEMI):
+        c.put(ITREC_I + 0x1A8 * i + 0x11E, le16(t1[i]) + le16(t2[i]))
+    eq = []
+    for t in range(NITYPE):
+        ws = [0] * EQW
+        for b in range(NITYPE):
+            if b == t or rnd.random() < 0.1:
+                ws[b >> 5] |= 1 << (b & 31)
+        for b in (18, 22):
+            if rnd.random() < 0.3:
+                ws[b >> 5] |= 1 << (b & 31)
+        eq.append(ws)
+        c.put(EQ_I + 4 * EQW * t, b"".join(le32(w) for w in ws))
+    bk = []
+    for i in range(NBOOK):
+        sk = rnd.choice([sid, sid, sid, sid + 1, -1, rnd.randrange(NSREC)])
+        bs = rnd.choice([sid, sid, sid, sid + 1, -1, rnd.randrange(NSREC)])
+        c.put(BOOKREC + 0x20 * i + 0x08, le32(sk) + le32(bs))
+        bk.append([sk, bs])
+    row.update(t1=t1, t2=t2, eq=eq, books=bk)
+
+
+def is_type_i(row, it, t):
+    """ITEMS_UnitIsType(item, t) for t < the type count: the class's first type, then its second (> 0 as s16 and
+    below the count)."""
+    eq = row["eq"]
+    a = row["t1"][it["cls"]]
+    if (eq[a][t >> 5] >> (t & 31)) & 1:
+        return 1
+    b = s16(row["t2"][it["cls"]])
+    if 0 < b < NITYPE:
+        return (eq[b][t >> 5] >> (t & 31)) & 1
+    return 0
+
+
+def book_i(row, it):
+    suf = it.get("suf", 0) if it.get("data") else 0
+    if suf >= NBOOK:
+        return None
+    return row["books"][suf]
+
+
+def do113_i(row, neg=None):
+    """Do 113 up to InvUse / BeltUse: -> ('v', eax) or ('obs', item dict, location)."""
+    if not row["inv"]:
+        return ("v", 0)
+    if row["magic"] != 0x01020304:
+        return ("v", 0)
+    sid = s32(row["sid"])
+    for it in row["items"]:
+        if it["typ"] != 4:
+            return ("v", 0)            # INV_GetNextItem of a non-item ends the walk (0x0063DFB5)
+        found = False
+        if is_type_i(row, it, 18):
+            b = book_i(row, it)
+            if b is not None and s32(b[1]) == sid and (it["q"] > 0 or neg == "book_noqty"):
+                found = True
+        elif is_type_i(row, it, 22):
+            b = book_i(row, it)
+            if b is not None and s32(b[0]) == sid and (neg != "scroll_qty" or it["q"] > 0):
+                found = True
+        if found:
+            loc = it.get("loc", 0) if it.get("data") else 0
+            loc = loc - 256 if loc >= 128 else loc
+            if neg == "loc_swap" and loc in (1, 2):
+                loc = 3 - loc
+            if loc in (1, 2):
+                return ("obs", it, loc)
+            if neg != "loc_continue":
+                return ("v", 0)
+        if not it.get("data"):
+            return ("v", 0)
+    return ("v", 0)
+
+
+@family("use_item", "item")
+def use_item(rnd, game):
+    """Unsummon's start 3 (the target, the caster's pet lists, PetType unsummon, the used node's +0x18) and do 4
+    (PetRemove), do 113 (the scroll and book rows: the inventory walk, the item types, the Books record, the
+    location) and do 151 (Chain Lightning's item effect: SkillMissileCreate offset to the target)."""
+    cases, exp = [], []
+    for k in range(2400):
+        w = USE_ORDER_I[k % 4]
+        c = Case(FNI[w])
+        row = {"w": w, "sid": pick_skill(rnd), "lvl": pick_lvl(rnd)}
+        put_caster(c, rnd, row, types=(0, 0, 0, 0, 1) if w == "st3" else (0, 0, 1))
+        put_target_a(c, rnd, row, game, types=(1, 1, 1, 1, 1, 1, 0, 2, 4) if w == "st3" else (0, 1, 1, 1, 2, 3, 4,
+                                                                                              5))
+        row["hash"] = {}
+        dumps = []
+        if w == "st3":
+            put_owner_t(c, rnd, row)
+            if row["ut"] == 0:
+                put_pets(c, rnd, row, row.get("tg") if row["t"] else None)
+            pt4 = [rnd.choice([0, 8, 0xFF, rnd.getrandbits(8), 0x3D, 0x0D]) for _ in range(NPET)]
+            for i, b in enumerate(pt4):
+                c.put(PTREC + 0xE0 * i + 4, bytes([b]))
+            row["pt4"] = pt4
+            put_used_node(c, rnd, row, p=0.85)
+            if row["node"] is not None:
+                dumps = [(UNODE + 0x18, 4)]
+        elif w == "do4":
+            put_used_node(c, rnd, row, p=0.85)
+        elif w == "do113":
+            put_items(c, rnd, row)
+        else:
+            row["cal"] = ass_calcs(c, rnd, row["sid"], (0x138,))
+            if sid_ok(row):
+                m = rnd.choice([rnd.randrange(NREC)] * 5 + [-1, NREC, rnd.randint(-0x8000, -2)])
+                c.put(srec(row) + 0x48, le16(m))
+                row["m48"] = m
+        finish_i(c, rnd, row, cases, exp, game, U, [row["sid"], row["lvl"]], dumps=dumps)
+    return cases, mem_item({a: 1 for a in (0x005750E0, 0x0055E170, 0x00562390, 0x0056ECB0)}), {"cases": exp}
+
+
+def subxy_i(row, who):
+    """UnitGetSubX/Y: U (types 0, 1, 3: its dynamic path) or T (types 2, 4, 5: the static path's dwords; else the
+    dynamic path's words, 0 without one)."""
+    if who == "u":
+        return row["ux"], row["uy"]
+    return row["tx"], row["ty"]
+
+
+def use_item_model(row, game, br, neg=None):
+    w = row["w"]
+    br[w] += 1
+    sid, lv = row["sid"], row["lvl"]
+    if w == "st3":
+        if not row["t"]:
+            br["notarget"] += 1
+            return ret_i(row, 0, 8)
+        if row["tt"] != 1 or row["ut"] != 0:
+            br["types"] += 1
+            return ret_i(row, 0, 8)
+        if row["towner"] != U and neg != "owner_any":
+            br["notowner"] += 1
+            return ret_i(row, 0, 8)
+        pt = row.get("ptype", 0)
+        if not row["pt4"][pt] & 8 and neg != "unsummon_any":
+            br["nounsummon"] += 1
+            return ret_i(row, 0, 8)
+        if row["node"] is None:
+            br["noused"] += 1
+            return ret_i(row, 0, 8)
+        br["marked"] += 1
+        g = row["tg"] if neg != "mark_caster" else row["ug"]
+        return ret_i(row, 1, 8, mem={UNODE + 0x18: le32(g)})
+    if w == "do4":
+        if row["node"] is None:
+            br["noused"] += 1
+            return ret_i(row, 0, 8)
+        br["remove"] += 1
+        return obs_i(row, "PetRemove", {"ecx": game, "edx": U}, [row["node"]["n18"], 1 if neg != "flag0" else 0],
+                     0x0056CC47)
+    if w == "do113":
+        r = do113_i(row, neg)
+        if r[0] == "v":
+            br["none"] += 1
+            return ret_i(row, r[1], 8)
+        it, loc = r[1], r[2]
+        br["inv" if loc == 1 else "belt"] += 1
+        a = [it["guid"], it["x"], it["y"], ARG1]
+        if loc == 1:
+            return obs_i(row, "InvUse", {"ecx": game, "edx": U}, a, 0x005BF4FD)
+        return obs_i(row, "BeltUse", {"ecx": game, "edx": U}, a + [0], 0x005BF4C3)
+    # do 151
+    if not sid_ok(row) or not 0 <= s16(row["m48"]) < NREC:
+        br["refused"] += 1
+        return ret_i(row, 0, 8)
+    v = ev_s(row, 0x138)
+    dx = dy = 0
+    if row["t"] and neg != "noaim":
+        tx, ty = subxy_i(row, "t")
+        dx, dy = s32(tx - row["ux"]), s32(ty - row["uy"])
+    br["missile"] += 1
+    return obs_i(row, "SkillMissileCreate", {"ecx": game, "edx": s16(row["m48"])}, [U, sid, lv, dx, dy, 0, 0, 0],
+                 0x005CA330, bit6=True)
+
+
+# ------------------------------------------------------------------------------------------- ITEMSKILL_Cast
+CAST_ORDER_I = ("cast", "cast", "cast", "atunit", "atxy")
+CAST_EBP_DIRECT = 0x7FEFFFFC         # ITEMSKILL_Cast's EBP when called directly
+CAST_EBP_NESTED = 0x7FEFFFB0         # its EBP inside ItemCastAtUnit / ItemCastAtXY (return 0x005FDD10 / 0x005FDDC3)
+CAST_RET_SLOT = 0x7FEFFFB4
+H2_SLOT = 0x7FEFFFD0                 # the helpers' return addresses into ITEMSKILL_Cast (direct call)
+H3_SLOT = 0x7FEFFFC8
+
+
+def put_x2(c, rnd, row):
+    """X2: a unit of type 0 or 1 with a guid, found in the game's hash; its path (+0x2C) with a position."""
+    xt = rnd.choice([0, 1])
+    xg = (rnd.getrandbits(32) & ~0x7F) | 0x5A
+    c.put(X2 + 0x00, le32(xt))
+    put_found(c, rnd, row, X2, xt, xg)
+    row.update(xt=xt, xg=xg)
+
+
+@family("cast_item", "item")
+def cast_item(rnd, game):
+    """ITEMSKILL_Cast called directly (the aim at a unit or a point, the out words, ItemTarget 1-4, ItemCheckStart,
+    up to SKILLS_SrvStart / SKILLS_SrvDo, helper 2's first collision test, helper 3's corpse pick) and through its
+    two callers ItemCastAtUnit / ItemCastAtXY (the game, state 54, the out words on their frames)."""
+    cases, exp = [], []
+    for k in range(3000):
+        w = CAST_ORDER_I[k % 5]
+        c = Case(FNI[w])
+        row = {"w": w, "lvl": pick_lvl(rnd)}
+        row["sid"] = rnd.choice([rnd.randrange(NSREC)] * 12 + [0])
+        put_caster(c, rnd, row, types=(0, 0, 1, 3), room_p=0.7)
+        put_target_a(c, rnd, row, game, types=(0, 1, 1, 1, 2, 3, 4, 5))
+        if (UP + 0x5C) not in c.fields:
+            c.put(UP + 0x5C, le32(rnd.getrandbits(32)) + le32(rnd.getrandbits(32)))
+        if row["tlink"] != "self":
+            c.put(hash_slot(row["ut"], row["ug"]), le32(0))     # U is not in the hash (an aim at U is re-found as none)
+        row["hash"] = {}
+        if row["tlink"] in ("t", "item_taken"):
+            row["hash"]["%d:%d" % (row["tt"], row["tg"])] = T
+        if row["tlink"] == "self":
+            row["hash"]["%d:%d" % (row["ut"], row["ug"])] = U
+        put_x2(c, rnd, row)
+        p48, p4c = rnd.getrandbits(32), rnd.getrandbits(32)
+        c.put(UP + 0x48, le32(p48) + le32(p4c))
+        row["p48"], row["p4c"] = p48, p4c
+        # the record: ItemEffect, ItemTarget (the low byte read), ItemCheckStart (+0x08 bit 1)
+        if row["sid"]:
+            b = srec(row)
+            ie = rnd.choice([1, 1, 1, 36, 151, 0])
+            itg = rnd.choice([0, 1, 2, 2, 3, 3, 4, 4, 5, 0xFF, rnd.getrandbits(8)])
+            b08 = rnd.getrandbits(8)
+            c.put(b + 0x16A, le16(ie))
+            c.put(b + 0x120, bytes([itg]))
+            c.put(b + 0x08, bytes([b08]))
+            row.update(ie=ie, itg=itg, b08=b08)
+        # helper 4's stored unit (U+0xC8 bit 17, +0x9C type, +0xA0 guid)
+        c8 = rnd.getrandbits(32)
+        c.put(U + 0xC8, le32(c8))
+        kt = rnd.random()
+        if kt < 0.5:
+            st, sg = row["xt"], row["xg"]
+        else:
+            st, sg = rnd.randrange(5), (rnd.getrandbits(32) & ~0x7F) | 0x3C
+            c.put(hash_slot(st, sg), le32(0))
+        c.put(U + 0x9C, le32(st) + le32(sg))
+        row.update(c8=c8, st9c=st, sga0=sg)
+        aims = [0, U, X2] + ([T] if row["t"] else [])
+        tgt = rnd.choice(aims)
+        x, y = rnd.getrandbits(16), rnd.getrandbits(16)
+        eff = rnd.choice([0, 1, 1, rnd.getrandbits(32)])
+        row.update(aim=tgt, ax=x, ay=y, eff=eff)
+        if w == "cast":
+            po = rnd.random()
+            ptype = OUTP if po < 0.7 else 0
+            pxy = OUTP + 8 if rnd.random() < 0.7 else 0
+            out0 = [rnd.getrandbits(32) for _ in range(4)]
+            c.put(OUTP, b"".join(le32(v) for v in out0))
+            row.update(ptype=ptype, pxy=pxy, out0=out0)
+            args = [row["sid"], row["lvl"], tgt, x, y, ptype, ptype + 4 if ptype else 0, pxy, pxy + 4 if pxy else 0,
+                    eff]
+            finish_i(c, rnd, row, cases, exp, game, U, args,
+                     dumps=[(UP + 0x10, 4), (UP + 0x58, 4), (UP + 0x5C, 8), (OUTP, 16)])
+            continue
+        game_w = game if rnd.random() < 0.95 else 0
+        c.put(U + 0x80, le32(game_w))
+        row["ugame"] = game_w
+        ensure_list_u(c)
+        if u32f(c, U + 0x5C) == 0 and rnd.random() < 0.7:
+            put_stats(c, rnd, U, {}, p_nolist=0)
+        put_bits(c, rnd, row, [54])
+        if w == "atunit":
+            if rnd.random() < 0.05:
+                tgt = 0
+                row["aim"] = 0
+            elif tgt == 0:
+                tgt = X2
+                row["aim"] = X2
+            args = [row["lvl"], tgt, eff]
+        else:
+            row["aim"] = 0
+            args = [row["lvl"], x, y, eff]
+        finish_i(c, rnd, row, cases, exp, U, row["sid"], args,
+                 dumps=[(UP + 0x10, 4), (UP + 0x58, 4), (UP + 0x5C, 8)])
+    return cases, mem_item({a: 1 for a in (0x0056F640, 0x0056F7F0, 0x0064D870, 0x0056E390, 0x005717C0,
+                                           0x00571840)}), {"cases": exp}
+
+
+def unit_tg(row, a):
+    """(type, guid) of an aim unit."""
+    if a == U:
+        return row["ut"], row["ug"]
+    if a == X2:
+        return row["xt"], row["xg"]
+    return row["tt"], row["tg"]
+
+
+def get_target_i(row, path):
+    """UNIT_GetTargetUnit(game, U) over a path state {58, 5c, 60}: PathTargetRevalidate re-finds the unit by its
+    type and guid (a stale link is cleared), an item in mode 1 or 2 clears it; U itself gives 0. -> (unit, path)."""
+    p = dict(path)
+    if not p["58"]:
+        return 0, p
+    u = find_i(row, p["5c"], p["60"]) if p["5c"] is not None else 0
+    if u != p["58"]:
+        p["58"] = u
+    if u and u == T and row["tt"] == 4 and row["tmode"] in (1, 2):
+        p["58"] = 0
+        u = 0
+    if not u or u == U:
+        return 0, p
+    return u, p
+
+
+def cast_i(row, game, neg=None, nested=None):
+    """ITEMSKILL_Cast(game, U; id, lvl, aim, x, y, &type, &guid, &outX, &outY, effect) up to its boundary or return.
+    nested: None for a direct call, else ('unit' or 'xy', the out-word addresses). -> ('ret', eax, mem, frame) or
+    ('obs', name, regs, args, site, mem, frame, seeds)."""
+    sid, lv = row["sid"], row["lvl"]
+    if nested:
+        ebp = CAST_EBP_NESTED
+        pt, pg, px, py = nested[1]
+    else:
+        ebp = CAST_EBP_DIRECT
+        pt, pg = row["ptype"], (row["ptype"] + 4 if row["ptype"] else 0)
+        px, py = row["pxy"], (row["pxy"] + 4 if row["pxy"] else 0)
+    d = CAST_EBP_DIRECT - ebp
+    out = {}                                    # address -> u32 written to the out words
+    if sid == 0 or not row["ie"]:
+        return ("ret", 0, {}, out, None)
+    # the initial path state (put_target), the saved target and point
+    tl = row["tlink"]
+    if tl is None:
+        path = {"58": 0, "5c": None, "60": None}
+    elif tl == "self":
+        path = {"58": U, "5c": row["ut"], "60": row["ug"]}
+    elif tl == "stale":
+        path = {"58": T, "5c": None, "60": None}           # its type and guid find nothing
+    else:
+        path = {"58": T, "5c": row["tt"], "60": row["tg"]}
+    saved, path = get_target_i(row, path)
+    sx, sy = row["px"], row["py"]
+    pxy = [row["px"], row["py"]]
+    aim = row["aim"]
+    if aim:
+        path["58"] = aim
+        path["5c"], path["60"] = unit_tg(row, aim)
+    elif neg != "aim_none":
+        pxy = [row["ax"] & 0xFFFF, row["ay"] & 0xFFFF]
+        path["58"] = 0
+    if pt:
+        out[pt] = 6
+        out[pg] = 0xFFFFFFFF
+    if px:
+        out[px] = 0
+        out[py] = 0
+    itg = row["itg"]
+    seeds = None
+    if itg == 1:
+        path["58"] = U
+        path["5c"], path["60"] = row["ut"], row["ug"]
+        if pt:
+            out[pt], out[pg] = row["ut"], row["ug"]
+    elif itg == 2:
+        room = row["uroom"]
+        if not room:
+            return ("ret", 0, "restore", out, (saved, sx, sy, list(pxy), dict(path)))
+        s = tuple(row["seeds"][0] if neg != "h2_target" else row["seeds"][1])
+        lo1, hi1 = RNG.step(*s)
+        lo2, hi2 = RNG.step(lo1, hi1) if neg != "h2_onestep" else (lo1, hi1)
+        nx = s32(row["ux"] + (lo1 % 40) - 20)
+        ny = s32(row["uy"] + (lo2 % 40) - 20)
+        seeds = {0 if neg != "h2_target" else 1: (lo2, hi2)}
+        f = abs_ret(H2_SLOT - d, 0x005FDBA4)
+        return ("obs", "PatternTest", {}, [room, nx, ny, row["p48"], row["p4c"]], 0x005FD979, path, pxy, out, f,
+                seeds)
+    elif itg == 3:
+        t2, path = get_target_i(row, path)
+        f = abs_ret(H3_SLOT - d, 0x005FDBE6)
+        return ("obs", "CorpsePick", {"ecx": U, "edx": t2}, [sid, lv], 0x005FD9DF, path, pxy, out, f, None)
+    elif itg == 4:
+        t2, path = get_target_i(row, path)
+        if not t2:
+            found = find_i(row, row["st9c"], row["sga0"]) if row["c8"] & 0x20000 else 0
+            path["58"] = found
+            if found:
+                path["5c"], path["60"] = unit_tg(row, found)
+            if pt:
+                if found:
+                    out[pt], out[pg] = unit_tg(row, found)
+                else:
+                    out[pt] = 6 if neg != "type0" else 0
+                    out[pg] = 0xFFFFFFFF
+    if row["b08"] & 2 and neg != "start_any":
+        return ("obs", "SrvStart", {"ecx": game, "edx": U}, [sid, lv, 1], 0x005FDC1A, path, pxy, out, {}, seeds)
+    eff = row["eff"] if neg != "effect0" else 0
+    return ("obs", "SrvDo", {"ecx": game, "edx": U}, [sid, lv, 0, 1, eff], 0x005FDC34, path, pxy, out, {}, seeds)
+
+
+def path_mem(row, path, pxy):
+    m = {UP + 0x10: le16(pxy[0]) + le16(pxy[1]), UP + 0x58: le32(path["58"])}
+    if path["58"] and path["5c"] is not None:
+        m[UP + 0x5C] = le32(path["5c"]) + le32(path["60"])
+    return m
+
+
+def cast_item_model(row, game, br, neg=None):
+    w = row["w"]
+    br[w] += 1
+    if w == "cast":
+        r = cast_i(row, game, neg)
+        outm = {}
+        if r[0] == "ret":
+            if r[2] == "restore":
+                saved, sx, sy, pxy_a, path_a = r[4]
+                if neg == "no_restore":
+                    m = path_mem(row, path_a, pxy_a)
+                elif saved:
+                    m = path_mem(row, {"58": saved, "5c": unit_tg(row, saved)[0], "60": unit_tg(row, saved)[1]},
+                                 pxy_a)
+                else:
+                    m = path_mem(row, {"58": 0, "5c": None, "60": None}, [sx, sy])
+                ob = [row["out0"][i] for i in range(4)]
+                for a, v in r[3].items():
+                    ob[(a - OUTP) // 4] = v
+                m[OUTP] = b"".join(le32(v) for v in ob)
+                br["refused_aimed"] += 1
+                return ret_i(row, 0, 0x28, mem=m)
+            br["refused"] += 1
+            return ret_i(row, 0, 0x28)
+        _, name, regs, args, site, path, pxy, out, frame, seeds = r
+        m = path_mem(row, path, pxy)
+        ob = [row["out0"][i] for i in range(4)]
+        for a, v in out.items():
+            ob[(a - OUTP) // 4] = v
+        m[OUTP] = b"".join(le32(v) for v in ob)
+        br[name] += 1
+        return obs_i(row, name, regs, args, site, seeds=seeds, mem=m, frame=frame)
+    # the callers: ECX caster, EDX skill
+    if w == "atunit" and not row["aim"]:
+        br["notarget"] += 1
+        return ret_i(row, 0, 0xC)
+    if not row["ugame"]:
+        br["nogame"] += 1
+        return ret_i(row, 0, 0xC if w == "atunit" else 0x10)
+    if has_state(row, 54):
+        br["state54"] += 1
+        return ret_i(row, 0, 0xC if w == "atunit" else 0x10)
+    if w == "atunit":
+        fr_ = {"type": 0x7FF00008, "guid": 0x7FEFFFF8, "x": 0x7FEFFFEC, "y": 0x7FEFFFF0}
+        row2 = dict(row)
+        row2.update(ax=0, ay=0)
+    else:
+        fr_ = {"type": 0x7FEFFFEC, "guid": 0x7FEFFFF0, "x": 0x7FEFFFF8, "y": 0x7FEFFFF4}
+        row2 = dict(row)
+    r = cast_i(row2, row["ugame"], neg, nested=(w, (fr_["type"], fr_["guid"], fr_["x"], fr_["y"])))
+    if r[0] == "ret":
+        br["refused"] += 1
+        if r[2] == "restore":
+            br["refused_aimed"] += 1
+        # ITEMSKILL_Cast returned 0 to the caller, which returns 0 (the restore is checked by the direct cases)
+        return ret_i(row, 0, 0xC if w == "atunit" else 0x10, mem=None)
+    _, name, regs, args, site, path, pxy, out, frame, seeds = r
+    m = path_mem(row, path, pxy)
+    f = dict(frame)
+    f.update(abs_ret(CAST_RET_SLOT, 0x005FDD10 if w == "atunit" else 0x005FDDC3))
+    init = {fr_["type"]: 6, fr_["guid"]: 0xFFFFFFFF} if w == "atunit" else {fr_["x"]: 0, fr_["y"]: 0}
+    init.update(out)
+    for a, v in init.items():
+        if a >= 0x7FF00000:
+            m[a] = le32(v)                 # the target argument's slot (ARG2), dumped on its own
+        else:
+            f[a] = le32(v)
+    br[name] += 1
+    return obs_i(row, name, regs, args, site, seeds=seeds, mem=m, frame=f)
+
+
+# ------------------------------------------------------------------------------------------- stat-event handlers
+EV_ORDER_I = ("ev20", "ev21", "ev30")
+
+
+@family("event_item", "item")
+def event_item(rnd, game):
+    """The stat-event handlers 20 (skill on attack, kill, hit: the packet's +0x00 bit 5, an inline step, ItemTgtDo),
+    21 (skill on get-hit: +0x04 bit 2, RNG_RangeB) and 30 (skill on death or level-up: an inline step): the chance
+    stat by its layer, the skill and level from the layer, up to ItemCastAtUnit / ItemCastAtXY."""
+    cases, exp = [], []
+    for k in range(3000):
+        w = EV_ORDER_I[k % 3]
+        c = Case(FNI[w])
+        row = {"w": w, "sid": 0, "lvl": 0}
+        put_caster(c, rnd, row, types=(0, 0, 1))
+        put_target_a(c, rnd, row, game)
+        row["hash"] = {}
+        unit = U if rnd.random() < 0.97 else 0
+        other = rnd.choice([0, T, T, X2])
+        if other == X2:
+            c.put(X2 + 0x00, le32(1))
+        stat = rnd.choice([195, 196, 198, 201, 197, 199, rnd.randrange(NISC), NISC + 5])
+        skill = rnd.choice([rnd.randrange(NSREC)] * 6 + [NSREC, rnd.randrange(1024)])
+        lvlv = rnd.randrange(64)
+        layer = ((skill << SHIFT_I) | lvlv) & 0xFFFF
+        if rnd.random() < 0.05:
+            layer = rnd.getrandbits(16)
+        param = (stat << 16) | layer
+        if rnd.random() < 0.05:
+            param = rnd.getrandbits(32)
+        put_seeds_i(c, rnd, row)
+        s0 = row["seeds"][0]
+        lo = RNG.step(*s0)[0]
+        drawn = lo % 100                     # handlers 20 and 30 (inline) and 21 (RNG_RangeB of 100) draw the same
+        chance = rnd.choice([rnd.randint(1, 100)] * 4 + [drawn, drawn, drawn + 1, 0, rnd.randint(-5, 0),
+                                                         rnd.randint(100, 300), rnd.getrandbits(32)])
+        keys = {}
+        if unit:
+            kk = rnd.random()
+            if kk < 0.06:
+                c.put(U + 0x5C, le32(0))
+            else:
+                skey = ((param >> 16) << 16) | (param & 0xFFFF)
+                if kk < 0.9:
+                    keys[skey] = chance
+                keys[skey ^ 1] = rnd.getrandbits(32)
+                put_keys(c, U, USL, keys, rnd.getrandbits(32))
+                if (param >> 16) < NISC:
+                    c.put(ISC + 0x144 * (param >> 16) + 5, b"\x00")
+        pkt = PKT2 if rnd.random() < 0.8 else 0
+        if pkt:
+            b0, b4 = rnd.getrandbits(8), rnd.getrandbits(8)
+            c.put(PKT2, bytes([b0]))
+            c.put(PKT2 + 4, bytes([b4]))
+            row.update(b0=b0, b4=b4)
+        flags7 = [rnd.getrandbits(8) for _ in range(NSREC)]
+        for i, f7 in enumerate(flags7):
+            c.put(SREC + 0x23C * i + 7, bytes([f7]))
+        row.update(unit=unit, other=other, stat=stat, param=param, keys={str(a): v for a, v in keys.items()},
+                   pkt=pkt, f7=flags7)
+        finish_i(c, rnd, row, cases, exp, rnd.getrandbits(32), rnd.getrandbits(32), [unit, other, pkt, param,
+                                                                                       rnd.getrandbits(32)])
+    return cases, mem_item({a: 1 for a in list(CASTERS_I)}), {"cases": exp}
+
+
+def event_item_model(row, game, br, neg=None):
+    w = row["w"]
+    br[w] += 1
+    if not row["unit"]:
+        br["nounit"] += 1
+        return ret_i(row, 0, 0x14)
+    p = row["param"]
+    st = (p >> 16) & 0xFFFF
+    key = (st << 16) | (p & 0xFFFF)
+    if neg == "layer_full":
+        key = (st << 16) | ((p >> 1) & 0xFFFF)
+    ch = stat_key(row, key) if 0 <= st < NISC else 0
+    if ch <= 0:
+        br["nochance"] += 1
+        return ret_i(row, 0, 0x14)
+    lay = p & 0xFFFF
+    skill = lay >> SHIFT_I
+    lvl = lay & MASKL_I
+    s0 = row["seeds"][0]
+    other = row["other"]
+    eff = 1
+    if w == "ev20":
+        if row["pkt"] and not row["b0"] & 0x20 and neg != "ev20_any":
+            br["nobit5"] += 1
+            return ret_i(row, 0, 0x14)
+        lo, hi = RNG.step(*s0)
+        r = lo % 100
+        seeds = {0: (lo, hi)}
+    elif w == "ev21":
+        if not row["pkt"] or not row["b4"] & 4:
+            br["nobit2"] += 1
+            return ret_i(row, 0, 0x14)
+        r, lo, hi = rangeb(s0[0], s0[1], 100)
+        seeds = {0: (lo, hi)}
+        eff = 0
+    else:
+        lo, hi = RNG.step(*s0)
+        r = lo % 100
+        seeds = {0: (lo, hi)}
+        eff = 0
+    if not (r < ch if neg != "chance_le" else r <= ch):
+        br["miss"] += 1
+        return ret_i(row, 0, 0x14, seeds=seeds)
+    if not 0 <= skill < NSREC:
+        br["norec"] += 1
+        return ret_i(row, 0, 0x14, seeds=seeds)
+    if neg == "effect1":
+        eff = 1
+    if w == "ev20" and row["f7"][skill] & 0x20:
+        if not other:
+            br["tgtdo_none"] += 1
+            return ret_i(row, 1, 0x14, seeds=seeds)
+        br["tgtdo"] += 1
+        ecx = other if neg != "tgtdo_unit" else U
+        return obs_i(row, "ItemCastAtUnit", {"ecx": ecx, "edx": skill}, [lvl, other, 0], 0x005C053B, seeds=seeds)
+    site = {"ev20": (0x005C055D, 0x005C0589), "ev21": (0x005C065F, 0x005C0648),
+            "ev30": (0x005C0756, 0x005C073D)}[w]
+    if other:
+        br["atunit"] += 1
+        return obs_i(row, "ItemCastAtUnit", {"ecx": U, "edx": skill}, [lvl, other, eff], site[0], seeds=seeds)
+    br["atxy"] += 1
+    return obs_i(row, "ItemCastAtXY", {"ecx": U, "edx": skill}, [lvl, row["px"], row["py"], eff], site[1],
+                 seeds=seeds)
+
+
+# ------------------------------------------------------------------------------------------- the shrine missiles
+SH_ORDER_I = ("sh19", "sh21", "sh22")
+SH19_BLK = 0x7FEFFF28                # shrine 19's search block (ebp-0xD4) and iterator (ebp-0x40)
+SH19_ITER = 0x7FEFFFBC
+SH2X_N = 0x7FEFFF64                  # shrines 21/22: the drawn count (ebp-0x98)
+
+
+@family("shrine_item", "item")
+def shrine_item(rnd, game):
+    """Shrine 19 (Storm: the shrine's room and position, the search block, up to the unit search), 21 (Exploding)
+    and 22 (Poison): the count drawn on the shrine's seed, up to ItemIndexByCode ('opm' / 'gpm') or, with no
+    potion, the first of the six MissileCreate blocks (45 / 48, the operator's level / 5 clamped to 1..8)."""
+    cases, exp = [], []
+    for k in range(1800):
+        w = SH_ORDER_I[k % 3]
+        c = Case(FNI[w])
+        row = {"w": w, "sid": 0, "lvl": 0}
+        put_caster(c, rnd, row, types=(0, 0, 1))
+        put_target_a(c, rnd, row, game)
+        c.put(CTX + 0x00, le32(game))
+        c.put(CTX + 0x04, le32(SHO))
+        c.put(CTX + 0x08, le32(U))
+        c.put(game + 0x1C, le32(GAMEPOOL))
+        ot = rnd.choice([2, 2, 2, 2, 0, 1, 4, 5, 3])
+        c.put(SHO + 0x00, le32(ot))
+        c.put(SHO + 0x2C, le32(SHOP))
+        room = rnd.choice(ROOMS + [0])
+        if ot in (2, 4, 5):
+            ox, oy = rnd.getrandbits(32), rnd.getrandbits(32)
+            c.put(SHOP + 0x00, le32(room))
+            c.put(SHOP + 0x0C, le32(ox) + le32(oy))
+        else:
+            ox, oy = rnd.getrandbits(16), rnd.getrandbits(16)
+            c.put(SHOP + 0x02, le16(ox))
+            c.put(SHOP + 0x06, le16(oy))
+            c.put(SHOP + 0x1C, le32(room))
+        if w == "sh19":
+            a0, a1 = rnd.choice([(50, 2000), (rnd.randint(-100, 200), rnd.randint(-5, 3000)),
+                                 (rnd.getrandbits(32), rnd.getrandbits(32))])
+        else:
+            a0, a1 = rnd.choice([(5, 10), (5, 10), (rnd.randint(-10, 10), rnd.randint(-10, 20)), (0, 16), (3, 3),
+                                 (rnd.randint(-5, 5), rnd.randint(-5, 5)), (rnd.getrandbits(32), rnd.getrandbits(32))])
+        c.put(SHREC + 0x04, le32(a0) + le32(a1))
+        add_stats_u(c, rnd, row, (12,), force={12: rnd.choice([1, 4, 5, 9, 10, 40, 41, 99, -6, 0])})
+        row.update(ot=ot, oroom=room, ox=ox, oy=oy, a0=a0, a1=a1)
+        finish_i(c, rnd, row, cases, exp, CTX, SHREC, [])
+    return cases, mem_item({a: 1 for a in (0x0065A950, 0x0059FA30, 0x00633680)}), {"cases": exp}
+
+
+def shrine_item_model(row, game, br, neg=None):
+    w = row["w"]
+    br[w] += 1
+    ox, oy = row["ox"], row["oy"]
+    if w == "sh19":
+        blk = bytearray(0x38)
+        r1 = row["a1"] if neg != "radius_a0" else row["a0"]
+        struct.pack_into("<I", blk, 0x00, 0x583)
+        struct.pack_into("<III", blk, 0x0C, ox & M32, oy & M32, r1 & M32)
+        br["search"] += 1
+        return obs_i(row, "UnitSearch", {}, [GAMEPOOL, SH19_ITER, row["oroom"], ox, oy, r1, 0x00582710, SH19_BLK],
+                     0x00582E72, ptrs={7: bytes(blk)})
+    a0, a1 = s32(row["a0"]), s32(row["a1"])
+    n_range = s32(a1 - a0)
+    s2 = tuple(row["seeds"][2])
+    seeds = None
+    if n_range > 0 and neg != "sh_noseed":
+        if neg == "count_inc":
+            n_range = s32(n_range + 1)
+        r, lo, hi = rangeb(s2[0], s2[1], n_range)
+        seeds = {2: (lo, hi)}
+    else:
+        r = 0
+    n = s32(a0 + r)
+    frame = {SH2X_N: le32(n)}
+    if n > 0:
+        br["potions"] += 1
+        return obs_i(row, "ItemIndexByCode", {}, [0x206D706F if w == "sh21" else 0x206D7067],
+                     0x00583190 if w == "sh21" else 0x005834C0, seeds=seeds, frame=frame)
+    lvl = cdiv(sv_of(row, 12), 5)
+    if neg != "lvl_unclamped":
+        lvl = 1 if lvl < 1 else (8 if lvl > 8 else lvl)
+    dx, dy = (-6, 6) if neg != "dir_swap" else (6, -6)
+    blk = bytearray(0x5C)
+    struct.pack_into("<III", blk, 0x00, 0x520, U, SHO)
+    struct.pack_into("<IIIIII", blk, 0x10, 45 if w == "sh21" else 48, ox & M32, oy & M32, (ox + dx) & M32,
+                     (oy + dy) & M32, 1)
+    struct.pack_into("<I", blk, 0x30, lvl & M32)
+    br["missiles"] += 1
+    return obs_i(row, "MissileCreate", {"ecx": game}, [], 0x005833EA if w == "sh21" else 0x0058371A, seeds=seeds,
+                 stk={"edx": (0, bytes(blk))}, frame=frame)
+
+
+# ------------------------------------------------------------------------------------------- SKILLS_PayCost
+@family("cost_item", "item")
+def cost_item(rnd, game):
+    """SKILLS_PayCost: a non-player pays nothing; the used node of this id with an owner item (node +0x34 not -1)
+    -> UseCharge; else the mana cost (mana, lvlmana, manashift, the minmana floor), state 114 -> BloodManaPay,
+    stat 8 below the cost -> 0, else UnitAddStat(U, 8, -cost)."""
+    cases, exp = [], []
+    for k in range(1800):
+        c = Case(FNI["pay"])
+        row = {"w": "pay", "sid": pick_skill(rnd), "lvl": rnd.choice([rnd.randint(1, 30), 0, -1, rnd.randint(31, 99),
+                                                                         rnd.getrandbits(32)])}
+        put_caster(c, rnd, row, types=(0, 0, 0, 0, 1, 3))
+        nd = rnd.random()
+        if nd < 0.1:
+            c.put(U + 0xA8, le32(0))
+            row["node"] = None
+        else:
+            c.put(U + 0xA8, le32(OSK))
+            c.put(OSK + 0x10, le32(UNODE))
+            nid = s32(row["sid"]) if rnd.random() < 0.7 else rnd.choice([s32(row["sid"]) + 1, rnd.randrange(NSREC)])
+            g34 = 0xFFFFFFFF if rnd.random() < 0.7 else (rnd.getrandbits(32) & ~0x7F) | 0x29
+            c.put(UNODE + 0x00, le32(SKR_I))
+            c.put(SKR_I, le16(nid))
+            c.put(UNODE + 0x34, le32(g34))
+            row["node"] = {"id": s16(nid & 0xFFFF), "g34": g34}
+        if sid_ok(row):
+            b = srec(row)
+            mana = rnd.choice([0, rnd.randint(1, 76), rnd.randint(1, 76), rnd.randint(-5, 5), rnd.randint(-0x8000, 0x7FFF)])
+            lmana = rnd.choice([0, rnd.randint(-3, 10), rnd.randint(1, 10), rnd.randint(-0x8000, 0x7FFF)])
+            minm = rnd.choice([0, 1, 1, rnd.randint(-3, 300)])
+            shift = rnd.choice([8, 8, 7, 6, 5, rnd.randint(2, 8), rnd.getrandbits(8)])
+            c.put(b + 0x186, le16(minm) + bytes([shift, rnd.getrandbits(8)]) + le16(mana) + le16(lmana))
+            row.update(mana=mana, lmana=lmana, minm=minm, shift=shift)
+        cost = None
+        if sid_ok(row) and (row["mana"] or row["lmana"]):
+            cost = cost_of(row)
+        add_stats_u(c, rnd, row, (8,), force={8: rnd.choice([cost, cost, (cost or 0) - 1, (cost or 0) + 1])
+                                              if cost is not None else None})
+        put_bits(c, rnd, row, [114])
+        finish_i(c, rnd, row, cases, exp, game, U, [row["sid"], row["lvl"]])
+    return cases, mem_item({a: 1 for a in (0x0056BEC0, 0x005D2B60, 0x006272B0)}), {"cases": exp}
+
+
+def cost_of(row, neg=None):
+    """(mana + lvlmana * max(lvl - 1, 0)) << (manashift & 31), floored by minmana << 8 (signed), 32-bit."""
+    k = s32(s32(row["lvl"]) - 1) if neg != "cost_lvl" else s32(row["lvl"])
+    k = k if k >= 0 else 0
+    v = s32(s16(row["lmana"]) * k + s16(row["mana"]))
+    v = s32(v << (row["shift"] & 31))
+    f = s32(s16(row["minm"]) << 8)
+    if f > v and neg != "no_min":
+        v = f
+    return v
+
+
+def cost_item_model(row, game, br, neg=None):
+    br["pay"] += 1
+    if row["ut"] != 0:
+        br["nonplayer"] += 1
+        return ret_i(row, 1, 8)
+    nd = row["node"]
+    if nd is not None and (nd["id"] == s32(row["sid"]) or neg == "charge_any") and nd["g34"] != 0xFFFFFFFF:
+        br["charge"] += 1
+        return obs_i(row, "UseCharge", {"eax": nd["g34"], "ecx": game, "edx": UNODE}, [U], 0x0056C03A)
+    if not sid_ok(row) or not (row["mana"] & 0xFFFF or row["lmana"] & 0xFFFF):
+        br["nocost"] += 1
+        return ret_i(row, 0, 8)
+    cost = cost_of(row, neg)
+    if has_state(row, 114) and neg != "blood_off":
+        br["blood"] += 1
+        return obs_i(row, "BloodManaPay", {"ecx": U, "edx": cost}, [], 0x0056C0CF)
+    mana = sv_of(row, 8)
+    if not (mana >= cost if neg != "cost_gt" else mana > cost):
+        br["short"] += 1
+        return ret_i(row, 0, 8)
+    br["paid"] += 1
+    return obs_i(row, "UnitAddStat", {}, [U, 8, s32(-cost), 0], 0x0056C0FE)
+
+
+def compare_i(rep, c, exp, br):
+    """compare() with the register EAX among the boundary registers and a pointer argument's bytes at any stack
+    address (the frame dict at exp[8])."""
+    return compare(rep, c, exp, br)
+
+
+CHECKS.update({
+    "use_item": check9b("use_item", use_item_model, ["owner_any", "unsummon_any", "mark_caster", "flag0",
+                                                     "scroll_qty", "book_noqty", "loc_swap", "loc_continue",
+                                                     "noaim"], RS_ITEM, md_masked=False),
+    "cast_item": check9b("cast_item", cast_item_model, ["aim_none", "h2_target", "h2_onestep", "start_any",
+                                                        "effect0", "no_restore", "type0"], RS_ITEM, md_masked=False),
+    "event_item": check9b("event_item", event_item_model, ["ev20_any", "chance_le", "tgtdo_unit", "effect1",
+                                                           "layer_full"], RS_ITEM, md_masked=False),
+    "shrine_item": check9b("shrine_item", shrine_item_model, ["radius_a0", "count_inc", "sh_noseed",
+                                                              "lvl_unclamped", "dir_swap"], RS_ITEM, md_masked=False),
+    "cost_item": check9b("cost_item", cost_item_model, ["charge_any", "cost_lvl", "no_min", "blood_off",
+                                                        "cost_gt"], RS_ITEM, md_masked=False),
+})
+
+
+PINS_ITEM = [  # (address, mnemonic, operand substring): instructions the item claims turn on (ADR-0015 (5))
+    (0x0056CBBA, "cmp", "eax,0x1"), (0x0056CBC3, "cmp", "DWORD PTR [esi],0x0"),                    # start 3
+    (0x0056CBD3, "mov", "edx,DWORD PTR [edi+0xc]"), (0x0056CBE8, "mov", "cl,BYTE PTR ds:0x6ce274"),
+    (0x0056CBFD, "mov", "edi,DWORD PTR [edi+0xc]"),
+    (0x0056CC35, "push", "0x1"), (0x0056CC3D, "push", "eax"),                                         # do 4
+    (0x005BF408, "push", "0x12"), (0x005BF45D, "push", "0x16"),                                       # do 113
+    (0x005BF429, "cmp", "DWORD PTR [eax+0xc],ebx"), (0x005BF47E, "cmp", "DWORD PTR [eax+0x8],ebx"),
+    (0x005BF430, "push", "0x46"), (0x005BF43A, "jle", ""), (0x005BF452, "jne", ""),
+    (0x0063E043, "movsx", "eax,BYTE PTR [eax+0xd]"), (0x0063DFC3, "mov", "eax,DWORD PTR [eax+0x8]"),
+    (0x005CA29E, "movsx", "edx,WORD PTR [eax+0x48]"), (0x005CA2BD, "or", "DWORD PTR [esi+0xc4],0x40"),  # do 151
+    (0x005CA302, "sub", "edi,eax"), (0x005CA312, "sub", "ebx,eax"), (0x005CA33A, "call", "0x64a710"),
+    (0x005FDACE, "cmp", "WORD PTR [edi+0x16a],0x0"), (0x005FDB56, "movzx", "eax,BYTE PTR [edi+0x120]"),  # cast
+    (0x005FDB9B, "mov", "edx,esi"), (0x005FDBFC, "mov", "cl,BYTE PTR ds:0x6ce26c"),
+    (0x005FDC25, "push", "0x1"), (0x005FDC27, "push", "0x0"), (0x005FDB34, "mov", "DWORD PTR [ecx],0x6"),
+    (0x005FDB66, "mov", "DWORD PTR [ebp+0x10],0x0"),
+    (0x005FD8D6, "lea", "esi,[edi+0x20]"), (0x005FD916, "mov", "eax,0xcccccccd"),                    # helper 2
+    (0x005FD930, "lea", "ebx,[edx+eax*1-0x14]"), (0x005FD945, "mov", "DWORD PTR [esi+0x4],edx"),
+    (0x005FD984, "cmp", "eax,0xa"),
+    (0x005FD9D8, "mov", "ecx,esi"), (0x005FDA3F, "mov", "eax,0x6"),                                   # helpers 3, 4
+    (0x00553033, "test", "DWORD PTR [edx+0xc8],0x20000"),
+    (0x005FDCFD, "mov", "DWORD PTR [ebp+0xc],0x6"), (0x005FDD25, "jne", ""),                          # the callers
+    (0x005FDCCC, "push", "0x36"),
+    (0x005C04CC, "test", "BYTE PTR [eax],0x20"), (0x005C04F1, "mov", "eax,0x51eb851f"),              # handler 20
+    (0x005C051E, "mov", "cl,BYTE PTR ds:0x6ce27c"), (0x005C0529, "mov", "ecx,DWORD PTR [ebp+0xc]"),
+    (0x005C054E, "push", "0x1"),
+    (0x005C05F5, "test", "BYTE PTR [eax+0x4],0x4"), (0x005C05FE, "mov", "edx,0x64"),                 # handler 21
+    (0x005C06D1, "mov", "eax,0x51eb851f"), (0x005C06E9, "test", "edi,edi"),                          # handler 30
+    (0x00582E52, "mov", "DWORD PTR [ebp-0xd4],0x583"), (0x00582EB7, "mov", "eax,0xae147ae1"),        # shrine 19
+    (0x00582FD5, "mov", "DWORD PTR [ebp-0x8c],0x3e"), (0x00583026, "cmp", "esi,0x19"),
+    (0x005830F8, "mov", "edi,DWORD PTR [eax+0x8]"), (0x00583186, "push", "0x206d706f"),               # shrine 21
+    (0x005832E3, "lea", "ebx,[ecx+0x33]"), (0x005833B7, "mov", "eax,0x66666667"),
+    (0x005834B6, "push", "0x206d7067"), (0x00583613, "lea", "ebx,[ecx+0x36]"),                       # shrine 22
+    (0x0056C02A, "cmp", "eax,0xffffffff"), (0x0056C0A2, "mov", "cl,BYTE PTR [eax+0x188]"),          # PayCost
+    (0x0056C0B4, "cmp", "eax,esi"), (0x0056C0BA, "push", "0x72"), (0x0056C092, "setl", "dl"),
+    (0x0058E0F0, "push", "0x271"), (0x00593A26, "push", "0x120"), (0x0059565C, "push", "0x14c"),     # quest sites
+    (0x0058C909, "mov", "DWORD PTR [ebp-0x4c],0x21d"),
+    (0x0056BE62, "mov", "ecx,DWORD PTR [edi+0xc0]"), (0x005759D3, "mov", "edx,DWORD PTR [esi+0xc0]"),  # pet limits
+    (0x00575A55, "movsx", "eax,WORD PTR [eax+0xa]"), (0x0056E960, "call", "0x575900"),
+    (0x00583C4B, "mov", "DWORD PTR [ebp-0x4],0x583bd0"), (0x00583BE1, "call", "0x56de40"),
+]
+
+
+def cmd_static_item(a):
+    rep = Report("static")
+    rep.batch = "ITEM"
+    A = S4.asm()
+    for va, mn, sub in PINS_ITEM:
+        ins = A.at(va)
+        rep.c["pins"] += 1
+        if ins is None or ins[0] != mn or sub not in ins[1]:
+            rep.bad("pin 0x%08X: %r, want %s %s" % (va, ins, mn, sub))
+        else:
+            rep.c["pins_ok"] += 1
+    for lo, n, name in ((BITMASK, 128, "g_BitMask32"), (0x006E10E0, 20, "hash offsets"),
+                        (0x006C1164, 88, "CALC_Eval jump table"), (0x005FDC88, 16, "ITEMSKILL_Cast jump table")):
+        sec = S4.section_of(lo)
+        flags = [x[5] for x in S4.image()[2] if x[4] == sec][0]
+        rep.c["ro_reads"] += 1
+        if flags & 0x80000000:
+            rep.bad("%s 0x%08X in writable %s" % (name, lo, sec))
+        rep.notes.append("%s 0x%08X: %s" % (name, lo, sec))
+    rep.notes.append("ITEMSKILL_Cast jump table (ItemTarget 1..4): %s" % " ".join(
+        "0x%08X" % S4.dword(0x005FDC88 + 4 * i) for i in range(4)))
+    if [S4.dword(0x005FDC88 + 4 * i) for i in range(4)] != [0x005FDB7A, 0x005FDB96, 0x005FDBD6, 0x005FDBE8]:
+        rep.bad("ITEMSKILL_Cast jump table")
+    st, im, rd = ref_scan(A, SK_NFUNCS)
+    rep.c["data_stores"] += len(st)
+    rep.c["data_imms"] += len(im)
+    rep.notes.append("skills calc function count 0x%08X: %d stores (PTR or moffs), %d immediates, %d reads in .text"
+                     % (SK_NFUNCS, len(st), len(im), len(rd)))
+    for hlp, nm in ((0x005FDA80, "ITEMSKILL_Cast"), (0x005FDCA0, "ItemCastAtUnit"), (0x005FDD60, "ItemCastAtXY"),
+                    (0x005FD850, "helper 2"), (0x005FD9C0, "helper 3"), (0x005FDA10, "helper 4"),
+                    (0x0056EDE0, "MissileCreateAt"), (0x00575850, "PetLimit"), (0x00575900, "0x00575900"),
+                    (0x0056BD90, "0x0056BD90"), (0x005750E0, "PetRemove"), (0x0056BEC0, "UseCharge"),
+                    (0x0056BFE0, "SKILLS_PayCost"), (0x0056DE40, "0x0056DE40")):
+        sites = sorted(va for va, (mn, ops) in A.ins.items() if mn in ("call", "jmp") and ops.strip() == "0x%x" % hlp)
+        rep.notes.append("calls of %s 0x%08X: %d in the image: %s" % (nm, hlp, len(sites),
+                                                                      " ".join("0x%08X" % s for s in sites)))
+        rep.c["helper_sites"] += len(sites)
+    for name, va in sorted(FNI.items(), key=lambda kv: kv[1]):
+        if name in ("st3",):
+            tab, num = START_TABLE, 3
+        elif name in ("do4", "do113", "do151"):
+            tab, num = DO_TABLE, int(name[2:])
+        elif name.startswith("ev"):
+            tab, num = 0x007325B0, int(name[2:])
+        elif name.startswith("sh"):
+            tab, num = 0x006E1850, 3 * int(name[2:])
+        else:
+            continue
+        rep.c["table_entries"] += 1
+        if S4.dword(tab + 4 * num) != va:
+            rep.bad("%s: table entry 0x%08X, model address 0x%08X" % (name, S4.dword(tab + 4 * num), va))
+    rep.notes.append("start table 3: 0x%08X; do table 4, 113, 151: %s" % (S4.dword(START_TABLE + 12), " ".join(
+        "0x%08X" % S4.dword(DO_TABLE + 4 * i) for i in (4, 113, 151))))
+    rep.notes.append("g_StatEventFuncs 20, 21, 30: %s" % " ".join("0x%08X" % S4.dword(0x007325B0 + 4 * i)
+                                                                for i in (20, 21, 30)))
+    rep.notes.append("g_ShrineEffects 19-22 {fn, stat, state}: %s" % "; ".join(
+        " ".join("0x%X" % S4.dword(0x006E1850 + 12 * i + 4 * k) for k in range(3)) for i in range(19, 23)))
+    rep.notes.append("g_ItemUseFns count %d; [10], [11] {test, use}: %s" % (S4.dword(0x0074178C), "; ".join(
+        "0x%08X 0x%08X" % (S4.dword(0x00741790 + 8 * i), S4.dword(0x00741794 + 8 * i)) for i in (10, 11))))
+    for i in (10, 11):
+        rep.c["table_entries"] += 1
+        if S4.dword(0x00741794 + 8 * i) != (0x005BF170 if i == 10 else 0x005BF1F0):
+            rep.bad("g_ItemUseFns[%d].use" % i)
+    print("CATITEM static " + " ".join("%s=%d" % (k, rep.c[k]) for k in sorted(rep.c)))
+    for n in rep.notes:
+        print("  " + n)
+    return 1 if rep.c["bad"] else 0
+
+
+
+
+
+def walk113(row):
+    """Do 113's walk as data: per item until the walk ends, (type 4, has data, a book of the skill, a scroll of the
+    skill (not a book type), stat 70, location as s8)."""
+    out = []
+    if not row["inv"] or row["magic"] != 0x01020304:
+        return out
+    sid = s32(row["sid"])
+    for it in row["items"]:
+        if it["typ"] != 4:
+            break
+        b = book_i(row, it)
+        isb = is_type_i(row, it, 18)
+        bk = isb and b is not None and s32(b[1]) == sid
+        sc = (not isb) and is_type_i(row, it, 22) and b is not None and s32(b[0]) == sid
+        loc = it.get("loc", 0) if it.get("data") else 0
+        out.append({"book": bk, "scroll": sc, "q": it["q"], "loc": loc - 256 if loc >= 128 else loc,
+                    "data": it.get("data")})
+        if not it.get("data"):
+            break
+    return out
+
+
+def classes_item(d):
+    """The deciding classes of the item batch's thinner negative controls, counted from the case files by
+    predicates on the written inputs (each to be read beside its control's failure count in the same check)."""
+    out = []
+
+    def load(fam):
+        return json.load(open(os.path.join(d, fam + ".json")))["cases"]
+    rows = load("use_item")
+    st3 = [r for r in rows if r["w"] == "st3" and r["t"] and r["tt"] == 1 and r["ut"] == 0 and r["node"] is not None]
+    out.append(("owner_any", "st3: a monster target, a player caster, a used node, an owner other than the caster, "
+                "the pet type's unsummon bit set",
+                sum(1 for r in st3 if r["towner"] != U and r["pt4"][r.get("ptype", 0)] & 8)))
+    out.append(("unsummon_any", "st3: as above with the caster the owner and the pet type's unsummon bit clear",
+                sum(1 for r in st3 if r["towner"] == U and not r["pt4"][r.get("ptype", 0)] & 8)))
+    sc = bq = lc = 0
+    for r in rows:
+        if r["w"] != "do113":
+            continue
+        its = walk113(r)
+
+        def taken(lst, qbook=True, qscroll=False):
+            for i, x in enumerate(lst):
+                if (x["book"] and (x["q"] > 0 or not qbook)) or (x["scroll"] and (x["q"] > 0 or not qscroll)):
+                    return i
+            return None
+        i = taken(its)
+        if i is not None and its[i]["scroll"] and its[i]["q"] <= 0:
+            j = taken(its[i + 1:], qscroll=True)
+            if its[i]["loc"] in (1, 2) or (j is not None and its[i + 1 + j]["loc"] in (1, 2)):
+                sc += 1
+        k = taken(its, qbook=False)
+        if k is not None and its[k]["book"] and its[k]["q"] <= 0 and (i is None or k < i):
+            if its[k]["loc"] in (1, 2) or (i is not None and its[i]["loc"] in (1, 2)):
+                bq += 1
+        if i is not None and its[i]["loc"] not in (1, 2):
+            if any(taken([x]) is not None and x["loc"] in (1, 2) for x in its[i + 1:]):
+                lc += 1
+    out.append(("scroll_qty", "do 113: the first item taken is a scroll of the skill with stat 70 <= 0, and it or "
+                "the next one taken with the test has location 1 or 2", sc))
+    out.append(("book_noqty", "do 113: a book of the skill with stat 70 <= 0 comes before the first item taken, "
+                "and it or that item has location 1 or 2", bq))
+    out.append(("loc_continue", "do 113: the first item taken has a location other than 1 or 2 and some later "
+                "item taken has location 1 or 2", lc))
+    rows = load("cast_item")
+    nr = t0 = 0
+    for r in rows:
+        if not r["sid"] or not r["ie"]:
+            continue
+        if r["w"] == "atunit" and not r["aim"]:
+            continue
+        if r["w"] != "cast" and (not r["ugame"] or has_state(r, 54)):
+            continue
+        tl = r["tlink"]
+        path = {"58": 0, "5c": None, "60": None} if tl is None else (
+            {"58": U, "5c": r["ut"], "60": r["ug"]} if tl == "self" else (
+                {"58": T, "5c": None, "60": None} if tl == "stale" else {"58": T, "5c": r["tt"], "60": r["tg"]}))
+        saved, path = get_target_i(r, path)
+        aim = r["aim"]
+        if r["w"] == "cast" and r["itg"] == 2 and not r["uroom"]:
+            if aim and aim != saved:
+                nr += 1
+            elif not aim and ((r["ax"] & 0xFFFF, r["ay"] & 0xFFFF) != (r["px"], r["py"]) or saved):
+                nr += 1
+        if r["itg"] == 4 and (r["w"] != "cast" or r["ptype"]):
+            if aim:
+                path = {"58": aim, "5c": unit_tg(r, aim)[0], "60": unit_tg(r, aim)[1]}
+            else:
+                path = {"58": 0, "5c": None, "60": None}
+            t2, _ = get_target_i(r, path)
+            if not t2 and not (r["c8"] & 0x20000 and find_i(r, r["st9c"], r["sga0"])):
+                t0 += 1
+    out.append(("no_restore", "direct casts refused by helper 2 (no room) whose aim left the path words other "
+                "than the restore writes them", nr))
+    out.append(("type0", "ItemTarget 4 casts (direct with an out pointer, or through the two callers) with no "
+                "target after the aim and no stored unit found", t0))
+    rows = load("cost_item")
+    cl = cg = ca = 0
+    for r in rows:
+        if r["ut"] != 0:
+            continue
+        nd = r["node"]
+        charge = nd is not None and nd["id"] == s32(r["sid"]) and nd["g34"] != 0xFFFFFFFF
+        if nd is not None and not charge and nd["g34"] != 0xFFFFFFFF:
+            ca += 1
+        if charge or not sid_ok(r) or not (r["mana"] & 0xFFFF or r["lmana"] & 0xFFFF):
+            continue
+        c1, c2 = cost_of(r), cost_of(r, "cost_lvl")
+        if c1 != c2:
+            m8 = sv_of(r, 8)
+            if has_state(r, 114) or m8 >= c1 or m8 >= c2:
+                cl += 1
+        if not has_state(r, 114) and sv_of(r, 8) == cost_of(r):
+            cg += 1
+    out.append(("charge_any", "player casters whose used node has an owner item but another skill id", ca))
+    out.append(("cost_lvl", "mana-path cases whose cost with lvl in place of lvl - 1 differs, reaching state 114 "
+                "or with stat 8 at or above either cost", cl))
+    out.append(("cost_gt", "mana-path cases without state 114 whose stat 8 equals the cost", cg))
+    for nm, what, n in out:
+        print("CLASS %s %d: %s" % (nm, n, what))
+
+
 # ================================================================================================= commands
 def batch_families(a):
     if a.family:
@@ -10909,6 +12249,8 @@ def cmd_check(a):
             print("  " + n)
         print("  outcomes: " + " ".join("%s=%d" % kv for kv in sorted(rep.br.items())))
         rc |= 1 if rep.c["bad"] else 0
+    if a.batch == "item" and not a.family:
+        classes_item(a.dir)
     return rc
 
 
@@ -10988,6 +12330,8 @@ def cmd_static(a):
         return cmd_static_dru(a)
     if a.batch == "ass":
         return cmd_static_ass(a)
+    if a.batch == "item":
+        return cmd_static_item(a)
     rep = Report("static")
     A = S4.asm()
     for va, mn, sub in PINS:
@@ -11049,7 +12393,7 @@ def main(argv):
     ap.add_argument("cmd", choices=["cases", "check", "static", "manifest"])
     ap.add_argument("family", nargs="*")
     ap.add_argument("--dir", default=None, help="default workspace/logs/skills-cat-<batch>")
-    ap.add_argument("--batch", default="9a", choices=["9a", "9b", "9c", "9d", "sor", "ama", "nec", "pal", "bar", "dru", "ass"], help="the families of one batch (default 9a)")
+    ap.add_argument("--batch", default="9a", choices=["9a", "9b", "9c", "9d", "sor", "ama", "nec", "pal", "bar", "dru", "ass", "item"], help="the families of one batch (default 9a)")
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args(argv)
     return {"cases": cmd_cases, "check": cmd_check, "static": cmd_static, "manifest": cmd_manifest}[a.cmd](a)

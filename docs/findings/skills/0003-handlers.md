@@ -80,6 +80,9 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
 - [L] src:arreat-summit-skill-trees: extra skeletons disintegrate when a skill shrine wears off. **not covered**
   Detail: § 7 reads the limit at `PetAdd` only; what removes pets when `petmax` falls is unread (src:d2dfg-blizzard's
   `basemax`, "when skill levels are reset or changed", points the same way). A gap, in *Open questions*.
+  *2026-10-21 (plan 0046 batch `item`):* now **held** by the reading: the skill shrine's remove callback runs
+  `sub_00575900_PetLimitRefresh`, which recomputes each pet type's limit from the skill levels and calls `PetLimit`
+  ([skills/0015 § 10](0015-item.md#10-pets-when-petmax-falls), `[I]`). (0x00583BD0–0x00583BE1, fn:sub_00575900_PetLimitRefresh@0x00575900)
 - [L] src:arreat-summit-skill-trees: golems, skeletons and skeletal mages are "generated at the caster's level".
   **contradicted** (for Raise Skeleton)
   Detail: do 31 calls `SummonSetLevel(m, 0, lvl)`, which gives `min(max(L · 3/4 + skill level, 1), L)` with `L` the
@@ -250,6 +253,13 @@ return rec->srvmissilea;                                                // +0x48
   (`0x005FD850`, an item Teleport) steps the seed at `+0x20` of the unit it is given 2 to 20 times
   ([skills/0001 § 10](0001-dispatch.md#10-item-granted-skills); `p45b-reread.txt` R5). Helpers 3 and 4 are unread.
   (0x005FD900–0x005FD98A)
+  *2026-10-21 (plan 0046 batch `item`), emulated:* the two helpers take **`EDX` the skill** and the level as their
+  first stack word: `ItemCastAtUnit(ECX caster, EDX skill; lvl, target, effect)`, `ItemCastAtXY(ECX caster, EDX
+  skill; lvl, x, y, effect)` (`[C]` under ADR-0021, ending at `SKILLS_SrvStart`/`SKILLS_SrvDo` inside
+  `ITEMSKILL_Cast`); their three `ItemUse`-side callers are the item-use entries `g_ItemUseFns[10]` (`0x005BF170`) and
+  `[11]` (`0x005BF1F0`), which `sub_005BF240_ItemUse` runs and no stock Misc row selects. Helpers 3 and 4 do not draw;
+  helper 2 is given the cast's caster ([skills/0015 § 5](0015-item.md#5-itemskill_cast-its-itemtarget-helpers-and-its-callers)).
+  (0x005FDCE4–0x005FDD0B, fn:sub_005BF170_ItemUseCastFireBall@0x005BF170)
 
 ### 3. The stat-event handlers
 
@@ -280,7 +290,7 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
 | 17 | `0x005C0130` | stat 138 | `kill` | mana `+= stat · 256`, capped, overlay 152 | none |
 | 18 | `0x005C0260` | stat 139 | `kill` | for a demon victim, life `+= stat · 256`, capped, overlay 151 | none |
 | 19 | `0x005C0310` | stat 150 | as 7 | slow: `STATE_ApplyTimed` with stats 68, 69 = `−v`, `v` capped at 50 (players, bosses, hirelings, `MonTypeFlag`), 75 or 90 | none |
-| 20 | `0x005C0470` | stats 195, 196, 198 | attack, kill, hit events | skill on event: with no packet or packet `+0x00` bit 5, one inline step, `low % 100 < stat` → item cast (§ 2): without `ItemTgtDo` at the other unit, or at the unit's path point when none, effect 1; with `ItemTgtDo` only at the other unit, effect 0 | 1 inline |
+| 20 | `0x005C0470` | stats 195, 196, 198 | attack, kill, hit events | skill on event: with no packet or packet `+0x00` bit 5, one inline step, `low % 100 < stat` → item cast (§ 2): without `ItemTgtDo` at the other unit, or at the unit's path point when none, effect 1; with `ItemTgtDo` only at the other unit, effect 0 (*2026-10-21, plan 0046 batch `item`, emulated:* the other unit is then the cast's caster too, and with no other unit the handler returns 1 with no cast; [skills/0015 § 6](0015-item.md#6-the-stat-event-handlers-20-21-30)) | 1 inline |
 | 21 | `0x005C05A0` | stat 201 | `damagedinmelee`, `damagedbymissile` | skill on get-hit: packet result bit 2 needed; `RangeB(seed, 100) < stat` → cast, effect 0 | 1 |
 | 22 | `0x005C6370` | Bone Armor (68) | `absorbdamage` | absorbs `packet+0x08` from `aurastat1`, removes the state at 0 | none |
 | 23 | `0x005C6530` | Blood Golem (85) | `domeleedamage` | the golem's damage heals it and its owner (`0x005C5F10`) | none |
@@ -724,6 +734,8 @@ are cited where the claim is theirs.
   not followed. The caster's seed after that period is a function of this word alone.
 - [L] *2026-10-20 (Phase 1b):* what removes pets when `petmax` falls, for example extra skeletons when a skill shrine
   wears off (src:arreat-summit-skill-trees). § 7 reads the limit at `PetAdd` only; PetType `basemax`'s reader is
-  not read.
+  not read. *2026-10-21 (plan 0046 batch `item`):* read in [skills/0015 § 10](0015-item.md#10-pets-when-petmax-falls)
+  (`sub_00575900_PetLimitRefresh`, run by `STATE_DefaultRemoveCB` and the skill shrine's remove callback; `basemax`
+  is its limit for a type no skill raises). (fn:sub_00575900_PetLimitRefresh@0x00575900)
 - [L] Pet type 1's and type 7's special cases in `sub_00575850_PetLimit` (which rows they are), and where `SpawnOwnedMonster`'s
   block `+0x1C`/`+0x20` are filled by do 31 and 114 (register-passed; read as `pettype` and `petmax` by their use).
