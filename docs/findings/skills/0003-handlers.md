@@ -227,6 +227,14 @@ return rec->srvmissilea;                                                // +0x48
   three charges runs 143 (a step on the attacker's seed, then nothing: its `srvmissilea` is empty), 38 (delivery and
   two or three `RangeB` on the attacker's seed and the area's defence rolls) and 39 (a step, then the local seed).
   (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D53E0–0x005D5490)
+  *2026-10-21 (plan 0046 batch `ass`), emulated:* entries 36–41 and 143 are reproduced up to their boundaries (`[C]`
+  under ADR-0021; [skills/0014](0014-assassin.md) § 5): the inline step of the caster's seed at entry of 37, 39, 41 and
+  143 comes **before** the record test; 36's nova is centred on the target and owned by the caster; 40 has no record
+  test of its own. Two refinements of the 37/143 bullet: the `MissileData+0x28` value is `SkillGetParam2(280) + 1`
+  (the immediate `0x118`, Royal Strike's row, whatever row runs the ring), not the calling row's `Param2`, and ring 37
+  writes it with no null test of the missile; neither ring tests its step count `n`, so `n = 0` never ends the loop and
+  `n < 0` reads below the table (`[I]`, after the first creation). 41 returns 1 for a negative count.
+  (0x005D4657–0x005D467D, 0x005D4D77–0x005D4DAA, fn:sub_005D4150_SkillRing64LocalSeed@0x005D4150)
 
 ### 2. Item-event casts
 
@@ -414,6 +422,12 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
   `SkillMissileCreate(game, class; caster, id, lvl, 0, 0, 0, 0, 0)` (the Firestorm row now says so). Everything after
   those calls stays as read above, `[I]`. (fn:sub_005C6910_SkillDo114Summon@0x005C6910,
   fn:sub_005C7160_SkillDo117Firestorm@0x005C7160)
+  *2026-10-21 (plan 0046 batch `ass`), emulated:* start 23 and do 35 (the Fists of Fire row) are reproduced up to their
+  boundaries (`[C]` under ADR-0021; [skills/0014](0014-assassin.md) §§ 3, 4). Start 23 ends at `InMeleeRange(caster,
+  target, 0)` (0 without a target). Do 35 reads the caster's inventory first: with one it ends at
+  `InvGetBodyLocItem(inventory, 4)`; without one it sets bit 6 when bit 8 of `+0x38` is set and clears it otherwise,
+  runs do 34 (`MeleeHitTest(target, GetToHit, 0)` after its `aurastate` and `aurastat1` tests), and returns 1 where do 34
+  refuses (by the reading 1 after its hit path too). Everything after those calls stays as read above, `[I]`. (fn:sub_005D35D0_PrgChargeHitDualDo@0x005D35D0)
 
 ### 6. Tier A: missile do, hit and damage functions
 
@@ -545,6 +559,10 @@ if (m) { m->c4 &= ~4; SetStat(m, 74, 0); SummonSetLevel(m, max(calc2, 1), lvl); 
 - [I] `MissileData+0x28` is a per-missile stored seed word: written by `MISSDATA_SetSeedLow` (`0x0064A710`) at creation
   by do 37/143's rings, do 41, hit 36 and do 28/35 after their draws, read back by `MISSDATA_GetSeedLow` (`0x0064A730`)
   to re-seed. `+0x2C` holds a packed offset or a unit guid (`0x0064A760`/`0x0064A780`; hit 22 finds a unit by it).
+  *2026-10-21 (plan 0046 batch `ass`):* the rings' write is not a seed: they store `SkillGetParam2(280) + 1` (Royal
+  Strike's `Param2`, the immediate `0x118`) through `MISSDATA_SetSeedLow`, ring 37 for every missile, ring 143 for class
+  568 only ([skills/0014](0014-assassin.md) § 5, `[I]` after the first creation). (0x005D465E–0x005D4668,
+  0x005D4D7D–0x005D4D95)
 
 ### 10. Helpers P1.2 left unread
 

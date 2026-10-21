@@ -92,8 +92,8 @@ function a stock row uses on the machinery of plan [0045](0045-skills-missiles-m
   progressive entries), then 10 `item` (with Unsummon), then 8a, 8b, 8c (monster AI is phase (5), after animation;
   its plan may pull a monster sub-batch forward, or take the function as a boundary oracle under ADR-0020).
   *Carried from plan 0045's P1b review (2026-10-20):* the Assassin batch reads the five finishing-move calls of
-  `COMBAT_PrgFinisher` (start 25 at `0x005D6399` and `0x005D63E1`; do 42 `0x005D5A8C`, 50 `0x005D71F2`, 52
-  `0x005D79DF`); the item, shrine and object batch reads which unit `ITEMSKILL_Cast` gives the `ItemTarget` 2 helper
+  `COMBAT_PrgFinisher` (do 46 at `0x005D6399` and `0x005D63E1`, written "start 25" until the `lane/p46m11` review;
+  do 42 `0x005D5A8C`, 50 `0x005D71F2`, 52 `0x005D79DF`); the item, shrine and object batch reads which unit `ITEMSKILL_Cast` gives the `ItemTarget` 2 helper
   `0x005FD850` (it draws 2–20 steps on that unit's seed), whether helpers 3 `0x005FD9C0` and 4 `0x005FDA10` draw (and gives the three
   helpers `re/symbols.csv` rows: none has one), and
   what removes pets when `petmax` falls (a skill shrine wearing off). Each is filed back to plan 0045's spec as a
@@ -916,3 +916,86 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   replaced; the `dru` carry named). Review request closed
   ([archive](../backlog/archive/2026-10-21-spec-writer-architect-lane-srng-review-rng-seeds-armageddon-cast-draw.md));
   ledger row added (the lane's; the review's usage is the orchestrator's to add at the merge).
+- **2026-10-21 — Phase 1 batch `ass` landed for review (reverser, `lane/p46m11`, static, no harness).** The assassin
+  start functions 22–28, do functions 33–52 and 54, and the progressive entries 36–41 and 143 (`srvprgfunc`, run by
+  `COMBAT_PrgFinisher`; 36 also `ItemEffect` 36): 29 entries, all read and all emulated
+  ([skills/0014](../findings/skills/0014-assassin.md); tier A start 23, do 35, entries 38, 39, 143 emulated too). Draws
+  before the boundaries: entries 37, 39, 41 and 143 step the caster's seed once inline at entry, before their record
+  test, then draw on a stack seed seeded from the stepped low word (the ring's one step, 39's `RNG_Range(local, 2r)`
+  pairs, 41's two steps) up to their first creation; no case steps the target's seed (do 33's knockback step and do
+  42's `RNG_Range(caster, 100)` are after their boundaries, `[I]`). Raised by emulation (run:2026-10-21-cat-emu-ass,
+  `tools/skills_catalogue_emu.py --batch ass`, `check.txt` `dd6ed294…`, `manifest.sha256` `04f487b6…`): four families,
+  8 700 cases, 0 mismatches, 37 boundary/call-site triples asserted (site control 3 020 of 3 020), both seeds and the
+  stack seeds compared in every case, blocks and packets compared by content, register arguments where the callee reads
+  them first; nested boundaries by the helper's return address at its stack slot (`0x0057E240`, do 34 from do 35,
+  `0x005D6200`, `SkillNovaAtUnit`, the two rings, `0x005D5E10`, `0x005D7CE0`); five to seven negative controls per
+  family (each family has one failing 165 or more; the weak ones named with their deciding class). The calc count's
+  writer scan matches `moffs` stores and immediates (0 and 0). The same tool reproduces 9a–9d, `sor`, `ama`, `nec`,
+  `pal`, `bar` and `dru` byte for byte (`repro.txt`); the two development runs are kept under their own names in
+  `dev/`. The carried items: the five finishing-move calls of `COMBAT_PrgFinisher` are do 42's, do 46's (two, one per
+  frame parity; **not start 25's**, which is the 16-byte target test), do 50's and do 52's, each with
+  `QueuedHitFind`'s hit (do 42 and 52 without a null test); the `ItemEffect` 36 join is entry 36, a nova of the row's
+  `srvmissilea` centred on the cast's target unit. Surprises: the rings never test their step count (0 never ends,
+  `[I]`) and store Royal Strike's `Param2 + 1` in every missile's `+0x28`; the trap helper makes a bad `pettype` 0
+  instead of refusing; Dragon Flight alternates kick and teleport by the frame parity and reads Levels `Teleport`; do
+  35 returns 1 where do 34 refuses (and after its hit path, `[I]`). Tags: 39 `[C]`, 28 `[I]`, 4 `[L]` bullets; 27 symbols added (`I`). Dated notes
+  in skills/0001 § 12 and skills/0003 §§ 1, 5, 9. Review request
+  [to the architect](../backlog/archive/2026-10-21-reverser-architect-lane-p46m11-review-plan-0046-batch-ass.md); column
+  readers [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-ass-skills-levels-column-readers.md);
+  [to the spec-writer](../backlog/2026-10-21-reverser-spec-writer-combat-delivery-a3-finisher-callers-and-progressiv.md)
+  on combat/delivery A2/A3.
+- **2026-10-21 — `lane/p46m11` review (architect): accept with fixes.** Reviewed on the lane (head `a943188`), main not
+  merged (it moved to `f805cdf` with the `srng` and `h2c` merges; neither touches skills findings or these symbols, and
+  none of the 27 addresses or names is on main's side). From the lane's tool (`b38bba31…`), under a 4 GB scope,
+  `cases --batch ass`, `check --batch ass` and `static --batch ass` reproduce the kept case files, `cases.txt`,
+  `check.txt` (`dd6ed294…`) and `static.txt` (`fcf4be4f…`) byte for byte; `repro.sh` rerun into the review's scratch
+  gives the kept `repro.txt` (`43e65419…`) byte for byte (9a–9d and the six earlier classes); `sha256sum -c
+  manifest.sha256` (`04f487b6…`, 70 lines) passes. Read against objdump: start 25 and do 46 whole (`0x005D6330`–
+  `0x005D6405`), the six `call 0x5d5220` sites (a full-image grep), do 35 up to its do 34 call, `PrgCalcByCharge`
+  (`0x005D3DA0`), ring 37's loop tail (`0x005D4605`–`0x005D467D`), entry 41's two steps and remainders
+  (`0x005D5160`–`0x005D51DA`), the trap helper's class and `pettype` tests (`0x005D5E36`–`0x005D5E74`), do 48's frame test
+  (`0x005D691A`), start 26's `startmana` test and `STATLIST_Alloc` call, and do 52's `Teleport` branch. Tags recounted:
+  39 `[C]`, 28 `[I]`, 4 `[L]` bullets (unchanged by the fixes). **Rulings.** (1) **Start 25 vs do 46: do 46.** Start 25
+  is the 16 bytes `push edx; push ecx; call UNIT_GetTargetUnit; neg; sbb; neg; ret 8`; both finisher calls lie in do 46
+  (`0x005D6340`), one per parity of the caster's `+0x38` bit 8, each after `QueuedHitFind` and its `je`. Plan 0045's
+  P1b note had the function boundary wrong, not the sites. This plan's Phase 1 carried-item text is fixed (the
+  architect's own text, not counted on the lane), and skills/0001's *Leads used* detail with it (fix 2). (2) **The
+  ring's step count 0 loop stays `[I]`**, correctly placed after the first creation: `add esi, edi` with `edi = 4n` and a
+  signed `jl 0x100` never moves for `n = 0`; no case runs past the boundary, so neither the loop nor its count is
+  covered. The lane's negative branch was wrong (fix 1): a negative `4n` reads below the direction tables each pass and
+  the signed index leaves the loop only by wrapping past −2³¹; `4n` wraps for `|n| ≥ 2²⁹` too, so the `⌈64 / n⌉` count
+  holds for `0 < n < 2²⁹`. Whether a stock calc reaches 0 or a negative count stays the `[L]` under *Open questions*
+  (a calc-table check or the harness). (3) **The weak controls are enough, each with its deciding class.** `prg_k1` (7)
+  and `n18_le` (6) are thin but each is a whole class (the progressive path with two or more charges reaching a compared
+  value; a node `+0x18` equal to the frame), and a wrong reading cannot match a member by chance. The review also ran
+  scratch variants of the kept checker on the kept outputs (not kept; supporting this ruling only, no finding claim
+  rests on them): `prg_k1` applied to the trap family's `PrgCalcByCharge` readers (do 43, 48, 51, 54) fails 16 more;
+  a cap at 2 for 3 fails 3 + 12, an unsigned clamp 3 + 5, no lower clamp 16 + 27, and an unsigned do 48 frame test 1,
+  so the clamp's bounds and signedness are each separated, thinly. A later batch that reuses `PrgCalcByCharge` applies
+  its control in every family that reads it. (4) **The four new observed boundaries and the register arguments are
+  admitted** as cited in § 2 (`COMBAT_PrgFinisher` `mov edi, edx` / `mov [ebp−0x18], ecx`, `UnitTeleport` alike;
+  `InvGetBodyLocItem` and `0x006229F0` stack only); the earlier boundaries' register reads are as `dru`'s ruling 4.
+  (5) **Helpers run emulated are admissible** (the `dru` ruling 1); § 2 names the paths reached and § 6 the trap
+  helper's unreached branches. (6) **The draws before the boundaries are `[C]`** under ADR-0021 (c): the caster's seed
+  stepped at entry before the record test (`noseed` fails all 1 200 cases of the four entries) and the stack seeds
+  compared as frame words at their absolute slots (`ring_noinit` 243); do 33's knock step and do 42's
+  `RNG_Range(caster, 100)` are after their boundaries, `[I]`. (7) **The corrections stand as dated notes** in skills/0001
+  § 12 and skills/0003 §§ 1, 5, 9; skills/0003 § 1's "`n < 0` reads below the table" is right as written. **Fixes, made
+  in the documents:** (1) § 5's ring bullet and *Open questions*: a negative step count is not an endless loop (the
+  wrap above), the `⌈64 / n⌉` range bounded (misread); (2) skills/0001's *Leads used* detail (src:arreat-summit-skill-trees)
+  still named start function 25 for Dragon Claw's two sites after the § 12 note corrected it (stale cross-reference;
+  reverser review-fixes rule 12 gains this Seen line); (3) § 4's do 46 after-bullet read as two deliveries on the
+  no-hit path; now the finisher only on a hit, then one `DeliverQueued(target, 0)` on either path (other); (4) the
+  Answer's "After, from the reading" bullet had no anchor (gate W1); the after-boundary ranges of do 33, do 42, ring 37
+  and the trap helper added (wrong anchor). Counted: 4 (misread 1, stale cross-reference 1, wrong anchor 1, other 1). Review request closed
+  ([archive](../backlog/archive/2026-10-21-reverser-architect-lane-p46m11-review-plan-0046-batch-ass.md)); the
+  [archivist entry](../backlog/2026-10-21-reverser-archivist-plan-0046-ass-skills-levels-column-readers.md) and the
+  [spec-writer entry](../backlog/2026-10-21-reverser-spec-writer-combat-delivery-a3-finisher-callers-and-progressiv.md)
+  (combat/delivery A2/A3, the five finisher callers and the entries' raises) are **released**, the latter with the
+  negative-count and do 46 wording of fixes 1 and 3; lane ledger row added (the review's row is the orchestrator's at
+  the merge). **Phase 1 status:** the seven class batches and 9a–9d are accepted, eleven of fifteen batches and 230 of
+  the 310 entries (the other 80: batch 10's 4, 8a–8c's 70, and the six `general` tier-A entries plan 0045 read). Phase 1
+  is **not** complete. **Next for 0046:** batch 10 `item` (do 113, do 151, Unsummon's start 3 and do 4, and the callers:
+  stat-event handlers 20, 21, 30, charges, the shrine missiles, the object and quest `MissileCreateAt` sites, with the
+  carried `ITEMSKILL_Cast` helper items), on all the class batches' conventions; then 8a, 8b, 8c, unless the
+  monster-AI plan pulls one forward. Phase 2 still waits for 0045·P3's review.

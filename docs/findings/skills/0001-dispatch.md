@@ -131,8 +131,9 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
 - [L] src:arreat-summit-skill-trees: martial-arts charges build up to three, last for a time limit and are released
   by a normal attack or a finishing move. **held with refinement**
   Detail: the cap 3 and the `auralencalc` timed list (§ 12). The finisher has **six** direct call sites (R6):
-  `SKILL_AttackDo` (`0x0056F1CE`), named in § 12, and five in finishing-move functions (R7): start function 25 (Dragon
-  Claw, two sites) and do functions 42 (Dragon Talon), 50 (Dragon Tail), 52 (Dragon Flight); those are plan 0046's.
+  `SKILL_AttackDo` (`0x0056F1CE`), named in § 12, and five in finishing-move functions (R7): do functions 46 (Dragon
+  Claw, two sites; "start function 25" until the 2026-10-21 note in § 12), 42 (Dragon Talon), 50 (Dragon Tail), 52
+  (Dragon Flight), read by plan 0046's batch `ass`.
 - [L] src:arreat-summit-skill-trees: Phoenix Strike releases only the active charge. **held**
   Detail: Royal Strike's row has no `prgstack`, so only `srvprgfunc n` runs (§ 12, `p45b-rows.txt` `prgstack`).
 - [L] src:arreat-summit-skill-trees: Impale raises the chance that the weapon loses durability. **held with refinement**
@@ -651,6 +652,12 @@ return 1;
   functions: start function 25 (Dragon Claw, two sites) and do functions 42 (Dragon Talon), 50 (Dragon Tail) and 52
   (Dragon Flight). Those functions are not read; they are plan 0046's (`p45b-reread.txt` R6, R7; src:arreat-summit-skill-trees
   in *Leads used*). (0x005D5A8C, 0x005D6399, 0x005D63E1, 0x005D71F2, 0x005D79DF)
+  *2026-10-21 (plan 0046 batch `ass`):* the two sites `0x005D6399` and `0x005D63E1` are in **do 46** (Dragon Claw's do
+  function `0x005D6340`, one per frame parity), not in start 25: start 25 (`0x005D6330`) is the 16-byte test
+  `UNIT_GetTargetUnit ≠ 0` and calls nothing else. Each of the five passes `QueuedHitFind(caster, target)`'s result
+  (do 42 and do 52 with no null test); do 42's, do 46's and do 50's calls are `[C]` as boundaries under ADR-0021
+  ([skills/0014](0014-assassin.md) § 4). (fn:sub_005D6340_SkillDo46DragonClaw@0x005D6340,
+  fn:sub_005D6330_SkillSt25HasTarget@0x005D6330, run:2026-10-21-cat-emu-ass)
 
 ### 13. Monster skill use
 

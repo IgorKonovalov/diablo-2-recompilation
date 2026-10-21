@@ -47,7 +47,9 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
 12. **Carry a correction into the section it corrects**, not only into the run's ledger section: the claim, its
     tables and the summary lists that repeat it. Seen: the summit door and the P1b summit-warp verdict
     ([0042](../../../../docs/plans/done/0042-quests-travel.md) P2 part 1 review); NPC 266's two draws, word 40's bit map and
-    the switched-off reward writes, left in § 16 only (0042 P2 part 2 review).
+    the switched-off reward writes, left in § 16 only (0042 P2 part 2 review); skills/0001's *Leads used* detail still
+    naming start 25 for do 46's finisher calls after the § 12 note corrected it (`lane/p46m11` review,
+    [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
 13. **At an observed boundary (ADR-0021), the `[C]` ends at the call.** What the callee makes of a compared argument
     (a class word, a register it must preserve, a mode) and every later call go in "After, `[I]`", also in the Answer
     summary. Seen: the radius of hits 24, 44 and 14 in a callee-saved register (`lane/p46m3` review); hit 52's row 0
