@@ -1249,3 +1249,24 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   two `0x005CC3B0` calls), then 8c (do 129's direct call of do 98), on the class batches' conventions, unless the
   monster-AI plan pulls one forward or takes a function as a boundary oracle (ADR-0020). Phase 2 still waits for
   0045·P3's review.
+- **2026-10-21 — Phase 1 batch 8b landed for review (reverser, `lane/p46m14`, static, no harness).** The monster skill
+  functions of Skills rows 190–289: start 54, 55, 59, 60, 64, do 99–109, 112, 125–127, 141, 152, 22 entries, all read
+  and all emulated ([skills/0017](../findings/skills/0017-monster-8b.md)). Raised by emulation
+  (run:2026-10-21-cat-emu-8b, `tools/skills_catalogue_emu.py --batch 8b`, `check.txt` `2f000a04…`, `static.txt`
+  `4c181a27…`, `manifest.sha256` `1c9c42ff…`): four families, 9 200 cases, 0 mismatches, 27 boundary/call-site triples
+  (site control 3 698 of 3 698), both seeds compared in every case, every dumped byte written by its case; three to
+  eight negative controls per family, each family with one failing 152 or more, every control equal to its deciding
+  class on the 24 `CLASS` lines. The same tool reproduces 9a–9d, the seven class batches, `item` and 8a byte for byte
+  (`repro.txt` `948be1e1…`); four development runs and a first repro kept in `dev/`. **Carried item:** do 152's two
+  `0x005CC3B0` calls are `0x005CC770` (no target point, or `MissileCreate` returning 0) and `0x005CC827` (after a created
+  missile, the frame past the node's end or no state 12); do 152 is do 95's code instruction for instruction
+  (`static.txt`: 147 each, 0 differ), its first call emulated to `CancelEvents`. Draws before the boundaries: do 112's
+  inline step of the caster's seed (the curse index, low word mod 5) and start 55's `RNG_RangeB` on a local seed from the
+  two guids; no other. Surprises: do 112 casts one of five fixed curse rows (66, 72, 82, 87, 91) from their own columns,
+  row 91 (Lower Resist) with a Decrepify-like block and an unreachable resist branch; do 141 puts skill 285 into its block
+  whatever the id; do 104 writes `summode` over its level argument and never uses it; do 105's missiles take their y
+  position from the x offset; do 127's life unit is 0 for a player caster; start 59 is start 53 with calc1 for calc2.
+  Tags: 32 `[C]`, 5 `[I]`, 3 `[L]` bullets; 28 symbols added (`I`). Review request
+  [to the architect](../backlog/2026-10-21-reverser-architect-lane-p46m14-review-plan-0046-batch-8b.md); column readers
+  [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-8b-skills-missiles-column-readers.md). No
+  spec-writer entry: no spec states these functions yet (Phase 3 takes the finding).
