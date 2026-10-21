@@ -673,3 +673,74 @@ Plan 0045 Phase 2's harness runs: none yet. Plan 0046's emulated runs (ADR-0015)
   boundary callee does and everything after it (entry 146's re-seed of the caster's seed and its free-point draws,
   entry 145's damage rolls, the hits' elemental rolls among it); when the game runs these functions or with which seed.
   (fn:sub_005C8190_SkillDo124PeriodicState@0x005C8190, fn:sub_005C8080_SkillDo123Volcano@0x005C8080)
+
+## run:2026-10-21-cat-emu-ass
+
+- **Question:** (plan 0046 Phase 1, batch `ass`) Do the assassin start functions 22–28, do functions 33–52 and 54 and
+  the progressive entries 36–41 and 143 map their inputs (the Skills, Missiles and Levels records, the caster, its
+  path, used-skill node, unit skill chain, stat lists, state words, inventory word and queued hits, the target unit and
+  its position, the rooms, a monster caster's owner, the game frame and pool word, and the seeds) to the result they
+  return, or to the arguments, pointed-to blocks, node, frame, argument-slot and stack-seed words and seed states at the
+  call they end in, exactly as [skills/0014](0014-assassin.md) §§ 3–6 say, and which seed does each draw before its
+  boundary step?
+- **Setup:** as run:2026-10-21-cat-emu-dru: Ghidra 12.1.2 p-code emulator on the pinned `game.exe` (lane copy
+  `GHIDRA_PROJ_DIR=workspace/ghidra-p46m11`, heap 3 GB, one instance at a time, each under a 4 GB scope),
+  `re/ghidra_scripts/EmuBoundary.java` unchanged. No wine, nothing runs natively, no slot. Models, case writers and
+  checks: the `ass` families of `tools/skills_catalogue_emu.py` (`b38bba31…`; the kept outputs were emulated from case
+  files this revision regenerates byte for byte, and it reproduces the kept `check.txt` byte for byte), with `dru`'s
+  conventions (the call site of every boundary asserted with a site control, both seeds written and compared in every
+  case, a boundary's pointer argument compared by content: the hit packets, the `MissileCreate`, spawn and
+  `ApplyTimed` blocks; the node, argument-slot, frame and stack-seed words dumped and compared; register arguments
+  compared only where the callee reads them before writing them; no model compares a callee-saved register that is not
+  a boundary argument; a boundary inside a helper compares the helper's return address at its absolute stack slot, the
+  helpers' call sites listed by `static`). All inputs synthetic (stock parameter values among them); every case-writer
+  draw from `random.Random("catass-<family>")`. Files in `workspace/logs/skills-cat-ass/`, `manifest.sha256`
+  `ef691f38…` (70 files: cases, memory specs, expected inputs, outputs, the `.err` logs, `cases.txt`, `check.txt`
+  `dd6ed294…`, `static.txt` `fcf4be4f…`, `rows.txt` `a34a038f…` with its `rows.sh`, `repro.txt` `43e65419…` with its
+  `repro.sh`, the run script `run_ass.sh`, and the two development runs under `dev/` with `dev/notes.txt`);
+  `sha256sum -c manifest.sha256` from that directory passes. `repro.txt` records that the same tool revision
+  regenerates every case, memory and expectation file of 9a, 9b, 9c, 9d, `sor`, `ama`, `nec`, `pal`, `bar` and `dru`
+  byte for byte and reproduces their kept `check.txt` and `static.txt` byte for byte from their kept outputs.
+- **Procedure:**
+  ```
+  D=workspace/logs/skills-cat-ass
+  python3 -I tools/skills_catalogue_emu.py cases --batch ass > $D/cases.txt
+  $D/run_ass.sh $D start_ass hit_ass prg_ass trap_ass     # one EmuBoundary instance at a time, each in a 4 GB scope
+  python3 -I tools/skills_catalogue_emu.py check  --batch ass > $D/check.txt
+  python3 -I tools/skills_catalogue_emu.py static --batch ass > $D/static.txt
+  $D/repro.sh <scratch dir> > $D/repro.txt
+  python3 -I tools/skills_catalogue_emu.py manifest --batch ass --write
+  ```
+  Each memory spec points `g_pDataTables` at a scratch DataTables written one field per field read (Skills, Missiles,
+  ItemStatCost, MonStats, MonStats2, the calc pool, the States, PetType counts and the Levels records at `+0xC58`/
+  `+0xC5C`), sets the missile table and count `MissileSpeedAtLevel` reads (`0x0096C794`/`0x0096C79C`, as in `sor`),
+  names the boundaries (`observe`: `dru`'s plus `COMBAT_PrgFinisher`, `InvGetBodyLocItem`, `UnitTeleport`,
+  `0x006229F0`) and guards the allocator and the fatal path.
+- **Observed** (`check.txt`, `static.txt`):
+  ```
+  CATASS start_ass cases=2100 match=2100 bad=0 neg=507 traced=64 undeclared=0 stopped=0
+  CATASS hit_ass   cases=2100 match=2100 bad=0 neg=632 traced=63 undeclared=0 stopped=0
+  CATASS prg_ass   cases=2100 match=2100 bad=0 neg=1559 traced=12 undeclared=0 stopped=0
+  CATASS trap_ass  cases=2400 match=2400 bad=0 neg=511 traced=97 undeclared=0 stopped=0
+  CATASS static data_imms=0 data_stores=0 helper_sites=22 pins=66 pins_ok=66 ro_reads=5 table_entries=29
+  ```
+  8 700 cases. Every negative control fails (per-control counts on the `negative control` lines; each family has one
+  failing 90 or more cases: `st25_inv` 300, `parity_inv` 350, `noseed` 1 200, `pet_keep` 165; the weak ones fail on
+  the deciding class skills/0014 § 2 names); the site control fails on all 3 020 matched boundary cases (37 `site`
+  lines: function, boundary, return address; 685 + 753 + 674 + 908). The skills calc function count's scan names every
+  operand form: 0 stores, 0 immediates, 7 reads. Two development runs came first and are kept under their own names in
+  `dev/` (`dev/notes.txt`): the first mismatched on 131 do 46 and do 52 cases and one start 26 case (the model read the
+  json row's stat values by integer key; the keys are strings) and had two controls that did not fail; the second
+  matched in full; the writers were re-weighted between them and before the kept run.
+- **Conclusion:** bit-exact reproduction (evidence rule 4, ADR-0015) of the functions' maps on returning cases (`[C]`:
+  every refusal path, start 22's and 25's results, do 35's 1, entry 39's and 41's 1, do 54's town 1) and of their maps
+  up to their boundary calls with the call site, the helper return addresses, the arguments (register arguments where
+  the callee reads them first), the pointed-to blocks, the node, frame, argument-slot and stack-seed words and both
+  seeds asserted (`[C]` under [ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md); skills/0014 names each
+  claim's boundary). Four entries draw before their boundary, each one inline step of the caster's seed at entry before
+  the record test: 37 and 143 (then one step of the ring's stack seed), 39 (then two `RNG_Range` of its stack seed per
+  try) and 41 (then two steps of its stack seed); no case steps the target's seed. Not covered: what any boundary
+  callee does and everything after it (do 33's knock step and do 42's `RNG_Range(100)` on the caster's seed, the
+  physical and elemental rolls, the finisher, the rings' later creations among it); when the game runs these functions
+  or with which seed. (fn:sub_005D4E70_SkillPrgDo37Ring@0x005D4E70, fn:sub_005D3F90_SkillPrgDo39Scatter@0x005D3F90,
+  fn:sub_005D5080_SkillPrgDo41Scatter@0x005D5080)

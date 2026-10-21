@@ -892,3 +892,31 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `ass`) may start**, with 9c, 9d, `sor`, `ama`, `nec`, `pal`, `bar` and `dru`'s conventions; a callee that an earlier
   batch observed may run emulated when its reads are declared, and the finding then says which paths of it were
   reached.
+- **2026-10-21 — Phase 1 batch `ass` landed for review (reverser, `lane/p46m11`, static, no harness).** The assassin
+  start functions 22–28, do functions 33–52 and 54, and the progressive entries 36–41 and 143 (`srvprgfunc`, run by
+  `COMBAT_PrgFinisher`; 36 also `ItemEffect` 36): 29 entries, all read and all emulated
+  ([skills/0014](../findings/skills/0014-assassin.md); tier A start 23, do 35, entries 38, 39, 143 emulated too). Draws
+  before the boundaries: entries 37, 39, 41 and 143 step the caster's seed once inline at entry, before their record
+  test, then draw on a stack seed seeded from the stepped low word (the ring's one step, 39's `RNG_Range(local, 2r)`
+  pairs, 41's two steps) up to their first creation; no case steps the target's seed (do 33's knockback step and do
+  42's `RNG_Range(caster, 100)` are after their boundaries, `[I]`). Raised by emulation (run:2026-10-21-cat-emu-ass,
+  `tools/skills_catalogue_emu.py --batch ass`, `check.txt` `dd6ed294…`, `manifest.sha256` `ef691f38…`): four families,
+  8 700 cases, 0 mismatches, 37 boundary/call-site triples asserted (site control 3 020 of 3 020), both seeds and the
+  stack seeds compared in every case, blocks and packets compared by content, register arguments where the callee reads
+  them first; nested boundaries by the helper's return address at its stack slot (`0x0057E240`, do 34 from do 35,
+  `0x005D6200`, `SkillNovaAtUnit`, the two rings, `0x005D5E10`, `0x005D7CE0`); five to seven negative controls per
+  family (each family has one failing 165 or more; the weak ones named with their deciding class). The calc count's
+  writer scan matches `moffs` stores and immediates (0 and 0). The same tool reproduces 9a–9d, `sor`, `ama`, `nec`,
+  `pal`, `bar` and `dru` byte for byte (`repro.txt`); the two development runs are kept under their own names in
+  `dev/`. The carried items: the five finishing-move calls of `COMBAT_PrgFinisher` are do 42's, do 46's (two, one per
+  frame parity; **not start 25's**, which is the 16-byte target test), do 50's and do 52's, each with
+  `QueuedHitFind`'s hit (do 42 and 52 without a null test); the `ItemEffect` 36 join is entry 36, a nova of the row's
+  `srvmissilea` centred on the cast's target unit. Surprises: the rings never test their step count (0 never ends,
+  `[I]`) and store Royal Strike's `Param2 + 1` in every missile's `+0x28`; the trap helper makes a bad `pettype` 0
+  instead of refusing; Dragon Flight alternates kick and teleport by the frame parity and reads Levels `Teleport`; do
+  35 returns 1 whatever do 34 returns. Tags: 39 `[C]`, 26 `[I]`, 4 `[L]` bullets; 27 symbols added (`I`). Dated notes
+  in skills/0001 § 12 and skills/0003 §§ 1, 5, 9. Review request
+  [to the architect](../backlog/2026-10-21-reverser-architect-lane-p46m11-review-plan-0046-batch-ass.md); column
+  readers [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-ass-skills-levels-column-readers.md);
+  [to the spec-writer](../backlog/2026-10-21-reverser-spec-writer-combat-delivery-a3-finisher-callers-and-progressiv.md)
+  on combat/delivery A2/A3.
