@@ -810,3 +810,27 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   ([archive](../backlog/archive/2026-10-21-reverser-architect-lane-p46m9-review-plan-0046-batch-bar.md)); the
   archivist entry stays open for its lane; ledger row added. **The next batch (druid, `dru`) may start**, with 9c, 9d,
   `sor`, `ama`, `nec`, `pal` and `bar`'s conventions, and development outputs kept under their own names.
+- **2026-10-21 — Phase 1 batch `dru` landed for review (reverser, `lane/p46m10`, static, no harness).** The druid
+  start functions 56–58, do functions 114–124 and do-table entries 145 and 146 (the States `srvactivefunc` of 144
+  `hurricane` and 145 `armageddon`, run by `sub_0056D790_StateDoFunc` on unit event 5 with the event's skill id and
+  level): 16 entries, all read and all emulated ([skills/0013](../findings/skills/0013-druid.md); tier A do 114, do 117
+  emulated too). Draws before the boundaries: do 124's `RNG_Range(caster, 0x10000)` and do 123's `RNG_Range(caster,
+  0x100)`, both on the caster's seed; no case steps the target's seed (entry 146's re-seed of the caster and its point
+  draws, entry 145's damage rolls and the hits' elemental rolls are after their boundaries, `[I]`). Raised by emulation
+  (run:2026-10-21-cat-emu-dru, `tools/skills_catalogue_emu.py --batch dru`, `check.txt` `592baf51…`, `manifest.sha256`
+  `d1a77e1f…`): four families, 8 400 cases, 0 mismatches, 33 boundary/call-site triples asserted (site control 3 967
+  of 3 967), both seeds compared in every case, blocks, packets and the `RectTest` rectangle compared by content,
+  register arguments where the callee reads them first; nested boundaries by the helper's return address at its stack
+  slot (`0x0056E680`, `0x005C8980`, `0x005C7040`, `SkillTargetCellFree`, `COLL_WHTest`); four to six negative controls
+  per family (each family has one failing 134 or more; the weak ones named with their deciding class); `COLL_WHTest`
+  runs emulated (a boundary in `sor`) so do 123's draw is reached. The calc count's writer scan matches `moffs` stores
+  and immediates (0 and 0). The same tool reproduces 9a–9d, `sor`, `ama`, `nec`, `pal` and `bar` byte for byte
+  (`repro.txt`); the two development runs are kept under their own names in `dev/`. Surprises: a `ResultFlags` bit-0
+  skill makes no hit test in start 58 and do 122; do 123 has no upper test on its class (the fatal path in
+  `SkillTargetCellFree`); do 119 puts the target point's x in the spawn block's `+0x24`; do 120 evaluates its
+  `aurastat` calcs at the stack count (`[I]`); do 124's draw is the word Armageddon's first period re-seeds from
+  (`[I]` after the boundary; skills/0003 § 9 note, rng/seeds open question to the spec-writer). Tags: 25 `[C]`, 25 `[I]`,
+  4 `[L]` bullets; 20 symbols added (`I`). Dated notes in skills/0003 § 5 (the Firestorm row in step) and § 9. Review
+  request [to the architect](../backlog/2026-10-21-reverser-architect-lane-p46m10-review-plan-0046-batch-dru.md); column
+  readers [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-dru-skills-missiles-column-readers.md);
+  [to the spec-writer](../backlog/2026-10-21-reverser-spec-writer-rng-seeds-armageddon-first-period.md) on rng/seeds.

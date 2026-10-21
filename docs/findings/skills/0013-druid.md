@@ -173,8 +173,8 @@ None. No community document was opened for this batch.
 The method is skills/0012's: each case calls the function with `ECX` = the game, `EDX` = the caster and the stack
 `(id, lvl)`, and dumps the stack, the caster's and the target's seeds, the caster's `+0xC4`, the second argument's slot
 and, where a claim writes them, the used node's `+0x18` (start 57, do 120, 121, 124) and the first argument's slot
-(entry 145, do 123). Emulated, not observed (new for this batch): `0x00643CE0`, `SkillSummonClass` with
-`sub_0063EA70_SkillSummonRec` (the `EDX` 0 path), `sub_006444A0_UnitSkillGet18`, `sub_00644560_UnitSkillSet18`,
+(entry 145, do 123). Emulated, not observed: `0x00643CE0`, `SkillSummonClass` with
+`sub_0063EA70_SkillSummonRec` (the `EDX` 0 path, as in skills/0009), `sub_006444A0_UnitSkillGet18`, `sub_00644560_UnitSkillSet18`,
 `0x004EFC80`, `0x0056E680` up to its `MeleeHitTest`, `0x005C7040` up to its first `MissileCreate`, `0x005C8980` with
 `STATLIST_GetBaseStat` (through `0x00625D00`) and `SKILLS_GetRecord`, and **`COLL_WHTest` (`0x0064D800`, a boundary in
 skills/0008) with `COLL_CellTestNb` and `DUNGEON_GetCollMap`** up to `COLL_RectTest`; and the earlier batches' helpers
@@ -282,6 +282,9 @@ m = SpawnOwnedMonster(game, &blk);
   (`STATE_GroupClear(…, 1)`), reads the list's stat 350, and through that skill's node calls `0x005C6BF0(caster, 10)`,
   `0x00644340` and `STATE_Set(caster, state, 0)`. By the stock rows the state is the wereform (139 `wolf`, 140 `bear`,
   177 `delerium`). (0x005C6F25–0x005C7039, 0x005C6C50–0x005C6CA4)
+- [I] Not run: a null caster (do 116, 120 and 124 skip bit 6 for it and pass type 6 and guid −1 to `STATLIST_Alloc`,
+  `lea eax, [edi+0x6]; or ecx, −1`); every case has a caster of type 0 or 1, so `UNIT_HasState`'s type-3 branch is not
+  run either. (0x005C6F69–0x005C6F7A, 0x005C78AC–0x005C78BD, 0x005C8270–0x005C8281)
 - [C] (ADR-0021; ends at `COMBAT_DeliverQueued` @0x005C786A, `STATLIST_Alloc` @0x005C78D1 or `StatListSetEnd`
   @0x005C7917) **Do 120** (`0x005C77C0`): the record; `aurastate` in `[0, States count)` (`jl`, `jge`; else 0);
   `UNIT_GetUsedSkill(caster)` (0 → 0); `0x00643CE0(node, …, 0x2AF)` not equal to the id → 0; bit 6; a target →
