@@ -34,4 +34,5 @@ against all of them before you file the review request. Categories are those of 
    (`lane/p37s`, 0037); cube G4 (`lane/p39s`, 0039); a shortfall the logs already covered (`lane/p43s`, 0043).
 9. **Cite the exact instruction the finding gives**, and link the section that holds the object named.
    Seen: the cold-draw anchor (`lane/p37s`, 0037); the glossary *near list* link (`lane/wiki3`, 0038); a packing
-   anchored to the checker's decoder, not the code's globals (`lane/p43s`, 0043).
+   anchored to the checker's decoder, not the code's globals (`lane/p43s`, 0043). Keep the finding's mood: chain/0001's
+   "the creation would be the monsters chain's" restated as "is" in a `[C]` row (`lane/s48p3`, [0048](../../../../docs/plans/0048-seed-to-world.md)).

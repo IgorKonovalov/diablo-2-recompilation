@@ -458,9 +458,54 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   of each game type in each difficulty; 2 189 populations (2 000); 13 056 objects (300); 63 champion and 162 unique
   packs with 217 mods rolls (100 special monsters); 1 314 drops with an item (500) with no builder oracle; the record
   lists each input and remaining oracle with its count (after fix 1). **Phase 2 closed.**
-  **Next: Phase 3** (spec-writer, [entry](../backlog/2026-10-21-architect-spec-writer-plan-0048-phase-3-seed-to-world-spec.md)):
+  **Next: Phase 3** (spec-writer, [entry](../backlog/archive/2026-10-21-architect-spec-writer-plan-0048-phase-3-seed-to-world-spec.md)):
   `docs/specs/chain/README.md` and the *Inputs and oracles* updates, the re-creation marks in the owning spec, the
   chest writer and oracle 13's unreached branches under *Open questions*; then Phase 4. Reverser `review-fixes.md`
   rule 6 extended (a kept file renamed under a manifest's name; seen with `lane/p46m9`'s overwritten dev outputs).
   Review request [closed](../backlog/archive/2026-10-21-reverser-architect-review-plan-0048-phase-2-run-2.md); the
   lane's two ledger rows added (the review's row is the orchestrator's, with its usage).
+- **2026-10-21 — Phase 3 written, review requested (spec-writer, `lane/s48p3`, static, no harness).**
+  [specs/chain](../specs/chain/README.md) (`draft`, C 89 / I 7 / L 6): the call order A–H from the game seed to a
+  populated level and a drop, as a flowchart and a sequence diagram; the inputs by class with run 2's counts (oracle 25:
+  7 290 re-creations, 103 no unit); the retired oracles linked to their models and the remaining ones counted; an
+  entry-contract table; four worked examples from kept logs (`-seed 4802` to level 57, one oracle-free population of
+  it, a gold drop, two r2-xn2 re-creations with their marks). Re-creation marks in
+  [drlg/lifecycle § H5](../specs/drlg/lifecycle.md#h5-the-grid-marks-of-a-re-created-monster): `[C]` on the 1 903
+  compared, the dead sequences on the 140 outside r2-xn1, the call path `[I]`. *Inputs and oracles* and the stale
+  passages of the Phase 1 review's ruling 5 and chain/0001 § 5 updated in 13 specs. 6 open questions, the chest
+  interact-byte writer and MonEquip's unreachable branches among them. Phase 4 not started. Review request
+  [entry](../backlog/archive/2026-10-21-spec-writer-architect-review-plan-0048-phase-3-seed-to-world.md).
+- **2026-10-21 — Phase 3 reviewed (architect, on `lane/s48p3`, not merged with `main`, whose `lane/s46d` merge touches
+  combat/delivery only): accept with fixes (2); Phase 3 done; Phase 4 released.** Worked examples re-read from the kept
+  logs: example 1 (`tools/chain.py gen --seed 4802 --diff 0 --exp 1 --levels 57`, under `MemoryMax=4G`) prints the
+  game seed, the four draws, `levelSeedBase` `e0a791e4` and level 57's `e0a7921d:0000029a` and pool 374, 101, 101, equal
+  to `GAME`, `OGC` and `LC0` (lines 47, 49, 2073); example 2's `RW0` (3944), `P0` (3959) and `PX` (4152) seeds, the
+  wanderer `0x14BE`, the eight slots, the 27 game-seed steps to `PA`, the three creations' game and unit seeds and the
+  group draw equal the log, and a check of the log listing its oracle-free populations names this one (line 3959, level
+  57, 3 creations); example 3's two game-seed steps and the unit-seed step recomputed with `Step`, stat 14 = 31 at
+  `IIS1`, the next `TCR`'s `gseed` `a15d299b:15eb20e3`; example 4's scope `CMR0` 39133 .. `CMRX` 39176, the room seed's
+  three draws per record recomputed, and both records' `CM` sequences in order. Per-log outputs of both logs: 0
+  sub-checks failed. Every count of § Inputs, the remaining-oracle table, the step notes and H5 agrees with
+  run:2026-10-21-chain2's record; every `fn:`/`data:` anchor added in the 14 specs resolves in `re/symbols.csv` with its
+  name; the three diagrams state nothing the text does not; the six `[L]` of chain and objects' new one are under *Open
+  questions*; the tags recount to the front matters; the gate is green before and after the fixes.
+  **Fixes.** (1) **overclaim**: objects *Inputs and oracles*, the operate monster spawn row said its creation "is the
+  monsters chain's once the operate's frame and seeds are given"; chain/0001 oracle 8 says *would be*, and the chain
+  counts those creations outside the model; the row now says so. (2) **overclaim**: drlg/room-tiles step 11's `[C]`
+  header carried note 11's `[I]` preset-unit reading; split out with its own `[I]` (room-tiles I 33 → 34).
+  **Rulings.** (1) **The re-creation marks** follow the `lane/p48h` and `lane/p48r2` rulings: H5's `[C]` is on the
+  1 903 compared, the dead sequences on the 140 outside r2-xn1 (the 166 and 8 are observation counts, the scoping bullet
+  says which carry the evidence), the marks scoped to oracle 25's values, the 5 284 unchecked admitted for the result
+  only, the `recreation-off` 63 a floor, the call path `[I]`; accepted. (2) **items/tc and items/quality's "quality roll
+  oracle" wording stays**: each passage is scoped to a named pre-chain run (run:2026-10-11-tc-drops' replay, worked
+  example 1's table, the 266 MF-0 rolls) and true of it; both specs already state the roll modelled (items/tc's 9 184
+  calls, items/quality's resolver totals), chain/0001 marks oracle 5 *chained* before plan 0048, and the chain spec's
+  retired table links items/quality. A later edit of either spec may relabel the worked-example row; no entry now.
+  items/cube and monsters/pool (oracles 9, 10, 23) are off the chain and rightly untouched. (3) **chain is `reviewed`**
+  (front matter set at this review). (4) **Phase 4 may start**: [entry](../backlog/2026-10-21-architect-spec-writer-plan-0048-phase-4-seed-to-world-wiki.md),
+  with the W4 warnings this phase's edits left on eight wiki pages folded in.
+  Research map: the `chain` row (spec link, `reviewed`, counts) and the count rows of drlg/lifecycle, drlg/collision,
+  drlg/room-tiles, objects and monsters/stats rewritten; dates bumped on drlg/README, monsters/spawn, monsters/special and
+  items/affixes. Spec-writer `review-fixes.md` rule 9 extended (the finding's mood). Review request
+  [closed](../backlog/archive/2026-10-21-spec-writer-architect-review-plan-0048-phase-3-seed-to-world.md); the lane's
+  ledger row added (the review's row is the orchestrator's, with its usage).

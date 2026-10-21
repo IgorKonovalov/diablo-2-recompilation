@@ -3,9 +3,9 @@ spec: monsters/stats
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, monsters/spawn, monsters/special, items/properties, data/excel]
-consumed_by: [items/tc, hirelings, combat/overview, combat/damage, stats/aggregate]
-tags: {C: 106, I: 58, L: 4}
-updated: 2026-10-20
+consumed_by: [items/tc, hirelings, combat/overview, combat/damage, stats/aggregate, chain]
+tags: {C: 110, I: 58, L: 4}
+updated: 2026-10-21
 ---
 
 # Monster stats: hit points, defence, experience, resistances, MonProp and the mod effects
@@ -35,7 +35,7 @@ flowchart TD
   acxp --> cls["classic nightmare/hell (D)<br/>via the stat callback (E)"]
   cls --> sk["skills (B)"]
   sk --> mp["MonProp (F)"]
-  mp --> me["MonEquip (oracle)"]
+  mp --> me["MonEquip (B12)"]
   me --> sp["special-mod handlers (G)<br/>monsters/special"]
 ```
 
@@ -136,9 +136,9 @@ only, no frequency and no champion chance. [C] (run:2026-10-15-berserk-forced, [
 
 | Input | Kind | What this spec needs | Owner | Tag |
 |---|---|---|---|---|
-| unit seed at `MonStatsInit` entry | seed input | `Init(step(game).low)` (rng/seeds 7a); 22 creations of the run start from another seed, which the model takes from the log | [rng/seeds](../rng/seeds.md), [spawn § J](spawn.md#j-creation-and-the-unit-seed) | [C] (run:2026-10-15-mon-stats) |
+| unit seed at `MonStatsInit` entry | seed input | `Init(step(game).low)` (rng/seeds 7a); 22 creations of the run start from another seed, which the model takes from the log: the region append's `MonVariantRoll` on the unit seed ([pool § D](pool.md#d-appearance-sets-sub_005bdb20_monvariantroll)), which the chain predicts ([chain § Algorithm](../chain/README.md#algorithm) E2) | [rng/seeds](../rng/seeds.md), [spawn § J](spawn.md#j-creation-and-the-unit-seed) | [C] (run:2026-10-15-mon-stats, [chain/0002 § 3](../../findings/chain/0002-retirements.md#3-oracle-14-the-unit-seed-after-sunitcreate)) |
 | monster level | value input | stat 12 before this spec's writes | [pool § E](pool.md#e-the-monster-level-sub_00573cb0_monstatsinit) | [C] (run:2026-10-15-mon-stats) |
-| `MonEquipInit`'s item creation | ADR-0004 seed oracle | the unit seed after it; no class with an `oninit` MonEquip row was met | `items/*` | [I] (fn:sub_005D6B60_MonEquipInit@0x005D6B60) |
+| `MonEquipInit`'s item creation | modelled (B12; an ADR-0004 seed oracle in this spec's run, which met no class with an `oninit` row) | the unit-seed step per row and each item's two game-seed steps; the items themselves are the item chain's ([chain § Algorithm](../chain/README.md#algorithm) E3, G2–H) | `items/*` | [C] in part (fn:sub_005D6B60_MonEquipInit@0x005D6B60, run:2026-10-21-chain2) |
 | mod lists and flags | value input | which handlers run, with which flag, in which order | [monsters/special](special.md#c-mod-handlers) | [C] (fn:sub_005A2120_SpecialModsApply@0x005A2120, run:2026-10-15-mon-stats) |
 | re-created monster's stats 7, 12, 13 | specified elsewhere | the restore writes 13 and 7 from the inactive record; 12 is this spec's `MonsterInit` level plus the re-applied mods | [drlg/lifecycle § H](../drlg/lifecycle.md#h-the-restore) | [C] (run:2026-10-17-lifecycle, fn:sub_005424F0_InactiveMonstersRestore@0x005424F0) |
 
@@ -202,7 +202,7 @@ flowchart TD
   b8 --> b9["B9 classic adjustment (D)"]
   b9 --> b10["B10 skills"]
   b10 --> b11["B11 MonProp (F)"]
-  b11 --> b12["B12 MonEquip (oracle)"]
+  b11 --> b12["B12 MonEquip"]
 ```
 
 ```
@@ -240,7 +240,7 @@ B9. MonClassicDiffAdjust(unit, game.expansion, game.difficulty)  ; § D
 B10. for k in 0 ..< 8:                                           ; [I] (0x005740E0–0x00574135, fn:sub_0056DEB0_UnitSkillAdd@0x0056DEB0)
        if Skill[k] ≥ 0 and Sk_lvl[k] > 0: UnitSkillAdd(unit, Skill[k], Sk_lvl[k] + pb.skillBonus)
 B11. MonProp (§ F)
-B12. MonEquipInit(unit, …, level, level, 1)                      ; [I] seed oracle (fn:sub_005D6B60_MonEquipInit@0x005D6B60)
+B12. MonEquipInit(unit, …, level, level, 1)                      ; [C] in part, see note B12 (fn:sub_005D6B60_MonEquipInit@0x005D6B60, run:2026-10-21-chain2)
 ```
 
 Step notes:
@@ -278,6 +278,18 @@ inventory. From the first row of the class whose level ≤ the monster level, fo
 it counts `k` leading item slots with a location 1..10 (≤ 3). If `k` > 0, one unit-seed step picks one (`low & (k − 1)`
 or `low mod k`), and the item is created when that location is free. Item creation draws on the game seed and on its
 own seeds. [I] (fn:sub_005D6B60_MonEquipInit@0x005D6B60, fn:sub_005D30A0_MonEquipFirstRow@0x005D30A0)
+The `oninit` byte is at row `+0x04` and the level the row is compared with is the s16 at `+0x02`; a class's first row
+is the first record whose `monster` is the class (MonStats `+0x2A`, written at load). The code tests `row[+4]`, and a
+check of `monequip.bin` against `monequip.txt` agrees on all 45 rows; the stock table has two `oninit` classes, 234
+(`flyingscimitar`) and 267 (`bloodraven`), each its class's first row. [C] (fn:sub_005D6B60_MonEquipInit@0x005D6B60,
+0x005D6BA5, [chain/0002 § 11](../../findings/chain/0002-retirements.md#11-oracle-13-monequips-items))
+The path those two rows take is reproduced: one row of level 0 with one location, so `k` = 1, the masked step, and one
+item at a free location with its two game-seed steps. run:2026-10-21-chain2 creates class 267 three times and class
+234 once, with the unit seed after `MonEquipInit` predicted and each item made by the item chain, and the control that
+leaves out the location draw fails each case. [C] (fn:sub_005D6B60_MonEquipInit@0x005D6B60,
+fn:sub_00573B20_MonEquipItemCreate@0x00573B20, run:2026-10-21-chain2) The level skip, a second row, `k` of 2 or 3 and an
+occupied location are unreachable with the stock table and stay `[I]` (*Open questions*). [I]
+(fn:sub_005D6B60_MonEquipInit@0x005D6B60)
 
 ### C. The player count (`sub_00573930_MonPlayerBonus`)
 
@@ -608,7 +620,7 @@ sequenceDiagram
   S->>U: doomknight Range(4) (311, 312)
   S->>U: HP RangeB(hi - lo + 1)
   S->>U: MonProp: chance step if c > 0, value roll if min ≠ max
-  S->>U: MonEquip: 1 step per row (oracle)
+  S->>U: MonEquip: 1 step per row with a location
   M->>U: champion roll, picks, minions, rndname (monsters/special)
 ```
 
@@ -626,7 +638,8 @@ fn:sub_005D6B60_MonEquipInit@0x005D6B60, run:2026-10-15-mon-stats) The stat hand
   48–63, 67, 74, 119. [C] (run:2026-10-15-mon-stats)
 - The MonProp stat list (flags `0x40`) attached to the unit's list. [C] (fn:PROP_ApplyBlock@0x0065FD70, run:2026-10-15-mon-stats)
 - The skills set at creation with their levels. [I] (fn:sub_0056DEB0_UnitSkillAdd@0x0056DEB0)
-- The unit seed, advanced by exactly the draws of § B and § F (and MonEquip). [C] (run:2026-10-15-mon-stats)
+- The unit seed, advanced by exactly the draws of § B and § F (and MonEquip's, B12). [C] (run:2026-10-15-mon-stats,
+  run:2026-10-21-chain2)
 - Downstream: [items/tc](../items/tc.md) reads stat 12 (the level) when the monster drops, and the TC player-count model
   reads the player count separately. `hirelings` reuses MonStats rows through Hireling.txt.
 
@@ -790,7 +803,8 @@ fn:sub_005A1910_UModFast@0x005A1910, run:2026-10-15-mon-stats)
 - [L] The `willowisp1` halving (§ G5): the case itself, which no run met.
 - [L] Unreached on stock data or not met, each inferred above: `berserk` with flag 0 (§ G; a champion has no group
   members), `poisonhit`,
-  `always_run_ai`, the reversed HP range (`minionspawner1`, `mephistospirit`), MonEquip, a MonProp slot with `chance` > 0,
+  `always_run_ai`, the reversed HP range (`minionspawner1`, `mephistospirit`), MonEquip's level skip, second row, `k` of 2 or 3
+  and occupied location (no stock row reaches them; the one-row path is reproduced, B12), a MonProp slot with `chance` > 0,
   MonProp in normal, the doomknight `Range(4)`, the `MulDiv` and `MonHpAddPct` overflow branches, the hpregen overflow
   branch, and player counts ≥ 9.
 - [L] The formulas of the stats `MonAttackStats` writes (§ H1: the MonLvl cells, the skill-damage pair, the classic

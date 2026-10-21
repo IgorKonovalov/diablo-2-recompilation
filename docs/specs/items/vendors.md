@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/quality, items/uniques-sets, items/affixes, items/properties, data/excel]
 consumed_by: [hirelings]
 tags: {C: 77, I: 37, L: 2}
-updated: 2026-10-20
+updated: 2026-10-21
 ---
 
 # Vendor stock and gambling
@@ -227,7 +227,7 @@ C1. on trade open (action 1) of NPC npc by player p:                  [C] (fn:NP
       if rec.hasStore:
         if rec.built = 0: VENDOR_BuildStock(npc, p)   (§ D); rec.built ← 1
         if rec.hirelingsBuilt = 0:
-          if npc.class ∈ {150, 515, 198, 252}: HIRE_BuildStock(rec)   ; boundary oracle, draws on S
+          if npc.class ∈ {150, 515, 198, 252}: HIRE_BuildStock(rec)   ; draws on S: hirelings spec
           rec.hirelingsBuilt ← 1
       if npc.class ∈ {150, 515, 198}: return                          ; hire-only NPCs
       if sole and rec.stale:                                          ; sole: the NPC's interaction list has exactly one live entry
@@ -270,8 +270,9 @@ Step notes:
   `sole` 1, a reset, then a build. (0x00579E08, fn:sub_00572DA0_NpcInteractCount@0x00572DA0, run:2026-10-20-two-clients)
 - C1. [I] For Asheara (252, a store and hirelings), the first trade open builds the stock first and the hireling list
   second, both on `S`. Opening her hire list first (action 3, `0x00576770`) builds the hirelings first.
-  `HIRE_BuildStock` is a boundary oracle here (ADR-0004; the hireling generator is plan 0033): a reimplementation
-  takes its exit `S` as an input. (fn:HIRE_BuildStock@0x00576070, 0x00578BCB, 0x00578BFF, 0x005767EB)
+  `HIRE_BuildStock` was a boundary oracle of this spec's run (ADR-0004); its draws on `S` are specified in
+  [hirelings](../hirelings/README.md) (plan 0033), which a reimplementation runs in its place.
+  (fn:HIRE_BuildStock@0x00576070, 0x00578BCB, 0x00578BFF, 0x005767EB)
 - C1. [C] In the run the oracle was entered 16 times, each with the `S` the model predicted, and its exit `S` was
   taken from the log. (fn:HIRE_BuildStock@0x00576070, run:2026-10-15-vendors)
 - C2. [C] In single player, a waypoint to **another act** reaches `NPCSTORE_ActStale` with `townEmpty` 0 (the leaving
