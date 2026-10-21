@@ -620,13 +620,17 @@ W4. StoneOrderDraw (first use of the decoded scroll `bkd `, or first stone opera
   data:g_MissileSrvDoFuncs@0x0073C768, tbl:Missiles.txt:pSrvDoFunc, [quests/0001 § 7](../../findings/quests/0001-progression.md))
 - W4c. [C] **Do 17 and do 18, up to their boundary calls.** Do 17 (`cairnstones`), with `left` the frames left and
   `Range` the raw column: while `SubMissile1 > 0` and `Param1 < left < Range − Param1`, it runs the re-seeding scatter
-  helper (period `Param2`, radius `Param3`), which re-seeds the missile's seed and draws two `RNG_RangeB` on it for
-  the sub-missile's offsets (none when the radius is 1 or less); when `Param4 ≥ 0`, `+0x28` is 0 and
-  `left ≤ Param5 + Param1`, it calls `sub_005A9930_PermPortalAtUnit(game, m, Param4)`. Do 18 (`towerchestspawner`) runs
-  the chest's drop at `left == Range − Param1` and from that frame, every `max(4·Param2, 1)` frames (32-bit), draws two
-  `RNG_RangeB` on the missile's seed for a gold pile's point, passed to the free-spot search. Nothing after a boundary
-  call is covered: the cell test's refusal and the sub-missile's creation, the portal function's and the chest drop's
-  own work, the gold item after the free spot. (fn:sub_005AF240_MissDo17CairnStones@0x005AF240,
+  helper with period `Param2` and radius `r = Param3`; on a frame whose elapsed count is a multiple of the period, with
+  an owner and a room, the helper re-seeds the missile's seed to `(SubX + elapsed, 666)` and draws two
+  `RNG_RangeB(seed, 2(r − 1))`, each minus `r − 1`, for the sub-missile's x and y offsets (no step when `2(r − 1) ≤ 0`).
+  Separately from that window, when `Param4 ≥ 0`, `+0x28` is 0 and `left ≤ Param5 + Param1`, it calls
+  `sub_005A9930_PermPortalAtUnit(game, m, Param4)`. Do 18 (`towerchestspawner`): at `left == 1` it gives the chest
+  (guid `+0x28`) unit event `0x5C`; at `left == Range − Param1` it runs the chest's drop on that chest and sets the gold
+  phase `+0x2C = 1`, also when the chest is gone; in the gold phase, on each frame with `left % max(4·Param2, 1) == 0`
+  (32-bit), it draws two `RNG_RangeB(seed, 2·Param3 + 1)`, each minus `Param3`, on the missile's seed (no re-seed) and
+  passes the offset point to the free-spot search. Nothing after a boundary call is covered: the cell test's refusal
+  and the sub-missile's creation, the portal function's, the unit event's and the chest drop's own work, the gold item
+  after the free spot. (fn:sub_005AF240_MissDo17CairnStones@0x005AF240,
   fn:sub_005A9820_MissSubNearReseed@0x005A9820, fn:sub_005AF300_MissDo18ChestSpawner@0x005AF300,
   run:2026-10-20-cat-emu-9a, [skills/0004 §§ 7, 8](../../findings/skills/0004-missile-do-1-18.md#7-do-8-10-17-and-sub_005a9820_misssubnearreseed))
 - W4c. [I] **With the stock rows.** 288 `cairnstones` scatters `cairnstonessky` (289) every second frame while

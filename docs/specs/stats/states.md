@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [stats/overview, stats/aggregate, rng, combat/delivery, data/calc, objects]
 consumed_by: [combat/delivery, combat/overview, objects]
-tags: {C: 44, I: 50, L: 6}
+tags: {C: 44, I: 51, L: 6}
 updated: 2026-10-21
 ---
 
@@ -71,7 +71,7 @@ stateDiagram-v2
 | state bit-sets | two sets of `ceil(nStates / 32)` dwords at the unit list's `+0x58`: on, and changed (for the client) | fn:UNIT_SetStateBit@0x00625A70 |
 | a state's list | `StatList` with the state at `+0x14`, end frame `+0x18`, skill `+0x1C`, level `+0x20`, remove callback `+0x38` | struct:StatList+0x18 |
 | the apply request | `{source, target, skill, level, duration, stat, value, state (+0x1C), remove callback, …}` | struct:TimedStateReq+0x1C |
-| unit seed | `Unit+0x20` | [rng/seeds](../rng/seeds.md); drawn only by a damaging aura's run, once per drawing run (§ H) |
+| unit seed | `Unit+0x20` | [rng/seeds](../rng/seeds.md); in the run drawn only by a damaging aura's run, once per drawing run; Holy Freeze's step of each unit hit is read only (§ H) |
 
 ### Inputs and oracles
 
@@ -427,6 +427,11 @@ Step notes:
   hit (`rep movs` at 0x005CF367), so a run that hits several units still draws once. A run with two or more units in
   range would raise this reading. (fn:sub_005CF3A0_AuraHitDo@0x005CF3A0, fn:sub_005CF2A0_AuraHitUnitCb@0x005CF2A0,
   [skills/0011 § 3](../../findings/skills/0011-paladin.md#3-the-aura-functions-do-65-66-81-82), [stats/0002 § 7](../../findings/stats/0002-states.md#7-events-inputs-outputs-draws))
+- H. [I] **Holy Freeze steps each unit's own seed.** Do 81 makes the same one roll per run on the caster's seed, and
+  its target callback, for each unit it does not refuse, steps that unit's own seed once inline (`× 0x6AC690C5`, with
+  carry) and sets state 107 when the new low word, unsigned, `% 100` is below 20, else clears it. The stats run met
+  no Holy Freeze. (fn:sub_005D0920_SkillDo81HolyFreeze@0x005D0920, fn:sub_005D07C0_HolyFreezeUnitCb@0x005D07C0,
+  [skills/0011 § 3](../../findings/skills/0011-paladin.md#3-the-aura-functions-do-65-66-81-82))
 - H. [I] Shrine codes 18, 21 and 22 (missile and monster shrines, phase 3 and monsters/special) do draw; they are out
   of this spec. (0x00582CE3, 0x0058311D, 0x0058344D)
 
@@ -473,7 +478,7 @@ leaves the cache. (fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-10-17-stat
   shrine's state. [I] (tbl:States.txt:curse, fn:STATE_ApplyTimed@0x0056E970)
 - **The tick's floor is 256, not 0**, for players; a monster's tick can kill ([combat/delivery § E4](../combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze)).
   [I] (fn:sub_00580610_LifeRegenTick@0x00580610)
-- **The aura's hit draws on the caster's seed**: a reimplementation that runs Sanctuary must consume one draw on the
+- **A damaging aura's run draws on the caster's seed**: a reimplementation that runs Sanctuary must consume one draw on the
   caster in each run that draws, even when the state code itself draws nothing. [C] (fn:SKILLS_RollElemDamage@0x0056E0C0,
   run:2026-10-17-stats) **Draw once per run, not once per unit hit**: the one roll's packet is copied to every unit the
   run hits. [I] (fn:sub_005CF3A0_AuraHitDo@0x005CF3A0, fn:sub_005CF2A0_AuraHitUnitCb@0x005CF2A0)

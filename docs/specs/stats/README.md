@@ -80,7 +80,7 @@ check that composition.
 
 [C] Seed invariance was logged at the entry and the exit of every event of eight kinds (game seed and acting unit's
 seed): link 12 868, unlink 12 853, own write 101 995, toggle 19 525, apply 6 232, expire 2 749, tick 54 719, aura
-2 763 unchanged. Those kinds draw nothing, except the aura's hit below. (run:2026-10-17-stats)
+2 763 unchanged. Those kinds draw nothing, except a damaging aura's drawing run below. (run:2026-10-17-stats)
 
 [C] A damaging aura's run (Sanctuary) that draws moves the caster's unit seed by one `RNG_RangeB`, in the elemental
 damage roll (phase 3's): 865 drawing runs, 865 steps, each exit asserted against the logged draws; 746 chained pairs,

@@ -237,12 +237,12 @@ spawn, the Tristram portal that reappears in later games, and the Cow King bit (
 has beaten Diablo in a classic game or Baal in an expansion game, and for the players then in the cow level) are read
 from the code.
 
-The fifth stone and the Countess's death each create an invisible missile that does the rest of the work over the
-frames that follow ([word 4](../specs/quests/progression.md#word-4-cain-the-cairn-stones-tristram-and-the-cow-king-quest-object-4)).
+The fifth stone creates a missile, and the Countess's death one missile at each of her recorded chests; these
+missiles do the rest of the work over the frames that follow ([word 4](../specs/quests/progression.md#word-4-cain-the-cairn-stones-tristram-and-the-cow-king-quest-object-4)).
 Their draws are confirmed by emulating the two functions up to the calls they make; what those calls then do is not
 covered. The stones' missile scatters smaller missiles around itself, each placed with two numbers from the missile's
-own seed, which it re-seeds first, and it calls the portal function. The Countess's missile, one at each of her
-recorded chests, runs the chest's drop, then takes two numbers from its own seed for each gold pile's spot. With the
+own seed, which it re-seeds first, and it calls the portal function. Each of the Countess's missiles runs its chest's
+drop, then takes two numbers from its own seed for each gold pile's spot. With the
 stock settings, as read from the code: the stones' missile scatters every second frame for a while and opens the
 Tristram portal once; each chest opens 150 frames after the Countess dies (one more per missile level), then a gold pile
 lands within 5 of it every 8 frames until the missile ends.

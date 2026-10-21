@@ -321,8 +321,9 @@ From [states § F](../specs/stats/states.md#f-auras), confirmed except where not
   kill by the aura also moves the game seed when it drops an item.
 - **Once per run, not once per unit hit.** The run did not count how many units each run hit. Read from the code:
   the aura rolls its damage once, before it goes over the units in range, and gives every unit it hits a copy of that
-  one roll. So a run that hits several monsters still takes one number, and a rebuild that drew once per monster
-  would fall out of step.
+  one roll. So a run that hits several monsters still takes one number from the caster's seed, and a rebuild that drew
+  once per monster would fall out of step. Holy Freeze, which the run never met, takes that same one number per run
+  and, read from the code, also steps the own seed of each unit it does not turn away, once each.
 
 Auras turning on and off were met only 9 times (the plan asked for 50), because Prayer and Sanctuary always reached
 the player; that is a named shortfall, and the rules it rests on are confirmed on their own counts.
