@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, combat/to-hit, monsters/stats, items/properties]
 consumed_by: [combat/reductions, combat/delivery]
-tags: {C: 34, I: 29, L: 4}
-updated: 2026-10-20
+tags: {C: 34, I: 30, L: 5}
+updated: 2026-10-21
 ---
 
 # Combat: the attacker's damage build
@@ -263,6 +263,11 @@ run:2026-10-16-combat) The stats it writes were value inputs of the run, so thei
 - E. The mode passed is the **new** mode for every mode change except get-hit (3); mode 5 selects the `A2` columns,
   7 and 8 the `S1` columns, and every other mode, `sequence` (14) included, the `A1` columns. An `El<e>` group applies
   only when its `El<e>Mode` equals the mode passed. [I] (fn:sub_005A7C20_MonSetMode@0x005A7C20, 0x005A7D34)
+- E. **A monster can call it inside its own attack.** `sandraider2` attacking in mode 14 (the attack's return
+  `0x005CAED8`) called `MonAttackStats` for mode 8 between the defence rolls and the build in 6 of 14 such events, and
+  the build used what that call wrote (stats 21/22 72/91, against 59/100 at the event's entry); the call entered on the
+  attacker's running seed (5 asserted). The checker takes that call's exit stats as a value oracle. Which events make
+  the call is not read. [I] (fn:sub_005A4F50_MonAttackStats@0x005A4F50, run:2026-10-20-shortfalls)
 - E. A `noRatio` monster's `El` attack sets min = max = 0: `MonLvlStats` writes the raw `El<e>MinD/MaxD` of such a
   class to output `+0x24`/`+0x28`, while `MonAttackStats` reads `+0x2C`/`+0x30`. Only the duration (`+0x34`) is set.
   [I] (0x00653BC2–0x00653C2D, 0x005A5160, struct:MonLvlStatsOut+0x2C)
@@ -319,7 +324,7 @@ The exit seed `9fdf9862:101f40ba` is the one logged at the builder's return. [C]
 
 - [combat/0001](../../findings/combat/0001-formulas.md) §§ 2 (the attack events, the build on a miss), 5 (the
   builder), 12 and 12b (a), (b), (d) (`MonAttackStats` modes, `noRatio`, element types), 14 (the monster `Crit`
-  flag), 15 (the confirmed raises).
+  flag), 15 (the confirmed raises), 16 (a monster's `MonAttackStats` inside its attack, run:2026-10-20-shortfalls).
 - [skills/0001](../../findings/skills/0001-dispatch.md) § 11 (the conversion writers).
 - [skills/0002](../../findings/skills/0002-missiles.md) § 3 (the missile's critical chain, which is not step 3's).
 - [combat/experiments § run:2026-10-16-combat](../../findings/combat/experiments.md#run2026-10-16-combat): 3 732
@@ -341,5 +346,7 @@ The exit seed `9fdf9862:101f40ba` is the one logged at the builder's return. [C]
 - [L] The formulas of the stats `MonAttackStats` writes (to-hit, damage, the classic factors, the expansion
   player-count bonus): the run took them as value inputs; a later run that asserts them raises
   [monsters/stats § H](../monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only).
+- [L] Which monster attacks call `MonAttackStats` inside the attack (§ E): carried to plan 0045, whose monster skill
+  uses predict it.
 - [L] Step 1's bonus percents against demons, undead and monster types, and stat 120's permanent defence
   reduction: the run took `edPct` as a value oracle.

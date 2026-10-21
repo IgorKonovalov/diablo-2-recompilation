@@ -386,3 +386,24 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     reason the TL;DR asks for, so they are not final: they move to **Phase 2b** of this plan (added above), with cold
     and lightning flat absorb (`abs-nm-marsh` unrun). Final now: the walking block (6), the magic cap (unstaged).
     **Phase 3 may start** on combat and on the stats cases reached here; the Phase 2b counts reach the specs after it.
+- **2026-10-21 — Phase 3 landed for combat and the reached stats cases (spec-writer, `lane/s47p3`; static, no game,
+  no Ghidra).** Review requested ([backlog](../backlog/2026-10-21-spec-writer-architect-review-lane-s47p3-plan-0047-phase-3-re.md)).
+  Re-tagged from run:2026-10-20-shortfalls per rulings 1, 2, 7 and 8, each raised statement citing the run:
+  [combat/to-hit](../specs/combat/to-hit.md) (C3's four rolls on a player defender, prevent-heal's no draw, the
+  `--no-shield-log` scope; the walking block 6 final at `[I]`, the unusable shield and the skill check 13/12 `[I]`;
+  tags `{C: 33, I: 27, L: 3}` → `{C: 39, I: 30, L: 5}`), [combat/reductions](../specs/combat/reductions.md) (magic
+  immunity, the lightning cap, the cold cap over two runs, fire flat absorb, the negative absorbed amount; the magic
+  cap final at `[I]`; `{C: 40, I: 25, L: 4}` → `{C: 45, I: 24, L: 5}`), [combat/delivery](../specs/combat/delivery.md)
+  (the total ≤ 0, crushing blow on champions, freeze on a melee hit; `{C: 52, I: 54, L: 4}` → `{C: 59, I: 49, L: 3}`),
+  [combat/damage](../specs/combat/damage.md) (the in-event `MonAttackStats`, `[I]`; `{C: 34, I: 29, L: 4}` →
+  `{C: 34, I: 30, L: 5}`), [combat/README](../specs/combat/README.md) (the run's boundary paragraph, the champion
+  1/8, the shortfall bullet rewritten; `{C: 36, I: 42, L: 5}` → `{C: 38, I: 42, L: 5}`),
+  [stats/states](../specs/stats/states.md) (`attract` on a monster target, groups 1–2, the aura end by the skill
+  switch; group 3, the curse cut, the 256 floor, expiries 153, shrines and wells 15 named for Phase 2b;
+  `{C: 44, I: 51, L: 6}` → `{C: 47, I: 52, L: 6}`), [stats/README](../specs/stats/README.md) (`{C: 14, I: 3, L: 3}` →
+  `{C: 15, I: 3, L: 3}`), [quests/travel](../specs/quests/travel.md) (one dated `[I]` note, 1 of 20; `{C: 74, I: 84,
+  L: 4}` → `{C: 74, I: 86, L: 4}`). Open questions (live `[L]`): to-hit 3 → 5, reductions 4 → 5, delivery 4 → 3,
+  damage 4 → 5, README 5, states 6, stats/README 3, travel 4. Wiki: [combat](../wiki/combat.md),
+  [stats and states](../wiki/stats-and-states.md), [quests](../wiki/quests.md) (`based_on` 2026-10-21) and
+  [how we know](../wiki/how-we-know.md). The research map rows are asked of the architect in the review request.
+  The Phase 2b counts reach the specs after Phase 2b.

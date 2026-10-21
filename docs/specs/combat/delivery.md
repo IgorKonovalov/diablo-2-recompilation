@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, combat/to-hit, combat/damage, combat/reductions, monsters/stats]
 consumed_by: [combat/overview, items/tc, stats/states, items/economy]
-tags: {C: 52, I: 54, L: 4}
-updated: 2026-10-20
+tags: {C: 59, I: 49, L: 3}
+updated: 2026-10-21
 ---
 
 # Combat: queue, delivery, on-hit effects and the life change
@@ -44,7 +44,7 @@ flowchart TD
 | The queued hit is delivered | fn:COMBAT_DeliverQueued@0x0057D4F0 | [C] (run:2026-10-16-combat) |
 | The packet is applied (melee and missile) | fn:COMBAT_ApplyDamage@0x0057C6C0 | [C] (run:2026-10-16-combat) |
 | Leech | fn:COMBAT_Leech@0x0057C420 | [C] for players, the mercenary and monsters (run:2026-10-16-combat) |
-| Crushing blow, open wounds, freeze (stat events 16, 15, 14) | fn:STATEVENT_CrushingBlow@0x005BFFC0, fn:STATEVENT_OpenWounds@0x005BFE60, fn:STATEVENT_Freeze@0x005BFC60 | [C] for the first two (run:2026-10-16-combat) |
+| Crushing blow, open wounds, freeze (stat events 16, 15, 14) | fn:STATEVENT_CrushingBlow@0x005BFFC0, fn:STATEVENT_OpenWounds@0x005BFE60, fn:STATEVENT_Freeze@0x005BFC60 | [C] for the first two (run:2026-10-16-combat); [C] for freeze on a melee hit (run:2026-10-20-shortfalls) |
 | A monster's life tick (poison, open wounds) | fn:sub_005A6920_MonRegenEvent@0x005A6920 | [C] (run:2026-10-16-combat) |
 | A player's life tick | fn:sub_00580810_RegenEvent@0x00580810 → fn:sub_00580610_LifeRegenTick@0x00580610 ([stats/states § E](../stats/states.md#e-the-regeneration-tick)) | [C] (run:2026-10-17-stats: 54 719 ticks, 1 082 under poison) |
 | The kill | fn:COMBAT_GetHit@0x0057CEE0 → fn:sub_0057CCB0_UnitKilled@0x0057CCB0 | [I] |
@@ -78,7 +78,7 @@ flowchart TD
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
 | one life | 256 (life below it is set to 0) | 0x0057C852–0x0057C874 | [C] (run:2026-10-16-combat) |
-| crushing blow divisors | player 10, hireling 10, monster 4, boss or superunique 8 | 0x005C0031–0x005C00F6 | [C] for 4 and 8 (run:2026-10-16-combat) |
+| crushing blow divisors | player 10, hireling 10, monster 4, boss or superunique 8 | 0x005C0031–0x005C00F6 | [C] for 4 and 8 (run:2026-10-16-combat), 4 on champions (run:2026-10-20-shortfalls) |
 | open wounds band steps | 9, 18, 27, 36, 45 per level; + 40 | fn:sub_005BFDA0_OpenWoundsBand@0x005BFDA0 | [C] (run:2026-10-16-combat) |
 | open wounds length | 200 frames | 0x005BFEEC–0x005BFF9B | [C] (run:2026-10-16-combat) |
 | shatter chance | 20 | 0x0057B0FA–0x0057B124 | [I] |
@@ -212,7 +212,7 @@ B4.   pkt.phys ← min(pkt.phys, stat(def, 6))
       Leech(att, def, pkt)                                             ; § C
       if att is a monster and pkt.result & 0x1: MonOnHitSkill(att, def)          ; 0x005A4390, boundary oracle
       if pkt.absorbHeal > 0 and def is alive and not HasState(def, 92): AddLifeCapped(def, pkt.absorbHeal)
-      if pkt.total > 0:                                                ; [I] for the test (0x0057C855–0x0057C857), see note
+      if pkt.total > 0:                                                ; [C] for the test (0x0057C855–0x0057C857, run:2026-10-20-shortfalls), see note
         hp: i32 ← stat(def, 6) − pkt.total
         stat(def, 6) ← (hp < 256) ? 0 : hp
       stat(def, 8)  ← stat(def, 8)  − pkt.manaSteal,  0 when below 256  ; [I] (0x0057C879–0x0057C889)
@@ -236,12 +236,13 @@ Step notes:
   that was left. [C] (0x0057C7F8–0x0057C8D8, run:2026-10-16-combat)
 - B4. **The life change**: `HP − total`, and 0 when the result is below 256 (one life point). [C] (0x0057C852–0x0057C874,
   run:2026-10-16-combat) The absorbed life is healed only when positive (`UNIT_AddLifeCapped` returns at once for
-  an amount ≤ 0); 32 percent-absorb heals of the player reproduced. [C] (fn:UNIT_AddLifeCapped@0x0057A980,
-  run:2026-10-16-combat)
+  an amount ≤ 0); 32 percent-absorb heals of the player reproduced, and 186 negative absorbed amounts healed
+  nothing. [C] (fn:UNIT_AddLifeCapped@0x0057A980, run:2026-10-16-combat, run:2026-10-20-shortfalls)
 - B4. **A total of 0 or less changes nothing.** `test edi, edi` / `jle` at 0x0057C855–0x0057C857 skips the
-  subtraction (and the 256 floor) when `total ≤ 0`. The 25 logged events with a negative total (MDR above the
-  elemental damage, [combat/reductions § B1](reductions.md#b-the-rows-g_damageresisttable)) left the defender's life
-  unchanged, under the plan's floor of about 30. [I] (0x0057C855–0x0057C857, run:2026-10-16-combat)
+  subtraction (and the 256 floor) when `total ≤ 0`. In run:2026-10-20-shortfalls 488 deliveries with a negative total
+  on the player (MDR above the elemental damage, [combat/reductions § B1](reductions.md#b-the-rows-g_damageresisttable)),
+  113 with a total of 0 on the player and 32 at 0 on a monster left the defender's life unchanged. [C]
+  (0x0057C855–0x0057C857, fn:COMBAT_ApplyDamage@0x0057C6C0, run:2026-10-20-shortfalls)
 - B4. For a player attacker the defender's mana and stamina losses read the steal fields after `Leech` scaled them
   (`<< 6` and the divisor), so a monster defender with mana loses `manaSteal·64/divisor` in 1/256 units. [I]
   (0x0057C879–0x0057C889)
@@ -331,8 +332,10 @@ D4. ApplyPoison(att, def, dmg = pkt.poison, len = pkt.poisonLen):    [I] (fn:COM
   tbl:DifficultyLevels.txt:MonsterColdDivisor)
 - D1. The stun draw on a unique reproduced with 0 mismatches in 34 events; the stun goes on only when `r ≥ 90`. [C]
   (0x0057AB17–0x0057AB44, run:2026-10-16-combat)
-- D3. A player, a boss, a unique or a hireling is chilled instead of frozen, for the same length. No logged event
-  froze. [I] (0x0057B2F1, tbl:DifficultyLevels.txt:MonsterFreezeDivisor)
+- D3. A player, a boss, a unique or a hireling is chilled instead of frozen, for the same length. The 81 freeze
+  packets of run:2026-10-20-shortfalls (E3) were checked up to their nested delivery; what D3 does inside it (the
+  state, the divisor, the mode change) was not asserted. [I] (0x0057B2F1, tbl:DifficultyLevels.txt:MonsterFreezeDivisor,
+  run:2026-10-20-shortfalls)
 
 ### E. The stat events: crushing blow, open wounds, freeze
 
@@ -348,7 +351,7 @@ E1. CrushingBlow(att, def, pkt, event):                              [C] (fn:STA
       if r ≥ c: return
       if def is a player or a hireling: k: i32 ← 10                  ; [I] (0x005C0031–0x005C00F6)
       else:
-        k ← (MonStats[def.class].boss or def has type flag 0x02) ? 8 : 4         ; [C] for 8 (fn:MONSTATS_IsBoss@0x0063E9F0, run:2026-10-16-combat)
+        k ← (MonStats[def.class].boss or def has type flag 0x02) ? 8 : 4         ; [C] for 8 (fn:MONSTATS_IsBoss@0x0063E9F0, run:2026-10-16-combat) and for 4 on champions (run:2026-10-20-shortfalls)
         n: i32 ← max(stat(def, 100), 1)
         k ← k + MulDiv(k, PlayerHpPct(n), 100)                       ; + 50 % per player beyond the first
       if event = 6: k ← k × 2                                        ; missile, [I] (0x005C0031–0x005C00F6)
@@ -365,13 +368,13 @@ E2. OpenWounds(att, def, pkt, event):                                [C] (fn:STA
       L: i32 ← max(stat(att, 12), 1)
       dmg: i32 ← Band(L) + 40
       if def is a player: dmg ← dmg ÷ 4;  if event = 6: dmg ← dmg ÷ 2              ; [I] (0x005BFEEC–0x005BFF9B)
-      else if def has type flags 0x0C (champion or unique): dmg ← dmg ÷ 2     ; [C] for the unique bit 0x08 (run:2026-10-16-combat, 383), [I] for the champion bit 0x04
+      else if def has type flags 0x0C (champion or unique): dmg ← dmg ÷ 2     ; [C] for the unique bit 0x08 (run:2026-10-16-combat, 383), [I] for the champion bit 0x04 alone
       state 62 (openwounds) for 200 frames with stat 74 ← −dmg       ; STATE_ApplyTimed; a new wound restarts it
 
     Band(L): L < 2 → 0;  L ≤ 15 → (L − 1)·9;  L ≤ 30 → 126 + (L − 15)·18;  L ≤ 45 → 396 + (L − 30)·27;
              L ≤ 60 → 801 + (L − 45)·36;  else 1341 + (L − 60)·45
 
-E3. Freeze(att, def, pkt, event):                                    [I] (fn:STATEVENT_Freeze@0x005BFC60, all of E3)
+E3. Freeze(att, def, pkt, event):                                    [C] on a melee hit (fn:STATEVENT_Freeze@0x005BFC60, run:2026-10-20-shortfalls, all of E3 but the missile terms); [I] for the missile terms
       x: i32 ← max(stat(att, 134) − 1, 0)
       c: i32 ← ((x − 1)·4 − dlvl + 10 + alvl [− 6 for a missile])·5 [÷ 3 for a missile];  c ← clamp(c, 0, 100)
       r ← Range(att.seed, 100)                                       ; draw (attacker)
@@ -383,12 +386,17 @@ E3. Freeze(att, def, pkt, event):                                    [I] (fn:STA
   (at `/players` 2, 3 and 8: 5, 40 and 124 events), then lowered by positive physical resistance. Two community pages
   give 1/8 for champions and uniques and one says the player count does not matter; for uniques and the player count
   1.14d does neither. [C] (fn:sub_005738F0_PlayerHpPct@0x005738F0, 0x005C0031–0x005C00F6, run:2026-10-16-combat)
-  Champions take 1/4 by the reading; no champion was labelled in the run. [I] (0x005C0031–0x005C00F6)
+  **Champions take 1/4 as well**, raised by the player count: 52 crushing blows on defenders with type flags `0x0C`
+  (40 in Nightmare at `/players` 8), every life value asserted. [C] (fn:STATEVENT_CrushingBlow@0x005BFFC0,
+  0x005C0031–0x005C00F6, run:2026-10-20-shortfalls)
+- E1. **A champion carries the unique flag `0x08` as well as `0x04`**: of 7 474 monsters first seen in 74 combat logs,
+  164 have both and none has `0x04` alone. `STATEVENT_CrushingBlow` reads neither flag, so the community's 1/8 does
+  not apply to champions either. Re-labelled, run:2026-10-16-combat holds 72 such events among the 163 it counted as
+  uniques. [C] (fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-20-shortfalls, run:2026-10-16-combat)
 - E1. There is **no difficulty and no classic branch** in crushing blow. [I] (fn:STATEVENT_CrushingBlow@0x005BFFC0)
 - E1. `k = 8` for MonStats `boss` (act bosses) and superuniques reproduced with 0 mismatches on an act boss (34
   events, Andariel, Normal, `/players` 8) and on superuniques (55), with the same draw, player-count scaling and
-  physical-resistance step as `k = 4`. [C] (fn:MONSTATS_IsBoss@0x0063E9F0, run:2026-10-16-combat) Champions were not
-  labelled (the checker labels a unit with the unique bit first). [I] (0x005C0031–0x005C00F6)
+  physical-resistance step as `k = 4`. [C] (fn:MONSTATS_IsBoss@0x0063E9F0, run:2026-10-16-combat)
 - E2. `Band(L) + 40` equals the community's per-frame bands; at level 85 it is `1341 + 25·45 + 40` = 2506 per frame,
   logged as stat 74 = −2506 (`solo-h3`, frame 266, a normal monster). Open wounds reproduced 246 times; in all 11 logged windows the bleed ended at the
   application frame + 200. [C] (fn:sub_005BFDA0_OpenWoundsBand@0x005BFDA0, fn:STATE_ApplyTimed@0x0056E970,
@@ -398,8 +406,11 @@ E3. Freeze(att, def, pkt, event):                                    [I] (fn:STA
   all 1 497 on monsters without `0x0C` took the full `Band(L) + 40`. [C] (0x005BFEEC–0x005BFF9B, run:2026-10-16-combat)
   The test never reads MonStats `boss`, so an act boss without `0x08` takes the full amount and a monster with the
   champion flag `0x04` alone is halved; neither was met (Andariel carries `0x08`, so the run cannot tell the two
-  readings apart on her). [I] (0x005BFEEC–0x005BFF9B)
-- E3. Freeze (stat 134) was not met. [I] (fn:STATEVENT_Freeze@0x005BFC60)
+  readings apart on her). Since a champion also carries `0x08` (E1), no stock spawn separates a `0x04`-only
+  defender. [I] (0x005BFEEC–0x005BFF9B, fn:STATEVENT_OpenWounds@0x005BFE60, run:2026-10-20-shortfalls)
+- E3. **Freeze on a melee hit reproduced**: 81 rolls of stat 134 (*Frostwind*, stat 134 = 4) on the attacker's seed,
+  each with its chance, draw and length (26 to 249 frames) as E3 gives them, up to the nested delivery. The missile
+  terms (`− 6`, `÷ 3`) were not met. [C] (fn:STATEVENT_Freeze@0x005BFC60, run:2026-10-20-shortfalls)
 
 **E4. The life tick.** Poison and open wounds bleed through the unit's regeneration event, once per frame.
 
@@ -481,9 +492,10 @@ The durability loss itself is specified in [items/economy § H](../items/economy
 - The defender's life (stat 6), mana and stamina after the hit, the attacker's life and mana after leech, the
   defender's timed states (stun 21, cold 11, shatter 107, freeze 1, poison 2, open wounds 62, burning 115). [C] for
   life, leech, the open-wounds state (run:2026-10-16-combat); [I] for the other states (fn:COMBAT_ApplyDamage@0x0057C6C0)
+  and for freeze's state inside the nested delivery
 - The result word with `0x2` on a kill; the hand-off to `COMBAT_GetHit`. [C] (run:2026-10-16-combat)
 - The attacker's seed advanced by the stat-event, leech and stun draws; the defender's by the cold draw. [C] for
-  crushing blow, open wounds, leech and cold (run:2026-10-16-combat)
+  crushing blow, open wounds, leech and cold (run:2026-10-16-combat) and for freeze (run:2026-10-20-shortfalls)
 
 ## Worked example
 
@@ -508,8 +520,8 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
 
 ## Reimplementation notes
 
-- **Crushing blow is a share of the defender's current life, before this hit's damage**, and it is 1/4 on uniques.
-  [C] (fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat)
+- **Crushing blow is a share of the defender's current life, before this hit's damage**, and it is 1/4 on uniques
+  and champions. [C] (fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat, run:2026-10-20-shortfalls)
 - **The player count raises the crushing-blow divisor** through the monster's stat 100 (its creation count). [C]
   (fn:sub_005738F0_PlayerHpPct@0x005738F0, run:2026-10-16-combat)
 - **Leech uses the reduced, life-capped physical damage**; elemental damage never leeches. [C]
@@ -540,6 +552,12 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
   below-the-floor bullet), 13 (*Leads used*: crushing blow, open wounds, absorb, leech).
 - [combat/experiments § run:2026-10-16-combat](../../findings/combat/experiments.md#run2026-10-16-combat): crushing
   blow 316, open wounds 246 with 11 windows, leech 364 / 681 / 455, the stat-74 tick 6 181.
+- [combat/0001 § 16](../../findings/combat/0001-formulas.md#16-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls)
+  and [combat/experiments § run:2026-10-20-shortfalls](../../findings/combat/experiments.md#run2026-10-20-shortfalls)
+  (plan 0047 Phase 2, 0 mismatches over 18 737 events) with its review in the
+  [plan 0047 log](../../plans/0047-simulation-shortfalls.md#implementation-log): crushing blow on champions 52, the
+  type flags of 7 474 monsters, freeze 81, the total ≤ 0 (488 + 113 on the player, 32 on a monster), the negative
+  absorbed amount 186.
 - [skills/0001](../../findings/skills/0001-dispatch.md) §§ 10 (item-event casts and the `ItemTarget` 2 helper's draws,
   the dated Phase 1b note), 12 (the finisher's seed save and restore).
 - [skills/0003](../../findings/skills/0003-handlers.md) §§ 1 (the `srvprgfunc` entries, the finisher's tail and stock
@@ -552,10 +570,13 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
 
 ## Open questions
 
-- [L] Branches reproduced under the plan's floor of about 30: crushing blow on champions (0 labelled); a total of 0 or
-  less leaving life unchanged (B4, 25).
-- [L] Not reached: open wounds on a champion without the unique flag and on a player, the freeze handler and freezing.
-  ~~The player's life tick~~: reproduced by run:2026-10-17-stats under poison (E4); its 256 floor was not reached.
+- ~~Branches reproduced under the plan's floor of about 30: crushing blow on champions (0 labelled); a total of 0 or
+  less leaving life unchanged (B4, 25).~~ Reproduced by run:2026-10-20-shortfalls: crushing blow on champions 52 (E1),
+  a total ≤ 0 leaving life unchanged 633 times (488 + 113 + 32, B4).
+- [L] Not reached: open wounds on a monster with the champion flag `0x04` alone (no stock spawn carries it, E2) and
+  on a player (only another player's item wounds a player: plan 0044's case, not run); freeze from a missile and the
+  freezing inside the nested delivery (D3). ~~The player's life tick~~: reproduced by run:2026-10-17-stats under
+  poison (E4); its 256 floor was not reached (0 in run:2026-10-20-shortfalls; plan 0047 Phase 2b).
 - ~~The state end: when a timed state's stat list is freed at its end frame.~~ At `frame + duration` by unit event 12,
   one event per apply or refresh: [stats/states § C](../stats/states.md#c-expiry-and-removal) (plan 0041).
 - ~~Event handlers other than 14, 15 and 16 (skill on hit, knockback, slow and the like) draw on seeds this spec

@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/collision, drlg/warps, objects, quests/progression, save/d2s]
 consumed_by: [quests/progression, monsters/spawn, objects]
-tags: {C: 74, I: 84, L: 4}
-updated: 2026-10-20
+tags: {C: 74, I: 86, L: 4}
+updated: 2026-10-21
 ---
 
 # Travel: waypoints, act changes, town portals, warps and placement
@@ -265,6 +265,10 @@ Step notes:
   run 3's three attempts, from the Rogue Encampment and the Kurast Docks, reached no mode-0 waypoint). This stays `[I]`
   in plan 0042. (fn:sub_00584E30_WaypointOperate@0x00584E30 0x00584E78–0x00584E81, run:2026-10-18-quests2,
   run:2026-10-19-quests3)
+- C1. [I] Plan 0047's run operated one waypoint from mode 0 (the Crystalline Passage's, on the Act V route down from
+  the Arreat Plateau): mode 0 → 1 with one object-seed step, its row's `Sync` 0, 0 mismatches. One of the 20
+  activations asked, so the mode-0 branch stays `[I]`; plan 0047 Phase 2b carries the rest. (fn:sub_00584E30_WaypointOperate@0x00584E30,
+  tbl:Objects.txt:Sync, run:2026-10-20-shortfalls, [quests/0002](../../findings/quests/0002-travel.md))
 - C2. [I] Over the 45 logs of the three runs, a field waypoint first seen after a waypoint arrival in its level was in
   mode 1 (87) or already 2 (8), and one first seen with no arrival was in mode 0 (4); the object lines are periodic, so
   first seen is not the creation, and the reading of `InitFn` 17's creation mode is not raised. (fn:OBJINIT_Waypoint@0x00547210,
