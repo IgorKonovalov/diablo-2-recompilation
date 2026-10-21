@@ -69,7 +69,10 @@
     re-run on the same seed), and `p2-s1-4807-raven-xn.log` (its collision logger error, `LOGERR collision
     MemoryError`, is fixed as `DCRF`; raven-xn2 re-ran it on the same seed).
   - **xh4** sat through a suspend of the machine (about 23:17 to 06:19; the PLR game frames stop at 3 729), so its
-    wall time is 429 min for 2.48 game minutes; the watchdog ended it on resume. Its log checks clean.
+    wall time is 429 min for 2.48 game minutes; the watchdog ended it on resume. Its log checks clean. The 1 962 lines
+    after its last `PLR` line (46 632) carry no frame, so whether they ran before the suspend or after the resume is not
+    shown; no model reads wall time, and the session is admitted as a reproduction only (review ruling, plan 0048 log),
+    not for any timing figure.
   - The session order differs from the resume note's (classic and Hell sessions were interleaved); every session of
     the note's list ran once, counted, besides those re-run above.
 - **Observed** (`out/final-check.txt`, trimmed): `chain: 28 logs, 2 sub-checks failed`.
@@ -97,9 +100,11 @@
   (`out/final-per-log/`): cn4 line 72971 (site `0x005504B3`, (5402, 5241) 8×8, mask `0x3F11`: game `0x1100`, model
   `0x0000`) and cm4 line 53279 (site `0x00550B89`, (7742, 6264) 10×10: game `0x1500`, model `0x0400`). In both the game
   sees a live monster's bits (`0x100` footprint, `0x1000` centre) that no logged mark explains; in each, a monster
-  created a few seconds before by a `MonSpawnTry` request in a neighbouring room in mode 3 (cn4: class 310, unit
-  `48670976`, at (5398, 5237); cm4: class 189 at (7738, 6260)) is the nearest candidate. The log carries no line for a
-  monster's movement between windows.
+  re-created by a `MonSpawnTry` request in a neighbouring room in mode 3 (cn4: class 310, unit `48670976`, id 522, at
+  (5398, 5237); cm4: class 189 at (7738, 6260) and (7736, 6262)) stands inside the tested rectangle, which
+  `COLL_WHTest` centres on (x, y). Each is a monster the population pass made in mode 1 and the request re-made after
+  its room's return; the re-creations have no `CM` line and the model applies no mark for them (corrected at the
+  review, chain/0003 § 2; first recorded as a candidate 4 cells off the rectangle that had walked).
   The remaining oracles of the summary, by name and count, are the run's inputs and remaining oracles (the record of
   ruling 2): the state InitFns' modes and interact bytes, the timer draws (13 823), the operate and trap spawns,
   `LevelRoomCount` (59 windows), the gate inputs (3 183), the revisit restores (31), the preset units of types 1 and 5
@@ -118,4 +123,11 @@
   - **Controls:** `--cf monequip-off` fails raven-xn2 and cn2 with one mismatch each, at the class-267 and class-234
     creations (`out/cf-monequip-off-*.txt`).
 - **Conclusion:** [chain/0003](0003-end-to-end-run.md). The run does **not** meet Phase 2's bar yet: 2 mismatches
-  (not 0), and 1 385 oracle-free room populations of the 2 000. Every other count of the bar is met.
+  (not 0), and 1 222 oracle-free room populations of the 2 000 on the 26 passing logs (1 385 with cn4's and cm4's,
+  which count only once those logs pass). Every other count of the bar is met on the 26 passing logs alone.
+- **Review re-run** (architect, 2026-10-21, on `lane/p48h` after merging `main`, under `MemoryMax=4G`):
+  `sha256sum -c manifest-final.txt` clean (`e47bb1b13e2cc7ca`, 127 lines); the 28-log check above on the merged tree
+  equals `out/final-check.txt` byte for byte (paths aside) and `final-o20.json` is identical; the same check without
+  cn4 and cm4, `chain: 26 logs, 0 sub-checks failed`, 1 222 populations, 148 levels, 8 231 objects, 745 drops with an
+  item. Outputs `out/review-check.txt`, `out/review-check-26.txt`, `out/review-o20.json`, `out/review-meq.py` (the
+  `monequip.bin` rows of classes 234 and 267), hashed in `out/review-manifest.txt` (`5ba2d0051461a63d`).

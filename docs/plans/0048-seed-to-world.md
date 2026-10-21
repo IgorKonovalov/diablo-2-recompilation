@@ -292,3 +292,56 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   **Next:** the architect rules on the two mismatches and the shortfall. Proposed: a `chain.gdb` line for a moving
   monster's marks between windows (or the cells under each objects-model `COLL_WHTest`), cn4 and cm4 re-run on their
   seeds, and about 13 more outdoor sessions on slot 1 for the populations.
+- **2026-10-21 — Phase 2 run 1 reviewed (architect, on `lane/p48h` after merging `main`): accept with fixes (4);
+  Phase 2 not done, run 2 on slot 1.** Re-run on the merged tree under `MemoryMax=4G`: `sha256sum -c
+  manifest-final.txt` clean (`e47bb1b1…`, 127 lines); `tools/chain.py check --o20` over the 28 logs equals
+  `out/final-check.txt` byte for byte (paths aside, `79c3a7a7…`) and `final-o20.json` is identical; the same check
+  without cn4 and cm4: 26 logs, 0 sub-checks failed. Anchors read in the image: `0x005504B3` and `0x00550B89` are
+  `call 0x64D800` (`COLL_WHTest`, mask `push 0x3F11`, w and h `+ 6`), `0x005D6BA5` `cmp byte [ebx+4], 0`, `0x00574235`
+  `call 0x5D6B60` (`MonEquipInit` from `MonStatsInit`); every cited address is in `re/symbols.csv`. Oracle 19, 20 and
+  14 counts recounted from the re-run, equal to the record. Review outputs `workspace/logs/chain-p2/out/review-*`,
+  `review-manifest.txt` (`5ba2d005…`).
+  **Fixes** (written into chain/0003, chain/0002 and the run record): (1) **misread**: chain/0003 § 2 said neither
+  candidate's footprint overlaps the tested rectangle, reading it as anchored at (x, y); `COLL_WHTest` centres it
+  (`tools/collision.py wh_test`), so cn4's unit 522 stands on the rectangle's top-left cell and cm4's two class-189
+  units' footprints overlap its left columns. The candidates are not fresh monsters that walked: each is a monster
+  the population pass made in mode 1 and a `MonSpawnTry` request re-made in mode 3 after its room's release and return
+  (same unit id, same request seed), and the re-creations have no `CM` line and no modelled mark; the game's bits are
+  exactly those of the monsters on their re-creation cells (`[I]`). § 2, the Answer, Open question 1 and the record
+  corrected. (2) **overclaim**: the 1 385 populations and the coverage counts included cn4's (117) and cm4's (46)
+  populations and counts, logs that fail; on the 26 passing logs: **1 222** populations, 148 levels (every kind, every
+  act of each game type in each difficulty), 8 231 objects, 41 champion and 108 unique packs, 142 mods rolls, 745
+  drops with an item (843 items); the shortfall is 778 (about 16 sessions, not 13). (3) **overclaim**: oracle 13's
+  raise covered model branches no case reached; the stock table's two `oninit` rows (`monequip.bin` rows 0 and 1) are
+  level 0 with one location each, so the `[C]` is **in part** (one row, n = 1, the masked step, one item) and the level
+  skip, a second row, n of 2 or 3 (`RangeB`) and an occupied location stay `[I]`, unreachable with the stock table
+  (chain/0002 § 11 and its Answer). (4) **omission**: xh4's 1 962 lines after its last frame-stamped `PLR` line are
+  of unknown time (before the suspend or after the resume); the record now says so and scopes the session.
+  **Rulings.** (1) **The two mismatches: neither proposed route.** Not the moving monster's marks (the cause is the
+  re-creation, fix 1), and not the test as a simulation input: taking a `COLL_WHTest` result would have hidden exactly
+  this model gap, and stays refused. Route: find the mark call a mode-3 re-creation takes (the mode-1 creation's `PM`
+  lines return to `0x006494D5`; the re-creations log none), add it to `tools/gdb/chain.gdb`, model the marks in
+  the objects grid as for in-pass creations (`creation_mark`), and re-check cn4 and cm4 **on their kept logs**: if both
+  pass they count, populations included, with the marks there checked only through the later tests (say so); the new
+  logs compare the marks line for line. Count the re-creations in every log. A test that only a moved monster
+  explains would then be logged as a simulation input (that unit's marks), not taken as the test's result.
+  (2) **More sessions: approved**, on slot 1, new seeds, weighted to outdoor waypoints, until the passing logs hold
+  2 000 populations (778 more, 615 if cn4 and cm4 pass); recount after each batch from the kept check output.
+  (3) **The chest interact byte (`dfe3e5e`): legitimate as a counted remaining oracle, not a hidden gap of the bar.**
+  The creation's byte is still asserted at its creation line; the taken byte is the operate's, after the player's
+  interaction, and drives only `OperateFn` 4's locked test and that chest's drop (object-source drops, outside the
+  bar's 500 monster drops and its 300 creations); the branch takes only the two forms seen with mode and sparkle
+  equal, so any other change still fails. It is a gap of the operate path, named (chain/0003 Open question 2) and
+  counted by kind; run 2 reads the writer if a static pass finds it cheaply, else it stays for Phase 3's *Open
+  questions*. (4) **xh4 is admissible as a reproduction.** A suspend stops the game, wine, gdb and its logger together,
+  so no line is lost or reordered; no model reads wall time (the game frame and every seed are logged or predicted),
+  and every line the check consumes is reproduced, including whatever ran after the resume. It is not admissible for
+  timing (MB or wall minutes per game minute), and a session crossing a suspend is named in its record, as here.
+  (5) **Oracle 13**: reached, raised in part (fix 3); the control is live and the unit seed after the draw is a 64-bit
+  value, so neither case matches by chance. (6) **Oracles 19, 20, 14**: counted as ruling 2 of the Phase 1 review asked;
+  accepted. **Done-when**: not met — 2 mismatches, 1 222 of 2 000 populations; everything else met on the 26 passing
+  logs. **Next: run 2 on slot 1** with (a) the re-creation marks logged and modelled, (b) cn4 and cm4 re-checked on
+  their logs, (c) about 16 new sessions, (d) one `chain.py check` over every counted log (run 1's 28 and run 2's) with
+  run 2's tools, 0 sub-checks failed, and the Phase 1 world logs re-checked for regressions, (e) the record's counts
+  from passing logs only, then the review request. Review request
+  [closed](../backlog/archive/2026-10-21-reverser-architect-review-plan-0048-phase-2-run-1-end.md); ledger row added.
