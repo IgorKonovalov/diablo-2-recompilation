@@ -1,0 +1,87 @@
+{
+  "game": "expansion",
+  "progression": 15,
+  "difficulty": [
+    131,
+    131,
+    131
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "quests": "all",
+  "class": "Paladin",
+  "seed": 4705,
+  "name": "StatsFloorB",
+  "stats": {
+    "strength": 400,
+    "energy": 200,
+    "dexterity": 400,
+    "vitality": 800,
+    "hitpoints": 30,
+    "maxhp": 3000,
+    "mana": 3000,
+    "maxmana": 3000,
+    "stamina": 800,
+    "maxstamina": 800,
+    "level": 85,
+    "experience": 1050299747
+  },
+  "skills": {
+    "Might": 1
+  },
+  "mouse": {
+    "left": "Attack",
+    "right": "Might",
+    "swap_left": "Attack",
+    "swap_right": "Might"
+  },
+  "items": [
+    {
+      "unique": "The Gnasher",
+      "equip": "rarm",
+      "roll": "max"
+    },
+    {
+      "unique": "Kerke's Sanctuary",
+      "equip": "larm",
+      "roll": "max"
+    },
+    {
+      "unique": "The Gladiator's Bane",
+      "equip": "tors",
+      "roll": "max"
+    },
+    {
+      "unique": "Rockstopper",
+      "equip": "head",
+      "roll": "max"
+    },
+    {
+      "unique": "Steelrend",
+      "equip": "glov",
+      "roll": "max"
+    },
+    {
+      "code": "hbl",
+      "equip": "belt"
+    },
+    {
+      "unique": "Gorerider",
+      "equip": "feet",
+      "roll": "max"
+    },
+    {
+      "unique": "Nature's Peace",
+      "equip": "rrin",
+      "roll": "max"
+    },
+    {
+      "unique": "Nature's Peace",
+      "equip": "lrin",
+      "roll": "max"
+    }
+  ]
+}

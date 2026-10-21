@@ -221,7 +221,9 @@ def shrine_hunt(wp, rounds=4):
     Plan 0047 Phase 2b: Phase 2's version went from the waypoint straight to objop, which explores nothing: it
     operates only objects already listed, so a session saw the shrines of the waypoint's rooms (about one)."""
     op = ["objop", "--obj-cls", SHRINES_WELLS, "--obj-near", "3", "--obj-mem", "--done", "SHR1,WEL1"]
-    ex = ["explore", "--hops", "25", "--nova", "2", "--mana-col", "4", "--drink", "0.4"]
+    # --dead-below 0: the pilot read StatsSor's life orb (1 500 of 6 000) as empty and stopped each explore after one
+    # hop (dev-p47b-sor-shrines1)
+    ex = ["explore", "--hops", "25", "--nova", "2", "--mana-col", "4", "--drink", "0", "--dead-below", "0"]
     t = [("pilot", ["farm", "--wp", wp, "--time", "1"], 90)]
     for _ in range(rounds):
         t += [("pilot", ex, 300), ("pilot", op + ["--times", "4", "--time", "120"], 200)]
@@ -305,6 +307,37 @@ for k, wp in enumerate(("2,4", "2,6")):
                                                         "9", "--drink", "0", "--mana-col", "0", "--hops", "80",
                                                         "--dead-below", "0"], 600)],
                                             FIELD)
+# floor-poison3 (dev of this design, kept): StatsFloor is level 85 at the experience where 86 begins (the recipe's
+# 1 145 236 814), so the first kill of the melee explore levelled it up at frame 436 and the level-up filled life to
+# the maximum (14 175 -> 780 032 in 1/256 units, max life +2): poison then drained from 3 047 life. Without --melee
+# (no kill, no experience) the character walks into the packs and stands among them (the waits) at 30 life.
+FLOOR_WALK = ["explore", "--walk", "--radius", "9", "--drink", "0", "--mana-col", "0", "--dead-below", "0"]
+for k, wp in enumerate(("2,4", "2,6", "2,4", "2,6")):
+    t = [("pilot", ["farm", "--wp", wp, "--time", "1", "--mana-col", "0", "--drink", "0"], 90)]
+    for _ in range(8):
+        t += [("pilot", FLOOR_WALK + ["--hops", "8"], 200), ("wait", 20)]
+    SESSIONS["floor-poison%d" % (k + 5)] = ("StatsFloor", "enter-normal", 4775 + k, t, FIELD)
+# floor-poison5 (kept as a dev log) showed the refill without a melee kill too (frame 1080: The Gladiator's Bane's
+# attacker damage kills give experience as well): the recipe's experience, 1 145 236 814, is experience.txt row 85,
+# the experience at which level 86 begins (row N is level N+1's start: row 1 is 500), so any experience levels
+# StatsFloor up. StatsFloorB (statsfloorb.json, pinned) is the same character at row 84's 1 050 299 747, level 85's
+# start: about 95 million experience from the next level.
+for k, wp in enumerate(("2,4", "2,6", "2,4", "2,6")):
+    t = [("pilot", ["farm", "--wp", wp, "--time", "1", "--mana-col", "0", "--drink", "0"], 90)]
+    for _ in range(8):
+        t += [("pilot", FLOOR_WALK + ["--hops", "8"], 200), ("wait", 20)]
+    SESSIONS["floorb-poison%d" % (k + 1)] = ("StatsFloorB", "enter-normal", 4791 + k, t, FIELD)
+# floorb-poison1 (Halls of the Dead) took no poison; floorb-poison2 (Lost City) took its first at frame ~4 000, after
+# natural regeneration (+15 a frame) had raised life from 30 to 267, and 567 poisoned ticks left it above 180. The
+# melee explore of floor-poison4 met the Plague Bearers at frame 593: floorb-poison3/4 are that explore on StatsFloorB
+# (no level-up now) in the Lost City.
+for k in (2, 3):
+    SESSIONS["floorb-poison%d" % (k + 1)] = ("StatsFloorB", "enter-normal", 4791 + k,
+                                             [("pilot", ["farm", "--wp", "2,6", "--time", "1", "--mana-col", "0",
+                                                         "--drink", "0"], 90),
+                                              ("pilot", ["explore", "--walk", "--melee", "--melee-hold", "1.2",
+                                                         "--radius", "9", "--drink", "0", "--mana-col", "0", "--hops",
+                                                         "80", "--dead-below", "0"], 600)], FIELD)
 # The curse resistance cut, a second field: the Crystalline Passage (waypoint 5,4; Levels 113 mon succubus3, skill
 # Defense Curse 309, state 113 defense_curse with States `curse` 1: the kept run's 11 state-113 expiries came from
 # there), StatsAss under Fade as in ass-curses
@@ -337,7 +370,7 @@ CASES_0047 = {
                                           ["pot-town%d" % k for k in range(1, 5)], [], ()),
     "S4 different-state group clears": ("armours (group 1), Fade and Quickness (2), the shapes (3)",
                                         ["sor-armours", "ass-fade", "dru-shapes", "dru-shapes2", "dru-shapes3"], [], ()),
-    "S5 the 256 floor": ("StatsFloor poisoned at 30 life", ["floor-poison%d" % k for k in range(1, 5)], [34], ()),
+    "S5 the 256 floor": ("StatsFloor poisoned at 30 life", ["floor-poison%d" % k for k in range(1, 9)] + ["floorb-poison%d" % k for k in range(1, 5)], [34], ()),
     "S7 the curse resistance cut": ("StatsAss under Fade cursed by the Worldstone Keep's witches",
                                     ["ass-curses%d" % k for k in range(1, 5)], [], ("Fade",)),
     "S8 attract (Phase 1 review ruling 2)": ("StatsNecA: Attract, then Amplify Damage on the same monster",

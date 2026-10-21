@@ -990,6 +990,12 @@ class Checker:
                     if so_u:
                         sa = so_u
                 ld[0] = lines[i - 1][1]["lo"][0] if h["u"] == a["u"] else lines[i - 1][1]["lu"][0]
+                if h["u"] != a["u"]:
+                    # plan 0047 Phase 2b: as below, the attacker's life after a defender's handler
+                    lo = lines[i - 1][1].get("lo")
+                    if lo and lo[0] != la[0]:
+                        self.kc("handlers", "attacker life taken from a defender handler's EVR")
+                        la[0] = lo[0]
                 continue
             r_line = lines[j][1]
             if h["u"] == a["u"] and h["fn"] == FN_CB:
@@ -1019,6 +1025,12 @@ class Checker:
                     if r_line["so"]:
                         sa = sd_parse(r_line["so"])
                     ld[0] = r_line["lu"][0]
+                    # plan 0047 Phase 2b: the defender's handler may change the attacker's life (the player's
+                    # attacker damage, 0x005BF720 event 1, on a draining monster): the leech after it starts from
+                    # the attacker's life the EVR line gives ("lo"), a value oracle as the handler is
+                    if r_line.get("lo") and r_line["lo"][0] != la[0]:
+                        self.kc("handlers", "attacker life taken from a defender handler's EVR")
+                        la[0] = r_line["lo"][0]
             i = j + 1
         # phys capped at life, leech
         hp = ld[0]
