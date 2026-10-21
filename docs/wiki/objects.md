@@ -1,8 +1,8 @@
 ---
 based_on:
-  - docs/specs/objects/README.md 2026-10-17
+  - docs/specs/objects/README.md 2026-10-21
   - docs/specs/items/tc.md 2026-10-21
-  - docs/specs/drlg/lifecycle.md 2026-10-20
+  - docs/specs/drlg/lifecycle.md 2026-10-21
 ---
 
 # Objects: shrines, chests, barrels and the rest
@@ -66,7 +66,9 @@ Before any random object is placed, a gate decides whether this room takes part 
 ([objects § C](../specs/objects/README.md#c-the-gate-and-the-theme-roll)). A room is skipped when it holds a waypoint,
 when it has no population level, when a preset test on the room says no, or when it is in a town. Those
 tests come from the level generator ([DRLG](../glossary.md)); in the test runs they were taken from the recording
-rather than modelled, and the gate as a whole is read from the code. Town rooms drew nothing in all 222 recorded
+rather than modelled, and the gate as a whole is read from the code. The code behind those tests has since been read,
+and the end-to-end run checked the recorded values against that reading at every gate, but the values are still taken
+from the recording there ([seed to world](seed-to-world.md#how-it-was-checked)). Town rooms drew nothing in all 222 recorded
 town activations.
 
 Each gated room increments a "rooms visited" counter of its population level. That counter counts gated rooms, not
@@ -232,7 +234,11 @@ to 2, 3 and 18, so Health Exchange, Mana Exchange and the Shrine of Enirhs are n
 
 The callee scan behind this table went three calls deep, so "no draw" for the other `InitFn`s is read from the code.
 The sparkle chest's own `InitFn` (57), the fissure (58) and the Zoo (79) were not reached in a run. Quest objects and
-the City of the Damned spawn monsters when created; their rolls were taken from the recording.
+the City of the Damned spawn monsters when created. The City of the Damned's spawns, with their room, game and
+object-region draws, are now modelled; for the other monster-spawning objects the rolls are still taken from the
+recording. Each pile of the gold-pile dummy is now a modelled item, with its two game-seed steps and its mark on the
+grid and no object-region draw (71 of 71 piles); where a pile lands is read from the code, and that reading placed 69
+of the 71 ([objects § H](../specs/objects/README.md#h-draws-at-creation-per-initfn), rows 28 and 46).
 
 ## Leaving and coming back
 
@@ -295,7 +301,10 @@ Other containers:
 | caskets, sarcophagi | one drop; only if it made an item, a monster with chance 18.08 %; then the trap |
 | bookshelves, trapped souls, the evil urn | their own rolls, read from the code: none was operated in a run |
 
-The casket's monster roll after an item is read from the code; the run only saw caskets that made no item. Class
+The casket's monster roll after an item is read from the code; the run only saw caskets that made no item. When an
+operate does spawn a monster, the operate itself is a player's action and so an input; the monster's creation is not
+run by the composed model, and the end-to-end check counts such creations rather than predicting them
+([objects § Inputs and oracles](../specs/objects/README.md#inputs-and-oracles)). Class
 397, a special chest with its own tiered drop table, was never operated in a run, so its table is read from the code
 only. Of the 68 operate handlers, only seven roll the object-region seed directly; the others reach it only through an
 object they create, a trap fired later, or a room they activate (for example a portal), all read from the code. The
@@ -431,6 +440,9 @@ From the spec's [open questions](../specs/objects/README.md#open-questions) and 
 - **The chest tier in the objects spec:** the exact cut and its check against recorded chests (with the tier used as
   the quality roll's item level) are in the treasure class spec; the objects spec has not taken them over yet, see
   [the hand-off](#what-a-chest-drops-the-hand-off).
+- **Who changes a chest's state byte before it is opened.** Seven chests of the end-to-end run reached their operate
+  with a lock bit or state their creation had not left (set, cleared, or the whole byte cleared), and no recorded line
+  wrote it; the check takes the byte at the operate.
 - **Multiplayer games were not recorded**, and quest-state objects stay inputs.
 
 ## Where to read more

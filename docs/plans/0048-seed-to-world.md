@@ -502,10 +502,18 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   calls, items/quality's resolver totals), chain/0001 marks oracle 5 *chained* before plan 0048, and the chain spec's
   retired table links items/quality. A later edit of either spec may relabel the worked-example row; no entry now.
   items/cube and monsters/pool (oracles 9, 10, 23) are off the chain and rightly untouched. (3) **chain is `reviewed`**
-  (front matter set at this review). (4) **Phase 4 may start**: [entry](../backlog/2026-10-21-architect-spec-writer-plan-0048-phase-4-seed-to-world-wiki.md),
+  (front matter set at this review). (4) **Phase 4 may start**: [entry](../backlog/archive/2026-10-21-architect-spec-writer-plan-0048-phase-4-seed-to-world-wiki.md),
   with the W4 warnings this phase's edits left on eight wiki pages folded in.
   Research map: the `chain` row (spec link, `reviewed`, counts) and the count rows of drlg/lifecycle, drlg/collision,
   drlg/room-tiles, objects and monsters/stats rewritten; dates bumped on drlg/README, monsters/spawn, monsters/special and
   items/affixes. Spec-writer `review-fixes.md` rule 9 extended (the finding's mood). Review request
   [closed](../backlog/archive/2026-10-21-spec-writer-architect-review-plan-0048-phase-3-seed-to-world.md); the lane's
   ledger row added (the review's row is the orchestrator's, with its usage).
+- **2026-10-21 — Phase 4 written, review requested (spec-writer, `lane/s48p4`).**
+  [wiki/seed-to-world](../wiki/seed-to-world.md) over [specs/chain](../specs/chain/README.md): the call order A–H in
+  prose with two diagrams, the inputs by class, how the composition was checked, three worked examples, traps and open
+  questions; `based_on` chain, rng/seeds, drlg/room-tiles, drlg/lifecycle, monsters/stats and objects (2026-10-21);
+  linked from the wiki index. The W4 warnings the Phase 3 edits left on characters, items, items-other-paths, levels,
+  monsters, objects, randomness and saves cleared (gate W4 17 -> 0), restating only the stale passages. The Phase 4
+  [entry](../backlog/archive/2026-10-21-architect-spec-writer-plan-0048-phase-4-seed-to-world-wiki.md) closed; review
+  [request](../backlog/2026-10-21-spec-writer-architect-review-plan-0048-phase-4-seed-to-world.md).

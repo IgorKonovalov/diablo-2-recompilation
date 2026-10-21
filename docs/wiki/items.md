@@ -2,8 +2,8 @@
 based_on:
   - docs/specs/items/tc.md 2026-10-21
   - docs/specs/items/quality.md 2026-10-20
-  - docs/specs/items/uniques-sets.md 2026-10-17
-  - docs/specs/items/affixes.md 2026-10-20
+  - docs/specs/items/uniques-sets.md 2026-10-21
+  - docs/specs/items/affixes.md 2026-10-21
   - docs/specs/items/properties.md 2026-10-21
 ---
 
@@ -535,7 +535,7 @@ level 1, `magic lvl` 1, `auto prefix` 303), item level 1, magic:
 | prefix pick | 1 | 7 candidates, total weight 20, draw 5 of 21 → *Lizard's* |
 | suffix coin | 1 | lowest bit 1: roll a suffix |
 | suffix pick | 1 | 2 candidates (both *of Energy*), weight 8, draw 4 of 9 → the second one |
-| staff mods | taken from the log | class 1 |
+| staff mods | taken from the recording in that check; the model now predicts it | class 1 |
 | ethereal roll | (logged) | magic gets no socket roll |
 | automagic coin | 1 | ignored |
 | automagic pick | 1 | one candidate, *of the Jackal*, weight 6, draw 5 of 7 → chosen |
