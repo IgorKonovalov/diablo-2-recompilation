@@ -144,6 +144,8 @@ RECIPE_BASES = {
     "cuberunes": (BASE_X, "416cb60e442bf2e13bfeaeace0f322206d4344e2a35f0094b175340693261b7c"),  # run:2026-10-15-cube-saves
     "cubesock": (BASE_X, "fc5674f780e62ac90791636433212c4cbbc39348a963c42aaac367da1ef3d52d"),  # run:2026-10-15-cube-saves
     "h2afind": (os.path.join(SAMPLES, "smpbar.d2s"), "38f0fc5792475a073a9da3838c5dd6864c687f4b5484f6d2cfc2cfbf14f426db"),  # run:2026-10-20-sweep-items-tc (H2a FindBar)
+    "h2bjewel": (os.path.join(SAMPLES, "smpsor.d2s"), "03afa56fce9073fb98d7581dbc025decaad2c4ea18dcf93bcdd8aee19b05fcab"),  # run:2026-10-20-sweep-items-chain (H2b)
+    "h2bthrow": (BASE_C, "b965d6b9e65ab8d7e5444515a81074a3bf48953da7bd2295cd8ecc198d536987"),  # run:2026-10-20-sweep-items-chain (H2b)
     "keynova": (BASE_X, "88ebd25f6db285ef3d863377e4cf4fe9a0554664d448cb6b53f762585e46d635"),  # run:2026-10-15-drlg-outdoor
     "cownova": (BASE_X, "8c66964bb82a2cc5757bac9b154756571af953ca960d5847ecc77c99389efbc8"),  # plan 0027 Phase 3 (level 39)
     "lightsorc": (BASE_X, None),
@@ -259,6 +261,8 @@ RECIPE_BASES = {
     "combatfrz": (BASE_X, "c1ed1c393a0bbc895def710550bf301dbeb36f187d296370a9e26af8bee58759"),
     "combatowf": (BASE_X, "77807e000c7c7c863752a795a45b446525dd38020c86a22ea1584c8c2639903c"),  # 5871b00's CombatOW, renamed
     "combatama": (os.path.join(SAMPLES, "smpama.d2s"), "5b694383e89d63d2c52d07968e1b265b4754f239b55a7fba0d2c42042e126522"),
+    "combatamad": (os.path.join(SAMPLES, "smpama.d2s"), "d4572d07d582af3dc2fea3d7091900f71a75f46030593bccc1273d8e93a68cfd"),
+    "combatamaw": (os.path.join(SAMPLES, "smpama.d2s"), "fa9c41625e302bad2b7a3af49b327712b4938e4ae6e375ba4487a667e15029cd"),
     "combatass": (os.path.join(SAMPLES, "smpasn.d2s"), "e0ea31a2df0dce6a63d4c705f4cdd9ce0c2b94716d71b3e8f692d0a49fc7af48"),
     "combatasso": (os.path.join(SAMPLES, "smpasn.d2s"), "c4dc7172e72c896accb07ebf77bfe05fd460eae75e4c757374039ae675b96475"),
     "statssor": (os.path.join(SAMPLES, "smpsor.d2s"), "963ed3809c35d69f29800a1292b9f9c4f4104245e612c4632206c123760efadd"),
@@ -266,6 +270,7 @@ RECIPE_BASES = {
     "statsass": (os.path.join(SAMPLES, "smpasn.d2s"), "5eb48cc0be61071d9e1e64549a365f58ecb6b62f5e12fa0b8a49f5cfc3ccdbde"),
     "statsdru": (os.path.join(SAMPLES, "smpdru.d2s"), "58cc838b578534b0d0dd0329bfb54188e737a6994576d3957ff0c9bbfebd312c"),
     "statsfloor": (os.path.join(SAMPLES, "smppal.d2s"), "82db5212c3cc57367313a0e731336ffd83234dd94a55781070bf90e093eac5ca"),
+    "statsneca": (os.path.join(SAMPLES, "smpnec.d2s"), "21b42e85994cfb5e6e6bac3f4d812294944f9b96e73dc58b847fb7df9e54ea54"),  # plan 0047 P2: Attract
     "statspot": (os.path.join(SAMPLES, "smpbar.d2s"), "a18f03a9f2dacaa2218ac200e1f555b3aca5a79cebf7a0e706298d5ab010dc6c"),
     "quest-p47wp": (BASE_X, "f3c935c349d44ca2fcaad2c803626b7bf62d56657d20036a39a98351b64a31d0"),
     # plan 0044 Phase 2 pairs (tools/mp_saves.py): not loaded yet

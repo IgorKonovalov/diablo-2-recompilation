@@ -3,6 +3,7 @@ docs/findings/combat/0001-formulas.md.
 
 Usage:
   python3 -I tools/combat.py check <log> [...] [--excel DIR] [--exe EXE] [-v] [--json OUT] [--no-shield ID,...]
+                                                    [--no-shield-log NAME,...]
   python3 -I tools/combat.py manifest <log> [...]          # sha256, size and line count of each log
 
 <log> is written by tools/d2run.py with tools/gdb/combat.gdb (the tags of tools/gdb/combat.py). The model reads the
@@ -200,8 +201,12 @@ def pset(p, off, v):
 
 
 class Checker:
-    def __init__(self, T, verbose=False, no_shield=()):
+    def __init__(self, T, verbose=False, no_shield=(), no_shield_logs=()):
         self.T, self.v = T, verbose
+        # plan 0047 Phase 2: logs (base names, ".log" optional) whose every player holds no shield, so a run list
+        # mixing shield and shield-less recipes checks in one call; self.no_shield_here is set per log by run()
+        self.no_shield_logs = {n[:-4] if n.endswith(".log") else n for n in no_shield_logs}
+        self.no_shield_here = False
         # plan 0044 Phase 2: player unit ids known (from their recipes) to hold no shield; UnitBlockChance is 0 for
         # them (combat/0001 § 4: "0 without a shield in the hands"). The logs carry no equipment, so this is input.
         self.no_shield = set(no_shield)
@@ -337,6 +342,7 @@ class Checker:
             self.eq("DRR %s chance" % label, L["ch"], ch)
             self.eq("DRR %s roll" % label, L["r"], r)
             self.eq("DRR %s seed" % label, L["s"], sd_fmt(sd))
+            self.case("defence roll %s" % label)          # plan 0047 Phase 2: rolls, beside the successes below
             return r < ch
 
         if use_block:
@@ -350,8 +356,9 @@ class Checker:
                     self.fail("expected DRB")
             b = drb["b"]
             if d["t"] == 0 and not drb.get("r1"):
-                want = 0 if d.get("id") in self.no_shield else self.block_formula(d, g["exp"])
-                if d.get("id") in self.no_shield:
+                shieldless = d.get("id") in self.no_shield or self.no_shield_here
+                want = 0 if shieldless else self.block_formula(d, g["exp"])
+                if shieldless:
                     self.case("player block chance 0: no shield held (--no-shield)")
                 if b > 0 or want > 0:
                     self.eq("DRB block chance (player formula, shield held)", b, want)
@@ -367,6 +374,8 @@ class Checker:
                     if drm["mv"] and d["m"] != 2:
                         b = tdiv(b, 3)
                         self.case("block divided by 3 (moving player)")
+                    elif drm["mv"]:
+                        self.case("block not divided: moving player in mode 2 (walk)")
                 if roll("block", b):
                     self.case("block")
                     return 1, sd, i
@@ -598,6 +607,46 @@ class Checker:
             diff = ["+0x%02X: %d vs %d" % (4 * k, got[k], want[k]) for k in range(28) if got[k] != want[k]]
             self.fail("%s (logged vs model): %s" % (what, ", ".join(diff)))
 
+    def freeze_check(self, h, lines, j, a, d):
+        """STATEVENT_Freeze (0x005BFC60, plan 0047 Phase 2), checked up to its nested delivery, which stays a boundary
+        oracle: x = the attacker's stat (EVH par: 134, layer 0); x <= 0 -> no draw; c = ((max(x - 1, 0)·4 - dlvl +
+        alvl [- 6 missile] + 10)·5 [/3 missile, toward zero]), negative -> 0, capped at 100; one draw on the
+        attacker's seed, r = low % 100; r >= c -> no freeze; else len = (c - r)·2 + 25 clamped 25..250 into a fresh
+        packet's freeze length (+0x34) and COMBAT_ApplyDamage(defender, reductions = 1) (the nested AD0)."""
+        x = stat(a, h["par"] >> 16)
+        su = sd_parse(h["su"])
+        if x <= 0:
+            self.case("freeze handler: no stat, no draw")
+            if lines[j][0] == "EVR":
+                self.eq("freeze handler exit seed (no stat)", lines[j][1]["su"], h["su"])
+            else:
+                self.fail("freeze handler without the stat: nested lines")
+            return
+        miss = h["e"] == 6
+        c = (max(x - 1, 0) * 4 - stat(d, 12) + stat(a, 12) - (6 if miss else 0) + 10) * 5
+        if miss:
+            c = tdiv(c, 3)
+        c = min(max(c, 0), 100)
+        r, s1 = rng_range(su, 100)
+        self.case("freeze handler roll (%s)" % ("missile" if miss else "melee"))
+        if r >= c:
+            if lines[j][0] != "EVR":
+                self.fail("freeze handler: r %d >= c %d, but nested lines" % (r, c))
+            else:
+                self.eq("freeze handler exit seed (no freeze)", lines[j][1]["su"], sd_fmt(s1))
+            return
+        L = min(max((c - r) * 2 + 25, 25), 250)
+        if lines[j][0] != "AD0":
+            self.fail("freeze handler: r %d < c %d, expected the nested AD0, got %s" % (r, c, lines[j][0]))
+            return
+        ad = lines[j][1]
+        got, _ = pk(ad["p"])
+        self.eq("freeze nested packet freeze length", pget(got, F_FLEN), L)
+        self.eq("freeze nested reductions flag", ad["red"], 1)
+        self.eq("freeze nested AD0 attacker seed", ad["sa"], sd_fmt(s1))
+        self.case("freeze handler: freeze delivered (len %s)" % ("25" if L == 25 else "250" if L == 250 else
+                                                                 "26..249"))
+
     def oracle_handler(self, lines, i, s_unit_pred, s_other_pred, a, d):
         """An EVH .. EVR pair taken as a boundary oracle: assert the unit's entry seed, take the exits."""
         h = lines[i][1]
@@ -776,6 +825,10 @@ class Checker:
         self.eq_packet("RD1 packet", got, p)
         if any(x for kind, _, x in absorb_log if kind == "pct" and x > 0) and d["t"] == 0:
             self.case("percent absorb on the player (heal amount > 0)")
+        for kind, k, x in absorb_log:   # plan 0047 Phase 2: flat absorb (the f = stat << 8 step) taken per element
+            if kind == "flat" and x > 0:
+                self.case("flat absorb %s on the %s (amount > 0)" % (ELEM_ROWS.get(k, k),
+                                                                    "player" if d["t"] == 0 else "monster"))
         if stat(d, 34) or stat(d, 35) or any(x for _, _, x in absorb_log):
             self.case("events with DR, MDR or absorb non-zero")
         if not g["exp"] and g["diff"] and d["t"] == 0:
@@ -815,8 +868,10 @@ class Checker:
         new = max(hp - cb, 0)
         self.eq("CB life after", r_line["lo"][0], new)
         f = d.get("f", 0) or 0
-        who = "act boss" if d["t"] == 1 and T.boss(d["c"]) else ("superunique" if f & 2 else ("unique" if f & 8 else (
-            "champion" if f & 4 else ("player" if d["t"] == 0 else "normal"))))
+        # plan 0047 Phase 2: a champion carries 0x04 with 0x08 (SpecialModsRoll adds 0x04 to a special monster;
+        # no kept combat log holds a monster with 0x04 and not 0x08), so 0x04 is tested before 0x08
+        who = "act boss" if d["t"] == 1 and T.boss(d["c"]) else ("superunique" if f & 2 else (
+            "champion (0x04)" if f & 4 else ("unique" if f & 8 else ("player" if d["t"] == 0 else "normal"))))
         self.case("crushing blow on %s" % who)
         return sa
 
@@ -886,7 +941,16 @@ class Checker:
             # a deferred delivery that COMBAT_ApplyDamage left at once (0x0057C6D5..0x0057C78E: hostility, town,
             # killable or dead at the delivery frame; the reason is not logged)
             self.case("deferred delivery: COMBAT_ApplyDamage returned at once (reason not logged)")
-        if d["m"] in (0, 12) or not ld[0] or early:
+        if "c4" in d:
+            # sub_005541B0_UnitIsDead (0x005541B0): unit +0xC6 bit 0, or mode 0 or 12 (monster) / 0 or 17 (player), or
+            # another unit type; life is not read (plan 0047 Phase 2: a monster at life 0 not yet in its death mode
+            # takes the events), from the defender's EV0 snapshot
+            dead = bool((d["c4"] >> 16) & 1) or d["t"] not in (0, 1) or d["m"] in ((0, 17) if d["t"] == 0 else (0, 12))
+            if not dead and not ld[0]:
+                self.case("defender at life 0 not dead (events run)")
+        else:                           # logger r1, r2 (no +0xC4 field): the old approximation
+            dead = d["m"] in (0, 12) or not ld[0]
+        if dead or early:
             # dead defender: COMBAT_ApplyDamage returns before the events (0x0057C77D)
             if lines[i][0] != "AD1":
                 self.fail("dead defender: expected AD1, got %s" % lines[i][0])
@@ -909,6 +973,8 @@ class Checker:
             if j < len(lines) and lines[j][0] == "STA":
                 sta = lines[j][1]
                 j += 1
+            if h["fn"] == FN_FRZ and h["u"] == a["u"]:
+                self.freeze_check(h, lines, j, a, d)
             if lines[j][0] != "EVR":
                 if h["fn"] in (FN_CB, FN_OW):
                     self.fail("handler %08x: nested lines not modelled" % h["fn"])
@@ -988,6 +1054,11 @@ class Checker:
         if tot > 0:
             v = ld[0] - tot
             ld[0] = 0 if v < 256 else v
+        else:                           # delivery B4 (backlog 2026-10-17 resume-lane follow (b)): life left as is,
+            # asserted at AD1
+            self.case("delivery total %s (life unchanged) on the %s" % (
+                "negative" if tot < 0 else "zero", "player" if d["t"] == 0 else "monster" if d["t"] == 1 else
+                "unit type %d" % d["t"]))
         # stun, cold, freeze, poison, burn
         if pget(p, F_STUN) > 0 and d["t"] == 1 and (d.get("f", 0) or 0) & 8:
             _, sa = rng_range(sa, 100)          # COMBAT_ApplyStun on a unique: one draw on the attacker's seed
@@ -1156,6 +1227,15 @@ class Checker:
         if not g["exp"]:
             self.case("classic event diff %d" % g["diff"])
         p = None
+        while i < len(lines) and lines[i][0] == "MASA":
+            # the inner MAS event checks its draws from MAS0's seed to MAS1's; here MAS0 must enter on the attacker's
+            # running seed, and the build takes MAS1's stats (value oracle, as at EV0)
+            m = lines[i][1]
+            self.eq("own MonAttackStats entry seed", m["mas0"]["u"]["s"], sd_fmt(sa))
+            sa = sd_parse(m["mas1"]["s"])
+            a = dict(a, st=dict(m["mas1"]["st"]))
+            self.case("attacker's own MonAttackStats inside its event (build stats from MAS1)")
+            i += 1
         if i < len(lines) and lines[i][0] == "BD0":
             if not (res & 1):
                 self.case("builder ran on a miss")
@@ -1187,7 +1267,7 @@ class Checker:
             p[0] = 0x20
             sa, sd, i, _ = self.apply(ev, a, d, p, sa, sd, lines, i, g, False)
         sa, sd, i = self.extras(sa, sd, lines, i)
-        while i < len(lines) and lines[i][0] in ("MAS0", "MAS1"):
+        while i < len(lines) and lines[i][0] in ("MAS0", "MAS1", "MASA"):
             i += 1
         if ev.deferred:
             while i < len(lines) and lines[i][0] != "EVX":
@@ -1260,6 +1340,8 @@ class Checker:
     # --- driver --------------------------------------------------------------------------------------------------
     def run(self, path):
         self.player_seed, self.mon_seed = None, {}      # no chain across sessions
+        base = os.path.basename(path)
+        self.no_shield_here = (base[:-4] if base.endswith(".log") else base) in self.no_shield_logs
         self.stats["rgn_prev"] = {}
         lines = []
         with open(path, errors="replace") as fh:
@@ -1298,6 +1380,10 @@ class Checker:
                 while q < len(body):
                     if body[q][0] == "MAS0" and q + 1 < len(body) and body[q + 1][0] == "MAS1":
                         inner.append(("mas", body[q][1], [body[q + 1]], True, lines[k][2]))
+                        if (head.get("a") or {}).get("u") == body[q][1]["u"]["u"]:
+                            # plan 0047 Phase 2: the attacker's own MonAttackStats inside its attack event (a monster
+                            # in mode 14 calling it for mode 8): its output stats feed the build after it
+                            rest_.append(("MASA", {"mas0": body[q][1], "mas1": body[q + 1][1]}))
                         q += 2
                         continue
                     if body[q][0] not in ("MAS0", "MAS1"):
@@ -1318,10 +1404,24 @@ class Checker:
                     continue
             if tag == "RGN":
                 evs.append(("rgn", lines[k][1], [], True, lines[k][2]))
+            if tag == "CAP" and lines[k][1].get("k") == "mas":
+                evs.append(("capmas", lines[k][1], [], True, lines[k][2]))
             k += 1
+        mas_capped = False
         for kind, head, body, ok, no in evs:
             if kind == "rgn":
                 self.tick(head)
+                continue
+            if kind == "capmas":
+                mas_capped = True
+                continue
+            if (mas_capped and kind == "ma" and head.get("ret") == 0x005CAED8
+                    and not any(t == "MASA" for t, _ in body)):
+                # plan 0047 Phase 2: an attack returning to 0x005CAED8 (sandraider2 in mode 14) may call
+                # MonAttackStats inside the event and build from its output (6 of 14 such events before a MAS cap);
+                # past the logger's MAS cap that call is not logged, so the build has no stats input
+                self.kc(kind, "events")
+                self.kc(kind, "dropped: own MonAttackStats unlogged (past the MAS cap)")
                 continue
             self.kc(kind, "events")
             if not ok:
@@ -1533,6 +1633,7 @@ def main(argv):
         return 2
     cmd, rest = argv[0], argv[1:]
     excel, exe, verbose, out, paths, no_shield = DEFAULT_EXCEL, drlg.DEFAULT_EXE, False, None, [], ()
+    no_shield_logs = ()
     k = 0
     while k < len(rest):
         a = rest[k]
@@ -1546,6 +1647,8 @@ def main(argv):
             verbose, k = True, k + 1
         elif a == "--no-shield":
             no_shield, k = tuple(int(x) for x in rest[k + 1].split(",")), k + 2
+        elif a == "--no-shield-log":
+            no_shield_logs, k = no_shield_logs + tuple(rest[k + 1].split(",")), k + 2
         else:
             paths.append(a)
             k += 1
@@ -1555,7 +1658,7 @@ def main(argv):
             print("%s  %d  %d  %s" % (hashlib.sha256(data).hexdigest(), len(data), data.count(b"\n"),
                                       os.path.basename(p)))
         return 0
-    C = Checker(Tables(excel, exe), verbose, no_shield)
+    C = Checker(Tables(excel, exe), verbose, no_shield, no_shield_logs)
     for p in paths:
         C.run(p)
     return report(C, out)

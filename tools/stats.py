@@ -131,7 +131,9 @@ class Tables:
         self.states_rows = load_txt(excel, "states.txt")
         self.states = [r["state"] for r in self.states_rows]
         self.shrines = load_txt(excel, "shrines.txt")
-        self.itypes = [r["Code"] for r in load_txt(excel, "itemtypes.txt")]
+        # the "Expansion" separator row is not a record of the loaded table (plan 0047 Phase 2: the Assassin's claw
+        # mastery passive, param h2h = 67, was predicted one high)
+        self.itypes = [r["Code"] for r in load_txt(excel, "itemtypes.txt") if r.get("ItemType") != "Expansion"]
         self.montypes = {}
         for i, r in enumerate(load_txt(excel, "montype.txt")):
             self.montypes.setdefault(r["type"], i)
@@ -1021,6 +1023,10 @@ class Checker:
             self.sta = None
             if not a:
                 return
+            if a["w"] == "m":                       # logger rev 9 with STATS_MONSTA (plan 0047 Phase 2: attract)
+                self.seed_pair("apply_m", {"gs": a["gs"], "us": a["us"]}, d)
+                self.monster_apply(a, d)
+                return
             self.seed_pair("apply", {"gs": a["gs"], "us": a["us"]}, d)
             p = getattr(self, "sta_pred", None)
             if p is None:
@@ -1303,6 +1309,25 @@ class Checker:
 
     def seed_open(self, stack, kind, d):
         self.open_seed = (kind, d)
+
+    def monster_apply(self, a, d):
+        """A request on a monster (stats/0002 § 2): a curse on a target in state 57 attract is refused (the test after
+        curse_resistance, which no stock monster carries: no MonStats, MonProp or MonUMod cell writes stat 109). The
+        control is a curse on a monster not in attract, counted made or refused (refused by the monster gate or an
+        older curse of a higher level, which the logger does not separate)."""
+        if not self.sflag(a["state"], "curse"):
+            self.n["apply_m_not_curse"] += 1
+            return
+        sk = "attract" if a["sk"] == 86 else "other"
+        if 57 in a["sb"]:
+            self.n["curse_m_in_attract_%s" % sk] += 1
+            if d["r"] != 0:
+                self.fail("attract", "skill %d curse (state %d) on monster class %s in attract: list 0x%x, predicted "
+                          "refused" % (a["sk"], a["state"], a.get("mc"), d["r"]))
+            else:
+                self.n["curse_m_in_attract_%s_refused" % sk] += 1
+        else:
+            self.n["curse_m_free_%s_%s" % (sk, "made" if d["r"] else "refused")] += 1
 
     def seed_pair(self, kind, a, b):
         same = a.get("gs") == b.get("gs") and a.get("us") == b.get("us")
