@@ -79,6 +79,25 @@ def chaos():
     return out
 
 
+def chaos6(near="4", t=150):
+    """chaos5's route with the seal search per wing: chaos5 stopped at each wing's edge (explore --to-pdef), where only
+    the two seals of 859 were logged, and its later objops went back to those two (operated, no OOX). Here each wing in
+    turn is an objop that heads for the preset's centre until a seal is listed (--to-pdef), never re-targets a seal
+    already operated (--skip-operated), and is followed by a sweep for the seal boss."""
+    out = [wp(4, 3),
+           ("until", (108, ["objop", "--obj-cls", "9999", "--to-pdef", "857", "--pdef-any", "--time", "90"] + NOVA,
+                      120, 4), 0)]
+    seals = "392,393,394,395,396"
+    for wing in (859, 858, 860, 861):
+        out.append(("pilot", ["objop", "--obj-cls", seals, "--to-pdef", str(wing), "--pdef-any", "--skip-operated",
+                              "--times", "2", "--done", "OOX", "--time", str(t), "--obj-near", near] + NOVA, t + 20))
+        out.append(sweep(25))
+    out.append(sweep(30))
+    out.append(explore(80))
+    out.append(hunt(243, 360))
+    return out
+
+
 # name: (save Name, steps file, map seed, commands). All start in the Act IV town (the save's last town).
 SESSIONS = {
     # special 35, 68 (Blood Raven's name, mod 12), the stats 7/18/21 MonEquip creation again; Act I wanderer rider
@@ -110,6 +129,11 @@ SESSIONS = {
     "chaos4": ("UniqNova", "enter-nightmare", 4907, chaos(), "mon-h4a-obj.gdb"),
     # chaos4 with --obj-near 6 (chaos4 stood 4.2 sub-tiles from a seal with no hop left and no click)
     "chaos5": ("UniqNova", "enter-nightmare", 4907, chaos(), "mon-h4a-obj.gdb"),
+    # chaos5 with the per-wing seal search (chaos6 above)
+    "chaos6": ("UniqNova", "enter-nightmare", 4907, chaos6(), "mon-h4a-obj.gdb"),
+    # chaos6 with --obj-near 6 and 300 s per wing (chaos6 stood 4.2 sub-tiles from seal 392 with no hop left, and
+    # spent its first wing's 150 s getting there)
+    "chaos7": ("UniqNova", "enter-nightmare", 4907, chaos6("6", 300), "mon-h4a-obj.gdb"),
     # special 58 (Siege Boss, tail 42): Harrogath to the Bloody Foothills (110)
     "foothills": ("UniqNova", "enter-nightmare", 4908, [wp(5, 1), explore(200, ["--any-level"])]),
     # special 58 again: plan 0048's xm5 map seed, where Shenk (Siege Boss, record 42) stood near (3906, 5114) in the

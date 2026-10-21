@@ -3249,3 +3249,37 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
        Proposed so far: raised pool 12, qd 48, stats 7, 18, special 30, 35, 48 (kept logs), 50 (aura half), 51, 54, 55,
        58, 60, 68; in part stats 21, special 34 (rows 10, 13), 46, 52, 69 (156, 242, 256); spawn 5 and 49 by the static
        read of 0x00731B2C/0x00731B30 (S2c ruling 2); shortfall spawn 47, 48 (no `WRL`), special 59.
+- **2026-10-21 — H4a (`monsters-a`) paused again at the owner's request (reverser, `lane/h4a`, harness slot 1, after
+  merging `main` `fafcd32`).** Slot 1 is stopped and its saves directory restored (empty, no aside). No game, driver,
+  pilot, gdb or wait loop of the lane is left running. Still nothing is claimed: no statement raised, no § 2.6 entry,
+  no review request.
+  - **Found:** chaos5-paused had opened two seals, not one (`OO0`/`OOX` for 392 and 393, both in wing 859); its later
+    objops re-clicked those two, so the misses were not a click-distance problem. The other wings' seals never
+    appeared because `explore --to-pdef` stops at a wing's edge.
+  - **Tools** (this commit): `d2pilot.py objop --skip-operated` (an object whose unit has an `OO0` line is never
+    targeted again); `h4a_sessions.py` sessions chaos6 (each wing an `objop --to-pdef W --pdef-any --skip-operated`
+    and a sweep) and chaos7 (the same with `--obj-near 6` and 300 s per wing).
+  - **Sessions** (dev logs, `workspace/logs/h4a/dev/`; manifest `h4a-manifest-paused2.sha256`): chaos6 (stopped by
+    the lane: `--obj-near 4` left it 4.2 sub-tiles from seal 392 with no hop), chaos7-paused (stopped by this pause:
+    seals 392, 393, 395 and 396 opened; `SU0` and the tail calls `QUESTS_HookMonster(23, 36 | 38, room, 0, 1)` then
+    `0x005A4850(22, 1, …)` for the Infector of Souls (36) and the Grand Vizier (38); seal 394 (Lord De Seis) not yet
+    opened, no `GQ` with `eax` 1).
+  - **Checks so far:** `sweep_h4a.py check` on the eleven kept session logs, bad 0 in every part
+    (`check/sweep-check-part1.txt`); `static-wanderer.txt` now also holds the objdump scan for every instruction naming
+    0x00731B2C–0x00731B3F (three readers, no writer) and r2's `px 16 @ 0x00731B2C` (second tool).
+  - **Drafts** (not committed; `workspace/logs/h4a/drafts/`): `findings-drafts.diff` (0001, 0004, items/0010; applies
+    cleanly on this commit), `sec0003-body.md` (monsters/0003 rows 30/50/51, 34, 35/68, 48, 54, 55, 58, 60, 69),
+    `sec0002.md` (spawn 5/49 raised by the operand route, 47/48 shortfall, `{SPAWN11}` to fill), `exp.md` (the run
+    record with `{…}` holes), and the spec texts at `1d0262a` the L-numbers come from.
+  - **Next (resume):**
+    1. `python3 -I tools/saves.py --slot 1 aside h4a`; run `h4a_sessions.py run --slot 1 --tag h4a --saves
+       workspace/runtime/h4a-chars --run h4a chaos7` (about 30 min: 5 min into 108, 4 wings × 320 s, sweep, explore,
+       hunt 243). It needs seal 394 for Lord De Seis (special 9, 10, 25, 31, 38, 50 thief half), the three seal bosses
+       killed for `GQ` 1 (spawn 11); tails 36–38 (special 56) are already seen in the dev log. If seal 394 is not
+       reached, file those rows as shortfalls with an owner-play route.
+    2. Full checks into `workspace/logs/h4a/check/` (`sweep_h4a.py check` on all kept session logs including chaos7,
+       `monstats.py check` on chaos7), hashed; then fill the drafts, write § 2.6 (no class moves expected; totals
+       against `main`: static 567, harness 526, blocked 414 at `fafcd32`), symbols (`sub_005B24E0_EscortSpawn` I → C,
+       rule 14), the review request and the plan-log entry. The H4b pieces met: Blood Raven's client name (special 66).
+  - **Usage:** this resume 0 h 50 min, about 95 tool calls, about 190 k tokens; with the earlier part about 620 k
+    tokens, 325 tool calls, 190 min.
