@@ -16,7 +16,9 @@
 # Marks (COLL_PatternMark 0x0064EA90, COLL_PatternUnmark 0x0064EC10, COLL_RectOrWH 0x0064DE30,
 # COLL_RectClearWH 0x0064DC00, COLL_SizeMark 0x0064EA00, COLL_SizeUnmark 0x0064EBA0; all stdcall):
 #   CM   {f: PM|PU|RO|RC|SM|SU, room, x, y, a (pattern / size / w), b (mask / h), m (mask of RO/RC), ret}; logged only
-#        inside a window: from the room driver's RW1 point to the pass exit PX, on that thread
+#        inside a window: from the room driver's RW1 point to the pass exit PX, on that thread; and (plan 0048
+#        Phase 2 run 2) inside a revisit restore scope CMR0 {th, room} .. CMRX {th}: the calls of
+#        sub_00542B40_RoomInactiveUnitsRestore at 0x0052D142 / 0x0052D205 (no RW window there) to their returns
 # The pass:
 #   SN   0x0054EC91 (pass entry, after P0): the grid snapshot (ADR-0004 oracle): the room, every room of its near
 #        list and every room of their near lists (two hops), each with rect, near list, cells, DRLG room, tile origin,
@@ -232,6 +234,32 @@ def _collision_main():
     for a in (0x0052D1C4, 0x0052D0F6):          # RW0: a new room, close any stale window
         Bp(a, win_close)
     Bp(0x0054EEDD, win_close)                    # PX
+
+    # plan 0048 Phase 2 run 2: the revisit restore scope. A room whose driver flag bit 0 is set gets no RW window:
+    # sub_0052D0F0_RoomUpdateOne (0x0052D142) and sub_0052D160_NewRoomsUpdate (0x0052D205) call
+    # sub_00542B40_RoomInactiveUnitsRestore directly (ESI = the room). Its re-creations (InactiveMonstersRestore ->
+    # SpawnWithId -> MonSpawnTry -> SUnitCreate flags 3) mark through the same UNIT_CollMark calls as a pass creation;
+    # the marks are logged from the call to its return: CMR0 {th, room} .. CM .. CMRX {th}.
+    rscope = {}
+
+    def rs_open():
+        t = th()
+        if t in win:
+            return
+        win[t] = reg("esi")
+        rscope[t] = True
+        emit("CMR0", {"th": t, "room": reg("esi")})
+
+    def rs_close():
+        t = th()
+        if rscope.pop(t, None):
+            win.pop(t, None)
+            emit("CMRX", {"th": t})
+
+    for a in (0x0052D142, 0x0052D205):
+        Bp(a, rs_open)
+    for a in (0x0052D147, 0x0052D20A):
+        Bp(a, rs_close)
 
     # --- pass entry snapshot ----------------------------------------------------------------------------------
     def logic(dr):

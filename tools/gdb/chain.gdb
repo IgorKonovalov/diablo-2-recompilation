@@ -19,6 +19,8 @@
 #   presets window  OPU0 / OPUX (room, object-region and game seeds), SU0..SUX, PM0..PMX
 #   creation        MU0 / MU (game seed, the unit seed after SUnitCreate), SI0..SIX, OU0 / OUX, OI0 / OIX
 #   pass            P0 / PX (room and game seeds, the region snapshot)
+#   revisit restore CMR0 / CMRX (plan 0048 Phase 2 run 2, tools/gdb/collision.py): RoomInactiveUnitsRestore called
+#                   outside a window (0x0052D142, 0x0052D205); the CM marks of its re-creations are logged inside
 #   drop            DROP, TCR / TCEND (the source seed), QIN / QOUT, CPRE / CPOST, OC0 / OCT / OCX
 #   item            IC0 / ICJ / ICX (the item seed), APE / APX, STF0 / STF1, ETH0 / ETHX, SOK0 / SOKX
 # Not reduced to entry and exit lines: the composition's checkers consume the lines inside each boundary (every draw

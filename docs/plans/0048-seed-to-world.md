@@ -345,3 +345,122 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   run 2's tools, 0 sub-checks failed, and the Phase 1 world logs re-checked for regressions, (e) the record's counts
   from passing logs only, then the review request. Review request
   [closed](../backlog/archive/2026-10-21-reverser-architect-review-plan-0048-phase-2-run-1-end.md); ledger row added.
+- **2026-10-21 — Phase 2 run 2 paused at the owner's request: checkpoint and resume note (reverser, `lane/p48r2`,
+  harness slot 1).** Not a phase close; no review requested yet; no run record written yet.
+  **The mark call a re-creation takes** (static reading, objdump of the pinned image, `[I]` until the record): the
+  mode-3 re-creations are the revisit restore's. A room whose driver flag bit 0 is set gets no RW window:
+  `sub_0052D0F0_RoomUpdateOne` (`0x0052D142`) and `sub_0052D160_NewRoomsUpdate` (`0x0052D205`) call
+  `sub_00542B40_RoomInactiveUnitsRestore` directly, whose monsters go through `sub_005B30E0_SpawnWithId` to
+  `sub_005B2A00_MonSpawnTry` with request flags `0x62` / `0x6A` / `0xE2`; flag `0x20` makes the `SUnitCreate` create
+  flags 3 (`0x005B2E10`; the `MU0` "mode" field is these create flags), bit 0 runs `sub_00554850_SUnitPathCreate`,
+  and its monster branch marks through the **same** `UNIT_CollMark` calls as a pass creation (`PATH_DynamicCreate` at
+  `0x00649E9A`, `sub_005A7C20_MonSetMode` at `0x005A7CB1`, both into `COLL_PatternMark` returning to `0x006494D5`), then
+  MonSpawnTry's alignment refresh (`0x005B2EAB`). No `CM` line was logged only because `tools/gdb/collision.py` logs
+  marks inside an RW1..PX window, and the restore runs outside one. A record restored dead (`a10` = 12) has no
+  MonSetMode mark (`0x005541B0` is the dead test at `0x005A7CA7`); for MonStats2 `deadCol` 0 the corpse call
+  (`sub_00649F70_UnitCorpseColl`, `RectOrWH` 3×3 `0x8000` at `0x00649FD8`) and SUnitCreate's corpse re-mark
+  (`0x0055546F`..`0x005554A3`) follow; `deadCol` 1 keeps the one live mark. The dead sequence was first predicted
+  wrong (from the code alone) and corrected from run 2's first log (`out/dev-r2-xn1-check-deadlist0.txt`: 18 dead
+  re-creations mismatched, every alive one matched).
+  **Tools** (commit `53ffb95`, with the dead-sequence fix): `tools/gdb/collision.py` logs
+  `CMR0 {th, room}` .. `CM` .. `CMRX` around the two restore calls; `tools/objects.py` `recreation` predicts each
+  re-creation's marks (MonStats / MonStats2 rows, `MonTables`), compares them with the logged lines inside a scope
+  and applies them to the objects grid (on run 1's logs, which have no scope, applied unchecked: "checked only
+  through the later tests"); `tools/chain.py --cf recreation-off` (control); `tools/chain_sessions.py` `PLAN2` (16 run-2
+  rows, seeds 4861..4912, mostly outdoor waypoints).
+  **(b) cn4 and cm4 pass on their kept logs** (`out/r2ckpt1-check.txt`): 0 sub-checks failed, cn4 118 and cm4 47
+  oracle-free populations (the record's 117 and 46 plus each failing window, now predicted); `--cf recreation-off`
+  restores exactly run 1's two mismatches (`out/dev-r2-cf-recreation-off-*.txt`). Run 1's 28 logs with the
+  pre-fix tools: 0 sub-checks failed, 1 387 populations, 5 348 re-creations, every other count equal to
+  `final-check.txt` (`out/dev-r2-r1logs-check.txt`); the Phase 1 world logs: 0 failed, summary equal but the new
+  re-creation lines (`out/dev-r2-p1world-check.txt`). Both are development outputs: they must be re-run with the
+  final tools.
+  **Sessions** (`workspace/logs/chain-p2/`, `manifest-r2-ckpt1.txt` `0c7beb21…`, paths relative to that directory;
+  tools in `out/tools-r2-ckpt1.sha256`): `p2r2-s1-4861-r2-xn1` (City of the Damned, 94 populations, 288
+  re-creations compared: 254 alive, 32 dead `deadCol` 0, 2 `deadCol` 1, 0 mismatches) and `p2r2-s1-4862-r2-xn2`
+  (Cold Plains, 73), both 15 minutes, no `internal-error:`. `p2r2-s1-4871-r2-xm1.pilot.txt` and its empty shots
+  directory are a stub: the driver was stopped for the pause before r2-xm1's game launched (no log). Passing
+  populations now **1 554** (26 run-1 logs 1 222, cn4 and cm4 165, run 2 167): **446 to go**.
+  Chest interact-byte writer (ruling 3): not read (no cheap static anchor); stays in chain/0003's Open questions.
+  Slot 1 stopped, the `p48r2` aside restored (the saves directory is empty, as before the run).
+  **Next (resume):** on `lane/p48r2`, slot 1: `python3 -I tools/saves.py --slot 1 aside p48r2`, then
+  `python3 -I tools/chain_sessions.py run --slot 1 --tag p48r2 --saves workspace/runtime/p48h-chars --run p2r2
+  r2-xm1 r2-xh1 r2-cn1 r2-cm1 r2-ch1 r2-xn3 r2-xm2` (queued, in this order; then r2-xn4 r2-xm3 r2-xh2 r2-xh3 r2-cn2
+  r2-cm2 r2-ch2 if the populations are still short), recounting from a kept check after each batch, until the
+  passing logs hold 2 000. Then: (d) one `chain.py check --o20` over run 1's 28 logs and every run-2 log with the
+  final tools, under `MemoryMax=4G`, 0 sub-checks failed, and the Phase 1 world logs re-checked
+  (`cd workspace/logs/chain-p1 && … check $(awk '{print $2}' inputs-world.sha256)`); the re-creation counts per log;
+  the run record (new id, `run:2026-10-21-chain2`), chain/0003 updates (§ 2, the Answer, Open question 1 closed by
+  the reading above, the counts from passing logs only), a final manifest, and the review request in
+  `docs/backlog/`.
+- **2026-10-21 — Phase 2 run 2 recorded; review requested (reverser, `lane/p48r2`, harness slot 1).** Resumed from the
+  pause note: the slot-1 aside `p48r2` set, the queued seven sessions run in order (r2-xm1 r2-xh1 r2-cn1 r2-cm1 r2-ch1
+  r2-xn3 r2-xm2), each checked alone as it finished; the passing logs held 2 000 after them, so the optional seven
+  were not run. No log holds `internal-error:`; r2-cn1's game process ended on its own at game frame 10 920 (cause not
+  shown; the log checks clean). Record [run:2026-10-21-chain2](../findings/chain/experiments.md#run2026-10-21-chain2),
+  finding [chain/0003](../findings/chain/0003-end-to-end-run.md) updated; manifest `manifest-r2-final.txt`
+  (`e1d9e622…`, 169 lines), tools `out/tools-r2-final.sha256` (commit `53ffb95`'s, unchanged since the checkpoint).
+  **Result** (`tools/chain.py check --o20` over run 1's 28 logs and run 2's 9, under `MemoryMax=4G`): **37 logs, 0
+  sub-checks failed**, and each log alone the same. **2 189** oracle-free room populations (run 1's logs 1 387, run 2's
+  802); 176 levels (DrlgType 1: 65, 2: 36, 3: 75), every act of each game type in each difficulty; 13 056 objects; 63
+  champion and 162 unique packs, 217 mods rolls; 1 314 drops with an item (1 492 items), 3 784 TC calls and 1 913 item
+  creations, 0 failed. Re-creations 7 290: 1 903 compared line for line with the logged marks (1 729 alive, 166 dead
+  `deadCol` 0, 8 `deadCol` 1), 5 284 applied unchecked on run 1's logs, 103 made no unit. Phase 1 world logs: 62 logs,
+  0 failed, summary equal to run 1's but four re-creation lines. Controls: `--cf recreation-off` restores exactly run
+  1's cn4 and cm4 mismatches and fails r2-xn1 (63); `--cf monequip-off` fails the two new Blood Raven cases (r2-xn2,
+  r2-xm1). A first Phase 1 re-check resolved `../../../tools` through the `workspace` symlink to the main checkout's
+  tools; kept as `dev-r2-p1world-check-maintools.txt` and re-run with the worktree's.
+  **Done-when, as the run reads it:** 0 mismatches; 2 189 of 2 000 populations; every other count met on the same
+  logs; the record lists each input and remaining oracle with its count. Chest interact-byte writer (ruling 3): not
+  read; chain/0003 Open question 2, for Phase 3. Slot 1 stopped, the `p48r2` aside restored (saves directory empty).
+  **Next:** the architect reviews run 2 and rules on the Phase 2 close.
+- **2026-10-21 — Phase 2 run 2 reviewed (architect, on `lane/p48r2`, not merged with `main`, which touches no chain
+  finding or tool): accept with fixes (4); Phase 2 closed; Phase 3 released.** Re-run with the worktree's tools under
+  `MemoryMax=4G`: `chain.py check --o20` over run 1's 28 logs and run 2's 9, `chain: 37 logs, 0 sub-checks failed`,
+  `out/review-r2-check.txt` byte-identical to `r2final-check.txt` and `review-r2-o20.json` to `r2final-o20.json`
+  (`out/review-r2-manifest.txt`, `6d83a5e5…`); `sha256sum -c manifest-r2-final.txt` clean (`e1d9e622…`, 169 lines),
+  `manifest-final.txt` clean, `out/tools-r2-final.sha256` (`797865e9…`) matches the worktree's tools, which are
+  unchanged since `53ffb95`. The 37 per-log checks each 0 failed; the five control outputs each fail as recorded;
+  `r2final-p1world-check.txt` differs from run 1's `p1world-check-final.txt` by the four re-creation lines only, and
+  `dev-r2-p1world-check-maintools.txt` is byte-identical to run 1's (the main-tools run, kept as dev). Anchors read in
+  the image: `0x0052D142` and `0x0052D205` are `call 0x542B40` (returns `0x0052D147`, `0x0052D20A`), `0x005B2E10`
+  `test cl, 0x20` then `mov eax, 3`, `0x00649E9A` and `0x005A7CB1` `call 0x649400` (`UNIT_CollMark`), `0x005A7CA7`
+  `call 0x5541B0`, `0x00649FD8` after `push 0x8000; push 3; push 3`, `0x005B2EAB` `call 0x5543B0`; each named
+  function is in `re/symbols.csv`. Counts recounted from the re-run: 2 189 populations (323, 593, 264, 450, 263, 296),
+  176 levels (65, 36, 75; every act of each game type in each difficulty), 13 056 objects, 7 290 re-creations, oracle
+  13 at 4.
+  **Fixes** (written into the run record and chain/0003): (1) **omission**: the record's list of inputs and remaining
+  oracles left out the re-creations' own input: each one's class, unit id, cell and alive or dead state are taken from
+  the log (`MT0`, `MU0`, `a10`), chain/0001's oracle 25 (the restored monster's AI and movement, a simulation input);
+  now listed with its count (7 290, 103 made no unit), and chain/0003 § 2 scopes the marks' `[C]` to the marks made
+  from it. (2) **overclaim**: the dead sequences' `[C]` counted r2-xn1's 34 dead cases, the log the sequence was
+  corrected from; it rests on the 140 of the other eight logs (134 `deadCol` 0, 6 `deadCol` 1), said in § 2 and the
+  Answer. (3) **omission**: `--cf recreation-off`'s 63 mismatches on r2-xn1 are a floor, not 288: after each mismatch
+  `tools/objects.py` `resync` skips to the next `RW1`/`OO0`/`OGC`/`OPU0`, so the rest of that restore stretch is not
+  tested; said in the record and § 2. (4) **misread**: the renamed stub's line in `manifest-r2-ckpt1.txt` does not
+  "no longer resolve": it fails `sha256sum -c`, the name now holding the session's pilot; the stub's hash (`e3b0c442…`)
+  is in `manifest-r2-final.txt` under its new name. Corrected in the record.
+  **Rulings.** (1) **The 5 284 re-creations applied unchecked on run 1's logs are admissible** for the 0-mismatch
+  result and the population count, not as evidence for the marks. They are model predictions entering the grid, not
+  values taken from the log at a test; a wrong or missing mark that a later `COLL_WHTest` reads fails it, one no test reads
+  changes nothing the run claims (the oracle-20 snapshot comparison only counts, and its residue has no cell with a
+  model-only bit: every key is `-0000`); the populations are windows with no oracle inside, and the re-creations sit outside windows. The marks' `[C]` stands on the 1 903 compared (the dead
+  ones on 140, fix 2) and the restored state is oracle 25's input (fix 1). (2) **cn4 and cm4 count**: they pass on
+  their kept logs with the route the run-1 review ruled, their marks checked through the later tests (said in § 2),
+  and `--cf recreation-off` restores exactly their run-1 mismatches. (3) **r2-cn1 is admissible**: the game process
+  exited on its own at frame 10 920, gdb saw a normal exit, the log is whole to that line and checks clean, and no
+  model reads anything after it; the cause stays unknown and is not a claim. (4) **The first Phase 1 re-check** (main's
+  tools through the `workspace` symlink) is a development output, rightly kept and not cited; the cited re-check is
+  the worktree's. A lane that runs from a log directory calls its own worktree's `tools/` by absolute path. (5) **The
+  chest interact-byte writer** stays a counted oracle of the operate path (run-1 ruling 3; 7 cases, three kinds),
+  outside the bar; it goes to Phase 3's *Open questions* as chain/0003 Open question 2, no reverser entry now.
+  **Done-when**: met on the 37 passing logs: 0 mismatches; 176 levels (40 asked) with every generator kind, every act
+  of each game type in each difficulty; 2 189 populations (2 000); 13 056 objects (300); 63 champion and 162 unique
+  packs with 217 mods rolls (100 special monsters); 1 314 drops with an item (500) with no builder oracle; the record
+  lists each input and remaining oracle with its count (after fix 1). **Phase 2 closed.**
+  **Next: Phase 3** (spec-writer, [entry](../backlog/2026-10-21-architect-spec-writer-plan-0048-phase-3-seed-to-world-spec.md)):
+  `docs/specs/chain/README.md` and the *Inputs and oracles* updates, the re-creation marks in the owning spec, the
+  chest writer and oracle 13's unreached branches under *Open questions*; then Phase 4. Reverser `review-fixes.md`
+  rule 6 extended (a kept file renamed under a manifest's name; seen with `lane/p46m9`'s overwritten dev outputs).
+  Review request [closed](../backlog/archive/2026-10-21-reverser-architect-review-plan-0048-phase-2-run-2.md); the
+  lane's two ledger rows added (the review's row is the orchestrator's, with its usage).
