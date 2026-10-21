@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview]
 consumed_by: [rng/seeds, drlg/preset, drlg/outdoor, drlg/collision, monsters/spawn, objects, chain]
-tags: {C: 121, I: 33, L: 0}
+tags: {C: 121, I: 34, L: 0}
 updated: 2026-10-21
 ---
 
@@ -556,7 +556,7 @@ flowchart TD
              then every floor entry of R whose tile is (main s, sub < 4) is re-linked into the
              warp node's list the same way                            ; 0x0066E4A2, [C] (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-15-objects)
 
-11. Orient89Unit(R, cell, tile)  — its unit is created later, as a preset unit (note 11):   [C] (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, fn:sub_0066D960_Orient89RowFind@0x0066D960, data:g_Orient89Levels@0x006EEFC8, data:g_Orient89Rows@0x006EF188, run:2026-10-14-collision, run:2026-10-15-objects)
+11. Orient89Unit(R, cell, tile)  — its unit is a preset unit, created later ([I], note 11); the step:   [C] (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, fn:sub_0066D960_Orient89RowFind@0x0066D960, data:g_Orient89Levels@0x006EEFC8, data:g_Orient89Rows@0x006EF188, run:2026-10-14-collision, run:2026-10-15-objects)
       ; with tile none, the steps below run without the 0x20 skip and without the mark
       if tile ≠ none and tile.flags & 0x20: return
       row ← Orient89RowFind(L.id, m, s, o = 9)                       ; § Constants: the first row of L's range in g_Orient89Levels

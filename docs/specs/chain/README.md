@@ -1,6 +1,6 @@
 ---
 spec: chain
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/room-tiles, drlg/lifecycle, drlg/collision, drlg/warps, objects, monsters/pool, monsters/spawn, monsters/special, monsters/stats, items/tc, items/quality, items/uniques-sets, items/affixes, items/properties, items/economy]
 consumed_by: []

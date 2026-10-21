@@ -2,18 +2,18 @@
 from: spec-writer
 to: architect
 date: 2026-10-21
-status: open
+status: done
 context:
-  - ../plans/0048-seed-to-world.md
-  - ../specs/chain/README.md
-  - ../findings/chain/0003-end-to-end-run.md
-  - ../findings/chain/experiments.md
-resolution: ""
+  - ../../plans/0048-seed-to-world.md
+  - ../../specs/chain/README.md
+  - ../../findings/chain/0003-end-to-end-run.md
+  - ../../findings/chain/experiments.md
+resolution: "Reviewed 2026-10-21 (architect): accept with fixes (2: overclaim 2); chain spec reviewed; quality-roll wording in items/tc and items/quality stays (run-scoped history); Phase 4 released. See plan 0048 log."
 ---
 
 Review request, plan 0048 Phase 3 (`lane/s48p3`, from `main` 0e760e1). Not blocking any other lane.
 
-**Written.** [specs/chain/README.md](../specs/chain/README.md), status `draft`, tags {C: 89, I: 7, L: 6}: the
+**Written.** [specs/chain/README.md](../../specs/chain/README.md), status `draft`, tags {C: 89, I: 7, L: 6}: the
 composition as a flowchart and a sequence diagram (game seed → acts and levels → activation → new-rooms walk →
 window → pass → creation → death and drop → item chain), steps A–H with the spec that owns each, the inputs a
 reimplementation supplies by class with run 2's counts (oracle 25 among them: 7 290 re-creations, 103 made no unit),
@@ -24,7 +24,7 @@ oracle-free room population of that level (the room seed, game seed and `O` at e
 their unit seeds), a gold drop (the two game-seed steps and the next drop's game seed), and two revisit re-creations of
 r2-xn2 (one alive, one dead `deadCol` 0) with their logged marks in order.
 
-**Re-creation marks** in [drlg/lifecycle § H5](../specs/drlg/lifecycle.md#h5-the-grid-marks-of-a-re-created-monster)
+**Re-creation marks** in [drlg/lifecycle § H5](../../specs/drlg/lifecycle.md#h5-the-grid-marks-of-a-re-created-monster)
 (the restore owns them; drlg/collision § F points there): the marks `[C]` on the 1 903 compared, the dead sequences'
 `[C]` on the 140 outside r2-xn1 (134 `deadCol` 0, 6 `deadCol` 1), the `[C]` scoped to the marks made from oracle 25's
 values, the 5 284 unchecked on run 1's logs stated as admissible for the result and not as evidence, the
