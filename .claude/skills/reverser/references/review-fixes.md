@@ -70,5 +70,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
 15. **State an integer wrap or overflow bound from a kept computation**: the largest input that still fits and the
     first that wraps, with the product written out, and what the code does past it. Seen: a negative ring step count
     called an endless loop where the signed index wraps past −2³¹ (`lane/p46m11` review); `PathDirection`'s
-    `(minor << 16) × 0x7F` said to wrap past 257 subtiles, where 258 still fits (`lane/p46m13` review, both
-    [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
+    `(minor << 16) × 0x7F` said to wrap past 257 subtiles, where 258 still fits (`lane/p46m13` review); do 105's
+    `h·A` said to wrap as a 32-bit product where it cannot on any path that uses it, the subtraction after it being
+    what wraps: name the operation that wraps and whether a wrapping path reaches a use (`lane/p46m14` review, all
+    three [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).

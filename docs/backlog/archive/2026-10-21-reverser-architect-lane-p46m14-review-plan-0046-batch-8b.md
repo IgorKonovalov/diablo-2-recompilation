@@ -1,0 +1,19 @@
+---
+from: reverser
+to: architect
+date: 2026-10-21
+status: done
+context:
+  - ../../findings/skills/0017-monster-8b.md
+  - ../../findings/skills/experiments.md
+  - ../../plans/0046-skills-function-catalogue.md
+resolution: "Reviewed 2026-10-21 (architect): accept with fixes (4: misread 2, omission 1, other 1); see the lane/p46m14 review entry in plans/0046."
+---
+
+Not blocking. Please review plan 0046 Phase 1 batch 8b (`lane/p46m14`): the monster skill functions of Skills rows 190–289, start 54, 55, 59, 60, 64, do 99–109, 112, 125–127, 141 and 152, 22 entries ([skills/0017](../../findings/skills/0017-monster-8b.md), run:2026-10-21-cat-emu-8b in [experiments](../../findings/skills/experiments.md)).
+
+- **Run:** four families (`miss_8b`, `hit_8b`, `move_8b`, `curse_8b`), 9 200 cases, 0 mismatches, 0 undeclared reads, 0 stopped; all 22 entries emulated; site control 3 698 of 3 698 (27 function/boundary/return-address triples); every negative control fails and equals its deciding class (24 `CLASS` lines). `workspace/logs/skills-cat-8b/manifest.sha256` `1c9c42ff…` (118 files; four development runs and the first repro under `dev/` with `dev/notes.txt`), `check.txt` `2f000a04…`, `static.txt` `4c181a27…` (64 pins, 22 table entries, 22 entry dwords, do 95/do 152 and start 53/start 59 instruction comparisons, the two shift bounds), `rows.txt` `46d85e01…` (18 Skills rows checked complete, the five curse rows), tool `ba63f2a8…`; `repro.txt` `948be1e1…`: the same tool revision regenerates 9a–9d's, the seven class batches', `item`'s and 8a's case, memory and expectation files and reproduces their `check.txt` and `static.txt` byte for byte. `EmuBoundary.java` unchanged.
+- **Conventions:** 8a's. New observed boundaries with their register reads cited in skills/0017 § 2 (`SKILLS_RollElemDamage`, `QueuedHitRemove`, `0x005B34C0`, `0x0056DCC0`, `NovaAtUnit`; `0x0057E270` compared on `EDX` only, its `ECX` overwritten unread; `0x00649EF0` stack only). Nested: `0x005CC3B0` inside do 152 (`0x7FEFFF84`, do 95's slot), `0x0056E680` inside start 60 (`0x7FEFFF5C`). `curse_8b` sets the Skills count to 92 (do 112 reads rows 66–91, not its own).
+- **Things to check:** (1) **the draws**: do 112's inline step of the caster's seed before any test (`k_mod4` 578), start 55's `RNG_RangeB` on a local seed (compared through the node's count, `seed_t` 111); (2) **do 152 = do 95** by instruction comparison plus its own emulated cases (sites `0x005CC78A`, `0x005CC415` via `0x005CC775`) — the carried `0x005CC3B0` item, § 1; (3) **emulated helpers new to the catalogue**: `PathSetTargetPoint`, `PathSetTargetUnit`, `MissileSpeedAtLevel` with its `.data` table set in the spec, `RNG_SeedInit`/`SeedInitOne`, `GetElemLen`, `0x0056E680` reused from `dru`, `QueuedHitFind` from `pal` with the packet's `+0x04` now written; (4) the stale target link: `UNIT_GetTargetUnit` clears the caster's path `+0x58`, compared in start 54 and do 126 (dev1's error); (5) the thin controls and their classes (`dmg_nomin` 14, `hire_any` 24, `p4_first` 26); (6) rule 15: § 6 states the two shift bounds from `static.txt`'s `wrap` lines; (7) the symbols: 28 added, all `I` (two entry names, start 55 and do 109, kept from skills/0003).
+- **Surprises:** do 112 picks one of five fixed curse rows by the caster's seed and fills row 91's (Lower Resist) block with Decrepify-like stats, its resist branch unreachable; do 141 writes skill 285 into its block whatever the id; do 104 writes `summode` over its level argument and drops it; do 105's positions take the y from the x offset; do 127's life unit is 0 for a player caster; start 59 is start 53 with calc1; do 100 returns 1 with no target; start 54, 64, do 109, 141 and 112 make no id test.
+- Tags: 32 `[C]`, 5 `[I]`, 3 `[L]` bullets; 28 symbols added (`I`, evidence 0017).

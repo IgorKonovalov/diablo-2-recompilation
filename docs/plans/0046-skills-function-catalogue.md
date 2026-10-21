@@ -1249,3 +1249,91 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   two `0x005CC3B0` calls), then 8c (do 129's direct call of do 98), on the class batches' conventions, unless the
   monster-AI plan pulls one forward or takes a function as a boundary oracle (ADR-0020). Phase 2 still waits for
   0045·P3's review.
+- **2026-10-21 — Phase 1 batch 8b landed for review (reverser, `lane/p46m14`, static, no harness).** The monster skill
+  functions of Skills rows 190–289: start 54, 55, 59, 60, 64, do 99–109, 112, 125–127, 141, 152, 22 entries, all read
+  and all emulated ([skills/0017](../findings/skills/0017-monster-8b.md)). Raised by emulation
+  (run:2026-10-21-cat-emu-8b, `tools/skills_catalogue_emu.py --batch 8b`, `check.txt` `2f000a04…`, `static.txt`
+  `4c181a27…`, `manifest.sha256` `1c9c42ff…`): four families, 9 200 cases, 0 mismatches, 27 boundary/call-site triples
+  (site control 3 698 of 3 698), both seeds compared in every case, every dumped byte written by its case; three to
+  eight negative controls per family, each family with one failing 152 or more, every control equal to its deciding
+  class on the 24 `CLASS` lines. The same tool reproduces 9a–9d, the seven class batches, `item` and 8a byte for byte
+  (`repro.txt` `948be1e1…`); four development runs and a first repro kept in `dev/`. **Carried item:** do 152's two
+  `0x005CC3B0` calls are `0x005CC770` (no target point, or `MissileCreate` returning 0) and `0x005CC827` (after a created
+  missile, the game frame not below the node's end frame, or no state 12); do 152 is do 95's code instruction for instruction
+  (`static.txt`: 147 each, 0 differ), its first call emulated to `CancelEvents`. Draws before the boundaries: do 112's
+  inline step of the caster's seed (the curse index, low word mod 5) and start 55's `RNG_RangeB` on a local seed from the
+  two guids; no other. Surprises: do 112 casts one of five fixed curse rows (66, 72, 82, 87, 91) from their own columns,
+  row 91 (Lower Resist) with a Decrepify-like block and an unreachable resist branch; do 141 puts skill 285 into its block
+  whatever the id; do 104 writes `summode` over its level argument and never uses it; do 105's missiles take their y
+  position from the x offset; do 127's life unit is 0 for a player caster; start 59 is start 53 with calc1 for calc2.
+  Tags: 32 `[C]`, 5 `[I]`, 3 `[L]` bullets; 28 symbols added (`I`). Review request
+  [to the architect](../backlog/archive/2026-10-21-reverser-architect-lane-p46m14-review-plan-0046-batch-8b.md); column readers
+  [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-8b-skills-missiles-column-readers.md). No
+  spec-writer entry: no spec states these functions yet (Phase 3 takes the finding).
+- **2026-10-21 — `lane/p46m14` review (architect): accept with fixes.** Reviewed on the lane (head `f4e5227`), main not
+  merged (it moved to `a12993b`: plan 0048 closed and moved to `plans/done/` with its links rewritten; none of it
+  touches a skills finding, and none of the 28 new addresses or names is on main's side; main's appends to this log and
+  to the ledger will meet this entry at the merge, keep both). `sha256sum -c manifest.sha256` (`1c9c42ff…`, 118 lines)
+  passes. From the lane's tool (`ba63f2a8…`), each step under its own 4 GB scope, `cases --batch 8b`, `check --batch 8b`
+  and `static --batch 8b` reproduce the twelve case, memory and expectation files, `cases.txt`, `check.txt`
+  (`2f000a04…`) and `static.txt` (`4c181a27…`) byte for byte; `repro.sh` rerun into the review's scratch gives the kept
+  `repro.txt` (`948be1e1…`) byte for byte (9a–9d, the seven classes, `item` and 8a, 13 `REPRO` lines, every one
+  `differ=0 check=same static=same`). Recounted from `check.txt`: 9 200 cases, 0 bad, 0 undeclared, 0 stopped; site
+  controls 1 296 + 1 172 + 703 + 527 = 3 698 over 27 `site` lines; 24 `CLASS` lines. `re/symbols.csv`: the 28 rows are
+  the only change (the 3 437 base rows kept in order and unchanged, each new row between its neighbours by address, the
+  11 order breaks the file already had unchanged). Read against objdump: do 112 whole (`0x005CE2B0`–`0x005CE4D8`),
+  do 127 whole (`0x005D16A0`–`0x005D17F0`), start 55's seed and count (`0x005CD94A`–`0x005CD9DF`), do 105's row
+  (`0x005CD7BD`–`0x005CD860`), do 152's tail (`0x005CC740`–`0x005CC83A`), do 104's argument slots and do 141's block
+  constants; a scan of the batch's bodies for a call of `RNG_Step`, `RNG_Range`, `RNG_RangeB`, `RNG_RangePow2*`,
+  `RNG_RangeOffset`, `RNG_RandLoHi`, `RNG_SeedInit*` or the multiplier `0x6AC690C5` finds start 55's three calls, do
+  107's three `RNG_RangeB` (after its `InMeleeRange` boundary), do 112's inline step and the callback `0x005CD110`'s
+  pair (do 102 passes it as a pointer and does not call it): no other. Tags 32 `[C]`, 5 `[I]`, 3 `[L]` bullets (the
+  fixes add none). **Rulings.** (1) **`repro.sh`'s per-step scopes are admissible**, and the earlier reviews' repro
+  claims stand. The change moves the scope boundary only: what each step runs and what it compares are unchanged. An
+  out-of-memory end can only make a step print nothing and read `DIFF` (as `dev/repro-dev1.txt` shows for `ass`); it
+  cannot print `same`, which needs a byte-equal file, so a `same` under the old script was never a false one, and this
+  review reproduced every earlier batch's line under the new one. (2) **Do 152 = do 95 is admitted** on the
+  147-instruction comparison (`static.txt`, 0 differ, in-body jump targets relative), backed by do 152's own emulated
+  cases at `0x005CC78A` and `0x005CC415`. Its first `0x005CC3B0` call (`0x005CC770`, reached with no target point or a
+  failed `MissileCreate` at `0x005CC78C`) is `[C]` up to `CancelEvents` (nested return `0x005CC775` at `0x7FEFFF84`);
+  the second (`0x005CC827`, after a created missile, the game frame not below the node's end frame or no state 12) is
+  `[I]` after `MissileCreate`, as filed. The 8a carried item is closed. (3) **Do 112's draw is admitted as `[C]`.** The
+  inline step (`0x005CE2BA`–`0x005CE2E0`) is the first code, with no caster test; `k` is the stepped low word (the seed's
+  low 32 bits, the spec's usage) mod 5 by the `0xCCCCCCCD` multiply; both seeds are compared in all 800 cases and
+  `k_mod4` (578) equals its class. The five fixed rows are read from `.rdata` `0x006E3228` (a pin), the block's five
+  branches match the jump table, and row 91's resist branch (`0x005CE470`, stats 37–45) is unreachable by arithmetic
+  (`k ≤ 4`, `ja` at `0x005CE3CA`): `[I]` as filed is right, since no case reaches it. (4) **Start 55's local seed is
+  admitted** as a map: `RNG_SeedInitOne` then `RNG_SeedInit(Tguid + Uguid)` (`0x005CD96A`–`0x005CD984`), compared
+  through the count (no unit's seed changes, both compared); `seed_t` (111) is the deciding class of the cases where
+  the caster's guid changes the count, which a wrong seed could match only by chance on a small range, and 111 is
+  enough. (5) **The thin controls decide** under reverser rule 10: `dmg_nomin` (14) — the uncapped reading reaches a
+  different `UnitSetStat` value in every one; `hire_any` (24) — the wrong reading reaches `RoomUnitRemove` instead of
+  returning 0; `p4_first` (26) — the wrong order reaches the other boundary (`0x006212C0` at `0x005CD4CC` against
+  `PathSetSpeed` at `0x005CD481`). None can match by chance. (6) **The four case-writer-unreached paths stay `[I]`**:
+  do 126's target without a caster path and start 54's path used untested are null reads ADR-0015 leaves out; start
+  55's −1 guid for a null caster sits behind two calls that take the caster first; do 112's default branch is
+  unreachable (ruling 3). (7) **The surprises are code readings inside the map and stand**: do 141's `0x11D` is an
+  immediate (`0x005D2F15`); do 104's slot write is `SkillSummonClass`'s out pointer `&lvl` (`lea eax, [ebp+0xC]`,
+  `0x005CD60D`), and the slot is not read after it; do 105's y position from `dx / 6` (`0x005CD81B`–`0x005CD838`, both
+  position words from `esi`); do 127's life unit 0 for a non-monster caster (`0x005D1724`–`0x005D1743`). What the game
+  shows for them stays under *Open questions*. (8) **The archivist entry is released**
+  ([entry](../backlog/2026-10-21-reverser-archivist-plan-0046-8b-skills-missiles-column-readers.md); read against
+  §§ 3–5, no fix touches a column it names). **No spec-writer entry** is right: no spec states these functions;
+  Phase 3 takes skills/0016 and 0017. (9) The tool's `near8` docstring still says "below 258" (the `lane/p46m13` review
+  fix 2 left it to the next revision); it is carried to 8c's tool revision, the hash here being cited. `dev/notes.txt`
+  counts dev1's "99 mismatches" with the `half_floor` control's line; the finding's 98 cases (16 + 46 + 36) is right,
+  and the hashed development note is left as it is. **Fixes, made in the documents:** (1) § 6: do 105's `h·A`, `h·B`
+  cannot wrap on a path that uses them (`n > 0` gives `|h·A| ≤ 2 147 483 646`; the `n ≤ 0` wrap at `h·(−2)` = 2³¹ returns
+  1 first); the subtraction `dx − h·A` is what wraps; do 141's sum is modulo 2³² with two free inputs (misread; reverser
+  rule 15); (2) this log's lane entry: do 152's second call is at a game frame **not below** the node's end frame, not
+  "past" it (misread); (3) § 5 do 112: `cid` below 0, at the Skills count or with no record → 0 (`0x005CE2F4`–
+  `0x005CE31A`) (omission); (4) § 4 do 127: the cap reworded to `min(d, life)` from "the target's life when not above
+  it" (other). Counted: 4 (misread 2, omission 1, other 1). Promoted: fix 1 is a third Seen line on reverser rule 15
+  (name the operation that wraps and whether a wrapping path reaches a use). Review request closed
+  ([archive](../backlog/archive/2026-10-21-reverser-architect-lane-p46m14-review-plan-0046-batch-8b.md)); lane ledger
+  row added (the review's row is the orchestrator's at the merge). **Phase 1 status:** the seven class batches, 9a–9d,
+  batch 10, 8a and 8b are accepted, fourteen of fifteen batches and 286 of the 310 entries (the other 24: 8c's 18 and
+  the six `general` tier-A entries plan 0045 read). Phase 1 is **not** complete. **Next for 0046:** batch 8c, carrying
+  do 129's direct call of do 98 (`0x005D1B75`) and the `near8` docstring, on the class batches' conventions, unless the
+  monster-AI plan pulls one forward or takes a function as a boundary oracle (ADR-0020). Phase 2 still waits for
+  0045·P3's review.
