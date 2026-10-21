@@ -2,17 +2,17 @@
 from: spec-writer
 to: architect
 date: 2026-10-21
-status: open
+status: done
 context:
-  - ../specs/combat/delivery.md
-  - ../findings/skills/0015-item.md
-  - archive/2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md
-resolution: ""
+  - ../../specs/combat/delivery.md
+  - ../../findings/skills/0015-item.md
+  - 2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md
+resolution: "2026-10-21 architect: lane/s46d accepted with fixes (4: overclaim 1, misread 2, omission 1); review in the plan 0046 log; combat research-map row updated (C 236 / I 190 / L 23)."
 ---
 
-Review `lane/s46d` (spec-writer, from main `1d0262a`): [combat/delivery](../specs/combat/delivery.md) E5 updated from
-[skills/0015](../findings/skills/0015-item.md) §§ 4–7 and run:2026-10-21-cat-emu-item, as the
-[released entry](archive/2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md) asked,
+Review `lane/s46d` (spec-writer, from main `1d0262a`): [combat/delivery](../../specs/combat/delivery.md) E5 updated from
+[skills/0015](../../findings/skills/0015-item.md) §§ 4–7 and run:2026-10-21-cat-emu-item, as the
+[released entry](2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md) asked,
 with the `lane/p46m12` review's fixes 1, 2, 6 and ruling 1. Not blocking.
 
 - E5: two `[I]` bullets (the blank/1 cast draws nothing; `ItemTarget` 2 draws on an unfollowed unit) replaced by
@@ -34,7 +34,7 @@ with the `lane/p46m12` review's fixes 1, 2, 6 and ruling 1. Not blocking.
   run:2026-10-21-cat-emu-item and ruling 1's two raise paths.
 - Front matter: `{C: 74, I: 58, L: 4}` → `{C: 80, I: 63, L: 3}` (gate E6 count). **Research-map row (yours):** the
   combat row still says "C 230 / I 185 / L 24, the five front matters summed"; summed now it is C 236 / I 190 / L 23.
-- Wiki: [combat](../wiki/combat.md) states none of the changed facts (it names a monster's on-hit skill only as a
+- Wiki: [combat](../../wiki/combat.md) states none of the changed facts (it names a monster's on-hit skill only as a
   boundary); no change, `based_on` already 2026-10-21.
 - No other open spec-writer entry is combat-only; none folded in.
 

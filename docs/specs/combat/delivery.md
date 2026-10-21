@@ -563,11 +563,13 @@ that draw:
   tbl:ItemStatCost.txt:itemeventfunc1, [skills/0003 § 3](../../findings/skills/0003-handlers.md#3-the-stat-event-handlers))
 - E5. **The item-skill handlers' draws, up to their casts.** Each reads its chance as `UnitGetStat(unit, stat,
   layer)` of the record's `stat << 16 | layer`, the skill as `layer >> [DataTables+0xC6C]` and the level as `layer &
-  [DataTables+0xC70]`. Handler 20 returns 0 with no draw for a chance ≤ 0 or a packet whose `+0x00` lacks bit 5;
-  else (no packet, or bit 5 set) it steps its unit's seed once inline and casts when `low mod 100` (unsigned) is below
-  the chance (signed). Handler 21 returns 0 with no draw with no packet or a packet whose `+0x04` lacks bit 2; else it
-  casts when `RNG_RangeB(unit+0x20, 100)` is below the chance. Handler 30 steps its unit's seed once inline whatever
-  the packet and casts when `low mod 100` is below the chance. [C] (ADR-0021; ends at `ItemCastAtUnit` or
+  [DataTables+0xC70]`. All three return 0 with no draw for no unit or a chance ≤ 0. Handler 20 also returns 0 with no
+  draw for a packet whose `+0x00` lacks bit 5; else (no packet, or bit 5 set) it steps its unit's seed once inline and
+  goes on when `low mod 100` (unsigned) is below the chance (signed). Handler 21 also returns 0 with no draw with no
+  packet or a packet whose `+0x04` lacks bit 2; else it goes on when `RNG_RangeB(unit+0x20, 100)` is below the chance.
+  Handler 30 steps its unit's seed once inline whatever the packet and goes on when `low mod 100` is below the chance.
+  Each then returns 0 with no cast when the skill has no Skills record (handler 30: the skill outside `[0, Skills
+  count)` as well), else casts as below. [C] (ADR-0021; ends at `ItemCastAtUnit` or
   `ItemCastAtXY`; fn:sub_005C0470_StatEv20SkillOnEvent@0x005C0470, fn:sub_005C05A0_StatEv21SkillOnGetHit@0x005C05A0,
   fn:sub_005C0670_StatEv30SkillOnDeathOrLevel@0x005C0670, run:2026-10-21-cat-emu-item `event_item`,
   [skills/0015 § 6](../../findings/skills/0015-item.md#6-the-stat-event-handlers-20-21-30))
@@ -576,9 +578,9 @@ that draw:
   EDX skill; level, the unit's path point, 1)`. With `ItemTgtDo` the other unit is both the caster and the target,
   `ItemCastAtUnit(ECX other, EDX skill; level, other, 0)`, and with no other unit the handler returns 1 with no cast.
   Handlers 21 and 30 cast as their own unit at the other unit or at the point, effect 0. `ItemCastAtUnit` (`ECX` the
-  caster, `EDX` the skill, the level the first stack word) refuses no target, a unit with no game (`+0x80`) and a
+  caster, `EDX` the skill, the level the first stack word) refuses no target, a caster with no game (`+0x80`) and a
   caster in state 54, else calls `ITEMSKILL_Cast(game, caster; skill, level, target, 0, 0, &type, &guid, &ox, &oy,
-  effect)`; `ItemCastAtXY` makes the same tests and passes the aim 0 and the point. [C] (ADR-0021; ends at the cast's
+  effect)`; `ItemCastAtXY` makes the game and state tests and passes the aim 0 and the point. [C] (ADR-0021; ends at the cast's
   boundaries below; 0x005C0529, fn:sub_005FDCA0_ItemCastAtUnit@0x005FDCA0, fn:sub_005FDD60_ItemCastAtXY@0x005FDD60,
   tbl:Skills.txt:ItemTgtDo, run:2026-10-21-cat-emu-item `event_item`, `cast_item`,
   [skills/0015 §§ 5, 6](../../findings/skills/0015-item.md#5-itemskill_cast-its-itemtarget-helpers-and-its-callers);
@@ -602,13 +604,15 @@ that draw:
   caster** (`EDX = ESI` at `0x005FDB9B`, the call at `0x005FDB9F`). The helper takes the caster's room; with none it
   returns 0 with no draw and the cast is refused. Else, on its first try, it steps **the caster's seed** twice inline
   (the second step from the first's full state) and tests `COLL_PatternTest(room, x + low₁ mod 40 − 20, y + low₂ mod 40 −
-  20, …)` at the caster's position, the remainders unsigned. [C] (ADR-0021; ends at `COLL_PatternTest` @0x005FD979,
+  20, …)` at the caster's position, the remainders unsigned, for a caster of type 0, 1 or 3 (the run's casters, whose
+  position is their dynamic path's). [C] (ADR-0021; ends at `COLL_PatternTest` @0x005FD979,
   the first try; fn:sub_005FD850_ItemTargetRandomPoint@0x005FD850, 0x005FDB9B, run:2026-10-21-cat-emu-item `cast_item`,
   [skills/0015 § 5](../../findings/skills/0015-item.md#5-itemskill_cast-its-itemtarget-helpers-and-its-callers))
 - E5. After the first test: a result of 0 sets the path's target point to the tried point and the helper returns 1;
   any other result makes another try, at most 10, so 2 to 20 steps; all 10 failing return 0 and the cast is refused
   (no `SKILLS_SrvDo`). An item Teleport, the one stock `ItemTarget` 2 row, therefore moves its caster to a free point
-  within ±20 of its position. [I] (0x005FD979–0x005FD9B4, fn:COLL_PatternTest@0x0064D870,
+  offset by −20 to +19 on each axis from its position. A caster of type 2, 4 or 5 takes that position from its static
+  path's dwords. [I] (0x005FD979–0x005FD9B4, 0x005FD89E–0x005FD8A4, fn:COLL_PatternTest@0x0064D870,
   [skills/0015 § 5](../../findings/skills/0015-item.md#5-itemskill_cast-its-itemtarget-helpers-and-its-callers))
 - E5. **Whose seed an item Teleport steps.** Joining the handlers' casters to the helper's: the handler's own unit for
   handlers 21 and 30, and for handler 20 without `ItemTgtDo`; **the other unit** for handler 20 with `ItemTgtDo`,
