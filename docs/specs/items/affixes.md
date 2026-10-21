@@ -3,9 +3,9 @@ spec: items/affixes
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/quality, items/uniques-sets, data/excel]
-consumed_by: [items/properties, items/vendors, items/cube, save/d2s]
+consumed_by: [items/properties, items/vendors, items/cube, save/d2s, chain]
 tags: {C: 152, I: 28, L: 4}
-updated: 2026-10-20
+updated: 2026-10-21
 ---
 
 # Affixes: alvl, magic and rare picks, automagic, and the other builders
@@ -427,7 +427,7 @@ D2. if rec.forcedSuffix[0] > 0: sufMust ← true
     s ← PickMagicAffix(item, 1, sufMust, 1, suffix, rec.forcedSuffix[0], 0)
     suffix[0] ← s
 D3. if p = 0 and s = 0: return false                                    ; → superior fallback
-D4. set item flag 0x10; RollStaffMods(item, rec)                        ; ORACLE, § I
+D4. set item flag 0x10; RollStaffMods(item, rec)                        ; § I (modelled)
     return true
 ```
 
@@ -497,7 +497,7 @@ E6. set item flag 0x10                                                          
     for k in 0 ..< 3:
       if prefix[k] ≠ 0: ItemApplyProps(item, record(prefix[k]))                   ; ORACLE, items/properties
       if suffix[k] ≠ 0: ItemApplyProps(item, record(suffix[k]))
-E7. RollStaffMods(item, rec); return true                                         ; ORACLE, § I
+E7. RollStaffMods(item, rec); return true                                         ; § I (modelled)
 ```
 
 **E2. `PickRareName(isPrefix, item)`**:
@@ -575,7 +575,7 @@ F2. loop:
 F3.   if QualityItemTypeOk(item, QualityItems[row]):
         item.fileIndex ← row
         ItemApplyProps(item, QualityItems[row])                           ; ORACLE, items/properties
-        RollStaffMods(item, rec)                                          ; ORACLE, § I
+        RollStaffMods(item, rec)                                          ; § I (modelled)
         return true
 F4.   tried[row] ← true
       if every row < n is tried: return false                             ; → normal fallback
@@ -643,7 +643,7 @@ Step notes:
 H1. if base type = 13 (charm): CharmForcedAffixes(item, rec)                 [I] (fn:ITEMS_BuildNormal@0x00556E80, fn:sub_00556A60_CharmForcedAffixes@0x00556A60)
     else if type 40 or 7 (body parts): item.fileIndex ← (from the base)
     else if type 22 (scroll) or 18 (book): suffix[0] ← a fixed id by base code   ; table at 0x0096CC60
-H2. tail jump to RollStaffMods(item, rec)                                    [C] ORACLE (0x00556F24, fn:ITEMS_RollStaffMods@0x005C1260, run:2026-10-14-affixes)
+H2. tail jump to RollStaffMods(item, rec)                                    [C] § I (0x00556F24, fn:ITEMS_RollStaffMods@0x005C1260, run:2026-10-14-affixes)
 ```
 
 Step notes:
@@ -808,7 +808,7 @@ sequenceDiagram
   else low
     B->>I: row draw
   end
-  B->>O: RollStaffMods
+  B->>I: RollStaffMods draws, § I
   O->>O: ethereal roll if expansion, socket roll if quality 1 to 3
   B->>I: automagic draw 1, draw 2
   B->>O: automagic ItemApplyProps
@@ -866,7 +866,7 @@ and every candidate here has `level` 1.
 | C4 | — | — | 2 candidates, W = 8 |
 | C7 | 4 | `c6efa9b8:355e8965` | `0xc6efa9b8 mod 9 = 4` → id 740 |
 | C8 | oracle | `c6efa9b8:355e8965` | suffix properties (no draw here) |
-| D4 | oracle | `1fed7c74:51e5808f` | staff mods, class 1, `firstSkill` 36 (`STFC`) |
+| D4 | § I | `1fed7c74:51e5808f` | staff mods, class 1, `firstSkill` 36 (`STFC`); an oracle in the run's check, predicted by the model since |
 
 Prefix walk, x = 5 (`AFC … "ids":[1013,1302,1410,1411,1412,1413,1414]`):
 
@@ -899,7 +899,7 @@ seed `2734d95a:0000029a`. alvl: `i = 5`, `h = 0`, `5 < 99` → 5. [C] (run:2026-
 | E4 slot 2 side | 10 | `fd8cfe4c:1a877a90` | prefix |
 | C2, C7 | 11, 12 | `89f1abf6:4883142f` | 9 candidates, W = 36, `mod 37 = 16` → id 1156 *Beryl* |
 | E6 | oracle × 3 | `8bf26748:45da467f` | properties of 986, 933, 1156, in that order |
-| E7 | oracle | `8bf26748:45da467f` | staff mods (no `StaffMods` class: nothing drawn) |
+| E7 | § I | `8bf26748:45da467f` | staff mods (no `StaffMods` class: nothing drawn) |
 
 Slot 0 walk, x = 28: *Jagged* 9 → 19, *Deadly* 9 → 10, *Bronze* 8 → 2, *Iron* 8 → −6, so **986**. Slot 1 drops
 *Bronze* (group 110, taken by *Iron*); x = 3 < 9 → *Jagged*. Slot 2 drops *Deadly* (group 105, taken by *Jagged*); x =

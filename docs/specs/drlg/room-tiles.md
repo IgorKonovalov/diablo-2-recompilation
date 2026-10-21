@@ -3,9 +3,9 @@ spec: drlg/room-tiles
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview]
-consumed_by: [rng/seeds, drlg/preset, drlg/outdoor, drlg/collision, monsters/spawn, objects]
-tags: {C: 121, I: 32, L: 0}
-updated: 2026-10-17
+consumed_by: [rng/seeds, drlg/preset, drlg/outdoor, drlg/collision, monsters/spawn, objects, chain]
+tags: {C: 121, I: 33, L: 0}
+updated: 2026-10-21
 ---
 
 # Room tile build: DT1 list, tile choice by rarity, and the k room-seed draws
@@ -556,7 +556,7 @@ flowchart TD
              then every floor entry of R whose tile is (main s, sub < 4) is re-linked into the
              warp node's list the same way                            ; 0x0066E4A2, [C] (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-15-objects)
 
-11. Orient89Unit(R, cell, tile)  — the unit creation is a boundary oracle, row `objects`:   [C] (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, fn:sub_0066D960_Orient89RowFind@0x0066D960, data:g_Orient89Levels@0x006EEFC8, data:g_Orient89Rows@0x006EF188, run:2026-10-14-collision, run:2026-10-15-objects)
+11. Orient89Unit(R, cell, tile)  — its unit is created later, as a preset unit (note 11):   [C] (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, fn:sub_0066D960_Orient89RowFind@0x0066D960, data:g_Orient89Levels@0x006EEFC8, data:g_Orient89Rows@0x006EF188, run:2026-10-14-collision, run:2026-10-15-objects)
       ; with tile none, the steps below run without the 0x20 skip and without the mark
       if tile ≠ none and tile.flags & 0x20: return
       row ← Orient89RowFind(L.id, m, s, o = 9)                       ; § Constants: the first row of L's range in g_Orient89Levels
@@ -564,7 +564,7 @@ flowchart TD
                                                                       ; is-9: the orientation (the entry's, or the hidden cell's) is 9
       (sx, sy) ← ((x − R.x)·5 + row.dx, (y − R.y)·5 + row.dy)         ; the unit's subtile
       if not (0 ≤ sx < R.w·5 and 0 ≤ sy < R.h·5): return
-      create the row's unit; but for unit type 2 with id 91 or 92:
+      the row's unit (a preset unit of R, created in the presets window); but for unit type 2 with id 91 or 92:
         u ← Range(R.seed, 3)                                          ; 0 → no unit
       if tile ≠ none: tile.flags |= 0x20
 
@@ -743,8 +743,11 @@ Step notes:
     432–435 and 524–525; type 2: objects 13–16, 60, 91, 92 and 230), found no row in 855 calls, put the unit
     outside the room in 41, met an entry that already had `0x20` 14 times, and drew 3 times, each draw
     predicted. [C] (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, fn:sub_0066D960_Orient89RowFind@0x0066D960,
-    data:g_Orient89Rows@0x006EF188, run:2026-10-15-objects) The unit creation itself stays an oracle (seed in,
-    seed out) for row `objects`. A draw that returns 0 creates no unit: in Halls of the Dead 2 (level 57) the
+    data:g_Orient89Rows@0x006EF188, run:2026-10-15-objects) What it makes at activation is a **preset unit** of the
+    room, not a unit: the classes its rows flag are created later in the presets window through `PresetUnitDispatch`,
+    whose creations the chain models ([chain § Algorithm](../chain/README.md#algorithm) D2); the code that adds the
+    preset unit is not read. [I] (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, fn:sub_005557D0_PresetUnitDispatch@0x005557D0,
+    [chain/0002 § 6](../../findings/chain/0002-retirements.md#6-oracle-22-the-orient89unit-creations)) A draw that returns 0 creates no unit: in Halls of the Dead 2 (level 57) the
     tomb-door rows drew 44 times, `Range(3)` returned 0 ten times with no unit created, and the entry got `0x20`
     either way. [C] (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, 0x0066DAC6, run:2026-10-16-sweep-roomk, [drlg/0002 § Plan 0038 batch H5c](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk))
 12. `T[+0x18]` and `T[+0x20]` are the wall and floor entry counts after the build (the builder copies the
@@ -1030,8 +1033,10 @@ same DT1 list. [C] (run:2026-10-11-drlg-roomk)
   run:2026-10-11-drlg-roomk logs, which have no outdoor lines, still take them from the log.
 - ~~`Orient89Unit`: the unit table is not dumped, so when its `Range(3)` happens is unknown outside the oracle.~~
   Settled at plan 0027 Phase 2 (step 11): the tables are stated in § Constants from drlg/0002 § Entry flags, and
-  the draw is predicted. A draw that returns 0 is settled (step note 11, run:2026-10-16-sweep-roomk). Still open:
-  the unit creation, which stays an oracle for row `objects`.
+  the draw is predicted. A draw that returns 0 is settled (step note 11, run:2026-10-16-sweep-roomk). The unit
+  creation is settled by plan 0048 Phase 1: its units are preset units created in the presets window, modelled there
+  (step note 11, [chain/0002 § 6](../../findings/chain/0002-retirements.md#6-oracle-22-the-orient89unit-creations)); the
+  code that adds the preset unit at activation is not read.
 - ~~The bit-2 merge into or out of orientation 3 (the `0xC008` and the `0x8` on E's next entry, step 9c)~~ is
   unreachable on stock data (step note 9, drlg/0002 § Plan 0039 batch P1a). An animated wall or shadow (step 7b) was
   never reached; it is read from the code only.

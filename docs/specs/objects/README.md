@@ -3,9 +3,9 @@ spec: objects
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, drlg/preset, drlg/collision]
-consumed_by: [monsters/spawn, drlg/collision, items/tc, items/quality, items/quest-drops]
-tags: {C: 138, I: 72, L: 4}
-updated: 2026-10-17
+consumed_by: [monsters/spawn, drlg/collision, items/tc, items/quality, items/quest-drops, chain]
+tags: {C: 139, I: 72, L: 5}
+updated: 2026-10-21
 ---
 
 # Objects: room object population, placement, preset objects, creation rolls and the chest drop
@@ -123,14 +123,15 @@ owners. Every `[C]` of this spec holds under these inputs. [C] (run:2026-10-15-o
 
 | Input | Kind | What it holds | Owner | Tag |
 |---|---|---|---|---|
-| the gate's DRLG parts | value oracle | room flags `0x30000`, `RoomPopLevelId`, the preset test, the town test, `LevelRoomCount` on first read | `drlg/preset`, `drlg/overview` | [C] (fn:OBJ_PopulateGate@0x00552560, run:2026-10-15-objects) |
+| the gate's DRLG parts | value oracle (read in [chain/0002 § 7](../../findings/chain/0002-retirements.md#7-oracle-19-the-gates-drlg-parts-read-inputs-kept) and asserted at every gate of run:2026-10-21-chain2) | room flags `0x30000`, `RoomPopLevelId`, the preset test, the town test, `LevelRoomCount` on first read | `drlg/preset`, `drlg/overview` | [C] (fn:OBJ_PopulateGate@0x00552560, run:2026-10-15-objects, run:2026-10-21-chain2) |
 | `COLL_WHTest` results at the seven object call sites and at the gold piles | modelled, [drlg/collision § E6](../drlg/collision.md#e-collisiontest-by-size) | 0 = free; predicted on the room grids (the activation stamp, the object marks below, the logged monster and gold-item marks): 5767 placer calls and 92 gold-pile calls, 4816 blocked and 1043 free, 0 mismatches | [drlg/collision](../drlg/collision.md#inputs-and-oracles) | [C] (fn:COLL_WHTest@0x0064D800, run:2026-10-15-objects, [objects/0001 § 14](../../findings/objects/0001-object-population.md#14-the-position-tests-and-the-object-marks-on-the-grid-model-plan-0027-phase-2-2026-10-15)) |
 | object marks in the collision grid | modelled, § G and [drlg/collision § F](../drlg/collision.md#f-unit-marks) | the mark each created object makes (G1, G4): all 1847 predicted (1835 inside a window, matched with their CM lines; 12 under preset monsters, compared inside the monster's seed oracle); 742 creations with `HasCollision` 0 in their mode made none, as predicted; 433 creations of the revisit restore are applied without a line to compare | `drlg/collision` | [C] (fn:UNIT_CollMarkRect@0x00620A70, fn:UNIT_GetCollMask@0x006209D0, run:2026-10-15-objects) |
-| preset monsters of the presets window | seed oracle | `PresetUnitDispatch` of type 1, and the superunique and MonPlace spawns | [monsters/spawn](../monsters/spawn.md), [monsters/special](../monsters/special.md) | [C] (fn:sub_0054E600_PresetMonSpawn@0x0054E600, run:2026-10-15-objects) |
-| monster and quest `InitFn`s | seed oracle | `InitFn` 46 (it draws the room, game and object-region seeds inside its monster spawns: 584 object-region draws in 16 calls), 47, 54, 55, 62, 66, 68, 69, Zoo 79, pseudo-object 582 | monsters, quests | [C] (fn:OBJINIT_CityDamnedSpawns@0x005506D0, run:2026-10-15-objects) |
+| preset monsters of the presets window | modelled (plan 0048 Phase 1; a seed oracle in this spec's run) | `PresetUnitDispatch` of type 1 (the class case, the MonPlace fixed rows, the objects under catapults 432 and 433), and the superunique and MonPlace spawns, through the monsters chain ([chain § Algorithm](../chain/README.md#algorithm) D2); MonPlace rows 5, 10 and 11 stay seed oracles | [monsters/spawn](../monsters/spawn.md), [monsters/special](../monsters/special.md), [chain](../chain/README.md) | [C] (fn:sub_0054E600_PresetMonSpawn@0x0054E600, fn:sub_0054E490_PresetClassSpawn@0x0054E490, run:2026-10-15-objects, [chain/0002 § 4](../../findings/chain/0002-retirements.md#4-oracle-16-the-preset-monsters-of-the-presets-window)) |
+| monster and quest `InitFn`s | seed oracle, but `InitFn` 46 | `InitFn` 46 is modelled since plan 0048 Phase 1 (§ H row 46; [chain/0002 § 5](../../findings/chain/0002-retirements.md#5-oracle-17-initfn-46-city-of-the-damned)); 47, 54, 55, 62, 66, 68, 69, Zoo 79, pseudo-object 582, and 18, 19, 25, 43, 49, 50, 52, 60 and 71 ([objects/0001 § Plan 0038 batch S4b](../../findings/objects/0001-object-population.md#plan-0038-batch-s4b-2026-10-16) row 25) stay seed oracles | monsters, quests | [C] (fn:OBJINIT_CityDamnedSpawns@0x005506D0, run:2026-10-15-objects, run:2026-10-21-chain2) |
 | state `InitFn`s | value oracle | the mode or `interact` value that `InitFn`s without draws set from game state (4, 6, 8, 9, 12, 14, 16, 17, 22, 26 in the run); the unit-seed draw of the mode change is predicted | game state | [C] (data:g_ObjInitFns@0x00731BC0, run:2026-10-15-objects) |
-| `TC_ResolveDrops` | seed oracle in the run; modelled by [items/tc](../items/tc.md) | draws the dropping object's **unit seed**; it left the object-region seed alone in all 59 calls | `items/tc` | [C] (fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-15-objects) |
-| gold drop of `InitFn` 28, operate monster spawn `0x00582280` | seed oracle | item creation; the gold drop's item marks (`0x200`, 71) stay logged CM lines; the spawn draws no object-region draw (2 spawns) | items, monsters | [C] (fn:OBJINIT_GoldPiles@0x0054F8C0, fn:OBJOP_Barrel@0x005868A0, run:2026-10-15-objects) |
+| `TC_ResolveDrops` | seed oracle in the run; modelled by [items/tc](../items/tc.md), chained since plan 0048 Phase 1 | draws the dropping object's **unit seed**; it left the object-region seed alone in all 59 calls. In the chain the object's unit seed after the drop is the resolver's exit seed and the game seed after it is two steps per item ([chain/0002 § 10](../../findings/chain/0002-retirements.md#10-oracle-6-an-objects-drop)) | `items/tc` | [C] (fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-15-objects) |
+| gold drop of `InitFn` 28 | modelled (plan 0048 Phase 1; a seed oracle in the run) | one item per drop: two game-seed steps, the item's unit seed, its `0x200` mark, no object-region draw (71 of 71); the spot read from the code and predicted for 69 of 71 ([chain/0002 § 9](../../findings/chain/0002-retirements.md#9-oracle-7-the-gold-piles-items)) | items | [C] (fn:OBJINIT_GoldPiles@0x0054F8C0, fn:sub_00559300_DropGoldPile@0x00559300, run:2026-10-15-objects) |
+| operate monster spawn `0x00582280` | input (the operate is a player action) | the spawn draws no object-region draw (2 spawns); its creation is the monsters chain's once the operate's frame and seeds are given | monsters | [C] (fn:OBJOP_Barrel@0x005868A0, run:2026-10-15-objects) |
 | when a player operates which object | input | simulation | game | [C] (fn:OBJ_OperateDispatch@0x00584420, run:2026-10-15-objects) |
 | when an object timer event runs | input | simulation (ADR-0002); its draws are modelled (§ K), the trap event's `OBJTRAP_MonsterSpawn` draw included | game | [C] (data:g_ObjEventFns@0x006E19B0, run:2026-10-15-objects) |
 | trap effects | named only | `g_ObjTrapFns[t]`, run by object event 4 (§ K); the `fire` creations of `OBJTRAP_ObjectCreate` (one game-seed step and a unit-seed draw each) are **not modelled**, and no trap of types 5, 7, 8 or 9 fired in the run | game simulation | [I] (fn:OBJ_TrapEvent@0x005817A0, fn:OBJTRAP_ObjectCreate@0x00582380) |
@@ -619,12 +620,12 @@ the object-region seed `O` unless the row says otherwise. [I] (data:g_ObjInitFns
 | 2 | 37 urns, jars, baskets | `P100(O) < MonLvl1 ÷ 8 + 5` → trap type `RandLoHi(O, 1, 9)` (1..8), else none | [C] (fn:OBJINIT_TrapByte@0x0054FBB0, tbl:Levels.txt:MonLvl1, run:2026-10-15-objects: 397 runs) |
 | 3 | 71 chests | `InitFn` 2; then, for a `Lockable` row, `P100(O) < MonLvl1 ÷ 2 + 8` → locked (`interact` bit 7); then one draw `v = low mod 0xFFFE + 1` and `Init(unit.seed, v)` | [C] (fn:OBJINIT_Chest@0x0054FCB0, tbl:Objects.txt:Lockable, run:2026-10-15-objects: 212 runs) |
 | 27 | goo pile | one draw: `low mod 1000 > 332` → `interact` 0, else 3 (chance 333/1000) | [C] (data:g_ObjInitFns@0x00731BC0, run:2026-10-15-objects: 2 runs) |
-| 28 | gold-pile dummy (269) | `n = 1 + low mod 9` piles (1..9); per pile two draws, offsets `(dx, dy) = (low & 3, low & 3)`; the running position `(px, py)` starts at the object's cell; if `RoomAtSubtile(room, px + dx, py + dy)` is the object's room, `(px, py) ← (x + dx, y + dy)` and, when `COLL_WHTest(room, px, py, 1, 1, 0x3F11) = 0`, a gold drop at `(px, py)` (seed oracle; the drop only reads the position) | [C] (fn:OBJINIT_GoldPiles@0x0054F8C0, run:2026-10-15-objects: 14 objects, counts 2–9, 92 tests, 71 drops) |
+| 28 | gold-pile dummy (269) | `n = 1 + low mod 9` piles (1..9); per pile two draws, offsets `(dx, dy) = (low & 3, low & 3)`; the running position `(px, py)` starts at the object's cell; if `RoomAtSubtile(room, px + dx, py + dy)` is the object's room, `(px, py) ← (x + dx, y + dy)` and, when `COLL_WHTest(room, px, py, 1, 1, 0x3F11) = 0`, a gold drop at `(px, py)` (the drop only reads the position; its item is modelled since plan 0048 Phase 1, [chain/0002 § 9](../../findings/chain/0002-retirements.md#9-oracle-7-the-gold-piles-items)) | [C] (fn:OBJINIT_GoldPiles@0x0054F8C0, run:2026-10-15-objects: 14 objects, counts 2–9, 92 tests, 71 drops) |
 | 34 | 358, 359 `fire` | one draw, odd → mode 1 | [C] (data:g_ObjInitFns@0x00731BC0, run:2026-10-15-objects: 20 runs) |
 | 57 | 397 `sparklychest`, 455 `specialchest` | `InitFn` 3, then the sparkle flag | [I] (fn:OBJINIT_SparklyChest@0x0054FD90) |
 | 58 | fissure | one draw for a timer | [I] (data:g_ObjInitFns@0x00731BC0) |
 | 79 | Zoo | `RandLoHi` on a quest-held seed, not `O` | [I] (data:g_ObjInitFns@0x00731BC0) |
-| 46 | 369 (City of the Damned) | random points and monster spawns 403/404: room, game and `O` draws; seed oracle | [C] (fn:OBJINIT_CityDamnedSpawns@0x005506D0, run:2026-10-15-objects: 16 calls) |
+| 46 | 369 (City of the Damned) | random points and monster spawns 403/404: room, game and `O` draws; modelled since plan 0048 Phase 1, the walk and its draws in [objects/0001 § Plan 0048 Phase 1](../../findings/objects/0001-object-population.md#plan-0048-phase-1-initfn-46-modelled-2026-10-20) (the direction draw is not stored) | [C] (fn:OBJINIT_CityDamnedSpawns@0x005506D0, run:2026-10-15-objects: 16 calls) |
 | 47, 54, 55, 62, 66, 68, 69 | quest objects | monster spawns through `SpawnAtPos` or `PresetMonSpawn`; seed oracles | [I] (data:g_ObjInitFns@0x00731BC0) |
 | every other | — | no draw; some (4, 6, 8, 9, 12, 14, 16, 17, 22, 26 in the run) set mode or `interact` from game state, whose mode change draws the unit seed (G2) | [I] no draw (data:g_ObjInitFns@0x00731BC0); [C] the state values as inputs (run:2026-10-15-objects) |
 
@@ -1100,6 +1101,10 @@ fn:sub_00585B90_ObjectChestDrop@0x00585B90, run:2026-10-15-objects)
   running position kept), the door masks `0x804` and `0x400`, and units that move between their room's activation
   and its window (players, wandering monsters; their moves are not logged, and none of the 5859 tests needed one).
   (fn:OBJINIT_GoldPiles@0x0054F8C0, fn:UNIT_GetCollMask@0x006209D0)
+- [L] **A chest's interact byte between its creation and its operate.** Seven chests of run:2026-10-21-chain2
+  reached `OperateFn` 4 with a byte their `InitFn` did not leave (the lock bit set, cleared, or the byte cleared to 0),
+  with no logged line writing it; the chain takes the byte at the operate and counts it. Its writer is unread
+  ([chain § Open questions](../chain/README.md#open-questions)). (fn:OBJINIT_Chest@0x0054FCB0, run:2026-10-21-chain2)
 - [L] Which code, if any, reads Objects `TrapProb` and the zero byte ranges, narrowed (plan 0039 P1b): `SpawnMax` and
   `Act` have no reader by a whole-image operand scan, and no record fetcher reads `TrapProb` (*Inputs*); still open is a
   function that keeps an Objects record pointer from elsewhere and reads `+0xCC` later

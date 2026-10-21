@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, items/uniques-sets, items/properties, items/affixes, monsters/stats, save/d2s]
 consumed_by: [save/d2s, combat/to-hit, stats/aggregate]
 tags: {C: 85, I: 49, L: 1}
-updated: 2026-10-20
+updated: 2026-10-21
 ---
 
 # New character, starting items, experience and level-up
@@ -109,7 +109,7 @@ The record index of CharStats is the class id 0..6 (`Expansion` marker row not c
 
 | Input | Kind | Where it is specified | Tag |
 |---|---|---|---|
-| `ITEMS_RollStaffMods` at the end of the normal builder (the Sorceress's `sst`, the Necromancer's `wnd`) | seed oracle of the item model: its exit seed and its `item_singleskill` entries are the logged ones | [items/affixes § I](../items/affixes.md#i-staff-mods--items_rollstaffmods) | [C] (fn:ITEMS_RollStaffMods@0x005C1260, run:2026-10-16-player: 11 of 269 creations) |
+| `ITEMS_RollStaffMods` at the end of the normal builder (the Sorceress's `sst`, the Necromancer's `wnd`) | seed oracle of this run's item model: its exit seed and its `item_singleskill` entries are the logged ones. The roll is modelled in [items/affixes § I](../items/affixes.md#i-staff-mods--items_rollstaffmods), the chained tools' default since plan 0048 Phase 1 ([chain/0002 § 2](../../findings/chain/0002-retirements.md#2-oracle-2-the-staff-mods)); this run's 11 rolls were not re-run through it | [items/affixes § I](../items/affixes.md#i-staff-mods--items_rollstaffmods) | [C] (fn:ITEMS_RollStaffMods@0x005C1260, run:2026-10-16-player: 11 of 269 creations) |
 | full maxima `UnitGetMaxHp/Mana/Stamina` when items add to them | value input of the level-up refill; the sum is specified in [stats/aggregate § G](../stats/aggregate.md#g-the-maxima-the-rescale-and-the-stat-callback), and this run's values stay oracles (plan 0041 P2 review: none replaced, the logs hold no item lists) | § I, I3 | [C] (fn:sub_00625D10_UnitGetMaxHp@0x00625D10, run:2026-10-16-player: 7 of 20 level-ups) |
 
 ## Algorithm
@@ -348,7 +348,7 @@ Step notes:
 - E3. **What a normal starting item draws.** The base stats of [items/properties § A](../items/properties.md#a-base-stats-on-the-unit-seed)
   on the unit seed (a weapon's durability, a shield's durability then defense, nothing for a potion or scroll); then on
   the item seed the normal builder ([items/affixes § H](../items/affixes.md#h-the-normal-builder--items_buildnormal),
-  which ends in `ITEMS_RollStaffMods`, an oracle); the ethereal roll returns at flag `0x02` before its draw; the socket
+  which ends in `ITEMS_RollStaffMods`, an oracle of this run's check, § I there); the ethereal roll returns at flag `0x02` before its draw; the socket
   roll ([items/properties § F](../items/properties.md#f-ethereal-and-sockets), F4) **draws** `Range(item.seed, 100)`
   for a base that can have sockets and only then returns at flag `0x08`, so the draw is consumed and the item gets no
   sockets. [C] (fn:sub_00556CA0_ItemRollEthereal@0x00556CA0, fn:sub_00556B60_ItemRollSockets@0x00556B60,
@@ -634,7 +634,7 @@ seed `5389700c:0f9a1148`. The model reproduces each line. [C] (run:2026-10-16-pl
 | B2 `SUnitCreate` | game seed unchanged `5389700c:0f9a1148` |
 | B3 `PlayerUnitInit` | Step → `48ac0a84:22d7b3ef`; player `Unit+0x28` = `0x48ac0a84`, unit seed `48ac0a84:0000029a` |
 | C | strength 10, energy 35, dexterity 25, vitality 10; life = max = 40 × 256 = 10240; mana 35 × 256 = 8960; stamina 74 × 256 = 18944; level 1, nextexp 500 |
-| E `sst` (slot 0) | game Steps → unit seed `9f3e0b83:0000029a`, start `b4da2652`; unit seed: durability `10 + Range(10)` = 15 (max 20), unit seed after `968a8e69:426b34ce`; item seed `b4da2652:0000029a` → `ITEMS_RollStaffMods` **oracle**, join seed `78d99fb4:4b6e9add` and no staff-mod entry, as logged; ethereal no draw; socket `Range(100)` = 85, discarded (flag `0x08`) → exit `c1f3c061:3267d8c9`; list `0x40`: `item_singleskill(36)` = 1; equipped `rarm`, flags `0xA2011`, durability ← 20 |
+| E `sst` (slot 0) | game Steps → unit seed `9f3e0b83:0000029a`, start `b4da2652`; unit seed: durability `10 + Range(10)` = 15 (max 20), unit seed after `968a8e69:426b34ce`; item seed `b4da2652:0000029a` → `ITEMS_RollStaffMods` **taken from the log** (an oracle of this run's check; [items/affixes § I](../items/affixes.md#i-staff-mods--items_rollstaffmods) specifies it), join seed `78d99fb4:4b6e9add` and no staff-mod entry, as logged; ethereal no draw; socket `Range(100)` = 85, discarded (flag `0x08`) → exit `c1f3c061:3267d8c9`; list `0x40`: `item_singleskill(36)` = 1; equipped `rarm`, flags `0xA2011`, durability ← 20 |
 | E `hp1` ×4 (slot 1) | unit seeds `bb44d1e8`, `450d87c4`, `61ad922c`, `6cd49484`; starts `86e6a265`, `21a3dbbd`, `20da2c9a`, `e6ec5b5e`; no draw on either seed; belt boxes 0, 1, 2, 3, flags `0xA2010` |
 | E `tsc` (slot 2) | unit `6b5f9eca`, start `3e73ccac`; no draw; inventory (9, 3) |
 | E `isc` (slot 3) | unit `e40e20c9`, start `20d2ae4d`; no draw; inventory (9, 2) |
