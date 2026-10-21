@@ -720,3 +720,44 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
      `minmana` floor, ignored failure), DLY. `tools/test_skills.py` on hand-built lines.
   3. `tools/skills_sessions.py` (recipes per class for the 26 tier-A rows, sessions table, run) on the
      `stats_sessions.py` pattern; then the dev session, then `run:YYYY-MM-DD-skills` and the oracle re-checks.
+- **2026-10-21 — Phase 2 resumed, paused again at the owner's request (reverser, `lane/p45h`).** Development only:
+  no kept run, no claim raised, no finding edited. Slot 2 only, stopped (`slots.py stop 2`), saves restored, no aside
+  left; no Ghidra. Done:
+  - **Logger smoke-tested** and fixed: `tools/gdb/skills.py` rev 2 (`43a81216…`). Rev 1's `SL0` read `ECX` as the
+    summon, but `ECX` is the game and the summon is the first stack argument; rev 2 logs the summon's stat 12 before
+    and after. Every other tag fired as designed in six dev sessions.
+  - **`tools/skills.py`** (`7d7417a2…`, `check`, `manifest`) models PAY (cost, `minmana` floor, refusal, a non-player's
+    1), MC (velocity, accel/max, range, frames left, activate, skill/level, the missile seed from the game-seed step,
+    the callback re-seed, the owner's 1–3 critical draws and stat 141, the pierce count from `Init(b328)`), MF (the
+    fifth-step acceleration, the position step, frames left, seed), BD (the seven `RangeB` draws on the missile seed,
+    the mastery `MulDiv`, the drawn fields, the physical percent and the critical doubling, lengths), THR's roll, a
+    missed to-hit ending the missile with one pierce used (C5), SL (C1), SST/SDO caster seeds for the rows with no own
+    draws, and the chaining (game seed between creations of one SrvDo, the caster's seed across skill events).
+    `tools/test_skills.py` has 7 tests on hand-built lines, all passing.
+  - **`tools/skills_sessions.py`** (`f5777a25…`, `build`, `list`, `run`) with recipes `tools/d2s_recipes/skills-{sor,
+    ama,amaj,nec,dru,bar,pal,ass}.json` (clvl 80/85, stock items; built into `workspace/logs/skills/saves/`) and 18
+    run sessions (`sor-1..4`, `ama-1..2`, `amaj-1..2`, `nec-1..2`, `dru-1..2`, `bar-1..2`, `pal-1..2`, `ass-1..2`).
+    `tools/d2pilot.py` gains `--keys-cycle` (explore `--curse-keys` taken in turn over all clicks, not per monster).
+  - **Dev logs** (kept, `workspace/logs/skills/dev-p45h-manifest.sha256` `caeabe2e…`; checker output
+    `dev-p45h-check.txt` `94f85172…`): `dev-p45h-a-sor-smoke`, `-b-sor-smoke2`, `-c-nec-1`, `-c-pal-1`, `-c-ass-1`,
+    `-c-amaj-1` (the last aborted mid-explore for this pause). Over the six: 10 901 creations with velocity, range, seed
+    and owner draws all matching, 3 123 motion steps (108 accelerating, 18 fifth steps), 147 builds, 534 payments,
+    40 physical packets, 72 pierce counts, 4 missed to-hits (1 with a pierce left), 3 Raise Skeleton summons (rev 1:
+    no SL check), 9 887 game-seed chained pairs, 908 caster chained pairs; **7 mismatches, all `MF.seed`**, each in a
+    frame where the missile hit a unit: the checker does not yet add the nested `MH`'s `BD`/`MA` draws on the
+    missile seed. One unread observation: Raise Skeleton (do 31) steps the caster's seed once after
+    `SpawnOwnedMonster` returns (3 of 3), where skills/0003 § 5 reads "none"; the site is not located.
+  **Next (resume):**
+  1. Fix `MF.seed` to allow the draws of an `MH` nested in the frame (the `BD` count plus the `MA` boundary exit).
+  2. Locate the Raise Skeleton caster draw (between `SP1` and `SDO1`: `0x005C4430`, `SummonInitStats`, `0x005C40D0`
+     or `0x005B1900`; static reading or one more logged exit), and correct skills/0003 § 5.
+  3. Run `run:2026-10-2x-skills`: `skills_sessions.py build`, then `run --slot 2 --tag p45h --saves
+     workspace/logs/skills/saves --run <run>` over the 18 sessions (about 3–4 min each); check, manifest, then the
+     oracle re-checks (run:2026-10-16-combat, run:2026-10-17-stats, the *Fleshripper* log) under `MemoryMax=4G`.
+  4. Shortfalls to expect and name: Kick, Left Hand Throw, Left Hand Swing (no session), `srvprgfunc` 36, 37, 40, 41,
+     summons by Raven (no SL check yet with rev 2), the C2 `spike` monster missiles and the C4 `LevRange` rows (Blaze
+     reaches C4), event-9 handler fires, state 52, the re-seed sites.
+  5. Write the run record in `skills/experiments.md`, the per-claim raises in skills/0001–0003 (review-fixes 8, 12,
+     14), the symbols raised, the review request and this log's entry.
+  **Usage:** this resume 216 000 tokens and about 100 tool calls over about 75 min, on top of the first part's
+  287 603 / 64 / 9 min.

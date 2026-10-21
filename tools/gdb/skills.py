@@ -42,8 +42,8 @@
 #   PF0/PFC/PFR/PF1  COMBAT_PrgFinisher 0x005D5220 entry, before (0x005D53F8, 0x005D544C) and after each srvprgfunc
 #              call, its rets: the attacker's seed (ruling 1)
 #   SP0/SP1    sub_0056D940_SpawnOwnedMonster (ECX game, EDX block) and its rets: owner; the created unit
-#   SL0/SL1    sub_005C49E0_SummonSetLevel (ECX summon, EDX owner; a, lvl, skill level) and its rets: owner stat 12,
-#              the summon's stat 12 after
+#   SL0/SL1    sub_005C49E0_SummonSetLevel (ECX game, EDX owner; summon, lvl, skill level) and its rets: owner stat
+#              12, the summon's stat 12 before and after (rev 2; rev 1 took ECX for the summon)
 #   PA0/PA1    sub_00575D90_PetAdd and its ret
 #   ARM0/ARM1  sub_005C8520_SkillDo146Armageddon and its rets: caster seed, SkillEntry+0x18 (logged whenever it fires)
 #   MAS0/MAS1  sub_005A4F50_MonAttackStats (ECX unit, EDX mode) and its ret 0x005A5443: seed, stats
@@ -534,9 +534,12 @@ def _skills_main():
         emit("SP1", {"k": n, "m": unit(m, [6, 7, 12, 19, 31]) if m else None, "so": sd(o) if o else None})
 
     def on_sl0():
+        # rev 2: ECX is the game, the summon is the first stack argument (rev 1 read ECX as the summon)
         esp = reg("esp")
-        m, o = reg("ecx"), reg("edx")
-        n = emit("SL0", {"m": m, "o": o, "a": list(struct.unpack("<3i", mem(esp + 4, 12))),
+        o = reg("edx")
+        a = list(struct.unpack("<3i", mem(esp + 4, 12)))
+        m = a[0] & 0xFFFFFFFF
+        n = emit("SL0", {"m": m, "ecx": reg("ecx"), "o": o, "a": a, "m12": stats(m, [12]).get("12", 0) if m else None,
                          "o12": stats(o, [12]).get("12", 0) if o else None})
         st["open"][("sl", esp)] = (n, m)
 
@@ -651,7 +654,7 @@ def _skills_main():
         Bp(a, on_arm1)
     Bp(0x005A4F50, on_mas0)
     Bp(0x005A5443, on_mas1)
-    emit("SKILLSLOG", {"rev": 1, "win": WIN, "caps": CAPS})
+    emit("SKILLSLOG", {"rev": 2, "win": WIN, "caps": CAPS})
     gdb.write("SKILLS logger armed\n")
 
 
