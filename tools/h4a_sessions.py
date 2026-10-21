@@ -32,8 +32,9 @@ CLASSIC_WP = ["--wp-tab-x0", "120", "--wp-tab-w", "78"]
 
 
 def wp(tab, row):
-    """The waypoint from the Act IV town start (the save's last town): its position from the object lines."""
-    return ("pilot", ["wp", "--wp-find", str(tab), str(row)], 90)
+    """The waypoint from the Act IV town start (the save's last town), at its screen position there (as H4b; the
+    object lines held no waypoint at the start in the first try)."""
+    return ("pilot", ["wp", "--wp-x", "715", "--wp-y", "58", str(tab), str(row)], 90)
 
 
 def hunt(cls, t=300, extra=()):
@@ -41,7 +42,7 @@ def hunt(cls, t=300, extra=()):
 
 
 def explore(hops, extra=()):
-    return ("pilot", ["explore", "--hops", str(hops)] + NOVA + list(extra), 60 + 4 * hops)
+    return ("pilot", ["explore", "--hops", str(hops), "--persist", "10"] + NOVA + list(extra), 60 + 4 * hops)
 
 
 def sweep(t):
@@ -57,16 +58,19 @@ def chaos():
     """River of Flame waypoint (tab 4 row 3); into the Chaos Sanctuary (level 108) by blind hops towards its Entry
     preset (LvlPrest 857, objop --pdef-any; plan 0038 H6d's route); to each wing (858-861) so the seals' rooms
     populate; each of the five seals (objects 392-396) operated once (OOP line) with a sweep for the seal bosses
-    (Infector of Souls, Lord De Seis, Grand Vizier: records 36-38); then Diablo (243)."""
+    (Infector of Souls, Lord De Seis, Grand Vizier: records 36-38); an explore of the rooms not yet activated; then
+    Diablo (243)."""
     out = [wp(4, 3),
            ("until", (108, ["objop", "--obj-cls", "9999", "--to-pdef", "857", "--pdef-any", "--time", "90"] + NOVA,
                       120, 4), 0)]
     for wing in (858, 859, 860, 861):
-        out.append(("pilot", ["explore", "--to-pdef", str(wing), "--hops", "60"] + NOVA, 240))
+        out.append(("pilot", ["explore", "--to-pdef", str(wing), "--hops", "60", "--persist", "10"] + NOVA, 240))
     for c in (392, 393, 394, 395, 396):
-        out.append(("pilot", ["objop", "--obj-cls", str(c), "--times", "1", "--done", "OOP", "--time", "180"] + NOVA,
+        out.append(("pilot", ["objop", "--obj-cls", str(c), "--times", "1", "--done", "OOX", "--time", "180"] + NOVA,
                     200))
         out.append(sweep(20))
+    # the gate's closed state: rooms of 108 that first activate after the seal bosses died (GQ eax 1, quest 23 +0x13)
+    out.append(explore(80))
     out.append(hunt(243, 360))
     return out
 
@@ -75,8 +79,12 @@ def chaos():
 SESSIONS = {
     # special 35, 68 (Blood Raven's name, mod 12), the stats 7/18/21 MonEquip creation again; Act I wanderer rider
     "raven": ("UniqNova", "enter-nightmare", 4901,
-              [wp(1, 2), ("pilot", ["explore", "--hops", "300", "--to-pdef", "108", "--pdef-any"] + NOVA, 400),
+              [wp(1, 2), ("pilot", ["explore", "--hops", "300", "--to-pdef", "108", "--pdef-any", "--persist", "25"] + NOVA, 400),
                hunt(267, 240), sweep(30)]),
+    # raven again on plan 0048's raven-xn2 map seed (its explore reached the Burial Grounds), with --persist
+    "raven2": ("UniqNova", "enter-nightmare", 4807,
+               [wp(1, 2), ("pilot", ["explore", "--hops", "300", "--to-pdef", "108", "--pdef-any", "--persist", "25"]
+                           + NOVA, 400), hunt(267, 240), sweep(30)]),
     # special 34 (Treehead WoodFist, brute2 24, its mod list); Act I rider
     "tree": ("UniqNova", "enter-nightmare", 4902, [wp(1, 4), hunt(24, 420), sweep(30)]),
     # special 69 (Andariel, 156: the fixed-name branch); Act I rider
@@ -90,6 +98,8 @@ SESSIONS = {
                                                      hunt(242, 300)]),
     # special 9, 10, 25, 31, 38, 50, 56 (the seal bosses), spawn 11 (the gate, GQ), 69 (Diablo, 243)
     "chaos": ("UniqNova", "enter-nightmare", 4907, chaos()),
+    # chaos again with the object lines (the first try had none, so objop found no seal)
+    "chaos2": ("UniqNova", "enter-nightmare", 4907, chaos(), "mon-h4a-obj.gdb"),
     # special 58 (Siege Boss, tail 42): Harrogath to the Bloody Foothills (110)
     "foothills": ("UniqNova", "enter-nightmare", 4908, [wp(5, 1), explore(200, ["--any-level"])]),
     # special 60 (Nihlathak, tail 60): Halls of Pain waypoint, the Temple Down warp (LvlWarp 80) to level 124
@@ -150,7 +160,8 @@ def last_level(log):
 
 
 def run_session(name, slot, tag, saves, run):
-    _, steps, seed, cmds = SESSIONS[name]
+    _, steps, seed, cmds = SESSIONS[name][:4]
+    gdbf = SESSIONS[name][4] if len(SESSIONS[name]) > 4 else "mon-h4a.gdb"
     path, sname = save_path(saves, run, name)
     os.makedirs(LOGS, exist_ok=True)
     stem = "%s-s%d-%d-%s" % (run, slot, seed, name)
@@ -166,7 +177,7 @@ def run_session(name, slot, tag, saves, run):
     sh(PY + [os.path.join(HERE, "saves.py"), "--slot", str(slot), "restore", tag], 60)
     sh(PY + [os.path.join(HERE, "saves.py"), "--slot", str(slot), "aside", tag], 60)
     drv = subprocess.Popen(PY + [os.path.join(HERE, "d2run.py"), "--slot", str(slot), "--seed", str(seed), "--gdb",
-                                 os.path.join(HERE, "gdb", "mon-h4a.gdb"), "--steps",
+                                 os.path.join(HERE, "gdb", gdbf), "--steps",
                                  os.path.join(HERE, "gdb", "%s.steps" % steps), "--after", "2400",
                                  "--install", tag, path, "--log", log],
                            cwd=ROOT, stdout=out, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
