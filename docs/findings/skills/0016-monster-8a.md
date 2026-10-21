@@ -286,14 +286,16 @@ through `0x00645F00` and `0x00623C60` (the query's own return address `0x006239B
   `SkillMissileCreate(ECX game, EDX r; caster, id, lvl, 0, 0, 0, 0, 0)` at `0x005CE23F`. `r` 0 or 31: `srvmissilea`
   (s16) out of `[0, count)` → 0; else Skills `+0x04` bit 1 (`lob`, tested with `g_BitMask32[1]`) →
   `SkillMissileCreateLob(ECX game, EDX m; caster, id, lvl, 0, 0, 0, 0, 0)` at `0x005CE295`, else `SkillMissileCreate`
-  at `0x005CE23F`. A player's weapon class 1 or 7 runs the same stat tests (7 → 31 when both fail); others → −1.
+  at `0x005CE23F`. After the player's inventory query, `[I]`: a weapon class 1 or 7 runs the same stat tests (7 → 31
+  when both fail), others → −1.
   (run:2026-10-21-cat-emu-8a, fn:sub_00645F00_UnitRangedMissile@0x00645F00)
 
 ### 4. Moves and marks: start 43–46, 48, 49, 51, 52, do 89–91, 94, 98
 
 - [C] (ADR-0021) **Start 43** (`0x005CAF80`): `+0xC4 &= ~0xE` (a null unit skips it), `0x00649F70(caster, 1)` at
-  `0x005CAF93`; after, `[I]`, 1. **Start 44** (`0x005CB170`): the caster's position (a static path's `+0x0C`/`+0x10`
-  for types 2, 4, 5, else `0x006488C0`/`0x00648900`, 0 with no path) and `UnitGetRoom` → `UnitTeleport(ECX game, EDX
+  `0x005CAF93`; after, `[I]`, 1. **Start 44** (`0x005CB170`): the caster's position (`0x006488C0`/`0x00648900` of
+  its path; a static path's `+0x0C`/`+0x10` for types 2, 4, 5 is unreached, the cases' casters being players and
+  monsters, `[I]`) and `UnitGetRoom` → `UnitTeleport(ECX game, EDX
   caster; room, x, y, 0, 0)` at `0x005CB1E3`; after, `[I]`: 0 when it fails, else `+0xC4 |= 0xE` and
   `COLL_PatternMark(room, x, y, 1, 0x1000)`, 1. **Start 45** (`0x005CB270`): `+0xC4 &= ~0xE`, then
   `COLL_PatternUnmark(room, x, y, 5, 0x1000)` at `0x005CB2EA`; after, `[I]`, 1. **Start 51** (`0x005CC1D0`) clears and
@@ -303,7 +305,8 @@ through `0x00645F00` and `0x00623C60` (the query's own return address `0x006239B
   `+0x1C` = its y (a static path's dwords for types 2, 4, 5, else its path's `+0x02`/`+0x06`, 0 with no path), and 1.
   (run:2026-10-21-cat-emu-8a, fn:sub_005CB4D0_SkillSt46AndarielSpray@0x005CB4D0)
 - [C] (ADR-0021) **Start 48** (`0x005CBBF0`): `UNIT_GetTargetUnit` first, which with the caster's `+0x2C` 0 reaches
-  `Fatal` from `0x005534A8` (its path revalidation); no target → 0; no path → 0; no used node → 0; else
+  `Fatal` from `0x005534A8` (its path revalidation), so its own no-path refusal (`0x005CBC08`) is unreached (`[I]`);
+  no target → 0; no used node → 0; else
   `0x00648E70(path, 5)` (path `+0x90` = `+0x91` = 5) and `PathSetType(path, 2)` at `0x005CBC2E`. After, `[I]`:
   `PathPlan(path, caster, 0)`; failed → type 1 and plan again; failed again → 0; else the node's `+0x0C` = 1 and 1.
   (run:2026-10-21-cat-emu-8a, 0x005CBC37–0x005CBC74)
@@ -372,7 +375,7 @@ through `0x00645F00` and `0x00623C60` (the query's own return address `0x006239B
 - [C] (ADR-0021) **Do 97** (`0x005CCB10`, Resurrect): a bad id → 0; no target → 0; bit 6 set; `MonIsDeathMode` (a
   monster in mode 0 or 12) false → 0; `0x0063A320` (the target's state words against the DataTables `+0xD4` set) true
   → 0; `UnitGetRoom(target)` none → 0; else `COLL_PatternTestBool(room, Tx, Ty, path+0x48, 0x3C01)` at `0x005CCBD2`
-  (the mask `0x1C09` for a target of type 0, which the death test excludes). After, `[I]`: a free spot → the caster's
+  (the code's mask `0x1C09` for a target of type 0 is unreachable after the death test, `[I]`). After, `[I]`: a free spot → the caster's
   path target, `0x005CC960`, a monster's command mode by `0x005FD7B0`, `srvoverlay`, 1; a blocked one → 0.
   (run:2026-10-21-cat-emu-8a, 0x005CCBB5–0x005CCBC5)
 
