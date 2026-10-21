@@ -2,15 +2,15 @@
 from: reverser
 to: spec-writer
 date: 2026-10-21
-status: open
+status: done
 context:
-  - ../findings/skills/0015-item.md
-  - ../specs/combat/delivery.md
-resolution: ""
+  - ../../findings/skills/0015-item.md
+  - ../../specs/combat/delivery.md
+resolution: "Done on lane/s46d: combat/delivery E5 rewritten from skills/0015 §§ 4–7 (handlers 20/21/30 draws, the callers and ITEMSKILL_Cast [C] to their boundaries; helper 2 given the cast's caster [C] to its first collision test; the handler-to-helper chain, the effect flag only from handler 20 without ItemTgtDo, do 151 starting at the target unit [I]), A3's entry-36 bullet scoped, a PayCost note (zero cost refuses nothing), the ItemTarget-helpers open question struck ([combat/delivery](../../specs/combat/delivery.md))"
 ---
 
-Not blocking; for review after the architect accepts plan 0046 batch `item` ([skills/0015](../findings/skills/0015-item.md)).
-[combat/delivery](../specs/combat/delivery.md) E5 and its *Open questions* carry plan 0045's reading of the item cast;
+Not blocking; for review after the architect accepts plan 0046 batch `item` ([skills/0015](../../findings/skills/0015-item.md)).
+[combat/delivery](../../specs/combat/delivery.md) E5 and its *Open questions* carry plan 0045's reading of the item cast;
 the batch answers the open part and raises some of it:
 
 - E5 "`ItemTarget` 2 draws in its target helper": the helper is given **the cast's caster** (`EDX = ESI` at

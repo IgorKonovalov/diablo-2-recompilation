@@ -14,10 +14,10 @@ against all of them before you file the review request. Categories are those of 
    (`lane/p38s3`, 0038). Split a code-read part out of a `[C]` sentence: five resurrection NPCs in a `[C]` bullet
    whose run met one (`lane/p43s`, [0043](../../../../docs/plans/done/0043-items-economy.md)); the partial repair's
    rounding and Wirt's ilvl floor inside `[C]` notes (`lane/p43t`, 0043). A boundary reached on one path is `[C]` on that
-   path only: do 46's finisher calls, reached only on a bad skill id (`lane/s46c`, [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
+   path only: do 46's finisher calls, reached only on a bad skill id (`lane/s46c`, [0046](../../../../docs/plans/0046-skills-function-catalogue.md)); helper 2's test "at the caster's position" whose cases had casters of types 0, 1 and 3 only (`lane/s46d`, 0046).
 3. **Re-read the finding for each restated condition**: who, when, which branch. Seen: `SetBoss` party
    minions and the staff-mods type condition (`lane/wiki5`, [0039](../../../../docs/plans/done/0039-backlog-sweep-4.md)); warps F1's
-   `Warp` = −1 case (`lane/p38s2`, 0038); the store record's 4505 scoping (`lane/p43t`, 0043).
+   `Warp` = −1 case (`lane/p38s2`, 0038); the store record's 4505 scoping (`lane/p43t`, 0043); handlers 21 and 30's chance ≤ 0 and no-record exits, which decide whether handler 30 steps a seed (`lane/s46d`, [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
 4. **Take the order of steps from the anchored instructions**, not from a summary. Seen: the release
    order (`lane/p38s`, 0038); do 124's bit 6 and list steps dropped around its draw and store (`lane/srng`,
    [0046](../../../../docs/plans/0046-skills-function-catalogue.md)). Restate every step between two anchored calls.

@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, combat/to-hit, combat/damage, combat/reductions, monsters/stats]
 consumed_by: [combat/overview, items/tc, stats/states, items/economy]
-tags: {C: 74, I: 58, L: 4}
+tags: {C: 80, I: 63, L: 3}
 updated: 2026-10-21
 ---
 
@@ -62,6 +62,7 @@ flowchart TD
 | tbl:MonStats.txt:coldeffect | chill strength and whether a monster can be chilled or frozen (§ D) |
 | tbl:MonStats.txt:killable, `boss` | delivery refusal; crushing blow divisor, stun, freeze |
 | tbl:ItemStatCost.txt:itemeventfunc1 | stats 134, 135, 136 register handlers 14, 15, 16 on events 5 and 6 |
+| tbl:Skills.txt:ItemTarget, `ItemTgtDo`, `ItemEffect`, `ItemCheckStart`, `srvmissilea` | an item cast from handlers 20, 21, 30: its aim, its caster, the effect entry, the start test (§ E5) |
 
 ### Runtime state
 
@@ -266,9 +267,12 @@ Entry 40 (one missile at the target point):                           [C] (ADR-0
   immediate `0x118`, row 280 Royal Strike) whatever row runs them; ring 37 for every missile with no null test, ring
   143 only for a non-null missile of class 568 (`royalstrikechainlightning`). [I] (0x005D465E–0x005D4668,
   0x005D4D7D–0x005D4D95, [skills/0003 § 9](../../findings/skills/0003-handlers.md#9-re-seed-sites-rng0002--the-other-initialiser-sites))
-- A3. **Entry 36 is also an item cast.** `ItemEffect` 36 on rows 44 Frost Nova and 48 Nova makes an item cast of those
-  skills run entry 36: a nova of the row's `srvmissilea` (119 `frostnova`, 90 `nova`) centred on the cast's target
-  unit, and nothing without one. [I] (tbl:Skills.txt:ItemEffect, [skills/0014 § 1](../../findings/skills/0014-assassin.md#1-the-table-slots-the-shared-shape-the-stock-rows-and-the-callers))
+- A3. **Entry 36 is also an item effect.** `ItemEffect` 36 on rows 44 Frost Nova and 48 Nova makes an item cast of
+  those skills with the effect flag run entry 36: a nova of the row's `srvmissilea` (119 `frostnova`, 90 `nova`)
+  centred on the cast's target unit, and nothing without one. The flag is 1 only from a skill-on-attack, -kill or -hit
+  stat without `ItemTgtDo` (E5); any other item cast of those rows runs their `srvdofunc`. [I] (tbl:Skills.txt:ItemEffect,
+  [skills/0014 § 1](../../findings/skills/0014-assassin.md#1-the-table-slots-the-shared-shape-the-stock-rows-and-the-callers),
+  [skills/0015 § 6](../../findings/skills/0015-item.md#6-the-stat-event-handlers-20-21-30))
 - A3. **Stock use**: Fists of Fire 143/38/39 and Blades of Ice −/38/39 and Claws of Thunder −/36/37 with `prgstack`
   (an entry number 0 runs nothing), Royal Strike 40/143/41 without (only the current count's entry runs). A Fists of
   Fire finisher at three charges therefore steps the attacker's seed once (143), delivers and draws two or three
@@ -557,19 +561,83 @@ that draw:
   by no stock row. Among them the `kill` handler 28 (`0x005C01D0`, stat 86, heal after kill) adds `stat · 256` to the
   attacker's life, capped at its maximum, with no draw. [I] (fn:sub_005C01D0_StatEv28HealAfterKill@0x005C01D0,
   tbl:ItemStatCost.txt:itemeventfunc1, [skills/0003 § 3](../../findings/skills/0003-handlers.md#3-the-stat-event-handlers))
-- E5. **An item cast of a skill with `ItemTarget` blank or 1 draws nothing of its own**: the cast helpers
-  `0x005FDCA0` (at a unit) and `0x005FDD60` (at a point) and `ITEMSKILL_Cast` hold no draw, so such a cast adds only
-  the handler's chance draw above and the cast skill's own do function and missiles. [I]
-  (fn:ITEMSKILL_Cast@0x005FDA80, fn:sub_005FDCA0_ItemCastAtUnit@0x005FDCA0, fn:sub_005FDD60_ItemCastAtXY@0x005FDD60,
-  tbl:Skills.txt:ItemTarget, [skills/0003 § 2](../../findings/skills/0003-handlers.md#2-item-event-casts))
-- E5. **`ItemTarget` 2 draws in its target helper.** `ITEMSKILL_Cast` calls the helper `0x005FD850` (call at
-  `0x005FDB9F`) before its `SKILLS_SrvDo`. Per try the helper steps the seed at `+0x20` of the unit it is given twice,
-  inline, adding `low mod 40 − 20` to x and to y, and it tries at most 10 times, until `COLL_PatternTest` returns 0:
-  2 to 20 steps, none when `sub_00620BB0_UnitGetRoom` finds no room. When it finds no room or all 10 tries fail it
-  returns 0 and the cast is refused (no `SKILLS_SrvDo`). The one stock `ItemTarget` 2 row is Teleport. Which unit
-  the helper is given is not followed (*Open questions*). [I] (fn:ITEMSKILL_Cast@0x005FDA80, 0x005FDB9F, 0x005FDBA6,
-  0x005FD900–0x005FD98A, fn:sub_00620BB0_UnitGetRoom@0x00620BB0, fn:COLL_PatternTest@0x0064D870, tbl:Skills.txt:ItemTarget,
-  [skills/0001 § 10](../../findings/skills/0001-dispatch.md#10-item-granted-skills))
+- E5. **The item-skill handlers' draws, up to their casts.** Each reads its chance as `UnitGetStat(unit, stat,
+  layer)` of the record's `stat << 16 | layer`, the skill as `layer >> [DataTables+0xC6C]` and the level as `layer &
+  [DataTables+0xC70]`. All three return 0 with no draw for no unit or a chance ≤ 0. Handler 20 also returns 0 with no
+  draw for a packet whose `+0x00` lacks bit 5; else (no packet, or bit 5 set) it steps its unit's seed once inline and
+  goes on when `low mod 100` (unsigned) is below the chance (signed). Handler 21 also returns 0 with no draw with no
+  packet or a packet whose `+0x04` lacks bit 2; else it goes on when `RNG_RangeB(unit+0x20, 100)` is below the chance.
+  Handler 30 steps its unit's seed once inline whatever the packet and goes on when `low mod 100` is below the chance.
+  Each then returns 0 with no cast when the skill has no Skills record (handler 30: the skill outside `[0, Skills
+  count)` as well), else casts as below. [C] (ADR-0021; ends at `ItemCastAtUnit` or
+  `ItemCastAtXY`; fn:sub_005C0470_StatEv20SkillOnEvent@0x005C0470, fn:sub_005C05A0_StatEv21SkillOnGetHit@0x005C05A0,
+  fn:sub_005C0670_StatEv30SkillOnDeathOrLevel@0x005C0670, run:2026-10-21-cat-emu-item `event_item`,
+  [skills/0015 § 6](../../findings/skills/0015-item.md#6-the-stat-event-handlers-20-21-30))
+- E5. **Who casts, at what, with which effect flag.** Handler 20 without `ItemTgtDo` (Skills `+0x07` bit 5) casts as
+  its own unit: `ItemCastAtUnit(ECX unit, EDX skill; level, other, 1)`, or with no other unit `ItemCastAtXY(ECX unit,
+  EDX skill; level, the unit's path point, 1)`. With `ItemTgtDo` the other unit is both the caster and the target,
+  `ItemCastAtUnit(ECX other, EDX skill; level, other, 0)`, and with no other unit the handler returns 1 with no cast.
+  Handlers 21 and 30 cast as their own unit at the other unit or at the point, effect 0. `ItemCastAtUnit` (`ECX` the
+  caster, `EDX` the skill, the level the first stack word) refuses no target, a caster with no game (`+0x80`) and a
+  caster in state 54, else calls `ITEMSKILL_Cast(game, caster; skill, level, target, 0, 0, &type, &guid, &ox, &oy,
+  effect)`; `ItemCastAtXY` makes the game and state tests and passes the aim 0 and the point. [C] (ADR-0021; ends at the cast's
+  boundaries below; 0x005C0529, fn:sub_005FDCA0_ItemCastAtUnit@0x005FDCA0, fn:sub_005FDD60_ItemCastAtXY@0x005FDD60,
+  tbl:Skills.txt:ItemTgtDo, run:2026-10-21-cat-emu-item `event_item`, `cast_item`,
+  [skills/0015 §§ 5, 6](../../findings/skills/0015-item.md#5-itemskill_cast-its-itemtarget-helpers-and-its-callers);
+  the argument order as corrected in [skills/0003 § 2](../../findings/skills/0003-handlers.md#2-item-event-casts))
+- E5. **`ITEMSKILL_Cast`** refuses id 0 and a row whose `ItemEffect` is 0 with no write; aims the caster's path at
+  the given unit or point; then by the **low byte** of `ItemTarget`: 1 aims at the caster, 2–4 call the target
+  helpers below, which may refuse, and any other value skips the switch. It ends at `SKILLS_SrvStart(id, lvl, 1)` with
+  `ItemCheckStart` (Skills `+0x08` bit 1), else at `SKILLS_SrvDo(id, lvl, 0, 1, effect)`, `ECX` the game and `EDX` the
+  caster. For `ItemTarget` blank, 1, 3 or 4 no seed is stepped before these boundaries (helper 3 up to its corpse pick
+  `0x0056E390`; helper 4 whole). When helper 2 refuses for want of a room, the cast restores the saved target unit, or
+  the saved point, and bit 6 of the caster's `+0xC4`, and returns 0. [C] (ADR-0021; ends at `SKILLS_SrvStart` @0x005FDC1A or `SKILLS_SrvDo`
+  @0x005FDC34; fn:ITEMSKILL_Cast@0x005FDA80, fn:sub_005FD9C0_ItemTargetCorpse@0x005FD9C0,
+  fn:sub_005FDA10_ItemTargetStoredUnit@0x005FDA10, tbl:Skills.txt:ItemTarget, tbl:Skills.txt:ItemCheckStart,
+  run:2026-10-21-cat-emu-item `cast_item`, [skills/0015 § 5](../../findings/skills/0015-item.md#5-itemskill_cast-its-itemtarget-helpers-and-its-callers))
+- E5. **So an item cast with `ItemTarget` blank, 1, 3 or 4 draws nothing of its own**: it adds only the handler's
+  chance draw above and the cast skill's own start, do function and missiles. Helper 3's corpse pick draws nothing
+  either: the static closures of helpers 3 and 4 and of `0x0056E390` hold no LCG step and no RNG call (their indirect
+  calls not followed). [I] (fn:sub_0056E390_CorpsePickNear@0x0056E390, `cg.txt` of run:2026-10-21-cat-emu-item,
+  [skills/0015 § 5](../../findings/skills/0015-item.md#5-itemskill_cast-its-itemtarget-helpers-and-its-callers))
+- E5. **`ItemTarget` 2 draws on the cast's caster.** `ITEMSKILL_Cast` gives the helper `0x005FD850` **its own
+  caster** (`EDX = ESI` at `0x005FDB9B`, the call at `0x005FDB9F`). The helper takes the caster's room; with none it
+  returns 0 with no draw and the cast is refused. Else, on its first try, it steps **the caster's seed** twice inline
+  (the second step from the first's full state) and tests `COLL_PatternTest(room, x + low₁ mod 40 − 20, y + low₂ mod 40 −
+  20, …)` at the caster's position, the remainders unsigned, for a caster of type 0, 1 or 3 (the run's casters, whose
+  position is their dynamic path's). [C] (ADR-0021; ends at `COLL_PatternTest` @0x005FD979,
+  the first try; fn:sub_005FD850_ItemTargetRandomPoint@0x005FD850, 0x005FDB9B, run:2026-10-21-cat-emu-item `cast_item`,
+  [skills/0015 § 5](../../findings/skills/0015-item.md#5-itemskill_cast-its-itemtarget-helpers-and-its-callers))
+- E5. After the first test: a result of 0 sets the path's target point to the tried point and the helper returns 1;
+  any other result makes another try, at most 10, so 2 to 20 steps; all 10 failing return 0 and the cast is refused
+  (no `SKILLS_SrvDo`). An item Teleport, the one stock `ItemTarget` 2 row, therefore moves its caster to a free point
+  offset by −20 to +19 on each axis from its position. A caster of type 2, 4 or 5 takes that position from its static
+  path's dwords. [I] (0x005FD979–0x005FD9B4, 0x005FD89E–0x005FD8A4, fn:COLL_PatternTest@0x0064D870,
+  [skills/0015 § 5](../../findings/skills/0015-item.md#5-itemskill_cast-its-itemtarget-helpers-and-its-callers))
+- E5. **Whose seed an item Teleport steps.** Joining the handlers' casters to the helper's: the handler's own unit for
+  handlers 21 and 30, and for handler 20 without `ItemTgtDo`; **the other unit** for handler 20 with `ItemTgtDo`,
+  which Teleport has. So on a skill-on-attack, -kill or -hit stat the struck unit is moved and its seed stepped, and
+  on skill-on-get-hit, -death or -level-up the stat's owner. No case runs from a handler through to the helper: the
+  join composes the handler family's casts with the cast family's runs, so it stays inferred. [I] (0x005C0529–0x005C0536,
+  0x005FDB9B, [skills/0015 § 5](../../findings/skills/0015-item.md#5-itemskill_cast-its-itemtarget-helpers-and-its-callers),
+  plan 0046 log, `lane/p46m12` review, ruling 1)
+- E5. **The item effect flag is 1 only from handler 20 without `ItemTgtDo`.** Handlers 21 and 30 and handler 20 with
+  `ItemTgtDo` pass 0; the two item-use entries pass 0 (`0x005BF1A1`, `0x005BF21C`); charges do not go through
+  `ITEMSKILL_Cast`; `SKILLS_SrvDo`'s seven other direct calls pass 0 as its fifth word, and no dword of the image holds
+  the address of `SKILLS_SrvDo`, `ITEMSKILL_Cast` or its two callers. So `ItemEffect` 36 (Frost Nova, Nova, A3) and 151
+  (Chain Lightning) replace the do function only for skill-on-attack, -kill or -hit stats; any other item cast of
+  those rows runs their `srvdofunc`. [I] (0x005C054E, 0x005C0626, 0x005C0718, 0x0056FD29–0x0056FD34,
+  fn:SKILLS_SrvDo@0x0056F7F0, tbl:Skills.txt:ItemEffect, [skills/0015 § 6](../../findings/skills/0015-item.md#6-the-stat-event-handlers-20-21-30))
+- E5. **Do 151, the item Chain Lightning**, takes `srvmissilea` (`+0x48`, signed) and returns 0 with nothing written
+  outside `[0, Missiles count)`; else it sets bit 6 of the caster's `+0xC4`, evaluates `calc1`, and calls
+  `SkillMissileCreate(ECX game, EDX srvmissilea; caster, id, lvl, dx, dy, 0, 0, 0)` with `(dx, dy)` the target's
+  position minus the caster's, `(0, 0)` without a target. It steps no seed before that call. [C] (ADR-0021; ends at
+  `SkillMissileCreate` @0x005CA330; fn:sub_005CA260_SkillDo151ItemChainLightning@0x005CA260,
+  run:2026-10-21-cat-emu-item `use_item`, [skills/0015 § 4](../../findings/skills/0015-item.md#4-do-113-and-do-151))
+- E5. After that call: no missile returns 0; else the missile's `MissileData+0x28` word gets the `calc1` value and do
+  151 returns 1. With the reading of `SkillMissileCreate` (start at the caster's position plus `(dx, dy)`), the item
+  Chain Lightning starts at the target unit. [I] (0x005CA330–0x005CA349,
+  [skills/0015 § 4](../../findings/skills/0015-item.md#4-do-113-and-do-151))
 - E5. **Order on a kill**: the defender's `killed` handlers (30) run before the attacker's `kill` handlers (28, 31,
   and 20 for stat 196), all inside `COMBAT_ApplyDamage` (B5). [I] (0x0057C8DD–0x0057C970)
 
@@ -647,6 +715,14 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
 - **A handler draws on its own unit's seed**: shiver armour (3) and skill on get-hit (21) on the defender's, skill on
   death (30) on the dying unit's, knockback, howl, stupidity, skill on attack or hit, and reanimate on the attacker's (E5). [I]
   (data:g_StatEventFuncs@0x007325B0, 0x005BF9CF, 0x005C0603)
+- **A zero-cost skill is not refused for its cost.** `SKILLS_PayCost` returns 0 for a row with `mana` and `lvlmana`
+  both 0 (the scrolls and books, Unsummon), and none of its three calls (`0x0056F7AA` in `SKILLS_SrvStart`,
+  `0x0056FA7A` in `SKILLS_SrvDo`, `0x005D6B48`) tests the return. A reimplementation that refuses on 0 refuses those
+  skills. [C] for the 0 (ADR-0021, run:2026-10-21-cat-emu-item `cost_item`, fn:SKILLS_PayCost@0x0056BFE0); [I] for
+  the untested return (0x0056F7AF, 0x0056FA7F, 0x005D6B4D, [skills/0015 § 7](../../findings/skills/0015-item.md#7-charges-skills_paycost))
+- **The item effect is not every item cast's.** An item Nova, Frost Nova or Chain Lightning runs its `ItemEffect` (36,
+  151) only from a skill-on-attack, -kill or -hit stat without `ItemTgtDo`; from get-hit, death, level-up or the
+  item-use entries it runs the row's `srvdofunc` (E5). [I] (0x005C054E, 0x0056FD29–0x0056FD34)
 - **Burning never applies from a plain attack**: the builder leaves `burn = 2` with `burnLen = 0`. [I]
   (0x0057BC2F–0x0057BC8A)
 
@@ -670,8 +746,13 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
   the rings' step count), with its review in the [plan 0046 log](../../plans/0046-skills-function-catalogue.md)
   (`lane/p46m11`); [skills/experiments § run:2026-10-21-cat-emu-ass](../../findings/skills/experiments.md#run2026-10-21-cat-emu-ass)
   (8 700 cases, 0 mismatches).
+- [skills/0015](../../findings/skills/0015-item.md) §§ 4 (do 151), 5 (`ITEMSKILL_Cast`, its `ItemTarget` helpers and
+  its two callers), 6 (handlers 20, 21, 30 and the item effect flag), 7 (`SKILLS_PayCost`), with its review in the
+  [plan 0046 log](../../plans/0046-skills-function-catalogue.md) (`lane/p46m12`: fixes 1, 2 and 6, ruling 1);
+  [skills/experiments § run:2026-10-21-cat-emu-item](../../findings/skills/experiments.md#run2026-10-21-cat-emu-item)
+  (12 000 cases, 0 mismatches).
 - [skills/0003](../../findings/skills/0003-handlers.md) §§ 1 (the `srvprgfunc` entries, the finisher's tail and stock
-  use, the dated 2026-10-21 note), 2 (item casts), 3 (the stat-event handlers, their registrations and draws), 13 (draws per event), as fixed by
+  use, the dated 2026-10-21 note), 2 (item casts, the dated 2026-10-21 notes), 3 (the stat-event handlers, their registrations and draws), 13 (draws per event), as fixed by
   the architect's P1.3 review (plan 0045 log).
 - Tables: [DifficultyLevels](../../tables/DifficultyLevels.md), [MonStats](../../tables/MonStats.md),
   [ItemStatCost](../../tables/ItemStatCost.md), [States](../../tables/States.md).
@@ -694,14 +775,17 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
 - ~~The progressive server functions the finisher calls (`srvprgfunc` entries 36–41, 143) and `0x00571AA0`, which
   receives the peeked value, are not read.~~ Read from the code: § A3; `0x00571AA0` is a client message
   ([skills/0003 § 1](../../findings/skills/0003-handlers.md#1-progressive-entries-srvprgfunc-and-the-finishers-tail)).
-- [L] A run that reaches the finisher itself, its entries past their first creation (A3) and the handlers of E5:
-  run:2026-10-16-combat met no charged state and took these handlers as boundary oracles (plan 0045 Phase 2), and
-  run:2026-10-21-cat-emu-ass emulated the entries and the finishing moves only up to their boundaries (A2, A3).
+- [L] A run that reaches the finisher itself, its entries past their first creation (A3) and the handlers of E5 past
+  their casts: run:2026-10-16-combat met no charged state and took these handlers as boundary oracles (plan 0045
+  Phase 2); run:2026-10-21-cat-emu-ass emulated the entries and the finishing moves only up to their boundaries (A2,
+  A3), and run:2026-10-21-cat-emu-item handlers 20, 21 and 30 and the item cast only up to theirs (E5). A family
+  running handler 20 through `ItemCastAtUnit` to `COLL_PatternTest`, or a run with an item Teleport, would settle whose
+  seed an item Teleport steps (plan 0046 log, `lane/p46m12` review, ruling 1).
 - [L] Whether stock data gives a ring a step count of 0 (an endless loop) or a negative one (A3): Claws of Thunder's
   `prgcalc3` and Royal Strike's `prgcalc2` at their charge counts, or their `aurarangecalc` when those are 0; a harness
   or calc-table check ([skills/0014 *Open questions*](../../findings/skills/0014-assassin.md#open-questions)).
-- [L] The `ItemTarget` helpers of an item cast (E5): which unit helper 2 (`0x005FD850`) is given, the caster or the
-  target, and so whose seed its 2 to 20 steps advance; and whether helpers 3 (`0x005FD9C0`, called at `0x005FDBE1`, a
-  corpse pick through `0x0056E390`) and 4 (`0x005FDA10`, called at `0x005FDBF3`) draw, which is not read. Plan 0046
-  Phase 1's item, shrine and object batch reads them ([skills/0001 § 10](../../findings/skills/0001-dispatch.md#10-item-granted-skills),
-  plan 0045 log, Phase 1b review).
+- ~~The `ItemTarget` helpers of an item cast (E5): which unit helper 2 (`0x005FD850`) is given, the caster or the
+  target, and so whose seed its 2 to 20 steps advance; and whether helpers 3 (`0x005FD9C0`) and 4 (`0x005FDA10`)
+  draw.~~ Emulated by run:2026-10-21-cat-emu-item (plan 0046 batch `item`): helper 2 is given the cast's own caster,
+  whose seed it steps, and helpers 3 and 4 step no seed; whose unit that caster is, for each handler, is a composition
+  (§ E5; [skills/0015 § 5](../../findings/skills/0015-item.md#5-itemskill_cast-its-itemtarget-helpers-and-its-callers)).

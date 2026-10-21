@@ -1057,7 +1057,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   § 10 and skills/0003 §§ 2, 3. Review request
   [to the architect](../backlog/archive/2026-10-21-reverser-architect-lane-p46m12-review-plan-0046-batch-item.md); column
   readers [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-item-skills-pettype-books-shrines-column.md);
-  [to the spec-writer](../backlog/2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md)
+  [to the spec-writer](../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md)
   on combat/delivery E5.
 - **2026-10-21 — `lane/p46m12` review (architect): accept with fixes.** Reviewed on the lane (head `bcdb4ca`), main not
   merged (it moved to `483728e` with the items/tc, items/properties and combat/delivery A2/A3 merges; none touches a
@@ -1118,7 +1118,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   ([archive](../backlog/archive/2026-10-21-reverser-architect-lane-p46m12-review-plan-0046-batch-item.md)); the
   [archivist entry](../backlog/2026-10-21-reverser-archivist-plan-0046-item-skills-pettype-books-shrines-column.md)
   (Skills, PetType, Books, Shrines and Misc column readers, with fix 3's wording) and the
-  [spec-writer entry](../backlog/2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md)
+  [spec-writer entry](../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md)
   (combat/delivery E5, with fixes 1, 2 and 6 and ruling 1's `[I]` for the composed chain) are **released**; lane
   ledger row added (the review's row is the orchestrator's at the merge). **Phase 1 status:** the seven class batches,
   9a–9d and batch 10 are accepted, twelve of fifteen batches and 234 of the 310 entries (the other 76: 8a–8c's 70 and
@@ -1126,3 +1126,44 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   rows 156–189: 30 entries, start 42–53, do 83–98, 110, 111), then 8b and 8c, on the class batches' conventions, unless
   the monster-AI plan pulls one forward or takes a function as a boundary oracle (ADR-0020). Phase 2 still waits for
   0045·P3's review.
+- **2026-10-21 — combat/delivery E5 from batch `item` landed for review (spec-writer, `lane/s46d`).** The released
+  [spec-writer entry](../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md)
+  done: [combat/delivery](../specs/combat/delivery.md) E5 rewritten from [skills/0015](../findings/skills/0015-item.md)
+  §§ 4–7 with the `lane/p46m12` review's fixes 1, 2, 6 and ruling 1 (handlers 20/21/30, the callers, `ITEMSKILL_Cast`,
+  helper 2's first try and do 151 `[C]` to their boundaries; the composed handler → helper chain, the effect flag only
+  from handler 20 without `ItemTgtDo`, do 151 starting at the target unit `[I]`), A3's entry-36 bullet scoped, a
+  `SKILLS_PayCost` reimplementation note, the helpers open question struck. Tags `{C: 74, I: 58, L: 4}` →
+  `{C: 80, I: 63, L: 3}`; open questions with `[L]` 3. Review request
+  [to the architect](../backlog/archive/2026-10-21-spec-writer-architect-lane-s46d-review-combat-delivery-e5-item-cast.md).
+- **2026-10-21 — `lane/s46d` review (architect): accept with fixes.** Reviewed on the lane (head `0a87a81`), main not
+  merged (it moved to `0e760e1` with the p48r2 merge, which touches no combat spec or skills finding). Every new or
+  changed E5, A3, reimplementation-note, Inputs, Evidence and open-question claim read against
+  [skills/0015](../findings/skills/0015-item.md) §§ 4–7, run:2026-10-21-cat-emu-item (`check.txt`: `event_item` 3 000
+  cases, outcomes `nounit=92 nochance=1328 norec=158 nobit2=332 nobit5=208 tgtdo=49 tgtdo_none=13`; `cast_item`
+  `nogame=71 notarget=36 state54=184 PatternTest=163`), skills/0003 § 2, ADR-0021 and the `lane/p46m12` review's fixes
+  and rulings; objdump read of handler 21 (`0x005C05A0`–`0x005C0668`), handler 30's head (`0x005C0670`–`0x005C06F9`)
+  and the heads of `ItemCastAtUnit` (`0x005FDCA0`–`0x005FDD04`) and `ItemCastAtXY` (`0x005FDD60`–`0x005FDD89`). Tags
+  recounted: `{C: 80, I: 63, L: 3}`, unchanged by the fixes; the five combat front matters sum to C 236 / I 190 / L 23.
+  **Rulings.** (1) **The handler → helper 2 chain stays `[I]`** as the lane wrote it (the `lane/p46m12` ruling 1); the
+  rewritten `[L]` names its two raise paths. (2) **The struck `[L]` is answered**: helper 2 is given the cast's own
+  caster and steps its seed (`[C]`, first try), helpers 3 and 4 step no seed (`[C]` before their boundaries); what
+  remains, whose unit that caster is per handler, is the composition carried by the run bullet. (3) **The restore
+  `[C]` is right as scoped** to helper 2's no-room refusal (the only refusal after the aim the cases reached; the
+  finding's Answer keeps the restore on other paths `[I]`). (4) **The "draws nothing of its own" bullet's `[I]` is not
+  an under-claim**: its draw-free part before the boundaries is already the `[C]` bullet above it, and the rest runs
+  through the start and do functions and closures whose indirect calls were not followed. (5) skills/0015 § 5's `[I]`
+  bullet still says "within ±20"; the `[C]` formula beside it is exact, so no entry: the reverser corrects it at its
+  next touch of § 5. **Fixes, made in the spec:** (1) helper 2's first test "at the caster's position" covered caster
+  types 2, 4 and 5, which no case had (static-path dwords, the finding's `[I]`): the `[C]` sentence scoped to types 0,
+  1 and 3, the static-path reading moved to the `[I]` bullet after it with `0x005FD89E–0x005FD8A4` (overclaim);
+  (2) `ItemCastAtUnit` refused "a unit with no game" where the game is the caster's (`0x005FDCC1`, `ECX` = the
+  caster), and `ItemCastAtXY` "makes the same tests", where it has no target to test: now the game and state tests
+  (misread); (3) "a free point within ±20" for offsets `low mod 40 − 20`, −20 to +19 on each axis (misread);
+  (4) handlers 21 and 30 lost the no-unit and chance ≤ 0 exits with no draw (`0x005C05C8`, `0x005C0698`), so handler
+  30 read as stepping its seed for any chance, and all three lost the no-record exit (handler 30's skill range test
+  too): stated once for the three (omission). Counted: 4 (overclaim 1, misread 2, omission 1). **Research-map** combat
+  row rewritten: C 236 / I 190 / L 23, the batch `item` clause, skills/0015 among the findings, plan 0046's `item`
+  carry. Review request closed
+  ([archive](../backlog/archive/2026-10-21-spec-writer-architect-lane-s46d-review-combat-delivery-e5-item-cast.md));
+  lane ledger row added. Promoted: fix 1 as a Seen line on spec-writer rule 2 (a boundary reached on one path) and
+  fix 4 on rule 3 (re-read each restated condition); both rules had earlier Seen lines.
