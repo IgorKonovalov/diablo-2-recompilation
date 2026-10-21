@@ -1035,3 +1035,94 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   rule 2 gains this Seen line (a `[C]` boundary reached on one path stated for all). Review request closed
   ([archive](../backlog/archive/2026-10-21-spec-writer-architect-lane-s46c-review-combat-delivery-finisher-callers.md));
   lane ledger row added (the review's row is the orchestrator's at the merge). Gate fast tier green.
+- **2026-10-21 — Phase 1 batch 10 `item` landed for review (reverser, `lane/p46m12`, static, no harness).** Unsummon's
+  start 3 and do 4, do 113 (rows 217–220) and do 151 (row 53's `ItemEffect`), and the callers: `ITEMSKILL_Cast` with
+  its `ItemTarget` helpers 2–4 and its two callers, the stat-event handlers 20, 21, 30, `SKILLS_PayCost`'s charge path,
+  the shrine functions 19, 21, 22 and the object and quest `MissileCreateAt` sites
+  ([skills/0015](../findings/skills/0015-item.md)). All four entries and the ten callers emulated (the three helpers inside the cast)
+  (run:2026-10-21-cat-emu-item, `tools/skills_catalogue_emu.py --batch item`, `check.txt` `22402718…`,
+  `manifest.sha256` `3e974e32…`): five families, 12 000 cases, 0 mismatches, 31 boundary/call-site triples (site
+  control 4 936 of 4 936), three seeds compared in every case; five to nine negative controls per family, the thin
+  ones equal to their deciding classes on the `CLASS` lines. The quest sites and `0x0058C8D0` are read and pinned, not
+  emulated (inside quest handlers). The same tool reproduces 9a–9d and the seven class batches byte for byte
+  (`repro.txt`). **Carried items:** `ITEMSKILL_Cast` gives the `ItemTarget` 2 helper **its own caster**
+  (`0x005FDB9B`), the handler's unit or, for handler 20 with `ItemTgtDo` (Teleport), the event's other unit; helpers 3
+  and 4 do not draw (run and static closures); `sub_00575900_PetLimitRefresh`, run by `STATE_DefaultRemoveCB` and the
+  skill shrine's remove callback, recomputes the pet limits and removes pets above a lowered `petmax` (`[I]`);
+  helpers' symbols added. Draws before the boundaries: handlers 20/30 one inline step and 21 `RNG_RangeB(100)` on the
+  handler's unit, helper 2 two steps on the caster's seed, shrines 21/22 `RNG_RangeB(Arg1 − Arg0)` on the shrine's.
+  Surprises: the item effect flag is 1 only from handler 20 without `ItemTgtDo`; `ItemTarget`'s low byte only; the
+  exploding and poison shrines drop 5–9 potions; Unsummon's `PetRemove` flag is a `push 1` left across
+  `UnitSkillGet18`. Tags: 29 `[C]`, 22 `[I]`, 4 `[L]` bullets; 26 symbols added (`I`). Dated notes in skills/0001
+  § 10 and skills/0003 §§ 2, 3. Review request
+  [to the architect](../backlog/archive/2026-10-21-reverser-architect-lane-p46m12-review-plan-0046-batch-item.md); column
+  readers [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-item-skills-pettype-books-shrines-column.md);
+  [to the spec-writer](../backlog/2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md)
+  on combat/delivery E5.
+- **2026-10-21 — `lane/p46m12` review (architect): accept with fixes.** Reviewed on the lane (head `bcdb4ca`), main not
+  merged (it moved to `483728e` with the items/tc, items/properties and combat/delivery A2/A3 merges; none touches a
+  skills finding, and none of the 26 addresses or names is on main's side; main's own appends to this log will meet
+  this entry at the merge, keep both). `sha256sum -c manifest.sha256` (`3e974e32…`, 118 lines) passes. From the lane's
+  tool (`904fe25e…`), under a 4 GB scope, `cases --batch item`, `check --batch item` and `static --batch item`
+  reproduce the 15 case files, `cases.txt`, `check.txt` (`22402718…`) and `static.txt` (`55299029…`) byte for byte;
+  `repro.sh` rerun into the review's scratch gives the kept `repro.txt` (`41e54f5b…`) byte for byte (9a–9d and the
+  seven classes). Recounted from `check.txt`: 12 000 cases, 0 bad, 0 undeclared, 0 stopped; site controls 934 + 1 317
+  + 386 + 1 800 + 499 = 4 936 over 4 + 12 + 7 + 5 + 3 = 31 `site` lines; the ten `CLASS` lines equal their controls.
+  Read against objdump: `ItemCastAtUnit` whole (`0x005FDCA0`–`0x005FDD1C`), the cast's helper 2 call (`0x005FDB9B`–
+  `0x005FDBA4`), handler 20 (`0x005C0470`–`0x005C058B`), do 4 whole, `STATE_DefaultRemoveCB`'s tail (`0x0056E940`–
+  `0x0056E965`) and `0x00583BD0`'s head, `PetLimitRefresh`'s loops (`0x00575990`–`0x00575A7B`), shrine 21 up to its
+  missiles (`0x005830E0`–`0x00583299`), `SKILLS_PayCost`'s mana path and its three call sites, and the eight
+  `call 0x56f7f0` sites of `SKILLS_SrvDo` with a byte search of the image for the four cast-path addresses (none).
+  Tags 29 `[C]`, 22 `[I]`, 4 `[L]` bullets as filed (the fixes add none). **Rulings.** (1) **The handler → helper 2
+  chain stays `[I]`.** Each `[C]` ends at its boundary (ADR-0021), and the handler family observes `ItemCastAt*` while
+  the cast family starts from its own inputs, so the join is a composition of two maps over different case sets, which
+  neither ADR-0015 nor ADR-0021 covers. The cast family already runs caller → cast → helper 2 in one case (the 45
+  `PatternTest` cases from `0x005FDCA0`/`0x005FDD60`), so the open seam is handler → caller only. Path to `[C]`, not
+  required: a family running handler 20 with `ItemCastAtUnit` emulated through to `COLL_PatternTest` (the `dru`
+  ruling 1 lets a callee observed in one batch run emulated in another), or a Phase 2 sample with an item Teleport.
+  (2) **`PetLimitRefresh` `[I]` by static reading is admitted.** It is no catalogue entry; the carried item asked what
+  removes the pets, and § 10 answers it with addresses, read here at its two loops and at both remove callbacks.
+  The `PetLimit` it calls is not emulated in any batch, so an emulated `PetLimitRefresh` would end at that boundary
+  and say nothing about removal; the harness (a skill shrine wearing off with extra skeletons) is the raise path. The
+  extra-skeletons *Leads used* verdict "held" stands as a verdict; it raises nothing. (3) **"`ItemEffect` 36/151 only
+  on attack, kill or hit" holds, `[I]`, with the review's addition.** It joins the handlers' `[C]` effect words with
+  static call-site reads; the lane named `ITEMSKILL_Cast`'s callers but not `SKILLS_SrvDo`'s other seven calls, which
+  all pass 0 (fix 1). (4) **skills/0003 § 2's correction is right**: `ItemCastAtUnit` pushes its entry `EDX`
+  (`[ebp−0x8]`) as the cast's first stack word (the id) and `[ebp+0x8]` as the second (the level), `ret 0xC`; the
+  dated note sat under the next bullet and is moved to the one it corrects (fix 4). (5) **5–9, not 5–10**: `n = Arg0 +
+  low mod (Arg1 − Arg0)` is `[C]` (the count compared at `[ebp−0x98]`; `count_inc` fails 667), so 5 to 9 for the stock
+  5 and 10; the 5–10 is the Shrines `Effect` editor text. `n` counts potion tries, though: a try with no free spot makes
+  none and still counts (fix 3). (6) **The quest and object `MissileCreateAt` sites are admitted as named with the
+  reason** (the Done-when's "the rest are named with the reason"): they are no skill functions, each passes skill 0
+  and level 1 with its argument words pinned in `static.txt`, and their callers are quest handlers whose reads are
+  quests/0001's. Emulating them, `0x0058C8D0` included (a small whole function whose read set looks declarable), is
+  out of this plan. (7) **Reverser review-fixes rule 14 does not reach the catalogue's symbol rows.** The rule asks a
+  raise when the game's own logged return (a runtime log or a reproduction on game data) agrees with a model or a
+  table row. An ADR-0015/0021 emulation over a declared scratch image confirms the code's map, not the role a name
+  states (ADR-0015 (3): what the offsets mean keeps its own tag), so the 26 rows stay `I`, as the 343 catalogue rows
+  before them; rule 14 gains this scope sentence. **Fixes, made in the documents:** (1) § 6's effect-flag bullet and
+  the Answer: `SKILLS_SrvDo`'s seven other calls pass 0 as the fifth word (`0x0056FD34` with `EAX` 0 after its
+  `jne`), and no dword of the image holds the address of `SKILLS_SrvDo`, `ITEMSKILL_Cast` or its two callers
+  (omission); (2) § 7: `SKILLS_PayCost`'s 0 for a row with `mana` and `lvlmana` both 0 refuses nothing, since none of
+  its three calls (`0x0056F7AA` in `SKILLS_SrvStart`, `0x0056FA7A` in `SKILLS_SrvDo`, `0x005D6B48`) tests the return
+  (omission); (3) § 8's after-bullet: `n` potion tries, a try with no free spot (`0x005831D0` → `0x00583270`) making
+  none and still counting, so `n` is the most potions (misread; carried to the archivist entry); (4) skills/0003 § 2:
+  the `EDX`-the-skill note moved onto the first bullet, which still said `EDX` the level, with "the three call sites
+  lie in the item-use entries" for "callers are … `ItemUse`" (stale cross-reference; reverser review-fixes rule 12
+  gains this Seen line); (5) § 2's weak-controls bullet credited `mark_caster` (74) and `tgtdo_unit` (49) to `CLASS`
+  lines, which hold neither: they are whole-path classes, the `use_item` `outcomes` line's `marked=74` and the `site`
+  line of `0x005C053B` (wrong anchor); (6) the spec-writer entry stated do 151's start at the target unit with no tag,
+  where § 4 has it `[I]` after the boundary (overclaim). Counted: 6 (overclaim 1, misread 1, omission 2, wrong anchor
+  1, stale cross-reference 1). Promoted: fixes 1 and 2 are both a claim about callers with a caller path unnamed,
+  reverser review-fixes rule 9 gains them as Seen lines. Review request closed
+  ([archive](../backlog/archive/2026-10-21-reverser-architect-lane-p46m12-review-plan-0046-batch-item.md)); the
+  [archivist entry](../backlog/2026-10-21-reverser-archivist-plan-0046-item-skills-pettype-books-shrines-column.md)
+  (Skills, PetType, Books, Shrines and Misc column readers, with fix 3's wording) and the
+  [spec-writer entry](../backlog/2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md)
+  (combat/delivery E5, with fixes 1, 2 and 6 and ruling 1's `[I]` for the composed chain) are **released**; lane
+  ledger row added (the review's row is the orchestrator's at the merge). **Phase 1 status:** the seven class batches,
+  9a–9d and batch 10 are accepted, twelve of fifteen batches and 234 of the 310 entries (the other 76: 8a–8c's 70 and
+  the six `general` tier-A entries plan 0045 read). Phase 1 is **not** complete. **Next for 0046:** batch 8a (monster
+  rows 156–189: 30 entries, start 42–53, do 83–98, 110, 111), then 8b and 8c, on the class batches' conventions, unless
+  the monster-AI plan pulls one forward or takes a function as a boundary oracle (ADR-0020). Phase 2 still waits for
+  0045·P3's review.

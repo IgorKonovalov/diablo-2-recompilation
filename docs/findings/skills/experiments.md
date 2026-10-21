@@ -744,3 +744,79 @@ Plan 0045 Phase 2's harness runs: none yet. Plan 0046's emulated runs (ADR-0015)
   physical and elemental rolls, the finisher, the rings' later creations among it); when the game runs these functions
   or with which seed. (fn:sub_005D4E70_SkillPrgDo37Ring@0x005D4E70, fn:sub_005D3F90_SkillPrgDo39Scatter@0x005D3F90,
   fn:sub_005D5080_SkillPrgDo41Scatter@0x005D5080)
+
+## run:2026-10-21-cat-emu-item
+
+- **Question:** (plan 0046 Phase 1, batch 10 `item`) Do Unsummon's start 3 and do 4, do 113, do 151, `ITEMSKILL_Cast`
+  with its `ItemTarget` helpers and its two callers `ItemCastAtUnit` / `ItemCastAtXY`, the stat-event handlers 20, 21
+  and 30, the shrine functions 19, 21 and 22 and `SKILLS_PayCost` map their inputs (the Skills, PetType, Books, Shrines
+  and item records, the item-type equivalence words, the caster, its path, used node, pet lists, inventory and items,
+  stat lists and state words, the target, the stored unit, the event packet, the shrine and its context, and the
+  seeds) to the result they return, or to the arguments, pointed-to blocks, path, node, frame and out words and seed
+  states at the call they end in, exactly as [skills/0015](0015-item.md) §§ 3–8 say, and which seed does each draw
+  before its boundary step?
+- **Setup:** as run:2026-10-21-cat-emu-ass: Ghidra 12.1.2 p-code emulator on the pinned `game.exe` (lane copy
+  `GHIDRA_PROJ_DIR=workspace/ghidra-p46m12`, heap 3 GB, one instance at a time, each under a 4 GB scope),
+  `re/ghidra_scripts/EmuBoundary.java` unchanged. No wine, nothing runs natively, no slot. Models, case writers and
+  checks: the `item` families of `tools/skills_catalogue_emu.py` (`904fe25e…`; the kept outputs were emulated from case
+  files this revision regenerates byte for byte, written by `fc207804…`, which differs only in the `CLASS` lines of
+  `check`), with `ass`'s conventions (the call site of every boundary asserted with a site control; the caster's, the
+  target's and the shrine's seeds written and compared in every case; a boundary's pointer argument compared by
+  content: the `MissileCreate` blocks and shrine 19's search block; the node, path, out, argument-slot and frame words
+  dumped and compared; register arguments compared only where the callee reads them before writing them, `EAX`
+  among them for `UseCharge`; a boundary inside a helper or inside `ITEMSKILL_Cast` called by its callers compares the
+  return address at its absolute stack slot). All inputs synthetic (stock parameter values among them); every
+  case-writer draw from `random.Random("catitem-<family>")`. Files in `workspace/logs/skills-cat-item/`,
+  `manifest.sha256` `3e974e32…` (118 files: cases, memory specs, expected inputs, outputs, the `.err` logs,
+  `cases.txt`, `check.txt` `22402718…`, `static.txt` `55299029…`, `rows.txt` `a9e0cb25…` with its `rows.sh`, `repro.txt`
+  `41e54f5b…` with its `repro.sh`, `cg.txt` `42b678eb…` with `cg.sh` and the five call-graph files, the run script
+  `run_item.sh`, and the three development runs under `dev/` with `dev/notes.txt`); `sha256sum -c manifest.sha256`
+  from that directory passes. `repro.txt` records that the same tool revision regenerates every case, memory and
+  expectation file of 9a, 9b, 9c, 9d, `sor`, `ama`, `nec`, `pal`, `bar`, `dru` and `ass` byte for byte and reproduces
+  their kept `check.txt` and `static.txt` byte for byte from their kept outputs.
+- **Procedure:**
+  ```
+  D=workspace/logs/skills-cat-item
+  python3 -I tools/skills_catalogue_emu.py cases --batch item > $D/cases.txt
+  $D/run_item.sh $D use_item cast_item event_item shrine_item cost_item   # one EmuBoundary instance at a time, 4 GB scope
+  python3 -I tools/skills_catalogue_emu.py check  --batch item > $D/check.txt
+  python3 -I tools/skills_catalogue_emu.py static --batch item > $D/static.txt
+  $D/rows.sh > $D/rows.txt; $D/cg.sh > $D/cg.txt; $D/repro.sh <scratch dir> > $D/repro.txt
+  python3 -I tools/skills_catalogue_emu.py manifest --batch item --write
+  ```
+  Each memory spec points `g_pDataTables` at a scratch DataTables written one field per field read (Skills, the calc
+  pool, ItemStatCost, the States, PetType counts and records, the item-type count, stride and equivalence words, the
+  item-skill layer shift 6 and mask 0x3F), sets `ITEMS_GetRecord`'s and `BOOKS_GetRecord`'s counts and tables
+  (`0x0096CA58`/`0x0096CA5C`, `0x0096CC60`/`0x0096CC64`) and the cookie, names the family's boundaries (`observe`) and
+  guards the allocator and the fatal path.
+- **Observed** (`check.txt`, `static.txt`):
+  ```
+  CATITEM use_item    cases=2400 match=2400 bad=0 neg=1069 traced=13 undeclared=0 stopped=0
+  CATITEM cast_item   cases=3000 match=3000 bad=0 neg=1701 traced=11 undeclared=0 stopped=0
+  CATITEM event_item  cases=3000 match=3000 bad=0 neg=1757 traced=2 undeclared=0 stopped=0
+  CATITEM shrine_item cases=1800 match=1800 bad=0 neg=2474 traced=1 undeclared=0 stopped=0
+  CATITEM cost_item   cases=1800 match=1800 bad=0 neg=597 traced=2 undeclared=0 stopped=0
+  CATITEM static data_imms=0 data_stores=0 helper_sites=72 pins=74 pins_ok=74 ro_reads=4 table_entries=12
+  ```
+  12 000 cases. Every negative control fails (per-control counts on the `negative control` lines; each family has one
+  failing 90 or more: `flag0` 531, `aim_none` 471, `layer_full` 1 037, `sh_noseed` 784, `no_min` 241; the thinner ones
+  equal their deciding classes on the `CLASS` lines); the site control fails on all 4 936 matched boundary cases (31
+  `site` lines: function, boundary, return address; 934 + 1 317 + 386 + 1 800 + 499). The skills calc function count's
+  scan names every operand form: 0 stores, 0 immediates, 7 reads. The static call graphs (`cg.txt`): helpers 3 and 4
+  and `0x0056E390` hold no LCG step or RNG call (586, 554, 578 functions; 56, 54, 56 indirect calls not followed),
+  helper 2 only its own (564), `SKILLS_PayCost` none (619; 57). Three development runs came first and are kept in
+  `dev/` (`dev/notes.txt`): the first mismatched on 61 `cast_item` cases (the writer left the caster's hash slot
+  unwritten and the emulator, which keeps memory between cases, read an earlier case's slot); the second and third
+  matched in full; the writers were re-weighted between them.
+- **Conclusion:** bit-exact reproduction (evidence rule 4, ADR-0015) of the functions' maps on returning cases (`[C]`:
+  every refusal path, start 3's mark and 1, the cast's restore, `ItemTgtDo`'s 1 with no other unit, the cost's 0s)
+  and of their maps up to their boundary calls with the call site, the nested return addresses, the arguments
+  (register arguments where the callee reads them first), the pointed-to blocks, the path, node, out and frame words
+  and the three seeds asserted (`[C]` under [ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md);
+  skills/0015 names each claim's boundary). Draws before the boundaries: handlers 20 (packet condition) and 30 one
+  inline step of the unit's seed, handler 21 `RNG_RangeB(unit, 100)`, `ITEMSKILL_Cast`'s helper 2 two steps of the
+  cast's caster's seed, shrines 21 and 22 `RNG_RangeB(shrine, Arg1 − Arg0)` on the shrine's seed; no other case steps a
+  seed. Not covered: what any boundary callee does and everything after it (the casts' do functions, helper 2's later
+  tries, the potions and missiles of the shrines, `UseCharge`); when the game runs these functions or with which
+  seed. (fn:ITEMSKILL_Cast@0x005FDA80, fn:sub_005FD850_ItemTargetRandomPoint@0x005FD850,
+  fn:sub_005C0470_StatEv20SkillOnEvent@0x005C0470, fn:SHRINE_Exploding@0x005830E0)

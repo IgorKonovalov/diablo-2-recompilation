@@ -39,7 +39,9 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    unreached branch inside (the wanderer gate's `+0x78`, the item drop on expiry; [0040](../../../../docs/plans/done/0040-drlg-room-lifecycle.md) P2 review);
    sell's seed with five refusal tests unreached (0043 P2b review).
 9. **Name the path for every claim about a caller**, or say "unfollowed" with the count. Seen: the
-   superunique minion path (0039 P1b, Q19); the 8/9 case's `RoomTileSetFlags` call (0039 P1a).
+   superunique minion path (0039 P1b, Q19); the 8/9 case's `RoomTileSetFlags` call (0039 P1a); "the effect flag is 1
+   only from handler 20" without `SKILLS_SrvDo`'s seven other calls, and `SKILLS_PayCost`'s 0 for a zero-cost row
+   without its three calls, none of which tests it (`lane/p46m12` review, [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
 10. **One case decides only if a wrong reading could not match it by chance.** Seen: aff 28's durability
     value, about one in eight (S2b, 0038).
 11. **"Moved" names the destination plan**; otherwise write "out of this plan". Seen: status bit 1
@@ -49,7 +51,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     ([0042](../../../../docs/plans/done/0042-quests-travel.md) P2 part 1 review); NPC 266's two draws, word 40's bit map and
     the switched-off reward writes, left in § 16 only (0042 P2 part 2 review); skills/0001's *Leads used* detail still
     naming start 25 for do 46's finisher calls after the § 12 note corrected it (`lane/p46m11` review,
-    [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
+    [0046](../../../../docs/plans/0046-skills-function-catalogue.md)); skills/0003 § 2's `EDX`-the-skill note filed under the
+    bullet after the one that still said `EDX` the level (`lane/p46m12` review, 0046).
 13. **At an observed boundary (ADR-0021), the `[C]` ends at the call.** What the callee makes of a compared argument
     (a class word, a register it must preserve, a mode) and every later call go in "After, `[I]`", also in the Answer
     summary. Seen: the radius of hits 24, 44 and 14 in a callee-saved register (`lane/p46m3` review); hit 52's row 0
@@ -59,4 +62,6 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     (and whose consumer agrees) is `[C]` in `re/symbols.csv` and the finding's Functions table, evidence column moved
     to the finding that holds the claim; don't leave it to the review. Seen: five H2b symbols (`lane/h2b` review fix 4);
     `sub_00633680_ItemIndexByCode`, `lsd ` → 31 logged 141 times (`lane/h2c` review, both
-    [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)).
+    [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)). Scope: the return logged by the game on its own data. An
+    ADR-0015/0021 emulation over a declared scratch image confirms the map, not the role the name states, and raises no
+    symbol row (`lane/p46m12` review ruling 7, [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
