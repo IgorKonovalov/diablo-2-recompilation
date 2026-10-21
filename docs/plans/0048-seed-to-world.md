@@ -393,3 +393,24 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   the run record (new id, `run:2026-10-21-chain2`), chain/0003 updates (§ 2, the Answer, Open question 1 closed by
   the reading above, the counts from passing logs only), a final manifest, and the review request in
   `docs/backlog/`.
+- **2026-10-21 — Phase 2 run 2 recorded; review requested (reverser, `lane/p48r2`, harness slot 1).** Resumed from the
+  pause note: the slot-1 aside `p48r2` set, the queued seven sessions run in order (r2-xm1 r2-xh1 r2-cn1 r2-cm1 r2-ch1
+  r2-xn3 r2-xm2), each checked alone as it finished; the passing logs held 2 000 after them, so the optional seven
+  were not run. No log holds `internal-error:`; r2-cn1's game process ended on its own at game frame 10 920 (cause not
+  shown; the log checks clean). Record [run:2026-10-21-chain2](../findings/chain/experiments.md#run2026-10-21-chain2),
+  finding [chain/0003](../findings/chain/0003-end-to-end-run.md) updated; manifest `manifest-r2-final.txt`
+  (`e1d9e622…`, 169 lines), tools `out/tools-r2-final.sha256` (commit `53ffb95`'s, unchanged since the checkpoint).
+  **Result** (`tools/chain.py check --o20` over run 1's 28 logs and run 2's 9, under `MemoryMax=4G`): **37 logs, 0
+  sub-checks failed**, and each log alone the same. **2 189** oracle-free room populations (run 1's logs 1 387, run 2's
+  802); 176 levels (DrlgType 1: 65, 2: 36, 3: 75), every act of each game type in each difficulty; 13 056 objects; 63
+  champion and 162 unique packs, 217 mods rolls; 1 314 drops with an item (1 492 items), 3 784 TC calls and 1 913 item
+  creations, 0 failed. Re-creations 7 290: 1 903 compared line for line with the logged marks (1 729 alive, 166 dead
+  `deadCol` 0, 8 `deadCol` 1), 5 284 applied unchecked on run 1's logs, 103 made no unit. Phase 1 world logs: 62 logs,
+  0 failed, summary equal to run 1's but four re-creation lines. Controls: `--cf recreation-off` restores exactly run
+  1's cn4 and cm4 mismatches and fails r2-xn1 (63); `--cf monequip-off` fails the two new Blood Raven cases (r2-xn2,
+  r2-xm1). A first Phase 1 re-check resolved `../../../tools` through the `workspace` symlink to the main checkout's
+  tools; kept as `dev-r2-p1world-check-maintools.txt` and re-run with the worktree's.
+  **Done-when, as the run reads it:** 0 mismatches; 2 189 of 2 000 populations; every other count met on the same
+  logs; the record lists each input and remaining oracle with its count. Chest interact-byte writer (ruling 3): not
+  read; chain/0003 Open question 2, for Phase 3. Slot 1 stopped, the `p48r2` aside restored (saves directory empty).
+  **Next:** the architect reviews run 2 and rules on the Phase 2 close.
