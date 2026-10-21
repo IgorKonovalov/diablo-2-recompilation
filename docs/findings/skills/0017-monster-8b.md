@@ -317,7 +317,7 @@ stack arguments only; the others as in skills/0008–0016.
 - [C] (ADR-0021) **Do 127** (`0x005D16A0`, Suck Blood): a bad id → 0; no target → 0; bit 6; `QueuedHitFind(caster,
   target)` none → 0; the hit's packet `+0x04` bit 0 clear → `DeliverQueued(target, 0)` at `0x005D17E5`; set → the life
   unit `o` = `MonsterOwner(caster)` for a monster caster (the caster when none), **0 for any other caster**;
-  `d` = the packet's `+0x08`, the target's life when not above it (`d ≥ life` → life); `v = life(o) + MulDiv(d, calc1,
+  `d` = the hit's `+0x08`, replaced by the target's life when `d ≥ life` (`min(d, life)`); `v = life(o) + MulDiv(d, calc1,
   100)`; `UnitSetStat(o, 6, max(v, 1) ≥ max(o) ? max(o) : max(v, 1), 0)` at `0x005D17D5` (with `o` = 0, life and maximum
   read 0, so the value is 0). After, `[I]`: `DeliverQueued(target, 0)` on both paths, 1. (run:2026-10-21-cat-emu-8b,
   0x005D1718–0x005D17CF)
@@ -361,7 +361,8 @@ stack arguments only; the others as in skills/0008–0016.
   `[I]`, 1. (run:2026-10-21-cat-emu-8b, 0x005D2E86–0x005D2F66)
 - [C] (ADR-0021) **Do 112** (`0x005CE2B0`, MonCurseCast; no id read): the caster's seed stepped once inline (`low ·
   0x6AC690C5 + high`, no null test of the caster), `k` = the new low word mod 5 (unsigned, the `0xCCCCCCCD` multiply),
-  the curse `cid` = `0x006E3228[k]` (66, 72, 82, 87, 91); its record's `auratargetstate` (`+0x82`, s16) below 0 or at
+  the curse `cid` = `0x006E3228[k]` (66, 72, 82, 87, 91); `cid` below 0 or at the Skills count, or no record → 0
+  (`0x005CE2F4`–`0x005CE31A`; review fix 3); its record's `auratargetstate` (`+0x82`, s16) below 0 or at
   the States count → 0 (seed stepped, no bit 6); bit 6; `r` = `aurarangecalc` (`+0x64`) and `len` = `auralencalc`
   (`+0x60`), both evaluated with `cid` and the caster's level; a 0x68-byte block at `EBP − 0x78`: `+0x00` the game,
   `+0x04` the caster, `+0x08` 0, `+0x0C` 0 (1 for `k` = 4), `+0x10` `cid`, `+0x14` the level, `+0x18` `len`, six stat
@@ -378,9 +379,13 @@ stack arguments only; the others as in skills/0008–0016.
   bounds: `8 388 607 << 8 = 2 147 483 392` fits and `8 388 608 << 8` is `−2 147 483 648` as an s32, which do 103's
   signed `cmp edi, 0x100; jg` (`0x005CD44E`) floors to `0x100`; `33 554 431 << 6 = 2 147 483 584` fits and
   `33 554 432 << 6` wraps (do 99 stores the word unread before its boundary). The cases draw calc1 and Param1 over the
-  full 32 bits (`sor_calcs`, the do 99 writer), so both sides of each bound are reached. Do 105's `h·A`, `h·B` and do
-  141's `(lvl − 1)·Param6 + Param5` wrap as 32-bit products, the model's `s32` matching on full-range inputs.
-  (run:2026-10-21-cat-emu-8b, `static.txt`)
+  full 32 bits (`sor_calcs`, the do 99 writer), so both sides of each bound are reached. Do 141's `(lvl − 1)·Param6 +
+  Param5` is 32-bit arithmetic modulo 2³² (two free inputs, so no single bound), the model's `s32` matching on
+  full-range inputs. Do 105's products `h·A`, `h·B` (`imul` at `0x005CD7E7`/`0x005CD7EA`, `|A|`, `|B|` ≤ 2) do not
+  wrap on any path that uses them: a creation needs `n > 0`, so `h ≤ 1 073 741 823` and `|h·A| ≤ 2 147 483 646`; for
+  `n ≤ 0` (`h` down to −1 073 741 824, `h·(−2)` = 2³¹ wrapping) the function returns 1 before reading them. What can
+  wrap is the difference `dx − h·A` (and `dy − h·B`), taken modulo 2³² (`sub` at `0x005CD7F0`/`0x005CD7F8`), as the
+  model does. (Review of `lane/p46m14`, fix 1.) (run:2026-10-21-cat-emu-8b, `static.txt`, 0x005CD7E0–0x005CD80E)
 
 ## Corrections to earlier findings
 

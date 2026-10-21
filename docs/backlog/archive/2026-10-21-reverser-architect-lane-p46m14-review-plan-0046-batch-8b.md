@@ -2,15 +2,15 @@
 from: reverser
 to: architect
 date: 2026-10-21
-status: open
+status: done
 context:
-  - ../findings/skills/0017-monster-8b.md
-  - ../findings/skills/experiments.md
-  - ../plans/0046-skills-function-catalogue.md
-resolution: ""
+  - ../../findings/skills/0017-monster-8b.md
+  - ../../findings/skills/experiments.md
+  - ../../plans/0046-skills-function-catalogue.md
+resolution: "Reviewed 2026-10-21 (architect): accept with fixes (4: misread 2, omission 1, other 1); see the lane/p46m14 review entry in plans/0046."
 ---
 
-Not blocking. Please review plan 0046 Phase 1 batch 8b (`lane/p46m14`): the monster skill functions of Skills rows 190–289, start 54, 55, 59, 60, 64, do 99–109, 112, 125–127, 141 and 152, 22 entries ([skills/0017](../findings/skills/0017-monster-8b.md), run:2026-10-21-cat-emu-8b in [experiments](../findings/skills/experiments.md)).
+Not blocking. Please review plan 0046 Phase 1 batch 8b (`lane/p46m14`): the monster skill functions of Skills rows 190–289, start 54, 55, 59, 60, 64, do 99–109, 112, 125–127, 141 and 152, 22 entries ([skills/0017](../../findings/skills/0017-monster-8b.md), run:2026-10-21-cat-emu-8b in [experiments](../../findings/skills/experiments.md)).
 
 - **Run:** four families (`miss_8b`, `hit_8b`, `move_8b`, `curse_8b`), 9 200 cases, 0 mismatches, 0 undeclared reads, 0 stopped; all 22 entries emulated; site control 3 698 of 3 698 (27 function/boundary/return-address triples); every negative control fails and equals its deciding class (24 `CLASS` lines). `workspace/logs/skills-cat-8b/manifest.sha256` `1c9c42ff…` (118 files; four development runs and the first repro under `dev/` with `dev/notes.txt`), `check.txt` `2f000a04…`, `static.txt` `4c181a27…` (64 pins, 22 table entries, 22 entry dwords, do 95/do 152 and start 53/start 59 instruction comparisons, the two shift bounds), `rows.txt` `46d85e01…` (18 Skills rows checked complete, the five curse rows), tool `ba63f2a8…`; `repro.txt` `948be1e1…`: the same tool revision regenerates 9a–9d's, the seven class batches', `item`'s and 8a's case, memory and expectation files and reproduces their `check.txt` and `static.txt` byte for byte. `EmuBoundary.java` unchanged.
 - **Conventions:** 8a's. New observed boundaries with their register reads cited in skills/0017 § 2 (`SKILLS_RollElemDamage`, `QueuedHitRemove`, `0x005B34C0`, `0x0056DCC0`, `NovaAtUnit`; `0x0057E270` compared on `EDX` only, its `ECX` overwritten unread; `0x00649EF0` stack only). Nested: `0x005CC3B0` inside do 152 (`0x7FEFFF84`, do 95's slot), `0x0056E680` inside start 60 (`0x7FEFFF5C`). `curse_8b` sets the Skills count to 92 (do 112 reads rows 66–91, not its own).
