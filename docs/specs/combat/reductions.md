@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [combat/overview, combat/damage, monsters/stats]
 consumed_by: [combat/delivery]
-tags: {C: 45, I: 24, L: 5}
+tags: {C: 45, I: 25, L: 5}
 updated: 2026-10-21
 ---
 
@@ -268,7 +268,8 @@ B3. Absorb(ctx, row, d: i32) → i32:                                   [C] (fn:
 
 - B3. **Both the percent and the flat absorbed amounts are healed** to the defender at delivery (`absorbHeal`,
   packet `+0x48`). 32 percent-absorb heals of the player reproduced; this contradicts src:purediablo-absorb, which
-  heals from flat absorb only. [C] (0x0057BF2A–0x0057BF6F, run:2026-10-16-combat)
+  heals from flat absorb only. [C] (0x0057BF2A–0x0057BF6F, run:2026-10-16-combat) That the flat amount is healed
+  too is read from the code: the flat-absorb hits below assert the field, not the heal. [I] (fn:COMBAT_Absorb@0x0057BF10)
 - B3. **Flat absorb** (fire): 113 hits on `CombatAbs` (*Hellmouth*, fire absorb 15) with the amount subtracted and the
   field asserted. [C] (fn:COMBAT_Absorb@0x0057BF10, run:2026-10-20-shortfalls) Cold and lightning flat absorb were not
   hit (0), so their rows rest on the code's one path; plan 0047 Phase 2b carries them. [I] (fn:COMBAT_Absorb@0x0057BF10)

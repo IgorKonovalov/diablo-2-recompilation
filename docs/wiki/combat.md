@@ -290,8 +290,8 @@ before this hit's damage**:
 
 - 1/4 for ordinary monsters, **for uniques and for champions** (247 and 63 events, then 52 on champions in a run
   built for them, most in Nightmare at 8 players). Community pages give 1/8 for champions and uniques; 1.14d does
-  neither. A champion carries the unique mark as well as its own (no monster in 74 logs had the champion mark
-  alone), and crushing blow looks at neither.
+  neither. A champion carries the special mark that every champion, unique and superunique gets, as well as its
+  own champion mark (no monster in 74 logs had the champion mark alone), and crushing blow looks at neither.
 - The share shrinks with the number of players the monster was **created** for: the divisor 4 grows by 50 % per
   player beyond the first, so at 8 players it is 18. Confirmed at 2, 3 and 8 players. Community pages say the player
   count does not matter; in 1.14d it does.
@@ -302,11 +302,12 @@ before this hit's damage**:
 
 **Open wounds** is confirmed: one draw of 100 on the attacker's seed; on success the defender bleeds for 200 frames,
 by an amount that grows in bands with the attacker's level (2 506 per frame, in 1/256 life, at level 85). A new wound
-restarts the bleed. **Unique monsters bleed half as much**, confirmed over 383 wounds, Andariel's 63 included: she
-carries the unique mark. Monsters with neither the champion nor the unique mark took the full amount (1 497 wounds).
+restarts the bleed. **Special monsters (champions, uniques and superuniques) bleed half as much**, confirmed over
+383 wounds, Andariel's 63 included: she carries the special mark. Monsters with neither the champion nor the special
+mark took the full amount (1 497 wounds).
 Read from the code: the halving looks only at those two marks, never at whether the monster is an act boss, so a
-champion without the unique mark would also bleed half and an act boss without it would take the full amount; players
-bleed a quarter. None of these was wounded in the runs, and since champions carry the unique mark too, no unmodified
+champion without the special mark would also bleed half and an act boss without it would take the full amount; players
+bleed a quarter. None of these was wounded in the runs, and since champions carry the special mark too, no unmodified
 monster can show the first case. When both effects are present, the
 order the handlers run in follows the order the unit registered them, newest first; that is read from the code.
 
@@ -334,7 +335,7 @@ From [delivery § D](../specs/combat/delivery.md#d-stun-cold-freeze-poison-burn)
 - **Chill** draws one `Range(100)` on the **defender's** seed whenever a chill is applied, whatever the outcome; that
   draw is confirmed. Read from the code: a monster whose `coldeffect` is 0 is not chilled and draws nothing, a player
   is chilled at −50, and the chill strength and the 20 % shatter chance.
-- **Stun** on a unique monster first draws `Range(100)` on the attacker's seed and succeeds only on 90 or more; that
+- **Stun** on a special monster (a champion, a unique or a superunique) first draws `Range(100)` on the attacker's seed and succeeds only on 90 or more; that
   draw is confirmed (34 events). Read from the code: act bosses and monsters that cannot move are never stunned, and
   the stun's length caps.
 - **Freeze** from the freeze stat is confirmed on melee hits up to the point where it delivers its freezing packet:
@@ -364,7 +365,7 @@ sequenceDiagram
   M->>M: on a hit: block, then avoidance rolls
   A->>A: damage build, hit or miss
   A->>A: on a hit: open wounds, crushing blow
-  A->>A: leech overlay, stun on a unique
+  A->>A: leech overlay, stun on a special monster
   M->>M: chill
 ```
 
@@ -437,7 +438,7 @@ From the specs' open questions ([overview](../specs/combat/README.md#open-questi
 - **Branches the runs met too rarely or never.** A second run built for the rare branches settled most of the first
   run's list (above). Left: a walking player's full block chance (6 cases, and final: the extra session allowed was
   spent); the magic resistance cap (no unmodified item or skill reaches it); cold and lightning flat absorb (not hit;
-  a further pass of the plan takes them); open wounds on a champion without the unique mark (no such monster exists
+  a further pass of the plan takes them); open wounds on a champion without the special mark (no such monster exists
   unmodified) and on players (only another player's item wounds one); what the weapon-block skill check means and
   which flag makes a shield unusable; a monster's own avoidance rolls; freeze from a missile; pierce and conversion,
   which belong to skills and missiles; the floor of one point on the player's life tick.

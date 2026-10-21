@@ -71,7 +71,7 @@ flowchart TD
 | frame | `Game+0xA8` | the end frame of timed states |
 | life, mana, stamina | stats 6–11, 1/256 units | value inputs at the event's entry (ADR-0014) |
 | player count of a monster | stat 100, set at creation | [monsters/stats § C](../monsters/stats.md#c-the-player-count-sub_00573930_monplayerbonus) |
-| unit type flags | `0x02` superunique, `0x04` champion, `0x08` unique | [monsters/special](../monsters/special.md) |
+| unit type flags | `0x02` superunique, `0x04` champion, `0x08` special (set on every champion, unique and superunique) | [monsters/special](../monsters/special.md), [monsters/spawn § G](../monsters/spawn.md#g-the-special-group-boss-champion-or-unique) |
 
 ### Constants
 
@@ -190,7 +190,7 @@ sequenceDiagram
   Note over A,D: COMBAT_ApplyDamage, in order
   A->>A: event handlers newest first: open wounds Range(100), crushing blow Range(100), freeze Range(100), each if chance > 0
   A->>A: leech overlay Range(2) if life and mana gains both run
-  A->>A: stun Range(100) if the defender is a unique and stun length > 0
+  A->>A: stun Range(100) if the defender is special (flag 0x08) and stun length > 0
   D->>D: cold shatter Range(100) if cold length > 0 and coldeffect ≠ 0
 ```
 
@@ -294,7 +294,7 @@ C1. Leech(att, def, pkt):                                            [C] (fn:COM
 ```
 D1. ApplyStun(att, def, len = pkt.stunLen):                          [I] (fn:COMBAT_ApplyStun@0x0057AAE0, all of D1)
       if len ≤ 0: return
-      if def is a monster with type flag 0x08 (unique):
+      if def is a monster with type flag 0x08 (special: a champion, unique or superunique):
         if Range(att.seed, 100) < 90: return                         ; draw (attacker), inlined; [C] (run:2026-10-16-combat, 34)
       if def is a boss: return
       if MonStats[def.class].Velocity = 0: return
@@ -368,7 +368,7 @@ E2. OpenWounds(att, def, pkt, event):                                [C] (fn:STA
       L: i32 ← max(stat(att, 12), 1)
       dmg: i32 ← Band(L) + 40
       if def is a player: dmg ← dmg ÷ 4;  if event = 6: dmg ← dmg ÷ 2              ; [I] (0x005BFEEC–0x005BFF9B)
-      else if def has type flags 0x0C (champion or unique): dmg ← dmg ÷ 2     ; [C] for the unique bit 0x08 (run:2026-10-16-combat, 383), [I] for the champion bit 0x04 alone
+      else if def has type flags 0x0C (champion or unique): dmg ← dmg ÷ 2     ; [C] for the special bit 0x08 (run:2026-10-16-combat, 383), [I] for the champion bit 0x04 alone
       state 62 (openwounds) for 200 frames with stat 74 ← −dmg       ; STATE_ApplyTimed; a new wound restarts it
 
     Band(L): L < 2 → 0;  L ≤ 15 → (L − 1)·9;  L ≤ 30 → 126 + (L − 15)·18;  L ≤ 45 → 396 + (L − 30)·27;
@@ -389,10 +389,12 @@ E3. Freeze(att, def, pkt, event):                                    [C] on a me
   **Champions take 1/4 as well**, raised by the player count: 52 crushing blows on defenders with type flags `0x0C`
   (40 in Nightmare at `/players` 8), every life value asserted. [C] (fn:STATEVENT_CrushingBlow@0x005BFFC0,
   0x005C0031–0x005C00F6, run:2026-10-20-shortfalls)
-- E1. **A champion carries the unique flag `0x08` as well as `0x04`**: of 7 474 monsters first seen in 74 combat logs,
-  164 have both and none has `0x04` alone. `STATEVENT_CrushingBlow` reads neither flag, so the community's 1/8 does
-  not apply to champions either. Re-labelled, run:2026-10-16-combat holds 72 such events among the 163 it counted as
-  uniques. [C] (fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-20-shortfalls, run:2026-10-16-combat)
+- E1. **A champion carries the special flag `0x08` as well as `0x04`**: `MonMarkSpecial` sets `0x08` on every
+  champion-pack member before the champion roll sets `0x04` ([monsters/spawn § G](../monsters/spawn.md#g-the-special-group-boss-champion-or-unique)),
+  and of 7 474 monsters first seen in 74 combat logs 164 have both and none has `0x04` alone. `STATEVENT_CrushingBlow`
+  reads neither flag, so the community's 1/8 does not apply to champions either. Re-labelled, run:2026-10-16-combat
+  holds 72 such events among the 163 it counted as uniques (`0x08`). [C] (fn:sub_005A0320_MonMarkSpecial@0x005A0320,
+  fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-20-shortfalls, run:2026-10-16-combat)
 - E1. There is **no difficulty and no classic branch** in crushing blow. [I] (fn:STATEVENT_CrushingBlow@0x005BFFC0)
 - E1. `k = 8` for MonStats `boss` (act bosses) and superuniques reproduced with 0 mismatches on an act boss (34
   events, Andariel, Normal, `/players` 8) and on superuniques (55), with the same draw, player-count scaling and
@@ -401,7 +403,7 @@ E3. Freeze(att, def, pkt, event):                                    [C] on a me
   logged as stat 74 = −2506 (`solo-h3`, frame 266, a normal monster). Open wounds reproduced 246 times; in all 11 logged windows the bleed ended at the
   application frame + 200. [C] (fn:sub_005BFDA0_OpenWoundsBand@0x005BFDA0, fn:STATE_ApplyTimed@0x0056E970,
   run:2026-10-16-combat)
-- E2. **The halving tests the type flags `0x0C`.** All 383 wounds on monsters with the unique flag `0x08` were
+- E2. **The halving tests the type flags `0x0C`.** All 383 wounds on monsters with the special flag `0x08` were
   halved, Andariel's 63 included (her unit carries `0x08`: stat 74 = −1 275 = −(2 551 ÷ 2) at attacker level 86), and
   all 1 497 on monsters without `0x0C` took the full `Band(L) + 40`. [C] (0x005BFEEC–0x005BFF9B, run:2026-10-16-combat)
   The test never reads MonStats `boss`, so an act boss without `0x08` takes the full amount and a monster with the

@@ -535,14 +535,15 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   and durability draws.
 - ~~**Shortfalls of run:2026-10-16-combat** (plan 0037 Phase 2): crushing blow on a champion, the cold, lightning and
   magic caps, magic immunity, the negative absorbed amount, evade, weapon block, dodge, avoid, freeze, flat absorb,
-  the negative total, the walking block.~~ Reached by run:2026-10-20-shortfalls (plan 0047 Phase 2), each to about 30
-  or more: crushing blow on champions 52 ([delivery E1](delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze)),
+  the negative total, the walking block.~~ Closed by run:2026-10-20-shortfalls (plan 0047 Phase 2). Reached, each to
+  about 30 or more: crushing blow on champions 52 ([delivery E1](delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze)),
   the lightning cap 42 and the cold cap 31 over the two runs, magic immunity 36, the negative absorbed amount 186,
   fire flat absorb 113 ([reductions B2, B3](reductions.md#b-the-rows-g_damageresisttable)), the total ≤ 0 633
   ([delivery B4](delivery.md#b-delivery-combat_applydamage)), freeze 81
   ([delivery E3](delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze)), evade 31 of 46 rolls, weapon block 30 of 50,
   dodge 109 of 172, avoid 68 of 103 ([to-hit C3](to-hit.md#c-the-hit-test-and-the-defence-rolls)). The player's life
   tick is reproduced under poison by run:2026-10-17-stats ([stats/states § E](../stats/states.md#e-the-regeneration-tick)).
+  Not reached, and named again in the next bullet: the walking block, the magic cap, cold and lightning flat absorb.
 - [L] **Named again after run:2026-10-20-shortfalls.** Final: the mode-2 (walking) exception of the block `÷ 3`, 6
   undivided chances in 48 events on a walking player, the plan's one extra session spent
   ([to-hit C2](to-hit.md#c-the-hit-test-and-the-defence-rolls)); the magic resistance cap, which no stock source of

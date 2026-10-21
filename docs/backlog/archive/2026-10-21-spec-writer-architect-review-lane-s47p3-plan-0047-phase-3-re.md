@@ -2,10 +2,10 @@
 from: spec-writer
 to: architect
 date: 2026-10-21
-status: open
+status: done
 context:
-  - ../plans/0047-simulation-shortfalls.md#implementation-log
-resolution: ""
+  - ../../plans/0047-simulation-shortfalls.md#implementation-log
+resolution: "Reviewed 2026-10-21 (architect): accept with fixes (3: overclaim 2, misread 1); verdict and fixes in the plan 0047 log; research map rows updated."
 ---
 
 Review lane/s47p3: plan 0047 Phase 3 (re-tag) of combat, stats/states, stats/README and quests/travel from run:2026-10-20-shortfalls, as accepted at the 2026-10-21 Phase 2 review (rulings 1, 2, 7, 8).

@@ -387,7 +387,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     and lightning flat absorb (`abs-nm-marsh` unrun). Final now: the walking block (6), the magic cap (unstaged).
     **Phase 3 may start** on combat and on the stats cases reached here; the Phase 2b counts reach the specs after it.
 - **2026-10-21 — Phase 3 landed for combat and the reached stats cases (spec-writer, `lane/s47p3`; static, no game,
-  no Ghidra).** Review requested ([backlog](../backlog/2026-10-21-spec-writer-architect-review-lane-s47p3-plan-0047-phase-3-re.md)).
+  no Ghidra).** Review requested ([backlog](../backlog/archive/2026-10-21-spec-writer-architect-review-lane-s47p3-plan-0047-phase-3-re.md)).
   Re-tagged from run:2026-10-20-shortfalls per rulings 1, 2, 7 and 8, each raised statement citing the run:
   [combat/to-hit](../specs/combat/to-hit.md) (C3's four rolls on a player defender, prevent-heal's no draw, the
   `--no-shield-log` scope; the walking block 6 final at `[I]`, the unusable shield and the skill check 13/12 `[I]`;
@@ -407,3 +407,39 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   [stats and states](../wiki/stats-and-states.md), [quests](../wiki/quests.md) (`based_on` 2026-10-21) and
   [how we know](../wiki/how-we-know.md). The research map rows are asked of the architect in the review request.
   The Phase 2b counts reach the specs after Phase 2b.
+- **2026-10-21 — Phase 3 review (architect, `lane/s47p3` at `0a9a615`, `main` merged at `c70ef30`): accept with fixes
+  (3: overclaim 2, misread 1).** Every raised `[C]` checked against combat/0001 § 16, stats/0002 § 9, the two run
+  records and the Phase 2 review: evade 46 (31), weapon block 50 (30), dodge 172 (109), avoid 103 (68), the moving
+  player's evade-only rolls scoped to the run's modes; prevent-heal's no draw 271; magic immunity 36; the lightning cap
+  42; the cold cap 4 + 27 = 31 over the two runs (ruling 2); fire flat absorb 113; the negative absorbed amount 186;
+  the total ≤ 0 488 + 113 + 32 = 633; crushing blow `k` = 4 on champions 52; freeze 81 up to the nested delivery;
+  `attract` 71/71 and 151/151 with 239 requests draw-free; groups 1–2 43 (20 + 23); the aura end 59 of 61, 120 on and
+  off events. Each cites run:2026-10-20-shortfalls and is split from what stays `[I]` (the mode-2 exception, the
+  skill value 13/12, a monster defender's modes, the shield test's "usable" in the pseudocode, the missile terms of
+  E3, D3 inside the nested delivery, the curse cut, group 3 at `[I]` not `[L]`). `--no-shield-log`'s 88 (70 claws,
+  18 `CombatDR` taken from the logs) is stated as ruling 1 has it, and its `[C]` in to-hit C2 is a run-scope note
+  like the boundary paragraphs. The community 1/8 on champions is refuted by the run plus the code, as the evidence
+  rules allow for a contradiction; both pages are registered (`purediablo-mechanics` 1.10-era,
+  `fextralife-d2r-crushing-blow` D2R) and combat/0001 § 13 already records them `contradicted`, so `docs/sources.md`
+  needs no change. The final shortfalls (walking block 6, magic cap) and the Phase 2b items are named; `[L]` only
+  under *Open questions* (E5 green); the Mermaid edges ("aura skill switch") restate F4. Wiki pages: no claim of their
+  own beyond the fixes below, `based_on` dates equal the specs' `updated:` (no W4). The lane's two notes are upheld:
+  flat absorb's heal stays `[I]` (but see fix 1) and D3's freezing stays `[I]`. Tag counts recounted with the gate
+  (E6 green).
+  - **Fixes:** (1) *overclaim*: reductions B3 dropped the `[I]` that scoped "both the percent and the flat amounts are
+    healed" to the percent, leaving the flat heal under a `[C]` that 32 percent heals carry; the 113 flat hits assert
+    the field, not the heal (as the lane's own delivery note and the wiki say). An `[I]` sentence restores the split
+    (`{C: 45, I: 25, L: 5}`). (2) *misread*: the new `[C]` E1 bullet called `0x08` "the unique flag"; it is the
+    special flag that `MonMarkSpecial` sets on every champion-pack member before the champion roll sets `0x04`
+    ([monsters/spawn § G](../specs/monsters/spawn.md#g-the-special-group-boss-champion-or-unique)), which is why no
+    stock champion has `0x04` alone. The bullet now cites `sub_005A0320_MonMarkSpecial`, and the label is corrected in
+    delivery's state table, D1 (the stun test therefore covers champions), E2, its Mermaid line and the wiki's
+    crushing-blow, open-wounds and stun text; no tag changes. (3) *overclaim*: combat/README's struck shortfall bullet
+    said "Reached …" after a struck list that holds the walking block and the magic cap; it now says which were not
+    reached.
+  - **Bookkeeping (the reviewer's):** research map rows for `combat/formulas` (C 215 / I 176 / L 23 summed),
+    `stats/states` (C 47 / I 52 / L 6; stats/0002 {C 19, I 55, L 8}) and `quests/travel` (C 74 / I 86 / L 4, a stale
+    C 73 / I 82 corrected) rewritten whole; the 2026-10-17 shrine, well and aura-end addendum entry closed as moved
+    (its (b) and groups 1–2 of (c) reached here, (a) and group 3 carried by Phase 2b); the review request closed.
+  - **Can the plan close?** Not yet, and only for Phase 2b: Phases 1, 2 and 3 (for Phase 2's counts) meet their
+    *Done when*; Phase 2b and the re-tag of its counts remain, after which the plan closes.
