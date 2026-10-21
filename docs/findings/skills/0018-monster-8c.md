@@ -213,8 +213,10 @@ at `0x7FEFFFF8`.
   alignment 2 (a wrong reading, no alignment test, reaches `STATE_ApplyTimed` where the code returns 0, and cannot match
   by chance); `st118_any` (38) the start 63 targets in state 118 (the same: `STATE_Set` against a return); `draw_inv`
   (47) the do 131 draws with the target not in the state (the inverted test reaches the other boundary,
-  `0x005D1E10` against `0x005D1D70`'s `STATE_ApplyTimed`). Each family has a control failing 90 or more (`lob_inv` 271,
-  `corpse_any` 100, `base_any` 75 with `seed_none` 63 in `curse_8c`, `mode_x` 359). (run:2026-10-21-cat-emu-8c)
+  `0x005D1E10` against `0x005D1D70`'s `STATE_ApplyTimed`). Three families have a control failing 90 or more (`lob_inv` 271,
+  `corpse_any` 100, `mode_x` 359); `curse_8c`'s largest are `base_any` 75 and `seed_none` 63, each deciding under
+  reverser rule 10 (the wrong reading reaches a `STATE_ApplyTimed` where the code returns 0, or a seed compared in every
+  case). (run:2026-10-21-cat-emu-8c)
 - [I] ADR-0015 (3): the claims cover the code as a map. What the offsets mean keeps its own tag (Skills, Missiles,
   MonStats columns `[C]` by layout; unit, path, node, packet, state-word and stat-list offsets `[I]`), and nothing here
   says when the game runs these functions or on which seed state. (run:2026-10-21-cat-emu-8c)
@@ -367,7 +369,7 @@ at `0x7FEFFFF8`.
   path for a monster without one; do 140's target without a path is covered (0), a caster without a path is not.
 - [I] Thin outcomes, each deciding under reverser rule 10 (the wrong reading reaches another boundary or a return):
   do 131's class-change boundary (27 cases), do 129's target teleport (30), do 137's `STATE_Set` (40), do 133's
-  `STATE_ApplyTimed` (41). (`check.txt` `site` lines)
+  `STATE_ApplyTimed` (41). (run:2026-10-21-cat-emu-8c, `check.txt` `site` lines)
 
 ## Corrections to earlier findings
 

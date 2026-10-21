@@ -1358,3 +1358,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   lane-landed log entry. **What remains of Phase 1 after 8c:** batch 8c's review, and the six `general` tier-A entries
   plan 0045 read (start 1, 2, 65, do 1, 3, 5 of rows 0–5; Unsummon's start 3 and do 4 went to batch 10) — read by plan
   0045, not re-read by a 0046 batch; the architect to rule whether they count as covered for Phase 1's close.
+- **2026-10-21 — Phase 1 batch 8c landed for review (reverser, `lane/p46m15`, static, no harness; resumed after the
+  owner's pause).** [skills/0018](../findings/skills/0018-monster-8c.md): start 61–63, do 128–137, 139, 140, 147–149,
+  18 entries, all read and all emulated; run:2026-10-21-cat-emu-8c as in the paused entry above (8 800 cases, 0
+  mismatches, site control 2 376 of 2 376 over 23 triples, 18 `CLASS` lines each equal to its control; counts rechecked
+  against the kept `check.txt` `500b673c…`). Self-check against reverser review-fixes 1–15 made; one fix: § 2's "each
+  family has a control failing 90 or more" was wrong for `curse_8c` (largest `base_any` 75), reworded with the rule-10
+  reason; § 7's thin-outcomes line anchored (gate W1). Done-when: params, calcs, states, missiles and units, draws in
+  order with their seeds read for all 18; all 18 emulated with negative controls; the one draw path not emulated is
+  Baal's arm of `0x0063EFA0` (two or three `RNG_Range` on the caster's seed, § 7 `[I]`), put to the review. No machinery
+  path beyond plan 0045's spec (no 0045 correction filed); do 129's direct call of do 98 is a catalogue fact. Tags: 27
+  `[C]`, 10 `[I]`, 3 `[L]` bullets; 30 symbols (`I`). Filed:
+  [archivist entry](../backlog/2026-10-21-reverser-archivist-plan-0046-8c-skills-monstats-column-readers.md) (column
+  readers), [review request](../backlog/2026-10-21-reverser-architect-lane-p46m15-review-plan-0046-batch-8c.md). **Next:**
+  the architect's review of 8c, and the ruling on the six `general` entries plan 0045 read for Phase 1's close.
