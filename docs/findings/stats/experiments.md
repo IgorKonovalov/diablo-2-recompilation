@@ -208,6 +208,16 @@ stopped at the first hop; `--dead-below 0` since). Not run: `pot-town3`/`4`, `as
 `sor-shrines1`…`10` (`sor-shrines1` stopped by the lane before its game started: no log), `nec-attract2`/`3` (attract met
 on the first). `floor-poison1` also operated one shrine (code 6).
 
+*Review 2026-10-21 (the machine suspend, 23:17 to 06:25).* No log of the run list spans it: the last session before it,
+`dev-p47h-pot-town2-keyi`, ended at 23:15:25 (gdb's `exited normally`; its driver's output was written after the
+resume and ends in a screenshot-path traceback), and the first after it, `floor-poison1`, was launched at 06:19:27. A
+first `floor-poison1` launch at 23:15:33 ran across the suspend and logged no event (its game exited on resume); it is
+kept as `workspace/logs/stats/p47h-floor-poison1.log.failed1` (`06b1601b…`), a development log outside the run, not
+in `p47h-manifest.txt`. The potion plan's cause: commit `b7dec78`'s message (and its code comment) blamed the
+Pandemonium Fortress's dark floor for `inv:open`'s failure; the Rogue Encampment sessions failed the same way, and
+commit `3236965` gives the cause found, the 40 potions filling the grid that `inv:open`'s dark-centre test reads (its
+comment replaces the earlier one). With the one key press still no inventory potion was drunk, for a cause not found (above).
+
 ### Results
 
 Check: `systemd-run --user --scope -p MemoryMax=4G python3 -I tools/stats.py check $(cat

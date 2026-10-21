@@ -75,6 +75,21 @@ named again with the reason it cannot be staged on stock data.
   - travel (after 0042 closes, if still short): 20 waypoint activations from mode 0, with the object-seed draw
     chained (ADR-0014).
 
+### Phase 2b — The staging-limited cases (added at the Phase 2 review, 2026-10-21)
+- **Owner skill:** reverser (agent-driven; **one slot**, given in the prompt)
+- **What:** the stats and travel cases Phase 2 named again for staging reasons, not for stock data: fix the
+  staging, run the sessions Phase 2 left unrun, add them to the same checkers.
+- **Done when:** a run `run:YYYY-MM-DD-shortfalls2` (its own record, 0 mismatches under `tools/stats.py`,
+  `tools/combat.py` and `tools/quests.py`) reaches, with Phase 2's and the kept runs' counts: 50 shrine or well
+  operates over the combat and stamina shrines, the re-arm and a well's cure (`sor-shrines1`…`10`, `palc-wells2`);
+  300 expiries (the potion plan's failure found and fixed first, in a dev session); 20 group-3 clears checked (the
+  stats logger writes the exit line of the nested `STATE_GroupClear` call, or the checker reads the nested call's
+  result; a tool change, its tests); the 256 floor and the curse resistance cut to 30 each (`ass-curses2` and a route
+  that reaches the Worldstone Keep Level 1's witches; a field whose monsters poison `StatsFloor`); 20 waypoint
+  activations from mode 0 (the pilot's warp search fixed, `x-wpact5r-1`…`5`); cold and lightning flat absorb to 30
+  if `abs-nm-marsh` reaches them. Each case it cannot reach is named again with its count and a stock-data reason, or
+  a tool reason with the fix tried; those are then final.
+
 ### Phase 3 — Re-tag
 - **Owner skill:** spec-writer
 - **What:** re-tag combat, stats/states and (if run) quests/travel from the run; narrow their open questions.
@@ -274,8 +289,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     refused in `attract` (151 made outside it); 120 aura on and off events (61 + 59, the ends by the skill switch);
     43 different-state group clears (groups 1 and 2).
   - **Named again:** the cold cap 4 (27 kept, 31 over the two runs); the walking block 6 in 48 mode-2 events (ruling
-    3 (a)'s extra session spent on `amaw-n-walk`); group 3 (12 unchecked clears, no exit line; ruling 3 (c): the
-    skill path's reach stays `[I]`, to `[L]` under *Open questions* in Phase 3); the 256 floor 0 (no poison taken);
+    3 (a)'s extra session spent on `amaw-n-walk`); group 3 (12 unchecked clears, no exit line; the skill path's reach
+    stays `[I]`; *review 2026-10-21:* not withdrawn to `[L]`, since ruling 3 (c) applies when no call is seen and these
+    12 reached `STATE_GroupClear`); the 256 floor 0 (no poison taken);
     the curse resistance cut 0 (no witch curse); expiries 30 (153 with the kept 123, of 300: the potion plan drank no
     inventory potion in three attempts, dev logs kept); shrines and wells 3 (15 with the kept 12, of 50); waypoint
     activation from mode 0: 1 of 20 (the Act V route's warp search fails on most seeds). The magic cap stays
@@ -295,3 +311,78 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (the `attract` refusal on monsters, the different-state group clear for groups 1–2, the aura end by the skill
     switch, `[C]`), [quests/0002](../findings/quests/0002-travel.md) (one mode-0 activation, stays `[I]`). Phase 3 may
     start on the counts above.
+- **2026-10-21 — Phase 2 review (architect, `lane/p47h` at `2d116b3`, `main` merged at `75ff308`): accept with fixes
+  (6, plus 1 not the lane's).** Re-run on the review's side under `systemd-run --user --scope -p MemoryMax=4G`, tools
+  as recorded (`tools/combat.py` `bd80126a…`, `tools/stats.py` `23f34c4d…`, `tools/quests.py` `b6dfb1a3…`): the three
+  `sha256sum -c` lists (`p47h-logs.sha256` for combat and stats, `p47h-manifest.sha256` for quests) pass; the combat
+  check over `p47h-run.lst` with the recorded `--no-shield-log` gives a JSON byte-identical to `p47h-check.json`
+  (`4e7ee7a7…`) and the same report (0 / 18 737); the stats check over its `p47h-run.lst` gives `p47h-check.json`
+  (`63892df3…`) byte for byte; `tools/quests.py check` on `p47h-x-wpact5r-0.log` gives `p47h-check.txt` byte for
+  byte (0 / 2 625); `p47h-owf-n-andariel-p8.log` (`a411b34d…`) gives `p47h-owf-check.json` (`5db67372…`), 57
+  mismatches, all `expected AD1, got EVH`, and its 57 `EVH` lines with `fn` `0x005C01D0` are exactly those events;
+  `c37r-run2.lst` 0 / 40 655; `s1017-run.lst` byte-identical to `s1017-check-p47r.json`; `tools/test_stats.py` OK;
+  `tools/test_d2s.py` 45 OK after fix 7. Spot-read on `Game.exe` (objdump): `0x0057DDAB` calls `0x0064F380` and
+  `0x0057DDB0` compares its out-word with 13; `UnitBlockChance`'s player branch (`0x00622791`) returns 0 when
+  `sub_0063C8F0_InvItemQuery` gives 0; `0x005CAED3` calls `COMBAT_MeleeHitTest`, so `0x005CAED8` is the attack's
+  return; `PreventHealHook` ends at `0x0057D899` with no RNG call (`STATE_ApplyTimed` and stat reads only);
+  `0x005702DC` calls `UNIT_UnlinkStatList` (return `0x005702E1`); `STATE_ApplyTimed` pushes 57 at `0x0056EA40`; the
+  `Expansion` row is data row 58 of `itemtypes.txt`, so `h2h` is 67 (ItemTypes.md's `[C]` marker rule). Symbols of
+  § 16 and § 9 resolve in `re/symbols.csv`.
+  - **Fixes:** (1) *omission*: the stats record now says which sessions met the machine suspend (23:17–06:25): no
+    run-list log; a first `floor-poison1` launch at 23:15:33 spanned it with no event and is kept as the dev log
+    `p47h-floor-poison1.log.failed1` (`06b1601b…`), which the record did not name; `dev-p47h-pot-town2-keyi`'s game
+    ended before it. (2) *omission*: the combat record and combat/0001 § 16 state what `--no-shield-log` changes:
+    without it, 88 mismatches, all the shield-held block chance against a logged 0 (66 `CombatAss`, 4 `CombatAssO`,
+    18 `CombatDR`; `CombatAmaD` passes either way), so the lane's "37 on an Assassin log" was one log of three
+    Assassin and three `CombatDR` logs; the claws' 70 are predicted from the recipe, `CombatDR`'s 18 are the logged 0
+    taken as input. (3) *miscount*: the kept run's re-check differs from its kept output by five counters, not two
+    (the three `≤ 0` delivery counters). (4) *misread*: group 3's reach is not withdrawn to `[L]` (above): ruling 3 (c)
+    is for a group with no call, and 12 calls reached `STATE_GroupClear`. (5) *omission*: commit `b7dec78`'s message
+    gives a cause (the Pandemonium floor) that the run refuted; the stats record now says so and names `3236965`'s.
+    (6) *other*: combat/0001 § 16 cites `0x0063C8F0` by its existing name `sub_0063C8F0_InvItemQuery`. (7) not the
+    lane's (pre-existing on `main`, counted for no lane): `h2bjewel` and `h2bthrow` pinned in `tools/test_d2s.py` from
+    the H2b record (bases `samples/d2s/smpsor.d2s` and the classic `smpsor.d2s`; saves `03afa56f…` and `b965d6b9…`,
+    both rebuilt byte for byte).
+  - **Ruling 1 (`--no-shield-log`): a model input, not a mask.** It sets the predicted chance to 0 for a named log and
+    nothing else, so a logged chance above 0 still fails and a block roll the game made would break the seed chain; it
+    cannot hide a roll. For a recipe with no shield in either hand it is a recipe fact (the code's `0x0063C8F0` test,
+    read at `[I]`); for `CombatDR` it takes the logged 0 as given, so those 18 events check nothing about the refusal,
+    which stays `[I]` in § 16. A later run list declares the flag from the recipes before the check and names any log
+    whose shield the code refuses.
+  - **Ruling 2 (the cold cap): met over the two runs.** 4 here and 27 in `c37r-run2.lst`, both re-checked by the same
+    checker revision with 0 mismatches, on the one table-row path the fire, lightning and poison caps take: 31, so
+    combat/0001 § 16 now raises it to `[C]` (done in this review). The plan's floor is per case, not per run (the
+    expiries and shrines already count with the kept run).
+  - **Ruling 3 (`CombatAmaD`, `CombatAmaW`, `amaw-n-walk`).** Accepted: stock uniques at their maximum rolls, pinned;
+    the stat totals at level 5 are a built state (as `CombatAma`'s), harmless since every stat the model uses is
+    logged. `amaw-n-walk` as ruling 3 (a)'s one extra session is accepted (the cause was the to-hit floor, not the
+    mode); with 6 the walking block is **final** at `[I]`.
+  - **Ruling 4 (the in-event `MonAttackStats`, the drop past the cap).** Accepted at `[I]`: the inner call is checked
+    as its own `mas` event, its exit stats feed the build as a value oracle (as at `EV0`), its entry seed is asserted
+    (5 in this run, 6 over the 71 logs); the 8 dropped events are counted in `ma` and checked nothing. Which events
+    call it is unread: carried to plan [0045](0045-skills-missiles-machinery.md) (its monster skill uses with
+    `MonAttackStats` predicted; log entry there).
+  - **Ruling 5 (the stats checker's item-type fix, `--dead-below`, the potion key).** The index fix follows
+    ItemTypes.md's `[C]` marker rule and moves no kept-run value (byte-identical re-check). `--dead-below` changes the
+    pilot only (its default stays 0.05); with 0 the death stop is off, so a session using it must find a death in its
+    log: neither `floor-poison` session died (80 hops each, the character moving). The potion plan's one key press
+    is a staging change behind dev logs only.
+  - **Ruling 6 (the *Fleshripper* log).** Accepted outside the run: it is the kept replacement (Phase 1 ruling 1),
+    hashed in `p47h-manifest.txt`; its 57 mismatches are one cause, the unmodelled event-9 handler, each located by its
+    `EVH` line. Plan 0045 Phase 2's oracle replacement takes it (log entry there); combat/0001's event-9 bullet stays
+    `[I]`.
+  - **Ruling 7 (the raises).** combat/0001 § 16: evade, weapon block, dodge and avoid, crushing blow on champions, the
+    lightning cap and magic immunity, the negative field and the total ≤ 0, fire flat absorb, freeze and prevent-heal's
+    no draw stand at `[C]` (code reading plus a 0-mismatch reproduction, every case above 30; the evade-by-mode
+    "never" is separated by the same characters rolling dodge and avoid in other modes); the cold cap added by ruling
+    2; the weapon-block skill value, open wounds' `0x0C`, the unusable shield and the in-event `MonAttackStats` stay
+    `[I]`. stats/0002 § 9: the `attract` refusal on monsters (71 of 71 refused, 151 of 151 made), groups 1–2 (43) and
+    the aura end by the skill switch (59, return `0x005702E1` read) stand at `[C]`, each split from its remainder.
+    quests/0002: one activation, stays `[I]`.
+  - **Ruling 8 (Done-when and what carries forward).** Phase 2 meets its *Done when* for every combat case and for
+    `attract`, the aura end and groups 1–2. The cases named again for staging reasons (shrines and wells with ten
+    staged sessions unrun, the expiries behind an unexplained potion-plan failure, the 256 floor and the curse cut with
+    one of two sessions run, group 3's missing exit line, the travel route's warp search) do not give the stock-data
+    reason the TL;DR asks for, so they are not final: they move to **Phase 2b** of this plan (added above), with cold
+    and lightning flat absorb (`abs-nm-marsh` unrun). Final now: the walking block (6), the magic cap (unstaged).
+    **Phase 3 may start** on combat and on the stats cases reached here; the Phase 2b counts reach the specs after it.

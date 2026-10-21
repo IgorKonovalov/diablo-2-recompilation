@@ -414,9 +414,17 @@ Lunata* and the session re-run).
    `--no-shield-log` (new) names the logs whose player holds no usable shield (the claws, `CombatAmaD`, and
    `CombatDR`, whose two-handed *Spellsteel* leaves *Kerke's Sanctuary* with block chance 0 in all 18 of its player `DRB` lines,
    12 + 4 + 2): `UnitBlockChance`'s shield test is a value oracle, as before; the logs carry no equipment.
+   *Review 2026-10-21:* the same call without `--no-shield-log` gives `SUMMARY mismatches=88 events=18737`, every one
+   `DRB block chance (player formula, shield held)` with 0 logged: 66 on `CombatAss` (28, 37 and 1 in
+   `ass-n-plains`, `-plains2`, `-plains3`), 4 on `CombatAssO`, 18 on `CombatDR` (12, 4, 2); the `CombatAmaD` logs
+   pass either way (dexterity 15 makes the expansion formula 0). The claw recipes hold no shield, so their 70 are a
+   prediction from the recipe; `CombatDR`'s 18 are the logged 0 taken as the input (its refusal is unread,
+   combat/0001 § 16). The flag only sets the expected chance to 0: a logged chance above 0 still fails.
 3. The same checker over `c37r-run2.lst` (the kept run): `SUMMARY mismatches=0 events=40655`, unchanged except two
    counters: `defence roll block` 9 288 is new, and the crushing-blow label `champion (0x04)` takes 72 of the 163
-   events labelled `unique` (below).
+   events labelled `unique` (below). *Review 2026-10-21:* against the kept output
+   `c37r-run2-check-rbs-2026-10-17.txt` there are also the three new `≤ 0` delivery counters (147 negative on the
+   player, 4 and 444 at zero on the player and on a monster); no other line differs.
 
 **Checker changes** (`tools/combat.py`, commits `157e502`…`9d8a1fa` on `lane/p47h`): the `≤ 0` delivery counter
 (`delivery total negative/zero (life unchanged)`, backlog resume-lane follow (b)); the dead-defender test from
@@ -430,7 +438,7 @@ input and is dropped with a count (8, one log).
 | case (plan 0047 Phase 2) | count, this run | label in `p47h-check.txt` | met |
 |---|---:|---|---|
 | crushing blow on champions (Nightmare) | 40 (52 in all) | `crushing blow on champion (0x04)` | yes |
-| cold resistance at the cap | 4 | `resist application cold at cap` | **no** |
+| cold resistance at the cap | 4 (31 with the kept run's 27) | `resist application cold at cap` | over the two runs (review ruling 2) |
 | lightning resistance at the cap | 42 | `resist application light at cap` | yes |
 | magic immunity | 36 | `resist application magic immune` | yes |
 | negative absorbed amount | 186 | `negative absorbed amount (no heal)` | yes |
@@ -469,5 +477,6 @@ input and is dropped with a count (8, one log).
   `item_healafterkill`, not modelled: plan 0045 Phase 2). It is the kept replacement of the lost `e001b03e…` log
   (backlog resume-lane follow (a)): `p47h-owf-n-andariel-p8.log` `a411b34d…` in `p47h-manifest.txt`.
 - **Conclusion:** every case but two passes the floor with 0 mismatches; cold at the cap (4) and the walking block (6)
-  are named again with these counts; the magic cap stays unstaged (Phase 1 ruling 2). Raises in
+  are named again with these counts (*review 2026-10-21:* the cold cap is met over the two runs, 31, both re-checked
+  by this checker revision; the walking block is final); the magic cap stays unstaged (Phase 1 ruling 2). Raises in
   [combat/0001 § 16](0001-formulas.md#16-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls). (run:2026-10-20-shortfalls)

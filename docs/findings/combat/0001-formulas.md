@@ -849,7 +849,8 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
   (fn:COMBAT_Absorb@0x0057BF10, fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat) *2026-10-20 (plan 0047
   Phase 2, § 16):* raised: crushing blow on champions (52), the lightning cap (42), magic immunity (36), the negative
   absorbed amount (186), the total ≤ 0 (488), evade, weapon block, dodge, avoid, freeze (81) and fire flat absorb (113);
-  still under the floor: the cold cap (4) and the mode-2 block (6); not reached: cold and lightning flat absorb, the
+  the cold cap over the two runs (27 + 4 = 31, Phase 2 review ruling 2); still under the floor: the mode-2 block (6);
+  not reached: cold and lightning flat absorb, the
   magic cap (unstaged), open wounds on a player (plan 0044), conversion and pierce (plan 0045).
 
 ### 16. Plan 0047 Phase 2: the shortfalls (run:2026-10-20-shortfalls)
@@ -895,17 +896,26 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
   (81 in `abs-n-plains`, *Blackhorn's Face* `noheal`), each with both seeds asserted after it and no step between;
   with the static reading of `sub_0057D810_PreventHealHook` (no RNG call) the Open questions bullet is raised.
   (fn:sub_0057D810_PreventHealHook@0x0057D810, run:2026-10-20-shortfalls)
-- [I] **Named again, under the floor**: cold resistance at the cap, 4 (27 in run:2026-10-16-combat): cold hits on a
-  Normal player are rare on stock rows; the walking (mode 2) block, 6 undivided chances in 48 events on a walking
-  player, ruling 3 (a)'s extra session (`amaw-n-walk`) spent: the `÷ 3` exception stays `[I]`. The magic cap stays
-  unstaged (plan 0047 Phase 1 ruling 2). (fn:COMBAT_DefenceRoll@0x0057DFB0, fn:COMBAT_ResistFor@0x0057BE00,
-  run:2026-10-20-shortfalls)
-- [I] **An unusable shield blocks nothing.** `UnitBlockChance`'s player branch calls `0x0063C8F0` (inventory, 0), which
+- [C] **The cold cap, over two runs** (§ 7; Phase 2 review ruling 2, 2026-10-21): the player's cold resistance at the
+  cap in 4 applications of this run and 27 of `c37r-run2.lst`, both lists re-checked by the same `tools/combat.py`
+  (`bd80126a…`) with 0 mismatches: 31, each giving the logged field, on the one table-row path that the fire,
+  lightning and poison caps take. Cold hits on a Normal player are rare on stock rows (a cold El row that rolls, or a
+  cold-enchanted special). (fn:COMBAT_ResistFor@0x0057BE00, fn:COMBAT_ReduceRow@0x0057BF80, run:2026-10-20-shortfalls,
+  run:2026-10-16-combat)
+- [I] **Named again, under the floor (final)**: the walking (mode 2) block, 6 undivided chances in 48 events on a
+  walking player, ruling 3 (a)'s extra session (`amaw-n-walk`) spent: the `÷ 3` exception stays `[I]`. The magic cap
+  stays unstaged (plan 0047 Phase 1 ruling 2). (fn:COMBAT_DefenceRoll@0x0057DFB0, run:2026-10-20-shortfalls)
+- [I] **An unusable shield blocks nothing.** `UnitBlockChance`'s player branch calls `sub_0063C8F0_InvItemQuery` (inventory, 0), which
   takes each hand's item, tests it with `0x0062A4E0` (item `+0x14` → `+0x18` flags `0x100` and `0x4000` clear) and
   `ITEMS_UnitIsType(item, 51)`, and returns 0 otherwise; the chance is then 0. Two layouts gave 0 in every player
   `DRB` line: *Steelclash* (level 17) on the level-5 `CombatAmaW` (225 lines, the dev log) and *Kerke's Sanctuary*
   beside the two-handed *Spellsteel* (`CombatDR`, 18). Which flag each sets is not read. (fn:sub_00622720_UnitBlockChance@0x00622720,
-  0x00622797, 0x0063C8F0, 0x0062A4E0, fn:ITEMS_UnitIsType@0x00629BB0, run:2026-10-20-shortfalls)
+  0x00622797, fn:sub_0063C8F0_InvItemQuery@0x0063C8F0, 0x0062A4E0, fn:ITEMS_UnitIsType@0x00629BB0,
+  run:2026-10-20-shortfalls) *Review 2026-10-21:* the checker cannot see a hand's item, so `--no-shield-log` declares
+  these logs' players shield-less; it changes the check only where the formula would give more than 0: without it
+  the run list gives 88 mismatches, all `DRB block chance (player formula, shield held)` with 0 logged (70 on the
+  claw Assassins, who hold no shield, which their recipes show; 18 on `CombatDR`, whose 0 is this bullet's unread
+  refusal, taken from the logs, not predicted). With it, a logged chance above 0 still fails.
 - [I] **A monster's own `MonAttackStats` inside its attack**: `sandraider2` attacking in mode 14 (return `0x005CAED8`)
   called it for mode 8 between the defence rolls and the build in 6 of 14 such events, and the build used its output
   (`MAS1` stats 21/22: 72/91 against 59/100 at `EV0`), its entry on the attacker's running seed (5 asserted). Which events call it is not

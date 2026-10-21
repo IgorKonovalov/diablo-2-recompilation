@@ -144,6 +144,8 @@ RECIPE_BASES = {
     "cuberunes": (BASE_X, "416cb60e442bf2e13bfeaeace0f322206d4344e2a35f0094b175340693261b7c"),  # run:2026-10-15-cube-saves
     "cubesock": (BASE_X, "fc5674f780e62ac90791636433212c4cbbc39348a963c42aaac367da1ef3d52d"),  # run:2026-10-15-cube-saves
     "h2afind": (os.path.join(SAMPLES, "smpbar.d2s"), "38f0fc5792475a073a9da3838c5dd6864c687f4b5484f6d2cfc2cfbf14f426db"),  # run:2026-10-20-sweep-items-tc (H2a FindBar)
+    "h2bjewel": (os.path.join(SAMPLES, "smpsor.d2s"), "03afa56fce9073fb98d7581dbc025decaad2c4ea18dcf93bcdd8aee19b05fcab"),  # run:2026-10-20-sweep-items-chain (H2b)
+    "h2bthrow": (BASE_C, "b965d6b9e65ab8d7e5444515a81074a3bf48953da7bd2295cd8ecc198d536987"),  # run:2026-10-20-sweep-items-chain (H2b)
     "keynova": (BASE_X, "88ebd25f6db285ef3d863377e4cf4fe9a0554664d448cb6b53f762585e46d635"),  # run:2026-10-15-drlg-outdoor
     "cownova": (BASE_X, "8c66964bb82a2cc5757bac9b154756571af953ca960d5847ecc77c99389efbc8"),  # plan 0027 Phase 3 (level 39)
     "lightsorc": (BASE_X, None),
