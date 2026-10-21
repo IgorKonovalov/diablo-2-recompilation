@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, combat/to-hit, combat/damage, combat/reductions, monsters/stats]
 consumed_by: [combat/overview, items/tc, stats/states, items/economy]
-tags: {C: 59, I: 49, L: 3}
+tags: {C: 74, I: 58, L: 4}
 updated: 2026-10-21
 ---
 
@@ -21,7 +21,7 @@ boundary of the model ([combat/overview § Boundary](README.md#the-adr-0014-boun
 
 ```mermaid
 flowchart TD
-  q["ResolveAndQueue: build, reductions, kill pre-test, queue"] --> fin["PrgFinisher, a player's charged state only: entries draw, 38 delivers first (A3)"]
+  q["ResolveAndQueue: build, reductions, kill pre-test, queue"] --> fin["PrgFinisher (A3): a player's charged state, or a finishing move's hit (A2); entries draw, 38 delivers first"]
   fin --> dq["DeliverQueued: range check"]
   dq --> ad["ApplyDamage"]
   ad --> ev["events 5 then 1 (melee) or 6 then 2 (missile): crushing blow, open wounds, freeze"]
@@ -47,6 +47,7 @@ flowchart TD
 | Crushing blow, open wounds, freeze (stat events 16, 15, 14) | fn:STATEVENT_CrushingBlow@0x005BFFC0, fn:STATEVENT_OpenWounds@0x005BFE60, fn:STATEVENT_Freeze@0x005BFC60 | [C] for the first two (run:2026-10-16-combat); [C] for freeze on a melee hit (run:2026-10-20-shortfalls) |
 | A monster's life tick (poison, open wounds) | fn:sub_005A6920_MonRegenEvent@0x005A6920 | [C] (run:2026-10-16-combat) |
 | A player's life tick | fn:sub_00580810_RegenEvent@0x00580810 → fn:sub_00580610_LifeRegenTick@0x00580610 ([stats/states § E](../stats/states.md#e-the-regeneration-tick)) | [C] (run:2026-10-17-stats: 54 719 ticks, 1 082 under poison) |
+| A finishing move (do 42, 46, 50, 52) hands its queued hit to the finisher | fn:COMBAT_PrgFinisher@0x005D5220 (A2) | [C] for the six call sites (run:2026-10-21-cat-emu-ass `static.txt`); [C] for the calls of do 42, 46 and 50 as boundaries, do 46's on the path where its hit helper returns for a bad skill id (ADR-0021, run:2026-10-21-cat-emu-ass) |
 | The kill | fn:COMBAT_GetHit@0x0057CEE0 → fn:sub_0057CCB0_UnitKilled@0x0057CCB0 | [I] |
 
 ## Inputs
@@ -122,12 +123,36 @@ A2. DeliverQueued(att, def):                                          [I] (fn:CO
 - A2. Before delivery, `SKILL_AttackDo` calls the progressive-charge finisher (A3); an attacker under a `meleeonly`
   state (wolf, bear) skips it. The run met no charged state. [I] (fn:COMBAT_PrgFinisher@0x005D5220,
   fn:sub_0056C2D0_AttackDeliverMeleeOnly@0x0056C2D0)
+- A2. **The finisher has six direct calls in five functions**: `SKILL_AttackDo` (`0x0056F1CE`) and five sites in the assassin
+  finishing moves' do functions, do 42 Dragon Talon (`0x005D5A8C`), do 46 Dragon Claw (`0x005D6399` and `0x005D63E1`,
+  one per parity path), do 50 Dragon Tail (`0x005D71F2`) and do 52 Dragon Flight (`0x005D79DF`); start 25 calls it
+  nowhere (it only tests for a target). [C] (run:2026-10-21-cat-emu-ass `static.txt`, a scan of every `call` operand,
+  [skills/0014 § 1](../../findings/skills/0014-assassin.md#1-the-table-slots-the-shared-shape-the-stock-rows-and-the-callers))
+- A2. **What the finishing moves pass.** Do 42, do 46 and do 50 reach the finisher with `QueuedHitFind(caster,
+  target)`'s result as its one stack argument (the game in `ECX`, the caster in `EDX`): do 42 with **no null test**, so
+  it also calls it with 0; do 46 only when `QueuedHitFind` gives a hit, and with no hit it calls `DeliverQueued(caster,
+  target)` instead; do 50 only with a hit, returning 0 before it otherwise, after copying the 0x70-byte packet to its
+  frame. The run reached do 46's two calls only where `0x005D6200` returns for a bad skill id; on a valid id the same
+  instructions follow its hit test, after that boundary. [C] (ADR-0021, up to `PrgFinisher` @0x005D5A91, @0x005D639E, @0x005D63E6, @0x005D71F7 or `DeliverQueued`
+  @0x005D63AB, @0x005D63F3; run:2026-10-21-cat-emu-ass `hit_ass`, fn:sub_005D5A30_SkillDo42DragonTalon@0x005D5A30,
+  fn:sub_005D6340_SkillDo46DragonClaw@0x005D6340, fn:sub_005D7180_SkillDo50DragonTail@0x005D7180,
+  [skills/0014 § 4](../../findings/skills/0014-assassin.md#4-the-hits-and-the-finishing-moves-do-33-34-35-42-46-50-52))
+- A2. Do 52 passes `QueuedHitFind`'s result with no null test, as do 42. The finisher returns at once for a null hit
+  or one whose result lacks bit `0x1`, so a null argument runs nothing. [I] (0x005D79D1–0x005D79DF,
+  0x005D5229–0x005D523B)
+- A2. **After the finisher, each finishing move delivers.** Do 46 runs the finisher only on a hit, then one
+  `DeliverQueued(caster, target)` on either path (the jump at `0x005D6391` / `0x005D63D9` skips only the finisher), and
+  sets or clears bit 6 by the parity bit; do 42, do 50 and do 52 call `DeliverQueued` after the finisher. Do 42 then
+  delivers once more; at its last kick (the count at 0) it first makes one `RNG_Range(caster, 100)` against a value
+  `k` (100, or a calc chosen by the target's kind; no draw when `k` ≤ 0); do 50 then makes a fire area hit of `calc1 + stat 329` percent of the kick's
+  physical damage for a living caster. [I] (0x005D6386–0x005D6405, 0x005D5A91–0x005D5BE9, 0x005D71F7–0x005D72A0,
+  0x005D7982–0x005D79FB)
 
 **A3. The progressive finisher and its `srvprgfunc` entries.**
 
 ```
-A3. PrgFinisher(att):                                                 [I] (fn:COMBAT_PrgFinisher@0x005D5220, all of A3)
-      if not (the queued hit has result bit 0x1 and the target is in melee range): return
+A3. PrgFinisher(att, hit):                                            [I] (fn:COMBAT_PrgFinisher@0x005D5220, all of A3 except as tagged)
+      if hit is null or not (hit.result & 0x1) or the target is not in melee range: return
       for each charged progressive state of att (a list, a skill, lvl ← max(stat 351, current level) > 0, an aurastat1):
         n ← clamp(charges, 1, 3)
         peek ← Step(copy of att.seed)                                 ; att.seed itself unchanged (0x005D5368–0x005D538C)
@@ -136,45 +161,114 @@ A3. PrgFinisher(att):                                                 [I] (fn:CO
         UnitMsgA3(skill, lvl, peek, 0, n)                             ; a client message (0xA3), no game state, no draw
       free the list
 
-Entry 37 or 143 (ring):                                               [I] (fn:sub_005D4E70_SkillPrgDo37Ring@0x005D4E70, fn:sub_005D4F40_SkillPrgDo143Ring@0x005D4F40, 0x005D4E80, 0x005D4F50)
-      Step(att.seed);  w ← att.seed.low                               ; draw (attacker), at entry, before any test
-      m ← srvmissile by charge;  if m ≤ 0: return
-      every ← prgcalc by charge, or aurarangecalc when 0
-      local ← Init(w);  for each `every`-th of 64 directions: Step(local); MissileCreate(m, …, callback arg: local.low)
-                                                                      ; the callback re-seeds the new missile (rng/seeds)
-Entry 38 (area hit):                                                  [I] (fn:sub_005D3E80_SkillPrgDo38AreaHit@0x005D3E80, 0x005D3E80–0x005D3F82)
+Entry 37 or 143 (ring):                                               [C] up to the first MissileCreate (ADR-0021, run:2026-10-21-cat-emu-ass, fn:sub_005D4E70_SkillPrgDo37Ring@0x005D4E70, fn:sub_005D4F40_SkillPrgDo143Ring@0x005D4F40, fn:sub_005D4150_SkillRing64LocalSeed@0x005D4150, fn:sub_005D4870_SkillRing64LocalSeedB@0x005D4870)
+      Step(att.seed);  w ← att.seed.low                               ; draw (attacker), at entry, before the record test
+      if no Skills record: return 0                                   ; the seed stays stepped
+      m ← SrvMissileByCharge(att, skill);  if m ≤ 0: return 0
+      (tx, ty) ← the target point;  if none: return 0
+      n ← PrgCalcByCharge(att, skill, lvl), or aurarangecalc when 0    ; i32, not tested
+      local ← Init(w)                                                 ; high word 0x29A
+      b ← 0                                                           ; i32, a byte index into the 64 direction pairs
+      do:
+        Step(local)
+        MissileCreate({flags 3, owner att, class m, at (tx, ty), direction pair at b (the first (30, 0)),
+                       skill, lvl, callback 37: 0x005D40F0 / 143: 0x005D4680, callback arg: local.low})
+        ; [I] from here (0x005D4657–0x005D467D, 0x005D4D77–0x005D4DAA)
+        37: MissileData+0x28 ← SkillGetParam2(280) + 1                ; no null test of the missile
+        143: the same, only for a non-null missile of class 568
+        b ← b + 4n                                                    ; i32, wraps mod 2³²
+      while b < 0x100                                                 ; signed compare
+Entry 38 (area hit):                                                  [C] up to DeliverQueued or SkillRollPhys (ADR-0021, run:2026-10-21-cat-emu-ass, fn:sub_005D3E80_SkillPrgDo38AreaHit@0x005D3E80)
+      if no Skills record: return 0
       if att has a target: DeliverQueued(att, target)                 ; A2: the queued hit's delivery and its draws (0x005D3EBF–0x005D3ED0)
-      pkt.phys ← RangeB(att.seed, max − min) + min                    ; draw (attacker), 0x0056E1C4
+      (tx, ty) ← the target point;  if none: return 0
+      r ← PrgCalcByCharge(att, skill, lvl), or aurarangecalc when 0
+      pkt ← 0x70 zero bytes
+      SkillRollPhys(att, pkt, skill, lvl)                             ; [I] from here (0x005D3ED5–0x005D3F82)
+        pkt.phys ← RangeB(att.seed, max − min) + min                  ; draw (attacker), 0x0056E1C4
       RollElemDamage(att, pkt)                                        ; draw (attacker): RangeB; EType 10: one more Step
-      for each unit u of ForUnitsInRange(target point, r, aurafilter):  ; r: prgcalc by charge or aurarangecalc
+      for each unit u of ForUnitsInRange((tx, ty), r, aurafilter):
         AreaHitUnit(u): DefenceRoll(u, isMissile: true, useBlock: false)  ; draws on u.seed (combat/to-hit § C2): no block, avoid not dodge (0x0056BA06–0x0056BA0D)
           then MonCritDouble (combat/damage step 10), ApplyDamage on a hit (§ B), GetHit (§ F)
-Entry 39 (scatter):                                                   [I] (fn:sub_005D3F90_SkillPrgDo39Scatter@0x005D3F90, 0x005D3F90–0x005D40E7)
-      Step(att.seed);  local ← Init(att.seed.low)                     ; draw (attacker), at entry
-      r ← prgcalc by charge, or aurarangecalc
-      repeat r² times: dx ← r − Range(local, 2r); dy ← r − Range(local, 2r)
-        if dx² + dy² ≤ r² and the point has a room: MissileCreate at (tx + dx, ty + dy)
-Entry 41 (scatter):                                                   [I] (fn:sub_005D5080_SkillPrgDo41Scatter@0x005D5080, 0x005D5080–0x005D5218)
-      Step(att.seed);  local ← Init(att.seed.low)                     ; draw (attacker), at entry
-      count ← prgcalc by charge;  if count = 0: return
-      count missiles, each after two Step(local) for its offset
-Entries 36 (nova at the target) and 40 (one missile at the target point): no draw of their own
+      return 1
+Entry 39 (scatter):                                                   [C] up to the first MissileCreate (ADR-0021, run:2026-10-21-cat-emu-ass, fn:sub_005D3F90_SkillPrgDo39Scatter@0x005D3F90)
+      Step(att.seed);  w ← att.seed.low                               ; draw (attacker), at entry, before the record test
+      if no Skills record: return 0
+      (tx, ty) ← the target point;  if none: return 0
+      m ← SrvMissileByCharge(att, skill);  if m ≤ 0: return 0
+      r ← PrgCalcByCharge(att, skill, lvl), or aurarangecalc when 0
+      local ← Init(w)
+      repeat r · r times (i32; ≤ 0: no try):
+        dx ← r − Range(local, 2r);  dy ← r − Range(local, 2r)         ; x first; a 2r ≤ 0 gives 0 without a step
+        if dx² + dy² ≤ r² and the point (tx + dx, ty + dy) has a room:
+          MissileCreate({flags 1, owner att, class m, at (tx + dx, ty + dy), skill, lvl})
+                                                                      ; [I] after the first: the remaining tries (0x005D40D6–0x005D40E7)
+      return 1
+Entry 41 (scatter):                                                   [C] up to the first MissileCreate (ADR-0021, run:2026-10-21-cat-emu-ass, fn:sub_005D5080_SkillPrgDo41Scatter@0x005D5080)
+      Step(att.seed);  local ← Init(att.seed.low)                     ; draw (attacker), at entry, before the record test
+      if no Skills record: return 0
+      (tx, ty) ← the target point;  if none: return 0
+      m ← SrvMissileByCharge(att, skill);  if m ≤ 0: return 0
+      n ← PrgCalcByCharge(att, skill, lvl);  if n = 0: return 0
+      if n < 0: return 1
+      repeat n times:
+        Step(local);  dx ← (local.low mod 40) − 20                    ; u32 remainder
+        Step(local);  dy ← (local.low mod 40) − 20
+        if dx = 0 and dy = 0: dx ← 20
+        MissileCreate({flags 3, owner att, class m, at (tx, ty), offset (dx, dy), skill, lvl})
+        ; [I] from here (0x005D51DA–0x005D5218)
+        MissileData seed low ← local.low;  MissileData+0x2C ← dy << 16 | (dx & 0xFFFF)
+      return 1
+Entry 36 (nova at the target unit):                                   [C] up to the first MissileCreate (ADR-0021, run:2026-10-21-cat-emu-ass, fn:sub_005D4DB0_SkillPrgDo36NovaAtTarget@0x005D4DB0, fn:sub_0056D400_SkillNovaAtUnit@0x0056D400)
+      if no target, lvl ≤ 0 or no Skills record: return 0
+      m ← SrvMissileByCharge(att, skill);  if m ≤ 0: return 0
+      v ← MissileSpeedAtLevel(m, lvl) + calc1                         ; (VelLev · lvl) / 8 + Vel, signed division
+      SkillNovaAtUnit(att, target, m, skill, lvl, v)                  ; a nova of m centred on the target's position, owned by att,
+                                                                      ; flags 3 (| 4 when v ≠ 0), from the first of the 64 offsets
+Entry 40 (one missile at the target point):                           [C] (ADR-0021, run:2026-10-21-cat-emu-ass, fn:sub_005D5010_SkillPrgDo40MissileAt@0x005D5010)
+      (tx, ty) ← the target point;  if none or lvl ≤ 0: return 0
+      m ← SrvMissileByCharge(att, skill);  if m ≤ 0: return 0         ; no record test of its own (a bad skill gives m = −1)
+      MissileCreateAt(att, skill, lvl, m, tx, ty)
 ```
 
 - A3. **The finisher's own step is a peek**: it copies the seed out (`0x005D5374`), calls `RNG_Step` on the copy
   (`0x005D537B`), keeps the result and copies the seed back (`0x005D538C`). The kept value goes only into the client
   message `0xA3`. [I] (fn:sub_00650E70_Copy64Out@0x00650E70, fn:sub_00650E60_Copy64In@0x00650E60, fn:RNG_Step@0x0045C370,
   fn:sub_00571AA0_UnitMsgA3@0x00571AA0, [skills/0001 § 12](../../findings/skills/0001-dispatch.md#12-progressive-charges))
-- A3. **The entries draw.** 37, 39, 41 and 143 step the attacker's seed once at entry, before the record test, so the
-  step happens even when the entry then creates nothing (143 for Fists of Fire: its `srvmissilea` is empty). 38 draws
-  `RangeB` twice on it (physical and elemental) and a third time, an `RNG_Step`, for `EType` 10; its area units draw
-  their defence rolls on their own seeds. 36 and 40 draw nothing of their own. Every missile an entry creates adds
-  the creation's draws ([combat/overview § B4](README.md#b-draw-order-per-event)). [I] (0x005D4E80, 0x005D4F50,
-  fn:sub_0056E170_SkillRollPhys@0x0056E170, 0x0056E1C4, fn:SKILLS_RollElemDamage@0x0056E0C0,
-  fn:sub_0056B9C0_AreaHitUnit@0x0056B9C0, [skills/0003 § 1](../../findings/skills/0003-handlers.md#1-progressive-entries-srvprgfunc-and-the-finishers-tail))
-- A3. **Entry 38 delivers the queued hit itself**, before its own draws, so the attack's delivery (§ B, on both seeds)
-  comes before 38's `RangeB`; `SKILL_AttackDo`'s later `DeliverQueued` then finds no entry for the defender. [I]
-  (0x005D3E80–0x005D3F82, fn:COMBAT_DeliverQueued@0x0057D4F0)
+- A3. **The entries step the attacker's seed at entry.** 37, 39, 41 and 143 step the attacker's seed once inline,
+  before the record test, so the step happens even when the entry then creates nothing; up to its boundary (the first
+  creation; 38's `DeliverQueued` or `SkillRollPhys`) no entry of 36–41 and 143 draws on the attacker's or the target's
+  seed otherwise, and the draws before the first creation are on the local seed (37 and 143: one step; 39: two
+  `Range(local, 2r)` per try; 41: two steps). The run's calcs were constant programs, so a calc function's own draws
+  are not covered. [C]
+  (ADR-0021, run:2026-10-21-cat-emu-ass `prg_ass`, 0x005D4E80, 0x005D4F50,
+  [skills/0014 § 5](../../findings/skills/0014-assassin.md#5-the-progressive-entries-3641-and-143))
+- A3. **Entry 38 draws on the attacker's seed** after its delivery: `RangeB` twice (physical and elemental) and a
+  third time, an `RNG_Step`, for `EType` 10; its area units draw their defence rolls on their own seeds. 36 and 40 draw
+  nothing of their own. Every missile an entry creates adds the creation's draws
+  ([combat/overview § B4](README.md#b-draw-order-per-event)). [I] (fn:sub_0056E170_SkillRollPhys@0x0056E170, 0x0056E1C4,
+  fn:SKILLS_RollElemDamage@0x0056E0C0, fn:sub_0056B9C0_AreaHitUnit@0x0056B9C0,
+  [skills/0003 § 1](../../findings/skills/0003-handlers.md#1-progressive-entries-srvprgfunc-and-the-finishers-tail))
+- A3. **Entry 38 delivers the queued hit itself** when the attacker has a target, before its own rolls, so the
+  attack's delivery (§ B, on both seeds) comes before 38's `RangeB`. [C] (ADR-0021, up to `DeliverQueued` @0x005D3ED5,
+  run:2026-10-21-cat-emu-ass `prg_ass`) `SKILL_AttackDo`'s later `DeliverQueued` then finds no entry for the defender.
+  [I] (0x005D3E80–0x005D3F82, fn:COMBAT_DeliverQueued@0x0057D4F0)
+- A3. **A ring's step count is not tested.** `n` is used as found up to the first creation. [C] (ADR-0021,
+  run:2026-10-21-cat-emu-ass `prg_ass`) After it, `n` is not tested either: the ring makes `⌈64 / n⌉` missiles for
+  `0 < n < 2²⁹`; for `n = 0` the index does not move and the loop never ends, a creation per pass. [I]
+  (0x005D4657–0x005D467D, 0x005D4D77–0x005D4DAA, [skills/0014 § 5](../../findings/skills/0014-assassin.md#5-the-progressive-entries-3641-and-143))
+- A3. **A negative ring count does not loop forever.** For `n < 0` the ring reads its direction pair below the two
+  64-entry tables on every pass, ever further below its frame, and the signed index ends the loop only by wrapping past
+  −2³¹ to a value ≥ 0x100, after about 2³¹ / |4n| passes. Not run. [I] (0x005D4657–0x005D467D, 0x005D4D77–0x005D4DAA,
+  [skills/0014 § 5](../../findings/skills/0014-assassin.md#5-the-progressive-entries-3641-and-143)) Whether stock data
+  gives a ring 0 or a negative count is an open question.
+- A3. **The rings' `MissileData+0x28` write is Royal Strike's.** Both rings store `SkillGetParam2(280) + 1` (the
+  immediate `0x118`, row 280 Royal Strike) whatever row runs them; ring 37 for every missile with no null test, ring
+  143 only for a non-null missile of class 568 (`royalstrikechainlightning`). [I] (0x005D465E–0x005D4668,
+  0x005D4D7D–0x005D4D95, [skills/0003 § 9](../../findings/skills/0003-handlers.md#9-re-seed-sites-rng0002--the-other-initialiser-sites))
+- A3. **Entry 36 is also an item cast.** `ItemEffect` 36 on rows 44 Frost Nova and 48 Nova makes an item cast of those
+  skills run entry 36: a nova of the row's `srvmissilea` (119 `frostnova`, 90 `nova`) centred on the cast's target
+  unit, and nothing without one. [I] (tbl:Skills.txt:ItemEffect, [skills/0014 § 1](../../findings/skills/0014-assassin.md#1-the-table-slots-the-shared-shape-the-stock-rows-and-the-callers))
 - A3. **Stock use**: Fists of Fire 143/38/39 and Blades of Ice −/38/39 and Claws of Thunder −/36/37 with `prgstack`
   (an entry number 0 runs nothing), Royal Strike 40/143/41 without (only the current count's entry runs). A Fists of
   Fire finisher at three charges therefore steps the attacker's seed once (143), delivers and draws two or three
@@ -536,11 +630,20 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
   run:2026-10-16-combat)
 - **Absorb heals from both percent and flat absorb**, and only a positive amount. [C] for the percent
   (fn:COMBAT_Absorb@0x0057BF10, run:2026-10-16-combat); [I] for the flat (fn:COMBAT_Absorb@0x0057BF10)
-- **The finisher's `RNG_Step` is a peek, not a draw, but its entries draw.** It steps a copy of the attacker's seed
-  and restores the seed, so advancing the seed there shifts every later attacker draw; the entries 37, 39, 41 and 143
-  then step the real seed once at entry, even when they create nothing, and 38 draws two or three times on it after
-  delivering the queued hit (A3). [I] (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D5368–0x005D538C, 0x005D4E80,
-  0x005D4F50, 0x0056E1C4)
+- **The finisher's `RNG_Step` is a peek, not a draw.** It steps a copy of the attacker's seed and restores the seed,
+  so advancing the seed there shifts every later attacker draw (A3). [I] (fn:COMBAT_PrgFinisher@0x005D5220,
+  0x005D5368–0x005D538C)
+- **Its entries draw, even when they create nothing.** Entries 37, 39, 41 and 143 step the attacker's seed once at
+  entry, before their record test (A3). [C] (ADR-0021, run:2026-10-21-cat-emu-ass, 0x005D4E80, 0x005D4F50) Entry 38
+  draws two or three times on it after delivering the queued hit. [I] (0x0056E1C4)
+- **The finisher is not only the normal attack's.** The assassin finishing moves (do 42, 46, 50, 52) call it with
+  their own queued hit and then deliver (A2); do 46 runs it only on a hit but delivers on both paths. [C] for the call
+  sites and the calls of do 42, 46 (on its bad-id path) and 50 up to them (ADR-0021, run:2026-10-21-cat-emu-ass); [I]
+  for do 46's calls on a valid id and the deliveries
+  after them (0x005D6386–0x005D6405)
+- **A ring's step count is used untested.** A ring given 0 never ends; a negative count reads below the direction
+  tables until the index wraps (A3). A reimplementation that guards these changes behaviour only for data that makes
+  them happen. [I] (0x005D4657–0x005D467D, 0x005D4D77–0x005D4DAA)
 - **A handler draws on its own unit's seed**: shiver armour (3) and skill on get-hit (21) on the defender's, skill on
   death (30) on the dying unit's, knockback, howl, stupidity, skill on attack or hit, and reanimate on the attacker's (E5). [I]
   (data:g_StatEventFuncs@0x007325B0, 0x005BF9CF, 0x005C0603)
@@ -561,9 +664,14 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
   type flags of 7 474 monsters, freeze 81, the total ≤ 0 (488 + 113 on the player, 32 on a monster), the negative
   absorbed amount 186.
 - [skills/0001](../../findings/skills/0001-dispatch.md) §§ 10 (item-event casts and the `ItemTarget` 2 helper's draws,
-  the dated Phase 1b note), 12 (the finisher's seed save and restore).
+  the dated Phase 1b note), 12 (the finisher's seed save and restore; its callers, as corrected by the dated 2026-10-21 note).
+- [skills/0014](../../findings/skills/0014-assassin.md) §§ 1 (the finisher's six calls, `ItemEffect` 36), 4 (the
+  finishing moves' calls of the finisher and `DeliverQueued`), 5 (entries 36–41 and 143 up to their first creation and
+  the rings' step count), with its review in the [plan 0046 log](../../plans/0046-skills-function-catalogue.md)
+  (`lane/p46m11`); [skills/experiments § run:2026-10-21-cat-emu-ass](../../findings/skills/experiments.md#run2026-10-21-cat-emu-ass)
+  (8 700 cases, 0 mismatches).
 - [skills/0003](../../findings/skills/0003-handlers.md) §§ 1 (the `srvprgfunc` entries, the finisher's tail and stock
-  use), 2 (item casts), 3 (the stat-event handlers, their registrations and draws), 13 (draws per event), as fixed by
+  use, the dated 2026-10-21 note), 2 (item casts), 3 (the stat-event handlers, their registrations and draws), 13 (draws per event), as fixed by
   the architect's P1.3 review (plan 0045 log).
 - Tables: [DifficultyLevels](../../tables/DifficultyLevels.md), [MonStats](../../tables/MonStats.md),
   [ItemStatCost](../../tables/ItemStatCost.md), [States](../../tables/States.md).
@@ -586,8 +694,12 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
 - ~~The progressive server functions the finisher calls (`srvprgfunc` entries 36–41, 143) and `0x00571AA0`, which
   receives the peeked value, are not read.~~ Read from the code: § A3; `0x00571AA0` is a client message
   ([skills/0003 § 1](../../findings/skills/0003-handlers.md#1-progressive-entries-srvprgfunc-and-the-finishers-tail)).
-- [L] A run that reaches the finisher's entries (A3) and the handlers of E5: run:2026-10-16-combat met no charged
-  state and took these handlers as boundary oracles (plan 0045 Phase 2).
+- [L] A run that reaches the finisher itself, its entries past their first creation (A3) and the handlers of E5:
+  run:2026-10-16-combat met no charged state and took these handlers as boundary oracles (plan 0045 Phase 2), and
+  run:2026-10-21-cat-emu-ass emulated the entries and the finishing moves only up to their boundaries (A2, A3).
+- [L] Whether stock data gives a ring a step count of 0 (an endless loop) or a negative one (A3): Claws of Thunder's
+  `prgcalc3` and Royal Strike's `prgcalc2` at their charge counts, or their `aurarangecalc` when those are 0; a harness
+  or calc-table check ([skills/0014 *Open questions*](../../findings/skills/0014-assassin.md#open-questions)).
 - [L] The `ItemTarget` helpers of an item cast (E5): which unit helper 2 (`0x005FD850`) is given, the caster or the
   target, and so whose seed its 2 to 20 steps advance; and whether helpers 3 (`0x005FD9C0`, called at `0x005FDBE1`, a
   corpse pick through `0x0056E390`) and 4 (`0x005FDA10`, called at `0x005FDBF3`) draw, which is not read. Plan 0046
