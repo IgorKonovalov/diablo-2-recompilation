@@ -3,7 +3,7 @@ spec: rng/seeds
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng]
-consumed_by: [drlg/overview, drlg/room-tiles, drlg/*, monsters/spawn, objects, items/*]
+consumed_by: [drlg/overview, drlg/room-tiles, drlg/*, monsters/spawn, objects, items/*, chain]
 tags: {C: 80, I: 13, L: 4}
 updated: 2026-10-21
 ---
@@ -354,7 +354,8 @@ Step notes:
    made on the room seed between creation and activation, because 6a restarts it from `+0x04`, but
    it does depend on k. Observed in that run: k = 50–376 over 157 activations. [C]
    (run:2026-10-11-seed-tree-p1) k is the number of room-seed draws of the `LvlSub` substitutions (type 1
-   only) and of the tile picks whose candidates have a positive rarity sum, plus rare oracle draws; it
+   only) and of the tile picks whose candidates have a positive rarity sum, plus `Orient89Unit`'s rare `Range(3)`
+   draws (room-tiles step 11); it
    is defined in [drlg/room-tiles § k](../drlg/room-tiles.md#k), which predicts it for all 520
    activations of its run (k = 0–388). [C] (fn:sub_0066EE70_DrlgRoomTypeInit@0x0066EE70,
    run:2026-10-11-drlg-roomk) `T[+0x18]`/`T[+0x20]` are the room's wall and floor tile counts after the

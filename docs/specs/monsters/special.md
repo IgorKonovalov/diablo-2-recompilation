@@ -3,9 +3,9 @@ spec: monsters/special
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/spawn, monsters/pool, data/excel, drlg/collision]
-consumed_by: [monsters/stats, monsters/spawn, items/tc]
+consumed_by: [monsters/stats, monsters/spawn, items/tc, chain]
 tags: {C: 107, I: 95, L: 3}
-updated: 2026-10-20
+updated: 2026-10-21
 ---
 
 # Special monsters: mods, minions, superuniques and names
@@ -130,8 +130,8 @@ What remains are inputs owned by other subsystems; every `[C]` below holds under
 
 | Input | Kind | What this spec needs | Owner | Tag |
 |---|---|---|---|---|
-| unit seed after `SUnitCreate` | seed oracle | the boss's, member's or superunique's `+0x20` before its first special draw | [monsters/stats](stats.md) ([spawn § J](spawn.md#j-creation-and-the-unit-seed)) | [C] (fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-14-mon-special) |
-| presets, inactive restore, objects window | seed oracle | the room and game seed after the window (`RW1` → `RW4`). Its superunique and MonPlace 2/3 spawns are modelled here from the room and game seed at their own entry; the rest of the window is the oracle | `drlg/preset`, `objects` | [C] (fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:sub_00552610_RoomObjectsPopulate@0x00552610, run:2026-10-14-mon-special) |
+| unit seed after `SUnitCreate` | modelled (plan 0048 Phase 1; a seed oracle in this spec's run) | the boss's, member's or superunique's `+0x20` before its first special draw; the chain predicts it ([chain § Algorithm](../chain/README.md#algorithm) E1–E3) | [monsters/stats](stats.md) ([spawn § J](spawn.md#j-creation-and-the-unit-seed)) | [C] (fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-14-mon-special, run:2026-10-21-chain2) |
+| presets, inactive restore, objects window | seed oracle in this spec's run; modelled in the chain | the room and game seed after the window (`RW1` → `RW4`). Its superunique and MonPlace 2/3 spawns are modelled here from the room and game seed at their own entry; the rest of the window was the oracle, and is the objects model with the window's preset monsters since plan 0048 Phase 1 ([chain § Inputs and oracles](../chain/README.md#inputs-and-oracles)) | `drlg/preset`, `objects` | [C] (fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:sub_00552610_RoomObjectsPopulate@0x00552610, run:2026-10-14-mon-special, run:2026-10-21-chain2) |
 | grid snapshot at each preset special | value input | the collision grids a superunique or MonPlace special is placed on | `drlg/collision`, `objects` | [C] (fn:sub_005A09E0_SpecialMonPlace@0x005A09E0, run:2026-10-14-mon-special) |
 | monster level read by `aura` | compared value | stat 12 after `leveladd`; it enters the draw only through `level ≥ 20` | [monsters/stats § D3](stats.md#d-classic-nightmare-and-hell-sub_0063eef0_monclassicdiffadjust) | [C] (fn:sub_005A1650_UModAura@0x005A1650, run:2026-10-14-mon-special) |
 | handler effects and their deep callees | seed-asserted calls | skill and AI setup, stat writes, quest hooks: no seed of unit, room or game changes across them; a change would be a failure, not a taken value | [monsters/stats § G](stats.md#g-the-mod-handlers-stat-effects), [quests/progression § B](../quests/progression.md#b-events-and-dispatch) | [C] (fn:sub_005A2120_SpecialModsApply@0x005A2120, run:2026-10-14-mon-special) |

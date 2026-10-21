@@ -131,3 +131,119 @@
   cn4 and cm4, `chain: 26 logs, 0 sub-checks failed`, 1 222 populations, 148 levels, 8 231 objects, 745 drops with an
   item. Outputs `out/review-check.txt`, `out/review-check-26.txt`, `out/review-o20.json`, `out/review-meq.py` (the
   `monequip.bin` rows of classes 234 and 267), hashed in `out/review-manifest.txt` (`5ba2d0051461a63d`).
+
+## run:2026-10-21-chain2
+
+- **Question:** (plan 0048 Phase 2, run 2) With the revisit re-creations' marks logged and modelled, does the
+  composition (`tools/chain.py check`) reproduce run 1's 28 logs and the new sessions with 0 mismatches, and do the
+  passing logs together hold the bar's 2 000 oracle-free room populations?
+- **Setup:** as [run:2026-10-20-chain](#run2026-10-20-chain): ADR-0003 harness, slot 1 (`:8`,
+  `workspace/wineprefix-1`), the pinned `game.exe`, logger `tools/gdb/chain.gdb`, characters `UniqNova` and
+  `UniqClassic` from `workspace/runtime/p48h-chars/` (saves tag `p48r2`; the slot's saves directory was empty before
+  the run and is empty after it). Driver `tools/chain_sessions.py run --slot 1 --tag p48r2 --saves
+  workspace/runtime/p48h-chars --run p2r2 <session>…`, its `PLAN2` rows (seeds 4861..4912, mostly outdoor waypoints),
+  same watchdog. New in the logger (commit `53ffb95`): `tools/gdb/collision.py` writes `CMR0 {th, room}` .. `CMRX`
+  around the two `sub_00542B40_RoomInactiveUnitsRestore` calls (`0x0052D142`, `0x0052D205`) and logs the `CM` mark
+  lines inside that scope as inside a window. New in the checker (same commit): `tools/objects.py` `recreation`
+  predicts each re-creation's marks and compares them with the scope's `CM` lines (on run 1's logs, which have no
+  scope, it applies them unchecked); `--cf recreation-off` is its control. Tool revisions `out/tools-r2-final.sha256`
+  (`797865e9ba9fac87`, paths from the repository root; every listed tool is commit `53ffb95`'s, unchanged since the
+  run's checkpoint `out/tools-r2-ckpt1.sha256`).
+- **Procedure:** the nine sessions below (2026-10-21, two before the owner's pause, seven after), then, from the
+  worktree root, each under `systemd-run --user --scope -p MemoryMax=4G`:
+  ```
+  python3 -I tools/chain.py check $(ls workspace/logs/chain-p2/p2-s1-*.log | grep -v raven-xn.log) \
+      workspace/logs/chain-p2/p2r2-s1-*.log --o20 out/r2final-o20.json        > out/r2final-check.txt
+  python3 -I tools/chain.py check <log>                       > out/r2final-per-log/<log>-check.txt   # each of the 37
+  python3 -I tools/chain.py check <log> --cf recreation-off   > out/r2final-cf-recreation-off-<log>.txt  # cn4, cm4, r2-xn1
+  python3 -I tools/chain.py check <log> --cf monequip-off     > out/r2final-cf-monequip-off-<log>.txt    # r2-xn2, r2-xm1
+  (cd workspace/logs/chain-p1 && python3 -I <worktree>/tools/chain.py check $(awk '{print $2}' inputs-world.sha256)) \
+                                                              > out/r2final-p1world-check.txt
+  ```
+  `out/r2final-recreations.txt` tabulates the per-log outputs (populations and re-creations by kind). Manifest
+  `workspace/logs/chain-p2/manifest-r2-final.txt` (sha256 prefix `e1d9e622a85995f5`, 169 lines, paths relative to
+  `workspace/logs/chain-p2/`; `sha256sum -c` passes from there): the 37 counted logs with their `.session.json` and
+  `.pilot.txt`, the outputs above, the development outputs `out/dev-r2-*` and the tool hashes. Run 1's
+  `manifest-final.txt` and the checkpoint's `manifest-r2-ckpt1.txt` stay as kept (the checkpoint's stub
+  `p2r2-s1-4871-r2-xm1.pilot.txt`, empty, is renamed `dev-p2r2-s1-4871-r2-xm1-paused.pilot.txt` so the session could
+  run under its name; its line in `manifest-r2-ckpt1.txt` now fails `sha256sum -c`, because the name holds the
+  session's pilot: the empty stub's hash, `e3b0c442…`, is in `manifest-r2-final.txt` under the new name (corrected at
+  the review; the run first said the line no longer resolves)).
+
+| Log | Seed | Character | Difficulty | Levels (PLR order) | Wall min | Game min | MB | Ended |
+|---|---|---|---|---|---|---|---|---|
+| `p2r2-s1-4861-r2-xn1.log` | 4861 | UniqNova | normal | 103, 106, 105, 104 | 15.0 | 7.95 | 14.9 | time |
+| `p2r2-s1-4862-r2-xn2.log` | 4862 | UniqNova | normal | 103, 3, 2, 3, 17 | 15.0 | 6.85 | 12.1 | time |
+| `p2r2-s1-4863-r2-xn3.log` | 4863 | UniqNova | normal | 103, 76, 78 | 15.0 | 7.93 | 17.0 | time |
+| `p2r2-s1-4871-r2-xm1.log` | 4871 | UniqNova | nightmare | 103, 3, 4, 3, 17, 3, 2 | 15.0 | 7.56 | 14.4 | time |
+| `p2r2-s1-4872-r2-xm2.log` | 4872 | UniqNova | nightmare | 103, 106, 105, 104, 103, 104 | 15.0 | 8.44 | 17.0 | time |
+| `p2r2-s1-4881-r2-xh1.log` | 4881 | UniqNova | hell | 103, 6, 7, 6 | 15.0 | 7.58 | 13.6 | time |
+| `p2r2-s1-4891-r2-cn1.log` | 4891 | UniqClassic | normal | 103, 106, 105 | 14.3 | 7.28 | 12.6 | quiet: log unchanged for 90 s |
+| `p2r2-s1-4901-r2-cm1.log` | 4901 | UniqClassic | nightmare | 103, 106, 105, 104 | 15.0 | 8.47 | 14.6 | time |
+| `p2r2-s1-4911-r2-ch1.log` | 4911 | UniqClassic | hell | 103, 106, 105 | 12.7 | 5.71 | 9.9 | commands done |
+
+  67.8 game minutes in all. No log holds gdb's `internal-error:`; no session reached the cap.
+  - **cn1**: the game process ended on its own at game frame 10 920 (gdb: `[Inferior 1 … exited normally]`), the
+    pilot still exploring level 105; the cause is not shown (the last screenshot is a live game). The log is whole up
+    to the exit and checks clean; the watchdog ended the session on silence.
+  - The queue was the resume note's first seven sessions (r2-xm1 r2-xh1 r2-cn1 r2-cm1 r2-ch1 r2-xn3 r2-xm2), run in
+    that order; the passing logs held 2 000 after them, so the optional seven were not run.
+  - **Development outputs** (kept, no claim rests on them): `out/dev-r2-*` from the checkpoint (run before the
+    final tools were fixed, or as the checkpoint's controls), and `out/dev-r2-p1world-check-maintools.txt`: a Phase 1
+    re-check whose `../../../tools/chain.py` resolved through the `workspace` symlink to the main checkout's (run 1's)
+    tools; it is byte-identical to run 1's `p1world-check-final.txt` and was re-run with the worktree's tools.
+- **Observed** (`out/r2final-check.txt`, trimmed): `chain: 37 logs, 0 sub-checks failed`.
+  ```
+  levels built (level, difficulty, game type)                     176   (DrlgType 1: 65, 2: 36, 3: 75)
+  levels built, difficulty 0/1/2, classic: acts 1234 each (24, 24, 20 levels); expansion: acts 12345 each (35, 36, 37)
+  room populations end to end with no oracle                     2189   (N cl 323, N exp 593, NM cl 264, NM exp 450,
+                                                                          H cl 263, H exp 296); creations in them 10764;
+                                                                          58 levels, 43 (level, difficulty) pairs
+  windows RW1 -> RW4 with no oracle left inside                  4827   (56 with one: OPUX 39, MTX 9, InitFn 62 1,
+                                                                          InitFn 62 and OPUX 2, InitFn 25 2, InitFn 43 2,
+                                                                          GOLD 1)
+  objects created (populate) 2888, (preset) 10168
+  specials: champion packs 63, uniques and minion packs 162, special mods rolls predicted 217
+  unit seeds after SUnitCreate predicted (oracle 14)             12580 of 12580 creations
+  tc: TC_ResolveDrops calls reproduced (quality modelled)        3784, failed 0; monster drops with an item 1314,
+                                                                          items made 1492; object-source calls 265
+  items: creations reproduced from the affix and property lines  1913 each, failed 0
+  monspawn checks 1641203, mismatches 0; monstats checks 275898, mismatches 0
+  re-creations by the revisit restore                            7290: marks compared with the logged CM lines 1903
+                                                                          (alive 1729, dead deadCol 0 166, deadCol 1 8),
+                                                                          applied unchecked on run 1's logs 5284 (4953,
+                                                                          328, 3), request made no unit 103;
+                                                                          restore scopes logged (CMR0 .. CMRX) 1000
+  oracle 13: MonEquipInit oninit creations reproduced            class 267 3 (raven-xn2, r2-xn2, r2-xm1), class 234 1
+                                                                          (cn2); items 4
+  oracle 19: LevelRoomCount reads (OG cnt) 3885; gate inputs asserted against chain/0002 § 7: pop 0 or the level id
+             4801 True, preset value in {0, 0x80} 3885 True, town test = LevelIsTown 3676 True, 82 gates closed by 0x30000
+  oracle 20: R3 pass rooms 4883, exact 4723, with a residue 160; residue cells +0080 192, +0100 166, +0400 28,
+             +0404 3, +0800 5, +1080 48, +1100 43; object-bit residue cells: 31 with a nearest line (OU0), 0 unexplained
+  ```
+  Per log (`out/r2final-recreations.txt`): every one of the 37 checks alone with 0 sub-checks failed; run 1's 28 logs
+  hold 1 387 populations (cn4 118, cm4 47) and 5 348 re-creations, run 2's nine 802 populations (xn1 94, xn2 73, xn3
+  75, xm1 99, xm2 120, xh1 73, cn1 90, cm1 107, ch1 71) and 1 942 re-creations, of which 1 903 compared line for line
+  and 39 made no unit.
+  The remaining oracles and inputs of the summary, by name and count: the state InitFns' modes (952) and interact
+  bytes (49), the object timer draws (20 109), the operate and trap spawns (6, 25, 2), the non-container OperateFns
+  (53), `LevelRoomCount` (88 windows), the gate inputs (4 883), the revisit object restores (35), the preset units of
+  types 1 and 5 (695, 281: their monsters are `tools/monspawn.py`'s), InitFn 46's requests (491, predicted by
+  `tools/monspawn.py`), InitFns 25, 43 and 62 (2, 2, 7), the class-434 mode (3), MonPlace rows 5, 10 and 11 (3, 4, 3),
+  creations outside the model with no level known (34), region appends by a creation outside the model (12), the
+  presets-window cell tests whose room has no cells (35 each), the special-count increment in a preset's creation (8),
+  one gold spot, and the chest interact bytes taken at the operate (lock bit set 2, lock bit cleared 3, cleared to 0 2;
+  r2-xm1 holds the second "cleared to 0"), and oracle 25 (chain/0001: the restored monster's state, a simulation
+  input): each revisit re-creation's class and unit id (`MT0`), cell (`MU0`) and alive or dead (`a10`) are taken from
+  the log, 7 290 re-creations (103 of them made no unit; added at the review). Inputs: `AROOM` 18 459, `LG0` 7 343, `NWW` 21 943, `OG` 4 883, `PLR`
+  51 214, `SN` 4 883, `TCR` 3 784 (with the game seed at each drop), `QKMF` 473, `QMF` 479.
+  - **Phase 1 world logs** (`out/r2final-p1world-check.txt`): `chain: 62 logs, 0 sub-checks failed`; the summary equals
+    run 1's `out/p1world-check-final.txt` line for line but four new re-creation lines (529 re-creations, marks applied
+    unchecked: 498 alive, 26 dead deadCol 0; 5 made no unit). No regression.
+  - **Controls:** `--cf recreation-off` fails cn4 and cm4 with exactly run 1's two mismatches (cn4 line 72971, cm4
+    line 53279, the same `COLL_WHTest` results) and fails r2-xn1 with 63 mismatches, every one a re-creation's logged
+    marks against an empty prediction (a floor, not 288: after each mismatch the checker resyncs to the next `RW1`,
+    `OO0`, `OGC` or `OPU0`, so the rest of that restore stretch is not tested; added at the review); `--cf monequip-off` fails r2-xn2 (line 48791) and r2-xm1 (line 52802), each at
+    a class-267 `MonEquipInit` unit seed.
+- **Conclusion:** [chain/0003](0003-end-to-end-run.md). With run 2's tools the 37 logs reproduce with 0 mismatches
+  and hold 2 189 oracle-free room populations; every other count of the Phase 2 bar is met on the same logs.

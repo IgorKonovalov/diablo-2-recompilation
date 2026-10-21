@@ -254,7 +254,10 @@ OBJINIT_Waypoint (InitFn 17)                                                    
   created in mode 0, and operating it is an activation (§ 2 above). The ice caves' waypoint rooms are LvlPrest Def
   1034–1037, the tundra's 953 or 954. Sessions `x-wpact5r-0` … `-5` in `tools/quest_sessions.py` (six map seeds,
   four activations each); not run. (tbl:Levels.txt:Warp0, tbl:Objects.txt:Sync, tbl:LvlPrest.txt:Def,
-  fn:OBJINIT_Waypoint@0x00547210)
+  fn:OBJINIT_Waypoint@0x00547210) *2026-10-21 (plan 0047 Phase 2b):* these are LvlWarp **ids**; the WRP lines and the sessions' `warp:`
+  steps number the loaded records (no `Expansion` divider), where id 71 is records 71 and 72 (left and right walls,
+  either per seed) and id 74 records 76 and 77; record 74 is id 73, Ice Caves Up. The sessions now name the records.
+  (tbl:LvlWarp.txt:Id, run:2026-10-21-shortfalls2)
 
 ### 3. Waypoint travel
 
@@ -626,7 +629,10 @@ offers no line); the 150-travel, 150-warp, 60-activation and 20-`NpcActTravel` f
 resurrection's life, mana and state writes (not logged); the free-cell search's far rings. Two-client cases stay plan
 0044's. (run:2026-10-19-quests3) *2026-10-20 (plan 0047 Phase 2):* one waypoint was operated from mode 0 (the Crystalline Passage, `x-wpact5r-0`):
 mode 0 → 1 with one object-seed step, its class's `Sync` 0, 0 mismatches; one of the 20 asked, so it stays `[I]`
-([quests experiments](experiments.md#the-travel-sessions-of-run2026-10-20-shortfalls); run:2026-10-20-shortfalls).
+([quests experiments](experiments.md#the-travel-sessions-of-run2026-10-20-shortfalls); run:2026-10-20-shortfalls). *2026-10-21 (plan 0047 Phase 2b):* six more (three in the Crystalline Passage, class 511; three in the
+Frigid Highlands, class 496, reached on foot from the Plateau), each mode 0 → 1 with one object-seed step and 0
+mismatches: 7 of the 20 over the two runs, named again, final; the operate stays `[I]`
+([quests experiments](experiments.md#the-travel-sessions-of-run2026-10-21-shortfalls2); run:2026-10-21-shortfalls2).
 
 ## Data touched
 

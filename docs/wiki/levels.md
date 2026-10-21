@@ -1,13 +1,13 @@
 ---
 based_on:
-  - docs/specs/drlg/README.md 2026-10-17
-  - docs/specs/drlg/room-tiles.md 2026-10-17
+  - docs/specs/drlg/README.md 2026-10-21
+  - docs/specs/drlg/room-tiles.md 2026-10-21
   - docs/specs/drlg/preset.md 2026-10-17
-  - docs/specs/drlg/collision.md 2026-10-20
+  - docs/specs/drlg/collision.md 2026-10-21
   - docs/specs/drlg/maze.md 2026-10-17
   - docs/specs/drlg/warps.md 2026-10-17
   - docs/specs/drlg/outdoor.md 2026-10-20
-  - docs/specs/drlg/lifecycle.md 2026-10-20
+  - docs/specs/drlg/lifecycle.md 2026-10-21
 ---
 
 # How a level is built
@@ -310,7 +310,11 @@ counts the substitution draws of an outdoor room, one per pick with a positive r
 rule on some wall cells (orientations 8 and 9), and it fixes the
 active-room seed, which monster and object placement later draw on ([room tiles § k](../specs/drlg/room-tiles.md#k)).
 k was predicted exactly for all 520 room activations of the first run (k from 0 to 388), and for 12 974 more
-activations in later runs.
+activations in later runs. What the wall-cell unit rule makes at activation is a [preset unit](../glossary.md) of the
+room, not a unit: the units it names are created later, with the room's other preset units, in the window before its
+objects and monsters ([room tiles § Algorithm](../specs/drlg/room-tiles.md#algorithm), step 11; see
+[seed to world](seed-to-world.md#c-a-room-activates)). That reading is inferred: the code that adds the preset
+unit has not been read.
 
 **Why k depends on what is already built.** Neighbouring rooms share their edge cells, and both rooms build them
 (unless a preset's `KillEdge` drops its own outer edge). The second room
@@ -532,6 +536,17 @@ the monster's own seed; its level does not show which form it gets, so that is r
 saved in full keeps its seed, while a simple one (gold, potions, keys) comes back with seed 0. Its expiry becomes the
 later of the saved one and 15 000 frames from now; an item whose expiry has already passed is not re-created (5 seen
 in a run). A run reproduced 2 035 monster, 876 item and 1 799 object restores.
+
+**A restored monster marks the collision grid** like a monster of the population pass, though outside any window
+([lifecycle § H5](../specs/drlg/lifecycle.md#h5-the-grid-marks-of-a-re-created-monster),
+[collision § F](../specs/drlg/collision.md#f-unit-marks)). One that comes back alive marks its footprint twice, then is
+unmarked and marked again with the pattern for its size. One that comes back dead is marked once and then, if its
+class's `deadCol` column is 0, takes the corpse marks (a 3 × 3 corpse rectangle, then the corpse pattern); with
+`deadCol` 1 the one mark stays. The end-to-end run compared 1 903 re-creations mark by mark, 0 different; the dead
+cases rest on 140 of them. That covers the marks made from the recorded cell and alive-or-dead state, which are
+inputs (they depend on what the monster did before the release), not where or in what state a monster comes back.
+The call path that makes the marks is read from the code; the marks and their order are what the run compared. Leaving the marks out breaks later placement
+tests: the first end-to-end run's only two mismatches were that.
 
 **Wanderers** ([lifecycle § I](../specs/drlg/lifecycle.md#i-the-wanderer-tick)). Each time a room is handled at the
 start of a frame it takes one room-seed draw for the wandering monster; that draw passes 1 time in 32 768. What

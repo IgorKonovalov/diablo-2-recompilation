@@ -3,9 +3,9 @@ spec: items/uniques-sets
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/tc, items/quality, data/excel]
-consumed_by: [items/affixes, items/properties, items/vendors, items/cube, save/d2s, stats/aggregate]
+consumed_by: [items/affixes, items/properties, items/vendors, items/cube, save/d2s, stats/aggregate, chain]
 tags: {C: 71, I: 55, L: 4}
-updated: 2026-10-17
+updated: 2026-10-21
 ---
 
 # Unique and set selection, and the creation fallbacks
@@ -32,7 +32,7 @@ flowchart LR
   CB -->|5| BS["ITEMS_BuildSet"]
   BU -->|ok| P["ItemApplyProps<br/>properties.md"]
   BS -->|ok| P
-  BU -->|fail| FB["durability, then fallback chain<br/>builders are oracles, items/affixes"]
+  BU -->|fail| FB["durability, then fallback chain<br/>builders: items/affixes"]
   BS -->|fail| FB
   P --> J["join: ethereal, sockets<br/>properties.md"]
   FB --> J
@@ -145,9 +145,9 @@ Plan 0024 replaced the property-roll oracle with the model of [items/properties]
 | Input | Kind | What this spec needs | Owner | Tag |
 |---|---|---|---|---|
 | `sub_0065FEC0_ItemApplyProps` mode 3 (unique) and mode 4 (set) | modelled (a seed oracle in plan 0019) | entry seed = the seed after the pick draw (or the builder entry seed for a TC-named row); it draws the row's properties on the item seed | [items/properties § B](properties.md#b-itemapplyprops-modes-and-blocks) | [C] (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, run:2026-10-14-uniques, run:2026-10-14-uniques-forced) |
-| the rare builder `ITEMS_BuildRare` | seed and result oracle | entry seed `{S, 666}`; returns success or failure | `items/affixes` | [C] (fn:ITEMS_BuildRare@0x005C21A0, run:2026-10-14-uniques-forced) |
-| the magic builder `ITEMS_BuildMagic` | seed and result oracle | as above | `items/affixes` | [C] (fn:ITEMS_BuildMagic@0x005565E0, run:2026-10-14-uniques, run:2026-10-14-uniques-forced) |
-| the superior builder `ITEMS_BuildSuperior`, the normal builder `ITEMS_BuildNormal` | seed and result oracle | as above; never reached from a failed unique or set in the runs | `items/affixes` | [I] (fn:ITEMS_BuildSuperior@0x005C2AD0, fn:ITEMS_BuildNormal@0x00556E80) |
+| the rare builder `ITEMS_BuildRare` | seed and result oracle in plan 0019's check; modelled by [items/affixes](affixes.md) and chained after this spec by `tools/items_chain.py both` (889 creations of run:2026-10-15-items-chain) | entry seed `{S, 666}`; returns success or failure | `items/affixes` | [C] (fn:ITEMS_BuildRare@0x005C21A0, run:2026-10-14-uniques-forced, run:2026-10-15-items-chain) |
+| the magic builder `ITEMS_BuildMagic` | as above: an oracle in plan 0019's check, chained since | as above | `items/affixes` | [C] (fn:ITEMS_BuildMagic@0x005565E0, run:2026-10-14-uniques, run:2026-10-14-uniques-forced, run:2026-10-15-items-chain) |
+| the superior builder `ITEMS_BuildSuperior`, the normal builder `ITEMS_BuildNormal` | specified in [items/affixes](affixes.md); as fallbacks of this spec never reached from a failed unique or set in the runs, so never chained here | as above | `items/affixes` | [I] (fn:ITEMS_BuildSuperior@0x005C2AD0, fn:ITEMS_BuildNormal@0x00556E80) |
 | stats 72 and 73 before the durability step | value input | the values `sub_00557AB0_ItemInitStats` set on the unit seed | [items/properties § A](properties.md#a-base-stats-on-the-unit-seed) | [C] (fn:sub_00557AB0_ItemInitStats@0x00557AB0, run:2026-10-14-uniques, run:2026-10-14-uniques-forced) |
 | `ItemData+0x10` (`start`) | value input | one game-seed draw in `sub_00552E90_ItemSeedInit` | [rng/seeds](../rng/seeds.md#algorithm) | [C] (fn:sub_00552E90_ItemSeedInit@0x00552E90, run:2026-10-14-uniques, run:2026-10-14-uniques-forced) |
 | quality and `rec+0x40` | value input | the quality roll's code, or 7/5 and row + 1 from a TC entry | [items/quality](quality.md), [items/tc § H](tc.md#h-item-pick-and-hand-off) | [C] (fn:ITEMS_DropRollQuality@0x00558640, run:2026-10-14-uniques) |
@@ -433,7 +433,7 @@ E2. for q in chain:                                                         [C] 
       item.quality ← q; rec.quality ← q                                     ; 6, 4, 3 or 2
       if q = normal: NormalBuilder(item); go to join                        ; result not tested
       S ← item.seed.low                                                     ; = S, nothing drew since the reseed
-      if Builder_q(item, rec): go to join                                   ; ORACLE, items/affixes
+      if Builder_q(item, rec): go to join                                   ; items/affixes (an oracle in plan 0019's check)
 ```
 
 Step notes:
@@ -496,7 +496,7 @@ sequenceDiagram
   participant C as ItemCreate
   participant B as builder
   participant I as item.seed
-  participant O as oracles
+  participant O as properties and builders
   C->>G: Step, unit seed
   C->>G: Step, start = low
   C->>I: Init start, 666

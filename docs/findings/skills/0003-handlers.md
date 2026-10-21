@@ -340,6 +340,10 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
 - [I] **Do 83** (`0x005CAF30`, Fire Hit): with a target, `COMBAT_DeliverQueued(target, 0)`, `sub_0057C9F0_QueuedHitRemove`,
   then `SKILLS_SrvStart(id, lvl, noCost 0)` (`0x005CAF72`): the skill's start function 42 runs again, building the
   next hit, and the cost is paid again (Fire Hit has no mana). (fn:sub_005CAF30_SkillDo83DeliverRestart@0x005CAF30)
+  *2026-10-21 (plan 0046 batch 8a), emulated:* the `COMBAT_DeliverQueued(target, 0)` call is reproduced (`[C]` under
+  ADR-0021, return address `0x005CAF5A`), and start 42, which the restart runs, ends at `MeleeHitTest` for a monster and
+  runs start 32 for a player; the restart itself stays `[I]` ([skills/0016 § 3](0016-monster-8a.md#3-the-hits-start-42-47-50-do-83-92-110)).
+  (run:2026-10-21-cat-emu-8a)
 - [I] **Do 109** (`0x005CDF10`, MonFrenzy, BloodLordFrenzy): with a used skill and a target, removes the queued hit,
   sets bit 6, and when `0x005CDD30` finds a non-zero byte in the animation's frame list after the current frame,
   `SKILLS_SrvStart(id, lvl, 0)` (`0x005CDF70`); then `sub_005CDDD0_SkillDo109Hit`: to-hit `SKILLS_GetToHit`,

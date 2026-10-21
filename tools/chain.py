@@ -292,6 +292,7 @@ CF = {
     "state-stale": "oracle 21: another room's seed from its activation seed only (its passes and windows ignored)",
     "i46-stored": "oracle 17: InitFn 46's direction draw stored like the others (one OD line per step)",
     "monequip-off": "oracle 13: MonEquipInit draws nothing on the unit seed (no location pick)",
+    "recreation-off": "plan 0048 Phase 2 run 2: a revisit re-creation makes no marks in the objects grid",
 }
 
 
@@ -321,6 +322,9 @@ def apply_cf(name):
         monstats.Model.monequip = lambda self, seed, cls, lvl: 0
     elif name == "overlay-off":
         monspawn.PresetMonPass.overlay = lambda self: self.chk.world.model
+    elif name == "recreation-off":
+        import objects
+        objects.MonTables.recreation_marks = lambda self, room, x, y, cls, mode: []
 
 
 def barrier_pred_ok(fl, o):

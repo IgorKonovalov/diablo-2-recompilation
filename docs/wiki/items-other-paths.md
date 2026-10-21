@@ -2,7 +2,7 @@
 based_on:
   - docs/specs/items/sockets-runewords.md 2026-10-17
   - docs/specs/items/cube.md 2026-10-17
-  - docs/specs/items/vendors.md 2026-10-20
+  - docs/specs/items/vendors.md 2026-10-21
   - docs/specs/items/quest-drops.md 2026-10-20
 ---
 
@@ -591,8 +591,11 @@ Collected from the specs' open questions and unconfirmed points:
   damaged items, the item level cap, the crafted edge cases).
 - **Vendors** ([open questions](../specs/items/vendors.md#open-questions)): the rest of the multiplayer cases (a leave
   with a trade window open, the two ways of leaving, three or more players); three bytes of the
-  vendor record that nothing read in the windows a run watched (a reader elsewhere is not excluded); how many draws
-  the [mercenary (hireling)](../glossary.md) list takes from the shared store seed (another plan owns it).
+  vendor record that nothing read in the windows a run watched (a reader elsewhere is not excluded); and how many draws
+  the [mercenary (hireling)](../glossary.md) list takes from the shared store seed, which the vendor run did not follow:
+  it took the store seed after each hire-list build from the recording (16 builds, each entered with the seed the
+  model predicted). The hire list's own draws are specified with the hirelings (see
+  [characters and hirelings](characters.md)), and a reimplementation runs them in that build's place.
 - **Quests** ([open questions](../specs/items/quest-drops.md#open-questions)): kills by pets, hirelings or converted
   monsters, parties, classic games, Diablo, Baal and his gold, Anya's and Qual-Kehk's items, the chest gold (Wirt's gold is now run, see [gold](economy.md#how-much-a-pile-holds)),
   the Countess in Hell and the Cow King's refusals were not attempted; and, for quest objects other than the

@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-21
 status: done
 context:
-  - ../../plans/0048-seed-to-world.md
+  - ../../plans/done/0048-seed-to-world.md
   - ../../findings/chain/0003-end-to-end-run.md
   - ../../findings/chain/experiments.md
 resolution: "Reviewed 2026-10-21 (architect): run 1 accepted with fixes (4: overclaim 2, misread 1, omission 1); Phase 2 not done. Rulings in the plan 0048 log: the mismatches are re-created monsters' unlogged marks (route: log and model them, re-check cn4/cm4 on their kept logs; the test is not taken as an input); about 16 more sessions approved on slot 1; the chest interact byte is a legitimate counted operate-path oracle; xh4 admissible as a reproduction, not for timing; oracle 13 raised in part. Next: run 2 on slot 1."

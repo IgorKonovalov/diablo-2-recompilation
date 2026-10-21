@@ -4,7 +4,7 @@ to: archivist
 date: 2026-10-20
 status: open
 context:
-  - ../plans/0048-seed-to-world.md#implementation-log
+  - ../plans/done/0048-seed-to-world.md#implementation-log
   - ../findings/chain/0001-oracles.md#open-questions
 resolution: ""
 ---

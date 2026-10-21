@@ -3,9 +3,9 @@ spec: drlg/lifecycle
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/room-tiles, monsters/spawn, monsters/special, monsters/stats, objects, save/d2s]
-consumed_by: [drlg/room-tiles, drlg/preset, drlg/collision, monsters/spawn, monsters/special, monsters/stats, objects]
-tags: {C: 86, I: 76, L: 8}
-updated: 2026-10-20
+consumed_by: [drlg/room-tiles, drlg/preset, drlg/collision, monsters/spawn, monsters/special, monsters/stats, objects, chain]
+tags: {C: 92, I: 77, L: 8}
+updated: 2026-10-21
 ---
 
 # Room lifecycle: activation, release, the inactive records and the restore
@@ -780,6 +780,67 @@ record with expiry 0, kept by the same test, was not reached. (run:2026-10-17-h7
 fn:sub_00541AC0_InactiveItemsRestore@0x00541AC0,
 [drlg/0009 § 11.3 (4)](../../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle))
 
+#### H5. The grid marks of a re-created monster
+
+```mermaid
+flowchart TD
+  r["H2: SpawnWithId, MonSpawnTry with request flag 0x20"] --> c["SUnitCreate, create flags 3: bit 0 runs SUnitPathCreate"]
+  c --> p["PATH_DynamicCreate: mark, creation pattern, 0x100"]
+  p --> d{"record restored dead?"}
+  d -->|"no"| a["MonSetMode: mark again; alignment refresh: unmark, mark with the pattern by size"]
+  d -->|"yes"| dc{"MonStats2 deadCol"}
+  dc -->|"0"| k["corpse call: unmark, 3x3 rectangle 0x8000; SUnitCreate's corpse re-mark: pattern 5, 0x8000"]
+  dc -->|"1"| l["the one live mark stays"]
+```
+
+```
+H5. the marks of one monster re-created by H2, in order:          [C] (run:2026-10-21-chain2: 1 903 re-creations compared line for line, the dead sequences on 140)
+      m ← (the creation pattern of drlg/collision F2, mask 0x100) at the landing cell
+      alive (record mode 1):                                     ; 1 729
+        PatternMark(m); PatternMark(m)                           ; PATH_DynamicCreate, then MonSetMode
+        PatternUnmark(m); PatternMark(pattern by size, 0x100)    ; the alignment refresh
+      dead (record mode 12, oracle 25's a10):
+        PatternMark(m)                                           ; no MonSetMode mark
+        if MonStats2 deadCol = 0:                                ; 134 outside r2-xn1
+          PatternUnmark(m); RectOrWH(x, y, 3, 3, 0x8000)         ; the corpse call
+          PatternUnmark(m); PatternUnmark(5, 0x100); PatternMark(5, 0x8000)   ; SUnitCreate's corpse re-mark
+        else: nothing more                                       ; 6 outside r2-xn1
+```
+
+- [C] **A re-created monster marks the grid like a pass creation**, outside any `RW` window: on run 2's nine logs, 1 942
+  re-creations in 1 000 logged restore scopes, 1 903 with their logged marks equal to the prediction above line for
+  line (cell, room, pattern or size, mask; 1 729 alive, 166 dead with `deadCol` 0, 8 dead with `deadCol` 1), 39 whose
+  request made no unit, 0 different. `--cf recreation-off` (no marks) fails r2-xn1 with 63 mismatches, a floor, since
+  the checker skips to the next window after each, and restores exactly run 1's two `COLL_WHTest` mismatches.
+  (fn:UNIT_CollMark@0x00649400, fn:COLL_PatternMark@0x0064EA90, run:2026-10-21-chain2,
+  [chain/0003 § 2](../../findings/chain/0003-end-to-end-run.md#2-run-1s-two-mismatches-and-the-re-creations-marks))
+- [C] **The dead sequences** rest on the 140 dead re-creations of the eight run-2 logs other than r2-xn1 (134
+  `deadCol` 0, 6 `deadCol` 1): the sequence was first predicted wrong from the code and corrected from r2-xn1's 34 dead
+  cases, which are therefore not its evidence. (fn:sub_00649F70_UnitCorpseColl@0x00649F70, 0x00649FD8,
+  0x0055546F, run:2026-10-21-chain2)
+- [C] The marks are made from the record's class (MonStats size, MonStats2 `deadCol`), its unit id, its landing cell and
+  its alive or dead state, which the check takes from the log: chain/0001 oracle 25, a simulation input (monster AI
+  and movement), 7 290 re-creations in the run, 103 of which made no unit. The `[C]` covers the marks made from those
+  values, not where or in what state a monster is restored. (fn:sub_00541E20_InactiveMonAiRestore@0x00541E20,
+  run:2026-10-21-chain2)
+- [C] On run 1's 28 logs, which log no restore scope, the same prediction entered the grid unchecked (5 284
+  re-creations) and every later position test passed; that admits them for the run's result, not as evidence for the
+  marks. (run:2026-10-21-chain2)
+- [I] **The call path**, read in the pinned image: a room whose driver flag bit 0 is set gets no `RW` window;
+  `RoomUpdateOne` (0x0052D142) and `NewRoomsUpdate` (0x0052D205) call `RoomInactiveUnitsRestore` directly, whose
+  monsters go through `SpawnWithId` to `MonSpawnTry` with request flags `0x62`, `0x6A` or `0xE2`. Flag `0x20` makes
+  the create flags 3 (0x005B2E10), and bit 0 runs `SUnitPathCreate`, whose monster branch marks through
+  `PATH_DynamicCreate` (0x00649E9A) and `MonSetMode` (0x005A7CB1), both into `COLL_PatternMark`, then `MonSpawnTry`'s
+  alignment refresh (0x005B2EAB). A record restored dead has no `MonSetMode` mark (`UnitIsDead` tested at 0x005A7CA7);
+  with `deadCol` 0 the corpse call (`RectOrWH` 3×3 `0x8000` at 0x00649FD8) and `SUnitCreate`'s corpse re-mark
+  (0x0055546F..0x005554A3) follow. (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0, fn:sub_0052D160_NewRoomsUpdate@0x0052D160,
+  fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40, fn:sub_005B30E0_SpawnWithId@0x005B30E0,
+  fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:sub_00554850_SUnitPathCreate@0x00554850, fn:PATH_DynamicCreate@0x00649D00,
+  fn:sub_005A7C20_MonSetMode@0x005A7C20, fn:sub_005541B0_UnitIsDead@0x005541B0, fn:sub_00649F70_UnitCorpseColl@0x00649F70,
+  [chain/0003 § 2](../../findings/chain/0003-end-to-end-run.md#2-run-1s-two-mismatches-and-the-re-creations-marks))
+- A worked example (two class-5 records, one alive, one dead) is in
+  [chain § Worked example 4](../chain/README.md#4-two-revisit-re-creations-and-their-marks).
+
 ### I. The wanderer tick
 
 ```mermaid
@@ -931,6 +992,9 @@ restore is not specified here.
   [§ 11.1](../../findings/drlg/0009-room-lifecycle.md#111-static-follow-ups-of-the-phase-2-review-lanerbs3) and
   [§ 11.2](../../findings/drlg/0009-room-lifecycle.md#112-the-town-follow-static-remainder-lanerbs4) hold the static
   town-follow reads.
+- [findings/chain/0003-end-to-end-run.md § 2](../../findings/chain/0003-end-to-end-run.md#2-run-1s-two-mismatches-and-the-re-creations-marks)
+  and [run:2026-10-21-chain2](../../findings/chain/experiments.md#run2026-10-21-chain2): the re-creation marks (H5),
+  1 903 compared line for line; the call path read from the image.
 - [drlg/room-tiles § Release and re-activation](room-tiles.md#release-and-re-activation): what the tiles release frees.
 - [objects § B](../objects/README.md#b-the-window-in-the-room-driver-and-the-revisit): the object save (B4) and
   re-creation (B5).

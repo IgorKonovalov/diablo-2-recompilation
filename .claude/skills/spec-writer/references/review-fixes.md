@@ -14,10 +14,10 @@ against all of them before you file the review request. Categories are those of 
    (`lane/p38s3`, 0038). Split a code-read part out of a `[C]` sentence: five resurrection NPCs in a `[C]` bullet
    whose run met one (`lane/p43s`, [0043](../../../../docs/plans/done/0043-items-economy.md)); the partial repair's
    rounding and Wirt's ilvl floor inside `[C]` notes (`lane/p43t`, 0043). A boundary reached on one path is `[C]` on that
-   path only: do 46's finisher calls, reached only on a bad skill id (`lane/s46c`, [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
+   path only: do 46's finisher calls, reached only on a bad skill id (`lane/s46c`, [0046](../../../../docs/plans/0046-skills-function-catalogue.md)); helper 2's test "at the caster's position" whose cases had casters of types 0, 1 and 3 only (`lane/s46d`, 0046). A wiki summary keeps the run's scope: "every room, monster, object and drop predicted" from the seed alone, for 37 games rebuilt with the walk, the fights and counted values taken from the recordings (`lane/s48p4`, [0048](../../../../docs/plans/done/0048-seed-to-world.md)).
 3. **Re-read the finding for each restated condition**: who, when, which branch. Seen: `SetBoss` party
    minions and the staff-mods type condition (`lane/wiki5`, [0039](../../../../docs/plans/done/0039-backlog-sweep-4.md)); warps F1's
-   `Warp` = −1 case (`lane/p38s2`, 0038); the store record's 4505 scoping (`lane/p43t`, 0043).
+   `Warp` = −1 case (`lane/p38s2`, 0038); the store record's 4505 scoping (`lane/p43t`, 0043); handlers 21 and 30's chance ≤ 0 and no-record exits, which decide whether handler 30 steps a seed (`lane/s46d`, [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
 4. **Take the order of steps from the anchored instructions**, not from a summary. Seen: the release
    order (`lane/p38s`, 0038); do 124's bit 6 and list steps dropped around its draw and store (`lane/srng`,
    [0046](../../../../docs/plans/0046-skills-function-catalogue.md)). Restate every step between two anchored calls.
@@ -31,7 +31,8 @@ against all of them before you file the review request. Categories are those of 
    with a W4 warning and an answered "unknown" (`lane/p43s`, 0043); quest-drops' Wirt-body
    route bullet left saying a run would settle it (`lane/p43t`, 0043).
 8. **Don't under-tag**: a raise the accepted ledger allows is stated at its strength. Seen: `burn = 2`
-   (`lane/p37s`, 0037); cube G4 (`lane/p39s`, 0039); a shortfall the logs already covered (`lane/p43s`, 0043).
+   (`lane/p37s`, 0037); cube G4 (`lane/p39s`, 0039); a shortfall the logs already covered (`lane/p43s`, 0043). Split a mixed tag, don't extend the weaker one: H5's marks, compared in order (`[C]`), said read from the code with their call path (`[I]`) (`lane/s48p4`, 0048).
 9. **Cite the exact instruction the finding gives**, and link the section that holds the object named.
    Seen: the cold-draw anchor (`lane/p37s`, 0037); the glossary *near list* link (`lane/wiki3`, 0038); a packing
-   anchored to the checker's decoder, not the code's globals (`lane/p43s`, 0043).
+   anchored to the checker's decoder, not the code's globals (`lane/p43s`, 0043). Keep the finding's mood: chain/0001's
+   "the creation would be the monsters chain's" restated as "is" in a `[C]` row (`lane/s48p3`, [0048](../../../../docs/plans/done/0048-seed-to-world.md)).

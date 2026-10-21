@@ -31,7 +31,9 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    output hashed, logs under `workspace/logs/` with a manifest line, one path base per manifest so `sha256sum -c` passes from one directory (H7a review, 0038; again 0043 P2 review), and every tool revision behind a cited output named. Seen: the unseeded `eval` case
    writer (S1e, 0038); the *Fleshripper* log left in session scratch (resume lane, 0037). An aborted session's
    partial log is kept as a development log, not deleted (0040 P2 review). A development run's outputs are written under their own names, not overwritten by the kept run
-   (`lane/p46m9` review, [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
+   (`lane/p46m9` review, [0046](../../../../docs/plans/0046-skills-function-catalogue.md)), and no kept file is renamed or
+   reused under a name a kept manifest lists: the stub renamed so a session could run under its name broke one line of
+   `manifest-r2-ckpt1.txt` (`lane/p48r2` review, [0048](../../../../docs/plans/done/0048-seed-to-world.md)).
 7. **A conclusion needs an address, `fn:` or `run:` anchor**, not a link to another finding (gate W1).
    Seen: the resume lane's experiments addendum (0037); `lane/w1`'s 104 W1 lines (0039).
 8. **Split a raise where it has a remainder** and head the row "raised in part", in the ledger itself.
@@ -43,7 +45,9 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    only from handler 20" without `SKILLS_SrvDo`'s seven other calls, and `SKILLS_PayCost`'s 0 for a zero-cost row
    without its three calls, none of which tests it (`lane/p46m12` review, [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
 10. **One case decides only if a wrong reading could not match it by chance.** Seen: aff 28's durability
-    value, about one in eight (S2b, 0038).
+    value, about one in eight (S2b, 0038). Count the cases that separate the readings, not the cases checked: a
+    rounding needs a remainder (three curse lengths whose `MulDiv` is exact), and a model fix's counter is not its
+    evidence (59 events counted, one separating; `lane/p47b` review, [0047](../../../../docs/plans/0047-simulation-shortfalls.md)).
 11. **"Moved" names the destination plan**; otherwise write "out of this plan". Seen: status bit 1
     (0039 P1b ruling 4); a closed entry's "(3) deferred" with no home (H7a review, 0038).
 12. **Carry a correction into the section it corrects**, not only into the run's ledger section: the claim, its
@@ -65,3 +69,10 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)). Scope: the return logged by the game on its own data. An
     ADR-0015/0021 emulation over a declared scratch image confirms the map, not the role the name states, and raises no
     symbol row (`lane/p46m12` review ruling 7, [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
+15. **State an integer wrap or overflow bound from a kept computation**: the largest input that still fits and the
+    first that wraps, with the product written out, and what the code does past it. Seen: a negative ring step count
+    called an endless loop where the signed index wraps past −2³¹ (`lane/p46m11` review); `PathDirection`'s
+    `(minor << 16) × 0x7F` said to wrap past 257 subtiles, where 258 still fits (`lane/p46m13` review); do 105's
+    `h·A` said to wrap as a 32-bit product where it cannot on any path that uses it, the subtraction after it being
+    what wraps: name the operation that wraps and whether a wrapping path reaches a use (`lane/p46m14` review, all
+    three [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).

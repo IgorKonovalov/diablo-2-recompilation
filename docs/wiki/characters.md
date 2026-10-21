@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/player/README.md 2026-10-16
-  - docs/specs/player/creation.md 2026-10-20
+  - docs/specs/player/creation.md 2026-10-21
   - docs/specs/hirelings/README.md 2026-10-20
   - docs/specs/save/d2s.md 2026-10-20
 ---
@@ -393,6 +393,11 @@ Every character of that batch starts from game seed `5389700c:0f9a1148`.
 | four potions | no draw on either seed; belt boxes 0, 1, 2, 3 |
 | two scrolls | no draw; inventory (9, 3) and (9, 2) |
 | end | game seed `20d2ae4d:5f1ebd78` after 15 steps; right skill Fire Bolt |
+
+The staff's [staff mods](../glossary.md) roll was taken from the recording in that batch's check (its seed after the roll
+and its single-skill bonus are the logged ones). The roll itself is specified in
+[affixes § I](../specs/items/affixes.md#i-staff-mods--items_rollstaffmods) and is run by the project's chained tools,
+but the batch's 11 staff-mods rolls were not re-run through it.
 
 A Barbarian from the same batch gets the same seeds for the player and for its first copies; it has one copy more
 (the buckler), so it ends after 17 steps at `2f6ab60b:58c69aea`

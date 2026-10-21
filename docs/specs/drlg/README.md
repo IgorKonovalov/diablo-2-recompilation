@@ -3,9 +3,9 @@ spec: drlg/overview
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds]
-consumed_by: [drlg/room-tiles, drlg/preset, drlg/maze, drlg/outdoor, drlg/warps, drlg/collision, monsters/spawn, objects]
+consumed_by: [drlg/room-tiles, drlg/preset, drlg/maze, drlg/outdoor, drlg/warps, drlg/collision, monsters/spawn, objects, chain]
 tags: {C: 75, I: 6, L: 0}
-updated: 2026-10-17
+updated: 2026-10-21
 ---
 
 # DRLG overview: act → level → room, generator dispatch and room-creation order
@@ -199,7 +199,8 @@ flowchart TD
 
 `L` is the level, `L.seed` its seed, `base` the act's level seed base. Every `Range`, `RangeB` and
 `Step` below on `L.seed` is a **level draw**, and the level seed has no other consumer outside the
-named oracles and the preset drop rolls of step 5a ([preset.md](preset.md)).
+sub-generators of [§ Sub-generator boundaries](#sub-generator-boundaries) (the maze and outdoor windows, oracles of
+the first runs, now modelled) and the preset drop rolls of step 5a ([preset.md](preset.md)).
 
 ```
 1. CreateLevel(act, id) → L:                                          [C] (fn:DRLG_LevelCreate@0x00642AE0, run:2026-10-12-drlg-gen)
@@ -404,8 +405,9 @@ Step notes:
    rooms. [C] (fn:sub_0067D540_OutRoomCreate@0x0067D540, run:2026-10-11-drlg-roomk)
 9. **Maze rooms become preset rooms.** The maze generator works with its own rooms. Afterwards each
    listed maze room is converted into a preset instance, which creates the level's real (type 2)
-   rooms, and is freed. The seed entering the maze oracle is the seed after the first room's draw;
-   the conversion order is the room list the oracle leaves, newest first. [C]
+   rooms, and is freed. The seed entering the maze generator ([maze.md](maze.md), an oracle of the first
+   run) is the seed after the first room's draw; the conversion order is the room list the generator leaves,
+   newest first. [C]
    (fn:sub_00673B30_MazeLevelBuild@0x00673B30, fn:sub_00673A60_MazeLevelRooms@0x00673A60,
    run:2026-10-12-drlg-gen: Den of Evil, Sewers Level 1, Catacombs Levels 2–4) The generator's room
    count, positions, `Def`s, forced indices and list order are [maze.md](maze.md)'s; the conversion walks
