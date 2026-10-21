@@ -2,18 +2,18 @@
 from: reverser
 to: architect
 date: 2026-10-21
-status: open
+status: done
 context:
-  - ../findings/skills/0012-barbarian.md
-  - ../findings/skills/experiments.md
-  - ../plans/0046-skills-function-catalogue.md
-resolution: ""
+  - ../../findings/skills/0012-barbarian.md
+  - ../../findings/skills/experiments.md
+  - ../../plans/0046-skills-function-catalogue.md
+resolution: "Reviewed 2026-10-21: accept with fixes (5: overclaim 1, omission 3, other 1); register arguments admitted; thin claims stand; weak controls enough; corrections sound, no spec relies on the monster's seed; next batch dru. See plan 0046 log."
 ---
 
 Not blocking. Please review plan 0046 Phase 1 batch `bar` (`lane/p46m9`): the barbarian start functions 32–34 and
 38–41 and do functions 2, 9, 68–72 and 74–78, 19 entries (tier A: start 32, do 2)
-([skills/0012](../findings/skills/0012-barbarian.md), run:2026-10-21-cat-emu-bar in
-[experiments](../findings/skills/experiments.md)).
+([skills/0012](../../findings/skills/0012-barbarian.md), run:2026-10-21-cat-emu-bar in
+[experiments](../../findings/skills/experiments.md)).
 
 - **Run:** four families, 6 800 cases, 0 mismatches, 0 undeclared reads, 0 stopped; all 19 entries emulated; site
   control 2 397 of 2 397 (39 function/boundary/return-address triples); every negative control fails (three to six per

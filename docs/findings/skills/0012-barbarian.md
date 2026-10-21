@@ -186,7 +186,8 @@ inventory calls `0x0063C9B0`/`0x0064F380`, the fatal path's `0x00408090`).
 
 **Nested boundaries** (ruling 1 of the `lane/p46m6` review, at each level). Compared at the helper's return slot: do 70's
 call of start 32 (`0x005D84F3` at `0x7FEFFFE4`; start 32 has two callers in the image, `0x005CAE9E` and `0x005D84EE`);
-start 38's `0x00571B70` (`0x005D8F9B` or `0x005D902C` at `0x7FEFFFAC`; five calls in start 38); do 68's `NovaAtUnit`
+start 38's `0x00571B70` (`0x005D8F9B` at `0x7FEFFFAC`, the call at `0x005D8F96` that the no-node and the
+no-target-point paths share; five calls in start 38, and no case reaches the no-path call at `0x005D9027`); do 68's `NovaAtUnit`
 (`0x005D844A` at `0x7FEFFFD4`); do 71's `0x005D8510` (`0x005D85E2` at `0x7FEFFF74`) and `0x0056BBC0` (`0x005D8606` at
 `0x7FEFFF6C`); start 40's `0x005D9A10` (`0x005D9EC9` at `0x7FEFFFC8`); start 41's `0x00645CA0` (`0x005DA583` at
 `0x7FEFFFD0`); do 74's `UnitGetWeapon` (`0x005D88F6` at `0x7FEFFFE8`). Single call sites (`static.txt`): `0x005D9A10`,
@@ -222,7 +223,7 @@ is also pushed as an immediate at `0x005D85F8`); `0x00645CA0` two (`0x004C8DFA`,
   each); `move_bar`'s `sk34` (33) on the cases where a node's `+0x34` of −1 decides the node, `size2` (41) on start 40's
   monster free-spot cases whose MonStats2 size is not 2, `noscale` (22) on start 40's player cases farther than the
   range, `mask_swap` (27) on every start 38 `PathSetType` case, `f200` (23) on do 78's cases with bit 9 and bit 7 or 8
-  set. Each family has a control failing 72 or more (`par_low` 224, `no12` 109, `vel1` 257, `x1` 90).
+  set. Each family has a control failing 90 or more (`par_low` 224, `no12` 109, `vel1` 257, `x1` 90).
   (run:2026-10-21-cat-emu-bar)
 - [I] ADR-0015 (3): the claims cover the code as a map. What the offsets mean keeps its own tag (Skills and MonStats2
   columns `[C]` by layout; unit, path, node, queued-hit and stat-list offsets `[I]`, skills/0001, skills/0008,
@@ -394,7 +395,9 @@ u->c4 |= 0x40;  if ((t = UNIT_GetTargetUnit(game, u))) { COMBAT_DeliverQueued(ga
   1)`, the node's `+0x0C` = 1, `+0x18`/`+0x1C` the point, `+0x20` = −1, `+0x24` = 0; with `aurastate` in range
   `STATE_GroupClear(0)`, `STATE_ApplyTimed` for `auralencalc`, `SKILLS_ApplyAuraStats`, `0x005C6DC0`, stats 350/351,
   the `auraevent`s, `UnitSetStateBit`; returns 1. With a target in melee range: `0x00571B70`, `0x0056E230(game,
-  caster; target)` returned. (0x005D8FE2–0x005D92C8)
+  caster; target)` returned. A target **not** in melee range takes the no-target branch (`je 0x005D9006`), the path
+  move to the target point. Not run: a caster with no path (`+0x2C` 0) on that branch calls `0x00571B70` at
+  `0x005D9027` and returns 0. (0x005D8FE2–0x005D92C8, 0x005D9006–0x005D902C)
 - [C] (ADR-0021; ends at `MonSkillAttackDo` @0x005D9DFD, `FreeNearFallback` @0x005D9E66, or `FreeNearFallback`
   @0x005D9BAE inside `0x005D9A10`, return `0x005D9EC9` compared) **Start 40** (`0x005D9D50`): the record and the used
   skill (0 → 0). A caster of type 1 with a target: `sub_005D9C80_MonSkillAttackDo(game)`; without one, the target
@@ -422,8 +425,12 @@ u->c4 |= 0x40;  if ((t = UNIT_GetTargetUnit(game, u))) { COMBAT_DeliverQueued(ga
   2 (px − ux) / d + px`, `y = 2 (py − uy) / d + py` (`add eax, eax; cdq; idiv`), the caster's room (none → the fatal
   path) and `COLL_PatternTestBool(room, x, y, path +0x48, 0x1C09)`. (run:2026-10-21-cat-emu-bar `move_bar`,
   fn:sub_005DA540_SkillSt41LeapAttack@0x005DA540, fn:sub_00645CA0_LeapAttackPoint@0x00645CA0)
-- [I] After start 41's boundaries: when `COLL_PatternTestBool` gives non-zero, `0x00645CA0` calls
-  `FreeNearFallback(room, &point, UNIT_GetSizeX(caster), 0x1C09, 0)` (0 → 0) and stores the point; start 41 then marks the pattern, fills the node (`+0x18`/`+0x1C` the point, `+0x20`/`+0x24`
+- [I] After start 41's boundaries: a target **not** in melee range (`InMeleeRange` 0) makes `0x00645CA0` take
+  `(px, py)` from the target's position (the same getters as the caster's: the path's `+0x0C`/`+0x10` for types 2, 4
+  and 5, else `0x006488C0`/`0x00648900`) instead of the caster's path words, then go on as without a target
+  (0x00645D2B–0x00645D88). When `COLL_PatternTestBool` gives 0 the extended point is kept; when it gives non-zero,
+  `0x00645CA0` calls `FreeNearFallback(room, &{px, py}, UNIT_GetSizeX(caster), 0x1C09, 0)` around the unextended
+  point (0 → 0) and stores the spot it finds (0x00645E1A–0x00645E53); start 41 then marks the pattern, fills the node (`+0x18`/`+0x1C` the point, `+0x20`/`+0x24`
   the target's type and guid, or `+0x20` = 6), `+0x0C` = 0x1080, `STATE_Set(caster, 0x12, 1)`, and for a target in
   state 54 `0x00570420(target, 100)`; returns 1. A target in melee range: `0x0056E230(game, caster; target)`, returns
   1. (0x00645E1A–0x00645E80, 0x005DA5B0–0x005DA654)
@@ -445,8 +452,9 @@ u->c4 |= 0x40;  if ((t = UNIT_GetTargetUnit(game, u))) { COMBAT_DeliverQueued(ga
   in the hit branch a monster's `+0x48` = 0x400, then `0x005D9320` gives a count of passes, each taking
   `NearestUnitInRange(0, 0, 5, 3, node +0x20, 0)`, storing its guid at `+0x20` (none: −1 and stop), `MeleeHitTest(unit,
   SKILLS_GetToHit, 0)`, on a hit the flags, `calc1`, `SKILLS_RollElemDamage` (the caster's seed),
-  `ResolveAndQueue(SrcDam or 128)` and `DeliverQueued`, and toggling `+0x0C` bit 13; returns 1. (0x005D9460–0x005D957F,
-  0x005D9663–0x005D97C4)
+  `ResolveAndQueue(SrcDam or 128)` and `DeliverQueued`, and toggling `+0x0C` bit 13; returns 1. Do 76 itself returns 0
+  after the call at the word-0 site (`0x005D97D6`, `xor eax, eax`) and 1 after the `+0x0C & 3 == 3` site
+  (`0x005D9621`). (0x005D9460–0x005D957F, 0x005D9663–0x005D97C4, 0x005D9621–0x005D962C, 0x005D97D6–0x005D97DE)
 - [C] (ADR-0021; ends at `UNIT_CancelEvents` @0x005DA3D0) **Do 77** (`0x005DA370`): the record and the node (0 → 0),
   then `UNIT_CancelEvents(ECX game, EDX caster; 1, 0)`. (run:2026-10-21-cat-emu-bar `move_bar`,
   fn:sub_005DA370_SkillDo77Leap@0x005DA370)
@@ -464,8 +472,9 @@ u->c4 |= 0x40;  if ((t = UNIT_GetTargetUnit(game, u))) { COMBAT_DeliverQueued(ga
   and requeued at `frame + 4` and 0; `0x005D9F70` sets the node's `+0x0C` to 0x1101, the path's mask and target point
   (the node's `+0x18`/`+0x1C`), its type, a speed from the MonStats or CharStats record, `PathSetSpeed` and
   `PathPlan`; `0x005DA660` makes a hit (`MeleeHitTest`, `calc1`, the elemental roll on the caster's seed,
-  `ResolveAndQueue`, `DeliverQueued`, `UnitSetOverlayStat(target, srvoverlay, 0)`, the state list removed).
-  (0x005DA120–0x005DA35F, 0x005D9F70–0x005DA01F, 0x005DA660–0x005DA7D5)
+  `ResolveAndQueue`, `DeliverQueued`, `UnitSetOverlayStat(target, srvoverlay, 0)`, the state list removed). Do 78
+  returns 1 when `0x005DA120` gives 0 (`je 0x005DA8A2`), and returns `0x005D9F70`'s or `0x005DA660`'s value on the
+  bit-7 and bit-9 paths. (0x005DA810–0x005DA8AB, 0x005DA120–0x005DA35F, 0x005D9F70–0x005DA01F, 0x005DA660–0x005DA7D5)
 
 ## Corrections to earlier findings
 

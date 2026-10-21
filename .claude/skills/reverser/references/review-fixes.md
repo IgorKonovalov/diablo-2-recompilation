@@ -30,7 +30,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
 6. **Keep the tool behind every claim**: the script in `tools/` (seeded, if it generates cases), its
    output hashed, logs under `workspace/logs/` with a manifest line, one path base per manifest so `sha256sum -c` passes from one directory (H7a review, 0038; again 0043 P2 review), and every tool revision behind a cited output named. Seen: the unseeded `eval` case
    writer (S1e, 0038); the *Fleshripper* log left in session scratch (resume lane, 0037). An aborted session's
-   partial log is kept as a development log, not deleted (0040 P2 review).
+   partial log is kept as a development log, not deleted (0040 P2 review). A development run's outputs are written under their own names, not overwritten by the kept run
+   (`lane/p46m9` review, [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
 7. **A conclusion needs an address, `fn:` or `run:` anchor**, not a link to another finding (gate W1).
    Seen: the resume lane's experiments addendum (0037); `lane/w1`'s 104 W1 lines (0039).
 8. **Split a raise where it has a remainder** and head the row "raised in part", in the ledger itself.
