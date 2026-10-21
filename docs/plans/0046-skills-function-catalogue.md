@@ -679,7 +679,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (Answer, § 7 bullet and table row, § 8), and once per run whatever the number hit stays `[I]` (the dated note, no
   check of its own needed for the finding). The stats spec and the wiki repeat "per hit" (`states.md` asks a
   reimplementation to "consume one draw per hit"): carried to the spec-writer
-  ([backlog](../backlog/2026-10-20-architect-spec-writer-stats-aura-draw-once-per-run.md)). A run with two or more
+  ([backlog](../backlog/archive/2026-10-20-architect-spec-writer-stats-aura-draw-once-per-run.md)). A run with two or more
   units in range of one Sanctuary run would raise the per-run reading; not required.
   (4) **Do 81's 20 % roll stays `[I]`.** The seeds are compared at the self-call boundary, before `ForUnitsInRange`
   ever runs the callback `0x005D07C0`, so no case executes the LCG step; the seed compare says nothing about it.
@@ -714,6 +714,32 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   archivist entry stays open for its lane; ledger row added. **The next batch (barbarian, `bar`) may start**, with
   9c, 9d, `sor`, `ama`, `nec` and `pal`'s conventions, ruling 3 of the `sor` review on writer scans, and ruling 1's
   condition of the `ama` review at each level of a helper chain.
+- **2026-10-21 — Two spec carries from the `pal` and 9a reviews landed for review (spec-writer, `lane/s46a`, static
+  docs only).** (1) stats: Sanctuary's draw is one `RNG_RangeB` per drawing run `[C]` and once per run whatever the
+  number of units hit `[I]`, in [stats/README](../specs/stats/README.md#draw-order), [states § H](../specs/stats/states.md#h-draws-per-event-kind)
+  and the wiki (stats/overview I 2 → 3, stats/states I 47 → 50). (2) [quests/progression](../specs/quests/progression.md)
+  W4c: missile do 17 and do 18 up to their boundary calls `[C]` and their stock rows `[I]` from skills/0004 §§ 7, 8;
+  the open question narrowed to do 36 (C 116 → 117, I 321 → 322, L 6). Both backlog entries closed; review request
+  [to the architect](../backlog/archive/2026-10-21-spec-writer-architect-lane-s46a-review-stats-aura-draw-and-quests.md).
+- **2026-10-21 — `lane/s46a` review (architect): accept with fixes.** Checked against stats/0002 § 7, skills/0011 § 3
+  and skills/0004 §§ 7, 8 (do 17's portal test at 0x005AF2BA–0x005AF2DD re-read: it sits outside the scatter window,
+  as W4c says). The `[C]` in stats/README and states § H is one `RNG_RangeB` per drawing run and the units-per-run
+  reading is `[I]`; W4c's `[C]` stops at each boundary call and names what is not covered; the one new `[L]` (do 36)
+  is under *Open questions*; the tag counts held. **Fixes, made in the documents:** (1) states' *Runtime state*
+  unit-seed row said the unit seed is "drawn only by a damaging aura's run"; skills/0011 § 3 has Holy Freeze's
+  callback step each hit unit's own seed: the row is scoped to the run and a new § H `[I]` note states do 81's
+  per-unit step, and the wiki's "once per run" bullet says it, read from the code (overclaim); (2) the wiki quests
+  paragraph called the missiles "invisible", which no spec says, and ran the stones' and the chests' missiles into
+  one count (overclaim); (3) W4c's `[C]` gave do 18's gold period "from that frame, every `max(4·Param2, 1)`
+  frames"; the code tests `left % max(4·Param2, 1) == 0` in the gold phase (stock: first pile at `left` 248, not
+  250) (misread); (4) W4c's `[C]` now states the helper's re-seed `(SubX + elapsed, 666)`, its period test and
+  owner/room gate, both draw ranges and their offsets, do 18's `left == 1` unit event `0x5C` and the gold phase set
+  when the chest is gone (omission); (5) "the aura's hit" left in stats/README § Draw order and as the states
+  reimplementation note's heading (stale cross-reference). Counted: 5 (overclaim 2, misread 1, omission 1, stale
+  cross-reference 1). Tags after the review: stats/overview {C 14, I 3, L 3}, stats/states {C 44, I 51, L 6},
+  quests/progression {C 117, I 322, L 6}. Research map: the stats/states row (counts, the drawing-run wording, Holy
+  Freeze), the quests/progression row (counts, the 9a carry) and the overview's stale count in the stats/aggregate
+  row (C 13 / I 4 → C 14 / I 3, the architect's). Review request closed; ledger row added. Not merged here.
 - **2026-10-21 — Phase 1 batch `bar` landed for review (reverser, `lane/p46m9`, static, no harness).** The barbarian
   start functions 32–34 and 38–41 and do functions 2, 9, 68–72 and 74–78: 19 entries, all read and all emulated
   ([skills/0012](../findings/skills/0012-barbarian.md); tier A start 32 and do 2 emulated too). Draws before the
