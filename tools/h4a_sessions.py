@@ -63,12 +63,16 @@ def chaos():
     out = [wp(4, 3),
            ("until", (108, ["objop", "--obj-cls", "9999", "--to-pdef", "857", "--pdef-any", "--time", "90"] + NOVA,
                       120, 4), 0)]
+    seals = "392,393,394,395,396"
     for wing in (858, 859, 860, 861):
         out.append(("pilot", ["explore", "--to-pdef", str(wing), "--hops", "60", "--persist", "10"] + NOVA, 240))
-    for c in (392, 393, 394, 395, 396):
-        out.append(("pilot", ["objop", "--obj-cls", str(c), "--times", "1", "--done", "OOX", "--time", "180"] + NOVA,
-                    200))
+        # every seal seen so far (OBJS lines, --obj-mem: also those of rooms no longer active), each clicked once
+        out.append(("pilot", ["objop", "--obj-cls", seals, "--obj-mem", "--times", "2", "--done", "OOX", "--time",
+                              "150", "--obj-near", "6"] + NOVA, 170))
         out.append(sweep(20))
+    out.append(("pilot", ["objop", "--obj-cls", seals, "--obj-mem", "--times", "5", "--done", "OOX", "--time",
+                          "240", "--obj-near", "6"] + NOVA, 260))
+    out.append(sweep(30))
     # the gate's closed state: rooms of 108 that first activate after the seal bosses died (GQ eax 1, quest 23 +0x13)
     out.append(explore(80))
     out.append(hunt(243, 360))
@@ -100,10 +104,20 @@ SESSIONS = {
     "chaos": ("UniqNova", "enter-nightmare", 4907, chaos()),
     # chaos again with the object lines (the first try had none, so objop found no seal)
     "chaos2": ("UniqNova", "enter-nightmare", 4907, chaos(), "mon-h4a-obj.gdb"),
+    # chaos2 again with OBJS lines (mon-h4a.py), which objop needs to find an object's position
+    "chaos3": ("UniqNova", "enter-nightmare", 4907, chaos(), "mon-h4a-obj.gdb"),
+    # chaos3 with the seals by memory after each wing (objop on one class found no seal whose room was inactive)
+    "chaos4": ("UniqNova", "enter-nightmare", 4907, chaos(), "mon-h4a-obj.gdb"),
+    # chaos4 with --obj-near 6 (chaos4 stood 4.2 sub-tiles from a seal with no hop left and no click)
+    "chaos5": ("UniqNova", "enter-nightmare", 4907, chaos(), "mon-h4a-obj.gdb"),
     # special 58 (Siege Boss, tail 42): Harrogath to the Bloody Foothills (110)
     "foothills": ("UniqNova", "enter-nightmare", 4908, [wp(5, 1), explore(200, ["--any-level"])]),
-    # special 60 (Nihlathak, tail 60): Halls of Pain waypoint, the Temple Down warp (LvlWarp 80) to level 124
+    # special 58 again: plan 0048's xm5 map seed, where Shenk (Siege Boss, record 42) stood near (3906, 5114) in the
+    # Bloody Foothills next to the Frigid Highlands waypoint (tab 5 row 2); the hunt heads there first
+    "shenk": ("UniqNova", "enter-nightmare", 4815, [wp(5, 2), hunt(479, 300, ["--goal", "3906,5114"]), sweep(30)]),
+    # special 60 (Nihlathak, tail 60): Halls of Pain waypoint (tab 5 row 6; the first try took row 5, the Glacial Trail), the Temple Down warp (LvlWarp 80) to level 124
     "nihl": ("UniqNova", "enter-nightmare", 4909, [wp(5, 5), descend(124, "80"), hunt(526, 420)]),
+    "nihl2": ("UniqNova", "enter-nightmare", 4910, [wp(5, 6), descend(124, "80"), hunt(526, 420)]),
 }
 
 

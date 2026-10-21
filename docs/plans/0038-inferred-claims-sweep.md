@@ -3211,3 +3211,41 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request
     [s38h2c review](../backlog/archive/2026-10-21-spec-writer-architect-s38h2c-items-tc-properties-review.md) closed.
   - **Next:** merge `lane/s38h2c`; the remaining items clusters after H1a, H6a, H6b, H6c, H4a, H6e1 and H6e2.
+- **2026-10-21 — H4a (`monsters-a`) paused at the owner's request (reverser, `lane/h4a`, harness slot 1, from `main`
+  `1d0262a`).** Slot 1 is stopped and its saves directory restored (empty, no aside). No game, driver, pilot, gdb or
+  wait loop of the lane is left running. Nothing below is claimed yet: no statement is raised, no § 2.6 entry, no review
+  request.
+  - **Tools** (committed): `tools/gdb/mon-h4a.gdb` = `mon-stats.gdb` unchanged plus `tools/gdb/mon-h4a.py` (tags only:
+    `SUC`/`SUCR` at every call of `SuperUniqueSpawn`'s tail cases 0x005A4BFE–0x005A4E43 with the pushed arguments,
+    `SURD` after Radament's `Range(us, 5)`, `GQ` at the Chaos Sanctuary gate 0x0054EC27; pilot helpers `MON` and
+    `OBJS`); `tools/gdb/mon-h4a-obj.gdb` adds `tools/gdb/objects.py` (seals, `OOX`). `MONSPAWN_WATCH` and `H4B_WATCH`
+    empty in every session. H4b review condition (4): `sweep_h4b.py check` on the nine H4b logs gives the summary of
+    `workspace/logs/h4b/sweep-check.txt` line for line, `monstats.py check` 0 mismatches on every group
+    (`workspace/logs/h4a/check/regress-*.txt`). Checker `tools/sweep_h4a.py` (`su`, `tails`, `handlers`, `gate`, `boss`,
+    `names`, `wander`); runner `tools/h4a_sessions.py`.
+  - **Sessions** (slot 1, `UniqNova` `2c793a3d…`, expansion Nightmare, `workspace/logs/h4a/`; manifest
+    `h4a-manifest-paused.sha256`; no log has `internal-error:`): raven (4901, Burial Grounds not reached), raven2 (4807,
+    Blood Raven: mod 12 name 3111, `SI2` 43), tree (4902, Treehead, null row 13), andy (4903, Andariel name 3021), radament
+    (4904, tail 10 reproduced, r = 0), council (4905, tails 26/27/29), durance (4906, Bremm's aura twice, Mephisto name
+    3062), foothills (4908, no Siege Boss), nihl (4909, wrong waypoint row: Glacial Trail), shenk (4815, tail 42: escorts
+    20 × 453, quest hook 31, `0x545B50`, state 118), nihl2 (4910, tail 60: 20 × 458, hook 34). `monstats.py check` 0
+    mismatches on the first nine (`check/monstats-h4a-part1.txt`). Dev logs in `dev/`: raven-nowp (no waypoint click),
+    chaos and chaos2 (no object lines: no seal found), chaos3 and chaos4 (seals not clicked), chaos5-paused (stopped by the
+    pause after one seal was opened). Kept-log checks: `check/check-kept.txt` over the 63 logs of
+    `check/kept-logs.lst` (bad 0: placed-bit refusals 3, Feature Creep's aura twice 2, Siege Boss escorts, null rows 10
+    and 13); `check/monstats-monequip-kept.txt`; static `check/static-wanderer.txt`, `check/static-gate.txt`.
+  - **Drafts** (not committed; `workspace/logs/h4a/drafts/`): ledger sections of monsters/0001 (pool 12), 0004 (stats 7,
+    18, 21) and items/0010 (qd 48) as `findings-drafts.diff`; the monsters/0003 section head.
+  - **Next (resume):**
+    1. Merge `main`; `python3 -I tools/saves.py --slot 1 aside h4a` (slot 1 only).
+    2. Chaos Sanctuary: `h4a_sessions.py run … chaos5` (seed 4907, `mon-h4a-obj.gdb`; objop `--obj-near 6` clicked one
+       seal, later clicks at d 4–6 brought no `OOX`: try `--obj-near 3` or `--obj-dy`, or owner play). Needed for special
+       9, 10, 25, 31, 38, 50 (thief half), 56 and spawn 11 (`GQ` 1 after the seal bosses die); the doomknight3 piece.
+    3. Optional: Ancients (special 59, b; likely a shortfall), Diablo's name (243).
+    4. Full check set into `workspace/logs/h4a/check/` under `MemoryMax=4G` (`sweep_h4a.py check` on all session logs,
+       `monstats.py check`), hashed; then the write-up: run record run:2026-10-21-sweep-monsters-a in monsters/experiments,
+       "Plan 0038 batch H4a" ledgers in monsters/0001–0004 and items/0010 (apply the drafts), § 2.6 H4a block and totals
+       against `main`, symbols (`sub_005B24E0_EscortSpawn`, `QUESTS_HookMonster` call args if raised), review request.
+       Proposed so far: raised pool 12, qd 48, stats 7, 18, special 30, 35, 48 (kept logs), 50 (aura half), 51, 54, 55,
+       58, 60, 68; in part stats 21, special 34 (rows 10, 13), 46, 52, 69 (156, 242, 256); spawn 5 and 49 by the static
+       read of 0x00731B2C/0x00731B30 (S2c ruling 2); shortfall spawn 47, 48 (no `WRL`), special 59.

@@ -197,11 +197,13 @@ def part_su(paths):
                 pos = [i for i, (tag, d, _) in enumerate(body) if tag == "AUR" and d["u"] == u["u"]]
                 rows = [d["row"] for tag, d, _ in body if tag == "AURS" and d["u"] == u["u"]]
                 ok = (len(aurs) == 2 and aurs[0]["r"] == aurs[1]["r"] and aurs[0]["ns"] == aurs[1]["ns"] and smax
-                      and pos[0] < smax[0] < pos[1] and len(set(rows)) == 1 and len(rows) == 2)
+                      and pos[0] < smax[0] < pos[1] and (rows == [] or (len(set(rows)) == 1 and len(rows) == 2)))
                 if not ok:
                     R.fail("%s:%d id %d aura calls %s rows %s (SMAX at %s, AUR at %s)" % (p, n0, sid, aurs, rows, smax, pos))
                 else:
                     R.n("aura twice: same draw, same row, the second after SpecialModsApply")
+                    if not rows:
+                        R.n("aura twice: no AURS lines in this logger (draw and index only)")
                     R.note("%s:%d id %d (hc %d) AUR r %d x2, AURS rows %s" % (b, n0, sid, su_hc(t, sid), aurs[0]["r"], rows))
             if su_hc(t, sid) == 37:
                 R.n("Lord De Seis")

@@ -11,7 +11,8 @@
 # The Chaos Sanctuary population gate (sub_0054EBC0_RoomPopulateGate, level 108 only):
 #   GQ   0x0054EC27 after sub_005B5210(game) (the quest-record byte): room (EDI), game (EBX), EAX
 # Harness helper (not a model input): MON as tools/gdb/pilot.py writes it (its header), at a player's mark and at
-#   PATH_SetMarkMask, at most every 0.3 s; the game pointer from GAME_InitSeeds 0x0052C312 (EDI), no line.
+#   PATH_SetMarkMask, at most every 0.3 s; the game pointer from GAME_InitSeeds 0x0052C312 (EDI), no line. OBJS as
+#   tools/gdb/vendors.py writes it (every object of the game's lists: class, x, y), with every far MON scan (2 s).
 import json
 import struct
 import time
@@ -161,6 +162,21 @@ def _monh4a_main():
         if far:
             hs["tf"] = now
         emit("MON", {"x": hs["pos"][0], "y": hs["pos"][1], "far": far, "m": mons(hs["pos"][0], hs["pos"][1], far)})
+        if far and hs["game"]:
+            # every object of the game's lists (game +0x1520, next +0xE4), as tools/gdb/vendors.py's OBJS
+            objs = []
+            for u in struct.unpack("<128I", mem(hs["game"] + 0x1520, 512)):
+                k = 0
+                while u and k < 512:
+                    k += 1
+                    try:
+                        sp = u32(u + 0x2C)
+                        if sp:
+                            objs.append([s32(u + 4), s32(sp + 0x0C), s32(sp + 0x10)])
+                    except gdb.MemoryError:
+                        pass
+                    u = u32(u + 0xE4)
+            emit("OBJS", {"o": objs})
         gdb.flush()
 
     def on_game():
