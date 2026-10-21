@@ -62,6 +62,7 @@
 #   RNGA    while an AU0 .. AU1 run is open, every LCG multiplier site (tools/gdb/lcg-sites.txt, 852): its address,
 #           [esp] and [ebp+4]
 #   GRP/GRX STATE_GroupClear 0x0056C740 (ECX unit, EDX state, [esp+4]) for the player, its state bits / returns
+#           (rev 10: nested calls kept on a stack, "dp" the depth, so every call has its GRX)
 #   SHR0/1  OBJOP_Shrine 0x00583C70 (ECX context: +4 object, +8 unit) for the player: object class, ObjectData
 #           +0x00..+0x1F, vitals, seeds / returns 0x00583CA4, 0x00583E65
 #   WEL0/1  the well use 0x00585720 (ESI unit, [esp+8] the Objects record: Parm1 +0x17C, +0x180, Parm3 +0x184)
@@ -763,13 +764,17 @@ def _stats_main():
         if who(u) != "p":
             return
         esp = reg("esp")
-        st["grp"] = esp
-        emit("GRP", {"st": sreg("edx"), "self": s32(esp + 4), "sb": state_bits(u)})
+        # rev 10 (plan 0047 Phase 2b): a stack of open calls, since STATE_GroupClear is re-entered (the Druid's
+        # Werebear clear of Werewolf calls it again for 139 before it returns); rev 9 kept one, so a nested call's
+        # exit cleared it and the outer call logged no GRX
+        st.setdefault("grp", []).append(esp)
+        emit("GRP", {"st": sreg("edx"), "self": s32(esp + 4), "sb": state_bits(u), "dp": len(st["grp"])})
 
     def on_grx():
-        if st.get("grp") == reg("esp"):
-            st["grp"] = None
-            emit("GRX", {"sb": state_bits(player())})
+        stk = st.get("grp") or []
+        if stk and stk[-1] == reg("esp"):
+            stk.pop()
+            emit("GRX", {"sb": state_bits(player()), "dp": len(stk) + 1})
 
     def on_shr0():
         ctx = reg("ecx")
@@ -873,7 +878,7 @@ def _stats_main():
         Bp(a, on_shr1)
     Bp(0x00585720, on_wel0)
     Bp(0x0058589B, on_wel1)
-    emit("STATSLOG", {"rev": 9})
+    emit("STATSLOG", {"rev": 10})
     gdb.write("STATS logger armed\n")
 
 

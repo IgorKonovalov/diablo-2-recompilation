@@ -147,6 +147,25 @@ class ModelTest(unittest.TestCase):
         self.assertEqual(r[1]["x"], 201)
         self.assertTrue(r[1]["f"] & 2)
 
+    def test_curse_cut(self):
+        """Plan 0047 Phase 2b: a curse on a player with curse_resistance (109) 1..99 is cut by MulDiv(len, r, 100)
+        and counted; at 100 it is refused; a non-curse state is not cut."""
+        M = stats.Model(self.I, self.T, None)
+        tree = self.tree()
+        tree["cache"].append([109 << 16, 30])
+        M.reset(tree, 0x10)
+        C = stats.Checker(self.T)
+        dc = self.T.states.index("defense_curse")
+        req = {"state": dc, "len": 250, "sk": 309, "sl": 3, "stat": -1, "val": 0, "sb": [], "fr": 1000}
+        r = C.predict_apply(M, req)
+        self.assertEqual((r[0], r[1]["x"], r[1]["f"] & 0x20), ("new", 1000 + 250 - 75, 0x20))
+        self.assertEqual(C.n["apply_curse_cut"], 1)
+        r = C.predict_apply(M, dict(req, state=34, sk=99))
+        self.assertEqual((r[1]["x"], C.n["apply_curse_cut"]), (1250, 1))
+        tree["cache"][-1] = [109 << 16, 100]
+        M.reset(tree, 0x10)
+        self.assertEqual(C.predict_apply(M, req)[0], "refuse")
+
 
 class WellRefillTest(unittest.TestCase):
     """0x00585720 and SHRINE_Refill (stats/0002 § 5) on the vitals [life, max, mana, max, stamina, max]."""
@@ -276,6 +295,31 @@ class StatesStepTest(unittest.TestCase):
         C.states_step(None, "STA0", req(66, amp, [att]), [])
         C.states_step(None, "STA1", dict(s, w="m", r=0x700, f=0x20, s=amp, x=600, sk=66, sl=20, own=[], pa=0), [])
         self.assertEqual(C.bad["attract"], 1)
+
+    def test_nested_group_clear(self):
+        """Logger rev 10 (plan 0047 Phase 2b): STATE_GroupClear re-entered (Werebear's clear of Werewolf calls it for
+        139 before returning), both calls checked by depth; a wrong outer exit fails; rev 9 lines (no "dp") keep the
+        single open call, so the outer call of a nested pair is not checked."""
+        wolf, bear = self.T.states.index("wolf"), self.T.states.index("bear")
+        self.assertEqual(self.T.states_rows[wolf]["group"], self.T.states_rows[bear]["group"])
+        C = self.checker()
+        C.states_step(None, "GRP", {"st": bear, "self": 1, "sb": [105, wolf], "dp": 1}, [])
+        C.states_step(None, "GRP", {"st": wolf, "self": 1, "sb": [105], "dp": 2}, [])
+        C.states_step(None, "GRX", {"sb": [105], "dp": 2}, [])
+        C.states_step(None, "GRX", {"sb": [105], "dp": 1}, [])
+        self.assertEqual(dict(C.bad), {})
+        self.assertEqual((C.n["group_clear"], C.n["group_clear_effective"], C.n["group_clear_nested"],
+                          C.n["group_clear_holding_nested"]), (2, 1, 1, 1))
+        C.states_step(None, "GRP", {"st": bear, "self": 1, "sb": [105, wolf], "dp": 1}, [])
+        C.states_step(None, "GRP", {"st": wolf, "self": 1, "sb": [105, wolf], "dp": 2}, [])
+        C.states_step(None, "GRX", {"sb": [105], "dp": 2}, [])
+        C.states_step(None, "GRX", {"sb": [105, wolf], "dp": 1}, [])          # the outer exit still holds Werewolf
+        self.assertEqual(C.bad["group"], 1)
+        C9 = self.checker()
+        C9.states_step(None, "GRP", {"st": bear, "self": 1, "sb": [105, wolf]}, [])
+        C9.states_step(None, "GRP", {"st": wolf, "self": 1, "sb": [105]}, [])
+        C9.states_step(None, "GRX", {"sb": [105]}, [])
+        self.assertEqual((dict(C9.bad), C9.n["group_clear"]), ({}, 1))
 
     def write_log(self, d, name, lines):
         path = os.path.join(d, name)

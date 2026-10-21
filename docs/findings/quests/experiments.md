@@ -499,4 +499,61 @@ mode 0 with the `Sync` 0 object-seed draw chained).
   mode 1 after an arrival (`p47h-wpmodes.txt`). Hashes in `workspace/logs/quests/p47h-manifest.sha256` (`7b9d7e59…`,
   `sha256sum -c` from `workspace/logs/quests/`).
 - **Result:** 1 activation from mode 0 of the 20 asked, checked with its object-seed step: named again (the pilot's
-  warp search and approach fail on most Act V seeds). (run:2026-10-20-shortfalls)
+  warp search and approach fail on most Act V seeds). (run:2026-10-20-shortfalls) *2026-10-21 (Phase 2b):* the warp search failed because the
+  route named LvlWarp ids where the WRP lines number records ([the Phase 2b record](#the-travel-sessions-of-run2026-10-21-shortfalls2)).
+  (run:2026-10-21-shortfalls2)
+
+## The travel sessions of run:2026-10-21-shortfalls2
+
+The run is defined in [stats/experiments § The stats sessions of run:2026-10-21-shortfalls2](../stats/experiments.md#the-stats-sessions-of-run2026-10-21-shortfalls2);
+this is its travel case (plan [0047](../../plans/0047-simulation-shortfalls.md) Phase 2b: 20 waypoint activations from
+mode 0 with the `Sync` 0 object-seed draw, with Phase 2's 1).
+
+- **Setup:** slot 2, tag `p47b`, `tools/quest_sessions.py run --slot 2 --tag p47b --run p47b …` (final revision
+  `e1d18621…`), logger `tools/gdb/quest-state.gdb` (`c54d695f…`), checker `tools/quests.py` (`b6dfb1a3…`, unchanged).
+  Save `TravelWpArreat` (`f3c935c3…`, pinned), as in Phase 2.
+- **The warp search, found and fixed.** The route's `warp:` steps name WRP records, the loaded LvlWarp table's rows
+  without the `Expansion` divider (`warp_select`'s numbering), and Phase 2 passed Levels' `Warp` **ids** (71, 74, 74,
+  71). Id 71 (Barricade Down Wall) is two records, 71 (left) and 72 (right), and the Plateau draws either: seed 4782
+  drew 72 (`dev-p47h-x-wpact5r-1`'s WRP lines), so the search for record 71 explored the whole level and stopped
+  ("every room activated or skipped"). Record 74 is id 73, Ice Caves **Up** (left): `x-wpact5r-0`'s "Glacial Trail"
+  step took the Passage's way back to the Plateau and ended in level 111. Fix: records 71/72 for id 71, 76/77 for id
+  74 (Ice Caves Down). Also in `tools/d2pilot.py`'s `descend`: when no hop gets straight nearer the chosen room, a
+  breadth-first path over known free cells (explore's `plan`) before the room is skipped.
+- **Two more causes, found in this run's logs.** (1) The Escape after an activation: an operate from mode 0 opened no
+  waypoint list on these seeds, so the Escape opened the game menu, whose buttons took the next Teleport clicks
+  ("hops without moving") and whose Save and Exit ended the game at the next step (`x-wpact5b-0` and `-1`, gdb's
+  `exited normally`); `activate` now presses Escape only when `Pilot.menu_open()` sees the list. (2) The Crystalline
+  Passage's maze: from its waypoint the search for the next warp (76/77) timed out (`x-wpact5r-1`, 400 s) and the way
+  back up (74/75) found no path (`x-wpact5b-3`). A shorter field instead: the Frigid Highlands' waypoint (111, class
+  496) stands at sub-tile (3779, 5109) on every seed logged (4781, 4782, 4821, 4822) and is reached on foot from the
+  Plateau (`push`), so routes `x-wpact5b-*` (the Passage's waypoint, back up, the Highlands') and `x-wpact5c-*` (the
+  Highlands' only).
+
+| session | seed | route | activations from mode 0 | `tools/quests.py check` |
+|---|---|---|---|---|
+| x-wpact5r-1 | 4782 | Phase 2's, records fixed | 1 (Crystalline Passage); the next descend timed out; stopped by the lane | 0 mismatches / 1 103 |
+| x-wpact5b-0 | 4801 | 5b | 0 (the Passage's waypoint seen in mode 0, the approach missed it; the game exited) | 0 / 1 020 |
+| x-wpact5b-1 | 4802 | 5b | 1 (Passage); the Escape's game menu, the game exited | 0 / 848 |
+| x-wpact5b-3 | 4804 | 5b, Escape fixed | 1 (Passage); no path back up; stopped by the lane | 0 / 932 |
+| x-wpact5c-0 | 4821 | 5c | 1 (Highlands); Save and Exit | 0 / 1 871 |
+| x-wpact5c-1 | 4822 | 5c | 1 (Highlands, after 12 minutes of the Plateau's exploration); Save and Exit | 0 / 1 507 |
+| x-wpact5c-2 | 4823 | 5c | 1 (Highlands); Save and Exit | 0 / 1 442 |
+| x-wpact5c-3 | 4824 | 5c | 0 (10 minutes on the Plateau, the Highlands not reached); stopped by the lane | 0 / 577 |
+
+Not part of the run: `dev-p47b-x-wpact5b-2` (stopped by the lane at its start, to run the Escape fix).
+
+- **Check:** `systemd-run --user --scope -p MemoryMax=4G python3 -I tools/quests.py check $(cat
+  workspace/logs/quests/p47b-run.lst)`: **`SUMMARY mismatches=0 checks=9300 logs=8`** (`p47b-check.txt` `ab1afe2d…`,
+  `p47b-run.lst` `ad74f1c9…`), among them `waypoint mode 0 -> 1` 6, `waypoint object seed` 15 (each mode-0 operate's
+  one object-seed step, the class's `Sync` 0; the arrival waypoints' none), `waypoint record bit` 15.
+  `tools/quests.py wpmodes` over the 8 logs: 7 field waypoints first seen in mode 0 with no arrival, 8 in mode 1 after
+  one (`p47b-wpmodes.txt` `0550159a…`). Hashes of the logs, the installed and written saves and the outputs in
+  `p47b-manifest.sha256` (`2144ab0f…`, `sha256sum -c` from `workspace/logs/quests/`).
+- **Result:** 6 activations from mode 0 (3 in the Crystalline Passage, class 511; 3 in the Frigid Highlands, class
+  496), each with its object-seed step checked; **7** with Phase 2's, against 20: named again, final (a tool reason,
+  the fixes above tried). The Highlands route gives one activation in about 5 minutes when the Plateau's arrival
+  point lies towards the Highlands; where it does not, the push's straight hops and short explorations took 12
+  minutes (seed 4822) or found no way in 10 (4824); the Passage's maze stops the four-waypoint route after its first
+  waypoint. At about one activation per 5 to 15 minutes, the 13 missing are beyond this lane's slot time.
+  (run:2026-10-21-shortfalls2)

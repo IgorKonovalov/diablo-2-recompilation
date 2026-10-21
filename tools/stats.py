@@ -548,6 +548,7 @@ class Checker:
         self.t = tables
         self.v = verbose
         self.n = collections.Counter()
+        self.grp_stk = []          # logger rev 10: the open STATE_GroupClear calls, outermost first
         self.bad = collections.Counter()
         self.examples = collections.defaultdict(list)
         self.seeds = collections.defaultdict(lambda: [0, 0])     # kind -> [equal, moved]
@@ -618,6 +619,7 @@ class Checker:
         self.cur_line = 0
         # an event left open at the end of the previous log (the session was killed inside it) is not continued
         self.au_open = self.shr = self.wel = self.grp = self.rq = None
+        self.grp_stk = []
         self.au_log = {}           # this log's aura run frames, for the grid's gaps (keyed per log)
         self.au_pend = {}          # caster unit -> the unit seed a drawing aura run left, for the chained pairs
         M = None
@@ -1148,11 +1150,25 @@ class Checker:
                 for sbit in d["sb"]:
                     if self.t.states_rows[sbit].get("group", "") == grp and (sbit != d["st"] or d["self"]):
                         want.discard(sbit)
+            if "dp" in d:                           # logger rev 10: nested calls on a stack (plan 0047 Phase 2b)
+                del self.grp_stk[d["dp"] - 1:]
+                if self.grp_stk:
+                    self.grp_stk[-1][2] = True          # the open call holds a nested one
+                self.grp_stk.append([d, want, False])
+                return
             self.grp = (d, want)
             return
         if tag == "GRX":
-            g = getattr(self, "grp", None)
-            self.grp = None
+            if "dp" in d:
+                g = self.grp_stk.pop() if len(self.grp_stk) == d["dp"] else None
+                if g:
+                    if d["dp"] > 1:
+                        self.n["group_clear_nested"] += 1
+                    if g[2]:
+                        self.n["group_clear_holding_nested"] += 1
+            else:
+                g = getattr(self, "grp", None)
+                self.grp = None
             if not g:
                 return
             self.n["group_clear"] += 1
@@ -1216,6 +1232,7 @@ class Checker:
                 return ("refuse", "curse resistance %d" % r)
             if r:
                 dur = s32(dur - muldiv(dur, r, 100))
+                self.n["apply_curse_cut"] += 1      # plan 0047 Phase 2b: the duration cut by curse_resistance 1..99
             if 57 in d["sb"]:
                 return ("refuse", "attract")
         root = M.L[M.plist]
