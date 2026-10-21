@@ -326,3 +326,487 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   added. **Batch 9d may start** (missile hit 31–59 and row 568's 64 948), with 9c's conventions (call site asserted,
   three seeds compared, pointed-to bytes compared, two controls per family). It also emulates hit 2, and it tags any
   value read from a non-argument register at a boundary `[I]`.
+- **2026-10-20 — Phase 1 batch 9d checkpoint (reverser, `lane/p46m4`, static, no harness; paused for the owner, resume
+  note).** Read from objdump and the lane's Ghidra copy (`workspace/ghidra-p46m4`): all 24 hit functions 31–59 of the
+  batch (table entries checked: 30, 34, 41, 42, 46, 49 and 60–70 are null, count 71) and hit 2 (tier A, carried from
+  9c), with their callees `0x0056D4E0` (a nova of creations, fatal path for `(n − 1)/5 > 7`), `sub_005A9370_MissSubRing16`,
+  `SKILLS_GetPhysMin/Max`, `SKILLS_GetElemLen`, `SKILLS_FindUnitSkill`, `0x005D5BF0`, `0x005B3570`, `0x005C7DB0`.
+  Draws before the boundaries found so far: hit 31 (the `EType` roll, missile seed), hit 43 (one `RNG_RangeB` of
+  `PhysMax − PhysMin`, missile seed), hit 58 (re-seed from `SubX`, two `RNG_Range(2r + 1)`); hit 40's callee re-seeds
+  and draws (after its boundary). Surprise to confirm: hit 52 tests `HitSubMissile1` but leaves the block's class
+  word 0. Tool: the 9d section of `tools/skills_catalogue_emu.py` (`--batch 9d`; families `heal9d`, `create9d`,
+  `nova9d`, `area9d`, `event9d`, 8 400 cases; static pins and the hit-table read scan for row 568) is written and its
+  case writers run; `cases --batch 9c` still regenerates 9c's kept files byte for byte. **Not yet done:** the
+  emulation runs, the check (models untested against the emulator), the 9a/9b check/static reproduction, the finding
+  (`docs/findings/skills/0007-missile-hit-31-59.md`), symbols, review request, gate. Kept so far:
+  `workspace/logs/skills-cat-9d/rows.txt` (stock rows) with `manifest.sha256`. **Resume:** run the five families
+  under EmuBoundary (procedure of 9c, `GHIDRA_PROJ_DIR=workspace/ghidra-p46m4`), fix model mismatches, then write the
+  finding and the rest as the batch prompt lists.
+- **2026-10-20 — Phase 1 batch 9d landed for review (reverser, `lane/p46m4`, static, no harness; resumed from the
+  checkpoint above).** Missile server hit functions 31–59: the 24 filled entries (30, 34, 41, 42, 46, 49 and 60–70
+  null, count 71), all read; 23 emulated (hit 44 is 9c's) and **hit 2** (tier A, carried from 9c by ruling 3)
+  ([skills/0007](../findings/skills/0007-missile-hit-31-59.md)). Draws before the boundaries: hit 31 (the `EType`
+  roll), hit 43 (one `RNG_RangeB(PhysMax − PhysMin)`), hit 58 (re-seed from x, two `RNG_Range(2r + 1)`), all on the
+  missile's seed; no case steps the owner's or the target's. Raised by emulation (run:2026-10-20-cat-emu-9d,
+  `tools/skills_catalogue_emu.py --batch 9d`, `check.txt` `9ec69cf5…`, `manifest.sha256` `6fa68cd0…`): five
+  families, 8 400 cases, 0 mismatches, 28 boundary/call-site triples asserted (site control 3 796 of 3 796), the three
+  seeds compared in every case, the `MissileCreate` block and hit 47's packet compared by content, two to six
+  negative controls per family (each family has one failing 53 or more); no model compares a non-argument register
+  (ruling 1 of the 9c review). Fixes during the run: `event9d`'s object lacked its type word (58 hit-35 cases), the
+  rabies length edge was never hit (writer now targets it), `area9d` had no control reaching 50 (`unit56` added), one
+  static pin off by one instruction. The same tool regenerates 9a/9b/9c's case files and reproduces their `check.txt`
+  and `static.txt` byte for byte (`repro.txt`). Surprises: **hit 52 (blade fury) creates Missiles class 0 (`arrow`)**,
+  its block's class word never written; hit 38/45's nova helper asserts (`0x00408090(0xF0D)`) for `n ≥ 41`, which
+  stock hit 38 reaches at missile level 20; hit 43 (healing vortex) heals any hit unit with no owner or ally test;
+  hit 47 (molten boulder) explodes only on MonStats2 `large` monsters or at the end of life; hit 39 spawns on every
+  call; the Skills `Kick` maximum divides by 3, not 4 (`[I]`). Row 568's 64 948: the four hit-table reads sit behind a
+  signed `test ax, ax; jle` (scan `[C]`, meaning `[I]`). Tags: 38 `[C]`, 10 `[I]`, 4 `[L]` bullets; 28 symbols added
+  (`I`). Dated notes in skills/0003 § 6 and skills/0006 § 16. Review request
+  [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p46m4-review-plan-0046-batch-9d.md); column
+  readers [to the archivist](../backlog/2026-10-20-reverser-archivist-plan-0046-9d-missiles-skills-column-readers.md).
+- **2026-10-20 — `lane/p46m4` review (architect): batch 9d accepted with fixes (4: overclaim 2, misread 1, miscount
+  1).** Merged `main` (`9ef5f84`) first; no conflict, `backlog.py archive` moved nothing; 28 new symbols, no address
+  or name twice in `re/symbols.csv` after the merge. **Re-run:** `sha256sum -c manifest.sha256` passes (29 files);
+  `check --batch 9d` and `static --batch 9d` from the lane's tool (`da004a4b…`) regenerate `check.txt` (`9ec69cf5…`)
+  and `static.txt` (`d909b72d…`) byte for byte; tag counts 38 `[C]`, 10 `[I]`, 4 `[L]` recounted. **Read against
+  objdump:** hit 52 (0x005AC940–0x005ACA4F), hit 2 (0x005A9D80–0x005A9E05), `MissNovaCreate`'s head
+  (0x0056D4E0–0x0056D539), `0x00408090`, `sub_00644C20_SkillKickDamage` (flag 0 divides by 3: `imul 0x55555556`),
+  and the four hit-table reads (each straight-line: `movzx eax, word [rec+0x0E]; test ax, ax; jle; movsx; cmp
+  [0x0073C83C]; jge; read`). **Ruling (1), hit 52:** the block word is `[C]` (ADR-0021): the block sits at
+  `ebp−0x60`, is zeroed, and no instruction stores to `ebp−0x50` (`+0x10`); the emulated block matches in all 173
+  creation cases. The control `cls52` fails all 120 cases with `HitSubMissile1 ≠ 0`; in the other 53 the word is 0
+  and the two readings agree (the finding said "120 of 120 creation cases"). That the missiles are row 0 (`arrow`)
+  is `MissileCreate`'s reading of `+0x10` (skills/0002 § 2), callee behaviour after the boundary, so it stays `[I]`
+  under ADR-0021's "what they mean to the callee keeps its own tag". Whether the game shows arrows stays under Open
+  questions (a harness check). **Ruling (2), the nova helper:** `[C]` up to the call accepted (boundary `Fatal` at
+  return address 0x0056D50C, 153 cases; control `fatal8` 53). But `0x00408090` is not an assertion-message helper: it
+  is `mov eax, [esp]; ret`, which returns its own return address. The `0xF0D` pushed before it is the third argument
+  of `0x00408A60(0x006CC837, that address, 0xF0D)`, which is followed by `0x00681E09(−1)`. All of that is after the
+  boundary, `[I]`. The finding now says "the fatal path's `0x00408090`" throughout, as rng/0002 and the data
+  findings name the trio. **Ruling (3), weak controls and hit 2's ring:** enough, under 9c ruling 2. `nofloor31` (2),
+  `nofloor55` (3) and `pct100` (6) each fail on every case whose input decides the claim (a negative roll, a drain
+  under 1, a percent above 100), deterministically (reverser review-fixes 10), beside `nocap43` 73 and `ownseed` 140
+  in `heal9d`. Hit 2's source choice is one `test ebx, ebx; jne; mov ebx, edi` (0x005A9DBF–0x005A9DC3). The 3
+  end-of-life cases compare the source pointer and its position, which a wrong reading could not match by chance,
+  and `ring_self` fails all 120 unit cases. No re-run. **Ruling (4), row 568:** the split holds. The scan
+  (`tabread_scan`, every `.text` operand naming `0x73c840`, lea and push included) is `[C]`; my read of the four
+  sites agrees. That the tested word is that row's `pSrvHitFunc` stays `[I]`: the layout (`+0x0E` u16) is `[C]` in
+  [Missiles](../tables/Missiles.md), but which record reaches sites 2–4 (`[ebp−4]`, `[edi]`) is the reading. Route to
+  `[C]`: an emulated `MISSILE_HitUnit` case with the word at 64 948. **Ruling 1 of the 9c review held:** no claim
+  rests on a non-argument register. ESI at the kick boundary is an argument and is not claimed. **Fixes, made in the
+  documents:** (1) the Answer's creation bullet no longer carries hit 52's "creates class 0 (`arrow`)", nor hit 51's
+  and hit 52's later creations, under `[C]`; they are marked after, `[I]` (overclaim); (2) § 5's hit 52 bullet moves
+  the row-0 meaning after the boundary, citing skills/0002 § 2 (overclaim); (3) `0x00408090` is described as what it
+  is in the Answer, § 2, the Functions table, the `nova9d` row, § 7 and Open questions, and in the experiments
+  conclusion (misread); (4) `cls52`'s count is "120 of the 120 with `HitSubMissile1 ≠ 0`, of 173" (miscount). Review
+  request closed
+  ([archive](../backlog/archive/2026-10-20-reverser-architect-lane-p46m4-review-plan-0046-batch-9d.md)); ledger rows
+  added. **The next batch (sorceress) may start**, with 9c and 9d's conventions. One addition: a meaning that a
+  boundary callee gives to a compared argument or block word (a class, a mode, a monster id) is stated after the
+  boundary, `[I]`, and is never part of the `[C]` sentence.
+- **2026-10-20 — Phase 1 batch `sor` landed for review (reverser, `lane/p46m5`, static, no harness).** The sorceress
+  start functions 11–14 and do functions 17–29 and 144: 18 entries, all read; 17 emulated (do 27 Teleport read only)
+  with the Inferno helpers `0x005C8CA0` and `0x005C8E30` ([skills/0008](../findings/skills/0008-sorceress.md); tier A
+  do 18, 20, 22, 28 emulated too). Draws before the boundaries: do 21 (Telekinesis) only, one
+  `RNG_Range(caster seed, 100)` against `Param2`; no case steps the target's seed. Raised by emulation
+  (run:2026-10-20-cat-emu-sor, `tools/skills_catalogue_emu.py --batch sor`, `check.txt` `961ccef7…`,
+  `manifest.sha256` `83d7c0f9…`): six families, 8 500 cases, 0 mismatches, 27 boundary/call-site triples asserted
+  (site control 2 977 of 2 977), the caster's and the target's seeds compared in every case, the blocks passed by
+  pointer compared by content, two to six negative controls per family (each family has one failing 79 or more);
+  `UnitsHostile` and `UnitsSameParty` run emulated with the alignment rule. The same tool reproduces 9a–9d's kept
+  files byte for byte (`repro.txt`). Surprises: by the alignment rule (`0x00650D70`) a player and a monster with no
+  state-105 list are not hostile (open question); Inferno's channel lives in state 12's list and the used skill's
+  `+0x18` (a monster's end frame `frame + calc2`); Thunder Storm's node `+0x18`/`+0x1C` hold the last struck guid and
+  the re-arm switch; Hydra spawns classes `summon + 0..2`; do 22's velocity is read through a second missile table at
+  `0x0096C794`; start 11's mana test covers any caster type. Tags: 34 `[C]`, 10 `[I]`, 4 `[L]` bullets; 25 symbols
+  added (`I`). Dated note in skills/0003 § 5. Review request
+  [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p46m5-review-plan-0046-batch-sor.md); column
+  readers [to the archivist](../backlog/2026-10-20-reverser-archivist-plan-0046-sor-skills-missiles-column-readers.md).
+- **2026-10-20 — Batch `sor` reviewed (architect, on `lane/p46m5` at `d240aa5`): accept with fixes.** `main` had not
+  moved past `43d534c`, so no merge. Re-run from the lane's tool (`7525830c…`): `check --batch sor` and
+  `static --batch sor` reproduce `check.txt` `961ccef7…` and `static.txt` `91a6de74…` byte for byte;
+  `sha256sum -c manifest.sha256` (`83d7c0f9…`) passes. Spot reads against objdump: do 21's draw and flag
+  (`0x005C99C0`–`0x005C99DC`: `RNG_Range(caster+0x20, 0 + 0x64)`, `SkillGetParam2`, `jge` past the flag), `UnitsHostile`
+  (`0x00554200`), the alignment rule (`0x00650D70`, `0x006259B0`), `0x00663270` and do 27 (`0x005CA360`–`0x005CA3DD`)
+  all match the finding; the 27 site lines and every control are in `check.txt`; tags recounted 34 `[C]` / 10 `[I]` /
+  4 `[L]` bullets as filed. **Rulings:**
+  (1) **Do 21's draw holds at `[C]`.** The model compares the flag `[ebp−8]` as a pre-call byte at the `SkillRollPhys`
+  boundary and both seeds; the writer puts 35 % of the reaching cases at `Param2` or one off it and draws `Param2` from
+  negative and full 32-bit values too, so `stun_le` (23) decides `<` against `≤` at the edge and the signed compare
+  is exercised; `tseed` fails all 93 draw cases. What the flag does (`|= 9`, a stun) is after, `[I]`, as filed.
+  (2) **`UnitsHostile` and `UnitsSameParty` emulated is accepted**: they read only declared records (unit, owner link,
+  stat lists) and call nothing undeclared, so running them is condition (1)'s first treatment, and the 9c boundary
+  list is a list, not a rule. The alignment reading is right by objdump: `0x006259B0` gives 0 for no unit or no
+  stat list, 2 for a type above 1, else stat 172 of the state-105 list (0 without one); `0x00650D70` calls two units
+  allied when both are 0 or both 2, and `UnitsHostile` returns the negation. The consequence for a player and a
+  monster without the list stays `[I]` plus its Open question, which is enough for the finding; **no harness check is
+  needed for the finding, but the Phase 3 spec may not state the play consequence** ("Telekinesis refuses
+  monsters") until a static read of who allocates the state-105 list (its writers) says which units carry it in play;
+  the spec states the rule as a map only. One wording fix: the missile-owner branch of `UnitsHostile`, never
+  exercised, sat inside the `[C]` bullet.
+  (3) **The `.data` inputs are admitted, but not on the writer scan.** Under the S1e review's ruling 3 (last
+  sentence), tables set on purpose as inputs of a claim that is a map from their bytes need no justification; that
+  is the ground here. The writer scan cited for them is wrong: `static_sor` (like 9a's and 9b's scans) matches only
+  `PTR`-form stores, so it misses `mov ds:0x0096C794, eax` (`0x00663139`, `DATATBLS_LoadTable("missiles", 0x1A4)`'s
+  result) and `mov ds:0x0096C8AC, eax` (`0x006180C5`), and the counts written through pushed pointers (`0x00663115`,
+  `0x00617FF8`). 9a's and 9b's scans of the calc function counts `0x007457AC`/`0x00745848` stand: a full objdump grep
+  finds only reads of either address, no `moffs` store and no address taken. **Condition for the next batch:** any
+  writer scan it cites also matches the `moffs` store form and immediate pushes or `mov reg, imm` of the address,
+  or it does not cite one.
+  (4) **The weak controls are accepted.** Each fails exactly on the edge class the finding names (`nostate`,
+  `town14`, `dist_ge`, `ign1c`, `charge_a`), the writer places that class on purpose, and a wrong reading of the
+  claim could not match those cases by chance; every family also has a control of 79 or more. A weak control stays
+  admissible only with its deciding class named, as here.
+  **Do 27 (§ 9) read only is accepted at `[I]`.** The reading matches objdump; the stated reason is thin
+  (`LEVELS_GetRecord` is a table read the emulator could serve, and a boundary at `0x006229F0`/`UnitTeleport` would
+  give `[C]` on the `Teleport` byte test), so Phase 3 keeps § 9 `[I]` or a later batch emulates it; not a fix.
+  **Earlier rulings held:** no claim rests on a non-argument register (9c ruling 1); callee meanings sit after the
+  boundary in the body and the Answer (9d ruling, reverser review-fixes 13).
+  **Fixes, made in the finding:** (1) § 2's inputs bullet no longer rests on the writer scan; it cites ruling 3 and
+  says why the scan is no justification (misread); (2) a new § 2 `[I]` bullet records the load-time writers of
+  `0x0096C794` and `g_pDifficultyLevels`, and the `0x0096C794` Open question narrows to whether the second
+  `missiles` load equals `DataTables+0xB64` (counted with (1)); (3) `UnitsHostile`'s missile branch moves out of the
+  `[C]` sentence as not exercised (overclaim); (4) § 7 states `Vel` and `VelLev` are read unsigned (`movzx`) and
+  § 9 that do 27 returns `UnitTeleport`'s value, 0 without a room or a Levels record (omission). Counted: 3
+  (misread 1, overclaim 1, omission 1). Tags after the
+  review: 34 `[C]`, 11 `[I]`, 4 `[L]` bullets. Review request closed
+  ([archive](../backlog/archive/2026-10-20-reverser-architect-lane-p46m5-review-plan-0046-batch-sor.md)); ledger rows
+  added. **The next batch (amazon) may start**, with 9c, 9d and `sor`'s conventions and ruling 3's condition on
+  writer scans.
+- **2026-10-20 — Phase 1 batch `ama` landed for review (reverser, `lane/p46m6`, static, no harness; resumed after the
+  first session was killed by the system's out-of-memory handler, no commit lost).** The amazon start functions 4–10
+  and do functions 6, 7, 8 and 10–16: 17 entries, all read and all emulated ([skills/0009](../findings/skills/0009-amazon.md);
+  tier A start 4, start 5, do 7, do 8 emulated too). Draws before the boundaries: none; no case steps the caster's or
+  the target's seed (start 10's elemental `RNG_RangeB` comes after its hit test). Raised by emulation
+  (run:2026-10-20-cat-emu-ama, `tools/skills_catalogue_emu.py --batch ama`, `check.txt` `03a40fde…`,
+  `manifest.sha256` `6a3181d8…`): six families, 8 300 cases, 0 mismatches, 33 boundary/call-site triples asserted
+  (site control 4 190 of 4 190), both seeds compared in every case, blocks and packets compared by content and, where
+  a boundary sits inside a helper, the batch function's frame words compared at their stack address; two to four
+  negative controls per family (each family has one failing 96 or more; the smallest, `nonorm`, 51). The calc count's
+  writer scan matches `moffs` stores and immediates too (ruling 3's condition): 0 and 0. The same tool reproduces
+  9a–9d and `sor` byte for byte (`repro.txt`). Surprises: **start 6 and start 10 pass 0 as `COMBAT_MeleeHitTest`'s
+  AR argument** (Power Strike's `ToHit` 20/12 does not reach it; combat/0001 note); **do 15 and
+  do 16 leave `SpawnOwnedMonster`'s `+0x24` word unwritten**, so it carries the mode (Dopplezon) or the Skills record
+  pointer (Valkyrie); **do 13 (Fend, Zeal, Fury) returns 0 on every path**; do 8's fan steps perpendicular to the
+  caster–point line, not along it (skills/0003 § 5 note); start 4 has no skill-record test. Tags: 31 `[C]`, 13 `[I]`,
+  4 `[L]` bullets; 22 symbols added (`I`). Review request
+  [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p46m6-review-plan-0046-batch-ama.md); column
+  readers [to the archivist](../backlog/2026-10-20-reverser-archivist-plan-0046-ama-skills-column-readers.md).
+- **2026-10-20 — Batch `ama` reviewed (architect, on `lane/p46m6` at `a6eaf75`): accept with fixes.** `main` had not
+  moved past `9b5dfa8`, so no merge. Re-run from the lane's tool (`69c01d13…`, unchanged since the checkpoint
+  `9d0263c` that committed the killed session's tool section): `check --batch ama` and `static --batch ama` reproduce
+  `check.txt` `03a40fde…` and `static.txt` `b1b51e31…` byte for byte; `sha256sum -c manifest.sha256` (`6a3181d8…`,
+  37 files) passes. Spot reads against objdump: start 6 and start 10 push `0, 0` before `COMBAT_MeleeHitTest`
+  (`0x005DA9A5`, `0x005DB08E`); start 10's `RNG_RangeB(caster+0x20, max − min)` (`0x005DB0C7`) sits inside the
+  hit branch after the test; start 4 (`0x005DA8B0`–`0x005DA8E1`) has no record test; do 8's fan
+  (`0x005DB4E8`–`0x005DB676`: the perpendicular step, the truncating halves, `0x820` with `0x10000` set for the first
+  outer group and cleared for the centre, `+0x44` = calc2); do 6's block (`0x005DB1FF`–`0x005DB2A8`); do 15's and do
+  16's blocks (`ebp−0x34`/`ebp−0x30`, the last word the `&mode` slot `ebp−0x10` and the record slot `ebp−0xC`
+  stored at `0x005DC210`; no other store reaches either); do 13's every exit runs through `xor eax, eax` at
+  `0x005DBE3F` (seven jumps to `0x005DBE3D`/`0x005DBE3E`, one `ret`). The calc count's scan: a full objdump grep of
+  `0x7457ac` gives the seven `mov reg, ds:` reads and nothing else, so the scan meets ruling 3's condition of the
+  `sor` review. Tags recounted 31 `[C]` / 13 `[I]` / 4 `[L]` bullets as filed; the 22 symbol rows are new addresses
+  and names, all `I`, evidence 0009; gate green. **Rulings:**
+  (1) **Frame words at a nested boundary are admissible as filed.** A word the batch function wrote to its own frame
+  before calling the helper that reaches the boundary is a "byte written before the call that the claim uses"
+  (ADR-0021 (c)); the case fixes the entry `ESP`, so the absolute address is the `EBP`-relative slot, and a function
+  whose frame sat elsewhere would fail the compare, not pass it. One gap: the site check (b) names the boundary's
+  return address inside the helper, not the batch function's call of the helper. It holds here because each batch
+  function calls each such helper from one site (objdump: `0x00623C60` once in do 8, do 10 and do 12; `0x0056E510`
+  once in start 9 and do 13; `0x0056C4E0` once in start 4 and start 8; `0x0056BC80` once in start 8 and start 9).
+  **Condition from the next batch on:** a nested boundary's case also compares the helper's return address into
+  the batch function at its absolute stack slot, or the finding shows from objdump that the helper has one call
+  site in that function. The words' later use (the creations' targets on the armed path) stays after, `[I]`.
+  (2) **Start 6 and start 10's `0` is `[C]` as a value**, with the AR-percent meaning and its consequence for
+  Power Strike's `ToHit` `[I]` after the boundary plus the Open question, in the body and in the Answer (reverser
+  review-fixes 13). The combat/0001 dated note is right and scoped (the argument values `[C]` for start 6, 7, 10 and
+  do 7; do 13's `SKILLS_GetToHit` is a reading, past `InMeleeRange`).
+  (3) **The summons' `+0x24` word is `[C]` as a value.** The block is compared by content at `SpawnOwnedMonster`, the
+  writer varies the mode and the record pointer is a scratch address, and `w24_zero` fails 715 cases; "no store
+  fills it" agrees with objdump. What the spawn makes of it stays the Open question.
+  (4) **`srvmissileb` is `[C]` for a caster with no inventory only, as filed.** With `+0x60` = 0, `0x00623990`
+  returns 0 before its inventory call and `0x00623C60` gives word 0; no case gives word 1, so the `cmp eax, 1` stays
+  `[I]`. The skills/0003 note had put "taken for a weapon word ≠ 1" inside its `[C]` sentence (fix 1).
+  **Also checked:** start 10's elemental draw is `[I]` in the Answer, § 4 and the run record; the Answer's
+  "do 13 returns 0 on every path" sits under "After, `[I]`" (the emulated refusal paths return 0 too; the all-paths
+  claim is the objdump reading above). **Earlier rulings held:** no claim rests on a non-argument register (9c
+  ruling 1); callee meanings sit after the boundary (9d ruling); `sor`'s conventions and its ruling 3.
+  **Fixes, made in the documents:** (1) skills/0003 § 5's dated note and skills/0009's Corrections scope
+  `srvmissileb` to word 0 and leave the test against 1 `[I]` (overclaim); (2) skills/0003 § 5's Multiple Shot row
+  still said "start points stepped along it"; the row now says perpendicular, from the point less half the fan,
+  pointing at the note (reverser review-fixes 12; stale cross-reference); (3) skills/0009 § 6's after-text named the
+  weapon word "a bow" from the stock missile names, a meaning from data alone; it now points at the Open question
+  (overclaim); (4) the archivist column-reader entry called `calc1` "the missile count" under a `[C]` that covers
+  the first creation only, and `aurarangecalc` the "search radius" `[C]`; both now split the value (`[C]`) from the
+  meaning (`[I]`) (overclaim). Counted: 4 (overclaim 3, stale cross-reference 1). Tags after the review: 31 `[C]`,
+  13 `[I]`, 4 `[L]` bullets (no tag moved). Review request closed
+  ([archive](../backlog/archive/2026-10-20-reverser-architect-lane-p46m6-review-plan-0046-batch-ama.md)); the
+  archivist entry stays open for its lane; ledger rows added. **The next batch (necromancer, `nec`) may start**, with
+  9c, 9d, `sor` and `ama`'s conventions, ruling 3 of the `sor` review on writer scans, and ruling 1's condition on
+  nested boundaries.
+- **2026-10-20 — Phase 1 batch `nec` landed for review (reverser, `lane/p46m7`, static, no harness).** The necromancer
+  start functions 15–21 and do functions 30–32 and 55–63: 19 entries, all read and all emulated
+  ([skills/0010](../findings/skills/0010-necromancer.md); tier A start 15, do 30, do 31 emulated too). Draws before the
+  boundaries: none; no case steps the caster's or the target's seed (do 55's damage roll and do 58's life roll draw on
+  the target's seed after their boundaries). Raised by emulation (run:2026-10-20-cat-emu-nec,
+  `tools/skills_catalogue_emu.py --batch nec`, `check.txt` `10fec33a…`, `manifest.sha256` `792c0cb4…`): four families,
+  6 100 cases, 0 mismatches, 17 boundary/call-site triples asserted (site control 1 891 of 1 891), both seeds compared
+  in every case, blocks and packets compared by content; **where a boundary sits inside a helper, the helper's return
+  address into the batch function is compared at its stack slot** (ruling 1's condition of the `ama` review), and
+  `static` lists every call of each helper; two to seven negative controls per family (each family has one failing 76
+  or more; the weak ones named with their deciding class). The calc count's writer scan matches `moffs` stores and
+  immediates (0 and 0). The same tool reproduces 9a–9d, `sor` and `ama` byte for byte (`repro.txt`). Surprises:
+  **`0x005C2FF0`, run by Raise Skeleton and Revive before anything else, hits a player caster of class 3 for `maxhp /
+  8`** (the paladin in PlayerClass order, `[I]`); do 30's `aurastat1` test admits −1 and its length is divided by
+  `AiCurseDivisor` only for states 23 and 56 (Dim Vision, Terror), Confuse's always, and Confuse's block skips
+  `aurastat1`; do 63 returns 1 when `srvmissilea` is out of range; seven do functions test `id ≠ 0` and not the
+  record; do 31 reads `pettype` signed; the corpse test also refuses a `udead`-set state and a MonStats `+0x32` of 0;
+  the spawn blocks' `+0x24` is the game pointer (do 56, 60), a frame word do 57 does not write before the call, or the mode (do 62) (wording fixed at the review).
+  Tags: 28 `[C]`, 11 `[I]`, 5 `[L]` bullets; 31 symbols added (`I`). Dated note in skills/0003 § 5 (row 70 kept in
+  step).
+- **2026-10-20 — Batch `nec` reviewed (architect, on `lane/p46m7` at `4118630`): accept with fixes.** `main` had not
+  moved past `9183232`, so no merge. Re-run from the lane's tool (`27b93f23…`): `check --batch nec` and
+  `static --batch nec` reproduce `check.txt` `10fec33a…` and `static.txt` `c8bdc9e9…` byte for byte;
+  `sha256sum -c manifest.sha256` (`792c0cb4…`, 28 files) passes; 17 `site` lines, site control 236 + 630 + 268 + 757 =
+  1 891. Spot reads against objdump: start 20 (`0x005C32A0`–`0x005C32F2`) has one call of `0x00629CC0`
+  (`0x005C32C3`), and `0x00629CC0` one call of `0x00408090` (`0x00629CD5`, return `0x00629CDA`); do 57's block
+  (`ebp−0x34`…`ebp−0x14` stored at `0x005C52EE`–`0x005C5350`, `ebp−0x10` first written after the spawn, through
+  `0x0062EA80` at `0x005C53B9`); `0x005C2FF0` (type 0, class 3, `cdq; and edx, 7; add; sar 3`, the packet words at
+  `ebp−0x68`/`ebp−0x24`, then `COMBAT_GetHit` at `0x005C305A`); do 30's `cmp ax, 0xFFFF; jl` (`0x005C3803`) and
+  `0x005C3400` (0x17 or 0x38); do 61's `lea ecx, [edi+0x56]` and `esi = 1`; do 63's two range jumps to `0x005C5EFC`;
+  do 31's `movsx` of `+0xBE` (`0x005C4B97`) against do 56's and do 57's `movzx` with the stored 0; the seven `id ≠ 0`
+  tests at the seven addresses § 1 lists; `0x00645510`'s `+0x32` word compare and `0x0063A770`'s `DataTables+0x150`.
+  From the kept `corpse_nec.json` through the tool's own model, the eight class-3 cases have `maxhp` −9, 7 and 8,
+  so −9 separates truncation from `sar`'s floor and the "signed, truncating" `[C]` holds. **Rulings:**
+  (1) **Do 57's fatal path meets ruling 1's condition** by its second branch: each helper on the path has one call
+  site in its caller (do 57 → start 20 once, `0x005C5265`, the only call in the image; start 20 → `0x00629CC0` once;
+  `0x00629CC0` → `0x00408090` once, the site compared). A chain of single-site helpers needs no stack-slot compare;
+  the finding now says so with the addresses (§ 2).
+  (2) **Do 57's `+0x24` is `[C]` as a value**: the map from the slot's bytes at entry to the block word (19 cases,
+  a random word, `w24_zero` 741). What the game leaves in that slot when it runs do 57 is not covered (it is the
+  previous callee frames' residue), and what the spawn makes of it stays the Open question. The finding's Open
+  question said do 57 "never wrote" the slot; it writes it after the call (fix 3).
+  (3) **The class-3 self-hit stands as filed**: `[C]` up to `COMBAT_ApplyDamage` with the packet by content and the
+  helper return address `0x005C4B3F` compared; the paladin and the 1/8-life hit `[I]`; the play consequence an Open
+  question. The after-text omitted the `COMBAT_GetHit` call that follows (fix 5).
+  (4) **The weak controls are enough**, under the `sor` review's ruling 4: each names its deciding class, and each
+  family has one control failing 76 or more.
+  (5) **`0x0056E2F0` as a boundary is admitted**; start 21, do 58 and do 59 are `[C]` up to their target tests
+  (start 21's and do 58's shared site `0x005C3340` told apart by the helper return addresses `0x005C3366` and
+  `0x005C5738`), and their results, Revive's life roll and Attract's state after, `[I]`.
+  **Also checked:** do 55's and do 58's `RNG_RangeB` on the target's seed sit after their boundaries under
+  "after, `[I]`"; the tags recount 28 `[C]` / 11 `[I]` / 5 `[L]` bullets; the 31 symbol rows are new addresses, all
+  `I`, evidence 0010; skills/0003 § 5's dated note and its Raise Skeleton row agree. **Earlier rulings held:** no
+  claim rests on a non-argument register (9c ruling 1); callee meanings sit after the boundary (9d ruling, reverser
+  review-fixes 13); `sor`'s conventions and its ruling 3; `ama`'s rulings.
+  **Fixes, made in the documents:** (1) § 3's start 15 `[C]` and § 4's do 30 `[C]` carried the meaning anchors
+  `tbl:MonStats2.txt:corpseSel`, `tbl:MonStats.txt:Velocity` and `tbl:DifficultyLevels.txt:AiCurseDivisor`; they now
+  sit on the `[I]` layout bullets beside them (overclaim); (2) § 6's do 56 said an out-of-range `pettype` "→ 0", the
+  finding's notation for a refusal; the code stores 0 and goes on (`pet_keep`), and the text now says so (misread);
+  (3) the Open question and the landing entry above said do 57 "never" writes `ebp−0x10`; now "not before the call"
+  (overclaim); (4) the Answer sent the after-boundary draws to "§§ 5, 6"; both are § 5 (wrong anchor); (5) § 5's
+  after-text now names `COMBAT_GetHit(game, caster; caster, &packet)` after `COMBAT_ApplyDamage` (omission);
+  (6) § 3 now states that `0x00645510` reads `+0x32` through a null record for a class outside the MonStats count
+  (`0x0064557F`), unmodelled, as § 1 does for the ids (omission); (7) § 2 names the single call sites behind
+  ruling 1 (other); (8) the archivist entry's context now links MonStats and States, which it asks about (other).
+  Counted: 8 (overclaim 2, misread 1, wrong anchor 1, omission 2, other 2). Tags after the review: 28 `[C]`,
+  11 `[I]`, 5 `[L]` bullets (no tag moved). Review request closed
+  ([archive](../backlog/archive/2026-10-20-reverser-architect-lane-p46m7-review-plan-0046-batch-nec.md)); the
+  archivist entry stays open for its lane; ledger row added. **The next batch (paladin, `pal`) may start**, with
+  9c, 9d, `sor`, `ama` and `nec`'s conventions, ruling 3 of the `sor` review on writer scans, and ruling 1's
+  condition of the `ama` review on nested boundaries (a stack-slot compare or a single call site shown at each
+  level of a helper chain).
+- **2026-10-20 — Phase 1 batch `pal` landed for review (reverser, `lane/p46m8`, static, no harness).** The paladin
+  start functions 29, 31, 35, 36, 37 and do functions 64–67, 73, 79–82 and 150: 15 entries, all read and all emulated
+  ([skills/0011](../findings/skills/0011-paladin.md); tier A start 36, do 65, do 66 emulated too). Draws before the
+  boundaries: none; no case steps the caster's or the target's seed (the aura target passes, start 35's weapon roll
+  and do 79's conversion roll draw after their boundaries, `[I]`). Raised by emulation (run:2026-10-20-cat-emu-pal,
+  `tools/skills_catalogue_emu.py --batch pal`, `check.txt` `989e5367…`, `manifest.sha256` `12c8d5c0…`): three
+  families, 4 950 cases, 0 mismatches, 21 boundary/call-site triples asserted (site control 2 615 of 2 615), both seeds
+  compared in every case, blocks, the aura context and packets compared by content; nested boundaries by the helper's
+  return address at its stack slot (`0x0056B740`, `0x005D02B0`) or single call sites listed by `static`
+  (`0x0056E510`, `0x00622870`); five negative controls per family (each family has one failing 134 or more; the weak
+  ones named with their deciding class). The calc count's writer scan matches `moffs` stores and immediates (0 and 0).
+  The same tool reproduces 9a–9d, `sor`, `ama` and `nec` byte for byte (`repro.txt`). Surprises: the aura functions
+  reach `AURA_ApplyToTarget` through `0x0056B740` (a context `{game, unit, 0, &block}` and an indirect call), the
+  boundary of this batch; do 65's `aurastat` values are gated by mana as its `passivestat`s are, `aurastate` 0 is
+  skipped and `auratargetstate` 0 admitted; do 66 rolls `SKILLS_RollElemDamage` once per run, not per unit (`[I]`,
+  stats/0002 § 7 note); start 36 reads no skill record; start 35 has no range test; do 73 and do 80 refuse missile
+  class 0; do 81's callback rolls a 20 % state 107 on each unit's own seed. Class-3 self-hit (skills/0010): nothing in
+  the batch tests the class or calls `0x005C2FF0`; Sacrifice's own self-hit has the same packet shape without the
+  result word (`[I]`). Tags: 25 `[C]`, 12 `[I]`, 4 `[L]` bullets; 29 symbols added (`I`). Dated notes in skills/0003 § 5
+  (rows 98, 102, 117 in step) and stats/0002 §§ 4, 7. Review request
+  [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p46m8-review-plan-0046-batch-pal.md); column
+  readers [to the archivist](../backlog/2026-10-20-reverser-archivist-plan-0046-pal-skills-charstats-column-readers.md).
+- **2026-10-20 — Batch `pal` reviewed (architect, on `lane/p46m8` at `d8c384b`): accept with fixes.** `main` had not
+  moved past `e345eaf`, so no merge. Re-run from the lane's tool (`c1630af4…`): `check --batch pal` and
+  `static --batch pal` reproduce `check.txt` `989e5367…` and `static.txt` `5fd43532…` byte for byte;
+  `sha256sum -c manifest.sha256` (`12c8d5c0…`) passes; 21 `site` lines, site control 915 + 853 + 847 = 2 615.
+  Spot reads against objdump: `0x0056B740` (`0x0056B740`–`0x0056B762`: the context `{ECX, EDX, 0, [ebp+0xC]}` at
+  `ebp−0x10`, `lea ecx`, EDX untouched, `call [ebp+8]`); `AURA_ApplyToTarget`'s entry reads both registers before
+  writing either (`mov esi, [ecx+0xC]`, `mov ebx, edx`, `mov ecx, [ecx+4]`, 0x005CEDE2–0x005CEDF0); do 65's gate
+  (0x005CF0B5–0x005CF0C4: a null caster or a non-zero type word skips the test, `jl` against the cost), `aurastate`'s
+  `test ax, ax; jle` (0x005CF117) and `auratargetstate`'s `jl` (0x005CF1D8), the self call at 0x005CF143 and the
+  target pass reached only when `aurastate` fails; do 66's one `SKILLS_RollElemDamage` at 0x005CF5D5 after the town
+  test and before its `ForUnitsInRange` (0x005CF64E), its second block's mana-only gate (0x005CF56B); do 81's callback
+  (`0x005D07C0`: the unit's `+0x20`/`+0x24` stepped by `0x6AC690C5` with carry, an unsigned `% 100` against 20, state
+  107 set or cleared); start 29, do 150 and start 35 up to their boundaries (start 35: used skill, target, a zeroed
+  packet, `SKILLS_GetToHit`, `COMBAT_MeleeHitTest`, no `InMeleeRange`); start 36 (`0x005D0180`–`0x005D0198`, no
+  record read); do 64's packet (`or [ebp−0x78], 0x1000`, `+0x08`/`+0x4C`, no `+0x04` write; then `COMBAT_ApplyDamage`,
+  `COMBAT_GetHit`, `COMBAT_DeliverQueued`) against `0x005C2FF0`'s (`or word [ebp−0x6C], 4` at 0x005C3028); do 73's and
+  do 80's `jle` (0x005D008A, 0x005D06BE), do 73's `or [edi+0xC4], 0x40` (0x005D00A6) and none in do 80 before its
+  creation; start 31's speed code (0x005CF7D8–0x005CF873); `0x005CF8C0`'s byte read once at 0x005CF8DC before the loop;
+  `sub_0063EE90_HirelingType`'s five classes. Tags recounted 25 `[C]` / 12 `[I]` / 4 `[L]` bullets as filed; the 29
+  symbol rows are new addresses and new names, all `I`, evidence 0011; the `hireling` helper rename leaves 9a–`nec`'s
+  case files and outputs byte for byte (`repro.txt`). **Rulings:**
+  (1) **The aura boundary's ECX and EDX are arguments, so `[C]`.** `AURA_ApplyToTarget` is a register-argument callee
+  that reads ECX (the context) and EDX (the unit) at entry before it writes either; that is ADR-0021 (c)'s "every
+  argument the claim uses, in registers", not 9c ruling 1's case (a callee-saved register the callee does not take
+  and must preserve). The context is a byte block written before the call (by `0x0056B740`) and compared by content,
+  with the block it points at; the indirect `call [ebp+8]` reaches the entry the batch function pushed
+  (`0x005CEDC0`), which is (a)'s own control flow; the site is the helper's return `0x0056B75F`, and the helper's
+  return into each batch function is compared at its slot (ama ruling 1, nec ruling 1). What the callee does with
+  the block stays after, `[I]`.
+  (2) **The thin claims are admitted.** Do 67's `[C]` is the record test, the used-skill test and the argument of
+  `0x006633B0`; start 29's, do 150's and start 31's target path are the record (and used skill) tests and
+  `InMeleeRange`'s three arguments. Each is true as a map and each names its boundary; Phase 3 keeps everything after
+  them `[I]`, as filed. Routes to more: a boundary later in do 67 (with `0x006633B0`/`0x006633F0` served from declared
+  records), or the harness.
+  (3) **stats/0002 § 7's `[C]` was not right as worded.** run:2026-10-17-stats counted 865 drawing Sanctuary runs and
+  865 steps: one draw per drawing run. It did not count units per run, so it cannot tell "one per unit hit" from "one
+  per run"; "once per hit" read as per unit is not separated, and the code (0x005CF5D5, before the target pass, the
+  packet copied by `rep movs` at 0x005CF367) makes one call per run. The `[C]` now states the count the run made
+  (Answer, § 7 bullet and table row, § 8), and once per run whatever the number hit stays `[I]` (the dated note, no
+  check of its own needed for the finding). The stats spec and the wiki repeat "per hit" (`states.md` asks a
+  reimplementation to "consume one draw per hit"): carried to the spec-writer
+  ([backlog](../backlog/archive/2026-10-20-architect-spec-writer-stats-aura-draw-once-per-run.md)). A run with two or more
+  units in range of one Sanctuary run would raise the per-run reading; not required.
+  (4) **Do 81's 20 % roll stays `[I]`.** The seeds are compared at the self-call boundary, before `ForUnitsInRange`
+  ever runs the callback `0x005D07C0`, so no case executes the LCG step; the seed compare says nothing about it.
+  Route to `[C]`: emulate `0x005D07C0` as its own entry (ECX the context, EDX a unit with a declared seed and
+  MonStats row): with the block's `+0x48` and packet pointer `+0x4C` both 0 it skips `AURA_ApplyToTarget` and the two
+  `COMBAT_*` calls (the tests at 0x005D081F and 0x005D088A–0x005D088F) and reaches the step, ending at `STATE_Set(unit, 107, …)` as a
+  boundary with the seed compared; with them set, those calls come first; a later batch or Phase 2.
+  (5) **Do 65's gate and the 0 handling hold** (`nogate` 172, `as0` 27 on the `aurastate`-0 class), and so do do 73/80's
+  `jle` (`m0` 90), do 80's missing bit 6 (`bit6_80` 71), start 35's missing range test and start 36's missing record
+  read (both by objdump above and by cases that end at the predicted boundary). `0x005CF8C0`'s pre-loop byte read is a
+  reading, `[I]` in the Functions table, as filed.
+  (6) **Sacrifice's self-hit and the class-3 self-hit:** § 6 stands at `[I]`; the packet shape agrees by objdump.
+  (7) **The weak controls are enough**, under the `sor` review's ruling 4 (each names its deciding class; each family
+  has one failing 134 or more).
+  **Also checked:** the dated notes in skills/0003 § 5 agree with rows 98, 102 and 117; the stats/0002 § 4 note put
+  `AURA_ApplyToTarget`'s removal of the `+0x48` state inside its `[C]` sentence (fix 2). **Earlier rulings held:** no
+  claim rests on a non-argument register (9c ruling 1, ruling 1 above); callee meanings sit after the boundary (9d
+  ruling, reverser review-fixes 13); `sor`'s conventions and its ruling 3 (the calc count's scan: 0 stores, 0
+  immediates); ama ruling 1 at each level (`0x0056E510` once in start 37, `0x00622870` once in `0x0056E510`, both in
+  `static.txt`). **Fixes, made in the documents:** (1) stats/0002's Answer, § 7 bullet and table row and § 8 "once
+  per hit" narrowed to the run's count, one draw per drawing run, with the per-run reading `[I]` (overclaim);
+  (2) stats/0002 § 4's dated note: the removal of the `+0x48` state moved after the boundary, `[I]` (overclaim);
+  (3) the archivist entry's `Param1` and `RunVelocity` items named "the charge speed" and "its base speed" under
+  `[C]`; the value is now `[C]` and the meaning `[I]` (overclaim); (4) skills/0011's Answer said do 64 "finds the
+  caster's queued hit on the target" in a `[C]`; it now names the `+0xAC` chain node the code matches (overclaim);
+  (5) § 3 states that do 81's callback takes the new low seed word unsigned `% 100` (omission); (6) the spec and wiki
+  repetition of "per hit" filed to the spec-writer (omission). Counted: 6 (overclaim 4, omission 2). The meaning
+  word in a column-reader entry's `[C]` is the second such fix (after `lane/p46m6`'s fix 4); added as a "Seen" line to
+  reverser review-fixes rule 1. Tags after the review: 25 `[C]`, 12 `[I]`, 4 `[L]` bullets (no tag moved in
+  skills/0011). Review request closed
+  ([archive](../backlog/archive/2026-10-20-reverser-architect-lane-p46m8-review-plan-0046-batch-pal.md)); the
+  archivist entry stays open for its lane; ledger row added. **The next batch (barbarian, `bar`) may start**, with
+  9c, 9d, `sor`, `ama`, `nec` and `pal`'s conventions, ruling 3 of the `sor` review on writer scans, and ruling 1's
+  condition of the `ama` review at each level of a helper chain.
+- **2026-10-21 — Two spec carries from the `pal` and 9a reviews landed for review (spec-writer, `lane/s46a`, static
+  docs only).** (1) stats: Sanctuary's draw is one `RNG_RangeB` per drawing run `[C]` and once per run whatever the
+  number of units hit `[I]`, in [stats/README](../specs/stats/README.md#draw-order), [states § H](../specs/stats/states.md#h-draws-per-event-kind)
+  and the wiki (stats/overview I 2 → 3, stats/states I 47 → 50). (2) [quests/progression](../specs/quests/progression.md)
+  W4c: missile do 17 and do 18 up to their boundary calls `[C]` and their stock rows `[I]` from skills/0004 §§ 7, 8;
+  the open question narrowed to do 36 (C 116 → 117, I 321 → 322, L 6). Both backlog entries closed; review request
+  [to the architect](../backlog/archive/2026-10-21-spec-writer-architect-lane-s46a-review-stats-aura-draw-and-quests.md).
+- **2026-10-21 — `lane/s46a` review (architect): accept with fixes.** Checked against stats/0002 § 7, skills/0011 § 3
+  and skills/0004 §§ 7, 8 (do 17's portal test at 0x005AF2BA–0x005AF2DD re-read: it sits outside the scatter window,
+  as W4c says). The `[C]` in stats/README and states § H is one `RNG_RangeB` per drawing run and the units-per-run
+  reading is `[I]`; W4c's `[C]` stops at each boundary call and names what is not covered; the one new `[L]` (do 36)
+  is under *Open questions*; the tag counts held. **Fixes, made in the documents:** (1) states' *Runtime state*
+  unit-seed row said the unit seed is "drawn only by a damaging aura's run"; skills/0011 § 3 has Holy Freeze's
+  callback step each hit unit's own seed: the row is scoped to the run and a new § H `[I]` note states do 81's
+  per-unit step, and the wiki's "once per run" bullet says it, read from the code (overclaim); (2) the wiki quests
+  paragraph called the missiles "invisible", which no spec says, and ran the stones' and the chests' missiles into
+  one count (overclaim); (3) W4c's `[C]` gave do 18's gold period "from that frame, every `max(4·Param2, 1)`
+  frames"; the code tests `left % max(4·Param2, 1) == 0` in the gold phase (stock: first pile at `left` 248, not
+  250) (misread); (4) W4c's `[C]` now states the helper's re-seed `(SubX + elapsed, 666)`, its period test and
+  owner/room gate, both draw ranges and their offsets, do 18's `left == 1` unit event `0x5C` and the gold phase set
+  when the chest is gone (omission); (5) "the aura's hit" left in stats/README § Draw order and as the states
+  reimplementation note's heading (stale cross-reference). Counted: 5 (overclaim 2, misread 1, omission 1, stale
+  cross-reference 1). Tags after the review: stats/overview {C 14, I 3, L 3}, stats/states {C 44, I 51, L 6},
+  quests/progression {C 117, I 322, L 6}. Research map: the stats/states row (counts, the drawing-run wording, Holy
+  Freeze), the quests/progression row (counts, the 9a carry) and the overview's stale count in the stats/aggregate
+  row (C 13 / I 4 → C 14 / I 3, the architect's). Review request closed; ledger row added. Not merged here.
+- **2026-10-21 — Phase 1 batch `bar` landed for review (reverser, `lane/p46m9`, static, no harness).** The barbarian
+  start functions 32–34 and 38–41 and do functions 2, 9, 68–72 and 74–78: 19 entries, all read and all emulated
+  ([skills/0012](../findings/skills/0012-barbarian.md); tier A start 32 and do 2 emulated too). Draws before the
+  boundaries: none; no case steps the caster's or the target's seed (do 69's and do 72's `RNG_Range` and do 69's
+  inline step draw on the caster's seed after their `STATE_Set` boundary, `[I]`). Raised by emulation
+  (run:2026-10-21-cat-emu-bar, `tools/skills_catalogue_emu.py --batch bar`, `check.txt` `13b1a4d2…`,
+  `manifest.sha256` `737c8b4f…`): four families, 6 800 cases, 0 mismatches, 39 boundary/call-site triples asserted
+  (site control 2 397 of 2 397), both seeds compared in every case, blocks, points and contexts compared by content,
+  register arguments compared where the callee reads them first (pal ruling 1); nested boundaries by the helper's
+  return address at its stack slot (eight helpers) or single call sites listed by `static` (do 70's reach chain); three
+  to six negative controls per family (each family has one failing 90 or more; the weak ones named with their deciding
+  class). The calc count's writer scan matches `moffs` stores and immediates (0 and 0). The same tool reproduces
+  9a–9d, `sor`, `ama`, `nec` and `pal` byte for byte (`repro.txt`). Surprises: do 2's overlay and target-state blocks
+  return 1 without delivering when the caster has no queued hit on the target; do 9 and do 70 branch on bit 8 of the
+  caster's `+0x38`; do 68 sets bit 6 before its record test and admits missile class 0; Find Potion and Grim Ward's
+  corpse test adds MonStats2 flag 12 (`soft`, by the layout) to Find Item's; start 40 pulls a player's leap point in to
+  `aurarangecalc`; start 41 aims two steps past the path's target point; do 72's rolls are on the caster's seed
+  (items/0001 note). Tags: 31 `[C]`, 22 `[I]`, 4 `[L]` bullets; 32 symbols added (`I`). Dated notes in skills/0001
+  § 11, skills/0003 § 5 (the Kick row in step) and items/0001. Review request
+  [to the architect](../backlog/archive/2026-10-21-reverser-architect-lane-p46m9-review-plan-0046-batch-bar.md); column
+  readers [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-bar-skills-monstats2-column-readers.md).
+- **2026-10-21 — `lane/p46m9` review (architect): accept with fixes.** Main (`8d9ecb5`) merged first (one conflict in
+  this log, both sides kept; `backlog.py archive` moved nothing more). `check --batch bar` and `static --batch bar`
+  from the lane's tool reproduce the kept `check.txt` (`13b1a4d2…`) and `static.txt` (`4808f177…`) byte for byte;
+  `sha256sum -c manifest.sha256` (`737c8b4f…`) passes. Recounted from `check.txt`: 6 800 cases, the per-family control
+  sums (357, 233, 542, 236), 39 `site` lines summing to 2 397, the site controls 933 + 185 + 469 + 810. Read against
+  objdump: start 32, 38, 39, 41, do 2, 9, 68, 70, 71, 72, 74, 76, 77, 78 and the helpers `0x0056E510`, `0x005D8510`,
+  `0x005D9A10`, `0x00645CA0`, `0x0057D690`. **Rulings.** (1) **The register arguments are admitted** under the `pal`
+  review's ruling 1: `0x0056E520` reads `ECX` (`mov edi, ecx`) and `EDX` (`mov ebx, edx`) before any write;
+  `0x005DA120` reads `EAX` (`mov edi, eax` at `0x005DA128`; the `push edi` before it saves the caller's `EDI`, not an
+  argument); `0x005D9F70` reads `EDI` first (`mov esi, [edi+0x2C]` at `0x005D9F74`, no save or write before it), and do 78
+  sets it to the caster at `0x005DA7E6` and never writes it before the call; `0x005DA660` reads `EAX` at `0x005DA66D`
+  after writing only `EDX` and `ESP`; `0x0056E2F0` reads `ECX` and `EDX` at `0x0056E2F1`/`0x0056E2F6`. (2) **The thin
+  claims stand as `[C]`**, each for what precedes its boundary only: do 77 (the record, the node, then
+  `UNIT_CancelEvents(game, caster; 1, 0)`, objdump `0x005DA370–0x005DA3CB`), do 74 (the record, `UnitGetWeapon`'s
+  null and `+0x60` tests, its query), start 39 (`SKILLS_GetToHit` is `ret 0xC`, so the trailing 0 is
+  `MeleeHitTest`'s third argument, as written), do 71 with a type-1 target (the record, the `auratargetstate` range,
+  the type test in `0x005D8510`; what `0x0056E2F0` tests is an open question, as filed). (3) **The weak controls are
+  enough** under the `sor` review's ruling 4: each names its deciding class, and the classes match the outcome
+  counts where they can be read off (`town_any` 42 = `town` 42, `pt_swap` 36 = `freenear` 36, `mask_swap` 27 =
+  `settype` 27; `size2` 41 of 47 monster free-spot cases, `noscale` 22 of 38 player ones, `f200` 23 of the 69 bit-7/8
+  cases); each family has one failing 90 or more. (4) **The corrections are sound as dated notes.** items/0001's row
+  keeps `C` for its role (the call into `MonDropNoNoDrop`, on its harness logs) and the seed is `[I]` from objdump
+  (`mov edi, edx` at `0x005D878D`, `add edi, 0x20` at `0x005D8808`, the two `RNG_Range` at `0x005D8814` and
+  `0x005D882F`): the split is sound. No spec relies on the monster's seed ([items/tc](../specs/items/tc.md) names only
+  the call chain, `[I]`), so no spec-writer entry is filed. **Also checked:** do 69's and do 72's draws are in `[I]`
+  bullets after their `STATE_Set` boundary; do 2's `QueuedHitFind` 0 jumps to `0x0056F44F` (after the delivery call:
+  1, bit 6 not set), and the found pointer is the node `+ 0x14`, so "the packet's `+0x04`" is right; do 9's and do 70's
+  `sar 8; and 0x80000001` remainder is non-zero exactly when bit 8 is set, whatever the sign; do 68 sets bit 6 (for a
+  non-null caster) before its record test and admits class 0 by `jl`, against do 73/80's `jle`; flag 12 is `[C]` as a
+  bit test and `soft` only in the `[I]` layout bullet; start 40's pull is `imul`/`cdq; idiv` with `d` raised to 1 and
+  tested `> range` (`range` the `aurarangecalc` value); start 41's point is `2 (p − u) / d + p`; do 70's chain
+  (`0x0056E510` once in do 70 at `0x005D84B7`, its single call of `0x00622870` at `0x0056E511`) is in `static.txt`;
+  the archivist entry's `[C]` items carry values and tests only (meanings `[I]`); the 32 symbols are new and the gate
+  is green after the merge. **The development runs:** the record is honest (it says the first `corpse_bar` and
+  `move_bar` outputs mismatched on three tool faults and were overwritten by the kept run, and no claim rests on them),
+  and no new evidence rule is needed, but reverser review-fixes rule 6 already asks that a development log be kept,
+  not lost; a "Seen" line is added there (later batches write development outputs under their own names). **Fixes,
+  made in the documents:** (1) § 2 listed `0x005D902C` as a compared return of start 38's `0x00571B70`; the model
+  compares only `0x005D8F9B`, and no case reaches the no-path call at `0x005D9027` (overclaim); (2) start 38's
+  after-bullet now says a target not in melee range takes the path branch and that the no-path return 0 is not run
+  (omission); (3) start 41's after-bullet now says a target not in melee range gives `(px, py)` from the target's
+  position, and that the free-spot search after a non-zero pattern test is around the unextended point (omission);
+  (4) do 76's and do 78's own return values after their boundaries (0 at the word-0 site, 1 at the `& 3` site; 1 when
+  `0x005DA120` gives 0, the callee's value on bits 7 and 9) (omission); (5) § 2's "a control failing 72 or more" made
+  "90 or more", as the request and this log say (other). Counted: 5 (overclaim 1, omission 3, other 1). Tags after the
+  review: 31 `[C]`, 22 `[I]`, 4 `[L]` bullets (the fixes extend existing `[I]` bullets). Review request closed
+  ([archive](../backlog/archive/2026-10-21-reverser-architect-lane-p46m9-review-plan-0046-batch-bar.md)); the
+  archivist entry stays open for its lane; ledger row added. **The next batch (druid, `dru`) may start**, with 9c, 9d,
+  `sor`, `ama`, `nec`, `pal` and `bar`'s conventions, and development outputs kept under their own names.

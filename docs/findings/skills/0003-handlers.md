@@ -341,19 +341,19 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
 | 0 Attack, 5 Left Hand Swing | 1 `SKILL_AttackStart` | 1 `SKILL_AttackDo` | P1.1 § 11, P1.2 § 2 | melee chain or missile |
 | 1 Kick | 2 `0x0056CAF0`: a packet result 9, flags 2, physical `MinDam << HitShift`, hit class 1, `ResolveAndQueue(…, 128)` | 2 `SKILL_MeleeDeliverDo` | start builds, do delivers | the builder's |
 | 2 Throw, 4 Left Hand Throw | 65 `0x0056CAB0` | 3, 5 (P1.2) | start: `0x0056C4E0(unit)` (the thrown item) or the two refusal calls `0x00580310`/`0x00580380`, return 0 | none |
-| 25 Plague Javelin, 12 Multiple Shot | 4 `0x005DA8B0` (the same code as 65) | — / 8 | 8: `n = calc1` missiles (`srvmissilea`, `srvmissileb` for a weapon class ≠ 1) fanned across the line to the target: offsets `(dx, dy)` from the unit to the target, start points stepped along it, flags `0x820` (`0x10000` on the outer groups), activate `calc2`, `calc3` (or `n`) centre missiles | the creations' |
+| 25 Plague Javelin, 12 Multiple Shot | 4 `0x005DA8B0` (the same code as 65) | — / 8 | 8: `n = calc1` missiles (`srvmissilea`, `srvmissileb` for a weapon class ≠ 1) fanned across the line to the target: offsets `(dx, dy)` from the unit to the target, start points stepped perpendicular to it from the point less half the fan (corrected 2026-10-20, note below), flags `0x820` (`0x10000` on the outer groups), activate `calc2`, `calc3` (or `n`) centre missiles | the creations' |
 | 10 Jab | 5 `0x005DA8F0`: a target | 7 `0x005DB2D0` | to-hit `SKILLS_GetToHit` (and `MonAttackStats` for a monster), `edPct = calc1`, conversion `EType`/`calc4`, elemental roll, `ResolveAndQueue(SrcDam or 128)`, `DeliverQueued` | to-hit, defence, build, 1–2 |
-| 70 Raise Skeleton | 15 `0x005C3070`: a target not in town that `0x00645510` accepts (a monster corpse in mode 12 whose MonStats2 flag and MonStats `+0x32` allow it) | 31 `0x005C4B00` | § 7 | none |
+| 70 Raise Skeleton | 15 `0x005C3070`: a target not in town that `0x00645510` accepts (a monster corpse in mode 12 with no state of the `DataTables+0x150` set, whose MonStats2 flag 7 and MonStats `+0x32` allow it; refined 2026-10-20, note below) | 31 `0x005C4B00` | § 7; first `0x005C2FF0` (note below) | none |
 | 259 Fists of Fire | 23 `0x005D32F0`: target in melee range | 35 (P1.1 § 12) | finisher § 1 | as § 1 |
-| 117 Holy Shield | 36 `0x005D0180`: inventory `0x0063C8F0(inv, 0)` (a shield) | 18 `0x005C9480` | 18: bit 6, `STATE_GroupClear(1)`, `STATE_ApplyTimed(aurastate, auralencalc)`, `SKILLS_ApplyAuraStats`, `0x005C6DC0` (`passivestat`s), stats 350/351, the `auraevent`s registered | none |
+| 117 Holy Shield | 36 `0x005D0180`: inventory `0x0063C8F0(inv, 0)` (a shield); no skill record read, 0 without an inventory (note below) | 18 `0x005C9480` | 18: bit 6, `STATE_GroupClear(1)`, `STATE_ApplyTimed(aurastate, auralencalc)`, `SKILLS_ApplyAuraStats`, `0x005C6DC0` (`passivestat`s), stats 350/351, the `auraevent`s registered | none |
 | 68 Bone Armor | — | 18 | as above; event 22 | none |
 | 42 Static Field | — | 20 `sub_005C9800_SorSkillStaticMin` | `ForUnitsInRange(aurarangecalc, aurafilter, 0x005C96A0)` with calc1, calc2, elemental length, `EType` and the difficulty's `+0x40` (combat/0001) | callback's |
 | 48 Nova, 44 Frost Nova, 130 Howl | — | 22 `0x005C9B50` | bit 6; `m = SrvMissileByCharge` (`srvmissilea`); `NovaAtUnit(unit, m, id, lvl, vel + calc1)` | the creations' |
 | 54 Teleport | — | 27 `sub_005CA360_SkillTeleportDo` | P1.1 name; target point, room checks, `0x006229F0` | none |
 | 56 Meteor | — | 28 `0x005CA3E0` | bit 6; `srvmissilea` at the target point (`MissileCreateAt`) when `0x0056E450` finds the target cell free for the missile's size (`COLL_WHTest(…, 5)`) | the creation's |
 | 66 Amplify Damage | — | 30 `0x005C37C0` | bit 6; radius `aurarangecalc`, length `auralencalc` (divided by the difficulty's `+0x1C` when `0x005C3400` is true), `aurastat1..6` and the `auraevent`s into a block; `sub_0056E780_SkillForUnitsNearTarget(radius, CurseApplyCb)`: units within the radius of the target point in the near rooms (town rooms skipped with `aurafilter` bit `0x2000`) that pass `sub_0056B3E0_SkillUnitFilter`; the callback applies `auratargetstate` (`STATE_ApplyTimed`), the stats and the events | none |
-| 98 Might | — | 65 `sub_005CF010_PalAuraDo` | stats/0002 | none |
-| 102 Holy Fire | — | 66 `sub_005CF3A0_AuraHitDo` | stats/0002; `SKILLS_RollElemDamage` per unit | 1 per unit |
+| 98 Might | — | 65 `sub_005CF010_PalAuraDo` | stats/0002; the `aurastat` values too need the mana test for a player, `aurastate` must be above 0 (note below) | none |
+| 102 Holy Fire | — | 66 `sub_005CF3A0_AuraHitDo` | stats/0002; the self block carries `passivestat1..5`; one `SKILLS_RollElemDamage` per run, its packet copied to each unit (note below) | 1 per run |
 | 221 Raven | — | 114 `0x005C6910` | § 7 | none |
 | 225 Firestorm | — | 117 `0x005C7160` | bit 6; with `calc1 > 0` one `SkillMissileCreate` of `srvmissilea` (`firestormmaker`), then `calc1 − 1` more by `MissileCreate` (flags `0x21`, callback `0x005C9290` with the index 0, 1, …) toward the target point | the creations' |
 | 36 Fire Bolt, 251 Fire Trauma | — | — | `SKILLS_SrvDo`'s `srvmissile` (P1.2 § 2) | the creation's |
@@ -361,6 +361,51 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
 - [I] As above; each row's function is the `ST`/`DO` line of `handlers-scan.txt` and its draws the `DRAW` line.
   (fn:sub_005DB410_SkillDo08MultiShot@0x005DB410, fn:sub_005C37C0_SkillDo30Curse@0x005C37C0,
   fn:sub_005C7160_SkillDo117Firestorm@0x005C7160, fn:sub_0056E780_SkillForUnitsNearTarget@0x0056E780)
+  *2026-10-20 (plan 0046 batch `sor`), emulated:* do 18, 20, 22 and 28 are reproduced up to their boundaries (`[C]`
+  under ADR-0021; [skills/0008](0008-sorceress.md) §§ 7–8): do 18 up to `STATE_GroupClear(caster, aurastate; 1)`;
+  do 20 up to `SKILLS_ForUnitsInRange`, whose block is `{calc2, calc1, the difficulty record's +0x40, elemental
+  length, EType}` with the third word 0 when `game+0x70` is 0 (refinement: the row above has the `+0x40` term
+  always); do 22 up to `NovaAtUnit`'s first creation, its `vel` being `0x00663270(cls, lvl)` (Missiles `Vel` +
+  `VelLev · lvl / 8`) plus calc1; do 28 up to `COLL_WHTest(room, target point, Size, Size, 5)` inside
+  `0x0056E450`. Do 27 is not emulated. Everything after those calls stays as read above, `[I]`.
+  (fn:sub_005C9800_SorSkillStaticMin@0x005C9800, fn:sub_005C9B50_SkillDo22NovaAtSelf@0x005C9B50)
+  *2026-10-20 (plan 0046 batch `ama`), emulated:* start 4, start 5, do 7 and do 8 are reproduced up to their
+  boundaries (`[C]` under ADR-0021; [skills/0009](0009-amazon.md) §§ 3, 4, 6): start 4 makes **no skill-record
+  test** and returns 1 for any non-player caster, ending at `0x00580310` for a player without an inventory; do 7 up to
+  `COMBAT_MeleeHitTest(target, SKILLS_GetToHit, 0)` (a monster first at `MonAttackStats(ECX unit, EDX 8)`); do 8 up to
+  its first `MissileCreate`, with two corrections to the row above: the step between the fanned missiles is
+  **perpendicular** to the caster–point line (`0x0056D370` scales a short vector, `0x0056D3B0` rotates it to `(dy,
+  −dx)` and halves it to a square of 3 or less), and the first start point is the target point less `step · n / 2`
+  (truncating); `srvmissileb` (when ≥ 0) is taken for a caster with no inventory (weapon word 0); the test against 1
+  itself (`cmp eax, 1` at `0x005DB52C`) stays `[I]`, since only word 0 is emulated (an armed caster ends at the
+  inventory call). Everything after those calls stays as read above, `[I]`. (fn:sub_005DB410_SkillDo08MultiShot@0x005DB410,
+  fn:sub_0056D3B0_VecPerpSmall@0x0056D3B0)
+  *2026-10-20 (plan 0046 batch `nec`), emulated:* start 15, do 30 and do 31 are reproduced up to their boundaries
+  (`[C]` under ADR-0021; [skills/0010](0010-necromancer.md) §§ 3–5): start 15 returns `0x00645510(target, 0)`, which
+  also refuses a monster carrying a state of the `DataTables+0x150` bit-set (refinement of the Raise Skeleton row);
+  do 30 up to `sub_0056E780_SkillForUnitsNearTarget`, its `aurastat1` test admitting −1 and its block carrying the
+  `0x005C3400` flag at `+0x08` and an ItemStatCost-byte flag at `+0x0C`; do 31 calls `0x005C2FF0` before its record
+  test (a player caster of class 3 ends there at `COMBAT_ApplyDamage` with a packet of `maxhp / 8`) and reads
+  `pettype` signed, ending at `0x0061A270` before its spawn. Everything after those calls stays as read above, `[I]`.
+  (fn:sub_005C37C0_SkillDo30Curse@0x005C37C0, fn:sub_005C2FF0_SkillClass3SelfHit@0x005C2FF0)
+  *2026-10-20 (plan 0046 batch `pal`), emulated:* start 36, do 65 and do 66 are reproduced up to their boundaries
+  (`[C]` under ADR-0021; [skills/0011](0011-paladin.md) §§ 3–4): start 36 reads **no skill record** and returns 0
+  without an inventory word (`+0x60`), else ends at `0x0063C8F0(inventory, 0)`; do 65 and do 66 end at
+  `AURA_ApplyToTarget(ECX &{game, caster, 0, &block}, EDX caster)` through `0x0056B740`, the 0x50-byte block holding
+  the state, id, level, the end `SKILLS_NextPeriodicFrame + 1 − frame` and the stats with their values, the values
+  evaluated unless the caster is a player whose stat 8 is below the cost `((lvl − 1) · lvlmana + mana) << (manashift &
+  31)` (refinement of the Might row: the `aurastat` values are gated as well); do 65 takes `aurastat1..6` up to the
+  first below 0 and needs `aurastate` above 0 (else its `auratargetstate` pass, `SKILLS_ForUnitsInRange`), and puts
+  `passivestate` at `+0x48`; do 66 refuses an `aurastate` outside `[0, States count)` and takes `passivestat1..5` (the
+  Holy Fire row). From the reading, `[I]`: do 66 makes one `SKILLS_RollElemDamage` per run, its packet copied to every
+  unit of the target pass (correction of the Holy Fire row's "per unit"). Everything after those calls stays as read
+  above, `[I]`. (fn:sub_005CF010_PalAuraDo@0x005CF010, fn:sub_005CF3A0_AuraHitDo@0x005CF3A0)
+  *2026-10-21 (plan 0046 batch `bar`), emulated:* do 2 (the Kick row) is reproduced up to its boundaries (`[C]` under
+  ADR-0021; [skills/0012](0012-barbarian.md) § 3). For a row with no `srvoverlay`, `auratargetstate` or `aurastate`
+  (Kick) it sets bit 6 and ends at `COMBAT_DeliverQueued(game, unit; target, 0)`, or returns 0 without a target, as the
+  row says; for rows that fill those columns its overlay and target-state blocks return 1 without delivering when
+  `QueuedHitFind(caster, target)` finds no `+0xAC` node naming both (skills/0001 § 11 note). Everything after those calls stays as read above,
+  `[I]`. (fn:SKILL_MeleeDeliverDo@0x0056F1F0)
 
 ### 6. Tier A: missile do, hit and damage functions
 
@@ -400,6 +445,14 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
   that call); **hit 2** also returns 3 without a record or with `HitSubMissile1 < 0` (`[I]`); **hit 22** finds its unit
   by `MissileData+0x28` (type) and `+0x2C` (guid) and returns 0 when there is none (`[C]`)
   (run:2026-10-20-cat-emu-9c, [skills/0006 §§ 4, 11, 14, 16](0006-missile-hit-1-29.md#4-hit-13-hit-3--44-hit-14)).
+  *2026-10-20 (plan 0046 batch 9d), emulated:* **hit 2** returns 3 without a record or with `HitSubMissile1 < 0`, and
+  3 when the ring refuses (no owner, class outside the Missiles count) (`[C]`, was `[I]` above); its ring's first
+  creation is `{flags 0x1F and loops sHitPar3 when > 0, else 0x17; owner; source = the hit unit, or the missile at the
+  end of life; cls; that source's position; skill, lvl; direction (0, 2); velocity Param1 << 7}` (`[C]` under
+  ADR-0021, up to that `MissileCreate`; the later directions and the return 3 after it stay `[I]`); **hit 36**
+  returns 0 for a unit and creates at the end of life only (`[C]`, up to `MissileCreateAt`); **hit 58** re-seeds the
+  missile from its x and draws its two offsets before the creation (`[C]`, up to `MissileCreate`)
+  (run:2026-10-20-cat-emu-9d, [skills/0007 §§ 5, 6](0007-missile-hit-31-59.md#5-hit-2-hit-59-and-hit-52-rings)).
 
 ### 7. Summons
 

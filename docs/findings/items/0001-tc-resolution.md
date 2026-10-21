@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/tc
 > **Question:** Which TC does a kill use, how does the game walk it (picks, NoDrop, recursion, ratios), which seed does each draw come from, and what does item creation receive?
-> **Date:** 2026-10-11   **Plan:** 0004 (Phase 1)   **Status:** open (Phase 1 read `[I]`; Phase 1b cross-check done; Phase 2 done: 328/328 resolver calls of run:2026-10-11-tc-drops reproduced by `tools/tc.py replay`, since plan 0010 Phase 2 also with the quality roll modelled and no oracle; plan 0011: party count `[C]` by run:2026-10-12-tc-party (175/175 calls, two clients); champion column and champion-before-unique order `[C]` by run:2026-10-12-tc-champion (124/124 calls, Nightmare, 2 champions); superunique-first order and Normal/Hell champions stay `[I]`; plan 0020 Phase 2: the classic total, the classic scan with no skipped entry, and the throwable refund `[C]` by run:2026-10-13-quality (485/485 classic calls); the classic skip, miss, `version` reject and Long Sword fallback stay `[I]`; plan 0038 batch S2a, 2026-10-16: 20 statements raised and 18 in part over 166 kept stock logs, tables and a second xref tool, 8 reclassified, [§ Plan 0038 batch S2a](#plan-0038-batch-s2a-2026-10-16); plan 0038 batch H2a, 2026-10-20: 9 statements raised and 4 in part by run:2026-10-20-sweep-items-tc, [§ Plan 0038 batch H2a](#plan-0038-batch-h2a-2026-10-20))
+> **Date:** 2026-10-11   **Plan:** 0004 (Phase 1)   **Status:** open (Phase 1 read `[I]`; Phase 1b cross-check done; Phase 2 done: 328/328 resolver calls of run:2026-10-11-tc-drops reproduced by `tools/tc.py replay`, since plan 0010 Phase 2 also with the quality roll modelled and no oracle; plan 0011: party count `[C]` by run:2026-10-12-tc-party (175/175 calls, two clients); champion column and champion-before-unique order `[C]` by run:2026-10-12-tc-champion (124/124 calls, Nightmare, 2 champions); superunique-first order and Normal/Hell champions stay `[I]`; plan 0020 Phase 2: the classic total, the classic scan with no skipped entry, and the throwable refund `[C]` by run:2026-10-13-quality (485/485 classic calls); the classic skip, miss, `version` reject and Long Sword fallback stay `[I]`; plan 0038 batch S2a, 2026-10-16: 20 statements raised and 18 in part over 166 kept stock logs, tables and a second xref tool, 8 reclassified, [§ Plan 0038 batch S2a](#plan-0038-batch-s2a-2026-10-16); plan 0038 batch H2a, 2026-10-20: 9 statements raised and 4 in part by run:2026-10-20-sweep-items-tc, [§ Plan 0038 batch H2a](#plan-0038-batch-h2a-2026-10-20); plan 0038 batch H2b, 2026-10-20: 1 statement raised and 1 in part by run:2026-10-20-sweep-items-chain, [§ Plan 0038 batch H2b](#plan-0038-batch-h2b-2026-10-20))
 
 Names of structs and fields are ours. "Game" is the server game object passed in ECX (`game+0x6D`, `game+0x70`, seed
 `+0xD0` as in [rng/0002](../rng/0002-seed-tree.md)). "Source unit" is the unit the drop comes from (the dying monster, or
@@ -185,14 +185,14 @@ data/0001). Phase 1b (2026-10-11) then compared the finished claims with two reg
 | `0x005A6FF0` | `sub_005A6FF0_MonDeathEvent` | monster death event (reached through the table at `0x006E2260`); calls the death drop | C |
 | `0x005A6830` | `sub_005A6830_MonDeathDrop` | death drop guard: skips if `unit+0xC4` bit 17 is set or the spot is blocked; `noNoDrop = 0` | C |
 | `0x005A8000` | `sub_005A8000_MonDropNoNoDrop` | the same drop with `noNoDrop = 1`; called by the corpse skill `0x005D8780` | C |
-| `0x005D8780` | `sub_005D8780_CorpseFindItem` | skill on a corpse (`skills` record, corpse state `0x76`), rolls `RNG_Range(monster seed, 100)` (that roll unmodelled, `[I]`) | C |
+| `0x005D8780` | `sub_005D8780_CorpseFindItem` | skill on a corpse (`skills` record, corpse state `0x76`), rolls `RNG_Range(monster seed, 100)` (that roll unmodelled, `[I]`). *2026-10-21:* the rolls are two `RNG_Range(…, 100)` on the caster's seed (`EDX` → `edi`, `add edi, 0x20` at `0x005D8808`; `0x005D8814`, `0x005D882F`), `[I]`, [skills/0012](../skills/0012-barbarian.md) § 4 | C |
 | `0x005A6600` | `MONSTER_DropItems` | TC column choice, ilvl, calls `TC_DropByIndex` | C |
 | `0x0055AFA0` | `TC_DropByIndex` | level-upgrade gate, `TC_GetByIndex`, `TC_ResolveDrops` | C |
 | `0x00654E00` | `TC_GetByIndex` | index → TC, with the group/level walk | I |
 | `0x0055A6D0` | `TC_ResolveDrops` | the pick loop (all of the walkthrough) | C |
 | `0x00558640` | `ITEMS_DropRollQuality` | quality code 1–7 (0 on a missing record) from `itemratio`, ratios, MF; 0–6 draws on the source seed; read in [items/0002](0002-quality-roll.md) | I |
-| `0x0055A550` | `sub_0055A550_DropCreateItem` | builds the creation record, calls item creation | I |
-| `0x00558D90` | `sub_00558D90_ItemCreate` | `.\ITEMS\Items.cpp` creation; seeds from the record only if asked | I |
+| `0x0055A550` | `sub_0055A550_DropCreateItem` | builds the creation record, calls item creation | C |
+| `0x00558D90` | `sub_00558D90_ItemCreate` | `.\ITEMS\Items.cpp` creation; seeds from the record only if asked | C |
 | `0x005589A0` | `sub_005589A0_DropGoldFind` | gold × (100 + GF) / 100 | C |
 | `0x00558200` | `sub_00558200_UnitDropLevel` | ilvl source: monster/player `level` stat, else area level; ≥ 1 | I |
 | `0x0061DCA0` | `sub_0061DCA0_LevelMonLvl` | `levels` `MonLvl[diff]` or `MonLvlEx[diff]` | I |
@@ -597,6 +597,8 @@ sub_005589A0_DropGoldFind(killer, unit);
   seed and the item-data seed from record `+0x48`/`+0x4C` only when its third argument or record `+0x2C` is non-zero.
   Drops pass neither, so their item seeds come from the game seed. In a classic game it also refuses an item record
   with `version ≥ 100`. (0x00558D90)
+  *2026-10-20, plan 0038 batch H2b (tc 58, raised in part):* `[C]` for the item seed of a drop (988 drops, no record
+  seed, the two game-seed steps reproduced); the classic `version ≥ 100` refusal stays `[I]` (d-none), [§ Plan 0038 batch H2b](#plan-0038-batch-h2b-2026-10-20).
 
 ### 9. Auto item-type TCs (`weapN`, `armoN`, `bowN`, `meleN`, `abowN`)
 
@@ -1110,6 +1112,41 @@ Per row (inventory row, spec line, outcome):
 `sub_005D8780_CorpseFindItem` and `sub_005589A0_DropGoldFind` move to `C` in `re/symbols.csv`: each role holds on two
 sources, the logged entries and return addresses of the run and the static call-site and reference scan
 (`sweep_h2a.py static`).
+
+## Plan 0038 batch H2b (2026-10-20)
+
+Harness batch H2b of [plan 0038](../../plans/0038-inferred-claims-sweep.md)
+([run:2026-10-20-sweep-items-chain](experiments.md#run2026-10-20-sweep-items-chain), 13 kept sessions on harness slot
+2, stock data) took two inferred statements of [items/tc](../../specs/items/tc.md), rows 58 and 68 of
+[the inventory](../../plans/0038-inventory/items-tc.md) (both by
+[§ 2.6](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews)); spec lines are those of the
+inventory's commit `a398945`. The seed lines and the model they are checked against are in
+[items/0004 § Plan 0038 batch H2b](0004-uniques-sets.md#plan-0038-batch-h2b-2026-10-20); the counts are from
+`check/check-sweep_h2b.txt`, and every resolver call of the run replays with `tools/tc.py replay` (`check/check-tc.txt`:
+1 118 calls, 0 failed).
+
+- **tc 58** (L669, H7) **raised in part.** [C] A drop's item seed comes from the game seed, not from `src.seed`: in
+  all 988 drop creations (`GS0` between `CPRE` and `CPOST`, return 0x0055A6B4) the record passes no seed (argument 0,
+  `+0x2C` 0, and no `GS3` line in the run), the unit seed and the item seed are those of two game-seed steps from the
+  game seed at `ItemCreate`'s entry (`{g1.low, 666}`, `{g2.low, 666}`), and the source seed at `CPOST` equals that at
+  `CPRE` in all 988. **Remainder `[I]`, d-none:** the classic refusal of an item record with `version ≥ 100`
+  (0x00558DBC, `game+0x70` = 0): the classic TC scan never yields such an item (row 74), and no other classic creation
+  path names one. (fn:sub_00558D90_ItemCreate@0x00558D90, fn:sub_00555230_SUnitCreate@0x00555230,
+  fn:sub_00552E90_ItemSeedInit@0x00552E90, run:2026-10-20-sweep-items-chain)
+- **tc 68** (L768) **raised.** [C] For each item the resolver makes one creation call, and the unit constructor steps
+  `game.seed`: `sub_0055A550_DropCreateItem` has one call to `ItemCreate` (0x0055A6AF), and every `CPRE`…`CPOST` pair
+  that names a unit holds exactly one `GS0`, with return address 0x0055A6B4 and the record's item index equal to
+  `CPRE`'s item (988 of 988); in each the game seed at `GS1` is two steps on from that at `GS0`, and no step follows
+  before `GQ0` (`GS2`, `GS4` and `GQ0` carry `GS1`'s game seed, 1 043 of 1 043 creations).
+  (fn:sub_0055A550_DropCreateItem@0x0055A550, fn:sub_00558D90_ItemCreate@0x00558D90, run:2026-10-20-sweep-items-chain)
+
+**Correction carried (rule 12):** § 8's *Item seed* bullet now points here for its `[C]` half
+(fn:sub_00558D90_ItemCreate@0x00558D90, run:2026-10-20-sweep-items-chain).
+
+**Symbols:** `sub_00558D90_ItemCreate` and `sub_0055A550_DropCreateItem` I → C (their entries and return addresses
+logged on 988 drops, the Functions table updated).
+
+**Tally:** 2 statements: 1 raised (tc 68), 1 raised in part (tc 58).
 
 ## Open questions
 

@@ -192,7 +192,7 @@ nor monster (§7).
 | `0x00556F60` | `sub_00556F60_ItemRollQualityCreate` | creation-side quality roll (item seed); items/0008 § 8.1 | C |
 | `0x00557450` | `sub_00557450_ItemCreateByQuality` | creation: quality dispatch and fallbacks (cases 1–9) | I |
 | `0x005572A0` | `sub_005572A0_ItemFallbackNormal` | sets quality 2 and builds a normal item | I |
-| `0x00557320` | `sub_00557320_ItemFallbackSuperior` | sets quality 3, then `0x005C2AD0` | I |
+| `0x00557320` | `sub_00557320_ItemFallbackSuperior` | sets quality 3, then `0x005C2AD0` | (`C` since the `lane/h2b` review: run:2026-10-20-sweep-items-chain) | C |
 | `0x00557380` | `sub_00557380_ItemFallbackMagic` | sets quality 4, then `0x005565E0` | I |
 | `0x005573F0` | `sub_005573F0_ItemFallbackRare` | sets quality 6, then `0x005C21A0` | I |
 
