@@ -510,8 +510,10 @@ lightning flat absorb that `abs-nm-marsh` was to reach.
   Face*'s lightning thorns (handler `0x005BF720`, the defender's event 1) for 25 life before its drain, and the checker
   started the drain from the attacker's `AD0` life. It now takes the attacker's life from the defender handler's `EVR`
   (`lo`), on both the plain and the nested-line path, counted as `attacker life taken from a defender handler's EVR`
-  (22 + 7 events here). Re-checks with this revision: `p47h-run.lst` (with its recorded `--no-shield-log`) 0 / 18 737,
+  (22 + 7 events here; *review 2026-10-21:* 8 of them have a leech after the handler and one, line 6 763, separates
+  the two readings, the previous revision's only mismatch). Re-checks with this revision: `p47h-run.lst` (with its recorded `--no-shield-log`) 0 / 18 737,
   its JSON equal to `p47h-check.json` but for that counter (30); `c37r-run2.lst` 0 / 40 655, its report equal to the
   one of the Phase 2 re-check (no such event). Outputs `p47b-recheck-p47h.json` (`212c0557…`)/`.txt`, `p47b-recheck-c37r.json`/`.txt` (`0fd905d4…`).
 - **Result:** lightning flat absorb **51** (met); cold flat absorb **1** (named again, final: Travincal's cold rows
-  gave 13 melee attacks, all misses). (run:2026-10-21-shortfalls2)
+  gave 13 melee attacks, all misses; *review 2026-10-21:* final under the Done-when's own condition, `abs-nm-marsh`
+  run, not as a stock-data limit, since Nightmare and Hell cold rows were not tried). (run:2026-10-21-shortfalls2)

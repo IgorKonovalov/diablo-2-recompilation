@@ -448,7 +448,9 @@ The record: [experiments § The stats sessions of run:2026-10-21-shortfalls2](ex
   curse requests on the player under Fade (`curse_resistance` 84) made or refreshed a list whose duration is
   `len - MulDiv(len, 84, 100)`: 52 `defense_curse` from the Crystalline Passage's succubi (275 frames asked, 44 given)
   and two shrine curses (3 600 → 576, 2 400 → 384), each expiry as predicted. Three lengths cut by the same `r` to
-  the frame rule out a reading without the cut or with another rounding. The refusal at `r` ≥ 100 and a negative `r`
+  the frame rule out a reading without the cut. The rounding stays `[I]` (the code reads `MulDiv`): `len · 84` is a
+  multiple of 100 for all three lengths (231, 3 024, 2 016 exactly), so no case separates `MulDiv`'s rounding from a
+  truncating division (*review 2026-10-21*). The refusal at `r` ≥ 100 and a negative `r`
   stay `[I]` (no stock source gives the player 100 or less than 0). (fn:STATE_ApplyTimed@0x0056E970,
   0x0056E9C9–0x0056EA4A, tbl:Skills.txt:aurastat5, run:2026-10-21-shortfalls2)
 - [C] **A different state of group 3 is cleared** (§ 2, the remainder of § 9's group bullet): 24 `STATE_GroupClear`
@@ -460,9 +462,12 @@ The record: [experiments § The stats sessions of run:2026-10-21-shortfalls2](ex
   predicted, lateness 0 (the potion states 100, 106, 178–180 153, `poison` 49, `skilldelay` 48, `defense_curse` 42,
   shrine states 4); 449 with run:2026-10-17-stats and run:2026-10-20-shortfalls. (fn:EVENT_TimedListExpire@0x00580800,
   fn:UNIT_ExpireTimedLists@0x00627460, run:2026-10-21-shortfalls2)
-- [I] **Named again, final:** the 256 floor (0 floored ticks in 1 431 poisoned ones: the stock items that keep a 30-life
-  character alive also regenerate life or resist and shorten poison, the record's scan), and shrines and wells (21
-  operates over the three runs against 50; about one operate per explore-and-operate session in Act I fields).
+- [I] **Named again, final:** the 256 floor (0 floored ticks in 1 431 poisoned ones: on the staged route, a 30-life
+  character kept alive in Normal by flat damage reduction, the stock items that give it also regenerate life or resist
+  and shorten poison, the record's scan; a character with more life drained to the floor by poison alone was not
+  tried, so this is not a stock-data limit and that route is out of this plan), and shrines and wells (21 operates
+  over the three runs against 50; one explore-and-operate session run, one shrine listed in it; the re-arm and a
+  well's cure unreached, `palc-wells2` not run: out of this plan, *review 2026-10-21*).
   (fn:sub_00580610_LifeRegenTick@0x00580610, fn:OBJOP_Shrine@0x00583C70, run:2026-10-21-shortfalls2)
 
 ## Data touched

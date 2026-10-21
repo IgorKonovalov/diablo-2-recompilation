@@ -462,7 +462,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     | 50 shrine or well operates | 6 | 21 | **final**: tool reason, fix tried |
     | 20 waypoint activations from mode 0 | 6 | 7 | **final**: tool reason, fixes tried |
     | lightning flat absorb | 51 | 51 | met |
-    | cold flat absorb | 1 | 1 | **final**: stock data |
+    | cold flat absorb | 1 | 1 | **final**: the Done-when's condition (`abs-nm-marsh` run), not stock data (review) |
 
   - **Fixes, each found in a log:** the potion plan did drink; its 8 s waits were sized at 25 frames a second and the
     game runs at about 17 under the stats logger, so each healing potion refreshed the last one's list instead of
@@ -495,6 +495,58 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Findings:** [stats/0002 § 10](../findings/stats/0002-states.md#10-plan-0047-phase-2b-the-staging-limited-cases-run2026-10-21-shortfalls2)
     (the curse cut on the player, group 3, the 300 expiries `[C]`; the floor and shrines `[I]`, final),
     [combat/0001 § 17](../findings/combat/0001-formulas.md#17-plan-0047-phase-2b-flat-absorb-by-element-run2026-10-21-shortfalls2)
-    (lightning flat absorb and the leech after a defender handler `[C]`; cold `[I]`, final),
+    (lightning flat absorb `[C]`; the leech after a defender handler `[I]` at the review, one separating event; cold `[I]`, final),
     [quests/0002](../findings/quests/0002-travel.md) (7 activations, the operate stays `[I]`; the warp ids and records).
     Phase 3 may re-tag on these counts.
+- **2026-10-21 — Phase 2b review (architect, `lane/p47b` at `6cf1ec2`; `main` not merged): accept with fixes (5:
+  overclaim 3, misread 1, omission 1).** Re-checked with the lane's tools (hashes as recorded: `tools/stats.py`
+  `85e14b94…`, `tools/combat.py` `ee628bbe…`, `tools/quests.py` `b6dfb1a3…` unchanged) under `MemoryMax=4G`: stats
+  `p47b-run.lst` 0 mismatches, its JSON byte-identical to `p47b-check.json`; combat 0 / 2 527, JSON byte-identical;
+  quests `SUMMARY mismatches=0 checks=9300 logs=8`, the text equal but for systemd's scope line; the three `p47b-*`
+  manifests pass `sha256sum -c`. Kept runs: stats `s1017-run.lst` and `p47h-run.lst` byte-identical to
+  `s1017-check-p47r.json` and `p47h-check.json`; combat `p47h-run.lst` (its recorded `--no-shield-log`) differs from
+  `p47h-check.json` in the one new counter (30) only, `c37r-run2.lst` 0 / 40 655 with no new counter, its text equal
+  to `c37r-run2-check-rbs-2026-10-17.txt` but for the label and `≤ 0` counters the Phase 2 review already recorded.
+  `tools/test_stats.py` (18) and `tools/test_d2s.py` pass. Counts recomputed from the kept outputs: expiries 296
+  (`expired_lists`), 449 with 153; group 3 24 at depth 1 with 24 nested (`p47b-grpclear.txt`), 67 with 43; curse
+  cuts 54 (`apply_curse_cut`; 52 + 1 + 1 in `p47b-cursecut.txt`); shrines 6 (`shrine` 6: 4 applied, 2 refills), 21
+  with 15; lightning flat absorb 13 + 25 + 13 = 51, cold 1; activations 1 + 0 + 1 + 1 + 1 + 1 + 1 + 0 = 6, 7 with
+  Phase 2's.
+  - **Fixes:** (1) *overclaim*: stats/0002 § 10 said the three curse lengths rule out "another rounding"; `len · 84`
+    is a multiple of 100 for 275, 3 600 and 2 400 (cuts 231, 3 024, 2 016 exactly), so no case separates `MulDiv`'s
+    rounding from truncation: the `[C]` is the cut, the rounding stays `[I]`. (2) *overclaim*: combat/0001 § 17
+    raised "the leech after a defender's handler" to `[C]` on "29 events here and 30 in `p47h-run.lst`, each `LE1`
+    equal to `EVR` plus the drain"; the counter counts events whose `EVR` life differs from the model's, and an
+    instrumented copy of the checker (scratch, not kept) shows only 8 of the 59 followed by a leech, all in this run,
+    of which the previous revision's single mismatch (line 6 763) is the only one that separates the readings. `[I]`,
+    the checker's correction kept (a value oracle as the handler is, firing only when the logged life differs; it
+    cannot hide a mismatch elsewhere). (3) *overclaim*: the 256 floor's "stock data" reason holds for the staged route
+    only (a 30-life character kept alive by flat reduction); the lane itself names a route not tried (more life,
+    poison alone): scoped in § 10 and the stats record. (4) *misread*: the plan table gave cold flat absorb's reason
+    as stock data; Travincal's cold rows gave 13 attacks, all misses, and Nightmare/Hell cold rows were untried; it is
+    final under the Done-when's own condition (`abs-nm-marsh` run). (5) *omission*: the shrine and well "tool reason"
+    did not say the yield rests on one session (`sor-shrines2`) and that `palc-wells2` was not run, so the well's cure
+    was not tried in this phase: stated in § 10 and the record.
+  - **Rulings on the final items.** (a) *The 256 floor, 0*: final at `[I]` on the code reading and the checker's
+    test; the fixes tried (poisoner fields, `StatsFloorB` after the level-86 experience bug) each found the next
+    obstacle; the untried higher-life route is out of this plan, not a stock-data limit. (b) *Shrines and wells, 21 of
+    50*: final at `[I]` as a slot-time ruling: the staging fault (no exploration) is fixed and shown working, and at
+    about one operate per 12 minutes the 29 missing cost about six slot hours for a draw-free path that 21 operates
+    already check with 0 mismatches; the re-arm and a well's cure leave this plan unreached (out of this plan). (c)
+    *Waypoint activations from mode 0, 7 of 20*: final at `[I]`, a tool reason with the fixes tried (the LvlWarp id vs
+    WRP record numbering, `activate`'s Escape, the Highlands route), the yield measured over eight sessions. (d)
+    *Cold flat absorb, 1*: final at `[I]` (fix 4); `COMBAT_Absorb` is the one table-row path, but one case is under
+    the floor.
+  - **The checker and route changes.** `tools/combat.py`'s change is a model correction with a value oracle, not an
+    oracle that takes the checked value: it replaces the attacker's starting life only where the defender handler's
+    logged `EVR` life differs, and the leech's gain, the cap and the `LE1` life are still predicted. The quest route's
+    record numbering and `activate`'s Escape are pilot changes; `tools/quests.py` is unchanged, so Phase 2's one
+    activation (checked under the same revision) stands, and the travel finding's ids-vs-records note corrects only
+    the sessions' description. The stats rev 10 pairing leaves the rev 9 logs' reports byte-identical.
+  - **Raises upheld:** stats/0002 § 10 the curse cut on a player (r 1..99, rounding `[I]`), group 3 (24, the nested
+    call's caller unfollowed), the 300 expiries; combat/0001 § 17 lightning flat absorb (51); quests/0002 stays `[I]`.
+  - **Phase 2b closes.** Every Done-when item is met or named again, final, with a reason the review accepts above.
+    Spec-writer entry filed for the Phase 3 re-tag of the 2b counts
+    ([backlog](../backlog/2026-10-21-architect-spec-writer-plan-0047-phase-3-re-tag-the-phase.md)); the review request
+    closed. **Can the plan close?** After that re-tag's review: Phases 1, 2, 2b and 3 (for Phase 2's counts) meet
+    their *Done when*.

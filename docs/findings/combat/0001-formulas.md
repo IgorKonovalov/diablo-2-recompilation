@@ -937,13 +937,16 @@ Three `CombatAbs` sessions on slot 2 (the record: [experiments § run:2026-10-21
   `El1Pct` is 65) gave 13 melee attacks on `CombatAbs` in `abs-n-travincal`, all misses. The cold field passes the
   same subtraction as fire and lightning; only the element's count stays under the floor.
   (fn:COMBAT_Absorb@0x0057BF10, run:2026-10-21-shortfalls2)
-- [C] **The leech after a defender's handler starts from the life the handler left.** `COMBAT_ApplyDamage` runs the
+- [I] **The leech after a defender's handler starts from the life the handler left.** `COMBAT_ApplyDamage` runs the
   event 5/1 handlers before the leech (§ 8, steps 3 and 4); a draining monster hit by the player's lightning thorns
   (`sub_005BF720_StatEv10ThornsLightning`, *Blackhorn's Face*, in the defender's event 1) loses life there, and its
-  drain then adds to that life: 29 events in this run and 30 in `p47h-run.lst`, each `LE1` attacker life equal to the
-  handler's `EVR` life plus the drain. The checker took the attacker's life only from `AD0` before (one mismatch in
+  drain then adds to that life. The checker took the attacker's life only from `AD0` before (one mismatch in
   `abs-nm-marsh`, 25 life); it now takes it from the defender handler's `EVR` (a value oracle, as the handler is),
-  and the kept lists re-check unchanged but for the new counter. (fn:COMBAT_ApplyDamage@0x0057C6C0,
+  counted when the two differ: 29 events in this run and 30 in `p47h-run.lst`, and the kept lists re-check unchanged
+  but for that counter. *Review 2026-10-21:* only 8 of those 59 events (all in this run) have a leech after the
+  handler, and the previous revision's single mismatch shows that only one of them (line 6 763, 25 life) separates
+  the readings; the other 51 check no attacker life after the handler. One case against the floor of 30: `[I]`, with
+  the checker's model corrected. (fn:COMBAT_ApplyDamage@0x0057C6C0,
   fn:COMBAT_Leech@0x0057C420, fn:sub_005BF720_StatEv10ThornsLightning@0x005BF720, run:2026-10-21-shortfalls2,
   run:2026-10-20-shortfalls)
 

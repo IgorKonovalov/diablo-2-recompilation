@@ -376,13 +376,17 @@ byte-identical to `s1017-check-p47r.json` and `p47h-check.json` (`p47b-recheck-s
   `defense_curse` (42 new, 10 refreshes) asked 275 frames and got 44, the two shrine curses asked 3 600 and 2 400 and
   got 576 and 384 (`p47b-cursecut.txt`): `len - MulDiv(len, 84, 100)` in all three lengths, each list's expiry as
   predicted. (fn:STATE_ApplyTimed@0x0056E970, 0x0056E9C9–0x0056EA4A, run:2026-10-21-shortfalls2)
-- **Named again, final:** the 256 floor: **0** (no tick floored; 1 431 poisoned ticks, none from below 256 life): the
-  stock data gives no character that is poisoned at the floor and survives Normal hits there, since the only items
-  that keep a 30-life character alive (flat damage reduction 58) carry `regen` or poison resistance and length, and
-  the stock items without them reach 50 at most (above); the floor stays `[I]` on the code reading and
-  `tools/test_stats.py`'s case. Shrines and wells: **6** shrine operates this run (codes 11 once, 12 three times, two
+- **Named again, final:** the 256 floor: **0** (no tick floored; 1 431 poisoned ticks, none from below 256 life): on
+  the staged route (a 30-life character kept alive in Normal by flat damage reduction) the only items that keep it
+  alive (flat damage reduction 58) carry `regen` or poison resistance and length, and the stock items without them
+  reach 50 at most (above); the floor stays `[I]` on the code reading and `tools/test_stats.py`'s case. *Review
+  2026-10-21:* a stock-data limit of that route only; a character with more life drained to the floor by poison
+  alone was not tried and is out of this plan. Shrines and wells: **6** shrine operates this run (codes 11 once, 12 three times, two
   recharges on a full player), **21** with the kept 15, against 50: in four explore rounds of 25 hops the Stony Field
   listed one shrine (`sor-shrines2`), so the hunt yields about one operate in 12 minutes of slot time; the 29 missing
   would take about six hours of `sor-shrines` sessions, which this lane did not have (a tool reason: the fix tried is
-  the explore rounds; Act I fields list few shrines). The re-arm and a well's cure stay unreached.
+  the explore rounds; Act I fields list few shrines). The re-arm and a well's cure stay unreached. *Review
+  2026-10-21:* the yield is measured on one session (`sor-shrines2`), and `palc-wells2` was not run, so the well's
+  cure was not tried in this phase; both are final as a slot-time ruling of the review, out of this plan, not as a
+  stock-data limit.
   (fn:sub_00580610_LifeRegenTick@0x00580610, fn:OBJOP_Shrine@0x00583C70, run:2026-10-21-shortfalls2)
