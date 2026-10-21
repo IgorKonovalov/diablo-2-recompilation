@@ -3164,8 +3164,50 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Wiki:** [items](../wiki/items.md) and [objects](../wiki/objects.md) restated; `based_on` 2026-10-21.
   - **Backlog:** the H2c, H2a and S2b-corrections entries closed; the H2b, H6d, S4b and S2a tc 64 entries annotated
     (done in part). Review request
-    [s38h2c review](../backlog/2026-10-21-spec-writer-architect-s38h2c-items-tc-properties-review.md) (one ruling asked:
+    [s38h2c review](../backlog/archive/2026-10-21-spec-writer-architect-s38h2c-items-tc-properties-review.md) (one ruling asked:
     prop 9 stated `[C]` whole; one mismatch noted: objects § J3 still `[I]` on the chest `ilvl` hand-off).
   - **Waiting** (missing batches): items/uniques-sets H1a (us 21); items/sockets-runewords H6b; items/cube H6a;
     items/vendors H6c; items/quest-drops H4a, H6e1, H6e2; and the non-items clusters as listed above.
   - **Next:** architect review of `lane/s38h2c`.
+- **2026-10-21 — Review of `lane/s38h2c`, Phase 3 items/tc and items/properties clusters (architect): accept with
+  fixes (4).** `main` had not moved past the lane's base (`f805cdf`), so no merge. Read: the spec diffs of items/tc and
+  items/properties against the "Plan 0038 batch S2a, H6d, H2a, H2b, H2c" sections of
+  [items/0001](../findings/items/0001-tc-resolution.md) (with tc 64's S4b line and § 2's chest arithmetic) and the
+  "S2b, S2c, H2b, H2c" sections of [items/0006](../findings/items/0006-properties.md), the reviews above, inventory
+  § 2.6, both wiki diffs, objects § J3 and the seven touched backlog entries. Every `fn:`/`data:` anchor of both specs
+  resolves in `re/symbols.csv` (script); spot-checked `TC_GetByIndex`, `ITEMTYPES_IsThrowable`,
+  `sub_00633680_ItemIndexByCode`, `ITEMS_UnitIsType`, `PROP_ApplyBlockByVersion`, `RUNEWORD_Apply`, `ITEMS_IsEthereal`,
+  `DRLG_ActFromLevelId`, `g_SkillDoFuncs`.
+  - **Scope ruling:** a fair reading, not scope creep. Phase 3 runs "per cluster once all of that cluster's batches are
+    accepted", so a cluster's round folds every accepted raise of the cluster; items/tc and items/properties both
+    waited on H2c, and `lane/s38h2b` did the same for items/affixes. plan 0044's tc 43, 44 and 46 were already applied
+    (§ 2.6, *raised by plan 0044*).
+  - **Against the ledgers:** the raised and in-part lists match each tally line: S2a 20 raised and 18 in part (tc 3–5,
+    7, 12, 16, 18, 21, 24, 25, 28, 32, 35, 36, 39, 50, 52, 61, 62, 66; 14, 19, 23, 29–31, 33, 38, 40, 42, 48, 49, 51,
+    57, 67, 69, 72, 73), tc 13, 15, 41, 74 restated as no stock case; H6d 26 / 27; H2a 9 / 4; H2b 68 / 58; H2c tc 10 ×2,
+    55 / 56; tc 64 by S4b with J1 equal to items/0001 § 2 (both boundaries, 14 and 5 calls); S2b 7 raised (prop 4 ×2,
+    5, 6, 8, 16, 18 L450), prop 1 and 2 rewritten with their corrections (the remainder was the rewording), 18 L454
+    split, 23 and 24 kept `[I]`; S2c prop 19 ×2 / L573; H2b prop 20 ×2, prop 7 ×3 no stock case, 24 shortfall; H2c
+    prop 12 / 14, prop 15 an `[L]` with its route. H2c rulings (b) and (c) are stated as ruled. Counts (gate E6):
+    items/tc **{C 119, I 60, L 5}**, items/properties **{C 152, I 22, L 3}**, unchanged by the fixes.
+  - **Rulings.** (a) prop 9 `[C]` whole stands: its S2b remainder (what `add func` 1 and 2 do when worn) was answered
+    by plan 0041 (stats/aggregate § J, `[C]` by run:2026-10-17-stats), which the next B3 note states; a dated note in
+    items/0006 prop 9 records it; the row's class does not move. (b) objects § J3 against items/tc § J: the objects
+    spec stays `[I]` until the objects round (routing of 2026-10-20 in the S2a tc 64 entry, which stays open for it);
+    the objects wiki takes the weaker tag meanwhile (fix 1). items/quality C1 and items/tc § J state the hand-off `[C]`
+    on the same accepted evidence, so the items wiki keeps it. (c) prop 19 without a spec-writer entry: admitted. The
+    S2c review accepted prop 19 as filed, and Phase 3's input is the accepted ledger; the S2c corrections entry never
+    listed it, so it needs no annotation. (d) Backlog: the three closed entries (H2c, H2a, S2b corrections) have
+    nothing owed: H2a's (j)–(m) and the quality lines of (o) were done by `lane/p38s7`, S2b's (c) and the affixes half
+    of (f) by `lane/s38h2b`. The four annotated ones (H2b, H6d, S4b, S2a tc 64) still owe parts to other clusters.
+  - **Fixes applied (4):** (1) overclaim: the objects wiki stated the chest tier's cut and the tier-as-`ilvl` hand-off
+    confirmed while objects § J3 still tags both `[I]`; restated as read from the code there, naming the treasure class
+    spec's check. (2) stale cross-reference: the objects wiki's untested line still said the cut was not written down;
+    rewritten. (3) misread: the items wiki said the classic skip of an expansion-only entry "cannot happen" with stock
+    tables; it happens and changes nothing (tc E2 note), reworded with the `version` reject. (4) overclaim: tc A2 note's
+    "reached by no classic call" scoped to the log set. Research map: the items/tc and items/properties rows rewritten
+    whole; the items/affixes row corrected to I 28 (the `lane/s38h2b` review's count had not reached the row).
+  - **Promoted:** spec-writer rule 1 extended to two specs that disagree; architect rule 3 cites the affixes row.
+  - **Backlog:** review request
+    [s38h2c review](../backlog/archive/2026-10-21-spec-writer-architect-s38h2c-items-tc-properties-review.md) closed.
+  - **Next:** merge `lane/s38h2c`; the remaining items clusters after H1a, H6a, H6b, H6c, H4a, H6e1 and H6e2.

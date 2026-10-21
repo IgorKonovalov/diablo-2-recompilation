@@ -976,6 +976,11 @@ image (`tools/xrefscan.py`) and r2.
 
   The 0-against-non-zero split is `[C]` in § 9 (run:2026-10-14-props-forced). (tbl:SetItems.txt:add func)
   **Remainder `[I]`:** what 1 and 2 change when the item is worn (`sub_00660120_SetBonusApply`, not read).
+  *Review note (architect, 2026-10-21, `lane/s38h2c`):* the remainder is answered by plan 0041, which read
+  `SetBonusApply` and `SETS_ToggleItemAProps` and confirmed what 1 and 2 do when worn
+  ([stats/aggregate § J](../../specs/stats/aggregate.md#j-set-bonuses), run:2026-10-17-stats). The items/properties
+  B3 note may therefore state its own sentence `[C]` whole, pointing at that note for the worn behaviour; the row's
+  inventory class does not move (counted as S2b, raised in part).
 - **prop 16** (L420) **raised.** [C] Every func-10 write logged has param `par % 3 + (par / 3)·8`, the tab in bits
   0–1 and `par / 3` from bit 3: 2 stock, 15 IR. (fn:PROP_Func10_SkillTab@0x0065F3F0, run:2026-10-15-items-chain,
   run:2026-10-15-items-chain-forced)

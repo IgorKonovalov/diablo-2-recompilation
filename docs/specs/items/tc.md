@@ -185,8 +185,8 @@ Step notes:
 
 - A2. **The two clauses decide the classic totals.** Over the 801 classic calls of the S2a log set, a model without
   the `version` clause gets 158 calls wrong and one without the sub-TC clause 28. The unique/set clause has no classic
-  case: the only such stock entries (`Annihilus` in `ROP (N)` and `ROP (H)`) are reached by no classic call.
-  [C] (fn:TC_ParseItemCell@0x00654440, run:2026-10-13-quality, run:2026-10-14-affixes,
+  case: the only such stock entries (`Annihilus` in `ROP (N)` and `ROP (H)`) are reached by no classic call of the
+  log set. [C] (fn:TC_ParseItemCell@0x00654440, run:2026-10-13-quality, run:2026-10-14-affixes,
   [items/0001 § Plan 0038 batch S2a](../../findings/items/0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16))
 - A1, A3. No loaded stock row has `Picks` 0 (852 rows) and no stock item cell has `Prob` below 1 (3 404 cells), so
   neither load rule has a stock case; both rest on the code reading. [I] (fn:TC_LoadTreasureClassEx@0x006547D0,

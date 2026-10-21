@@ -316,15 +316,18 @@ creation).
 - Which of A, B or C: the level's monster level (the same value the monster pages call the area level), compared
   with the monster levels of the act's two reference levels, the span between them cut into thirds. Both specs now
   say it this way ([objects § J](../specs/objects/README.md#j-operate-chests-and-containers-up-to-the-drop),
-  [treasure class spec § J](../specs/items/tc.md#j-object-drops-named-only)). The cut is now written down: a third of
-  the span (plus one) rounded toward zero, tier A below the first third, C from the second on. It is confirmed on the
-  59 chest drops of a recorded objects run (three difficulties, classic and expansion, acts I, II, III and V, all three
-  tiers, both boundaries met). The shape of the drop (no roll of its own, one hand-off) is confirmed; the 11 object
-  drops of one test run (all `Act 1 Chest A`) and the Jail chest of the worked example below reproduced.
+  [treasure class spec § J](../specs/items/tc.md#j-object-drops-named-only)). The treasure class spec now writes the
+  exact cut: a third of the span (plus one) rounded toward zero, tier A below the first third, C from the second on,
+  and checks it against the 59 chest drops of a recorded objects run (three difficulties, classic and expansion, acts
+  I, II, III and V, all three tiers, both boundaries met). The objects spec still gives the tier as read from the code
+  until its own re-tag, so this page counts it as read from the code too. The shape of the drop (no roll of its own,
+  one hand-off) is confirmed; the 11 object drops of one test run (all `Act 1 Chest A`) and the Jail chest of the
+  worked example below reproduced.
 - The tier also goes to the resolver as the drop's item level for the quality roll, so a chest drop rolls its
   quality at item level 0 to 2: its odds of magic and better are no better than those of a monster drop of the same base in the same area; the
-  item's own level still comes from the chest. Confirmed: the same 59 chest drops pass their tier as that item level
-  ([items/tc § J](../specs/items/tc.md#j-object-drops-named-only)).
+  item's own level still comes from the chest. The treasure class and quality specs check it on the same 59 chest
+  drops, which pass their tier as that item level ([items/tc § J](../specs/items/tc.md#j-object-drops-named-only)); the
+  objects spec still reads it from the code, as above.
 - The forced quality: 0 from urns, caskets and barrels, the sparkle chest's rare or magic
   [quality code](../glossary.md) otherwise. A non-zero forced quality replaces the normal quality roll for every entry
   that is not a unique or set entry. A sparkle chest uses the **same** act chest TC as any other chest; only the
@@ -425,8 +428,9 @@ From the spec's [open questions](../specs/objects/README.md#open-questions) and 
   record reads it, but code that keeps a record from elsewhere could. A whole-image scan finds no reader of `SpawnMax`
   or `Act` either, though a reader through a computed address is not ruled out. Also open: two contradictions with a community guide (a
   `DENSITY` of 128 and a shrine row with `Parm0` 0) that only modified data could reach.
-- **The chest tier's exact cut:** how the third is rounded and which bound counts, and a check of the tier (and of
-  the tier used as the quality roll's item level) against recorded chests, see [the hand-off](#what-a-chest-drops-the-hand-off).
+- **The chest tier in the objects spec:** the exact cut and its check against recorded chests (with the tier used as
+  the quality roll's item level) are in the treasure class spec; the objects spec has not taken them over yet, see
+  [the hand-off](#what-a-chest-drops-the-hand-off).
 - **Multiplayer games were not recorded**, and quest-state objects stay inputs.
 
 ## Where to read more

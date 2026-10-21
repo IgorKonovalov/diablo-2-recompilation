@@ -159,7 +159,8 @@ up to ten times per drop; from the eleventh throwable on, the pick becomes a Lon
 and the throwable refund are confirmed in recorded classic games, and the bound of ten and the Long Sword in a run whose
 treasure class was edited to name throwables only. That the test reads an item's first type, not its second, is read
 from the code: no stock item tells the two apart. Skipping an expansion-only entry that comes before the chosen one
-and the rejection of expansion bases cannot happen with the stock tables
+changes nothing with the stock tables (the same entry is chosen either way), and the rejection of expansion bases is
+never reached with them; both are read from the code
 ([TC § E](../specs/items/tc.md#e-entry-selection), [§ H](../specs/items/tc.md#h-item-pick-and-hand-off)).
 
 ## More players, fewer empty picks
