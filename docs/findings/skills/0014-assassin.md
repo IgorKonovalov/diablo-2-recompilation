@@ -16,7 +16,7 @@ by `COMBAT_PrgFinisher` ([skills/0001 § 12](0001-dispatch.md#12-progressive-cha
 batch (start 23, do 35, entries 38, 39, 143) were read by plan 0045 in [skills/0003 §§ 1, 5](0003-handlers.md#1-progressive-entries-srvprgfunc-and-the-finishers-tail),
 and all five are emulated here. Stock values come from `workspace/logs/skills-cat-ass/rows.txt` (`excel_bin.py dump`
 of the 26 Skills rows that name one of the batch's entries in `srvstfunc`, `srvdofunc`, `srvprgfunc1..3` or
-`ItemEffect`, by `rows.sh` beside it; the selection checked complete against all 358 rows).
+`ItemEffect`, by `rows.sh` beside it; the selection checked complete against all 357 rows by the `CHECK` lines of `rows.txt`).
 
 **Tag convention for this finding** (as skills/0013). A claim marked **[C] (ADR-0021)** rests on emulated cases that
 end at an observed boundary (a declared callee's entry), under
@@ -168,15 +168,17 @@ None. No community document was opened for this batch.
   on 264 Cloak of Shadows; start 26 and do 48 on 266 Blade Fury (`startmana` 6); do 49 on 268 Shadow Warrior and 279
   Shadow Master; start 27 and do 50 on 270 Dragon Tail; do 51 on 273 Mind Blast; do 52 on 275 Dragon Flight (whose
   `srvstfunc` is 12, the sorceress's); start 28 and do 54 on 277 Blade Shield. `ItemEffect` 36 on 44 Frost Nova and 48
-  Nova (`srvdofunc` 22; non-progressive, so entry 36's missile is `srvmissilea`, 119 and 90). Of the 358 rows no other
+  Nova (`srvdofunc` 22; non-progressive, so entry 36's missile is `srvmissilea`, 119 and 90). Of the 357 rows no other
   names an entry of the batch. (`rows.txt`, tbl:Skills.txt:srvstfunc, tbl:Skills.txt:srvdofunc,
   tbl:Skills.txt:srvprgfunc1, tbl:Skills.txt:ItemEffect)
 - [C] **The finisher's callers.** `COMBAT_PrgFinisher` (`0x005D5220`) has six direct calls in the image:
   `SKILL_AttackDo` (`0x0056F1CE`), do 42 (`0x005D5A8C`), do 46 (`0x005D6399`, `0x005D63E1`), do 50 (`0x005D71F2`) and
-  do 52 (`0x005D79DF`) (`static.txt`). Each passes `QueuedHitFind(caster, target)`'s result as its one stack argument
-  with `ECX` the game and `EDX` the caster; do 42 and do 52 call it without a null test, do 46 and do 50 only with a
-  hit (§ 4). That the finisher returns at once for a null hit or one whose `+0x04` lacks bit 0 is from its first lines
-  (`0x005D5229`–`0x005D523B`, `[I]`). (fn:COMBAT_PrgFinisher@0x005D5220)
+  do 52 (`0x005D79DF`) (`static.txt`, a scan of every `call` operand). Do 42's, do 46's and do 50's calls are reached
+  as boundaries in the run with `QueuedHitFind(caster, target)`'s result as the one stack argument, `ECX` the game and
+  `EDX` the caster, do 42's also with a null result (§ 4). (fn:COMBAT_PrgFinisher@0x005D5220, run:2026-10-21-cat-emu-ass)
+- [I] Do 52's call (after its hit-test boundary) passes `QueuedHitFind`'s result with no null test, as do 42; do 46
+  and do 50 call it only with a hit. The finisher returns at once for a null hit or one whose `+0x04` lacks bit 0
+  (`0x005D5229`–`0x005D523B`). (0x005D79D1–0x005D79DF)
 
 ### 2. Emulation: the `ass` families
 
@@ -262,7 +264,8 @@ set, at `0x7FEFFFDC`; two callers, `0x005D6381`, `0x005D63C9`); entry 36's from 
   `RoomIsTown(UnitGetRoom(target))` → 0; else `1 if target type ≤ 1 (unsigned) else 0` (`mov eax, 1; cmp eax, esi;
   sbb eax, eax; add eax, 1`). It reads neither the record nor its two stack words (`ret 8`). (run:2026-10-21-cat-emu-ass
   `start_ass`, fn:sub_005D30F0_SkillSt22PsychicTest@0x005D30F0)
-- [C] **Start 25** (`0x005D6330`): `UNIT_GetTargetUnit(game, caster) ≠ 0` (`neg; sbb; neg`); nothing else.
+- [C] **Start 25** (`0x005D6330`): `UNIT_GetTargetUnit(game, caster) ≠ 0` (`neg; sbb; neg`); the whole function is 16
+  bytes (`push edx; push ecx; call UNIT_GetTargetUnit; neg eax; sbb eax, eax; neg eax; ret 8`).
   (run:2026-10-21-cat-emu-ass `start_ass`, fn:sub_005D6330_SkillSt25HasTarget@0x005D6330)
 - [C] (ADR-0021; ends at `InMeleeRange` @0x005D330B) **Start 23**: no target → 0 (`EAX` the null); else
   `InMeleeRange(caster, target, 0)`, whose value it returns (after, `[I]`). (run:2026-10-21-cat-emu-ass `start_ass`,
@@ -318,7 +321,8 @@ set, at `0x7FEFFFDC`; two callers, `0x005D6381`, `0x005D63C9`); entry 36's from 
 - [C] (ADR-0021; ends at `InvGetBodyLocItem` @0x005D35EB, or at do 34's `MeleeHitTest` with do 35's return
   `0x005D3648` compared) **Do 35** (`0x005D35D0`): the inventory (`+0x60`) non-null → `InvGetBodyLocItem(inventory,
   4)`; null → bit 6 of `+0xC4` **set** when bit 8 of `+0x38` is set, **cleared** when it is clear (`sar 8; and
-  0x80000001`), then do 34 with the same arguments; do 35 returns **1** whatever do 34 returns.
+  0x80000001`), then do 34 with the same arguments; do 35 returns **1** where do 34 refuses with 0 (run), and its
+  `mov eax, 1` after the call (`0x005D3648`) returns 1 after do 34's hit path too (`[I]`, after the boundary).
   (run:2026-10-21-cat-emu-ass `hit_ass`, fn:sub_005D35D0_PrgChargeHitDualDo@0x005D35D0)
 - [I] After do 35's inventory boundary: the items at body locations 4 and 5; two different items that both pass
   `0x0062A4E0` (an item without the `+0x18` bits `0x100` or `0x4000`) and `ITEMS_UnitIsType(…, 0x2D)` take the parity
@@ -445,16 +449,19 @@ for (i = 0; i < 64; i += n) { loc = step(loc); blk = {3, u, .cls m, x, y, .tx dx
   `0x005D61E3` compared) **Do 44** (`0x005D6020`): the record; `SkillSummonClass(ECX caster, EDX 0; id, lvl, &mode, 0,
   0)` (a class in range in every case, as skills/0013); bit 6; `SKILLS_GetTargetXY` 0 → 0 (bit 6 set);
   `0x005D5E10(game, caster; 0, 0, rec, id, lvl)`. **Do 45** (`0x005D6170`): the record; bit 6; `SKILLS_GetTargetXY`
-  0 → 0; `0x005D5E10(game, caster; x, y, rec, id, lvl)`. **`0x005D5E10`**: `SkillSummonClass` again, the class in
-  `[0, MonStats count)` (else 0); `pettype` (`movsx`) negative or at or past `DataTables+0xBF0` → **0, not a refusal**;
-  `petmax`; an `x` or `y` of 0 → the caster's position (static path `+0x0C`/`+0x10` for types 2, 4, 5, else
-  `PathGetX/Y`); a monster caster replaced by `MonsterOwner` while the unit is a monster (none → 0); an `x` or `y`
-  still 0 → `SKILLS_GetTargetXY(game, that unit)` (0 → 0); `RoomAtSubtile(UnitGetRoom(that unit), x; y)` 0 → 0;
+  0 → 0; `0x005D5E10(game, caster; x, y, rec, id, lvl)`. **`0x005D5E10`**: `SkillSummonClass` again (the class in
+  `[0, MonStats count)` in every case); `pettype` (`movsx`) negative or at or past `DataTables+0xBF0` → **0, not a
+  refusal**; `petmax`; an `x` or `y` of 0 → the caster's position (`PathGetX/Y` of its path; the cases' casters are of
+  types 0 and 1); a monster caster replaced by its owner (`MonsterOwner`, none → 0; the owner a player in every case);
+  an `x` or `y` still 0 → `SKILLS_GetTargetXY(game, that unit)` (0 → 0); `RoomAtSubtile(UnitGetRoom(that unit), x; y)` 0 → 0;
   `InTown` (`+0x05` bit 0) clear and `RoomIsTown` → 0; the nine words `{1, unit, class, 0, mode, x, y, pettype,
   petmax}` at `ebp−0x50` and `SpawnOwnedMonster(ECX game, EDX &block)`, compared by content (the tenth word `+0x24`,
   `ebp−0x2C`, is not written by the helper and not compared). (run:2026-10-21-cat-emu-ass `trap_ass`,
   fn:sub_005D6020_SkillDo44BladeSentinel@0x005D6020, fn:sub_005D6170_SkillDo45Sentry@0x005D6170,
   fn:sub_005D5E10_TrapSpawn@0x005D5E10)
+- [I] Not run: `SkillSummonClass`'s refusal and the helper's own class-count refusal (`cmp ecx, [eax+0xA80]; jge`,
+  `0x005D5E48`); a caster of type 2, 4 or 5 (its static path's `+0x0C`/`+0x10` as the position, `0x005D5E94`–`0x005D5EBB`);
+  an owner that is itself a monster (the `MonsterOwner` loop's second pass). (0x005D5E36–0x005D5F04)
 - [I] After the spawn: no unit → 0; `SummonSetLevel(game, owner; m, 0, lvl)`, `SummonInitStats(m, id, lvl, 0)`,
   `MonAlignSet(m, 2; 1)`, `MonCmdInit(m, …, buf)`, `MonSetMode(game, buf, 1)`, the unit returned. Do 44: stat 12 copied
   from the caster, `UnitTeleport(game, m; the caster's room and position, 0, 0)`, `0x0058EF40(game, m; &{0, 0, 0, the
@@ -519,7 +526,7 @@ for (i = 0; i < 64; i += n) { loc = step(loc); blk = {3, u, .cls m, x, y, .tx dx
   narrowed the same way. (0x005D4657–0x005D467D, 0x005D4D77–0x005D4DAA)
 - skills/0003 § 5 (tier A), carried there as a dated note: start 23 and do 35 (the Fists of Fire row) are `[C]` up to
   their boundaries: do 35 sets or clears bit 6 by the caster's `+0x38` bit 8 only without an inventory, and returns 1
-  whatever do 34 returns (§ 4). (fn:sub_005D35D0_PrgChargeHitDualDo@0x005D35D0)
+  where do 34 refuses (§ 4; after do 34's hit path 1 as well, `[I]`). (fn:sub_005D35D0_PrgChargeHitDualDo@0x005D35D0)
 
 ## Data touched
 

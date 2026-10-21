@@ -900,7 +900,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   test, then draw on a stack seed seeded from the stepped low word (the ring's one step, 39's `RNG_Range(local, 2r)`
   pairs, 41's two steps) up to their first creation; no case steps the target's seed (do 33's knockback step and do
   42's `RNG_Range(caster, 100)` are after their boundaries, `[I]`). Raised by emulation (run:2026-10-21-cat-emu-ass,
-  `tools/skills_catalogue_emu.py --batch ass`, `check.txt` `dd6ed294…`, `manifest.sha256` `ef691f38…`): four families,
+  `tools/skills_catalogue_emu.py --batch ass`, `check.txt` `dd6ed294…`, `manifest.sha256` `04f487b6…`): four families,
   8 700 cases, 0 mismatches, 37 boundary/call-site triples asserted (site control 3 020 of 3 020), both seeds and the
   stack seeds compared in every case, blocks and packets compared by content, register arguments where the callee reads
   them first; nested boundaries by the helper's return address at its stack slot (`0x0057E240`, do 34 from do 35,
@@ -914,7 +914,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `srvmissilea` centred on the cast's target unit. Surprises: the rings never test their step count (0 never ends,
   `[I]`) and store Royal Strike's `Param2 + 1` in every missile's `+0x28`; the trap helper makes a bad `pettype` 0
   instead of refusing; Dragon Flight alternates kick and teleport by the frame parity and reads Levels `Teleport`; do
-  35 returns 1 whatever do 34 returns. Tags: 39 `[C]`, 26 `[I]`, 4 `[L]` bullets; 27 symbols added (`I`). Dated notes
+  35 returns 1 where do 34 refuses (and after its hit path, `[I]`). Tags: 39 `[C]`, 28 `[I]`, 4 `[L]` bullets; 27 symbols added (`I`). Dated notes
   in skills/0001 § 12 and skills/0003 §§ 1, 5, 9. Review request
   [to the architect](../backlog/2026-10-21-reverser-architect-lane-p46m11-review-plan-0046-batch-ass.md); column
   readers [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-ass-skills-levels-column-readers.md);

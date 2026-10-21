@@ -17,10 +17,10 @@ functions 33–52 and 54, and the progressive entries 36–41 and 143, 29 entrie
 
 - **Run:** four families, 8 700 cases, 0 mismatches, 0 undeclared reads, 0 stopped; all 29 entries emulated; site
   control 3 020 of 3 020 (37 function/boundary/return-address triples); every negative control fails (five to seven
-  per family, each family with one failing 165 or more). `workspace/logs/skills-cat-ass/manifest.sha256` `ef691f38…`
+  per family, each family with one failing 165 or more). `workspace/logs/skills-cat-ass/manifest.sha256` `04f487b6…`
   (70 files, the two development runs under `dev/` with `dev/notes.txt`), `check.txt` `dd6ed294…`, `static.txt`
   `fcf4be4f…` (66 pins, the table entries, the read-only tables, the calc count's scan, every call of each nested
-  helper and of `COMBAT_PrgFinisher`), `rows.txt` `a34a038f…`, tool `b38bba31…`; `repro.txt` `43e65419…`: the same tool
+  helper and of `COMBAT_PrgFinisher`), `rows.txt` `3f8ff8a8…`, tool `b38bba31…`; `repro.txt` `43e65419…`: the same tool
   revision regenerates 9a–9d's, `sor`'s, `ama`'s, `nec`'s, `pal`'s, `bar`'s and `dru`'s case, memory and expectation
   files and reproduces their `check.txt` and `static.txt` byte for byte. `EmuBoundary.java` unchanged.
 - **Conventions:** `dru`'s. `g_pDataTables` and the missile table and count `MissileSpeedAtLevel` reads (`0x0096C794`,
@@ -44,9 +44,9 @@ functions 33–52 and 54, and the progressive entries 36–41 and 143, 29 entrie
   entry for combat/delivery A2/A3.
 - **Surprises:** the rings never test their step count (0 is an endless loop, `[I]`); the rings' `MissileData+0x28` is
   Royal Strike's `Param2 + 1` for every row; the trap helper turns a bad `pettype` into 0 instead of refusing, and
-  writes nine of the spawn block's ten words; do 35 returns 1 whatever do 34 returns and sets bit 6 unconditionally
+  writes nine of the spawn block's ten words; do 35 returns 1 where do 34 refuses (and, by the reading, after its hit path) and sets bit 6 unconditionally
   for an inventory without two claws (`[I]`); Dragon Flight alternates kick and teleport by the frame parity and reads
   Levels `Teleport`; do 42 calls the finisher with a possibly null hit; do 33's knockback roll and do 42's last-kick
   `RNG_Range(100)` draw on the caster's seed after their boundaries (`[I]`); entry 40 and do 48 have no record test of
   their own.
-- Tags: 39 `[C]`, 26 `[I]`, 4 `[L]` bullets; 27 symbols added (`I`, evidence 0014).
+- Tags: 39 `[C]`, 28 `[I]`, 4 `[L]` bullets; 27 symbols added (`I`, evidence 0014).

@@ -426,8 +426,8 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
   boundaries (`[C]` under ADR-0021; [skills/0014](0014-assassin.md) §§ 3, 4). Start 23 ends at `InMeleeRange(caster,
   target, 0)` (0 without a target). Do 35 reads the caster's inventory first: with one it ends at
   `InvGetBodyLocItem(inventory, 4)`; without one it sets bit 6 when bit 8 of `+0x38` is set and clears it otherwise,
-  runs do 34 (`MeleeHitTest(target, GetToHit, 0)` after its `aurastate` and `aurastat1` tests), and returns 1 whatever
-  do 34 returns. Everything after those calls stays as read above, `[I]`. (fn:sub_005D35D0_PrgChargeHitDualDo@0x005D35D0)
+  runs do 34 (`MeleeHitTest(target, GetToHit, 0)` after its `aurastate` and `aurastat1` tests), and returns 1 where do 34
+  refuses (by the reading 1 after its hit path too). Everything after those calls stays as read above, `[I]`. (fn:sub_005D35D0_PrgChargeHitDualDo@0x005D35D0)
 
 ### 6. Tier A: missile do, hit and damage functions
 

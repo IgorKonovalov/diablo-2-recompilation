@@ -695,8 +695,8 @@ Plan 0045 Phase 2's harness runs: none yet. Plan 0046's emulated runs (ADR-0015)
   a boundary argument; a boundary inside a helper compares the helper's return address at its absolute stack slot, the
   helpers' call sites listed by `static`). All inputs synthetic (stock parameter values among them); every case-writer
   draw from `random.Random("catass-<family>")`. Files in `workspace/logs/skills-cat-ass/`, `manifest.sha256`
-  `ef691f38…` (70 files: cases, memory specs, expected inputs, outputs, the `.err` logs, `cases.txt`, `check.txt`
-  `dd6ed294…`, `static.txt` `fcf4be4f…`, `rows.txt` `a34a038f…` with its `rows.sh`, `repro.txt` `43e65419…` with its
+  `04f487b6…` (70 files: cases, memory specs, expected inputs, outputs, the `.err` logs, `cases.txt`, `check.txt`
+  `dd6ed294…`, `static.txt` `fcf4be4f…`, `rows.txt` `3f8ff8a8…` with its `rows.sh`, `repro.txt` `43e65419…` with its
   `repro.sh`, the run script `run_ass.sh`, and the two development runs under `dev/` with `dev/notes.txt`);
   `sha256sum -c manifest.sha256` from that directory passes. `repro.txt` records that the same tool revision
   regenerates every case, memory and expectation file of 9a, 9b, 9c, 9d, `sor`, `ama`, `nec`, `pal`, `bar` and `dru`
