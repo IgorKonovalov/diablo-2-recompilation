@@ -65,3 +65,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)). Scope: the return logged by the game on its own data. An
     ADR-0015/0021 emulation over a declared scratch image confirms the map, not the role the name states, and raises no
     symbol row (`lane/p46m12` review ruling 7, [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
+15. **State an integer wrap or overflow bound from a kept computation**: the largest input that still fits and the
+    first that wraps, with the product written out, and what the code does past it. Seen: a negative ring step count
+    called an endless loop where the signed index wraps past −2³¹ (`lane/p46m11` review); `PathDirection`'s
+    `(minor << 16) × 0x7F` said to wrap past 257 subtiles, where 258 still fits (`lane/p46m13` review, both
+    [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).

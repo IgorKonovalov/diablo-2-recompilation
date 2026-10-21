@@ -175,8 +175,8 @@ None. No community document was opened for this batch.
   `HitClass`. (`rows.txt`, tbl:Skills.txt:srvstfunc, tbl:Skills.txt:srvdofunc)
 - [I] **Callers.** No entry of the batch is called from outside the two tables but do 98, which do 129 (`0x005D1AB0`,
   batch 8c) calls directly at `0x005D1B75` (unfollowed here): a scan of every `call`/`jmp` operand finds no other
-  site, and each entry's address occurs once as a dword in the image file, its table slot (`entry_words=30`). `0x005CC3B0` is called four times: twice in do 95 (`0x005CC5C0`, `0x005CC677`, after
-  its missile) and twice in do 152 `0x005CC690` (DiabLight, batch 8b: `0x005CC770`, `0x005CC827`); `0x0056C210` only by do 111. (`static.txt`
+  site, and each entry's address occurs once as a dword in the image file, its table slot (`entry_words=30`). `0x005CC3B0` is called four times: twice in do 95 (`0x005CC5C0` with no target point or a failed
+  `MissileCreate`, `0x005CC677` after the re-queue test fails; *`lane/p46m13` review:* both read "after its missile" before) and twice in do 152 `0x005CC690` (DiabLight, batch 8b: `0x005CC770`, `0x005CC827`); `0x0056C210` only by do 111. (`static.txt`
   `calls of` lines, 0x005D1B75)
 
 ### 2. Emulation: the `8a` families
@@ -284,7 +284,7 @@ through `0x00645F00` and `0x00623C60` (the query's own return address `0x006239B
   else stat 158 > 0 → 41 (`0x29`) and the stat, else 0; a player → its weapon class (`0x00623C60`, ending at the
   inventory query `0x006239BE`; no inventory → class 0 → `r` = −1). `r` not 0 or 31: `MissileRec(r)` none → 0, else
   `SkillMissileCreate(ECX game, EDX r; caster, id, lvl, 0, 0, 0, 0, 0)` at `0x005CE23F`. `r` 0 or 31: `srvmissilea`
-  (s16) out of `[0, count)` → 0; else Skills `+0x04` bit 1 (`lob`, tested with `g_BitMask32[1]`) →
+  (s16) out of `[0, count)` or `MissileRec(m)` none (`0x005CE264`) → 0; else Skills `+0x04` bit 1 (`lob`, tested with `g_BitMask32[1]`) →
   `SkillMissileCreateLob(ECX game, EDX m; caster, id, lvl, 0, 0, 0, 0, 0)` at `0x005CE295`, else `SkillMissileCreate`
   at `0x005CE23F`. After the player's inventory query, `[I]`: a weapon class 1 or 7 runs the same stat tests (7 → 31
   when both fail), others → −1.
@@ -363,9 +363,10 @@ through `0x00645F00` and `0x00623C60` (the query's own return address `0x006239B
 - [C] (ADR-0021, through do 87's and do 88's boundary arguments) **`PathDirection`** (`0x0064FC60`), as the model
   runs it: the larger and smaller of the two x and of the two y
   (unsigned), the minor difference × `0x7F` over the major (signed `idiv`, 0 for a 0 major), that row of `0x006EB7E0`
-  (12 bytes; its third word the value folded), folded by `(−1 − d) & 0xF` when y is the major axis, `& 0x1F` when the
+  (12 bytes; its third word the value folded), folded by `(−1 − d) & 0xF` when x is the major axis (the x difference strictly the larger, `jg` at `0x0064FCB3`; *`lane/p46m13`
+  review:* read "y" before), `& 0x1F` when the
   target's y is not the larger, `& 0x3F` when its x is not smaller, then `+ 8 & 0x3F`. The `(minor << 16) × 0x7F` wraps
-  past a minor difference of 257 subtiles, and the ratio then leaves the table: the case writer keeps do 87's and do
+  past a minor difference of 258 subtiles (258 · 2¹⁶ · 127 = 2 147 352 576 still fits; *`lane/p46m13` review:* "257" before), and the ratio then leaves the table: the case writer keeps do 87's and do
   88's points within 250 subtiles (§ 2, `dev/notes.txt`). (run:2026-10-21-cat-emu-8a, 0x0064FCD3)
 - [C] (ADR-0021) **Do 96** (`0x005CC840`, ZakarumHeal, Bestow): a bad id → 0; no target → 0; bit 6 set; `hi = calc2`,
   0 below 0, 100 above 99; `lo = calc1`, 0 below 0, at most `hi`; **`pct = lo + RNG_RangeB(caster+0x20, hi − lo)`**;
@@ -387,7 +388,8 @@ through `0x00645F00` and `0x00623C60` (the query's own return address `0x006239B
   caster, id, lvl, 0, 0, 0, 0, 0)` at `0x005CB152`. So `unholybolt1` and `shafire1` stand for chains: the n-th class of
   a MonStats chain casts the n-th missile after the named one. (run:2026-10-21-cat-emu-8a, fn:MONSTATS_GetClassChainPos@0x006510C0)
 - [C] (ADR-0021) **Do 88** (`0x005CB580`, AndrialSpray): a bad id or `srvmissilea` out of range → 0; no used node → 0;
-  the point is the node's `+0x18`/`+0x1C` when both are non-zero, else `SKILLS_GetTargetXY` (none → 0); `d =
+  the point is the node's `+0x18`/`+0x1C` when both are non-zero, else `SKILLS_GetTargetXY` (none → 0, one case: `noxy=1` in `check.txt`, decisive since a wrong reading reaches
+  `MissileCreate`); `d =
   map[0x00621DC0(caster, point)] & 7`; `(dx, dy)` of `0x006E3188[d]` from the caster's position; the frame `f =
   min(max((+0x44 >> 8) − 4, 0), 8)`; `0x006E3140[9d + f]` not `0x63` ('c') adds its offsets too; `MissileCreate(ECX game,
   EDX &block)` at `0x005CB70D` with the block's flags `0x20`, owner and source the caster, class `m`, **target point**
@@ -405,10 +407,10 @@ through `0x00645F00` and `0x00623C60` (the query's own return address `0x006239B
   `[I]` as a meaning); `SKILLS_GetTargetXY` none → `0x005CC3B0`, ending at
   `CancelEvents(ECX game, EDX caster; 0, 0)` at `0x005CC415`; else the target point into `+0x1C`/`+0x20` and
   `MissileCreate` at `0x005CC5DA`. After, `[I]`: on `0x005CC3B0`, an event at `frame + MonStats2 InfernoLen` (default
-  11) and 0; on a created missile, `0x005CC2E0` (a count from calc1, or the missile's `+0x3C` plus the level, onto the path's `+0x90` and the
+  11) and 0 (also when `MissileCreate` returns 0, `0x005CC5DC`); on a created missile, `0x005CC2E0` (a count from calc1, or the missile's `+0x3C` plus the level, onto the path's `+0x90` and the
   animation by `AnimLen`),
   `0x005CC440` (`InfernoAnim`), and while the game frame is below the node's `+0x18` (start 53's end frame) and state
-  12 is set, `calc3` re-queues the do; else `0x005CC3B0`; 1. (run:2026-10-21-cat-emu-8a, 0x005CC58C–0x005CC5A8)
+  12 is set, `calc3` re-queues the do (after `CancelEvents(1, 0)` and `(0, 0)`); else `0x005CC3B0` (`0x005CC677`); 1. (run:2026-10-21-cat-emu-8a, 0x005CC58C–0x005CC5A8)
 - [C] (ADR-0021) **Start 53** (`0x005CC240`): a bad id → 0; no used node → 0; the node's `+0x18` = `game+0xA8 +
   max(calc2, 1)`; with state 12 → 1; else `STATE_Set(caster, 12, 1)` at `0x005CC2CF`; after, `[I]`, 1.
   (run:2026-10-21-cat-emu-8a, 0x005CC29A–0x005CC2B4)
@@ -448,7 +450,7 @@ inventory, `+0xA8` skills, `+0xC4` bits 1–3 and 6; the used node `+0x0C`, `+0x
 
 - [L] What every boundary callee does past its entry (§§ 3–6), what `0x00649F70` (`UnitCorpseColl`) and `0x005544B0`
   do with their unit, and what `0x0056EBE0(id, lvl, 0x44, 0x19, 0)` gives do 111's fetishes.
-- [L] Whether a monster's `PathDirection` point lies within 257 subtiles in play (do 87's target, do 88's node point);
+- [L] Whether a monster's `PathDirection` point lies within 258 subtiles in play (do 87's target, do 88's node point);
   past that the code reads outside its table (§ 5).
 - [L] The direct call of do 98 from do 129 (`0x005D1B75`, batch 8c) and do 152's two `0x005CC3B0` calls
   (`0x005CC690`, batch 8b).

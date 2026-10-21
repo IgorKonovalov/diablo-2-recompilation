@@ -1143,6 +1143,68 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   adds the MonStats chain position to `srvmissilea`; do 93's target words are offsets; do 98 falls back to the owner's
   room; thirteen entries make no id test. Tags: 34 `[C]`, 6 `[I]`, 4 `[L]` bullets; 38 symbols added (`I`). Dated
   note in skills/0003 § 4 (do 83). Review request
-  [to the architect](../backlog/2026-10-21-reverser-architect-lane-p46m13-review-plan-0046-batch-8a.md); column readers
+  [to the architect](../backlog/archive/2026-10-21-reverser-architect-lane-p46m13-review-plan-0046-batch-8a.md); column readers
   [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-8a-skills-monstats-missiles-column-reade.md).
   No spec-writer entry: no spec states these functions yet (Phase 3 takes the finding).
+- **2026-10-21 — `lane/p46m13` review (architect): accept with fixes.** Reviewed on the lane (head `53060fe`), main not
+  merged (it moved to `bce3d86` with the p48r2 and s46d merges; neither touches a skills finding, and none of the 38
+  addresses or names is on main's side; main's appends to this log and to the ledger will meet this entry at the merge,
+  keep both). `sha256sum -c manifest.sha256` (`10a8ce1f…`, 106 lines) passes. From the lane's tool (`e2f67728…`), under
+  a 4 GB scope, `cases --batch 8a`, `check --batch 8a` and `static --batch 8a` reproduce the 15 case files, `cases.txt`,
+  `check.txt` (`b06f25a1…`) and `static.txt` (`f4ed00d9…`) byte for byte; `repro.sh` rerun into the review's scratch
+  gives the kept `repro.txt` (`485fdbef…`) byte for byte (9a–9d, the seven classes and `item`). Recounted from
+  `check.txt`: 12 600 cases, 0 bad, 0 undeclared, 0 stopped; site controls 1 041 + 1 459 + 970 + 1 159 + 506 = 5 135
+  over 8 + 10 + 6 + 6 + 1 = 31 `site` lines; negative controls 6 + 8 + 7 + 5 + 1, the nine `CLASS` lines equal to their
+  controls. Read against objdump: do 96 whole (`0x005CC840`–`0x005CC94E`), do 110 whole (`0x005CE1B0`–`0x005CE2AB`),
+  do 111 whole (`0x005CE670`–`0x005CE782`), do 93's step and sixth (`0x005CC0E8`–`0x005CC1CC`), do 95's tail
+  (`0x005CC5A8`–`0x005CC687`) and `PathDirection` up to its first fold (`0x0064FC60`–`0x0064FD2D`); a scan of the
+  thirty bodies (`0x005CAE40`–`0x005CCD20`, `0x005CE1B0`–`0x005CE790`) for a call of `RNG_Step`, `RNG_Range`,
+  `RNG_RangeB`, `RNG_RangePow2*`, `RNG_RangeOffset`, `RNG_RandLoHi` or the multiplier `0x6AC690C5` finds one call,
+  `0x005CC8ED` in do 96 (the multiplier's one hit, `0x005CE2C0`, lies in the next function `0x005CE2B0`, outside the
+  batch). Tags 34 `[C]`, 6 `[I]`, 4 `[L]` bullets as filed (the fixes add none). **Rulings.** (1) **The six start
+  entries with no Ghidra function are admitted.** A Ghidra function boundary is no evidence; the entry is the table
+  dword (`table_entries=30`, `entry_words=30`), the code was read from objdump, and the emulator runs from that
+  address by the program's own flow (ADR-0015 needs no Ghidra function). Their symbol rows stand at `I`. (2) **The
+  first-time helpers are admitted as emulated.** `PathDirection`'s direction is compared directly (do 87 writes it as a
+  byte over the id slot, dumped and compared) and its `.rdata` table is a declared image read; `0x00745600` is a
+  `.data` input of a map claim, admitted on the `sor` ruling 3 ground (an input set on purpose needs no writer scan),
+  and the scan cited does meet that ruling's condition (every instruction naming `0x007455C0`–`0x007456FF`, which takes
+  in `moffs` stores and immediates); that the running game holds the file's 64 bytes stays outside the `[C]`
+  (ADR-0015 (3), § 2's last bullet). `SkillSummonClass` with `0x0058F710`, `MONSTATS_GetClassChainPos` (its table
+  pointer set in the spec), `0x0063E7E0` and `0x00645F00` are emulated callees like the class batches'. (3) **The
+  allocator observed in `aura_8a` only and guarded elsewhere is right**: a guard stops a case that reaches it, and
+  `stopped=0` in the other four families shows none did. (4) **Start 48's `Fatal` as an outcome is admitted** on the
+  `nec` ruling 2 precedent (`Fatal` a boundary, 16 cases, call site `0x005534A8` asserted); its own no-path refusal
+  stays `[I]`, as the self-check wrote. (5) **The case-writer restrictions are admitted as named with the reason.**
+  `SkillSummonClass`'s fault and unwritten outs and do 111's `[0x154]` read are faults or undefined outs no model can
+  compare (ADR-0015 leaves faults out), and no stock row reaches them; `PathDirection`'s bound is a real wrap, but it
+  is 258, not 257 (fix 2), and the `[L]` stays under *Open questions*. (6) **Thin coverage is admitted.** Do 88's
+  `SKILLS_GetTargetXY` refusal has one case (`noxy=1`, `miss_8a`): it decides under reverser rule 10, since the
+  wrong readings (no refusal, a default point) reach `MissileCreate` and could not return 0 by chance; the count is now
+  in § 6 (fix 4). Do 97's collision test has 55 cases, every one comparing the mask, point and path pointer, and
+  `mask_1c09` fails all 55: enough for a constant mask. (7) **"The only pre-boundary draw is do 96" holds** in the
+  Answer's scope (the caster's and the target's seeds, compared in every case), and the review's call scan backs it
+  for every seed inside the thirty bodies; draws inside emulated helpers (start 32 within start 42) are covered only by
+  the two compared seeds, as the sentence says. (8) **The unfollowed callers are named with their counts** (do 98 from
+  do 129 at `0x005D1B75`, `0x005CC3B0` twice from do 152) and go to 8c and 8b, as reverser rule 9 asks. (9) **No
+  spec-writer entry is right**: no spec states these functions; Phase 3 takes skills/0016. **Fixes, made in the
+  documents:** (1) § 5 `PathDirection`: the `(−1 − d) & 0xF` fold applies when **x** is the major axis (`jg` at
+  `0x0064FCB3`, the swap branch sets the flag), not y; the model has it right (misread); (2) § 5 and *Open questions*:
+  the `× 0x7F` product fits for a minor difference up to 258 subtiles (258 · 2¹⁶ · 127 = 2 147 352 576) and wraps from
+  259, "257" before; the tool's `near8` docstring ("below 258") carries the same slip and is left for the next tool
+  revision, the hash being cited (misread); (3) § 1 and § 6: `0x005CC5C0` is do 95's call with no target point **or a
+  failed `MissileCreate`** (`0x005CC5DC`), not "after its missile"; § 6's after-bullet gains that path and the two
+  `CancelEvents` before the re-queue (misread); (4) § 6 do 88: the refusal's one case named (omission); (5) § 3 do 110:
+  `MissileRec(m)` none → 0 on the `srvmissilea` path (`0x005CE264`) (omission). Counted: 5 (misread 3, omission 2).
+  Promoted: fix 2 and the `lane/p46m11` review's ring-count wrap are both an integer wrap bound stated without the
+  computation, reverser review-fixes rule 15. Review request closed
+  ([archive](../backlog/archive/2026-10-21-reverser-architect-lane-p46m13-review-plan-0046-batch-8a.md)); the
+  [archivist entry](../backlog/2026-10-21-reverser-archivist-plan-0046-8a-skills-monstats-missiles-column-reade.md)
+  (Skills `Param4`, `lob`, `summon`/`summode`, MonStats `spawn*` and `+0x4B`, Missiles `Vel`/`VelLev`, MonStats2
+  `InfernoLen`/`InfernoAnim` readers; read against § 3–6, no fix touches it) is **released**; lane ledger row added (the
+  review's row is the orchestrator's at the merge). **Phase 1 status:** the seven class batches, 9a–9d, batch 10 and
+  8a are accepted, thirteen of fifteen batches and 264 of the 310 entries (the other 46: 8b–8c's 40 and the six
+  `general` tier-A entries plan 0045 read). Phase 1 is **not** complete. **Next for 0046:** batch 8b (it takes do 152's
+  two `0x005CC3B0` calls), then 8c (do 129's direct call of do 98), on the class batches' conventions, unless the
+  monster-AI plan pulls one forward or takes a function as a boundary oracle (ADR-0020). Phase 2 still waits for
+  0045·P3's review.

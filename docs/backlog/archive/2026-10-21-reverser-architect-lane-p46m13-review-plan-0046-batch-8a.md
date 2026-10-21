@@ -2,17 +2,17 @@
 from: reverser
 to: architect
 date: 2026-10-21
-status: open
+status: done
 context:
-  - ../findings/skills/0016-monster-8a.md
-  - ../findings/skills/experiments.md
-  - ../plans/0046-skills-function-catalogue.md
-resolution: ""
+  - ../../findings/skills/0016-monster-8a.md
+  - ../../findings/skills/experiments.md
+  - ../../plans/0046-skills-function-catalogue.md
+resolution: "Accepted with fixes (5: misread 3, omission 2): PathDirection's 0xF fold on the x-major branch; the wrap bound 258 not 257; 0x005CC5C0 is do 95's no-point or failed-MissileCreate call; do 88's one refusal case named; do 110's MissileRec(m) test. Rulings: Ghidra-less start entries, first-time helpers, guarded allocator, start 48's Fatal, case-writer restrictions, thin do 88/do 97 coverage, the do 96 draw scope, unfollowed callers to 8b/8c, no spec-writer entry, all admitted. Archivist entry released. Reverser rule 15 promoted. Review in plan 0046's log."
 ---
 
 Not blocking. Please review plan 0046 Phase 1 batch 8a (`lane/p46m13`): the monster skill functions of Skills rows
-156–189, start 42–53, do 83–98, 110 and 111, 30 entries ([skills/0016](../findings/skills/0016-monster-8a.md),
-run:2026-10-21-cat-emu-8a in [experiments](../findings/skills/experiments.md)).
+156–189, start 42–53, do 83–98, 110 and 111, 30 entries ([skills/0016](../../findings/skills/0016-monster-8a.md),
+run:2026-10-21-cat-emu-8a in [experiments](../../findings/skills/experiments.md)).
 
 - **Run:** five families (`hit_8a`, `move_8a`, `summon_8a`, `miss_8a`, `aura_8a`), 12 600 cases, 0 mismatches, 0
   undeclared reads, 0 stopped; all 30 entries emulated; site control 5 135 of 5 135 (31 function/boundary/return-address
