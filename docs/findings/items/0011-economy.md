@@ -139,7 +139,7 @@ Blind first: § 1–§ 7 were read from the code before the pages below were fet
 | `0x0062A840` | `sub_0062A840_ItemHasCharges` | stat 204 present; out: all full | I |
 | `0x006283A0` | `sub_006283A0_ItemEarLevel` | `ItemData+0x48` | I |
 | `0x006287D0` | `sub_006287D0_ItemNormCode` | base `normcode`, else `code` | I |
-| `0x00633680` | `sub_00633680_ItemIndexByCode` | code → item index | I |
+| `0x00633680` | `sub_00633680_ItemIndexByCode` | code → item index; C at the H2c review ([items/0001](0001-tc-resolution.md#plan-0038-batch-h2c-2026-10-21)) | C |
 | `0x00627F20` | `sub_00627F20_ItemGetAutoAffix` | `ItemData+0x36` | I |
 | `0x006374B0` | `BOOKS_GetRecord` | Books row (0x20 stride) | I |
 | `0x00555C90` | `ITEMTYPES_GetRecord` | ItemTypes row (0xE4 stride) | I |

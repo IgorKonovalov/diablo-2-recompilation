@@ -2,14 +2,14 @@
 from: reverser
 to: architect
 date: 2026-10-21
-status: open
+status: done
 context:
-  - ../plans/0038-inferred-claims-sweep.md#implementation-log
-  - ../findings/items/experiments.md#run2026-10-21-throw-forced
-  - ../findings/items/experiments.md#run2026-10-21-tcnamed-props-forced
-  - ../findings/items/0001-tc-resolution.md#plan-0038-batch-h2c-2026-10-21
-  - ../findings/items/0006-properties.md#plan-0038-batch-h2c-2026-10-21
-resolution: ""
+  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../findings/items/experiments.md#run2026-10-21-throw-forced
+  - ../../findings/items/experiments.md#run2026-10-21-tcnamed-props-forced
+  - ../../findings/items/0001-tc-resolution.md#plan-0038-batch-h2c-2026-10-21
+  - ../../findings/items/0006-properties.md#plan-0038-batch-h2c-2026-10-21
+resolution: "Reviewed 2026-10-21 (architect): accept with fixes (3: overclaim 1, under-claim 1, omission 1). Ledger stands: 4 raised, 2 raised in part, 1 shortfall; sub_00633680_ItemIndexByCode raised I to C at the review; totals unchanged (1 526). Plan 0038 log, review of lane/h2c."
 ---
 
 Review plan 0038 batch H2c (forced; items/tc and items/properties; `lane/h2c`), run:2026-10-21-throw-forced and run:2026-10-21-tcnamed-props-forced. 12 launches on slot 2, 10 kept logs (2 dev logs, heph-a and heph-b, wrong waypoint row; no log has `internal-error:` or `LOGERR`). Each table is a loose `treasureclassex.bin` under `-direct` in its own game copy (variants A, B and tcn; hashes in `workspace/logs/h2c/h2c-tables.sha256`, `bindiff` with only the listed cells); the ADR-0013 read lists (items/0001 § 8, items/0006 § 4) were committed before any session (`fc6c7a6`) and re-taken with the final checker (`check-reads.txt`: 0 TC reads in every closure). Checks, all 0 mismatches: `sweep_h2c.py logs` 0 failed, `tc.py replay` 677/677, `items_chain.py both`, `uniques.py` and `props.py` 580/580, `quality.py` 1 496/1 496. Manifest `workspace/logs/h2c/h2c-manifest.sha256` (`sha256sum -c` from `workspace/logs/h2c`); outputs in `check/`, `h2c-check.sha256` (from `check/`), produced by `run-checks.sh` and re-run once with the same hashes.

@@ -2909,6 +2909,14 @@ logs; shortfalls under *Limits*.
   their place; the counter restarts in each call. 1 078 throwable picks over 100 calls and 377 replayed calls, 0
   failed. Stock control: an expansion game creates throwable-type items (13 in H2b's logs), a classic game none. The
   ledger is in [items/0001 § Plan 0038 batch H2c](0001-tc-resolution.md#plan-0038-batch-h2c-2026-10-21).
+- **Review checks** (architect, 2026-10-21, `lane/h2c` review): `sha256sum -c` passes on `h2c-manifest.sha256`,
+  `h2c-tables.sha256` (from `workspace/logs/h2c`), `h2c-check.sha256` (from `check/`) and `h2c-dev-manifest.sha256`
+  (from `dev/`); the tool hashes above match the lane's files. The control's 329 expansion creations in H2b's logs
+  (hell-a, -c, -d, exp-cold, exp-stony: 14, 34, 63, 89, 129) each follow a `QOUT` directly, so all 13 throwable-type
+  creations were picked and rolled in a resolver call and then created, with no refund and no `lsd`: the stock
+  expansion branch, observed by its outcome (the H2b logger has no `THR` line). No Weapons, Armor or Misc row has a
+  throwable `type2` without a throwable `type` (`itemtypes.txt` `Throwable`: `ajav`, `comb`, `jave`, `taxe`, `thro`,
+  `tkni`, `tpot`), so `type` against `type2` is not separable on stock data. One-off commands, no kept output.
 
 ## run:2026-10-21-tcnamed-props-forced
 
@@ -2963,7 +2971,7 @@ logs; shortfalls under *Limits*.
   ```
 - **Shortfall:** no func-24 slot (`E24` 0 over the seven logs). The pilot never reached the Hellforge: heph-c and
   heph-e stopped at "no target" 86 and 55 sub-tiles short of the room centre, heph-d and heph-f died. Properties 15
-  stays `[I]`.
+  stays `[I]` (fn:PROP_Func24_ParParam@0x0065F390, run:2026-10-21-tcnamed-props-forced).
 - **Conclusion:** on three *Ormus' Robes* func 12 draws once on the item seed and writes `item_singleskill` with the
   roll (37, 38, 39 within 36..60) as param and `par` 3 as value; on three *Ethereal Edge* entered not ethereal and with
   durability, func 23 sets flag `0x400000`, returns 1, makes no draw and no `PROP_WriteStat` call. `props.py`

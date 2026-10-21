@@ -1134,10 +1134,13 @@ hashed `check/check-logs.txt` and `check/check-props.txt` (`workspace/logs/h2c/h
   (fn:PROP_Func12_SkillRand@0x0065FC40, fn:PROP_RollValue@0x0065E9E0, fn:PROP_WriteStat@0x0065EA50,
   run:2026-10-21-tcnamed-props-forced)
 - **prop 14** (L401, func 23) **raised in part.** [C] On an item that is not ethereal and has durability, func 23 makes
-  it ethereal with no draw and no stat write: on three *Ethereal Edge* (item class 202 `7ba`, quality 7, unit type 4;
+  it ethereal with no draw and no `PROP_WriteStat` call: on three *Ethereal Edge* (item class 202 `7ba`, quality 7, unit type 4;
   entry flags `0x82000`; Items record durability 35, `nodurability` 0) `ITEMS_IsEthereal` returned 0,
   `ItemHasDurability` 1, the handler returned 1 with flags `0x482000` (`0x400000` set), no `WR` line, and the item seed
-  unchanged; `props.py check` (which models `ITEMS_MakeEthereal`) reproduces the three creations with 0 failures.
+  unchanged; `props.py check` (which models `ITEMS_MakeEthereal`) reproduces the three creations with 0 failures,
+  their final stat lists included (`final lists checked at LX`), so the weapon's base stats 21–24, 159 and 160 scaled by
+  `ITEMS_MakeEthereal` (§ 4 read list) are in the check. *Review 2026-10-21:* "no stat write" read "no `PROP_WriteStat`
+  call"; the make branch does change base stats through `ITEMS_MakeEthereal`.
   **Remainder `[I]`:** the two skips (an item already ethereal at entry, or one without durability), not reached: every
   func-23 entry of the run was of the make branch. (fn:PROP_Func23_Ethereal@0x0065FD20, fn:ITEMS_MakeEthereal@0x0065E4D0,
   fn:sub_00629930_ItemHasDurability@0x00629930, run:2026-10-21-tcnamed-props-forced)

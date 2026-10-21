@@ -219,6 +219,7 @@ data/0001). Phase 1b (2026-10-11) then compared the finished claims with two reg
 | `0x006335F0` | `ITEMS_GetRecord` | `g_pItems` record (0x1A8 B) by index or 0 | I |
 | `0x00628700` | `ITEMS_GetType` | item record `+0x11E` (`type`) | I |
 | `0x00628860` | `ITEMTYPES_IsThrowable` | itemtypes record `+0x10` (`Throwable`) | C |
+| `0x00633680` | `sub_00633680_ItemIndexByCode` | Items index of a 4-byte code (code tree 0x0096BCC4); `lsd ` → 31 logged ([§ Plan 0038 batch H2c](#plan-0038-batch-h2c-2026-10-21)) | C |
 | `0x00629A90` | `ITEMS_IsType` | item index is of type t (`type`, then `type2`, through the equivalence bitmap) | I |
 | `0x00629BB0` | `ITEMS_UnitIsType` | same test for an item unit | I |
 | `0x00585B90` | `sub_00585B90_ObjectChestDrop` | object/chest drop: "Act N Chest A/B/C" TC, calls `TC_ResolveDrops` | I |
@@ -1211,17 +1212,22 @@ the run) has no TreasureClassEx read; the edited cells choose which item is pick
   `jav`/`jave`), and none of the 394 classic creations of the run (nor the 659 of H2b's classic logs) is of a throwable
   type; the first 10 refund and later ones become `lsd` as tc 10. Classic only, with the expansion control above. The
   upgrade draws between the roll and the test do not run on these tables (ratio words 4 and 5 are 0 in every
-  `QIN` of the three logs).
+  `QIN` of the three logs). That the test reads `type` and not `type2` stays `[I]` (the code reading): no Weapons,
+  Armor or Misc row has a throwable `type2` without a throwable `type` (review check, 2026-10-21), so no run can
+  separate the two on stock data.
   (0x0055AE6E–0x0055AEC2, fn:ITEMTYPES_IsThrowable@0x00628860, tbl:ItemTypes.txt:Throwable,
   run:2026-10-21-throw-forced)
 - **tc 56** (L657, H6/H2 "not exercised") **raised in part.** [C] The Long Sword after the tenth throwable, as tc 10.
   **Remainder `[I]`, d-none:** the `version ≥ 100` reject of H2 (the classic scan never yields such an entry, A2 and
   row 74; inventory § 6 ruling 1). (0x0055AE6E–0x0055AEC7, run:2026-10-21-throw-forced)
 
-**Correction carried (rule 12):** § 8's throwable bullet now points here for its `[C]` part.
+**Correction carried (rule 12):** § 8's throwable bullet now points here for its `[C]` part (run:2026-10-21-throw-forced).
 
 **Symbols:** `ITEMTYPES_IsThrowable` I → C (its non-zero return logged at 0x0055AE9C on 1 078 picks, all of throwable
-types; no classic creation of a throwable type).
+types; no classic creation of a throwable type). At the review (2026-10-21), `sub_00633680_ItemIndexByCode` I → C: its
+return for `'lsd '` logged 141 times (`THL`) is 31, the Weapons row of `lsd`, and `sub_0055A550_DropCreateItem` created
+that index each time (`CPRE`); a reading other than "the Items index of the code" would not give `lsd`'s row by chance.
+The `[C]` covers the code-to-index map, observed for one code.
 
 **Tally:** 4 statements: 3 raised (tc 10 ×2, 55), 1 raised in part (tc 56).
 

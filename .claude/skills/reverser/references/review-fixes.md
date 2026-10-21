@@ -53,3 +53,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     summary. Seen: the radius of hits 24, 44 and 14 in a callee-saved register (`lane/p46m3` review); hit 52's row 0
     (`arrow`) and hits 51/52's later creations under `[C]` (`lane/p46m4` review, both
     [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
+14. **Raise the symbols your run checks.** A function whose logged return the run compares with a model or a table row
+    (and whose consumer agrees) is `[C]` in `re/symbols.csv` and the finding's Functions table, evidence column moved
+    to the finding that holds the claim; don't leave it to the review. Seen: five H2b symbols (`lane/h2b` review fix 4);
+    `sub_00633680_ItemIndexByCode`, `lsd ` → 31 logged 141 times (`lane/h2c` review, both
+    [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)).

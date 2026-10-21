@@ -256,6 +256,9 @@ A batch's priority is its count of T1 rows first, then its count of T2 rows.
   owner what accepting it would unlock.
 - **`d-owner` rows.** Owner-play rows other than the plan 0032 addendum are listed only. If they are many, the
   architect proposes one owner addendum at the close, as plan 0032 did.
+  - Candidate for that addendum (`lane/h2c` review, 2026-10-21): items/properties 15, func 24, an H2c shortfall still
+    counted as harness. An owner-played Hell Hellforge session on the H2c tcn game copy (`Haphesto (H)` names *Tomb
+    Reaver*, the only stock-droppable func-24 carrier) would log it; the pilot reached the room in none of four tries.
 - **`d-none` rows**, such as guards that stock data never fails, may never reach `[C]`. Phase 0 counts them so that
   the specs' remaining `[I]` is explained.
 - **Plan 0037 interaction.** If 0037·P1 reads code that a static batch also needs, such as the stat accessors, the
@@ -3092,8 +3095,53 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Inventory:** [§ 2.6 H2c](0038-inventory/README.md#26-moves-made-by-the-batch-reviews), no class move; totals
     against `main` `3d1cc99`: static 567, harness 526, blocked 414 (d-none 288), deferred 2, raised 17: 1 526.
   - **Backlog:** review request
-    [2026-10-21-reverser-architect-review-lane-h2c-plan-0038-batch-h2c-forced](../backlog/2026-10-21-reverser-architect-review-lane-h2c-plan-0038-batch-h2c-forced.md);
+    [2026-10-21-reverser-architect-review-lane-h2c-plan-0038-batch-h2c-forced](../backlog/archive/2026-10-21-reverser-architect-review-lane-h2c-plan-0038-batch-h2c-forced.md);
     spec-writer entry
     [2026-10-21-reverser-spec-writer-h2c-forced-throwables-and-tc-named-props-spec](../backlog/2026-10-21-reverser-spec-writer-h2c-forced-throwables-and-tc-named-props-spec.md)
     (to be released with the review).
   - **Next:** architect review of `lane/h2c`; then items/tc and items/properties clusters (Phase 3).
+- **2026-10-21 — Review of `lane/h2c`, batch H2c forced (items/tc, items/properties; architect): accept with fixes
+  (3).** `main` had moved to `20c33d7` (`lane/srng`: plan 0046, rng/seeds, the ledger; no inventory row); the merge of
+  `main` into the lane was refused by the session's permission layer, so the orchestrator's merge takes it (the ledger
+  rows of `lane/srng` sit at the end of `docs/plans/metrics.md` beside the H2c rows; keep both). Read: the pause and
+  filing entries, both run records, the H2c sections and corrections of items/0001, 0004 and 0006, the inventory
+  § 2.6 H2c block and § 6 rulings 1 and 2, `re/symbols.csv`, the two backlog entries, `tools/sweep_h2c.py` (`logs` and
+  `control`), and the check outputs.
+  - **Re-checked** (worktree): `sha256sum -c` passes on `h2c-manifest.sha256` (10 logs and the list),
+    `h2c-tables.sha256` (stock and the three variants), `h2c-check.sha256` (from `check/`, nine outputs) and the dev
+    manifest; the cited hashes of `run-checks.sh`, the run list, the manifest and every tool match the files. The
+    ledger recounts from `check-logs.txt`: 497 + 581 = 1 078 `THR`, 452 + 485 = 937 refunds, 45 + 96 = 141 `lsd`, 47 + 53
+    = 100 calls (93 at the bound, 7 of one refund); 3 `E12`, 3 `E23`, 0 `E24`. 6 rows, 7 statements (4 + 2 + 1).
+  - **Each raise against a reading it rules out:** tc 10 by the counter sequence (`sweep_h2c.py` fails a refund at ≥ 10,
+    an `lsd` below 10, a non-0,1,2… sequence and an `lsd` after other than 10 refunds; 93 calls at the bound); tc 55 by
+    the per-thread order `QOUT` (same item, seed stepped) → `THR`; prop 12 by the swapped param/value (37–39 against
+    3); prop 14 by the logged entry state and `props.py`'s final lists.
+  - **Rulings.** (a) prop 14 in part, as filed: three make-branch entries, neither skip reached (rule 8). (b) tc 55's
+    order evidence is admitted: the `THR` breakpoint follows its own item's `QOUT` in every one of 1 078 picks with no
+    `PICK` between, each after a roll that stepped the seed, and the replay holds the seed chain of all 377 calls; the
+    order test is the cited revision `75a9d18a…`. The upgrade draws (H5) between them stay unexercised (ratio words 4
+    and 5 are 0), and "`type` not `type2`" stays the code reading: no stock item separates them (review check; fix 3).
+    (c) The "classic only" control is admitted as stock-data behaviour of the expansion branch: every one of the 329
+    expansion creations of H2b's logs follows its `QOUT` directly, so the 13 throwable-type ones were picked, rolled and
+    created with neither refund nor `lsd` (review check in the run record). The `THR` lines' flag 0 is tautological at
+    0x0055AE9C (after the expansion test) and is not the control. (d) prop 15 stays an H2c **shortfall**, counted as
+    harness, as H2b's prop 24; no further pilot attempt is asked of the reverser. The open route is an owner-played
+    Hellforge session (Hell, `Haphesto (H)` edited as tcn) or a pilot that reaches rooms 853/854; it goes to plan
+    0038's open questions with the H7a-style shortfalls, not to d-owner by this review. (e) `sub_00633680_ItemIndexByCode`
+    raised I → C (fix 2). (f) Totals stand: no class move, `main`'s new commits touch no inventory row: **static 567,
+    harness 526, c-emu awaiting a batch 0, blocked 414** (d-none 288, d-edit 73, d-sim 28, d-2c 7, d-owner 10,
+    d-0032 8), **deferred 2, raised 17: 1 526.** § 5 marks H2c done.
+  - **Fixes applied (3):** (1) overclaim: prop 14's "no draw and no stat write" read "no `PROP_WriteStat` call";
+    `ITEMS_MakeEthereal` scales a weapon's base stats, which `props.py`'s final-list check covers (items/0006 prop 14,
+    the spec-writer entry (e)). (2) under-claim: `sub_00633680_ItemIndexByCode` I → C, `lsd ` → 31 logged 141 times and
+    created as that index each time (`re/symbols.csv` evidence moved to items/0001; items/0001 Functions table row and
+    H2c Symbols line; items/0011 table row). (3) omission: tc 55's `type` against `type2` not separated, stated in
+    items/0001 tc 55 and the spec-writer entry (b). Promoted: reverser review-fixes rule 14 (symbols the run checks,
+    seen at H2b and H2c).
+  - **Backlog:** review request
+    [2026-10-21-reverser-architect-review-lane-h2c-plan-0038-batch-h2c-forced](../backlog/archive/2026-10-21-reverser-architect-review-lane-h2c-plan-0038-batch-h2c-forced.md)
+    closed; the spec-writer entry
+    [2026-10-21-reverser-spec-writer-h2c-forced-throwables-and-tc-named-props-spec](../backlog/2026-10-21-reverser-spec-writer-h2c-forced-throwables-and-tc-named-props-spec.md)
+    released (open, for the Phase 3 re-tag of items/tc and items/properties).
+  - **Next:** merge `lane/h2c` (with `main` and `backlog.py archive`); the items/tc and items/properties clusters
+    (Phase 3), which waited on H2c.
