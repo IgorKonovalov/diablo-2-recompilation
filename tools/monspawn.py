@@ -1786,7 +1786,8 @@ class Checker:
             self.obj_rw4_oracles = oc.rw4_oracles
             # plan 0027: the objects window on the grid model (object marks and COLL_WHTest predicted by tools/objects.py)
             for k, v in oc.stats.items():
-                if k.startswith(("position tests predicted", "object marks", "gold-pile room tests", "marks applied from the log")):
+                if k.startswith(("position tests predicted", "object marks", "gold-pile room tests", "marks applied from the log",
+                                 "re-creation", "revisit restore")):
                     self.obj_grid[k] = self.obj_grid.get(k, 0) + v
             for k, v in oc.stats.items():
                 self.obj_stats[k] = self.obj_stats.get(k, 0) + v

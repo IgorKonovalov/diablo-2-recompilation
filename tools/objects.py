@@ -58,6 +58,7 @@ The last lines are counters, oracles and the coverage the plan asks for. Exit 0 
 """
 import json
 import os
+import struct
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -266,9 +267,15 @@ OBJ_TAGS = {"OGC", "OD", "OG", "OS", "OK", "OH0", "OHX", "OT", "OPU0", "OPUX", "
             "TF", "TFQ", "TE0", "TT0", "TTX"}
 TRAP_Q = ("TF", "TFQ")                                 # OBJ_TrapFire and its queue call: recorded wherever they occur
 PASS_TAGS = ("HDR", "GAME", "RW0", "P0", "TCEND") + TRAP_Q     # TCEND: plan 0048, read only inside a chest drop
-COLL_SIDE = ("TL", "CB", "TCU", "RRESEED", "CM")     # tools/gdb/collision.py lines fed to the grid model (plan 0027)
+# plan 0048 Phase 2 run 2: MU0 / MU (tools/gdb/mon-spawn.py's SUnitCreate call and return) are read only by a
+# re-creation outside a window (recreation); CMC is a CM line a re-creation consumed
+PASS_TAGS = PASS_TAGS + ("MU0", "MU", "CMC")
+# tools/gdb/collision.py lines fed to the grid model (plan 0027); CMR0 / CMRX (plan 0048 Phase 2 run 2): the revisit
+# restore scope, inside which the CM lines are logged
+COLL_SIDE = ("TL", "CB", "TCU", "RRESEED", "CM", "CMR0", "CMRX")
 SKIP_TAGS = PASS_TAGS + COLL_SIDE
 RET_COLLMARKRECT = 0x00620ACF                          # return address of COLL_RectOrWH in UNIT_CollMarkRect
+RET_CORPSE_RECT = 0x00649FDD                           # return address of COLL_RectOrWH (3x3, 0x8000) in UnitCorpseColl
 # g_ObjTrapFns 0x00732CEC (10 entries, plan 0038 batch H5b): 0 none; 1, 2, 3, 4, 6 a monster at a free spot
 # (0x00582420 with MonStats 330, 326, 329, 369, 326); 5, 7 OBJTRAP_ObjectCreate; 8, 9 OBJTRAP_MonsterSpawn
 TRAP_FNS = [0, 0x00582490, 0x005824B0, 0x005824D0, 0x005824F0, 0x00582380, 0x005824B0, 0x00582380, 0x005822F0,
@@ -328,6 +335,53 @@ class Seed:
         return lo + self.draw() % (hi - lo)
 
 
+class MonTables:
+    """MonStats / MonStats2 rows for a re-created monster's marks (plan 0048 Phase 2 run 2; the same reads as
+    tools/collision.py World.creation_marks)."""
+
+    def __init__(self, excel):
+        from excel_bin import find_file, read_bin
+        self.ms, _ = read_bin(find_file(excel, "monstats", ".bin"))
+        self.ms2, _ = read_bin(find_file(excel, "monstats2", ".bin"))
+
+    def m(self, c, off, fmt_):
+        return struct.unpack_from(fmt_, self.ms[c], off)[0]
+
+    def m2(self, c):
+        ex = self.m(c, 0x18, "<h")
+        return self.ms2[ex] if 0 <= ex < len(self.ms2) else None
+
+    def patterns(self, cls):
+        """PATH_PatternFromSize (the size table, the NPC upgrade), and PATH_DynamicCreate's wraith pattern 5."""
+        size = struct.unpack("b", self.m2(cls)[0x08:0x09])[0]
+        pat = collision.PATTERN_BY_SIZE.get(size, 1) if 0 <= size else 1
+        fl = self.m(cls, 0x0D, "<B")
+        if fl & 1 and not fl & 2 and pat in (1, 2):
+            pat += 2
+        pat0 = 5 if self.m(cls, 0x02, "<h") == 38 else pat
+        return pat0, pat
+
+    def deadcol(self, cls):
+        """MonStats2 flag 0x13 (byte +0x06 bit 3, deadCol), read by 0x004638A0 at 0x00555481."""
+        return (self.m2(cls)[0x06] >> 3) & 1
+
+    def recreation_marks(self, room, x, y, cls, mode):
+        pat0, pat = self.patterns(cls)
+        m = {"f": "PM", "room": room, "x": x, "y": y, "a": pat0, "b": 0x100}
+        want = [dict(m), dict(m)]
+        if mode in (0, 12):
+            # run 2's first log (p2r2-s1-4861-r2-xn1): no MonSetMode mark for a dead unit (0x005541B0 is the dead test
+            # at 0x005A7CA7); for deadCol 0 the corpse call (sub_00649F70_UnitCorpseColl with an argument != 0:
+            # UNIT_CollUnmark, RectOrWH 3x3 0x8000 at 0x00649FD8), then SUnitCreate's corpse re-mark
+            want = [dict(m)]
+            if not self.deadcol(cls):
+                want += [dict(m, f="PU"), {"f": "RO", "room": room, "x": x, "y": y, "a": 3, "b": 3, "m": 0x8000},
+                         dict(m, f="PU"), dict(m, f="PU", a=5), dict(m, a=5, b=0x8000)]
+        else:
+            want += [dict(m, f="PU"), dict(m, a=pat)]
+        return want
+
+
 class Checker:
     def __init__(self, excel, root, verbose):
         self.t = Tables(excel)
@@ -342,6 +396,8 @@ class Checker:
         # of a preset monster, ("OIX", line, InitFn) of a monster or quest InitFn, ("GOLD", line) of a gold drop
         self.rw4_oracles = {}
         self.win_oracles = []
+        self.mt = MonTables(excel)
+        self.rscope = False
 
     # --- bookkeeping --------------------------------------------------------------------------------------------
     def hit(self, k, n=1):
@@ -373,7 +429,7 @@ class Checker:
                 # tools/gdb/tc-drops.py's resolver exit (key=value): its source seed, which tools/tc.py predicts
                 kv = dict(x.split("=", 1) for x in rest.split() if "=" in x)
                 lines.append(("TCEND", {"seed": kv.get("seed")}, ln))
-            elif tag in OBJ_TAGS or tag in COLL_SIDE:
+            elif tag in OBJ_TAGS or tag in COLL_SIDE or tag in ("MU0", "MU"):
                 try:
                     lines.append((tag, json.loads(rest), ln))
                 except ValueError:
@@ -393,6 +449,13 @@ class Checker:
         line (a mark logged inside a window) is applied from the log unless it is an object's mark, which the model
         makes itself at creation (create -> obj_mark) and compares with the line it consumes there."""
         W = self.cw
+        if tag == "CMR0":
+            self.rscope = True
+            self.hit("revisit restore scopes logged (CMR0 .. CMRX)")
+            return
+        if tag == "CMRX":
+            self.rscope = False
+            return
         if tag == "OU0x":
             self.orc_obj = d if d["type"] == 2 else None
             return
@@ -451,7 +514,7 @@ class Checker:
                 self.covk("size-0 objects with HasCollision (no mark)", (self.lid, u["cls"], u["mode"], self.in_window))
             return
         m = want["m"]
-        if self.in_window:
+        if self.in_window or self.rscope:
             j = self.i
             while j < len(self.L) and self.L[j][0] in SKIP_TAGS and self.L[j][0] != "CM":
                 j += 1
@@ -577,6 +640,7 @@ class Checker:
         self._restore_last = None
         self.cw = collision.World(self.root, None)       # the grid model (one game process per log)
         self.in_window = False
+        self.rscope = False
         self.tq = {}              # object unit -> its last OBJ_TrapFire (TF) and queue (TFQ) lines
         self.room_rect = {}       # room -> rect from its OG line
         chk0, fail0 = self.checks, self.fail
@@ -593,6 +657,8 @@ class Checker:
                     self.operate(d)
                 elif tag == "OPU0":
                     self.lone_preset(d)
+                elif tag == "MT0" and not self.in_window and d["fl"] & 0x20 and d["a14"]:
+                    self.recreation(d)
                 elif tag == "P0":
                     self.room_lid[d["room"]] = d["lid"]
                     self.de = (d["diff"], d["exp"])
@@ -703,6 +769,71 @@ class Checker:
             self.covk("populated rooms by difficulty / expansion / act",
                       ("nmh"[self.de[0]] if self.de else "?", self.de[1] if self.de else "?", self.t.levels[self.lid]["Act"] + 1))
         self.rs = None
+
+    def recreation(self, mt):
+        """Plan 0048 Phase 2 run 2: a monster re-created by the revisit restore (drlg/0009 § 6:
+        sub_005424F0_InactiveMonstersRestore -> sub_005B30E0_SpawnWithId -> sub_005B2A00_MonSpawnTry with flags 0x62,
+        0x6A or 0xE2 and the saved unit id), outside any RW window. MonSpawnTry passes SUnitCreate create flags 3
+        (request flag 0x20, 0x005B2E10), whose bit 0 runs sub_00554850_SUnitPathCreate; its monster branch marks the grid
+        as a pass creation does: PATH_DynamicCreate's UNIT_CollMark (0x00649E9A, the room is non-null) and
+        sub_005A7C20_MonSetMode's (0x005A7CB1), both returning to 0x006494D5, then MonSpawnTry's alignment setter
+        (0x005B2EAB) refreshes the pattern (UNIT_CollUnmark, UNIT_CollMark: tools/collision.py creation_remark). A record
+        restored dead (mode a10 = 12) is re-marked as a corpse at the end of SUnitCreate (0x0055546F..0x005554A3) unless
+        MonStats2 deadCol (flag 0x13, +0x06 bit 3) is set: UNIT_CollUnmark, pattern 5, PATH_SetMarkMask(0x8000)
+        (PatternUnmark with mask 0x100, PatternMark with 0x8000); the alignment refresh skips a dead unit
+        (0x00554392). The marks are predicted at MU0's cell with MT0's room as the lookup hint and applied to the grid
+        model; inside a logged restore scope (CMR0 .. CMRX) they are compared with the CM lines first."""
+        n = mt["d"]
+        j = self.i
+        mu0 = mu = None
+        while j < len(self.L):
+            tg, dd, _l = self.L[j]
+            if tg == "MTX" and dd["d"] == n:
+                break
+            if tg == "MT0" and dd["d"] <= n:
+                break
+            if tg == "MU0" and mu0 is None:
+                mu0 = dd
+            elif tg == "MU" and mu0 is not None and mu is None:
+                mu = dd
+            j += 1
+        self.hit("re-creations by the revisit restore (MonSpawnTry flag 0x20, a saved unit id), outside a window")
+        u = mu["unit"] if mu else None
+        if not u:
+            self.hit("re-creations: request made no unit (no marks)")
+            return
+        cls, x, y, room, mode = mt["cls"], mu0["x"], mu0["y"], mt["room"], mt["a10"]
+        self.ok(u["cls"] == cls and u["id"] == mt["a14"], "line %d: re-creation unit %s, request class %d id %d"
+                % (self.ln, json.dumps(u), cls, mt["a14"]))
+        want = self.mt.recreation_marks(room, x, y, cls, mode)
+        dead = mode in (0, 12)
+        kind = "dead, deadCol %d" % self.mt.deadcol(cls) if dead else "alive"
+        if self.rscope:
+            # the CM lines of this creation: up to the next request, preset unit or the scope's end
+            k = self.i
+            got = []
+            while k < len(self.L):
+                tg, dd, _l = self.L[k]
+                if tg in ("MT0", "OPU0", "CMRX", "RW0", "RW1", "P0"):
+                    break
+                if tg == "CM" and (dd["f"] in ("PM", "PU") or (dd["f"] == "RO" and dd["ret"] == RET_CORPSE_RECT)):
+                    got.append(k)
+                k += 1
+            keys = ("f", "room", "x", "y", "a", "b")
+            gl = [self.L[k][1] for k in got]
+            same = len(gl) == len(want) and all(all(g[q] == w[q] for q in keys) and g.get("m") == w.get("m")
+                                                for g, w in zip(gl, want))
+            self.ok(same, "line %d: re-creation marks (class %d, %s): logged %s, model %s" % (
+                self.ln, cls, kind, [[g[q] for q in keys] for g in gl], [[w[q] for q in keys] for w in want]))
+            for k in got:
+                tg, dd, ll = self.L[k]
+                self.L[k] = ("CMC", dd, ll)
+            self.hit("re-creation marks predicted and compared with the logged CM lines (%s)" % kind)
+        else:
+            self.hit("re-creation marks predicted, not logged (a log before run 2: checked only through the later "
+                     "tests) (%s)" % kind)
+        for w in want:
+            self.cw.apply_model_mark(w)
 
     def lone_preset(self, d):
         """A preset unit created outside a logged window (a room whose driver flag bit 0 is set gets no RW lines):

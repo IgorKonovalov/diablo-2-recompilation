@@ -127,6 +127,28 @@ SESSIONS["raven-cn"] = raven(CLS, "normal", 4837)
 SESSIONS["raven-xn2"] = raven(EXP, "normal", 4807)
 for _n, _sv, _d, _sd, _t, _r in PLAN:
     SESSIONS[_n] = act_session(_sv, _d, _sd, _t, _r)
+# plan 0048 Phase 2 run 2 (review ruling 2): new seeds, weighted to outdoor waypoints (the most populations per
+# session in run 1: City of the Damned, Cold Plains, Frigid Highlands, Black Marsh, Spider Forest, Dry Hills)
+PLAN2 = [
+    ("r2-xn1", EXP, "normal", 4861, 4, 2),     # City of the Damned
+    ("r2-xn2", EXP, "normal", 4862, 1, 2),     # Cold Plains
+    ("r2-xn3", EXP, "normal", 4863, 3, 2),     # Spider Forest
+    ("r2-xn4", EXP, "normal", 4864, 5, 2),     # Frigid Highlands
+    ("r2-xm1", EXP, "nightmare", 4871, 1, 2),  # Cold Plains
+    ("r2-xm2", EXP, "nightmare", 4872, 4, 2),  # City of the Damned
+    ("r2-xm3", EXP, "nightmare", 4873, 5, 2),  # Frigid Highlands
+    ("r2-xh1", EXP, "hell", 4881, 1, 5),       # Black Marsh
+    ("r2-xh2", EXP, "hell", 4882, 4, 2),       # City of the Damned
+    ("r2-xh3", EXP, "hell", 4883, 2, 3),       # Dry Hills
+    ("r2-cn1", CLS, "normal", 4891, 4, 2),     # City of the Damned
+    ("r2-cn2", CLS, "normal", 4892, 1, 2),     # Cold Plains
+    ("r2-cm1", CLS, "nightmare", 4901, 4, 2),  # City of the Damned
+    ("r2-cm2", CLS, "nightmare", 4902, 1, 5),  # Black Marsh
+    ("r2-ch1", CLS, "hell", 4911, 4, 2),       # City of the Damned
+    ("r2-ch2", CLS, "hell", 4912, 1, 2),       # Cold Plains
+]
+for _n, _sv, _d, _sd, _t, _r in PLAN2:
+    SESSIONS[_n] = act_session(_sv, _d, _sd, _t, _r)
 
 
 def sh(args, timeout=None, log=None, holder=None):
