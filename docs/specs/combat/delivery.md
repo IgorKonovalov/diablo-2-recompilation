@@ -47,7 +47,7 @@ flowchart TD
 | Crushing blow, open wounds, freeze (stat events 16, 15, 14) | fn:STATEVENT_CrushingBlow@0x005BFFC0, fn:STATEVENT_OpenWounds@0x005BFE60, fn:STATEVENT_Freeze@0x005BFC60 | [C] for the first two (run:2026-10-16-combat); [C] for freeze on a melee hit (run:2026-10-20-shortfalls) |
 | A monster's life tick (poison, open wounds) | fn:sub_005A6920_MonRegenEvent@0x005A6920 | [C] (run:2026-10-16-combat) |
 | A player's life tick | fn:sub_00580810_RegenEvent@0x00580810 → fn:sub_00580610_LifeRegenTick@0x00580610 ([stats/states § E](../stats/states.md#e-the-regeneration-tick)) | [C] (run:2026-10-17-stats: 54 719 ticks, 1 082 under poison) |
-| A finishing move (do 42, 46, 50, 52) hands its queued hit to the finisher | fn:COMBAT_PrgFinisher@0x005D5220 (A2) | [C] for the six call sites (run:2026-10-21-cat-emu-ass `static.txt`); [C] for the calls of do 42, 46 and 50 as boundaries (ADR-0021, run:2026-10-21-cat-emu-ass) |
+| A finishing move (do 42, 46, 50, 52) hands its queued hit to the finisher | fn:COMBAT_PrgFinisher@0x005D5220 (A2) | [C] for the six call sites (run:2026-10-21-cat-emu-ass `static.txt`); [C] for the calls of do 42, 46 and 50 as boundaries, do 46's on the path where its hit helper returns for a bad skill id (ADR-0021, run:2026-10-21-cat-emu-ass) |
 | The kill | fn:COMBAT_GetHit@0x0057CEE0 → fn:sub_0057CCB0_UnitKilled@0x0057CCB0 | [I] |
 
 ## Inputs
@@ -123,7 +123,7 @@ A2. DeliverQueued(att, def):                                          [I] (fn:CO
 - A2. Before delivery, `SKILL_AttackDo` calls the progressive-charge finisher (A3); an attacker under a `meleeonly`
   state (wolf, bear) skips it. The run met no charged state. [I] (fn:COMBAT_PrgFinisher@0x005D5220,
   fn:sub_0056C2D0_AttackDeliverMeleeOnly@0x0056C2D0)
-- A2. **The finisher has six direct callers**: `SKILL_AttackDo` (`0x0056F1CE`) and five sites in the assassin
+- A2. **The finisher has six direct calls in five functions**: `SKILL_AttackDo` (`0x0056F1CE`) and five sites in the assassin
   finishing moves' do functions, do 42 Dragon Talon (`0x005D5A8C`), do 46 Dragon Claw (`0x005D6399` and `0x005D63E1`,
   one per parity path), do 50 Dragon Tail (`0x005D71F2`) and do 52 Dragon Flight (`0x005D79DF`); start 25 calls it
   nowhere (it only tests for a target). [C] (run:2026-10-21-cat-emu-ass `static.txt`, a scan of every `call` operand,
@@ -132,14 +132,15 @@ A2. DeliverQueued(att, def):                                          [I] (fn:CO
   target)`'s result as its one stack argument (the game in `ECX`, the caster in `EDX`): do 42 with **no null test**, so
   it also calls it with 0; do 46 only when `QueuedHitFind` gives a hit, and with no hit it calls `DeliverQueued(caster,
   target)` instead; do 50 only with a hit, returning 0 before it otherwise, after copying the 0x70-byte packet to its
-  frame. [C] (ADR-0021, up to `PrgFinisher` @0x005D5A91, @0x005D639E, @0x005D63E6, @0x005D71F7 or `DeliverQueued`
+  frame. The run reached do 46's two calls only where `0x005D6200` returns for a bad skill id; on a valid id the same
+  instructions follow its hit test, after that boundary. [C] (ADR-0021, up to `PrgFinisher` @0x005D5A91, @0x005D639E, @0x005D63E6, @0x005D71F7 or `DeliverQueued`
   @0x005D63AB, @0x005D63F3; run:2026-10-21-cat-emu-ass `hit_ass`, fn:sub_005D5A30_SkillDo42DragonTalon@0x005D5A30,
   fn:sub_005D6340_SkillDo46DragonClaw@0x005D6340, fn:sub_005D7180_SkillDo50DragonTail@0x005D7180,
   [skills/0014 § 4](../../findings/skills/0014-assassin.md#4-the-hits-and-the-finishing-moves-do-33-34-35-42-46-50-52))
 - A2. Do 52 passes `QueuedHitFind`'s result with no null test, as do 42. The finisher returns at once for a null hit
   or one whose result lacks bit `0x1`, so a null argument runs nothing. [I] (0x005D79D1–0x005D79DF,
   0x005D5229–0x005D523B)
-- A2. **After the finisher, each finishing move delivers once.** Do 46 runs the finisher only on a hit, then one
+- A2. **After the finisher, each finishing move delivers.** Do 46 runs the finisher only on a hit, then one
   `DeliverQueued(caster, target)` on either path (the jump at `0x005D6391` / `0x005D63D9` skips only the finisher), and
   sets or clears bit 6 by the parity bit; do 42, do 50 and do 52 call `DeliverQueued` after the finisher. Do 42 then
   delivers once more; at its last kick (the count at 0) it first makes one `RNG_Range(caster, 100)` against a value
@@ -235,9 +236,11 @@ Entry 40 (one missile at the target point):                           [C] (ADR-0
   message `0xA3`. [I] (fn:sub_00650E70_Copy64Out@0x00650E70, fn:sub_00650E60_Copy64In@0x00650E60, fn:RNG_Step@0x0045C370,
   fn:sub_00571AA0_UnitMsgA3@0x00571AA0, [skills/0001 § 12](../../findings/skills/0001-dispatch.md#12-progressive-charges))
 - A3. **The entries step the attacker's seed at entry.** 37, 39, 41 and 143 step the attacker's seed once inline,
-  before the record test, so the step happens even when the entry then creates nothing; up to its first creation no
-  entry of 36–41 and 143 draws on the attacker's or the target's seed otherwise, and the draws before the first
-  creation are on the local seed (37 and 143: one step; 39: two `Range(local, 2r)` per try; 41: two steps). [C]
+  before the record test, so the step happens even when the entry then creates nothing; up to its boundary (the first
+  creation; 38's `DeliverQueued` or `SkillRollPhys`) no entry of 36–41 and 143 draws on the attacker's or the target's
+  seed otherwise, and the draws before the first creation are on the local seed (37 and 143: one step; 39: two
+  `Range(local, 2r)` per try; 41: two steps). The run's calcs were constant programs, so a calc function's own draws
+  are not covered. [C]
   (ADR-0021, run:2026-10-21-cat-emu-ass `prg_ass`, 0x005D4E80, 0x005D4F50,
   [skills/0014 § 5](../../findings/skills/0014-assassin.md#5-the-progressive-entries-3641-and-143))
 - A3. **Entry 38 draws on the attacker's seed** after its delivery: `RangeB` twice (physical and elemental) and a
@@ -250,8 +253,8 @@ Entry 40 (one missile at the target point):                           [C] (ADR-0
   attack's delivery (§ B, on both seeds) comes before 38's `RangeB`. [C] (ADR-0021, up to `DeliverQueued` @0x005D3ED5,
   run:2026-10-21-cat-emu-ass `prg_ass`) `SKILL_AttackDo`'s later `DeliverQueued` then finds no entry for the defender.
   [I] (0x005D3E80–0x005D3F82, fn:COMBAT_DeliverQueued@0x0057D4F0)
-- A3. **A ring's step count is not tested.** `n` is used as found, before and after the first creation. [C] up to the
-  first creation (ADR-0021, run:2026-10-21-cat-emu-ass `prg_ass`) After it, the ring makes `⌈64 / n⌉` missiles for
+- A3. **A ring's step count is not tested.** `n` is used as found up to the first creation. [C] (ADR-0021,
+  run:2026-10-21-cat-emu-ass `prg_ass`) After it, `n` is not tested either: the ring makes `⌈64 / n⌉` missiles for
   `0 < n < 2²⁹`; for `n = 0` the index does not move and the loop never ends, a creation per pass. [I]
   (0x005D4657–0x005D467D, 0x005D4D77–0x005D4DAA, [skills/0014 § 5](../../findings/skills/0014-assassin.md#5-the-progressive-entries-3641-and-143))
 - A3. **A negative ring count does not loop forever.** For `n < 0` the ring reads its direction pair below the two
@@ -635,7 +638,8 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
   draws two or three times on it after delivering the queued hit. [I] (0x0056E1C4)
 - **The finisher is not only the normal attack's.** The assassin finishing moves (do 42, 46, 50, 52) call it with
   their own queued hit and then deliver (A2); do 46 runs it only on a hit but delivers on both paths. [C] for the call
-  sites and the calls of do 42, 46 and 50 up to them (ADR-0021, run:2026-10-21-cat-emu-ass); [I] for the deliveries
+  sites and the calls of do 42, 46 (on its bad-id path) and 50 up to them (ADR-0021, run:2026-10-21-cat-emu-ass); [I]
+  for do 46's calls on a valid id and the deliveries
   after them (0x005D6386–0x005D6405)
 - **A ring's step count is used untested.** A ring given 0 never ends; a negative count reads below the direction
   tables until the index wraps (A3). A reimplementation that guards these changes behaviour only for data that makes
@@ -661,7 +665,7 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
   absorbed amount 186.
 - [skills/0001](../../findings/skills/0001-dispatch.md) §§ 10 (item-event casts and the `ItemTarget` 2 helper's draws,
   the dated Phase 1b note), 12 (the finisher's seed save and restore; its callers, as corrected by the dated 2026-10-21 note).
-- [skills/0014](../../findings/skills/0014-assassin.md) §§ 1 (the finisher's six callers, `ItemEffect` 36), 4 (the
+- [skills/0014](../../findings/skills/0014-assassin.md) §§ 1 (the finisher's six calls, `ItemEffect` 36), 4 (the
   finishing moves' calls of the finisher and `DeliverQueued`), 5 (entries 36–41 and 143 up to their first creation and
   the rings' step count), with its review in the [plan 0046 log](../../plans/0046-skills-function-catalogue.md)
   (`lane/p46m11`); [skills/experiments § run:2026-10-21-cat-emu-ass](../../findings/skills/experiments.md#run2026-10-21-cat-emu-ass)

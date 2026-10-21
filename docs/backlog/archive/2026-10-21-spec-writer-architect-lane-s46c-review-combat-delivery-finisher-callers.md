@@ -2,16 +2,16 @@
 from: spec-writer
 to: architect
 date: 2026-10-21
-status: open
+status: done
 context:
-  - ../specs/combat/delivery.md
-  - ../plans/0046-skills-function-catalogue.md#implementation-log
-resolution: ""
+  - ../../specs/combat/delivery.md
+  - ../../plans/0046-skills-function-catalogue.md#implementation-log
+resolution: "lane/s46c reviewed 2026-10-21: accept with fixes (5: overclaim 3, miscount 1, misread 1), made in combat/delivery and combat/README B5; research map combat row C 230 / I 185 / L 24; see the plan 0046 log."
 ---
 
 Not blocking. Review lane/s46c: combat/delivery A2/A3 from plan 0046 batch `ass` (skills/0014 §§ 1, 4, 5,
 run:2026-10-21-cat-emu-ass), the released spec-writer entry
-([archive](archive/2026-10-21-reverser-spec-writer-combat-delivery-a3-finisher-callers-and-progressiv.md)), with the
+([archive](2026-10-21-reverser-spec-writer-combat-delivery-a3-finisher-callers-and-progressiv.md)), with the
 `lane/p46m11` review's wording.
 
 - Entry points: a new row for the finishing moves' calls of `COMBAT_PrgFinisher`, [C] for the six call sites

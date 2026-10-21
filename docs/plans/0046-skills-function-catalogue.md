@@ -1007,4 +1007,31 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   negative count ending by the index wrap `[I]`, the stock values an `[L]` under *Open questions*. Tags {C59 I49 L3} →
   {C74 I58 L4}; open questions 3 → 4 `[L]`. Entry closed
   ([archive](../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-a3-finisher-callers-and-progressiv.md));
-  review request [to the architect](../backlog/2026-10-21-spec-writer-architect-lane-s46c-review-combat-delivery-finisher-callers.md).
+  review request [to the architect](../backlog/archive/2026-10-21-spec-writer-architect-lane-s46c-review-combat-delivery-finisher-callers.md).
+- **2026-10-21 — `lane/s46c` review (architect): accept with fixes.** Reviewed on the lane (head `b3c7c03`), main not
+  merged (it moved to `945f2f7` with the items/tc and items/properties re-tag, which touches no combat file). Every new
+  or changed claim of combat/delivery A2/A3 read against skills/0014 §§ 1, 4, 5, run:2026-10-21-cat-emu-ass (§ 2's
+  family table and `static.txt`'s line `calls of 0x005D5220: 6 in the image`), skills/0001 § 12, skills/0003 §§ 1, 9,
+  ADR-0021 and the `lane/p46m11` rulings. The pseudocode of entries 36–41 and 143 follows § 5's anchored order step for
+  step (record, missile, target point, count; 40's point before its level test; 41's `n < 0` after the block); the
+  diagram's finisher node restates A2 and A3 and adds no claim. **Rulings.** (1) **Do 52's finisher call is a static
+  call site only**, `[C]` as one of the six `static.txt` calls and `[I]` as a call (it follows do 52's hit-test
+  boundary); the lane has it so. Do 33's knock step and do 42's last-kick draw stay `[I]` (after their boundaries). (2)
+  **"Six" counts calls, not callers**: six `call 0x5d5220` sites in five functions (`SKILL_AttackDo`, do 42, 46, 50,
+  52), as the `lane/p46m11` review's "five finishing-move calls plus `SKILL_AttackDo`". (3) **Do 46's calls are `[C]`
+  on the run's path only**: the run reaches `PrgFinisher` @0x005D639E / @0x005D63E6 and `DeliverQueued` @0x005D63AB /
+  @0x005D63F3 where `0x005D6200` returns for a bad id (skills/0014 Answer, § 4); on a valid id the same instructions
+  follow the `MeleeHitTest` boundary and are `[I]`. (4) **combat/README B5 gets a pointer**: B5's normal-attack text
+  stays true, but a reader of the draw order should know the finisher has other callers; one untagged sentence
+  pointing at delivery § A2 (no tag of its own; the claim is A2's). (5) Research map: the combat row's figure is
+  C 230 / I 185 / L 24 (the five front matters summed by script, unchanged by the fixes), with the plan 0046 `ass`
+  clause, skills/0014 and the plan link. **Fixes, made in the documents:** (1) A2 "six direct callers" for six calls in
+  five functions, and § Evidence's "six callers" (miscount); (2) the do 46 `[C]` in A2, the entry-points row and the
+  reimplementation note scoped to its bad-id path, the valid-id call `[I]` (overclaim); (3) A3's "no entry draws up to
+  its first creation" `[C]`: boundary named per entry (38's delivery or roll is not a creation) and the constant-calc
+  caveat added, as skills/0014's Answer states (overclaim); (4) the ring-count bullet's `[C]` sentence said "before and
+  after the first creation" (overclaim); (5) A2's bold "each finishing move delivers once" against do 42's second
+  delivery in the same bullet (misread). Counted: 5 (overclaim 3, miscount 1, misread 1). Spec-writer review-fixes
+  rule 2 gains this Seen line (a `[C]` boundary reached on one path stated for all). Review request closed
+  ([archive](../backlog/archive/2026-10-21-spec-writer-architect-lane-s46c-review-combat-delivery-finisher-callers.md));
+  lane ledger row added (the review's row is the orchestrator's at the merge). Gate fast tier green.

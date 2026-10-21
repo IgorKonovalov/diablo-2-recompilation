@@ -336,7 +336,8 @@ CritChain(u, w) → bool:                                              [I] (fn:s
 **B5. The progressive finisher (the attacker's seed).** A player's normal attack under a charged progressive
 state (an Assassin's charge-up skills) runs `COMBAT_PrgFinisher` between the queue and the delivery (A1); the run met
 none (§ The ADR-0014 boundary). Its own `RNG_Step` is a **peek**, but the `srvprgfunc` entries it calls **draw on the
-attacker's seed**; the full algorithm is [delivery § A3](delivery.md#a-queue-and-delivery).
+attacker's seed**; the full algorithm is [delivery § A3](delivery.md#a-queue-and-delivery). The assassin finishing
+moves (do 42, 46, 50, 52) also call the finisher, with their own queued hit, outside this attack event (delivery § A2).
 
 ```mermaid
 sequenceDiagram
