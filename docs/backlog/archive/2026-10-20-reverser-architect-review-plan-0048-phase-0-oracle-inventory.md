@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-20
 status: done
 context:
-  - ../../plans/0048-seed-to-world.md
+  - ../../plans/done/0048-seed-to-world.md
   - ../../findings/chain/0001-oracles.md
 resolution: "Reviewed 2026-10-20 (architect): accept with fixes (1: oracle 14's variant roll already modelled by tools/mon_sweep.py pool, S3a). All ten proposed oracles assigned to Phase 1, 14 moved before 16/17, barrier grid and type-11 point with 20; S/N classes meet the Done-when; both proposed input classes accepted into the plan's Context; oracle 31 stays listed; stale spawn row routed to the spec-writer; MonEquip table doc asked of the archivist. Plan 0048 log, 2026-10-20 review entry. Phase 1 can start."
 ---

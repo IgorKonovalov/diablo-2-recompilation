@@ -33,7 +33,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    partial log is kept as a development log, not deleted (0040 P2 review). A development run's outputs are written under their own names, not overwritten by the kept run
    (`lane/p46m9` review, [0046](../../../../docs/plans/0046-skills-function-catalogue.md)), and no kept file is renamed or
    reused under a name a kept manifest lists: the stub renamed so a session could run under its name broke one line of
-   `manifest-r2-ckpt1.txt` (`lane/p48r2` review, [0048](../../../../docs/plans/0048-seed-to-world.md)).
+   `manifest-r2-ckpt1.txt` (`lane/p48r2` review, [0048](../../../../docs/plans/done/0048-seed-to-world.md)).
 7. **A conclusion needs an address, `fn:` or `run:` anchor**, not a link to another finding (gate W1).
    Seen: the resume lane's experiments addendum (0037); `lane/w1`'s 104 W1 lines (0039).
 8. **Split a raise where it has a remainder** and head the row "raised in part", in the ledger itself.

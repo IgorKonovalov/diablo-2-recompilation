@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-10-21
 status: done
 context:
-  - ../../plans/0048-seed-to-world.md
+  - ../../plans/done/0048-seed-to-world.md
   - ../../specs/chain/README.md
   - ../../specs/drlg/lifecycle.md
 resolution: "Done on lane/s48p4: [wiki/seed-to-world](../../wiki/seed-to-world.md) written over specs/chain (based_on chain, rng/seeds, drlg/room-tiles, drlg/lifecycle, monsters/stats, objects at 2026-10-21) and linked from the wiki index; the W4 warnings on characters, items, items-other-paths, levels, monsters, objects, randomness and saves cleared (based_on bumped; stale passages restated: staff mods, Orient89 preset units, H5 re-creation marks, monster seed after creation, MonEquip B12, gate and grid inputs, City of the Damned and gold piles, chest interact byte, hire-list store seed). Gate W4 17 -> 0. Review requested."

@@ -313,7 +313,7 @@ k was predicted exactly for all 520 room activations of the first run (k from 0 
 activations in later runs. What the wall-cell unit rule makes at activation is a [preset unit](../glossary.md) of the
 room, not a unit: the units it names are created later, with the room's other preset units, in the window before its
 objects and monsters ([room tiles § Algorithm](../specs/drlg/room-tiles.md#algorithm), step 11; see
-[seed to world](seed-to-world.md#c-a-room-activates)). That reading is from the code: the code that adds the preset
+[seed to world](seed-to-world.md#c-a-room-activates)). That reading is inferred: the code that adds the preset
 unit has not been read.
 
 **Why k depends on what is already built.** Neighbouring rooms share their edge cells, and both rooms build them
@@ -545,7 +545,7 @@ class's `deadCol` column is 0, takes the corpse marks (a 3 × 3 corpse rectangle
 `deadCol` 1 the one mark stays. The end-to-end run compared 1 903 re-creations mark by mark, 0 different; the dead
 cases rest on 140 of them. That covers the marks made from the recorded cell and alive-or-dead state, which are
 inputs (they depend on what the monster did before the release), not where or in what state a monster comes back.
-Which calls make the marks, in which order, is read from the code. Leaving the marks out breaks later placement
+The call path that makes the marks is read from the code; the marks and their order are what the run compared. Leaving the marks out breaks later placement
 tests: the first end-to-end run's only two mismatches were that.
 
 **Wanderers** ([lifecycle § I](../specs/drlg/lifecycle.md#i-the-wanderer-tick)). Each time a room is handled at the

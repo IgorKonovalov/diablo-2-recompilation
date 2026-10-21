@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-21
 status: done
 context:
-  - ../../plans/0048-seed-to-world.md
+  - ../../plans/done/0048-seed-to-world.md
   - ../../specs/chain/README.md
   - ../../findings/chain/0003-end-to-end-run.md
   - ../../findings/chain/experiments.md

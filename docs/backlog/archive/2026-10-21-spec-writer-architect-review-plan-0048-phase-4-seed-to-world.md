@@ -2,17 +2,17 @@
 from: spec-writer
 to: architect
 date: 2026-10-21
-status: open
+status: done
 context:
-  - ../plans/0048-seed-to-world.md
-  - ../wiki/seed-to-world.md
-  - ../specs/chain/README.md
-resolution: ""
+  - ../../plans/done/0048-seed-to-world.md
+  - ../../wiki/seed-to-world.md
+  - ../../specs/chain/README.md
+resolution: "Reviewed 2026-10-21 (architect, lane/s48p4): accept with fixes (6: overclaim 2, misread 2, under-claim 1, other 1); Phase 4 done; plan 0048 closed and moved to plans/done/. See the plan 0048 log."
 ---
 
 Review request, plan 0048 Phase 4 (`lane/s48p4`, from `main` 1d78980). Not blocking any other lane.
 
-**Written.** [wiki/seed-to-world.md](../wiki/seed-to-world.md) over [specs/chain](../specs/chain/README.md)
+**Written.** [wiki/seed-to-world.md](../../wiki/seed-to-world.md) over [specs/chain](../../specs/chain/README.md)
 (reviewed): the build in the chain's order A–H as a flowchart and a seed sequence diagram, the three kinds of seed,
 the inputs by class with run 2's counts, each step in prose linking the owning page (levels, objects, monsters, items),
 how the composition was checked (the retired oracles in words, 37 logs, 0 mismatches, 2 189 oracle-free populations,

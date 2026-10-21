@@ -132,7 +132,7 @@ run counts as oracle-free hold no seed taken from the log in their window or pas
 - [C] Where the objects checker takes a seed at a preset monster's or an `InitFn` 46 request's exit and the monsters
   checker predicts and asserts it at the same line, both run in one check and a failed assert fails the run; the
   composed value is the model's. These are not oracles of the composition, and this spec states the one call order.
-  (Phase 1 review ruling 1, [plan 0048 log](../../plans/0048-seed-to-world.md#implementation-log); run:2026-10-21-chain2)
+  (Phase 1 review ruling 1, [plan 0048 log](../../plans/done/0048-seed-to-world.md#implementation-log); run:2026-10-21-chain2)
 
 ## Algorithm
 

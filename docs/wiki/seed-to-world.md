@@ -17,8 +17,10 @@ rule of its own. Each step is explained on the page that owns it; this page says
 [seed](../glossary.md) is handed from one step to the next**, and **what has to come from outside**: where the player
 walks, and what happens in the fights. It restates the [seed-to-world spec](../specs/chain/README.md#purpose).
 
-The short version: everything that does not depend on what the player does follows from the game seed alone, and a
-recorded game was rebuilt step by step with every room, monster, object and drop predicted. What the player does
+The short version: everything that does not depend on what the player does is built from the seed the game was
+created with, and 37 recorded games were rebuilt step by step with 0 mismatches, given what the player did and what the
+fights produced, as taken from the recordings, and a few counted values still read from them
+([below](#how-it-was-checked)). What the player does
 (which rooms it walks into, in what order, what it kills and clicks) is not a detail to be modelled: it is an input,
 and it decides most of the seeds after the first room.
 
@@ -44,10 +46,10 @@ flowchart LR
 There are three kinds of seed in play, and the build moves between them
 ([rng/seeds § Algorithm](../specs/rng/seeds.md#algorithm)):
 
-- **Seeds that depend only on the game seed.** The act seeds, every level's seed and every room's seed in the level
+- **Seeds that depend only on the seed the game was created with.** The act seeds, every level's seed and every room's seed in the level
   generator. These are the same in every game made from the same seed, whatever the player does.
-- **Seeds shared by the whole game.** The [game seed](../glossary.md) itself, which steps once for every unit the
-  server creates (twice for an item), and the [object-region seed](../glossary.md), one stream for every object roll
+- **Seeds shared by the whole game.** The [game seed](../glossary.md) itself, which steps once for every unit other
+  than a player that the server creates (twice for an item), and the [object-region seed](../glossary.md), one stream for every object roll
   in the game. Their values at any moment depend on everything created or rolled before.
 - **A unit's own seed.** Each monster, object and item gets its own seed from one game-seed step when it is created.
 
@@ -61,7 +63,7 @@ end-to-end run, 37 recorded games, where each of these was taken from the record
 | Input | What it decides | In the run |
 |---|---|---|
 | the seed, the difficulty, the game type | the game seed and map seed, the monster pools, every level's parameters | 37 games |
-| which rooms activate, in which order, with which neighbours already active (the player's walk) | each room's [near list](../glossary.md) and so its collision grid, and the order of the new-rooms walk | 18 459 activations |
+| which rooms activate, in which order, with which neighbours already active (the player's walk) | each room's [near list](../glossary.md) and so its collision grid, and the order of the new-rooms walk (what it decides is read from the code) | 18 459 activations |
 | which object a player operates, and when | the operate's rolls and any monster it spawns | 6, 25 and 2 operate and trap spawns; 53 operates of handlers other than containers |
 | the dying unit's seed at its death | the treasure class walk and the quality rolls of its drop; combat draws on that seed too | 3 784 treasure-class resolutions |
 | the game seed at each drop | each dropped item's own two seeds; every unit simulation creates (a missile, a summon) steps it | 3 784 |
@@ -136,7 +138,7 @@ collision grid, stamped from its own tiles and those of the neighbours already a
 grid: a neighbour that activates later is not stamped in. One more draw then gives the
 [active room](../glossary.md) its seed. The tile rule on some wall cells that can draw during the tile pick makes a
 *preset unit* of the room, not a unit; the units it names are created later, in the presets window of step D. That
-last point is read from the code: the code that adds the preset unit has not been read.
+last point is inferred: the code that adds the preset unit has not been read.
 
 ### D. The new-rooms walk
 
@@ -196,8 +198,8 @@ It also marks the collision grid like a monster of the pass, though outside any 
 marks its footprint twice, then is unmarked and marked again with the pattern for its size. One that comes back dead
 is marked once, and then, if its class's `deadCol` is 0, takes the corpse marks; with `deadCol` 1 the one mark stays.
 This is confirmed on 1 903 re-creations compared mark by mark, the dead cases on 140 of them. It covers the marks made
-from the recorded cell and state, not where or in what state a monster comes back. Which calls make the marks, in
-which order, is read from the code. Leaving the marks out breaks later placement tests: the first end-to-end run's
+from the recorded cell and state, not where or in what state a monster comes back. The call path that makes the marks is read
+from the code; the marks and their order are what the run compared. Leaving the marks out breaks later placement tests: the first end-to-end run's
 only two mismatches were exactly that.
 
 ### G. A death and its drop
