@@ -310,3 +310,164 @@ and a scan of the `EV0`/`DRM` lines; no new run):
   Andariel are halved, by her unique flag, not taken in full as the finding had said; the unique half of the `0x0C`
   test is `[C]` (383), the champion half `[I]` (0); the −100 floor changed no logged value and stays `[I]`.
   Verdict in the [plan log](../../plans/done/0037-combat-formulas.md#implementation-log). (run:2026-10-16-combat)
+
+## run:2026-10-20-shortfalls
+
+One run under two checkers: this section holds the combat sessions; the stats sessions are in
+[stats/experiments](../stats/experiments.md#the-stats-sessions-of-run2026-10-20-shortfalls), the travel sessions in
+[quests/experiments](../quests/experiments.md#the-travel-sessions-of-run2026-10-20-shortfalls).
+
+- **Question:** plan [0047](../../plans/0047-simulation-shortfalls.md) Phase 2. Do the branches that
+  run:2026-10-16-combat left under the rare-branch floor of about 30 (combat/0001 § 15, last bullets) reproduce event
+  for event when sessions are built for them: crushing blow on champions, the resistance caps, magic immunity, the
+  negative absorbed amount, the negative total, evade, weapon block, dodge, avoid, freeze, flat absorb, a walking
+  player's block? Boundary as in run:2026-10-16-combat (value oracles, boundary oracles, inputs); no new oracle.
+- **Setup:** agent-driven sessions on harness slot 2 (display `:9`, prefix `workspace/wineprefix-2`), saves set aside
+  under tag `p47h`, pinned `game.exe`, stock data. Logger `tools/gdb/combat.gdb` (`450f36f8…`) with
+  `tools/gdb/combat.py` r9 (`82780acc…`, commit `98426bc`, unchanged) and `tools/gdb/pilot.py` (`1ad48a4c…`); every log
+  writes `COMBATLOG {"rev": 9}`. Driver `tools/combat_sessions.py run --slot 2 --tag p47h --saves
+  workspace/scratch-p47h/saves --run p47h …` (final revision `89444dbb…`; the sessions, seeds and pilot commands are its
+  `SESSIONS` rows), `tools/d2pilot.py` `c2b3257f…`. Five batches: A and B (the first lane, killed with every agent by
+  systemd-oomd at 20:12 while `ama-n-idle1`'s and `ass-n-plains2`'s checks started; both re-checked by this lane), C, D.
+  Per-session caps as before (player attack 800, monster attack 500, `MonAttackStats` 300, missile defence 300).
+- **Characters** (ADR-0013 § Neutral, tool-built from stock uniques, pinned in `tools/test_d2s.py` except the two
+  plan 0037 recipes): `CombatOW` (`b07db91b…`), `CombatSorH` (`210b2c0c…`), `CombatDR` (`639afd6a…`), `CombatAbs`
+  (`05f4741c…`), `CombatFrz` (`c1ed1c39…`), `CombatAma` (`5b694383…`), `CombatAss` (`e0ea31a2…`), `CombatAssO`
+  (`c4dc7172…`), `CombatOWF` (`77807e00…`: commit `5871b00`'s `CombatOW` recipe with only the name changed, so not
+  the lost log's `5f440622…` byte for byte; the item list and rolls are that recipe's), and two new ones on
+  `smpama.d2s`: **`CombatAmaD`** (`d4572d07…`: level 5, dexterity 15, Dodge, Avoid and Evade 20, *The Gnasher*,
+  *Goldwrap*, *Nokozan Relic*, *Raven Frost*, *Manald Heal*; no shield, no armour) and **`CombatAmaW`** (`fa9c4162…`:
+  the same with dexterity 60 and *Pelta Lunata*). Why the new ones: `CombatAma` (level 85, dexterity 400) was hit at
+  the to-hit floor, `c` = 5 in every logged roll of `ama-n-stand`, `ama-n-walk` and `ama-n-idle1`, and every defence
+  roll needs a hit first; with its shield the block roll also comes before dodge.
+
+### Sessions
+
+| session | seed | save | difficulty | where (waypoint) | pa | ma | ha | md | pm | MAS |
+|---|---|---|---|---|---:|---:|---:|---:|---:|---:|
+| ow-nm-champs1 | 4701 | CombatOW | Nightmare, /players 8 | Cold Plains (1,2) | 103 | 297 | 0 | 1 | 0 | 300 |
+| ow-nm-champs2 | 4702 | CombatOW | Nightmare, /players 8 | Stony Field (1,3), `--sweep` | 195 | 500 | 0 | 18 | 0 | 300 |
+| ow-nm-champs3 | 4703 | CombatOW | Nightmare, /players 8 | Dark Wood (1,4), `--sweep` | 205 | 279 | 0 | 19 | 0 | 300 |
+| sorh-n-darkwood | 4711 | CombatSorH | Normal, /players 8 | Dark Wood (1,4) | 90 | 38 | 169 | 23 | 0 | 300 |
+| sorh-n-lostcity | 4712 | CombatSorH | Normal, /players 8 | Lost City (2,6) | 25 | 12 | 49 | 190 | 0 | 156 |
+| sorh-n-marsh | 4713 | CombatSorH | Normal, /players 8 | Black Marsh (1,5) | 68 | 34 | 122 | 6 | 0 | 218 |
+| sorh-n-cityd | 4719 | CombatSorH | Normal, /players 8 | City of the Damned (4,2) | 73 | 37 | 82 | 34 | 0 | 220 |
+| sorh-n-travincal2 | 4791 | CombatSorH | Normal, /players 8 | Travincal (3,8) | 29 | 7 | 38 | 187 | 0 | 300 |
+| sorh-n-travincal3 | 4792 | CombatSorH | Normal, /players 8 | Travincal (3,8) | 31 | 3 | 31 | 300 | 0 | 300 |
+| sorh-n-catacombs2 | 4793 | CombatSorH | Normal, /players 8 | Catacombs Level 2 (1,9) | 14 | 10 | 47 | 7 | 0 | 88 |
+| sorh-h-lostcity1 | 4721 | CombatSorH | Hell | Lost City (2,6) | 30 | 500 | 51 | 0 | 0 | 300 |
+| sorh-h-lostcity2 | 4722 | CombatSorH | Hell | (left the level after 11 s: no event) | 0 | 0 | 0 | 0 | 0 | 0 |
+| sorh-h-lostcity3 | 4723 | CombatSorH | Hell | Lost City (2,6) | 117 | 500 | 122 | 2 | 0 | 300 |
+| sorh-h-lostcity4 | 4724 | CombatSorH | Hell | Lost City (2,6) | 101 | 500 | 14 | 0 | 0 | 300 |
+| dr-n-plains | 4731 | CombatDR | Normal | Cold Plains (1,2) | 78 | 206 | 0 | 3 | 0 | 242 |
+| dr-n-darkwood | 4732 | CombatDR | Normal | Dark Wood (1,4) | 104 | 65 | 0 | 2 | 0 | 171 |
+| dr-n-travincal | 4734 | CombatDR | Normal | Travincal (3,8) | 38 | 8 | 0 | 232 | 0 | 300 |
+| abs-n-plains | 4741 | CombatAbs | Normal | Cold Plains (1,2) | 95 | 87 | 0 | 18 | 62 | 236 |
+| abs-n-darkwood | 4742 | CombatAbs | Normal | Dark Wood (1,4) | 109 | 361 | 0 | 19 | 198 | 300 |
+| abs-n-marsh | 4743 | CombatAbs | Normal | Black Marsh (1,5) | 111 | 148 | 0 | 77 | 212 | 300 |
+| frz-n-plains | 4751 | CombatFrz | Normal | Cold Plains (1,2) | 97 | 115 | 0 | 60 | 0 | 210 |
+| ama-n-stand | 4761 | CombatAma | Normal, /players 8 | Cold Plains, walking explore with Attack | 109 | 349 | 0 | 9 | 0 | 300 |
+| ama-n-walk | 4763 | CombatAma | Normal, /players 8 | Cold Plains, walk toggle (`r`) | 56 | 260 | 0 | 55 | 0 | 300 |
+| ama-n-idle1 | 4765 | CombatAma | Normal, /players 8 | Stony Field, walk in, stand 3 × 90 s | 49 | 500 | 0 | 6 | 0 | 300 |
+| amad-n-idle1 | 4795 | CombatAmaD | Normal, /players 8 | Cold Plains, walk in, stand 3 × 90 s | 63 | 500 | 0 | 15 | 0 | 300 |
+| amad-n-run | 4798 | CombatAmaD | Normal, /players 8 | Cold Plains, running explore | 41 | 135 | 0 | 5 | 0 | 193 |
+| amaw-n-walk | 4799 | CombatAmaW | Normal, /players 8 | Stony Field, walk toggle (`r`) | 38 | 123 | 0 | 81 | 0 | 300 |
+| ass-n-plains | 4771 | CombatAss | Normal, /players 8 | Cold Plains | 63 | 229 | 0 | 1 | 0 | 253 |
+| ass-n-plains2 | 4772 | CombatAss | Normal, /players 8 | Stony Field | 38 | 500 | 0 | 8 | 0 | 300 |
+| ass-n-plains3 | 4774 | CombatAss | Normal, /players 8 | Dark Wood (explore stopped after 5 hops) | 0 | 6 | 0 | 0 | 0 | 7 |
+| asso-n-plains | 4773 | CombatAssO | Normal, /players 8 | Cold Plains | 43 | 120 | 0 | 0 | 0 | 126 |
+
+`ass-n-plains2`'s pilot was killed by the OOM at hop 30; the game ran on under its driver's `--after` with the
+Assassin standing (the log ends at 20:34 with gdb's `exited normally`), so its later events are a standing player's.
+`sorh-h-lostcity2` and `ass-n-plains3` are in the run list with 0 and 13 events. Staged but not run, as their cases
+were met or capped first: `ow-nm-champs4`…`6`, `sorh-n-oasis`, `sorh-n-catacombs`, `sorh-n-upperk`,
+`sorh-n-travincal`, `sorh-n-spider`, `sorh-n-catacombs3`, `sorh-h-lostcity5`/`6`, `abs-nm-marsh`, `frz-nm-plains`,
+`ama-n-run`, `ama-n-walk2`, `ama-n-idle2`/`3`, `amad-n-idle2`/`3`.
+
+Not part of the run: `owf-n-andariel-p8` (seed 3712, `CombatOWF`; below) and the development log
+`dev-p47h-amaw-n-walk-steelclash.log` (the first `amaw-n-walk`, with *Steelclash*, whose level 17 left it unusable at
+level 5: all 225 player `DRB` lines read 0, the shield test of `UnitBlockChance`; the recipe was changed to *Pelta
+Lunata* and the session re-run).
+
+### Log manifest
+
+| file (under `workspace/logs/combat/`) | sha256 | what |
+|---|---|---|
+| `p47h-run.lst` | `89fce594…` | the 31 logs of the run, in check order |
+| `p47h-manifest.txt` | `04dadb8c…` | per log: sha256, size, line count (`tools/combat.py manifest`), the 31, `owf-n-andariel-p8` and the dev log |
+| `p47h-logs.sha256` | `7211a9b4…` | `sha256sum -c` from this directory: every log and output of this table |
+| `p47h-check.json`, `p47h-check.txt` | `4e7ee7a7…`, `e748e625…` | the checker over the run list |
+| `p47h-owf-check.json`, `p47h-owf-check.txt` | `5db67372…`, `3ccb063d…` | the checker over `p47h-owf-n-andariel-p8.log` |
+| `p47h-mode2-hits.py`, `.txt` | `cf2c105f…`, `23f3a7d2…` | events on a player in mode 2 per log (the walking block) |
+| `p47h-mode14.py`, `.txt` | `b76b02da…`, `65348be0…` | monster attacks in mode 14 by return address and class, with or without their own `MAS` (the 40 logs of `c37r-run2.lst` and the 31) |
+| `p47h-defrolls.py`, `.txt` | `c535f3d1…`, `06e7e82a…` | player defence rolls by label, defender mode and outcome, over the run list |
+| `p47h-monflags.py`, `.txt` | `6223837f…`, `9c795179…` | the type flags `0x0C` of every monster first seen in a `MON` line, over the 74 combat logs on disk |
+| `p47h-<session>.pilot.txt`, `-shots/` | — | the driver's output and screenshots |
+
+### Procedure and result
+
+1. The sessions, five batches (above).
+2. `systemd-run --user --scope -p MemoryMax=4G python3 -I tools/combat.py check $(cat
+   workspace/logs/combat/p47h-run.lst) --no-shield-log p47h-ass-n-plains,p47h-ass-n-plains2,p47h-ass-n-plains3,p47h-asso-n-plains,p47h-dr-n-plains,p47h-dr-n-darkwood,p47h-dr-n-travincal,p47h-amad-n-idle1,p47h-amad-n-run
+   --json workspace/logs/combat/p47h-check.json`, `tools/combat.py` at `9d8a1fa` (`bd80126a…`): **0 mismatches over
+   18 737 events** (pa 2 213, ma 6 429 of which 8 dropped, ha 725, md 1 378, pm 472, MAS 7 520).
+   `--no-shield-log` (new) names the logs whose player holds no usable shield (the claws, `CombatAmaD`, and
+   `CombatDR`, whose two-handed *Spellsteel* leaves *Kerke's Sanctuary* with block chance 0 in all 18 of its player `DRB` lines,
+   12 + 4 + 2): `UnitBlockChance`'s shield test is a value oracle, as before; the logs carry no equipment.
+3. The same checker over `c37r-run2.lst` (the kept run): `SUMMARY mismatches=0 events=40655`, unchanged except two
+   counters: `defence roll block` 9 288 is new, and the crushing-blow label `champion (0x04)` takes 72 of the 163
+   events labelled `unique` (below).
+
+**Checker changes** (`tools/combat.py`, commits `157e502`…`9d8a1fa` on `lane/p47h`): the `≤ 0` delivery counter
+(`delivery total negative/zero (life unchanged)`, backlog resume-lane follow (b)); the dead-defender test from
+`sub_005541B0_UnitIsDead`; `STATEVENT_Freeze` up to its nested delivery; flat absorb per element; defence rolls
+counted per label and the undivided mode-2 block; `--no-shield-log`; the crushing-blow label tests `0x04` before
+`0x08`; an attacker's own `MonAttackStats` inside its event (`sandraider2` in mode 14, return `0x005CAED8`: 6 of the 14 such
+events before a `MAS` cap call it, over the 71 logs of `p47h-mode14.txt`) gives the build its stats (`MAS1`, a value oracle as at `EV0`) and
+must enter on the attacker's running seed (5 events, asserted); past a log's `MAS` cap such an event has no stats
+input and is dropped with a count (8, one log).
+
+| case (plan 0047 Phase 2) | count, this run | label in `p47h-check.txt` | met |
+|---|---:|---|---|
+| crushing blow on champions (Nightmare) | 40 (52 in all) | `crushing blow on champion (0x04)` | yes |
+| cold resistance at the cap | 4 | `resist application cold at cap` | **no** |
+| lightning resistance at the cap | 42 | `resist application light at cap` | yes |
+| magic immunity | 36 | `resist application magic immune` | yes |
+| negative absorbed amount | 186 | `negative absorbed amount (no heal)` | yes |
+| negative total, life unchanged (player) | 488 (+ 113 at 0; 32 at 0 on a monster) | `delivery total negative/zero (life unchanged)` | yes |
+| evade | 31 of 46 rolls | `evade`, `defence roll evade` | yes |
+| weapon block | 30 of 50 rolls | `weapon block`, `defence roll wblock` | yes |
+| dodge | 109 of 172 rolls | `dodge`, `defence roll dodge` | yes |
+| avoid | 68 of 103 rolls | `avoid`, `defence roll avoid` | yes |
+| freeze | 81 | `freeze handler: freeze delivered` | yes |
+| flat absorb | 113 (fire; cold 0, lightning 0) | `flat absorb fire on the player (amount > 0)` | yes (fire) |
+| a walking player's block | 6 | `block not divided: moving player in mode 2 (walk)` | **no** |
+
+- **Champions carry `0x08`.** No monster of the 74 combat logs on disk has type flag `0x04` without `0x08`: 6 982
+  with neither, 328 with `0x08` only, 164 with both (`p47h-monflags.txt`). A champion is a special monster on which
+  `SpecialModsRoll`'s champion roll set `0x04` (monsters/0003 § 2), so "`0x04` and not `0x08`", the label the
+  checker used, is empty on stock spawns; the 72 kept-run and 52 new crushing blows on `0x0C` defenders are the
+  champion case, all at `k` = 4 raised by the player count. `STATEVENT_CrushingBlow` tests neither flag
+  (combat/0001 § 10), so the reading needs no split.
+- **Weapon block and the skill check.** `WBS` = 13 in all 50 rolls of the two-claw `CombatAss` (15, 34, 1 per log);
+  `CombatAssO` (one claw, empty left hand) logged `WBS` 12 once and rolled no weapon block. So 13 is what the two-claw
+  layout gives and 12 the one-claw layout (Phase 1 review ruling 3 (b)); what the value is (a weapon class row) stays
+  unread.
+- **The walking block.** 48 events on a player in mode 2 over `ama-n-walk` and `amaw-n-walk`, 6 of them hits that
+  reached the block roll, all with `DRM` `mv` = 1 and the chance not divided (`p47h-mode2-hits.txt`): the
+  exception holds where seen, under the floor. Ruling 3 (a)'s one more session was `amaw-n-walk` (`ama-n-walk2`
+  replaced by it, since the cause was the to-hit floor, not the mode).
+- **Cold at the cap.** 4: in Normal (no penalty) a cold hit on the player needs a cold El row that rolls (the Dark Wood's
+  cold rows `fallen2` and `quillrat2` have an empty `El1Pct`) or a cold-enchanted special; Travincal's cantors and vampires
+  (`El1Pct` 65) were rarely in melee range of `CombatSorH`, and the Lost City drew no cold row on seed 4712. With the
+  kept run's 27 it is 31 over two runs.
+- **Prevent-heal (state 52) needs no draw, in a run log.** `abs-n-plains` (`CombatAbs`, *Blackhorn's Face*,
+  `noheal`) has 81 and the run 271 state-52 `STA` lines between the to-hit and the defence rolls, each skipped with no
+  draw and every seed after it asserted, 0 mismatches.
+- **`owf-n-andariel-p8`** (`CombatOWF`, seed 3712, Normal Andariel; not in the run): 633 events, 68 state-52 lines
+  skipped, **57 mismatches, all "expected `AD1`, got `EVH`"** (the event-9 handler `0x005C01D0`, function 28
+  `item_healafterkill`, not modelled: plan 0045 Phase 2). It is the kept replacement of the lost `e001b03e…` log
+  (backlog resume-lane follow (a)): `p47h-owf-n-andariel-p8.log` `a411b34d…` in `p47h-manifest.txt`.
+- **Conclusion:** every case but two passes the floor with 0 mismatches; cold at the cap (4) and the walking block (6)
+  are named again with these counts; the magic cap stays unstaged (Phase 1 ruling 2). Raises in
+  [combat/0001 § 16](0001-formulas.md#16-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls). (run:2026-10-20-shortfalls)

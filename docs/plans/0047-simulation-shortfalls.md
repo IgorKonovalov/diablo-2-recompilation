@@ -257,3 +257,41 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     that the record does not say why. (2) not the lane's (pre-existing, flagged by the lane): [how-we-know](../wiki/how-we-know.md)
     said plan 0041's specs were not reviewed and no wiki page restated them; it now says they are reviewed and points at
     [stats and states](../wiki/stats-and-states.md).
+- **2026-10-21 — Phase 2 landed (reverser, `lane/p47h`; slot 2 only; no Ghidra).** Review requested. The first
+  lane ran batches A and B and was killed with every agent by systemd-oomd at 20:12 (no resume note); this lane kept its
+  uncommitted `combat_sessions.py` edit (Travincal and Catacombs Level 2 seeds, checked against Levels' rows), re-ran
+  the two killed checks and ran the rest. **run:2026-10-20-shortfalls**, one run under three checkers:
+  [combat](../findings/combat/experiments.md#run2026-10-20-shortfalls) (31 logs, **0 mismatches over 18 737 events**),
+  [stats](../findings/stats/experiments.md#the-stats-sessions-of-run2026-10-20-shortfalls) (10 logs, **0 mismatches**)
+  and [travel](../findings/quests/experiments.md#the-travel-sessions-of-run2026-10-20-shortfalls) (1 log, **0
+  mismatches over 2 625 checks**); the kept runs re-check unchanged (combat `c37r-run2.lst` 0 / 40 655, stats
+  `s1017-check-p47r.json` byte-identical, `tools/test_stats.py` and `tools/test_d2s.py` pass).
+  - **Reached** (each ≥ 30, this run): crushing blow on champions 52 (40 in Nightmare; champions carry `0x08` with
+    `0x04`, so the checker's "`0x04` and not `0x08`" label was empty on stock spawns and is fixed); the lightning cap
+    42; magic immunity 36; the negative absorbed amount 186; the total ≤ 0 with life unchanged 488 (+ 113 at 0; the
+    resume-lane counter (b)); evade 31 (46 rolls); weapon block 30 (50 rolls; `WBS` 13 with two claws, 12 with one,
+    ruling 3 (b)); dodge 109; avoid 68; freeze 81; flat absorb 113 (fire only; cold and lightning 0); stats: 71 curses
+    refused in `attract` (151 made outside it); 120 aura on and off events (61 + 59, the ends by the skill switch);
+    43 different-state group clears (groups 1 and 2).
+  - **Named again:** the cold cap 4 (27 kept, 31 over the two runs); the walking block 6 in 48 mode-2 events (ruling
+    3 (a)'s extra session spent on `amaw-n-walk`); group 3 (12 unchecked clears, no exit line; ruling 3 (c): the
+    skill path's reach stays `[I]`, to `[L]` under *Open questions* in Phase 3); the 256 floor 0 (no poison taken);
+    the curse resistance cut 0 (no witch curse); expiries 30 (153 with the kept 123, of 300: the potion plan drank no
+    inventory potion in three attempts, dev logs kept); shrines and wells 3 (15 with the kept 12, of 50); waypoint
+    activation from mode 0: 1 of 20 (the Act V route's warp search fails on most seeds). The magic cap stays
+    unstaged (ruling 2).
+  - **The *Fleshripper* log** is kept (`workspace/logs/combat/p47h-owf-n-andariel-p8.log`, `a411b34d…`, outside the
+    run: 57 mismatches, all the unmodelled event-9 handler, plan 0045 Phase 2); backlog entry
+    [resume-lane follow](../backlog/archive/2026-10-17-architect-reverser-plan-0037-resume-lane-review-follow.md)
+    closed with (a) and (b).
+  - **Tools:** `tools/combat.py` (`--no-shield-log`, the champion label, an attacker's own `MonAttackStats` inside its
+    event, the per-label defence-roll counters), `tools/stats.py` (the `Expansion` row of `itemtypes` skipped: the
+    claw-mastery param was one high), `tools/d2pilot.py --dead-below`, `tools/stats_sessions.py` (the potion plan's
+    inventory key), recipes `CombatAmaD` and `CombatAmaW` (level 5, to-hit above the floor), pinned.
+  - **Findings:** [combat/0001 § 16](../findings/combat/0001-formulas.md#16-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls)
+    (evade, weapon block, dodge, avoid, crushing blow on champions, the lightning cap, magic immunity, the negative
+    field, flat absorb, freeze, prevent-heal's no draw raised to `[C]`; the unusable shield and the in-event
+    `MonAttackStats` read `[I]`), [stats/0002 § 9](../findings/stats/0002-states.md#9-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls)
+    (the `attract` refusal on monsters, the different-state group clear for groups 1–2, the aura end by the skill
+    switch, `[C]`), [quests/0002](../findings/quests/0002-travel.md) (one mode-0 activation, stays `[I]`). Phase 3 may
+    start on the counts above.

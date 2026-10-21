@@ -23,7 +23,8 @@ against this finding; § 8 lists what each claim was checked against and what st
 - [I] A curse is refused when the target's `curse_resistance` (109) is ≥ 100 or the target is in state 57
   `attract`, and its duration loses `MulDiv(duration, r, 100)` with `r` = stat 109 (a negative `r` lengthens it; the
   test is signed): unreachable on stock data for the player (no item or affix carries stat 109; no monster casts
-  Attract). (0x0056E9C9–0x0056EA4A, tbl:ItemStatCost.txt:Stat)
+  Attract). (0x0056E9C9–0x0056EA4A, tbl:ItemStatCost.txt:Stat) *2026-10-20 (plan 0047 Phase 2):* the `attract` refusal
+  is raised for a monster target (§ 9); the stat-109 cut stays here.
 - [C] **Expiry.** Unit event 12 (`EVENT_TimedListExpire`) frees every timed list (flag `0x2`) whose `+0x18` ≤ the
   current frame; each request queues its own event, so a refreshed list's earlier event fires and frees nothing.
   (fn:EVENT_TimedListExpire@0x00580800, fn:UNIT_ExpireTimedLists@0x00627460, run:2026-10-17-stats)
@@ -36,7 +37,8 @@ against this finding; § 8 lists what each claim was checked against and what st
   callback; when the set breaks the call clears `monsterset` itself (180 clears, § 8). (fn:STATE_GroupClear@0x0056C740,
   fn:sub_0055B800_MonStatCallback@0x0055B800, tbl:States.txt:group, run:2026-10-17-stats)
 - [I] The exclusion of a *different* state of the same group (the Druid's shapes and `maul`/`feralrage` share group 3
-  with `monsterset`) was not reached. (fn:STATE_GroupClear@0x0056C740, tbl:States.txt:group)
+  with `monsterset`) was not reached. (fn:STATE_GroupClear@0x0056C740, tbl:States.txt:group) *2026-10-20 (plan 0047
+  Phase 2):* reached for groups 1 and 2 (43, § 9); group 3 stays as here.
 - [C] **The per-frame ticks** (player event 3, every frame): stamina `+= max >> 8` standing, `>> 9` walking (not
   below 1 point outside town), none running unless `staminarecoverybonus` ≥ 1000, `× (100 + bonus)/100`; mana
   `+= MulDiv(max / (ManaRegen·25), 100 + manarecoverybonus, 100) + manarecovery`, off under state 85 `nomanaregen`;
@@ -336,6 +338,7 @@ low defence, to be poisoned) walked Act II, III and V areas; the Barbarians and 
   levels, against each other: 1 013); a higher level frees the old list and makes a new one (2). The curse branch's cut by stat 109
   and the `attract` refusal were not reached: no stock item or affix carries `curse_resistance` (properties with stat
   109: none), and no monster casts Attract (MonStats skills). (fn:STATE_ApplyTimed@0x0056E970, run:2026-10-17-stats)
+  *2026-10-20:* the `attract` refusal is reached on monsters by a Necromancer's own Attract (§ 9).
 - [I] **Shrine states are curses.** States 128–137 have the `curse` bit, so a shrine's list carries flag `0x20` and
   is "the" curse of § 2: it replaces a monster curse and a curse replaces it. The run applied 3 timed shrines
   (codes 10 (1), 8 (2)) with flag `0x22`, the duration `Duration in frames` and, for `SHRINE_TimedStat`, the table's
@@ -359,7 +362,8 @@ low defence, to be poisoned) walked Act II, III and V areas; the Barbarians and 
   `SKILLS_NextPeriodicFrame` with Prayer's and Sanctuary's `perdelay` 50; each target state's duration was
   `perdelay + 1` = 51 (6 207 applies, Conviction's included). An aura state's start and end were rare: new 6
   (Sanctuary's 47 five times, Conviction's 28 once), replaced 2, and one end by expiry (28); the end is the timed
-  expiry above, and the Prayer and Sanctuary states never ended (the auras always reached the player). (fn:EVENT_SelectedAuraTick@0x0056FCB0, fn:EVENT_ItemAuraTick@0x0056FE40,
+  expiry above, and the Prayer and Sanctuary states never ended (the auras always reached the player). *2026-10-20:*
+  59 ends by the skill switch, § 9. (fn:EVENT_SelectedAuraTick@0x0056FCB0, fn:EVENT_ItemAuraTick@0x0056FE40,
   fn:SKILLS_NextPeriodicFrame@0x0056CD50, tbl:Skills.txt:perdelay, run:2026-10-17-stats)
 - [C] **The regeneration tick** (§ 6): 54 719 player ticks; the life, stamina and mana written equal the formulas of
   § 6 from the mirrored stats, the unit mode and state 85 (life: +74 1 424, capped 10 657, −74 1 082, no 74 41 556; mana: regenerated 48 433,
@@ -373,7 +377,8 @@ low defence, to be poisoned) walked Act II, III and V areas; the Barbarians and 
   other state of group 3 was on the player and nothing was cleared (180); when the set broke (98 back to 0) with the
   self argument 1, the call cleared state 176 itself (180 effective clears; a reading that clears only the *other*
   states of the group predicts the bit kept). A clear of a *different* state of the same group (the Druid's `wolf`,
-  `bear`, `maul`, `feralrage`, or `delerium`) was not reached: that half stays `[I]`.
+  `bear`, `maul`, `feralrage`, or `delerium`) was not reached: that half stays `[I]`. *2026-10-20:* raised for groups 1
+  and 2 (§ 9).
   (fn:sub_0055B800_MonStatCallback@0x0055B800, 0x0055BD8F–0x0055BDC4, fn:STATE_GroupClear@0x0056C740,
   tbl:States.txt:group, run:2026-10-17-stats)
 - [C] **Draws** (§ 7, the P1 review's draw-freedom amendment): the game seed and the acting unit's seed were equal at
@@ -389,6 +394,33 @@ low defence, to be poisoned) walked Act II, III and V areas; the Barbarians and 
   monster's own seeds (not the caster's). That draw is the skill's damage (phase 3), outside this plan's stat and
   state code. (fn:SKILLS_RollElemDamage@0x0056E0C0, fn:sub_005CF3A0_AuraHitDo@0x005CF3A0, fn:RNG_RangeB@0x0045C3E0,
   run:2026-10-17-stats)
+
+### 9. Plan 0047 Phase 2: the shortfalls (`run:2026-10-20-shortfalls`)
+
+The record: [experiments § The stats sessions of run:2026-10-20-shortfalls](experiments.md#the-stats-sessions-of-run2026-10-20-shortfalls); `tools/stats.py`
+over its run list with 0 mismatches.
+
+- [C] **A curse on a monster in `attract` is refused** (§ 2, raised in part: the `attract` half on a monster target):
+  71 Amplify Damage requests on monsters with state 57 set, all refused (no list), and 151 on monsters without it, all
+  made, in the same session (`nec-attract1`, the Necromancer's own Attract, ruling 2); 239 monster requests left both
+  seeds unchanged. A reading without the test could not refuse 71 of 71 while making 151 of 151. The curse
+  resistance cut (stat 109) stays `[I]`: no witch cursed the player in `ass-curses1`. (fn:STATE_ApplyTimed@0x0056E970,
+  0x0056E9C9–0x0056EA4A, run:2026-10-20-shortfalls)
+- [C] **A different state of the same group is cleared** (§ 2, raised in part: groups 1 and 2): 43
+  `STATE_GroupClear` calls cleared another state of the applied state's group, each `GRX` bit set as predicted:
+  group 1 (`frozenarmor` 10, `chillingarmor` 20, `shiverarmor` 88) 20, group 2 (`fade` 159, `quickness` 157) 23.
+  Group 3 stays `[I]`: 12 calls for `bear` (140) found `wolf` (139) set and the bit was gone at the nested call that
+  followed, but those calls logged no exit line, so they are unchecked. (fn:STATE_GroupClear@0x0056C740,
+  tbl:States.txt:group, run:2026-10-20-shortfalls)
+- [C] **An aura state ends when the aura is switched off**: 61 aura target-state lists made (Might 33, Defiance 34,
+  Prayer 37) and 59 unlinked, all from `sub_005701B0_PlayerSetSkill` (return `0x005702E1`) through
+  `UNIT_UnlinkStatList` when the next aura key changed the right skill, before the timed expiry; each unlink's writes
+  checked. This is a second end path beside the timed expiry of § 3 (the one end of run:2026-10-17-stats).
+  (fn:sub_005701B0_PlayerSetSkill@0x005701B0, fn:UNIT_UnlinkStatList@0x006277E0, run:2026-10-20-shortfalls)
+- [I] **Named again**: the 256 floor (neither `StatsFloor` field poisoned the player), the expiries (30 this run, 153 with
+  run:2026-10-17-stats, against 300: the potion plan drank no inventory potion), shrines and wells (3 shrines, no well;
+  15 with the kept run, against 50).
+  (fn:sub_00580610_LifeRegenTick@0x00580610, fn:EVENT_TimedListExpire@0x00580800, run:2026-10-20-shortfalls)
 
 ## Data touched
 

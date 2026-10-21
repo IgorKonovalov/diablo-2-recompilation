@@ -475,3 +475,28 @@ Runtime records for [quests/0001](0001-progression.md) and [quests/0002](0002-tr
 - **Conclusion:** raises, corrections and shortfalls in
   [quests/0001 § 17](0001-progression.md#17-phase-2-part-3-run2026-10-19-quests3) and
   [quests/0002 § 14](0002-travel.md#14-phase-2-part-3-run2026-10-19-quests3).
+
+## The travel sessions of run:2026-10-20-shortfalls
+
+The run is defined in [combat/experiments § run:2026-10-20-shortfalls](../combat/experiments.md#run2026-10-20-shortfalls);
+this is its travel case (plan [0047](../../plans/0047-simulation-shortfalls.md) Phase 2: 20 waypoint activations from
+mode 0 with the `Sync` 0 object-seed draw chained).
+
+- **Setup:** slot 2, tag `p47h`, `tools/quest_sessions.py run --slot 2 --tag p47h --run p47h x-wpact5r-0 …`
+  (`9041577b…`), logger `tools/gdb/quest-state.gdb` (`c54d695f…`), checker `tools/quests.py` (`b6dfb1a3…`, unchanged
+  since the plan 0042 review). Save `TravelWpArreat` (`quest-p47wp.json`, `f3c935c3…`, pinned), the route of plan
+  0047 Phase 1: waypoint to the Arreat Plateau, LvlWarp 71, 74, 74, 71 down, an approach and an activation at each
+  waypoint.
+- **Sessions:** `x-wpact5r-0` (seed 4781): the Crystalline Passage's waypoint (level 113) approached through its preset
+  room and operated from mode 0 (1 activation); the Glacial Trail's approach then failed (0 activations) and the
+  driver ended in level 111. `dev-p47h-x-wpact5r-1` (seed 4782, stopped by the lane at the Crystalline Passage's
+  activation step: the Arreat Plateau search found no warp 71, every room activated or skipped; no activation). Not
+  run: `x-wpact5r-2`…`5`.
+- **Check:** `tools/quests.py check workspace/logs/quests/p47h-x-wpact5r-0.log`: `SUMMARY mismatches=0 checks=2625`
+  (`p47h-check.txt`), among them `waypoint mode 0 -> 1` 1, `waypoint object seed` 2 (the mode-0 operate's one object-seed
+  step, the class's `Sync` 0, and the arrival waypoint's none), `waypoint record bit` 2; the dev log 0 mismatches over
+  4 403 checks. `tools/quests.py wpmodes` over both logs: 3 field waypoints first seen in mode 0 with no arrival, 2 in
+  mode 1 after an arrival (`p47h-wpmodes.txt`). Hashes in `workspace/logs/quests/p47h-manifest.sha256` (`7b9d7e59…`,
+  `sha256sum -c` from `workspace/logs/quests/`).
+- **Result:** 1 activation from mode 0 of the 20 asked, checked with its object-seed step: named again (the pilot's
+  warp search and approach fail on most Act V seeds). (run:2026-10-20-shortfalls)
