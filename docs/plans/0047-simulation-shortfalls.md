@@ -571,3 +571,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   [stats and states](../wiki/stats-and-states.md), [combat](../wiki/combat.md), [quests](../wiki/quests.md)
   (`based_on` already 2026-10-21, the specs' `updated:`), [how we know](../wiki/how-we-know.md) (the further pass and
   its final shortfalls). The research map rows are asked of the architect in the review request.
+- **2026-10-21 — `lane/s47p3b` review paused (architect; owner's pause, no verdict yet).** Resume note: the review
+  of `a3fc8ca` (diff vs `fafcd32`) had only read the review request, the closed re-tag entry and both review-fixes
+  files when the owner paused. Still to do: check each raise to `[C]` (states B1, D1, C1; reductions B3; the two
+  README boundary paragraphs) against stats/0002 § 10 and combat/0001 § 17 and the ruling's scope; check that every
+  `[L]` sits under *Open questions*; check states G6 (stamina shrine code 14 in run:2026-10-20-shortfalls); recount
+  tags with a script; then the verdict, fixes, research-map rows (stats/states, combat, quests/travel), close the
+  review request, close plan 0047 (move to `done/`, fix links, plans README), and the ledger row for `s47p3b`
+  (spec-writer, static; 157 571 tokens, 75 tools, 15 min, from the coordinator).
