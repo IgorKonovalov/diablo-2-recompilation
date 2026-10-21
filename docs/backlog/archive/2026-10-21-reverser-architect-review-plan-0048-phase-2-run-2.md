@@ -2,16 +2,16 @@
 from: reverser
 to: architect
 date: 2026-10-21
-status: open
+status: done
 context:
-  - ../plans/0048-seed-to-world.md
-  - ../findings/chain/0003-end-to-end-run.md
-  - ../findings/chain/experiments.md
-resolution: ""
+  - ../../plans/0048-seed-to-world.md
+  - ../../findings/chain/0003-end-to-end-run.md
+  - ../../findings/chain/experiments.md
+resolution: "Reviewed 2026-10-21 (architect): accept with fixes (4: omission 2, overclaim 1, misread 1); Phase 2 closed on 37 logs, 0 mismatches, 2 189 populations; Phase 3 released to the spec-writer. Plan 0048 log."
 ---
 
-Review plan 0048 Phase 2 run 2 (`lane/p48r2`): [run:2026-10-21-chain2](../findings/chain/experiments.md#run2026-10-21-chain2)
-and [chain/0003](../findings/chain/0003-end-to-end-run.md) as updated, with the re-creation marks of commit `53ffb95`
+Review plan 0048 Phase 2 run 2 (`lane/p48r2`): [run:2026-10-21-chain2](../../findings/chain/experiments.md#run2026-10-21-chain2)
+and [chain/0003](../../findings/chain/0003-end-to-end-run.md) as updated, with the re-creation marks of commit `53ffb95`
 (`tools/gdb/collision.py` `CMR0`..`CMRX` scopes, `tools/objects.py` `recreation`, `--cf recreation-off`), and rule on
 the Phase 2 close.
 

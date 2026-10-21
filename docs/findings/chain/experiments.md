@@ -166,7 +166,9 @@
   `.pilot.txt`, the outputs above, the development outputs `out/dev-r2-*` and the tool hashes. Run 1's
   `manifest-final.txt` and the checkpoint's `manifest-r2-ckpt1.txt` stay as kept (the checkpoint's stub
   `p2r2-s1-4871-r2-xm1.pilot.txt`, empty, is renamed `dev-p2r2-s1-4871-r2-xm1-paused.pilot.txt` so the session could
-  run under its name; its line in `manifest-r2-ckpt1.txt` no longer resolves).
+  run under its name; its line in `manifest-r2-ckpt1.txt` now fails `sha256sum -c`, because the name holds the
+  session's pilot: the empty stub's hash, `e3b0c442…`, is in `manifest-r2-final.txt` under the new name (corrected at
+  the review; the run first said the line no longer resolves)).
 
 | Log | Seed | Character | Difficulty | Levels (PLR order) | Wall min | Game min | MB | Ended |
 |---|---|---|---|---|---|---|---|---|
@@ -231,14 +233,17 @@
   creations outside the model with no level known (34), region appends by a creation outside the model (12), the
   presets-window cell tests whose room has no cells (35 each), the special-count increment in a preset's creation (8),
   one gold spot, and the chest interact bytes taken at the operate (lock bit set 2, lock bit cleared 3, cleared to 0 2;
-  r2-xm1 holds the second "cleared to 0"). Inputs: `AROOM` 18 459, `LG0` 7 343, `NWW` 21 943, `OG` 4 883, `PLR`
+  r2-xm1 holds the second "cleared to 0"), and oracle 25 (chain/0001: the restored monster's state, a simulation
+  input): each revisit re-creation's class and unit id (`MT0`), cell (`MU0`) and alive or dead (`a10`) are taken from
+  the log, 7 290 re-creations (103 of them made no unit; added at the review). Inputs: `AROOM` 18 459, `LG0` 7 343, `NWW` 21 943, `OG` 4 883, `PLR`
   51 214, `SN` 4 883, `TCR` 3 784 (with the game seed at each drop), `QKMF` 473, `QMF` 479.
   - **Phase 1 world logs** (`out/r2final-p1world-check.txt`): `chain: 62 logs, 0 sub-checks failed`; the summary equals
     run 1's `out/p1world-check-final.txt` line for line but four new re-creation lines (529 re-creations, marks applied
     unchecked: 498 alive, 26 dead deadCol 0; 5 made no unit). No regression.
   - **Controls:** `--cf recreation-off` fails cn4 and cm4 with exactly run 1's two mismatches (cn4 line 72971, cm4
     line 53279, the same `COLL_WHTest` results) and fails r2-xn1 with 63 mismatches, every one a re-creation's logged
-    marks against an empty prediction; `--cf monequip-off` fails r2-xn2 (line 48791) and r2-xm1 (line 52802), each at
+    marks against an empty prediction (a floor, not 288: after each mismatch the checker resyncs to the next `RW1`,
+    `OO0`, `OGC` or `OPU0`, so the rest of that restore stretch is not tested; added at the review); `--cf monequip-off` fails r2-xn2 (line 48791) and r2-xm1 (line 52802), each at
     a class-267 `MonEquipInit` unit seed.
 - **Conclusion:** [chain/0003](0003-end-to-end-run.md). With run 2's tools the 37 logs reproduce with 0 mismatches
   and hold 2 189 oracle-free room populations; every other count of the Phase 2 bar is met on the same logs.

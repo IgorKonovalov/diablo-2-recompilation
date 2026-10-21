@@ -414,3 +414,53 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   logs; the record lists each input and remaining oracle with its count. Chest interact-byte writer (ruling 3): not
   read; chain/0003 Open question 2, for Phase 3. Slot 1 stopped, the `p48r2` aside restored (saves directory empty).
   **Next:** the architect reviews run 2 and rules on the Phase 2 close.
+- **2026-10-21 — Phase 2 run 2 reviewed (architect, on `lane/p48r2`, not merged with `main`, which touches no chain
+  finding or tool): accept with fixes (4); Phase 2 closed; Phase 3 released.** Re-run with the worktree's tools under
+  `MemoryMax=4G`: `chain.py check --o20` over run 1's 28 logs and run 2's 9, `chain: 37 logs, 0 sub-checks failed`,
+  `out/review-r2-check.txt` byte-identical to `r2final-check.txt` and `review-r2-o20.json` to `r2final-o20.json`
+  (`out/review-r2-manifest.txt`, `6d83a5e5…`); `sha256sum -c manifest-r2-final.txt` clean (`e1d9e622…`, 169 lines),
+  `manifest-final.txt` clean, `out/tools-r2-final.sha256` (`797865e9…`) matches the worktree's tools, which are
+  unchanged since `53ffb95`. The 37 per-log checks each 0 failed; the five control outputs each fail as recorded;
+  `r2final-p1world-check.txt` differs from run 1's `p1world-check-final.txt` by the four re-creation lines only, and
+  `dev-r2-p1world-check-maintools.txt` is byte-identical to run 1's (the main-tools run, kept as dev). Anchors read in
+  the image: `0x0052D142` and `0x0052D205` are `call 0x542B40` (returns `0x0052D147`, `0x0052D20A`), `0x005B2E10`
+  `test cl, 0x20` then `mov eax, 3`, `0x00649E9A` and `0x005A7CB1` `call 0x649400` (`UNIT_CollMark`), `0x005A7CA7`
+  `call 0x5541B0`, `0x00649FD8` after `push 0x8000; push 3; push 3`, `0x005B2EAB` `call 0x5543B0`; each named
+  function is in `re/symbols.csv`. Counts recounted from the re-run: 2 189 populations (323, 593, 264, 450, 263, 296),
+  176 levels (65, 36, 75; every act of each game type in each difficulty), 13 056 objects, 7 290 re-creations, oracle
+  13 at 4.
+  **Fixes** (written into the run record and chain/0003): (1) **omission**: the record's list of inputs and remaining
+  oracles left out the re-creations' own input: each one's class, unit id, cell and alive or dead state are taken from
+  the log (`MT0`, `MU0`, `a10`), chain/0001's oracle 25 (the restored monster's AI and movement, a simulation input);
+  now listed with its count (7 290, 103 made no unit), and chain/0003 § 2 scopes the marks' `[C]` to the marks made
+  from it. (2) **overclaim**: the dead sequences' `[C]` counted r2-xn1's 34 dead cases, the log the sequence was
+  corrected from; it rests on the 140 of the other eight logs (134 `deadCol` 0, 6 `deadCol` 1), said in § 2 and the
+  Answer. (3) **omission**: `--cf recreation-off`'s 63 mismatches on r2-xn1 are a floor, not 288: after each mismatch
+  `tools/objects.py` `resync` skips to the next `RW1`/`OO0`/`OGC`/`OPU0`, so the rest of that restore stretch is not
+  tested; said in the record and § 2. (4) **misread**: the renamed stub's line in `manifest-r2-ckpt1.txt` does not
+  "no longer resolve": it fails `sha256sum -c`, the name now holding the session's pilot; the stub's hash (`e3b0c442…`)
+  is in `manifest-r2-final.txt` under its new name. Corrected in the record.
+  **Rulings.** (1) **The 5 284 re-creations applied unchecked on run 1's logs are admissible** for the 0-mismatch
+  result and the population count, not as evidence for the marks. They are model predictions entering the grid, not
+  values taken from the log at a test; a wrong or missing mark that a later `COLL_WHTest` reads fails it, one no test reads
+  changes nothing the run claims (the oracle-20 snapshot comparison only counts, and its residue has no cell with a
+  model-only bit: every key is `-0000`); the populations are windows with no oracle inside, and the re-creations sit outside windows. The marks' `[C]` stands on the 1 903 compared (the dead
+  ones on 140, fix 2) and the restored state is oracle 25's input (fix 1). (2) **cn4 and cm4 count**: they pass on
+  their kept logs with the route the run-1 review ruled, their marks checked through the later tests (said in § 2),
+  and `--cf recreation-off` restores exactly their run-1 mismatches. (3) **r2-cn1 is admissible**: the game process
+  exited on its own at frame 10 920, gdb saw a normal exit, the log is whole to that line and checks clean, and no
+  model reads anything after it; the cause stays unknown and is not a claim. (4) **The first Phase 1 re-check** (main's
+  tools through the `workspace` symlink) is a development output, rightly kept and not cited; the cited re-check is
+  the worktree's. A lane that runs from a log directory calls its own worktree's `tools/` by absolute path. (5) **The
+  chest interact-byte writer** stays a counted oracle of the operate path (run-1 ruling 3; 7 cases, three kinds),
+  outside the bar; it goes to Phase 3's *Open questions* as chain/0003 Open question 2, no reverser entry now.
+  **Done-when**: met on the 37 passing logs: 0 mismatches; 176 levels (40 asked) with every generator kind, every act
+  of each game type in each difficulty; 2 189 populations (2 000); 13 056 objects (300); 63 champion and 162 unique
+  packs with 217 mods rolls (100 special monsters); 1 314 drops with an item (500) with no builder oracle; the record
+  lists each input and remaining oracle with its count (after fix 1). **Phase 2 closed.**
+  **Next: Phase 3** (spec-writer, [entry](../backlog/2026-10-21-architect-spec-writer-plan-0048-phase-3-seed-to-world-spec.md)):
+  `docs/specs/chain/README.md` and the *Inputs and oracles* updates, the re-creation marks in the owning spec, the
+  chest writer and oracle 13's unreached branches under *Open questions*; then Phase 4. Reverser `review-fixes.md`
+  rule 6 extended (a kept file renamed under a manifest's name; seen with `lane/p46m9`'s overwritten dev outputs).
+  Review request [closed](../backlog/archive/2026-10-21-reverser-architect-review-plan-0048-phase-2-run-2.md); the
+  lane's two ledger rows added (the review's row is the orchestrator's, with its usage).

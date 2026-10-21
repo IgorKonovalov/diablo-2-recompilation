@@ -2,7 +2,7 @@
 
 > **Subsystem:** chain (seed to world, plan 0048)
 > **Question:** does `tools/chain.py check`, with every Phase 1 model in, reproduce fresh games from known `-seed` values with no seed oracle inside the populations, over the coverage Phase 2 asks for?
-> **Date:** 2026-10-21   **Plan:** 0048 (Phase 2)   **Status:** open (Phase 2 run 2: 0 mismatches over 37 logs, 2 189 oracle-free populations; review requested)
+> **Date:** 2026-10-21   **Plan:** 0048 (Phase 2)   **Status:** open (Phase 2 reviewed 2026-10-21: accepted with fixes, Phase 2 closed; 0 mismatches over 37 logs, 2 189 oracle-free populations; Phase 3 next)
 
 The runs are [run:2026-10-20-chain](experiments.md#run2026-10-20-chain) (run 1: 28 scripted sessions) and
 [run:2026-10-21-chain2](experiments.md#run2026-10-21-chain2) (run 2: 9 more sessions, the revisit re-creations' marks
@@ -32,7 +32,9 @@ checker scope changed (§ 3).
 - [C] **A revisit re-creation's marks are those the model predicts**: 1 903 re-creations inside a logged restore
   scope (`CMR0` .. `CMRX`, around the two `sub_00542B40_RoomInactiveUnitsRestore` calls) have their `CM` lines equal,
   line for line, to `tools/objects.py`'s prediction: 1 729 alive, 166 restored dead with MonStats2 `deadCol` 0, 8 dead
-  with `deadCol` 1; `--cf recreation-off` fails r2-xn1 with 63 mismatches. The call path the marks take is a static
+  with `deadCol` 1 (the dead sequences' `[C]` rests on the 140 dead cases outside r2-xn1, whose log corrected them);
+  `--cf recreation-off` fails r2-xn1 with 63 mismatches. The restored monster's class, cell and state are oracle 25's
+  input. The call path the marks take is a static
   reading, `[I]` (§ 2). (0x0052D142, 0x0052D205, fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40,
   run:2026-10-21-chain2)
 - [I] **Run 1's two mismatches were re-created monsters' marks the model lacked**: in each, the `COLL_WHTest` rectangle
@@ -112,10 +114,14 @@ process ended on its own at game frame 10 920 (cause not shown); its log is whol
   ordered `PM`/`PU` and corpse `RO` lines from MonStats and MonStats2 and compares cell, room, size and mask. On run 2's
   nine logs, 1 942 re-creations in 1 000 scopes: 1 903 equal (1 729 alive, 166 dead with `deadCol` 0, 8 dead with
   `deadCol` 1), 39 requests made no unit, 0 different. Under `--cf recreation-off` r2-xn1 fails with 63 mismatches, each
-  a re-creation's logged marks against an empty prediction. The dead sequence was first predicted wrong from the code
+  a re-creation's logged marks against an empty prediction (a floor: the checker resyncs to the next window after each
+  mismatch, so the rest of that restore stretch is not tested). The re-created monster's class, unit id, cell and alive
+  or dead state are taken from the log (`MT0`, `MU0`, `a10`): oracle 25 of chain/0001, a simulation input, counted in
+  the record (7 290); the `[C]` covers the marks made from them, not where or in what state the monster was restored. The dead sequence was first predicted wrong from the code
   alone and corrected from r2-xn1's log (`out/dev-r2-xn1-check-deadlist0.txt`: 18 dead re-creations mismatched, every
   alive one matched); the other eight run-2 logs' dead cases (134 with `deadCol` 0, 6 with `deadCol` 1) were not the
-  correction's evidence and match it. (0x0052D142, 0x0052D205, 0x006494D5, run:2026-10-21-chain2)
+  correction's evidence and match it; the dead sequences' `[C]` rests on those 140, not on r2-xn1's 34 (scoped at the
+  review). (0x0052D142, 0x0052D205, 0x006494D5, run:2026-10-21-chain2)
 - [C] On run 1's 28 logs, which have no scope, the same prediction is applied to the grid unchecked (5 348
   re-creations: 4 953 alive, 328 dead `deadCol` 0, 3 `deadCol` 1, 64 made no unit) and is checked only through the
   later position tests and snapshots, which all pass; the Phase 1 world logs likewise (529). (run:2026-10-21-chain2)
