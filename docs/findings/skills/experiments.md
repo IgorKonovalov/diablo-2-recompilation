@@ -820,3 +820,74 @@ Plan 0045 Phase 2's harness runs: none yet. Plan 0046's emulated runs (ADR-0015)
   tries, the potions and missiles of the shrines, `UseCharge`); when the game runs these functions or with which
   seed. (fn:ITEMSKILL_Cast@0x005FDA80, fn:sub_005FD850_ItemTargetRandomPoint@0x005FD850,
   fn:sub_005C0470_StatEv20SkillOnEvent@0x005C0470, fn:SHRINE_Exploding@0x005830E0)
+
+## run:2026-10-21-cat-emu-8a
+
+- **Question:** (plan 0046 Phase 1, batch 8a) Do the monster start functions 42–53 and do functions 83–98, 110 and 111
+  map their inputs (the Skills, Missiles, MonStats and MonStats2 records, the caster, its path, used node, stat lists,
+  state words, frame words and owner link, the target, its path, stat list and state words, the rooms, the game frame
+  and pool word, and the seeds) to the result they return, or to the arguments, pointed-to blocks, node, path, frame and
+  argument-slot words and seed states at the call they end in, exactly as [skills/0016](0016-monster-8a.md) §§ 3–6
+  say, and which seed does each draw before its boundary step?
+- **Setup:** as run:2026-10-21-cat-emu-item: Ghidra 12.1.2 p-code emulator on the pinned `game.exe` (lane copy
+  `GHIDRA_PROJ_DIR=workspace/ghidra-p46m13`, heap 3 GB, one instance at a time, each under a 4 GB scope),
+  `re/ghidra_scripts/EmuBoundary.java` unchanged. No wine, nothing runs natively, no slot. Models, case writers and
+  checks: the `8a` families of `tools/skills_catalogue_emu.py` (`e2f67728…`; the kept outputs were emulated from case
+  files this revision regenerates byte for byte, and it reproduces the kept `check.txt` and `static.txt` byte for byte),
+  with `item`'s conventions (the call site of every boundary asserted with a site control; the caster's and the target's
+  seeds written and compared in every case; a boundary's pointer argument compared by content: the hit packets and the
+  `MissileCreate` blocks; the node, path, frame and both argument-slot words dumped and compared, each dumped byte
+  written by the case; register arguments compared only where the callee reads them before writing them; a boundary
+  inside a helper compares the helper's return address at its absolute stack slot). All inputs synthetic (stock
+  parameter values among them); every case-writer draw from `random.Random("cat8a-<family>")`. Files in
+  `workspace/logs/skills-cat-8a/`, `manifest.sha256` `10a8ce1f…` (106 files: cases, memory specs, expected inputs, outputs, the `.err` logs,
+  `cases.txt`, `check.txt` `b06f25a1…`, `static.txt` `f4ed00d9…`, `rows.txt` `d842e64a…` with its `rows.sh`, `repro.txt`
+  `485fdbef…` with its `repro.sh`, the run script `run_8a.sh`, and the three development runs under `dev/` with `dev/notes.txt`);
+  `sha256sum -c manifest.sha256` from that directory passes. `repro.txt` records that the same tool revision
+  regenerates every case, memory and expectation file of 9a, 9b, 9c, 9d, `sor`, `ama`, `nec`, `pal`, `bar`, `dru`,
+  `ass` and `item` byte for byte and reproduces their kept `check.txt` and `static.txt` byte for byte from their kept
+  outputs.
+- **Procedure:**
+  ```
+  D=workspace/logs/skills-cat-8a
+  python3 -I tools/skills_catalogue_emu.py cases --batch 8a > $D/cases.txt
+  $D/run_8a.sh $D hit_8a move_8a summon_8a miss_8a aura_8a   # one EmuBoundary instance at a time, 4 GB scope
+  python3 -I tools/skills_catalogue_emu.py check  --batch 8a > $D/check.txt
+  python3 -I tools/skills_catalogue_emu.py static --batch 8a > $D/static.txt
+  $D/rows.sh > $D/rows.txt; $D/repro.sh <scratch dir> > $D/repro.txt
+  python3 -I tools/skills_catalogue_emu.py manifest --batch 8a --write
+  ```
+  The memory spec points `g_pDataTables` at a scratch DataTables written one field per field read (Skills, Missiles
+  with count 48, ItemStatCost, MonStats, MonStats2, the calc pool, the States and PetType counts, the state set at
+  `+0xD4`, the overlay count), sets `MONSTATS_GetClassChainPos`'s table and count (`0x0096C6A8`/`0x0096C6B0`) and the
+  cookie, names the boundaries (`observe`; the allocator `0x0040B430` in `aura_8a` only) and guards the allocator and
+  the fatal path elsewhere.
+- **Observed** (`check.txt`, `static.txt`):
+  ```
+  CAT8A hit_8a    cases=2400 match=2400 bad=0 neg=679 traced=31 undeclared=0 stopped=0
+  CAT8A move_8a   cases=2600 match=2600 bad=0 neg=953 traced=7 undeclared=0 stopped=0
+  CAT8A summon_8a cases=2500 match=2500 bad=0 neg=795 traced=346 undeclared=0 stopped=0
+  CAT8A miss_8a   cases=2500 match=2500 bad=0 neg=432 traced=434 undeclared=0 stopped=0
+  CAT8A aura_8a   cases=600 match=600 bad=0 neg=409 traced=5 undeclared=0 stopped=0
+  CAT8A static data_imms=0 data_stores=0 entry_words=30 helper_sites=51 pins=52 pins_ok=52 ro_reads=8 table_entries=30
+  ```
+  12 600 cases. Every negative control fails (per-control counts on the `negative control` lines; each family has one
+  failing 90 or more: `q40` 249, `f_le1` 200, `keep3c` 251, `axis_swap` 162, `r_lvl1` 409; the thinner ones equal their
+  deciding classes on the nine `CLASS` lines); the site control fails on all 5 135 matched boundary cases (31 `site`
+  lines: function, boundary, return address; 1 041 + 1 459 + 970 + 1 159 + 506). The `.data` reads have no writer in
+  `.text`: the skills calc function count (0 stores, 0 immediates, 7 reads) and the byte map `0x00745600` (three reads
+  in `0x007455C0`–`0x007456FF`, no store, no immediate). Three development runs came first and are kept in `dev/`
+  (`dev/notes.txt`): the start 32 return slot guessed, do 98 modelled after an id test it does not make, `PathDirection`'s
+  ratio leaving its table for far points (the writer now keeps do 87's and do 88's points within 250 subtiles), and do
+  93's target words read as a point (they are offsets).
+- **Conclusion:** bit-exact reproduction (evidence rule 4, ADR-0015) of the functions' maps on returning cases (`[C]`:
+  every refusal path, start 46's node words, start 51's and 52's flag words, do 94's frame test, start 53's state-12
+  return, do 86's `n ≤ 0` return) and of their maps up to their boundary calls with the call site, the nested return
+  addresses, the arguments (register arguments where the callee reads them first), the pointed-to blocks and packets,
+  the node, path, argument-slot and frame words and both seeds asserted (`[C]` under
+  [ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md); skills/0016 names each claim's boundary). One draw
+  before a boundary: do 96's `RNG_RangeB(caster, hi − lo)`; no other case steps a seed. Not covered: what any boundary
+  callee does and everything after it (the spawns, the hits' delivery, the missiles, the continuations after
+  `CancelEvents`, do 111's loop); when the game runs these functions or with which seed.
+  (fn:sub_005CC840_SkillDo96Heal@0x005CC840, fn:sub_0064FC60_PathDirection@0x0064FC60,
+  fn:sub_005CAE40_SkillSt42FireHit@0x005CAE40)

@@ -1126,3 +1126,23 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   rows 156–189: 30 entries, start 42–53, do 83–98, 110, 111), then 8b and 8c, on the class batches' conventions, unless
   the monster-AI plan pulls one forward or takes a function as a boundary oracle (ADR-0020). Phase 2 still waits for
   0045·P3's review.
+- **2026-10-21 — Phase 1 batch 8a landed for review (reverser, `lane/p46m13`, static, no harness).** The monster skill
+  functions of Skills rows 156–189: start 42–53, do 83–98, 110, 111, 30 entries, all read and all emulated
+  ([skills/0016](../findings/skills/0016-monster-8a.md); six start entries have no Ghidra function and were read from
+  objdump). Raised by emulation (run:2026-10-21-cat-emu-8a, `tools/skills_catalogue_emu.py --batch 8a`, `check.txt`
+  `b06f25a1…`, `static.txt` `f4ed00d9…`, `manifest.sha256` `10a8ce1f…`): five families, 12 600 cases, 0 mismatches, 31 boundary/call-site triples
+  (site control 5 135 of 5 135), both seeds compared in every case, every dumped byte written by its case; one to eight
+  negative controls per family, each family with one failing 162 or more, the nine thin ones equal to their deciding
+  classes on the `CLASS` lines. New emulated helpers: `PathDirection` with its `.rdata` table, the `.data` byte map
+  `0x00745600` (scanned: no store), `0x0063E7E0`, `SkillSummonClass`'s MonStats path, `MONSTATS_GetClassChainPos`,
+  `0x00645F00`; the allocator observed in do 111's family only. The same tool reproduces 9a–9d, the seven class batches
+  and `item` byte for byte (`repro.txt`); three development runs kept in `dev/`. Draws before the boundaries: only do 96
+  (`RNG_RangeB(caster, hi − lo)`, ZakarumHeal and Bestow). Case-writer restrictions named with the reason (§§ 4–6):
+  `SkillSummonClass`'s fault for a refused non-monster class, do 111's missing id test, `PathDirection`'s overflow past
+  257 subtiles (an `[L]`). Surprises: do 110 casts missile 27 or 41 at stat 157's or 158's value as the level; do 85
+  adds the MonStats chain position to `srvmissilea`; do 93's target words are offsets; do 98 falls back to the owner's
+  room; thirteen entries make no id test. Tags: 34 `[C]`, 6 `[I]`, 4 `[L]` bullets; 38 symbols added (`I`). Dated
+  note in skills/0003 § 4 (do 83). Review request
+  [to the architect](../backlog/2026-10-21-reverser-architect-lane-p46m13-review-plan-0046-batch-8a.md); column readers
+  [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-8a-skills-monstats-missiles-column-reade.md).
+  No spec-writer entry: no spec states these functions yet (Phase 3 takes the finding).

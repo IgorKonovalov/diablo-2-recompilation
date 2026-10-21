@@ -106,6 +106,17 @@ the item and general entries and the callers of skills that are code paths (plan
               ItemIndexByCode or the first MissileCreate)
   cost_item   SKILLS_PayCost (the charge path up to UseCharge, the mana cost up to BloodManaPay / UnitAddStat)
 
+Batch 8a (`--batch 8a`, files under workspace/logs/skills-cat-8a/, draws from random.Random("cat8a-<family>")):
+the monster skill functions of Skills rows 156-189 (plan 0046 batch 8a), start 42-53, do 83-98, 110, 111:
+  hit_8a     start 42 (Fire Hit: start 32 for a player, MeleeHitTest), 47 (Jump), 50 (Quick Strike), do 83, 92
+             (DeliverQueued), do 110 (MissileSkill1: 0x00645F00's stats 157/158, the lob bit)
+  move_8a    start 43-46, 48, 49, 51, 52, do 89, 90, 91, 94, 98 (the maggots, Andariel's spray point, Swarm Move,
+             Nest's SkillSummonClass, Submerge/Emerge, MonTeleport)
+  summon_8a  do 84 (MaggotEgg), 86 (MagottDown's heal), 87 (MagottLay: PathDirection and its tables), 96
+             (ZakarumHeal: the draw on the caster's seed), 97 (Resurrect)
+  miss_8a    do 85, 88, 93, 95, start 53 (the bolts, Andariel's spray, the gargoyle trap, the infernos)
+  aura_8a    do 111 (FetishAura) up to the allocation of 0x0056C210's unit list
+
 Each check prints `CAT9A <family> key=value ...`: cases, matches, mismatches (bad), the negative control's mismatch
 count (neg, must be > 0), traced accesses outside the stack, spec and case memory (traced), those outside the declared
 read set (undeclared, must be 0), cases stopped other than at a boundary (stopped, must be 0), then the outcome and
@@ -12202,6 +12213,1278 @@ def classes_item(d):
         print("CLASS %s %d: %s" % (nm, n, what))
 
 
+# ##################################################################################################################
+# Batch 8a (plan 0046 Phase 1, the monster skills of Skills rows 156-189): start 42-53, do 83-98, 110, 111. Each
+# (ECX game, EDX unit; id, lvl), ret 8. Four families: hit_8a, move_8a, summon_8a, miss_8a. Emulated (new):
+# 0x00621810 (the unit's animation frame words +0x44/+0x48 >> 8), 0x00621DC0 with sub_0064FC60_PathDirection (the
+# 64-direction from a unit to a point, .rdata table 0x006EB7E0), 0x0063E7A0 (.data byte map 0x00745600), 0x0063E7E0
+# (.rdata offsets 0x006EA998/0x006EA978), MONSTATS_GetClassChainPos (0x0096C6A8/0x0096C6B0, set in the spec),
+# SkillSummonClass's MonStats path (+0x20, +0x22, +0x23, +0x24) and its 0x0058F710 fallback, 0x00645F00 (stats 157 and
+# 158 through UnitGetStat), 0x0063EA40, 0x0063A320 (DataTables+0xD4), 0x00648E70, 0x0045C3E0 (RNG_RangeB) and
+# 0x005CC3B0 up to its CancelEvents. Observed (new): PatternMark 0x0064EA90, PatternUnmark 0x0064EC10, CorpseColl
+# 0x00649F70, SpawnNearUnitNoBox 0x005B23C0, UnitKilled 0x0057CCB0, SpawnAtPos 0x005B2F20, COMBAT_ResolveAndQueue
+# 0x0057DBF0, SkillMissileCreateLob 0x0056EE90, UnitTeleport, and the allocator 0x0040B430 in do 111's cases only.
+# ##################################################################################################################
+FN8 = {
+    "st42": 0x005CAE40, "st43": 0x005CAF80, "st44": 0x005CB170, "st45": 0x005CB270, "st46": 0x005CB4D0,
+    "st47": 0x005CB730, "st48": 0x005CBBF0, "st49": 0x005CBD10, "st50": 0x005CBF30, "st51": 0x005CC1D0,
+    "st52": 0x005CC220, "st53": 0x005CC240,
+    "do83": 0x005CAF30, "do84": 0x005CAFA0, "do85": 0x005CB0C0, "do86": 0x005CB300, "do87": 0x005CB3C0,
+    "do88": 0x005CB580, "do89": 0x005CB940, "do90": 0x005CBC80, "do91": 0x005CBE00, "do92": 0x005CBF90,
+    "do93": 0x005CC050, "do94": 0x005CC1F0, "do95": 0x005CC4E0, "do96": 0x005CC840, "do97": 0x005CCB10,
+    "do98": 0x005CCC80, "do110": 0x005CE1B0, "do111": 0x005CE670,
+}
+BOUNDS_8 = dict(BOUNDS_B)
+BOUNDS_8.update({
+    0x00554EA0: "UnitTeleport", 0x0064EA90: "PatternMark", 0x0064EC10: "PatternUnmark", 0x00649F70: "CorpseColl",
+    0x005B23C0: "SpawnNearNoBox", 0x0057CCB0: "UnitKilled", 0x005B2F20: "SpawnAtPos", 0x0057DBF0: "ResolveQueue",
+    0x0056EE90: "SkillMissileCreateLob",
+})
+ALLOC8 = {0x0040B430: "Alloc"}       # observed by the miss_8a family only (do 111's unit list)
+BOUND_BY_NAME.update({v: k for k, v in BOUNDS_8.items()})
+BOUND_BY_NAME.update({v: k for k, v in ALLOC8.items()})
+ALLBOUND.update(BOUNDS_8)
+ALLBOUND.update(ALLOC8)
+NREC8 = 48                           # DataTables+0xB6C here: do 110's arrow and bolt rows 27 and 41 in range
+MSCHAIN = (0x0096C6A8, 0x0096C6B0)   # MONSTATS_GetClassChainPos's MonStats table and count (.data, set in the spec)
+MASKD4 = 0x12690000 + 0x8000         # DataTables+0xD4: the state bit-set 0x0063A320 tests (do 97)
+ARG1_8 = 0x7FF00004
+TAB_DIR = 0x006EB7E0                 # sub_0064FC60_PathDirection's table (.rdata, 128 x 12 bytes)
+MAP_DIR = 0x00745600                 # 0x0063E7A0's byte map (.data, 64 bytes read)
+OFF_X, OFF_Y = 0x006EA998, 0x006EA978   # 0x0063E7E0's s8 offsets (.rdata)
+TAB87, TAB88A, TAB88B = 0x006E3138, 0x006E3188, 0x006E3140   # do 87's and do 88's direction bytes (.rdata)
+RS_DIR = (TAB_DIR, TAB_DIR + 128 * 12, "r", "PathDirection's table 0x006EB7E0 (.rdata)")
+RS_MAPDIR = (MAP_DIR, MAP_DIR + 0x100, "r", "0x0063E7A0's byte map 0x00745600 (.data; no store in .text)")
+RS_OFF = (OFF_Y, OFF_X + 0x20, "r", "0x0063E7E0's offsets 0x006EA978/0x006EA998 (.rdata)")
+RS_T87 = (TAB87, TAB88B + 9 * 8, "r", "do 87's and do 88's direction tables 0x006E3138/0x006E3140/0x006E3188 "
+          "(.rdata)")
+RS_T88 = (TAB88A, TAB88A + 8, "r", "do 88's direction table 0x006E3188 (.rdata)")
+RS_MSCHAIN = (MSCHAIN[0], MSCHAIN[1] + 4, "r", "MONSTATS_GetClassChainPos's table and count 0x0096C6A8/0x0096C6B0 "
+              "(.data, set in the spec)")
+RS_8A = [RS_HASH, RS_SKN, RS_CALC_JT, RS_BITMASK9C, RS_TOWN, RS_SIZE_JT, RS_DIR, RS_MAPDIR, RS_OFF, RS_T87, RS_T88,
+         RS_MSCHAIN]
+
+
+def img_byte(a):
+    return (S4.dword(a & ~3) >> (8 * (a & 3))) & 0xFF
+
+
+def s8(v):
+    v &= 0xFF
+    return v - 0x100 if v & 0x80 else v
+
+
+def mem_8a(alloc=False):
+    lines = ["dword %08x %08x" % (G_PDATATABLES, DT),
+             "dword %08x %08x" % (DT + 0xB64, MREC), "dword %08x %08x" % (DT + 0xB6C, NREC8),
+             "dword %08x 6b3a11f5" % COOKIE,
+             "dword %08x %08x" % (DT + 0xB98, SREC), "dword %08x %08x" % (DT + 0xBA0, NSREC),
+             "dword %08x %08x" % (DT + 0x40, SPOOL),
+             "dword %08x %08x" % (DT + 0xBCC, ISC), "dword %08x %08x" % (DT + 0xBD4, NISC),
+             "dword %08x %08x" % (DT + 0xA78, MSREC), "dword %08x %08x" % (DT + 0xA80, NMON),
+             "dword %08x %08x" % (DT + 0xA90, MS2REC), "dword %08x %08x" % (DT + 0xA98, NMON2),
+             "dword %08x %08x" % (DT + 0xC4, NSTATES), "dword %08x %08x" % (DT + 0xBF0, NPET),
+             "dword %08x %08x" % (DT + 0xD4, MASKD4), "dword %08x %08x" % (DT + 0xBC0, NOVL),
+             "dword %08x %08x" % (MSCHAIN[0], MSREC), "dword %08x %08x" % (MSCHAIN[1], NMON)]
+    obs = dict(BOUNDS_8)
+    if alloc:
+        obs.update(ALLOC8)
+    lines += ["observe %08x" % a for a in sorted(obs)]
+    lines += ["guard %08x" % a for a in FATAL + ALLOC if a not in obs]
+    return lines
+
+
+def lines_8(c, game, args, dumps=()):
+    out = lines_s(c, game, args, dumps)
+    out.insert(len(out) - 1, "d %08x 4" % ARG1_8)
+    return out
+
+
+def finish_8(c, rnd, row, game, cases, exp, dumps=()):
+    """lines_8 plus each dump's initial bytes (every dumped byte is written by the case: the emulator keeps memory
+    between cases)."""
+    if "seeds" not in row:
+        put_seeds_s(c, rnd, row)
+    init = {}
+    for a, n in dumps:
+        b = bytearray(n)
+        have = [False] * n
+        for fa, fb in c.fields.items():
+            for i in range(len(fb)):
+                if a <= fa + i < a + n:
+                    b[fa + i - a] = fb[i]
+                    have[fa + i - a] = True
+        if not all(have):
+            raise ValueError("%s: dump %08x+%d not fully written" % (row["w"], a, n))
+        init["%d" % a] = bytes(b).hex()
+    row["dinit"] = init
+    cases += lines_8(c, game, [row["sid"], row["lvl"]], dumps)
+    exp.append(json.loads(json.dumps(row)))
+
+
+def mem_8(row, bit6, mem, useed, c4):
+    """The words compared in every case: both seeds, U+0xC4, the dumps (initial bytes patched by `mem` entries
+    inside them) and the other `mem` words (ARG1, ARG2)."""
+    m = seeds_s(row, useed)
+    m.update(c4_of(row, bit6) if c4 is None else {U + 0xC4: le32(c4 & M32)})
+    rest = dict(mem or {})
+    for k, hx_ in row["dinit"].items():
+        a = int(k)
+        b = bytearray(bytes.fromhex(hx_))
+        for ma in list(rest):
+            mb = rest[ma]
+            if a <= ma and ma + len(mb) <= a + len(b):
+                b[ma - a:ma - a + len(mb)] = mb
+                del rest[ma]
+        m[a] = bytes(b)
+    m.update(rest)
+    return m
+
+
+def ret_8(row, eax, bit6=False, mem=None, useed=None, c4=None):
+    return ("ret", eax, 8, mem_8(row, bit6, mem, useed, c4))
+
+
+def obs_8(row, name, regs, args, site, bit6=False, stk=None, ptrs=None, mem=None, frame=None, useed=None,
+          c4=None):
+    return ("obs", name, regs, args, mem_8(row, bit6, mem, useed, c4), stk or {}, site, ptrs or {}, frame or {})
+
+
+def put_node8(c, rnd, row, p=0.88):
+    """put_used_node plus the node's +0x0C (the flag word) and +0x24 (the mode / last guid word)."""
+    put_used_node(c, rnd, row, p)
+    if row["node"] is not None:
+        f0c = rnd.choice([0, 1, 2, 3, 0x80, 0x100, 0x101, rnd.getrandbits(32)])
+        w24 = rnd.getrandbits(32)
+        c.put(UNODE + 0x0C, le32(f0c))
+        c.put(UNODE + 0x24, le32(w24))
+        row["node"].update(f0c=f0c, w24=w24)
+
+
+def put_frames8(c, rnd, row):
+    """U+0x44 and +0x48 (0x00621810 reads them >> 8, signed): the frame words."""
+    f44 = rnd.choice([rnd.randint(-2, 14) << 8, rnd.randint(0, 0xFFF), rnd.getrandbits(32), 0, 0x400, 0x500])
+    c.put(U + 0x44, le32(f44) + le32(rnd.getrandbits(32)))
+    row["f44"] = f44
+
+
+def frames8(row):
+    return s32(row["f44"]) >> 8
+
+
+def put_link8(c, rnd, row):
+    """For a monster caster: U+0x14 -> data, +0x28 -> a link whose +0x3C SkillSummonClass's fallback 0x0058F710
+    reads (and whose +0x28/+0x2C/+0x30 MonsterOwner follows: put_trap_owner)."""
+    put_trap_owner(c, rnd, row)
+    if row["ut"] != 1:
+        row["link3c"] = None
+        return
+    if u32f(c, UDATA + 0x28) == 0:
+        c.put(UDATA + 0x28, le32(ULINK))
+        c.put(ULINK + 0x28, le32(0))
+    v = rnd.choice([rnd.randrange(NMON), rnd.randrange(NMON), 0, -1, NMON, rnd.getrandbits(32)])
+    c.put(ULINK + 0x3C, le32(v))
+    row["link3c"] = v
+
+
+def put_monspawn8(c, rnd, row):
+    """MonStats +0x20 (spawn class, s16), +0x22/+0x23 (s8 offsets), +0x24 (s8 mode), +0x4B (the chain position)."""
+    sp = []
+    for i in range(NMON):
+        cls = rnd.choice([rnd.randrange(NMON)] * 5 + [-1, NMON, rnd.randint(-0x8000, 0x7FFF)])
+        ox, oy = rnd.choice([0, 0, 2, 8, -2, rnd.randint(-128, 127)]), rnd.choice([0, 3, 5, -2, rnd.randint(-128, 127)])
+        md = rnd.choice([rnd.randrange(16), 1, 8, -1, 16, rnd.randint(-128, 127)])
+        pos = rnd.choice([0, 0, 1, 2, rnd.randrange(256)])
+        b = MSREC + 0x1A8 * i
+        c.put(b + 0x20, le16(cls) + bytes([ox & 0xFF, oy & 0xFF, md & 0xFF]))
+        c.put(b + 0x4B, bytes([pos]))
+        sp.append([cls, ox, oy, md, pos])
+    row["msp"] = sp
+
+
+def summon_class8(row, sel=1):
+    """sub_0056E620_SkillSummonClass(ECX U, EDX sel; id, lvl, &mode, &x, &y): -> (class, mode, x, y). A monster
+    caster with sel != 0 reads its own MonStats row (+0x20 class, +0x22/+0x23 offsets from its position, +0x24 mode);
+    otherwise the Skills row (+0xBC class, +0xBF mode, its position). The class out of [0, MonStats count) falls back
+    to 0x0058F710 (a monster's link +0x3C, used when 0 < v < count), else -1. The mode out of [0, 16) is 1."""
+    r = -1
+    mode = x = y = None
+    if sel and row["ut"] == 1:
+        cls = row["ucls"]
+        if 0 <= cls < NMON:
+            m = row["msp"][cls]
+            r = s16(m[0])
+            x = s32(row["ux"] + m[1])
+            y = s32(row["uy"] + m[2])
+            mode = m[3] if 0 <= m[3] < 16 else 1
+    else:
+        if sid_ok(row):
+            summ = s16(row["summ"])
+            if 0 <= summ < NMON:
+                r = summ
+                x, y = row["ux"], row["uy"]
+                mode = sum_mode(row["smode"])
+    if not 0 <= r < NMON:
+        if row["ut"] == 1:
+            v = s32(row["link3c"])
+            r = v if 0 < v < NMON else -1
+        else:
+            r = -1
+    if x is None:                          # outs unwritten (only a negative control reaches this)
+        mode, x, y = 1, 0, 0
+    return r, mode, x, y
+
+
+def put_summ8(c, rnd, row):
+    """Skills +0xBC (summon) and +0xBF (summode). For a non-monster caster the class is kept in range: out of range,
+    SkillSummonClass's fallback 0x0058F710 reads [0x3C] (a fault), so the code admits no such case."""
+    if row["ut"] == 1:
+        cls = rnd.randrange(NMON)          # in range: an out-of-range class leaves the outs unwritten
+        c.put(U + 0x04, le32(cls))
+        row["ucls"] = cls
+    if sid_ok(row):
+        summ = rnd.choice([rnd.randrange(NMON)] * 6 + ([NMON, -1] if row["ut"] == 1 else []))
+        sm = rnd.choice([rnd.randrange(16), 1, 0x80, 16, rnd.randrange(256)])
+        c.put(srec(row) + 0xBC, le16(summ))
+        c.put(srec(row) + 0xBF, bytes([sm]))
+        row.update(summ=summ, smode=sm)
+
+
+def pathdir(a1, a2, a3, a4):
+    """sub_0064FC60_PathDirection on (a1, a2) -> (a3, a4), each `v << 16 | 0x8000`: the 64-direction (the asm
+    literally: unsigned orders, the signed ratio x 0x7F, the .rdata row, the octant folds)."""
+    a1, a2, a3, a4 = a1 & M32, a2 & M32, a3 & M32, a4 & M32
+    if a1 > a3:
+        eax, m4, mc = a1, a3, 0
+    else:
+        eax, m4, mc = a3, a1, 1
+    if a2 > a4:
+        edx, esi, ac = a2, a4, 0
+    else:
+        edx, esi, ac = a4, a2, 1
+    dx = s32(eax - m4)
+    dy = s32(edx - esi)
+    if dx <= dy:
+        ebx, flag = m4, 0
+    else:
+        eax, edx = edx, eax
+        flag = 1
+        ebx = esi
+        esi = m4
+    den = s32(edx - esi)
+    num = s32(s32(eax - ebx) * 0x7F)
+    q = 0 if den == 0 else s32(cdiv(num, den))
+    e2 = S4.dword(TAB_DIR + 12 * q + 8) if 0 <= q < 128 else None
+    if e2 is None:
+        raise ValueError("ratio %d out of the table" % q)
+    d = e2
+    if flag:
+        d = (-1 - d) & 0xF
+    if not ac:
+        d = (-1 - d) & 0x1F
+    if mc:
+        d = (-1 - d) & 0x3F
+    return (d + 8) & 0x3F
+
+
+def fx(v):
+    return ((v << 16) + 0x8000) & M32
+
+
+def dir_u_to(row, x, y):
+    """0x00621DC0(U, x, y): PathDirection from U's path position (+0x02/+0x06) to (x, y)."""
+    return pathdir(fx(row["ux"]), fx(row["uy"]), fx(x), fx(y))
+
+
+def off_of(b):
+    """0x0063E7E0(b, &dx, &dy): the s8 offsets at 0x006EA998 + b and 0x006EA978 + b."""
+    return s8(img_byte(OFF_X + b)), s8(img_byte(OFF_Y + b))
+
+
+def put_room8(c, rnd, row):
+    """U's room's level and the near-room list put_target_a wrote (put_world_rooms); nothing more."""
+    return
+
+
+def near8(c, rnd, row):
+    """For do 87 and do 88: the target's position and the caster's path point within 250 subtiles of the caster
+    (PathDirection's `(minor << 16) x 0x7F` stays in 32 bits only for a minor difference below 258; the code reads
+    outside its table past that), and the caster's position at least 300 from 0."""
+    ux, uy = rnd.randint(300, 0x7000), rnd.randint(300, 0x7000)
+    c.put(UP + 0x02, le16(ux))
+    c.put(UP + 0x06, le16(uy))
+    row.update(ux=ux, uy=uy)
+
+    def pt():
+        k = rnd.random()
+        if k < 0.1:
+            return ux, uy
+        d = 3 if k < 0.5 else 250
+        return ux + rnd.randint(-d, d), uy + rnd.randint(-d, d)
+    px, py = pt()
+    if rnd.random() < 0.05:
+        px = 0
+    c.put(UP + 0x10, le16(px) + le16(py))
+    row.update(px=px, py=py)
+    if row["t"]:
+        tx, ty = pt()
+        if row["tt"] in (2, 4, 5):
+            c.put(TP + 0x0C, le32(tx))
+            c.put(TP + 0x10, le32(ty))
+        else:
+            if not u32f(c, T + 0x2C):          # a path for the target (its room none)
+                c.put(T + 0x2C, le32(TP))
+                c.put(TP + 0x1C, le32(0))
+                row["troom"] = 0
+            c.put(TP + 0x02, le16(tx))
+            c.put(TP + 0x06, le16(ty))
+        row.update(tx=tx, ty=ty)
+    return pt
+
+
+# ------------------------------------------------------------------------------------------- the hits
+HIT_ORDER_8 = ("st42", "do83", "st50", "do92", "st47", "do110")
+ST32_SLOT42 = (0x7FEFFF70, 0x005CAEA3)   # st 42's return address from start 32, at its stack slot
+
+
+@family("hit_8a", "8a")
+def hit_8a(rnd, game):
+    """Start 42 (Fire Hit: a player through start 32, a monster up to MeleeHitTest), do 83 (Fire Hit) and do 92
+    (Quick Strike) up to DeliverQueued, start 50 (Quick Strike) up to COMBAT_ResolveAndQueue, start 47 (Jump: the used
+    skill, the path, state 1, the point beyond the target or the path point, its room, up to MeleeHitTest or
+    PatternMark), do 110 (MissileSkill1, HireableMissile, RogueMissile: 0x00645F00's stats 157/158, up to
+    SkillMissileCreate or its lob form)."""
+    cases, exp = [], []
+    for k in range(2400):
+        w = HIT_ORDER_8[k % 6]
+        c = Case(FN8[w])
+        row = {"w": w, "sid": pick_skill(rnd), "lvl": pick_lvl(rnd)}
+        put_caster(c, rnd, row, types=(1, 1, 1, 0) if w in ("st42", "do110") else (1, 1, 0))
+        put_game_b(c, rnd, row, game)
+        put_inv_a(c, rnd, row)
+        put_target_a(c, rnd, row, game)
+        row["cal"] = sor_calcs(c, rnd, row["sid"], (0x140, 0x1A0, 0x138))
+        dumps = []
+        if w in ("st42", "st47"):
+            put_tohit(c, rnd, row)
+        if w == "st47":
+            sv = put_stats(c, rnd, U, {6: rnd.getrandbits(8)})
+            put_bits(c, rnd, row, [1])
+            put_node8(c, rnd, row)
+            if rnd.random() < 0.06:
+                c.put(U + 0x2C, le32(0))
+                row["nopath"] = 1
+            m48 = rnd.getrandbits(32)
+            c.put(UP + 0x48, le32(m48))
+            row["m48"] = m48
+            if row["node"] is not None:
+                dumps = [(UNODE + 0x18, 0x10)]
+        if w == "do110":
+            keys = {}
+            for s in (157, 158):
+                if rnd.random() < 0.6:
+                    keys[s << 16] = rnd.choice([0, 1, rnd.randint(2, 60), -1, rnd.getrandbits(32)])
+            put_keys(c, U, SLIST[U], keys, rnd.getrandbits(32) & 0x7FFFFFFF)
+            row["keys"] = {str(kk): vv for kk, vv in keys.items()}
+            if sid_ok(row):
+                m = rnd.choice([rnd.randrange(NREC8)] * 5 + [27, 41, -1, NREC8, rnd.randint(-0x8000, -2)])
+                fl = rnd.getrandbits(32)
+                c.put(srec(row) + 0x48, le16(m))
+                c.put(srec(row) + 0x04, le32(fl))
+                row.update(m48=m, sf4=fl)
+        finish_8(c, rnd, row, game, cases, exp, dumps)
+    return cases, mem_8a(), {"cases": exp}
+
+
+def ranged645(row):
+    """0x00645F00(U, &lvl): a non-player: stat 157 > 0 -> (0x1B, stat), stat 158 > 0 -> (0x29, stat), else (0, None);
+    a player: the weapon class (0x00623C60 -> its inventory query; no inventory 0 -> -1)."""
+    if row["ut"] != 0:
+        for s, r in ((157, 0x1B), (158, 0x29)):
+            v = stat_key(row, s << 16)
+            if v > 0:
+                return ("v", r, v)
+        return ("v", 0, None)
+    a = weapcls_a(row)
+    if a[0] == "obs":
+        return a
+    return ("v", -1, None)
+
+
+def hit_8a_model(row, game, br, neg=None):
+    w = row["w"]
+    br[w] += 1
+    t = tgt_unit(row)
+    gu = {"ecx": game, "edx": U}
+    if w == "do83":
+        if not t:
+            br["notarget"] += 1
+            return ret_8(row, 0)
+        br["deliver"] += 1
+        return obs_8(row, "DeliverQueued", gu, [T, 0], 0x005CAF5A)
+    if w == "st50":
+        if not t:
+            br["notarget"] += 1
+            return ret_8(row, 0)
+        br["queue"] += 1
+        return obs_8(row, "ResolveQueue", gu, [T, fr(-0x70), 0x80 if neg != "q40" else 0x40], 0x005CBF76,
+                     ptrs={1: bytes(0x70)})
+    if not sid_ok(row):
+        br["nosid"] += 1
+        return ret_8(row, 0)
+    if w == "do92":
+        if not t:
+            br["notarget"] += 1
+            return ret_8(row, 0)
+        br["deliver"] += 1
+        return obs_8(row, "DeliverQueued", gu, [T, 0], 0x005CBFE2)
+    if w == "st42":
+        if not t:
+            br["notarget"] += 1
+            return ret_8(row, 0)
+        if (row["ut"] == 0) != (neg == "player_swap"):
+            e = st32_model(row, game, br, None, frame=abs_ret(*ST32_SLOT42))
+            if e is None:
+                br["st32_ret0"] += 1
+                return ret_8(row, 0)
+            br["st32"] += 1
+            return e
+        br["hittest"] += 1
+        return obs_8(row, "MeleeHitTest", gu, [T, tohit_a(row), 0], 0x005CAED8, frame={fr(-0x74): bytes(0x70)})
+    if w == "st47":
+        nd = row["node"]
+        if nd is None or row.get("nopath"):
+            br["nonode"] += 1
+            return ret_8(row, 0)
+        if has_state(row, 1) and neg != "state1_any":
+            br["state1"] += 1
+            return ret_8(row, 0)
+        mem = {}
+        if t:
+            tx, ty = row["tx"], row["ty"]
+            x = s32(2 * tx - row["ux"])
+            y = s32(2 * ty - row["uy"])
+        else:
+            x, y = row["px"], row["py"]
+            mem[UNODE + 0x24] = le32(0xFFFFFFFF)
+        room = room_at(row, row["uroom"], x, y)
+        if not room and not (neg == "room_skip" and t):
+            br["noroom"] += 1
+            return ret_8(row, 0, mem=mem)
+        if t:
+            br["hittest"] += 1
+            return obs_8(row, "MeleeHitTest", gu, [T, tohit_a(row), 0], 0x005CB860, mem=mem,
+                         frame={fr(-0x84): bytes(0x70)})
+        br["mark"] += 1
+        return obs_8(row, "PatternMark", {}, [room, x, y, row["m48"], 0x100], 0x005CB907, mem=mem)
+    # do 110
+    if not t:
+        br["notarget"] += 1
+        return ret_8(row, 0)
+    r = ranged645(row)
+    if r[0] == "obs":
+        br["invquery"] += 1
+        _, name, regs, args, site = r
+        return obs_8(row, name, regs, args, site, bit6=True)
+    code, v = r[1], r[2]
+    lv = row["lvl"] if v is None or neg == "lvl_keep" else v
+    a2 = {ARG2: le32(lv)}
+    if code not in (0, 0x1F):
+        if not 0 <= code < NREC8:
+            br["norec"] += 1
+            return ret_8(row, 0, bit6=True, mem=a2)
+        br["stat_missile"] += 1
+        return obs_8(row, "SkillMissileCreate", gu | {"edx": code}, [U, row["sid"], lv, 0, 0, 0, 0, 0], 0x005CE23F,
+                     bit6=True, mem=a2)
+    m = s16(row["m48"])
+    if not 0 <= m < NREC8:
+        br["nomissile"] += 1
+        return ret_8(row, 0, bit6=True, mem=a2)
+    if row["sf4"] & 2 and neg != "lob_off":
+        br["lob"] += 1
+        return obs_8(row, "SkillMissileCreateLob", gu | {"edx": m}, [U, row["sid"], lv, 0, 0, 0, 0, 0], 0x005CE295,
+                     bit6=True, mem=a2)
+    br["missile"] += 1
+    return obs_8(row, "SkillMissileCreate", gu | {"edx": m}, [U, row["sid"], lv, 0, 0, 0, 0, 0], 0x005CE23F,
+                 bit6=True, mem=a2)
+
+
+# ------------------------------------------------------------------------------------------- moves and marks
+MOVE_ORDER_8 = ("st43", "st44", "st45", "st46", "st48", "st49", "st51", "st52", "do89", "do90", "do91", "do94",
+                "do98")
+
+
+@family("move_8a", "8a")
+def move_8a(rnd, game):
+    """Start 43 (MaggotEgg) up to CorpseColl, 44 (MagottUp) up to UnitTeleport, 45 (MagottDown) up to PatternUnmark,
+    46 (AndrialSpray: the target's point into the used node), 48 (Swarm Move: the path's +0x90/+0x91, up to
+    PathSetType), 49 (Nest, EvilHutSpawner: SkillSummonClass into the used node, up to PatternMark), 51 (Submerge) and
+    52 (Emerge: +0xC4 bits 1-3), do 89 (Jump) and do 91 (Nest) up to CancelEvents, do 90 (Swarm Move: the node's bit
+    1, calc1 or calc2, up to 0x006212C0), do 94 (Submerge: the frame word), do 98 (MonTeleport: the path point's room
+    or the owner's, up to UnitTeleport)."""
+    cases, exp = [], []
+    for k in range(2600):
+        w = MOVE_ORDER_8[k % 13]
+        c = Case(FN8[w])
+        row = {"w": w, "sid": pick_skill(rnd), "lvl": pick_lvl(rnd)}
+        put_caster(c, rnd, row, types=(1, 1, 1, 0))
+        put_game_b(c, rnd, row, game)
+        put_target_a(c, rnd, row, game)
+        row["cal"] = sor_calcs(c, rnd, row["sid"], (0x138, 0x13C))
+        dumps = []
+        if w in ("st46", "st48", "st49", "do89", "do90", "do91"):
+            put_node8(c, rnd, row)
+            if row["node"] is not None:
+                dumps = [(UNODE + 0x0C, 4), (UNODE + 0x18, 0x10)]
+        if w in ("st48", "do89") and rnd.random() < 0.08:
+            c.put(U + 0x2C, le32(0))
+            row["nopath"] = 1
+        if w == "st48":
+            c.put(UP + 0x90, bytes([rnd.getrandbits(8), rnd.getrandbits(8)]))
+            dumps.append((UP + 0x90, 2))
+        if w in ("st45", "st49"):
+            m48 = rnd.getrandbits(32)
+            c.put(UP + 0x48, le32(m48))
+            row["m48"] = m48
+        if w == "st49":
+            put_monspawn8(c, rnd, row)
+            put_link8(c, rnd, row)
+            put_summ8(c, rnd, row)
+        if w == "do94":
+            put_frames8(c, rnd, row)
+            w3c = rnd.getrandbits(32)
+            c.put(U + 0x3C, le32(w3c))
+            w4c = rnd.getrandbits(32)
+            c.put(U + 0x4C, le32(w4c))
+            row.update(w3c=w3c, w4c=w4c)
+            dumps = [(U + 0x3C, 4), (U + 0x4C, 4)]
+        if w == "do98":
+            put_trap_owner(c, rnd, row)
+        finish_8(c, rnd, row, game, cases, exp, dumps)
+    return cases, mem_8a(), {"cases": exp}
+
+
+def tpos8(row):
+    """UnitGetSubX/Y(T) (put_target's tx, ty: a static path's words for types 2, 4, 5, else the dynamic path's,
+    0 with none) -- also what 0x006488C0/0x00648900 or the static path give st 46."""
+    return row["tx"], row["ty"]
+
+
+def move_8a_model(row, game, br, neg=None):
+    w = row["w"]
+    br[w] += 1
+    gu = {"ecx": game, "edx": U}
+    c4 = row["c4"]
+    if w == "st43":
+        br["corpsecoll"] += 1
+        return obs_8(row, "CorpseColl", {}, [U, 1], 0x005CAF93, c4=c4 & ~0xE)
+    if w == "st44":
+        br["teleport"] += 1
+        return obs_8(row, "UnitTeleport", gu, [row["uroom"], row["ux"], row["uy"], 0, 0], 0x005CB1E3)
+    if w == "st45":
+        br["unmark"] += 1
+        return obs_8(row, "PatternUnmark", {}, [row["uroom"], row["ux"], row["uy"], 5, 0x1000], 0x005CB2EA,
+                     c4=c4 & ~0xE)
+    if w == "st51":
+        br["ret1"] += 1
+        return ret_8(row, 1, c4=c4 & ~0xE)
+    if w == "st52":
+        br["ret1"] += 1
+        return ret_8(row, 1, c4=c4 | (0xE if neg != "e_half" else 0x6))
+    if w == "do94":
+        f = frames8(row)
+        w3c = 0 if (f < 1) != (neg == "f_le1") else row["w3c"]
+        w4c = row["w4c"] & ~0xFF0000 if neg != "keep4e" else row["w4c"]
+        br["f_low" if f < 1 else "f_high"] += 1
+        return ret_8(row, 1, mem={U + 0x3C: le32(w3c), U + 0x4C: le32(w4c)})
+    t = tgt_unit(row)
+    if w == "st46":
+        if not t:
+            br["notarget"] += 1
+            return ret_8(row, 0)
+        nd = row["node"]
+        if nd is None:
+            br["nonode"] += 1
+            return ret_8(row, 0)
+        x, y = tpos8(row)
+        if neg == "xy_swap":
+            x, y = y, x
+        br["set"] += 1
+        return ret_8(row, 1, mem={UNODE + 0x18: le32(x) + le32(y)})
+    if w == "st48":
+        if row.get("nopath"):              # UNIT_GetTargetUnit's revalidation asserts the caster's path
+            br["fatal"] += 1
+            return obs_8(row, "Fatal", {}, [], 0x005534A8)
+        if not t:
+            br["notarget"] += 1
+            return ret_8(row, 0)
+        if row["node"] is None:
+            br["nonode"] += 1
+            return ret_8(row, 0)
+        br["settype"] += 1
+        v = 5 if neg != "speed4" else 4
+        return obs_8(row, "PathSetType", {}, [UP, 2], 0x005CBC2E, mem={UP + 0x90: bytes([v, v])})
+    if w == "do89":
+        if row["node"] is None:
+            br["nonode"] += 1
+            return ret_8(row, 0)
+        if row.get("nopath"):
+            br["nopath"] += 1
+            return ret_8(row, 0)
+        br["cancel"] += 1
+        return obs_8(row, "CancelEvents", gu, [1, 0], 0x005CB982)
+    if w == "do98":
+        x, y = row["px"], row["py"]
+        room = room_at(row, row["uroom"], x, y)
+        if not room and neg != "no_owner":
+            owner = row["root"] if row["ut"] == 1 else 0
+            if owner:
+                room = row["oroom"]
+        br["teleport_" + ("room" if room else "none")] += 1
+        return obs_8(row, "UnitTeleport", gu, [room, x, y, 0, 0], 0x005CCCE4)
+    if not sid_ok(row):
+        br["nosid"] += 1
+        return ret_8(row, 0)
+    nd = row["node"]
+    if w == "do91":
+        if nd is None:
+            br["nonode"] += 1
+            return ret_8(row, 0)
+        br["cancel"] += 1
+        return obs_8(row, "CancelEvents", gu, [1, 0], 0x005CBE62)
+    if w == "do90":
+        if nd is None:
+            br["nonode"] += 1
+            return ret_8(row, 0)
+        if (nd["f0c"] & 2) and neg != "bit1_off":
+            br["calc2"] += 1
+            return obs_8(row, "Mode6212C0", {}, [U, ev_s(row, 0x13C)], 0x005CBCFE, mem={UNODE + 0x0C: le32(0)})
+        br["calc1"] += 1
+        return obs_8(row, "Mode6212C0", {}, [U, ev_s(row, 0x138)], 0x005CBCFE)
+    if w == "st49":
+        if nd is None:
+            br["nonode"] += 1
+            return ret_8(row, 0)
+        cls, mode, x, y = summon_class8(row, 1 if neg != "sel0" else 0)
+        if cls < 0:
+            br["noclass"] += 1
+            return ret_8(row, 0)
+        room = room_at(row, row["uroom"], x, y)
+        br["mark"] += 1
+        return obs_8(row, "PatternMark", {}, [room, x, y, 1, 0x100], 0x005CBDD3,
+                     mem={UNODE + 0x18: le32(cls) + le32(x) + le32(y) + le32(mode)})
+
+
+# ------------------------------------------------------------------------------------------- spawns, heals, revives
+SUMMON_ORDER_8 = ("do84", "do86", "do87", "do96", "do97")
+
+
+def put_tstate8(c, rnd, row):
+    """T's class, mode and state words (stat list +0x5C, +0x10 bit 31, +0x58) and the bit-set DataTables+0xD4
+    that 0x0063A320 tests; a dead monster more often."""
+    mask = [rnd.choice([0, 0, 1 << rnd.randrange(32), rnd.getrandbits(32)]) for _ in range(NSW)]
+    for i, m in enumerate(mask):
+        c.put(MASKD4 + 4 * i, le32(m))
+    row["mask"] = mask
+    row["twords"] = None
+    if not row["t"]:
+        return
+    if row["tt"] == 1:
+        mode = rnd.choice([12, 12, 12, 0, 0, rnd.randrange(1, 18)])
+        c.put(T + 0x10, le32(mode))
+        row["tmode"] = mode
+    k = rnd.random()
+    if k < 0.07:
+        c.put(T + 0x5C, le32(0))
+        return
+    fl = rnd.getrandbits(32) | 0x80000000
+    if k < 0.13:
+        fl &= 0x7FFFFFFF
+    c.put(T + 0x5C, le32(TSL))
+    c.put(TSL + 0x10, le32(fl))
+    if not fl & 0x80000000:
+        return
+    wa = TSL + 0x200
+    c.put(TSL + 0x58, le32(wa))
+    words = []
+    for i in range(NSW):
+        v = rnd.getrandbits(32) if rnd.random() < 0.25 else 0
+        words.append(v)
+        c.put(wa + 4 * i, le32(v))
+    row["twords"] = words
+
+
+def setd4(row):
+    """0x0063A320(T) -> sub_0063A130_UnitHasStateInMask(EAX T, EBX DataTables+0xD4)."""
+    if row["twords"] is None:
+        return 0
+    return int(any(w & m for w, m in zip(row["twords"], row["mask"])))
+
+
+@family("summon_8a", "8a")
+def summon_8a(rnd, game):
+    """Do 84 (MaggotEgg: SkillSummonClass, the caster's +0x3C, calc1, up to SpawnNearUnitNoBox or UnitKilled), do 86
+    (MagottDown: the frame word, calc1, life + life x calc1 / 100 capped at the maximum, up to UnitSetStat), do 87
+    (MagottLay: the direction to the target through the .rdata and .data tables, up to SpawnAtPos), do 96 (ZakarumHeal,
+    Bestow: the percentage drawn on the caster's seed, up to UnitSetStat on the target), do 97 (Resurrect, Resurrect2:
+    a dead monster target, its states against DataTables+0xD4, its room, up to the collision test)."""
+    cases, exp = [], []
+    for k in range(2500):
+        w = SUMMON_ORDER_8[k % 5]
+        c = Case(FN8[w])
+        row = {"w": w, "sid": pick_skill(rnd), "lvl": pick_lvl(rnd)}
+        put_caster(c, rnd, row, types=(1, 1, 1, 0))
+        put_game_b(c, rnd, row, game)
+        put_target_a(c, rnd, row, game, types=(1, 1, 1, 1, 0, 2, 3, 4) if w in ("do96", "do97") else
+                     (0, 1, 1, 1, 2, 3, 4, 5))
+        row["cal"] = sor_calcs(c, rnd, row["sid"], (0x138, 0x13C))
+        if w == "do87":
+            near8(c, rnd, row)
+        dumps = [(U + 0x3C, 4), (U + 0x4C, 4)]
+        w3c, w4c = rnd.getrandbits(32), rnd.getrandbits(32)
+        c.put(U + 0x3C, le32(w3c) + le32(rnd.getrandbits(32)))
+        c.put(U + 0x4C, le32(w4c))
+        row.update(w3c=w3c, w4c=w4c)
+        if w in ("do84", "do87"):
+            put_monspawn8(c, rnd, row)
+            put_link8(c, rnd, row)
+            put_summ8(c, rnd, row)
+        if w == "do84":
+            put_node8(c, rnd, row)
+        if w == "do86":
+            put_frames8(c, rnd, row)
+            sv = put_stats(c, rnd, U, {6: rnd.choice([rnd.randint(1, 1 << 16), rnd.getrandbits(32), 0, 0x200000]),
+                                       7: rnd.choice([rnd.randint(1, 1 << 16), rnd.getrandbits(32), 0, 0x300000])})
+            row["hp"], row["maxhp"] = stat_of(sv, 6), stat_of(sv, 7)
+            row["haslist"] = int(u32f(c, U + 0x5C) != 0)
+        if w == "do96" and row["t"]:
+            sv = put_stats(c, rnd, T, {6: rnd.choice([rnd.randint(1, 1 << 16), rnd.getrandbits(32), 0, -5]),
+                                       7: rnd.choice([rnd.randint(1, 1 << 16), rnd.getrandbits(32), 0, 0x300000])})
+            row["hp"], row["maxhp"] = stat_of(sv, 6), stat_of(sv, 7)
+            row["haslist"] = int(u32f(c, T + 0x5C) != 0)
+        if w == "do97":
+            put_tstate8(c, rnd, row)
+            if row["t"]:
+                m48 = rnd.getrandbits(32)
+                if row["tt"] in (2, 4, 5):
+                    m48 = 0
+                elif u32f(c, T + 0x2C):
+                    c.put(TP + 0x48, le32(m48))
+                row["tm48"] = m48
+        finish_8(c, rnd, row, game, cases, exp, dumps)
+    return cases, mem_8a(), {"cases": exp}
+
+
+def mem3c(row, w3c=None, w4c=None):
+    return {U + 0x3C: le32(row["w3c"] if w3c is None else w3c), U + 0x4C: le32(row["w4c"] if w4c is None else w4c)}
+
+
+def summon_8a_model(row, game, br, neg=None):
+    w = row["w"]
+    br[w] += 1
+    gu = {"ecx": game, "edx": U}
+    if not sid_ok(row):
+        br["nosid"] += 1
+        return ret_8(row, 0, mem=mem3c(row))
+    t = tgt_unit(row)
+    if w == "do84":
+        cls, mode, _, _ = summon_class8(row, 1)
+        if cls < 0:
+            br["noclass"] += 1
+            return ret_8(row, 0, mem=mem3c(row))
+        if row["node"] is None:
+            br["nonode"] += 1
+            return ret_8(row, 0, mem=mem3c(row))
+        m = mem3c(row, w3c=0 if neg != "keep3c" else None)
+        n = ev_s(row, 0x138)
+        if n > 0:
+            br["spawn"] += 1
+            return obs_8(row, "SpawnNearNoBox", gu, [cls, mode if neg != "mode8" else 8, 0xFFFFFFFF, 0], 0x005CB03E,
+                         mem=m)
+        br["killed"] += 1
+        return obs_8(row, "UnitKilled", gu, [U, 1], 0x005CB0B1, mem=m)
+    if w == "do86":
+        f = frames8(row)
+        m = mem3c(row, w3c=0 if f <= 0 else None)
+        n = ev_s(row, 0x138)
+        if n <= 0:
+            br["n0"] += 1
+            return ret_8(row, 1, bit6=True, mem=m)
+        hp, mx = row["hp"], row["maxhp"]
+        if not row["haslist"]:
+            hp = mx = 0
+        nv = s32(hp + muldiv(hp if neg != "pct_max" else mx, n, 100))
+        if nv >= mx:
+            nv = mx
+        br["heal"] += 1
+        return obs_8(row, "UnitSetStat", {}, [U, 6, nv, 0], 0x005CB3AC, bit6=True, mem=m)
+    if w == "do87":
+        cls, mode, _, _ = summon_class8(row, 1)
+        if cls < 0:
+            br["noclass"] += 1
+            return ret_8(row, 0, mem=mem3c(row))
+        if not t:
+            br["notarget"] += 1
+            return ret_8(row, 0, mem=mem3c(row))
+        tx, ty = row["tx"], row["ty"]
+        d = dir_u_to(row, tx, ty)
+        b = img_byte(TAB87 + (img_byte(MAP_DIR + d) & 7))
+        dx, dy = off_of(b)
+        if neg == "off_swap":
+            dx, dy = dy, dx
+        x, y = s32(row["ux"] + dx), s32(row["uy"] + dy)
+        br["spawn"] += 1
+        return obs_8(row, "SpawnAtPos", {"ecx": game, "edx": row["uroom"]}, [x, y, cls, mode, 0xFFFFFFFF, 0],
+                     0x005CB4AF, mem=mem3c(row, w4c=row["w4c"] & ~0xFF0000) | {ARG1_8: le32((row["sid"] & ~0xFF) | d),
+                                                                            ARG2: le32(dx)})
+    if w == "do96":
+        if not t:
+            br["notarget"] += 1
+            return ret_8(row, 0, mem=mem3c(row))
+        hi = max(ev_s(row, 0x13C), 0)
+        hi = min(hi, 100)
+        lo = max(ev_s(row, 0x138), 0)
+        lo = min(lo, hi)
+        s0, s1 = row["seeds"][0]
+        if neg == "noseed":
+            r, a, b2 = 0, s0, s1
+        else:
+            r, a, b2 = rangeb(s0, s1, hi - lo)
+        pct = r + lo
+        hp, mx = row["hp"], row["maxhp"]
+        if not row["haslist"]:
+            hp = mx = 0
+        add = muldiv(mx, pct, 100)
+        v = s32(add + hp)
+        lim = v if v > 1 else 1
+        if lim < mx:
+            nv = v if v > 1 else 1
+        else:
+            nv = mx
+        br["heal"] += 1
+        return obs_8(row, "UnitSetStat", {}, [T, 6, nv, 0], 0x005CC943, bit6=True, mem=mem3c(row), useed=(a, b2))
+    # do 97
+    if not t:
+        br["notarget"] += 1
+        return ret_8(row, 0, mem=mem3c(row))
+    dead = row["tt"] == 1 and row.get("tmode") in (0, 12)
+    if not dead:
+        br["notdead"] += 1
+        return ret_8(row, 0, bit6=True, mem=mem3c(row))
+    if setd4(row) and neg != "d4_any":
+        br["masked"] += 1
+        return ret_8(row, 0, bit6=True, mem=mem3c(row))
+    room = room_of_t(row)
+    if not room:
+        br["noroom"] += 1
+        return ret_8(row, 0, bit6=True, mem=mem3c(row))
+    br["colltest"] += 1
+    return obs_8(row, "CollTest910", {}, [room, row["tx"], row["ty"], row["tm48"], 0x3C01 if neg != "mask_1c09"
+                                          else 0x1C09], 0x005CCBD2, bit6=True, mem=mem3c(row))
+
+
+# ------------------------------------------------------------------------------------------- missiles and the inferno
+MISS_ORDER_8 = ("do85", "do88", "do93", "do95", "st53")
+SLOT_D111 = (0x7FEFFFD0, 0x005CE6E9)     # do 111's return address from 0x0056C210, its three arguments above
+SLOT_D95 = (0x7FEFFF84, 0x005CC5C5)      # do 95's return address from 0x005CC3B0
+
+
+@family("miss_8a", "8a")
+def miss_8a(rnd, game):
+    """Do 85 (UnHolyBolt, ShamanFire: the class chain position added to srvmissilea, up to SkillMissileCreate), do 88
+    (AndrialSpray: the node's point or the target point, the direction tables and the frame, up to MissileCreate),
+    do 93 (GargoyleTrap: four steps towards the target, the sixth, up to MissileCreate), do 95 (the infernos: the
+    velocity from Vel/VelLev, the target point, up to MissileCreate or the CancelEvents of 0x005CC3B0), start 53 (the
+    infernos: the node's end frame, state 12, up to STATE_Set), do 111 (FetishAura: Param4 + 2 lvl round the target
+    point, up to the allocation of 0x0056C210's list)."""
+    cases, exp = [], []
+    for k in range(2500):
+        w = MISS_ORDER_8[k % 5]
+        c = Case(FN8[w])
+        sid = pick_skill(rnd) if w != "do111" else rnd.randrange(NSREC)
+        row = {"w": w, "sid": sid, "lvl": pick_lvl(rnd)}
+        put_caster(c, rnd, row, types=(1, 1, 1, 0))
+        put_game_b(c, rnd, row, game)
+        put_target_a(c, rnd, row, game)
+        row["cal"] = sor_calcs(c, rnd, row["sid"], (0x13C, 0x140))
+        dumps = []
+        if sid_ok(row):
+            m = rnd.choice([rnd.randrange(NREC8)] * 6 + [-1, NREC8, rnd.randint(-0x8000, -2)])
+            c.put(srec(row) + 0x48, le16(m))
+            row["m48"] = m
+        if w == "do85":
+            pos = [rnd.choice([0, 0, 1, 2, rnd.randrange(256)]) for _ in range(NMON)]
+            for i in range(NMON):
+                c.put(MSREC + 0x1A8 * i + 0x4B, bytes([pos[i]]))
+            row["pos4b"] = pos
+            if rnd.random() < 0.7:
+                row["ucls"] = rnd.randrange(NMON)
+                c.put(U + 0x04, le32(row["ucls"]))
+        if w in ("do88", "st53", "do95"):
+            put_node8(c, rnd, row)
+            if row["node"] is not None:
+                dumps = [(UNODE + 0x18, 8)]
+        if w == "do88":
+            put_frames8(c, rnd, row)
+            pt = near8(c, rnd, row)
+            if row["node"] is not None:
+                n18, n1c = pt()
+                k = rnd.random()
+                if k < 0.25:
+                    n18 = 0
+                elif k < 0.4:
+                    n1c = 0
+                c.put(UNODE + 0x18, le32(n18) + le32(n1c))
+                row["node"]["n18"], row["node"]["ty"] = n18, n1c
+        if w == "st53":
+            sv = put_stats(c, rnd, U, {6: rnd.getrandbits(8)})
+            put_bits(c, rnd, row, [12])
+        if w == "do95":
+            vel = [(rnd.randrange(256), rnd.randrange(256)) for _ in range(NREC8)]
+            for i, (a, b) in enumerate(vel):
+                c.put(MREC + 0x1A4 * i + 0x9A, bytes([a, b]))
+            row["vel"] = vel
+            put_mon_tables(c, rnd, row)
+            ib = [rnd.randrange(256) for _ in range(NMON2)]
+            for i in range(NMON2):
+                c.put(MS2REC + 0x134 * i + 0x108, bytes([ib[i]]))
+            row["ib"] = ib
+        if w == "do111" and sid_ok(row):
+            p4 = rnd.choice([rnd.randint(-40, 500), 0, rnd.getrandbits(32)])
+            c.put(srec(row) + 0x154, le32(p4))
+            row["p4"] = p4
+        finish_8(c, rnd, row, game, cases, exp, dumps)
+    return cases, mem_8a(), {"cases": exp}
+
+
+@family("aura_8a", "8a")
+def aura_8a(rnd, game):
+    """Do 111 alone with the allocator observed (its list)."""
+    cases, exp = [], []
+    for k in range(600):
+        c = Case(FN8["do111"])
+        row = {"w": "do111", "sid": rnd.randrange(NSREC), "lvl": pick_lvl(rnd)}
+        put_caster(c, rnd, row, types=(1, 1, 1, 0))
+        put_game_b(c, rnd, row, game)
+        put_target_a(c, rnd, row, game)
+        row["cal"] = sor_calcs(c, rnd, row["sid"], (0x13C,))
+        p4 = rnd.choice([rnd.randint(-40, 500), 0, rnd.getrandbits(32)])
+        c.put(srec(row) + 0x154, le32(p4))
+        row["p4"] = p4
+        finish_8(c, rnd, row, game, cases, exp)
+    return cases, mem_8a(alloc=True), {"cases": exp}
+
+
+def miss_8a_model(row, game, br, neg=None):
+    w = row["w"]
+    br[w] += 1
+    gu = {"ecx": game, "edx": U}
+    t = tgt_unit(row)
+    if w == "do111":
+        x, y, ok = target_xy(row)
+        if not ok:
+            br["noxy"] += 1
+            return ret_8(row, 0)
+        r = s32(row["p4"] + 2 * s32(row["lvl"])) if neg != "r_lvl1" else s32(row["p4"] + s32(row["lvl"]))
+        br["alloc"] += 1
+        f = abs_ret(*SLOT_D111)
+        f.update({SLOT_D111[0] + 4: le32(r) + le32(x) + le32(y)})
+        return obs_8(row, "Alloc", {"ecx": GAMEPOOL, "edx": 0x2C}, [0x006DAB88, 0x44B, 0], 0x0056C236, bit6=True,
+                     frame=f)
+    if not sid_ok(row):
+        br["nosid"] += 1
+        return ret_8(row, 0)
+    m = s16(row["m48"])
+    nd = row.get("node")
+    if w == "st53":
+        if nd is None:
+            br["nonode"] += 1
+            return ret_8(row, 0)
+        n = max(ev_s(row, 0x13C), 1)
+        mem = {UNODE + 0x18: le32(row["frame"] + n)}
+        if has_state(row, 12) and neg != "state_any":
+            br["has12"] += 1
+            return ret_8(row, 1, mem=mem)
+        br["stateset"] += 1
+        return obs_8(row, "StateSet", {}, [U, 12, 1], 0x005CC2CF, mem=mem)
+    if not 0 <= m < NREC8:
+        br["nomissile"] += 1
+        return ret_8(row, 0)
+    if w == "do85":
+        pos = row["pos4b"][row["ucls"]] if 0 <= row["ucls"] < NMON else 0
+        m2 = m + pos if neg != "nochain" else m
+        a1 = {ARG1_8: le32(pos)}
+        if not 0 <= m2 < NREC8:
+            br["chain_out"] += 1
+            return ret_8(row, 0, bit6=True, mem=a1)
+        br["missile"] += 1
+        return obs_8(row, "SkillMissileCreate", {"ecx": game, "edx": m2}, [U, row["sid"], row["lvl"], 0, 0, 0, 0, 0],
+                     0x005CB152, bit6=True, mem=a1)
+    if w == "do93":
+        if not t:
+            br["notarget"] += 1
+            return ret_8(row, 0, bit6=True)
+        tx, ty = s32(row["tx"]), s32(row["ty"])
+        ux, uy = s32(row["ux"]), s32(row["uy"])
+        ex, ey = tx, ty
+        adx, ady = s32(-s32(tx - ux)) if s32(tx - ux) < 0 else s32(tx - ux), \
+            s32(-s32(ty - uy)) if s32(ty - uy) < 0 else s32(ty - uy)
+        if (adx < ady) != (neg == "axis_swap"):
+            ex = ux
+            for _ in range(4):
+                ex = ex - 1 if ex > tx else (ex + 1 if ex < tx else ex)
+            br["step_x"] += 1
+        else:
+            ey = uy
+            for _ in range(4):
+                ey = ey - 1 if ey > ty else (ey + 1 if ey < ty else ey)
+            br["step_y"] += 1
+        x = s32(cdiv(s32(ex - ux), 6) + ux - 1)
+        y = s32(cdiv(s32(ey - uy), 6) + uy - 1)
+        blk = block(flags=3, owner=U, cls=m, x=x, y=y, tx=s32(ex - ux), ty=s32(ey - uy), skill=row["sid"],
+                    lvl=row["lvl"])
+        return obs_8(row, "MissileCreate", {"ecx": game}, [], 0x005CC1C1, bit6=True, stk={"edx": (0, blk)})
+    if nd is None:
+        br["nonode"] += 1
+        return ret_8(row, 0)
+    if w == "do88":
+        x0, y0 = nd["n18"], nd["ty"]
+        if x0 == 0 or y0 == 0:
+            x0, y0, ok = target_xy(row)
+            if not ok:
+                br["noxy"] += 1
+                return ret_8(row, 0)
+            br["xy_target"] += 1
+        else:
+            br["xy_node"] += 1
+        d = img_byte(MAP_DIR + dir_u_to(row, x0, y0)) & 7
+        dx, dy = off_of(img_byte(TAB88A + d))
+        x, y = s32(row["ux"] + dx), s32(row["uy"] + dy)
+        f = frames8(row) - 4
+        f = max(f, 0)
+        f = min(f, 8) if neg != "f_nocap" else f
+        bb = img_byte(TAB88B + 9 * d + f) if f <= 8 else 0x63
+        if bb != 0x63:
+            dx2, dy2 = off_of(bb)
+            x, y = s32(x + dx2), s32(y + dy2)
+            br["second"] += 1
+        blk = block(flags=0x20, owner=U, source=U, cls=m, tx=x, ty=y, lvl=row["lvl"])
+        return obs_8(row, "MissileCreate", {"ecx": game}, [], 0x005CB70D, stk={"edx": (0, blk)},
+                     mem={ARG1_8: le32(x)})
+    # do 95
+    vb, vl = row["vel"][m]
+    vel = s32(cdiv(s32(vl * s32(row["lvl"])), 8) + vb) if neg != "vel_shift" else s32((s32(vl * s32(row["lvl"])) >> 3)
+                                                                                         + vb)
+    x, y, ok = target_xy(row)
+    if not ok:
+        br["cancel"] += 1
+        return obs_8(row, "CancelEvents", gu, [0, 0], 0x005CC415, frame=abs_ret(*SLOT_D95))
+    blk = bytearray(block(flags=0x25, owner=U, cls=m, x=row["ux"], y=row["uy"], tx=x, ty=y, lvl=row["lvl"]))
+    struct.pack_into("<I", blk, 0x28, vel & M32)
+    br["missile"] += 1
+    return obs_8(row, "MissileCreate", {"ecx": game}, [], 0x005CC5DA, stk={"edx": (0, bytes(blk))})
+
+
+CHECKS.update({
+    "hit_8a": check9b("hit_8a", hit_8a_model, ["q40", "player_swap", "state1_any", "room_skip", "lvl_keep",
+                                               "lob_off"], RS_8A, md_masked=False),
+    "move_8a": check9b("move_8a", move_8a_model, ["e_half", "f_le1", "keep4e", "xy_swap", "speed4", "bit1_off",
+                                                  "sel0", "no_owner"], RS_8A, md_masked=False),
+    "summon_8a": check9b("summon_8a", summon_8a_model, ["keep3c", "mode8", "pct_max", "off_swap", "noseed",
+                                                        "d4_any", "mask_1c09"], RS_8A, md_masked=False),
+    "miss_8a": check9b("miss_8a", miss_8a_model, ["state_any", "nochain", "axis_swap", "f_nocap", "vel_shift"],
+                       RS_8A, md_masked=False),
+    "aura_8a": check9b("aura_8a", miss_8a_model, ["r_lvl1"], RS_8A, md_masked=False),
+})
+
+
+PINS_8A = [  # (address, mnemonic, operand substring): instructions the 8a claims turn on (ADR-0015 (5))
+    (0x005CAEC4, "call", "0x6449f0"), (0x005CAED3, "call", "0x57ec10"),                               # st 42
+    (0x005CAE8F, "cmp", "DWORD PTR [edi],0x0"), (0x005CAF84, "and", "0xfffffff1"),                       # st 42, 43
+    (0x005CB00B, "mov", "DWORD PTR [esi+0x3c],0x0"), (0x005CAFEA, "mov", "edx,0x1"),                     # do 84
+    (0x005CB120, "call", "0x6510c0"), (0x005CB125, "add", "esi,DWORD PTR [ebp+0x8]"),                    # do 85
+    (0x005CB1EF, "or", "DWORD PTR [esi+0xc4],0xe"), (0x005CB2DA, "push", "0x5"),                         # st 44, 45
+    (0x005CB355, "jg", ""), (0x005CB38C, "mov", "ecx,esi"), (0x005CB39D, "jl", ""),                      # do 86
+    (0x005CB451, "and", "eax,0x80000007"), (0x005CB464, "movzx", "0x6e3138"),                           # do 87
+    (0x005CB656, "movzx", "0x6e3188"), (0x005CB6A4, "mov", "0x6e3140"), (0x005CB6AB, "cmp", "bl,0x63"),  # do 88
+    (0x005CB694, "cmp", "eax,0x8"), (0x005CB6E6, "mov", "DWORD PTR [ebp-0x5c],ecx"),                     # do 88
+    (0x005CB78D, "push", "0x1"), (0x005CB7ED, "lea", "ecx,[edx+edx*1]"), (0x005CB7BF, "push", "0xffffffff"),  # st 47
+    (0x005CBCC8, "test", "al,0x2"), (0x005CBC1E, "push", "0x5"), (0x005CBC26, "push", "0x2"),            # do 90, st 48
+    (0x005CBD6A, "mov", "edx,0x1"), (0x005CBDC9, "push", "0x1"),                                        # st 49
+    (0x005CBF63, "push", "0x80"), (0x005CC168, "mov", "eax,0x2aaaaaab"), (0x005CC105, "cmp", "eax,ecx"),  # st 50, do 93
+    (0x005CC1AC, "mov", "DWORD PTR [ebp-0x78],0x3"), (0x005CC229, "or", "0xe"),
+    (0x005CC29A, "cmp", "eax,0x1"), (0x005CC2A7, "mov", "ecx,DWORD PTR [edx+0xa8]"),                     # st 53
+    (0x005CC593, "imul", "eax,edx"), (0x005CC5A3, "sar", "eax,0x3"), (0x005CC564, "mov", "0x25"),       # do 95
+    (0x005CC8AF, "cmp", "eax,0x64"), (0x005CC8E8, "sub", "edx,ebx"), (0x005CC8ED, "call", "0x45c3e0"),   # do 96
+    (0x005CC91A, "cmp", "esi,0x1"),                                                                    # do 96
+    (0x005CCBB9, "and", "edi,0x1ff8"), (0x005CCBBF, "add", "edi,0x1c09"),                               # do 97
+    (0x005CE20E, "cmp", "ebx,0x1f"), (0x005CE26D, "mov", "0x6ce26c"), (0x005CE6D7, "lea", "eax,[edx+eax*2]"),  # 110, 111
+    (0x0064FCD3, "imul", "eax,eax,0x7f"), (0x0063E7A7, "mov", "0x745600"), (0x0063EB09, "cmp", "eax,0x10"),
+    (0x0056E64B, "cmp", "eax,DWORD PTR [ecx+0xa80]"), (0x00645F19, "push", "0x9d"),
+]
+
+
+def cmd_static_8a(a):
+    rep = Report("static")
+    rep.batch = "8A"
+    A = S4.asm()
+    for va, mn, sub in PINS_8A:
+        ins = A.at(va)
+        rep.c["pins"] += 1
+        if ins is None or ins[0] != mn or sub not in ins[1]:
+            rep.bad("pin 0x%08X: %r, want %s %s" % (va, ins, mn, sub))
+        else:
+            rep.c["pins_ok"] += 1
+    for lo, n, name in ((BITMASK, 128, "g_BitMask32"), (0x006E10E0, 20, "hash offsets"),
+                        (0x006C1164, 88, "CALC_Eval jump table"), (TAB_DIR, 128 * 12, "PathDirection table"),
+                        (OFF_Y, 0x40, "0x0063E7E0 offsets"), (TAB87, 8, "do 87 table"), (TAB88A, 8, "do 88 table"),
+                        (TAB88B, 72, "do 88 frame table")):
+        sec = S4.section_of(lo)
+        flags = [x[5] for x in S4.image()[2] if x[4] == sec][0]
+        rep.c["ro_reads"] += 1
+        if flags & 0x80000000:
+            rep.bad("%s 0x%08X in writable %s" % (name, lo, sec))
+        rep.notes.append("%s 0x%08X: %s" % (name, lo, sec))
+    # the .data byte map 0x00745600: every instruction naming an address in 0x007455C0..0x007456FF
+    import re as _re
+    refs = []
+    for va, (mn, ops) in sorted(A.ins.items()):
+        for h in _re.findall(r"0x([0-9a-f]+)", ops):
+            v = int(h, 16)
+            if 0x007455C0 <= v < 0x00745700:
+                refs.append((va, mn, ops))
+                break
+    for va, mn, ops in refs:
+        dst = ops.split(",")[0]
+        if ("PTR" in dst or "ds:" in dst) and "0x7456" in dst and mn in ("mov", "add", "sub", "inc", "dec", "or",
+                                                                          "and", "xor", "pop", "stos", "movs", "xchg"):
+            rep.c["data_stores"] += 1
+        elif "PTR" not in ops and "ds:" not in ops:
+            rep.c["data_imms"] += 1
+        rep.notes.append("ref 0x007455C0-0x007456FF: 0x%08X %s %s" % (va, mn, ops))
+    rep.notes.append("0x00745600[0..63]: %s" % " ".join("%d" % img_byte(MAP_DIR + i) for i in range(64)))
+    rep.notes.append("0x006E3138[0..7]: %s; 0x006E3188[0..7]: %s" % (
+        " ".join("%d" % img_byte(TAB87 + i) for i in range(8)), " ".join("%d" % img_byte(TAB88A + i) for i in range(8))))
+    rep.notes.append("0x006E3140[9d+f]: %s" % " ".join("%d" % img_byte(TAB88B + i) for i in range(72)))
+    rep.notes.append("0x0063E7E0 offsets (dx, dy) for 0..31: %s" % " ".join("(%d,%d)" % off_of(i) for i in range(32)))
+    st, im, rd = ref_scan(A, SK_NFUNCS)
+    rep.c["data_stores"] += len(st)
+    rep.c["data_imms"] += len(im)
+    rep.notes.append("skills calc function count 0x%08X: %d stores (PTR or moffs), %d immediates, %d reads in .text"
+                     % (SK_NFUNCS, len(st), len(im), len(rd)))
+    for hlp, nm in [(va, n) for n, va in sorted(FN8.items(), key=lambda kv: kv[1])] + [
+            (0x005CC3B0, "0x005CC3B0"), (0x0056C210, "0x0056C210"), (0x00621810, "0x00621810"),
+            (0x00621DC0, "0x00621DC0"), (0x0058F710, "0x0058F710"), (0x00645F00, "UnitRangedMissile")]:
+        sites = sorted(va for va, (mn, ops) in A.ins.items() if mn in ("call", "jmp") and ops.strip() == "0x%x" % hlp)
+        rep.notes.append("calls of %s 0x%08X: %d in the image: %s" % (nm, hlp, len(sites),
+                                                                      " ".join("0x%08X" % s for s in sites)))
+        rep.c["helper_sites"] += len(sites)
+    raw = open(S4.EXE, "rb").read()
+    for name, va in sorted(FN8.items(), key=lambda kv: kv[1]):
+        b = struct.pack("<I", va)
+        n_ = raw.count(b)
+        rep.c["entry_words"] += n_
+        rep.notes.append("dwords of %s 0x%08X in the image file: %d" % (name, va, n_))
+    for name, va in sorted(FN8.items(), key=lambda kv: kv[1]):
+        tab = START_TABLE if name.startswith("st") else DO_TABLE
+        num = int(name[2:])
+        rep.c["table_entries"] += 1
+        if S4.dword(tab + 4 * num) != va:
+            rep.bad("%s: table entry 0x%08X, model address 0x%08X" % (name, S4.dword(tab + 4 * num), va))
+    rep.notes.append("start table 42..53: %s" % " ".join("%d:0x%08X" % (i, S4.dword(START_TABLE + 4 * i))
+                                                       for i in range(42, 54)))
+    rep.notes.append("do table 83..98, 110, 111: %s" % " ".join("%d:0x%08X" % (i, S4.dword(DO_TABLE + 4 * i))
+                                                              for i in list(range(83, 99)) + [110, 111]))
+    print("CAT8A static " + " ".join("%s=%d" % (k, rep.c[k]) for k in sorted(rep.c)))
+    for n in rep.notes:
+        print("  " + n)
+    return 1 if rep.c["bad"] else 0
+
+
+def classes_8a(d):
+    """The deciding classes of the 8a batch's thinner negative controls, counted from the case files by predicates on
+    the written inputs (each to be read beside its control's failure count in the same check)."""
+    out = []
+
+    def load(fam):
+        return json.load(open(os.path.join(d, fam + ".json")))["cases"]
+    rows = load("hit_8a")
+    n = 0
+    for r in rows:
+        if r["w"] != "st47" or not sid_ok(r) or r["node"] is None or r.get("nopath") or not has_state(r, 1):
+            continue
+        if not tgt_unit(r):
+            n += 1                          # the no-target path writes the node's +0x24 whatever the room
+        elif room_at(r, r["uroom"], s32(2 * r["tx"] - r["ux"]), s32(2 * r["ty"] - r["uy"])):
+            n += 1
+    out.append(("state1_any", "st 47: a used node and a path, state 1 set, and no target or a target whose point "
+                "beyond lies in a room", n))
+    lob = lk = 0
+    for r in rows:
+        if r["w"] != "do110" or not sid_ok(r) or not tgt_unit(r) or r["ut"] == 0:
+            continue
+        v = [stat_key(r, s << 16) for s in (157, 158)]
+        if v[0] <= 0 and v[1] <= 0:
+            if 0 <= s16(r["m48"]) < NREC8 and r["sf4"] & 2:
+                lob += 1
+        else:
+            got = v[0] if v[0] > 0 else v[1]
+            if (got & M32) != (r["lvl"] & M32):
+                lk += 1
+    out.append(("lob_off", "do 110: a monster caster with stats 157 and 158 not above 0, srvmissilea in range, the "
+                "Skills lob bit set", lob))
+    out.append(("lvl_keep", "do 110: a monster caster with stat 157 or 158 above 0 (the one read) other than lvl",
+                lk))
+    rows = load("move_8a")
+    out.append(("bit1_off", "do 90: a valid id, a used node whose +0x0C has bit 1",
+                sum(1 for r in rows if r["w"] == "do90" and sid_ok(r) and r["node"] is not None and
+                    r["node"]["f0c"] & 2)))
+    out.append(("no_owner", "do 98: the path point in no room, a monster caster whose owner is found in a room",
+                sum(1 for r in rows if r["w"] == "do98" and not room_at(r, r["uroom"], r["px"], r["py"]) and
+                    r["ut"] == 1 and r["root"] and r.get("oroom"))))
+    rows = load("summon_8a")
+    dd = cc = 0
+    for r in rows:
+        if r["w"] != "do97" or not sid_ok(r) or not tgt_unit(r):
+            continue
+        if not (r["tt"] == 1 and r.get("tmode") in (0, 12)) or not room_of_t(r):
+            continue
+        if setd4(r):
+            dd += 1
+        else:
+            cc += 1
+    out.append(("d4_any", "do 97: a valid id, a dead monster target (mode 0 or 12) in a room, with a state of "
+                "DataTables+0xD4", dd))
+    out.append(("mask_1c09", "do 97: as above with no such state (every case reaching the collision test)", cc))
+    rows = load("miss_8a")
+    fc = vs = 0
+    for r in rows:
+        if r["w"] not in ("do88", "do95") or not sid_ok(r) or not 0 <= s16(r["m48"]) < NREC8 or r["node"] is None:
+            continue
+        if r["w"] == "do88":
+            nd = r["node"]
+            x0, y0 = nd["n18"], nd["ty"]
+            if x0 == 0 or y0 == 0:
+                x0, y0, ok = target_xy(r)
+                if not ok:
+                    continue
+            dd8 = img_byte(MAP_DIR + dir_u_to(r, x0, y0)) & 7
+            if frames8(r) - 4 > 8 and img_byte(TAB88B + 9 * dd8 + 8) != 0x63:
+                fc += 1
+        if r["w"] == "do95":
+            x, y, ok = target_xy(r)
+            vb, vl = r["vel"][s16(r["m48"])]
+            p = s32(vl * s32(r["lvl"]))
+            if ok and p < 0 and p % 8:
+                vs += 1
+    out.append(("f_nocap", "do 88: reaching its MissileCreate with the frame - 4 above 8 and the table's byte at "
+                "frame 8 not 0x63", fc))
+    out.append(("vel_shift", "do 95: reaching its MissileCreate with VelLev x lvl negative and not a multiple of 8",
+                vs))
+    for name, what, k in out:
+        print("CLASS %s %d: %s" % (name, k, what))
+
+
 # ================================================================================================= commands
 def batch_families(a):
     if a.family:
@@ -12251,6 +13534,8 @@ def cmd_check(a):
         rc |= 1 if rep.c["bad"] else 0
     if a.batch == "item" and not a.family:
         classes_item(a.dir)
+    if a.batch == "8a" and not a.family:
+        classes_8a(a.dir)
     return rc
 
 
@@ -12332,6 +13617,8 @@ def cmd_static(a):
         return cmd_static_ass(a)
     if a.batch == "item":
         return cmd_static_item(a)
+    if a.batch == "8a":
+        return cmd_static_8a(a)
     rep = Report("static")
     A = S4.asm()
     for va, mn, sub in PINS:
@@ -12393,7 +13680,7 @@ def main(argv):
     ap.add_argument("cmd", choices=["cases", "check", "static", "manifest"])
     ap.add_argument("family", nargs="*")
     ap.add_argument("--dir", default=None, help="default workspace/logs/skills-cat-<batch>")
-    ap.add_argument("--batch", default="9a", choices=["9a", "9b", "9c", "9d", "sor", "ama", "nec", "pal", "bar", "dru", "ass", "item"], help="the families of one batch (default 9a)")
+    ap.add_argument("--batch", default="9a", choices=["9a", "9b", "9c", "9d", "sor", "ama", "nec", "pal", "bar", "dru", "ass", "item", "8a"], help="the families of one batch (default 9a)")
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args(argv)
     return {"cases": cmd_cases, "check": cmd_check, "static": cmd_static, "manifest": cmd_manifest}[a.cmd](a)
