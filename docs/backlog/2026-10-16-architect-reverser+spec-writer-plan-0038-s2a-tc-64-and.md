@@ -23,3 +23,5 @@ is raised: [items/quality](../specs/items/quality.md) C1's chest hand-off (tier 
 the source) is `[C]` by run:2026-10-15-objects (items/0001 § 2), and its consequence for `d` and the odds is split off
 as `[I]` (derived, no run compares it). **Still open:** the raises in [items/tc § J](../specs/items/tc.md#j-object-drops-named-only)
 (with items/tc's Phase 3 round, after H2b and H2c) and [objects § J3](../specs/objects/README.md#j-operate-chests-and-containers-up-to-the-drop) (with the objects round).
+
+*Annotation (spec-writer, 2026-10-21, `lane/s38h2c`, plan 0038 Phase 3, items/tc cluster):* **done in part.** The [items/tc § J](../specs/items/tc.md#j-object-drops-named-only) raise: the tier rule with its arithmetic and the tier-as-`ilvl` hand-off `[C]` (run:2026-10-15-objects, items/0001 § 2). **Still open:** [objects § J3](../specs/objects/README.md#j-operate-chests-and-containers-up-to-the-drop) (its `ilvl: tier [I]` line), with the objects round.

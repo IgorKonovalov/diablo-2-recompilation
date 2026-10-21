@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/objects/README.md 2026-10-17
-  - docs/specs/items/tc.md 2026-10-20
+  - docs/specs/items/tc.md 2026-10-21
   - docs/specs/drlg/lifecycle.md 2026-10-20
 ---
 
@@ -316,14 +316,15 @@ creation).
 - Which of A, B or C: the level's monster level (the same value the monster pages call the area level), compared
   with the monster levels of the act's two reference levels, the span between them cut into thirds. Both specs now
   say it this way ([objects § J](../specs/objects/README.md#j-operate-chests-and-containers-up-to-the-drop),
-  [treasure class spec § J](../specs/items/tc.md#j-object-drops-named-only)). It is read from the code: the exact
-  cut (how the third is rounded, which bound counts) is not yet written down or checked against recorded tiers. The
-  shape of the drop (no roll of its own, one hand-off) is confirmed; the 11 object drops of one test run (all
-  `Act 1 Chest A`) and the Jail chest of the worked example below reproduced.
+  [treasure class spec § J](../specs/items/tc.md#j-object-drops-named-only)). The cut is now written down: a third of
+  the span (plus one) rounded toward zero, tier A below the first third, C from the second on. It is confirmed on the
+  59 chest drops of a recorded objects run (three difficulties, classic and expansion, acts I, II, III and V, all three
+  tiers, both boundaries met). The shape of the drop (no roll of its own, one hand-off) is confirmed; the 11 object
+  drops of one test run (all `Act 1 Chest A`) and the Jail chest of the worked example below reproduced.
 - The tier also goes to the resolver as the drop's item level for the quality roll, so a chest drop rolls its
   quality at item level 0 to 2: its odds of magic and better are no better than those of a monster drop of the same base in the same area; the
-  item's own level still comes from the chest. Read from the code
-  ([items/tc § J](../specs/items/tc.md#j-object-drops-named-only)); a check against recorded drops is pending.
+  item's own level still comes from the chest. Confirmed: the same 59 chest drops pass their tier as that item level
+  ([items/tc § J](../specs/items/tc.md#j-object-drops-named-only)).
 - The forced quality: 0 from urns, caskets and barrels, the sparkle chest's rare or magic
   [quality code](../glossary.md) otherwise. A non-zero forced quality replaces the normal quality roll for every entry
   that is not a unique or set entry. A sparkle chest uses the **same** act chest TC as any other chest; only the

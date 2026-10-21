@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/uniques-sets, items/affixes, items/quality, data/excel]
 consumed_by: [items/affixes, items/sockets-runewords, items/cube, items/vendors, save/d2s, player/creation, stats/aggregate]
-tags: {C: 130, I: 35, L: 2}
-updated: 2026-10-17
+tags: {C: 152, I: 22, L: 3}
+updated: 2026-10-21
 ---
 
 # Base stats and the property roll
@@ -50,10 +50,18 @@ flowchart LR
   fn:ITEMS_BuildSuperiorPick@0x005C2970, fn:ITEMS_BuildUnique@0x005566B0, fn:ITEMS_BuildSetPick@0x005C25C0,
   run:2026-10-14-props, run:2026-10-14-props-forced,
   [items/0006 § 2](../../findings/items/0006-properties.md#2-sub_0065fec0_itemapplypropsmode-a2-item-row-a5-a6-0x0065fec0))
-- [I] Four more callers of `ItemApplyProps` (0x004C0D20, 0x004E6720, 0x004E67D0, 0x0055C2C0) lie outside the
-  creation chain, and so does mode 6 (set bonuses, `sub_00660120_SetBonusApply`). Vendors and gambling reach the
-  roll through other callers of item creation ([items/vendors](vendors.md)). (fn:sub_00660120_SetBonusApply@0x00660120,
-  [items/0006 § 2](../../findings/items/0006-properties.md#2-sub_0065fec0_itemapplypropsmode-a2-item-row-a5-a6-0x0065fec0))
+- [C] `ItemApplyProps` has 20 call sites (Ghidra's references and a raw scan agree): 16 in the item builders and four
+  more callers outside the creation chain, `sub_004C0D20_ClientSocketAttach` (2 sites), `sub_004E6720_ClientGemDescMode5`,
+  `sub_004E67D0_ClientGemDescMode2` and `ITEMS_AttachToOwner` (2), none of them in the call graph of
+  `ItemCreateByQuality`. Mode 6 is `RUNEWORD_Apply`'s call of `PROP_ApplyBlock`, the only mode-6 call; the set bonuses
+  (`sub_00660120_SetBonusApply`) apply their blocks through `PROP_ApplyBlockByVersion` in modes 4 and 7. Both lie outside
+  the creation graph too. (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, fn:sub_004C0D20_ClientSocketAttach@0x004C0D20,
+  fn:sub_004E6720_ClientGemDescMode5@0x004E6720, fn:sub_004E67D0_ClientGemDescMode2@0x004E67D0,
+  fn:ITEMS_AttachToOwner@0x0055C2C0, fn:RUNEWORD_Apply@0x006600A0, fn:sub_00660120_SetBonusApply@0x00660120,
+  fn:PROP_ApplyBlockByVersion@0x0065FE10, `tools/xrefscan.py`,
+  [items/0006 § Plan 0038 batch S2b](../../findings/items/0006-properties.md#plan-0038-batch-s2b-2026-10-16))
+- [I] Vendors and gambling reach the roll through other callers of item creation ([items/vendors](vendors.md)).
+  ([items/0006 § 2](../../findings/items/0006-properties.md#2-sub_0065fec0_itemapplypropsmode-a2-item-row-a5-a6-0x0065fec0))
 
 ## Inputs
 
@@ -85,10 +93,16 @@ flowchart LR
 - [C] The `setitems` blocks are `prop1..9` at `+0x088` and `aprop1a, aprop1b, …, aprop5b` at `+0x118`, pinned
   against `setitems.bin`. (tbl:SetItems.txt:aprop1a, [SetItems § Property block](../../tables/SetItems.md#property-block-plan-0024-phase-1),
   [items/0006 § 2](../../findings/items/0006-properties.md#2-sub_0065fec0_itemapplypropsmode-a2-item-row-a5-a6-0x0065fec0))
-- [I] Not read on this path: `ItemStatCost` `op`, `op param`, `op base`, `op stat1..3` and every `Encode`/save column
-  (those belong to the save, [save/d2s § J](../save/d2s.md#j-property-list-framing)); `Sets` partial and full
-  blocks, `gems` and `runes` (applied when worn or socketed). (fn:PROP_WriteStat@0x0065EA50,
-  fn:sub_00660120_SetBonusApply@0x00660120, [items/0006 § 7](../../findings/items/0006-properties.md#7-stat-storage-as-far-as-the-save-needs-it))
+- [C] **No stored entry depends on** `ItemStatCost` `op`, `op param`, `op base`, `op stat1..3`, any `Encode`/save
+  column (those belong to the save, [save/d2s § J](../save/d2s.md#j-property-list-framing)), the `Sets` partial and full
+  blocks, `gems` or `runes` (applied when worn or socketed). Every final list logged reproduces with a model that reads
+  none of them (335 stock, 2 799 ItemRatio-forced), and the readers of the `Sets` blocks, the gems and runes and the
+  save columns lie outside `ItemCreateByQuality`'s call graph. The handlers and the writer read none of the `op`
+  columns; the stat evaluation does (`StatRecompute`, `StatEvaluate`), and that is how `op` reaches creation through
+  `EVD` (§ G). (fn:PROP_WriteStat@0x0065EA50, fn:sub_00626200_StatEvaluate@0x00626200,
+  fn:sub_006266C0_StatRecompute@0x006266C0, fn:sub_00660120_SetBonusApply@0x00660120, run:2026-10-14-props,
+  run:2026-10-15-items-chain, run:2026-10-14-props-forced,
+  [items/0006 § Plan 0038 batch S2b](../../findings/items/0006-properties.md#plan-0038-batch-s2b-2026-10-16))
 
 ### Runtime state
 
@@ -134,7 +148,7 @@ flowchart LR
 | `DataTables+0xC6C`, `+0xC70` | logged once per game: 6 and 63 | data/excel | [C] (fn:PROP_Func19_Charged@0x0065F6A0, run:2026-10-14-props-forced) |
 | the `skills` rows funcs 11 and 19 read (`reqlevel`, `maxlvl`) | table values | [Skills](../../tables/Skills.md) | [C] (fn:SKILLS_GetReqLevel@0x00644710, fn:SKILLS_GetMaxLevel@0x004AA8B0, run:2026-10-14-props-forced) |
 | the affix, rare-name, automagic and `qualityitems` picks | predicted (row and entry seed) by the items/affixes model chained with this one over the two runs, re-analysis 2026-10-15 ([items/0006 § 9](../../findings/items/0006-properties.md#9-phase-2-reproduction-run2026-10-14-props-run2026-10-14-props-forced)) | [items/affixes § C](affixes.md#c-one-magic-affix-pick--items_pickmagicaffix), [§ F](affixes.md#f-the-superior-builder--items_buildsuperior--items_buildsuperiorpick), [§ J](affixes.md#j-after-the-switch-ethereal-sockets-automagic) | [C] (fn:ITEMS_PickMagicAffix@0x005C1560, run:2026-10-14-props-forced) |
-| `ITEMS_RollStaffMods` | seed oracle inside the builders; its `item_singleskill` (107) entries are taken from the log | [items/affixes § I](affixes.md#i-staff-mods--items_rollstaffmods) | [I] (fn:ITEMS_RollStaffMods@0x005C1260, run:2026-10-14-props-forced) |
+| `ITEMS_RollStaffMods` | modelled (plan 0038 S2b), no longer a seed oracle: the model predicts the exit seed of 105 stock rolls and the `item_singleskill` (107) entries of every final list | [items/affixes § I](affixes.md#i-staff-mods--items_rollstaffmods) | [C] (fn:ITEMS_RollStaffMods@0x005C1260, run:2026-10-14-props, run:2026-10-15-items-chain, run:2026-10-14-props-forced) |
 
 - [C] Inside `ItemInitStats` and inside every `ItemApplyProps` call, the ethereal roll and the socket roll, the run
   needed **no** ADR-0004 oracle: every draw site is a plain range draw on the unit seed or the item seed, and no
@@ -146,16 +160,23 @@ flowchart LR
   property roll. Stock sessions alone: 186 creations, 36 end to end; the rest are ItemRatio-edited sessions (ADR-0010).
   (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, run:2026-10-15-items-chain, run:2026-10-15-items-chain-forced,
   [items/0006 § 9](../../findings/items/0006-properties.md#9-phase-2-reproduction-run2026-10-14-props-run2026-10-14-props-forced))
-- [I] No func reaches the calc VM: the roll, the writer, the base resets, the skill getters, `ITEMS_GetItemLevel`,
-  `sub_00483360_MulDiv` and the stat-list add and set were all read. (0x0065EB30–0x0065FD20,
-  fn:sub_00483360_MulDiv@0x00483360, fn:ITEMS_GetItemLevel@0x006281E0)
+- [C] No func reaches the calc VM: the roll, the writer, the base resets, the skill getters, `ITEMS_GetItemLevel`,
+  `sub_00483360_MulDiv` and the stat-list add and set were all read, and a mechanical call-graph closure of
+  `ItemApplyProps` and the 37 handler slots (644 functions) holds none of the 56 `data/calc` functions; no evaluator
+  entry is ever stored as a pointer, so the graph's indirect calls cannot reach it. (0x0065EB30–0x0065FD20,
+  fn:CALC_Eval@0x006C0BC0, fn:sub_00483360_MulDiv@0x00483360, fn:ITEMS_GetItemLevel@0x006281E0,
+  [items/0006 § Plan 0038 batch S2b](../../findings/items/0006-properties.md#plan-0038-batch-s2b-2026-10-16))
 
 ## Algorithm
 
 All arithmetic is signed 32-bit unless a step says otherwise. Division `÷` truncates toward zero. `Range(s, n)` is
 the rng spec's `Range`: one `Step` and `low mod n`, or 0 with **no step** when `n < 1` (signed). `RangeOffset(s, b,
-n)` is `b + Range(s, n)`, so it returns `b` with no step when `n < 1`. [I] (fn:RNG_Range@0x0045C390,
-fn:RNG_RangeB@0x0045C3E0, fn:RNG_RangeOffset@0x00472280, [rng § Algorithm](../rng/README.md#algorithm))
+n)` is `b + Range(s, n)`, so it returns `b` with no step when `n < 1`. [C] Three stock and 16 forced-run value rolls
+with a negative bound reproduce, and flooring the divisions instead breaks 6 forced-run creations (the func-11 and
+-19 skill levels with a negative `max`). (fn:RNG_Range@0x0045C390, fn:RNG_RangeB@0x0045C3E0,
+fn:RNG_RangeOffset@0x00472280, fn:PROP_RollValue@0x0065E9E0, run:2026-10-14-props-forced,
+[rng § Algorithm](../rng/README.md#algorithm),
+[items/0006 § Plan 0038 batch S2b](../../findings/items/0006-properties.md#plan-0038-batch-s2b-2026-10-16))
 
 ### A. Base stats on the unit seed
 
@@ -239,8 +260,11 @@ Step notes:
   with 1..5. [C] (fn:ITEMS_GetMinStack@0x006296F0, fn:ITEMS_GetMaxStack@0x006295B0, tbl:Misc.txt:spawnstack,
   run:2026-10-14-props-forced)
 - A4. The quantity-1 rule for qualities 4..9 never fires on a drop, because the quality is still 0 when § A runs
-  (`ItemData` is zeroed at allocation). A rare or magic throwing weapon keeps its drawn quantity. [I]
-  (fn:sub_0062A0F0_ItemQualityMagicPlus@0x0062A0F0, [items/0006 § Dead ends](../../findings/items/0006-properties.md#dead-ends))
+  (`ItemData` is zeroed at allocation): the quality logged at the entry of `ItemInitStats` is 0 in every creation (335
+  stock, 2 800 ItemRatio-forced). A rare or magic throwing weapon keeps its drawn quantity: five stock ones kept 63
+  (`7pi`), 109 and 39 (`7ta`), 92 and 66 (`bal`). [C] (fn:sub_0062A0F0_ItemQualityMagicPlus@0x0062A0F0,
+  fn:sub_00557AB0_ItemInitStats@0x00557AB0, run:2026-10-14-props, run:2026-10-15-items-chain,
+  [items/0006 § Plan 0038 batch S2b](../../findings/items/0006-properties.md#plan-0038-batch-s2b-2026-10-16))
 - A6. **Durability** lies in `[⌊d/2⌋, 2⌊d/2⌋ − 1]` and is never `d` for `d ≥ 2`; max durability is `d`. [C]
   (tbl:Weapons.txt:durability, tbl:Armor.txt:durability, run:2026-10-14-props-forced)
 - A6. **`nodurability` is not tested here.** 80 bows, crossbows and throwing potions drew their durability on the unit
@@ -249,7 +273,10 @@ Step notes:
   tbl:Armor.txt:minac, run:2026-10-14-props-forced)
 - A3–A6. Defense, damage, block, speed, quantity and durability are written as the unit's **base stats**
   (`sub_00627260_UnitSetStat`), not into the property list. [C] (0x00557C06, 0x005563D0, run:2026-10-14-props-forced)
-- A5. The type-11 setup was not reached in any run. [I] (fn:sub_0065E8E0_ItemType11Setup@0x0065E8E0)
+- A5. The type-11 setup has no stock case: type 11 (`elix`) has one record, `elx`, which no TC cell, cube output or
+  vendor column names, and `elix` has `TreasureClass` 0 (full-table check, plan 0038 batch H2b). It stays code-read.
+  [I] (fn:sub_0065E8E0_ItemType11Setup@0x0065E8E0, tbl:ItemTypes.txt:TreasureClass,
+  [items/0006 § Plan 0038 batch H2b](../../findings/items/0006-properties.md#plan-0038-batch-h2b-2026-10-20))
 
 ### B. ItemApplyProps: modes and blocks
 
@@ -297,9 +324,11 @@ Step notes:
   Three *Civerb's Cudgel* (`add func` blank) put `aprop1a` `dmg/lvl` in the main list (Worked example 6); rows with
   `add func` 1 or 2 put theirs in the lists of state 165 and up (103 slots). [C] (0x0065FFD2–0x00660027,
   data:g_SetAPropStates@0x006EDB40, tbl:SetItems.txt:add func, run:2026-10-14-props-forced)
-- B3. On stock data, 82 set rows with `add func` 1 or 2 carry `aprop`s, and two rows with it blank carry one
-  (`Civerb's Cudgel` `dmg/lvl`, `Trang-Oul's Claws` `extra-pois`). The code distinguishes only 0 from non-zero; what 1
-  and 2 change happens when the item is worn. [I] (0x0065FFE3, tbl:SetItems.txt:add func)
+- B3. On stock data, 82 set rows with `add func` 1 (1 row) or 2 (81) carry `aprop`s, one row with 2 carries none, and
+  two rows with it blank carry one (`Civerb's Cudgel` `dmg/lvl`, `Trang-Oul's Claws` `extra-pois`), by a full-table
+  check. At creation the code distinguishes only 0 from non-zero; what 1 and 2 change happens when the item is worn
+  (next note). [C] (0x0065FFE3, tbl:SetItems.txt:add func, run:2026-10-14-props-forced,
+  [items/0006 § Plan 0038 batch S2b](../../findings/items/0006-properties.md#plan-0038-batch-s2b-2026-10-16))
 - B3. **When worn** ([stats/aggregate § J](../stats/aggregate.md#j-set-bonuses)): `add func` 1 switches the list of
   pair *k* on while the member it names is worn, `add func` 2 while *k* other members are worn; the wearer also gets
   one list per set from the `Sets` partial and full blocks. 19 525 toggles and 5 569 wearer lists were predicted.
@@ -391,7 +420,7 @@ only then).
 | 9 | fn:PROP_Func09_SkillParam@0x0065F310 | as 8 | `W(stat, par, v)` when `par` is a skill id. No row uses it | [I] |
 | 10 | fn:PROP_Func10_SkillTab@0x0065F3F0 | `v ← prev or Roll` | `W(stat, par mod 3 + (par ÷ 3) × 8, v)` | [C] |
 | 11 | fn:PROP_Func11_SkillOnEvent@0x0065F470 | **none** | E3: `W(stat, par × 64 + (L & 63), chance)` | [C] |
-| 12 | fn:PROP_Func12_SkillRand@0x0065FC40 | `Roll` | `W(stat, param = v, value = par)` | [I] |
+| 12 | fn:PROP_Func12_SkillRand@0x0065FC40 | `Roll` | `W(stat, param = v, value = par)` | [C] (run:2026-10-21-tcnamed-props-forced) |
 | 13 | fn:PROP_Func13_DurPercent@0x0065FC90 | `Roll` | `Reset` when mode = 1; `W(stat, 0, v)`; if written, base stat 72 ← `EVD` | [C] |
 | 14 | fn:PROP_Func14_Sockets@0x0065F590 | E5 | E5 | [C] |
 | 15 | fn:PROP_Func15_Min@0x0065F960 | none | `v ← min`; stat 21 → E1 as func 5 with prev = v, else `W(stat, 0, v)` | [C] |
@@ -402,14 +431,18 @@ only then).
 | 20 | fn:PROP_Func20_Indestructible@0x0065FAE0 | none | `AddStat(list, 152, 0, 1)` | [C] |
 | 21 | fn:PROP_Func21_ValParam@0x0065FB50 | `Roll` | `W(stat, val, v)` (the class or element in `val1`) | [C] |
 | 22 | fn:PROP_Func22_SkillParam@0x0065FBF0 | `Roll` | `W(stat, (u16) par, v)` | [C] |
-| 23 | fn:PROP_Func23_Ethereal@0x0065FD20 | none | if not ethereal and `ItemHasDurability`: `ITEMS_MakeEthereal` (§ F) | [I] |
+| 23 | fn:PROP_Func23_Ethereal@0x0065FD20 | none | if not ethereal and `ItemHasDurability`: `ITEMS_MakeEthereal` (§ F), no `PROP_WriteStat` call, return 1 | [C] for that make branch (run:2026-10-21-tcnamed-props-forced); the two skips (already ethereal, no durability) [I] |
 | 24 | fn:PROP_Func24_ParParam@0x0065F390 | `v ← prev or Roll` | `W(stat, par, v)` | [I] |
 | 36 | fn:PROP_Func36_RandClassSkill@0x0065FBA0 | `Roll` | `W(stat, param = v, value = val)` | [I] |
 
 - [C] The handler of func *f* is the word at `0x007462F8 + 4f`; slots 0 and 25..35 are NULL. The run reached funcs 1,
-  2, 3, 5, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 19, 20, 21 and 22 (2 279 slots), every one reproduced. Funcs 12, 18,
-  23, 24 and 36 were not reached, and no drop-path row uses 4 or 9; their rows stay inferred. (data:g_PropFuncTable@0x007462F8,
-  run:2026-10-14-props-forced, [Properties § Survey](../../tables/Properties.md#survey-the-codes-the-item-tables-use))
+  2, 3, 5, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 19, 20, 21 and 22 (2 279 slots), every one reproduced. A TC-named
+  forced run (a loose `treasureclassex.bin` naming the carriers; ADR-0013, the handlers read no TreasureClassEx cell)
+  reached func 12 and func 23's make branch, three slots each, reproduced with the final lists. Funcs 18, 24 and 36
+  and func 23's skips were not reached, and no drop-path row uses 4 or 9; their rows stay inferred.
+  (data:g_PropFuncTable@0x007462F8, run:2026-10-14-props-forced, run:2026-10-21-tcnamed-props-forced,
+  [Properties § Survey](../../tables/Properties.md#survey-the-codes-the-item-tables-use),
+  [items/0006 § Plan 0038 batch H2c](../../findings/items/0006-properties.md#plan-0038-batch-h2c-2026-10-21))
 - [C] **Funcs 1 and 13 roll in mode 1 too.** Superior `att` rolled 1..3 over 11 items and superior `dur%` 10..15 over
   15 items, never their maximum; the mode-1 `Reset` has no case for stats 19 and 75. (fn:PROP_Func01_Roll@0x0065EB30,
   fn:PROP_Func13_DurPercent@0x0065FC90, run:2026-10-14-props-forced)
@@ -417,11 +450,26 @@ only then).
   (`maxac + 1`, D3), not the stat. (fn:PROP_Func02_RollAcPercent@0x0065EBA0, run:2026-10-14-props-forced)
 - [C] Funcs 15, 16 and 17 (the damage pairs and `…/lvl` codes) never draw, except func 17 with `par` 0. A `dmg-norm`
   block whose `min` is 0 hands prev 0 to func 5, which then rolls. (0x0065FD70, run:2026-10-14-props-forced)
-- [I] **Funcs 12 and 36 put the roll in the param.** `skill-rand` (*Ormus' Robes*, `36..60`, `par` 3) writes
-  `item_singleskill` with a random skill id as param and value `par`; `randclassskill` (*Hellfire Torch*, `0..6`,
-  `val1` 3) writes `item_addclassskills` with a random class as param and value `val`.
-  (fn:PROP_Func12_SkillRand@0x0065FC40, fn:PROP_Func36_RandClassSkill@0x0065FBA0, tbl:Properties.txt:val1)
-- [I] Func 10's param packs the class in bits 3 and up and the tab in bits 0–1. (fn:PROP_Func10_SkillTab@0x0065F3F0)
+- [C] **Func 12 puts the roll in the param.** `skill-rand` (*Ormus' Robes*, `36..60`, `par` 3) draws once on the item
+  seed and writes `item_singleskill` with the roll as param and `par` as value: on three *Ormus' Robes* the roll was 39,
+  37 and 38 and the write was stat 107, param the roll, value 3 each time (the swapped reading would have written a
+  value of 37–39); `tools/props.py check` reproduces the three creations from their seeds. (fn:PROP_Func12_SkillRand@0x0065FC40,
+  fn:PROP_RollValue@0x0065E9E0, fn:PROP_WriteStat@0x0065EA50, run:2026-10-21-tcnamed-props-forced,
+  [items/0006 § Plan 0038 batch H2c](../../findings/items/0006-properties.md#plan-0038-batch-h2c-2026-10-21))
+- [I] **Func 36 does the same with the class.** `randclassskill` (*Hellfire Torch*, `0..6`, `val1` 3) writes
+  `item_addclassskills` with a random class as param and value `val`. Its only carrier is never dropped in stock
+  single-player play, so only edited data reaches it. (fn:PROP_Func36_RandClassSkill@0x0065FBA0, tbl:Properties.txt:val1)
+- [C] **Func 23's make branch.** On an item that is not ethereal and has durability, func 23 makes it ethereal through
+  `ITEMS_MakeEthereal`, with no draw and no `PROP_WriteStat` call, and returns 1: on three *Ethereal Edge* (`7ba`,
+  durability 35) `ITEMS_IsEthereal` gave 0 and `ItemHasDurability` 1, the item flags gained `0x400000`, no `PROP_WriteStat` call
+  was logged and the item seed was unchanged; `props.py check` (which models `ITEMS_MakeEthereal`) reproduces the three
+  creations with their final lists, so the weapon base stats `ITEMS_MakeEthereal` scales (21–24, 159, 160) are in the
+  check. (fn:PROP_Func23_Ethereal@0x0065FD20, fn:ITEMS_MakeEthereal@0x0065E4D0, fn:ITEMS_IsEthereal@0x0062A8D0,
+  fn:sub_00629930_ItemHasDurability@0x00629930, run:2026-10-21-tcnamed-props-forced) The two skips (an item already
+  ethereal, or one without durability) were not reached. [I] (fn:PROP_Func23_Ethereal@0x0065FD20)
+- [C] Func 10's param packs the class in bits 3 and up and the tab in bits 0–1: every func-10 write logged has param
+  `par mod 3 + (par ÷ 3) × 8` (2 stock, 15 ItemRatio-forced). (fn:PROP_Func10_SkillTab@0x0065F3F0,
+  run:2026-10-15-items-chain, run:2026-10-15-items-chain-forced)
 
 **E1. Funcs 5 and 6, damage by base column.**
 
@@ -451,13 +499,19 @@ E2. v ← prev or Roll                                                          
       base 21..24, 159, 160 ← their base columns (as D3, all six)
       m ← max(maxdam, 2handmaxdam)
       t ← MulDiv(m, v, 100)
-      if t ≤ 0: E1 as func 6 with v = 1; return                 ; +1 max damage, no percent stat     [I] (fn:sub_00483360_MulDiv@0x00483360)
+      if t ≤ 0: E1 as func 6 with v = 1; return                 ; +1 max damage, no percent stat     [C] (fn:sub_00483360_MulDiv@0x00483360, run:2026-10-15-items-chain-forced)
     W(18, 0, v); W(17, 0, v)                                     ; 18 first, then 17
 ```
 
-- [I] The reset of the damage columns matters only when something changed them before in the same item, for example a
-  block placed after `ethereal`; every stock `ethereal` unique has `dmg%` first. The +1 fallback was not reached in the
-  runs. (0x0065F010, run:2026-10-14-props-forced)
+- [C] **The `+1` fallback acts.** Seven superior weapons of the ItemRatio-forced runs have `max(maxdam, 2handmaxdam) · v
+  < 100` (`swb` 14·5, `hbw` 6·7, `tax` 7·10, `2hs` 17·5, `pil` 9·11, `ob2` 8·7, `axe` 11·6); each wrote only max-damage
+  stats of value 1 and no 17 or 18, and `tools/props.py` reproduces each. Func 7 reads no ItemRatio cell (ADR-0013);
+  the forced runs give the path, not its frequency, and no stock drop met it. (fn:PROP_Func07_DmgPercent@0x0065F010,
+  fn:sub_00483360_MulDiv@0x00483360, run:2026-10-15-items-chain-forced,
+  [items/0006 § Plan 0038 batch S2b](../../findings/items/0006-properties.md#plan-0038-batch-s2b-2026-10-16))
+- [C] On stock data the reset of the damage columns never acts after a change: four unique and set rows carry
+  `ethereal`, and none has a func-7 block after it (full table). (fn:PROP_Func07_DmgPercent@0x0065F010,
+  tbl:UniqueItems.txt:prop1) What the reset does after such a change has no stock case. [I] (0x0065F010)
 - [C] `MulDiv` is signed and truncates toward zero, so for the positive operands here `t = ⌊m · v / 100⌋` and the
   fallback fires exactly when `m · v < 100`. (fn:sub_00483360_MulDiv@0x00483360, run:2026-10-15-mon-stats,
   [monsters/stats § A](../monsters/stats.md#a-muldiv-and-monlvlstats))
@@ -536,7 +590,7 @@ flowchart TD
 F1. if itemVersion ≥ 100: EtherealRoll(item, rec)                                    [C] (0x00557943–0x005579A3, run:2026-10-14-props, run:2026-10-14-props-forced)
     if quality ∈ 1..3: SocketRoll(game, item, rec)
 EtherealRoll:                                                                       (fn:sub_00556CA0_ItemRollEthereal@0x00556CA0)
-F2. if rec+0x80 & 0x02: return                                                       [I] (0x00556CA0)
+F2. if rec+0x80 & 0x02: return                                                       [C] (0x00556CA0, run:2026-10-15-cube, run:2026-10-16-player)
     if not (IsType(item, 45) or IsType(item, 50)): return                            [C] (fn:sub_00629930_ItemHasDurability@0x00629930, run:2026-10-14-props-forced, all of F2–F3)
     if not ItemHasDurability(item) or quality ∈ {1, 5} or base.quest: return
     r ← Range(item.seed, 100)                                                        ; draw
@@ -548,9 +602,9 @@ SocketRoll:                                                                     
 F4. if quality < 2 or not base.hasinv or base.stackable: return                      [C] (0x00556B60, fn:ITEMS_GetStartSeed@0x00627DF0, run:2026-10-14-props, run:2026-10-14-props-forced, all of F4–F6)
     cap ← ItemMaxSockets(item);  if cap = 0: return
     cap ← min(cap, 3 / 4 / 6 by game.difficulty)
-    if itemVersion < 100 and IsType(item, 3 tors): return                            ; [I] no draw (0x00556C0F)
+    if itemVersion < 100 and IsType(item, 3 tors): return                            ; no draw [C] (0x00556C0F, run:2026-10-20-sweep-items-chain)
     r ← Range(item.seed, 100)                                                        ; draw
-    if rec+0x80 & 0x08: return                                                       ; [I] tested after the draw (0x00556C0F)
+    if rec+0x80 & 0x08: return                                                       ; tested after the draw [C] (0x00556C0F, run:2026-10-16-player)
     if rec+0x80 & 0x10: r ← 0
 F5. ItemMaxSockets(item) = min(gemsockets, MaxSock1 if ilvl ≤ 25, MaxSock25 if ilvl ≤ 40, else MaxSock40)
 F6. if (rec+0x44 & 0x800) or r < 33:
@@ -572,10 +626,17 @@ Step notes:
 - F3. The ×3/2 applies to the base stats as the builder left them, so an `ac%` armour is multiplied from `maxac + 1`.
   The durability becomes `⌊max/2⌋ + 1` and the current durability the evaluated max. [C]
   (fn:ITEMS_MakeEthereal@0x0065E4D0, run:2026-10-14-props-forced)
-- F2–F3. The ethereal roll tests the record's skip bit before its draw and its forced bits after it; the socket roll
-  draws before testing its skip bit. The forced bits `rec+0x80 & 0x04` / `& 0x10` are the resolver's upgrade bits,
-  never set with stock data. [I] (0x00556C0F, 0x00556D07, struct:ItemCreateRec+0x80,
-  [items/tc § H](tc.md#h-item-pick-and-hand-off))
+- F2, F4. **The skip bits.** Every ethereal roll entered with `rec+0x80 & 0x02` returned without a draw: 132 cube
+  outputs and 209 player start items, 11 of the cube's being weapons or armour with durability and a quality other than
+  1 or 5, where the roll would otherwise draw. In the player logs 54 socket rolls with `rec+0x80 & 0x08` made their
+  `Range(100)` draw and then wrote no sockets, 21 of them with a draw below 33. So the ethereal roll tests its skip bit
+  before its draw and the socket roll after. [C] (fn:sub_00556CA0_ItemRollEthereal@0x00556CA0,
+  fn:sub_00556B60_ItemRollSockets@0x00556B60, 0x00556C0F, run:2026-10-15-cube, run:2026-10-16-player,
+  [items/0006 § Plan 0038 batch S2c](../../findings/items/0006-properties.md#plan-0038-batch-s2c-2026-10-16))
+- F3. The forced bits `rec+0x80 & 0x04` / `& 0x10` are the resolver's upgrade bits ([items/tc § H](tc.md#h-item-pick-and-hand-off)),
+  never set with stock data: none of the 354 ethereal and 287 socket rolls of the stock drop logs had `rec+0x80 &
+  0x14`, nor any player start item. [C] (struct:ItemCreateRec+0x80, run:2026-10-14-props, run:2026-10-15-items-chain)
+  That the ethereal roll tests them after its draw has no stock case. [I] (0x00556D07)
 - F3. **An `ethereal` unique can be made ethereal twice.** Func 23 makes the item ethereal without touching durability;
   the roll then tests the record bits, not the item flag. A unique whose `indestruct` follows its `ethereal` has no
   durability and does not draw (*Ethereal Edge*, *Ghostflame*, *Shadowkiller*); *Wraithflight* (`7gl`, durability 16,
@@ -592,7 +653,11 @@ Step notes:
   read in full, with the load setter that keeps a count above these clamps, in
   [items/sockets-runewords § F](sockets-runewords.md#f-socket-counts-the-two-setters); filling the sockets and the
   runeword are [items/sockets-runewords](sockets-runewords.md).
-- F4. Classic body armour (`tors`, item version < 100) makes no socket draw; not reached in the runs. [I] (0x00556C0F)
+- F4. **Classic body armour (`tors`, item version < 100) makes no socket draw.** The 10 classic `tors` drops of
+  qualities 2 and 3 in the H2b run each passed `ItemMaxSockets` > 0 and reached the test, and none drew; the 5 expansion
+  `tors` drops of quality 2 past the same point each drew. [C] (0x00556C0F, fn:sub_00556B60_ItemRollSockets@0x00556B60,
+  run:2026-10-20-sweep-items-chain,
+  [items/0006 § Plan 0038 batch H2b](../../findings/items/0006-properties.md#plan-0038-batch-h2b-2026-10-20))
 
 ### G. Stat storage
 
@@ -671,9 +736,11 @@ Step notes:
   calls interleaved prefix *k*, suffix *k* for *k* = 0..2 ([items/affixes § E](affixes.md#e-the-rare-builder--items_buildrare--items_buildrareaffixes), items/0005 § 6). [C] (fn:ITEMS_BuildRareAffixes@0x005C1BF0, run:2026-10-14-affixes,
   [items/0005](../../findings/items/0005-affixes.md))
 - H4. The staff mods advance the item seed after the builder's last `ItemApplyProps` and add an `item_singleskill`
-  (107) entry to the main list; they are specified in [items/affixes § I](affixes.md#i-staff-mods--items_rollstaffmods),
-  and `tools/props.py` takes that span from the log. [I] (fn:ITEMS_RollStaffMods@0x005C1260,
-  run:2026-10-14-props-forced)
+  (107) entry to the main list; they are specified in [items/affixes § I](affixes.md#i-staff-mods--items_rollstaffmods).
+  The model predicts the exit seed of 105 stock rolls (21 ItemRatio-forced), the join seed after every builder whose
+  log has no affix lines, and the 107 entries of every final list (354 stock lists, 4 items with entries). [C]
+  (fn:ITEMS_RollStaffMods@0x005C1260, run:2026-10-14-props, run:2026-10-15-items-chain, run:2026-10-14-props-forced,
+  [items/0006 § Plan 0038 batch S2b](../../findings/items/0006-properties.md#plan-0038-batch-s2b-2026-10-16))
 - H1–H7. The plan 0019 logs, rerun with the property oracle replaced by this model, still reproduce: 304 + 1 519
   creations, the item seed after 77 unique and 28 set rolls predicted from the tables alone. [C]
   (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, run:2026-10-14-uniques, run:2026-10-14-uniques-forced,
@@ -803,7 +870,9 @@ blank). [C] (run:2026-10-14-props-forced)
 - **The socket count is `start mod cap + 1`**, not a draw; keep `ItemData+0x10` (which a fallback rewrites) around.
   [C] (fn:ITEMS_SetSockets@0x0062BCB0, run:2026-10-14-props-forced)
 - **`sock` draws even when it then writes nothing** (cap < 1 after `ItemMaxSockets`), but not when the inventory size
-  is 0. [I] (fn:PROP_Func14_Sockets@0x0065F590)
+  is 0. No stock `sock` block runs with a cap below 1 (no unique or set `sock` row has such a base at an ilvl it drops
+  at, and the magic `sock` rows are refused on them), so this rests on the code reading. [I]
+  (fn:PROP_Func14_Sockets@0x0065F590)
 - **Superior is not "max".** Funcs 1, 2 and 13 roll in mode 1; a D2R-era description that says otherwise does not
   describe 1.14d. [C] (fn:PROP_Func01_Roll@0x0065EB30, run:2026-10-14-props-forced)
 - **`ac%` raises the base defense to `maxac + 1` per block**, before ethereal ×3/2. [C] (0x0065CCC0,
@@ -824,7 +893,8 @@ blank). [C] (run:2026-10-14-props-forced)
   run:2026-10-15-items-chain-forced, [items/0006 § 4](../../findings/items/0006-properties.md#4-the-handlers-per-func))
 - **So the `+1` comes before the percentage:** max = current = `h + ⌊h · dur%/100⌋`, not
   `⌊⌊max/2⌋ · (100 + dur%)/100⌋ + 1`. The two differ by one for some values (`max` 38, `dur%` 15: 23, not 22); none of
-  the three run items is such a case, so this order rests on the code reading. [I] (0x00556D41–0x00556D6E,
+  the three run items is such a case, and the long stock hunt of run:2026-10-20-sweep-items-chain made no superior
+  ethereal `dur%` item in 1 043 creations, so this order rests on the code reading. [I] (0x00556D41–0x00556D6E,
   fn:sub_00626200_StatEvaluate@0x00626200)
 
 ## Evidence
@@ -867,12 +937,18 @@ blank). [C] (run:2026-10-14-props-forced)
   had `⌊(m+1)·dur%/100⌋ > ⌊m·dur%/100⌋` (`m = ⌊max/2⌋`). A superior ethereal item where the two differ (e.g. `max` 38,
   `dur%` 15) would settle it on a run ([items/0006 *Open questions*](../../findings/items/0006-properties.md#open-questions),
   architect review 2026-10-15).
-- ~~`MulDiv` rounding in E2~~ answered in § E2: signed, truncating toward zero. The fallback itself was not reached.
-- [L] **Not reached in the runs:** funcs 12, 23, 24 and 36 (one or four unique rows each), the func 7 fallback, a `sock`
-  block on a base with `ItemMaxSockets` 0, the `dmg-min`/`dmg-max` clamp (no stock row), the type-11 setup, classic body
-  armour at the socket roll, *Wraithflight*'s second ethereal. Each stays inferred.
+- ~~`MulDiv` rounding in E2~~ answered in § E2: signed, truncating toward zero; the fallback is reached on forced-run
+  drops (E2 note).
+- [L] **Func 24** (`v ← prev or Roll`, `W(stat, par, v)`): no slot reached. *Tomb Reaver*, its only stock-droppable
+  carrier, needs ilvl ≥ 86, so Hephasto in Hell; the TC-named forced run (run:2026-10-21-tcnamed-props-forced) met no
+  Hephasto in four sessions. Open route: an owner-played Hell Hellforge session on that run's edited table, or a pilot
+  that reaches the room ([items/0006 § Plan 0038 batch H2c](../../findings/items/0006-properties.md#plan-0038-batch-h2c-2026-10-21)).
+- [L] **Still not reached, with no stock route:** func 23's two skips, func 36 (*Hellfire Torch*), *Wraithflight*'s
+  second ethereal (both only through an edited TC cell); a `sock` block on a base with `ItemMaxSockets` 0, the
+  `dmg-min`/`dmg-max` clamp, the type-11 setup (no stock case). Each stays inferred. ~~Funcs 12 and 23 (make branch),
+  the func 7 fallback, classic body armour at the socket roll~~: reached (§ E, E2 and F4 notes).
 - ~~The affix stitch~~ closed on the two runs: the chained check predicts the builders' picks and the automagic pick
-  (*Inputs and boundaries*); `ITEMS_RollStaffMods` stays an oracle. ~~One creation checked end to end with both line
+  (*Inputs and boundaries*); `ITEMS_RollStaffMods` is modelled too (plan 0038 S2b). ~~One creation checked end to end with both line
   sets~~ closed by run:2026-10-15-items-chain: 219 creations end to end (*Inputs and boundaries*).
 - ~~**What `add func` 1 and 2 change when the item is worn** (`sub_00660120_SetBonusApply`), and the `Sets` bonus
   blocks.~~ Specified in [stats/aggregate § J](../stats/aggregate.md#j-set-bonuses) (plan 0041; B3 above).
