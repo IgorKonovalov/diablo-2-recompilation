@@ -46,7 +46,8 @@ claim rests on a callee-saved register that is not a boundary argument (ruling 1
 - [C] (ADR-0021; § 3) **The melee functions.** Start 32 tests the record, the target and the target's room (a town
   room → 0), then ends at `0x0056E520(ECX caster, EDX calc3)`; start 39 ends at `COMBAT_MeleeHitTest(target,
   SKILLS_GetToHit(caster, id, lvl), 0)` with a zeroed 0x70-byte packet. Do 2 (with `0 < srvoverlay ≤
-  DataTables+0xBC0`) needs a target (→ 0) and the caster's queued hit on it (none → **1, no delivery**) and ends at
+  DataTables+0xBC0`) needs a target (→ 0) and a node of the caster's `+0xAC` chain naming the caster and the target
+  (`QueuedHitFind`; none → **1, no delivery**) and ends at
   `sub_00621E40_UnitSetOverlayStat(target, srvoverlay, 0)` when the packet's `+0x04` bit 0 is set; then (with
   `auratargetstate` in `[0, States count)`) the same two tests and, on bit 0, `end = frame + max(auralencalc, 1)` and
   `STATLIST_Alloc(game+0x1C, 2, end, target type, guid)` for a target with no list of that state, else
@@ -265,9 +266,9 @@ u->c4 |= 0x40;  if ((t = UNIT_GetTargetUnit(game, u))) { COMBAT_DeliverQueued(ga
 - [C] (ADR-0021; ends at `UnitSetOverlayStat` @0x0056F273, `STATLIST_Alloc` @0x0056F326 or @0x0056F3DC,
   `UnitQueueEvent` @0x0056F344, `STATE_Set` @0x0056F414, or `COMBAT_DeliverQueued` @0x0056F44F) **Do 2** (tier A), as
   the excerpt: `srvoverlay` (`movzx; test ax, ax; jle`, then `movsx; cmp [DataTables+0xBC0]; jg`: in `(0, count]`);
-  each of the overlay and `auratargetstate` blocks returns 0 without a target and **1 without the caster's queued hit
-  on it** (`sub_0057D690_QueuedHitFind`, no delivery, bit 6 not set), and acts only when that packet's `+0x04` bit 0
-  is set; `auratargetstate` by `test ax, ax; jl` (0 admitted), `aurastate` by `jle` (0 refused); the end `frame +
+  each of the overlay and `auratargetstate` blocks returns 0 without a target and **1 when `sub_0057D690_QueuedHitFind(caster,
+  target)` finds no node** of the caster's `+0xAC` chain naming both (no delivery, bit 6 not set), and acts only when
+  the found node's packet `+0x04` bit 0 is set; `auratargetstate` by `test ax, ax; jl` (0 admitted), `aurastate` by `jle` (0 refused); the end `frame +
   max(auralencalc, 1)` (`cmp eax, 1; jl`); `STATLIST_Alloc`'s first argument is the game's `+0x1C`; the
   `auratargetstate` list is looked up on the target and the `aurastate` list on the caster; with neither state block
   taken, bit 6 of the caster's `+0xC4`, then `DeliverQueued(ECX game, EDX caster; target, 0)`, or 0 without a target
@@ -283,7 +284,7 @@ u->c4 |= 0x40;  if ((t = UNIT_GetTargetUnit(game, u))) { COMBAT_DeliverQueued(ga
   `DeliverQueued(ECX game, EDX caster; target, 0)` at the first site, bit 6 unchanged; non-zero → bit 6, then the
   second site. (run:2026-10-21-cat-emu-bar `hit_bar`, fn:sub_005D8E00_SkillDo09Frenzy@0x005D8E00)
 - [I] After do 9's boundaries: parity 0: `sub_0057C9F0_QueuedHitRemove(target)`, `HandsRefresh`, `0x00580380`,
-  `0x005D8C70(id, lvl)` (skills/0003's frenzy state: `aurastate` for `auralencalc`, stat 169 counting up to `lvl`)
+  `0x005D8C70(id, lvl)` (skills/0003 § 4's reading: `aurastate` for `auralencalc`, stat 169 counting up to `lvl`)
   and `0x005D8B10(target, id, lvl)` (the next hit); parity 1: `HandsRefresh`, `0x00580380`, `0x005D8C70`, then
   `NearestUnitInRange(0, 0, reach + 4, 0x20003, target guid, 0)` and `0x005D8B10` on what it finds. The function is
   `void`. (0x005D8E3E–0x005D8EEF)
@@ -301,8 +302,9 @@ u->c4 |= 0x40;  if ((t = UNIT_GetTargetUnit(game, u))) { COMBAT_DeliverQueued(ga
 - [C] **`0x006455E0(unit)`** gives 1 for a unit of type 1 in mode 12 (`+0x10`), outside the `DataTables+0x150` set
   (`sub_0063A770_UnitHasStateSet33`), whose MonStats2 flag 7 is set (`sub_004638A0_MonStats2FlagTest(class, 7)`), else
   0; **`0x00645590(unit)`** runs the same tests, then `0x00621F60(unit)` = flag 12 for a type-1 unit.
-  **`UNIT_HasState(unit, 118)`**: a unit of type 0, 1 or 3 whose stat list has `+0x10` bit 31, word 3 bit 22 of its
-  `+0x58` array. (run:2026-10-21-cat-emu-bar `corpse_bar`, fn:sub_006455E0_CorpseTest@0x006455E0,
+  **`UNIT_HasState(unit, 118)`** on a type-1 unit (the only type that reaches it after the corpse tests): its stat
+  list's `+0x10` bit 31, then word 3 bit 22 of its `+0x58` array; that types 0 and 3 pass the type test too
+  (0x00639DFA–0x00639E08) is not run here, `[I]`. (run:2026-10-21-cat-emu-bar `corpse_bar`, fn:sub_006455E0_CorpseTest@0x006455E0,
   fn:sub_00645590_CorpseTestF12@0x00645590)
 - [C] **Start 34** (`0x005D8760`): no target → 0, else `0x006455E0(target)` (`neg; sbb; neg`). **Start 33**
   (`0x005D80C0`): no target → 0; `v = 0x00645590(target)`; `v` and state 118 → 0; else `v`. Neither tests the skill
@@ -403,7 +405,8 @@ u->c4 |= 0x40;  if ((t = UNIT_GetTargetUnit(game, u))) { COMBAT_DeliverQueued(ga
   UnitDistance(caster, x, y)` raised to 1, and for `d > range` the point becomes `((x − ux) · range / d + ux, (y − uy) ·
   range / d + uy)` (`imul`, `cdq; idiv`); `FreeNearFallback(RoomAtSubtile(caster room, x; y), &{x, y}, size, 0x1C09,
   1)`. `UNIT_GetSizeX` is 2 for type 0 and the MonStats2 `+0x08` byte (`movsx`) for type 1 (0 without a row);
-  `UnitDistance` is `(min + 2 · max) / 2` of `|dx|`, `|dy|` (truncating; a negative absolute value taken as 0).
+  `UnitDistance` is `(min + 2 · max) / 2` of `|dx|`, `|dy|` (truncating); its `jge` that takes a negative absolute
+  value as 0 is reached only by `INT_MIN`, not run, `[I]`.
   (run:2026-10-21-cat-emu-bar `move_bar`, fn:sub_005D9D50_SkillSt40Leap@0x005D9D50,
   fn:sub_005D9A10_LeapPoint@0x005D9A10, fn:sub_006417F0_UnitDistance@0x006417F0)
 - [I] By the layouts, `aurarangecalc` is the leap's range, so a player's leap lands at most that far along the line to
@@ -468,7 +471,8 @@ u->c4 |= 0x40;  if ((t = UNIT_GetTargetUnit(game, u))) { COMBAT_DeliverQueued(ga
 
 - skills/0001 § 11 and skills/0003 § 5 (tier A), carried there as dated notes: start 32 and do 2 are now `[C]` up to
   their boundaries (ADR-0021). Do 2's overlay and `auratargetstate` blocks each return **1 without delivering** when
-  the caster has no queued hit on the target, and act only when that packet's `+0x04` bit 0 is set; its overlay test is
+  `QueuedHitFind(caster, target)` finds no `+0xAC` node naming both, and act only when the found node's packet `+0x04`
+  bit 0 is set; its overlay test is
   `0 < srvoverlay ≤ DataTables+0xBC0`, `auratargetstate` admits 0 and `aurastate` refuses it.
   (fn:SKILL_MeleeDeliverDo@0x0056F1F0, fn:sub_005D7EA0_SkillSt32Hit@0x005D7EA0)
 - items/0001's Functions row for `sub_005D8780_CorpseFindItem`, carried there as a dated note: its rolls are on **the
