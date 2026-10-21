@@ -692,3 +692,31 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   output ([combat/0001 § 16](../findings/combat/0001-formulas.md#16-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls),
   `[I]`); which events call it is unread and belongs with this plan's monster skill uses with `MonAttackStats`
   predicted. ([0047 log](0047-simulation-shortfalls.md#implementation-log), Phase 2 review rulings 4 and 6.)
+- **2026-10-21 — Phase 2 started, paused at the owner's request (reverser, `lane/p45h`).** No session run, no slot
+  used (slot 2 never launched, no aside taken), no Ghidra. Done: the logger `tools/gdb/skills.gdb` and
+  `tools/gdb/skills.py` (rev 1, **untested**: never run against the game) with the entry points of the Phase 1 review
+  ruling 1: `SKILLS_SrvStart`/`SrvDo` (SST/SDO), `PayCost`, `SetDelayState` (EAX the delay, EDI the unit),
+  `MissileCreate` (MC, with the creation crit's mastery return at `0x0064A8F0`, the SUnitCreate parent seed at
+  `0x00552E2F`/`0x00552E55`, the Firestorm re-seed callback `0x005C9290`/`0x005C92F4`), `MissileDoFrame` windowed at
+  `0x005ADC97`/`0x005ADCA9` (gdb condition on `$skw0..7`, 30 missiles a session), `MISSILE_HitUnit`, `BuildDamage`
+  (args `[esp+4]` missile, `+8` unit, `+0xC` packet; all its stats read from the missile, masteries 329–332/357 via
+  `MulDiv`, the pct block only with a unit), boundaries `MISSILE_ApplyDamage`, `COMBAT_MeleeHitTest`,
+  `DeliverQueued`, `ApplyDamage` (entry asserted, exit taken), the to-hit and defence stubs, `UNIT_DispatchEvent`
+  handler calls, `PreventHealHook`, `STATE_ApplyTimed`, `RollElemDamage`'s `RangeB` (`0x0056E132`), the finisher and
+  its two `srvprgfunc` call sites (`0x005D53F8`, `0x005D544C`), `SpawnOwnedMonster`, `SummonSetLevel`, `PetAdd`,
+  Armageddon, `MonAttackStats`; exits matched by ESP at the functions' `ret` addresses (objdump of the pinned image).
+  **Next (resume):**
+  1. Smoke-test the logger on slot 2 (one short dev session, `dev-` log name under `workspace/logs/skills/`): a
+     tier-A Sorceress recipe `tools/d2s_recipes/skills-sor.json` (stock uniques; Nova, Frost Nova, Static Field,
+     Teleport, Fire Bolt, Meteor, Blaze ≥ 2 for C4; hotkeys F1..F6), entered with `enter-normal.steps`, driven by
+     `d2pilot.py explore --melee --melee-button 3 --curse-keys F1,F2,…` (right-click casts on the nearest monster).
+     `saves.py --slot 2 aside p45h` first, `slots.py stop 2` and `restore p45h` after.
+  2. Write `tools/skills.py` (`check`, `manifest`): parse spans by `n`/`k`; per-seed observation ledger (inside an
+     event every gap is a modelled draw or a boundary exit, across events a chained pair or a named resync); models:
+     MC (unit seed `init(step(parent).low)` or the callback's `init(path+0x10 + arg)`, velocity
+     `((VelLev·lvl)/8+Vel)<<8 ·75/100`, range `LevRange·lvl+Range`, activate, crit draws 337/141/mastery, pierce count
+     from `init(b328)`), MH (to-hit, pierce use, BuildDamage's `RangeB` order and packet), MF (accel every fifth step,
+     `(dir·((v·0x400)>>6))>>12`, remaining −1), handler draws per skills/0003 § 3, SL (C1 level), PAY (cost and
+     `minmana` floor, ignored failure), DLY. `tools/test_skills.py` on hand-built lines.
+  3. `tools/skills_sessions.py` (recipes per class for the 26 tier-A rows, sessions table, run) on the
+     `stats_sessions.py` pattern; then the dev session, then `run:YYYY-MM-DD-skills` and the oracle re-checks.
