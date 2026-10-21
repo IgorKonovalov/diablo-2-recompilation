@@ -740,3 +740,73 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   quests/progression {C 117, I 322, L 6}. Research map: the stats/states row (counts, the drawing-run wording, Holy
   Freeze), the quests/progression row (counts, the 9a carry) and the overview's stale count in the stats/aggregate
   row (C 13 / I 4 → C 14 / I 3, the architect's). Review request closed; ledger row added. Not merged here.
+- **2026-10-21 — Phase 1 batch `bar` landed for review (reverser, `lane/p46m9`, static, no harness).** The barbarian
+  start functions 32–34 and 38–41 and do functions 2, 9, 68–72 and 74–78: 19 entries, all read and all emulated
+  ([skills/0012](../findings/skills/0012-barbarian.md); tier A start 32 and do 2 emulated too). Draws before the
+  boundaries: none; no case steps the caster's or the target's seed (do 69's and do 72's `RNG_Range` and do 69's
+  inline step draw on the caster's seed after their `STATE_Set` boundary, `[I]`). Raised by emulation
+  (run:2026-10-21-cat-emu-bar, `tools/skills_catalogue_emu.py --batch bar`, `check.txt` `13b1a4d2…`,
+  `manifest.sha256` `737c8b4f…`): four families, 6 800 cases, 0 mismatches, 39 boundary/call-site triples asserted
+  (site control 2 397 of 2 397), both seeds compared in every case, blocks, points and contexts compared by content,
+  register arguments compared where the callee reads them first (pal ruling 1); nested boundaries by the helper's
+  return address at its stack slot (eight helpers) or single call sites listed by `static` (do 70's reach chain); three
+  to six negative controls per family (each family has one failing 90 or more; the weak ones named with their deciding
+  class). The calc count's writer scan matches `moffs` stores and immediates (0 and 0). The same tool reproduces
+  9a–9d, `sor`, `ama`, `nec` and `pal` byte for byte (`repro.txt`). Surprises: do 2's overlay and target-state blocks
+  return 1 without delivering when the caster has no queued hit on the target; do 9 and do 70 branch on bit 8 of the
+  caster's `+0x38`; do 68 sets bit 6 before its record test and admits missile class 0; Find Potion and Grim Ward's
+  corpse test adds MonStats2 flag 12 (`soft`, by the layout) to Find Item's; start 40 pulls a player's leap point in to
+  `aurarangecalc`; start 41 aims two steps past the path's target point; do 72's rolls are on the caster's seed
+  (items/0001 note). Tags: 31 `[C]`, 22 `[I]`, 4 `[L]` bullets; 32 symbols added (`I`). Dated notes in skills/0001
+  § 11, skills/0003 § 5 (the Kick row in step) and items/0001. Review request
+  [to the architect](../backlog/archive/2026-10-21-reverser-architect-lane-p46m9-review-plan-0046-batch-bar.md); column
+  readers [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-bar-skills-monstats2-column-readers.md).
+- **2026-10-21 — `lane/p46m9` review (architect): accept with fixes.** Main (`8d9ecb5`) merged first (one conflict in
+  this log, both sides kept; `backlog.py archive` moved nothing more). `check --batch bar` and `static --batch bar`
+  from the lane's tool reproduce the kept `check.txt` (`13b1a4d2…`) and `static.txt` (`4808f177…`) byte for byte;
+  `sha256sum -c manifest.sha256` (`737c8b4f…`) passes. Recounted from `check.txt`: 6 800 cases, the per-family control
+  sums (357, 233, 542, 236), 39 `site` lines summing to 2 397, the site controls 933 + 185 + 469 + 810. Read against
+  objdump: start 32, 38, 39, 41, do 2, 9, 68, 70, 71, 72, 74, 76, 77, 78 and the helpers `0x0056E510`, `0x005D8510`,
+  `0x005D9A10`, `0x00645CA0`, `0x0057D690`. **Rulings.** (1) **The register arguments are admitted** under the `pal`
+  review's ruling 1: `0x0056E520` reads `ECX` (`mov edi, ecx`) and `EDX` (`mov ebx, edx`) before any write;
+  `0x005DA120` reads `EAX` (`mov edi, eax` at `0x005DA128`; the `push edi` before it saves the caller's `EDI`, not an
+  argument); `0x005D9F70` reads `EDI` first (`mov esi, [edi+0x2C]` at `0x005D9F74`, no save or write before it), and do 78
+  sets it to the caster at `0x005DA7E6` and never writes it before the call; `0x005DA660` reads `EAX` at `0x005DA66D`
+  after writing only `EDX` and `ESP`; `0x0056E2F0` reads `ECX` and `EDX` at `0x0056E2F1`/`0x0056E2F6`. (2) **The thin
+  claims stand as `[C]`**, each for what precedes its boundary only: do 77 (the record, the node, then
+  `UNIT_CancelEvents(game, caster; 1, 0)`, objdump `0x005DA370–0x005DA3CB`), do 74 (the record, `UnitGetWeapon`'s
+  null and `+0x60` tests, its query), start 39 (`SKILLS_GetToHit` is `ret 0xC`, so the trailing 0 is
+  `MeleeHitTest`'s third argument, as written), do 71 with a type-1 target (the record, the `auratargetstate` range,
+  the type test in `0x005D8510`; what `0x0056E2F0` tests is an open question, as filed). (3) **The weak controls are
+  enough** under the `sor` review's ruling 4: each names its deciding class, and the classes match the outcome
+  counts where they can be read off (`town_any` 42 = `town` 42, `pt_swap` 36 = `freenear` 36, `mask_swap` 27 =
+  `settype` 27; `size2` 41 of 47 monster free-spot cases, `noscale` 22 of 38 player ones, `f200` 23 of the 69 bit-7/8
+  cases); each family has one failing 90 or more. (4) **The corrections are sound as dated notes.** items/0001's row
+  keeps `C` for its role (the call into `MonDropNoNoDrop`, on its harness logs) and the seed is `[I]` from objdump
+  (`mov edi, edx` at `0x005D878D`, `add edi, 0x20` at `0x005D8808`, the two `RNG_Range` at `0x005D8814` and
+  `0x005D882F`): the split is sound. No spec relies on the monster's seed ([items/tc](../specs/items/tc.md) names only
+  the call chain, `[I]`), so no spec-writer entry is filed. **Also checked:** do 69's and do 72's draws are in `[I]`
+  bullets after their `STATE_Set` boundary; do 2's `QueuedHitFind` 0 jumps to `0x0056F44F` (after the delivery call:
+  1, bit 6 not set), and the found pointer is the node `+ 0x14`, so "the packet's `+0x04`" is right; do 9's and do 70's
+  `sar 8; and 0x80000001` remainder is non-zero exactly when bit 8 is set, whatever the sign; do 68 sets bit 6 (for a
+  non-null caster) before its record test and admits class 0 by `jl`, against do 73/80's `jle`; flag 12 is `[C]` as a
+  bit test and `soft` only in the `[I]` layout bullet; start 40's pull is `imul`/`cdq; idiv` with `d` raised to 1 and
+  tested `> range` (`range` the `aurarangecalc` value); start 41's point is `2 (p − u) / d + p`; do 70's chain
+  (`0x0056E510` once in do 70 at `0x005D84B7`, its single call of `0x00622870` at `0x0056E511`) is in `static.txt`;
+  the archivist entry's `[C]` items carry values and tests only (meanings `[I]`); the 32 symbols are new and the gate
+  is green after the merge. **The development runs:** the record is honest (it says the first `corpse_bar` and
+  `move_bar` outputs mismatched on three tool faults and were overwritten by the kept run, and no claim rests on them),
+  and no new evidence rule is needed, but reverser review-fixes rule 6 already asks that a development log be kept,
+  not lost; a "Seen" line is added there (later batches write development outputs under their own names). **Fixes,
+  made in the documents:** (1) § 2 listed `0x005D902C` as a compared return of start 38's `0x00571B70`; the model
+  compares only `0x005D8F9B`, and no case reaches the no-path call at `0x005D9027` (overclaim); (2) start 38's
+  after-bullet now says a target not in melee range takes the path branch and that the no-path return 0 is not run
+  (omission); (3) start 41's after-bullet now says a target not in melee range gives `(px, py)` from the target's
+  position, and that the free-spot search after a non-zero pattern test is around the unextended point (omission);
+  (4) do 76's and do 78's own return values after their boundaries (0 at the word-0 site, 1 at the `& 3` site; 1 when
+  `0x005DA120` gives 0, the callee's value on bits 7 and 9) (omission); (5) § 2's "a control failing 72 or more" made
+  "90 or more", as the request and this log say (other). Counted: 5 (overclaim 1, omission 3, other 1). Tags after the
+  review: 31 `[C]`, 22 `[I]`, 4 `[L]` bullets (the fixes extend existing `[I]` bullets). Review request closed
+  ([archive](../backlog/archive/2026-10-21-reverser-architect-lane-p46m9-review-plan-0046-batch-bar.md)); the
+  archivist entry stays open for its lane; ledger row added. **The next batch (druid, `dru`) may start**, with 9c, 9d,
+  `sor`, `ama`, `nec`, `pal` and `bar`'s conventions, and development outputs kept under their own names.

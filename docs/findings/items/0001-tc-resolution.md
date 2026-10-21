@@ -185,7 +185,7 @@ data/0001). Phase 1b (2026-10-11) then compared the finished claims with two reg
 | `0x005A6FF0` | `sub_005A6FF0_MonDeathEvent` | monster death event (reached through the table at `0x006E2260`); calls the death drop | C |
 | `0x005A6830` | `sub_005A6830_MonDeathDrop` | death drop guard: skips if `unit+0xC4` bit 17 is set or the spot is blocked; `noNoDrop = 0` | C |
 | `0x005A8000` | `sub_005A8000_MonDropNoNoDrop` | the same drop with `noNoDrop = 1`; called by the corpse skill `0x005D8780` | C |
-| `0x005D8780` | `sub_005D8780_CorpseFindItem` | skill on a corpse (`skills` record, corpse state `0x76`), rolls `RNG_Range(monster seed, 100)` (that roll unmodelled, `[I]`) | C |
+| `0x005D8780` | `sub_005D8780_CorpseFindItem` | skill on a corpse (`skills` record, corpse state `0x76`), rolls `RNG_Range(monster seed, 100)` (that roll unmodelled, `[I]`). *2026-10-21:* the rolls are two `RNG_Range(…, 100)` on the caster's seed (`EDX` → `edi`, `add edi, 0x20` at `0x005D8808`; `0x005D8814`, `0x005D882F`), `[I]`, [skills/0012](../skills/0012-barbarian.md) § 4 | C |
 | `0x005A6600` | `MONSTER_DropItems` | TC column choice, ilvl, calls `TC_DropByIndex` | C |
 | `0x0055AFA0` | `TC_DropByIndex` | level-upgrade gate, `TC_GetByIndex`, `TC_ResolveDrops` | C |
 | `0x00654E00` | `TC_GetByIndex` | index → TC, with the group/level walk | I |
