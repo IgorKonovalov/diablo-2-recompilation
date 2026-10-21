@@ -1003,7 +1003,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   start 3 and do 4, do 113 (rows 217–220) and do 151 (row 53's `ItemEffect`), and the callers: `ITEMSKILL_Cast` with
   its `ItemTarget` helpers 2–4 and its two callers, the stat-event handlers 20, 21, 30, `SKILLS_PayCost`'s charge path,
   the shrine functions 19, 21, 22 and the object and quest `MissileCreateAt` sites
-  ([skills/0015](../findings/skills/0015-item.md)). All four entries and eleven callers emulated
+  ([skills/0015](../findings/skills/0015-item.md)). All four entries and the ten callers emulated (the three helpers inside the cast)
   (run:2026-10-21-cat-emu-item, `tools/skills_catalogue_emu.py --batch item`, `check.txt` `22402718…`,
   `manifest.sha256` `3e974e32…`): five families, 12 000 cases, 0 mismatches, 31 boundary/call-site triples (site
   control 4 936 of 4 936), three seeds compared in every case; five to nine negative controls per family, the thin

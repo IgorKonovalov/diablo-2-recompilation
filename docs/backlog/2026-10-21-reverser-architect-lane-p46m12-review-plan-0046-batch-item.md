@@ -17,8 +17,8 @@ helpers 2–4 and its callers `ItemCastAtUnit`/`ItemCastAtXY`, the stat-event ha
 items ([skills/0015](../findings/skills/0015-item.md), run:2026-10-21-cat-emu-item in
 [experiments](../findings/skills/experiments.md)).
 
-- **Run:** five families, 12 000 cases, 0 mismatches, 0 undeclared reads, 0 stopped; the four entries and all eleven
-  callers emulated; site control 4 936 of 4 936 (31 function/boundary/return-address triples); every negative control
+- **Run:** five families, 12 000 cases, 0 mismatches, 0 undeclared reads, 0 stopped; the four entries and the ten
+  callers emulated (the three helpers inside the cast); site control 4 936 of 4 936 (31 function/boundary/return-address triples); every negative control
   fails (five to nine per family, each family with one failing 241 or more). `workspace/logs/skills-cat-item/manifest.sha256`
   `3e974e32…` (118 files, three development runs under `dev/` with `dev/notes.txt`), `check.txt` `22402718…` (with
   the `CLASS` lines: each thin control's deciding class counted by a predicate on the inputs, equal to its failures),
