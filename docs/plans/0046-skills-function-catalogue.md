@@ -1057,7 +1057,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   § 10 and skills/0003 §§ 2, 3. Review request
   [to the architect](../backlog/archive/2026-10-21-reverser-architect-lane-p46m12-review-plan-0046-batch-item.md); column
   readers [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-item-skills-pettype-books-shrines-column.md);
-  [to the spec-writer](../backlog/2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md)
+  [to the spec-writer](../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md)
   on combat/delivery E5.
 - **2026-10-21 — `lane/p46m12` review (architect): accept with fixes.** Reviewed on the lane (head `bcdb4ca`), main not
   merged (it moved to `483728e` with the items/tc, items/properties and combat/delivery A2/A3 merges; none touches a
@@ -1118,7 +1118,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   ([archive](../backlog/archive/2026-10-21-reverser-architect-lane-p46m12-review-plan-0046-batch-item.md)); the
   [archivist entry](../backlog/2026-10-21-reverser-archivist-plan-0046-item-skills-pettype-books-shrines-column.md)
   (Skills, PetType, Books, Shrines and Misc column readers, with fix 3's wording) and the
-  [spec-writer entry](../backlog/2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md)
+  [spec-writer entry](../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md)
   (combat/delivery E5, with fixes 1, 2 and 6 and ruling 1's `[I]` for the composed chain) are **released**; lane
   ledger row added (the review's row is the orchestrator's at the merge). **Phase 1 status:** the seven class batches,
   9a–9d and batch 10 are accepted, twelve of fifteen batches and 234 of the 310 entries (the other 76: 8a–8c's 70 and
@@ -1126,3 +1126,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   rows 156–189: 30 entries, start 42–53, do 83–98, 110, 111), then 8b and 8c, on the class batches' conventions, unless
   the monster-AI plan pulls one forward or takes a function as a boundary oracle (ADR-0020). Phase 2 still waits for
   0045·P3's review.
+- **2026-10-21 — combat/delivery E5 from batch `item` landed for review (spec-writer, `lane/s46d`).** The released
+  [spec-writer entry](../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md)
+  done: [combat/delivery](../specs/combat/delivery.md) E5 rewritten from [skills/0015](../findings/skills/0015-item.md)
+  §§ 4–7 with the `lane/p46m12` review's fixes 1, 2, 6 and ruling 1 (handlers 20/21/30, the callers, `ITEMSKILL_Cast`,
+  helper 2's first try and do 151 `[C]` to their boundaries; the composed handler → helper chain, the effect flag only
+  from handler 20 without `ItemTgtDo`, do 151 starting at the target unit `[I]`), A3's entry-36 bullet scoped, a
+  `SKILLS_PayCost` reimplementation note, the helpers open question struck. Tags `{C: 74, I: 58, L: 4}` →
+  `{C: 80, I: 63, L: 3}`; open questions with `[L]` 3. Review request
+  [to the architect](../backlog/2026-10-21-spec-writer-architect-lane-s46d-review-combat-delivery-e5-item-cast.md).
