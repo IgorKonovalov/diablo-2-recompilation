@@ -547,6 +547,27 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     call's caller unfollowed), the 300 expiries; combat/0001 § 17 lightning flat absorb (51); quests/0002 stays `[I]`.
   - **Phase 2b closes.** Every Done-when item is met or named again, final, with a reason the review accepts above.
     Spec-writer entry filed for the Phase 3 re-tag of the 2b counts
-    ([backlog](../backlog/2026-10-21-architect-spec-writer-plan-0047-phase-3-re-tag-the-phase.md)); the review request
+    ([backlog](../backlog/archive/2026-10-21-architect-spec-writer-plan-0047-phase-3-re-tag-the-phase.md)); the review request
     closed. **Can the plan close?** After that re-tag's review: Phases 1, 2, 2b and 3 (for Phase 2's counts) meet
     their *Done when*.
+- **2026-10-21 — Phase 3 landed for the Phase 2b counts (spec-writer, `lane/s47p3b`; static, no game, no Ghidra).**
+  Review requested ([backlog](../backlog/2026-10-21-spec-writer-architect-review-lane-s47p3b-plan-0047-phase-3-re.md));
+  the re-tag entry closed ([backlog](../backlog/archive/2026-10-21-architect-spec-writer-plan-0047-phase-3-re-tag-the-phase.md)).
+  Re-tagged from run:2026-10-21-shortfalls2 as the Phase 2b review rules, each raised statement citing the run:
+  [stats/states](../specs/stats/states.md) (B1 the curse resistance cut on a player target, `r` 1..99, 54, with
+  `MulDiv`'s rounding, the refusal at 100 and a negative `r` split out at `[I]`; D1 group 3, 24, 67 over groups 1–3,
+  the nested call's caller `[I]`; C1 the 300 expiries, 449 over three runs; the 256 floor (0) and shrines and wells
+  (21 of 50) final at `[I]`, out of the plan; G6's stale "stamina shrine not reached" corrected, code 14 was operated
+  twice in run:2026-10-20-shortfalls; `{C: 47, I: 52, L: 6}` → `{C: 51, I: 53, L: 6}`),
+  [stats/README](../specs/stats/README.md) (the run's boundary paragraph; `{C: 15, I: 3, L: 3}` → `{C: 16, I: 3, L: 3}`),
+  [combat/reductions](../specs/combat/reductions.md) (B3 lightning flat absorb 51 `[C]`; cold 1, final at `[I]`;
+  `{C: 45, I: 25, L: 5}` → `{C: 46, I: 25, L: 5}`), [combat/delivery](../specs/combat/delivery.md) (C1 the leech
+  after a defender's event 1/5 handler, `[I]` on one separating event; E4's floor count; `{C: 80, I: 63, L: 3}` →
+  `{C: 80, I: 64, L: 4}`), [combat/README](../specs/combat/README.md) (the run's boundary paragraph with the
+  checker's value oracle, the named-again bullet rewritten whole; `{C: 38, I: 42, L: 5}` → `{C: 39, I: 42, L: 5}`),
+  [quests/travel](../specs/quests/travel.md) (C1's note rewritten: 7 of 20 activations from mode 0, final, `[I]`;
+  the spec names no Act V LvlWarp id, so no id/record note; tags unchanged `{C: 74, I: 86, L: 4}`). Open questions
+  (live `[L]`): states 6, stats/README 3, reductions 5, delivery 3 → 4, combat/README 5, travel 4. Wiki:
+  [stats and states](../wiki/stats-and-states.md), [combat](../wiki/combat.md), [quests](../wiki/quests.md)
+  (`based_on` already 2026-10-21, the specs' `updated:`), [how we know](../wiki/how-we-know.md) (the further pass and
+  its final shortfalls). The research map rows are asked of the architect in the review request.

@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [stats/overview, stats/aggregate, rng, combat/delivery, data/calc, objects]
 consumed_by: [combat/delivery, combat/overview, objects]
-tags: {C: 47, I: 52, L: 6}
+tags: {C: 51, I: 53, L: 6}
 updated: 2026-10-21
 ---
 
@@ -38,10 +38,10 @@ stateDiagram-v2
 |---|---|---|
 | A timed state is applied (skills, auras, shrines, open wounds, prevent-heal) | fn:STATE_ApplyTimed@0x0056E970 | [C] (run:2026-10-17-stats: 3 643 calls) |
 | A timed list's end frame is reached (unit event 12) | fn:EVENT_TimedListExpire@0x00580800 → fn:UNIT_ExpireTimedLists@0x00627460 | [C] (run:2026-10-17-stats: 2 749 runs) |
-| States of one `group` are cleared | fn:STATE_GroupClear@0x0056C740 | [C] (run:2026-10-17-stats: 450 calls; run:2026-10-20-shortfalls: 43 different-state clears) |
+| States of one `group` are cleared | fn:STATE_GroupClear@0x0056C740 | [C] (run:2026-10-17-stats: 450 calls; run:2026-10-20-shortfalls: 43 different-state clears; run:2026-10-21-shortfalls2: 24 in group 3) |
 | A player's regeneration tick (player event 3, every frame) | fn:sub_00580810_RegenEvent@0x00580810 | [C] (run:2026-10-17-stats: 54 719 ticks) |
 | An aura runs (unit events 8 and 9) | fn:EVENT_SelectedAuraTick@0x0056FCB0, fn:EVENT_ItemAuraTick@0x0056FE40 | [C] (run:2026-10-17-stats: 3 629 runs) |
-| A shrine is operated (OperateFn 2) | fn:OBJOP_Shrine@0x00583C70 | [I] (10 operates over run:2026-10-17-stats and run:2026-10-20-shortfalls) |
+| A shrine is operated (OperateFn 2) | fn:OBJOP_Shrine@0x00583C70 | [I] (16 operates over run:2026-10-17-stats, run:2026-10-20-shortfalls and run:2026-10-21-shortfalls2) |
 | A well is used (OperateFn 22) | `0x005858A0` → `0x00585720` | [I] (5 uses) |
 | A unit dies, or changes mode | fn:sub_00627540_StatListsPurgeOnDeath@0x00627540, fn:sub_006272E0_StatListsDropOnMode@0x006272E0 | [I] |
 
@@ -123,9 +123,10 @@ B1. STATE_ApplyTimed(req) → list or 0:                                 [C] (fn
       if target is a monster refused by its MonStats/MonStats2 bits: return 0          [I] (0x0056E9A7–0x0056E9C3)
       curse: bool ← States[req.state].curse
       if curse:
-        r: i32 ← STATS_GetUnitStat(target, 109 curse_resistance)                       [I] (0x0056E9C9–0x0056EA4A, these three lines)
-        if r > 99: return 0
+        r: i32 ← STATS_GetUnitStat(target, 109 curse_resistance)                       (0x0056E9C9–0x0056EA4A)
+        if r > 99: return 0                                                            [I] (0x0056E9C9–0x0056EA4A)
         if r ≠ 0: req.duration ← req.duration − MulDiv(req.duration, r, 100)   ; signed: r < 0 lengthens
+                                                                                       [C] the cut on a player target, 1 ≤ r ≤ 99 (run:2026-10-21-shortfalls2); [I] MulDiv's rounding and r < 0
         if UNIT_HasState(target, 57 attract): return 0                                [C] on a monster target (0x0056EA40, run:2026-10-20-shortfalls); [I] on a player
       old ← curse ? the target's first list with flag 0x20 : the target's list of req.state
       if old:
@@ -164,9 +165,16 @@ Step notes:
   same monster: 71 requests on monsters with state 57 set, all refused (no list), and 151 on monsters without it, all
   made, in the same session; the 239 monster requests left both seeds unchanged. The refusal on a player target was
   not staged. (fn:STATE_ApplyTimed@0x0056E970, 0x0056E9C9–0x0056EA4A, run:2026-10-20-shortfalls)
-- B1. [I] **The curse resistance cut** (stat 109) was not reached: its one stock writer is Fade (`curse_resistance`,
-  an `aurastat`), and no witch cursed the Assassin under Fade in run:2026-10-20-shortfalls (0). Plan 0047 Phase 2b
-  carries it. (0x0056E9C9–0x0056EA4A, tbl:Skills.txt:aurastat5, run:2026-10-20-shortfalls)
+- B1. [C] **The curse resistance cut on a player target** (stat 109, `r` between 1 and 99): under Fade
+  (`curse_resistance` 84, its one stock writer, an `aurastat`), 54 curse requests on the player made or refreshed a
+  list whose duration is `len − MulDiv(len, 84, 100)`, each expiry as predicted: 52 `defense_curse` from the
+  Crystalline Passage's succubi (275 frames asked, 44 given) and two shrine curses (3 600 → 576, 2 400 → 384). Three
+  lengths cut by the same `r` to the frame rule out a reading without the cut. (fn:STATE_ApplyTimed@0x0056E970,
+  0x0056E9C9–0x0056EA4A, tbl:Skills.txt:aurastat5, run:2026-10-21-shortfalls2)
+- B1. [I] **The cut's rounding** is `MulDiv`'s, read from the code: `len · 84` is a multiple of 100 for the three
+  lengths of the run (231, 3 024 and 2 016 exactly), so no case separates it from a truncating division. The refusal
+  at `r` ≥ 100 and a negative `r` (a longer curse) are read from the code too: no stock source gives the player 100 or
+  less than 0. (0x0056E9C9–0x0056EA4A, run:2026-10-21-shortfalls2)
 - B1. [I] The duration is in frames and is not rounded. The monster gate refuses every timed state on a monster whose
   MonStats `+0x0D` bit 0 is set or whose MonStats2 `+0x05` bit 1 is clear (columns not named). (0x0056E9A7–0x0056E9C3,
   fn:sub_00451FE0_MonStats2Rec@0x00451FE0)
@@ -199,13 +207,15 @@ Step notes:
   stats leave the full cache by the unlink's propagation, and a maximum that drops rescales the current value
   ([aggregate § G](aggregate.md#g-the-maxima-the-rescale-and-the-stat-callback)). (fn:STATLIST_Unlink@0x006269F0,
   run:2026-10-17-stats)
-- C1. [I] The expiry count is a **named shortfall**: the plan asked for 300 expiries; run:2026-10-17-stats freed 123
-  lists (potion states 178–180 79, state 21 18, state 113 11, poison 7, 86 5, shrines 130/131 2, Conviction 1) and
-  run:2026-10-20-shortfalls 30 (the Druid's shapes 24, the Sorceress armours 3, `palc-wells1` 3; lateness 0 in all):
-  153 in all. The potion sessions that were to give most of the rest drank no inventory potion, so plan 0047 Phase 2b
-  carries the count; the rule rests on the 2 749 event runs above. The client copy calls the same function with
-  frame 0, which counts `+0x18` down by one per call (presentation). (fn:UNIT_ExpireTimedLists@0x00627460,
-  run:2026-10-17-stats, run:2026-10-20-shortfalls)
+- C1. [C] **The 300 expiries are met: 449 lists freed over three runs**, each on its own end frame (lateness 0) and
+  each event run's free set as predicted. run:2026-10-17-stats freed 123 (potion states 178–180 79, state 21 18,
+  state 113 11, poison 7, 86 5, shrines 130/131 2, Conviction 1), run:2026-10-20-shortfalls 30 (the Druid's shapes 24,
+  the Sorceress armours 3, `palc-wells1` 3) and run:2026-10-21-shortfalls2 296 in its 1 401 event-12 runs (the potion
+  states 100, 106 and 178–180 153, `poison` 49, `skilldelay` 48, `defense_curse` 42, the shrine states 133 and 134 4).
+  (fn:EVENT_TimedListExpire@0x00580800, fn:UNIT_ExpireTimedLists@0x00627460, run:2026-10-17-stats,
+  run:2026-10-20-shortfalls, run:2026-10-21-shortfalls2)
+- C1. [I] The client copy calls the same function with frame 0, which counts `+0x18` down by one per call
+  (presentation). (fn:UNIT_ExpireTimedLists@0x00627460)
 - C3. [I] **Death and mode.** Death frees every counting child that is not from an item (`+0x08` ≠ 4), has none of
   flags `0x1`, `0x80`, `0x100`, and whose state does not stay on death. A mode change frees every flag-4 list and
   clears its state. No death was in the run. (fn:sub_00627540_StatListsPurgeOnDeath@0x00627540,
@@ -235,10 +245,13 @@ Step notes:
   the applied state's group, each exit line (`GRX`) as predicted: group 1 (the Sorceress armours `frozenarmor` 10,
   `chillingarmor` 20, `shiverarmor` 88) 20, group 2 (`fade` 159, `quickness` 157) 23. (fn:STATE_GroupClear@0x0056C740,
   tbl:States.txt:group, run:2026-10-20-shortfalls)
-- D1. [I] Group 3 (the Druid's `wolf`, `bear`, `maul`, `feralrage`, `delerium` share it with `monsterset`): 12 calls
-  for `bear` (140) found `wolf` (139) set, and the bit was gone at the nested call that followed, but those calls
-  logged no exit line, so they are unchecked. The skill path is seen to reach the call, so the claim is not withdrawn
-  to a lead; plan 0047 Phase 2b carries the check. (fn:STATE_GroupClear@0x0056C740, tbl:States.txt:group, run:2026-10-20-shortfalls)
+- D1. [C] **Group 3** (the Druid's `wolf`, `bear`, `maul`, `feralrage`, `delerium` share it with `monsterset`): 24
+  calls for `bear` (140) cleared `wolf` (139), each holding a nested `STATE_GroupClear` call for 139 (depth 2) before
+  it returns, both exits' bits as predicted. Groups 1–3 give 67 different-state clears over the two runs (43 + 24).
+  (fn:STATE_GroupClear@0x0056C740, tbl:States.txt:group, run:2026-10-21-shortfalls2)
+- D1. [I] **The call is re-entered**: the nested call for 139 runs inside the outer call for 140; which function
+  makes it is not followed (the return addresses are not logged). (fn:STATE_GroupClear@0x0056C740,
+  run:2026-10-21-shortfalls2)
 
 ### E. The regeneration tick
 
@@ -294,8 +307,12 @@ Step notes:
   the maximum, and a negative one (poison: 1 082 ticks on `StatsPalC`, Act III and Act II fields) bleeds the player,
   `hp + stat 74`. (fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-10-17-stats)
 - E2. [I] **The floor at 256** (one life point): a poisoned or wounded player's tick never takes life below 256, so
-  poison and open wounds cannot kill a player. No poisoned tick reached it (neither `StatsFloor` session of
-  run:2026-10-20-shortfalls was poisoned; plan 0047 Phase 2b carries it), and open wounds never hit the player.
+  poison and open wounds cannot kill a player. No poisoned tick reached it: 0 floored in 1 431 poisoned ticks of
+  run:2026-10-21-shortfalls2 (none in run:2026-10-20-shortfalls), and open wounds never hit the player. The count is
+  final for plan 0047: on the staged route (a 30-life character kept alive in Normal by flat damage reduction) the
+  stock items that give it also regenerate life or resist and shorten poison; a character with more life drained to
+  the floor by poison alone was not tried, so this is no stock-data limit, and that route is out of the plan
+  (run:2026-10-21-shortfalls2).
   When their list ends (§ C) the stat leaves the cache and the tick stops changing life. (0x0058065B–0x0058066E,
   fn:sub_00580610_LifeRegenTick@0x00580610)
 - E3. [I] Modes 2 and 6 (walking) and the `b ≥ 1000` exception were not among the run's modes; the stamina shrine,
@@ -371,10 +388,12 @@ Step notes:
 
 ### G. Shrines and wells
 
-All of § G is inferred: run:2026-10-17-stats operated 7 shrines and 5 wells and run:2026-10-20-shortfalls 3 shrines
-(codes 14 twice, 6 once) and no well, every one predicted, 15 against the plan's 50 operates and the 20 that the
-draw-freedom check asks per kind (a named shortfall, carried to plan 0047 Phase 2b, whose ten staged shrine sessions
-did not run).
+All of § G is inferred: run:2026-10-17-stats operated 7 shrines and 5 wells, run:2026-10-20-shortfalls 3 shrines
+(codes 14 twice, 6 once) and no well, and run:2026-10-21-shortfalls2 6 shrines (codes 11 once, 12 three times, two
+recharges on a full player) and no well, every one predicted: 21 against the plan's 50 operates and the 20 that the
+draw-freedom check asks per kind. The count is final for plan 0047 as a slot-time ruling, not a stock-data limit: one
+explore-and-operate session (`sor-shrines2`) listed one shrine, about one operate in 12 minutes, and `palc-wells2` was
+not run, so a well's cure was not tried in that phase (the plan 0047 review of 2026-10-21).
 
 ```
 G1. OBJOP_Shrine(object, player):                                      [I] (fn:OBJOP_Shrine@0x00583C70, tbl:Shrines.txt:reset)
@@ -418,20 +437,21 @@ Step notes:
   predicted: they decide none of G5. (fn:SHRINE_Refill@0x005828E0, run:2026-10-17-stats)
 - G6. [I] The 5 wells matched G6: `Parm1 · max >> 8` = 128/256 of each maximum, capped (raised life and mana 2, mana
   1, mana and stamina 1; one on a full player returned 0 and changed nothing). Poison and freeze cured by a well, the
-  combat and stamina shrines and the re-arm were not reached, in either run. (tbl:Objects.txt:Parm1, run:2026-10-17-stats,
-  run:2026-10-20-shortfalls)
+  combat shrine and the re-arm were not reached in the three runs (the stamina shrine, code 14, was operated twice in
+  run:2026-10-20-shortfalls, G4's timed state as predicted). (tbl:Objects.txt:Parm1, run:2026-10-17-stats,
+  run:2026-10-20-shortfalls, run:2026-10-21-shortfalls2)
 
 ### H. Draws per event kind
 
 | Event kind | Draws | Tag |
 |---|---|---|
 | apply (B1) | none (6 232 events on the player, seeds unchanged; 239 requests on monsters) | [C] (run:2026-10-17-stats, run:2026-10-20-shortfalls) |
-| expire (C1) | none (2 749) | [C] (run:2026-10-17-stats) |
+| expire (C1) | none (2 749 runs, and 1 401 in run:2026-10-21-shortfalls2) | [C] (run:2026-10-17-stats, run:2026-10-21-shortfalls2) |
 | tick (E1–E4) | none (54 719) | [C] (run:2026-10-17-stats) |
 | aura run (F) | none, except one `RNG_RangeB` on the caster's unit seed per drawing run of a damaging aura (2 763 runs unchanged, 865 drawing, 865 steps) | [C] (fn:SKILLS_RollElemDamage@0x0056E0C0, run:2026-10-17-stats) |
 | aura run (F), units per run | one draw per run whatever the number of units hit: the roll precedes the target pass and its packet is copied to each unit | [I] (fn:sub_005CF3A0_AuraHitDo@0x005CF3A0, fn:sub_005CF2A0_AuraHitUnitCb@0x005CF2A0) |
 | group clear (D), remove callback, death purge, mode drop | none found in the code | [I] (fn:STATE_GroupClear@0x0056C740) |
-| shrine codes 0–15 (G1–G5), well (G6) | none found in the code; 10 and 5 events with the seeds unchanged over the two runs, under the floor of 20 | [I] (fn:OBJOP_Shrine@0x00583C70, run:2026-10-17-stats, run:2026-10-20-shortfalls) |
+| shrine codes 0–15 (G1–G5), well (G6) | none found in the code; 16 and 5 events with the seeds unchanged over the three runs, under the floor of 20 | [I] (fn:OBJOP_Shrine@0x00583C70, run:2026-10-17-stats, run:2026-10-20-shortfalls, run:2026-10-21-shortfalls2) |
 
 Step notes:
 
@@ -516,6 +536,10 @@ leaves the cache. (fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-10-17-stat
   (plan 0047 Phase 2, 10 logs, 0 mismatches) with its review in the
   [plan 0047 log](../../plans/0047-simulation-shortfalls.md#implementation-log): `attract` on monsters, groups 1 and 2,
   the aura end by the skill switch, and the counts named again.
+- [stats/0002 § 10](../../findings/stats/0002-states.md#10-plan-0047-phase-2b-the-staging-limited-cases-run2026-10-21-shortfalls2) and
+  [stats/experiments § The stats sessions of run:2026-10-21-shortfalls2](../../findings/stats/experiments.md#the-stats-sessions-of-run2026-10-21-shortfalls2)
+  (plan 0047 Phase 2b, 14 logs, 0 mismatches) with its review in the plan 0047 log: the curse resistance cut on the
+  player, group 3, the 300 expiries, and the 256 floor and shrines and wells named final.
 - `tools/stats.py` (the apply, expiry, tick, aura, well and recharge-shrine models).
 - Tables: [States](../../tables/States.md), [Skills § Passive and aura columns](../../tables/Skills.md#passive-and-aura-columns-plan-0041-phase-0),
   [Shrines § Effects](../../tables/Shrines.md#effects-plan-0041-phase-0), [Objects](../../tables/Objects.md),
@@ -529,10 +553,14 @@ leaves the cache. (fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-10-17-stat
 - ~~**Named shortfalls of run:2026-10-17-stats**: an aura state's end, a different-state group clear, `attract`.~~
   Reached by run:2026-10-20-shortfalls: 120 aura on and off events (F4), 43 different-state clears in groups 1 and 2
   (D1), 71 curses refused on monsters in `attract` (B1).
-- [L] **Named again after run:2026-10-20-shortfalls, carried to plan 0047 Phase 2b**: shrines and wells (15 operates
-  over the two runs against 50; the combat and stamina shrines, the re-arm, a cure by a well); the expiries (153
-  against 300); group 3's different-state clear (12 calls with no exit line, D1); the 256 floor (0); the curse
-  resistance cut (0). Open wounds on the player needs another player's item (plan 0044's case, not run).
+- ~~**Named again after run:2026-10-20-shortfalls, carried to plan 0047 Phase 2b**: the expiries, group 3's
+  different-state clear, the curse resistance cut.~~ Reached by run:2026-10-21-shortfalls2: 449 expiries over three
+  runs (C1), 24 group-3 clears (D1), 54 curse cuts on the player (B1).
+- [L] **Final for plan 0047, out of it** (run:2026-10-21-shortfalls2 and its review): shrines and wells (21 operates
+  over three runs against 50; the combat shrine, the re-arm and a cure by a well unreached, `palc-wells2` not run);
+  the 256 floor (0; a character with more life drained by poison alone not tried, E2); the curse cut's rounding
+  (no length separates `MulDiv` from truncation) and its refusal at `r` ≥ 100 (B1); the caller of group 3's nested
+  clear (D1). Open wounds on the player needs another player's item (plan 0044's case, not run).
 - [L] The monster gate's two bits (MonStats `+0x0D` bit 0, MonStats2 `+0x05` bit 1): which columns.
 - [L] The skill shrine's `Arg0` (2): no stat is written, so the +2 skills come from a reader of state 134 not read.
 - [L] Holy Shield, the progressive skills and the timed self-states (armours, shouts): their skill functions

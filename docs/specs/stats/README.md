@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/properties, items/uniques-sets, player/creation, monsters/stats, data/calc, combat/overview]
 consumed_by: [combat/overview, player/creation, monsters/stats, data/calc, objects]
-tags: {C: 15, I: 3, L: 3}
+tags: {C: 16, I: 3, L: 3}
 updated: 2026-10-21
 ---
 
@@ -75,6 +75,11 @@ expiry, tick, aura run and duration, and the shrines and wells reached. (run:202
 among them curse requests on monsters, the aura ends by the skill switch and the different-state group clears
 ([states](states.md)), and the kept run list re-checks byte for byte with the same checker. (run:2026-10-20-shortfalls)
 
+[C] Under the same boundary run:2026-10-21-shortfalls2 (plan 0047 Phase 2b) reproduced 14 sessions with 0
+mismatches, among them the curse resistance cut on the player, group 3's nested clears and 296 expiries
+([states](states.md)); the kept run lists of the two earlier runs re-check byte for byte with its checker.
+(run:2026-10-21-shortfalls2)
+
 The stat values that plans 0034 and 0037 took as value oracles stay oracles: run:2026-10-16-combat logs values, not
 lists, and the level-up maxima of run:2026-10-16-player were compared only for consistency (the P2 review ruled that
 none is replaced). A reimplementation that models this subsystem computes those values; the earlier runs do not yet
@@ -126,6 +131,6 @@ caster unit). The run did not count the units each run hit.
   shouts), a damaging aura's hit, charged and item-granted skills.
 - [L] Two clients (plan 0044): offensive auras on a hostile player and hostile states; the party aura filter is
   [states F3](states.md)'s (run:2026-10-20-two-clients).
-- [L] The shortfalls named again after run:2026-10-20-shortfalls (shrines and wells, the expiries, group 3's
-  different-state clear, the 256 floor, the curse resistance cut) are listed in [states](states.md#open-questions);
-  plan 0047 Phase 2b carries them. An aura state's end, groups 1 and 2 and `attract` on monsters are reached there.
+- [L] The shortfalls final for plan 0047 (shrines and wells, 21 of 50; the 256 floor, 0; the curse cut's rounding
+  and its refusal at 100) are listed in [states](states.md#open-questions), out of that plan. An aura state's end,
+  groups 1–3, `attract` on monsters, the curse cut on the player and the 300 expiries are reached there.

@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [combat/overview, combat/damage, monsters/stats]
 consumed_by: [combat/delivery]
-tags: {C: 45, I: 25, L: 5}
+tags: {C: 46, I: 25, L: 5}
 updated: 2026-10-21
 ---
 
@@ -261,7 +261,7 @@ B3. Absorb(ctx, row, d: i32) → i32:                                   [C] (fn:
       if p > 0:
         a: i32 ← MulDiv(d, p, 100);  pkt.absorbHeal += a;  d ← d − a
       f: i32 ← stat(def, row.absorbFlatStat) << 8
-      if f > 0:                                                        ; [C] for fire (run:2026-10-20-shortfalls), [I] for cold and lightning
+      if f > 0:                                                        ; [C] for fire (run:2026-10-20-shortfalls) and lightning (run:2026-10-21-shortfalls2), [I] for cold
         a ← min(f, d);  pkt.absorbHeal += a;  d ← d − a
       return d
 ```
@@ -270,9 +270,13 @@ B3. Absorb(ctx, row, d: i32) → i32:                                   [C] (fn:
   packet `+0x48`). 32 percent-absorb heals of the player reproduced; this contradicts src:purediablo-absorb, which
   heals from flat absorb only. [C] (0x0057BF2A–0x0057BF6F, run:2026-10-16-combat) That the flat amount is healed
   too is read from the code: the flat-absorb hits below assert the field, not the heal. [I] (fn:COMBAT_Absorb@0x0057BF10)
-- B3. **Flat absorb** (fire): 113 hits on `CombatAbs` (*Hellmouth*, fire absorb 15) with the amount subtracted and the
-  field asserted. [C] (fn:COMBAT_Absorb@0x0057BF10, run:2026-10-20-shortfalls) Cold and lightning flat absorb were not
-  hit (0), so their rows rest on the code's one path; plan 0047 Phase 2b carries them. [I] (fn:COMBAT_Absorb@0x0057BF10)
+- B3. **Flat absorb** (fire and lightning): 113 fire hits on `CombatAbs` (*Hellmouth*, fire absorb 15) with the
+  amount subtracted and the field asserted. [C] (fn:COMBAT_Absorb@0x0057BF10, run:2026-10-20-shortfalls) 51 lightning
+  hits on `CombatAbs` (*Blackhorn's Face* and *Thundergod's Vigor*, 20 + 20), the same: 13 in the Nightmare Black
+  Marsh, 25 in Travincal, 13 in the City of the Damned. [C] (fn:COMBAT_Absorb@0x0057BF10, run:2026-10-21-shortfalls2)
+  Cold flat absorb was hit once (*Spirit Ward* 11, Travincal: Travincal's cold rows that roll their element gave 13
+  melee attacks, all misses), so its row rests on the code's one path, final for plan 0047. [I]
+  (fn:COMBAT_Absorb@0x0057BF10, run:2026-10-21-shortfalls2)
 - B3. **Absorb runs on whatever `d` is, also a negative one**: the percent of a negative `d` is a negative absorbed
   amount, which delivery does not heal. 186 events where MDR left the field at or below 0 and percent absorb
   (`CombatDR`: *Dwarf Star* fire 15 %, *Raven Frost* cold 20 %) then found it negative and healed nothing. [C]
@@ -344,6 +348,10 @@ poison 153 pass unreduced. No penalty and no cap apply to the monster. [C] (run:
   [plan 0047 log](../../plans/0047-simulation-shortfalls.md#implementation-log): the lightning cap 42, the cold cap 31
   over the two runs, magic immunity 36, the negative absorbed amount 186, fire flat absorb 113; the magic cap
   unstaged (Phase 1 review, ruling 2).
+- [combat/0001 § 17](../../findings/combat/0001-formulas.md#17-plan-0047-phase-2b-flat-absorb-by-element-run2026-10-21-shortfalls2)
+  and [combat/experiments § run:2026-10-21-shortfalls2](../../findings/combat/experiments.md#run2026-10-21-shortfalls2)
+  (plan 0047 Phase 2b, 0 mismatches over 2 527 events) with its review in the plan 0047 log: lightning flat absorb 51,
+  cold flat absorb 1 (final).
 - Tables: [DifficultyLevels](../../tables/DifficultyLevels.md), [MonStats](../../tables/MonStats.md),
   [ItemStatCost](../../tables/ItemStatCost.md).
 - Types: `re/types/combat.h` (`DamagePacket`, `ReduceCtx`, `ResistRow`).
@@ -353,7 +361,10 @@ poison 153 pass unreduced. No penalty and no cap apply to the monster. [C] (run:
 - ~~Branches reproduced under the plan's floor of about 30 events: the negative absorbed amount (4), the resistance
   cap reached for cold (27) and lightning (17).~~ Reproduced by run:2026-10-20-shortfalls: the negative absorbed
   amount 186 (B3), lightning at the cap 42, cold 31 over the two runs (B2).
-- [L] Cold and lightning flat absorb (B3): 0 hits in run:2026-10-20-shortfalls; carried to plan 0047 Phase 2b.
+- ~~Cold and lightning flat absorb (B3): 0 hits in run:2026-10-20-shortfalls.~~ Lightning reproduced by
+  run:2026-10-21-shortfalls2 (51, B3).
+- [L] Cold flat absorb (B3): 1 hit over the runs; final for plan 0047 under its own condition (the Nightmare Black
+  Marsh session run), not a stock-data limit: the Nightmare and Hell cold rows were not tried. It stays a code reading.
 - [L] The magic resistance cap (B2): not stageable on stock data (plan 0047 Phase 1 review, ruling 2); final, it stays
   a code reading.
 - [L] Not reached: pierce, the stat-118 halving, states 131 and 133, sanctuary, the hireling-against-hireling 25 %,

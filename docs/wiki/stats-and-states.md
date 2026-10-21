@@ -245,8 +245,10 @@ applies on the player:
 
 **Curses** follow the same rules, with these differences: a unit holds **one curse at a time**, so a different curse
 replaces the old one (read from the code); the target's curse resistance shortens the duration by its percentage (a
-negative value lengthens it), and 100 or more refuses the curse (read from the code: the one stock source of curse
-resistance is the Assassin's Fade, and no monster cursed her under it in the runs so far); and **a unit under Attract
+negative value lengthens it), and 100 or more refuses the curse. The shortening is confirmed on the player: under
+Fade (84 curse resistance, its one stock source), 54 curses (52 from succubi, two from shrines) were each cut to the
+frame, 275 frames to 44; the rounding of the cut, the refusal at 100 and the lengthening are read from the code, since
+no run separates the rounding and no stock source gives 100 or a negative value; and **a unit under Attract
 refuses every curse**, confirmed on monsters: after a Necromancer's own Attract, 71 curses on attracted monsters were
 all refused and 151 on the others were all made, in the same session. On a player it is read from the code.
 
@@ -261,9 +263,9 @@ From [states § C](../specs/stats/states.md#c-expiry-and-removal):
 - **At its end frame.** Each apply and each refresh with a duration schedules its own end event. A state applied at
   frame `f` for `d` frames is removed by the event at `f + d`; its stats leave the totals at once, and if a maximum
   drops the current value is rescaled as above. An earlier event of a refreshed state still fires and removes
-  nothing. Confirmed: 2 749 end events, each removing exactly the lists whose end frame had come, and no other. Only
-  123 lists actually ended in the run, and 30 more in a second run (153; the plan asked for 300), so the count is a
-  named shortfall that a further pass of the plan takes, but the rule rests on the 2 749 events.
+  nothing. Confirmed: 2 749 end events, each removing exactly the lists whose end frame had come, and no other; and
+  the 300 lists the plan asked to see end are met, 449 over three runs (296 in the third, most of them potions, each
+  on its own end frame).
 - **When its aura is switched off.** An aura's state on the player also ends when the player switches the right skill
   to another aura: the switch removes the list at once, before its end frame. Confirmed in a second run, with a
   Paladin switching Might, Defiance and Prayer: 61 aura states made and 59 ended this way, every change checked.
@@ -279,9 +281,10 @@ run the clear exclude a group (potions, the "state" stat that some items carry, 
 for the cases met: the potions of the run have no group, so their clear removed nothing; the full Trang-Oul's set
 switches its `monsterset` state on with a clear that found nothing else in the group, and when the set broke the clear
 removed that state itself. Clearing a **different** state of the same group is confirmed by a second run for two
-groups: the Sorceress's three armours (20 clears) and the Assassin's Fade and Quickness (23). For the Druid's werewolf
-and werebear forms, which share a third group, the clear was reached 12 times and the old form's mark was gone
-afterwards, but the logger recorded no result for those calls, so that group is still read from the code.
+groups: the Sorceress's three armours (20 clears) and the Assassin's Fade and Quickness (23), and by a third run for
+the Druid's werewolf and werebear forms, which share a third group: 24 clears of the werewolf form by the werebear,
+each running a second clear inside the first before it returns, both results as predicted (67 over the three groups).
+Which code makes the inner call is not followed.
 
 ## Regeneration: life, mana, stamina and poison
 
@@ -292,7 +295,8 @@ Every frame, while the player is alive, one tick changes life, then stamina, the
   a positive value until life is full (reaching the cap removes the potion's state); **poison gives it a negative
   value**, so a poisoned player bleeds by the same tick (1 082 poisoned ticks reproduced), until the poison's list
   ends and its stat leaves the totals. By the code the tick never takes a player's life below one point, so poison
-  and open wounds cannot kill a player; no poisoned tick reached that floor. A monster's tick is different and can
+  and open wounds cannot kill a player; no poisoned tick reached that floor (none of 1 431 in the third run, whose
+  plan stops there). A monster's tick is different and can
   kill ([combat](combat.md#chill-stun-freeze-and-poison)).
 - **Stamina** regains a share of maximum stamina that depends on what the player is doing: 1/256 of the maximum per
   frame in some modes, none in others, raised by the stamina recovery bonus, and never above the maximum. By the
@@ -338,9 +342,10 @@ when the aura is switched off (see *How a state ends*).
 
 ## Shrines and wells
 
-Everything in this section is read from the code: the first run operated 7 shrines and 5 wells and a second run 3
-more shrines, all predicted, 15 against the 50 the plan asked for; a further pass of the plan takes the rest
-([states § G](../specs/stats/states.md#g-shrines-and-wells)).
+Everything in this section is read from the code: the first run operated 7 shrines and 5 wells, a second run 3 more
+shrines and a third 6, all predicted, 21 against the 50 the plan asked for. The plan stops there for lack of slot
+time, not for lack of shrines: one hunting session met about one shrine in 12 minutes, and the session meant for
+wells was not run ([states § G](../specs/stats/states.md#g-shrines-and-wells)).
 
 - **Shrine states count as curses.** The states of the timed shrines (armour, combat, the resist shrines, skill,
   mana recharge, stamina, experience) carry the curse mark, so a shrine's state is "the" curse of the unit: taking a
@@ -381,14 +386,14 @@ From the specs' open questions ([overview](../specs/stats/README.md#open-questio
 - **Never met in the run, so read from the code only**: the floor on reads, derivation ops 3, 6, 7, 10 and 12, a
   requirements percent, level or class test that decides, a broken item and a set with a broken member, an Assassin's
   second weapon, the lowering of life and mana when an item comes off, the 1/512 walking stamina, the death and
-  mode-change removals, curse resistance, Attract on a player, open wounds on the player, and the life floor of one
-  point.
+  mode-change removals, the rounding of the curse resistance cut and its refusal at 100, Attract on a player, open
+  wounds on the player, and the life floor of one point.
 - **Ops 6 and 7** (by time of day) are computed by the 1.14d server, against a community claim; no stock item reaches
   them, so no run can show it.
-- **Named shortfalls**, still short after the second run and taken by a further pass of the plan: shrines and wells
-  (15 operates of 50; the combat and stamina shrines, re-arming and a well's cure not met), state ends (153 of 300),
-  the werewolf and werebear group clear, the life floor of one point and curse resistance. Auras turning on and off
-  (120 of 50) and a group clear of a different state for two groups are now met.
+- **Named shortfalls, final for the plan**: shrines and wells (21 operates of 50; the combat shrine, re-arming and a
+  well's cure not met) and the life floor of one point (not reached; a character with more life, drained by poison
+  alone, was not tried). Auras turning on and off (120 of 50), state ends (449 of 300), a group clear of a different
+  state for all three groups and the curse resistance cut on the player are met.
 - What schedules the **136-frame refresh**, the weapon switch's own code, and which code reads a per-level source's
   hidden value.
 - Two flags of `MonStats` that make a monster refuse timed states, the skill shrine's +2 skills, and seven `States`

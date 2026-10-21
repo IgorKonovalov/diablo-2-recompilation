@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/stats, player/creation, items/properties, data/calc]
 consumed_by: [items/tc]
-tags: {C: 38, I: 42, L: 5}
+tags: {C: 39, I: 42, L: 5}
 updated: 2026-10-21
 ---
 
@@ -155,7 +155,12 @@ mismatches. (run:2026-10-16-combat) [C] Under the same boundary run:2026-10-20-s
 sessions built for the branches the first run met too rarely) reproduced 18 737 events of 31 logs with 0 mismatches,
 and the kept run list re-checks with the same checker at 0 mismatches over its 40 655 events. Its run list names the logs whose player holds no
 usable shield (`--no-shield-log`), which only sets the predicted block chance to 0, so a logged chance above 0 still
-fails ([to-hit § C2](to-hit.md#c-the-hit-test-and-the-defence-rolls)). (run:2026-10-20-shortfalls) The progressive-charge hooks around the player's build and the
+fails ([to-hit § C2](to-hit.md#c-the-hit-test-and-the-defence-rolls)). (run:2026-10-20-shortfalls) [C] Under the same
+boundary run:2026-10-21-shortfalls2 (plan 0047 Phase 2b, flat absorb by element) reproduced 2 527 events of 3 logs
+with 0 mismatches, and both kept run lists re-check at 0 mismatches. Its checker takes the attacker's life after a
+defender's stat-event handler from the handler's logged life where it differs from the model's (a value oracle, as
+the handler is), so a leech that follows is predicted from that life
+([delivery C1](delivery.md#c-leech-combat_leech)). (run:2026-10-21-shortfalls2) The progressive-charge hooks around the player's build and the
 finisher before delivery were dropped events by rule; none occurred. [I] (fn:COMBAT_PrgHooksBeforeBuild@0x005D3AC0,
 fn:COMBAT_PrgFinisher@0x005D5220)
 
@@ -505,6 +510,10 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   (plan 0047 Phase 2: 31 logs, 18 737 events, 0 mismatches) with its review in the
   [plan 0047 log](../../plans/0047-simulation-shortfalls.md#implementation-log) (rulings 1, 2 and 7: `--no-shield-log`
   a model input, the cold cap over two runs, the raises).
+- [combat/0001 § 17](../../findings/combat/0001-formulas.md#17-plan-0047-phase-2b-flat-absorb-by-element-run2026-10-21-shortfalls2)
+  and [combat/experiments § run:2026-10-21-shortfalls2](../../findings/combat/experiments.md#run2026-10-21-shortfalls2)
+  (plan 0047 Phase 2b: 3 logs, 2 527 events, 0 mismatches) with its review in the plan 0047 log: lightning flat
+  absorb, cold flat absorb final, the leech after a defender's handler at one separating event.
 - [skills/0001](../../findings/skills/0001-dispatch.md) §§ 11 (the conversion writers), 12 (the finisher's seed peek).
 - [skills/0003](../../findings/skills/0003-handlers.md) §§ 1 (the `srvprgfunc` entries and the finisher's tail), 3 (the
   stat-event handlers and their draws), 13 (draws per event), and the architect's P1.3 review (plan 0045 log).
@@ -545,11 +554,15 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   dodge 109 of 172, avoid 68 of 103 ([to-hit C3](to-hit.md#c-the-hit-test-and-the-defence-rolls)). The player's life
   tick is reproduced under poison by run:2026-10-17-stats ([stats/states § E](../stats/states.md#e-the-regeneration-tick)).
   Not reached, and named again in the next bullet: the walking block, the magic cap, cold and lightning flat absorb.
-- [L] **Named again after run:2026-10-20-shortfalls.** Final: the mode-2 (walking) exception of the block `÷ 3`, 6
-  undivided chances in 48 events on a walking player, the plan's one extra session spent
-  ([to-hit C2](to-hit.md#c-the-hit-test-and-the-defence-rolls)); the magic resistance cap, which no stock source of
-  stat 37 reaches ([reductions B2](reductions.md#b-the-rows-g_damageresisttable)). Carried to plan 0047 Phase 2b: cold
-  and lightning flat absorb (0). Moved to plan 0045 Phase 2: conversion and pierce (skill and missile effects).
+- [L] **Named again after run:2026-10-20-shortfalls and run:2026-10-21-shortfalls2, final for plan 0047.** The mode-2
+  (walking) exception of the block `÷ 3`, 6 undivided chances in 48 events on a walking player, the plan's one extra
+  session spent ([to-hit C2](to-hit.md#c-the-hit-test-and-the-defence-rolls)); the magic resistance cap, which no
+  stock source of stat 37 reaches ([reductions B2](reductions.md#b-the-rows-g_damageresisttable)); cold flat absorb, 1
+  hit, final under the plan's own condition (the Nightmare Black Marsh session run), the Nightmare and Hell cold rows
+  untried ([reductions B3](reductions.md#b-the-rows-g_damageresisttable)); the leech after a defender's handler, one
+  separating event ([delivery C1](delivery.md#c-leech-combat_leech)). Lightning flat absorb is reached by
+  run:2026-10-21-shortfalls2 (51, reductions B3). Moved to plan 0045 Phase 2: conversion and pierce (skill and
+  missile effects).
 - [L] Player against player beyond run:2026-10-20-two-clients (plan 0044), which reached the 17 % on physical and
   lightning damage ([reductions A2](reductions.md)) and a shieldless player's block chance 0 ([to-hit C2](to-hit.md)):
   the fire, cold, magic and poison fields, a defender in town, and the hostile (offensive) auras.
