@@ -529,8 +529,13 @@ class Driver:
                                                                              got.get("omode")), flush=True)
                         break
                 time.sleep(1.0)
-                self.p.dpy.key("Escape")
-                time.sleep(0.5)
+                # plan 0047 Phase 2b: Escape only when the waypoint list is up. An activation from mode 0 that opened
+                # no list left the Escape to open the game menu, whose buttons then took the next Teleport clicks
+                # ("hops without moving" in the descend after it) and its Save and Exit ended the game
+                # (p47b-x-wpact5b-0 and -1: gdb's "exited normally" after the push's first clicks)
+                if self.p.menu_open():
+                    self.p.dpy.key("Escape")
+                    time.sleep(0.5)
                 done += ok
                 continue
             if pos and pos[2] in TOWNS:
@@ -1182,6 +1187,20 @@ WP5_ROUTE = ["towp2", "wp:5,3", "warp:71,72", "approach:" + ICE_WP, "activate:1:
              "warp:71,72", "approach:" + ICE_WP, "activate:1:4", "saveexit"]
 for k in range(10):                   # 6-9: plan 0047 Phase 2b, more map seeds
     sess("x-wpact5r-%d" % k, "TravelWpArreat", "enter-normal", 4781 + k, WP5_ROUTE)
+# Plan 0047 Phase 2b, a shorter route: x-wpact5r-1's descend from the Crystalline Passage to the Glacial Trail (records
+# 76/77) timed out in the maze (400 s), while the Plateau's cave entrance (71/72) was found at once. The Frigid
+# Highlands' waypoint (level 111, class 496) stands at the same sub-tile (3779, 5109) on seeds 4781 and 4782 (the OBJP
+# lines of p47h-x-wpact5r-0 and dev-p47h-x-wpact5r-1, both first seen in mode 0): reached on foot from the Plateau it
+# is a second mode-0 waypoint per seed. Route: the Passage's waypoint, back up (Ice Caves Up, records 74/75), Teleport
+# hops to the Highlands' waypoint, activate.
+WP5B_ROUTE = ["towp2", "wp:5,3", "warp:71,72", "approach:" + ICE_WP, "activate:1:4", "warp:74,75",
+              "push:3779:5109:40", "activate:1:4", "saveexit"]
+for k in range(12):
+    sess("x-wpact5b-%d" % k, "TravelWpArreat", "enter-normal", 4801 + k, WP5B_ROUTE)
+# the Highlands' waypoint alone (the way back up from the Passage found no path on seed 4804: x-wpact5b-3)
+WP5C_ROUTE = ["towp2", "wp:5,3", "push:3779:5109:40", "activate:1:4", "saveexit"]
+for k in range(6):
+    sess("x-wpact5c-%d" % k, "TravelWpArreat", "enter-normal", 4821 + k, WP5C_ROUTE)
 
 
 def check(names):
@@ -1208,7 +1227,7 @@ def check(names):
     def of(n):
         save, steps, seed, actions, extra = SESSIONS[n]
         return save, steps, pilots(actions)
-    names = names or sorted(n for n in SESSIONS if n.startswith("x-wpact5r-"))
+    names = names or sorted(n for n in SESSIONS if n.startswith(("x-wpact5r-", "x-wpact5b-", "x-wpact5c-")))
     bad = [n for n in names if n not in SESSIONS]
     if bad:
         print("unknown session(s) %s" % " ".join(bad))
