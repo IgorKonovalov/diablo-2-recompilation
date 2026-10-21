@@ -34,21 +34,30 @@ RUNTIME = os.path.join(ROOT, "workspace", "runtime")
 NOVA = hb.NOVA
 
 
-def hephasto(t=360, players=1):
-    """Hell: River of Flame waypoint (tab 4 row 5), hunt Hephasto the Armorer (MonStats row 409, ilvl 88 in Hell:
+def hephasto(t=360, players=1, extra=()):
+    """Hell: River of Flame waypoint (tab 4 row 3: the Act IV list has three rows), hunt Hephasto the Armorer
+    (MonStats row 409, ilvl 88 in Hell:
     the only stock-droppable func-24 carrier, Tomb Reaver, has lvl 86), then a sweep."""
-    return [("pilot", ["farm", "--wp", "4,5", "--players", str(players), "--time", str(t), "--sweep",
-                       "--boss-cls", "409"] + NOVA, t + 90)]
+    # (after heph-a and heph-b: row 5 does not exist, the Act IV list has three rows; River of Flame is row 3)
+    extra = list(extra)
+    # (after heph-c: 361 s of farm never met Hephasto) explore to the Hellforge room first, LvlPrest 853 / 854
+    # (Act 4 - Lava Forge W / E), then farm
+    return [("pilot", ["wpchain", "--chain", "4,3", "--linger", "2"], 120),
+            ("pilot", ["explore", "--to-pdef", "853,854", "--hops", "80"] + NOVA + extra, 300),
+            ("pilot", ["farm", "--players", str(players), "--time", str(t), "--sweep", "--boss-cls", "409"] + NOVA
+             + extra, t + 90)]
 
 
-THROW = "game-forced-h2c-throw"
+THROW = "game-forced-h2c-throw"      # variant A: Act 1 Junk Item1..3 = tkf, tax, jav
+THROW2 = "game-forced-h2c-throw2"    # variant B (added after throw-a): the same and Picks 1 -> 2, so that one call
+#                                      meets a twelfth throwable (no classic monster TC reaches Act 1 Junk twice)
 TCN = "game-forced-h2c-tcn"
 # name: (save Name, steps file, map seed, game copy, commands)
 SESSIONS = {
     # tc 10, 55, 56: classic Normal sweeps; Act 1 Junk names three classic throwables only
     "throw-a": ("UniqClassic", "enter-normal", 4011, THROW, hb.classic_sweep(2, t=300)),
-    "throw-b": ("UniqClassic", "enter-normal", 4012, THROW, hb.classic_sweep(3, t=300)),
-    "throw-c": ("UniqClassic", "enter-normal", 4013, THROW, hb.classic_sweep(4, t=300)),
+    "throw-b": ("UniqClassic", "enter-normal", 4012, THROW2, hb.classic_sweep(3, t=300)),
+    "throw-c": ("UniqClassic", "enter-normal", 4013, THROW2, hb.classic_sweep(4, t=300)),
     # properties 12 (func 12), 14 (func 23): Eldritch (Act 5 (H) Super A / Ax name Ormus' Robes and Ethereal Edge)
     "tcn-a": ("UniqNova", "uniques-hell", 4021, TCN, hb.eldritch(t=150, players=1)),
     "tcn-b": ("UniqNova", "uniques-hell", 4022, TCN, hb.eldritch(t=150, players=1)),
@@ -59,6 +68,9 @@ SESSIONS = {
     "heph-b": ("UniqNova", "uniques-hell", 4032, TCN, hephasto()),
     "heph-c": ("UniqNova", "uniques-hell", 4033, TCN, hephasto()),
     "heph-d": ("UniqNova", "uniques-hell", 4034, TCN, hephasto()),
+    # (after heph-d died chasing a lightning-immune Doom Knight) Energy Shield every 15 s, no chase of a target
+    # whose lightning resist is 75 or more (the options given last win)
+    "heph-e": ("UniqNova", "uniques-hell", 4035, TCN, hephasto(extra=["--es", "15", "--max-res", "75"])),
 }
 
 

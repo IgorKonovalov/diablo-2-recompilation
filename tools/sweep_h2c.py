@@ -3,6 +3,7 @@
 
     python3 -I tools/sweep_h2c.py reads [--asm <objdump .text dump>]     # the static read lists (before the run)
     python3 -I tools/sweep_h2c.py logs <log> [<log> ...] [--excel DIR]   # the THR/THF/THL and E12/E23/E24 lines
+    python3 -I tools/sweep_h2c.py control <stock log> [...] [--excel DIR] # throwable creations per game kind
 
 reads: for each claim, the callee closure of its code in the pinned Game.exe (tools/callee_writes.py's walk, the same
 stops for every claim: the fatal-error triple 0x00408090 / 0x00408A60 / 0x00681E09, the pool allocator 0x0040B430 and
@@ -138,10 +139,63 @@ def kv(rest):
     return dict(p.split("=", 1) for p in rest.split() if "=" in p)
 
 
+def weapon_index(excel, code):
+    """The item index of a weapon code: its row in weapons.txt with the 'Expansion' marker rows dropped (weapons come
+    first in the item index space, data/0001)."""
+    import csv
+    with open(os.path.join(excel, "weapons.txt"), encoding="latin-1") as f:
+        rows = list(csv.reader(f, delimiter="\t"))
+    ci = rows[0].index("code")
+    k = 0
+    for r in rows[1:]:
+        if not r or r[0] == "Expansion":
+            continue
+        if r[ci] == code:
+            return k
+        k += 1
+    return None
+
+
+def item_types(excel):
+    """Item index -> (code, type) over weapons, armor, misc in that order (the item index space, data/0001), and the
+    set of ItemTypes codes with Throwable 1."""
+    import csv
+    out = []
+    for t in ("weapons", "armor", "misc"):
+        with open(os.path.join(excel, t + ".txt"), encoding="latin-1") as f:
+            rows = list(csv.reader(f, delimiter="\t"))
+        ci, ti = rows[0].index("code"), rows[0].index("type")
+        out += [(r[ci], r[ti]) for r in rows[1:] if r and r[0] != "Expansion"]
+    with open(os.path.join(excel, "itemtypes.txt"), encoding="latin-1") as f:
+        rows = list(csv.reader(f, delimiter="\t"))
+    ci, th = rows[0].index("Code"), rows[0].index("Throwable")
+    thr = {r[ci] for r in rows[1:] if r and r[0] != "Expansion" and r[th] == "1"}
+    return out, thr
+
+
+def cmd_control(ns):
+    """Stock control of 'classic only': in the given stock logs, the creations (CPRE) of throwable-type items per game
+    kind (TCR exp) and the THR lines (none expected in a log without the H2c logger)."""
+    types, thr = item_types(ns.excel)
+    S = collections.Counter()
+    for path in ns.logs:
+        exp = None
+        for tag, rest in read_lines(path):
+            if tag == "TCR":
+                exp = kv(rest).get("exp")
+            elif tag == "CPRE" and exp is not None:
+                code, ty = types[int(kv(rest)["item"])]
+                S["%s creations" % ("expansion" if exp == "1" else "classic")] += 1
+                if ty in thr:
+                    S["%s creations of a throwable type (%s)" % ("expansion" if exp == "1" else "classic", ty)] += 1
+    for k in sorted(S):
+        print("%-60s %d" % (k, S[k]))
+    return 0
+
+
 def cmd_logs(ns):
-    sys.path.insert(0, HERE)
-    import excel_bin
-    items = excel_bin.load(ns.excel, "weapons")  # noqa: F841  (kept for the record of the tables used)
+    lsd_tbl = weapon_index(ns.excel, "lsd")
+    types, thr_types = item_types(ns.excel)
     S = collections.Counter()
     fails = []
     lsd_idx = None
@@ -164,6 +218,9 @@ def cmd_logs(ns):
                 call["thr"].append(d)
                 pend = d
                 S["THR lines"] += 1
+                S["THR item %s (type %s)" % types[d["item"]]] += 1
+                if types[d["item"]][1] not in thr_types:
+                    fails.append("%s: THR on item %d of a non-throwable type" % (name, d["item"]))
                 if d["exp"] != 0:
                     fails.append("%s: THR in an expansion game" % name)
             elif tag == "THF":
@@ -187,6 +244,12 @@ def cmd_logs(ns):
             elif tag == "CPRE" and call is not None:
                 k = kv(rest)
                 call["cpre"].append(int(k["item"]))
+                if call["exp"] == "0":
+                    ty = types[int(k["item"])][1]
+                    S["classic creations"] += 1
+                    if ty in thr_types:
+                        S["classic creations of a throwable type"] += 1
+                        fails.append("%s: classic creation of %s (type %s)" % (name, types[int(k["item"])][0], ty))
                 if pend and pend.get("kind") == "lsd" and "made" not in pend:
                     pend["made"] = int(k["item"])
             elif tag in ("E12", "E12V", "E23", "E23E", "E23D", "E23X", "E24", "E24V", "WR", "SLOTR"):
@@ -235,7 +298,9 @@ def cmd_logs(ns):
     for k in sorted(S):
         print("%-60s %d" % (k, S[k]))
     if lsd_idx is not None:
-        print("'lsd ' index %d" % lsd_idx)
+        print("'lsd ' index logged %d, weapons.txt row %s" % (lsd_idx, lsd_tbl))
+        if lsd_idx != lsd_tbl:
+            fails.append("'lsd ' index %d is not the weapons.txt row %s" % (lsd_idx, lsd_tbl))
     for f in fails:
         print("FAIL " + f)
     print("checks failed: %d" % len(fails))
@@ -253,7 +318,7 @@ def check_handler(name, e, S, fails):
         if len(v) != 1 or not (min(mn, mx) <= v[0] <= max(mn, mx)):
             fails.append("%s: func 12 roll %s outside [%d, %d]" % (name, v, mn, mx))
             return
-        ok = len(wr) == 1 and wr[0].get("param") == v[0] and wr[0].get("value") == par
+        ok = len(wr) == 1 and wr[0].get("param") == v[0] and wr[0].get("v") == par
         S["func 12: WR param = roll, value = par" if ok else "func 12: WR other"] += 1
         if not ok:
             fails.append("%s: func 12 WR %s, roll %d par %d" % (name, wr, v[0], par))
@@ -287,7 +352,7 @@ def check_handler(name, e, S, fails):
                                                                   (min(mn, mx) <= v[0] <= max(mn, mx))):
             fails.append("%s: func 24 prev %d -> v %s (block %s)" % (name, prev, v, d["blk"]))
             return
-        ok = len(wr) == 1 and wr[0].get("param") == par and wr[0].get("value") == v[0]
+        ok = len(wr) == 1 and wr[0].get("param") == par and wr[0].get("v") == v[0]
         S["func 24 prev %d block %s: WR param = par, value = %s" % (prev, d["blk"],
                                                                    "prev" if prev else "roll")
           if ok else "func 24: WR other"] += 1
@@ -307,8 +372,11 @@ def main(argv):
     lg.add_argument("logs", nargs="+")
     lg.add_argument("--excel", default=os.path.join(os.path.dirname(HERE), "workspace", "merged", "data", "global",
                                                     "excel"))
+    co = sub.add_parser("control")
+    co.add_argument("logs", nargs="+")
+    co.add_argument("--excel", default=lg.get_default("excel"))
     ns = ap.parse_args(argv)
-    return cmd_reads(ns) if ns.cmd == "reads" else cmd_logs(ns)
+    return {"reads": cmd_reads, "logs": cmd_logs, "control": cmd_control}[ns.cmd](ns)
 
 
 if __name__ == "__main__":
