@@ -355,7 +355,7 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
 | 98 Might | — | 65 `sub_005CF010_PalAuraDo` | stats/0002; the `aurastat` values too need the mana test for a player, `aurastate` must be above 0 (note below) | none |
 | 102 Holy Fire | — | 66 `sub_005CF3A0_AuraHitDo` | stats/0002; the self block carries `passivestat1..5`; one `SKILLS_RollElemDamage` per run, its packet copied to each unit (note below) | 1 per run |
 | 221 Raven | — | 114 `0x005C6910` | § 7 | none |
-| 225 Firestorm | — | 117 `0x005C7160` | bit 6; with `calc1 > 0` one `SkillMissileCreate` of `srvmissilea` (`firestormmaker`), then `calc1 − 1` more by `MissileCreate` (flags `0x21`, callback `0x005C9290` with the index 0, 1, …) toward the target point | the creations' |
+| 225 Firestorm | — | 117 `0x005C7160` | the class `SrvMissileByCharge`'s (`srvmissilea`, `firestormmaker`, for the stock row), refused outside the Missiles count before bit 6 (2026-10-21 note below); bit 6; with `calc1 > 0` one `SkillMissileCreate` of it, then `calc1 − 1` more by `MissileCreate` (flags `0x21`, callback `0x005C9290` with the index 0, 1, …) toward the target point | the creations' |
 | 36 Fire Bolt, 251 Fire Trauma | — | — | `SKILLS_SrvDo`'s `srvmissile` (P1.2 § 2) | the creation's |
 
 - [I] As above; each row's function is the `ST`/`DO` line of `handlers-scan.txt` and its draws the `DRAW` line.
@@ -406,6 +406,14 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
   row says; for rows that fill those columns its overlay and target-state blocks return 1 without delivering when
   `QueuedHitFind(caster, target)` finds no `+0xAC` node naming both (skills/0001 § 11 note). Everything after those calls stays as read above,
   `[I]`. (fn:SKILL_MeleeDeliverDo@0x0056F1F0)
+  *2026-10-21 (plan 0046 batch `dru`), emulated:* do 114 (Raven) and do 117 (Firestorm) are reproduced up to their
+  boundaries (`[C]` under ADR-0021; [skills/0013](0013-druid.md) §§ 3, 7). Do 114 ends at `SpawnOwnedMonster` with the
+  block `{0, caster, class, 0, mode, 0, 0, pettype, petmax, mode}`, after refusing a `pettype` byte that is negative or
+  at or past the PetType count (→ 0) **before** bit 6; do 117 takes its class from `SrvMissileByCharge`, refuses one
+  outside `[0, Missiles count)` before bit 6, returns 0 **with** bit 6 set for `calc1 ≤ 0`, and ends at
+  `SkillMissileCreate(game, class; caster, id, lvl, 0, 0, 0, 0, 0)` (the Firestorm row now says so). Everything after
+  those calls stays as read above, `[I]`. (fn:sub_005C6910_SkillDo114Summon@0x005C6910,
+  fn:sub_005C7160_SkillDo117Firestorm@0x005C7160)
 
 ### 6. Tier A: missile do, hit and damage functions
 
@@ -513,7 +521,7 @@ if (m) { m->c4 &= ~4; SetStat(m, 74, 0); SummonSetLevel(m, max(calc2, 1), lvl); 
 | `0x005AFB80` (do 28) | missile `+0x20` | `MissileData+0x28` | 2 `Range`, then `+0x28 = RNG_GetLow` | rows with do 28 |
 | `0x005B04A0` (do 34) | missile `+0x20` | path X | 1 inline | rows with do 34 |
 | `0x005B0640` (do 35) | missile `+0x20` | `+0x28` | 1 inline, `+0x28 = RNG_GetLow` | rows with do 35 |
-| `0x005C8520` (do 146) | **caster** `+0x20` | `SkillEntry+0x18` | `RNG_Range(10^6)` into `+0x18`, then up to 5 × 2 `Range` for a free point | Armageddon (`srvactivefunc` 146) |
+| `0x005C8520` (do 146) | **caster** `+0x20` | `SkillEntry+0x18` (at the first period the word do 124 stored, 2026-10-21 note below) | `RNG_Range(10^6)` into `+0x18`, then up to 5 × 2 `Range` for a free point | Armageddon (`srvactivefunc` 146) |
 | `0x00645390` | a unit's `+0x20` | a skill entry's `+0x18`/`+0x1C` (+7 on a repeat) | none | no reference in the image |
 | `0x005C276A` | an item's seed | its own saved low word (restored on failure) | 1 inline | `sub_005C2740_ItemBuildSetV0` |
 | local seeds | a stack seed | constant `0x53454953` (`0x005A3610`, `0x005A6B70`), stat 328 (`0x0059F940`, P1.2), the target and unit guids (`0x005CD910`, start 55), a stepped low word (do 37, 39, 41, 143) | as read | — |
@@ -527,6 +535,12 @@ if (m) { m->c4 &= ~4; SetStat(m, 74, 0); SummonSetLevel(m, max(calc2, 1), lvl); 
   `mov [ebp−…], callback` stores of their creators). So the server re-seeds a **unit** seed only at do 146 among the
   reached sites; every other server site re-seeds a missile or a stack seed. (fn:sub_005C8520_SkillDo146Armageddon@0x005C8520,
   0x005C8688–0x005C8694, fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290)
+  *2026-10-21 (plan 0046 batch `dru`):* the `+0x18` word of the first Armageddon period is written at the cast by do
+  124: one `RNG_Range(caster+0x20, 0x10000)` after its used-skill tests (`[C]` under ADR-0021, up to its
+  `STATLIST_Alloc` or `StatListSetEnd`; [skills/0013](0013-druid.md) § 4), stored by `UnitSkillSet18(used node, r)`
+  after unit event 5 is queued at `frame + Param4` (`[I]`, 0x005C8354–0x005C835C). Do 146 reads `SKILLS_GetUnitSkill(caster,
+  id)`'s node, so the first period uses `r` when that node is the used node (`[I]`, not run).
+  (fn:sub_005C8190_SkillDo124PeriodicState@0x005C8190)
 - [I] `MissileData+0x28` is a per-missile stored seed word: written by `MISSDATA_SetSeedLow` (`0x0064A710`) at creation
   by do 37/143's rings, do 41, hit 36 and do 28/35 after their draws, read back by `MISSDATA_GetSeedLow` (`0x0064A730`)
   to re-seed. `+0x2C` holds a packed offset or a unit guid (`0x0064A760`/`0x0064A780`; hit 22 finds a unit by it).

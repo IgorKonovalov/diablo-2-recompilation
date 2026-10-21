@@ -9850,6 +9850,11 @@ def cmd_static_dru(a):
         rep.c["table_entries"] += 1
         if S4.dword(tab + 4 * num) != va:
             rep.bad("%s: table entry 0x%08X, model address 0x%08X" % (name, S4.dword(tab + 4 * num), va))
+    for base, name in ((0x006E1810, "g_PlayerEventFuncs"), (0x006E2490, "g_MonEventFuncs")):
+        rep.notes.append("%s[5] 0x%08X: 0x%08X" % (name, base + 0x14, S4.dword(base + 0x14)))
+    ops = sorted(va for va, (mn, o) in A.ins.items() if "0x5c7520" in o)
+    raw = open(S4.EXE, "rb").read().count(struct.pack("<I", 0x005C7520))
+    rep.notes.append("0x005C7520: %d .text operands, %d little-endian dwords in the file" % (len(ops), raw))
     rep.notes.append("start table 56-58: %s" % " ".join("%d:0x%08X" % (i, S4.dword(START_TABLE + 4 * i))
                                                         for i in (56, 57, 58)))
     rep.notes.append("do table 114-124, 145, 146: %s" % " ".join(
