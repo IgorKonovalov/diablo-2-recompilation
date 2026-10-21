@@ -256,4 +256,137 @@ was one high; the Assassin's claw-mastery passive (skill 252, param `h2h`, 67 in
   cursed `StatsAss`); the expiries: 30 lists freed this run (the shapes 24, the armours 3, `palc-wells1` 3; lateness 0
   in all), 153 with the kept run's 123, against 300: the potion plan that was to give about 220 drank nothing
   (above); shrines and wells: 3 shrines (codes 14 twice, 6 once; draw-free, the timed state as predicted) and no well,
-  15 with the kept 12, against 50.
+  15 with the kept 12, against 50. *2026-10-21 (Phase 2b):* the potion plan did drink; its waits were too short for the
+  logger's frame rate, so each healing potion refreshed the last one's list ([the Phase 2b record](#staging-fixes-each-found-in-a-log-of-this-lane)).
+  The floor sessions' character levelled up at its first experience and refilled its life (both logs, frames 498 and
+  678).
+
+## The stats sessions of run:2026-10-21-shortfalls2
+
+The run is one run under three checkers (plan [0047](../../plans/0047-simulation-shortfalls.md) Phase 2b, the
+staging-limited cases of Phase 2): this section holds its stats sessions and its definition; the combat sessions are in
+[combat/experiments § run:2026-10-21-shortfalls2](../combat/experiments.md#run2026-10-21-shortfalls2), the travel
+sessions in [quests/experiments § The travel sessions of run:2026-10-21-shortfalls2](../quests/experiments.md#the-travel-sessions-of-run2026-10-21-shortfalls2).
+
+- **Question:** do the stats cases Phase 2 named again for staging reasons (the expiries, group 3's clears, the curse
+  resistance cut, the 256 floor, shrines and wells) reproduce under `tools/stats.py` once the staging is fixed, with
+  the boundary of run:2026-10-17-stats?
+- **Setup:** slot 2 (`:9`, `workspace/wineprefix-2`), tag `p47b` (an empty aside, restored at the end). Logger
+  `tools/gdb/stats.gdb` (`d7a5df84…`) with `tools/gdb/stats.py` **rev 10** (`2dc46547…`, commit `22c856d`: the
+  `GRP`/`GRX` calls kept on a stack with their depth `dp`, below); `pot-town1` was launched before that change and
+  logs rev 9 (its `STATSLOG` line; it has no `GRP` line). Driver `tools/stats_sessions.py run --slot 2 --tag p47b
+  --saves workspace/scratch-p47b/saves --run p47b …` (final revision `dcbd27f8…`, commit `600f2ca`; the sessions'
+  rows are its `SESSIONS`), `tools/d2pilot.py` `114a7003…` (the edits during the run, the `frames:` token, `--done`
+  with several tags and the `descend` path search, touch commands other sessions did not use before their change).
+  Environment `STATS_TICKS=6000 STATS_OBJS=1`, and `STATS_TICKS=40000` for the potion sessions (ticks, and with them
+  the `fr` the `frames:` token reads, all session).
+- **Characters** (pinned in `tools/test_d2s.py`): `StatsPot` (`a18f03a9…`), `StatsDru` (`58cc838b…`), `StatsFloor`
+  (`82db5212…`), **`StatsFloorB`** (`f52e4148…`, new: `statsfloor.json` with the experience at level 85's start,
+  below), `StatsAss` (`5eb48cc0…`), `StatsSor` (`963ed380…`).
+
+### Staging fixes (each found in a log of this lane)
+
+- **The potion plan (the expiries).** The dev session `dev-p47b-pot1` (`ef20d3cf…`; seed 4741, `StatsPot`, Pandemonium Fortress,
+  then the Rogue Encampment) showed the right clicks drink: every clicked cell emptied and the first potion of each
+  kind linked a list (the screenshots). What failed was the timing: the plan's waits were wall-clock seconds sized at
+  25 frames a second (a healing potion every 8 s against `healthpot`'s 192 frames), but the game runs at about 17 under
+  the stats logger (173 frames in 10 s, measured in that log), so each healing potion was drunk while the last one's
+  list was still linked and `STATE`'s refresh moved its expiry instead of linking a new list (`EXP0` at frame 1 222:
+  the `healthpot` list's expiry 1 606). No list was freed while the drinking went on, which Phase 2 read as "drank
+  nothing". Fix: the cube token `frames:N` (waits on the log's server frame), 210 frames between healing potions and
+  840 between the three timed potions (750 frames).
+- **Group 3 (the exit line).** `STATE_GroupClear` is re-entered: Werebear's clear of Werewolf calls it again for 139
+  before it returns. Logger rev 9 kept one open call, so the nested call's exit cleared it and the outer call wrote no
+  `GRX`. Rev 10 keeps a stack and writes the depth (`dp`) on both lines; `tools/stats.py` (`85e14b94…`) pairs them by
+  depth (rev 9 lines, without `dp`, as before) and counts `group_clear_nested` and `group_clear_holding_nested`;
+  `tools/test_stats.py` (`d35d9b42…`, 18 tests) adds the nested pair, a wrong outer exit and the rev 9 pairing.
+- **The curse resistance cut.** `StatsAss` has no Teleport, so `ass-curses`' route (waypoint to the Worldstone Keep
+  Level 2, `farm --descend 81` up to Level 1, which Teleports) cannot leave Level 2 (`ass-curses2`: "12 hops without
+  moving"). A field with a stock curse-caster on the player's own waypoint: the Crystalline Passage (5,4), whose
+  Levels row 113 lists `succubus3`, skill `Defense Curse` (309), state 113 `defense_curse` with States `curse` 1 (the
+  kept run's 11 state-113 expiries came from there). `tools/stats.py` counts each player curse request whose
+  `curse_resistance` is 1..99 (`apply_curse_cut`); a test covers the cut, a non-curse state and the refusal at 100.
+- **The 256 floor.** Three causes, in turn: (1) neither Phase 2 field has a Normal poisoner (MonStats `El*Type`
+  `pois` with Normal damage, against Levels' `mon1`..`mon10`/`umon` columns): the Halls of the Dead Level 2 (2,4) and
+  the Lost City (2,6) do; (2) `StatsFloor`'s recipe experience, 1 145 236 814, is `experience.txt` row 85, the
+  experience at which level **86** begins (row N is level N+1's start: row 1 is 500), so the first experience the
+  character gets (a melee kill, or *The Gladiator's Bane*'s attacker damage) levels it up and the level-up fills life
+  to the maximum: `floor-poison3`, `-4` and `-5` at frames 436, 512 and 1 080 (14 175 → 780 032 in 1/256 units, max
+  life +2), as were both Phase 2 floor logs (frames 498 and 678); **`StatsFloorB`** is the same character at row 84's
+  1 050 299 747; (3) left at 30 life, the character's own items work against the case: *Kerke's Sanctuary*'s `regen`
+  15 (stat 74 +15 a frame, the logged `TK0` value) raised life from 30 to 267 before the first Plague Bearer's poison
+  at frame ~4 000 (`floorb-poison2`), *The Gladiator's Bane* halves poison length (`res-pois-len` 50) and two
+  *Nature's Peace* add `res-pois` 20–30 each. Those items also give the damage reduction (58 flat) that keeps the
+  30-life character alive against Normal hits (`zombie5` A1 55–137), and the stock items with flat damage reduction
+  and none of these properties (*Arkaine's Valor* 15, *Rockfleece* 5, *Goblin Toe* 1, *The Patriarch* 3,
+  *Lazarus Spire* 5, *Steel Carapice* 14, *Ironward* 7: the `uniqueitems.txt` scan of this lane) do not reach it.
+- **Shrines and wells.** `shrine_hunt` went from the waypoint straight to `objop`, which explores nothing (it
+  operates only objects already listed): now rounds of `explore` (25 hops) and `objop --obj-mem --done SHR1,WEL1`
+  (`--done` takes several tags), a wait past the re-arm, the shrines again. The pilot read `StatsSor`'s life orb
+  (1 500 of 6 000) as empty and stopped each `explore` after one hop (`dev-p47b-sor-shrines1`): `--dead-below 0`.
+
+### Sessions
+
+| session | seed | save | what | stats checker | the case's count |
+|---|---|---|---|---|---|
+| pot-town1 | 4741 | StatsPot | Rogue Encampment, 40 inventory and 16 belt potions on `frames:` waits (logger rev 9) | 0 mismatches | 52 lists freed |
+| pot-town2 | 4742 | StatsPot | as above | 0 | 47 |
+| pot-town3 | 4743 | StatsPot | as above | 0 | 52 |
+| dru-shapes2 | 4754 | StatsDru | Werewolf and Werebear in turn, 12 rounds | 0 | 12 group-3 clears, each with its nested call |
+| dru-shapes3 | 4755 | StatsDru | as above | 0 | 12 |
+| ass-curses3 | 4763 | StatsAss | Crystalline Passage (5,4), Fade, walking melee explore | 0 | 24 curses cut |
+| ass-curses4 | 4764 | StatsAss | as above | 0 | 28 |
+| ass-curses2 | 4762 | StatsAss | Worldstone Keep Level 2 (the warp up not reached, no Teleport) | 0 | 2 (shrine curses 133, 134) |
+| floor-poison3 | 4773 | StatsFloor | Halls of the Dead Level 2, melee explore | 0 | 0 (levelled up at frame 436; no poison) |
+| floor-poison4 | 4774 | StatsFloor | Lost City, melee explore | 0 | 0 (levelled up at 512; 808 poisoned ticks at full life) |
+| floor-poison5 | 4775 | StatsFloor | Halls of the Dead Level 2, walk and stand, no melee | 0 | 0 (levelled up at 1 080) |
+| floorb-poison1 | 4791 | StatsFloorB | Halls of the Dead Level 2, walk and stand | 0 | 0 (no poison) |
+| floorb-poison2 | 4792 | StatsFloorB | Lost City, walk and stand | 0 | 0 (567 poisoned ticks from life 267) |
+| sor-shrines2 | 4702 | StatsSor | Stony Field (1,3): four explore and operate rounds, the re-arm wait, again | 0 | 1 shrine (one listed in the whole session) |
+
+Not part of the run (development logs under `workspace/logs/stats/`, kept, no claim on them): `dev-p47b-pot1` (the
+potion diagnosis above), `dev-p47b-sor-shrines1` (the one-hop explores; stopped by the lane), `dev-p47b-floor-poison6`
+(stopped by the lane at its start once floor-poison5 showed the level-up), `dev-p47b-floorb-poison3` (the game stopped
+at frame 1 859 with gdb holding it, state `t`, no `internal-error` line; stopped by the lane). Staged, not run:
+`floorb-poison4`, `sor-shrines3`…`10`, `palc-wells2`, `pot-town4`.
+
+### Results
+
+Check: `systemd-run --user --scope -p MemoryMax=4G python3 -I tools/stats.py check $(cat
+workspace/logs/stats/p47b-run.lst) --json workspace/logs/stats/p47b-check.json`, `tools/stats.py` `85e14b94…`: **0
+mismatches** over the 14 logs (`p47b-run.lst` `1ce4d0b9…`; report `p47b-check.json` `30641747…`, `p47b-check.txt`
+`0d6ca631…`; `p47b-logs.sha256` `db24c111…` lists every run log, dev log, plan, pilot output, script and output, and
+passes `sha256sum -c` from `workspace/logs/stats/`). Seeds equal at entry and exit: apply 606, aura 544, expire 1 401, link 940, unlink 945, propagate 1 485, own
+write 66 458, tick 81 448, shrine 6. Scripts and outputs: `p47b-grpclear.py`/`.txt` (group clears by depth),
+`p47b-cursecut.py`/`.txt` (curse durations asked and given), `p47b-expiries.py`/`.txt` (lists freed by state):
+`2e6eacf4…`, `9d6b6489…`, `48a47d6f…`. The same checker over `s1017-run.lst` and `p47h-run.lst` gives JSONs
+byte-identical to `s1017-check-p47r.json` and `p47h-check.json` (`p47b-recheck-s1017.json` `4b94c8ef…`,
+`p47b-recheck-p47h.json` `63892df3…`): the rev 10 pairing leaves rev 9 logs as they were. `tools/test_stats.py` passes
+(18 tests).
+
+- **Expiries:** 296 lists freed (`expired_lists`; the free set of each of the 1 401 event-12 runs as predicted,
+  lateness 0): `healthpot` 106, `antidote` 16, `thawing` 15, `staminapot` 15, `manapot` 1, `poison` 49, `skilldelay`
+  48, `defense_curse` 42, the shrine states 133 and 134 4. **449** with the 153 of run:2026-10-17-stats and
+  run:2026-10-20-shortfalls: the 300 are met. (fn:EVENT_TimedListExpire@0x00580800, run:2026-10-21-shortfalls2)
+- **Group 3:** 24 `STATE_GroupClear` calls for `bear` (140) cleared `wolf` (139), each with the nested call for 139
+  (depth 2, 24) inside it and both exits' bits as predicted (`group_clear` 124, of which nested 24, holding a nested
+  call 24, effective 27). With groups 1 and 2's 43 (run:2026-10-20-shortfalls), 67 different-state clears.
+  (fn:STATE_GroupClear@0x0056C740, tbl:States.txt:group, run:2026-10-21-shortfalls2)
+- **The curse resistance cut:** 54 player curse requests with `curse_resistance` 84 (Fade level 20): 52
+  `defense_curse` (42 new, 10 refreshes) asked 275 frames and got 44, the two shrine curses asked 3 600 and 2 400 and
+  got 576 and 384 (`p47b-cursecut.txt`): `len - MulDiv(len, 84, 100)` in all three lengths, each list's expiry as
+  predicted. (fn:STATE_ApplyTimed@0x0056E970, 0x0056E9C9–0x0056EA4A, run:2026-10-21-shortfalls2)
+- **Named again, final:** the 256 floor: **0** (no tick floored; 1 431 poisoned ticks, none from below 256 life): on
+  the staged route (a 30-life character kept alive in Normal by flat damage reduction) the only items that keep it
+  alive (flat damage reduction 58) carry `regen` or poison resistance and length, and the stock items without them
+  reach 50 at most (above); the floor stays `[I]` on the code reading and `tools/test_stats.py`'s case. *Review
+  2026-10-21:* a stock-data limit of that route only; a character with more life drained to the floor by poison
+  alone was not tried and is out of this plan. Shrines and wells: **6** shrine operates this run (codes 11 once, 12 three times, two
+  recharges on a full player), **21** with the kept 15, against 50: in four explore rounds of 25 hops the Stony Field
+  listed one shrine (`sor-shrines2`), so the hunt yields about one operate in 12 minutes of slot time; the 29 missing
+  would take about six hours of `sor-shrines` sessions, which this lane did not have (a tool reason: the fix tried is
+  the explore rounds; Act I fields list few shrines). The re-arm and a well's cure stay unreached. *Review
+  2026-10-21:* the yield is measured on one session (`sor-shrines2`), and `palc-wells2` was not run, so the well's
+  cure was not tried in this phase; both are final as a slot-time ruling of the review, out of this plan, not as a
+  stock-data limit.
+  (fn:sub_00580610_LifeRegenTick@0x00580610, fn:OBJOP_Shrine@0x00583C70, run:2026-10-21-shortfalls2)

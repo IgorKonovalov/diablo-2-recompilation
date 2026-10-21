@@ -180,6 +180,11 @@ for name, steps, wp, seed in (("n-plains", "enter-normal", "1,2", 4741), ("n-dar
     # flat absorb (fire 15 Hellmouth, cold 11 Spirit Ward, lightning 20 + 20 Blackhorn's Face and Thudergod's Vigor);
     # Nightmare for fields larger than the absorb
     SESSIONS["abs-" + name] = ("CombatAbs", steps, seed, [(SWEEP + ["--wp", wp, "--time", "270"], 340)])
+for name, wp, seed in (("n-travincal", "3,8", 4745), ("n-cityd", "4,2", 4746)):
+    # plan 0047 Phase 2b: the Act I fields' cold and lightning rows add no element (empty El1Pct, above), so the cold
+    # and lightning flat absorb stayed at 0; the fields whose every row adds it: Travincal (cold) and the City of
+    # the Damned (lightning)
+    SESSIONS["abs-" + name] = ("CombatAbs", "enter-normal", seed, [(SWEEP + ["--wp", wp, "--time", "270"], 340)])
 for name, steps, seed in (("n-plains", "enter-normal", 4751), ("nm-plains", "enter-nightmare", 4752)):
     # freeze (stat 134: Frostwind's 4), the stat event 14 handler and COMBAT_ApplyFreeze
     SESSIONS["frz-" + name] = ("CombatFrz", steps, seed, [(SWEEP + ["--wp", "1,2", "--time", "270"], 340)])
@@ -269,7 +274,8 @@ CASES_0047 = {
                           "amad-n-idle3"], [], ("Avoid",)),
     "C12 freeze": ("CombatFrz's Frostwind (freeze 4) in melee", ["frz-n-plains", "frz-nm-plains"], [134], ()),
     "C13 flat absorb": ("CombatAbs against fire, cold and lightning attackers",
-                        ["abs-n-plains", "abs-n-darkwood", "abs-n-marsh", "abs-nm-marsh"], [143, 145, 149], ()),
+                        ["abs-n-plains", "abs-n-darkwood", "abs-n-marsh", "abs-nm-marsh", "abs-n-travincal", "abs-n-cityd"],
+                        [143, 145, 149], ()),
     "C14 a walking player's block": ("CombatAma after the run/walk toggle (mode 2), with a shield",
                                      ["ama-n-walk", "ama-n-walk2", "amaw-n-walk"], [20], ()),
     "C15 the set-aside Fleshripper session (backlog 2026-10-17 resume-lane follow (a))":

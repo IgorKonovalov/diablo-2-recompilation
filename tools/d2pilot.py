@@ -70,6 +70,7 @@ import json
 import math
 import os
 import random
+import re
 import sys
 import time
 
@@ -944,6 +945,17 @@ def cell_xy(spec):
     if not (0 <= c and c + w <= cols and 0 <= r and r + h <= rows):
         raise ValueError("%s: outside the %s grid" % (spec, page))
     return x0 + CELL * c + CELL * w // 2, y0 + CELL * r + CELL * h // 2
+
+
+def log_last_frame(path, span=20000):
+    """The largest server frame ("fr") in the last span bytes of a log, or None."""
+    try:
+        with open(path, "rb") as fh:
+            fh.seek(max(0, os.path.getsize(path) - span))
+            frs = re.findall(rb'"fr":(\d+)', fh.read())
+    except OSError:
+        return None
+    return max(int(x) for x in frs) if frs else None
 
 
 def log_tail(path, start):
@@ -1973,7 +1985,8 @@ def cmd_objop(args):
         while time.time() - t1 < args.done_wait:
             time.sleep(0.3)
             text, _ = log_tail(args.log, start)
-            if any(ln.startswith((args.done or "") + " ") for ln in text.splitlines()):
+            # --done may name several tags, comma-separated (plan 0047 Phase 2b: SHR1,WEL1 for shrines and wells)
+            if any(ln.startswith(tuple(t + " " for t in (args.done or "").split(","))) for ln in text.splitlines()):
                 ok = True
                 break
         done += ok
@@ -2241,7 +2254,8 @@ def cmd_cube(args, tokens):
     puts it down with its footprint's centre at B; out:inv:x,y,w,h moves the first item the cube holds after the
     last transmute (at the cell its CUBX line gives) to that footprint; tm presses Transmute (--tm-xy) and waits for the logger's CUBX line,
     then prints the row matched (or none), the classes placed and the classes left in the cube; drop:CELL picks the
-    item at CELL up and drops it on the ground (--drop-xy, a point of the floor between the two panels)."""
+    item at CELL up and drops it on the ground (--drop-xy, a point of the floor between the two panels);
+    frames:N[,T] waits until the log's server frame has passed the one at the token by N (at most T s, 120)."""
     p = Pilot(args)
     if args.plan:
         tokens = read_plan(args.plan) + list(tokens)
@@ -2350,6 +2364,24 @@ def cmd_cube(args, tokens):
                 old = [h for h in hist if now - h[0] >= quiet]
                 if old and hist[-1][1] - old[-1][1] < limit:
                     break
+        elif kind == "frames":
+            # frames:N[,T] (plan 0047 Phase 2b): wait until the server frame of the log's lines ("fr") has passed the
+            # last one seen at the token by N, at most T seconds (default 120). The game runs below 25 frames a second
+            # under the stats logger (about 17), so a wall-clock sleep sized to a state's frames is too short
+            a = arg.split(",")
+            nfr, limit = int(a[0]), float(a[1]) if len(a) > 1 else 120.0
+            fr0, t0 = log_last_frame(args.log), time.time()
+            while fr0 is None and time.time() - t0 < limit:
+                time.sleep(0.5)
+                fr0 = log_last_frame(args.log)
+            while time.time() - t0 < limit:
+                fr = log_last_frame(args.log)
+                if fr is not None and fr - fr0 >= nfr:
+                    break
+                time.sleep(0.25)
+            else:
+                print("cube: frames:%s: %s frames passed in %.0f s" % (arg, None if fr0 is None else
+                                                                        (log_last_frame(args.log) or fr0) - fr0, limit))
         elif kind == "drop":
             click(*cell_xy(arg))
             time.sleep(args.pick_wait)
@@ -2651,7 +2683,7 @@ def descend(args, st, p, gate, deadline):
     skip, bad = set(), set()
     goal = None
     clicks = still = 0
-    path = None
+    path = epath = None
     while time.time() < deadline:
         st.poll()
         if st.pos[2] != lid0:
@@ -2698,16 +2730,38 @@ def descend(args, st, p, gate, deadline):
         else:
             fr = {r: rect for r, rect in st.frontier(lid0) if r not in skip}
             if goal not in fr:
+                epath = None
                 if not fr:
-                    print("descend: every room activated or skipped, no warp %s" % args.descend)
+                    print("descend: every room activated or skipped, no warp %s (%d skipped)" % (args.descend,
+                                                                                               len(skip)))
                     return False
                 goal = min(fr, key=lambda r: math.hypot(room_centre(fr[r])[0] - px, room_centre(fr[r])[1] - py))
-            tgt = greedy_hop(st, room_centre(fr[goal]), args.hop, args.min_hop, bad)
+            tgt = pick_on_path(st, epath, args.hop, bad) if epath else None
+            if tgt is None:
+                epath = None
+                tgt = greedy_hop(st, room_centre(fr[goal]), args.hop, args.min_hop, bad)
             if tgt is None:
                 tgt = greedy_hop(st, room_centre(fr[goal]), 1.6 * args.hop, args.min_hop, bad)
             if tgt is None:
+                # plan 0047 Phase 2b: no hop straight nearer the room (a wall, a cliff, an ice-cave corridor
+                # between). Phase 2 skipped the room here, so on most Act V seeds the search ran out of rooms
+                # before the warp's room activated. Instead follow explore's breadth-first path over the known free
+                # cells to the nearest reachable unactivated room, skipping only the rooms no path reaches.
+                plan.last_room = None
+                got, why = plan(st, args.hop, bad, want_path=True, skip=skip)
+                while got is None and plan.last_room is not None:
+                    skip.add(plan.last_room)
+                    plan.last_room = None
+                    got, why = plan(st, args.hop, bad, want_path=True, skip=skip)
+                if isinstance(got, list):
+                    epath = got
+                    tgt = pick_on_path(st, epath, args.hop, bad)
+                else:
+                    tgt = got
+            if tgt is None:
                 skip.add(goal)
                 goal = None
+                epath = None
                 continue
         p.teleport(tgt[0] - px, tgt[1] - py)
         time.sleep(args.wait)
@@ -3171,7 +3225,7 @@ def main():
     ap.add_argument("--obj-near", type=float, default=4.0, help="objop: click the object from this close (sub-tiles)")
     ap.add_argument("--obj-dy", type=int, default=30, help="objop: click this many pixels above the object's cell")
     ap.add_argument("--times", type=int, default=1, help="objop: the number of confirmed clicks")
-    ap.add_argument("--done", help="objop: the log tag that confirms a click (e.g. QS)")
+    ap.add_argument("--done", help="objop: the log tag that confirms a click (e.g. QS; several comma-separated)")
     ap.add_argument("--mon-cls", type=int, help="hunt: the MonStats row to kill")
     ap.add_argument("--pet", type=float, default=0, help="hunt (plan 0038 H6d): within this many sub-tiles of the "
                     "target stand still and cast nothing (the mercenary or a summon kills it); never Nova on the way")
