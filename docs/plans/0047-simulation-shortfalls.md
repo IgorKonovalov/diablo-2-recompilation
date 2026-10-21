@@ -443,3 +443,58 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (its (b) and groups 1–2 of (c) reached here, (a) and group 3 carried by Phase 2b); the review request closed.
   - **Can the plan close?** Not yet, and only for Phase 2b: Phases 1, 2 and 3 (for Phase 2's counts) meet their
     *Done when*; Phase 2b and the re-tag of its counts remain, after which the plan closes.
+- **2026-10-21 — Phase 2b landed (reverser, `lane/p47b`; slot 2 only; no Ghidra).** Review requested.
+  **run:2026-10-21-shortfalls2**, one run under three checkers, each **0 mismatches**:
+  [stats](../findings/stats/experiments.md#the-stats-sessions-of-run2026-10-21-shortfalls2) (14 logs, `tools/stats.py`
+  `85e14b94…`), [combat](../findings/combat/experiments.md#run2026-10-21-shortfalls2) (3 logs, 2 527 events,
+  `tools/combat.py` `ee628bbe…`), [travel](../findings/quests/experiments.md#the-travel-sessions-of-run2026-10-21-shortfalls2)
+  (8 logs, 9 300 checks, `tools/quests.py` unchanged). The kept runs re-check unchanged: stats `s1017-run.lst` and
+  `p47h-run.lst` byte-identical JSONs; combat `p47h-run.lst` 0 / 18 737 (one new counter, 30) and `c37r-run2.lst`
+  0 / 40 655; `tools/test_stats.py` (18) and `tools/test_d2s.py` (45) pass.
+  - **The Done-when items** (this run, and with Phase 2's and the kept runs' counts):
+
+    | item | this run | in all | |
+    |---|---:|---:|---|
+    | 300 expiries | 296 | 449 | met; the potion plan fixed first (dev session `dev-p47b-pot1`) |
+    | 20 group-3 clears checked | 24 | 24 (67 over groups 1–3) | met; stats logger rev 10 writes the nested call's exit, checker and tests |
+    | the curse resistance cut | 54 | 54 | met (Crystalline Passage succubi, Defense Curse; Fade's 84) |
+    | the 256 floor | 0 | 0 | **final**: stock data (below) |
+    | 50 shrine or well operates | 6 | 21 | **final**: tool reason, fix tried |
+    | 20 waypoint activations from mode 0 | 6 | 7 | **final**: tool reason, fixes tried |
+    | lightning flat absorb | 51 | 51 | met |
+    | cold flat absorb | 1 | 1 | **final**: stock data |
+
+  - **Fixes, each found in a log:** the potion plan did drink; its 8 s waits were sized at 25 frames a second and the
+    game runs at about 17 under the stats logger, so each healing potion refreshed the last one's list instead of
+    linking a new one (the cube token `frames:N` waits on the log's frame). `STATE_GroupClear` is re-entered (Werebear's
+    clear of Werewolf calls it for 139), and the rev 9 logger's single open call lost the outer exit (rev 10 keeps a
+    stack with the depth). The Act V route named LvlWarp ids where the WRP lines number records (id 71 = records 71/72,
+    id 74 = 76/77; record 74 is Ice Caves Up, which took `x-wpact5r-0` back to the Plateau); `descend` gains a
+    breadth-first path before skipping a room; `activate`'s Escape opened the game menu when no waypoint list was up
+    (its Save and Exit ended two games). `StatsAss` has no Teleport, so the Worldstone Keep route cannot go up; the
+    Crystalline Passage's succubi curse instead. `StatsFloor`'s experience is level 86's threshold (any experience
+    levels it up and fills life: all five floor logs of both phases), hence `StatsFloorB`. The shrine hunt explored
+    nothing between its operates. The combat checker started a draining monster's drain from its `AD0` life after the
+    player's lightning thorns had cut it (one mismatch in `abs-nm-marsh`): it now takes the defender handler's `EVR`.
+  - **Final, with reasons** (Phase 2b's rule: named again with a stock-data or a tool reason, the fix tried):
+    the 256 floor 0: the only stock items that keep a 30-life Paladin alive in a poisoner's field (flat damage
+    reduction 58) also carry `regen` (*Kerke's Sanctuary*), poison length (*The Gladiator's Bane*) and poison resistance
+    (*Nature's Peace*); the stock items with flat reduction and none of these reach about 50 (the record's scan), below
+    the 58 the recipe uses so that Normal hits take nothing; regeneration raised life to 267 before the first poison
+    (`floorb-poison2`). Not tried: a character without those items at more life, where poison alone would have to
+    drain it to the floor. Cold flat absorb 1: the cold rows that roll their
+    element (Travincal's `cantor3`, `vampire2`) gave 13 melee attacks, all misses; the Act I cold rows have an empty
+    `El1Pct`. Shrines and wells 21 of 50: about one operate per 12-minute explore-and-operate session in the Act I
+    fields; the re-arm and a well's cure unreached. Waypoint activations 7 of 20: about one per 5–15 minutes once the
+    route was fixed; the Passage's maze stops the four-waypoint route after its first waypoint.
+  - **Tools:** `tools/gdb/stats.py` rev 10, `tools/stats.py` (nested group-clear pairing, `apply_curse_cut`),
+    `tools/test_stats.py` (18 tests), `tools/combat.py` (the attacker's life after a defender handler),
+    `tools/d2pilot.py` (`frames:N`, `--done` with several tags, `descend`'s path), `tools/stats_sessions.py`,
+    `tools/combat_sessions.py` and `tools/quest_sessions.py` (the sessions above), recipe `statsfloorb.json` pinned
+    in `tools/test_d2s.py`.
+  - **Findings:** [stats/0002 § 10](../findings/stats/0002-states.md#10-plan-0047-phase-2b-the-staging-limited-cases-run2026-10-21-shortfalls2)
+    (the curse cut on the player, group 3, the 300 expiries `[C]`; the floor and shrines `[I]`, final),
+    [combat/0001 § 17](../findings/combat/0001-formulas.md#17-plan-0047-phase-2b-flat-absorb-by-element-run2026-10-21-shortfalls2)
+    (lightning flat absorb and the leech after a defender handler `[C]`; cold `[I]`, final),
+    [quests/0002](../findings/quests/0002-travel.md) (7 activations, the operate stays `[I]`; the warp ids and records).
+    Phase 3 may re-tag on these counts.

@@ -24,7 +24,8 @@ against this finding; § 8 lists what each claim was checked against and what st
   `attract`, and its duration loses `MulDiv(duration, r, 100)` with `r` = stat 109 (a negative `r` lengthens it; the
   test is signed): unreachable on stock data for the player (no item or affix carries stat 109; no monster casts
   Attract). (0x0056E9C9–0x0056EA4A, tbl:ItemStatCost.txt:Stat) *2026-10-20 (plan 0047 Phase 2):* the `attract` refusal
-  is raised for a monster target (§ 9); the stat-109 cut stays here.
+  is raised for a monster target (§ 9); the stat-109 cut stays here. *2026-10-21 (plan 0047 Phase 2b):* the cut on the
+  player (stat 109 between 1 and 99) is raised in § 10; the refusal at 100 and a negative `r` stay here.
 - [C] **Expiry.** Unit event 12 (`EVENT_TimedListExpire`) frees every timed list (flag `0x2`) whose `+0x18` ≤ the
   current frame; each request queues its own event, so a refreshed list's earlier event fires and frees nothing.
   (fn:EVENT_TimedListExpire@0x00580800, fn:UNIT_ExpireTimedLists@0x00627460, run:2026-10-17-stats)
@@ -424,7 +425,8 @@ over its run list with 0 mismatches.
   group 1 (`frozenarmor` 10, `chillingarmor` 20, `shiverarmor` 88) 20, group 2 (`fade` 159, `quickness` 157) 23.
   Group 3 stays `[I]`: 12 calls for `bear` (140) found `wolf` (139) set and the bit was gone at the nested call that
   followed, but those calls logged no exit line, so they are unchecked. (fn:STATE_GroupClear@0x0056C740,
-  tbl:States.txt:group, run:2026-10-20-shortfalls)
+  tbl:States.txt:group, run:2026-10-20-shortfalls) *2026-10-21:* group 3 is raised in § 10 (logger rev 10 writes the
+  outer call's exit).
 - [C] **An aura state ends when the aura is switched off**: 61 aura target-state lists made (Might 33, Defiance 34,
   Prayer 37) and 59 unlinked, all from `sub_005701B0_PlayerSetSkill` (return `0x005702E1`) through
   `UNIT_UnlinkStatList` when the next aura key changed the right skill, before the timed expiry; each unlink's writes
@@ -434,6 +436,34 @@ over its run list with 0 mismatches.
   run:2026-10-17-stats, against 300: the potion plan drank no inventory potion), shrines and wells (3 shrines, no well;
   15 with the kept run, against 50).
   (fn:sub_00580610_LifeRegenTick@0x00580610, fn:EVENT_TimedListExpire@0x00580800, run:2026-10-20-shortfalls)
+  *2026-10-21 (plan 0047 Phase 2b, § 10):* the expiries are met (449); the potion plan did drink, its waits were too
+  short for the logger's frame rate. The 256 floor and shrines and wells are named again there, final.
+
+### 10. Plan 0047 Phase 2b: the staging-limited cases (`run:2026-10-21-shortfalls2`)
+
+The record: [experiments § The stats sessions of run:2026-10-21-shortfalls2](experiments.md#the-stats-sessions-of-run2026-10-21-shortfalls2);
+`tools/stats.py` over its 14 logs with 0 mismatches.
+
+- [C] **The curse resistance cut on the player** (§ 2, raised in part: `r` between 1 and 99 on a player target): 54
+  curse requests on the player under Fade (`curse_resistance` 84) made or refreshed a list whose duration is
+  `len - MulDiv(len, 84, 100)`: 52 `defense_curse` from the Crystalline Passage's succubi (275 frames asked, 44 given)
+  and two shrine curses (3 600 → 576, 2 400 → 384), each expiry as predicted. Three lengths cut by the same `r` to
+  the frame rule out a reading without the cut or with another rounding. The refusal at `r` ≥ 100 and a negative `r`
+  stay `[I]` (no stock source gives the player 100 or less than 0). (fn:STATE_ApplyTimed@0x0056E970,
+  0x0056E9C9–0x0056EA4A, tbl:Skills.txt:aurastat5, run:2026-10-21-shortfalls2)
+- [C] **A different state of group 3 is cleared** (§ 2, the remainder of § 9's group bullet): 24 `STATE_GroupClear`
+  calls for `bear` (140) cleared `wolf` (139), each holding a nested `STATE_GroupClear` call for 139 (depth 2) before it
+  returns; both exits' bits as predicted. Groups 1–3 now give 67 different-state clears over the two runs.
+  The caller of the nested call is not followed (the return addresses are not logged).
+  (fn:STATE_GroupClear@0x0056C740, tbl:States.txt:group, run:2026-10-21-shortfalls2)
+- [C] **Timed expiry, the 300** (§ 3): 296 lists freed in this run's 1 401 event-12 runs, each run's free set as
+  predicted, lateness 0 (the potion states 100, 106, 178–180 153, `poison` 49, `skilldelay` 48, `defense_curse` 42,
+  shrine states 4); 449 with run:2026-10-17-stats and run:2026-10-20-shortfalls. (fn:EVENT_TimedListExpire@0x00580800,
+  fn:UNIT_ExpireTimedLists@0x00627460, run:2026-10-21-shortfalls2)
+- [I] **Named again, final:** the 256 floor (0 floored ticks in 1 431 poisoned ones: the stock items that keep a 30-life
+  character alive also regenerate life or resist and shorten poison, the record's scan), and shrines and wells (21
+  operates over the three runs against 50; about one operate per explore-and-operate session in Act I fields).
+  (fn:sub_00580610_LifeRegenTick@0x00580610, fn:OBJOP_Shrine@0x00583C70, run:2026-10-21-shortfalls2)
 
 ## Data touched
 

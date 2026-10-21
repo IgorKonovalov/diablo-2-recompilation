@@ -851,7 +851,8 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
   absorbed amount (186), the total ≤ 0 (488), evade, weapon block, dodge, avoid, freeze (81) and fire flat absorb (113);
   the cold cap over the two runs (27 + 4 = 31, Phase 2 review ruling 2); still under the floor: the mode-2 block (6);
   not reached: cold and lightning flat absorb, the
-  magic cap (unstaged), open wounds on a player (plan 0044), conversion and pierce (plan 0045).
+  magic cap (unstaged), open wounds on a player (plan 0044), conversion and pierce (plan 0045). *2026-10-21 (plan 0047
+  Phase 2b, § 17):* lightning flat absorb raised (51); cold flat absorb named again, final (1).
 
 ### 16. Plan 0047 Phase 2: the shortfalls (run:2026-10-20-shortfalls)
 
@@ -889,7 +890,8 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
   unchanged**: 488 on the player below 0, 113 at 0, 32 at 0 on a monster (the counter of backlog resume-lane follow
   (b)). (fn:COMBAT_Absorb@0x0057BF10, fn:COMBAT_ApplyDamage@0x0057C6C0, run:2026-10-20-shortfalls)
 - [C] **Flat absorb** (fire): 113 events on `CombatAbs` (*Hellmouth* 15) with the amount subtracted and the field
-  asserted; cold and lightning flat absorb were not hit (0) and stay `[I]`. **Freeze**: 81 `STATEVENT_Freeze` rolls up
+  asserted; cold and lightning flat absorb were not hit (0) and stay `[I]` (*2026-10-21:* lightning raised in § 17, 51;
+  cold named again there, final). **Freeze**: 81 `STATEVENT_Freeze` rolls up
   to the nested delivery (length 26–249 frames), from *Frostwind*. (fn:COMBAT_Absorb@0x0057BF10,
   fn:STATEVENT_Freeze@0x005BFC60, run:2026-10-20-shortfalls)
 - [C] **Prevent-heal takes no draw**: 271 state-52 `STA` lines of the attacker between the to-hit and the defence rolls
@@ -920,6 +922,30 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
   called it for mode 8 between the defence rolls and the build in 6 of 14 such events, and the build used its output
   (`MAS1` stats 21/22: 72/91 against 59/100 at `EV0`), its entry on the attacker's running seed (5 asserted). Which events call it is not
   read. (fn:sub_005A4F50_MonAttackStats@0x005A4F50, run:2026-10-20-shortfalls)
+
+### 17. Plan 0047 Phase 2b: flat absorb by element (run:2026-10-21-shortfalls2)
+
+Three `CombatAbs` sessions on slot 2 (the record: [experiments § run:2026-10-21-shortfalls2](experiments.md#run2026-10-21-shortfalls2));
+`tools/combat.py check` over `p47b-run.lst`: **0 mismatches over 2 527 events**, every seed asserted as in § 15.
+
+- [C] **Lightning flat absorb** (§ 7, raised in part: lightning): 51 events on `CombatAbs` (*Blackhorn's Face* and
+  *Thundergod's Vigor*, 20 + 20) with the flat amount subtracted from the lightning field and the field asserted: 13
+  in the Nightmare Black Marsh (`abs-nm-marsh`), 25 in Travincal, 13 in the City of the Damned. With fire's 113 of
+  § 16, two elements of the one flat-absorb path. (fn:COMBAT_Absorb@0x0057BF10, run:2026-10-21-shortfalls2)
+- [I] **Cold flat absorb, named again (final):** 1 event (*Spirit Ward* 11, Travincal). In Normal and the Nightmare
+  Black Marsh a cold hit on the player needs a cold El row that rolls: Travincal's `cantor3` and `vampire2` (their
+  `El1Pct` is 65) gave 13 melee attacks on `CombatAbs` in `abs-n-travincal`, all misses. The cold field passes the
+  same subtraction as fire and lightning; only the element's count stays under the floor.
+  (fn:COMBAT_Absorb@0x0057BF10, run:2026-10-21-shortfalls2)
+- [C] **The leech after a defender's handler starts from the life the handler left.** `COMBAT_ApplyDamage` runs the
+  event 5/1 handlers before the leech (§ 8, steps 3 and 4); a draining monster hit by the player's lightning thorns
+  (`sub_005BF720_StatEv10ThornsLightning`, *Blackhorn's Face*, in the defender's event 1) loses life there, and its
+  drain then adds to that life: 29 events in this run and 30 in `p47h-run.lst`, each `LE1` attacker life equal to the
+  handler's `EVR` life plus the drain. The checker took the attacker's life only from `AD0` before (one mismatch in
+  `abs-nm-marsh`, 25 life); it now takes it from the defender handler's `EVR` (a value oracle, as the handler is),
+  and the kept lists re-check unchanged but for the new counter. (fn:COMBAT_ApplyDamage@0x0057C6C0,
+  fn:COMBAT_Leech@0x0057C420, fn:sub_005BF720_StatEv10ThornsLightning@0x005BF720, run:2026-10-21-shortfalls2,
+  run:2026-10-20-shortfalls)
 
 ## Boundary recommendation for Phase 2
 

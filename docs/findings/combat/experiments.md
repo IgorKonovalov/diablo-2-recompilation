@@ -480,3 +480,38 @@ input and is dropped with a count (8, one log).
   are named again with these counts (*review 2026-10-21:* the cold cap is met over the two runs, 31, both re-checked
   by this checker revision; the walking block is final); the magic cap stays unstaged (Phase 1 ruling 2). Raises in
   [combat/0001 § 16](0001-formulas.md#16-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls). (run:2026-10-20-shortfalls)
+
+## run:2026-10-21-shortfalls2
+
+The run is defined in [stats/experiments § The stats sessions of run:2026-10-21-shortfalls2](../stats/experiments.md#the-stats-sessions-of-run2026-10-21-shortfalls2)
+(plan [0047](../../plans/0047-simulation-shortfalls.md) Phase 2b); this section holds its combat sessions, the cold and
+lightning flat absorb that `abs-nm-marsh` was to reach.
+
+- **Setup:** slot 2, tag `p47b`, saves `workspace/scratch-p47b/saves` (`CombatAbs` `05f4741c…`, pinned). Logger
+  `tools/gdb/combat.gdb` (`450f36f8…`) with `tools/gdb/combat.py` r9 (`82780acc…`, unchanged). Driver
+  `tools/combat_sessions.py run --slot 2 --tag p47b --saves workspace/scratch-p47b/saves --run p47b abs-nm-marsh
+  abs-n-travincal abs-n-cityd` (`f2539a81…`; the two new rows: the fields whose every row adds the element, Travincal
+  for cold and the City of the Damned for lightning, since the Act I fields' cold and lightning rows have an empty
+  `El1Pct`), `tools/d2pilot.py` `114a7003…`.
+
+| session | seed | save | difficulty | where (waypoint) | events | flat absorb fire / cold / lightning |
+|---|---|---|---|---|---:|---|
+| abs-nm-marsh | 4744 | CombatAbs | Nightmare | Black Marsh (1,5) | 1 276 | 31 / 0 / 13 |
+| abs-n-travincal | 4745 | CombatAbs | Normal | Travincal (3,8) | 598 | 193 / 1 / 25 |
+| abs-n-cityd | 4746 | CombatAbs | Normal | City of the Damned (4,2) | 653 | 35 / 0 / 13 |
+
+- **Check:** `systemd-run --user --scope -p MemoryMax=4G python3 -I tools/combat.py check $(cat
+  workspace/logs/combat/p47b-run.lst) --json workspace/logs/combat/p47b-check.json`, `tools/combat.py` `ee628bbe…`
+  (commit `600f2ca`): **0 mismatches over 2 527 events** (`p47b-run.lst` `0632742b…`, `p47b-check.json` `f61d3b5f…`,
+  `p47b-check.txt` `aedd5766…`). Logs, pilot outputs and outputs in `p47b-logs.sha256` (`d5b96337…`, `sha256sum -c`
+  from `workspace/logs/combat/`).
+- **Checker change** (`600f2ca`): `abs-nm-marsh` gave one mismatch with the previous revision, `LE1 attacker life:
+  logged 26279, model 32679` (line 6 763): a monster draining the player (its stat 74 at −2 449) was hit by *Blackhorn's
+  Face*'s lightning thorns (handler `0x005BF720`, the defender's event 1) for 25 life before its drain, and the checker
+  started the drain from the attacker's `AD0` life. It now takes the attacker's life from the defender handler's `EVR`
+  (`lo`), on both the plain and the nested-line path, counted as `attacker life taken from a defender handler's EVR`
+  (22 + 7 events here). Re-checks with this revision: `p47h-run.lst` (with its recorded `--no-shield-log`) 0 / 18 737,
+  its JSON equal to `p47h-check.json` but for that counter (30); `c37r-run2.lst` 0 / 40 655, its report equal to the
+  one of the Phase 2 re-check (no such event). Outputs `p47b-recheck-p47h.json` (`212c0557…`)/`.txt`, `p47b-recheck-c37r.json`/`.txt` (`0fd905d4…`).
+- **Result:** lightning flat absorb **51** (met); cold flat absorb **1** (named again, final: Travincal's cold rows
+  gave 13 melee attacks, all misses). (run:2026-10-21-shortfalls2)
