@@ -714,3 +714,24 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   archivist entry stays open for its lane; ledger row added. **The next batch (barbarian, `bar`) may start**, with
   9c, 9d, `sor`, `ama`, `nec` and `pal`'s conventions, ruling 3 of the `sor` review on writer scans, and ruling 1's
   condition of the `ama` review at each level of a helper chain.
+- **2026-10-21 — Phase 1 batch `bar` landed for review (reverser, `lane/p46m9`, static, no harness).** The barbarian
+  start functions 32–34 and 38–41 and do functions 2, 9, 68–72 and 74–78: 19 entries, all read and all emulated
+  ([skills/0012](../findings/skills/0012-barbarian.md); tier A start 32 and do 2 emulated too). Draws before the
+  boundaries: none; no case steps the caster's or the target's seed (do 69's and do 72's `RNG_Range` and do 69's
+  inline step draw on the caster's seed after their `STATE_Set` boundary, `[I]`). Raised by emulation
+  (run:2026-10-21-cat-emu-bar, `tools/skills_catalogue_emu.py --batch bar`, `check.txt` `13b1a4d2…`,
+  `manifest.sha256` `737c8b4f…`): four families, 6 800 cases, 0 mismatches, 39 boundary/call-site triples asserted
+  (site control 2 397 of 2 397), both seeds compared in every case, blocks, points and contexts compared by content,
+  register arguments compared where the callee reads them first (pal ruling 1); nested boundaries by the helper's
+  return address at its stack slot (eight helpers) or single call sites listed by `static` (do 70's reach chain); three
+  to six negative controls per family (each family has one failing 90 or more; the weak ones named with their deciding
+  class). The calc count's writer scan matches `moffs` stores and immediates (0 and 0). The same tool reproduces
+  9a–9d, `sor`, `ama`, `nec` and `pal` byte for byte (`repro.txt`). Surprises: do 2's overlay and target-state blocks
+  return 1 without delivering when the caster has no queued hit on the target; do 9 and do 70 branch on bit 8 of the
+  caster's `+0x38`; do 68 sets bit 6 before its record test and admits missile class 0; Find Potion and Grim Ward's
+  corpse test adds MonStats2 flag 12 (`soft`, by the layout) to Find Item's; start 40 pulls a player's leap point in to
+  `aurarangecalc`; start 41 aims two steps past the path's target point; do 72's rolls are on the caster's seed
+  (items/0001 note). Tags: 31 `[C]`, 22 `[I]`, 4 `[L]` bullets; 32 symbols added (`I`). Dated notes in skills/0001
+  § 11, skills/0003 § 5 (the Kick row in step) and items/0001. Review request
+  [to the architect](../backlog/2026-10-21-reverser-architect-lane-p46m9-review-plan-0046-batch-bar.md); column
+  readers [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-bar-skills-monstats2-column-readers.md).

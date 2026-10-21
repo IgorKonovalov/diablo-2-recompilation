@@ -400,6 +400,12 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
   Holy Fire row). From the reading, `[I]`: do 66 makes one `SKILLS_RollElemDamage` per run, its packet copied to every
   unit of the target pass (correction of the Holy Fire row's "per unit"). Everything after those calls stays as read
   above, `[I]`. (fn:sub_005CF010_PalAuraDo@0x005CF010, fn:sub_005CF3A0_AuraHitDo@0x005CF3A0)
+  *2026-10-21 (plan 0046 batch `bar`), emulated:* do 2 (the Kick row) is reproduced up to its boundaries (`[C]` under
+  ADR-0021; [skills/0012](0012-barbarian.md) § 3). For a row with no `srvoverlay`, `auratargetstate` or `aurastate`
+  (Kick) it sets bit 6 and ends at `COMBAT_DeliverQueued(game, unit; target, 0)`, or returns 0 without a target, as the
+  row says; for rows that fill those columns its overlay and target-state blocks return 1 without delivering when the
+  caster has no queued hit on the target (skills/0001 § 11 note). Everything after those calls stays as read above,
+  `[I]`. (fn:SKILL_MeleeDeliverDo@0x0056F1F0)
 
 ### 6. Tier A: missile do, hit and damage functions
 

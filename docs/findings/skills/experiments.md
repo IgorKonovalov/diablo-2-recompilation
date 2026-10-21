@@ -537,3 +537,72 @@ Plan 0045 Phase 2's harness runs: none yet. Plan 0046's emulated runs (ADR-0015)
   seed. Not covered: what any boundary callee does and everything after it (the aura target passes and their draws on
   the caster's and the units' seeds, start 35's and do 79's draws on the caster's seed among it); when the game runs
   these functions or with which seed. (fn:sub_005CF010_PalAuraDo@0x005CF010, fn:sub_005CE8E0_SkillDo64SacrificeSelfHit@0x005CE8E0)
+
+## run:2026-10-21-cat-emu-bar
+
+- **Question:** (plan 0046 Phase 1, batch `bar`) Do the barbarian start functions 32–34 and 38–41 and do functions 2,
+  9, 68–72 and 74–78 map their inputs (the Skills and MonStats2 records, the caster, its path, used-skill node, unit
+  skill chain, queued hits, stat lists, `+0x38` word and inventory word, the target unit, its stat lists, room and
+  position, the rooms, the game frame and pool word, and the seeds) to the result they return, or to the arguments,
+  pointed-to blocks, node, path and frame words and seed states at the call they end in, exactly as
+  [skills/0012](0012-barbarian.md) §§ 3–6 say, and do they leave both seeds alone?
+- **Setup:** as run:2026-10-20-cat-emu-pal: Ghidra 12.1.2 p-code emulator on the pinned `game.exe` (lane copy
+  `GHIDRA_PROJ_DIR=workspace/ghidra-p46m9`, heap 3 GB, one instance at a time, each under a 4 GB scope),
+  `re/ghidra_scripts/EmuBoundary.java` unchanged (`286393aa…`). No wine, nothing runs natively, no slot. Models, case
+  writers and checks: the `bar` families of `tools/skills_catalogue_emu.py` (`613471e3…`), with `pal`'s conventions
+  (the call site of every boundary asserted with a site control, both seeds written and compared in every case, a
+  boundary's pointer argument compared by content: the hit packet, do 75's and start 40's points, `NovaAtUnit`'s block,
+  do 71's search context; the node, path and list words dumped and compared; register arguments compared only where the
+  callee reads them before writing them; no model compares a callee-saved register that is not a boundary argument; a
+  boundary inside a helper compares the helper's return address at its absolute stack slot, the helpers' call sites
+  listed by `static`). All inputs synthetic (stock parameter values among them); every case-writer draw from
+  `random.Random("catbar-<family>")`. Files in `workspace/logs/skills-cat-bar/`, `manifest.sha256` `737c8b4f…` (28
+  files: cases, memory specs, expected inputs, outputs, the `.err` logs, `cases.txt`, `check.txt` `13b1a4d2…`,
+  `static.txt` `4808f177…`, `rows.txt` `9646927a…` with its `rows.sh`, `repro.txt` `65c7b964…` with its `repro.sh`, the
+  run script `run_bar.sh`); `sha256sum -c manifest.sha256` from that directory passes. `repro.txt` records that the
+  same tool revision regenerates every case, memory and expectation file of 9a, 9b, 9c, 9d, `sor`, `ama`, `nec` and
+  `pal` byte for byte and reproduces their kept `check.txt` and `static.txt` byte for byte from their kept outputs.
+- **Procedure:**
+  ```
+  D=workspace/logs/skills-cat-bar
+  python3 -I tools/skills_catalogue_emu.py cases --batch bar > $D/cases.txt
+  for f in cry_bar hit_bar corpse_bar move_bar; do      # one at a time ($D/run_bar.sh)
+    GHIDRA_PROJ_DIR=workspace/ghidra-p46m9 GHIDRA_HEADLESS_MAXMEM=3G systemd-run --user --scope -p MemoryMax=4G \
+      tools/ghidra.sh emuboundary $D/$f.cases $D/$f.mem > $D/$f.out 2> $D/$f.err
+  done
+  python3 -I tools/skills_catalogue_emu.py check  --batch bar > $D/check.txt
+  python3 -I tools/skills_catalogue_emu.py static --batch bar > $D/static.txt
+  $D/repro.sh <scratch dir> > $D/repro.txt
+  python3 -I tools/skills_catalogue_emu.py manifest --batch bar --write
+  ```
+  Each memory spec points `g_pDataTables` at a scratch DataTables written one field per field read (Skills, Missiles,
+  ItemStatCost, MonStats, MonStats2, the calc pool, the States, PetType and overlay counts, the `+0x150` state set),
+  names the boundaries (`observe`: `pal`'s plus `0x0056E520`, `UnitQueueEvent`, `FreeNearFallback`, `PathSetType`,
+  `MonSkillAttackDo`, `COLL_PatternTestBool`, `0x005D9460`, `0x00553DC0`, `0x006212C0`, `0x005DA120`, `0x005D9F70`,
+  `0x005DA660`) and guards the allocator and the fatal path.
+- **Observed** (`check.txt`, `static.txt`):
+  ```
+  CATBAR hit_bar    cases=1750 match=1750 bad=0 neg=357 traced=67 undeclared=0 stopped=0
+  CATBAR corpse_bar cases=2500 match=2500 bad=0 neg=233 traced=7 undeclared=0 stopped=0
+  CATBAR cry_bar    cases=800 match=800 bad=0 neg=542 traced=9 undeclared=0 stopped=0
+  CATBAR move_bar   cases=1750 match=1750 bad=0 neg=236 traced=21 undeclared=0 stopped=0
+  CATBAR static data_imms=0 data_stores=0 helper_sites=49 pins=45 pins_ok=45 ro_reads=6 table_entries=19
+  ```
+  6 800 cases. Every negative control fails (per-control counts on the `negative control` lines; each family has one
+  failing 90 or more cases: `par_low` 224, `no12` 109, `vel1` 257, `x1` 90; the weak ones fail on the deciding class
+  skills/0012 § 2 names); the site control fails on all 2 397 matched boundary cases (39 `site` lines: function,
+  boundary, return address). The skills calc function count's scan names every operand form (`PTR` and `moffs` stores,
+  immediates, reads): 0 stores, 0 immediates, 7 reads. `hit_bar` and `cry_bar` matched on their first emulation (one
+  fix to the declared read set: `NovaAtUnit`'s offsets); the first `corpse_bar` and `move_bar` runs mismatched on tool
+  faults (missing dumps of the compared node, path and list words; do 76's `+0xC6` byte written over the compared
+  `+0xC4` word; too few points inside rooms to reach two free-spot calls), fixed in the case writers before the kept
+  run; those first outputs were overwritten by the kept run of the same file names.
+- **Conclusion:** bit-exact reproduction (evidence rule 4, ADR-0015) of the functions' maps on returning cases (`[C]`:
+  start 33's and start 34's results, do 78's 1 with its node word, every refusal path) and of their maps up to their
+  boundary calls with the call site, the helper return addresses, the arguments (register arguments where the callee
+  reads them first), the pointed-to blocks, the node, path and frame words and both seeds asserted (`[C]` under
+  [ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md); skills/0012 names each claim's boundary). No function
+  draws before its boundary or return; no case steps either seed. Not covered: what any boundary callee does and
+  everything after it (do 69's and do 72's draws on the caster's seed, do 69's inline step, the hits' elemental rolls
+  among it); when the game runs these functions or with which seed. (fn:sub_005D81C0_SkillDo69FindPotion@0x005D81C0,
+  fn:sub_005D9A10_LeapPoint@0x005D9A10)

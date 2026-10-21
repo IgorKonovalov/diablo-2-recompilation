@@ -600,6 +600,14 @@ return 1;
   bit 6 and calls `COMBAT_DeliverQueued`. So the to-hit, defence and damage draws of such a skill happen at the start
   frame, the delivery (and its draws) at the action frame. (fn:SKILL_MeleeDeliverDo@0x0056F1F0,
   tbl:Skills.txt:srvoverlay, tbl:Skills.txt:auratargetstate)
+  *2026-10-21 (plan 0046 batch `bar`), emulated:* start 32 and do 2 are reproduced up to their boundaries (`[C]` under
+  ADR-0021; [skills/0012](0012-barbarian.md) § 3): start 32 up to `0x0056E520(ECX unit, EDX calc3)` after the target
+  and town tests; do 2 up to `UnitSetOverlayStat`, `STATLIST_Alloc`, `UnitQueueEvent`, `STATE_Set` or
+  `COMBAT_DeliverQueued`. Refinements of the bullet above: the overlay test is `0 < srvoverlay ≤ DataTables+0xBC0`;
+  each of the overlay and `auratargetstate` blocks returns **1 without delivering** (bit 6 not set) when the caster
+  has no queued hit on the target, and 0 without a target; the queued hit's "0x1" is its packet's `+0x04` bit 0;
+  `auratargetstate` admits 0, `aurastate` refuses it. Everything after those calls stays as read above, `[I]`.
+  (fn:sub_005D7EA0_SkillSt32Hit@0x005D7EA0, fn:SKILL_MeleeDeliverDo@0x0056F1F0)
 - [I] `srvstfunc` 6 (`sub_005DA940_SkillSt06Hit`): the same shape with to-hit 0 (the attack rating alone), no flags, no
   calc2/calc3, and SrcDam passed as stored (0 not replaced). `srvstfunc` 7 (Impale) is § 14.
   (fn:sub_005DA940_SkillSt06Hit@0x005DA940)
