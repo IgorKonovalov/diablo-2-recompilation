@@ -1370,5 +1370,76 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   path beyond plan 0045's spec (no 0045 correction filed); do 129's direct call of do 98 is a catalogue fact. Tags: 27
   `[C]`, 10 `[I]`, 3 `[L]` bullets; 30 symbols (`I`). Filed:
   [archivist entry](../backlog/2026-10-21-reverser-archivist-plan-0046-8c-skills-monstats-column-readers.md) (column
-  readers), [review request](../backlog/2026-10-21-reverser-architect-lane-p46m15-review-plan-0046-batch-8c.md). **Next:**
+  readers), [review request](../backlog/archive/2026-10-21-reverser-architect-lane-p46m15-review-plan-0046-batch-8c.md). **Next:**
   the architect's review of 8c, and the ruling on the six `general` entries plan 0045 read for Phase 1's close.
+- **2026-10-21 — `lane/p46m15` review (architect): accept with fixes. Phase 1 closed.** Reviewed on the lane (head
+  `b89926c`), main not merged (it moved to `fafcd32`: plan 0047 Phase 2b, combat and tools; it touches no skills
+  finding, no `re/symbols.csv` row, and none of the 30 new addresses is on main's side; main's ledger rows will meet
+  this review's at the merge, keep both). `sha256sum -c manifest.sha256` (`9dc63588…`, 92 lines) passes. From the lane's
+  tool (`8911d02a…`), each step under its own 4 GB scope, `cases --batch 8c` reproduces the twelve case, memory and
+  expectation files byte for byte, and `check --batch 8c` and `static --batch 8c` reproduce `check.txt` (`500b673c…`) and
+  `static.txt` (`873640da…`) byte for byte. Recounted from `check.txt`: 8 800 cases (3 200 + 1 200 + 2 000 + 2 400), 0
+  bad, 0 undeclared, 0 stopped; site controls 892 + 370 + 227 + 887 = 2 376 over 23 `site` lines; 18 `CLASS` lines,
+  each equal to its control. `re/symbols.csv`: the 30 rows are the only change, none on main. Read against objdump: the
+  18 table slots (`g_SkillStartFuncs` 61–63, `g_SkillDoFuncs` 128–149 as listed) and the six `general` slots (start 1
+  `0x0056CA40`, 2 `0x0056CAF0`, 65 `0x0056CAB0`; do 1 `0x0056F070`, 3 `0x0056F460`, 5 `0x0056F550`, each with a
+  `re/symbols.csv` row); do 131 `0x005D1FAA`–`0x005D206F` (calc1 evaluated, then `RNG_Range(caster +0x20, 100)`, the
+  signed `setl`, then the state test, as § 4 says); do 129's direct call of do 98 (`0x005D1B75`); do 128's `add edx, eax`
+  (`0x005D1897`); do 140 `0x005D2C20`–`0x005D2DC5` (the count step, the `0xAAAAAAAB` residue, the two chained steps per
+  try with the `0x38E38E39` residue, the frame stores); `0x0063EFA0` whole, with its second byte table (544 → index 3 →
+  `0x0063F473`). A scan of the batch's bodies (`0x005D1800`–`0x005D2E40`, `0x005CDFB0`–`0x005CE1B0`, `0x005CC960`–
+  `0x005CCA70`) for an `RNG_*` call or the multiplier `0x6AC690C5` finds do 131's one `RNG_Range` and do 140's three
+  multiplies: no other; `0x0063EFA0` has five `RNG_Range` calls, all in arm `0x0063F473`. Tags 27 `[C]`, 10 `[I]`, 4
+  `[L]` bullets after the fixes (one `[L]` added). **Rulings.** (1) **Baal's arm of `0x0063EFA0` read, not emulated,
+  meets "its draws in order".** The done-when asks the draws at `[I]` or better, with the seed of each; § 7 reads all
+  five draw sites, their order, their seed (the caster's) and their arguments, and do 140, the function, is emulated with
+  negative controls, its own map `[C]`. The arm was declarable (a MonStats count above 570 and a base-544 record), so its
+  map could be emulated, but that would not settle what matters: the review found that the branch between two and three
+  draws turns on do 140's local `EBP − 0x1C`, which do 140 never writes before the call (fix 1). No emulation can give
+  the value the game leaves there; only a logged cast can. So the arm stays `[I]`, an arm emulation is not required for
+  Phase 1, and the stale word is an open question for **Phase 2** (one Baal Tentacle cast logged with the caster's seed
+  before and after, or named as a shortfall with the reason; Baal is the only stock user of row 315), else the
+  monster-AI plan. Phase 3 writes do 140 with both branches and the stale-word condition, `[I]`. (2) **The six `general`
+  tier-A entries plan 0045 read count as covered; Phase 1 closes.** Phase 1's done-when is per function at `[I]` or
+  better, and the batch list fixed at Phase 0 counts the 310 entries with "40 reached by tier A" read by 0045. The six
+  (start 1, 2, 65, do 1, 3, 5) are read in skills/0001 § 11–12, skills/0002 § 2 and skills/0003 § 5 (packet, missile,
+  ammunition and refusals, draws named; `SKILL_AttackDo` `[C]` from combat/0001), each with a symbol row. The emulation
+  clause's "named with the reason" is met by their tier-A standing: plan 0045 Phase 2 reproduces each in the game (at
+  least 30 uses per tier-A skill), which is a stronger check than an ADR-0015 map, and the class batches' emulation of
+  their own tier-A entries (and 9d's of hit 2, carried from 9c) went beyond that bar for entries a class or missile
+  batch already held; these six belong to no batch. Phase 3 links 0045's spec for them and does not restate it (its own done-when). (3) **The carried
+  items are closed**: do 129's direct call of do 98 (do 98's only direct caller, emulated to the call; the composition
+  `[I]`), and the `near8` docstring (258 fits, 259 wraps) in this tool revision. (4) **Start 62's plain `[C]` stands**: it
+  returns, and the node words are compared on 8a's emulated `SkillSummonClass` model (accepted at the `lane/p46m13`
+  review). (5) **The thin controls and outcomes decide** under reverser rule 10: `align_any` (19) and `st118_any` (38)
+  reach a boundary call where the code returns 0; `draw_inv` (47) reaches the other boundary; the outcomes 27, 30, 40,
+  41 are each a distinct boundary at a distinct return address. None can match by chance. (6) **Rule 15**: do 128's sum
+  stands as filed; do 140's offset bound is corrected (fix 2). (7) **The 30 symbols stay `I`** (rule 14's scope: an
+  emulation over a scratch image raises no symbol row). (8) **The surprises stand** as code readings inside the map (do
+  148/149's one byte, do 132's slot write, do 136's point test before bit 6, the three entries with no id test, do 134's
+  stock gate); what the game shows for them stays under *Open questions*. (9) **The archivist entry is released**
+  ([entry](../backlog/2026-10-21-reverser-archivist-plan-0046-8c-skills-monstats-column-readers.md)) after fix 3. **No
+  spec-writer entry** is right: no spec states these functions; Phase 3 takes skills/0004–0018. **Fixes, made in the
+  documents:** (1) skills/0018 § 7 (and the Answer's draw bullet, and a new `[L]` under *Open questions*): the arm's two
+  class constants are guarded by the MonStats count (570 or 562 when the count is above it, else −1); the five
+  `RNG_Range` sites of `0x0063EFA0` all lie in the Baal arm, so no other arm draws; the out word compared with 570 is do
+  140's never-written `EBP − 0x1C`, so the two-or-three choice depends on a stale stack word, and on the 570 branch do
+  140 spawns class 570 with mode 1 (omission); (2) § 6: do 140's try offsets cannot wrap for a base up to 2³¹ − 9
+  (2³¹ − 9 + 8 = 2³¹ − 1); from 2³¹ − 8 the offset +8 gives −2³¹ as s32, passed to `RoomAtSubtile` unchecked; a 16-bit
+  path position cannot reach it, where the lane wrote "below 2³¹ − 9" (misread; reverser rule 15); (3) the archivist
+  entry's States `srvactivefunc` 147 line put "moves the unit's path to its owner's point" inside a `[C]` that ends at
+  the `0x006505E0` call; reworded to the call and its condition `[C]`, the callee's meaning `[I]`; § 5's `0x006505E0`
+  reading marked `[I]` in place (overclaim; reverser rules 1 and 13). Counted: 3 (omission 1, misread 1, overclaim 1).
+  Promoted: fix 2 is a fourth Seen line on reverser rule 15; fix 3 a third Seen line on rule 1 (a meaning word inside
+  the column-reader entry's `[C]`). **Architect bookkeeping, not counted on the lane:** the plans index row for 0046
+  still read "thirteen accepted … 8b next" and is brought to Phase 1's close; the research map lacked the
+  `skills/dispatch`, `skills/missiles` and `skills/catalogue` rows this plan's Context says are added when 0045 starts,
+  added now as `findings in progress` (architect rule 8, Seen line added). Review request closed
+  ([archive](../backlog/archive/2026-10-21-reverser-architect-lane-p46m15-review-plan-0046-batch-8c.md)); lane ledger
+  rows added (the review's row is the orchestrator's at the merge). **Phase 1 status: closed.** All fifteen batches
+  accepted (9a–9d, the seven classes, 10 `item`, 8a–8c), 304 entries read by this plan's batches and the six `general`
+  entries by plan 0045: 310 of 310, in skills/0004–0018. **Next for 0046:** Phase 2 (harness sample, one slot) stays
+  gated on **0045·P3's review** and runs after 0045·P2 in the harness queue; it takes ruling 1's Baal Tentacle item.
+  Phase 3 (spec-writer) is released by Phase 1's close as far as this plan goes, and runs in the spec-writer queue's
+  order (after 0045·P3 and P4; it merges after any open 0045 spec change, ADR-0020). The static lane A that held 0046·P1
+  is free.

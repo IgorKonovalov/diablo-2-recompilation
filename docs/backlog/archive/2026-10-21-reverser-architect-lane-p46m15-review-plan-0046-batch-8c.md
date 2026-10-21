@@ -2,15 +2,15 @@
 from: reverser
 to: architect
 date: 2026-10-21
-status: open
+status: done
 context:
-  - ../findings/skills/0018-monster-8c.md
-  - ../findings/skills/experiments.md
-  - ../plans/0046-skills-function-catalogue.md
-resolution: ""
+  - ../../findings/skills/0018-monster-8c.md
+  - ../../findings/skills/experiments.md
+  - ../../plans/0046-skills-function-catalogue.md
+resolution: "Reviewed 2026-10-21 (architect): accept with fixes (3: omission 1, misread 1, overclaim 1). Rulings: Baal's arm of 0x0063EFA0 read at [I] meets the done-when, its stale-word branch carried to Phase 2; the six general tier-A entries plan 0045 read count as covered. Phase 1 closed. See the plan 0046 log."
 ---
 
-Not blocking. Please review plan 0046 Phase 1 batch 8c (`lane/p46m15`), the last Phase 1 batch: the monster skill functions of Skills rows 290–338, start 61–63, do 128–137, 139, 140, 147–149, 18 entries ([skills/0018](../findings/skills/0018-monster-8c.md), run:2026-10-21-cat-emu-8c in [experiments](../findings/skills/experiments.md)).
+Not blocking. Please review plan 0046 Phase 1 batch 8c (`lane/p46m15`), the last Phase 1 batch: the monster skill functions of Skills rows 290–338, start 61–63, do 128–137, 139, 140, 147–149, 18 entries ([skills/0018](../../findings/skills/0018-monster-8c.md), run:2026-10-21-cat-emu-8c in [experiments](../../findings/skills/experiments.md)).
 
 - **Run:** four families (`miss_8c`, `hit_8c`, `curse_8c`, `move_8c`), 8 800 cases, 0 mismatches, 0 undeclared reads, 0 stopped; all 18 entries emulated; site control 2 376 of 2 376 (23 function/boundary/return-address triples: 892 + 370 + 227 + 887); every negative control fails and equals its deciding class (18 `CLASS` lines). `workspace/logs/skills-cat-8c/manifest.sha256` `9dc63588…` (92 files; three development runs under `dev/` with `dev/notes.txt`), `check.txt` `500b673c…`, `static.txt` `873640da…` (68 pins, 18 table entries, 18 entry dwords, the do 148/do 149 instruction comparison, do 128's wrap line), `rows.txt` `21a02907…` (17 Skills rows checked complete, States row 143), tool `8911d02a…`; `repro.txt` `2a44bd63…`: the same tool revision reproduces 9a–9d, the seven class batches, `item`, 8a and 8b byte for byte. `EmuBoundary.java` unchanged.
 - **Conventions:** 8a's and 8b's. New observed boundaries with their register reads cited in skills/0018 § 2 (`0x0058F730`, do 98 as an entry, `0x005D1E10`; `PATH_SetMarkMask` and `0x006505E0` stack only). Nested: `0x005D1C30` inside do 130 (`0x7FEFFFDC`), `0x005D1D70` inside do 131 (`0x7FEFFFE0`), `0x005CC960` inside start 61 (`0x7FEFFFF8`). `curse_8c` sets the MonStats count to 600 so that `MonClassCheck` admits 453, 546 and 551.
@@ -18,4 +18,4 @@ Not blocking. Please review plan 0046 Phase 1 batch 8c (`lane/p46m15`), the last
 - **Surprises:** do 148 and 149 are one body differing in one byte offset (`+0x0E`/`+0x0F` of the monster data); do 132 writes the class chain position over its id argument's slot; do 136 tests the target point before bit 6; start 61, do 140 and 147 make no id test; do 134's stock row (Siege Beast Stomp) returns 0 at its `srvmissilea` gate.
 - **Self-check fix made before filing:** § 2's "each family has a control failing 90 or more" was wrong for `curse_8c` (largest 75); reworded with the rule-10 reason. Gate W1 on § 7's thin-outcomes line anchored.
 - **Phase 1 close:** with 8c, fifteen of fifteen batches are filed; the six `general` tier-A entries plan 0045 read (start 1, 2, 65, do 1, 3, 5) are not re-read by a 0046 batch — please rule whether they count as covered for Phase 1's close.
-- Tags: 27 `[C]`, 10 `[I]`, 3 `[L]` bullets; 30 symbols added (`I`). Archivist entry filed: [column readers](2026-10-21-reverser-archivist-plan-0046-8c-skills-monstats-column-readers.md).
+- Tags: 27 `[C]`, 10 `[I]`, 3 `[L]` bullets; 30 symbols added (`I`). Archivist entry filed: [column readers](../2026-10-21-reverser-archivist-plan-0046-8c-skills-monstats-column-readers.md).

@@ -47,7 +47,8 @@ cases that return; a plain `[I]` is a code reading the emulator does not reach. 
   twice per try (an x and a y offset, each `low mod 18 − 9`) until a try's point lies in a room near the caster's.
   No other entry steps the caster's or the target's seed before its boundary or return. Between do 140's count step and
   its tries, `0x0063EFA0` runs on the caster; the cases reach only its default arm, which draws nothing; Baal's arm
-  draws two or three `RNG_Range` on the caster's seed (§ 7, `[I]`). (run:2026-10-21-cat-emu-8c,
+  draws two or three `RNG_Range` on the caster's seed, which of the two turning on a frame word do 140 leaves
+  unwritten (§ 7, `[I]`). (run:2026-10-21-cat-emu-8c,
   fn:sub_005D1F70_SkillDo131OverseerWhip@0x005D1F70, fn:sub_005D2C20_SkillDo140BaalTentacle@0x005D2C20)
 - [C] (ADR-0021; § 3) **The missile casts.** Do 130 ends at the first of calc1 `MissileCreate` calls of its helper
   `0x005D1C30` (flags 3, the target point, target words `(0, 1)` the first of four `.rdata` offsets, `+0x54` the
@@ -334,7 +335,7 @@ at `0x7FEFFFF8`.
   x 0, y 0, mode 1; § 7). After, `[I]`: a spawn gets `+0xC4 |= 0x4020000`, `0x005DE0F0(…, 0xF)`, the caster as owner;
   the loop goes on through all `n` tries (several tentacles); 1. (run:2026-10-21-cat-emu-8c, 0x005D2C3D–0x005D2E07)
 - [C] (ADR-0021) **Do 147** (`0x005D2B20`, state 143 `attached`; no id test): `UnitGetOwner(game, unit)` none → 1;
-  else `0x006505E0(unit, owner)` at `0x005D2B33`; after, `[I]`, 1. `0x006505E0` (read): the unit's path flags `+0x34`
+  else `0x006505E0(unit, owner)` at `0x005D2B33`; after, `[I]`, 1. `0x006505E0` (read, `[I]`): the unit's path flags `+0x34`
   bit 3 (the points differ) and bit 0 (the rooms differ), then `PathSetPoint` to the owner's point and room — the
   imp riding its tower or beast. (run:2026-10-21-cat-emu-8c, 0x005D2B23–0x005D2B2E, 0x006505E0–0x00650652)
 
@@ -345,7 +346,10 @@ at `0x7FEFFFF8`.
   `0x7FFFFFFF + 1` = −2 147 483 648); the cases draw the frame up to 2³¹ and calc1 over the full 32 bits, and the model
   takes the sum modulo 2³². No compare reads it before the boundary. Do 140's count `n` is at most 255 + 2 + 2 = 259
   (a byte plus a residue below 3), with no wrap; its try offsets `low mod 18 − 9` lie in `[−9, 8]`, added to a 16-bit
-  path position or a static path's 32-bit word, the sum taken modulo 2³² (no wrap for a position below 2³¹ − 9).
+  path position or a static path's 32-bit word by `lea` (`0x005D2D8D`, `0x005D2DBC`), the sum taken modulo 2³². The
+  largest base that cannot wrap as s32 is 2³¹ − 9 (2³¹ − 9 + 8 = 2³¹ − 1); from 2³¹ − 8 the offset +8 gives
+  2³¹ = −2 147 483 648 as s32, passed on to `RoomAtSubtile` unchecked. A 16-bit path position (at most 65 535) cannot
+  reach it; a static path's word is not bounded by the code read here.
   (run:2026-10-21-cat-emu-8c, `static.txt`, 0x005D1897, 0x005D2C60–0x005D2C70)
 
 ### 7. Case-writer restrictions and what stays unreached
@@ -353,15 +357,22 @@ at `0x7FEFFFF8`.
 - [I] **`0x0063EFA0`'s switch arms.** The helper switches on the caster's MonStats base: the bases 206, 228, 267, 284,
   298 and 321 through the byte table `0x0063F5BC` (base − 206, 116 entries, `static.txt`), 334 (`suckernest1`) by a
   direct test, and 484, 526, 528, 537 and 544 through a second byte table at `0x0063F644` (base − 484, 61 entries; jump
-  table `0x0063F630`), every other base to the default arm. With 4 MonStats rows no case reaches an arm. Baal's base 544
-  (`baalcrab`, also Uber Baal's) takes arm `0x0063F473`: unless the class out word already holds 570 (`baalclone`;
-  the word is do 140's `EBP − 0x1C`, which do 140 does not write before the call), `RNG_Range(caster's seed, 2)` plus the
-  difficulty steps the chain from class 562 (`baaltentacle1`; `MonClassChainStep`) into the class out and the mode is 4; then two
-  `RNG_Range(caster's seed, 24)`, `x = SubX + r − 12`, `y = SubY + r' − 12` (outs do 140 overwrites in its tries); with
-  the out word 570, only the two position draws and mode 1. So for stock Baal, do 140's draws on the caster's seed are:
-  its count step, two or three `RNG_Range` here, then two steps per try. Named here; do 140's own map is covered with
-  the default arm's outputs, and this arm is a reading. (0x0063EFF1–0x0063F019, 0x0063F310–0x0063F326,
-  0x0063F473–0x0063F566)
+  table `0x0063F630`), every other base to the default arm. With 4 MonStats rows no case reaches an arm. The helper's
+  five `RNG_Range` calls all lie in arm `0x0063F473` (`0x0063F4BB`, `0x0063F4D8`, `0x0063F4F6`, `0x0063F524`,
+  `0x0063F542`), so no other arm draws. Baal's base 544 (`baalcrab`, also Uber Baal's) takes that arm. Its two class
+  constants are guarded by the MonStats count (`ECX` from `+0xA80`): 570 (`baalclone`) when the count is above 570, else
+  −1; 562 (`baaltentacle1`) when it is above 562, else −1 (`setg`, `and`, `add` at `0x0063F478`–`0x0063F48D` and
+  `0x0063F49C`–`0x0063F4B5`); stock MonStats is above both. Unless the class out word already holds the first constant,
+  `RNG_Range(caster's seed, 2)` plus the difficulty argument steps the chain from the second (`MonClassChainStep`) into
+  the class out and the mode is 4; then two `RNG_Range(caster's seed, 24)`, `x = SubX + r − 12`, `y = SubY + r' − 12`
+  (outs do 140 overwrites in its tries). When the out word holds it, only the two position draws, the class out left
+  as it was (so do 140 spawns class 570) and mode 1. **The out word is do 140's `EBP − 0x1C`, a local do 140 never
+  writes before the call** (`sub esp, 0x1C` at `0x005D2C23`; the stores before `0x005D2C88` are `EBP − 0x10` and
+  `EBP − 0x14` only), so which branch runs depends on what an earlier call left on the stack, which no reading of the
+  code gives. So for stock Baal, do 140's draws on the caster's seed are: its count step, two or three `RNG_Range` here
+  (three unless the stale word is 570), then two steps per try. Named here; do 140's own map is covered with the
+  default arm's outputs, and this arm is a reading. (0x0063EFF1–0x0063F019, 0x0063F310–0x0063F326,
+  0x0063F473–0x0063F566, 0x005D2C20–0x005D2C88)
 - [I] **Start 62 with a non-monster caster and a bad id**: `SkillSummonClass` leaves its outs unwritten, so the node
   gets stack words; the writer gives such a caster a valid id (a value no model can compare; stock casters are
   monsters). (0x005D2459)
@@ -402,3 +413,6 @@ owner); the used node `+0x18`–`+0x24`; game `+0x6D`, `+0xA8`.
 - [L] Whether Siege Beast Stomp does anything on the server for the stock row (do 134 returns 0 at its `srvmissilea`
   gate, § 1).
 - [L] Everything after each boundary (§§ 3–5), for the harness or the monster-AI plan.
+- [L] For stock Baal's do 140, the value the game leaves in do 140's `EBP − 0x1C` before `0x0063EFA0` (§ 7): 570 gives
+  two `RNG_Range` and class 570 with mode 1, anything else three and a `baaltentacle` class with mode 4. Only a logged
+  cast can say (plan 0046 Phase 2, or a shortfall there with the reason, or the monster-AI plan).
