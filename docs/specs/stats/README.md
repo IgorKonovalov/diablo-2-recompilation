@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/properties, items/uniques-sets, player/creation, monsters/stats, data/calc, combat/overview]
 consumed_by: [combat/overview, player/creation, monsters/stats, data/calc, objects]
-tags: {C: 14, I: 3, L: 3}
+tags: {C: 15, I: 3, L: 3}
 updated: 2026-10-21
 ---
 
@@ -56,7 +56,7 @@ in 1/256 points. A stat key is `stat << 16 | param`. Time is in game frames, the
 | A timed list's end frame is reached | fn:EVENT_TimedListExpire@0x00580800 | [C] (run:2026-10-17-stats: 2 749 runs) |
 | A player's regeneration tick, every frame | fn:sub_00580810_RegenEvent@0x00580810 | [C] (run:2026-10-17-stats: 54 719 ticks) |
 | An aura runs | fn:EVENT_SelectedAuraTick@0x0056FCB0, fn:EVENT_ItemAuraTick@0x0056FE40 | [C] (run:2026-10-17-stats: 3 629 runs) |
-| A shrine or a well is operated | fn:OBJOP_Shrine@0x00583C70, `0x00585720` | [I] (12 operates, a named shortfall) |
+| A shrine or a well is operated | fn:OBJOP_Shrine@0x00583C70, `0x00585720` | [I] (15 operates over run:2026-10-17-stats and run:2026-10-20-shortfalls, a named shortfall) |
 
 ## The boundary (plan 0041 Phase 2)
 
@@ -70,6 +70,10 @@ in 1/256 points. A stat key is `stat << 16 | param`. Time is in game frames, the
 unlink, propagation and cache write of the player's tree in order, every read in the 50-frame windows, the stat
 callback and its rescale, the requirement checks, the set masks, toggles and lists, the passive lists, every apply,
 expiry, tick, aura run and duration, and the shrines and wells reached. (run:2026-10-17-stats)
+
+[C] Under the same boundary run:2026-10-20-shortfalls (plan 0047 Phase 2) reproduced 10 sessions with 0 mismatches,
+among them curse requests on monsters, the aura ends by the skill switch and the different-state group clears
+([states](states.md)), and the kept run list re-checks byte for byte with the same checker. (run:2026-10-20-shortfalls)
 
 The stat values that plans 0034 and 0037 took as value oracles stay oracles: run:2026-10-16-combat logs values, not
 lists, and the level-up maxima of run:2026-10-16-player were compared only for consistency (the P2 review ruled that
@@ -98,6 +102,9 @@ caster unit). The run did not count the units each run hit.
 
 - [stats/0001](../../findings/stats/0001-aggregate.md) (aggregation, § 1–9) and
   [stats/0002](../../findings/stats/0002-states.md) (states, § 1–8).
+- [stats/0002 § 9](../../findings/stats/0002-states.md#9-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls) and
+  [stats/experiments § The stats sessions of run:2026-10-20-shortfalls](../../findings/stats/experiments.md#the-stats-sessions-of-run2026-10-20-shortfalls),
+  with the Phase 2 review in the [plan 0047 log](../../plans/0047-simulation-shortfalls.md#implementation-log).
 - [stats/experiments § run:2026-10-17-stats](../../findings/stats/experiments.md#run2026-10-17-stats) and its review
   in the [plan 0041 log](../../plans/done/0041-stats-and-states.md#implementation-log); its *Re-check 2026-10-20*
   (plan 0047 Phase 1: the full set blocks built, the aura chained pairs counted) and its review in the
@@ -119,5 +126,6 @@ caster unit). The run did not count the units each run hit.
   shouts), a damaging aura's hit, charged and item-granted skills.
 - [L] Two clients (plan 0044): offensive auras on a hostile player and hostile states; the party aura filter is
   [states F3](states.md)'s (run:2026-10-20-two-clients).
-- [L] The named shortfalls of run:2026-10-17-stats (shrines and wells, an aura state's end, a different-state `group`
-  clear) are listed in each file; an optional harness addendum is filed to the reverser.
+- [L] The shortfalls named again after run:2026-10-20-shortfalls (shrines and wells, the expiries, group 3's
+  different-state clear, the 256 floor, the curse resistance cut) are listed in [states](states.md#open-questions);
+  plan 0047 Phase 2b carries them. An aura state's end, groups 1 and 2 and `attract` on monsters are reached there.

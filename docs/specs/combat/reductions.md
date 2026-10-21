@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [combat/overview, combat/damage, monsters/stats]
 consumed_by: [combat/delivery]
-tags: {C: 40, I: 25, L: 4}
-updated: 2026-10-20
+tags: {C: 45, I: 25, L: 5}
+updated: 2026-10-21
 ---
 
 # Combat: the defender's reductions
@@ -208,8 +208,10 @@ B1. ReduceRow(ctx, row, bypass: bool):                                [C] (fn:CO
 - B1. A negative resistance raises the field: `100 − r` exceeds 100. [C] (fn:COMBAT_ReduceRow@0x0057BF80,
   run:2026-10-16-combat)
 - B1. Monster immunity is `r ≥ 100`, capped here to 100, so the field becomes 0 (fire 268, cold 158, lightning 72,
-  poison 73 immune applications). [C] (fn:COMBAT_ReduceRow@0x0057BF80, run:2026-10-16-combat) Magic immunity was not
-  met. [I] (fn:COMBAT_ReduceRow@0x0057BF80)
+  poison 73 immune applications). [C] (fn:COMBAT_ReduceRow@0x0057BF80, run:2026-10-16-combat) **Magic immunity**
+  takes the same path: 36 applications of magic damage on monsters with magic resistance ≥ 100 (the Hell Lost City's
+  Plague Bearers, `zombie5`, `ResMa(H)` 100), each giving the logged field. [C] (fn:COMBAT_ReduceRow@0x0057BF80,
+  fn:COMBAT_ResistFor@0x0057BE00, tbl:MonStats.txt:ResMa(H), run:2026-10-20-shortfalls)
 
 **B2. The effective resistance (`COMBAT_ResistFor`).**
 
@@ -237,9 +239,16 @@ B2. ResistFor(ctx, row) → i32:                                        [C] (fn:
   throughout. [C] (fn:COMBAT_ResistFor@0x0057BE00, tbl:DifficultyLevels.txt:ResistPenalty, run:2026-10-16-combat)
 - B2. Physical (stat 36) and magic (stat 37) resistances take no difficulty penalty. [C] (fn:COMBAT_ResistFor@0x0057BE00,
   run:2026-10-16-combat)
-- B2. The cap is one code path for every row; fire reached it 2 115 times and poison 692. Cold (27) and lightning (17)
-  reached it fewer times than the plan's floor of about 30, and magic never. [C] for the formula
-  (fn:COMBAT_ResistFor@0x0057BE00, run:2026-10-16-combat); the cold and lightning counts are listed under *Open questions*.
+- B2. The cap is one code path for every row; fire reached it 2 115 times and poison 692. [C] for the formula
+  (fn:COMBAT_ResistFor@0x0057BE00, run:2026-10-16-combat) **Lightning** reached it 42 times (`CombatSorH`, resistance
+  120 in Normal, so 75 applies), and **cold** 31 times over two runs (4 in run:2026-10-20-shortfalls, 27 in
+  run:2026-10-16-combat, both lists re-checked by the same checker revision with 0 mismatches), each giving the logged
+  field. [C] (fn:COMBAT_ResistFor@0x0057BE00, fn:COMBAT_ReduceRow@0x0057BF80, run:2026-10-20-shortfalls,
+  run:2026-10-16-combat)
+- B2. The magic row's cap was never reached and cannot be staged on stock data: no unique, set item, affix, runeword,
+  gem, skill or state writes the player's magic resistance (stat 37), and the one writer, a crafted shield's 5–10,
+  stays far below 75. The cap is the same code path as the other rows, read from the code. [I]
+  (fn:COMBAT_ResistFor@0x0057BE00, tbl:ItemStatCost.txt:Stat, [plan 0047 Phase 1 review, ruling 2](../../plans/0047-simulation-shortfalls.md#implementation-log))
 - B2. Pierce (stats 333–336) applies unless the defender is a monster at 100 or more; no logged attacker had pierce.
   Sanctuary (state 47) zeroes physical resistance against undead; not met. [I] (fn:COMBAT_ResistFor@0x0057BE00)
 
@@ -252,18 +261,22 @@ B3. Absorb(ctx, row, d: i32) → i32:                                   [C] (fn:
       if p > 0:
         a: i32 ← MulDiv(d, p, 100);  pkt.absorbHeal += a;  d ← d − a
       f: i32 ← stat(def, row.absorbFlatStat) << 8
-      if f > 0:                                                        ; [I] for the flat branch (fn:COMBAT_Absorb@0x0057BF10)
+      if f > 0:                                                        ; [C] for fire (run:2026-10-20-shortfalls), [I] for cold and lightning
         a ← min(f, d);  pkt.absorbHeal += a;  d ← d − a
       return d
 ```
 
 - B3. **Both the percent and the flat absorbed amounts are healed** to the defender at delivery (`absorbHeal`,
   packet `+0x48`). 32 percent-absorb heals of the player reproduced; this contradicts src:purediablo-absorb, which
-  heals from flat absorb only. [C] (0x0057BF2A–0x0057BF6F, run:2026-10-16-combat) No logged unit had flat absorb. [I]
-  (fn:COMBAT_Absorb@0x0057BF10)
-- B3. Absorb runs on whatever `d` is, also a negative one: the percent of a negative `d` is a negative absorbed
-  amount, which delivery does not heal (4 events, under the floor). [I] (fn:COMBAT_Absorb@0x0057BF10,
-  run:2026-10-16-combat)
+  heals from flat absorb only. [C] (0x0057BF2A–0x0057BF6F, run:2026-10-16-combat) That the flat amount is healed
+  too is read from the code: the flat-absorb hits below assert the field, not the heal. [I] (fn:COMBAT_Absorb@0x0057BF10)
+- B3. **Flat absorb** (fire): 113 hits on `CombatAbs` (*Hellmouth*, fire absorb 15) with the amount subtracted and the
+  field asserted. [C] (fn:COMBAT_Absorb@0x0057BF10, run:2026-10-20-shortfalls) Cold and lightning flat absorb were not
+  hit (0), so their rows rest on the code's one path; plan 0047 Phase 2b carries them. [I] (fn:COMBAT_Absorb@0x0057BF10)
+- B3. **Absorb runs on whatever `d` is, also a negative one**: the percent of a negative `d` is a negative absorbed
+  amount, which delivery does not heal. 186 events where MDR left the field at or below 0 and percent absorb
+  (`CombatDR`: *Dwarf Star* fire 15 %, *Raven Frost* cold 20 %) then found it negative and healed nothing. [C]
+  (fn:COMBAT_Absorb@0x0057BF10, fn:COMBAT_ApplyDamage@0x0057C6C0, run:2026-10-20-shortfalls)
 
 ## Outputs
 
@@ -325,17 +338,27 @@ poison 153 pass unreduced. No penalty and no cap apply to the monster. [C] (run:
 - [combat/experiments § run:2026-10-16-combat](../../findings/combat/experiments.md#run2026-10-16-combat): resistance
   applications per element (fire 2 803, cold 1 386, lightning 930, poison 1 374, magic 1 340, physical 3 544); DR,
   MDR or absorb non-zero 1 747; the classic penalty 138 / 208.
+- [combat/0001 § 16](../../findings/combat/0001-formulas.md#16-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls)
+  and [combat/experiments § run:2026-10-20-shortfalls](../../findings/combat/experiments.md#run2026-10-20-shortfalls)
+  (plan 0047 Phase 2, 0 mismatches over 18 737 events) with its review in the
+  [plan 0047 log](../../plans/0047-simulation-shortfalls.md#implementation-log): the lightning cap 42, the cold cap 31
+  over the two runs, magic immunity 36, the negative absorbed amount 186, fire flat absorb 113; the magic cap
+  unstaged (Phase 1 review, ruling 2).
 - Tables: [DifficultyLevels](../../tables/DifficultyLevels.md), [MonStats](../../tables/MonStats.md),
   [ItemStatCost](../../tables/ItemStatCost.md).
 - Types: `re/types/combat.h` (`DamagePacket`, `ReduceCtx`, `ResistRow`).
 
 ## Open questions
 
-- [L] Branches reproduced under the plan's floor of about 30 events: the negative absorbed amount (4), the
-  resistance cap reached for cold (27) and lightning (17).
-- [L] Not reached: magic at or above the cap and magic immunity, pierce, flat absorb, the stat-118 halving, states
-  131 and 133, sanctuary, the hireling-against-hireling 25 %, and the PvP 17 % on the fire, cold, magic and poison
-  fields and from a hireling attacker (physical and lightning are A2's, run:2026-10-20-two-clients).
+- ~~Branches reproduced under the plan's floor of about 30 events: the negative absorbed amount (4), the resistance
+  cap reached for cold (27) and lightning (17).~~ Reproduced by run:2026-10-20-shortfalls: the negative absorbed
+  amount 186 (B3), lightning at the cap 42, cold 31 over the two runs (B2).
+- [L] Cold and lightning flat absorb (B3): 0 hits in run:2026-10-20-shortfalls; carried to plan 0047 Phase 2b.
+- [L] The magic resistance cap (B2): not stageable on stock data (plan 0047 Phase 1 review, ruling 2); final, it stays
+  a code reading.
+- [L] Not reached: pierce, the stat-118 halving, states 131 and 133, sanctuary, the hireling-against-hireling 25 %,
+  and the PvP 17 % on the fire, cold, magic and poison fields and from a hireling attacker (physical and lightning
+  are A2's, run:2026-10-20-two-clients).
 - [L] The handlers of event 11 (`absorbdamage`): energy shield and the bone and cyclone armours by the community's
   account; their code is skills, phase (3).
 - [L] The meaning of `Unit+0xC4` bit 31, which P tests for the PvP and prime-evil cases.

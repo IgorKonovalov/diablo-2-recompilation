@@ -229,7 +229,7 @@ stateDiagram-v2
   On --> Replaced: another skill, a higher level, or another curse
   Replaced --> On
   On --> Off: end frame reached
-  On --> Off: group clear, death, mode change, a remover
+  On --> Off: group clear, death, mode change, aura switched off, a remover
   Off --> [*]: list removed (its stats leave the totals)
 ```
 
@@ -243,10 +243,12 @@ applies on the player:
   different levels, reached the player: the weaker one was refused at every run (1 013 times).
 - **A higher level, or another skill: replaced.** The old list is removed and a new one made.
 
-**Curses** follow the same rules, with these differences, all read from the code: a unit holds **one curse at a
-time**, so a different curse replaces the old one; the target's curse resistance shortens the duration by its
-percentage (a negative value lengthens it), and 100 or more refuses the curse; and a unit under Attract refuses every
-curse. No stock item or affix carries curse resistance and no monster casts Attract, so none of this was met.
+**Curses** follow the same rules, with these differences: a unit holds **one curse at a time**, so a different curse
+replaces the old one (read from the code); the target's curse resistance shortens the duration by its percentage (a
+negative value lengthens it), and 100 or more refuses the curse (read from the code: the one stock source of curse
+resistance is the Assassin's Fade, and no monster cursed her under it in the runs so far); and **a unit under Attract
+refuses every curse**, confirmed on monsters: after a Necromancer's own Attract, 71 curses on attracted monsters were
+all refused and 151 on the others were all made, in the same session. On a player it is read from the code.
 
 Also read from the code: durations are in frames and are not rounded; some monsters refuse every timed state by two
 flags, one in their `MonStats` row and one in their `MonStats2` row (which columns those are is not known); and a potion clears its state's group (below)
@@ -260,8 +262,11 @@ From [states § C](../specs/stats/states.md#c-expiry-and-removal):
   frame `f` for `d` frames is removed by the event at `f + d`; its stats leave the totals at once, and if a maximum
   drops the current value is rescaled as above. An earlier event of a refreshed state still fires and removes
   nothing. Confirmed: 2 749 end events, each removing exactly the lists whose end frame had come, and no other. Only
-  123 lists actually ended in the run (the plan asked for 300), so the count is a named shortfall, but the rule rests
-  on the 2 749 events.
+  123 lists actually ended in the run, and 30 more in a second run (153; the plan asked for 300), so the count is a
+  named shortfall that a further pass of the plan takes, but the rule rests on the 2 749 events.
+- **When its aura is switched off.** An aura's state on the player also ends when the player switches the right skill
+  to another aura: the switch removes the list at once, before its end frame. Confirmed in a second run, with a
+  Paladin switching Might, Defiance and Prayer: 61 aura states made and 59 ended this way, every change checked.
 - **On death**, every state list not from an item is removed, except a few specially flagged lists and the states
   marked to stay on death (for players and monsters separately). **On a mode change**, the lists marked for it are removed. Read from the code; no
   death happened in the run.
@@ -273,8 +278,10 @@ Some states share a `group` in the `States` table, and a group clear removes the
 run the clear exclude a group (potions, the "state" stat that some items carry, and five skills). Confirmed in the run
 for the cases met: the potions of the run have no group, so their clear removed nothing; the full Trang-Oul's set
 switches its `monsterset` state on with a clear that found nothing else in the group, and when the set broke the clear
-removed that state itself. Clearing a **different** state of the same group, for example the Druid's werewolf and
-werebear forms, which share the group, was not met; it is read from the code.
+removed that state itself. Clearing a **different** state of the same group is confirmed by a second run for two
+groups: the Sorceress's three armours (20 clears) and the Assassin's Fade and Quickness (23). For the Druid's werewolf
+and werebear forms, which share a third group, the clear was reached 12 times and the old form's mark was gone
+afterwards, but the logger recorded no result for those calls, so that group is still read from the code.
 
 ## Regeneration: life, mana, stamina and poison
 
@@ -325,13 +332,15 @@ From [states § F](../specs/stats/states.md#f-auras), confirmed except where not
   once per monster would fall out of step. Holy Freeze, which the run never met, takes that same one number per run
   and, read from the code, also steps the own seed of each unit it does not turn away, once each.
 
-Auras turning on and off were met only 9 times (the plan asked for 50), because Prayer and Sanctuary always reached
-the player; that is a named shortfall, and the rules it rests on are confirmed on their own counts.
+Auras turning on and off were met only 9 times in the first run, because Prayer and Sanctuary always reached the
+player. A second run built for it switched auras by key and met 120 (the plan asked for 50): an aura's state ends
+when the aura is switched off (see *How a state ends*).
 
 ## Shrines and wells
 
-Everything in this section is read from the code: the run operated 7 shrines and 5 wells, all predicted, against the
-50 the plan asked for ([states § G](../specs/stats/states.md#g-shrines-and-wells)).
+Everything in this section is read from the code: the first run operated 7 shrines and 5 wells and a second run 3
+more shrines, all predicted, 15 against the 50 the plan asked for; a further pass of the plan takes the rest
+([states § G](../specs/stats/states.md#g-shrines-and-wells)).
 
 - **Shrine states count as curses.** The states of the timed shrines (armour, combat, the resist shrines, skill,
   mana recharge, stamina, experience) carry the curse mark, so a shrine's state is "the" curse of the unit: taking a
@@ -372,12 +381,14 @@ From the specs' open questions ([overview](../specs/stats/README.md#open-questio
 - **Never met in the run, so read from the code only**: the floor on reads, derivation ops 3, 6, 7, 10 and 12, a
   requirements percent, level or class test that decides, a broken item and a set with a broken member, an Assassin's
   second weapon, the lowering of life and mana when an item comes off, the 1/512 walking stamina, the death and
-  mode-change removals, curse resistance and Attract, open wounds on the player, and the life floor of one point.
+  mode-change removals, curse resistance, Attract on a player, open wounds on the player, and the life floor of one
+  point.
 - **Ops 6 and 7** (by time of day) are computed by the 1.14d server, against a community claim; no stock item reaches
   them, so no run can show it.
-- **Named shortfalls** of the run: shrines and wells (12 operates of 50; the combat and stamina shrines, re-arming and
-  a well's cure not met), state ends (123 of 300), auras turning on and off (9 of 50), and a group clear of a different
-  state.
+- **Named shortfalls**, still short after the second run and taken by a further pass of the plan: shrines and wells
+  (15 operates of 50; the combat and stamina shrines, re-arming and a well's cure not met), state ends (153 of 300),
+  the werewolf and werebear group clear, the life floor of one point and curse resistance. Auras turning on and off
+  (120 of 50) and a group clear of a different state for two groups are now met.
 - What schedules the **136-frame refresh**, the weapon switch's own code, and which code reads a per-level source's
   hidden value.
 - Two flags of `MonStats` that make a monster refuse timed states, the skill shrine's +2 skills, and seven `States`

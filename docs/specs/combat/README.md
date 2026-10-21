@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/stats, player/creation, items/properties, data/calc]
 consumed_by: [items/tc]
-tags: {C: 36, I: 42, L: 5}
-updated: 2026-10-20
+tags: {C: 38, I: 42, L: 5}
+updated: 2026-10-21
 ---
 
 # Combat formulas: the attack event, its seeds and its branches
@@ -151,7 +151,11 @@ life/mana/stamina drain roll, `0x20` built (and forced at delivery), `0x80` no `
 
 [C] Under this boundary run:2026-10-16-combat reproduced 15 358 logged events of 19 sessions with 0 mismatches,
 every logged seed asserted; with the resume-lane addendum the run list holds 40 logs and 40 655 events, still with 0
-mismatches. (run:2026-10-16-combat) The progressive-charge hooks around the player's build and the
+mismatches. (run:2026-10-16-combat) [C] Under the same boundary run:2026-10-20-shortfalls (plan 0047 Phase 2,
+sessions built for the branches the first run met too rarely) reproduced 18 737 events of 31 logs with 0 mismatches,
+and the kept run list re-checks with the same checker at 0 mismatches over its 40 655 events. Its run list names the logs whose player holds no
+usable shield (`--no-shield-log`), which only sets the predicted block chance to 0, so a logged chance above 0 still
+fails ([to-hit § C2](to-hit.md#c-the-hit-test-and-the-defence-rolls)). (run:2026-10-20-shortfalls) The progressive-charge hooks around the player's build and the
 finisher before delivery were dropped events by rule; none occurred. [I] (fn:COMBAT_PrgHooksBeforeBuild@0x005D3AC0,
 fn:COMBAT_PrgFinisher@0x005D5220)
 
@@ -394,7 +398,10 @@ the creation event's chaining. (fn:sub_0064A850_MissileCritRoll@0x0064A850, fn:s
 
 [C] **A monster's seed chains only within one melee attack**: `MonAttackStats` at the mode change to the attack it
 opens (2 237 monster, 558 mercenary pairs). Between two attacks its AI draws on the same seed, out of scope, so each
-attack resynchronises. (fn:sub_005A4F50_MonAttackStats@0x005A4F50, run:2026-10-16-combat) [I] A monster's
+attack resynchronises. (fn:sub_005A4F50_MonAttackStats@0x005A4F50, run:2026-10-16-combat) [I] A monster can also
+call `MonAttackStats` inside an attack, between the defence rolls and the build, on its running seed (`sandraider2`
+in mode 14, [damage § E](damage.md#e-a-monsters-attack-stats-monattackstats)); which attacks do is not read.
+(fn:sub_005A4F50_MonAttackStats@0x005A4F50, run:2026-10-20-shortfalls) [I] A monster's
 weapon-share missile (an archer's arrow) also steps the monster's seed, one to three times at its creation (B4).
 (fn:sub_0064A850_MissileCritRoll@0x0064A850)
 
@@ -480,8 +487,9 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   the to-hit and build at the hit frame, with the monster's AI drawing in between. [C]
   (fn:sub_005A4F50_MonAttackStats@0x005A4F50, run:2026-10-16-combat)
 - **The community's 1/8 crushing blow on uniques and its player-count-free crushing blow do not hold in 1.14d**; nor
-  does the class level bonus in the chance to hit, nor healing only from flat absorb. [C] (run:2026-10-16-combat) The
-  1/8 on champions does not hold by the reading; no champion was labelled. [I] (fn:STATEVENT_CrushingBlow@0x005BFFC0)
+  does the class level bonus in the chance to hit, nor healing only from flat absorb. [C] (run:2026-10-16-combat) Nor
+  does the 1/8 on champions: 52 crushing blows on champions took 1/4. [C] (fn:STATEVENT_CrushingBlow@0x005BFFC0,
+  run:2026-10-20-shortfalls)
 
 ## Evidence
 
@@ -491,6 +499,11 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
 - [combat/experiments § run:2026-10-16-combat](../../findings/combat/experiments.md#run2026-10-16-combat) and its
   architect review: 19 sessions, 15 358 events, 0 mismatches; the resume-lane addendum (40 logs, 40 655 events,
   0 mismatches) and its review; the shortfalls.
+- [combat/0001 § 16](../../findings/combat/0001-formulas.md#16-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls)
+  and [combat/experiments § run:2026-10-20-shortfalls](../../findings/combat/experiments.md#run2026-10-20-shortfalls)
+  (plan 0047 Phase 2: 31 logs, 18 737 events, 0 mismatches) with its review in the
+  [plan 0047 log](../../plans/0047-simulation-shortfalls.md#implementation-log) (rulings 1, 2 and 7: `--no-shield-log`
+  a model input, the cold cap over two runs, the raises).
 - [skills/0001](../../findings/skills/0001-dispatch.md) §§ 11 (the conversion writers), 12 (the finisher's seed peek).
 - [skills/0003](../../findings/skills/0003-handlers.md) §§ 1 (the `srvprgfunc` entries and the finisher's tail), 3 (the
   stat-event handlers and their draws), 13 (draws per event), and the architect's P1.3 review (plan 0045 log).
@@ -520,12 +533,22 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   give from the code only, and the progressive-charge hooks around the build.
 - [L] **Owed to phase (5), animation:** hit recovery, knockback and stun lengths in time, the hit class, the get-hit
   and durability draws.
-- [L] **Shortfalls of run:2026-10-16-combat** (plan 0037 Phase 2, after the resume lane; 40 655 events): crushing
-  blow on a champion (0 labelled); the resistance cap for cold (27), lightning (17), magic (0); magic immunity (0);
-  the negative absorbed amount (4); evade, weapon block, dodge, avoid (0); conversion, freeze, pierce, flat absorb (0);
-  the negative total that leaves life unchanged (25); the player's life tick (no window here; reproduced under
-  poison by run:2026-10-17-stats, [stats/states § E](../stats/states.md#e-the-regeneration-tick)); the mode-2 (walking)
-  exception of the block `÷ 3` (no walking player attacked).
+- ~~**Shortfalls of run:2026-10-16-combat** (plan 0037 Phase 2): crushing blow on a champion, the cold, lightning and
+  magic caps, magic immunity, the negative absorbed amount, evade, weapon block, dodge, avoid, freeze, flat absorb,
+  the negative total, the walking block.~~ Closed by run:2026-10-20-shortfalls (plan 0047 Phase 2). Reached, each to
+  about 30 or more: crushing blow on champions 52 ([delivery E1](delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze)),
+  the lightning cap 42 and the cold cap 31 over the two runs, magic immunity 36, the negative absorbed amount 186,
+  fire flat absorb 113 ([reductions B2, B3](reductions.md#b-the-rows-g_damageresisttable)), the total ≤ 0 633
+  ([delivery B4](delivery.md#b-delivery-combat_applydamage)), freeze 81
+  ([delivery E3](delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze)), evade 31 of 46 rolls, weapon block 30 of 50,
+  dodge 109 of 172, avoid 68 of 103 ([to-hit C3](to-hit.md#c-the-hit-test-and-the-defence-rolls)). The player's life
+  tick is reproduced under poison by run:2026-10-17-stats ([stats/states § E](../stats/states.md#e-the-regeneration-tick)).
+  Not reached, and named again in the next bullet: the walking block, the magic cap, cold and lightning flat absorb.
+- [L] **Named again after run:2026-10-20-shortfalls.** Final: the mode-2 (walking) exception of the block `÷ 3`, 6
+  undivided chances in 48 events on a walking player, the plan's one extra session spent
+  ([to-hit C2](to-hit.md#c-the-hit-test-and-the-defence-rolls)); the magic resistance cap, which no stock source of
+  stat 37 reaches ([reductions B2](reductions.md#b-the-rows-g_damageresisttable)). Carried to plan 0047 Phase 2b: cold
+  and lightning flat absorb (0). Moved to plan 0045 Phase 2: conversion and pierce (skill and missile effects).
 - [L] Player against player beyond run:2026-10-20-two-clients (plan 0044), which reached the 17 % on physical and
   lightning damage ([reductions A2](reductions.md)) and a shieldless player's block chance 0 ([to-hit C2](to-hit.md)):
   the fire, cold, magic and poison fields, a defender in town, and the hostile (offensive) auras.
