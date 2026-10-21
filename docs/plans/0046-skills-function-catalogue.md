@@ -679,7 +679,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (Answer, § 7 bullet and table row, § 8), and once per run whatever the number hit stays `[I]` (the dated note, no
   check of its own needed for the finding). The stats spec and the wiki repeat "per hit" (`states.md` asks a
   reimplementation to "consume one draw per hit"): carried to the spec-writer
-  ([backlog](../backlog/2026-10-20-architect-spec-writer-stats-aura-draw-once-per-run.md)). A run with two or more
+  ([backlog](../backlog/archive/2026-10-20-architect-spec-writer-stats-aura-draw-once-per-run.md)). A run with two or more
   units in range of one Sanctuary run would raise the per-run reading; not required.
   (4) **Do 81's 20 % roll stays `[I]`.** The seeds are compared at the self-call boundary, before `ForUnitsInRange`
   ever runs the callback `0x005D07C0`, so no case executes the LCG step; the seed compare says nothing about it.
@@ -714,3 +714,10 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   archivist entry stays open for its lane; ledger row added. **The next batch (barbarian, `bar`) may start**, with
   9c, 9d, `sor`, `ama`, `nec` and `pal`'s conventions, ruling 3 of the `sor` review on writer scans, and ruling 1's
   condition of the `ama` review at each level of a helper chain.
+- **2026-10-21 — Two spec carries from the `pal` and 9a reviews landed for review (spec-writer, `lane/s46a`, static
+  docs only).** (1) stats: Sanctuary's draw is one `RNG_RangeB` per drawing run `[C]` and once per run whatever the
+  number of units hit `[I]`, in [stats/README](../specs/stats/README.md#draw-order), [states § H](../specs/stats/states.md#h-draws-per-event-kind)
+  and the wiki (stats/overview I 2 → 3, stats/states I 47 → 50). (2) [quests/progression](../specs/quests/progression.md)
+  W4c: missile do 17 and do 18 up to their boundary calls `[C]` and their stock rows `[I]` from skills/0004 §§ 7, 8;
+  the open question narrowed to do 36 (C 116 → 117, I 321 → 322, L 6). Both backlog entries closed; review request
+  [to the architect](../backlog/2026-10-21-spec-writer-architect-lane-s46a-review-stats-aura-draw-and-quests.md).

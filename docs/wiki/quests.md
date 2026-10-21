@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/quests/README.md 2026-10-20
-  - docs/specs/quests/progression.md 2026-10-20
+  - docs/specs/quests/progression.md 2026-10-21
   - docs/specs/quests/travel.md 2026-10-20
 ---
 
@@ -236,6 +236,16 @@ game record and gives the player bit 14. Akara's reward talk is confirmed. The s
 spawn, the Tristram portal that reappears in later games, and the Cow King bit (set on his death only for a killer who
 has beaten Diablo in a classic game or Baal in an expansion game, and for the players then in the cow level) are read
 from the code.
+
+The fifth stone and the Countess's death each create an invisible missile that does the rest of the work over the
+frames that follow ([word 4](../specs/quests/progression.md#word-4-cain-the-cairn-stones-tristram-and-the-cow-king-quest-object-4)).
+Their draws are confirmed by emulating the two functions up to the calls they make; what those calls then do is not
+covered. The stones' missile scatters smaller missiles around itself, each placed with two numbers from the missile's
+own seed, which it re-seeds first, and it calls the portal function. The Countess's missile, one at each of her
+recorded chests, runs the chest's drop, then takes two numbers from its own seed for each gold pile's spot. With the
+stock settings, as read from the code: the stones' missile scatters every second frame for a while and opens the
+Tristram portal once; each chest opens 150 frames after the Countess dies (one more per missile level), then a gold pile
+lands within 5 of it every 8 frames until the missile ends.
 
 ### The eclipse (word 11)
 
@@ -524,7 +534,7 @@ and the points not confirmed by a run:
 - **Two players:** party credit beyond the Den's one case, the portal's party and quest gates, and what withdrawing
   hostility does in the code belong to the multiplayer plan.
 - **Unknown:** which monsters are hooked to five quests (the Den of Evil, the Act I boss quest, the Countess, Andariel
-  and the Act IV monster quest; not all re-read); what three object creations in the stones, the Countess's chests and Baal's death make; a
+  and the Act IV monster quest; not all re-read); what the missile created at Baal's death does; a
   descriptor field with no reader; a few AI and missile links; whether Anya's party callback writes into the wrong
   quest's data harmlessly; two bits of the Act II word 10 with no setter found; what the client sends its "act loaded"
   report after; the exact distance tests of an operate and a warp click; the `Levels` column `Portal`, which has no

@@ -1,8 +1,8 @@
 ---
 based_on:
-  - docs/specs/stats/README.md 2026-10-20
+  - docs/specs/stats/README.md 2026-10-21
   - docs/specs/stats/aggregate.md 2026-10-20
-  - docs/specs/stats/states.md 2026-10-20
+  - docs/specs/stats/states.md 2026-10-21
 ---
 
 # Stats and states
@@ -56,7 +56,7 @@ whenever a stat is read gets those cases wrong ([aggregate § Reimplementation n
 **Nothing in this subject draws a random number**, with one exception. Adding and removing lists, writing stats,
 switching set bonuses, applying and ending states, the regeneration tick and an aura's run all left both the game seed
 and the unit's seed unchanged, confirmed over thousands of events of each kind. The exception is a damaging aura such
-as Sanctuary: each hit draws one number on the caster's seed for its damage (see *Auras*)
+as Sanctuary: each of its runs that draws takes one number from the caster's seed for its damage (see *Auras*)
 ([overview § Draw order](../specs/stats/README.md#draw-order)).
 
 ## Derived stats: what each op family does
@@ -312,13 +312,17 @@ From [states § F](../specs/stats/states.md#f-auras), confirmed except where not
   applies the target state to every unit in range that passes the aura's filter; a stat that heals directly is added
   to current life up to its maximum. While a player's aura with a mana cost writes a stat on a target, the player is
   in the "no mana regeneration" state, which stops the ordinary part of the mana tick.
-- **Sanctuary's draw.** A damaging aura draws one random number on the **caster's** unit seed per hit, for the hit's
-  elemental damage roll. This is confirmed: 865 drawing runs, each one's draws accounted for, and 746 consecutive runs
+- **Sanctuary's draw.** A damaging aura's run that draws takes one random number from the **caster's** unit seed, for
+  the elemental damage roll. This is confirmed: 865 drawing runs, one draw each, each one's draws accounted for, and 746 consecutive runs
   of the same caster picking up exactly where the last one left the seed, as the project's stats checker counts them
   (in 115 others the next run did not start where the last one left the seed, and the record does not say why; 4 runs
   were the caster's last in their log). The
   damage itself belongs to the skills phase still to come, but a rebuild that runs Sanctuary must take that draw. A
   kill by the aura also moves the game seed when it drops an item.
+- **Once per run, not once per unit hit.** The run did not count how many units each run hit. Read from the code:
+  the aura rolls its damage once, before it goes over the units in range, and gives every unit it hits a copy of that
+  one roll. So a run that hits several monsters still takes one number, and a rebuild that drew once per monster
+  would fall out of step.
 
 Auras turning on and off were met only 9 times (the plan asked for 50), because Prayer and Sanctuary always reached
 the player; that is a named shortfall, and the rules it rests on are confirmed on their own counts.

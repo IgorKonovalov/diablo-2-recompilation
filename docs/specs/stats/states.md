@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [stats/overview, stats/aggregate, rng, combat/delivery, data/calc, objects]
 consumed_by: [combat/delivery, combat/overview, objects]
-tags: {C: 44, I: 47, L: 6}
-updated: 2026-10-20
+tags: {C: 44, I: 50, L: 6}
+updated: 2026-10-21
 ---
 
 # States: the timed apply, expiry, the group clear, the regeneration tick, auras, shrines and wells
@@ -71,7 +71,7 @@ stateDiagram-v2
 | state bit-sets | two sets of `ceil(nStates / 32)` dwords at the unit list's `+0x58`: on, and changed (for the client) | fn:UNIT_SetStateBit@0x00625A70 |
 | a state's list | `StatList` with the state at `+0x14`, end frame `+0x18`, skill `+0x1C`, level `+0x20`, remove callback `+0x38` | struct:StatList+0x18 |
 | the apply request | `{source, target, skill, level, duration, stat, value, state (+0x1C), remove callback, …}` | struct:TimedStateReq+0x1C |
-| unit seed | `Unit+0x20` | [rng/seeds](../rng/seeds.md); drawn only by a damaging aura's hit (§ H) |
+| unit seed | `Unit+0x20` | [rng/seeds](../rng/seeds.md); drawn only by a damaging aura's run, once per drawing run (§ H) |
 
 ### Inputs and oracles
 
@@ -406,21 +406,27 @@ Step notes:
 | apply (B1) | none (6 232 events, seeds unchanged) | [C] (run:2026-10-17-stats) |
 | expire (C1) | none (2 749) | [C] (run:2026-10-17-stats) |
 | tick (E1–E4) | none (54 719) | [C] (run:2026-10-17-stats) |
-| aura run (F) | none, except one `RNG_RangeB` on the caster's unit seed per hit of a damaging aura (2 763 runs unchanged, 865 drawing) | [C] (fn:SKILLS_RollElemDamage@0x0056E0C0, run:2026-10-17-stats) |
+| aura run (F) | none, except one `RNG_RangeB` on the caster's unit seed per drawing run of a damaging aura (2 763 runs unchanged, 865 drawing, 865 steps) | [C] (fn:SKILLS_RollElemDamage@0x0056E0C0, run:2026-10-17-stats) |
+| aura run (F), units per run | one draw per run whatever the number of units hit: the roll precedes the target pass and its packet is copied to each unit | [I] (fn:sub_005CF3A0_AuraHitDo@0x005CF3A0, fn:sub_005CF2A0_AuraHitUnitCb@0x005CF2A0) |
 | group clear (D), remove callback, death purge, mode drop | none found in the code | [I] (fn:STATE_GroupClear@0x0056C740) |
 | shrine codes 0–15 (G1–G5), well (G6) | none found in the code; 7 and 5 events with the seeds unchanged, under the floor of 20 | [I] (fn:OBJOP_Shrine@0x00583C70, run:2026-10-17-stats) |
 
 Step notes:
 
 - H. [C] **The damaging aura's draw.** Sanctuary's run calls `sub_005CF3A0_AuraHitDo`, which calls
-  `SKILLS_RollElemDamage` (at 0x005CF5D5), which draws `RNG_RangeB` (at 0x0056E132) on the caster's seed once per hit.
-  The checker asserted each of the 865 drawing runs' exit seed against its entry advanced by its logged draws, and
+  `SKILLS_RollElemDamage` (at 0x005CF5D5), which draws `RNG_RangeB` (at 0x0056E132) on the caster's seed once in each
+  run that draws (865 runs, 865 steps; the run did not count the units each run hit). The checker asserted each of the 865 drawing runs' exit seed against its entry advanced by its logged draws, and
   746 of the next runs of the same caster entered on that exit: chained pairs in the ADR-0014 sense (the checker's
   `aura_chained_pairs`, keyed by the caster unit, since the 2026-10-20 re-check; 115 next runs entered elsewhere and
   4 drawing runs had no next run in their log). The game seed
   moved in one aura run, when a kill dropped an item; a kill also steps the dead monster's own seeds. The draw is the
   hit's damage (phase 3), outside this spec's state code. (fn:sub_005CF3A0_AuraHitDo@0x005CF3A0,
   fn:RNG_RangeB@0x0045C3E0, run:2026-10-17-stats)
+- H. [I] **Once per run, not once per unit.** Do 66 makes its one `SKILLS_RollElemDamage` call at 0x005CF5D5 before
+  its target pass (`SKILLS_ForUnitsInRange`), and the pass's callback copies the packet that call filled to every unit
+  hit (`rep movs` at 0x005CF367), so a run that hits several units still draws once. A run with two or more units in
+  range would raise this reading. (fn:sub_005CF3A0_AuraHitDo@0x005CF3A0, fn:sub_005CF2A0_AuraHitUnitCb@0x005CF2A0,
+  [skills/0011 § 3](../../findings/skills/0011-paladin.md#3-the-aura-functions-do-65-66-81-82), [stats/0002 § 7](../../findings/stats/0002-states.md#7-events-inputs-outputs-draws))
 - H. [I] Shrine codes 18, 21 and 22 (missile and monster shrines, phase 3 and monsters/special) do draw; they are out
   of this spec. (0x00582CE3, 0x0058311D, 0x0058344D)
 
@@ -467,9 +473,10 @@ leaves the cache. (fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-10-17-stat
   shrine's state. [I] (tbl:States.txt:curse, fn:STATE_ApplyTimed@0x0056E970)
 - **The tick's floor is 256, not 0**, for players; a monster's tick can kill ([combat/delivery § E4](../combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze)).
   [I] (fn:sub_00580610_LifeRegenTick@0x00580610)
-- **The aura's hit draws on the caster's seed**: a reimplementation that runs Sanctuary must consume one draw per hit
-  on the caster, even when the state code itself draws nothing. [C] (fn:SKILLS_RollElemDamage@0x0056E0C0,
-  run:2026-10-17-stats)
+- **The aura's hit draws on the caster's seed**: a reimplementation that runs Sanctuary must consume one draw on the
+  caster in each run that draws, even when the state code itself draws nothing. [C] (fn:SKILLS_RollElemDamage@0x0056E0C0,
+  run:2026-10-17-stats) **Draw once per run, not once per unit hit**: the one roll's packet is copied to every unit the
+  run hits. [I] (fn:sub_005CF3A0_AuraHitDo@0x005CF3A0, fn:sub_005CF2A0_AuraHitUnitCb@0x005CF2A0)
 
 ## Evidence
 

@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/properties, items/uniques-sets, player/creation, monsters/stats, data/calc, combat/overview]
 consumed_by: [combat/overview, player/creation, monsters/stats, data/calc, objects]
-tags: {C: 14, I: 2, L: 3}
-updated: 2026-10-20
+tags: {C: 14, I: 3, L: 3}
+updated: 2026-10-21
 ---
 
 # Stats and states: how a unit's stats add up, and how timed states live and die
@@ -82,11 +82,16 @@ check that composition.
 seed): link 12 868, unlink 12 853, own write 101 995, toggle 19 525, apply 6 232, expire 2 749, tick 54 719, aura
 2 763 unchanged. Those kinds draw nothing, except the aura's hit below. (run:2026-10-17-stats)
 
-[C] A damaging aura's run (Sanctuary) draws one `RNG_RangeB` on the caster's unit seed per hit, in the hit's elemental
-damage roll (phase 3's): 865 drawing runs, each exit asserted against the logged draws; 746 chained pairs, 115 next
-runs entered elsewhere, 4 drawing runs with no next run in their log (`tools/stats.py`'s counts, keyed by the caster
-unit).
-(fn:SKILLS_RollElemDamage@0x0056E0C0, fn:RNG_RangeB@0x0045C3E0, run:2026-10-17-stats) Details:
+[C] A damaging aura's run (Sanctuary) that draws moves the caster's unit seed by one `RNG_RangeB`, in the elemental
+damage roll (phase 3's): 865 drawing runs, 865 steps, each exit asserted against the logged draws; 746 chained pairs,
+115 next runs entered elsewhere, 4 drawing runs with no next run in their log (`tools/stats.py`'s counts, keyed by the
+caster unit). The run did not count the units each run hit.
+(fn:SKILLS_RollElemDamage@0x0056E0C0, fn:RNG_RangeB@0x0045C3E0, run:2026-10-17-stats)
+
+[I] The draw is one per run whatever the number of units hit: do 66 makes its one `SKILLS_RollElemDamage` call
+(at 0x005CF5D5) before its target pass, and the pass copies the packet it fills to every unit hit (`rep movs` at
+0x005CF367). (fn:sub_005CF3A0_AuraHitDo@0x005CF3A0, fn:sub_005CF2A0_AuraHitUnitCb@0x005CF2A0,
+[skills/0011 § 3](../../findings/skills/0011-paladin.md#3-the-aura-functions-do-65-66-81-82), [stats/0002 § 7](../../findings/stats/0002-states.md#7-events-inputs-outputs-draws)) Details:
 [states § H](states.md#h-draws-per-event-kind).
 
 ## Evidence
