@@ -75,6 +75,15 @@ the barbarian start functions 32-34, 38-41 and do functions 2, 9, 68-72 and 74-7
   cry_bar    do 68, 71 (the warcries' NovaAtUnit block, Taunt's test and search)
   move_bar   start 38, 40, 41, do 74, 76-78 (the unit's skill node, the leap point, the continuations)
 
+Batch dru (`--batch dru`, files under workspace/logs/skills-cat-dru/, draws from random.Random("catdru-<family>")):
+the druid start functions 56-58 and do functions 114-124, and do-table entries 145 and 146 (States srvactivefunc):
+  summon_dru do 114, 115, 119 (SkillSummonClass, the pet type, the SpawnOwnedMonster block)
+  shape_dru  do 116, 120, 124, 145, 146 (the aurastate, the used skill's id, do 124's draw, the timed list, the town
+             test and the re-arm of the periodic states)
+  melee_dru  start 56, 57, 58, do 121, 122 (the hit tests, 0x0056E680's ResultFlags shortcut, Rabies' summed to-hit)
+  miss_dru   do 117, 118, 123 (Firestorm, Twister/Tornado's 0x005C7040, Volcano's cell test with COLL_WHTest run, its
+             draw)
+
 Each check prints `CAT9A <family> key=value ...`: cases, matches, mismatches (bad), the negative control's mismatch
 count (neg, must be > 0), traced accesses outside the stack, spec and case memory (traced), those outside the declared
 read set (undeclared, must be 0), cases stopped other than at a boundary (stopped, must be 0), then the outcome and
@@ -9085,6 +9094,772 @@ def cmd_static_bar(a):
     return 1 if rep.c["bad"] else 0
 
 
+# ##################################################################################################################
+# Batch dru (plan 0046 Phase 1): the druid start functions 56-58 and do functions 114-124, and the do-table entries
+# 145 and 146 that the States rows 144 hurricane and 145 armageddon name as srvactivefunc (StateDoFunc, unit event 5).
+# Emulated (new): 0x00643CE0 (a node's record id), sub_0056E620_SkillSummonClass with sub_0063EA70_SkillSummonRec,
+# UNIT_GetUsedSkill, sub_006444A0_UnitSkillGet18, sub_00644560_UnitSkillSet18, 0x004EFC80 (Param4), 0x0056E680 (the
+# hit test or the ResultFlags shortcut), 0x005C7040 up to its first MissileCreate, 0x005C8980 (Rabies' summed to-hit)
+# with STATLIST_GetBaseStat and SKILLS_GetRecord, COLL_WHTest (0x0064D800, a boundary in sor) with COLL_CellTestNb and
+# DUNGEON_GetCollMap; and the earlier batches' helpers. Observed (new): COMBAT_BuildDamage (0x0057B7D0),
+# sub_006260B0_StatListSetEnd, UNIT_UnlinkStatList, COLL_RectTest (0x0064CEB0).
+# ##################################################################################################################
+FND = {
+    "st56": 0x005C7690, "st57": 0x005C79E0, "st58": 0x005C7E00,
+    "do114": 0x005C6910, "do115": 0x005C6A80, "do116": 0x005C6EC0, "do117": 0x005C7160, "do118": 0x005C72F0,
+    "do119": 0x005C7390, "do120": 0x005C77C0, "do121": 0x005C8AD0, "do122": 0x005C7F10, "do123": 0x005C8080,
+    "do124": 0x005C8190, "do145": 0x005C8380, "do146": 0x005C8520,
+}
+BOUNDS_D = {a: n for a, n in BOUNDS_B.items() if a != 0x0064D800}    # COLL_WHTest runs emulated here
+BOUNDS_D.update({0x0057B7D0: "CombatBuildDmg", 0x006260B0: "StatListSetEnd", 0x006277E0: "UnlinkStatList",
+                 0x0064CEB0: "RectTest"})
+BOUND_BY_NAME.update({v: k for k, v in BOUNDS_D.items()})
+ALLBOUND.update(BOUNDS_D)
+SHAPE_D = 0x12660000                 # DataTables+0x17C: the u16 state list 0x005C8980 walks (count s16 at +0x180)
+STREC_D = 0x12670000                 # DataTables+0xBC: the States records (0x3C; only the address is formed)
+CMAP_D = 0x12680000                  # a room's +0x20 collision map (0x4000 per room; words at +0x100)
+USKR_D = OSK + 0x700                 # the used node's record (+0x00 s16 id, 0x00643CE0)
+ARG1 = 0x7FF00004                    # the first stack argument's slot ([ebp+0x8])
+RS_DRU = [RS_HASH, RS_SKN, RS_CALC_JT, RS_BITMASK9C, RS_TOWN]
+
+
+def mem_dru():
+    lines = ["dword %08x %08x" % (G_PDATATABLES, DT),
+             "dword %08x %08x" % (DT + 0xB64, MREC), "dword %08x %08x" % (DT + 0xB6C, NREC),
+             "dword %08x 6b3a11f5" % COOKIE,
+             "dword %08x %08x" % (DT + 0xB98, SREC), "dword %08x %08x" % (DT + 0xBA0, NSREC),
+             "dword %08x %08x" % (DT + 0x40, SPOOL),
+             "dword %08x %08x" % (DT + 0xBCC, ISC), "dword %08x %08x" % (DT + 0xBD4, NISC),
+             "dword %08x %08x" % (DT + 0xA78, MSREC), "dword %08x %08x" % (DT + 0xA80, NMON),
+             "dword %08x %08x" % (DT + 0xA90, MS2REC), "dword %08x %08x" % (DT + 0xA98, NMON2),
+             "dword %08x %08x" % (DT + 0xC4, NSTATES), "dword %08x %08x" % (DT + 0xBF0, NPET),
+             "dword %08x %08x" % (DT + 0xBC, STREC_D)]
+    lines += ["observe %08x" % a for a in sorted(BOUNDS_D)]
+    lines += ["guard %08x" % a for a in FATAL + ALLOC if a not in BOUNDS_D]
+    return lines
+
+
+def finish_d(c, rnd, row, game, cases, exp, dumps=()):
+    finish_s(c, rnd, row, game, cases, exp, [row["sid"], row["lvl"]], dumps=dumps)
+
+
+def put_used_d(c, rnd, row, p=0.9):
+    """put_used_node plus the node's +0x00 record, whose s16 +0x00 0x00643CE0 returns (the id the functions test)."""
+    put_used_node(c, rnd, row, p)
+    if row["node"] is not None:
+        sid = s16(row["sid"])
+        rid = sid if rnd.random() < 0.85 else rnd.choice([sid + 1, rnd.randrange(NSREC), -1, 0x7FFF])
+        c.put(UNODE + 0x00, le32(USKR_D))
+        c.put(USKR_D, le16(rid))
+        row["node"]["rid"] = rid
+
+
+def node_id_ok(row):
+    """UNIT_GetUsedSkill(U) non-null and 0x00643CE0(node) (movsx of the record's +0x00) equal to the id."""
+    nd = row["node"]
+    return nd is not None and s16(nd["rid"]) == s32(row["sid"])
+
+
+def put_ustate_d(c, rnd, row, st):
+    """U's stat list: put_state_lists for UNIT_FindStatListByState(U, st) and, for st in range, the +0x58 state word
+    with st's bit set or cleared (UNIT_HasState). row: usl (the list found, 0 for none), usl_st, hs."""
+    s = st if 0 < st < NSTATES else 1
+    row["usl"] = put_state_lists(c, rnd, U, s)
+    row["usl_st"] = s
+    row["hs"] = 0
+    if not 0 <= st < NSTATES or (U + 0x5C) not in c.fields or not u32f(c, U + 0x5C):
+        return
+    if not u32f(c, USL + 0x10) & 0x80000000:
+        return
+    add_state_words(c, rnd, U, [st])
+    wa = USL + 0x200 + 4 * (st >> 5)
+    v = u32f(c, wa)
+    on = rnd.random() < 0.65
+    v = (v | (1 << (st & 31))) if on else (v & ~(1 << (st & 31)))
+    c.put(wa, le32(v))
+    row["hs"] = int(on)
+
+
+def find_list_d(row, st):
+    """UNIT_FindStatListByState(U, st): 0 for st 0 (`test edx, edx; je`), else the list put_state_lists made."""
+    if st == 0 or row["usl_st"] != st:
+        return 0
+    return row["usl"]
+
+
+def has_state_d(row):
+    return row["hs"] if row["ut"] in (0, 1, 3) else 0
+
+
+# ------------------------------------------------------------------------------------------- the summons
+SUMMON_ORDER_D = ("do114", "do115", "do119")
+
+
+@family("summon_dru", "dru")
+def summon_dru(rnd, game):
+    """Do 114 (Raven), do 115 (Plague Poppy, Cycle of Life, Vines), do 119 (the spirits, Oak Sage, Heart of Wolverine,
+    Spirit of Barbs, Summon Spirit Wolf, Fenris, Grizzly): SkillSummonClass, the pet type, up to SpawnOwnedMonster."""
+    cases, exp = [], []
+    for k in range(1500):
+        w = SUMMON_ORDER_D[k % 3]
+        c = Case(FND[w])
+        row = {"w": w, "sid": pick_skill(rnd), "lvl": pick_lvl(rnd)}
+        put_caster(c, rnd, row, types=(0, 0, 1))
+        put_target_a(c, rnd, row, game)
+        row["cal"] = sor_calcs(c, rnd, row["sid"], (0xC0, 0x13C))
+        if sid_ok(row):
+            b = srec(row)
+            summ = rnd.randrange(NMON)
+            mode = rnd.choice([rnd.randrange(16), rnd.randrange(16), -1, 16, rnd.randint(17, 127), -0x80])
+            pet = rnd.choice([rnd.randrange(NPET)] * 7 + [0xFF, 0x80, NPET, rnd.randint(NPET, 0x7F)])
+            c.put(b + 0xBC, le16(summ))
+            c.put(b + 0xBE, bytes([pet & 0xFF, mode & 0xFF]))
+            row.update(summ=summ, mode=mode, pet=pet)
+        finish_d(c, rnd, row, game, cases, exp)
+    return cases, mem_dru(), {"cases": exp}
+
+
+def summon_dru_model(row, game, br, neg=None):
+    w = row["w"]
+    br[w] += 1
+    if not sid_ok(row):
+        br["nosid"] += 1
+        return ret_s(row, 0)
+    pet = row["pet"]
+    if pet >= 0x80 or pet >= NPET:          # movsx < 0, then >= the PetType count: refused
+        if neg != "pet_zero":
+            br["pet_refused"] += 1
+            return ret_s(row, 0)
+        pet = 0
+    mode = row["mode"] if 0 <= row["mode"] < 16 else 1
+    pm = ev_s(row, 0xC0)
+    if w == "do119":
+        x, y, ok = target_xy(row)
+        if not ok:
+            br["noxy"] += 1
+            return ret_s(row, 0, bit6=True)
+        pos = (0, 0) if neg != "xy_pos" else (x, y)
+        w24 = x if neg != "w24_zero" else 0
+        blk = b"".join(le32(v) for v in (0, U, row["summ"], 0, mode, pos[0], pos[1], pet, pm, w24))
+        br["spawn"] += 1
+        return obs_a(row, "SpawnOwned", {"ecx": game}, [], 0x005C74A0, bit6=True, stk={"edx": (0, blk)},
+                     frame={fr(-0x14): le32(y)})
+    m10 = mode if w == "do114" or neg == "mode10" else 8
+    w24 = mode if neg != "w24_zero" else 0
+    blk = b"".join(le32(v) for v in (0, U, row["summ"], 0, m10, 0, 0, pet, pm, w24))
+    br["spawn"] += 1
+    return obs_a(row, "SpawnOwned", {"ecx": game}, [], 0x005C6A00 if w == "do114" else 0x005C6B71, bit6=True,
+                 stk={"edx": (0, blk)})
+
+
+# ------------------------------------------------------------------------------------------- shapes and timed states
+SHAPE_ORDER_D = ("do116", "do120", "do124", "do145", "do146")
+
+
+@family("shape_dru", "dru")
+def shape_dru(rnd, game):
+    """Do 116 (Werewolf, Werebear, Delerium Change: up to STATE_GroupClear), do 120 (Feral Rage, Maul), do 124
+    (Armageddon, Hurricane, Diablogeddon: the draw, the timed list), do 145 and do 146 (the hurricane and armageddon
+    states' srvactivefunc: the state, the town test, up to UNIT_CancelEvents or the state's removal)."""
+    cases, exp = [], []
+    for k in range(2500):
+        w = SHAPE_ORDER_D[k % 5]
+        c = Case(FND[w])
+        row = {"w": w, "sid": pick_skill(rnd), "lvl": pick_lvl(rnd)}
+        if w in ("do145", "do146") and rnd.random() < 0.6:
+            row["lvl"] = rnd.randint(1, 30)
+        put_caster(c, rnd, row, types=(0, 0, 1))
+        put_game_b(c, rnd, row, game)
+        put_target_a(c, rnd, row, game)
+        if w in ("do145", "do146") and row["uroom"] and rnd.random() < 0.35:     # the caster's room in town
+            lev = 0x13200000 + 0x1000 * ROOMS.index(row["uroom"])
+            c.put(lev + 0x1D0, le32(1))
+            row["rooms"][str(row["uroom"])][0] = 1
+        row["cal"] = sor_calcs(c, rnd, row["sid"], (0x60, 0x64))
+        ast = 1
+        if sid_ok(row):
+            b = srec(row)
+            if w == "do146":
+                put_bycharge(c, rnd, row)
+                row["f04"] &= ~4                      # the plain srvmissilea path (no state list of its own)
+                c.put(b + 0x04, bytes([row["f04"]]))
+            ast = rnd.choice([rnd.randrange(1, NSTATES)] * (6 if w not in ("do145", "do146") else 20) +
+                             [0, -1, NSTATES, rnd.randint(-0x8000, -2)])
+            c.put(b + 0x80, le16(ast))
+            b05 = rnd.getrandbits(8)
+            if rnd.random() < 0.6:
+                b05 &= ~1
+            c.put(b + 0x05, bytes([b05]))
+            p4 = rnd.choice([rnd.randint(0, 40), rnd.getrandbits(32)])
+            c.put(b + 0x154, le32(p4))
+            row.update(ast=ast, b05=b05, p4=p4)
+            if w == "do146":
+                row["cst"] = ast
+        put_ustate_d(c, rnd, row, ast)
+        if w in ("do120", "do124"):
+            put_used_d(c, rnd, row)
+        if w == "do146":
+            put_unit_skills(c, rnd, row)
+        dumps = [(UNODE + 0x18, 4)] if w in ("do120", "do124") else []
+        if w == "do145":
+            dumps.append((ARG1, 4))
+        finish_d(c, rnd, row, game, cases, exp, dumps=dumps)
+    return cases, mem_dru(), {"cases": exp}
+
+
+def shape_dru_model(row, game, br, neg=None):
+    w = row["w"]
+    br[w] += 1
+    sid, lv = s16(row["sid"]), row["lvl"]
+    gu = {"ecx": game, "edx": U}
+    if w in ("do145", "do146"):
+        early = 0x005C8443 if w == "do145" else 0x005C85E3
+        cancel = (row, "CancelEvents", gu, [5, row["sid"]])
+        if not sid_ok(row) or s32(lv) <= 0 or not 0 <= s16(row["ast"]) < NSTATES:
+            br["refused"] += 1
+            return obs_a(*cancel, early)
+        ast = s16(row["ast"])
+        if not has_state_d(row):
+            br["nostate"] += 1
+            return obs_a(*cancel, early)
+        if not row["b05"] & 1 and (neg != "notown") and row["uroom"] and town_of(row, row["uroom"]):
+            l = find_list_d(row, ast)
+            if l:
+                br["town_unlink"] += 1
+                return obs_a(row, "UnlinkStatList", {}, [U, l], 0x005C841D if w == "do145" else 0x005C85BD)
+            br["town_clear"] += 1
+            return obs_a(row, "StateSet", {}, [U, ast, 0], 0x005C8436 if w == "do145" else 0x005C85D6)
+        if w == "do146":
+            if bycharge(row) <= 0:
+                br["nomiss"] += 1
+                return obs_a(*cancel, early)
+            if unit_skill(row) is None:
+                br["noskill"] += 1
+                return obs_a(*cancel, early)
+        if ev_s(row, 0x64) <= 0:
+            br["norange"] += 1
+            return obs_a(*cancel, early)
+        br["rearm"] += 1
+        if w == "do145":
+            p4 = row["p4"] if neg == "p4_noframe" else row["p4"] + row["frame"]
+            return obs_a(*cancel, 0x005C8481, mem={ARG1: le32(p4)})
+        return obs_a(*cancel, 0x005C8647)
+    if not sid_ok(row):
+        br["nosid"] += 1
+        return ret_s(row, 0)
+    ast = s16(row["ast"])
+    lo = 0 if neg != "ast_le" else 1
+    if not lo <= ast < NSTATES:
+        br["nostate"] += 1
+        return ret_s(row, 0)
+    if w == "do116":
+        br["groupclear"] += 1
+        return obs_a(row, "GroupClear", {"ecx": U, "edx": ast}, [1], 0x005C6F25, bit6=True)
+    if row["node"] is None:
+        br["noused"] += 1
+        return ret_s(row, 0)
+    if not node_id_ok(row):
+        br["otherid"] += 1
+        return ret_s(row, 0)
+    useed = None
+    fr_ = {}
+    if w == "do120":
+        if tgt_unit(row):
+            br["deliver"] += 1
+            return obs_a(row, "DeliverQueued", gu, [T, 0], 0x005C786A, bit6=True)
+        if row["node"]["n18"] == 0:
+            br["n18_0"] += 1
+            return ret_s(row, 1, bit6=True)
+        ln = ev_s(row, 0x60)
+        if neg == "noclamp":
+            ln = max(ln, 1)
+        sites = (0x005C78D1, 0x005C7917)
+    else:
+        s0 = row["seeds"][0]
+        r, lo_, hi_ = rrange(s0[0], s0[1], 0x10000)
+        if neg != "seed_none":
+            useed = (lo_, hi_)
+        fr_ = {fr(-0xC): le32(r)}
+        ln = ev_s(row, 0x60)
+        if ln < 1 and neg != "noclamp":
+            ln = 1
+        sites = (0x005C8295, 0x005C82E1)
+    end = s32(row["frame"] + ln)
+    l = find_list_d(row, ast)
+    e = None
+    if l:
+        br["setend"] += 1
+        e = obs_s(row, "StatListSetEnd", {}, [l, end], sites[1], bit6=True, useed=useed)
+    else:
+        br["alloc"] += 1
+        e = obs_s(row, "StatListAlloc", {}, [GAMEPOOL, 2, end, row["ut"], row["ug"]], sites[0], bit6=True,
+                  useed=useed)
+    return e + (fr_,)
+
+
+# ------------------------------------------------------------------------------------------- the melee functions
+MELEE_ORDER_D = ("st56", "st57", "st58", "do121", "do122", "do121")
+HIT680_SLOT = {"st58": (0x7FEFFF60, 0x005C7E7A), "do122": (0x7FEFFF5C, 0x005C7F90)}   # 0x0056E680's return slots
+RAB_SLOT = (0x7FEFFFE0, 0x005C8B5F)  # do 121's return address from 0x005C8980
+RAB_EBP = 0x7FEFFFDC                 # 0x005C8980's EBP
+
+
+def put_shape_d(c, rnd, row):
+    """0x005C8980's inputs: the state list at DataTables+0x17C (count s16 +0x180); U's stat list with the +0x58 state
+    words (UNIT_HasState) and the +0x3C/+0x40 chains (UNIT_FindStatListByState), each found list holding stat 350
+    (STATLIST_GetBaseStat, base array +0x24/+0x28); the skills' ToHit, LevToHit, ToHitCalc -1 and SrcDam."""
+    n = rnd.choice([0, 1, 2, 2, 3, 3, 3])
+    pool = list(range(1, NSTATES))
+    sts = rnd.sample(pool, n)
+    for i in range(n):
+        if rnd.random() < 0.1:
+            sts[i] = rnd.choice([-1, NSTATES, rnd.randint(-0x8000, -2)])
+    cnt = n if rnd.random() < 0.95 else rnd.choice([0, -1, -0x8000])
+    c.put(DT + 0x17C, le32(SHAPE_D))
+    c.put(DT + 0x180, le16(cnt))
+    row["shape_cnt"] = cnt
+    for i, s in enumerate(sts):
+        c.put(SHAPE_D + 2 * i, le16(s))
+    row["shape"] = []
+    if rnd.random() < 0.04:
+        c.put(U + 0x5C, le32(0))
+        row["shape_list"] = 0
+    else:
+        c.put(U + 0x5C, le32(USL))
+        fl = rnd.getrandbits(32) | 0x80000000
+        if rnd.random() < 0.05:
+            fl &= 0x7FFFFFFF
+        c.put(USL + 0x10, le32(fl))
+        row["shape_list"] = fl >> 31
+        words = USL + 0x200
+        c.put(USL + 0x58, le32(words))
+        wv = {}
+        nodes = [USL + 0x400 + 0x80 * i for i in range(8)]
+        chains = {0x3C: [], 0x40: []}
+        for s in sts:
+            on = rnd.random() < 0.8
+            ent = {"s": s, "has": 0, "list": 0, "sk": None}
+            if 0 <= s < NSTATES:
+                wi = s >> 5
+                if wi not in wv:
+                    wv[wi] = rnd.getrandbits(32)
+                wv[wi] = (wv[wi] | (1 << (s & 31))) if on else (wv[wi] & ~(1 << (s & 31)))
+                if rnd.random() < 0.85:
+                    chains[rnd.choice((0x3C, 0x40))].append(ent)
+            row["shape"].append(ent)
+        for wi, v in wv.items():
+            c.put(words + 4 * wi, le32(v))
+        for e in row["shape"]:
+            s = e["s"]
+            if 0 <= s < NSTATES:
+                e["has"] = int(bool(fl >> 31) and (wv[s >> 5] >> (s & 31)) & 1)
+        pos = 0
+        for head in (0x3C, 0x40):
+            ch = chains[head]
+            if rnd.random() < 0.3:                    # a decoy node of another state first
+                ch = [{"s": None}] + ch
+            c.put(USL + head, le32(nodes[pos] if ch else 0))
+            for i, e in enumerate(ch):
+                nd = nodes[pos]
+                pos += 1
+                nxt = nodes[pos] if i + 1 < len(ch) else 0
+                if e["s"] is None:
+                    c.put(nd + 0x14, le32(rnd.choice([0, NSTATES + 5, 999])))
+                    c.put(nd + 0x2C, le32(nxt))
+                    continue
+                c.put(nd + 0x14, le32(e["s"]))
+                c.put(nd + 0x2C, le32(nxt))
+                sk = rnd.choice([rnd.randrange(NSREC)] * 6 + [-1, NSREC, rnd.getrandbits(32)])
+                keys = {350 << 16: sk}
+                if rnd.random() < 0.3:
+                    keys[351 << 16] = rnd.getrandbits(32)
+                if rnd.random() < 0.08:
+                    keys = {351 << 16: rnd.getrandbits(32)}
+                    sk = 0
+                arr = nd + 0x40
+                c.put(nd + 0x10, le32(0))
+                c.put(nd + 0x24, le32(arr))
+                c.put(nd + 0x28, le16(len(keys)))
+                for j, kk in enumerate(sorted(keys)):
+                    c.put(arr + 8 * j, le32(kk) + le32(keys[kk]))
+                e["list"] = nd
+                e["sk"] = sk & M32
+        c.put(ISC + 0x144 * 350 + 5, b"\x00")
+    recs = []
+    for i in range(NSREC):
+        b = SREC + 0x23C * i
+        base, lev = rnd.choice([rnd.randint(0, 300), rnd.getrandbits(32)]), rnd.choice([rnd.randint(0, 35),
+                                                                                        rnd.getrandbits(32)])
+        sd = rnd.choice([0, 128, rnd.getrandbits(8), rnd.getrandbits(8)])
+        c.put(b + 0x198, le32(base) + le32(lev) + le32(0xFFFFFFFF))
+        c.put(b + 0x1A5, bytes([sd]))
+        recs.append([base, lev, sd])
+    row["trec"] = recs
+
+
+def rabies_hit_d(row, neg=None):
+    """0x005C8980 up to its MeleeHitTest: the sum of SKILLS_GetToHit(U, skill, lvl) over the listed states U has, whose
+    list's stat 350 names a skill in range, and the last such skill's non-zero SrcDam (0x80 by default)."""
+    tot, sd = 0, 0x80
+    lv = s32(row["lvl"])
+    for e in row["shape"][:max(row["shape_cnt"], 0)]:
+        s = e["s"]
+        if not 0 <= s < NSTATES or not e["has"]:
+            continue
+        if not e["list"]:
+            continue
+        sk = s32(e["sk"])
+        if not 0 <= sk < NSREC:
+            continue
+        base, lev, d = row["trec"][sk]
+        th = 0 if lv <= 0 else s32((lv - 1) * lev + base)
+        tot = s32(tot + th)
+        if d and neg not in ("sd_first", "sd_none"):
+            sd = d
+        elif d and neg == "sd_first" and sd == 0x80:
+            sd = d
+    return tot, sd
+
+
+@family("melee_dru", "dru")
+def melee_dru(rnd, game):
+    """Start 56 (Feral Rage, Maul), start 57 (Rabies), start 58 (Fire Claws), do 121 (Rabies: 0x005C8980's summed
+    to-hit), do 122 (Hunger): the used skill and its id, the target, the shape state, up to MeleeHitTest (inside
+    0x0056E680 or 0x005C8980) or COMBAT_BuildDamage (the ResultFlags shortcut)."""
+    cases, exp = [], []
+    for k in range(2400):
+        w = MELEE_ORDER_D[k % 6]
+        c = Case(FND[w])
+        row = {"w": w, "sid": pick_skill(rnd), "lvl": pick_lvl(rnd)}
+        put_caster(c, rnd, row, types=(0, 0, 1))
+        put_target_a(c, rnd, row, game)
+        row["cal"] = sor_calcs(c, rnd, row["sid"], (0x138, 0x1A0))
+        if w in ("st56", "st57", "st58", "do122"):
+            put_tohit(c, rnd, row)
+        if w in ("st56", "st57", "do121"):
+            put_used_d(c, rnd, row)
+        ast = 1
+        if sid_ok(row):
+            b = srec(row)
+            if w == "st57":
+                ast = rnd.choice([rnd.randrange(1, NSTATES)] * 6 + [0, -1, NSTATES, rnd.randint(-0x8000, -2)])
+                c.put(b + 0x80, le16(ast))
+                row["ast"] = ast
+            if w in ("st58", "do122"):
+                rf = rnd.choice([0, 0, 1, rnd.getrandbits(16), rnd.getrandbits(16) | 1, rnd.getrandbits(16) & ~1])
+                hf = rnd.choice([0, 2, rnd.getrandbits(32)])
+                hc = rnd.choice([0, 0, rnd.randint(1, 160), rnd.getrandbits(32)])
+                sd = rnd.choice([0, 128, rnd.getrandbits(8)])
+                c.put(b + 0x12E, le16(rf) + le32(hf) + le32(hc))
+                c.put(b + 0x1A5, bytes([sd]))
+                row.update(rf=rf, hf=hf, hc=hc, sd=sd)
+        if w == "st57":
+            put_ustate_d(c, rnd, row, ast)
+        if w == "do121":
+            put_shape_d(c, rnd, row)
+        dumps = [(UNODE + 0x18, 4)] if w in ("st57", "do121") else []
+        finish_d(c, rnd, row, game, cases, exp, dumps=dumps)
+    return cases, mem_dru(), {"cases": exp}
+
+
+def hit680_d(row, game, w, neg=None):
+    """0x0056E680(ECX game, EDX U; target, rec, id, lvl, &packet, 0) and the caller's code up to its next boundary:
+    ResultFlags (+0x12E) bit 0 set -> packet +0x04 = ResultFlags, then (the caller) packet +0x00 = 2 | HitFlags,
+    HitClass into +0x60 when non-zero, start 58 also calc1 into +0x0C, COMBAT_BuildDamage(target, &packet, 0,
+    SrcDam); clear -> MeleeHitTest(target, SKILLS_GetToHit(U, id, lvl), 0) inside 0x0056E680."""
+    pkt_at = fr(-0x74) if w == "st58" else fr(-0x78)
+    if not row["rf"] & 1 or neg == "rf_ignored":
+        slot = HIT680_SLOT[w]
+        f = abs_ret(*slot)
+        f[pkt_at] = bytes(0x70)
+        return obs_a(row, "MeleeHitTest", {"ecx": game, "edx": U}, [T, tohit_a(row), 0], 0x0056E6B8,
+                     bit6=(w == "do122"), frame=f)
+    p = bytearray(0x70)
+    struct.pack_into("<I", p, 0x00, (2 | row["hf"]) & M32)
+    struct.pack_into("<H", p, 0x04, row["rf"])
+    if row["hc"] and neg != "hc_never":
+        struct.pack_into("<I", p, 0x60, row["hc"])
+    if w == "st58":
+        struct.pack_into("<I", p, 0x0C, ev_s(row, 0x138) & M32)
+    return obs_a(row, "CombatBuildDmg", {"ecx": game, "edx": U}, [T, None, 0, row["sd"]],
+                 0x005C7ED2 if w == "st58" else 0x005C7FE0, bit6=(w == "do122"), ptrs={1: bytes(p)})
+
+
+def melee_dru_model(row, game, br, neg=None):
+    w = row["w"]
+    br[w] += 1
+    if not sid_ok(row):
+        br["nosid"] += 1
+        return ret_s(row, 0)
+    t = tgt_unit(row)
+    gu = {"ecx": game, "edx": U}
+    if w in ("st58", "do122"):
+        if not t:
+            br["notarget"] += 1
+            return ret_s(row, 0)
+        br["rf1" if row["rf"] & 1 else "hittest"] += 1
+        return hit680_d(row, game, w, neg)
+    if row["node"] is None:
+        br["noused"] += 1
+        return ret_s(row, 0)
+    if w == "st56":
+        if not t:
+            br["notarget"] += 1
+            return ret_s(row, 0)
+        br["hittest"] += 1
+        return obs_a(row, "MeleeHitTest", gu, [T, tohit_a(row), 0], 0x005C7717, frame={fr(-0x78): bytes(0x70)})
+    if w == "do121" and not t:
+        br["notarget"] += 1
+        return ret_s(row, 0)
+    if not node_id_ok(row) and neg != "id_any":
+        br["otherid"] += 1
+        return ret_s(row, 0)
+    if w == "st57":
+        if not t:
+            br["notarget"] += 1
+            return ret_s(row, 0)
+        ast = s16(row["ast"])
+        if 0 <= ast < NSTATES and not has_state_d(row) and neg != "nostate57":
+            br["noshape"] += 1
+            return ret_s(row, 0)
+        br["hittest_" + ("shape" if 0 <= ast < NSTATES else "any")] += 1
+        return obs_a(row, "MeleeHitTest", gu, [T, tohit_a(row), 0], 0x005C7AAB, mem={UNODE + 0x18: le32(0)})
+    # do 121
+    if row["node"]["n18"] == 0:
+        br["n18_0"] += 1
+        return ret_s(row, 0)
+    tot, sd = rabies_hit_d(row, neg)
+    f = abs_ret(*RAB_SLOT)
+    f[RAB_EBP - 0x80] = bytes(0x70)
+    f[RAB_EBP - 0x8] = bytes([sd])
+    br["rabies_" + ("sum" if tot else "zero")] += 1
+    return obs_a(row, "MeleeHitTest", gu, [T, tot, 0], 0x005C8A9B, mem={UNODE + 0x18: le32(0)}, frame=f)
+
+
+# ------------------------------------------------------------------------------------------- the missiles
+MISS_ORDER_D = ("do117", "do118", "do123", "do123")
+TW_SLOT = (0x7FEFFFD4, 0x005C7375)   # do 118's return address from 0x005C7040, its five arguments above it
+CELL_SLOT = (0x7FEFFF80, 0x005C80F1)  # do 123's return address from sub_0056E450_SkillTargetCellFree
+WH_SLOT = (0x7FEFFF4C, 0x0056E4EF)   # TargetCellFree's return address from COLL_WHTest
+WH_RECT = 0x7FEFFF38                 # COLL_WHTest's rectangle (ebp-0x10)
+
+
+def put_cmap_d(c, rnd, row):
+    """COLL_CellTestNb's inputs: the room RoomAtSubtile(U's room, x; y) gives, its +0x20 collision map (+0x00 x0,
+    +0x04 y0, +0x08 width, +0x20 the word array) and the one word at (y - y0)·width - x0 + x."""
+    x, y, ok = target_xy(row)
+    row["cmap"] = None
+    if not ok:
+        return
+    r2 = room_at(row, row["uroom"], x, y)
+    if not r2:
+        return
+    i = ROOMS.index(r2)
+    if rnd.random() < 0.08:
+        c.put(r2 + 0x20, le32(0))
+        row["cmap"] = {"room": r2, "map": 0}
+        return
+    m = CMAP_D + 0x4000 * i
+    _, x0, y0, ww, hh = row["rooms"][str(r2)][:5]
+    arr = m + 0x100 if rnd.random() < 0.93 else 0
+    c.put(r2 + 0x20, le32(m))
+    c.put(m + 0x00, le32(x0) + le32(y0) + le32(ww))
+    c.put(m + 0x20, le32(arr))
+    v = None
+    if arr:
+        idx = s32(s32(s32(y - y0) * ww) - x0 + x)
+        v = rnd.choice([0, 0, 0, 0, 0, 1, 4, 2, 2, 8, rnd.getrandbits(16)])
+        c.put((arr + 2 * idx) & M32, le16(v))
+    row["cmap"] = {"room": r2, "map": m, "arr": arr, "v": v}
+
+
+@family("miss_dru", "dru")
+def miss_dru(rnd, game):
+    """Do 117 (Firestorm: up to SkillMissileCreate), do 118 (Twister, Tornado: 0x005C7040 up to its first
+    MissileCreate), do 123 (Volcano: SkillTargetCellFree with COLL_WHTest run, the draw, up to MissileCreate)."""
+    cases, exp = [], []
+    for k in range(2000):
+        w = MISS_ORDER_D[k % 4]
+        c = Case(FND[w])
+        row = {"w": w, "sid": pick_skill(rnd), "lvl": pick_lvl(rnd)}
+        put_caster(c, rnd, row, types=(0, 0, 1))
+        put_target_a(c, rnd, row, game)
+        if w == "do123" and rnd.random() < 0.7:
+            put_point_in_room(c, rnd, row)
+        row["cal"] = sor_calcs(c, rnd, row["sid"], (0x138,))
+        if sid_ok(row):
+            put_bycharge(c, rnd, row)
+            if w == "do123" and rnd.random() < 0.12:       # a class past the Missiles count (do 123 has no upper test)
+                row["ms"][1] = rnd.choice([NREC, NREC + 1, 0x7FFF])
+                c.put(srec(row) + 0x48, le16(row["ms"][1]))
+        for i in range(NREC):
+            c.put(MREC + 0x1A4 * i + 0x18A, bytes([rnd.choice([0, 1, 1, 1, 2, 3, rnd.getrandbits(8)])]))
+        row["msize"] = [c.fields[MREC + 0x1A4 * i + 0x18A][0] for i in range(NREC)]
+        if w == "do123":
+            put_cmap_d(c, rnd, row)
+        dumps = [(ARG1, 1)] if w == "do123" else []
+        finish_d(c, rnd, row, game, cases, exp, dumps=dumps)
+    return cases, mem_dru(), {"cases": exp}
+
+
+def cellnb_d(row, neg=None):
+    """COLL_CellTestNb(room, x, y, 5): 0x27 without a room at the point, a map or a word array; else the word & 5."""
+    cm = row["cmap"]
+    if cm is None or not cm["map"] or not cm["arr"]:
+        return 0x27
+    return cm["v"] & (5 if neg != "mask7" else 7)
+
+
+def miss_dru_model(row, game, br, neg=None):
+    w = row["w"]
+    br[w] += 1
+    sid, lv = s16(row["sid"]), row["lvl"]
+    if not sid_ok(row):
+        br["nosid"] += 1
+        return ret_s(row, 0)
+    m = bycharge(row)
+    if w in ("do117", "do118"):
+        if not 0 <= m < NREC:
+            br["nomiss"] += 1
+            return ret_s(row, 0)
+        c1 = ev_s(row, 0x138)
+        if c1 <= 0 and not (neg == "c1_ge0" and c1 == 0):
+            br["c1_le0"] += 1
+            return ret_s(row, 0, bit6=True)
+        if w == "do117":
+            br["skillcreate"] += 1
+            return obs_a(row, "SkillMissileCreate", {"ecx": game, "edx": m}, [U, sid, lv, 0, 0, 0, 0, 0],
+                         0x005C7206, bit6=True)
+        x, y, ok = target_xy(row)
+        if not ok:
+            br["noxy"] += 1
+            return ret_s(row, 1, bit6=True)
+        blk = bytearray(blk9d(flags=0x21 if neg != "flags1" else 0x01, owner=U, cls=m, x=row["ux"], y=row["uy"],
+                              skill=sid, lvl=lv, tx=x, ty=y, cb=0x005C9290))
+        f = abs_ret(*TW_SLOT)
+        f[TW_SLOT[0] + 4] = b"".join(le32(v) for v in (c1, m, sid, lv, 0))
+        br["twister"] += 1
+        return obs_a(row, "MissileCreate", {"ecx": game}, [], 0x005C7140, bit6=True, stk={"edx": (0, bytes(blk))},
+                     frame=f)
+    # do 123
+    if m <= 0:
+        br["nomiss"] += 1
+        return ret_s(row, 0)
+    x, y, ok = target_xy(row)
+    if not ok:
+        br["noxy"] += 1
+        return ret_s(row, 0)
+    if m >= NREC and neg != "cls_hi":
+        br["fatal"] += 1
+        return obs_a(row, "Fatal", {}, [0x1281], 0x0056E4A3, frame=abs_ret(*CELL_SLOT))
+    if m >= NREC:
+        return ret_s(row, 0)
+    if not row["uroom"]:
+        br["noroom"] += 1
+        return ret_s(row, 0)
+    sz = row["msize"][m]
+    if sz > 1:
+        x0, y0 = s32(x - (sz >> 1)), s32(y - (sz >> 1))
+        rect = b"".join(le32(v) for v in (x0, y0, x0 + sz - 1, y0 + sz - 1))
+        f = abs_ret(*CELL_SLOT)
+        f.update(abs_ret(*WH_SLOT))
+        f[WH_RECT] = rect
+        br["recttest"] += 1
+        return obs_a(row, "RectTest", {"ecx": row["uroom"], "edx": WH_RECT}, [5], 0x0064D866, frame=f)
+    if cellnb_d(row, neg):
+        br["busy"] += 1
+        return ret_s(row, 0)
+    s0 = row["seeds"][0]
+    r, lo, hi = rrange(s0[0], s0[1], 0x100)
+    useed = (lo, hi) if neg != "noseed" else None
+    blk = block(flags=1, owner=U, cls=m, x=x, y=y, skill=sid, lvl=lv)
+    br["volcano"] += 1
+    e = obs_s(row, "MissileCreate", {"ecx": game}, [], 0x005C814D, bit6=True, stk={"edx": (0, blk)},
+              mem={ARG1: bytes([r & 0xFF])}, useed=useed)
+    return e + ({},)
+
+
+CHECKS.update({
+    "summon_dru": check9b("summon_dru", summon_dru_model, ["pet_zero", "xy_pos", "w24_zero", "mode10"], RS_DRU,
+                          md_masked=False),
+    "shape_dru": check9b("shape_dru", shape_dru_model, ["ast_le", "noclamp", "seed_none", "notown", "p4_noframe"],
+                         RS_DRU, md_masked=False),
+    "melee_dru": check9b("melee_dru", melee_dru_model, ["rf_ignored", "hc_never", "id_any", "nostate57", "sd_first",
+                                                        "sd_none"],
+                         RS_DRU, md_masked=False),
+    "miss_dru": check9b("miss_dru", miss_dru_model, ["c1_ge0", "flags1", "cls_hi", "mask7", "noseed"], RS_DRU,
+                        md_masked=False),
+})
+
+PINS_DRU = [  # (address, mnemonic, operand substring): instructions the dru claims turn on (ADR-0015 (5))
+    (0x005C6975, "movsx", "eax,dl"), (0x005C697A, "jl", ""), (0x005C698E, "jge", ""),               # do 114: pet
+    (0x005C6B4B, "mov", "DWORD PTR [ebp-0x20],0x8"),                                                  # do 115
+    (0x005C7441, "je", ""), (0x005C7481, "mov", "DWORD PTR [ebp-0x20],eax"),                          # do 119
+    (0x005C6EFD, "jl", ""), (0x005C6F1C, "push", "0x1"),                                              # do 116
+    (0x005C71E5, "jle", ""), (0x005C71AC, "jl", ""), (0x005C71BE, "jge", ""),                         # do 117
+    (0x005C735D, "jle", ""), (0x005C7046, "cmp", "DWORD PTR [ebp+0x18],0x0"),                         # do 118
+    (0x005C70A0, "mov", "DWORD PTR [ebp-0x5c],0x21"), (0x005C711D, "mov", "DWORD PTR [ebp-0x8],0x5c9290"),
+    (0x005C7809, "jl", ""), (0x005C7842, "jne", ""), (0x005C7875, "je", ""),                          # do 120
+    (0x005C8228, "mov", "edx,0x10000"), (0x005C8247, "jge", ""),                                      # do 124
+    (0x005C83BF, "jle", ""), (0x005C83E8, "test", "BYTE PTR [ebx+0x5],al"), (0x005C8462, "jle", ""),  # do 145
+    (0x005C8479, "mov", "DWORD PTR [ebp+0x8],eax"),
+    (0x005C85FC, "jle", ""), (0x005C8629, "jle", ""), (0x005C8688, "call", "0x650e40"),              # do 146
+    (0x005C7A66, "jl", ""), (0x005C7A82, "je", ""),                                                   # start 57
+    (0x0056E68E, "test", "al,0x1"), (0x005C7E83, "or", "eax,0x2"), (0x005C7FB3, "or", "WORD PTR [ebp-0x74],cx"),
+    (0x005C89B3, "cmp", "WORD PTR [eax+0x180],bx"), (0x005C8A59, "je", ""), (0x005C89BD, "mov", "BYTE PTR [ebp-0x8],0x80"),
+    (0x005C80CA, "jle", ""), (0x005C8103, "mov", "edx,0x100"), (0x005C8115, "mov", "BYTE PTR [ebp+0x8],al"),  # do 123
+    (0x0056E46B, "cmp", "eax,DWORD PTR [ecx+0xb6c]"), (0x0064D80C, "cmp", "ecx,0x1"), (0x0064CA83, "and", "eax,DWORD PTR [ebp+0x8]"),
+    (0x006256C3, "test", "DWORD PTR [eax+0x10],0x80000000"), (0x00625663, "test", "edx,edx"),       # FindStatList
+]
+
+
+def cmd_static_dru(a):
+    rep = Report("static")
+    rep.batch = "DRU"
+    A = S4.asm()
+    for va, mn, sub in PINS_DRU:
+        ins = A.at(va)
+        rep.c["pins"] += 1
+        if ins is None or ins[0] != mn or sub not in ins[1]:
+            rep.bad("pin 0x%08X: %r, want %s %s" % (va, ins, mn, sub))
+        else:
+            rep.c["pins_ok"] += 1
+    for lo, n, name in ((BITMASK, 128, "g_BitMask32"), (0x006E10E0, 20, "hash offsets"),
+                        (0x006C1164, 88, "CALC_Eval jump table"), (0x006426C0, 8 + 0x6D, "town tables")):
+        sec = S4.section_of(lo)
+        flags = [x[5] for x in S4.image()[2] if x[4] == sec][0]
+        rep.c["ro_reads"] += 1
+        if flags & 0x80000000:
+            rep.bad("%s 0x%08X in writable %s" % (name, lo, sec))
+        rep.notes.append("%s 0x%08X: %s" % (name, lo, sec))
+    st, im, rd = ref_scan(A, SK_NFUNCS)
+    rep.c["data_stores"] += len(st)
+    rep.c["data_imms"] += len(im)
+    rep.notes.append("skills calc function count 0x%08X: %d stores (PTR or moffs), %d immediates, %d reads in .text"
+                     % (SK_NFUNCS, len(st), len(im), len(rd)))
+    for hlp in (0x5C7040, 0x56E680, 0x5C8980, 0x56E450, 0x64D800):
+        sites = sorted(va for va, (mn, ops) in A.ins.items() if mn == "call" and ops.strip() == "0x%x" % hlp)
+        rep.notes.append("calls of 0x%08X: %d in the image: %s" % (hlp, len(sites), " ".join("0x%08X" % s for s in sites)))
+        rep.c["helper_sites"] += len(sites)
+    for lo in (0x17C, 0x180):
+        refs = sorted(va for va, (mn, ops) in A.ins.items() if ("+0x%x]" % lo) in ops and va in range(0x5C8980, 0x5C8AC4))
+        rep.notes.append("0x005C8980 operands naming +0x%X: %s" % (lo, " ".join("0x%08X" % v for v in refs)))
+    for name, va in sorted(FND.items(), key=lambda kv: kv[1]):
+        tab = START_TABLE if name.startswith("st") else DO_TABLE
+        num = int(name[2:])
+        rep.c["table_entries"] += 1
+        if S4.dword(tab + 4 * num) != va:
+            rep.bad("%s: table entry 0x%08X, model address 0x%08X" % (name, S4.dword(tab + 4 * num), va))
+    rep.notes.append("start table 56-58: %s" % " ".join("%d:0x%08X" % (i, S4.dword(START_TABLE + 4 * i))
+                                                        for i in (56, 57, 58)))
+    rep.notes.append("do table 114-124, 145, 146: %s" % " ".join(
+        "%d:0x%08X" % (i, S4.dword(DO_TABLE + 4 * i)) for i in list(range(114, 125)) + [145, 146]))
+    print("CATDRU static " + " ".join("%s=%d" % (k, rep.c[k]) for k in sorted(rep.c)))
+    for n in rep.notes:
+        print("  " + n)
+    return 1 if rep.c["bad"] else 0
+
+
 # ================================================================================================= commands
 def batch_families(a):
     if a.family:
@@ -9207,6 +9982,8 @@ def cmd_static(a):
         return cmd_static_pal(a)
     if a.batch == "bar":
         return cmd_static_bar(a)
+    if a.batch == "dru":
+        return cmd_static_dru(a)
     rep = Report("static")
     A = S4.asm()
     for va, mn, sub in PINS:
@@ -9268,7 +10045,7 @@ def main(argv):
     ap.add_argument("cmd", choices=["cases", "check", "static", "manifest"])
     ap.add_argument("family", nargs="*")
     ap.add_argument("--dir", default=None, help="default workspace/logs/skills-cat-<batch>")
-    ap.add_argument("--batch", default="9a", choices=["9a", "9b", "9c", "9d", "sor", "ama", "nec", "pal", "bar"], help="the families of one batch (default 9a)")
+    ap.add_argument("--batch", default="9a", choices=["9a", "9b", "9c", "9d", "sor", "ama", "nec", "pal", "bar", "dru"], help="the families of one batch (default 9a)")
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args(argv)
     return {"cases": cmd_cases, "check": cmd_check, "static": cmd_static, "manifest": cmd_manifest}[a.cmd](a)
