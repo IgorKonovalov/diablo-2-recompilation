@@ -2,7 +2,7 @@
 docs/findings/combat/0001-formulas.md.
 
 Usage:
-  python3 -I tools/combat.py check <log> [...] [--excel DIR] [--exe EXE] [-v] [--json OUT]
+  python3 -I tools/combat.py check <log> [...] [--excel DIR] [--exe EXE] [-v] [--json OUT] [--no-shield ID,...]
   python3 -I tools/combat.py manifest <log> [...]          # sha256, size and line count of each log
 
 <log> is written by tools/d2run.py with tools/gdb/combat.gdb (the tags of tools/gdb/combat.py). The model reads the
@@ -200,8 +200,11 @@ def pset(p, off, v):
 
 
 class Checker:
-    def __init__(self, T, verbose=False):
+    def __init__(self, T, verbose=False, no_shield=()):
         self.T, self.v = T, verbose
+        # plan 0044 Phase 2: player unit ids known (from their recipes) to hold no shield; UnitBlockChance is 0 for
+        # them (combat/0001 § 4: "0 without a shield in the hands"). The logs carry no equipment, so this is input.
+        self.no_shield = set(no_shield)
         self.stats = {}
         self.mism = []
         self.cnt = {}
@@ -347,7 +350,9 @@ class Checker:
                     self.fail("expected DRB")
             b = drb["b"]
             if d["t"] == 0 and not drb.get("r1"):
-                want = self.block_formula(d, g["exp"])
+                want = 0 if d.get("id") in self.no_shield else self.block_formula(d, g["exp"])
+                if d.get("id") in self.no_shield:
+                    self.case("player block chance 0: no shield held (--no-shield)")
                 if b > 0 or want > 0:
                     self.eq("DRB block chance (player formula, shield held)", b, want)
                     self.case("player block chance checked (classic)" if not g["exp"] else
@@ -1527,7 +1532,7 @@ def main(argv):
         print(__doc__)
         return 2
     cmd, rest = argv[0], argv[1:]
-    excel, exe, verbose, out, paths = DEFAULT_EXCEL, drlg.DEFAULT_EXE, False, None, []
+    excel, exe, verbose, out, paths, no_shield = DEFAULT_EXCEL, drlg.DEFAULT_EXE, False, None, [], ()
     k = 0
     while k < len(rest):
         a = rest[k]
@@ -1539,6 +1544,8 @@ def main(argv):
             out, k = rest[k + 1], k + 2
         elif a in ("-v", "--verbose"):
             verbose, k = True, k + 1
+        elif a == "--no-shield":
+            no_shield, k = tuple(int(x) for x in rest[k + 1].split(",")), k + 2
         else:
             paths.append(a)
             k += 1
@@ -1548,7 +1555,7 @@ def main(argv):
             print("%s  %d  %d  %s" % (hashlib.sha256(data).hexdigest(), len(data), data.count(b"\n"),
                                       os.path.basename(p)))
         return 0
-    C = Checker(Tables(excel, exe), verbose)
+    C = Checker(Tables(excel, exe), verbose, no_shield)
     for p in paths:
         C.run(p)
     return report(C, out)

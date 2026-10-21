@@ -2,7 +2,7 @@
 based_on:
   - docs/specs/items/sockets-runewords.md 2026-10-17
   - docs/specs/items/cube.md 2026-10-17
-  - docs/specs/items/vendors.md 2026-10-19
+  - docs/specs/items/vendors.md 2026-10-20
   - docs/specs/items/quest-drops.md 2026-10-20
 ---
 
@@ -314,10 +314,15 @@ window, from the opener's level ([§ C](../specs/items/vendors.md#c-when-stock-i
   The leaving player still counts as in town here because, for a change of act, the town-leave check runs before the
   player leaves its town room; within an act it runs only after the player is found in the new level. That ordering
   is read from the code and matches the run's counts.
-- Read from the code but never seen in the test run, so unconfirmed: reopening a built store keeps its stock; walking out of town behaves
-  like a waypoint within the act; leaving the game from Harrogath triggers nothing; and a level-up, entering a town or
-  a quest event rebuilds nothing, so the stock keeps the level of its build. The multiplayer cases (two players
-  interacting, players left in town) are read from the code only; the run was single player.
+- Read from the code but never seen in the test run, so unconfirmed: the same player reopening a built store keeps its stock; walking out of town behaves
+  like a waypoint within the act; and a level-up, entering a town or a quest event rebuilds nothing, so the stock
+  keeps the level of its build.
+- A two-client game confirmed the multiplayer cases: a store one player built is kept, unchanged, when the other opens
+  it; when a player leaves the game from a town, a store is only marked stale (if built more than 240 seconds before)
+  while the other player is still in that town, and every built store is reset when nobody is left there; a stale
+  store keeps its stock while a second player is talking to the merchant, and is rebuilt once only one is; and
+  leaving the game from Harrogath triggers nothing. Whether a dropped connection and *Save and Exit* take the same
+  path out is not known, and the case of a player leaving with a trade window open was seen only in part.
 
 ### The stock build
 
@@ -584,7 +589,8 @@ Collected from the specs' open questions and unconfirmed points:
   ethereal bonus; the cow portal's draws and its classic-game condition; whether the stat-bonus reading of the stat
   tests holds, since no stock row uses them; and everything the run did not reach (outputs B and C, the player and item tests, ethereal and elite inputs, repair of
   damaged items, the item level cap, the crafted edge cases).
-- **Vendors** ([open questions](../specs/items/vendors.md#open-questions)): the multiplayer cases; three bytes of the
+- **Vendors** ([open questions](../specs/items/vendors.md#open-questions)): the rest of the multiplayer cases (a leave
+  with a trade window open, the two ways of leaving, three or more players); three bytes of the
   vendor record that nothing read in the windows a run watched (a reader elsewhere is not excluded); how many draws
   the [mercenary (hireling)](../glossary.md) list takes from the shared store seed (another plan owns it).
 - **Quests** ([open questions](../specs/items/quest-drops.md#open-questions)): kills by pets, hirelings or converted

@@ -7,7 +7,9 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
 1. **A new code reading is `[I]`.** `[C]` needs a named second source (a reproduction of logged calls, a
    writer/reader pair, a full-table check, an independent tool). Don't name a meaning the code does not
    give. Seen: S1e rows 51/64 ([0038](../../../../docs/plans/0038-inferred-claims-sweep.md), 2026-10-17); `0x400` "good/evil"
-   ([0040](../../../../docs/plans/done/0040-drlg-room-lifecycle.md) P1 review).
+   ([0040](../../../../docs/plans/done/0040-drlg-room-lifecycle.md) P1 review); a meaning word ("the missile count", "the
+   charge speed") inside a `[C]` of the batch's column-reader entry (`lane/p46m6` and `lane/p46m8` reviews,
+   [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
 2. **Recount every count from the binary with a kept command**, never from memory or a partial scan:
    writers, call sites, instructions, items. Copy a run's counts from the kept, hashed check output, never from an
    earlier check. Seen: bit-17 writers 5 → 21
@@ -28,7 +30,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
 6. **Keep the tool behind every claim**: the script in `tools/` (seeded, if it generates cases), its
    output hashed, logs under `workspace/logs/` with a manifest line, one path base per manifest so `sha256sum -c` passes from one directory (H7a review, 0038; again 0043 P2 review), and every tool revision behind a cited output named. Seen: the unseeded `eval` case
    writer (S1e, 0038); the *Fleshripper* log left in session scratch (resume lane, 0037). An aborted session's
-   partial log is kept as a development log, not deleted (0040 P2 review).
+   partial log is kept as a development log, not deleted (0040 P2 review). A development run's outputs are written under their own names, not overwritten by the kept run
+   (`lane/p46m9` review, [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
 7. **A conclusion needs an address, `fn:` or `run:` anchor**, not a link to another finding (gate W1).
    Seen: the resume lane's experiments addendum (0037); `lane/w1`'s 104 W1 lines (0039).
 8. **Split a raise where it has a remainder** and head the row "raised in part", in the ledger itself.
@@ -45,3 +48,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     tables and the summary lists that repeat it. Seen: the summit door and the P1b summit-warp verdict
     ([0042](../../../../docs/plans/done/0042-quests-travel.md) P2 part 1 review); NPC 266's two draws, word 40's bit map and
     the switched-off reward writes, left in § 16 only (0042 P2 part 2 review).
+13. **At an observed boundary (ADR-0021), the `[C]` ends at the call.** What the callee makes of a compared argument
+    (a class word, a register it must preserve, a mode) and every later call go in "After, `[I]`", also in the Answer
+    summary. Seen: the radius of hits 24, 44 and 14 in a callee-saved register (`lane/p46m3` review); hit 52's row 0
+    (`arrow`) and hits 51/52's later creations under `[C]` (`lane/p46m4` review, both
+    [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).

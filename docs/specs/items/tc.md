@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/quality, items/quest-drops, objects]
-tags: {C: 45, I: 82, L: 6}
+tags: {C: 49, I: 81, L: 6}
 updated: 2026-10-20
 ---
 
@@ -526,10 +526,14 @@ Step notes:
   → 10 and (125, 38) → 20 at `n = 4`, and (100, 60) and (100, 47) at `n = 2` (68 evaluations). The control
   word was `0x027F` in every evaluation, single player and TCP/IP host. [C] (0x0055A93B,
   fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-11-tc-drops, run:2026-10-12-tc-party)
-- F1. Still code-read: a dead party member, more than two players, the clamp at 8, and a monster killer
-  resolved to its owning player. [I] (fn:sub_005408E0_PartyCountInLevel@0x005408E0, 0x0055A8E4,
-  fn:sub_0058F0D0_MonsterOwner@0x0058F0D0,
-  [items/0001 §6](../../findings/items/0001-tc-resolution.md#6-nodrop-scaling-0x0055a8a10x0055a9d7))
+- F1. **A monster killer's owner stands for it.** In plan 0044's two-client run, 40 kills by the host's Rogue
+  mercenary each resolved to the host as owner; with the joiner partied in the killer's level the count was
+  `party = 2` (33 calls), with the joiner elsewhere 1 (3 calls), and the other 4 had no prediction. Scope: two
+  players, a hireling as the owned killer. [C] (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0,
+  fn:sub_005408E0_PartyCountInLevel@0x005408E0, run:2026-10-20-two-clients,
+  [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients))
+- F1. Still code-read: more than two players and the clamp at 8 (a third client exceeds ADR-0008). [I]
+  (0x0055A8E4, [items/0001 §6](../../findings/items/0001-tc-resolution.md#6-nodrop-scaling-0x0055a8a10x0055a9d7))
 - F3. **Party count: same level, no distance test.** `PartyCountInLevel` counts the player and the members
   of its party (party list `game+0x1D2C`) whose room is in **the same level**: the level id of a room is
   read through room `+0x10` (the DRLG room) → `+0x58` (its level) → `+0x1D0` (the level id), and the ids
@@ -541,20 +545,27 @@ Step notes:
   Scope: two players, both alive, player killer. [C] (fn:sub_005405A0_PartyForEachInLevel@0x005405A0,
   fn:sub_005408E0_PartyCountInLevel@0x005408E0, fn:sub_0061A1B0_RoomGetLevelId@0x0061A1B0,
   run:2026-10-12-tc-party, [items/0001 §6](../../findings/items/0001-tc-resolution.md#6-nodrop-scaling-0x0055a8a10x0055a9d7))
-- F3. A member is counted only when not dead; a member without a room is skipped; a player with no
-  room or no party counts itself only. [I] (fn:sub_005404F0_PartyCountAliveCb@0x005404F0,
-  fn:sub_005405A0_PartyForEachInLevel@0x005405A0)
+- F3. **A dead member is not counted.** With the partied joiner dead (mode 17) in the Black Marsh, where the host
+  killed, the host's kills gave `party = 1` in all 106 drops of that case; across the run's 686 resolver calls, 253 gave `party = 1`
+  with the joiner dead or in another level, every one predicted. Scope: two players. [C]
+  (fn:sub_005404F0_PartyCountAliveCb@0x005404F0, fn:sub_005408E0_PartyCountInLevel@0x005408E0,
+  run:2026-10-20-two-clients)
+- F3. A member without a room is skipped; a player with no room or no party counts itself only. [I]
+  (fn:sub_005404F0_PartyCountAliveCb@0x005404F0, fn:sub_005405A0_PartyForEachInLevel@0x005405A0)
 - F2. `PlayerCount` counts the units in the game's 128 player hash lists (`game+0x1120`, next pointer
   `unit+0xE4`) that are neither in state 7 (`playerbody`) nor dead (modes 0/17 for players, 0/12 for
   monsters, or `unit+0xC6` bit 0). If `game.type ∈ {1, 2, 3}` and `g_PlayersOverride` is larger, the
-  override is used. `/players N` stores N only when `N ≤ 8` as an unsigned compare. `game.type` was 3
-  in every single-player call and 2 in every TCP/IP host call logged, so by the code the override also
-  applies in a TCP/IP game; no run typed `/players` there. [I]
+  override is used. `/players N` stores N only when `N ≤ 8` as an unsigned compare. [I]
   (fn:sub_00535790_PlayerCount@0x00535790, fn:sub_005541B0_UnitIsDead@0x005541B0,
   fn:sub_00535780_SetPlayersOverride@0x00535780, data:g_PlayersOverride@0x00883D70)
+- F2. **The override applies in a TCP/IP game, and only the host's counts.** In plan 0044's two-client run (game type 2)
+  the host's `/players 3` gave `PlayerCount` 3 in 95 calls, `/players 8` gave 8 in 13, and `/players 1` gave 2 (the
+  two live players); the joiner's `/players 5`, typed among the 95, changed nothing, since the setting is a global of
+  the server's process. A dead player is not counted: with the joiner dead the count was 1 (106 drops). [C]
+  (fn:sub_00535790_PlayerCount@0x00535790, data:g_PlayersOverride@0x00883D70, run:2026-10-20-two-clients)
 - F2. So the override is a **maximum**, not an addition: a lone player with `/players 8` gets
-  `n = 1 + (8 − 1) ÷ 2 = 4`, the value logged in every `/players 8` call. [C] for the lone-player values
-  (run:2026-10-11-tc-drops); the multi-player combination is [I] (fn:sub_00535790_PlayerCount@0x00535790).
+  `n = 1 + (8 − 1) ÷ 2 = 4`, the value logged in every `/players 8` call (run:2026-10-11-tc-drops), and two live
+  players with `/players 1` count 2 (run:2026-10-20-two-clients). [C] (fn:sub_00535790_PlayerCount@0x00535790)
 - F2. The `monster_playercount` cap applies only to a monster source; an object source is not capped. [I]
   (0x0055A926)
 
@@ -915,7 +926,9 @@ potions' quality calls return without drawing (H4).
 - **The party rule is "same level", not "two screens".** 1.14d differs from the 1.10/1.11 community
   descriptions here; do not "correct" it. [C] (fn:sub_005405A0_PartyForEachInLevel@0x005405A0,
   run:2026-10-12-tc-party)
-- **`/players` is a floor on the player count**, not an addition, and only in game types 1–3. [I]
+- **`/players` is a floor on the player count**, not an addition, in single player (type 3) and on a TCP/IP host
+  (type 2), where only the server's process setting counts. [C] (fn:sub_00535790_PlayerCount@0x00535790,
+  run:2026-10-11-tc-drops, run:2026-10-20-two-clients) Game type 1 also takes it, and other types do not. [I]
   (fn:sub_00535790_PlayerCount@0x00535790)
 - **The level walk is forward-only** and starts at the base TC, which is kept even when its own level
   is above mlvl. Do not search the whole group for the best level. [C] (fn:TC_GetByIndex@0x00654E00,
@@ -959,15 +972,17 @@ potions' quality calls return without drawing (H4).
 ## Open questions
 
 - [L] **Parties beyond two players, and other champions.** Plan 0011 logged a party of two (alive,
-  player killer) and two Nightmare champions of one class. Not logged: a dead member, three or more
-  players, the clamp at 8, a monster killer's owner; champions in Normal or Hell, of other classes or in a
+  player killer) and two Nightmare champions of one class; plan 0044 added a dead member and a hireling killer's
+  owner (F1, F3; run:2026-10-20-two-clients). Not logged: three or more players, the clamp at 8, a member without a
+  room, a summon's owner with a second player; champions in Normal or Hell, of other classes or in a
   classic game, and a monster carrying both `0x02` and `0x04` (the superunique-first order).
-  ([items/0001 § Open questions](../../findings/items/0001-tc-resolution.md#open-questions))
+  ([items/0001 § Open questions](../../findings/items/0001-tc-resolution.md#open-questions),
+  [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients))
 - [L] **FPU precision in other configurations.** Every logged evaluation had control word `0x027F`;
   whether another game type or renderer sets 24- or 64-bit precision is not known.
 - [L] **`game.type` values.** Single player logged 3 and a TCP/IP game 2 (on the host); value 1 is
-  unobserved, and whether `/players` takes effect in a TCP/IP game was not tested. A run that typed
-  `/players 1` still logged an override of 8; whether the command reached the game is unchecked.
+  unobserved. (`/players` in a TCP/IP game is answered in F2 by run:2026-10-20-two-clients, where `/players 1` after
+  `/players 8` took effect; the earlier run that logged an override of 8 after a typed `/players 1` stays unchecked.)
 - [L] **Hell, the untested classic cases (the skip of an expansion-only entry, the scan off the end, the `version`
   reject, the `cm=`…`cg=` raises, the Long Sword), the `boss` gate (one Nightmare call only), unique/set entries, `Picks = 0` and the negative-`Picks`
   early stop** are code-read only (inferred above). Hell needs its own run, and the classic cases need TCs that reach them; a

@@ -2,7 +2,7 @@
 based_on:
   - docs/specs/player/README.md 2026-10-16
   - docs/specs/player/creation.md 2026-10-20
-  - docs/specs/hirelings/README.md 2026-10-19
+  - docs/specs/hirelings/README.md 2026-10-20
   - docs/specs/save/d2s.md 2026-10-20
 ---
 
@@ -246,7 +246,12 @@ These are in [player/creation § J](../specs/player/creation.md#j-other-level-an
   the next load without that share, so picking it up then returns nothing. All of this is read from the code only.
 - **Party share.** With two or more members (alive, in the same level, close enough, at most 8), the kill's
   experience is raised by 89/256 per extra member and split in proportion to the members' levels, and each share
-  then goes through the kill formula with that member's level. This needs two clients and was not run.
+  then goes through the kill formula with that member's level. Confirmed for two players in a two-client game (385
+  shares, and the cases where only the killer gets the experience: the other too far, in another level, dead or not
+  in the party). One detail matters for exact results: the per-level ratio is kept as a single-precision float, but
+  the member's level times that ratio is truncated without rounding it to single precision first, which a
+  reimplementation gets by multiplying in double precision. Three or more members and the exact edge of "close enough"
+  are read from the code only.
 - **Spending attribute points.** Vitality adds `LifePerVitality` and `StaminaPerVitality`, energy adds
   `ManaPerMagic`, all in quarter points. Read from the code only.
 
@@ -278,8 +283,8 @@ of the seller's Normal row in every difficulty, so a seller offers the same name
 Because vendors and hirelings share the store seed
 ([hirelings § B](../specs/hirelings/README.md#b-the-store-seed)), opening a trade or gamble window before you first
 talk to a seller changes that seller's list, and the reverse. When a hire empties the list, the table is rebuilt
-from the store seed. The table lives with the NPC, so all players of a game would share it; only single-player
-games were tested. That Asheara's trade window can also build the table is read from the code and was not reached
+from the store seed. The table lives with the NPC, so all players of a game share it: in a two-client game
+Kashya's list was built once and the second player saw the same entries. That Asheara's trade window can also build the table is read from the code and was not reached
 in a run.
 
 ## A list entry and the hire
@@ -431,13 +436,13 @@ From [player/creation § Open questions](../specs/player/creation.md#open-questi
 
 - the first save's appearance bytes are not predicted.
 
-Also read from the code only, not run: party sharing, death loss and the corpse's share, the Ancients' reward,
+Also read from the code only, not run: party sharing with three or more members, death loss and the corpse's share, the Ancients' reward,
 attribute spending, the experience cap, and the edge cases of kill experience listed above.
 
 From [hirelings § Open questions](../specs/hirelings/README.md#open-questions):
 
 - not reached by a run: classic hire lists and hires, a Greiz hire, the free mercenary, refused hires, hiring an unlisted entry, the table built from Asheara's trade window, levelling in play and the share
-  of the owner's experience, a dead or empty saved header, the written header, sharing the table in multiplayer, and
+  of the owner's experience, a dead or empty saved header, the written header, a second player hiring from the shared table, and
   the list window's odd name;
 - whether the client ever shows its own rolled values instead of the server's.
 

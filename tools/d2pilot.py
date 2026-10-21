@@ -29,8 +29,8 @@ casts, belt potions, steered by the live gdb log.
     python3 -I tools/d2pilot.py join <host.log> leave [--exit-xy X,Y]             # Escape, SAVE AND EXIT GAME
     python3 -I tools/d2pilot.py join <host.log> trade request|accept|give:inv:c,r>tr:c,r|ok|key:K|sleep:S|shot:P ...
         # plan 0044: steer one client of a two-client game (--slot of that client) from the HOST's PLRS lines
-        # (tools/gdb/two-players.py); --me on any other command also steers by PLRS. Trade and exit geometry are
-        # uncalibrated until the live test (tools/joiner.py).
+        # (tools/gdb/two-players.py); --me on any other command also steers by PLRS. Trade and exit geometry were
+        # measured at the plan 0044 Phase 2 live test (tools/joiner.py). Quote give tokens: '>' is a shell redirect.
 
 Watchdog (explore, farm): when neither the log nor the player position changes for --stall seconds (20), a STALL line
 names what the pilot was doing and the game process state (gdb holding it shows as 't'), a screenshot is saved, the
@@ -2920,7 +2920,7 @@ def cmd_join(args, tokens):
     act = args.dx
     st = LogState(args.log)
     me, lead = args.me or "join", args.lead
-    if not join_wait(st, [me, lead] if act != "where" else [], args.done_wait if act != "follow" else 30.0):
+    if not join_wait(st, [me] + ([lead] if not args.at else []) if act != "where" else [], args.done_wait if act != "follow" else 30.0):
         print("join: the log lists no PLRS entry for %s and %s (tools/gdb/two-players.py loaded?)" % (me, lead))
         return 1
     if act == "where":
@@ -2941,7 +2941,14 @@ def cmd_join(args, tokens):
         said = None
         while time.time() - t0 < args.time:
             st.poll()
-            step = joiner.follow_step(st.players.get(me), st.players.get(lead), args.near_lead, args.hop)
+            lead_e = st.players.get(lead)
+            if args.at:                 # a fixed point instead of the leader (the town waypoint another player used)
+                ax, ay = (int(v) for v in args.at.split(","))
+                lead_e = dict(st.players.get(me) or {}, x=ax, y=ay)
+            step = joiner.follow_step(st.players.get(me), lead_e, args.near_lead, args.hop, args.cross)
+            if step is None and args.at:
+                print("follow: at %s" % args.at)
+                break
             if step is None or step[0] != "move":
                 if step != said:
                     print("follow: %s" % (step or "near"))
@@ -3175,8 +3182,12 @@ def main():
     ap.add_argument("--lead", default="host", help="join follow/trade: the other player ('host', 'join' or a unit id)")
     ap.add_argument("--near-lead", type=float, default=6.0, help="join follow: stop within this many sub-tiles")
     ap.add_argument("--teleport", action="store_true", help="join follow: Teleport (Shift + left) instead of walking")
+    ap.add_argument("--at", default=None, help="join follow: walk to this sub-tile X,Y of my level instead of the leader")
+    ap.add_argument("--cross", action="store_true",
+                    help="join follow: keep moving towards the leader across an outdoor level border (one act's "
+                         "outdoor levels share the sub-tile space); a warp still needs its own step")
     ap.add_argument("--exit-xy", default="%d,%d" % joiner.EXIT_MENU_XY,
-                    help="join leave: the Escape menu's SAVE AND EXIT GAME (window coordinates; uncalibrated default)")
+                    help="join leave: the Escape menu's SAVE AND EXIT GAME (window coordinates; measured at the plan 0044 P2 live test)")
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()
     if args.cmd == "join" and args.me is None:

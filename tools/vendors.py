@@ -193,6 +193,7 @@ def read_events(path, ic_tags):
             continue
         if not rest.startswith("{"):
             continue
+        tag = {"ETB0": "ETH0", "ETB1": "ETH1"}.get(tag, tag)   # tools/gdb/affixes.py's renamed tags (affixes.ETB_LEGACY)
         if tag in ic_tags:
             try:
                 d = json.loads(rest)

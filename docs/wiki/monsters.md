@@ -4,7 +4,7 @@ based_on:
   - docs/specs/monsters/pool.md 2026-10-16
   - docs/specs/monsters/spawn.md 2026-10-20
   - docs/specs/monsters/special.md 2026-10-20
-  - docs/specs/monsters/stats.md 2026-10-17
+  - docs/specs/monsters/stats.md 2026-10-20
   - docs/specs/drlg/collision.md 2026-10-20
   - docs/specs/drlg/lifecycle.md 2026-10-20
 ---
@@ -410,7 +410,9 @@ equipment (`MonEquip`) is read from the code only. No class that has it was met.
 ## The player count
 
 ([stats § C](../specs/monsters/stats.md#c-the-player-count-sub_00573930_monplayerbonus))
-The player count is the number of living players, raised to the `/players` setting. Hostile
+The player count is the number of living players, raised to the `/players` setting. A two-client game confirmed that a
+second real player counts like `/players 2` for the monsters created while it is in the game; whether a dead player
+counts was not tested there. Hostile
 monsters get **+50 % hit points and +50 % experience for each player beyond the first**, so +350 % at 8 players.
 Town NPCs, critters, hirelings, summons and a few neutral classes get no bonus; this is read from the code.
 

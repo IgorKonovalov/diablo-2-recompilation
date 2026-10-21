@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, save/d2s, items/quest-drops, objects, monsters/spawn, monsters/special, quests/travel]
 consumed_by: [items/quest-drops, items/cube, objects, monsters/spawn, monsters/special, quests/travel, save/d2s]
-tags: {C: 114, I: 320, L: 6}
-updated: 2026-10-20
+tags: {C: 117, I: 322, L: 6}
+updated: 2026-10-21
 ---
 
 # Quest progression: the record, the events, every quest's bits and the quest draws
@@ -470,13 +470,20 @@ stateDiagram-v2
 | bit | set/clear | trigger and condition | site | Tag |
 |---|---|---|---|---|
 | b13, b1 | set | e8: the level-8 monster region has every monster dead (`+0x2D0` = `+0x2CC`) and every room counted (`0x0061ABF0(act, 8)` ≤ region `+0x04`); each player of the quest's private list (players who killed a hooked monster) with b0, b1 clear | 0x00590387 | [I] (fn:sub_00590260_A1Q1_MonsterDeath@0x00590260, fn:sub_00547BB0_MonRegionGet@0x00547BB0) |
-| b13, b1 | set | the same kill: party members in Act I | 0x00590175, 0x0059017F | [I] (fn:sub_00590120_A1Q1_PartyCreditMember@0x00590120) |
+| b13, b1 | set | the same kill: party members in Act I | 0x00590175, 0x0059017F | [C] for a partied member in the Rogue Encampment (run:2026-10-20-two-clients: den-a2); [I] for the act test and an unpartied player (fn:sub_00590120_A1Q1_PartyCreditMember@0x00590120) |
 | b14 | set | the same kill: fail others | 0x005900B8 | [I] (fn:sub_00590080_A1Q1_FailOthers@0x00590080) |
 | G b13 | set | the same kill | 0x00590375 | [I] (fn:sub_00590260_A1Q1_MonsterDeath@0x00590260) |
 | b0; b1 clear; steps clear | set / clear | e11 NPC 148 (`akara`) message 0x4C with b1 set | 0x0058FF11, 0x0058FF20, 0x0058FF4B | [C] (run:2026-10-18-quests2: x-talk1, h-talk1, c-talk1) |
 | w41 b13, w41 b1 | set | the same message (word `+0xE4` = 41): the respec offer | 0x0058FF2F, 0x0058FF3E | [C] (run:2026-10-18-quests2: in the saved words) |
 | b2, b3, b4 | set | StepBits by log state (2; 3; 4 when `+0x0B` ≠ 1) | 0x0058FCDD, 0x0058FCF9, 0x0058FD0A | [I] (fn:sub_0058FC90_A1Q1_StepBits@0x0058FC90) |
 
+- [C] **The party credit with two players.** In plan 0044's two-client run the host cleared the Den with the joiner
+  partied in the Rogue Encampment, and the joiner's record got b13 and b1 from the calls at 0x00590175 and 0x0059017F
+  (one game; the cases with the member in another act and not partied were not completed). (0x00590175, 0x0059017F,
+  run:2026-10-20-two-clients, [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients))
+- [I] In the same run, the host's entry into the Den set b4 (the 0x0058FD0A site) on both players' records, partied or
+  not, in four games. This is not the case list's prediction and the event behind the call is not read, so whether
+  StepBits reaches every player of the game here stays open. (0x0058FD0A, run:2026-10-20-two-clients)
 - [I] The reward also adds 1 to stat 5 of the player (`UnitAddStat(player, 5, 1, 0)` at 0x0058FF5A). The kill registers
   timer `0x00590230` (period 8) once, a log-state change only. No draw. (fn:sub_0058FDD0_A1Q1_NpcMessage@0x0058FDD0,
   fn:sub_006272B0_UnitAddStat@0x006272B0, fn:sub_00590230_A1Q1_DoneTimer@0x00590230)
@@ -608,9 +615,30 @@ W4. StoneOrderDraw (first use of the decoded scroll `bkd `, or first stone opera
   `+0x10` the missile, `+0x14`/`+0x18` x and y, `+0x2C` = a, `+0x30` = b) and returns `MissileCreate`'s result. The
   quest calls create Missiles rows 288 `cairnstones` (the fifth stone, `0x120`), 332 `towerchestspawner` (each of the
   Countess's recorded chests, `0x14C`) and 625 `baalfx control` (Baal's death); each does its work in its server
-  do-function (17, 18 and 36 of the server do-function table), which is not read.
+  do-function (17, 18 and 36 of the server do-function table): 17 and 18 are read (the next note), 36 is not.
   (0x0056EDE0–0x0056EE84, fn:sub_0056EDE0_MissileCreateAt@0x0056EDE0, fn:sub_0059FA30_MissileCreate@0x0059FA30,
   data:g_MissileSrvDoFuncs@0x0073C768, tbl:Missiles.txt:pSrvDoFunc, [quests/0001 § 7](../../findings/quests/0001-progression.md))
+- W4c. [C] **Do 17 and do 18, up to their boundary calls.** Do 17 (`cairnstones`), with `left` the frames left and
+  `Range` the raw column: while `SubMissile1 > 0` and `Param1 < left < Range − Param1`, it runs the re-seeding scatter
+  helper with period `Param2` and radius `r = Param3`; on a frame whose elapsed count is a multiple of the period, with
+  an owner and a room, the helper re-seeds the missile's seed to `(SubX + elapsed, 666)` and draws two
+  `RNG_RangeB(seed, 2(r − 1))`, each minus `r − 1`, for the sub-missile's x and y offsets (no step when `2(r − 1) ≤ 0`).
+  Separately from that window, when `Param4 ≥ 0`, `+0x28` is 0 and `left ≤ Param5 + Param1`, it calls
+  `sub_005A9930_PermPortalAtUnit(game, m, Param4)`. Do 18 (`towerchestspawner`): at `left == 1` it gives the chest
+  (guid `+0x28`) unit event `0x5C`; at `left == Range − Param1` it runs the chest's drop on that chest and sets the gold
+  phase `+0x2C = 1`, also when the chest is gone; in the gold phase, on each frame with `left % max(4·Param2, 1) == 0`
+  (32-bit), it draws two `RNG_RangeB(seed, 2·Param3 + 1)`, each minus `Param3`, on the missile's seed (no re-seed) and
+  passes the offset point to the free-spot search. Nothing after a boundary call is covered: the cell test's refusal
+  and the sub-missile's creation, the portal function's, the unit event's and the chest drop's own work, the gold item
+  after the free spot. (fn:sub_005AF240_MissDo17CairnStones@0x005AF240,
+  fn:sub_005A9820_MissSubNearReseed@0x005A9820, fn:sub_005AF300_MissDo18ChestSpawner@0x005AF300,
+  run:2026-10-20-cat-emu-9a, [skills/0004 §§ 7, 8](../../findings/skills/0004-missile-do-1-18.md#7-do-8-10-17-and-sub_005a9820_misssubnearreseed))
+- W4c. [I] **With the stock rows.** 288 `cairnstones` scatters `cairnstonessky` (289) every second frame while
+  `40 < left < 260`, offsets −16 … 15, and opens the Tristram portal once when `left ≤ 140` (the portal function sets
+  `+0x28` = 1 first, quests/0002's reading). 332 `towerchestspawner` opens its chest 150 frames (plus `LevRange · lvl`)
+  after creation, then drops a gold pile within ±5 every 8 frames until the missile ends; the gold's ilvl is the
+  level's monster level. (tbl:Missiles.txt:Param4, fn:sub_005A9930_PermPortalAtUnit@0x005A9930,
+  fn:sub_00558D90_ItemCreate@0x00558D90, fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0, [skills/0004 §§ 7, 8](../../findings/skills/0004-missile-do-1-18.md#7-do-8-10-17-and-sub_005a9820_misssubnearreseed))
 - [I] **Items.** Message 0x70 with `bks ` held removes it and gives `bkd ` (`QUESTS_GiveItem(bkd, 0, 2, 1)`); message 0x76
   gives the ring of [items/quest-drops § F](../items/quest-drops.md#f-npc-item-services-and-given-items); the Inifuss
   tree drops `bks `; Wirt's gold draws `RandLoHi(questSeed, 10, 20)`. (fn:sub_00592250_A1Q4_NpcMessage@0x00592250,
@@ -1620,11 +1648,13 @@ pinned by each run's manifest and checked by `tools/quests.py check` with 0 mism
 - Findings: [quests/0001](../../findings/quests/0001-progression.md) (§ 1–§ 14 the reading, § 15 run 1, § 16 run 2,
   § 17 run 3),
   [items/0010](../../findings/items/0010-quest-drops.md) (the quest seed and the item draws),
-  [save/0002](../../findings/save/0002-quest-words.md) (the record and the loader).
+  [save/0002](../../findings/save/0002-quest-words.md) (the record and the loader),
+  [skills/0004](../../findings/skills/0004-missile-do-1-18.md) §§ 7, 8 (missile do 17 and do 18, W4c).
 - Runs: [run:2026-10-17-quests](../../findings/quests/experiments.md#run2026-10-17-quests),
   [run:2026-10-18-quests2](../../findings/quests/experiments.md#run2026-10-18-quests2),
   [run:2026-10-19-quests3](../../findings/quests/experiments.md#run2026-10-19-quests3); the quest seed's start from
-  run:2026-10-16-quest-drops ([items/quest-drops](../items/quest-drops.md)).
+  run:2026-10-16-quest-drops ([items/quest-drops](../items/quest-drops.md));
+  [run:2026-10-20-cat-emu-9a](../../findings/skills/experiments.md#run2026-10-20-cat-emu-9a) (W4c's do 17 and do 18).
 - Tables: [MonStats](../../tables/MonStats.md), [Levels § Travel](../../tables/Levels.md#travel-plan-0042-phase-0),
   [Objects](../../tables/Objects.md), [Misc](../../tables/Misc.md).
 - Symbols: subsystem `quests/progression` in `re/symbols.csv` (every per-quest function by name, quests/0001 § 14).
@@ -1634,7 +1664,9 @@ pinned by each run's manifest and checked by `tools/quests.py check` with 0 mism
 - [L] The monsters hooked to quests 1, 2, 5, 6 and 22 (Levels `+0x30` and superunique hooks) were not all re-read.
 - ~~What `0x0056EDE0` creates with arguments `0x120` (the stones), `0x14C` (the Countess's chests) and 625 (Baal's
   death)~~: missiles 288 `cairnstones`, 332 `towerchestspawner` and 625 `baalfx control` (W4c, from quests/0001 § 7).
-- [L] What the server do-functions (17, 18, 36) of missiles 288, 332 and 625 make is not read.
+- ~~What the server do-functions (17, 18, 36) of missiles 288, 332 and 625 make is not read~~: 17 and 18 are read up to
+  their boundary calls (W4c, [skills/0004 §§ 7, 8](../../findings/skills/0004-missile-do-1-18.md#7-do-8-10-17-and-sub_005a9820_misssubnearreseed)).
+- [L] What the server do-function 36 of missile 625 (`baalfx control`) makes is not read (plan 0046 batch 9b).
 - [L] The descriptor's `+0x08` (100 or 0) has no reader in the code read.
 - [L] The AI states that call `0x00599420` and `0x0059C330`, the game-type 3 test in `0x0059EA20`, and the Missiles column
   behind `+0x96` used by the staff timer.

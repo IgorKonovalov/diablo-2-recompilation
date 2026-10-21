@@ -104,7 +104,12 @@ whose pc reaches that address ends there and prints `C <n> <fn> OBS <pc> steps= 
 esp=` and an `A <64 bytes at ESP>` line (the return address, then the stack arguments); `d` dumps follow as usual, so
 dump the stack (`d 7feffc00 1024`) to read a parameter block passed by pointer. Use it for a function that ends in a
 call whose read set is not declarable (MissileCreate, the path planner, a spawn): the case's claim is the map up to that
-call, nothing after it (skills/0004 § 2; the architect rules on the reading at the 9a review). Models and checks:
+call, nothing after it ([ADR-0021](../../../../docs/adrs/0021-observed-boundaries-in-emulation.md), skills/0004 § 2).
+ADR-0021's conditions: no patch, the boundary a function entry reached by the program's own flow; the checker asserts
+per case the boundary **and the call site** (the return address in the `A` line, or the case's own return sentinel for
+a tail jump) and fails a different boundary, site, or a return where the model predicts a boundary (and the reverse);
+the model predicts every argument, pre-call byte and seed state the claim uses. Each claim names its boundary and the
+finding lists the code after it as not covered. Models and checks:
 `tools/skills_catalogue_emu.py` (its own output reader; `sweep_s1e.read_out` does not parse `OBS` lines).
 
 ## radare2 / rizin quick looks
@@ -419,6 +424,11 @@ loopback (the owner's `sudo ufw status verbose`, or the deny rule the owner adde
 output; before each later session the lane re-reads the ufw state and file hashes without root and logs them:
 [multiplayer/0001 § 5](../../../../docs/findings/multiplayer/0001-cases.md#5-the-hosts-binding-and-the-port-4000-precondition).
 No hosting session starts before that line is in the record.
+The per-session re-read is `tools/ufwcheck.sh <session> <baseline.sha256> <log> || exit 1`, called by every
+hosting driver before it launches the host: the script is read-only (no root, no ufw command; it only appends to
+`<log>`), prints `UFW-OK` and exits 0 only when every test holds, and exits non-zero on any change or error. Never
+use a copied or ad-hoc check, and never call it without `|| exit 1` (the run copy of 2026-10-20 always exited 0;
+[multiplayer/experiments](../../../../docs/findings/multiplayer/experiments.md#run2026-10-20-two-clients)).
 
 ```bash
 python3 -I tools/d2run.py --slot 1 --seed 1 --gdb tools/gdb/two-pilot.gdb --steps tools/gdb/two-host.steps \
@@ -436,8 +446,11 @@ python3 -I tools/d2pilot.py join workspace/logs/two-N.log follow --slot 2 --time
   hostility stamps). `--slot` is the client being driven; `--me`/`--lead` are `host`, `join` or a unit id. Actions:
   `where`, `follow`, `party invite|accept|leave|hostile` (the steps files below), `leave` (Escape, exit item),
   `trade TOKEN…`. `--me` on any other command (`wp`, `npc`, `explore`) also steers by PLRS; without it, the PLR
-  line alternates between the two players' marks. The hostile button, the exit item and the trade geometry are
-  uncalibrated until the plan 0044 live test (`tools/joiner.py`).
+  line alternates between the two players' marks. The hostile button (103,147), the exit item (400,260) and the trade
+  geometry (accept box (320,103), check button (318,461), offer grid at (97,316)) were measured at the plan 0044
+  Phase 2 live test (`tools/joiner.py`). Quote `give:` tokens: `>` is a shell redirect. A character with every
+  difficulty open needs `two-host-normal.steps` (the Select Difficulty box); the joiner joins the host's difficulty.
+  PLRS also fires on the server frame (`0x0052D870`), so standing players still update.
 - gdb goes on the **host**: it runs the server game, so `TC_ResolveDrops` and the party count run there (every
   resolver call of the two-client runs was logged by the host's gdb). The joiner is a plain client.
 - Each slot has its own driver pidfile (`d2run-driver.pid` for slot 0, `d2run-driver-slot1.pid` for slot 1), and

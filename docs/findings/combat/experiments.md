@@ -300,7 +300,10 @@ and a scan of the `EV0`/`DRM` lines; no new run):
   band; 0 on a monster with `0x04` and not `0x08`; 0 on a player.
 - **Resistance floor.** 214 resistance applications on the player at exactly −100 before the floor, none below.
 - **Set-aside *Fleshripper* session** (lane scratch, sha256 `e001b03e…`, not in the run): 861 events, 133 state-52
-  `STA` lines skipped, 101 mismatches, the first 60 printed all "expected `AD1`, got `EVH`".
+  `STA` lines skipped, 101 mismatches, the first 60 printed all "expected `AD1`, got `EVH`". *2026-10-20 (plan 0047
+  Phase 1):* the log is lost with the lane's scratch (`workspace/logs/combat/p47r-fleshripper-search.txt`,
+  `aef49a11…`); the session is re-staged as `owf-n-andariel-p8` on the same recipe ([combat/0001 *Open
+  questions*](0001-formulas.md#open-questions)).
 
 - **Conclusion:** the lane's raises hold, scoped in [combat/0001 § 15](0001-formulas.md) to what the logs show: the
   `/3` and the automatic hit are `[C]` for a running player; the mode-2 exception stays `[I]`. Open wounds on

@@ -5,12 +5,19 @@ melee characters; Nova for the immune-monster session).
 Usage:
   python3 -I tools/combat_sessions.py list
   python3 -I tools/combat_sessions.py run --slot N --tag TAG --saves DIR --run RUN SESSION [SESSION ...]
+  python3 -I tools/combat_sessions.py check [SESSION ...]   # dry check, no game: plan 0047's cases (default) or these
 
 Each SESSION names a row of SESSIONS below: the save (built from tools/d2s_recipes/<recipe>.json with tools/d2s.py
 build into --saves), the difficulty steps file, the map seed, and the tools/d2pilot.py commands run in order (each
 with a time limit). The log goes to workspace/logs/combat/<RUN>-<SESSION>.log. The slot is stopped after each session
 (tools/slots.py stop N) and its saves directory returned to the TAG aside, so every session starts from the built
-save. Nothing here feeds a model.
+save. A step is (pilot args, timeout[, level]) (skipped when the player already stands in that level) or ("keys",
+[key, ...], seconds) (tools/xdrive.py key presses, e.g. "r", the run/walk toggle). Nothing here feeds a model.
+
+`check` (plan 0047 Phase 1) runs tools/session_check.py on every case of CASES_0047 and lists the cases that cannot be
+staged (UNSTAGED_0047) with the reason: each save is built from its recipe into a temporary directory (sha256 against
+tools/test_d2s.py), the stats a case needs are summed over the built save's equipped items, the steps file and every
+d2pilot.py option are checked. No game, no slot.
 """
 import os
 import subprocess
@@ -123,6 +130,115 @@ SESSIONS = {
                         "--drink", "0.5"], 300)]),
 }
 
+# ---- plan 0047 Phase 1: the shortfalls of run:2026-10-16-combat (sessions written and dry-checked, not run)
+FARM = ["farm"] + MELEE                       # bosses: the unique and champion flags first (no --sweep)
+WALKM = ["explore", "--walk", "--melee", "--melee-hold", "1.2", "--radius", "9", "--drink", "0.5"]
+WALK = ["explore", "--walk", "--drink", "0.5"]
+for k, wp in enumerate(("1,2", "1,3", "1,4", "1,5", "5,2", "5,3")):
+    # crushing blow on champions (type flag 0x04 without 0x08): CombatOW's 40 % in Nightmare, /players 8
+    SESSIONS["ow-nm-champs%d" % (k + 1)] = ("CombatOW", "enter-nightmare", 4701 + k,
+                                            [(FARM + ["--wp", wp, "--players", "8", "--time", "270"], 340)])
+for name, wp, seed in (("darkwood", "1,4", 4711), ("lostcity", "2,6", 4712), ("marsh", "1,5", 4713),
+                       ("oasis", "2,5", 4714), ("catacombs", "1,9", 4715)):
+    # the cold and lightning caps: CombatSorH's resistances (The Ward, Rockstopper, Mara's) above 75 in Normal, where
+    # no difficulty penalty applies; cold attackers in the Dark Wood and the Lost City, lightning in the Black Marsh,
+    # the Far Oasis and the Catacombs
+    SESSIONS["sorh-n-" + name] = ("CombatSorH", "enter-normal", seed,
+                                  [(SWEEP + ["--wp", wp, "--players", "8", "--time", "270"], 340)])
+for k in range(3):
+    # magic immunity: CombatSorH's Ginther's Rift (magic damage) on the Lost City's Plague Bearers (zombie5, Hell
+    # ResMa 100), Hell
+    SESSIONS["sorh-h-lostcity%d" % (k + 1)] = ("CombatSorH", "enter-hell", 4721 + k,
+                                               [(SWEEP + ["--wp", "2,6", "--time", "270"], 340)])
+for name, wp, seed in (("plains", "1,2", 4731), ("darkwood", "1,4", 4732), ("marsh", "1,5", 4733)):
+    # fields driven negative by DR and MDR (the negative total) and percent absorb on a negative field (Dwarf Star
+    # fire 15 %, Raven Frost cold 20 %): CombatDR against Normal Act I monsters, one player
+    SESSIONS["dr-n-" + name] = ("CombatDR", "enter-normal", seed, [(SWEEP + ["--wp", wp, "--time", "270"], 340)])
+for name, steps, wp, seed in (("n-plains", "enter-normal", "1,2", 4741), ("n-darkwood", "enter-normal", "1,4", 4742),
+                              ("n-marsh", "enter-normal", "1,5", 4743), ("nm-marsh", "enter-nightmare", "1,5", 4744)):
+    # flat absorb (fire 15 Hellmouth, cold 11 Spirit Ward, lightning 20 + 20 Blackhorn's Face and Thudergod's Vigor);
+    # Nightmare for fields larger than the absorb
+    SESSIONS["abs-" + name] = ("CombatAbs", steps, seed, [(SWEEP + ["--wp", wp, "--time", "270"], 340)])
+for name, steps, seed in (("n-plains", "enter-normal", 4751), ("nm-plains", "enter-nightmare", 4752)):
+    # freeze (stat 134: Frostwind's 4), the stat event 14 handler and COMBAT_ApplyFreeze
+    SESSIONS["frz-" + name] = ("CombatFrz", steps, seed, [(SWEEP + ["--wp", "1,2", "--time", "270"], 340)])
+# dodge (melee) and avoid (missiles) standing, evade moving (mode 3 running, then mode 2 walking after the run/walk
+# toggle), and the walking player's block (mode 2 keeps the full chance): CombatAma, Normal, /players 8
+SESSIONS["ama-n-stand"] = ("CombatAma", "enter-normal", 4761,
+                           [(["farm", "--wp", "1,2", "--players", "8", "--time", "1"], 90),
+                            (WALKM + ["--hops", "120"], 400)])
+SESSIONS["ama-n-run"] = ("CombatAma", "enter-normal", 4762,
+                         [(["farm", "--wp", "1,2", "--players", "8", "--time", "1"], 90), (WALK + ["--hops", "150"], 400)])
+SESSIONS["ama-n-walk"] = ("CombatAma", "enter-normal", 4763,
+                          [(["farm", "--wp", "1,2", "--players", "8", "--time", "1"], 90), ("keys", ["r"], 1.0),
+                           (WALK + ["--hops", "150"], 500)])
+SESSIONS["ama-n-walk2"] = ("CombatAma", "enter-normal", 4764,
+                           [(["farm", "--wp", "1,3", "--players", "8", "--time", "1"], 90), ("keys", ["r"], 1.0),
+                            (WALK + ["--hops", "150"], 500)])
+# weapon block: two claws (CombatAss) and one claw with an empty left hand (CombatAssO), standing in melee; the
+# skill check 0x0064F380 (WBS) is a value oracle and tells which weapon class it wants
+SESSIONS["ass-n-plains"] = ("CombatAss", "enter-normal", 4771,
+                            [(["farm", "--wp", "1,2", "--players", "8", "--time", "1"], 90), (WALKM + ["--hops", "120"], 400)])
+SESSIONS["ass-n-plains2"] = ("CombatAss", "enter-normal", 4772,
+                             [(["farm", "--wp", "1,3", "--players", "8", "--time", "1"], 90), (WALKM + ["--hops", "120"], 400)])
+SESSIONS["asso-n-plains"] = ("CombatAssO", "enter-normal", 4773,
+                             [(["farm", "--wp", "1,2", "--players", "8", "--time", "1"], 90), (WALKM + ["--hops", "120"], 400)])
+# the set-aside Fleshripper session re-staged (the plan 0037 resume lane's log was lost with its scratch):
+# CombatOWF is commit 5871b00's CombatOW recipe (Fleshripper, Dracul's Grasp) renamed, at the first session's seed
+SESSIONS["owf-n-andariel-p8"] = ("CombatOWF", "enter-normal", 3712, andariel(first=["--players", "8"], guard=True))
+
+# stat ids the cases read (tbl:ItemStatCost.txt:ID): resistances 39 fire, 41 lightning, 43 cold, 37 magic; DR 34,
+# MDR 35; absorb percent 142 fire, 144 lightning, 148 cold; flat 143, 145, 149; 134 freeze, 136 crushing blow,
+# 52/53 magic damage
+CASES_0047 = {
+    "C1 crushing blow on champions": ("CombatOW in Nightmare, bosses first (the champion flag), /players 8",
+                                      ["ow-nm-champs%d" % k for k in range(1, 7)], [136], ()),
+    "C2 cold cap (cold resistance above 75)": ("CombatSorH in Normal (no penalty), cold attackers",
+                                               ["sorh-n-darkwood", "sorh-n-lostcity"], [43, 41], ()),
+    "C3 lightning cap": ("CombatSorH in Normal, lightning attackers",
+                         ["sorh-n-marsh", "sorh-n-oasis", "sorh-n-catacombs"], [41], ()),
+    "C5 magic immunity": ("CombatSorH's magic damage on Hell Plague Bearers (ResMa(H) 100)",
+                          ["sorh-h-lostcity%d" % k for k in range(1, 4)], [52, 53], ()),
+    "C6 negative absorbed amount": ("CombatDR: MDR above the field, then percent absorb on the negative field",
+                                    ["dr-n-plains", "dr-n-darkwood"], [35, 142, 148], ()),
+    "C7 negative total, life unchanged": ("CombatDR: DR and MDR above every field of weak Normal hits",
+                                         ["dr-n-plains", "dr-n-darkwood", "dr-n-marsh"], [34, 35], ()),
+    "C8 evade": ("CombatAma moving (running, then walking)", ["ama-n-run", "ama-n-walk", "ama-n-walk2"], [],
+                 ("Evade",)),
+    "C9 weapon block": ("CombatAss with two claws, CombatAssO with one (the weapon class the skill check wants)",
+                        ["ass-n-plains", "ass-n-plains2", "asso-n-plains"], [], ("Weapon Block",)),
+    "C10 dodge": ("CombatAma standing in melee", ["ama-n-stand"], [], ("Dodge",)),
+    "C11 avoid": ("CombatAma standing against missiles (fallen shamans, archers)", ["ama-n-stand"], [], ("Avoid",)),
+    "C12 freeze": ("CombatFrz's Frostwind (freeze 4) in melee", ["frz-n-plains", "frz-nm-plains"], [134], ()),
+    "C13 flat absorb": ("CombatAbs against fire, cold and lightning attackers",
+                        ["abs-n-plains", "abs-n-darkwood", "abs-n-marsh", "abs-nm-marsh"], [143, 145, 149], ()),
+    "C14 a walking player's block": ("CombatAma after the run/walk toggle (mode 2), with a shield",
+                                     ["ama-n-walk", "ama-n-walk2"], [20], ()),
+    "C15 the set-aside Fleshripper session (backlog 2026-10-17 resume-lane follow (a))":
+        ("the log was lost; the session is staged again on the same recipe and seed", ["owf-n-andariel-p8"], [], ()),
+}
+UNSTAGED_0047 = {
+    "C4 magic cap": "no stock source of player magic resistance (stat 37) reaches the 75 cap: no unique, set item, "
+                    "affix, runeword, gem, skill or state writes it; the only writer is the crafted Safety Shield "
+                    "recipe (cubemain.txt, res-mag 5-10), which tools/d2s.py cannot build with its recipe mods "
+                    "(tools/combat_sessions.py check prints this list; the table search is in the plan 0047 log)",
+}
+
+
+def check(names):
+    """Dry check (plan 0047 Phase 1): every case's sessions, or the named sessions as one case."""
+    if HERE not in sys.path:
+        sys.path.insert(0, HERE)
+    import session_check
+
+    def of(n):
+        save, steps, seed, cmds = SESSIONS[n]
+        return save, steps, [c[0] for c in cmds if c[0] != "keys"]
+    if names:
+        cases = {"named": ("sessions named on the command line", names, [], ())}
+        return session_check.run(cases, {}, of, "combat_sessions")
+    return session_check.run(CASES_0047, UNSTAGED_0047, of, "combat_sessions")
+
 
 def sh(args, timeout=None, log=None):
     print("$ " + " ".join(args), flush=True)
@@ -169,6 +285,11 @@ def run_session(name, slot, tag, saves, run):
     time.sleep(3)
     os.makedirs(os.path.join(ROOT, "workspace", "logs", "combat", "%s-%s-shots" % (run, name)), exist_ok=True)
     for step in cmds:
+        if step[0] == "keys":                 # ("keys", [key, ...], seconds): key presses on the slot's display
+            for key in step[1]:
+                sh(PY + ["tools/xdrive.py", "--slot", str(slot), "key", key], 30)
+                time.sleep(step[2])
+            continue
         args, timeout = step[0], step[1]
         if len(step) > 2 and level_of(os.path.join(ROOT, log)) == step[2]:
             continue
@@ -183,9 +304,15 @@ def run_session(name, slot, tag, saves, run):
 
 
 def main(argv):
-    if not argv or argv[0] not in ("list", "run"):
+    if not argv or argv[0] not in ("list", "run", "check"):
         print(__doc__)
         return 2
+    if argv[0] == "check":
+        bad = [n for n in argv[1:] if n not in SESSIONS]
+        if bad:
+            print("unknown session(s) %s" % " ".join(bad))
+            return 2
+        return check(argv[1:])
     if argv[0] == "list":
         for k, v in SESSIONS.items():
             print("%-16s %-10s %-16s %d %d step(s)" % (k, v[0], v[1], v[2], len(v[3])))

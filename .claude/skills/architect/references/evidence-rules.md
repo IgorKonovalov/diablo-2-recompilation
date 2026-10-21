@@ -21,6 +21,11 @@ Independent corroboration is one of:
    The binary's side may also be its own code run under Ghidra's p-code emulator, with a declared memory image
    (ADR-0015): no patched code, every memory read accounted for, and the `[C]` covers the code's map from the bytes it
    reads, not what the game stores at those offsets or when it runs; faults, x87 results and OS calls are not covered.
+   A case may end at an **observed boundary** (ADR-0021, amending ADR-0015 (1) and (3)): the emulator stops at a
+   declared callee's entry, reached by the program's own flow with nothing patched; the checker asserts per case which
+   boundary and which call site (return address) was reached, and compares every argument, pre-call byte and seed state
+   the claim uses. Such a `[C]` covers the code up to the boundary only: not the callee, not the caller's code after
+   it, not the return value. The finding names each claim's boundary and lists the code after it as not covered.
 
 Data-format claims follow the same scheme. A field layout is `[C]` once a parser reads every file
 of that type without error *and* the decoded values make sense, or once the code that reads the

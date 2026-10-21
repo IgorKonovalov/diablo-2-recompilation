@@ -9,8 +9,8 @@ The log lines come from tools/gdb/two-players.py:
 
 Who is who: `--me` / `--lead` take a unit id, or "host" (the first player id the log lists: the host is in its game
 before anyone joins) or "join" (the first other id). Party actions are plan 0011's steps files
-(tools/gdb/two-party-invite.steps, -accept, -leave) plus two-party-hostile.steps; the trade and exit geometry below is
-UNCALIBRATED until the driver's live test (plan 0044 log) measures it on a slot.
+(tools/gdb/two-party-invite.steps, -accept, -leave) plus two-party-hostile.steps; the trade and exit geometry below was
+measured at the driver's live test (plan 0044 Phase 2).
 """
 import json
 import os
@@ -23,13 +23,15 @@ WAYPOINT_GATE_MS = 10000      # 0x0054C601: add eax, 0x2710
 PORTAL_GATE_MS = 5000         # 0x005848C1: lea edi, [eax + 0x1388]
 HOSTILE_REPEAT_MS = 60000     # 0x005A5F47: add eax, 0xEA60 (the pair's stamp)
 
-# Window-relative 800x600 geometry, UNCALIBRATED (measure at the live test, then replace and record the screenshots).
+# Window-relative 800x600 geometry, measured at the driver's live test (plan 0044 Phase 2, run:2026-10-20-two-clients,
+# screenshots workspace/logs/p44h-live-2/): the "Agree to trade / OK / Cancel" box on the asked player's screen, the
+# trade window's check button under the player's own offer, the own offer grid (x0, y0, cols, rows) of 29-px cells.
 TRADE_UI = {
-    "accept": (110, 140),     # the "accept trade" box that opens on the asked player's screen
-    "ok": (275, 412),         # the trade window's check button
-    "grid": (88, 302, 10, 4),  # the trade grid (x0, y0, cols, rows) of 29-px cells, as tools/d2pilot.py's GRIDS
+    "accept": (320, 103),     # OK in the "Agree to trade" box (top centre-left)
+    "ok": (318, 461),         # the check button under the own offer grid
+    "grid": (97, 316, 10, 4),  # the own offer grid (the lower one; the other player's offer is the upper grid)
 }
-EXIT_MENU_XY = (400, 287)     # Escape menu: SAVE AND EXIT GAME
+EXIT_MENU_XY = (400, 260)     # Escape menu: SAVE AND EXIT GAME (screenshot p44h-live-2/escmenu-j-s2.png)
 INV = (418, 316, 10, 4)       # inventory grid, measured on run:2026-10-15-sockets (d2pilot.py GRIDS)
 CELL = 29
 
@@ -69,6 +71,12 @@ class Players:
         if w == "host":
             return self.order[0] if self.order else None
         if w == "join":
+            # the joiner present now: after a leave and a rejoin it has a new unit id (plan 0044 Phase 2), so take
+            # the latest non-host id of the last PLRS line, else the first other id ever seen
+            live = [e.get("id") for e in (self.last or {}).get("p", [])]
+            later = [i for i in self.order[1:] if i in live]
+            if later:
+                return later[-1]
             return self.order[1] if len(self.order) > 1 else None
         return int(w, 0)
 
@@ -107,15 +115,16 @@ def read_players(path, players=None):
     return players
 
 
-def follow_step(me, lead, near=6.0, hop=10.0):
+def follow_step(me, lead, near=6.0, hop=10.0, cross=False):
     """One move of `follow`: None when me is within `near` sub-tiles of lead (Chebyshev), ('level', my lid, lead lid)
-    when the two are in different levels, ('wait', why) when a position is missing, else ('move', dx, dy): the offset
+    when the two are in different levels (unless `cross`: outdoor levels of one act share the sub-tile space, so the
+    move goes on across the border), ('wait', why) when a position is missing, else ('move', dx, dy): the offset
     from me towards lead, clamped to `hop` sub-tiles along the larger axis and rounded."""
     if not me or not lead:
         return ("wait", "player not in the log")
     if me.get("x") is None or lead.get("x") is None:
         return ("wait", "no position")
-    if me.get("lid") != lead.get("lid"):
+    if me.get("lid") != lead.get("lid") and not cross:
         return ("level", me.get("lid"), lead.get("lid"))
     dx, dy = lead["x"] - me["x"], lead["y"] - me["y"]
     m = max(abs(dx), abs(dy))
@@ -183,7 +192,7 @@ def grid_xy(spec):
 def plan_trade(tokens, lead_xy=None):
     """Turn trade tokens into clicks: [('click', x, y, button) | ('key', K) | ('sleep', S) | ('shot', PATH)].
        request          left click on the other player (lead_xy: its window point, from follow's geometry)
-       accept           the accept box on the asked player's screen (TRADE_UI, uncalibrated)
+       accept           the accept box on the asked player's screen (TRADE_UI, measured at the live test)
        give:A>B         pick the inventory item at A up and put it at trade-grid cell B (inv:c,r>tr:c,r)
        ok               the trade window's check button
        key:K  sleep:S  shot:PATH  xy:X,Y"""

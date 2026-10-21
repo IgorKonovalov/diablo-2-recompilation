@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/quests/README.md 2026-10-20
-  - docs/specs/quests/progression.md 2026-10-20
+  - docs/specs/quests/progression.md 2026-10-21
   - docs/specs/quests/travel.md 2026-10-20
 ---
 
@@ -171,7 +171,8 @@ Each quest has its own copy of a few helpers, and the bit tables of the spec nam
 - **Near credit**: a boss's death credits every player in the death room or a room near it whose quest bits are clear.
   **Level credit** credits every player in a named level.
 - **Party credit**: each party member of a credited player who has not finished the quest gets the same bits, but only
-  if they stand somewhere in that quest's act.
+  if they stand somewhere in that quest's act. A two-client game confirmed it once, for the Den of Evil with the
+  partied member waiting in the Rogue Encampment; the act test and the unpartied case are read from the code.
 - **Fail others**: every other player who has not finished the quest gets bit 14 and a message.
 - **The reward pattern**: the completing event sets bits 13 and 1 (or 13 and 0 when there is no reward talk); the
   reward talk, with bit 1 set, sets bit 0, clears bit 1 and wipes the log steps.
@@ -235,6 +236,16 @@ game record and gives the player bit 14. Akara's reward talk is confirmed. The s
 spawn, the Tristram portal that reappears in later games, and the Cow King bit (set on his death only for a killer who
 has beaten Diablo in a classic game or Baal in an expansion game, and for the players then in the cow level) are read
 from the code.
+
+The fifth stone creates a missile, and the Countess's death one missile at each of her recorded chests; these
+missiles do the rest of the work over the frames that follow ([word 4](../specs/quests/progression.md#word-4-cain-the-cairn-stones-tristram-and-the-cow-king-quest-object-4)).
+Their draws are confirmed by emulating the two functions up to the calls they make; what those calls then do is not
+covered. The stones' missile scatters smaller missiles around itself, each placed with two numbers from the missile's
+own seed, which it re-seeds first, and it calls the portal function. Each of the Countess's missiles runs its chest's
+drop, then takes two numbers from its own seed for each gold pile's spot. With the
+stock settings, as read from the code: the stones' missile scatters every second frame for a while and opens the
+Tristram portal once; each chest opens 150 frames after the Countess dies (one more per missile level), then a gold pile
+lands within 5 of it every 8 frames until the missile ends.
 
 ### The eclipse (word 11)
 
@@ -470,7 +481,10 @@ left it.
 **Using a portal** ([using a portal](../specs/quests/travel.md#using-a-portal)) draws on no seed of its own (122 uses
 confirmed). Going in from a town raises the level-change event, and when the owner goes back through the town end both
 ends are freed; those two are read from the code. With one player, the hostility, party and quest checks for using someone else's portal never come into
-play; they are read from the code and belong to the two-player work.
+play. A two-client game confirmed the hostility check: a player hostile to anyone is refused at another player's
+portal before any wait. The same game confirmed the first half of the party check, in one refused click and one that
+passed: a player in no party is refused at another player's portal, and a player in the owner's party goes through.
+The refusal for two different parties, which needs a third player, and the quest check are read from the code.
 
 A pair is closed when the owner goes back through the town end, opens a new one, leaves, declares hostility, or when
 the Ancients' altar closes every portal on the summit ([closing](../specs/quests/travel.md#closing-and-permanent-portals)).
@@ -497,7 +511,12 @@ put was not separated in the runs.
 Two travel gates count real milliseconds, not game frames
 ([travel § J](../specs/quests/travel.md#j-operate-gates-and-real-time-gates)): waypoint travel waits 10 seconds and a
 portal use 5 seconds after a time stamp. The stamp is written only when a player declares hostility (read from the code); with one
-player it stayed 0 and both gates always passed (confirmed for one client). While the act-change block is set, or the
+player it stayed 0 and both gates always passed (confirmed for one client). In a two-client game a declaration wrote
+the stamp, and both gates refused inside their wait and passed after it, so the community's single 10-second delay
+holds for waypoints but not for portals (confirmed). The declaration also starts a 60-second wait before the same pair
+can declare again (confirmed). By the code it needs both players at level 9 or more and the declarer in a town; the
+game client itself refuses to send it outside town, which was seen, so the server's own town check was not reached. Withdrawing hostility left the stamp
+alone in the one case tried. While the act-change block is set, or the
 player is talking to an NPC or holds an item on the cursor, no object can be operated; that is read from the code.
 
 ## What is not known yet
@@ -512,10 +531,10 @@ and the points not confirmed by a run:
   gates; the level-136 portal refusal.
 - **Not reachable on stock data:** the Zoo's draws and the NPC 377 talk draw, because no stock map places their object
   or NPC.
-- **Two players:** party credit, someone else's portal, the hostility stamp and the portal's party and quest gates
-  belong to the multiplayer plan.
+- **Two players:** party credit beyond the Den's one case, the portal's party and quest gates, and what withdrawing
+  hostility does in the code belong to the multiplayer plan.
 - **Unknown:** which monsters are hooked to five quests (the Den of Evil, the Act I boss quest, the Countess, Andariel
-  and the Act IV monster quest; not all re-read); what three object creations in the stones, the Countess's chests and Baal's death make; a
+  and the Act IV monster quest; not all re-read); what the missile created at Baal's death does; a
   descriptor field with no reader; a few AI and missile links; whether Anya's party callback writes into the wrong
   quest's data harmlessly; two bits of the Act II word 10 with no setter found; what the client sends its "act loaded"
   report after; the exact distance tests of an operate and a warp click; the `Levels` column `Portal`, which has no

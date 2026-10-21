@@ -69,8 +69,9 @@ named again with the reason it cannot be staged on stock data.
     immunity; the negative absorbed amount; evade, weapon block, dodge and avoid; freeze; flat absorb; the negative
     total that leaves life unchanged; a walking player's block;
   - stats: 50 shrine or well operates over the combat and stamina shrines, the re-arm and a well's cure; 50 aura on
-    and off events; 300 expiries in total with the kept run; 20 different-state `group` clears; open wounds on the
-    player; the curse resistance cut;
+    and off events; 300 expiries in total with the kept run; 20 different-state `group` clears; the curse resistance
+    cut; 30 curses refused on a target in `attract` (Phase 1 review: a Necromancer's own Attract, then another curse on
+    the same monster; open wounds on the player moved to plan [0044](done/0044-multiplayer-branches.md));
   - travel (after 0042 closes, if still short): 20 waypoint activations from mode 0, with the object-seed draw
     chained (ADR-0014).
 
@@ -104,3 +105,155 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-20 — Drafted (architect, `lane/plans45`).** Status `proposed`.
 - **2026-10-20 — Approved (owner, via the orchestrator).** Plans 0045–0049 and ADR-0020 approved as proposed; the run
   order of the [plans index](README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049) is the current queue.
+- **2026-10-20 — Phase 1 landed (reverser, `lane/p47r`; static, no game, no slot, no Ghidra).** Review requested.
+  - **Stats checker items** (backlog entry closed): `tools/stats.py` (`98538acf…`) reports the ADR-0014 aura chained
+    pairs (the caster's next run entering on a drawing run's exit, keyed by the caster unit), keys the aura grid's
+    gaps per log, builds every Sets block (values `<< ValShift`, the `state` block by func 24 with the compiled param,
+    `tools/stats.py` `Tables.par_value` after `sub_006336A0_PropParamCell`), and `oracle-player` prints a consistency
+    count. `tools/test_stats.py` (`d7d6b0c6…`): 15 tests pass (the well and recharge-shrine predictions, the negative
+    stat-74 tick and the 256 floor, the full Trang-Oul's blocks, two written logs for the per-log reset, the per-log
+    gaps and the chained pairs). **Chaining report vs the 18 kept logs:** 0 mismatches; 865 drawing aura runs, 746
+    chained pairs (the review's scratch count), 115 breaks, 4 with no next run; aura gaps all 50 within a log; all
+    5 749 wearer set lists predicted, the 180 full Trang-Oul's included (the *unchecked remainder* is gone, so no
+    property block is left unchecked: the request allowed two). Output `workspace/logs/stats/s1017-check-p47r.json`
+    (`4b94c8ef…`); the reversed order differs only in the 20 wells listed. Carried into
+    [stats/0001](../findings/stats/0001-aggregate.md) (the full-block statement raised to `[C]`) and the
+    [stats experiments](../findings/stats/experiments.md#run2026-10-17-stats) record; specs and wiki to the
+    spec-writer ([backlog](../backlog/archive/2026-10-20-reverser-spec-writer-stats-full-set-blocks-and-aura-chaining-checked.md)).
+  - **The *Fleshripper* log: not copied, re-staged.** The lane's scratch is gone; a scan of the 307 harness logs on
+    the machine found none with `e001b03e…` or save `5f440622…` (`workspace/logs/combat/p47r-fleshripper-search.txt`,
+    `aef49a11…`, which also holds the rebuild: commit `5871b00`'s recipe still builds `5f440622…`). Session
+    `owf-n-andariel-p8` (save `CombatOWF`, that recipe renamed, seed 3712) replaces it; combat/0001 and the combat
+    record say so. The resume-lane entry stays open for (b).
+  - **Session tools.** `tools/combat_sessions.py`, `tools/stats_sessions.py` and `tools/quest_sessions.py` gain the
+    plan's sessions and a `check` command (`tools/session_check.py`: each save built from its recipe into a temporary
+    directory and compared with the sha256 pinned in `tools/test_d2s.py`, the case's stats summed over the built
+    save's equipped items, the steps file, every `d2pilot.py` option). New tool-built saves on stock rows (ADR-0013
+    § Neutral): `CombatDR`, `CombatAbs`, `CombatFrz`, `CombatOWF`, `CombatAma`, `CombatAss`, `CombatAssO`, `StatsSor`,
+    `StatsPalD`, `StatsAss`, `StatsDru`, `StatsFloor`, `StatsPot`, `TravelWpArreat`. Dry checks (`SUMMARY` lines; a session serving two cases is
+    counted under each): combat 14 cases staged in 31 distinct sessions (36 case entries), 1 not staged, 0 problems (`workspace/logs/combat/p47r-sessions-check.txt`, `6aacdf45…`); stats 6
+    staged in 25 sessions, 2 not staged, 0 problems (`workspace/logs/stats/p47r-sessions-check.txt`, `b6a7e854…`);
+    travel 1 in 6 sessions, 0 problems (`workspace/logs/quests/p47r-sessions-check.txt`, `a5726f20…`).
+  - **Case list** (session, or the reason it cannot be staged):
+
+    | case | sessions | staged by |
+    |---|---|---|
+    | crushing blow on champions | `ow-nm-champs1`…`6` | `CombatOW` (crushing blow 45) in Nightmare, `farm` bosses first (the champion flag), `/players 8` |
+    | cold cap | `sorh-n-darkwood`, `sorh-n-lostcity` | `CombatSorH` (cold and lightning resistance 120 each) in Normal (no penalty); cold attackers by MonStats `El*Type` and missiles |
+    | lightning cap | `sorh-n-marsh`, `sorh-n-oasis`, `sorh-n-catacombs` | as above, lightning attackers |
+    | **magic cap** | — | **not staged:** no stock source of player magic resistance (stat 37) reaches 75. No unique, set item, affix, runeword, gem, skill or state writes it (`grep -l -w` over the excel tables: only `itemstatcost`, `properties` and `cubemain`); the one writer is the crafted Safety Shield recipe (`res-mag` 5–10), which `tools/d2s.py` cannot build with its recipe mods |
+    | magic immunity | `sorh-h-lostcity1`…`3` | `CombatSorH`'s Ginther's Rift (magic damage) on the Hell Lost City's Plague Bearers (`zombie5`, `ResMa(H)` 100) |
+    | negative absorbed amount | `dr-n-plains`, `dr-n-darkwood` | `CombatDR`: MDR 108 above every Normal field, then percent absorb (Dwarf Star fire 15, Raven Frost cold 20) on the negative field |
+    | negative total, life unchanged | `dr-n-plains`, `dr-n-darkwood`, `dr-n-marsh` | `CombatDR`: DR 36, MDR 108 |
+    | evade | `ama-n-run`, `ama-n-walk`, `ama-n-walk2` | `CombatAma` (Evade 20) moving: running, then walking after the run/walk key |
+    | weapon block | `ass-n-plains`, `ass-n-plains2`, `asso-n-plains` | `CombatAss` (Weapon Block 20, two claws) and `CombatAssO` (one claw): `0x0057DD60` (0x0057DDAB–0x0057DDB4) rolls only when `0x0064F380` gives 13 for the current mode; what 13 stands for is unread (if a weapon class: WeaponClass row 13 is `ht1`, one claw, or `ht2`, two, without the "None" row), so both are staged and the run's `WBS` oracle tells |
+    | dodge, avoid | `ama-n-stand` | `CombatAma` (Dodge 20, Avoid 20) standing in melee and under missiles |
+    | freeze | `frz-n-plains`, `frz-nm-plains` | `CombatFrz`: Frostwind (stat 134 = 4) |
+    | flat absorb | `abs-n-plains`, `abs-n-darkwood`, `abs-n-marsh`, `abs-nm-marsh` | `CombatAbs`: fire 15, cold 11, lightning 40 flat; Nightmare for fields above the absorb |
+    | a walking player's block | `ama-n-walk`, `ama-n-walk2` | `CombatAma` with a shield after the run/walk key (mode 2); whether the key holds mode 2 under attack shows in the `DRM` lines |
+    | the *Fleshripper* session | `owf-n-andariel-p8` | `CombatOWF`, above |
+    | shrines and wells | `sor-shrines1`…`10`, `palc-wells1`, `palc-wells2` | `StatsSor` (life 1 500 of 6 000, mana 500 of 3 000) over ten field waypoints, a wait past the re-arm, the shrines again; `StatsPalC` poisoned at wells (the cure). Which shrine types appear is the map's draw |
+    | an aura state's end | `pald-auras1`, `pald-auras2` | `StatsPalD`: Might, Defiance, Prayer switched by key, 30 switches a session |
+    | 300 expiries | `pot-town1`…`4` | `StatsPot`: 56 potions a session drunk so each timed state ends before the next of its kind (about 55 freed lists a session) |
+    | different-state group clears | `sor-armours`, `ass-fade`, `dru-shapes` | the Sorceress armours (group 1), Fade and Quickness (group 2), the Druid's shapes (group 3); whether the skill path calls `STATE_GroupClear` is phase 3's, the `GRP` lines tell |
+    | the 256 floor | `floor-poison1`, `floor-poison2` | `StatsFloor`: life 30 of 3 000, DR 58 (Normal hits take nothing), poisoned in the Spider Forest and the Far Oasis, no potion |
+    | **open wounds on the player** | — | **not staged:** stat 135 is written only by item properties (gems, runes, sets, cube recipes); no MonStats, MonProp or MonUMod cell names it, so only another player wounds a player: two clients (plan 0044) |
+    | the curse resistance cut | `ass-curses1`, `ass-curses2` | `StatsAss` under Fade 20 (`curse_resistance`, `aurastat5`, the only stock writer) among the Worldstone Keep 1's witches (`succubuswitch2`: Amplify Damage, Weaken), Normal |
+    | **attract** | — | **not staged:** no MonStats `Skill` cell names Attract (the name is in `skills.txt` only), so only another player's curse: two clients (plan 0044). *Review 2026-10-20: reason refused;* Attract is a Necromancer curse (skills.txt Id 86, `charclass` nec), and the refusal tests the target (`STATE_ApplyTimed`, stats/0002 § 1), so a Necromancer staged single-client reaches it on a monster: Phase 2's first step |
+    | waypoint activation from mode 0 | `x-wpact5r-0`…`5` (`tools/quest_sessions.py`) | the reading and the route below |
+
+  - **`InitFn` 17 and the route** ([quests/0002 § 2](../findings/quests/0002-travel.md#2-waypoint-activation), `[I]`,
+    static): a preset waypoint is created with its preset's mode, 0 for every object (`PresetUnitSpawn` →
+    `PresetUnitDispatch` → `SUnitCreate`'s mode argument, stored at unit `+0x10` before `OBJ_ServerInit`), and
+    `OBJINIT_Waypoint` changes it only for a room the arrival list names (mode 1) or a town room (mode 2); it never
+    reads the waypoint record. So a waypoint whose room is built on foot or through a warp stays in mode 0, held or not.
+    Route: `TravelWpArreat` (towns and the Arreat Plateau) arrives at the Plateau by waypoint, then LvlWarp 71, 74, 74,
+    71 down through the Crystalline Passage, the Glacial Trail, the Frozen Tundra and the Ancients' Way, four Act V
+    waypoints (rows with `Sync` 0) per map seed; six seeds.
+  - **Not done here:** no session was run (slots 1 and 2 are plan 0044's); the `≤ 0` delivery counter is Phase 2's.
+    `tools/test_d2s.py` has one failure that predates this lane (`h2afind`, plan 0038 H2a's recipe, has no
+    `RECIPE_BASES` row); the 14 new recipes are pinned there.
+- **2026-10-20 — Phase 1 review (architect, `lane/p47r` at `0678bc3`, `main` merged): accept with fixes (2).**
+  Re-run on the review's side: `tools/test_stats.py` 15 tests OK (`tools/stats.py` `98538acf…`, `tools/test_stats.py`
+  `d7d6b0c6…` as cited); `tools/stats.py check` over the 18 logs of `s1017-run.lst` gives a JSON byte-identical to
+  `s1017-check-p47r.json` (`4b94c8ef…`; 0 mismatches, `aura_chained_pairs` 746, `aura_chain_breaks` 115,
+  `aura_drawing_runs_without_next_run` 4; the printed report differs from `s1017-check-p47r.txt` only by the
+  `systemd-run` scope line); the three dry checks give outputs byte-identical to the kept ones (`6aacdf45…`,
+  `b6a7e854…`, `a5726f20…`; combat 14 staged / 1 unstaged / 36 session entries, stats 6 / 2 / 25, travel 1 / 0 / 6,
+  0 problems each); `tools/test_d2s.py` 45 tests OK after fix 3. Anchors spot-checked in `re/symbols.csv`
+  (`OBJINIT_Waypoint`, `PresetUnitSpawn`, `PresetUnitDispatch`, `SUnitCreate`, `OBJ_ServerInit`, `g_ObjInitFns`,
+  `RoomIsTown`, `PROP_Func24_ParParam`, `PropParamCell`, `PROP_WriteStat`, `SetBonusApply`, `COMBAT_AvoidRoll`); the
+  skill check `0x0064F380` is unnamed (an `[L]` in combat/0001, the staging names it as unread: correct).
+  - **Fixes:** (1) *misread*: the `attract` reason is refused (case table row above): Attract is a Necromancer curse,
+    and `STATE_ApplyTimed` refuses a curse on any target in state 57, so a Necromancer casting Attract on a monster and
+    then another curse on it reaches the refusal in one client; it is Phase 2's (Phase 2 *Done when* updated, ruling 2).
+    (2) *stale cross-reference*: the stats run record's *Results* still said the 180 full Trang-Oul's lists were taken
+    as logged; it now points at the re-check. (3) not the lane's (pre-existing, counted for no lane): `h2afind` pinned
+    in `tools/test_d2s.py` from the H2a run record (base `smpbar.d2s`, recipe `d8115721…` as recorded, save
+    `38f0fc57…` from `items-tc-saves.sha256`); the build reproduces it.
+  - **Ruling 1 (the *Fleshripper* log).** Yes, the case still needs a run, and the new log replaces the lost one.
+    skills/0003 answers *which call* applies state 52 (`PreventHealHook` inside `COMBAT_ToHitRoll`), statically, `[I]`;
+    the no-draw claim and the event-9 (function 28) modelling need a kept log, and a log nobody can open backs nothing
+    (reverser review-fixes 6). `owf-n-andariel-p8` on the byte-identical save is accepted in place of `e001b03e…`
+    (the lost log is history, not evidence); with it under `workspace/logs/combat/` and hashed in Phase 2's manifest,
+    backlog (a) of the resume-lane entry closes, (b) stays with Phase 2's counter. Plan 0045 Phase 2's oracle
+    replacement takes this log whichever lands later: if plan 0045 Phase 2 runs first, its re-check of event 9 and
+    state 52 on this session is done by the later lane on the kept log. The combat/0001 bullet stays `[I]` until then;
+    the run plus `PreventHealHook` are the two sources that may raise it.
+  - **Ruling 2 (the case list).** Accepted with the `attract` change. *Magic cap*: a final shortfall reason (the
+    review's `grep -l -w -i 'res-mag\|magicresist'` over the excel tables gives only `itemstatcost`, `properties`
+    and `cubemain`, and the one cube row is the Safety Shield craft's `res-mag` 5–10): the cap stays `[I]`, named in
+    Phase 3 as unreachable on stock data, homed nowhere. *Open wounds on the player*: accepted, moved to plan
+    [0044](done/0044-multiplayer-branches.md) (log entry there; it needs hostility, as plan 0044's hostility case from plan 0042 does).
+    *Attract*: not a shortfall; Phase 2's first step, before its first game, adds a Necromancer recipe with Attract
+    and one other curse (tool-built, ADR-0013 § Neutral, pinned in `tools/test_d2s.py`), a session that casts Attract
+    and then the other curse on the same Normal monster, the `stats_sessions.py check` dry run, and counts the `STA`
+    refusals to 30.
+  - **Ruling 3 (Phase 2 risks).** (a) *Run/walk key under attack*: the `DRM` mode decides; if no hit lands in mode 2
+    in `ama-n-walk`/`-walk2`, one more session at most (a held walk toggle with a ranged attacker), then the walking
+    block and the mode-2 evade are named again with the mode-2 hit count; the `÷ 3` exception stays `[I]`. (b)
+    *`0x0064F380` = 13*: Phase 2 logs the WBS value per layout; whichever of `CombatAss`/`CombatAssO` rolls weapon
+    block decides the case, and the other layout's value is recorded as what 13 is not; if neither rolls, weapon block
+    is named again with both layouts' WBS values and the skill check goes to the reverser as a static read (a backlog
+    entry, not a third layout). (c) *`STATE_GroupClear` reach*: if the `GRP` lines show none for a group, that group
+    is named with its apply count and the claim that the skill path reaches it is withdrawn to `[L]` under *Open
+    questions* for Phase 3; no extra session. (d) *Plague Bearers*: a seed whose Hell Lost City holds no `zombie5`
+    is replaced, up to six seeds; if none holds them, move to a Hell level with `unraveler*` (ResMa(H) 100, the
+    review's MonStats scan: `zombie5`, `brute5`, `unraveler2`–`9`, `megademon6`) before naming magic immunity again.
+  - **Ruling 4 (the stats/0001 raise).** Accepted at `[C]`: the code reading (`SetBonusApply`, `PROP_Func24_ParParam`,
+    `PropParamCell`) and a full reproduction of the 180 logged lists by the kept checker are two sources, and the
+    values are exact (`<< ValShift`, param 176, the `oskill` id and level), so a wrong reading cannot match by chance
+    (the review checked the full block holds both `state` `monsterset` and `oskill` Fire Mastery). The broken-member
+    bullet stays `[I]`. The specs and wiki are the spec-writer's backlog entry.
+  - **Ruling 5 (`InitFn` 17 and the route).** Accepted at `[I]`: a static reading with every hop addressed and the
+    preset mode tied to drlg/0004; the route matches Levels' warps. It is raised only by Phase 2's activations from
+    mode 0 with the `Sync` 0 draw chained. Plan 0042 closed with this shortfall final, so the travel case applies.
+  - **Ruling 6 (`h2afind`).** Fixed here (fix 3); nothing to the archivist.
+  - **Phase 2 may start** in the next free harness slot (slot 1: plan 0048 Phase 2; slot 2: plan 0038 H2b), with the
+    `attract` staging as its first, static step.
+- **2026-10-20 — Phase 1 specs and wiki (spec-writer, `lane/stw`; no game, no Ghidra).** Review requested
+  ([backlog](../backlog/archive/2026-10-20-spec-writer-architect-review-lane-stw-stats-full-set-blocks-and.md)). Ruling 4 and
+  the re-check's chaining counts carried into the stats specs: [stats/README](../specs/stats/README.md) (boundary row
+  *no remainder*, `[I]` → `[C]`; the 746 chained pairs as `tools/stats.py`'s, 115 breaks, 4 with no next run; tags
+  C 13 → 14, I 4 → 2, L 3), [stats/aggregate](../specs/stats/aggregate.md) (J4 full Trang-Oul's `[C]`, the
+  broken-member set split out `[I]`, the full-block open question struck; tags C 64 → 65, I 42, L 5 → 4),
+  [stats/states](../specs/stats/states.md) (§ H note; tags unchanged) and
+  [wiki/stats-and-states](../wiki/stats-and-states.md) (`based_on` aggregate 2026-10-20). Open questions: aggregate 5 → 4,
+  README 3, states 6. The reverser's entry is closed.
+- **2026-10-20 — Phase 1 specs and wiki review (architect, `lane/stw` at `503e72c`, `main` merged: up to date):
+  accept with fixes (1, plus 1 not the lane's).** Checked against [stats/0001](../findings/stats/0001-aggregate.md)
+  *Answer (summary)* (the raised full-block bullet) and § 9, the [stats experiments](../findings/stats/experiments.md#run2026-10-17-stats)
+  *Re-check 2026-10-20* (0 mismatches; `aura_chained_pairs` 746, `aura_chain_breaks` 115,
+  `aura_drawing_runs_without_next_run` 4; 746 + 115 + 4 = 865) and ruling 4 above: the J4 full Trang-Oul's bullet and
+  the README boundary row are `[C]` on its two sources (the code reading, the checker's reproduction of the 180
+  lists), the broken-member set is split out at `[I]`, and the struck open question carries no live tag. Tags
+  recounted by script against `main`: README `{C: 13, I: 4, L: 3}` → `{C: 14, I: 2, L: 3}` (the old row held the
+  tag cell's `[I]` and a backticked `` `[I]` `` in its text, both counted, both gone), aggregate
+  `{C: 64, I: 42, L: 5}` → `{C: 65, I: 42, L: 4}`, states unchanged `{C: 44, I: 47, L: 6}`. Anchors spot-checked in
+  `re/symbols.csv`: `SetBonusApply` 0x00660120, `PROP_Func24_ParParam` 0x0065F390, `PropParamCell` 0x006336A0,
+  `SKILLS_RollElemDamage` 0x0056E0C0, `RNG_RangeB` 0x0045C3E0. The three stats specs stay `reviewed`.
+  - **Fixes:** (1) *overclaim*: the wiki said the 115 next runs "started from a different seed"; the record counts the
+    breaks and gives no cause, so the page now says the next run did not start where the last one left the seed and
+    that the record does not say why. (2) not the lane's (pre-existing, flagged by the lane): [how-we-know](../wiki/how-we-know.md)
+    said plan 0041's specs were not reviewed and no wiki page restated them; it now says they are reviewed and points at
+    [stats and states](../wiki/stats-and-states.md).

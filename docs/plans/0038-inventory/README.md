@@ -854,10 +854,69 @@ Net effect on the totals: none (no class moves; the remainders stay counted as H
 merging `main` (`5a7feb3`, the H5b review above; nothing newer), they stand: **static 567, harness 531, c-emu awaiting a batch 0, blocked 416** (d-none 283,
 d-edit 73, d-sim 28, d-2c 14, d-owner 10, d-0032 8), **deferred 2, raised 10: 1 526.**
 
+**Plan 0044 Phase 3 (`lane/p44s`, accepted with fixes at its review, 2026-10-20): the d-2c rows raised by
+run:2026-10-20-two-clients.** No batch of this plan ran them; plan 0044's two-client run and re-tag did
+([plan 0044 log](../done/0044-multiplayer-branches.md#implementation-log), Phase 3 review ruling (c);
+[multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients)). They
+leave the blocked count for the raised column, labelled *raised by plan 0044*; Phase 3 of this plan has nothing left to
+re-tag for them.
+
+- **Raised (7 statements, d-2c → raised):** tc 46 (`/players` with real players, items/tc F2); vendors 1 (the
+  `TownPlayerRemove` entry row), 10 (the shared stock, A2), 13 (`sole` with two interactors, C1), 16 (the game leave
+  and Harrogath, C2); hirelings 11 (one table per game, § C); player/creation 31 (J4 for two members).
+- **Raised in part, stay d-2c for the remainder (3):** tc 43 (the dead member and the monster killer's owner raised;
+  three or more players and the clamp at 8 remain), tc 44 (the dead member raised; a member without a room remains),
+  player/creation 6 (the 89/256 bonus raised; the 6400 bound's edge remains).
+- **Not raised (stay d-2c):** vendors 17 (MP11, the branch with an interactor, kept `[I]`: the stale byte is not
+  logged). The partial halves stay as § 3 lists them: player/creation 33's party half (MP17), tc 27's party half
+  (MP13), quest-drops 6, 12, 36 and 25's n > 1 part (MP12–MP14), the trade part of sockets 22 (MP18); all are named
+  shortfalls of plan 0044, routed to the owner-play and reverser entries.
+
+Net effect, recomputed once at the review over every reviewed batch above, after merging `main` (up to date at
+`26d8978`; the H2a totals were the last): d-2c 14 → 7, raised 10 → 17. **Static 567, harness 531, c-emu awaiting a
+batch 0, blocked 409** (d-none 283, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17:
+1 526.**
+
+**H2b (filed 2026-10-20, reverser, `lane/h2b`; accepted with fixes at the `lane/h2b` review, 2026-10-20): 25 statements of items/affixes, tc, uniques-sets,
+properties and sockets-runewords.** run:2026-10-20-sweep-items-chain, 13 kept sessions on slot 2 (17 launches of 20),
+stock data, 0 mismatches (`sweep_h2b.py logs` 0 bad, `tc.py replay` 1 118/1 118, `items_chain.py both`, `uniques.py`
+and the seed model 1 043/1 043, `quality.py` 1 022/1 022, `cube.py` 26/26). The lane files **14 raised, 5 raised in
+part, 1 shortfall, 5 reclassified (d-none)**. The evidence is in the "Plan 0038 batch H2b" sections of
+[items/0001](../../findings/items/0001-tc-resolution.md#plan-0038-batch-h2b-2026-10-20),
+[0004](../../findings/items/0004-uniques-sets.md#plan-0038-batch-h2b-2026-10-20),
+[0005](../../findings/items/0005-affixes.md#plan-0038-batch-h2b-2026-10-20),
+[0006](../../findings/items/0006-properties.md#plan-0038-batch-h2b-2026-10-20) and
+[0007](../../findings/items/0007-sockets-runewords.md#plan-0038-batch-h2b-2026-10-20).
+
+- **Raised (14):** tc 68; uniques-sets 9, 39; affixes 5, 13 (2), 17, 19 (2), 21 (3); properties 20 (2).
+- **Raised in part (5):** tc 58 (the classic `version ≥ 100` refusal, d-none as row 74), uniques-sets 7 (entry from a
+  failed unique or set; the normal builder), uniques-sets 35 (a failed superior step and the normal step; `Rare` 0),
+  affixes 24 (the "no affix" cause, d-none as aff 20; the discard of a rare's draws), sockets 42 (the quality branches,
+  a request above the final cap, the `cap < 1` return; scoped at the review: every logged request lay in `1..cap`, so
+  `max(n, 1)` and the clamp of the write are in the remainder too).
+- **Shortfall (1):** properties 24 (no superior ethereal `dur%` item in 1 043 creations).
+- **S2c's piece of sockets 44** (the row stays S2c's, raised in part): normal and superior unclamped `[C]`; no request of
+  4 or more and no low-quality call, so the piece is met in part.
+- **H2c companion** (§ 6): no func 12, 23 or 24 slot in the run's creations.
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| items-uniques-sets 10 (type-11 setup draws on the item seed first; 1) | a-run, H2b | **d-none** | `ItemInitStats` calls the setup only for base type 11 (`cmp eax, 0xB` at 0x00557DE7, an exact test). Type 11 is `elix`, one record `elx`: no TreasureClassEx cell names it, `elix` has `TreasureClass` 0, no cubemain output names it or its type, no vendor cell, no other table (`sweep_h2b.py static`). |
+| items-properties 7 (the type-11 setup, A5 line, A5 note, H3; 3) | a-run, H2b | **d-none** | The same function and the same full-table check. |
+| items-affixes 20 (rare build fails with no prefix and no suffix, E5; 1) | a-run, H2b | **d-none** | `sweep_h2b.py rareboth`: the only base x version x ilvl with both names and no affix on either side is `jew` at item version 1 (99 cases), a jewel in a classic game, which no stock path makes; the classic throwables fail at the names first (aff 21). |
+
+Net effect on the totals: harness −5 (531 → 526), d-none +5 (283 → 288), blocked 409 → 414; the remainders of the
+raised-in-part rows and the shortfall stay counted as H2b. The review merged `main` (`9ef5f84`, the plan 0044 Phase 3
+totals above; nothing newer) into `lane/h2b` and moved no further row; the three moves stand (the static check of
+`elix` extended at the review to the pinned image: no `elx` code in it, run:2026-10-20-sweep-items-chain *Review
+checks*). Recomputed once over every reviewed batch above: **static 567, harness 526, c-emu awaiting a batch 0,
+blocked 414** (d-none 288, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
-  what accepting ADR-0008 would unlock now.
+  what accepting ADR-0008 would unlock now. *(2026-10-20: 7 of them raised by plan 0044, and tc 43, 44 and
+  player/creation 6 raised in part; d-2c is now 7: [§ 2.6, Plan 0044 Phase 3](#26-moves-made-by-the-batch-reviews).)*
   - Partial rows add a few more halves: the trade part of sockets 22, the party half of player/creation 33, the
     n > 1 part of quest-drops 25.
   - Six save/d2s rows (1–3, 6, 18, 19) assume that a one-client TCP/IP host counts as one client. If the review
@@ -931,7 +990,7 @@ a letter suffix and its own run id, as the plan requires.
 | **H1a** | `d2s-load` | 46 (45 filed; uniques-sets 21 from H6d, § 2.6) | 0/3/43 | save/d2s 9–10, 17, 22–23, 26–30, 36, 38, 44, 46–47, 49–50, 52–54, 59, 62, 65, 68, 80, 90–91, 105–107, 126, 132, 139–140; hirelings 3, 30, 32–33; player/creation 1, 8–9, 11, 20, 34; uniques-sets 21 (from H6d) | `d2s-io.gdb` + `d2sio.py check`. Tool-built saves from `d2sio_saves.py`: bad magic or version, wrong name, class 7 and 8, act 5, status mismatches, waypoint markers, out-of-range unique and set ids, legacy v94 and versions 71 and 87 (builder support needed; from H6d, a version-`0x47` item list holding a unique, under `uniques.py`, if a version-71 load reaches `0x00533350`), item version < 93, ear, personalized, realm, > 8 KiB, checksum and size wrong; `MercMF` loaded | `findings/save/experiments.md` | ~18 |
 | **H1b** | `d2s-play` | 48 | 0/22/26 | save/d2s 1–4, 6, 18–19, 21, 25, 31, 33–35, 37, 39–43, 48, 55–57, 60, 72–73, 77–78, 83, 88, 102, 108, 110–116, 117 (from S1a), 118, 124 (from S1a), 125, 127; hirelings 24 | same family. A one-client TCP/IP host, weapon swap, hotkeys, the hirelings mercenary saves (write side, dead flag), iron golem, corpse, runeword, the `questdiffcheck` item, `maxhp`/`maxmana` and poison items, the bit-13 case, and section writer, reader and join breakpoints. **Also:** load `questrewards` and `questrewardsh` (built `246515c5…`, `14c28526…`; backlog 2026-10-16, archivist `lane/abl`) and pin both in `tools/test_d2s.py` with the run id, as the plan 0032 recipes were pinned. From S1a (§ 2.6; 117 and 124 counted here, the other pieces stay counted as S1a): a set item with one damage group in its main and a bonus list; a lone `fire-max` and a lone `fire-min`; magic damage (group 52); a hired mercenary, a swapped weapon set, a left-button hotkey, an item on the cursor and a class item with an automagic affix at *Save and Exit* | `findings/save/experiments.md` | ~14–17 |
 | **H2a** (done) | `items-tc` | 17 | 10/0/7 | quality 20, 22–23; tc 1–2, 11, 22, 34 (2, from S2a), 37, 45, 47, 59–60, 70–71 | `tc-drops.gdb` + `tc.py`. New lines: the caller, gold (stat 14), the MonDeathDrop exit. A Find Item barbarian, `/players 8` host and chests, Hell mfnecro, skeleton or Valkyrie kills; a classic Countess kill (tc 34, § 2.6) | `findings/items/experiments.md` | ~6 |
-| **H2b** | `items-chain` | 25 | 7/1/17 | affixes 5, 13, 17, 19–21, 24; properties 7, 20, 24 (from S2b); sockets 42 (from S2c); tc 58, 68 (from S2a); uniques-sets 7, 9, 10, 35, 39 (9, 39 from S2b) | `items-chain.gdb` + `items_chain.py both`. A classic hunt (classicsorc) and a long Hell hunt (also a superior ethereal `dur%` item where the two orders differ, properties 24; magic drops requesting 5 or 6 sockets, sockets 42; from the S2c review, a piece with the row counted as S2c: normal and rare drops requesting more than 3 and 4, sockets 44). New line (tc 58, 68, uniques-sets 9, 39; § 2.6): `game+0xD0` at `sub_00558D90_ItemCreate` entry and after `sub_00552E90_ItemSeedInit`, and `Unit+0x20` with the game seed at `IC0` and `ICJ` | `findings/items/experiments.md` | 6–10 |
+| **H2b** (done) | `items-chain` | 25 (5 to d-none, § 2.6) | 7/1/17 | affixes 5, 13, 17, 19–21, 24; properties 7, 20, 24 (from S2b); sockets 42 (from S2c); tc 58, 68 (from S2a); uniques-sets 7, 9, 10, 35, 39 (9, 39 from S2b) | `items-chain.gdb` + `items_chain.py both`. A classic hunt (classicsorc) and a long Hell hunt (also a superior ethereal `dur%` item where the two orders differ, properties 24; magic drops requesting 5 or 6 sockets, sockets 42; from the S2c review, a piece with the row counted as S2c: normal and rare drops requesting more than 3 and 4, sockets 44). New line (tc 58, 68, uniques-sets 9, 39; § 2.6): `game+0xD0` at `sub_00558D90_ItemCreate` entry and after `sub_00552E90_ItemSeedInit`, and `Unit+0x20` with the game seed at `IC0` and `ICJ` | `findings/items/experiments.md` | 6–10 |
 | **H2c** | `items-forced` (id ends `-forced`) | 7 | 0/0/7 | properties 12 (spec L390 only), 14–15; tc 10, 55–56 | **forced, admitted with conditions** (§ 6): `items-chain.gdb` + `tc.py`, `props.py` on a loose `treasureclassex.bin` under `-direct`; two edits (classic throwables; TC-named uniques), each its own `-forced` session set | `findings/items/experiments.md` | few |
 | **H3b** | `data-load` | 25 | 0/16/9 | data/README 2–5; data/excel 1–8, 17–18, 20, 24–25, 27, 50, 71, 74; data/strings 2, 6, 22, 29 | **new** `excel`/startup logger that also sources `strings.py`. **First piece (review ruling 3):** a `d2run.py` mode that has gdb on the game before `DATATBLS_LoadAll`, built and tested off-slot; if it cannot be made to work, the 9 startup rows are a recorded shortfall and stay `[I]` (they have an observable, so not d-none). Covers `FindFile`, loose files without `-direct`, `-txt`, record-byte dumps, the rare-item hover, `STRTABLE_Unload`. From the S1b review (§ 2.6, rows stay counted as S1b): the remainders of data/README 1 ("only under `-direct`") and data/excel 30 (the code-list tables' names at `DATATBLS_LoadTable` in a stock start) | `findings/data/experiments.md` | ~6 |
 | **H4a** | `monsters-a` | 32 | 0/14/18 | pool 12; quest-drops 48 (from S2c); spawn 5, 11, 47–49; special 9–10, 25, 30–31, 34 (from S3a), 35, 38, 46, 48 (from S3a), 50–52, 54–56, 58–60, 68–69; stats 7, 18, 21 | `mon-stats.gdb` with `d2pilot.py` wp, `--descend`, `hunt`, `objop`: Radament, the Travincal council, the Chaos seals, Shenk, Nihlathak, Blood Raven, Andariel, Izual (Blood Raven, Izual or Radament in an expansion Nightmare or Hell game for quest-drops 48), a `flyingscimitar` level. The Ancients (b) need a quest-open recipe. From the H4b review (pieces; the rows stay counted as H4b, § 2.6): `doomknight3` (312) in the Chaos Sanctuary (stats 13, 14), a `willowisp` champion or unique (stats 40), Blood Raven's client name (special 66, mod 12), an aura special of level ≤ 15 (special 27, the clamp at 1); if a seed places one, a Shrines code-20 shrine operated with `objop` (special 2, 74; `MMS0`); optionally the camel at `/players` 8 (stats 23). From S3b (pieces; the rows stay counted as S3b, § 2.6): a Druid casting Raven in a Normal game (stats 30, the `druidhawk` Normal MonProp row), and, optionally (the S3b review raised the rows without it; no row depends on it), a Normal visit to the Durance of Hate Level 3 (`mephistospirit`, stats 19 and 45). Checked with `sweep_h4b.py` and `monstats.py` | `findings/monsters/experiments.md` | ~10 |

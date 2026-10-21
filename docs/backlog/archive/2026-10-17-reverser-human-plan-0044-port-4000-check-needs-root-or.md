@@ -5,7 +5,7 @@ date: 2026-10-17
 status: done
 context:
   - ../../findings/multiplayer/0001-cases.md#5-the-hosts-binding-and-the-port-4000-precondition
-  - ../../plans/0044-multiplayer-branches.md#implementation-log
+  - ../../plans/done/0044-multiplayer-branches.md#implementation-log
 resolution: "Owner ran sudo ufw status verbose on 2026-10-17: active, default deny incoming, ALLOW IN only 53317/tcp+udp and 53/udp to 172.17.0.1 (docker DNS); nothing covers 4000/tcp. Condition met; recorded in the plan 0044 log."
 ---
 

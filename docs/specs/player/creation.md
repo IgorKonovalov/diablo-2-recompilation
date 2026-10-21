@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, items/uniques-sets, items/properties, items/affixes, monsters/stats, save/d2s]
 consumed_by: [save/d2s, combat/to-hit, stats/aggregate]
-tags: {C: 81, I: 48, L: 1}
+tags: {C: 85, I: 49, L: 1}
 updated: 2026-10-20
 ---
 
@@ -100,7 +100,8 @@ The record index of CharStats is the class id 0..6 (`Expansion` marker row not c
 | level-difference factors, monster at or below | `256 ×6, 207, 159, 110, 61, 13` (/256) | data:g_XpPenaltyBelow@0x006E1668 | [C] |
 | level-difference factors, monster above | `256 ×6, 225, 174, 92, 38, 5` (/256) | data:g_XpPenaltyAbove@0x006E1694 | [C] |
 | kill experience clamp | `0x7FFFFF` | 0x0057E480 | [I] |
-| party distance², party bonus | 6400, `89/256` per extra member | fn:XP_PartyShare@0x0057E6C0, fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0 | [I] |
+| party bonus | `89/256` per extra member | fn:XP_PartyShare@0x0057E6C0 | [C] (run:2026-10-20-two-clients, two members) |
+| party distance² | 6400 | fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0 | [I] |
 | starting item creation record | ilvl = level, `+0x18` 4, `+0x28` 1, quality 2, flags `0x0A` | fn:ITEMS_CreateForStore@0x00559CE0 | [C] |
 | starter item flag | `0x20000` (save flag bit 17) | 0x00534DB6 | [C] |
 
@@ -536,11 +537,12 @@ J3. PLAYER_DeathExpLoss (character level lvl > 1):                       [I] (fn
         client.deathLoss ← kept                                          ; client +0x508, before the stat write
         exp ← new
       ; the level never drops
-J4. XP_PartyShare with n ≥ 2 members (alive, same level, distance² ≤ 6400, at most 8):   [I] (fn:XP_PartyShare@0x0057E6C0, fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0, 0x0057E736–0x0057E79D)
+J4. XP_PartyShare with n ≥ 2 members (alive, same level, distance² ≤ 6400, at most 8):   [C] for n = 2 (fn:XP_PartyShare@0x0057E6C0, fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0, 0x0057E736–0x0057E79D, run:2026-10-20-two-clients)
       total: i32 ← exp + ((n − 1) × exp × 89) ÷ 256
-      q: f32 ← (f32) total / (f32) Σ levels
+      q: f32 ← (f32) ((f64) total / (f64) Σ levels)                        ; real division, not ÷: fild total, fidiv Σ levels, rounded once to f32 by fstp dword
       for each member i in collection order:
-        PLAYER_AddExperience(XP_Compute(ftol((f32) level_i × q), level_i, mlvl))   ; CRT_ftol2 truncates
+        in_i: i32 ← trunc((f64) level_i × (f64) q)                         ; exact in f64, never rounded to f32; CRT_ftol2 truncates
+        PLAYER_AddExperience(XP_Compute(in_i, level_i, mlvl))
 J5. PLAYER_SpendStatPoint(unit, which): needs statpts ≠ 0; statpts −= 1; [I] (fn:PLAYER_SpendStatPoint@0x00570D60, fn:PLAYER_SpendEnergy@0x00570A80, fn:PLAYER_SpendVitality@0x00570B60)
       strength or dexterity + 1
       energy + 1:   maxmana += ManaPerMagic × 64;  mana likewise, clamped to maxmana
@@ -551,8 +553,29 @@ Step notes:
 
 - J1. The `-act` grants run on game-made characters (no built save), through `PLAYER_AddExperience` and one
   `PLAYER_LevelUp` call each. [C] (fn:PLAYER_GrantLevel@0x0057EB10, run:2026-10-16-player)
-- J2–J5. Not run: party share needs two clients; death loss, the experience cap and the capped grant were not reached.
-  [I] (run:2026-10-16-player)
+- J4. **The party share with two players.** In plan 0044's two-client run, 690 kills were logged, and the 649 with a
+  player killer and a complete log had every member set predicted from the logged positions: 385 shares to two members
+  (alive, same level, d² ≤ 6400 of the credited player), and the killer alone in the others, with the other member
+  beyond 6400, in another level, dead or not partied;
+  each of the 770 share inputs and 264 single inputs was predicted (the record's branch counts 9 + 106 + 108 + 42 sum to
+  265, one more than the single inputs; filed to the reverser), and `player.py` reproduced every `XP_Compute`,
+  `AddExperience` and `LevelUp`. Scope: n = 2. [C] (fn:XP_PartyShare@0x0057E6C0,
+  fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0, run:2026-10-20-two-clients,
+  [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients))
+- J4. **The member's input is not rounded to f32.** `q` is stored as an f32 (`fstp dword`, 0x0057E754–0x0057E75D);
+  each member's `fild` level is multiplied by that dword on the x87 stack (0x0057E775–0x0057E778) and passed to
+  `CRT_ftol2` (0x00682FD0), whose SSE2 and x87 paths both truncate the unrounded product. A level (≤ 99) times an f32
+  needs at most 31 significant bits, so the product is exact in f64: compute `trunc((f64) level_i × (f64) q_f32)`.
+  98 inputs of the run separate this from an f32 product (exp 63, levels 81 and 81: 41, where an f32 product gives
+  42). [C] (fn:XP_PartyShare@0x0057E6C0, fn:CRT_ftol2@0x00682FD0, run:2026-10-20-two-clients)
+- J4. `q` itself is the quotient rounded once to the nearest f32: the `fidiv` result is rounded to the x87 precision
+  and the `fstp dword` rounds it to f32, and at 24-, 53- or 64-bit precision that equals one rounding of the exact
+  quotient (an f64 or wider intermediate has at least 2 × 24 + 2 bits), so the f64 division then the f32 cast above
+  gives the game's `q`. [I] (fn:XP_PartyShare@0x0057E6C0, 0x0057E754–0x0057E75D)
+- J4. The distance bound is bracketed, not met at its edge: 5 of the 9 kills beyond it were within 800 of 6400, and
+  no kill inside it came that close. More than two members and the cap at 8 need a third client. [I]
+  (fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0)
+- J2–J5 apart from J4. Not run: death loss, the experience cap and the capped grant were not reached. [I] (run:2026-10-16-player)
 - J2. **The trigger is the Ancients' reward** (quest record word 39, `a5q5`). The quest's monster-death callback acts on
   classes 540–542 (`ancientbarb1`–`3`) and counts them down; when the last dies and the quest is active, the grant goes
   first to the killing player, then to each player standing in level 120 (the Arreat Summit), and, for a player there in

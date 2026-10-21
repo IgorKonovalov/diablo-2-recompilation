@@ -2679,3 +2679,152 @@ logs; shortfalls under *Limits*.
   run:2026-10-14-props (43) and run:2026-10-15-items-chain (40), in none of the plan 0010, objects and quest-drop logs;
   `goldtypes`: of 659 item records only `gld` is of itemtypes record 4 by its type, `type2` or their `Equiv` ancestors.
   The replays and scans ran under `systemd-run --user --scope -p MemoryMax=4G`.
+
+## run:2026-10-20-sweep-items-chain
+
+- **Question:** (plan 0038 Phase 2, batch H2b, [inventory § 5](../../plans/0038-inventory/README.md#5-batch-list))
+  Where does a created item's seed come from, and are the game and unit seeds left alone through
+  `ItemCreateByQuality`? What do `ITEMS_SetSockets`' clamps compute on the creations that call it? On a classic
+  throwing weapon, what do the magic and rare builders do, and where does the fallback chain end? How many affixes does
+  a rare jewel get? Does a classic body armour skip the socket draw? Does any stock superior ethereal `dur%` item
+  separate the two durability orders, and does a stock drop carry a func 12, 23 or 24 property (the H2c companion)?
+  Boundary as in run:2026-10-15-items-chain: each creation is checked from both line sets by
+  `tools/items_chain.py both` (no seed oracle between the pick and the property roll); the cube transmutes by
+  `tools/cube.py check` from the game seed at `CUBE_Transmute`.
+- **Setup:** agent-driven sessions on harness **slot 2** (display `:9`, `workspace/wineprefix-2`, game in
+  `workspace/runtime/game`), one game at a time, the Xwayland window kept on `special:d2harness`, stock data (no loose
+  data file, no `-direct`), pinned `game.exe`, gdb by `tools/d2run.py`. Driven by `tools/h2b_sessions.py run --slot 2
+  --tag h2b --saves workspace/logs/h2b/saves --run items-chain <session>` (`704e3c68…`; the machinery of
+  `tools/h2a_sessions.py`, logger and sessions changed). Per session it restores and sets aside the slot's empty saves
+  directory (tag `h2b`), starts `d2run.py --seed N --gdb tools/gdb/items-h2b.gdb --steps tools/gdb/<steps>.steps
+  --after 1500 --install h2b <save>`, plays the listed `tools/d2pilot.py` commands (`5df547f8…`) and ends with
+  `tools/slots.py stop 2`. Sorceress pilot options `--nova-key F1 --es-key F2 --es 25 --radius 9 --mana-col 4 --drink
+  0.5 --nova-hold 1.6 --max-res 1000` (classic: `--wp-tab-x0 120 --wp-tab-w 78`); cube sessions `d2pilot.py cube
+  --plan tools/gdb/<plan> --ins-gap 1.2 --pick-wait 0.5`. 17 launches of the 20 allowed (§ 8 cap).
+  - **Logger** `tools/gdb/items-h2b.gdb` (`5a5cef86…`): `pilot.py` `1ad48a4c…`, `uniques.py` `9b3e988f…`, `affixes.py`
+    `f2ac1c63…`, `props.py` `441a81b3…`, `cube.py` `e0cbd2ef…` (its SLOT/ROLL/WR lines fire only inside a cube mod), the
+    new `tools/gdb/h2b.py` (`cb89516e…`) and `tc-drops.gdb` `842f8613…`, all unchanged but `h2b.py`. New lines
+    (addresses read with objdump on the pinned image; readings in
+    [items/0004 § Plan 0038 batch H2b](0004-uniques-sets.md#plan-0038-batch-h2b-2026-10-20)): `GS0` 0x00558D90
+    (`ItemCreate` entry: return, arg, game seed `game+0xD0`, record index, `+0x2C`, `+0x48`, `+0x4C`), `GS1` 0x0055532F
+    (after `ItemSeedInit` in `SUnitCreate`, type 4: game seed, unit seed `Unit+0x20`, `Unit+0x28`, item seed, start),
+    `GS2` 0x00558E1F, `GS3` 0x00558E53, `GS4` 0x00558E7E, `GQ0` 0x00557450, `GQJ` 0x00557943, `GQX` 0x00557A1C /
+    0x00557A27 / 0x00557482, `SS0` 0x0062BCB0, `SSP` 0x0062BD05, `SSQ` 0x0062BD79, `SSM` 0x0062BD82, `SSN` 0x0062BD8F,
+    `SSW` 0x0062BDC4, `SSR` 0x0062BDD2, `MB0` 0x00556673, `MBF` 0x0055667D, `RNE` 0x005C1A6E / 0x005C1B7E, `RBF`
+    0x005C1E71, and the waypoint `OBJP` lines `d2pilot.py wpchain` steers by (the walk of `tools/gdb/vendors.py`).
+  - **Characters** (`tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/<recipe>.json <base>
+    <out>`; kept in `workspace/logs/h2b/saves/`, manifest `items-chain-saves.sha256` `2d199ffd…`): `UniqNova`
+    (`uniqnova.json` `95c8be4e…` on `smpsor-l50.d2s`, save `2c793a3d…`, as in H2a), `UniqClassic` (`uniqclassic.json`
+    `0a6efe81…` on the classic `smpsor.d2s`, save `68e46a96…`, as in H2a), and two new cube characters (built inputs,
+    ADR-0003; the outputs are new creations): `H2bJewel` (`h2bjewel.json` `b7d1ff02…`, expansion, one rare jewel, 17
+    perfect skulls and 17 *The Stone of Jordan*; save `03afa56f…`; plan `h2bjewel.plan` `61d4474b…`: row 62 on the same
+    jewel 17 times, each output back in the jewel's cell) and `H2bThrow` (`h2bthrow.json` `cf4d090e…`, classic,
+    progression 0, nine built rare throwing weapons, five `tkf` and four `tax`, each with a perfect skull and a *Stone of
+    Jordan*; save `b965d6b9…`; plan `h2bthrow.plan` `bc308c40…`, steps `h2b-cube-classic.steps` `06df52fa…`). No
+    test-state key, no table edit.
+
+| # | Log (`workspace/logs/h2b/`) | Save, game | What | Result |
+|---|---|---|---|---|
+| 1 | `items-chain-s2-3911-classic-a.log` | UniqClassic, classic Normal, `/players 8` | Cold Plains Nova sweep | 163 creations |
+| 2 | `items-chain-s2-3912-classic-b.log` | the same | Stony Field, 420 s | 177 creations |
+| 3 | `items-chain-s2-3913-classic-c.log` | the same | Dark Wood, 420 s | 201 creations |
+| 4 | `items-chain-s2-3914-classic-d.log` | the same | Black Marsh, level explored after 305 s (the re-run of the dev4 launch) | 123 creations |
+| 5 | `items-chain-s2-3915-classic-jail.log` | the same | the Jail; the pilot stalled twice, stopped after 69 s | 23 creations |
+| 6 | `items-chain-s2-3916-classic-cat.log` | the same | the Catacombs; no cast in 481 s | 0 creations |
+| 7 | `items-chain-s2-3921-hell-a.log` | UniqNova, Hell, `/players 8` | Frigid Highlands, Eldritch (`farm --wp 5,2`) | **died** after 147 s; 14 creations, kept and recorded as a death |
+| 8 | `items-chain-s2-3923-hell-c.log` | UniqNova, Hell, `/players 1` | the same, map seed 3923 | 34 creations |
+| 9 | `items-chain-s2-3924-hell-d.log` | the same | the same, map seed 3924 | 63 creations |
+| 10 | `items-chain-s2-3931-jewel.log` | H2bJewel, expansion Normal | row 62 on one rare jewel, 17 times | 17 transmutes |
+| 11 | `items-chain-s2-3941-throw.log` | H2bThrow, classic Normal | row 62 on nine rare throwing weapons | 9 transmutes |
+| 12 | `items-chain-s2-3951-exp-cold.log` | UniqNova, expansion Normal, `/players 8` | Cold Plains sweep, level explored after 216 s | 89 creations |
+| 13 | `items-chain-s2-3952-exp-stony.log` | the same | Stony Field sweep, level explored after 299 s | 130 creations |
+
+  Development logs (no claim rests on them), in `workspace/logs/h2b/dev/`, manifest
+  `workspace/logs/h2b/items-chain-dev-manifest.sha256` (`ced144d2…`; from `workspace/logs/h2b/dev`, `sha256sum -c
+  ../items-chain-dev-manifest.sha256`; path corrected at the review): `dev1` classic-a (the first launch: the town
+  waypoint list never opened, so no sweep), `dev2` and `dev3` hell-b (both cut off, `dev3` by the first agent's stop), `dev4` classic-d (map seed
+  3914): gdb aborted with `i387-tdep.c:1057: internal-error: i387_supply_xsave: Assertion 'regs != NULL' failed` (log
+  line 1200), a gdb 18.1 thread race under Wine, a tool failure. Session 4 is its re-run on the same map seed; it has no
+  `internal-error:` line, nor has any other kept log (`grep -l "internal-error:"` over the 13 logs: none; only `dev4`
+  among the dev logs).
+- **Procedure** (in `workspace/logs/h2b`; outputs in `check/`):
+  ```
+  python3 -I tools/sweep_h2b.py logs $(cat items-chain-run.lst)       # check/check-sweep_h2b.txt
+  for l in $(cat items-chain-run.lst); do python3 -I tools/sweep_h2b.py logs $l; done   # check/check-sweep_h2b-perlog.txt
+  python3 -I tools/sweep_h2b.py static                                 # check/check-static.txt
+  python3 -I tools/sweep_h2b.py rareboth                               # check/check-rareboth.txt
+  python3 -I tools/affixes.py survey                                   # check/check-survey.txt
+  python3 -I tools/test_sweep_h2b.py                                   # check/check-tests.txt
+  python3 -I tools/items_chain.py both $(cat items-chain-run.lst)      # check/check-items_chain.txt
+  python3 -I tools/uniques.py check $(cat items-chain-run.lst)         # check/check-uniques.txt
+  python3 -I tools/quality.py check $(cat items-chain-run.lst)         # check/check-quality.txt
+  for l in $(cat items-chain-run.lst); do python3 -I tools/tc.py replay $l | tail -3; done   # check/check-tc.txt
+  # cube.py reads the cube lines in order: the H2b tags are stripped first
+  grep -Ev '^(GS[0-4]|GQ[0JX]|SS[0PQMNWR]|MB0|MBF|RNE|RBF|OBJP) ' <log> > check/cube-stripped/<log>
+  python3 -I tools/cube.py check check/cube-stripped/*.log                 # check/check-cube.txt
+  python3 -I tools/cube.py check ../cube-rare1-s1-3031.log ../cube-rare2-s1-3032.log   # check-cube-rare-2026-10-15.txt
+  ```
+  All under `systemd-run --user --scope -p MemoryMax=4G`.
+- **Observed** (13 logs: list `items-chain-run.lst` `2350a4b8…`, per-file sha256 in `items-chain-manifest.sha256`
+  `bcab1464…`, `sha256sum -c` from `workspace/logs/h2b` passes; checker `tools/sweep_h2b.py` `75799253…`, tests
+  `tools/test_sweep_h2b.py` `99a6830c…`, 13 tests OK; `affixes.py` `44c1faf9…`, `items_chain.py` `f72af367…`,
+  `uniques.py` `252cf9ab…`, `quality.py` `ed525200…`, `tc.py` `36892d1a…`, `cube.py` `991ca195…`; reports in `check/`,
+  sha256 `check-sweep_h2b.txt` `49cb1c15…`, `check-sweep_h2b-perlog.txt` `0aa938d3…`, `check-static.txt` `a3ef6867…`,
+  `check-rareboth.txt` `3b94da30…`, `check-survey.txt` `8a9577c0…`, `check-tests.txt` `fe926cc2…`,
+  `check-items_chain.txt` `8bd67b78…`, `check-uniques.txt` `5ab074d1…`, `check-quality.txt` `f45767c2…`,
+  `check-tc.txt` `57214d0f…`, `check-cube.txt` `3db00d10…`, `check-cube-rare-2026-10-15.txt` `7e6e87af…`). From
+  `check-sweep_h2b.txt` (0 bad; lines abridged):
+  ```
+  GS0 ItemCreate calls 1043 (ret 0x0055A6B4 988, 0x0055947A 29, 0x00566045 26; arg 0 and +0x2C 0 in all)
+  GS1 seeds = two game-seed steps (unit {g1.low, 666}, item {g2.low, 666}) 1043; GS2 = GS1 1043; GS4 = GS2 1043
+  GQ0 game seed = GS4 1043; GQJ and GQX: game and unit seed = GQ0 993, low builder unchanged 6,
+      low builder unit seed one step on 44
+  drop creations: one ItemCreate call (ret 0x0055A6B4, no record seed) 988; source seed at CPOST = at CPRE 988
+  SetSockets calls (ret 00556c61) 34: ItemMaxSockets = F5 model 34, lowered the cap 34, the 6 clamp lowered it 3,
+      quality 2 clamp none 30 (cap above 3: 19), quality 3 clamp none 4 (cap above 3: 2), written = min(max(n,1), cap) 34
+  classic throwable tkf 5, tax 4: BLD:rare RBF FB:magic BLD:magic MBF FB:superior BLD:superior -> q 3
+  classic tors q2 9, q3 1: SOK0 1, SOKR 0, all reaching the tors test (SOKM ms > 0); control: expansion tors q2 5, SOKR 1
+  magic builder: failed (both slots 0, MBF) 9, ok both 16, prefix 19, suffix 36
+  rare name scans: none 18, candidates 74; empty scan then the second scan with the same item seed 9; RBF 9
+  ```
+  No `dur` line (no superior ethereal creation with a func-13 slot) and no `carrier` line (no func 12, 23 or 24 slot).
+  ```
+  tc.py replay: 1118 calls, 1118 reproduced, 0 failed (classic-a 171, -b 188, -c 217, -d 125, jail 12, hell-a 10,
+                hell-c 51, hell-d 100, exp-cold 100, exp-stony 144)
+  items_chain.py both: 1043 creations reproduced by both passes, 0 failed
+  uniques.py check: 1043 creations reproduced, 0 failed;  quality.py check: 1022 pairs, 1022 reproduced, 0 failed
+  cube.py check: 26 transmutes reproduced, 0 failed (rare jewel count 3: 9, count 4: 8; pick no-candidate magic 11,
+                 pick no-roll magic 7; rare: no name 9; superior outputs 9)
+  cube.py check (run:2026-10-15-cube's two rare logs): 14 transmutes, 0 failed (rare jewel count 3: 4; counts 4, 5, 6:
+                 2, 3, 5)
+  static: elix (type 11) records ['elx']; TreasureClass 0; 3404 TC item cells, 0 name an elixir; 151 cubemain outputs,
+          0; elx vendor cells none; other tables none. ItemMaxSockets above min(6, invwidth x invheight): 24 base x ilvl
+          band pairs, the twelve orbs ob1-ob4, ob6-ob9, obb-obe at the 26 and 41 bands (3 against 1 x 2)
+  rareboth: 99 rare-able base x version x ilvl cases with both names and no affix on either side, all jew at version 1
+  survey: version-1 records with no prefix, no suffix and no rare name: 30 (18 classic throwing weapons, 12 expansion)
+  ```
+- **Shortfalls** (claims stay `[I]`; run:2026-10-20-sweep-items-chain): no superior ethereal `dur%` item (properties
+  24); no `ITEMS_SetSockets` call of qualities 1 or 4–9, no request of 4 or more, no `cap < 1` return (sockets 42);
+  no fallback past a failed superior step, and no failed unique or set past its first step (uniques-sets 7, 35); no
+  func 12, 23 or 24 slot (the H2c companion). Session 7 (a death) and sessions 5 and 6 (pilot stalls) are kept; their
+  calls replay with 0 failures and are in the counts.
+- **Conclusion:** over 1 043 creations of 13 sessions the item and unit seeds of a creation come from two game-seed
+  steps in `SUnitCreate` and no record seed, `ItemCreateByQuality` steps neither seed but the low builder's durability
+  draw, each drop is one creation call, `ITEMS_SetSockets` follows § F1 on the 34 drop calls, a classic body armour makes
+  no socket draw, a classic throwing weapon falls rare → magic → superior with no affix and no name, and a rare jewel
+  gets 3 or 4 affixes, all with 0 mismatches. The per-row ledger is in the "Plan 0038 batch H2b" sections of
+  [items/0001](0001-tc-resolution.md#plan-0038-batch-h2b-2026-10-20),
+  [items/0004](0004-uniques-sets.md#plan-0038-batch-h2b-2026-10-20),
+  [items/0005](0005-affixes.md#plan-0038-batch-h2b-2026-10-20),
+  [items/0006](0006-properties.md#plan-0038-batch-h2b-2026-10-20) and
+  [items/0007](0007-sockets-runewords.md#plan-0038-batch-h2b-2026-10-20).
+- **Review checks (`lane/h2b` review, 2026-10-20; in `workspace/logs/h2b/check/review/`, manifest
+  `review-manifest.sha256` `d1dfe024…`, `sha256sum -c` from that directory):** (1) `c5a_control.py` (`11ed27d6…`,
+  importing the lane's `tools/affixes.py` `44c1faf9…`; `python3 -I c5a_control.py <repo>/tools
+  workspace/merged/data/global/excel`): the magic and rare-name candidates of `tkf` and `tax` at item version 1,
+  ilvl 45, with and without the stackable/`Throwable` refusal; output `c5a_control.txt` (`8583478c…`), the control of
+  aff 13 and aff 21. (2) `tools/tc.py replay` re-run per log with `main`'s `tc.py` (`f26df35d…`, plan 0044's party
+  model) after the merge: the same 1 118 calls, 0 failed (`check-tc-merged-main.txt`, `b0398ac5…`). (3) The 34
+  `ITEMS_SetSockets` calls re-read: every request `n` lay in `1..cap` (final cap 1–4), so the written value is the
+  request each time (items/0007 sock 42, scoped). (4) No `elx` item code in the pinned image as a string or an
+  immediate (`elx `, `elx\0`, byte search), with `check-static.txt` for the type-11 d-none moves.

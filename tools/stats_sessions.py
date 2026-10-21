@@ -6,14 +6,22 @@ Usage:
   python3 -I tools/stats_sessions.py list
   python3 -I tools/stats_sessions.py plan SESSION              # print the plan tokens of a session
   python3 -I tools/stats_sessions.py run --slot N --tag TAG --saves DIR --run RUN SESSION [SESSION ...]
+  python3 -I tools/stats_sessions.py check [SESSION ...]       # dry check, no game: plan 0047's cases (default)
 
 Each SESSION names a row of SESSIONS below: the save (built from tools/d2s_recipes/<recipe>.json with tools/d2s.py
 build into --saves), the difficulty steps file, the game seed, and the steps run in order: ("plan", cycles) plays the
 equip cycle of the character (written to workspace/logs/stats/<RUN>-<SESSION>.plan) that many times; ("pilot",
 [args], timeout) runs one tools/d2pilot.py command; ("wait", s) only lets the game run (the periodic requirement
-refresh of an item with `rep-dur` keeps the set code busy). The log goes to workspace/logs/stats/<RUN>-<SESSION>.log;
+refresh of an item with `rep-dur` keeps the set code busy); ("keys", [key, ...], s) presses keys s seconds apart;
+("cast", [key, ...], s) presses each key (an F-key choosing the right skill) and right-clicks next to the player (a
+self-cast skill: the armours, Fade, Quickness, the shapes), s seconds apart. A fifth element of a session, a dict, is
+put in the environment of its logger (STATS_TICKS, STATS_OBJS). The log goes to workspace/logs/stats/<RUN>-<SESSION>.log;
 the slot is stopped after each session (tools/slots.py stop N) and its saves directory returned to the TAG aside, so
 every session starts from the built save. Nothing here feeds a model.
+
+`check` (plan 0047 Phase 1) runs tools/session_check.py on every case of CASES_0047 (each save built from its recipe
+into a temporary directory, the steps file, every d2pilot.py option) and lists the cases that cannot be staged
+(UNSTAGED_0047) with the reason. No game, no slot.
 
 The cycles (tools/d2s_recipes/statsbar.json, statsbarb.json): every click that must change the stat lists is a
 `clickv`/`keyv` token (tools/d2pilot.py cube: repeated until a ULK/LNK/UOE line follows), and every equipped slot is
@@ -110,8 +118,33 @@ def statsnec_cycle():
     return t
 
 
+def statspot_cycle():
+    """StatsPot (plan 0047, the expiries): the 40 inventory potions (tools/d2s_recipes/statspot.json: cell k holds
+    hp1 hp1 hp1 hp1 yps wms vps hp1 by k mod 8) drunk by right click so that each timed state ends before the next
+    of its kind: a healing potion (state healthpot, 192 frames) every 8 s, an antidote, thawing and stamina potion
+    (750 frames) together every 32.5 s; then the 16 belt potions (hp1) by the keys 1-4, 8 s apart. Life stays far
+    below its maximum, so no healthpot list is freed by a full life."""
+    cells = [(k % 10, k // 10) for k in range(40)]
+    kind = ["hp1", "hp1", "hp1", "hp1", "yps", "wms", "vps", "hp1"]
+    hp = [c for k, c in enumerate(cells) if kind[k % 8] == "hp1"]
+    other = [c for k, c in enumerate(cells) if kind[k % 8] != "hp1"]
+    t = []
+    while other:
+        for c in other[:3]:
+            t += ["rclick:inv:%d,%d" % c, "sleep:0.4"]
+        other = other[3:]
+        for j in range(4):
+            if hp:
+                t += ["rclick:inv:%d,%d" % hp.pop(0), "sleep:%s" % ("8.5" if j == 3 else "8")]
+    for c in hp:
+        t += ["rclick:inv:%d,%d" % c, "sleep:8"]
+    for k in range(16):
+        t += ["key:%d" % (1 + k % 4), "sleep:8"]
+    return t
+
+
 PLANS = {"statsbar": statsbar_cycle, "statsbarb": statsbarb_cycle, "statsbarc": statsbarc_cycle,
-         "statsnec": statsnec_cycle}
+         "statsnec": statsnec_cycle, "statspot": statspot_cycle}
 
 # objects.txt rows with OperateFn 2 (shrines) or 22 (wells): the classes objop may operate
 SHRINES_WELLS = ("2,77,81,83,84,85,86,93,96,97,109,111,113,115,116,118,120,123,124,130,132,133,134,135,136,137,138,"
@@ -168,6 +201,113 @@ SESSIONS = {
     "bar-town4": ("StatsBar", "enter-hell", 4114, [("plan", "statsbar", 3), ("wait", 20)]),
 }
 
+# ---- plan 0047 Phase 1: the shortfalls of run:2026-10-17-stats (sessions written and dry-checked, not run)
+FIELD = {"STATS_TICKS": "6000", "STATS_OBJS": "1"}
+
+
+def shrine_hunt(wp, times=6):
+    """StatsSor (life 1500 of 6000, mana 500 of 3000: the first recharge, refill and well decide): waypoint, the
+    shrines, the wells, a wait past a shrine's re-arm (reset 5 x 1200 + 1 frames, about 4 min at 25 frames a second),
+    the shrines again."""
+    op = ["objop", "--obj-cls", SHRINES_WELLS, "--time", "300", "--obj-near", "3"]
+    return [("pilot", ["farm", "--wp", wp, "--time", "1"], 90),
+            ("pilot", op + ["--times", str(times), "--done", "SHR1"], 400),
+            ("pilot", op + ["--times", "3", "--done", "WEL1"], 400),
+            ("wait", 250),
+            ("pilot", op + ["--times", "2", "--done", "SHR1"], 400)]
+
+
+def cast_cycle(keys, rounds, back=None, wait=2.5):
+    """Self-casts in a field next to the waypoint (no skill in a town): each key then a right click."""
+    t = []
+    for _ in range(rounds):
+        t += list(keys)
+    return [("cast", t + ([back] if back else []), wait)]
+
+
+for k, wp in enumerate(("1,2", "1,3", "1,4", "1,5", "2,3", "2,5", "3,2", "3,4", "5,2", "5,3")):
+    SESSIONS["sor-shrines%d" % (k + 1)] = ("StatsSor", "enter-normal", 4701 + k, shrine_hunt(wp), FIELD)
+for k, wp in enumerate(("2,5", "3,2")):
+    # a well's cure: StatsPalC poisoned in the field (pal_field), then more wells than the kept run's
+    SESSIONS["palc-wells%d" % (k + 1)] = ("StatsPalC", "enter-normal", 4721 + k,
+                                          pal_field(wp, 50)[:2] + [
+                                              ("pilot", ["objop", "--walk", "--no-nova", "--obj-cls", SHRINES_WELLS,
+                                                         "--times", "6", "--time", "300", "--done", "WEL1",
+                                                         "--obj-near", "3"], 400), POTIONS], FIELD)
+for k in range(2):
+    # an aura state's end: StatsPalD switches Might, Defiance and Prayer (F1-F3) by key, 30 switches a session
+    SESSIONS["pald-auras%d" % (k + 1)] = ("StatsPalD", "enter-normal", 4731 + k,
+                                          [("pilot", ["farm", "--wp", "1,2", "--time", "1"], 90),
+                                           ("keys", ["F1", "F2", "F3"] * 10, 3.0), ("wait", 5)], FIELD)
+for k in range(4):
+    # the expiries: StatsPot drinks 56 potions in town, each state ending before the next of its kind
+    SESSIONS["pot-town%d" % (k + 1)] = ("StatsPot", "enter-normal", 4741 + k, [("plan", "statspot", 1), ("wait", 35)],
+                                        FIELD)
+# different states of one group: the Sorceress armours (group 1: frozenarmor 10, shiverarmor 88, chillingarmor 20),
+# Fade and Quickness (group 2: fade 159, quickness 157), the Druid's shapes (group 3: wolf 139, bear 140)
+SESSIONS["sor-armours"] = ("StatsSor", "enter-normal", 4751,
+                           [("pilot", ["farm", "--wp", "1,2", "--time", "1"], 90)] +
+                           cast_cycle(["F2", "F3", "F4"], 8, back="F1"), FIELD)
+SESSIONS["ass-fade"] = ("StatsAss", "enter-normal", 4752,
+                        [("pilot", ["farm", "--wp", "1,2", "--time", "1"], 90)] + cast_cycle(["F1", "F2"], 12), FIELD)
+SESSIONS["dru-shapes"] = ("StatsDru", "enter-normal", 4753,
+                          [("pilot", ["farm", "--wp", "1,2", "--time", "1"], 90)] + cast_cycle(["F1", "F2"], 12, wait=3.0),
+                          FIELD)
+for k in range(2):
+    # the curse resistance cut: StatsAss with Fade 20 (curse_resistance, aurastat5) among the Worldstone Keep 1's
+    # witches (succubuswitch2: Amplify Damage, Weaken), Normal: waypoint to the Keep 2 (5,9), warp 81 up to the Keep 1
+    SESSIONS["ass-curses%d" % (k + 1)] = ("StatsAss", "enter-normal", 4761 + k,
+                                          [("pilot", ["farm", "--wp", "5,9", "--descend", "81", "--time", "1",
+                                                      "--descend-time", "300"], 420)] + cast_cycle(["F1"], 1) +
+                                          [("pilot", PAL_WALK + ["--hops", "60"], 600)] + cast_cycle(["F1"], 1) +
+                                          [("pilot", PAL_WALK + ["--hops", "60"], 600)], FIELD)
+for k, wp in enumerate(("3,2", "2,5")):
+    # the 256 floor: StatsFloor (life 30 of 3000, DR 58 flat: Normal hits take nothing) poisoned by the Spider Forest's
+    # and the Far Oasis' monsters; no potion in the belt
+    SESSIONS["floor-poison%d" % (k + 1)] = ("StatsFloor", "enter-normal", 4771 + k,
+                                            [("pilot", ["farm", "--wp", wp, "--time", "1", "--mana-col", "0"], 90),
+                                             ("pilot", ["explore", "--walk", "--melee", "--melee-hold", "1.2", "--radius",
+                                                        "9", "--drink", "0", "--mana-col", "0", "--hops", "80"], 600)],
+                                            FIELD)
+
+# stats the cases read from the built saves (tbl:ItemStatCost.txt:ID): 6 life, 7 max life, 8 mana, 9 max mana; 34 DR
+CASES_0047 = {
+    "S1 shrines and wells (the combat and stamina shrines, the re-arm, a well's cure)":
+        ("StatsSor hunts shrines and wells across ten field waypoints, waits past a re-arm, hunts again; StatsPalC "
+         "uses wells poisoned", ["sor-shrines%d" % k for k in range(1, 11)] + ["palc-wells1", "palc-wells2"], [], ()),
+    "S2 an aura state's end": ("StatsPalD switches three self auras by key", ["pald-auras1", "pald-auras2"], [],
+                               ("Might", "Defiance", "Prayer")),
+    "S3 300 expiries with the kept run": ("StatsPot's timed potion states, each ending",
+                                          ["pot-town%d" % k for k in range(1, 5)], [], ()),
+    "S4 different-state group clears": ("armours (group 1), Fade and Quickness (2), the shapes (3)",
+                                        ["sor-armours", "ass-fade", "dru-shapes"], [], ()),
+    "S5 the 256 floor": ("StatsFloor poisoned at 30 life", ["floor-poison1", "floor-poison2"], [34], ()),
+    "S7 the curse resistance cut": ("StatsAss under Fade cursed by the Worldstone Keep's witches",
+                                    ["ass-curses1", "ass-curses2"], [], ("Fade",)),
+}
+UNSTAGED_0047 = {
+    "S6 open wounds on the player": "no stock monster carries open wounds: stat 135 is written only by item properties "
+                                    "(gems, runes, sets, cube recipes; no MonStats, MonProp or MonUMod cell names it), "
+                                    "so a player is wounded only by another player: two clients, plan 0044",
+    "S8 attract": "no stock monster has the Attract skill (the name is in skills.txt only, no MonStats Skill cell), so "
+                  "the state reaches a player only from another player's curse: two clients, plan 0044",
+}
+
+
+def check(names):
+    """Dry check (plan 0047 Phase 1)."""
+    if HERE not in sys.path:
+        sys.path.insert(0, HERE)
+    import session_check
+
+    def of(n):
+        row = SESSIONS[n]
+        return row[0], row[1], [st[1] for st in row[3] if st[0] == "pilot"]
+    if names:
+        return session_check.run({"named": ("sessions named on the command line", names, [], ())}, {}, of,
+                                 "stats_sessions")
+    return session_check.run(CASES_0047, UNSTAGED_0047, of, "stats_sessions")
+
 
 def sh(args, timeout=None, log=None):
     print("$ " + " ".join(args), flush=True)
@@ -187,7 +327,7 @@ def plan_tokens(name, cycles):
 
 
 def run_session(name, slot, tag, saves, run):
-    save, steps, seed, todo = SESSIONS[name]
+    save, steps, seed, todo = SESSIONS[name][:4]
     log = os.path.join(LOGDIR, "%s-%s.log" % (run, name))
     os.makedirs(os.path.join(ROOT, LOGDIR), exist_ok=True)
     out = open(os.path.join(ROOT, LOGDIR, "%s-%s.pilot.txt" % (run, name)), "a")
@@ -195,6 +335,8 @@ def run_session(name, slot, tag, saves, run):
     if save.startswith("StatsPal"):                 # field sessions: every tick logged, the objects for objop
         os.environ["STATS_TICKS"] = os.environ.get("STATS_TICKS", "6000")
         os.environ["STATS_OBJS"] = "1"
+    if len(SESSIONS[name]) > 4:                     # plan 0047: the session's own logger environment
+        os.environ.update(SESSIONS[name][4])
     for attempt in range(3):
         sh(PY + ["tools/saves.py", "--slot", str(slot), "restore", tag], 60)
         sh(PY + ["tools/saves.py", "--slot", str(slot), "aside", tag], 60)
@@ -267,6 +409,12 @@ def run_session(name, slot, tag, saves, run):
             for k in step[1]:
                 sh(PY + ["tools/xdrive.py", "--slot", str(slot), "key", k], 30)
                 time.sleep(step[2])
+        elif step[0] == "cast":                    # plan 0047: an F-key, then a right click beside the player
+            for k in step[1]:
+                sh(PY + ["tools/xdrive.py", "--slot", str(slot), "key", k], 30)
+                time.sleep(0.4)
+                sh(PY + ["tools/xdrive.py", "--slot", str(slot), "--window", "Diablo II", "rclick", "430", "270"], 30)
+                time.sleep(step[2])
     sh(PY + ["tools/slots.py", "stop", str(slot)], 60)
     try:
         drv.wait(30)
@@ -276,9 +424,15 @@ def run_session(name, slot, tag, saves, run):
 
 
 def main(argv):
-    if not argv or argv[0] not in ("list", "run", "plan"):
+    if not argv or argv[0] not in ("list", "run", "plan", "check"):
         print(__doc__)
         return 2
+    if argv[0] == "check":
+        bad = [n for n in argv[1:] if n not in SESSIONS]
+        if bad:
+            print("unknown session(s) %s" % " ".join(bad))
+            return 2
+        return check(argv[1:])
     if argv[0] == "list":
         for k, v in SESSIONS.items():
             print("%-16s %-10s %-16s %d %r" % (k, v[0], v[1], v[2], v[3]))

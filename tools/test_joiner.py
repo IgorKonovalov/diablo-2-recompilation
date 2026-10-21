@@ -46,6 +46,9 @@ class Plrs(unittest.TestCase):
         pl.feed(joiner.parse_plrs(plrs([unit(7, 1, 1)])))                  # the joiner left
         self.assertIsNone(pl.get("join"))
         self.assertEqual(pl.resolve("join"), 3)
+        pl.feed(joiner.parse_plrs(plrs([unit(7, 1, 1), unit(9, 2, 2)])))   # it rejoined with a new unit id
+        self.assertEqual(pl.resolve("join"), 9)
+        self.assertEqual(pl.get("join")["x"], 2)
 
     def test_party(self):
         pl = joiner.Players()
@@ -86,6 +89,9 @@ class Follow(unittest.TestCase):
         self.assertEqual(joiner.follow_step(unit(1, 100, 100), unit(2, 140, 120)), ("move", 10, 5))
         self.assertEqual(joiner.follow_step(unit(1, 100, 100), unit(2, 60, 100), hop=12), ("move", -12, 0))
         self.assertEqual(joiner.follow_step(unit(1, 0, 0, lid=1), unit(2, 0, 0, lid=2)), ("level", 1, 2))
+        # --cross (plan 0044 Phase 2): an outdoor border is crossed like any other move
+        self.assertEqual(joiner.follow_step(unit(1, 100, 100, lid=2), unit(2, 140, 100, lid=3), cross=True),
+                         ("move", 10, 0))
         self.assertEqual(joiner.follow_step(None, unit(2, 0, 0))[0], "wait")
         self.assertEqual(joiner.follow_step(unit(1, None, None), unit(2, 0, 0))[0], "wait")
 

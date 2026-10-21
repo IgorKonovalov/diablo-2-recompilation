@@ -101,7 +101,7 @@ references, [item-palette.md](../../formats/item-palette.md)); each was re-read 
 | `0x00627E70` | `ITEMS_GetQuality` | item data `+0x00`, 2 for a non-item | I |
 | `0x00629DA0` | `ITEMS_GetFileIndex` | item data `+0x28` (unique/set row) | I |
 | `0x006280A0` | `ITEMS_CheckFlags` | item data `+0x18 & mask` | I |
-| `0x0062BC20` | `sub_0062BC20_ItemMaxSockets` | type `MaxSock1/25/40` by level, capped | I |
+| `0x0062BC20` | `sub_0062BC20_ItemMaxSockets` | type `MaxSock1/25/40` by level, capped | (`C` since the `lane/h2b` review: run:2026-10-20-sweep-items-chain) | C |
 | `0x00483470` | `UNIQUEITEMS_GetRecord` | row → `0x14C`-byte record | I |
 | `0x00633EE0` | `MAGICAFFIX_GetRecord` | 1-based affix id → `0x90`-byte record | I |
 | `0x006372C0` | `GEMS_GetRecord` | row → `0xC0`-byte Gems record | I |

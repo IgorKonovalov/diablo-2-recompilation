@@ -7,6 +7,7 @@ Usage:
   python3 -I tools/quest_sessions.py run --slot N --tag TAG --run RUN SESSION [SESSION ...]   # each supervised (watchdog)
   python3 -I tools/quest_sessions.py act --slot N LOG ACTION [ACTION ...]      # actions on a running session
   python3 -I tools/quest_sessions.py load --slot N [NAME ...]     # load each built save, Save and Exit, compare
+  python3 -I tools/quest_sessions.py check [SESSION ...]          # dry check, no game (plan 0047: the Act V route)
 
 A session installs one save (workspace/runtime/quest-saves-p42/<Name>/<Name>.d2s), launches the game with
 tools/d2run.py (seed, difficulty steps), plays its action list, and stops the slot (tools/slots.py stop N); the
@@ -46,7 +47,8 @@ PY = [sys.executable, "-I"]
 SAVES = [os.path.join(ROOT, "workspace", "runtime", "quest-saves-p42"),      # quest_saves.py build (plan 0042 P0)
          os.path.join(ROOT, "workspace", "runtime", "quest-saves-p42h"),     # d2s.py build of quest-tpc (Phase 2)
          os.path.join(ROOT, "workspace", "runtime", "quest-saves-p42q"),     # part 2's step recipes (build_part2)
-         os.path.join(ROOT, "workspace", "runtime", "quest-saves-p42r")]     # part 3's recipes (quest-p3*.json)
+         os.path.join(ROOT, "workspace", "runtime", "quest-saves-p42r"),     # part 3's recipes (quest-p3*.json)
+         os.path.join(ROOT, "workspace", "runtime", "quest-saves-p47")]      # plan 0047 (quest-p47wp.json)
 CLASSIC_WP = ["--wp-tab-x0", "120", "--wp-tab-w", "78"]
 TOWNS = {1, 40, 75, 103, 109}
 # a warp's place where it is fixed (Lut Gholein is one preset; part 1 and part 2 logs, WRP lines): a walking goal
@@ -972,7 +974,7 @@ def run_load(args, names):
 def main(argv):
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=("list", "run", "act", "load"))
+    ap.add_argument("cmd", choices=("list", "run", "act", "load", "check"))
     ap.add_argument("rest", nargs="*")
     ap.add_argument("--slot", type=int)
     ap.add_argument("--tag", default="p42h")
@@ -983,6 +985,8 @@ def main(argv):
         for k, v in SESSIONS.items():
             print(k, v)
         return 0
+    if args.cmd == "check":
+        return check(args.rest)
     if args.slot is None or args.slot == 0:
         print("--slot N (N >= 1) is required")
         return 2
@@ -1153,6 +1157,60 @@ for k in range(20):
 # head for its tile rect from the camp, then activate it
 for k in range(12):
     sess("x-wpactr-%d" % k, "QuestWpAct", "enter-normal", 4322, ["push:5134:4709:12", "activate:1:4", "saveexit"])
+
+# ---- plan 0047 Phase 1: waypoint activation from mode 0 (the shortfall plan 0042 closed with). The reading
+# (plan 0047 log): every DS1 preset object is created with its preset's mode, 0 for every object
+# (0x00555938 -> 0x005557D0 -> SUnitCreate's mode argument, 0x005553E5), and OBJINIT_Waypoint (InitFn 17,
+# 0x00547210) changes it only for a room the waypoint-arrival list names (mode 1) or a town room (mode 2). A field
+# waypoint whose room is created while the player came in by a warp or on foot therefore stays in mode 0 until it is
+# operated. The route: TravelWpArreat (tools/d2s_recipes/quest-p47wp.json: the towns and the Arreat Plateau) arrives
+# at the Arreat Plateau by waypoint (5,3), whose own waypoint takes the arrival node, then goes down by warps through
+# four levels whose waypoints it does not hold, each an Act V row with Sync 0 (the object-seed draw): LvlWarp 71 to the
+# Crystalline Passage (113), 74 to the Glacial Trail (115), 74 to the Frozen Tundra (117), 71 to the Ancients' Way
+# (118). Each waypoint: approach it through its preset room (LvlPrest Def 1034-1037 for the ice caves, 953 or 954 for
+# the tundra), then activate. Five map seeds give 20 activations.
+ICE_WP = "511:1034,1035,1036,1037"
+TUNDRA_WP = "429,496:953,954"
+WP5_ROUTE = ["towp2", "wp:5,3", "warp:71", "approach:" + ICE_WP, "activate:1:4", "warp:74", "approach:" + ICE_WP,
+             "activate:1:4", "warp:74", "approach:" + TUNDRA_WP, "activate:1:4", "warp:71", "approach:" + ICE_WP,
+             "activate:1:4", "saveexit"]
+for k in range(6):
+    sess("x-wpact5r-%d" % k, "TravelWpArreat", "enter-normal", 4781 + k, WP5_ROUTE)
+
+
+def check(names):
+    """Dry check (plan 0047 Phase 1): the save's recipe builds, the steps file exists, the d2pilot.py commands the
+    route's actions run are valid."""
+    import session_check
+
+    def pilots(actions):
+        out = []
+        for a in actions:
+            kind, _, rest = a.partition(":")
+            if kind == "warp":
+                out.append(["farm", "--descend", rest.split(":")[0], "--time", "1", "--descend-time", "400"])
+            elif kind == "approach":
+                c, *pd = rest.split(":")
+                out.append(["objop", "--obj-cls", c, "--approach", "--time", "240", "--obj-near", "6"] +
+                           (["--to-pdef", pd[0]] if pd else []))
+            elif kind == "activate":
+                out.append(["explore", "--any-level", "--hops", "5", "--nova", "2"])
+            elif kind == "wp":
+                out.append(["wpchain", "--chain", rest.replace("_", " "), "--linger", "0.1"])
+        return out
+
+    def of(n):
+        save, steps, seed, actions, extra = SESSIONS[n]
+        return save, steps, pilots(actions)
+    names = names or sorted(n for n in SESSIONS if n.startswith("x-wpact5r-"))
+    bad = [n for n in names if n not in SESSIONS]
+    if bad:
+        print("unknown session(s) %s" % " ".join(bad))
+        return 2
+    cases = {"T1 waypoint activation from mode 0 (20, the Sync 0 object-seed draw)":
+             ("TravelWpArreat down the Act V warps, four field waypoints per map seed", names, [], ())}
+    return session_check.run(cases, {}, of, "quest_sessions")
+
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

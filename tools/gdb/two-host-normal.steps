@@ -1,0 +1,17 @@
+# plan 0044 Phase 2: two-host.steps plus the Select Difficulty box (NORMAL), for a host save with every difficulty open.
+# Main menu -> Other Multiplayer -> TCP/IP Game -> Host Game -> first character -> OK (a character with
+# only Normal open goes straight in; one with Nightmare open gets the difficulty box: add a click there).
+# Window-relative coordinates for the 800x600 game window.
+click 700 150   # empty background: the first click only activates the window
+sleep 1
+click 400 417   # OTHER MULTIPLAYER
+sleep 2
+click 400 334   # TCP/IP GAME
+sleep 3
+click 400 189   # HOST GAME
+sleep 3
+click 690 556   # OK on the character-select screen (first character is preselected)
+sleep 2
+click 400 280   # NORMAL in the Select Difficulty box (plan 0044 P2: a character with every difficulty open)
+sleep 13
+shot workspace/logs/two-host-ingame.png

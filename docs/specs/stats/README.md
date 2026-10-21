@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/properties, items/uniques-sets, player/creation, monsters/stats, data/calc, combat/overview]
 consumed_by: [combat/overview, player/creation, monsters/stats, data/calc, objects]
-tags: {C: 13, I: 4, L: 3}
-updated: 2026-10-17
+tags: {C: 14, I: 3, L: 3}
+updated: 2026-10-21
 ---
 
 # Stats and states: how a unit's stats add up, and how timed states live and die
@@ -64,7 +64,7 @@ in 1/256 points. A stat key is `stat << 16 | param`. Time is in game frames, the
 |---|---|---|
 | value oracles | a skill's own calc results where the formula reads unit state (data/calc's unit-reading variables); the shrine to-hit and damage values (`SHRINE_StatValue` cases 19 and 21); monster AI; the combat appliers that put a state on the player (poison, cold, open wounds) are inputs; the item's required level and the strength and dexterity the requirement check reads through `0x0062B450`, as the run record names them | [C] (run:2026-10-17-stats) |
 | modelled inputs | the passive calcs, evaluated with the level the list records in stat 351 | [C] (fn:SKILLS_RefreshPassive@0x00646D60, run:2026-10-17-stats) |
-| unchecked remainder | the 180 wearer set lists of the full Trang-Oul's Avatar (full blocks with a `state` or an `oskill` property): taken as logged and used as the input of the events after them; not an ADR-0004 boundary oracle, and their content stays `[I]` ([aggregate § J](aggregate.md#j-set-bonuses)) | [I] (fn:sub_00660120_SetBonusApply@0x00660120, run:2026-10-17-stats) |
+| no remainder (since the 2026-10-20 re-check) | the 180 wearer set lists of the full Trang-Oul's Avatar (full blocks with a `state` and an `oskill` property), taken as logged at the run, are predicted by the kept checker: values stored `<< ValShift`, the `state` block writing stat 98 with param 176 and value 1, so all 5 749 wearer set lists are checked ([aggregate § J](aggregate.md#j-set-bonuses)) | [C] (fn:sub_00660120_SetBonusApply@0x00660120, fn:PROP_Func24_ParParam@0x0065F390, run:2026-10-17-stats) |
 
 [C] Under this boundary run:2026-10-17-stats reproduced 18 sessions of six characters with 0 mismatches: every link,
 unlink, propagation and cache write of the player's tree in order, every read in the 50-frame windows, the stat
@@ -80,11 +80,18 @@ check that composition.
 
 [C] Seed invariance was logged at the entry and the exit of every event of eight kinds (game seed and acting unit's
 seed): link 12 868, unlink 12 853, own write 101 995, toggle 19 525, apply 6 232, expire 2 749, tick 54 719, aura
-2 763 unchanged. Those kinds draw nothing, except the aura's hit below. (run:2026-10-17-stats)
+2 763 unchanged. Those kinds draw nothing, except a damaging aura's drawing run below. (run:2026-10-17-stats)
 
-[C] A damaging aura's run (Sanctuary) draws one `RNG_RangeB` on the caster's unit seed per hit, in the hit's elemental
-damage roll (phase 3's): 865 drawing runs, each exit asserted against the logged draws, 746 chained pairs.
-(fn:SKILLS_RollElemDamage@0x0056E0C0, fn:RNG_RangeB@0x0045C3E0, run:2026-10-17-stats) Details:
+[C] A damaging aura's run (Sanctuary) that draws moves the caster's unit seed by one `RNG_RangeB`, in the elemental
+damage roll (phase 3's): 865 drawing runs, 865 steps, each exit asserted against the logged draws; 746 chained pairs,
+115 next runs entered elsewhere, 4 drawing runs with no next run in their log (`tools/stats.py`'s counts, keyed by the
+caster unit). The run did not count the units each run hit.
+(fn:SKILLS_RollElemDamage@0x0056E0C0, fn:RNG_RangeB@0x0045C3E0, run:2026-10-17-stats)
+
+[I] The draw is one per run whatever the number of units hit: do 66 makes its one `SKILLS_RollElemDamage` call
+(at 0x005CF5D5) before its target pass, and the pass copies the packet it fills to every unit hit (`rep movs` at
+0x005CF367). (fn:sub_005CF3A0_AuraHitDo@0x005CF3A0, fn:sub_005CF2A0_AuraHitUnitCb@0x005CF2A0,
+[skills/0011 § 3](../../findings/skills/0011-paladin.md#3-the-aura-functions-do-65-66-81-82), [stats/0002 § 7](../../findings/stats/0002-states.md#7-events-inputs-outputs-draws)) Details:
 [states § H](states.md#h-draws-per-event-kind).
 
 ## Evidence
@@ -92,7 +99,9 @@ damage roll (phase 3's): 865 drawing runs, each exit asserted against the logged
 - [stats/0001](../../findings/stats/0001-aggregate.md) (aggregation, § 1–9) and
   [stats/0002](../../findings/stats/0002-states.md) (states, § 1–8).
 - [stats/experiments § run:2026-10-17-stats](../../findings/stats/experiments.md#run2026-10-17-stats) and its review
-  in the [plan 0041 log](../../plans/done/0041-stats-and-states.md#implementation-log).
+  in the [plan 0041 log](../../plans/done/0041-stats-and-states.md#implementation-log); its *Re-check 2026-10-20*
+  (plan 0047 Phase 1: the full set blocks built, the aura chained pairs counted) and its review in the
+  [plan 0047 log](../../plans/0047-simulation-shortfalls.md#implementation-log).
 - `tools/stats.py` (the model behind the confirmed tags, `check` over the run list), `tools/gdb/stats.gdb`.
 - Tables: [ItemStatCost](../../tables/ItemStatCost.md), [CharStats](../../tables/CharStats.md),
   [States](../../tables/States.md), [Skills](../../tables/Skills.md), [Sets](../../tables/Sets.md),
@@ -108,6 +117,7 @@ damage roll (phase 3's): 865 drawing runs, each exit asserted against the logged
 
 - [L] Phase (3): a skill's own effect, Holy Shield and the progressive skills, the timed self-states (armours,
   shouts), a damaging aura's hit, charged and item-granted skills.
-- [L] Two clients (plan 0044): party auras and hostile states.
+- [L] Two clients (plan 0044): offensive auras on a hostile player and hostile states; the party aura filter is
+  [states F3](states.md)'s (run:2026-10-20-two-clients).
 - [L] The named shortfalls of run:2026-10-17-stats (shrines and wells, an aura state's end, a different-state `group`
   clear) are listed in each file; an optional harness addendum is filed to the reverser.

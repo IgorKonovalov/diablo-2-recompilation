@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/quality, items/uniques-sets, data/excel]
 consumed_by: [items/properties, items/vendors, items/cube, save/d2s]
-tags: {C: 112, I: 46, L: 4}
-updated: 2026-10-17
+tags: {C: 152, I: 28, L: 4}
+updated: 2026-10-20
 ---
 
 # Affixes: alvl, magic and rare picks, automagic, and the other builders
@@ -58,16 +58,25 @@ flowchart LR
   `{S, 666}`, as [items/uniques-sets § A](uniques-sets.md#a-the-item-seed-at-entry) sets it.
   (fn:sub_00557450_ItemCreateByQuality@0x00557450, run:2026-10-14-affixes,
   [items/0005 § Phase 2 results](../../findings/items/0005-affixes.md#phase-2-results-run2026-10-14-affixes))
-- [I] Qualities 8 (crafted) and 9 have builders in the same switch, but the drop quality roll returns only 1..7, so
-  no drop reaches them. They belong to `items/cube`, which specifies the crafted builder in
+- [C] Qualities 8 (crafted) and 9 have builders in the same switch, and no drop reaches them. All 9 336 logged drop
+  creations (5 017 stock, 4 319 from ItemRatio-only forced runs) reach the switch with a quality of 1 to 7 and none
+  enters the crafted builder. `sub_005C21D0_ItemBuildCrafted` has one caller, case 8 of the switch (0x005577E0), and
+  `sub_005C1BC0_PickRareNameByVersion` is called only by case 9 and by the cube's `sub_00565AB0_RecipeOutputCreate`
+  (raw scan of the image and Ghidra's references). They belong to `items/cube`, which specifies the crafted builder in
   [items/cube § I](cube.md#i-the-crafted-builder--sub_005c21d0_itembuildcrafted) and the quality-9 names in
   [§ E](cube.md#e-building-one-output--sub_00565ab0_recipeoutputcreate). (fn:sub_005C21D0_ItemBuildCrafted@0x005C21D0,
-  fn:sub_005C1BC0_PickRareNameByVersion@0x005C1BC0, fn:ITEMS_DropRollQuality@0x00558640,
+  fn:sub_005C1BC0_PickRareNameByVersion@0x005C1BC0, run:2026-10-14-affixes, run:2026-10-16-quest-drops,
+  [items/0005 § Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16), aff 1)
+- [I] That the drop quality roll can return no value outside 0..7 for any input, which is why no drop reaches them.
+  (fn:ITEMS_DropRollQuality@0x00558640,
   [items/0005 § 11](../../findings/items/0005-affixes.md#11-qualities-8-and-9-not-on-the-drop-path))
-- [I] Vendors, gambling, the cube and imbue reach the same builders by other paths, some with forced affixes. This
-  spec covers the builders as a drop reaches them; those callers belong to [items/vendors](vendors.md) and
+- [C] Vendors, gambling, the cube and imbue reach the same builders by other paths, some with forced affixes: the
+  affix model of this spec reproduces the vendors' 8 787 chained creations (run:2026-10-15-vendors), the cube's 140
+  (12 picks with a forced id; run:2026-10-15-cube) and the 17 imbued rares (run:2026-10-16-quest-drops). This spec
+  covers the builders as a drop reaches them; those callers belong to [items/vendors](vendors.md) and
   [items/cube](cube.md) (its forced `pre=`/`suf=` ids: [§ E](cube.md#e-building-one-output--sub_00565ab0_recipeoutputcreate)).
-  (fn:ITEMS_PickMagicAffix@0x005C1560, struct:ItemCreateRec+0x68)
+  (fn:ITEMS_PickMagicAffix@0x005C1560, struct:ItemCreateRec+0x68,
+  [items/0005 § Plan 0038 batch S2c](../../findings/items/0005-affixes.md#plan-0038-batch-s2c-2026-10-16), aff 2)
 
 ## Inputs
 
@@ -91,13 +100,20 @@ flowchart LR
 | tbl:ItemTypes.txt:Throwable, tbl:ItemTypes.txt:Class (`+0x21`, 7 = none), tbl:ItemTypes.txt:StaffMods (`+0x1F`, 7 = none), tbl:ItemTypes.txt:Rare, tbl:ItemTypes.txt:MaxSock1, `Equiv1`/`Equiv2` | type tests, class test, staff mods, the rare gate |
 | tbl:Skills.txt:charclass, tbl:Skills.txt:itypea1 (`+0x18`) | staff mods: the class's skill run and each skill's item-type requirement |
 
-- [I] Not read by any pick: `levelreq`, `class`, `classlevelreq`, `transformcolor` and the price columns of the
-  magic tables; the rare record's `+0x000..+0x00B`. (fn:ITEMS_PickMagicAffix@0x005C1560,
-  fn:ITEMS_PickRareName@0x005C1AB0, tbl:MagicPrefix.txt:levelreq,
-  [items/0005 § Data touched](../../findings/items/0005-affixes.md#data-touched))
-- [I] Every list in a type column ends at its first value < 1, so the `0xFFFF` (−1) that the `.bin` holds in absent
-  `etype4`/`etype5` columns ends the list like a blank. (fn:ITEMS_MagicAffixTypeOk@0x0065E620,
-  tbl:MagicSuffix.txt:etype4, [AutoMagic § Code semantics](../../tables/AutoMagic.md#code-semantics-items0005))
+- [C] Not read by any pick: `levelreq`, `class`, `classlevelreq`, `transformcolor` and the price columns of the
+  magic tables; the rare record's `+0x000..+0x00B`. A second read of the seven pick functions (an instruction scan
+  that also covers the record cursor `ESI` = record + 0x60, and every non-stack memory operand with its width) finds
+  no access to those bytes, and the candidate lists, built without these columns, reproduce: 1 458 stock and 62 from
+  ItemRatio-only forced runs. (fn:ITEMS_PickMagicAffix@0x005C1560, fn:ITEMS_RareNameTypeOk@0x0065E710,
+  tbl:MagicPrefix.txt:levelreq, [items/0005 § Data touched](../../findings/items/0005-affixes.md#data-touched),
+  [items/0005 § Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16), aff 3)
+- [C] The `0xFFFF` (−1) that the `.bin` holds in absent `etype4`/`etype5` cells never refuses a row: 783 of the 1 452
+  magic rows hold it, and the 1 520 logged candidate lists reproduce with every list ending at its first value < 1.
+  (fn:ITEMS_MagicAffixTypeOk@0x0065E620, tbl:MagicSuffix.txt:etype4,
+  [items/0005 § Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16), aff 4)
+- [I] Whether a type list *ends* at its first value < 1 or only skips it: no stock magic or rare row has a value ≥ 1
+  after a value < 1, so no stock row tells them apart. The model ends it, like a blank.
+  (fn:ITEMS_MagicAffixTypeOk@0x0065E620, [AutoMagic § Code semantics](../../tables/AutoMagic.md#code-semantics-items0005))
 
 ### Runtime state
 
@@ -121,13 +137,21 @@ flowchart LR
 | `ALVL_MAX` | 99, in the alvl formula and the clamp | 0x005C1671–0x005C16C2 | [C] |
 | `RARE_COUNT` | `{3, 4, 4, 5, 5, 5, 6, 6}` (`int[8]`) | data:g_RareAffixCountTable@0x006E3014 | [C] |
 | `RARE_SIDE_MAX` | 3 prefixes, 3 suffixes | 0x005C1CB1–0x005C1E16 | [C] |
-| `TYPE_JEWEL` | 58 (`jewl`) | 0x005C1C6F–0x005C1C77 | [I] |
+| `TYPE_JEWEL` | 58 (`jewl`) | 0x005C1C6F–0x005C1C80, run:2026-10-20-sweep-items-chain | [C] |
 | `CLASS_NONE` | 7, the "no class" value of `Class` and `StaffMods` | fn:sub_0062C0B0_ItemTypeClass@0x0062C0B0, fn:sub_0062BBD0_ItemTypeStaffMods@0x0062BBD0 | [C] |
-| `CAND_CAP` | 511 stored candidates per pick | fn:sub_005C0D00_AffixCandAdd@0x005C0D00 | [I] |
+| `CAND_CAP` | 511 stored candidates per pick | fn:sub_005C0D00_AffixCandAdd@0x005C0D00, run:2026-10-17-sweep-emu2 | [C] |
 | `STAT_SOCKETS` | 194 (`item_numsockets`) | fn:ITEMS_MagicAffixTypeOk@0x0065E620 | [I] |
 
 - [C] The model uses each `[C]` constant above and reproduces every logged pick, count and slot with it.
   (run:2026-10-14-affixes)
+- [C] `TYPE_JEWEL`: after `ITEMS_GetBaseType` the count branch compares with `0x3A` and on equal draws the jewel
+  count (E3); 21 rare jewels (17 cube rerolls of run:2026-10-20-sweep-items-chain, 4 of run:2026-10-15-cube) reproduce
+  through that branch, and 10 non-jewel rares through the general table. `CAND_CAP`: under emulation
+  `sub_005C0D00_AffixCandAdd` stores a candidate and returns `count + 1` exactly when the signed count is below 0x1FF,
+  and from 511 up returns the count unchanged and writes nothing (3 000 calls; a cap of 512 differs in 65).
+  (fn:ITEMS_GetBaseType@0x0062B400, fn:sub_005C0D00_AffixCandAdd@0x005C0D00, run:2026-10-20-sweep-items-chain,
+  run:2026-10-17-sweep-emu2, [items/0005 § Plan 0038 batch H2b](../../findings/items/0005-affixes.md#plan-0038-batch-h2b-2026-10-20)
+  aff 5, [§ Plan 0038 batch S1f](../../findings/items/0005-affixes.md#plan-0038-batch-s1f-2026-10-17) row 6)
 
 ### Inputs and oracles
 
@@ -140,7 +164,7 @@ Chained with the [items/properties](properties.md) model (re-analysis 2026-10-15
 an oracle: all 3 102 creations of the run still reproduce and its 1 034 exit seeds are predicted. Run without log lines
 over run:2026-10-14-props and run:2026-10-14-props-forced, this spec's picks predict every affix and `QualityItems`
 call (754, row and entry seed), 2 114 join seeds and the 18 automagic picks from the ethereal and socket exit to the
-return seed. `ITEMS_RollStaffMods` stays an oracle. [C] (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0,
+return seed. `ITEMS_RollStaffMods` was an oracle in those checks; it is now modelled (§ I). [C] (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0,
 fn:ITEMS_PickMagicAffix@0x005C1560, run:2026-10-14-affixes, run:2026-10-14-props-forced,
 [items/0005 Phase 2 results](../../findings/items/0005-affixes.md#phase-2-results-run2026-10-14-affixes))
 With both item loggers in one session (`tools/gdb/items-chain.gdb`), `tools/items_chain.py both` reproduces 889
@@ -155,7 +179,7 @@ run:2026-10-15-items-chain, run:2026-10-15-items-chain-forced,
 | Input | Kind | What this spec needs | Owner | Tag |
 |---|---|---|---|---|
 | `sub_0065FEC0_ItemApplyProps` | seed oracle in `check`; modelled in the chained check | entry seed: after each magic pick's draw, after all rare picks, after the superior row, after the automagic pick; it draws a row's property values on the item seed | [items/properties § B](properties.md#b-itemapplyprops-modes-and-blocks) | [C] (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, run:2026-10-14-affixes) |
-| `ITEMS_RollStaffMods` | seed oracle | entry seed: the builder's last draw; § I gives its draws as read | this spec (§ I), modelled later | [C] (fn:ITEMS_RollStaffMods@0x005C1260, run:2026-10-14-affixes) |
+| `ITEMS_RollStaffMods` | modelled (plan 0038 S2b); the checkers' default since plan 0048 Phase 1, `--staff oracle` restores the oracle | entry seed: the builder's last draw; § I gives its draws | this spec (§ I) | [C] (fn:ITEMS_RollStaffMods@0x005C1260, run:2026-10-14-affixes, [items/0005 § Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16), [items/0005 § Plan 0048 Phase 1](../../findings/items/0005-affixes.md#plan-0048-phase-1-the-staff-mods-model-is-the-default-2026-10-20)) |
 | the ethereal roll `sub_00556CA0_ItemRollEthereal` and the socket roll `sub_00556B60_ItemRollSockets` | logged boundary | entry seed: the join seed; exit seed: the automagic pick's entry seed | [items/properties § F](properties.md#f-ethereal-and-sockets) | [C] (fn:sub_00556CA0_ItemRollEthereal@0x00556CA0, fn:sub_00556B60_ItemRollSockets@0x00556B60, run:2026-10-14-affixes) |
 | the builder entry seed `{S, 666}` and the quality | value input | the switch or the fallback step | [items/uniques-sets](uniques-sets.md#e-failure-durability-and-the-fallback-chain) | [C] (fn:sub_00557450_ItemCreateByQuality@0x00557450, run:2026-10-14-affixes) |
 
@@ -164,7 +188,11 @@ run:2026-10-15-items-chain, run:2026-10-15-items-chain-forced,
 All arithmetic is signed 32-bit unless a step says otherwise. "Low" is `item.seed.low` after the step just made.
 Section A fixes the id spaces, B the affix level, C one magic-affix pick, D to H the builders, I the staff mods,
 J the automagic step after the switch, K classic games.
-[I] (fn:sub_00557450_ItemCreateByQuality@0x00557450, [items/0005 § Walkthrough](../../findings/items/0005-affixes.md#walkthrough))
+[C] Signed 32-bit arithmetic on the low word after the step reproduces every logged creation (5 144 stock, 703 from
+ItemRatio-only forced runs); a draw from the high word breaks 680 stock creations, an unsigned subtract walk 671.
+(fn:sub_00557450_ItemCreateByQuality@0x00557450, 0x005C1828–0x005C189E,
+[items/0005 § Walkthrough](../../findings/items/0005-affixes.md#walkthrough),
+[§ Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16), aff 8)
 
 ### A. Merged affix ids
 
@@ -196,8 +224,11 @@ Step notes:
   `+0x3E + 2i`, `ITEMS_SetRareName1` → `+0x32`, `ITEMS_SetRareName2` → `+0x34`, `ITEMS_SetAutoAffix` → `+0x36`). A
   save stores block-relative ids instead (`save/d2s`). [C] (fn:ITEMS_SetPrefix@0x00627EF0,
   fn:ITEMS_SetSuffix@0x00627FB0, fn:ITEMS_SetAutoAffix@0x00627F50, struct:ItemData+0x32, run:2026-10-14-affixes)
-- A1. `magicsuffix` row 0 is a real row with id 1; `magicprefix` row 0 is blank and never a candidate (`frequency` 0,
-  no `itype`). [I] (tbl:MagicPrefix.txt:frequency, [items/0005 § 1](../../findings/items/0005-affixes.md#1-the-merged-affix-arrays-and-the-ids-0x00633730-0x00633f40))
+- A1. `magicsuffix` row 0 is a real row with id 1 (`of Health`, `frequency` 0); `magicprefix` row 0 is blank and never
+  a candidate (no name, `frequency` 0, no `itype`). Read from the full tables, row identity pinned by `excel_bin.py
+  diff`. [C] (tbl:MagicPrefix.txt:frequency, tbl:MagicSuffix.txt:frequency,
+  [items/0005 § 1](../../findings/items/0005-affixes.md#1-the-merged-affix-arrays-and-the-ids-0x00633730-0x00633f40),
+  [items/0005 § Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16), aff 9)
 
 ### B. The affix level (alvl)
 
@@ -225,8 +256,10 @@ Step notes:
   suffixes, the rare slots and the automagic pick. [C] (0x005C1664, run:2026-10-14-affixes)
 - B1. The same formula holds in a classic game: the picks branch on item version 0, which no drop creates, not on
   100 (§ K). [C] (fn:sub_005C18E0_PickMagicAffixByVersion@0x005C18E0, run:2026-10-14-affixes)
-- B2. Stock bases with `magic lvl`: the staves, wands and orbs with 1, the circlets `ci0`..`ci3` with 3, 8, 13, 18.
-  [I] (tbl:Armor.txt:magic lvl, [items/0005 § 2](../../findings/items/0005-affixes.md#2-alvl-0x005c16340x005c16c2))
+- B2. Stock bases with `magic lvl`: the 15 staves, 8 wands and 15 orbs with 1, the circlets `ci0`..`ci3` with 3, 8,
+  13, 18; no other base of Weapons, Armor or Misc has one (full tables). [C] (tbl:Weapons.txt:magic lvl,
+  tbl:Armor.txt:magic lvl, [items/0005 § 2](../../findings/items/0005-affixes.md#2-alvl-0x005c16340x005c16c2),
+  [items/0005 § Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16), aff 10)
 
 ### C. One magic-affix pick — `ITEMS_PickMagicAffix`
 
@@ -272,9 +305,9 @@ C4g.  if r.frequency = 0: continue                                        ; u8
 C4h.  if r.classspecific ≠ 0xFF and typeClass(item) ≠ 7                   ; u8; 7 = no class
          and r.classspecific ≠ typeClass(item): continue
 C4i.  if GroupTaken(item, r.group): continue                              ; C6
-      if forced: id ← blockStart + row; go to C8                          ; [I] no weighted draw (0x005C180B–0x005C181B)
+      if forced: id ← blockStart + row; go to C8                          ; [C] no weighted draw (0x005C180B–0x005C181B, run:2026-10-15-cube)
       w: i32 ← r.frequency × r.level if m ≠ 0 else r.frequency
-      if n < 511: cand[n] ← (blockStart + row, r); n ← n + 1             ; [I] weight added even past the cap (0x005C0D00)
+      if n < 511: cand[n] ← (blockStart + row, r); n ← n + 1             ; [C] weight added even past the cap (0x005C0D00, 0x005C17E1, run:2026-10-17-sweep-emu2)
       W ← W + w
 C7. if n ≤ 0: return 0                                                    [C] (0x005C1821, run:2026-10-14-affixes)
     x: i32 ← Range(item.seed, W + 1)                                      [C] draw#2 (fn:RNG_RangeOffset@0x00472280, 0x005C1828–0x005C1839, run:2026-10-14-affixes)
@@ -290,8 +323,8 @@ C8. if applyProps: ItemApplyProps(item, record(id + 1))                   [C] OR
 **C5. The type test `MagicAffixTypeOk(item, r)`**, in order:
 
 ```
-C5a. if itemVersion < 100 and (base.stackable or ItemTypes[type].Throwable): return false      [I] (fn:ITEMS_MagicAffixTypeOk@0x0065E620, 0x0065E62D, all of C5a–C5b)
-C5b. if not base.hasinv or ItemMaxSockets(item) = 0:
+C5a. if itemVersion < 100 and (base.stackable or ItemTypes[type].Throwable): return false      [C] (fn:ITEMS_MagicAffixTypeOk@0x0065E620, 0x0065E62D–0x0065E645, run:2026-10-20-sweep-items-chain; each half alone: C5a notes)
+C5b. if not base.hasinv or ItemMaxSockets(item) = 0:                                            [I] (fn:ITEMS_MagicAffixTypeOk@0x0065E620, 0x0065E64E)
        if r.mod1code ≥ 0 and (mod1code out of range, or no Properties record,
                               or the property's first stat = 194): return false
 C5c. for t in r.etype1..5 while t ≥ 1: if ITEMS_UnitIsType(item, t): return false                [C] (fn:ITEMS_MagicAffixTypeOk@0x0065E620, fn:ITEMS_UnitIsType@0x00629BB0, run:2026-10-14-affixes, all of C5c–C5d)
@@ -325,25 +358,53 @@ Step notes:
   excludes itself. Stock prefix groups (101–142), suffix groups (1–45) and automagic groups (300–305) do not overlap,
   so the cross-table comparisons never bite with stock data. [C] (fn:sub_005C1500_AffixGroupTaken@0x005C1500,
   tbl:MagicPrefix.txt:group, tbl:AutoMagic.txt:group, run:2026-10-14-affixes)
-- C4i. **The forced row** (`forcedId` > 0, block-relative) skips only the level window. It still passes every other
-  test, and when it does the pick returns it with no draw 2. If it fails a test the pick continues as an ordinary one.
-  On the drop path `forcedId` is always 0, because `sub_0055A550_DropCreateItem` zeroes the record and nothing on the
-  path writes `+0x68..+0x7C`. [I] (0x005C16FE–0x005C1713, 0x005C180B–0x005C181B, struct:ItemCreateRec+0x68)
+- C4i. **The forced row** (`forcedId` > 0, block-relative): a forced row that passes every other test is returned
+  with no draw 2: the 12 forced picks of run:2026-10-15-cube (rows 6–10, 17, 18, 19) leave the item seed
+  as the model has it with no weighted draw. On the drop path `forcedId` is always 0, because
+  `sub_0055A550_DropCreateItem` zeroes the record and nothing on the path writes `+0x68..+0x7C`. [C]
+  (0x005C180B–0x005C181B, struct:ItemCreateRec+0x68, fn:ITEMS_PickMagicAffix@0x005C1560, run:2026-10-15-cube,
+  [items/0005 § Plan 0038 batch S2c](../../findings/items/0005-affixes.md#plan-0038-batch-s2c-2026-10-16), aff 11 and 14)
+- C4i. The forced row skips only the level window, and a forced row that fails another test leaves the pick to
+  continue as an ordinary one. All 12 logged forced picks lay inside their rows' windows, so no run decides the
+  window skip. [I] (0x005C16FE–0x005C1713, [items/0005 § Plan 0038 batch S2c](../../findings/items/0005-affixes.md#plan-0038-batch-s2c-2026-10-16), aff 14)
 - C4i. Every logged pick on the drop path had `forcedId` 0. [C] (fn:ITEMS_PickMagicAffix@0x005C1560,
   run:2026-10-14-affixes)
 - C4. **Weights.** `frequency` alone, or `frequency × level` when the base has `magic lvl`, the same rule in the sum
   and in the walk. 989 logged picks drew over unequal weights, 51 of them with `frequency × level`. [C]
   (0x005C17CE–0x005C17EA, 0x005C185A–0x005C187C, tbl:MagicPrefix.txt:frequency, run:2026-10-14-affixes)
-- C4. **Candidate cap.** Only the first 511 candidates are stored, while every weight is summed. With stock data no
-  base has more than 165 type-eligible rows in one block, so the cap is unreachable. [I]
-  (fn:sub_005C0D00_AffixCandAdd@0x005C0D00)
-- C5a. A classic item refuses stackable bases and `Throwable` types. With stock data only classic throwing weapons
-  then have no affix and no rare name at all; none dropped as magic or rare in the run. [I] (0x0065E62D,
-  fn:sub_006289F0_ItemBaseStackable@0x006289F0, fn:sub_0062BA80_ItemTypeThrowable@0x0062BA80, tbl:Weapons.txt:stackable)
+- C4. **Candidate cap.** Only the first 511 candidates are stored, while every weight is summed: the caller adds the
+  weight with no test of the count (0x005C17E1, 0x005C17EA). Under emulation, in the 207 picks with more than 511
+  eligible rows the total passed to the draw sums every eligible row while the list holds 511, and in 22 of them the
+  walk ended on the 511th candidate; a model that sums only the stored weights differs in 125 calls.
+  [C] (fn:sub_005C0D00_AffixCandAdd@0x005C0D00, fn:RNG_RangeOffset@0x00472280, run:2026-10-17-sweep-emu2, [items/0005 § Plan 0038 batch S1f](../../findings/items/0005-affixes.md#plan-0038-batch-s1f-2026-10-17),
+  row 12)
+- C4. With stock data the cap is unreachable: over every base, both game versions and the three socket bands, the most
+  rows of one block that pass the version and type tests are 188 (`ci0`, suffixes, expansion), and 135 of those also
+  have `spawnable` and a non-zero `frequency`, which every candidate of a drop pick needs. [C]
+  (fn:sub_005C0D00_AffixCandAdd@0x005C0D00, tbl:MagicSuffix.txt:frequency, [items/0005 § Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16), aff 15)
+- C5a. A classic item refuses stackable bases and `Throwable` types before any row test. In the 9 magic fallbacks of
+  nine classic rare throwing weapons rebuilt by the cube (5 `tkf`, 4 `tax`, ilvl 45), the 11 candidate lists logged
+  were all empty, the other 7 picks declined on their attempt bit, and all 9 magic builds ended with no affix. With
+  C5a removed, the same bases at item version 1 have 30 to 35 candidates per side, so the refusal is what empties
+  them. [C] (0x0065E62D–0x0065E645, fn:sub_006289F0_ItemBaseStackable@0x006289F0,
+  fn:sub_0062BA80_ItemTypeThrowable@0x0062BA80, tbl:Weapons.txt:stackable, run:2026-10-20-sweep-items-chain,
+  [items/0005 § Plan 0038 batch H2b](../../findings/items/0005-affixes.md#plan-0038-batch-h2b-2026-10-20), aff 13)
+- C5a, R1. Each half of the test alone is read from the code: the logged `tkf` and `tax`, like all 18 classic
+  throwing weapons, are both `stackable` and of a `Throwable` type, so no run tells the two-part test from a test on
+  one half (a stackable base whose type is not `Throwable`, or the reverse). [I] (0x0065E62D–0x0065E645,
+  0x0065E71D–0x0065E737, tbl:Weapons.txt:stackable, tbl:ItemTypes.txt:Throwable)
+- C5a. With stock data only classic throwing weapons then have no affix and no rare name at all: the survey of every
+  base at item version 1 lists, among the weapons, exactly the 18 classic throwing weapons (types `tkni`, `taxe`,
+  `jave`), each with no prefix, no suffix and no name candidate; its other entries are expansion records, which no
+  classic game creates, and misc records whose type has no `Rare` flag. [C] (tbl:Weapons.txt:stackable, run:2026-10-20-sweep-items-chain,
+  [items/0005 § Plan 0038 batch H2b](../../findings/items/0005-affixes.md#plan-0038-batch-h2b-2026-10-20), aff 13)
 - C5b. **The socket test.** On a base that cannot hold sockets (`hasinv` = 0, or the type's max sockets = 0), a row
-  whose first property is the `sock` property (first stat 194, `item_numsockets`) is refused. No row was refused this
-  way in the run. [I] (0x0065E64E, fn:sub_00629900_ItemBaseHasInv@0x00629900,
-  fn:sub_0062BC20_ItemMaxSockets@0x0062BC20, tbl:MagicPrefix.txt:mod1code, tbl:Weapons.txt:hasinv)
+  whose first property is the `sock` property (first stat 194, `item_numsockets`) is refused. With stock data, inside
+  the level window, the test alone refuses a row (`Jeweler's`, `Artificer's`, `Mechanist's`) only on the five quest
+  bases `d33`, `g33`, `hdm`, `hst` and `msf`, which no drop builds as magic, so no stock drop reaches it; no logged pick
+  was refused by it. [I] (0x0065E64E, fn:sub_00629900_ItemBaseHasInv@0x00629900,
+  fn:sub_0062BC20_ItemMaxSockets@0x0062BC20, tbl:MagicPrefix.txt:mod1code, tbl:Weapons.txt:hasinv,
+  [items/0005 § Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16), aff 7 and 16)
 - C5c–C5d. `ITEMS_UnitIsType` tests the `Equiv1`/`Equiv2` closure of the base's `type` and `type2`. Any `etype`
   match refuses before the `itype` list is read. The 27 `magicsuffix` rows with no `itype` can never be picked. [C]
   (fn:ITEMS_UnitIsType@0x00629BB0, tbl:MagicPrefix.txt:itype1, tbl:MagicPrefix.txt:etype1, run:2026-10-14-affixes)
@@ -380,8 +441,11 @@ Step notes:
 - D1–D2. **The prefix's properties come before the suffix pick**, because each pick applies its row's properties
   itself (`applyProps` 1). Order on the item seed: prefix draw 1, prefix draw 2, prefix properties, suffix draw 1,
   suffix draw 2, suffix properties, staff mods. [C] (fn:ITEMS_BuildMagic@0x005565E0, run:2026-10-14-affixes)
-- D3. The builder fails only when both slots are 0, which on a drop needs an empty suffix block for the item (the
-  suffix pick must roll). No failed magic build was logged. [I] (0x00556673–0x00556684, 0x0055667D)
+- D3. The builder fails exactly when both slots are 0 (`test di, di` / `test bx, bx`, return 0 at 0x0055667D), which
+  on a drop needs an empty suffix block for the item (the suffix pick must roll). In run:2026-10-20-sweep-items-chain
+  the 9 magic builds with both slots 0 (the classic throwing weapons of C5a) each failed, and none of the 71 with a
+  slot set did. [C] (0x00556673–0x00556684, 0x0055667D, fn:ITEMS_BuildMagic@0x005565E0,
+  run:2026-10-20-sweep-items-chain, [items/0005 § Plan 0038 batch H2b](../../findings/items/0005-affixes.md#plan-0038-batch-h2b-2026-10-20), aff 17)
 
 ### E. The rare builder — `ITEMS_BuildRare` → `ITEMS_BuildRareAffixes`
 
@@ -412,7 +476,7 @@ E1. if not ItemTypes[type].Rare: return false                                   
 E2. n1 ← PickRareName(prefix, item); n2 ← PickRareName(suffix, item)                [C] (fn:ITEMS_BuildRareAffixes@0x005C1BF0, 0x005C1BF0–0x005C1C59, run:2026-10-14-affixes)
     if n1 = 0 or n2 = 0: return false                                             ; → magic fallback
     rareName1 ← n1; rareName2 ← n2
-E3. if base type = 58:                                                            [I] (0x005C1C6F–0x005C1C77, fn:ITEMS_GetBaseType@0x0062B400)
+E3. if base type = 58:                                                            [C] (0x005C1C6F–0x005C1C80, fn:ITEMS_GetBaseType@0x0062B400, run:2026-10-20-sweep-items-chain)
       count: i32 ← 3 + Range(item.seed, 2)                                        ; draw (RNG_RangeOffset)
     else:                                                                         [C] (0x005C1C77–0x005C1CAE, data:g_RareAffixCountTable@0x006E3014, run:2026-10-14-affixes)
       Step(item.seed); count ← RARE_COUNT[low & 7]                                ; draw
@@ -428,7 +492,7 @@ E4. np ← 0; ns ← 0; preDone ← false; sufDone ← false; i ← 0           
       store a in the side's next slot; n<side> ← n<side> + 1
       if n<side> > 2: close side
       i ← i + 1
-E5. if np = 0 and ns = 0: return false                                            ; [I] (0x005C1E71)
+E5. if np = 0 and ns = 0: return false                                            ; [I] no stock case (0x005C1E71)
 E6. set item flag 0x10                                                            [C] (0x005C1E16–0x005C1E70, run:2026-10-14-affixes)
     for k in 0 ..< 3:
       if prefix[k] ≠ 0: ItemApplyProps(item, record(prefix[k]))                   ; ORACLE, items/properties
@@ -439,12 +503,12 @@ E7. RollStaffMods(item, rec); return true                                       
 **E2. `PickRareName(isPrefix, item)`**:
 
 ```
-R1. if itemVersion < 100 and (base.stackable or ItemTypes[type].Throwable): no row passes    [I] (0x0065E71D–0x0065E737)
+R1. if itemVersion < 100 and (base.stackable or ItemTypes[type].Throwable): no row passes    [C] (0x0065E71D–0x0065E737, run:2026-10-20-sweep-items-chain; each half alone: C5a notes)
 R2. cand ← every row r of the block, in table order, with                                  [C] (fn:ITEMS_PickRareName@0x005C1AB0, fn:ITEMS_RareNameTypeOk@0x0065E710, run:2026-10-14-affixes)
       not (r.version ≥ 100 and itemVersion < 100),
       no etype1..4 (while ≥ 1) that the item is,
       one itype1..7 (while ≥ 1) that the item is
-R3. if cand is empty: return 0                                                             [I] no draw (0x005C1B7E)
+R3. if cand is empty: return 0                                                             [C] no draw (0x005C1B7E, run:2026-10-20-sweep-items-chain)
 R4. k ← Range(item.seed, len(cand)); return cand[k].id                                     [C] draw (fn:RNG_RangeOffset@0x00472280, run:2026-10-14-affixes)
 ```
 
@@ -458,12 +522,20 @@ Step notes:
 - R2–R4. A name pick has no level and no weight: one uniform draw over the type-eligible rows (cap 511). `rareprefix`
   `Warp` and `Rift` name no `itype`, so they are never picked. [C] (fn:ITEMS_PickRareName@0x005C1AB0,
   tbl:RarePrefix.txt:itype1, tbl:RareSuffix.txt:etype1, run:2026-10-14-affixes)
-- R2. The rare `version` cell is 0 in every stock row, so its test always passes. [I] (fn:ITEMS_RareNameTypeOk@0x0065E710,
-  tbl:RarePrefix.txt:version)
-- R3. Only classic throwing weapons have no name candidate with stock data; none was logged as rare. [I] (0x005C1B7E)
+- R2. The rare `version` cell is 0 in every stock row (all 201 rows of both tables), so its test always passes. [C]
+  (fn:ITEMS_RareNameTypeOk@0x0065E710, tbl:RarePrefix.txt:version, [items/0005 § Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16), aff 22)
+- R1, R3. Only classic throwing weapons have no name candidate with stock data (C5a note). In the 9 rare builds of
+  classic `tkf` and `tax` in run:2026-10-20-sweep-items-chain both name scans found 0 candidates, the second scan
+  started from the first's item seed (the empty scan drew nothing), and the build returned at 0x005C1E71. R1 is the
+  same refusal as C5a; with it removed, those bases at item version 1 have 18 to 37 name candidates per side. [C]
+  (0x0065E71D–0x0065E737, 0x005C1B7E, fn:ITEMS_PickRareName@0x005C1AB0, fn:ITEMS_RareNameTypeOk@0x0065E710,
+  run:2026-10-20-sweep-items-chain, [items/0005 § Plan 0038 batch H2b](../../findings/items/0005-affixes.md#plan-0038-batch-h2b-2026-10-20), aff 21)
 - E3. The count is 3 with probability 1/8, 4 with 2/8, 5 with 3/8, 6 with 2/8. Counts 3, 4, 5 and 6 were drawn 14,
   16, 41 and 34 times over the 105 logged rares. [C] (data:g_RareAffixCountTable@0x006E3014, run:2026-10-14-affixes)
-- E3. Jewels get 3 or 4. No rare jewel was logged. [I] (0x005C1C77)
+- E3. Jewels get 3 or 4, after one step. 21 rare jewels were logged (17 cube rerolls of one jewel in
+  run:2026-10-20-sweep-items-chain, 4 in run:2026-10-15-cube): 13 got 3 and 8 got 4, each with that many affixes and the
+  join seed predicted. The general table would give each logged count with odds of at most 3/8. [C] (0x005C1C77,
+  fn:ITEMS_BuildRareAffixes@0x005C1BF0, run:2026-10-20-sweep-items-chain, run:2026-10-15-cube, [items/0005 § Plan 0038 batch H2b](../../findings/items/0005-affixes.md#plan-0038-batch-h2b-2026-10-20), aff 19)
 - E4. **A side runs out, the slot is retried.** A pick that returns 0 closes its side without consuming the slot; a
   side also closes after its third affix. With one side closed no side step is drawn. The loop ends after `count`
   filled slots or when both sides are closed, so a rare has at most 3 prefixes and 3 suffixes. Two logged rares ran a
@@ -478,9 +550,16 @@ Step notes:
   (0x005C1CB1–0x005C1E16)
 - E6. **All picks come before all properties.** The properties are applied in the order prefix 0, suffix 0, prefix
   1, suffix 1, prefix 2, suffix 2, skipping empty slots. [C] (0x005C1E16–0x005C1E70, run:2026-10-14-affixes)
-- E2, E5. A failed rare build (no name, or no affix) falls back to magic with the item seed reset to `{S, 666}`
-  ([items/uniques-sets § E](uniques-sets.md#e-failure-durability-and-the-fallback-chain)), discarding the rare
-  builder's draws. Not reached in the run. [I] (0x005C1E71, fn:sub_00557380_ItemFallbackMagic@0x00557380)
+- E2. A rare build that fails for want of a name falls back to magic with the item seed reset to `{S, 666}`
+  ([items/uniques-sets § E](uniques-sets.md#e-failure-durability-and-the-fallback-chain)): in the 9 cases of
+  run:2026-10-20-sweep-items-chain the magic builder entered with `{S, 666}`, `S` the item's start, and the file index
+  reset to −1. [C] (0x005C1E71, fn:sub_00557380_ItemFallbackMagic@0x00557380, run:2026-10-20-sweep-items-chain,
+  [items/0005 § Plan 0038 batch H2b](../../findings/items/0005-affixes.md#plan-0038-batch-h2b-2026-10-20), aff 24)
+- E5. A rare build that fails for want of an affix takes the same fallback, discarding the rare builder's draws. No
+  stock path reaches E5: over every rare-able base, item versions 1 and 101 and ilvl 1–99, both affix sides are empty
+  while both name blocks have a row only for `jew` at item version 1, a jewel in a classic game, which no stock path
+  makes. A name failure draws nothing, so the 9 cases above cannot show a discard. [I] (0x005C1E71,
+  fn:ITEMS_BuildRareAffixes@0x005C1BF0, [items/0005 § Plan 0038 batch H2b](../../findings/items/0005-affixes.md#plan-0038-batch-h2b-2026-10-20), aff 20 and 24)
 
 ### F. The superior builder — `ITEMS_BuildSuperior` → `ITEMS_BuildSuperiorPick`
 
@@ -525,24 +604,38 @@ Step notes:
 
 ```
 G1. row ← Range(item.seed, count(LowQualityItems)); item.fileIndex ← row    [C] draw (fn:ITEMS_BuildLowPick@0x005C2D40, 0x005C2D80, run:2026-10-14-affixes)
-G2. if the item has durability:                                             [I] (fn:ITEMS_BuildLowPick@0x005C2D40, all of G2–G4)
+G2. if the item has durability:                                             [C] (fn:ITEMS_BuildLowPick@0x005C2D40, run:2026-10-14-props-forced, G2 to maxdurability)
       M: i32 ← max(1, base.durability × 33 ÷ 100)                           ; u8 column, unsigned
       maxdurability ← M
-      durability ← max(1, Range(unit.seed, M ÷ 2) + M ÷ 2)                  ; UNIT seed, not item seed
-G3. if item is type 45 (weapon): each damage stat ← stat × 75 ÷ 100         ; signed; floors 2/1/2/1
-      if the type is throwable: the throw damage alike
+      durability ← max(1, Range(unit.seed, M ÷ 2) + M ÷ 2)                  ; [I] UNIT seed, not item seed (fn:RNG_RangeB@0x0045C3E0)
+G3. if item is type 45 (weapon): each damage stat ← stat × 75 ÷ 100         ; [C] signed; floors 2/1/2/1 (run:2026-10-14-props-forced)
+      if the type is throwable: the throw damage alike                      ; [I] (fn:ITEMS_BuildLowPick@0x005C2D40, also the armour line)
     else if item is type 50 (armour): defense ← max(1, defense × 75 ÷ 100)
-G4. RollStaffMods(item, rec)                                                ; ORACLE, § I, always called
+G4. RollStaffMods(item, rec)                                                ; [C] § I, always called (run:2026-10-14-affixes, run:2026-10-15-cube, the call and the return)
     return true for a weapon or an armour, else false                       ; false → normal fallback
 ```
 
 Step notes:
 
-- G1. The row draw is the low builder's only draw on the item seed; the durability draw of G2 steps the unit seed at
-  `Unit+0x20`, which the item-seed model never sees. [C] (fn:ITEMS_BuildLowPick@0x005C2D40, 0x005C2F93,
-  run:2026-10-14-affixes)
-- G2. `durability` goes through `RNG_RangeB` on the unit seed. [I] (fn:RNG_RangeB@0x0045C3E0,
-  tbl:Weapons.txt:durability)
+- G1. The row draw is the low builder's only draw on the item seed; the durability draw of G2 is not on it (G2 note).
+  [C] (fn:ITEMS_BuildLowPick@0x005C2D40, 0x005C2F93, run:2026-10-14-affixes) The code passes the unit seed at
+  `Unit+0x20` to that draw, which the item-seed model never sees; no run decides the seed (G2 note). [I]
+  (fn:ITEMS_BuildLowPick@0x005C2D40)
+- G2–G4. One low build carries the property lines (a `9b7` at ilvl 31, in a session whose only edit is to ItemRatio,
+  which the low builder does not read): its `maxdurability` is `max(1, 50 × 33 ÷ 100)` = 16 and its four damage stats
+  are `max(floor, x × 75 ÷ 100)`, two of them at their floors; stock data has no such case. Every logged low build
+  enters the staff mods (52 stock). A base that is neither weapon nor armour fails: a Token of Absolution whose cube
+  roll gave quality 1 (run:2026-10-15-cube) failed the low builder and took the normal fallback, reproduced. [C]
+  (fn:ITEMS_BuildLowPick@0x005C2D40, run:2026-10-14-props-forced, run:2026-10-15-cube, [items/0005 § Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16), aff 27,
+  [items/0005 § Plan 0038 batch S2c](../../findings/items/0005-affixes.md#plan-0038-batch-s2c-2026-10-16))
+- G3. The armour and throw-damage branches were not logged. [I] (fn:ITEMS_BuildLowPick@0x005C2D40)
+- G2. The durability draw is not on the item seed: the item-seed model, with no durability draw, reproduces the item
+  seed after every low build, 55 asserted at the staff-mods entry or the join (52 stock). [C]
+  (fn:ITEMS_BuildLowPick@0x005C2D40, run:2026-10-14-affixes, run:2026-10-16-quest-drops, run:2026-10-14-props-forced,
+  [items/0005 § Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16), aff 28)
+- G2. That `durability` goes through `RNG_RangeB` on the unit seed: one value (15 for `M` 16, logged after
+  `ItemInitStats`) matches it, and a wrong seed or range form would match it about one time in eight. [I]
+  (fn:RNG_RangeB@0x0045C3E0, tbl:Weapons.txt:durability, [items/0005 § Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16), aff 28)
 
 ### H. The normal builder — `ITEMS_BuildNormal`
 
@@ -569,14 +662,15 @@ Called last by every builder above: magic, rare and superior on success only, lo
 jump. [C] (fn:ITEMS_RollStaffMods@0x005C1260, 0x0055669D, 0x005C1E3E, 0x005C2AAA, 0x005C2F98, 0x00556F24,
 run:2026-10-14-affixes)
 
-The reproduction keeps this roll as an oracle, so its draws below are as read, not reproduced.
+The roll is modelled (`affixes.staff_mods`, plan 0038 S2b; the checkers' default since plan 0048 Phase 1), so the
+draws below are reproduced except where a line says otherwise ([items/0005 § Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16), [items/0005 § Plan 0048 Phase 1](../../findings/items/0005-affixes.md#plan-0048-phase-1-the-staff-mods-model-is-the-default-2026-10-20)).
 
 ```
-I1. c ← ItemTypes[type].StaffMods                                           [I] (fn:ITEMS_RollStaffMods@0x005C1260, fn:sub_0062BBD0_ItemTypeStaffMods@0x0062BBD0)
+I1. c ← ItemTypes[type].StaffMods                                           [C] (fn:ITEMS_RollStaffMods@0x005C1260, fn:sub_0062BBD0_ItemTypeStaffMods@0x0062BBD0, run:2026-10-14-affixes, all of I1 but the remainder of the I1–I6 note)
     if c ≥ 7 or class c has no skills: return                              ; no draw
     first ← firstSkill(c); ilvl ← rec.ilvl (rec+0x0C)
     bonus ← ilvl if rec.flags (rec+0x80) & 0x20 else 0                     ; 0 on a drop
-I2. t ← low % 100 + bonus after one Step                                   [I] (fn:sub_005C0F90_StaffModsRoll@0x005C0F90, all of I2–I6)
+I2. t ← low % 100 + bonus after one Step                                   [C] (fn:sub_005C0F90_StaffModsRoll@0x005C0F90, run:2026-10-14-affixes, all of I2–I6 but the remainder of the I1–I6 note)
     mods ← 3 if t ≥ 91, 2 if t ≥ 71, 1 if t ≥ 31, else (1 if bonus ≠ 0 else 0)
 I3. tier ← 5 if ilvl ≥ 37 and expansion, else 4 if ilvl ≥ 25, 3 if ≥ 19, 2 if ≥ 12, else 1
     for each mod:
@@ -601,8 +695,24 @@ Step notes:
 - I1. `firstSkill(c)` is the first id of the class's 30-id `Skills` run: logged on all 74 staff-mods rolls for
   classes 1 to 6 (36, 66, 96, 126, 221, 251). Class 0 (`ama`, 6) was not logged. [C] (0x005C1285–0x005C128A,
   tbl:Skills.txt:charclass, run:2026-10-14-affixes, [Skills § Class blocks](../../tables/Skills.md#class-blocks))
-- I2–I6. Every `low % k` uses the unsigned low word; all draws are on the item seed. [I]
-  (fn:sub_005C0F90_StaffModsRoll@0x005C0F90)
+- I2–I6. Every `low % k` uses the unsigned low word; all draws are on the item seed. The 105 stock exit seeds are
+  predicted on the item seed, and a signed `low` breaks 9 stock creations. [C] (0x005C0FCC, 0x005C1101, 0x005C11B6,
+  fn:sub_005C0F90_StaffModsRoll@0x005C0F90, run:2026-10-14-affixes, [items/0005 § Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16), aff 30)
+- I1. `StaffMods` decides the roll: a class below 7 rolls with `firstSkill(c)` (logged 104 times, classes 1 to 6, the
+  exit seed predicted 105 times), 7 draws nothing (4 457 stock calls). The bonus is 0 on every drop. In stock data
+  classes 0 to 6 have 30 skills each. [C] (fn:ITEMS_RollStaffMods@0x005C1260, tbl:Skills.txt:charclass,
+  run:2026-10-14-affixes, [items/0005 § Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16), aff 30)
+- I2–I6. Reproduced on 105 stock rolls (and 21 from ItemRatio-only forced runs): every mod count 0 to 3 occurs, the
+  exit seeds and the stat-107 entries match (4 stock items, 39 forced), the classic tier stops at 4 (tier 5 breaks a
+  classic creation), the item-type requirement refuses drawn skills (10 stock refusals; no type test breaks 4
+  creations), and a low-quality expansion item draws no level (2 stock; a level draw breaks both). [C]
+  (fn:sub_005C0F90_StaffModsRoll@0x005C0F90, run:2026-10-14-affixes, run:2026-10-16-quest-drops,
+  run:2026-10-15-items-chain, [items/0005 § Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16), aff 30)
+- I1–I6. Not decided by any run: the `bonus` branch (`rec+0x80 & 0x20`, no drop sets it) and the `bonus` and `bonus ÷ 2`
+  terms; a class with no skills (none in stock data); class 0; the 6-try fallback; the tier cap at 4 on low quality
+  (never above 4 in the logs); and whether each threshold is `>` or `≥` at its boundary value (the 90/70/30 count,
+  80/30/10 tier offset, 90/60 level and ilvl 36/24/18/11 thresholds), except the classic tier stop. [I]
+  (fn:sub_005C0F90_StaffModsRoll@0x005C0F90, [items/0005 § Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16), aff 30)
 - I5. The acceptance test is re-read in the disassembly: a skill index below 0 (`js`), at or past the skill count, or
   with no record skips the type test and goes to the repeat test, so the decompile's grouping was right. `itypea1` is
   the s16 at `+0x18`; a value below 1 accepts any item. The 6-try fallback was not reached. [I] (0x005C1121–0x005C1165,
@@ -639,12 +749,19 @@ Step notes:
   tbl:Weapons.txt:auto prefix, tbl:AutoMagic.txt:group, run:2026-10-14-affixes)
 - J4. **The automagic pick does not test `spawnable`** (`needSpawnable` 0). Every stock `automagic` row has
   `spawnable` 1, so no run can show the difference. [I] (0x005579DF, tbl:AutoMagic.txt:spawnable)
-- J4. Qualities 5 and 7 skip the step; 1, 2, 3, 4, 6, 8 and 9 take it (jump table at 0x00557A58). A skip on 5 or 7
-  was not logged. [I] (0x005579B3–0x005579BF)
+- J4. Quality 5 skips the step, and qualities 2, 3, 4 and 6 take it. One set item on an automagic base (`oba`, set
+  row 78, `auto prefix` 303, in a session whose only edit is to ItemRatio) made no automagic pick, the item seed at the
+  return equal to the socket roll's exit; stock data has no such case. The taking qualities are those of the logged
+  automagic picks. [C] (0x005579B3–0x005579BF, run:2026-10-14-props-forced, run:2026-10-14-affixes, [items/0005 § Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16),
+  aff 34)
+- J4. Quality 7 skips the step too, and 1, 8 and 9 take it (jump table at 0x00557A58); no unique on an automagic base
+  and no automagic pick at quality 1, 8 or 9 was logged. [I] (0x005579B3–0x005579BF)
 - J4. A classic item never reaches the pick. [C] (0x005579A2, run:2026-10-14-affixes)
-- J4. A base whose group has no eligible row gets no automagic and still spends draw 1. With stock data no base and
-  ilvl has such a group. `automagic` group 301 is named by no base, so its rows never drop. [I] (0x005579A2,
-  tbl:AutoMagic.txt:group)
+- J4. A base whose group has no eligible row gets no automagic and still spends draw 1 (§ C2). With stock data no
+  base and ilvl has such a group: every base with an `auto prefix`, at every quality that reaches the step and every
+  ilvl from 1 to 99, has at least one eligible row (41 580 cases, the `rare` and class tests included). The groups are
+  300–305, and group 301 is named by no base, so its rows never drop. [C] (0x005579A2, tbl:AutoMagic.txt:group,
+  tbl:Weapons.txt:auto prefix, [items/0005 § Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16), aff 35)
 
 ### K. Classic games and item version 0
 
@@ -658,8 +775,10 @@ Step notes:
   `sub_005C19A0_PickRareNameV0` and `sub_005C2AF0_ItemBuildLowV0` (`durability/3`, no staff mods). No drop reaches
   them. (fn:sub_005C12F0_PickMagicAffixV0@0x005C12F0, fn:sub_005C1E80_ItemBuildRareV0@0x005C1E80,
   fn:sub_005C19A0_PickRareNameV0@0x005C19A0, fn:sub_005C2AF0_ItemBuildLowV0@0x005C2AF0)
-- [I] So the `frequency` 0, `version` 0 rows of both magic tables are never candidates on the drop path, in either
-  game type. (tbl:MagicPrefix.txt:version, tbl:MagicPrefix.txt:frequency)
+- [C] So the 232 `frequency` 0, `version` 0 rows of both magic tables are never candidates on the drop path, in either
+  game type: the § C filter refuses `frequency` 0, none of them is in any of the 1 520 logged candidate lists, and no
+  version-0 body was entered. (tbl:MagicPrefix.txt:version, tbl:MagicPrefix.txt:frequency, run:2026-10-14-affixes,
+  [items/0005 § Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16), aff 37)
 
 ### Draw order on the item seed
 
@@ -821,8 +940,9 @@ A single candidate still costs both draws. [C] (run:2026-10-14-affixes)
   (0x005C1781–0x005C179E, run:2026-10-14-affixes)
 - **The automagic pick runs after the ethereal and socket rolls,** on the same item seed, and uses the same alvl as
   the builder's picks. [C] (0x005579A8–0x00557A0C, run:2026-10-14-affixes)
-- **The low-quality durability draw is on the unit seed.** Putting it on the item seed shifts the staff mods and
-  everything after. [I] (fn:ITEMS_BuildLowPick@0x005C2D40)
+- **The low-quality durability draw is not on the item seed.** Putting it there shifts the staff mods and everything
+  after. [C] (fn:ITEMS_BuildLowPick@0x005C2D40, run:2026-10-14-affixes, [items/0005 § Plan 0038 batch S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16), aff 28) The draw itself is a
+  `RangeB` on the unit seed. [I] (fn:RNG_RangeB@0x0045C3E0)
 - **Superior draws are not a fixed count.** Redraw a tried row; stop when every row of the range is tried. [C]
   (fn:ITEMS_BuildSuperiorPick@0x005C2970, run:2026-10-14-affixes)
 - **Ids are merged indices + 1.** A prefix id is not a `magicprefix` row number; subtract the block start and 1. [C]
@@ -837,6 +957,14 @@ A single candidate still costs both draws. [C] (run:2026-10-14-affixes)
   (*Phase 2 results*).
 - [findings/items/experiments.md § run:2026-10-14-affixes](../../findings/items/experiments.md#run2026-10-14-affixes):
   51 stock sessions (41 with creations), 3 102 creations, 0 mismatches.
+- Plan 0038 second sources and re-runs, each a section of items/0005:
+  [S2b](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16) (full-table reads, the instruction scan,
+  the staff-mods model), [S2c](../../findings/items/0005-affixes.md#plan-0038-batch-s2c-2026-10-16) (the vendors, cube
+  and imbue paths), [S1f](../../findings/items/0005-affixes.md#plan-0038-batch-s1f-2026-10-17) (the candidate cap under
+  emulation, [run:2026-10-17-sweep-emu2](../../findings/data/experiments.md#run2026-10-17-sweep-emu2)) and
+  [H2b](../../findings/items/0005-affixes.md#plan-0038-batch-h2b-2026-10-20) (cube rerolls of a rare jewel and of
+  classic throwing weapons,
+  [run:2026-10-20-sweep-items-chain](../../findings/items/experiments.md#run2026-10-20-sweep-items-chain)).
 - [findings/items/0004-uniques-sets.md](../../findings/items/0004-uniques-sets.md): the switch, the fallback chain and
   the post-switch steps named (§ 8).
 - [findings/items/0006-properties.md](../../findings/items/0006-properties.md): the property roll and the ethereal and
@@ -860,13 +988,17 @@ A single candidate still costs both draws. [C] (run:2026-10-14-affixes)
 
 ## Open questions
 
-- [L] **Not reached in the run**, so still code-read: a rare jewel (count `3 + low % 2`), the classic
-  stackable/throwable refusal (C5a, R1), the socket test (C5b), an empty rare name list, a failed magic builder, the
-  charm path of the normal builder, automagic skipped on qualities 5 and 7, and the version-0 bodies. The forced row
-  (C4i) was reached on the cube path: 12 forced picks, block-relative and with no weighted draw
+- [L] **Not reached in a run**, so still code-read: the socket test (C5b; no stock drop reaches it), a rare build
+  failing for want of an affix (E5; no stock case), the charm path of the normal builder, automagic skipped on quality
+  7, the low builder's armour and throw-damage branches (G3), and the version-0 bodies. The rare jewel, the classic
+  stackable/throwable refusal (C5a, R1), the empty rare name list and the failed magic builder were reached by plan 0038
+  batch H2b's cube rerolls ([items/0005 § Plan 0038 batch H2b](../../findings/items/0005-affixes.md#plan-0038-batch-h2b-2026-10-20)),
+  and the quality-5 skip once in a session with an edited ItemRatio. The forced row (C4i) was reached on the cube path:
+  12 forced picks, block-relative and with no weighted draw
   ([items/0005 § 3](../../findings/items/0005-affixes.md#3-items_pickmagicaffixitem-needspawnable-mustroll-applyprops-isprefix-forcedid-autogroup-0x005c1560),
   [items/cube § E](cube.md#e-building-one-output--sub_00565ab0_recipeoutputcreate)); that it skips the level window
-  of a row outside its window is still untested. A forced-path run (ADR-0010) or the [items/vendors](vendors.md) path could reach
+  of a row outside its window is still untested, and plan 0038 batch H6a carries the one stock case (cube row 17 on a
+  magic tower shield, *of Spikes*). A forced-path run (ADR-0010) or the [items/vendors](vendors.md) path could reach
   the charm.
 - [L] **Automagic and `spawnable`.** The pick passes `needSpawnable` 0, but every stock `automagic` row has
   `spawnable` 1; ruled unreachable with stock data (plan 0021 Phase 1 review). Only modded data would show it.

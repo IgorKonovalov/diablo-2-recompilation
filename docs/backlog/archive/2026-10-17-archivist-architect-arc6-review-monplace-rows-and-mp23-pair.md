@@ -6,7 +6,7 @@ status: done
 context:
   - ../../tables/MonPlace.md
   - ../../formats/d2s.md
-  - ../../plans/0044-multiplayer-branches.md
+  - ../../plans/done/0044-multiplayer-branches.md
 resolution: "Reviewed 2026-10-17 (architect, lane/arc6): accept with fixes (2: misread 1, other 1). MP23 ruling: the low-damage pair is right; the logger reads the packet in 1/256 life and combat.py checks MulDiv(v, 17, 100) exactly, so no large hits, potions or Energy Shield are needed. The survival bound now includes the worst ResistPenalty (expansion Hell, x2): 7 points, 1400 <= 8000. MonPlace rows match monsters/0003 § 7 and the rbs3 scope. Verdicts in the plan 0044 and 0039 logs; reverser follow-up monsters-0003-s7-stale-fixed-class-rows filed."
 ---
 
