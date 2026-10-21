@@ -137,7 +137,9 @@ WALK = ["explore", "--walk", "--drink", "0.5"]
 for k, wp in enumerate(("1,2", "1,3", "1,4", "1,5", "5,2", "5,3")):
     # crushing blow on champions (type flag 0x04 without 0x08): CombatOW's 40 % in Nightmare, /players 8
     SESSIONS["ow-nm-champs%d" % (k + 1)] = ("CombatOW", "enter-nightmare", 4701 + k,
-                                            [(FARM + ["--wp", wp, "--players", "8", "--time", "270"], 340)])
+                                            [(SWEEP + ["--wp", wp, "--players", "8", "--time", "270"], 340)])
+    # plan 0047 Phase 2: --sweep (bosses and champions first, then the level), since without it farm ended once the
+    # first unique was down (ow-nm-champs1: 134 s, 21 monsters seen, no champion)
 for name, wp, seed in (("darkwood", "1,4", 4711), ("lostcity", "2,6", 4712), ("marsh", "1,5", 4713),
                        ("oasis", "2,5", 4714), ("catacombs", "1,9", 4715)):
     # the cold and lightning caps: CombatSorH's resistances (The Ward, Rockstopper, Mara's) above 75 in Normal, where
@@ -145,7 +147,23 @@ for name, wp, seed in (("darkwood", "1,4", 4711), ("lostcity", "2,6", 4712), ("m
     # the Far Oasis and the Catacombs
     SESSIONS["sorh-n-" + name] = ("CombatSorH", "enter-normal", seed,
                                   [(SWEEP + ["--wp", wp, "--players", "8", "--time", "270"], 340)])
-for k in range(3):
+for name, wp, seed in (("upperk", "3,7", 4716), ("travincal", "3,8", 4717), ("spider", "3,2", 4718),
+                       ("cityd", "4,2", 4719)):
+    # plan 0047 Phase 2: the Dark Wood's cold rows (fallen2, quillrat2) and the Black Marsh's lightning row (goatman2)
+    # have an empty El1Pct, so they never add the element; levels whose MonStats rows add it (El1Pct > 0): cold in
+    # Upper Kurast (cantor2 55) and Travincal (cantor3 65, vampire2 65), lightning in the Spider Forest (batdemon2 70)
+    # and the City of the Damned (bighead5 100, batdemon5 85)
+    SESSIONS["sorh-n-" + name] = ("CombatSorH", "enter-normal", seed,
+                                  [(SWEEP + ["--wp", wp, "--players", "8", "--time", "270"], 340)])
+for name, wp, seed in (("travincal2", "3,8", 4791), ("travincal3", "3,8", 4792), ("catacombs2", "1,9", 4793),
+                       ("catacombs3", "1,9", 4794)):
+    # plan 0047 Phase 2: Levels picks NumMon (3) of a level's rows per game, so only levels whose every row adds the
+    # element give hits on every seed: Travincal (cantor3, cantor3, vampire2: cold) and the Catacombs Level 2
+    # (bighead2 among 3 rows of 3: lightning); the Lost City drew sandleaper3, zombie5, slinger6 on seed 4712, and
+    # wp 3,2 is the Spider Forest (76), not the Spider Cave (84) whose row batdemon2 was meant
+    SESSIONS["sorh-n-" + name] = ("CombatSorH", "enter-normal", seed,
+                                  [(SWEEP + ["--wp", wp, "--players", "8", "--time", "270"], 340)])
+for k in range(6):                            # 4-6: plan 0047 Phase 2, ruling 3 (d) (up to six seeds)
     # magic immunity: CombatSorH's Ginther's Rift (magic damage) on the Lost City's Plague Bearers (zombie5, Hell
     # ResMa 100), Hell
     SESSIONS["sorh-h-lostcity%d" % (k + 1)] = ("CombatSorH", "enter-hell", 4721 + k,
@@ -154,6 +172,9 @@ for name, wp, seed in (("plains", "1,2", 4731), ("darkwood", "1,4", 4732), ("mar
     # fields driven negative by DR and MDR (the negative total) and percent absorb on a negative field (Dwarf Star
     # fire 15 %, Raven Frost cold 20 %): CombatDR against Normal Act I monsters, one player
     SESSIONS["dr-n-" + name] = ("CombatDR", "enter-normal", seed, [(SWEEP + ["--wp", wp, "--time", "270"], 340)])
+# plan 0047 Phase 2: the Act I fields gave 5 negative absorbed amounts in dr-n-plains and dr-n-darkwood (few elemental
+# hits); Travincal's rows all add cold (cantor3, vampire2: El1Pct 65), under Raven Frost's cold absorb
+SESSIONS["dr-n-travincal"] = ("CombatDR", "enter-normal", 4734, [(SWEEP + ["--wp", "3,8", "--time", "270"], 340)])
 for name, steps, wp, seed in (("n-plains", "enter-normal", "1,2", 4741), ("n-darkwood", "enter-normal", "1,4", 4742),
                               ("n-marsh", "enter-normal", "1,5", 4743), ("nm-marsh", "enter-nightmare", "1,5", 4744)):
     # flat absorb (fire 15 Hellmouth, cold 11 Spirit Ward, lightning 20 + 20 Blackhorn's Face and Thudergod's Vigor);
@@ -175,12 +196,41 @@ SESSIONS["ama-n-walk"] = ("CombatAma", "enter-normal", 4763,
 SESSIONS["ama-n-walk2"] = ("CombatAma", "enter-normal", 4764,
                            [(["farm", "--wp", "1,3", "--players", "8", "--time", "1"], 90), ("keys", ["r"], 1.0),
                             (WALK + ["--hops", "150"], 500)])
+# plan 0047 Phase 2: dodge and avoid roll only for a player outside modes 2 and 3 (COMBAT_AvoidRoll), and the
+# walking explore of ama-n-stand kept her moving (3 dodge and 8 avoid rolls); these sessions walk into a pack
+# (explore without --melee), then stand still ("wait") while the pack attacks
+for k, wp in enumerate(("1,2", "1,3", "1,4")):
+    SESSIONS["ama-n-idle%d" % (k + 1)] = ("CombatAma", "enter-normal", 4765 + k,
+                                          [(["farm", "--wp", wp, "--players", "8", "--time", "1"], 90),
+                                           (WALK + ["--hops", "25"], 200), ("wait", 90),
+                                           (WALK + ["--hops", "15"], 150), ("wait", 90),
+                                           (WALK + ["--hops", "15"], 150), ("wait", 90)])
+# plan 0047 Phase 2: CombatAma (level 85, dexterity 400, defence above 1 000) was hit at the to-hit floor (c = 5 in
+# every logged roll of ama-n-stand, ama-n-walk and ama-n-idle1), and every defence roll needs a hit first; CombatAmaD
+# (level 5, dexterity 15, no shield, no armour: no block roll ahead of dodge) and CombatAmaW (level 5, dexterity 60,
+# Pelta Lunata only, level 2: the walking block; Steelclash's level 17 left it unusable, block 0 in the first
+# amaw-n-walk, kept as workspace/logs/combat/dev-p47h-amaw-n-walk-steelclash.log) give Normal monsters a chance well
+# above the floor
+for k, wp in enumerate(("1,2", "1,3", "1,4")):
+    SESSIONS["amad-n-idle%d" % (k + 1)] = ("CombatAmaD", "enter-normal", 4795 + k,
+                                           [(["farm", "--wp", wp, "--players", "8", "--time", "1"], 90),
+                                            (WALK + ["--hops", "25"], 200), ("wait", 90),
+                                            (WALK + ["--hops", "15"], 150), ("wait", 90),
+                                            (WALK + ["--hops", "15"], 150), ("wait", 90)])
+SESSIONS["amad-n-run"] = ("CombatAmaD", "enter-normal", 4798,
+                          [(["farm", "--wp", "1,2", "--players", "8", "--time", "1"], 90), (WALK + ["--hops", "150"], 400)])
+# ruling 3 (a)'s one more walking session: the walk toggle held, Stony Field's archers and shamans (ranged)
+SESSIONS["amaw-n-walk"] = ("CombatAmaW", "enter-normal", 4799,
+                           [(["farm", "--wp", "1,3", "--players", "8", "--time", "1"], 90), ("keys", ["r"], 1.0),
+                            (WALK + ["--hops", "150"], 500)])
 # weapon block: two claws (CombatAss) and one claw with an empty left hand (CombatAssO), standing in melee; the
 # skill check 0x0064F380 (WBS) is a value oracle and tells which weapon class it wants
 SESSIONS["ass-n-plains"] = ("CombatAss", "enter-normal", 4771,
                             [(["farm", "--wp", "1,2", "--players", "8", "--time", "1"], 90), (WALKM + ["--hops", "120"], 400)])
 SESSIONS["ass-n-plains2"] = ("CombatAss", "enter-normal", 4772,
                              [(["farm", "--wp", "1,3", "--players", "8", "--time", "1"], 90), (WALKM + ["--hops", "120"], 400)])
+SESSIONS["ass-n-plains3"] = ("CombatAss", "enter-normal", 4774,          # plan 0047 Phase 2: weapon block at 29
+                             [(["farm", "--wp", "1,4", "--players", "8", "--time", "1"], 90), (WALKM + ["--hops", "120"], 400)])
 SESSIONS["asso-n-plains"] = ("CombatAssO", "enter-normal", 4773,
                              [(["farm", "--wp", "1,2", "--players", "8", "--time", "1"], 90), (WALKM + ["--hops", "120"], 400)])
 # the set-aside Fleshripper session re-staged (the plan 0037 resume lane's log was lost with its scratch):
@@ -194,26 +244,34 @@ CASES_0047 = {
     "C1 crushing blow on champions": ("CombatOW in Nightmare, bosses first (the champion flag), /players 8",
                                       ["ow-nm-champs%d" % k for k in range(1, 7)], [136], ()),
     "C2 cold cap (cold resistance above 75)": ("CombatSorH in Normal (no penalty), cold attackers",
-                                               ["sorh-n-darkwood", "sorh-n-lostcity"], [43, 41], ()),
+                                               ["sorh-n-darkwood", "sorh-n-lostcity", "sorh-n-upperk", "sorh-n-travincal",
+                                                "sorh-n-travincal2", "sorh-n-travincal3"],
+                                               [43, 41], ()),
     "C3 lightning cap": ("CombatSorH in Normal, lightning attackers",
-                         ["sorh-n-marsh", "sorh-n-oasis", "sorh-n-catacombs"], [41], ()),
+                         ["sorh-n-marsh", "sorh-n-oasis", "sorh-n-catacombs", "sorh-n-spider", "sorh-n-cityd",
+                          "sorh-n-catacombs2", "sorh-n-catacombs3"],
+                         [41], ()),
     "C5 magic immunity": ("CombatSorH's magic damage on Hell Plague Bearers (ResMa(H) 100)",
-                          ["sorh-h-lostcity%d" % k for k in range(1, 4)], [52, 53], ()),
+                          ["sorh-h-lostcity%d" % k for k in range(1, 7)], [52, 53], ()),
     "C6 negative absorbed amount": ("CombatDR: MDR above the field, then percent absorb on the negative field",
-                                    ["dr-n-plains", "dr-n-darkwood"], [35, 142, 148], ()),
+                                    ["dr-n-plains", "dr-n-darkwood", "dr-n-travincal"], [35, 142, 148], ()),
     "C7 negative total, life unchanged": ("CombatDR: DR and MDR above every field of weak Normal hits",
                                          ["dr-n-plains", "dr-n-darkwood", "dr-n-marsh"], [34, 35], ()),
-    "C8 evade": ("CombatAma moving (running, then walking)", ["ama-n-run", "ama-n-walk", "ama-n-walk2"], [],
+    "C8 evade": ("CombatAma moving (running, then walking)", ["ama-n-run", "ama-n-walk", "ama-n-walk2", "amad-n-run"], [],
                  ("Evade",)),
     "C9 weapon block": ("CombatAss with two claws, CombatAssO with one (the weapon class the skill check wants)",
-                        ["ass-n-plains", "ass-n-plains2", "asso-n-plains"], [], ("Weapon Block",)),
-    "C10 dodge": ("CombatAma standing in melee", ["ama-n-stand"], [], ("Dodge",)),
-    "C11 avoid": ("CombatAma standing against missiles (fallen shamans, archers)", ["ama-n-stand"], [], ("Avoid",)),
+                        ["ass-n-plains", "ass-n-plains2", "ass-n-plains3", "asso-n-plains"], [], ("Weapon Block",)),
+    "C10 dodge": ("CombatAma standing in melee", ["ama-n-stand", "ama-n-idle1", "ama-n-idle2", "ama-n-idle3", "amad-n-idle1",
+                                                    "amad-n-idle2", "amad-n-idle3"], [],
+                  ("Dodge",)),
+    "C11 avoid": ("CombatAma standing against missiles (fallen shamans, archers)",
+                  ["ama-n-stand", "ama-n-idle1", "ama-n-idle2", "ama-n-idle3", "amad-n-idle1", "amad-n-idle2",
+                          "amad-n-idle3"], [], ("Avoid",)),
     "C12 freeze": ("CombatFrz's Frostwind (freeze 4) in melee", ["frz-n-plains", "frz-nm-plains"], [134], ()),
     "C13 flat absorb": ("CombatAbs against fire, cold and lightning attackers",
                         ["abs-n-plains", "abs-n-darkwood", "abs-n-marsh", "abs-nm-marsh"], [143, 145, 149], ()),
     "C14 a walking player's block": ("CombatAma after the run/walk toggle (mode 2), with a shield",
-                                     ["ama-n-walk", "ama-n-walk2"], [20], ()),
+                                     ["ama-n-walk", "ama-n-walk2", "amaw-n-walk"], [20], ()),
     "C15 the set-aside Fleshripper session (backlog 2026-10-17 resume-lane follow (a))":
         ("the log was lost; the session is staged again on the same recipe and seed", ["owf-n-andariel-p8"], [], ()),
 }
@@ -233,7 +291,7 @@ def check(names):
 
     def of(n):
         save, steps, seed, cmds = SESSIONS[n]
-        return save, steps, [c[0] for c in cmds if c[0] != "keys"]
+        return save, steps, [c[0] for c in cmds if c[0] not in ("keys", "wait")]
     if names:
         cases = {"named": ("sessions named on the command line", names, [], ())}
         return session_check.run(cases, {}, of, "combat_sessions")
@@ -285,6 +343,9 @@ def run_session(name, slot, tag, saves, run):
     time.sleep(3)
     os.makedirs(os.path.join(ROOT, "workspace", "logs", "combat", "%s-%s-shots" % (run, name)), exist_ok=True)
     for step in cmds:
+        if step[0] == "wait":                 # ("wait", seconds): the game runs, nothing is pressed (plan 0047)
+            time.sleep(step[1])
+            continue
         if step[0] == "keys":                 # ("keys", [key, ...], seconds): key presses on the slot's display
             for key in step[1]:
                 sh(PY + ["tools/xdrive.py", "--slot", str(slot), "key", key], 30)

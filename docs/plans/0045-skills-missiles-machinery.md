@@ -682,3 +682,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   10 failed tries, and `ITEMSKILL_Cast` then skips `SKILLS_SrvDo` (`je` at `0x005FDBA6`). Helpers 2–4 have no symbol
   rows: added to plan 0046 Phase 1's item, shrine and object batch. combat/delivery stays `reviewed`, tags
   {C 52, I 54, L 4} recounted. Review request closed.
+- **2026-10-21 — From plan 0047's Phase 2 review (architect).** Two items for Phase 2. (1) The *Fleshripper* session's
+  log is kept: `workspace/logs/combat/p47h-owf-n-andariel-p8.log` (`a411b34d…`, in `p47h-manifest.txt`; save
+  `CombatOWF` `77807e00…`, seed 3712, Normal Andariel), so the oracle replacement's condition ("once its log is under
+  `workspace/logs/combat/` with a manifest hash") is met. `tools/combat.py` (`bd80126a…`) gives 57 mismatches over 633
+  events, all `expected AD1, got EVH`, each at an `EVH` line of the event-9 handler `0x005C01D0` (not the 101 of the
+  lost log: another save build and seed). (2) A monster's own `MonAttackStats` inside its attack: `sandraider2` in mode
+  14 (return `0x005CAED8`) calls it for mode 8 in 6 of 14 such events over 71 combat logs, and the build uses its
+  output ([combat/0001 § 16](../findings/combat/0001-formulas.md#16-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls),
+  `[I]`); which events call it is unread and belongs with this plan's monster skill uses with `MonAttackStats`
+  predicted. ([0047 log](0047-simulation-shortfalls.md#implementation-log), Phase 2 review rulings 4 and 6.)

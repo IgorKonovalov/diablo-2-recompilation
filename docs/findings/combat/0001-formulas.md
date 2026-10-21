@@ -752,7 +752,7 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
   in an expansion game (2 523 events) and `stat 20 + BlockFactor` in classic (395), the monster's `stat 20`, one draw
   on the defender's seed (the `/3` for a moving player is raised by the resume addendum, bullet *Resume lane,
   second sessions* below). Oracles: `UnitBlockChance`'s shield test and
-  `UnitIsMoving`. Evade, weapon block, dodge and avoid stay `[I]` (no event). (fn:COMBAT_DefenceRoll@0x0057DFB0,
+  `UnitIsMoving`. Evade, weapon block, dodge and avoid stay `[I]` (no event; *raised in § 16*, 2026-10-20). (fn:COMBAT_DefenceRoll@0x0057DFB0,
   fn:sub_00622720_UnitBlockChance@0x00622720, run:2026-10-16-combat)
 - [C] **The damage build** (§ 5): the physical roll (min/max, `+ stat 111`, enhanced damage with the weapon's
   `StrBonus`/`DexBonus` shares, the ≥ −90 clamp, `MulDiv` by `ed + stat 17/18`, `RangeB(hi − lo)`), deadly strike
@@ -784,7 +784,8 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
   (5, 40, 124 events: the player count does scale it, against src:purediablo-mechanics), `cb −= MulDiv(cb, min(stat 36,
   100), 100)`. `k` = 8 for an act boss and superuniques is raised by the resume addendum (bullet *Resume lane, second
   sessions* below: 34 and 55); the champion branch stays `[I]` (last bullet, 0 labelled). (fn:STATEVENT_CrushingBlow@0x005BFFC0,
-  run:2026-10-16-combat)
+  run:2026-10-16-combat) *2026-10-20 (plan 0047 Phase 2):* champions carry `0x08` too, so 72 of these 163 "unique"
+  defenders were champions; the champion branch is raised in § 16 (52 events, run:2026-10-20-shortfalls).
 - [C] **Open wounds** (§ 10): one draw on the attacker's seed, `band(L) + 40`, `/2` on champions and uniques,
   state 62 for 200 frames with stat 74 = `−dmg` (246), the bleed ending at application frame + 200 (11 windows). On an
   act boss it is raised by the resume addendum (bullet *Resume lane* below); on a player it stays `[I]` (no event). (fn:STATEVENT_OpenWounds@0x005BFE60, run:2026-10-16-combat)
@@ -832,6 +833,8 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
   (63 Andariel, 320 other uniques, 87 of them also flagged `0x04`) were all asserted at `(band + 40) ÷ 2` (stat 74 =
   −1 275 or −1 253), the 1 497 on monsters without `0x0C` at the full `band + 40` (−2 551 or −2 506). A monster with the
   champion flag `0x04` and not `0x08` was never wounded, so the champion half of the `0x0C` test stays `[I]`.
+  *2026-10-20 (plan 0047 Phase 2):* no stock spawn has `0x04` without `0x08` (§ 16), so the 87 were champions and
+  that half cannot be separated on stock data.
   (fn:STATEVENT_OpenWounds@0x005BFE60, 0x005BFEEC–0x005BFF9B, run:2026-10-16-combat)
 - [I] **The −100 resistance floor changes no logged value.** 214 resistance applications on the player came out at
   exactly −100 before the floor (73, 86 and 55 over three rows of the resistance table), and none below,
@@ -843,7 +846,80 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
   resistance cap reached for cold and lightning (27, 17; the cap formula itself is `[C]` above); a total ≤ 0 leaving
   life unchanged (25 in the first run; the checker has no counter for it in the resume logs). Not reached at all: open wounds on a player, evade, weapon block, dodge, avoid,
   magic at the cap or immune, conversion, freeze, pierce, flat absorb, PvP 17 % and 25 %, the player's tick.
-  (fn:COMBAT_Absorb@0x0057BF10, fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat)
+  (fn:COMBAT_Absorb@0x0057BF10, fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat) *2026-10-20 (plan 0047
+  Phase 2, § 16):* raised: crushing blow on champions (52), the lightning cap (42), magic immunity (36), the negative
+  absorbed amount (186), the total ≤ 0 (488), evade, weapon block, dodge, avoid, freeze (81) and fire flat absorb (113);
+  the cold cap over the two runs (27 + 4 = 31, Phase 2 review ruling 2); still under the floor: the mode-2 block (6);
+  not reached: cold and lightning flat absorb, the
+  magic cap (unstaged), open wounds on a player (plan 0044), conversion and pierce (plan 0045).
+
+### 16. Plan 0047 Phase 2: the shortfalls (run:2026-10-20-shortfalls)
+
+31 sessions on slot 2 built for the branches § 15 left under the floor of about 30 (the record:
+[experiments § run:2026-10-20-shortfalls](experiments.md#run2026-10-20-shortfalls)); `tools/combat.py check` over
+`p47h-run.lst`: **0 mismatches over 18 737 events**, every seed asserted as in § 15. Counts are the checker's
+(`workspace/logs/combat/p47h-check.txt`) and `p47h-defrolls.txt` (rolls by defender mode).
+
+- [C] **Evade, weapon block, dodge and avoid** (§ 4, `COMBAT_AvoidRoll`): each a `Range(100)` on the defender's seed,
+  success when `r < chance`, the chances stats 340, 348 (`WBC`, value oracle), 338 and 339: evade 46 rolls (31
+  successes), weapon block 50 (30), dodge 172 (109), avoid 103 (68), every roll's value and exit seed asserted. A
+  player in mode 2 or 3 rolled only evade (46 rolls: 42 in mode 3, 4 in mode 2) and never weapon block, dodge or
+  avoid, while dodge, avoid and weapon block were rolled in modes 1, 7, 9, 13 and 16 by the same characters
+  (`p47h-defrolls.txt`); evade was rolled in no other mode. (fn:COMBAT_AvoidRoll@0x0057DD60, fn:sub_0057DCA0_WeaponBlockChance@0x0057DCA0,
+  run:2026-10-20-shortfalls)
+- [I] **The weapon-block skill check `0x0064F380`**: 13 in all 34 + 15 + 1 `WBS` lines of the two-claw `CombatAss`,
+  which rolled weapon block 50 times; 12 in the one `WBS` line of the one-claw `CombatAssO`, which rolled none. So 13
+  goes with two claws in the hands; what the value stands for is not read (Phase 1 review ruling 3 (b)).
+  (0x0057DDAB–0x0057DDB4, run:2026-10-20-shortfalls)
+- [C] **Crushing blow on champions** takes `k` = 4 raised by the player count, like a normal monster: 52 events on
+  `0x0C` defenders (40 in Nightmare at `/players` 8, `ow-nm-champs2`/`3`), every life value asserted. Champions carry
+  `0x08` as well as `0x04` (164 of 7 474 monsters first seen in the 74 combat logs on disk; none with `0x04` alone,
+  `p47h-monflags.txt`); `STATEVENT_CrushingBlow` reads neither flag, so the 1/8 of src:purediablo-mechanics and
+  src:fextralife-d2r-crushing-blow does not apply to champions either. Re-labelled, the kept run has 72 such events
+  of the 163 it counted as uniques. (fn:STATEVENT_CrushingBlow@0x005BFFC0, 0x005C0031–0x005C00F6,
+  run:2026-10-20-shortfalls, run:2026-10-16-combat)
+- [I] Open wounds' `0x0C` test (§ 10) stays split as § 15 says: a champion also carries `0x08`, so no stock spawn
+  separates a `0x04`-only defender. (fn:STATEVENT_OpenWounds@0x005BFE60, run:2026-10-20-shortfalls)
+- [C] **The lightning cap and magic immunity** (§ 7): the player's lightning resistance at the cap in 42
+  applications (`CombatSorH`, 120 in Normal, so 75 applies), and a monster's magic resistance ≥ 100 (the Hell Lost
+  City, whose Plague Bearers `zombie5` have `ResMa(H)` 100) in 36, each giving the logged field. (fn:COMBAT_ResistFor@0x0057BE00,
+  fn:COMBAT_ReduceRow@0x0057BF80, tbl:MonStats.txt:ResMa(H), run:2026-10-20-shortfalls)
+- [C] **The negative field under absorb**: 186 events where MDR left a field ≤ 0 and percent absorb (`CombatDR`:
+  *Dwarf Star* fire 15 %, *Raven Frost* cold 20 %) then found it negative and healed nothing; and **a delivery total ≤ 0 leaves life
+  unchanged**: 488 on the player below 0, 113 at 0, 32 at 0 on a monster (the counter of backlog resume-lane follow
+  (b)). (fn:COMBAT_Absorb@0x0057BF10, fn:COMBAT_ApplyDamage@0x0057C6C0, run:2026-10-20-shortfalls)
+- [C] **Flat absorb** (fire): 113 events on `CombatAbs` (*Hellmouth* 15) with the amount subtracted and the field
+  asserted; cold and lightning flat absorb were not hit (0) and stay `[I]`. **Freeze**: 81 `STATEVENT_Freeze` rolls up
+  to the nested delivery (length 26–249 frames), from *Frostwind*. (fn:COMBAT_Absorb@0x0057BF10,
+  fn:STATEVENT_Freeze@0x005BFC60, run:2026-10-20-shortfalls)
+- [C] **Prevent-heal takes no draw**: 271 state-52 `STA` lines of the attacker between the to-hit and the defence rolls
+  (81 in `abs-n-plains`, *Blackhorn's Face* `noheal`), each with both seeds asserted after it and no step between;
+  with the static reading of `sub_0057D810_PreventHealHook` (no RNG call) the Open questions bullet is raised.
+  (fn:sub_0057D810_PreventHealHook@0x0057D810, run:2026-10-20-shortfalls)
+- [C] **The cold cap, over two runs** (§ 7; Phase 2 review ruling 2, 2026-10-21): the player's cold resistance at the
+  cap in 4 applications of this run and 27 of `c37r-run2.lst`, both lists re-checked by the same `tools/combat.py`
+  (`bd80126a…`) with 0 mismatches: 31, each giving the logged field, on the one table-row path that the fire,
+  lightning and poison caps take. Cold hits on a Normal player are rare on stock rows (a cold El row that rolls, or a
+  cold-enchanted special). (fn:COMBAT_ResistFor@0x0057BE00, fn:COMBAT_ReduceRow@0x0057BF80, run:2026-10-20-shortfalls,
+  run:2026-10-16-combat)
+- [I] **Named again, under the floor (final)**: the walking (mode 2) block, 6 undivided chances in 48 events on a
+  walking player, ruling 3 (a)'s extra session (`amaw-n-walk`) spent: the `÷ 3` exception stays `[I]`. The magic cap
+  stays unstaged (plan 0047 Phase 1 ruling 2). (fn:COMBAT_DefenceRoll@0x0057DFB0, run:2026-10-20-shortfalls)
+- [I] **An unusable shield blocks nothing.** `UnitBlockChance`'s player branch calls `sub_0063C8F0_InvItemQuery` (inventory, 0), which
+  takes each hand's item, tests it with `0x0062A4E0` (item `+0x14` → `+0x18` flags `0x100` and `0x4000` clear) and
+  `ITEMS_UnitIsType(item, 51)`, and returns 0 otherwise; the chance is then 0. Two layouts gave 0 in every player
+  `DRB` line: *Steelclash* (level 17) on the level-5 `CombatAmaW` (225 lines, the dev log) and *Kerke's Sanctuary*
+  beside the two-handed *Spellsteel* (`CombatDR`, 18). Which flag each sets is not read. (fn:sub_00622720_UnitBlockChance@0x00622720,
+  0x00622797, fn:sub_0063C8F0_InvItemQuery@0x0063C8F0, 0x0062A4E0, fn:ITEMS_UnitIsType@0x00629BB0,
+  run:2026-10-20-shortfalls) *Review 2026-10-21:* the checker cannot see a hand's item, so `--no-shield-log` declares
+  these logs' players shield-less; it changes the check only where the formula would give more than 0: without it
+  the run list gives 88 mismatches, all `DRB block chance (player formula, shield held)` with 0 logged (70 on the
+  claw Assassins, who hold no shield, which their recipes show; 18 on `CombatDR`, whose 0 is this bullet's unread
+  refusal, taken from the logs, not predicted). With it, a logged chance above 0 still fails.
+- [I] **A monster's own `MonAttackStats` inside its attack**: `sandraider2` attacking in mode 14 (return `0x005CAED8`)
+  called it for mode 8 between the defence rolls and the build in 6 of 14 such events, and the build used its output
+  (`MAS1` stats 21/22: 72/91 against 59/100 at `EV0`), its entry on the attacker's running seed (5 asserted). Which events call it is not
+  read. (fn:sub_005A4F50_MonAttackStats@0x005A4F50, run:2026-10-20-shortfalls)
 
 ## Boundary recommendation for Phase 2
 
@@ -896,7 +972,8 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
   hit, before `COMBAT_ResolveAndQueue`; 15 such stores in 15 functions, three mapped to the packet field. [I]
   (fn:sub_005D7EA0_SkillSt32Hit@0x005D7EA0, 0x005D7FA8, [skills/0001 § 11](../skills/0001-dispatch.md#11-the-skill-packet))
 - [L] `0x00645270` (the owner/type lookup that picks the monster leech branch) and `0x0064F380` (the skill check that
-  gates weapon block, value 13) were not read in full.
+  gates weapon block, value 13) were not read in full. *2026-10-20 (plan 0047 Phase 2):* `0x0064F380` gave 13 with two
+  claws and 12 with one (§ 16); its meaning is still unread.
 - [L] The player's per-frame tick of stat 74 (`sub_00580610_LifeRegenTick`, § 14) under poison or open wounds, and its
   interaction with `DamageRegen`: read, not exercised (no window on the player in run:2026-10-16-combat). The monster
   tick is answered (§ 14, `[C]` in § 15).
@@ -920,7 +997,11 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
   with that hash or that save (`workspace/logs/combat/p47r-fleshripper-search.txt`, `aef49a11…`). Commit `5871b00`'s
   `CombatOW` recipe still builds `5f440622…` byte for byte, so the session is staged again as `owf-n-andariel-p8`
   (`tools/combat_sessions.py`, save `CombatOWF`, the same recipe renamed, seed 3712) for plan 0047 Phase 2; until it
-  runs, this bullet rests on the review's re-check of the lost log.
+  runs, this bullet rests on the review's re-check of the lost log. *2026-10-20 (plan 0047 Phase 2):* it ran
+  (`workspace/logs/combat/p47h-owf-n-andariel-p8.log`, `a411b34d…`, save `77807e00…`: the recipe renamed, so the
+  bytes differ from `5f440622…` by the name only): 633 events, 68 state-52 lines skipped with no draw, 57
+  mismatches, all "expected `AD1`, got `EVH`" (the event-9 handler below). The no-draw claim is raised to `[C]` in
+  § 16 on the run's 271 skips in 0-mismatch logs and `PreventHealHook`. (run:2026-10-20-shortfalls)
 - [L] The same session's remaining 101 mismatches are a different gap: an event-9 (kill) handler at `0x005C01D0` runs
   inside the delivery before `AD1` with that revision's items (*Fleshripper*, *Dracul's Grasp*); not modelled.
   *2026-10-20 (plan 0045 P1.3):* read: it is function 28 (`item_healafterkill`), life `+= stat · 256` capped, no draw;
