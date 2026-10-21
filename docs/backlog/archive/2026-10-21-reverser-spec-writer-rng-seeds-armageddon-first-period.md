@@ -2,17 +2,17 @@
 from: reverser
 to: spec-writer
 date: 2026-10-21
-status: open
+status: done
 context:
-  - ../findings/skills/0013-druid.md
-  - ../findings/skills/0003-handlers.md
-  - ../specs/rng/seeds.md
-resolution: ""
+  - ../../findings/skills/0013-druid.md
+  - ../../findings/skills/0003-handlers.md
+  - ../../specs/rng/seeds.md
+resolution: "Done 2026-10-21 (lane/srng): rng/seeds Reimplementation notes 'Armageddon's cast draw' states do 124's RNG_Range(caster+0x20, 0x10000) [C] and the store, node identity and no-other-writer conditions [I]; the open question narrowed to those conditions until a run logs a first period; wiki randomness updated ([rng/seeds](../../specs/rng/seeds.md))."
 ---
 
-Not blocking. [rng/seeds](../specs/rng/seeds.md) *Open questions* asks what the skill entry's `+0x18` holds before
-Armageddon's first period. Plan 0046 batch `dru` ([skills/0013](../findings/skills/0013-druid.md) §§ 4, 5;
-[skills/0003 § 9](../findings/skills/0003-handlers.md#9-re-seed-sites-rng0002--the-other-initialiser-sites) dated
+Not blocking. [rng/seeds](../../specs/rng/seeds.md) *Open questions* asks what the skill entry's `+0x18` holds before
+Armageddon's first period. Plan 0046 batch `dru` ([skills/0013](../../findings/skills/0013-druid.md) §§ 4, 5;
+[skills/0003 § 9](../../findings/skills/0003-handlers.md#9-re-seed-sites-rng0002--the-other-initialiser-sites) dated
 note) answers it in part:
 
 - `[C]` (ADR-0021, up to do 124's `STATLIST_Alloc` or `StatListSetEnd`): srvdofunc 124 (249 Armageddon, 250

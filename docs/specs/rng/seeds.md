@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng]
 consumed_by: [drlg/overview, drlg/room-tiles, drlg/*, monsters/spawn, objects, items/*]
-tags: {C: 79, I: 12, L: 4}
-updated: 2026-10-20
+tags: {C: 80, I: 13, L: 4}
+updated: 2026-10-21
 ---
 
 # Seed tree: game → act → level → room → unit
@@ -536,17 +536,41 @@ separate objects.
   | missile do 28 and 35 | the missile's `+0x20` | the low word kept in `MissileData+0x28`, stored back after the draws |
   | hit 58, do 34 | the missile's `+0x20` | its position (hit 58 its `SubX`, do 34 its path X) |
   | `0x005A9820` (missile do 8, 10, 17, 25) | the parent missile's `+0x20` | its `SubX + elapsed` |
-  | Armageddon's periodic function (`srvactivefunc` 146) | the **caster's** `+0x20` | the skill entry's `+0x18`, then a fresh `RNG_Range(1 000 000)` is stored back there |
+  | Armageddon's periodic function (`srvactivefunc` 146) | the **caster's** `+0x20` | the skill entry's `+0x18` (at the first period, the cast's draw under the conditions of *Armageddon's cast draw* below), then a fresh `RNG_Range(1 000 000)` is stored back there |
   | `0x00645390` | a unit's `+0x20` | a skill entry's `+0x18`/`+0x1C`; no reference in the image |
 
   So a missile's draws after such a re-seed are a function of the creator's value, not of the game seed, and an
-  Armageddon period sets the caster's seed from a stored word: a reimplementation keeps that word per skill entry.
+  Armageddon period sets the caster's seed from a stored word: a reimplementation keeps that word per skill entry,
+  written at the cast as *Armageddon's cast draw* below states.
   The one other server site of rng/0002's register-seed list, `0x005C276A` in the version-0 set builder, re-seeds an **item's** seed from
   its own saved low word, restoring it on failure.
   [I] (fn:sub_005C2740_ItemBuildSetV0@0x005C2740, 0x005C276A, fn:sub_005D40F0_MissCbReseedFromArg@0x005D40F0, fn:sub_005D4680_MissCbReseedZigzag@0x005D4680,
   fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290, fn:sub_005CD110_MissCbReseedRoll@0x005CD110,
   fn:sub_005AC040_MissCbReseedPathX@0x005AC040, fn:sub_005C8520_SkillDo146Armageddon@0x005C8520, 0x005C8688–0x005C8694,
   [skills/0003 § 9](../../findings/skills/0003-handlers.md#9-re-seed-sites-rng0002--the-other-initialiser-sites))
+
+- **Armageddon's cast draw.** Skill do function 124 (`srvdofunc` 124: 249 Armageddon, 250 Hurricane, 349 Diablogeddon),
+  after its record test, its `aurastate` range test, its used-skill tests and the setting of bit 6 of the caster's
+  `+0xC4`, makes one `r = RNG_Range(caster+0x20, 0x10000)` on the **caster's** seed and keeps `r` in its frame, before its `STATLIST_Alloc` or `StatListSetEnd`. In
+  the run's cases it makes no other draw on the caster's seed before that call; the `auralencalc` it evaluates between
+  the draw and that call ran on constant programs only, so a calc function's own draws are not covered. [C]
+  (ADR-0021, up to `STATLIST_Alloc` @0x005C8295 or `StatListSetEnd` @0x005C82E1;
+  fn:sub_005C8190_SkillDo124PeriodicState@0x005C8190, 0x005C8228, run:2026-10-21-cat-emu-dru,
+  [skills/0013 § 4](../../findings/skills/0013-druid.md#4-the-shape-and-timed-state-functions-do-116-120-124))
+
+  After that call, from the reading: a `STATLIST_Alloc` giving 0 makes do 124 return 0 with nothing queued or stored;
+  otherwise, after its list steps (`StatListSetEnd`, event 12, `SKILLS_ApplyAuraStats`, stats 350 and 351), it
+  cancels the caster's unit events 5 for the skill id, queues unit event 5 at `frame + Param4` with
+  `(id, lvl)`, and stores `r` with `UnitSkillSet18(used node, r)`. For Armageddon and Diablogeddon (state 145,
+  `srvactivefunc` 146) that event runs the periodic function above, which reads the `+0x18` of
+  `SKILLS_GetUnitSkill(caster, id)`'s node and seeds the caster with `Init` of it. So the first period re-seeds the
+  caster from the cast's `r` when that node is the used node **and** no other writer of its `+0x18` runs between the
+  cast and that period; the setter `sub_00644560_UnitSkillSet18` has 85 call sites, which were not followed, and no
+  run has logged a first period. Hurricane (state 144, `srvactivefunc` 145) is stored the same `r`, and its periodic
+  function does not re-seed. [I] (0x005C8299, 0x005C8354–0x005C835C, fn:sub_00644560_UnitSkillSet18@0x00644560,
+  fn:sub_005C8520_SkillDo146Armageddon@0x005C8520, 0x005C8647–0x005C8779,
+  [skills/0013 § 5](../../findings/skills/0013-druid.md#5-the-periodic-states-do-table-entries-145-and-146),
+  [skills/0003 § 9](../../findings/skills/0003-handlers.md#9-re-seed-sites-rng0002--the-other-initialiser-sites) dated note)
 
 ## Evidence
 
@@ -556,6 +580,9 @@ separate objects.
   (draw 3) and [items/0010 § 1](../../findings/items/0010-quest-drops.md#1-quest-objects-events-and-the-quest-seed) (draw 4).
 - [findings/skills/0002-missiles.md § 3](../../findings/skills/0002-missiles.md#3-the-damage-the-missile-carries): the pierce count's local seed (plan 0045 P1.2).
 - [findings/skills/0003-handlers.md § 9](../../findings/skills/0003-handlers.md#9-re-seed-sites-rng0002--the-other-initialiser-sites): the skill and missile re-seed sites (plan 0045 P1.3, and its review).
+- [findings/skills/0013-druid.md §§ 4, 5](../../findings/skills/0013-druid.md#4-the-shape-and-timed-state-functions-do-116-120-124) and
+  [skills/experiments § run:2026-10-21-cat-emu-dru](../../findings/skills/experiments.md#run2026-10-21-cat-emu-dru):
+  Armageddon's cast draw (plan 0046 batch `dru`, and the `lane/p46m10` review).
 - [findings/rng/0001-rng-core.md](../../findings/rng/0001-rng-core.md): the "draw" definition, `0x005BDFF0`.
 - [findings/monsters/0001-level-pool.md § 1](../../findings/monsters/0001-level-pool.md#1-where-and-when-game-creation): game-seed draw 1 and the game-creation call order (step note 7a).
 - [findings/rng/experiments.md § run:2026-10-11-seed-tree](../../findings/rng/experiments.md#run2026-10-11-seed-tree):
@@ -603,7 +630,10 @@ separate objects.
 - ~~**Skill and missile re-seeds**: the server sites in the skill and missile code that re-seed a unit's `+0x20` or
   another object's seed, and from what.~~ Read from the code (*Reimplementation notes*, *Skill and missile re-seeds*;
   plan 0045 P1.3): missiles and local seeds, and the caster at Armageddon's periods.
-- [L] **Armageddon's first period**: what the skill entry's `+0x18` holds before the first period has stored its
-  `RNG_Range(1 000 000)`. Its setter `0x00644560` has 85 call sites and the writers before the first period were not
-  followed; the caster's seed after that period is a function of this word alone. Owner: plan 0045 Phase 2 (logged
-  whenever it fires) or plan 0046.
+- [L] **Armageddon's first period**, narrowed: the cast's `RNG_Range(caster+0x20, 0x10000)` and its store at the
+  used node's `+0x18` are in *Reimplementation notes* (*Armageddon's cast draw*: the draw confirmed, the store read from the code). Still
+  open: whether `SKILLS_GetUnitSkill(caster, id)` and do 124's used node are one node at the first period, and whether
+  another writer of that node's `+0x18` (the setter `0x00644560` has 85 call sites, not followed) runs between the
+  cast and that period, so whether the first period's caster seed is `Init(r)`. Owner: a run that logs a first
+  period (plan 0045 Phase 2, logged whenever it fires, or plan 0046)
+  ([skills/0013 § 5](../../findings/skills/0013-druid.md#5-the-periodic-states-do-table-entries-145-and-146)).
