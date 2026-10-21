@@ -1,10 +1,10 @@
 ---
 based_on:
-  - docs/specs/items/tc.md 2026-10-20
+  - docs/specs/items/tc.md 2026-10-21
   - docs/specs/items/quality.md 2026-10-20
   - docs/specs/items/uniques-sets.md 2026-10-17
   - docs/specs/items/affixes.md 2026-10-20
-  - docs/specs/items/properties.md 2026-10-17
+  - docs/specs/items/properties.md 2026-10-21
 ---
 
 # How an item drops
@@ -72,15 +72,19 @@ A monster has four TC columns per difficulty in MonStats: `TreasureClass1` for n
 [quest TC](../glossary.md). A [superunique](../glossary.md) uses its own row's TC. The game tests the kinds in the order
 superunique, champion, unique, normal. The order matters because a live monster carries several kind flags at once:
 champions also carry the unique flag, and they still get the champion column. Champion-before-unique is confirmed by
-a recorded Nightmare game; superunique-before-champion is read from the code only, since no monster seen in a run
-carried both flags ([TC § B](../specs/items/tc.md#b-monster-drop-which-tc--monster_dropitems)).
+a recorded Nightmare game, and the recorded games of the item runs show champions taking their column in Normal,
+Nightmare and Hell and in classic games, over 35 monster classes; Hell uses its own columns the same way.
+Superunique-before-champion is read from the code only, since no monster seen in a run carried both flags
+([TC § B](../specs/items/tc.md#b-monster-drop-which-tc--monster_dropitems)).
 
 The quest TC then replaces whichever TC was chosen when the monster has one, the killer is (or belongs to) a player,
 and that player's quest bits for the boss are clear. Because the drop runs before the boss's quest script sets those
-bits, a first kill always gets the quest TC. This is confirmed for single player; kills by a pet, a hireling, and a
-party were not run ([TC § B](../specs/items/tc.md#b-monster-drop-which-tc--monster_dropitems)).
+bits, a first kill always gets the quest TC. This is confirmed for single player, including a kill by a hireling and
+one by a pet, each counted for its player; a kill through an `exp` state and a party were not run
+([TC § B](../specs/items/tc.md#b-monster-drop-which-tc--monster_dropitems)).
 
-Some monsters carry a "no death drop" flag and skip the drop entirely. The code sets it in 30 places: 20 plain
+Some monsters carry a "no death drop" flag and skip the drop entirely, as does a monster whose death spot fails a
+collision test; both skips are confirmed in a recorded game. The code sets the flag in 30 places: 20 plain
 writes of the flag, and 10 more that set it together with other flags. Read from the code, these monsters get it:
 
 - town NPCs, critters, hirelings and player summons (every class whose `Align` is 1) when made by the normal spawn
@@ -102,9 +106,9 @@ whole from somewhere else would not show up in this count, so the list is a lowe
 `Act 1 (N) H2H A` to `H2H B`). The game walks forward through the group while the monster's level
 ([mlvl](../glossary.md)) is at least the next TC's `level`. The walk only moves forward, so a base TC whose own level is
 above the monster's is kept, never replaced by a lower one. Monsters flagged `boss` or `noRatio` do not upgrade, nor
-do sub-TCs or chests. The walk is confirmed on Nightmare kills of normal, minion, champion, unique and superunique
-monsters. The Hell columns work by the same rule but no Hell drop was recorded, the `boss` gate rests on a single
-logged call, and the classic and `noRatio` gates were not exercised
+do sub-TCs or chests. The walk is confirmed on Nightmare and Hell kills of normal, minion, champion, unique and
+superunique monsters, and the classic and `boss` gates on the recorded classic games and five boss kills. Only the
+`noRatio` gate is read from the code: no stock `noRatio` monster has a TC
 ([TC § C](../specs/items/tc.md#c-level-upgrade--tc_dropbyindex-and-tc_getbyindex)).
 
 ## Walking the treasure class
@@ -124,25 +128,26 @@ A TC is a weighted list of up to ten entries, each an item, an item-type TC such
 - Each TC carries [ratio](../glossary.md) words (`Magic`, `Rare`, `Set`, `Unique`) that improve the quality odds.
   Down a chain of sub-TCs each word takes the larger of parent and child, so a good parent's ratios reach the item
   even through plain sub-TCs. Confirmed in a recorded game.
-- A monster drop stops at six items in total across the whole walk; the sixth item ends it at once. This limit is read
-  from the code ([TC § H](../specs/items/tc.md#h-item-pick-and-hand-off)).
+- A monster drop stops at six items in total across the whole walk; the sixth item ends it at once. Confirmed in
+  recorded games ([TC § H](../specs/items/tc.md#h-item-pick-and-hand-off)).
 
 The item-type TCs (`weapN`, `armoN`, `bowN`, `meleN`, `abowN`; for example `bow3`) are built by the game at load:
 for each item type that has one, a TC for every N = 3, 6, … 96, holding every spawnable, non-quest base of that type
-whose base `level` lies above N − 3 and at most N, each weighted by the `Rarity` of the base's own type. This is read from the code
-([TC § I](../specs/items/tc.md#i-auto-item-type-tcs-weapn-armon-bown-melen-abown)).
+whose base `level` lies above N − 3 and at most N, each weighted by the `Rarity` of the base's own type. Confirmed by
+the recorded drops that land in them ([TC § I](../specs/items/tc.md#i-auto-item-type-tcs-weapn-armon-bown-melen-abown)).
 
 When a pick lands on an item, the game asks for a quality (next section) unless the TC entry itself names a unique or
 set row, in which case the quality is fixed to unique or set with no roll. In stock data the only such entries are
 `Annihilus` in `ROP (N)` and `ROP (H)`, and no run reached them, so that path is read from the code
 ([TC § H](../specs/items/tc.md#h-item-pick-and-hand-off),
 [uniques-sets § F](../specs/items/uniques-sets.md#f-a-row-named-by-the-tc)). For gold, a `mul=` value in the cell scales the amount and
-the killer's (and its owner's) gold find adds a percentage; both are read from the code only.
+the killer's (and its owner's) gold find adds a percentage; both are confirmed in a recorded game, and the sixth item
+of a full drop gets no gold find.
 
-Chests use the same walk with no level upgrade. Their TC is an `Act N Chest A/B/C` of their [act](../glossary.md) and difficulty; how
-the tier is chosen is read from the code, while the chest drops of a recorded game reproduce the walk itself. The tier
-(0, 1 or 2) is also passed as the item level of the quality roll, so a chest's quality roll runs at item level 0 to 2
-(read from the code; [quality](../specs/items/quality.md#c-shared-terms-and-magic-find)). A chest can also force a
+Chests use the same walk with no level upgrade. Their TC is an `Act N Chest A/B/C` of their [act](../glossary.md) and
+difficulty, the tier set by where the chest's level falls in thirds of the act's level span; the tier rule and the
+walk are confirmed on recorded chest drops. The tier (0, 1 or 2) is also passed as the item level of the quality roll,
+so a chest's quality roll runs at item level 0 to 2 (confirmed; [quality](../specs/items/quality.md#c-shared-terms-and-magic-find)). A chest can also force a
 quality on its drop; when the entry is gold or a potion, that item skips the quality roll and is then built as normal
 quality anyway, because the always-normal rule of item creation overrides it (read from the code; elixirs are the
 exception and keep the forced quality). The
@@ -150,9 +155,12 @@ chest side is on the [objects](objects.md) page ([TC § J](../specs/items/tc.md#
 
 **Classic games differ.** In a classic game the walk uses only the classic weights, skips expansion-only entries,
 and when it picks a throwable item (javelins, throwing potions and the like) it gives the pick back and picks again,
-up to ten times per drop. The classic weights, the scan and the throwable refund are confirmed in a recorded classic
-game. Skipping an expansion-only entry that comes before the chosen one, the Long Sword that replaces the eleventh
-throwable, and the rejection of expansion bases are read from the code only
+up to ten times per drop; from the eleventh throwable on, the pick becomes a Long Sword. The classic weights, the scan
+and the throwable refund are confirmed in recorded classic games, and the bound of ten and the Long Sword in a run whose
+treasure class was edited to name throwables only. That the test reads an item's first type, not its second, is read
+from the code: no stock item tells the two apart. Skipping an expansion-only entry that comes before the chosen one
+changes nothing with the stock tables (the same entry is chosen either way), and the rejection of expansion bases is
+never reached with them; both are read from the code
 ([TC § E](../specs/items/tc.md#e-entry-selection), [§ H](../specs/items/tc.md#h-item-pick-and-hand-off)).
 
 ## More players, fewer empty picks
@@ -176,8 +184,9 @@ recomputed on every pick, from the unscaled NoDrop and the current TC's total.
 
 Confirmed for a party of one (alone or with `/players 8`) and a party of two in a two-client game. A second two-client
 run also confirmed that a dead party member is not counted, that a mercenary's kill counts its owner's party, and that
-`/players` works on the host of a network game (the joiner's setting changes nothing). Read from the code only: three
-or more players and the cap at 8.
+`/players` works on the host of a network game (the joiner's setting changes nothing), also for a host alone. The
+monster's player-count cap applies only to monster drops, not to chests (confirmed); in the recorded games it never
+lowered *n*. Read from the code only: three or more players and the cap at 8.
 
 ## The quality roll and magic find
 
@@ -263,8 +272,9 @@ skips straight to the superior test, was not exercised.
 The item is created with two draws from the game seed: one seeds the item as a world object (its unit seed), the
 other gives the item seed its starting value, written as `{start, 666}`. The `start` number is kept; it comes back for
 the socket count and every fallback ([uniques-sets § A](../specs/items/uniques-sets.md#a-the-item-seed-at-entry)).
-That a drop's two seeds come from the game seed is read from the code; that the item seed starts at `{start, 666}`
-when the quality work begins is confirmed in every logged creation.
+That a drop's two seeds come from the game seed is confirmed on the drops of a recorded game, which logged the game
+seed around each creation ([TC § H, note H7](../specs/items/tc.md#h-item-pick-and-hand-off)); that the item seed starts
+at `{start, 666}` when the quality work begins is confirmed in every logged creation.
 
 Before any quality work, the **base stats** are rolled on the unit seed
 ([properties § A](../specs/items/properties.md#a-base-stats-on-the-unit-seed)):
@@ -278,7 +288,8 @@ Before any quality work, the **base stats** are rolled on the unit seed
 - **Picture**: a draw for the types that have several pictures (`VarInvGfx`).
 
 A rule that would set the quantity to 1 for magic and better items never fires on a drop, because the quality is
-not yet set when these stats are rolled: a rare throwing weapon keeps its drawn quantity. That is read from the code.
+not yet set when these stats are rolled: a rare throwing weapon keeps its drawn quantity. Confirmed: the quality is 0
+at that point in every logged creation, and five magic and rare throwing weapons of stock games kept their quantities.
 
 ## Uniques and sets
 
@@ -432,8 +443,12 @@ the item seed ([properties § B](../specs/items/properties.md#b-itemapplyprops-m
 - Per-level properties store their raw value; the per-level value is not computed at creation.
 - A set item's extra bonus blocks (`aprop`) are rolled at creation like the others.
 
-A few property kinds (random skill, random class skill, the ethereal property, and two more) were not reached in any run
-and are read from the code only.
+The random-skill property (*Ormus' Robes*) puts the drawn number in the skill slot and the block's fixed value in the
+level, and the ethereal property makes a not-yet-ethereal item with durability ethereal, with no draw; both are
+confirmed on drops from a treasure class edited to name those uniques. The ethereal property's two skips (an item
+already ethereal, or one without durability), the random class skill, and two more kinds were not reached in any run
+and are read from the code only. The damage-percent property's fallback (+1 maximum damage when the percentage of a
+small weapon rounds to 0) is confirmed on drops of runs with edited quality odds.
 
 ## Ethereal, sockets and automagic
 
@@ -449,7 +464,7 @@ After the builder, three more steps run on the item seed, in this order
    drawn: it is `start` mod cap + 1, where `start` is the item seed's starting value and cap is the smallest of the
    base's `gemsockets`, the type's maximum for the item level (`MaxSock1` up to ilvl 25, `MaxSock25` up to 40,
    `MaxSock40` above) and 3, 4 or 6 for Normal, Nightmare or Hell. All 29 socketed drops of the runs had that count.
-   Classic body armour makes no socket draw at all; that is read from the code.
+   Classic body armour makes no socket draw at all, as ten recorded classic drops confirm.
 3. **[Automagic](../glossary.md)** (expansion games only, not set or unique): a base whose `auto prefix` names a group
    (class items such as orbs) gets one affix from `AutoMagic`, picked like any affix with the same alvl. It always
    spends its coin draw. That set items skip it was seen once, in a session with edited quality odds; that unique items
@@ -544,13 +559,11 @@ Vendors, gambling, the Horadric Cube and quest rewards reach the same builders b
 
 The main flow above is confirmed in recorded games. These parts are not, or are still open:
 
-- **Treasure classes** ([TC open questions](../specs/items/tc.md#open-questions)): Hell drops; parties of three or
-  more and the cap at 8; champions outside one
-  Nightmare class and in classic games; the superunique-before-champion order; the early stop of a negative-Picks TC
-  and `Picks = 0`; the untested classic cases (expansion-only entries before the chosen one, the Long Sword, the
-  ratio raises); a TC entry naming a unique (`Annihilus`) in stock data; the floating-point precision under other game
-  types or renderers; the quest TC for a kill by a pet, a hireling or a
-  party member, and for Mephisto, Diablo and Baal after their quest is done; and whether any monster skips the death
+- **Treasure classes** ([TC open questions](../specs/items/tc.md#open-questions)): parties of three or more and the
+  cap at 8; the superunique-before-champion order and `Picks = 0` (no stock case); the classic ratio raises and a TC
+  entry naming a unique (`Annihilus`), which only edited tables reach; the floating-point precision under other game
+  types or renderers; game type 1; the quest TC for a kill through an `exp` state or by a party member, and for
+  Mephisto, Diablo and Baal after their quest is done; and whether any monster skips the death
   drop beyond the lower bound above. The two "upgrade" bits a TC can set turned out, by the code, to force the item
   ethereal and force sockets (see [Ethereal, sockets and automagic](#ethereal-sockets-and-automagic)); no stock data
   sets them.
@@ -564,7 +577,8 @@ The main flow above is confirmed in recorded games. These parts are not, or are 
   (set items skip it, seen once with edited quality odds), a forced affix outside its level window, and which text a
   rare name id is shown as (the [game data](game-data.md) page has the name line).
 - **Properties** ([properties open questions](../specs/items/properties.md#open-questions)): several property kinds
-  never reached, the type-11 setup, classic body armour at the socket roll, the second ethereal, and the exact
+  never reached (among them the one *Tomb Reaver* carries, which needs a Hellforge drop in Hell), the type-11 setup,
+  the second ethereal, and the exact
   rounding of a superior ethereal item with a durability bonus, where the code and a community page disagree (for
   maximum 38 and 15 %: 23 by the code, 22 by the page). No recorded item has settled it.
 

@@ -5,10 +5,10 @@ against all of them before you file the review request. Categories are those of 
 [lane run ledger](../../../../docs/plans/metrics.md).
 
 1. **Take the weaker tag.** A code reading is said "read from the code", never "confirmed" or "seen in
-   the game"; when a spec contradicts itself, the wiki takes the weaker tag. Seen: four such fixes at the
+   the game"; when a spec contradicts itself, or two specs a page is based on disagree, the wiki takes the weaker tag. Seen: four such fixes at the
    `lane/wiki2` review ([0037](../../../../docs/plans/done/0037-combat-formulas.md)); "never seen in the game" (`lane/wiki1`,
    [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)); four code readings stated flat and a menu known only
-   from a screenshot (`lane/wiki5`, [0042](../../../../docs/plans/done/0042-quests-travel.md)).
+   from a screenshot (`lane/wiki5`, [0042](../../../../docs/plans/done/0042-quests-travel.md)); the chest cut and `ilvl` hand-off stated confirmed on the objects page while objects § J3 kept `[I]` (`lane/s38h2c`, 0038).
 2. **Scope "never", "every" and "only" to the cases the run met.** Seen: "never MonStats `boss`" in a `[C]`
    sentence (`lane/p37t`, 0037); "every choice" (`lane/wiki4`, 0038); the struck warps open question
    (`lane/p38s3`, 0038). Split a code-read part out of a `[C]` sentence: five resurrection NPCs in a `[C]` bullet
