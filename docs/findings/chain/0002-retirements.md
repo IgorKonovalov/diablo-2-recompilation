@@ -55,10 +55,11 @@ oracles still taken from the log.
   seeds: the object's unit seed after the drop equals the resolver's predicted exit seed, and the game seed after it is
   predicted from the items the drop creates; 59 object drops, 0 mismatches (§ 10). (fn:TC_ResolveDrops@0x0055A6D0,
   run:2026-10-15-objects)
-- [I] **Oracle 13 (MonEquip's items) is modelled but unreached**: its draws on the unit seed and the two game-seed
-  steps per item are in the chain; the two stock classes with an `oninit` row (234 and 267, Blood Raven) were not
-  created on the kept logs. A reading error of `tools/monstats.py` (the `oninit` byte) is corrected on the way (§ 11).
-  (fn:sub_005D6B60_MonEquipInit@0x005D6B60)
+- [C] **Oracle 13 (MonEquip's items) is modelled; reached in Phase 2** (raised 2026-10-21): its draws on the unit seed
+  and the two game-seed steps per item are in the chain; the two stock classes with an `oninit` row (234 and 267, Blood
+  Raven) were not created on the Phase 1 logs, and Phase 2 created one of each, both reproduced, with `--cf
+  monequip-off` failing both (chain/0003). A reading error of `tools/monstats.py` (the `oninit` byte) is corrected on
+  the way (§ 11). (fn:sub_005D6B60_MonEquipInit@0x005D6B60, run:2026-10-20-chain)
 - [I] **Oracle 20 (the pass-entry grid snapshot) is not retired**: the composed grid (activation stamp plus the
   logged window marks) already equals the snapshot in 3 871 of 3 998 pass rooms; the predicates still read the
   snapshot, the barrier grid of the flood stays an input (its builder is read, not modelled) and so does the type-11
@@ -319,7 +320,10 @@ oracle left when it predicted every one of them.
   step picks one (masked for a power of two, a step all the same), and a free location gets its item. In
   `tools/monspawn.py` each item adds two game-seed steps inside the creation. `tools/test_chain.py` checks the walk
   on stub rows. No creation of class 234 or 267 is in the 62 world logs (`grep` of their `MU` lines finds none), so
-  the model is unreached and stays `[I]`; the item builds themselves are the item chain's. (fn:sub_005D6B60_MonEquipInit@0x005D6B60,
+  the model is unreached here and stays `[I]` on these logs; the item builds themselves are the item chain's.
+  **Raised to `[C]` at Phase 2** (2026-10-21): run:2026-10-20-chain creates class 267 (raven-xn2) and class 234 (cn2),
+  each with its `oninit` row, the unit seed after `MonEquipInit` predicted and the items reproduced; `--cf
+  monequip-off` fails both. (fn:sub_005D6B60_MonEquipInit@0x005D6B60,
   fn:sub_00573B20_MonEquipItemCreate@0x00573B20, fn:sub_00555230_SUnitCreate@0x00555230)
 - The archivist's MonEquip table doc ([backlog entry](../../backlog/2026-10-20-architect-archivist-monequip-table-doc-for-plan-0048.md))
   should record the `+0x04` `oninit` byte and the load-time `MonStats +0x2A`; a note is added to that entry.

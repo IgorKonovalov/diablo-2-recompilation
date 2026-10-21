@@ -272,3 +272,23 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   the run record `run:2026-10-20-chain` (no `experiments.md` entry written yet), and the review request. Maze waypoints
   finish their level in 5–8 minutes; about 70 oracle-free populations per 15-minute outdoor session, so 2 000 needs
   roughly 25 more sessions.
+- **2026-10-21 — Phase 2 run 1 recorded; review requested (reverser, `lane/p48h`, harness slot 1).** Not a phase
+  close: the bar is not met. Resumed after the 2026-10-20 20:12 out-of-memory kill (no resume note for it): of the
+  note's queue, xm2, xh1, xh2, cn1, cn2, cm1, cm3 and ch1 had finished cleanly; xm5 was cut and is kept as
+  `dev-p2-s1-4815-xm5-oom`; the other 14 (raven-xn2, xm3, xm4, xm5, xh3, xh4, xh5, cn3, cn4, cm2, cm4, ch2, ch3, ch4)
+  ran in two batches. xh4 sat through a machine suspend (23:17 to 06:19) and checks clean. No log holds
+  `internal-error:`. Record [run:2026-10-20-chain](../findings/chain/experiments.md#run2026-10-20-chain), finding
+  [chain/0003](../findings/chain/0003-end-to-end-run.md); 28 counted logs, manifest `manifest-final.txt`
+  (`e47bb1b1…`).
+  **Result** (`tools/chain.py check --o20` over the 28, under `MemoryMax=4G`): 26 logs pass; **2 mismatches** (cn4,
+  cm4: one `COLL_WHTest` of the objects model each, a live monster's bits the log does not place; candidate a
+  `MonSpawnTry` monster that walked, `[I]`). Met: 156 levels built, every DrlgType, every act of each game type in each
+  difficulty; 9 057 objects; 44 champion and 110 unique packs, 147 mods rolls; 849 monster drops with an item (951
+  items), 2 514 TC calls and 1 286 item creations, 0 failed. **Short**: 1 385 of 2 000 oracle-free populations. Ruling
+  2's items: oracle 13 reached (classes 267 and 234, `--cf monequip-off` fails both; MonEquip raised to `[C]` in
+  chain/0002 § 11), oracle 19 counted and its gate inputs asserted, oracle 20's residue by bit with 0 unexplained
+  object-bit cells, oracle 14's remainder 0 of 8 588. Checker scope change (`dfe3e5e`): a chest's interact byte set or
+  cleared before its operate is taken and counted (3 cases), Phase 1 world summary unchanged.
+  **Next:** the architect rules on the two mismatches and the shortfall. Proposed: a `chain.gdb` line for a moving
+  monster's marks between windows (or the cells under each objects-model `COLL_WHTest`), cn4 and cm4 re-run on their
+  seeds, and about 13 more outdoor sessions on slot 1 for the populations.
