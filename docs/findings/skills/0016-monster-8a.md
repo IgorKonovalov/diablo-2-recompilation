@@ -174,7 +174,7 @@ None. No community document was opened for this batch.
   202, 336; do 98 on 184, 292, 329, 331. No row of the batch has the `lob` bit, `ResultFlags`, `HitFlags` or
   `HitClass`. (`rows.txt`, tbl:Skills.txt:srvstfunc, tbl:Skills.txt:srvdofunc)
 - [I] **Callers.** No entry of the batch is called from outside the two tables but do 98, which do 129 (`0x005D1AB0`,
-  batch 8c) calls directly at `0x005D1B75` (unfollowed here): a scan of every `call`/`jmp` operand finds no other
+  batch 8c) calls directly at `0x005D1B75` (unfollowed here; followed in [skills/0018](0018-monster-8c.md) § 5): a scan of every `call`/`jmp` operand finds no other
   site, and each entry's address occurs once as a dword in the image file, its table slot (`entry_words=30`). `0x005CC3B0` is called four times: twice in do 95 (`0x005CC5C0` with no target point or a failed
   `MissileCreate`, `0x005CC677` after the re-queue test fails; *`lane/p46m13` review:* both read "after its missile" before) and twice in do 152 `0x005CC690` (DiabLight, batch 8b: `0x005CC770`, `0x005CC827`); `0x0056C210` only by do 111. (`static.txt`
   `calls of` lines, 0x005D1B75)
@@ -453,5 +453,7 @@ inventory, `+0xA8` skills, `+0xC4` bits 1–3 and 6; the used node `+0x0C`, `+0x
 - [L] Whether a monster's `PathDirection` point lies within 258 subtiles in play (do 87's target, do 88's node point);
   past that the code reads outside its table (§ 5).
 - [L] The direct call of do 98 from do 129 (`0x005D1B75`, batch 8c) and do 152's two `0x005CC3B0` calls
-  (`0x005CC690`, batch 8b).
+  (`0x005CC690`, batch 8b). *2026-10-21, batch 8c (`lane/p46m15`):* both answered: do 129 calls do 98 with its own `(ECX game, EDX
+  caster; id, lvl)` for a caster with no owner and no target, the only direct caller ([skills/0018](0018-monster-8c.md)
+  §§ 1, 5, emulated to that call); do 152's calls are [skills/0017](0017-monster-8b.md) § 1's.
 - [L] Everything after each boundary (§§ 3–6), for a later batch or the harness.

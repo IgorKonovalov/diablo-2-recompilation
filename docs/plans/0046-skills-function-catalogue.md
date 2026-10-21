@@ -1337,3 +1337,24 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   do 129's direct call of do 98 (`0x005D1B75`) and the `near8` docstring, on the class batches' conventions, unless the
   monster-AI plan pulls one forward or takes a function as a boundary oracle (ADR-0020). Phase 2 still waits for
   0045·P3's review.
+- **2026-10-21 — Phase 1 batch 8c paused at the owner's request (reverser, `lane/p46m15`, static, no harness).** Done
+  and committed: the monster skill functions of Skills rows 290–338, start 61–63, do 128–137, 139, 140, 147–149, 18
+  entries, all read and all emulated ([skills/0018](../findings/skills/0018-monster-8c.md), draft for review); run
+  run:2026-10-21-cat-emu-8c (`tools/skills_catalogue_emu.py --batch 8c`, tool `8911d02a…`, `check.txt` `500b673c…`,
+  `static.txt` `873640da…`, `manifest.sha256` `9dc63588…`): four families, 8 800 cases, 0 mismatches, 23
+  boundary/call-site triples (site control 2 376 of 2 376), every control equal to its deciding class (18 `CLASS`
+  lines); `repro.txt` (`2a44bd63…`) reproduces 9a–9d, the seven class batches, `item`, 8a and 8b byte for byte. Carried
+  items done: do 129's direct call of do 98 (`0x005D1B75`, emulated to that call; skills/0016's open question
+  annotated), the tool's `near8` docstring (258 fits, 259 wraps). 30 symbols added (`I`); experiments record appended.
+  Draws: do 131's `RNG_Range(caster, 100)`, do 140's inline steps of the caster's seed; Baal's arm of `0x0063EFA0`
+  (not emulated, § 7) adds two or three `RNG_Range` on the caster's seed. Tags as drafted: 27 `[C]`, 10 `[I]`, 3 `[L]`
+  bullets. **Next (resume):** (1) run `python3 -I tools/gate.py` (it was red only on the then-untracked 0018 links;
+  recheck the W3 warnings for the new symbols once 0018 is tracked); (2) self-check 0018 against
+  `.claude/skills/reverser/references/review-fixes.md` rules 1–15 (in particular rule 13's "after, `[I]`" in the
+  Answer and rule 2's counts against the kept `check.txt`); (3) file the archivist entry (column readers: Skills
+  `aurastate`/`auratargetstate` as gates in do 129/131/137, `summon`/`summode`, `sumumod`, `sumoverlay`, `srvoverlay`,
+  `lob`, `ResultFlags`/`HitFlags`/`HitClass` in do 134, MonStats `BaseId` tests 453/546/551, the monster data bytes
+  `+0x0E`/`+0x0F`) and the review request to the architect (modelled on the archived p46m14 request); (4) append the
+  lane-landed log entry. **What remains of Phase 1 after 8c:** batch 8c's review, and the six `general` tier-A entries
+  plan 0045 read (start 1, 2, 65, do 1, 3, 5 of rows 0–5; Unsummon's start 3 and do 4 went to batch 10) — read by plan
+  0045, not re-read by a 0046 batch; the architect to rule whether they count as covered for Phase 1's close.

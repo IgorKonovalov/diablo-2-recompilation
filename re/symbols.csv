@@ -660,6 +660,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00573B20,func,sub_00573B20_MonEquipItemCreate,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00573CB0,func,sub_00573CB0_MonStatsInit,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00574250,func,sub_00574250_MonsterInit,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
+0x00574370,func,sub_00574370_MonChangeClass,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
 0x005749B0,func,PETS_SetInfo,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00574A20,func,sub_00574A20_PetTypeOfGuid,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x00574BD0,func,PETS_GetInfo,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
@@ -932,6 +933,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0058F100,func,sub_0058F100_MonGroupAddMember,,I,monsters/special,docs/findings/items/0002-quality-roll.md
 0x0058F380,func,sub_0058F380_MonGroupForEach,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x0058F710,func,sub_0058F710_MonLinkClass3C,,I,skills/catalogue,docs/findings/skills/0016-monster-8a.md
+0x0058F730,func,sub_0058F730_MonHelpBlock,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
 0x0058F870,func,sub_0058F870_A1Intro_NpcMessage,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0058F8F0,func,sub_0058F8F0_A1Intro_NpcTalk,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0058F9B0,func,sub_0058F9B0_A1Intro_LogState,,I,quests/progression,docs/findings/quests/0001-progression.md
@@ -1801,6 +1803,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005CC4E0,func,sub_005CC4E0_SkillDo95Inferno,,I,skills/catalogue,docs/findings/skills/0016-monster-8a.md
 0x005CC690,func,sub_005CC690_SkillDo152DiabLight,,I,skills/catalogue,docs/findings/skills/0017-monster-8b.md
 0x005CC840,func,sub_005CC840_SkillDo96Heal,,I,skills/catalogue,docs/findings/skills/0016-monster-8a.md
+0x005CC960,func,sub_005CC960_MonReviveInPlace,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
 0x005CCB10,func,sub_005CCB10_SkillDo97Resurrect,,I,skills/catalogue,docs/findings/skills/0016-monster-8a.md
 0x005CCC80,func,sub_005CCC80_SkillMonTeleportDo,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x005CCD10,func,sub_005CCD10_SkillDo99PoisonNova,,I,skills/catalogue,docs/findings/skills/0017-monster-8b.md
@@ -1820,6 +1823,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005CDDD0,func,sub_005CDDD0_SkillDo109Hit,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x005CDF00,func,sub_005CDF00_SkillSt64HasTarget,,I,skills/catalogue,docs/findings/skills/0017-monster-8b.md
 0x005CDF10,func,sub_005CDF10_SkillDo109Frenzy,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
+0x005CDFB0,func,sub_005CDFB0_SkillDo148DoomKnightMissile,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x005CE0B0,func,sub_005CE0B0_SkillDo149NecromageMissile,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
 0x005CE1B0,func,sub_005CE1B0_SkillDo110MissileSkill,,I,skills/catalogue,docs/findings/skills/0016-monster-8a.md
 0x005CE2B0,func,sub_005CE2B0_SkillDo112MonCurse,,I,skills/catalogue,docs/findings/skills/0017-monster-8b.md
 0x005CE670,func,sub_005CE670_SkillDo111FetishAura,,I,skills/catalogue,docs/findings/skills/0016-monster-8a.md
@@ -1833,6 +1838,29 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005D1350,func,sub_005D1350_SkillDo126ImpInferno,,I,skills/catalogue,docs/findings/skills/0017-monster-8b.md
 0x005D1570,func,sub_005D1570_SkillSt60SuckBlood,,I,skills/catalogue,docs/findings/skills/0017-monster-8b.md
 0x005D16A0,func,sub_005D16A0_SkillDo127SuckBlood,,I,skills/catalogue,docs/findings/skills/0017-monster-8b.md
+0x005D1800,func,sub_005D1800_SkillDo128CryHelp,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x005D18E0,func,sub_005D18E0_ImpAttach,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x005D19D0,func,sub_005D19D0_ImpDetach,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x005D1AB0,func,sub_005D1AB0_SkillDo129ImpTeleport,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x005D1BF0,func,sub_005D1BF0_SkillSt61SelfResurrect,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x005D1C30,func,sub_005D1C30_VineCreateRow,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x005D1CD0,func,sub_005D1CD0_SkillDo130VineAttack,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x005D1D70,func,sub_005D1D70_WhipApplyState,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x005D1E10,func,sub_005D1E10_WhipChangeClass,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x005D1F70,func,sub_005D1F70_SkillDo131OverseerWhip,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x005D2090,func,sub_005D2090_SkillDo132ImpFireMissile,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x005D2140,func,sub_005D2140_ImpregnateTest,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x005D21B0,func,sub_005D21B0_ImpregnateEndCb,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x005D2250,func,sub_005D2250_SkillDo133Impregnate,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x005D2320,func,sub_005D2320_SkillDo134SiegeStomp,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x005D2420,func,sub_005D2420_SkillSt62MinionSpawner,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x005D2490,func,sub_005D2490_SkillDo135MinionSpawn,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x005D25B0,func,sub_005D25B0_SkillDo136DeathMaul,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x005D26F0,func,sub_005D26F0_SkillDo137FenrisRage,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x005D2940,func,sub_005D2940_SkillDo139BaalColdMissiles,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x005D2A10,func,sub_005D2A10_SkillSt63CorpseCycler,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x005D2B20,func,sub_005D2B20_StateDo147Attached,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x005D2C20,func,sub_005D2C20_SkillDo140BaalTentacle,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
 0x005D2E50,func,sub_005D2E50_BaalCorpseCb,,I,skills/catalogue,docs/findings/skills/0017-monster-8b.md
 0x005D2E80,func,sub_005D2E80_SkillDo141BaalCorpse,,I,skills/catalogue,docs/findings/skills/0017-monster-8b.md
 0x005D30A0,func,sub_005D30A0_MonEquipFirstRow,,I,monsters/stats,docs/findings/monsters/0004-stats.md
@@ -2347,6 +2375,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0063EDC0,func,MONSTATS_IsPrimeEvil,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0063EE90,func,sub_0063EE90_HirelingType,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x0063EEF0,func,sub_0063EEF0_MonClassicDiffAdjust,,C,monsters/stats,docs/findings/monsters/0004-stats.md
+0x0063EFA0,func,sub_0063EFA0_SpawnClassByBase,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
 0x00640E90,func,OBJECTS_GetRecord,,I,objects,docs/findings/objects/0001-object-population.md
 0x006412F0,func,OBJGROUP_GetRecord,,I,objects,docs/findings/objects/0001-object-population.md
 0x006414B0,func,SHRINES_GetRecord,,I,objects,docs/findings/objects/0001-object-population.md
@@ -2524,6 +2553,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0064FDC0,func,sub_0064FDC0_PathDirectionXY,,I,skills/catalogue,docs/findings/skills/0016-monster-8a.md
 0x006502D0,func,sub_006502D0_PathVelocityStep,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x006505C0,func,sub_006505C0_PathFlag08,,I,skills/missiles,docs/findings/skills/0003-handlers.md
+0x006505E0,func,sub_006505E0_PathFollowUnit,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
 0x00650840,func,sub_00650840_PathStep,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x00650BE0,func,sub_00650BE0_PathTargetRoomXY,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
 0x00650DE0,func,RNG_EntropySeed,uint __fastcall RNG_EntropySeed(int salt),C,rng/seeds,docs/findings/rng/0002-seed-tree.md
