@@ -1171,10 +1171,16 @@ for k in range(12):
 # the tundra), then activate. Five map seeds give 20 activations.
 ICE_WP = "511:1034,1035,1036,1037"
 TUNDRA_WP = "429,496:953,954"
-WP5_ROUTE = ["towp2", "wp:5,3", "warp:71", "approach:" + ICE_WP, "activate:1:4", "warp:74", "approach:" + ICE_WP,
-             "activate:1:4", "warp:74", "approach:" + TUNDRA_WP, "activate:1:4", "warp:71", "approach:" + ICE_WP,
-             "activate:1:4", "saveexit"]
-for k in range(6):
+# Plan 0047 Phase 2b: the warp steps name WRP records (the loaded LvlWarp table without the 'Expansion' divider:
+# warp_select's numbering), not Levels' Warp ids. Phase 2 passed the ids (71, 74, 74, 71): record 71 is id 71's
+# left-facing row only (the Arreat Plateau's entrance is id 71 left, record 71, or right, record 72, by seed: seed
+# 4782 drew 72, so the search found no record 71), and record 74 is id 73 Ice Caves Up, the way back to the
+# Plateau (x-wpact5r-0 went back up and ended in level 111). Id 71 is records 71/72, id 74 Ice Caves Down
+# records 76/77.
+WP5_ROUTE = ["towp2", "wp:5,3", "warp:71,72", "approach:" + ICE_WP, "activate:1:4", "warp:76,77",
+             "approach:" + ICE_WP, "activate:1:4", "warp:76,77", "approach:" + TUNDRA_WP, "activate:1:4",
+             "warp:71,72", "approach:" + ICE_WP, "activate:1:4", "saveexit"]
+for k in range(10):                   # 6-9: plan 0047 Phase 2b, more map seeds
     sess("x-wpact5r-%d" % k, "TravelWpArreat", "enter-normal", 4781 + k, WP5_ROUTE)
 
 

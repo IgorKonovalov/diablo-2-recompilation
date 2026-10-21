@@ -121,13 +121,20 @@ def statsnec_cycle():
 def statspot_cycle():
     """StatsPot (plan 0047, the expiries): the 40 inventory potions (tools/d2s_recipes/statspot.json: cell k holds
     hp1 hp1 hp1 hp1 yps wms vps hp1 by k mod 8) drunk by right click so that each timed state ends before the next
-    of its kind: a healing potion (state healthpot, 192 frames) every 8 s, an antidote, thawing and stamina potion
-    (750 frames) together every 32.5 s; then the 16 belt potions (hp1) by the keys 1-4, 8 s apart. Life stays far
-    below its maximum, so no healthpot list is freed by a full life."""
+    of its kind: a healing potion (state healthpot 100, 192 frames) every 210 frames, an antidote, thawing and stamina
+    potion (750 frames) together every 840; then the 16 belt potions (hp1) by the keys 1-4, 210 frames apart. Life
+    stays far below its maximum, so no healthpot list is freed by a full life.
+
+    Plan 0047 Phase 2b: the waits are server frames (the cube token frames:N), not seconds. Phase 2's 8 s waits were
+    sized at 25 frames a second, but the game runs at about 17 under the stats logger (dev-p47b-pot1: 173 frames in
+    10 s), so each healing potion was drunk while the last one's list was still linked: the game refreshed its expiry
+    instead of linking a new list (EXP0 of dev-p47b-pot1 at frame 1222: the healthpot list's expiry 1606), and no
+    list was freed until the drinking stopped. The potions were drunk all along."""
     cells = [(k % 10, k // 10) for k in range(40)]
     kind = ["hp1", "hp1", "hp1", "hp1", "yps", "wms", "vps", "hp1"]
     hp = [c for k, c in enumerate(cells) if kind[k % 8] == "hp1"]
     other = [c for k, c in enumerate(cells) if kind[k % 8] != "hp1"]
+    hp_wait = "frames:210,60"
     t = []
     while other:
         for c in other[:3]:
@@ -135,11 +142,11 @@ def statspot_cycle():
         other = other[3:]
         for j in range(4):
             if hp:
-                t += ["rclick:inv:%d,%d" % hp.pop(0), "sleep:%s" % ("8.5" if j == 3 else "8")]
+                t += ["rclick:inv:%d,%d" % hp.pop(0), hp_wait]
     for c in hp:
-        t += ["rclick:inv:%d,%d" % c, "sleep:8"]
+        t += ["rclick:inv:%d,%d" % c, hp_wait]
     for k in range(16):
-        t += ["key:%d" % (1 + k % 4), "sleep:8"]
+        t += ["key:%d" % (1 + k % 4), hp_wait]
     return t
 
 
@@ -205,16 +212,21 @@ SESSIONS = {
 FIELD = {"STATS_TICKS": "6000", "STATS_OBJS": "1"}
 
 
-def shrine_hunt(wp, times=6):
-    """StatsSor (life 1500 of 6000, mana 500 of 3000: the first recharge, refill and well decide): waypoint, the
-    shrines, the wells, a wait past a shrine's re-arm (reset 5 x 1200 + 1 frames, about 4 min at 25 frames a second),
-    the shrines again."""
-    op = ["objop", "--obj-cls", SHRINES_WELLS, "--time", "300", "--obj-near", "3"]
-    return [("pilot", ["farm", "--wp", wp, "--time", "1"], 90),
-            ("pilot", op + ["--times", str(times), "--done", "SHR1"], 400),
-            ("pilot", op + ["--times", "3", "--done", "WEL1"], 400),
-            ("wait", 250),
-            ("pilot", op + ["--times", "2", "--done", "SHR1"], 400)]
+def shrine_hunt(wp, rounds=4):
+    """StatsSor (life 1500 of 6000, mana 500 of 3000: the first recharge, refill and well decide): waypoint, then
+    rounds of an exploration (rooms activate, their shrines and wells enter the OBJS lines) and the shrines and wells
+    seen so far (--obj-mem: also those an earlier OBJS line listed), a wait past a shrine's re-arm (reset 5 x 1200 + 1
+    frames), the used ones again.
+
+    Plan 0047 Phase 2b: Phase 2's version went from the waypoint straight to objop, which explores nothing: it
+    operates only objects already listed, so a session saw the shrines of the waypoint's rooms (about one)."""
+    op = ["objop", "--obj-cls", SHRINES_WELLS, "--obj-near", "3", "--obj-mem", "--done", "SHR1,WEL1"]
+    ex = ["explore", "--hops", "25", "--nova", "2", "--mana-col", "4", "--drink", "0.4"]
+    t = [("pilot", ["farm", "--wp", wp, "--time", "1"], 90)]
+    for _ in range(rounds):
+        t += [("pilot", ex, 300), ("pilot", op + ["--times", "4", "--time", "120"], 200)]
+    t += [("wait", 250), ("pilot", op + ["--times", "6", "--time", "200"], 260)]
+    return t
 
 
 def cast_cycle(keys, rounds, back=None, wait=2.5):
@@ -232,8 +244,9 @@ for k, wp in enumerate(("2,5", "3,2")):
     SESSIONS["palc-wells%d" % (k + 1)] = ("StatsPalC", "enter-normal", 4721 + k,
                                           pal_field(wp, 50)[:2] + [
                                               ("pilot", ["objop", "--walk", "--no-nova", "--obj-cls", SHRINES_WELLS,
-                                                         "--times", "6", "--time", "300", "--done", "WEL1",
-                                                         "--obj-near", "3"], 400), POTIONS], FIELD)
+                                                         "--times", "6", "--time", "300", "--done", "WEL1,SHR1",
+                                                         "--obj-near", "3", "--obj-mem"], 400), POTIONS], FIELD)
+# (plan 0047 Phase 2b: --obj-mem, the wells an earlier OBJS line listed, and a shrine's SHR1 confirms a click too)
 for k in range(2):
     # an aura state's end: StatsPalD switches Might, Defiance and Prayer (F1-F3) by key, 30 switches a session
     SESSIONS["pald-auras%d" % (k + 1)] = ("StatsPalD", "enter-normal", 4731 + k,
@@ -245,8 +258,8 @@ for k in range(4):
     # out of it to her death when inv:open failed (see plan_tokens), so the Rogue Encampment's waypoint first
     SESSIONS["pot-town%d" % (k + 1)] = ("StatsPot", "enter-normal", 4741 + k,
                                         [("pilot", ["farm", "--wp", "1,1", "--time", "1"], 90), ("plan", "statspot", 1),
-                                         ("wait", 35)],
-                                        FIELD)
+                                         ("wait", 50)],
+                                        dict(FIELD, STATS_TICKS="40000"))   # Phase 2b: ticks (and "fr") all session
 # different states of one group: the Sorceress armours (group 1: frozenarmor 10, shiverarmor 88, chillingarmor 20),
 # Fade and Quickness (group 2: fade 159, quickness 157), the Druid's shapes (group 3: wolf 139, bear 140)
 SESSIONS["sor-armours"] = ("StatsSor", "enter-normal", 4751,
@@ -257,6 +270,11 @@ SESSIONS["ass-fade"] = ("StatsAss", "enter-normal", 4752,
 SESSIONS["dru-shapes"] = ("StatsDru", "enter-normal", 4753,
                           [("pilot", ["farm", "--wp", "1,2", "--time", "1"], 90)] + cast_cycle(["F1", "F2"], 12, wait=3.0),
                           FIELD)
+for k in range(2):
+    # plan 0047 Phase 2b: group 3 again with logger rev 10 (the nested STATE_GroupClear call's exit line)
+    SESSIONS["dru-shapes%d" % (k + 2)] = ("StatsDru", "enter-normal", 4754 + k,
+                                          [("pilot", ["farm", "--wp", "1,2", "--time", "1"], 90)] +
+                                          cast_cycle(["F1", "F2"], 12, wait=3.0), FIELD)
 for k in range(2):
     # the curse resistance cut: StatsAss with Fade 20 (curse_resistance, aurastat5) among the Worldstone Keep 1's
     # witches (succubuswitch2: Amplify Damage, Weaken), Normal: waypoint to the Keep 2 (5,9), warp 81 up to the Keep 1
@@ -275,6 +293,26 @@ for k, wp in enumerate(("3,2", "2,5")):
                                                         "9", "--drink", "0", "--mana-col", "0", "--hops", "80",
                                                         "--dead-below", "0"], 600)],
                                             FIELD)
+
+# plan 0047 Phase 2b. The 256 floor: neither Phase 2 field has a Normal poisoner (MonStats El1Type/El2Type `pois`
+# with a Normal El*MinD, against Levels' mon1..mon10/umon columns): the Halls of the Dead Level 2 (waypoint 2,4:
+# mummy2 Decayed, unraveler1 Hollow One, poison 120-160 over 1000 frames) and the Lost City (2,6: zombie5 Plague
+# Bearer, 27-54 over 400) have them.
+for k, wp in enumerate(("2,4", "2,6")):
+    SESSIONS["floor-poison%d" % (k + 3)] = ("StatsFloor", "enter-normal", 4773 + k,
+                                            [("pilot", ["farm", "--wp", wp, "--time", "1", "--mana-col", "0"], 90),
+                                             ("pilot", ["explore", "--walk", "--melee", "--melee-hold", "1.2", "--radius",
+                                                        "9", "--drink", "0", "--mana-col", "0", "--hops", "80",
+                                                        "--dead-below", "0"], 600)],
+                                            FIELD)
+# The curse resistance cut, a second field: the Crystalline Passage (waypoint 5,4; Levels 113 mon succubus3, skill
+# Defense Curse 309, state 113 defense_curse with States `curse` 1: the kept run's 11 state-113 expiries came from
+# there), StatsAss under Fade as in ass-curses
+for k in range(2):
+    SESSIONS["ass-curses%d" % (k + 3)] = ("StatsAss", "enter-normal", 4763 + k,
+                                          [("pilot", ["farm", "--wp", "5,4", "--time", "1"], 90)] + cast_cycle(["F1"], 1) +
+                                          [("pilot", PAL_WALK + ["--hops", "60"], 600)] + cast_cycle(["F1"], 1) +
+                                          [("pilot", PAL_WALK + ["--hops", "60"], 600)], FIELD)
 
 # attract (plan 0047 Phase 1 review ruling 2, Phase 2's first step): StatsNecA casts Attract (F1) on the nearest
 # monster, then Amplify Damage (F2) twice on the same monster (tools/d2pilot.py explore --melee --curse-keys, the right
@@ -298,10 +336,10 @@ CASES_0047 = {
     "S3 300 expiries with the kept run": ("StatsPot's timed potion states, each ending",
                                           ["pot-town%d" % k for k in range(1, 5)], [], ()),
     "S4 different-state group clears": ("armours (group 1), Fade and Quickness (2), the shapes (3)",
-                                        ["sor-armours", "ass-fade", "dru-shapes"], [], ()),
-    "S5 the 256 floor": ("StatsFloor poisoned at 30 life", ["floor-poison1", "floor-poison2"], [34], ()),
+                                        ["sor-armours", "ass-fade", "dru-shapes", "dru-shapes2", "dru-shapes3"], [], ()),
+    "S5 the 256 floor": ("StatsFloor poisoned at 30 life", ["floor-poison%d" % k for k in range(1, 5)], [34], ()),
     "S7 the curse resistance cut": ("StatsAss under Fade cursed by the Worldstone Keep's witches",
-                                    ["ass-curses1", "ass-curses2"], [], ("Fade",)),
+                                    ["ass-curses%d" % k for k in range(1, 5)], [], ("Fade",)),
     "S8 attract (Phase 1 review ruling 2)": ("StatsNecA: Attract, then Amplify Damage on the same monster",
                                              ["nec-attract1", "nec-attract2", "nec-attract3"], [],
                                              ("Attract", "Amplify Damage")),
