@@ -810,7 +810,14 @@ class Checker:
             U["monprop"] = True
 
     def six(self, U, d, where):
-        if self.T.monequip_oninit(U["cls"]):
+        if self.T.monequip_oninit(U["cls"]) and MONEQUIP_MODEL:
+            # plan 0048 Phase 2 (oracle 13): MonEquipInit's unit-seed draws by the model, compared at SIX
+            n = self.M.monequip(U["seed"], U["cls"], U["lvl"])
+            self.eq("unit seed after MonEquipInit (oninit class %d: the oracle 13 model, %d item(s))" % (U["cls"], n),
+                    d["us"], fmt(U["seed"].t()), where)
+            self.note("MonEquipInit oninit creations reproduced by the model (oracle 13), class %d" % U["cls"])
+            self.note("MonEquipInit items created by the model (oracle 13)", n)
+        elif self.T.monequip_oninit(U["cls"]):
             self.note("MonEquip seed oracle (oninit class)")
             U["seed"] = Seed(seed_t(d["us"]))
         else:

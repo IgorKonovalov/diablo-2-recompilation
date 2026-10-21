@@ -29,10 +29,11 @@ continue
 end
 
 # TC_ResolveDrops entry: ECX game, EDX source, stack (killer, tc, forcedQ, ilvl, noNoDrop, out, count*, max).
+# gseed: the game seed (game +0xD0) at the drop, an input of plan 0048 Phase 2 (added 2026-10-20).
 break *0x0055A6D0
 commands
 silent
-printf "TCR src=%08x stype=%u sclass=%u seed=%08x:%08x killer=%08x tc=%u fq=%u ilvl=%u nonodrop=%u max=%d g6a=%u diff=%u exp=%u pover=%u", $edx, *(unsigned*)$edx, *(unsigned*)($edx+4), *(unsigned*)($edx+0x20), *(unsigned*)($edx+0x24), *(unsigned*)($esp+4), (*(unsigned*)($esp+8) - *(unsigned*)0x0096C5EC) / 0x2c, *(unsigned*)($esp+0xc), *(unsigned*)($esp+0x10), *(unsigned*)($esp+0x14), *(int*)($esp+0x20), *(unsigned char*)($ecx+0x6a), *(unsigned char*)($ecx+0x6d), *(unsigned*)($ecx+0x70), *(unsigned*)0x00883D70
+printf "TCR src=%08x stype=%u sclass=%u seed=%08x:%08x killer=%08x tc=%u fq=%u ilvl=%u nonodrop=%u max=%d g6a=%u diff=%u exp=%u pover=%u gseed=%08x:%08x", $edx, *(unsigned*)$edx, *(unsigned*)($edx+4), *(unsigned*)($edx+0x20), *(unsigned*)($edx+0x24), *(unsigned*)($esp+4), (*(unsigned*)($esp+8) - *(unsigned*)0x0096C5EC) / 0x2c, *(unsigned*)($esp+0xc), *(unsigned*)($esp+0x10), *(unsigned*)($esp+0x14), *(int*)($esp+0x20), *(unsigned char*)($ecx+0x6a), *(unsigned char*)($ecx+0x6d), *(unsigned*)($ecx+0x70), *(unsigned*)0x00883D70, *(unsigned*)($ecx+0xd0), *(unsigned*)($ecx+0xd4)
 if *(unsigned*)$edx == 1
 printf " mflags=%02x suid=%u", *(unsigned char*)(*(unsigned*)($edx+0x14)+0x16), *(unsigned short*)(*(unsigned*)($edx+0x14)+0x26)
 end
