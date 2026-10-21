@@ -1196,7 +1196,11 @@ class PresetMonPass(Pass):
         self.seeds(px, "OPUX")
         self.guard_preset("placed" if u else "nothing placed")
         if self.sci:
-            raise Mismatch("%d special-count increments not modelled" % len(self.sci))
+            # plan 0048 Phase 2 (xn4, Izual 256): the creation path's MonMarkSpecial (ModAppendApply 0x005A4850 from
+            # 0x0057340B, not read) increments the special count; the increment is taken from the SCI line, counted,
+            # and the window keeps an oracle
+            self.sci_taken = len(self.sci)
+            self.sci = []
         return "preset class"
 
     # sub_0054E600 0x0054E973..0x0054EA9D: MonPlace rows 17..32, the fixed-class table 0x0054EB74 (index row - 17)
@@ -1560,6 +1564,8 @@ class Checker:
         self.root, self.verbose = root, verbose
         self.checks = self.fail = 0
         self.stats, self.oracles = {}, {}
+        self.append_src, self.unit_seed_taken = {}, {}      # plan 0048 Phase 2: oracle 14 remainder per class
+        self.populated_clean, self.populated_unclean = [], {}  # plan 0048 Phase 2: oracle-free room populations
         # F8: MonSpawnTry branches that are counted, printed even at 0
         self.stats["CollisionTest bypassed by R.flags & 0x80"] = 0
         self.stats["MonSpawnTry exit on x = 0 or y = 0"] = 0
@@ -1649,6 +1655,7 @@ class Checker:
             # known (None), so a later creation of that class takes its unit seed from the log
             for c in got[len(want):]:
                 tr.append([c, 0, None])
+                self.append_src.setdefault((P.path, reg["lid"], c), "no creation logged (first seen in a region snapshot)")
                 self.oracle("region append by a creation outside the model (class from the snapshot, sets unknown)")
             want = got
         self.ok(want == got, "%s: region of level %d at the pass entry %s, tracked model %s" % (P.path, reg["lid"], got, want))
@@ -1688,6 +1695,9 @@ class Checker:
         if m2 is None or m2[0xEC] <= 2:
             return
         reg.append([cls, 0, None])
+        # plan 0048 Phase 2: the creation that appended the class, for the remainder of oracle 14
+        self.append_src[(path, lid, cls)] = "%s MU line %d (class %d, outside a modelled window)" % (
+            os.path.basename(path), ln, cls)
         self.oracle("region append by a creation outside the model (an MU line not in a modelled window; sets unknown)")
 
     def unit_seed(self, P, cls, us0, logged):
@@ -1702,6 +1712,8 @@ class Checker:
         self.stats[k] = self.stats.get(k, 0) + 1
         if e is not None and e[2] is None:
             self.oracle("unit seed after SUnitCreate (region entry appended outside the model: sets unknown)")
+            src = self.append_src.get((P.path, P.lid, cls), "appender not recorded")
+            self.unit_seed_taken[(cls, P.lid, src)] = self.unit_seed_taken.get((cls, P.lid, src), 0) + 1
             return
         nvar = len(e[2]) if e is not None else 0
         ms = monstats.Seed((s.low, s.high))
@@ -1855,6 +1867,7 @@ class Checker:
                 self.rw0_line, self.rw0_room = ln, d["room"]
                 self.rw1_rs = nxt[0][1]["rs"] if nxt and nxt[0][0] == "RW1" else None
                 self.room_e2e = False
+                self.window_clean = False
                 if nxt and nxt[0][0] == "RW1":
                     lo, hi = step(*seed_t(d["rs"]))
                     self.ok(nxt[0][1]["rs"] == fmt((lo, hi)), "%s:%d wanderer tick: one room draw (%s -> %s)"
@@ -1875,6 +1888,7 @@ class Checker:
                      "windows RW1 -> RW4 with an oracle left inside: " + ", ".join(sorted({
                          "InitFn %d" % o[2] if o[0] == "OIX" else o[0] for o in left})))
                 self.stats[k] = self.stats.get(k, 0) + 1
+                self.window_clean = not left
                 self.room_e2e = bool(self.room_predicted and self.rw1_rs is not None)
                 if self.room_e2e:
                     self.rooms_e2e.append((path, self.rw0_line, self.rw0_room))
@@ -1886,6 +1900,7 @@ class Checker:
                 # F7: the pass-entry room seed is predicted end to end iff the room was predicted and the
                 # presets / restore / objects window drew nothing on it
                 self.room_e2e = bool(self.room_predicted and self.rw1_rs is not None and self.rw1_rs == d["rs"])
+                self.window_clean = self.room_e2e
                 if self.room_e2e:
                     self.rooms_e2e.append((path, self.rw0_line, self.rw0_room))
                 if i + 1 < len(lines) and lines[i + 1][0] == "P0":
@@ -1905,6 +1920,8 @@ class Checker:
                 P = Pass(self, win, self.t, path)
                 f_pass = self.fail
                 e2e, self.room_e2e = self.room_e2e, False
+                wclean, self.window_clean = getattr(self, "window_clean", False), False
+                o_pass = sum(self.oracles.values())
                 n_cr = len(self.creations)
                 try:
                     res = P.run()
@@ -1919,6 +1936,16 @@ class Checker:
                         self.levels.add((d["lid"], d["diff"]))
                     if e2e and res == "populated":
                         self.populated_e2e.append((path, ln, d["lid"], d["room"], len(self.creations) - n_cr))
+                    # plan 0048 Phase 2: a room population end to end from the game seed with no seed oracle in its
+                    # window (objects window clean) nor in the pass (no oracle counter moved, no mismatch)
+                    if (e2e and wclean and res == "populated" and self.fail == f_pass
+                            and sum(self.oracles.values()) == o_pass):
+                        self.populated_clean.append((path, ln, d["lid"], d["room"], d["diff"], d["exp"],
+                                                     len(self.creations) - n_cr))
+                    elif e2e and res == "populated":
+                        why = ("window" if not wclean else "pass oracle" if sum(self.oracles.values()) != o_pass
+                               else "mismatch")
+                        self.populated_unclean[why] = self.populated_unclean.get(why, 0) + 1
                     if P.i < len(win):
                         rest = [w[0] for w in win[P.i:] if w[0] not in SIDE_TAGS]
                         self.ok(not rest, "%s:%d %d line(s) of the pass not consumed by the model: %s" % (path, ln, len(rest), rest[:8]))
@@ -2034,6 +2061,7 @@ class Checker:
         win = lines[i:end + 1]
         P = PresetMonPass(self, win, self.t, path)
         f0 = self.fail
+        o0 = sum(self.oracles.values())
         try:
             P.run()
             rest = [w[0] for w in win[P.i:] if w[0] not in SIDE_TAGS]
@@ -2041,7 +2069,16 @@ class Checker:
             for tg, dd, ll in win[P.i:]:
                 if tg in SIDE_TAGS:
                     P.side(tg, dd, ll)
-            if self.fail == f0:
+            if self.fail == f0 and getattr(P, "sci_taken", 0):
+                for _ in range(P.sci_taken):
+                    self.oracle("special-count increment inside a preset monster's creation (SCI taken; class %d)"
+                                % d["id"])
+            elif self.fail == f0 and sum(self.oracles.values()) != o0:
+                # plan 0048 Phase 2: a value taken inside (a presets-window predicate on a room the model has no cells
+                # for): the OPUX is checked but the window keeps an oracle
+                self.stats["preset monsters (class case) predicted OPU0 -> OPUX with a value taken inside"] = \
+                    self.stats.get("preset monsters (class case) predicted OPU0 -> OPUX with a value taken inside", 0) + 1
+            elif self.fail == f0:
                 self.opu_confirmed.add((path, lines[end][2]))
                 self.stats["preset monsters (class case) predicted OPU0 -> OPUX"] = \
                     self.stats.get("preset monsters (class case) predicted OPU0 -> OPUX", 0) + 1
@@ -2063,10 +2100,13 @@ class Checker:
         win = lines[i:end + 1]
         P = RequestPass(self, win, self.t, path)
         f0 = self.fail
+        o0 = sum(self.oracles.values())
         k = "requests of %s predicted MT0 -> MTX" % what
         try:
             P.run()
-            if self.fail == f0:
+            if self.fail == f0 and sum(self.oracles.values()) != o0:
+                self.stats[k + " with a value taken inside"] = self.stats.get(k + " with a value taken inside", 0) + 1
+            elif self.fail == f0:
                 self.opu_confirmed.add((path, lines[end][2]))
                 self.stats[k] = self.stats.get(k, 0) + 1
         except NotModelled as e:

@@ -161,3 +161,99 @@ event open at a log's end (the session killed inside it).
   from the equality itself (levels 1 and 9 equal, 49 and 97 differ, consistent with item requirements, not shown).
   The maxima stay value oracles until a run logs the lists. run:2026-10-16-combat logs values, not lists: its stat
   oracles are **not replaceable** from the kept logs.
+
+## The stats sessions of run:2026-10-20-shortfalls
+
+The run is one run under two checkers; its combat half and its definition are in
+[combat/experiments § run:2026-10-20-shortfalls](../combat/experiments.md#run2026-10-20-shortfalls).
+
+- **Question:** plan [0047](../../plans/0047-simulation-shortfalls.md) Phase 2, the stats cases: do the shrine and
+  well operates, an aura state's end, the expiries, a different-state `group` clear, the 256 floor, the curse
+  resistance cut and a curse refused on a monster in `attract` reproduce under `tools/stats.py`, with the boundary of
+  run:2026-10-17-stats?
+- **Setup:** slot 2 (`:9`, `workspace/wineprefix-2`), tag `p47h`, as the combat record of this run. Logger
+  `tools/gdb/stats.gdb` (`d7a5df84…`) with `tools/gdb/stats.py` rev 9 (`1df37219…`, commit `820bdc3`: `STA` on a
+  monster target with `STATS_MONSTA`); every log's `STATSLOG` line says rev 9. Driver `tools/stats_sessions.py run
+  --slot 2 --tag p47h --saves workspace/scratch-p47h/saves --run p47h …` (final revision `ecd86f9b…`), `tools/d2pilot.py`
+  (`--curse-keys`, and `--dead-below`, new). Environment `STATS_TICKS=6000 STATS_OBJS=1` (and `STATS_MONSTA=1` for the
+  Necromancer).
+- **Characters** (pinned in `tools/test_d2s.py`): `StatsNecA` (`21b42e85…`, new at this phase's first step: a
+  Necromancer with Attract and Amplify Damage, ruling 2), `StatsPalD` (`9fd320d2…`), `StatsSor` (`963ed380…`),
+  `StatsAss` (`5eb48cc0…`), `StatsDru` (`58cc838b…`), `StatsFloor` (`82db5212…`), `StatsPalC` (`3c3a1fe3…`), `StatsPot`
+  (`a18f03a9…`).
+
+### Sessions
+
+| session | seed | save | what | stats checker | the case's count |
+|---|---|---|---|---|---|
+| nec-attract1 | 4781 | StatsNecA | Cold Plains: Attract (F1), then Amplify Damage (F2) twice on the same monster | 0 mismatches | 71 curses in attract, 71 refused |
+| pald-auras1 | 4731 | StatsPalD | Cold Plains: Might, Defiance, Prayer by key, 30 switches | 0 | 31 on, 30 off |
+| pald-auras2 | 4732 | StatsPalD | as above | 0 | 30 on, 29 off |
+| sor-armours | 4751 | StatsSor | the three armours cast in turn (group 1) | 0 | 20 different-state clears |
+| ass-fade | 4752 | StatsAss | Fade and Quickness in turn (group 2) | 0 (after the checker fix below) | 23 |
+| dru-shapes | 4753 | StatsDru | Werewolf and Werebear in turn (group 3) | 0 | 0 checked (below) |
+| floor-poison1 | 4771 | StatsFloor | Spider Forest, explore 80 hops, no potion | 0 | no poison taken |
+| floor-poison2 | 4772 | StatsFloor | Far Oasis, as above | 0 | no poison taken |
+| ass-curses1 | 4761 | StatsAss | Worldstone Keep (the walk stayed in Level 2) | 0 | no curse on the player |
+| palc-wells1 | 4721 | StatsPalC | Far Oasis (2,5): the field steps, then `objop --walk` for wells and shrines (no well of the 6 asked) | 0 | 2 shrines (code 14), no well |
+
+Not part of the run (development logs under `workspace/logs/stats/`, kept, no claim on them):
+`dev-p47h-pot-town1-act4`, `dev-p47h-pot-town2-act4` (the potion plan's `inv:open` failed four presses; in
+`pot-town1` the potion clicks then walked the character out of the Pandemonium Fortress to her death),
+`dev-p47h-pot-town1-invopen`, `dev-p47h-pot-town2-invopen` (Rogue Encampment waypoint first: `inv:open` failed again;
+the 40 potions fill the grid that the dark-centre test reads), `dev-p47h-pot-town1-keyi`, `dev-p47h-pot-town2-keyi`
+(one key press instead: still no inventory potion drunk, 4 lists freed by belt potions the waypoint step's pilot drank;
+the cause was not found in this lane), `dev-p47h-floor-poison1-orb` (the pilot read the 1 % life orb as a death and
+stopped at the first hop; `--dead-below 0` since). Not run: `pot-town3`/`4`, `ass-curses2`, `palc-wells2`,
+`sor-shrines1`…`10` (`sor-shrines1` stopped by the lane before its game started: no log), `nec-attract2`/`3` (attract met
+on the first). `floor-poison1` also operated one shrine (code 6).
+
+*Review 2026-10-21 (the machine suspend, 23:17 to 06:25).* No log of the run list spans it: the last session before it,
+`dev-p47h-pot-town2-keyi`, ended at 23:15:25 (gdb's `exited normally`; its driver's output was written after the
+resume and ends in a screenshot-path traceback), and the first after it, `floor-poison1`, was launched at 06:19:27. A
+first `floor-poison1` launch at 23:15:33 ran across the suspend and logged no event (its game exited on resume); it is
+kept as `workspace/logs/stats/p47h-floor-poison1.log.failed1` (`06b1601b…`), a development log outside the run, not
+in `p47h-manifest.txt`. The potion plan's cause: commit `b7dec78`'s message (and its code comment) blamed the
+Pandemonium Fortress's dark floor for `inv:open`'s failure; the Rogue Encampment sessions failed the same way, and
+commit `3236965` gives the cause found, the 40 potions filling the grid that `inv:open`'s dark-centre test reads (its
+comment replaces the earlier one). With the one key press still no inventory potion was drunk, for a cause not found (above).
+
+### Results
+
+Check: `systemd-run --user --scope -p MemoryMax=4G python3 -I tools/stats.py check $(cat
+workspace/logs/stats/p47h-run.lst) --json workspace/logs/stats/p47h-check.json`, `tools/stats.py` `23f34c4d…` (commit `121233e`): **0 mismatches** over the 10 logs (`p47h-run.lst`,
+`044518a7…`; per-log sha256, size and lines in `p47h-manifest.txt`, `6acd5060…`, with the 9 dev logs; report
+`p47h-check.json` `63892df3…`, `p47h-check.txt` `08c102f7…`). Seeds equal at entry and exit: apply 658, monster apply
+239, aura 383, expire 455, link 526, unlink 524, propagate 549, own write 22 784, tick 27 192, shrine 3. Scripts and
+outputs: `p47h-auraonoff.py`/`.txt` (`a3bb65b2…`, `67eaaa99…`), `p47h-grpclear.py`/`.txt` (`3fbd6f5f…`, `333738ca…`); `p47h-logs.sha256` (`16574241…`) checks
+every log and output with `sha256sum -c` from `workspace/logs/stats/`.
+`tools/d2pilot.py` `f8164f3d…` for the sessions after its `--dead-below` change (`floor-poison1`, `floor-poison2`,
+`ass-curses1`, `palc-wells1`). The same checker over `s1017-run.lst` gives a JSON byte-identical to `s1017-check-p47r.json`, and
+`tools/test_stats.py` passes.
+
+**Checker fix** (`tools/stats.py`, commit `121233e`): the item-type index skipped no row, while the loaded
+`itemtypes` table has no record for the `Expansion` separator row (index 58 of the `.txt`), so every expansion type
+was one high; the Assassin's claw-mastery passive (skill 252, param `h2h`, 67 in all 23 logged lists) was predicted
+68 in `ass-fade`. The kept run's passives (Barbarian masteries, types below row 58) are unchanged.
+
+- **Attract** (`nec-attract1`): 71 curse requests (Amplify Damage) on monsters in state 57, all refused (no list), and
+  151 curses on monsters not in it, all made, in the same window; 16 Attract casts made. Both seeds equal at the entry
+  and exit of all 239 monster requests. The refusal test of `STATE_ApplyTimed` on a monster target holds as read
+  (stats/0002 § 2). (fn:STATE_ApplyTimed@0x0056E970, run:2026-10-20-shortfalls)
+- **An aura state's end** (`pald-auras1`/`2`, `p47h-auraonoff.py`): 61 aura lists made (states 33, 34, 37) and 59
+  unlinked when the next aura key switched the skill, 120 events. All 59 ends are unlinks called from
+  `sub_005701B0_PlayerSetSkill` (return `0x005702E1`) before the state's timed expiry freed it (no aura list was
+  freed by event 12 in either log), each an emulated `ULK` checked write for write; each aura duration as predicted
+  (109). (fn:sub_005701B0_PlayerSetSkill@0x005701B0, fn:UNIT_UnlinkStatList@0x006277E0, fn:STATLIST_Unlink@0x006269F0,
+  run:2026-10-20-shortfalls)
+- **Different-state `group` clears** (`p47h-grpclear.py`): 43 calls of `STATE_GroupClear` cleared a state of the same
+  group other than the one applied (group 1: frozen 10, chilling 20, shiver 88 armour, 20; group 2: Fade 159 and
+  Quickness 157, 23), each `GRX` bit set as predicted. Group 3 (`dru-shapes`): 12 calls for Werebear (140) found
+  Werewolf (139) set, and Werewolf's bit was gone at the nested call that followed, but these 12 calls log no exit
+  line of their own (`GRX`), so the checker does not check them and they are not counted.
+  (fn:STATE_GroupClear@0x0056C740, run:2026-10-20-shortfalls)
+- **Named again:** the 256 floor (0: neither field poisoned `StatsFloor`); the curse resistance cut (0: no witch
+  cursed `StatsAss`); the expiries: 30 lists freed this run (the shapes 24, the armours 3, `palc-wells1` 3; lateness 0
+  in all), 153 with the kept run's 123, against 300: the potion plan that was to give about 220 drank nothing
+  (above); shrines and wells: 3 shrines (codes 14 twice, 6 once; draw-free, the timed state as predicted) and no well,
+  15 with the kept 12, against 50.

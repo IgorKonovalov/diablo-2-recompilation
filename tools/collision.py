@@ -602,10 +602,17 @@ class World:
             self.r3["rooms_resid"] += 1
         else:
             self.r3["rooms_exact"] += 1
-        for a, b in zip(mc2, snap.c):
+        rec = {"path": P.get("path"), "ln": P.get("ln"), "room": room, "th": P["th"], "bits": {}, "objcells": []}
+        for i, (a, b) in enumerate(zip(mc2, snap.c)):
             if a != b:
                 k = "+%04x -%04x" % (b & ~a & 0xFFFF, a & ~b & 0xFFFF)
                 self.r3["resid_bits"][k] = self.r3["resid_bits"].get(k, 0) + 1
+                rec["bits"][k] = rec["bits"].get(k, 0) + 1
+                if (b ^ a) & 0x400:
+                    # plan 0048 Phase 2 (oracle 20): an object-bit cell no window mark explains
+                    rec["objcells"].append((snap.x0 + i % snap.w, snap.y0 + i // snap.w, b, a))
+        if rec["bits"]:
+            self.r3.setdefault("per_room", []).append(rec)
         self.hit("R3: window marks applied", sum(1 for cm, _ in self.pre_cm if cm["th"] == P["th"]))
 
     def pass_end(self):

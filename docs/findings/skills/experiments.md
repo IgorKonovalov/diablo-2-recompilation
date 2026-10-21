@@ -606,3 +606,70 @@ Plan 0045 Phase 2's harness runs: none yet. Plan 0046's emulated runs (ADR-0015)
   everything after it (do 69's and do 72's draws on the caster's seed, do 69's inline step, the hits' elemental rolls
   among it); when the game runs these functions or with which seed. (fn:sub_005D81C0_SkillDo69FindPotion@0x005D81C0,
   fn:sub_005D9A10_LeapPoint@0x005D9A10)
+
+## run:2026-10-21-cat-emu-dru
+
+- **Question:** (plan 0046 Phase 1, batch `dru`) Do the druid start functions 56–58, do functions 114–124 and do-table
+  entries 145 and 146 map their inputs (the Skills and Missiles records, the caster, its path, used-skill node, unit
+  skill chain, stat lists and state words, the target unit and its position, the rooms and their collision maps, the
+  state list at `DataTables+0x17C`, the game frame and pool word, and the seeds) to the result they return, or to the
+  arguments, pointed-to blocks, node, frame and argument-slot words and seed states at the call they end in, exactly
+  as [skills/0013](0013-druid.md) §§ 3–7 say, and which seed does each draw before its boundary step?
+- **Setup:** as run:2026-10-21-cat-emu-bar: Ghidra 12.1.2 p-code emulator on the pinned `game.exe` (lane copy
+  `GHIDRA_PROJ_DIR=workspace/ghidra-p46m10`, heap 3 GB, one instance at a time, each under a 4 GB scope),
+  `re/ghidra_scripts/EmuBoundary.java` unchanged (`286393aa…`). No wine, nothing runs natively, no slot. Models, case
+  writers and checks: the `dru` families of `tools/skills_catalogue_emu.py` (`11b763dd…`; the kept outputs were
+  emulated from case files that this revision regenerates byte for byte, and it reproduces the kept `check.txt` byte
+  for byte), with `bar`'s conventions (the call site of every boundary asserted with a site control, both seeds written
+  and compared in every case, a boundary's pointer argument compared by content: the spawn blocks, the hit packets,
+  the `MissileCreate` blocks, `COLL_RectTest`'s rectangle; the node and argument-slot words dumped and compared;
+  register arguments compared only where the callee reads them before writing them; no model compares a callee-saved
+  register that is not a boundary argument; a boundary inside a helper compares the helper's return address at its
+  absolute stack slot, the helpers' call sites listed by `static`). All inputs synthetic (stock parameter values among
+  them); every case-writer draw from `random.Random("catdru-<family>")`. Files in `workspace/logs/skills-cat-dru/`,
+  `manifest.sha256` `d1a77e1f…` (69 files: cases, memory specs, expected inputs, outputs, the `.err` logs, `cases.txt`,
+  `check.txt` `592baf51…`, `static.txt` `d2c98496…`, `rows.txt` `fba56eef…` with its `rows.sh`, `repro.txt`
+  `c6f4b37b…` with its `repro.sh`, the run script `run_dru.sh`, and the two development runs under `dev/` with
+  `dev/notes.txt`); `sha256sum -c manifest.sha256` from that directory passes. `repro.txt` records that the same tool
+  revision regenerates every case, memory and expectation file of 9a, 9b, 9c, 9d, `sor`, `ama`, `nec`, `pal` and `bar`
+  byte for byte and reproduces their kept `check.txt` and `static.txt` byte for byte from their kept outputs.
+- **Procedure:**
+  ```
+  D=workspace/logs/skills-cat-dru
+  python3 -I tools/skills_catalogue_emu.py cases --batch dru > $D/cases.txt
+  $D/run_dru.sh $D summon_dru shape_dru melee_dru miss_dru     # one EmuBoundary instance at a time, each in a 4 GB scope
+  python3 -I tools/skills_catalogue_emu.py check  --batch dru > $D/check.txt
+  python3 -I tools/skills_catalogue_emu.py static --batch dru > $D/static.txt
+  $D/repro.sh <scratch dir> > $D/repro.txt
+  python3 -I tools/skills_catalogue_emu.py manifest --batch dru --write
+  ```
+  Each memory spec points `g_pDataTables` at a scratch DataTables written one field per field read (Skills, Missiles,
+  ItemStatCost, MonStats, MonStats2, the calc pool, the States, PetType counts and the States record base), names the
+  boundaries (`observe`: `bar`'s less `COLL_WHTest`, which runs here, plus `COMBAT_BuildDamage`, `StatListSetEnd`,
+  `UNIT_UnlinkStatList`, `COLL_RectTest`) and guards the allocator and the fatal path.
+- **Observed** (`check.txt`, `static.txt`):
+  ```
+  CATDRU summon_dru cases=1500 match=1500 bad=0 neg=1622 traced=7 undeclared=0 stopped=0
+  CATDRU shape_dru  cases=2500 match=2500 bad=0 neg=620 traced=84 undeclared=0 stopped=0
+  CATDRU melee_dru  cases=2400 match=2400 bad=0 neg=438 traced=41 undeclared=0 stopped=0
+  CATDRU miss_dru   cases=2000 match=2000 bad=0 neg=441 traced=9 undeclared=0 stopped=0
+  CATDRU static data_imms=0 data_stores=0 helper_sites=25 pins=43 pins_ok=43 ro_reads=4 table_entries=16
+  ```
+  8 400 cases. Every negative control fails (per-control counts on the `negative control` lines; each family has one
+  failing 90 or more cases: `w24_zero` 735, `notown` 134, `rf_ignored` 171, `c1_ge0` 156; the weak ones fail on the
+  deciding class skills/0013 § 2 names); the site control fails on all 3 967 matched boundary cases (33 `site` lines:
+  function, boundary, return address; 747 + 1 694 + 931 + 595). The skills calc function count's scan names every
+  operand form: 0 stores, 0 immediates, 7 reads. Two development runs came first and are kept under their own names in
+  `dev/` (`dev/notes.txt`): the first mismatched on 3 do 121 cases (the model walked the whole state list where the
+  case wrote a count of 0) and had one control that did not fail (no class past the Missiles count); the second matched
+  in full; the writers were re-weighted between them and one control added before the kept run.
+- **Conclusion:** bit-exact reproduction (evidence rule 4, ADR-0015) of the functions' maps on returning cases (`[C]`:
+  every refusal path, do 119's and do 123's 0, do 118's and do 120's 1) and of their maps up to their boundary calls
+  with the call site, the helper return addresses, the arguments (register arguments where the callee reads them
+  first), the pointed-to blocks, the node, frame and argument-slot words and both seeds asserted (`[C]` under
+  [ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md); skills/0013 names each claim's boundary). Two
+  functions draw before their boundary, each one `RNG_Range` on the caster's seed: do 124 (`0x10000`, the value at
+  `ebp−0xC`) and do 123 (`0x100`, the low byte at `[ebp+0x8]`); no case steps the target's seed. Not covered: what any
+  boundary callee does and everything after it (entry 146's re-seed of the caster's seed and its free-point draws,
+  entry 145's damage rolls, the hits' elemental rolls among it); when the game runs these functions or with which seed.
+  (fn:sub_005C8190_SkillDo124PeriodicState@0x005C8190, fn:sub_005C8080_SkillDo123Volcano@0x005C8080)

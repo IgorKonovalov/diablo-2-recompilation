@@ -2,7 +2,7 @@
 based_on:
   - docs/specs/quests/README.md 2026-10-20
   - docs/specs/quests/progression.md 2026-10-21
-  - docs/specs/quests/travel.md 2026-10-20
+  - docs/specs/quests/travel.md 2026-10-21
 ---
 
 # Quests and travel: how a character moves through the acts
@@ -390,7 +390,9 @@ A waypoint is **activated by operating it**, not by walking near it
 ([travel § C](../specs/quests/travel.md#c-waypoint-activation)). Every operate sets the player's bit for that waypoint
 first. A waypoint that is already lit opens the menu and draws on no seed: confirmed for 108 operates, all on waypoints
 already in their final mode (the one a town waypoint is built in). A waypoint that has not yet been lit by anyone starts its animation on the first operate, and only the
-next operate opens the menu; no unlit waypoint was operated in the runs, so this is read from the code. Five waypoint
+next operate opens the menu. The quest runs operated no unlit waypoint; a later run operated one, which behaved as the
+code says (one draw on its seed, as its object row allows), but one case is far short of the twenty asked, so this is
+still read from the code. Five waypoint
 object rows take a draw on the object's own seed when their animation changes; the other eleven never do (read from
 the code).
 

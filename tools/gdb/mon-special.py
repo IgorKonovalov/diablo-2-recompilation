@@ -26,7 +26,7 @@
 #   PMC  after the class pick 0x0054E878 / 0x0054E8C8: class (EAX), record
 #   PMX  0x0054E895 / 0x0054E90E / 0x0054EAB1 / 0x0054EAFE while a PM0 is open: EAX, rs, gs
 # Harness helper (not a model input): PLR at COLL_PatternMark 0x0064EA90 with mask 0x80 (a player's mark): thread, room,
-#   level, x, y; emitted when the position moved by 2 or more sub-tiles on that thread, and flushed at once so that
+#   level, x, y, gf (the game frame, game +0xA8, of the last game seen; plan 0048 Phase 2 log volume); emitted when the position moved by 2 or more sub-tiles on that thread, and flushed at once so that
 #   tools/d2pilot.py can steer the scripted Teleport from the live log.
 # Client name (sub_004AC870_ClientMonNameBuild; the client thread):
 #   CN0  0x004AC9C7 before RNG_SeedInit(unit +0x20, nameSeed): client unit, id, class, mod, name seed (EDX)
@@ -316,7 +316,8 @@ def _monspecial_main():
         if last and abs(last[0] - x) < 2 and abs(last[1] - y) < 2 and last[2] == room:
             return
         plr[t] = (x, y, room)
-        emit("PLR", {"th": t, "room": room, "lid": level_of(room), "x": x, "y": y})
+        emit("PLR", {"th": t, "room": room, "lid": level_of(room), "x": x, "y": y,
+                     "gf": u32(st["game"] + 0xA8) if st["game"] else None})
         gdb.flush()
 
     Bp(0x0064EA90, on_plr)

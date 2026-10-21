@@ -1,10 +1,10 @@
 ---
 based_on:
-  - docs/specs/combat/README.md 2026-10-20
-  - docs/specs/combat/to-hit.md 2026-10-20
-  - docs/specs/combat/damage.md 2026-10-20
-  - docs/specs/combat/reductions.md 2026-10-20
-  - docs/specs/combat/delivery.md 2026-10-20
+  - docs/specs/combat/README.md 2026-10-21
+  - docs/specs/combat/to-hit.md 2026-10-21
+  - docs/specs/combat/damage.md 2026-10-21
+  - docs/specs/combat/reductions.md 2026-10-21
+  - docs/specs/combat/delivery.md 2026-10-21
 ---
 
 # Combat
@@ -22,7 +22,9 @@ Combat is the project's first *simulation* subject. The earlier pages describe h
 describes a rule that runs many times a second during play. The specs were checked against one large recorded run:
 15 358 logged combat events in 19 sessions at first, then 40 655 events over 40 logs once follow-up sessions aimed at
 the rare branches were added, every one reproduced with no mismatch, with each unit's seed checked before and after
-([overview § The ADR-0014 boundary](../specs/combat/README.md#the-adr-0014-boundary)).
+([overview § The ADR-0014 boundary](../specs/combat/README.md#the-adr-0014-boundary)). A second run, with characters
+built for the branches the first met too rarely, reproduced 18 737 more events over 31 logs, again with no mismatch.
+Where this page says "a run built for it", it means that second run.
 
 ## The big picture
 
@@ -144,6 +146,8 @@ flowchart TD
 skip this step); the result is capped at 75. A monster blocks with its block stat if it has a shield or its class
 allows blocking without one. The formula was checked in 2 523 expansion and 395 classic events, with 2 243 blocks. A
 player holding no shield cannot block: 66 hits between two shieldless players in a two-client game all had chance 0.
+By the code, a shield the player cannot use (one above the character's level, or one beside a two-handed weapon)
+counts as no shield; two such layouts logged chance 0 on every hit, but the test that refuses them is not fully read.
 
 Two rules for a running player are confirmed:
 
@@ -152,12 +156,19 @@ Two rules for a running player are confirmed:
 - **A running player blocks at a third of the chance**, taken after the 75 cap, so at most 25 %. Seen 48 times: a
   75 % chance became 25 % in an expansion game, a 53 % chance 17 % in a classic one.
 
-Read from the code only, because the run met them too rarely or never:
+**Evade, weapon block, dodge and avoid** are confirmed for player defenders by a run built for them: each is one
+draw of 100 on the defender's seed, a success when the draw is below the chance (evade 31 successes in 46 rolls,
+weapon block 30 in 50, dodge 109 in 172, avoid 68 in 103). A walking or running player rolled only evade, and the
+same characters standing or attacking rolled the other three, never evade. Weapon block also passes a skill check
+whose value went with two claws in the hands; what that check means is not read. A monster defender with these
+skills was not logged, so its side is read from the code.
+
+Read from the code only, because the runs met it too rarely:
 
 - **A walking player keeps the full block chance**: the code divides by three for a moving player except one who is
-  walking, but no walking player was attacked in the run. Which kinds of movement count as moving is also taken from
-  the code.
-- **Evade, weapon block, dodge and avoid.** No logged character had them.
+  walking. Hits on a walking player that reached the block roll were seen 6 times, each with the full chance, and
+  the one extra session the plan allowed was spent, so this stays read from the code. Which kinds of movement count
+  as moving is also taken from the code.
 
 Each of these rolls is made only when its chance is above 0, so a defender without them draws nothing; that held
 for every logged event. A missile with no physical damage cannot be blocked (read from the code).
@@ -238,15 +249,19 @@ What is confirmed:
   not −15 %. Between the two, the code also raises anything below −99 to −100; that floor is read from the code only
   (resistances landed on exactly −100 214 times, but none went below, so the floor never changed a value).
 - **The cap** is 75 plus the unit's "maximum resistance" bonus, at most 95; physical resistance caps at 50. Fire
-  reached the cap 2 115 times and poison 692. Cold and lightning reached it fewer than about 30 times (27 and 17),
-  and magic never.
-- **Monster immunity** is a resistance of 100 or more, which zeroes the field (seen for fire, cold, lightning and
-  poison; magic immunity was not met).
+  reached the cap 2 115 times and poison 692, lightning 42 times in a run built for it, and cold 31 times over the
+  two runs. Magic never reached it, and cannot on unmodified data: nothing the game ships gives a player enough magic
+  resistance, so the magic cap is read from the code (it is the same code as the other rows).
+- **Monster immunity** is a resistance of 100 or more, which zeroes the field (seen for fire, cold, lightning,
+  poison and, in 36 hits on Hell monsters immune to magic, magic).
 - **Cold and freeze lengths are reduced by cold resistance**, and the poison length by its own stat, not by poison
   resistance.
 - **Absorb heals.** Percent absorb (at most 40 %) takes its share out of the damage and heals the defender by that
   amount. Community pages say only flat absorb heals; 32 healing events from percent absorb say otherwise. Flat absorb
-  also heals by the code, but no logged unit had it.
+  is subtracted after the percent: confirmed for fire in 113 hits; cold and lightning flat absorb were not hit, and
+  that flat absorb heals as well is read from the code.
+- **A negative field is still absorbed**, giving a negative absorbed amount that heals nothing: 186 hits where magic
+  damage reduction had pushed fire or cold below zero before percent absorb.
 - **"Cannot be frozen"** zeroes the cold length.
 
 **The damage percent** is 100 for every player and monster attack the run logged. When a mercenary hits an act boss
@@ -273,9 +288,10 @@ kill test already compares the total with the defender's life in whole points.
 confirmed. One draw of 100 on the attacker's seed; on success the defender loses a share of its **current life,
 before this hit's damage**:
 
-- 1/4 for ordinary monsters **and for uniques** (247 and 63 events). Community pages give 1/8 for champions and
-  uniques; 1.14d does not for uniques, and by the code champions take 1/4 as well (no champion was identified in the
-  run).
+- 1/4 for ordinary monsters, **for uniques and for champions** (247 and 63 events, then 52 on champions in a run
+  built for them, most in Nightmare at 8 players). Community pages give 1/8 for champions and uniques; 1.14d does
+  neither. A champion carries the special mark that every champion, unique and superunique gets, as well as its
+  own champion mark (no monster in 74 logs had the champion mark alone), and crushing blow looks at neither.
 - The share shrinks with the number of players the monster was **created** for: the divisor 4 grows by 50 % per
   player beyond the first, so at 8 players it is 18. Confirmed at 2, 3 and 8 players. Community pages say the player
   count does not matter; in 1.14d it does.
@@ -286,11 +302,13 @@ before this hit's damage**:
 
 **Open wounds** is confirmed: one draw of 100 on the attacker's seed; on success the defender bleeds for 200 frames,
 by an amount that grows in bands with the attacker's level (2 506 per frame, in 1/256 life, at level 85). A new wound
-restarts the bleed. **Unique monsters bleed half as much**, confirmed over 383 wounds, Andariel's 63 included: she
-carries the unique mark. Monsters with neither the champion nor the unique mark took the full amount (1 497 wounds).
+restarts the bleed. **Special monsters (champions, uniques and superuniques) bleed half as much**, confirmed over
+383 wounds, Andariel's 63 included: she carries the special mark. Monsters with neither the champion nor the special
+mark took the full amount (1 497 wounds).
 Read from the code: the halving looks only at those two marks, never at whether the monster is an act boss, so a
-champion without the unique mark also bleeds half and an act boss without it would take the full amount; players
-bleed a quarter. None of these was wounded in the run. When both effects are present, the
+champion without the special mark would also bleed half and an act boss without it would take the full amount; players
+bleed a quarter. None of these was wounded in the runs, and since champions carry the special mark too, no unmodified
+monster can show the first case. When both effects are present, the
 order the handlers run in follows the order the unit registered them, newest first; that is read from the code.
 
 **Leech** ([delivery § C](../specs/combat/delivery.md#c-leech-combat_leech)) is confirmed for players, the
@@ -307,7 +325,8 @@ mercenary and monsters:
 
 **The life change** is confirmed: the total is subtracted from the defender's life, and **a result below one life
 point is 0**, a kill. A total of zero or less (for example, when magic damage reduction drove every element negative)
-leaves life unchanged; that was seen 25 times, just short of confirmation, and is read from the code.
+leaves life unchanged: confirmed in a run built for it, 488 negative totals and 113 of zero on the player and 32 of
+zero on a monster.
 
 ### Chill, stun, freeze and poison
 
@@ -316,11 +335,13 @@ From [delivery § D](../specs/combat/delivery.md#d-stun-cold-freeze-poison-burn)
 - **Chill** draws one `Range(100)` on the **defender's** seed whenever a chill is applied, whatever the outcome; that
   draw is confirmed. Read from the code: a monster whose `coldeffect` is 0 is not chilled and draws nothing, a player
   is chilled at −50, and the chill strength and the 20 % shatter chance.
-- **Stun** on a unique monster first draws `Range(100)` on the attacker's seed and succeeds only on 90 or more; that
+- **Stun** on a special monster (a champion, a unique or a superunique) first draws `Range(100)` on the attacker's seed and succeeds only on 90 or more; that
   draw is confirmed (34 events). Read from the code: act bosses and monsters that cannot move are never stunned, and
   the stun's length caps.
-- **Freeze** freezes ordinary monsters and only chills players, bosses, uniques and mercenaries. Read from the code;
-  no logged hit froze.
+- **Freeze** from the freeze stat is confirmed on melee hits up to the point where it delivers its freezing packet:
+  one draw on the attacker's seed against a chance from the stat and the two levels, and a length from the margin
+  (81 rolls, lengths 26 to 249 frames). What that packet then does is read from the code: it freezes ordinary
+  monsters and only chills players, bosses, uniques and mercenaries. The missile form of the chance was not met.
 - **Poison** replaces an existing poison only when it is at least as strong. Read from the code.
 
 **The life tick** that carries poison and open wounds is confirmed for monsters: they bleed each frame and can die of
@@ -344,7 +365,7 @@ sequenceDiagram
   M->>M: on a hit: block, then avoidance rolls
   A->>A: damage build, hit or miss
   A->>A: on a hit: open wounds, crushing blow
-  A->>A: leech overlay, stun on a unique
+  A->>A: leech overlay, stun on a special monster
   M->>M: chill
 ```
 
@@ -414,10 +435,13 @@ From the specs' open questions ([overview](../specs/combat/README.md#open-questi
 - **Skills and missiles.** A skill's or missile's own damage, a missile's chance to hit and knockback, conversion, and
   on-hit effects other than crushing blow, open wounds and freeze.
 - **Timing.** Hit recovery, knockback and stun lengths in time, and the get-hit and durability draws.
-- **Branches the run met too rarely or never**: crushing blow and open wounds on champions; open wounds on players;
-  the resistance cap for cold, lightning and magic; magic immunity; a negative absorbed amount; evade, weapon block,
-  dodge and avoid; pierce, flat absorb, conversion and freeze; a walking player's full block chance; a negative total
-  leaving life unchanged; the floor of one point on the player's life tick. A later run may settle some of these.
+- **Branches the runs met too rarely or never.** A second run built for the rare branches settled most of the first
+  run's list (above). Left: a walking player's full block chance (6 cases, and final: the extra session allowed was
+  spent); the magic resistance cap (no unmodified item or skill reaches it); cold and lightning flat absorb (not hit;
+  a further pass of the plan takes them); open wounds on a champion without the special mark (no such monster exists
+  unmodified) and on players (only another player's item wounds one); what the weapon-block skill check means and
+  which flag makes a shield unusable; a monster's own avoidance rolls; freeze from a missile; pierce and conversion,
+  which belong to skills and missiles; the floor of one point on the player's life tick.
 - **Player against player** beyond physical and lightning damage (fire, cold, magic, poison, a defender standing in
   town), and the hostile auras, need another two-client run.
 

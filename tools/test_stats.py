@@ -253,6 +253,30 @@ class StatesStepTest(unittest.TestCase):
         self.assertEqual(self.T.par_value(""), 0)
         self.assertEqual(self.T.par_value("no such name"), 0)
 
+    def test_monster_curse_in_attract(self):
+        """Logger rev 9 (STATS_MONSTA): a curse on a monster in state 57 attract is refused; one made there is a
+        mismatch; a curse on a monster outside attract is counted as the control; seeds unchanged."""
+        C = self.checker()
+        s = {"gs": "1:1", "us": "2:2"}
+        amp, att = self.T.states.index("amplifydamage"), self.T.states.index("attract")
+        req = lambda sk, state, sb: dict(s, w="m", t=0x99, sk=sk, sl=20, len=500, stat=0, val=0, state=state, sb=sb,
+                                         mc=0)
+        C.states_step(None, "STA0", req(66, amp, []), [])
+        C.states_step(None, "STA1", dict(s, w="m", r=0x500, f=0x20, s=amp, x=600, sk=66, sl=20, own=[], pa=0), [])
+        C.states_step(None, "STA0", req(86, att, []), [])
+        C.states_step(None, "STA1", dict(s, w="m", r=0x600, f=0x20, s=att, x=900, sk=86, sl=20, own=[], pa=0), [])
+        C.states_step(None, "STA0", req(66, amp, [att]), [])
+        C.states_step(None, "STA1", dict(s, w="m", r=0), [])
+        C.states_step(None, "STA0", req(86, att, [att]), [])
+        C.states_step(None, "STA1", dict(s, w="m", r=0), [])
+        self.assertEqual(dict(C.bad), {})
+        self.assertEqual((C.n["curse_m_free_other_made"], C.n["curse_m_free_attract_made"]), (1, 1))
+        self.assertEqual((C.n["curse_m_in_attract_other_refused"], C.n["curse_m_in_attract_attract_refused"]), (1, 1))
+        self.assertEqual(C.seeds["apply_m"], [4, 0])
+        C.states_step(None, "STA0", req(66, amp, [att]), [])
+        C.states_step(None, "STA1", dict(s, w="m", r=0x700, f=0x20, s=amp, x=600, sk=66, sl=20, own=[], pa=0), [])
+        self.assertEqual(C.bad["attract"], 1)
+
     def write_log(self, d, name, lines):
         path = os.path.join(d, name)
         tree = {"t": sample_tree(self.T)}

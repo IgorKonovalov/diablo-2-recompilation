@@ -293,6 +293,7 @@ class MeleeGate:
         self.casts = {}
         self.ignored = set()
         self.skipped_immune = 0
+        self.keys = []                           # --curse-keys: a skill hotkey pressed before each click, in turn
 
     def cast(self, p, st):
         if not st.pos or st.pos[2] in TOWNS:     # town NPCs are monsters too: a click would talk to them
@@ -311,6 +312,9 @@ class MeleeGate:
         if m["hp"] != hp0:
             n, hp0 = 0, m["hp"]
         self.casts[m["id"]] = (n + 1, hp0)
+        if self.keys:                            # plan 0047 Phase 2: Attract, then another curse on the same monster
+            p.dpy.key(self.keys[n % len(self.keys)])
+            time.sleep(0.15)
         sx, sy = p.screen(m["x"] - px, m["y"] - py)
         sx, sy = max(10, min(790, sx)), max(10, min(int(540 * p.vs), sy))
         p.dpy.click(p.off[0] + int(sx), p.off[1] + int(sy) - 20, button=self.button, hold=self.hold)
@@ -2404,6 +2408,8 @@ def cmd_explore(args):
     targets = None
     gate = (MeleeGate(args.radius, args.give_up, button=args.melee_button or 1, hold=args.melee_hold)
             if args.melee else NovaGate(args.radius, args.give_up))
+    if args.melee and args.curse_keys:
+        gate.keys = args.curse_keys.split(",")
     if args.to_warp:
         targets = [(r, rect) for r, (lp, rect) in st.rl.items() if r in st.warps and lp == st.lptr.get(lid0)]
         print("target rooms with a warp: %s" % [(rect, st.warps[r]) for r, rect in targets])
@@ -2416,7 +2422,7 @@ def cmd_explore(args):
     if args.to_pdef is not None:
         defs = {int(v) for v in str(args.to_pdef).split(",")}
         targets = [(r, rect) for r, (lp, rect) in st.rl.items() if st.pdef.get(r) in defs
-                   and lp == st.lptr.get(lid0)]
+                   and (args.pdef_any or lp == st.lptr.get(lid0))]     # --pdef-any: plan 0048 Phase 2
         print("target rooms with preset def %s: %s" % (args.to_pdef, [rect for _, rect in targets]))
         if not targets:
             return 1
@@ -2544,9 +2550,9 @@ def cmd_explore(args):
         if args.potion and k % args.potion == 0:
             p.potion(1 + (k // args.potion) % 4)
         hp = p.hp()
-        if hp is not None and hp < 0.05:
+        if hp is not None and hp < args.dead_below:
             time.sleep(0.5)
-            if (p.hp() or 0) < 0.05:
+            if (p.hp() or 0) < args.dead_below:
                 print("hop %d: the life orb is empty (death); stop" % k)
                 break
         if hp is not None and hp < args.drink:
@@ -3060,6 +3066,8 @@ def main():
     ap.add_argument("--merc-drink", type=float, default=0, help="farm, hunt: give the mercenary a belt potion "
                     "(Shift + column key) below this fill of its most seen MON life (0: never)")
     ap.add_argument("--drink", type=float, default=0.6, help="drink a belt potion below this life-orb fill")
+    ap.add_argument("--dead-below", type=float, default=0.05,
+                    help="explore: stop as dead below this life-orb fill (0: never; plan 0047 Phase 2, StatsFloor at 1 %%)")
     ap.add_argument("--to-pdef", help="go to the room of this LvlPrest Def (or any of a comma-separated list) in the "
                                       "current level, then stop")
     ap.add_argument("--exclude-xy", help="objop: ignore objects of the class within 20 sub-tiles of X,Y")
@@ -3074,6 +3082,8 @@ def main():
                     help="the old behaviour: Nova every --nova hops whatever is (or is not) in range")
     ap.add_argument("--melee-button", type=int, default=0, help="farm, hunt: attack with this mouse button (3: Attack "
                     "on the right button) instead of Nova; explore --melee: the button (default 1)")
+    ap.add_argument("--curse-keys", help="explore --melee: skill hotkeys pressed in turn before each click on a "
+                    "monster (plan 0047 Phase 2: F1,F2,F2 = Attract, then the other curse twice)")
     ap.add_argument("--melee-hold", type=float, default=0.12, help="melee: seconds the attack button is held per click")
     ap.add_argument("--radius", type=float, default=9.0, help="Nova range in sub-tiles for the target test")
     ap.add_argument("--give-up", type=int, default=6, help="abandon a target after this many casts with no life change")

@@ -241,7 +241,11 @@ for k in range(2):
                                            ("keys", ["F1", "F2", "F3"] * 10, 3.0), ("wait", 5)], FIELD)
 for k in range(4):
     # the expiries: StatsPot drinks 56 potions in town, each state ending before the next of its kind
-    SESSIONS["pot-town%d" % (k + 1)] = ("StatsPot", "enter-normal", 4741 + k, [("plan", "statspot", 1), ("wait", 35)],
+    # plan 0047 Phase 2: the saves start in the Pandemonium Fortress; the first pot-town1 (kept as a dev log) walked
+    # out of it to her death when inv:open failed (see plan_tokens), so the Rogue Encampment's waypoint first
+    SESSIONS["pot-town%d" % (k + 1)] = ("StatsPot", "enter-normal", 4741 + k,
+                                        [("pilot", ["farm", "--wp", "1,1", "--time", "1"], 90), ("plan", "statspot", 1),
+                                         ("wait", 35)],
                                         FIELD)
 # different states of one group: the Sorceress armours (group 1: frozenarmor 10, shiverarmor 88, chillingarmor 20),
 # Fade and Quickness (group 2: fade 159, quickness 157), the Druid's shapes (group 3: wolf 139, bear 140)
@@ -263,12 +267,26 @@ for k in range(2):
                                           [("pilot", PAL_WALK + ["--hops", "60"], 600)], FIELD)
 for k, wp in enumerate(("3,2", "2,5")):
     # the 256 floor: StatsFloor (life 30 of 3000, DR 58 flat: Normal hits take nothing) poisoned by the Spider Forest's
-    # and the Far Oasis' monsters; no potion in the belt
+    # and the Far Oasis' monsters; no potion in the belt; plan 0047 Phase 2: --dead-below 0, since the pilot took the
+    # 1 % life orb for a death and stopped at the first hop (the first floor-poison1, kept as a dev log)
     SESSIONS["floor-poison%d" % (k + 1)] = ("StatsFloor", "enter-normal", 4771 + k,
                                             [("pilot", ["farm", "--wp", wp, "--time", "1", "--mana-col", "0"], 90),
                                              ("pilot", ["explore", "--walk", "--melee", "--melee-hold", "1.2", "--radius",
-                                                        "9", "--drink", "0", "--mana-col", "0", "--hops", "80"], 600)],
+                                                        "9", "--drink", "0", "--mana-col", "0", "--hops", "80",
+                                                        "--dead-below", "0"], 600)],
                                             FIELD)
+
+# attract (plan 0047 Phase 1 review ruling 2, Phase 2's first step): StatsNecA casts Attract (F1) on the nearest
+# monster, then Amplify Damage (F2) twice on the same monster (tools/d2pilot.py explore --melee --curse-keys, the right
+# button); logger rev 9 with STATS_MONSTA logs STATE_ApplyTimed on monsters, so a curse on a monster in state 57 is
+# seen refused, and Amplify Damage's radius (22 at level 20 against Attract's 9) gives the control outside attract
+NEC_CURSE = ["explore", "--walk", "--melee", "--melee-button", "3", "--curse-keys", "F1,F2,F2", "--give-up", "6",
+             "--radius", "12", "--melee-hold", "0.3", "--drink", "0.5", "--mana-col", "4"]
+for k, wp in enumerate(("1,2", "1,3", "1,4")):
+    SESSIONS["nec-attract%d" % (k + 1)] = ("StatsNecA", "enter-normal", 4781 + k,
+                                           [("pilot", ["farm", "--wp", wp, "--time", "1"], 90),
+                                            ("pilot", NEC_CURSE + ["--hops", "80"], 600)],
+                                           dict(FIELD, STATS_MONSTA="1"))
 
 # stats the cases read from the built saves (tbl:ItemStatCost.txt:ID): 6 life, 7 max life, 8 mana, 9 max mana; 34 DR
 CASES_0047 = {
@@ -284,13 +302,14 @@ CASES_0047 = {
     "S5 the 256 floor": ("StatsFloor poisoned at 30 life", ["floor-poison1", "floor-poison2"], [34], ()),
     "S7 the curse resistance cut": ("StatsAss under Fade cursed by the Worldstone Keep's witches",
                                     ["ass-curses1", "ass-curses2"], [], ("Fade",)),
+    "S8 attract (Phase 1 review ruling 2)": ("StatsNecA: Attract, then Amplify Damage on the same monster",
+                                             ["nec-attract1", "nec-attract2", "nec-attract3"], [],
+                                             ("Attract", "Amplify Damage")),
 }
 UNSTAGED_0047 = {
     "S6 open wounds on the player": "no stock monster carries open wounds: stat 135 is written only by item properties "
                                     "(gems, runes, sets, cube recipes; no MonStats, MonProp or MonUMod cell names it), "
                                     "so a player is wounded only by another player: two clients, plan 0044",
-    "S8 attract": "no stock monster has the Attract skill (the name is in skills.txt only, no MonStats Skill cell), so "
-                  "the state reaches a player only from another player's curse: two clients, plan 0044",
 }
 
 
@@ -319,6 +338,10 @@ def sh(args, timeout=None, log=None):
 
 
 def plan_tokens(name, cycles):
+    if name == "statspot":
+        # plan 0047 Phase 2: the 40 potions fill the inventory grid, so inv:open's dark-centre test never sees it
+        # open (it pressed I four times); one plain press opens it, one closes it
+        return ["key:i", "sleep:1.0", "settle:1"] + PLANS[name]() * cycles + ["key:i", "sleep:0.5"]
     t = ["inv:open", "settle:1"]
     for _ in range(cycles):
         t += PLANS[name]()

@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, player/creation, monsters/stats]
 consumed_by: [combat/overview, combat/damage, combat/delivery]
-tags: {C: 33, I: 27, L: 3}
-updated: 2026-10-20
+tags: {C: 39, I: 30, L: 5}
+updated: 2026-10-21
 ---
 
 # Combat: the hit test, chance to hit and the defence rolls
@@ -46,7 +46,7 @@ flowchart TD
 |---|---|---|
 | A player's normal attack or a skill's melee hit, a monster's plain attack, at the hit frame | fn:COMBAT_MeleeHitTest@0x0057EC10 | [I] (0x0057EC16–0x0057EC28) |
 | The chance to hit and its draw | fn:COMBAT_ToHitRoll@0x0057D9B0 | [C] (run:2026-10-16-combat) |
-| The defender's block, then evade, weapon block, dodge or avoid | fn:COMBAT_DefenceRoll@0x0057DFB0 → fn:COMBAT_AvoidRoll@0x0057DD60 | [C] for the block (run:2026-10-16-combat) |
+| The defender's block, then evade, weapon block, dodge or avoid | fn:COMBAT_DefenceRoll@0x0057DFB0 → fn:COMBAT_AvoidRoll@0x0057DD60 | [C] for the block (run:2026-10-16-combat); [C] for evade, weapon block, dodge and avoid on a player defender (run:2026-10-20-shortfalls) |
 | A missile reaching a unit (phase (3); the to-hit and defence calls only) | fn:MISSILE_HitUnit@0x005ADF10, fn:MISSILE_ApplyDamage@0x005AD730 | [I] |
 
 ## Inputs
@@ -148,9 +148,11 @@ Step notes:
   fn:DEBUG_ToHitRollStub@0x005347B0, run:2026-10-16-combat)
 - A6. On a hit, `PreventHealHook` runs inside `COMBAT_ToHitRoll`'s success branch, after the draw: for a player
   attacker with stat 117 ≠ 0 and a monster defender whose class is outside 704–709, it applies state 52 (`STATE_ApplyTimed`)
-  for 120 000 frames with stat 31 = 0. It draws nothing, so the state is applied between the to-hit draw and the
-  defence rolls. [I] (fn:sub_0057D810_PreventHealHook@0x0057D810, 0x0057DB80, 0x0057D869–0x0057D891,
-  [skills/0003 § 3](../../findings/skills/0003-handlers.md#3-the-stat-event-handlers))
+  for 120 000 frames with stat 31 = 0. [I] (fn:sub_0057D810_PreventHealHook@0x0057D810, 0x0057DB80, 0x0057D869–0x0057D891,
+  [skills/0003 § 3](../../findings/skills/0003-handlers.md#3-the-stat-event-handlers)) **It draws nothing**, so the state
+  is applied between the to-hit draw and the defence rolls: 271 state-52 lines of the attacker between the two, each
+  with both seeds asserted after it and no step between, beside the code reading of the hook (no RNG call). [C]
+  (fn:sub_0057D810_PreventHealHook@0x0057D810, run:2026-10-20-shortfalls)
 
 **A7. Target modifiers (players only).**
 
@@ -242,7 +244,7 @@ C1. MeleeHitTest(att, def, arPct: i32, rangeExtra: i32) → result: u16:        
 C2. DefenceRoll(def, isMissile: bool, useBlock: bool) → u32:                     [C] (fn:COMBAT_DefenceRoll@0x0057DFB0, run:2026-10-16-combat, all of C2)
       if useBlock:
         b: i32 ← BlockChance(def, game.expansion)
-        if def is a player and IsMoving(def) and def.mode ≠ 2: b ← b ÷ 3            ; moving, not walking; [C] mode 3 (run:2026-10-16-combat, 48), [I] the mode-2 exception (0x0057E00B–0x0057E01F)
+        if def is a player and IsMoving(def) and def.mode ≠ 2: b ← b ÷ 3            ; moving, not walking; [C] mode 3 (run:2026-10-16-combat, 48), [I] the mode-2 exception (0x0057E00B–0x0057E01F, run:2026-10-20-shortfalls, 6)
         if b > 0:
           r ← Range(def.seed, 100)                                                ; draw (defender)
           if r < b: return 0x01                                                   ; blocked
@@ -250,7 +252,7 @@ C2. DefenceRoll(def, isMissile: bool, useBlock: bool) → u32:                  
 
     BlockChance(u, expansion) → i32:                                              [C] (fn:sub_00622720_UnitBlockChance@0x00622720, run:2026-10-16-combat)
       if u is a player:
-        if u holds no shield: return 0
+        if neither hand holds a usable shield: return 0                         ; the shield test: [I] for "usable" (fn:sub_0063C8F0_InvItemQuery@0x0063C8F0)
         b: i32 ← stat(u, 20) + CharStats[u.class].BlockFactor
         if expansion: b ← ((stat(u, 2) − 15) × b) ÷ (2 × max(stat(u, 12), 1))
       else:
@@ -266,8 +268,23 @@ C2. DefenceRoll(def, isMissile: bool, useBlock: bool) → u32:                  
   the shield would give more. [C] (fn:sub_00622720_UnitBlockChance@0x00622720, run:2026-10-20-two-clients) The `÷ 3` for a **running** player (mode 3)
   reproduced with 0 mismatches in 48 events (47 melee, 1 missile), with the moving test a value oracle
   (`sub_00622D00_UnitIsMoving`). [C] (fn:sub_00622D00_UnitIsMoving@0x00622D00, 0x0057E011–0x0057E01F,
-  run:2026-10-16-combat) The exception for a walking player (mode 2), who keeps the full chance, is read but was not
-  met: no walking player was attacked. [I] (0x0057E00B–0x0057E01F)
+  run:2026-10-16-combat) The exception for a walking player (mode 2), who keeps the full chance, is read from the code;
+  run:2026-10-20-shortfalls met it 6 times in 48 events on a walking player, each chance undivided, under the floor of
+  about 30. The one extra session the plan allowed was spent, so the count is final and the exception stays [I].
+  (0x0057E00B–0x0057E01F, fn:COMBAT_DefenceRoll@0x0057DFB0, run:2026-10-20-shortfalls)
+- C2. **The shield test.** `UnitBlockChance`'s player branch calls `sub_0063C8F0_InvItemQuery`, which takes each hand's
+  item, tests it with `0x0062A4E0` (two item flags, `0x100` and `0x4000`, clear) and `ITEMS_UnitIsType(item, 51)`, and
+  gives 0 otherwise; the chance is then 0. So a shield the player cannot use blocks nothing: two layouts logged
+  chance 0 in every player block line, *Steelclash* above the level-5 player's level (a development log) and
+  *Kerke's Sanctuary* beside a two-handed weapon. Which flag each layout sets is not read. [I]
+  (fn:sub_00622720_UnitBlockChance@0x00622720, 0x00622797, fn:sub_0063C8F0_InvItemQuery@0x0063C8F0, 0x0062A4E0,
+  fn:ITEMS_UnitIsType@0x00629BB0, run:2026-10-20-shortfalls)
+- C2. The checker sees no hand's item, so the shield test stays a value oracle, and run:2026-10-20-shortfalls names
+  the logs whose player holds no usable shield (`--no-shield-log`). The flag only sets the predicted chance to 0: a
+  logged chance above 0 still fails, and a block roll the game made would break the seed chain. Without it the run
+  list gives 88 mismatches, all a player block chance of 0 against the formula: 70 on the claw Assassins, whose
+  recipes hold no shield, and 18 on `CombatDR`, whose 0 is taken from the logs, so those 18 check nothing about the
+  refusal above. [C] (run:2026-10-20-shortfalls, [combat/0001 § 16](../../findings/combat/0001-formulas.md#16-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls))
 - C2. **The dexterity form applies only in an expansion game**; classic uses `stat 20 + BlockFactor`. The divisor is
   `2·level` with level 0 and 1 both counting as 1. [C] (fn:sub_00622720_UnitBlockChance@0x00622720, tbl:CharStats.txt:BlockFactor,
   run:2026-10-16-combat)
@@ -281,8 +298,8 @@ C2. DefenceRoll(def, isMissile: bool, useBlock: bool) → u32:                  
 **C3. Evade, weapon block, dodge, avoid.**
 
 ```
-C3. AvoidRoll(def, isMissile: bool) → u32:                                       [I] (fn:COMBAT_AvoidRoll@0x0057DD60, all of C3)
-      moving ← (def is a player and def.mode ∈ {2, 3}) or (def is a monster and def.mode ∈ {2, 15})
+C3. AvoidRoll(def, isMissile: bool) → u32:                                       [C] for a player defender (fn:COMBAT_AvoidRoll@0x0057DD60, run:2026-10-20-shortfalls, all of C3 except as tagged)
+      moving ← (def is a player and def.mode ∈ {2, 3}) or (def is a monster and def.mode ∈ {2, 15})   ; [I] for the monster modes (0x0057DD60)
       if moving:
         e: i32 ← stat(def, 340)
         if e > 0:
@@ -290,7 +307,7 @@ C3. AvoidRoll(def, isMissile: bool) → u32:                                    
           if r < e: return 0x08                                                   ; evaded
         return 0
       wb: i32 ← WeaponBlockChance(def)                                            ; stat 348 by the held weapon's item type
-      if wb > 0 and CurrentSkillCheck(def) = 13:
+      if wb > 0 and CurrentSkillCheck(def) = 13:                                   ; [I] what 13 stands for (0x0057DDAB–0x0057DDB4)
         if Range(def.seed, 100) < wb: return 0x10                                 ; draw (defender); weapon block
       ch: i32 ← isMissile ? stat(def, 339) : stat(def, 338)                       ; avoid : dodge
       if ch > 0:
@@ -300,9 +317,18 @@ C3. AvoidRoll(def, isMissile: bool) → u32:                                    
 
 - C3. Each draw happens only when its chance is above 0, so a defender without these stats draws nothing here. That
   held for every logged event (the defence rolls were asserted by the defender's exit seed). [C] (run:2026-10-16-combat)
-- C3. No logged character had evade, weapon block, dodge or avoid, so the branches themselves are [I]: 0 events each.
-  The skill check `0x0064F380` that gates weapon block was not read in full. [I] (fn:sub_0057DCA0_WeaponBlockChance@0x0057DCA0,
-  0x0057DD60)
+- C3. **The four rolls reproduced on player defenders**, each a `Range(100)` on the defender's seed with success when
+  `r < chance`: evade 46 rolls (31 successes), weapon block 50 (30), dodge 172 (109), avoid 103 (68), every roll's
+  value and exit seed asserted. The weapon block chance was a value oracle. [C] (fn:COMBAT_AvoidRoll@0x0057DD60,
+  fn:sub_0057DCA0_WeaponBlockChance@0x0057DCA0, run:2026-10-20-shortfalls)
+- C3. **A moving player rolls only evade.** A player in mode 2 or 3 rolled evade (46 rolls: 42 in mode 3, 4 in mode 2)
+  and never weapon block, dodge or avoid, while the same characters rolled dodge, avoid and weapon block in modes 1,
+  7, 9, 13 and 16; evade was rolled in no other mode. [C] (fn:COMBAT_AvoidRoll@0x0057DD60, run:2026-10-20-shortfalls)
+  A monster defender with these stats was not logged, so its moving modes (2, 15) are [I]. (0x0057DD60)
+- C3. **The weapon-block skill check** `0x0064F380` gave 13 in every logged check of the two-claw `CombatAss`, which
+  rolled weapon block 50 times, and 12 in the one check of the one-claw `CombatAssO`, which rolled none. So 13 goes
+  with two claws in the hands; what the value stands for is not read. [I] (0x0057DDAB–0x0057DDB4,
+  run:2026-10-20-shortfalls)
 
 **C4. Missiles.** When the missile's record byte `+0x18B` is set, `MISSILE_HitUnit` calls `ToHitRoll(missile's
 stat 19 as arPct, isMissile = true)`, which reads stat 32 and skips the weapon mastery; `MISSILE_ApplyDamage` calls
@@ -315,8 +341,9 @@ The defence draws of 1 957 missiles on the player or the mercenary reproduced. [
 - The result word of the hit test (C1), carried in the packet at `+0x04`: a hit with or without get-hit, or one of
   blocked, dodged, avoided, evaded, weapon block, or 0. [I] (struct:DamagePacket+0x04)
 - The attacker's seed advanced by 0 or 1 draw, the defender's by 0 to 3 draws (block, then evade, or weapon block
-  and dodge or avoid). [I] (fn:COMBAT_DefenceRoll@0x0057DFB0, fn:COMBAT_AvoidRoll@0x0057DD60) The 0 or 1 draw on each
-  seed that the run's characters allowed reproduced. [C] (run:2026-10-16-combat)
+  and dodge or avoid). [I] (fn:COMBAT_DefenceRoll@0x0057DFB0, fn:COMBAT_AvoidRoll@0x0057DD60) The draws on each seed
+  that the two runs' characters allowed reproduced: the block, and each of evade, weapon block, dodge and avoid. [C]
+  (run:2026-10-16-combat, run:2026-10-20-shortfalls)
 
 ## Worked example
 
@@ -361,9 +388,14 @@ case shows the running defender: no to-hit draw, and a third of the capped block
 
 - [combat/0001](../../findings/combat/0001-formulas.md) §§ 3 (to-hit, defence, target modifiers, 3.4 `ToHitFactor`),
   4 (hit test and defence rolls), 13 (*Leads used*: the `ToHitFactor` contradiction, the block formula held with
-  refinement), 14 (the debug stubs), 15 (the confirmed raises).
+  refinement), 14 (the debug stubs), 15 (the confirmed raises), 16 (the shortfalls run: the four avoidance rolls,
+  prevent-heal's no draw, the walking block, the shield test, `--no-shield-log`).
 - [combat/experiments § run:2026-10-16-combat](../../findings/combat/experiments.md#run2026-10-16-combat): 7 669
   to-hit rolls, 2 243 blocks, the block formula in 2 523 expansion and 395 classic events.
+- [combat/experiments § run:2026-10-20-shortfalls](../../findings/combat/experiments.md#run2026-10-20-shortfalls)
+  (plan 0047 Phase 2, 31 logs, 18 737 events, 0 mismatches) and its review in the
+  [plan 0047 log](../../plans/0047-simulation-shortfalls.md#implementation-log): the defence rolls by mode, the
+  weapon-block skill values, the mode-2 events, the run without `--no-shield-log`.
 - Tables: [CharStats](../../tables/CharStats.md), [MonStats](../../tables/MonStats.md),
   [ItemStatCost](../../tables/ItemStatCost.md), [Skills](../../tables/Skills.md).
 - Upstream: [rng](../rng/README.md), [player/creation](../player/creation.md) (the class's base attributes),
@@ -372,9 +404,12 @@ case shows the running defender: no to-hit draw, and a third of the capped block
 
 ## Open questions
 
-- [L] Evade, weapon block, dodge and avoid (C3): 0 events in run:2026-10-16-combat; a character with those stats
-  (an Amazon's passives, a weapon-block item) would settle the draw order. The skill check `0x0064F380` (value 13)
-  that gates weapon block is unread ([combat/0001 *Open questions*](../../findings/combat/0001-formulas.md#open-questions)).
+- ~~Evade, weapon block, dodge and avoid (C3): 0 events in run:2026-10-16-combat.~~ Reproduced on player defenders
+  by run:2026-10-20-shortfalls (C3).
+- [L] What the skill check `0x0064F380` returns: 13 with two claws, 12 with one (C3); the function is unread
+  ([combat/0001 *Open questions*](../../findings/combat/0001-formulas.md#open-questions)).
+- [L] Which item flag a shield the player cannot use sets for the shield test of C2 (`0x0062A4E0`).
+- [L] The avoidance rolls of a monster defender (C3's monster modes): no logged monster had the stats.
 - [L] Whether `0x00621190` (the "moving" test of C2) returns the player's mode or a separate state; the run took it
   as a value oracle.
 - [L] The target modifiers of A7 and the defence percents of B1: no logged unit carried them.

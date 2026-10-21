@@ -624,7 +624,9 @@ a hop or a short walk; the mode 1 → 2 draw is logged by no revision); NPC 367'
 offers no line); the 150-travel, 150-warp, 60-activation and 20-`NpcActTravel` floors; level 120's warp tiles and the
 118/128 branch, the gates into 73, 100 and 132; the Durance, Arcane and lair portals; the level-136 portal refusal; the
 resurrection's life, mana and state writes (not logged); the free-cell search's far rings. Two-client cases stay plan
-0044's. (run:2026-10-19-quests3)
+0044's. (run:2026-10-19-quests3) *2026-10-20 (plan 0047 Phase 2):* one waypoint was operated from mode 0 (the Crystalline Passage, `x-wpact5r-0`):
+mode 0 → 1 with one object-seed step, its class's `Sync` 0, 0 mismatches; one of the 20 asked, so it stays `[I]`
+([quests experiments](experiments.md#the-travel-sessions-of-run2026-10-20-shortfalls); run:2026-10-20-shortfalls).
 
 ## Data touched
 

@@ -182,7 +182,11 @@ outputs; the model predicts every draw and output and must arrive at the logged 
 
 The first simulation plan, combat formulas, checked 40 655 logged events in 40 logs with 0 mismatches
 ([plan index, plan 0037](../plans/README.md); record:
-[run:2026-10-16-combat](../findings/combat/experiments.md#run2026-10-16-combat)).
+[run:2026-10-16-combat](../findings/combat/experiments.md#run2026-10-16-combat)). A later plan built sessions for the
+branches that run and the stats run met too rarely and checked them with the same checkers: 18 737 more combat events
+in 31 logs and 10 stats logs, all with 0 mismatches ([plan 0047](../plans/0047-simulation-shortfalls.md); record:
+[run:2026-10-20-shortfalls](../findings/combat/experiments.md#run2026-10-20-shortfalls)). The
+[combat](combat.md) and [stats and states](stats-and-states.md) pages say which cases it settled.
 
 ## Two clients in one game
 
@@ -236,6 +240,14 @@ is named with its count and its reason, the claim stays inferred, and the plan i
 ([plan 0038 § Phase 2](../plans/0038-inferred-claims-sweep.md#phase-2--harness-batches)). For example, the stats and
 states run met 7 shrines and 5 wells, below the plan's target of 50 operates and below the floor of 20 events per
 kind for the "no draw" check, and its review accepted them as a named shortfall ([plan 0041 log, Phase 2 review](../plans/done/0041-stats-and-states.md)).
+
+A shortfall can later be reached by sessions built for it. When that pass still falls short, the review asks why. A
+case that unmodified game data cannot stage, or one whose single permitted extra session was spent, is final and
+stays inferred: in plan 0047 the magic resistance cap and a walking player's block. A case short only because the
+staging failed (sessions not run, a tool that did not work) is not final and goes to a further pass of the same plan
+([plan 0047 log, Phase 2 review](../plans/0047-simulation-shortfalls.md#implementation-log)). A count can also be met
+over two runs when both are checked by the same checker revision with no mismatch, as plan 0047's cold resistance
+cap was.
 
 Gaps in knowledge are written down, not filled. A spec's *Open questions* section holds what is unknown and every
 lead; a gap one lane needs another to close becomes a backlog entry, one file per request, closed with a link to the
