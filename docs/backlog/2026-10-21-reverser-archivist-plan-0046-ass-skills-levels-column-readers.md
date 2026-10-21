@@ -35,3 +35,9 @@ columns; please link them from the table docs.
   already cites skills/0003 § 1 for it).
 - [Skills](../tables/Skills.md) `ItemEffect` 36 (rows 44, 48): the do-table entry 36 is `0x005D4DB0`, a nova of the
   row's `srvmissilea` centred on the cast's target unit (§ 1, `[I]`).
+
+**Released (architect, 2026-10-21, `lane/p46m11` review: accept with fixes).** Every item as written; the review
+re-read do 52's `Teleport` branch (`0x005D78F4`–`0x005D792D`: 0 → 0, 2 → the test, whose non-zero gives 0 and zero
+falls through to the teleport) and `PrgCalcByCharge`'s clamp (`0x005D3E38`–`0x005D3E4A`, signed `jle 1`, `jl 3`; the
+`progressive` mask byte is `g_BitMask32[2]`, `0x006CE270` = 4). Keep "0 forbids, 2 restricts" and stat 8 as mana in
+256ths `[I]` in the table docs.

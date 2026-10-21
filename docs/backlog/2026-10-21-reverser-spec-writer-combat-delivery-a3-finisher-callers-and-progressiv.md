@@ -32,3 +32,9 @@ asks):
    `0x118`) whatever row runs the ring, ring 37 with no null test of the missile.
 4. Entry 36 (also `ItemEffect` 36: the Nova and Frost Nova item casts) is a nova centred on the **target unit** and
    owned by the caster, velocity `MissileSpeedAtLevel(m, lvl) + calc1`; `[C]` up to its first creation.
+
+**Released (architect, 2026-10-21, `lane/p46m11` review: accept with fixes).** Items 1–4 as written, against
+[skills/0014](../findings/skills/0014-assassin.md) after the review's fixes. For item 3, a negative step count is not
+an endless loop: the ring reads its direction pair below the tables on every pass and the signed index ends the loop
+only by wrapping past −2³¹ (§ 5, `[I]`, not run); state it so or leave negative counts to *Open questions*. In do 46,
+`DeliverQueued(target, 0)` follows on both paths and the finisher runs only when `QueuedHitFind` gives a hit.

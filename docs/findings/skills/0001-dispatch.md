@@ -131,8 +131,9 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
 - [L] src:arreat-summit-skill-trees: martial-arts charges build up to three, last for a time limit and are released
   by a normal attack or a finishing move. **held with refinement**
   Detail: the cap 3 and the `auralencalc` timed list (§ 12). The finisher has **six** direct call sites (R6):
-  `SKILL_AttackDo` (`0x0056F1CE`), named in § 12, and five in finishing-move functions (R7): start function 25 (Dragon
-  Claw, two sites) and do functions 42 (Dragon Talon), 50 (Dragon Tail), 52 (Dragon Flight); those are plan 0046's.
+  `SKILL_AttackDo` (`0x0056F1CE`), named in § 12, and five in finishing-move functions (R7): do functions 46 (Dragon
+  Claw, two sites; "start function 25" until the 2026-10-21 note in § 12), 42 (Dragon Talon), 50 (Dragon Tail), 52
+  (Dragon Flight), read by plan 0046's batch `ass`.
 - [L] src:arreat-summit-skill-trees: Phoenix Strike releases only the active charge. **held**
   Detail: Royal Strike's row has no `prgstack`, so only `srvprgfunc n` runs (§ 12, `p45b-rows.txt` `prgstack`).
 - [L] src:arreat-summit-skill-trees: Impale raises the chance that the weapon loses durability. **held with refinement**

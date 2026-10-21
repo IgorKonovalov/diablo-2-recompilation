@@ -91,7 +91,8 @@ argument. A plain `[C]` rests on cases that return; a plain `[I]` is a code read
   seed**, `low % 100 <` a calc chosen by the target's kind) and its kill flag; do 42's `RNG_Range(caster, 100)` against
   a calc by the target's kind at the last charge; the hits' `SkillRollPhys`/`SKILLS_RollElemDamage` draws; the rings'
   remaining creations (an endless loop for a step count of 0, § 5); the summons' set-up and do 44's teleport of the
-  trap to the caster; the area callbacks. Every boundary is listed per function.
+  trap to the caster; the area callbacks. Every boundary is listed per function. (0x005D31BF–0x005D32E8,
+  0x005D5A91–0x005D5BE9, 0x005D4657–0x005D467D, 0x005D5FB7–0x005D6012)
 - [I] **The data joins.** `ItemEffect` 36 (rows 44 Frost Nova and 48 Nova) makes an item cast of those skills run
   entry 36, a nova of the row's `srvmissilea` (119 `frostnova`, 90 `nova`) centred on the cast's target unit and
   nothing without one (skills/0001 § 10's effect flag, not re-read here). The five finishing-move calls of
@@ -347,8 +348,9 @@ set, at `0x7FEFFFDC`; two callers, `0x005D6381`, `0x005D63C9`); entry 36's from 
   enhanced-damage percent by the layout, `re/types/combat.h`), and with a non-zero `EType` the conversion pair (`+0x68 =
   calc4`, `+0x65 = EType` when `calc4 > 0`) and `SKILLS_RollElemDamage` (none without an `EType`),
   `COMBAT_BuildDamage(…, SrcDam)`,
-  `COMBAT_PrgHooksAfterBuild`; then `ResolveAndQueue(…, 0x80)`; back in do 46 the finisher or the delivery as above,
-  `DeliverQueued`, and bit 6 **cleared** (bit 8 clear) or **set** (bit 8 set); 1. (0x005D6275–0x005D631F,
+  `COMBAT_PrgHooksAfterBuild`; then `ResolveAndQueue(…, 0x80)`; back in do 46 `PrgFinisher` only when `QueuedHitFind`
+  gives a hit, then `DeliverQueued(game, caster; target, 0)` once on either path (`je` at `0x005D6391`/`0x005D63D9`
+  skips only the finisher), and bit 6 **cleared** (bit 8 clear) or **set** (bit 8 set); 1. (0x005D6275–0x005D631F,
   0x005D6386–0x005D6405)
 - [C] (ADR-0021; ends at `PrgFinisher` @0x005D71F7) **Do 50** (`0x005D7180`): the record; the target (0 → 0);
   `QueuedHitFind` 0 → 0; the hit's 0x70 bytes copied to `ebp−0xEC` (`rep movs`, compared); `PrgFinisher(game,
@@ -400,10 +402,12 @@ for (i = 0; i < 64; i += n) { loc = step(loc); blk = {3, u, .cls m, x, y, .tx dx
   and `MissileCreate(ECX game, EDX &block)`; the block by content and the local seed (`0x7FEFFFAC`) compared. **`n` is
   not tested** before the first creation. (run:2026-10-21-cat-emu-ass `prg_ass`, fn:sub_005D4150_SkillRing64LocalSeed@0x005D4150,
   fn:sub_005D4870_SkillRing64LocalSeedB@0x005D4870)
-- [I] After the rings' first creation: the index steps by `4n` bytes (`add edi, edi` twice; `add esi, edi`; `cmp esi,
-  0x100; jl`), so the ring makes `⌈64 / n⌉` missiles for `n > 0`, **never ends for `n = 0`** (a creation per pass, the
-  index not moving) and reads below the table for `n < 0` until the signed index passes 0x100, which it does not
-  (an endless loop as well); ring 37 then writes `MISSDATA_SetSeedLow(missile, SkillGetParam2(280) + 1)` with **no
+- [I] After the rings' first creation: the index steps by `4n` bytes, taken modulo 2³² (`add edi, edi` twice; `add
+  esi, edi`; `cmp esi, 0x100; jl`, signed), so the ring makes `⌈64 / n⌉` missiles for `0 < n < 2²⁹`, **never ends for
+  `n = 0`** (a creation per pass, the index not moving), and for a negative `4n` reads its direction pair below the two
+  tables (`[ebp+esi−0x208]`, `[ebp+esi−0x108]`) on every pass; the signed index ends the loop only by wrapping past
+  −2³¹ to a value ≥ 0x100, after about 2³¹ / |4n| passes, reading ever further below the frame before that (no case
+  runs it; *corrected at the `lane/p46m11` review*: the lane's text said the index never passes 0x100); ring 37 then writes `MISSDATA_SetSeedLow(missile, SkillGetParam2(280) + 1)` with **no
   null test** of the missile, ring 143 the same only for a non-null missile of class 568
   (`royalstrikechainlightning`); `SkillGetParam2`'s argument is the immediate `0x118` (row 280 Royal Strike), whatever
   row runs the ring. Not run past the first creation. (0x005D4657–0x005D467D, 0x005D4D77–0x005D4DAA)
@@ -552,7 +556,8 @@ bit 6; game `+0x1C`, `+0xA8`.
 
 - [L] What `0x005D5880` (start 24 and do 42's kick) and `0x005D54B0` (start 27 and do 52's hit) do with the packet,
   and what do 42's last-kick flag selects (§§ 3, 4).
-- [L] Whether a stock progressive calc can make a ring's step count 0 or negative (an endless loop, § 5): Claws of
+- [L] Whether a stock progressive calc can make a ring's step count 0 (an endless loop) or negative (reads below the
+  direction tables, § 5): Claws of
   Thunder's `prgcalc3` and Royal Strike's `prgcalc2` at their charge counts, or their `aurarangecalc` when those are 0,
   a harness or calc-table check.
 - [L] What `0x006229F0` tests for Dragon Flight on a `Teleport` 2 level, and what `0x0058EF40` does with Blade
