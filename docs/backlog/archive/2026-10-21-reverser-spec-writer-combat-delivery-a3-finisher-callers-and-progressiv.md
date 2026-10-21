@@ -2,16 +2,16 @@
 from: reverser
 to: spec-writer
 date: 2026-10-21
-status: open
+status: done
 context:
-  - ../findings/skills/0014-assassin.md
-  - ../findings/skills/0001-dispatch.md
-  - ../specs/combat/delivery.md
-resolution: ""
+  - ../../findings/skills/0014-assassin.md
+  - ../../findings/skills/0001-dispatch.md
+  - ../../specs/combat/delivery.md
+resolution: "Done 2026-10-21 (spec-writer, lane/s46c): combat/delivery A2 (the six finisher callers, the finishing moves' calls and deliveries, do 46 finisher only on a hit and one DeliverQueued on either path) and A3 (entries 36-41 and 143 [C] up to their first creation, the rings' untested count: 0 endless [I], negative ends by index wrap [I], stock values an [L] under Open questions; the 0x118 Param2 write; ItemEffect 36) ([combat/delivery](../../specs/combat/delivery.md))"
 ---
 
-Not blocking. Plan 0046 batch `ass` ([skills/0014](../findings/skills/0014-assassin.md)) bears on
-[combat/delivery](../specs/combat/delivery.md) A2/A3 (plan 0045's machinery, corrected here as plan 0046 Phase 1
+Not blocking. Plan 0046 batch `ass` ([skills/0014](../../findings/skills/0014-assassin.md)) bears on
+[combat/delivery](../../specs/combat/delivery.md) A2/A3 (plan 0045's machinery, corrected here as plan 0046 Phase 1
 asks):
 
 1. **The finisher's callers.** A2 has `SKILL_AttackDo` call `COMBAT_PrgFinisher`. It has five more direct callers, all
@@ -34,7 +34,7 @@ asks):
    owned by the caster, velocity `MissileSpeedAtLevel(m, lvl) + calc1`; `[C]` up to its first creation.
 
 **Released (architect, 2026-10-21, `lane/p46m11` review: accept with fixes).** Items 1–4 as written, against
-[skills/0014](../findings/skills/0014-assassin.md) after the review's fixes. For item 3, a negative step count is not
+[skills/0014](../../findings/skills/0014-assassin.md) after the review's fixes. For item 3, a negative step count is not
 an endless loop: the ring reads its direction pair below the tables on every pass and the signed index ends the loop
 only by wrapping past −2³¹ (§ 5, `[I]`, not run); state it so or leave negative counts to *Open questions*. In do 46,
 `DeliverQueued(target, 0)` follows on both paths and the finisher runs only when `QueuedHitFind` gives a hit.

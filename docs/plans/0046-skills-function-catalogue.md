@@ -942,7 +942,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   in skills/0001 § 12 and skills/0003 §§ 1, 5, 9. Review request
   [to the architect](../backlog/archive/2026-10-21-reverser-architect-lane-p46m11-review-plan-0046-batch-ass.md); column
   readers [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-ass-skills-levels-column-readers.md);
-  [to the spec-writer](../backlog/2026-10-21-reverser-spec-writer-combat-delivery-a3-finisher-callers-and-progressiv.md)
+  [to the spec-writer](../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-a3-finisher-callers-and-progressiv.md)
   on combat/delivery A2/A3.
 - **2026-10-21 — `lane/p46m11` review (architect): accept with fixes.** Reviewed on the lane (head `a943188`), main not
   merged (it moved to `f805cdf` with the `srng` and `h2c` merges; neither touches skills findings or these symbols, and
@@ -990,7 +990,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   and the trap helper added (wrong anchor). Counted: 4 (misread 1, stale cross-reference 1, wrong anchor 1, other 1). Review request closed
   ([archive](../backlog/archive/2026-10-21-reverser-architect-lane-p46m11-review-plan-0046-batch-ass.md)); the
   [archivist entry](../backlog/2026-10-21-reverser-archivist-plan-0046-ass-skills-levels-column-readers.md) and the
-  [spec-writer entry](../backlog/2026-10-21-reverser-spec-writer-combat-delivery-a3-finisher-callers-and-progressiv.md)
+  [spec-writer entry](../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-a3-finisher-callers-and-progressiv.md)
   (combat/delivery A2/A3, the five finisher callers and the entries' raises) are **released**, the latter with the
   negative-count and do 46 wording of fixes 1 and 3; lane ledger row added (the review's row is the orchestrator's at
   the merge). **Phase 1 status:** the seven class batches and 9a–9d are accepted, eleven of fifteen batches and 230 of
@@ -999,3 +999,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   stat-event handlers 20, 21, 30, charges, the shrine missiles, the object and quest `MissileCreateAt` sites, with the
   carried `ITEMSKILL_Cast` helper items), on all the class batches' conventions; then 8a, 8b, 8c, unless the
   monster-AI plan pulls one forward. Phase 2 still waits for 0045·P3's review.
+- **2026-10-21 — The `ass` spec carry landed for review (spec-writer, `lane/s46c`, static docs only).**
+  [combat/delivery](../specs/combat/delivery.md) A2/A3 from [skills/0014](../findings/skills/0014-assassin.md) §§ 1, 4,
+  5 and run:2026-10-21-cat-emu-ass, with the `lane/p46m11` review's wording: the finisher's six callers and the
+  finishing moves' calls `[C]` (do 46 runs it only on a hit, then one `DeliverQueued` on either path, `[I]` after the
+  call); entries 36–41 and 143 `[C]` up to their first creation, the rest `[I]`; a ring count of 0 endless `[I]`, a
+  negative count ending by the index wrap `[I]`, the stock values an `[L]` under *Open questions*. Tags {C59 I49 L3} →
+  {C74 I58 L4}; open questions 3 → 4 `[L]`. Entry closed
+  ([archive](../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-a3-finisher-callers-and-progressiv.md));
+  review request [to the architect](../backlog/2026-10-21-spec-writer-architect-lane-s46c-review-combat-delivery-finisher-callers.md).
