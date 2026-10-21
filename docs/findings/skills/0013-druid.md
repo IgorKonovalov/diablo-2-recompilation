@@ -49,7 +49,8 @@ claim rests on a callee-saved register that is not a boundary argument (ruling 1
   0x10000)` after its used-skill tests and stores the value at `ebp−0xC` before its `STATLIST_Alloc` or
   `StatListSetEnd`; do 123 makes one `RNG_Range(caster+0x20, 0x100)` after its cell test and stores the low byte in its
   first argument's slot before its `MissileCreate`. No other function of the batch steps the caster's or the target's
-  seed before its boundary or return (8 400 cases, both seeds compared in each). (run:2026-10-21-cat-emu-dru,
+  seed before its boundary or return (8 400 cases, both seeds compared in each; the cases' calcs are constant programs
+  that call no calc function, as in skills/0008–0012, so a calc function's own draws are not covered). (run:2026-10-21-cat-emu-dru,
   fn:sub_005C8190_SkillDo124PeriodicState@0x005C8190, fn:sub_005C8080_SkillDo123Volcano@0x005C8080)
 - [C] (ADR-0021; § 3) **The summons.** Do 114, 115 and 119 test the record, take `sub_0056E620_SkillSummonClass(ECX
   caster, EDX 0; id, lvl, &mode, 0, 0)` (Skills `+0xBC`, the mode `+0xBF` in `[0, 16)` else 1), **refuse** a `pettype`
@@ -164,9 +165,11 @@ None. No community document was opened for this batch.
   57 and do 121 on 238 Rabies (`ResultFlags` 1, `HitFlags` 2); start 58 (with do 2, skills/0012) on 239 Fire Claws;
   do 122 on 242 Hunger; do 123 on 244 Volcano (479); do 124 on 249 Armageddon (`srvmissilea..c` 577), 250 Hurricane,
   349 Diablogeddon (670). (`rows.txt`, tbl:Skills.txt:srvstfunc, tbl:Skills.txt:srvdofunc)
-- [I] `0x005C7520`, between do 119 and start 56, is a fourth summon function of do 114's shape; no `.text` operand
-  names it and its address appears nowhere in the file as a little-endian dword (`static.txt`: 0 and 0), so it has no
-  reference in the image. Not read further.
+- [I] `0x005C7520`, between do 119 and start 56, is a fourth summon function of do 114's shape. The scan
+  (`static.txt`: 0 and 0) is a linear objdump sweep of `.text` for any operand text naming `0x5c7520` (call and jump
+  targets as objdump resolves them, immediates, memory operands) and a count of the little-endian dword in the whole
+  file; both are 0, so it has **no direct reference** in the image (an address computed at run time is not excluded).
+  Not read further.
 
 ### 2. Emulation: the `dru` families
 
@@ -226,8 +229,12 @@ callers) for the `RectTest` cases (`static.txt` lists the call sites).
   `p4_noframe` (47) fails on every entry-145 re-arm case whose game frame is non-zero (47 of the 48 at
   `@0x005C8481`); `melee_dru`'s `nostate57` (47) on every start 57 case with `aurastate` in range and the state's bit
   clear (the 47 `noshape` returns), `sd_first` (2) on the two do 121 cases with two counted skills whose non-zero
-  `SrcDam` bytes differ; `miss_dru`'s `mask7` (15) on the 15 do 123 cell cases whose word has bit 1 set and bits 0 and 2
-  clear. Each family has a control failing 90 or more (`w24_zero` 735, `notown` 134, `rf_ignored` 171, `c1_ge0` 156).
+  `SrcDam` bytes differ, the first neither 0x80 nor equal to the last (the control keeps the first byte unless it is
+  0x80: cases 383, bytes 235 then 3, and 2201, 222 then 128). The "last" reading rests on more than the control: recounted at the
+  review from `melee_dru.json` with the lane's model, 8 of the 255 boundary cases count two or more distinct non-zero
+  bytes (47, 75, 197, 317, 383, 1169, 1479, 2201), and among them a first-kept reading fails 7, a smallest one 5 and a
+  largest one 3, so all three are separated from the last; `miss_dru`'s `mask7` (15) on the 15 do 123 cell cases
+  whose word has bit 1 set and bits 0 and 2 clear. Each family has a control failing 90 or more (`w24_zero` 735, `notown` 134, `rf_ignored` 171, `c1_ge0` 156).
   Of the 255 do 121 boundary cases, 36 count two states and 4 count three, so the sum is separated from a single
   term. (run:2026-10-21-cat-emu-dru)
 - [I] ADR-0015 (3): the claims cover the code as a map. What the offsets mean keeps its own tag (Skills columns `[C]` by
@@ -305,7 +312,8 @@ m = SpawnOwnedMonster(game, &blk);
   `ebp−0xC`); `end = frame + max(auralencalc, 1)` (`cmp eax, 1; jge`); `STATLIST_Alloc(game+0x1C, 2, end, type, guid)`
   without a list of the state, else `StatListSetEnd(list, end)`. (run:2026-10-21-cat-emu-dru `shape_dru`,
   fn:sub_005C8190_SkillDo124PeriodicState@0x005C8190)
-- [I] After do 124's boundaries: as do 120's list steps (`STATE_DefaultRemoveCB`), `StatListSetEnd`, event 12 at
+- [I] After do 124's boundaries: `STATLIST_Alloc` giving 0 → **0** (`0x005C8299`; do 120 returns 1 there); else as
+  do 120's list steps (`STATE_DefaultRemoveCB`), `StatListSetEnd`, event 12 at
   `end`, `SKILLS_ApplyAuraStats(caster, list; rec, id, lvl)`, stats 350/351; then `p = Param4` (`0x004EFC80`, Skills
   `+0x154`), `UNIT_CancelEvents(game, caster; 5, id)`, `UnitQueueEvent(game, caster; 5, frame + p, id, lvl)`, and
   **`UnitSkillSet18(used node, r)`**; returns 1. Unit event 5 runs `StateDoFunc` (§ 1), which, for the stock rows, runs
@@ -352,7 +360,8 @@ CancelEvents(game, u; 5, id); UnitQueueEvent(game, u; 5, frame + Param4, id, lvl
   a free point → `sub_0056EDE0_MissileCreateAt(ECX game, EDX caster; id, lvl, class, x, y)` and
   `sub_00571AA0_UnitMsgA3(ECX caster, EDX 0; id, lvl, x, y, 0)`, returns 1; five failures → 0 (the event already
   re-queued). So the first period re-seeds the caster from do 124's `r` when `SKILLS_GetUnitSkill(caster, id)` and the
-  used node are one node (not run here). (0x005C8647–0x005C8779)
+  used node are one node **and** no other writer of that node's `+0x18` runs between the cast and the first period
+  (`sub_00644560_UnitSkillSet18` has 85 call sites, not followed; not run here). (0x005C8647–0x005C8779)
 
 ### 6. The melee functions: start 56, 57, 58, do 121, 122
 
@@ -388,7 +397,9 @@ CancelEvents(game, u; 5, id); UnitQueueEvent(game, u; 5, frame + Param4, id, lvl
   start 58 `SKILLS_RollElemDamage(caster, &packet; id, lvl)` and `ResolveAndQueue(game, caster; target, &packet, 0x80)`;
   do 122 the elemental roll, `+0x08 += MulDiv(+0x08, calc1, 100)` (`sub_00483360_MulDiv`), `calc2` added to `+0x38`
   and `calc3` (`+0x140`) to `+0x3C`, `ResolveAndQueue(…, 0x80)`, `COMBAT_DeliverQueued(game, caster; target, 0)`; both
-  return 1. No stock row of either has `ResultFlags` bit 0 (`rows.txt`: 239 and 242 have 0); 238 Rabies (1) reaches
+  return 1. No stock row of either has `ResultFlags` bit 0: of the 358 Skills rows only 239 has `srvstfunc` 58 and
+  only 242 `srvdofunc` 122, and both have `ResultFlags` 0 (`rows.txt`, its 25-row selection checked complete against
+  every row at the review; tbl:Skills.txt:ResultFlags); 238 Rabies (1) reaches
   `0x0056E680` only through `0x005C7C20` after do 121's boundary. (0x005C7E7A–0x005C7F02, 0x005C7F90–0x005C8070)
 - [C] (ADR-0021; ends at `MeleeHitTest` @0x005C8A9B inside `0x005C8980`, do 121's return `0x005C8B5F` compared) **Do
   121** (`0x005C8AD0`): the record; the target (0 → 0); the used skill (0 → 0); its id (`0x00643CE0`, else 0);
@@ -491,5 +502,6 @@ boundary), `calc1`, `calc2`, `calc3`, `calc4`, `Param4` (`+0x154`), `ResultFlags
 - [L] What `STATE_GroupClear`'s result means for a shape-shift (do 116 returns 0 and calls `SkillDelayFromCalc` when it
   is non-zero) (§ 4).
 - [L] Who fills `DataTables+0x17C`/`+0x180` and with which states (§ 6), an archivist question; and whether
-  `SKILLS_GetUnitSkill(caster, id)` and the used node are the same node at Armageddon's first period (§ 5).
+  `SKILLS_GetUnitSkill(caster, id)` and the used node are the same node at Armageddon's first period, and whether any
+  other writer of its `+0x18` runs between the cast and that period (§ 5).
 - [L] Everything after each boundary (§§ 3–7), for a later batch or the harness.

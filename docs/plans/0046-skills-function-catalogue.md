@@ -831,6 +831,64 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `aurastat` calcs at the stack count (`[I]`); do 124's draw is the word Armageddon's first period re-seeds from
   (`[I]` after the boundary; skills/0003 § 9 note, rng/seeds open question to the spec-writer). Tags: 25 `[C]`, 25 `[I]`,
   4 `[L]` bullets; 20 symbols added (`I`). Dated notes in skills/0003 § 5 (the Firestorm row in step) and § 9. Review
-  request [to the architect](../backlog/2026-10-21-reverser-architect-lane-p46m10-review-plan-0046-batch-dru.md); column
+  request [to the architect](../backlog/archive/2026-10-21-reverser-architect-lane-p46m10-review-plan-0046-batch-dru.md); column
   readers [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-dru-skills-missiles-column-readers.md);
   [to the spec-writer](../backlog/2026-10-21-reverser-spec-writer-rng-seeds-armageddon-first-period.md) on rng/seeds.
+- **2026-10-21 — `lane/p46m10` review (architect): accept with fixes.** Main (`f8f1e9f`) merged first (clean, no
+  markers; `backlog.py archive` moved nothing). `check --batch dru` and `static --batch dru` from the lane's tool
+  (`11b763dd…`) reproduce the kept `check.txt` (`592baf51…`) and `static.txt` (`d2c98496…`) byte for byte;
+  `sha256sum -c manifest.sha256` (`d1a77e1f…`, 69 lines) passes. Read against objdump: do 116, 119, 120, 123, 124,
+  start 57, entry 146 up to its point draws, `0x0056E680`, `0x005C8980`'s loop, `SkillTargetCellFree`,
+  `COLL_WHTest`, `0x004EFC80`, `0x00625D00`, and the entries of the five new boundaries. **Rulings.** (1) **`COLL_WHTest`
+  run emulated is admissible.** ADR-0015 (1) names "runs emulated" as one of a callee's treatments and the choice is
+  per run, declared in the memory spec; this run declares its reads (0 undeclared in `miss_dru`), so the `[C]` covers
+  `COLL_WHTest`'s code on the paths reached from `SkillTargetCellFree`, which always passes width = height = `Size`
+  (the separate height test at `0x0064D811` is not separated from the width test). The three `0x27` branches and the
+  word test are each reached (recounted at the review from `miss_dru.json` with the lane's model: no room at the
+  point 88, no map 14, no word array 6, a busy word 33, a free one 72). The `sor` batch is unaffected: its claims end
+  at `COLL_WHTest`'s entry, nothing here re-runs or raises its functions' code after that call, which stays `[I]`.
+  (2) **The two draws are `[C]`** under ADR-0021 (c): the drawn value is a byte written before the call that the
+  claim uses, compared at its absolute stack address, with the caster's seed state compared and `seed_none` (202) and
+  `noseed` (72) failing; do 124's `CALC_Eval` of `auralencalc` between the draw and the boundary runs on constant
+  programs. What the value becomes (`UnitSkillSet18`, `MISSDATA_SetSeedLow`, `UnitMsgA3`'s last argument) is after,
+  `[I]` (objdump `0x005C8228`/`0x005C823C`, `0x005C8103`/`0x005C8115`). (3) **Entries 145 and 146 stand as mapped**:
+  every map ends at `UNIT_CancelEvents` (the shared exit at `0x005C85D6` is also where the town branch's `STATE_Set`
+  returns), `UNIT_UnlinkStatList`/`STATE_Set`, or the re-arm; entry 146's re-seed (`0x005C8688`) and point draws are
+  inline after `UnitQueueEvent` with no callee to stop at, so they stay `[I]` until a wider image or a run. (4) **The
+  register arguments are admitted**: `STATE_GroupClear` (`mov edi, edx` `0x0056C749`, `mov ebx, ecx` `0x0056C750`),
+  `UNIT_CancelEvents` (`mov edi, ecx; mov ecx, edx` `0x00540E64`), `SkillMissileCreate` (`0x0056ECC1`/`0x0056ECC3`;
+  the `memset` arguments are pushed, not registers), `COMBAT_BuildDamage` (`0x0057B7D7`, `0x0057B7DB`) and
+  `COLL_RectTest` (`mov edi, edx` `0x0064CEB8`, `ECX` unwritten up to `0x0064CEC0`) each read before any write. (5)
+  **The weak controls are enough**, each with its deciding class, but `sd_first`'s class was misstated: the control
+  keeps the first byte unless it is `0x80`, so it fails only where the first is neither `0x80` nor the last (cases 383
+  and 2201), not on "the cases with two differing bytes" (8 of the 255 boundary cases). The "last" reading does not
+  rest on 2: over those 8, first-kept fails 7, smallest 5, largest 3, so it is separated from all three. `nostate57` 47 =
+  `noshape` 47, `p4_noframe` 47 of 48 (one frame 0) and `mask7` 15 are as stated. (6) **The corrections are sound as
+  dated notes**: skills/0003 § 5's note and the Firestorm row agree with objdump; § 9's row and note needed the
+  condition of fix 1. **Also checked:** do 123 has no upper test (`test ebx, ebx; jle` only, `0x005C80C8`) and
+  `SkillTargetCellFree` takes the fatal path on a null record (`0x0056E497`), before its room test; `0x0056E680` tests
+  `ResultFlags` bit 0 first (`0x0056E68E`) and on it returns with `+0x04 = ResultFlags`; the "no stock row" fact is now
+  a full-table statement (fix 6; 25 rows in the batch, the lane's `rows.sh` selection complete); do 119's `+0x24` is
+  the block slot `ebp−0x18` that `SKILLS_GetTargetXY` writes x to (no store names it), stated as such in § 3; do 120's
+  count is `min(old + 1, calc2)` (`jl` at `0x005C796A`) passed to `SKILLS_ApplyAuraStats` as its level (`[I]`, after
+  the boundary); do 116 returns 0 after `SkillDelayFromCalc` on a non-zero `GroupClear` (`0x005C6F27`–`0x005C6F40`);
+  start 57 zeroes no packet (no `memset` before `0x005C7AA6`); the dev runs are under `dev/dev1`, `dev/dev2` with
+  their own `dev<N>-` names (its `notes.txt` writes dev1 `miss_dru` as "match=1800 bad=1" for a control that did not
+  fail, a wording slip in a workspace note, left); 25 `[C]`, 25 `[I]`, 4 `[L]` bullets recounted (unchanged by the
+  fixes); the 20 symbol rows are new and the gate passes E7 after the merge. **Fixes, made in the documents:** (1)
+  Armageddon's first period uses do 124's `r` only if `SKILLS_GetUnitSkill(caster, id)` is the used node **and** no
+  other writer of its `+0x18` runs between (`UnitSkillSet18` has 85 call sites, not followed): § 5, Open questions,
+  skills/0003 § 9's row and note, and the spec-writer entry (overclaim); (2) the archivist entry's `InTown` and
+  `aurarangecalc` items said "loses the state", "the period ends" inside `[C]`; now the branch and its boundary calls,
+  the meaning `[I]` (overclaim; reverser review-fixes rule 1); (3) `0x005C7520`: the scan form stated (a linear sweep of
+  `.text` operand text, call targets included, and the file's dwords) and "no reference" narrowed to "no direct
+  reference" (overclaim); (4) `sd_first`'s deciding class, and the 8-case separation of the "last" byte, in § 2
+  (misread); (5) do 124 returns 0 when `STATLIST_Alloc` gives 0, unlike do 120 (omission); (6) the `ResultFlags` table
+  fact over all 358 rows with `tbl:Skills.txt:ResultFlags` (omission); (7) the Answer's "no other draw before a
+  boundary" scoped to constant calc programs (omission). Counted: 7 (overclaim 3, misread 1, omission 3). Tags after
+  the review: 25 `[C]`, 25 `[I]`, 4 `[L]` bullets. Review request closed
+  ([archive](../backlog/archive/2026-10-21-reverser-architect-lane-p46m10-review-plan-0046-batch-dru.md)); the
+  archivist and spec-writer entries stay open for their lanes; ledger row added. **The last class batch (assassin,
+  `ass`) may start**, with 9c, 9d, `sor`, `ama`, `nec`, `pal`, `bar` and `dru`'s conventions; a callee that an earlier
+  batch observed may run emulated when its reads are declared, and the finding then says which paths of it were
+  reached.

@@ -2,18 +2,18 @@
 from: reverser
 to: architect
 date: 2026-10-21
-status: open
+status: done
 context:
-  - ../findings/skills/0013-druid.md
-  - ../findings/skills/experiments.md
-  - ../plans/0046-skills-function-catalogue.md
-resolution: ""
+  - ../../findings/skills/0013-druid.md
+  - ../../findings/skills/experiments.md
+  - ../../plans/0046-skills-function-catalogue.md
+resolution: "Reviewed 2026-10-21: accept with fixes (7: overclaim 3, misread 1, omission 3); COLL_WHTest run emulated admitted, sor unaffected; the two draws [C] up to their boundaries; entries 145/146 maps stand, 146's re-seed [I]; register arguments admitted; weak controls enough (sd_first's class restated); dated notes sound. Plan 0046 log, lane/p46m10 review. The ass batch may start."
 ---
 
 Not blocking. Please review plan 0046 Phase 1 batch `dru` (`lane/p46m10`): the druid start functions 56–58, do
 functions 114–124 and do-table entries 145 and 146 (the States `srvactivefunc` of 144 `hurricane` and 145
-`armageddon`), 16 entries (tier A: do 114, do 117) ([skills/0013](../findings/skills/0013-druid.md),
-run:2026-10-21-cat-emu-dru in [experiments](../findings/skills/experiments.md)).
+`armageddon`), 16 entries (tier A: do 114, do 117) ([skills/0013](../../findings/skills/0013-druid.md),
+run:2026-10-21-cat-emu-dru in [experiments](../../findings/skills/experiments.md)).
 
 - **Run:** four families, 8 400 cases, 0 mismatches, 0 undeclared reads, 0 stopped; all 16 entries emulated; site
   control 3 967 of 3 967 (33 function/boundary/return-address triples); every negative control fails (four to six per

@@ -22,8 +22,9 @@ columns; please link them from the table docs.
 - [Skills](../tables/Skills.md) `aurastate` (`+0x080`) for do 116, 120, 124, start 57 and do-table entries 145, 146:
   admitted in `[0, States count)` (`test ax, ax; jl`, so 0 is admitted) (§§ 4–6, `[C]` as the test). `auralencalc`
   (`+0x060`): added to the game frame as `STATLIST_Alloc`'s third argument, raised to 1 by do 124 and not by do 120
-  (§ 4, `[C]` as the map; that it is a length in frames `[I]`). `aurarangecalc` (`+0x064`): entries 145 and 146 end
-  their period when it is ≤ 0 (§ 5, `[C]` as the test; its use as the area radius and the point range after the
+  (§ 4, `[C]` as the map; that it is a length in frames `[I]`). `aurarangecalc` (`+0x064`): entries 145 and 146 take
+  the shared exit at `UNIT_CancelEvents(game, caster; 5, id)` when it is ≤ 0 (§ 5, `[C]` as the test; that the period
+  then ends, and its use as the area radius and the point range after the
   boundary `[I]`). `Param4` (`+0x154`): entry 145's first argument slot holds `frame + Param4` before its re-arm call
   (§ 5, `[C]` as the value; that it is the period `[I]`).
 - [Skills](../tables/Skills.md) `ResultFlags` (`+0x12E`), `HitFlags` (`+0x130`), `HitClass` (`+0x134`), `SrcDam`
@@ -32,7 +33,9 @@ columns; please link them from the table docs.
   `COMBAT_BuildDamage`'s fourth argument (§ 6, `[C]` as the map). `calc1` (`+0x138`) for start 58: the packet's `+0x0C`
   (§ 6, `[C]` as the value).
 - [Skills](../tables/Skills.md) `InTown` (`+0x005` bit 0, `g_BitMask32[0]`) for entries 145 and 146: when clear, a
-  caster in a town room loses the state and the period ends (§ 5, `[C]` as the test and the calls up to the boundary).
+  caster whose room is a town room (`RoomIsTown`) takes the branch that ends at `UNIT_UnlinkStatList(caster, list)`
+  or `STATE_Set(caster, aurastate, 0)` (§ 5, `[C]` as the test and the calls up to the boundary; that the state is
+  removed and no further period is queued `[I]`, after the boundary; wording narrowed at the `lane/p46m10` review).
 - [Missiles](../tables/Missiles.md) `Size` (`+0x18A`, `movzx`) for do 123 through `COLL_WHTest`: 0 or 1 tests one cell
   (`COLL_CellTestNb`, mask 5), 2 or more a rectangle `{x − Size/2, y − Size/2, …}` (`shr`) (§ 7, `[C]` as the map).
 - [States](../tables/States.md) `srvactivefunc` (`+0x036`): `sub_0056D790_StateDoFunc` (unit event 5,

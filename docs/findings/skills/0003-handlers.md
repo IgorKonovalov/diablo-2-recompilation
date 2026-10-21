@@ -521,7 +521,7 @@ if (m) { m->c4 &= ~4; SetStat(m, 74, 0); SummonSetLevel(m, max(calc2, 1), lvl); 
 | `0x005AFB80` (do 28) | missile `+0x20` | `MissileData+0x28` | 2 `Range`, then `+0x28 = RNG_GetLow` | rows with do 28 |
 | `0x005B04A0` (do 34) | missile `+0x20` | path X | 1 inline | rows with do 34 |
 | `0x005B0640` (do 35) | missile `+0x20` | `+0x28` | 1 inline, `+0x28 = RNG_GetLow` | rows with do 35 |
-| `0x005C8520` (do 146) | **caster** `+0x20` | `SkillEntry+0x18` (at the first period the word do 124 stored, 2026-10-21 note below) | `RNG_Range(10^6)` into `+0x18`, then up to 5 × 2 `Range` for a free point | Armageddon (`srvactivefunc` 146) |
+| `0x005C8520` (do 146) | **caster** `+0x20` | `SkillEntry+0x18` (at the first period the word do 124 stored, under the 2026-10-21 note's conditions below) | `RNG_Range(10^6)` into `+0x18`, then up to 5 × 2 `Range` for a free point | Armageddon (`srvactivefunc` 146) |
 | `0x00645390` | a unit's `+0x20` | a skill entry's `+0x18`/`+0x1C` (+7 on a repeat) | none | no reference in the image |
 | `0x005C276A` | an item's seed | its own saved low word (restored on failure) | 1 inline | `sub_005C2740_ItemBuildSetV0` |
 | local seeds | a stack seed | constant `0x53454953` (`0x005A3610`, `0x005A6B70`), stat 328 (`0x0059F940`, P1.2), the target and unit guids (`0x005CD910`, start 55), a stepped low word (do 37, 39, 41, 143) | as read | — |
@@ -539,7 +539,8 @@ if (m) { m->c4 &= ~4; SetStat(m, 74, 0); SummonSetLevel(m, max(calc2, 1), lvl); 
   124: one `RNG_Range(caster+0x20, 0x10000)` after its used-skill tests (`[C]` under ADR-0021, up to its
   `STATLIST_Alloc` or `StatListSetEnd`; [skills/0013](0013-druid.md) § 4), stored by `UnitSkillSet18(used node, r)`
   after unit event 5 is queued at `frame + Param4` (`[I]`, 0x005C8354–0x005C835C). Do 146 reads `SKILLS_GetUnitSkill(caster,
-  id)`'s node, so the first period uses `r` when that node is the used node (`[I]`, not run).
+  id)`'s node, so the first period uses `r` when that node is the used node and no other writer of its `+0x18` (the
+  setter has 85 call sites, not followed) runs between the cast and that period (`[I]`, not run).
   (fn:sub_005C8190_SkillDo124PeriodicState@0x005C8190)
 - [I] `MissileData+0x28` is a per-missile stored seed word: written by `MISSDATA_SetSeedLow` (`0x0064A710`) at creation
   by do 37/143's rings, do 41, hit 36 and do 28/35 after their draws, read back by `MISSDATA_GetSeedLow` (`0x0064A730`)

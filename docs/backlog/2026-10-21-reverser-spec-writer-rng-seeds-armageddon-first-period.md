@@ -21,7 +21,8 @@ note) answers it in part:
 - `[I]` from the reading: after that boundary do 124 queues unit event 5 at `frame + Param4` with `(id, lvl)` and
   stores the value with `UnitSkillSet18(used node, r)` (0x005C8354–0x005C835C); do-table entry 146 reads
   `SKILLS_GetUnitSkill(caster, id)`'s node `+0x18` to re-seed the caster, so the first period uses `r` when that node
-  is the used node (not run).
+  is the used node and no other writer of its `+0x18` runs between the cast and that period (`UnitSkillSet18` has 85
+  call sites, not followed; not run; added at the `lane/p46m10` review).
 
-Please narrow the open question (the cast-time draw and its store), keeping the store and the node identity `[I]`
-and the rest of the question open until a run logs a first period.
+Please narrow the open question (the cast-time draw and its store), keeping the store, the node identity and the
+absence of another writer `[I]`, and the rest of the question open until a run logs a first period.
