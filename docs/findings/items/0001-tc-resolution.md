@@ -218,7 +218,7 @@ data/0001). Phase 1b (2026-10-11) then compared the finished claims with two reg
 | `0x00451F80` | `MONSTATS_GetRecord` | `monstats` record (0x1A8 B) by index or 0 | C |
 | `0x006335F0` | `ITEMS_GetRecord` | `g_pItems` record (0x1A8 B) by index or 0 | I |
 | `0x00628700` | `ITEMS_GetType` | item record `+0x11E` (`type`) | I |
-| `0x00628860` | `ITEMTYPES_IsThrowable` | itemtypes record `+0x10` (`Throwable`) | I |
+| `0x00628860` | `ITEMTYPES_IsThrowable` | itemtypes record `+0x10` (`Throwable`) | C |
 | `0x00629A90` | `ITEMS_IsType` | item index is of type t (`type`, then `type2`, through the equivalence bitmap) | I |
 | `0x00629BB0` | `ITEMS_UnitIsType` | same test for an item unit | I |
 | `0x00585B90` | `sub_00585B90_ObjectChestDrop` | object/chest drop: "Act N Chest A/B/C" TC, calls `TC_ResolveDrops` | I |
@@ -571,6 +571,9 @@ sub_005589A0_DropGoldFind(killer, unit);
   10 throwables in one resolver call refund their pick, later ones become a Long Sword. The test uses the item's
   `type` only, through `ItemTypes.Throwable` (itemtypes `+0x10`). The quality roll has already drawn by then.
   (0x0055AE6E–0x0055AEC2, tbl:ItemTypes.txt:Throwable)
+  *2026-10-21, plan 0038 batch H2c (forced):* `[C]` now for the bound of 10 per call, the Long Sword `lsd` and the
+  order after the quality roll; the `version ≥ 100` reject stays `[I]` (d-none), [§ Plan 0038 batch H2c](#plan-0038-batch-h2c-2026-10-21)
+  tc 10, 55, 56 (0x0055AE6E–0x0055AEC7, run:2026-10-21-throw-forced).
 - [C] **Throwable refund, observed part:** in a classic Normal session 16 picks of throwable types were refunded,
   at most 3 in one call. They were `tpot` potions (11), javelins, a throwing axe and a throwing knife. Each came after
   its quality roll (`QIN`/`QOUT` logged) with no `CPRE`, and the pick was taken again. Without the refund, 13 of the
@@ -1178,6 +1181,49 @@ inventory's commit `a398945`. The seed lines and the model they are checked agai
 logged on 988 drops, the Functions table updated).
 
 **Tally:** 2 statements: 1 raised (tc 68), 1 raised in part (tc 58).
+
+## Plan 0038 batch H2c (2026-10-21)
+
+Forced harness batch H2c of [plan 0038](../../plans/0038-inferred-claims-sweep.md)
+([run:2026-10-21-throw-forced](experiments.md#run2026-10-21-throw-forced), three kept sessions on harness slot 2, a
+loose `treasureclassex.bin` under `-direct` whose `Act 1 Junk` names three classic throwables; inventory § 6 ruling 1)
+took four inferred statements of [items/tc](../../specs/items/tc.md), rows 10 (2), 55 and 56 of
+[the inventory](../../plans/0038-inventory/items-tc.md). The read list of the code under test (§ 8, committed before
+the run) has no TreasureClassEx read; the edited cells choose which item is picked. Counts are from the kept, hashed
+`check/check-logs.txt` and `check/check-tc.txt` (`workspace/logs/h2c/h2c-check.sha256`).
+
+- **tc 10** (L84 `THROW_RETRIES`, L85 `LONG_SWORD`; 2 statements) **raised.** [C] In a classic game the first 10
+  throwable picks of one resolver call refund their pick and every later one in that call becomes the item of code
+  `lsd`: over 100 calls with a throwable pick, the counter runs 0, 1, 2… from 0 in each call; all 937 refunds (`THF`)
+  are at counter 0–9 and all 141 Long Swords (`THL`) at 10 or 11; 93 calls reached the bound (45 of 10 refunds and one
+  `lsd`, 48 of 10 and two), and in each the refunds before the first `lsd` number exactly 10. The index
+  `sub_00633680_ItemIndexByCode('lsd ')` returns is 31 (Weapons row 31, `lsd`), and the next creation (`CPRE`) is of
+  that index all 141 times. A bound other than 10 would put a refund at 10 or an `lsd` below it in some of the 93 calls.
+  `tools/tc.py replay` reproduces the 377 resolver calls of the three logs with the same counts (refund 452/284/201,
+  `lsd` 45/56/40). Classic only: the `THR` lines all carry expansion flag 0, and the stock control (H2b's logs) has 13
+  expansion creations of throwable types and 0 classic ones. (0x0055AE6E–0x0055AEC7, 0x0055A71D,
+  fn:sub_00633680_ItemIndexByCode@0x00633680, run:2026-10-21-throw-forced)
+- **tc 55** (L649, H6) **raised.** [C] The throwable test uses the picked item's type through `ItemTypes.Throwable`
+  and runs after the pick's quality roll: each of the 1 078 `THR` lines (the branch after `ITEMTYPES_IsThrowable`
+  returned non-zero) follows the `QOUT` of the same item with no `PICK` between, and all 1 078 quality rolls had stepped
+  the source seed, so a test before the roll would have left a different seed for the next pick (the replay
+  reproduces the seed chain of every call). Every `THR` item is of a throwable type (`tkf`/`tkni`, `tax`/`taxe`,
+  `jav`/`jave`), and none of the 394 classic creations of the run (nor the 659 of H2b's classic logs) is of a throwable
+  type; the first 10 refund and later ones become `lsd` as tc 10. Classic only, with the expansion control above. The
+  upgrade draws between the roll and the test do not run on these tables (ratio words 4 and 5 are 0 in every
+  `QIN` of the three logs).
+  (0x0055AE6E–0x0055AEC2, fn:ITEMTYPES_IsThrowable@0x00628860, tbl:ItemTypes.txt:Throwable,
+  run:2026-10-21-throw-forced)
+- **tc 56** (L657, H6/H2 "not exercised") **raised in part.** [C] The Long Sword after the tenth throwable, as tc 10.
+  **Remainder `[I]`, d-none:** the `version ≥ 100` reject of H2 (the classic scan never yields such an entry, A2 and
+  row 74; inventory § 6 ruling 1). (0x0055AE6E–0x0055AEC7, run:2026-10-21-throw-forced)
+
+**Correction carried (rule 12):** § 8's throwable bullet now points here for its `[C]` part.
+
+**Symbols:** `ITEMTYPES_IsThrowable` I → C (its non-zero return logged at 0x0055AE9C on 1 078 picks, all of throwable
+types; no classic creation of a throwable type).
+
+**Tally:** 4 statements: 3 raised (tc 10 ×2, 55), 1 raised in part (tc 56).
 
 ## Open questions
 

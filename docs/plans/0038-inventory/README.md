@@ -912,6 +912,29 @@ totals above; nothing newer) into `lane/h2b` and moved no further row; the three
 checks*). Recomputed once over every reviewed batch above: **static 567, harness 526, c-emu awaiting a batch 0,
 blocked 414** (d-none 288, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
 
+**H2c (filed 2026-10-21, reverser, `lane/h2c`; forced, awaiting review): 7 statements of items/tc and
+items/properties.** run:2026-10-21-throw-forced (three sessions, classic Normal, `Act 1 Junk` naming `tkf`, `tax`,
+`jav`) and run:2026-10-21-tcnamed-props-forced (seven sessions, Hell, Eldritch's and Hephasto's TCs naming *Ormus'
+Robes*, *Ethereal Edge* and the func-24 carrier *Tomb Reaver*), slot 2, 12 launches, 10 kept logs, each table a loose
+`treasureclassex.bin` under `-direct` (§ 6 rulings 1 and 2; the read lists committed before the run). 0 mismatches
+(`sweep_h2c.py logs` 0 failed, `tc.py replay` 677/677, `items_chain.py both`, `uniques.py` and `props.py` 580/580,
+`quality.py` 1 496/1 496). The lane files **4 raised, 2 raised in part, 1 shortfall** (7 statements in six rows; tc 10
+counts two). The evidence is in the "Plan 0038 batch H2c" sections of
+[items/0001](../../findings/items/0001-tc-resolution.md#plan-0038-batch-h2c-2026-10-21) and
+[items/0006](../../findings/items/0006-properties.md#plan-0038-batch-h2c-2026-10-21).
+
+- **Raised (4 statements):** tc 10 (2: the bound of 10 per call and the Long Sword `lsd`), tc 55 (the type test after
+  the quality roll, classic only, with the stock expansion control), properties 12 (spec L390, func 12).
+- **Raised in part (2):** tc 56 (the Long Sword half; the `version ≥ 100` reject d-none, as ruling 1 said), properties
+  14 (func 23's make branch; the two skips, an item already ethereal or without durability, not reached).
+- **Shortfall (1):** properties 15 (func 24: no Hephasto met, so no *Tomb Reaver*; heph-c and heph-e stopped short of
+  the Hellforge, heph-d and heph-f died).
+
+Net effect on the totals: none proposed (no class moves; the remainders and the shortfall stay counted as H2c). Taken
+against `main` after merging it into the lane (`3d1cc99`; the H2b review's totals above are the latest in this
+section): **static 567, harness 526, c-emu awaiting a batch 0, blocked 414** (d-none 288, d-edit 73, d-sim 28, d-2c 7,
+d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is

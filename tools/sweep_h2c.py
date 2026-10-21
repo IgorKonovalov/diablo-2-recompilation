@@ -19,7 +19,8 @@ memory operand of 0x0055AE6E..0x0055AEC7) is printed too.
 
 logs: per log, the classic throwable re-pick (THR before the counter test, THF after a refund, THL after the 'lsd '
 lookup): per resolver call (a TCR line), the counter values in order, refunds, Long Swords, and the checks the claims
-need: every refund at a counter value < 10 and every 'lsd ' at >= 10, the counter starting at 0 in each call and
+need: each THR right after the quality roll of the same item (its QOUT, no PICK between; counted by whether that roll
+stepped the source seed), every refund at a counter value < 10 and every 'lsd ' at >= 10, the counter starting at 0 in each call and
 stepping by 1, picks left +1 after each refund, the created item after a THL is the 'lsd ' index (CPRE item), the
 game classic. Then the handler entry states: per E12/E23/E24 line the item, its flags, the block, and the follow-up
 lines, with the checks: func 12 writes param = the roll and value = par (WR line after E12V), func 23 makes an item
@@ -204,17 +205,36 @@ def cmd_logs(ns):
         calls = []
         pend = None          # the last THR of this thread
         last_e = {}
+        lastq = None         # (kind, item, seed) of the last PICK / QIN / QOUT line (the order test of tc 55)
+        qin = None
         name = os.path.basename(path)
         for tag, rest in read_lines(path):
             if tag == "TCR":
                 call = {"thr": [], "exp": kv(rest).get("exp"), "cpre": []}
                 calls.append(call)
                 pend = None
+                lastq = None
+            elif tag == "PICK":
+                lastq = ("PICK", None, None)
+            elif tag == "QIN":
+                k = kv(rest)
+                qin = (int(k["item"]), k["seed"])
+                lastq = ("QIN", None, None)
+            elif tag == "QOUT":
+                lastq = ("QOUT", qin, kv(rest)["seed"])
             elif tag == "THR":
                 d = json.loads(rest)
                 if call is None:
                     fails.append("%s: THR outside a resolver call" % name)
                     continue
+                # tc 55: the throwable test comes after the pick's quality roll (QOUT of the same item, no PICK
+                # between); count the refunded picks whose quality roll stepped the source seed
+                if lastq and lastq[0] == "QOUT" and lastq[1] and lastq[1][0] == d["item"]:
+                    S["THR after the same item's QOUT"] += 1
+                    S["THR after a quality roll that %s the source seed" % (
+                        "stepped" if lastq[1][1] != lastq[2] else "did not step")] += 1
+                else:
+                    fails.append("%s: THR not right after its item's quality roll (%s)" % (name, lastq))
                 call["thr"].append(d)
                 pend = d
                 S["THR lines"] += 1

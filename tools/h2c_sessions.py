@@ -34,7 +34,7 @@ RUNTIME = os.path.join(ROOT, "workspace", "runtime")
 NOVA = hb.NOVA
 
 
-def hephasto(t=360, players=1, extra=()):
+def hephasto(t=360, players=1, extra=(), explore=()):
     """Hell: River of Flame waypoint (tab 4 row 3: the Act IV list has three rows), hunt Hephasto the Armorer
     (MonStats row 409, ilvl 88 in Hell:
     the only stock-droppable func-24 carrier, Tomb Reaver, has lvl 86), then a sweep."""
@@ -43,7 +43,7 @@ def hephasto(t=360, players=1, extra=()):
     # (after heph-c: 361 s of farm never met Hephasto) explore to the Hellforge room first, LvlPrest 853 / 854
     # (Act 4 - Lava Forge W / E), then farm
     return [("pilot", ["wpchain", "--chain", "4,3", "--linger", "2"], 120),
-            ("pilot", ["explore", "--to-pdef", "853,854", "--hops", "80"] + NOVA + extra, 300),
+            ("pilot", ["explore", "--to-pdef", "853,854", "--hops", "80"] + NOVA + extra + list(explore), 300),
             ("pilot", ["farm", "--players", str(players), "--time", str(t), "--sweep", "--boss-cls", "409"] + NOVA
              + extra, t + 90)]
 
@@ -71,6 +71,10 @@ SESSIONS = {
     # (after heph-d died chasing a lightning-immune Doom Knight) Energy Shield every 15 s, no chase of a target
     # whose lightning resist is 75 or more (the options given last win)
     "heph-e": ("UniqNova", "uniques-hell", 4035, TCN, hephasto(extra=["--es", "15", "--max-res", "75"])),
+    # (after heph-c and heph-e stopped at "no target" short of the Hellforge, resume lane: one pilot attempt) on "no
+    # target", a random standable hop and a fresh plan, up to 25 times in a row (d2pilot.py --persist, plan 0023)
+    "heph-f": ("UniqNova", "uniques-hell", 4036, TCN, hephasto(extra=["--es", "15", "--max-res", "75"],
+                                                               explore=["--persist", "25", "--hops", "160"])),
 }
 
 

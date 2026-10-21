@@ -2828,3 +2828,144 @@ logs; shortfalls under *Limits*.
   `ITEMS_SetSockets` calls re-read: every request `n` lay in `1..cap` (final cap 1–4), so the written value is the
   request each time (items/0007 sock 42, scoped). (4) No `elx` item code in the pinned image as a string or an
   immediate (`elx `, `elx\0`, byte search), with `check-static.txt` for the type-11 d-none moves.
+
+## run:2026-10-21-throw-forced
+
+- **Question:** (plan 0038 batch H2c, forced, [inventory § 6](../../plans/0038-inventory/README.md#6-forced-run-candidates-ruled-at-the-review)
+  ruling 1) In a classic game, what does `TC_ResolveDrops` do with a picked item of a throwable type: does the counter
+  bound the refunds at 10 per resolver call, does the eleventh and every later throwable become the Long Sword `lsd`,
+  and does the test come after the pick's quality roll? Boundary as in run:2026-10-20-sweep-items-chain; the claims are
+  read at the code from 0x0055AE6E to 0x0055AEC7 (the [read list](0001-tc-resolution.md#8-item-pick-and-hand-off-0x0055ac5f0x0055af59),
+  committed before the run: no TreasureClassEx read in its closure, `check/check-reads.txt`).
+- **Forced path (ADR-0013), `treasureclassex.bin` only**, loose under `-direct` in its own game copy; the stock files
+  are untouched. Written with `tools/excel_edit.py`, then `tools/excel_bin.py diff` 0 mismatches and `bindiff` with only
+  the listed cells (`workspace/logs/h2c/edit-throw.txt`, `edit-throw2.txt`, `bindiff.txt`); table hashes in
+  `workspace/logs/h2c/h2c-tables.sha256` (`a047db79…`, `sha256sum -c` from `workspace/logs/h2c` passes):
+  - **variant A** `12f4dd47…`, game copy `workspace/runtime/game-forced-h2c-throw`, excel directory
+    `workspace/runtime/excel-forced-h2c-throw`: record 42 `Act 1 Junk` `Item1..3` → `tkf`, `tax`, `jav` (3 cells,
+    three classic throwables);
+  - **variant B** `2160c76b…`, `game-forced-h2c-throw2` / `excel-forced-h2c-throw2`: the same and `Picks` 1 → 2
+    (4 cells). Added after throw-a: no classic monster TC reaches `Act 1 Junk` twice in one call, so variant A cannot
+    show a twelfth throwable in one call.
+  - The edited cells choose which item is picked. The code under test reads the picked item's type, the call-local
+    counter, the expansion flag and the `lsd` record (read list), none of them an edited cell.
+- **Setup:** agent-driven sessions on harness **slot 2** (display `:9`, `workspace/wineprefix-2`), one game at a time,
+  pinned `game.exe`, gdb by `tools/d2run.py`. Driven by `tools/h2c_sessions.py run --slot 2 --tag h2c --saves
+  workspace/logs/h2c/saves --run throw-forced <session>` (`88dc1a60…`; machinery of `tools/h2b_sessions.py`, the game
+  copy started with `--game-dir <copy> --game-args=-direct`), steps `enter-normal.steps` (`96942bdc…`), `/players 8`,
+  `d2pilot.py wpchain` to the Act I waypoint then `farm --sweep --time 300` with the H2b Sorceress options
+  (`tools/d2pilot.py` `d9c18237…`).
+  - **Logger** `tools/gdb/items-h2c.gdb` (`921824da…`): the items-h2b set unchanged, then `tools/gdb/h2c.py`
+    (`a6df5681…`): `THR` 0x0055AE9C (the throwable branch after `ITEMTYPES_IsThrowable` returned non-zero, at the
+    `cmp $0xa,%edx`: item index, the counter before the increment, picks left, the expansion flag), `THF` 0x0055AEB0
+    (after the refund's `addl $1,(%eax)`: picks left) and `THL` 0x0055AEC2 (after `sub_00633680_ItemIndexByCode('lsd ')`:
+    the index), then `tc-drops.gdb`.
+  - **Character** `UniqClassic`, the H2b save (`68e46a96…`, recipe `uniqclassic.json` on the classic `smpsor.d2s`),
+    copied to `workspace/logs/h2c/saves/` (`h2c-saves.sha256` `dbebca4d…`, the same hashes as
+    `items-chain-saves.sha256`). No test-state key.
+
+| # | Log (`workspace/logs/h2c/`) | Table | What | Result |
+|---|---|---|---|---|
+| 1 | `throw-forced-s2-4011-throw-a.log` | variant A | Cold Plains sweep, 301 s | 183 resolver calls, 162 creations |
+| 2 | `throw-forced-s2-4012-throw-b.log` | variant B | Stony Field, level explored after 221 s | 108 calls, 143 creations |
+| 3 | `throw-forced-s2-4013-throw-c.log` | variant B | Dark Wood; ended at a level change after 132 s | 86 calls, 98 creations |
+
+- **Procedure** (`workspace/logs/h2c/run-checks.sh <repo>`, `f649f53c…`, from `workspace/logs/h2c`; every tool under
+  `systemd-run --user --scope -p MemoryMax=4G`; outputs in `check/`, per-file sha256 in `h2c-check.sha256`
+  `65ff5a14…`, `sha256sum -c` from `check/` passes; re-run once, same hashes):
+  ```
+  python3 -I tools/sweep_h2c.py reads                                            # check/check-reads.txt
+  python3 -I tools/sweep_h2c.py logs <throw-a> --excel <excel-forced-h2c-throw>   # check/check-logs.txt
+  python3 -I tools/sweep_h2c.py logs <throw-b> <throw-c> --excel <excel-forced-h2c-throw2>
+  python3 -I tools/sweep_h2c.py control $(H2b items-chain-run.lst)               # check/check-control.txt
+  per log, with its variant's excel directory: tools/tc.py replay, tools/items_chain.py both, tools/uniques.py check,
+  tools/props.py check, tools/quality.py check                                    # check/check-{tc,items_chain,...}.txt
+  grep -l "internal-error:" $(cat h2c-run.lst)                                    # check/check-internal-error.txt: none
+  ```
+  Logs: list `h2c-run.lst` (`1252e22a…`, both runs' ten logs), manifest `h2c-manifest.sha256` (`c1be804f…`),
+  `sha256sum -c` from `workspace/logs/h2c` passes. Checker `tools/sweep_h2c.py` `75a9d18a…` (the order test of `THR`
+  against the pick's `QOUT` added on the resume; no earlier revision's output is cited); `tc.py` `f26df35d…`,
+  `items_chain.py` `f72af367…`, `uniques.py` `252cf9ab…`, `props.py` `82348014…`, `quality.py` `ed525200…`. Output
+  hashes: `check-reads.txt` `aaf16653…`, `check-logs.txt` `345b5a18…`, `check-control.txt` `2d18f56a…`,
+  `check-tc.txt` `70411fcc…`, `check-items_chain.txt` `02dca819…`, `check-uniques.txt` `75e32cb9…`,
+  `check-props.txt` `727766aa…`, `check-quality.txt` `eb799994…`, `check-internal-error.txt` `51000da1…`.
+- **Observed** (`check-logs.txt`, 0 checks failed; abridged):
+  ```
+  variant A: THR 497 (tkf 263, tax 115, jav 119); resolver calls with a throwable 47:
+             10 refunds + 1 long sword 45, 1 refund 2; refunds 452, long swords 45 (CPRE item = lsd index 45)
+  variant B: THR 581 (tkf 303, tax 128, jav 150); resolver calls with a throwable 53:
+             10 refunds + 2 long swords 48, 1 refund 5; refunds 485, long swords 96 (CPRE item = lsd index 96)
+  THR right after the same item's QOUT (no PICK between): 497 + 581, each after a quality roll that stepped the seed
+  every refund at counter 0..9, every lsd at 10 or 11; counter 0, 1, 2… in each call; picks left +1 at each refund
+  'lsd ' index logged 31 = weapons.txt row 31; THR expansion flag 0 in all; classic creations 394, of a throwable type 0
+  control (H2b stock logs): expansion creations 329, of a throwable type 13 (tkni 7, jave 2, taxe 1, tpot 3);
+                            classic creations 659, of a throwable type 0
+  tc.py replay:  183/183, 108/108, 86/86 (classic: refund 452 / 284 / 201, lsd 45 / 56 / 40), 0 failed
+  items_chain.py both, uniques.py, props.py: 162, 143, 98 creations, 0 failed
+  quality.py: 614, 418, 299 pairs, 0 failed
+  ```
+- **Conclusion:** in a classic game the throwable test fires after the pick's quality roll, the first 10 throwable
+  picks of a resolver call each refund their pick, and the eleventh and twelfth become `lsd` (index 31), created in
+  their place; the counter restarts in each call. 1 078 throwable picks over 100 calls and 377 replayed calls, 0
+  failed. Stock control: an expansion game creates throwable-type items (13 in H2b's logs), a classic game none. The
+  ledger is in [items/0001 § Plan 0038 batch H2c](0001-tc-resolution.md#plan-0038-batch-h2c-2026-10-21).
+
+## run:2026-10-21-tcnamed-props-forced
+
+- **Question:** (plan 0038 batch H2c, forced, inventory § 6 ruling 2) What do the property handlers of funcs 12, 23
+  and 24 write, from the item state logged at their entry? The claims are read at the handlers and their callees (the
+  [read lists](0006-properties.md#4-the-handlers-per-func), committed before the run: no TreasureClassEx read,
+  `check/check-reads.txt`).
+- **Forced path (ADR-0013):** variant **tcn** `ad171f79…`, game copy `workspace/runtime/game-forced-h2c-tcn`, excel
+  directory `workspace/runtime/excel-forced-h2c-tcn` (8 cells, `edit-tcn.txt`, `bindiff.txt`): records 777/822
+  `Act 5 (H) Super A`/`Ax` `Item1`/`Item2` → *Ormus' Robes*, *Ethereal Edge* (Eldritch's TC and its group mate);
+  record 716 `Haphesto (H)` `Item1..4` → *Tomb Reaver*, *Shadowkiller*, *Ghostflame*, *Ormus' Robes*. *Tomb Reaver*
+  (lvl 86) is the only stock-droppable func-24 carrier; Eldritch's drops are ilvl 84, so it needs Hephasto (ilvl 88).
+  The edited cells choose the UniqueItems row; the handlers read the stock `Properties` and `UniqueItems` rows and the
+  item's state, which the logger records at each handler's entry (ADR-0013, third negative consequence).
+- **Setup:** as run:2026-10-21-throw-forced (slot 2, `tools/h2c_sessions.py`, the same logger), save `UniqNova` (the
+  H2b save `2c793a3d…`, recipe `uniqnova.json` on `smpsor-l50.d2s`), steps `uniques-hell.steps` (`afb60595…`), Hell.
+  - Eldritch sessions: `farm --wp 5,2 --players 1 --time 150 --sweep` with the H2b options.
+  - Hephasto sessions: `wpchain --chain 4,3` (River of Flame: row 3 of Act IV's three-row list), `explore --to-pdef
+    853,854` (the Hellforge rooms) and `farm --boss-cls 409 --time 360 --sweep`; heph-e and heph-f add `--es 15
+    --max-res 75` after heph-d's death, heph-f adds `--persist 25 --hops 160` to the explore step (one pilot
+    attempt on the resume: a random standable hop and a fresh plan on "no target").
+  - Logger lines: `E12` 0x0065FC40 (`PROP_Func12_SkillRand` entry: item class, flags `ItemData+0x18`, quality, the
+    block, item seed) and `E12V` 0x0065FC68 (the roll); `E23` 0x0065FD20 (entry: unit type, class, flags, quality, the
+    block, the Items record's durability bytes `+0x112`/`+0x113`), `E23E` 0x0065FD3C (`ITEMS_IsEthereal`'s return),
+    `E23D` 0x0065FD46 (`sub_00629930_ItemHasDurability`'s return), `E23X` 0x0065FD55 / 0x0065FD5A (the returns, the
+    flags now); `E24` 0x0065F390 and `E24V` 0x0065F3BF; with `props.py`'s `WR`/`SLOTR` lines.
+
+| # | Log (`workspace/logs/h2c/`) | What | Result |
+|---|---|---|---|
+| 4 | `tcnamed-props-forced-s2-4021-tcn-a.log` | Eldritch, `/players 1`, 152 s | 67 calls, 41 creations; one *Ormus' Robes*, one *Ethereal Edge* |
+| 5 | `tcnamed-props-forced-s2-4022-tcn-b.log` | the same, map seed 4022 | 54 calls, 48 creations; one of each |
+| 6 | `tcnamed-props-forced-s2-4023-tcn-c.log` | the same, map seed 4023 (resume) | 79 calls, 47 creations; one of each |
+| 7 | `tcnamed-props-forced-s2-4033-heph-c.log` | Hephasto route; explore stopped at "no target" short of the Hellforge, farm 361 s met no Hephasto | 90 calls, 40 creations; no carrier |
+| 8 | `tcnamed-props-forced-s2-4034-heph-d.log` | the same; **died** chasing a lightning-immune Doom Knight | 2 calls, 0 creations |
+| 9 | `tcnamed-props-forced-s2-4035-heph-e.log` | the same with `--es 15 --max-res 75`; "no target", no Hephasto | 8 calls, 1 creation |
+| 10 | `tcnamed-props-forced-s2-4036-heph-f.log` | the same with `--persist 25` (resume); **died** at explore hop 19 in the River of Flame, slot stopped | 0 calls, 0 creations |
+
+  Development logs (no claim rests on them) in `workspace/logs/h2c/dev/`, manifest `h2c-dev-manifest.sha256`
+  (`6e9d0d98…`, from `dev/`): heph-a and heph-b, whose waypoint row was wrong (row 5 of a three-row list), no
+  creation. 12 launches in all (10 kept, 2 dev). No log has `internal-error:` or `LOGERR`.
+- **Procedure:** the same `run-checks.sh` (the tcn set with `excel-forced-h2c-tcn`).
+- **Observed** (`check-logs.txt`, tcn set, 0 checks failed):
+  ```
+  E12 entries 3, item class 429 (`uui`, the Ormus' Robes base) q 7; block [261, par 3, min 36, max 60]; entry flags 0x82000
+      E12V v 39, 37, 38 -> WR stat 107, param = v, value 3 (= par), one each; item seed stepped once
+  E23 entries 3, item class 202 (`7ba`, the Ethereal Edge base) q 7, unit type 4; block [264, 0, 1, 1]; entry flags 0x82000
+      E23E eth 0, E23D hasdur 1 (record durability 35, nodurability 0) -> E23X r 1, flags 0x482000; no WR; seed unchanged
+  E24 entries 0
+  tc.py replay: 67, 54, 79, 90, 2, 8 calls reproduced, 0 failed (heph-f: no call, the tool's rc 1 for an empty log)
+  items_chain.py both, uniques.py, props.py: 41, 48, 47, 40, 0, 1, 0 creations, 0 failed
+  quality.py: 37, 44, 43, 40, 0, 1, 0 pairs, 0 failed
+  ```
+- **Shortfall:** no func-24 slot (`E24` 0 over the seven logs). The pilot never reached the Hellforge: heph-c and
+  heph-e stopped at "no target" 86 and 55 sub-tiles short of the room centre, heph-d and heph-f died. Properties 15
+  stays `[I]`.
+- **Conclusion:** on three *Ormus' Robes* func 12 draws once on the item seed and writes `item_singleskill` with the
+  roll (37, 38, 39 within 36..60) as param and `par` 3 as value; on three *Ethereal Edge* entered not ethereal and with
+  durability, func 23 sets flag `0x400000`, returns 1, makes no draw and no `PROP_WriteStat` call. `props.py`
+  reproduces all three creations of each from their seeds. The ledger is in
+  [items/0006 § Plan 0038 batch H2c](0006-properties.md#plan-0038-batch-h2c-2026-10-21).

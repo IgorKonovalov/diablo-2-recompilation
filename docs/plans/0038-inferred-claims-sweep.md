@@ -3070,3 +3070,30 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
          - props 15 shortfall unless a carrier is met.
     5. The § 2.6 H2c block with totals against `main`, the spec-writer entry, the symbols (`PROP_Func12_SkillRand`,
        `PROP_Func23_Ethereal` I → C if raised), and the review request (`backlog.py new`; stage before commit).
+- **2026-10-21 — Batch H2c filed (reverser, `lane/h2c`, resumed from the pause note above).** `main` (`3d1cc99`)
+  merged into the lane first, no conflict. Two more launches on slot 2: tcn-c (Eldritch, one more *Ormus' Robes* and
+  *Ethereal Edge*) and heph-f, the one pilot attempt at the Hellforge (`explore --persist 25`), which died at hop 19 in
+  the River of Flame. Slot 2 then stopped and its saves directory restored (empty, no aside). 12 launches, 10 kept
+  logs, 2 dev logs; no log has `internal-error:`. Every count re-taken from the full check set in
+  `workspace/logs/h2c/check/` (`run-checks.sh`, under `MemoryMax=4G` scopes, re-run once with the same hashes).
+  - **Ledger** ([items/0001](../findings/items/0001-tc-resolution.md#plan-0038-batch-h2c-2026-10-21),
+    [items/0006](../findings/items/0006-properties.md#plan-0038-batch-h2c-2026-10-21)): 6 rows, 7 statements:
+    **4 raised** (tc 10 ×2, tc 55, prop 12 L390), **2 raised in part** (tc 56: the `version ≥ 100` half d-none;
+    prop 14: func 23's two skips not reached), **1 shortfall** (prop 15: no Hephasto, so no func-24 slot).
+    The pause note's "props 14 raised" is filed in part (rule 8).
+  - **Checks** (run:2026-10-21-throw-forced, run:2026-10-21-tcnamed-props-forced): `sweep_h2c.py reads` 0 TC reads,
+    `logs` 0 failed (1 078 `THR`, 937 refunds, 141 Long Swords; 3 func-12 and 3 func-23 entries, 0 func-24),
+    `tc.py replay` 677/677, `items_chain.py both`, `uniques.py`, `props.py` 580/580, `quality.py` 1 496/1 496.
+  - **Tools since the pause:** `sweep_h2c.py` gains the order test of `THR` against the pick's `QOUT`;
+    `h2c_sessions.py` gains heph-f (`explore` options passed separately).
+  - **Corrections carried (rule 12):** items/0001 § 8 throwable bullet and the Functions table; items/0006 § 4 table
+    rows of funcs 12 and 23 and the funcs-12-and-36 bullet.
+  - **Symbols:** `ITEMTYPES_IsThrowable`, `PROP_Func12_SkillRand`, `PROP_Func23_Ethereal` I → C.
+  - **Inventory:** [§ 2.6 H2c](0038-inventory/README.md#26-moves-made-by-the-batch-reviews), no class move; totals
+    against `main` `3d1cc99`: static 567, harness 526, blocked 414 (d-none 288), deferred 2, raised 17: 1 526.
+  - **Backlog:** review request
+    [2026-10-21-reverser-architect-review-lane-h2c-plan-0038-batch-h2c-forced](../backlog/2026-10-21-reverser-architect-review-lane-h2c-plan-0038-batch-h2c-forced.md);
+    spec-writer entry
+    [2026-10-21-reverser-spec-writer-h2c-forced-throwables-and-tc-named-props-spec](../backlog/2026-10-21-reverser-spec-writer-h2c-forced-throwables-and-tc-named-props-spec.md)
+    (to be released with the review).
+  - **Next:** architect review of `lane/h2c`; then items/tc and items/properties clusters (Phase 3).
