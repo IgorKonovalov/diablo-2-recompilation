@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-21
 status: done
 context:
-  - ../../plans/0048-seed-to-world.md
+  - ../../plans/done/0048-seed-to-world.md
   - ../../findings/chain/0003-end-to-end-run.md
   - ../../findings/chain/experiments.md
 resolution: "Reviewed 2026-10-21 (architect): accept with fixes (4: omission 2, overclaim 1, misread 1); Phase 2 closed on 37 logs, 0 mismatches, 2 189 populations; Phase 3 released to the spec-writer. Plan 0048 log."

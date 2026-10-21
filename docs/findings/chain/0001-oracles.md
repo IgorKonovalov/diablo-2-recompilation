@@ -2,7 +2,7 @@
 
 > **Subsystem:** chain (seed to world, plan 0048)
 > **Question:** which ADR-0004 boundary oracles do the core and enabler specs still name, which of them a reviewed model already replaces in a chained check, which a model could replace, and which stay inputs?
-> **Date:** 2026-10-20   **Plan:** 0048 (Phase 0)   **Status:** open (Phase 0 inventory reviewed 2026-10-20, accepted with fixes; the Phase 1 assignment and the rulings on § 3.3 and § 4 are in the [plan 0048 log](../../plans/0048-seed-to-world.md#implementation-log))
+> **Date:** 2026-10-20   **Plan:** 0048 (Phase 0)   **Status:** open (Phase 0 inventory reviewed 2026-10-20, accepted with fixes; the Phase 1 assignment and the rulings on § 3.3 and § 4 are in the [plan 0048 log](../../plans/done/0048-seed-to-world.md#implementation-log))
 
 Phase 0 reads; it makes no new code reading and runs nothing. Every row below rests on the spec or finding that names
 the oracle, and carries that spec's anchors. The inventory was taken on `main` at `ad130d7`.
@@ -199,7 +199,7 @@ phase (ADR-0014), or **proposed** where none fits.
 
 ## 4. Proposed Phase 1 retirements (for the architect's ruling)
 
-Proposed by the lane; the review of 2026-10-20 assigned all ten, with oracle 14 moved before 16 and 17 and the barrier grid and the type-11 point with oracle 20 (the [plan 0048 log](../../plans/0048-seed-to-world.md#implementation-log) holds the ruling). The proposal, in order of what each one unblocks for Phase 2's counts:
+Proposed by the lane; the review of 2026-10-20 assigned all ten, with oracle 14 moved before 16 and 17 and the barrier grid and the type-11 point with oracle 20 (the [plan 0048 log](../../plans/done/0048-seed-to-world.md#implementation-log) holds the ruling). The proposal, in order of what each one unblocks for Phase 2's counts:
 
 1. **Oracle 2, staff mods.** Make `--staff model` the default of the chained tools and of `tools/chain.py`. No new
    modelling: the model and its check exist (items/0005 § Plan 0038 batch S2b). Unblocks: 500 drops with **no**

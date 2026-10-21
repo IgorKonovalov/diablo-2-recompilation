@@ -1,6 +1,6 @@
 # 0048 — Seed to world: the core specs composed end to end, with the last in-chain oracles retired
 
-> **Status:** approved 2026-10-20 (owner)
+> **Status:** done (closed 2026-10-21; approved 2026-10-20 by the owner)
 > **Created:** 2026-10-20
 > **Owner skill(s):** reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0011-harness-slots, 0015-emulated-reproduction
@@ -25,16 +25,16 @@ boundary oracles. A reimplementer composes them. When this plan is done:
 
 ## Context
 
-- **Why now.** Every core, enabler and creation-path row of the [research map](../specs/README.md) is reviewed. What
+- **Why now.** Every core, enabler and creation-path row of the [research map](../../specs/README.md) is reviewed. What
   the map cannot show is whether the pieces fit: an entry seed asserted at each subsystem's boundary is not the same as
   the composition reproducing from the game seed. The specs' *Inputs and oracles* tables (items/affixes,
   items/uniques-sets, monsters/spawn, drlg/collision, objects, items/tc, monsters/special) still name, for example:
-  `ITEMS_RollStaffMods` (a seed oracle in [items/affixes](../specs/items/affixes.md), "modelled later"); the rare and
-  magic builders as oracles inside [items/uniques-sets](../specs/items/uniques-sets.md) (modelled by items/affixes,
+  `ITEMS_RollStaffMods` (a seed oracle in [items/affixes](../../specs/items/affixes.md), "modelled later"); the rare and
+  magic builders as oracles inside [items/uniques-sets](../../specs/items/uniques-sets.md) (modelled by items/affixes,
   but not chained there); inside the presets-and-objects window, the preset monsters and the monster-spawning object
   `InitFn`s as seed oracles; the grid snapshot at pass entry, whose object marks are logged values; the unit seed
   after `SUnitCreate` (2 steps on 914 of 916 creations, 6 and 15 on a class appended to the region)
-  ([monsters/spawn § Inputs and oracles](../specs/monsters/spawn.md)).
+  ([monsters/spawn § Inputs and oracles](../../specs/monsters/spawn.md)).
 - **Research map:** a new row `chain` (seed to world) at the end of the **Core** band, added when the plan starts;
   it depends on every core row. Wiki owner: Phase 4.
 - **What stays an input, by design** (Phase 0 confirms each): the player's actions (where it walks, so which rooms
@@ -119,9 +119,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-20 — Drafted (architect, `lane/plans45`).** Status `proposed`.
 - **2026-10-20 — Approved (owner, via the orchestrator).** Plans 0045–0049 and ADR-0020 approved as proposed; the run
-  order of the [plans index](README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049) is the current queue.
+  order of the [plans index](../README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049) is the current queue.
 - **2026-10-20 — Phase 0 done, review requested (reverser, `lane/p48a`, static, no Ghidra, no harness).**
-  [chain/0001](../findings/chain/0001-oracles.md) lists **31 boundary oracles** of the core and enabler specs (seed 21,
+  [chain/0001](../../findings/chain/0001-oracles.md) lists **31 boundary oracles** of the core and enabler specs (seed 21,
   seed and result 3, result 2, value 5; first named in items 9, monsters 8, drlg 7, objects 6, data 1), each with its
   status: 11 already replaced in a chained check, 1 modelled behind a switch, 10 Phase 1 candidates, 5 inputs, 4 off the
   chain. Surprises: `ITEMS_RollStaffMods` is already modelled (plan 0038 batch S2b, `--staff model`, still not the
@@ -131,7 +131,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   killer's magic find. Recount: the kept grep (162 lines, 169 matches, 22 files on `ad130d7`) and
   `tools/oracle_ledger.py`, which checks the finding's § 6 ledger line for line (25 structural, 3 "no oracle", 134
   naming an oracle). Proposed retirements for the review to rule: oracles 2, 16, 17 (46), 14, 22, 19, 21, 20, 7, 6, 13
-  ([§ 4](../findings/chain/0001-oracles.md#4-proposed-phase-1-retirements-for-the-architects-ruling)). Five spec
+  ([§ 4](../../findings/chain/0001-oracles.md#4-proposed-phase-1-retirements-for-the-architects-ruling)). Five spec
   passages that lag the models are listed for Phase 3 (§ 5).
 - **2026-10-20 — Phase 0 reviewed (architect): accept with fixes; Phase 1 can start.** `main` merged into `lane/p48a`
   (no conflict); `tools/oracle_ledger.py` after the merge: 162 lines, 22 files, the same hash
@@ -152,7 +152,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   drlg/warps point list in the same step; the player, walk-in, item and corpse marks stay logged inputs, counted;
   (8) oracle 7, the gold piles' items; (9) oracle 6, an object's drop; (10) oracle 13, MonEquip's item creation,
   `[I]` at best, and it may close as "not modelled, unreached" if no stock row reaches it (archivist entry
-  [MonEquip table doc](../backlog/2026-10-20-architect-archivist-monequip-table-doc-for-plan-0048.md), not blocking).
+  [MonEquip table doc](../../backlog/2026-10-20-architect-archivist-monequip-table-doc-for-plan-0048.md), not blocking).
   Not assigned: 8, 12, 18, 24, 25 (inputs) and 9, 10, 11, 23 (off the chain), as proposed.
   **Rulings.** (a) The S and N line classes of chain/0001 § 6 meet the Phase 0 *Done when*: a structural use or a "no
   oracle" statement names no oracle, so "in the list or a historical sentence" applies to the 134 naming lines; no plan
@@ -161,10 +161,10 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `[31]` is the expected output. (d) Activation order: accepted as an input beyond the per-room seeds, `[I]` as stated
   (§ 3.2); the open question is answered. (e) The stale *grid snapshot* row of monsters/spawn (object marks "still
   logged") is a wrong statement in a reviewed spec, routed now to the spec-writer
-  ([entry](../backlog/archive/2026-10-20-architect-spec-writer-monsters-spawn-stale-object-marks-row.md)); the other four
+  ([entry](../../backlog/archive/2026-10-20-architect-spec-writer-monsters-spawn-stale-object-marks-row.md)); the other four
   passages of § 5 stay Phase 3's. (f) Research map: the Core row `chain` is added (findings in progress).
 - **2026-10-20 — Phase 1 done, review requested (reverser, `lane/p48r`, static, Ghidra copy, no harness).**
-  [chain/0002](../findings/chain/0002-retirements.md) records each assigned oracle, in the assigned order, on kept logs
+  [chain/0002](../../findings/chain/0002-retirements.md) records each assigned oracle, in the assigned order, on kept logs
   only (133 item logs, 62 world logs; input lists and every output hashed in `workspace/logs/chain-p1/manifest.txt`,
   `8c219e82…`). `tools/chain.py` is written: `gen` builds the seed tree, the four game-creation draws, the monster
   regions and every level seed from `-seed N` (the rng/seeds worked example reproduced in `tools/test_chain.py`);
@@ -185,7 +185,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   unit-seed step counts (6 to 17): all are FindAdd appends or MonProp; `L` does not change the HP draw count. 8 symbols
   added (`sub_0054E490_PresetClassSpawn`, `sub_0054E3A0_PresetRetryAllowed`, the gate's six DRLG tests);
   `OBJINIT_CityDamnedSpawns` raised to `C`. `tools/gdb/chain.gdb` written (not run). Review request:
-  [entry](../backlog/archive/2026-10-20-reverser-architect-review-plan-0048-phase-1-in-chain-oracles.md).
+  [entry](../../backlog/archive/2026-10-20-reverser-architect-review-plan-0048-phase-1-in-chain-oracles.md).
 - **2026-10-20 — Phase 1 review (architect, on `lane/p48r` after merging `main`): accept with fixes (5).** Re-run on
   the merged tree under `MemoryMax=4G`: `tools/chain.py check` over the 195 logs, 0 sub-checks failed; every summary
   line equals `final-check.txt` but one: **1 250** of 1 265 objects windows oracle-free (was 1 253), because `main`'s
@@ -238,7 +238,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   drop, and `InitFn` 46's row; drlg/room-tiles' `Orient89Unit` step 11 and its § 746 sentence (the creation is a
   preset unit's, `[I]`). No entry to the spec-writer now.
   **Phase 1 is done; Phase 2 may start in one slot** when plan 0044 releases one (the queue's order holds). Ledger
-  rows added (usage TBD). Review request [closed](../backlog/archive/2026-10-20-reverser-architect-review-plan-0048-phase-1-in-chain-oracles.md).
+  rows added (usage TBD). Review request [closed](../../backlog/archive/2026-10-20-reverser-architect-review-plan-0048-phase-1-in-chain-oracles.md).
 - **2026-10-20 — Phase 2 paused at the owner's request: checkpoint and resume note (reverser, `lane/p48h`, harness
   slot 1).** Not a phase close; no review requested yet.
   **Smoke session** (`p2-s1-4801-smoke`, UniqNova, Normal, Act I, `tools/gdb/chain.gdb`): 36 406 lines, 7.8 MB,
@@ -277,8 +277,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   note's queue, xm2, xh1, xh2, cn1, cn2, cm1, cm3 and ch1 had finished cleanly; xm5 was cut and is kept as
   `dev-p2-s1-4815-xm5-oom`; the other 14 (raven-xn2, xm3, xm4, xm5, xh3, xh4, xh5, cn3, cn4, cm2, cm4, ch2, ch3, ch4)
   ran in two batches. xh4 sat through a machine suspend (23:17 to 06:19) and checks clean. No log holds
-  `internal-error:`. Record [run:2026-10-20-chain](../findings/chain/experiments.md#run2026-10-20-chain), finding
-  [chain/0003](../findings/chain/0003-end-to-end-run.md); 28 counted logs, manifest `manifest-final.txt`
+  `internal-error:`. Record [run:2026-10-20-chain](../../findings/chain/experiments.md#run2026-10-20-chain), finding
+  [chain/0003](../../findings/chain/0003-end-to-end-run.md); 28 counted logs, manifest `manifest-final.txt`
   (`e47bb1b1…`).
   **Result** (`tools/chain.py check --o20` over the 28, under `MemoryMax=4G`): 26 logs pass; **2 mismatches** (cn4,
   cm4: one `COLL_WHTest` of the objects model each, a live monster's bits the log does not place; candidate a
@@ -344,7 +344,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   their logs, (c) about 16 new sessions, (d) one `chain.py check` over every counted log (run 1's 28 and run 2's) with
   run 2's tools, 0 sub-checks failed, and the Phase 1 world logs re-checked for regressions, (e) the record's counts
   from passing logs only, then the review request. Review request
-  [closed](../backlog/archive/2026-10-21-reverser-architect-review-plan-0048-phase-2-run-1-end.md); ledger row added.
+  [closed](../../backlog/archive/2026-10-21-reverser-architect-review-plan-0048-phase-2-run-1-end.md); ledger row added.
 - **2026-10-21 — Phase 2 run 2 paused at the owner's request: checkpoint and resume note (reverser, `lane/p48r2`,
   harness slot 1).** Not a phase close; no review requested yet; no run record written yet.
   **The mark call a re-creation takes** (static reading, objdump of the pinned image, `[I]` until the record): the
@@ -397,8 +397,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   pause note: the slot-1 aside `p48r2` set, the queued seven sessions run in order (r2-xm1 r2-xh1 r2-cn1 r2-cm1 r2-ch1
   r2-xn3 r2-xm2), each checked alone as it finished; the passing logs held 2 000 after them, so the optional seven
   were not run. No log holds `internal-error:`; r2-cn1's game process ended on its own at game frame 10 920 (cause not
-  shown; the log checks clean). Record [run:2026-10-21-chain2](../findings/chain/experiments.md#run2026-10-21-chain2),
-  finding [chain/0003](../findings/chain/0003-end-to-end-run.md) updated; manifest `manifest-r2-final.txt`
+  shown; the log checks clean). Record [run:2026-10-21-chain2](../../findings/chain/experiments.md#run2026-10-21-chain2),
+  finding [chain/0003](../../findings/chain/0003-end-to-end-run.md) updated; manifest `manifest-r2-final.txt`
   (`e1d9e622…`, 169 lines), tools `out/tools-r2-final.sha256` (commit `53ffb95`'s, unchanged since the checkpoint).
   **Result** (`tools/chain.py check --o20` over run 1's 28 logs and run 2's 9, under `MemoryMax=4G`): **37 logs, 0
   sub-checks failed**, and each log alone the same. **2 189** oracle-free room populations (run 1's logs 1 387, run 2's
@@ -458,23 +458,23 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   of each game type in each difficulty; 2 189 populations (2 000); 13 056 objects (300); 63 champion and 162 unique
   packs with 217 mods rolls (100 special monsters); 1 314 drops with an item (500) with no builder oracle; the record
   lists each input and remaining oracle with its count (after fix 1). **Phase 2 closed.**
-  **Next: Phase 3** (spec-writer, [entry](../backlog/archive/2026-10-21-architect-spec-writer-plan-0048-phase-3-seed-to-world-spec.md)):
+  **Next: Phase 3** (spec-writer, [entry](../../backlog/archive/2026-10-21-architect-spec-writer-plan-0048-phase-3-seed-to-world-spec.md)):
   `docs/specs/chain/README.md` and the *Inputs and oracles* updates, the re-creation marks in the owning spec, the
   chest writer and oracle 13's unreached branches under *Open questions*; then Phase 4. Reverser `review-fixes.md`
   rule 6 extended (a kept file renamed under a manifest's name; seen with `lane/p46m9`'s overwritten dev outputs).
-  Review request [closed](../backlog/archive/2026-10-21-reverser-architect-review-plan-0048-phase-2-run-2.md); the
+  Review request [closed](../../backlog/archive/2026-10-21-reverser-architect-review-plan-0048-phase-2-run-2.md); the
   lane's two ledger rows added (the review's row is the orchestrator's, with its usage).
 - **2026-10-21 — Phase 3 written, review requested (spec-writer, `lane/s48p3`, static, no harness).**
-  [specs/chain](../specs/chain/README.md) (`draft`, C 89 / I 7 / L 6): the call order A–H from the game seed to a
+  [specs/chain](../../specs/chain/README.md) (`draft`, C 89 / I 7 / L 6): the call order A–H from the game seed to a
   populated level and a drop, as a flowchart and a sequence diagram; the inputs by class with run 2's counts (oracle 25:
   7 290 re-creations, 103 no unit); the retired oracles linked to their models and the remaining ones counted; an
   entry-contract table; four worked examples from kept logs (`-seed 4802` to level 57, one oracle-free population of
   it, a gold drop, two r2-xn2 re-creations with their marks). Re-creation marks in
-  [drlg/lifecycle § H5](../specs/drlg/lifecycle.md#h5-the-grid-marks-of-a-re-created-monster): `[C]` on the 1 903
+  [drlg/lifecycle § H5](../../specs/drlg/lifecycle.md#h5-the-grid-marks-of-a-re-created-monster): `[C]` on the 1 903
   compared, the dead sequences on the 140 outside r2-xn1, the call path `[I]`. *Inputs and oracles* and the stale
   passages of the Phase 1 review's ruling 5 and chain/0001 § 5 updated in 13 specs. 6 open questions, the chest
   interact-byte writer and MonEquip's unreachable branches among them. Phase 4 not started. Review request
-  [entry](../backlog/archive/2026-10-21-spec-writer-architect-review-plan-0048-phase-3-seed-to-world.md).
+  [entry](../../backlog/archive/2026-10-21-spec-writer-architect-review-plan-0048-phase-3-seed-to-world.md).
 - **2026-10-21 — Phase 3 reviewed (architect, on `lane/s48p3`, not merged with `main`, whose `lane/s46d` merge touches
   combat/delivery only): accept with fixes (2); Phase 3 done; Phase 4 released.** Worked examples re-read from the kept
   logs: example 1 (`tools/chain.py gen --seed 4802 --diff 0 --exp 1 --levels 57`, under `MemoryMax=4G`) prints the
@@ -502,10 +502,54 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   calls, items/quality's resolver totals), chain/0001 marks oracle 5 *chained* before plan 0048, and the chain spec's
   retired table links items/quality. A later edit of either spec may relabel the worked-example row; no entry now.
   items/cube and monsters/pool (oracles 9, 10, 23) are off the chain and rightly untouched. (3) **chain is `reviewed`**
-  (front matter set at this review). (4) **Phase 4 may start**: [entry](../backlog/2026-10-21-architect-spec-writer-plan-0048-phase-4-seed-to-world-wiki.md),
+  (front matter set at this review). (4) **Phase 4 may start**: [entry](../../backlog/archive/2026-10-21-architect-spec-writer-plan-0048-phase-4-seed-to-world-wiki.md),
   with the W4 warnings this phase's edits left on eight wiki pages folded in.
   Research map: the `chain` row (spec link, `reviewed`, counts) and the count rows of drlg/lifecycle, drlg/collision,
   drlg/room-tiles, objects and monsters/stats rewritten; dates bumped on drlg/README, monsters/spawn, monsters/special and
   items/affixes. Spec-writer `review-fixes.md` rule 9 extended (the finding's mood). Review request
-  [closed](../backlog/archive/2026-10-21-spec-writer-architect-review-plan-0048-phase-3-seed-to-world.md); the lane's
+  [closed](../../backlog/archive/2026-10-21-spec-writer-architect-review-plan-0048-phase-3-seed-to-world.md); the lane's
   ledger row added (the review's row is the orchestrator's, with its usage).
+- **2026-10-21 — Phase 4 written, review requested (spec-writer, `lane/s48p4`).**
+  [wiki/seed-to-world](../../wiki/seed-to-world.md) over [specs/chain](../../specs/chain/README.md): the call order A–H in
+  prose with two diagrams, the inputs by class, how the composition was checked, three worked examples, traps and open
+  questions; `based_on` chain, rng/seeds, drlg/room-tiles, drlg/lifecycle, monsters/stats and objects (2026-10-21);
+  linked from the wiki index. The W4 warnings the Phase 3 edits left on characters, items, items-other-paths, levels,
+  monsters, objects, randomness and saves cleared (gate W4 17 -> 0), restating only the stale passages. The Phase 4
+  [entry](../../backlog/archive/2026-10-21-architect-spec-writer-plan-0048-phase-4-seed-to-world-wiki.md) closed; review
+  [request](../../backlog/archive/2026-10-21-spec-writer-architect-review-plan-0048-phase-4-seed-to-world.md).
+- **2026-10-21 — Phase 4 reviewed (architect, on `lane/s48p4`, not merged with `main`): accept with fixes (6); Phase 4
+  done; plan 0048 closed.** Every count on [wiki/seed-to-world](../../wiki/seed-to-world.md) and the eight restated pages
+  checked against the specs they cite: the inputs table against chain § Runtime state (37, 18 459, 6/25/2 and 53,
+  3 784 twice, 20 109, 7 290 and 103, 473 and 479, 952/49/3, 35), the retired and remaining oracles against chain
+  § Inputs and oracles (4 883 gates, 4 723 of 4 883, 2/2/7, 3/4/3, 34 and 12, 35, 8, 1, 7 with 2/3/2), step notes
+  (176, 311, 13 056 = 2 888 + 10 168, 12 580 of 12 580, 63/162/217, 1 314 and 1 492, 3 784, 1 913), the three worked
+  examples against chain § Worked example 1–3, H5's 1 903 and 140 against drlg/lifecycle, the gold piles' 71 of 71 and
+  69 of 71 against objects § H row 28 and the chain, MonEquip's classes 234 and 267 and four creations against
+  monsters/stats § B12, the hire-list oracle's 16 entries against items/vendors C1, and the 11 staff-mods oracles
+  against player/creation. All agree. The chain's `[I]` (activation order, pass-entry game seed, the walk trap, the
+  Orient89 preset unit, H5's call path, the gold piles' spot, MonEquip's other branches) read as code readings on the
+  page. The two diagrams state nothing the text does not.
+  **Fixes.** (1) **overclaim**: the page's opening said a recorded game was rebuilt "with every room, monster, object
+  and drop predicted" from the game seed alone; it now says 37 games were rebuilt with 0 mismatches given the
+  recording's walk and fight results and a few counted values still read from it. (2) **overclaim**: the inputs
+  table's activation row stated what the walk decides flat; chain § Runtime state tags that row `[I]`, now "read from
+  the code". (3) **misread**: "the game seed steps once for every unit the server creates" dropped chain E's "other
+  than a player". (4) **misread**: the act, level and room seeds were said to "depend only on the game seed"; they
+  depend on the seed the game was created with (the map seed), not on the stepping game seed. (5) **under-claim**: the
+  re-creation marks' "which calls make the marks, in which order, is read from the code" (seed-to-world § F and levels)
+  put the marks' order under the `[I]`; H5 compared the marks in order line for line (`[C]`), only the call path is
+  `[I]`. (6) **other**: the Orient89 preset-unit reading was called "read from the code" in the same sentence that says
+  the code adding the preset unit is not read (seed-to-world § C and levels); now "inferred", as room-tiles note 11.
+  **Rulings.** (1) The `characters` paragraph on the Sorceress's staff mods and the `items-other-paths` hire-list
+  restatement are scoped to their runs and true; accepted. (2) The monsters page's open question keeps spawn's own
+  list (snapshot residue and the type-11 point) without the barrier grid, as monsters/spawn does; the seed-to-world
+  page names the barrier grid from the chain. (3) **Plan 0048 closes.** All five phases accepted. The plan's open
+  question on activation order is answered in chain § Runtime state (`[I]`: the game seed, `O` and the near lists
+  depend on it; the level and room seeds do not); the vendors-and-hirelings question was left as stated (off the
+  chain). Left open outside the plan: the archivist entry
+  [MonEquip table doc](../../backlog/2026-10-20-architect-archivist-monequip-table-doc-for-plan-0048.md) and chain's six
+  `[L]` (the chest interact-byte writer, MonEquip's unreachable branches by a forced-path run, oracle 19's room flags,
+  oracle 20's model side, the other monster-creating `InitFn`s and MonPlace rows, a log-free world build), for a later
+  plan. Research map: the `chain` row's wiki cell set to the page. Spec-writer `review-fixes.md` rules 2 and 8 extended.
+  Review [request](../../backlog/archive/2026-10-21-spec-writer-architect-review-plan-0048-phase-4-seed-to-world.md)
+  closed; the lane's ledger row added.

@@ -2,11 +2,11 @@
 based_on:
   - docs/specs/monsters/README.md 2026-10-16
   - docs/specs/monsters/pool.md 2026-10-16
-  - docs/specs/monsters/spawn.md 2026-10-20
-  - docs/specs/monsters/special.md 2026-10-20
-  - docs/specs/monsters/stats.md 2026-10-20
-  - docs/specs/drlg/collision.md 2026-10-20
-  - docs/specs/drlg/lifecycle.md 2026-10-20
+  - docs/specs/monsters/spawn.md 2026-10-21
+  - docs/specs/monsters/special.md 2026-10-21
+  - docs/specs/monsters/stats.md 2026-10-21
+  - docs/specs/drlg/collision.md 2026-10-21
+  - docs/specs/drlg/lifecycle.md 2026-10-21
 ---
 
 # Monsters
@@ -64,8 +64,8 @@ leader's or boss's own unit seed gives the group size, the minion counts, the ch
 [champion pack](../glossary.md)
 ([spawn § Algorithm](../specs/monsters/spawn.md#algorithm),
 [README § Data flow](../specs/monsters/README.md#data-flow)). That each monster's unit seed is made from one
-game-seed draw is read from the code. Its exact value after creation is still taken from the logs (see
-[Placement](#placement-where-each-monster-stands)).
+game-seed draw is read from the code. Its exact value after creation, which the population runs took from the logs,
+is now predicted when the parts are run together (see [Placement](#placement-where-each-monster-stands)).
 
 ## Which monsters a level can have: the pool
 
@@ -245,13 +245,16 @@ cell. The walk tests cells against the room's [collision grid](../glossary.md)
 - The grid changes as the pass runs. A monster just placed blocks later ones through its centre mark, so a later group
   member may have to take another cell. Read from the code, every monster the server creates is marked the same way,
   not only those of the pass, and a monster created already dead gets the same corpse mark as one that dies, as its
-  class's `deadCol` column decides ([drlg/collision § F](../specs/drlg/collision.md#f-unit-marks)).
+  class's `deadCol` column decides ([drlg/collision § F](../specs/drlg/collision.md#f-unit-marks)). For a monster
+  re-created when its room comes back, the marks were compared in a run and agree
+  ([levels](levels.md#rooms-that-come-and-go-release-and-restore)).
 - The near-warp test can activate another room in the middle of the pass and, in some levels, step that level's
   seed ([drlg/collision](../specs/drlg/collision.md#i-nearwarptestgame-room-x-y-and-its-side-effects)).
 
 Each creation steps the game seed once ([spawn § J](../specs/monsters/spawn.md#j-creation-and-the-unit-seed)).
 The new monster's own seed comes from that step. On 914 of 916 logged creations it was 2 steps past its starting
-value when the pass first drew on it, and 6 and 15 steps on the other two. The spawn spec takes that seed as an input. The stats
+value when the pass first drew on it, and 6 and 15 steps on the other two. The spawn spec's own run took that seed as
+an input. The stats
 spec names the two usual steps, the appearance pick and the hit-point draw
 ([stats § B](../specs/monsters/stats.md#b-monstatsinit-in-order)). The extra steps come from the level's list of
 classes and their appearance sets: when a class with more than two pieces is created for the first time in a level, it
@@ -259,7 +262,9 @@ is added to that list, and its sets are rolled on the new monster's own seed bef
 ([spawn § J](../specs/monsters/spawn.md#j-creation-and-the-unit-seed)). This is confirmed: across the 1 786 creations
 in the logs, 14 were such additions, and each took exactly the number of steps the model predicts from its seed (6 to
 16), the two odd ones of the pass included. Which of the other creations found their class already listed is not told
-apart by the logs.
+apart by the logs. With the level's class list and the stats draws modelled together, the end-to-end run predicted
+this seed for all 12 580 monster creations it met ([spawn § Inputs and oracles](../specs/monsters/spawn.md#inputs-and-oracles);
+[seed to world](seed-to-world.md#e-one-monsters-creation)).
 
 **Wanderers** ([spawn § K](../specs/monsters/spawn.md#k-wanderers-the-tick)). Every room in the update walk takes one
 room-seed draw per tick; that it goes on after the room is populated is read from the code. Rarely (1 in 32 768 ticks), and only in a level with `MonWndr` set, a
@@ -404,8 +409,15 @@ the case of a minimum above the maximum, and the overflow branches of the arithm
 **MonProp** ([stats § F](../specs/monsters/stats.md#f-monprop-at-creation)) gives every monster
 of a class its row's properties for the difficulty, special or not, with any value range rolled on the unit seed.
 On stock data only `thorns` has a range, and a test run reproduced it. Stock `chance` is 0 everywhere, so the
-`chance` roll is never reached. No normal-difficulty row can be reached on stock data, by the code read. Monster
-equipment (`MonEquip`) is read from the code only. No class that has it was met.
+`chance` roll is never reached. No normal-difficulty row can be reached on stock data, by the code read.
+
+**Monster equipment** (`MonEquip`, [stats § B](../specs/monsters/stats.md#b-monstatsinit-in-order), step B12) comes
+last. Only two classes have a row that equips at creation in the stock table: 234 (a flying scimitar) and 267 (Blood
+Raven), each with one row of level 0 and one location. For them one unit-seed step picks the location and the item is
+created there when it is free, taking two game-seed steps like any item. The end-to-end run created Blood Raven three
+times and the flying scimitar once, with the seed after the equipment and each item predicted. The rest of the rule
+is read from the code only, because no stock row reaches it: a first row above the monster level is skipped, and with
+two or three locations the step picks one of them; a location already taken gets no item.
 
 ## The player count
 
@@ -554,14 +566,17 @@ Each spec's *Open questions* has the full list: [pool](../specs/monsters/pool.md
   disagree), and multiplayer games, which were not logged. The room field the wanderer roll tests and the restore of
   inactive monsters are answered by the [room lifecycle spec](../specs/drlg/lifecycle.md). Many guard exits and rare branches were never reached: the evil hut object, the tentacle-head
   minions, the wanderer spawn, and others listed in the spec. Monster positions also depend on inputs no spec yet
-  produces end to end, namely the object marks on the collision grid and one waypoint point.
+  produces end to end: the collision grid at the start of the pass, whose object marks are modelled but whose marks of
+  players, monsters that walked in, items and corpses are not (the grid the models build equals the recorded one in
+  4 723 of 4 883 rooms of the end-to-end run), and one waypoint point.
 - **Specials:** whether a `MonUMod` row with `champion` 0 could ever be a champion mod (no stock row tests it, and a
   community source claims it can). Where a unique's colour is drawn. The superunique tails, the `lightning` exclusion,
   `thief`, the `Stacks` refusal, Blood Raven's and the act bosses' fixed names and the Warping Shrine are read from the
   code only. The restore of inactive specials was reached by a run; a minion restored without its boss was not.
 - **Stats:** whether a graphics renderer can change the
   floating-point precision of the hit-point rescale, the will-o'-wisp halving, and the unreached branches (`poisonhit`,
-  `always_run_ai`, monster equipment, a `MonProp` slot with a chance, more than 8 players, the overflow branches).
+  `always_run_ai`, monster equipment beyond the one-row case, a `MonProp` slot with a chance, more than 8 players, the
+  overflow branches).
   The formulas of the attack-time to-hit and damage values were not asserted by a run.
 
 ## Where to read more

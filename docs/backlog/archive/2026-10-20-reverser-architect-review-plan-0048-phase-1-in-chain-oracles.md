@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-20
 status: done
 context:
-  - ../../plans/0048-seed-to-world.md#implementation-log
+  - ../../plans/done/0048-seed-to-world.md#implementation-log
   - ../../findings/chain/0002-retirements.md
   - ../../findings/chain/0001-oracles.md
 resolution: "Reviewed 2026-10-20 (architect): accept with fixes (5). Phase 1 done; Phase 2 may start in one slot. Rulings in the plan 0048 log."

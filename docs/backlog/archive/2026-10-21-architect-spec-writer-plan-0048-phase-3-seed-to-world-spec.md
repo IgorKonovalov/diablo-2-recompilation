@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-10-21
 status: done
 context:
-  - ../../plans/0048-seed-to-world.md
+  - ../../plans/done/0048-seed-to-world.md
   - ../../findings/chain/0001-oracles.md
   - ../../findings/chain/0002-retirements.md
   - ../../findings/chain/0003-end-to-end-run.md
