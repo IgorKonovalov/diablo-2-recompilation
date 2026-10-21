@@ -246,6 +246,13 @@ return rec->srvmissilea;                                                // +0x48
   `sub_005717C0_UnitMsg99` (skill, the aimed unit). `sub_005FDD60_ItemCastAtXY(skill, x, y, effect)` is the same at a
   point with `sub_00571840_UnitMsg9A`. Their callers are the handlers 20, 21 and 30 (§ 3) and `sub_005BF240_ItemUse`
   (`0x005BF1AF`, `0x005BF1D7`, `0x005BF229`). (`handlers-scan.txt` `REF 0x005FDCA0`, `REF 0x005FDD60`)
+  *2026-10-21 (plan 0046 batch `item`), emulated; corrects this bullet:* the two helpers take **`EDX` the skill** and
+  the level as their first stack word: `ItemCastAtUnit(ECX caster, EDX skill; lvl, target, effect)`,
+  `ItemCastAtXY(ECX caster, EDX skill; lvl, x, y, effect)` (`[C]` under ADR-0021, ending at
+  `SKILLS_SrvStart`/`SKILLS_SrvDo` inside `ITEMSKILL_Cast`); the three `ItemUse`-side call sites lie in the item-use
+  entries `g_ItemUseFns[10]` (`0x005BF170`) and `[11]` (`0x005BF1F0`), which `sub_005BF240_ItemUse` runs and no stock
+  Misc row selects ([skills/0015 §§ 1, 5](0015-item.md#5-itemskill_cast-its-itemtarget-helpers-and-its-callers)).
+  (0x005FDCE4–0x005FDD0B, fn:sub_005BF170_ItemUseCastFireBall@0x005BF170)
 - [I] No draw in the two helpers or in `ITEMSKILL_Cast` itself (`DRAW` lines: `lcg=0`, no RNG call); the draws of an
   item cast are the handler's chance step and whatever the cast skill's do function and missile draw.
   (fn:ITEMSKILL_Cast@0x005FDA80, fn:sub_005FDCA0_ItemCastAtUnit@0x005FDCA0, fn:sub_005FDD60_ItemCastAtXY@0x005FDD60)
@@ -253,13 +260,9 @@ return rec->srvmissilea;                                                // +0x48
   (`0x005FD850`, an item Teleport) steps the seed at `+0x20` of the unit it is given 2 to 20 times
   ([skills/0001 § 10](0001-dispatch.md#10-item-granted-skills); `p45b-reread.txt` R5). Helpers 3 and 4 are unread.
   (0x005FD900–0x005FD98A)
-  *2026-10-21 (plan 0046 batch `item`), emulated:* the two helpers take **`EDX` the skill** and the level as their
-  first stack word: `ItemCastAtUnit(ECX caster, EDX skill; lvl, target, effect)`, `ItemCastAtXY(ECX caster, EDX
-  skill; lvl, x, y, effect)` (`[C]` under ADR-0021, ending at `SKILLS_SrvStart`/`SKILLS_SrvDo` inside
-  `ITEMSKILL_Cast`); their three `ItemUse`-side callers are the item-use entries `g_ItemUseFns[10]` (`0x005BF170`) and
-  `[11]` (`0x005BF1F0`), which `sub_005BF240_ItemUse` runs and no stock Misc row selects. Helpers 3 and 4 do not draw;
-  helper 2 is given the cast's caster ([skills/0015 § 5](0015-item.md#5-itemskill_cast-its-itemtarget-helpers-and-its-callers)).
-  (0x005FDCE4–0x005FDD0B, fn:sub_005BF170_ItemUseCastFireBall@0x005BF170)
+  *2026-10-21 (plan 0046 batch `item`):* helpers 3 and 4 do not draw; helper 2 is given the cast's caster
+  ([skills/0015 § 5](0015-item.md#5-itemskill_cast-its-itemtarget-helpers-and-its-callers)).
+  (0x005FDB9B, fn:sub_005FD9C0_ItemTargetCorpse@0x005FD9C0)
 
 ### 3. The stat-event handlers
 

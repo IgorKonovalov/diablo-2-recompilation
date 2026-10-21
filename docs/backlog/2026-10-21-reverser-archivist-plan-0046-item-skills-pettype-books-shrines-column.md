@@ -37,6 +37,7 @@ columns; please link them from the table docs.
   and stat 70 above 0 (§ 4, `[C]`).
 - [Shrines](../tables/Shrines.md) `Arg0`/`Arg1` of codes 19, 21, 22: 19's search radius is `Arg1` and its life loss
   `Arg0` percent (`[C]` for the radius argument, `[I]` for the loss); 21's and 22's count is `Arg0 + RNG_RangeB(Arg1 −
-  Arg0)`, so **5 to 9** for the stock 5 and 10, not the row text's 5–10 (§ 8, `[C]`).
+  Arg0)`, so **5 to 9** for the stock 5 and 10, not the `Effect` text's 5–10 (§ 8, `[C]` for the count); the count is
+  of potion tries, a try with no free spot making none (`[I]`, after the boundary; `lane/p46m12` review).
 - [Misc](../tables/Misc.md) `pSpell` 10 and 11: `g_ItemUseFns[10]`/`[11]` cast skill 47 at level 1 (§ 1); no stock row
   uses them (`rows.txt` `PSPELL`).

@@ -2,20 +2,20 @@
 from: reverser
 to: architect
 date: 2026-10-21
-status: open
+status: done
 context:
-  - ../findings/skills/0015-item.md
-  - ../findings/skills/experiments.md
-  - ../plans/0046-skills-function-catalogue.md
-resolution: ""
+  - ../../findings/skills/0015-item.md
+  - ../../findings/skills/experiments.md
+  - ../../plans/0046-skills-function-catalogue.md
+resolution: "Reviewed 2026-10-21: accept with fixes (6: overclaim 1, misread 1, omission 2, wrong anchor 1, stale cross-reference 1); rulings and fixes in plan 0046's log (lane/p46m12 review); archivist and spec-writer entries released."
 ---
 
 Not blocking. Please review plan 0046 Phase 1 batch 10 `item` (`lane/p46m12`): Unsummon's start 3 and do 4, do 113
 (scrolls and books), do 151 (Chain Lightning's `ItemEffect`), and the callers: `ITEMSKILL_Cast` with its `ItemTarget`
 helpers 2–4 and its callers `ItemCastAtUnit`/`ItemCastAtXY`, the stat-event handlers 20, 21, 30, the charge path of
 `SKILLS_PayCost`, the shrine missiles 19, 21, 22 and the object and quest `MissileCreateAt` sites, with the carried
-items ([skills/0015](../findings/skills/0015-item.md), run:2026-10-21-cat-emu-item in
-[experiments](../findings/skills/experiments.md)).
+items ([skills/0015](../../findings/skills/0015-item.md), run:2026-10-21-cat-emu-item in
+[experiments](../../findings/skills/experiments.md)).
 
 - **Run:** five families, 12 000 cases, 0 mismatches, 0 undeclared reads, 0 stopped; the four entries and the ten
   callers emulated (the three helpers inside the cast); site control 4 936 of 4 936 (31 function/boundary/return-address triples); every negative control
