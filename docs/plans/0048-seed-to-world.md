@@ -345,3 +345,51 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   run 2's tools, 0 sub-checks failed, and the Phase 1 world logs re-checked for regressions, (e) the record's counts
   from passing logs only, then the review request. Review request
   [closed](../backlog/archive/2026-10-21-reverser-architect-review-plan-0048-phase-2-run-1-end.md); ledger row added.
+- **2026-10-21 — Phase 2 run 2 paused at the owner's request: checkpoint and resume note (reverser, `lane/p48r2`,
+  harness slot 1).** Not a phase close; no review requested yet; no run record written yet.
+  **The mark call a re-creation takes** (static reading, objdump of the pinned image, `[I]` until the record): the
+  mode-3 re-creations are the revisit restore's. A room whose driver flag bit 0 is set gets no RW window:
+  `sub_0052D0F0_RoomUpdateOne` (`0x0052D142`) and `sub_0052D160_NewRoomsUpdate` (`0x0052D205`) call
+  `sub_00542B40_RoomInactiveUnitsRestore` directly, whose monsters go through `sub_005B30E0_SpawnWithId` to
+  `sub_005B2A00_MonSpawnTry` with request flags `0x62` / `0x6A` / `0xE2`; flag `0x20` makes the `SUnitCreate` create
+  flags 3 (`0x005B2E10`; the `MU0` "mode" field is these create flags), bit 0 runs `sub_00554850_SUnitPathCreate`,
+  and its monster branch marks through the **same** `UNIT_CollMark` calls as a pass creation (`PATH_DynamicCreate` at
+  `0x00649E9A`, `sub_005A7C20_MonSetMode` at `0x005A7CB1`, both into `COLL_PatternMark` returning to `0x006494D5`), then
+  MonSpawnTry's alignment refresh (`0x005B2EAB`). No `CM` line was logged only because `tools/gdb/collision.py` logs
+  marks inside an RW1..PX window, and the restore runs outside one. A record restored dead (`a10` = 12) has no
+  MonSetMode mark (`0x005541B0` is the dead test at `0x005A7CA7`); for MonStats2 `deadCol` 0 the corpse call
+  (`sub_00649F70_UnitCorpseColl`, `RectOrWH` 3×3 `0x8000` at `0x00649FD8`) and SUnitCreate's corpse re-mark
+  (`0x0055546F`..`0x005554A3`) follow; `deadCol` 1 keeps the one live mark. The dead sequence was first predicted
+  wrong (from the code alone) and corrected from run 2's first log (`out/dev-r2-xn1-check-deadlist0.txt`: 18 dead
+  re-creations mismatched, every alive one matched).
+  **Tools** (commit `53ffb95`, with the dead-sequence fix): `tools/gdb/collision.py` logs
+  `CMR0 {th, room}` .. `CM` .. `CMRX` around the two restore calls; `tools/objects.py` `recreation` predicts each
+  re-creation's marks (MonStats / MonStats2 rows, `MonTables`), compares them with the logged lines inside a scope
+  and applies them to the objects grid (on run 1's logs, which have no scope, applied unchecked: "checked only
+  through the later tests"); `tools/chain.py --cf recreation-off` (control); `tools/chain_sessions.py` `PLAN2` (16 run-2
+  rows, seeds 4861..4912, mostly outdoor waypoints).
+  **(b) cn4 and cm4 pass on their kept logs** (`out/r2ckpt1-check.txt`): 0 sub-checks failed, cn4 118 and cm4 47
+  oracle-free populations (the record's 117 and 46 plus each failing window, now predicted); `--cf recreation-off`
+  restores exactly run 1's two mismatches (`out/dev-r2-cf-recreation-off-*.txt`). Run 1's 28 logs with the
+  pre-fix tools: 0 sub-checks failed, 1 387 populations, 5 348 re-creations, every other count equal to
+  `final-check.txt` (`out/dev-r2-r1logs-check.txt`); the Phase 1 world logs: 0 failed, summary equal but the new
+  re-creation lines (`out/dev-r2-p1world-check.txt`). Both are development outputs: they must be re-run with the
+  final tools.
+  **Sessions** (`workspace/logs/chain-p2/`, `manifest-r2-ckpt1.txt` `0c7beb21…`, paths relative to that directory;
+  tools in `out/tools-r2-ckpt1.sha256`): `p2r2-s1-4861-r2-xn1` (City of the Damned, 94 populations, 288
+  re-creations compared: 254 alive, 32 dead `deadCol` 0, 2 `deadCol` 1, 0 mismatches) and `p2r2-s1-4862-r2-xn2`
+  (Cold Plains, 73), both 15 minutes, no `internal-error:`. `p2r2-s1-4871-r2-xm1.pilot.txt` and its empty shots
+  directory are a stub: the driver was stopped for the pause before r2-xm1's game launched (no log). Passing
+  populations now **1 554** (26 run-1 logs 1 222, cn4 and cm4 165, run 2 167): **446 to go**.
+  Chest interact-byte writer (ruling 3): not read (no cheap static anchor); stays in chain/0003's Open questions.
+  Slot 1 stopped, the `p48r2` aside restored (the saves directory is empty, as before the run).
+  **Next (resume):** on `lane/p48r2`, slot 1: `python3 -I tools/saves.py --slot 1 aside p48r2`, then
+  `python3 -I tools/chain_sessions.py run --slot 1 --tag p48r2 --saves workspace/runtime/p48h-chars --run p2r2
+  r2-xm1 r2-xh1 r2-cn1 r2-cm1 r2-ch1 r2-xn3 r2-xm2` (queued, in this order; then r2-xn4 r2-xm3 r2-xh2 r2-xh3 r2-cn2
+  r2-cm2 r2-ch2 if the populations are still short), recounting from a kept check after each batch, until the
+  passing logs hold 2 000. Then: (d) one `chain.py check --o20` over run 1's 28 logs and every run-2 log with the
+  final tools, under `MemoryMax=4G`, 0 sub-checks failed, and the Phase 1 world logs re-checked
+  (`cd workspace/logs/chain-p1 && … check $(awk '{print $2}' inputs-world.sha256)`); the re-creation counts per log;
+  the run record (new id, `run:2026-10-21-chain2`), chain/0003 updates (§ 2, the Answer, Open question 1 closed by
+  the reading above, the counts from passing logs only), a final manifest, and the review request in
+  `docs/backlog/`.
