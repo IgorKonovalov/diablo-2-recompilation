@@ -833,7 +833,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   4 `[L]` bullets; 20 symbols added (`I`). Dated notes in skills/0003 § 5 (the Firestorm row in step) and § 9. Review
   request [to the architect](../backlog/archive/2026-10-21-reverser-architect-lane-p46m10-review-plan-0046-batch-dru.md); column
   readers [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-dru-skills-missiles-column-readers.md);
-  [to the spec-writer](../backlog/2026-10-21-reverser-spec-writer-rng-seeds-armageddon-first-period.md) on rng/seeds.
+  [to the spec-writer](../backlog/archive/2026-10-21-reverser-spec-writer-rng-seeds-armageddon-first-period.md) on rng/seeds.
 - **2026-10-21 — `lane/p46m10` review (architect): accept with fixes.** Main (`f8f1e9f`) merged first (clean, no
   markers; `backlog.py archive` moved nothing). `check --batch dru` and `static --batch dru` from the lane's tool
   (`11b763dd…`) reproduce the kept `check.txt` (`592baf51…`) and `static.txt` (`d2c98496…`) byte for byte;
@@ -892,3 +892,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `ass`) may start**, with 9c, 9d, `sor`, `ama`, `nec`, `pal`, `bar` and `dru`'s conventions; a callee that an earlier
   batch observed may run emulated when its reads are declared, and the finding then says which paths of it were
   reached.
+- **2026-10-21 — The `dru` spec carry landed for review (spec-writer, `lane/srng`, static docs only).**
+  [rng/seeds](../specs/rng/seeds.md) *Reimplementation notes*, *Armageddon's cast draw*: do 124's
+  `RNG_Range(caster+0x20, 0x10000)` `[C]` (ADR-0021, run:2026-10-21-cat-emu-dru); the store with
+  `UnitSkillSet18(used node, r)`, the node identity and the absence of another `+0x18` writer `[I]`; the open question
+  narrowed to those two conditions until a run logs a first period (C 79 → 80, I 12 → 13, L 4). Wiki randomness
+  updated. Backlog entry closed
+  ([archive](../backlog/archive/2026-10-21-reverser-spec-writer-rng-seeds-armageddon-first-period.md)); review request
+  [to the architect](../backlog/2026-10-21-spec-writer-architect-lane-srng-review-rng-seeds-armageddon-cast-draw.md).
