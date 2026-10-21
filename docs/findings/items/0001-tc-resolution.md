@@ -218,7 +218,8 @@ data/0001). Phase 1b (2026-10-11) then compared the finished claims with two reg
 | `0x00451F80` | `MONSTATS_GetRecord` | `monstats` record (0x1A8 B) by index or 0 | C |
 | `0x006335F0` | `ITEMS_GetRecord` | `g_pItems` record (0x1A8 B) by index or 0 | I |
 | `0x00628700` | `ITEMS_GetType` | item record `+0x11E` (`type`) | I |
-| `0x00628860` | `ITEMTYPES_IsThrowable` | itemtypes record `+0x10` (`Throwable`) | I |
+| `0x00628860` | `ITEMTYPES_IsThrowable` | itemtypes record `+0x10` (`Throwable`) | C |
+| `0x00633680` | `sub_00633680_ItemIndexByCode` | Items index of a 4-byte code (code tree 0x0096BCC4); `lsd ` → 31 logged ([§ Plan 0038 batch H2c](#plan-0038-batch-h2c-2026-10-21)) | C |
 | `0x00629A90` | `ITEMS_IsType` | item index is of type t (`type`, then `type2`, through the equivalence bitmap) | I |
 | `0x00629BB0` | `ITEMS_UnitIsType` | same test for an item unit | I |
 | `0x00585B90` | `sub_00585B90_ObjectChestDrop` | object/chest drop: "Act N Chest A/B/C" TC, calls `TC_ResolveDrops` | I |
@@ -551,7 +552,7 @@ if (f->ratio[5] && (RNG_Next(&src->seed) & 0x3FF) < f->ratio[5]) up |= 0x10;
 item = e->index;
 if (!expansion && ITEMTYPES_IsThrowable(ITEMS_GetType(item))) {
     if (throwRetries++ < 10) { f->picksLeft++; continue; }    // refund the pick
-    item = ITEMS_GetByCode('lsd ');                           // Long Sword
+    item = sub_00633680_ItemIndexByCode('lsd ');              // Long Sword (0x0055AEBA; the index)
 }
 unit = sub_0055A550_DropCreateItem(game, item, src, quality, uidx, up);
 if (!unit) continue;
@@ -571,12 +572,46 @@ sub_005589A0_DropGoldFind(killer, unit);
   10 throwables in one resolver call refund their pick, later ones become a Long Sword. The test uses the item's
   `type` only, through `ItemTypes.Throwable` (itemtypes `+0x10`). The quality roll has already drawn by then.
   (0x0055AE6E–0x0055AEC2, tbl:ItemTypes.txt:Throwable)
+  *2026-10-21, plan 0038 batch H2c (forced):* `[C]` now for the bound of 10 per call, the Long Sword `lsd` and the
+  order after the quality roll; the `version ≥ 100` reject stays `[I]` (d-none), [§ Plan 0038 batch H2c](#plan-0038-batch-h2c-2026-10-21)
+  tc 10, 55, 56 (0x0055AE6E–0x0055AEC7, run:2026-10-21-throw-forced).
 - [C] **Throwable refund, observed part:** in a classic Normal session 16 picks of throwable types were refunded,
   at most 3 in one call. They were `tpot` potions (11), javelins, a throwing axe and a throwing knife. Each came after
   its quality roll (`QIN`/`QOUT` logged) with no `CPRE`, and the pick was taken again. Without the refund, 13 of the
   485 calls break. Not exercised: the Long Sword after the tenth throwable, and the `version ≥ 100` reject (classic
   TCs reached no such item record). (0x0055AE6E–0x0055AEC2, tbl:ItemTypes.txt:Throwable, run:2026-10-13-quality,
   `tools/tc.py replay`, added check)
+- **ADR-0013 read list of the throwable re-pick** (plan 0038 batch H2c, written 2026-10-21 before its forced run;
+  inventory § 6 ruling 1). The code is 0x0055AE6E–0x0055AEC7, from the expansion test to the `lsd ` index store; the
+  creation call at 0x0055AEC8 and the loop's next pick at 0x0055AF5E are outside it. `tools/sweep_h2c.py reads` walks it
+  and its callees (output `workspace/logs/h2c/check/check-reads.txt`). Every memory operand of the code itself:
+  - `[EBP−0x528]` the game and `game+0x70` its expansion flag (0x0055AE6E, 0x0055AE74);
+  - `[EBP−0x50C]` (u16) the picked item index, which 0x0055AC69 stored from the entry's `index` (the pick's output,
+    read at 0x0055AE7A, written with the `lsd ` index at 0x0055AEC2);
+  - `[EBP−0x53C]` the call's throwable counter, zeroed once at the call's entry (0x0055A71D, the only other write) and
+    read and incremented at 0x0055AE91/0x0055AE9F;
+  - `[EBP−0x51C]` the frame's picks-left pointer, through which 0x0055AEAD adds 1 to `f->picksLeft`. The value is not
+    read: the add does not depend on it.
+  - The `lsd ` code is an immediate (`push $0x2064736c`).
+  - Callees: `ITEMS_GetType` (0x00628700: `ITEMS_GetRecord`, Items record `+0x11E`), `ITEMTYPES_IsThrowable`
+    (0x00628860: `*g_pDataTables` `+0xBF8`/`+0xBFC`, the ItemTypes array and count, record × 0xE4, `+0x10` read by
+    a data-indexed row, so the whole stock `Throwable` column), `ITEMS_GetRecord` (0x006335F0: the Items count
+    0x0096CA58 and base 0x0096CA5C), and `sub_00633680_ItemIndexByCode` (0x00633680: the code tree 0x0096BCC4,
+    `EXCEL_FindCode` 0x006BD130). The excerpt above named `ITEMS_GetByCode` until 2026-10-21; the call is
+    `sub_00633680_ItemIndexByCode`, which returns the index. The fatal-error stops (0x00408090, 0x00408A60,
+    0x00681E09) are not followed.
+  - **No TreasureClassEx read.** Six functions and 131 instructions. None of them references `g_TCLink`,
+    `g_pTreasureClasses` or `g_nTreasureClasses` (0x0096C5E8/EC/F0), or a register operand at DataTables `+0x9B8`,
+    `+0x9BC` or `+0x9C0`. None calls a `TC_` function, and there is no indirect call. Those globals are the only route
+    to TC data after load: the `.bin` buffer is local to `TC_LoadTreasureClassEx` and freed, data/0001. Over the whole
+    `.text` the three globals are referenced only by eight `TC_` functions and `MONSTATS_Load` (`g_TCLink`, the TC
+    name lookup at load). The other ten sites at `+0x9B8`/`+0x9BC` (0x006B088A–0x006B1235) are fields of some other
+    structure, not DataTables: the same base is also indexed at `+0x27CC` and `+0x49D2`. All 50 sites are the
+    `TCREF` lines of the same output.
+  - The code's inputs from the resolver are the item index (the pick's decision) and the frame's picks-left word
+    (written from the TC's `Picks` at the frame's push, only incremented here). The ruling's reading: the edited cells
+    choose which item is picked, and the claims are about any throwable once picked.
+  (0x0055AE6E–0x0055AEC7, 0x0055A71D, fn:ITEMTYPES_IsThrowable@0x00628860, fn:sub_00633680_ItemIndexByCode@0x00633680)
 - [I] `mul=` applies to any item that is of type `gold` (type 4, via the type-equivalence test); the shift is `sar 8`
   on the signed product. Gold find applies only to items whose `type` is exactly 4. It is
   `gold = gold × (100 + GF(killer) + GF(owner of killer)) / 100` (signed, `imul 0x51EB851F` = exact `/ 100`), with GF
@@ -1147,6 +1182,54 @@ inventory's commit `a398945`. The seed lines and the model they are checked agai
 logged on 988 drops, the Functions table updated).
 
 **Tally:** 2 statements: 1 raised (tc 68), 1 raised in part (tc 58).
+
+## Plan 0038 batch H2c (2026-10-21)
+
+Forced harness batch H2c of [plan 0038](../../plans/0038-inferred-claims-sweep.md)
+([run:2026-10-21-throw-forced](experiments.md#run2026-10-21-throw-forced), three kept sessions on harness slot 2, a
+loose `treasureclassex.bin` under `-direct` whose `Act 1 Junk` names three classic throwables; inventory § 6 ruling 1)
+took four inferred statements of [items/tc](../../specs/items/tc.md), rows 10 (2), 55 and 56 of
+[the inventory](../../plans/0038-inventory/items-tc.md). The read list of the code under test (§ 8, committed before
+the run) has no TreasureClassEx read; the edited cells choose which item is picked. Counts are from the kept, hashed
+`check/check-logs.txt` and `check/check-tc.txt` (`workspace/logs/h2c/h2c-check.sha256`).
+
+- **tc 10** (L84 `THROW_RETRIES`, L85 `LONG_SWORD`; 2 statements) **raised.** [C] In a classic game the first 10
+  throwable picks of one resolver call refund their pick and every later one in that call becomes the item of code
+  `lsd`: over 100 calls with a throwable pick, the counter runs 0, 1, 2… from 0 in each call; all 937 refunds (`THF`)
+  are at counter 0–9 and all 141 Long Swords (`THL`) at 10 or 11; 93 calls reached the bound (45 of 10 refunds and one
+  `lsd`, 48 of 10 and two), and in each the refunds before the first `lsd` number exactly 10. The index
+  `sub_00633680_ItemIndexByCode('lsd ')` returns is 31 (Weapons row 31, `lsd`), and the next creation (`CPRE`) is of
+  that index all 141 times. A bound other than 10 would put a refund at 10 or an `lsd` below it in some of the 93 calls.
+  `tools/tc.py replay` reproduces the 377 resolver calls of the three logs with the same counts (refund 452/284/201,
+  `lsd` 45/56/40). Classic only: the `THR` lines all carry expansion flag 0, and the stock control (H2b's logs) has 13
+  expansion creations of throwable types and 0 classic ones. (0x0055AE6E–0x0055AEC7, 0x0055A71D,
+  fn:sub_00633680_ItemIndexByCode@0x00633680, run:2026-10-21-throw-forced)
+- **tc 55** (L649, H6) **raised.** [C] The throwable test uses the picked item's type through `ItemTypes.Throwable`
+  and runs after the pick's quality roll: each of the 1 078 `THR` lines (the branch after `ITEMTYPES_IsThrowable`
+  returned non-zero) follows the `QOUT` of the same item with no `PICK` between, and all 1 078 quality rolls had stepped
+  the source seed, so a test before the roll would have left a different seed for the next pick (the replay
+  reproduces the seed chain of every call). Every `THR` item is of a throwable type (`tkf`/`tkni`, `tax`/`taxe`,
+  `jav`/`jave`), and none of the 394 classic creations of the run (nor the 659 of H2b's classic logs) is of a throwable
+  type; the first 10 refund and later ones become `lsd` as tc 10. Classic only, with the expansion control above. The
+  upgrade draws between the roll and the test do not run on these tables (ratio words 4 and 5 are 0 in every
+  `QIN` of the three logs). That the test reads `type` and not `type2` stays `[I]` (the code reading): no Weapons,
+  Armor or Misc row has a throwable `type2` without a throwable `type` (review check, 2026-10-21), so no run can
+  separate the two on stock data.
+  (0x0055AE6E–0x0055AEC2, fn:ITEMTYPES_IsThrowable@0x00628860, tbl:ItemTypes.txt:Throwable,
+  run:2026-10-21-throw-forced)
+- **tc 56** (L657, H6/H2 "not exercised") **raised in part.** [C] The Long Sword after the tenth throwable, as tc 10.
+  **Remainder `[I]`, d-none:** the `version ≥ 100` reject of H2 (the classic scan never yields such an entry, A2 and
+  row 74; inventory § 6 ruling 1). (0x0055AE6E–0x0055AEC7, run:2026-10-21-throw-forced)
+
+**Correction carried (rule 12):** § 8's throwable bullet now points here for its `[C]` part (run:2026-10-21-throw-forced).
+
+**Symbols:** `ITEMTYPES_IsThrowable` I → C (its non-zero return logged at 0x0055AE9C on 1 078 picks, all of throwable
+types; no classic creation of a throwable type). At the review (2026-10-21), `sub_00633680_ItemIndexByCode` I → C: its
+return for `'lsd '` logged 141 times (`THL`) is 31, the Weapons row of `lsd`, and `sub_0055A550_DropCreateItem` created
+that index each time (`CPRE`); a reading other than "the Items index of the code" would not give `lsd`'s row by chance.
+The `[C]` covers the code-to-index map, observed for one code.
+
+**Tally:** 4 statements: 3 raised (tc 10 ×2, 55), 1 raised in part (tc 56).
 
 ## Open questions
 

@@ -2082,7 +2082,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00628700,func,ITEMS_GetType,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00628740,func,ITEMS_GetQLvl,,C,items/affixes,docs/findings/items/0005-affixes.md
 0x006287D0,func,sub_006287D0_ItemNormCode,,I,items/economy,docs/findings/items/0011-economy.md
-0x00628860,func,ITEMTYPES_IsThrowable,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00628860,func,ITEMTYPES_IsThrowable,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x006289F0,func,sub_006289F0_ItemBaseStackable,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x00628C70,func,sub_00628C70_ItemBaseIsUnique,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00628CD0,func,sub_00628CD0_ItemBaseIsQuest,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
@@ -2160,7 +2160,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006335A0,func,sub_006335A0_ItemClassicIndexMap,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006335F0,func,ITEMS_GetRecord,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00633640,func,ITEMS_GetByCode,"void * __stdcall ITEMS_GetByCode(uint code, int * pIndex)",C,data/excel,docs/findings/data/0001-excel-loader.md
-0x00633680,func,sub_00633680_ItemIndexByCode,,I,items/economy,docs/findings/items/0011-economy.md
+0x00633680,func,sub_00633680_ItemIndexByCode,,C,items/economy,docs/findings/items/0001-tc-resolution.md
 0x006336A0,func,sub_006336A0_PropParamCell,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x00633730,func,sub_00633730_LoadMagicAffixes,,C,items/affixes,docs/findings/items/0005-affixes.md
 0x00633ED0,func,sub_00633ED0_GetMagicAffixInfo,,C,items/affixes,docs/findings/items/0005-affixes.md
@@ -2500,9 +2500,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0065FB50,func,PROP_Func21_ValParam,,I,items/properties,docs/findings/items/0006-properties.md
 0x0065FBA0,func,PROP_Func36_RandClassSkill,,I,items/properties,docs/findings/items/0006-properties.md
 0x0065FBF0,func,PROP_Func22_SkillParam,,I,items/properties,docs/findings/items/0006-properties.md
-0x0065FC40,func,PROP_Func12_SkillRand,,I,items/properties,docs/findings/items/0006-properties.md
+0x0065FC40,func,PROP_Func12_SkillRand,,C,items/properties,docs/findings/items/0006-properties.md
 0x0065FC90,func,PROP_Func13_DurPercent,,I,items/properties,docs/findings/items/0006-properties.md
-0x0065FD20,func,PROP_Func23_Ethereal,,I,items/properties,docs/findings/items/0006-properties.md
+0x0065FD20,func,PROP_Func23_Ethereal,,C,items/properties,docs/findings/items/0006-properties.md
 0x0065FD70,func,PROP_ApplyBlock,,I,items/properties,docs/findings/items/0006-properties.md
 0x0065FE10,func,PROP_ApplyBlockByVersion,,I,items/properties,docs/findings/items/0006-properties.md
 0x0065FEC0,func,sub_0065FEC0_ItemApplyProps,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
