@@ -668,7 +668,9 @@ Checks: `tools/sweep_h4b.py` (`sik`, `players`) and `tools/monstats.py check`.
   (level 107, nightmare). `tools/monstats.py` did not store it and reported 73 false appearance mismatches; fixed
   (`7015458`), then 0 mismatches. (fn:sub_00573CB0_MonStatsInit@0x00573CB0, 0x00573D93–0x00573DAC,
   run:2026-10-16-sweep-monsters-b) **Remainder `[I]`:** class 312 (`doomknight3`, Chaos Sanctuary), not met; its two
-  writes (`+0x0E`, `+0x0F`, 0x00573D68–0x00573D8E) rest on the reading.
+  writes (`+0x0E`, `+0x0F`, 0x00573D68–0x00573D8E) rest on the reading. *Met since* in run:2026-10-21-sweep-monsters-a
+  (63 creations, one `Range(4)` written to both bytes; § Plan 0038 batch H4a below): the H4a review raises the remainder,
+  so stats 14 and 13 are raised whole, still counted as H4b.
 - **stats 23** (L302–L304) **raised.** [C] `Align` 1 and 2 classes get `players` 1 and no HP or XP percent under
   `/players` > 1: `Align` 1 at `/players` 8 for 16 classes (Lut Gholein's NPCs and the `roguehire` hireling of session
   5b), `Align` 2 (`cow`) at 8 in run:2026-10-15-mon-stats; `tools/monstats.py` reproduces each record. (0x0057396C,

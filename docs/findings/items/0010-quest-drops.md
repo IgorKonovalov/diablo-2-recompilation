@@ -993,7 +993,9 @@ L712 at `main` `1d0262a`). Record: [monsters/experiments.md § run:2026-10-21-sw
   0x00573F83; `tools/sweep_h4a.py boss`): Blood Raven 43 (area 36), Radament 49 (44), Mephisto 59 (55), Nihlathak 70
   (64), and Andariel 49 (43) again. The test reads the class's own flag byte (0x00573E2E–0x00573E40), so it holds for
   every class that has the flag; the `.bin` sets it on 25 classes: 156, 211, 229, 242, 243, 250, 256, 267, 333, 365,
-  526, 544, 546–550, 559, 570, 704–709 (the run met 156, 229, 242, 267, 526). (fn:sub_00573CB0_MonStatsInit@0x00573CB0,
+  526, 544, 546–550, 559, 570, 704–709 (the run met 156, 229, 242, 267, 526). `(H)`: hell takes the same branch
+  (0x00573E23–0x00573E2C test only the expansion word and the difficulty index > 0), logged for Andariel at 75 in
+  run:2026-10-16-quest-drops; no other `boss` class was created in hell. (fn:sub_00573CB0_MonStatsInit@0x00573CB0,
   tbl:MonStats.txt:boss, run:2026-10-21-sweep-monsters-a)
 
 ## Plan 0049 Phase 1 (2026-10-20, static): the S2c static leftovers

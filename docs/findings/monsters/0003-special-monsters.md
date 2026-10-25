@@ -1122,11 +1122,13 @@ mismatches on three logs touch no row of this section; they are listed in the re
   with `Stacks` 0 whose placed bit (`game+0x1D30 + (id >> 3)`, bit `id & 7`) was already set returned at 0x005A4A09
   with no unit (`check/check-kept.txt`: `placed bit set, Stacks 0: refused` 3); every first call of those records
   created its unit. (0x005A4A09, tbl:SuperUniques.txt:Stacks, run:2026-10-21-sweep-monsters-a)
-- **special 54** (L520, tail 10) **raised.** [C] Radament (session radament): the tail draws `Range(u.seed, 5)` once
+- **special 54** (L520, tail 10) **raised in part** (architect review: the lane filed it raised). [C] Radament (session radament): the tail draws `Range(u.seed, 5)` once
   (`SURD` r 0, reproduced from the logged unit seed), then calls `SpawnNearUnitNoBox` with class 4 (`skeleton5`) 2 + r
   = 2 times and once each with 276, 382, 385, 389 (`skmage_pois3`, `skmage_cold4`, `skmage_fire3`, `skmage_ltng3`),
-  radius 4, flags 0x40; six units were created, each call returning non-zero. Only r = 0 was met: the count reading is
-  `[C]` for that value, and the draw's position (one unit-seed step before the spawns) holds whatever r is.
+  radius 4, flags 0x40; six units were created, each call returning non-zero. The draw's position (one unit-seed step
+  before the spawns) holds whatever r is. **Remainder `[I]`:** the `+ r` of the
+  `skeleton5` count (`add ebx, 2` on the draw, 0x005A4CDE–0x005A4CE0): only r = 0 was met, and r = 0 cannot tell
+  `2 + r` from a fixed 2 or any other count that is 2 at r = 0 (reverser rule 10).
   (0x005A4CD1, fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, run:2026-10-21-sweep-monsters-a)
 - **special 55** (L521, tails 26, 27, 29) **raised.** [C] The three council members (session council) each make
   `QUESTS_HookMonster(19, record, room, 0, 1)` then `0x00545B50`, and nothing else; no unit is created in

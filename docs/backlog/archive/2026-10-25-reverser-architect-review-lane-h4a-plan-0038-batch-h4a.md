@@ -2,17 +2,17 @@
 from: reverser
 to: architect
 date: 2026-10-25
-status: open
+status: done
 context:
-  - ../plans/0038-inferred-claims-sweep.md#implementation-log
-  - ../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
-  - ../findings/monsters/experiments.md#run2026-10-21-sweep-monsters-a
-  - ../findings/monsters/0001-level-pool.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a
-  - ../findings/monsters/0002-room-population.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a
-  - ../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a
-  - ../findings/monsters/0004-stats.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a
-  - ../findings/items/0010-quest-drops.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a
-resolution: ""
+  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
+  - ../../findings/monsters/experiments.md#run2026-10-21-sweep-monsters-a
+  - ../../findings/monsters/0001-level-pool.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a
+  - ../../findings/monsters/0002-room-population.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a
+  - ../../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a
+  - ../../findings/monsters/0004-stats.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a
+  - ../../findings/items/0010-quest-drops.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a
+resolution: "Reviewed 2026-10-25 (architect): accept with fixes. Special 54 moved to raised in part (r = 0 only); pool 12's 'six' corrected to five and the (H) half of pool 12 and qd 48 stated; the H4b class-312 remainder marked met. Ledger raised 15, in part 9, shortfall 8; totals unchanged (1 526). Rulings in the plan log; chained-model mismatches routed to 2026-10-25-architect-reverser-h4a-chained-model-mismatches-council-nihl2; spec-writer entry released."
 ---
 
 Review plan 0038 batch H4a (`monsters-a`; monsters/pool, spawn, special, stats and items/quest-drops; `lane/h4a`),
