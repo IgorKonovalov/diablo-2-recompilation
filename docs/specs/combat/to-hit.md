@@ -394,7 +394,7 @@ case shows the running defender: no to-hit draw, and a third of the capped block
   to-hit rolls, 2 243 blocks, the block formula in 2 523 expansion and 395 classic events.
 - [combat/experiments § run:2026-10-20-shortfalls](../../findings/combat/experiments.md#run2026-10-20-shortfalls)
   (plan 0047 Phase 2, 31 logs, 18 737 events, 0 mismatches) and its review in the
-  [plan 0047 log](../../plans/0047-simulation-shortfalls.md#implementation-log): the defence rolls by mode, the
+  [plan 0047 log](../../plans/done/0047-simulation-shortfalls.md#implementation-log): the defence rolls by mode, the
   weapon-block skill values, the mode-2 events, the run without `--no-shield-log`.
 - Tables: [CharStats](../../tables/CharStats.md), [MonStats](../../tables/MonStats.md),
   [ItemStatCost](../../tables/ItemStatCost.md), [Skills](../../tables/Skills.md).

@@ -184,8 +184,10 @@ The first simulation plan, combat formulas, checked 40 655 logged events in 40 l
 ([plan index, plan 0037](../plans/README.md); record:
 [run:2026-10-16-combat](../findings/combat/experiments.md#run2026-10-16-combat)). A later plan built sessions for the
 branches that run and the stats run met too rarely and checked them with the same checkers: 18 737 more combat events
-in 31 logs and 10 stats logs, all with 0 mismatches ([plan 0047](../plans/0047-simulation-shortfalls.md); record:
-[run:2026-10-20-shortfalls](../findings/combat/experiments.md#run2026-10-20-shortfalls)). The
+in 31 logs and 10 stats logs, all with 0 mismatches ([plan 0047](../plans/done/0047-simulation-shortfalls.md); record:
+[run:2026-10-20-shortfalls](../findings/combat/experiments.md#run2026-10-20-shortfalls)), and a further pass
+for the cases whose staging had failed added 2 527 combat events in 3 logs, 14 stats logs and 8 travel logs, again
+with 0 mismatches (record: [run:2026-10-21-shortfalls2](../findings/combat/experiments.md#run2026-10-21-shortfalls2)). The
 [combat](combat.md) and [stats and states](stats-and-states.md) pages say which cases it settled.
 
 ## Two clients in one game
@@ -245,7 +247,9 @@ A shortfall can later be reached by sessions built for it. When that pass still 
 case that unmodified game data cannot stage, or one whose single permitted extra session was spent, is final and
 stays inferred: in plan 0047 the magic resistance cap and a walking player's block. A case short only because the
 staging failed (sessions not run, a tool that did not work) is not final and goes to a further pass of the same plan
-([plan 0047 log, Phase 2 review](../plans/0047-simulation-shortfalls.md#implementation-log)). A count can also be met
+([plan 0047 log, Phase 2 review](../plans/done/0047-simulation-shortfalls.md#implementation-log)). What that further
+pass still misses is final once the review accepts its reason, a tool or slot-time reason with the fixes tried
+included: in plan 0047, shrines and wells (21 of 50) and waypoints lit for the first time (7 of 20). A count can also be met
 over two runs when both are checked by the same checker revision with no mismatch, as plan 0047's cold resistance
 cap was.
 

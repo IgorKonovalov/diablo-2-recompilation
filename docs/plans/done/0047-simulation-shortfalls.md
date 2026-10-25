@@ -1,6 +1,6 @@
 # 0047 — Simulation shortfalls: the named remainders of the combat, stats and travel runs
 
-> **Status:** approved 2026-10-20 (owner)
+> **Status:** done (approved 2026-10-20, owner; closed 2026-10-25; P1, P2, P2b and P3 accepted with fixes)
 > **Created:** 2026-10-20
 > **Owner skill(s):** reverser, spec-writer
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0017-scope-quests-travel-economy
@@ -20,18 +20,18 @@ named again with the reason it cannot be staged on stock data.
   *case*, not a missing reading: one harness slot closes them while plan 0045 is in its static phases, and the
   checkers' outstanding tool items land first.
 - **The shortfalls**, as the specs name them:
-  - [combat § Open questions](../specs/combat/README.md) (run:2026-10-16-combat, 40 655 events): crushing blow on a
+  - [combat § Open questions](../../specs/combat/README.md) (run:2026-10-16-combat, 40 655 events): crushing blow on a
     champion (0 labelled; the community "1/8 on champions" lead is contradicted in
-    [combat/0001](../findings/combat/0001-formulas.md)); the resistance cap for cold (27), lightning (17), magic (0);
+    [combat/0001](../../findings/combat/0001-formulas.md)); the resistance cap for cold (27), lightning (17), magic (0);
     magic immunity (0); the negative absorbed amount (4); evade, weapon block, dodge, avoid (0); freeze and flat
     absorb (0); the negative total that leaves life unchanged (25, under the floor of about 30); the mode-2 (walking)
     exception of the block `÷ 3` (no walking player attacked). **Conversion and pierce** are skill and missile
-    effects: they move to plan [0045](0045-skills-missiles-machinery.md) Phase 2, not here.
-  - [stats/states § Open questions](../specs/stats/states.md) (run:2026-10-17-stats): shrines and wells (12 operates
+    effects: they move to plan [0045](../0045-skills-missiles-machinery.md) Phase 2, not here.
+  - [stats/states § Open questions](../../specs/stats/states.md) (run:2026-10-17-stats): shrines and wells (12 operates
     against 50: the combat and stamina shrines, the re-arm, a cure by a well); an aura state's end (9 on and off
     events against 50); a different-state `group` clear; the 256 floor; open wounds on the player; the curse
     resistance cut and `attract`. The research map adds the expiries (123 of 300).
-  - Plan [0042](done/0042-quests-travel.md) Phase 2 part 3 (run:2026-10-19-quests3, accepted with fixes 2026-10-20 at the
+  - Plan [0042](0042-quests-travel.md) Phase 2 part 3 (run:2026-10-19-quests3, accepted with fixes 2026-10-20 at the
     `lane/p42r` review, its shortfalls final): **waypoint activation from mode 0** (0 of 20; the walk never reached an unvisited field
     waypoint, and field waypoints were first logged in mode 1 or 2 after a waypoint arrival), with the `Sync` 0
     object-seed draw. This plan takes it only **after 0042 closes**, and only if that close leaves it a shortfall.
@@ -71,7 +71,7 @@ named again with the reason it cannot be staged on stock data.
   - stats: 50 shrine or well operates over the combat and stamina shrines, the re-arm and a well's cure; 50 aura on
     and off events; 300 expiries in total with the kept run; 20 different-state `group` clears; the curse resistance
     cut; 30 curses refused on a target in `attract` (Phase 1 review: a Necromancer's own Attract, then another curse on
-    the same monster; open wounds on the player moved to plan [0044](done/0044-multiplayer-branches.md));
+    the same monster; open wounds on the player moved to plan [0044](0044-multiplayer-branches.md));
   - travel (after 0042 closes, if still short): 20 waypoint activations from mode 0, with the object-seed draw
     chained (ADR-0014).
 
@@ -108,10 +108,12 @@ named again with the reason it cannot be staged on stock data.
 
 ## Open questions
 
-- **Magic cap and immunity.** Whether a stock monster or item set reaches the magic-resistance cap without a skill
-  (phase 3) is part of Phase 1's case list.
-- **Walking player's block.** It needs a player hit while in mode 2; the pilot may not be able to hold that mode
-  under attack, in which case it stays `[I]`.
+- ~~**Magic cap and immunity.** Whether a stock monster or item set reaches the magic-resistance cap without a skill
+  (phase 3) is part of Phase 1's case list.~~ Immunity reached (36); the cap is unstageable on stock data and stays
+  `[I]`, final (Phase 1 review, ruling 2).
+- ~~**Walking player's block.** It needs a player hit while in mode 2; the pilot may not be able to hold that mode
+  under attack, in which case it stays `[I]`.~~ 6 undivided chances in 48 events; the extra session spent, `[I]`,
+  final (Phase 2 review).
 
 ## Implementation log
 
@@ -119,7 +121,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-20 — Drafted (architect, `lane/plans45`).** Status `proposed`.
 - **2026-10-20 — Approved (owner, via the orchestrator).** Plans 0045–0049 and ADR-0020 approved as proposed; the run
-  order of the [plans index](README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049) is the current queue.
+  order of the [plans index](../README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049) is the current queue.
 - **2026-10-20 — Phase 1 landed (reverser, `lane/p47r`; static, no game, no slot, no Ghidra).** Review requested.
   - **Stats checker items** (backlog entry closed): `tools/stats.py` (`98538acf…`) reports the ADR-0014 aura chained
     pairs (the caster's next run entering on a drawing run's exit, keyed by the caster unit), keys the aura grid's
@@ -132,9 +134,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     5 749 wearer set lists predicted, the 180 full Trang-Oul's included (the *unchecked remainder* is gone, so no
     property block is left unchecked: the request allowed two). Output `workspace/logs/stats/s1017-check-p47r.json`
     (`4b94c8ef…`); the reversed order differs only in the 20 wells listed. Carried into
-    [stats/0001](../findings/stats/0001-aggregate.md) (the full-block statement raised to `[C]`) and the
-    [stats experiments](../findings/stats/experiments.md#run2026-10-17-stats) record; specs and wiki to the
-    spec-writer ([backlog](../backlog/archive/2026-10-20-reverser-spec-writer-stats-full-set-blocks-and-aura-chaining-checked.md)).
+    [stats/0001](../../findings/stats/0001-aggregate.md) (the full-block statement raised to `[C]`) and the
+    [stats experiments](../../findings/stats/experiments.md#run2026-10-17-stats) record; specs and wiki to the
+    spec-writer ([backlog](../../backlog/archive/2026-10-20-reverser-spec-writer-stats-full-set-blocks-and-aura-chaining-checked.md)).
   - **The *Fleshripper* log: not copied, re-staged.** The lane's scratch is gone; a scan of the 307 harness logs on
     the machine found none with `e001b03e…` or save `5f440622…` (`workspace/logs/combat/p47r-fleshripper-search.txt`,
     `aef49a11…`, which also holds the rebuild: commit `5871b00`'s recipe still builds `5f440622…`). Session
@@ -177,7 +179,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     | **attract** | — | **not staged:** no MonStats `Skill` cell names Attract (the name is in `skills.txt` only), so only another player's curse: two clients (plan 0044). *Review 2026-10-20: reason refused;* Attract is a Necromancer curse (skills.txt Id 86, `charclass` nec), and the refusal tests the target (`STATE_ApplyTimed`, stats/0002 § 1), so a Necromancer staged single-client reaches it on a monster: Phase 2's first step |
     | waypoint activation from mode 0 | `x-wpact5r-0`…`5` (`tools/quest_sessions.py`) | the reading and the route below |
 
-  - **`InitFn` 17 and the route** ([quests/0002 § 2](../findings/quests/0002-travel.md#2-waypoint-activation), `[I]`,
+  - **`InitFn` 17 and the route** ([quests/0002 § 2](../../findings/quests/0002-travel.md#2-waypoint-activation), `[I]`,
     static): a preset waypoint is created with its preset's mode, 0 for every object (`PresetUnitSpawn` →
     `PresetUnitDispatch` → `SUnitCreate`'s mode argument, stored at unit `+0x10` before `OBJ_ServerInit`), and
     `OBJINIT_Waypoint` changes it only for a room the arrival list names (mode 1) or a town room (mode 2); it never
@@ -219,7 +221,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     review's `grep -l -w -i 'res-mag\|magicresist'` over the excel tables gives only `itemstatcost`, `properties`
     and `cubemain`, and the one cube row is the Safety Shield craft's `res-mag` 5–10): the cap stays `[I]`, named in
     Phase 3 as unreachable on stock data, homed nowhere. *Open wounds on the player*: accepted, moved to plan
-    [0044](done/0044-multiplayer-branches.md) (log entry there; it needs hostility, as plan 0044's hostility case from plan 0042 does).
+    [0044](0044-multiplayer-branches.md) (log entry there; it needs hostility, as plan 0044's hostility case from plan 0042 does).
     *Attract*: not a shortfall; Phase 2's first step, before its first game, adds a Necromancer recipe with Attract
     and one other curse (tool-built, ADR-0013 § Neutral, pinned in `tools/test_d2s.py`), a session that casts Attract
     and then the other curse on the same Normal monster, the `stats_sessions.py check` dry run, and counts the `STA`
@@ -247,17 +249,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Phase 2 may start** in the next free harness slot (slot 1: plan 0048 Phase 2; slot 2: plan 0038 H2b), with the
     `attract` staging as its first, static step.
 - **2026-10-20 — Phase 1 specs and wiki (spec-writer, `lane/stw`; no game, no Ghidra).** Review requested
-  ([backlog](../backlog/archive/2026-10-20-spec-writer-architect-review-lane-stw-stats-full-set-blocks-and.md)). Ruling 4 and
-  the re-check's chaining counts carried into the stats specs: [stats/README](../specs/stats/README.md) (boundary row
+  ([backlog](../../backlog/archive/2026-10-20-spec-writer-architect-review-lane-stw-stats-full-set-blocks-and.md)). Ruling 4 and
+  the re-check's chaining counts carried into the stats specs: [stats/README](../../specs/stats/README.md) (boundary row
   *no remainder*, `[I]` → `[C]`; the 746 chained pairs as `tools/stats.py`'s, 115 breaks, 4 with no next run; tags
-  C 13 → 14, I 4 → 2, L 3), [stats/aggregate](../specs/stats/aggregate.md) (J4 full Trang-Oul's `[C]`, the
+  C 13 → 14, I 4 → 2, L 3), [stats/aggregate](../../specs/stats/aggregate.md) (J4 full Trang-Oul's `[C]`, the
   broken-member set split out `[I]`, the full-block open question struck; tags C 64 → 65, I 42, L 5 → 4),
-  [stats/states](../specs/stats/states.md) (§ H note; tags unchanged) and
-  [wiki/stats-and-states](../wiki/stats-and-states.md) (`based_on` aggregate 2026-10-20). Open questions: aggregate 5 → 4,
+  [stats/states](../../specs/stats/states.md) (§ H note; tags unchanged) and
+  [wiki/stats-and-states](../../wiki/stats-and-states.md) (`based_on` aggregate 2026-10-20). Open questions: aggregate 5 → 4,
   README 3, states 6. The reverser's entry is closed.
 - **2026-10-20 — Phase 1 specs and wiki review (architect, `lane/stw` at `503e72c`, `main` merged: up to date):
-  accept with fixes (1, plus 1 not the lane's).** Checked against [stats/0001](../findings/stats/0001-aggregate.md)
-  *Answer (summary)* (the raised full-block bullet) and § 9, the [stats experiments](../findings/stats/experiments.md#run2026-10-17-stats)
+  accept with fixes (1, plus 1 not the lane's).** Checked against [stats/0001](../../findings/stats/0001-aggregate.md)
+  *Answer (summary)* (the raised full-block bullet) and § 9, the [stats experiments](../../findings/stats/experiments.md#run2026-10-17-stats)
   *Re-check 2026-10-20* (0 mismatches; `aura_chained_pairs` 746, `aura_chain_breaks` 115,
   `aura_drawing_runs_without_next_run` 4; 746 + 115 + 4 = 865) and ruling 4 above: the J4 full Trang-Oul's bullet and
   the README boundary row are `[C]` on its two sources (the code reading, the checker's reproduction of the 180
@@ -269,16 +271,16 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `SKILLS_RollElemDamage` 0x0056E0C0, `RNG_RangeB` 0x0045C3E0. The three stats specs stay `reviewed`.
   - **Fixes:** (1) *overclaim*: the wiki said the 115 next runs "started from a different seed"; the record counts the
     breaks and gives no cause, so the page now says the next run did not start where the last one left the seed and
-    that the record does not say why. (2) not the lane's (pre-existing, flagged by the lane): [how-we-know](../wiki/how-we-know.md)
+    that the record does not say why. (2) not the lane's (pre-existing, flagged by the lane): [how-we-know](../../wiki/how-we-know.md)
     said plan 0041's specs were not reviewed and no wiki page restated them; it now says they are reviewed and points at
-    [stats and states](../wiki/stats-and-states.md).
+    [stats and states](../../wiki/stats-and-states.md).
 - **2026-10-21 — Phase 2 landed (reverser, `lane/p47h`; slot 2 only; no Ghidra).** Review requested. The first
   lane ran batches A and B and was killed with every agent by systemd-oomd at 20:12 (no resume note); this lane kept its
   uncommitted `combat_sessions.py` edit (Travincal and Catacombs Level 2 seeds, checked against Levels' rows), re-ran
   the two killed checks and ran the rest. **run:2026-10-20-shortfalls**, one run under three checkers:
-  [combat](../findings/combat/experiments.md#run2026-10-20-shortfalls) (31 logs, **0 mismatches over 18 737 events**),
-  [stats](../findings/stats/experiments.md#the-stats-sessions-of-run2026-10-20-shortfalls) (10 logs, **0 mismatches**)
-  and [travel](../findings/quests/experiments.md#the-travel-sessions-of-run2026-10-20-shortfalls) (1 log, **0
+  [combat](../../findings/combat/experiments.md#run2026-10-20-shortfalls) (31 logs, **0 mismatches over 18 737 events**),
+  [stats](../../findings/stats/experiments.md#the-stats-sessions-of-run2026-10-20-shortfalls) (10 logs, **0 mismatches**)
+  and [travel](../../findings/quests/experiments.md#the-travel-sessions-of-run2026-10-20-shortfalls) (1 log, **0
   mismatches over 2 625 checks**); the kept runs re-check unchanged (combat `c37r-run2.lst` 0 / 40 655, stats
   `s1017-check-p47r.json` byte-identical, `tools/test_stats.py` and `tools/test_d2s.py` pass).
   - **Reached** (each ≥ 30, this run): crushing blow on champions 52 (40 in Nightmare; champions carry `0x08` with
@@ -298,18 +300,18 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     unstaged (ruling 2).
   - **The *Fleshripper* log** is kept (`workspace/logs/combat/p47h-owf-n-andariel-p8.log`, `a411b34d…`, outside the
     run: 57 mismatches, all the unmodelled event-9 handler, plan 0045 Phase 2); backlog entry
-    [resume-lane follow](../backlog/archive/2026-10-17-architect-reverser-plan-0037-resume-lane-review-follow.md)
+    [resume-lane follow](../../backlog/archive/2026-10-17-architect-reverser-plan-0037-resume-lane-review-follow.md)
     closed with (a) and (b).
   - **Tools:** `tools/combat.py` (`--no-shield-log`, the champion label, an attacker's own `MonAttackStats` inside its
     event, the per-label defence-roll counters), `tools/stats.py` (the `Expansion` row of `itemtypes` skipped: the
     claw-mastery param was one high), `tools/d2pilot.py --dead-below`, `tools/stats_sessions.py` (the potion plan's
     inventory key), recipes `CombatAmaD` and `CombatAmaW` (level 5, to-hit above the floor), pinned.
-  - **Findings:** [combat/0001 § 16](../findings/combat/0001-formulas.md#16-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls)
+  - **Findings:** [combat/0001 § 16](../../findings/combat/0001-formulas.md#16-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls)
     (evade, weapon block, dodge, avoid, crushing blow on champions, the lightning cap, magic immunity, the negative
     field, flat absorb, freeze, prevent-heal's no draw raised to `[C]`; the unusable shield and the in-event
-    `MonAttackStats` read `[I]`), [stats/0002 § 9](../findings/stats/0002-states.md#9-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls)
+    `MonAttackStats` read `[I]`), [stats/0002 § 9](../../findings/stats/0002-states.md#9-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls)
     (the `attract` refusal on monsters, the different-state group clear for groups 1–2, the aura end by the skill
-    switch, `[C]`), [quests/0002](../findings/quests/0002-travel.md) (one mode-0 activation, stays `[I]`). Phase 3 may
+    switch, `[C]`), [quests/0002](../../findings/quests/0002-travel.md) (one mode-0 activation, stays `[I]`). Phase 3 may
     start on the counts above.
 - **2026-10-21 — Phase 2 review (architect, `lane/p47h` at `2d116b3`, `main` merged at `75ff308`): accept with fixes
   (6, plus 1 not the lane's).** Re-run on the review's side under `systemd-run --user --scope -p MemoryMax=4G`, tools
@@ -360,7 +362,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Ruling 4 (the in-event `MonAttackStats`, the drop past the cap).** Accepted at `[I]`: the inner call is checked
     as its own `mas` event, its exit stats feed the build as a value oracle (as at `EV0`), its entry seed is asserted
     (5 in this run, 6 over the 71 logs); the 8 dropped events are counted in `ma` and checked nothing. Which events
-    call it is unread: carried to plan [0045](0045-skills-missiles-machinery.md) (its monster skill uses with
+    call it is unread: carried to plan [0045](../0045-skills-missiles-machinery.md) (its monster skill uses with
     `MonAttackStats` predicted; log entry there).
   - **Ruling 5 (the stats checker's item-type fix, `--dead-below`, the potion key).** The index fix follows
     ItemTypes.md's `[C]` marker rule and moves no kept-run value (byte-identical re-check). `--dead-below` changes the
@@ -387,25 +389,25 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     and lightning flat absorb (`abs-nm-marsh` unrun). Final now: the walking block (6), the magic cap (unstaged).
     **Phase 3 may start** on combat and on the stats cases reached here; the Phase 2b counts reach the specs after it.
 - **2026-10-21 — Phase 3 landed for combat and the reached stats cases (spec-writer, `lane/s47p3`; static, no game,
-  no Ghidra).** Review requested ([backlog](../backlog/archive/2026-10-21-spec-writer-architect-review-lane-s47p3-plan-0047-phase-3-re.md)).
+  no Ghidra).** Review requested ([backlog](../../backlog/archive/2026-10-21-spec-writer-architect-review-lane-s47p3-plan-0047-phase-3-re.md)).
   Re-tagged from run:2026-10-20-shortfalls per rulings 1, 2, 7 and 8, each raised statement citing the run:
-  [combat/to-hit](../specs/combat/to-hit.md) (C3's four rolls on a player defender, prevent-heal's no draw, the
+  [combat/to-hit](../../specs/combat/to-hit.md) (C3's four rolls on a player defender, prevent-heal's no draw, the
   `--no-shield-log` scope; the walking block 6 final at `[I]`, the unusable shield and the skill check 13/12 `[I]`;
-  tags `{C: 33, I: 27, L: 3}` → `{C: 39, I: 30, L: 5}`), [combat/reductions](../specs/combat/reductions.md) (magic
+  tags `{C: 33, I: 27, L: 3}` → `{C: 39, I: 30, L: 5}`), [combat/reductions](../../specs/combat/reductions.md) (magic
   immunity, the lightning cap, the cold cap over two runs, fire flat absorb, the negative absorbed amount; the magic
-  cap final at `[I]`; `{C: 40, I: 25, L: 4}` → `{C: 45, I: 24, L: 5}`), [combat/delivery](../specs/combat/delivery.md)
+  cap final at `[I]`; `{C: 40, I: 25, L: 4}` → `{C: 45, I: 24, L: 5}`), [combat/delivery](../../specs/combat/delivery.md)
   (the total ≤ 0, crushing blow on champions, freeze on a melee hit; `{C: 52, I: 54, L: 4}` → `{C: 59, I: 49, L: 3}`),
-  [combat/damage](../specs/combat/damage.md) (the in-event `MonAttackStats`, `[I]`; `{C: 34, I: 29, L: 4}` →
-  `{C: 34, I: 30, L: 5}`), [combat/README](../specs/combat/README.md) (the run's boundary paragraph, the champion
+  [combat/damage](../../specs/combat/damage.md) (the in-event `MonAttackStats`, `[I]`; `{C: 34, I: 29, L: 4}` →
+  `{C: 34, I: 30, L: 5}`), [combat/README](../../specs/combat/README.md) (the run's boundary paragraph, the champion
   1/8, the shortfall bullet rewritten; `{C: 36, I: 42, L: 5}` → `{C: 38, I: 42, L: 5}`),
-  [stats/states](../specs/stats/states.md) (`attract` on a monster target, groups 1–2, the aura end by the skill
+  [stats/states](../../specs/stats/states.md) (`attract` on a monster target, groups 1–2, the aura end by the skill
   switch; group 3, the curse cut, the 256 floor, expiries 153, shrines and wells 15 named for Phase 2b;
-  `{C: 44, I: 51, L: 6}` → `{C: 47, I: 52, L: 6}`), [stats/README](../specs/stats/README.md) (`{C: 14, I: 3, L: 3}` →
-  `{C: 15, I: 3, L: 3}`), [quests/travel](../specs/quests/travel.md) (one dated `[I]` note, 1 of 20; `{C: 74, I: 84,
+  `{C: 44, I: 51, L: 6}` → `{C: 47, I: 52, L: 6}`), [stats/README](../../specs/stats/README.md) (`{C: 14, I: 3, L: 3}` →
+  `{C: 15, I: 3, L: 3}`), [quests/travel](../../specs/quests/travel.md) (one dated `[I]` note, 1 of 20; `{C: 74, I: 84,
   L: 4}` → `{C: 74, I: 86, L: 4}`). Open questions (live `[L]`): to-hit 3 → 5, reductions 4 → 5, delivery 4 → 3,
-  damage 4 → 5, README 5, states 6, stats/README 3, travel 4. Wiki: [combat](../wiki/combat.md),
-  [stats and states](../wiki/stats-and-states.md), [quests](../wiki/quests.md) (`based_on` 2026-10-21) and
-  [how we know](../wiki/how-we-know.md). The research map rows are asked of the architect in the review request.
+  damage 4 → 5, README 5, states 6, stats/README 3, travel 4. Wiki: [combat](../../wiki/combat.md),
+  [stats and states](../../wiki/stats-and-states.md), [quests](../../wiki/quests.md) (`based_on` 2026-10-21) and
+  [how we know](../../wiki/how-we-know.md). The research map rows are asked of the architect in the review request.
   The Phase 2b counts reach the specs after Phase 2b.
 - **2026-10-21 — Phase 3 review (architect, `lane/s47p3` at `0a9a615`, `main` merged at `c70ef30`): accept with fixes
   (3: overclaim 2, misread 1).** Every raised `[C]` checked against combat/0001 § 16, stats/0002 § 9, the two run
@@ -431,7 +433,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     the field, not the heal (as the lane's own delivery note and the wiki say). An `[I]` sentence restores the split
     (`{C: 45, I: 25, L: 5}`). (2) *misread*: the new `[C]` E1 bullet called `0x08` "the unique flag"; it is the
     special flag that `MonMarkSpecial` sets on every champion-pack member before the champion roll sets `0x04`
-    ([monsters/spawn § G](../specs/monsters/spawn.md#g-the-special-group-boss-champion-or-unique)), which is why no
+    ([monsters/spawn § G](../../specs/monsters/spawn.md#g-the-special-group-boss-champion-or-unique)), which is why no
     stock champion has `0x04` alone. The bullet now cites `sub_005A0320_MonMarkSpecial`, and the label is corrected in
     delivery's state table, D1 (the stun test therefore covers champions), E2, its Mermaid line and the wiki's
     crushing-blow, open-wounds and stun text; no tag changes. (3) *overclaim*: combat/README's struck shortfall bullet
@@ -445,9 +447,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     *Done when*; Phase 2b and the re-tag of its counts remain, after which the plan closes.
 - **2026-10-21 — Phase 2b landed (reverser, `lane/p47b`; slot 2 only; no Ghidra).** Review requested.
   **run:2026-10-21-shortfalls2**, one run under three checkers, each **0 mismatches**:
-  [stats](../findings/stats/experiments.md#the-stats-sessions-of-run2026-10-21-shortfalls2) (14 logs, `tools/stats.py`
-  `85e14b94…`), [combat](../findings/combat/experiments.md#run2026-10-21-shortfalls2) (3 logs, 2 527 events,
-  `tools/combat.py` `ee628bbe…`), [travel](../findings/quests/experiments.md#the-travel-sessions-of-run2026-10-21-shortfalls2)
+  [stats](../../findings/stats/experiments.md#the-stats-sessions-of-run2026-10-21-shortfalls2) (14 logs, `tools/stats.py`
+  `85e14b94…`), [combat](../../findings/combat/experiments.md#run2026-10-21-shortfalls2) (3 logs, 2 527 events,
+  `tools/combat.py` `ee628bbe…`), [travel](../../findings/quests/experiments.md#the-travel-sessions-of-run2026-10-21-shortfalls2)
   (8 logs, 9 300 checks, `tools/quests.py` unchanged). The kept runs re-check unchanged: stats `s1017-run.lst` and
   `p47h-run.lst` byte-identical JSONs; combat `p47h-run.lst` 0 / 18 737 (one new counter, 30) and `c37r-run2.lst`
   0 / 40 655; `tools/test_stats.py` (18) and `tools/test_d2s.py` (45) pass.
@@ -492,11 +494,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `tools/d2pilot.py` (`frames:N`, `--done` with several tags, `descend`'s path), `tools/stats_sessions.py`,
     `tools/combat_sessions.py` and `tools/quest_sessions.py` (the sessions above), recipe `statsfloorb.json` pinned
     in `tools/test_d2s.py`.
-  - **Findings:** [stats/0002 § 10](../findings/stats/0002-states.md#10-plan-0047-phase-2b-the-staging-limited-cases-run2026-10-21-shortfalls2)
+  - **Findings:** [stats/0002 § 10](../../findings/stats/0002-states.md#10-plan-0047-phase-2b-the-staging-limited-cases-run2026-10-21-shortfalls2)
     (the curse cut on the player, group 3, the 300 expiries `[C]`; the floor and shrines `[I]`, final),
-    [combat/0001 § 17](../findings/combat/0001-formulas.md#17-plan-0047-phase-2b-flat-absorb-by-element-run2026-10-21-shortfalls2)
+    [combat/0001 § 17](../../findings/combat/0001-formulas.md#17-plan-0047-phase-2b-flat-absorb-by-element-run2026-10-21-shortfalls2)
     (lightning flat absorb `[C]`; the leech after a defender handler `[I]` at the review, one separating event; cold `[I]`, final),
-    [quests/0002](../findings/quests/0002-travel.md) (7 activations, the operate stays `[I]`; the warp ids and records).
+    [quests/0002](../../findings/quests/0002-travel.md) (7 activations, the operate stays `[I]`; the warp ids and records).
     Phase 3 may re-tag on these counts.
 - **2026-10-21 — Phase 2b review (architect, `lane/p47b` at `6cf1ec2`; `main` not merged): accept with fixes (5:
   overclaim 3, misread 1, omission 1).** Re-checked with the lane's tools (hashes as recorded: `tools/stats.py`
@@ -547,6 +549,61 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     call's caller unfollowed), the 300 expiries; combat/0001 § 17 lightning flat absorb (51); quests/0002 stays `[I]`.
   - **Phase 2b closes.** Every Done-when item is met or named again, final, with a reason the review accepts above.
     Spec-writer entry filed for the Phase 3 re-tag of the 2b counts
-    ([backlog](../backlog/2026-10-21-architect-spec-writer-plan-0047-phase-3-re-tag-the-phase.md)); the review request
+    ([backlog](../../backlog/archive/2026-10-21-architect-spec-writer-plan-0047-phase-3-re-tag-the-phase.md)); the review request
     closed. **Can the plan close?** After that re-tag's review: Phases 1, 2, 2b and 3 (for Phase 2's counts) meet
     their *Done when*.
+- **2026-10-21 — Phase 3 landed for the Phase 2b counts (spec-writer, `lane/s47p3b`; static, no game, no Ghidra).**
+  Review requested ([backlog](../../backlog/archive/2026-10-21-spec-writer-architect-review-lane-s47p3b-plan-0047-phase-3-re.md));
+  the re-tag entry closed ([backlog](../../backlog/archive/2026-10-21-architect-spec-writer-plan-0047-phase-3-re-tag-the-phase.md)).
+  Re-tagged from run:2026-10-21-shortfalls2 as the Phase 2b review rules, each raised statement citing the run:
+  [stats/states](../../specs/stats/states.md) (B1 the curse resistance cut on a player target, `r` 1..99, 54, with
+  `MulDiv`'s rounding, the refusal at 100 and a negative `r` split out at `[I]`; D1 group 3, 24, 67 over groups 1–3,
+  the nested call's caller `[I]`; C1 the 300 expiries, 449 over three runs; the 256 floor (0) and shrines and wells
+  (21 of 50) final at `[I]`, out of the plan; G6's stale "stamina shrine not reached" corrected, code 14 was operated
+  twice in run:2026-10-20-shortfalls; `{C: 47, I: 52, L: 6}` → `{C: 51, I: 53, L: 6}`),
+  [stats/README](../../specs/stats/README.md) (the run's boundary paragraph; `{C: 15, I: 3, L: 3}` → `{C: 16, I: 3, L: 3}`),
+  [combat/reductions](../../specs/combat/reductions.md) (B3 lightning flat absorb 51 `[C]`; cold 1, final at `[I]`;
+  `{C: 45, I: 25, L: 5}` → `{C: 46, I: 25, L: 5}`), [combat/delivery](../../specs/combat/delivery.md) (C1 the leech
+  after a defender's event 1/5 handler, `[I]` on one separating event; E4's floor count; `{C: 80, I: 63, L: 3}` →
+  `{C: 80, I: 64, L: 4}`), [combat/README](../../specs/combat/README.md) (the run's boundary paragraph with the
+  checker's value oracle, the named-again bullet rewritten whole; `{C: 38, I: 42, L: 5}` → `{C: 39, I: 42, L: 5}`),
+  [quests/travel](../../specs/quests/travel.md) (C1's note rewritten: 7 of 20 activations from mode 0, final, `[I]`;
+  the spec names no Act V LvlWarp id, so no id/record note; tags unchanged `{C: 74, I: 86, L: 4}`). Open questions
+  (live `[L]`): states 6, stats/README 3, reductions 5, delivery 3 → 4, combat/README 5, travel 4. Wiki:
+  [stats and states](../../wiki/stats-and-states.md), [combat](../../wiki/combat.md), [quests](../../wiki/quests.md)
+  (`based_on` already 2026-10-21, the specs' `updated:`), [how we know](../../wiki/how-we-know.md) (the further pass and
+  its final shortfalls). The research map rows are asked of the architect in the review request.
+- **2026-10-21 — `lane/s47p3b` review paused (architect; owner's pause, no verdict yet).** Resume note: the review
+  of `a3fc8ca` (diff vs `fafcd32`) had only read the review request, the closed re-tag entry and both review-fixes
+  files when the owner paused. Still to do: check each raise to `[C]` (states B1, D1, C1; reductions B3; the two
+  README boundary paragraphs) against stats/0002 § 10 and combat/0001 § 17 and the ruling's scope; check that every
+  `[L]` sits under *Open questions*; check states G6 (stamina shrine code 14 in run:2026-10-20-shortfalls); recount
+  tags with a script; then the verdict, fixes, research-map rows (stats/states, combat, quests/travel), close the
+  review request, close plan 0047 (move to `done/`, fix links, plans README), and the ledger row for `s47p3b`
+  (spec-writer, static; 157 571 tokens, 75 tools, 15 min, from the coordinator).
+- **2026-10-25 — `lane/s47p3b` review resumed and given (architect, `a3fc8ca` vs `fafcd32`, `main` at `e3ac907`
+  merged first, no conflict): accept with fixes (2: stale cross-reference 1, other 1).** Every raise to `[C]` checked
+  against stats/0002 § 10, combat/0001 § 17 and the Phase 2b review's scope: states B1 (the cut on a player target,
+  `r` 1..99, 54 = 52 + 2; 275 − 231 = 44, 3 600 − 3 024 = 576, 2 400 − 2 016 = 384), the rounding, the refusal at
+  100 and a negative `r` split out at `[I]` as ruled (fix 1 of that review); D1 group 3 (24, 67 = 43 + 24), the nested
+  call's caller split out at `[I]`; C1 the 300 expiries (296 = 153 + 49 + 48 + 42 + 4, 449 = 123 + 30 + 296); reductions
+  B3 lightning flat absorb (51 = 13 + 25 + 13), cold at `[I]` final under the Done-when's condition (fix 4); the two
+  README boundary paragraphs (14 sessions; 2 527 events of 3 logs; the kept lists re-check as the Phase 2b review
+  recorded; the checker's attacker life after a defender handler stated as a value oracle). The leech after a
+  defender's handler stays `[I]` on its one separating event (fix 2), the 256 floor, shrines and wells and the
+  waypoints final at `[I]` with the rulings' reasons. States G6 checked: code 14 is the stamina shrine (states G1's
+  table) and run:2026-10-20-shortfalls' record lists 2 shrines of code 14 in `palc-wells1`. Tags recounted with a
+  script (struck text excluded): the six front matters match their bodies, and no `[L]` stands outside *Open
+  questions*. Gate green.
+  - **Fixes:** (1) *stale cross-reference*: states E3 still said the stamina shrine "was not reached", the clause G6
+    corrected; it now says it was operated twice and that the record does not count the ticks under its bonus by
+    mode, so the `b ≥ 1000` exception stays a code reading. (2) *other*: the combat wiki's "the colder monsters of the
+    higher difficulties" reworded to the spec's scope (the cold-attacking monsters of Nightmare and Hell beyond the
+    one session run).
+  - **Bookkeeping:** research-map rows `combat/formulas` (C 238 / I 191 / L 24), `stats/states` (C 51 / I 53 / L 6;
+    stats/0002 {C 22, I 58, L 8}), the stats overview's count in `stats/aggregate` (C 16) and `quests/travel`
+    rewritten; the review request closed; the plan's two open questions struck with their outcomes.
+  - **Plan 0047 closes.** Phases 1, 2, 2b and 3 (both parts) meet their *Done when*: each shortfall is reproduced to
+    its minimum or named again, final, with a reason a review accepted (the walking block, the magic cap, cold flat
+    absorb, the leech after a defender's handler, the 256 floor, shrines and wells 21 of 50, mode-0 waypoint
+    activations 7 of 20). Moved to `done/`.

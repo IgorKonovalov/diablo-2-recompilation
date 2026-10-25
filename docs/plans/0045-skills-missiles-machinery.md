@@ -22,8 +22,8 @@ which seeds it draws on? This is phase (3) of [ADR-0014](../adrs/0014-scope-game
 
 The boundary: **the machinery and a named tier A of skills** are in this plan. What each of the remaining numbered
 skill and missile functions does is plan [0046](0046-skills-function-catalogue.md). Which skill a monster chooses,
-and when, is phase (4) (an input here); the frame on which an animation reaches its action frame is phase (5) (a
-logged input here, stated in game frames).
+and when, is phase (5) (an input here); the frame on which an animation reaches its action frame is phase (4) (a
+logged input here, stated in game frames; phases renumbered by the owner's 2026-10-20 swap, plans 0050 and 0052).
 
 ## Context
 
@@ -691,4 +691,4 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   14 (return `0x005CAED8`) calls it for mode 8 in 6 of 14 such events over 71 combat logs, and the build uses its
   output ([combat/0001 § 16](../findings/combat/0001-formulas.md#16-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls),
   `[I]`); which events call it is unread and belongs with this plan's monster skill uses with `MonAttackStats`
-  predicted. ([0047 log](0047-simulation-shortfalls.md#implementation-log), Phase 2 review rulings 4 and 6.)
+  predicted. ([0047 log](done/0047-simulation-shortfalls.md#implementation-log), Phase 2 review rulings 4 and 6.)

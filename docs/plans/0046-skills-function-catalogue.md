@@ -141,7 +141,8 @@ function a stock row uses on the machinery of plan [0045](0045-skills-missiles-m
 
 - **Synthetic-only functions.** A function no stock row reaches is specified from the code and its emulation, and
   flagged as such; edited-data cases are ADR-0013's.
-- **Monster AI.** Which monster uses which skill, and when, stays phase (4)'s.
+- **Monster AI.** Which monster uses which skill, and when, stays phase (5)'s (plan [0052](0052-monster-ai.md); phase (4)
+  is animation since the owner's 2026-10-20 swap).
 
 ## Implementation log
 
