@@ -940,6 +940,45 @@ permission layer and is left to the orchestrator's merge. No row moved; the tota
 call; the weapon base-stat changes of `ITEMS_MakeEthereal` are in the list check). prop 15 stays an H2c shortfall,
 counted as harness; its open route is an owner-played Hellforge session or a pilot that reaches the room.
 
+**H4a (filed 2026-10-25, reverser, `lane/h4a`): 32 statements of monsters/pool, spawn, special, stats and
+items/quest-drops.** run:2026-10-21-sweep-monsters-a, twelve kept sessions on slot 1 (expansion Nightmare, `UniqNova`;
+nine development logs of the Chaos Sanctuary attempts kept apart), stock data. `sweep_h4a.py check` bad 0 in every part
+on the twelve logs and on 63 kept logs of the earlier monster runs and run:2026-10-20-chain; `monstats.py` 0 mismatches
+on all twelve (the chained `monspawn.py` and DRLG models' mismatches on three logs, none on a tag these rows rest on,
+are listed in the record). The lane files **16 raised, 8 raised in part, 8 shortfall**. The evidence is in the "Plan
+0038 batch H4a" sections of
+[monsters/0001](../../findings/monsters/0001-level-pool.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a),
+[0002](../../findings/monsters/0002-room-population.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a),
+[0003](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a),
+[0004](../../findings/monsters/0004-stats.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a) and
+[items/0010](../../findings/items/0010-quest-drops.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a).
+
+- **Raised (16):** pool 12; quest-drops 48; stats 7, 18; spawn 5, 49 (the operand route of S2c ruling 2: the class
+  list read at 0x00731B2C/0x00731B30 with objdump and r2, three readers and no writer); special 30, 35, 48 (on the
+  kept logs: three refusals), 50 (the aura half, with an extra-pick control), 51, 54 (r = 0 only, the draw's place
+  holding for any r), 55, 58, 60, 68.
+- **Raised in part (8):** stats 21 (one stock row per class; the level skip, a second row, `n` 2 or 3 and an occupied
+  location are d-none on stock data, as the chain run's review found); spawn 47 (the tick's gate, the roll's one step
+  and the no-spawn branch, on the one roll met; the mask's width, room `+0x78` and the spawn branch remain) and spawn 48
+  (**with a correction:** the roll did fire, once, in the Chaos Sanctuary); special 34 (rows 10 and 13; 11, 14 and 15
+  in no logged list), 46 and 52 (records 10, 26, 27, 29, 36, 38, 42 and 60, and the no-tail records; tails 6, 37, 39,
+  43–45 and 62 not met), 56 (records 36 and 38; 37 not met), 69 (156, 242 and 256; the other fixed-name classes not met).
+- **Shortfall (8):** spawn 11 (91 gate calls in level 108, all with byte 0 and an open gate; the closed state needs
+  the three seal bosses dead); special 9, 10, 25, 31, 38 and 50's thief half (all need Lord De Seis: seal 394 was
+  logged but never operated, the pilot finding no hop towards it); special 59 (no Ancients recipe). Route for the seven
+  De Seis and gate rows: an owner-played Chaos Sanctuary session with `tools/gdb/mon-h4a-obj.gdb`; for 59, a
+  quest-open recipe or owner play.
+- **H4b pieces met** (the rows stay counted as H4b): stats 14 and 13's class 312 (`doomknight3`, 63 creations, both
+  appearance bytes = `Range(4)`, every value 0–3 met); special 66's mod 12 (Blood Raven's client name). Not met: a
+  `willowisp` special (stats 40), an aura special at level ≤ 15 (special 27's clamp at 1), a Shrines code-20 shrine
+  (special 2, 74), the camel at `/players` 8 (stats 23). S3b pieces (Druid Raven in Normal; Durance 3 in Normal): not
+  run.
+
+Net effect on the totals: none proposed (no class moves; the remainders and the shortfalls stay counted as H4a). Taken
+against `main` after merging it into the lane (`e3ac907`; the H2c review's totals above are the latest in this
+section): **static 567, harness 526, c-emu awaiting a batch 0, blocked 414** (d-none 288, d-edit 73, d-sim 28, d-2c 7,
+d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is

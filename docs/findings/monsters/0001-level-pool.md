@@ -509,6 +509,22 @@ at exit, so no output depends on it: S1e ruling 3 (a)); no access was traced. Th
   component (`comp > 1`) always allows, so on the game's generator it ends with probability 1 but with no bound on the
   number of draws. (0x005BDDA0–0x005BDE4A)
 
+## Plan 0038 batch H4a (run:2026-10-21-sweep-monsters-a)
+
+Harness batch H4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took one row of
+[monsters/pool](../../specs/monsters/pool.md) ([inventory](../../plans/0038-inventory/monsters-pool.md); spec lines
+`Lnnn` at `main` `1d0262a`). Record: [experiments.md § run:2026-10-21-sweep-monsters-a](experiments.md#run2026-10-21-sweep-monsters-a).
+Check: `tools/sweep_h4a.py boss` (`SI0`/`SI2` of every `boss`-flag creation) and `tools/monstats.py check`, 0 monstats mismatches (the chained models: run record).
+
+- **pool 12** (L420) **raised.** [C] Five more `boss` classes, each created in an expansion nightmare game, keep MonStats
+  `Level(N)` where the area level differs: Blood Raven (267, level 17: 43, `MonLvl2Ex` 36), Radament (229, level 49: 49,
+  not 44), Mephisto (242, level 102: 59, not 55), Nihlathak (526, level 124: 70, not 64), and Andariel again (156,
+  level 37: 49, not 43). Each `SI2` level (0x00573F83) is the MonStats value; a reading without the `boss` test would
+  give the area level in all five. With Andariel's quest-drops run, six of the 25 `boss` classes are met; the others
+  take the same instruction (0x00573E2E–0x00573E40 tests the class's own flag byte, no class compare), and the flag is
+  set on exactly the 25 listed in [items/0010 § H4a](../items/0010-quest-drops.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a).
+  (fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:MonStats.txt:boss, tbl:Levels.txt:MonLvl2Ex, run:2026-10-21-sweep-monsters-a)
+
 ## Open questions
 
 - ~~The nightmare/hell monster level and the classic branches are code-read only.~~ Logged in run:2026-10-12-mon-pool-p2

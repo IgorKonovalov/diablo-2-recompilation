@@ -259,6 +259,10 @@ A batch's priority is its count of T1 rows first, then its count of T2 rows.
   - Candidate for that addendum (`lane/h2c` review, 2026-10-21): items/properties 15, func 24, an H2c shortfall still
     counted as harness. An owner-played Hell Hellforge session on the H2c tcn game copy (`Haphesto (H)` names *Tomb
     Reaver*, the only stock-droppable func-24 carrier) would log it; the pilot reached the room in none of four tries.
+  - Candidate (H4a, filed 2026-10-25, for the review to rule): monsters/special 9, 10, 25, 31, 38, 50's thief half and
+    monsters/spawn 11, H4a shortfalls still counted as harness. An owner-played Chaos Sanctuary session (`UniqNova`,
+    Nightmare, seed 4907, `tools/gdb/mon-h4a-obj.gdb`) that opens seal 394 and kills the three seal bosses logs Lord
+    De Seis and the closed gate; the pilot logged seal 394 but found no hop towards it.
 - **`d-none` rows**, such as guards that stock data never fails, may never reach `[C]`. Phase 0 counts them so that
   the specs' remaining `[I]` is explained.
 - **Plan 0037 interaction.** If 0037·P1 reads code that a static batch also needs, such as the stat accessors, the
@@ -3283,3 +3287,27 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
        rule 14), the review request and the plan-log entry. The H4b pieces met: Blood Raven's client name (special 66).
   - **Usage:** this resume 0 h 50 min, about 95 tool calls, about 190 k tokens; with the earlier part about 620 k
     tokens, 325 tool calls, 190 min.
+- **2026-10-25 — H4a (`monsters-a`) filed (reverser, `lane/h4a`, harness slot 1, after merging `main` `e3ac907`).**
+  run:2026-10-21-sweep-monsters-a: twelve kept sessions (session chaos7 added on this resume, 41 min, seed 4907), nine
+  development logs; manifests `h4a-manifest.sha256` and `h4a-manifest-dev.sha256` (`workspace/logs/h4a/`). Slot 1 is
+  stopped and its saves directory restored (empty, no aside); nothing of the lane is left running.
+  - **chaos7:** seals 392, 393, 395 and 396 operated; tails 36 (Infector of Souls) and 38 (Grand Vizier) logged; seal
+    394 logged at (7773, 5155), no hop found towards it, so no Lord De Seis, no closed gate, no Diablo. Also met: one
+    wanderer roll (level 108; 82 ≥ 3, no spawn), 63 `doomknight3` creations (H4b's stats 14 piece).
+  - **Tools:** `tools/sweep_h4a.py wander` now models every tick pair (one step; the roll on low & 0x7FFF = 0 with
+    `MonWndr`; the roll's step and the ≥ 3 branch); `check/run-checks.sh` runs the whole check set (with the aura
+    control and the class-312 bytes) under `MemoryMax=4G`. Checks: `sweep_h4a.py check` bad 0 on the twelve logs and
+    the 63 kept logs; `monstats.py` 0 mismatches on all twelve; the chained models' mismatches on three logs listed in
+    the record.
+  - **Ledger (32 statements):** raised 16 (pool 12; qd 48; stats 7, 18; spawn 5, 49; special 30, 35, 48, 50 aura half,
+    51, 54, 55, 58, 60, 68); raised in part 8 (stats 21; spawn 47, 48 with a correction; special 34, 46, 52, 56, 69);
+    shortfall 8 (spawn 11; special 9, 10, 25, 31, 38, 50 thief half, 59). Sections "Plan 0038 batch H4a" in
+    monsters/0001–0004 and items/0010; inventory § 2.6 H4a block; totals unchanged (1 526).
+  - **Symbols:** `sub_005B24E0_EscortSpawn` I → C.
+  - **Backlog:** review request
+    [2026-10-25-reverser-architect-review-lane-h4a-plan-0038-batch-h4a](../backlog/2026-10-25-reverser-architect-review-lane-h4a-plan-0038-batch-h4a.md);
+    spec-writer entry
+    [2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48](../backlog/2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48.md)
+    (to be released with the review).
+  - **Next:** architect review of `lane/h4a`.
+  - **Usage:** this resume about 1 h 50 min, about 110 tool calls; with the earlier parts about 300 min.

@@ -47,7 +47,7 @@ if HERE not in sys.path:
 
 import drlg  # noqa: E402
 import sweep_h4b as H  # noqa: E402
-from rng import INIT_HIGH, rng_range  # noqa: E402
+from rng import INIT_HIGH, rng_range, step  # noqa: E402
 
 EXE = drlg.DEFAULT_EXE
 parse, T = H.parse, H.T
@@ -505,19 +505,83 @@ def part_names(paths):
 
 
 # --- wanderers -----------------------------------------------------------------------------------------------------
+def _seed(s):
+    lo, hi = s.split(":")
+    return int(lo, 16), int(hi, 16)
+
+
+def _monwndr():
+    """Levels MonWndr by level id, from the merged levels.txt (the column the tick's gate reads, Levels +0x2E)."""
+    import csv
+    out = {}
+    with open(os.path.join(H.EXCEL, "levels.txt"), encoding="latin-1") as f:
+        for r in csv.DictReader(f, delimiter="\t"):
+            if r["Id"].strip().isdigit():
+                out[int(r["Id"])] = int(r["MonWndr"] or 0)
+    return out
+
+
 def part_wander(paths):
+    """The tick model of K1 (sub_0054F060_RoomWandererTick) on every RTK0 .. RTK1 pair of one room: one room-seed
+    step; the roll (WRL, sub_0054EFF0_WandererRoll) only when the stepped low has its 15 low bits 0 and the level's
+    MonWndr is non-zero (room +0x78 is not logged: a passed gate with no WRL is counted apart, not failed); the roll's
+    own step; and, when its low mod 100 is 3 or more, no further draw (RTK1 = two steps)."""
     R = Report("wander")
+    wndr = _monwndr()
     for p in paths:
         acts = collections.Counter()
+        b = os.path.basename(p)
+        open_ = {}
         for tag, d, n in parse(p):
             if tag == "RTK0":
                 R.n("RTK0 ticks")
                 lid = d.get("lid")
                 if lid is not None:
                     acts["act %d" % (1 if lid < 40 else 2 if lid < 75 else 3 if lid < 103 else 4 if lid < 109 else 5)] += 1
+                open_[d["room"]] = [d, None, n]
             elif tag == "WRL":
                 R.n("WRL (roll past the 1/32768 gate)")
-                R.note("%s:%d WRL %s" % (os.path.basename(p), n, d))
+                R.note("%s:%d WRL %s" % (b, n, d))
+                if d["room"] in open_:
+                    open_[d["room"]][1] = d
+                else:
+                    R.fail("%s:%d WRL with no open RTK0 for its room" % (b, n))
+            elif tag == "RTK1" and d["room"] in open_:
+                d0, wrl, n0 = open_.pop(d["room"])
+                if "rs" not in d0 or "rs" not in d or d0.get("lid") is None:
+                    R.n("tick pairs without seeds or level (not modelled)")
+                    continue
+                lo, hi = step(*_seed(d0["rs"]))
+                gate = (lo & 0x7FFF) == 0 and wndr.get(d0["lid"], 0) != 0
+                if wrl is None:
+                    if gate:
+                        R.n("gate passed on the seed and MonWndr, no WRL (room +0x78 non-zero?)")
+                        R.note("%s:%d gate passed, no roll: lid %s" % (b, n0, d0["lid"]))
+                    if (lo, hi) != _seed(d["rs"]):
+                        R.fail("%s:%d tick: one step gives %08x:%08x, RTK1 %s" % (b, n0, lo, hi, d["rs"]))
+                    else:
+                        R.n("tick = one room-seed step, no roll")
+                        if (lo & 0x7FFF) == 0 and not gate:
+                            R.n("low 15 bits 0 but MonWndr 0, no roll")
+                    continue
+                if not gate:
+                    R.fail("%s:%d WRL where the gate is shut (low %08x, lid %s)" % (b, n0, lo, d0["lid"]))
+                    continue
+                if (lo, hi) != _seed(wrl["rs"]):
+                    R.fail("%s:%d WRL seed %s, the tick's step gives %08x:%08x" % (b, n0, wrl["rs"], lo, hi))
+                    continue
+                R.n("WRL at the tick's step with low & 0x7FFF = 0 and MonWndr non-zero")
+                lo2, hi2 = step(lo, hi)
+                if lo2 % 100 >= 3:
+                    if (lo2, hi2) == _seed(d["rs"]):
+                        R.n("roll: one step, low mod 100 >= 3, no further draw")
+                        R.note("%s:%d roll low %08x mod 100 = %d: RTK1 = two steps, lid %s" %
+                               (b, n0, lo2, lo2 % 100, d0["lid"]))
+                    else:
+                        R.fail("%s:%d roll %d >= 3 but RTK1 %s is not two steps" % (b, n0, lo2 % 100, d["rs"]))
+                else:
+                    R.n("roll below 3 (spawn branch; not modelled here)")
+                    R.note("%s:%d roll low mod 100 = %d" % (b, n0, lo2 % 100))
         for k, v in acts.items():
             R.n("RTK0 " + k, v)
     return R.out()
