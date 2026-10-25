@@ -990,6 +990,44 @@ line and only reported how many steps it lay past `Init(step(game).low)`. It now
 - [I] `MonEquipInit` (oracle 13) is not modelled: a class with an `oninit` MonEquip row raises and its unit seed is taken
   (none was created on these logs). (fn:sub_005D6B60_MonEquipInit@0x005D6B60)
 
+## Plan 0038 batch H4a (run:2026-10-21-sweep-monsters-a)
+
+Harness batch H4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took five rows of
+[monsters/spawn](../../specs/monsters/spawn.md) ([inventory](../../plans/0038-inventory/monsters-spawn.md); spec lines
+`Lnnn` at `main` `1d0262a`). Record: [experiments.md § run:2026-10-21-sweep-monsters-a](experiments.md#run2026-10-21-sweep-monsters-a).
+Checks: `tools/sweep_h4a.py` (`gate`, `wander`) on the batch's twelve session logs and the 63 kept logs; the static
+reads in `workspace/logs/h4a/check/static-wanderer.txt`, `static-wanderer-tick.txt` and `static-gate.txt`.
+
+- **spawn 5** (L110) and **spawn 49** (L749, "an entry for Act I only: one class, 270 `rogue2`") **raised.** [C] by
+  the operand route (S2c ruling 2, under S4b ruling 1): `WandererSpawn` returns for an act ≥ 5 (`cmp al, 5; jae`,
+  0x0054EF59), reads the act's `(start, count)` byte pair at `0x00731B30 + 2·act` and the class dword at
+  `0x00731B2C + 4·(start + i)`. The image holds class word `0x010E` = 270 and the pairs `(0, 1), (0, 0), (0, 0), (0, 0),
+  (0, 0)`, read with objdump and with r2 (`px 16 @ 0x00731B2C`); the only instructions of the code section that name
+  these addresses are the three readers at 0x0054EF64, 0x0054EF71 and 0x0054EF92, none a write. A count of 0 returns
+  before any spawn (`test edx, edx` at 0x0054EF6E, `je` at 0x0054EF78). (fn:sub_0054EF50_WandererSpawn@0x0054EF50, 0x00731B2C, 0x00731B30)
+- **spawn 47** (L736, K1 past the first draw) **raised in part**, and **spawn 48** (L745, the note "the roll never
+  fired") **raised in part, with a correction.** [C] The roll fired once in the batch: in session chaos7 (level 108,
+  Chaos Sanctuary, `MonWndr` 1) a tick's room-seed step left the low word `0xD17D0000`, and `WandererRoll` was entered
+  (`WRL`, 0x0054EFF0) on exactly that seed; it stepped the room seed once more (low `0xC2EF6F3A`, mod 100 = 82), and
+  since 82 ≥ 3 nothing further was drawn: the tick's `RTK1` seed is two steps from its `RTK0` seed. `tools/sweep_h4a.py
+  wander` models every tick pair: on the twelve session logs 7 184 ticks, 7 183 one step and no roll, 1 roll as above;
+  on the 63 kept logs 4 785 ticks, all one step and no roll; no tick whose step left the low 15 bits 0 went without a
+  roll, and no roll came on any other tick (bad 0). The code: `test eax, 0x7FFF` on the stepped low (0x0054F089), room
+  `+0x78` = 0 (0x0054F096), Levels `+0x2E` ≠ 0 (0x0054F0AA); the roll's `low mod 100` (unsigned, `mul 0x51EB851F; shr
+  edx, 5`) against 3 (0x0054F02B) and the region's `+0x2C4` against 3 (0x0054F041) before `WandererSpawn`
+  (`static-wanderer-tick.txt`). **Correction** (spawn 48): the note's "never fired" holds for run:2026-10-13-mon-spawn
+  only; the roll has now fired once. **Remainder `[I]`:** the mask's width (the low had 16 zero bits, so `0x7FFF` and
+  `0xFFFF` are not separated by this case), room `+0x78` (not logged), the spawn branch (a roll below 3, the region
+  count, `WandererSpawn`'s draws and placement): no roll below 3 was met. (fn:sub_0054F060_RoomWandererTick@0x0054F060,
+  fn:sub_0054EFF0_WandererRoll@0x0054EFF0, tbl:Levels.txt:MonWndr, run:2026-10-21-sweep-monsters-a)
+- **spawn 11** (L254, the Chaos Sanctuary quest byte closes the gate) **shortfall.** Every one of the 91 `GQ` lines (all
+  in level 108, session chaos7) has byte 0 and is followed by an open gate (`PG` 1), as the line reads (`sweep_h4a.py
+  gate`: `gate result as the byte gives (byte 0 -> 1)` 91, bad 0). The closed state needs the three seal bosses dead;
+  Lord De Seis was never created (seal 394 not operated, monsters/0003 § H4a special 56), so no `GQ` with a non-zero byte
+  was logged. The row stays `[I]`, counted as H4a; route: the owner-played Chaos Sanctuary session of monsters/0003
+  § H4a (special 9 and the rows with it). (0x0054EC1B, 0x0054EC27, fn:sub_0054EBC0_RoomPopulateGate@0x0054EBC0,
+  run:2026-10-21-sweep-monsters-a)
+
 ## Open questions
 
 - [L] What room `+0x78` is (it must be 0 for a wanderer), and when `0x0061A4D0` lets an already populated room restore its inactive units. Code still to read.

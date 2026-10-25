@@ -668,7 +668,9 @@ Checks: `tools/sweep_h4b.py` (`sik`, `players`) and `tools/monstats.py check`.
   (level 107, nightmare). `tools/monstats.py` did not store it and reported 73 false appearance mismatches; fixed
   (`7015458`), then 0 mismatches. (fn:sub_00573CB0_MonStatsInit@0x00573CB0, 0x00573D93–0x00573DAC,
   run:2026-10-16-sweep-monsters-b) **Remainder `[I]`:** class 312 (`doomknight3`, Chaos Sanctuary), not met; its two
-  writes (`+0x0E`, `+0x0F`, 0x00573D68–0x00573D8E) rest on the reading.
+  writes (`+0x0E`, `+0x0F`, 0x00573D68–0x00573D8E) rest on the reading. *Met since* in run:2026-10-21-sweep-monsters-a
+  (63 creations, one `Range(4)` written to both bytes; § Plan 0038 batch H4a below): the H4a review raises the remainder,
+  so stats 14 and 13 are raised whole, still counted as H4b.
 - **stats 23** (L302–L304) **raised.** [C] `Align` 1 and 2 classes get `players` 1 and no HP or XP percent under
   `/players` > 1: `Align` 1 at `/players` 8 for 16 classes (Lut Gholein's NPCs and the `roguehire` hireling of session
   5b), `Align` 2 (`cow`) at 8 in run:2026-10-15-mon-stats; `tools/monstats.py` reproduces each record. (0x0057396C,
@@ -784,6 +786,40 @@ Oracle 13 of [chain/0001](../chain/0001-oracles.md). Record: [chain/0002 § 11](
   twice per item inside the creation (rng/seeds 7a). No logged creation reaches it: neither class was created in the
   62 world logs of plan 0048, so the model is untested. (fn:sub_005D6B60_MonEquipInit@0x005D6B60,
   fn:sub_00573B20_MonEquipItemCreate@0x00573B20)
+
+## Plan 0038 batch H4a (run:2026-10-21-sweep-monsters-a)
+
+Harness batch H4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took three rows of
+[monsters/stats](../../specs/monsters/stats.md) ([inventory](../../plans/0038-inventory/monsters-stats.md); spec lines
+`Lnnn` at `main` `1d0262a`). Record: [experiments.md § run:2026-10-21-sweep-monsters-a](experiments.md#run2026-10-21-sweep-monsters-a).
+The rows were routed to a Blood Raven or `flyingscimitar` creation; plan 0048 Phase 2 met both before this batch ran,
+in two kept, reviewed logs of run:2026-10-20-chain (`p2-s1-4807-raven-xn2`, `p2-s1-4832-cn2`). The raises cite that
+run's reviewed check output; this batch's own Blood Raven (session raven2) is not counted for them.
+
+- **stats 18** (L243, B12: `MonEquipInit` is called) and **stats 7** (L141, the seed oracle) **raised.** [C] For the two
+  classes with an `oninit` first row, 267 `bloodraven` and 234 `flyingscimitar`, the creation's unit seed after
+  `MonEquipInit` (`SIX`, 0x0057423A) is the model's: one step per walked row with a location and the item creation's
+  game-seed draws (`run:2026-10-20-chain` final check, `oracle 13: monstats MonEquipInit oninit creations reproduced by
+  the model (oracle 13), class 234 1` and `class 267 1`, 2 items created; `workspace/logs/chain-p2/out/final-check.txt`
+  `79c3a7a7…`). The control `--cf monequip-off` (no `MonEquipInit` walk) fails both logs at those creations, so the
+  call is made and its draws are the model's; the seed after it is no longer an oracle. Re-run here:
+  `tools/monstats.py check` on both logs, 0 mismatches (4 130 and 4 474 checks;
+  `workspace/logs/h4a/check/monstats-monequip-kept.txt`). (fn:sub_005D6B60_MonEquipInit@0x005D6B60, 0x00574235,
+  fn:sub_00573B20_MonEquipItemCreate@0x00573B20, run:2026-10-20-chain)
+- **stats 21** (L276, the row walk and one unit-seed step per row) **raised in part.** [C] The walk from the class's
+  first row and the one step that picks the location, for the stock rows: `monequip.bin` rows 0 and 1 (the two `oninit`
+  rows) are level 0 with one location each, so each creation walks one row, takes one step (`n` = 1, the masked
+  form) and creates one item (run:2026-10-20-chain, as above; its review fix 3). **Remainder `[I]`, d-none on stock
+  data:** the level skip (a first row above the monster level), a second row of the class, `n` of 2 or 3 (`RangeB`)
+  and an occupied location; no stock `oninit` row reaches them (chain/0002 § 11).
+  (fn:sub_005D30A0_MonEquipFirstRow@0x005D30A0, fn:sub_005D6B60_MonEquipInit@0x005D6B60)
+- **H4b piece, stats 14 and 13 (class 312; the rows stay counted as H4b).** [C] `doomknight3` (class 312) draws
+  `Range(4)` on its unit seed after the appearance pick and writes the result to both `MonsterData +0x0E` and `+0x0F`
+  (appearance bytes 10 and 11): 63 creations in session chaos7 (level 108, nightmare), the two bytes equal in every one
+  and spread over all four values (0: 14, 1: 19, 2: 18, 3: 12; `check/doomknight3-app.txt`); `tools/monstats.py check` reproduces each creation's
+  appearance bytes and the unit seed after them, 0 mismatches (6 272 checks; `check/monstats-h4a.txt`). This is the
+  remainder the H4b ledger left for class 312 (§ Plan 0038 batch H4b, stats 14). (fn:sub_00573CB0_MonStatsInit@0x00573CB0,
+  0x00573D68–0x00573D8E, run:2026-10-21-sweep-monsters-a)
 
 ## Open questions
 
