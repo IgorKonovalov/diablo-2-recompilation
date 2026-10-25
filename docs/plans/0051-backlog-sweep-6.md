@@ -232,3 +232,15 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     give the third slot's offset. The three data questions of § Phase 0 belong to P0b's entries; none of P0a needs a
     decompile reading, so nothing is forwarded to Phase 1b.
   - Gate fast tier GREEN (the 11 W1 warnings are `main`'s, in `docs/specs/data/excel.md`). Next: P0b (items 9–16).
+- **2026-10-25 — Phase 0a review paused (architect, on `lane/p51a` at `61c0f41`; owner's usage-limit stop).** `main`
+  (`9e221ed`) is the lane's base, so no merge was needed. Checked against skills/0004–0011 and the 9b and `pal` review
+  entries: the readers on Missiles (`pSrvHitFunc`, `HitSubMissile2..4`, `SubMissile1..3`, `Param1..5`, `sHitPar1..3`,
+  `dParam1/2`, `EType`, `CollideKill`, `Size`, `Vel`/`VelLev`), Skills (aura, passive and summon words, `calc1..4`,
+  `Param1..7`, `ToHit`, `ELen`, the mana columns, `perdelay`, `progressive`, `srvmissilea..c`, `startmana`), MonStats2,
+  MonStats, CharStats, DifficultyLevels and States. Their tags follow the findings, and the anchors resolve to the
+  findings' sections. `Kick`'s maximum `/ 3` (`[I]`) and minimum (`[C]`) match skills/0007 § 3, and `TargetPet` matches
+  skills/0006 § 6. The narrowed `AiCurseDivisor` open question is right. The diff has no `[L]` outside Open questions
+  except the layout cells' existing "slot by stride". `tools/` and `re/` are unchanged. No fix has been found so far.
+  **Left:** the gate's result, the verdict, closing the review request (`backlog.py close`, then stage the archive/
+  path), the ledger rows in `docs/plans/metrics.md` (lane: archivist, static, 183 561 tokens, 59 tools, 14 min;
+  review: "—"), and the review-fixes Seen lines.
