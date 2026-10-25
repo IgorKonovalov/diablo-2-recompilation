@@ -41,7 +41,8 @@ offsets are record offsets. This batch continues [skills/0001](0001-dispatch.md)
   the defence roll. (fn:sub_0057D810_PreventHealHook@0x0057D810, 0x0057D879–0x0057D891)
 - [I] **Re-seed sites** (rng/0002's open rows): the missile-creation callbacks `0x005D40F0`, `0x005D4680`,
   `0x005C9290`, `0x005CD110` and `0x005AC040` set the **new missile's** seed from a value the creator passes (a local
-  seed's low word, or the path position plus an index); missile do 28 and 35 re-seed the missile from the low word
+  seed's low word, or the path position plus an index; `0x005C9290`'s own path calls then step the new seed, § 9
+  corrected 2026-10-25); missile do 28 and 35 re-seed the missile from the low word
   kept in `MissileData+0x28` and store the new low word back; hit 58, do 34 and `0x005A9820` re-seed the missile from
   its position. Two re-seed a **unit's** seed: Armageddon's periodic function (do 146, `0x005C8520`) re-seeds the caster
   from `SkillEntry+0x18` and stores a fresh `RNG_Range(1 000 000)` there, and `0x00645390` (no reference in the image).
@@ -50,6 +51,13 @@ offsets are record offsets. This batch continues [skills/0001](0001-dispatch.md)
   max)`: a pet type with a `group` removes the owner's pets of the other types of that group, then the owner's pets of
   the type are removed oldest first while their count exceeds `max`, except pet type 7. (fn:sub_00575720_PetGroupClear@0x00575720,
   fn:sub_00575850_PetLimit@0x00575850, tbl:PetType.txt:group)
+- [C] **The run** (§ 15, run:2026-10-25-skills, 0 mismatches): the § 5 rows with no own draws leave the caster's
+  seed stepped only by their nested events' draws (11 rows at 30 events or more; five rows under 30 stay `[I]`);
+  Raise Skeleton's do 31 steps the caster's seed **once** inside `0x005C4430` after the spawn (8 of 8, class 363 at
+  skill level 20; § 5's "none" corrected); the summon level is `min(max(L · 3/4 + skill level, 1), L)` (8 of 8, case
+  C1) or the given level (207); `0x005C9290` re-seeds the new missile from `Init(path x + arg)` (450 of 450), and its
+  path calls then step that seed (§ 9's "none" corrected; which call, `[I]`). (fn:sub_005C4430_SummonClassRoll@0x005C4430,
+  fn:sub_005C49E0_SummonSetLevel@0x005C49E0, fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290, run:2026-10-25-skills)
 - [I] **The frame pass** (`sub_005414D0_GameRunUnitEvents`) runs the unit-event lists in this order: missiles, players,
   monsters, objects, then a fifth list; each first its every-frame list, then the current frame's bucket. So every
   missile steps before any player or monster acts in a frame. (0x005414EE–0x00541589)
@@ -88,7 +96,7 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
   Detail: do 31 calls `SummonSetLevel(m, 0, lvl)`, which gives `min(max(L · 3/4 + skill level, 1), L)` with `L` the
   owner's stat 12 (R4: `lea eax,[ecx+ecx*2]`, `sar 2`, the clamps); so the caster's level only when the skill level is
   at least `L/4`. Golems and mages are not read (plan 0046). Phase 2 case C1,
-  [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md).
+  [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md). *2026-10-25:* run:2026-10-25-skills gives 84 in 8 of 8 summons at L 86 and skill level 20 (§ 15).
 - [L] src:arreat-summit-skill-trees: a Druid has one spirit and one vine at a time, and spirit wolves, dire wolves and
   a grizzly exclude each other. **held**
   Detail: the totem and vine rows have `petmax` 1; `group` 1 on `spiritwolf`, `fenris` and `grizzly` makes
@@ -133,7 +141,8 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
 | `0x005717C0`, `0x00571840` | `sub_005717C0_UnitMsg99`, `sub_00571840_UnitMsg9A` | the item-cast messages (at a unit, at a point) | I |
 | `0x005FDCA0`, `0x005FDD60` | `sub_005FDCA0_ItemCastAtUnit`, `sub_005FDD60_ItemCastAtXY` | `ITEMSKILL_Cast` callers | I |
 | `0x005CAB40` … `0x005C0670` | `sub_005CAB40_StatEv01MissileAtSource` … (table in § 3) | stat-event handlers | I |
-| `0x005D40F0`, `0x005D4680`, `0x005C9290`, `0x005CD110`, `0x005AC040` | `sub_…_MissCbReseed…` (§ 9) | missile-creation callbacks that re-seed the missile | I |
+| `0x005D40F0`, `0x005D4680`, `0x005CD110`, `0x005AC040` | `sub_…_MissCbReseed…` (§ 9) | missile-creation callbacks that re-seed the missile | I |
+| `0x005C9290` | `sub_005C9290_MissCbReseedPathXPlusArg` (§ 9) | the re-seed `Init(path x + arg)`, the new seed logged at its `ret` in 450 creations (§ 15) | C |
 | `0x005CAF30` | `sub_005CAF30_SkillDo83DeliverRestart` | `srvdofunc` 83 (Fire Hit) | I |
 | `0x005CDF10`, `0x005CDDD0` | `sub_005CDF10_SkillDo109Frenzy`, `sub_005CDDD0_SkillDo109Hit` | `srvdofunc` 109 (MonFrenzy, BloodLordFrenzy) | I |
 | `0x005D69D0`, `0x005D68A0` | `sub_005D69D0_SkillSt26BladeFury`, `sub_005D68A0_SkillDo48BladeFury` | Blade Fury's start and do | I |
@@ -148,7 +157,10 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
 | `0x005C4B00`, `0x005C6910` | `sub_005C4B00_SkillDo31RaiseSkeleton`, `sub_005C6910_SkillDo114Summon` | `srvdofunc` 31, 114 | I |
 | `0x005C7160` | `sub_005C7160_SkillDo117Firestorm` | `srvdofunc` 117 | I |
 | `0x005C8520` | `sub_005C8520_SkillDo146Armageddon` | do-table entry 146, reached only as the `armageddon` state's `srvactivefunc` (no Skills row has `srvdofunc` 146; Armageddon's is 124) | I |
-| `0x005C4470`, `0x005C49E0` | `sub_005C4470_SummonInitStats`, `sub_005C49E0_SummonSetLevel` | the summon's stats and level | I |
+| `0x005C4470` | `sub_005C4470_SummonInitStats` | the summon's stats | I |
+| `0x005C49E0` | `sub_005C49E0_SummonSetLevel` | the summon's level (logged before and after in 215 summons, § 15) | C |
+| `0x005C4430` | `sub_005C4430_SummonClassRoll` | do 31's class branch after the spawn: 363 → `0x005C4300`, 364 → `0x005C43D0` (§ 5 note; the caster's seed logged around it in 8 calls, § 15) | C |
+| `0x005C4300`, `0x005C43D0`, `0x005C4180` | `sub_005C4300_SkeletonParam1Roll`, `sub_005C43D0_SkelMageRoll`, `sub_005C4180_SummonSetDataBytes` | the class-363 draw against `Param1`, the class-364 path, the data bytes from the `0x00741940` rows (§ 5 note) | I |
 | `0x0056E620`, `0x0063EA70` | `sub_0056E620_SkillSummonClass`, `sub_0063EA70_SkillSummonRec` | `summon`, `summode` (or the monster's own) | I |
 | `0x0056E780` | `sub_0056E780_SkillForUnitsNearTarget` | callback on units within a radius of the target point | I |
 | `0x0056E450` | `sub_0056E450_SkillTargetCellFree` | the target point's cell against the missile's size (do 28) | I |
@@ -368,7 +380,7 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
 | 2 Throw, 4 Left Hand Throw | 65 `0x0056CAB0` | 3, 5 (P1.2) | start: `0x0056C4E0(unit)` (the thrown item) or the two refusal calls `0x00580310`/`0x00580380`, return 0 | none |
 | 25 Plague Javelin, 12 Multiple Shot | 4 `0x005DA8B0` (the same code as 65) | — / 8 | 8: `n = calc1` missiles (`srvmissilea`, `srvmissileb` for a weapon class ≠ 1) fanned across the line to the target: offsets `(dx, dy)` from the unit to the target, start points stepped perpendicular to it from the point less half the fan (corrected 2026-10-20, note below), flags `0x820` (`0x10000` on the outer groups), activate `calc2`, `calc3` (or `n`) centre missiles | the creations' |
 | 10 Jab | 5 `0x005DA8F0`: a target | 7 `0x005DB2D0` | to-hit `SKILLS_GetToHit` (and `MonAttackStats` for a monster), `edPct = calc1`, conversion `EType`/`calc4`, elemental roll, `ResolveAndQueue(SrcDam or 128)`, `DeliverQueued` | to-hit, defence, build, 1–2 |
-| 70 Raise Skeleton | 15 `0x005C3070`: a target not in town that `0x00645510` accepts (a monster corpse in mode 12 with no state of the `DataTables+0x150` set, whose MonStats2 flag 7 and MonStats `+0x32` allow it; refined 2026-10-20, note below) | 31 `0x005C4B00` | § 7; first `0x005C2FF0` (note below) | none |
+| 70 Raise Skeleton | 15 `0x005C3070`: a target not in town that `0x00645510` accepts (a monster corpse in mode 12 with no state of the `DataTables+0x150` set, whose MonStats2 flag 7 and MonStats `+0x32` allow it; refined 2026-10-20, note below) | 31 `0x005C4B00` | § 7; first `0x005C2FF0` (note below) | one caster draw after the spawn for class 363 at skill level > 2 or class 364 (corrected 2026-10-25, note below) |
 | 259 Fists of Fire | 23 `0x005D32F0`: target in melee range | 35 (P1.1 § 12) | finisher § 1 | as § 1 |
 | 117 Holy Shield | 36 `0x005D0180`: inventory `0x0063C8F0(inv, 0)` (a shield); no skill record read, 0 without an inventory (note below) | 18 `0x005C9480` | 18: bit 6, `STATE_GroupClear(1)`, `STATE_ApplyTimed(aurastate, auralencalc)`, `SKILLS_ApplyAuraStats`, `0x005C6DC0` (`passivestat`s), stats 350/351, the `auraevent`s registered | none |
 | 68 Bone Armor | — | 18 | as above; event 22 | none |
@@ -413,6 +425,22 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
   test (a player caster of class 3 ends there at `COMBAT_ApplyDamage` with a packet of `maxhp / 8`) and reads
   `pettype` signed, ending at `0x0061A270` before its spawn. Everything after those calls stays as read above, `[I]`.
   (fn:sub_005C37C0_SkillDo30Curse@0x005C37C0, fn:sub_005C2FF0_SkillClass3SelfHit@0x005C2FF0)
+  *2026-10-25 (plan 0045 Phase 2), corrected:* the Raise Skeleton row's "none" was wrong. After the spawn do 31
+  calls `sub_005C4430_SummonClassRoll(ECX caster, EDX summon; skill id, skill level)` at `0x005C4C7A`, which branches
+  on the summon's class (`Unit+0x04`): 363 (`necroskeleton`) to `sub_005C4300_SkeletonParam1Roll`, 364 (`necromage`)
+  to `sub_005C43D0_SkelMageRoll`, any other class to nothing. 363: when the skill level is above 2 (signed `jle` at
+  `0x005C4354`), **one inline step of the caster's seed** (`Unit+0x20`/`+0x24`, `0x6AC690C5` at `0x005C4384`), its
+  low word `% 100` (`0x51EB851F`, `shr 5`, `× 0x64`) compared with Skills `Param1` (`+0x148`) of the skill id: a flag
+  of 1 when below, passed with the tier (stat 351 of the caster's state-97 list, else 1) to
+  `sub_005C4180_SummonSetDataBytes`, whose second argument 0 skips its own step. 364: no level test;
+  `0x005C4180` with its second argument 1 makes **one inline step** of the caster's seed (`0x005C4270`) and writes
+  `low & 3` into the summon's data bytes `+0x0F` and `+0x10`, then calls `0x005B0D70` (not followed). So the row
+  draws once per class-363 summon at level > 2 and once per class-364 summon (plus `0x005B0D70`'s, unread). Raise
+  Skeleton (row 70) has `Param1` 5; Raise Skeletal Mage (row 80) is not tier A. Seen first in the development logs
+  (one caster step after `SpawnOwnedMonster` returns, 3 of 3) and located from there; the run's `RSK` lines put the
+  step inside the `0x005C4430` call (§ 15).
+  (fn:sub_005C4430_SummonClassRoll@0x005C4430, fn:sub_005C4300_SkeletonParam1Roll@0x005C4300,
+  fn:sub_005C4180_SummonSetDataBytes@0x005C4180)
   *2026-10-20 (plan 0046 batch `pal`), emulated:* start 36, do 65 and do 66 are reproduced up to their boundaries
   (`[C]` under ADR-0021; [skills/0011](0011-paladin.md) §§ 3–4): start 36 reads **no skill record** and returns 0
   without an inventory word (`+0x60`), else ends at `0x0063C8F0(inventory, 0)`; do 65 and do 66 end at
@@ -507,8 +535,9 @@ if (m) { m->c4 &= ~4; SetStat(m, 74, 0); SummonSetLevel(m, max(calc2, 1), lvl); 
 
 - [I] As above; do 31 (Raise Skeleton) is the same after the corpse test: the target's corpse is removed
   (`0x0061A270`, `UnitFree`), and after the spawn `SummonSetLevel(m, 0, lvl)` (level `owner level · 3/4 + lvl`,
-  capped at the owner's level, below), `0x005C4430` (classes 363, 364), `SummonInitStats`, `0x005C40D0` (stat 349 as
-  resistances) and `0x005B1900` (a target-list add, `.\GAME\Targets.cpp`). (fn:sub_005C4B00_SkillDo31RaiseSkeleton@0x005C4B00, fn:sub_005C49E0_SummonSetLevel@0x005C49E0)
+  capped at the owner's level, below), `0x005C4430` (classes 363, 364: one caster draw, corrected 2026-10-25 in
+  § 5's note), `SummonInitStats`, `0x005C40D0` (stat 349 as resistances) and `0x005B1900` (a target-list add,
+  `.\GAME\Targets.cpp`). (fn:sub_005C4B00_SkillDo31RaiseSkeleton@0x005C4B00, fn:sub_005C49E0_SummonSetLevel@0x005C49E0)
 - [I] `sub_005C49E0_SummonSetLevel(m, lvl, skillLvl)` (`EDX` the owner): `lvl ≤ 0` → `L = owner stat 12`, `lvl =
   min(max(L · 3 / 4 + skillLvl, 1), L)` (signed `/ 4`), left unset when `L` is 0; stat 12 = lvl;
   then the MonLvl row (`DataTables+0xB70`, 0x78 bytes, capped at the last row) adds defence (stat 31) and to-hit
@@ -544,7 +573,7 @@ if (m) { m->c4 &= ~4; SetStat(m, 74, 0); SummonSetLevel(m, max(calc2, 1), lvl); 
 |---|---|---|---|---|
 | `0x005D40F0` (callback) | new missile `+0x20` | the creator's argument (ring 37's local low word) | none | `0x005D4150` (do 37) |
 | `0x005D4680` (callback) | new missile `+0x20` | the argument (ring 143's local low word) | inline steps on the new seed for a zig-zag path: 2 at the start (a sign from `low & 1`, a step size `low % 3 +` a global), 1 more at every `*0x00741B0C`-th path point | `0x005D4870` (do 143) |
-| `0x005C9290` (callback) | new missile `+0x20` | path `+0x10` (u16) + the argument (an index) | none; range capped at 77 | do 117 Firestorm, `0x005C7040`, `0x005C9300`, `0x005D1C30`, `0x005DB850`, monsters `0x005A29A0`, `0x005A2EE0`, `0x005A3490` |
+| `0x005C9290` (callback) | new missile `+0x20` | path `+0x10` (u16) + the argument (an index) | range capped at 77, then `sub_00648CF0_PathSetType(path, 10)`, `sub_00648E70_PathSetByte90(path, range)` and `sub_00649970_PathPlan(path, missile, 0)`, which step the new seed (20 or 38 steps in the run; corrected 2026-10-25, first read "none", note below) | do 117 Firestorm, `0x005C7040`, `0x005C9300`, `0x005D1C30`, `0x005DB850`, monsters `0x005A29A0`, `0x005A2EE0`, `0x005A3490` |
 | `0x005CD110` (callback) | new missile `+0x20` | path `+0x10` + the argument | 1 inline: `low % 100 > 19` → path type 10 | `0x005CD1C0` |
 | `0x005AC040` (callback) | new missile `+0x20` | path `+0x10` | none | `0x005AC14B`, `0x005AC525` (missile hit functions) |
 | `0x005A9820` | parent missile `+0x20` | `SubX + elapsed` | 2 `RangeB` | missile do 8, 10, 17, 25 |
@@ -562,6 +591,14 @@ if (m) { m->c4 &= ~4; SetStat(m, 74, 0); SummonSetLevel(m, max(calc2, 1), lvl); 
   stored at the parameter block's `+0x54` and called by `MissileCreate` with the new missile in `ECX` and `+0x58` in
   `EDX` before the damage block (P1.2 § 2). (fn:sub_005D40F0_MissCbReseedFromArg@0x005D40F0,
   fn:sub_005AC040_MissCbReseedPathX@0x005AC040)
+- [I] *2026-10-25 (plan 0045 Phase 2), corrected:* `0x005C9290` is not draw-free after its re-seed. After
+  `0x00650E40(missile+0x20, path x + arg)` at `0x005C92D1` (low = the value, high = `0x29A`) it calls
+  `sub_00648CF0_PathSetType(path, 0xA)` (`0x005C92D9`), `sub_00648E70_PathSetByte90(path, range)` (`0x005C92E0`) and
+  `sub_00649970_PathPlan(path, missile, 0)` (`0x005C92E9`), and the missile's seed at the callback's `ret` lies 20
+  steps (442 Firestorm sub-missiles) or 38 steps (8 class-195 missiles of a monster) past the Init in the run (§ 15).
+  The first reading's `DRAW` line looked for steps inside `0x005C9290` only; which of the three calls steps, and why
+  20 or 38, is not read (the path planner is a value oracle under § 14). (fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290,
+  fn:sub_00649970_PathPlan@0x00649970, run:2026-10-25-skills)
 - [I] As above (`DRAW` lines: `SeedInit` and `lcg` per site; `REF` lines: the callbacks' only references are the
   `mov [ebp−…], callback` stores of their creators). So the server re-seeds a **unit** seed only at do 146 among the
   reached sites; every other server site re-seeds a missile or a stack seed. (fn:sub_005C8520_SkillDo146Armageddon@0x005C8520,
@@ -652,11 +689,12 @@ RunList(lists->a14, every); RunList(lists->bucket[4], frame);     // fifth list 
 | stat-event handler | `UNIT_DispatchEvent` | 7, 14, 15, 16, 20, 30: 1 inline; 8, 9, 21, 31: 1 call; 3: the elemental roll | the handler's unit |
 | state 52 | `PreventHealHook` | none | — |
 | item cast | `ITEMSKILL_Cast` | none of its own | — |
-| missile create (rings, Firestorm) | the callbacks of § 9 | re-seed of the new missile; `0x005D4680` and `0x005CD110` then step it | missile |
+| missile create (rings, Firestorm) | the callbacks of § 9 | re-seed of the new missile; `0x005D4680`, `0x005CD110` and `0x005C9290` (its path calls, corrected 2026-10-25) then step it | missile |
 | missile frame | do 5, 28, 34, 35 | 1 `RangeB` per loop (5); re-seed then 2 `Range` (28), 1 inline (34, 35) | missile |
 | missile damage 3 | `MISSILE_HitUnit` | 1 inline | missile |
 | periodic (Armageddon) | do 146 | re-seed of the caster's seed from `SkillEntry+0x18` | caster |
 | summon | `SpawnOwnedMonster` | the spawn's (monsters/spawn) | game seed |
+| summon (do 31) | `0x005C4430` after the spawn | 1 inline for class 363 at skill level > 2 or class 364 (corrected 2026-10-25, § 5) | caster |
 
 - [I] Reading for Phase 2: the attacker's seed gains draws inside a finisher and in its `do…` event handlers
   (7–9, 14–16, 20) between the to-hit and the delivery steps, and in its `kill` handler 31; a defender's seed gains the
@@ -700,6 +738,44 @@ RunList(lists->a14, every); RunList(lists->bucket[4], frame);     // fifth list 
   missile seed's draws are private to the missile and chain only within it (§ 9). (fn:sub_0064A850_MissileCritRoll@0x0064A850,
   fn:sub_005C8520_SkillDo146Armageddon@0x005C8520)
 
+### 15. Plan 0045 Phase 2: the run (run:2026-10-25-skills)
+
+18 sessions of eight tier-A characters on slot 2 (the record:
+[experiments § run:2026-10-25-skills](experiments.md#run2026-10-25-skills)); `tools/skills.py check` over the 18 logs:
+**0 mismatches** (`workspace/logs/skills/2026-10-25-skills-check.txt`); coverage counts from `…-tally.txt`.
+
+- [C] **The rows of § 5 whose functions draw nothing of their own** leave the caster's seed at `SKILLS_SrvDo`'s exit
+  equal to its entry seed stepped by exactly the nested events' draws (the creations' critical draws, `THR`, `DRR`,
+  `REL`), and the same at `SKILLS_SrvStart`'s exit: 36 Fire Bolt (32 do events), 44 Frost Nova (33), 48 Nova (33),
+  54 Teleport (182), 56 Meteor (30), 98 Might (84), 102 Holy Fire (35, its one `RollElemDamage` per run the nested
+  `REL`), 130 Howl (54), 221 Raven (207), 225 Firestorm (221), 12 Multiple Shot (36); 1 269 do and 1 142 start
+  events checked in all, a missing or extra step being a mismatch in each. (fn:SKILLS_SrvDo@0x0056F7F0,
+  fn:SKILLS_SrvStart@0x0056F640, run:2026-10-25-skills)
+- [I] The same rows under the plan's 30 events: 25 Plague Javelin (26), 66 Amplify Damage (25), 68 Bone Armor (23),
+  251 Fire Trauma (19), 117 Holy Shield (13); every one of their events held. (run:2026-10-25-skills)
+- [C] **Do 31's class draw** (§ 5 note, corrected 2026-10-25): in 8 of 8 Raise Skeleton casts (skill level 20, a
+  class-363 `necroskeleton` summon) the caster's seed steps exactly once between do 31's call of
+  `sub_005C4430_SummonClassRoll` at `0x005C4C7A` and its return at `0x005C4C7F` (`RSK0`/`RSK1`), and nowhere else in
+  the do event (`SDO.seed`). (fn:sub_005C4430_SummonClassRoll@0x005C4430, 0x005C4384, run:2026-10-25-skills)
+- [I] The level gate (no draw at skill level 2 or less) and the class-364 path (`0x005C43D0` → `0x005C4180`'s step)
+  are not reached; the roll's use (`low % 100 < Param1`, the data bytes) is not logged. (fn:sub_005C4300_SkeletonParam1Roll@0x005C4300,
+  fn:sub_005C4180_SummonSetDataBytes@0x005C4180)
+- [C] **The summon's level** (§ 7, case C1 of the P1b review): `SummonSetLevel(m, 0, 20)` with an owner of level
+  L = 86 gives 84 = `min(max(86 · 3/4 + 20, 1), 86)` in 8 of 8 Raise Skeleton summons (the lead's "the caster's
+  level" would give 86); a positive `lvl` is taken as given in 207 Raven summons. (fn:sub_005C49E0_SummonSetLevel@0x005C49E0,
+  run:2026-10-25-skills)
+- [I] Its MonLvl defence and to-hit, `SummonInitStats`, and the created unit's seed are not checked.
+- [C] **`0x005C9290`'s re-seed** (§ 9): the new missile's seed at the callback's `ret` lies on the stream of
+  `Init(path x + arg)` (low = the word at path `+0x10` plus `+0x58`, high `0x29A`) in 450 of 450 creations, 20 steps
+  past it in the 442 of Firestorm's sub-missiles and 38 in the 8 of a monster's class-195 missiles; a seed made any
+  other way lies within 5 000 steps of that Init by chance with odds of about 5 000 in 2⁶⁴. (fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290,
+  run:2026-10-25-skills)
+- [I] Which of the callback's three path calls makes the 20 or 38 steps is not read (§ 9 note). The other re-seed
+  sites of § 9 are not reached.
+- [I] **Not checked by the run** (named in the record as shortfalls): the stat-event handlers of § 3 (284 fires
+  logged, oracles), state 52 (never applied), the progressive entries of § 1 (56 finisher calls, oracles), Kick, Left
+  Hand Throw and Left Hand Swing (no session).
+
 ## Kept outputs
 
 `workspace/logs/skills/` (manifest `p45h-manifest.sha256`, one path base; `sha256sum -c` from that directory):
@@ -732,7 +808,9 @@ are cited where the claim is theirs.
 - [L] What `Unit+0x38` holds (SrvDo's sequence gate and do 35's parity); `0x005CDD30` reads `+0x38`, `+0x44`, `+0x48`
   of a unit as 8.8 frame counters, which suggests an animation field, not read further.
 - [L] The frame on which a missile created by a player's or monster's do function first runs its do function (the
-  every-frame list's insertion, `sub_005415E0`), for Phase 2's position windows.
+  every-frame list's insertion, `sub_005415E0`), for Phase 2's position windows. *2026-10-25:* observed in
+  run:2026-10-25-skills: the frame after its creation in 493 of 493 followed missiles ([skills/0002 § 11](0002-missiles.md#11-plan-0045-phase-2-the-run-run2026-10-25-skills));
+  the insertion code itself is still not read.
 - [L] `sub_0056B3E0_SkillUnitFilter` for a missile as the unit (the grim wards), and `0x005C3400`'s register argument
   in do 30.
 - [L] The fifth unit-event list of the frame pass (default `0x00562DA0`).

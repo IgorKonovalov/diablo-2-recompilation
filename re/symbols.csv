@@ -1215,8 +1215,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0059F580,func,sub_0059F580_A2Q4_GuardBlock,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0059F8A0,func,sub_0059F8A0_MissileUnitInit,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x0059F900,func,sub_0059F900_MissileInitDamage,,I,skills/missiles,docs/findings/skills/0002-missiles.md
-0x0059F940,func,sub_0059F940_MissilePierceCount,,I,skills/missiles,docs/findings/skills/0002-missiles.md
-0x0059FA30,func,sub_0059FA30_MissileCreate,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
+0x0059F940,func,sub_0059F940_MissilePierceCount,,C,skills/missiles,docs/findings/skills/0002-missiles.md
+0x0059FA30,func,sub_0059FA30_MissileCreate,,C,drlg/collision,docs/findings/skills/0002-missiles.md
 0x005A0070,func,sub_005A0070_MonTypeIsA,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A00F0,func,sub_005A00F0_UModConstant,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A0140,func,sub_005A0140_MonNameSeedGet,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
@@ -1380,11 +1380,11 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005ADA40,func,sub_005ADA40_MissileHitTypeFilter,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005ADA80,func,sub_005ADA80_MissilePierceUse,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005ADB00,func,sub_005ADB00_MissileJustHitState,,I,skills/missiles,docs/findings/skills/0002-missiles.md
-0x005ADBB0,func,sub_005ADBB0_MissileDoFrame,,I,skills/missiles,docs/findings/skills/0002-missiles.md
+0x005ADBB0,func,sub_005ADBB0_MissileDoFrame,,C,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005ADCC0,func,sub_005ADCC0_MissileFrameEvent,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005ADCD0,func,sub_005ADCD0_MissileApplyAndAc,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005ADD20,func,sub_005ADD20_MissHit22Chain,,I,skills/missiles,docs/findings/skills/0003-handlers.md
-0x005ADF10,func,MISSILE_HitUnit,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005ADF10,func,MISSILE_HitUnit,,C,combat/formulas,docs/findings/skills/0002-missiles.md
 0x005AE1F0,func,sub_005AE1F0_MissileMoveCollide,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005AE400,func,sub_005AE400_MissDo02SubMissile,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005AE480,func,sub_005AE480_MissDo03CloudMark,,I,skills/missiles,docs/findings/skills/0002-missiles.md
@@ -1699,8 +1699,12 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005C3B90,func,sub_005C3B90_SkillDo59Attract,,I,skills/catalogue,docs/findings/skills/0010-necromancer.md
 0x005C3DE0,func,sub_005C3DE0_ConfuseApplyCb,,I,skills/catalogue,docs/findings/skills/0010-necromancer.md
 0x005C3F20,func,sub_005C3F20_SkillDo61Confuse,,I,skills/catalogue,docs/findings/skills/0010-necromancer.md
+0x005C4180,func,sub_005C4180_SummonSetDataBytes,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
+0x005C4300,func,sub_005C4300_SkeletonParam1Roll,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
+0x005C43D0,func,sub_005C43D0_SkelMageRoll,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
+0x005C4430,func,sub_005C4430_SummonClassRoll,,C,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x005C4470,func,sub_005C4470_SummonInitStats,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
-0x005C49E0,func,sub_005C49E0_SummonSetLevel,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
+0x005C49E0,func,sub_005C49E0_SummonSetLevel,,C,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x005C4B00,func,sub_005C4B00_SkillDo31RaiseSkeleton,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x005C4CD0,func,sub_005C4CD0_SkillDo32PoisonDagger,,I,skills/catalogue,docs/findings/skills/0010-necromancer.md
 0x005C4D10,func,sub_005C4D10_CorpseExplUnitCb,,I,skills/catalogue,docs/findings/skills/0010-necromancer.md
@@ -1750,7 +1754,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005C9030,func,sub_005C9030_SkillSt12TargetInRange,,I,skills/catalogue,docs/findings/skills/0008-sorceress.md
 0x005C91C0,func,sub_005C91C0_SkillSt13StormArm,,I,skills/catalogue,docs/findings/skills/0008-sorceress.md
 0x005C9220,func,sub_005C9220_SkillSt14PointOutOfTown,,I,skills/catalogue,docs/findings/skills/0008-sorceress.md
-0x005C9290,func,sub_005C9290_MissCbReseedPathXPlusArg,,I,skills/missiles,docs/findings/skills/0003-handlers.md
+0x005C9290,func,sub_005C9290_MissCbReseedPathXPlusArg,,C,skills/missiles,docs/findings/skills/0003-handlers.md
 0x005C9300,func,sub_005C9300_SkillDo17ChargedBolt,,I,skills/catalogue,docs/findings/skills/0008-sorceress.md
 0x005C9420,func,sub_005C9420_SkillDo18RemoveCb,,I,skills/catalogue,docs/findings/skills/0008-sorceress.md
 0x005C9480,func,sub_005C9480_SkillDo18TimedSelfState,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
@@ -2486,7 +2490,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0064A730,func,MISSDATA_GetSeedLow,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x0064A760,func,MISSDATA_SetParam2C,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x0064A780,func,MISSDATA_GetParam2C,,I,skills/missiles,docs/findings/skills/0003-handlers.md
-0x0064A850,func,sub_0064A850_MissileCritRoll,,I,skills/missiles,docs/findings/skills/0002-missiles.md
+0x0064A850,func,sub_0064A850_MissileCritRoll,,C,skills/missiles,docs/findings/skills/0002-missiles.md
 0x0064A930,func,sub_0064A930_AddOwnerElemDamage,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x0064AA60,func,sub_0064AA60_ScaleElemDamage,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x0064ABA0,func,sub_0064ABA0_ElemMasteryBonus,,I,skills/missiles,docs/findings/skills/0002-missiles.md
@@ -2551,7 +2555,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0064FB90,func,sub_0064FB90_PathSetPoint,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x0064FC60,func,sub_0064FC60_PathDirection,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x0064FDC0,func,sub_0064FDC0_PathDirectionXY,,I,skills/catalogue,docs/findings/skills/0016-monster-8a.md
-0x006502D0,func,sub_006502D0_PathVelocityStep,,I,skills/missiles,docs/findings/skills/0002-missiles.md
+0x006502D0,func,sub_006502D0_PathVelocityStep,,C,skills/missiles,docs/findings/skills/0002-missiles.md
 0x006505C0,func,sub_006505C0_PathFlag08,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x006505E0,func,sub_006505E0_PathFollowUnit,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
 0x00650840,func,sub_00650840_PathStep,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md

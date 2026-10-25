@@ -174,6 +174,25 @@ class Model(unittest.TestCase):
         self.assertEqual(self.run_lines(lines(5, lvl=5)).ok["SL.level"], 1)
         self.assertEqual(self.run_lines(lines(3, L=3)).ok["SL.level"], 1)        # 2 + 20 capped at 3
 
+    def test_rsk(self):
+        # do 31's class draw (0x005C4430): one caster step for class 363 at level > 2, none at level 2; 364 always one
+        s0 = (0x1234, 0x29A)
+        s1 = skills.sd_fmt(skills.step(s0))
+
+        def lines(c, lvl, after):
+            return [("SDO0", {"u": {"u": 100, "t": 0, "c": 2, "id": 1, "m": 10, "s": skills.sd_fmt(s0)},
+                              "a": [70, lvl, 1, 0, 0], "n": 1}),
+                    ("SP1", {"k": 9, "m": {"u": 7, "c": c}, "so": skills.sd_fmt(s0), "n": 2}),
+                    ("RSK0", {"u": 100, "s": skills.sd_fmt(s0), "m": 7, "c": c, "n": 3}),
+                    ("RSK1", {"k": 3, "s": after, "n": 4}),
+                    ("SDO1", {"k": 1, "r": 1, "s": after, "st": {}, "n": 5})]
+        C = self.run_lines(lines(363, 20, s1))
+        self.assertEqual((C.ok["RSK.seed"], C.ok["SDO.seed"], sum(C.bad.values())), (1, 1, 0))
+        self.assertEqual(self.run_lines(lines(363, 2, skills.sd_fmt(s0))).ok["RSK.seed"], 1)
+        self.assertEqual(self.run_lines(lines(363, 2, s1)).bad["RSK.seed"], 1)
+        self.assertEqual(self.run_lines(lines(364, 1, s1)).ok["RSK.seed"], 1)
+        self.assertEqual(self.run_lines(lines(363, 20, skills.sd_fmt(s0))).bad["SDO.seed"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

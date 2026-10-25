@@ -5,7 +5,136 @@ evidence rules: ADR-0003, ADR-0004, ADR-0011, ADR-0013, ADR-0014;
 [tooling](../../../.claude/skills/reverser/references/tooling.md),
 [harness-play](../../../.claude/skills/reverser/references/harness-play.md).
 
-Plan 0045 Phase 2's harness runs: none yet. Plan 0046's emulated runs (ADR-0015) follow.
+Plan 0045 Phase 2's harness run comes first (run:2026-10-25-skills); plan 0046's emulated runs (ADR-0015) follow.
+
+## run:2026-10-25-skills
+
+- **Question:** (plan 0045 Phase 2) Does `tools/skills.py`, the model of [skills/0001](0001-dispatch.md),
+  [skills/0002](0002-missiles.md) and [skills/0003](0003-handlers.md), reproduce the logged skill and missile events
+  of tier-A characters draw for draw: the payment, the missile creation (velocity, acceleration and maximum, range,
+  frames left, activate mark, skill and level, the missile's seed from the game seed or a creation callback, the
+  owner's critical draws, the pierce count), every logged frame of a followed missile (the velocity step, the position
+  step, the seed), the packet a missile builds at a hit (`MISSILE_BuildDamage`'s draws on the missile's seed and the
+  drawn fields), a missed to-hit, a summon's level, and the caster's seed across the skill events of the rows whose
+  functions draw nothing of their own, with the game and caster seeds chained across events?
+- **Setup:** 18 agent-driven sessions on harness slot 2 (display `:9`, prefix `workspace/wineprefix-2`), single
+  player, pinned `game.exe` in `workspace/runtime/game` (stock data), gdb by `tools/d2run.py` with `-seed` per
+  session, all in Normal. Logger `tools/gdb/skills.gdb` (`92420a1c…`) sourcing `tools/gdb/pilot.py` (`1ad48a4c…`,
+  unchanged) and `tools/gdb/skills.py` **rev 3** (`12e30fe5…`: rev 2 with the `RSK0`/`RSK1` lines around do 31's call
+  of `0x005C4430` at `0x005C4C7A`/`0x005C4C7F`); breakpoints only print and continue. Driver
+  `tools/skills_sessions.py` (`f5777a25…`, unchanged from the development runs) over `tools/d2pilot.py` (`b1db3063…`):
+  each session `saves.py --slot 2 restore`/`aside p45h`, `d2run.py --install p45h`, the waypoint, then `explore
+  --melee --melee-button 3 --curse-keys … --keys-cycle` (the next skill hotkey and a right-click at the nearest live
+  monster; Teleport on Shift + left), the Necromancer's `corpse` step first, the Paladin's two aura walks after;
+  `slots.py stop 2` after each session, `saves.py --slot 2 restore p45h` at the end (aside empty, slot idle). The
+  pilot only decides where to click.
+- **Characters** (ADR-0013 § Neutral: tool-built by `skills_sessions.py build` from the recipes
+  `tools/d2s_recipes/skills-{sor,ama,amaj,nec,dru,bar,pal,ass}.json` on the stock `p0005` base saves, stock items,
+  skill points from the recipe; no test-state key), into `workspace/logs/skills/2026-10-25-skills-saves/`, byte for
+  byte the development saves of `dev-p45h-manifest.sha256`: `SkillsSor` (clvl 80; Nova F1, Frost Nova F2, Static Field
+  F3, Fire Bolt F4, Meteor F5, Blaze F6, Teleport), `SkillsAma` (85, *Pluckeye* and arrows: Multiple Shot, Attack),
+  `SkillsAmaJ` (85, *Titan's Revenge*: Jab, Plague Javelin, Throw), `SkillsNec` (85, *The Gnasher*: Poison Nova, Raise
+  Skeleton, Amplify Damage, Bone Armor), `SkillsDru` (Firestorm, Raven), `SkillsBar` (Bash, Howl), `SkillsPal`
+  (*Steelclash*: Holy Shield, Attack, Might, Holy Fire), `SkillsAss` (*Cutthroat*: Fists of Fire, Attack, Fire
+  Trauma).
+
+### Sessions
+
+| session | save | seed | waypoint (act, row) |
+|---|---|---:|---|
+| sor-1 … sor-4 | SkillsSor | 4521–4524 | 1,2 · 1,3 · 1,4 · 1,5 |
+| ama-1, ama-2 | SkillsAma | 4531, 4532 | 1,2 · 1,3 |
+| amaj-1, amaj-2 | SkillsAmaJ | 4541, 4542 | 1,2 · 1,3 |
+| nec-1, nec-2 | SkillsNec | 4551, 4552 | 1,2 · 1,3 |
+| dru-1, dru-2 | SkillsDru | 4561, 4562 | 1,2 · 1,3 |
+| bar-1, bar-2 | SkillsBar | 4571, 4572 | 1,2 · 1,3 |
+| pal-1, pal-2 | SkillsPal | 4581, 4582 | 1,2 · 1,3 |
+| ass-1, ass-2 | SkillsAss | 4591, 4592 | 1,2 · 1,3 |
+
+No session was relaunched, aborted or died. Logs `workspace/logs/skills/2026-10-25-skills-<session>.log` (65 MB),
+with their `.pilot.txt` and `-shots/`.
+
+- **Procedure** (from the worktree; the checks under a 4 GB scope):
+  ```
+  python3 -I tools/skills_sessions.py build --saves workspace/logs/skills/2026-10-25-skills-saves
+  python3 -I tools/saves.py --slot 2 aside p45h
+  python3 -I tools/skills_sessions.py run --slot 2 --tag p45h --saves workspace/logs/skills/2026-10-25-skills-saves \
+      --run 2026-10-25-skills sor-1 sor-2 sor-3 sor-4 ama-1 ama-2 amaj-1 amaj-2 nec-1 nec-2 dru-1 dru-2 bar-1 bar-2 \
+      pal-1 pal-2 ass-1 ass-2
+  cd workspace/logs/skills
+  python3 -I ../../../tools/skills.py check 2026-10-25-skills-*.log --json 2026-10-25-skills-check.json \
+      > 2026-10-25-skills-check.txt
+  python3 -I ../../../tools/skills.py tally 2026-10-25-skills-*.log > 2026-10-25-skills-tally.txt
+  python3 -I tools/skills.py audit $(cat workspace/logs/combat/c37p2-run.lst) \
+      $(awk '{print $4}' workspace/logs/stats/s1017-manifest.txt) workspace/logs/combat/p47h-owf-n-andariel-p8.log \
+      > workspace/logs/skills/2026-10-25-skills-audit.txt                      # from the worktree root
+  ```
+  Checker `tools/skills.py` `1b297c24…` (it gives the kept `check.txt`, `tally.txt` and `audit.txt`); its tests
+  `tools/test_skills.py` (8 tests, passing). Against the development revision (`7d7417a2…`) it adds: `MF.seed` with
+  the draws of a hit nested in the frame (the `BD` draws, then the `MISSILE_ApplyDamage` boundary's exit, the frame
+  exiting with the last hit's seed: `MF.hitseed`); do 31's class draw (`RSK.seed`, and the rows 70 and 80 in
+  `SDO.seed`); the `0x005C9290` callback check as "the exit seed lies on the stream of `Init(path x + arg)`", the
+  steps after the Init reported; the `tally` and `audit` commands; counters only otherwise. A first check of
+  `sor-1`…`sor-4` with the callback check as written (the exit seed equal to the Init) gave 8 `MC.cbseed` mismatches,
+  each 38 steps past the Init (not kept as a file; the cause is in the result below).
+- **Kept:** `workspace/logs/skills/2026-10-25-skills-manifest.sha256` (`8b01d216…`, 48 files: the 18 logs and their
+  pilot files, `check.txt` `17555e43…`, `check.json` `5619ca23…`, `tally.txt` `b82c4040…`, `audit.txt` `96816fa4…`,
+  the 8 saves); `sha256sum -c` from that directory passes.
+
+### Result
+
+**0 mismatches** over 335 618 checks (the checker's table; every row 0). Counts below are `check.txt` and
+`tally.txt`.
+
+| check | ok | what it asserts |
+|---|---:|---|
+| `PAY` | 1 798 | 1 334 player payments of a cost row (258 with a `lvlmana` term at level > 1; `manashift` 5, 6, 7, 8 in 19, 21, 117, 1 177), 259 result-0 calls of a row with no cost, 205 non-player calls returning 1 |
+| `MC.vel`, `.accel`, `.range`, `.left`, `.skill`, `.owner`, `.seed`, `.gameseed` | 31 391 each (`.range` 30 941, `.left` 30 922) | every creation; 450 ranges taken after a creation callback and 19 lob frame counts are oracles |
+| `MC.cbseed` | 450 | the `0x005C9290` re-seed: 442 Firestorm sub-missiles (20 steps after the Init each), 8 of a monster's class-195 missiles (38 each) |
+| `MC.crit`, `MC.pierce` | 984, 1 066 | 984 owner critical draws (1 draw each; none of 2 or 3), 856 pierce counts drawn from the local seed |
+| `MF.vel`, `.pos` | 11 413 | 1 657 accelerating steps, 278 fifth steps, 60 capped at `MaxVel`; none floored at 0 |
+| `MF.left`, `.seed`, `.still`, `.hitseed` | 13 335, 13 335, 1 922, 110 | 37 frames with a nested hit; the boundary moved the missile's seed in none of 36 |
+| `BD.seed`, `.elem`, `.phys`, `.len` | 778, 594, 164, 24 | builds with 0, 1, 2 draws: 39, 720, 19 |
+| `THR.roll`, `MH.missed` | 269, 105 | 105 missed to-hits ending the missile, 7 of them with a pierce left (C5) |
+| `SL.level` | 215 | 8 Raise Skeleton summons from the owner's level (C1: L 86, skill level 20, 84 each), 207 Raven summons at the given level |
+| `RSK.seed` | 8 | do 31's class draw, 8 class-363 summons at skill level 20, one caster step each |
+| `SST.seed`, `SDO.seed` | 1 142, 1 269 | the rows with no own draws, the nested events' draws added |
+| `CHAIN.gameseed`, `CHAIN.caster` | 21 860, 3 155 | chained pairs; 304 caster resyncs between skill events (steps in `check.txt`'s distribution) |
+
+Coverage against the plan's *Done when* (`tally.txt`):
+
+- **Skill uses:** 2 708 do events and 2 508 start events. Tier-A rows at ≥ 30 do events: 0 Attack 116, 2 Throw 35,
+  10 Jab 63, 12 Multiple Shot 36, 36 Fire Bolt 32, 44 Frost Nova 33, 48 Nova 33, 54 Teleport 182, 56 Meteor 30,
+  98 Might 84, 102 Holy Fire 35, 126 Bash 67, 130 Howl 54, 221 Raven 207, 225 Firestorm 221, 259 Fists of Fire 41.
+  **Short:** 25 Plague Javelin 26, 42 Static Field 26, 66 Amplify Damage 25, 68 Bone Armor 23, 251 Fire Trauma 19,
+  117 Holy Shield 13, 70 Raise Skeleton 8; 1 Kick, 4 Left Hand Throw, 5 Left Hand Swing 0 (no session). Others: 46
+  Blaze 29, 92 Poison Nova 208, the monster rows 160 (82), 181 (106), 167 (6). Refusals: 2 start functions returning
+  0 (rows 10, 259), 21 do events of row 0 returning 0; **no** payment refused for its cost (every result-0 payment is
+  a no-cost row), no delay refusal and no town refusal logged (277 delay states set, `DLY`, an oracle).
+- **Missiles:** 31 391 creations; 493 windowed missiles followed from creation to their removal frame; 778 hit
+  packets predicted; 450 sub-missiles (the callback's). **Short:** the end of a missile at a hit is an oracle except
+  the 105 missed to-hits (31 257 hit calls returned 2, 1 536 hit calls had a unit); pierce uses at a hit are not
+  modelled (7 cases of C5).
+- **Handlers:** 284 `EVH` fires (event 5: `0x005BFAA0` 65, `0x005BFE60` 62, `0x005BFFC0` 62; event 9 `0x005C0130`
+  94; event 11 `0x005C6370` 1), all oracles: **short** (no handler model); state 52 never applied.
+- **Summons:** 215 (`SP0`), each level predicted; the created unit's seed and stats not predicted: **short in part**.
+- **Monster skill uses:** 15 268 `MonAttackStats` calls, all oracles: **short** (no `MonAttackStats` model).
+- **Re-seeds:** 450 at `0x005C9290`; the other sites of skills/0003 § 9 not reached: **short in part**.
+- **Chaining:** the game seed across creations of one do event (21 860 pairs) and the caster's seed across skill
+  events (3 155); the missile's seed across the hits of one frame (`MF.hitseed`, 110).
+- **The oracle replacement:** `audit.txt` over the 19 logs of run:2026-10-16-combat, the 18 of run:2026-10-17-stats
+  and the *Fleshripper* log: 2 554 missile-packet oracle events, 3 461 handler fires and 3 646 aura runs, **none
+  replaceable**: those loggers wrote no missile stat list at the hit and no `MISSILE_BuildDamage` line with the
+  missile's seed, no creation, no `RollElemDamage` line in an aura run, and the handler fires need a handler model
+  this tool does not have. Their checks stand as kept.
+- **The Phase 1b cases:** C1 8 (above); C3 278 fifth steps and 60 caps; C5 7. **Short:** C2 0 (no `spike1`–`spike4`
+  monster met: no `VelLev` row created), C4 0 (Blaze cast 29 times, but its `blaze` missiles, `LevRange` 25, come
+  from walking and the pilot teleports: no `LevRange` row created at all).
+
+Two readings changed by the run, both recorded in the findings: do 31's caster draw (skills/0003 § 5, found in the
+development logs and located statically: `0x005C4300`'s inline step at `0x005C4384`), and the `0x005C9290` re-seed,
+whose new seed the callback's own path calls then step 20 or 38 times (skills/0003 § 9, the "none" corrected).
+
 
 ## run:2026-10-20-cat-emu-9a
 

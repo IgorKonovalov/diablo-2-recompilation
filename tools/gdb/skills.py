@@ -45,6 +45,8 @@
 #   SL0/SL1    sub_005C49E0_SummonSetLevel (ECX game, EDX owner; summon, lvl, skill level) and its rets: owner stat
 #              12, the summon's stat 12 before and after (rev 2; rev 1 took ECX for the summon)
 #   PA0/PA1    sub_00575D90_PetAdd and its ret
+#   RSK0/RSK1  do 31's call of 0x005C4430 (0x005C4C7A: EDI the caster, ESI the summon) and its return (0x005C4C7F):
+#              the caster's seed before and after, the summon's class (rev 3)
 #   ARM0/ARM1  sub_005C8520_SkillDo146Armageddon and its rets: caster seed, SkillEntry+0x18 (logged whenever it fires)
 #   MAS0/MAS1  sub_005A4F50_MonAttackStats (ECX unit, EDX mode) and its ret 0x005A5443: seed, stats
 #   CAP        once per kind when its cap is reached
@@ -548,6 +550,15 @@ def _skills_main():
         if d:
             emit("SL1", {"k": d[0], "m12": stats(d[1], [12]).get("12", 0)})
 
+    def on_rsk0():
+        c, m = reg("edi"), reg("esi")
+        st["rsk"] = (emit("RSK0", {"u": c, "s": sd(c), "m": m, "c": u32(m + 4) if m else None}), c)
+
+    def on_rsk1():
+        d = st.pop("rsk", None)
+        if d:
+            emit("RSK1", {"k": d[0], "s": sd(d[1])})
+
     def on_pa0():
         esp = reg("esp")
         n = emit("PA0", {"ecx": reg("ecx"), "edx": reg("edx"), "a": list(struct.unpack("<3I", mem(esp + 4, 12)))})
@@ -647,6 +658,8 @@ def _skills_main():
     Bp(0x005C49E0, on_sl0)
     for a in (0x005C4A79, 0x005C4AEF):
         Bp(a, on_sl1)
+    Bp(0x005C4C7A, on_rsk0)
+    Bp(0x005C4C7F, on_rsk1)
     Bp(0x00575D90, on_pa0)
     Bp(0x00575E82, on_pa1)
     Bp(0x005C8520, on_arm0)

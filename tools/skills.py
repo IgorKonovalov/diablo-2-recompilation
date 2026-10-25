@@ -4,6 +4,8 @@ docs/findings/skills/0001-dispatch.md, 0002-missiles.md and 0003-handlers.md.
 Usage:
   python3 -I tools/skills.py check <log> [...] [--excel DIR] [-v] [--json OUT]
   python3 -I tools/skills.py manifest <log> [...]          # sha256, size and line count of each log
+  python3 -I tools/skills.py audit <log> [...]             # the oracle replacement: what a foreign log holds
+  python3 -I tools/skills.py tally <log> [...] [--excel DIR] # the run's coverage counts against plan 0045's minimums
 
 <log> is written by tools/d2run.py with tools/gdb/skills.gdb (the tags of tools/gdb/skills.py). The model reads the
 .bin tables the game loads (missiles, skills) from --excel (default workspace/merged/data/global/excel).
@@ -18,13 +20,16 @@ Checked (a mismatch is any difference):
         the sub-loop frames, the caller's override, less the frames already run), frames left (= range; a lob's
         remaining frames are taken as an oracle), activate mark (range - Activate or the caller's), skill and level;
         the missile's seed (one game-seed step inside SUnitCreate: SU0 -> SU1, the seed Init(post.low)), or the
-        creation callback's re-seed (MCB1) when one ran; the owner's seed (the critical roll's 1..3 draws for a row
+        creation callback's re-seed (MCB1) when one ran (0x005C9290: the exit seed on the stream of Init(path x + arg),
+        the steps after the Init, the callback's path calls, reported); the owner's seed (the critical roll's 1..3 draws for a row
         that takes weapon damage, else none); the pierce count (missile stat 328) from a local seed Init(owner base
         stat 328). A CanSlow row whose owner is slowed (state 87, not logged) would
         show as a velocity mismatch.
   MF    sub_005ADBB0_MissileDoFrame of a windowed missile with do function 1, 2 or 3 that returned 1: the velocity
         step (the counter, the fifth-step acceleration, the cap), the position step (dir * ((v * 0x400) >> 6)) >> 12
-        on both axes of the 16.16 position, frames left - 1; the missile's seed unchanged.
+        on both axes of the 16.16 position, frames left - 1; the missile's seed unchanged by the frame's own code: a
+        hit nested in the frame (MH0..MH1) moves it by its BuildDamage draws (BD.seed) and the MISSILE_ApplyDamage
+        boundary's exit (MA0 -> MA1, an oracle), and the frame exits with the last hit's seed (MF.hitseed, MF.seed).
   SDO/SST  SKILLS_SrvDo / SKILLS_SrvStart: the caster's seed at the exit equals its seed at the entry stepped by the
         draws the nested logged events account for (MC critical draws, THR, DRR, REL) for the rows whose own function
         draws nothing (skills/0003 § 5: Teleport, Nova, Frost Nova, Meteor, Fire Bolt, Blaze, the curses, the
@@ -35,6 +40,9 @@ Checked (a mismatch is any difference):
         lightning, cold, poison, burn; RangeB(hi - lo) + lo when both stats are >= 1, the mastery MulDiv on both bounds
         first), the drawn packet fields, the physical percent (25 + 121 + 122, floored at -90) and the critical doubling,
         the cold and burn lengths; the missile's stats taken from the MH0 line (the hit's entry).
+  RSK   do 31's call of 0x005C4430 (logger rev 3): one caster draw for a class-363 summon at skill level > 2
+        (0x005C4300) or a class-364 summon (0x005C43D0 -> 0x005C4180), none otherwise; the SDO.seed of rows 70 and 80
+        counts the same draw per SP1 summon.
 Reported (oracles, ADR-0014): MH (the hit's result and the boundary calls after the build), EVH/EVR, MAS, SP/SL/PA,
 DLY.
 Exit 0 only if every check holds. Stdlib only. Read-only.
@@ -61,8 +69,10 @@ INIT_HIGH = 0x29A
 # Fire Bolt and Blaze have no srvdofunc: their only action is SrvDo's srvmissile
 NO_OWN_DRAWS = {36: True, 44: True, 48: True, 54: True, 56: True, 66: True, 98: True, 68: True, 92: True,
                 102: True, 117: True, 130: True, 221: True, 225: True, 251: True, 25: True, 12: True}
-# (70 Raise Skeleton is left out: skills/0003 § 5 reads "none", the dev logs show one caster step after the spawn
-# returns; reported as a distribution, not checked. 92 Poison Nova: not tier A, the Necromancer's killer, the same do 22 as Nova; 102 Holy Fire's one RollElemDamage is
+# do 31's rows (70 Raise Skeleton, 80 Raise Skeletal Mage): the class draw of 0x005C4430 after the spawn, modelled
+# per summon (skills/0003 § 5, corrected 2026-10-25).
+RAISE_SKELETON = {70, 80}
+# (92 Poison Nova: not tier A, the Necromancer's killer, the same do 22 as Nova; 102 Holy Fire's one RollElemDamage is
 # the nested REL line, counted with the nested draws)
 
 
@@ -92,6 +102,12 @@ def sd_fmt(t):
 def step(t):
     v = t[0] * MULT + t[1]
     return v & M32, (v >> 32) & M32
+
+
+def step_n(t, k):
+    for _ in range(k):
+        t = step(t)
+    return t
 
 
 def steps_between(a, b, limit=4096):
@@ -186,6 +202,9 @@ class Checker:
                        (m0, m1, d1["r"]))
             return
         cost = s32((r["lvlmana"] * max(lvl - 1, 0) + r["mana"]) << r["shift"])
+        if r["lvlmana"] and lvl > 1:
+            self.info["PAY with a lvlmana term (lvl > 1)"] += 1
+        self.info["PAY manashift %d" % r["shift"]] += 1
         floored = cost < r["minmana"] * 0x100
         if floored:
             cost = r["minmana"] * 0x100
@@ -271,8 +290,13 @@ class Checker:
                 self.check("MC.seed", sd_parse(m["s"]) == sd_parse(cb["s"]), log, n, "callback seed %s, got %s" %
                            (cb["s"], m["s"]))
                 cb0 = [d for t, d in inner if t == "MCB0"][-1]
-                self.check("MC.cbseed", sd_parse(cb["s"]) == ((cb0["x10"] + cb0["arg"]) & M32, INIT_HIGH), log, n,
+                # 0x005C9290: Init(word path+0x10 + arg) at 0x005C92D1 (0x00650E40: low = value, high = 0x29A), then
+                # the path calls 0x00648CF0, 0x00648E70 and 0x00649970 step the new seed (unread: a boundary, its
+                # steps reported); the check is that the exit seed lies on the stream from that Init
+                k = steps_between(((cb0["x10"] + cb0["arg"]) & M32, INIT_HIGH), sd_parse(cb["s"]), 5000)
+                self.check("MC.cbseed", k is not None, log, n,
                            "callback x %s + arg %s -> %s" % (cb0["x10"], cb0["arg"], cb["s"]))
+                self.dist["MCB steps after the Init (the path calls)"][k if k is not None else ">5000"] += 1
             else:
                 self.check("MC.seed", sd_parse(m["s"]) == want, log, n, "seed %s, got %s" % (sd_fmt(want), m["s"]))
         else:
@@ -333,7 +357,7 @@ class Checker:
         return v
 
     # ---------------------------------------------------------------- MF
-    def mf(self, log, d0, d1):
+    def mf(self, log, d0, d1, inner=()):
         n = d0["n"]
         p0, p1 = d0.get("path"), d1.get("path")
         if d0.get("do") not in (1, 2, 3) or d1["r"] != 1 or not p0 or not p1:
@@ -343,7 +367,40 @@ class Checker:
             self.fail(log, "MF.left", n, "left %s -> %s" % (d0["md"]["rem"], d1["md"]["rem"]))
         else:
             self.ok["MF.left"] += 1
-        self.check("MF.seed", d0["s"] == d1["s"], log, n, "seed %s -> %s" % (d0["s"], d1["s"]))
+        # the missile's seed: unchanged by the frame's own code; a hit nested in the frame (MH0..MH1 of this
+        # missile) draws on it in BuildDamage (BD0 -> BD1, checked by BD.seed) and may step it inside the
+        # MISSILE_ApplyDamage boundary (MA0 -> MA1, an oracle: ADR-0021); the frame's exit seed is the last hit's
+        s = d0["s"]
+        hits = 0
+        for i, (tt, dd) in enumerate(inner):
+            if tt != "MH0" or dd["m"].get("u") != d0["m"]:
+                continue
+            e = next((d2 for t2, d2 in inner[i + 1:] if t2 == "MH1" and d2.get("k") == dd["n"]), None)
+            if e is None:
+                continue
+            hits += 1
+            self.check("MF.hitseed", dd["m"].get("s") == s, log, dd["n"], "hit entry seed %s, frame seed %s" %
+                       (dd["m"].get("s"), s))
+            sub = inner[i + 1:next(j for j, (t2, d2) in enumerate(inner) if d2 is e)]
+            want = dd["m"].get("s")
+            bd1 = [d2 for t2, d2 in sub if t2 == "BD1"]
+            if bd1:
+                want = bd1[-1]["sm"]
+            ma = [(t2, d2) for t2, d2 in sub if t2 in ("MA0", "MA1")]
+            ma0 = next((d2 for t2, d2 in ma if t2 == "MA0" and d2.get("a") == d0["m"]), None)
+            ma1 = next((d2 for t2, d2 in ma if t2 == "MA1" and ma0 and d2.get("k") == ma0["n"]), None)
+            if ma0 and ma1:
+                self.check("MF.hitseed", ma0["sa"] == want, log, ma0["n"], "boundary entry seed %s, after the "
+                           "build %s" % (ma0["sa"], want))
+                k = steps_between(sd_parse(ma0["sa"]), sd_parse(ma1["sa"]), 4096)
+                self.dist["MA boundary steps on the missile seed"][k if k is not None else ">4096"] += 1
+                want = ma1["sa"]
+            self.check("MF.hitseed", e.get("sm") == want, log, e["n"], "hit exit seed %s, want %s" %
+                       (e.get("sm"), want))
+            s = e.get("sm")
+        if hits:
+            self.info["MF frames with a nested hit"] += 1
+        self.check("MF.seed", s == d1["s"], log, n, "seed %s -> %s (%d nested hits)" % (d0["s"], d1["s"], hits))
         v, a, cnt, mx = p0["v"], p0["a"], p0["cnt"], p0["mx"]
         if v == 0 and p1["v"] == 0:
             self.check("MF.still", (p0["x"], p0["y"]) == (p1["x"], p1["y"]), log, n, "a still missile moved")
@@ -355,8 +412,10 @@ class Checker:
                 v += a
                 if v > mx:
                     v, a = mx, 0
+                    self.info["MF capped at MaxVel"] += 1
                 elif v < 0:
                     v = 0
+                    self.info["MF floored at 0"] += 1
         self.check("MF.vel", (p1["v"], p1["a"], p1["cnt"]) == (v, a, cnt), log, n,
                    "v %d a %d cnt %d, got %s %s %s" % (v, a, cnt, p1["v"], p1["a"], p1["cnt"]))
         if p0["a"]:
@@ -507,12 +566,20 @@ class Checker:
                 d1 = exits.get(("SL", d["n"]))
                 if d1 and "m12" in d:                   # logger rev 2
                     self.sl(log, d, d1)
+            elif t == "RSK0":
+                d1 = next((d2 for t2, d2 in L[i + 1:i + 400] if t2 == "RSK1" and d2.get("k") == d["n"]), None)
+                sdo = next((d2 for t2, d2 in reversed(L[max(0, i - 400):i]) if t2 == "SDO0"), None)
+                if d1 and sdo and sdo["a"][0] in RAISE_SKELETON:
+                    k = 1 if (d["c"] == 363 and sdo["a"][1] > 2) or d["c"] == 364 else 0
+                    self.check("RSK.seed", step_n(sd_parse(d["s"]), k) == sd_parse(d1["s"]), log, d["n"],
+                               "class %s level %d: %d caster draws, %s -> %s" % (d["c"], sdo["a"][1], k, d["s"],
+                                                                                 d1["s"]))
             elif t == "MF0":
-                mf_open[d["m"]] = d
+                mf_open[d["m"]] = (i, d)
             elif t == "MF1":
-                d0 = mf_open.pop(d["m"], None)
-                if d0:
-                    self.mf(log, d0, d)
+                o = mf_open.pop(d["m"], None)
+                if o:
+                    self.mf(log, o[1], d, L[o[0] + 1:i])
             elif t in ("SST0", "SDO0"):
                 kind = t[:3]
                 d1 = exits.get((kind, d["n"]))
@@ -548,11 +615,24 @@ class Checker:
                         draws += 1
                     elif t2 == "REL" and d2.get("u") == u and d2.get("n", 0) >= 1:
                         draws += 1
+                sid = d["a"][0]
+                own = None
+                if kind == "SDO" and sid in RAISE_SKELETON:
+                    # do 31 after the spawn: 0x005C4430 by the summon's class; 363 -> 0x005C4300, one caster draw
+                    # (low % 100 against Skills Param1) when the skill level is > 2; 364 -> 0x005C43D0 ->
+                    # 0x005C4180 with its second argument 1, one caster draw (low & 3); any other class none
+                    own = 0
+                    for t2, d2 in L[i + 1:j]:
+                        if t2 == "SP1" and d2.get("m"):
+                            c = d2["m"].get("c")
+                            if (c == 363 and d["a"][1] > 2) or c == 364:
+                                own += 1
+                                self.info["SDO %d summon-class draw (class %d)" % (sid, c)] += 1
+                    draws += own
                 for _ in range(draws):
                     tt = step(tt)
                 s1 = sd_parse(d1["s"])
-                sid = d["a"][0]
-                if NO_OWN_DRAWS.get(sid):
+                if NO_OWN_DRAWS.get(sid) or own is not None:
                     self.check(kind + ".seed", tt == s1, log, d["n"], "skill %d caster seed %s after %d nested draws, "
                                "got %s" % (sid, sd_fmt(tt), draws, d1["s"]))
                 else:
@@ -622,7 +702,109 @@ def report(C, out=None):
     return tot
 
 
+def audit(paths):
+    """The oracle replacement (plan 0045 Phase 2): for a log written by another logger (tools/gdb/combat.py,
+    tools/gdb/stats.py), count the oracle events of its own checker that this model could replace and the fields each
+    replacement needs. A missile packet (combat MS0, RD0) needs the missile's stat list at the hit and the
+    BuildDamage lines with the missile's seed (MH0 "m.st", BD0/BD1 "sm"); a creation or a motion step needs MC0/MF0; a
+    stat-event handler fire (EVH/EVR) needs a handler model, which this tool does not have (combat.py's crushing blow
+    and open wounds are already modelled there); an aura run (stats AU0/AU1) needs the run's RollElemDamage lines (REL).
+    Prints one row per log and the totals; returns the rows."""
+    rows = []
+    tot = Counter()
+    for p in paths:
+        c = Counter()
+        for line in open(p, errors="replace"):
+            tag, _, rest = line.partition(" ")
+            if tag in ("MS0", "RD0", "EVH", "AU0", "MC0", "MF0", "MH0", "BD0", "BD1", "REL", "SDO0"):
+                c[tag] += 1
+                if tag == "MS0" and '"st"' in rest.split('"o"')[0]:
+                    c["MS0 with the missile's stats"] += 1
+                if tag in ("BD0", "BD1") and '"sm"' in rest:
+                    c["BD with the missile seed"] += 1
+                if tag == "MH0" and '"st"' in rest:
+                    c["MH0 with the missile's stats"] += 1
+        repl = {
+            "missile packets": (c["MS0"], min(c["MS0 with the missile's stats"], c["BD with the missile seed"])),
+            "handler fires": (c["EVH"], 0),
+            "aura runs": (c["AU0"], min(c["AU0"], c["REL"])),
+            "creations and steps": (c["MC0"] + c["MF0"], c["MC0"] + c["MF0"]),
+        }
+        rows.append((p, repl))
+        for k, (a, b) in repl.items():
+            tot[k + " events"] += a
+            tot[k + " replaceable"] += b
+        print("%s  %s" % (os.path.basename(p), "  ".join("%s %d/%d" % (k, b, a) for k, (a, b) in repl.items())))
+    print("totals: " + ", ".join("%s %d" % kv for kv in sorted(tot.items())))
+    return rows
+
+
+def tally(paths, excel=DEFAULT_EXCEL):
+    """Coverage counts of a run (plan 0045 Phase 2's Done-when): skill events per row, the start refusals (SST
+    result 0) and the payment refusals (PAY result 0), creations of the VelLev and LevRange rows at a level above 1
+    (cases C2, C4), windowed missiles followed from creation to their removal frame (an MF result 2), hit ends (MH
+    result 2) with and without a unit, handler fires per event, summons, MonAttackStats, the creation callbacks.
+    Counts only; the checks are `check`'s."""
+    T = Tables(excel)
+    c = Counter()
+    for p in paths:
+        L = parse(p)
+        exits = {(t[:-1], d["k"]): d for t, d in L if t.endswith("1") and "k" in d}
+        win = set()
+        for t, d in L:
+            if t in ("SST0", "SDO0"):
+                c["%s row %d" % (t[:3], d["a"][0])] += 1
+                e = exits.get((t[:3], d["n"]))
+                if e and e.get("r") == 0:
+                    c["%s refused (result 0), row %d" % (t[:3], d["a"][0])] += 1
+            elif t == "PAY0":
+                e = exits.get(("PAY", d["n"]))
+                if e and e.get("r") == 0:
+                    c["PAY refused (result 0)"] += 1
+            elif t == "MC1" and d.get("m"):
+                m = d["m"]
+                R = T.mrec(m["c"])
+                lv = (m.get("md") or {}).get("lv", 0)
+                if R["vellev"] and lv > 1:
+                    c["MC VelLev row %d at level > 1 (C2)" % m["c"]] += 1
+                if R["levrange"] and lv > 1:
+                    c["MC LevRange row %d at level > 1 (C4)" % m["c"]] += 1
+                if d.get("win") is not None:
+                    win.add(m["u"])
+                    c["MC windowed"] += 1
+            elif t == "MF1" and d["m"] in win and d.get("r") == 2:
+                win.discard(d["m"])
+                c["windowed missiles followed to their removal frame"] += 1
+            elif t == "MH1":
+                if d.get("r") == 2:
+                    c["MH result 2 (the missile ends at the hit)"] += 1
+            elif t == "MH0":
+                c["MH with a unit" if d.get("d") else "MH without a unit"] += 1
+            elif t == "EVH":
+                c["EVH event %s fn 0x%08X" % (d.get("e"), d.get("fn") or 0)] += 1
+                c["EVH fires"] += 1
+            elif t == "STA" and d.get("state") == 52:
+                c["STA state 52"] += 1
+            elif t in ("SP0", "MAS0", "MCB0", "ARM0", "PF0"):
+                c[t] += 1
+    for k in sorted(c):
+        print("  %-60s %7d" % (k, c[k]))
+    return c
+
+
 def main(argv):
+    if argv and argv[0] == "tally":
+        a = argv[1:]
+        ex = DEFAULT_EXCEL
+        if "--excel" in a:
+            k = a.index("--excel")
+            ex = a[k + 1]
+            del a[k:k + 2]
+        tally(a, ex)
+        return 0
+    if argv and argv[0] == "audit":
+        audit(argv[1:])
+        return 0
     if not argv or argv[0] not in ("check", "manifest"):
         print(__doc__)
         return 2

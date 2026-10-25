@@ -761,3 +761,20 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
      14), the symbols raised, the review request and this log's entry.
   **Usage:** this resume 216 000 tokens and about 100 tool calls over about 75 min, on top of the first part's
   287 603 / 64 / 9 min.
+- **2026-10-25 — Phase 2 run logged, paused at the owner's request (reverser, `lane/p45h`).** Not for review yet.
+  Slot 2 only, stopped (`slots.py stop 2`), saves restored (no aside left); no Ghidra (objdump only). Done:
+  - Resume items 1–3: `MF.seed` allows a nested hit's draws (`MF.hitseed`); the Raise Skeleton caster draw located
+    (do 31 → `sub_005C4430_SummonClassRoll` → `0x005C4300`'s inline step at `0x005C4384`, class 363 at skill level > 2;
+    class 364 via `0x005C4180`), logger rev 3 (`RSK0`/`RSK1`), skills/0003 § 5 corrected; `0x005C9290`'s re-seed is
+    stepped 20 or 38 times by its path calls (§ 9 corrected; the checker's first `MC.cbseed` was wrong, fixed).
+  - **run:2026-10-25-skills**: 18 sessions, **0 mismatches** over 335 618 checks (`tools/skills.py` `1b297c24…`,
+    manifest `2026-10-25-skills-manifest.sha256` `8b01d216…`); record in skills/experiments.md, raises in
+    skills/0002 § 11 and skills/0003 § 15 (with the Answer, Leads and Functions edits), 9 symbols raised to C, 4 new.
+    The oracle replacement: `skills.py audit`, none replaceable (named).
+  **Next (resume):** (1) skills/0001: a run section for `PAY` (1 334 player payments; no floor, no refusal for cost
+  reached) and the chaining (caster 3 155 pairs), raise `SKILLS_PayCost` per review-fix 14; (2) re-read the new
+  sections against review-fixes 1, 4, 8, 10, 12 (the C1/RSK raises rest on 8 cases each: say so or keep `[I]`);
+  (3) the shortfalls are named in the record (handlers, state 52, MonAttackStats, summon seeds, C2, C4, rows under 30,
+  Kick/LHT/LHS): decide whether a second run (slot 1 too, a walking Blaze, a `spike` monster area, a handler model)
+  precedes the review; (4) gate, the review request (`tools/backlog.py new --from reverser --to architect`), the
+  ledger row.

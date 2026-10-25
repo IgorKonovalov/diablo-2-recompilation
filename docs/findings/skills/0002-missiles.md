@@ -102,17 +102,18 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
 - [L] src:d2dfg-blizzard: velocity is `Vel` plus `VelLev` per caster level beyond 1. **contradicted**
   Detail: `((VelLev · lvl) / 8 + Vel) << 8`, `lvl` the request's level (R1: `imul [esi+0x30]`, `cdq; and edx,7;
   sar 3`); four stock rows (`spike1`–`spike4`). Phase 2 case C2,
-  [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md).
+  [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md). *2026-10-25:* not reached by run:2026-10-25-skills (no `VelLev` row created; § 11).
 - [L] src:d2dfg-blizzard: `MaxVel` caps the velocity. **held**
 - [L] src:d2dfg-blizzard: `Accel` changes the velocity per frame. **contradicted**
   Detail: `Accel` is added on every **fifth** path step (R3: the counter `+0x8C` reaches 5), the result capped at
   `MaxVel << 8` (acceleration then stops) and floored at 0 (§ 4); 21 stock rows, Nova, Frost Nova and Howl in tier A.
-  Phase 2 case C3, [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md).
+  Phase 2 case C3, [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md). *2026-10-25:* run:2026-10-25-skills: 278 fifth steps and 60 caps over 1 657
+  accelerating steps, every step's velocity as read (§ 11).
 - [L] src:d2dfg-blizzard: `Range` is the lifetime in frames. **held**
 - [L] src:d2dfg-blizzard: `LevRange` adds to `Range` per caster level beyond 1. **contradicted**
   Detail: `LevRange · lvl + Range`, `lvl` the request's level, with no `− 1` (R2: `movsx [edx+0x98]; imul [esi+0x30]`);
   32 stock rows, none in tier A. Phase 2 case C4,
-  [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md).
+  [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md). *2026-10-25:* not reached by run:2026-10-25-skills (Blaze cast 29 times, no `LevRange` row created; § 11).
 - [L] src:d2dfg-blizzard: `Activate` is the frame count before the missile collides. **held**
 - [L] src:d2dfg-blizzard: `CollideType` codes 0–8, 7 being missile collision. **held with refinement**
   Detail: 7's mask is `0x40` with a `CanDestroy` filter, and no stock row uses it (§ 2).
@@ -147,7 +148,8 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
 - [L] src:purediablo-piercing: a missile that misses but pierces "keeps traveling but doesn't deal any damage".
   **contradicted**
   Detail: a `ToHit` missile whose roll fails returns 2 and is freed at that unit, pierce or not (§ 5). Phase 2 case
-  C5, [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md).
+  C5, [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md). *2026-10-25:* run:2026-10-25-skills: 105 missed rolls, each result 2, 7 of them with a pierce left
+  and one pierce spent (§ 11).
 - [L] src:purediablo-piercing: a blocked hit still pierces. **held**
   Detail: the pierce result is fixed before `MISSILE_ApplyDamage`'s defence roll (§ 5).
 - [L] src:purediablo-piercing: pierce sources add up and above 100 % do nothing more. **held**
@@ -163,29 +165,29 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
 
 | Address | Name | Role | Tag |
 |---|---|---|---|
-| `0x0059FA30` | `sub_0059FA30_MissileCreate` | create a missile from a parameter block | I |
+| `0x0059FA30` | `sub_0059FA30_MissileCreate` | create a missile from a parameter block (31 391 logged exits, § 11) | C |
 | `0x0059F8A0` | `sub_0059F8A0_MissileUnitInit` | type-3 branch of `SUnitCreate`: missile data, the every-frame event | I |
 | `0x0064A100`, `0x0064A150` | `sub_0064A100_MissileDataAlloc`, `sub_0064A150_MissileDataFree` | the 0x34-byte missile data at `Unit+0x14` | I |
 | `0x0059F900` | `sub_0059F900_MissileInitDamage` | damage block, then the missile's stats | I |
 | `0x0064B860` | `sub_0064B860_MissileDamageBlock` | the creation-time damage (Missiles or Skills columns, weapon, mastery) | I |
-| `0x0064A850` | `sub_0064A850_MissileCritRoll` | critical / deadly / mastery critical, inline steps on a unit's seed | I |
+| `0x0064A850` | `sub_0064A850_MissileCritRoll` | critical / deadly / mastery critical, inline steps on a unit's seed (§ 11) | C |
 | `0x0064ABA0` | `sub_0064ABA0_ElemMasteryBonus` | `MulDiv(x, mastery of EType, 100)` for `ApplyMastery` | I |
 | `0x0064A930`, `0x0064AA60` | `sub_0064A930_AddOwnerElemDamage`, `sub_0064AA60_ScaleElemDamage` | the owner's elemental item damage, scaled by `SrcDamage`/128 | I |
 | `0x0064AC60` | `sub_0064AC60_MissileDamageToStats` | the block into missile stats 12, 21, 22, 25, 48–66, 120–122, 315–317, 326 | I |
-| `0x0059F940` | `sub_0059F940_MissilePierceCount` | pierce count from a local seed of stat 328 | I |
+| `0x0059F940` | `sub_0059F940_MissilePierceCount` | pierce count from a local seed of stat 328 (§ 11) | C |
 | `0x0056ECB0` | `sub_0056ECB0_SkillMissileCreate` | (P1.1 name) skill missile in a line | I |
 | `0x0056EE90` | `sub_0056EE90_SkillMissileCreateLob` | (P1.1 name) skill missile, lobbed | I |
 | `0x0056EDE0` | `sub_0056EDE0_MissileCreateAt` | skill missile created at a point (quests, shrines, missiles) | I |
 | `0x0056F460`, `0x0056F550` | `sub_0056F460_SkillThrowDo`, `sub_0056F550_SkillThrowLeftDo` | `srvdofunc` 3 (Throw), 5 (Left Hand Throw) | I |
 | `0x00552FD0`, `0x00621CE0` | `sub_00552FD0_UnitGetOwner`, `sub_00621CE0_UnitSetOwner` | owner by guid, `Unit+0xC8` bit 10 | I |
 | `0x005ADCC0` | `sub_005ADCC0_MissileFrameEvent` | the missile list's default event callback | I |
-| `0x005ADBB0` | `sub_005ADBB0_MissileDoFrame` | town tests, do function, free on 2 | I |
+| `0x005ADBB0` | `sub_005ADBB0_MissileDoFrame` | town tests, do function, free on 2 (13 335 logged frames, § 11) | C |
 | `0x005AE1F0` | `sub_005AE1F0_MissileMoveCollide` | do function 1: step, range, cells against the collide mask | I |
 | `0x005AE400` | `sub_005AE400_MissDo02SubMissile` | do function 2: `SubMissile1` per new cell, then do 1 | I |
 | `0x005AE480` | `sub_005AE480_MissDo03CloudMark` | do function 3: the `0x40` cell mark while still, then do 1 | I |
 | `0x005AEF70` | `sub_005AEF70_MissDo14PeriodicDo` | do function 14: a skill do function every `Param1` frames | I |
 | `0x005ACFC0` | `sub_005ACFC0_MissHit23CallDo` | hit function 23 (*corrected 2026-10-20*, was "22"): retarget, a skill do function by `sHitPar1` | I |
-| `0x005ADF10` | `MISSILE_HitUnit` | (combat name) the hit: filters, pierce, to-hit, hit/damage functions | I |
+| `0x005ADF10` | `MISSILE_HitUnit` | (combat name) the hit: filters, pierce, to-hit, hit/damage functions (105 missed returns, § 11) | C |
 | `0x005ADA40` | `sub_005ADA40_MissileHitTypeFilter` | `CollideType` 0 none, 1 players, 2 monsters, other all | I |
 | `0x005ADA80` | `sub_005ADA80_MissilePierceUse` | stat 328 − 1 on a `Pierce` row | I |
 | `0x005ADB00` | `sub_005ADB00_MissileJustHitState` | state 86 on the hit unit for `NextDelay` frames | I |
@@ -197,7 +199,7 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
 | `0x00641CB0` | `sub_00641CB0_FindUnitAtCell` | a unit whose footprint covers a cell, through a filter | I |
 | `0x00648EB0`, `0x00648F40` | `sub_00648EB0_PathCellCollision`, `sub_00648F40_PathStepCells` | the path's cell collision word; the cells of the last step | I |
 | `0x00648690`, `0x006486C0`, `0x006486D0`, `0x00648700`, `0x00648CE0` | `sub_00648690_PathSetSpeed`, `sub_006486C0_PathGetSpeed`, `sub_006486D0_PathSetMaxSpeed`, `sub_00648700_PathSetAccel`, `sub_00648CE0_PathSetCollMask` | path fields `+0x7C`, `+0x84`, `+0x88`, `+0x50` | I |
-| `0x006502D0` | `sub_006502D0_PathVelocityStep` | acceleration and the step vector | I |
+| `0x006502D0` | `sub_006502D0_PathVelocityStep` | acceleration and the step vector (§ 11) | C |
 | `0x0064A190`, `0x0064A1C0` | `MISSDATA_GetFlags`, `MISSDATA_SetFlags` | `MissileData+0x14` | I |
 | `0x0064A1E0`, `0x0064A210` | `MISSDATA_SetLevel`, `MISSDATA_GetLevel` | `+0x0C` (s16) | I |
 | `0x0064A240`, `0x0064A280` | `MISSDATA_SetSkill`, `MISSDATA_GetSkill` | `+0x0A` (s16, set 0 when < 1) | I |
@@ -616,6 +618,53 @@ return 1;
   only; the town end of § 4 applies to every player owner and to monster owners with `SrcTown`; the hireling branch of
   the damage block uses stat 2 as the enhanced damage of a weaponless hireling. No difficulty, expansion or player-count
   test in the functions of §§ 1–6 as read. (fn:sub_0059FA30_MissileCreate@0x0059FA30, fn:sub_0064B860_MissileDamageBlock@0x0064B860)
+
+### 11. Plan 0045 Phase 2: the run (run:2026-10-25-skills)
+
+18 sessions of eight tier-A characters on slot 2 (the record:
+[experiments § run:2026-10-25-skills](experiments.md#run2026-10-25-skills)); `tools/skills.py check` over the 18 logs:
+**0 mismatches** (`workspace/logs/skills/2026-10-25-skills-check.txt`), coverage from `…-tally.txt`. Raises of the
+Answer's bullets, each split where the run leaves a remainder (raised in part):
+
+- [C] **Creation, raised in part** (§ 2): in 31 391 creations the stored velocity is `(Vel << 8) · 75 / 100` (or the
+  caller's, then `· 75/100`), the path's `Accel` and `MaxVel << 8` as read, the range `Range` less the frames already
+  run (30 941; 450 taken after a creation callback), the frames left equal to it (30 922; 19 lob counts taken), the
+  activate mark, skill and level. (fn:sub_0059FA30_MissileCreate@0x0059FA30, run:2026-10-25-skills)
+- [I] The remainder: the `VelLev` term (C2: no `spike1`–`spike4` created) and the `LevRange` term (C4: no `LevRange`
+  row created), the slow-missiles scaling (no `CanSlow` row's owner slowed), the `SubLoop` loops, the 99-sub-tile
+  refusal.
+- [C] **The missile's seed** (§ 2): `SUnitCreate` steps the game seed once and the missile's seed is
+  `Init(post.low)` in 31 391 of 31 391 creations (`MC.gameseed`, `MC.seed`), the game seed chaining from one creation
+  of a do event to the next in 21 860 pairs. (fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-25-skills)
+- [C] **The owner's critical draws, raised in part** (§ 3): one inline step of the owner's seed per creation of a row
+  that takes weapon damage, none for any other row: 984 creations with one draw, 30 407 with none (`MC.owner`).
+  (fn:sub_0064A850_MissileCritRoll@0x0064A850, run:2026-10-25-skills)
+- [I] The second and third draws (stat 141, the mastery's chance) are not reached: no creation drew twice.
+- [C] **The pierce count** (§ 3): from a local seed `Init(owner base stat 328)` in 1 066 creations of `Pierce` rows
+  (856 with draws), the owner's and the game seeds untouched. (fn:sub_0059F940_MissilePierceCount@0x0059F940,
+  run:2026-10-25-skills)
+- [C] **Motion** (§ 4, case C3): in 11 413 logged frames of 493 followed missiles the velocity takes `Accel` on every
+  fifth path step (278 fifth steps over 1 657 accelerating steps), is capped at `MaxVel << 8` with the acceleration
+  stopping (60 caps), and the position moves `(dir · ((v · 0x400) >> 6)) >> 12` on both 16.16 axes; frames left drop by
+  1 per frame (13 335). (fn:sub_006502D0_PathVelocityStep@0x006502D0, fn:sub_005ADBB0_MissileDoFrame@0x005ADBB0,
+  run:2026-10-25-skills)
+- [I] The floor at 0 is not reached (no velocity fell below 0).
+- [C] **The first frame** (P1.3's open question): each of the 493 followed missiles first runs its do function on
+  the frame after its creation. (run:2026-10-25-skills)
+- [C] **A frame's seed** (§§ 4, 5): the do function of a followed frame leaves the missile's seed unchanged, except
+  by the hits inside it (37 frames, 110 checks: the hit's entry seed is the frame's, its exit the build's, the
+  `MISSILE_ApplyDamage` boundary moving it in none of 36). (fn:sub_005ADBB0_MissileDoFrame@0x005ADBB0, run:2026-10-25-skills)
+- [C] **The packet at the hit, raised in part** (§ 6): `MISSILE_BuildDamage` draws `RangeB(hi − lo) + lo` on the
+  missile's seed once per stat pair with both bounds ≥ 1 and `hi − lo ≥ 1`, the mastery `MulDiv` on both bounds
+  first, in 778 builds (39 with no draw, 720 with one, 19 with two), every drawn elemental field (594), the physical
+  field with its percent and critical doubling (164) and the cold and burn lengths (24) as read. (fn:MISSILE_BuildDamage@0x005A89A0,
+  run:2026-10-25-skills)
+- [I] The order of the seven pairs is separated only by the 19 two-draw builds; the stat-180 entries are not checked.
+- [C] **A missed to-hit** (§ 5, case C5): `COMBAT_ToHitRoll`'s roll is the owner's next draw `low % 100` (269 rolls),
+  and a failed roll returns 2 and frees the missile at that unit, a `Pierce` row having spent one pierce first: 105
+  misses, 7 with a pierce left. (fn:MISSILE_HitUnit@0x005ADF10, fn:COMBAT_ToHitRoll@0x0057D9B0, run:2026-10-25-skills)
+- [I] Not checked by the run: the result of a hit that does not miss (31 257 calls returned 2, oracles), a pierce
+  used at a hit, the hit and damage functions, the sub-missile site `0x005A9820`.
 
 ## Data touched
 
