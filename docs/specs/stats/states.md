@@ -316,7 +316,9 @@ Step notes:
   When their list ends (§ C) the stat leaves the cache and the tick stops changing life. (0x0058065B–0x0058066E,
   fn:sub_00580610_LifeRegenTick@0x00580610)
 - E3. [I] Modes 2 and 6 (walking) and the `b ≥ 1000` exception were not among the run's modes; the stamina shrine,
-  which sets `staminarecoverybonus` 1000 (§ G), was not reached. (0x00580565–0x005805AB, jump table 0x005805B8)
+  which sets `staminarecoverybonus` 1000 (§ G), was operated twice in run:2026-10-20-shortfalls (G6), but the record
+  does not count the ticks under its bonus by mode, so the exception stays a code reading. (0x00580565–0x005805AB,
+  jump table 0x005805B8)
 - E5. [I] A monster's tick is `sub_005A6920_MonRegenEvent` ([combat/delivery § E4](../combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze));
   the life-orb byte stat 352 the player's life tick updates is presentation. (fn:sub_005A6920_MonRegenEvent@0x005A6920)
 
@@ -534,7 +536,7 @@ leaves the cache. (fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-10-17-stat
 - [stats/0002 § 9](../../findings/stats/0002-states.md#9-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls) and
   [stats/experiments § The stats sessions of run:2026-10-20-shortfalls](../../findings/stats/experiments.md#the-stats-sessions-of-run2026-10-20-shortfalls)
   (plan 0047 Phase 2, 10 logs, 0 mismatches) with its review in the
-  [plan 0047 log](../../plans/0047-simulation-shortfalls.md#implementation-log): `attract` on monsters, groups 1 and 2,
+  [plan 0047 log](../../plans/done/0047-simulation-shortfalls.md#implementation-log): `attract` on monsters, groups 1 and 2,
   the aura end by the skill switch, and the counts named again.
 - [stats/0002 § 10](../../findings/stats/0002-states.md#10-plan-0047-phase-2b-the-staging-limited-cases-run2026-10-21-shortfalls2) and
   [stats/experiments § The stats sessions of run:2026-10-21-shortfalls2](../../findings/stats/experiments.md#the-stats-sessions-of-run2026-10-21-shortfalls2)

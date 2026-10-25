@@ -691,4 +691,4 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   14 (return `0x005CAED8`) calls it for mode 8 in 6 of 14 such events over 71 combat logs, and the build uses its
   output ([combat/0001 § 16](../findings/combat/0001-formulas.md#16-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls),
   `[I]`); which events call it is unread and belongs with this plan's monster skill uses with `MonAttackStats`
-  predicted. ([0047 log](0047-simulation-shortfalls.md#implementation-log), Phase 2 review rulings 4 and 6.)
+  predicted. ([0047 log](done/0047-simulation-shortfalls.md#implementation-log), Phase 2 review rulings 4 and 6.)

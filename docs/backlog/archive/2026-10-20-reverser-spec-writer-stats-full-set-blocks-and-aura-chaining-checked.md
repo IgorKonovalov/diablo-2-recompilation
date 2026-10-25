@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/stats/0001-aggregate.md
   - ../../findings/stats/experiments.md#run2026-10-17-stats
-  - ../../plans/0047-simulation-shortfalls.md#implementation-log
+  - ../../plans/done/0047-simulation-shortfalls.md#implementation-log
 resolution: "Done 2026-10-20 (spec-writer, lane/stw): stats/README boundary row raised to [C] (no remainder) and the chained-pair counts named as tools/stats.py's (746, 115 breaks, 4 with no next run); stats/aggregate J4 full Trang-Oul's [C], broken member split out [I], open question struck; stats/states H note; wiki stats-and-states (180 lists, chaining, open-question bullet dropped). Review: [request](2026-10-20-spec-writer-architect-review-lane-stw-stats-full-set-blocks-and.md)."
 ---
 

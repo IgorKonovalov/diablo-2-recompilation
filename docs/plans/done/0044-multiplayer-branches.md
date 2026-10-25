@@ -338,7 +338,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   on the player** (stats/states *Open questions*): stat 135 is written only by item properties, and no MonStats,
   MonProp or MonUMod cell names it, so only a hostile player wounds a player. The case: player B, hostile, wearing an
   open-wounds item (tool-built, ADR-0013 § Neutral), hits player A; the stats logger's state and tick lines on A.
-  ([plan 0047 log](../0047-simulation-shortfalls.md#implementation-log), Phase 1 review, ruling 2)
+  ([plan 0047 log](0047-simulation-shortfalls.md#implementation-log), Phase 1 review, ruling 2)
 - **2026-10-20 — Phase 3 re-tag (spec-writer, `lane/p44s` from `main` `26d8978`), review requested.** Source:
   [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients) as fixed by
   the Phase 2 review, each raise checked against it and the run record; every raised statement cites

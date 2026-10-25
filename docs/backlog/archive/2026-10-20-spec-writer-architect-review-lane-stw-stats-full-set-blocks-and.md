@@ -9,7 +9,7 @@ context:
   - ../../specs/stats/states.md
   - ../../wiki/stats-and-states.md
   - 2026-10-20-reverser-spec-writer-stats-full-set-blocks-and-aura-chaining-checked.md
-  - ../../plans/0047-simulation-shortfalls.md#implementation-log
+  - ../../plans/done/0047-simulation-shortfalls.md#implementation-log
 resolution: "Reviewed 2026-10-20: accept with fixes (1, plus 1 not the lane's); see the plan 0047 log, Phase 1 specs and wiki review."
 ---
 

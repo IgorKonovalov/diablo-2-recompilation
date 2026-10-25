@@ -248,7 +248,7 @@ B2. ResistFor(ctx, row) → i32:                                        [C] (fn:
 - B2. The magic row's cap was never reached and cannot be staged on stock data: no unique, set item, affix, runeword,
   gem, skill or state writes the player's magic resistance (stat 37), and the one writer, a crafted shield's 5–10,
   stays far below 75. The cap is the same code path as the other rows, read from the code. [I]
-  (fn:COMBAT_ResistFor@0x0057BE00, tbl:ItemStatCost.txt:Stat, [plan 0047 Phase 1 review, ruling 2](../../plans/0047-simulation-shortfalls.md#implementation-log))
+  (fn:COMBAT_ResistFor@0x0057BE00, tbl:ItemStatCost.txt:Stat, [plan 0047 Phase 1 review, ruling 2](../../plans/done/0047-simulation-shortfalls.md#implementation-log))
 - B2. Pierce (stats 333–336) applies unless the defender is a monster at 100 or more; no logged attacker had pierce.
   Sanctuary (state 47) zeroes physical resistance against undead; not met. [I] (fn:COMBAT_ResistFor@0x0057BE00)
 
@@ -345,7 +345,7 @@ poison 153 pass unreduced. No penalty and no cap apply to the monster. [C] (run:
 - [combat/0001 § 16](../../findings/combat/0001-formulas.md#16-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls)
   and [combat/experiments § run:2026-10-20-shortfalls](../../findings/combat/experiments.md#run2026-10-20-shortfalls)
   (plan 0047 Phase 2, 0 mismatches over 18 737 events) with its review in the
-  [plan 0047 log](../../plans/0047-simulation-shortfalls.md#implementation-log): the lightning cap 42, the cold cap 31
+  [plan 0047 log](../../plans/done/0047-simulation-shortfalls.md#implementation-log): the lightning cap 42, the cold cap 31
   over the two runs, magic immunity 36, the negative absorbed amount 186, fire flat absorb 113; the magic cap
   unstaged (Phase 1 review, ruling 2).
 - [combat/0001 § 17](../../findings/combat/0001-formulas.md#17-plan-0047-phase-2b-flat-absorb-by-element-run2026-10-21-shortfalls2)

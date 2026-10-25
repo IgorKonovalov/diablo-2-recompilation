@@ -479,7 +479,7 @@ Runtime records for [quests/0001](0001-progression.md) and [quests/0002](0002-tr
 ## The travel sessions of run:2026-10-20-shortfalls
 
 The run is defined in [combat/experiments § run:2026-10-20-shortfalls](../combat/experiments.md#run2026-10-20-shortfalls);
-this is its travel case (plan [0047](../../plans/0047-simulation-shortfalls.md) Phase 2: 20 waypoint activations from
+this is its travel case (plan [0047](../../plans/done/0047-simulation-shortfalls.md) Phase 2: 20 waypoint activations from
 mode 0 with the `Sync` 0 object-seed draw chained).
 
 - **Setup:** slot 2, tag `p47h`, `tools/quest_sessions.py run --slot 2 --tag p47h --run p47h x-wpact5r-0 …`
@@ -506,7 +506,7 @@ mode 0 with the `Sync` 0 object-seed draw chained).
 ## The travel sessions of run:2026-10-21-shortfalls2
 
 The run is defined in [stats/experiments § The stats sessions of run:2026-10-21-shortfalls2](../stats/experiments.md#the-stats-sessions-of-run2026-10-21-shortfalls2);
-this is its travel case (plan [0047](../../plans/0047-simulation-shortfalls.md) Phase 2b: 20 waypoint activations from
+this is its travel case (plan [0047](../../plans/done/0047-simulation-shortfalls.md) Phase 2b: 20 waypoint activations from
 mode 0 with the `Sync` 0 object-seed draw, with Phase 2's 1).
 
 - **Setup:** slot 2, tag `p47b`, `tools/quest_sessions.py run --slot 2 --tag p47b --run p47b …` (final revision

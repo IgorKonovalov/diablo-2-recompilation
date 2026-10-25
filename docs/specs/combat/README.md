@@ -508,7 +508,7 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
 - [combat/0001 § 16](../../findings/combat/0001-formulas.md#16-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls)
   and [combat/experiments § run:2026-10-20-shortfalls](../../findings/combat/experiments.md#run2026-10-20-shortfalls)
   (plan 0047 Phase 2: 31 logs, 18 737 events, 0 mismatches) with its review in the
-  [plan 0047 log](../../plans/0047-simulation-shortfalls.md#implementation-log) (rulings 1, 2 and 7: `--no-shield-log`
+  [plan 0047 log](../../plans/done/0047-simulation-shortfalls.md#implementation-log) (rulings 1, 2 and 7: `--no-shield-log`
   a model input, the cold cap over two runs, the raises).
 - [combat/0001 § 17](../../findings/combat/0001-formulas.md#17-plan-0047-phase-2b-flat-absorb-by-element-run2026-10-21-shortfalls2)
   and [combat/experiments § run:2026-10-21-shortfalls2](../../findings/combat/experiments.md#run2026-10-21-shortfalls2)

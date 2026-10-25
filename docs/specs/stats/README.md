@@ -109,11 +109,11 @@ caster unit). The run did not count the units each run hit.
   [stats/0002](../../findings/stats/0002-states.md) (states, § 1–8).
 - [stats/0002 § 9](../../findings/stats/0002-states.md#9-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls) and
   [stats/experiments § The stats sessions of run:2026-10-20-shortfalls](../../findings/stats/experiments.md#the-stats-sessions-of-run2026-10-20-shortfalls),
-  with the Phase 2 review in the [plan 0047 log](../../plans/0047-simulation-shortfalls.md#implementation-log).
+  with the Phase 2 review in the [plan 0047 log](../../plans/done/0047-simulation-shortfalls.md#implementation-log).
 - [stats/experiments § run:2026-10-17-stats](../../findings/stats/experiments.md#run2026-10-17-stats) and its review
   in the [plan 0041 log](../../plans/done/0041-stats-and-states.md#implementation-log); its *Re-check 2026-10-20*
   (plan 0047 Phase 1: the full set blocks built, the aura chained pairs counted) and its review in the
-  [plan 0047 log](../../plans/0047-simulation-shortfalls.md#implementation-log).
+  [plan 0047 log](../../plans/done/0047-simulation-shortfalls.md#implementation-log).
 - `tools/stats.py` (the model behind the confirmed tags, `check` over the run list), `tools/gdb/stats.gdb`.
 - Tables: [ItemStatCost](../../tables/ItemStatCost.md), [CharStats](../../tables/CharStats.md),
   [States](../../tables/States.md), [Skills](../../tables/Skills.md), [Sets](../../tables/Sets.md),

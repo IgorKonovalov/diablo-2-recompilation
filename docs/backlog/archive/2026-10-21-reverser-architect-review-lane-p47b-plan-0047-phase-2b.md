@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-21
 status: done
 context:
-  - ../../plans/0047-simulation-shortfalls.md#implementation-log
+  - ../../plans/done/0047-simulation-shortfalls.md#implementation-log
   - ../../findings/stats/experiments.md#the-stats-sessions-of-run2026-10-21-shortfalls2
   - ../../findings/combat/experiments.md#run2026-10-21-shortfalls2
   - ../../findings/quests/experiments.md#the-travel-sessions-of-run2026-10-21-shortfalls2

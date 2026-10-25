@@ -441,7 +441,7 @@ From the specs' open questions ([overview](../specs/combat/README.md#open-questi
 - **Branches the runs met too rarely or never.** A second run built for the rare branches settled most of the first
   run's list (above). Left: a walking player's full block chance (6 cases, and final: the extra session allowed was
   spent); the magic resistance cap (no unmodified item or skill reaches it); cold flat absorb (hit once, and final:
-  the session the plan allowed was run, though the colder monsters of the higher difficulties were not tried); the
+  the session the plan allowed was run, though the cold-attacking monsters of Nightmare and Hell beyond that one session were not tried); the
   leech after the defender's handlers (one telling hit); open wounds on a champion without the special mark (no such monster exists
   unmodified) and on players (only another player's item wounds one); what the weapon-block skill check means and
   which flag makes a shield unusable; a monster's own avoidance rolls; freeze from a missile; pierce and conversion,

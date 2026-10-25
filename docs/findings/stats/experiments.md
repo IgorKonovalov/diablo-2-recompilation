@@ -167,7 +167,7 @@ event open at a log's end (the session killed inside it).
 The run is one run under two checkers; its combat half and its definition are in
 [combat/experiments § run:2026-10-20-shortfalls](../combat/experiments.md#run2026-10-20-shortfalls).
 
-- **Question:** plan [0047](../../plans/0047-simulation-shortfalls.md) Phase 2, the stats cases: do the shrine and
+- **Question:** plan [0047](../../plans/done/0047-simulation-shortfalls.md) Phase 2, the stats cases: do the shrine and
   well operates, an aura state's end, the expiries, a different-state `group` clear, the 256 floor, the curse
   resistance cut and a curse refused on a monster in `attract` reproduce under `tools/stats.py`, with the boundary of
   run:2026-10-17-stats?
@@ -263,7 +263,7 @@ was one high; the Assassin's claw-mastery passive (skill 252, param `h2h`, 67 in
 
 ## The stats sessions of run:2026-10-21-shortfalls2
 
-The run is one run under three checkers (plan [0047](../../plans/0047-simulation-shortfalls.md) Phase 2b, the
+The run is one run under three checkers (plan [0047](../../plans/done/0047-simulation-shortfalls.md) Phase 2b, the
 staging-limited cases of Phase 2): this section holds its stats sessions and its definition; the combat sessions are in
 [combat/experiments § run:2026-10-21-shortfalls2](../combat/experiments.md#run2026-10-21-shortfalls2), the travel
 sessions in [quests/experiments § The travel sessions of run:2026-10-21-shortfalls2](../quests/experiments.md#the-travel-sessions-of-run2026-10-21-shortfalls2).

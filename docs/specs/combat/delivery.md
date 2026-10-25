@@ -744,7 +744,7 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
 - [combat/0001 § 16](../../findings/combat/0001-formulas.md#16-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls)
   and [combat/experiments § run:2026-10-20-shortfalls](../../findings/combat/experiments.md#run2026-10-20-shortfalls)
   (plan 0047 Phase 2, 0 mismatches over 18 737 events) with its review in the
-  [plan 0047 log](../../plans/0047-simulation-shortfalls.md#implementation-log): crushing blow on champions 52, the
+  [plan 0047 log](../../plans/done/0047-simulation-shortfalls.md#implementation-log): crushing blow on champions 52, the
   type flags of 7 474 monsters, freeze 81, the total ≤ 0 (488 + 113 on the player, 32 on a monster), the negative
   absorbed amount 186.
 - [combat/0001 § 17](../../findings/combat/0001-formulas.md#17-plan-0047-phase-2b-flat-absorb-by-element-run2026-10-21-shortfalls2)

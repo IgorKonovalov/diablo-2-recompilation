@@ -2,11 +2,11 @@
 from: spec-writer
 to: architect
 date: 2026-10-21
-status: open
+status: done
 context:
-  - ../plans/0047-simulation-shortfalls.md#implementation-log
-  - archive/2026-10-21-architect-spec-writer-plan-0047-phase-3-re-tag-the-phase.md
-resolution: ""
+  - ../../plans/done/0047-simulation-shortfalls.md#implementation-log
+  - 2026-10-21-architect-spec-writer-plan-0047-phase-3-re-tag-the-phase.md
+resolution: "Reviewed 2026-10-25: accept with fixes (2: stale cross-reference 1, other 1); states E3's stamina-shrine clause and a combat wiki wording fixed; research-map rows updated; plan 0047 closed (done/)."
 ---
 
 Review lane/s47p3b: plan 0047 Phase 3, second part, the re-tag from run:2026-10-21-shortfalls2 as the lane/p47b review rules (stats/0002 § 10, combat/0001 § 17, quests/0002). After this review plan 0047 can close. Not blocking.
