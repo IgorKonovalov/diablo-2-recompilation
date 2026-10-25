@@ -59,7 +59,7 @@ positions are pinned by the data except where noted.
 | `MaxGrp` | int 0..10 (10 distinct), 4 blank | `+0x030` u8 | — | [C] |
 | `sparsePopulate` | int, always 40, 733 blank | `+0x031` u8 | — | [C] |
 | `Velocity` | int 0..15 (16 distinct), 4 blank | `+0x032` u16 | — | [C] |
-| `Run` | int 0..20 (18 distinct), 4 blank | `+0x034` u16 | — | [C] |
+| `Run` | int 0..20 (18 distinct), 4 blank | `+0x034` u16 (read signed by Charge, § [Readers at creation](#readers-at-creation-and-at-attack-time-plan-0025-phase-1)) | — | [C] |
 | `Rarity` | int 0..2 (3 distinct), 4 blank | `+0x02E` u8 | — | [C] |
 | `Level` | int 0..110 (49 distinct), 150 blank | `+0x0AA` u16 | — | [C] |
 | `Level(N)` | int 1..110 (41 distinct), 150 blank | `+0x0AC` u16 | — | [C] |
@@ -541,6 +541,8 @@ finding's, linked here by column. `d` is the difficulty (0 for a hireling), `L` 
 | `Skill1..8`, `Sk1lvl..Sk8lvl`, `Sk1mode..` | creation | each `Skill` ≥ 0 with `Sk lvl` > 0 is added at `Sk lvl` + DifficultyLevels `MonsterSkillBonus` | I |
 | `MonProp` | creation | the [MonProp](MonProp.md#code-semantics-plan-0025-phase-1) row, applied to every monster of the class | I |
 | `Velocity` | creation (mods); hit time | the champion/fanatic/`fast` velocity bonus, only when > 0; 0 makes the monster unstunnable ([§ Combat readers](#combat-readers-plan-0037-phase-1-plan-0039-a1)) | I |
+| `Velocity` (plan 0046) | skill target test | `[C]` as a map: the corpse test `0x00645510` (starts 15 and 21) refuses a monster whose `+0x032` word is 0; a class outside the MonStats count reads it through a null record (0x0064557F), unmodelled; why the test reads it is an open question of the finding ([skills/0010 § 3](../findings/skills/0010-necromancer.md#3-the-start-functions-15-17-18-19-20-21); fn:sub_00645510_MonCorpseTest@0x00645510) | C |
+| `Run` (plan 0046) | Charge (start 31) | `[C]` as a map: a monster caster's base is `+0x034` read **signed** (`movsx`) `<< 8`, then `0x00649050(path)`, into `MulDiv(base, max(stat 67, 50) + Param1, 100)` (Skills `Param1`) for `sub_00648690_PathSetSpeed` (ADR-0021 boundaries); `[I]` that this is the charge's run speed; the layout's u16 and the signed read agree on the stock values 0..20 ([skills/0011 § 5](../findings/skills/0011-paladin.md#5-charge-and-the-missiles-start-31-do-67-73-80); fn:sub_005CF6B0_SkillSt31Charge@0x005CF6B0) | C |
 | `A1TH`/`A2TH`/`S1TH`, `A1MinD`…`S1MaxD`, `El<e>*` | **attack time** | to-hit and damage = MonLvl `TH`/`DM` × cell / 100 from the current level stat, with the classic or player-count factors; `El<e>Pct` < 100 draws on the unit seed per attack; out of the creation model | I |
 | `Drain`, `coldeffect`, `Crit`, `NoShldBlock` | not at creation; hit time | [§ Combat readers](#combat-readers-plan-0037-phase-1-plan-0039-a1) | I |
 

@@ -203,3 +203,32 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   0042 owner-play entry closed as dropped
   ([archive](../backlog/archive/2026-10-17-architect-human-plan-0042-owner-play-boss-steps.md)); the patch, Diablo-pair
   and plan 0044 owner-play entries stay open as recommended; the two-client tail optional and deferred.
+- **2026-10-25 — Phase 0a landed for review (archivist, `lane/p51a`, no slot, no Ghidra).** The eight plan 0046
+  column-reader entries of 2026-10-20 (9a, 9b, 9c, 9d, `ama`, `nec`, `pal`, `sor`) are folded and closed. Each column
+  the entries name now ends its row's Meaning cell with `*plan 0046 readers:*`, a tagged reader, the finding section
+  (skills/0004–0011) and an `fn:` or address anchor. Tables touched:
+  [Skills](../tables/Skills.md), [Missiles](../tables/Missiles.md), [MonStats2](../tables/MonStats2.md)
+  (`MeleeRng`, `corpseSel`, `revive`, `small`, `large`), [MonStats](../tables/MonStats.md) (`Velocity` and `Run` as
+  two rows of § Readers at creation and at attack time), [CharStats](../tables/CharStats.md) (`RunVelocity`),
+  [DifficultyLevels](../tables/DifficultyLevels.md) (`AiCurseDivisor`: `DiffDivide` read, the three other readers
+  still not read) and [States](../tables/States.md) (`udead`, a dated note on its bullet). In Skills the reader goes on
+  the § Dispatch row where one carries the column's code meanings (missiles, `progressive`, parameters, costs,
+  summons), else on the § Columns row (the § Passive and aura table has no Meaning cell). One row per column; a run
+  of columns read together sits on its first column's row, and the others say "as `X`". Where an entry differs from
+  the finding, the finding was followed: 9b's `ELenCalc` is `ELenSymPerCalc`; `srvmissilec` is taken at a charge of 3
+  or more; the `Kick` minimum for a non-player is `max(3·level, 1) / 4 << 8`.
+  - **The tags are the findings', as their reviews left them, where an entry says otherwise.** Do 7's `Param1` period
+    and `Size` edge distance are `[I]` (re-plan, skills/0004 § 10). Do 8/10/17's creation of `SubMissile1` comes after
+    the `COLL_CellTestAt` boundary, so it is `[I]`. Do 28 and do 34 are `[C]` (ADR-0021), as the 9b review raised them;
+    the entry had `[I]`. The radii of hits 14, 22, 24 and 44 are `[I]` (9c ruling 1), and so are hit 9's disc radius,
+    hit 4's switch and hit 22's bolt count. The ring steps of hits 52 and 59 and the `CollideKill` return values are
+    `[I]`, as is row 568's word being `pSrvHitFunc` (9d ruling 4). The `ama` and `pal` values are `[C]` and their
+    meanings `[I]` (fixes 4 and 3 of those reviews). `srvmissileb` is `[C]` for weapon word 0 only.
+  - Also changed: `HitSubMissile2..4`'s layout note "slot by stride `[L]`" is replaced by hit 4's reader (`[C]`,
+    ADR-0021). `Kick`'s maximum divides by 3 (`sub_00644C20_SkillKickDamage`), not by 4. MonStats `Run` is laid out
+    u16 and read signed by Charge; stock 0..20 cannot tell them apart. The layout and the `excel_layout` baseline are
+    unchanged.
+  - **Left open:** `SubMissile3`'s "slot by stride `[L]`" stays. Do 34 reads three pairs, but the finding does not
+    give the third slot's offset. The three data questions of § Phase 0 belong to P0b's entries; none of P0a needs a
+    decompile reading, so nothing is forwarded to Phase 1b.
+  - Gate fast tier GREEN (the 11 W1 warnings are `main`'s, in `docs/specs/data/excel.md`). Next: P0b (items 9–16).

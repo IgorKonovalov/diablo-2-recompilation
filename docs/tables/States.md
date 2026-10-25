@@ -333,6 +333,11 @@ several.
   shipped data 13 rows set it (§ Flag bits by row). (fn:sub_005431F0_InactiveMonsterSaveTest@0x005431F0,
   fn:sub_0063A130_UnitHasStateInMask@0x0063A130, tbl:States.txt:udead;
   [drlg/0009 § 5](../findings/drlg/0009-room-lifecycle.md#5-the-inactive-records))
+  *2026-10-25 (plan 0051 P0a):* `[C]` as a map of the bit-set, `sub_0063A770_UnitHasStateSet33` tests the unit
+  against the same `DataTables+0x150` set, and the corpse tests `0x00645510` and `0x00645680` (starts 15, 17, 21:
+  Raise Skeleton, the corpse explosions, Revive) refuse a monster that carries one of its states (emulated, skills/0010
+  § 2). `[I]` that the set is this column's (the layout above) ([skills/0010 § 3](../findings/skills/0010-necromancer.md#3-the-start-functions-15-17-18-19-20-21);
+  fn:sub_0063A770_UnitHasStateSet33@0x0063A770, fn:sub_00645510_MonCorpseTest@0x00645510)
 - `[I]` **`group` is an exclusion group, cleared by `STATE_GroupClear`.** Called by the item-use states (potions),
   five skill functions and the `state` stat callback before they apply a state, it clears every other state of the
   same non-zero `group` on the unit and frees its list; the apply itself (`STATE_ApplyTimed`) does not look at it.
