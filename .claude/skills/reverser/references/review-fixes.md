@@ -47,7 +47,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
 10. **One case decides only if a wrong reading could not match it by chance.** Seen: aff 28's durability
     value, about one in eight (S2b, 0038). Count the cases that separate the readings, not the cases checked: a
     rounding needs a remainder (three curse lengths whose `MulDiv` is exact), and a model fix's counter is not its
-    evidence (59 events counted, one separating; `lane/p47b` review, [0047](../../../../docs/plans/0047-simulation-shortfalls.md)).
+    evidence (59 events counted, one separating; `lane/p47b` review, [0047](../../../../docs/plans/done/0047-simulation-shortfalls.md)).
 11. **"Moved" names the destination plan**; otherwise write "out of this plan". Seen: status bit 1
     (0039 P1b ruling 4); a closed entry's "(3) deferred" with no home (H7a review, 0038).
 12. **Carry a correction into the section it corrects**, not only into the run's ledger section: the claim, its

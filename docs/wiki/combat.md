@@ -258,8 +258,8 @@ What is confirmed:
   resistance.
 - **Absorb heals.** Percent absorb (at most 40 %) takes its share out of the damage and heals the defender by that
   amount. Community pages say only flat absorb heals; 32 healing events from percent absorb say otherwise. Flat absorb
-  is subtracted after the percent: confirmed for fire in 113 hits; cold and lightning flat absorb were not hit, and
-  that flat absorb heals as well is read from the code.
+  is subtracted after the percent: confirmed for fire in 113 hits and for lightning in 51; cold flat absorb was hit
+  once, and that flat absorb heals as well is read from the code.
 - **A negative field is still absorbed**, giving a negative absorbed amount that heals nothing: 186 hits where magic
   damage reduction had pushed fire or cold below zero before percent absorb.
 - **"Cannot be frozen"** zeroes the cold length.
@@ -320,6 +320,9 @@ mercenary and monsters:
   for that difficulty (`fallen2`: 100, 85, 75 %). A monster with no `Drain` cannot be leeched.
 - Mana is added first, then life. When both ran, one extra draw of 2 on the attacker's seed picks which visual
   overlay to show; a reimplementation without overlays still has to take it.
+- The defender's on-hit handlers run before the leech, so a draining monster that the player's lightning thorns have
+  just hurt adds its drain to the life the thorns left. That is read from the code, and one hit in the runs tells the
+  two orders apart.
 - Monster leech (a monster attacker healing itself, by up to the damage it dealt and the defender's mana and stamina)
   is confirmed over 80 events in Nightmare and Hell.
 
@@ -437,8 +440,9 @@ From the specs' open questions ([overview](../specs/combat/README.md#open-questi
 - **Timing.** Hit recovery, knockback and stun lengths in time, and the get-hit and durability draws.
 - **Branches the runs met too rarely or never.** A second run built for the rare branches settled most of the first
   run's list (above). Left: a walking player's full block chance (6 cases, and final: the extra session allowed was
-  spent); the magic resistance cap (no unmodified item or skill reaches it); cold and lightning flat absorb (not hit;
-  a further pass of the plan takes them); open wounds on a champion without the special mark (no such monster exists
+  spent); the magic resistance cap (no unmodified item or skill reaches it); cold flat absorb (hit once, and final:
+  the session the plan allowed was run, though the cold-attacking monsters of Nightmare and Hell beyond that one session were not tried); the
+  leech after the defender's handlers (one telling hit); open wounds on a champion without the special mark (no such monster exists
   unmodified) and on players (only another player's item wounds one); what the weapon-block skill check means and
   which flag makes a shield unusable; a monster's own avoidance rolls; freeze from a missile; pierce and conversion,
   which belong to skills and missiles; the floor of one point on the player's life tick.

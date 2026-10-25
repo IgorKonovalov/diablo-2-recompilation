@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-21
 status: done
 context:
-  - ../../plans/0047-simulation-shortfalls.md#implementation-log
+  - ../../plans/done/0047-simulation-shortfalls.md#implementation-log
 resolution: "Reviewed 2026-10-21 (architect): accept with fixes (3: overclaim 2, misread 1); verdict and fixes in the plan 0047 log; research map rows updated."
 ---
 

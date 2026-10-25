@@ -29,7 +29,7 @@ against all of them before you file the review request. Categories are those of 
 7. **Close what your change makes stale**: answered open questions, ADR status, wiki paragraphs. Seen:
    ADR-0008 still "proposed" (`lane/p37s`, 0037); drlg/README open questions (`lane/wiki1`, 0038); wiki pages left
    with a W4 warning and an answered "unknown" (`lane/p43s`, 0043); quest-drops' Wirt-body
-   route bullet left saying a run would settle it (`lane/p43t`, 0043).
+   route bullet left saying a run would settle it (`lane/p43t`, 0043); states E3's "stamina shrine not reached" left after the same clause in G6 was fixed (`lane/s47p3b`, [0047](../../../../docs/plans/done/0047-simulation-shortfalls.md)).
 8. **Don't under-tag**: a raise the accepted ledger allows is stated at its strength. Seen: `burn = 2`
    (`lane/p37s`, 0037); cube G4 (`lane/p39s`, 0039); a shortfall the logs already covered (`lane/p43s`, 0043). Split a mixed tag, don't extend the weaker one: H5's marks, compared in order (`[C]`), said read from the code with their call path (`[I]`) (`lane/s48p4`, 0048).
 9. **Cite the exact instruction the finding gives**, and link the section that holds the object named.
