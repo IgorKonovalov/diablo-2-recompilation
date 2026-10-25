@@ -267,6 +267,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-21 | `lane/p46m15` review | 0046 P1 batch 8c | architect-review | 154 809 | 44 | 9 | — | gave accept with fixes | — (on the lane row; Phase 1 closed, 310/310) |
 | 2026-10-21 | `lane/s47p3b` | 0047 P3 (P2b counts) | spec-writer | 157 571 | 75 | 15 | — (static, no Ghidra) | accept with fixes | 2: stale cross-reference 1, other 1 (states E3 still said the stamina shrine was not reached, the clause G6 corrected; the combat wiki's "colder monsters of the higher difficulties" for the spec's untried Nightmare and Hell cold rows) |
 | 2026-10-25 | `lane/s47p3b` review | 0047 P3 (P2b counts) | architect-review | 137 830 | 55 | 11 | — (static, no Ghidra) | gave accept with fixes | — (on the lane row; resumed after the owner's pause; research map rows rewritten; plan 0047 closed to done/) |
+| 2026-10-25 | `lane/plans50` | plans 0050–0052, run order | architect | 232 926 | 59 | 19 | — (static, no Ghidra) | 0050, 0051 and the run order approved by the owner 2026-10-25; 0052 held | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

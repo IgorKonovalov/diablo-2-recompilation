@@ -22,8 +22,8 @@ which seeds it draws on? This is phase (3) of [ADR-0014](../adrs/0014-scope-game
 
 The boundary: **the machinery and a named tier A of skills** are in this plan. What each of the remaining numbered
 skill and missile functions does is plan [0046](0046-skills-function-catalogue.md). Which skill a monster chooses,
-and when, is phase (4) (an input here); the frame on which an animation reaches its action frame is phase (5) (a
-logged input here, stated in game frames).
+and when, is phase (5) (an input here); the frame on which an animation reaches its action frame is phase (4) (a
+logged input here, stated in game frames; phases renumbered by the owner's 2026-10-20 swap, plans 0050 and 0052).
 
 ## Context
 
