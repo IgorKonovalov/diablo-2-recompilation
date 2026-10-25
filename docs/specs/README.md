@@ -80,7 +80,8 @@ start before plan 0037's spec is reviewed. Phase (3) is approved (2026-10-20) as
 machinery: rows `skills/dispatch` and `skills/missiles`) and [plan 0046](../plans/0046-skills-function-catalogue.md) (the
 function catalogue: row `skills/catalogue`), under [ADR-0020](../adrs/0020-skills-phase-in-two-plans.md) (accepted 2026-10-20); the
 rows are added when 0045 starts. The owner swapped phases (4) and (5) on 2026-10-20: (4) is animation and frame timing,
-(5) monster AI. [Plan 0048](../plans/done/0048-seed-to-world.md) (approved 2026-10-20, closed 2026-10-21) added the Core row `chain` at its Phase 0 review (2026-10-20).
+(5) monster AI. Phase (4) is [plan 0050](../plans/0050-animation-frame-timing.md) (rows `anim/timing` and `anim/movement`) and phase (5)
+[plan 0052](../plans/0052-monster-ai.md) (row `monsters/ai`), both proposed 2026-10-25 ahead of their gates. [Plan 0048](../plans/done/0048-seed-to-world.md) (approved 2026-10-20, closed 2026-10-21) added the Core row `chain` at its Phase 0 review (2026-10-20).
 
 | Subsystem | Depends on | Key tables | Status |
 |---|---|---|---|
@@ -90,6 +91,9 @@ rows are added when 0045 starts. The owner swapped phases (4) and (5) on 2026-10
 | `skills/dispatch`: the skill request, start checks, start and do function dispatch, progressive charges, costs, the skill packet, event handlers, summons, monster skill use ([plan 0045](../plans/0045-skills-missiles-machinery.md)) | combat/formulas, stats/states, data/calc | Skills, SkillDesc, PetType, MonStats | findings in progress · [skills/0001](../findings/skills/0001-dispatch.md), [skills/0003](../findings/skills/0003-handlers.md) (0045 Phase 1 closed; Phase 2 and the spec not started) |
 | `skills/missiles`: missile creation, seed, motion, collision, hit, pierce, sub-missiles, end of life ([plan 0045](../plans/0045-skills-missiles-machinery.md)) | skills/dispatch, combat/formulas | Missiles, Skills | findings in progress · [skills/0002](../findings/skills/0002-missiles.md) (0045 Phase 1 closed; Phase 2 and the spec not started) |
 | `skills/catalogue`: every numbered skill start, do and progressive function and every missile do, hit and damage function a stock row uses ([plan 0046](../plans/0046-skills-function-catalogue.md)) | skills/dispatch, skills/missiles | Skills, Missiles, States, MonStats | findings in progress · [skills/0004](../findings/skills/0004-missile-do-1-18.md)–[0018](../findings/skills/0018-monster-8c.md) (0046 Phase 1 closed 2026-10-21, 310 of 310 entries; Phase 2 and the spec not started) |
+| `anim/timing`: unit modes and their frame counts, the event frames (the do function's frame, the action frame, sequences), attack, cast, hit-recovery and block rates and the breakpoints they give, the animation-start draws ([plan 0050](../plans/0050-animation-frame-timing.md), proposed) | skills/dispatch, combat/formulas, stats/aggregate, objects | `animdata.d2`, PlrMode, MonMode, ObjMode, monseq, HitClass, CharStats, MonStats, MonStats2, Weapons, Skills, ItemStatCost, Objects | not started · plan 0050 proposed 2026-10-25 (P0/P1 after 0045·P2's acceptance, P2 after 0045·P3's review) |
+| `anim/movement`: walk and run speed, the slowing states, the per-frame step along a path ([plan 0050](../plans/0050-animation-frame-timing.md), proposed; the path itself is `monsters/ai`'s) | anim/timing, stats/states | CharStats, MonStats, States, ItemStatCost | not started · plan 0050 proposed 2026-10-25 (the spec-writer may merge it into `anim/timing`) |
+| `monsters/ai`: the AI tick, target, mode and skill choice, leader and minion following, the path request and its draws ([plan 0052](../plans/0052-monster-ai.md), first draft) | anim/timing, skills/dispatch, monsters/stats, drlg/collision | MonStats (`AI`, `aip*`, `aidel`, `aidist`), MonAI index | not started · plan 0052 first draft 2026-10-25, held until 0045·P3's review |
 
 ### Game rules (ADR-0017)
 
