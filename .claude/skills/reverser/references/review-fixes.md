@@ -8,7 +8,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    writer/reader pair, a full-table check, an independent tool). Don't name a meaning the code does not
    give. Seen: S1e rows 51/64 ([0038](../../../../docs/plans/0038-inferred-claims-sweep.md), 2026-10-17); `0x400` "good/evil"
    ([0040](../../../../docs/plans/done/0040-drlg-room-lifecycle.md) P1 review); a meaning word ("the missile count", "the
-   charge speed") inside a `[C]` of the batch's column-reader entry (`lane/p46m6` and `lane/p46m8` reviews,
+   charge speed", "moves the unit's path to its owner's point") inside a `[C]` of the batch's column-reader entry (`lane/p46m6`, `lane/p46m8` and `lane/p46m15` reviews,
    [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
 2. **Recount every count from the binary with a kept command**, never from memory or a partial scan:
    writers, call sites, instructions, items. Copy a run's counts from the kept, hashed check output, never from an
@@ -75,4 +75,5 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     `(minor << 16) × 0x7F` said to wrap past 257 subtiles, where 258 still fits (`lane/p46m13` review); do 105's
     `h·A` said to wrap as a 32-bit product where it cannot on any path that uses it, the subtraction after it being
     what wraps: name the operation that wraps and whether a wrapping path reaches a use (`lane/p46m14` review, all
-    three [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
+    three [0046](../../../../docs/plans/0046-skills-function-catalogue.md)); do 140's try offsets said not to wrap "below
+    2³¹ − 9" where 2³¹ − 9 itself still fits (`lane/p46m15` review, 0046).
