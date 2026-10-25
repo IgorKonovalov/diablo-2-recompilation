@@ -963,3 +963,73 @@ Plan 0045 Phase 2's harness runs: none yet. Plan 0046's emulated runs (ADR-0015)
   and corpse heals after their calls, the inferno repeats); when the game runs these functions or with which seed.
   (fn:sub_005CE2B0_SkillDo112MonCurse@0x005CE2B0, fn:sub_005CD910_SkillSt55LocalSeed@0x005CD910,
   fn:sub_005CC690_SkillDo152DiabLight@0x005CC690)
+
+## run:2026-10-21-cat-emu-8c
+
+- **Question:** (plan 0046 Phase 1, batch 8c) Do the monster start functions 61–63 and do functions 128–137, 139, 140
+  and 147–149 map their inputs (the Skills, Missiles, MonStats and MonStats2 records, the caster, its path, used node,
+  stat list, monster data, owner links and `+0xC4`, the target, its path, stat list, state words, alignment list and
+  owner link, the rooms, the game's frame and difficulty bytes, and the seeds) to the result they return, or to the
+  arguments, pointed-to blocks and packets, node, frame and argument-slot words and seed states at the call they end
+  in, exactly as [skills/0018](0018-monster-8c.md) §§ 3–5 say, and which seed does each draw before its boundary step?
+- **Setup:** as run:2026-10-21-cat-emu-8b: Ghidra 12.1.2 p-code emulator on the pinned `game.exe` (lane copy
+  `GHIDRA_PROJ_DIR=workspace/ghidra-p46m15`, heap 3 GB, one instance at a time, each under a 4 GB scope),
+  `re/ghidra_scripts/EmuBoundary.java` unchanged. No wine, nothing runs natively, no slot. Models, case writers and
+  checks: the `8c` families of `tools/skills_catalogue_emu.py` (`8911d02a…`; the kept outputs were emulated from case
+  files this revision writes, and it gives the kept `check.txt` and `static.txt`), with 8a's and 8b's conventions (the
+  call site of every boundary asserted with a site control; the caster's and the target's seeds written and compared
+  in every case; a boundary's pointer argument compared by content: the `MissileCreate` block, the hit packet, the
+  timed-state blocks; the node, frame and argument-slot words dumped and compared, each dumped byte written by the case;
+  register arguments compared only where the callee reads them before writing them; a boundary inside a helper compares
+  the helper's return address at its absolute stack slot). All inputs synthetic (stock parameter values among them);
+  every case-writer draw from `random.Random("cat8c-<family>")`. Files in `workspace/logs/skills-cat-8c/`,
+  `manifest.sha256` `9dc63588…` (92 files: cases, memory specs, expected inputs, outputs, the `.err` logs, `cases.txt`,
+  `check.txt` `500b673c…`, `static.txt` `873640da…`, `rows.txt` `21a02907…` with its `rows.sh`, `repro.txt` `2a44bd63…`
+  with its `repro.sh`, the run script `run_8c.sh`, and the three development runs under `dev/` with `dev/notes.txt`);
+  `sha256sum -c manifest.sha256` from that directory passes. `repro.txt` records that the same tool revision (which also
+  carries the `near8` docstring fix of the `lane/p46m13` review, fix 2) regenerates every case, memory and expectation
+  file of 9a, 9b, 9c, 9d, `sor`, `ama`, `nec`, `pal`, `bar`, `dru`, `ass`, `item`, 8a and 8b byte for byte and
+  reproduces their kept `check.txt` and `static.txt` byte for byte from their kept outputs (14 `REPRO` lines, each
+  `differ=0 check=same static=same`).
+- **Procedure:**
+  ```
+  D=workspace/logs/skills-cat-8c
+  python3 -I tools/skills_catalogue_emu.py cases --batch 8c > $D/cases.txt
+  $D/run_8c.sh $D miss_8c hit_8c curse_8c move_8c   # one EmuBoundary instance at a time, 4 GB scope
+  python3 -I tools/skills_catalogue_emu.py check  --batch 8c > $D/check.txt
+  python3 -I tools/skills_catalogue_emu.py static --batch 8c > $D/static.txt
+  $D/rows.sh > $D/rows.txt; $D/repro.sh <scratch dir> > $D/repro.txt
+  python3 -I tools/skills_catalogue_emu.py manifest --batch 8c --write
+  ```
+  The memory spec points `g_pDataTables` at a scratch DataTables written one field per field read (Skills with count
+  3; Missiles with count 48; ItemStatCost, MonStats with count 4, or 600 for `curse_8c` so that `MonClassCheck` admits
+  the bases 453, 546 and 551; MonStats2, the calc pool, the States and PetType counts, the state sets at `+0xD4` and
+  `+0x150`, the overlay count), sets `MONSTATS_GetClassChainPos`'s table and count, `MissileSpeedAtLevel`'s missile
+  table and count and the cookie, names the boundaries (`observe`) and guards the allocator and the fatal path.
+- **Observed** (`check.txt`, `static.txt`):
+  ```
+  CAT8C miss_8c  cases=3200 match=3200 bad=0 neg=605 traced=12 undeclared=0 stopped=0
+  CAT8C hit_8c   cases=1200 match=1200 bad=0 neg=260 traced=9 undeclared=0 stopped=0
+  CAT8C curse_8c cases=2000 match=2000 bad=0 neg=204 traced=29 undeclared=0 stopped=0
+  CAT8C move_8c  cases=2400 match=2400 bad=0 neg=1109 traced=6 undeclared=0 stopped=0
+  CAT8C static d148_differ=1 entry_words=18 helper_sites=29 pins=68 pins_ok=68 rng_calls=1 rng_mult=3 ro_reads=5 table_entries=18
+  ```
+  8 800 cases. Every negative control fails (per-control counts on the `negative control` lines; each family has one
+  failing 75 or more: `lob_inv` 271, `corpse_any` 100, `base_any` 75, `mode_x` 359; every control equals its deciding
+  class on the 18 `CLASS` lines); the site control fails on all 2 376 matched boundary cases (23 `site` lines: function,
+  boundary, return address; 892 + 370 + 227 + 887). `static.txt` also finds do 148's and do 149's 101 instructions equal
+  but one, scans the batch's bodies and helpers for the RNG functions and the multiplier (one `RNG_Range` call in do
+  131, the multiplier three times in do 140, nothing else), prints `0x0063EFA0`'s first switch table and do 130's
+  offsets, and computes do 128's frame-sum wrap (`wrap` line). Three development runs came first and are kept in `dev/`
+  (`dev/notes.txt`): one case-writer error (two owners written as one unit) and two classes too wide, then the writer's
+  tuning for the thin controls.
+- **Conclusion:** bit-exact reproduction (evidence rule 4, ADR-0015) of the functions' maps on returning cases (`[C]`:
+  every refusal path, start 62's node words from `SkillSummonClass`, do 140's no-room return with the seed stepped
+  `1 + 2n` times, do 147's no-owner 1) and of their maps up to their boundary calls with the call site, the nested
+  return addresses, the arguments (register arguments where the callee reads them first), the pointed-to blocks and
+  packets, the node, frame and argument-slot words and both seeds asserted (`[C]` under
+  [ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md); skills/0018 names each claim's boundary). Draws on a
+  unit's seed before a boundary: do 131's `RNG_Range(caster, 100)` and do 140's inline steps of the caster's seed. Not
+  covered: what any boundary callee does and everything after it, `0x0063EFA0`'s arms other than the default one (Baal's
+  among them); when the game runs these functions or with which seed. (fn:sub_005D1F70_SkillDo131OverseerWhip@0x005D1F70,
+  fn:sub_005D2C20_SkillDo140BaalTentacle@0x005D2C20, fn:sub_005D1AB0_SkillDo129ImpTeleport@0x005D1AB0)
