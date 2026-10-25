@@ -1,6 +1,6 @@
 # 0050 — Animation and frame timing: unit modes, frame counts, rates and breakpoints, movement speed (ADR-0014 phase 4)
 
-> **Status:** proposed (owner approval pending)
+> **Status:** approved 2026-10-25 (owner), effective when plan 0045 Phase 2 is accepted
 > **Created:** 2026-10-25
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0005-presentation-formats-tools-only, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases, 0020-skills-phase-in-two-plans, 0021-observed-boundaries-in-emulation
@@ -36,7 +36,7 @@ client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing ente
   `skills/dispatch` and `skills/missiles`), because the P2 boundary (which skill inputs are modelled and which are
   oracles) is ruled against that spec. If 0045·P3's review moves a boundary Phase 1 relied on, the architect re-rules
   Phase 2's boundary at the Phase 1 review, or in a dated amendment. This plan is drafted ahead of its gate at the
-  owner's request (2026-10-25); its approval takes effect at the gate.
+  owner's request (2026-10-25); the owner approved it on 2026-10-25, effective at the gate.
 - **Plan 0046 never gates this plan** (ADR-0020). Phase 1 of 0046 read all 310 functions (closed 2026-10-21); its spec
   is not written. A **catalogue function** this plan needs and plan 0046 has not specified (no reviewed
   `skills/catalogue` entry when this plan's Phase 2 is ruled) is taken as a **boundary oracle under ADR-0004**: its
@@ -227,8 +227,8 @@ client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing ente
 
 ## Open questions
 
-- **Movement's place.** This draft puts a unit's speed and per-frame step in phase (4) and the path it follows in
-  phase (5). The owner may move movement whole into phase (5) instead (owner decision).
+- ~~**Movement's place.**~~ Decided 2026-10-25 (owner): a unit's speed and per-frame step are this plan's, the path it
+  follows is phase (5)'s.
 - **One row or two.** `anim/timing` and `anim/movement` are proposed; the spec-writer may merge them at P3.
 - **Client-side timing.** The client's own animation clock, its interpolation and any display of attack speed are
   presentation and stay out (ADR-0014 § Time). A client function that computes the same rate separately counts as a
@@ -241,3 +241,6 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-25 — Drafted (architect, `lane/plans50`).** Status `proposed`, ahead of its gate (0045·P2) at the owner's
   request.
+- **2026-10-25 — Approved (owner, via the orchestrator).** Approved as drafted, effective when plan 0045 Phase 2 is
+  accepted; the movement split kept (speed here, the path in phase (5)); Phase 2 runs before plan 0046 Phase 2 on the
+  harness; the 2026-10-25 run order of the [plans index](README.md#run-order-set-2026-10-25-plans-00380052) is current.

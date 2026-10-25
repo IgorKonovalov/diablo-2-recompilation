@@ -1,6 +1,6 @@
 # 0052 — Monster AI: the AI tick, target and skill choice, and the pathing it drives (ADR-0014 phase 5; first draft)
 
-> **Status:** proposed (owner approval pending; first draft, held until its gate)
+> **Status:** proposed (first draft, held until its gate: approvable at the review of plan 0045's spec, owner 2026-10-25)
 > **Created:** 2026-10-25
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0011-harness-slots, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases, 0020-skills-phase-in-two-plans, 0021-observed-boundaries-in-emulation
@@ -78,6 +78,9 @@ architect re-drafts it at its gate.
 
 ## Scoping questions for the owner
 
+Open until this plan is re-drafted at its gate (owner, 2026-10-25). The owner leans towards pathing as **its own
+part** (question 1). Question 6's reading is confirmed (below).
+
 1. **Pathing in or out.** The path search a monster runs (its kinds, its cost, its draws) is large and close to
    collision. Include it in this plan, give it its own plan, or keep it as an oracle (the path request and its result
    logged) with only the speed in plan 0050?
@@ -92,7 +95,8 @@ architect re-drafts it at its gate.
    the other?
 6. **The gate's reading.** This draft reads ADR-0020 as letting phase (5)'s plan be approved once 0045·P3 is reviewed,
    with its harness phase after 0050·P3 (ADR-0016's harness rule). ADR-0016's one-phase-ahead rule, read alone, would
-   hold the plan until 0050·P2 is accepted. Confirm the ADR-0020 reading.
+   hold the plan until 0050·P2 is accepted. **Confirmed (owner, 2026-10-25):** approvable at the review of 0045's
+   spec, per ADR-0020.
 
 ## Resources and limits
 
@@ -116,3 +120,6 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-25 — First draft (architect, `lane/plans50`).** Status `proposed`, held until 0045·P3 is reviewed;
   scoping questions for the owner listed.
+- **2026-10-25 — Owner ruling (via the orchestrator).** The gate's reading confirmed (approvable at 0045·P3's review,
+  ADR-0020); status stays `proposed` until then; the scoping questions stay open until the re-draft, with the owner
+  leaning towards pathing as its own part; movement speed stays in plan 0050.

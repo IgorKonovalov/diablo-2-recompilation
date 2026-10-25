@@ -55,14 +55,14 @@ Lane runs (agent usage, review verdicts, fix counts by category) are logged in t
 | [0047](done/0047-simulation-shortfalls.md) | Simulation shortfalls: the named remainders of the combat, stats and travel runs | done | — (closed 2026-10-25; P1, P2, P2b and P3 (both parts) accepted with fixes; run:2026-10-20-shortfalls and run:2026-10-21-shortfalls2, 0 mismatches; final at `[I]`: the walking block, the magic cap, cold flat absorb, the leech after a defender's handler, the 256 floor, shrines and wells 21 of 50, mode-0 waypoint activations 7 of 20) |
 | [0048](done/0048-seed-to-world.md) | Seed to world: the core specs composed end to end, with the last in-chain oracles retired | done | — (closed 2026-10-21; `chain` reviewed, C 89 / I 7 / L 6; run:2026-10-21-chain2, 37 logs, 0 mismatches, 2 189 oracle-free populations; 8 in-chain oracles retired; wiki/seed-to-world written; follow-ups: archivist (MonEquip table doc), chain's six `[L]` for a later plan) |
 | [0049](done/0049-backlog-sweep-5.md) | Backlog sweep 5: the static loose ends, the recipe register and the gate warnings | done | — (closed 2026-10-20; P0, P1 and P2 accepted with fixes; ten specs edited (eight from P1's readings); P1 items 6 and 13 optional, open outside the plan) |
-| [0050](0050-animation-frame-timing.md) | Animation and frame timing: unit modes, frame counts, rates and breakpoints, movement speed (ADR-0014 phase 4) | proposed | drafted 2026-10-25 (`lane/plans50`), owner approval pending, ahead of its gate; P0 archivist (`animdata.d2`, `monseq`, the timing columns), P1 three static batches, P1b, P2 one slot, P3 spec, P4 wiki; **P0/P1/P1b start once 0045·P2 is accepted, P2 once 0045·P3 is reviewed** (ADR-0016, ADR-0020) |
-| [0051](0051-backlog-sweep-6.md) | Backlog sweep 6: the catalogue's column readers, the static optionals and the routing of the rest | proposed | drafted 2026-10-25 (`lane/plans50`), owner approval pending; triage of the 46 open entries; P0 archivist (16 entries) and P1a reverser (4) need **no slot and no Ghidra**, P1b (2 optional) one Ghidra, P2 the owner's four entries; may start on approval |
-| [0052](0052-monster-ai.md) | Monster AI: the AI tick, target and skill choice, and the pathing it drives (ADR-0014 phase 5; first draft) | proposed | first draft 2026-10-25 (`lane/plans50`), held: approvable once 0045·P3 is reviewed (ADR-0020), P2 after 0050·P3 is reviewed (ADR-0016); six scoping questions for the owner; re-drafted at its gate |
+| [0050](0050-animation-frame-timing.md) | Animation and frame timing: unit modes, frame counts, rates and breakpoints, movement speed (ADR-0014 phase 4) | approved | approved 2026-10-25 (owner), effective when 0045·P2 is accepted; drafted 2026-10-25 (`lane/plans50`) ahead of its gate; P0 archivist (`animdata.d2`, `monseq`, the timing columns), P1 three static batches, P1b, P2 one slot, P3 spec, P4 wiki; **P0/P1/P1b start once 0045·P2 is accepted, P2 once 0045·P3 is reviewed** (ADR-0016, ADR-0020) |
+| [0051](0051-backlog-sweep-6.md) | Backlog sweep 6: the catalogue's column readers, the static optionals and the routing of the rest | approved | approved 2026-10-25 (owner); drafted 2026-10-25 (`lane/plans50`); triage of the 46 open entries (45 after the owner closed the plan 0042 owner-play entry at approval); P0 archivist (16 entries) and P1a reverser (4) need **no slot and no Ghidra**, P1b (2 optional) one Ghidra, P2 the owner's four entries (one closed, three kept open); P0 and P1a may start now |
+| [0052](0052-monster-ai.md) | Monster AI: the AI tick, target and skill choice, and the pathing it drives (ADR-0014 phase 5; first draft) | proposed | first draft 2026-10-25 (`lane/plans50`), held: approvable at 0045·P3's review (ADR-0020; reading confirmed by the owner 2026-10-25), P2 after 0050·P3 is reviewed (ADR-0016); six scoping questions open until the re-draft at its gate (the owner leans towards pathing as its own part) |
 
-## Run order (proposed 2026-10-25, plans 0038–0052; owner approval pending)
+## Run order (set 2026-10-25, plans 0038–0052)
 
-Drafted by the architect (`lane/plans50`) with plans 0050–0052. Until the owner approves it, the 2026-10-20 queue
-below stays the current one. It keeps that queue's rules: each lane takes the first phase of its queue whose
+Drafted by the architect (`lane/plans50`) with plans 0050–0052 and **approved by the owner on 2026-10-25**: this is
+the current queue, and it replaces the 2026-10-20 queue below (kept for its links and rulings). It keeps that queue's rules: each lane takes the first phase of its queue whose
 prerequisites have landed and whose gate is open; a phase whose prerequisite has not landed is skipped, not waited
 on; a lane that finishes a phase files its review request in the backlog and moves on; the architect reviews in
 landing order.
@@ -99,14 +99,19 @@ column readers. 0050 is small and mostly data, and its P1 can run while the harn
 batches; its P2 takes one slot, so 0038 keeps the other. 0050·P2 goes before 0046·P2 on the harness because it is on
 phase (5)'s path and 0046 gates nothing (ADR-0020).
 
-**Owner decisions asked (2026-10-25):** approve 0050, 0051 and this queue, with 0050's approval effective at its gate;
-hold 0052 as a draft and answer its scoping questions; 0045·P3 ahead of the remaining 0038 clusters; movement's speed
-in phase (4) and its path in phase (5); close the plan 0042 owner-play entry as dropped; the optional two-client
-tail.
+**Owner decisions (2026-10-25):**
+- **0050, 0051 and this queue:** approved; 0050's approval takes effect when 0045·P2 is accepted.
+- **Spec-writer:** 0045·P3 goes ahead of the remaining 0038 Phase 3 clusters.
+- **0052:** its gate is the review of 0045's spec (P3), per ADR-0020 (confirmed); it stays `proposed` until then. Its
+  scoping questions stay open until the re-draft at the gate; the owner leans towards pathing as its own part.
+- **Movement:** the split is kept: speed and the per-frame step in 0050, the path itself in phase (5).
+- **Backlog:** the plan 0042 owner-play entry closed as dropped (0051 Phase 2).
+- **The two-client tail** (the plan 0044 shortfalls): optional and deferred; it stays in the queue as optional.
+- **Harness:** 0050·P2 runs before 0046·P2.
 
 ## Run order (unattended queue, set 2026-10-20, plans 0038–0049)
 
-**Current queue** until the owner approves the 2026-10-25 proposal above.
+**Superseded** on 2026-10-25 by the queue above (owner); kept for its rulings and the links that cite it.
 
 The owner approved plans 0045–0049 and ADR-0020 on 2026-10-20 and made this the current queue. It replaces the
 2026-10-16 table (plans 0037–0044), which is in git history. Plan 0043 is closed (`lane/c43` merged); plan 0042's

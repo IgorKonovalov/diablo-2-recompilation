@@ -1,6 +1,6 @@
 # 0051 — Backlog sweep 6: the catalogue's column readers, the static optionals and the routing of the rest
 
-> **Status:** proposed (owner approval pending)
+> **Status:** approved 2026-10-25 (owner); Phase 2 in part done at approval (one entry closed)
 > **Created:** 2026-10-25
 > **Owner skill(s):** archivist, reverser, human
 > **Related ADRs:** 0006-docs-gate, 0013-forced-path-runs-cell-level, 0015-emulated-reproduction, 0018-backlog-one-file-per-entry, 0019-backlog-closed-entries-archive, 0021-observed-boundaries-in-emulation
@@ -163,16 +163,18 @@ Phase 3 already reads the entries of its cluster):
 | `20-…-h2b-items-chain-spec-updates.md` | (c)–(g) items/uniques-sets; (r)–(s) items/sockets-runewords | H1a; H6b |
 | `20-…-h5b-objects-spec-updates.md` | objects, drlg/collision | H6e2; H5d |
 
-**Owner entries (4, Phase 2):**
+**Owner entries (4, Phase 2; one closed at approval, 3 open):**
 
 | Entry | Recommendation |
 |---|---|
 | `2026-10-11-archivist-architect+human-is-1-14d-s-patchd2-mpq.md` | keep parked (owner, 2026-10-20) |
 | `2026-10-17-architect-human-plan-0038-h6d-diablo-owner-pair.md` | optional; keep open until plan 0038 Phase 3's items/quest-drops round, then close as not played if it was not |
-| `2026-10-17-architect-human-plan-0042-owner-play-boss-steps.md` | **close as dropped**: plan 0042 closed on 2026-10-20 and the entry's own 2026-10-19 note says the steps not played before part 3's review stay `[I]` for good |
+| `2026-10-17-architect-human-plan-0042-owner-play-boss-steps.md` (now in `archive/`) | **closed as dropped** (owner, 2026-10-25): plan 0042 closed on 2026-10-20 and the entry's own 2026-10-19 note says the steps not played before part 3's review stay `[I]` for good |
 | `2026-10-20-architect-human-plan-0044-owner-play-cases-mp12-mp14-mp17.md` | optional; keep open |
 
-**Count:** 16 + 4 + 2 (this plan) + 3 + 17 + 4 = **46**.
+**Count:** 16 + 4 + 2 (this plan) + 3 + 17 + 4 = **46** at the triage; after the owner closed the plan 0042 entry
+(2026-10-25), **45 open**: 16 + 4 + 2 + 3 + 17 + 3. The other three owner entries stay open as recommended (owner,
+2026-10-25).
 
 ## Resources and limits
 
@@ -189,11 +191,15 @@ Phase 3 already reads the entries of its cluster):
 ## Open questions
 
 - **The two-client run.** The sessions of the plan 0044 shortfalls entry (MP16, MP18, MP20, MP21, MP25, MP27, MP28,
-  MP30–MP32, the hostile open-wounds pair) need both slots. No plan takes them yet; the run-order section proposes
-  them as an optional tail after plan 0045 P2 frees both slots.
+  MP30–MP32, the hostile open-wounds pair) need both slots. No plan takes them; the owner kept them as an optional,
+  deferred tail of the run order (2026-10-25). Phase 1a still stages them.
 
 ## Implementation log
 
 _(lanes append dated entries as phases land: what was found, the confidence reached, surprises)_
 
 - **2026-10-25 — Drafted (architect, `lane/plans50`).** Status `proposed`; triage of the 46 open entries in § Routing.
+- **2026-10-25 — Approved (owner, via the orchestrator).** Approved as drafted; may start at once. Phase 2: the plan
+  0042 owner-play entry closed as dropped
+  ([archive](../backlog/archive/2026-10-17-architect-human-plan-0042-owner-play-boss-steps.md)); the patch, Diablo-pair
+  and plan 0044 owner-play entries stay open as recommended; the two-client tail optional and deferred.
