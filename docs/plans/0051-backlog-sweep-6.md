@@ -203,3 +203,35 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   0042 owner-play entry closed as dropped
   ([archive](../backlog/archive/2026-10-17-architect-human-plan-0042-owner-play-boss-steps.md)); the patch, Diablo-pair
   and plan 0044 owner-play entries stay open as recommended; the two-client tail optional and deferred.
+- **2026-10-25 — Phase 1a done (reverser, `lane/p51r`, from `main` `9e221ed`; no slot, no Ghidra, no game run).**
+  Four entries annotated, all four still open as the plan says (each annotation names what remains and with which
+  batch). Off-slot outputs: `workspace/logs/p51r/` (manifest `manifest.sha256`, `22169f4a…`; `commands.txt` lists the
+  command behind each file; tool revisions in `tools-revisions.txt`).
+  1. **S2c harness pieces**
+     ([entry](../backlog/2026-10-16-architect-reverser-plan-0038-s2c-review-harness-pieces.md)): the H2b piece (sock
+     44) is pruned. It was met in part at H2b's run and review, and its remainder (a request of 4 or more) is out of
+     this plan. H6a, H6b, H6c and H6e1 are left, each still in its inventory § 5 row.
+  2. **S1b leftover pieces**
+     ([entry](../backlog/2026-10-16-architect-reverser-plan-0038-phase-2-leftover-pieces.md)): `tools/gdb/calc.py`
+     writes the hover marker `CH` at `0x00486370`, and `tools/calc.py hover` counts it. The `SUNITPRE` line of
+     `seed-tree-core.gdb` carries the caller's `ra=`, which `tools/rng.py seedtree` names among the six direct calls of
+     `0x00552DF0`. The call sites behind both come from a kept objdump scan (`call-sites.txt`). The session is staged as
+     `tools/gdb/s1b-pieces.gdb` + `.steps` (CalcSor: hover, drink, Save and Exit, load again) and assigned to plan 0038
+     **H1a**, one extra session: no open batch loads either logger first. Tests: `tools/test_p51_staging.py`.
+  3. **Plan 0044 shortfalls (2)–(4)**
+     ([entry](../backlog/2026-10-20-architect-reverser-plan-0044-p2-review-agent-stageable-shortfalls.md)): staged
+     MP18 (recipe `mp-sock-join`, logger `two-sockets.gdb`), MP25's offensive auras (recipe `mp-pal-conv`, `two-combat.gdb`
+     and `mp_check.py aura` as they stand), MP30 (the QL0..QL1 lines in `tools/gdb/quests.py`, checker `mp_check.py
+     leave`) and the open-wounds pair (recipe `mp-wound-join`, *Ripsaw*, logger `two-wounds.gdb`). `mp_saves.py check`:
+     30 recipes, 21 pairs, 0 bad. The predictions are the ones the findings already give (multiplayer/0001 § 2 and § 4,
+     stats/0002 § 2 and § 6). The sessions wait for the two-client run with both slots (§ Routing, Open questions).
+     **Forwarded to Phase 1b**, as new readings: MP31's prediction (the player-to-player trade, not read) and MP32's
+     (the arithmetic of `sub_00540900_PartyGoldShare`; items/0011 gives only "a split by `PartyCount`").
+  4. **H4b follow-ups**
+     ([entry](../backlog/2026-10-16-architect-reverser-plan-0038-h4b-review-follow-ups.md)): **with H4a**. `lane/h4a`
+     has not landed (paused 2026-10-21, nothing claimed). The H5d piece is still in H5d's § 5 row.
+  - **Not touched:** no slot, no Ghidra, no game launch. No tool that `lane/h4a` or `lane/p45h` edits on its branch
+    (`d2pilot.py`, `sweep_h4a.py`, the `mon-h4a*` and `skills*` files) was changed. The inventory of plan 0038 is not
+    edited (the H1a session is for the architect to add to § 5).
+  - **Backlog:** review request
+    [p51r review](../backlog/2026-10-25-reverser-architect-p51r-plan-0051-phase-1a-review.md).

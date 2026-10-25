@@ -30,7 +30,8 @@ RRESEED/RACT/AROOM (room activation): the DRLG room seed is re-initialised to in
 stepped k times by the room-type code (k is reported, not predicted), then once by DRLG_RoomActivate;
 the active-room seed = init(that low). SUNITPRE/SUNIT (server unit seed 0x00552DF0): parent pointer =
 game +0xD0, unit seed = init(step(parent).low), +0x28 = that low; the parent's position in the game
-seed's sequence from init(N) is reported. CUNITPRE/CUNIT (client unit 0x00465FD0): unit seed =
+seed's sequence from init(N) is reported, and (plan 0051) the caller its ra names among the six direct calls.
+CUNITPRE/CUNIT (client unit 0x00465FD0): unit seed =
 init(step(active room).low); steps since the room's AROOM line are reported.
 ENTIN/ENTOUT/GAMECLOCK (tools/gdb/entropy.gdb, a run with -seed 0, i.e. no override): RNG_EntropySeed
 = lcg(lcg(lcg(tick + time + salt))) & 0x7FFFFFFF with lcg(x) = x * 0x19660D + 0x3C6EF35F, all mod 2^32;
@@ -44,6 +45,12 @@ import sys
 MASK = 0xFFFFFFFF
 MULT = 0x6AC690C5
 INIT_HIGH = 666
+
+
+# The six direct calls of UnitSeedInit 0x00552DF0 in the pinned game.exe (objdump scan, plan 0051 Phase 1a), by
+# return address: the SUNITPRE line's ra names the call that seeded the unit.
+UNITSEED_CALLS = {0x00532553: 0x0053254E, 0x005338DD: 0x005338D8, 0x00555313: 0x0055530E,
+                  0x00569F58: 0x00569F53, 0x0056A963: 0x0056A95E, 0x0057F7EA: 0x0057F7E5}
 
 
 def step(low, high):
@@ -378,6 +385,13 @@ def seedtree(paths):
                         hist("client unit without a room: seed stays {1, 666}" + (" (x, y) = (0, 0)" if st["xy"] == (0, 0) else ""))
                 elif tag in ("SUNITPRE", "CUNITPRE"):
                     if tag == "SUNITPRE":
+                        if "ra" in kv:
+                            site = UNITSEED_CALLS.get(hx("ra"))
+                            hist(f"server unit caller: call at {site:#010x} (ra {hx('ra'):#010x}), type {dec('type')}"
+                                 if site else f"server unit caller: ra {hx('ra'):#010x}, not one of the six direct "
+                                 f"calls of 0x00552DF0, type {dec('type')}")
+                        else:
+                            hist("server unit caller: ra not logged (seed-tree-core.gdb before plan 0051)")
                         k = steps_between((n & MASK, INIT_HIGH), kv["pre"], 100000)
                         hist("server unit parent = game +0xD0: " + str(hx("p") == (game_ptr + 0xD0) & MASK))
                         if k is None or hx("p") != (game_ptr + 0xD0) & MASK:
