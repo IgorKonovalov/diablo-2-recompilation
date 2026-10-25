@@ -66,7 +66,10 @@ ROOT = os.path.dirname(HERE)
 DEFAULT_ROOT = os.path.join(ROOT, "workspace", "merged")
 DEFAULT_EXE = os.path.join(ROOT, "workspace", "install", "app", "game.exe")
 COLL_TAGS = {"TL", "CB", "TCU", "CM", "SN", "SNP", "NWP", "NWW", "NW0", "NW1", "LG0", "LG1", "LG2", "DC", "DCX", "DCR", "MS",
-             "MSX"}
+             "MSX",
+             # plan 0038 batch H5d (tools/gdb/collision.py): unwindowed before / after pairs
+             "TCB0", "TCB1", "IM0", "IM1", "PN0", "PN1", "SCT0", "SCT1", "LPP0", "LPP1"}
+LPP_GROUPS = 0x006EED88                                # 8-byte {flag, group} per level point type, read by 0x0066AC40
 PATTERN_BY_SIZE = {0: 0, 1: 1, 2: 1, 3: 2}             # g_CollPatternBySize 0x006EB3DC
 CLASS_CELL = {206: (0, 3, 0x3C01), 228: (0, 2, 0x3C01), 334: (-2, -2, 0x01C0), 528: (2, 4, 0x3C01)}  # 0x005FD350
 TILE_OFFSETS = [(0, -3), (3, 0), (0, 3), (-3, 0)]      # g_SpawnTileOffsets 0x006E2D50
@@ -230,6 +233,11 @@ class World:
         self.nears_override = None
         self.model_near = {}      # active room -> near list as the model keeps it (CB, then DUNGEON_NearRoomsBuild)
         self.dr_room = {}         # DRLG room -> its active room at the latest CB (plan 0038 H5b)
+        self.cb_stamps = {}       # active room -> [(sx, sy, tile)] stamped at its CB (plan 0038 H5d)
+        self.h5d = {}             # thread -> pending before-line of an H5d pair
+        self.last_tcu = None
+        self.exe = exe
+        self.lpp_groups = None
         self.lg0 = {}
         self.nw = None
         self.nw_cbs = []
@@ -283,6 +291,7 @@ class World:
         cells = [0] * (w * h)
         bad = 0
         n_ent = 0
+        stamps = []
         for n, _dr, trect, W, F, S in z["near"]:
             tx, ty = trect[0], trect[1]
             for lst in (F, W, S):
@@ -296,6 +305,7 @@ class World:
                         continue
                     row, col = sy - y0, sx - x0
                     bad += stamp(cells, w, row, col, self.tiles.bytes_of(tp))
+                    stamps.append((sx, sy, tp))
                     v = (0x10 if fl & 0x02 else 0) | (0x01 if fl & 0x40 else 0) | (0x04 if fl & 0x80 else 0)
                     if v:
                         or_block(cells, w, row, col, v)
@@ -316,6 +326,7 @@ class World:
         self.cb_info[room] = {"lid": d["lid"], "dr": dr, "th": d["th"], "type": rr.get("type"), "ltype": rr.get("ltype"),
                               "near": len(z["near"]), "entries": n_ent}
         self.model[room] = Map(x0, y0, w, h, cells)
+        self.cb_stamps[room] = stamps
         # the model's near lists (plan 0027): the room's list at activation; DUNGEON_NearRoomsBuild adds the new room to
         # the list of each active neighbour
         nl = [e[0] for e in z["near"]]
@@ -393,6 +404,7 @@ class World:
 
     def ev_TCU(self, d, ln, path):
         room = d["room"]
+        self.last_tcu = d
         self.hit("TileCollisionUpdate calls")
         m0 = self.model.get(room)
         if m0 is None or d["t0"] is None:
@@ -1146,6 +1158,213 @@ class World:
         self.ok(exp == d["cells"] and d["mm"] == 0x40, "C2: missile class %d size %d: cells after the 0x40 mark %s, model %s"
                 % (d0["cls"], d0["size"], d["cells"], exp))
         self.hit("C2: Collision missiles marked 0x40 (class %d, size %d)" % (d0["cls"], d0["size"]))
+
+    # --- plan 0038 batch H5d: unwindowed before / after pairs ---------------------------------------------------
+    def ev_TCB0(self, d, ln, path):
+        self.h5d[("TCB", d["th"])] = (d, ln, self.last_tcu)
+
+    def ev_TCB1(self, d, ln, path):
+        """sub_0064C860_TileCollisionUpdate (B1): in the map RoomAtSubtile finds for the entry's top-left subtile, AND-NOT
+        the current tile's 25 bytes (rows reversed), then OR the new tile's when one is given; nothing when no room."""
+        got = self.h5d.pop(("TCB", d["th"]), None)
+        if not got:
+            return
+        d0, ln0, tcu = got
+        name = os.path.basename(path)
+        b0, b1 = d0["cells"], d["cells"]
+        if tcu is None or tcu.get("e") != d0["e"]:
+            self.ok(False, "%s:%d TCB0 without its TCU line" % (name, ln0))
+            return
+        if all(v is None for row in b0 for v in row):
+            self.ok(b1 == b0, "%s:%d TileCollisionUpdate with no room at the tile changed cells" % (name, ln))
+            self.hit("H5d TileCollisionUpdate: no room holds the tile's top-left (no write)")
+            return
+        flat = [v for row in b0 for v in row]
+        exp = list(flat)
+        if None in exp:
+            self.ok(False, "%s:%d TileCollisionUpdate block only partly in a room" % (name, ln0))
+            return
+        old = self.tiles.bytes_of(tcu["old"]) if tcu["old"] else None
+        new = self.tiles.bytes_of(tcu["new"]) if tcu["new"] else None
+        if old:
+            stamp(exp, 5, 0, 0, old, clear=True)
+        if new:
+            stamp(exp, 5, 0, 0, new)
+        got1 = [v for row in b1 for v in row]
+        self.ok(exp == got1, "%s:%d TileCollisionUpdate block: game %s, model %s" % (name, ln, got1, exp))
+        kind = "re-stamp" if new else "clear"
+        self.hit("H5d TileCollisionUpdate in an active room, block predicted (%s)" % kind)
+        changed = sum(1 for a, b in zip(flat, got1) if a != b)
+        self.hit("H5d TileCollisionUpdate: cells changed", changed)
+        if old and new and old != new:
+            self.hit("H5d TileCollisionUpdate: old and new tiles differ")
+        # the separating case of the plain AND-NOT: a bit the old tile clears that another stamp of the activation
+        # also set in that cell (a re-computation from the other tiles would keep it)
+        sx, sy = d0["sx"], d0["sy"]
+        tgt = None
+        for r, m in self.model.items():
+            if m.has(sx, sy):
+                tgt = r
+        others = [0] * 25
+        skipped = False
+        for (ex, ey, tp) in self.cb_stamps.get(tgt, []):
+            if (ex, ey) == (sx, sy) and tp == tcu["old"] and not skipped:
+                skipped = True
+                continue
+            if abs(ex - sx) < 5 and abs(ey - sy) < 5:
+                tmp = [0] * 81
+                stamp(tmp, 9, ey - sy + 2, ex - sx + 2, self.tiles.bytes_of(tp))
+                for r in range(5):
+                    for c in range(5):
+                        others[r * 5 + c] |= tmp[(r + 2) * 9 + c + 2]
+        if old:
+            ob = [0] * 25
+            stamp(ob, 5, 0, 0, old)
+            nb = [0] * 25
+            if new:
+                stamp(nb, 5, 0, 0, new)
+            sep = sum(1 for i in range(25) if flat[i] & ob[i] & others[i] & ~nb[i])
+            if sep:
+                self.hit("H5d TileCollisionUpdate: cells where the clear removed a bit another tile stamped", sep)
+                kept = sum(1 for i in range(25) if flat[i] & ob[i] & others[i] & ~nb[i] & got1[i])
+                self.ok(kept == 0, "%s:%d TileCollisionUpdate: %d cells kept a bit another tile stamped" % (name, ln, kept))
+
+    def ev_IM0(self, d, ln, path):
+        self.h5d[("IM", d["th"])] = (d, ln)
+
+    def ev_IM1(self, d, ln, path):
+        """An item's mark (F1, types 3-5 through SizeMark; UNIT_CollMarkRect through RectOrWH): one cell, 0x200."""
+        got = self.h5d.pop(("IM", d["th"]), None)
+        if not got:
+            return
+        d0, ln0 = got
+        name = os.path.basename(path)
+        if d0["f"] == "SM":
+            args_ok = d0["args"] == [1, 0x200]
+        else:
+            args_ok = d0["args"] == [1, 1, 0x200]
+        self.ok(args_ok, "%s:%d item mark (%s) of class %d: size / mask %s, model %s" % (
+            name, ln0, d0["f"], d0["cls"], d0["args"], "[1, 512]" if d0["f"] == "SM" else "[1, 1, 512]"))
+        b0, b1 = d0["cells"], d["cells"]
+        if b0 is None or b0[2][2] is None:
+            self.hit("H5d item marks: no room holds the cell")
+            return
+        exp = [row[:] for row in b0]
+        exp[2][2] |= 0x200
+        self.ok(exp == b1, "%s:%d item mark of class %d: cells after %s, model %s" % (name, ln, d0["cls"], b1, exp))
+        self.hit("H5d item marks predicted (%s: one cell 0x200)" % d0["f"])
+        if not b0[2][2] & 0x200:
+            self.hit("H5d item marks on a cell without 0x200 before")
+
+    def ev_PN0(self, d, ln, path):
+        self.h5d[("PN", d["th"])] = (d, ln)
+
+    def ev_PN1(self, d, ln, path):
+        """PatternMark / PatternUnmark (F2) with pattern 3 (plus of m, 0x2000 on the centre) or 4 (3x3 of m, 0x2000 on
+        the plus)."""
+        got = self.h5d.pop(("PN", d["th"]), None)
+        if not got:
+            return
+        d0, ln0 = got
+        b0, b1 = d0["cells"], d["cells"]
+        if b0 is None or b0[2][2] is None:
+            self.hit("H5d patterns 3/4: no room holds the centre")
+            return
+        clear = d0["f"] == "PU"
+        p, m = d0["p"], d0["m"]
+        plus = [(0, 0), (-1, 0), (1, 0), (0, -1), (0, 1)]
+        sq = [(dx, dy) for dy in (-1, 0, 1) for dx in (-1, 0, 1)]
+        ops = []
+        if p == 3:
+            ops = [(plus, m)] + ([([(0, 0)], 0x2000)] if m else [])
+        else:
+            ops = [(sq, m)] + ([(plus, 0x2000)] if m else [])
+        exp = [row[:] for row in b0]
+        for cells, v in ops:
+            for dx, dy in cells:
+                if exp[2 + dy][2 + dx] is None:
+                    continue
+                if clear:
+                    exp[2 + dy][2 + dx] &= ~v & 0xFFFF
+                else:
+                    exp[2 + dy][2 + dx] |= v
+        self.ok(exp == b1, "%s:%d %s pattern %d mask %#x: cells after %s, model %s" % (
+            os.path.basename(path), ln, d0["f"], p, m, b1, exp))
+        self.hit("H5d %s pattern %d (mask %#x) predicted" % (d0["f"], p, m))
+
+    def ev_SCT0(self, d, ln, path):
+        self.h5d[("SCT", d["th"])] = (d, ln)
+
+    def ev_SCT1(self, d, ln, path):
+        """SpawnClassCellTest (H1) from the 11x11 cells the logger read around (x, y)."""
+        got = self.h5d.pop(("SCT", d["th"]), None)
+        if not got:
+            return
+        d0, ln0 = got
+        b, fl = d0["base"], d0["flag"]
+        site = "%08x" % d0["ret"]
+        if b == 298 and fl:
+            exp = 1
+        elif b in CLASS_CELL or b == 298:
+            dx, dy, mask = CLASS_CELL.get(b, (0, 0, 0x3C01))
+            c = d0.get("cells")
+            if c is None:
+                self.hit("H5d SpawnClassCellTest: offset class without a room")
+                return
+            g = lambda xx, yy: c[5 + yy][5 + xx]
+            if g(dx, dy) is None:
+                exp = 0
+            else:
+                v = 0
+                for ox, oy in ((0, 0), (-1, 0), (1, 0), (0, -1), (0, 1)):
+                    cv = g(dx + ox, dy + oy)
+                    v |= 0x27 if cv is None else cv & mask
+                exp = 1 if v == 0 else 0
+        else:
+            exp = 1
+        self.ok((d["r"] & 0xFF) == exp, "%s:%d SpawnClassCellTest class %d (BaseId %s) flag %d at %s: game %d, model %d" % (
+            os.path.basename(path), ln, d0["cls"], b, fl, site, d["r"], exp))
+        key = b if (b in CLASS_CELL or b == 298) else "other"
+        self.hit("H5d SpawnClassCellTest predicted: BaseId %s, flag %d, caller %s, result %d" % (key, fl, site, exp))
+
+    def ev_LPP0(self, d, ln, path):
+        self.h5d[("LPP", d["th"])] = (d, ln)
+
+    def ev_LPP1(self, d, ln, path):
+        """sub_0066AC40_LevelPointPick: n = the points of the type or of its group; n >= 1: one draw on the level seed,
+        r = low & (n - 1) for a power of two, else low mod n, the (r + 1)-th match; n = 0: entry 0, no draw."""
+        got = self.h5d.pop(("LPP", d["th"]), None)
+        if not got:
+            return
+        d0, ln0 = got
+        if self.lpp_groups is None:
+            raw = exe_read(self.exe, LPP_GROUPS, 8 * 64)
+            self.lpp_groups = [struct.unpack_from("<Ii", raw, 8 * i) for i in range(64)]
+        t = d0["type"]
+        G = self.lpp_groups
+
+        def match(pt):
+            return pt == t or (0 <= t < len(G) and 0 <= pt < len(G) and G[t][0] != 0 and G[t][1] == G[pt][1])
+        pts = d0["pts"]
+        idx = [i for i, p in enumerate(pts) if match(p[2])]
+        n = len(idx)
+        lo, hi = (int(v, 16) for v in d0["seed"].split(":"))
+        if n == 0:
+            k, seed = 0, (lo, hi)
+        else:
+            seed = step(lo, hi)
+            r = seed[0] & (n - 1) if n & (n - 1) == 0 else seed[0] % n
+            k = idx[r]
+        want = (pts[k][0], pts[k][1]) if pts else None
+        st = "%08x:%08x" % seed
+        self.ok(want == (d["x"], d["y"]) and st == d["seed"], "%s:%d LevelPointPick level %d type %d n %d: game (%d, %d) %s, "
+                "model %s %s" % (os.path.basename(path), ln, d0["lid"], t, n, d["x"], d["y"], d["seed"], want, st))
+        self.hit("H5d LevelPointPick predicted: level %d, type %d, matches %d%s" % (
+            d0["lid"], t, n, " (Position %d)" % self.t.position(d0["lid"]) if d0["lid"] is not None else ""))
+        if n >= 2:
+            alt = [(pts[i][0], pts[i][1]) for i in idx if (pts[i][0], pts[i][1]) != want]
+            if alt:
+                self.hit("H5d LevelPointPick: n >= 2 with another match at a different point (the pick separates)")
 
     # --- report -----------------------------------------------------------------------------------------------
     def report(self):

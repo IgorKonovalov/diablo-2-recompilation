@@ -3211,3 +3211,23 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request
     [s38h2c review](../backlog/archive/2026-10-21-spec-writer-architect-s38h2c-items-tc-properties-review.md) closed.
   - **Next:** merge `lane/s38h2c`; the remaining items clusters after H1a, H6a, H6b, H6c, H4a, H6e1 and H6e2.
+- **2026-10-25, reverser, `lane/h5d` (batch H5d, `collision`, 17 statements): paused at the owner's request (usage
+  limit), resume note.**
+  - **Done (tools only, no claim yet):** `tools/gdb/collision.py` gains unwindowed before/after line pairs (TCB0/TCB1
+    at `TileCollisionUpdate`, IM0/IM1 for item marks at `0x0064954C` / `0x00620ACA`, PN0/PN1 for patterns 3 and 4,
+    SCT0/SCT1 at `SpawnClassCellTest` with every caller and flag, LPP0/LPP1 at `0x0066AC40`); `tools/collision.py`
+    checks each pair (the new tags join `COLL_TAGS`; output on the H5b cata log unchanged). New logger
+    `tools/gdb/collision-h5d.gdb` and driver `tools/h5d_sessions.py` (sessions tomb, tomb2, frigid, steppes, jail,
+    throne, arcane). Save `workspace/runtime/h5d-chars/UniqNova.d2s` rebuilt from `uniqnova.json` (sha256 `2c793a3d…`,
+    same as h4a/h5e). One session (tomb) was stopped at launch: its 21-line log is kept as
+    `workspace/logs/h5d/dev-run-2026-10-25-h5d-s1-1557-tomb.log` (development, no claim rests on it).
+  - **Leads from the kept logs (to recount with a kept command):** entry flag `0x80` occurs in CB dumps of levels 109,
+    111, 112, 117 (18 kept logs, e.g. `h4a/h4a-s1-4908-foothills.log`), already compared cell for cell (row 8: count
+    the entries whose `0x04` OR changes a cell); `TileCollisionUpdate` applied in modelled rooms in the H5b, chain-p2
+    and h4a logs (rows 1, 9, 11); Arcane 74 (Position 1) reached in `h5b/…-3904-arcane.log`, 625 lookups each one step
+    (row 46's first half); the 528 piece of row 45 is H4b's (monsters/0002 § H4b). `suckernest1` (334–337) has no stock
+    creation source in any table (pools, MonPreset, minion, superunique, skill columns): propose d-none after a code
+    check. 298's flag 0 comes from the AI callers of `0x005FD350` (`0x005F9F9D` pushes 0).
+  - **Next:** test the logger on one session (tomb), then the session list; `tools/sweep_h5d.py` (static 334 check,
+    kept-log counts), manifest, findings in drlg/0005 and monsters/0002, the § 2.6 entry against current main,
+    symbols, the review request, the spec-writer entry. Slot 1 stopped and restored.
