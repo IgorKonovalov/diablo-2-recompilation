@@ -940,6 +940,66 @@ permission layer and is left to the orchestrator's merge. No row moved; the tota
 call; the weapon base-stat changes of `ITEMS_MakeEthereal` are in the list check). prop 15 stays an H2c shortfall,
 counted as harness; its open route is an owner-played Hellforge session or a pilot that reaches the room.
 
+**H4a (filed 2026-10-25, reverser, `lane/h4a`; accepted with fixes at the `lane/h4a` review, 2026-10-25): 32 statements of monsters/pool, spawn, special, stats and
+items/quest-drops.** run:2026-10-21-sweep-monsters-a, twelve kept sessions on slot 1 (expansion Nightmare, `UniqNova`;
+nine development logs of the Chaos Sanctuary attempts kept apart), stock data. `sweep_h4a.py check` bad 0 in every part
+on the twelve logs and on 63 kept logs of the earlier monster runs and run:2026-10-20-chain; `monstats.py` 0 mismatches
+on all twelve (the chained `monspawn.py` and DRLG models' mismatches on three logs, none on a tag these rows rest on,
+are listed in the record). The lane files **16 raised, 8 raised in part, 8 shortfall**; the review moves special 54 to raised in part
+(**15 raised, 9 raised in part, 8 shortfall**). The evidence is in the "Plan
+0038 batch H4a" sections of
+[monsters/0001](../../findings/monsters/0001-level-pool.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a),
+[0002](../../findings/monsters/0002-room-population.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a),
+[0003](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a),
+[0004](../../findings/monsters/0004-stats.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a) and
+[items/0010](../../findings/items/0010-quest-drops.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a).
+
+- **Raised (15):** pool 12; quest-drops 48; stats 7, 18; spawn 5, 49 (the operand route of S2c ruling 2: the class
+  list read at 0x00731B2C/0x00731B30 with objdump and r2, three readers and no writer); special 30, 35, 48 (on the
+  kept logs: three refusals), 50 (the aura half, with an extra-pick control), 51, 55, 58, 60, 68.
+- **Raised in part (9):** special 54 (review: filed raised; r = 0 only, so the `+ r` of the `skeleton5` count stays
+  `[I]`; the draw's place holds for any r); stats 21 (one stock row per class; the level skip, a second row, `n` 2 or 3 and an occupied
+  location are d-none on stock data, as the chain run's review found); spawn 47 (the tick's gate, the roll's one step
+  and the no-spawn branch, on the one roll met; the mask's width, room `+0x78` and the spawn branch remain) and spawn 48
+  (**with a correction:** the roll did fire, once, in the Chaos Sanctuary); special 34 (rows 10 and 13; 11, 14 and 15
+  in no logged list), 46 and 52 (records 10, 26, 27, 29, 36, 38, 42 and 60, and the no-tail records; tails 6, 37, 39,
+  43–45 and 62 not met), 56 (records 36 and 38; 37 not met), 69 (156, 242 and 256; the other fixed-name classes not met).
+- **Shortfall (8):** spawn 11 (91 gate calls in level 108, all with byte 0 and an open gate; the closed state needs
+  the three seal bosses dead); special 9, 10, 25, 31, 38 and 50's thief half (all need Lord De Seis: seal 394 was
+  logged but never operated, the pilot finding no hop towards it); special 59 (no Ancients recipe). Route for the seven
+  De Seis and gate rows: an owner-played Chaos Sanctuary session with `tools/gdb/mon-h4a-obj.gdb`; for 59, a
+  quest-open recipe or owner play.
+- **H4b pieces met** (the rows stay counted as H4b): stats 14 and 13's class 312 (`doomknight3`, 63 creations, both
+  appearance bytes = `Range(4)`, every value 0–3 met); special 66's mod 12 (Blood Raven's client name). Not met: a
+  `willowisp` special (stats 40), an aura special at level ≤ 15 (special 27's clamp at 1), a Shrines code-20 shrine
+  (special 2, 74), the camel at `/players` 8 (stats 23). S3b pieces (Druid Raven in Normal; Durance 3 in Normal): not
+  run.
+
+Net effect on the totals: none proposed (no class moves; the remainders and the shortfalls stay counted as H4a). Taken
+against `main` after merging it into the lane (`e3ac907`; the H2c review's totals above are the latest in this
+section): **static 567, harness 526, c-emu awaiting a batch 0, blocked 414** (d-none 288, d-edit 73, d-sim 28, d-2c 7,
+d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
+
+**`lane/h4a` review (architect, 2026-10-25): accept with fixes.** The checks were re-run on the review side
+(`check/run-checks.sh` into the review's scratch, under `MemoryMax=4G`): `sweep-check.txt`, `check-kept-final.txt`,
+`monstats-h4a.txt`, `aura-control.txt` and `doomknight3-app.txt` byte-identical to the kept files; both manifests pass
+`sha256sum -c`; the tool hashes cited in the record match the lane's tree. Spot reads of the pinned `Game.exe` with
+objdump: `WandererSpawn`'s act bound and the three readers of 0x00731B2C/0x00731B30 (bytes `0e010000 0001 0000 0000
+0000 0000`), `RoomWandererTick`'s `test eax, 0x7FFF` and `WandererRoll`'s `mod 100` against 3, the gate's `cmp eax, 0x6C`
+and quest call (0x0054EC1B–0x0054EC29), the `boss`/`noRatio` masks at 0x00573E2E (`.rdata` 0x40 and 0x04), Radament's
+`add ebx, 2` loop (0x005A4CD1), class 312's one `Range(4)` stored at `+0x0E` and `+0x0F`, and the 43 slots of
+`g_UModHandlers` in the image (null rows as the run's memory read). Fixes: special 54 moved from raised to **raised in
+part** (only r = 0 met, so the `+ r` of the `skeleton5` count is not separated); pool 12's "six of the 25" corrected to
+five, and pool 12 and quest-drops 48 now say how the `(H)` half rests (the branch, and Andariel's hell creation); the H4b
+section's class-312 remainder marked met. Rulings: the seven De Seis and gate shortfalls stay harness, counted as H4a, and
+are a candidate for the plan's `d-owner` addendum at the close (Open questions), not routed to the owner now; a pilot that
+reaches seal 394 is the other route. Stats 14 and 13 are raised whole by the class-312 piece (still counted as H4b, a
+Phase 3 note, not a class move). The three chained-model mismatches go to their own reverser entry
+([2026-10-25-architect-reverser-h4a-chained-model-mismatches-council-nihl2](../../backlog/2026-10-25-architect-reverser-h4a-chained-model-mismatches-council-nihl2.md)).
+**Ledger: raised 15, raised in part 9, shortfall 8.** No class move; totals unchanged and recounted against `main`
+`9e221ed` after merging it (no inventory change since `e3ac907`): **static 567, harness 526, c-emu awaiting a batch 0,
+blocked 414** (d-none 288, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is

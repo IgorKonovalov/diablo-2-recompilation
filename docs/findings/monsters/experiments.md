@@ -916,3 +916,105 @@
   Logs without that tag are not tested for a second game. Outputs `workspace/logs/p49r/monstats-h4b-s5a-s8-p49r-2026-10-20.txt`,
   `monspawn-h4b-s5a-p49r-2026-10-20.txt` and `monspawn-h4b-s5-refused-p49r-2026-10-20.txt`, with tool hashes in
   `p49r-manifest.txt`.
+
+## run:2026-10-21-sweep-monsters-a
+
+- **Question:** (plan 0038 batch H4a, `monsters-a`) Do the inferred statements of the H4a rows hold at run time: the
+  superunique tails by record index (Radament's draw and escorts, the council's and the seal bosses' quest hooks, the
+  Siege Boss's and Nihlathak's `EscortSpawn`), the aura a superunique runs twice and Lord De Seis's forced index, the
+  `thief` mod dropped from fixed mods, the null handler rows, the placed bit, the fixed client names, the `boss` classes'
+  monster level, the Chaos Sanctuary population gate, the wanderer class list, and `MonEquipInit`? Rows:
+  [inventory § 5, H4a](../../plans/0038-inventory/README.md#harness-batches).
+- **Setup:** the ADR-0003 harness on **slot 1** (display `:8`, prefix `workspace/wineprefix-1`, the shared
+  `workspace/runtime/game`), wine 11.17, GNU gdb 17.2. Play was **agent-driven** by `tools/h4a_sessions.py run --slot 1
+  --tag h4a --saves workspace/runtime/h4a-chars --run h4a SESSION` (`81f7d5b1…e507f22a` at the end of the run; each
+  session's commands are its `SESSIONS` row): `tools/d2pilot.py` `wp` from the Act IV town, then `--descend`, `hunt
+  --mon-cls`, `explore` or `objop` (Teleport on Shift + left, Nova F1, Energy Shield F2).
+  - Logger `tools/gdb/mon-h4a.gdb` (`eb0b61eb…4c5bc04a`) = `tools/gdb/mon-stats.gdb` unchanged (`befeaffd…80d647dc`,
+    with `mon-extra.py` `501195fe…72ade4d9`) plus `tools/gdb/mon-h4a.py`: `SUC`/`SUCR` at every call of
+    `SuperUniqueSpawn`'s tail cases 0x005A4BFE–0x005A4E43 with the pushed arguments and the return, `SURD` after
+    Radament's `Range(us, 5)`, `GQ` at the Chaos Sanctuary gate 0x0054EC27 (room, game, `eax`), and the pilot helpers
+    `MON` and `OBJS` (no model input). `mon-h4a.py` versions: sessions raven to nihl `d9546d4e…` (`d050b7d`); shenk,
+    nihl2 and chaos7 `0cb41645…f24625c9` (`652f2f8`, adds `OBJS` only). The chaos sessions use
+    `tools/gdb/mon-h4a-obj.gdb` (`38615238…1115b206`): the same plus `tools/gdb/objects.py` (`7d78c5e3…0a8b55ae`;
+    `OO0`/`OOX` at the operate call). `MONSPAWN_WATCH` and `H4B_WATCH` empty in every session.
+  - **Character:** `UniqNova` of run:2026-10-15-mon-stats (`2c793a3d…d7ddc376`, unchanged), expansion; each session
+    restored and set aside tag `h4a` and installed the save fresh; all start in the Act IV town, Nightmare
+    (`enter-nightmare.steps`).
+  - Before the first session, H4b review condition (4): `sweep_h4b.py check` on the nine H4b logs gives the summary of
+    `workspace/logs/h4b/sweep-check.txt` line for line (`check/regress-sweep_h4b.txt`), and `monstats.py check` 0
+    mismatches on every group (`check/regress-monstats.txt`).
+- **Sessions** (`workspace/logs/h4a/`, each `h4a-s1-<seed>-<name>.log` with its `.pilot.txt` and shots):
+
+  | session | seed | levels | play | met |
+  |---|---|---|---|---|
+  | raven | 4901 | 3 | wp 1,2; explore towards the Burial Grounds | not reached |
+  | raven2 | 4807 | 3, 17 | as raven, plan 0048's raven-xn2 map seed | Blood Raven (mods 12, 22; name 3111; `SI2` 43) |
+  | tree | 4902 | 5 | wp 1,4; hunt 24 | Treehead WoodFist (record 4), null row 13 |
+  | andy | 4903 | 35–37 | wp 1,9; descend; hunt 156 | Andariel (level 49, name 3021) |
+  | radament | 4904 | 48, 49 | wp 2,2; descend (LvlWarp 23); hunt 229 | tail 10, r = 0 |
+  | council | 4905 | 83 | wp 3,8; explore 220 | tails 26, 27, 29 |
+  | durance | 4906 | 101, 102 | wp 3,9; descend; hunt 242 | Bremm Sparkfist's aura twice; tails 28, 30; Mephisto (59, 3062) |
+  | foothills | 4908 | 109, 110 | wp 5,1; explore `--any-level` | tail 48; no Siege Boss |
+  | nihl | 4909 | 115 | wp 5,5 (the wrong row: Glacial Trail) | none |
+  | shenk | 4815 | 110, 111 | wp 5,2; hunt 479 towards (3906, 5114) | tail 42 |
+  | nihl2 | 4910 | 123, 124 | wp 5,6; descend (LvlWarp 80); hunt 526 | tail 60; Nihlathak (70) |
+  | chaos7 | 4907 | 107, 108 | wp 4,3; into 108; per wing `objop --to-pdef W --pdef-any --skip-operated --obj-near 6` (300 s) on seals 392–396 and a sweep; `objop` on every seal seen; sweep; explore 80; hunt 243 | seals 392, 393, 395, 396 operated; the Infector of Souls (36) and the Grand Vizier (38); seal 394 seen, not reached; 63 `doomknight3`; one wanderer roll; no Diablo |
+
+- **Checks** (`workspace/logs/h4a/check/`, hashed in the manifest): `tools/sweep_h4a.py check` (`7df479f7…3b26c246`) on the
+  twelve session logs (`sweep-check.txt`) and on the 63 kept logs of `kept-logs.lst` (`check-kept-final.txt`, from the
+  earlier monster runs and run:2026-10-20-chain; their hashes in `kept-logs.sha256`); `tools/monstats.py check`
+  (`8d6d0d13…052f1860`, chaining `tools/monspawn.py` `835b4549…0ef81d7f`) per session log (`monstats-h4a.txt`), all run by `check/run-checks.sh` (`dd9be9fc…5a39a788`) under
+  `systemd-run --user --scope -p MemoryMax=4G` and on
+  the two plan 0048 logs with a `MonEquipInit` creation (`monstats-monequip-kept.txt`); the static reads
+  `static-wanderer.txt` (objdump and r2), `static-wanderer-tick.txt` and `static-gate.txt`; `aura-control.txt` (`AUR`
+  lines per superunique window) and `doomknight3-app.txt` (class 312's appearance bytes), from the same script.
+- **Observed** (trimmed):
+  ```
+sweep_h4a check, 12 session logs (bad 0 in every part):
+  su       SU0 15; fixed mods written in order 15; mod 22 appended last 15; Bremm Sparkfist (28) AUR r 2 twice, AURS rows [2, 2]
+  tails    records 10, 26, 27, 29, 36, 38, 42, 60 reproduced; 0, 4, 28, 30, 48, 49 no tail call
+           record 10: Range(us, 5) = 0 -> 2 x class 4, then [276, 382, 385, 389]; 6 units
+           record 36 / 38: 0x5436b0[23, 36 | 38, room, 0, 1]
+           record 42: EscortSpawn(453, 1, 20, 20, 0) -> 20 x 453, return 1; hook 31; 0x545b50; state 118
+           record 60: 0x58f030[217, 1, 1, 0, 60]; 0x620bb0; 0x63ec70 -> 458; EscortSpawn(458, 1, 10, 20, 0x40) -> 20 x 458; hook 34
+  handlers SpecialModsApply windows 121; null rows skipped: 7 x23, 13 x6, 22 x3, 29 x11, 34 x14
+  gate     GQ 91 (level 108), byte 0 -> PG 1 in all 91
+  boss     classes 156, 229, 242, 267, 526 at d 1: MonStats Level(N) 49, 49, 59, 43, 70; area MonLvlEx 43, 44, 55, 36, 64
+  names    fixed 156 -> 3021, 242 -> 3062; mod 12 (267) -> 3111; superunique names 27, champion 64, unique 78
+  wander   RTK0 7184: 7183 one step; WRL 1 (chaos7:97550, level 108, low d17d0000), roll 82 -> two steps
+63 kept logs: placed bit set, Stacks 0: refused 3; aura twice 2; null rows 10 x11, 13 x7; RTK0 4785, all one step
+aura-control: AUR before / after SpecialModsApply's exit: 28 1/1; 42, 60, 36 1/0 (30 an extra pick)
+monstats (monstats.py): 0 mismatches on all 12 logs; doomknight3 63 creations, bytes 10 = 11, values 0..3
+  ```
+- **Deviations and limits:**
+  - Development logs in `workspace/logs/h4a/dev/` (not part of the record): raven-nowp (the waypoint click missed);
+    chaos and chaos2 (no object lines, so no seal found); chaos3 and chaos4 (seals not clicked); chaos5-paused (stopped
+    by the owner's pause; it opened seals 392 and 393, `OO0`/`OOX`, then its later objops re-targeted them); chaos6
+    (stopped by the lane: `--obj-near 4` left it 4.2 sub-tiles from seal 392 with no hop); chaos7-paused (stopped by
+    the second pause after seals 392, 393, 395 and 396). Their manifest is `h4a-manifest-dev.sha256`.
+  - Chained models (`tools/monstats.py check` runs `tools/monspawn.py` and the DRLG models first): their mismatches,
+    none on a tag this batch's rows rest on: council, 3 DRLG room-tile mismatches (`CB` W entries of one DRLG room,
+    first difference at entry 18, flags `0x8005`), which `monspawn.py` reports as its 1; nihl2, 1 `monspawn` (Nihlathak's
+    mods at `SU1` are `[22, 30]`, the model's `[30]`: mod 22 was already in the list when `SpecialMonPlace` returned,
+    `SMPX` mods `[22]`, which the model's post-create table lacks for class 526); chaos7, 2 `monspawn` (the
+    `CollisionTest` at the Infector's and the Vizier's placement points returned 4097 and 4096, the collision model 1
+    and 0: bit `0x1000` set in the game only) and 10 collision (the creation marks of five units next to them, logged
+    none). The superunique checks (`sweep_h4a.py su`, `tails`) read the logged lines and pass on all three logs.
+  - Session nihl took the Glacial Trail waypoint row; nihl2 is its retry. Session raven did not reach the Burial
+    Grounds; raven2 is its retry on another map seed.
+  - The pilot (`tools/d2pilot.py`, `663f57c2…e6bb94ef` at the end) gained `objop --skip-operated` before chaos6. Nothing it
+    computes feeds a model.
+  - Not met: the Ancients (tails 43–45: no recipe with the quest open), The Countess's and the Cow King's tails (6, 39),
+    Baal Subject 2 (62), the class-704 `ubermephisto` aura; a wanderer roll below 3 (a spawn); Lord De Seis (37): seal
+    394 (at (7773, 5155) in level 108, logged by `OU0`/`OI0`) was never operated, because `objop` found no hop towards it
+    (d 33, in two objops); so no `GQ` with a non-zero byte, and no Diablo (`hunt 243` timed out). Owner play is the route
+    (monsters/0003 § H4a).
+- **Raw logs:** listed with their sha256 in `workspace/logs/h4a/h4a-manifest.sha256` (`sha256sum -c` from
+  `workspace/logs/h4a/`).
+- **Conclusion:** the rows are settled one by one in the "Plan 0038 batch H4a" sections of
+  [monsters/0001](0001-level-pool.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a),
+  [0002](0002-room-population.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a),
+  [0003](0003-special-monsters.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a),
+  [0004](0004-stats.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a) and
+  [items/0010](../items/0010-quest-drops.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a).
