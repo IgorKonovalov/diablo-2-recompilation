@@ -17,7 +17,7 @@ Review request: plan 0038 Phase 3, the **items/sockets-runewords** cluster (S2c,
 I 22, L 3}** (F6, rule 8). Wiki: items-other-paths refreshed (`based_on` sockets-runewords 2026-10-27), items
 `based_on` properties 2026-10-27. Entries closed: the [H6b entry](2026-10-27-architect-spec-writer-h6b-sockets-raises-for-the-phase-3-re.md)
 and the [H2b entry](2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md) ((r)–(s), the last
-open items); the [S2c entry](../2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md) annotated ((e),
+open items); the [S2c entry](2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md) annotated ((e),
 (g) done; (a), (d), (f) open for cube and vendors). Counts entry:
 [2026-10-27-spec-writer-architect-s38k-sockets-runewords-counts-for-the-research-map](2026-10-27-spec-writer-architect-s38k-sockets-runewords-counts-for-the-research-map.md).
 
