@@ -364,6 +364,10 @@ RECIPE_BASES = {
     "sock-h6b-low2": (BASE_RW, "7e3d88ccc9ad7446fe9594aff0bfb8b5d8fa3f70e07f83e33af96da1aa0915da"),
     "sock-h6b-refuse": (BASE_X, "a9afe50254561549f5d134b8632d33208cdff598c7b4a8992426cef9c6ba65b8"),
     "sock-h6b-svc": (BASE_X, "a0aa3e8ce029d439cae03c8fbc787c0203e02a413bce9d604c0c72d5f46bd783"),
+    "vend-h6c-low": (BASE_X, "b0334a6eb3f6ae25c6dfd1b08fb79e16b144e970701d953123f26a3a3419161c"),  # run:2026-10-27-sweep-vendors
+    "vend-h6c-lvl": (BASE_X, "45223841c311618199df65291cccab69a9be2f6ea74c247c4aa79f34f14522a0"),
+    "vend-h6c-h99e": (BASE_X, "b7e77e44c6c5ec6bf235a0a2a52ef46b3e3a50afd19c5310cec44bf87feed8ea"),
+    "vend-h6c-n19": (BASE_X, "1a48c28694629c582dc256f3a3f6e3eeb0c28057d41a003ebd42c1e3a952ebe0"),
 }
 
 _TABLES = []

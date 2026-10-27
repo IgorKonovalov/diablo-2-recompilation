@@ -478,6 +478,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005540A0,func,UNIT_SetSparkle,,C,objects,docs/findings/objects/0001-object-population.md
 0x005540D0,func,UNIT_GetSparkle,,C,objects,docs/findings/objects/0001-object-population.md
 0x00554100,func,sub_00554100_PlayerGetInteract,,I,items/cube,docs/findings/items/0008-cube.md
+0x00554120,func,sub_00554120_PlayerSetInteract,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00554190,func,sub_00554190_PlayerClearInteract,,I,items/vendors,docs/findings/items/0009-vendors.md
 0x005541B0,func,sub_005541B0_UnitIsDead,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00554200,func,sub_00554200_UnitsHostile,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005542C0,func,sub_005542C0_SkillPetTest,,I,skills/catalogue,docs/findings/skills/0006-missile-hit-1-29.md
@@ -731,8 +733,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00576900,func,VENDOR_PickNormalQuality,,C,items/vendors,docs/findings/items/0009-vendors.md
 0x00576980,func,VENDOR_BuildStock,,C,items/vendors,docs/findings/items/0009-vendors.md
 0x00576D90,func,sub_00576D90_PayGold,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
-0x00576ED0,func,VENDOR_IsPermanent,,I,items/vendors,docs/findings/items/0009-vendors.md
-0x00576F50,func,sub_00576F50_StoreItemSold,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00576ED0,func,VENDOR_IsPermanent,,C,items/vendors,docs/findings/items/0009-vendors.md
+0x00576F50,func,sub_00576F50_StoreItemSold,,C,items/vendors,docs/findings/items/0009-vendors.md
 0x00577010,func,HIRE_RebuildIfEmpty,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x005770E0,func,HIRE_Hire,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x005774F0,func,MERC_Create,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
@@ -2387,7 +2389,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0062E5D0,func,sub_0062E5D0_ItemIsRepairableStack,,I,items/economy,docs/findings/items/0011-economy.md
 0x0062E660,func,sub_0062E660_ItemCanRepair,,I,items/economy,docs/findings/items/0011-economy.md
 0x0062E740,func,sub_0062E740_ItemTypeQuiver,,I,items/properties,docs/findings/items/0006-properties.md
-0x0062E880,func,sub_0062E880_ItemStorePage,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x0062E880,func,sub_0062E880_ItemStorePage,,C,items/vendors,docs/findings/items/0009-vendors.md
 0x0062E8D0,func,sub_0062E8D0_ItemVarInvGfx,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0062E920,func,sub_0062E920_ItemInvGfxName,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0062E990,func,sub_0062E990_ItemTypeRare,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md

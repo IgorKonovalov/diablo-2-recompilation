@@ -702,6 +702,11 @@ class Checker:
                 elif t in ("ICB",):
                     E.i += 1
                     self.st["item creations outside the store paths (not checked here)"] += 1
+                elif t == "CF0" and d.get("ret") not in (0x005764DB, 0x005789FE):
+                    # plan 0038 H6c: ITEMS_CreateForStore called from outside a build (a gold pile dropped when a
+                    # sale's gold passes the level cap, 0x0055A18D); its creation block follows as an ICB
+                    E.i += 1
+                    self.st["ITEMS_CreateForStore calls outside a build (not checked here)"] += 1
                 else:
                     E.i += 1
                     if t in ("PIEND", "MA", "VGAME"):
