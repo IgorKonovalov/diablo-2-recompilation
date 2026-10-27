@@ -65,12 +65,13 @@ flowchart LR
 | tbl:Skills.txt:delay, `perdelay` | the delay state and the periodic grid (§ G) |
 | tbl:Skills.txt:LineOfSight, `TargetableOnly`, `TargetCorpse`, `TargetAlly`, `TargetItem`, `AttackNoMana` | the start and request tests (§ B, § D) |
 | tbl:Skills.txt:ItemEffect, `ItemTarget`, `ItemCheckStart`, `ItemTgtDo` | item-event casts (§ H) |
-| tbl:Skills.txt:ResultFlags, `HitFlags`, `HitClass`, `calc1`, `calc2`, `calc3`, `calc4`, `EType`, `SrcDam`, `Kick`, `MinDam`, `MinLevDam1`, `DmgSymPerCalc`, `HitShift` | the skill packet (§ I) |
+| tbl:Skills.txt:ResultFlags, `HitFlags`, `HitClass`, `calc1`, `calc2`, `calc3`, `calc4`, `EType`, `SrcDam`, `Kick`, `MinDam`, `MaxDam`, `MinLevDam1`, `DmgSymPerCalc`, `HitShift` | the skill packet (§ I) |
 | tbl:Skills.txt:aurastate, `auratargetstate`, `auralencalc`, `aurastat1`, `aurastatcalc2`, `srvoverlay` | the melee deliver do and the charges (§ I, § J) |
 | tbl:Skills.txt:summon, `summode`, `pettype`, `petmax`, `Param1` | summons (§ L) |
 | tbl:PetType.txt:group | the pet group clear (§ L) |
 | tbl:ItemStatCost.txt:itemeventfunc1 | the item-stat handler registrations (§ K) |
 | tbl:MonStats.txt:SkillDamage | a summon's owner skill damage (§ M) |
+| tbl:MonStats.txt:ResDm, `Skill1` | the logged Kick targets and the `Kick` branch's monster casters (§ I) |
 
 Column semantics are the table docs': [Skills § Dispatch](../../tables/Skills.md#dispatch-plan-0045-phase-0),
 [Skills § Function index](../../tables/Skills.md#function-index-plan-0046-phase-0), [PetType](../../tables/PetType.md).
@@ -643,7 +644,7 @@ I2. SKILLS_RollElemDamage(unit, p, id, lvl):                         [I] (fn:SKI
   result 9 and flags 2 (which `COMBAT_ResolveAndQueue` reads as "no weapon build", I1), reads the row's `HitShift`
   (`+0x1A4`, `0x0056CB54`) and `MinDam` (`+0x1A8`, `0x0056CB5A`) itself, stores `MinDam << HitShift` as the packet's
   physical (`+0x08`, `0x0056CB71`) and hit class 1 (`+0x60`), then calls `COMBAT_ResolveAndQueue(…, 0x80)`. It calls
-  neither `GetPhysMin` nor `GetPhysMax`, and does not read `MaxDam`. [I] (0x0056CB54–0x0056CB71,
+  neither `GetPhysMin` nor `GetPhysMax`, and does not read `MaxDam`. [I] (0x0056CB42–0x0056CB80,
   fn:sub_0056CAF0_SkillSt02Kick@0x0056CAF0, [skills/0003 § 5](../../findings/skills/0003-handlers.md#5-tier-a-start-and-do-functions))
 - I4. **The stock Kick row's damage columns are all zero but `HitShift`**: `skills.bin` row 1 has `HitShift` 8,
   `SrcDam` 0, `MinDam` 0, `MaxDam` 0, `MinLevDam1..5` and `MaxLevDam1..5` 0 and `DmgSymPerCalc` blank (−1), so start

@@ -2,15 +2,15 @@
 from: spec-writer
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../specs/skills/dispatch.md
-resolution: ""
+  - ../../specs/skills/dispatch.md
+resolution: "Reviewed 2026-10-27: accept with fixes (2): start 2's anchor range widened to 0x0056CB42–0x0056CB80; MaxDam, MonStats ResDm and Skill1 added to dispatch's tables-used list. Research-map row updated (plan 0038 log)."
 ---
 
-Please review `lane/sk` (spec-writer, no Ghidra, no harness): the [released entry](archive/2026-10-27-reverser-spec-writer-dispatch-i4-kick-start-hit-answered.md)
-carried out from [skills/0003 § 5](../findings/skills/0003-handlers.md#5-tier-a-start-and-do-functions)'s 2026-10-27
-note, after the `lane/rk` review's fixes. [Dispatch § I4](../specs/skills/dispatch.md#i-the-skill-packet): Kick's
+Please review `lane/sk` (spec-writer, no Ghidra, no harness): the [released entry](2026-10-27-reverser-spec-writer-dispatch-i4-kick-start-hit-answered.md)
+carried out from [skills/0003 § 5](../../findings/skills/0003-handlers.md#5-tier-a-start-and-do-functions)'s 2026-10-27
+note, after the `lane/rk` review's fixes. [Dispatch § I4](../../specs/skills/dispatch.md#i-the-skill-packet): Kick's
 start-hit bullet restated from the anchored instructions (`[I]`; `MinDam << HitShift`, hit class 1, no
 `GetPhysMin/Max` call, `MaxDam` not read); a `[C]` bullet for the stock row's values (`HitShift` 8, `MinDam` 0, so
 physical 0; tbl:Skills.txt); a `[C]` bullet for the 25 logged deliveries with physical 0, scoped to the packet after
