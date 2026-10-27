@@ -1280,6 +1280,28 @@ c-emu awaiting a batch 0, blocked 421** (d-none 295, d-edit 73, d-sim 28, d-2c 7
 this run met it again on an independent seed (3811); Phase 3 adds the run anchor only. Recounted against `main`
 `507a6f5c` after merging it (`lane/rk` moved no inventory row): totals as above. **Phase 3 ready:** objects (S4a,
 S4b, H5b, H6e2; its 13 "—" rows have no batch). Not ready: items/quest-drops (H6e1 open).
+**`lane/s38s` review (2026-10-27, architect, Phase 3 of save/d2s and items/uniques-sets): three S1a rows completed by
+H1b's kept check.** The H1b ledger listed the S1a pieces it met and left the rows as S1a. Two of those pieces carry a
+compared line in the kept check output (`workspace/logs/r1h/sweep-h1b-check-r1h.txt`, 0 failing), so they move here,
+with no class change:
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| save-d2s 24 (`weapon_set` bit 0 from client `+0x45C`) | S1a, raised in part (value 0) | **S1a, raised** | rt-r2's four writes after `w`: bit 0 = 1, equal to the logged `+0x45C` (`tools/d2sio.py`'s `weapon_set bit 0` check). |
+| save-d2s 123 (groups 52 and 57 framed like the others) | S1a, raised in part (57) | **S1a, raised** | `9cr` 52/53 = 50/120 read three times with stats 52 and 53 equal to the file's group values (`group 52 stats 52/53 = file`), the second rt-r2 read on the file the game wrote. One item. |
+| save-d2s 138 (groups 52 and 57 read the same way) | S1a, raised in part | **S1a, raised** | As row 123. |
+| save-d2s 130 (unseen ids, groups, clamp bounds, stat 326, version < 93) | S1a, raised in part | S1a, raised in part | The group-52 remainder is met; the clamp bounds (d-none), stat 326 (d-none here; its own row 125 raised by H1b) and version < 93 (d-edit) are as before. |
+
+Rows 20 (the pet-type-7 test) and 32 (the read side's `& 0xFFF` mask) stay as filed: no compared line covers them (the
+H1b hotkey check compares the written words only). S1a's ledger is now **raised 42, raised in part 12, returned 2**
+(56). Totals unchanged: **static 567, harness 519, c-emu awaiting a batch 0, blocked 421** (d-none 295, d-edit 73, d-sim
+28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
+
+*Rows 20 and 34 of player/creation (ruling).* The class-7 halt and the two d-none rows are different statements. The
+halt (a class-7 file passes the class test and the game stops at the null-unit test, 1210) is player-creation row 11,
+raised by H1a on the logged `RCST`/`RMAP` lines and the two crash reports, so a spec states it `[C]`. Rows 20 and 34
+(what a class-7 player's experience lookup and starting kit would be) need a class-7 player, which the halt shows
+never exists; they are d-none and stay `[I]` readings. The halt is the reason for the d-none, not a contradiction of it.
 
 **H6e1 (filed 2026-10-27, reverser, `lane/h6e1`): 22 statements of items/quest-drops (rows 2, 4, 5, 32, 39, 40,
 42–46, 50, 51) and the S2c piece of row 38.** run:2026-10-27-sweep-quest-npc, 14 kept sessions on slot 1 (17

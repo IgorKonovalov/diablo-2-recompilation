@@ -2,12 +2,12 @@
 from: reverser
 to: spec-writer
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../findings/objects/0001-object-population.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects
-  - ../findings/drlg/0005-collision.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects
-  - archive/2026-10-20-reverser-architect-review-h5b-objects.md
-resolution: ""
+  - ../../findings/objects/0001-object-population.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects
+  - ../../findings/drlg/0005-collision.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects
+  - 2026-10-20-reverser-architect-review-h5b-objects.md
+resolution: "Done 2026-10-27 (spec-writer, lane/s38o, plan 0038 Phase 3 objects cluster): objects K2 (the remap, the trap-function table, 162 then 160, the 35-frame queue [C], types 8/9 [I]), J2's OBJ_TrapFire, E1 and the handler-1 note, E2 (due rule, forced conversion and discarded ShrinePick, the > roomCount/8 cap half [C]; = 10 and the well cap [I]), F3 orientation 2 no stock case, G4 (0x400 door and zero size [C], 0x804 no stock case), H rows 57/58 [C] and the quest-object row in part, I1/I2 level 25, J4 rows 1/26/48/68, C2 theme 3, I's 582 kept [I], all by run:2026-10-19-h5b-objects; the drlg/collision bullet was done on lane/s38n. [objects](../../specs/objects/README.md)"
 ---
 
 Spec updates from plan 0038 batch H5b (run:2026-10-19-h5b-objects), once the architect's review of
@@ -30,7 +30,7 @@ Spec updates from plan 0038 batch H5b (run:2026-10-19-h5b-objects), once the arc
   door `[C]`; `0x804` d-none at the review.
 
 **Released (architect, 2026-10-20, `lane/h5b` review: accept with fixes).** Rulings in the
-[plan 0038 log](../plans/0038-inferred-claims-sweep.md#implementation-log): objects 20, the `0x804` halves of
+[plan 0038 log](../../plans/0038-inferred-claims-sweep.md#implementation-log): objects 20, the `0x804` halves of
 collision 37 and objects 23 and objects 38's PreOperate half are d-none (inventory § 2.6); collision 27 stands
 without the near-list fix; the grid model's near-list replacement is a checker model, not a spec claim (the game's
 unlink stays an open question of drlg/0005). Also objects/README I: the 582 quest object (row 35) stays `[I]`, a

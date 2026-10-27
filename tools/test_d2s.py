@@ -31,6 +31,10 @@ every output goes to a scratch directory, nothing in workspace/ is written:
   'jf' (equipped, hand item last) read back and round-trip byte for byte, the dead flag (bit 16), and the refusals
   (no row of the save's Version, seed 0, a name id past NameLast, items in a classic save, an item not placed with
   "equip").
+- ExtendedTest (backlog 2026-10-27, the plan 0038 H1a gaps) covers the extension keys and the extended reader:
+  build reproduces tools/h1a_saves.py's v94, v94s12 and skills29 cases byte for byte; the default parser still
+  refuses them and realm data; realm words per version (three above 93); an ear's realm bit; the 8-bit stat 72 at
+  <= 95; the old stat form at <= 94; the refusals (92, < 92, 97, stat_slots, a stat past the slots, a cut-off skill).
 - ExcelEditTest edits integer and text cells through excel_edit.py and checks that nothing else changed.
 """
 import contextlib
@@ -891,6 +895,173 @@ class MercTest(Scratch):
         self.refused(dict(self.MERC, name=0x10000, name_unchecked=True), "u16")
         self.refused(dict(self.MERC, name=-1, name_unchecked=True), "u16")
         self.refused(dict(self.MERC, name=41, name_unchecked=False), "name 41 outside 0 .. 40")
+
+
+class ExtendedTest(Scratch):
+    """backlog 2026-10-27 (plan 0038 H1a gaps): the extended reading and writing (versions 93..95, the old stat
+    form, the stat-slot and skill counts, realm data, an ear's realm bit), off unless asked for."""
+    QITSOR = os.path.join(SAMPLES, "qitsor.d2s")
+    STATS = {"0": 10, "1": 35, "2": 25, "3": 10, "6": 40, "7": 40, "8": 35, "9": 35, "10": 74, "11": 74, "12": 1}
+    KEEP = ["hp1", "tsc", "box", "rin", "amu", "jew", "cm1", "cap", "lgl", "sst"]
+
+    def build(self, recipe, base=None, name="out.d2s"):
+        base = base or self.QITSOR
+        need(base)
+        out = self.path(name)
+        d2s.build(EXCEL, dict(dict(seed=1, game="expansion"), **recipe), base, out)
+        return readb(out)
+
+    def ext(self, b):
+        return d2s.parse(b, tables().isc, tables().kinds, extended=True)
+
+    def items_round_trip(self, b, f):
+        t = tables()
+        for it in d2s.all_items(f):
+            self.assertEqual(d2s.encode_item(it, t.isc, t.kinds, f["ver"]), b[it["off"]:it["end"]])
+
+    def test_h1a_cases_rebuilt_byte_for_byte(self):
+        """The v94, v94s12 and skills29 saves of tools/h1a_saves.py (loaded in run:2026-10-27-sweep-d2s-load) come
+        out of build with the new keys byte for byte."""
+        import h1a_saves
+        ref = self.path("h1a")
+        with contextlib.redirect_stdout(io.StringIO()):
+            h1a_saves.main([EXCEL, ref])
+        keep = dict(keep_items=self.KEEP)
+        cases = {"v94": dict(keep, stats=self.STATS, save_version=94),
+                 "v94s12": dict(keep, stats={k: v for k, v in self.STATS.items() if int(k) < 12}, save_version=94,
+                                stat_slots=12),
+                 "skills29": dict(keep, stats=self.STATS, name="QITSOR", skills={"Fire Bolt": 1, "Frozen Orb": 1},
+                                  skill_count=29)}
+        for case, rc in cases.items():
+            with self.subTest(case=case):
+                b = self.build(rc, name=case + ".d2s")
+                self.assertEqual(b, readb(os.path.join(ref, case, "qitsor.d2s")))
+                f = self.ext(b)
+                self.assertEqual(f["end"], len(b))
+                self.items_round_trip(b, f)
+        # the items case (realm data on the gloves, an ear) reads and re-encodes item by item
+        b = readb(os.path.join(ref, "items", "qitsor.d2s"))
+        f = self.ext(b)
+        self.assertEqual(f["end"], len(b))
+        self.items_round_trip(b, f)
+        realm = [it["realm_data"] for it in d2s.all_items(f) if it.get("realm")]
+        self.assertEqual(realm, [[0x11223344, 0x55667788, 0x99AABBCC]])
+        ears = [it for it in d2s.all_items(f) if it["ear"]]
+        self.assertEqual([(e["ear_class"], e["ear_level"], e["ear_name"], e["realm"]) for e in ears],
+                         [(3, 42, "earname", 0)])
+
+    def test_default_reading_unchanged(self):
+        """Without extended the parser refuses what it refused before: a version other than 96, realm data, and a
+        skill count other than 30 (read as 30 bytes, so the item list tag is missed)."""
+        t = tables()
+        for rc, word in ((dict(stats=self.STATS, keep_items=self.KEEP, save_version=94), "version 94"),
+                         (dict(stats=self.STATS, keep_items=self.KEEP, skill_count=29), "item list tag"),
+                         (dict(stats=self.STATS, items=[dict(code="lgl", store="inventory", x=6, y=0,
+                                                             realm=[1, 2, 3])]), "realm data")):
+            with self.subTest(word=word):
+                b = self.build(rc)
+                with self.assertRaises(d2s.D2sError) as cm:
+                    d2s.parse(b, t.isc, t.kinds)
+                self.assertIn(word, str(cm.exception))
+                self.assertEqual(self.ext(b)["end"], len(b))
+
+    def test_realm_words_by_version(self):
+        lgl = dict(code="lgl", store="inventory", x=6, y=0)
+        for ver, words in ((96, [7, 8, 0]), (95, [7, 8, 9]), (94, [1, 2, 0]), (93, [5, 6])):
+            with self.subTest(ver=ver):
+                b = self.build(dict(stats=self.STATS, save_version=ver, items=[dict(lgl, realm=words)]))
+                f = self.ext(b)
+                self.assertEqual(d2s.u32(b, 4), ver)
+                self.assertEqual([it["realm_data"] for it in d2s.all_items(f) if it.get("realm")], [words])
+                self.items_round_trip(b, f)
+        for ver, words in ((96, [7, 8]), (93, [5, 6, 0])):
+            with self.subTest(refused=ver):
+                with self.assertRaises(d2s.D2sError) as cm:
+                    self.build(dict(stats=self.STATS, save_version=ver, items=[dict(lgl, realm=words)]))
+                self.assertIn("words for version %d" % ver, str(cm.exception))
+        with self.assertRaises(d2s.D2sError):
+            self.build(dict(stats=self.STATS, items=[dict(lgl, realm=[1 << 32, 0, 0])]))
+        # a simple item takes realm data too (the realm bit after its code)
+        b = self.build(dict(stats=self.STATS, items=[dict(code="hp1", store="inventory", x=6, y=0, realm=[3, 4, 0])]))
+        self.assertEqual([it["realm_data"] for it in d2s.all_items(self.ext(b)) if it.get("realm")], [[3, 4, 0]])
+
+    def test_ear_realm_bit(self):
+        """An ear's realm bit after the name: one more byte only when the name ends on a byte boundary
+        (5 or 13 characters in the stored/equipped common part); the default encoder writes none."""
+        t = tables()
+        for n in range(2, 16):
+            with self.subTest(n=n):
+                ear = dict(flags=(1 << 4) | (1 << 16) | (1 << 21) | (1 << 23), version=101, location=0, body=0, x=0,
+                           y=0, store=1, ear_class=3, ear_level=42, ear_name="e" * n)
+                old, new = d2s.encode_item(ear, t.isc, t.kinds), d2s.encode_item(ear, t.isc, t.kinds, 96)
+                self.assertEqual(len(new) - len(old), 1 if n in (5, 13) else 0)
+                self.assertEqual(new[:len(old)], old)
+                it, end = d2s.parse_item(new, 0, t.isc, t.kinds, 96)
+                self.assertEqual((it["ear_name"], it["realm"], end), ("e" * n, 0, len(new)))
+                rd = dict(ear, realm=1, realm_data=[9, 10, 0])
+                it, end = d2s.parse_item(d2s.encode_item(rd, t.isc, t.kinds, 96), 0, t.isc, t.kinds, 96)
+                self.assertEqual(it["realm_data"], [9, 10, 0])
+
+    def test_durability_width(self):
+        """Stat 72 is 8 bits for a save version <= 95, Save Bits (9) at 96; v95 keeps the bit-form stats."""
+        t = tables()
+        rc = dict(stats=self.STATS, items=[dict(code="lgl", store="inventory", x=6, y=0, dur=5)])
+        for ver in (95, 96):
+            with self.subTest(ver=ver):
+                b = self.build(dict(rc, save_version=ver))
+                f = self.ext(b)
+                self.assertEqual(b[d2s.HEADER_SIZE:d2s.HEADER_SIZE + 2], b"gf")
+                self.assertEqual(sorted(s for s, _, _ in f["stats"]), sorted(int(k) for k in self.STATS))
+                gl = [it for it in d2s.all_items(f) if it.get("code") == "lgl "]
+                self.assertEqual([it["dur"] for it in gl], [5])
+                self.items_round_trip(b, f)
+        with self.assertRaises(d2s.D2sError):    # 256 does not fit the 8-bit width
+            d2s.encode_item(dict(gl[0], dur=256), t.isc, t.kinds, 95)
+        d2s.encode_item(dict(gl[0], dur=256), t.isc, t.kinds, 96)
+
+    def test_old_stat_form(self):
+        b = self.build(dict(stats=self.STATS, save_version=93))
+        f = self.ext(b)
+        mask = struct.unpack_from("<H", b, d2s.HEADER_SIZE + 2)[0]
+        self.assertEqual(mask, sum(1 << int(k) for k in self.STATS))
+        self.assertEqual(f["stats"], [(int(k), None, v << 8 if 6 <= int(k) <= 11 else v)
+                                      for k, v in sorted(self.STATS.items(), key=lambda kv: int(kv[0]))])
+        self.assertEqual(b[d2s.HEADER_SIZE + 4 + 4 * len(self.STATS):][:2], b"if")
+
+    def test_refusals(self):
+        def refused(rc, word, base=None):
+            with self.assertRaises(d2s.D2sError) as cm:
+                self.build(dict(dict(stats=self.STATS), **rc), base)
+            self.assertIn(word, str(cm.exception))
+        refused(dict(save_version=92), "per-id overrides")
+        refused(dict(save_version=87), "legacy layouts")
+        refused(dict(save_version=97), "93..96")
+        refused(dict(save_version=94, stat_slots=8), "9..16")
+        refused(dict(save_version=94, stat_slots=12), "stat 12")
+        refused(dict(save_version=94, stat_slots=13, stats=dict(self.STATS, experience=1)), "stat 13")
+        refused(dict(skill_count=29, skills={"Cold Mastery": 1}), "cuts off")
+        refused(dict(skill_count=300), "a byte")
+        # a base whose trailer holds mercenary items (version-96 widths) is refused for another version
+        merc = os.path.join(self.tmp, "merc.d2s")
+        need(BASE_X)
+        d2s.build(EXCEL, dict(seed=1, game="expansion", stats={"level": 30},
+                              merc=dict(id=0, seed=5, name=3, exp=100, items=[dict(code="cap", equip="head")])),
+                  BASE_X, merc)
+        refused(dict(save_version=95), "mercenary", merc)
+        self.build(dict(stats=self.STATS, save_version=95, merc=dict(id=0, seed=5, name=3, exp=100, items=[])),
+                   merc, "merc95.d2s")   # replaced by the recipe's merc: written in the version's widths
+        # a 92 file is refused by the extended reader as well
+        b = bytearray(self.build(dict(stats=self.STATS)))
+        struct.pack_into("<I", b, 4, 92)
+        with self.assertRaises(d2s.D2sError) as cm:
+            self.ext(d2s.finish(b))
+        self.assertIn("version 92", str(cm.exception))
+
+    def test_skill_count_over_30(self):
+        b = self.build(dict(stats=self.STATS, skill_count=32))
+        f = self.ext(b)
+        self.assertEqual((b[0x2A], len(f["skills"]), f["skills"][30:]), (32, 32, [0, 0]))
+        self.assertEqual(f["end"], len(b))
 
 
 class ExcelEditTest(Scratch):

@@ -87,6 +87,7 @@ TOWNS = (1, 40, 75, 103, 109)       # Levels ids of the five towns
 
 class LogState:
     me = None                       # --me (plan 0044): steer by this player's PLRS entry ('host', 'join' or a unit id)
+    all_copies = False              # --all-copies (lane/rdp): the frontier spans every built copy of the level
 
     def __init__(self, path):
         self.path = path
@@ -108,6 +109,9 @@ class LogState:
         self.far = {}               # the bosses of the last "far" MON scan beyond the near square, by unit id
         self.warps = {}             # DRLG room -> warp nodes (RL / RRESEED "warps", tools/gdb/pilot.py)
         self.wrp = {}               # (level id, LvlWarp row, x, y): warp units (WRP, tools/gdb/pilot.py)
+        self.wrp_room = {}          # the same key -> the DRLG room of the WRP line (warp_dest)
+        self.ptr_lid = {}           # level pointer -> level id (RL "lid" when logged, else a RRESEED of one of its rooms)
+        self.copies = {}            # level id -> every level pointer a RRESEED of that level named (most levels: two)
         self.objs = {}              # object unit -> (class, x, y, mode at creation) (OU0/OUX, tools/gdb/objects.py)
         self.obj_it = {}            # object unit -> interact byte at creation (OUX; trap type & 0x7F, lock 0x80)
         self.operated = set()       # object units operated (OO0)
@@ -155,6 +159,8 @@ class LogState:
                 self.rl[d["room"]] = (d["level"], d["rect"])
                 self.active.discard(d["room"])      # a rebuilt level can reuse a freed room's address
                 self.pdef[d["room"]] = d.get("pdef")
+                if d.get("lid") is not None:    # tools/gdb/pilot.py from lane/rdp on; older logs lack it
+                    self.ptr_lid[d["level"]] = d["lid"]
                 if d.get("warps"):
                     self.warps[d["room"]] = d["warps"]
             elif tag == "MZ1":                  # drlg-gen.py: the maze generator's own rooms, freed after the conversion
@@ -163,6 +169,7 @@ class LogState:
             elif tag == "WRP":
                 x0, y0 = 5 * d["rect"][0], 5 * d["rect"][1]
                 self.wrp[(d["lid"], d["rec"], x0 + d["dx"], y0 + d["dy"])] = 1
+                self.wrp_room[(d["lid"], d["rec"], x0 + d["dx"], y0 + d["dy"])] = d["room"]
             elif tag == "MON":
                 if d.get("far"):
                     x, y = d["x"], d["y"]
@@ -178,6 +185,8 @@ class LogState:
                 self.active.add(d["room"])
                 if d["room"] in self.rl:
                     self.lptr[d["level"]] = self.rl[d["room"]][0]
+                    self.ptr_lid[self.rl[d["room"]][0]] = d["level"]
+                    self.copies.setdefault(d["level"], set()).add(self.rl[d["room"]][0])
             elif tag == "CB":
                 z = collision.unz(d["z"])
                 c = z.get("cells")
@@ -210,9 +219,33 @@ class LogState:
                     npcs.setdefault(c, []).append((i, m, x, y))
                 self.npcs = npcs
 
+    def warp_dest(self, key):
+        """The level a warp unit (a self.wrp key) leads to, or None while unknown. The WRP line's room carries the
+        warp nodes (RRESEED/RL "warps", room +0x4C): node +0x00 is the destination room and +0x10 the LvlWarp record
+        (drlg/0007 § warp pairs, sub_0066BE10_RoomWarpNodeAdd). The destination room's level pointer comes from its RL
+        line, the pointer's level id from that RL line's "lid" or from a RRESEED of any room of that level. Nodes of
+        other LvlWarp rows are ignored; two nodes of the row leading to different levels give None."""
+        room = self.wrp_room.get(key)
+        dests = set()
+        for n in self.warps.get(room) or ():
+            if n[0] != key[1] or not n[2]:
+                continue
+            dst = n[2][0]
+            lid = self.ptr_lid.get(self.rl[dst][0]) if dst in self.rl else None
+            if lid is None:
+                lid = self.lid_of.get(dst)
+            dests.add(lid)
+        return dests.pop() if len(dests) == 1 else None
+
     def frontier(self, lid):
         if self.any_level:
             lps = {self.rl[r][0] for r in self.active if r in self.rl}
+            return [(r, rect) for r, (p, rect) in self.rl.items() if p in lps and r not in self.active]
+        if self.all_copies:
+            # lane/rdp: RRESEED names two level pointers for most levels, and self.lptr holds the last one, so the
+            # default frontier is that of whichever copy activated a room last; in brain4/brain4b (level 91) that copy
+            # had all 25 rooms activated while the copy whose rooms held the OBJS objects had 4 to 11 left
+            lps = self.copies.get(lid) or set()
             return [(r, rect) for r, (p, rect) in self.rl.items() if p in lps and r not in self.active]
         lp = self.lptr.get(lid)
         if lp is None:
@@ -2712,26 +2745,68 @@ def descend_rows(args):
     return {int(x) for x in str(args.descend).split(",")}
 
 
-def descend(args, st, p, gate, deadline):
+ANY_ROW = "any"
+
+
+def descend_cells(st, lid0, rows, dest=None, wrong=()):
+    """The warp cells descend() may take on level lid0: the WRP units of a LvlWarp row in rows (ANY_ROW: every row),
+    not in wrong ((lid, x, y) of a warp already taken to another level). With dest (--descend-to), a warp whose
+    destination st.warp_dest knows is kept only when it is dest; when some warp is known to lead to dest, only those
+    are kept; otherwise the warps whose destination is still unknown are kept (descend() checks the arrival)."""
+    keys = [k for k in st.wrp if k[0] == lid0 and (rows == ANY_ROW or k[1] in rows) and (k[0],) + k[2:] not in wrong]
+    if dest is not None:
+        dests = {k: st.warp_dest(k) for k in keys}
+        known = [k for k in keys if dests[k] == dest]
+        keys = known or [k for k in keys if dests[k] is None]
+    return [k[2:] for k in keys]
+
+
+def descend(args, st, p, gate, deadline, rows=None, dest=None, back=1):
     """Find and take the warp of LvlWarp row --descend on the current level. Until a WRP line of that row is logged,
     hop towards one unactivated room of the level (the nearest when chosen, kept until it activates or no hop gets
     nearer, then skipped); once logged, hop to the warp and left-click its cell (no Shift). Every hop strictly
-    approaches the current target (greedy_hop); Nova bursts clear what blocks the way. Returns True on a level change."""
+    approaches the current target (greedy_hop); Nova bursts clear what blocks the way. Returns True on a level change.
+    With --descend-to LEVEL (dest) only a warp that leads there is taken (descend_cells): a row that serves two levels
+    (51: Spider Forest to 84 or 85; 61: Kurast Bazaar to 94 or 95) no longer takes the first warp logged. An arrival
+    elsewhere (a warp whose destination was not yet known) takes a warp back (any row, destination lid0; back times
+    at most), marks the warp wrong and searches on; True only on arrival at dest. Without --descend-to: as before."""
     lid0 = st.pos[2]
-    skip, bad = set(), set()
+    if rows is None:
+        rows = descend_rows(args)
+    if dest is None:
+        dest = getattr(args, "descend_to", None)
+    skip, bad, wrong = set(), set(), set()
     goal = None
     clicks = still = 0
     path = epath = None
+    last = None
     while time.time() < deadline:
         st.poll()
         if st.pos[2] != lid0:
-            print("descend: level %s -> %s" % (lid0, st.pos[2]))
-            return True
+            lid1 = st.pos[2]
+            print("descend: level %s -> %s" % (lid0, lid1))
+            if dest is None or lid1 == dest:
+                return True
+            if last is not None:
+                wrong.add((lid0,) + last)
+            if back <= 0:
+                print("descend: level %s, not %s" % (lid1, dest))
+                return False
+            print("descend: level %s, not %s; back to %s" % (lid1, dest, lid0))
+            time.sleep(0.5)
+            if not descend(args, st, p, gate, deadline, rows=ANY_ROW, dest=lid0, back=0) or st.pos[2] != lid0:
+                print("descend: no way back to %s" % lid0)
+                return False
+            back -= 1
+            goal = path = epath = last = None
+            clicks = still = 0
+            bad = set()
+            continue
         upkeep(args, p, st)
         if gate.cast(p, st):
             continue
         px, py = st.pos[0], st.pos[1]
-        cells = [(x, y) for (lid, rec, x, y) in st.wrp if lid == lid0 and rec in descend_rows(args)]
+        cells = descend_cells(st, lid0, rows, dest, wrong)
         if cells:
             w = min(cells, key=lambda c: math.hypot(c[0] - px, c[1] - py))
             if math.hypot(w[0] - px, w[1] - py) <= 6:
@@ -2739,6 +2814,7 @@ def descend(args, st, p, gate, deadline):
                 lift = (0, 12, 24, 36)[clicks % 4]
                 p.dpy.click(p.off[0] + int(sx), p.off[1] + int(sy) - lift, button=1, hold=0.08)
                 clicks += 1
+                last = w
                 t0 = time.time()
                 while time.time() - t0 < 2.5:
                     st.poll()
@@ -2770,8 +2846,9 @@ def descend(args, st, p, gate, deadline):
             if goal not in fr:
                 epath = None
                 if not fr:
-                    print("descend: every room activated or skipped, no warp %s (%d skipped)" % (args.descend,
-                                                                                               len(skip)))
+                    print("descend: every room activated or skipped, no warp %s (%d skipped)" % (
+                        args.descend if rows is not ANY_ROW else "to %s" % dest, len(skip))
+                          + (" to %s" % dest if dest is not None and rows is not ANY_ROW else ""))
                     return False
                 goal = min(fr, key=lambda r: math.hypot(room_centre(fr[r])[0] - px, room_centre(fr[r])[1] - py))
             tgt = pick_on_path(st, epath, args.hop, bad) if epath else None
@@ -3166,6 +3243,10 @@ def main():
     ap.add_argument("--to-rect", help="explore: go to this tile rect x,y,w,h (several: concatenated), then stop")
     ap.add_argument("--any-level", action="store_true",
                     help="explore: aim at unactivated rooms of any level that has an activated room (leaves a town)")
+    ap.add_argument("--all-copies", action="store_true",
+                    help="explore, farm, descend: count a room unactivated while it is so in any copy of the level "
+                         "(RRESEED names two level pointers for most levels; default: the copy that activated a room "
+                         "last, as before)")
     ap.add_argument("--to-warp", action="store_true", help="go to a room of the current level that has a warp, then stop")
     ap.add_argument("--walk", action="store_true", help="explore: always walk (left click), never Teleport")
     ap.add_argument("--melee", action="store_true", help="explore: left-click the nearest live monster in --radius "
@@ -3205,6 +3286,10 @@ def main():
     ap.add_argument("--descend", help="farm: after the waypoint, find and take the warp of this LvlWarp row (or of any of a "
                                       "comma-separated list, e.g. 67,68: Durance Down L/R) "
                                                 "(67: Durance of Hate 2 -> 3) before the kill loop")
+    ap.add_argument("--descend-to", type=int, help="farm: with --descend, take only a warp of the row that leads to "
+                                                   "this level id (e.g. --descend 51 --descend-to 85: the Spider Cavern, "
+                                                   "not the Arachnid Lair 84); an arrival elsewhere goes back and tries "
+                                                   "the next warp. Default: the first warp of the row, as before")
     ap.add_argument("--descend-time", type=float, default=150, help="farm: give the --descend search this long")
     ap.add_argument("--boss-cls", help="farm: MonStats rows that count as bosses besides the unique/champion flags "
                                        "(e.g. 242 Mephisto)")
@@ -3301,6 +3386,7 @@ def main():
     if args.cmd == "join" and args.me is None:
         args.me = "join"
     LogState.me = args.me
+    LogState.all_copies = args.all_copies
     if args.cmd in ("npc", "join"):
         args.npc_name, args.npc_action = args.dx, args.dy
     else:
