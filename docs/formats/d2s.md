@@ -109,6 +109,15 @@ flowchart LR
 - `[I]` The reader takes at most `0x2000` bytes, rejects fewer than 8 bytes or a wrong `magic` (code 9) and accepts
   `version` 92..96 only (code 7); < 92 goes to a legacy reader. Only codes 0, 5, 6 and 14 have been seen at run time.
   ([save/0001](../findings/save/0001-d2s-io.md) § Answer)
+  `[C]` Plan 0038 H1a has since logged the 0x2000-byte limit, codes 9, 4, 6, 7 and the mapped codes, versions 94
+  and 96 passing the version test, 97 refused (7) and 91 sent to the legacy reader ([save/0001 § Plan 0038 batch H1a](../findings/save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load), run:2026-10-27-sweep-d2s-load).
+- `[I]` **The character screen lists a file only if `0x0043C8A0` accepts it**: at least 8 bytes, the `magic`, and
+  either a `version` 71..91 with at least `0x82` bytes or a `version` 92..96 with at least `0x14F` bytes. The list
+  entry takes `class` (`0x028`), `level` (`0x02B`), `status` (`0x024`) and the appearance bytes (`0x088`, `0x098`)
+  from the file and the name from the **file name**; the checksum, `file_size` and the header name are not tested
+  there (the server's reader tests them). So a save of version 97 or above, or below 71, never appears on the
+  screen. (fn:sub_0043C8A0_CharListReadInfo@0x0043C8A0 0x0043C93E–0x0043C9C4,
+  fn:sub_00438F70_CharListBuild@0x00438F70, [save/0001 § Plan 0038 batch H1a](../findings/save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load))
 - `[C]` The character-select screen does not check the checksum: it showed the level byte of the
   corrupted `smpsor` (2), and only entering the game failed. The checksum routine's four callers are the writer,
   the server reader and two client stub writers; the select-screen readers of `"%s%s.d2s"` are not among them.
@@ -125,7 +134,7 @@ The writer `memset`s the 0x14F-byte image, so every byte it does not set is 0.
 | offset | size | type | name | observed | tag |
 |---|---|---|---|---|---|
 | `0x000` | 4 | u32 | `magic` | `0xAA55AA55` | `[C]` |
-| `0x004` | 4 | u32 | `version` | 96 | `[C]`; the reader accepts 92..96 `[I]` |
+| `0x004` | 4 | u32 | `version` | 96 | `[C]`; the reader accepts 92..96 `[I]` (94, 96 loaded and 97 refused `[C]`, H1a); < 92 goes to the legacy reader `[C]` ([§ Versions 92..95](#versions-9295), [§ Legacy versions](#legacy-versions-7191)) |
 | `0x008` | 4 | u32 | `file_size` | file size | `[C]` |
 | `0x00C` | 4 | u32 | `checksum` | above | `[C]` |
 | `0x010` | 4 | u32 | `weapon_set` | 0 | layout `[C]`; bit 0 = the swap weapon set is active (client `+0x45C`), read back `[I]` |
@@ -134,8 +143,8 @@ The writer `memset`s the 0x14F-byte image, so every byte it does not set is 0.
 | `0x025` | 1 | u8 | `progression` | 0; 5 in the Nightmare test save (below) | layout `[C]`; value 5 `[C]` by load test; the difficulty gate `[I]` (below) |
 | `0x026` | 2 | u16 | `unk_26` | 0 | `[I]` the high half of a u32 written at `0x024` from the zero-extended u16 status word: always 0 |
 | `0x028` | 1 | u8 | `class` | 0..6 | `[C]` (below); the reader maps > 7 to 4 `[I]` |
-| `0x029` | 1 | u8 | `stat_slots` | 16 in every save, stubs too | `[C]` constant 16 (run); read only by the old (version ≤ 94) stat reader as its stat count `[I]` |
-| `0x02A` | 1 | u8 | `skill_count` | 30 in every save, stubs too | `[C]` written from the skills-per-class count (run); the number of `if` bytes the reader takes `[I]` |
+| `0x029` | 1 | u8 | `stat_slots` | 16 in every save, stubs too | `[C]` constant 16 (run); read only by the old (version ≤ 94) stat reader as its stat count `[C]` (H1a `v94s12`, `slots8`; [§ Versions 92..95](#versions-9295)) |
+| `0x02A` | 1 | u8 | `skill_count` | 30 in every save, stubs too | `[C]` written from the skills-per-class count (run); the number of `if` bytes the reader takes `[C]` (H1a `skills29`, [§ Skills](#skills-if)) |
 | `0x02B` | 1 | u8 | `level` | 1 | `[C]` written from stat 12, never read (below) |
 | `0x02C` | 4 | u32 | `unk_2c` | 0 in full saves; equals `last_played` in stubs | `[C]` a pass-through: read into client `+0x488` and written back from it (run) |
 | `0x030` | 4 | u32 | `last_played` | Unix time of the save | `[C]` `time(NULL)` at the save (run); not read `[I]` |
@@ -354,6 +363,10 @@ calls `SetStat` for each entry in file order and fails the load (code 18) on an 
 
 - `[C]` `if`, then 30 bytes: one skill level per class skill, in the class's skill order. All zero at
   level 1.
+- `[C]` The reader takes header `0x2A` bytes, not 30: H1a's `skills29` (`0x2A` = 29, the last skill byte removed)
+  loaded with the item list's cursor 2 + 29 bytes after the skills', and the game wrote 30 bytes back (the 29 read
+  and a 0); a reader taking 30 would have read the list's `J` as a skill. (fn:D2S_ReadSkills@0x0056A710
+  0x0056A7C3–0x0056A7D0, [save/0001 § Plan 0038 batch H1a](../findings/save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load))
 - `[I]` Each byte is the unit's base level of the *i*-th skill of the class's skill list; the reader takes header
   `0x2A` bytes and sets each non-zero one. That the class list is the class's 30 rows of `skills.txt` in file order
   is not shown by the save code `[L]`. ([save/0001](../findings/save/0001-d2s-io.md) § 5)
@@ -423,9 +436,18 @@ common-part field with the logged runtime item over 8 writes and 5 loads (no soc
   gems, and the socketed runes. The earlier reading (a 3-bit `n_filled` = 0, one padding bit) gave the same length,
   so the data could not separate the two.
 - `[C]` A simple item loads with seed 0, ilvl 1 and quality 2 (normal). (run, 5 simple items per load)
-- `[I]` Ears (`flags` bit 16) replace `code` with class (3 bits), level (7) and a name of 7 bits per character
-  including the terminating 0. The parser reads them that way; no sample has one.
-  ([save/0001](../findings/save/0001-d2s-io.md) § 7)
+- `[C]` **Ears** (`flags` bit 16) take the simple form (the shipped `ear` record has `compactsave` 1) and replace
+  `code` with class (3 bits), level (7) and a name of 7 bits per character including the terminating 0: H1a's tool-built
+  ear (flags bits 4, 16, 21, 23; class 3, level 42, `earname`) was read into item data `+0x28`, `+0x48`, `+0x4A`, the
+  next record started where it ended, and the game wrote the same bytes back. No sample has one.
+  (0x0062B1D3–0x0062B277, 0x0062AEE9–0x0062AEF1, [save/0001 § Plan 0038 batch H1a](../findings/save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load))
+- `[I]` **After the ear's name comes the realm bit**, as after any simple item: `ITEMS_WriteCompact` goes on from
+  the name to the realm field (0x0062B277 → 0x0062B2E2 → 0x0062B341; [§ Realm data](#realm-data)). It changes an
+  ear's length only when the name ends on a byte boundary: 93 + 7·*n* bits for a name of *n* characters in the
+  stored or equipped common part, so *n* = 5 or 13. H1a's 7-character name does not separate the two readings,
+  and whether the reader takes the bit for an ear is asked of the reverser
+  ([backlog](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md) (e)).
+  `d2s.py` ends an ear at its name by default and reads and writes the bit in its extended form.
 
 #### Flags
 
@@ -436,13 +458,13 @@ Bit *k* of `flags` is item bit 16 + *k*:
 | 4 | identified | 1 in all 228 | layout `[C]` |
 | 11 | socketed | 3 items, exactly the ones with sockets | `[C]` |
 | 13 | `new` | 1 in 213, 0 in 15 (items that were loaded and saved again, among others) | layout `[C]`; cleared on every item loaded from a save `[C]` (run); what clears it between a drop's creation and its save is open |
-| 16 | ear | 0 | `[I]` |
+| 16 | ear | 0 | `[C]`: H1a's tool-built ear read as one ([§ Common part](#common-part)) |
 | 17 | starter | 1 on every CharStats starting item, 0 on cube outputs | `[C]` |
 | 19 | — | 0 | `[C]` cleared by the writer on every item (run) |
 | 21 | simple | 1 on the 14-byte items | `[C]`; set by the writer from the item record's `compactsave` `[I]` |
 | 22 | ethereal | 3 items (eth long sword, eth buckler, runeword sword) | `[C]` |
 | 23 | — | 1 in all 228 | `[C]` forced to 1 by the writer on every item (run) |
-| 24 | personalized | 0 | `[I]` |
+| 24 | personalized | 0 | `[C]`: H1a's personalized cap (`Hoarder`, 7 bits per character with its 0) read into item data `+0x4A` and written back to the byte (0x0062D288–0x0062D2A7, [save/0001 § Plan 0038 batch H1a](../findings/save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load) row 90) |
 | 25 | — | 0 | `[I]` stripped by the reader |
 | 26 | runeword | 1 on the *Steel* sword only | `[C]` |
 
@@ -525,7 +547,7 @@ Then, in order, each only when it applies ([save/0001](../findings/save/0001-d2s
 |---|---|---|---|---|
 | `runeword` | 16 | flags bit 26 | `0x509F` for *Steel* (Runes.txt row 18, `Runeword134`), read earlier as (159, 5) in 12 + 4 bits | layout `[C]`; one u16, the `Runes` record's `+0x82` `[I]` |
 | ear / `pname` | 7 bits per char, 0-terminated | flags bit 24 (bit 16: the ear fields) | — | `[I]` |
-| `realm` | 1 (+96) | always | 0; the parser stops on 1 | layout `[C]`; when 1, three u32 follow (the last 0) `[I]` |
+| `realm` | 1 (+64 or +96) | always | 0 in the samples | layout `[C]`; when 1, two u32 and, above version 93, a third ([§ Realm data](#realm-data)) `[C]` |
 | `defense` | `Save Bits`[31] = 11, minus `Save Add` 10 | armor (code in `armor.txt`) | 3..10, within the base ranges | `[C]`; stat 31 for item type 50 `[I]` |
 | `maxdur` | `Save Bits`[73] = 8 | armor and weapons | 2..48, the base durability | `[C]`; stat 73 `[I]` |
 | `dur` | `Save Bits`[72] = 9 | if `maxdur` > 0 | current durability; equal to `maxdur` except on 6 cube-made items | `[C]`; stat 72 `[I]` |
@@ -583,11 +605,96 @@ repeat:
   reader also sets stat 326 (`poison_count`) = 1, which is never written. ([save/0001](../findings/save/0001-d2s-io.md) § 7)
 - `[I]` A save of version < 93 is read with `1.09-Save Bits` (`+0x1A`) and `1.09-Save Add` (`+0x20`) and per-id
   width overrides; version 96 files never take that path. ([save/0001](../findings/save/0001-d2s-io.md) § 7)
+  Which ids the overrides change is not in the findings ([§ Versions 92..95](#versions-9295)).
 - `[C]` The `Save Bits`, `Save Add` and `Save Param Bits` columns of `itemstatcost.txt` decode every
   item property list in the samples. [run:2026-10-11-d2s-samples]
 - `[C]` The stock `itemstatcost.bin` holds the same values: `excel_bin.py diff … itemstatcost` reports 0
   mismatches over 359 records for `Save Bits` (u8 `+0x019`), `Save Add` (s32 `+0x01C`) and
   `Save Param Bits` (u32 `+0x024`). So the `-txt` item samples and a stock game use the same widths.
+
+### Realm data
+
+The realm field closes every item record that is not an ear in the default reading: after the simple-item fields
+(gold, stat 356) or after `pname` in an extended item ([§ Extended items](#extended-items-simple--0)), and after an
+ear's name ([§ Common part](#common-part)).
+
+| bits | name | meaning | tag |
+|---|---|---|---|
+| 1 | `realm` | 1 = realm data follows | `[C]` |
+| 32 | `realm_1` | read into item data `+0x1C` | `[C]` |
+| 32 | `realm_2` | read into item data `+0x20` | `[C]` |
+| 32 | `realm_3` | only for a save version above 93: read and dropped; written as 0 | `[C]` for version 96; the version test `[I]` |
+
+- `[C]` H1a's `items` case put the realm bit and `0x11223344`, `0x55667788`, `0x99AABBCC` on a magic pair of gloves
+  (version 96): the reader stored the first two at item data `+0x1C`/`+0x20`, dropped the third, and the game wrote
+  1, the pair and 0; the other 14 records came back unchanged. `d2s.py`'s extended reader reads the game-written file
+  as `[0x11223344, 0x55667788, 0]` and re-encodes all 15 records byte for byte. (0x0062D2AF–0x0062D2EA,
+  0x0062B36E–0x0062B387, fn:ITEMS_WriteFull@0x0062FFF0, [save/0001 § Plan 0038 batch H1a](../findings/save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load))
+- `[I]` The third word is read only for a version above 93 (0x0062D2D3–0x0062D2DF), so a version-93 file carries
+  two words. The writer sets the bit and writes the data only when item data `+0x20` is non-zero; otherwise it
+  writes the bit 0 (0x0062B341–0x0062B387; the reverser's H1a entry, [archivist backlog](../backlog/2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md) (1)).
+- No sample holds realm data, and no run has had a realm game ([save/0001 § Plan 0038 batch H1b](../findings/save/0001-d2s-io.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play) row 83).
+  `d2s.py` refuses a realm bit of 1 by default and reads it in its extended form.
+
+## Versions 92..95
+
+`D2S_ReadSave` sends a version below 92 to the legacy reader ([§ Legacy versions](#legacy-versions-7191)) and
+`D2S_ReadHeader` accepts 92..96 (`cmp eax, 0x5B; jbe` at 0x0056A117, after 0x00534364); the character screen lists
+92..96 ([§ Checksum](#checksum)). The layout is the version-96 one except where the reader tests the version. The
+tests the findings name are below; the findings name no other, and whether that list is complete is asked of the
+reverser ([backlog](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md) (c)). `[I]` (fn:D2S_ReadSave@0x00534330, fn:D2S_ReadHeader@0x0056A090)
+
+| versions | what changes | tag | source |
+|---|---|---|---|
+| ≤ 94 | the stats in the old form (below), `0x029` its count | `[C]` (94) | fn:D2S_ReadStats@0x0056A620, H1a `v94`, `v94s12` |
+| ≤ 95 | current durability (stat 72) in 8 bits, not its `Save Bits` (9) | `[C]` (94) | 0x0062D425–0x0062D433, 0x0062D759–0x0062D764, H1a `v94` |
+| ≤ 93 | two realm words, not three ([§ Realm data](#realm-data)) | `[I]` | 0x0062D2D3–0x0062D2DF |
+| ≥ 93 | a set id looked up with `SETITEMS_GetRecord`; no record drops the item | `[I]`; the drop `[C]` (96) | 0x0062D11C–0x0062D1A1, H1a `setbad` |
+| < 93 | item properties in `1.09-Save Bits` / `1.09-Save Add`, with per-id width overrides | `[I]` | 0x0062D9AE–0x0062E1A9 |
+| ≤ 92 | an item code `nec ` read as `neg ` | `[I]` | [save/0001](../findings/save/0001-d2s-io.md) § 8 |
+
+- `[C]` **The old stat form** (H1a `v94`, `v94s12`): `gf`, a bitmask whose bit *i* stands for stat *i*, *i* <
+  `0x029`, then one u32 per set bit in id order, holding the value as the bit form does (life, mana and stamina with
+  their 8 fraction bits). The reader sets every stat below `0x029`, to the u32 or to 0 for a clear bit, and none at or
+  above it (`v94s12`, `0x029` = 12: stat 12 not set, written back with no level). The mask took 2 bytes for
+  `0x029` = 16 and 12, and `if` followed the last u32 (the skills' cursor 2 + 2 + 4 × 11 bytes after the stats'). The
+  game wrote both back as version 96 in the bit form. Whether the mask is ⌈`0x029`/8⌉ bytes or always 2 is open
+  ([backlog](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md) (d)). (fn:D2S_ReadStats@0x0056A620 0x0056A627–0x0056A640, [save/0001 § Plan 0038 batch H1a](../findings/save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load))
+- `[I]` **The version tested for stat 72 is the save's.** The H1a `v94` items keep their item `version` field 101
+  (above 95) and were still read with an 8-bit current durability: the three values (7, 8, 20) came back in the
+  write. ([save/0001](../findings/save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load) row 68)
+- **Version 92 is not documented here**: its property lists need the per-id width overrides, which the findings do
+  not list (which ids, which widths, whether the fixed fields take the 1.09 columns, what a set item does below
+  93). `d2s.py` refuses it ([backlog](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md) (b)). The `1.09-Save Bits` and `1.09-Save Add` columns themselves are
+  `ItemStatCost` record `+0x1A` and `+0x20` ([save/0001](../findings/save/0001-d2s-io.md) § 7).
+
+## Legacy versions (71..91)
+
+- `[C]` A version below 92 goes to `sub_00534020_ReadSaveLegacy`: H1a's `v91` (a version-96 body labelled 91) was
+  sent there (0x00534364 → 0x0053437B) and refused with 14 before `D2S_ReadHeader` ran. ([save/0001 § Plan 0038 batch H1a](../findings/save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load))
+- `[I]` The character screen lists a version 71..91 file of at least `0x82` bytes ([§ Checksum](#checksum)).
+- `[I]` What the findings say of the legacy reader's parts, none of which is a byte layout:
+  - It makes the character through `sub_00532590_NewCharLegacy`, the steps of a new character
+    ([player/0001](../findings/player/0001-creation.md), 0x00532590, 0x00534098).
+  - `sub_00533C70_ReadMercOldSave` reads the mercenary; below version 90 it converts the experience
+    (`sub_00533BF0_MercExpFromOldSave`); a version-71 save has no hireling Id and the mercenary gets `0xFFFF`
+    ([hirelings/0001 § 7](../findings/hirelings/0001-hirelings.md#7-the-mercenary-from-a-save)).
+  - `sub_005337F0_ItemListReadByVersion` sends an item list of version `0x47` (71) to
+    `sub_00533350_ItemListReadV71` and versions `0x48`–`0x60` to `ITEMS_ReadInventoryList`
+    ([rng/0002](../findings/rng/0002-seed-tree.md#which-item-creations-pass-seeds-0x480x4c)).
+  - A version-`0x47` item record whose flags have neither `0x100000` nor the ear bit `0x10000` names its item by a
+    signed 10-bit index among the version-0 item rows, mapped through the classic item index map (an index < 0 or no
+    record gives index −1 and code 0) ([data/0001](../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17)).
+    The items it creates go through `sub_00530F40_ItemCreateFromOldRec`, which sets the restore flag and keeps the
+    stored seeds ([items/0004](../findings/items/0004-uniques-sets.md)).
+- **Not documented, and needed for a layout or a builder**: the header length and the offset and width of each
+  field the legacy reader reads; whether it tests the checksum and `file_size`; the sections, their order and
+  framing; the stat and skill forms; the mercenary fields; the version-`0x47` item record around its 10-bit index;
+  how the item list's version is chosen; and which of 71..91 the reader accepts and with which code it refuses the
+  rest. The section readers are named (0x00532690, 0x00532BE0..0x00532DA0, 0x005337F0, 0x005339A0, 0x00533C70,
+  0x00533F70) but not read. The static reading is asked of the reverser ([backlog](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md) (a)). Until it
+  lands, `d2s.py` builds no legacy save, and the H1a legacy rows stay shortfalls: the findings show neither the
+  reader accepting a legacy layout nor refusing every one (plan 0038 `lane/h1a` review, ruling 5).
 
 ## Experiments
 
@@ -1127,6 +1234,35 @@ is the header act byte in all three. Four are other recipes under another name: 
   | `mp-pvp-host` | `83ad704dc3e1fa4d3cc70b72bae558199852deca35f8de2171cd635217d66875` |
   | `mp-pvp-join` | `9dbb422b092dbcb6bbcce54b906b7c8a3f3cae6e49acad884fea351da71d8998` |
 
+### Extension keys: versions 93..95, the counts, realm data
+
+Backlog 2026-10-27 (the plan 0038 H1a gaps; `python3 -I tools/test_d2s.py`, `ExtendedTest`). All are off unless a
+recipe gives them; without them `build`, `parse` and `encode_item` read and write exactly as before (the 259
+recipes of `RECIPE_BASES` rebuild with the same sha256 before and after the change, and `tools/sweep_h1a.py check`
+on the five H1a logs prints its kept output byte for byte). They make test states, never what a 1.14d game writes:
+the game writes version 96, `0x029` = 16, `0x02A` = 30 and no realm data.
+
+- `save_version` 93..96 writes header `0x004` and the layout of [§ Versions 92..95](#versions-9295): the old stat
+  form for ≤ 94 (`stat_slots` 9..16 only, a 2-byte mask; a stat at or above `0x029`, or not a u32, refused), stat 72
+  in 8 bits for ≤ 95 (a current durability above 255 is refused), two realm words for 93. 92 and anything below are
+  refused, the layouts not being documented. For a version other than 96 a base save with corpse, golem or
+  mercenary items is refused, since the bytes after the main list are copied from the base in the version-96 widths
+  (a recipe `merc` replaces the mercenary list and writes it in the version's widths).
+- `stat_slots` writes `0x029`; `skill_count` writes `0x02A` and that many skill bytes (padded with 0; a non-zero
+  byte that would be cut off is refused).
+- The item key `"realm": [w1, w2]` or `[w1, w2, w3]` sets the realm bit and writes the words ([§ Realm data](#realm-data));
+  the count must fit the save version (three above 93; the game writes the third as 0).
+- In the extended form (any of these keys, or `parse(…, extended=True)`, `encode_item(…, ver)`) an ear's realm bit
+  is read and written after its name ([§ Common part](#common-part)); the default form ends the ear at its name, as
+  before. The two differ for a 5- or 13-character name only.
+- `[C]` `build` with these keys reproduces three of the H1a run's inputs byte for byte (built by
+  `tools/h1a_saves.py`, loaded by the game in run:2026-10-27-sweep-d2s-load): `v94` (`save_version` 94 on `qitsor`
+  with its stats and items kept), `v94s12` (the same with `stat_slots` 12 and stats 0..11) and `skills29`
+  (`skill_count` 29, the skills Fire Bolt and Frozen Orb, header name `QITSOR`). The extended reader reads those and
+  the `items` case (realm data, an ear) to their last byte and re-encodes every item record unchanged.
+- Not buildable: version 92 and the legacy versions ([§ Legacy versions](#legacy-versions-7191)); both wait on the
+  reverser ([backlog](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md) (a), (b)).
+
 ## Sample hashes
 
 sha256 of the files in `workspace/samples/`:
@@ -1181,6 +1317,12 @@ What the save code leaves open after [save/0001](../findings/save/0001-d2s-io.md
 | corpse first u32 | corpse record | no sample |
 
 ## Open questions
+
+- `[L]` The legacy layouts (versions 71..91), the version-92 property overrides, whether the version tests listed in
+  [§ Versions 92..95](#versions-9295) are all of them, the old stat form's mask width outside `0x029` = 12 and 16,
+  and whether the reader takes an ear's realm bit: asked of the reverser,
+  [backlog](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md). (H1a's tool-built ear, personalized cap and realm data have since been read by the game:
+  [§ Common part](#common-part), [§ Realm data](#realm-data).)
 
 - `[L]` Branches no sample exercises (the save code reads them, tagged `[I]` above, but no file shows them): ears,
   personalized names, class-specific affixes, realm data, mercenary and golem items, corpses,

@@ -4441,3 +4441,26 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     12 min); the review row added, usage "—".
   - **Next:** merge `lane/sk`.
 - **2026-10-27 — `lane/a3r` review (architect): accept.** The `tools/` diff is the one `h3brare` `RECIPE_BASES` row; a scratch rebuild of `h3brare.json` (`52aa64e8…`) on `smpsor-l50.d2s` gives `ce57d8f7…6317`, the H3b record's save hash (data/experiments); `test_d2s.py` 47 tests OK; the [review request](../backlog/archive/2026-10-27-archivist-architect-review-lane-a3r-test-d2s-h3brare-row.md) closed; ledger lane row filled (usage from the orchestrator), review row usage "—".
+- **2026-10-27 — `lane/a71` (archivist, no slot, no Ghidra, no harness, from `main` `44cfbcb5`): the H1a parser gaps.**
+  Work of the [H1a archivist entry](../backlog/2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md).
+  - **Built** (`tools/d2s.py`, every change off by default): an extended reader and writer (`parse(…, extended=True)`,
+    `encode_item(…, ver)`) and the build keys `save_version` 93..96, `stat_slots`, `skill_count` and the item key
+    `realm`: the old stat form for ≤ 94, stat 72 in 8 bits for ≤ 95, header `0x2A` skill bytes, realm data (two
+    words, three above 93) and an ear's realm bit after its name. Version 92 and the legacy versions are refused.
+    `tools/test_d2s.py` `ExtendedTest`: 8 tests; the file runs 55 tests OK.
+  - **Proof of byte identity:** the 259 `RECIPE_BASES` recipes rebuilt into the scratchpad before and after give the
+    same sha256; `d2s.py roundtrip` on the 18 sample and owner saves stays 205 items, 0 diffs; `sweep_h1a.py check` on
+    the five H1a logs prints its kept output byte for byte.
+  - **Against the run:** `build` with the new keys reproduces the H1a inputs `v94`, `v94s12` and `skills29` byte for
+    byte, and the extended reader reads `items` and all 16 game-written H1a saves to their last byte, re-encoding
+    every item unchanged (the written realm words `[0x11223344, 0x55667788, 0]`).
+  - **Documented** ([d2s.md](../formats/d2s.md)): § Realm data, § Versions 92..95 (the version tests the findings
+    name, the old stat form `[C]`), § Legacy versions (71..91) (what the findings give, and the list of what they do
+    not), the character-screen list rule, and the H1a `[C]`s for `0x029`, `0x02A`, ears, personalized names.
+  - **Not done:** the version 71/87 layouts and a legacy builder, version 92's property overrides, the completeness of
+    the version-test list, the old-form mask width outside `0x029` = 12, 16, and the reader side of the ear's realm
+    bit: reverser entry [2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md).
+    So the legacy rows (hirelings 3, 30, 33; player-creation 1; items-uniques-sets 21) and save-d2s 126 stay
+    shortfalls under ruling 5. The H1a entry is annotated and stays open for the legacy builder.
+  - **Backlog:** review request [2026-10-27-archivist-architect-review-lane-a71-d2s-versions-93-95-realm](../backlog/2026-10-27-archivist-architect-review-lane-a71-d2s-versions-93-95-realm.md). Ledger row added, usage "—".
+  - **Next:** the `lane/a71` review.

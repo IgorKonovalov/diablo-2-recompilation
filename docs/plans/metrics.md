@@ -344,6 +344,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/sk` review | backlog: dispatch I4 Kick start hit | architect-review | 78 071 | 21 | 5 | — (static, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
 | 2026-10-27 | `lane/a3r` | backlog: `test_d2s.py` `h3brare` recipe base (0038 `lane/h6e2` review) | archivist | 58 999 | 14 | 5 | — (static, two scratch builds, no Ghidra, no harness) | accept (the one row; rebuild matches the H3b record's `ce57d8f7…`; 47 tests OK) | 0 |
 | 2026-10-27 | `lane/a3r` review | backlog: `test_d2s.py` `h3brare` row | architect-review | 52 059 | 17 | 3 | — (static, one scratch build, no Ghidra, no harness) | gave accept | — (on the lane row) |
+| 2026-10-27 | `lane/a71` | backlog: the H1a d2s parser gaps (0038 H1a) | archivist | — | — | — | — (static, scratch builds, no Ghidra, no harness) | | |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
