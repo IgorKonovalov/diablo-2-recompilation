@@ -41,6 +41,9 @@ SAVES = {
     "SkillsBar": ("skills-bar", "smpbar"),
     "SkillsPal": ("skills-pal", "smppal"),
     "SkillsAss": ("skills-ass", "smpasn"),
+    # plan 0045 Phase 2 part 2
+    "SkillsBarH": ("skills-barh", "smpbar"),
+    "SkillsSorLow": ("skills-sorlow", "smpsor"),
 }
 
 
@@ -108,6 +111,50 @@ for k, f in enumerate(FIELDS[:2]):
 for k, f in enumerate(FIELDS[:2]):
     SESSIONS["ass-%d" % (k + 1)] = ("SkillsAss", "enter-normal", 4591 + k,
                                     [wp(f), ("pilot", cast_explore(["F1", "F1", "F1", "F2", "F3"], 50, walk=True), 700)])
+
+
+# --- plan 0045 Phase 2 part 2 (lane/p45k): refusals, the short rows, Kick / Left Hand Throw / Left Hand Swing, the
+# handlers, a walking Blaze (C4), the quill-rat areas (C2). "cast" presses each key and right-clicks beside the player.
+TOWN = ("cast", ["F1", "F3", "F4", "F2"] * 5, 0.5)            # in the Rogue Encampment: the InTown refusals
+SESSIONS["dev-barh"] = ("SkillsBarH", "enter-normal", 4600,
+                        [wp("1,2"), ("pilot", cast_explore(["F1", "F2", "F3", "F4", "F5"], 6, walk=True), 200)],
+                        {"SKILLS_WIN": "4"})
+SESSIONS["dev-barh2"] = ("SkillsBarH", "enter-normal", 4605,
+                         [wp("1,2"), ("cast", ["F2", "F3", "F4"] * 4, 0.8),
+                          ("pilot", cast_explore(["F2", "F3", "F4"], 15, walk=True), 300)], {"SKILLS_WIN": "4"})
+SESSIONS["ref-sor-1"] = ("SkillsSor", "enter-normal", 4601,
+                         [TOWN, wp("1,2"), ("cast", ["F5"] * 40, 0.25), ("cast", ["F3"] * 20, 0.4),
+                          ("pilot", cast_explore(["F3", "F5", "F1", "F3"], 30), 500)])
+SESSIONS["ref-sor-2"] = ("SkillsSor", "enter-normal", 4602,
+                         [TOWN, wp("1,3"), ("cast", ["F5"] * 40, 0.25), ("cast", ["F3"] * 20, 0.4),
+                          ("pilot", cast_explore(["F3", "F5", "F3", "F1"], 30), 500)])
+SESSIONS["ref-low-1"] = ("SkillsSorLow", "enter-normal", 4603,
+                         [TOWN, wp("1,2"), ("cast", ["F1"] * 40, 0.3), ("cast", ["F4"] * 30, 0.3),
+                          ("cast", ["F5"] * 30, 0.3)])
+SESSIONS["ref-low-2"] = ("SkillsSorLow", "enter-normal", 4604,
+                         [wp("1,3"), ("cast", ["F5"] * 40, 0.3), ("cast", ["F2"] * 30, 0.3), ("cast", ["F1"] * 30, 0.3)])
+for k in (1, 2, 3):
+    SESSIONS["barh-%d" % k] = ("SkillsBarH", "enter-normal", 4610 + k,
+                               [wp(FIELDS[k - 1]), ("pilot", cast_explore(["F1", "F2", "F3", "F4", "F4", "F5", "F2",
+                                                                            "F3", "F4", "F4"], 50, walk=True), 700)])
+SESSIONS["amaj-3"] = ("SkillsAmaJ", "enter-normal", 4621, [wp("1,4"), ("pilot", cast_explore(["F2", "F1", "F2", "F3"], 50,
+                                                                                            walk=True), 700)])
+SESSIONS["nec-3"] = ("SkillsNec", "enter-normal", 4622,
+                     [wp("1,3"), ("pilot", ["corpse", "--walk", "--nova-key", "F1", "--find-key", "F2", "--corpse-r", "12",
+                                            "--corpse-tries", "2", "--corpse-max", "60", "--radius", "10", "--time",
+                                            "420", "--chase", "30"], 480),
+                      ("pilot", cast_explore(["F3", "F4", "F3", "F1"], 30, walk=True), 500)])
+SESSIONS["ass-3"] = ("SkillsAss", "enter-normal", 4623, [wp("1,4"), ("pilot", cast_explore(["F3", "F3", "F1", "F2"], 50,
+                                                                                           walk=True), 700)])
+SESSIONS["pal-3"] = ("SkillsPal", "enter-normal", 4624, [wp("1,3"), ("cast", ["F2"] * 25, 1.0),
+                                                         ("pilot", cast_explore(["F2", "F1"], 40, walk=True), 600)])
+# the walking Blaze (C4): Blaze (F6) cast at the nearest monster, the Sorceress walking (no Teleport)
+SESSIONS["blaze-1"] = ("SkillsSor", "enter-normal", 4625, [wp("1,2"), ("pilot", cast_explore(["F6", "F6", "F1"], 50,
+                                                                                            walk=True), 700)])
+# the quill-rat areas (C2): Dark Wood and Black Marsh, Normal and Nightmare
+SESSIONS["spike-1"] = ("SkillsSor", "enter-nightmare", 4626, [wp("1,4"), ("pilot", cast_explore(SOR_KEYS, 50), 700)])
+SESSIONS["spike-2"] = ("SkillsSor", "enter-nightmare", 4627, [wp("1,5"), ("pilot", cast_explore(SOR_KEYS, 50), 700)])
+SESSIONS["spike-3"] = ("SkillsSor", "enter-normal", 4628, [wp("1,4"), ("pilot", cast_explore(SOR_KEYS, 50), 700)])
 
 
 def sh(args, timeout=None, log=None):

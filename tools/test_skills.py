@@ -194,5 +194,84 @@ class Model(unittest.TestCase):
         self.assertEqual(self.run_lines(lines(363, 20, skills.sd_fmt(s0))).bad["SDO.seed"], 1)
 
 
+    # ---- part 2 (lane/p45k): MonAttackStats, the handlers, SKILLS_CanUse, the summon's seed
+    def test_mas(self):
+        # a class with an El1 attack in some mode at a chance below 100 (Normal): one RNG_Range(100) on the unit seed;
+        # the stats written are 21, 22, 19 and, when the roll is below the chance, El1's type stats
+        T = self.T
+        cls = next(c for c in range(len(T.ms)) if T.ms[c][0xFE] and 0 < T.ms[c][0x104] < 100 and
+                   T.ms[c][0x101] not in (0, 10) and not T.ms[c][0x0C] & 4 and
+                   struct.unpack_from("<H", T.ms[c], 0xA8)[0] == 0xFFFF)
+        mode = T.ms[cls][0xFE]
+        C0 = skills.Checker(T)
+        s0 = (0x1000, 0x29A)
+        w, t, draws, notes = C0.mas_model(cls, 10, 0, 1, mode, s0)
+        self.assertEqual((draws, t), (1, skills.step(s0)))
+
+        def lines(st1, seed1):
+            u = {"u": 5, "t": 1, "c": cls, "id": 3, "m": 1, "s": skills.sd_fmt(s0), "st": {"12": 10}}
+            return [("MAS0", {"mode": mode, "u": u, "fr": 1, "diff": 0, "g": [3, 0, 1, 0], "n": 1}),
+                    ("MAS1", {"k": 1, "s": seed1, "st": st1, "n": 2})]
+        st1 = {"12": 10}
+        st1.update({str(k): v for k, v in w.items() if v})
+        C = self.run_lines(lines(st1, skills.sd_fmt(t)))
+        self.assertEqual((C.ok["MAS.seed"], C.ok["MAS.stats"], sum(C.bad.values())), (1, 1, 0))
+        self.assertEqual(self.run_lines(lines(st1, skills.sd_fmt(s0))).bad["MAS.seed"], 1)
+        st_bad = dict(st1)
+        st_bad["21"] = st_bad.get("21", 0) + 1
+        self.assertEqual(self.run_lines(lines(st_bad, skills.sd_fmt(t))).bad["MAS.stats"], 1)
+
+    def test_handler(self):
+        # open wounds (0x005BFE60): one draw on the handler's unit; mana after kill (0x005C0130): none, mana += v << 8
+        s0 = (0x2000, 0x29A)
+
+        def ev(fn, sv, after, st0=None, st1=None, e=5):
+            return [("EVH", {"fn": fn, "e": e, "u": {"u": 1, "t": 0, "c": 4, "id": 1, "m": 1, "s": skills.sd_fmt(s0),
+                                                    "st": st0 or {}}, "o": 2, "par": 135 << 16, "so": "0:0",
+                             "sv": sv, "ot": {"u": 2, "t": 1, "c": 5, "id": 9}, "n": 1}),
+                    ("EVR", {"k": 1, "r": 0, "su": after, "so": "0:0", "st": st1 or {}, "n": 2})]
+        one = skills.sd_fmt(skills.step(s0))
+        self.assertEqual(self.run_lines(ev(0x005BFE60, 0, skills.sd_fmt(s0))).ok["EVH.seed"], 1)  # stat 0: no draw
+        C = self.run_lines(ev(0x005BFE60, 50, one))
+        self.assertEqual((C.ok["EVH.seed"], C.bad["EVH.seed"]), (1, 0))
+        self.assertEqual(self.run_lines(ev(0x005BFE60, 50, skills.sd_fmt(s0))).bad["EVH.seed"], 1)
+        st0, st1 = {"8": 1000, "9": 5000}, {"8": 1000 + (6 << 8), "9": 5000}
+        C = self.run_lines(ev(0x005C0130, 6, skills.sd_fmt(s0), st0, st1, e=9))
+        self.assertEqual((C.ok["EVH.seed"], C.ok["EVH.mana"], sum(C.bad.values())), (1, 1, 0))
+        self.assertEqual(self.run_lines(ev(0x005C0130, 6, skills.sd_fmt(s0), st0, st0, e=9)).bad["EVH.mana"], 1)
+
+    def test_canuse(self):
+        # Meteor (56): a cost above the mana is code 1; in a delay state (DLY at frame 100 for 30 frames) code 8
+        P = self.T.srec(56)
+        cost = (P["lvlmana"] * 4 + P["mana"]) << P["shift"]
+
+        def lines(mana, fr, r, dly=True):
+            out = [("DLY", {"u": 1, "d": 30, "fr": 100, "n": 1})] if dly else []
+            return out + [("CU0", {"u": {"u": 1, "t": 0, "c": 1, "id": 1, "m": 1, "s": "1:2", "st": {"8": mana}},
+                                   "sk": 56, "ret": 0x00549B0F, "bl": 5, "it": -1, "ch": 0, "fr": fr, "n": 2}),
+                          ("CUL", {"k": 2, "bonus": 0, "base": 5, "n": 3}),
+                          ("CU1", {"k": 2, "r": r, "s": "1:2", "n": 4})]
+        self.assertEqual(self.run_lines(lines(cost - 1, 200, 1)).ok["CU.code"], 1)
+        self.assertEqual(self.run_lines(lines(cost, 200, 0)).ok["CU.code"], 1)
+        self.assertEqual(self.run_lines(lines(cost, 120, 8)).ok["CU.code"], 1)
+        self.assertEqual(self.run_lines(lines(cost, 120, 0)).bad["CU.code"], 1)
+        self.assertEqual(self.run_lines(lines(cost, 130, 0)).ok["CU.code"], 1)
+
+    def test_summon_seed(self):
+        pre = (0x3000, 0x4000)
+        post = skills.step(pre)
+
+        def lines(s):
+            return [("SP0", {"blk": "00" * 0x28, "o": None, "fr": 1, "n": 1}),
+                    ("SU0", {"u": 7, "t": 1, "c": 419, "p": 9, "pre": skills.sd_fmt(pre), "n": 2}),
+                    ("SU1", {"u": 7, "p": 9, "post": skills.sd_fmt(post), "s": s, "u28": 0, "n": 3}),
+                    ("SP1", {"k": 1, "m": {"u": 7, "t": 1, "c": 419, "id": 4, "m": 8, "s": s, "st": {}}, "so": None,
+                             "n": 4})]
+        C = self.run_lines(lines(skills.sd_fmt((post[0], 0x29A))))
+        self.assertEqual((C.ok["SP.seed"], C.ok["SP.gameseed"], C.bad["SP.seed"]), (1, 1, 0))
+        self.assertEqual(C.bad["SP.stats"], 1)                     # SP1 carries no life: the stats check fails
+        self.assertEqual(self.run_lines(lines(skills.sd_fmt((post[0] + 1, 0x29A)))).bad["SP.seed"], 1)
+
+
 if __name__ == "__main__":
     unittest.main()

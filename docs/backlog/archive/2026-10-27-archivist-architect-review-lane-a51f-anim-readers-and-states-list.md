@@ -26,7 +26,7 @@ Points to check:
   the record name, and give the join under both (1 491 against 1 483). Objects § Timing and ObjMode § Timing keep
   their Objects-token tables.
 - A data-against-finding mismatch filed to the reverser
-  ([entry](../2026-10-27-archivist-reverser-anim0001-splgetmodechart-rows-shifted.md)): anim/0001 § 10's
+  ([entry](2026-10-27-archivist-reverser-anim0001-splgetmodechart-rows-shifted.md)): anim/0001 § 10's
   `SplGetModeChart` rows are one off above the `Expansion` marker; MonStats § Timing states the `.bin` values `[C]`
   and leaves the five branches `[L]`. The plan 0050 log asks that P1.2's *Done when* re-check § 10.
 - anim/0001's open question "the PlrType and object-type token tables have no doc" is now met; the finding is the

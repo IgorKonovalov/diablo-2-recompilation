@@ -7,7 +7,7 @@ based_on:
   - docs/specs/drlg/maze.md 2026-10-17
   - docs/specs/drlg/warps.md 2026-10-17
   - docs/specs/drlg/outdoor.md 2026-10-20
-  - docs/specs/drlg/lifecycle.md 2026-10-21
+  - docs/specs/drlg/lifecycle.md 2026-10-27
   - docs/specs/monsters/spawn.md 2026-10-27
 ---
 

@@ -161,9 +161,14 @@ RECIPE_BASES = {
     "questfreshvh": (BASE_X, "a3ef1b2071132257d0e17a5bfa82fdbd45b5c46c15f9b75ae676e05db2db150f"),  # run:2026-10-16-quest-drops
     "questdurielk": (BASE_X, "fc022ab59d845674b919c8d0220e89f27d42c0ad43af371edd627aeeb5dc0200"),  # run:2026-10-16-quest-drops
     # questrewards/questrewardsh: hammer equipped (and 356 = 2 on the H hammer) after run:2026-10-16-quest-drops;
-    # the loaded revisions (7dfe9bc2..., 4e7b9134...) are the recipes at 32a1a6e. Not yet loaded: no pin.
-    "questrewards": (BASE_X, None),
-    "questrewardsh": (BASE_X, None),
+    # the earlier loaded revisions (7dfe9bc2..., 4e7b9134...) are the recipes at 32a1a6e. These builds were loaded and
+    # saved in run:2026-10-27-sweep-d2s-play (plan 0038 H1b, sessions qr and qrh).
+    "questrewards": (BASE_X, "246515c51710408563eb63aa8a5f7ff4543cbea846a792d300733a2e3fb99f16"),  # run:2026-10-27-sweep-d2s-play
+    "questrewardsh": (BASE_X, "14c285261e43751c5fc94d54d08b5baad753185fb3cc3f8c5d27cd0b72c9e95e"),  # run:2026-10-27-sweep-d2s-play
+    "h1bsor": (BASE_X, "116d0f90d80a06104e5e42368875aad6cf7238e680caf0161016165c18dc2f00"),  # run:2026-10-27-sweep-d2s-play
+    "h1bdead": (BASE_X, "9ff431ea8d3f9b1846fe7c8bbfdab42eea1b459f2b30b861f81b61dfd100bc45"),  # run:2026-10-27-sweep-d2s-play
+    "h1bweak": (BASE_X, "3acba754d2c2a5d26b5a9b6d86b41c127800375a3dbc83cb3224000fa077ba31"),  # run:2026-10-27-sweep-d2s-play
+    "h1bhire": (BASE_X, "a1313dd0c53dbf571e2e4c65fc7442e7ca5ec4b8448023676d001e2eaf748b5e"),  # run:2026-10-27-sweep-d2s-play
     "sock-cases1": (BASE_X, "ff6866163d45c8223c5d357fbf781d31caf0378a1bb248dd3bb1829a2b2596cd"),  # run:2026-10-15-sockets
     "sock-cases2": (BASE_X, "b1a24d0b73566cf2c55644cbacf244bb15efd98c99786d8939c90dc54f9da925"),  # run:2026-10-15-sockets
     "sock-classic1": (BASE_C, "92c1c91c91212a7dfd90fc0164641bff1980b8a19594a9043b12ec80929ec021"),  # run:2026-10-15-sockets

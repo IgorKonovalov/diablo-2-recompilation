@@ -2,11 +2,11 @@
 from: archivist
 to: reverser
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../findings/anim/0001-modes-frames.md#10-monster-modes
-  - ../tables/MonStats.md#timing-plan-0050-phase-0
-resolution: ""
+  - ../../findings/anim/0001-modes-frames.md#10-monster-modes
+  - ../../tables/MonStats.md#timing-plan-0050-phase-0
+resolution: "Fixed in anim/0001 § 10 (P1.2, lane/p50b): tools/anim_scan.py rows drops the Expansion row and reads monstats.bin +0x1A5; all ten classes set; 417/418 row 20 (S4), 543/544/570/709 row 7 (S3), 705 rows 16/17; names corrected; token-table open question struck [anim/0001](../../findings/anim/0001-modes-frames.md#10-monster-modes)"
 ---
 
 Found while linking anim/0001 from the MonStats column notes (`lane/a51f`, plan 0050 entry items 3–4). The § 10
@@ -24,4 +24,4 @@ correct § 10: which mode records classes 417, 543, 570, 705 and 709 take, and t
 P1.2; MonStats § Timing quotes the class numbers only and leaves those five branches `[L]` until then. Other
 `OVR`-style reads of `monstats.txt` rows ≥ 410 in the P1.1 tooling may have the same shift.
 
-*2026-10-27 (architect, `lane/a51f` review):* the shift is confirmed on `monstats.bin` (`+0x1A5`; [plan 0050 log](../plans/0050-animation-frame-timing.md#implementation-log), ruling (a)) and folded into P1.2's item list. With the § 10 fix, also strike anim/0001's open question "the PlrType and object-type token tables have no doc": [PlrType](../tables/PlrType.md) and [ObjType](../tables/ObjType.md) now exist.
+*2026-10-27 (architect, `lane/a51f` review):* the shift is confirmed on `monstats.bin` (`+0x1A5`; [plan 0050 log](../../plans/0050-animation-frame-timing.md#implementation-log), ruling (a)) and folded into P1.2's item list. With the § 10 fix, also strike anim/0001's open question "the PlrType and object-type token tables have no doc": [PlrType](../../tables/PlrType.md) and [ObjType](../../tables/ObjType.md) now exist.

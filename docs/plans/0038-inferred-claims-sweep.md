@@ -3562,6 +3562,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     omission 1, overclaim 1, misread 1; the review row added with usage "—".
   - **Backlog:** review request and counts entry closed (archive); the wiki refresh entry annotated.
   - **Next:** merge `lane/s38n`; the wiki refresh (now with wiki/levels); objects after H6e2.
+
 - **2026-10-27 — The wiki refresh after the monsters and drlg/collision clusters (spec-writer, `lane/swk`, from
   `main` `e88e8e2`).** [wiki/monsters](../wiki/monsters.md) and [wiki/levels](../wiki/levels.md) are refreshed over the
   re-tagged monsters/pool, spawn, special and stats and drlg/collision, and
@@ -3588,11 +3589,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Rulings.** (a) **`Rarity` 0:** the page's weaker wording is right. spawn D's `[C]` covers a case no run met (no stock
     region holds a `Rarity` 0 entry; the run confirms the walk, not that outcome), so spawn D is reconciled down to pool's
     `[I]`, not pool up:
-    [entry](../backlog/2026-10-27-architect-spec-writer-spawn-d-rarity-0-tag-to-pool.md). (b) **drlg/lifecycle § I** is
+    [entry](../backlog/archive/2026-10-27-architect-spec-writer-spawn-d-rarity-0-tag-to-pool.md). (b) **drlg/lifecycle § I** is
     stale against spawn § K (the roll's draw and no-spawn branch are `[C]` on run:2026-10-21-sweep-monsters-a); it was not
     filed, so it is filed now together with spawn K1's header, which leaves the `MonWndr` ≠ 0 test under `[C]` although
     the one pass cannot separate it (the `lane/s38m` review missed this):
-    [entry](../backlog/2026-10-27-architect-spec-writer-lifecycle-i-and-spawn-k-wanderer-gate-reconcile.md). (c) The
+    [entry](../backlog/archive/2026-10-27-architect-spec-writer-lifecycle-i-and-spawn-k-wanderer-gate-reconcile.md). (c) The
     edits beyond the entry (wiki/levels' *Wanderers* paragraph and the room-lifecycle bullet citing spawn § K) are within
     rule 7 and stand, with fix (1). (d) "By the formula" (`fast`/`fanatic` at `Velocity` 8 and 9, stats G3 `[I]`) and "by
     the code" (`druidhawk`, stats F3 `[I]`; `Rarity` 0) match the specs' tags. (e) The `based_on` dates equal each spec's
@@ -3602,3 +3603,203 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     overclaim 3, other 1; the review row added with usage "—".
   - **Backlog:** review request closed (archive); two spec-writer entries filed.
   - **Next:** merge `lane/swk`; the two spec-writer entries, then a `based_on` bump on the three pages.
+- **2026-10-27 — `lane/sfx` (spec-writer): the two entries from the `lane/swk` review.**
+  - **monsters/spawn § D:** the `Rarity` 0 bullet split: the walk's stop rule stays `[C]` (run:2026-10-13-mon-spawn), "a
+    `Rarity` 0 entry is never picked" is `[I]`, read from that walk and from `raritySum` not wrapping, with pool's "no
+    stock region has one". **§ K1:** the Levels `MonWndr` ≠ 0 test (0x0054F0AA) added to the header's `[I]` list and the
+    `[I]` bullet (the pass came in a `MonWndr` 1 level; no logged tick passed the mask in a `MonWndr` 0 level); the
+    `[C]` bullet that `MonWndr` has no other reader is unchanged. Tags C 136 / I 43 / L 5 → C 136 / I 44 / L 5.
+  - **drlg/lifecycle § I:** I1's roll draw and its `mod 100` ≥ 3 return `[C]` on run:2026-10-21-sweep-monsters-a (the
+    region `+0x2C4` test split onto its own `[I]` line); the gate line's mask width marked `[I]`; the "no gate draw
+    passed" bullet replaced by a `[C]` bullet for the Chaos Sanctuary pass and an `[I]` bullet for what it does not
+    separate (mask width, `+0x78`, `MonWndr`, `+0x2C4`, the spawn). Made stale and fixed (rule 7): the Constants rows for
+    the gate and the roll, and the open question, now "the wanderer spawn was never reached". Tags C 92 / I 77 / L 8 →
+    C 96 / I 80 / L 8; `updated` 2026-10-21 → 2026-10-27.
+  - **Wiki:** `based_on` for drlg/lifecycle bumped to 2026-10-27 on wiki/levels, wiki/monsters, wiki/seed-to-world and
+    wiki/objects (which also lists it; its text has no wanderer statement); spawn was already 2026-10-27. No page text
+    changed: the pages already take the weaker tags.
+  - **Research map** (architect's): the spawn row's counts become C 136 / I 44 / L 5 and the lifecycle row's
+    C 96 / I 80 / L 8, updated 2026-10-27.
+  - **Backlog:** both entries closed (archive); review request filed.
+  - **Next:** architect review of `lane/sfx`.
+- **2026-10-27 — `lane/sfx` review (architect): accept with fixes (1).** Head `cc76e71e`; `main` merged first (already up to
+  date), `backlog.py archive` a no-op.
+  - **Checked.** The new `[C]` statements against run:2026-10-21-sweep-monsters-a: `h4a-manifest.sha256` (42 files) and
+    `check/kept-logs.sha256` (63 kept logs) pass `sha256sum -c`; session chaos7's `RTK0` at line 97549 (level 108, room
+    seed `9408b966:5d98f482`) steps to `d17d0000:3dbe6f3a`, the `WRL` seed; one more step gives `c2ef6f3a:57603f25`, low
+    mod 100 = 82, equal to the `RTK1` seed, so two room draws; `sweep-check.txt`'s `wander` line (7 184 ticks, 7 183 one
+    step, 1 roll, bad 0). objdump of 0x0054EFF0–0x0054F0C9: the roll's step, `mul 0x51EB851F; shr edx, 5; imul 0x64`
+    (unsigned mod), `cmp ecx, 3; jge` at 0x0054F02B, `cmp [eax+0x2C4], 3; jge` at 0x0054F041; the tick's `test eax,
+    0x7FFF` at 0x0054F089, `cmp [esi+0x78], 0` at 0x0054F096, `cmp byte [eax+0x2E], 0` at 0x0054F0AA. The counts match
+    the gate (spawn C 136 / I 44 / L 5; lifecycle C 96 / I 80 / L 8 before the fix). No `[L]` outside *Open questions*
+    in either spec.
+  - **Fix (1, applied):** lifecycle's Constants row *wanderer list* raised to `[C]` on the H4a operand read (objdump and
+    r2; the three readers 0x0054EF64, 0x0054EF71, 0x0054EF92 are the only instructions naming 0x00731B2C–0x00731B3B,
+    re-counted here, and the bytes `0e010000 00010000 00000000 00000000` re-read), with spawn § K's anchor. Lifecycle
+    C 96 / I 80 / L 8 → C 97 / I 79 / L 8.
+  - **Rulings.** (a) The flagged mismatch: reconciled up, not filed (fix above); spawn's `[C]` was ruled at the H4a review
+    on the S2c operand route and nothing in lifecycle's row needs more. (b) Spawn D's split and K1's `MonWndr` test move
+    match the `lane/swk` rulings. (c) The two archived entries' `#log` → `#implementation-log` stand; no other entry,
+    open or archived, nor `docs/backlog.md`, links plan 0038 at `#log`. (d) The research map's spawn and lifecycle rows
+    rewritten (counts, updated date, the `lane/sfx` clauses; lifecycle's "the wanderer roll and spawn" open now "the
+    wanderer spawn").
+  - **Ledger:** the lane row filled (verdict, fix 1: under-tag 1, usage from the orchestrator); review row added, usage
+    "—". Seen lines: spec-writer review-fixes rule 8, architect review-fixes rule 3.
+  - **Backlog:** review request closed (archive).
+  - **Next:** merge `lane/sfx`.
+
+- **2026-10-27 — H1b (`d2s-play`) rotated at about 4 h (reverser, `lane/h1b`, harness slot 1, from `main`
+  `0e3f501`).** Slot 1 is stopped and its saves directory restored (empty, no aside); no game, driver, pilot, gdb or
+  wait loop of the lane is left running. Sessions and checks are done; the write-up is not. Nothing is claimed yet: no
+  statement raised, no § 2.6 entry, no review request.
+  - **Tools** (this commit): logger `tools/gdb/d2s-h1b.py` (sha256 `8a27dc8c…`; sourced after `d2s-io.py`, unchanged,
+    and `pilot.py` by `tools/gdb/d2s-h1b.gdb`, `bcd53b34…`; `d2s-h1b-hire.gdb`, `05c0b954…`, adds the hirelings
+    loggers): who saves (`PSV2`, `SVCL`, `SVCB`, `SHUT`, `AUTO`), the join chain (`JCH`), section cursors of
+    `D2S_WriteSave`/`D2S_ReadSaveV92` (`WSEC`/`RSEC`), hotkeys (`HOTK`/`HREF`), graphics bytes (`GFX`), the
+    mercenary header write and read (`MHW0`–`MHW2`, `MHWD`, `MRX`, `M5726`), `D2S_LoadFinish` (`LFG`, `LFB`, `LFS`,
+    `LFX0`/`LFX`, `LFE`), item stats (`RIST`, `SBX`), runeword (`RWW`, `RWR`), bit 13 (`B13S`, `B13C`, `SETF`, `GOLD`,
+    `COPY`, the watchpoint `WTCH`). **Two revisions were used:** revision 1 (the committed file without `h1b_full`,
+    `h1b_wskl` and their `full`/`WSKL` lines) for sessions dead, tcpip, shut, hell-r3, hire, rw, qr, qrh; revision 2
+    (committed) for rt-r2, drop, qr-r2, qrh-r2. The checker skips the property groups where `full` is absent. Runner
+    `tools/h1b_sessions.py` (`d11afb5c…`), steps `tools/gdb/h1b-tcpip-host.steps`, checker `tools/sweep_h1b.py`
+    (`c0063a8b…`; runs `d2sio.py check` first), recipes `h1bsor`, `h1bdead`, `h1bweak`, `h1bhire` (on
+    `smpsor-l50.d2s`), pinned in `tools/test_d2s.py` with `questrewards`/`questrewardsh` (the backlog pin request).
+    `test_d2s.py` RecipeTest pins pass; `test_every_recipe_has_a_base` and `test_mp_saves_check` fail on `main` too
+    (other lanes' mp recipes), not touched here.
+  - **Sessions** (slot 1, run:2026-10-27-sweep-d2s-play, `workspace/logs/h1b/`; manifests `h1b-manifest.sha256`
+    `18f92562…` (12 logs, the check output, the six input saves) and `h1b-manifest-dev.sha256` `122aca67…` (dev logs
+    in `dev/`: rt (revision 1, no `WSKL`: its two d2sio left/right-mouse mismatches per swapped write are the d2sio
+    model's, see below), hell and hell-r2 (no death: the pilot stood, then stopped at the 1-point life orb), drop
+    27110 (waypoint row 1 is the town)). Kept: rt-r2 (27101, swap `w`, 75 s autosave control, reload), dead (27102,
+    tool-built dead Desert merc id 7 name 20), tcpip (27103, one-client TCP/IP host), shut (27104, Alt+F4 in game),
+    hell-r3 (27105, death in Hell River of Flame with the Rogue killed in play; corpse; reload), hire (27106, Kashya
+    hire), qr/qr-r2 (27107), qrh/qrh-r2 (27108), rw (27109, sample `qitbarb`'s runeword), drop (27111, City of the
+    Damned, three drops). Check: `systemd-run --user --scope -p MemoryMax=4G python3 -I tools/sweep_h1b.py check
+    workspace/merged/data/global/excel $(ls workspace/logs/h1b/*.log)` → `check/sweep-h1b-check.txt`: **2 502 H1B
+    comparisons, 0 failing**; every d2sio part 0 mismatches except the left/right mouse words of swapped writes
+    (superseded by the `WSKL` group: the writer reads the unit's current skill, `0x00620190`/`0x006201D0`, not player
+    data `+0x74`/`+0x70`, which a swap leaves 0) and hell-r3's `RITEM` count (25 = 14 loaded + 11 `ItemCopy`
+    recreations of the corpse items at the death, matched by 11 `COPY` lines).
+  - **Findings so far (for the ledger; cite the check file):**
+    - who saves: SP `PLRSAVE_Save` from `0x0052CA5F`/`0x0052C940` (Save and Exit, Alt+F4) and **`0x0057FD88`, the
+      death path, in single player** (hell-r3: the write before the respawn, status word `0x0F28`, bit 3 set); game type
+      3 + host callback 0 → file in every SP write; TCP/IP game type 2 → `0x00532340` (`SVCL`), no file by the server;
+      host callback `0x00883D50` 0 in every session; `AutosaveTick` called throughout (up to 3 000 calls) and never
+      saved; `SaveAllOnShutdown` entered once per game exit (ret `0x0044F2FE` SP, `0x0044D052` TCP/IP) and never saved
+      (its game list at `0x00882D38` already empty). Join chain SP: `ClientAddPlayerToGame`←`0x005301E9`,
+      `PlayerLoad`←`0x00539809`, `PLRSAVE_ReadFile`←`0x005344E0`, `D2S_ReadSave`←`0x0053447A`; TCP/IP: no
+      `PLRSAVE_ReadFile`, `D2S_ReadSave`←`0x00534563`.
+    - sections: every write's final-pass cursors = the file's sections; the scratch pass sizes = final; reader order
+      and offsets as the finding; `D2S_ReadMercHeader` at the merc offset without moving the cursor; `0x005726C0(1)`
+      exactly when a merc was made; the all-zero header (hire read 1) → no merc, load continues.
+    - header: weapon set bit 0 written 1 after `w` and read back into client `+0x45C`; swap A/B = player data
+      `+0x84`/`+0x80` (values 54/48 after the swap, 42/43 before) written and read; hotkeys with the `0x8000` flag
+      (slot 2 `left:Teleport` → `0x8036`), item refs 0 only; graphics/colour bytes = the image after `0x0063E510`
+      (non-`0xFF` bytes present); merc header seed/name/id/exp/dead = sources in tool-built (12345/3/0, 54321/20/7),
+      hired (2573073805/0/1, exp 52424400) and killed-in-play (bit 16 from the dead test, merc mode 12) cases.
+    - `D2S_LoadFinish`: gold 900 000 > 800 000 → 0, bank 3 000 000 > 2 500 000 → 0, 500 000 kept; stamina = max; 6/8
+      restored; 67–69 = 100; stat 30 = `EXP_GetThreshold(class, L)` = experience.txt row L (level 80 → 742 730 244 with
+      experience 750 000 000 in dead, so it is not the experience; level 1 → 500): the threshold of level L + 1, as the
+      spec's "table at level + 1" counting the MaxLvl row.
+    - items: maxhp/maxmana full stat = file << 8 (5 → 1280, 1 → 256) and written back >> 8; stat 326 = 1 after group
+      57 (Septic dagger); group 52 (Ginther's Rift 50/120); rebuilt 21–24 and 68 = weapons.txt (an ethereal `lsd`:
+      the ×3/2 branch met; no low-quality item); stat 356 = file 0 and 2 (qr-r2, qrh-r2); runeword 20639 read into
+      `+0x38` and written from `Runes +0x82`.
+    - corpse: one corpse, 12 bytes, 11 equipped items (mode 1), written and read; no mode 3/5 item in any save
+      (rows 77/78 → d-none per their route). bit 13: three drops set at create (`0x00558EA8`, params `+0x2C` 0), each
+      cleared on the ground (mode 3) by `UnitFrameReset` (ret `0x0053B049`) inside the tick's `ActUnitsFrameReset`
+      call; no gold-pile (`DropGoldPile`) and no pickup of a saved item; `ItemCopy`'s clears seen 11 times (death);
+      the watchpoint armed (`WTCH0`) but logged **no hit**, not even the logged `SetFlag` writes: row 110's "only
+      through `ITEMS_SetFlag`" has no working control → shortfall.
+    - Proposed ledger (48): raised 4, 21, 25, 33 (2), 34 (2), 35, 37, 39 (2), 40, 41, 42, 43, 55, 56, 57, 108, 111,
+      112, 113, 125, 127, hirelings 24; in part 2 (no-callback half), 6 (death caller and no-autosave; 0x0052E2A0 not
+      reached), 18 (file and client branches), 31 (item refs 0 only), 48 (name reset unreachable: the builder refuses a
+      name past `+0x116`), 60 (negative gold), 72 (count ≥ 2 refusal, the first u32), 73 (no golem item), 83 (gold and
+      realm), 88 (`0xFFFF`), 102 (low quality), 115 (copy seen, socketed copy not), 116 (no pickup of an item with the
+      bit), 118 (no negative value: arithmetic not separated); shortfall 1, 3, 19, 110, 114, 117 (no separating case:
+      rule 10), 124 (the builder refuses a lone follower: archivist entry); d-none 77, 78. Recount before filing.
+    - S1a pieces met (rows stay S1a): hired merc (20), swapped weapon set (24), left-button hotkey (32), group 52
+      (123/130/138 in part). Not met: cursor item (71), automagic class item (86/103), lone `fire-min` (128).
+  - **Next (resume):** (1) optional: rerun dead, tcpip, shut, hell, hire, rw under logger revision 2 so every kept log
+    has one tool revision (or record revision 1 by its diff); (2) write run:2026-10-27-sweep-d2s-play in
+    `findings/save/experiments.md`, the "Plan 0038 batch H1b" sections in save/0001 and hirelings/0001, the inventory
+    § 2.6 H1b block with totals against `main`, symbols (rule 14: `D2S_WriteMercHeader`, `D2S_ReadMercHeader`,
+    `D2S_LoadFinish`, `D2S_WriteCorpses`, `D2S_ReadCorpses`, `D2S_ReadMercItems` I → C), the archivist entry for a
+    lone-follower builder key, the review request and the metrics row ("—").
+- **2026-10-27 — H1b (`d2s-play`) filed (reverser, `lane/h1b`, harness slot 1; resume after the rotation).** Merged
+  `main` `e88e8e2` first (the plan log conflicted, both sides kept; `backlog.py archive` a no-op).
+  - **Revision 1, decided:** of the eight revision-1 logs, only rw lost a check a row needs (the write-side runeword
+    field = `Runes +0x82`, gated on `full` in `sweep_h1b.py`); the property groups of the others are met on the four
+    revision-2 logs, and no in-part remainder depends on the revision. So rw was rerun under revision 2 (rw-r2, seed
+    27109, about 5 min, slot 1 stopped and its saves restored after), and revision 1 is recorded by its diff in the run
+    record; the other seven are not rerun. Check re-run on the 13 logs: **2 798 comparisons, 0 failing**
+    (`check/sweep-h1b-check-r2.txt` `f44b92e0…`, manifest `h1b-manifest-r2.sha256` `f0e88782…`; the first check and
+    its manifest kept as they were).
+  - **Recount:** the rotation note's "three drops" is five (ids 27–31, `check` B13S/B13C 5); `AutosaveTick`'s counts are
+    the logger's sample (call 1 and every 500th), up to 6 500. The ledger the caller relayed (28 / 16 / 7 / 2) did not
+    sum to 48; the row list recounts to **raised 25, raised in part 14, shortfall 7, proposed d-none 2: 48** (save-d2s
+    45 + hirelings 1 + rows 117, 124).
+  - **Filed:** run:2026-10-27-sweep-d2s-play in `findings/save/experiments.md`; "Plan 0038 batch H1b" sections in
+    save/0001 and hirelings/0001 (hirelings § F and the summary's header sentence now `[C]`; two save/0001 open
+    questions annotated); inventory § 2.6 H1b block, totals against `main`: **static 567, harness 523, c-emu 0, blocked
+    417** (d-none 291), **deferred 2, raised 17: 1 526**; symbols I → C (rule 14): `D2S_WriteMercHeader`,
+    `D2S_ReadMercHeader`, `D2S_LoadFinish`, `D2S_WriteCorpses`, `D2S_ReadCorpses`, `D2S_ReadMercItems`.
+  - **Backlog:** archivist entry
+    [2026-10-27-reverser-archivist-h1b-d2s-build-test-state-keys-for-a](../backlog/2026-10-27-reverser-archivist-h1b-d2s-build-test-state-keys-for-a.md)
+    (lone follower, merc name past range); spec-writer entry
+    [2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises](../backlog/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md)
+    (held for the review); review request
+    [2026-10-27-reverser-architect-review-lane-h1b-plan-0038-batch-h1b](../backlog/archive/2026-10-27-reverser-architect-review-lane-h1b-plan-0038-batch-h1b.md).
+  - **Next:** the `lane/h1b` review.
+- **2026-10-27 — `lane/h1b` review (architect): accept with fixes (6).** `main` `3c90008` was merged into the lane
+  first (`1fdab87`; the plan log and the ledger conflicted, both sides were kept; `backlog.py archive` was a no-op).
+  Re-checked with no harness and no Ghidra. `h1b-manifest.sha256` and `h1b-manifest-r2.sha256` pass from
+  `workspace/logs/h1b`. `h1b-manifest-dev.sha256` passes from `workspace/logs/h1b/dev` only (fix 4). The check rerun
+  under `systemd-run --user --scope -p MemoryMax=4G` (`sweep_h1b.py`, which runs `d2sio.py check` on each log) gives
+  **2 798 comparisons, 0 failing**, byte-identical to `check/sweep-h1b-check-r2.txt` (`f44b92e0…`). objdump confirms
+  the anchors: the 13 logged return addresses (0x005301E9, 0x00539809, 0x005344E0, 0x0053447A, 0x00534563,
+  0x0052CA5F, 0x0052C940, 0x0057FD88, 0x00558EA8, 0x0055335C, 0x0053B049, 0x0044F2FE, 0x0044D052) each follow a call
+  to the named function, and the reader calls are at 0x0056B313/0x0056B32D/0x0056B343. The ledger recounts to the
+  inventory: 42 H1b rows of 45 statements, plus rows 117 and 124 and hirelings 24, give 48 = 25 + 14 + 7 + 2.
+  - **Fixes:** (1) row 4's chain skipped a frame on each path: 0x005344E0 is inside `sub_005344B0_PlayerLoadFromFile`
+    and 0x00534563 inside `sub_00534520_PlayerLoadFromClient`, each called once from `PlayerLoad` (0x005345DB,
+    0x005345FB). The logged returns stay `[C]`; the two links are `[I]`. (2) Row 2's `[C]` is scoped to the outcome.
+    `AutosaveTick` first tests `0x00730FFC` (0x0052D353), then the per-client time tests, then the callback
+    (0x0052D3D9), and the logger breaks only at the entry, so the gate that stopped the save is not shown. (3)
+    `D2S_WriteMercItems` was raised I → C (rule 14, on the same evidence as `D2S_ReadMercItems`, row 73), which makes
+    seven symbols in all. (4) The record states the dev manifest's directory. (5) The record names every save copy
+    the reruns overwrote (rt-r2, qr-r2, qrh-r2, rw-r2 and drop 27111 each wrote under the session name without the
+    suffix). (6) Row 1's "game list already empty" is a reading, because the `SHUT` line logs only the return and the
+    callback.
+  - **Rulings:** (a) the seven revision-1 logs are accepted as they stand. Revision 1 drops only `full` and `WSKL`, and
+    every check those gate (stats 7/9, 326, 52/53, 356, the runeword write, the swap source) is met on revision-2
+    logs. No remainder of a row raised in part is met by an item that only a revision-1 log holds. (b) The rw-r2
+    overwrite is accepted: no check and no claim reads a copy. The runner should key copies on the log name (reverser
+    entry item 3; reverser review-fixes rule 6, Seen). (c) The single-player death save at 0x0057FD88 does not
+    contradict "no single-player autosave". It is an event save from the death path the spec already lists, and with
+    callback 0 it is unconditional (0x0057FD4B–0x0057FD62). The spec's "Nothing was written during play in the runs"
+    holds for run:2026-10-12-d2s-io only (spec-writer entry). (d) Rows 1, 3 and 19 stay **shortfalls, not d-2c**: a
+    one-client TCP/IP host counts as one client (§ 3's six-row bullet is settled), and d-2c needs a second client to be
+    what reaches the code. For rows 3 and 19, the only writer of the host callback `0x00883D50`, 0x0052C0E0, has no
+    call, jump or absolute or RVA pointer in the image (objdump). If Ghidra xrefs agree, rows 3 and 19 and the callback
+    halves of rows 2 and 18 become d-none
+    ([2026-10-27-architect-reverser-h1b-review-host-callback-setter-and-d2sio-model](../backlog/2026-10-27-architect-reverser-h1b-review-host-callback-setter-and-d2sio-model.md)).
+    (e) Row 110's shortfall is right. The watchpoint armed on drop 27's flags missed a clear that `B13C` logged, so it
+    was not live, and no absence is claimed under it. Rows 111–113 rest on breakpoints, not on the watch. (f) Row 39's
+    tightened read half stands. The tool-built dead mercenary has no source of deadness but header bit 16, and each
+    read of it gave a mode-12 mercenary with the dead test 1; hell-r3's read 1, with the bit clear, gave a living
+    Rogue. (g) Stat 30 `nextexp` is right: it is the experience.txt row whose `Level` is L, which is index L + 1
+    counting `MaxLvl`, because `EXP_GetThreshold` reads dword `class + 8·L + 8` (0x00611814). Level 1 → 500 rules out L
+    + 1, and dead's 750 000 000 rules out the experience. The spec-writer entry asks for unambiguous wording. (h) Rows
+    77 and 78 move to **d-none** by their own route, and row 56's raise stands (`D2S_ReadMercHeader`'s `eax` is passed
+    untested, 0x0056B318–0x0056B32A, into the `D2S_ReadMercItems` call at 0x0056B32D). (i) The d2sio mismatches are explained. A d2sio model fix is filed (reverser entry item 2), not
+    blocking. (j) **H1a may start**: the family rule H1b → H1a is met.
+  - **Totals** (against `main` `3c90008`, no inventory change since `e88e8e2`): **static 567, harness 523, c-emu 0,
+    blocked 417** (d-none 291, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526**,
+    inventory § 2.6 H1b block.
+  - **Ledger:** the resume row's usage was filled from the orchestrator (212 206 tokens, 100 tools, 22 min), with the
+    verdict and 6 fixes: overclaim 2, omission 2, under-claim 1, other 1. The review row was added with usage "—".
+  - **Backlog:** the review request was closed (archive). The spec-writer entry
+    [2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises](../backlog/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md)
+    was **released**, with four points added. The reverser entry above was filed. The archivist entry is unchanged.
+  - **Next:** merge `lane/h1b`; then H1a (`d2s-load`).

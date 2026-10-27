@@ -59,8 +59,8 @@ further statements; where it lists one, its tag and evidence take precedence ove
   fn:HIRELING_NextByActDiff@0x00656580, tbl:Hireling.txt:Act, tbl:Hireling.txt:Difficulty, tbl:Hireling.txt:Level)
 - [C] **The hire stores `{seed, name index, Hireling Id}`** in the player's pet list (pet type 7). The seed is the
   entry's seed from the stock build; the Id is draw 1 of `RollEntry`; the price is `RollEntry`'s, taken from
-  inventory gold (49 hires). [I] The save header copies it (`D2S_WriteMercHeader`, no save written in the run), and
-  a price above the inventory gold takes the rest from the stash (never needed in the run). (run:2026-10-16-hirelings,
+  inventory gold (49 hires). [C] The save header copies it (`D2S_WriteMercHeader`; § Plan 0038 batch H1b,
+  run:2026-10-27-sweep-d2s-play). [I] A price above the inventory gold takes the rest from the stash (never needed in the run). (run:2026-10-16-hirelings,
   fn:HIRE_Hire@0x005770E0, fn:MERC_Init@0x00573270, fn:PETS_Add@0x00575E90,
   fn:sub_00576D90_PayGold@0x00576D90, fn:D2S_WriteMercHeader@0x00568E60, tbl:Hireling.txt:Id, tbl:Hireling.txt:Gold)
 - [C] **In the world, every stat comes from the row whose `Level` band holds the mercenary's level**
@@ -428,7 +428,8 @@ out->hireDesc = row->hireDesc;  out->_34 = 1;  out->_38 = 0;
   `MERC_SetLevel(merc, out.level)`; `sub_005726C0_MercSendStats`.
 
 So the header the save writes (`D2S_WriteMercHeader`: seed, name − `+0x114`, Id, experience, dead flag) holds the
-entry's seed, the name, the Id rolled from that seed, and the experience. [I] (fn:D2S_WriteMercHeader@0x00568E60,
+entry's seed, the name, the Id rolled from that seed, and the experience. [C] (§ Plan 0038 batch H1b,
+run:2026-10-27-sweep-d2s-play, fn:D2S_WriteMercHeader@0x00568E60,
 fn:PETS_GetInfo@0x00574BD0)
 
 **Free mercenary.** `HIRE_GiveFreeMerc(seller)` (called with 150 from `a1q2.cpp` code and 252 from `a3q3.cpp` code)
@@ -781,6 +782,22 @@ game run.
   "Combat", "Defensive", "Offensive", "Fire", "Cold", "Lightning". Those are the rows `None`, `farw`, `carw`, `comb`,
   `def`, `off`, `fire`, `cold` and `ltng` in order, so a Barbarian (row 0) gets no description.
   (data:g_HireDescStrIdx@0x006EE410, tbl:HireDesc.txt:Code)
+
+## Plan 0038 batch H1b (run:2026-10-27-sweep-d2s-play)
+
+Harness batch H1b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took one row of
+[hirelings](../../specs/hirelings/README.md) ([inventory](../../plans/0038-inventory/hirelings-README.md), row 24); the
+save rows are in [save/0001](../save/0001-d2s-io.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play). § F and the
+summary above had the saved header as inferred ("no save written in the run"); both now point here.
+
+- **hirelings 24** (§ F, the saved mercenary header) **raised.** [C] A mercenary hired in play is written to the
+  header from its pet entry and its unit: in the hire session (Kashya, Rogue Encampment, one hire through
+  `tools/d2pilot.py npc kashya hire --buy 1`) *Save and Exit* wrote seed 2 573 073 805, name 0, Hireling Id 1 and
+  experience 52 424 400 (header `000000008dfd5d9900000100d0ee1f03`), each equal to the `MHW` lines' sources (mercenary
+  info `+0x00`, the name id minus record `+0x114`, info `+0x08`, stat 13), and the reload recreated the mercenary from
+  those bytes (`0x005726C0` called once). The tool-built (12345 / 3 / 0; 54321 / 20 / 7 dead) and killed-in-play
+  (hell-r3, merc mode 12, dead bit set) cases separate the fields and the flag. (fn:D2S_WriteMercHeader@0x00568E60,
+  fn:D2S_ReadMercHeader@0x0056AA50, fn:HIRE_Hire@0x005770E0, run:2026-10-27-sweep-d2s-play)
 
 ## Open questions
 

@@ -1,0 +1,140 @@
+{
+  "game": "expansion",
+  "class": "Sorceress",
+  "seed": 741127004,
+  "name": "H1bHire",
+  "progression": 15,
+  "difficulty": [
+    131,
+    131,
+    131
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "stats": {
+    "strength": 88,
+    "energy": 1000,
+    "dexterity": 25,
+    "vitality": 1000,
+    "hitpoints": 8000,
+    "maxhp": 8000,
+    "mana": 8000,
+    "maxmana": 8000,
+    "stamina": 275,
+    "maxstamina": 275,
+    "level": 80,
+    "experience": 742730244,
+    "gold": 500000,
+    "goldbank": 2000000
+  },
+  "skills": {
+    "Lightning": 20,
+    "Chain Lightning": 20,
+    "Lightning Mastery": 20,
+    "Charged Bolt": 1,
+    "Static Field": 1,
+    "Telekinesis": 20,
+    "Nova": 20,
+    "Teleport": 1,
+    "Thunder Storm": 1,
+    "Energy Shield": 20,
+    "Warmth": 20,
+    "Fire Wall": 20,
+    "Fire Bolt": 1,
+    "Inferno": 1,
+    "Blaze": 1
+  },
+  "mouse": {
+    "left": "Teleport",
+    "right": "Nova",
+    "swap_left": "Static Field",
+    "swap_right": "Telekinesis"
+  },
+  "items": [
+    {
+      "unique": "Griffon's Eye",
+      "equip": "head",
+      "roll": "max"
+    },
+    {
+      "unique": "Skin of the Vipermagi",
+      "equip": "tors"
+    },
+    {
+      "unique": "Wartraveler",
+      "equip": "feet",
+      "roll": "max"
+    },
+    {
+      "unique": "Mara's Kaleidoscope",
+      "equip": "neck"
+    },
+    {
+      "unique": "Nagelring",
+      "equip": "lrin",
+      "roll": "max"
+    },
+    {
+      "unique": "Lidless Wall",
+      "equip": "larm"
+    },
+    {
+      "unique": "Ginther's Rift",
+      "equip": "rarm",
+      "roll": "max"
+    },
+    {
+      "code": "dgr",
+      "prefix": 555,
+      "roll": "max",
+      "equip": "rarm2"
+    },
+    {
+      "set": "M'avina's Icy Clutch",
+      "equip": "glov"
+    },
+    {
+      "code": "rin",
+      "prefix": 52,
+      "roll": "max",
+      "equip": "rrin"
+    },
+    {
+      "code": "mbl",
+      "suffix": 320,
+      "roll": "max",
+      "equip": "belt"
+    },
+    {
+      "code": "mss",
+      "store": "inventory",
+      "x": 2,
+      "y": 0,
+      "quest_diff": 0
+    },
+    {
+      "code": "rin",
+      "suffix": 74,
+      "roll": "max",
+      "store": "inventory",
+      "x": 3,
+      "y": 0
+    }
+  ],
+  "belt_fill": [
+    "rvl",
+    "rvl",
+    "rvl",
+    "mp5"
+  ],
+  "quests": "all",
+  "hotkeys": [
+    "Nova",
+    "Energy Shield",
+    "left:Teleport",
+    "Telekinesis"
+  ]
+}

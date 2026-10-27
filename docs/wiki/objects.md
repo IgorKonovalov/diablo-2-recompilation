@@ -2,7 +2,7 @@
 based_on:
   - docs/specs/objects/README.md 2026-10-21
   - docs/specs/items/tc.md 2026-10-21
-  - docs/specs/drlg/lifecycle.md 2026-10-21
+  - docs/specs/drlg/lifecycle.md 2026-10-27
 ---
 
 # Objects: shrines, chests, barrels and the rest

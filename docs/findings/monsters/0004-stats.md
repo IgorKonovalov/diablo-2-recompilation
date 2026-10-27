@@ -465,6 +465,17 @@ truncating toward zero (`0x51EB851F`, `sar 5`, sign fix). `lvl` is stat 12 at th
   (fn:sub_005A4F50_MonAttackStats@0x005A4F50, fn:sub_005A4F20_PlayerDmgBonus@0x005A4F20, data:g_PlayerDmgBonus@0x006E21F4)
 - So to-hit, damage and elemental damage are attack-time quantities with draws on the unit seed during combat, not creation
   stats. They are out of the Phase 2 creation model (§ 10).
+- [C] *2026-10-27 (plan 0045 Phase 2 part 2, raised in part):* `tools/skills.py`'s model of this call reproduces stats
+  21, 22 and 19 in 26 425 logged calls (the mode's `A1`/`A2`/`S1` columns separating in 26 383) and the unit seed's
+  steps (the `El<e>` chance rolls, 21 one-draw calls, two applied `El1` attacks with their stats); the details and the
+  remainder (the `L` columns, the classic and player-count terms, type 10, the owner skill-damage pair) are in
+  [skills/0001 § 18](../skills/0001-dispatch.md#18-plan-0045-phase-2-part-2-the-run-run2026-10-27-skills).
+  (fn:sub_005A4F50_MonAttackStats@0x005A4F50, run:2026-10-27-skills)
+- [I] *2026-10-27 (objdump, plan 0045 Phase 2 part 2):* two readings the bullet above lacked. The list is cleared before
+  the writes (`0x00627340` at `0x005A4FB3`). And for each `El<e>` the call passes `MonLvlStats` the mask `0x40 + e`
+  (`0x005A51D7`, `0x005A5252`–`0x005A525C`), not `0x40 << e`: `e` = 1, 2 add the HP and AC bits to El1's block, so
+  **`El2` and `El3` are applied with El1's minimum, maximum and length** (their mode, chance and type are their own).
+  No logged call applied an `El2` or `El3` (0x005A4FB3, 0x005A5252–0x005A527A, run:2026-10-27-skills).
 
 ### 10. Boundary decision for Phase 2 (recommendation)
 
