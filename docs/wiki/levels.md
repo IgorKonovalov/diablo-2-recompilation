@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/drlg/README.md 2026-10-21
-  - docs/specs/drlg/room-tiles.md 2026-10-21
+  - docs/specs/drlg/room-tiles.md 2026-10-27
   - docs/specs/drlg/preset.md 2026-10-17
   - docs/specs/drlg/collision.md 2026-10-27
   - docs/specs/drlg/maze.md 2026-10-17

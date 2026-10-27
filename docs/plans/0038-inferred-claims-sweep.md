@@ -4012,12 +4012,33 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     the three groups sat on an H4a row (the H4a review's ruling d stands); row 60 (H4a) was already raised, and the
     526 piece belongs to special § J's `[I]` bullet, a remainder of S3a's row 73 that the spec-writer splits in Phase 3
     with no class move. Totals stand at the H3b review's 1 526 (`main` `7cd4f991` adds no inventory change).
-  - **Spec-writer:** the entry [skills/missiles F1 and dispatch I4](../backlog/2026-10-27-architect-spec-writer-skills-missiles-f1-mastery-and-dispatch-i4-kick.md)
+  - **Spec-writer:** the entry [skills/missiles F1 and dispatch I4](../backlog/archive/2026-10-27-architect-spec-writer-skills-missiles-f1-mastery-and-dispatch-i4-kick.md)
     is **released** with what to write (the mastery out of F1's `[C]`, the `k` lines `[I]` inline, the `[L]` open
     question, the swap's order, both runs' 4 118 builds). The lane's entry
-    [MonPostCreateBoss and 0x400](../backlog/2026-10-27-reverser-spec-writer-postcreateboss-table-and-entry-bit-0x400.md)
+    [MonPostCreateBoss and 0x400](../backlog/archive/2026-10-27-reverser-spec-writer-postcreateboss-table-and-entry-bit-0x400.md)
     is **released** with the § J split and the scope of the `0x400` `[C]`.
   - **Backlog:** the review request was closed. Review-fixes Seen lines: reverser 6 and 14.
   - **Ledger:** the lane row filled (verdict, fixes 6: under-claim 1, tool not kept 1, omission 4; usage from the
     orchestrator: 301 043 tokens, 196 tools, 33 min); the review row added, usage "—".
   - **Next:** merge `lane/rbd`; the two spec-writer entries may start.
+- **2026-10-27 — `lane/sf2` (spec-writer, no slot, no Ghidra, no harness): the two entries released at the
+  `lane/rbd` review.** (1) [skills/missiles § F1](../specs/skills/missiles.md#f-the-packet-at-the-hit-missile_builddamage):
+  the mastery taken out of the `[C]` bullet, which now cites both runs (4 118 builds over 33 logs, 0 mismatches; the
+  778-build breakdown kept as run:2026-10-25-skills's); the `k ←` and `if k ≠ 0` lines `[I]` inline at `0x005A895F`;
+  a new `[I]` bullet on the mastery (0 of 54 655 `MH0` lists hold one); the `[I]` bullet gives the order *test both
+  bounds > 0, swap, mastery, draw* and no inverted pair in either run; the `[L]` on a missile carrying its owner's
+  masteries. [Dispatch § I4](../specs/skills/dispatch.md#i-the-skill-packet) restated per bound: the `Kick`-clear,
+  `SrcDam` 0 formula and the `Kick` minimum `÷ 4` `[C]` (emulated inside hit 43, skills/0007 § 3), the `Kick` maximum
+  `÷ 3` `[I]`, the weapon share `[I]`; skills/0003 § 5 does not say whether start 2 reads `MinDam` itself or calls
+  `GetPhysMin/Max`, nor the table doc the `Kick` row's `MinDam`, so which damage Kick's start hit carries is an `[L]`
+  open question and a [reverser entry](../backlog/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md).
+  (2) [monsters/special § J](../specs/monsters/special.md#j-other-entry-paths-and-pre-existing-mods): the post-create
+  helpers and the flag-2 gate `[I]`, `MonPostCreateBoss`'s case table by `BaseId` (one tag per row, 13 `[I]`; the 526
+  row `[C]` for mod 22, `[I]` for its hook) and a `[C]` bullet for Nihlathak's 22, scoped to `BaseId` 526; § G row 60
+  keeps its tag and cites the chained placement. [drlg/room-tiles](../specs/drlg/room-tiles.md) 9d's note: `0x400`,
+  the client wall fade's mark, its writer `[I]`, on a near room's walls only `[C]` for the council log alone.
+  Tags: missiles C 46, I 92 → 95, L 6 → 7; dispatch C 72 → 73, I 187 → 189, L 10 → 11; special C 149 → 151, I 70 → 86,
+  L 4; room-tiles C 121 → 122, I 34 → 35, L 0 (`updated:` 2026-10-27). Wiki: skills (F1, I4, two open items);
+  `based_on` of levels, randomness and seed-to-world bumped for room-tiles. Both entries closed;
+  [review request](../backlog/2026-10-27-spec-writer-architect-review-lane-sf2-missiles-f1-dispatch-i4-special.md)
+  filed; ledger row added, usage "—".
