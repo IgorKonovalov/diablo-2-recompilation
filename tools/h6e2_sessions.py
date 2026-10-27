@@ -34,7 +34,36 @@ NOVA = ["--nova-key", "F1", "--es-key", "F2", "--es", "25", "--radius", "9", "--
 
 def wpc(chain):
     """Waypoint travel from the Rogue Encampment start (map seed 3811: its waypoint is on the screen)."""
-    return ("pilot", ["wpchain", "--chain", chain, "--linger", "2"], 120)
+    return ("pilot", ["wpchain", "--chain", chain, "--linger", "2"], 45)   # wpchain's settle loop waits for a quiet log, which this logger never gives (checkpoint 1: 120 s)
+
+
+def wp4(tab, row):
+    """The waypoint from the Act IV town start (the a4/ saves: header act bytes 131, recipes quest-h6e2-*-a4.json), at
+    its fixed screen position there (H4a's wp): the Pandemonium Fortress does not depend on the map seed, so the
+    Act II and III sessions can take any map seed (checkpoint 1: the Sewers stairs of map seed 3811 had no path)."""
+    return ("pilot", ["wp", "--wp-x", "715", "--wp-y", "58", str(tab), str(row)], 90)
+
+
+def a4(cmds):
+    """A session's commands with its first waypoint hop (wpc) replaced by wp4 from the Act IV town."""
+    first = cmds[0]
+    assert first[0] == "pilot" and first[1][0] == "wpchain"
+    tab, row = first[1][2].split(",")
+    return [wp4(int(tab), int(row))] + cmds[1:]
+
+
+def a4x(cmds):
+    """a4, and before every objop with --to-pdef an explore --to-pdef (--pdef-any) to the preset room, with --pdef-any
+    on the objop too (staff4b: objop alone stood still at the arrival point in staff4 and staff-nm4)."""
+    out = []
+    for c in a4(cmds):
+        if c[0] == "pilot" and c[1][0] == "objop" and "--to-pdef" in c[1]:
+            pdef = c[1][c[1].index("--to-pdef") + 1]
+            out.append(("pilot", ["explore", "--to-pdef", pdef, "--pdef-any", "--hops", "80", "--persist", "10"]
+                        + NOVA, 400))
+            c = (c[0], c[1] + ["--pdef-any"], c[2])
+        out.append(c)
+    return out
 
 
 def descend(lid, rows):
@@ -42,8 +71,8 @@ def descend(lid, rows):
                       300, 5), 0)
 
 
-def objop(cls, pdef=None, done="OCD", t=420, extra=()):
-    a = ["objop", "--obj-cls", str(cls), "--times", "1", "--done", done, "--time", str(t), "--obj-near", "4"]
+def objop(cls, pdef=None, done="OCD", t=420, extra=(), near="4"):
+    a = ["objop", "--obj-cls", str(cls), "--times", "1", "--done", done, "--time", str(t), "--obj-near", near]
     if pdef:
         a += ["--to-pdef", pdef]
     return ("pilot", a + NOVA + list(extra), t + 30)
@@ -78,6 +107,15 @@ def staff():
     return [wpc("2,5"), descend(62, "47"), descend(63, "49"), descend(64, "49"), objop(356, "509"), wait(5)]
 
 
+def staff_any():
+    """staff with --pdef-any: in staff4 (map seed 4912) the room of LvlPrest 509 was logged (RL) but objop stood still
+    for 420 s at the arrival point (the room was found offline: objop's hops did not move the player). Here explore
+    --to-pdef (the frontier path) goes there first, and a new map seed."""
+    return [wpc("2,5"), descend(62, "47"), descend(63, "49"), descend(64, "49"),
+            ("pilot", ["explore", "--to-pdef", "509", "--pdef-any", "--hops", "80", "--persist", "10"] + NOVA, 400),
+            objop(356, "509", extra=["--pdef-any"]), wait(5)]
+
+
 def heart():
     """Kurast Bazaar waypoint (3,6), Kurast to Sewer (57) to level 92, the sewer lever (367, LvlPrest 739-742: object
     event 7), Sewer Down (60) to level 93, the heart chest (405, LvlPrest 747)."""
@@ -89,6 +127,15 @@ def brain():
     """Flayer Jungle waypoint (3,4), Jungle to Dungeon (54), Dungeon Down (56) twice to level 91, the brain chest (406,
     LvlPrest 704)."""
     return [wpc("3,4"), descend(88, "54"), descend(89, "56"), descend(91, "56"), objop(406, "704"), wait(5)]
+
+
+def brain_mem():
+    """brain4 again (map seed 4914), with an explore of level 91 before the objop and the chest found by memory
+    (--obj-mem): in brain4 the player stood at the centre of LvlPrest 704 (a whole-level preset, 40 x 40 tiles) for
+    420 s with no class-406 object in any OBJS line, which lists only the objects near the player."""
+    return [wp4(3, 4), descend(88, "54"), descend(89, "56"), descend(91, "56"),
+            ("pilot", ["explore", "--hops", "120", "--persist", "10"] + NOVA, 600),
+            objop(406, extra=["--obj-mem"]), wait(5)]   # no --to-pdef: objop takes that branch before --obj-mem
 
 
 def eye():
@@ -106,6 +153,12 @@ def tome():
 def inifuss():
     """Dark Wood waypoint (1,4), the Inifuss tree (30, LvlPrest 161), operated twice (the second: the refusal)."""
     return [wpc("1,4"), objop(30, "161", done="QOW"), wait(4), objop(30, done="QOW", t=60), wait(4)]
+
+
+def inifuss6():
+    """inifuss with --obj-near 6: the first try stood 4.1 sub-tiles from the tree with no hop left and no click."""
+    return [wpc("1,4"), objop(30, "161", done="QOW", near="6"), wait(4), objop(30, done="QOW", t=60, near="6"),
+            wait(4)]
 
 
 def tristram():
@@ -139,7 +192,22 @@ SESSIONS = {
     "eye": ("QuestFreshT", "enter-normal", 3811, eye()),
     "tome": ("QuestFreshT", "enter-normal", 3811, tome()),
     "inifuss": ("QuestFreshT", "enter-normal", 3811, inifuss()),
+    "inifuss6": ("QuestFreshT", "enter-normal", 3811, inifuss6()),
     "tristram": ("QuestAllDone", "enter-normal", 3811, tristram()),
+    # resume (2026-10-27): the Act II and III sessions from the Act IV town (a4/ saves) on other map seeds; radament
+    # on H4a's 4904
+    "radament4": ("a4/QuestFreshT", "enter-normal", 4904, a4(radament())),
+    "cube4": ("a4/QuestFreshT", "enter-normal", 4911, a4(cube())),
+    "cube-held4": ("a4/QuestBoxH", "enter-normal", 4911, a4(cube())),
+    "staff4": ("a4/QuestFreshT", "enter-normal", 4912, a4(staff())),
+    "staff-nm4": ("a4/QuestMsfN", "enter-nightmare", 4912, a4(staff())),
+    "staff4b": ("a4/QuestFreshT", "enter-normal", 4916, a4(staff_any())),
+    "staff-nm4b": ("a4/QuestMsfN", "enter-nightmare", 4916, a4(staff_any())),
+    "heart4": ("a4/QuestFreshT", "enter-normal", 4913, a4x(heart())),
+    "brain4": ("a4/QuestFreshT", "enter-normal", 4914, a4x(brain())),
+    "brain4b": ("a4/QuestFreshT", "enter-normal", 4914, brain_mem()),
+    "eye4": ("a4/QuestFreshT", "enter-normal", 4915, a4x(eye())),
+    "tome4": ("a4/QuestFreshT", "enter-normal", 4913, a4x(tome())),
 }
 
 

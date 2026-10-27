@@ -1249,6 +1249,32 @@ No class moves beyond the lane's. Recounted against `main` `6ad383c4` after merg
 **Phase 3 ready:** save/d2s (S1a, S1e, H1b, H1a) and items/uniques-sets (S2b, S2c, S1f, H2b, H6d, H1a). Not ready:
 hirelings (H6f, 22 rows) and player/creation (H6g, 15 rows).
 
+**H6e2 (filed 2026-10-27, reverser, `lane/h6e2`): 24 statements of items/quest-drops (rows 1, 30, 33, 34, 35) and
+objects (row 48).** run:2026-10-27-sweep-quest-items, 11 kept sessions on slot 1 (19 launches, 8 development logs;
+Normal, one Nightmare; tool-built quest saves, the Act II and III ones starting in the Act IV town), logger
+`tools/gdb/quest-items.gdb`, checker `tools/sweep_h6e2.py check` over the 11 kept logs: **chest 6, object 2, event7 19,
+dup 8, gate 8; 0 mismatches** (`check-final.txt`, manifests `manifest-final.sha256` and `manifest-ckpt1.sha256`). The
+evidence is in [items/0010 § Plan 0038 batch H6e2](../../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items),
+whose ledger table gives each statement's `[C]` part and remainder.
+
+- **Raised (3):** quest-drops 30 `box` (made without a cube, refused with one); 30 Wirt's gold (already `[C]` in the
+  spec from run:2026-10-19-economy2; met again, 18 piles by event 7); objects 48 Wirt's body row.
+- **Raised in part (14):** quest-drops 1 (classes 268 and 367; the other event-7 classes), 30 `leg`, `bks`, `ass`,
+  `tr1`, `msf`, `qhr`/`qey`/`qbr` (`qhr` only), `j34` (the creations; the refusal halves), 33 (E1 for `box`, `tr1`,
+  `msf`; **corrected** for the Khalim chests, gold first, met on `qhr`; `vip`, `qey`, `qbr` stay), 34 (a held cube
+  refuses in Normal; a Normal staff does not count in Nightmare; the cursor branch and "only" stay), 35 (8 gate
+  cases, as at checkpoint 1); objects 48 chests row (as 33, with the correction), item-objects row (`leg`, `bks`),
+  orifice row (the bits, from the kept log `quests-s3-3364-duriel-normal.log`; the `hst` gate stays).
+- **Shortfall (7):** quest-drops 30 `bkd`, `hdm`, `vip`, `bbb`, `g33`, `g34`/`xyz`, `qf1`: not run (launch cap), or
+  the route failed (the tome's warp led to the Disused Fane).
+- Eleven symbols I → C (rule 14): `QUESTS_ObjectEvent`, `A1Q4_WirtGold`, `WirtLegDrop`, `A1Q4_InifussDrop`, the
+  scroll, staff, cube and heart chests, `DropItemCodeAt`, `PlayerFindItemByCode`, `ItemQuestGate`.
+
+No class move is proposed. Net effect on the totals: none. Taken against `main` after merging it into the lane
+(`147e5ca3`; no inventory row moved on `main` since the `lane/h1a` review totals above): **static 567, harness 519,
+c-emu awaiting a batch 0, blocked 421** (d-none 295, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred
+2, raised 17: 1 526.** H6e2's ledger: raised 3, raised in part 14, shortfall 7: 24.
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is

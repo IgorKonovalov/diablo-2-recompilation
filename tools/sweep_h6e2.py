@@ -20,6 +20,8 @@ against what the game logged (one stock case or more per claim; nothing here is 
           next QOT the class's target of items/0010 § 9 called from inside QUESTS_ObjectEvent.
   dup     each PlayerFindItemByCode call: a stat-356 read (PSX) is followed by an answer that holds the item only when
           the value is >= the difficulty.
+  death   (listed only) each QDI returning into A2Q1_RadamentDeath (ass) or A3Q4_FigurineDrop (j34): the source
+          unit, the quality asked and, when logged, the created item's quality (QDX).
   gate    each ItemQuestGate call (IQG, IQX): the gate of items/0010 § 5 on the item's code and the record words,
           without the 0x0055CA40 tail (IHD answers are read from the log, as inputs).
 Prints one line per case and a SUMMARY line; exit 1 on any mismatch.
@@ -48,6 +50,7 @@ EVENT7 = {26: 0x00593290, 122: 0x0059B710, 268: 0x00594630, 341: 0x005BCAC0, 367
           376: 0x005B6710, 459: 0x0058B940, 460: 0x0058A500, 461: 0x00589540, 474: 0x0058C0E0, 475: 0x0058C0E0,
           476: 0x0058C0E0}
 QOE_LO, QOE_HI = 0x005449E0, 0x00544DA0
+DEATHS = {0x0059911B: "RadamentDeath", 0x005BABFE: "FigurineDrop"}   # DropItemAtUnit returns in the death scripts
 
 
 def bit(rec, w, b):
@@ -118,7 +121,7 @@ def check(excel, logs):
     codes = item_codes(excel)
     mq = misc_quest(excel)
     tot = {"chest": 0, "chest_bad": 0, "object": 0, "object_bad": 0, "event7": 0, "event7_bad": 0, "dup": 0,
-           "dup_bad": 0, "gate": 0, "gate_bad": 0, "gate_skip": 0, "gold": 0}
+           "dup_bad": 0, "gate": 0, "gate_bad": 0, "gate_skip": 0, "gold": 0, "death": 0}
     for path in logs:
         lines = []
         for ln in open(path, errors="replace"):
@@ -227,6 +230,14 @@ def check(excel, logs):
             tot["event7_bad"] += bad
             print("%s event7 cls %d ev %d ret %s r1 %s target %s [%s]" % (
                 "MISMATCH" if bad else "ok", d["cls"], d["ev"], d["ret"], d["r1"], nxt and nxt["fn"], name))
+        # ---- the death scripts' creations (listed, not modelled: the gate's record words at the death are not logged)
+        for i, (t, d) in enumerate(lines):
+            if t == "QDI" and int(d["ret"], 16) in DEATHS:
+                tot["death"] += 1
+                qdx = next((x for tt, x in lines[i + 1:i + 6] if tt == "QDX"), None)
+                print("seen death %s %s: source %s, quality asked %d%s [%s]" % (
+                    DEATHS[int(d["ret"], 16)], d["code"].strip(), d["src"], d["q"],
+                    (", created quality %s" % (qdx.get("item") or {}).get("q")) if qdx else "", name))
         # ---- duplicates: the stat-356 comparison of PlayerFindItemByCode
         for i, (t, d) in enumerate(lines):
             if t != "PSX":

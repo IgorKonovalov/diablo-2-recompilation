@@ -3806,7 +3806,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-27 — H6e2 (`quest-items`) started; rotated at the first checkpoint (reverser, `lane/h6e2`, harness slot 1,
   from `main` `3c90008`; `main` `2637b08` merged at the checkpoint).** Run id run:2026-10-27-sweep-quest-items, record in
   [items experiments](../findings/items/experiments.md#run2026-10-27-sweep-quest-items), evidence so far in
-  [items/0010 § Plan 0038 batch H6e2](../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items-in-progress).
+  [items/0010 § Plan 0038 batch H6e2](../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items).
   - **Built:** logger `tools/gdb/quest-items.gdb` + `tools/gdb/quest-items.py` (object operates with record words,
     object event 7 and its targets, `GiveItem`, the chest gold, `ObjectChestDrop`, `PlayerFindItemByCode` with its
     stat-356 reads, `ItemQuestGate` with its result and tail, the orifice); session driver `tools/h6e2_sessions.py`
@@ -4281,3 +4281,33 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     1, under-claim 1, wrong anchor 1; usage from the orchestrator: 133 323 tokens, 62 tools, 13 min); the review row
     added, usage "—".
   - **Next:** merge `lane/sf2`; the reverser entry on Kick's row values may start.
+- **2026-10-27 — H6e2 (`quest-items`) filed (reverser, `lane/h6e2`, harness slot 1; resumed from checkpoint 1,
+  `main` `147e5ca3` merged).** Run id run:2026-10-27-sweep-quest-items, record in
+  [items experiments](../findings/items/experiments.md#run2026-10-27-sweep-quest-items), evidence in
+  [items/0010 § Plan 0038 batch H6e2](../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items).
+  - **Resume, per the note:** the Act II and III sessions start in the Act IV town (three `-a4` recipes, header act
+    bytes 131; H4a's fixed waypoint click), each on its own map seed (radament on 4904); `wpchain` limit 45 s; the orb
+    read checked once after the first waypoint (0.75 / 0.79). On 4904 the Sewers stairs took two tries, as in H4a.
+    Where a route failed twice (the staff chest on 4912, the brain chest on 4914) the pilot's other moves were used
+    (`explore --to-pdef … --pdef-any` before the objop; then a full explore and `objop --obj-mem`); the staff chest was
+    reached on map seed 4916, the brain chest not. 15 launches at the resume, 19 in all; 11 kept sessions.
+  - **Check:** `sweep_h6e2.py check` over the 11 kept logs: chest 6, object 2, event7 19, dup 8, gate 8, death 3
+    (listed); **0 mismatches** (`check-final.txt` `d4ce6d6d…`, manifest `manifest-final.sha256`).
+  - **Ledger (24): raised 3, raised in part 14, shortfall 7** (inventory § 2.6 H6e2 block). Highlights: object event 7's
+    route `[C]` for classes 268 and 367 (qd 1, in part); E1 met for `box`, `tr1`, `msf` and **corrected** for the Khalim
+    chests (gold first; met on `qhr`); a held cube refuses `box`, a Normal staff in Nightmare does not stop `msf` (qd 34
+    in part); Wirt's body row raised (leg, then 18 event-7 piles, `RandLoHi(10, 20)` = 18 on the logged seed). Shortfalls:
+    `bkd`, `hdm`, `vip`, `bbb`, `g33`, `g34`/`xyz`, `qf1` (launch cap; the tome's warp led to the Disused Fane). No class
+    move; totals unchanged: static 567, harness 519, c-emu 0, blocked 421, deferred 2, raised 17: 1 526.
+  - **Answered:** the checkpoint's open question on `j34`/`mss` quality 7 is items/0004's us 13 (the base `unique`
+    override); `ass` shows it too.
+  - **Symbols (rule 14), I → C:** `QUESTS_ObjectEvent`, `sub_00594630_A1Q4_WirtGold`, `sub_00583E70_WirtLegDrop`,
+    `sub_00593AF0_A1Q4_InifussDrop`, `sub_00599C10_A2Q2_ScrollChest`, `sub_00599CF0_A2Q2_StaffChest`,
+    `sub_00599DF0_A2Q2_CubeChest`, `sub_005B8860_A3Q2_HeartChest`, `sub_00585970_DropItemCodeAt`,
+    `sub_00558110_PlayerFindItemByCode`, `sub_0055CC90_ItemQuestGate`.
+  - **Backlog:** review request
+    [2026-10-27-reverser-architect-review-lane-h6e2-plan-0038-batch-h6e2](../backlog/2026-10-27-reverser-architect-review-lane-h6e2-plan-0038-batch-h6e2.md)
+    filed; spec-writer entry
+    [2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest](../backlog/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md)
+    filed, held until the review. Slot 1 stopped, saves restored (empty, no aside).
+  - **Next:** the `lane/h6e2` review; then H6e1.

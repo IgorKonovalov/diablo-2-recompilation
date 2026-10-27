@@ -331,7 +331,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00544760,func,sub_00544760_GameQuestGet,,I,items/cube,docs/findings/items/0008-cube.md
 0x00544840,func,sub_00544840_QuestsItemUseCode,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005449D0,func,sub_005449D0_JoinMarkFlagClear,,I,quests/progression,docs/findings/quests/0001-progression.md
-0x005449E0,func,QUESTS_ObjectEvent,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x005449E0,func,QUESTS_ObjectEvent,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00544E80,func,sub_00544E80_A3Q4_FigurineArmHook,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00544F20,func,sub_00544F20_A3Q4_FigurineSaveHook,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00544FA0,func,QUESTS_SendActNpcFlags,,I,quests/progression,docs/findings/quests/0001-progression.md
@@ -508,7 +508,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005573F0,func,sub_005573F0_ItemFallbackRare,,C,items/quality,docs/findings/items/0004-uniques-sets.md
 0x00557450,func,sub_00557450_ItemCreateByQuality,,C,items/quality,docs/findings/items/0004-uniques-sets.md
 0x00557AB0,func,sub_00557AB0_ItemInitStats,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
-0x00558110,func,sub_00558110_PlayerFindItemByCode,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x00558110,func,sub_00558110_PlayerFindItemByCode,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00558200,func,sub_00558200_UnitDropLevel,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00558270,func,sub_00558270_ItemCreateRecFromItem,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00558530,func,sub_00558530_ItemReplenishDurTimer,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
@@ -539,7 +539,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0055C2C0,func,ITEMS_AttachToOwner,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0055C730,func,ITEMS_DetachFromOwner,,I,stats/aggregate,docs/findings/stats/0001-aggregate.md
 0x0055C850,func,sub_0055C850_GoldPickup,,I,items/economy,docs/findings/items/0011-economy.md
-0x0055CC90,func,sub_0055CC90_ItemQuestGate,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x0055CC90,func,sub_0055CC90_ItemQuestGate,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0055E170,func,sub_0055E170_PlayerUseInvItem,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x0055E9B0,func,sub_0055E9B0_ItemToBelt,,C,player/creation,docs/findings/player/0001-creation.md
 0x0055EEA0,func,sub_0055EEA0_CursorItemConsume,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
@@ -854,7 +854,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00583BD0,func,sub_00583BD0_ShrineSkillRemoveCB,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x00583BF0,func,SHRINE_Skill,,I,stats/states,docs/findings/stats/0002-states.md
 0x00583C70,func,OBJOP_Shrine,,I,stats/states,docs/findings/stats/0002-states.md
-0x00583E70,func,sub_00583E70_WirtLegDrop,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x00583E70,func,sub_00583E70_WirtLegDrop,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00584060,func,OBJOP_Bookshelf,,C,objects,docs/findings/objects/0001-object-population.md
 0x00584420,func,OBJ_OperateDispatch,,C,objects,docs/findings/objects/0001-object-population.md
 0x005846B0,func,OBJOP_ArcanePortal,,I,quests/travel,docs/findings/quests/0002-travel.md
@@ -863,7 +863,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00584D00,func,OBJOP_LevelPortal,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x00584E30,func,sub_00584E30_WaypointOperate,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x00584F60,func,sub_00584F60_WaypointTravel,,I,save/d2s,docs/findings/save/0002-quest-words.md
-0x00585970,func,sub_00585970_DropItemCodeAt,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x00585970,func,sub_00585970_DropItemCodeAt,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00585B90,func,sub_00585B90_ObjectChestDrop,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00585F60,func,OBJOP_Chest,,C,objects,docs/findings/objects/0001-object-population.md
 0x00586410,func,OBJOP_Casket,,I,objects,docs/findings/objects/0001-object-population.md
@@ -1079,7 +1079,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005935E0,func,sub_005935E0_A1Q4_StoneInit,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005936B0,func,sub_005936B0_A1Q4_StonePartyBit4,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00593710,func,sub_00593710_A1Q4_StoneOperate,,I,quests/progression,docs/findings/quests/0001-progression.md
-0x00593AF0,func,sub_00593AF0_A1Q4_InifussDrop,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x00593AF0,func,sub_00593AF0_A1Q4_InifussDrop,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00593CB0,func,sub_00593CB0_A1Q4_SendStoneOrder,,C,quests/progression,docs/findings/quests/0001-progression.md
 0x00593D70,func,sub_00593D70_A1Q4_ChainNext,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00593E30,func,sub_00593E30_A1Q4_CowLevelCredit,,I,quests/progression,docs/findings/quests/0001-progression.md
@@ -1092,7 +1092,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00594280,func,CUBE_PandemoniumFinalePortalStub,,C,save/d2s,docs/findings/save/0002-quest-words.md
 0x00594290,func,sub_00594290_A1Q4_Dummy189Queue,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005942C0,func,sub_005942C0_A1Q4_Dummy189Event,,I,quests/progression,docs/findings/quests/0001-progression.md
-0x00594630,func,sub_00594630_A1Q4_WirtGold,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x00594630,func,sub_00594630_A1Q4_WirtGold,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00594830,func,sub_00594830_A1Q5_StateSync,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00594890,func,sub_00594890_A1Q5_StepBits,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00594960,func,sub_00594960_A1Q5_NpcMessage,,I,quests/progression,docs/findings/quests/0001-progression.md
@@ -1174,9 +1174,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00599910,func,sub_00599910_A2Q2_NpcTalk,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00599A30,func,sub_00599A30_A2Q2_ItemToInv,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00599B30,func,sub_00599B30_A2Q2_ItemToGround,,I,quests/progression,docs/findings/quests/0001-progression.md
-0x00599C10,func,sub_00599C10_A2Q2_ScrollChest,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
-0x00599CF0,func,sub_00599CF0_A2Q2_StaffChest,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
-0x00599DF0,func,sub_00599DF0_A2Q2_CubeChest,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x00599C10,func,sub_00599C10_A2Q2_ScrollChest,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x00599CF0,func,sub_00599CF0_A2Q2_StaffChest,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x00599DF0,func,sub_00599DF0_A2Q2_CubeChest,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00599F50,func,sub_00599F50_A2Q3_LogUpdate,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0059A1C0,func,sub_0059A1C0_A2Q3_NpcGate,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0059A270,func,sub_0059A270_A2Q3_NpcTalk,,I,quests/progression,docs/findings/quests/0001-progression.md
@@ -1587,7 +1587,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005B8660,func,sub_005B8660_A3Q2_SewerStairsInit,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005B86B0,func,sub_005B86B0_A3Q2_SewerStairsInitB,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005B86E0,func,sub_005B86E0_QuestKhalimWillMade,,I,items/cube,docs/findings/items/0008-cube.md
-0x005B8860,func,sub_005B8860_A3Q2_HeartChest,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x005B8860,func,sub_005B8860_A3Q2_HeartChest,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005B8940,func,sub_005B8940_A3Q2_EyeChest,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005B8A20,func,sub_005B8A20_A3Q2_BrainChest,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005B8B20,func,sub_005B8B20_A3Q3_SetProgressBits,,I,quests/progression,docs/findings/quests/0001-progression.md
