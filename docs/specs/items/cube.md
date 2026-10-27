@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/quality, items/uniques-sets, items/affixes, items/properties, items/sockets-runewords, data/excel]
 consumed_by: [drlg/outdoor, save/d2s]
-tags: {C: 167, I: 87, L: 3}
+tags: {C: 167, I: 88, L: 3}
 updated: 2026-10-27
 ---
 
@@ -880,7 +880,7 @@ L1. CowPortalOpen(game, player):                                                
 L1a.  if RoomGetLevelId(room(player)) ≠ 1: refuse                               [C] (fn:sub_0061A1B0_RoomGetLevelId@0x0061A1B0, 0x005941DD, run:2026-10-27-sweep-cube)
 L2.   spot ← FreeSpotNear(player)                                               [C] ORACLE, no draw (0x00545340, run:2026-10-15-cube)
       portal ← PortalObjectCreate(game, player, …, level 39, 0, class 60, 0)    [C] ORACLE, draws (fn:sub_0056D130_PortalObjectCreate@0x0056D130, run:2026-10-15-cube)
-      if either fails: refuse
+      if either fails: refuse                                                   ; [I] no failure logged (0x0059420F, 0x0059422F)
       GameQuestSet(4, 11);  return 1                                            [C] (fn:sub_00544720_GameQuestSet@0x00544720, run:2026-10-15-cube)
     refuse: UnitSetEvent(player, 20, …); return 0                               [C] (fn:sub_00553380_UnitSetEvent@0x00553380, run:2026-10-27-sweep-cube)
 L3. PandemoniumPortalStub, PandemoniumFinalePortalStub: return 0                [C] (fn:CUBE_PandemoniumPortalStub@0x00594270, fn:CUBE_PandemoniumFinalePortalStub@0x00594280, run:2026-10-15-cube, run:2026-10-15-drlg-outdoor)
@@ -898,7 +898,8 @@ Step notes:
   events set those bits in a game. [C] (run:2026-10-15-cube, plan 0030 Phase 2 review ruling 3)
 - L1. **A classic game tests word 26, an expansion game word 40.** In a classic game with word 26 bit 0 clear the
   portal was refused at that test, before any word-40 test; with word 26 bit 0 set and word 40 bit 0 clear it opened
-  in level 1, with event 4 only. [C] (0x0059419E, fn:CUBE_CowPortalOpen@0x00594140, run:2026-10-27-sweep-cube,
+  in level 1, with event 4 only. The expansion games' word-40 test (0x005941BE, reached only when `Game+0x70` ≠ 0) is
+  run:2026-10-15-cube's. [C] (0x0059419E, 0x005941BE, fn:CUBE_CowPortalOpen@0x00594140, run:2026-10-15-cube, run:2026-10-27-sweep-cube,
   [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) cube 54)
 - L1a. **Only in the Rogue Encampment.** In the Pandemonium Fortress (level 103) the tests passed up to the level test,
   which refused: return 0, event 20, the leg and the tome left in the cube. The three openings of run:2026-10-15-cube
@@ -1118,7 +1119,8 @@ ids (prefix id = 747 + the prefix block row + 1); rare-name ids are merged rare 
   tbl:CubeMain.txt:output)
 - **A crafted item at a low output ilvl can fault the game.** On rows 72, 83, 84 and 90 a side with too few groups
   picks 0 against a filled slot and the duplicate test reads a NULL record (I4 (b)); a reimplementation that wants the
-  1.14d outcome must stop there, not draw again. [C] (0x005C2460, run:2026-10-27-sweep-cube)
+  1.14d outcome must stop there, not draw again. [C] (0x005C2460, run:2026-10-27-sweep-cube, tbl:MagicSuffix.txt:group,
+  [items/0008 § Plan 0038 batch S2c](../../findings/items/0008-cube.md#plan-0038-batch-s2c-2026-10-16) cube 49; the fault logged on row 83 only)
 - **Nothing produced, nothing consumed.** A row that matches but produces nothing (the Pandemonium rows, a refused
   cow portal) leaves the inputs in the cube. [C] (0x00566400, run:2026-10-15-cube)
 - **`qty=` and `sock=` share one byte**: test the `sock` flag to know which it is. [C] (0x0056632A, run:2026-10-15-cube,

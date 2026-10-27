@@ -275,9 +275,9 @@ A crafted item is built by the crafted builder
 (above 70: 4; above 50: 3; above 30: 2; else 1), so it is never lowered. Each slot first draws a side (prefix or
 suffix), every slot, then picks an affix. Properties are rolled only after all picks, then the recipe's own three lines
 are added. So tier 4 always gives four affixes, while tier 1 gives one with probability 2/5. An affix pick can find
-no candidate on the stock data, for a low-level character crafting on a short staff, light boots or light gloves at
-output ilvl 5 or below: when that side already holds an affix, the game crashes, as was seen at output ilvl 1 on light
-boots. The same pick on an empty side, and the limit of 252 retries against a duplicate, are read from the code only.
+no candidate on the stock data: on a short staff at output ilvl 1, light boots up to 5 and light gloves up to 3 (the
+output ilvl is half the character's level plus half the input's, so it takes a low-level character and low-level
+inputs). When that side already holds an affix the game crashes, as was seen at output ilvl 1 on light boots. The same pick on an empty side, and the limit of 252 retries against a duplicate, are read from the code only.
 
 ### The cow portal and the Pandemonium rows
 

@@ -2,25 +2,25 @@
 from: spec-writer
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0038-inferred-claims-sweep.md#implementation-log
-  - ../specs/items/cube.md
-  - ../specs/items/affixes.md
-  - ../wiki/items-other-paths.md
-resolution: ""
+  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../specs/items/cube.md
+  - ../../specs/items/affixes.md
+  - ../../wiki/items-other-paths.md
+resolution: "done: lane/s38c review, accept with fixes (4); plan 0038 log"
 ---
 
 Review request: plan 0038 Phase 3, the **items/cube** cluster (S2c, H6a), on `lane/s38c` (from `main` `7995eefc`).
 items/cube {C 119, I 82, L 4} → **{C 167, I 87, L 3}** (diff: +59 / −11 `[C]`, +50 / −45 `[I]`, +2 / −3 `[L]`),
 `updated:` 2026-10-27; items/affixes {C 152, I 28, L 4} → **{C 153, I 28, L 4}** (C4i, rule 8). Wiki:
 items-other-paths cube section refreshed (`based_on` cube 2026-10-27), items `based_on` affixes 2026-10-27. Entries:
-the [H6a entry](archive/2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re.md) closed; the
-[S2c entry](2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md) annotated ((a), (f) done; (d) open
+the [H6a entry](2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re.md) closed; the
+[S2c entry](../2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md) annotated ((a), (f) done; (d) open
 for vendors, H6c still running). Counts entry:
 [2026-10-27-spec-writer-architect-s38c-cube-counts-for-the-research-map](2026-10-27-spec-writer-architect-s38c-cube-counts-for-the-research-map.md).
 
-Suggested spot-checks (statement → batch section of [items/0008](../findings/items/0008-cube.md)):
+Suggested spot-checks (statement → batch section of [items/0008](../../findings/items/0008-cube.md)):
 - § L, L1 and its three notes (H6a cube 53, 54, 7: the classic word-26 test moved into L1 in the code's order,
   0x0059419E before 0x005941BE; the old L3 removed and L4 renumbered L3) and the L2 note (S2c cube 55 L776, the
   contradicted statement);
