@@ -2,12 +2,12 @@
 from: reverser
 to: archivist
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
-  - ../findings/save/0001-d2s-io.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play
-  - ../findings/save/experiments.md#run2026-10-27-sweep-d2s-play
-resolution: ""
+  - ../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
+  - ../../findings/save/0001-d2s-io.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play
+  - ../../findings/save/experiments.md#run2026-10-27-sweep-d2s-play
+resolution: "lane/a50t: tools/d2s.py build gains two opt-in, default-off test-state keys: item \"lone_follower\": true (a follower such as 49 without its head written alone with its own Save Bits) and merc \"name_unchecked\": true (any u16 name id); pinned in tools/test_d2s.py (KeysTest.test_lone_follower_test_state, MercTest.test_name_unchecked_test_state) [d2s format](../../formats/d2s.md#mercenary-saves)"
 ---
 
 Two `tools/d2s.py build` refusals left plan 0038 batch H1b without a separating input (run:2026-10-27-sweep-d2s-play).

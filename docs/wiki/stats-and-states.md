@@ -2,7 +2,7 @@
 based_on:
   - docs/specs/stats/README.md 2026-10-21
   - docs/specs/stats/aggregate.md 2026-10-20
-  - docs/specs/stats/states.md 2026-10-21
+  - docs/specs/stats/states.md 2026-10-27
 ---
 
 # Stats and states
@@ -219,7 +219,8 @@ A state is a flag on the unit and, usually, a stat list carrying the state's sta
 ([states § A](../specs/stats/states.md#a-the-state-bit-and-its-list), [§ B](../specs/stats/states.md#b-the-timed-apply)).
 Skills, auras, shrines, open wounds and the prevent-heal effect put states on a unit through one common routine; poison, burning,
 cold and freeze use their own routines that make the same kind of list (read from the code;
-[combat](combat.md#chill-stun-freeze-and-poison) covers those).
+[combat](combat.md#chill-stun-freeze-and-poison) covers those). The skills runs saw prevent-heal land on a monster only
+when the attacker had the prevent-heal stat (86 of 918 successful hits checked), with no random draw.
 
 ```mermaid
 stateDiagram-v2

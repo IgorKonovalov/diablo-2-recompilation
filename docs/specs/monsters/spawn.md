@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, data/excel, drlg/collision, objects]
 consumed_by: [monsters/special, monsters/stats, items/tc, chain]
-tags: {C: 136, I: 44, L: 5}
+tags: {C: 137, I: 45, L: 5}
 updated: 2026-10-27
 ---
 
@@ -782,6 +782,15 @@ mod picks ([special § A](special.md#a-champion-or-unique)), the unique minion c
 ([special § C](special.md#c-mod-handlers)), the pack size (G5) for a boss. [C]
 (fn:sub_0054DF80_SpawnGroup@0x0054DF80, fn:sub_005A43E0_SpecialMonSpawn@0x005A43E0, fn:sub_0054E1E0_ChampionPack@0x0054E1E0,
 run:2026-10-13-mon-spawn)
+
+J3. **A skill's summon is created the same way**, outside this pass
+([skills/dispatch § L](../skills/dispatch.md#l-summons)): in 219 summons of plan 0045 (207 Ravens of Skills row 221, 12
+`necroskeleton` of Raise Skeleton) the game seed steps once in the summon's `SUnitCreate`, the new unit's seed is
+`Init` of that step's low word, and its life and defence are what `MonStatsInit`'s draws give on that seed
+([stats § B](stats.md#b-monstatsinit-in-order)). [C] (fn:sub_0056D940_SpawnOwnedMonster@0x0056D940,
+fn:sub_00552DF0_UnitSeedInit@0x00552DF0, fn:sub_00573CB0_MonStatsInit@0x00573CB0, run:2026-10-27-skills)
+`SpawnOwnedMonster` itself adds no draw, and its fallback creation in mode 4 is the reading. [I]
+(fn:sub_0056D940_SpawnOwnedMonster@0x0056D940, fn:sub_005B2F20_SpawnAtPos@0x005B2F20)
 
 ### K. Wanderers (the tick)
 

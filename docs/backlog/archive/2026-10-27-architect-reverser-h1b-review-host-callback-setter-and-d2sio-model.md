@@ -2,11 +2,11 @@
 from: architect
 to: reverser
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0038-inferred-claims-sweep.md#implementation-log
-  - ../findings/save/0001-d2s-io.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play
-resolution: ""
+  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../findings/save/0001-d2s-io.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play
+resolution: "Done in lane/r1h: (1) Ghidra findptr and a raw byte scan find nothing reaching 0x0052C0E0 or 0x00534630, so rows 3 and 19 and the callback halves of rows 2 and 18 are proposed d-none, and both symbols were added (I) [../findings/save/0001-d2s-io.md#plan-0038-r1h-the-host-callback-setter-and-the-d2sio-model-2026-10-27]; (2) d2sio.py 2ac6e9f1 -> 29561293 compares WSKL and stops at LFIN2, and the H1b re-check gives 2 798 comparisons, 0 failing, 0 d2sio mismatches; (3) h1b_sessions.py keys its copies on the log stem [../plans/0038-inferred-claims-sweep.md#implementation-log]"
 ---
 
 From the `lane/h1b` review (plan 0038 batch H1b). Not blocking. Static work only, no slot.

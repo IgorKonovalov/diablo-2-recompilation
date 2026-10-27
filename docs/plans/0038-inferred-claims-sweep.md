@@ -3745,7 +3745,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     417** (d-none 291), **deferred 2, raised 17: 1 526**; symbols I → C (rule 14): `D2S_WriteMercHeader`,
     `D2S_ReadMercHeader`, `D2S_LoadFinish`, `D2S_WriteCorpses`, `D2S_ReadCorpses`, `D2S_ReadMercItems`.
   - **Backlog:** archivist entry
-    [2026-10-27-reverser-archivist-h1b-d2s-build-test-state-keys-for-a](../backlog/2026-10-27-reverser-archivist-h1b-d2s-build-test-state-keys-for-a.md)
+    [2026-10-27-reverser-archivist-h1b-d2s-build-test-state-keys-for-a](../backlog/archive/2026-10-27-reverser-archivist-h1b-d2s-build-test-state-keys-for-a.md)
     (lone follower, merc name past range); spec-writer entry
     [2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises](../backlog/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md)
     (held for the review); review request
@@ -3783,7 +3783,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     what reaches the code. For rows 3 and 19, the only writer of the host callback `0x00883D50`, 0x0052C0E0, has no
     call, jump or absolute or RVA pointer in the image (objdump). If Ghidra xrefs agree, rows 3 and 19 and the callback
     halves of rows 2 and 18 become d-none
-    ([2026-10-27-architect-reverser-h1b-review-host-callback-setter-and-d2sio-model](../backlog/2026-10-27-architect-reverser-h1b-review-host-callback-setter-and-d2sio-model.md)).
+    ([2026-10-27-architect-reverser-h1b-review-host-callback-setter-and-d2sio-model](../backlog/archive/2026-10-27-architect-reverser-h1b-review-host-callback-setter-and-d2sio-model.md)).
     (e) Row 110's shortfall is right. The watchpoint armed on drop 27's flags missed a clear that `B13C` logged, so it
     was not live, and no absence is claimed under it. Rows 111–113 rest on breakpoints, not on the watch. (f) Row 39's
     tightened read half stands. The tool-built dead mercenary has no source of deadness but header bit 16, and each
@@ -3803,3 +3803,63 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     [2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises](../backlog/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md)
     was **released**, with four points added. The reverser entry above was filed. The archivist entry is unchanged.
   - **Next:** merge `lane/h1b`; then H1a (`d2s-load`).
+- **2026-10-27 — `lane/r1h` filed (reverser, static, Ghidra lane copy, no slot): the `lane/h1b` review's reverser
+  entry, rulings (d) and (i).** Branched from `main` `2b087d2c`.
+  - **Setter:** `tools/ghidra.sh findptr` (new: `re/ghidra_scripts/FindPointer.java`) and a raw byte scan both find
+    nothing that reaches `sub_0052C0E0_SetHostSaveCallback` (0x0052C0E0) or `sub_00534630_PlrSaveWrapper` (0x00534630).
+    The six channels are references of any type, the VA or RVA at any alignment in every initialized block,
+    immediates, raw relative branches, exports and fall-through. Each channel found its control in the same run.
+    The setter's two stores are the only writes of `0x00883D50` (Ghidra 38 READ + 2 WRITE; objdump 41 instructions,
+    the extra one a read in undisassembled code at 0x0052BFC0). The callback lies in zero-filled `.data`. Both
+    symbols were added (I). The absence is `[I]`: a target computed at run time is not excluded.
+    [save/0001 § Plan 0038 r1h](../findings/save/0001-d2s-io.md#plan-0038-r1h-the-host-callback-setter-and-the-d2sio-model-2026-10-27).
+  - **Proposed class moves** (inventory § 2.6 H1b block): rows 3 and 19 go shortfall → **d-none**. The callback
+    halves of rows 2 and 18 are d-none as halves, and those rows stay raised in part. H1b becomes raised 25, in part
+    14, shortfall 5, d-none 4: 48. Totals against `main` `2b087d2c`: **static 567, harness 521, c-emu 0, blocked 419**
+    (d-none 293), **deferred 2, raised 17: 1 526**.
+  - **d2sio:** `tools/d2sio.py` `2ac6e9f1…` → `29561293…`: the mouse words are compared with `WSKL` (fallback:
+    player data, labelled), and a load's items stop at `LFIN2`, with the later `RITEM` lines compared with
+    `COPY`/`COPY2`. `tools/sweep_h1b.py` `c0063a8b…` → `b2d9ac1a…`: the explaining wrapper is removed. The re-check
+    on the 13 kept logs, run under `MemoryMax=4G`, gives **2 798 H1B comparisons, 0 failing, 0 d2sio mismatches**
+    (`workspace/logs/r1h/sweep-h1b-check-r1h.txt` `c39fd4bd…`; manifest `r1h-manifest.sha256` `94f2b304…`). The
+    run:2026-10-12-d2s-io logs are unchanged apart from the added `later=` field. `tools/h1b_sessions.py` now keys
+    its copies on the log stem (entry item 3).
+  - **Backlog:** the reverser entry was closed (archive). Review request: [2026-10-27-reverser-architect-review-lane-r1h-host-callback-setter-and-d2sio](../backlog/archive/2026-10-27-reverser-architect-review-lane-r1h-host-callback-setter-and-d2sio.md).
+  - **Next:** the `lane/r1h` review.
+- **2026-10-27 — `lane/r1h` review (architect): accept with fixes (3).** Merged `main` `2637b081` into the lane first
+  (ledger conflict kept both sides).
+  - **Checks:** `sha256sum -c r1h-manifest.sha256` passes for all 7 files (manifest `94f2b304…`). The re-check under
+    `systemd-run --user --scope -p MemoryMax=4G` (`tools/d2sio.py` `29561293…`, `tools/sweep_h1b.py` `b2d9ac1a…`, 13
+    logs) is byte-identical to `sweep-h1b-check-r1h.txt` (`c39fd4bd…`): 2 798 comparisons, 0 failing, every D2SIO line
+    0. **Negative control:** the replaced `d2sio.py` (`2ac6e9f1…`, git `2b087d2c`) fails rt-r2 with 4 mismatches
+    (`mouse[0]`/`mouse[1]` file 42/43, player data 0, two writes) and hell-r3 with 1 (`RITEM count` 25 against the
+    file's 14; the label prints the runtime count first, a cosmetic slip older than this lane). The new one gives 0 on
+    both, with hell-r3 at 1 034 comparisons (the added `COPY` comparison). objdump agrees on the writes and reads.
+    There are 41 instructions naming `0x00883D50`, the only stores 0x0052C0EC and 0x0052C0FF. `0x00883D54` is stored
+    only at 0x0052C0F1 and 0x0052C105. The `rep stos` at 0x005306B8 zeroes 0x400 dwords from `0x00882D38`, so it ends
+    at `0x00883D37`. The death branch's `je` at 0x0057FD52 skips the status test when the callback is 0. The setter
+    follows `ret 8` and `int3` at 0x0052C0DC–0x0052C0DF. The `.data` raw size ends at RVA `0x0034D000`. An independent
+    raw scan (VA, RVA, `E8`/`E9`/`0F 8x`/`EB`/`7x`; control `PLRSAVE_Save`'s 8 calls) finds nothing for 0x0052C0E0,
+    0x00534630 or 0x0052BFC0 (`workspace/logs/r1h/review/`, manifest `review-manifest.sha256` `d7aca001…`).
+  - **`FindPointer.java`** is correct for what it claims. The rel8 displacement is sign-extended (a Java `byte`), the
+    rel32 by `(int)`. The pointer scan runs before the executable-only `continue`, so data blocks are searched. The
+    script is read-only (no transaction), and it adds one `ghidra.sh` subcommand, so it is backward-safe. Its limits
+    were not written down: `fall` sees only disassembled instructions, `rel` does not decode `E0`–`E3` or
+    `66`-prefixed branches and skips each executable block's last 4 bytes, and no channel sees a computed target.
+  - **Fixes:** (1) save/0001: 0x0052BFC0's "callers unfollowed" now carries the raw scan (nothing reaches it) and its
+    gate (`0x00883D54`, set only by the setter). (2) save/0001: the computed-target residual names the nearest
+    indexed store. 0x0052C134 writes `[0x00882D34 + 4·id]` (`id` 16-bit; `0x00883D50` is `id` 0x407) only into a slot
+    holding −1, which only 0x0052C1E1 stores, for allocator ids 1..0x400. The other `.data` indexed stores below the
+    callback are named as what the `[I]` still stands on. (3) `FindPointer.java`'s header states its limits (comment
+    only; no output changes). The proposals are also written as accepted in save/0001 and inventory § 2.6 (rule 3).
+  - **Rulings:** (a) the four moves are accepted. Rows 3 and 19 go shortfall → d-none, and the callback halves of rows 2
+    and 18 are d-none as halves, with both rows still H1b, raised in part. (b) The unfollowed read at 0x0052BFCF does
+    not change ruling (d). "Nothing reaches the code" is about the callback-gated paths, and that read is one of them,
+    gated on `0x00883D54`, which only the setter writes. Nothing reaches 0x0052BFC0 either. (c) d-none with an `[I]`
+    absence fits the class rules. d-none raises nothing, its definition includes dead code, and its reason may be a
+    reading (tc 41, outdoor 10). The reason is recorded with its residual, and a caller of 0x0052C0E0, found any way,
+    moves rows 3 and 19 back to (b). (d) The symbols stay I (no logged return, rule 14 scope).
+  - **Totals** (against `main` `2637b081`; `lane/p50b` changed no inventory row): H1b raised 25, raised in part 14,
+    shortfall 5, d-none 4: 48. **static 567, harness 521, c-emu 0, blocked 419** (d-none 293, d-edit 73, d-sim 28,
+    d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526**, as the lane filed them.
+  - **Backlog:** review request closed. **Next:** merge `lane/r1h`; H1a (`d2s-load`) as before.

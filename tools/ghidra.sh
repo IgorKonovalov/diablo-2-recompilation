@@ -11,6 +11,9 @@
 #   xrefs <addr|name>...        references to each target, plus callees for functions
 #   findstring <text>...        defined strings containing <text> (case-insensitive) and their xrefs
 #   findscalar <value>...       functions whose instructions use an immediate (dec or 0x-hex)
+#   findptr <addr>...           every way the image reaches an address: references of any type, VA/RVA bytes in
+#                               every initialized block, immediates, raw relative branches, exports, fall-through
+#                               (FindPointer.java)
 #   instrat <addr-file>         per address: instruction / data / undefined, containing function
 #   emu <fn addr> <cases>       emulate a __fastcall(u32 *seed, u32 edx) per case line (EmuFastcall.java)
 #   emucalc <fn addr> <cases>   emulate a calc-formula function (a, b, c, ctx) per case line (EmuCalcFunc.java)
@@ -137,6 +140,7 @@ case "$cmd" in
 	xrefs) query Xrefs.java "$@" ;;
 	findstring) query FindString.java "$@" ;;
 	findscalar) query FindScalar.java "$@" ;;
+	findptr) query FindPointer.java "$@" ;;
 	instrat) query InstrAt.java "$@" ;;
 	emu) query EmuFastcall.java "$@" ;;
 	emucalc) query EmuCalcFunc.java "$@" ;;
