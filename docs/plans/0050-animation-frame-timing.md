@@ -164,6 +164,11 @@ client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing ente
     the hit class (`sub_0057CE30_HitClassPick`: which of Weapons `hit class`, MonStats2 `HitClass` and the packet's
     `+0x60` it starts from, and whether the server gates anything on it; [HitClass](../tables/HitClass.md#open-questions),
     folded in at the P0 review);
+    - **and the `lane/a50t` review's two reads** ([log](#implementation-log)): what `MonStatsSpeeds` (anim/0002 § 3.5)
+      writes as the walk base `+0x036` for a class with no walk record (the seven classic `9A` rows and the `E9` rows,
+      [MonStats § Timing](../tables/MonStats.md#timing-plan-0050-phase-0) `[L]`), and whether the moving branch
+      writes `+0x4C` for a `Velocity`-0 class in S1 (a path or none); and anim/0002's open question on a negative
+      rate stat closed, citing [ItemStatCost § Timing](../tables/ItemStatCost.md#timing-plan-0050-phase-0)'s survey;
   - for each event kind (mode start, frame event, mode end, rate change, movement step), its inputs, outputs, draws,
     seeds and the chaining reading (ADR-0014);
   - the community cross-check (Phase 1b) done;
@@ -202,6 +207,9 @@ client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing ente
     at the moving rate from its walk base (anim/0002 § 3.4) and its schedule predicted, at least 30 events over two or
     more classes, one under a stat 67 change (a `fast` or champion mod, or a slowing state); and a class ≥ 410 monster
     in an S1–S4 mode at the default or attack rate, at least 30 events;
+  - optional (the `lane/a50t` review ruling): a classic `9A` trap (326–330, 355 or 369) in S1, its `+0x036` and `+0x4C`
+    logged and its schedule predicted, at least 30 events; it counts toward the classic classes above when its rate
+    is the moving one. The two-frame records' lost event (`r ≥ 512`) is not a case: no stock source reaches it;
   - 100 object animation starts with the `Sync` draw predicted (and chained);
   - 200 movement windows (walk and run per class, monsters walking and running), positions per logged frame in a
     stated window, 50 under a slowing state;
@@ -587,3 +595,34 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   load reads for a missing record (not read, `[L]` in the table doc). For ruling (g)'s Phase 2 case, if the architect
   wants it: `invisospawner` S1 and a `9A` trap S1, with the stat 67 they carry. anim/0002 open question 3 is answered
   by the ItemStatCost bullet (the reverser's to close in the finding).
+- **2026-10-27 — `lane/a50t` reviewed (architect): accept with fixes (3).** `main` merged first (`062bc473`, the ledger
+  conflict kept both sides; `backlog.py archive` clean). Static only (no harness, no Ghidra). `anim_survey.py summary`
+  reproduces `tools/gate/baselines/anim.txt` key for key; `ratemin` and `twoframe` rerun. A review script of its own over
+  the excel `.txt` files (scratch, not kept) gives the same: 15 property codes write the five stats, 353 blocks (uniqueitems
+  192, runes 50, setitems 53, magicsuffix 37, sets 10, cubemain 4, monprop 4, gems 3), none negative or non-integer, the
+  lowest 3 (*of Inertia* `move1`). No cell outside `itemstatcost`/`properties` names one of the five. The 24 `K9`/`E9`/`9A`
+  rows, their `m<mode>` bits, `*mv` bits and `Velocity` match the MonStats table row for row. Note that
+  the survey's row numbers skip the `Expansion` marker row (*Stormchaser* is record 226).
+  `python3 -I tools/test_d2s.py`: 47 tests, the two new ones pass, and the two failures already on `main` remain.
+  **Rulings.** (a) Item 1 stands: the `SplGetModeChart` `[I]` is anim/0001 § 10's reading, class for class.
+  (b) Item 2's `[C]` stands for the data (the counts and minima); its table's "factor < 0" and "divide fault" columns
+  quote anim/0002 § 2 and § 3.1–3.2, and the bullet's step to "no stock combination" is `[I]` as written. Ruling (e)
+  gets no Phase 2 case. (c) **The item 3 surprise does not add a required case.** Losing a two-frame record's event
+  needs `r ≥ 512`: at walk base 256 that is `B_FRW + stat 67 ≥ 200`. A `Velocity`-0 class keeps the new-monster
+  75 (the `champion`/`fast` terms need `Velocity` > 0), and no stock monprop block writes stat 96. So no stock
+  source reaches it, which is the same outcome as ruling (f). **A `9A` trap's S1 is a Phase 2 optional case** (now in
+  *Done when*), for its run-time `+0x036`/`+0x4C`. The `invisospawner` is not a case: its walk base is the `K9WLHTH`
+  record, which leaves nothing to settle. (d) **Two static reads are now in P1.3's *Done when*:** the walk base
+  `MonStatsSpeeds` gives a class with no walk record (MonStats § Timing's `[L]`), with the moving branch's write for a
+  `Velocity`-0 class in S1, and closing anim/0002's open question on a negative rate stat. The lane had left these as
+  "the reverser's to close" with no route. (e) The 0045 part 2 links match their findings: skills/0001 § 18 and
+  monsters/0004 § 9 (26 425 / 26 383, mask `0x40 + e` at `0x005A51D7`), and skills/0002 § 12 (271 `blaze` at level 2,
+  `25 · 2 + 90` = 140). (f) The d2s keys are opt-in and default off, and each refusal path is tested. The two old
+  `test_d2s.py` failures are not this lane's and are not an architect fix: each missing `RECIPE_BASES` row needs a
+  base save and a built hash. They are routed:
+  [archivist entry](../backlog/2026-10-27-architect-archivist-test-d2s-recipe-bases-and-mp-saves-pin.md). The 13
+  recipes are three plan 0051 P1a mp recipes and ten `skills-*` recipes; `travel-tab2` is not one.
+  **Fixes:** the Missiles `VelLev` row gains the review note that a level-1 `spike1` separates the term, with its C2
+  entry (omission); the P1.3 reads of ruling (d) (omission); the request's `travel-tab2` (misread, in the request only).
+  No game data is dumped: the new tables give row ids, names and counts. The review request is closed. Ledger: lane row
+  filled (usage from the orchestrator), review row added with "—" usage.
