@@ -4441,6 +4441,91 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     12 min); the review row added, usage "—".
   - **Next:** merge `lane/sk`.
 - **2026-10-27 — `lane/a3r` review (architect): accept.** The `tools/` diff is the one `h3brare` `RECIPE_BASES` row; a scratch rebuild of `h3brare.json` (`52aa64e8…`) on `smpsor-l50.d2s` gives `ce57d8f7…6317`, the H3b record's save hash (data/experiments); `test_d2s.py` 47 tests OK; the [review request](../backlog/archive/2026-10-27-archivist-architect-review-lane-a3r-test-d2s-h3brare-row.md) closed; ledger lane row filled (usage from the orchestrator), review row usage "—".
+- **2026-10-27 — Phase 3, the save/d2s and items/uniques-sets clusters (spec-writer, `lane/s38s`, from `main`
+  `cb3a7014`).** Their batches are save/d2s S1a, S1e, H1b (with the r1h moves) and H1a, and items/uniques-sets S2b,
+  S2c, S1f, H2b, H6d and H1a, all accepted.
+  - **Counts:** [save/d2s](../specs/save/d2s.md) {C 91, I 149, L 3} → **{C 239, I 67, L 3}**;
+    [items/uniques-sets](../specs/items/uniques-sets.md) {C 71, I 55, L 4} → **{C 100, I 38, L 4}**; `updated:` 2026-10-27.
+  - **Applied:** every raised row with its `run:` or second source, raised-in-part rows split along their remainders;
+    the H1a new readings (`D2S_ReadSave`'s unmapped 9, the length test first and the test order, the waypoint marker
+    reset and `WAYPOINT_Save`'s restore, a bad set id dropping the item, a bad unique id read −1 and written `0xFFF`,
+    stat 72 in 8 bits for item version ≤ 95, the `0x29` count bounding the old stat form, class 7 halting); H1a ruling
+    1 as one `[I]` reach note; rows 20/34's −1 reach condition as an `[I]` note under the class-7 `[C]`; the d-none
+    halves (row 50's ladder, row 139's `gf`, rows 3/19 and the callback halves of 2/18 per r1h) and the legacy
+    shortfalls `[I]`; H1b ruling (c) (the death save `[C]`, "Nothing was written during play" scoped to
+    run:2026-10-12-d2s-io) and (g) (stat 30's wording); the S1a entry's (b)–(g), the S1e (a)/(f) and review (d) lines,
+    S1f (a)/(c), H2b (c)–(g) and H6d (i).
+  - **Wiki:** [saves](../wiki/saves.md), [characters](../wiki/characters.md) and [items](../wiki/items.md) `based_on`
+    dates set to 2026-10-27 (W4 clear); saves and items restated, characters waits on player/creation and hirelings.
+  - **Backlog:** closed the S1a corrections, S1e corrections, S1e review additions and S1f entries; annotated H1b
+    (hirelings, H6f), H1a (player/creation H6g, hirelings H6f, (k)), H6d (quest-drops) and H2b (sockets-runewords).
+    Counts entry [s38s counts](../backlog/archive/2026-10-27-spec-writer-architect-s38s-save-d2s-and-uniques-sets-counts-for.md),
+    review request [s38s review](../backlog/archive/2026-10-27-spec-writer-architect-s38s-review-save-d2s-and-uniques-sets-phase.md).
+    Ledger row added, usage "—".
+  - **Not touched (waiting):** hirelings (H6f) and player/creation (H6g): the H1b and H1a rows hirelings 3, 24, 30,
+    32, 33 and player-creation 1, 8, 9, 11, 20, 34, and the H1a entry's (k) (data/calc L417, rng/seeds L362).
+  - **Next:** the `lane/s38s` review.
+- **2026-10-27 — `lane/s38s` review (architect): accept with fixes (9).** Phase 3 of the save/d2s and
+  items/uniques-sets clusters, reviewed at `3f4ffcf7` after merging `main` `507a6f5c` into the lane (`c95617d8`;
+  conflicts in this log and the ledger, both appends, kept both sides; `backlog.py archive` moved nothing). Static
+  review: objdump on the pinned image, the kept check outputs read (`workspace/logs/h1a/check/sweep-h1a-check.txt`,
+  `workspace/logs/r1h/sweep-h1b-check-r1h.txt`), no Ghidra, no harness.
+  - **Trace.** save/d2s's new `[C]` (148, plus 1 here) traced, more than a third of them, to the ledger lines of these rows in save/0001 § S1a (rows 5, 7, 8, 11–16, 20,
+    45, 51, 58, 61–64, 66, 69–71, 74–76, 79, 84–87, 93, 94, 96–101, 109, 119–121, 123, 131), § S1e (82, 122, 129, 133),
+    § H1b (rows 2, 4, 6, 18, 21, 25, 31, 33–43, 48, 55–57, 60, 72, 73, 83, 88, 102, 108, 111–113, 115, 116, 118, 125,
+    127) and § H1a (rows 9, 22, 23, 26–30, 36, 38, 44, 46, 47, 49, 50, 52–54, 59, 62, 65, 68, 80, 90, 91, 105–107, 132,
+    139, 140; player-creation 8, 9, 11), each within its review's scope; uniques-sets's new `[C]` (29) traced to the lines of
+    items/0004 § S2b (us 3, 4, 5, 6/28, 13, 15, 20, 23, 24, 27, 29, 32, 33, 34, 36, 40, 42), S2c (us 1), S1f (us 44)
+    and H2b (us 7, 9, 35, 39). The H1a new readings each have a `CASE` line in the kept check (`short`, `magic`,
+    `hdrshort`, `fields`, `wpbad`, `setbad`, `uniqbad`, `v94`, `v94s12`, `slots8`, `class7`, `stub7`). The second-source
+    bullets restate their rows' evidence and raise no claim beyond the rows' scope; no inflation by restatement.
+  - **Rulings:**
+    1. **Rows 20/34 and the class-7 halt.** No conflict. The halt (class 7 passes the class test, the game stops at
+       `sub_00553180`'s null-unit test, 1210) is player-creation row 11, raised by H1a on `RCST`/`RMAP` and the two
+       crash reports, so a spec states it `[C]`. Rows 20 and 34 are the readings that need a class-7 player (the
+       experience column, the starting kit); the halt shows none exists, so they are d-none and stay `[I]`. The spec's
+       class-7 bullet now cites row 11; inventory § 2.6 states the distinction under the s38s block.
+    2. **The cross-spec tag on the wiki.** Spec-writer rule 1 is for specs that disagree on the evidence. The header
+       test order (player-creation 8, H1a) and the merc header's write side (hirelings 24, H1b) are accepted ledger
+       raises that player/creation A2 and hirelings F8 have not yet absorbed (H6g, H6f). A page follows the spec that
+       carries the raise and links its section; the lagging specs take it in their own rounds. wiki/saves stands;
+       wiki/characters, which left both "read from the code", now follows save/d2s D3 and § D (rule 1 scoped in
+       spec-writer review-fixes).
+    3. **H1b ruling (c)** is applied as filed: § Entry points states the death save `[C]` as an event save, and
+       "Nothing was written during play" is scoped to run:2026-10-12-d2s-io. The wiki's "in one case: a death" is
+       scoped to what was logged (fix 6).
+    4. **The S1a pieces H1b met.** A piece may not be raised without a ledger line; this review gives two of them
+       one, since H1b's kept check compares them: **row 24** (the swapped set's write: `weapon_set bit 0` equal to the
+       logged `+0x45C` in rt-r2's four writes) and **group 52** (`group 52 stats 52/53 = file` on `9cr`, three reads,
+       one of them of the game-written file) → rows 24, 123 and 138 raised, row 130's group-52 remainder met. **Row
+       32's `& 0xFFF` mask** stays `[I]` (the H1b hotkey check compares the written words, not the read), and **row
+       20's pet-type-7 test** stays `[I]` (no other pet type separates it). S1a's ledger: raised 42, in part 12,
+       returned 2. Totals unchanged (static 567, harness 519, c-emu 0, blocked 421, deferred 2, raised 17: 1 526).
+    5. **H1a's stat-72 width reads the save version**, not the item's: `ITEMS_ReadFull` tests its version argument
+       (`cmp [ebp+0x1C], 0x5F; ja`, 0x0062D425, 0x0062D759), the `v94` items kept item version 101, and every version
+       test of the reader reads the same argument. The `lane/h1a` review's "item version ≤ 0x5F" is corrected here and
+       in save/0001 § H1a.
+  - **Fixes applied (9):** (1) wrong anchor: a `{P}` token as J's `ValShift` run anchor. (2) misread: I5's "item
+    version ≤ 95", and the Tables row, I3's 72–88 note and J2's 1.09 line, now "save version" (ruling 5). (3)–(5)
+    overclaim: version 95 inside F2's and I5's `[C]` (only 94 and 96 loaded; `cmp eax, 0x5E` at 0x0056A627 for F2),
+    `WAYPOINT_Save`'s 0x0101 case inside E2's `[C]` block, Outputs' "at most 8 KiB" inside a `[C]` bullet. (6)
+    overclaim: wiki/saves "in one case: a death". (7) stale cross-reference: wiki/characters' stub-order and saved-merc
+    paragraphs. (8) under-claim: rows 24 and group 52 (ruling 4) in the header table, J1, J, the reimplementation note
+    and wiki/saves. (9) other: the class-7 bullet's row citation (ruling 1). Also wiki/saves: the stat-72 wording and
+    "the size and version tests were not told apart".
+  - **Counts:** [save/d2s](../specs/save/d2s.md) **{C 240, I 68, L 3}** (from the lane's {239, 67, 3}: C +1 group 52;
+    I −3 for rows 24, the J1 line and the reimplementation note, +4 for the 95 boundaries, the 0x0101 case and
+    Outputs); [items/uniques-sets](../specs/items/uniques-sets.md) **{C 100, I 38, L 4}** as filed. Research-map rows
+    rewritten whole; both clusters' Phase 3 is done.
+  - **Wiki:** saves, characters and items checked against the specs; saves and characters fixed (fixes 6–8), items
+    stands.
+  - **Backlog:** the review request and the counts entry closed. The H1b, H1a, H6d and H2b spec-writer entries stay
+    open for hirelings (H6f), player/creation (H6g), quest-drops and sockets-runewords. Review-fixes Seen lines:
+    spec-writer 1 (with the scope), 2, 3, 7 and 9; architect 2 and 3.
+  - **Ledger rows:** the lane row filled (accept with fixes, 9: overclaim 4, misread 1, under-claim 1, wrong anchor 1,
+    stale cross-reference 1, other 1; usage from the orchestrator: 457 804 tokens, 114 tools, 33 min); the review row
+    added, usage "—".
+  - **Next:** merge `lane/s38s`; hirelings (H6f) and player/creation (H6g) take the H1a/H1b raises left for them.
 - **2026-10-27 — `lane/a71` (archivist, no slot, no Ghidra, no harness, from `main` `44cfbcb5`): the H1a parser gaps.**
   Work of the [H1a archivist entry](../backlog/2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md).
   - **Built** (`tools/d2s.py`, every change off by default): an extended reader and writer (`parse(…, extended=True)`,
