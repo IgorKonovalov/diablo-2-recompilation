@@ -112,4 +112,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     what wraps: name the operation that wraps and whether a wrapping path reaches a use (`lane/p46m14` review, all
     three [0046](../../../../docs/plans/0046-skills-function-catalogue.md)); do 140's try offsets said not to wrap "below
     2³¹ − 9" where 2³¹ − 9 itself still fits (`lane/p46m15` review, 0046); `x − 90q` said to wrap "for `x` within 270
-    of `INT32_MIN`" where the bound is `x < INT32_MIN + 90q` (`lane/p51s` review, [0051](../../../../docs/plans/done/0051-backlog-sweep-6.md)).
+    of `INT32_MIN`" where the bound is `x < INT32_MIN + 90q` (`lane/p51s` review, [0051](../../../../docs/plans/done/0051-backlog-sweep-6.md));
+    the step product's wrap from `v` 32 768 stated without its sign case (a component of +4096 wraps, −4096 reaches
+    −2³¹ exactly), and the collision walk's "at most 10 crossings" without what the 10th does (the full step taken
+    unchecked, flag `0x8`) or the halved increment it walks by (`lane/p50d` review,
+    [0050](../../../../docs/plans/0050-animation-frame-timing.md)).

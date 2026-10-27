@@ -1,6 +1,6 @@
 # 0050 — Animation and frame timing: unit modes, frame counts, rates and breakpoints, movement speed (ADR-0014 phase 4)
 
-> **Status:** approved 2026-10-25 (owner), in effect 2026-10-27 (plan 0045 Phase 2 part 1 accepted); P0 accepted 2026-10-27, P1 and P1b open, P2 after 0045·P3's review
+> **Status:** approved 2026-10-25 (owner), in effect 2026-10-27 (plan 0045 Phase 2 part 1 accepted); P0 accepted 2026-10-27; P1 batches P1.1–P1.3 accepted with fixes 2026-10-27; P1b part 2 and P2 open (P2's gate, 0045·P3's review, open since 2026-10-27)
 > **Created:** 2026-10-25
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0005-presentation-formats-tools-only, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases, 0020-skills-phase-in-two-plans, 0021-observed-boundaries-in-emulation
@@ -193,8 +193,19 @@ client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing ente
   batch, 0045 or 0046 session needs it)
 - **What:** write `tools/anim.py` (model and `check`), `tools/gdb/anim.gdb` and its handler, the character recipes
   (tool-built, stock rate items, ADR-0013 § Neutral), and log a run.
-- **Done when:** `run:YYYY-MM-DD-anim` reproduces with **0 mismatches** over at least (minimums are estimates, to be
-  confirmed at the P1.3 review):
+- **Boundary** (anim/0003 § 9, ruled at the P1.3 review, [log](#implementation-log)): **oracles** (ADR-0004,
+  ADR-0021) are the mode request (plan 0045), the AI's command and its velocity block (plan 0052), the path plan (its
+  points, the replan and the target revalidation's `PathPlan` calls, `0x00679720`; phase (5)), the collision test
+  `0x0064FF90`'s result per crossed subtile, the catalogue speed writers of anim/0003 § 1 and the reschedules of
+  anim/0001 § 7.1, and the client. **Modelled:** the speeds, the step, the snap and the collision walk's arithmetic
+  (the halved increment, the 10-crossing exit), the run drain, the knockback point and its length, the gates of
+  anim/0003 §§ 5–6, `GetHitRoll` with its draws, `PlayerModeAllowed`'s draw, the hit-class nibbles and the object
+  operate end. **Log windows:** the step per frame of one unit per window (position before and after, `+0x7C`, the
+  direction, the point index, `UnitMoveStep`'s return), not every unit every frame (ADR-0014 § Log volume);
+  `COMBAT_GetHit` at entry (result bits, `+0x60`, total, max HP, the defender's seed) and the mode command it issues
+  with the seed before and after `PlayerModeAllowed`; `PlrModeLeaveOk`'s result; object event 1.
+- **Done when:** `run:YYYY-MM-DD-anim` reproduces with **0 mismatches** over at least (minimums are estimates,
+  confirmed as estimates at the P1.3 review):
   - 1 500 player mode events across all seven classes, each with its start frame, its event frames and its end frame
     predicted: A1, A2 (or the class's second attack), kick, throw, cast, get-hit, block, walk and run, a sequence
     skill; at least 30 per class and mode the pilot can stage;
@@ -218,7 +229,15 @@ client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing ente
   - **the oracle replacement:** plan 0045's skills run (its action frames), run:2026-10-16-combat and the plan 0047
     runs (their get-hit and block events) re-checked with the action frame and the get-hit length modelled where the
     logs hold what the model needs; the record names what could and could not be replaced;
-  - the Phase 1b cases.
+  - the Phase 1b cases;
+  - **the P1.3 review's cases** (minimums are estimates): 100 `GetHitRoll` calls with the band, the divisor and the
+    draws predicted, at least 20 in each of the two drawing bands and over two or more hit classes with different
+    divisors; 30 knockbacks (players and monsters, the end frame predicted); the run drain in the run windows above
+    (stamina per frame, and a run that turns to a walk at 0 if the pilot can stage it); the first frame of an
+    every-frame event queued during a frame's unit-list run (anim/0003's open question: it sets the first step of
+    every moving mode and the monster knockback count), logged at 30 or more moving-mode starts; optional: 30
+    `PlayerModeAllowed` draws under state 42 and 30 object operate ends (event 1). The step-product wrap
+    (`v ≥ 32 768`) is not a case unless a stock source reaches it.
 
   Rare-branch minimums (about 30 each) may fall short, named in the record with their counts; their claims stay `[I]`.
 
@@ -648,10 +667,56 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   23 symbols (12 `anim/movement`, 11 `anim/timing`), `re/types/anim.h` `PathMove`, `tools/anim_moves.py`, outputs
   `workspace/logs/anim/p50d-*` (`p50d-manifest.sha256`). Boundary recommendation in anim/0003 § 9. Archivist entry
   ([backlog](../backlog/2026-10-27-reverser-archivist-p50d-objects-framecnt-shift-and-hit-class-readers.md)); review
-  requested ([backlog](../backlog/2026-10-27-reverser-architect-review-lane-p50d-plan-0050-phase-1-batch.md));
+  requested ([backlog](../backlog/archive/2026-10-27-reverser-architect-review-lane-p50d-plan-0050-phase-1-batch.md));
   **Phase 1b part 2 runs after this review.**
   *Addendum (same lane, after merging `main` `ee8273b7` with the `lane/a50t` review's two reads):* anim/0003 § 1.1:
   `MonStatsSpeeds` reads the fallback record for a class with no walk record, so the `9A` and `E9` rows get walk base
   256 (run 128 below 410), and a `Velocity`-0 classic class in S1 has a path (`SUnitPathCreate`) and so `+0x4C` 192
   at `X` 75 with path speed 0; anim/0002's negative-rate-stat open question struck, citing ItemStatCost § Timing.
   Archivist entry item 3 added (the MonStats `[L]`).
+- **2026-10-27 — Phase 1 batch P1.3 reviewed (architect, `lane/p50d` at `ae55f39a`; static, objdump, no Ghidra, no
+  harness): accept with fixes (4).** `main` merged first (already up to date); `backlog.py archive` clean. The manifest
+  passes `sha256sum -c` (7 lines, from `workspace/logs/anim/`); `tools/anim_moves.py` (`4f68385e…`) reruns `tables`,
+  `calls` and `model` under `systemd-run --user --scope -p MemoryMax=4G` byte for byte, and the `p50d-monstatsspeeds.asm`
+  command reproduces. Objdump checks: the step at 0x00650330–0x00650345 is `imul ecx, edi; sar 6; imul; sar 0xC` on
+  both axes, signed, with `k = [ebp+0xC]` passed in `ECX` at 0x00650899 and the acceleration every fifth call
+  (0x006502E6–0x00650320); the collision walk's 10-crossing exit at 0x0065022F–0x0065023D; `PathSetAccel`'s two call
+  or jump sites (0x0059FDCC in `MissileCreate`, 0x004CD97E client) and no image pointer to it; the speed
+  `(pbase · X) / 100` by `0x51EB851F` and `sar 5` with the sign fix (0x006241A9–0x006241C9); the drain
+  (`RunDrain · 2`, `speed / 10 + 1` signed, stat 154 by `0xAE147AE1`, floor 1; 0x0057F283–0x0057F2F7);
+  `GetHitRoll`'s jump table at 0x0057CBF8 decoded (1 → 16, 2 → 8, 3 → 16, 4 → 32, 5 → 64, 6 → 8, 7 → 16, 8 → 32,
+  9 → 16, 10 → 8, 11 → 8, 12 → 16; above 12 → 16), the signed `D/2` and `D/4`, and two `RNG_RangePow2` calls on
+  `def+0x20` with `n` 2 and 4 (`low & (n − 1)`, rng/0001: so the bands get hit with 3/8, 3/4, 1 as stated); the
+  Concentration draw is `RNG_Range(player+0x20, 100)` at 0x0057EF7C against stat 164 of state 42's list, a draw below
+  it refusing; the eight `shl [edi+0xD8…0xF4], 8` at 0x00640E33–0x00640E64; and 0x0057D5EA calls 0x00623C20
+  (`UnitBaseHitClass`: weapon `+0x13C` via 0x0062A180, 1 without one, MonStats2 `+0x14`, else 0) under `+0x64` = 0 and
+  an empty low nibble. Also read: the knockback distance 10 for base class 78 else 5 (0x005A783F–0x005A784B), the
+  block gate (0x0057D282–0x0057D2D6), `g_HitClassElements` (36→48, 16→32, 28→64, 40→80, twice).
+  **The corrections stand:** anim/0001 § 1 (an object's `+0x48` is 8.8, `re/types/game.h` with it) and combat/0001
+  § 6 (`UnitBaseHitClass` at the delivery, `HitClassPick` in `COMBAT_GetHit`), each as a dated note. **Blind rule:**
+  no `anim/leads` row is cited, no community number or formula appears without an address, and *Leads used* states
+  that leads were not read before filing. **P1.3's *Done when* is met:** the speeds (CharStats, MonStats,
+  `MonStatsSpeeds`, stat 67, the slowing states, `RunDrain`), `PathSetSpeed` and the step in 16.16 units, each gate
+  (do, delivery, `srvmissile`, hit recovery and `GetHitRoll`, knockback and stun lengths, block, `delay`, the object
+  operate), the get-hit and durability draws, the hit class (folded at P0: its sources, and the server gate found is
+  `GetHitRoll`'s divisor; `Unit+0xB0`'s readers stay an open question, which the item's "whether" allows), the
+  `lane/a50t` items (§ 1.1's walk base 256 and the `Velocity`-0 S1 write; anim/0002's question struck citing
+  ItemStatCost § Timing), the movement-step event kind, and § 9.
+  **Rulings.** (a) **§ 9's boundary is accepted** with one addition, the collision test `0x0064FF90`'s result per
+  crossed subtile as an oracle (the grid is drlg/collision's), and is **folded into Phase 2's text** (a *Boundary*
+  item) with five new cases under *Done when* (`GetHitRoll` bands, knockbacks, the run drain in the run windows, the
+  every-frame event's first frame, and optional Concentration draws and object operate ends); the minimums stay
+  estimates. (b) The step-product wrap (`v ≥ 32 768`) is not a Phase 2 case unless a stock source reaches it; it
+  stays anim/0003's open question. (c) The global hit-class counter changes no server outcome found (every high
+  nibble gives `D` 16), so Phase 2 logs `+0x60` but need not model the counter beyond the nibble it logs. (d) **With
+  P1.3 accepted, Phase 1's three batches are done.** Phase 1's last *Done when* item (Phase 1b) closes with P1b
+  part 2. **P1b part 2 (the verdicts on `anim/leads` against P1.1–P1.3) may start now.** **0050·P2 (harness, one
+  slot) may start now:** its gate, 0045·P3's review, has been open since 2026-10-27, and Phase 1b need only land
+  before Phase 2's last session batch.
+  **Fixes (applied in anim/0003):** § 2's move bullet gains the collision walk's increment (`0x00678F00` halves both
+  axes until each is within one subtile), the free-crossing count at `+0x1D4`, and the 10th crossing's exit, which
+  takes the full step unchecked and sets flag `0x8` (omission); § 2's wrap bound names the sign case (+4096 wraps at
+  `v` 32 768, −4096 does not) (omission); § 6.1's block gate writes stat 95 only when the test passes, and otherwise
+  returns at 0x0057D3BD (omission); the function table's "§ 6.7" for § 6.5, and that heading's level (stale
+  cross-reference). The review request is closed. Ledger: the lane row filled (usage from the orchestrator), the
+  review row added with "—" usage.

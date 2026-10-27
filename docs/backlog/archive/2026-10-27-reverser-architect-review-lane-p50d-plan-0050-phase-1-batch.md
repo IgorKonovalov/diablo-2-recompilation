@@ -2,22 +2,22 @@
 from: reverser
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../findings/anim/0003-movement-gates.md
-  - ../findings/anim/0001-modes-frames.md#1-the-units-animation-fields
-  - ../findings/combat/0001-formulas.md#6-resolve-queue-deliver
-  - ../plans/0050-animation-frame-timing.md#implementation-log
-resolution: ""
+  - ../../findings/anim/0003-movement-gates.md
+  - ../../findings/anim/0001-modes-frames.md#1-the-units-animation-fields
+  - ../../findings/combat/0001-formulas.md#6-resolve-queue-deliver
+  - ../../plans/0050-animation-frame-timing.md#implementation-log
+resolution: "Reviewed 2026-10-27 (architect): accept with fixes (4: the collision walk's halved increment and 10-crossing exit, the wrap's sign case, the block gate's stat-95 write, a stale § 6.7). Rulings in plan 0050's log: § 9's boundary accepted with the collision test as an oracle and folded into Phase 2; Phase 1's batches done; P1b part 2 and 0050·P2 may start."
 ---
 
 Please review `lane/p50d`, plan 0050 Phase 1 batch P1.3 (movement and the gates), against the P1.3 item of the
 plan's *Done when* (with the hit class folded in at the P0 review) and P1.1 ruling (c) (`PlayerModeAllowed`'s draw
-as a gate). Blocking Phase 1's close; **Phase 1b part 2** (the verdicts on [anim/leads](../findings/anim/leads.md))
+as a gate). Blocking Phase 1's close; **Phase 1b part 2** (the verdicts on [anim/leads](../../findings/anim/leads.md))
 runs after this batch's review.
 
 What to check:
-- [anim/0003](../findings/anim/0003-movement-gates.md), all `[I]`: the speeds (§ 1: the path base without a mode
+- [anim/0003](../../findings/anim/0003-movement-gates.md), all `[I]`: the speeds (§ 1: the path base without a mode
   argument, the player run's mode-scoped stat-67 list, the monster's command velocity), the per-frame step (§ 2: the
   `(d · ((v · 0x400) >> 6)) >> 12` step with `g_PathDirTable`'s norm, the point snap, the collision walk, the stop,
   no acceleration for units; the wrap bound `v ≤ 32 767`), who steps (§ 3, 11 sites) and the run drain (§ 3.1),
@@ -40,7 +40,7 @@ What to check:
   offsets checked with `_Static_assert` under `gcc -m32`).
 - Blind rule: leads not read before filing (only `anim/leads` § 1); no leads row cited.
 - An archivist entry for the Objects `FrameCnt` load shift and the HitClass open question
-  ([backlog](2026-10-27-reverser-archivist-p50d-objects-framecnt-shift-and-hit-class-readers.md)), non-blocking.
+  ([backlog](../2026-10-27-reverser-archivist-p50d-objects-framecnt-shift-and-hit-class-readers.md)), non-blocking.
 
 Not done here: no harness and no emulation; every new claim is a code reading. The open questions of anim/0003 (the
 step wrap's stock reach, `Unit+0xB0`'s readers, the 44 unread object queue sites, stun on players, the every-frame

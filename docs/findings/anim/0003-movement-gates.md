@@ -109,9 +109,9 @@ New names (subsystems `anim/movement` and `anim/timing`) and the existing ones t
 | `0x0057ED70` | `sub_0057ED70_PlrModeEndPending` | `frame ≤ (first kind-1 event frame) + 5` | I |
 | `0x0057ED90` | `sub_0057ED90_PlrSeqLeaveOk` | the sequence mode's leave test (not read past its first test) | I |
 | `0x005415A0` | `sub_005415A0_UnitEventFirstFrame` | the least positive frame of the unit's queued events of a kind | I |
-| `0x00581490` | `sub_00581490_ObjEvOperateEnd` | object event 1: mode 1 → 2 (§ 6.7) | I |
+| `0x00581490` | `sub_00581490_ObjEvOperateEnd` | object event 1: mode 1 → 2 (§ 6.5) | I |
 | `0x005A54F0` | `sub_005A54F0_MonGetHitAddKnockback` | base class 78: a get-hit also knocks back | I |
-| `0x0063F690` | `sub_0063F690_ObjectsLoad` | the Objects table load (its `FrameCnt` shift, § 6.7) | I |
+| `0x0063F690` | `sub_0063F690_ObjectsLoad` | the Objects table load (its `FrameCnt` shift, § 6.5) | I |
 
 Data: `g_HitClassElements` `0x006E16D8` (4 pairs, repeated: packet offset, class), `g_HitClassCounter` `0x0088CAD0`
 (byte), `g_PathPlanFuncs` `0x006EB6D8` (16 planners by path type). Read, existing: `sub_0056E5B0_UnitWalkVelocity`,
@@ -227,6 +227,12 @@ PathStop(p);  return 0;                             // UnitMoveStep: 2 - (ret !=
   the position stops at the centre of the last free subtile, and then a monster path with flag `0x10` re-plans
   (`sub_00650350_PathReplan`), any other path sets `+0x24 = +0x28` (ends). A reached point increments `+0x24`; the
   path byte `+0x90` is decremented at each subtile change for path types other than 8 and 11.
+  *2026-10-27 (`lane/p50d` review):* the walk's increment is not the step itself: `0x00678F00` first halves both
+  axes together (`sar 1`) until each lies within `±0x10000` (one subtile), and the walk adds that increment, testing
+  only when the subtile changes. Each free tested subtile counts in path `+0x1D4` (recorded at `+0x1D8…` under flag
+  `0x20000`); at the 10th the walk stops testing and the full step's target is taken unchecked (`jge 0x00650292`),
+  with flag `0x8` set when any subtile was counted; a blocked test returns 1, otherwise 0.
+  (0x00650177, 0x0065022F–0x0065023D, 0x00650259–0x00650279, 0x00650292–0x006502AA)
   (fn:sub_00650660_PathStepMove@0x00650660, fn:sub_00650150_PathStepCollide@0x00650150, fn:sub_00650350_PathReplan@0x00650350)
 - [I] **The end.** `PathStep` returns 1 while points remain; otherwise `sub_006507B0_PathStop` snaps the position to
   the subtile centre, clears flag `0x20`, the point count and index and the step, and `UnitMoveStep` returns 2.
@@ -238,7 +244,8 @@ PathStop(p);  return 0;                             // UnitMoveStep: 2 - (ret !=
   `sub_0059FA30_MissileCreate` and one client; `PathSetMaxSpeed` likewise. A player's or monster's path keeps the
   speed the rate code set. (`p50d-calls.txt` `CALLS sub_00648700_PathSetAccel 2`)
 - [I] **Wrap bound.** `d · s` with `|d| ≤ 4096` and `s = 16 v` fits 32 bits for `v ≤ 32 767` (`4096 × 16 × 32 767 =
-  2 147 418 112`) and wraps from `v = 32 768` (`4096 × 16 × 32 768 = 2³¹`), turning an axis step negative; `v · 0x400`
+  2 147 418 112`) and wraps from `v = 32 768` (`4096 × 16 × 32 768 = 2³¹`) on a component of +4096 (rows 0 and its
+  octant images), turning that axis step negative (−4096 reaches −2³¹ without wrapping; smaller components wrap later); `v · 0x400`
   itself fits up to `v = 2 097 151`. No test guards it. A player (`pbase` 1 536) reaches `v = 32 768` from `X = 2 134`
   (`X = 2 133` gives 32 762); a monster with `Velocity` 15 (`pbase` 3 840) from `X = 854` (853 gives 32 755). Whether a
   stock source reaches such an `X` is not surveyed (open questions). (0x00650330–0x00650345, `p50d-model.txt` `EDGE`)
@@ -344,8 +351,9 @@ monster (not in DT or DD): knockback → get-hit if no KB mode; base 78 adds 0x8
   fn:SUNIT_ScheduleModeEvents@0x005539B0)
 - [I] **The block length** is the block mode's schedule at the block rate (anim/0002 § 3.2). A player's block
   animation starts only when `frame − stat 95 (lastblockframe) > ⌊stat 102 / 8⌋ + 15` (stat 102
-  `item_fasterblockrate`, the raw stat, signed division by 8 toward zero), and stat 95 is set to the frame after the
-  command whether or not the command was accepted; the block itself (the result bit) is combat's. A monster blocks in
+  `item_fasterblockrate`, the raw stat, signed division by 8 toward zero); when that test passes, stat 95 is set to the
+  frame after the command whether or not the command was accepted, and when it fails nothing is written and the
+  function returns (`jle 0x0057D3BD`); the block itself (the result bit) is combat's. A monster blocks in
   mode 6 when its class has the BL mode and is not 243, 333 or 705. (0x0057D282–0x0057D2D6, `p50d-sites.asm`
   `## 0x57d270`, tbl:ItemStatCost.txt:Stat)
 
@@ -408,7 +416,7 @@ return 0;
   stun (anim/0001 § 10), and `sandleaper1`'s knockback end waits 45. No test of state 21 was found in the two player
   mode tests of § 6.2. (fn:COMBAT_ApplyStun@0x0057AAE0, 0x0057AB9A–0x0057ABF9)
 
-### 6.5 Objects: the operate frames
+#### 6.5 Objects: the operate frames
 
 - [I] **`FrameCnt` is 8.8 in memory.** `sub_0063F690_ObjectsLoad` shifts each record's eight `FrameCnt` dwords
   (`+0xD8`…`+0xF4`) left by 8 after loading (`p50d-tables.txt` `OBJSHL`), so `UNIT_AnimInit`'s object `+0x48 =
