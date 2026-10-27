@@ -1956,6 +1956,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005D5010,func,sub_005D5010_SkillPrgDo40MissileAt,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x005D5080,func,sub_005D5080_SkillPrgDo41Scatter,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x005D5220,func,COMBAT_PrgFinisher,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005D54B0,func,sub_005D54B0_SkillKickPhysDamage,,I,skills/catalogue,docs/findings/skills/0003-handlers.md
 0x005D5970,func,sub_005D5970_SkillSt24DragonTalon,,I,skills/catalogue,docs/findings/skills/0014-assassin.md
 0x005D5A30,func,sub_005D5A30_SkillDo42DragonTalon,,I,skills/catalogue,docs/findings/skills/0014-assassin.md
 0x005D5BF0,func,sub_005D5BF0_MissScatterAtTarget,,I,skills/catalogue,docs/findings/skills/0007-missile-hit-31-59.md
