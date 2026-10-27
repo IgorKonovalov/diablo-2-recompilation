@@ -41,12 +41,16 @@ EXPECT = {
     "E11": ("docs/wiki/saves.md", 1),         # no based_on front matter
     "E12": ("docs/wiki/randomness.md", 16),   # a `##` section with no link into docs/specs/
     "E13": (BACKLOG_ENTRY, 1),                # status done without a resolution
+    "E14": ("docs/formats/cells.md", 6),      # a row with 3 cells under a 2-cell header
+    "E15": ("docs/specs/README.md", 5),       # the map says reviewed, the spec is a draft
+    "E16": ("docs/plans/README.md", 7),       # status cell done, the plan says approved
     "W1": ("docs/findings/rng/0001-core.md", 5),
     "W2": ("docs/specs/rng/core.md", 13),
     "W3": ("re/symbols.csv", 4),
     "W4": ("docs/wiki/randomness.md", 2),     # based_on date older than the spec's updated:
     "W5": ("docs/backlog.md", 7),             # an unstruck entry appended to the frozen archive
     "W6": (BACKLOG_ENTRY, 1),                 # a closed entry left outside docs/backlog/archive/
+    "W7": ("docs/specs/rng/counts.md", 16),   # a Total row off by one
 }
 
 # overlay -> (rule, file, line), for overlays that test a second case of a rule
@@ -60,6 +64,13 @@ EXPECT_MORE = {
     "E13-context": ("E13", BACKLOG_ENTRY, 7),              # a context link with no such heading
     "W5-struck": ("W5", "docs/backlog.md", 7),             # a struck archive copy of an entry with a file
     "W5-archived": ("W5", "docs/backlog.md", 7),           # a struck archive copy of an archived entry
+    "E15-tags": ("E15", "docs/specs/README.md", 6),        # tag counts after the link differ from the spec's
+    "E15-updated": ("E15", "docs/specs/README.md", 6),     # updated date after the link differs
+    "E15-partial": ("E15", "docs/specs/README.md", 6),     # a tag group that gives no L
+    "W7-all": ("W7", "docs/specs/rng/counts.md", 16),      # an `All` row off by two
+    "E16-next": ("E16", "docs/plans/README.md", 3),        # next free number is not above the highest plan
+    "E16-done": ("E16", "docs/plans/README.md", 8),        # a done plan outside done/
+    "E16-adr": ("E16", "docs/adrs/README.md", 3),          # next free number of the ADR index
     "E13-archive": ("E13", ARCHIVED_ENTRY, 1),             # an open entry in docs/backlog/archive/
 }
 
@@ -82,7 +93,7 @@ class GateTest(unittest.TestCase):
         rep = self.run_on()
         self.assertEqual(rep.errors, {})
         self.assertEqual(rep.warnings, {})
-        for rule in ("E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E10", "E11", "E12", "E13", "W4", "W5", "W6"):
+        for rule in ("E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E10", "E11", "E12", "E13", "E14", "E15", "E16", "W4", "W5", "W6", "W7"):
             self.assertGreater(rep.checked.get(rule, 0), 0, rule)
 
     def test_each_fixture_raises_its_rule(self):
@@ -93,11 +104,12 @@ class GateTest(unittest.TestCase):
                 rep = self.run_on(overlay)
                 if rule == "E9" and rep.warnings.get("E9"):
                     self.skipTest(rep.warnings["E9"][0])
-                bucket = rep.errors if rule.startswith("E") else rep.warnings
+                is_err = rule.startswith("E") and rule not in gate.DEMOTED
+                bucket = rep.errors if is_err else rep.warnings
                 msgs = bucket.get(rule, [])
                 self.assertTrue(msgs, f"{rule} fixture raised no {rule}")
                 self.assertTrue(any(m.startswith(f"{path}:{line}: {rule} ") for m in msgs), msgs)
-                if rule.startswith("W"):
+                if not is_err:
                     self.assertEqual(rep.errors, {}, "warning fixtures must stay green")
                 else:
                     self.assertEqual(set(rep.errors), {rule}, rep.errors)

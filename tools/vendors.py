@@ -702,6 +702,12 @@ class Checker:
                 elif t in ("ICB",):
                     E.i += 1
                     self.st["item creations outside the store paths (not checked here)"] += 1
+                elif t == "CF0" and d.get("ret") == 0x0055A18D:
+                    # plan 0038 H6c: ITEMS_CreateForStore called from sub_0055A090_DropGoldAmount (a gold pile, class
+                    # 523), not a build; its creation block follows as an ICB. Only this call site is skipped (the
+                    # lane/h6c review): a CF0 from any other caller outside a build stays a mismatch below.
+                    E.i += 1
+                    self.st["ITEMS_CreateForStore calls outside a build (not checked here)"] += 1
                 else:
                     E.i += 1
                     if t in ("PIEND", "MA", "VGAME"):

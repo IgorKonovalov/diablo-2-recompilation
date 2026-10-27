@@ -64,6 +64,15 @@ tools/               # our own Python helpers (parsers, extractors); run with `p
 workspace/           # GITIGNORED: installer extract, game files, MPQ dumps, Ghidra project
 ```
 
+## Context budget
+
+Some shared files are too large to read whole: `docs/inventory.md` (~500 KB), `docs/plans/metrics.md`
+(~100 KB), `docs/sources.md` (~90 KB), `docs/specs/README.md` (~60 KB), `docs/glossary.md`,
+`.claude/skills/reverser/references/tooling.md`. Find the section with `grep -n` and read only that
+range (`Read` with offset/limit, or `sed -n`). Touch the ledger only through `python3 -I tools/metrics.py
+append|summary`. Keep command output short: pipe long logs and dumps through `tail`, `grep` or a file
+under the lane's scratch area, and read back only what the next step needs.
+
 ## Non-negotiables
 
 - **Game data never enters git.** `workspace/` is ignored. Specs describe tables, they don't dump

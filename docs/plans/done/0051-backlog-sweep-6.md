@@ -266,7 +266,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   batch). Off-slot outputs: `workspace/logs/p51r/` (manifest `manifest.sha256`, `22169f4a…`; `commands.txt` lists the
   command behind each file; tool revisions in `tools-revisions.txt`).
   1. **S2c harness pieces**
-     ([entry](../../backlog/2026-10-16-architect-reverser-plan-0038-s2c-review-harness-pieces.md)): the H2b piece (sock
+     ([entry](../../backlog/archive/2026-10-16-architect-reverser-plan-0038-s2c-review-harness-pieces.md)): the H2b piece (sock
      44) is pruned. It was met in part at H2b's run and review, and its remainder (a request of 4 or more) is out of
      this plan. H6a, H6b, H6c and H6e1 are left, each still in its inventory § 5 row.
   2. **S1b leftover pieces**

@@ -2,12 +2,12 @@
 from: reverser
 to: spec-writer
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
-  - ../findings/save/0001-d2s-io.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play
-  - ../findings/hirelings/0001-hirelings.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play
-resolution: ""
+  - ../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
+  - ../../findings/save/0001-d2s-io.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play
+  - ../../findings/hirelings/0001-hirelings.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play
+resolution: "done: save/d2s parts applied on lane/s38s; the hirelings part (row 24, the saved header of a mercenary hired in play) applied in hirelings § F (F8 note [C], run:2026-10-27-sweep-d2s-play) on lane/s38h, plan 0038 Phase 3 [../../specs/hirelings/README.md#f-the-hire-hire_hire-merc_init]"
 ---
 
 **Released by the `lane/h1b` review (2026-10-27, accept with fixes).** Phase 3 re-tag input for save/d2s and hirelings from plan 0038 batch
@@ -39,7 +39,7 @@ Added by the `lane/h1b` review (the fixes are in save/0001's H1b section):
   to d-none.
 
 *Annotation (spec-writer, 2026-10-27, `lane/s38s`, plan 0038 Phase 3, save/d2s cluster):* the save/d2s parts are
-applied in [save/d2s](../specs/save/d2s.md): the H1b rows raised and split along their remainders; § Entry points
+applied in [save/d2s](../../specs/save/d2s.md): the H1b rows raised and split along their remainders; § Entry points
 lists the death path's save as met in single player, an event save, with "Nothing was written during play" scoped to
 run:2026-10-12-d2s-io and "no single-player autosave" kept as the outcome `[C]` (the `0x00730FFC` entry test, the time
 tests and the callback test `[I]`); the join row's two `PlayerLoad` links `[I]` beside the logged returns `[C]`; D5's

@@ -116,6 +116,42 @@ The six behaviour columns are bits of `+0x004` (bit order = header order: `warp`
 - `[C]` The Skills `petmax` formula is the skill variable `pets` (71): `SKILLS_CalcVar` returns its value
   ([data/calc § G](../specs/data/calc.md); fn:SKILLS_CalcVar@0x00646460). How the summon code uses it is Phase 1.3.
 
+## AI of the summons (plan 0052 Phase 0)
+
+PetType has no AI column: a summon's AI is its MonStats record's `AI` ([MonAI](MonAI.md)). The record is the Skills
+`summon` of a row whose `pettype` names the kind, or a PetType `mclass` cell. `[C]` as data:
+`python3 -I tools/ai_survey.py index|rows <excel-dir>` (gate survey `ai`; MonAI reach mark S).
+
+| idx | pet type | summoned records (Skills row → record) and `mclass` records | AI rows |
+|---:|---|---|---|
+| 0 | `none` | 78 Bone Wall, 88 Bone Prison → 344 `bonewall`; 199 DiabPrison → 340 `boneprison1` | 84 `BoneWall`; 1 `Idle` |
+| 2 | `valkyrie` | 32 Valkyrie → 357 `valkyrie` | 67 `NecroPet` |
+| 3 | `golem` | 75, 85, 90, 94 → 289–292 (the four golems); `mclass` 290–292 | 67 `NecroPet` |
+| 4 | `skeleton` | 70 Raise Skeleton → 363 `necroskeleton` | 67 `NecroPet` |
+| 5 | `skeletonmage` | 80 Raise Skeletal Mage → 364 `necromage` | 67 `NecroPet` |
+| 6 | `revive` | 95 Revive (no `summon` cell) | — |
+| 7 | `hireable` | `mclass` 338 `act2hire`, 359 `act3hire`, 561 `act5hire2` | 61 `Hireable` |
+| 8 | `dopplezon` | 28 Dopplezon → 356 `dopplezon` | 1 `Idle` |
+| 10 | `raven` | 221 Raven → 419 `druidhawk` | 107 `Raven` |
+| 11 | `spiritwolf` | 227 Summon Spirit Wolf → 420 `spiritwolf` | 108 `DruidWolf` |
+| 12 | `fenris` | 237 Summon Fenris → 421 `fenris` | 108 `DruidWolf` |
+| 13 | `totem` | 226 Oak Sage, 236 Heart of Wolverine, 246 Spirit of Barbs → 424, 423, 422; `mclass` 423, 422 | 109 `Totem` |
+| 14 | `vine` | 222 Plague Poppy → 425 `plaguepoppy`; 231 Cycle of Life, 241 Vines → 426, 427; `mclass` 426, 427 | 110 `Vines`; 111 `CycleOfLife` |
+| 15 | `grizzly` | 247 Summon Grizzly → 428 `druidbear` | 112 `DruidBear` |
+| 16 | `shadowwarrior` | 268 Shadow Warrior → 417 `shadowwarrior`; 279 Shadow Master → 418 `shadowmaster` | 105 `ShadowWarrior`; 106 `ShadowMaster` |
+| 17 | `assassintrap` | 257 Blade Sentinel → 413 `bladecreeper`; 261, 262, 271, 272 → 411, 410, 412, 415 (the four sentries); 276 Death Sentry → 416 `deathsentry` | 102 `BladeCreeper`; 101 `AssassinSentry`; 104 `DeathSentry` |
+| 19 | `hydra` | 62 Hydra → 351 `hydra1` | 86 `Hydra` |
+
+- `[C]` Kinds 1 `single`, 9 `invis` and 18 `pettrap` name no record. The two summoning Skills rows with no `pettype`,
+  295 Overseer Whip (`suicideminion1`, AI 117) and 300 Impregnate (`painworm1`, AI 69), are outside this table.
+  (tbl:Skills.txt:summon, tbl:Skills.txt:pettype)
+- `[C]` So 16 AI rows are reached by a summon. 14 of them have no pool, superunique or hireling record (67, 84, 86,
+  101, 102, 104–112) and form plan 0052's summons batch with row 143 `ShadowMasterNoInit`
+  ([MonAI § Batches](MonAI.md#batches)); 1 `Idle` (61 records) goes with the machinery and 61 `Hireable` with the
+  hirelings. (tbl:MonStats.txt:AI)
+- `[C]` `wolf` (430) and `bear` (431) use AI 67 `NecroPet` too, and no Skills row or `mclass` cell names them.
+  (tbl:MonStats.txt:AI)
+
 ## Open questions
 
 - `[L]` Which PetType columns the summon code reads and how the limit is computed from `basemax`, `group` and the

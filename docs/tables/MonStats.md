@@ -39,7 +39,7 @@ positions are pinned by the data except where noted.
 | `MonStatsEx` | str, 603 distinct, len ≤ 17 | `+0x018` u16 index | `monstats2:Id` | [C] |
 | `MonProp` | str, 12 distinct, len ≤ 14, 716 blank | `+0x01A` u16 index | `monprop:Id` | [C] |
 | `MonType` | str, 55 distinct, len ≤ 13, 128 blank | `+0x01C` u16 index | `montype:type` | [C] |
-| `AI` | str, 146 distinct, len ≤ 15 | `+0x01E` u16 index | `monai:AI` | [C] |
+| `AI` | str, 146 distinct, len ≤ 15 | `+0x01E` u16 index | `monai:AI`: the [MonAI](MonAI.md) row, also the `g_MonAiTable` row ([§ AI columns](#ai-columns-plan-0052-phase-0)) | [C] |
 | `DescStr` | str, 24 distinct, len ≤ 25, 631 blank | `+0x008` u16 string index | string tables | [C] |
 | `Code` | str, 210 distinct, len ≤ 2 | `+0x010` char[4] code | — | [C] |
 | `enabled` | int, always 1, 31 blank | `+0x00F` bit 1 | — | [C] |
@@ -892,6 +892,34 @@ The columns that name a monster's animation, its modes and its speeds (values fr
   0x00650FBE–0x00650FD4, tbl:MonStats.txt:Velocity, tbl:MonStats.txt:BaseId)
 - How `Velocity`/`Run` and stat 67 become the per-frame step is [anim/0003 § 1–2](../findings/anim/0003-movement-gates.md#1-velocities) `[I]` (plan 0050 Phase 1.3); how the rate stats change a
   monster's modes is [anim/0002](../findings/anim/0002-rates.md) `[I]`.
+
+## AI columns (plan 0052 Phase 0)
+
+The columns the monster AI reads or may read, with what the data alone shows. Survey: `python3 -I tools/ai_survey.py
+summary|rows <excel-dir>` (gate survey `ai`); per AI row the records, slots and skills are in the
+[MonAI index](MonAI.md#the-index). Offsets and widths are the § Columns table's (`[C]` by diff). Meanings are `[L]`
+unless a finding is cited.
+
+| Columns | `.bin` field | Observed (734 records) | What is anchored | Tag |
+|---|---|---|---|---|
+| `AI` | `+0x01E` u16 | 146 of the 148 [MonAI](MonAI.md) rows; none blank; every cell resolves to the row of the same name (case-exact) | the index of `g_MonAiTable` on `MonAiEntryGet`'s `EDX` = 0 branch (the other branch reads a second table, [MonAI § The second table](MonAI.md#the-second-table-at-0x0073d358-found-at-the-lanea52-review)), whose `+8` word is the AI function ([items/0001](../findings/items/0001-tc-resolution.md), fn:sub_005B15D0_MonAiEntryGet@0x005B15D0, data:g_MonAiTable@0x0073CA18) | [C] data; use [I] |
+| `aidel`, `aidel(N)`, `aidel(H)` | `+0x04F`..`+0x051` u8 | Normal: 15 (710 records), 1 (5), 6 (1), 0 (18 blank); Nightmare and Hell take 9 and 10 values (Nightmare mostly 14, Hell mostly 13); 455 records differ between difficulties | `MonModeStartNeutral` (also the refusal fallback) sets mode 1; **when the next AI event is not later than now**, it re-queues the event at `T + 45` under state 21 (`stunned`), else at `T +` the delay (`aidel(N)`/`aidel(H)` by difficulty when `Game+0x6A` or `Game+0x74` is non-zero), **15 when the cell is 0**; the finding names no re-queue when the next event is later than now ([anim/0001 § 10](../findings/anim/0001-modes-frames.md#10-monster-modes), fn:sub_005A73E0_MonModeStartNeutral@0x005A73E0, struct:Game+0x6A) | [I] |
+| `aidist`, `aidist(N)`, `aidist(H)` | `+0x052`..`+0x054` u8 | set on 2 records only: 242 `mephisto` and 704 `ubermephisto`, 0 / 40 / 46 | none | [L] |
+| `aip1`..`aip8` (each n, N, H) | `+0x056 + 6(k−1) + 2d` u16 | records with slot k non-zero: 573, 551, 526, 461, 327, 144, 106, 82 (k = 1..8); 588 records set a slot; 497 differ between difficulties; blank and 0 both store 0 | the AI parameters per difficulty (plan 0052 P1 reads them per AI); the inactive save keeps "AI parameters" ([drlg/lifecycle § G](../specs/drlg/lifecycle.md#g-the-records), fn:sub_00541FE0_InactiveMonAiSave@0x00541FE0) | layout [C]; meaning [L] |
+| `Skill1..8`, `Sk1mode..Sk8mode`, `Sk1lvl..Sk8lvl` | `+0x170` u16, `+0x180` u8 and `+0x188` s16, `+0x198` u8 | 393 records name a skill, 775 cells in 97 AI rows; 319 of the cells give a `seq_*` mode (`xx` and a sequence); 5 cells have `Sk lvl` 0 | at creation each `Skill` ≥ 0 with `Sk lvl` > 0 is added at `Sk lvl` + `MonsterSkillBonus` (§ Readers at creation, [monsters/0004](../findings/monsters/0004-stats.md)); which skill the AI uses and when is plan 0052's | [I] creation; AI use [L] |
+| `switchai` | `+0x00E` bit 0 | 585 records | none | [L] |
+| `threat` | `+0x04E` u8 | 1..14, 144 blank (§ Columns) | none | [L] |
+
+- `[C]` The five `Sk lvl` 0 cells: `bloodgolem` (290) `BloodGolem`, `bonewall` (344) `Bone Wall`, `chargeboltsentry`
+  (411) `Shock Field`, `infernosentry` (415) `Wake of Fire Sentry`, `druidhawk` (419) `Raven`: all summon records
+  (MonAI reach S). `[I]` The creation reader above skips them; whether the summon code gives them a level is plan 0052's
+  summons batch. (tbl:MonStats.txt:Sk1lvl)
+- `[C]` `shadowmaster` (418) sets `aip8` to 279 in Normal (0 in Nightmare and Hell), the Skills row of Shadow Master;
+  row 143 `ShadowMasterNoInit` labels its `*aip8` `summoning skill` (a lead, [MonAI § Leads](MonAI.md#leads)).
+  (tbl:MonStats.txt:aip8)
+- `[C]` In 13 AI rows the records disagree on which `aip` slots they set (`ai_aip_slots_differ=13`): 1, 8, 11, 30, 35,
+  36, 61, 67, 114, 119, 122, 133, 142. A catalogue entry reads each record's slots, not one per AI.
+  (tbl:MonStats.txt:aip1)
 
 ## Open questions
 

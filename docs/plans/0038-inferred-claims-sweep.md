@@ -3747,7 +3747,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** archivist entry
     [2026-10-27-reverser-archivist-h1b-d2s-build-test-state-keys-for-a](../backlog/archive/2026-10-27-reverser-archivist-h1b-d2s-build-test-state-keys-for-a.md)
     (lone follower, merc name past range); spec-writer entry
-    [2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises](../backlog/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md)
+    [2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises](../backlog/archive/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md)
     (held for the review); review request
     [2026-10-27-reverser-architect-review-lane-h1b-plan-0038-batch-h1b](../backlog/archive/2026-10-27-reverser-architect-review-lane-h1b-plan-0038-batch-h1b.md).
   - **Next:** the `lane/h1b` review.
@@ -3800,7 +3800,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Ledger:** the resume row's usage was filled from the orchestrator (212 206 tokens, 100 tools, 22 min), with the
     verdict and 6 fixes: overclaim 2, omission 2, under-claim 1, other 1. The review row was added with usage "—".
   - **Backlog:** the review request was closed (archive). The spec-writer entry
-    [2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises](../backlog/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md)
+    [2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises](../backlog/archive/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md)
     was **released**, with four points added. The reverser entry above was filed. The archivist entry is unchanged.
   - **Next:** merge `lane/h1b`; then H1a (`d2s-load`).
 - **2026-10-27 — H6e2 (`quest-items`) started; rotated at the first checkpoint (reverser, `lane/h6e2`, harness slot 1,
@@ -5039,7 +5039,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     [H4a](../backlog/archive/2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48.md),
     [H6e1](../backlog/archive/2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item.md) and
     [H6e2](../backlog/archive/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md) entries;
-    annotated the [S2c entry](../backlog/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md) ((b),
+    annotated the [S2c entry](../backlog/archive/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md) ((b),
     (c) done; (a), (d)–(g) wait for cube, vendors, sockets-runewords); filed the
     [counts entry](../backlog/archive/2026-10-27-spec-writer-architect-s38q-quest-drops-counts-for-the-research-map.md) and the
     [review request](../backlog/archive/2026-10-27-spec-writer-architect-s38q-review-quest-drops-phase-3.md). Ledger row
@@ -5208,7 +5208,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     sockets-runewords 2026-10-27; [items](../wiki/items.md) `based_on` properties 2026-10-27 (no text change).
   - **Backlog:** closed the [H6b entry](../backlog/archive/2026-10-27-architect-spec-writer-h6b-sockets-raises-for-the-phase-3-re.md)
     and the [H2b entry](../backlog/archive/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md) ((r)–(s),
-    its last open items); annotated the [S2c entry](../backlog/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md)
+    its last open items); annotated the [S2c entry](../backlog/archive/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md)
     ((e), (g) done; (a), (d), (f) wait for cube and vendors); filed the
     [counts entry](../backlog/archive/2026-10-27-spec-writer-architect-s38k-sockets-runewords-counts-for-the-research-map.md) and the
     [review request](../backlog/archive/2026-10-27-spec-writer-architect-s38k-review-sockets-runewords-phase-3.md). Ledger row
@@ -5386,7 +5386,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Wiki:** [items-other-paths](../wiki/items-other-paths.md) cube section refreshed, `based_on` cube 2026-10-27;
     [items](../wiki/items.md) `based_on` affixes 2026-10-27 (one open-question line).
   - **Backlog:** closed the [H6a entry](../backlog/archive/2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re.md);
-    annotated the [S2c entry](../backlog/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md)
+    annotated the [S2c entry](../backlog/archive/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md)
     ((a), (f) done; (d) waits for vendors, H6c); filed the
     [counts entry](../backlog/archive/2026-10-27-spec-writer-architect-s38c-cube-counts-for-the-research-map.md) and the
     [review request](../backlog/archive/2026-10-27-spec-writer-architect-s38c-review-cube-phase-3.md). Ledger row added, usage "—".
@@ -5441,3 +5441,338 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Bookkeeping.** Review-fixes Seen lines: spec-writer 2 and 9. The review request and the counts entry closed; the
     S2c entry stays open for (d) (vendors, H6c). Ledger: the lane row filled (usage from the orchestrator: 235 263
     tokens, 78 tools, 23 min; accept with fixes, 4: overclaim 2, wrong anchor 2); the review row added, usage "—".
+- **2026-10-27 — H6c (`vendors`) filed (reverser, `lane/h6c`, harness slot 1, from `main` `ad8b8cd0`; `main`
+  `a105ae13` merged at `e21e840a`; the entry named `ffa5b957`, corrected at the review).** Run id run:2026-10-27-sweep-vendors, record in
+  [items experiments](../findings/items/experiments.md#run2026-10-27-sweep-vendors), evidence in
+  [items/0009 § Plan 0038 batch H6c](../findings/items/0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors).
+  - **Built:** logger `tools/gdb/h6c.gdb` (`vendors.gdb`'s files) + `tools/gdb/h6c.py` (the town-leave call site, the
+    level-up note, the interaction set and clear, the hireling build's caller, each stock item's tab, placement and
+    cell, the inventories at builds, opens and windows, the creation record at IC0, purchases and sales), session driver
+    `tools/h6c_sessions.py` (H6b's loop; `BUY:`/`GBUY` tokens resolved from the log for `economy_sessions.py act`),
+    checker `tools/sweep_h6c.py logs|pairs|hb|fails|static`, a `tools/vendors.py` branch (an `ITEMS_CreateForStore`
+    call outside a build, a gold pile at 0x0055A18D, counted and skipped; run:2026-10-15-vendors unchanged), four
+    recipes `tools/d2s_recipes/vend-h6c-*.json` (rows in `tools/test_d2s.py`).
+  - **Sessions:** 8 launches, 6 kept (Normal clvl 1 in Act I: gamble windows, sales, purchases, a reopen, the walk out;
+    Normal clvl 30 from Act IV: Drognan's reopens around an act change, a level-up and a town entry; Hell clvl 99 in
+    Act V: Larzuk, Anya, Malah, Asheara at ilvl 104, gamble windows, a sale and purchases; two Larzuk rebuild loops,
+    one ended by a death in the Frigid Highlands; Nightmare clvl 19: six Fara builds at ilvl 24), 2 development logs.
+    Lessons: the tab of a store page is page + 1 (the trade window's labels); the Act IV start and H4a's fixed waypoint
+    click reach Lut Gholein reliably where the Lut Gholein start did not; an in-act waypoint in Hell without Energy
+    Shield killed the character at arrival; a stale rebuild needs a pause of 240 s before the act change.
+  - **Check:** `vendors.py check` over the 6 kept logs: 17 stock builds, 40 gamble windows, 1 646 creations through
+    the item chain, **0 mismatches**; `sweep_h6c.py logs`: **9 616 counted checks, 0 bad**.
+  - **Ledger (13): raised 7, raised in part 2, shortfall 4** (inventory § 2.6 H6c block). Corrections and refinements:
+    Asheara's hirelings are built at the interaction start, so the trade-first order is never taken (vend 14);
+    `PlayerInteractEnd` runs at a player unit's free and reaches `NpcStorePlayerLeave` only with an interaction open,
+    met in run:2026-10-20-two-clients's kept logs (vend 2); the 32-failure test sits only after normal copies and
+    permanent items (vend 5, at most 27 failures in 17 builds). Proposed d-2c: vendors 29 and 32. No class move filed;
+    totals unchanged: static 567, harness 513, c-emu 0, blocked 427, deferred 2, raised 17: 1 526.
+  - **S2c pieces:** vend 22 (tab and cell) met, its cell search `[I]`; vend 26 (`+0x18`, `+0x28`) met, proposed raised.
+    The S2c harness-pieces entry is annotated: every piece has run.
+  - **Symbols (rule 14), I → C:** `VENDOR_IsPermanent`, `sub_00576F50_StoreItemSold`, `sub_0062E880_ItemStorePage`;
+    new `sub_00554120_PlayerSetInteract`, `sub_00554190_PlayerClearInteract` (I).
+  - **Backlog:** review request
+    [2026-10-27-reverser-architect-review-lane-h6c-plan-0038-batch-h6c](../backlog/archive/2026-10-27-reverser-architect-review-lane-h6c-plan-0038-batch-h6c.md)
+    filed. Slot 1 stopped, saves restored (empty, no aside).
+  - **Next:** the `lane/h6c` review; items/vendors is then ready for its Phase 3 re-tag (S2c and H6c).
+- **2026-10-27 — `lane/h6c` review (architect): accept with fixes (6).** `main` `a105ae13` was already merged into
+  the lane (`e21e840a`); the merge was empty. Static review: objdump on the pinned `game.exe` (`631066c1…`), no Ghidra,
+  no harness.
+  - **Checked.** `manifest-run.sha256` (23 lines), `manifest-shots.sha256` (62) and `dev/manifest-dev.sha256` (25, not
+    listing itself) pass; the ten procedure commands, rerun under `systemd-run --user --scope -p MemoryMax=4G`, give
+    byte-identical outputs: `vendors.py check` 0 mismatches (17 builds, 40 windows, 1 646 creations), `sweep_h6c.py
+    logs` 9 616 checks 0 bad, the run:2026-10-15-vendors regression 0 mismatches. run:2026-10-20-two-clients's
+    manifest passes; its host logs hold 7 `PIEND` (return 0x005555CB) and 2 `PLEAVE` (0x00555562): Kashya's (class
+    150, `MLV`) and Akara's (148, `BS0`). objdump: `PlayerInteractEnd` 0x00555500–0x00555569 (the `+0x6C` test, the unit
+    found by `+0x68`/`+0x64`, type 1 → `NpcStorePlayerLeave` at 0x0055555D, type 2 → 0x00585550); the 32-failure tests
+    at 0x00576AA3 and 0x00576BE5 and none in 0x00576B25–0x00576B4D; `NpcInteractStart` → `HIRE_SendList` at 0x00572CFF,
+    whose `+0x21` test at 0x005767D5 guards the build 0x005767EB; `NPC_OpenStore`'s 0x00578BD3 test and the class list
+    (150, 515, 198, 252) before 0x00578BFF; `NpcInteractRemove`'s 0x00572FAF; `GambleEnsure`'s id scan
+    0x00578AFC–0x00578B18; `VENDOR_IsPermanent`'s difficulty clause 0x00576EF0–0x00576F10 (`hp4`, `hp5`, `mp4`, `mp5`);
+    `PlayerSetInteract`/`ClearInteract` 0x00554120/0x00554190; `ItemStorePage` 0x0062E880; the gold call 0x0055A188.
+    `vendors.py lists`: `hp5` in no permanent list, so the Hell refusal separates the clause. The four `vend-h6c-*`
+    recipes have their `RECIPE_BASES` rows and build to the recorded hashes; `test_d2s.py`'s one failure is `main`'s
+    134 `anim-*` recipes without rows (the archivist lane's fix, not this one's).
+  - **Fixes.** (1) other (tool): `tools/vendors.py`'s new branch skipped every `ITEMS_CreateForStore` call outside a
+    build whatever its caller; narrowed to the return 0x0055A18D (`sub_0055A090_DropGoldAmount`), any other caller
+    staying a mismatch (`a0ec05e4…`; both checks' outputs unchanged, `workspace/logs/h6c/review/manifest-review.sha256`
+    `4ac7f16e…`). (2) misread: "a gold pile dropped when a sale's gold passes the level cap" named a cause for the 4
+    piles that the logs do not show (one at the `larz` death's arrival, two after refused sales, one after a copied
+    sale); the cause struck, the call site kept. (3) misread: `VendH6cLvl` was "the experience one point short of a
+    threshold"; it is clvl 30 one point under clvl 32's threshold and over clvl 31's, so vend 18's level-up is one event
+    of two levels (one `LUN`, level 32); written into vend 18 and the run record, with the note queue's read
+    (0x00536850–0x005368DF) that the level gained is not read. (4) omission (rule 4): vend 14's "never taken" had no
+    read beyond the six runs; the writes of store `+0x21` added (only 0x005770C5, rebuilt at once at 0x005770C9;
+    `NPCSTORE_Reset` writes `+0x20` alone, 0x00536D24), `[I]`, in the ledger and the body's correction. (5) stale
+    cross-reference (rule 3): the totals were said to be against `main` `ffa5b957`; the lane had merged `a105ae13`
+    (the numbers are the same). (6) omission: `PlayerSetInteract`'s row left out that it writes only while `+0x6C` is
+    0 (0x00554133). Also vend 5's refinement gained the read that both tests jump to the epilogue 0x00576B74.
+  - **Rulings.** (a) **vend 2's raise stands.** Rescanning a reviewed run's kept logs (plan 0044, done), with its
+    manifest checked first and the lines its own logger wrote (`PIEND`, `PLEAVE`), is a legitimate source: the class
+    of the row was b because no vendor log of a player's free with an interaction open existed in H6c's plan, not
+    because only a new run could carry it. The row stays counted as H6c; the raise rests on the two `PLEAVE` and this
+    run's `PIEND` without one; the flag test between them stays `[I]`. (b) **vendors 29 and 32 move to d-2c.** With
+    one player every close and menu Escape logs `NIR` and `ICLR`, and the skip at 0x00572FAF needs a second entry in
+    the NPC's list. A d-edit route (a gamble action sent with the window open) would be a forged client, not stock
+    behaviour. (c) **The built states stand as ADR-0013 § Neutral inputs**, backing only the code that reads them;
+    the clvl-30 save's state is not one a character reaches by play, and vend 18 says so (fix 3). (d) **The
+    `vendors.py` branch is modelling, once narrowed** (fix 1): the skipped call is a different caller of the same
+    function, identified by its return address, outside the store model's scope like the `ICB` lines it already
+    skips; the regression is unchanged and the 4 calls are counted in `check-vendors.txt`. (e) **The `larz` session is
+    kept for its Larzuk build and the in-act leave only**: both precede the death, no ledger line uses a later line,
+    and the gold pile its death produced is one of the 4 skipped calls. (f) **vend 14's correction and vend 5's
+    refinement stand** as filed, with fix 4 and the epilogue read. (g) The S2c pieces: vendors 26 is raised (it stays
+    counted as S2c; the S2c tally in items/0009 now 9 raised, 6 in part); vendors 22 stays raised in part with the
+    cell search as its remainder.
+  - **Ledger: raised 7, raised in part 2, reclassified 2, shortfall 2** (13). Totals recounted once against `main`
+    `a105ae13`: **static 567, harness 511, c-emu awaiting a batch 0, blocked 429** (d-none 300, d-edit 73, d-sim 28,
+    d-2c 10, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526** (inventory § 2.6 H6c block, § 3, § 5).
+  - **Phase 3 ready:** items/vendors (S2c and H6c, both accepted). The spec-writer entry
+    [2026-10-27-architect-spec-writer-h6c-items-vendors-phase-3-retag](../backlog/archive/2026-10-27-architect-spec-writer-h6c-items-vendors-phase-3-retag.md)
+    filed (no H6c entry existed); the research map's items/vendors row says so.
+  - **Bookkeeping.** Review-fixes Seen lines: reverser 3, 4 and 9. The review request and the S2c
+    harness-pieces entry closed (every piece has run). Ledger: the lane row filled (usage from the orchestrator:
+    606 857 tokens, 273 tools, 129 min; accept with fixes, 6: misread 2, omission 2, stale cross-reference 1, other 1);
+    the review row added, usage "—".
+- **2026-10-27 — H6f (`hirelings`) filed (reverser, `lane/h6f`, harness slot 2, from `main` `ffa5b957`; `main`
+  `a105ae13` merged before filing).** Run id run:2026-10-27-sweep-hirelings, record in
+  [hirelings experiments](../findings/hirelings/experiments.md#run2026-10-27-sweep-hirelings), evidence in
+  [hirelings/0001 § Plan 0038 batch H6f](../findings/hirelings/0001-hirelings.md#plan-0038-batch-h6f-run2026-10-27-sweep-hirelings).
+  - **Built:** logger `tools/gdb/h6f.gdb` (`hirelings.gdb`'s four loggers unchanged plus `tools/gdb/h6f.py`: the hire
+    gates, refusal tail and `PayGold`, the free mercenary, `MERC_Create`'s table write, the saved mercenary's name clamp
+    and dead branch, `PETS_OnDeath`, `MERC_Resurrect`, the kill award, `MERC_CapExpGain`, `MERC_AddExp`, the client's
+    name string), session driver `tools/h6f_sessions.py write|plan|run` (15 recipes `tools/d2s_recipes/h6f-*.json`,
+    pinned in `tools/test_d2s.py`; the stash and the 1057 seed chosen offline by `plan`), checker
+    `tools/sweep_h6f.py check` (runs `tools/hirelings.py check` first). `tools/d2pilot.py`: the `kashyares` menu and the
+    `RESX` done alias. `tools/hirelings.py`: a hire counted by `MERC_Init`, not by `HIRE_Hire`'s `EAX` (the function
+    returns no value); its output on the 48 logs of run:2026-10-16-hirelings is byte-identical to `main`'s.
+  - **Sessions:** 19 launches on slot 2 (cap 20), 15 kept, 4 development (the classic Greiz attempts: from the Act II
+    start the pilot found neither Greiz nor the waypoint, and from the waypoint it walked into the sewer twice). Tooling
+    lessons applied: `-a4` starts (act byte 131) and per-act starts (128–130), no Save and Exit (so no act-byte
+    zeroing), `--descend-to`/`--all-copies` not needed (no descent), the Harrogath margin on the town walks; built
+    states named per recipe in the run record (each backs only the code that reads it); no crash-prone probe, so no game
+    copy; heavy checks under `MemoryMax=4G`. Slot 2 stopped and its saves directory restored (empty, no aside).
+  - **Check:** `sweep_h6f.py check` over the 15 kept logs: **603 comparisons, 0 failing**, `hirelings.py check` 0
+    mismatches (16 hires, 13 tables, 6 loads), `monpool.py check` 4 613 of 4 613 (`check/check-final.txt` `943f181f…`).
+  - **Ledger (23): raised 12, raised in part 8, shortfall 1, reclassified 2** (inventory § 2.6 H6f block). Highlights:
+    the free mercenary at Kashya (the pick, no payment, `RebuildIfEmpty` after it); the stash paying the rest and the
+    gold refusal 0x6AE; the level floor (12 floor-bound rolls); a level-up between the list and the hire; 1057 → 11021 at
+    both client sites; the saved mercenary's cap 99, name reset and dead branch; `PETS_OnDeath` at a load and three
+    deaths in play; resurrection at Kashya; `MERC_AddExp` adding 2·gain only below the owner's level, with the cap
+    binding at L 3 and 4. The stock client offers no hire line at Kashya below 8 or at Qual-Kehk with their quests
+    open, so the server's two quest refusals are never sent (d-none parts). Proposed moves: rows 1 and 9 → d-none (the
+    interaction start always builds first); row 29 stays a shortfall with a d-2c proposal. Totals against `main`
+    `a105ae13`: **static 567, harness 511, c-emu 0, blocked 429** (d-none 302), **deferred 2, raised 17: 1 526**.
+  - **Symbols (rule 14), I → C:** `HIRE_GiveFreeMerc`, `MERC_AddExp`, `MERC_CapExpGain`, `PETS_OnDeath`,
+    `MERC_Resurrect`, `MERC_ResurrectCost`, `sub_00576D90_PayGold`, `sub_004B5C60_ClientHireListDraw`,
+    `sub_004B1090_ClientMercInit` (9).
+  - **Backlog:** review request
+    [2026-10-27-reverser-architect-review-lane-h6f-plan-0038-batch-h6f](../backlog/archive/2026-10-27-reverser-architect-review-lane-h6f-plan-0038-batch-h6f.md);
+    spec-writer entry
+    [2026-10-27-reverser-spec-writer-h6f-hirelings-raises](../backlog/archive/2026-10-27-reverser-spec-writer-h6f-hirelings-raises.md),
+    held until the review. Ledger row added with usage "—".
+  - **Next:** the `lane/h6f` review; hirelings is then ready for its Phase 3 re-tag.
+- **2026-10-27 — `lane/h6f` review (architect): H6f (`hirelings`) accept with fixes (6); ledger as filed.** `main`
+  `a105ae13` had not moved since the lane merged it (`lane/h6c` and `lane/a4t` unmerged; `lane/h6c` does not touch
+  `tools/d2pilot.py`), so there was nothing to merge; `tools/test_d2pilot_descend.py` 10 OK. Static only (objdump of
+  the pinned image), no harness, no Ghidra.
+  - **Rechecked.** `manifest-final.sha256`, `manifest-shots.sha256` and `dev/manifest-dev.sha256` pass `sha256sum -c`;
+    under `MemoryMax=4G`, `sweep_h6f.py check` (603, 0 failing), `monpool.py check` and `hirelings.py check` on the 48
+    run:2026-10-16-hirelings logs reproduce `check/check-final.txt` `943f181f…`, `check/monpool.txt` `d65e5fbf…` and
+    `check/regress-hire-run.txt` `637d34c4…` byte for byte. **The byte-identity claim holds:** `main`'s
+    `tools/hirelings.py`, run from a `git archive` of `main`'s `tools/`, gives the same bytes on the 48 logs, and on
+    the 15 H6f logs one mismatch (`qk`, "paid 0, price 2650": the refused hire counted by `EAX`), which is why the
+    change is needed. The anchors re-read: 0x00572C10–0x00572D04 (`NpcInteractStart`'s early exits and the
+    `HIRE_SendList` call), 0x005767D5–0x005767EB, 0x00578BD3–0x00578C04, 0x0056AAA0–0x0056AABB, 0x0057E3F0–0x0057E474,
+    0x0057E860–0x0057E983, 0x0057EA28–0x0057EA46, 0x0057728F–0x005772AD, 0x005773B0–0x005773CB, 0x005395BF–0x00539637,
+    0x00611830. The 9 symbol raises and the Functions table agree. Recount against `a105ae13`: **static 567, harness
+    511, c-emu 0, blocked 429** (d-none 302), **deferred 2, raised 17: 1 526**; 23 statements, 12 / 8 / 1 / 2.
+    `tools/test_d2s.py`: 59 of 60 pass; the failure is `test_every_recipe_has_a_base` for the 134 `anim-*` recipes
+    only (`lane/a4t` adds them); H6f's 15 recipes have rows, and their hashes pass.
+  - **Rulings.**
+    - (1) **Rows 1 and 9 → d-none, accepted.** `NpcInteractStart` returns before `HIRE_SendList` only on its refusals
+      and for a player already interacting (0x00572C98 loop), so the first interaction always builds; `NPC_OpenStore`'s
+      build at 0x00578BFF needs `+0x21` 0, which no stock sequence leaves at a trade.
+    - (2) **Rows 17, 18 and 21: the refusal halves are d-none, not d-2c**, on a condition. A second stock client
+      filters its own menu the same way, so two clients add nothing, and a hand-made packet is outside the stock
+      boundary. But the d-none rests on the client's test matching the server's gates in every state, which is
+      unread: three states were observed (Kashya at 3 and 7, Qual-Kehk). That is an untraced gap, filed
+      ([entry](../backlog/2026-10-27-architect-reverser-h6f-review-client-hire-line-and-merc-create.md) (1)); if a state
+      shows the line that the server refuses, the refusals become a harness piece. Phase 3 states them as `[I]`
+      server checks the stock client did not send.
+    - (3) **Row 29 stays a shortfall; the d-2c proposal is not accepted.** The third caller,
+      `sub_005394A0_PlayerPlaceInAct`, walks a list at `+0x60` of its `EDX` argument and calls `MERC_Create`
+      (0x00539637); what fills that list is unread, so "a client joining a game" is a guess. Filed (same entry, (2)).
+    - (4) **Row 27 stands raised on its built state.** Under ADR-0013's Neutral rule a tool-built save on stock tables
+      backs `[C]` for the code that reads the built field, here `D2S_ReadMercHeader`'s clamp (`first + name > last →
+      first`), and nothing about how a stock game would write such a name. The widths are not separated by name 50 and
+      go to `[I]` with the wrap bound (fix 1).
+    - (5) **Row 25 stays in part.** `2·gain` is `[C]` (6 additions at different gains; `lea ecx, [esi + ebx·2]`
+      at 0x0057E8CE), and so is the cap's `min` (4 capped at L 3 and 4, 35 below). The bound is
+      `ExpMaxLevel(0) − 1` (class 0's `MaxLvl`, 98 on stock data), tested before the experience write, so a mercenary
+      at that level gains nothing; it and the loop's bound are the `[I]` remainder (fix 2).
+    - (6) **The `floor` screenshots:** not a tool gap. The session was launched with `--shots workspace/logs/h6f/shots`
+      instead of its own directory, so later sessions overwrote its images; its menu count is the pilot's line in the
+      hashed driver output, and `lvlup` and `qk`'s kept screenshots show the same two-line menus. The record now says
+      so (fix 5).
+    - (7) `tools/d2pilot.py`: the run used `638f3c51…` (as recorded); the branch's `043e46d7…` is the same change on
+      `main`'s later revision.
+  - **Fixes (6), applied in hirelings/0001 and experiments:** (1) *overclaim:* the name clamp's u16 add and unsigned
+    compare moved from the `[C]` bullet to an `[I]` reading, with the wrap bound (Rogue: 62 124 fits, 62 125 wraps to 0
+    and is kept); (2) *misread:* `MERC_AddExp`'s 98 written as `ExpMaxLevel(0) − 1`, tested before the write, in the
+    H6f section, § 6's levelling note and the Functions table, whose row still said "levels up while below the
+    owner's level"; (3) *overclaim:* `MERC_CapExpGain`'s "unsigned" to `[I]` (no negative gain or difference logged);
+    (4) *overclaim:* § 7's "found no other call in single player" and the row 29 section reworded to the unread
+    trigger, with ruling 3; (5) *omission:* the `floor` session's `--shots` path and the driver line its menu count
+    rests on; (6) *omission:* the client-test gap behind ruling 2 left unfiled (filed, with row 29's).
+  - **Bookkeeping.** Inventory § 2.6 review paragraph and § 5 marks H6f done. Review-fixes Seen lines: reverser 9,
+    10, 12 and 15. The review request closed; the spec-writer entry
+    [2026-10-27-reverser-spec-writer-h6f-hirelings-raises](../backlog/archive/2026-10-27-reverser-spec-writer-h6f-hirelings-raises.md)
+    released with the rulings. Ledger: the lane row filled (usage from the orchestrator: 492 169 tokens, 210 tools,
+    73 min; accept with fixes, 6: overclaim 3, misread 1, omission 2); the review row added, usage "—".
+  - **Readiness.** **hirelings is ready for Phase 3** on every row but 3, 30 and 33, which wait on H1c and stay `[I]`
+    in this pass (the sockets precedent: Phase 3 ran with sock 1's piece routed to H1c); a small re-tag follows H1c's
+    acceptance. The conditional d-none parts and row 29 are `[I]` in the spec until the reverser entry is answered.
+- **2026-10-27 — Phase 3, the items/vendors cluster (spec-writer, `lane/s38v`, from `main` `fcce5b4d`).** Batches S2c
+  and H6c, both accepted; each restated statement checked against its section of
+  [items/0009](../findings/items/0009-vendors.md) (§ Plan 0038 batch S2c, H6c, the S2c pieces) and the `lane/h6c`
+  review's rulings and fixes.
+  - **items/vendors** {C 77, I 37, L 2} → **{C 112, I 37, L 2}** (recounted with the gate's tag reader; diff +37 / −2
+    `[C]`, +28 / −28 `[I]`). Raised from S2c: vend 3, 4 (the call sites and the direct walk; the indirect calls `[I]`;
+    the correction (d): quest code resets a store only through a dropped client), 7, 8, 9, 11 (in part), 19, 20, 21
+    (in part), 22 (the tab; with H6c's piece the placement, the cell search `[I]`), 24 (in part), 25, 26 (with H6c's
+    piece, raised), 27, 28 (in part). From H6c, each naming run:2026-10-27-sweep-vendors: vend 2 (the `UnitFree` row,
+    ruling (a), the flag test `[I]`, `PlayerSetInteract` only while `+0x6C` is 0, fix 6), 12, 14 (a new C0 step, the
+    trade-first branch inline `[I]`, "never" beyond the runs `[I]` from the `+0x21` writes, fix 4; the *Two seeds
+    interleave* note rewritten), 15, 18 (in part: one level-up event of two levels on a built state, fix 3, ruling
+    (c); a quest event and the note's consumer `[I]`), 30, 33, 34 (in part), 36. Kept `[I]`: vend 5 (shortfall on the
+    count `[C]`; the test sites and the epilogue jump `[I]`), vend 29 and 32 (d-2c: a second interactor on the NPC,
+    0x00572FAF, no single-player case). The gold piles: `DropGoldAmount`'s call (return 0x0055A18D), no cause (fix 2).
+    Pseudocode lines no run reached got inline `[I]` (A2, C1, D3–D4, E2, E3, G2). Open questions: the multiplayer
+    `[L]` gains the second-interactor gamble window.
+  - **Wiki:** [items-other-paths](../wiki/items-other-paths.md) vendor sections refreshed, `based_on` vendors
+    2026-10-27; wiki/economy restates no vendors statement, unchanged. Research-map row rewritten (review pending);
+    the root README row dated 2026-10-27.
+  - **Backlog:** closed the [H6c entry](../backlog/archive/2026-10-27-architect-spec-writer-h6c-items-vendors-phase-3-retag.md)
+    and the [S2c entry](../backlog/archive/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md)
+    ((d), its last open part); filed the
+    [counts entry](../backlog/archive/2026-10-27-spec-writer-architect-s38v-vendors-counts-for-the-research-map.md) and the
+    [review request](../backlog/archive/2026-10-27-spec-writer-architect-s38v-review-vendors-phase-3.md). Ledger row added,
+    usage "—".
+  - **Next:** architect review of `lane/s38v`.
+- **2026-10-27 — `lane/s38v` review (architect): accept with fixes (5).** `main` `e0270b75` merged into the lane first
+  (README Scope and Plans sections and the Status table rows kept as `main` has them, the vendors row then set to
+  "reviewed", 2026-10-27; the ledger kept both sides). Static review: objdump on the pinned `game.exe` (`631066c1…`),
+  no Ghidra, no harness.
+  - **Checked.** Every raise of items/vendors against its S2c or H6c ledger line in
+    [items/0009](../findings/items/0009-vendors.md) and the `lane/h6c` rulings: vend 3, 4, 7, 8, 9, 11, 19, 20, 21, 22,
+    24, 25, 26, 27, 28 (S2c) and 2, 12, 14, 15, 18, 30, 33, 34, 36 (H6c), with the remainders kept `[I]` (vend 4's
+    indirect calls, 11's `npc` column, 18's quest event and the note's consumer, 21's retries, 22's cell search, 24's
+    `storepage.bin` and −1, 28's in-place fields and `qsort`, 34's four unreached refusals and `hp4`, `mp4`, `mp5`).
+    The five suggested spot-checks: C0–C1 and vend 14 as ruled (0x00578BFF never taken in the runs `[C]`, "never" beyond
+    them from the `+0x21` writes `[I]`); the `UnitFree` row and its two bullets as ruling (a); § D's notes and the
+    `MAX_FAILS` row as vend 5 (count `[C]`, test sites and epilogue `[I]`); G1 and § H with vendors 29 and 32 stated
+    d-2c (the second interactor at 0x00572FAF); vend 18 as one event of two levels on a built state. Built states are
+    named in *Inputs* under ADR-0013 § Neutral (clvl 1, 30 Normal, 19 Nightmare, 99 Hell, against the run record).
+    Inline `[I]` on A2, C1, D3–D4, E2, E3 and G2's unreached lines. objdump: `NpcInteractStart` 0x00572CF6–0x00572D0B
+    (the call 0x00572CFF unconditional), `HIRE_SendList`'s class test 0x0057678B–0x005767A8 (150, 198, 515, 252) and
+    `+0x21` guard 0x005767D5; `NPC_SellItem` 0x00579692–0x00579747.
+  - **Fixes.** (1) under-claim (rule 8): E2's "neither retry was reached in the run" left `[I]` while vend 20 and 21
+    raise both halves; raised with run:2026-10-15-vendors. (2) overclaim (rule 2): vend 4's "quest code resets a store
+    only through that client drop, never in single player" in the `[C]` bullet, over a direct-call walk; scoped "by
+    direct calls" (the indirect sites stay the next bullet's `[I]`). (3) misread (rule 3): C0 "on the first interaction
+    start of a player with a hireling seller"; `NpcInteractStart` calls `HIRE_SendList` on every interaction start
+    (0x00572CFF), and the class test and the `+0x21` guard are inside it; C0 rewritten. (4) overclaim (wiki, ADR-0012):
+    wiki/items-other-paths' "the second weapons tab" for tab 2, a label no spec gives; reworded to the spec's (the third
+    tab, named by no item type, holding only weapons that did not fit). (5) under-claim (cross-spec, the lane's point
+    3): items/economy F4's test 8 raised (below).
+  - **Rulings.** (a) **Economy F4's test 8 is H6c vend 34's gamble-view refusal.** objdump: 0x005796FF calls
+    `0x00535F10` (the store record), 0x00579709 calls 0x00536CB0, which returns the record's entry for the player (the
+    list at `+0x18`, keyed by the unit's id `+0x0C`, an entry added when none matches); 0x0057970E tests that entry's
+    byte `+4` and `je 0x0057971B` skips the one refusal store, 0x00579714. The site vend 34 logged is therefore that
+    test's taken outcome. Raised in this review: economy F4 gains a `[C]` bullet (the `cap` sold in Gheed's gamble
+    window, no `ItemCopy`), the unreached remainder is four tests `[I]`, the seed table's refused-sale row reads "the
+    gamble-view test or one of the four", and wiki/economy says four seen, four read from the code. economy {C 125, I
+    85, L 11} → **{C 126, I 85, L 11}**; only F4 and that table row were touched (the `lane/s38h` review may edit the
+    NPC-classes bullet). (b) The A2 header's `[C]` stands: vend 7 and 9 raise the record walk and order, the no-slot
+    case carries its inline `[I]`. (c) vend 5 and vend 14 stand as worded; vendors 29 and 32 as d-2c, no
+    single-player case. (d) The wiki vendor sections follow ADR-0012: every claim has its spec statement, the code
+    readings are said read from the code, the built save is said built by a tool.
+  - **Counts.** items/vendors {C 77, I 37, L 2} → **{C 113, I 36, L 2}** (the lane's 112 / 37 plus fix 1); items/economy
+    {C 126, I 85, L 11}. Research-map rows rewritten whole (vendors reviewed, Phase 3 done; economy's counts and the F4
+    clause); root README row "reviewed", 2026-10-27.
+  - **Backlog:** the review request and the counts entry closed.
+  - **Phase 3 done for items/vendors.**
+- **2026-10-27 — Phase 3, the hirelings cluster (spec-writer, `lane/s38h`, from `main` `fcce5b4d`).** Batches S3a,
+  S3b, H4b, H1b, H1a and H6f, all accepted; each restated statement checked against its section of
+  [hirelings/0001](../findings/hirelings/0001-hirelings.md) and the `lane/h6f` review's rulings and fixes. A partial
+  pass on the sockets precedent: rows 3, 30 and 33 stay `[I]` for H1c.
+  - **hirelings** {C 95, I 39, L 6} → **{C 137, I 41, L 7}** (recounted with the gate's tag reader; line diff +43 / −1
+    `[C]`, +32 / −30 `[I]`, +2 / −1 `[L]`). Raised: S3a rows 4 (the layout; the 0x450 bound `[I]`), 19 (the slot; the
+    refusals `[I]`), 26 (the empty header; one-field zeros `[I]`); S3b 7, 8 (the fatal branches `[I]`); H4b 34; H1b
+    24 (F8); H1a 32 (§ H items); H6f 5, 6, 10, 14, 15, 16, 20, 27 (the clamp only, built state; the u16 add and unsigned
+    compare `[I]` with the wrap bound, fix 1), 28 ×2, 31, 37, and in part 2 and 35 (Act I, expansion), 17, 18 and 21
+    (the reads and passes; the two refusals `[I]` server checks the stock client did not send, ruling 2), 23 (no
+    classic Greiz hire), 25 (a new levelling block G2–G7: `2·gain`, the owner test, the cap's `min` and the `·86 >> 8`
+    share `[C]`; `M = ExpMaxLevel(0) − 1`, tested before the write, and the loop bound `[I]`, fix 2; the cap's unsigned
+    width `[I]`, fix 3), 36 (Kashya and Qual-Kehk). Rows 1 and 9 written as no stock case (C2: the skip `[C]`, the
+    reach `[I]`, ruling 1); row 29 an `[I]` shortfall with the unread `+0x60` list (H12, ruling 3, fix 4). New:
+    `HIRE_Hire` returns no value. Inline `[I]` on lines no case reached (A1, A2, D1, D5, E2, F1, F2, G4, G5, G7, H12,
+    H13). Open questions: the not-reached list struck and rewritten; one `[L]` added for the reverser entry's two reads.
+  - **Wiki:** the hireling sections of [characters](../wiki/characters.md) refreshed, `based_on` hirelings 2026-10-27.
+    wiki/saves still lists hirelings 2026-10-20 (W4 warning; `lane/wiki`'s page, left).
+  - **Map and README:** the research-map row rewritten whole; the root README's hirelings row 2026-10-27.
+  - **Backlog:** closed the [H6f entry](../backlog/archive/2026-10-27-reverser-spec-writer-h6f-hirelings-raises.md) and
+    the [H1b entry](../backlog/archive/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md); annotated
+    the [H1a entry](../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md) (hirelings 32
+    done; 3, 30, 33 for H1c); filed the
+    [counts entry](../backlog/archive/2026-10-27-spec-writer-architect-s38h-hirelings-counts-for-the-research-map.md) and the
+    [review request](../backlog/archive/2026-10-27-spec-writer-architect-s38h-review-hirelings-phase-3.md). Ledger row added,
+    usage "—".
+  - **Next:** architect review of `lane/s38h`; the H1c re-tag of rows 3, 30 and 33 after H1c.
+- **2026-10-27 — `lane/s38h` review (architect): Phase 3 of hirelings, accept with fixes (6).** `main` (`e0270b75`)
+  merged into the lane first, and `main` `71fa2265` (`lane/s38v` merged) again before the last commit; `README.md` and `docs/plans/metrics.md` conflicted (main's Status rows and Scope kept,
+  the hirelings row set to its reviewed state; both ledger sides kept). Static review: objdump on the pinned
+  `game.exe`, no Ghidra, no harness.
+  - **Checked.** Every restated H6f raise against the ledger and the `lane/h6f` rulings: rows 1 and 9 as no stock case
+    (C2: the skip `[C]` at 0x00578BD3, objdump shows the `+1` byte test then the four seller classes before the
+    0x00578BFF build; the reach `[I]`, ruling 1); the refusal halves of 17, 18 and 21 inline `[I]` on F1, stated as
+    server checks the stock client did not send (ruling 2); row 29 an `[I]` shortfall with the `+0x60` list unread and
+    no "no other call" (ruling 3); row 27 `[C]` for the clamp only, the u16 add and `jbe` `[I]` with the wrap bound
+    (ruling 4; objdump 0x0056AAA0–0x0056AABB); row 25's `M = ExpMaxLevel(0) − 1` `[I]` (ruling 5; `call 0x611830;
+    sub ebx, 1` at 0x0057E8D6–0x0057E8DD, the test at 0x0057E8E3 before the write at 0x0057E8F2), `·86 >> 8` at
+    0x0057EA2D–0x0057EA39. S3a rows 4, 19, 26, S3b rows 7, 8 (the fatal branches and the `> 99` / `= 100` note `[I]`),
+    H4b 34, H1b 24 and H1a 32 match their batch sections. Inline `[I]` sits on A1, A2, D1, D5, E2, F1, F2, G4, G5, G7,
+    H12 and H13. The new `[L]` is under *Open questions*. Rows 3, 30 and 33 stay `[I]` for H1c.
+  - **Fixes.** (1) overclaim (rule 2): F1's `[I]` title said the stock client "never sent" the quest refusals, and F2's
+    note "the stock client never sends" an unlisted hire; scoped to the states observed and the logged hires.
+    (2) wrong anchor (rule 9): G4's `shr` was anchored at 0x0057E3FD (the player test; the shift is 0x0057E45A, the
+    `jbe` 0x0057E461), and G5's gain test at 0x0057E8BA–0x0057E8BC (the owner-level test; the gain test is
+    0x0057E869–0x0057E86B). (3) omission: `MERC_CapExpGain` returns 0 when the owner is missing or not a player or the
+    pet info or band row is missing (0x0057E402–0x0057E43C, 0x0057E46F), and `MERC_AddExp` returns on a missing pet
+    info or band row (0x0057E880–0x0057E8A7); both now in the pseudocode `[I]`, and the G5 note that left the test order
+    "not given" now gives the code's order `[I]`. (4) misread: G5's comment "class 0's MaxLvl: 98" (`MaxLvl` is 99,
+    `M` is 98). (5) stale cross-reference (rule 7): the introduction still said resurrection and death are named only.
+    (6) overclaim (rule 1): wiki/characters stated the trade build's "no stock case" and the share "worked out at the
+    mercenary's level" flat, both `[I]` in the spec; each now said read from the code. hirelings is now
+    **{C 137, I 43, L 7}** (gate reader).
+  - **Left for the review, done here.** (a) wiki/saves: `based_on` hirelings 2026-10-27; the mercenary header's "a name
+    past the end of its range is read from the code only" now follows hirelings H3 (the built-save reset, the widths
+    read from the code) and the load's cap 99; the open-question item marked as since run (spec-writer rule 1, `lane/s38s`
+    scope). save/d2s § D keeps its stale "not run-checked" bullet; routed to the H1c re-tag by an annotation on the
+    [H1a entry](../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md). (b) items/economy's
+    *NPC classes* bullet split (rule 8): resurrection at 150 and 515 `[C]` (run:2026-10-17-economy, Qual-Kehk;
+    run:2026-10-27-sweep-hirelings, Kashya; objdump confirms the five classes at 0x00579C31–0x00579C55), 198, 252 and
+    367 `[I]`. Only that bullet was touched; after `main` (`71fa2265`, with `lane/s38v`'s F4 raise) was merged a
+    second time, items/economy is **{C 127, I 85, L 11}**, the research-map row keeping both clauses.
+  - **Rulings.** (1) **The partial pass stands** on the sockets precedent; rows 3, 30, 33 are H1c's. (2) **The F3 stash
+    note and `HIRE_Hire`'s no result stand `[C]`** (the H6f ledger, row 20 and the checker correction). (3) **G2 stays
+    an `[I]` call path**; its later steps are compared. (4) **Section K keeps its heading** (wiki links point at it);
+    the introduction says what it now holds.
+  - **Totals:** unchanged by a re-tag: **static 567, harness 509, c-emu 0, blocked 431, deferred 2, raised 17: 1 526**.
+  - **Bookkeeping.** Research-map rows (hirelings rewritten whole, items/economy's counts) and the root README hirelings
+    row (reviewed, 2026-10-27). Review-fixes Seen lines: spec-writer 1, 2, 7 and 9. The review request and the counts
+    entry closed. Ledger: the lane row filled (usage from the orchestrator: 236 661 tokens, 99 tools, 20 min; accept with
+    fixes, 6: overclaim 2, wrong anchor 1, omission 1, misread 1, stale cross-reference 1); the review row added, usage
+    "—".
+  - **Next:** merge `lane/s38h`; the H1c re-tag of hirelings rows 3, 30 and 33 and save/d2s § D's name bullet after H1c.

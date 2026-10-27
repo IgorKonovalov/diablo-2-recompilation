@@ -759,6 +759,14 @@ LAYOUTS["monstats2"] = dict(size=0x134, fields=[
 # own row. MonPreset Place names these rows (tag 0) beside monstats and superuniques.
 LAYOUTS["monplace"] = dict(size=2, fields=[R("code", 0x000, "monplace:code", "u16")])
 
+# ------------------------------------------------------------------ monai (2 B)
+# Plan 0052 Phase 0 (docs/tables/MonAI.md). One u16 per monai.txt row (148), equal to the row index: the compiled `AI`
+# column resolves to its own row, as monplace's `code`. The *aip1..8 comment columns are not compiled. MonStats `AI`
+# (+0x01E) stores the same row index, which g_MonAiTable (0x0073CA18, 16-byte rows) is indexed by (items/0001).
+LAYOUTS["monai"] = dict(size=2, fields=[R("AI", 0x000, "monai:AI", "u16")],
+                        txt_only={"*aip%d" % k: "comment column (an editor label of the parameter); not compiled"
+                                  for k in range(1, 9)} | {"*eol": "end-of-line marker column; not compiled"})
+
 # ------------------------------------------------------------------ monpreset (4 B)
 # One record per MonPreset.txt row (229). Place compiles twice: +0x001 the kind of name (0 = monplace
 # code, 1 = monstats Id, 2 = superuniques Superunique) and +0x002 the row index in that table. Every
