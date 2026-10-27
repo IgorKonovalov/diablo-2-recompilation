@@ -673,11 +673,12 @@ queues and reschedules, the client): what a callee or a catalogue function does 
   `LeapAttackLand` 0x005DA2AA among them), each of which is followed at once by that function's own
   `sub_005417D0_UnitQueueEvent` call (0x005CFABE, 0x005D1517, 0x005DA2BE), a queue the logger does not read
   (`dispatch-catalogue-queued`; `rv-catq-*` of `2026-10-27-anim-check-review.txt`). Since that queue's output is not
-  logged, it is an uncompared catalogue path (plan 0046), not an ADR-0004 oracle; Phase 2 part 2 logs it.
+  logged, it is an uncompared catalogue path (plan 0046), not an ADR-0004 oracle; Phase 2 part 2 logs it (rev 6 `CQ`; the window is closed for rev 6 logs, see the part 2
+  section below).
   (fn:SUNIT_ScheduleModeEvents@0x005539B0, fn:UNIT_CancelEvents@0x00540E60, fn:sub_005417D0_UnitQueueEvent@0x005417D0,
   fn:sub_005416B0_EventQueueAt@0x005416B0, fn:sub_00581220_PlayerEventDispatch@0x00581220,
   fn:sub_005A7F80_MonEventDispatch@0x005A7F80, run:2026-10-27-anim)
-- **The advance** (§ 8) **raised.** [C] 2 927 consecutive advances of windowed every-frame monsters (`adv`, knockback
+- **The advance** (§ 8) **raised.** [C] (Under the part 2 checker, 2 924: see the part 2 section.) 2 927 consecutive advances of windowed every-frame monsters (`adv`, knockback
   among them) give the next `+0x44` and event byte, and 1 453 monster sequence advances (`adv-seq`, mode 14, the
   `monseq` rows of the used skill's `Sk<k>seq`) give the next position, length, frame, event byte and mode, the event
   scan of `SEQ_ReadFrame` (the rows after the old position up to the new, the last non-zero winning). [I] In two the byte
@@ -712,3 +713,27 @@ queues and reschedules, the client): what a callee or a catalogue function does 
   the request's frame, before `T + N` too. After, `[I]`: the
   client's rule for when it sends a held request is not read (ADR-0005, the client is presentation and an oracle).
   (fn:SUNIT_ScheduleModeEvents@0x005539B0, fn:sub_0057EDD0_PlrModeLeaveOk@0x0057EDD0, run:2026-10-27-anim)
+
+## Plan 0050 Phase 2 part 2 (run:2026-10-27-anim-p2)
+
+Record: [experiments.md](experiments.md#run2026-10-27-anim-p2). Checker output `2026-10-27-anim-p2-check-ckpt2.txt`
+(`03f83c9d…`), over part 1's 55 logs and part 2's 26.
+
+- **The catalogue queue, `sub_005417D0_UnitQueueEvent`, raised in part.** [C] Logger rev 6 logs the call at its entry
+  when the return lies in 0x005B0000–0x005EFFFF (`CQ`: kind, frame, `a`, `b`). Kinds 0 and 1 with `a ≠ 0` are taken as
+  an ADR-0004 oracle and compared like a schedule's: 405 `CQ` lines logged (`cq-k0` 379 of any `a`, `cq-k1` 26; the
+  share of kind 0 with `a = 0`, which the oracle leaves out, is not printed). The 83 dispatches of a `CQ`-queued
+  event that follow a catalogue cancel (`dispatch-cq-after-catcancel`) fire at the queued frames with the queued
+  arguments; the 134 dispatches 0–4 frames after a catalogue cancel are all compared and matched
+  (`dispatch-catcancel-0-4-compared`; each matches a queued event of either source, the schedulers' or a `CQ` line,
+  and the output does not split the 134 by source). The raise is in part (review-fix 8): kind 0 with `a ≠ 0` and kind 1. An unqueued dispatch there is a mismatch under rev 6
+  (`dispatch-catalogue-queued-rev6`): 0. [I] Kinds 2 (65 324 calls) and 12 (9 166) are logged but not compared; the
+  callers other than Charge's are not separated by a dispatch here (`rv-catcan-ra=` tallies list the cancels).
+  (fn:sub_005417D0_UnitQueueEvent@0x005417D0, fn:UNIT_CancelEvents@0x00540E60, run:2026-10-27-anim-p2)
+- **The advance and a restart, correction to § 8's pair rule.** [C] A get-hit hit again in the same mode restarts the
+  monster's mode (an `SR` line for the unit between two `AD0` lines): the second line's `+0x44` is 0, not the advance
+  of the first. Checker `tools/anim.py` (`5be6c31f…`) pairs two consecutive advances only with no `SR` of that unit
+  between them (`adv-restart-unpaired`); the first 10 `adv` mismatches (8 printed; Druid mode 13, `+0x44` 512–1792 of length 2304
+  to 0) were those restarts. Over part 1's 55 logs the output differs only in `adv` 2 927 → 2 924 and that tally 3
+  (three restarts that had matched by chance); every other line is byte-identical. Closing `adv=4110/0`.
+

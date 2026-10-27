@@ -1,0 +1,98 @@
+{
+ "game": "expansion",
+ "class": "Paladin",
+ "seed": 6441,
+ "name": "AnimPalS1",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 150,
+  "energy": 200,
+  "dexterity": 100,
+  "vitality": 25,
+  "hitpoints": 480,
+  "maxhp": 480,
+  "mana": 600,
+  "maxmana": 600,
+  "stamina": 120,
+  "maxstamina": 120,
+  "level": 60,
+  "experience": 128782495
+ },
+ "skills": {
+  "Holy Freeze": 20,
+  "Holy Bolt": 1,
+  "Sacrifice": 1
+ },
+ "mouse": {
+  "left": "Attack",
+  "right": "Holy Freeze",
+  "swap_left": "Attack",
+  "swap_right": "Holy Freeze"
+ },
+ "hotkeys": [
+  "Attack",
+  "Holy Freeze",
+  "Kick",
+  "Holy Bolt",
+  "Sacrifice"
+ ],
+ "belt_fill": [
+  "rvl",
+  "rvl",
+  "rvl",
+  "rvl"
+ ],
+ "items": [
+  {
+   "code": "rin",
+   "equip": "rrin",
+   "suffix": 173
+  },
+  {
+   "code": "rin",
+   "equip": "lrin",
+   "suffix": 173
+  },
+  {
+   "code": "qui",
+   "equip": "tors",
+   "suffix": 263
+  },
+  {
+   "code": "lbt",
+   "equip": "feet",
+   "suffix": 112
+  },
+  {
+   "code": "hbl",
+   "equip": "belt"
+  },
+  {
+   "unique": "The Generals Tan Do Li Ga",
+   "equip": "rarm"
+  },
+  {
+   "code": "buc",
+   "equip": "larm"
+  },
+  {
+   "unique": "The Generals Tan Do Li Ga",
+   "equip": "rarm2"
+  },
+  {
+   "code": "buc",
+   "equip": "larm2"
+  }
+ ]
+}

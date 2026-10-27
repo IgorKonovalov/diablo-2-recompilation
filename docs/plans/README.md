@@ -1,6 +1,6 @@
 # Plans index
 
-Next free number: **0053**
+Next free number: **0054**
 
 Lane runs (agent usage, review verdicts, fix counts by category) are logged in the [lane run ledger](metrics.md).
 
@@ -57,7 +57,8 @@ Lane runs (agent usage, review verdicts, fix counts by category) are logged in t
 | [0049](done/0049-backlog-sweep-5.md) | Backlog sweep 5: the static loose ends, the recipe register and the gate warnings | done | — (closed 2026-10-20; P0, P1 and P2 accepted with fixes; ten specs edited (eight from P1's readings); P1 items 6 and 13 optional, open outside the plan) |
 | [0050](0050-animation-frame-timing.md) | Animation and frame timing: unit modes, frame counts, rates and breakpoints, movement speed (ADR-0014 phase 4) | approved | approved 2026-10-25 (owner), in effect 2026-10-27 (0045·P2 part 1 accepted; P0/P1/P1b open); drafted 2026-10-25 (`lane/plans50`) ahead of its gate; P0 archivist (`animdata.d2`, `monseq`, the timing columns), P1 three static batches, P1b, P2 one slot, P3 spec, P4 wiki; **P0/P1/P1b start once 0045·P2 is accepted, P2 once 0045·P3 is reviewed** (ADR-0016, ADR-0020); P0, P1b part 1, P1.1, P1.2 and P1.3 accepted with fixes 2026-10-27: **Phase 1's batches done**; P1b part 2 accepted with fixes 2026-10-27 (`lane/p50v`: 61 verdicts, 19 contradicted as P2 cases P1b-1 … P1b-15): **Phase 1b done**; P2 part 1 accepted with fixes 2026-10-27 (`lane/p50e`, run:2026-10-27-anim, 0 mismatches); **P2 part 2 open** (get-hits by FHR, blocks, throws, rate tiers, the catalogue queue); **P3 may start beside it**, its review waits for part 2's |
 | [0051](done/0051-backlog-sweep-6.md) | Backlog sweep 6: the catalogue's column readers, the static optionals and the routing of the rest | done | — (closed 2026-10-27; P0a accepted, P0b, P1a, P1b and the States item 3a fold (`lane/a51f`) accepted with fixes; the sixteen archivist entries closed, the Phase 1a entries annotated for their plan 0038 batches, the two Phase 1b entries closed; P2: the plan 0042 owner play closed at approval, the patch_d2, Diablo-pair and plan 0044 owner entries annotated "stay open" (owner, 2026-10-25); the plan 0044 shortfalls entry stays open for the optional two-client run) |
-| [0052](0052-monster-ai.md) | Monster AI: the AI tick, target and skill choice, and the path request it makes (ADR-0014 phase 5) | proposed | first draft 2026-10-25 (`lane/plans50`); approvable since 0045·P3's review (2026-10-27; ADR-0020); **re-drafted 2026-10-27** (`lane/plans52`): P0 archivist, P1.1 machinery then eight to twelve catalogue batches, P1b, P2 one slot (after 0050·P3's review and its own P1.1 and tier reviews), P3a machinery and tier, P3b catalogue, P4 wiki; the path search a boundary with its own plan, drafted at the P1.1 review; **awaiting the owner's approval** and the answers to its eight scoping questions (each with a recommendation), the seventh on [ADR-0022](../adrs/0022-scope-server-frame.md) (proposed) |
+| [0052](0052-monster-ai.md) | Monster AI: the AI tick, target and skill choice, and the path request it makes (ADR-0014 phase 5) | approved | **approved by the owner 2026-10-27** (scoping answers in the owner decisions below; question 8: the whole AI table); first draft 2026-10-25 (`lane/plans50`); approvable since 0045·P3's review (2026-10-27; ADR-0020); **re-drafted 2026-10-27** (`lane/plans52`): P0 archivist, P1.1 machinery (reviewed 2026-10-27; tier 18 AIs) then twelve catalogue batches (set at the P1.1 review; **paused, P1.2 next on unpause**), P1b, P2 one slot (after 0050·P3's review and its own P1.1 and tier reviews), P3a machinery and tier, P3b catalogue, P4 wiki; the path search a boundary with its own plan, drafted on unpause; [ADR-0022](../adrs/0022-scope-server-frame.md) accepted |
+| [0053](0053-review-tiers-and-gate-checks.md) | Review tiers and gate checks for the mechanical fix categories (ADR-0023) | approved | Phases 0–2 done 2026-10-27 (E14–E16 and W7 in the gate, E14 demoted until the reverser's entry; `lane-check.md` and the Mode 3 tiers); next: Phase 3, the trial (human: ten Tier B checks, two audits) |
 
 ## Run order (set 2026-10-25, plans 0038–0052)
 
@@ -76,8 +77,7 @@ lane resumes on the same branch.
 (closed); plan 0045 (closed 2026-10-27: Phase 2 both parts, Phase 3 `lane/s45p3`, Phase 4 the wiki page `lane/s45p4`);
 plan 0050 P0, P1b part 1, P1.1 and P1.2; plan 0038 H4a, H5d and H1b, and the Phase 3 monsters and drlg/collision
 clusters with their wiki refresh. **Done since:** 0050·P1.3 and 0050·P1b part 2 (accepted with fixes 2026-10-27; Phase 1b done). 0050·P2 part 1 (accepted with fixes 2026-10-27, `lane/p50e`). **Open, not started:** 0050·P2 part 2 (one harness slot) and 0050·P3 beside it (its review after part 2's). **Open, not started:** 0038 H1a (its family
-rule met at the H1b review); 0046·P2 (one slot, after 0050·P2 has started: owner, 2026-10-25). **Awaiting the owner:** plan 0052's approval and its
-scoping questions, and ADR-0022 (proposed). Still to run after them: plan 0038's batches H1a → H3b → H6e2 → H6e1 →
+rule met at the H1b review); 0046·P2 (one slot, after 0050·P2 has started: owner, 2026-10-25). **Approved 2026-10-27:** plan 0052 (its P0 and P1.1 open) and ADR-0022 (accepted). Still to run after them: plan 0038's batches H1a → H3b → H6e2 → H6e1 →
 H6b → H6a → H6c → H6f → H6g (the owner's 2026-10-20 order, family rules of
 [§ 7](0038-inventory/README.md#7-priority-order)) and its Phase 3 clusters as their batches land (objects after
 H6e2); 0050·P2 part 2, P3 and P4; 0046·P2, P3 and P4.
@@ -85,18 +85,18 @@ H6e2); 0050·P2 part 2, P3 and P4; 0046·P2, P3 and P4.
 **Gates of the new plans:** 0051 had none (**closed 2026-10-27**). 0050·P0/P1/P1b open since 0045·P2's acceptance,
 0050·P2's since 0045·P3's review (2026-10-27); 0050·P2's own P1.3 review passed (2026-10-27), so it may start. 0052 is approvable since
 0045·P3's review; once the owner approves it, its P0 and P1.1 may start, and its P2 waits for 0050·P3's review and its
-own P1.1 and tier reviews. 0046·P2 is open since 0045·P3's review. ADR-0022 (if accepted): its plan's tables and static
+own P1.1 and tier reviews. 0046·P2 is open since 0045·P3's review. ADR-0022 (accepted 2026-10-27): its plan's tables and static
 reading after 0052·P1.1's review, its harness after 0052·P3a's.
 
 | Lane | Queue, in order | Notes |
 |---|---|---|
-| **architect** | each phase below in landing order (0050·P2 part 2 and 0050·P3 next) → **on the owner's answers:** 0052's status and its run-order rows; at 0052·P1.1's review, draft the path search plan; if ADR-0022 is accepted, draft its plan at 0052·P1.1's review | Each review fills the ledger row. |
-| **archivist** (no slots, no Ghidra) | ~~0051·P0a → 0051·P0b~~ → ~~0050·P0~~ (done) → the open archivist entries (the `lane/p50b` MonStats timing entry first, then the H1b and 0045·P2 part 2 entries) → **0052·P0 (awaiting the owner)** → the path search plan's and ADR-0022's table phases, if approved | The `lane/p50b` entry's item 2 survey may add a 0050·P2 case: before 0050·P2 starts. |
-| **reverser, static lane A** (Ghidra 1) | ~~0051·P1a~~ → ~~0050·P1.1 → 0050·P1.2~~ (done) → ~~0050·P1.3~~ (done) → **0052·P1 catalogue batches (awaiting the owner)** | 0050·P1 is phase (4)'s critical path. |
-| **reverser, static lane B** (Ghidra 2) | ~~0051·P1b~~ → ~~0050·P1b part 1~~ (done) → the static reverser entries (the BuildDamage readings, H1b's host-callback setter, H5d's waypoint mode) → **0052·P1.1 (awaiting the owner; it may start beside 0050·P1.3)** → ~~0050·P1b part 2~~ (done) → 0052·P1 batches beside lane A → 0052·P1b | One batch per lane at a time; P1.1 is 0052's critical path. |
+| **architect** | each phase below in landing order (0050·P2 part 2 and 0050·P3 next) → **on the owner's answers:** 0052's status and its run-order rows; ~~0052·P1.1's rulings and the catalogue batches for the whole AI table~~ (done 2026-10-27) → **on unpause:** draft the path search plan and ADR-0022's plan | Each review fills the ledger row. |
+| **archivist** (no slots, no Ghidra) | ~~0051·P0a → 0051·P0b~~ → ~~0050·P0~~ (done) → the open archivist entries (the `lane/p50b` MonStats timing entry first, then the H1b and 0045·P2 part 2 entries) → **0052·P0 (open)** → the path search plan's and ADR-0022's table phases | The `lane/p50b` entry's item 2 survey may add a 0050·P2 case: before 0050·P2 starts. |
+| **reverser, static lane A** (Ghidra 1) | ~~0051·P1a~~ → ~~0050·P1.1 → 0050·P1.2~~ (done) → ~~0050·P1.3~~ (done) → **0052·P1 catalogue batches (next on unpause; twelve, the tier batches first)** | 0050·P1 is phase (4)'s critical path. |
+| **reverser, static lane B** (Ghidra 2) | ~~0051·P1b~~ → ~~0050·P1b part 1~~ (done) → the static reverser entries (the BuildDamage readings, H1b's host-callback setter, H5d's waypoint mode) → ~~0052·P1.1~~ (reviewed 2026-10-27) → ~~0050·P1b part 2~~ (done) → 0052·P1 batches beside lane A (on unpause) → 0052·P1b | One batch per lane at a time; P1.1 is 0052's critical path. |
 | **reverser, harness lane H1** (slot 1) | ~~H4a → H5d → H1b~~ (done) → H1a → plan 0038 batches in the order above → 0046·P2 (one slot) | Yields its slot between batches if a two-client run asks for both. |
-| **reverser, harness lane H2** (slot 2) | ~~0045·P2~~ (done) → plan 0038 batches alternating with H1 while 0050·P1.3 was reviewed → ~~**0050·P2** part 1~~ (accepted with fixes 2026-10-27) → **0050·P2 part 2** (one slot; open) → plan 0038 batches → the two-client tail (optional, both slots) → **0052·P2 (awaiting the owner; after 0050·P3's review)** | 0050·P2 runs before 0046·P2 (owner, 2026-10-25); 0046·P2 may take whichever slot is free once 0050·P2 has started. |
-| **spec-writer** | ~~0045·P3 → 0045·P4~~ (done; plan 0045 closed) → the missiles F1 / dispatch I4 entry (after `lane/rbd` merges) → 0038·P3 clusters as their batches land → 0050·P3 → 0050·P4 → 0046·P3 → 0046·P4 → **0052·P3a → 0052·P3b → 0052·P4 (awaiting the owner)** | Specs edited by two plans merge one at a time, the earlier plan's first. |
+| **reverser, harness lane H2** (slot 2) | ~~0045·P2~~ (done) → plan 0038 batches alternating with H1 while 0050·P1.3 was reviewed → ~~**0050·P2** part 1~~ (accepted with fixes 2026-10-27) → **0050·P2 part 2** (one slot; open) → plan 0038 batches → the two-client tail (optional, both slots) → **0052·P2 (after 0050·P3's review and its own P1.1 and tier reviews)** | 0050·P2 runs before 0046·P2 (owner, 2026-10-25); 0046·P2 may take whichever slot is free once 0050·P2 has started. |
+| **spec-writer** | ~~0045·P3 → 0045·P4~~ (done; plan 0045 closed) → the missiles F1 / dispatch I4 entry (after `lane/rbd` merges) → 0038·P3 clusters as their batches land → 0050·P3 → 0050·P4 → 0046·P3 → 0046·P4 → **0052·P3a → 0052·P3b → 0052·P4** | Specs edited by two plans merge one at a time, the earlier plan's first. |
 
 **Why this order.** 0045·P3 opens three gates at once (0050·P2, 0046·P2 and 0052's approval), so it moves ahead of
 the 0038 clusters in the spec-writer queue once 0045·P2 is accepted. Plan 0051 needed no slot and filled both static
@@ -118,6 +118,19 @@ phase (5)'s path and 0046 gates nothing (ADR-0020).
   0052, the architect also proposes what follows it. Phase (5) is the last phase of ADR-0014, so anything beyond the
   remaining 0038/0046 tails needs a scope ADR for the owner. The aim is to have that ready before 0052's harness phase
   starts, so the static lanes and the archivist do not go idle while 0052·P2 waits on 0050·P3.
+
+**Owner decisions (2026-10-27, plan 0052 and ADR-0022):** plan 0052 is **approved**, and
+[ADR-0022](../adrs/0022-scope-server-frame.md) is **accepted**. The answers to 0052's scoping questions:
+1. Pathing gets its own plan; 0052 stops at the path request (recommended).
+2. One plan, with the spec in two parts, P3a and P3b (recommended).
+3. The injected-logger ADR is drafted at the P1.1 review only if capped breakpoints cannot keep the logs bounded (recommended).
+4. Hirelings and summons are in this plan (recommended).
+5. One harness slot (recommended).
+6. The gate addition is accepted: P2 waits for 0050·P3's review and for its own P1.1 and tier reviews (recommended).
+7. What follows 0052 is ADR-0022, the server frame (recommended; accepted).
+8. **Catalogue coverage: the whole AI table** (*differs from the recommendation*). Every row of the AI table gets a
+   catalogue entry, whether or not a stock MonStats, PetType or Hireling row names it. The architect revises P1's
+   catalogue batches and P3b to match, at the latest at the P1.1 review. P0 and P1.1 are unaffected and may start.
 
 **What follows 0052 (architect's proposal, 2026-10-27, for the owner).** Drafted as
 [ADR-0022](../adrs/0022-scope-server-frame.md) (proposed); the candidates it weighs:

@@ -1,0 +1,60 @@
+{
+  "game": "expansion",
+  "class": "Sorceress",
+  "seed": 731000030,
+  "name": "H6fFloor",
+  "progression": 15,
+  "difficulty": [
+    128,
+    128,
+    128
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "quests": "all",
+  "stats": {
+    "strength": 60,
+    "energy": 60,
+    "dexterity": 25,
+    "vitality": 100,
+    "hitpoints": 500,
+    "maxhp": 500,
+    "mana": 300,
+    "maxmana": 300,
+    "stamina": 200,
+    "maxstamina": 200,
+    "level": 3,
+    "experience": 2000,
+    "gold": 20000,
+    "goldbank": 0
+  },
+  "skills": {
+    "Charged Bolt": 1,
+    "Static Field": 1,
+    "Telekinesis": 1,
+    "Teleport": 1
+  },
+  "mouse": {
+    "left": "Teleport",
+    "right": "Telekinesis"
+  },
+  "keep_items": [
+    "tsc",
+    "isc"
+  ],
+  "items": [],
+  "quest_bits": {
+    "normal": {
+      "2": {
+        "clear": [
+          0,
+          1,
+          13
+        ]
+      }
+    }
+  }
+}

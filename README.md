@@ -36,98 +36,105 @@ Terms are in the [glossary](docs/glossary.md).
 
 ## Scope
 
-Three subsystems came first, all built on the game's RNG:
+The specification covers six areas. The first three are built on the game's RNG and form the core; the
+[chain](docs/specs/chain/README.md) composes them from the game seed to a populated level and a drop.
 
-| Area | What gets specified |
-|---|---|
-| **Item creation** | treasure class resolution, quality rolls, affix/unique/set selection, ilvl/alvl, sockets |
-| **Monster spawning** | per-level monster pools, packs and minions, champions/uniques/superuniques, monster level per difficulty |
-| **Level generation (DRLG)** | preset, maze and outdoor generators, rooms, warps, object and population placement |
+| Area | What gets specified | Defined by |
+|---|---|---|
+| **Item creation** | treasure class resolution, quality rolls, affix/unique/set selection, ilvl/alvl, sockets | [ADR-0001](docs/adrs/0001-target-toolchain-evidence-sources.md) |
+| **Monster spawning** | per-level monster pools, packs and minions, champions/uniques/superuniques, monster level per difficulty | [ADR-0001](docs/adrs/0001-target-toolchain-evidence-sources.md) |
+| **Level generation (DRLG)** | preset, maze and outdoor generators, rooms, warps, object and population placement | [ADR-0001](docs/adrs/0001-target-toolchain-evidence-sources.md) |
+| **Enablers and creation paths** | the systems the core cannot be reproduced without (excel data, strings, calc formulas, the seed tree, collision, saves), and the other callers into the item and monster code (vendors, the cube, sockets, quest drops, hirelings, new characters) | [ADR-0002](docs/adrs/0002-scope-creation-paths-and-enablers.md) |
+| **Simulation** | the game run over time, in six phases: combat formulas; stats and states; skills and missiles (the machinery and the function catalogue, [ADR-0020](docs/adrs/0020-skills-phase-in-two-plans.md)); animation and frame timing; monster AI and path search; and the server frame, which composes them so that events chain across units ([ADR-0022](docs/adrs/0022-scope-server-frame.md)) | [ADR-0014](docs/adrs/0014-scope-game-simulation.md) |
+| **Game rules** | quest progression, travel, and the item economy | [ADR-0017](docs/adrs/0017-scope-quests-travel-economy.md) |
 
-[ADR-0002](docs/adrs/0002-scope-creation-paths-and-enablers.md) added the systems the core cannot be reproduced
-without (enablers) and the other callers into the item and monster code (creation paths).
-[ADR-0014](docs/adrs/0014-scope-game-simulation.md) added the game run over time (simulation), in five phases.
+Out of scope: the network protocol, client prediction and wall-clock pacing, sound, fonts, video, rendering and input handling. Presentation formats are covered by tools only ([ADR-0005](docs/adrs/0005-presentation-formats-tools-only.md)).
 
 ## Status
 
-Every row of the [research map](docs/specs/README.md), with its status and the date of the spec's last update. The
-research map is authoritative: it adds the dependencies, key tables, tag counts and the plans behind each row.
+Every row of the [research map](docs/specs/README.md), with its status and the `updated:` date of the spec's front
+matter. The research map is authoritative: it adds the dependencies, key tables, tag counts and the plans behind
+each row.
 
 **Core**
 
 | Subsystem | What it covers | Status | Date |
 |---|---|---|---|
-| [`rng`](docs/specs/rng/README.md) | seed state, step, range | reviewed | 2026-10-11 |
-| [`items/tc`](docs/specs/items/tc.md) | treasure class resolution, picks, NoDrop, player-count scaling | reviewed | 2026-10-16 |
-| [`items/quality`](docs/specs/items/quality.md) | the unique/set/rare/magic/superior/normal/low roll; magic find | reviewed | 2026-10-16 |
-| [`items/affixes`](docs/specs/items/affixes.md) | alvl, prefix/suffix selection, rare affix counts, automagic | reviewed | 2026-10-16 |
-| [`items/uniques-sets`](docs/specs/items/uniques-sets.md) | unique and set candidate selection, fallback rules | reviewed | 2026-10-15 |
-| [`items/properties`](docs/specs/items/properties.md) | stat rolls, sockets, ethereal, durability, defense | reviewed | 2026-10-15 |
-| [`monsters/pool`](docs/specs/monsters/pool.md) | which monster types a level can host | reviewed | 2026-10-16 |
-| [`monsters/spawn`](docs/specs/monsters/spawn.md) | packs, density, placement, minions | reviewed | 2026-10-15 |
-| [`monsters/special`](docs/specs/monsters/special.md) | champions, uniques, superuniques, mod rolls, unique name rolls | reviewed | 2026-10-15 |
-| [`drlg/overview`](docs/specs/drlg/README.md) | act → level → room hierarchy, generator dispatch, room-type draws ([room tiles](docs/specs/drlg/room-tiles.md)) | reviewed | 2026-10-15 |
-| [`drlg/preset`](docs/specs/drlg/preset.md) | DS1 preset maps, their unit lists and keep/drop rolls, `LvlPrest` columns | reviewed | 2026-10-15 |
-| [`drlg/maze`](docs/specs/drlg/maze.md) | maze generator (dungeons and caves) | reviewed | 2026-10-15 |
-| [`drlg/outdoor`](docs/specs/drlg/outdoor.md) | wilderness generator, borders, paths, `LvlSub` substitutions | reviewed | 2026-10-15 |
-| [`drlg/warps`](docs/specs/drlg/warps.md) | inter-level links and placement | reviewed | 2026-10-15 |
-| [`objects`](docs/specs/objects/README.md) | object, shrine and chest placement and operation | reviewed | 2026-10-16 |
+| [`rng`](docs/specs/rng/README.md) | seed state, step, range | reviewed | 2026-10-17 |
+| [`items/tc`](docs/specs/items/tc.md) | treasure class resolution, picks, NoDrop, player-count scaling | reviewed | 2026-10-21 |
+| [`items/quality`](docs/specs/items/quality.md) | the unique/set/rare/magic/superior/normal/low roll; magic find | reviewed | 2026-10-20 |
+| [`items/affixes`](docs/specs/items/affixes.md) | alvl, prefix/suffix selection, rare affix counts, automagic | reviewed | 2026-10-27 |
+| [`items/uniques-sets`](docs/specs/items/uniques-sets.md) | unique and set candidate selection, fallback rules | reviewed | 2026-10-27 |
+| [`items/properties`](docs/specs/items/properties.md) | stat rolls, sockets, ethereal, durability, defense | reviewed | 2026-10-27 |
+| [`monsters/pool`](docs/specs/monsters/pool.md) | which monster types a level can host | reviewed | 2026-10-27 |
+| [`monsters/spawn`](docs/specs/monsters/spawn.md) | packs, density, placement, minions | reviewed | 2026-10-27 |
+| [`monsters/special`](docs/specs/monsters/special.md) | champions, uniques, superuniques, mod rolls, unique name rolls | reviewed | 2026-10-27 |
+| [`drlg/overview`](docs/specs/drlg/README.md) | act → level → room hierarchy, generator dispatch, room-type draws ([room tiles](docs/specs/drlg/room-tiles.md), 2026-10-27) | reviewed | 2026-10-21 |
+| [`drlg/preset`](docs/specs/drlg/preset.md) | DS1 preset maps, their unit lists and keep/drop rolls, `LvlPrest` columns | reviewed | 2026-10-17 |
+| [`drlg/maze`](docs/specs/drlg/maze.md) | maze generator (dungeons and caves) | reviewed | 2026-10-17 |
+| [`drlg/outdoor`](docs/specs/drlg/outdoor.md) | wilderness generator, borders, paths, `LvlSub` substitutions | reviewed | 2026-10-20 |
+| [`drlg/warps`](docs/specs/drlg/warps.md) | inter-level links and placement | reviewed | 2026-10-17 |
+| [`objects`](docs/specs/objects/README.md) | object, shrine and chest placement and operation | reviewed | 2026-10-27 |
+| [`chain`](docs/specs/chain/README.md) | seed to world: the core specs composed from the game seed to a populated level and a drop, with no oracle inside the chain | reviewed | 2026-10-21 |
 
 **Enablers** ([ADR-0002](docs/adrs/0002-scope-creation-paths-and-enablers.md))
 
 | Subsystem | What it covers | Status | Date |
 |---|---|---|---|
-| [`data/excel`](docs/specs/data/excel.md) | which form is loaded (`.bin`/`.txt`), record layout, code→index lookups ([overview](docs/specs/data/README.md)) | reviewed | 2026-10-15 |
-| [`data/calc`](docs/specs/data/calc.md) | the formula bytecode (`*code.bin`) and the columns that index into it | reviewed | 2026-10-16 |
-| [`data/strings`](docs/specs/data/strings.md) | string-table lookup by key and index, as used by name rolls | reviewed | 2026-10-15 |
-| [`rng/seeds`](docs/specs/rng/seeds.md) | game seed → act → level → room → unit seed derivation | reviewed | 2026-10-15 |
-| [`drlg/collision`](docs/specs/drlg/collision.md) | room collision grid, logic regions, the placement tests used by spawning and objects | reviewed | 2026-10-15 |
-| [`save/d2s`](docs/specs/save/d2s.md) | save layout, item bitstream, persisted seeds and quest state | reviewed | 2026-10-16 |
+| [`data/excel`](docs/specs/data/excel.md) | which form is loaded (`.bin`/`.txt`), record layout, code→index lookups ([overview](docs/specs/data/README.md), 2026-10-27) | reviewed | 2026-10-27 |
+| [`data/calc`](docs/specs/data/calc.md) | the formula bytecode (`*code.bin`) and the columns that index into it | reviewed | 2026-10-17 |
+| [`data/strings`](docs/specs/data/strings.md) | string-table lookup by key and index, as used by name rolls | reviewed | 2026-10-27 |
+| [`rng/seeds`](docs/specs/rng/seeds.md) | game seed → act → level → room → unit seed derivation | reviewed | 2026-10-27 |
+| [`drlg/collision`](docs/specs/drlg/collision.md) | room collision grid, logic regions, the placement tests used by spawning and objects | reviewed | 2026-10-27 |
+| [`save/d2s`](docs/specs/save/d2s.md) | save layout, item bitstream, persisted seeds and quest state | reviewed | 2026-10-27 |
+| [`drlg/lifecycle`](docs/specs/drlg/lifecycle.md) | room activation and release, the inactive records, the restore of monsters, objects and ground items, the wanderer tick | reviewed | 2026-10-27 |
 
 **Creation paths** ([ADR-0002](docs/adrs/0002-scope-creation-paths-and-enablers.md))
 
 | Subsystem | What it covers | Status | Date |
 |---|---|---|---|
-| [`items/vendors`](docs/specs/items/vendors.md) | store stock, refresh, vendor ilvl, gambling | reviewed | 2026-10-16 |
-| [`items/cube`](docs/specs/items/cube.md) | recipe matching, input checks, output construction, rerolls | reviewed | 2026-10-16 |
-| [`items/sockets-runewords`](docs/specs/items/sockets-runewords.md) | socket filling, gems, runes and jewels, runeword activation | reviewed | 2026-10-15 |
-| [`items/quest-drops`](docs/specs/items/quest-drops.md) | quest-state TC switches, first-kill and special drops, quest rewards | reviewed | 2026-10-16 |
-| [`monsters/stats`](docs/specs/monsters/stats.md) | HP, damage, AC and XP per difficulty and player count, mod effects | reviewed | 2026-10-15 |
-| [`hirelings`](docs/specs/hirelings/README.md) | hireling stock, per-difficulty stats, name rolls | reviewed | 2026-10-16 |
-| [`player/creation`](docs/specs/player/creation.md) | starting stats and items, experience curve, level-up | reviewed | 2026-10-16 |
+| [`items/vendors`](docs/specs/items/vendors.md) | store stock, refresh, vendor ilvl, gambling | reviewed | 2026-10-27 |
+| [`items/cube`](docs/specs/items/cube.md) | recipe matching, input checks, output construction, rerolls | reviewed | 2026-10-27 |
+| [`items/sockets-runewords`](docs/specs/items/sockets-runewords.md) | socket filling, gems, runes and jewels, runeword activation | reviewed | 2026-10-27 |
+| [`items/quest-drops`](docs/specs/items/quest-drops.md) | quest-state TC switches, first-kill and special drops, quest rewards | reviewed | 2026-10-27 |
+| [`monsters/stats`](docs/specs/monsters/stats.md) | HP, damage, AC and XP per difficulty and player count, mod effects | reviewed | 2026-10-27 |
+| [`hirelings`](docs/specs/hirelings/README.md) | hireling stock, per-difficulty stats, name rolls | reviewed | 2026-10-27 |
+| [`player/creation`](docs/specs/player/creation.md) | starting stats and items, experience curve, level-up | reviewed | 2026-10-21 |
 
 **Simulation** ([ADR-0014](docs/adrs/0014-scope-game-simulation.md))
 
 | Subsystem | What it covers | Status | Date |
 |---|---|---|---|
-| [`combat/formulas`](docs/specs/combat/README.md) | to-hit, damage, resistances, block, avoid, damage reduction, on-hit effects | reviewed | 2026-10-17 |
+| [`combat/formulas`](docs/specs/combat/README.md) | to-hit, damage, resistances, block, avoid, damage reduction, on-hit effects: the overview and its four parts, [to-hit](docs/specs/combat/to-hit.md) (the hit test, chance to hit and the defence rolls), [damage](docs/specs/combat/damage.md) (the attacker's damage build), [reductions](docs/specs/combat/reductions.md) (the defender's reductions) and [delivery](docs/specs/combat/delivery.md) (queue, delivery, on-hit effects and the life change), each 2026-10-21 | reviewed | 2026-10-27 |
+| [`stats/aggregate`](docs/specs/stats/aggregate.md) | stat lists and their cache, the stat ops, the maxima and their rescale, item requirements, set bonuses ([overview](docs/specs/stats/README.md), 2026-10-21) | reviewed | 2026-10-20 |
+| [`stats/states`](docs/specs/stats/states.md) | timed state apply, refresh, `group`, expiry, the regeneration ticks, auras, shrines and wells | reviewed | 2026-10-27 |
+| [`skills/dispatch`](docs/specs/skills/dispatch.md) | the skill request, start checks, start and do function dispatch, charges, costs, the skill packet, event handlers, summons, monster skill use ([overview](docs/specs/skills/README.md), 2026-10-27) | reviewed | 2026-10-27 |
+| [`skills/missiles`](docs/specs/skills/missiles.md) | missile creation, seed, motion, collision, hit, pierce, sub-missiles, end of life | reviewed | 2026-10-27 |
+| `skills/catalogue` | every numbered skill and missile function a stock row uses (plan 0046) | findings in progress | — |
+| `anim/timing` | unit modes and frame counts, event frames, attack, cast, hit-recovery and block rates and their breakpoints (plan 0050) | findings in progress | — |
+| `anim/movement` | walk and run speed, the slowing states, the per-frame step along a path (plan 0050) | findings in progress | — |
+| `monsters/ai` | the AI tick, target, mode and skill choice, following, the path request and its draws (plan 0052) | not started | — |
 
-Later simulation rows (stats and states, skills and missiles, monster AI, animation timing) are added when their
-plans start.
+**Game rules** ([ADR-0017](docs/adrs/0017-scope-quests-travel-economy.md))
+
+| Subsystem | What it covers | Status | Date |
+|---|---|---|---|
+| [`quests/progression`](docs/specs/quests/progression.md) | the quest registry and event dispatch, each quest's record bits per event and difficulty, quest timers, the quest seed's non-item draws ([overview](docs/specs/quests/README.md), 2026-10-20) | reviewed | 2026-10-21 |
+| [`quests/travel`](docs/specs/quests/travel.md) | waypoints, act change, town portals, warps and their quest gates, death and join placement | reviewed | 2026-10-21 |
+| [`items/economy`](docs/specs/items/economy.md) | buy, sell, gamble and repair prices; hire, resurrect and identify costs; gold; durability, quantity and charge wear | reviewed | 2026-10-27 |
 
 ### Plans
 
 In flight ([plans index](docs/plans/README.md)):
 
-- **[0038](docs/plans/0038-inferred-claims-sweep.md)**: the inferred-claims sweep: which inferred points in the reviewed specs one more run, a re-check of kept
-  logs or a static second source raises to confirmed (approved 2026-10-16).
+- **[0038](docs/plans/0038-inferred-claims-sweep.md)**: the inferred-claims sweep, raising the reviewed specs'
+  inferred points to confirmed where a run, a re-check of kept logs or a static second source allows; Phase 3
+  re-tags the specs cluster by cluster.
+- **[0046](docs/plans/0046-skills-function-catalogue.md)**: the skills and missiles function catalogue.
+- **[0050](docs/plans/0050-animation-frame-timing.md)**: animation and frame timing.
+- **[0052](docs/plans/0052-monster-ai.md)**: monster AI.
 
-Done (each closed plan is in `docs/plans/done/`, listed in the [plans index](docs/plans/README.md)):
-
-- **Foundations**: bootstrap and binary pinning (0001), the excel foundation (0002), the seed tree and the runtime
-  harness (0003), prerequisite formats (0005), asset rendering tools (0006), the docs gate (0007), item art tools
-  (0009), the two-client harness (0011).
-- **Items**: treasure classes (0004), the quality roll and magic find (0010), uniques and sets (0019), affixes (0021),
-  base stats and properties (0024), sockets and runewords (0029), the Horadric Cube (0030), vendors and gambling
-  (0031), quest drops and rewards (0032).
-- **Monsters**: the level pool and monster level (0012), room population (0014), special monsters (0018), monster
-  stats (0025), hirelings (0033).
-- **Levels and objects**: the DRLG overview and room seeds (0008), presets (0016), the collision grid (0017), the maze
-  generator and warps (0022), objects (0023), the outdoor generators (0026).
-- **Data, saves and players**: save files (0013), string tables (0028), player creation (0034), calc formulas (0035).
-- **Sweeps**: backlog sweeps 1–3 (0015, 0020, 0027).
-- **Reading**: the human wiki and this README (0036).
-- **Simulation**: combat formulas (0037).
+Closed plans are in `docs/plans/done/`, listed in the [plans index](docs/plans/README.md).
 
 ### Supporting material
 
@@ -171,7 +178,7 @@ docs/
   plans/       research work in flight; done/ when closed
   inventory.md hashed list of every extracted file; the PINNED Game.exe
   sources.md   external documentation used as leads
-  backlog.md   cross-lane requests and open questions
+  backlog/     cross-lane requests, one file per entry (closed ones in archive/; backlog.md is the frozen pre-2026-10-17 archive)
   glossary.md  D2 terms (ilvl, alvl, TC, DRLG, …)
 re/
   symbols.csv  single source of truth for named addresses
@@ -249,7 +256,7 @@ The research runs as four lanes, each a Claude Code skill in `.claude/skills/`:
 | `reverser` | Ghidra/radare2 analysis and runtime experiments on `Game.exe`, findings, `re/symbols.csv` |
 | `spec-writer` | turns findings and table docs into `docs/specs/`, and keeps the wiki in step with them |
 
-Lanes hand work over through [plans](docs/plans/README.md) and [`docs/backlog.md`](docs/backlog.md). Durable
+Lanes hand work over through [plans](docs/plans/README.md) and the [backlog](docs/backlog/README.md). Durable
 decisions are recorded as [ADRs](docs/adrs/README.md). Commit hygiene (no game data, explicit staging, no history
 rewrites, a green docs gate) is enforced by hooks in `.claude/hooks/`. [`CLAUDE.md`](CLAUDE.md) is the map for
 agents.

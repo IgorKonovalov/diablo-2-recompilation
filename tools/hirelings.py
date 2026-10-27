@@ -413,7 +413,9 @@ class Checker:
                 if e is not None:
                     self.notes["hire of a %s entry" % ("listed" if e[3] else "not listed")] += 1
             elif tag == "HHX" and hire is not None:
-                if d["r"]:
+                # HIRE_Hire returns no value (EAX is what its last callee left): a hire is made when MERC_Init ran
+                # inside it (plan 0038 H6f: a refused hire returned 15)
+                if hire.get("inited"):
                     self.n["hires"] += 1
                     e = hire["entry"]
                     paid = hire["gold"] + hire["bank"] - d["gold"] - d["bank"]
@@ -436,6 +438,7 @@ class Checker:
                     self.ok("hired class = Class of the seller's Normal row", d["merc"]["cls"] == rr["Class"],
                             path, lambda: "class %d, row %d" % (d["merc"]["cls"], rr["Class"]))
                     merc["src"] = "hire"
+                    hire["inited"] = True
                     hire["entry"][2] = 1        # hired before HIRE_RebuildIfEmpty runs (inside HIRE_Hire)
                 elif d["id"] != -1:
                     merc["src"] = "load"

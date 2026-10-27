@@ -3456,3 +3456,116 @@ run id). Evidence in [items/0010 § Plan 0038 batch H6e2](0010-quest-drops.md#pl
   holds one charge entry, the knives' max stack 160 lies under the `qty=255` byte, and the forced rows' other tests all
   pass on stock data: cube 39 L491 and L524, 40 L528 and 58 are raised in part
   ([items/0008 § Plan 0038 batch H6a](0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube)).
+
+## run:2026-10-27-sweep-vendors
+
+- **Question:** (plan 0038 Phase 2, batch H6c, [inventory § 5](../../plans/0038-inventory/README.md#5-batch-list))
+  Does the vendor code do what [items/0009](0009-vendors.md) reads where run:2026-10-15-vendors did not look: a reopen
+  of a built store, a walk out of a town, a level-up and a town entry between two opens, Asheara's hire list before her
+  trade, the gamble `lvl` clamp at both ends, a Hell stock level above 99, the limit of 32 failed creations at the
+  longest stocks, purchases of stock and gamble items, sales the store keeps or refuses, the interaction's end at a
+  player's removal, and (the S2c pieces of vendors 22 and 26) each stock item's tab and cell and the store creation
+  record's `+0x18`/`+0x28`? Boundary as in run:2026-10-15-vendors (the store seed end to end, each creation handed to
+  the item chain; `HIRE_BuildStock` and the `g_GambleList` order as logged oracles, ADR-0004); tool-built saves are
+  inputs (ADR-0013 § Neutral).
+- **Status:** done (2026-10-27). Evidence in
+  [items/0009 § Plan 0038 batch H6c](0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors).
+- **Setup:** agent-driven sessions on harness **slot 1** (display `:8`, `workspace/wineprefix-1`, game in
+  `workspace/runtime/game`), stock data, pinned `game.exe`, expansion, one player; every session in town but for the
+  level-up kill (the Frigid Highlands, Normal), one in-act waypoint (the Frigid Highlands, Hell) and the Sewers Level 2
+  arrivals (Nightmare).
+  - **Logger** `tools/gdb/h6c.gdb` (`0bb48ea1…`): `tools/gdb/vendors.gdb`'s files (`pilot.py` `05d89736…`,
+    `uniques.py` `9b3e988f…`, `affixes.py` `f2ac1c63…`, `vendors.py` `eddbff8c…`, all unchanged) and the new
+    `tools/gdb/h6c.py` (`36003c65…`; its lines are listed in the finding). Every kept session ran this revision; the
+    first development log ran it before `NB0` read the NPC unit from the first stack word (no inventories around its
+    purchases).
+  - **Session driver** `tools/h6c_sessions.py` (`62a4d127…`): H6b's loop (restore, aside, `d2run.py --install`, the
+    commands, `slots.py stop`) with `d2pilot.py npc` (`3ba03df5…`, unchanged), `farm`, `explore`, `wp` (H4a's fixed
+    click from the Act IV town), `wpchain`, and `economy_sessions.py act` (`7bbdb1d4…`, unchanged) in an open window;
+    its `BUY:`/`GBUY` tokens pick the item to buy from the log's last `INVB`/`INVT`/`INVG` line (a cell and, for stock,
+    the tab of its page: tab k holds page k − 1, as the trade window's tab labels show). Sessions were added or changed
+    only before they ran, so the final revision holds the definitions that ran.
+  - **Characters** (`tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/<recipe>.json
+    workspace/samples/d2s-owner/smpsor-l50.d2s <out>`, `tools/d2s.py` `8044c638…`, saves in `workspace/scratch-h6c/saves/`,
+    rows in `tools/test_d2s.py` `RECIPE_BASES`, 60 tests OK before `main`'s 134 `anim-*` recipes, whose rows are not
+    this batch's): the Nova build of `uniqnova.json` (its stats, skills,
+    hotkeys and equipped items, no charms), every difficulty open, every quest done, written by `h6c_sessions.py write`:
+    `VendH6cLow` (`vend-h6c-low.json` `77826b26…`, save `b0334a6e…`: level 1, experience 0, the Act I town, gold 10 000
+    and 2 000 000 in the stash, a `hp5`, a `tsc` and a `cap` at inventory cells (0, 0), (1, 0), (2, 0); no belt, no
+    hotkeys), `VendH6cLvl` (`vend-h6c-lvl.json` `a4294c0e…`, `45223841…`: level 30, experience 6 397 854, the Act IV
+    town), `VendH6cH99e` (`vend-h6c-h99e.json` `65701e16…`, `b7e77e44…`: level 99, experience 3 837 739 017, the Act V
+    town, gold 990 000 and 2 500 000, a `hp5` and a `cap` at (0, 0), (1, 0)), `VendH6cN19` (`vend-h6c-n19.json`
+    `4c344103…`, `1a48c286…`: level 19, experience 537 513, the Act IV town).
+  - **Built (test) states** (tool-built saves on stock tables, ADR-0013 § Neutral; no `d2s.py` test-state key is
+    used): a level-1 character with every quest done and the Nova build's stats, clvl 30 with the experience one
+    point under clvl 32's threshold (and over clvl 31's: the level-up the kill gave was one event of two levels, 30 →
+    32; corrected at the `lane/h6c` review), level 99 in Hell, level 19 with Nightmare open (at clvl 20's threshold,
+    537 513). They are inputs of the code that reads them (the opener's clvl at the stock and gamble builds, the
+    level-up's call into the store note, the act start); they raise nothing about how a character reaches them.
+- **Sessions** (`python3 -I tools/h6c_sessions.py run --slot 1 --tag h6c --saves workspace/scratch-h6c/saves --run
+  vendors <session>`; logs `workspace/logs/h6c/vendors-s1-<seed>-<session>.log`; saves restored after each):
+
+  | session | save | what | result |
+  |---|---|---|---|
+  | `6201-low` `92cfb6bb…` | VendH6cLow (Normal) | Gheed's gamble window (a sale in it, a purchase), a second window; Akara: two sales, two purchases; Charsi: a purchase, the window again; a walk out of the Rogue Encampment | **kept** |
+  | `6202-lvl` `3f7272b4…` | VendH6cLvl (Normal) | the waypoint to Lut Gholein; Drognan's window twice; the Frigid Highlands, Eldritch's pack (a level-up), back; Drognan's window twice more (the last before *Save and Exit*) | **kept** |
+  | `6203-h99e` `bacfc5f3…` | VendH6cH99e (Hell) | Larzuk, Anya, Malah at ilvl 104; two sales and a purchase at Malah; Anya's gamble window (a purchase), a second window; the waypoint to Kurast Docks; Asheara's hire list, then her trade window | **kept** |
+  | `6205-larz` `afcde287…` | VendH6cH99e (Hell) | Larzuk's window, the waypoint to the Frigid Highlands (an in-act leave: the store reset); the character died there at arrival, and every later waypoint try failed | **kept** (the build and the in-act leave; the death ends the session's use) |
+  | `6206-fara` `1dbe7ef1…` | VendH6cN19 (Nightmare) | the waypoint to Lut Gholein; six times Fara's window at ilvl 24, the Sewers Level 2 waypoint and back | **kept** |
+  | `6207-larz2` `a6ab917d…` | VendH6cH99e (Hell) | six times: Larzuk's window, six of Anya's gamble windows and a 150 s pause, the Act IV town and back (two of the cycles passed 240 000 ms: a stale mark, then a reset and rebuild) | **kept** |
+
+  Development logs (`workspace/logs/h6c/dev/`, renamed `dev1-`/`dev2-` before any manifest listed them; no claim rests
+  on them): `dev1-…-6201-low`, the `low` session with the logger before the `NB0` fix; `dev2-…-6202-lvl`, the `lvl`
+  session started in Lut Gholein, where `farm`'s waypoint step did not open the list and the game left to the main
+  menu (a `PIEND` at the player's free) before the trip. **Launches: 8** (6 kept, 2 development); the batch cap is 20.
+- **Procedure** (from `/home/igor/Work/recompilcation-project-h6c`, each under `systemd-run --user --scope -p
+  MemoryMax=4G`; `L` = the six kept logs, `workspace/logs/h6c/kept.lst`):
+  ```
+  python3 -I tools/vendors.py check $L > workspace/logs/h6c/check-vendors.txt
+  python3 -I tools/sweep_h6c.py logs -v $L > workspace/logs/h6c/check-sweep_h6c.txt
+  python3 -I tools/sweep_h6c.py fails $L > workspace/logs/h6c/check-fails.txt
+  python3 -I tools/sweep_h6c.py pairs workspace/logs/p44h-vend-1-host.log workspace/logs/p44h-vend-2-host.log \
+      workspace/logs/p44h-vend-3-host.log workspace/logs/p44h-qjoin-1-host.log $L > workspace/logs/h6c/check-pairs.txt
+  python3 -I tools/sweep_h6c.py hb $(cat workspace/logs/vendors-run.lst) $L > workspace/logs/h6c/check-hb.txt
+  python3 -I tools/sweep_h6c.py fails $(cat workspace/logs/vendors-run.lst) > workspace/logs/h6c/check-fails-vendors-run.txt
+  python3 -I tools/sweep_h6c.py static > workspace/logs/h6c/check-static.txt
+  python3 -I tools/vendors.py lists > workspace/logs/h6c/check-lists.txt
+  python3 -I tools/xrefscan.py 0x00555500 0x00536B50 0x00537340 0x00576ED0 > workspace/logs/h6c/check-xref.txt
+  python3 -I tools/vendors.py check $(cat workspace/logs/vendors-run.lst) > workspace/logs/h6c/regress/check-regress-vendors-run.txt
+  ```
+  `tools/vendors.py` `555fe1e2…` (this batch adds one branch: an `ITEMS_CreateForStore` call outside a build, from
+  `sub_0055A090_DropGoldAmount` at 0x0055A18D, is counted and skipped; narrowed at the `lane/h6c` review to that
+  return address, `a0ec05e4…`, with both checks' outputs unchanged, `workspace/logs/h6c/review/manifest-review.sha256`
+  `4ac7f16e…`), `tools/sweep_h6c.py` `bf8a970d…`. The
+  `p44h-*-host.log` files are run:2026-10-20-two-clients's, checked against its manifest
+  (`workspace/logs/p44h-run/manifest.sha256`) before the rescan.
+- **Observed** (`check-vendors.txt` `8daa6759…`, `check-sweep_h6c.txt` `79c18580…`, `check-fails.txt` `4d4f9a63…`,
+  `check-pairs.txt` `0ed8d789…`, `check-hb.txt` `4a966c4e…`, `check-fails-vendors-run.txt` `0a32dc20…`,
+  `check-static.txt` `eecde86b…`, `check-lists.txt` `6a5f70ab…`, `check-xref.txt` `42022754…`,
+  `regress/check-regress-vendors-run.txt` `feab4098…`; manifests `manifest-run.sha256` `e45b2410…` (the 6 logs, their
+  pilot outputs, `kept.lst` and the 11 checks: 23 lines), `manifest-shots.sha256` `1d7a582e…` (62 screenshots),
+  `dev/manifest-dev.sha256` `f06d384e…` (25 development files), each checked with `sha256sum -c` from its own
+  directory; trimmed):
+  ```
+  vendors.py: 17 stock builds (1 086 items, 185 not placed), 40 gamble windows (560 slots), 1 646 creations through
+    the item chain, 6 store seeds, 1 HIRE_BuildStock oracle; 7 trade opens with the stock kept, 2 stale rebuilds,
+    9 stores reset and 2 marked stale by a town leave; 4 ITEMS_CreateForStore calls outside a build; 0 mismatches
+  tll: per-frame room check 8 town leaves (townEmpty 1, 9 stores destroyed), PlayerChangeLevel 14 (townEmpty 0)
+  reopen: 7 opens of a built, non-stale store, the stock ids unchanged 7; 1 level-up note (LUN)
+  build: Hell clvl 99 -> ilvl 104 in 8 builds; most failures in one build 27 (94 builds of run:2026-10-15-vendors: 20)
+  place: 1 086 tabs = the StorePage byte; 901 cells inside the grid, none overlapping; tab 2 171 (each after a failed
+    tab-1 try), parked 185; first fit column-major 841 of 901, row-major 384
+  rec: 1 646 store creation records, +0x18 4, +0x28 1, +0x80 2
+  glv: 560 lvl draws: 26 below 5 (-4..4) -> 5, 232 above 99 (100..103) -> 99
+  hire: HIRE_BuildStock from HIRE_SendList (0x005767F0) from NpcInteractStart (0x00572D04); hb: Asheara's 6 first
+    trade opens (5 of run:2026-10-15-vendors) all with hirelingsBuilt 1
+  buy: 6 purchases: gamble 2 (inventory 14 -> 13), stock kept (permanent) 1, stock removed 3; copy = source 6
+  sell: 5 sales: copied 2, refused by the permanent test 2, by the gamble view 1; 77 GambleInvFree from 0x00572FBF
+  pie: 8 PlayerInteractEnd entries (return 0x005555CB): 2 then NpcStorePlayerLeave (0x00555562), both two-client
+  SUMMARY logs=6 checks=9616 bad=0
+  regression: run:2026-10-15-vendors 0 mismatches, no call outside a build
+  ```
+- **Limits.** One player: an interaction never stays open past its window, so the gamble window's skip branch and the
+  free at a player's removal (vendors 29, 32) need a second player; the level-up's note queue and a quest event were
+  not looked at; no build passed 32 failures (most 27); the refusals by `Cracked`, base type 7, flag `0x1000000` and
+  `0x0055F590` were not reached. The store's cell search is not modelled (a column-major first fit is close but not it).

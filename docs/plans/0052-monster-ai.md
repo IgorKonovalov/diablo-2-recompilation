@@ -1,6 +1,6 @@
 # 0052 — Monster AI: the AI tick, target and skill choice, and the path request it makes (ADR-0014 phase 5)
 
-> **Status:** proposed (re-drafted 2026-10-27 at its gate, the review of plan 0045's spec; awaiting the owner's approval and the answers to § Scoping questions)
+> **Status:** approved (owner, 2026-10-27; scoping answers in the [plans README](README.md) owner decisions: questions 1–7 as recommended, question 8 the whole AI table); **paused after P1.1** (owner ruling, 2026-10-27): P1.2 is next on unpause
 > **Created:** 2026-10-25
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases, 0020-skills-phase-in-two-plans, 0021-observed-boundaries-in-emulation
@@ -23,7 +23,7 @@ after animation and frame timing (phase (4), plan [0050](0050-animation-frame-ti
 **Boundary (recommended, § Scoping questions 1).** The AI's **path request** (its kind, its target, its flags) is this
 plan's; the path search behind it is a **boundary**: an observed boundary under
 [ADR-0021](../adrs/0021-observed-boundaries-in-emulation.md) in emulation, a logged ADR-0004 oracle (its exit state and
-the seeds it touched) in the harness. The path search gets its own plan, drafted at this plan's P1.1 review. The skill
+the seeds it touched) in the harness. The path search gets its own plan, drafted when the project unpauses (deferred at the P1.1 review: the AI's path types draw nothing, so it gates nothing here). The skill
 use the AI commands is [skills/dispatch](../specs/skills/dispatch.md)'s (reviewed); the mode's frames are phase (4)'s
 (plan 0050, reviewed before this plan's harness phase); the per-skill functions plan 0046 has not specified are
 boundary oracles under ADR-0004 (ADR-0020).
@@ -102,14 +102,64 @@ Data first, then code, then spec. Phase numbers follow plans 0045 and 0050.
     planner draws, on which seed** (if it does, the harness oracle must log its exit seed); leader and minion following;
     the draws of each and their seeds; H4's AI side; the **tier proposal** for Phase 2 (below) and the batch list for
     P1.2 onward from Phase 0's table; **the boundary recommendation** (what the AI takes as oracles: the skill's
-    catalogue function, the mode's frames before 0050·P3, the path result) and the per-event log windows.
-  - **P1.2 onward, the catalogue:** the per-AI functions in batches from P1.1's list (an estimate: eight to twelve),
+    catalogue function, the mode's frames before 0050·P3, the path result) and the per-event log windows. *Folded in at
+    the `lane/a52` review:* `MonAiEntryGet`'s two branches, with the word its three callers pass as `EDX`, who sets
+    it, what `0x00623470` tests for 10–12, and the row count of the **second table at `0x0073D358`** (MonAI § The
+    second table); the `+0`, `+4` and `+C` words of a row of either table; rows 0 and 1 (and the second table's rows
+    0 and 1) as catalogue entries of this batch; whether any path gives a unit an AI other than its record's (row 143,
+    the hirelings, revived and converted monsters).
+  - **P1.2 onward, the catalogue:** the per-AI functions in the twelve batches of § The catalogue batches below (set at the P1.1 review from Phase 0's 13 and
+    P1.1's 9–11, with the second table's rows),
     each AI's decision tree with its `aip` reads, its draws and its calls; **the summons batch** (PetType AIs, the
     necromancer and druid summons, H3's owner pair) and **the hirelings batch** (`MERCAI_PickSkill` and the four
-    hireling classes' AIs) per § Scoping questions 4; the boss AIs (the act bosses and Baal's minions) in one batch;
-    H5 and H6 answered where a batch reaches them.
-- **The P1.1 review** rules the tier, the floors of Phase 2 and the boundary, and the architect then drafts the path
-  search plan (§ Scoping questions 1) from P1.1's path request kinds.
+    hireling classes' AIs) per § Scoping questions 4; the boss AIs in two batches (bosses-A, bosses-B; ruled at the P1.1 review);
+    H5 and H6 answered where a batch reaches them. *Folded in at the `lane/a52` review:* the summons batch takes row 143
+    (row 106's `+8` word, its own `+4`, no record) and the five summon records with a skill at `Sk lvl` 0
+    (`bloodgolem`, `bonewall`, `chargeboltsentry`, `infernosentry`, `druidhawk`), and `shadowmaster`'s `aip8` = 279 in
+    Normal only; the hirelings batch says which skill list the one AI row 61 uses (`roguehire` and `act2hire` also
+    name MonStats skills); every batch reads the `aip` slots per record where its AI's records disagree (13 rows,
+    MonStats § AI columns), and the batch holding 50 `Mephisto` and 146 `UberMephisto` reads `aidist`.
+- **The P1.1 review** ruled the tier (18 AIs, Phase 2), the floors of Phase 2 (unchanged) and the boundary, and set
+  the batches below. The path search plan is deferred to the unpause (implementation log, the P1.1 review entry).
+
+#### The catalogue batches (P1.2 onward; set at the P1.1 review, owner question 8)
+
+**Status: next on unpause.** The project is paused after the P1.1 review (owner ruling); no batch is dispatched.
+Every one of the 148 rows of `g_MonAiTable` and the 18 rows of `g_MonAiStateRows` (`0x0073D358`, ai/0001 § 3) is in
+exactly one batch, P1.1 included. Rows are grouped by the think functions' address ranges and families (ai/0001
+§ 13), cut at about 18 rows; *tier* marks the Phase 2 tier AIs a batch holds. The order is the run order: the
+batches holding the tier come first, since Phase 2 waits for their review.
+
+| # | Batch | Table rows | State rows | n | Tier AIs |
+|---:|---|---|---|---:|---|
+| — | P1.1 (done) | 0 `None`, 1 `Idle` | 0 (zero row), 1 | 2 + 2 | — |
+| 1 | pool-A (acts I–II, `0x005EFB80`–`0x005F1DE0`) | 2–16, 142 `ClawViperEx` | — | 16 | 2, 6, 9, 13 |
+| 2 | pool-B (acts II–III, `0x005F20A0`–`0x005F53E0`) | 17–30 | — | 14 | 20, 21, 22, 28, 29, 30 |
+| 3 | pool-C (ranged, maggots, the Zakarum, nests) | 33, 35–40, 43, 45–49, 52, 56, 57, 63 | — | 17 | 35, 37 |
+| 4 | pool-D (`SkeletonMage` to the traps) | 64–66, 68–80, 87, 92 | — | 18 | 64 |
+| 5 | summons (PetType, necromancer, druid, assassin; H3's owner pair) | 67, 84, 86, 101–112, 143 | 7 | 16 + 1 | 67 |
+| 6 | hirelings (`MERCAI_PickSkill` `0x005E4D30`) | 61 | 4, 5, 6 | 1 + 3 | 61 |
+| 7 | bosses-A (Andariel to Izual, Blood Raven, Griswold, Uber Izual and Mephisto) | 34, 44, 50, 53, 55, 59, 90, 144, 146 | — | 9 | 34 |
+| 8 | pool-E (towers, turrets, javelins and blowguns, Venom Lords, the siege) | 82, 83, 85, 89, 93–98, 113–115 | — | 13 | 89 |
+| 9 | pool-F (act V minions, `0x005E1B60`–`0x005E36F0`) | 116–125 | 15 (`WhipChangeClass`), 16 (`ImpAttach`) | 10 + 2 | 125 |
+| 10 | pool-G (act V rest, the Ancients, Baal's minions) | 126, 127, 129–134, 136, 137, 139, 141 | — | 12 | — |
+| 11 | bosses-B (Diablo, Nihlathak, the Baal rows, Uber Diablo and Baal) | 51, 128, 135, 138, 140, 145, 147 | — | 7 | — |
+| 12 | towns, NPCs and the state rows | 31, 32, 41, 42, 54, 58, 60, 62, 81, 88, 91, 99, 100 | 2, 3, 8–14, 17 | 13 + 10 | — |
+
+- Sums: table rows 2 + 16 + 14 + 17 + 18 + 16 + 1 + 9 + 13 + 10 + 12 + 7 + 13 = 148; state rows 2 + 1 + 3 + 2 + 10
+  = 18.
+- Against Phase 0's 13 (MonAI § Batches): its `machinery` is P1.1; rest-1 … rest-9 are regrouped by code range; the
+  bosses split in two (16 boss rows, many long functions, too many for one lane run); row 117 `SuicideMinion` moves
+  from the summons to pool-F with state row 15, which `WhipChangeClass` (the `Overseer`'s whip, row 120) sets; state
+  row 16 goes with `Imp` (122), whose `ImpAttach` sets it.
+- Against P1.1's 9–11 (ai/0001 § 13): its B6 (34 rows) splits into pool-F, pool-G and bosses-B; Blood Raven (59)
+  stays with the bosses, as MonAI places it; state rows 2, 3, 8–14 and 17, and the five unresolved register-passed
+  `MonAiInit` sites (ai/0001 § 3), go to batch 12, which names their setters.
+- Each batch carries the P1.2 items above that fall in its rows (row 143 and the `Sk lvl` 0 records to batch 5; the
+  hireling skill list to batch 6; `aidist` with rows 50 and 146 to batch 7; per-record `aip` reads everywhere) and
+  the catalogue's action helpers (`0x005DF850`, `0x005DF990`, `0x005DFA00`, `0x005DFBF0`) with the first batch whose
+  AI calls each.
+- P3b's entries follow this list: one per table row and one per state row.
 
 ### Phase 1b — Community cross-check
 - **Owner skill:** reverser (no Ghidra)
@@ -128,7 +178,9 @@ Data first, then code, then spec. Phase numbers follow plans 0045 and 0050.
   breakpoints filter to monsters within the logged character's rooms and cap each kind, as ADR-0014 § Log volume.
 - **Done when** (minimums are estimates, confirmed at the P1.1 review): `run:YYYY-MM-DD-ai` reproduces with
   **0 mismatches** over
-  - 1 500 AI decisions over the **tier** (an estimate: 12 to 16 AIs that cover most pool rows of the five acts, one
+  - 1 500 AI decisions over the **tier** (**18 AIs, ruled at the P1.1 review:** the 16 of ai/0001 § 13 plus 89 `Megademon` and
+    125 `BloodLord`, so acts IV and V hold a tier AI; 836 of 1 753 pool slots; at first an estimate of 12 to 16 AIs
+    that cover most pool rows of the five acts, one
     leader with minions, one ranged and one caster AI, one resurrecting AI, a superunique and an act boss, one summon
     and one hireling), at least 50 per tier AI;
   - **chaining (ADR-0014):** for every decision kind that draws, at least 20 chained pairs on one seed (an AI decision
@@ -150,7 +202,8 @@ Data first, then code, then spec. Phase numbers follow plans 0045 and 0050.
   kinds and their seeds) and `machinery.md` (target search, the command, the path request, following), with each tier
   AI's entry; skills/dispatch § M, monsters/spawn and stats, drlg/lifecycle and hirelings updated where the AI was an
   input. **Its review is phase (5)'s reviewed spec** for any later gate (§ Scoping questions 7).
-- **P3b — catalogue:** `docs/specs/monsters/ai/catalogue.md`, one entry per stock AI (its `aip` meanings, its decision
+- **P3b — catalogue:** `docs/specs/monsters/ai/catalogue.md`, one entry per AI row (question 8: the 148 rows of
+  `g_MonAiTable` and the rows of the second table P1.1 names, stock-named or not) (its `aip` meanings, its decision
   tree, its draws), the tier entries linked, not repeated.
 - **Done when (each part):** the spec follows the template; every statement tagged; the tick and each tier AI's
   decision as pseudocode with its draw order; the architect's review passes. Specs edited by two plans merge one at a
@@ -237,3 +290,165 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   town-follow and teleport targets. P2 keeps its gate on 0050·P3's review (ADR-0016) and adds its own P1.1 and tier
   reviews. Eight scoping questions for the owner, the seventh on ADR-0022 (proposed), what follows. Status stays
   `proposed`: the owner approves.
+- 2026-10-27 — **Approved by the owner.** Questions 1–7 answered as recommended; ADR-0022 accepted. Question 8 differs: the catalogue covers **the whole AI table**, every row whether or not a stock MonStats, PetType or Hireling row names it. The architect revises P1's catalogue batches and P3b to match, at the latest at the P1.1 review. P0 and P1.1 may start.
+- **2026-10-27 — Phase 0 landed for review (archivist, `lane/a52`, from `main` fcce5b4d; no Ghidra, no harness).**
+  New [MonAI](../tables/MonAI.md), the AI index of **every row of the AI table** (question 8): 148 rows, the `.bin`
+  record its own index and MonStats `AI` its row index (`[C]`, 0 mismatches; layout `monai` added, `excel_layout`
+  baseline regenerated, 74 tables), each row with its MonStats records, its `g_MonAiTable` row read from the pinned
+  image (four words, `+8` the AI function `[I]` by items/0001, the others `[L]`) and its reach marks (pool,
+  superunique, summon, hireling). **146 rows are named by a stock MonStats record, 2 by none** (0 `None`, 143
+  `ShadowMasterNoInit`); 16 rows are reached by a summon (Skills `summon` with a `pettype`, or a PetType `mclass`), 1
+  by the hirelings (61 `Hireable`, all four classes and `act5hire1`), 63 by a pool class, 44 by a superunique, and 60
+  only through links the index does not mark (presets, minions, spawns). MonStats § AI columns (`AI`, `aidel`,
+  `aidist`, `aip1..8`, the skill columns, `switchai`, `threat`), PetType § AI of the summons and Hireling § AI of the
+  hirelings (the `DefaultChance`, `Chance_k`, `ChancePerLvl_k`, `Mode_k` values per kind) added and linked;
+  `Aiparms.txt` read as a lead only (19 sections, 16 matched to an AI row). `tools/ai_survey.py` (`index`, `rows`,
+  `hire`, `aiparms`, `md`, `batches`, `summary`), gate survey `ai` (new baseline), `tools/test_ai_survey.py` (8 tests).
+  Meanings `[L]` except where anim/0001, items/0001, monsters/0004 and hirelings/0001 anchor them. The **batch
+  proposal** (MonAI § Batches, by record count): 13 batches covering all 148 rows, machinery (rows 0–1 with P1.1),
+  rest-1 … rest-9, bosses (16 AIs), summons (15, with row 143), hirelings (1, with `MERCAI_PickSkill`); the plan's
+  estimate was eight to twelve. For P1, to fold into its *Done when* at the review:
+  1. **P1.1:** the `+0`, `+4`, `+C` words of a table row (`+0` takes 0, 1, 2, 4, 5; `+4` set in 19 rows, `+C` in 11,
+     some shared, MonAI § The AI table in the image); rows 0 and 1, whose `+8` words lie apart from the rest; whether
+     any path gives a unit an AI other than its record's (row 143, hirelings, revived monsters).
+  2. **Summons batch:** row 143 holds row 106's `+8` word with its own `+4` and no record; five summon records have a
+     skill at `Sk lvl` 0, which the creation reader skips (`bloodgolem`, `bonewall`, `chargeboltsentry`,
+     `infernosentry`, `druidhawk`); `shadowmaster` sets `aip8` = 279 (Shadow Master) in Normal only.
+  3. **Hirelings batch:** one AI row for all hirelings; `roguehire` and `act2hire` also name MonStats skills
+     (RogueMissile, Jab) beside their Hireling skills, and which list the AI uses is open.
+  4. **Every catalogue batch:** in 13 AI rows the records disagree on which `aip` slots they set, so an entry reads per
+     record; `aidist` is set only on `mephisto` and `ubermephisto` (0 / 40 / 46).
+  Review request [to the architect](../backlog/archive/2026-10-27-archivist-architect-review-lane-a52-plan-0052-phase-0.md).
+- **2026-10-27 — `lane/a52` review (architect): Phase 0 accepted with fixes (2: misread 1, omission 1).** Phase 0's
+  *Done when* is met: every AI a stock row uses is listed once with its records, the meanings are `[L]` except where a
+  finding anchors them, the survey matches its baseline, and the gate is green. Reran with `python3 -I`:
+  `ai_survey.py summary` gives the `ai` baseline, `test_ai_survey.py` passes 8 of 8, and `ai_survey.py md` reproduces
+  the index block. From the doc's index: 148 rows, each in exactly one of the 13 batches; the records sum to 734; the
+  marks give P 63, U 44, S 16, H 1 and no mark 60. The `excel_layout` baseline changes only `tables` 73→74,
+  `records`/`cells` +148 and the new `monai_cells=148 monai_bad=0`. Objdump against the pinned image (sha256 as in
+  the inventory): rows 0–3, 110, 143–147 and the zero row at `0x0073D358` are as MonAI states; `MonAiEntryGet`'s
+  `AI` < 148 test is at `0x005B1628`. Fixes:
+  1. *misread* (MonAI § Row identity and § The AI table in the image, MonStats § AI columns). The lane wrote "the
+     bound 148 is `MonAiEntryGet`'s, so no index past 147 reaches a row", but items/0001 gives that path only "with
+     `EDX` = 0". With `EDX` ≠ 0 the function returns `0x0073D358 + 16·EDX`, and `0x0073D358` is the lane's "row
+     after the last". Corrected: a MonStats `AI` out of range gives row 0, on that branch only.
+  2. *omission* (MonAI § The second table, § Batches, § Open questions). The second table: rows 0–17 have the
+     four-word shape. Seven of them reuse a first-table `+8` word (`Idle`, `Hireable` with its `+C`,
+     `GoodNpcRanged`, `NecroPet`, `SuicideMinion`, and rows 10 and 17 share one), and ten hold functions no `monai`
+     row has. These bytes are `[C]`, the branch is `[I]`, and the row count and the role are `[L]`, routed to P1.1.
+  **Rulings.** (a) **The generated 148-row index is acceptable** under "describe, don't dump". It is a derived
+  research index: a join of the name key to the records that use it, with aggregates and image addresses, the same
+  shape as Skills § Function index. The only whole column of a game table it reproduces is the name list of a
+  table that holds nothing else. It stays generated between its markers and gives no per-record values (`aip`
+  values, skill levels, chances): those stay in the `rows` output. Hireling § AI of the hirelings, with four kind
+  rows, is short and illustrative. (b) **Tags hold.** The image bytes are `[C]` as data. `+8` is the AI function
+  `[I]` by items/0001. `+0`, `+4` and `+C` are `[L]` with no finding reading them, and appear in § The AI table in
+  the image as leads and under Open questions. `Aiparms.txt` and the `*aip` comments are § Leads only. (c) **13
+  batches are accepted** against the plan's estimate of eight to twelve. The estimate was labelled an estimate,
+  question 8 adds the unnamed and the one-record rows, and P1.1 regroups by shared code. The second table's rows
+  are not yet batched. (d) **Rows 0 and 143 are placed correctly.** Row 0 goes with P1.1: its `+8` word lies beside
+  `Idle`'s, and the out-of-range fallback lands on it. Row 143 goes with the summons, since it holds row 106's `+8`
+  word. Both get catalogue entries (P3b now reads "one entry per AI row"). (e) **Reading the image table stays in
+  the archivist lane.** Reading a hash-pinned image at an address already in `re/symbols.csv` and printing the
+  words as data is extraction (precedent: `tools/ds1.py` reads `g_Ds1ObjectIds`). Naming a word's meaning is the
+  reverser's. The `tbl_*` keys stay. Once P1.1 names the second table, an archivist request adds it to the survey.
+  (f) **The log's four items are folded** into P1.1's and P1.2's text above, with the second table. The architect's
+  revision of the batches for question 8 stays due at the P1.1 review. (g) The lane relied on the commit hook. The
+  review ran `python3 -I tools/gate.py` (green).
+- **2026-10-27 — P1.1 checkpoint (reverser, static lane B, `lane/r52`; paused by the owner for a session reload).**
+  Committed: [ai/0001](../findings/ai/0001-machinery.md) (§§ 1–13 drafted: the AI tick `sub_005B1740_MonAiEvent` =
+  monster event kind 2, run by `MonEventsRun`'s slot pass in `GameRunUnitEvents` ← `GameTick` ←
+  `sub_0052FC20_ServerGamesFrame` / `sub_005645E0_GameTickAlt`, plus nine direct calls from mode ends; the 30 kind-2
+  queue sites; `g_MonAiTable` 148 × `{searchKind, init, think, alt}` and the **second table `g_MonAiStateRows`
+  (0x0073D358, 18 state rows indexed by `AiCtl.state`, who sets each state)**, covered in § 3; `AiCtl`/`MonPathCtl`/
+  `AiCtx`/`MonCmd` in `re/types/ai.h`; target search and the ten target lists at `Game+0x10F8`; the command and move
+  helpers; the path request (AI types 1, 2, 5, 6, 7, 13, 15; the planner draws only for 10 and 16, unreached); draws;
+  hireling and summon entries; H4/H5 AI side; the unit lists for ADR-0022; tier proposal, batch list, boundary
+  recommendation and the log-volume estimate (capped breakpoints suffice)), [ai/experiments](../findings/ai/experiments.md)
+  run:2026-10-27-ai-emu (1 314 emulated cases, 0 mismatches), 84 `re/symbols.csv` rows (all `I`),
+  `tools/ai_machinery_scan.py`, `tools/ai_emu.py`, kept outputs `workspace/logs/r52/` (manifest 40 lines), the
+  drlg/0009 § 11 correction (the nine "register" override calls). `main` merged at `db8162b3`.
+  **Resume note — next:** (1) re-read § 3 against `docs/tables/MonAI.md` (now on `main`) and align the state-row
+  wording with the archivist's table; check who passes `EDX` to `MonAiEntryGet` at 0x005B1663 (the event's row-kind
+  switch) and 0x005B0E81 (MonAiInit's old-state lookup) and state it; (2) run the review-fixes checklist over ai/0001
+  (counts recounted from the kept files, Functions-table tags); (3) the ledger row in `docs/plans/metrics.md`
+  (usage "—"); (4) the review request to the architect (`python3 -I tools/backlog.py new --from reverser --to
+  architect --slug "plan 0052 P1.1 review"`). No Ghidra needed for (1)–(4) except an optional re-check of 0x005B1663.
+- **2026-10-27 — P1.1 review request (reverser, static lane B, `lane/r52`, resumed after the checkpoint).** The
+  resume note's four items are done. `main` merged at `a2d31a99`; `python3 -I tools/gate.py` green (no error; the six
+  E14 warnings are in items/ and rng/ findings this lane does not touch).
+  - **Who passes `EDX` to `MonAiEntryGet`** ([ai/0001 § 3](../findings/ai/0001-machinery.md#3-the-ai-table-and-its-dispatch),
+    `[I]`): three direct calls in two functions, no dword reference (`entryget-callers.txt`). 0x005B1663
+    (`MonAiTargetByKind`) passes the stored `AiCtl.state` (`[[ctx+0x00]]`, 0x005B1655–0x005B165D), so the row kind
+    comes from the state row when the state is non-zero; 0x005B0E81 (`MonAiInit`) the current state before the store;
+    0x005B0EBE the new state. § 4's row-kind bullet and the Answer bullet carry it. `MonAiInit`'s `< 18` test is
+    signed: a negative state would index below the state rows; no immediate caller passes one, five register callers
+    stay unresolved.
+  - **Review-fixes pass** (rules 1–15 over the lane's diff; corrections carried into each section that repeats them):
+    rule 2 recounts from kept files: the setters of `AiCtl.state` were "7 calls pass a register" and are 21 immediate
+    and 12 register calls (`aiinit-pushes.txt`, `aiinit-regstates.txt`), adding the curse path `CurseApplyCb` →
+    0x005C34B0 (states 10, 12, 11 by `auratargetstate` 23, 27, 56; new row `sub_005C34B0_CurseSetAiState`, I) and the
+    state-0 returns of five state-row functions and three other sites; the table rows with an `init`/`alt` were "21 / 14" and are 19 / 11
+    (`ai-rows.txt`, as MonAI.md has them); the machinery RNG graph has 94 roots, not "92 and the tick"; the planner
+    graph has 8 roots, not "the 17 entries" (the slots of types 3, 11, 12 are not roots and are written as unfollowed,
+    rule 9; no AI path requests them); the tier share is 44.7 %, not 44.8 % (784 of 1 753); "66 cancel" now has its
+    kept output (`aicancel-pushes.txt`). Rule 14: the five emulated maps' Functions-table tags read "I (map `[C]`, § 12)"
+    to match `re/symbols.csv` (the emulation raises no row). Rule 7: two W1 lines anchored. Rules 5 and 3: no address or
+    name of the lane's 85 `re/symbols.csv` rows collides with `main`'s after the merge.
+  - **Kept outputs:** six new files under `workspace/logs/r52/` (`entryget-callers.txt`, `entryget-windows.txt`,
+    `aiinit-pushes.txt`, `aiinit-windows.txt`, `aiinit-regstates.txt`, `aicancel-pushes.txt`), from
+    `tools/sweep_rbs3.py` (`callers`, `window`, `pushes`); manifest 46 lines, `sha256sum -c` passes from that directory.
+  - **Backlog:** [archivist](../backlog/2026-10-27-reverser-archivist-monai-second-table-named-by-ai-0001.md) (link
+    MonAI.md's second table and its open question to ai/0001 § 3; the survey reads the state rows, ruling (e));
+    the [review request](../backlog/archive/2026-10-27-reverser-architect-plan-0052-p1-1-review.md).
+  - **To rule on.** (1) The tier proposal (16 AIs, § 13). (2) The batch list for P1.2 onward (§ 13; the architect's
+    revision for question 8 was due at this review). (3) The boundary (§ 13: the command at `MonSetMode`, the path
+    plan exit, the catalogue's action helpers). (4) **The injected-logger ADR is not needed** (owner question 3 asked
+    for it only if capped per-event breakpoints cannot keep the logs bounded). The case, from ai/0001 § 13: the AI
+    runs once per AI event, not every frame (§§ 1–2: kind-2 events at `T + aidel`, 10–25 frames when idle, or a mode
+    end), so one decision is 4–5 lines (9 at most: entry, search result, command, plan exit, exit seed), and the
+    draws of the forced-target and state-146 tests fall inside the entry and exit seeds and need no line. About 15–60
+    events a second near one player, uncapped 10 000–20 000 lines a minute; with ADR-0014's room filter and a cap of
+    200 decisions per AI row and 3 000 per session, at most about 15 000 lines per session, the size of plan 0045's
+    runs (13 335 missile-frame lines in one). The path planner draws nothing for the AI's types (§ 8), so no line
+    inside the planner is needed. What would change the answer: a P2 case that needs every frame of every monster
+    (that is ADR-0022's frame window, a separate question) or a think function that loops over many units with a draw
+    each, which the catalogue would find. All of this is an estimate (`[I]`), from the static reading.
+- **2026-10-27 — P1.1 review, the planning rulings (architect, `lane/r52`).** The finding itself passed its Tier B
+  lane check (accept, 0 fixes, `6590e220`) and is not re-reviewed here; these are the four points the review request
+  leaves to the architect.
+  1. **Tier: amended to 18 AIs.** The 16 of ai/0001 § 13 meet each kind the Phase 2 text asks for (ranged
+     `CorruptArcher`, `SkeletonBow`; casters `SkeletonMage`, `Vampire`; resurrecting `GreaterMummy`, `FallenShaman`,
+     the leader with minions and Bishibosh's class, so also the superunique; `Andariel`; `NecroPet`; `Hireable`), but
+     none of the twelve pool AIs is an act IV or act V one, and the plan asks for "the five acts". Added: 89
+     `Megademon` (22 slots, 10 levels) and 125 `BloodLord` (30 slots, 15 levels), the act IV and act V pool AIs with
+     the most slots in `ai-pool.txt` that the tier did not hold. 836 of 1 753 slots (47.7 %); reaching 50 % is not a
+     goal. **Floors unchanged:** 1 500 decisions, at least 50 per tier AI (900 for 18 leaves room), the chaining and
+     H1 floors as written.
+  2. **Batches: twelve, written into § The catalogue batches** (all 148 table rows and all 18 state rows, each once).
+     P1.1's grouping by code range is kept where it held 9–18 rows; its B6 (34 rows) is split, the bosses go into two
+     batches, and row 117 and state rows 15 and 16 follow the AIs whose code sets those states. The tier batches run
+     first. **P1.2 is next on unpause**, not ready to start: the project is paused after this roster (owner ruling).
+     Estimate: P1 thirteen lane runs (P1.1 and twelve batches), the top of the plan's nine to thirteen.
+  3. **Boundary: accepted as recommended, with two conditions.** The decision's claim ends at (a) `MonSetMode`'s entry
+     from an AI site (the command block is the output; the mode's frames are phase (4)'s) and the skill start behind
+     `MonAiUseSkill` (skills/dispatch, plan 0046's oracles); (b) `PathPlan`'s exit; (c) the action helpers' calls of
+     `COMBAT_ApplyDamage`, `MissileCreate` and the spawn functions. *Conditions:* the harness logs the unit seed at
+     entry and exit of each of the three, so the think function's own draws are separated from the mode start's
+     (anim/0001 § 11) and from the skill start's; and § 8's prediction that the plan leaves the seed unchanged for the
+     AI's types is **checked**, not assumed: any changed seed at a plan exit is a mismatch, routed to the path search
+     plan. The helpers' own code up to those calls is the catalogue's (it is read, not oracled). In emulation the same
+     three are ADR-0021 boundaries. The path search plan is **deferred to the unpause**: it gates nothing here.
+  4. **Injected-logger ADR: not needed (accepted).** The case is an `[I]` estimate from static reading, and it holds
+     on what the reading shows: one decision per AI event, 4–9 lines, capped at 200 decisions per AI row and 3 000
+     per session, about 15 000 lines, the size of plan 0045's runs. The question **reopens**, with the architect
+     drafting the ADR for the owner, if any one of these happens: (a) P2's first session logs more than twice the
+     estimate (30 000 lines) under the caps, or the breakpoints move the frame timing the run checks (a mismatch traced
+     to the logger); (b) a catalogue batch finds a think function that loops over many units with a draw or a logged
+     input each, so one decision needs lines per unit; (c) a plan exit shows the unit seed changed for an AI path type,
+     so lines inside the planner are needed; (d) the caps leave a tier AI under its 50 decisions over the planned
+     sessions; (e) a P2 case needs every frame of every monster, which is ADR-0022's frame window and is ruled in that
+     plan, not here. P2's record states the measured lines per session against the estimate.
+  **Index:** the plans README row and the architect and static-lane run-order rows changed only where these rulings
+  change them (the batch count, the path search plan and ADR-0022's plan deferred to the unpause). Review request
+  closed.

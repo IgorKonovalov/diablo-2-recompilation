@@ -90,10 +90,10 @@ When you sell an item, the NPC normally puts a copy of it in the store. That cop
 you get the lower of the two sale prices, so a damaged item never sells for more than its repaired copy
 ([§ F](../specs/items/economy.md#f-callers-buy-sell-repair)).
 
-Some items are not copied. The game runs eight tests, all of them every time, and any match stops the copy. Three
-were seen refusing in a run: an ethereal item, a broken item, and a unique that can be carried only once (such as
-*Annihilus*). The other five (a low-quality *Cracked* item, one base type, one item flag, one further item test and one
-store setting) are read from the code only. Making the copy is an item creation, so it moves the game seed two steps, even when no
+Some items are not copied. The game runs eight tests, all of them every time, and any match stops the copy. Four
+were seen refusing in runs: an ethereal item, a broken item, a unique that can be carried only once (such as
+*Annihilus*), and an item sold while the gamble window was open. The other four (a low-quality *Cracked* item, one
+base type, one item flag and one further item test) are read from the code only. Making the copy is an item creation, so it moves the game seed two steps, even when no
 store page has room and the copy is thrown away; a refused copy moves nothing.
 
 An ethereal throwing stack is not worth 1 gold, as some community guides say: it is priced on the ordinary path
@@ -265,7 +265,7 @@ From the spec's [open questions](../specs/items/economy.md#open-questions) and i
   charges used, skills that wear weapons, Baal's gold, the gold caps, pickup and the stash moves, deaths to another
   player and outside single player, the classic throwing weapon, the stack refill, Cain's free identify, selling a
   broken ethereal item, and repairs with a replenish stat or with *reduced prices*.
-- **Seen once or not at all:** whether repairing a broken item draws; the five store-copy refusals not reached; the
+- **Seen once or not at all:** whether repairing a broken item draws; the four store-copy refusals not reached; the
   server's own refusal of an ethereal repair; a second source for "no quest script repairs"; which monster level
   column gives Wirt's piles their item level.
 - **The vendor record:** three bytes of it were watched and nothing read them in the windows played; a reader in

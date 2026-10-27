@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/properties, items/tc, items/vendors, stats/aggregate, monsters/stats, hirelings, combat/delivery, data/excel]
 consumed_by: [items/vendors, hirelings, items/quest-drops, combat/delivery]
-tags: {C: 125, I: 85, L: 11}
+tags: {C: 127, I: 85, L: 11}
 updated: 2026-10-27
 ---
 
@@ -60,9 +60,14 @@ flowchart LR
 | A charged skill is cast | fn:sub_0056BEC0_UseCharge@0x0056BEC0 | [I] |
 | Item event 3 fires (replenish) | data:g_ItemEventFuncs@0x006E117C → fn:ITEMEVENT_Replenish@0x00562D30, run:2026-10-17-economy | [C] |
 
-- [I] **NPC classes.** Repair is accepted for MonStats classes 154, 178, 253, 257 and 511; resurrection at 150, 198,
-  252, 367 and 515; Cain's identify at 244–246, 265 and 520. (fn:sub_00578050_NpcRepair@0x00578050,
+- [I] **NPC classes.** Repair is accepted for MonStats classes 154, 178, 253, 257 and 511; resurrection at 198, 252
+  and 367 (with 150 and 515, the next bullet, the five classes of the test at 0x00579C31–0x00579C55); Cain's identify
+  at 244–246, 265 and 520. (fn:sub_00578050_NpcRepair@0x00578050,
   fn:MERC_Resurrect@0x00579C00, fn:NPC_CainIdentify@0x00578460)
+- [C] **Resurrection at 150 and 515.** Qual-Kehk (515) resurrected in run:2026-10-17-economy (G13), and Kashya (150) in
+  run:2026-10-27-sweep-hirelings: a dead level-30 mercenary for 6 750 gold, mode 12 → 1
+  ([hirelings § K](../hirelings/README.md#k-named-only)). (fn:MERC_Resurrect@0x00579C00, 0x00579C31–0x00579C55,
+  run:2026-10-17-economy, run:2026-10-27-sweep-hirelings)
 - [I] **The client copy.** The client calls the same price and repair-cost functions (six call sites of the price
   wrapper, two of `RepairCost`) with its own difficulty and quest record, so the displayed prices are the same
   arithmetic on the client's copies of the units; the server's call decides what is paid. (0x0049024C, 0x004887F0,
@@ -489,9 +494,12 @@ Step notes:
   seed unchanged are of these kinds (an ethereal throwing stack, flags `0xC00010`; *Annihilus*). Every test runs and
   each match clears the copy flag, so the result is the same whichever tests match. (0x0057962B–0x00579747,
   fn:NPC_SellItem@0x00579510, run:2026-10-17-economy, run:2026-10-19-economy2)
-- F4. [I] The other five tests (`Cracked` 0x00579630, base type 7 0x00579677, flag `0x1000000` 0x00579688,
-  `0x0055F590` 0x005796D4, the store record's byte `+4` from 0x00536CB0, tested at 0x0057970E) were not reached; that
-  they refuse the copy is read from the code. `ItemIsCarry1Unique` is true for an item unit of quality 7 with a file
+- F4. [C] **The gamble-view test.** A `cap` sold in Gheed's gamble window was refused the copy by the test of byte
+  `+4` of the player's entry that 0x00536CB0 returns from the store record, tested at 0x0057970E: its refusal store
+  0x00579714 was reached and no `ItemCopy` followed. (0x0057970E, 0x00579714, fn:NPC_SellItem@0x00579510,
+  run:2026-10-27-sweep-vendors, [items/0009 § Plan 0038 batch H6c](../../findings/items/0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors) vend 34)
+- F4. [I] The other four tests (`Cracked` 0x00579630, base type 7 0x00579677, flag `0x1000000` 0x00579688,
+  `0x0055F590` 0x005796D4) were not reached; that they refuse the copy is read from the code. `ItemIsCarry1Unique` is true for an item unit of quality 7 with a file
   index ≥ 0 whose UniqueItems record has the `carry1` bit (the flag byte `+0x2C` AND the byte at 0x006CE270, 4),
   read from the code. (fn:sub_00575FA0_ItemIsCarry1Unique@0x00575FA0, tbl:UniqueItems.txt:carry1)
 - F5. [C] 138 repair-all sums equal the sum of the mode-3 price calls made inside them.
@@ -833,7 +841,7 @@ H8. ITEMEVENT_Replenish(item):                                                  
 | price (modes 0–3), gamble price, `RepairCost`, `ItemRepairAll`, `NpcRepair`, `PayGold`, `UnitAddGoldStat`, resurrect cost and `MERC_Resurrect`, Cain, replenish tick, `ItemConsumeOne`, `PLAYER_UseAmmo` | none: game and player seed unchanged from entry to exit | [C] (run:2026-10-17-economy, run:2026-10-19-economy2) |
 | buy (`NPC_BuyItem`) | the store copy's creation only: game seed +2 (15 of 15) | [C] (fn:NPC_BuyItem@0x00577830, run:2026-10-17-economy) |
 | sell (`NPC_SellItem`), copied or refused by flag `0x100`, flag `0x400000` or `carry1` | the store copy's creation only: game seed +2 when copied, even when no store page takes it (6 of 6), +0 when refused (5 of 5); +4 with a gold re-drop (3 in the first run); the first run's 41 at +2 and 2 at +0 agree | [C] (fn:NPC_SellItem@0x00579510, 0x005796F6–0x00579747, run:2026-10-17-economy, run:2026-10-19-economy2) |
-| sell, refused by one of the five tests not reached (F4) | none (the refusal skips `ItemCopy`) | [I] (0x0057962B–0x00579747) |
+| sell, refused by the gamble-view test or one of the four tests not reached (F4) | none (the refusal skips `ItemCopy`) | [I] (0x0057962B–0x00579747) |
 | `PlayerGiveGold` | +2 in 3 of 46 (a re-drop over the cap) | [I] (fn:sub_0055B060_PlayerGiveGold@0x0055B060, run:2026-10-17-economy) |
 | `DropGoldAmount`, death loss | one item creation per pile (+2 each); a death draws only when it drops a pile | [C] (fn:sub_0055A090_DropGoldAmount@0x0055A090, fn:PLAYER_DeathGoldLoss@0x005357D0, run:2026-10-17-economy) |
 | Wirt's gold (G8a) | one `RandLoHi(questSeed, 10, 20)` on the first event; one item creation per pile (game seed +2, 18 of 18) | [C] (fn:sub_00594630_A1Q4_WirtGold@0x00594630, run:2026-10-19-economy2) |

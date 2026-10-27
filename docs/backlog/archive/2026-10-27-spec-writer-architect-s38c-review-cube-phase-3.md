@@ -16,7 +16,7 @@ items/cube {C 119, I 82, L 4} → **{C 167, I 87, L 3}** (diff: +59 / −11 `[C]
 `updated:` 2026-10-27; items/affixes {C 152, I 28, L 4} → **{C 153, I 28, L 4}** (C4i, rule 8). Wiki:
 items-other-paths cube section refreshed (`based_on` cube 2026-10-27), items `based_on` affixes 2026-10-27. Entries:
 the [H6a entry](2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re.md) closed; the
-[S2c entry](../2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md) annotated ((a), (f) done; (d) open
+[S2c entry](2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md) annotated ((a), (f) done; (d) open
 for vendors, H6c still running). Counts entry:
 [2026-10-27-spec-writer-architect-s38c-cube-counts-for-the-research-map](2026-10-27-spec-writer-architect-s38c-cube-counts-for-the-research-map.md).
 

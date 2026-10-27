@@ -2,7 +2,7 @@
 based_on:
   - docs/specs/save/d2s.md 2026-10-27
   - docs/specs/player/creation.md 2026-10-21
-  - docs/specs/hirelings/README.md 2026-10-20
+  - docs/specs/hirelings/README.md 2026-10-27
 ---
 
 # Saves: what a `.d2s` file holds
@@ -386,7 +386,9 @@ Id, the class of that Id's row and the level from the experience; 10 classic one
 and were not created. The **write** side is confirmed too: in three cases (two prepared mercenaries and one hired in
 play) the header held the mercenary's seed, name, Id and experience, and a dead mercenary, prepared or killed in
 play, was written with the dead flag and came back dead. The all-zero "no mercenary" header gives no mercenary and
-the load goes on. A name past the end of its range is read from the code only. How the level and stats follow from these values is on the
+the load goes on. A test save whose name was past the end of its range loaded with the range's first name; how the
+name's 16-bit addition wraps for a huge value is read from the code. A test save with experience far past level 99
+loaded at 99. How the level and stats follow from these values is on the
 [characters](characters.md) page and in
 [hirelings § H](../specs/hirelings/README.md#h-the-mercenary-from-a-save-d2s_readmercheader-merc_create).
 
@@ -462,8 +464,8 @@ From [save/d2s § Open questions](../specs/save/d2s.md#open-questions):
 
 - what item flag bit 13 means, and how soon after a drop the game clears it;
 - not exercised in a run: ground positions, a hotkey bound to an item, realm data on a simple item, gold items, the
-  golem section, two or more corpses, a few reader error codes, the older reader on a real old save, character
-  stats with a parameter or a sign, a save above 8 KiB, a classic game's items, and stats beyond those the runs
+  golem section, a mercenary name id past its hireling row's last name (since run on a test save, [hirelings § H](../specs/hirelings/README.md#h-the-mercenary-from-a-save-d2s_readmercheader-merc_create)), two or more corpses, a few reader error
+  codes, the older reader on a real old save, character stats with a parameter or a sign, a save above 8 KiB, a classic game's items, and stats beyond those the runs
   saved;
 - what the character-creation screen means by status bit 1.
 

@@ -161,9 +161,35 @@ survey `economy`), `[C]` as data.
   ([hirelings/0001 § 10](../findings/hirelings/0001-hirelings.md#10-named-only), fn:MERC_ResurrectCost@0x006637B0,
   fn:MERC_Resurrect@0x00579C00). Its widths, `L` (the mercenary's level) and the gold taken are plan 0043 Phase 1.
 
+## AI of the hirelings (plan 0052 Phase 0)
+
+`[C]` as data: `python3 -I tools/ai_survey.py hire <excel-dir>` (gate survey `ai`, keys `hire_*`). Every `Class`
+(271 `roguehire`, 338 `act2hire`, 359 `act3hire`, 561 `act5hire2`) has MonStats `AI` 61 `Hireable`, as has 560
+`act5hire1`, which no row names ([MonAI](MonAI.md#the-index)); the five records have `aidel` 1 in every difficulty, and
+only 338, 560 and 561 set `aip1` (1). So the hirelings' AI is one row of the table, and their skill choice is the
+columns below, which `MERCAI_PickSkill` reads `[I]` (§ Columns; [hirelings/0001 § 10](../findings/hirelings/0001-hirelings.md#10-named-only),
+fn:MERCAI_PickSkill@0x005E4D30). The skill-choice columns per kind, over both versions and every level row:
+
+| Kind (`Hireling`) | `DefaultChance` | Skill: `Mode` / `Chance` / `ChancePerLvl` |
+|---|---:|---|
+| `Rogue Scout` (271) | 75 | Inner Sight 4 / 10 / 0; Fire Arrow 4 / 25, 67, 69 / 0, 5, 8; Cold Arrow 4 / 25, 36, 67, 69 / 0, 2, 5 |
+| `Desert Mercenary` (338) | 30 | Jab 14 / 70..152 (8 values) / 4; Prayer, Defiance, Blessed Aim, Thorns, Holy Freeze, Might 1 / 10 / 0 |
+| `Eastern Sorceror` (359) | 10 | Fire Ball, Lightning 7 / 30 / 0; Inferno, Glacial Spike, Charged Bolt 7 / 60 / 0; Ice Blast 7 / 240 / 0; Frozen Armor 7 / 1000 / 0 |
+| `Barbarian` (561) | 50 | Bash, Stun 5 / 15, 50, 70, 75 / 0 |
+
+- `[C]` `Mode_k` holds MonMode indices: 1 `NU`, 4 `A1`, 5 `A2`, 7 `SC`, 14 `xx` (the sequence mode). Per kind every
+  skill of a row has one mode; `Chance_k` and `ChancePerLvl_k` vary with the level row (the Rogue's attack arrow: 25
+  with a per-level 2, 5 or 8 in the first band, 36 to 69 with 0 later). (tbl:Hireling.txt:Mode1, tbl:Hireling.txt:Chance1)
+- `[C]` The hireling classes' own MonStats skills: `roguehire` names RogueMissile (`A1`, level 1) and `act2hire` Jab
+  (`xx`, level 1); `act3hire`, `act5hire1` and `act5hire2` name none. Which of the two lists the hireling's AI uses is
+  plan 0052's hirelings batch. (tbl:MonStats.txt:Skill1)
+- `[L]` The formula over `DefaultChance`, `Chance_k`, `ChancePerLvl_k` and `Mode_k` (§ Open questions). Owner:
+  reverser, plan 0052 P1 hirelings batch.
+
 ## Open questions
 
 - ~~What `Share`, the equipment columns (`Head`, `Torso`, `Weapon`, `Shield`) do~~: no reader in 1.14d `[I]`
   ([hirelings/0001 § Plan 0039 batch P1c](../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17)).
 - `[L]` How `MERCAI_PickSkill` uses `DefaultChance`, `Chance_k`, `ChancePerLvl_k` and `Mode_k` (combat AI, out of
-  scope under ADR-0002; [hirelings/0001 § 10](../findings/hirelings/0001-hirelings.md#10-named-only)).
+  scope under ADR-0002; [hirelings/0001 § 10](../findings/hirelings/0001-hirelings.md#10-named-only)). *(2026-10-27:
+  in scope of [plan 0052](../plans/0052-monster-ai.md)'s hirelings batch; the data is § AI of the hirelings.)*
