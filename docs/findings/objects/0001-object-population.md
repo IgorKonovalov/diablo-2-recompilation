@@ -1215,7 +1215,8 @@ OBJTRAP_ObjectCreate (0x00582380):
   run:2026-10-19-h5b-objects)
   *Corrected 2026-10-27* (the `lane/s38o` review, plan 0038 Phase 3, ruling 1): this bullet said the cap returned
   "before any draw of the handler". `OBJPOP_Shrine` steps the room seed with `0x6AC690C5` at 0x00552B9A–0x00552BBA,
-  before the `HealthShrineDue` call at 0x00552BC5 and the cap call (`OBJRGN_ShrineCapReached`) at 0x00552BF7; § 4's
+  before the `HealthShrineDue` call at 0x00552BC5, the `% 100` of that seed against the chance at 0x00552BDB–0x00552BF0
+  (skipped when the health shrine is due) and the cap call (`OBJRGN_ShrineCapReached`) at 0x00552BF7; § 4's
   handler 2 step 1 and `tools/objects.py` `pop_2` have that draw first. No tag changes.
   (fn:OBJPOP_Shrine@0x00552B50, fn:OBJRGN_HealthShrineDue@0x00547330, fn:OBJRGN_ShrineCapReached@0x00547360)
 - [I] **The well cap** (row 19) was not reached: no level placed more than `roomCount ÷ 8` wells before a well slot.

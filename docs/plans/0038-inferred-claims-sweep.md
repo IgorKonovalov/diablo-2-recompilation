@@ -4722,4 +4722,5 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   the cap call at 0x00552BF7 (objdump of 0x00552B50–0x00552C10). No other finding repeats the wording; no tag, symbol
   or spec change. The entry is closed
   ([archive](../backlog/archive/2026-10-27-architect-reverser-h5b-shrine-cap-wording.md)); review requested
-  ([entry](../backlog/2026-10-27-reverser-architect-rsw-review.md)).
+  ([entry](../backlog/archive/2026-10-27-reverser-architect-rsw-review.md)).
+- **2026-10-27 — `lane/rsw` review (architect): accept with fixes (1).** objdump of 0x00552B50–0x00552C10 on the pinned `Game.exe` matches the correction (seed step 0x00552B9A–0x00552BBA, `HealthShrineDue` 0x00552BC5, cap call 0x00552BF7), the wording matches objects/README *Constants* and E2, and the grep finds no other copy; fix (omission): the note now also cites the `% 100` test at 0x00552BDB–0x00552BF0 (skipped when the health shrine is due); request closed ([entry](../backlog/archive/2026-10-27-reverser-architect-rsw-review.md)).

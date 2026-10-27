@@ -352,7 +352,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/s38o` review | 0038 P3 objects | architect-review | 201 197 | 68 | 13 | — (static, objdump, log grep, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
 | 2026-10-27 | `lane/a71` | backlog: the H1a d2s parser gaps (0038 H1a) | archivist | 230 283 | 72 | 20 | — (static, scratch builds, no Ghidra, no harness) | accept with fixes (rulings: the default path unchanged, 259 recipes and 38 H1a dumps identical to main's tool; the H1a legacy rows and save-d2s 126 stay shortfalls, ruling 5; stat 72's save-version test `[C]`) | 5: under-claim 1, overclaim 1, misread 2, stale cross-reference 1 |
 | 2026-10-27 | `lane/a71` review | backlog: the H1a d2s parser gaps | architect-review | 122 899 | 46 | 10 | — (static, scratch builds and dumps, `sweep_h1a.py check` rerun, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
-| 2026-10-27 | `lane/rsw` | backlog: objects/0001 § H5b.2 shrine-cap wording (0038 `lane/s38o` review ruling 1) | reverser-static | — | — | — | — (static, objdump, no Ghidra, no harness) | (review pending) | (review pending) |
+| 2026-10-27 | `lane/rsw` | backlog: objects/0001 § H5b.2 shrine-cap wording (0038 `lane/s38o` review ruling 1) | reverser-static | 69 910 | 30 | 9 | — (static, objdump, no Ghidra, no harness) | accept with fixes | omission 1 |
+| 2026-10-27 | `lane/rsw` review | backlog: objects/0001 § H5b.2 shrine-cap wording | architect-review | — | — | — | — (static, objdump, grep, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
