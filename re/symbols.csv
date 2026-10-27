@@ -105,9 +105,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x004AC870,func,sub_004AC870_ClientMonNameBuild,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x004AD020,func,sub_004AD020_ClientMonModsApply,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x004AE320,func,sub_004AE320_ClientMonIsChampion,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
-0x004B1090,func,sub_004B1090_ClientMercInit,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
+0x004B1090,func,sub_004B1090_ClientMercInit,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x004B32D0,func,sub_004B32D0_ClientQuestRecord,,I,save/d2s,docs/findings/save/0002-quest-words.md
-0x004B5C60,func,sub_004B5C60_ClientHireListDraw,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
+0x004B5C60,func,sub_004B5C60_ClientHireListDraw,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x004BC500,func,RNG_RandLoHi,,C,objects,docs/findings/objects/0001-object-population.md
 0x004C0D20,func,sub_004C0D20_ClientSocketAttach,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x004CC790,func,sub_004CC790_RandRangeIncl,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
@@ -717,7 +717,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00574BD0,func,PETS_GetInfo,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00574EC0,func,PETS_GetUnitOfType,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x005750E0,func,sub_005750E0_PetRemove,,I,skills/catalogue,docs/findings/skills/0015-item.md
-0x005751A0,func,PETS_OnDeath,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
+0x005751A0,func,PETS_OnDeath,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00575720,func,sub_00575720_PetGroupClear,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x00575850,func,sub_00575850_PetLimit,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x00575900,func,sub_00575900_PetLimitRefresh,,I,skills/catalogue,docs/findings/skills/0015-item.md
@@ -733,7 +733,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00576890,func,VENDOR_StockLevel,,C,items/vendors,docs/findings/items/0009-vendors.md
 0x00576900,func,VENDOR_PickNormalQuality,,C,items/vendors,docs/findings/items/0009-vendors.md
 0x00576980,func,VENDOR_BuildStock,,C,items/vendors,docs/findings/items/0009-vendors.md
-0x00576D90,func,sub_00576D90_PayGold,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
+0x00576D90,func,sub_00576D90_PayGold,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00576ED0,func,VENDOR_IsPermanent,,C,items/vendors,docs/findings/items/0009-vendors.md
 0x00576F50,func,sub_00576F50_StoreItemSold,,C,items/vendors,docs/findings/items/0009-vendors.md
 0x00577010,func,HIRE_RebuildIfEmpty,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
@@ -749,11 +749,11 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00578B30,func,NPC_OpenStore,,C,items/vendors,docs/findings/items/0009-vendors.md
 0x00578ED0,func,sub_00578ED0_NpcHealDead,,I,items/economy,docs/findings/items/0011-economy.md
 0x00579090,func,sub_00579090_StockRebuildDead,,I,items/vendors,docs/findings/items/0009-vendors.md
-0x00579180,func,HIRE_GiveFreeMerc,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
+0x00579180,func,HIRE_GiveFreeMerc,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00579430,func,NPC_TradeOpen,,C,items/vendors,docs/findings/items/0009-vendors.md
 0x00579510,func,NPC_SellItem,,I,items/economy,docs/findings/items/0011-economy.md
 0x00579AA0,func,sub_00579AA0_MercRevive,,I,items/quality,docs/findings/items/0002-quality-roll.md
-0x00579C00,func,MERC_Resurrect,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
+0x00579C00,func,MERC_Resurrect,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00579D60,func,NPC_MenuAction,,C,items/vendors,docs/findings/items/0009-vendors.md
 0x0057A880,func,COMBAT_RollRange,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057A8E0,func,COMBAT_RollElemStat,,I,combat/formulas,docs/findings/combat/0001-formulas.md
@@ -800,12 +800,12 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0057E270,func,sub_0057E270_SkillHitRecord,,I,skills/catalogue,docs/findings/skills/0017-monster-8b.md
 0x0057E2F0,func,XP_LevelDiffPenalty,,C,player/creation,docs/findings/player/0001-creation.md
 0x0057E390,func,XP_ApplyExpRatio,,C,player/creation,docs/findings/player/0001-creation.md
-0x0057E3F0,func,MERC_CapExpGain,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
+0x0057E3F0,func,MERC_CapExpGain,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x0057E480,func,XP_Compute,,C,player/creation,docs/findings/player/0001-creation.md
 0x0057E510,func,PLAYER_AddExperience,,C,player/creation,docs/findings/player/0001-creation.md
 0x0057E5A0,func,sub_0057E5A0_PartyXpCollect,,I,player/creation,docs/findings/player/0001-creation.md
 0x0057E6C0,func,XP_PartyShare,,I,player/creation,docs/findings/player/0001-creation.md
-0x0057E860,func,MERC_AddExp,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
+0x0057E860,func,MERC_AddExp,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x0057E990,func,XP_OnMonsterKill,,C,player/creation,docs/findings/player/0001-creation.md
 0x0057EAB0,func,sub_0057EAB0_AddExperienceDirect,,I,player/creation,docs/findings/player/0001-creation.md
 0x0057EB10,func,PLAYER_GrantLevel,,C,player/creation,docs/findings/player/0001-creation.md
@@ -2811,7 +2811,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00663720,func,HIRELING_DescString,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00663750,func,HIRELING_GetAct,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00663790,func,HIRELING_ExpForLevel,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
-0x006637B0,func,MERC_ResurrectCost,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
+0x006637B0,func,MERC_ResurrectCost,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x006637F0,func,HIRELING_RollEntry,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00663A20,func,SETS_ToggleItemAProps,,C,stats/aggregate,docs/findings/stats/0001-aggregate.md
 0x00663B40,func,SETS_UpdateOwnerBonusList,,C,stats/aggregate,docs/findings/stats/0001-aggregate.md
