@@ -30,3 +30,12 @@ weapons, 157 armours; 418 spawnable), `[C]`. (g) applied to [§ A](../specs/item
 the two logged cases (with H6b's skull cap before and after identifying) `[C]`, the general reason `[I]`. With them the
 S2c sockets raises (sock 2, 3, 4, 5, 6, 8, 19, 20, 25, 26, 27, 28, 32, 34, 36 L472, 41, 43, 44, 45, 46, 47, each at
 its ledger's `[C]` half). **Open:** (a), (d), (f), for items/cube (H6a) and items/vendors (H6c).
+
+*Annotation (spec-writer, 2026-10-27, `lane/s38c`, plan 0038 Phase 3, items/cube cluster):* (a) applied to
+[items/cube § L](../specs/items/cube.md#l-the-special-outputs-kinds-1-2-3) and § M: the spot search draws nothing and
+the portal object draws (171, 173, 171 steps), `[C]`, in L2's line and note, the M row and sequence diagram and the
+*Inputs and oracles* bullet; the open question narrowed to what the portal object's draws are spent on. (f) applied to
+[§ I](../specs/items/cube.md#i-the-crafted-builder--sub_005c21d0_itembuildcrafted): the survey (rows 72 and 90 `sst`,
+83 `lbt`, 84 `lgl`) `[C]`, with H6a's case (b) fault `[C]` and case (a) `[I]` (no stock case). With them the S2c cube
+raises (cube 6, 8, 10, 12, 13, 21, 22, 29, 47 in part, 49 in part, 52, 55, 56) and the d-none restatements (cube 20,
+24). **Open:** (d), for items/vendors (H6c).
