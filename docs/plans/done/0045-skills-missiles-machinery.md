@@ -1130,7 +1130,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     missile-mastery reading into skills/0002 § 6) merges, taking its tags; if the finding leaves open whether a missile
     carries its owner's masteries, that becomes an `[L]`. The page already takes the weaker tag (fix 9), so it does not
     wait. Filed for the spec-writer
-    ([backlog](../../backlog/2026-10-27-architect-spec-writer-skills-missiles-f1-mastery-and-dispatch-i4-kick.md)).
+    ([backlog](../../backlog/archive/2026-10-27-architect-spec-writer-skills-missiles-f1-mastery-and-dispatch-i4-kick.md)).
   - **Ruling (b): Kick's wording.** The page may say what § O and § I say, at their tags: Kick's start function
     builds its hit from its row's values (a set result and hit class, `MinDam` as physical damage), read from the code;
     in 32 uses the caster's seed did not move at the start and the do added no draw, confirmed; the strength-and-
@@ -1156,4 +1156,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   carries its owner's masteries is an `[L]` open question in the finding. Rulings: the mastery leaves F1's `[C]`
   bullet; `MISSILE_BuildDamage` and `MissileElemRoll` are C in `re/symbols.csv` on the drawn fields (rule 14),
   which moves no spec tag. The spec-writer entry for F1 is released with what to write
-  ([entry](../../backlog/2026-10-27-architect-spec-writer-skills-missiles-f1-mastery-and-dispatch-i4-kick.md)).
+  ([entry](../../backlog/archive/2026-10-27-architect-spec-writer-skills-missiles-f1-mastery-and-dispatch-i4-kick.md)).
+- **2026-10-27 — after the close: the F1 and I4 entry written by `lane/sf2` (spec-writer; logged in the
+  [plan 0038 log](../0038-inferred-claims-sweep.md#implementation-log)).** Missiles F1's mastery left the `[C]`
+  bullet, which now cites both runs' 4 118 builds; the mastery's carrier is an `[L]`. Dispatch I4 is restated per
+  bound (the `Kick` minimum `÷ 4` `[C]`, the maximum `÷ 3` `[I]`); which damage Kick's start hit carries is an `[L]`,
+  routed to the reverser ([entry](../../backlog/archive/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md)).

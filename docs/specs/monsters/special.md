@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/spawn, monsters/pool, data/excel, drlg/collision]
 consumed_by: [monsters/stats, monsters/spawn, items/tc, chain]
-tags: {C: 149, I: 70, L: 4}
+tags: {C: 151, I: 86, L: 4}
 updated: 2026-10-27
 ---
 
@@ -542,7 +542,7 @@ G1. SuperUniqueSpawn(game, room, x: i32, y: i32, id: i32) → unit | none:   [C]
 | 39 | The Cow King | quest hook 4 | none | [I] (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0) |
 | 42 | Siege Boss | `EscortSpawn(minion1, radius 20, 20 ×, flags 0)`, quest hook 31, `0x00545B50`, state 118 | the escorts' spawns | [C] (fn:sub_005B24E0_EscortSpawn@0x005B24E0, run:2026-10-21-sweep-monsters-a: Shenk, 20 `minion1`) |
 | 43, 44, 45 | Ancient Barbarian 1–3 | quest hook 35 | none | [I] (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0) |
-| 60 | Nihlathak Boss | links itself, `EscortSpawn(LevelClassVariant(minion1), radius 10, 20 ×, flags 0x40)`, quest hook 34 | the escorts' spawns | [C] (fn:sub_005B24E0_EscortSpawn@0x005B24E0, fn:sub_0063EC70_LevelClassVariant@0x0063EC70, run:2026-10-21-sweep-monsters-a: 20 of class 458 on level 124) |
+| 60 | Nihlathak Boss | links itself, `EscortSpawn(LevelClassVariant(minion1), radius 10, 20 ×, flags 0x40)`, quest hook 34 | the escorts' spawns | [C] (fn:sub_005B24E0_EscortSpawn@0x005B24E0, fn:sub_0063EC70_LevelClassVariant@0x0063EC70, run:2026-10-21-sweep-monsters-a: 20 of class 458 on level 124; the 20 requests also chain with their logged placements, [monsters/0003 § Lane rbd](../../findings/monsters/0003-special-monsters.md#lane-rbd-monpostcreateboss-and-the-h4a-chained-models-2026-10-27)) |
 | 62 | Baal Subject 2 | `EscortSpawn(skmage_cold3, radius 20, 10 ×, flags 0x40)` | the escorts' spawns | [I] (fn:sub_005B24E0_EscortSpawn@0x005B24E0) |
 
 - [C] The tail is the table's entry for the record's index, with the pushed arguments read from 0x005A4BFE–0x005A4E43:
@@ -738,10 +738,48 @@ fn:sub_00653E20_UNameTablesFree@0x00653E20, tbl:UniqueTitle.txt:Name, run:2026-1
   of other `BaseId`s hold none of them. (fn:sub_005B21B0_MonPostCreateMods@0x005B21B0, tbl:MonStats.txt:BaseId,
   run:2026-10-14-mon-special, run:2026-10-15-mon-stats, [monsters/0003 § Plan 0038 batch S3a](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-s3a-2026-10-16))
 - [I] The helper's other cases, not met: `mummy1` 10, `duriel` 11 and 22, traps 14, `boneprison1`..`4` 15,
-  `suicideminion1` 33, `ancientbarb1`..`3` 22. A second helper, `MonPostCreateBoss`, covers the act and uber bosses,
-  Blood Raven (12 and 22), the Maggot Queen and `firegolem` (31). These count as mods already present: `SpecialModsRoll`
-  puts them in `have`, and a superunique's fixed mods follow them. (fn:sub_005B21B0_MonPostCreateMods@0x005B21B0,
-  fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, tbl:MonStats.txt:BaseId)
+  `suicideminion1` 33, `ancientbarb1`..`3` 22. (fn:sub_005B21B0_MonPostCreateMods@0x005B21B0, tbl:MonStats.txt:BaseId)
+- [I] **The two post-create helpers in `MonSpawnTry`.** After the alignment setter, `MonSpawnTry` calls
+  `MonPostCreateMods` only when bit `0x2` of the request's flag word (`+0x24`) is clear (`0x005B2ECF`), then
+  `MonPostCreateBoss` with no test (`0x005B2EDF`); the minions follow unless bit `0x40` is set (`0x005B2EE4`). Both
+  helpers key on the **requested** class (`request+0x0C`). The flag-2 gate is a code reading: 590 logged requests
+  carry flag 2, 93 of them with a class that has `MonPostCreateMods` mods, and none of their lists is compared.
+  (0x005B2ECF, 0x005B2EDF, fn:sub_005B2A00_MonSpawnTry@0x005B2A00, run:2026-10-21-sweep-monsters-a,
+  [monsters/0003 § Lane rbd](../../findings/monsters/0003-special-monsters.md#lane-rbd-monpostcreateboss-and-the-h4a-chained-models-2026-10-27))
+- [I] **`MonPostCreateBoss`'s cases.** The helper switches on the requested class's MonStats `BaseId`; a class with no
+  record, or a `BaseId` with no case, takes nothing (`0x005B1CFD`–`0x005B1D3C`). Each mod goes through
+  `ModAppendApply(game, unit, mod, flag)`: with flag 1 it first calls `MonMarkSpecial`, then writes the mod in the
+  first free slot of the 9 (none when all are used) and calls the mod's `UModHandlers` entry, if any, with the flag.
+  Every mod is flag 1 except `firegolem`'s 31 (flag 0). Of the mods in the table only 6, 8, 17, 18, 23 and 30 have a
+  server handler (§ C), so outside the uber classes the one handler call is the Maggot Queen's 23. These mods, like
+  `MonPostCreateMods`', count as mods already present: `SpecialModsRoll` puts them in `have`, and a superunique's
+  fixed mods follow them. The quest hooks were not followed for mod writes. (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0,
+  fn:sub_005A4850_ModAppendApply@0x005A4850, data:g_UModHandlers@0x0073C008, tbl:MonStats.txt:BaseId,
+  [monsters/0003 § Lane rbd](../../findings/monsters/0003-special-monsters.md#lane-rbd-monpostcreateboss-and-the-h4a-chained-models-2026-10-27))
+
+  | `BaseId` (classes) | Mods, in call order | Other calls | Tag |
+  |---|---|---|---|
+  | 156 `andariel` | 22; `uberandariel` (707): 23, 6, 29 | quest hook 6 | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 211 `duriel` | none; `uberduriel` (708): 6, 18 | quest hooks 13, 9 | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 242 `mephisto` | 22; `ubermephisto` (704): 22, 30, 17, 8, 6 | quest hook 20 | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 243 `diablo`, `diabloclone` | 22; `uberdiablo` (705): 22, 8, 6 | quest hook 23 | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 256 `izual` | 22; `uberizual` (706): 6, 18 | quest hook 22 | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 544 `baalcrab` | 22; `uberbaal` (709): 22, 18, 8, 6 | quest hook 36 | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 267 `bloodraven` | 12, 22 | quest hook 2; `0x00639DB0(unit, 0x76, 1)` | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 284 `maggotqueen1`..`5` | 23, 22 | — | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 292 `firegolem` | 31 (flag 0) | — | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 366 `compellingorb` | 22 | quest hook 19, unit flag `0x20000` | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 402 `smith` | 22 | — | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 526 `nihlathakboss` | 22 | quest hook 34 | [C] the mod (run:2026-10-21-sweep-monsters-a); [I] the hook (0x005B2002) |
+  | 175 `warriv2`, 229 `radament`, 250 `summoner`, 340–343 `boneprison1`..`4`, 407 `fetish11`, 409 `hephasto`, 434 `prisondoor`, 540 `ancientbarb1`..`3` | none | quest hooks (229: 8; 250: 12, then unit flag `0x800`; 407: 17; 409: 24; 434: 32); unit flag `0x20000` (340–343); `0x005B1C50`, the gear call (540); `0x005447A0` (175) | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+
+- [C] **Nihlathak's mod 22 is `MonPostCreateBoss`'s.** Nihlathak (`BaseId` 526, superunique record 60) leaves
+  `SpecialMonPlace` with `[22]` (the `SMPX` line) and holds `[22, 30]` at the `SU1` line, as logged; a model without
+  the 526 case gives `[30]` and fails. This one unit separates the reading for `BaseId` 526 only. The other logged
+  classes of the table (`andariel`, `mephisto`, `bloodraven`, `compellingorb`) are created outside a superunique path,
+  where no logged mod list is compared, so their rows stay `[I]`. (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0,
+  0x005B2002, run:2026-10-21-sweep-monsters-a,
+  [monsters/0003 § Lane rbd](../../findings/monsters/0003-special-monsters.md#lane-rbd-monpostcreateboss-and-the-h4a-chained-models-2026-10-27))
 - [C] None of the `MonPostCreateMods` mods has a server handler, so they draw nothing. The superunique Beetleburst
   (`scarab2`) and its minions entered with mod 20 already present, as modelled. (fn:sub_005B21B0_MonPostCreateMods@0x005B21B0,
   run:2026-10-14-mon-special)

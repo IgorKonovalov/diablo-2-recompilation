@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/calc, combat/overview, combat/delivery, stats/states, monsters/spawn, monsters/stats]
 consumed_by: [skills/missiles, combat/overview, combat/delivery, stats/states, items/economy, monsters/stats]
-tags: {C: 72, I: 187, L: 10}
+tags: {C: 73, I: 189, L: 11}
 updated: 2026-10-27
 ---
 
@@ -624,11 +624,27 @@ I2. SKILLS_RollElemDamage(unit, p, id, lvl):                         [I] (fn:SKI
   set) when `QueuedHitFind(caster, target)` finds no queued hit naming both, and 0 without a target; for Kick, whose
   row fills none of those columns, it sets bit 6 and delivers. [C] (ADR-0021, fn:SKILL_MeleeDeliverDo@0x0056F1F0,
   run:2026-10-21-cat-emu-bar)
-- I4. **Physical damage of a skill** (`SKILLS_GetPhysMin/Max(unit, id, lvl, withWeapon)`, used by summons, missiles
-  and several do functions): a `Kick` row gives `(max(x, 1) ÷ 4) << 8` with `x = str + dex − 20` for a player or
-  `3 · level` for other units; otherwise `w = SrcDam · weaponMin ÷ 128` when `SrcDam` and `withWeapon`,
-  `x = w + LevelBands(lvl, MinLevDam1..5) + MinDam`, `x += MulDiv(x, DmgSymPerCalc, 100)` when that calc is non-zero,
-  then `x << HitShift`. [I] (fn:SKILLS_GetPhysMin@0x00647BC0, 0x00647CA6–0x00647CF1, fn:SKILLS_LevelBands@0x00644B70)
+- I4. **Physical damage of a skill** (`SKILLS_GetPhysMin/Max(unit, id, lvl, withWeapon)`). For a row with `Kick` clear and `SrcDam` 0, the minimum is
+  `x = MinDam + LevelBands(lvl, MinLevDam1..5)` (bands 2–8, 9–16, 17–22, 23–28, 29+; 0 at `lvl ≤ 1`),
+  `x += MulDiv(x, DmgSymPerCalc, 100)` when that calc is set and non-zero, then `x << HitShift`, and the maximum is the
+  same with the `Max` columns. For a `Kick` row with an owner, the **minimum** is `(max(x, 1) ÷ 4) << 8` with
+  `x = str + dex − 20` for a player owner or `3 · level` for another owner. [C] (ADR-0021, emulated inside hit 43,
+  fn:SKILLS_GetPhysMin@0x00647BC0, fn:SKILLS_GetPhysMax@0x00647D00, fn:SKILLS_LevelBands@0x00644B70,
+  run:2026-10-20-cat-emu-9d, [skills/0007 § 3](../../findings/skills/0007-missile-hit-31-59.md#3-hit-31-43-and-55-heals-and-drains))
+- I4. For a `Kick` row, the **maximum** is `(max(x, 1) ÷ 3) << 8`, with `x` as for the minimum: `GetPhysMax` calls
+  `sub_00644C20_SkillKickDamage` with flag 0, which divides by 3 (by 4 when the flag is set). The emulation stops at
+  that call. [I] (0x00644C20–0x00644C8C, fn:sub_00644C20_SkillKickDamage@0x00644C20, fn:SKILLS_GetPhysMax@0x00647D00,
+  [skills/0007 § 3](../../findings/skills/0007-missile-hit-31-59.md#3-hit-31-43-and-55-heals-and-drains))
+- I4. `GetPhysMin/Max` are called by summons, missiles and several do functions (the callers are a code reading,
+  outside the emulation's map). With `SrcDam ≠ 0` and `withWeapon`, `w = SrcDam · weaponMin ÷ 128` is added to `x`
+  before the synergy step (`GetPhysMin` first calls `sub_00623990_SkillSrcDamWeapon(unit, 0)`, where the emulation
+  stops). [I] (0x00647C4D–0x00647CA3, 0x00647CBA, fn:sub_00623990_SkillSrcDamWeapon@0x00623990)
+- I4. **Kick's start hit is not built from these functions**: start 2 (`0x0056CAF0`) reads the row's `HitShift`
+  (`+0x1A4`) and `MinDam` (`+0x1A8`) itself and stores `MinDam << HitShift` as the packet's physical, with flags 2,
+  which `COMBAT_ResolveAndQueue` reads as "no weapon build" (I1); it calls neither `GetPhysMin` nor `GetPhysMax`. So
+  the start hit carries the row's `MinDam`, not the strength-and-dexterity damage above; the `Kick` row's `MinDam`
+  value is open (*Open questions*). [I] (0x0056CB54–0x0056CB71, fn:sub_0056CAF0_SkillSt02Kick@0x0056CAF0,
+  [skills/0003 § 5](../../findings/skills/0003-handlers.md#5-tier-a-start-and-do-functions))
 - I4. The mastery bonus enters a skill hit through the combat build (`SKILLS_GetMasteryBonus` from
   `COMBAT_BuildDamage` and `COMBAT_ToHitRoll`) and through the missile damage block; the synergies enter through the
   calcs (`DmgSymPerCalc`, `EDmgSymPerCalc`, the `skill('…'.blvl)` terms of calc1–calc4). [I]
@@ -1076,6 +1092,11 @@ run:2026-10-25-skills) The step's use, `low mod 100` against Raise Skeleton's `P
 - [L] What `Unit+0x38` holds (the sequence-anim delay gate of E4 and do 35's parity).
 - [L] Which frame of a mode carries event code 1 or 2, and `Unit+0x4E`: animation timing (plan 0050).
 - [L] The finisher's entries in a run (56 finisher calls were oracles in run:2026-10-25-skills).
+- [L] **The damage of Kick's start hit.** Start 2 stores the row's `MinDam << HitShift` itself (I4), while
+  `GetPhysMin/Max` give a `Kick` row strength-and-dexterity damage. The `Kick` row's `MinDam` and `HitShift` values
+  (a blank `MinDam` makes the start hit's physical 0), whether run:2026-10-27-skills's Kick events logged the queued
+  hit's physical, and which path uses the `Kick` branch of `GetPhysMin/Max` are put to the reverser
+  ([entry](../../backlog/archive/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md)).
 - [L] Which unit's skill level `MonOwnerSkillDamage` reads (register-passed).
 - [L] Pet types 1's and 7's special cases in `PetLimit`, and where do 31 and 114 fill the spawn block's pet type and
   maximum.
