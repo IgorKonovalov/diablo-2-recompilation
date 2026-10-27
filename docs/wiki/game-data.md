@@ -1,8 +1,8 @@
 ---
 based_on:
-  - docs/specs/data/README.md 2026-10-16
-  - docs/specs/data/excel.md 2026-10-15
-  - docs/specs/data/strings.md 2026-10-17
+  - docs/specs/data/README.md 2026-10-27
+  - docs/specs/data/excel.md 2026-10-27
+  - docs/specs/data/strings.md 2026-10-27
   - docs/specs/data/calc.md 2026-10-17
 ---
 
@@ -52,9 +52,11 @@ even for a classic game, so classic and expansion games read the same tables.
 
 Loose files on disk are only looked at when the game runs with `-direct` (or when no archive is open at all), and
 then they beat every archive. In a
-normal run a loose file never overrides an archive. This whole section is read from the code; a test with a loose
-table file has not been run yet, and neither of the two optional archives in the middle of the list is present to
-test with.
+normal run a loose file never overrides an archive. This is confirmed in runs that put a debugger on the game before
+its start-up code: the archive opens, the sorted list after each open and every file lookup match these rules, a run
+with loose files but no `-direct` read none of them, and the same kind of files with `-direct` were read from disk.
+Only the place of the two optional archives in the middle of the list (the install has neither) and the case with no
+archive open (no lookup ran before the first open) are read from the code. The video archive is opened later, when a cinematic is played, and goes to the front of its priority group.
 
 ## The game reads the .bin, not the .txt
 
@@ -66,14 +68,19 @@ normal run no `.txt` is parsed at all. This is confirmed: the in-memory "parse t
 
 The `-txt` option compiles the `.txt` files and writes fresh `.bin` files to disk, and then loads the `.bin`
 through the normal lookup. Without `-direct` the game never sees the disk copy, so `-txt` alone changes nothing;
-only `-direct -txt` makes the game run on edited text. This is read from the code and not yet tried in a run.
+only `-direct -txt` makes the game run on edited text. Both are confirmed in a run: with `-txt` alone every table
+loaded was the archive's copy, and with `-direct -txt` every table read after the compile came from the freshly
+written files.
 
 A few consequences that a modder or reimplementer would trip over:
 
 - `TreasureClass.txt` is never loaded. The live table is `TreasureClassEx` (confirmed).
-- For `inventory` and `PlrMode` the live `.bin` comes from `d2exp`, so the patch archive's `.txt` edits to these
-  two tables are not live (read from the code and the files).
-- A few tables ship and are never loaded at all (confirmed for `cubemod` and `cubetype`).
+- Five tables (`automagic`, `RarePrefix`, `RareSuffix`, `inventory`, `PlrMode`) have their `.bin` and their newest
+  `.txt` in different archives. The game's own compile of that `.txt` gives the shipped `.bin` byte for byte, so it
+  makes no difference which one is taken (confirmed).
+- A few tables ship and are never loaded at all (confirmed for `cubemod` and `cubetype`), and some small code-list
+  tables are loaded only under `-txt`, for the compiler. One of them, `hitclass`, is still read whole at every start
+  by another loader (confirmed).
 
 ## Records are positions
 
@@ -107,8 +114,9 @@ duplicates, so this never happens on stock data.
 share a name, a lookup returns the first one registered
 ([excel § F](../specs/data/excel.md#f-name-links-tc-names-monster-ids)).
 
-All of the lookups in this section are read from the code (they are not observed one by one in a run), except the
-results the worked example checks against the shipped files.
+These lookups are confirmed. Item codes resolve to their combined position in over a thousand logged calls, and the
+code and name lookups were run under an emulator against a model (the unsigned compare, the case rules, the
+31-character cut, duplicate codes). That the duplicate-code rule never fires on stock data has nothing to observe.
 
 ## Treasure classes share one numbering
 
@@ -131,9 +139,16 @@ While loading TreasureClassEx, the game also resolves each `ItemN` cell. A name 
 as an item code first; failing that, it is looked up as a TC name, then as a unique item name, then as a set item
 name; a name that matches nothing is dropped. So a short TC name that equals an item code means the item. The loader
 stops reading a row's items at the first empty `ItemN`, so an item after a blank cell is ignored; a
-[Picks](../glossary.md) of 0 becomes 1; and a cell with a probability below 1 is skipped. These loader rules are
-read from the code. Several details of the automatic TCs (their exact names, which items they take, their
-probabilities) are not yet in a finding.
+[Picks](../glossary.md) of 0 becomes 1; and a cell with a probability below 1 is skipped. A replay of the logged
+drops confirms the numbering, the item-code-first rule and the resolution of every logged cell; the three rules just
+named, a short name that is both an item code and a TC name, the unique and set steps and a name that ends at an
+inner quote have no stock case and are read from the code.
+
+The automatic TC of an item type for level L (named after the type code and L, such as `bow3`) takes the non-quest,
+spawnable items of that type whose level is above L − 3 and at most L, each weighted by the rarity of the item's own
+type, with one pick and no upgrade (confirmed in the logged drops). After the load the game looks up 45 chest TC names
+(`Act 1 Chest A` and so on) for the objects' chests; the lookups are confirmed in the start-up runs, and where it
+keeps the result is read from the code.
 
 ## Monster references and the off-by-one
 
@@ -145,10 +160,10 @@ MonStats. The game then uses that number directly as a record position
 The two agree until MonStats repeats an Id. It does once: `cr_lancer8` appears at records 617 and 723. From
 record 724 on, ordinal and position differ by one, so a reference to one of those monsters reaches the record
 **before** it. In the shipped data this affects three cells of *Act 5 - Pandemonium 3* (`mon1`, `nmon1`, `umon1`),
-which name `overseer6` but reach the second `cr_lancer8`. The stored ordinals are confirmed by the data. That the
-game uses them as positions is read from the code, and was observed for the level's
-[monster pool](../glossary.md): that level's pool held class 723 in every logged game. Whether such a monster is
-ever seen in play is left to the monster specs.
+which name `overseer6` but reach the second `cr_lancer8`. The stored ordinals are confirmed by the data, and that
+the game uses them as positions is confirmed for the level's [monster pool](../glossary.md): that level's pool held
+class 723 in every logged game. A scan of every reader of MonStats in the code finds none that looks a monster up by
+its Id (read from the code). Whether such a monster is ever seen in play is left to the monster specs.
 
 ## What a stored cell means
 
@@ -187,10 +202,14 @@ text is converted from UTF-8 to 16-bit characters once, at load.
 
 The lookup is by **entry position**. A language whose table has other entries would show other text for the same
 stored index, and the stored indices are the English ones. The language comes from the first byte of the file
-`data\local\use`; only English ships the expansion table, so any other language would crash at load while the expansion archive is present. The language rules are
-read from the code ([strings § H](../specs/data/strings.md#h-language)). Two fallbacks (an expansion index with no
-expansion table, and an entry past the end of a table) are also read from the code and cannot be reached on a stock
-install ([strings § G](../specs/data/strings.md#g-index-bases-fallbacks-and-fatal-paths)).
+`data\local\use` ([strings § H](../specs/data/strings.md#h-language)). The start-up runs confirm it: the shipped byte
+0 gave English, and the shipped Russian file's byte 11 made the game look for Cyrillic fonts, fail to load the font
+map and exit before reading any string table. A byte above 13 becomes English, and a byte of exactly 13 reads past
+the language table (confirmed under an emulator) and would crash the load; both need an edited file and are read
+from the code. Only English ships the expansion table, so another language whose fonts load would still crash at
+that table (read from the code). Two fallbacks, an expansion index with no expansion table and an entry past the end
+of a table, cannot be reached on a stock install; what they do is confirmed by running the game's own lookup under
+an emulator ([strings § G](../specs/data/strings.md#g-index-bases-fallbacks-and-fatal-paths)).
 
 ## String keys: from a name to a number
 
@@ -209,20 +228,22 @@ flowchart TD
     s -->|no| nx["0, placeholder text"]
 ```
 
-The search order is patchstring, then expansionstring, then string, and the match is exact and case-sensitive. Each
+The search order is patchstring, then expansionstring, then string, and the match is exact. Each
 table is a hash table searched by walking from a home slot; a miss always walks the table's whole probe limit (1 179
 nodes in the English patchstring, for example). When a key occurs twice in one table, the lowest entry wins
 ([strings § E](../specs/data/strings.md#e-hash-probing--strtable_findintable-strtable_hash)). A key found nowhere
 returns 0 with a placeholder text: the key followed by the suffix " -not xlated call ken w", minus its last
 character, so `funeralpire` gives "funeralpire -not xlated call ken " with a trailing space. All of this is
-confirmed in a run that logged the game's key lookups. One quirk is read from the code: entry 0 of `string.tbl`
-cannot be told apart from "not found", since both give 0.
+confirmed in a run that logged the game's key lookups, except that the match is case-sensitive: no logged key differs
+from a table's key only in case, so that part is read from the code. One quirk is confirmed under the emulator: entry 0 of
+`string.tbl` cannot be told apart from "not found", since both give 0.
 
 When the `.txt` compiler turns a string-key cell into a stored index, it replaces 0 (blank or unknown) by 5382,
 the `string.tbl` entry named `dummy` ([strings § F](../specs/data/strings.md#f-excel-string-key-cells--the-5382-rule)).
-That is why blank name cells in the shipped `.bin` files hold 5382. One cell breaks the rule: the `uberandariel`
-monster's name `Lilith` exists in the English patchstring table, yet its cell stores 5382; nothing in the code
-explains it ([excel § I](../specs/data/excel.md#i-string-table-keys)).
+That is why blank name cells in the shipped `.bin` files hold 5382. One cell of the shipped files breaks the rule:
+the `uberandariel` monster's name `Lilith` exists in the English patchstring table, yet its cell stores 5382. The
+game's own compiler stores the key's index there (confirmed with a compile run), so the shipped file was probably
+made against string tables that lacked the key ([excel § I](../specs/data/excel.md#i-string-table-keys)).
 
 ## Names on items and monsters
 
@@ -230,20 +251,22 @@ Name columns hold stored string indices: MonStats `NameStr`, SuperUniques `Name`
 [superuniques](../glossary.md)), the UniquePrefix name words and Weapons `namestr` are examples
 ([strings, inputs](../specs/data/strings.md#tables)). Showing one of those names is an index lookup.
 
-[Rare names](../glossary.md) take a slightly different path, read from the code but not yet confirmed by a run
+[Rare names](../glossary.md) take a slightly different path
 ([strings § D](../specs/data/strings.md#d-key--index--strtable_getbykey), *Rare names*). The `.bin` stores no index for
-them. When the rare-name tables are loaded, each record's `name` key is looked up and the index kept. When the
+them. A run that hovered four rare items confirms the load-time lookup and the two shown indices; the fallbacks for
+a 0 index and a missing record are read from the code. When the rare-name tables are loaded, each record's `name` key is looked up and the index kept. When the
 client shows a rare item, it takes the item's two rare-name ids, finds each record and shows the text of each stored
 index; if an index is 0, it shows the raw key in parentheses instead, and a missing record leaves its word empty. The two words are then put into the string
 `RareFormat` as its first and second arguments, the way the magic name line uses `MagicFormat` (prefix, base name,
-suffix); that is read from the code. In the shipped English table `RareFormat` is `%0 %1` (checked in the data), so
+suffix). The run shows the line using `RareFormat`; the order of the arguments is read from the code. In the
+shipped English table `RareFormat` is `%0 %1` (checked in the data), so
 an English rare name is the first word, one space, the second word. The order and the separator come from the string
 table, so another language may change them. This rests on `%0` and `%1` standing for the first and second argument;
 the code that substitutes them is not read yet.
 
 One loader shows how a key lookup can silently fail: the gems table loader builds a key from bytes that, in this
 version, hold the gem's compiled item index rather than its code text, so the lookups miss (the run saw 68 such keys)
-and every gem stores 0 there. The cause is read from the code; the misses were seen in the run.
+and every gem stores 0 there. This is confirmed: the 68 logged keys are exactly those bytes of the 68 gem records.
 
 ## Calc formulas
 
@@ -331,8 +354,7 @@ a recorded game. Looking up the key `of Amianthus`:
 
 The index is 20000 + 925 = **20925**, and the text is `of Amianthus`. In the same example, index 21796 shows
 `CHARACTER` (expansionstring entry 1796, logged in a classic game with the expansion archive present), and index
-5382 shows `an evil force` (the `dummy` entry; this one comes from the project's model of the code, not from the
-log).
+5382 shows `an evil force` (the `dummy` entry, also logged once).
 
 **A formula**, copied from the [calc worked example](../specs/data/calc.md#worked-example): Raise Skeleton's
 `petmax`, `(lvl < 4) ?lvl:(2+lvl/3)`, evaluated at skill level 3 (logged 52 times, result 3):
@@ -359,18 +381,11 @@ level 4 takes the else-branch, 2 + 4 ÷ 3 = 3, also logged as 3.
 From the open questions of [excel](../specs/data/excel.md#open-questions),
 [strings](../specs/data/strings.md#open-questions) and [calc](../specs/data/calc.md#open-questions):
 
-- The loose-file rule, `-direct -txt`, and the place of the two optional archives in the search order are read from
-  the code only; a run with a loose or edited table would confirm them.
-- That monster references are used as record positions is observed for the level monster pools, but not checked
-  in every reader of MonStats.
-- The details of the automatic item-type TCs (exact names, item filter, probabilities), a post-pass over the TCs
-  after load, and the `group`/`level` walk applied when a TC is fetched, are not yet read.
-- The `Lilith` cell stores 5382 although its key exists; the `.bin` was probably compiled against string tables that
-  lacked the key, but nothing in the code explains it.
-- Whether anything reads two MonStats padding bytes, and what a list of item indices built at item load means, are
-  open.
-- The string-table fallbacks and fatal checks are read from the code and unreachable on a stock install; the other
-  languages' font maps are not read; the substitution of `%0`, `%1` in the rare and magic name lines is not read.
+- The place of the two optional archives in the search order is read from the code only; the install has neither.
+- Whether anything reads two MonStats padding bytes during a game is open; nothing writes them between the load and
+  the end of a game.
+- The string-table fatal checks are read from the code and unreachable on a stock install; the other languages' font
+  maps are not read; the substitution of `%0`, `%1` in the rare and magic name lines is not read.
 - `max` and `rand` were checked under an emulator but not in a live monster cast; the missile variables that read
   damage, and five skill variables that read the unit's state, were not checked; the item context's second
   argument (the used item) is read from the code and no stock formula reads it; that hovering over a potion evaluates

@@ -2,13 +2,13 @@
 from: reverser
 to: spec-writer
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../findings/data/0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load
-  - ../findings/data/0002-mpq-precedence.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load
-  - ../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load
-  - ../findings/data/0004-cell-converters.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load
-resolution: ""
+  - ../../findings/data/0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load
+  - ../../findings/data/0002-mpq-precedence.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load
+  - ../../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load
+  - ../../findings/data/0004-cell-converters.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load
+resolution: "Done 2026-10-27 on lane/s38d, plan 0038 Phase 3 data clusters: every part applied in [data/README](../../specs/data/README.md), [data/excel](../../specs/data/excel.md) and [data/strings](../../specs/data/strings.md)"
 ---
 
 *(Released at the `lane/h3b` review, 2026-10-27, accept with fixes; see the plan 0038 log.)* Phase 3 of plan 0038 for the data cluster: re-tag the H3b rows
@@ -32,3 +32,14 @@ rule (run:2026-10-27-sweep-data-load), and carry these corrections and review ad
 
 The data/README cluster is ready too (its rows are S1b and H3b only). The data/excel cluster also folds plan 0039's remainder (plan 0038 Phase 3 note, 2026-10-20).
 
+
+*Annotation (spec-writer, 2026-10-27, `lane/s38d`, plan 0038 Phase 3, data clusters):* every part applied. The H3b rows
+of [data/README](../../specs/data/README.md), [data/excel](../../specs/data/excel.md) and [data/strings](../../specs/data/strings.md)
+are re-tagged citing run:2026-10-27-sweep-data-load. The TC entry rows of data/README and data/excel name
+`EXCEL_FindName` on `g_TCLink` from `TC_ParseItemCell`, `TC_BuildChestTable` (from `TC_LoadAll`) and the `.txt` parser,
+with `TC_GetByName` kept as an `[I]` dead-code note; data/excel B1 scopes the code-list note to `DATATBLS_LoadTable`,
+adds the `hitclass.bin` read (return 0x0050448A) and the 18th, `sounds`, `-txt`-only call (0x00659C16, `je` at
+0x00659BC1); J4 lists levels `+0x033..+0x035` with their writers; data/strings § H has the `CYR` exit at the font map
+before `string.tbl` ([C] for the order and the exit, [I] for the test); the language byte read is `[C]` and the clamp
+`[I]` in data/excel I1 and data/strings § H; data/excel G1/G1a gives the post-pass's 45 lookups `[C]` and the store
+into `g_ChestTCs` `[I]`.

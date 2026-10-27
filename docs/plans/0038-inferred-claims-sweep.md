@@ -3887,7 +3887,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     files the dtxt run wrote).
   - **Backlog:** review request
     [h3b review](../backlog/archive/2026-10-27-reverser-architect-review-lane-h3b-plan-0038-batch-h3b.md); spec-writer entry
-    [h3b raises](../backlog/2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections.md) (held for the
+    [h3b raises](../backlog/archive/2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections.md) (held for the
     review).
   - **Next:** the H3b review. Slot 2 stopped, saves restored (empty, no aside), staged directories removed.
 - **2026-10-27 — H3b review (architect, `lane/h3b`): accept with fixes (9).** Merged `main` `550d2dcc` into the lane
@@ -3947,7 +3947,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     their re-tag round. Their batches are S1b, S1e and H3b, all accepted. The data/excel round also folds plan 0039's
     remainder (P1b (a), P1c (a), the 11 data/excel W1).
   - **Backlog:** the review request was closed. The spec-writer entry
-    [h3b raises](../backlog/2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections.md) was **released**,
+    [h3b raises](../backlog/archive/2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections.md) was **released**,
     with the TC caller list, the clamp half, the addresses and the G1 post-pass note added.
   - **Next:** merge `lane/h3b`; then H6e2 (plan order), and the data clusters' Phase 3 round.
 - **2026-10-27 — `lane/rbd` (reverser, static, objdump only, no slot, no Ghidra): the H4a chained-model mismatches and
@@ -4021,6 +4021,77 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Ledger:** the lane row filled (verdict, fixes 6: under-claim 1, tool not kept 1, omission 4; usage from the
     orchestrator: 301 043 tokens, 196 tools, 33 min); the review row added, usage "—".
   - **Next:** merge `lane/rbd`; the two spec-writer entries may start.
+- **2026-10-27 — Phase 3, the data/excel, data/strings and data/README clusters (spec-writer, `lane/s38d`, from `main`
+  `41500789`).** Their batches are S1b, S1e, S1f (data/excel 65, 69) and H3b, all accepted; the data/excel round also folds
+  plan 0039 P1b (a), P1c (a) and the 11 data/excel W1 warnings.
+  - **Counts:** [data/README](../specs/data/README.md) {C 3, I 5, L 0} → **{C 9, I 2, L 0}**;
+    [data/excel](../specs/data/excel.md) {C 42, I 100, L 8} → **{C 144, I 45, L 2}**;
+    [data/strings](../specs/data/strings.md) {C 60, I 42, L 3} → **{C 88, I 29, L 3}**; `updated:` 2026-10-27.
+  - **Applied:** the H3b entry (the TC entry rows name `EXCEL_FindName`'s callers, `TC_GetByName` an `[I]` dead-code note;
+    the language clamp `[I]`; levels `+0x033..+0x035` in J4; the `CYR` exit; the `hitclass.bin` read and the `sounds` call;
+    the G1 post-pass lookups `[C]`, the store `[I]`), the S1b, S1e and S1f lines of these specs (the id-13 correction
+    among them, as the S1e review's addition (a) words it), plan 0039 P1b (a) and P1c (a). W1 for data/excel is 0.
+  - **Wiki:** [wiki/game-data](../wiki/game-data.md) `based_on` dates for the three specs set to 2026-10-27 and its stale
+    paragraphs restated (W4 clear).
+  - **Backlog:** closed the H3b, W1, P1b, P1c and S1b entries; the S1e corrections, S1e review additions and S1f entries
+    annotated (save/d2s and items/uniques-sets parts open). Counts entry
+    [s38d counts](../backlog/archive/2026-10-27-spec-writer-architect-s38d-data-clusters-counts-for-the-research-map.md), review
+    request [s38d review](../backlog/archive/2026-10-27-spec-writer-architect-s38d-review-data-clusters-phase-3.md). Ledger row
+    added, usage "—".
+  - **Next:** the `lane/s38d` review.
+- **2026-10-27 — `lane/s38d` review (architect): accept with fixes (10).** Merged `main` `65893010` into the lane first
+  (`8dd2e248`; the ledger conflict kept both sides, `backlog.py archive` had nothing to move).
+  - **Checks:** every new `[C]` occurrence of data/excel (106 on changed lines) was listed by script against the old
+    file, and over 70 of them, all the entry rows, constants, A–J pseudocode headers and step notes, were traced to their
+    batch's raise: H3b rows 1–8, 17, 18, 20, 24, 25, 27, 50 (byte), 71, 74 and the excel 30 remainder (data/0001,
+    data/0002, data/0004, player/0001 § H3b); S1b rows 9–14, 19, 21, 23, 26, 29, 31, 33–35, 38, 41, 42, 45–49, 55, 57,
+    61–63, 67, 68, 72, 73, 75–78; S1e rows 16, 36, 37, 40, 51, 52, 53, 56, 60, 64, 66; S1f rows 65, 69; plan 0039 P1b
+    Q3's data count. The H3b review's fixes hold: the clamp `[I]` in excel I1 and strings § H, data/strings 29 and
+    data/excel 50 raised in part (byte `[C]`, clamp `[I]`), `TC_GetByName` an `[I]` dead-code note in both entry
+    tables, the entry rows naming `EXCEL_FindName`'s real callers. data/strings' 28 new `[C]` and data/README's 6 were
+    read whole against data/0003 § S1b, S1e, H3b and data/0002 § S1b, H3b. objdump confirms 0x0063366D (`imul 0x1a8`),
+    0x00653FB8/0x00653FDC/0x00654E17, 0x006BD26C/0x006BD27A, 0x005251A1, 0x005252AA/0x005252B2, 0x0061DB05/0x0061DB20/
+    0x0061DB40, 0x00659BC1/0x00659C16, 0x006127DF, 0x006BD7FE, 0x006BDFFF, 0x006BDE20 (`movsx`), 0x006BDD82/0x006BDDE7,
+    0x00524E0C, 0x0065A3B5, 0x004345D7, the signed `jle` at 0x0041B95B and the inline byte compare 0x00524CA4–0x00524CC6.
+    The shipped `levels.bin` has at most 10 leading non-negative slots in `mon`, 8 in `nmon` and `umon` (scratch read).
+  - **Fixes (10):** (1) *overclaim:* `AddCode`'s growth by 64 under E2's `[C]` header and in the E2 note; every emulated
+    insert had room (data/0001 § S1e), so the growth is `[I]` (block comment and its own note). (2) *overclaim:* J4's
+    levels writers stated `[C]` with their bound of 25; no stock record reaches it, so the bound is `[I]`, the counts and
+    the first-negative stop `[C]`. (3) *overclaim:* A2's "signed compare" under `[C]`; every priority is positive, `[I]`.
+    (4) *overclaim:* A3's "or no archive is open" under `[C]`; the finding keeps it `[I]` and no lookup ran before the
+    first open. (5) *overclaim:* D1's "the file buffers are freed" under `[C]`, not logged, `[I]`. (6) *overclaim:*
+    data/strings E2 "exact, case-sensitive `strcmp`" `[C]`; the match is `[C]`, its case-sensitivity `[I]` (point 3).
+    (7) *overclaim:* data/strings' reimplementation note tagged the fallbacks' "matter only to an install without
+    `d2exp.mpq` or to edited tables" `[C]`; S1e keeps the stock unreachability `[I]`, now split. (8) *omission:* J4's `[I]`
+    remainder now names "no reader" of the padding bytes, which a dump cannot show. (9) *overclaim:* wiki/game-data's
+    "with `-direct -txt` every table came from the freshly written files"; the 5 character-graphics reads before the
+    write went to the archives, now "every table read after the compile". (10) *overclaim:* three wiki sentences stated
+    flat against an `[I]` (spec-writer rule 1): the short name that is both a code and a TC name, the string match's
+    case-sensitivity and the no-archive case, each now "read from the code".
+  - **Rulings:** (1) data/excel 28's reword stands. "The `patch_d2` `.txt` edits are not live" is not a supported
+    statement lost: S1b's compile gives the shipped `.bin` byte for byte from the top-ranked `.txt` for all five tables,
+    so the `.txt` holds no record-level edit that could be live or not; the sentence was at best vacuous. Its removal
+    from B1, the reimplementation notes and the wiki is right, and it does not touch the parked 1.14b/1.14d `patch_d2`
+    question. (2) The Constants priorities row `[C]` stands on H3b: its runs log every `MPQ_OpenArchive` call with its
+    priority argument (5000, 3000, 1000 as A1), and the list after every open equals A2's model, which supersedes S1b
+    row 11's d-none for the numbers (that d-none was for want of an observable, and H3b supplied one). (3) The
+    case-sensitivity disagreement is aligned down, not filed: data/0003's hash bullet (plan 0028) tags the match `[C]`
+    over 9 456 searches, but S1b row 57 found no logged key held only under another case, so the run cannot separate a
+    case-sensitive from a case-folding compare. data/strings E2 now states the match `[C]` and the case `[I]`, as
+    data/excel I3 does, and data/0003 carries a dated review note. (4) The E2 duplicate note (rule `[C]`, "never fires on
+    stock data" `[I]`) is right. (5) The `[C]` count rise is honest: the restated evidence bullets carry claims of their
+    own (counts, call sequences, the TC-lookup absence in play), each traced to the batch named, and the split rows keep
+    each remainder at its batch's tag. No restatement raised a tag beyond its source; the fixes above are sub-steps of
+    block headers the batches never reached. (6) Plan 0039's remainder is fully folded: P1b (a) (G2, the post-pass, the
+    u16 list in § D) and P1c (a) (H3's every-reader scan `[I]`); no plan 0039 entry is left open.
+  - **Counts:** data/README {C 9, I 2, L 0} (unchanged); data/excel {C 144, I 51, L 2}; data/strings {C 88, I 31, L 3}.
+    Research-map rows `data/excel` (with the overview) and `data/strings` rewritten whole. The wiki's `based_on` dates
+    stay 2026-10-27.
+  - **Backlog:** the review request and the counts entry closed. The S1e review additions ((d), save/d2s), S1e
+    corrections (save/d2s) and S1f (items/uniques-sets) entries stay open for their other specs.
+  - **Ledger:** lane row usage filled from the orchestrator (354 593 tokens, 110 tools, 29 min); verdict and fixes
+    filled. Review row added, usage "—". Spec-writer review-fixes rules 1 and 2 have new Seen lines.
+  - **Next:** merge `lane/s38d`. The data clusters' Phase 3 round is done.
 - **2026-10-27 — `lane/sf2` (spec-writer, no slot, no Ghidra, no harness): the two entries released at the
   `lane/rbd` review.** (1) [skills/missiles § F1](../specs/skills/missiles.md#f-the-packet-at-the-hit-missile_builddamage):
   the mastery taken out of the `[C]` bullet, which now cites both runs (4 118 builds over 33 logs, 0 mismatches; the
