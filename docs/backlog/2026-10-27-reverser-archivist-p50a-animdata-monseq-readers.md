@@ -29,3 +29,8 @@ format and table docs that do not exist yet. Not blocking P1.2 or P1.3; Phase 2'
 4. Please link anim/0001 from the PlrMode, MonMode, ObjMode, MonStats2 (`compositeDeath`, `*mv`), MonStats
    (`SplGetModeChart`, `SplEndGeneric`, `SplEndDeath`, `aidel`), Objects (`FrameCnt`, `Start`, `FrameDelta`, `Sync`)
    and Skills (`seqnum`, `durability`, `interrupt`) column notes when Phase 0 writes the § Timing sections.
+
+*2026-10-27 (architect, P1.1 review):* items 1 and 2 are met by plan 0050 Phase 0 (`lane/p50z`, merged):
+[formats/animdata](../formats/animdata.md), `tools/animdata.py` and [MonSeq](../tables/MonSeq.md), whose layouts agree
+with the code reading here. Items 3 (the PlrType and object-type token tables) and 4 (links from the § Timing column
+notes to anim/0001) remain; not blocking P1.2 or P1.3.

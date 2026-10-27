@@ -14,8 +14,9 @@ values, call-site counts and event kinds below come from `tools/anim_scan.py`; t
 `p50a-rng-machine.txt` `c2a9581f…`, `p50a-rng-modes.txt` `7b68d8a1…`, `p50a-strings.txt` `f50af233…`, and `p50a-commands.txt` `9c2ad116…` with the
 command lines and the tool revisions: `tools/anim_scan.py` `f2825e83…`, `RngCallGraph.java` `33801ca2…`).
 Unit fields are named as in `re/types/game.h` (`struct:Unit+0x44` …); the animation records as in `re/types/anim.h`. Table columns are named as in the table docs; `animdata.d2` and
-`monseq.txt` have no format or table doc yet (plan 0050 Phase 0), so their fields are named from the code here and
-handed to the archivist ([backlog](../../backlog/README.md), § Open questions). 8.8 means frames × 256.
+`monseq.txt` had no format or table doc when this batch was filed, so their fields are named from the code here; plan
+0050 Phase 0 has since written [formats/animdata](../../formats/animdata.md) and [MonSeq](../../tables/MonSeq.md), whose
+names agree (P1.1 review). 8.8 means frames × 256.
 
 ## Answer (summary)
 
@@ -52,7 +53,8 @@ handed to the archivist ([backlog](../../backlog/README.md), § Open questions).
   The player and monster mode starts then call `SUNIT_AnimInit` (sequence or record, rate, `+0x44 = 0`), cancel the
   unit's events 0 and 1 and queue the new mode's (scheduled, every frame, or none). Player mode ends go to neutral
   (town neutral in town), death to dead (17); monster ends go to neutral by a mode command, walk and run directly,
-  knockback to get-hit, S3 to S4, death to dead (12). (fn:UNIT_SetMode@0x00624690, fn:SUNIT_AnimInit@0x005533D0,
+  knockback to get-hit, death to dead (12). The generic S3 record's frame function would go to S4, but its mode queues
+  no event (`schedule` 0, § 10), so in the code read nothing runs it (open question 1). (fn:UNIT_SetMode@0x00624690, fn:SUNIT_AnimInit@0x005533D0,
   fn:sub_005A7C20_MonSetMode@0x005A7C20, fn:sub_00581020_PlayerModeEnd@0x00581020,
   fn:sub_005A8030_MonModeEndGeneric@0x005A8030)
 - [I] **Sequences.** A player sequence (mode 18) uses the image tables `g_PlrSeqTables[Skills seqnum]` (24 entries,
@@ -60,10 +62,11 @@ handed to the archivist ([backlog](../../backlog/README.md), § Open questions).
   MonStats `Sk<k>mode` ordinal of the used skill. A sequence frame is 6 bytes: mode, frame, direction, event. The
   per-frame advance moves `+0x38` by `+0x3C` (wrapping at `+0x34`), counts `+0x48` down by `+0x3C`, and takes the
   frame's mode, frame and event byte; it ends when `+0x48 ≤ 0`. For a player, whose sequence does not
-  advance on the server, `PlrModeSkillFrame` writes the running event's index into `+0x38 >> 8`.
+  advance on the server, `PlrModeSkillFrame` writes the running event's index into `+0x38 >> 8` when a skill is in use.
   (fn:UNIT_SeqInit@0x00621260, fn:UNIT_SeqReadFrame@0x00621210, fn:SEQ_ReadFrame@0x00663410,
   fn:MONSEQ_Load@0x00659C60, data:g_PlrSeqTables@0x007483B8, tbl:Skills.txt:seqnum, tbl:MonStats.txt:Sk1mode)
-- [I] **Draws.** In the 171 functions under the animation machine's 29 roots, the only RNG call is
+- [I] **Draws.** In the 171 functions under the animation machine's 29 roots (three indirect stat-list callbacks
+  unfollowed, § 11), the only RNG call is
   `UNIT_AnimInit`'s object draw `RangeB(unit seed, FrameDelta[mode] >> 3)` when `Sync` is 0, which sets the object's
   rate to `FrameDelta − (FrameDelta >> 4) + draw` (clamped to `[0, 0x7FFF]`). The mode functions reach draws only
   through other subsystems (skills, combat, death drops, AI, paths), plus two of their own: the player interrupt test
@@ -76,8 +79,10 @@ handed to the archivist ([backlog](../../backlog/README.md), § Open questions).
 
 ## Leads used
 
-None. No lead is registered for animation timing; this batch reads code only ("no lead; derived from code"). The
-community cross-check is Phase 1b's, against P1.2 and P1.3.
+None. No lead was registered for animation timing when this batch was filed; it reads code only ("no lead; derived
+from code"), and [anim/leads](leads.md) was not read before filing. The community cross-check is Phase 1b part 2's;
+its rows R1, A3 and A4 (frame advance, start frame) are decided against this finding (plan 0050 log, `lane/p50c`
+review).
 
 Questions routed here by other findings: skills/0001's `Unit+0x38` (§ 5) and its "which frame carries code 1 or 2"
 (§§ 7–8: the frame whose `animdata.d2` or sequence event byte is 1 or 2, at the game frame the schedule gives it);
@@ -188,10 +193,10 @@ Data: `g_MonModeRecords` `0x006E2260` (21 × 16 B), `g_MonModePerFrame` `0x006E2
   (fn:UNIT_AnimTransform@0x00645270, fn:sub_00645190_PlrToMonMode@0x00645190, tbl:States.txt:gfxtype,
   tbl:States.txt:gfxclass, tbl:MonStats2.txt:mDT)
 
-#### 2.1 The Phase 0 data questions (archivist, `lane/p50z`, under review)
+#### 2.1 The Phase 0 data questions (archivist, `lane/p50z`; folded into P1.1's *Done when* at its review)
 
 The archivist's Phase 0 survey (reported by the orchestrator, 2026-10-27; not read on this lane) raised five data
-surprises. The code read here answers them as follows:
+surprises, (a)–(e) of the plan's P1.1 item. The code read here answers them as follows:
 
 - [I] **Duplicate record names.** `ANIMDATA_Find` walks the name's block from its first record and returns the first
   whose two dwords match, so of two same-named records the one earlier in the file wins (both necessarily sit in the
@@ -298,8 +303,8 @@ return 0;
   fn:SEQ_ReadFrame@0x00663410)
 - [I] **`Unit+0x38`** is the sequence position of an advancing (monster) sequence. Its other writer,
   `sub_006212C0_UnitSetSeqPos(unit, n)` (`+0x38 = (+0x38 & 0xFF) + 256·n`), has 32 call sites: 19 client, 12 in the
-  server skill range, and `PlrModeSkillFrame`, which at every player frame event writes the event's index `b`
-  (0x00580482–0x00580488). So for a player, `+0x38 >> 8` is the index of the code-1/2/4 event being run (0 for the
+  server skill range, and `PlrModeSkillFrame`, which at every player frame event of a unit with a used skill writes the event's index
+  `b` (0x00580482–0x00580488; with no used skill it returns 2 first, 0x00580475). So for a player, `+0x38 >> 8` is the index of the code-1/2/4 event being run (0 for the
   first): skills/0001's `anim` 18 delay gate (`+0x38 & 0xFFFFFF00` = 0) means "on the first event", and do 35's parity
   is the event's. This answers skills/0001's open question on `Unit+0x38`. (fn:sub_006212C0_UnitSetSeqPos@0x006212C0,
   fn:sub_00580460_PlrModeSkillFrame@0x00580460, `p50a-anim-scan.txt` `CALLS sub_006212C0_UnitSetSeqPos`)
@@ -316,14 +321,19 @@ return 0;
 - [I] `sub_005414D0_GameRunUnitEvents` runs, in order: missiles (`+0xA0C`, then slot `+0x204`), players (`+0xA04`,
   `+0x004`), monsters (`+0xA08`, `+0x104`), objects (`+0xA10`, `+0x304`), items (`+0xA14`, `+0x404`). A slot list is
   walked from its oldest record and only records whose frame equals the current one run (then are freed); the
-  every-frame list is walked from its newest. This answers skills/0002's "where the missile pass sits": first.
+  every-frame list is walked from its newest. The object lists run through `sub_00541160_ObjEventsRun` (dispatch
+  `0x00586AD0`). This answers skills/0002's "where the missile pass sits": first.
   (0x005414EE–0x00541589, fn:sub_00540F60_PlayerEventsRun@0x00540F60, fn:sub_00541060_MonEventsRun@0x00541060)
 - [I] A record without a callback goes to the type's dispatch: players `g_PlayerEventFuncs[kind](a, b)` (kind 0 →
   `sub_005811D0_PlayerModeFrameEvent`, which calls `g_PlayerModeFrameFuncs[mode](a, b)` and on a return of 2
   `sub_00581020_PlayerModeEnd`; kind 1 → `PlayerModeEnd`); monsters `sub_005A7F80_MonEventDispatch`, which drops
   every kind but 3, 4, 5, 8 and 12 while the monster has state 1 (`freeze`) and is alive, then
-  `g_MonEventFuncs[kind](a, b)` (kind 0 → `sub_005A7BA0_MonModeFrameEvent`: the mode record's frame function, **its
-  return value unused**; kind 1 → `sub_005A7BE0_MonModeEndEvent`: the record's end function). A dropped scheduled
+  `g_MonEventFuncs[kind](a, b)` (kind 0 → `sub_005A7BA0_MonModeFrameEvent`: the mode record's frame function, called
+  with the game and unit only (no code or index), **its return value unused**: passed back through the dispatch to
+  `sub_00541060_MonEventsRun`, which does not test it, 0x005410C4–0x005410C9; kind 1 → `sub_005A7BE0_MonModeEndEvent`:
+  the record's end function). With no mode record or no function in it, both handlers (and `MonSetMode`, 0x005A7DFD)
+  call `0x005A7B30`: clear the used skill and, unless the unit is dead (`sub_005541B0_UnitIsDead`) in a mode other
+  than DT and DD, `MonModeStartNeutral`. A dropped scheduled
   record is still freed, so a frozen monster loses those frame events and its mode end. (fn:sub_00581220_PlayerEventDispatch@0x00581220,
   fn:sub_005A7F80_MonEventDispatch@0x005A7F80, data:g_PlayerEventFuncs@0x006E1810, data:g_MonEventFuncs@0x006E2490)
 
@@ -468,7 +478,7 @@ for (; f <= (unit->animFrame >> 8); f++) take(f);
 | 3 | GH | `0x005A7580`: not from 0/12; `MonModeAllowed(3)` | `0x005A6DE0` | generic | 1 |
 | 4, 5, 7, 8, 9 | A1, A2, SC, S1, S2 | `MonModeStartSkill` | `MonAttackFrame` | generic | 1 |
 | 6 | BL | `0x005A77C0` | `0x005A6DE0` | generic | 1 |
-| 10 | S3 | `0x005A7490` | `0x005A74A0`: step, advance; at the end mode 11 | (`ret`) | 0 |
+| 10 | S3 | `0x005A7490` | `0x005A74A0`: step, advance; at the end mode 11 (no event runs it: `schedule` 0) | (`ret`) | 0 |
 | 11 | S4 | `0x005A74E0`: AI event at `T + 15` | `0x005A6DE0` | — | 0 |
 | 12 | DD | `0x005A7390`: cancel events 8, 9 | `0x005A6DE0` | — | 0 |
 | 13 | KB | `0x005A77D0`: `MonModeAllowed(3)` and `(13)`, path type 8, plan | `0x005A8630`: step, advance; at the end `MonKnockbackEnd` | `MonKnockbackEnd` | 1 |
@@ -520,7 +530,7 @@ for (; f <= (unit->animFrame >> 8); f++) take(f);
 - [I] **Mode functions.** Over the player and monster mode tables (39 roots), stopping also at the skill, combat,
   path and AI entries (`SKILLS_StartUsedSkill`, `SKILLS_DoUsedSkill`, `MON_MeleeHit`, `COMBAT_DeliverQueued`,
   `MonAttackStats`, `PathPlan`, `MonMovePlan`, `UnitMoveStep`, `0x005B1740`, the mode commands, `UnitInteract`): 2 355
-  functions, 128 with draws, reached through the death paths (`PlayerDeath`'s item handling, `PlayerDeathModeEnd`'s
+  functions, 128 with draws, 118 indirect calls unfollowed (`p50a-rng-modes.txt` `summary`), reached through the death paths (`PlayerDeath`'s item handling, `PlayerDeathModeEnd`'s
   corpse and the portal close that updates rooms, `MonDeathEvent`'s drops through `TC_ResolveDrops` and its area
   damage) and the walk frame's state trails (`MissileCreate`). Of the mode functions' own calls:
   - `sub_0057EEC0_PlayerModeAllowed` (from `PlayerModeEnd` and every unforced mode command): for a used skill with Skills
@@ -560,8 +570,9 @@ for (; f <= (unit->animFrame >> 8); f++) take(f);
   tbl:Objects.txt:FrameCnt0, tbl:Objects.txt:FrameDelta0, tbl:Objects.txt:Start0, tbl:Objects.txt:Sync,
   tbl:Missiles.txt:animrate, tbl:Missiles.txt:AnimLen, tbl:Skills.txt:seqnum, tbl:Skills.txt:interrupt,
   tbl:Skills.txt:durability, tbl:States.txt:gfxtype, tbl:States.txt:gfxclass, tbl:Weapons.txt:wclass, tbl:Weapons.txt:2handedwclass; the PlrMode,
-  MonMode and ObjMode tokens; `animdata.d2` (no format doc: `+0x00` name, `+0x08` frames, `+0x0C` speed, `+0x10`
-  events); `monseq.txt` (no table doc: `sequence`, `mode`, `frame`, `dir`, `event`); the PlrType and object-type
+  MonMode and ObjMode tokens; `animdata.d2` ([formats/animdata](../../formats/animdata.md): `+0x00` name, `+0x08` frames,
+  `+0x0C` speed, `+0x10` events); `monseq.txt` ([MonSeq](../../tables/MonSeq.md): `sequence`, `mode`, `frame`, `dir`,
+  `event`); the PlrType and object-type
   tokens (`0x0065B480`, `0x0065B570`; no table doc).
 - Unit: struct:Unit+0x10, struct:Unit+0x2C, struct:Unit+0x30 … struct:Unit+0x50 (§ 1), struct:Unit+0xB0,
   struct:Unit+0xC4 (bits 0, 6, 14, 19), struct:Unit+0xC8 (bit 3), struct:Unit+0xDC; game: struct:Game+0xA8, struct:Game+0xB8.
@@ -575,15 +586,18 @@ for (; f <= (unit->animFrame >> 8); f++) take(f);
 
 ## Open questions
 
-- [L] What ends an every-frame monster attack or skill mode (`*mv` set, `MonAttackFrame`), given the ignored 2; the AI
-  command (phase (5)) is the likely path. Phase 2 can log it.
+- [L] What ends an every-frame monster attack or skill mode (`*mv` set, `MonAttackFrame`), given the ignored 2, and
+  what ends a generic S3 (row 10, `schedule` 0: `MonSetMode` queues no event, so its frame function `0x005A74A0`
+  and its S4 transition are run by nothing read; the class overrides for S3, rows 7 and 17, are scheduled); the AI
+  command (phase (5), plan 0052) is the likely path. Phase 2 logs it (plan 0050 P1.1 review, ruling (b)).
 - [L] Whether the `PlayerModeEnd` knockback → get-hit branch is reached at all (no event 1 is queued for mode 19, and
   the move frame sets neutral first); other callers of `PlayerModeEnd` than `0x005811D0` and the event table: none
   by the call scan.
 - [L] The intra-frame order of a unit's every-frame event against its slot events when both exist (only the list order
   of § 6 is read).
-- [L] The format and table docs: `animdata.d2` (layout above, the 256-block hash, the fallback) and `monseq`
-  (archivist, plan 0050 Phase 0; backlog entry filed). The PlrType and object-type token tables have no doc either.
+- ~~The format and table docs for `animdata.d2` and `monseq`.~~ *2026-10-27 (P1.1 review):* written by plan 0050
+  Phase 0 ([formats/animdata](../../formats/animdata.md), [MonSeq](../../tables/MonSeq.md)).
+- [L] The PlrType and object-type token tables have no doc (archivist entry, items 3–4).
 - [L] `UNIT_AnimSetRate`'s branches (attack, cast, block with state 101, get-hit, walk and run with stat 67, the
   `+0x3C` sequence rate): P1.2.
 - [L] `sub_0064C040` (called by `UNIT_SetMode`) and `0x0057C980` (by `SUNIT_SetMode`) are not read.

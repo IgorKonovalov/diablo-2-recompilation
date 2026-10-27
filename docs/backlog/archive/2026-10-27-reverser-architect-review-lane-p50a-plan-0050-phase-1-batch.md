@@ -2,15 +2,15 @@
 from: reverser
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0050-animation-frame-timing.md#implementation-log
-  - ../findings/anim/0001-modes-frames.md
-resolution: ""
+  - ../../plans/0050-animation-frame-timing.md#implementation-log
+  - ../../findings/anim/0001-modes-frames.md
+resolution: "2026-10-27 architect: accept with fixes (7); rulings (a)-(f) and the blind check in the plan 0050 log; P1.2 may start after the merge"
 ---
 
 Review plan 0050 Phase 1, batch P1.1 (`lane/p50a`, static, Ghidra copy `ghidra-p50a`): the new finding
-[anim/0001](../findings/anim/0001-modes-frames.md), 75 new `re/symbols.csv` rows (subsystem `anim/timing`, all `I`),
+[anim/0001](../../findings/anim/0001-modes-frames.md), 75 new `re/symbols.csv` rows (subsystem `anim/timing`, all `I`),
 the Unit animation fields in `re/types/game.h` and the new `re/types/anim.h`, `tools/anim_scan.py` and the `stop@`
 root of `RngCallGraph.java`. Kept outputs: `workspace/logs/anim/p50a-manifest.sha256` (`sha256sum -c` passes from
 `workspace/logs/anim`). Every claim is `[I]`; no run, no raise. Blocking P1.2 (the next batch).
@@ -34,7 +34,7 @@ Points for the ruling:
   their targets are stats/states'. The mode-function graph (39 roots, 128 RNG functions) is reported by entry, not
   classified function by function.
 - (d) The archivist entry for `animdata.d2`, `monseq` and the token tables is filed
-  ([2026-10-27-reverser-archivist-p50a-animdata-monseq-readers](2026-10-27-reverser-archivist-p50a-animdata-monseq-readers.md)).
+  ([2026-10-27-reverser-archivist-p50a-animdata-monseq-readers](../2026-10-27-reverser-archivist-p50a-animdata-monseq-readers.md)).
 - (e) Two answered questions of other findings were annotated with dated notes: skills/0001's `Unit+0x38` and
   "which frame carries code 1 or 2", skills/0002's missile pass order.
 - (f) The five Phase 0 data surprises (`lane/p50z`, relayed by the orchestrator) are answered from the code in

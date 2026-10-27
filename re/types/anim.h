@@ -41,12 +41,12 @@ typedef struct SeqIndex {
 /* The monster mode record, 16 bytes (0x006E2260: 16 by mode, then 5 class-override rows). */
 typedef struct MonModeRec {
     int (*pfnStart)(void);        /* +0x0 ECX game, EDX the mode command; 0 refuses the mode */
-    int (*pfnFrame)(void);        /* +0x4 unit event 0; 2 ends the mode */
+    int (*pfnFrame)(void);        /* +0x4 unit event 0 (ECX game, EDX unit); its return is not read (anim/0001 § 6) */
     void (*pfnEnd)(void);         /* +0x8 unit event 1 */
     uint32_t schedule;            /* +0xC 0: MonSetMode queues no mode event; else every-frame or scheduled */
 } MonModeRec;
 
-/* Per monster mode (0x006E23D0, 12 bytes): does the mode run every frame (MON_ModeEveryFrame 0x005A6B10)? */
+/* Per monster mode (0x006E23D0, 12 bytes): does the mode run every frame (sub_005A6B10_MonModeEveryFrame)? */
 typedef struct MonModePerFrame {
     uint32_t always;              /* +0x0 every frame */
     uint32_t never;               /* +0x4 scheduled */

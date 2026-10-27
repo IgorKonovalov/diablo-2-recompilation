@@ -75,7 +75,7 @@ typedef struct Unit { /* any unit; type-specific data at +0x14 */
     uint8_t  _pad00B4[0x10];
     uint32_t flagsC4;             /* +0x0C4 bit 17 skips the death drop (items/0001 §3); byte +0xC6 bit 0 = dead flag (items/0001 §6);
                                      bit 0 set by UNIT_SetMode; bit 14 (0x4000) the sequence frame's mode changed (anim/0001 § 5);
-                                     bit 19 (0x80000) set by the monster mode command (anim/0001 § 4) */
+                                     bit 19 (0x80000) set by the monster mode command (anim/0001 § 10) */
     uint32_t flagsC8;             /* +0x0C8 bit 3: the unit may have a display-transform state (UNIT_AnimTransform; anim/0001 § 2) */
     uint8_t  _pad00CC[0x10];
     struct UnitEvent * pEventChain; /* +0x0DC the unit's queued events, linked by UnitEvent +0x24 (re/types/anim.h; anim/0001 § 6) */

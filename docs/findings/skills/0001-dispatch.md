@@ -819,7 +819,7 @@ event's own line. Raises of § 7 and § 15, each split where the run leaves a re
   the refusal never fires from `SKILLS_StartUsedSkill` ([skills/0003 § 12](0003-handlers.md#12-routed-questions-from-p11)).
 - ~~What `Unit+0x38` holds (the sequence-delay gate of § 6 and the dual-claw parity of `srvdofunc` 35).~~
   *2026-10-27 (plan 0050 P1.1):* for a player, `PlrModeSkillFrame` writes the running frame event's index into its
-  integer part at every frame event; the sequence position of an advancing sequence otherwise
+  integer part at every frame event while a skill is in use; the sequence position of an advancing sequence otherwise
   ([anim/0001 § 5](../anim/0001-modes-frames.md#5-sequences)).
 - [L] *2026-10-20 (Phase 1b):* the `ItemTarget` helpers' draws. 2 (`0x005FD850`) steps the seed at `+0x20` of
   the unit it is given 2 to 20 times; which unit that is (caster or target) is unfollowed. Whether 3 (`0x005FD9C0`,
