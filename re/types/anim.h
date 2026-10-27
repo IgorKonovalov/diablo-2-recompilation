@@ -8,7 +8,7 @@
 typedef struct AnimDataRec {
     char     cofName[8];          /* +0x00 token + mode token + weapon class, compared as two dwords after uppercasing */
     uint32_t framesPerDir;        /* +0x08 -> Unit.animLength = framesPerDir << 8 */
-    uint32_t speed;               /* +0x0C the base rate the rate function scales (P1.2) */
+    uint32_t speed;               /* +0x0C the base rate UNIT_AnimSetRate scales (anim/0002 § 3) */
     uint8_t  events[0x90];        /* +0x10 event byte per frame; 1..4 are acted on, frames >= 0x90 are never read */
 } AnimDataRec;
 
@@ -70,3 +70,23 @@ typedef struct UnitEvent {
     struct UnitEvent * pUnitPrev; /* +0x28 */
     void    (*pfnCallback)(void); /* +0x2C 0: the unit type's dispatch */
 } UnitEvent;
+
+/* The rate bonus table g_AnimRateBonus (0x006E8E24, 6 entries), read by sub_00621740_AnimRateBonus (EAX the entry):
+ * B = (type == 1 && s != 0) ? k*s/(k+s) (imul, idiv) : s, s the unit's full stat. Entries 0..4: (120, 93 IAS),
+ * (120, 99 FHR), (120, 105 FCR), (120, 102 FBR), (150, 96 FRW); 5: (1, 0), not used by the rate. Evidence:
+ * docs/findings/anim/0002-rates.md § 2. */
+typedef struct AnimRateBonus {
+    int32_t  type;                /* +0x0 1: diminishing */
+    int32_t  k;                   /* +0x4 */
+    int32_t  stat;                /* +0x8 ItemStatCost row */
+} AnimRateBonus;
+
+/* Per mode, the branch UNIT_AnimSetRate takes (g_PlrModeRateClass 0x006E8A00, 20 modes; g_MonModeRateClass
+ * 0x006E8B90, monster class < 410; g_MonXModeRateClass 0x006E8CD0, class >= 410; 16 modes each). anim/0002 § 3. */
+typedef struct ModeRateClass {
+    uint32_t skillMove;           /* +0x00 moving when the used skill's entry flags have bit 0 and not bit 12 */
+    uint32_t move;                /* +0x04 moving */
+    uint32_t skillAttack;         /* +0x08 attack when the used skill has Skills UseAttackRate (+0x006 bit 3) */
+    uint32_t attack;              /* +0x0C attack */
+    uint32_t fixed;               /* +0x10 the record's speed unscaled */
+} ModeRateClass;

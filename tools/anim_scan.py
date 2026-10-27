@@ -25,7 +25,8 @@ Prints addresses and the binary's own table values only, no excel data. One `SCA
           and PSEQF <seqnum> <col> <i> mode frame dir event for each 6-byte frame record.
   calls   `call 0x<target>` / `jmp 0x<target>` for each target in TARGETS, with the enclosing function (the nearest
           preceding padding-delimited start).
-  rows    OVR <class> chart=<0|1> for the classes MonModeRecord's switch names (MonStats `SplGetModeChart`);
+  rows    OVR <class> <Id> chart=<0|1> for the classes MonModeRecord's switch names (MonStats `SplGetModeChart`, the
+          .txt without its `Expansion` row), and OVRBIN <class> the monstats.bin record's +0x1A5 byte;
           SEQNUM: the largest Skills `seqnum` of a row with a `charclass`, and the count of rows without one whose
           `seqnum` exceeds 23 (the last g_PlrSeqTables index). Flags and counts only.
   queue   every `call 0x5417d0` in the scheduler range 0x005539B0-0x00553F20 with the immediate pushed as its first
@@ -219,9 +220,19 @@ def read_txt(path):
 
 
 def rows(xdir):
-    mon = read_txt(xdir + "/monstats.txt")
+    # the `Expansion` marker row is not a record (the .bin has 734 rows); dropping it keeps the row index = the class
+    mon = [r for r in read_txt(xdir + "/monstats.txt") if r.get("Id") != "Expansion"]
     for c in OVERRIDE_CLASSES:
-        print("OVR", c, "chart=%d" % (1 if mon[c].get("SplGetModeChart", "").strip() else 0))
+        print("OVR", c, mon[c].get("Id", "?"), "chart=%d" % (1 if mon[c].get("SplGetModeChart", "").strip() else 0))
+    binp = xdir + "/monstats.bin"                       # the record the game reads: u32 count, 424-byte records
+    try:
+        d = open(binp, "rb").read()
+    except OSError:
+        d = None
+    if d is not None:
+        n = struct.unpack_from("<I", d, 0)[0]
+        for c in OVERRIDE_CLASSES:
+            print("OVRBIN", c, "count=%d" % n, "b1A5=%d" % d[4 + 424 * c + 0x1A5])
     sk = read_txt(xdir + "/skills.txt")
     withc = [int(r["seqnum"]) for r in sk if r.get("seqnum", "").strip() and r.get("charclass", "").strip()]
     over = [r for r in sk if r.get("seqnum", "").strip() and not r.get("charclass", "").strip() and int(r["seqnum"]) > 23]
