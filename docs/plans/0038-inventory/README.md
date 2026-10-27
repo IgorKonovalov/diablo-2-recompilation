@@ -1061,6 +1061,41 @@ rogue mismatch goes to its own reverser entry
 awaiting a batch 0, blocked 415** (d-none 289, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2,
 raised 17: 1 526.**
 
+**H1b (filed 2026-10-27, reverser, `lane/h1b`): 48 statements of save/d2s and hirelings.** run:2026-10-27-sweep-d2s-play,
+13 kept sessions on slot 1 (expansion; Normal, Hell, one TCP/IP host), tool-built characters and two game-written
+samples, logger `tools/gdb/d2s-h1b.gdb` in two revisions (the record gives the difference; rw-r2 was rerun under
+revision 2 at the resume for the write-side runeword check). `sweep_h1b.py check` on the 13 logs: **2 798 comparisons,
+0 failing** (`check/sweep-h1b-check-r2.txt`, manifest `h1b-manifest-r2.sha256`). The evidence is in the "Plan 0038
+batch H1b" sections of [save/0001](../../findings/save/0001-d2s-io.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play)
+and [hirelings/0001](../../findings/hirelings/0001-hirelings.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play). The
+batch is 46 inventory statements (save-d2s 45, hirelings 1) and rows 117 and 124, moved c → b into H1b at the S1a
+review.
+
+- **Raised (25):** save-d2s 4, 21, 25, 33 (2), 34 (2), 35, 37, 39 (2), 40, 41, 42, 43, 55, 56, 57, 108, 111, 112, 113,
+  125, 127; hirelings 24.
+- **Raised in part (14):** save-d2s 2 (the no-callback half), 6 (the death caller 0x0057FD88 and no single-player
+  autosave; `0x0052E2A0` not reached), 18 (the file and client-buffer branches; no callback), 31 (item refs 0 only), 48
+  (the name reset past `+0x116`: the builder refuses it), 60 (negative gold), 72 (one corpse; count ≥ 2 and the first
+  u32), 73 (no golem item), 83 (356 only; gold and realm), 88 (`+0x82` only; `0xFFFF`), 102 (no low-quality item), 115
+  (the copy; no socketed copy), 116 (no pickup of an item with the bit), 118 (no negative value: arithmetic not
+  separated).
+- **Shortfall (7):** save-d2s 1, 3, 19 (no host callback; the shutdown save found no game), 110 (the watchpoint logged
+  no hit: no working control), 114 (no gold pile), 117 (no separating case), 124 (the builder refuses a lone follower;
+  archivist entry).
+- **Proposed d-none (2):** save-d2s 77 and 78, by their own route ("else reclass d-none"): no item record in mode 3 or
+  5 in any write or read of the run.
+- **S1a pieces met** (the rows stay S1a): 20, 24, 32; 123, 130 and 138 in part (group 52). Not met: 71, 86, 103, 128.
+
+| Row | Was | Now (proposed) | Why |
+|---|---|---|---|
+| save-d2s 77 (modes 3/5: world position) | b, H1b | **d-none** | No save path of the run holds a mode 3/5 item record, the corpse session included; the row's route names d-none for that case. The statement stays `[I]` as a reading. |
+| save-d2s 78 (modes 3/5: no body and no store) | b, H1b | **d-none** | As row 77. |
+
+Net effect on the totals (proposed): harness −2, d-none +2. Taken against `main` after merging it into the lane
+(`e88e8e2`; the `lane/h5d` review's totals above are the latest in this section, and no inventory change has landed on
+`main` since): **static 567, harness 523, c-emu awaiting a batch 0, blocked 417** (d-none 291, d-edit 73, d-sim 28,
+d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is

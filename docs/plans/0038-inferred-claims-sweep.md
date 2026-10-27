@@ -3641,3 +3641,28 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     § 2.6 H1b block with totals against `main`, symbols (rule 14: `D2S_WriteMercHeader`, `D2S_ReadMercHeader`,
     `D2S_LoadFinish`, `D2S_WriteCorpses`, `D2S_ReadCorpses`, `D2S_ReadMercItems` I → C), the archivist entry for a
     lone-follower builder key, the review request and the metrics row ("—").
+- **2026-10-27 — H1b (`d2s-play`) filed (reverser, `lane/h1b`, harness slot 1; resume after the rotation).** Merged
+  `main` `e88e8e2` first (the plan log conflicted, both sides kept; `backlog.py archive` a no-op).
+  - **Revision 1, decided:** of the eight revision-1 logs, only rw lost a check a row needs (the write-side runeword
+    field = `Runes +0x82`, gated on `full` in `sweep_h1b.py`); the property groups of the others are met on the four
+    revision-2 logs, and no in-part remainder depends on the revision. So rw was rerun under revision 2 (rw-r2, seed
+    27109, about 5 min, slot 1 stopped and its saves restored after), and revision 1 is recorded by its diff in the run
+    record; the other seven are not rerun. Check re-run on the 13 logs: **2 798 comparisons, 0 failing**
+    (`check/sweep-h1b-check-r2.txt` `f44b92e0…`, manifest `h1b-manifest-r2.sha256` `f0e88782…`; the first check and
+    its manifest kept as they were).
+  - **Recount:** the rotation note's "three drops" is five (ids 27–31, `check` B13S/B13C 5); `AutosaveTick`'s counts are
+    the logger's sample (call 1 and every 500th), up to 6 500. The ledger the caller relayed (28 / 16 / 7 / 2) did not
+    sum to 48; the row list recounts to **raised 25, raised in part 14, shortfall 7, proposed d-none 2: 48** (save-d2s
+    45 + hirelings 1 + rows 117, 124).
+  - **Filed:** run:2026-10-27-sweep-d2s-play in `findings/save/experiments.md`; "Plan 0038 batch H1b" sections in
+    save/0001 and hirelings/0001 (hirelings § F and the summary's header sentence now `[C]`; two save/0001 open
+    questions annotated); inventory § 2.6 H1b block, totals against `main`: **static 567, harness 523, c-emu 0, blocked
+    417** (d-none 291), **deferred 2, raised 17: 1 526**; symbols I → C (rule 14): `D2S_WriteMercHeader`,
+    `D2S_ReadMercHeader`, `D2S_LoadFinish`, `D2S_WriteCorpses`, `D2S_ReadCorpses`, `D2S_ReadMercItems`.
+  - **Backlog:** archivist entry
+    [2026-10-27-reverser-archivist-h1b-d2s-build-test-state-keys-for-a](../backlog/2026-10-27-reverser-archivist-h1b-d2s-build-test-state-keys-for-a.md)
+    (lone follower, merc name past range); spec-writer entry
+    [2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises](../backlog/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md)
+    (held for the review); review request
+    [2026-10-27-reverser-architect-review-lane-h1b-plan-0038-batch-h1b](../backlog/2026-10-27-reverser-architect-review-lane-h1b-plan-0038-batch-h1b.md).
+  - **Next:** the `lane/h1b` review.
