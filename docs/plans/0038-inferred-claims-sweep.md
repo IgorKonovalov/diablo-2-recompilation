@@ -3705,5 +3705,57 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (lone follower, merc name past range); spec-writer entry
     [2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises](../backlog/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md)
     (held for the review); review request
-    [2026-10-27-reverser-architect-review-lane-h1b-plan-0038-batch-h1b](../backlog/2026-10-27-reverser-architect-review-lane-h1b-plan-0038-batch-h1b.md).
+    [2026-10-27-reverser-architect-review-lane-h1b-plan-0038-batch-h1b](../backlog/archive/2026-10-27-reverser-architect-review-lane-h1b-plan-0038-batch-h1b.md).
   - **Next:** the `lane/h1b` review.
+- **2026-10-27 — `lane/h1b` review (architect): accept with fixes (6).** `main` `3c90008` was merged into the lane
+  first (`1fdab87`; the plan log and the ledger conflicted, both sides were kept; `backlog.py archive` was a no-op).
+  Re-checked with no harness and no Ghidra. `h1b-manifest.sha256` and `h1b-manifest-r2.sha256` pass from
+  `workspace/logs/h1b`. `h1b-manifest-dev.sha256` passes from `workspace/logs/h1b/dev` only (fix 4). The check rerun
+  under `systemd-run --user --scope -p MemoryMax=4G` (`sweep_h1b.py`, which runs `d2sio.py check` on each log) gives
+  **2 798 comparisons, 0 failing**, byte-identical to `check/sweep-h1b-check-r2.txt` (`f44b92e0…`). objdump confirms
+  the anchors: the 13 logged return addresses (0x005301E9, 0x00539809, 0x005344E0, 0x0053447A, 0x00534563,
+  0x0052CA5F, 0x0052C940, 0x0057FD88, 0x00558EA8, 0x0055335C, 0x0053B049, 0x0044F2FE, 0x0044D052) each follow a call
+  to the named function, and the reader calls are at 0x0056B313/0x0056B32D/0x0056B343. The ledger recounts to the
+  inventory: 42 H1b rows of 45 statements, plus rows 117 and 124 and hirelings 24, give 48 = 25 + 14 + 7 + 2.
+  - **Fixes:** (1) row 4's chain skipped a frame on each path: 0x005344E0 is inside `sub_005344B0_PlayerLoadFromFile`
+    and 0x00534563 inside `sub_00534520_PlayerLoadFromClient`, each called once from `PlayerLoad` (0x005345DB,
+    0x005345FB). The logged returns stay `[C]`; the two links are `[I]`. (2) Row 2's `[C]` is scoped to the outcome.
+    `AutosaveTick` first tests `0x00730FFC` (0x0052D353), then the per-client time tests, then the callback
+    (0x0052D3D9), and the logger breaks only at the entry, so the gate that stopped the save is not shown. (3)
+    `D2S_WriteMercItems` was raised I → C (rule 14, on the same evidence as `D2S_ReadMercItems`, row 73), which makes
+    seven symbols in all. (4) The record states the dev manifest's directory. (5) The record names every save copy
+    the reruns overwrote (rt-r2, qr-r2, qrh-r2, rw-r2 and drop 27111 each wrote under the session name without the
+    suffix). (6) Row 1's "game list already empty" is a reading, because the `SHUT` line logs only the return and the
+    callback.
+  - **Rulings:** (a) the seven revision-1 logs are accepted as they stand. Revision 1 drops only `full` and `WSKL`, and
+    every check those gate (stats 7/9, 326, 52/53, 356, the runeword write, the swap source) is met on revision-2
+    logs. No remainder of a row raised in part is met by an item that only a revision-1 log holds. (b) The rw-r2
+    overwrite is accepted: no check and no claim reads a copy. The runner should key copies on the log name (reverser
+    entry item 3; reverser review-fixes rule 6, Seen). (c) The single-player death save at 0x0057FD88 does not
+    contradict "no single-player autosave". It is an event save from the death path the spec already lists, and with
+    callback 0 it is unconditional (0x0057FD4B–0x0057FD62). The spec's "Nothing was written during play in the runs"
+    holds for run:2026-10-12-d2s-io only (spec-writer entry). (d) Rows 1, 3 and 19 stay **shortfalls, not d-2c**: a
+    one-client TCP/IP host counts as one client (§ 3's six-row bullet is settled), and d-2c needs a second client to be
+    what reaches the code. For rows 3 and 19, the only writer of the host callback `0x00883D50`, 0x0052C0E0, has no
+    call, jump or absolute or RVA pointer in the image (objdump). If Ghidra xrefs agree, rows 3 and 19 and the callback
+    halves of rows 2 and 18 become d-none
+    ([2026-10-27-architect-reverser-h1b-review-host-callback-setter-and-d2sio-model](../backlog/2026-10-27-architect-reverser-h1b-review-host-callback-setter-and-d2sio-model.md)).
+    (e) Row 110's shortfall is right. The watchpoint armed on drop 27's flags missed a clear that `B13C` logged, so it
+    was not live, and no absence is claimed under it. Rows 111–113 rest on breakpoints, not on the watch. (f) Row 39's
+    tightened read half stands. The tool-built dead mercenary has no source of deadness but header bit 16, and each
+    read of it gave a mode-12 mercenary with the dead test 1; hell-r3's read 1, with the bit clear, gave a living
+    Rogue. (g) Stat 30 `nextexp` is right: it is the experience.txt row whose `Level` is L, which is index L + 1
+    counting `MaxLvl`, because `EXP_GetThreshold` reads dword `class + 8·L + 8` (0x00611814). Level 1 → 500 rules out L
+    + 1, and dead's 750 000 000 rules out the experience. The spec-writer entry asks for unambiguous wording. (h) Rows
+    77 and 78 move to **d-none** by their own route, and row 56's raise stands (`D2S_ReadMercHeader`'s `eax` is passed
+    untested, 0x0056B318–0x0056B32A, into the `D2S_ReadMercItems` call at 0x0056B32D). (i) The d2sio mismatches are explained. A d2sio model fix is filed (reverser entry item 2), not
+    blocking. (j) **H1a may start**: the family rule H1b → H1a is met.
+  - **Totals** (against `main` `3c90008`, no inventory change since `e88e8e2`): **static 567, harness 523, c-emu 0,
+    blocked 417** (d-none 291, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526**,
+    inventory § 2.6 H1b block.
+  - **Ledger:** the resume row's usage was filled from the orchestrator (212 206 tokens, 100 tools, 22 min), with the
+    verdict and 6 fixes: overclaim 2, omission 2, under-claim 1, other 1. The review row was added with usage "—".
+  - **Backlog:** the review request was closed (archive). The spec-writer entry
+    [2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises](../backlog/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md)
+    was **released**, with four points added. The reverser entry above was filed. The archivist entry is unchanged.
+  - **Next:** merge `lane/h1b`; then H1a (`d2s-load`).

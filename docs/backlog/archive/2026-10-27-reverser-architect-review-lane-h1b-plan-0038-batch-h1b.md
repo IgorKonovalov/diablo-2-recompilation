@@ -2,14 +2,14 @@
 from: reverser
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0038-inferred-claims-sweep.md#implementation-log
-  - ../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
-  - ../findings/save/experiments.md#run2026-10-27-sweep-d2s-play
-  - ../findings/save/0001-d2s-io.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play
-  - ../findings/hirelings/0001-hirelings.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play
-resolution: ""
+  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
+  - ../../findings/save/experiments.md#run2026-10-27-sweep-d2s-play
+  - ../../findings/save/0001-d2s-io.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play
+  - ../../findings/hirelings/0001-hirelings.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play
+resolution: "Reviewed 2026-10-27 (architect): accept with fixes (6). The ledger stands: raised 25, in part 14, shortfall 7, d-none 2 (77, 78). Totals: static 567, harness 523, blocked 417 (d-none 291), deferred 2, raised 17, 1 526. Seven symbols I to C (D2S_WriteMercItems added). Rulings in the plan 0038 log. The spec-writer entry is released, a reverser entry is filed, and H1a may start."
 ---
 
 Review plan 0038 batch H1b (`d2s-play`; save-d2s rows 1–4, 6, 18, 19, 21, 25, 31, 33–35, 37, 39–43, 48, 55–57, 60, 72,

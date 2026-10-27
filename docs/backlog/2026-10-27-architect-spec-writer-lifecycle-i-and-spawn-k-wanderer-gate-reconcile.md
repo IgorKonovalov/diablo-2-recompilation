@@ -6,7 +6,7 @@ status: open
 context:
   - ../specs/drlg/lifecycle.md#i-the-wanderer-tick
   - ../specs/monsters/spawn.md#k-wanderers-the-tick
-  - ../plans/0038-inferred-claims-sweep.md#log
+  - ../plans/0038-inferred-claims-sweep.md#implementation-log
 resolution: ""
 ---
 

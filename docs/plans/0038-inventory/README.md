@@ -1096,6 +1096,25 @@ Net effect on the totals (proposed): harness −2, d-none +2. Taken against `mai
 `main` since): **static 567, harness 523, c-emu awaiting a batch 0, blocked 417** (d-none 291, d-edit 73, d-sim 28,
 d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
 
+**`lane/h1b` review (2026-10-27, architect): accept with fixes (6).** The ledger stands as filed: **raised 25, raised in
+part 14, shortfall 7, d-none 2** (rows 77 and 78 moved; no other class move). Recounted against `main` after merging it
+into the lane (`3c90008`; no inventory change on `main` since `e88e8e2`): **static 567, harness 523, c-emu awaiting a
+batch 0, blocked 417** (d-none 291, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17:
+1 526.** Fixes: (1) row 4's chain names the frames between `PlayerLoad` and the logged returns,
+`sub_005344B0_PlayerLoadFromFile` and `sub_00534520_PlayerLoadFromClient` (each with one call site, 0x005345DB and
+0x005345FB); (2) row 2's `[C]` is scoped to the outcome: the run does not show which of `AutosaveTick`'s tests stopped
+the save (the entry test of `0x00730FFC` at 0x0052D353, the time tests, or the callback test at 0x0052D3D9); (3)
+`D2S_WriteMercItems` raised I → C with `D2S_ReadMercItems` (rule 14, row 73); (4) the record's dev manifest is
+checked from `workspace/logs/h1b/dev`, not `workspace/logs/h1b`; (5) the record names every overwritten save copy
+(rt-r2, qr-r2, qrh-r2, rw-r2 and drop 27111, under the session names without the suffix); (6) row 1's "game list
+already empty" is a reading, since the `SHUT` line does not log the list. Rulings: the seven revision-1 logs are
+accepted as they stand; the death save is an event save, so the spec's caller list is not contradicted; rows 1, 3 and
+19 stay shortfalls, not d-2c, and rows 3 and 19 (with the callback halves of 2 and 18) are candidates for d-none, since
+the only writer of the host callback, 0x0052C0E0, has no call site or pointer in the image (reverser entry); row 110's
+shortfall is right, because a watchpoint that missed a logged clear is no control; row 39's read half and row 56's
+raise stand; stat 30 = experience.txt row L (index L + 1 counting `MaxLvl`; `EXP_GetThreshold` indexes `class + 8L +
+8`, 0x00611814).
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
@@ -1104,7 +1123,8 @@ d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
   - Partial rows add a few more halves: the trade part of sockets 22, the party half of player/creation 33, the
     n > 1 part of quest-drops 25.
   - Six save/d2s rows (1–3, 6, 18, 19) assume that a one-client TCP/IP host counts as one client. If the review
-    rules otherwise, they become d-2c.
+    rules otherwise, they become d-2c. *(2026-10-27, `lane/h1b` review: a one-client TCP/IP host counts as one client. None of the six becomes
+    d-2c. Rows 1, 3 and 19 are H1b shortfalls; rows 3 and 19 are candidates for d-none, § 2.6 H1b block.)*
 - **d-owner, 8 statements** outside the plan 0032 addendum:
   - ubermephisto, Baal Subject 2 and `poisonhit` (monsters/special and monsters/stats, 5);
   - the kill-experience clamp and the `ExpRatio` overflow (player/creation, 2);

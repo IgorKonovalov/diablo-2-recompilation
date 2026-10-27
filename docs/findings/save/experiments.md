@@ -227,7 +227,9 @@
   `workspace/logs/h1b/check/sweep-h1b-check-r2.txt` (`f44b92e0…`). Manifests, `sha256sum -c` from `workspace/logs/h1b`:
   `h1b-manifest-r2.sha256` (`f0e88782…`: the 13 kept logs, the check output, the seven input saves) supersedes
   `h1b-manifest.sha256` (`18f92562…`: the first 12 logs and `check/sweep-h1b-check.txt`, 2 502 comparisons, the check
-  before rw-r2), kept as it was; `h1b-manifest-dev.sha256` (`122aca67…`: `dev/`). No log has `internal-error:`.
+  before rw-r2), kept as it was; `h1b-manifest-dev.sha256` (`122aca67…`: the four logs in `dev/`, listed without the
+  directory, so it is checked **from `workspace/logs/h1b/dev`**: `cd dev && sha256sum -c ../h1b-manifest-dev.sha256`;
+  `lane/h1b` review fix). No log has `internal-error:`.
 
   | Session | Seed | Save | Logger rev. | What was done | Lines |
   |---|---|---|---|---|---|
@@ -246,7 +248,11 @@
   see below), hell and hell-r2 (no death: the pilot stood, then stopped at the 1-point life orb), drop 27110
   (waypoint row 1 is the town). rw-r2 was run at the resume (2026-10-27, the same slot and tag) because the revision-1
   rw log skips the write-side runeword check; its `keep` steps overwrote the rw session's copies under
-  `workspace/runtime/h1b-chars/h1b-rw/` (not in a manifest; the logs carry the buffers).
+  `workspace/runtime/h1b-chars/h1b-rw/` (not in a manifest; the logs carry the buffers). *(`lane/h1b` review fix:
+  rw-r2 was not the only one. The runner keeps copies per session name without the `-r2` suffix, so rt-r2, qr-r2 and
+  qrh-r2 also overwrote the copies of dev rt, qr and qrh under `h1b-rt/`, `h1b-qr/` and `h1b-qrh/`, and drop 27111
+  overwrote dev drop 27110's under `h1b-drop/` (file times 08:20–08:35). No claim and no check reads a copy:
+  `sweep_h1b.py` reads only the logs.)*
 - **Observed** (`check/sweep-h1b-check-r2.txt`; counts as printed):
   ```
   ALL 2798 H1B comparisons, 0 failing (mismatches + d2sio failures)

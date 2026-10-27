@@ -588,7 +588,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005696F0,func,D2S_WriteSkills,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005697B0,func,D2S_WriteItemList,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005697F0,func,D2S_WriteCorpses,,C,save/d2s,docs/findings/save/0001-d2s-io.md
-0x005699A0,func,D2S_WriteMercItems,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x005699A0,func,D2S_WriteMercItems,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00569A00,func,D2S_WriteGolem,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00569AD0,func,D2S_WriteSave,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00569D80,func,D2S_CheckStatus,,I,save/d2s,docs/findings/save/0001-d2s-io.md
