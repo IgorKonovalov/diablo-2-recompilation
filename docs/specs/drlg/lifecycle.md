@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/room-tiles, monsters/spawn, monsters/special, monsters/stats, objects, save/d2s]
 consumed_by: [drlg/room-tiles, drlg/preset, drlg/collision, monsters/spawn, monsters/special, monsters/stats, objects, chain]
-tags: {C: 92, I: 77, L: 8}
-updated: 2026-10-21
+tags: {C: 97, I: 79, L: 8}
+updated: 2026-10-27
 ---
 
 # Room lifecycle: activation, release, the inactive records and the restore
@@ -100,9 +100,9 @@ stateDiagram-v2
 | life kept | 7500 frames, unsigned test | 0x00542819 | [C] (run:2026-10-17-lifecycle) |
 | item expiry | frame + 15000, 30000 or 45000; 0 never | fn:sub_00558A10_ItemGroundExpiry@0x00558A10 | [C] for the branches G1 marks, [I] for the others (run:2026-10-17-lifecycle) |
 | restored item expiry floor | frame + 15000 | fn:sub_00541990_InactiveItemRestoreOne@0x00541990 | [C] (run:2026-10-17-lifecycle) |
-| wanderer gate | `low & 0x7FFF = 0` | 0x0054F089 | [C] (run:2026-10-17-lifecycle) |
-| wanderer roll | `low mod 100 < 3`, region `+0x2C4` < 3 | 0x0054F024–0x0054F041 | [I] (fn:sub_0054EFF0_WandererRoll@0x0054EFF0) |
-| wanderer list | act I: class 270 (`rogue2`), start 0, count 1; other acts count 0 | 0x00731B2C, 0x00731B30 | [I] (fn:sub_0054EF50_WandererSpawn@0x0054EF50) |
+| wanderer gate | `low & 0x7FFF = 0` | 0x0054F089 | [C] (run:2026-10-17-lifecycle), the mask's width [I] (§ I) |
+| wanderer roll | `low mod 100 < 3`, region `+0x2C4` < 3 | 0x0054F024–0x0054F041 | [C] for the draw and the `mod 100` ≥ 3 return (run:2026-10-21-sweep-monsters-a), [I] for the region test and the pass below 3 (fn:sub_0054EFF0_WandererRoll@0x0054EFF0) |
+| wanderer list | act I: class 270 (`rogue2`), start 0, count 1; other acts count 0 | 0x00731B2C, 0x00731B30 | [C] (objdump and r2 of the image; the only code naming them are the readers at 0x0054EF64, 0x0054EF71 and 0x0054EF92, fn:sub_0054EF50_WandererSpawn@0x0054EF50, [monsters/0002 § Plan 0038 batch H4a](../../findings/monsters/0002-room-population.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a)) |
 
 ## Algorithm
 
@@ -856,13 +856,14 @@ flowchart TD
 ```
 
 ```
-I1. RoomWandererTick(game, room):                                 [C] for the first draw, [I] for the rest (fn:sub_0054F060_RoomWandererTick@0x0054F060, 0x0054F089, run:2026-10-17-lifecycle)
+I1. RoomWandererTick(game, room):                                 [C] for the first draw, the roll's draw and its ≥ 3 return, [I] for the rest (fn:sub_0054F060_RoomWandererTick@0x0054F060, 0x0054F089, run:2026-10-17-lifecycle, run:2026-10-21-sweep-monsters-a)
       Step(room.seed)                                             ; room draw#1, always
-      if room.seed.low & 0x7FFF ≠ 0: return                       ; [C] (run:2026-10-17-lifecycle)
-      if room[+0x78] ≠ 0 or Levels[level].MonWndr = 0: return     ; [I] (0x0054F089–0x0054F096)
+      if room.seed.low & 0x7FFF ≠ 0: return                       ; [C] (run:2026-10-17-lifecycle); the mask's width [I]
+      if room[+0x78] ≠ 0 or Levels[level].MonWndr = 0: return     ; [I] (0x0054F096, 0x0054F0AA)
       WandererRoll:                                               ; fn:sub_0054EFF0_WandererRoll@0x0054EFF0
-        Step(room.seed)                                           ; room draw#2
-        if room.seed.low mod 100 ≥ 3 or region[+0x2C4] ≥ 3: return
+        Step(room.seed)                                           ; room draw#2, [C] (run:2026-10-21-sweep-monsters-a)
+        if room.seed.low mod 100 ≥ 3: return                      ; unsigned; [C] (run:2026-10-21-sweep-monsters-a, 0x0054F02B)
+        if region[+0x2C4] ≥ 3: return                             ; [I] (0x0054F041)
       WandererSpawn:                                              ; fn:sub_0054EF50_WandererSpawn@0x0054EF50
         a ← Levels[level].Act;  (start, count) ← the bytes at 0x00731B30 + 2·a     ; act I (0, 1), others (0, 0)
         r ← Range(room.seed, count)                               ; room draw#3 (none when count < 1)
@@ -875,9 +876,17 @@ I1. RoomWandererTick(game, room):                                 [C] for the fi
 - [C] The gate's draw is one room-seed step per walked room, out = `Step(in)` (11 064 draws), and no roll follows a draw
   whose `low & 0x7FFF` ≠ 0 (11 064; 3 211 of them in rooms with `+0x78` = 0 and `MonWndr` ≠ 0). The tick runs before the
   population or restore of the same room (§ D). (run:2026-10-17-lifecycle, 0x0054F089)
-- [I] No gate draw passed, so the `+0x78` and `MonWndr` conditions never decided, and the roll and the spawn were not
-  reached. The gate passes 1 in 32 768 draws and the roll 3 in 100: about 1.1 million room updates of an act I `MonWndr`
-  level with `+0x78` = 0 and region `+0x2C4` < 3 per spawn. (0x0054F089, 0x0054F024–0x0054F02B, tbl:Levels.txt:MonWndr)
+- [C] One gate pass is logged. In run:2026-10-21-sweep-monsters-a, in the Chaos Sanctuary (108, `MonWndr` 1), a tick's
+  step left the low word `0xD17D0000`; `WandererRoll` was entered on exactly that seed, stepped it once more (mod 100 =
+  82) and, since 82 ≥ 3, drew nothing further, so that tick took two room draws. (run:2026-10-21-sweep-monsters-a,
+  fn:sub_0054EFF0_WandererRoll@0x0054EFF0, 0x0054F02B, [monsters/spawn § K](../monsters/spawn.md#k-wanderers-the-tick),
+  [monsters/0002 § Plan 0038 batch H4a](../../findings/monsters/0002-room-population.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a))
+- [I] That one pass does not separate the rest: the mask's width (its low word had 16 zero bits, so `0x7FFF` and
+  `0xFFFF` agree), the `+0x78` test (not logged), the `MonWndr` test (the pass came in a `MonWndr` 1 level, and no logged
+  tick passed the mask in a `MonWndr` 0 level), the region `+0x2C4` test and the spawn, since no roll below 3 has been
+  met. Read from the code, the gate passes 1 in 32 768 draws and the roll 3 in 100: about 1.1 million room updates of an
+  act I `MonWndr` level with `+0x78` = 0 and region `+0x2C4` < 3 per spawn. (0x0054F089, 0x0054F096, 0x0054F0AA,
+  0x0054F024–0x0054F041, tbl:Levels.txt:MonWndr)
 - [I] Because of `+0x78`, wanderers can appear only in active rooms that no client is near: rooms kept alive by the idle
   timer of § E, or activated by `RoomActivateB` (§ B). (fn:sub_0054F060_RoomWandererTick@0x0054F060, struct:DungeonRoomLife+0x78)
 
@@ -1031,8 +1040,9 @@ restore is not specified here.
 - [L] **Which handler flag the minion restore really applies** (§ H): stat 12 does not separate them, so H2c's flag 0
   stays a code reading. A kept lifecycle log that shows a minion's unit seed after the handlers would check it without a
   run (the `rndname` step). Owner: reverser.
-- [L] **The wanderer roll and spawn** were never reached (1 in 32 768 gate draws pass). The wanderer's alignment is
-  answered as a code reading in § H from drlg/0009 § 11.4 (b): `MonSpawnTry` sets 2, so a saved wanderer is dropped.
+- [L] **The wanderer spawn** was never reached: one gate pass is logged (§ I), and its roll (82) returned. The gate
+  passes 1 in 32 768 draws and the roll 3 in 100. The wanderer's alignment is answered as a code reading in § H from
+  drlg/0009 § 11.4 (b): `MonSpawnTry` sets 2, so a saved wanderer is dropped.
 - [L] **Unreached branches**, each `[I]` above: the 0 expiry (no quest item was saved), the 1 500-frame expiry sweep
   `0x00542AC0` freeing a record (§ A), the 45000 gold expiry, save tests 3, 4, 6 and 7 and `restore` 0, kept monsters
   and units, the alignment-1 half of the `0x400` drop (no stock monster the H7a sessions met was saved with `+0xD0` ≥ 8
