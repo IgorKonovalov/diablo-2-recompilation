@@ -1149,10 +1149,17 @@ def run_gate(root, cache_root=None):
     check_mermaid([(rel, n, body) for rel in mds if rel.startswith("docs/")
                    for n, body in mermaid_blocks(texts[rel])], cache_root or root, rep)
     # W3: a symbol is cited when its name appears in some spec or finding
+    # (one pass over the corpus: the names are [A-Za-z0-9_]+, so a word-set lookup equals the
+    # bounded regex search; a name with another character falls back to the search)
     corpus = "\n".join(cited)
+    words = set(re.findall(r"[A-Za-z0-9_]+", corpus))
     for name, (_, _, line) in sorted(ctx["symbols"].items(), key=lambda kv: kv[1][2]):
         rep.count("W3")
-        if not re.search(r"(?<![A-Za-z0-9_])" + re.escape(name) + r"(?![A-Za-z0-9_])", corpus):
+        if re.fullmatch(r"[A-Za-z0-9_]+", name):
+            found = name in words
+        else:
+            found = re.search(r"(?<![A-Za-z0-9_])" + re.escape(name) + r"(?![A-Za-z0-9_])", corpus)
+        if not found:
             rep.warn("W3", "re/symbols.csv", line, f"{name} is cited by no doc")
     return rep
 
