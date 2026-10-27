@@ -3073,6 +3073,9 @@ logs; shortfalls under *Limits*.
   `dev-quest-items-s1-4915-eye4` (the Spider Forest warp 51 led to the Arachnid Lair 84, not the Spider Cavern 85),
   `dev-quest-items-s1-4914-brain4b` (the brain4 route with a full explore of level 91, frontier 0, then `objop
   --obj-mem`: no class-406 object in any `OBJS` line). They were renamed `dev-` before any manifest listed them.
+  *Note (lane/rdp, 2026-10-27):* `brain4b`'s "frontier 0" was not a full explore. The pilot's frontier was that of
+  the last-activated of level 91's two copies, and the chest's room was never activated in the other copy, the one
+  whose rooms held the listed objects. See [items/0010 § The brain chest in level 91](0010-quest-drops.md#the-brain-chest-in-level-91-lanerdp-2026-10-27-static).
 - **Launches:** 19 in all (4 at the checkpoint, 15 at the resume); 11 kept sessions (`gate-done-r2` and the ten
   above), 8 development logs.
 - **Not run** (launch cap): `gate-fresh`, the Malus, the NPC items (`bkd`, `g34`, `xyz`), the altar (`vip`), `g33`,

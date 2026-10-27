@@ -71,6 +71,13 @@ def descend(lid, rows):
                       300, 5), 0)
 
 
+def descend_to(lid, rows):
+    """descend with --descend-to lid (lane/rdp): only a warp of the rows that leads to lid is taken (rows 51 and 61
+    serve two levels each; eye4 reached 84, tome4 95). descend() is left as it was for the kept sessions."""
+    return ("until", (lid, ["farm", "--sweep", "--descend", rows, "--descend-to", str(lid), "--descend-time", "240",
+                            "--time", "5"] + NOVA, 300, 5), 0)
+
+
 def objop(cls, pdef=None, done="OCD", t=420, extra=(), near="4"):
     a = ["objop", "--obj-cls", str(cls), "--times", "1", "--done", done, "--time", str(t), "--obj-near", near]
     if pdef:
@@ -150,6 +157,26 @@ def tome():
     return [wpc("3,6"), descend(94, "61"), objop(193, "748", done="QOW"), wait(5)]
 
 
+def eye_to():
+    """eye with --descend-to 85 (lane/rdp): the Spider Cavern, not the Arachnid Lair."""
+    return [wpc("3,2"), descend_to(85, "51"), objop(407, "663"), wait(5)]
+
+
+def tome_to():
+    """tome with --descend-to 94 (lane/rdp): the Ruined Temple, not the Disused Fane."""
+    return [wpc("3,6"), descend_to(94, "61"), objop(193, "748", done="QOW"), wait(5)]
+
+
+def brain_copies():
+    """brain4b with explore --all-copies (lane/rdp, items/0010 § H6e2 brain chest): on map seed 4914 level 91's DS1 is
+    DungRm2B, whose class-406 chest stands in the room at tile offset (0, 32) (sub-tile 14, 179 of the level); that
+    room was never activated in the copy whose rooms held the listed objects, while the default frontier (the copy of
+    the last RRESEED) read 0. --all-copies keeps exploring until every copy's rooms are activated."""
+    return [wp4(3, 4), descend(88, "54"), descend(89, "56"), descend(91, "56"),
+            ("pilot", ["explore", "--all-copies", "--hops", "160", "--persist", "10"] + NOVA, 600),
+            objop(406, extra=["--obj-mem"]), wait(5)]
+
+
 def inifuss():
     """Dark Wood waypoint (1,4), the Inifuss tree (30, LvlPrest 161), operated twice (the second: the refusal)."""
     return [wpc("1,4"), objop(30, "161", done="QOW"), wait(4), objop(30, done="QOW", t=60), wait(4)]
@@ -208,6 +235,10 @@ SESSIONS = {
     "brain4b": ("a4/QuestFreshT", "enter-normal", 4914, brain_mem()),
     "eye4": ("a4/QuestFreshT", "enter-normal", 4915, a4x(eye())),
     "tome4": ("a4/QuestFreshT", "enter-normal", 4913, a4x(tome())),
+    # lane/rdp (not run): the reruns of the three failed routes with the pilot fixes
+    "eye4c": ("a4/QuestFreshT", "enter-normal", 4915, a4x(eye_to())),
+    "tome4c": ("a4/QuestFreshT", "enter-normal", 4913, a4x(tome_to())),
+    "brain4c": ("a4/QuestFreshT", "enter-normal", 4914, brain_copies()),
 }
 
 

@@ -4394,7 +4394,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     character reaches Act IV. (e) **The failed routes** are recorded honestly (the brain chest as an open question, the
     two warps in the run record). The warps are a pilot limitation, not a model bug: `descend` takes the first warp of a
     LvlWarp row, and rows 51 and 61 serve two levels each; routed with the brain-chest question to a reverser entry,
-    [2026-10-27-architect-reverser-d2pilot-descend-by-destination-and-the-brain-chest](../backlog/2026-10-27-architect-reverser-d2pilot-descend-by-destination-and-the-brain-chest.md).
+    [2026-10-27-architect-reverser-d2pilot-descend-by-destination-and-the-brain-chest](../backlog/archive/2026-10-27-architect-reverser-d2pilot-descend-by-destination-and-the-brain-chest.md).
     (f) **The 11 symbols I → C** stand (rule 14: each one's logged call compared with the checker's model); the
     call-site-only frames stay I. (g) **The quality 7 answer** stands as `[I]` After (items/0004 us 13), now with `bks`.
     (h) **`test_d2s.py`** fails `test_every_recipe_has_a_base` after the merge, on `lane/h3b`'s `h3brare` alone (merged
