@@ -1480,8 +1480,8 @@ part (b). No session: the kept `brain4` log and the development `brain4b` log of
 - [C] **Every DS1 of LvlPrest 704 places exactly one brain chest.** `Def` 704 (`Act 3 - Dungeon Treasure 2`,
   `LevelId` 91, `Files` 6) names `DungRm1B`..`DungRm6B`; each file's object list holds one type-2 unit of raw id 115,
   which `g_Ds1ObjectIds` (act 3) maps to object class 406, at sub-tile (14, 14) in 1B and 3B, (14, 179) in 2B and 6B,
-  (184, 179) in 4B and (97, 97) in 5B, within the 200 × 200 sub-tile level. Four of the six positions are corners;
-  only 5B's is at the centre, where `brain4` stood for 420 s. A full-table check over the six files with
+  (184, 179) in 4B and (97, 97) in 5B, within the 200 × 200 sub-tile level. Five of the six files put it in a corner (four distinct
+  positions in all); only 5B's is at the centre, where `brain4` stood for 420 s. A full-table check over the six files with
   `tools/ds1.py`'s own unit mapping (`brain91.txt`, the six `file` lines). (tbl:LvlPrest.txt:File1,
   tbl:LvlPrest.txt:LevelId, data:g_Ds1ObjectIds@0x00748AD8)
 - [I] **So the chest is in level 91 on every map seed.** drlg/0003 confirms that the preset file index is
@@ -1498,6 +1498,8 @@ part (b). No session: the kept `brain4` log and the development `brain4b` log of
   objects in `brain4b`, with 0 listed outside the prediction and 0 predicted but unlisted, in both logs. The other
   copy activated all 25 rooms, and 35 and 17 of the objects in them were never listed. The chest's room (0, 32) is
   never activated in the first copy in either log, and the chest is never listed. (run:2026-10-27-sweep-quest-items)
+  - [I] That the chest is listed once its room activates in that copy is the model's prediction, not yet observed:
+    no log has that room active in the matching copy. `brain4c` tests it (below). (run:2026-10-27-sweep-quest-items)
 - [C] **Why the pilot stopped: its frontier is the last copy's.** `LogState` keeps one level pointer per level id
   (`lptr`) and overwrites it at each `RRESEED`. Its frontier is the unactivated rooms of that one pointer. The last
   level-91 `RRESEED` of both logs names the fully activated copy, so `frontier(91)` is empty at the end of both
@@ -1509,7 +1511,9 @@ part (b). No session: the kept `brain4` log and the development `brain4b` log of
   path record. `brain_mem`'s docstring and the H6e2 open question said "near the player"; the exact match above
   shows that the listing follows the activated rooms, not the player's distance. (run:2026-10-27-sweep-quest-items)
 - [I] **Which copy is which.** The copy whose activations match the listed objects behaves as the server's (the
-  `OBJS` walk reads the server game). That the other copy is the client's, and why it activates every room of the
+  `OBJS` walk reads the server game). That a preset level is built once for the server and once for the client, the
+  two told apart by room flag `0x40000` (room `+0x28`), is drlg/0004 row 10 (0x006678E2, run:2026-10-13-drlg-preset);
+  `tools/gdb/pilot.py` does not log room `+0x28`, so the H6e2 logs cannot name the copy. That the other copy is the client's, and why it activates every room of the
   level, is not read. (run:2026-10-27-sweep-quest-items)
 - **The session it needs** (not run: no harness in this lane): `python3 -I tools/h6e2_sessions.py run --slot N
   --tag … --saves … --run … brain4c`. That is map seed 4914 again, from the Act IV town, the dungeon 1–3, then
@@ -1532,9 +1536,11 @@ part (b). No session: the kept `brain4` log and the development `brain4b` log of
 - What the 0x0055D011 interact route is (which click reaches `0x0055CF50`), and whether `sub_00563470_ItemDiscardInvalid`'s
   name fits the ground-pickup path that ran.
 - ~~Why the brain chest (class 406) was not listed in level 91 on map seed 4914 after a full explore (`brain4b`,
-  frontier 0).~~ Answered (lane/rdp, static): its room was never activated in the level copy whose rooms held the
+  frontier 0).~~ Answered in part (lane/rdp, static; the listing once the room activates is inferred until `brain4c`): its room was never activated in the level copy whose rooms held the
   listed objects, and the pilot's "frontier 0" was the other copy's; `OBJS` filters neither class nor distance (the
   question's "only the objects near the player" was wrong). See § The brain chest in level 91.
+- Whether the brain chest is listed once its room activates in the copy whose rooms hold the listed objects, and
+  whether that copy is the server's (`brain4c`, § The brain chest in level 91).
 
 ## Data touched
 

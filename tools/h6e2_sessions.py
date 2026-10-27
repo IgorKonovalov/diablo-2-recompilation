@@ -139,7 +139,9 @@ def brain():
 def brain_mem():
     """brain4 again (map seed 4914), with an explore of level 91 before the objop and the chest found by memory
     (--obj-mem): in brain4 the player stood at the centre of LvlPrest 704 (a whole-level preset, 40 x 40 tiles) for
-    420 s with no class-406 object in any OBJS line, which lists only the objects near the player."""
+    420 s with no class-406 object in any OBJS line, which lists only the objects near the player. (lane/rdp: that
+    last clause is wrong; OBJS filters neither class nor distance and follows the activated rooms, items/0010 § The
+    brain chest in level 91. The recipe is kept as run.)"""
     return [wp4(3, 4), descend(88, "54"), descend(89, "56"), descend(91, "56"),
             ("pilot", ["explore", "--hops", "120", "--persist", "10"] + NOVA, 600),
             objop(406, extra=["--obj-mem"]), wait(5)]   # no --to-pdef: objop takes that branch before --obj-mem

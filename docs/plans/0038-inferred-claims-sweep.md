@@ -4526,3 +4526,50 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     stale cross-reference 1, other 1; usage from the orchestrator: 457 804 tokens, 114 tools, 33 min); the review row
     added, usage "—".
   - **Next:** merge `lane/s38s`; hirelings (H6f) and player/creation (H6g) take the H1a/H1b raises left for them.
+- **2026-10-27 — `lane/rdp` review (architect, static, no Ghidra, no harness): accept with fixes (4).** The answer to
+  the `lane/h6e2` review's reverser entry: `d2pilot.py farm --descend ROW --descend-to LEVEL` and `--all-copies`
+  (opt-in), the RL `lid` key in `tools/gdb/pilot.py`, the `eye4c`/`tome4c`/`brain4c` recipes (not run), and
+  items/0010 § The brain chest in level 91.
+  - **Checks:** `sha256sum -c manifest-rdp.sha256` from `workspace/logs/rdp/` passes (2 lines);
+    `test_d2pilot_descend.py` 10 tests OK; `rdp_brain91.py` over `brain4` and `brain4b`, rerun under `MemoryMax=4G`,
+    gives `50e0f953…`, byte-identical to the kept `brain91.txt`.
+  - **Rulings:**
+    1. **Backward compatible.** Without `--descend-to` and `--all-copies` the pilot's state and choices are unchanged:
+       the pre-lane `d2pilot.py` (`1e61473c`) and the lane's, replayed over all 19 kept H6e2 logs, give equal `rl`,
+       `lptr`, `active`, `wrp`, `warps`, `pos` and `lid_of`, equal `frontier()` for every level, and equal warp cells
+       (old comprehension against `descend_cells(st, lid, {row})`) for all 67 (level, row) pairs. The default path's
+       messages are the same strings (`dest` None: the old format, no suffix). WRP lines carried `room` since the
+       logger's first version (`3c02956c`), so `wrp_room` cannot fail on an old log. The kept recipes of
+       `h6e2_sessions.py` are untouched.
+    2. **The RL `lid` key breaks no reader.** RL consumers in `tools/` (`d2pilot.py`, `drlg.py`, `monspawn.py`,
+       `sweep_s4a.py`, `outdoor_replay.py`, `rdp_brain91.py`) read the line by key; none compares whole dicts or key
+       sets. `PRL` (the renamed tag under `drlg-*.gdb` and `sweep-*.gdb`) has no Python reader.
+    3. **"Why the pilot stopped" stays `[C]`**: it is our tool's own code (one `lptr` per level, overwritten at each
+       `RRESEED`) replayed over the logs (`test_brain_frontier_copies`). **The copy bullet stays `[C]`** on two
+       sources: the DS1 data and the logs' 0/0 match (29 and 47 objects). What it does not reach, that the chest is
+       listed once its room activates in the matching copy, is a prediction: now `[I]` under the bullet, the struck
+       open question "answered in part", and an open question added (fix 1).
+    4. **"`OBJS` filters neither class nor distance" stays `[C]`**: `tools/gdb/vendors.py` (read here) walks the 128
+       heads at server game `+0x1520`, chain `+0xE4`, ≤ 512 per head, and keeps every unit with a path record
+       (`+0x2C` non-zero), one line per 2 s at most; the logs' exact match is the second source. No objdump needed:
+       the walk is our logger, not game code.
+    5. **"Which copy is the server's" stays `[I]`**; the repository already holds the server/client pair and its flag
+       (drlg/0004 row 10, room `+0x28` & `0x40000`), now cited, and the pilot logger does not log `+0x28` (fix 2).
+    6. **The chest on every seed** stays `[I]` (one of six files by `Range(seed, Files)`; creation from the DS1 unit
+       not re-read). The `g_Ds1ObjectIds` 115 → 406 mapping is read from the pinned exe and reproduced over 2 362 units
+       (drlg/0004 row 5); its symbol row's `I` is about the role, not the bytes.
+    7. **The three reruns: an H6e2 follow-up**, not H6f or H6g. They are H6e2's failed routes (eye and brain chests,
+       the tome), on H6e2's save (`a4/QuestFreshT`) and map seeds 4913–4915; H6f (hirelings) and H6g (player/creation)
+       share neither. One short harness lane, three sessions; `brain4c` decides ruling 3's `[I]`. The follow-up may add
+       room `+0x28` to the RL line first (one key, as `lid`), so `brain4c` also names the copy (ruling 5). Not blocking
+       the objects cluster's Phase 3.
+  - **Fixes applied (4):** (1) overclaim: the "Answered" strike and the copy bullet's unstated remainder (ruling 3).
+    (2) omission: drlg/0004 row 10 cited in "Which copy is which" (ruling 5). (3) miscount: "four of the six
+    positions are corners" for five files (four distinct positions). (4) stale cross-reference: `brain_mem`'s
+    docstring in `tools/h6e2_sessions.py` still said `OBJS` lists only the objects near the player (annotated; the
+    recipe unchanged).
+  - **Backlog:** the review request closed. Review-fixes Seen lines: reverser 2, 4 and 12; architect 4 (the
+    `lane/h6e2` review passed "near the player" unread).
+  - **Ledger rows:** the lane row filled (accept with fixes, 4: overclaim 1, miscount 1, omission 1, stale
+    cross-reference 1; usage from the orchestrator: 196 386 tokens, 79 tools, 18 min); the review row added, usage "—".
+  - **Next:** merge `lane/rdp`; file the H6e2 follow-up (eye4c, tome4c, brain4c) when a harness slot is free.
