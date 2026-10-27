@@ -3263,3 +3263,92 @@ run id). Evidence in [items/0010 § Plan 0038 batch H6e2](0010-quest-drops.md#pl
   reach the cursor, so those tests are not reached. Malah's potion was not given (word 37 clear: her talk table offers
   it only in quest state 4, § 6 of the finding). The given items carry no durability, so `GiveItem`'s durability write
   is not separated.
+
+## run:2026-10-27-sweep-sockets
+
+- **Question:** (plan 0038 Phase 2, batch H6b, [inventory § 5](../../plans/0038-inventory/README.md#5-batch-list))
+  Does the socket path do what [items/0007](0007-sockets-runewords.md) reads where run:2026-10-15-sockets did not
+  look: the child's x and y, the cursor at the `p5` test, the stat-list link branch, the replenish timers, a loaded
+  runeword's re-insert (the *Steel* sample) and the reader's runeword field on the server and the client, the item
+  copier's inserts, a low-level character inserting high runes, the non-server runewords with funcs 20 and 17's
+  `par` 0, the client test's refusals step by step, and an unidentified socketed parent before and after it is
+  identified (the S2c piece of sock 14)? Boundary as in run:2026-10-15-sockets: the child's item seed at the insert
+  is the one input (ADR-0004); tool-built saves are inputs (ADR-0013 § Neutral).
+- **Status:** done (2026-10-27). Evidence in
+  [items/0007 § Plan 0038 batch H6b](0007-sockets-runewords.md#plan-0038-batch-h6b-run2026-10-27-sweep-sockets).
+- **Setup:** agent-driven sessions on harness **slot 1** (display `:8`, `workspace/wineprefix-1`, game in
+  `workspace/runtime/game`), stock data, pinned `game.exe`, expansion, one player, Normal, all in town.
+  - **Logger** `tools/gdb/h6b.gdb` (`826f1a2c…`): `pilot.py`, `vendors.py`, `quests.py`, the plan 0029
+    `tools/gdb/sockets.py` (`d82f7871…`, unchanged since run:2026-10-15-sockets) and the new `tools/gdb/h6b.py`
+    (`e23bf51e…`; its lines are listed in the finding). Every kept session ran this revision; the five development
+    sessions ran it without the `UIS` lines.
+  - **Session driver** `tools/h6b_sessions.py` (`3f803be1…`): H6e1's loop with `d2pilot.py insert` on the session's
+    plan, `d2pilot.py npc` (Anya's personalize, Malah's trade window) and `economy_sessions.py act sell:0,0`. It writes
+    the recipes and plans with `tools/socket_sessions.py`'s layout (`h6b_sessions.py write`).
+  - **Characters** (`tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/<recipe>.json <base>
+    <out>`, `tools/d2s.py` `7fdd013d…` at the run; saves in `workspace/scratch-h6b/saves/`; rows in
+    `tools/test_d2s.py` `RECIPE_BASES`):
+    - `steel`: the game-written sample `workspace/samples/d2s/qitbarb.d2s` (`98042d88…`, run:2026-10-11-d2s-samples:
+      a level-1 Barbarian holding the *Steel* long sword, Tir El, and a magic jewel), installed as it is.
+    - `SockHLow` (`sock-h6b-low.json` `261d5083…`, save `6fe4ad56…`) and `SockHLow2` (`sock-h6b-low2.json`
+      `f88fd1a3…`, save `7e3d88cc…`): the sample's level-1 Barbarian on the sample as base, without its items, with
+      socketed normal bases and the runes of *Prudence* (a `qui`, equipped), *Faith* (a `lbw`, equipped),
+      *Fortitude*, *Lawbringer* and *Oath*; and of *Eternity* (a 5-socket `crs`) and *Leaf* (a `sst`).
+    - `SockHRefuse` (`sock-h6b-refuse.json` `a34fcb01…`, save `a9afe502…`): the level-80 Sorceress of
+      `socketnova.json` with an unidentified magic `skp` with 2 sockets and two Chipped Topazes, a Scroll of Identify, a
+      ring and gloves with bit 11 and 1 socket (`"forced_sockets"`, new), a broken `cap` with 1 socket (durability 0,
+      `"broken"`), an equipped helm and shield with a gem each, and one Flawed Amethyst for the three tries.
+    - `SockSvc` (`sock-h6b-svc.json` `ceb8d918…`, save `a0aa3e8c…`): `quest-h6e1-svca.json`'s Sorceress in the Act V
+      town with Anya's reward bit, and three socketed items holding children (a `cap` with a gem, a `cap` with a gem
+      and *El*, a `skp` with a jewel), built with `"filled"`.
+  - **Built (test) states** (ADR-0010 § built states): bit 11 on a ring and on gloves, the broken cap, the
+    unidentified cap, the filled children of `SockSvc` (the builder's, not an insert's), the low-level character
+    holding runes above its level. None changes a path the checks model: the client reads them as logged.
+- **Sessions** (`python3 -I tools/h6b_sessions.py run --slot 1 --tag h6b --saves workspace/scratch-h6b/saves --run
+  sockets <session>`; logs `workspace/logs/h6b/sockets-s1-<seed>-<session>.log`):
+
+  | session | save | what | result |
+  |---|---|---|---|
+  | `6101-steel` `556a53be…` | qitbarb | load (2 reader inserts, *Steel* re-matched); the jewel tried on the full sword | **kept** |
+  | `6102-low` `c5abd358…` | SockHLow | 17 packet inserts by the level-1 character: *Prudence* made; *Faith*, *Fortitude*, *Lawbringer*, *Oath* server rows | **kept** |
+  | `6105-low2` `eb0a1c8f…` | SockHLow2 | 7 inserts: *Eternity*, *Leaf* made | **kept** |
+  | `6103-refuse` `ccc33ccd…` | SockHRefuse | the unidentified `skp` tried, identified, tried again (inserted); gems on the equipped helm and shield; a gem tried on the ring, the gloves, the broken cap | **kept** |
+  | `6104-svc` `6734e49b…` | SockSvc | load (4 reader inserts); a sale to Malah (`sell:0,0`); Anya personalizes the cap holding a gem and *El* (`ItemCopy`, 2 inserts) | **kept** |
+
+  Development logs (`workspace/logs/h6b/dev/`, renamed `dev1-` before any manifest listed them; no claim rests on
+  them): the same five sessions with the logger before the `UIS` lines, and their screenshots. **Launches: 10** (5
+  kept, 5 development); the batch cap is 20.
+- **Procedure** (from `/home/igor/Work/recompilcation-project-h6b`, each under `systemd-run --user --scope -p
+  MemoryMax=4G`; `L` = the five kept logs):
+  ```
+  python3 -I tools/sockets.py check $L > workspace/logs/h6b/check-sockets.txt
+  python3 -I tools/sweep_h6b.py logs $L > workspace/logs/h6b/check-sweep_h6b.txt
+  python3 -I tools/sweep_h6b.py static workspace/install/app/game.exe > workspace/logs/h6b/check-static.txt
+  python3 -I tools/sockets.py check $(cat workspace/logs/sockets-run.lst) > workspace/logs/h6b/check-regress-sockets-run.txt
+  ```
+  `tools/sockets.py` `e6534401…` (this batch adds the already-applied branch of `RUNEWORD_Apply`), `tools/sweep_h6b.py`
+  `4a20d395…`.
+- **Observed** (`check-sockets.txt` `815bdd9b…`, `check-sweep_h6b.txt` `64d81481…`, `check-static.txt` `589f34e3…`,
+  `check-regress-sockets-run.txt` `7c94a139…`; manifests `manifest-run.sha256` `f27e222a…` (the 5 logs, their pilot
+  outputs and the 4 checks: 14 lines), `manifest-shots.sha256` `04f92c9d…` (16 screenshots), `dev/manifest-dev.sha256`
+  `e34c8df5…` (26 development files), each checked with `sha256sum -c` from its own directory; trimmed):
+  ```
+  35 inserts reproduced, 0 failed; 37 client tests          (packet 27, reader 6, copier p[0, 1, 0, 0] 2)
+  runewords made: Prudence, Eternity, Leaf; runeword already applied (a 171 list): reader lsd Steel
+  server row in a non-ladder game: inserted, no runeword: Faith, Fortitude, Lawbringer, Oath
+  client test verdicts: ok 27; not a filler 5; ItemMaxSockets 0 1; hasinv 0 1; flag 0x100 1; full 1; not socketed 1
+  xy: x = count before = children before; y 0; body -1     packet 27, reader 6, copier 2 (x > 0: 20)
+  cursor at the p5 test empty, after empty                  packet 27 (p5 1), reader 6 (p5 0), copier 2 (p5 1)
+  link: list owner 0 before, branch link                    stored 25, equipped 8, cursor 2
+  timers: called iff the gate passed                        gate 4, no gate 31; Prudence stat 252 = 25 -> type 3 at 324 + 101
+  client steps: ItemBaseHasInv = hasinv 39; ItemMaxSockets = min(gemsockets, MaxSock) 38
+  reader runeword store: the Name index of the row         server parent 1, client copies 6
+  client steps: UI word 14 43, 0 2; inventory step reached, non-zero 36
+  timers outside an insert (RPE): at the load, frame 1 186; later 114
+  SUMMARY logs=5 checks=773 bad=0
+  regression: 351 inserts reproduced, 0 failed; 357 client tests (run:2026-10-15-sockets)
+  ```
+- **Limits.** One player, single player, never ladder: the `server` rows (every row with func 24 or a ranged
+  `par`-0 func 17 line) make no runeword. No Necromancer's golem, corpse or version-71 save, so the golem reader and
+  the other reader sites did not run; no player trade, so the UI states 10 and 11 and 0x00563441's callers did not
+  either. The sale made no copy.

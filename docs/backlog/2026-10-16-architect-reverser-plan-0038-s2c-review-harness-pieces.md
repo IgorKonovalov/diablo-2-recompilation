@@ -30,3 +30,11 @@ session at output ilvl ≤ 5 (cube 49, the session's last transmute) and row 17 
 the *Steel* load's `+0x38` store (sock 46); **H6c** the stock item's store tab and grid cell (vend 22) and `+0x18`/`+0x28`
 of the store creation record at `IC0` (vend 26); **H6e1** the cursor-item line at `sub_0055EEA0_CursorItemConsume`
 (qd 38). None of the four batches has a run on `main`. The entry stays open for them.
+
+*2026-10-27 (reverser, `lane/h6b`, plan 0038 batch H6b):* **H6b pieces met.** sock 14: the unidentified socketed skull
+cap's client flags were `0x00800000` (no bit 4, no bit 11, stat 194 0) and the insert was refused at the socketed
+test; after a Scroll of Identify they were `0x00800811` (stat 194 2) and the same insert was accepted. sock 46: the
+*Steel* sample's load logged the reader's store `0x509F` at `+0x38` (0x0062D1EA), and the client copies held the Name
+index of their row ([items/0007 § Plan 0038 batch H6b](../findings/items/0007-sockets-runewords.md#plan-0038-batch-h6b-run2026-10-27-sweep-sockets),
+run:2026-10-27-sweep-sockets). Both rows stay counted as S2c. **Left:** H6a (cube 49, aff 14) and H6c (vend 22, 26). The
+entry stays open for them.

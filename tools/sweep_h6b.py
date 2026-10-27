@@ -136,6 +136,9 @@ def cmd_logs(ns):
                                 name, d["tgt"], d["fl"], d["rw"], d["kids"]))
                         S["client copy rw field non-zero"] += 1
                     continue
+                if tag == "RPE" and not d["ins"]:
+                    S["timers outside an insert (RPE): %s" % ("at the load, frame 1" if d["frame"] == 1 else
+                                                                "later")] += 1
                 if th not in cur:
                     continue
                 c = cur[th]
@@ -298,6 +301,9 @@ def check_uis(T, u, uic, S, notes, name):
         raise Bad("UIS %d, the UIC model %d" % (r, m_r))
     vals = dict((a, b) for a, b in u["steps"])
     tc = uic["tgt"]["cls"]
+    S["client steps: UI word %d" % vals["ui"]] += 1
+    if "inventory" in vals:
+        S["client steps: inventory step reached, %s" % ("non-zero" if vals["inventory"] else "0")] += 1
     if "hasinv" in vals:
         if bool(vals["hasinv"]) != bool(T.base(tc)["hasinv"]):
             raise Bad("ItemBaseHasInv %r, table hasinv %r" % (vals["hasinv"], T.base(tc)["hasinv"]))

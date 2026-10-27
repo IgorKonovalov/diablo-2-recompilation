@@ -1383,6 +1383,37 @@ moves. Recounted against `main` `92b811df` after merging it into the lane (`lane
 8), **deferred 2, raised 17: 1 526.** § 5 marks H6e1 done. **Phase 3 ready:** items/quest-drops (S2c, H6d, H6e2 and
 H6e1, all accepted).
 
+**H6b (filed 2026-10-27, reverser, `lane/h6b`): 25 statements of items/sockets-runewords (rows 1, 9, 10, 12, 13, 16–18,
+21, 29, 35 ×2 from S2c, 38) and the S2c pieces of rows 14 and 46.** run:2026-10-27-sweep-sockets, 5 kept sessions on
+slot 1 (10 launches, 5 development logs; expansion, Normal, in town; the game-written *Steel* sample and four
+tool-built saves), logger `tools/gdb/h6b.gdb`, checks over the 5 kept logs: `tools/sockets.py check` **35 inserts and
+37 client verdicts reproduced, 0 failed** (`check-sockets.txt`), `tools/sweep_h6b.py logs` **773 counted checks, 0 bad**
+(`check-sweep_h6b.txt`); the regression of run:2026-10-15-sockets still 351 and 357, 0 failed. The evidence is in
+[items/0007 § Plan 0038 batch H6b](../../findings/items/0007-sockets-runewords.md#plan-0038-batch-h6b-run2026-10-27-sweep-sockets),
+whose ledger gives each statement's `[C]` part and remainder.
+
+- **Raised (9):** sockets 10 (L170, L171; built states), 12 (L173; built state), 16 (L236, L274), 21 (L262), 35
+  (L438, L470), 38 (L490).
+- **Raised in part (9):** sockets 1 (L51, L283, L288: the copier; the golem reader and the other reader sites not
+  run), 13 (L181: `hasinv`, `ItemMaxSockets`, `0x100` now seen failing), 17 (L291: `p4`, `p6`, `p7`), 18 (L243, L450:
+  the 252 timer; no stock runeword parent carries 253), 38 (L481: *Leaf*'s `par`-0 branch at min = max; L505).
+- **Shortfall (7):** sockets 1 L284 (0x00563441's callers: a trade, `0x00568770`), 9 (UI states 10 and 11: the
+  player-trade window, `[I]`), 12 L174 (no target without a client inventory reached the test), 17 L237 (the cursor slot is already
+  empty at the `p5` test, a correction), 29 (the enable-bit branch never taken; no socket filler has durability), 38
+  L482 (func 24: only *Faith*, a `server` row) and L507 (func 7's `+1` fallback: no observable). Fewer than half are
+  raised; the finding's ledger says why.
+- **Pieces met:** sockets 14 (the unidentified socketed parent's client flags `0x00800000` before and `0x00800811` after
+  a Scroll of Identify; refused, then inserted) and 46 (the reader's store at `+0x38`, `0x509F`, and the client copies'
+  Name indexes). Both rows stay counted as S2c, raised in part there.
+- **Proposed for the review** (not filed as moves): sockets 9 → d-2c; sockets 18's 253 half, 29, 38 L481's ranged
+  half, L482 and L507 → d-none.
+- Symbols I → C (rule 14): `sub_00558530_ItemReplenishDurTimer`, `sub_00629900_ItemBaseHasInv`.
+
+No class move is filed. Net effect on the totals: none. Taken against `main` after merging it into the lane
+(`fd841611`; `lane/a72` and `lane/h6e2f` merged since the lane's base, neither moved a class): **static 567, harness
+519, c-emu awaiting a batch 0, blocked 421** (d-none 295, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8),
+**deferred 2, raised 17: 1 526.** H6b's ledger: raised 9, raised in part 9, shortfall 7: 25.
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is

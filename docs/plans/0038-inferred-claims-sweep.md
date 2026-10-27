@@ -5012,3 +5012,33 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     refusal `[I]`) and the item-objects row (`bbb` joins `leg` and `bks` as `[C]`, its quality 7 `[I]`; `hdm` stays
     `[I]`). The brain chest's listing is not stated in the objects spec. The spec-writer H6e2 entry is annotated.
     Request closed ([archive](../backlog/archive/2026-10-27-reverser-architect-h6e2f-review.md)); ledger rows filled.
+- **2026-10-27 — H6b (`sockets`) filed (reverser, `lane/h6b`, harness slot 1, from `main` `dcf6c210`; `main`
+  `fd841611` merged).** Run id run:2026-10-27-sweep-sockets, record in
+  [items experiments](../findings/items/experiments.md#run2026-10-27-sweep-sockets), evidence in
+  [items/0007 § Plan 0038 batch H6b](../findings/items/0007-sockets-runewords.md#plan-0038-batch-h6b-run2026-10-27-sweep-sockets).
+  - **Built:** logger `tools/gdb/h6b.gdb` + `tools/gdb/h6b.py` (the child's x/y, the cursor at the `p5` test, the
+    stat-list link branch, both replenish timers, the reader's runeword store, `ItemCopy`, the client test step by
+    step), session driver `tools/h6b_sessions.py` (H6e1's loop; `write` lays out the recipes and plans with
+    `socket_sessions.py`), checker `tools/sweep_h6b.py logs|static`, the already-applied branch of `RUNEWORD_Apply` in
+    `tools/sockets.py` (the old run still reproduces), a `"forced_sockets"` test-state key in `tools/d2s.py`, four
+    recipes `tools/d2s_recipes/sock-h6b-*.json` (rows in `tools/test_d2s.py`, 60 tests OK after the merge).
+  - **Sessions:** 10 launches, 5 kept (the game-written *Steel* sample loaded; a level-1 Barbarian making runewords
+    in two games; the client refusals and an identify; Malah's trade and Anya's personalize in Harrogath), 5
+    development (the same five, the logger before its `UIS` lines). The Act V game started in Harrogath (act bytes
+    132), so no waypoint was needed; nothing was saved.
+  - **Checks:** `sockets.py check` 35 inserts and 37 client verdicts reproduced, 0 failed (`check-sockets.txt`
+    `815bdd9b…`); `sweep_h6b.py logs` 773 counted checks, 0 bad (`check-sweep_h6b.txt` `64d81481…`); regression on
+    run:2026-10-15-sockets 351 and 357, 0 failed.
+  - **Ledger (25): raised 9, raised in part 9, shortfall 7** (inventory § 2.6 H6b block). Fewer than half raised: the
+    UI states 10/11 need a player trade; func 24 and the ranged `par`-0 func 17 lines are on `server` rows only; the
+    link's enable-bit branch and a broken filler do not occur on the socket path; the golem reader, the other reader
+    sites and 0x00563441 need a golem, a corpse or version-71 save, or a trade. A correction: the cursor slot is
+    already empty at the `p5` test (the place routine removes the child first). New: the copier passes the copy itself
+    as the insert's player and inserts into a parent in mode 4; the timers also run at every item load and creation;
+    the client copy of a runeword made by an insert holds the Name index while the server's field stays 0.
+  - **S2c pieces:** sockets 14 (the client flags before and after identifying) and 46 (the reader's store, the client
+    copy) met; both rows stay counted as S2c.
+  - **Symbols (rule 14), I → C:** `sub_00558530_ItemReplenishDurTimer`, `sub_00629900_ItemBaseHasInv`.
+  - No class move filed (proposals for the review in the § 2.6 block); totals unchanged: static 567, harness 519,
+    c-emu 0, blocked 421, deferred 2, raised 17: 1 526.
+  - **Next:** the `lane/h6b` review.
