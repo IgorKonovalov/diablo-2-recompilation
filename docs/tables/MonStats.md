@@ -870,14 +870,27 @@ The columns that name a monster's animation, its modes and its speeds (values fr
   two-frame records from frame 0 ([anim/0002 § 7](../findings/anim/0002-rates.md#7-the-breakpoint-function-derived-not-copied));
   with `vbase` 256, `r ≥ 512` needs `B_FRW + stat 67 ≥ 200`, against the new-monster 75 that the
   `champion`/`fast` terms leave unchanged at `Velocity` 0 (the bullet above). So the classic candidates are the
-  `invisospawner`'s S1 and, if their walk base is also 256 (below), the seven `9A` rows' S1 (and S2 for
+  `invisospawner`'s S1 and, their walk base being 256 too (next bullet), the seven `9A` rows' S1 (and S2 for
   `trap-horzmissile` and `trap-vertmissile`); from 410 the S1–S4
   rate is capped at 175 (`r ≤ 448`) except through a move-first skill ([anim/0002 § 1](../findings/anim/0002-rates.md#1-entry-the-record-and-the-order-of-the-tests)).
-  (tbl:MonStats.txt:Code, tbl:MonStats2.txt:S1mv, tbl:MonStats.txt:Velocity) `[L]` The `9A` and `E9` rows have no
-  walk record; whether the load's walk lookup then reads the fallback record (speed 256, anim/0001 § 2) is not read.
+  (tbl:MonStats.txt:Code, tbl:MonStats2.txt:S1mv, tbl:MonStats.txt:Velocity)
   Whether a `9A` row or the `invisospawner` reaches stat 67 ≥ 200 at run time (an aura or state) and runs S1 with a path
   is a run-time question, not a data one.
-- How `Velocity`/`Run` and stat 67 become the per-frame step is plan 0050 Phase 1.3; how the rate stats change a
+- `[I]` **The `9A` and `E9` rows' walk base** ([anim/0003 § 1.1](../findings/anim/0003-movement-gates.md#11-a-class-with-no-walk-record-the-lanea50t-reviews-reads),
+  answering this section's former `[L]`). These rows have no walk record; `sub_00650F00_MonStatsSpeeds` takes the walk
+  speed with `ANIMDATA_Lookup(mode 2, type 1, base class, no inventory)`, which returns the table's fallback record
+  when the name has no record (frames 2048, speed 256,
+  [anim/0001 § 2](../findings/anim/0001-modes-frames.md#2-records-the-token-the-lookup-and-the-fallback)). So a class
+  whose `<Code>WL<BaseW>` record is missing gets walk base `+0x036` = 256, scaled by `Velocity(i) / Velocity(b)` only
+  when its base row `b ≠ i` and `Velocity(b) > 0` (unsigned `div`), then `0 → 0`, capped at `0x7FFF`; below class 410
+  its run base `+0x038` is `+0x036(b) / 2` (signed), 128 for such a base, and from 410 the `RN` lookup, falling back to
+  256 the same way. Every `9A` and `E9` row is its own `BaseId` (above), so the eight classic `9A` rows (326–330, 355,
+  366, 369; the finding names the seven with `mS1`; `compellingorb` 366 has the code in lower case, `9a`, and no walk
+  record under either case) get walk base 256 and run base 128, and the two `E9` rows (410, 415) walk base 256 and,
+  from the `RN` lookup with no `E9RN` record, run base 256.
+  (fn:sub_00650F00_MonStatsSpeeds@0x00650F00, fn:ANIMDATA_Lookup@0x0066A9B0, 0x00650F80–0x00650F9D,
+  0x00650FBE–0x00650FD4, tbl:MonStats.txt:Velocity, tbl:MonStats.txt:BaseId)
+- How `Velocity`/`Run` and stat 67 become the per-frame step is [anim/0003 § 1–2](../findings/anim/0003-movement-gates.md#1-velocities) `[I]` (plan 0050 Phase 1.3); how the rate stats change a
   monster's modes is [anim/0002](../findings/anim/0002-rates.md) `[I]`.
 
 ## Open questions

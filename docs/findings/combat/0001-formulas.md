@@ -195,7 +195,7 @@ backlog entries (2026-10-16 "combat contradictions").
 | `0x005BFC60` | `STATEVENT_Freeze` | `itemeventfunc` 14 | I |
 | `0x0056E970` | `STATE_ApplyTimed` | put a timed state with one stat | I |
 | `0x005ADF10` | `MISSILE_HitUnit` | missile collision with a unit (named only) | I |
-| `0x005A89A0` | `MISSILE_BuildDamage` | missile packet from the missile's stats | I |
+| `0x005A89A0` | `MISSILE_BuildDamage` | missile packet from the missile's stats | C (skills/0002 § 6: 4 118 builds) |
 | `0x005AD730` | `MISSILE_ApplyDamage` | missile: defence roll, `COMBAT_ApplyDamage` with reductions | I |
 | `0x0063E9F0` | `MONSTATS_IsBoss` | MonStats `+0x0C` bit 6 | I |
 | `0x0063E940` | `MONSTATS_IsDemon` | `+0x0D` bit 5 | I |

@@ -40,7 +40,7 @@ What to check:
   offsets checked with `_Static_assert` under `gcc -m32`).
 - Blind rule: leads not read before filing (only `anim/leads` § 1); no leads row cited.
 - An archivist entry for the Objects `FrameCnt` load shift and the HitClass open question
-  ([backlog](../2026-10-27-reverser-archivist-p50d-objects-framecnt-shift-and-hit-class-readers.md)), non-blocking.
+  ([backlog](2026-10-27-reverser-archivist-p50d-objects-framecnt-shift-and-hit-class-readers.md)), non-blocking.
 
 Not done here: no harness and no emulation; every new claim is a code reading. The open questions of anim/0003 (the
 step wrap's stock reach, `Unit+0xB0`'s readers, the 44 unread object queue sites, stun on players, the every-frame

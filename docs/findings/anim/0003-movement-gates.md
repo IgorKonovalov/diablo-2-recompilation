@@ -580,7 +580,8 @@ return 0;
   animation start, so no `Sync` draw), and unmarks the footprint (`UNIT_CollUnmarkRect`) when `HasCollision2` is 0.
   The same `FrameCnt1 >> 8` + frame + 1 queue appears at 46 sites (`p50d-calls.txt` `FC8`); two are read here
   (`0x0058639A`, `0x00586475`), the other 44 are not. (fn:OBJOP_Chest@0x00585F60, fn:sub_00581490_ObjEvOperateEnd@0x00581490,
-  0x0058639A–0x005863B7, tbl:Objects.txt:Mode1, tbl:Objects.txt:HasCollision0)
+  0x0058639A–0x005863B7, 0x005814A7–0x005814BE, tbl:Objects.txt:FrameCnt1, tbl:Objects.txt:Mode1, tbl:Objects.txt:Mode2,
+  tbl:Objects.txt:HasCollision2) *(2026-10-27, `lane/a3f` review: the anchor read `HasCollision0`; event 1 tests `+0x122`, `HasCollision2`.)*
 
 ### 7. The hit class
 
@@ -642,7 +643,7 @@ return 0;
   tbl:MonStats.txt:Velocity, tbl:MonStats.txt:Run, tbl:MonStats2.txt:HitClass, tbl:MonStats2.txt:mDT,
   tbl:Armor.txt:speed, tbl:Weapons.txt:hitclass, tbl:Missiles.txt:HitClass, tbl:Skills.txt:interrupt,
   tbl:Skills.txt:srvdofunc, tbl:Skills.txt:delay, tbl:Objects.txt:FrameCnt0, tbl:Objects.txt:Mode1,
-  tbl:Objects.txt:HasCollision0, tbl:ItemStatCost.txt:Stat (stats 10, 67, 95, 102, 154, 164).
+  tbl:Objects.txt:Mode2, tbl:Objects.txt:HasCollision2, tbl:ItemStatCost.txt:Stat (stats 10, 67, 95, 102, 154, 164).
 - Unit: struct:Unit+0x10, struct:Unit+0x20, struct:Unit+0x2C, struct:Unit+0x60, struct:Unit+0xB0, struct:Unit+0xC4;
   path (`PathMove`): `+0x00`/`+0x04` position, `+0x24`/`+0x28` point index and count, `+0x34` flags, `+0x3C` type,
   `+0x58` target unit, `+0x6A`/`+0x6E` direction, `+0x72`/`+0x76` step, `+0x7C` speed, `+0x80`, `+0x84` maximum,

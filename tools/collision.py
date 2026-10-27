@@ -907,6 +907,15 @@ class World:
         got = [c for c, _ in P["cm"]]
         P["cm"] = []
         keys = ("f", "room", "x", "y", "a", "b")
+        if P.get("unlogged"):
+            # outside the logger's CM window (tools/monspawn.py mark_window_open): no CM line can be logged, and the
+            # model's own marks go on the grid; a logged mark here would contradict the window
+            self.ok(not got, "%s:%d %s outside the CM window: logged %s" % (os.path.basename(path), ln, what,
+                                                                          [[g[k] for k in keys] for g in got]))
+            self.hit("%s outside the CM window: the model's applied (not logged)" % what)
+            for c in want:
+                self.apply_cm(c)
+            return
         same = len(got) == len(want) and all(all(g[k] == w[k] for k in keys) for g, w in zip(got, want))
         self.ok(same, "%s:%d %s: logged %s, model %s" % (os.path.basename(path), ln, what,
                                                          [[g[k] for k in keys] for g in got], [[w[k] for k in keys] for w in want]))

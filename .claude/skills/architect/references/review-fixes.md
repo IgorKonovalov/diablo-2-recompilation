@@ -11,7 +11,8 @@ review against these before committing it. Categories are those of the [lane run
 3. **Write a review fix into the document it changes**, not only into the review's fix list. Seen: S4a's
    preset 18 split, still "raised" in drlg/0004 at the `lane/p38s3` review ([0038](../../../../docs/plans/0038-inferred-claims-sweep.md)); the `lane/s38h2b` review's items/affixes count (I 28) missing from its research-map row, fixed at the `lane/s38h2c` review (0038); the `lane/h4a` review marking class 312's H4b piece met in monsters/0004 but not special 66's in monsters/0003, fixed at the `lane/p51r` review ([0051](../../../../docs/plans/done/0051-backlog-sweep-6.md)). The H4a raise of the wanderer list written into monsters/spawn only, lifecycle's Constants row left `[I]` until the `lane/sfx` review (0038).
 4. **Read the whole branch region before ruling.** Seen: the Phase 2 review missed the moving player's
-   `÷ 3`, found at Phase 3 (0037).
+   `÷ 3`, found at Phase 3 (0037). The `lane/p50d` review passed anim/0003 § 6.5's `HasCollision0` anchor for event 1's
+   `+0x122` (`HasCollision2`) test, fixed at the `lane/a3f` review ([0050](../../../../docs/plans/0050-animation-frame-timing.md)).
 5. **Recompute totals once, over every reviewed batch, after merging `main`.** Two reviews computed in
    parallel each missed the other (S2b and S3a, fixed at the S4b review, 0038).
 6. **After every lane merge, run `python3 -I tools/backlog.py archive`** (ADR-0019; it runs `migrate` first, then

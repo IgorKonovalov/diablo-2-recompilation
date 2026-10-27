@@ -1013,6 +1013,32 @@ Both writers are client code, outside the DRLG build, which is why only a later 
   [chain/0002 § 6](../chain/0002-retirements.md#6-oracle-22-the-orient89unit-creations)). (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0,
   fn:sub_005557D0_PresetUnitDispatch@0x005557D0, run:2026-10-15-objects)
 
+## Lane rbd: entry bit `0x400` on a neighbour's walls (2026-10-27)
+
+From the backlog entry on the H4a chained models (council, `h4a-s1-4905-council`): three `CB` dumps reported a wall entry
+of DRLG room `02e58d00` at index 18 with flags `0x8405` where the model has `0x8005`.
+
+- [I] **Bit `0x400` of an entry's `+0x14` word is the client wall fade's "faded out" mark, not the build's.** A raw scan
+  of the image for `or [reg+0x14], 0x400` (dword and byte forms) finds two sites, `0x004DF05A` and `0x004DF2A8`, each
+  beside its `and [reg+0x14], 0xFFFFFBFF` (`0x004DF063`, `0x004DF2B1`; the only two such `and`s). Both are in client draw
+  code next to `sub_004DD060_WallCutawayTest` (functions `0x004DEF80` and `0x004DF1C0`; the second is called from
+  `0x00476CFA`). For an entry whose `+0x24` bit `0x2` is set, the code moves the alpha byte `+0x28` from `+0x29`
+  towards `+0x2A` over the 500 ms that end at the tick `+0x2C`:
+  `+0x29 + (+0x2A − +0x29) · (GetTickCount() − +0x2C + 500) / 500`, the division by `0x10624DD3` and `sar 5`. Once the
+  time is up it clears bit `0x2` and takes `+0x2A`. Then it sets `0x400` when the alpha is 0 and clears it otherwise (`0x004DF009`–`0x004DF063`). An
+  entry with `0x400` or `0x8` is then skipped (`test eax, 0x408` at `0x004DF086`). No build writer of 9d sets it.
+  The scan covers immediate `or`/`and` forms only; a computed store of the whole word is not excluded.
+  (0x004DF05A, 0x004DF2A8, fn:sub_004DD060_WallCutawayTest@0x004DD060)
+- [C] In the council log the bit is on 33 entries, all wall entries of that one near room in the dumps of other rooms
+  (`cb-bit400-council.txt`: 151 `CB` lines, 62 277 entries scanned, none of an own room). With `tools/drlg.py`'s
+  `cb_entries` counting `0x400` like `0x20000` and `0x40000` on a near room (added after its own activation, not
+  compared), the council log's three mismatches go and the rest of its entries compare as before
+  (`monstats-h4a-rbd.txt`: drlg roomk 0 mismatches, against 3 in the control run of main's tools,
+  `monstats-h4a-main-control.txt`). The bit stays compared on a room's own dump. (run:2026-10-21-sweep-monsters-a)
+- What room-tiles 9d says stands: the flag word is the build's at the room's own dump. `0x400` joins `0x20000` and
+  `0x40000` as a run-time bit a neighbour's entries may carry. That is a note for
+  [drlg/room-tiles](../../specs/drlg/room-tiles.md), filed to the spec-writer.
+
 ## Data touched
 
 - tbl:LvlPrest.txt:KillEdge (`+0x18`), tbl:LvlPrest.txt:FillBlanks (`+0x1C`), tbl:LvlPrest.txt:Animate

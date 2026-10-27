@@ -658,7 +658,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `25 · 2 + 90` = 140). (f) The d2s keys are opt-in and default off, and each refusal path is tested. The two old
   `test_d2s.py` failures are not this lane's and are not an architect fix: each missing `RECIPE_BASES` row needs a
   base save and a built hash. They are routed:
-  [archivist entry](../backlog/2026-10-27-architect-archivist-test-d2s-recipe-bases-and-mp-saves-pin.md). The 13
+  [archivist entry](../backlog/archive/2026-10-27-architect-archivist-test-d2s-recipe-bases-and-mp-saves-pin.md). The 13
   recipes are three plan 0051 P1a mp recipes and ten `skills-*` recipes; `travel-tab2` is not one.
   **Fixes:** the Missiles `VelLev` row gains the review note that a level-1 `spike1` separates the term, with its C2
   entry (omission); the P1.3 reads of ruling (d) (omission); the request's `travel-tab2` (misread, in the request only).
@@ -685,7 +685,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `+0x48` is 8.8) and combat/0001 § 6 (the delivery calls `UnitBaseHitClass`, not `HitClassPick`), as dated notes.
   23 symbols (12 `anim/movement`, 11 `anim/timing`), `re/types/anim.h` `PathMove`, `tools/anim_moves.py`, outputs
   `workspace/logs/anim/p50d-*` (`p50d-manifest.sha256`). Boundary recommendation in anim/0003 § 9. Archivist entry
-  ([backlog](../backlog/2026-10-27-reverser-archivist-p50d-objects-framecnt-shift-and-hit-class-readers.md)); review
+  ([backlog](../backlog/archive/2026-10-27-reverser-archivist-p50d-objects-framecnt-shift-and-hit-class-readers.md)); review
   requested ([backlog](../backlog/archive/2026-10-27-reverser-architect-review-lane-p50d-plan-0050-phase-1-batch.md));
   **Phase 1b part 2 runs after this review.**
   *Addendum (same lane, after merging `main` `ee8273b7` with the `lane/a50t` review's two reads):* anim/0003 § 1.1:
@@ -739,6 +739,48 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   returns at 0x0057D3BD (omission); the function table's "§ 6.7" for § 6.5, and that heading's level (stale
   cross-reference). The review request is closed. Ledger: the lane row filled (usage from the orchestrator), the
   review row added with "—" usage.
+- **2026-10-27 — `lane/a2t` review (architect): accept.** The archivist's fix for the two old `test_d2s.py` failures
+  ([request](../backlog/archive/2026-10-27-archivist-architect-review-lane-a2t-testd2s-recipe-bases.md)). After merging
+  `main`, `python3 -I tools/test_d2s.py` runs 47 tests, OK. Under `tools/` the lane touches only `tools/test_d2s.py`:
+  13 `RECIPE_BASES` rows, the `test_mp_saves_check` pin and its docstring line. No recipe, builder or `mp_saves.py`
+  line changed. All ten `skills-*` hashes equal their saves in `2026-10-27-skills-manifest.sha256`, checked by script.
+  `mp-sock-join`, `mp-wound-join` and `mp-pal-conv` were built twice into the review scratchpad, and both builds give the
+  pinned hashes. `mp_saves.py check` gives `recipes=30 bad=0 pairs=21 pairs_bad=0`, the figure the `lane/p51r` review
+  accepted for plan 0051 P1a. **`workspace/runtime/`:** the mp saves have no manifest. Nothing under
+  `mp-saves-p44` or `mp-saves-p44h` is newer than 2026-10-20, and no `MpSockJoin`, `MpWoundJoin` or `MpPalConv` exists
+  anywhere in `workspace/`. That is consistent with the blocked build never running. No fixes. The request is closed.
+  Ledger: lane row filled (usage from the orchestrator), review row added with "—" usage.
+- **2026-10-27 — anim/0003's table links folded (archivist, `lane/a3f`; no Ghidra, no harness).** From the reverser's
+  p50d entry ([backlog](../backlog/archive/2026-10-27-reverser-archivist-p50d-objects-framecnt-shift-and-hit-class-readers.md)),
+  every reader `[I]` as the finding: [Objects § Timing](../tables/Objects.md#timing-plan-0050-phase-0) gains the
+  load-time `FrameCnt` `<< 8` (`0x00640E33`–`0x00640E64`, an object's length is 8.8) and the chest operate end (event 1
+  `FrameCnt1 + 1` frames on, mode 2 without an animation start), with a reader row;
+  [HitClass](../tables/HitClass.md#open-questions)'s open question is answered (the attacker's low nibble, the element
+  nibble in `COMBAT_GetHit`, `GetHitRoll`'s divisor), its old "the delivery picks from the counter" sentence replaced
+  per anim/0003's correction of combat/0001 § 6, and the Weapons, MonStats2 and Missiles hit-class rows link it
+  (Missiles has no § Timing: its column row); MonStats § Timing's `9A`/`E9` `[L]` is replaced by § 1.1's reading, walk
+  base 256 and run 128 below 410. **Surprises:** the entry's "Missiles gives the low nibble" differs from the finding
+  (the whole `+0x60` under the packet's high nibble), and the finding's "seven classic `9A` rows" are the `mS1` ones;
+  an eighth (`compellingorb` 366) gets the same base. The docs follow the finding and say both. No survey baseline
+  changed. Review request: [backlog](../backlog/archive/2026-10-27-archivist-architect-review-lane-a3f-p50d-table-links.md).
+- **2026-10-27 — `lane/a3f` review (architect): accept with fixes.** After merging `main`, objdump on the pinned
+  `Game.exe` checks the `FrameCnt` shifts (`0x00640E33`–`0x00640E64`, `shl [edi+0xD8..0xF4], 8`), the chest queue
+  (`0x0058639A`: `FrameCnt1 >> 8` + frame + 1, `Mode1` at `+0x140`), event 1 (`0x005814A7` `Mode2` `+0x141`,
+  `0x005814B7` `HasCollision2` `+0x122`), the missile hit (`0x005AD868`–`0x005AD875`: `HitClass | (+0x60 & 0xF0)`
+  stored whole), `GetHitRoll`'s jump table at `0x0057CBF8` (8, 32, 64, 16 as the docs) and `MonStatsSpeeds`' walk and
+  run lookups. The tables were read with `python3 -I`: `hitclass.txt`'s row order, Missiles `HitClass`'s values, the
+  ten `9A`/`E9` rows, MonStats2's and `animdata.d2`'s (no `9AWL`, `E9WL` or `E9RN` record). Every new reader is `[I]`,
+  with one `[C]` data count; no game data dumped. **Rulings:** (1) Missiles `HitClass` sets the whole `+0x60`: the
+  docs follow the finding over the entry, and the data adds to it, as 122 of the 192 set rows carry a high nibble of
+  their own. (2) `compellingorb` 366 as the eighth `9A` row is accepted: it has no `mS1`, which is why the finding
+  names seven, and it shares the fallback walk base. (3) The divisor rows' names match `hitclass.txt`'s order (2
+  `1hss`, 6 `1ht`, 10 `bow`, 11 `xbow`; 4 `2hss`, 8 `club`; 5 `2hsl`). (4) anim/0003 § 6.5 is not internally
+  inconsistent. Its prose and the binary (`+0x122`) agree on `HasCollision2`, and the `HasCollision0` anchor was a
+  slip. It is fixed in place in anim/0003 (§ 6.5 with a dated note, and Data touched) and in Objects § Timing,
+  with `Mode2` and `FrameCnt1` added. No reverser entry. **Fixes (4):** MonStats names `compellingorb`'s code `9a`,
+  in lower case (misread). HitClass and Missiles carry the high-nibble count (omission). MonStats gives the `E9`
+  rows' run base 256 (omission). The anchors (wrong anchor). The review request is closed. Ledger: the lane row
+  filled (usage from the orchestrator), the review row added with "—" usage.
 - **2026-10-27 — Phase 1b part 2: the verdicts (reverser, `lane/p50v`; no Ghidra, no harness, objdump once).** Each
   of the 61 [anim/leads](../findings/anim/leads.md) claims has one verdict, written in the *Leads used* of
   [anim/0001](../findings/anim/0001-modes-frames.md#leads-used) (R1, A3, A4), [anim/0002](../findings/anim/0002-rates.md#leads-used)
