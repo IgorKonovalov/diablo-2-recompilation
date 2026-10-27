@@ -249,7 +249,7 @@ New names (subsystems `anim/movement` and `anim/timing`) and the existing ones t
 | `0x006503F0` | `sub_006503F0_PathStepTargetCheck` | still heading for the target? else replan (§ 2) | I |
 | `0x00650090` | `sub_00650090_PathStepSnap` | clamp the step onto the next point when within it (§ 2) | C |
 | `0x00650660` | `sub_00650660_PathStepMove` | the new position, the collision walk, the point index (§ 2) | C |
-| `0x00650150` | `sub_00650150_PathStepCollide` | per crossed subtile the collision test, at most 10 (§ 2) | I |
+| `0x00650150` | `sub_00650150_PathStepCollide` | per crossed subtile the collision test, at most 10 (§ 2; raised at the Phase 2 review: the step over the logged collision results, [run section](#plan-0050-phase-2-run2026-10-27-anim)) | C |
 | `0x00650350` | `sub_00650350_PathReplan` | re-plan a blocked monster path (types 2, 13, 15) | I |
 | `0x006507B0` | `sub_006507B0_PathStop` | snap to the subtile centre, clear flag 0x20, the points and the step | I |
 | `0x0064FE40` | `sub_0064FE40_PathAimNextPoint` | direction to the next point, step `(v · d) >> 8` | I |
@@ -721,7 +721,9 @@ speed writers (Charge, Leap Attack) and the mode requests are oracles.
 - **The mode tests** (§ 6.2). [C] 1 027 `PlrModeEndPending` values equal the frame of the kind-1 end queued when the
   request comes (`endpending-E`; one after a catalogue requeue not compared). 26 696 `PlayerModeAllowed` calls leave
   the player's seed unchanged (`pma-seed`): none under state 42, so the draw itself is not reached and stays `[I]`.
-  Get-hit and block are never left before their end (anim/0001's P1b-1 tallies). (fn:sub_0057ED70_PlrModeEndPending@0x0057ED70,
+  Get-hit and block are never left before their end (anim/0001's P1b-1 tallies). [I] `PlrModeLeaveOk` returned 1 at
+  all 5 633 first requests after an A1, cast, throw or kick start (`rv-req-*` of `2026-10-27-anim-check-review.txt`),
+  so none of its refusals is reached and § 6.2 stays as above. (fn:sub_0057ED70_PlrModeEndPending@0x0057ED70,
   fn:sub_0057EEC0_PlayerModeAllowed@0x0057EEC0, fn:sub_0057EDD0_PlrModeLeaveOk@0x0057EDD0, run:2026-10-27-anim)
 - **The skill delay** (§ 5, P1b-12, D1 and D2). [C] With Frozen Orb held, 72 of the 73 next casts that start within
   3 frames of the delay state's end start exactly at the `SKILLS_SetDelayState` frame (the do's) plus `d`, one 3

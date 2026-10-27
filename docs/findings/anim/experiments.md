@@ -123,7 +123,7 @@ output dev5-batch5b.out.
   Manifest `workspace/logs/anim/2026-10-27-anim-manifest-ckpt1.sha256` (`4dd51a04…`, 148 lines, one path base:
   `sha256sum -c` passes from `workspace/logs/anim/`): the 31 logs, their pilot outputs and screenshots, the batch
   outputs, the 43 saves, the list, the check output `2026-10-27-anim-check-ckpt1.txt` (`1bd13a13…`) and the three
-  replay outputs. The development files are in `workspace/logs/anim/dev-p50e-manifest.sha256` (71 lines, same base).
+  replay outputs. The development files are in `workspace/logs/anim/dev-p50e-manifest.sha256` (70 lines, same base; at the review its 71st line, a hash of the manifest itself that could not match, was removed).
 - **Result at the checkpoint** (all 31 sessions above, `2026-10-27-anim-ckpt1.lst`, checker `tools/anim.py`
   `b3fca053…`): `CHECK anim` every kind 0 mismatched (`adv=2507/0 adv-seq=1109/0 block-gate=299/0 dispatch=29182/0
   drain=27919/0 ef-first=7437/0 endpending-E=715/0 fire=29207/0 ghr=4226/0 kb-end=3050/0 name=186016/0 obj=440/0
@@ -147,9 +147,13 @@ output dev5-batch5b.out.
   (anim/0001 § 2, anim/0002 § 3.6; the checkpoint logs have no dual wield); the shapeshift display (`UNIT_AnimTransform`
   with `g_PlrToMonMode` and its fallback, rev 5's form states) and the wereform base, with `+0x48` the previous mode's
   length at `UNIT_AnimInit`'s three calls (returns 0x00624469, 0x006244C5, 0x006244E3, before its writes at 0x00624473
-  and 0x006244F4); two boundary classifications, both oracles of Phase 2's *Boundary* (catalogue code): a kind-1
-  dispatch after a cancel from skill code (returns 0x005B0000–0x005EFFFF, e.g. Leap Attack's 0x005DA2AA, whose own
-  queue the logger does not read) is not compared (`dispatch-catalogue-queued` 124, and one `PlrModeEndPending` E,
+  and 0x006244F4); two classifications of catalogue code (Phase 2's *Boundary*; at the review, uncompared catalogue paths rather
+  than ADR-0004 oracles, since neither output is logged): a dispatch after a cancel from skill code (returns
+  0x005B0000–0x005EFFFF, e.g. Leap Attack's 0x005DA2AA, each followed at once by the skill's own
+  `sub_005417D0_UnitQueueEvent` call, a queue the logger does not read) is not compared (`dispatch-catalogue-queued`
+  124: 110 kind 0 and 14 kind 1, 0–4 frames after the unit's latest such cancel, `rv-catq-*` of the review's
+  `2026-10-27-anim-check-review.txt`; the checker excuses any later dispatch of that unit, a window part 2 closes by
+  logging the queue), and one `PlrModeEndPending` E,
   `endpending-E-after-catalogue`), and a sequence advance's event byte cleared by the do it triggered is not the
   advance's (`adv-seq-do-cleared-4e` 2, sandmaggot's do 87, whose function `sub_005CB3C0_SkillDo87MaggotLay` stores 0
   at `+0x4E`, 0x005CB48E; the other two such stores, 0x005CB989 and 0x005CD51E, in dos 89 and 103); and the path
@@ -160,6 +164,15 @@ output dev5-batch5b.out.
   Manifest `workspace/logs/anim/2026-10-27-anim-manifest.sha256` (`39ba842a…`, 324 lines, one path base:
   `sha256sum -c` passes from `workspace/logs/anim/`): the 55 logs, their pilot outputs and screenshots, the batch
   outputs, all saves, the two lists, both check outputs, the summary and the three replay outputs.
+  *Review re-check* (architect, `lane/p50e` review): the manifest passes; `check`, `summary` and the three replays,
+  rerun under a 4 GB scope with `tools/anim.py` `4241197a…`, are byte-identical to the kept outputs. The review added
+  `check --review` (`tools/anim.py` `c2ef2166…`; without the flag its output is unchanged, byte-identical again):
+  `python3 -I tools/anim.py check --review $(cat workspace/logs/anim/2026-10-27-anim-close.lst) >
+  workspace/logs/anim/2026-10-27-anim-check-review.txt` (`d08c92a9…`, in
+  `2026-10-27-anim-review-manifest.sha256`, same base), the closing check plus the `rv-*` tallies: the catalogue
+  cancels by return address and the uncompared dispatches by distance and kind (`rv-catcan-*`, `rv-catq-*`), and
+  per player action the first request after the start against the kind-1 end with `PlrModeLeaveOk`'s result, and the
+  next action's start against the request's frame (`rv-req-*`).
 - **Covers** (against Phase 2's *Done when*; counts from `2026-10-27-anim-check.txt` and its summary; a short item
   keeps its claims inferred, the rare-branch rule):
 
@@ -172,7 +185,7 @@ output dev5-batch5b.out.
   | get-hits: 3 FHR breakpoints | 30 each | no class has a rate with 30 (`RATES` lines); see below | short |
   | blocks: 2 FBR breakpoints | 30 each | met for the Paladin, Druid, Assassin; one rate for the Amazon and Sorceress, none for the Necromancer and Barbarian | short in part |
   | monster mode events | 500, 20 classes | 18 756 over 54 classes; sequence monsters 1 453 advances | met |
-  | a `fast` champion | 1 | not reachable as named: MonUMod `fast` (row 6) has an empty `champion` cell (champions take 16, 36, 37, 39; tbl:MonUMod.txt); the `fast` mod met on superuniques and their minions instead: 9 300 rate calls of units whose `MON` scan carries mod 6 (`sr-m-fastmod-*`; moving 3 519, most at stat 67 175) | met as the mod |
+  | a `fast` champion | 1 | not reachable as named: MonUMod `fast` (row 6) has an empty `champion` cell (the rows with `champion` 1 are 16 `champion`, 36 `ghostly`, 37 `fanatic`, 38 `possessed` and 39 `berserk`; tbl:MonUMod.txt); the `fast` mod met on superuniques and their minions instead: 9 300 rate calls of units whose `MON` scan carries mod 6 (`sr-m-fastmod-*`; moving 3 519, most at stat 67 175) | met as the mod |
   | ruling (g): classic S1–S4 at the moving rate, two classes, one under a stat-67 change; class ≥ 410 S1–S4 | 30, 30 | 1 818 moving calls over classes 6, 19, 20, 111, 180, 190 (19 under a changed stat 67); the 70 default-branch calls are classes 257 and 405, `npc` rows (moving only in WL and RN, anim/0002 § 3.4); class ≥ 410: 509 attack, 75 default | met |
   | object animation starts, `Sync` draw predicted and chained | 100 | 725 starts, 490 draws, 235 without; chained pairs 0 of 7 (another draw on the object's seed between each) | met but chaining short |
   | movement windows (walk, run per class; monsters walking, running); 50 slowed | 200, 50 | player walk 719, run 2 211, sequence 30, knockback 1; monster walk 2 544, run 164, knockback 449; slowed 212 monster + 9 player | met |
@@ -210,15 +223,18 @@ output dev5-batch5b.out.
   all (dev5-gh3-sor-t2), and a life-1 500 character takes no get-hit. The 84 get-hits stay the run's.
 - **Readings** (what the logs show; the findings' run sections tag them):
   - **P1b-1, the interval between two actions** (`act-m<mode>-nextact-minus-n`: the next scheduled player mode's
-    start `T'` against the kind-1 end `T + n`, within 3 frames, a held request; `gap` otherwise). Cast (mode 10):
+    start `T'` against the kind-1 end `T + n`, within 3 frames; `gap` otherwise). Cast (mode 10):
     `T' = T + n − 1` 448 times, `T + n` 103, earlier (−2, −3) 8, later 175. A1 (7): −1 107, 0 63, −2/−3 15. Throw
     (11): −1 36, 0 2. Kick (12): −1 4, 0 6. Held Lightning (mode 18, skill 49, the control): `T + n` 68, `T + n − 2`
-    once, never `T + n − 1`. Get-hit (4) and block (9): never before `T + n` (0: 2 and 21 times; 1–3 later). So a
-    held normal action restarts at `T + N`, `N = n − 1`, the frame the last step's events fall on, the end still
-    queued; get-hit and block hold to their end; the Lightning sequence restarts at its end. Of the 107 A1 restarts
-    at `n − 1`, 23 have A2's `⌈256 (F − 1 − S) / r⌉ ≠ n − 1` (`act-a2-m7-a2ne-n-1-obs-n-1`), so A2's count is not the
-    interval there; the other 84 cannot tell them apart. 1 027 `PlrModeEndPending` values equal the queued end while
-    a request comes before it.
+    once, never `T + n − 1`. Get-hit (4) and block (9): never before `T + n` (0: 2 and 21 times; 1–3 later). The 23
+    starts before `T + N` are block and get-hit requests. Of the 107 A1 restarts at `n − 1`, 23 have A2's
+    `⌈256 (F − 1 − S) / r⌉ ≠ n − 1` (`act-a2-m7-a2ne-n-1-obs-n-1`), so A2's count is not the interval there; the
+    other 84 cannot tell them apart. 1 027 `PlrModeEndPending` values equal the queued end while a request comes
+    before it. *At the review* (`tools/anim.py check --review`, `2026-10-27-anim-check-review.txt`): the next action
+    starts in the frame of its request (after a cast, 1 816 of the 2 084 first action requests, 23 of them two to
+    five or more frames before `T + N`), the first action request after a cast comes at `T + N` 451 times and at
+    `T + n` 97, and `PlrModeLeaveOk` returned 1 at all 5 633 first requests. So the held normal action's `N` is the
+    client's request cadence, not a server gate (anim/0001's run section).
   - **P1b-12, the delay**: Frozen Orb held (mon sessions), of the 73 next casts (mode 10) that start within 3 frames of
     the delay state's end (`delay-next-start-m10-minus-end`), 72 start exactly at the `DLY` frame plus `d` and one 3
     frames later; the `DLY` frame is the do's (`SKILLS_SetDelayState` from `SKILLS_SrvDo`): the delay runs from the do.

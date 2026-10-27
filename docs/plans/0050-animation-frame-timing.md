@@ -1,6 +1,6 @@
 # 0050 — Animation and frame timing: unit modes, frame counts, rates and breakpoints, movement speed (ADR-0014 phase 4)
 
-> **Status:** approved 2026-10-25 (owner), in effect 2026-10-27 (plan 0045 Phase 2 part 1 accepted); P0 accepted 2026-10-27; P1 batches P1.1–P1.3 accepted with fixes 2026-10-27; P1b part 2 accepted with fixes 2026-10-27 (Phase 1b done); P2 open (its gate, 0045·P3's review, open since 2026-10-27)
+> **Status:** approved 2026-10-25 (owner), in effect 2026-10-27 (plan 0045 Phase 2 part 1 accepted); P0 accepted 2026-10-27; P1 batches P1.1–P1.3 accepted with fixes 2026-10-27; P1b part 2 accepted with fixes 2026-10-27 (Phase 1b done); P2 part 1 accepted with fixes 2026-10-27 (run:2026-10-27-anim, 0 mismatches); **P2 part 2 open** (ruled at the part 1 review); P3 may start beside it, its review waits for part 2's
 > **Created:** 2026-10-25
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0005-presentation-formats-tools-only, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases, 0020-skills-phase-in-two-plans, 0021-observed-boundaries-in-emulation
@@ -213,7 +213,7 @@ client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing ente
     breakpoints, get-hits at three or more FHR breakpoints, blocks at two or more FBR breakpoints, each at least 30
     events; a rate change in the middle of a mode (a stat change from an item swap or a state), if Phase 1 says it
     applies;
-  - 500 monster mode events over at least 20 classes, a sequence monster (mode 14) and a `fast` champion among them;
+  - 500 monster mode events over at least 20 classes, a sequence monster (mode 14) and a `fast` champion among them (read at the part 1 review as a unit with the `fast` mod, MonUMod row 6: no stock champion takes it, its `champion` cell being empty);
   - **required (the P1.2 review ruling (g)):** a classic monster (class < 410, not `npc`) in an S1–S4 mode, its `+0x4C`
     at the moving rate from its walk base (anim/0002 § 3.4) and its schedule predicted, at least 30 events over two or
     more classes, one under a stat 67 change (a `fast` or champion mod, or a slowing state); and a class ≥ 410 monster
@@ -266,8 +266,62 @@ client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing ente
 
   Rare-branch minimums (about 30 each) may fall short, named in the record with their counts; their claims stay `[I]`.
 
+#### Phase 2 part 2 — the get-hits, blocks and rates part 1 could not stage (ruled at the part 1 review, 2026-10-27)
+- **Owner skill:** reverser (agent-driven; one slot from 1–2, given in the prompt; no Ghidra)
+- **Why:** run:2026-10-27-anim (part 1) holds 0 mismatches over every compared kind, but rows of the *Done when*
+  above that are not rare branches are short because the sessions could not stage them: 84 get-hits in all (no class
+  has an FHR rate with 30; a get-hit needs a hit of a sixteenth of max life, and every fragile character died after
+  2–9), blocks for the Barbarian and the FBR rates of four classes, throws for three classes, the second weapon type
+  of the IAS rates and the Barbarian's third IAS rate, a third FCR rate for three classes. 124 dispatches after a
+  catalogue cancel are not compared because the skill's own queue (`sub_005417D0_UnitQueueEvent`) is not logged.
+  Each needs a recipe, a session or a breakpoint, not a rerun of part 1's sessions.
+- **Start:** part 1's tools (`tools/anim.py` `c2ef2166…`, its `--review` tallies included; logger rev 5;
+  `tools/anim_sessions.py` `889dae99…`); part 1's 55 logs stay kept and unchanged, and the floors below count part
+  1's events with part 2's. Nothing in part 1's closing check may regress: the closing check of part 2 runs over all
+  logs of both parts.
+- **What:** (1) **the get-hit route** (an estimate, the lane may change the numbers, not the route): a high-life
+  character per class (clvl 60 or more, life 1 000 or more, a hit of 63 or more reaching `GetHitRoll`'s bands) in a
+  Nightmare area whose melee hits fall between `maxHP / 16` and a quarter of life (the lane picks it from one
+  development session's `GH` totals), the belt and the inventory filled with stock full rejuvenation potions
+  (`rvl`) and the pilot's `--drink-in-burst` at a higher life threshold, so that one potion buys several get-hits;
+  the three FHR tiers per class as part 1's t0–t2 (0, 24, 48) or other stock values where two tiers give one rate;
+  (2) longer `bk-` sessions (split in two where the session cap cut part 1's to 10 hops) for two FBR rates per class;
+  (3) F4 Throw sessions for the Necromancer, Paladin and Druid; (4) set-2 attacks (the weapon swap pressed and its
+  record checked in the log) at three IAS values per class, and a third IAS rate for the Barbarian; (5) a third FCR
+  rate for the Amazon, Barbarian and Assassin (another stock FCR value where two tiers give one rate); (6) logger
+  rev 6: `sub_005417D0_UnitQueueEvent` called from 0x005B0000–0x005EFFFF logged (its kind, frame and arguments), so
+  that the checker takes that queue as an ADR-0004 oracle (logged, taken as given) and compares the dispatches after
+  a catalogue cancel, the excuse window of part 1's checker removed; (7) the rare branches below, staged where a
+  recipe reaches them.
+- **Done when:** `run:YYYY-MM-DD-anim` (part 2) reproduces with **0 mismatches** over its logs and part 1's, and, with
+  part 1, the following are met or named short with counts (minimums are estimates):
+  - get-hits: for each class, 30 or more at each of three FHR rates (the `RATES` line's `get-hit rates30` ≥ 3),
+    each with its schedule, its end and the first frame the player acts again (P1b-1's get-hit half at two or more
+    rates); P1b-8's Druid get-hits with a one-handed hammer and a two-handed sword, 30 each;
+  - blocks: two FBR rates of 30 for every class (`block rates30` ≥ 2);
+  - throws: 30 per class for the seven classes (P1b-3 counted with them);
+  - attacks: three IAS rates of 30 on each of two weapon types (two records) per class; casts: three FCR rates of
+    30 per class (`cast rates30` ≥ 3);
+  - the catalogue queue: in part 2's rev 6 logs every dispatch after a catalogue cancel compared
+    (`dispatch-catalogue-queued` 0 there, 30 or more such dispatches); part 1's 124, whose logs lack the queue, stay
+    uncompared and are named;
+  - P1b-1's restart against the request frame (`rv-req-*`) for every class and action mode, the held Lightning
+    control among them;
+  - rare branches (about 30 each; short ones named with counts, their claims stay `[I]`): 30 player knockbacks
+    (mode 19 starts with the end predicted; class 462 or another stock source); a run that turns to a walk at 0
+    stamina (a low-stamina recipe on a long run); P1b-2 (30 attacks with the factor above 175: Burst of Speed
+    extended); P1b-13 (a stock item or skill with Slows Target, or named unreachable with the survey); P1b-14 (a
+    moving factor below 25 by stacked stock slows, or named unreachable); P1b-7's `VASCHTH` (or the reason no
+    stock form reaches it); P1b-15 (a Charge at stat 67 ≤ 50).
+  Not part 2 cases, ruled at the part 1 review: the object-start and `PlayerModeAllowed` chaining (the plan's own
+  clause: a kind with no chained pair keeps its draw-order claims `[I]`), the optional `PlayerModeAllowed` draws under
+  state 42 and the object operate ends, and a Frenzy after a missed first swing.
+
 ### Phase 3 — Spec: animation and frame timing
 - **Owner skill:** spec-writer
+- **Start:** after the Phase 2 part 1 review (2026-10-27), in parallel with Phase 2 part 2 (plan 0045's precedent):
+  the statements part 2 targets are written `[I]` and re-tagged from part 2's reviewed raises; **the Phase 3 review
+  waits for part 2's review**.
 - **What:** `docs/specs/anim/README.md`, `anim/timing.md` and `anim/movement.md` (or one file, as the spec-writer
   chooses at the start); update skills/dispatch (the do frame), combat (hit recovery, knockback and stun lengths,
   block, the "owed to phase (5)" question relabelled and answered), stats/states (the rate and velocity effects of
@@ -923,4 +977,71 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   never `T + N`), get-hit and block never before `T + n`; 23 A1 restarts separate A2. P1b-12, the next cast starts at
   the do plus the delay (72 of 73). P1b-10, 12 of Blood Raven's 13 knockback results put the player in neutral in the
   same frame. The every-frame first run answered (anim/0003's open question, closed). The P1b cases entry is closed;
-  review requested ([backlog](../backlog/2026-10-27-reverser-architect-review-plan-0050-phase-2.md)).
+  review requested ([backlog](../backlog/archive/2026-10-27-reverser-architect-review-plan-0050-phase-2.md)).
+- **2026-10-27 — Phase 2 (part 1) reviewed (architect, `lane/p50e` at `16c783e7`; `main` merged first, `c9981432`, the
+  ledger conflict kept both sides; static, objdump, no Ghidra, no harness): accept with fixes (5); Phase 2 part 2
+  filed.** Re-checked: `2026-10-27-anim-manifest.sha256` (324 lines, `39ba842a…`) passes from `workspace/logs/anim/`;
+  `check` over the 55 logs, `summary` and the three replays, rerun under `systemd-run --user --scope -p MemoryMax=4G`
+  with `tools/anim.py` `4241197a…`, are byte-identical to the kept outputs (every kind 0 mismatched: rate 298 373,
+  schedules 25 848, queued events 42 542, steps 99 241, `GetHitRoll` 7 195). objdump on the pinned image: the
+  catalogue cancels' returns 0x005CBDED, 0x005CFAAA, 0x005D1503, 0x005DA2AA (each `UNIT_CancelEvents` at 0x00540E60
+  followed by `sub_005417D0_UnitQueueEvent`: 0x005CFABE, 0x005D1517, 0x005DA2BE), the `+0x4E` stores 0x005CB48E,
+  0x005CB989, 0x005CD51E, `UNIT_AnimInit`'s rate-call returns 0x00624469, 0x006244C5, 0x006244E3 with its `+0x48`
+  writes 0x00624473 and 0x006244F4, the start-frame read 0x005539CC, the dispatch sites 0x00540FC4 and 0x005410C4:
+  all resolve. MonUMod read with `python3 -I`. The review added `tools/anim.py check --review` (`c2ef2166…`; without
+  the flag the output is byte-identical) and kept `2026-10-27-anim-check-review.txt` (`d08c92a9…`,
+  `2026-10-27-anim-review-manifest.sha256`).
+  - **Fixes (5):** (1) *misread:* the catalogue exclusion was filed as "124 kind-1 dispatches" and "a boundary
+    oracle": they are 110 kind 0 and 14 kind 1, 0–4 frames after the unit's latest catalogue cancel, and since the
+    skill's own queue is not logged they are an uncompared catalogue path, not an ADR-0004 oracle (anim/0001's
+    schedule bullet and the record corrected; part 2 logs the queue). (2) *overclaim:* P1b-1's `[C]` "the sources'
+    count `N` is the interval between two held normal actions": the `--review` tallies show the next action starting
+    in its request's frame (1 816 of 2 084 first action requests after a cast, 23 of them before `T + N`) and
+    `PlrModeLeaveOk` returning 1 at all 5 633 first requests, so `N` is the client's held-request cadence, not a server
+    gate; the starts before `T + N` the record counted (8 and 15) are block and get-hit requests (anim/0001's P1b-1
+    bullet, anim/0003's mode-tests bullet and the record rewritten). (3) *under-claim:* four functions whose logged
+    output the run compares left I (review-fix 14): `sub_00650150_PathStepCollide` (the step over the logged collision
+    results at 0x00650215), `sub_005A8520_MonKnockbackEnd` (541 logged ends, `kb-end`), `SKILLS_SetDelayState` (the
+    next cast at its logged frame plus `d`, 72 of 73), `SUNIT_ModeEveryFrame` (9 682 logged starts, `ef-first`):
+    raised to `C` in `re/symbols.csv` and the Functions tables (anim/0001 rows split, anim/0003, skills/0001), so the
+    run raises 25. (4) *tool not kept:* `dev-p50e-manifest.sha256` listed its own hash, a line that cannot pass, so
+    `sha256sum -c` failed; the line removed (70 lines). (5) *misread:* the record's MonUMod champion rows "16, 36, 37,
+    39" left out 38 (`possessed`).
+  - **Ruling (a): the two classifications.** The `+0x4E` one stands: the three stores are where the checker says, the
+    two cases are a catalogue write (plan 0046) and anim/0001 keeps that reading `[I]`, while 1 451 other sequence
+    advances are compared. The dispatch one is a legitimate scope exclusion, not an oracle, and it does not hide a
+    model gap in what part 1 claims: each of the cancel sites queues its own event at once, and every excused dispatch
+    lies 0–4 frames after one. But the checker's window is unbounded (any later dispatch of that unit), which a model
+    gap could hide behind; part 2 logs `UnitQueueEvent` from catalogue code and removes the window.
+  - **Ruling (b): P1b-1.** A2 is contradicted (23 A1 restarts separate it) and Lightning's control holds (`T + n` 68,
+    never `T + N`). What the spec states: the server starts the next action in the frame of its request, whatever
+    the frame (the mode request is an oracle); the stock client's held request comes at `T + N` for a normal action and
+    at `T + n` for Lightning, `[C]` as an observation of that input; the client's rule is not read. Get-hit and block
+    are never left before `T + n` (§ 6.2's refusal the reading, `[I]`). The breakpoint tables' `N` is therefore the interval a held
+    button gives, stated as such.
+  - **Ruling (c): P1b-12** accepted: under D2 no cast could start inside the D1 window (the state still on), and 72
+    start at the logged `SKILLS_SetDelayState` frame plus `d`. **P1b-10** accepted as an observation (12 of 13 Blood
+    Raven knockbacks put the player in neutral in the hit's frame, the cause `[I]`), met for its 10; the player's
+    knockback length (mode 19, 2 starts) is a part 2 rare branch.
+  - **Ruling (d): the `fast` champion.** The claim is right: MonUMod row 6 `fast` has an empty `champion` cell, and the
+    rows with `champion` 1 are 16 and 36–39. The *Done when* item is read as a unit with the `fast` mod (the plan text
+    amended), met by the 9 300 rate calls of superuniques and minions carrying mod 6.
+  - **Ruling (e): Phase 2 part 1 accepted; a Phase 2 part 2 is filed** (above, with its *Done when*), as plan 0045's
+    part 2. The rare-branch rule does not cover the get-hits, blocks, throws and rate tiers: they are common events the
+    sessions could not stage, and the spec's breakpoint tables need them. **The get-hit fix:** a high-life character
+    per class (clvl 60+, life 1 000+) in a Nightmare area whose melee hits fall between `maxHP / 16` and a quarter of
+    life, with stock full rejuvenation potions in the belt and inventory and the pilot drinking early, so that each
+    potion buys several get-hits; not a high-defence character (it lowers the hit count, not the cost per get-hit).
+    The object-start and `PlayerModeAllowed` chaining, the optional state-42 draws and operate ends are not part 2
+    cases (the plan's own clause keeps them `[I]`); the player knockbacks, the run's turn to a walk, P1b-2, -7's
+    `VASCHTH`, -13, -14 and -15 are part 2's rare branches, named short if unreached.
+  - **Ruling (f): the 21 raises** hold under review-fix 14 (each a function whose logged return or effect the check
+    compares, the consumer agreeing); with fix (3), 25. `sub_0057EDD0_PlrModeLeaveOk` (no refusal reached),
+    `sub_0057EEC0_PlayerModeAllowed` (no draw), the two event dispatchers (only their call is logged) and the path base
+    and run-velocity helpers (not logged; their value is compared only through the rate exit) stay I.
+  - **Ruling (g): the leads' Verdict column** (request point 5) is not edited: verdicts record the blind cross-check
+    of P1b; the run's outcomes live in the findings' run sections, which the spec cites.
+  - **Gates.** Phase 2 part 1 accepted, so **0050·P3 (the spec) may start now**, beside part 2 (the statements part 2
+    targets written `[I]`, re-tagged from part 2's reviewed raises); **0050·P3's review waits for part 2's review**.
+    0052·P2 stays closed (gated on 0050·P3's review). **0050·P2 part 2** may start on one harness slot. The P1b
+    cases entry stays closed (its remaining cases are part 2's); the review request is closed.

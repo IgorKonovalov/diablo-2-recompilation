@@ -140,13 +140,15 @@ New names (subsystem `anim/timing`) and the existing ones this finding reads; al
 | `0x005533D0` | `SUNIT_AnimInit` | server re-init at a mode start (§ 3) | I |
 | `0x005539B0` | `SUNIT_ScheduleModeEvents` | the schedule (§ 7) | C |
 | `0x00553B10` / `0x00553C70` / `0x00553DC0` | `sub_00553B10_RescheduleFromPct` / `sub_00553C70_RescheduleSkip` / `sub_00553DC0_RescheduleAt` | catalogue reschedules (§ 7.1) | I |
-| `0x00553F00` / `0x00553990` / `0x00553570` | `SUNIT_ModeEveryFrame` / `SUNIT_CancelModeEvents` / `SUNIT_SetMode` | event 0 every frame; cancel events 0 and 1; `0x0057C980` then `UNIT_SetMode` | I |
+| `0x00553F00` | `SUNIT_ModeEveryFrame` | event 0 every frame (raised at the Phase 2 review: 9 682 logged starts, `ef-first`, [run section](#plan-0050-phase-2-run2026-10-27-anim)) | C |
+| `0x00553990` / `0x00553570` | `SUNIT_CancelModeEvents` / `SUNIT_SetMode` | cancel events 0 and 1; `0x0057C980` then `UNIT_SetMode` | I |
 | `0x005416B0` / `0x005415E0` / `0x00541650` | `sub_005416B0_EventQueueAt` / `sub_005415E0_EventQueueEveryFrame` / `sub_00541650_UnitQueueEveryFrame` | the event queue (§ 6) | I |
 | `0x00541240` / `0x00540F60` / `0x00541060` / `0x00541320` | `sub_00541240_MissileEventsRun` / `sub_00540F60_PlayerEventsRun` / `sub_00541060_MonEventsRun` / `sub_00541320_ItemEventsRun` | the list runners (§ 6) | I |
 | `0x00581220` / `0x005A7F80` | `sub_00581220_PlayerEventDispatch` / `sub_005A7F80_MonEventDispatch` | `g_PlayerEventFuncs` / `g_MonEventFuncs` by kind | I |
 | `0x005811D0` / `0x005A7BA0` / `0x005A7BE0` | `sub_005811D0_PlayerModeFrameEvent` / `sub_005A7BA0_MonModeFrameEvent` / `sub_005A7BE0_MonModeEndEvent` | event 0 and 1 handlers | I |
 | `0x005A6B10` | `sub_005A6B10_MonModeEveryFrame` | is the monster mode every-frame? | I |
-| `0x005A8030` / `0x005A8520` / `0x005A8330` / `0x005A83E0` / `0x005A73E0` | `sub_005A8030_MonModeEndGeneric` / `sub_005A8520_MonKnockbackEnd` / `sub_005A8330_MonModeEndToS1` / `sub_005A83E0_MonModeEndToS1b` / `sub_005A73E0_MonModeStartNeutral` | monster mode ends and the neutral start (§ 10) | I |
+| `0x005A8520` | `sub_005A8520_MonKnockbackEnd` | the monster knockback's end (§ 10; raised at the Phase 2 review: 541 logged ends, `kb-end`, [anim/0003's run section](0003-movement-gates.md#plan-0050-phase-2-run2026-10-27-anim)) | C |
+| `0x005A8030` / `0x005A8330` / `0x005A83E0` / `0x005A73E0` | `sub_005A8030_MonModeEndGeneric` / `sub_005A8330_MonModeEndToS1` / `sub_005A83E0_MonModeEndToS1b` / `sub_005A73E0_MonModeStartNeutral` | monster mode ends and the neutral start (§ 10) | I |
 | `0x0057F020` / `0x0057F090` / `0x0057F1F0` / `0x0057F190` / `0x0057FE30` / `0x0057FDC0` / `0x00580C20` | `sub_0057F020_PlrModeStartNeutral` / `sub_0057F090_PlrModeStartMove` / `sub_0057F1F0_PlrModeStartMoveXY` / `sub_0057F190_PlrModeStartMoveUnit` / `sub_0057FE30_PlrModeStartGetHit` / `sub_0057FDC0_PlrModeStartBlock` / `sub_00580C20_PlrModeMoveFrame` | player mode starts and the move frame (§ 9) | I |
 
 Data: `g_MonModeRecords` `0x006E2260` (21 × 16 B), `g_MonModePerFrame` `0x006E23D0` (16 × 12 B), `g_MonModeEndDirect`
@@ -665,8 +667,14 @@ queues and reschedules, the client): what a callee or a catalogue function does 
   sequences among them) queue exactly the kind-0 list and the kind-1 end of § 7's loop from the start frame, the
   rate and the length of the unit's last rate call and record (`sched`, `sched-rate`, `sched-len` 25 848 each), and
   the 42 542 queued events fire at their frames unless cancelled first (`fire`); no dispatch of the slot lists fires an
-  event the schedulers did not queue (`dispatch` 42 449), outside the 124 kind-1 dispatches after a catalogue skill
-  function's own cancel (`dispatch-catalogue-queued`, its queue a boundary oracle). (fn:SUNIT_ScheduleModeEvents@0x005539B0,
+  event the schedulers did not queue (`dispatch` 42 449). Not compared, and outside this `[C]`: 124 dispatches (110
+  kind 0, 14 kind 1) 0–4 frames after a catalogue skill function's own `UNIT_CancelEvents` call (returns
+  0x005B0000–0x005EFFFF: `SkillSt49Nest` 0x005CBDED, `SkillDo67Charge` 0x005CFAAA, `SkillDo126ImpInferno` 0x005D1503,
+  `LeapAttackLand` 0x005DA2AA among them), each of which is followed at once by that function's own
+  `sub_005417D0_UnitQueueEvent` call (0x005CFABE, 0x005D1517, 0x005DA2BE), a queue the logger does not read
+  (`dispatch-catalogue-queued`; `rv-catq-*` of `2026-10-27-anim-check-review.txt`). Since that queue's output is not
+  logged, it is an uncompared catalogue path (plan 0046), not an ADR-0004 oracle; Phase 2 part 2 logs it.
+  (fn:SUNIT_ScheduleModeEvents@0x005539B0, fn:UNIT_CancelEvents@0x00540E60, fn:sub_005417D0_UnitQueueEvent@0x005417D0,
   fn:sub_005416B0_EventQueueAt@0x005416B0, fn:sub_00581220_PlayerEventDispatch@0x00581220,
   fn:sub_005A7F80_MonEventDispatch@0x005A7F80, run:2026-10-27-anim)
 - **The advance** (§ 8) **raised.** [C] 2 927 consecutive advances of windowed every-frame monsters (`adv`, knockback
@@ -688,10 +696,19 @@ queues and reschedules, the client): what a callee or a catalogue function does 
   fn:sub_005415E0_EventQueueEveryFrame@0x005415E0, fn:SUNIT_ModeEveryFrame@0x00553F00, run:2026-10-27-anim)
 - **P1b-1, the interval between two actions** (A1, A2, C1, H1, B1; [anim/leads § 12](leads.md#12-verdicts-part-2)).
   [C] The schedule's end is at `T + n` and its last step at `T + N`, `N = n − 1` (above). What the run shows of the
-  next action, a held request (`act-m<mode>-nextact-minus-n`): a cast restarts at `T + N` 448 times and at `T + n`
-  103 (8 earlier); A1 107 and 63 (15 earlier); a throw 36 and 2; the held Lightning sequence (mode 18, the control) at
-  `T + n` 68 times and never at `T + N`; get-hit and block never before `T + n`. So the sources' count `N` is the
-  interval between two held normal actions, and Lightning's is `n` (the sources' own exception); 23 A1 restarts at
-  `N` have A2's `⌈256 (F − 1 − S) / r⌉ ≠ N`. [I] Why a held normal action restarts one frame before its end
-  (`PlrModeLeaveOk` passing while the end is queued, anim/0003 § 6.2) is the reading, not a logged branch.
+  next scheduled mode within 3 frames of the end (`act-m<mode>-nextact-minus-n`): after a cast it starts at `T + N`
+  448 times and at `T + n` 103; after A1 107 and 63; after a throw 36 and 2; after the held Lightning sequence (mode
+  18, the control) at `T + n` 68 times and never at `T + N`; get-hit and block are never left before `T + n`. The
+  starts earlier than `T + N` (8 after a cast, 15 after A1) are block and get-hit requests (9, 4), not actions. 23 A1
+  restarts at `N` have A2's `⌈256 (F − 1 − S) / r⌉ ≠ N`, so A2's count is not the interval there.
+  [C] **The next action starts in the frame of its request** (the mode request, an oracle of Phase 2's *Boundary*;
+  the checker's `--review` tallies `rv-req-*` in `2026-10-27-anim-check-review.txt`): of the 2 084 first action
+  requests after a cast's start, 1 816 are followed by the next scheduled mode in their own frame, 1 793 of them at or
+  after `T + N` and 23 two to five or more frames before it (the rest start it later, from a later request); after
+  A1 1 685 of 2 332, after a throw 90 of 149, after a kick 368 of 569 likewise. The first action request after a
+  cast comes at `T + N` 451 times, at `T + n` 97, later 1 505 and earlier 31. `PlrModeLeaveOk` returned 1 at all
+  5 633 first requests after a start (its refusal is not reached). So the `N` interval is the cadence of the client's
+  held request (sent at `T + N`, at `T + n` for Lightning), not a server gate: the server starts the next action in
+  the request's frame, before `T + N` too. After, `[I]`: the
+  client's rule for when it sends a held request is not read (ADR-0005, the client is presentation and an oracle).
   (fn:SUNIT_ScheduleModeEvents@0x005539B0, fn:sub_0057EDD0_PlrModeLeaveOk@0x0057EDD0, run:2026-10-27-anim)

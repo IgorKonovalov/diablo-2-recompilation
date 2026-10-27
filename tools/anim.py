@@ -487,9 +487,10 @@ def step_model(p, cts):
 
 # ----------------------------------------------------------------------------------------------- the checker
 class Checker:
-    def __init__(self, d, verbose=False):
+    def __init__(self, d, verbose=False, review=False):
         self.d = d
         self.v = verbose
+        self.rv = review    # --review: the plan 0050 Phase 2 review's extra tallies (rv-*); off, the output is unchanged
         self.n = collections.Counter()
         self.bad = collections.Counter()
         self.ex = collections.defaultdict(list)
@@ -617,6 +618,8 @@ class Checker:
                     # 0x005DA82F, ...): the skill queues its
                     # own events at a site the logger does not read (plan 0046's, a boundary oracle)
                     self.cat_cancel.setdefault(x["u"], []).append(x["fr"])
+                    if self.rv:
+                        self.tally["rv-catcan-ra=%08X" % x["ra"]] += 1
             elif tag == "FREE":
                 freed.setdefault(x["u"], []).append((x["fr"], x["n"]))
         queued = {}     # (unit, kind, frame, a, b) -> sched line
@@ -718,6 +721,9 @@ class Checker:
                     cc = [f for f in self.cat_cancel.get(uu, ()) if f <= fr]
                     if cc:
                         self.tally["dispatch-catalogue-queued"] += 1    # after a catalogue cancel: not modelled
+                        if self.rv:     # frames since the unit's latest catalogue cancel, and the event kind
+                            self.tally["rv-catq-dist=%d" % min(99, fr - max(cc))] += 1
+                            self.tally["rv-catq-kind=%d" % kind] += 1
                         continue
                     self.ok("dispatch", False, ("unqueued", n, uu, fr, kind, a, b))
                 else:
@@ -1058,6 +1064,17 @@ class Checker:
                 self.tally["endpending-E-after-catalogue"] += 1
             elif a["E"] is not None and a["e1"] is not None and a["req"] and a["req"][0] <= a["e1"]:
                 self.ok("endpending-E", a["E"] == a["e1"], ("E", a["n"], a["E"], a["e1"]))
+            if self.rv and a["req"] and a["e1"] is not None and not a["seq"] and a["m"] in (7, 10, 11, 12):
+                # P1b-1 at the review: the first request after T against the kind-1 end, PlrModeLeaveOk's result,
+                # and the next action's start against the request's frame (same unit)
+                rq = a["req"][0] - a["e1"]
+                nb = b["T"] - a["req"][0] if (b is not None and b["u"] == a["u"]) else None
+                act = a["req"][1] in (2, 3, 7, 8, 10, 11, 12, 18, 19)
+                self.tally["rv-req-m%d-%s-req-minus-e1=%s-leave=%s" % (
+                    a["m"], "act" if act else "req%d" % a["req"][1], max(-5, min(3, rq)), a["leave"])] += 1
+                if act:
+                    self.tally["rv-req-m%d-act-%s-next-start-minus-req=%s" % (
+                        a["m"], "early" if rq <= -2 else "late", nb if nb is None or abs(nb) <= 5 else ">5")] += 1
             if a["e1"] is None or a["next"] is None:
                 continue
             n = a["e1"] - a["T"]
@@ -1505,6 +1522,7 @@ def main():
     ap.add_argument("--root", default=os.path.join(ROOT, "workspace", "merged"))
     ap.add_argument("--exe", default=os.path.join(ROOT, "workspace", "install", "app", "game.exe"))
     ap.add_argument("-v", action="store_true")
+    ap.add_argument("--review", action="store_true", help="add the plan 0050 Phase 2 review's rv-* tallies")
     a = ap.parse_args()
     if a.cmd == "summary":
         return summary(a.logs)
@@ -1513,7 +1531,7 @@ def main():
     d = Data(a.root, a.exe)
     if a.cmd == "replay-skills":
         return replay_skills(d, a.root, a.logs)
-    c = Checker(d, a.v)
+    c = Checker(d, a.v, a.review)
     for p in a.logs:
         c.run(p)
     return c.report()

@@ -473,7 +473,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00553B10,func,sub_00553B10_RescheduleFromPct,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x00553C70,func,sub_00553C70_RescheduleSkip,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x00553DC0,func,sub_00553DC0_RescheduleAt,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
-0x00553F00,func,SUNIT_ModeEveryFrame,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
+0x00553F00,func,SUNIT_ModeEveryFrame,,C,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x00554010,func,sub_00554010_UnitGetGame,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005540A0,func,UNIT_SetSparkle,,C,objects,docs/findings/objects/0001-object-population.md
 0x005540D0,func,UNIT_GetSparkle,,C,objects,docs/findings/objects/0001-object-population.md
@@ -1363,7 +1363,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A8030,func,sub_005A8030_MonModeEndGeneric,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x005A8330,func,sub_005A8330_MonModeEndToS1,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x005A83E0,func,sub_005A83E0_MonModeEndToS1b,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
-0x005A8520,func,sub_005A8520_MonKnockbackEnd,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
+0x005A8520,func,sub_005A8520_MonKnockbackEnd,,C,anim/timing,docs/findings/anim/0003-movement-gates.md
 0x005A8730,func,sub_005A8730_CollideUnitFilter,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005A87B0,func,sub_005A87B0_CollideMonster,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005A87F0,func,sub_005A87F0_CollidePlayerOrAlly,,I,skills/missiles,docs/findings/skills/0002-missiles.md
@@ -2675,7 +2675,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0064FDC0,func,sub_0064FDC0_PathDirectionXY,,I,skills/catalogue,docs/findings/skills/0016-monster-8a.md
 0x0064FE40,func,sub_0064FE40_PathAimNextPoint,,I,anim/movement,docs/findings/anim/0003-movement-gates.md
 0x00650090,func,sub_00650090_PathStepSnap,,C,anim/movement,docs/findings/anim/0003-movement-gates.md
-0x00650150,func,sub_00650150_PathStepCollide,,I,anim/movement,docs/findings/anim/0003-movement-gates.md
+0x00650150,func,sub_00650150_PathStepCollide,,C,anim/movement,docs/findings/anim/0003-movement-gates.md
 0x006502D0,func,sub_006502D0_PathVelocityStep,,C,skills/missiles,docs/findings/skills/0002-missiles.md
 0x00650350,func,sub_00650350_PathReplan,,I,anim/movement,docs/findings/anim/0003-movement-gates.md
 0x006503F0,func,sub_006503F0_PathStepTargetCheck,,I,anim/movement,docs/findings/anim/0003-movement-gates.md
@@ -3497,7 +3497,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0056E520,func,sub_0056E520_SkillAttackRateList,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x0056ECB0,func,sub_0056ECB0_SkillMissileCreate,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x0056EE90,func,sub_0056EE90_SkillMissileCreateLob,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
-0x0056EF90,func,SKILLS_SetDelayState,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056EF90,func,SKILLS_SetDelayState,,C,skills/dispatch,docs/findings/anim/0003-movement-gates.md
 0x0056F020,func,sub_0056F020_SkillDelayFromCalc,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x0056F1F0,func,SKILL_MeleeDeliverDo,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x0056F640,func,SKILLS_SrvStart,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
