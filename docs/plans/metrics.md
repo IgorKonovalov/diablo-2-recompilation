@@ -383,6 +383,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/h6f` review | 0038 H6f | architect-review | 175 941 | 73 | 14 | — (static, objdump, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
 | 2026-10-27 | `lane/wiki` | owner request: wiki refresh over the 2026-10-27 re-tags, root README | wiki | 191 812 | 45 | 9 | — (no slot, no Ghidra, no harness) | accept with fixes (ruling: the README Status table follows the research map's rows, so the four combat files fold into `combat/formulas`) | 2: misread 1, other 1 (wiki/saves' "long name" for a name id past `+0x116`; the four combat rows split from the map's one) |
 | 2026-10-27 | `lane/wiki` review | owner request: wiki refresh, root README | architect-review | 112 970 | 37 | 6 | — (static, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/s38v` | 0038 P3 items/vendors (S2c, H6c) | spec-writer | 227 622 | 95 | 20 | — (no slot, no Ghidra, no harness) | accept with fixes | 5: under-claim 2, overclaim 2, misread 1 |
+| 2026-10-27 | `lane/s38v` review | 0038 P3 items/vendors | architect-review | 160 089 | 44 | 9 | — (static, objdump only) | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
