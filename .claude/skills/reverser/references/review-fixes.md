@@ -80,7 +80,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    (0x0052C134) left unbounded beside a "no block write" claim (`lane/r1h` review, 0038); a logged `EXCEL_FindName`
    return (0x0065A33B) credited to `TC_LoadAll` where it lies in `TC_BuildChestTable`, which `TC_LoadAll` calls
    (`lane/h3b` review, 0038); "Kick itself never reaches" `GetPhysMin`'s `Kick` branch from a scan of start 2's and
-   do 2's direct calls only, their callees' calls unfollowed (`lane/rk` review, 0038). The legacy header's left and right skills written as `PlayerSetSkill` calls of the header reader, which only returns them; the caller applies them after the skills section and skips a 0 (0x005341EC–0x00534210, `lane/rlg` review, 0038).
+   do 2's direct calls only, their callees' calls unfollowed (`lane/rk` review, 0038). The legacy header's left and right skills written as `PlayerSetSkill` calls of the header reader, which only returns them; the caller applies them after the skills section and skips a 0 (0x005341EC–0x00534210, `lane/rlg` review, 0038). `MERC_Create`'s "no other call in single player" with the third caller's trigger (`PlayerPlaceInAct`'s list at `+0x60`) unread, and a d-2c proposal resting on it (`lane/h6f` review, 0038).
 10. **One case decides only if a wrong reading could not match it by chance.** Seen: aff 28's durability
     value, about one in eight (S2b, 0038). Count the cases that separate the readings, not the cases checked: a
     rounding needs a remainder (three curse lengths whose `MulDiv` is exact), and a model fix's counter is not its
@@ -93,7 +93,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     convention (`lane/p50v` review, [0050](../../../../docs/plans/0050-animation-frame-timing.md)); Kick's 25 logged
     physicals of 0 set against `GetPhysMin`'s ≥ 49 920 without saying the packet at `ApplyDamage` is already reduced, so
     that a physical-immune target would also log 0: name what the observed value has been through, and rule it out
-    (`lane/rk` review, 0038). The imbued `cap` filed as the unidentified case of "an imbued item is repaired when created identified", where it was ethereal too and already at 7 of 7, so "refused" and "repaired" give the same line (`lane/h6e1` review, 0038).
+    (`lane/rk` review, 0038). The imbued `cap` filed as the unidentified case of "an imbued item is repaired when created identified", where it was ethereal too and already at 7 of 7, so "refused" and "repaired" give the same line (`lane/h6e1` review, 0038). The saved name's u16 add and unsigned compare filed `[C]` on one name, 50, which every width gives alike, and `MERC_CapExpGain`'s "unsigned" on gains that were all positive (`lane/h6f` review, 0038).
 11. **"Moved" names the destination plan**; otherwise write "out of this plan". Seen: status bit 1
     (0039 P1b ruling 4); a closed entry's "(3) deferred" with no home (H7a review, 0038).
 12. **Carry a correction into the section it corrects**, not only into the run's ledger section: the claim, its
@@ -114,7 +114,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     [0050](../../../../docs/plans/0050-animation-frame-timing.md)); skills/0001's Answer bullet giving, inside its `[C]`, the client
     filter as the reason no refused request reached the server, which § 18 holds `[I]` (`lane/p45k` review,
     [0045](../../../../docs/plans/done/0045-skills-missiles-machinery.md)); `brain_mem`'s docstring in `tools/h6e2_sessions.py` still saying
-    `OBJS` lists "only the objects near the player" after the finding corrected it (`lane/rdp` review, 0038). The imbue-repair refinement left out of items/0011's "never: the imbued item is built unidentified" and items/0010's Answer bullet "all three repair" (`lane/h6e1` review, 0038).
+    `OBJS` lists "only the objects near the player" after the finding corrected it (`lane/rdp` review, 0038). The imbue-repair refinement left out of items/0011's "never: the imbued item is built unidentified" and items/0010's Answer bullet "all three repair" (`lane/h6e1` review, 0038). `MERC_AddExp`'s Functions-table row still "levels up while below the owner's level" after the section read the loop's bound as `ExpMaxLevel(0) − 1`, itself written as the constant 98 (`lane/h6f` review, 0038).
 13. **At an observed boundary (ADR-0021), the `[C]` ends at the call.** What the callee makes of a compared argument
     (a class word, a register it must preserve, a mode) and every later call go in "After, `[I]`", also in the Answer
     summary. Seen: the radius of hits 24, 44 and 14 in a callee-saved register (`lane/p46m3` review); hit 52's row 0
@@ -146,4 +146,4 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     the step product's wrap from `v` 32 768 stated without its sign case (a component of +4096 wraps, −4096 reaches
     −2³¹ exactly), and the collision walk's "at most 10 crossings" without what the 10th does (the full step taken
     unchecked, flag `0x8`) or the halved increment it walks by (`lane/p50d` review,
-    [0050](../../../../docs/plans/0050-animation-frame-timing.md)).
+    [0050](../../../../docs/plans/0050-animation-frame-timing.md)); the saved name's `first + name` u16 add left without its bound (for the Rogue, 62 124 fits, 62 125 wraps to 0 and is kept; `lane/h6f` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)).

@@ -199,7 +199,7 @@ shared by players); no written save (`D2S_WriteMercHeader`). The client's list w
   | seed, session (log sha256) | save | what | result |
   |---|---|---|---|
   | 6602 `ash` `6a7b3124…` | H6fAsh (VendorNova) | Act III: Asheara's trade, then her list and 8 top-row hires (1057 is row 8 on this seed) | kept |
-  | 6611 `floor` `4066d965…` | H6fFloor, clvl 3, word 2 open | Kashya's menu: talk, cancel (no hire line) | kept (shots overwritten by 6612/6613: the menu count is the driver's line) |
+  | 6611 `floor` `4066d965…` | H6fFloor, clvl 3, word 2 open | Kashya's menu: talk, cancel (no hire line) | kept (launched with `--shots workspace/logs/h6f/shots`, not its own `shots/6611-floor`, so its screenshots were overwritten by the later sessions' and none is in `manifest-shots.sha256`; the menu count is the driver's line `npc: kashya menu has 2 options`, in the hashed `h6f-s2-6611-floor.driver.txt`; `lane/h6f` review) |
   | 6612 `free` `a09a389b…` | H6fFree, clvl 3, word 2 bit 1 | the quest gift at Kashya's talk; then a hire at clvl 3 | kept |
   | 6613 `lvlup` `618da4d4…` | H6fLvl, clvl 7 at 32 885 | menu without hire at 7; Cold Plains kills to 8; a hire at 8 | kept |
   | 6614 `lvl30` `45027ba0…` | H6fL30, clvl 30 at 5 493 362 | Kashya's list at 30; kills to 31; a hire at 31 | kept |
@@ -257,7 +257,7 @@ shared by players); no written save (`D2S_WriteMercHeader`). The client's list w
   ```
 - **Limits:** no classic Greiz hire (four launches, the pilot failed to reach him); no hire or list at Kashya below
   level 8 with word 2 open and none at Qual-Kehk with word 36 open: the client's menu offered no hire line, so the
-  server's two quest refusals were not sent (which client code drops the line is unfollowed); no Act III quest gift;
+  server's two quest refusals were not sent (which client code drops the line is unfollowed; filed at the `lane/h6f` review, [entry](../../backlog/2026-10-27-architect-reverser-h6f-review-client-hire-line-and-merc-create.md)); no Act III quest gift;
   no classic free mercenary; no `MERC_Create` with a hire table present (the only calls were at the load, and the act
   changes of `mact` made none); a `MERC_AddExp` at L ≥ 98 with a gain > 0 (`n99`'s gains were 0); resurrection at
   Greiz, Asheara or Tyrael. Dev logs: the four Greiz attempts.

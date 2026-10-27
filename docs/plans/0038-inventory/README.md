@@ -1519,7 +1519,7 @@ Net effect on the totals: harness −2 (515 → 513), d-none +2 (298 → 300), b
 harness 513, c-emu awaiting a batch 0, blocked 427** (d-none 300, d-edit 73, d-sim 28, d-2c 8, d-owner 10, d-0032 8),
 **deferred 2, raised 17: 1 526.** § 5 marks H6a done. **Phase 3 ready:** items/cube (S2c and H6a, both accepted).
 
-**H6f (filed 2026-10-27, reverser, `lane/h6f`): 23 statements of hirelings (rows 1–2, 5–6, 9–10, 14–18, 20–21, 23,
+**H6f (filed 2026-10-27, reverser, `lane/h6f`; reviewed 2026-10-27, accept with fixes): 23 statements of hirelings (rows 1–2, 5–6, 9–10, 14–18, 20–21, 23,
 25, 27–29, 31, 35–37; row 28 counts 2).** run:2026-10-27-sweep-hirelings, 19 launches on slot 2, 15 kept and 4
 development (the classic Greiz attempts), logger `tools/gdb/h6f.gdb` (`hirelings.gdb`'s four loggers plus
 `tools/gdb/h6f.py`), checker `tools/sweep_h6f.py check` over the 15 kept logs: **603 comparisons, 0 failing**, and
@@ -1534,14 +1534,16 @@ development (the classic Greiz attempts), logger `tools/gdb/h6f.gdb` (`hirelings
   with a gain > 0), 36 (resurrection at Kashya here and Qual-Kehk in run:2026-10-17-economy; Greiz, Asheara, Tyrael).
 - **Shortfall (1):** 29, `MERC_Create` with a hire table present: every call came from the load, before any NPC
   interaction, and the act changes made none. The lane proposes d-2c (a client joining a game whose table was built);
-  left as a shortfall for the review.
+  left as a shortfall for the review. **Review: the shortfall stands; d-2c not accepted** (the third caller,
+  `sub_005394A0_PlayerPlaceInAct`, walks a list whose writer is unread; reverser entry filed).
 - Refinements carried into hirelings/0001: `MERC_AddExp` adds twice the gain (its level loop's bound of 98, not the
   owner's level, is a reading); a kill by another unit gives the mercenary `·86 >> 8` of its gain; `HIRE_Hire` returns no value
   (`tools/hirelings.py` now counts a hire by `MERC_Init`, its output on run:2026-10-16-hirelings unchanged).
 - Symbols I → C (rule 14): `HIRE_GiveFreeMerc`, `MERC_AddExp`, `MERC_CapExpGain`, `PETS_OnDeath`, `MERC_Resurrect`,
   `MERC_ResurrectCost`, `sub_00576D90_PayGold`, `sub_004B5C60_ClientHireListDraw`, `sub_004B1090_ClientMercInit` (9).
 
-Proposed class moves (two rows):
+Class moves (two rows; accepted at the `lane/h6f` review, the reach re-read with objdump at 0x00572C10–0x00572D04,
+0x005767D5–0x005767EB and 0x00578BD3–0x00578C04):
 
 | Row | Was | Now | Why |
 |---|---|---|---|
@@ -1552,6 +1554,19 @@ Net effect on the totals: harness −2 (513 → 511), d-none +2 (300 → 302), b
 `a105ae13` merged into the lane (no inventory row moved on `main` since the `lane/h6a` review totals): **static 567,
 harness 511, c-emu awaiting a batch 0, blocked 429** (d-none 302, d-edit 73, d-sim 28, d-2c 8, d-owner 10, d-0032 8),
 **deferred 2, raised 17: 1 526.** H6f's ledger: raised 12, raised in part 8, shortfall 1, reclassified 2: 23.
+
+**`lane/h6f` review (2026-10-27): accept with fixes (6), ledger as filed.** Rechecked: the three manifests pass
+`sha256sum -c`; `sweep_h6f.py check` (603, 0 failing), `monpool.py check` and `hirelings.py check` reproduce
+`check/check-final.txt`, `check/monpool.txt` and `check/regress-hire-run.txt` byte for byte under `MemoryMax=4G`; the
+`main` revision of `hirelings.py`, run from a `git archive` of `main`'s `tools/`, gives on the 48 logs of
+run:2026-10-16-hirelings output byte-identical to the branch's, and on the 15 H6f logs one mismatch (`qk`: the refused
+hire counted, "paid 0, price 2650"), which is the change's reason. The d-none parts of rows 17, 18 and 21 are
+accepted on a condition (the client's menu test to be read; reverser entry); row 27 stands raised on its built
+state under ADR-0013's Neutral rule (the clamp only); rows 3, 30 and 33 stay H1c's. Recounted once against `main`
+`a105ae13` (unmoved since the lane merged it; `lane/h6c` and `lane/a4t` not merged): **static 567, harness 511,
+c-emu awaiting a batch 0, blocked 429** (d-none 302, d-edit 73, d-sim 28, d-2c 8, d-owner 10, d-0032 8), **deferred 2,
+raised 17: 1 526.** § 5 marks H6f done. **Phase 3 ready:** hirelings (S3a, S3b, H4b, H1b, H1a, H6f accepted), rows 3,
+30 and 33 left `[I]` for H1c's re-tag.
 
 ## 3. Blocked rows, for the plan's open questions
 
@@ -1651,7 +1666,7 @@ a letter suffix and its own run id, as the plan requires.
 | **H6d** (done) | `quest-b6` | 16 (17 filed; uniques-sets 21 to H1a, § 2.6) | 10/5/2 | quest-drops 11, 13, 16, 18, 22, 25, 27; tc 26–27; uniques-sets 21 | `quests.gdb` + tc-drops, `tc.py` b6_model, `questdrops.py`: Andariel or Duriel killed by a mercenary or summon, Diablo and Baal, Warriv's report, questfresh in Nightmare, Hell and classic, the forge with a stat-356-1 hammer, the unique restore path | `findings/items/experiments.md` | ≤ 20 |
 | **H6e1** (done) | `quest-npc` | 22 | 0/20/2 | quest-drops 2, 4–5, 32, 39–40, 42–46, 50–51 | `quests.gdb` + `d2pilot.py npc`: given items and service branches and refusals. From the S2c review (piece; quest-drops 38 stays counted as S2c): a cursor-item line at `sub_0055EEA0_CursorItemConsume` in each service branch | `findings/items/experiments.md` | ≤ 20 |
 | **H6e2** (done) | `quest-items` | 24 | 0/23/1 | quest-drops 1, 30, 33–35; objects 48 | `quests.gdb` with `objop`/`hunt` on tool-built quest saves: the 16 quest items, chests, duplicates, the item-move gate; the quest objects ride the same sessions; a backtrace at `QUESTS_ObjectEvent` (quest-drops 1). objects/0001 cites the record | `findings/items/experiments.md` | ~20, at the cap |
-| **H6f** | `hirelings` | 23 | 0/17/6 | hirelings 1–2, 5–6, 9–10, 14–18, 20–21, 23, 25, 27–29, 31, 35–37 | `hirelings.gdb` + `hireling_sessions.py`: Asheara's trade first, Greiz, classic lists, the free mercenary, the level floor, quest, level and gold gates, stash payment, `MERC_AddExp`, `merc_saves.py` saves, resurrection | `findings/hirelings/experiments.md` | ≤ 20 |
+| **H6f** (done) | `hirelings` | 23 (2 reclassified, § 2.6) | 0/17/6 | hirelings 1–2, 5–6, 9–10, 14–18, 20–21, 23, 25, 27–29, 31, 35–37 | `hirelings.gdb` + `hireling_sessions.py`: Asheara's trade first, Greiz, classic lists, the free mercenary, the level floor, quest, level and gold gates, stash payment, `MERC_AddExp`, `merc_saves.py` saves, resurrection | `findings/hirelings/experiments.md` | ≤ 20 |
 | **H6g** | `player` | 17 | 0/8/9 | player/creation 2–4, 12, 16 (from S3b), 18, 22–23, 25, 27–30, 32–33, 35 | `player.gdb` + `player_sessions.py`: death loss, a stat point, two skill points on one skill and one skill to its maximum (16, § 2.6), stat 85, the level-99 cap and a level-98 save, the capped grant (trigger read statically first), client `+0x3D4`, the belt column, the monster's experience at the kill | `findings/player/experiments.md` | ≤ 20 |
 | **H7a** (done) | `lifecycle` | 0 inventory rows (plan 0040 P2 shortfalls, `lane/rbs4` review) | — | none: drlg/lifecycle open questions, the town-follow case and the `0x400` drop ([drlg/0009 § 11.2](../../findings/drlg/0009-room-lifecycle.md#112-the-town-follow-static-remainder-lanerbs4), § 11) | `rooms.gdb` + `rooms.py check`, `rooms_sessions.py` (run:2026-10-17-lifecycle's family). (1) Town-follow, recipe (b): a chaser in the Blood Moor whose planned route to the player crosses a Rogue Encampment room; then the player leaves until the camp's rooms release, and the save rule's `SaveMonsters` 0 half is checked. Its map seed and points come from an offline geometry check made before a slot is taken (reverser entry [rbs4 review static remainders](../../backlog/archive/2026-10-17-architect-reverser-rbs4-review-static-remainders.md) (1)); if no stock layout allows the route, (b) is a recorded shortfall. Recipe (c), a teleporting unique chasing a player inside the camp, only if that entry's (2) shows an AI teleport target can lie in a town room. (2) The `0x400` drop: re-enter an `h-highlands` room holding a class 522 record with flags `0x540`. | `findings/drlg/experiments.md` | ~4 (estimate) |
 

@@ -5474,8 +5474,69 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `MERC_Resurrect`, `MERC_ResurrectCost`, `sub_00576D90_PayGold`, `sub_004B5C60_ClientHireListDraw`,
     `sub_004B1090_ClientMercInit` (9).
   - **Backlog:** review request
-    [2026-10-27-reverser-architect-review-lane-h6f-plan-0038-batch-h6f](../backlog/2026-10-27-reverser-architect-review-lane-h6f-plan-0038-batch-h6f.md);
+    [2026-10-27-reverser-architect-review-lane-h6f-plan-0038-batch-h6f](../backlog/archive/2026-10-27-reverser-architect-review-lane-h6f-plan-0038-batch-h6f.md);
     spec-writer entry
     [2026-10-27-reverser-spec-writer-h6f-hirelings-raises](../backlog/2026-10-27-reverser-spec-writer-h6f-hirelings-raises.md),
     held until the review. Ledger row added with usage "—".
   - **Next:** the `lane/h6f` review; hirelings is then ready for its Phase 3 re-tag.
+- **2026-10-27 — `lane/h6f` review (architect): H6f (`hirelings`) accept with fixes (6); ledger as filed.** `main`
+  `a105ae13` had not moved since the lane merged it (`lane/h6c` and `lane/a4t` unmerged; `lane/h6c` does not touch
+  `tools/d2pilot.py`), so there was nothing to merge; `tools/test_d2pilot_descend.py` 10 OK. Static only (objdump of
+  the pinned image), no harness, no Ghidra.
+  - **Rechecked.** `manifest-final.sha256`, `manifest-shots.sha256` and `dev/manifest-dev.sha256` pass `sha256sum -c`;
+    under `MemoryMax=4G`, `sweep_h6f.py check` (603, 0 failing), `monpool.py check` and `hirelings.py check` on the 48
+    run:2026-10-16-hirelings logs reproduce `check/check-final.txt` `943f181f…`, `check/monpool.txt` `d65e5fbf…` and
+    `check/regress-hire-run.txt` `637d34c4…` byte for byte. **The byte-identity claim holds:** `main`'s
+    `tools/hirelings.py`, run from a `git archive` of `main`'s `tools/`, gives the same bytes on the 48 logs, and on
+    the 15 H6f logs one mismatch (`qk`, "paid 0, price 2650": the refused hire counted by `EAX`), which is why the
+    change is needed. The anchors re-read: 0x00572C10–0x00572D04 (`NpcInteractStart`'s early exits and the
+    `HIRE_SendList` call), 0x005767D5–0x005767EB, 0x00578BD3–0x00578C04, 0x0056AAA0–0x0056AABB, 0x0057E3F0–0x0057E474,
+    0x0057E860–0x0057E983, 0x0057EA28–0x0057EA46, 0x0057728F–0x005772AD, 0x005773B0–0x005773CB, 0x005395BF–0x00539637,
+    0x00611830. The 9 symbol raises and the Functions table agree. Recount against `a105ae13`: **static 567, harness
+    511, c-emu 0, blocked 429** (d-none 302), **deferred 2, raised 17: 1 526**; 23 statements, 12 / 8 / 1 / 2.
+    `tools/test_d2s.py`: 59 of 60 pass; the failure is `test_every_recipe_has_a_base` for the 134 `anim-*` recipes
+    only (`lane/a4t` adds them); H6f's 15 recipes have rows, and their hashes pass.
+  - **Rulings.**
+    - (1) **Rows 1 and 9 → d-none, accepted.** `NpcInteractStart` returns before `HIRE_SendList` only on its refusals
+      and for a player already interacting (0x00572C98 loop), so the first interaction always builds; `NPC_OpenStore`'s
+      build at 0x00578BFF needs `+0x21` 0, which no stock sequence leaves at a trade.
+    - (2) **Rows 17, 18 and 21: the refusal halves are d-none, not d-2c**, on a condition. A second stock client
+      filters its own menu the same way, so two clients add nothing, and a hand-made packet is outside the stock
+      boundary. But the d-none rests on the client's test matching the server's gates in every state, which is
+      unread: three states were observed (Kashya at 3 and 7, Qual-Kehk). That is an untraced gap, filed
+      ([entry](../backlog/2026-10-27-architect-reverser-h6f-review-client-hire-line-and-merc-create.md) (1)); if a state
+      shows the line that the server refuses, the refusals become a harness piece. Phase 3 states them as `[I]`
+      server checks the stock client did not send.
+    - (3) **Row 29 stays a shortfall; the d-2c proposal is not accepted.** The third caller,
+      `sub_005394A0_PlayerPlaceInAct`, walks a list at `+0x60` of its `EDX` argument and calls `MERC_Create`
+      (0x00539637); what fills that list is unread, so "a client joining a game" is a guess. Filed (same entry, (2)).
+    - (4) **Row 27 stands raised on its built state.** Under ADR-0013's Neutral rule a tool-built save on stock tables
+      backs `[C]` for the code that reads the built field, here `D2S_ReadMercHeader`'s clamp (`first + name > last →
+      first`), and nothing about how a stock game would write such a name. The widths are not separated by name 50 and
+      go to `[I]` with the wrap bound (fix 1).
+    - (5) **Row 25 stays in part.** `2·gain` is `[C]` (6 additions at different gains; `lea ecx, [esi + ebx·2]`
+      at 0x0057E8CE), and so is the cap's `min` (4 capped at L 3 and 4, 35 below). The bound is
+      `ExpMaxLevel(0) − 1` (class 0's `MaxLvl`, 98 on stock data), tested before the experience write, so a mercenary
+      at that level gains nothing; it and the loop's bound are the `[I]` remainder (fix 2).
+    - (6) **The `floor` screenshots:** not a tool gap. The session was launched with `--shots workspace/logs/h6f/shots`
+      instead of its own directory, so later sessions overwrote its images; its menu count is the pilot's line in the
+      hashed driver output, and `lvlup` and `qk`'s kept screenshots show the same two-line menus. The record now says
+      so (fix 5).
+    - (7) `tools/d2pilot.py`: the run used `638f3c51…` (as recorded); the branch's `043e46d7…` is the same change on
+      `main`'s later revision.
+  - **Fixes (6), applied in hirelings/0001 and experiments:** (1) *overclaim:* the name clamp's u16 add and unsigned
+    compare moved from the `[C]` bullet to an `[I]` reading, with the wrap bound (Rogue: 62 124 fits, 62 125 wraps to 0
+    and is kept); (2) *misread:* `MERC_AddExp`'s 98 written as `ExpMaxLevel(0) − 1`, tested before the write, in the
+    H6f section, § 6's levelling note and the Functions table, whose row still said "levels up while below the
+    owner's level"; (3) *overclaim:* `MERC_CapExpGain`'s "unsigned" to `[I]` (no negative gain or difference logged);
+    (4) *overclaim:* § 7's "found no other call in single player" and the row 29 section reworded to the unread
+    trigger, with ruling 3; (5) *omission:* the `floor` session's `--shots` path and the driver line its menu count
+    rests on; (6) *omission:* the client-test gap behind ruling 2 left unfiled (filed, with row 29's).
+  - **Bookkeeping.** Inventory § 2.6 review paragraph and § 5 marks H6f done. Review-fixes Seen lines: reverser 9,
+    10, 12 and 15. The review request closed; the spec-writer entry
+    [2026-10-27-reverser-spec-writer-h6f-hirelings-raises](../backlog/2026-10-27-reverser-spec-writer-h6f-hirelings-raises.md)
+    released with the rulings. Ledger: the lane row filled (usage from the orchestrator: 492 169 tokens, 210 tools,
+    73 min; accept with fixes, 6: overclaim 3, misread 1, omission 2); the review row added, usage "—".
+  - **Readiness.** **hirelings is ready for Phase 3** on every row but 3, 30 and 33, which wait on H1c and stay `[I]`
+    in this pass (the sockets precedent: Phase 3 ran with sock 1's piece routed to H1c); a small re-tag follows H1c's
+    acceptance. The conditional d-none parts and row 29 are `[I]` in the spec until the reverser entry is answered.
