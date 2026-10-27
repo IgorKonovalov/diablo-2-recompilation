@@ -180,6 +180,11 @@ act 1: 8–14, 30, 31; act 2: 16–22, 32; act 3: 24–27, 33; act 4: 35–40. W
   42–47 unchanged. (fn:QUESTRECORD_LoadBytes@0x0065C4D0, run:2026-10-27-sweep-d2s-load)
 - [I] `D2S_ReadQuests` and `D2S_WriteQuests` move the three records at player data `+0x10`, `+0x14`, `+0x18` in that
   order, so block *d* is the record at `+0x10 + 4d`. (fn:D2S_ReadQuests@0x0056A370, fn:D2S_WriteQuests@0x00569320)
+- [I] *Plan 0038 lane/rlg:* a save of version 71..91 loads its quest blocks the same way: `sub_00532BE0_ReadQuestsLegacy`
+  tests `Woo!` and the u32 6, and calls `QUESTRECORD_LoadBytes(record, block, 0x60, 1)` for player data `+0x10`,
+  `+0x14`, `+0x18` from section offset `+0x0A` (0x00532C40–0x00532C56); its waypoints go through `WAYPOINT_Load` as
+  in the current reader ([save/0001 § Plan 0038 lane/rlg](0001-d2s-io.md#plan-0038-lanerlg-the-legacy-and-version-92-readers-static-2026-10-27)).
+  (fn:sub_00532BE0_ReadQuestsLegacy@0x00532BE0, fn:sub_00532C70_ReadWaypointsLegacy@0x00532C70)
 - [I] Every gameplay access found takes `+0x10 + 4·game[+0x6D]`: `movzx ecx, byte [ebx+0x6D]` at 0x005467F3 and
   0x00546AE0, `byte [edi+0x6D]` at 0x0058478A, and the join pass in `sub_00546270_QuestsPlayerJoin`.
 
