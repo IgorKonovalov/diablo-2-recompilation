@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, monsters/spawn, monsters/special, items/properties, data/excel]
 consumed_by: [items/tc, hirelings, combat/overview, combat/damage, stats/aggregate, chain]
-tags: {C: 110, I: 58, L: 4}
-updated: 2026-10-21
+tags: {C: 130, I: 47, L: 5}
+updated: 2026-10-27
 ---
 
 # Monster stats: hit points, defence, experience, resistances, MonProp and the mod effects
@@ -97,7 +97,10 @@ Stats are `ItemStatCost` rows ([ItemStatCost](../../tables/ItemStatCost.md)): 6 
 `armorclass`, 36 `damageresist`, 37 `magicresist`, 39/41/43/45 fire/lightning/cold/poison resist, 48–63 the elemental damage
 and length stats, 67 `velocitypercent`, 68 `attackrate`, 69 `other_animrate`, 74 `hpregen`, 100 `monster_playercount`,
 119 `item_tohit_percent`, 352 `last_sent_hp_pct`. `SetStat` replaces a base value; `AddStat` adds to it and does nothing for
-0. [I] (fn:sub_00627260_UnitSetStat@0x00627260, fn:sub_006272B0_UnitAddStat@0x006272B0)
+0: 464 `leveladd` writes over a non-zero level and experience, 1 194 non-zero `AddStat` calls, and 44 `AddStat(k, 0)` on a
+stat not in the list, after which no logged base list holds an entry of value 0 (234 244 entries). [C]
+(fn:sub_00627260_UnitSetStat@0x00627260, fn:sub_006272B0_UnitAddStat@0x006272B0, run:2026-10-15-mon-stats,
+[monsters/0004 § Plan 0038 batch S3a](../../findings/monsters/0004-stats.md#plan-0038-batch-s3a-2026-10-16))
 
 ### Constants
 
@@ -109,7 +112,7 @@ and length stats, 67 `velocitypercent`, 68 `attackrate`, 69 `other_animrate`, 74
 | constant stats at creation | 67 = 75, 68 = 100, 69 = 100, 352 = 128 | 0x00573F14, run:2026-10-15-mon-stats | [C] |
 | `g_ClassicDiffAdjust` rows `{stat, nmMul, nmDiv, hellMul, hellDiv}` | `{7, 1, 2, 1, 2}`, `{31, 10, 12, 10, 12}`, `{13, 10, 17, 10, 26}` | data:g_ClassicDiffAdjust@0x006EA9F0, run:2026-10-15-mon-stats | [C] |
 | classic level | MonStats `Level` (normal) + 25·d | fn:sub_0063EEF0_MonClassicDiffAdjust@0x0063EEF0, run:2026-10-15-mon-stats | [C] |
-| `MonsterSkillBonus` by difficulty | 0 / 3 / 7 (data) | tbl:DifficultyLevels.txt:MonsterSkillBonus | [I] |
+| `MonsterSkillBonus` by difficulty | 0 / 3 / 7 (data) | tbl:DifficultyLevels.txt:MonsterSkillBonus, run:2026-10-16-sweep-monsters-b (B10) | [C] |
 | `CDB` by difficulty | 90 / 75 / 66 (data) | tbl:DifficultyLevels.txt:ChampionDamageBonus, run:2026-10-15-mon-stats | [C] |
 | MonUMod `c[1..3]` minion HP % | 100 / 75 / 50 | tbl:MonUMod.txt:constants, run:2026-10-15-mon-stats | [C] |
 | `c[4..6]` champion HP %, `c[7..9]` unique HP % | 200 / 150 / 100; 300 / 200 / 100 | tbl:MonUMod.txt:constants, run:2026-10-15-mon-stats | [C] |
@@ -138,7 +141,7 @@ only, no frequency and no champion chance. [C] (run:2026-10-15-berserk-forced, [
 |---|---|---|---|---|
 | unit seed at `MonStatsInit` entry | seed input | `Init(step(game).low)` (rng/seeds 7a); 22 creations of the run start from another seed, which the model takes from the log: the region append's `MonVariantRoll` on the unit seed ([pool § D](pool.md#d-appearance-sets-sub_005bdb20_monvariantroll)), which the chain predicts ([chain § Algorithm](../chain/README.md#algorithm) E2) | [rng/seeds](../rng/seeds.md), [spawn § J](spawn.md#j-creation-and-the-unit-seed) | [C] (run:2026-10-15-mon-stats, [chain/0002 § 3](../../findings/chain/0002-retirements.md#3-oracle-14-the-unit-seed-after-sunitcreate)) |
 | monster level | value input | stat 12 before this spec's writes | [pool § E](pool.md#e-the-monster-level-sub_00573cb0_monstatsinit) | [C] (run:2026-10-15-mon-stats) |
-| `MonEquipInit`'s item creation | modelled (B12; an ADR-0004 seed oracle in this spec's run, which met no class with an `oninit` row) | the unit-seed step per row and each item's two game-seed steps; the items themselves are the item chain's ([chain § Algorithm](../chain/README.md#algorithm) E3, G2–H) | `items/*` | [C] in part (fn:sub_005D6B60_MonEquipInit@0x005D6B60, run:2026-10-21-chain2) |
+| `MonEquipInit`'s item creation | modelled (B12; an ADR-0004 seed oracle in this spec's run, which met no class with an `oninit` row; no longer an oracle) | the unit-seed step per row and each item's two game-seed steps; the items themselves are the item chain's ([chain § Algorithm](../chain/README.md#algorithm) E3, G2–H) | `items/*` | [C] for the stock `oninit` rows, 234 and 267 (fn:sub_005D6B60_MonEquipInit@0x005D6B60, run:2026-10-20-chain, run:2026-10-21-chain2) |
 | mod lists and flags | value input | which handlers run, with which flag, in which order | [monsters/special](special.md#c-mod-handlers) | [C] (fn:sub_005A2120_SpecialModsApply@0x005A2120, run:2026-10-15-mon-stats) |
 | re-created monster's stats 7, 12, 13 | specified elsewhere | the restore writes 13 and 7 from the inactive record; 12 is this spec's `MonsterInit` level plus the re-applied mods | [drlg/lifecycle § H](../drlg/lifecycle.md#h-the-restore) | [C] (run:2026-10-17-lifecycle, fn:sub_005424F0_InactiveMonstersRestore@0x005424F0) |
 
@@ -150,15 +153,15 @@ Out of scope: to-hit, damage and elemental damage (attack time, § H), skills an
 ### A. `MulDiv` and `MonLvlStats`
 
 ```
-A1. MulDiv(a: i32, b: i32, c: i32) → i32:                        [I] (fn:sub_00483360_MulDiv@0x00483360, 0x00483376–0x004833D7)
+A1. MulDiv(a: i32, b: i32, c: i32) → i32:                        [C] (fn:sub_00483360_MulDiv@0x00483360, 0x00483376–0x004833D7, run:2026-10-17-sweep-emu2)
       if c = 0: return 0
       if a > 0x100000:
-        if c ≤ a >> 4: return (a ÷ c) × b                         ; truncates before multiplying
-        else: return (i64) a × b ÷ c
+        if c ≤ a >> 4: return (a ÷ c) × b                         ; arithmetic shift, signed compare; truncates before multiplying, product wraps
+        else: return low32((i64) a × b ÷ c)                       ; fn:CRT_alldiv@0x00684240, truncates toward zero; a quotient outside i32 wraps
       if b > 0x10000:
         if c ≤ b >> 4: return (b ÷ c) × a
-        else: return (i64) a × b ÷ c
-      return (a × b) ÷ c                                          ; 32-bit imul / idiv, the creation branch
+        else: return low32((i64) a × b ÷ c)
+      return (a × b) ÷ c                                          ; 32-bit imul (wraps) / idiv, the creation branch
 
 A2. MonLvlStats(class, L: bool, d: u32, level: i32, mask) → out: [C] (fn:sub_006538A0_MonLvlStats@0x006538A0, run:2026-10-15-mon-stats)
       if level < 0: return, out untouched                         ; [I] (fn:sub_006538A0_MonLvlStats@0x006538A0)
@@ -177,7 +180,14 @@ Step notes:
 A1. `MulDiv` is signed and truncates toward zero in every branch. The 32-bit branch is the one every `MonLvlStats` call at
 creation takes on stock data (largest products: MonLvl HP 10 000 × `maxHP` 9 981; MonLvl XP 160 000 × `Exp` ≤ 6 600, both
 below 2³¹), and it is reproduced bit-exactly. [C] (fn:sub_00483360_MulDiv@0x00483360, run:2026-10-15-mon-stats) The other
-branches are as read. [I] (0x00483376–0x004833D7)
+branches are as A1 gives them: under emulation 4 000 synthetic triples (the branch edges, negative values, `c` = 0, random
+words) return the model's value, and an exact-quotient control differs in 1 948. A 64-bit quotient outside the 32-bit range
+is returned wrapped (its low 32 bits; EDX holds the high half), not saturated. A negative `c` always satisfies
+`c ≤ a >> 4` (resp. `b >> 4`) inside the two large-argument branches, so it takes the truncate-first form there; with `a` and
+`b` both at or below their thresholds it takes the 32-bit branch. [C] (fn:sub_00483360_MulDiv@0x00483360,
+fn:CRT_alldiv@0x00684240, run:2026-10-17-sweep-emu2, [monsters/0004 § Plan 0038 batch S1f](../../findings/monsters/0004-stats.md#plan-0038-batch-s1f-2026-10-17))
+The emulation leaves out the one input that faults, a 32-bit product wrapping to `INT32_MIN` with `c` = −1 (`idiv`
+overflow traps on the processor). [I] (0x00483376–0x0048338C)
 
 A2. MonStats cells are read as s16 (`movsx`), MonLvl cells as dwords. Masks 8 to `0x100` (to-hit, damage, elemental
 damage) are attack-time (§ H); creation uses mask 7 only. [I] (0x0065395C–0x00653A00, tbl:MonLvl.txt:HP) Single player reads
@@ -216,8 +226,8 @@ B2. MonComponentsPick(regionEntry, unit):                        ; unit-seed dra
         c: i32 ← MonCompCount(unit, k)                           ; MonStats2 component count
         if c < 1: appearance[k] ← 0                              ; no draw
         else: Step(unit.seed); appearance[k] ← (c is a power of 2) ? low & (c − 1) : low mod c   ; one draw, also for c = 1
-B3. if class = 311: MonsterData.b0E ← Range(unit.seed, 4)        ; [I] draw (fn:sub_00573CB0_MonStatsInit@0x00573CB0)
-    if class = 312: MonsterData.b0E ← MonsterData.b0F ← Range(unit.seed, 4)   ; [I] one draw (fn:sub_00573CB0_MonStatsInit@0x00573CB0)
+B3. if class = 311: MonsterData.b0E ← Range(unit.seed, 4)        ; [C] draw (0x00573D93–0x00573DAC, run:2026-10-16-sweep-monsters-b)
+    if class = 312: MonsterData.b0E ← MonsterData.b0F ← Range(unit.seed, 4)   ; [C] one draw (0x00573D68–0x00573D8E, run:2026-10-21-sweep-monsters-a)
 B4. pb ← MonPlayerBonus(game, room, unit)                        ; § C
 B5. d, level as in pool § E
     SetStat(12, level);  SetStat(100, max(1, pb.players))
@@ -237,10 +247,10 @@ B8. hp: i32 ← base + MulDiv(base, pb.hpPct, 100)
     else if (hp << 8) > 0x7FFFFFFF ÷ r: SetStat(74, ((hp << 8) >> 12) × r)   ; [I] overflow branch (0x00573FF6–0x00574058)
     else: SetStat(74, ((hp << 8) × r) >> 12)
 B9. MonClassicDiffAdjust(unit, game.expansion, game.difficulty)  ; § D
-B10. for k in 0 ..< 8:                                           ; [I] (0x005740E0–0x00574135, fn:sub_0056DEB0_UnitSkillAdd@0x0056DEB0)
+B10. for k in 0 ..< 8:                                           ; [C] (0x005740E0–0x00574135, fn:sub_0056DEB0_UnitSkillAdd@0x0056DEB0, run:2026-10-16-sweep-monsters-b)
        if Skill[k] ≥ 0 and Sk_lvl[k] > 0: UnitSkillAdd(unit, Skill[k], Sk_lvl[k] + pb.skillBonus)
 B11. MonProp (§ F)
-B12. MonEquipInit(unit, …, level, level, 1)                      ; [C] in part, see note B12 (fn:sub_005D6B60_MonEquipInit@0x005D6B60, run:2026-10-21-chain2)
+B12. MonEquipInit(unit, …, level, level, 1)                      ; [C] the call (0x00574235, run:2026-10-20-chain); its walk: note B12
 ```
 
 Step notes:
@@ -256,22 +266,40 @@ run:2026-10-15-mon-stats) The appearance pick and the HP draw are the two unit-s
 [spawn § J1](spawn.md#j-creation-and-the-unit-seed) sees on most creations. [C] (0x00573F8F, run:2026-10-14-mon-special,
 run:2026-10-15-mon-stats)
 
+B3. The `doomknight` draw comes right after the appearance pick, on the unit seed. Class 311 (`doomknight2`) stores it
+in `MonsterData +0x0E` (appearance byte 10): all 99 creations of a nightmare *River of Flame* (107) session. Class 312
+(`doomknight3`) writes one `Range(4)` to both `+0x0E` and `+0x0F` (bytes 10 and 11): 63 creations in a nightmare *Chaos
+Sanctuary* (108) session, the two bytes equal in every one and all four values met. `tools/monstats.py` reproduces the
+bytes and the unit seed after them. [C] (fn:sub_00573CB0_MonStatsInit@0x00573CB0, run:2026-10-16-sweep-monsters-b,
+run:2026-10-21-sweep-monsters-a, [monsters/0004 § Plan 0038 batch H4a](../../findings/monsters/0004-stats.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a))
+
 B5. Blank MonStats cells are used as the value 0; there is no "none" test. No hell adjustment is applied to the
 resistances at creation. [C] (0x00573E83–0x00573F03, tbl:MonStats.txt:ResFi, run:2026-10-15-mon-stats) Stat 100 is
 the creation player count and stays fixed (§ C). [C] (run:2026-10-15-mon-stats)
 
 B7. `RangeB(seed, n)` steps once and returns `low mod n` for `n` ≥ 1, and returns 0 with no step for `n` < 1 (signed),
 as in [rng](../rng/README.md#algorithm). So `maxHp = minHp` still steps (`n` = 1), and a reversed range (`maxHp < minHp`)
-makes no step and gives `minHp`. [C] for the draw (run:2026-10-15-mon-stats); [I] for the reversed range, which no logged
-creation met (0x00573F7E–0x00573FC8, tbl:MonStats.txt:minHP)
+makes no step and gives `minHp`. [C] for the draw (run:2026-10-15-mon-stats). The reversed range is `[C]` by composition:
+0x00573F83–0x00573F99 is straight-line code (the `n` computation, the call, the add of `minHp`), `MonLvlStats` scales
+`minHp` and `maxHp` each on its own and never compares them, and `RNG_RangeB`'s `n` ≤ 0 branch (0x0045C3E3–0x0045C3E7) is
+`[C]` in rng. Two stock rows are reversed in Normal: `mephistospirit` (401, placed by `mephcomp.ds1` in level 102) and
+`minionspawner1` (484, in no pool or DS1). No logged creation met one. [C] (fn:RNG_RangeB@0x0045C3E0,
+fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:MonStats.txt:minHP, run:2026-10-11-rng-emu, run:2026-10-15-mon-stats,
+[monsters/0004 § Plan 0038 batch S3b](../../findings/monsters/0004-stats.md#plan-0038-batch-s3b-2026-10-16))
 
 B8. The hpregen formula is evaluated on the HP before the classic adjustment; § E recomputes it with a different
 rounding when max HP changes. Stat 13 has no cap. [C] (0x00573FCD–0x00573FF1, tbl:MonStats.txt:DamageRegen,
 run:2026-10-15-mon-stats)
 
-B10. `MonsterSkillBonus` comes from the DifficultyLevels record of `game+0x6D`; a `Sk<k>mode` ≥ 0 also sets the
-skill's mode. `UnitSkillAdd` reaches RNG only through its player branch, so this step makes no draw for a monster.
-[I] (fn:sub_0056DEB0_UnitSkillAdd@0x0056DEB0, tbl:MonStats.txt:Sk1lvl, tbl:DifficultyLevels.txt:MonsterSkillBonus)
+B10. `MonsterSkillBonus` comes from the DifficultyLevels record of `game+0x6D`, and the step makes no draw for a
+monster. After the loop the unit's skill list is exactly `{(Skill[k], Sk_lvl[k] + bonus) : Skill[k] ≥ 0, Sk_lvl[k] > 0}`:
+2 678 creations, 2 102 skills, bonus 0 in normal (2 153 creations), 3 in nightmare (249) and 7 in hell (276), with the
+unit seed checked across the loop in every creation. The call right after it, `0x0063EBC0`, is an empty function
+(`ret 8`). [C] (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_0056DEB0_UnitSkillAdd@0x0056DEB0, tbl:MonStats.txt:Skill1,
+tbl:MonStats.txt:Sk1lvl, tbl:DifficultyLevels.txt:MonsterSkillBonus, run:2026-10-16-sweep-monsters-b,
+[monsters/0004 § Plan 0038 batch H4b](../../findings/monsters/0004-stats.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b)) A `Sk<k>mode` ≥ 0 also
+sets the skill's mode, and `UnitSkillAdd` reaches RNG only through its player branch; the mode was not logged. [I]
+(fn:sub_0056DEB0_UnitSkillAdd@0x0056DEB0)
 
 B12. `MonEquipInit` runs only for a class with a `monequip` row whose `oninit` byte is set, on a unit with an
 inventory. From the first row of the class whose level ≤ the monster level, for each following row of the class,
@@ -286,8 +314,11 @@ check of `monequip.bin` against `monequip.txt` agrees on all 45 rows; the stock 
 The path those two rows take is reproduced: one row of level 0 with one location, so `k` = 1, the masked step, and one
 item at a free location with its two game-seed steps. run:2026-10-21-chain2 creates class 267 three times and class
 234 once, with the unit seed after `MonEquipInit` predicted and each item made by the item chain, and the control that
-leaves out the location draw fails each case. [C] (fn:sub_005D6B60_MonEquipInit@0x005D6B60,
-fn:sub_00573B20_MonEquipItemCreate@0x00573B20, run:2026-10-21-chain2) The level skip, a second row, `k` of 2 or 3 and an
+leaves out the location draw fails each case. In run:2026-10-20-chain, one creation of each class reproduces the unit seed
+after `MonEquipInit` (0x0057423A) with its two items, and a control with no `MonEquipInit` walk fails both. So the call is
+made and its draws are the model's on the stock rows; the seed after it is no longer an oracle. [C]
+(fn:sub_005D6B60_MonEquipInit@0x005D6B60, fn:sub_00573B20_MonEquipItemCreate@0x00573B20, run:2026-10-20-chain,
+run:2026-10-21-chain2, [monsters/0004 § Plan 0038 batch H4a](../../findings/monsters/0004-stats.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a)) The level skip, a second row, `k` of 2 or 3 and an
 occupied location are unreachable with the stock table and stay `[I]` (*Open questions*). [I]
 (fn:sub_005D6B60_MonEquipInit@0x005D6B60)
 
@@ -312,8 +343,10 @@ Step notes:
 
 C1. The bonus is **+50 % per player beyond the first**, for hit points and experience alike, so at `/players 8` both
 gain 350 %. [C] (data:g_PlayerHpPct@0x006E1590, data:g_PlayerXpPct@0x006E15B4, run:2026-10-15-mon-stats) `Align` 1 (town
-NPCs, critters, hirelings, player summons) and 2 (`cow`, `camel`) get no bonus and `players` 1. [I] (0x0057396C,
-tbl:MonStats.txt:Align)
+NPCs, critters, hirelings, player summons) and 2 (`cow`, `camel`) get no bonus and `players` 1: `Align` 1 at `/players` 8
+for 16 classes (Lut Gholein's NPCs and the `roguehire` hireling) and `Align` 2 (`cow`) at 8, each record reproduced;
+`camel` was not met (the test reads `Align` only). [C] (0x0057396C, tbl:MonStats.txt:Align, run:2026-10-16-sweep-monsters-b,
+run:2026-10-15-mon-stats)
 
 C1. **Real players count as `/players` does.** In plan 0044's two-client run (no `/players`), the 16 creations made while
 the joiner was in the game had `MonPlayerBonus` `[50, 50, 0, 0, 2]` (hpPct, xpPct, skillBonus, difficulty, players)
@@ -365,8 +398,11 @@ aura with level 71 = 18 + 50 + 3, not `Level(H)` + 3 = 81. [C] (fn:sub_005A1650_
 fn:sub_0063EEF0_MonClassicDiffAdjust@0x0063EEF0, run:2026-10-15-mon-stats) The draw itself is in
 [special § C3](special.md#c-mod-handlers).
 
-D4. `d` here is the game byte, not the hireling's forced 0; a hireling has `Align` 1 and is skipped anyway. [I]
-(0x0057405D–0x0057406A, tbl:MonStats.txt:Align)
+D4. A class with `Align` 1 is skipped: the 8 classic nightmare and hell creations of `Align` 1 classes keep their level
+and stats, while the 354 of `Align` 0 are adjusted. [C] (fn:sub_0063EEF0_MonClassicDiffAdjust@0x0063EEF0,
+tbl:MonStats.txt:Align, run:2026-10-15-mon-stats) `d` here is the game byte, not the hireling's forced 0; the two differ
+only for a hireling, which has `Align` 1 and is skipped anyway, so no creation separates them. [I]
+(0x0057405D–0x0057406A)
 
 ### E. The stat callback (`sub_0055B800_MonStatCallback`), stat 7
 
@@ -445,23 +481,34 @@ reached on stock data. On stock data only `thorns` has `min ≠ max` (`quillrat6
 reproduced `thorns` 15..20 with its unit-seed roll (`quillrat8`, nightmare, 242 creations) and `crush` 15 (nightmare) and 25
 (hell) of `blunderbore1` in classic. [C] (tbl:MonProp.txt:chance1, tbl:MonProp.txt:min1, run:2026-10-15-mon-stats)
 
-F3. No normal-difficulty MonProp row is reachable on stock data: `baboon6` spawns from no normal pool, `druidhawk` is a
-druid summon, and the `irongolem` row is named by no MonStats record. `sub_00573470_MonPropRec` is the only reader of
-`g_pMonProp`. [I] (fn:sub_00573470_MonPropRec@0x00573470, data:g_pMonProp@0x0096C860)
+F3. `sub_00573470_MonPropRec` is the only reader of `g_pMonProp`: the one `DataTables + 0xC30` operand in `.text` is its
+own (0x005734AC), and the address `0x0096C860` appears only in the loader and the unloader. Of the three MonProp rows with
+a normal slot, two are unreachable on stock data: `baboon6` is only in `nmon` of level 124 (no normal pool), and no
+MonStats record names the `irongolem` row. [C] (fn:sub_00573470_MonPropRec@0x00573470, data:g_pMonProp@0x0096C860,
+tbl:MonProp.txt:prop1, tbl:MonStats.txt:MonProp, [monsters/0004 § Plan 0038 batch S3b](../../findings/monsters/0004-stats.md#plan-0038-batch-s3b-2026-10-16))
+The third, `druidhawk`, **is** reachable: it is the summon of the Druid skill Raven (221), `MonStatsInit` takes `d` = 0
+only for the five hireling classes, and `MonPropRec` runs for every monster (0x0057416D), so a Druid's Raven in a normal
+game reads the normal row (`stupidity`, −1). The summon's creation path into `MonsterInit` is not read and no such
+creation was logged (*Open questions*). [I] (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_0063EE90_HirelingType@0x0063EE90,
+0x0057416D, tbl:Skills.txt:summon)
 
 ### G. The mod handlers' stat effects
 
 The handlers run in `SpecialModsApply`'s order ([special § C1](special.md#c-mod-handlers)): mods 1, 2, 3, 4, then the mod
 list. After each one the same handler runs with flag 0 on every group member. Flag 1 is the special itself and flag 0
 a member of its group. A champion-pack member runs its own pass with flag 1. No flag-0 call follows a champion, so a
-champion leader's pass reaches no pack member. Flag-0 calls go to the minions of uniques and superuniques only. [C]
-(fn:sub_005A2120_SpecialModsApply@0x005A2120, run:2026-10-15-mon-stats) No handler draws on any seed. [C]
+champion leader's pass reaches no pack member. Flag-0 calls go to the minions of uniques and superuniques, and to the
+MonStats minions of a champion-pack member whose class is `SetBoss`: `MinionsSpawn` gives it minions (it is created
+without flag `0x40`), and its own pass walks them with flag 0 (64 walks, classes 59, 397 and 645, the minions' stats
+reproduced). [C] (fn:sub_005A2120_SpecialModsApply@0x005A2120, run:2026-10-14-mon-special, run:2026-10-15-mon-stats,
+[monsters/0004 § Plan 0038 batch S3a](../../findings/monsters/0004-stats.md#plan-0038-batch-s3a-2026-10-16), [monsters/0003 § Plan 0038 batch S3a](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-s3a-2026-10-16)) No handler draws on any seed. [C]
 (fn:sub_005A2120_SpecialModsApply@0x005A2120, run:2026-10-14-mon-special)
 
 Notation: `lvl` is stat 12 when the handler is called, `x` is stat 13 then. `÷ 100` is signed 32-bit division
 truncating toward zero. `CDB` is DifficultyLevels `ChampionDamageBonus` of `game+0x6D`. "champion part" is the flag-1
-body of `champion` without its velocity, given in the `champion` row. [I] (fn:sub_005A0E80_UModChampion@0x005A0E80,
-tbl:DifficultyLevels.txt:ChampionDamageBonus)
+body of `champion` without its velocity, given in the `champion` row: 71 `champion` calls in nightmare (CDB 75) and hell
+(66), and the champion part inside 11 `ghostly`, 3 `fanatic` and 7 `possessed` calls, every stat write reproduced. [C]
+(fn:sub_005A0E80_UModChampion@0x005A0E80, tbl:DifficultyLevels.txt:ChampionDamageBonus, run:2026-10-15-mon-stats)
 
 | Mod (row) | Handler | Flag 1 (the special) | Flag 0 (group member) | Tag |
 |---|---|---|---|---|
@@ -511,15 +558,22 @@ Step notes:
 G1. A monster whose HP exceeds 4 096 (`h` > `0x100000`) takes the first branch, which truncates `h` to a multiple of
 100 before multiplying. The worked examples below take this branch. The handlers stack: a `possessed` champion gets
 `c[4+d]` from `hpmultiply`, then + 100 % of the result. [C] (fn:sub_005A0D20_MonHpAddPct@0x005A0D20, run:2026-10-15-mon-stats)
-`hpmultiply` does nothing when `game+0x6D` ≥ 3, and tests the champion flag through `sub_005A0180_MonTypeFlag(unit, 4)`. [I]
-(0x005A0DDE–0x005A0E34, fn:sub_005A0180_MonTypeFlag@0x005A0180, struct:MonsterData+0x16)
+`hpmultiply` tests the champion flag through `sub_005A0180_MonTypeFlag(unit, 4)`: 92 flag-1 calls on champions take
+`c[4+d]` and 106 on uniques and superuniques `c[7+d]`. [C] (fn:sub_005A0180_MonTypeFlag@0x005A0180,
+fn:sub_005A0DC0_UModHpMultiply@0x005A0DC0, struct:MonsterData+0x16, run:2026-10-15-mon-stats) It does nothing when
+`game+0x6D` ≥ 3, which single player never holds (`MonPlayerBonus` writes 2 over a larger value first). [I]
+(0x005A0DDE–0x005A0E34)
 
 G2. Every enchant handler also uses this `ℓ` for the cold and poison lengths. In a classic nightmare or hell game `lvl`
 is the rewritten `Level + 25·d` (+ 3 after `leveladd`), not the level that chose the stats row (§ D2). [C]
 (fn:sub_005A1C70_UModCold@0x005A1C70, run:2026-10-15-mon-stats)
 
 G3. The branch that would add −33 for mod 36 is unreachable: the id is tested for 36 twice. [I] (0x005A0FE7–0x005A1069)
-The `fanatic` and `fast` bonus is 100 only for a class with `Velocity` ≤ 9. [I] (tbl:MonStats.txt:Velocity)
+The `fanatic` and `fast` bonus is `clamp(2048 ÷ Velocity − 128, 10, 100)` with signed division (`idiv` at 0x005A1951):
+100 at velocities 1 and 3–7 and 42 at 12 in 76 logged calls. [C] (fn:sub_005A1910_UModFast@0x005A1910,
+fn:sub_005A11F0_UModFanatic@0x005A11F0, tbl:MonStats.txt:Velocity, run:2026-10-15-mon-stats) So it is 100 for `Velocity`
+≤ 8 and 99 at 9 (2048 ÷ 9 = 227), not 100 up to 9 as this note said before plan 0038's S3a batch; velocities 8 and 9
+were not met. [I] (tbl:MonStats.txt:Velocity)
 
 G4. **`resist`, `spectralhit`, `stoneskin` and the enchant `resist` part** (`sub_005A1370_UModResist`, the mod id in
 `EDX`, flag 1 only):
@@ -637,7 +691,7 @@ fn:sub_005D6B60_MonEquipInit@0x005D6B60, run:2026-10-15-mon-stats) The stat hand
   69, 74, 100, 352 (those with a non-zero value), then the mod handlers' changes to 6, 7, 12, 13, 16, 25, 31, 36–45,
   48–63, 67, 74, 119. [C] (run:2026-10-15-mon-stats)
 - The MonProp stat list (flags `0x40`) attached to the unit's list. [C] (fn:PROP_ApplyBlock@0x0065FD70, run:2026-10-15-mon-stats)
-- The skills set at creation with their levels. [I] (fn:sub_0056DEB0_UnitSkillAdd@0x0056DEB0)
+- The skills set at creation with their levels (B10). [C] (fn:sub_0056DEB0_UnitSkillAdd@0x0056DEB0, run:2026-10-16-sweep-monsters-b)
 - The unit seed, advanced by exactly the draws of § B and § F (and MonEquip's, B12). [C] (run:2026-10-15-mon-stats,
   run:2026-10-21-chain2)
 - Downstream: [items/tc](../items/tc.md) reads stat 12 (the level) when the monster drops, and the TC player-count model
@@ -735,7 +789,8 @@ fn:sub_005A1910_UModFast@0x005A1910, run:2026-10-15-mon-stats)
 ## Reimplementation notes
 
 - **Draw the HP range with `RangeB(hi − lo + 1)`, also when `hi = lo`.** That is one step with result 0. Only a reversed
-  range makes no step. [C] for the draw (run:2026-10-15-mon-stats); [I] for the reversed range (0x00573F7E–0x00573FC8)
+  range makes no step. [C] for the draw (run:2026-10-15-mon-stats) and, by composition, for the reversed range (step
+  note B7). [C] (fn:RNG_RangeB@0x0045C3E0, run:2026-10-11-rng-emu)
 - **Single player reads the `L-` MonLvl columns.** Do not "correct" this to the plain columns: 3 954 creations of the run
   show it. [C] (run:2026-10-15-mon-stats)
 - **The player count is frozen at creation.** Changing `/players` changes nothing on live monsters, and stat 100 keeps the
@@ -777,6 +832,14 @@ fn:sub_005A1910_UModFast@0x005A1910, run:2026-10-15-mon-stats)
   the level and `L`.
 - [findings/monsters/0003-special-monsters.md § 4](../../findings/monsters/0003-special-monsters.md#4-specialmodsapply-and-the-per-handler-draw-table):
   the handler order and their (absent) draws.
+- Plan 0038 sweep ([plan 0038](../../plans/0038-inferred-claims-sweep.md)): the batch sections of
+  [monsters/0004](../../findings/monsters/0004-stats.md): [S3a](../../findings/monsters/0004-stats.md#plan-0038-batch-s3a-2026-10-16) (kept logs: `SetStat`/`AddStat`, the champion
+  part, `MonTypeFlag`, the velocity bonus, the `Align` 1 skip; two corrections),
+  [H4b](../../findings/monsters/0004-stats.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b) (run:2026-10-16-sweep-monsters-b: the skill list,
+  `doomknight2`, `Align` 1 and 2), [S3b](../../findings/monsters/0004-stats.md#plan-0038-batch-s3b-2026-10-16) (the reversed HP range, the MonProp reader
+  and rows), [S1f](../../findings/monsters/0004-stats.md#plan-0038-batch-s1f-2026-10-17) (run:2026-10-17-sweep-emu2: `MulDiv` under emulation) and
+  [H4a](../../findings/monsters/0004-stats.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a) (run:2026-10-21-sweep-monsters-a: `doomknight3`;
+  run:2026-10-20-chain: `MonEquipInit`).
 - `tools/monstats.py`: the model behind the confirmed tags (run with `check`, chained after `tools/monspawn.py`).
 - Tables: [MonStats](../../tables/MonStats.md#readers-at-creation-and-at-attack-time-plan-0025-phase-1),
   [MonLvl](../../tables/MonLvl.md#code-semantics-plan-0025-phase-1), [MonProp](../../tables/MonProp.md#code-semantics-plan-0025-phase-1),
@@ -803,10 +866,16 @@ fn:sub_005A1910_UModFast@0x005A1910, run:2026-10-15-mon-stats)
 - [L] The `willowisp1` halving (§ G5): the case itself, which no run met.
 - [L] Unreached on stock data or not met, each inferred above: `berserk` with flag 0 (§ G; a champion has no group
   members), `poisonhit`,
-  `always_run_ai`, the reversed HP range (`minionspawner1`, `mephistospirit`), MonEquip's level skip, second row, `k` of 2 or 3
+  `always_run_ai`, MonEquip's level skip, second row, `k` of 2 or 3
   and occupied location (no stock row reaches them; the one-row path is reproduced, B12), a MonProp slot with `chance` > 0,
-  MonProp in normal, the doomknight `Range(4)`, the `MulDiv` and `MonHpAddPct` overflow branches, the hpregen overflow
-  branch, and player counts ≥ 9.
+  the `MonHpAddPct` overflow branches, the hpregen overflow branch (only the Uber Tristram classes 704–709 can pass it),
+  `fast`/`fanatic` at `Velocity` 8 and 9, and player counts ≥ 9. The reversed HP range, the doomknight `Range(4)` and the
+  `MulDiv` branches are closed by plan 0038 (§ B7, § B3, § A1).
+- [L] **MonProp in normal, corrected by plan 0038 S3b** (§ F3): the `druidhawk` normal row was said unreachable, but a
+  Druid's Raven in a normal game reads it by the code. A Druid casting Raven in a normal game under `mon-stats.gdb` (its
+  `SI` lines carry the MonProp stat list) would log it; the H4a run did not take that piece.
+- ~~`Flag-0 calls go to the minions of uniques and superuniques only`~~ (§ G, corrected by plan 0038 S3a): a `SetBoss`
+  champion-pack member's own MonStats minions get flag-0 calls too.
 - [L] The formulas of the stats `MonAttackStats` writes (§ H1: the MonLvl cells, the skill-damage pair, the classic
   factors, the expansion player-count bonus): run:2026-10-16-combat took them as value inputs. A run that asserts them
   confirms § H ([combat § Open questions](../combat/README.md#open-questions)).

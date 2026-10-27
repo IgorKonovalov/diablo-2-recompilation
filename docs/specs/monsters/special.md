@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/spawn, monsters/pool, data/excel, drlg/collision]
 consumed_by: [monsters/stats, monsters/spawn, items/tc, chain]
-tags: {C: 107, I: 95, L: 3}
-updated: 2026-10-21
+tags: {C: 149, I: 70, L: 4}
+updated: 2026-10-27
 ---
 
 # Special monsters: mods, minions, superuniques and names
@@ -85,11 +85,11 @@ Constant data in `Game.exe`:
 
 | Data | Used for | Tag |
 |---|---|---|
-| data:g_UModHandlers@0x0073C008 | one server handler pointer per MonUMod row; null for rows 0, 3, 7, 10–15, 19–22, 24, 29, 31–35, 40, 42 | [I] |
-| data:g_UModAlwaysMods@0x006E2168 | the mods whose handlers always run: 1, 2, 3, 4 | [I] |
-| data:g_UModAuraTable@0x0073BF68 | 8 rows `{minLevel, add, mul, div, skill}` (i32 × 5): the aura choice | [I] |
-| data:g_ChampionNameStr@0x006DA488 | champion mod → name word | [I] |
-| data:g_ClientUModHandlers@0x00724D78 | client handler per mod; rows 1, 12, 16, 36–39 are the name builder | [I] |
+| data:g_UModHandlers@0x0073C008 | one server handler pointer per MonUMod row; null for rows 0, 3, 7, 10–15, 19–22, 24, 29, 31–35, 40, 42 (the table as read in the game's memory) | [C] for the rows a logged list held (§ D: calls exactly where a handler is set, run:2026-10-15-mon-stats, run:2026-10-21-sweep-monsters-a); [I] for the rows never in a list |
+| data:g_UModAlwaysMods@0x006E2168 | the mods whose handlers always run: 1, 2, 3, 4 | [C] (run:2026-10-15-mon-stats: 392 windows, § C1) |
+| data:g_UModAuraTable@0x0073BF68 | 8 rows `{minLevel, add, mul, div, skill}` (i32 × 5): the aura choice | [C] (run:2026-10-16-sweep-monsters-b, § C3) |
+| data:g_ChampionNameStr@0x006DA488 | champion mod → name word | [C] (run:2026-10-16-sweep-monsters-b, § I1) |
+| data:g_ClientUModHandlers@0x00724D78 | client handler per mod; rows 1, 12, 16, 36–39 are the name builder, and no other row | [C] (run:2026-10-16-sweep-monsters-b: 853 client handler calls, each the table's entry) |
 
 ### Runtime state
 
@@ -117,7 +117,7 @@ Constant data in `Game.exe`:
 | `QUEST_MOD` | 22 `questcomplete`, appended to every superunique | fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, run:2026-10-14-mon-special | [C] |
 | `THIEF` | 24, dropped from a superunique's fixed mods | 0x005A4AF0–0x005A4B22 | [I] |
 | aura classes | 704 `ubermephisto`: Conviction at level 20; superunique 37 (Lord De Seis): index 5 | fn:sub_005A1650_UModAura@0x005A1650 | [I] |
-| name formats | `string.tbl` 1721 `"%0 %1"`, 1722 `"%0 %1 %2"`; `patchstring.tbl` 11072 `"%0 %1"` | fn:sub_004AC870_ClientMonNameBuild@0x004AC870 | [I] |
+| name formats | `string.tbl` 1721 `"%0 %1"`, 1722 `"%0 %1 %2"`; `patchstring.tbl` 11072 `"%0 %1"` | fn:sub_004AC870_ClientMonNameBuild@0x004AC870, run:2026-10-16-sweep-monsters-b (§ I1) | [C] |
 
 ### Inputs and oracles
 
@@ -233,20 +233,20 @@ B2. UniqueModPick(unit, game, have) → u8:                         [C] (fn:sub_
       and the row test  w > 0 and MonUMod[r].champion = 0 and ModEligible(r, game, unit) and r ∉ have
       if total < 1: return 0                                     ; no draw
 
-B3. ModEligible(r, game, unit) → bool:                            [C] except the line tagged [I] (fn:sub_005A03E0_ModEligible@0x005A03E0, 0x005A03F4, run:2026-10-14-mon-special)
+B3. ModEligible(r, game, unit) → bool:                            [C] (fn:sub_005A03E0_ModEligible@0x005A03E0, 0x005A03F4, run:2026-10-14-mon-special)
       rec ← MonUMod[r]
       if rec.enabled = 0: return false
       if game.expansion = 0 and rec.version ≥ 100: return false  ; version u16; expansion = dword game+0x70
       for t in (rec.exclude1, rec.exclude2):                     ; s16
         if t ≤ 0: break
-        if MonTypeIsA(unit.class, t): return false               ; [I] never true in the run (fn:sub_005A0070_MonTypeIsA@0x005A0070)
+        if MonTypeIsA(unit.class, t): return false               ; [C] true once, sandleaper5 (fn:sub_005A0070_MonTypeIsA@0x005A0070, run:2026-10-16-sweep-monsters-b)
       case rec.fPick:
         1: return MonModeAllowed(unit.class, 4)                  ; MonStats2 +0xF0 bit 4, mode A1
         2: return not (MonStats[unit.class].isMelee or MonStats[unit.class].nomultishot)
         3: return MonModeAllowed(unit.class, 2)                  ; bit 2, mode WL
       return true
 
-B4. MonTypeIsA(class, t) → bool:                                  [I] (fn:sub_005A0070_MonTypeIsA@0x005A0070, fn:sub_00658520_MonTypeLoad@0x00658520, fn:sub_00658460_MonTypeReachable@0x00658460)
+B4. MonTypeIsA(class, t) → bool:                                  [C] (fn:sub_005A0070_MonTypeIsA@0x005A0070, fn:sub_00658520_MonTypeLoad@0x00658520, fn:sub_00658460_MonTypeReachable@0x00658460, run:2026-10-16-sweep-monsters-b)
       c: i16 ← MonStats[class].MonType
       if c, t ∉ [0, nTypes): return false
       return Reachable(t, c)
@@ -269,7 +269,10 @@ B1. The weights are u16 fields read as signed shorts, and only those above 0 cou
 total, and the first candidate whose cumulative weight exceeds it wins. [C] (fn:sub_005A0500_ChampionModPick@0x005A0500,
 fn:sub_005A0600_UniqueModPick@0x005A0600, run:2026-10-14-mon-special: the candidate list, total and draw of all 16
 champion and 153 unique picks) The unique pick inlines the draw: a power-of-two total masks the low word, any other total
-takes the unsigned remainder. Both give `low mod total`, so it is `Range`. [I] (0x005A06CC–0x005A070A)
+takes the unsigned remainder. Both give `low mod total`, so it is `Range`: 284 unique picks, each reproduced as `Range`.
+[C] (fn:sub_005A0600_UniqueModPick@0x005A0600, 0x005A06CC–0x005A070A, run:2026-10-14-mon-special, run:2026-10-15-mon-stats,
+[monsters/0003 § Plan 0038 batch S3a](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-s3a-2026-10-16)) None of their totals was a power of two, and none can be on stock data (every `upick` weight is 6, so a total
+is `6·k`): the masked form is a code reading. [I] (0x005A06CC–0x005A070A)
 
 B2. With stock data a classic game has one champion candidate, `champion` (16). The other four champion mods (`ghostly`,
 `fanatic`, `possessed`, `berserk`) have `version` 100. Classic and expansion have the same unique candidates, 12 in normal
@@ -286,9 +289,12 @@ fn:sub_0046C140_MonModeAllowed@0x0046C140, run:2026-10-14-mon-special)
 B4. Row `t` of the matrix holds every MonType reachable from `t` through `equiv1`..`equiv3`, `t` included. An `exclude`
 type therefore excludes its own classes and those of the types it lists as `equiv`, not the classes of the types that list
 it. The stock data has one exclusion, `lightning` (17) on MonType `sandleaper` (22), which lists no `equiv`. It refuses
-`lightning` to exactly the `sandleaper` classes. [I] (fn:sub_00658460_MonTypeReachable@0x00658460, tbl:MonUMod.txt:exclude1)
-The run never rolled a `sandleaper` special, so the exclusion itself is unreached. All 153 logged calls returned 0, as
-predicted. [C] (run:2026-10-14-mon-special)
+`lightning` to the `sandleaper` classes and, on the stock matrix, to no other. One case was met: a unique `sandleaper5`
+(class 82) was refused `lightning`:
+`MonTypeIsA(82, 22)` returned 1, the candidate list lacked mod 17, and the model predicted the call, the list and the pick
+on the matrix; the 153 calls of the first run all returned 0, as predicted. [C] (fn:sub_00658460_MonTypeReachable@0x00658460,
+fn:sub_005A03E0_ModEligible@0x005A03E0, tbl:MonUMod.txt:exclude1, run:2026-10-14-mon-special, run:2026-10-16-sweep-monsters-b,
+[monsters/0003 § Plan 0038 batch H4b](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b))
 
 B5. The champion pick takes only rows whose `champion` byte is non-zero, and the unique pick only rows where it is 0. A row
 with `champion` 0 and a `cpick` weight would never be a champion's mod. No stock row has that combination
@@ -309,18 +315,18 @@ C2. UModRndName(unit, flag):  mod 1                              [C] (fn:sub_005
       unit.nameSeed: u16 ← unit.seed.low & 0xFFFF
 
 C3. UModAura(unit, flag):  mod 30                                [C] for the draw, [I] for the lines tagged [I] (fn:sub_005A1650_UModAura@0x005A1650, run:2026-10-14-mon-special)
-      if flag = 0: return                                        ; [I] (fn:sub_005A1650_UModAura@0x005A1650)
+      if flag = 0: return                                        ; [C] (fn:sub_005A1650_UModAura@0x005A1650, run:2026-10-15-mon-stats)
       lvl: i32 ← unit level (stat 12)                            ; input, stats.md § D3
       if lvl ≤ 0: lvl ← 1                                        ; [I] guard, not reached (0x005A1685)
-      n: i32 ← number of AuraTable rows with minLevel ≤ lvl      ; [I] stock: 6 below 20, 7 from 20 on (data:g_UModAuraTable@0x0073BF68)
+      n: i32 ← number of AuraTable rows with minLevel ≤ lvl      ; [C] stock: 6 below 20, 7 from 20 on (data:g_UModAuraTable@0x0073BF68, run:2026-10-15-mon-stats)
       if n = 0: n ← 1                                            ; [I] guard, not reached (0x005A16EE)
       local: Seed ← Init(unit.nameSeed)                          ; [I] Init(0x1506) without MonsterData, not reachable for a monster (0x005A1704)
       i: u32 ← Range(local, n)                                   ; local-seed draw, also for the two cases below
       if unit.superUniqueId = 37: i ← 5                          ; [I] Lord De Seis, not reached (0x005A172C)
       if unit.class = 704: Conviction at skill level 20; return  ; [I] ubermephisto, not reached (0x005A1748)
-      k: i32 ← (AuraTable[i].add + lvl) × mul ÷ div              ; [I] signed, lvl the guarded level (0x005A1776)
-      if k ≤ 1: k ← 1;  if k ≥ 99: k ← 99                        ; [I] (0x005A1795–0x005A17A4)
-      skill ← AuraTable[i].skill;  level ← k                     ; [I] effect: stats.md § G (fn:sub_005A1650_UModAura@0x005A1650)
+      k: i32 ← (AuraTable[i].add + lvl) × mul ÷ div              ; [C] signed, lvl the guarded level (0x005A1776, run:2026-10-16-sweep-monsters-b)
+      if k ≤ 1: k ← 1;  if k ≥ 99: k ← 99                        ; [I] neither met (0x005A1795–0x005A17A4)
+      skill ← AuraTable[i].skill;  level ← k                     ; [C] to UnitSkillAdd (0x005A17AF, run:2026-10-16-sweep-monsters-b); effect: stats.md § G
 ```
 
 Step notes:
@@ -329,8 +335,13 @@ C1. The handler order is 1, 2, 3, 4, then the list in slot order. Row 3 has no h
 `rndname`, `hpmultiply`, `leveladd` and then the list. [C] (data:g_UModAlwaysMods@0x006E2168, run:2026-10-14-mon-special: 606
 handler calls on specials) A mod that occurs twice runs twice. Megaflow Rectifier, whose `Mod1` is `rndname`, steps its
 seed twice. [C] (run:2026-10-13-mon-spawn) The group walk finds the unit's leader through `MonsterData+0x28` and calls the
-handler with flag 0 on every unit in the leader's list. For a unique or superunique boss that list is its minions. [I]
-(fn:sub_0058F380_MonGroupForEach@0x0058F380, fn:sub_005A2100_UModHandlerThunk@0x005A2100) None of the 1667 group-member
+handler with flag 0 on every unit in the leader's list and on no other. For a unique or superunique boss that list is
+its `UniqueMinions` creations (621 walks, the set exact for each mod). It also holds the MonStats minions that
+`MinionsSpawn` links to a `SetBoss` class: a champion-pack member of class 59 (`fallenshaman2`), 397 or 645
+(`fallenshaman6`) is created without flag `0x40`, gets such minions, and its own `SpecialModsApply` walks exactly those
+(64 walks in 16 windows, the minions' stats reproduced). [C] (fn:sub_0058F380_MonGroupForEach@0x0058F380,
+fn:sub_005A2100_UModHandlerThunk@0x005A2100, fn:sub_005B2830_MinionsSpawn@0x005B2830, run:2026-10-14-mon-special,
+run:2026-10-15-mon-stats, [monsters/0003 § Plan 0038 batch S3a](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-s3a-2026-10-16)) None of the 1667 group-member
 calls of the run moved a unit, room or game seed, so the member order does not matter for the seeds. [C]
 (run:2026-10-14-mon-special)
 
@@ -341,12 +352,19 @@ C3. The aura draw touches no persistent seed. All 12 aura draws of the run were 
 `n` = 6 once (normal, level 5) and `n` = 7 eleven times, indices 0 to 6 all seen. [C] (fn:sub_005A1650_UModAura@0x005A1650,
 run:2026-10-14-mon-special) The eight rows are `(minLevel, add, mul, div, skill)`: (0, 0, 1, 6, 98) Might, (0, 0, 1, 6,
 102) Holy Fire, (0, 0, 1, 5, 108) Blessed Aim, (0, 0, 1, 7, 114) Holy Freeze, (0, 0, 1, 8, 123) Conviction, (0, 0, 1, 8, 122)
-Fanaticism, (20, 0, 1, 8, 118) Holy Shock, (999, 0, 0, 1, 103) Thorns, so Thorns needs level 999. [I]
-(data:g_UModAuraTable@0x0073BF68) The level the handler reads is stat 12 after `leveladd`. In a classic nightmare or hell
+Fanaticism, (20, 0, 1, 8, 118) Holy Shock, (999, 0, 0, 1, 103) Thorns. The skill and level passed to `UnitSkillAdd`
+(0x005A17AF) are the drawn row's skill and `(add + lvl) × mul ÷ div`: 10 calls, rows 0, 1, 3, 4, 5 and 6, in all three
+difficulties. `n` against the table is also checked on 84 kept aura draws, 3 of them below level 20 with `n` 6. [C]
+(data:g_UModAuraTable@0x0073BF68, fn:sub_005A1650_UModAura@0x005A1650, run:2026-10-16-sweep-monsters-b,
+run:2026-10-15-mon-stats, run:2026-10-15-objects, [monsters/0003 § Plan 0038 batch H4b](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b)) Row 7 needs level 999, so it is never drawn, and the clamps
+to 1 and 99 were not met (a clamp at 99 needs a level of 495 or more; the clamp at 1 needs an aura special of level at
+most 9 to 15, by row). [I] (0x005A1795–0x005A17A4) The level the handler reads is stat 12 after `leveladd`. In a classic nightmare or hell
 game that is MonStats `Level` + 25·d + 3 ([monsters/stats § D3](stats.md#d-classic-nightmare-and-hell-sub_0063eef0_monclassicdiffadjust)). [C]
 (fn:sub_0063EEF0_MonClassicDiffAdjust@0x0063EEF0, run:2026-10-15-mon-stats) A
 superunique with `aura` among its fixed mods runs this handler a second time (§ G). The second call uses the same local
-seed and gives the same index. [I] (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0) The draw comes before the Lord De Seis and
+seed and gives the same index: Bremm Sparkfist (record 28, `Mod1` 30) logged two aura draws on the same name seed, `n` 7
+and index 2, and the same row 2 written twice, the second after `SpecialModsApply`'s exit; the kept logs hold two more such
+records. [C] (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, run:2026-10-21-sweep-monsters-a, [monsters/0003 § Plan 0038 batch H4a](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a)) The draw comes before the Lord De Seis and
 class-704 tests, so `ubermephisto` and Lord De Seis also take one step of their local seed, which no persistent seed sees.
 [I] (0x005A1727, 0x005A1748) The two guards map a level ≤ 0 to 1, which the skill-level formula then uses too, and a row
 count of 0 to 1, so `Range(local, 1)` returns 0 and row 0 is used. Stock data reaches neither: the first rows have
@@ -369,8 +387,8 @@ its group. No handler draws on the room or game seed. The effect column only nam
 | 7 | `curse` | u 6/6/6 | 1 | null | — | — | elsewhere | [C] (run:2026-10-14-mon-special) |
 | 8 | `resist` | u 0/6/6 | 1 | fn:sub_005A1370_UModResist@0x005A1370 | none | nothing | resistances | [C] (run:2026-10-14-mon-special) |
 | 9 | `fire` | u 6/6/6 | 1 | fn:sub_005A1990_UModFire@0x005A1990 | none | runs, `resist` part skipped | enchant damage, resistance | [C] (run:2026-10-14-mon-special) |
-| 10, 11, 13, 14, 15 | `poisondead`, `durieldead`, `rage`, `spcdamage`, `partydead` | — | 0 | null | — | — | post-create mods (§ J) | [I] (data:g_UModHandlers@0x0073C008) |
-| 12 | `bloodraven` | — | 0 | null (client: the name) | — | — | Blood Raven's name | [I] (data:g_ClientUModHandlers@0x00724D78) |
+| 10, 11, 13, 14, 15 | `poisondead`, `durieldead`, `rage`, `spcdamage`, `partydead` | — | 0 | null | — | — | post-create mods (§ J) | [C] for 10 and 13, skipped in every window that listed them (run:2026-10-21-sweep-monsters-a); [I] for 11, 14, 15, in no logged list (data:g_UModHandlers@0x0073C008) |
+| 12 | `bloodraven` | — | 0 | null (client: the name) | — | — | Blood Raven's name | [C] (data:g_ClientUModHandlers@0x00724D78, run:2026-10-21-sweep-monsters-a: written by the preset path with no `SpecialModsApply` window; the client builder names it) |
 | 16 | `champion` | c 1/1/1 | 1 | fn:sub_005A0E80_UModChampion@0x005A0E80 | none | nothing | level − 1, experience, to-hit, damage, velocity | [C] (run:2026-10-14-mon-special) |
 | 17 | `lightning` | u 6/6/6, `exclude1` `sandleaper` | 1 | fn:sub_005A1B00_UModLightning@0x005A1B00 | none | runs, `resist` part skipped | enchant damage, resistance | [C] (run:2026-10-14-mon-special) |
 | 18 | `cold` | u 6/6/6 | 1 | fn:sub_005A1C70_UModCold@0x005A1C70 | none | runs, `resist` part skipped | enchant damage, resistance | [C] (run:2026-10-14-mon-special) |
@@ -385,15 +403,16 @@ its group. No handler draws on the room or game seed. The effect column only nam
 | 28 | `stoneskin` | u 6/6/6 | 1 | fn:sub_005A1370_UModResist@0x005A1370 | none | nothing | resistances | [C] (run:2026-10-14-mon-special) |
 | 29 | `multishot` | u 6/6/6, `fPick` 2 | 1 | null | — | — | elsewhere | [C] (run:2026-10-14-mon-special) |
 | 30 | `aura` | u 6/6/6 | 0 | fn:sub_005A1650_UModAura@0x005A1650 | **`Range(Init(nameSeed), n)`** on a local seed | nothing | aura skill and level | [C] (run:2026-10-14-mon-special) |
-| 31–35, 40, 42 | `goboom`, `firespike_explode`, `suicideminion_explode`, `ai_after_death`, `shatter_on_death`, `worms_on_death`, `lightningdeath` | — | 0 | null | — | — | — | [I] (data:g_UModHandlers@0x0073C008) |
+| 31–35, 40, 42 | `goboom`, `firespike_explode`, `suicideminion_explode`, `ai_after_death`, `shatter_on_death`, `worms_on_death`, `lightningdeath` | — | 0 | null | — | — | — | [C] for 34 and 35, in 17 applied lists with no call (run:2026-10-15-mon-stats); [I] for 31–33, 40, 42, in no logged list (data:g_UModHandlers@0x0073C008) |
 | 36 | `ghostly` | c 1/1/1, expansion | 1 | fn:sub_005A1080_UModGhostly@0x005A1080 | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] (run:2026-10-14-mon-special) |
 | 37 | `fanatic` | c 1/1/1, expansion | 1 | fn:sub_005A11F0_UModFanatic@0x005A11F0 | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] (run:2026-10-14-mon-special) |
 | 38 | `possessed` | c 1/1/1, expansion | 1 | fn:sub_005A1230_UModPossessed@0x005A1230 | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] (run:2026-10-14-mon-special) |
 | 39 | `berserk` | c 1/1/1, expansion | 1 | fn:sub_005A1280_UModBerserk@0x005A1280 | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] (run:2026-10-14-mon-special) |
 | 41 | `always_run_ai` | — | 0 | fn:sub_005A1330_UModAlwaysRunAi@0x005A1330 | none on the three seeds (AI event, not reached) | runs | AI timer | [I] (fn:sub_005A1330_UModAlwaysRunAi@0x005A1330) |
 
-- [C] A `[C]` row is a mod that was in some logged special's list (or always run) in run:2026-10-14-mon-special, with its
-  handler calls seed-asserted. The `[I]` rows were never in a logged list. For those the "none" rests on the static call
+- [C] A `[C]` row is a mod that was in some logged special's list (or always run), with its handler calls seed-asserted:
+  in run:2026-10-14-mon-special, and for rows 10, 12, 13, 34 and 35 in the later runs named in their rows. The `[I]` rows
+  (and the `[I]` parts of the split rows) were never in a logged list. For those the "none" rests on the static call
   graph: no LCG step and no RNG call in the stat handlers, the single step of `rndname`, the local draw of `aura`, and RNG
   only deep inside the skill and AI callees of `teleport`, `aura` and `always_run_ai`. (run:2026-10-14-mon-special,
   fn:sub_005A1330_UModAlwaysRunAi@0x005A1330, fn:sub_005A1600_UModTeleport@0x005A1600)
@@ -488,7 +507,7 @@ flowchart TD
 G1. SuperUniqueSpawn(game, room, x: i32, y: i32, id: i32) → unit | none:   [C] except the lines tagged [I] (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, fn:sub_005A09E0_SpecialMonPlace@0x005A09E0, run:2026-10-14-mon-special)
       if game.difficulty > 2: return none                        ; [I] (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0)
       rec ← SuperUniques[id];  if rec = none or rec.Class < 0: return none        ; [I] (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0)
-      if rec.Stacks = 0 and placed[id]: return none             ; [I] bit 1 << (id & 7) of byte game+0x1D30 + (id >> 3) (0x005A4A09)
+      if rec.Stacks = 0 and placed[id]: return none             ; [C] bit 1 << (id & 7) of byte game+0x1D30 + (id >> 3) (0x005A4A09, run:2026-10-21-sweep-monsters-a)
       if rec.AutoPos ≠ 0: (x, y) ← (0, 0)
       u ← SpecialMonPlace(room, no box, x, y, rec.Class, radius −1, avoidWarp: false)
       if u = none: return none
@@ -498,7 +517,7 @@ G1. SuperUniqueSpawn(game, room, x: i32, y: i32, id: i32) → unit | none:   [C]
       for j in 0 ..< 3:
         m ← rec.Mod[j];  if m = 0: break
         if m = 24: continue                                      ; [I] thief, not written (0x005A4AF0–0x005A4B22)
-        if m = 30: hasAura ← true                                ; [I] not reached (0x005A4AF0–0x005A4B22)
+        if m = 30: hasAura ← true                                ; [C] a fixed 30 only (0x005A4AF0–0x005A4B22, run:2026-10-21-sweep-monsters-a)
         ModAppend(u.mods, m);  have ← have ∪ {m}
       repeat game.difficulty times:                              ; 0, 1 or 2 extra mods
         m ← UniqueModPick(u, game, have);  if m = 0: break       ; unit-seed draw (B2)
@@ -506,8 +525,8 @@ G1. SuperUniqueSpawn(game, room, x: i32, y: i32, id: i32) → unit | none:   [C]
       (min, max): (i32, i32) ← (rec.MinGrp, rec.MaxGrp)
       if min ≠ 0 and max ≠ 0: (min, max) ← (min + d, max + d)    ; d = difficulty
       SpecialModsApply(game, u, no box, min, max, minions: true) ; § C, § E
-      if hasAura: UModAura(u, flag: 1)                           ; [I] a second time (fn:sub_005A1650_UModAura@0x005A1650)
-      tail by rec.Superunique (record index), table below        ; [I] for the non-default cases (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0)
+      if hasAura: UModAura(u, flag: 1)                           ; [C] a second time (fn:sub_005A1650_UModAura@0x005A1650, run:2026-10-21-sweep-monsters-a)
+      tail by rec.Superunique (record index), table below        ; [C] for the cases met, [I] for the others (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, 0x005A4BF7)
       ModAppendApply(u, 22, 1)                                   ; questcomplete; no handler
       return u
 ```
@@ -517,14 +536,24 @@ G1. SuperUniqueSpawn(game, room, x: i32, y: i32, id: i32) → unit | none:   [C]
 | Record | Superunique | Tail | Draws | Tag |
 |---|---|---|---|---|
 | 6 | The Countess | state 118, quest hook 5, AI mode 13 | none | [I] (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0) |
-| 10 | Radament | `2 + Range(u.seed, 5)` × `skeleton5`, then one each of `skmage_pois3`, `skmage_cold4`, `skmage_fire3`, `skmage_ltng3`, all `SpawnNearUnitNoBox(…, radius 4, flags 0x40)` | **1 unit-seed draw**, then the room and game draws of each spawn | [I] (0x005A4CD1) |
-| 26, 27, 29 | Ismail Vilehand, Geleb Flamefinger, Toorc Icefist | quest hook 19 | none | [I] (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0) |
-| 36, 37, 38 | Infector of Souls, Lord De Seis, Grand Vizier of Chaos | quest hook 23 | none | [I] (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0) |
+| 10 | Radament | `2 + Range(u.seed, 5)` × `skeleton5`, then one each of `skmage_pois3`, `skmage_cold4`, `skmage_fire3`, `skmage_ltng3`, all `SpawnNearUnitNoBox(…, radius 4, flags 0x40)` | **1 unit-seed draw**, then the room and game draws of each spawn | [C] for the draw, its place and the spawn calls (r = 0 met: two `skeleton5`); [I] for the `+ r` of the count (0x005A4CD1, 0x005A4CDE, run:2026-10-21-sweep-monsters-a) |
+| 26, 27, 29 | Ismail Vilehand, Geleb Flamefinger, Toorc Icefist | quest hook 19, then `0x00545B50` | none | [C] (fn:QUESTS_HookMonster@0x005436B0, run:2026-10-21-sweep-monsters-a) |
+| 36, 37, 38 | Infector of Souls, Lord De Seis, Grand Vizier of Chaos | quest hook 23 | none | [C] for 36 and 38 (fn:QUESTS_HookMonster@0x005436B0, run:2026-10-21-sweep-monsters-a); [I] for 37, not created (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0) |
 | 39 | The Cow King | quest hook 4 | none | [I] (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0) |
-| 42 | Siege Boss | `EscortSpawn(minion1, radius 20, 20 ×, flags 0)`, quest hook 31, state 118 | the escorts' spawns | [I] (fn:sub_005B24E0_EscortSpawn@0x005B24E0) |
+| 42 | Siege Boss | `EscortSpawn(minion1, radius 20, 20 ×, flags 0)`, quest hook 31, `0x00545B50`, state 118 | the escorts' spawns | [C] (fn:sub_005B24E0_EscortSpawn@0x005B24E0, run:2026-10-21-sweep-monsters-a: Shenk, 20 `minion1`) |
 | 43, 44, 45 | Ancient Barbarian 1–3 | quest hook 35 | none | [I] (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0) |
-| 60 | Nihlathak Boss | links itself, `EscortSpawn(LevelClassVariant(minion1), radius 10, 20 ×, flags 0x40)`, quest hook 34 | the escorts' spawns | [I] (fn:sub_005B24E0_EscortSpawn@0x005B24E0, fn:sub_0063EC70_LevelClassVariant@0x0063EC70) |
+| 60 | Nihlathak Boss | links itself, `EscortSpawn(LevelClassVariant(minion1), radius 10, 20 ×, flags 0x40)`, quest hook 34 | the escorts' spawns | [C] (fn:sub_005B24E0_EscortSpawn@0x005B24E0, fn:sub_0063EC70_LevelClassVariant@0x0063EC70, run:2026-10-21-sweep-monsters-a: 20 of class 458 on level 124) |
 | 62 | Baal Subject 2 | `EscortSpawn(skmage_cold3, radius 20, 10 ×, flags 0x40)` | the escorts' spawns | [I] (fn:sub_005B24E0_EscortSpawn@0x005B24E0) |
+
+- [C] The tail is the table's entry for the record's index, with the pushed arguments read from 0x005A4BFE–0x005A4E43:
+  records 10, 26, 27, 29, 36, 38, 42 and 60 made exactly the calls in their rows, and records 0, 4, 28, 30, 48 and 49,
+  which have no tail, made none there; on the kept logs, records 0, 3, 4, 5, 13, 41, 47, 49, 50, 51 and 56 created no unit
+  there, and record 42 created its 20 escorts. Each `EscortSpawn` call returned 1 with the 20 units of the class passed
+  created in between. (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, fn:sub_005B24E0_EscortSpawn@0x005B24E0,
+  run:2026-10-21-sweep-monsters-a, [monsters/0003 § Plan 0038 batch H4a](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a))
+- [I] The tails of records 6 (The Countess), 37 (Lord De Seis), 39 (The Cow King), 43–45 (the Ancients) and 62 (Baal
+  Subject 2) were not met, and Radament's draw was met with r = 0 only, which cannot tell `2 + r` from a fixed 2.
+  (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0)
 
 Step notes:
 
@@ -552,8 +581,13 @@ superunique's own class when it has none. [C] (fn:sub_005A0C00_UniqueMinions@0x0
 8, 9 and 10 in normal, nightmare and hell; Griswold ×4 and Threash Socket with `MinGrp` 0; run:2026-10-13-mon-spawn: Megaflow
 Rectifier 8 of its own class) A record with only one of the two bounds non-zero gets no bonus. [I] (0x005A4B72–0x005A4B86)
 
-G5. The `Stacks` byte is the only "may appear again" switch. `SuperUniqueSpawn` makes no quest test of its own, and the
-quest hooks of the tails register the unit; they do not gate it. [I] (0x005A4A09–0x005A4A25, tbl:SuperUniques.txt:Stacks)
+G5. A record with `Stacks` 0 whose placed bit is set is refused: three such calls on the kept logs returned at
+0x005A4A09 with no unit, and every first call of those records created its unit. `SuperUniqueSpawn` makes no quest test of
+its own that a done quest fails: all 18 superuniques of the earlier logs were placed for characters with every quest done
+in every difficulty. [C] (0x005A4A09, tbl:SuperUniques.txt:Stacks, fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0,
+run:2026-10-14-mon-special, run:2026-10-15-mon-stats, run:2026-10-21-sweep-monsters-a, [monsters/0003 § Plan 0038 batch S3a](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-s3a-2026-10-16)) That `Stacks` is the only
+"may appear again" switch, and that no test fails on an open quest either (the quest hooks of the tails register the
+unit; they do not gate it), rest on the reading: every logged character had all quests done. [I] (0x005A4A09–0x005A4A25)
 
 ### H. MonPlace presets
 
@@ -576,19 +610,24 @@ H2. MonPlace case 3, a champion at the point:                      [C] (0x0054E8
   unique mods with no `Range(100)` draw, and gets 3 … 6 minions. Case 3 has no `ChampionModPick`: a preset champion
   always has mod 16. Both were reproduced in Tristram in four games (normal classic and expansion, nightmare, hell).
   (fn:sub_0054E600_PresetMonSpawn@0x0054E600, fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, run:2026-10-14-mon-special)
-- [I] Cases `0x11`–`0x20` are fixed classes at the point and not specials: 17 `fallen1`, 18 `fallenshaman1`, 22
-  `fetish1`, 23 `fetishshaman1`; 29 `minion1`, 30 `imp1` (`deathmauler1` in level 110), 31 `act5barb1`, 32
-  `reanimatedhorde3`, these four with mode 12; 25, 27 and 28 nothing (their table entry returns 0). Rows 19–21, 24
-  and 26 hold the class-0 entry `0x0054E9CE` in that table, but none of them reaches it: 19–21 return 0 from the outer
-  switch (the *Every MonPlace row* bullet below). The class goes through
-  `LevelClassVariant` and then `PresetFallenVariant` (`fallen1` → `fallen2` in level 6, `fallen3` in 7, 12, 16;
-  `fallenshaman1` → `fallenshaman2` in 6 and 7, `fallenshaman3` in 12 and 16). `reanimatedhorde3` (438) draws
-  `Range(u.seed, 50)` for an AI timer.
-  (fn:sub_0054E2A0_PresetFallenVariant@0x0054E2A0, fn:sub_0063EC70_LevelClassVariant@0x0063EC70,
+- [C] Cases `0x11`–`0x20` are fixed classes at the point and not specials. Logged at the branch (0x0054E76F): 17 →
+  `fallen1`, 18 → `fallenshaman1`, 23 → `fetishshaman1`, 29 → `minion1`, 30 → `imp1` (level 111), 31 → `act5barb1`, the
+  last four with mode 12; 24 and 26 in hell placed nothing. The class goes through `LevelClassVariant` and then
+  `PresetFallenVariant`, which keys on the **`BaseId`** of the class it receives: in level 6 `LevelClassVariant` gives
+  `fallen3` and `PresetFallenVariant` turns it into `fallen2` (9 camps), and `fallenshaman1` becomes `fallenshaman2` (7).
+  The unit created has the result (27 creations). (fn:sub_0054E600_PresetMonSpawn@0x0054E600,
+  fn:sub_0054E2A0_PresetFallenVariant@0x0054E2A0, 0x0054E2C7–0x0054E2E9, fn:sub_0063EC70_LevelClassVariant@0x0063EC70,
+  run:2026-10-16-sweep-monsters-b, [monsters/0003 § Plan 0038 batch H4b](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b))
+- [I] The cases not logged: 22 `fetish1`, 32 `reanimatedhorde3` (mode 12), 30's `deathmauler1` in level 110, and 25, 27
+  and 28 nothing (their table entry returns 0). Rows 19–21, 24 and 26 hold the class-0 entry `0x0054E9CE` in that table,
+  but none of them reaches it: 19–21 return 0 from the outer switch (the *Every MonPlace row* bullet below). The other
+  levels' results of `PresetFallenVariant` (`fallen2` in level 6, `fallen3` in 7, 12, 16; `fallenshaman2` in 6 and 7,
+  `fallenshaman3` in 12 and 16) are read from the code. `reanimatedhorde3` (438) draws `Range(u.seed, 50)` for an AI
+  timer. (fn:sub_0054E2A0_PresetFallenVariant@0x0054E2A0, fn:sub_0063EC70_LevelClassVariant@0x0063EC70,
   [monsters/0003 § 7](../../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20))
 - [I] **Rows 24 `place_impgroup` and 26 `place_miniongroup` (`0x18`, `0x1A`) are Normal-only groups.** Their outer-switch byte is 7, the case at
   `0x0054EAA8`, which tests the difficulty byte `game+0x6D`. Outside Normal it returns 0, so both rows place nothing in
-  Nightmare and Hell. In Normal both call `PresetGroupSpawn`, with class `imp1` (`deathmauler1` in level 110) for row 24
+  Nightmare and Hell (logged in Hell: [C], run:2026-10-16-sweep-monsters-b). In Normal both call `PresetGroupSpawn`, with class `imp1` (`deathmauler1` in level 110) for row 24
   and `minion1` for row 26: a leader in the preset's box and `MinGrp − 1 + RangeB(leader.seed, MaxGrp − MinGrp + 1)`
   members around it. (0x0054EAA8–0x0054EAF9, fn:sub_0054E090_PresetGroupSpawn@0x0054E090, tbl:MonStats.txt:MinGrp, tbl:MonPlace.txt:code,
   [monsters/0003 § 7](../../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20))
@@ -634,16 +673,16 @@ sequenceDiagram
 ```
 
 ```
-I1. Client name of a special (called for mods 1, 12, 16, 36–39):  [C] for the random-unique roll, [I] for the rest (fn:sub_004AC870_ClientMonNameBuild@0x004AC870, fn:sub_0045F190_ClientMonAssign@0x0045F190, 0x0045F387, run:2026-10-14-mon-special)
-      if the unit is not special (flag 0x08): return             ; [I] minions (0x10) get no name (fn:sub_004AD020_ClientMonModsApply@0x004AD020)
+I1. Client name of a special (called for mods 1, 12, 16, 36–39):  [C] except the line tagged [I] (fn:sub_004AC870_ClientMonNameBuild@0x004AC870, fn:sub_0045F190_ClientMonAssign@0x0045F190, 0x0045F387, run:2026-10-14-mon-special, run:2026-10-16-sweep-monsters-b)
+      if the unit is not special (flag 0x08): return             ; [C] minions (0x10) get no name (fn:sub_004AD020_ClientMonModsApply@0x004AD020, run:2026-10-16-sweep-monsters-b)
       s8: u8 ← received nameSeed & 0xFF                          ; the client keeps the low byte
-      if flags & 0x02: name ← String(SuperUniques[unit.superUniqueId].Name); return   ; [I] (fn:sub_004AC870_ClientMonNameBuild@0x004AC870)
-      if flags & 0x04:                                           ; [I] champion (fn:sub_004AC870_ClientMonNameBuild@0x004AC870)
+      if flags & 0x02: name ← String(SuperUniques[unit.superUniqueId].Name); return   ; [C] (run:2026-10-16-sweep-monsters-b: 6)
+      if flags & 0x04:                                           ; [C] champion (run:2026-10-16-sweep-monsters-b: 26)
         word ← g_ChampionNameStr[mod]: 16 → 3220, 36 → 11084, 37 → 11085, 38 → 11086, any other → 11087
         name ← Format(11072 "%0 %1", String(word), String(MonStats[class].NameStr));  return
       Init(unit.clientSeed, s8)                                  ; low = s8, high = 666
-      if mod = 12: name ← String(3111);  return                  ; [I] Blood Raven (fn:sub_004AC870_ClientMonNameBuild@0x004AC870)
-      if class ∈ {156, 211, 242, 243, 256, 333, 544, 704 … 709}: fixed boss string;  return   ; [I] not reached (fn:sub_004AC870_ClientMonNameBuild@0x004AC870)
+      if mod = 12: name ← String(3111);  return                  ; [C] Blood Raven (run:2026-10-21-sweep-monsters-a)
+      if class ∈ {156, 211, 242, 243, 256, 333, 544, 704 … 709}: fixed boss string;  return   ; [I] for the classes not met (fn:sub_004AC870_ClientMonNameBuild@0x004AC870)
       s ← UniqueSuffix[Range(seed, nSuffix)]                     ; client draw#1
       p ← UniquePrefix[Range(seed, nPrefix)]                     ; client draw#2
       name ← Format(1721 "%0 %1", p, s)
@@ -663,6 +702,14 @@ name is one of at most 256 draw sequences. All 94 client rolls of the run follow
 appellation round. [C] (fn:sub_0045F190_ClientMonAssign@0x0045F190, 0x0045F387, fn:sub_0053E2E0_MonUnitPacketBuild@0x0053E2E0,
 fn:sub_004AC780_ClientMonNameSeedSet@0x004AC780, run:2026-10-14-mon-special)
 
+I1. Each kind's name is reproduced from the string tables: a non-special unit gets no text (164 minions with flag `0x10`,
+92 other units), a superunique its `SuperUniques.Name` (6), a champion `Format(11072, word, MonStats.NameStr)` (26), a
+random unique `Format(1721, prefix, suffix)` (23) or `Format(1722, prefix, suffix, appellation)` (13). The fixed-name
+branch is reached for Andariel (156, string 3021), Mephisto (242, 3062) and Izual (256, 1014), and mod 12 gives Blood
+Raven's string 3111 (class 267). [C] (fn:sub_004AC870_ClientMonNameBuild@0x004AC870, fn:sub_004AD020_ClientMonModsApply@0x004AD020,
+run:2026-10-16-sweep-monsters-b, run:2026-10-21-sweep-monsters-a, [monsters/0003 § Plan 0038 batch H4b](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b), [monsters/0003 § Plan 0038 batch H4a](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a)) The other fixed-name classes (211, 243,
+333, 544, 704–709) were not met. [I] (fn:sub_004AC870_ClientMonNameBuild@0x004AC870)
+
 I2. The order is suffix, then prefix, in both rounds, and the appellation comes first in the second round. When the 50 %
 branch is taken the first pair has been drawn and is discarded. Each word is a row index `Range(seed, rows)` over the
 table's records (stock: 69 suffixes, 53 prefixes, 25 appellations). [C] (fn:sub_00653F10_UniqueSuffixRoll@0x00653F10,
@@ -674,30 +721,45 @@ Turning a string index into text is the `data/strings` lookup, specified in [dat
 
 I3. The builder re-initialises its seed on every call. A random unique's name depends on nothing but the name seed, and the
 roll cannot feed a server seed. For a champion the client calls the builder for mod 1 first (no word matches, so word
-11087) and then for the champion mod in the list, and the last call sets the name. [I]
-(fn:sub_004AD020_ClientMonModsApply@0x004AD020, data:g_ChampionNameStr@0x006DA488, data:g_ClientUModHandlers@0x00724D78)
+11087) and then for the champion mod in the list, and the last call sets the name: `Init(nameSeed)` was logged for each of
+36 random-unique calls, and 13 champion sequences ran mod 1 then 16, 37 or 38. [C]
+(fn:sub_004AD020_ClientMonModsApply@0x004AD020, data:g_ChampionNameStr@0x006DA488, data:g_ClientUModHandlers@0x00724D78,
+run:2026-10-16-sweep-monsters-b)
 
-I4. `UniqueTitle` is loaded and freed, and nothing reads it. [I] (fn:sub_0065A400_MonsterTablesLoad@0x0065A400,
-fn:sub_00653E20_UNameTablesFree@0x00653E20, tbl:UniqueTitle.txt:Name)
+I4. `UniqueTitle` is loaded and freed, and nothing reads it: access watchpoints on its pointer `0x0096D488` and count
+`0x0096D498` in four sessions hit only the load (5 games) and the free (3). [C] (fn:sub_0065A400_MonsterTablesLoad@0x0065A400,
+fn:sub_00653E20_UNameTablesFree@0x00653E20, tbl:UniqueTitle.txt:Name, run:2026-10-16-sweep-monsters-b)
 
 ### J. Other entry paths and pre-existing mods
 
-- [I] `MonSpawnTry`'s post-create step appends fixed mods by `BaseId` before any special code runs. The helper is
-  `MonPostCreateMods`: `brute2` 13, `scarab1` 20, `mummy1` 10, `duriel` 11 and 22, traps 14, `boneprison1`..`4` 15,
-  `reanimatedhorde1` 34, `suicideminion1` 33, `frozenhorror1` 35, `ancientbarb1`..`3` 22. A second helper,
-  `MonPostCreateBoss`, covers the act and uber bosses, Blood Raven (12 and 22), the Maggot Queen and `firegolem` (31).
-  These count as mods already present: `SpecialModsRoll` puts them in `have`, and a superunique's fixed mods follow them.
-  (fn:sub_005B21B0_MonPostCreateMods@0x005B21B0, fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, tbl:MonStats.txt:BaseId)
+- [C] `MonSpawnTry`'s post-create step appends fixed mods by `BaseId` before any special code runs. The helper is
+  `MonPostCreateMods`. Units of `BaseId` 24 (`brute2`), 91 (`scarab1`), 436 (`reanimatedhorde1`) and 501
+  (`frozenhorror1`) hold 13, 20, 34 and 35 at the head of their lists in every logged list (42 units), and the 718 units
+  of other `BaseId`s hold none of them. (fn:sub_005B21B0_MonPostCreateMods@0x005B21B0, tbl:MonStats.txt:BaseId,
+  run:2026-10-14-mon-special, run:2026-10-15-mon-stats, [monsters/0003 § Plan 0038 batch S3a](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-s3a-2026-10-16))
+- [I] The helper's other cases, not met: `mummy1` 10, `duriel` 11 and 22, traps 14, `boneprison1`..`4` 15,
+  `suicideminion1` 33, `ancientbarb1`..`3` 22. A second helper, `MonPostCreateBoss`, covers the act and uber bosses,
+  Blood Raven (12 and 22), the Maggot Queen and `firegolem` (31). These count as mods already present: `SpecialModsRoll`
+  puts them in `have`, and a superunique's fixed mods follow them. (fn:sub_005B21B0_MonPostCreateMods@0x005B21B0,
+  fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, tbl:MonStats.txt:BaseId)
 - [C] None of the `MonPostCreateMods` mods has a server handler, so they draw nothing. The superunique Beetleburst
   (`scarab2`) and its minions entered with mod 20 already present, as modelled. (fn:sub_005B21B0_MonPostCreateMods@0x005B21B0,
   run:2026-10-14-mon-special)
-- [I] An inactive special that is restored (`SpecialMonRestore`) gets its saved mods and name seed back and runs
-  `SpecialModsApply` without minions. A restored minion (`MinionRestore`) gets its
-  saved mods and the handlers with flag 0. `MonMakeSpecial` runs `SpecialModsRoll(…, allowChampion = 1)` on an existing
+- [C] An inactive special that is restored (`SpecialMonRestore`, 11 calls, all from `0x005426C8`) gets its saved mod
+  bytes back and runs `SpecialModsApply` without minions, and only after that writes the saved name seed: in every case
+  the name seed ends equal to the first instance's, and the apply had stepped a new one. A restored minion
+  (`MinionRestore`, 31 calls) gets its saved mods and the handlers with flag 0 for 1, 2, 4 and then each saved row that has
+  a handler. (fn:sub_005A4440_SpecialMonRestore@0x005A4440, fn:sub_005A46E0_MinionRestore@0x005A46E0, 0x005A4569,
+  run:2026-10-16-sweep-monsters-b, [monsters/0003 § Plan 0038 batch H4b](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b))
+- [C] **A restored aura special holds two auras.** The apply's `aura` call draws on the fresh name seed, and the second
+  `UModAura` call (`0x005A457E`) on the restored one, so the unit gets another aura and then the first instance's: a
+  `regurgitator3` with mods 28 and 30 got Holy Shock 7 (fresh seed) and then Holy Freeze 8 (its original). So a restore does
+  not just give back the first instance's aura. (fn:sub_005A4440_SpecialMonRestore@0x005A4440,
+  fn:sub_005A1650_UModAura@0x005A1650, 0x005A457E, run:2026-10-16-sweep-monsters-b)
+- [I] `MonMakeSpecial` runs `SpecialModsRoll(…, allowChampion = 1)` on an existing
   monster and then `SpecialModsApply` without minions. It sets flag `0x01` at `MonsterData+0x16`, calls
-  `MonMarkSpecial` and sets unit flag `0x800`.
-  (fn:sub_005A4440_SpecialMonRestore@0x005A4440, fn:sub_005A46E0_MinionRestore@0x005A46E0,
-  fn:sub_005A4940_MonMakeSpecial@0x005A4940, fn:sub_005A0320_MonMarkSpecial@0x005A0320)
+  `MonMarkSpecial` and sets unit flag `0x800`. Its only caller is the Warping Shrine, which no session operated (below).
+  (fn:sub_005A4940_MonMakeSpecial@0x005A4940, fn:sub_005A0320_MonMarkSpecial@0x005A0320)
 - [C] A restored champion's stat 12 is what the **flag-1** handlers give (15 restores; with flag 0 each would come out one
   level high), and `SpecialMonRestore` applies them through its `SpecialModsApply` call (0x005A4558), which calls the
   special's own handlers with flag 1 (0x005A214D, 0x005A21A6). A restored minion's stat 12 is the level plus the handlers
@@ -908,6 +970,14 @@ The name is format 1722 with prefix, suffix and appellation, from the keys `Fire
   superuniques, 4 + 4 MonPlace presets, 94 client name rolls; `monspawn: 390144 checks, 0 mismatches`.
 - [findings/monsters/0002-room-population.md § 9](../../findings/monsters/0002-room-population.md#9-boundary-decision-and-the-phase-2-logging-plan):
   the oracles plan 0018 replaced.
+- Plan 0038 sweep ([plan 0038](../../plans/0038-inferred-claims-sweep.md)): the batch sections of
+  [monsters/0003](../../findings/monsters/0003-special-monsters.md): [S3a](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-s3a-2026-10-16) (kept logs: the always-run mods, the null rows met,
+  the aura row count, the group walk, the post-create mods, the quest test),
+  [H4b](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b) (run:2026-10-16-sweep-monsters-b: the aura table and
+  skill levels, the `sandleaper` exclusion, the client tables and names, `UniqueTitle`, the restores, the MonPlace
+  cases), [S3b](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-s3b-2026-10-16) (the minion list writer and reader) and
+  [H4a](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a) (run:2026-10-21-sweep-monsters-a: the second aura call,
+  the tails, rows 10, 12 and 13, the placed bit, Blood Raven's and the fixed boss names).
 - `tools/monspecial.py`: the model behind the confirmed tags (run inside `tools/monspawn.py check`).
 - Tables: [MonUMod](../../tables/MonUMod.md), [SuperUniques](../../tables/SuperUniques.md),
   [UniquePrefix](../../tables/UniquePrefix.md), [UniqueSuffix](../../tables/UniqueSuffix.md),
@@ -928,13 +998,23 @@ The name is format 1722 with prefix, suffix and appellation, from the keys `Fire
 - ~~The guards of `UModAura` for a level below 1 or an empty row count~~ answered in § C3 from
   [monsters/0003 § 4](../../findings/monsters/0003-special-monsters.md#4-specialmodsapply-and-the-per-handler-draw-table):
   both are in the code (`0x005A1685`, `0x005A16EE`); stock data cannot reach them.
-- [L] Unreached, each inferred above: the `lightning` × `sandleaper` exclusion, an empty candidate list, the ≥ 8 skip and the
-  ≤ 9 cut, the superunique tails (Radament's `Range(5)` + 2 escorts, the quest hooks, the `EscortSpawn` tails), `thief`,
-  an `aura` superunique with its second aura call and Lord De Seis's index, `ubermephisto`'s aura, a superunique with 5
-  or more mods at creation, the `Stacks` refusal, `poisonhit` and `always_run_ai` handlers, a client fixed-name class and
-  Blood Raven's name, a minion restored without its boss (the inactive-restore paths themselves are reached by
-  run:2026-10-17-lifecycle, [drlg/lifecycle § H](../drlg/lifecycle.md#h-the-restore)), and the Warping Shrine's `MonMakeSpecial` (no session operated one). None is reachable on demand with stock data and the recipes built so
-  far (architect ruling (c), plan 0018 Phase 2).
+- [L] Unreached, each inferred above: an empty candidate list, the ≥ 8 skip and the ≤ 9 cut, the superunique tails not
+  met (the Countess, Lord De Seis, the Cow King, the Ancients, Baal Subject 2) and the `+ r` of Radament's `skeleton5`
+  count, `thief`, Lord De Seis's aura index and local-seed step, `ubermephisto`'s aura, the aura level clamps, a
+  superunique with 5 or more mods at creation, `poisonhit` and `always_run_ai` handlers, the fixed-name classes not met
+  (211, 243, 333, 544, 704–709), the MonPlace cases not logged (22, 32, 30's level-110 class, the normal groups of 24 and
+  26), a minion restored without its boss (the inactive-restore paths themselves are reached by
+  run:2026-10-17-lifecycle and run:2026-10-16-sweep-monsters-b, [drlg/lifecycle § H](../drlg/lifecycle.md#h-the-restore)),
+  and the Warping Shrine's `MonMakeSpecial` (no session operated one). None is reachable on demand with stock data and
+  the recipes built so far (architect ruling (c), plan 0018 Phase 2). Plan 0038 (S3a, H4b, H4a) closed the
+  `lightning` × `sandleaper` exclusion, the reached tails (Radament's draw, the council, the Infector and the Vizier,
+  Shenk, Nihlathak), the second aura call of an `aura` superunique, the `Stacks` refusal and the client names of
+  champions, superuniques, Blood Raven and three fixed-name classes.
+- [L] **Lord De Seis** (record 37): the `thief` drop, the forced aura index 5, the local-seed step and his tail are
+  code reads only; seal 394 was logged but the pilot never operated it, so he was never created (plan 0038 H4a). An
+  owner-played Chaos Sanctuary session with `tools/gdb/mon-h4a-obj.gdb` (Nightmare, seed 4907) that opens seal 394 and
+  kills the three seal bosses would log him, and the closed gate of [spawn](spawn.md) with him; the plan lists it as a
+  candidate for its owner addendum. The Ancients' tails need a recipe with their quest open, or owner play.
 - ~~What calls `sub_005A4940_MonMakeSpecial` (caller `0x00583050`)~~ answered in [§ J](#j-other-entry-paths-and-pre-existing-mods) (the Warping Shrine) from
   [monsters/0003 § Plan 0039 batch P1c](../../findings/monsters/0003-special-monsters.md#plan-0039-batch-p1c-2026-10-17); the
   path is unreached, in the list above.

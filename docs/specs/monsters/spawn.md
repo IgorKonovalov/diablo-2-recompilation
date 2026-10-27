@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, data/excel, drlg/collision, objects]
 consumed_by: [monsters/special, monsters/stats, items/tc, chain]
-tags: {C: 112, I: 64, L: 4}
-updated: 2026-10-21
+tags: {C: 136, I: 43, L: 5}
+updated: 2026-10-27
 ---
 
 # Random population of a room
@@ -27,7 +27,7 @@ the pass with its exact draw order on the three seeds it uses: the **room seed**
 | When | Function | Tag |
 |---|---|---|
 | New rooms of an act are updated (server), per room: wanderer tick, then on first activation presets, inactive units, objects, **the pass** | fn:sub_0052D160_NewRoomsUpdate@0x0052D160 | [C] |
-| The same sequence for one room (three callers, not read) | fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0 | [I] |
+| The same sequence for one room (three server callers, step note A1) | fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0 | [C] (objdump: the same call paths as `NewRoomsUpdate`'s loop, run:2026-10-13-mon-spawn) |
 | The population pass | fn:sub_0054EC90_RoomPopulate@0x0054EC90 | [C] |
 | Its gate | fn:sub_0054EBC0_RoomPopulateGate@0x0054EBC0 | [C] |
 | Class pick | fn:sub_005BDE80_MonRegionPickClass@0x005BDE80 | [C] |
@@ -39,9 +39,13 @@ the pass with its exact draw order on the three seeds it uses: the **room seed**
 - [C] The pass and everything below it run on the server only; their game argument is the server game. Each
   run of `NewRoomsUpdate` walks the act's room list and treats each room as in § A. (fn:sub_0052D160_NewRoomsUpdate@0x0052D160,
   fn:sub_0054EC90_RoomPopulate@0x0054EC90, run:2026-10-13-mon-spawn)
-- [I] The client never runs this pass. A client room's own content is the critter draw of
-  [pool.md § F](pool.md#f-critters-sub_0046c460_clientcritters-not-from-the-pool). (fn:sub_0046C460_ClientCritters@0x0046C460,
-  [monsters/0002 § 1](../../findings/monsters/0002-room-population.md#1-when-the-pass-runs-and-the-room-seed-before-it))
+- [C] The client never runs this pass. `RoomPopulate` has three direct references and no stored pointer:
+  `RoomUpdateOne`, `NewRoomsUpdate` and a tail jump in a fragment (0x0052D0C0) that nothing references; `NewRoomsUpdate`
+  is called only by `sub_0052D870_GameTick` and `RoomUpdateOne` only by three server functions. In all 55 logs that hold
+  the pass (4 154 passes) every pass carried the server game's pointer. A client room's own content is the critter draw of
+  [pool.md § F](pool.md#f-critters-sub_0046c460_clientcritters-not-from-the-pool). (fn:sub_0054EC90_RoomPopulate@0x0054EC90,
+  fn:sub_0052D870_GameTick@0x0052D870, fn:sub_0046C460_ClientCritters@0x0046C460, run:2026-10-13-mon-spawn,
+  run:2026-10-14-mon-special, run:2026-10-15-mon-stats, run:2026-10-15-objects, [monsters/0002 § Plan 0038 batch S3b](../../findings/monsters/0002-room-population.md#plan-0038-batch-s3b-2026-10-16))
 
 ## Inputs
 
@@ -105,9 +109,9 @@ MonStats record position.
 | `UNIQUE_MINIONS` | 3 … 6 | fn:sub_005A0C00_UniqueMinions@0x005A0C00 | [C] |
 | `PACK_MOD` | 16, the mod `ChampionPack` passes to each member (`push 0x10`) | 0x0054E246 | [C] |
 | collision mask by `spawnCol` | 0 and other: `0x3C01`; 2: `0x3F11` | fn:sub_005B2A00_MonSpawnTry@0x005B2A00, run:2026-10-14-collision (1754 and 10 `CollisionTest` calls) | [C] |
-| collision mask by `spawnCol` | 1: `0x01C0`; 3: 0 (not reached in either run) | fn:sub_005B2A00_MonSpawnTry@0x005B2A00, [drlg/collision § Open questions](../drlg/collision.md#open-questions) | [I] |
+| collision mask by `spawnCol` | 1: `0x01C0` (on the ring path; most `spawnCol` 1 classes take `SpawnPosOnTile` instead, H2); 3: 0 | fn:sub_005B2A00_MonSpawnTry@0x005B2A00, run:2026-10-16-sweep-monsters-b (1: 159 calls, `tentaclehead2`, `tentacle2`, `hellmeteor`; 3: 451, barricades and the prison door) | [C] |
 | `EVILHUT`, its object | class 528, object 562 | 0x0054E03B | [I] |
-| wanderer class list | Act I: one class, 270 `rogue2`; other acts none | 0x00731B2C, fn:sub_0054EF50_WandererSpawn@0x0054EF50 | [I] |
+| wanderer class list | Act I: one class, 270 `rogue2`; other acts none | 0x00731B2C, fn:sub_0054EF50_WandererSpawn@0x0054EF50 (§ K) | [C] |
 
 ### Inputs and oracles
 
@@ -225,9 +229,16 @@ A1. NewRoomsUpdate(game):                                         [C] (fn:sub_00
 Step notes:
 
 A1. The wanderer tick runs every time a room is in a new-rooms walk, populated or not, so a room's seed keeps
-moving after its population. That matters only to later consumers of the same room seed. [I]
-(fn:sub_0052D160_NewRoomsUpdate@0x0052D160, 0x0052D1C4) `sub_0052D0F0_RoomUpdateOne` runs the same body for one
-room; its three callers are listed in [drlg/lifecycle § A](../drlg/lifecycle.md#a-the-frame). [I] (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0)
+moving after its population: 4 785 ticks logged at the tick call, 4 044 on a room with bit 0 set, each exactly one
+step. That matters only to later consumers of the same room seed. [C] (fn:sub_0052D160_NewRoomsUpdate@0x0052D160,
+fn:sub_0054F060_RoomWandererTick@0x0054F060, 0x0052D1C4, run:2026-10-16-sweep-monsters-b, [monsters/0002 § Plan 0038 batch H4b](../../findings/monsters/0002-room-population.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b))
+`sub_0052D0F0_RoomUpdateOne` runs the same body for one room: objdump gives both the same three call paths, with the
+same arguments and the same bit test and set (0x0052D0FB/0x0052D125 against 0x0052D1C9/0x0052D1F2). [C]
+(fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0, run:2026-10-13-mon-spawn, [monsters/0002 § Plan 0038 batch S3b](../../findings/monsters/0002-room-population.md#plan-0038-batch-s3b-2026-10-16)) Its three callers are read: 0x00553720 (a
+unit's room change: the room at the unit's target point, added when there is none), 0x0056CF40 (the room of a level's
+type-11 preset point, before a unit is placed there) and 0x0059DFD0 (the same for a type-12 point of level 40, after a
+test on quest 13's record); none passes anything but the server game ([drlg/lifecycle § A](../drlg/lifecycle.md#a-the-frame)). [I]
+(0x00553720, 0x0056CF40, 0x0059DFD0)
 
 A2. The room seed at pass entry is `rng/seeds` step 6c, one tick step (plus the wanderer roll's draws in the rare
 case of § K), then whatever the presets and object population drew. Those consumers are out of scope here and
@@ -242,16 +253,16 @@ mismatches in this pass's checks. [C] (run:2026-10-15-objects, [monsters/0002 §
 ### B. The gate
 
 ```
-B1. Gate(game, room) → bool:                                      [C] except the lines tagged [I] (fn:sub_0054EBC0_RoomPopulateGate@0x0054EBC0, run:2026-10-13-mon-spawn)
+B1. Gate(game, room) → bool:                                      [C] (fn:sub_0054EBC0_RoomPopulateGate@0x0054EBC0, run:2026-10-13-mon-spawn); guards no logged call took are marked below
       region ← game.regions[level id of room]
-      if region = none: return false                              ; [I] never taken in the run (fn:sub_0054EBC0_RoomPopulateGate@0x0054EBC0)
+      if region = none: return false                              ; [I] never taken: every level has a region (fn:sub_0054EBC0_RoomPopulateGate@0x0054EBC0)
       region.nPopulateCalls ← region.nPopulateCalls + 1           ; before any other test
       lvl ← RoomPopLevelId(room)                                  ; input: 0 if DRLG room +0x28 & 0x800000
       if lvl = 0: return false
       if region.nRooms < 0:
         region.nRooms ← LevelRoomCount(act of region, lvl)        ; input, read once
       if region.monDen = 0 or region.nRooms = 0: return false     ; taken on MonDen 0; [I] nRooms = 0 never seen (fn:sub_0054EBC0_RoomPopulateGate@0x0054EBC0)
-      if level id of room = 108 and quest byte (0x005B5210) ≠ 0: return false    ; [I] Chaos Sanctuary (0x0054EC1B)
+      if level id of room = 108 and quest byte (0x005B5210) ≠ 0: return false    ; [I] Chaos Sanctuary; only byte 0 (open) logged (0x0054EC1B)
       return true
 ```
 
@@ -260,9 +271,15 @@ B1. Gate(game, room) → bool:                                      [C] except t
   count. (fn:sub_0054EBC0_RoomPopulateGate@0x0054EBC0, struct:MonRegion+0x004, struct:MonRegion+0x00C, run:2026-10-13-mon-spawn)
 - [C] A level whose region `monDen` is 0 gets no random population. The run saw 37 closed gates, on levels 1, 75
   and 110. (fn:sub_0054EBC0_RoomPopulateGate@0x0054EBC0, tbl:Levels.txt:MonDen, run:2026-10-13-mon-spawn)
+- [C] The Chaos Sanctuary test was met 91 times in level 108, all with byte 0 and each
+  followed by an open gate. (0x0054EC1B, 0x0054EC27, run:2026-10-21-sweep-monsters-a, [monsters/0002 § Plan 0038 batch H4a](../../findings/monsters/0002-room-population.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a)) The closed state (the
+  byte non-zero once the three seal bosses are dead) was not logged: Lord De Seis was never created (*Open
+  questions*). [I] (0x0054EC1B)
 - [C] Two of the three writers of DRLG room bit `0x800000` are a preset room with `Populate` 0 and
   `DRLG_RoomNoPopNearTown`, both `drlg/preset` ([drlg/preset](../drlg/preset.md)). (fn:DRLG_RoomNoPopNearTown@0x0066BD50,
-  run:2026-10-13-drlg-preset) [I] The third is `sub_0066E360_HiddenWarpTilesAdd`. (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360)
+  run:2026-10-13-drlg-preset) The third is `sub_0066E360_HiddenWarpTilesAdd`, which writes it at `0x0066E37E`: 63 writes in
+  11 levels, 24 of them on a room that did not have the bit. [C] (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360,
+  run:2026-10-16-sweep-monsters-b, [monsters/0002 § Plan 0038 batch H4b](../../findings/monsters/0002-room-population.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b))
 
 ### C. Density: attempts per logic box
 
@@ -283,17 +300,17 @@ flowchart TD
 ```
 
 ```
-C1. RoomPopulate(game, room):                                     [C] except the lines tagged [I] (fn:sub_0054EC90_RoomPopulate@0x0054EC90, 0x0054ED55, 0x0054EDB1, 0x0054EDD4, 0x0054ECE2, run:2026-10-13-mon-spawn)
+C1. RoomPopulate(game, room):                                     [C] (fn:sub_0054EC90_RoomPopulate@0x0054EC90, 0x0054ED55, 0x0054EDB1, 0x0054EDD4, 0x0054ECE2, run:2026-10-13-mon-spawn); guards no logged call took are marked below
       if not Gate(game, room): return
       box ← first logic box of room                               ; input
-      if box = none: return                                       ; [I] never taken in the run (fn:sub_0054EC90_RoomPopulate@0x0054EC90)
+      if box = none: return                                       ; [I] never taken in 2 889 passes (fn:sub_0054EC90_RoomPopulate@0x0054EC90)
       region ← game.regions[RoomPopLevelId(room)]
       region.monDen ← min(region.monDen, 10000)                   ; i32, stored back
       populated: bool ← false
       for each box in the list:
         if box.regionId = 0 or box.kind ≠ 0: continue
         (left, top, right, bottom): i32 ← box.rect                ; tiles
-        if left = 0 and right = 0: continue                       ; [I] never taken in the run (fn:sub_0054EC90_RoomPopulate@0x0054EC90)
+        if left = 0 and right = 0: continue                       ; [C] 35 boxes skipped (0x0054ED25–0x0054ED2F, run:2026-10-15-mon-stats)
         n: i32 ← ((5·bottom − 5·top) ÷ 3) × ((5·right − 5·left) ÷ 3)    ; ÷ truncates toward zero
         while n > 0:
           n ← n − 1
@@ -313,8 +330,10 @@ Step notes:
 
 C1. One attempt passes with probability `(monDen + 1)/100000`, and the attempt count grows with the box area in
 subtiles: an 8 × 8-tile box (40 × 40 subtiles) gets `13 × 13 = 169` attempts. [C] (0x0054ED55, 0x0054EDD4,
-run:2026-10-13-mon-spawn) A box of the list is a DRLG logic region; only its second rectangle (`+0x10`) is read. [I]
-(struct:LogicBox+0x10, fn:sub_0066CCB0_LogicBoxSingle@0x0066CCB0) The `MonDen` clamp is a store into the region,
+run:2026-10-13-mon-spawn) A box of the list is a DRLG logic region; only its second rectangle (`+0x10`) is read: in 125
+boxes whose `+0x00` and `+0x10` rectangles differ, the first would give another attempt count, and every pass's attempt
+count is reproduced from `+0x10`. [C] (struct:LogicBox+0x10, fn:sub_0066CCB0_LogicBoxSingle@0x0066CCB0,
+run:2026-10-14-mon-special, run:2026-10-15-mon-stats, [monsters/0002 § Plan 0038 batch S3a](../../findings/monsters/0002-room-population.md#plan-0038-batch-s3a-2026-10-16)) The `MonDen` clamp is a store into the region,
 so a value above 10000 behaves as 10000 from then on; the stock maximum is 2200. [C] (0x0054ECE2, tbl:Levels.txt:MonDen,
 run:2026-10-13-mon-spawn)
 
@@ -406,9 +425,12 @@ fn:sub_0054E190_FormationGroup@0x0054E190, run:2026-10-13-mon-spawn: the breakpo
 E3. **The count is live.** `nSpecial` (`+0x2C8`) is raised by `MonMarkSpecial` once for each monster not yet flagged
 `0x08`: a random special boss, each champion-pack member, a preset special and a superunique. It is lowered when a
 monster with flag `0x01` leaves its level, and is never reset, so the "per-level count" builds up over the game
-and is not fixed at level creation. [C] for the increments (run:2026-10-13-mon-spawn: 30 increments, each checked;
-no decrement inside a pass) [I] for the decrement and the preset and superunique paths
-(fn:sub_005A0320_MonMarkSpecial@0x005A0320, fn:sub_00547ED0_MonRegionUnitLeave@0x00547ED0, 0x00547F15)
+and is not fixed at level creation. [C] (run:2026-10-13-mon-spawn: 30 increments, each checked; no decrement inside a
+pass) The preset and superunique increments and the decrement are logged too: `MonMarkSpecial` raised the count for 18
+superuniques, 4 MonPlace 2 bosses and 26 MonPlace 3 champions and members; the 188 decrements (0x00547F15) all come
+outside a pass, each lowers the live count by one from its logged value on a unit logged earlier with flag `0x01`, and
+7 910 region snapshots equal the count those lines give. [C] (fn:sub_005A0320_MonMarkSpecial@0x005A0320,
+fn:sub_00547ED0_MonRegionUnitLeave@0x00547ED0, 0x00547F15, run:2026-10-14-mon-special, run:2026-10-15-mon-stats, [monsters/0002 § Plan 0038 batch S3a](../../findings/monsters/0002-room-population.md#plan-0038-batch-s3a-2026-10-16))
 
 ### F. The normal group
 
@@ -425,7 +447,7 @@ F2. SpawnGroup(game, room, box, class, min: u8, max: u8) → leader | none:   [C
       if min = 0 or max = 0 or max < min: return none             ; [I] never taken: stock MinGrp ≥ 1 (fn:sub_0054DF80_SpawnGroup@0x0054DF80)
       (x, y) ← SpawnPosPick(game, room, box, class, avoidWarp: true)   ; § H; on failure return none
       leader ← MonSpawnTry{room, box, class, (x, y), radius −1, flags 0}   ; § H; creates, then MonStats minions (§ I)
-      if leader = none: return none                               ; [I] never taken in the run (fn:sub_0054DF80_SpawnGroup@0x0054DF80)
+      if leader = none: return none                               ; [I] never taken in 5 516 creations (fn:sub_0054DF80_SpawnGroup@0x0054DF80)
       if MonStats2(class).objCol and class = 528:                 ; [I] evilhut only, not reached (0x0054E03B)
         create object 562 at the leader                           ; [I] SUnitCreate type 2 (0x0054E03B)
       k: i32 ← (min − 1) + Range(leader.seed, max − min + 1)      ; leader-seed draw, always (n ≥ 1)
@@ -477,10 +499,10 @@ G1. SpecialGroup(game, region, room, box) → bool:                 [C] (0x0054E
       ChampionPack(boss, box, class2)
       return true
 
-G2. SpecialMonSpawn(…) → boss | none:                             [C] except the line tagged [I] (fn:sub_005A43E0_SpecialMonSpawn@0x005A43E0, fn:sub_005A09E0_SpecialMonPlace@0x005A09E0, fn:sub_005A0320_MonMarkSpecial@0x005A0320, run:2026-10-13-mon-spawn)
+G2. SpecialMonSpawn(…) → boss | none:                             [C] except the guard tagged [I] (fn:sub_005A43E0_SpecialMonSpawn@0x005A43E0, fn:sub_005A09E0_SpecialMonPlace@0x005A09E0, fn:sub_005A0320_MonMarkSpecial@0x005A0320, run:2026-10-13-mon-spawn)
       (x, y) ← SpawnPosPick(game, room, box, class2, avoidWarp: true)    ; § H; on failure return none
       boss ← MonSpawnTry{room, box, class2, (x, y), radius −1, flags 0x40}   ; 0x40: no MonStats minions
-      if boss = none: return none                                 ; [I] never taken in the run (fn:sub_005A09E0_SpecialMonPlace@0x005A09E0)
+      if boss = none: return none                                 ; [I] never taken in 5 516 creations (fn:sub_005A09E0_SpecialMonPlace@0x005A09E0)
       MonMarkSpecial(boss)                                        ; flags |= 0x08, region.nSpecial + 1 if not already set
       boss.flags ← boss.flags | 0x01
       SpecialModsRoll(boss, game, allowChampion: true)            ; G3
@@ -553,7 +575,7 @@ flowchart TD
 ```
 
 ```
-H1. SpawnPosPick(game, room, box, class, avoidWarp: bool) → (x, y) | none:    [C] except the line tagged [I] (fn:sub_0054DC40_SpawnPosPick@0x0054DC40, fn:sub_0054DAC0_SpawnBoxBounds@0x0054DAC0, run:2026-10-13-mon-spawn)
+H1. SpawnPosPick(game, room, box, class, avoidWarp: bool) → (x, y) | none:    [C] except the guard tagged [I] (fn:sub_0054DC40_SpawnPosPick@0x0054DC40, fn:sub_0054DAC0_SpawnBoxBounds@0x0054DAC0, run:2026-10-13-mon-spawn)
       if box: (x0, y0) ← (5·box.left + 1, 5·box.top + 1);  (w, h) ← (5·box.right − x0, 5·box.bottom − y0)
       else:   (x0, y0) ← (room.x + 1, room.y + 1);         (w, h) ← (room.w − 1, room.h − 1)
       repeat 20 times:
@@ -565,7 +587,7 @@ H1. SpawnPosPick(game, room, box, class, avoidWarp: bool) → (x, y) | none:    
           return (x, y)
       return none
 
-H2. MonSpawnTry(R) → unit | 1 | none:                             [C] except the lines tagged [I] (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, 0x005B2B63, 0x005B2DE6, run:2026-10-13-mon-spawn)
+H2. MonSpawnTry(R) → unit | 1 | none:                             [C] except the guards tagged [I] (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, 0x005B2B63, 0x005B2DE6, run:2026-10-13-mon-spawn)
       if R.class < 0 or R.class ≥ nMonStats or MonStats[R.class] = null: return none   ; [I] never taken in the run (0x005B2A16, 0x005B2A43)
       i2: i16 ← MonStats[R.class].MonStatsEx
       if i2 < 0 or i2 ≥ nMonStats2 or MonStats2[i2] = null: return none            ; [I] never taken in the run (0x005B2A72, 0x005B2A8B)
@@ -596,7 +618,7 @@ H2. MonSpawnTry(R) → unit | 1 | none:                             [C] except t
             if R.box and LogicRegionIdAt(room, x, y) ≠ R.box.regionId: continue      ; input; [I] never taken in the run (0x005B2D7F)
             if not SpawnClassCellTest(R.class, room, x, y, 1): continue              ; input
             if CollisionTest(room, x, y, m2.SizeX, mask) ≠ 0       ; input
-               and R.flags & 0x80 = 0: continue                   ; [I] the 0x80 bypass: no pass request sets it (0x005B2DAD)
+               and R.flags & 0x80 = 0: continue                   ; [C] the 0x80 bypass, outside a pass only (0x005B2DAD, run:2026-10-15-mon-stats)
             found ← (x, y);  break
           s ← s + 3
         if found = none: return none
@@ -609,6 +631,11 @@ H2. MonSpawnTry(R) → unit | 1 | none:                             [C] except t
       if R.flags & 0x40 = 0: MinionsSpawn(unit)                   ; § I
       return unit
 ```
+
+- [C] The `0x80` bypass: of the 651 requests with flag `0x80` (all outside a pass), 115 created their unit on a cell whose
+  `CollisionTest` had returned non-zero; no request without the flag did (17 848 refused cells skipped in the modelled
+  passes and preset windows). (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, 0x005B2DAD, run:2026-10-13-mon-spawn,
+  run:2026-10-14-mon-special, run:2026-10-15-mon-stats, [monsters/0002 § Plan 0038 batch S3a](../../findings/monsters/0002-room-population.md#plan-0038-batch-s3a-2026-10-16))
 
 Request wrappers fix the room and box. `SpawnAtPos` takes no box, `SpawnInBox` takes a box, and
 `SpawnNearUnit` centres on the unit's position in the unit's room, with a box (the group members of § F, unique
@@ -646,7 +673,11 @@ H3. The collision test dispatches on the footprint size (`SizeX`): 2 tests the c
 3×3 square. Each cell is `grid[(y − y0)·w + x − x0] & mask` on the u16 grid of the room that holds it, and a footprint
 cell in no room reachable from the request's room adds `0x27`, unmasked ([drlg/collision § E](../drlg/collision.md#e-collisiontest-by-size)).
 [C] (fn:sub_0064D9B0_CollisionTest@0x0064D9B0, 0x0064D450, 0x0064D100, run:2026-10-14-collision) Sizes 0 and 1 test one
-cell and other sizes return `0xFFFF`; no pool class reached them. [I] (fn:sub_0064D9B0_CollisionTest@0x0064D9B0)
+cell: in the presets window 26 size-0 tests (classes 327, 517 and 545 `baaltaunt`) and 10 size-1 tests (228
+`sarcophagus`, 371) are predicted, results 0 and non-zero in both, and in 5 of them a plus test of the same cells would
+give non-zero where the game gave 0. [C] (fn:sub_0064D9B0_CollisionTest@0x0064D9B0, fn:sub_005B2A00_MonSpawnTry@0x005B2A00,
+run:2026-10-27-sweep-collision, [monsters/0002 § Plan 0038 batch H5d](../../findings/monsters/0002-room-population.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision)) Other sizes return `0xFFFF`; no MonStats2 record has one (609 records: sizes 0–3
+only). [I] (fn:sub_0064D9B0_CollisionTest@0x0064D9B0, tbl:MonStats2.txt:SizeX)
 
 H4. **What blocks.** The default mask `0x3C01` reads tile bit 0, objects, doors and the `0x1000`/`0x2000` centre marks, but
 not the monster bit `0x100` ([drlg/collision § D](../drlg/collision.md#d-the-u16-word-bit-by-bit)). A monster the pass has created therefore
@@ -659,23 +690,35 @@ next test, so a created wraith blocks through its `0x1000` centre like any size-
 H5. `SpawnClassCellTest` passes every class except five `BaseId`s, which test an offset cell
 ([drlg/collision § H](../drlg/collision.md#h-spawnclasscelltestclass-room-x-y-flag)): 206 `crownest1`, 228 `sarcophagus`, 298 `vilemother1`
 (passes on this path), 334 `suckernest1`, 528 `evilhut`. [C] for 206, 298 and the pass-through (fn:sub_005FD350_SpawnClassCellTest@0x005FD350,
-run:2026-10-14-collision) [I] for 228, 334 and 528, not reached (fn:sub_005FD350_SpawnClassCellTest@0x005FD350)
+run:2026-10-14-collision) [C] for 528 and 228, whose offset-cell tests are predicted in the presets window: 73 `evilhut`
+calls (results 0 and 1) and 4 `sarcophagus` calls. (fn:sub_005FD350_SpawnClassCellTest@0x005FD350, run:2026-10-15-mon-stats,
+run:2026-10-14-mon-special, run:2026-10-16-sweep-monsters-b, run:2026-10-27-sweep-collision, [monsters/0002 § Plan 0038 batch H4b](../../findings/monsters/0002-room-population.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b), [monsters/0002 § Plan 0038 batch H5d](../../findings/monsters/0002-room-population.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision)) [I] for 334:
+no stock source creates a `BaseId` 334 class, so it has no observable. (fn:sub_005FD350_SpawnClassCellTest@0x005FD350)
 
 ### I. MonStats minions
 
 ```
-I1. MinionsSpawn(unit):                                           [C] except the lines tagged [I] (fn:sub_005B2830_MinionsSpawn@0x005B2830, fn:sub_004CC790_RandRangeIncl@0x004CC790, run:2026-10-13-mon-spawn)
+I1. MinionsSpawn(unit):                                           [C] (fn:sub_005B2830_MinionsSpawn@0x005B2830, fn:sub_004CC790_RandRangeIncl@0x004CC790, run:2026-10-13-mon-spawn, run:2026-10-16-sweep-monsters-b)
       rec ← MonStats[unit.class]
       if rec.minion1 is not a valid class: return
-      if rec.BaseId = 261 (tentaclehead1): separate branch 0x005B2570    ; [I] not reached (fn:sub_005B2830_MinionsSpawn@0x005B2830)
+      if rec.BaseId = 261 (tentaclehead1): TentacleMinions(unit), the separate branch    ; [C] (fn:sub_005B2570_TentacleMinionsSpawn@0x005B2570, 0x005B2903–0x005B290A)
       lo, hi: u8 ← rec.PartyMin, rec.PartyMax
-      n ← lo if lo ≥ hi else lo + Range(unit.seed, hi − lo + 1)  ; unit-seed draw only when lo < hi; [I] lo ≥ hi never taken in the run (fn:sub_004CC790_RandRangeIncl@0x004CC790)
+      n ← lo if lo ≥ hi else lo + Range(unit.seed, hi − lo + 1)  ; unit-seed draw only when lo < hi; lo = hi: 38 times, no draw (fn:sub_004CC790_RandRangeIncl@0x004CC790)
       k ← 0
       repeat n times:
         m ← (rec.minion1, rec.minion2)[k]
         MonSpawnTry{near unit, no box, m, radius 4, flags 0x40}
         k ← k + 1;  if k > (1 if rec.minion2 is a valid class else 0): k ← 0
       with SetBoss, each minion is linked to its leader; BossXfer is passed to the link (named only)
+
+TentacleMinions(head):                                            ; tentaclehead BaseId 261
+      n ← RandRangeIncl(PartyMin, PartyMax) on head.seed          ; as above
+      o ← 1 if the head's request flags have bit 2 clear else 0
+      Step(head.seed);  j: u32 ← head.seed.low mod 6              ; unsigned
+      repeat n times:
+        (dx, dy) ← pair o·6 + j of the table at 0x006E2CF0       ; 3 × 6 pairs of i32
+        MonSpawnTry{no box, minion1, (head.x + dx, head.y + dy), radius −1, flags 0x40}
+        j ← (j + 5) mod 6
 ```
 
 - [C] Minions run for **every** creation without request flag `0x40`: each normal-group leader and member and each
@@ -683,11 +726,19 @@ I1. MinionsSpawn(unit):                                           [C] except the
   own party. Bosses, unique minions and minions themselves (all `0x40`) bring none. The run created or tried 163
   MonStats minions. (fn:sub_005B2830_MinionsSpawn@0x005B2830, tbl:MonStats.txt:PartyMin, tbl:MonStats.txt:minion1,
   tbl:MonStats.txt:minion2, run:2026-10-13-mon-spawn)
+- [C] A `tentaclehead` takes its own branch, `TentacleMinions`: over the kept logs 16 heads (8 with each value of `o`) and
+  81 limb requests are reproduced, and each head's seed at the exit is one step past the count. The heads are preset
+  units, so these requests sit in the presets window; no pass creation of one was met. (fn:sub_005B2830_MinionsSpawn@0x005B2830,
+  fn:sub_005B2570_TentacleMinionsSpawn@0x005B2570, run:2026-10-14-mon-special, run:2026-10-14-collision, [monsters/0002 § Plan 0038 batch H4b](../../findings/monsters/0002-room-population.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b))
+- [C] `PartyMin` = `PartyMax` takes no draw: 38 minion counts of `fetishblow3` (2/2, level 78) with the count and the
+  leader's seed checked. (fn:sub_004CC790_RandRangeIncl@0x004CC790, tbl:MonStats.txt:PartyMin, run:2026-10-16-sweep-monsters-b)
 - [C] Minions take no box, so their cells skip the region-id test. (fn:sub_005B23C0_SpawnNearUnitNoBox@0x005B23C0,
   run:2026-10-13-mon-spawn)
-- [I] No read of the player count, party size or `/players` exists in the code read for this pass; group size, minions
-  and density do not scale with players in it. Not read: `SUnitCreate`, the mod handlers and the post-create helpers.
-  ([monsters/0002 § 6](../../findings/monsters/0002-room-population.md#6-placement-monspawntry), fn:sub_0054EC90_RoomPopulate@0x0054EC90)
+- [C] Group size, minions and density do not scale with players: the 342 passes at `/players 3` and 542 at `/players 8`
+  (expansion Normal, Nightmare and Hell, classic Nightmare and Hell) are reproduced by the same model as the 2 005 at 1.
+  (fn:sub_0054EC90_RoomPopulate@0x0054EC90, run:2026-10-15-mon-stats, [monsters/0002 § Plan 0038 batch S3a](../../findings/monsters/0002-room-population.md#plan-0038-batch-s3a-2026-10-16)) No read of the player count, party size or
+  `/players` exists in the code read for this pass; not read: `SUnitCreate`, the mod handlers and the post-create
+  helpers. [I] ([monsters/0002 § 6](../../findings/monsters/0002-room-population.md#6-placement-monspawntry))
 
 ### J. Creation and the unit seed
 
@@ -733,7 +784,7 @@ run:2026-10-13-mon-spawn)
 ### K. Wanderers (the tick)
 
 ```
-K1. RoomWandererTick(game, room):                                 [C] for the first draw, [I] for the rest (fn:sub_0054F060_RoomWandererTick@0x0054F060, run:2026-10-13-mon-spawn)
+K1. RoomWandererTick(game, room):                                 [C] up to the roll's draw and its no-spawn branch, [I] for the spawn branch (fn:sub_0054F060_RoomWandererTick@0x0054F060, run:2026-10-13-mon-spawn, run:2026-10-21-sweep-monsters-a)
       Step(room.seed)                                             ; room draw, every tick
       if room.seed.low & 0x7FFF = 0 and room[+0x78] = 0 and Levels[level].MonWndr ≠ 0:
         WandererRoll: Step(room.seed)                             ; room draw
@@ -743,17 +794,34 @@ K1. RoomWandererTick(game, room):                                 [C] for the fi
 ```
 
 - [C] The tick's first draw happens on every tick, and the run checked it on 516 rooms. The wanderer roll never fired
-  (1 in 32768 ticks), so the rest of K1 stays `[I]`. (fn:sub_0054F060_RoomWandererTick@0x0054F060, run:2026-10-13-mon-spawn)
+  in that run (1 in 32768 ticks). (fn:sub_0054F060_RoomWandererTick@0x0054F060, run:2026-10-13-mon-spawn)
+- [C] It fired once in run:2026-10-21-sweep-monsters-a: in the Chaos Sanctuary (108, `MonWndr` 1) a tick's step left the
+  low word `0xD17D0000`, `WandererRoll` was entered on exactly that seed, stepped it once more (mod 100 = 82) and, since
+  82 ≥ 3, drew nothing further, so that tick took two steps. Over 7 184 ticks of that run and 4 785 of the kept logs, no
+  tick whose step left the low 15 bits 0 went without a roll and no roll came on any other tick. The code tests
+  `low & 0x7FFF` (0x0054F089), room `+0x78` = 0 (0x0054F096) and Levels `+0x2E` ≠ 0 (0x0054F0AA), then `low mod 100`
+  (unsigned) against 3 (0x0054F02B) and the region's `+0x2C4` against 3 (0x0054F041). (fn:sub_0054F060_RoomWandererTick@0x0054F060,
+  fn:sub_0054EFF0_WandererRoll@0x0054EFF0, tbl:Levels.txt:MonWndr, run:2026-10-21-sweep-monsters-a, [monsters/0002 § Plan 0038 batch H4a](../../findings/monsters/0002-room-population.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a))
+- [I] Not separated by that one case: the mask's width (its low word had 16 zero bits, so `0x7FFF` and `0xFFFF` agree),
+  the room `+0x78` test (not logged) and the spawn branch (a roll below 3, the region count, `WandererSpawn`'s draws and
+  placement). (fn:sub_0054F060_RoomWandererTick@0x0054F060, fn:sub_0054EF50_WandererSpawn@0x0054EF50)
   Run:2026-10-17-lifecycle checked the first draw on 11 064 more walked rooms, re-activated ones included. What room `+0x78`
   is, and so in which rooms the gate can pass, is [drlg/lifecycle § I](../drlg/lifecycle.md#i-the-wanderer-tick).
-- [I] The class list has an entry for Act I only: one class, 270 `rogue2`. (fn:sub_0054EF50_WandererSpawn@0x0054EF50, 0x00731B2C)
-- [I] `MonWndr` reaches the game only through this gate. A static search finds two readers of Levels `+0x2E`: the
-  region build, which copies it to `+0x2BE`, a field nothing reads, and this tick. It does not decide whether
-  monsters roam or stand still. (fn:sub_005479C0_MonRegionsBuild@0x005479C0, 0x00547A99, 0x0054F0AA, tbl:Levels.txt:MonWndr)
+- [C] The class list has an entry for Act I only: one class, 270 `rogue2`. `WandererSpawn` returns for an act ≥ 5
+  (0x0054EF59), reads the act's `(start, count)` byte pair at `0x00731B30 + 2·act` and the class at `0x00731B2C + 4·(start
+  + i)`; the image holds class 270 and the pairs `(0, 1), (0, 0), (0, 0), (0, 0), (0, 0)` (read with objdump and r2), and
+  the only instructions naming these addresses are three readers (0x0054EF64, 0x0054EF71, 0x0054EF92), no write. A count
+  of 0 returns before any spawn (0x0054EF6E). (fn:sub_0054EF50_WandererSpawn@0x0054EF50, 0x00731B2C, 0x00731B30, [monsters/0002 § Plan 0038 batch H4a](../../findings/monsters/0002-room-population.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a))
+- [C] `MonWndr` reaches the game only through this gate. Two tools find two readers of Levels `+0x2E`: the region build,
+  which copies it to `+0x2BE` (the only `+0x2BE` operand in `.text` is that write, so nothing reads the copy), and this
+  tick; every other Levels access lies in the accessors. It does not decide whether monsters roam or stand still.
+  (fn:sub_005479C0_MonRegionsBuild@0x005479C0, fn:LEVELS_GetRecord@0x0061DB70, 0x00547A99, 0x00547A9D, 0x0054F0AA,
+  tbl:Levels.txt:MonWndr, [monsters/0002 § Plan 0038 batch S3b](../../findings/monsters/0002-room-population.md#plan-0038-batch-s3b-2026-10-16))
   [C] Watchpoints on the byte for five played levels hit only the region-build read while their monsters were
   activated, roamed and fought. (run:2026-10-13-mon-spawn)
-- [I] `MonSpcWalk` is read only by a pathing helper and plays no part in spawning. (fn:sub_005B13E0_MonSpcWalkCheck@0x005B13E0,
-  tbl:Levels.txt:MonSpcWalk)
+- [C] `MonSpcWalk` is read only by a pathing helper and plays no part in spawning: access watchpoints on the byte of
+  level 107 (nightmare) and 78 (normal) hit 769 and 449 times, every hit at `0x005B146F` inside `MonSpcWalkCheck`.
+  (fn:sub_005B13E0_MonSpcWalkCheck@0x005B13E0, tbl:Levels.txt:MonSpcWalk, run:2026-10-16-sweep-monsters-b, [monsters/0002 § Plan 0038 batch H4b](../../findings/monsters/0002-room-population.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b))
 
 ### Draw order across the three seeds
 
@@ -883,8 +951,8 @@ draw (leader seed → `219966E1:68C8AB12`).
   run settled this with a special at exactly `r = 5`. [C] (0x005BE0DB, run:2026-10-13-mon-spawn,
   [monsters/0002 § Leads used](../../findings/monsters/0002-room-population.md#leads-used))
 - **`MonWndr` is not a roam/stand flag.** A community page says it decides whether unactivated monsters roam. In 1.14d it
-  gates only the wanderer roll (§ K). [I] (0x0054F0AA, fn:sub_005479C0_MonRegionsBuild@0x005479C0) [C] for the run
-  watch (run:2026-10-13-mon-spawn)
+  gates only the wanderer roll (§ K): two static reads agree, and the run's watchpoints saw no other reader. [C]
+  (0x0054F0AA, fn:sub_005479C0_MonRegionsBuild@0x005479C0, run:2026-10-13-mon-spawn)
 - **The leader's seed serves its minions first.** The MonStats minion count is drawn inside the leader's creation,
   before `SpawnGroup` draws the group size on the same seed. [C] (fn:sub_005B2830_MinionsSpawn@0x005B2830,
   fn:sub_0054DF80_SpawnGroup@0x0054DF80, run:2026-10-13-mon-spawn)
@@ -906,7 +974,9 @@ draw (leader seed → `219966E1:68C8AB12`).
 - **No class record ends the whole pass.** When the first pick of an attempt returns no record, the pass returns at once
   and does not count the room as populated. [I] (0x0054EDF9)
 - **No expansion branch.** The pass and its callees do not test the expansion flag; it enters only through the region
-  and the champion mod pick of [monsters/special](special.md#b-the-weighted-picks). [I] (fn:sub_005A0500_ChampionModPick@0x005A0500,
+  and the champion mod pick of [monsters/special](special.md#b-the-weighted-picks). The 399 passes of the classic games
+  (Normal, Nightmare and Hell) are reproduced by the model the expansion passes use. [C] (fn:sub_0054EC90_RoomPopulate@0x0054EC90,
+  fn:sub_005A0500_ChampionModPick@0x005A0500, run:2026-10-14-mon-special, run:2026-10-15-mon-stats,
   [monsters/0002 § 8](../../findings/monsters/0002-room-population.md#8-classic-expansion-and-difficulty))
 
 ## Evidence
@@ -917,6 +987,15 @@ draw (leader seed → `219966E1:68C8AB12`).
   three owner-played games (`-seed` 12345 and 1, normal and hell, Acts I–V), 516 room activations, 169 populated rooms,
   916 creations, 4 champion packs, 20 unique groups, 110 302 checks, 0 mismatches; the oracles; the 11 end-to-end
   rooms; the unit-seed outliers.
+- Plan 0038 sweep ([plan 0038](../../plans/0038-inferred-claims-sweep.md)): the batch sections of
+  [monsters/0002](../../findings/monsters/0002-room-population.md): [S3a](../../findings/monsters/0002-room-population.md#plan-0038-batch-s3a-2026-10-16) (kept logs: the box rectangle, the special count,
+  the `0x80` bypass, `/players`, classic passes, the guard counts), [H4b](../../findings/monsters/0002-room-population.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b)
+  (run:2026-10-16-sweep-monsters-b: the tick on every room, `tentaclehead` minions, `PartyMin` = `PartyMax`, the
+  `spawnCol` masks, the hidden-warp writer, `MonSpcWalk`, `evilhut`), [S3b](../../findings/monsters/0002-room-population.md#plan-0038-batch-s3b-2026-10-16)
+  (objdump: `RoomUpdateOne`, the client, `MonWndr`), [H4a](../../findings/monsters/0002-room-population.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a)
+  (run:2026-10-21-sweep-monsters-a: the wanderer list and roll, the Chaos Sanctuary gate) and
+  [H5d](../../findings/monsters/0002-room-population.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision) (run:2026-10-27-sweep-collision: sizes 0 and 1,
+  `sarcophagus`).
 - `tools/monspawn.py check`: the model behind the confirmed tags and the worked example. Its `guard …` counters
   say which guard exits of §§ B–I the run took; every exit left untagged in a confirmed block has a non-zero count.
 - [findings/monsters/0001-level-pool.md § 6](../../findings/monsters/0001-level-pool.md#6-who-reads-the-pool-named-for-monstersspawn):
@@ -931,19 +1010,23 @@ draw (leader seed → `219966E1:68C8AB12`).
 
 ## Open questions
 
-- [L] **`sparsePopulate`, untested.** The code reading (§ F, `[I]`) is that the group spawns with probability
+- [L] **`sparsePopulate`, untested.** The code reading of § F is that the group spawns with probability
   `(v + 1)/100` on the game seed and that nothing replaces it, minions included. src:d2dfg-blizzard says the value is
   the chance that the monster does *not* spawn and that another spawns in its place; src:pk-monstats-guide says a
   failure can leave only the minions. Stock data never reaches the roll, so no stock run can settle it. A `-direct -txt`
   run with an edited Levels row (e.g. `evilhut` in a pool) could; such a run is no evidence for a stock-data claim.
   (architect ruling, plan 0014 Phase 1b review; [backlog](../../backlog.md))
-- [L] The unreached branches, each `[I]` above: `tentaclehead1` minions, the evil hut object, the `0x80` collision bypass, the `x = 0 or y = 0` exit,
-  the no-record exit, the wanderer roll and spawn, and the guard exits no logged call took (plan 0014 FS1–FS2): no
-  region, `nRooms` = 0, no logic box, a box with `left = right = 0`, `c` = 0 and `nPool` = 0 in the class pick, the
+- [L] The unreached branches: the evil hut object, the `x = 0 or y = 0` exit, the no-record exit, the wanderer spawn
+  branch, and the guard exits no logged call took (plan 0014 FS1–FS2; plan 0038 S3a counted each 0 over 2 889 passes
+  and 5 516 creations): no region, `nRooms` = 0, no logic box, `c` = 0 and `nPool` = 0 in the class pick, the
   `MinGrp`/`MaxGrp` exit, a failed creation after a found cell (leader, boss, `unit = none`), an invalid class or a
-  null room in `MonSpawnTry`, `smax < s`, a region-id mismatch in either position search, `PartyMin ≥ PartyMax`, and the two
-  negative tests of `ChampionMemberMark`. A run that reaches one should log it; `tools/monspawn.py` counts each
-  (`guard …` lines). (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:sub_0054F060_RoomWandererTick@0x0054F060)
+  null room in `MonSpawnTry`, `smax < s`, a region-id mismatch in either position search, and the two negative tests of
+  `ChampionMemberMark`. A run that reaches one should log it; `tools/monspawn.py` counts each (`guard …` lines). Plan
+  0038 closed the `tentaclehead` minions, the `0x80` bypass, the box with `left = right = 0`, `PartyMin` = `PartyMax`
+  and the wanderer roll's no-spawn branch. (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:sub_0054F060_RoomWandererTick@0x0054F060)
+- [L] The Chaos Sanctuary gate's closed state (§ B) needs the three seal bosses dead, Lord De Seis among them, whom no
+  session created (plan 0038 H4a); the owner-played Chaos Sanctuary session of [special](special.md#open-questions)
+  would log it.
 - [L] Multiplayer games were not logged. By the code they take the same path (no read of the player count was found).
   Nightmare and classic games were logged in run:2026-10-14-mon-special, whose passes reproduce with 0 mismatches.
 - ~~What room `+0x78` is (it must be 0 for a wanderer), and when `0x0061A4D0` lets a populated room restore its
@@ -953,5 +1036,5 @@ draw (leader seed → `219966E1:68C8AB12`).
 - [L] The positions still depend on inputs that no spec produces end to end: the grid snapshot at pass entry (its object
   marks are modelled since plan 0027 Phase 2; the marks of players, walk-ins, items and corpses stay inputs) and the type-11 waypoint point. The warp points are [drlg/warps](../drlg/warps.md), outdoor
   rooms' included since [drlg/outdoor](../drlg/outdoor.md) (run:2026-10-15-drlg-outdoor). The unreached parts of the
-  predicates (sizes 0 and 1, `BaseId`s 228, 334 and 528, the masks `0x01C0` and `0`) are listed in
-  [drlg/collision § Open questions](../drlg/collision.md#open-questions).
+  predicates once listed here (sizes 0 and 1, `BaseId`s 228 and 528, the masks `0x01C0` and `0`) are reached since plan
+  0038 (§ H, Constants); `BaseId` 334 has no stock source ([drlg/collision § Open questions](../drlg/collision.md#open-questions)).
