@@ -897,5 +897,70 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     Skeleton (12 do events).
   - The orchestrator's count note on skills/0001 § 17 and 0003 § 15 answered: "1 269 do / 1 142 start" are the
     `SDO.seed`/`SST.seed` totals over 18 and 15 rows, not the eleven rows' (947/828); corrected in both.
-  - Review request: [backlog](../backlog/2026-10-27-reverser-architect-review-lane-p45k-plan-0045-phase-2-part.md);
+  - Review request: [backlog](../backlog/archive/2026-10-27-reverser-architect-review-lane-p45k-plan-0045-phase-2-part.md);
     table links for the archivist: [backlog](../backlog/2026-10-27-reverser-archivist-plan-0045-phase-2-part-2-table-readings.md).
+- **2026-10-27 — `lane/p45k` reviewed (architect): accept with fixes. Phase 2 is done.** `main` merged first
+  (`4638beca`, no conflict; `backlog.py archive` clean). Checked against the kept outputs, objdump only (no harness, no
+  Ghidra): `tools/skills.py` hashes `c09f9419…`, `tools/gdb/skills.py` `e28d1344…`; its 12 tests pass;
+  `sha256sum -c 2026-10-27-skills-manifest.sha256` (`08b79a9b…`, 49 files) OK; `check` re-run under
+  `systemd-run --user --scope -p MemoryMax=4G` over part 2's 15 logs and part 1's 18 gives `check.txt`, `check.json`,
+  `gaps.txt`, `part1-check.txt`, `part1-check.json` and `part1-gaps.txt` byte for byte (0 mismatches in every row),
+  and `tally-both.txt` and `audit.txt` likewise. Recounted from them: 3 183 do / 2 985 start events, the 26 tier-A rows
+  2 375 (Raise Skeleton 12, every other ≥ 30); `CU` 1 340 (code 8 76, code 1 8, code 6 1); `EVH` 1 303 over events
+  1, 2, 5, 6, 9, 11, event 9 328, the per-handler counts of skills/0003 § 16 summing to 1 303; `PH` 918, state 52 86;
+  `SP` 219 (207 + 12); `MAS.stats` 26 425, `MAS.seed` 26 955 (26 439 modelled + 516 before a list); the caster walk
+  90 of part 1's 133 player resyncs (the ten attributed rows), part 1's 43 = 31 + 11 + 1, monster 171 = 131 + 33 + 7,
+  part 2's 308 = 45 + 103 + 160; the count basis of skills/0001 § 17 and 0003 § 15 (947 + 106 + 208 + 8 = 1 269,
+  828 + 106 + 208 = 1 142, the eleven rows' do counts summing to 947). Anchors on the pinned image: `MonAttackStats`
+  calls `STATLIST_Clear` at `0x005A4FB3`; `[ebp−0x30] = 0xFFFFFF42 − rec` (`0x005A51D7`), `ebx = rec + 0xFE` stepping by
+  1 per `e` (`0x005A542C`), `ecx = [ebp−0x30] + ebx` = `0x40 + e` (`0x005A525C`) pushed as `MonLvlStats`' fifth
+  argument, which `0x006538A0` tests bit by bit at `[ebp+0x18]` (`0x01` … `0x80`): El2/El3 take El1's block plus HP/AC,
+  as monsters/0004 § 9 reads (`[I]`, rightly). `SKILLS_CanUse`'s ten `ret 8`s, the four request call sites
+  (`0x00549B0A`, `0x00549B44`, `0x00549BC1`, `0x00549C0C`), the client call at `0x004D9FC5`; `SKILLS_ManaOk`'s
+  `add edi,eax` at `0x00647589`, the `max(lvl − 1, 0)` clamp and the `setge` (a cost equal to the mana passes);
+  `0x00645390` has no call and no absolute reference in the image; `0x005AC073` calls `RNG_SeedInit` inside
+  `0x005AC040`, whose address is stored at `0x005AC14B` and `0x005AC525`. The four symbol raises fit review-fix 14.
+  - **Fixes (3):** (1) skills/0001's Answer bullet for part 2 gave, inside its `[C]`, the client filter as the reason
+    no refused request reached the server; § 18 holds that reason `[I]`: reworded (overclaim). (2) The research map's
+    `skills/dispatch` and `skills/missiles` rows still said "Phase 2 and the spec not started": Phase 2 done, the spec
+    drafted on `lane/s45p3` (stale cross-reference; the part 1 review's miss, architect review-fixes 8). (3) skills/0002
+    § 12's `VelLev` remainder now names the `spike1` route of ruling (b) (stale cross-reference: the remainder said a
+    level-1 spike cannot separate, which holds for `spike2` only). Plans index row updated; review-fixes Seen lines
+    (reverser 12, architect 8).
+  - **Ruling (a): accepted as a named shortfall.** The codes are `SKILLS_CanUse`'s own: the client calls the same
+    function on its copy of the player (`0x004D9FC5`), so codes 1, 6 and 8 and their order are `[C]` from those 214
+    client changes with the 1 126 request calls, and the request at `f + d` passing is a server observation. What a
+    stock client never reaches is the server's handling of a refused request (`PLRMSG_*`'s branch on a non-zero code,
+    `sub_00549A60_NoManaMsg`) and `SKILLS_SrvStart`'s `InTown` test: they stay `[I]` from the code reading, and the
+    client filter itself stays `[I]` (the sending code not read). No forged-request test now: it needs plan 0044's
+    two-client harness or a patched client, and a reimplementation of a stock-client game does not depend on it. The
+    spec states the server path at `[I]` and says a stock client sends no refused request (`[I]`, with the run).
+  - **Ruling (b): no Nightmare/Hell quill-rat session.** C2 is named short and `VelLev` stays `[I]` with the
+    contradicted lead under the spec's *Open questions*. The lane's "a level-1 spike cannot separate" holds for
+    `spike2`–`spike4` (`VelLev` 7, 6, 4) but not `spike1` (`VelLev` 8: `(8 · 1) / 8 = 1`, velocity 11 against the
+    lead's 10); `quillrat1` (its `MissA2` is `spike1`, a table reading) is in the Blood Moor's pool in every difficulty.
+    Carried as an opportunistic check, no session of its own:
+    [backlog](../backlog/2026-10-27-architect-reverser-plan-0045-c2-vellev-by-a-blood-moor.md).
+  - **Ruling (c): Raise Skeleton at 12 accepted.** The summon family's floor is met by the 207 Ravens (seed, life,
+    defence with a 20–32 range that separates), as Phase 1's tier-A substitution rule allows; do 31's class draw and
+    level formula keep their `[C]` at 12 of 12 with the scoping already in skills/0003 § 15 (one input, the clamps not
+    binding). The spec gives the count.
+  - **Gates.** Phase 2 is done (part 1 and part 2 accepted). **The 0045·P3 review of `lane/s45p3` may start now**, once
+    this lane is merged into `main`. Before it, or as its first fixes if it starts first, the spec-writer merges `main`
+    into `lane/s45p3` and re-tags from part 2's reviewed raises: in skills/dispatch, `SKILLS_CanUse`'s codes 0, 1, 6, 8
+    and their order, the equal-cost pass and the delay test only for a row with `delay` `[C]` (codes 2–5, 7, charges,
+    blood mana `[I]`), the delay state's end at `f + d` `[C]`, the client filter `[I]` (ruling (a)); `MonAttackStats`'
+    21/22/19 by the mode's `A1`/`A2`/`S1` columns and its `El` rolls as its only draws `[C]`, the list clear and El2/El3
+    with El1's bounds `[I]`; the handlers' draws column `[C]` for the handlers skills/0003 § 16 lists, heal and mana after
+    kill (the cap; life's addition) `[C]`, open wounds' roll `[C]`, state 52 by stat 117 with no draw `[C]`; the summon's
+    seed, life and defence `[C]`; Kick, Left Hand Throw, Left Hand Swing and the five rows now over 30 `[C]`; the
+    caster chaining (90 of 133, 45 of 148 attributed) `[C]`, the rest listed `[I]`; the 1 269/1 142 basis of its point 1
+    (the seed-check totals; the eleven rows 947 do / 828 start). In skills/missiles, `LevRange · lvl + Range` `[C]`
+    (C4, the lead resolved contradicted), the end of a damaging hit and the pierce use for rows with no hit function
+    `[C]`, `VelLev` `[I]` (ruling (b)), the re-seed sites other than `0x005C9290` named unreached `[I]`. And the targets
+    its request left unedited: monsters/stats (`MonAttackStats`, the summon's seed and stats) and monsters/spawn (the
+    summons), from monsters/0004 § 9 and skills/0003 § 16; combat and stats/states for state 52. 0045·P3's acceptance
+    then opens 0050·P2, 0046·P2 and 0052's approvability.
+  - Review request closed; ledger: the lane row filled (verdict, fixes 3: overclaim 1, stale cross-reference 2), the
+    review row added with its usage "—". Gate E13 from `main`: the context links of two 2026-10-27 spec-writer entries
+    `0038…#log` pointed at no heading, now `#implementation-log`.

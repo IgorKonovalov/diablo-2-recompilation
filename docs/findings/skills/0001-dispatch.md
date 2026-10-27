@@ -47,7 +47,7 @@ Skills columns are named as in [Skills](../../tables/Skills.md); offsets are rec
 - [C] *2026-10-27:* **Part 2** (§ 18, run:2026-10-27-skills, 0 mismatches), raised in part: `SKILLS_CanUse`'s codes 0,
   1 (mana, a cost equal to the mana passing), 6 and 8 (delay, only for a row with `delay`) in 1 340 calls; a request
   at frame `f + d` of a delay set at `f` for `d` frames passes; no refused request reached the request handlers in the run (the client's
-  own check refused first); `MonAttackStats`' 21, 22, 19 by the mode's columns in 26 425 calls, its `El` rolls the
+  own check of the same skills refused 85 times; that it is why no request was sent is § 18's `[I]` reading); `MonAttackStats`' 21, 22, 19 by the mode's columns in 26 425 calls, its `El` rolls the
   only draws. Codes 2, 3, 4, 5, 7, the town refusal and `El2`/`El3` (given El1's bounds by the mask `0x40 + e`, `[I]`)
   are not reached. (fn:SKILLS_CanUse@0x00647960, fn:sub_005A4F50_MonAttackStats@0x005A4F50, run:2026-10-27-skills)
 - [I] **Delay**: a player whose skill has `delay` > 0 gets the timed state `skilldelay` (121) until `frame + delay`;

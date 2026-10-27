@@ -682,7 +682,9 @@ again over 19 667 creations, 5 660 moving frames of 414 followed missiles (238 f
   `MC.left`). The lead's `LevRange · (lvl − 1) + Range` would give 115: every one separates.
   (fn:sub_0059FA30_MissileCreate@0x0059FA30, tbl:Missiles.txt:LevRange, run:2026-10-27-skills)
 - [I] The `VelLev` term (C2) is still not separated: 22 `spike2` creations (Normal Dark Wood's quill rats), all at
-  level 1, where `(VelLev · 1) / 8` is 0 for `VelLev` 7; the two Nightmare sessions met no quill rat.
+  level 1, where `(VelLev · 1) / 8` is 0 for `VelLev` 7; the two Nightmare sessions met no quill rat. *Review
+  2026-10-27:* a `spike1` (`VelLev` 8) separates at level 1 already (velocity 11 against the lead's 10); carried to a
+  later Blood Moor log, [backlog](../../backlog/2026-10-27-architect-reverser-plan-0045-c2-vellev-by-a-blood-moor.md).
   (run:2026-10-27-skills)
 - [C] **The end of a damaging hit, raised in part** (§ 5): for a row with no hit function, on the 3 876 hit calls that
   reached `MISSILE_BuildDamage` (3 166 in part 2's logs, 710 in part 1's), the result and the missile's stat 328 are

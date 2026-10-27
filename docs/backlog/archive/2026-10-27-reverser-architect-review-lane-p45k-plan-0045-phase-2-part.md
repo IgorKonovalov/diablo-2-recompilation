@@ -2,14 +2,14 @@
 from: reverser
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0045-skills-missiles-machinery.md#implementation-log
-  - ../findings/skills/experiments.md#run2026-10-27-skills
-  - ../findings/skills/0001-dispatch.md#18-plan-0045-phase-2-part-2-the-run-run2026-10-27-skills
-  - ../findings/skills/0002-missiles.md#12-plan-0045-phase-2-part-2-the-run-run2026-10-27-skills
-  - ../findings/skills/0003-handlers.md#16-plan-0045-phase-2-part-2-the-run-run2026-10-27-skills
-resolution: ""
+  - ../../plans/0045-skills-missiles-machinery.md#implementation-log
+  - ../../findings/skills/experiments.md#run2026-10-27-skills
+  - ../../findings/skills/0001-dispatch.md#18-plan-0045-phase-2-part-2-the-run-run2026-10-27-skills
+  - ../../findings/skills/0002-missiles.md#12-plan-0045-phase-2-part-2-the-run-run2026-10-27-skills
+  - ../../findings/skills/0003-handlers.md#16-plan-0045-phase-2-part-2-the-run-run2026-10-27-skills
+resolution: "Accepted with fixes (3) at the lane/p45k review, 2026-10-27: Phase 2 done; rulings (a) the request refusals a named shortfall, (b) no Nightmare/Hell session, C2 carried to a Blood Moor spike1 log, (c) Raise Skeleton 12 accepted; the s45p3 review may start. Plan 0045 log."
 ---
 
 Review plan 0045 Phase 2 **part 2** (`lane/p45k`, `main` merged at `f979d04d`): run:2026-10-27-skills. 15 agent-driven
