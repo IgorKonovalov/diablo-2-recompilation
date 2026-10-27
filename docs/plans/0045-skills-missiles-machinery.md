@@ -875,3 +875,22 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request closed.
   - **Next:** merge `lane/p45h`; 0045·P3 (spec-writer) and 0050·P0 (archivist) and P1/P1b (static) as the run order
     places them; Phase 2 part 2 (reverser, harness) when slot 2 is scheduled.
+- **2026-10-27 — Phase 3 written, review requested (spec-writer, `lane/s45p3`).** In parallel with Phase 2 part 2
+  (`lane/p45k`), as the part 1 review allowed; no Ghidra, no harness. New, `status: draft`:
+  [skills/README](../specs/skills/README.md) `{C: 16, I: 24, L: 3}`, [skills/dispatch](../specs/skills/dispatch.md)
+  `{C: 35, I: 185, L: 11}`, [skills/missiles](../specs/skills/missiles.md) `{C: 42, I: 88, L: 6}` (93 / 297 / 20 in
+  all; 20 open questions, every `[L]` under *Open questions*). The *Done when* items: a sequence diagram per event kind
+  (dispatch § A, missiles § A, the README's event table), the start checks as a decision order (dispatch § C), the
+  packet as pseudocode with its widths (dispatch § I, missiles § F), the missile's life as a state diagram with its
+  per-frame motion (missiles, D3–D4), the handler table (dispatch § K), worked examples from run:2026-10-25-skills
+  (Raise Skeleton's level 84 and its one caster step; Firestorm's `0x005C9290` seeds). Statements that part 2 targets
+  (refusals, handlers and state 52, `MonAttackStats`, summon seeds and stats, hit ends and pierce uses, re-seed sites,
+  C2, C4, the short rows, the resyncs) stay at the findings' tags for the re-tag pass. Updated: combat/README (the
+  phase (3) open question struck in part and rewritten), stats/states (the self-states question struck, one `[L]`
+  kept), items/economy H6 (Impale's wear; the draw under the weapon tests; one `[L]` struck), rng/seeds
+  (`0x005C9290` `[C]`); wiki economy and randomness edited, three `based_on` bumps; glossary four terms. Not edited:
+  table docs (plan 0051's `lane/p51b`), data/calc, monsters/spawn, monsters/stats, drlg/collision (no new answer;
+  drlg/collision held by 0038 P3). One count queried in the request: the eleven rows' do counts in skills/0003 § 15
+  sum to 947, not the 1 269 cited. Review:
+  [request](../backlog/2026-10-27-spec-writer-architect-review-lane-s45p3-plan-0045-phase-3-skills.md); it waits for
+  part 2's review.

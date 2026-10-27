@@ -278,6 +278,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-25 | `lane/p45h` (Phase 2, three parts to the 10-25 pause) | 0045 P2 | reverser-harness | ~503 600 + the 10-25 part — (not recorded) | ~164 + | ~84 + | slot 2 | — (on the write-up row) | — (on the write-up row) |
 | 2026-10-27 | `lane/p45h` (Phase 2 part 1 write-up) | 0045 P2 | reverser-harness | 140 054 | 60 | 12 | slot 2 (no session run), no Ghidra | accept with fixes (rulings: a Phase 2 part 2, not a second run; the oracle-replacement record meets the item for packets and auras, the handler fires re-audited in part 2; the 304 caster resyncs an observation, player ones attributed in part 2, monster ones to plan 0052; 0050·P0/P1/P1b and 0045·P3 open) | 3: miscount 1, omission 1, misread 1 ("2 708 do events" for the logs' 1 840; the 2 000 skill-use floor's shortfall unnamed; the 304 resyncs "not logged" where 87 match the caster's own `THR` rolls) |
 | 2026-10-27 | `lane/p45h` review | 0045 P2 | architect-review | 144 335 | 62 | 12 | — (static, objdump, no Ghidra) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/s45p3` | 0045 P3 | spec-writer | — | — | — | — (no slot, no Ghidra) | — (review waits for 0045 P2 part 2's) | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

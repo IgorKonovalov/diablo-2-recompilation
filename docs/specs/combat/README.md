@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/stats, player/creation, items/properties, data/calc]
 consumed_by: [items/tc]
 tags: {C: 39, I: 42, L: 5}
-updated: 2026-10-21
+updated: 2026-10-27
 ---
 
 # Combat formulas: the attack event, its seeds and its branches
@@ -534,13 +534,14 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   aggregation needs (plan 0041 P2 review).
 - [L] **Still owed:** the formulas of the stats `MonAttackStats` writes, and a run that checks combat against the
   aggregated stats instead of logged values.
-- [L] **Owed to phase (3), skills and missiles:** a skill's damage packet and `SrcDam`; a missile's packet values
-  and its hit, damage and do functions (its draw order at creation and at the hit is § B3–B4, read from the code
-  only); whether a missile's creation draws anything beyond B4 (the request's callback, the path plan, `0x005A43B0`
-  for a monster owner, all unread) and whether its draws chain, which plan 0045 Phase 2 tests; the full rule of the
-  conversion writers (skill hit builders write them, [damage § D](damage.md#d-conversion)); a run that reaches the
-  progressive finisher and the stat-event handlers other than crushing blow and open wounds, whose draws B5 and B6
-  give from the code only, and the progressive-charge hooks around the build.
+- ~~**Owed to phase (3), skills and missiles:** a skill's damage packet and `SrcDam`; a missile's packet values; what
+  a missile's creation draws beyond B4; the full rule of the conversion writers.~~ Specified in
+  [skills/dispatch § I](../skills/dispatch.md#i-the-skill-packet) (the skill packet, `SrcDam`, all fifteen conversion
+  writers) and [skills/missiles](../skills/missiles.md) §§ B, C, F and H (the creation, the damage block, the packet at
+  the hit, the re-seeding creation callbacks and the monster owner's unique-mod hook), plan 0045 Phase 3, draft.
+- [L] **Still owed to phase (3):** a run that reaches the progressive finisher and the stat-event handlers other than
+  crushing blow and open wounds, whose draws B5 and B6 give from the code only (plan 0045 Phase 2 part 2); the
+  numbered hit, damage and do functions outside tier A (plan 0046); the progressive-charge hooks around the build.
 - [L] **Owed to phase (5), animation:** hit recovery, knockback and stun lengths in time, the hit class, the get-hit
   and durability draws.
 - ~~**Shortfalls of run:2026-10-16-combat** (plan 0037 Phase 2): crushing blow on a champion, the cold, lightning and

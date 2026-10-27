@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [stats/overview, stats/aggregate, rng, combat/delivery, data/calc, objects]
 consumed_by: [combat/delivery, combat/overview, objects]
 tags: {C: 51, I: 53, L: 6}
-updated: 2026-10-21
+updated: 2026-10-27
 ---
 
 # States: the timed apply, expiry, the group clear, the regeneration tick, auras, shrines and wells
@@ -565,8 +565,12 @@ leaves the cache. (fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-10-17-stat
   clear (D1). Open wounds on the player needs another player's item (plan 0044's case, not run).
 - [L] The monster gate's two bits (MonStats `+0x0D` bit 0, MonStats2 `+0x05` bit 1): which columns.
 - [L] The skill shrine's `Arg0` (2): no stat is written, so the +2 skills come from a reader of state 134 not read.
-- [L] Holy Shield, the progressive skills and the timed self-states (armours, shouts): their skill functions
-  (phase 3); the aura request's `+0x48` field and `SKILLS_ForUnitsInRange`'s monster exclusion flag.
+- ~~Holy Shield, the progressive skills and the timed self-states (armours, shouts): their skill functions; the aura
+  request's `+0x48` field.~~ Specified in [skills/dispatch](../skills/dispatch.md) § O (do 18, the timed self-state of
+  Holy Shield and Bone Armor) and § J (the progressive charges), plan 0045 Phase 3, draft; the `+0x48` word is do 65's
+  `passivestate`, the state the apply removes from the caster
+  ([skills/0011 § Answer](../../findings/skills/0011-paladin.md#answer-summary)).
+- [L] `SKILLS_ForUnitsInRange`'s monster exclusion flag.
 - [L] Seven States rows (6, 25, 29, 39, 116, 164, 171) have no immediate setter in the scan of stats/0002; whether
   anything sets them is open.
 - [L] Two clients (plan 0044): whether an offensive aura (`0x8000`) reaches a hostile player, and hostile states;
