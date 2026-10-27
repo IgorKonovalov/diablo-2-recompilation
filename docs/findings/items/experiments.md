@@ -3094,6 +3094,11 @@ logs; shortfalls under *Limits*.
   SUMMARY chest=6 chest_bad=0 object=2 object_bad=0 event7=19 event7_bad=0 dup=8 dup_bad=0 gate=8 gate_bad=0
           gate_skip=0 gold=45 death=3 mismatches=0
   ```
+- **Screenshots** *(added at the review, 2026-10-27)*: the 24 pilot screenshots of the kept sessions (eight
+  `quest-items-*-shots/` directories; the dev and the other kept directories are empty) were outside every manifest;
+  the review hashed them into `workspace/logs/h6e2/manifest-shots-final.sha256` (`2f8f0b14…`, 24 lines, `sha256sum -c`
+  from `workspace/logs/h6e2/`). No claim rests on them. The empty `quest-items-s1-3811-radament-shots/` belongs to the
+  development log `dev-quest-items-s1-3811-radament.log`.
 - **Limits.** One player in every session, so the per-player counts are 0 or 1; the record words are those the
   tool-built saves give (all clear or all done), so no case separates which word a gate reads. The `QOW` record
   is the operating player's at the operate, not at a death. The second clicks reached no operate.

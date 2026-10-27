@@ -4306,7 +4306,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `sub_00599DF0_A2Q2_CubeChest`, `sub_005B8860_A3Q2_HeartChest`, `sub_00585970_DropItemCodeAt`,
     `sub_00558110_PlayerFindItemByCode`, `sub_0055CC90_ItemQuestGate`.
   - **Backlog:** review request
-    [2026-10-27-reverser-architect-review-lane-h6e2-plan-0038-batch-h6e2](../backlog/2026-10-27-reverser-architect-review-lane-h6e2-plan-0038-batch-h6e2.md)
+    [2026-10-27-reverser-architect-review-lane-h6e2-plan-0038-batch-h6e2](../backlog/archive/2026-10-27-reverser-architect-review-lane-h6e2-plan-0038-batch-h6e2.md)
     filed; spec-writer entry
     [2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest](../backlog/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md)
     filed, held until the review. Slot 1 stopped, saves restored (empty, no aside).
@@ -4360,3 +4360,56 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     Ledger: the lane row filled (accept with fixes, 2: omission 1, overclaim 1; usage from the orchestrator: 171 207
     tokens, 79 tools, 12 min); the review row added, usage "—".
   - **Next:** merge `lane/rk`; the spec-writer entry on dispatch I4 may start.
+- **2026-10-27 — `lane/h6e2` review (architect): H6e2 (`quest-items`) accept with fixes (3).** `main` `507a6f5c`
+  (`lane/rk`) merged into the lane first (plan log and ledger conflicts kept both sides; `backlog.py archive`: nothing
+  to move). Static review: no Ghidra, no harness.
+  - **Checked.** The four manifests pass `sha256sum -c` from `workspace/logs/h6e2/` (21 + 2 kept, 10 + 3 dev lines; 11
+    kept logs and 8 dev logs, 19 launches). `sweep_h6e2.py check` rerun under `systemd-run --user --scope -p
+    MemoryMax=4G` over the 11 kept logs: byte-identical to `check-final.txt` (`d4ce6d6d…`): chest 6, object 2, event7
+    19, dup 8, gate 8, gold 45, death 3, 0 mismatches. The chest `k` recomputed from the four logged seeds (9, 5, 9, 8)
+    and Wirt's `low32(0x91FDB5F0 · 0x6AC690C5 + 0x29A) mod 10 + 10 = 18`. objdump on the pinned `game.exe`
+    (`631066c1…`): `WirtGold` 0x00594651–0x0059469A (`QUESTS_GetSeed`, `RNG_RandLoHi(seed, 10, 20)` with lo in `edx` and
+    hi 0x14 on the stack, the count at `+0x8C` set once behind the `+0x90` flag, one `DropItemAtUnit` per event);
+    `HeartChest` 0x005B8867 mode test, 0x005B8878 seed, 0x005B88BC `gld ` loop, callback 0x005B8810 (`qhr ` and `qf2 `),
+    0x005B8911 the part, 0x005B8931 `ObjectChestDrop`; the thunk `0x00581A10: jmp 0x005449E0`; the `call eax` at
+    0x00586B19; the callers at 0x005411BF and 0x00541568; the cube and staff callbacks (0x005997C8, 0x0059977B /
+    0x0059978D); the stat-356 compare at 0x005581D2; the gate call at 0x00563631. The orifice a-log
+    `quests-s3-3364-duriel-normal.log` hashes to its manifest line (`90e8b37f…`) and holds both `QS` writes.
+  - **Fixes.** (1) misread: the Inifuss tree's `bks` was filed "created … quality 2" from the `QDI` argument; the next
+    `ICQ` line shows quality 7 (rq 2), the base `unique` override (`bks` has `unique` 1); items/0010's tree bullet, the
+    death bullet's After, the answered open question and the spec-writer entry now say so (`box`, `qhr`, `leg`, `unique`
+    0, came back at 2). (2) tool not kept: the 24 screenshots of eight kept sessions were outside every manifest;
+    hashed into `manifest-shots-final.sha256` (`2f8f0b14…`, 24 lines), noted in the run record. (3) other: items/0010
+    § 5's `[I]` chest bullet carried a `[C]` sentence; the correction is now an italic note pointing at the H6e2 section,
+    where the tags are.
+  - **Rulings.** (a) **Wirt's gold** stays counted **raised** under H6e2, no class move (the `lane/p49r` precedent for
+    quest-drops 10 and 19): plan 0043 raised it first on map seed 4506; this run met it on seed 3811, an independent
+    quest seed. Phase 3 adds the anchor; objects § L's Wirt's body row, still `[I]` there, is the one raised.
+    (b) **The Khalim E1 correction** stands: the code order (gold, part, chest drop) is read and met on the heart chest;
+    the eye and brain chests have the same shape and stay `[I]`. (c) **The 18 piles** are `RNG_RandLoHi(questSeed, 10,
+    20)` = 10 + (LCG mod 10) on the logged seed, one quest-seed draw at the first event, none at the leg. (d) **The `-a4`
+    recipes** (header act bytes 131 = `0x80 | 3` in all three difficulties) are ADR-0003 tool-built inputs (ADR-0013 §
+    Neutral; the vendor saves set the act byte the same way): none of the checked code reads the start act, and the
+    quest seed and record words are logged at each operate. They support `[C]` for the scripts, nothing about how a
+    character reaches Act IV. (e) **The failed routes** are recorded honestly (the brain chest as an open question, the
+    two warps in the run record). The warps are a pilot limitation, not a model bug: `descend` takes the first warp of a
+    LvlWarp row, and rows 51 and 61 serve two levels each; routed with the brain-chest question to a reverser entry,
+    [2026-10-27-architect-reverser-d2pilot-descend-by-destination-and-the-brain-chest](../backlog/2026-10-27-architect-reverser-d2pilot-descend-by-destination-and-the-brain-chest.md).
+    (f) **The 11 symbols I → C** stand (rule 14: each one's logged call compared with the checker's model); the
+    call-site-only frames stay I. (g) **The quality 7 answer** stands as `[I]` After (items/0004 us 13), now with `bks`.
+    (h) **`test_d2s.py`** fails `test_every_recipe_has_a_base` after the merge, on `lane/h3b`'s `h3brare` alone (merged
+    into `main` before `lane/a2t`, whose branch lacked it); H6e2's seven recipes have rows. Not H6e2's: routed,
+    [2026-10-27-architect-archivist-test-d2s-h3brare-recipe-base](../backlog/2026-10-27-architect-archivist-test-d2s-h3brare-recipe-base.md),
+    with the base and the save hash the review rebuilt (`ce57d8f7…`, as the H3b record).
+  - **Totals** recounted against `main` `507a6f5c` after merging it (`lane/rk` moved no inventory row): unchanged,
+    static 567, harness 519, c-emu 0, blocked 421, deferred 2, raised 17: 1 526. H6e2's ledger: raised 3, raised in part
+    14, shortfall 7: 24 (rows: quest-drops 1 + 16 + 1 + 1 + 1, objects 48 × 4).
+  - **Readiness.** **objects** is ready for the Phase 3 re-tag (S4a, S4b, H5b, H6e2 all accepted; research-map row
+    updated). items/quest-drops still waits on H6e1.
+  - **Bookkeeping:** inventory § 2.6 H6e2 block marked accepted with the ruling, § 5 "(done)"; review-fixes Seen lines:
+    reverser 6 and 13. The review request closed; the
+    [spec-writer entry](../backlog/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md)
+    released (with the `bks` and Wirt points). Ledger: both lane rows filled (usage from the orchestrator: 331 873 tokens,
+    178 tools, 39 min to checkpoint 1; 307 855 tokens, 200 tools, 107 min for the resume; accept with fixes, 3: misread 1,
+    tool not kept 1, other 1, on the resume row); the review row added, usage "—".
+  - **Next:** merge `lane/h6e2`; then H6e1.

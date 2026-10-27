@@ -485,9 +485,9 @@ level; `ITEMS_CreateForStore`; durability set to max; into the inventory, or dro
 
 - [I] The chest functions (`tr1`, `msf`, `box`, `vip`, the Khalim chests) also run the chest's normal TC drop
   (`sub_00585B90_ObjectChestDrop`) and then `5 + low32(LCG(quest seed)) mod 5` gold piles (`sub_00585970_DropItemCodeAt`
-  with `gld`, quality 2). **Corrected at H6e2** (§ Plan 0038 batch H6e2): the three Khalim chests draw the gold
-  **first**, then the parts, then the chest drop; the order above holds for `tr1`, `msf`, `box` and `vip`. Both
-  orders are `[C]` for the chests H6e2 ran (`box`, `tr1`, `msf`; the heart chest). (fn:sub_00599C10_A2Q2_ScrollChest@0x00599C10, fn:sub_00599CF0_A2Q2_StaffChest@0x00599CF0,
+  with `gld`, quality 2). *(Corrected at H6e2, [§ Plan 0038 batch H6e2](#the-quest-chests-inventory-qd-30-qd-33-objects-48):
+  the three Khalim chests draw the gold **first**, then the parts, then the chest drop; the order above holds for
+  `tr1`, `msf`, `box` and `vip`. The tags of both orders are in that section.)* (fn:sub_00599C10_A2Q2_ScrollChest@0x00599C10, fn:sub_00599CF0_A2Q2_StaffChest@0x00599CF0,
   fn:sub_00599DF0_A2Q2_CubeChest@0x00599DF0, fn:sub_0059A7E0_A2Q3_ViperChest@0x0059A7E0,
   fn:sub_005B8860_A3Q2_HeartChest@0x005B8860, fn:sub_005B8940_A3Q2_EyeChest@0x005B8940,
   fn:sub_005B8A20_A3Q2_BrainChest@0x005B8A20, fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:sub_00585970_DropItemCodeAt@0x00585970)
@@ -1398,8 +1398,11 @@ Run record [run:2026-10-27-sweep-quest-items](experiments.md#run2026-10-27-sweep
   0x00594651–0x0059469A, run:2026-10-27-sweep-quest-items)
 - [C] **The Inifuss tree, first operate.** `inifuss6` (`QuestFreshT`, Normal): the tree (class 30, slot 12) in mode 0,
   word 4 = 0, called `PlayerFindItemByCode` for `bkd` (return 0x00593BA8) and `bks` (0x00593BBF), found neither, and
-  created `bks` (`QDI` return 0x00593C16, quality 2) on the unchanged quest seed `91fdb5f0:0000029a`.
+  created `bks` (`QDI` return 0x00593C16, asked with quality 2) on the unchanged quest seed `91fdb5f0:0000029a`; the
+  item was created with quality 7 (`ICQ` q 7, rq 2, the next line), as `ass` and `j34` below.
   (fn:sub_00593AF0_A1Q4_InifussDrop@0x00593AF0, run:2026-10-27-sweep-quest-items)
+  - After, `[I]`: the 7 is the base `unique` override below (`bks` has `unique` 1 in `misc.txt`). *(Review, 2026-10-27:
+    the lane had filed `bks` at quality 2, the asked value.)* (0x005574E3–0x00557567, tbl:Misc.txt:unique)
 - [I] **The second click.** Neither the body (in `tristram`, after the piles) nor the tree (in `inifuss6`, seven clicks
   from 4.0–5.8 sub-tiles) logged a second `QOW`: the clicks did not reach the operate, so the scripts' "mode ≠ 0:
   nothing" halves were not run. Whether the game offers a used body or tree to the click at all is not read.
@@ -1410,8 +1413,8 @@ Run record [run:2026-10-27-sweep-quest-items](experiments.md#run2026-10-27-sweep
   kills were by a player whose word 19 was 0. (fn:sub_00599020_A2Q1_RadamentDeath@0x00599020,
   fn:sub_005BAB60_A3Q4_FigurineDrop@0x005BAB60 0x005BABA8–0x005BABF9, run:2026-10-27-sweep-quest-items)
   - After, `[I]`: the 7 is the base `unique` pre-switch override of `ItemCreateByQuality` (items/0004 § Plan 0038
-    batch S2b, us 13: `j34` and `mss` in run:2026-10-16-quest-drops; here `ass` too, with `BLD` unique and no unique
-    row, `UNONE`). The refusal halves (`ass` held or word 9 bit 5 clear; word 19 bit 0 set) did not run.
+    batch S2b, us 13: `j34` and `mss` in run:2026-10-16-quest-drops; here `ass` and the tree's `bks` too, with `BLD` unique and no
+    unique row, `UNONE`; all three bases have `unique` 1, while `box`, `qhr` and `leg`, `unique` 0, came back at the asked 2). The refusal halves (`ass` held or word 9 bit 5 clear; word 19 bit 0 set) did not run.
     (0x005574E3–0x00557567)
 - [C] **The orifice's bits**, from the kept log `quests-s3-3364-duriel-normal.log` (run:2026-10-16-quest-drops,
   `90e8b37f…`, in `workspace/logs/quests-run-manifest.txt`): placing the staff wrote word 10 bit 0 (`QS` return
@@ -1468,7 +1471,7 @@ Run record [run:2026-10-27-sweep-quest-items](experiments.md#run2026-10-27-sweep
 ### Open questions (H6e2)
 
 - ~~Where `j34`'s and `mss`'s quality 7 comes from (the `DropItemAtUnit` record has quality 2).~~ The base `unique`
-  pre-switch override (items/0004, us 13, 0x005574E3–0x00557567); this run adds `ass` (above).
+  pre-switch override (items/0004, us 13, 0x005574E3–0x00557567); this run adds `ass` and `bks` (above).
 - What the 0x0055D011 interact route is (which click reaches `0x0055CF50`), and whether `sub_00563470_ItemDiscardInvalid`'s
   name fits the ground-pickup path that ran.
 - Why the brain chest (class 406) was not listed in level 91 on map seed 4914 after a full explore (`brain4b`,

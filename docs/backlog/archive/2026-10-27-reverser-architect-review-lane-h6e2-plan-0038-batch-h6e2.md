@@ -2,13 +2,13 @@
 from: reverser
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0038-inferred-claims-sweep.md#implementation-log
-  - ../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
-  - ../findings/items/experiments.md#run2026-10-27-sweep-quest-items
-  - ../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items
-resolution: ""
+  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
+  - ../../findings/items/experiments.md#run2026-10-27-sweep-quest-items
+  - ../../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items
+resolution: "Reviewed 2026-10-27: accept with fixes (3: misread 1, tool not kept 1, other 1). Rulings, fixes and totals in the plan 0038 log; spec-writer entry released; two entries routed (archivist test_d2s h3brare, reverser d2pilot descend by destination)."
 ---
 
 Review plan 0038 batch H6e2 (`quest-items`; items/quest-drops rows 1, 30, 33, 34, 35 and objects row 48;
@@ -40,5 +40,5 @@ Points for the ruling:
 - (g) **Totals** against `main` `147e5ca3` after merging it: unchanged, static 567, harness 519, c-emu 0, blocked 421,
   deferred 2, raised 17: 1 526.
 - (h) **Released with the review:** the spec-writer entry
-  [2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest](2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md)
+  [2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest](../2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md)
   (held until then).
