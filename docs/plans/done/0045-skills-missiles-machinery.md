@@ -1045,7 +1045,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     the `[C]` note says so. (2) *omission:* F1 had no swap of an inverted pair (`0x005A894B`, physical `0x005A89EB`)
     and tested the bounds after the mastery: rewritten, one new `[I]` bullet (missiles I 90 → 92 with the inline swap
     tag); the finding gap filed for the reverser
-    ([backlog](../../backlog/2026-10-27-architect-reverser-skills-0002-builddamage-pair-swap-and-unit.md)). (3)
+    ([backlog](../../backlog/archive/2026-10-27-architect-reverser-skills-0002-builddamage-pair-swap-and-unit.md)). (3)
     *misread:* missiles § A drew the creation callback after the critical chain and the pierce count; H2 and B1 run it
     before the damage block: moved. (4) *wrong anchor:* the three gate W1 warnings (missiles D4's `v < 0`, F1's pair
     order and stat 180 inline tags) carried no anchor: anchored (the ruling on the W1 warnings). (5) *other:* the
@@ -1145,3 +1145,15 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     ([archive](../../backlog/archive/2026-10-27-spec-writer-architect-review-lane-s45p4-plan-0045-phase-4-wiki.md));
     review-fixes Seen lines (spec-writer 1, 3, 9). Ledger: the lane row filled (verdict, fixes 9: overclaim 5, misread
     2, omission 2; usage from the orchestrator), the review row added with its usage "—".
+- **2026-10-27 — after the close: the P3 review's reverser entry, folded by `lane/rbd` and reviewed (architect,
+  accept with fixes; the review is in the [plan 0038 log](../0038-inferred-claims-sweep.md#implementation-log)).**
+  The [entry](../../backlog/archive/2026-10-27-architect-reverser-skills-0002-builddamage-pair-swap-and-unit.md)'s
+  two points are in skills/0002 § 6: every bound and the mastery are read on the missile, and each bound is tested
+  `> 0` before an inverted pair is swapped and the mastery applied, all `[I]` (objdump confirms `0x005A8914`–`0x005A8993`
+  and the physical pair at `0x005A89C4`–`0x005A89FD`). `tools/skills.py` `bd` swaps (`test_bd_swap`); the re-check of
+  both runs' 33 logs, re-run byte for byte at the review, gives 4 118 builds and 0 mismatches with no inverted pair,
+  so the swap rests on the code alone. No logged `MH0` list holds a mastery stat (0 of 54 655), so whether a missile
+  carries its owner's masteries is an `[L]` open question in the finding. Rulings: the mastery leaves F1's `[C]`
+  bullet; `MISSILE_BuildDamage` and `MissileElemRoll` are C in `re/symbols.csv` on the drawn fields (rule 14),
+  which moves no spec tag. The spec-writer entry for F1 is released with what to write
+  ([entry](../../backlog/2026-10-27-architect-spec-writer-skills-missiles-f1-mastery-and-dispatch-i4-kick.md)).
