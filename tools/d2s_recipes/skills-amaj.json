@@ -1,0 +1,66 @@
+{
+  "game": "expansion",
+  "progression": 15,
+  "difficulty": [
+    131,
+    131,
+    131
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "quests": "all",
+  "stats": {
+    "strength": 400,
+    "energy": 400,
+    "dexterity": 400,
+    "vitality": 800,
+    "hitpoints": 6000,
+    "maxhp": 6000,
+    "mana": 6000,
+    "maxmana": 6000,
+    "stamina": 800,
+    "maxstamina": 800,
+    "level": 85,
+    "experience": 1145236814
+  },
+  "belt_fill": [
+    "rvl",
+    "rvl",
+    "rvl",
+    "mp5"
+  ],
+  "class": "Amazon",
+  "seed": 4512,
+  "name": "SkillsAmaJ",
+  "skills": {
+    "Jab": 20,
+    "Plague Javelin": 20,
+    "Critical Strike": 20,
+    "Pierce": 20
+  },
+  "mouse": {
+    "left": "Attack",
+    "right": "Jab",
+    "swap_left": "Attack",
+    "swap_right": "Jab"
+  },
+  "hotkeys": [
+    "Jab",
+    "Plague Javelin",
+    "Throw"
+  ],
+  "items": [
+    {
+      "unique": "Titan's Revenge",
+      "equip": "rarm",
+      "roll": "max"
+    },
+    {
+      "code": "hbl",
+      "equip": "belt"
+    }
+  ]
+}

@@ -60,11 +60,12 @@ printf "DACT ret=%08x act=%u seed=%08x arg3=%u clientact=%08x\n", *(unsigned*)$e
 continue
 end
 
-# Server unit seed (0x00552DF0), parent-seed path: unit in EDI, parent seed pointer in ESI.
+# Server unit seed (0x00552DF0), parent-seed path: unit in EDI, parent seed pointer in ESI; ra = the caller's return
+# address at [EBP+4] (the frame is set up at 0x00552DF0/0x00552DF1; plan 0051 Phase 1a, the S1b leftover rng-seeds 11).
 break *0x00552E2F
 commands
 silent
-printf "SUNITPRE unit=%08x type=%u class=%u p=%08x pre=%08x:%08x\n", $edi, *(unsigned*)$edi, *(unsigned*)($edi+4), $esi, *(unsigned*)$esi, *(unsigned*)($esi+4)
+printf "SUNITPRE unit=%08x type=%u class=%u p=%08x pre=%08x:%08x ra=%08x\n", $edi, *(unsigned*)$edi, *(unsigned*)($edi+4), $esi, *(unsigned*)$esi, *(unsigned*)($esi+4), *(unsigned*)($ebp+4)
 continue
 end
 break *0x00552E55
