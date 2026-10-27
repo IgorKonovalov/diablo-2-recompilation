@@ -35,3 +35,9 @@ collision 37 and objects 23 and objects 38's PreOperate half are d-none (invento
 without the near-list fix; the grid model's near-list replacement is a checker model, not a spec claim (the game's
 unlink stays an open question of drlg/0005). Also objects/README I: the 582 quest object (row 35) stays `[I]`, a
 shortfall. Apply with the objects and drlg/collision Phase 3 rounds (objects waits for H6e2, drlg/collision for H5d).
+
+*Annotation (spec-writer, 2026-10-27, `lane/s38n`, plan 0038 Phase 3, drlg/collision cluster):* **the drlg/collision bullet
+is done:** § E's unmasked `0x27` rectangle result (row 27), § F's zero-size object (row 39) and the door `0x400` are `[C]` by
+run:2026-10-19-h5b-objects; the door `0x804` is restated as no stock case `[I]` (bit 11 row, door row, *Open questions*); the
+grid model's near-list replacement is not stated (a checker model). Every objects/README bullet waits for the objects cluster
+(H6e2).
