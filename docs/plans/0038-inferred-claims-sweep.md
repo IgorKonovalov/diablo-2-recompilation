@@ -3381,7 +3381,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     logs.
   - **Backlog:** review request
     [h5d review](../backlog/archive/2026-10-27-reverser-architect-review-lane-h5d-plan-0038-batch-h5d.md); spec-writer entry
-    [h5d raises](../backlog/2026-10-27-reverser-spec-writer-h5d-collision-raises-and-the-monisnpc-correction.md) (released
+    [h5d raises](../backlog/archive/2026-10-27-reverser-spec-writer-h5d-collision-raises-and-the-monisnpc-correction.md) (released
     with the review); the H4b follow-ups entry annotated with the H5d piece.
   - **Next:** the H5d review. Slot 1 stopped, saves restored (empty, no aside).
 - **2026-10-27 — `lane/h5d` review (architect): accept with fixes.** H5d (`collision`, 17 statements), reviewed at
@@ -3416,7 +3416,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Ledger:** raised 10, raised in part 4, shortfall 2, d-none 1. Totals against `main` `0e3f501`: static 567,
     harness 525, c-emu 0, blocked 415 (d-none 289), deferred 2, raised 17: 1 526.
   - **Backlog:** review request closed (archive); spec-writer entry
-    [2026-10-27-reverser-spec-writer-h5d-collision-raises-and-the-monisnpc-correction](../backlog/2026-10-27-reverser-spec-writer-h5d-collision-raises-and-the-monisnpc-correction.md)
+    [2026-10-27-reverser-spec-writer-h5d-collision-raises-and-the-monisnpc-correction](../backlog/archive/2026-10-27-reverser-spec-writer-h5d-collision-raises-and-the-monisnpc-correction.md)
     released with the review's changes; the H4b follow-ups entry
     [2026-10-16-architect-reverser-plan-0038-h4b-review-follow-ups](../backlog/archive/2026-10-16-architect-reverser-plan-0038-h4b-review-follow-ups.md)
     closed (its last piece, H5d's, is settled); the new reverser entry above.
@@ -3503,3 +3503,23 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Ledger:** the lane row's usage filled from the orchestrator (412 899 tokens, 109 tools, 26 min), verdict and fixes:
     overclaim 2, misread 2, stale cross-reference 1, omission 1; the review row's usage left "—".
   - **Next:** merge `lane/s38m`; the wiki refresh; the remaining Phase 3 clusters as their batches are accepted.
+- **2026-10-27 — Phase 3, the drlg/collision cluster (spec-writer, `lane/s38n`, from `main` `0848879`; `main` `4fe6362`
+  merged after the spec commit).** Readiness, from the per-spec inventory files' *Batch* column, § 5 and the § 2.6 moves:
+  drlg/collision's batches are S4a, S4b, H5b and H5d, all accepted (H5d on 2026-10-27); no collision row is in H6e2. The
+  other clusters still wait: save/d2s H1a, H1b; data/excel H3b (and the plan 0039 fold); data/strings and data/README H3b;
+  items/uniques-sets H1a (us 21); items/cube H6a; items/sockets-runewords H6b; items/vendors H6c; items/quest-drops H6e1,
+  H6e2; hirelings H1a, H1b, H6f; player/creation H1a, H6g; objects H6e2. The monsters cluster is merged (`lane/s38m`).
+  - **drlg/collision** {C 111, I 61, L 9} → **{C 157, I 35, L 7}**, `updated:` 2026-10-27. Raised from S4a: rows 6, 7, 12, 13,
+    15–18, 20 (`BlocksVis` half), 29 (missiles), 31 (sizes 1, 2), 32 (all but the player), 33, 38, 41, 42 ×2, 43, 44, 47, 49;
+    S4b: 10 split, 26 restated with the 240 / 124 counts (its correction (d)), 4 restated as no stock input; H5b: 27, 37 (`0x400`),
+    39; H5d: 5, 8, 19, 24, 30 ×2, 36, 45 (228, 298 flag 0, 528), in part 1, 21 and 46. **Correction** (H5d (a)/(f)): F2's
+    pattern upgrade is for `npc` or `inTown` with `interact` clear; the `inTown` half `[C]`, the `npc` half and the `+0xC4`
+    branch `[I]`. Kept `[I]`: rows 2, 9, 11 (shortfalls), the d-none statements (3, 4, 25, 37's `0x804`, 45's 334) and the
+    named remainders. *Open questions*: three `[L]` struck (sizes 0/1, `SpawnClassCellTest`, NPC patterns), one new (the
+    `npc` half and `+0xC4`), the `Position` levels narrowed to the operand.
+  - **Backlog:** closed the S4a corrections entry and the H5d entry (its monsters parts on `lane/s38m`); annotated the S4b
+    corrections ((a) waits for objects) and H5b entries (objects waits for H6e2). New: the counts entry to the architect
+    [s38n counts](../backlog/2026-10-27-spec-writer-architect-s38n-drlg-collision-counts-for-the-research-map.md) (research
+    map; W4 on wiki/levels and wiki/monsters, proposed for the open wiki refresh entry) and the review request
+    [s38n review](../backlog/2026-10-27-spec-writer-architect-s38n-review-drlg-collision-phase-3.md).
+  - **Next:** architect review of `lane/s38n`; objects after H6e2.
