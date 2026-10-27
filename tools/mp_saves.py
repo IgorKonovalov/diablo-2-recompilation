@@ -13,7 +13,9 @@ check  builds every recipe of SET into a temporary directory and tests, for each
        both are letters only and the game types match; the levels the case needs (hostility: both >= 9, so
        character level 9 or more on both sides, multiplayer/0001 § 4); the quest bits, waypoints, start act and
        held items each case names; magic find (stat 80) on the host's items only (MP19); a mercenary (MP04); a
-       Paladin joiner whose right skill is an aura (MP25); for the MP23 bulk pair, both sides with
+       Paladin joiner whose right skill is an aura (MP25; mp-pal-conv, staged by plan 0051 Phase 1a for MP25's
+       offensive auras, also level 30, Conviction's reqlevel); a rune and an item with empty sockets held (MP18); an
+       equipped open-wounds item (stat 135) with its requirements met (the open-wounds pair); for the MP23 bulk pair, both sides with
        Nova on the right button, no Lightning Mastery, no item with a property, and max life at least 200 times the
        other side's largest Nova hit at 17 % and the worst resistance (an upper bound from skills.txt EMax +
        (level - 1) * the largest EMaxLev*, times 17 % and (100 - the lowest DifficultyLevels ResistPenalty) %, rounded
@@ -22,8 +24,8 @@ check  builds every recipe of SET into a temporary directory and tests, for each
 pairs  prints PAIRS: case ids, host recipe, joiner recipe, what the pair is for.
 
 The recipes are made with tools/d2s.py build keys only (no new key). Bases: workspace/samples/d2s-owner/smpsor-l50.d2s
-(expansion Sorceress) for every recipe but mp-pal-join, which is built on workspace/samples/d2s/smppal.d2s
-(expansion Paladin); the clones (mp-mf-host, mp-merc-host, mp-forge-host, mp-cow-host) are uniqnova, mercnova,
+(expansion Sorceress) for every recipe but mp-pal-join and mp-pal-conv, which are built on
+workspace/samples/d2s/smppal.d2s (expansion Paladin); the clones (mp-mf-host, mp-merc-host, mp-forge-host, mp-cow-host) are uniqnova, mercnova,
 questrewardsh and questcows under another name. Stdlib only; writes only under <out-dir> (build) or a temporary
 directory (check).
 """
@@ -51,8 +53,9 @@ SET = {n: "x" for n in (
     "mp-forge-host", "mp-forge-join", "mp-forge-done", "mp-andy-open", "mp-andy-done", "mp-andy-weak",
     "mp-den-host", "mp-den-join", "mp-dur-host", "mp-dur-closed", "mp-dur-open", "quest-w39summit",
     "mp-anc-join", "mp-anc-low", "mp-scroll-join", "mp-quest-host", "mp-quest-join", "mp-cow-host",
-    "mp-pvp-host", "mp-pvp-join")}
+    "mp-pvp-host", "mp-pvp-join", "mp-sock-join", "mp-wound-join")}
 SET["mp-pal-join"] = "pal"
+SET["mp-pal-conv"] = "pal"   # plan 0051 Phase 1a: MP25's offensive auras
 
 # (cases, host, joiner, purpose): the backlog request's items (a)-(f)
 PAIRS = [
@@ -74,10 +77,14 @@ PAIRS = [
     ("MP29", "mp-quest-host", "mp-quest-join", "(d) different finished quests: host words 1-3, joiner 4-6"),
     ("MP25", "mp-nova-host", "mp-pal-join", "(e) Paladin joiner with an aura (Might) on the right button"),
     ("MP24 cow", "mp-cow-host", "mp-tank-join", "(f) cubeportal-type host: cube with Wirt's Leg and a tome, word 4 bit 10 clear"),
+    # staged by plan 0051 Phase 1a (the plan 0044 P2 review's agent-stageable shortfalls (2) and (4)); no session yet
+    ("MP18", "mp-nova-host", "mp-sock-join", "joiner with a rune and an item with empty sockets, for an insert tried in an open trade"),
+    ("MP25 offensive", "mp-nova-host", "mp-pal-conv", "Paladin joiner with Conviction on the right button and Holy Fire, Holy Shock, Holy Freeze on hot keys (filter 0x8000)"),
+    ("open wounds", "mp-pvp-host", "mp-wound-join", "hostile joiner wearing Ripsaw (open wounds 80) hits the host; the host's life ticks under state 62"),
 ]
 
 # pairs whose case declares hostility (multiplayer/0001 § 4: both players at character level 9 or more)
-HOSTILE = {"MP01 MP23 MP24", "MP23", "MP25", "MP24 cow"}
+HOSTILE = {"MP01 MP23 MP24", "MP23", "MP25", "MP24 cow", "MP25 offensive", "open wounds"}
 # MP23 bulk (multiplayer/0001 § 2: at least 200 events, P = 17 % on every scaled field)
 MP23_EVENTS, MP23_PCT = 200, 17
 
@@ -174,6 +181,13 @@ def checks(excel):
                         ("level >= 9", lambda f, q, w: lvl(f) >= 9)],
         "mp-pvp-host": [("level >= 9", lambda f, q, w: lvl(f) >= 9), ("no item with a property", lambda f, q, w: not any(i.get("props") for i in f["items"]["items"]))],
         "mp-pvp-join": [("level >= 9", lambda f, q, w: lvl(f) >= 9), ("no item with a property", lambda f, q, w: not any(i.get("props") for i in f["items"]["items"]))],
+        "mp-sock-join": [("level >= 9", lambda f, q, w: lvl(f) >= 9), ("a rune held", lambda f, q, w: any(held(f, "r%02d" % k) for k in range(1, 34))),
+                         ("an item with empty sockets held", lambda f, q, w: any(i.get("sockets", 0) > 0 and i.get("location") == 0 for i in f["items"]["items"]))],
+        "mp-wound-join": [("level >= 9", lambda f, q, w: lvl(f) >= 9),
+                          ("an equipped item with open wounds (stat 135)", lambda f, q, w: any(i.get("location") == 1 and any(p[0] == 135 for p in i.get("props") or []) for i in f["items"]["items"])),
+                          ("Ripsaw's requirements met (flb: strength 70, dexterity 49; level 26)", lambda f, q, w: stat(f, 0) >= 70 and stat(f, 2) >= 49 and lvl(f) >= 26)],
+        "mp-pal-conv": [("Paladin", lambda f, q, w: f["header"]["cls"] == 3), ("right skill an aura", lambda f, q, w: f["header"]["mouse"][1] in aura),
+                        ("level >= 30 (Conviction's reqlevel)", lambda f, q, w: lvl(f) >= 30)],
         "mp-cow-host": [("word 4 bit 10 clear", lambda f, q, w: every(lambda d: not bit(q, d, 4, 10))), ("leg, tbk held", lambda f, q, w: held(f, "leg") and held(f, "tbk")),
                         ("box held", lambda f, q, w: held(f, "box"))],
     }

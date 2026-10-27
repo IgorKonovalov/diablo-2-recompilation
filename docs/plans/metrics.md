@@ -273,6 +273,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-25 | `lane/h4a` review | 0038 H4a | architect-review | 158 439 | 64 | 22 | — (static, no Ghidra) | gave accept with fixes | — (on the lane row; ledger raised 15, in part 9, shortfall 8; totals 1 526 unchanged) |
 | 2026-10-25 | `lane/p51a` | 0051 P0a | archivist | 183 561 | 59 | 14 | — (static, no Ghidra) | accept | 0 |
 | 2026-10-27 | `lane/p51a` review | 0051 P0a | architect-review | 69 432 | 27 | 3 | — (static, no Ghidra) | gave accept | — (on the lane row; resumed after the owner's usage-limit pause) |
+| 2026-10-25 | `lane/p51r` | 0051 P1a | reverser-static | 274 329 | 125 | 24 | no slot, no Ghidra | accept with fixes (rulings: the S1b session stays in H1a, first to leave it on a split; MP31 and MP32 Phase 1b forwards) | 3: omission 1, stale cross-reference 2 (the S1b session missing from H1a's inventory row, the lane's point 1; the H4b follow-ups entry's "with H4a" after `lane/h4a` landed; special 66's mod 12 left `[I]` in monsters/0003 by the `lane/h4a` review) |
+| 2026-10-27 | `lane/p51r` review | 0051 P1a | architect-review | 103 513 | 39 | 7 | — (static, no Ghidra) | gave accept with fixes | — (on the lane row; no statement moved; 45 open entries unchanged) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

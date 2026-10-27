@@ -1,0 +1,65 @@
+{
+  "game": "expansion",
+  "class": "Paladin",
+  "seed": 440440053,
+  "name": "MpPalConv",
+  "progression": 15,
+  "difficulty": [
+    128,
+    128,
+    128
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "stats": {
+    "strength": 100,
+    "energy": 50,
+    "dexterity": 100,
+    "vitality": 200,
+    "hitpoints": 1000,
+    "maxhp": 1000,
+    "mana": 300,
+    "maxmana": 300,
+    "stamina": 300,
+    "maxstamina": 300,
+    "level": 30,
+    "experience": 4663553
+  },
+  "skills": {
+    "Conviction": 20,
+    "Holy Fire": 10,
+    "Holy Shock": 10,
+    "Holy Freeze": 10,
+    "Might": 1,
+    "Smite": 1
+  },
+  "mouse": {
+    "left": "Attack",
+    "right": "Conviction"
+  },
+  "keep_items": [
+    "tsc",
+    "isc"
+  ],
+  "items": [
+    {
+      "code": "tbk",
+      "tome": 0,
+      "quantity": 20,
+      "store": "inventory",
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "quests": "all",
+  "hotkeys": [
+    "Conviction",
+    "Holy Fire",
+    "Holy Shock",
+    "Holy Freeze",
+    "Might"
+  ]
+}

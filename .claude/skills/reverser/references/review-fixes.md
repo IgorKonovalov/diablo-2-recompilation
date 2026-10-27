@@ -59,7 +59,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     naming start 25 for do 46's finisher calls after the § 12 note corrected it (`lane/p46m11` review,
     [0046](../../../../docs/plans/0046-skills-function-catalogue.md)); skills/0003 § 2's `EDX`-the-skill note filed under the
     bullet after the one that still said `EDX` the level (`lane/p46m12` review, 0046); class 312's remainder met by H4a but
-    still `[I]` in monsters/0004's H4b section (`lane/h4a` review, 0038).
+    still `[I]` in monsters/0004's H4b section (`lane/h4a` review, 0038); special 66's mod 12, met by H4a (special 68)
+    but still `[I]` in monsters/0003's H4b section (`lane/p51r` review, [0051](../../../../docs/plans/0051-backlog-sweep-6.md)).
 13. **At an observed boundary (ADR-0021), the `[C]` ends at the call.** What the callee makes of a compared argument
     (a class word, a register it must preserve, a mode) and every later call go in "After, `[I]`", also in the Answer
     summary. Seen: the radius of hits 24, 44 and 14 in a callee-saved register (`lane/p46m3` review); hit 52's row 0

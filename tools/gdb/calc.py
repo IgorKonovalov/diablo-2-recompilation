@@ -17,6 +17,14 @@
 #        case (0x006C0ED1) jumps to 0x006C0D9D to push its quotient, so a CVR/CFR is logged only when ESP matches a
 #        pending read or call of the same thread (ESP + 8 for a call: the callee pops c and ctx)
 #   CX   the returns 0x006C0BD7 (len <= 0), 0x006C1145 (0), 0x006C1161 (top of the stack): the value (EAX)
+#   CH   hover marker (plan 0051 Phase 1a, the S1b leftover data-calc 19): the entry of the client function
+#        0x00486370 (one call, from 0x0048E978), which calls ITEMS_EvalCalc (0x00627C20) at 0x0048642F, 0x004864D0
+#        and 0x00486506 with [EDI+0xA4]; the return address ([esp]), the stack argument ([esp+4]), EDI ("rec") and,
+#        when EDI is non-zero, its byte +0xB4 ("b4": values 1-4 select the four cases of its jump table at 0x00486568, other values return), word +0xB6
+#        ("b6") and dword +0xA4 ("a4", s32). The function runs once per drawn frame, so a line is written only
+#        when (arg, rec) differs from the thread's last CH line; "n" counts the entries folded into the previous
+#        line. An evaluation it causes is the CE line whose "ra2" is 0x00486434, 0x004864D5 or 0x0048650B
+#        (tools/calc.py hover). CALC_HOVER=0 (environment) leaves the marker out.
 #
 # CALC_MAX (environment, default 0 = no limit): stop logging after that many CE lines (the breakpoints are disabled).
 import json
@@ -33,6 +41,7 @@ def _calc_main():
     RAND = {0x00643700: "unit", 0x00627B70: "unit", 0x0064B720: "ctx"}
     W = {1: 1, 4: 1, 5: 2, 6: 4, 7: 1, 8: 2, 9: 4}
     cap = int(os.environ.get("CALC_MAX", "0") or 0)
+    hover = os.environ.get("CALC_HOVER", "1") != "0"
     count = {"ce": 0}
     bps = []
 
@@ -169,6 +178,28 @@ def _calc_main():
                 pass
         emit("CFR", d)
 
+    last_ch = {}   # thread -> [(arg, rec), entries folded since its line]
+
+    def on_ch():
+        esp = reg("esp")
+        ra, arg = struct.unpack("<II", mem(esp, 8))
+        rec = reg("edi")
+        th = thn()
+        prev = last_ch.get(th)
+        if prev and prev[0] == (arg, rec):
+            prev[1] += 1
+            return
+        d = {"ra": ra, "arg": arg, "rec": rec, "n": prev[1] if prev else 0}
+        if rec:
+            try:
+                d["b4"] = mem(rec + 0xB4, 1)[0]
+                d["b6"] = struct.unpack("<H", mem(rec + 0xB6, 2))[0]
+                d["a4"] = s32(rec + 0xA4)
+            except gdb.MemoryError:
+                d["b4"] = None
+        last_ch[th] = [(arg, rec), 0]
+        emit("CH", d)
+
     class Bp(gdb.Breakpoint):
         def __init__(self, addr, fn):
             super().__init__("*0x%08X" % addr, internal=True)
@@ -193,7 +224,9 @@ def _calc_main():
     Bp(0x006C0D5E, on_cfr)
     Bp(0x006C0D9B, on_cf(False))
     Bp(0x006C0D9D, on_cfr)
-    gdb.write("CALC logger armed%s\n" % (" (cap %d)" % cap if cap else ""))
+    if hover:
+        Bp(0x00486370, on_ch)
+    gdb.write("CALC logger armed%s%s\n" % (" (cap %d)" % cap if cap else "", "" if hover else " (no hover marker)"))
 
 
 _calc_main()

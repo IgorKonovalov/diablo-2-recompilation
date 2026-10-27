@@ -254,3 +254,61 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   finding gives do 34's third slot. (3) No review-fixes Seen line: no fix was made, so no rule recurred. Review request
   closed ([archive](../backlog/archive/2026-10-25-archivist-architect-review-plan-0051-phase-0a-column-readers.md)).
   Ledger rows filed. Next: P0b (items 9–16).
+- **2026-10-25 — Phase 1a done (reverser, `lane/p51r`, from `main` `9e221ed`; no slot, no Ghidra, no game run).**
+  Four entries annotated, all four still open as the plan says (each annotation names what remains and with which
+  batch). Off-slot outputs: `workspace/logs/p51r/` (manifest `manifest.sha256`, `22169f4a…`; `commands.txt` lists the
+  command behind each file; tool revisions in `tools-revisions.txt`).
+  1. **S2c harness pieces**
+     ([entry](../backlog/2026-10-16-architect-reverser-plan-0038-s2c-review-harness-pieces.md)): the H2b piece (sock
+     44) is pruned. It was met in part at H2b's run and review, and its remainder (a request of 4 or more) is out of
+     this plan. H6a, H6b, H6c and H6e1 are left, each still in its inventory § 5 row.
+  2. **S1b leftover pieces**
+     ([entry](../backlog/2026-10-16-architect-reverser-plan-0038-phase-2-leftover-pieces.md)): `tools/gdb/calc.py`
+     writes the hover marker `CH` at `0x00486370`, and `tools/calc.py hover` counts it. The `SUNITPRE` line of
+     `seed-tree-core.gdb` carries the caller's `ra=`, which `tools/rng.py seedtree` names among the six direct calls of
+     `0x00552DF0`. The call sites behind both come from a kept objdump scan (`call-sites.txt`). The session is staged as
+     `tools/gdb/s1b-pieces.gdb` + `.steps` (CalcSor: hover, drink, Save and Exit, load again) and assigned to plan 0038
+     **H1a**, one extra session: no open batch loads either logger first. Tests: `tools/test_p51_staging.py`.
+  3. **Plan 0044 shortfalls (2)–(4)**
+     ([entry](../backlog/2026-10-20-architect-reverser-plan-0044-p2-review-agent-stageable-shortfalls.md)): staged
+     MP18 (recipe `mp-sock-join`, logger `two-sockets.gdb`), MP25's offensive auras (recipe `mp-pal-conv`, `two-combat.gdb`
+     and `mp_check.py aura` as they stand), MP30 (the QL0..QL1 lines in `tools/gdb/quests.py`, checker `mp_check.py
+     leave`) and the open-wounds pair (recipe `mp-wound-join`, *Ripsaw*, logger `two-wounds.gdb`). `mp_saves.py check`:
+     30 recipes, 21 pairs, 0 bad. The predictions are the ones the findings already give (multiplayer/0001 § 2 and § 4,
+     stats/0002 § 2 and § 6). The sessions wait for the two-client run with both slots (§ Routing, Open questions).
+     **Forwarded to Phase 1b**, as new readings: MP31's prediction (the player-to-player trade, not read) and MP32's
+     (the arithmetic of `sub_00540900_PartyGoldShare`; items/0011 gives only "a split by `PartyCount`").
+  4. **H4b follow-ups**
+     ([entry](../backlog/2026-10-16-architect-reverser-plan-0038-h4b-review-follow-ups.md)): **with H4a**. `lane/h4a`
+     has not landed (paused 2026-10-21, nothing claimed). The H5d piece is still in H5d's § 5 row.
+  - **Not touched:** no slot, no Ghidra, no game launch. No tool that `lane/h4a` or `lane/p45h` edits on its branch
+    (`d2pilot.py`, `sweep_h4a.py`, the `mon-h4a*` and `skills*` files) was changed. The inventory of plan 0038 is not
+    edited (the H1a session is for the architect to add to § 5).
+  - **Backlog:** review request
+    [p51r review](../backlog/archive/2026-10-25-reverser-architect-p51r-plan-0051-phase-1a-review.md).
+- **2026-10-27 — Phase 1a review (architect, `lane/p51r`): accept with fixes.** Reviewed after merging `main` `cf25f22`
+  (the `lane/h4a` merge) into the lane. Re-run on the review side: `test_p51_staging.py` 9 OK; `mp_saves.py check` 30
+  recipes, 21 pairs, 0 bad; `manifest.sha256` and `tools-revisions.txt` pass (the merge touched none of the lane's
+  tools). objdump reads of the pinned image: `0x00486370` (called once, from `0x0048E978`) holds the three
+  `ITEMS_EvalCalc` calls `0x0048642F`, `0x004864D0`, `0x00486506` before its last `ret 4` at `0x00486562`; the six
+  direct calls of `0x00552DF0` (none by `jmp`); its prologue `push ebp; mov ebp, esp`, so `[EBP+4]` at `0x00552E2F` is
+  the return address; the e10 dispatch at `0x00543CA2` (event word 10 stored just before) and the reset call at
+  `0x00592CDC`.
+  - **Fixes (3):** the H4b follow-ups entry annotated with what H4a took ((a) and (c)) and what is out of this plan
+    ((b), (d), (e) with the owner as the entry says, (f) dropped), now open for H5d only (stale cross-reference:
+    `lane/h4a` landed after the lane ran, item 4's own condition); monsters/0003's H4b section, special 66's mod 12
+    remainder marked met since H4a (stale cross-reference, left by the `lane/h4a` review, which marked only the
+    class-312 piece); the S1b session written into H1a's row of inventory § 5 (sessions ~19) and § 8's cap note
+    (omission; the lane's point 1, left to the architect).
+  - **Rulings.** (1) The H1a assignment stands: no open batch loads `calc.gdb` or `seed-tree.gdb`, the session is
+    its own (its own logger, CalcSor), and H1a stays under the cap of 20 at about 19; if H1a counts more than 20
+    before it starts, the S1b session is the first piece to leave it (§ 8's split rule). (2) The hover marker's call
+    sites rest on the kept objdump scan (`call-sites.txt`) and the review's re-read; no tag depends on them before H1a's
+    session. The fold keeps the last run of identical entries unflushed at the end of a log; `calc.py hover` counts
+    lines and evaluations, not `n`, so nothing is lost. (3) `two-wounds.gdb` loading `combat.py` and `stats.py`
+    together is staged, parse-tested only, as the lane says; the session's first minutes are its test. (4) MP31 and
+    MP32 are Phase 1b forwards, alongside its item 3 (each a new reading: the trade path, `PartyGoldShare`'s
+    arithmetic); they ride on the plan 0044 shortfalls entry's annotation, which stays open.
+  - **Ledger:** no statement moved (staging only); the Routing count stands at 45 open (no entry closed).
+  - **Backlog:** review request closed (archive).
+  - **Next:** Phase 1b (optional, one Ghidra), with the MP31 and MP32 forwards.
