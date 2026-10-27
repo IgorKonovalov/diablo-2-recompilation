@@ -381,6 +381,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/h6c` review | 0038 H6c | architect-review | 179 463 | 84 | 16 | — (static, objdump, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
 | 2026-10-27 | `lane/h6f` | 0038 H6f | reverser-harness | 492 169 | 210 | 73 | slot 2 (19 launches), no Ghidra | accept with fixes (ledger as filed; rows 1, 9 d-none; the refusal halves of 17, 18, 21 d-none on a condition; row 29 a shortfall, d-2c not accepted) | 6: overclaim 3, misread 1, omission 2 (the name clamp's widths, the cap's "unsigned", "no other call" for `MERC_Create`; `MERC_AddExp`'s 98 as a constant; the `floor` shots path; the client-test gap unfiled) |
 | 2026-10-27 | `lane/h6f` review | 0038 H6f | architect-review | 175 941 | 73 | 14 | — (static, objdump, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/a52` | 0052 P0 | archivist | — | — | — | — (static, no Ghidra) | pending | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

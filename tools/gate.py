@@ -206,6 +206,11 @@ SURVEYS = [
     # plan 0050 P0: the tables' tokens joined with animdata.d2 (players, monsters, objects), the Skills animation and
     # sequence columns, the rate stats and their users, the monseq sequences (docs/tables/MonSeq.md and the docs it links)
     Survey("anim", ["tools/anim_survey.py", "summary", "workspace/merged"]),
+    # plan 0052 P0: the AI index (monai rows, the MonStats records per AI and their reach marks, the g_MonAiTable rows
+    # read from the pinned image), the aip/aidel/aidist and skill columns, Aiparms.txt sections, the batch proposal
+    # (docs/tables/MonAI.md)
+    Survey("ai", ["tools/ai_survey.py", "summary", "workspace/merged/data/global/excel",
+                  "workspace/install/app/game.exe"]),
 ]
 
 # E9: Mermaid parser shipped with VS Code (no download); cache under the checkout's workspace/

@@ -238,3 +238,31 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   reviews. Eight scoping questions for the owner, the seventh on ADR-0022 (proposed), what follows. Status stays
   `proposed`: the owner approves.
 - 2026-10-27 — **Approved by the owner.** Questions 1–7 answered as recommended; ADR-0022 accepted. Question 8 differs: the catalogue covers **the whole AI table**, every row whether or not a stock MonStats, PetType or Hireling row names it. The architect revises P1's catalogue batches and P3b to match, at the latest at the P1.1 review. P0 and P1.1 may start.
+- **2026-10-27 — Phase 0 landed for review (archivist, `lane/a52`, from `main` fcce5b4d; no Ghidra, no harness).**
+  New [MonAI](../tables/MonAI.md), the AI index of **every row of the AI table** (question 8): 148 rows, the `.bin`
+  record its own index and MonStats `AI` its row index (`[C]`, 0 mismatches; layout `monai` added, `excel_layout`
+  baseline regenerated, 74 tables), each row with its MonStats records, its `g_MonAiTable` row read from the pinned
+  image (four words, `+8` the AI function `[I]` by items/0001, the others `[L]`) and its reach marks (pool,
+  superunique, summon, hireling). **146 rows are named by a stock MonStats record, 2 by none** (0 `None`, 143
+  `ShadowMasterNoInit`); 16 rows are reached by a summon (Skills `summon` with a `pettype`, or a PetType `mclass`), 1
+  by the hirelings (61 `Hireable`, all four classes and `act5hire1`), 63 by a pool class, 44 by a superunique, and 60
+  only through links the index does not mark (presets, minions, spawns). MonStats § AI columns (`AI`, `aidel`,
+  `aidist`, `aip1..8`, the skill columns, `switchai`, `threat`), PetType § AI of the summons and Hireling § AI of the
+  hirelings (the `DefaultChance`, `Chance_k`, `ChancePerLvl_k`, `Mode_k` values per kind) added and linked;
+  `Aiparms.txt` read as a lead only (19 sections, 16 matched to an AI row). `tools/ai_survey.py` (`index`, `rows`,
+  `hire`, `aiparms`, `md`, `batches`, `summary`), gate survey `ai` (new baseline), `tools/test_ai_survey.py` (8 tests).
+  Meanings `[L]` except where anim/0001, items/0001, monsters/0004 and hirelings/0001 anchor them. The **batch
+  proposal** (MonAI § Batches, by record count): 13 batches covering all 148 rows, machinery (rows 0–1 with P1.1),
+  rest-1 … rest-9, bosses (16 AIs), summons (15, with row 143), hirelings (1, with `MERCAI_PickSkill`); the plan's
+  estimate was eight to twelve. For P1, to fold into its *Done when* at the review:
+  1. **P1.1:** the `+0`, `+4`, `+C` words of a table row (`+0` takes 0, 1, 2, 4, 5; `+4` set in 19 rows, `+C` in 11,
+     some shared, MonAI § The AI table in the image); rows 0 and 1, whose `+8` words lie apart from the rest; whether
+     any path gives a unit an AI other than its record's (row 143, hirelings, revived monsters).
+  2. **Summons batch:** row 143 holds row 106's `+8` word with its own `+4` and no record; five summon records have a
+     skill at `Sk lvl` 0, which the creation reader skips (`bloodgolem`, `bonewall`, `chargeboltsentry`,
+     `infernosentry`, `druidhawk`); `shadowmaster` sets `aip8` = 279 (Shadow Master) in Normal only.
+  3. **Hirelings batch:** one AI row for all hirelings; `roguehire` and `act2hire` also name MonStats skills
+     (RogueMissile, Jab) beside their Hireling skills, and which list the AI uses is open.
+  4. **Every catalogue batch:** in 13 AI rows the records disagree on which `aip` slots they set, so an entry reads per
+     record; `aidist` is set only on `mephisto` and `ubermephisto` (0 / 40 / 46).
+  Review request [to the architect](../backlog/2026-10-27-archivist-architect-review-lane-a52-plan-0052-phase-0.md).

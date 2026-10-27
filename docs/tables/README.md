@@ -63,7 +63,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 
 | Table | `.txt` (archive) | `.bin` (archive) | Rows | `.txt` data rows | Rec | Agree | Doc |
 |---|---|---|---:|---:|---:|---|---|
-| Aiparms | `Aiparms.txt` (d2exp) | — | 194 | 194 | — | — | — |
+| Aiparms | `Aiparms.txt` (d2exp) | — | 194 | 194 | — | — | [MonAI § Leads](MonAI.md#leads) (no loader; a lead) |
 | Arena | `Arena.txt` (d2exp) | `.bin` (d2exp) | 1 | 1 | 28 | = | — |
 | armor | `armor.txt` (patch_d2) | `.bin` (patch_d2) | 202 | 203 | 424 | = (−1 marker) | [Armor](Armor.md) (economy) |
 | ArmType | `ArmType.txt` (d2exp) | `.bin` (d2exp) | 3 | 3 | 52 | = | [ArmType](armtype.md) |
@@ -108,7 +108,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | misscalc | `misscalc.txt` (patch_d2) | `.bin` (patch_d2) | 43 | 43 | 4 | = | [MissCalc](MissCalc.md) |
 | misscode | — | `.bin` (patch_d2) ⚠ no count header | — | — | — | — | — |
 | Missiles | `Missiles.txt` (patch_d2) | `.bin` (patch_d2) | 684 | 684 | 420 | = | [Missiles](Missiles.md) (layout, function index, motion, collision, damage, links) |
-| monai | `monai.txt` (patch_d2) | `.bin` (patch_d2) | 148 | 148 | 2 | = | — |
+| monai | `monai.txt` (patch_d2) | `.bin` (patch_d2) | 148 | 148 | 2 | = | [MonAI](MonAI.md) (the AI index, plan 0052) |
 | monequip | `monequip.txt` (patch_d2) | `.bin` (patch_d2) | 45 | 45 | 28 | = | [MonEquip](MonEquip.md) |
 | MonItemPercent | `MonItemPercent.txt` (d2exp) | `.bin` (d2exp) | 2 | 2 | 4 | = | — |
 | MonLvl | `MonLvl.txt` (patch_d2) | `.bin` (patch_d2) | 111 | 111 | 120 | = | [MonLvl](MonLvl.md) |
