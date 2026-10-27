@@ -14,7 +14,9 @@ in order:
   ("savexit", None, None)          Escape until the game pauses, then "Save and Exit Game" (400, 268); waits for the
                                    two WDONE lines of the write
   ("keep", SUFFIX, None)           copy the character's .d2s from the slot's saves directory to
-                                   DIR/RUN-NAME/SUFFIX/<name>.d2s (the file name must stay the character's name)
+                                   DIR/<log stem>/SUFFIX/<name>.d2s (the file name must stay the character's name;
+                                   the directory is the log's stem, -rN included, so a rerun never overwrites an
+                                   earlier session's copies; before plan 0038 r1h it was DIR/RUN-NAME)
   ("reload", STEPS, None)          from the main menu: SINGLE PLAYER, OK, and the difficulty of STEPS (normal |
                                    nightmare | hell | none); waits for the next RHRET line and a PLR line after it
   ("tcpreload", None, None)        the same through OTHER MULTIPLAYER -> TCP/IP GAME -> HOST GAME, Normal
@@ -227,7 +229,7 @@ def run_session(name, slot, tag, saves, run):
             print("  WDONE lines %d -> %d" % (n0w, count(log, "WDONE")), flush=True)
         elif kind == "keep":
             found = find_save(slot, sname)
-            dst = os.path.join(saves, "%s-%s" % (run, name), args, sname + ".d2s")
+            dst = os.path.join(saves, stem, args, sname + ".d2s")
             os.makedirs(os.path.dirname(dst), exist_ok=True)
             if found:
                 shutil.copyfile(found, dst)

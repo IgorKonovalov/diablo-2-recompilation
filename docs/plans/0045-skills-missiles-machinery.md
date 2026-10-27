@@ -1077,7 +1077,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Gates.** **Phase 3 is done; this acceptance opens 0050·P2** (harness, one slot, before 0046·P2 per the run order),
     **0046·P2** (one slot) and **plan 0052's approvability**: the owner approves 0052, after the architect's re-draft,
     which is not part of this review
-    ([backlog](../backlog/2026-10-27-architect-architect-plan-0052-re-draft-and-what-follows.md), with the owner's
+    ([backlog](../backlog/archive/2026-10-27-architect-architect-plan-0052-re-draft-and-what-follows.md), with the owner's
     2026-10-27 "propose what follows 0052"). **0045·P4 (the wiki page `docs/wiki/skills.md`) may start** (spec-writer).
   - Review request closed
     ([archive](../backlog/archive/2026-10-27-spec-writer-architect-review-lane-s45p3-plan-0045-phase-3-skills.md));
