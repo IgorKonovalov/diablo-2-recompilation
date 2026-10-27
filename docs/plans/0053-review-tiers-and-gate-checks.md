@@ -115,3 +115,41 @@ model. Phases 2–4 start only once the owner accepts the ADR as proposed (statu
 ## Implementation log
 
 _(lanes append dated entries as phases land)_
+
+### 2026-10-27 — Phases 0 and 1 (archivist, `lane/p53a`, from `main` 506fb55b)
+
+**Phase 0: the rules as the table states them, run over the tree at 506fb55b.**
+
+| Check | Checked | Hits | True | False | Causes |
+|---|---|---|---|---|---|
+| E14 | 1 446 tables | 8 | 7 | 1 | 6 findings rows with a fifth cell (a `(C since the lane/h2b review: …)` note before the Tag cell); 1 row of `docs/tables/README.md` (LvlWarp, a stray empty cell). False positive: `evidence-rules.md:147`, the E9 row, whose code span ``` ` ```mermaid ` ``` holds a triple-backtick run; the cell splitter toggled on every backtick, so the span was never closed. This is an implementation fault, not a rule fault: the splitter now pairs a backtick run with the next run of equal length (CommonMark). |
+| E15 | 38 map rows with a spec link | 6 | 4 | 2 | True: `monsters/pool` and `monsters/spawn` (Status cell begins `reviewed: [`, no ` · `); `player/creation` (`updated 2026-10-20` against 2026-10-21); `stats/aggregate` (C 64 / L 5 against C 65 / L 4). False: `combat/README` (the group `C 240 / I 191 / L 24` is stated as "the five front matters summed"); `skills/dispatch` (the first group after the `skills/README` link is `dispatch C 75 / I 191 / L 10`, a label for the other spec; the overview's own group follows it and is right). |
+| E16 | 55 plan rows + 2 indexes | 0 | 0 | 0 | none. |
+| W7 | 7 `Total` rows | 0 | 0 | 0 | none. |
+
+Value sets. Spec `status:`: `reviewed` 49, `draft` 2. Map status words: `reviewed` (bold or plain), `findings in progress`, `not started`, plus the malformed `reviewed:` twice. Mapping used: `reviewed` to `reviewed`, `draft` to `draft spec`; no map row links a draft spec today, so that half of the mapping is untested on real data. A row whose links are all findings or plans (`findings in progress`, `not started`) is not checked, since it links no spec. Plan `Status:` first words: `done` 48 (all under `done/`), `approved` 5 (none under `done/`); no `abandoned` plan exists yet.
+
+Rule-change proposals (the table is the architect's; Phase 1 implements the rules as stated):
+
+1. E15, the tag group: accept the row when any `C n / I n / L n` group between the link and the next spec link equals the spec's tags, instead of the first group only. This clears `skills/dispatch` and still catches a stale single group. Cost: dispatch's own group (the one before "and the overview") is then not checked, because no group sits between its link and the next one.
+2. E15, sums: a segment that contains the word `summed` is exempt from the tag comparison (`combat/README`), or the map states the sum in words and not as a `C/I/L` group. The first is the cheaper rule.
+3. E15, partial groups: the implementation compares the numbers a group gives; `C 15 / I 0` (monsters overview) is checked on C and I only. State it in the rule.
+4. W7: add `All` (any case) to `Total` as the first-cell label. Four more rows exist (`plans/0038-inventory/README.md` twice, `findings/stats/experiments.md`, `tables/Skills.md`; `formats/ds1.md` is out of scope), checked by scratch script: all 4 sum correctly, so the extension costs no false positives and covers 4 wide tables. Today's seven `Total` rows are all single-column tallies in `plans/0038-inventory/`.
+5. E14 scope: the rule text covers every tracked `.md`; nothing needs narrowing.
+
+Side finding, done on the owner's request as its own commit (`perf(tools): gate W3 …`): the fast tier took 153 to 183 s, of which 151 s was the W3 loop (about 50 000 `re.search` calls over the joined corpus), so the commit hook's 20 s timeout failed open. W3 now looks names up in a word set built once (a name with another character falls back to the regex). W3 was 0 warnings on 3 666 symbols before and after. The new checks add about 6 s on the old timing and use no per-symbol or per-line corpus scan. Wall time after: `gate.py --no-warnings` 5.4 s, `gate.py --staged --no-warnings` 5.6 s.
+
+**Phase 1: implemented in `tools/gate.py`** (`iter_tables`, `check_table_cells`, `check_map_rows`, `check_plans_index`, `check_index_numbers`, `check_totals`; the module docstring and the rule list updated; `DEMOTED` holds the rules reported as warnings). The cell splitter `table_cells` was rewritten to pair backtick runs (see E14 above). Fixtures: `E14`, `E15`, `E15-tags`, `E15-updated`, `E16`, `E16-next`, `E16-done`, `E16-adr`, `W7`, and base files for the map, the plan and ADR indexes, a table with code spans and a fenced table, and a `Total` table. `tools/test_gate.py` has a case for each (23 tests, green).
+
+Hits and the arithmetic (counts are warnings or errors reported by the gate at the tip):
+
+| Check | Phase 0 | Fixed here | Filed | At the tip | Level at the tip |
+|---|---|---|---|---|---|
+| E14 | 8 | 2 (`docs/tables/README.md` stray cell; the splitter fault, so `evidence-rules.md:147` no longer hits) | 6, reverser | 6 | warning (`DEMOTED`) |
+| E15 | 6 | 0 | 6, architect | 6 | warning (`DEMOTED`) |
+| E16 | 0 | 0 | 0 | 0 | error |
+| W7 | 0 | 0 | 0 | 0 | warning |
+
+8 - 2 = 6 and 6 - 0 = 6. E14 and E15 stay warnings because the files they flag belong to other lanes; Phase 2 empties `DEMOTED` once the entries are fixed. Backlog entries: `2026-10-27-archivist-reverser-e14-table-rows-with-an-extra-cell-in.md` and `2026-10-27-archivist-architect-e15-research-map-rows-that-disagree-with-their.md`.
+
+**Review request (architect).** Review `lane/p53a` at its tip. Check (a) the E15 mapping and the five proposals above against your intent for the rule table, (b) that `DEMOTED = {"E14", "E15"}` with the two backlog entries is the handoff you want for Phase 2, and (c) the `table_cells` rewrite, which every table check shares (W2 and the new checks); the gate output elsewhere is unchanged, and (d) the W3 commit. Copy E14, E15, E16 and W7 into `evidence-rules.md` § Mechanical checks in the review commit.

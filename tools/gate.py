@@ -27,6 +27,13 @@ Implements the fast tier of `.claude/skills/architect/references/evidence-rules.
                formed (tools/backlog.py), from/to known lanes, status in the enum, a resolution once
                closed, the date equal to the file name's, context links resolving, and no open entry
                in docs/backlog/archive/
+           E14 a markdown table row with a different number of cells than its header (every tracked .md)
+           E15 a research-map row (docs/specs/README.md) whose status words, `C n / I n / L n` group or
+               `updated` date differ from the spec it links
+           E16 docs/plans/README.md: a row's Status differs from the plan's `Status:`, the link is under
+               done/ iff the plan is done or abandoned; docs/plans/README.md and docs/adrs/README.md:
+               "Next free number" not above every number in use
+           (E14 and E15 are reported as warnings while DEMOTED lists them: plan 0053 Phase 1)
   warnings W1 a [C]/[I] line or table row with no anchor
            W2 a table with a Tag column has a row with an empty tag cell
            W3 a re/symbols.csv row cited by no spec or finding
@@ -38,6 +45,7 @@ Implements the fast tier of `.claude/skills/architect/references/evidence-rules.
            W6 a closed entry (done, moved, dropped) still in docs/backlog/ instead of docs/backlog/archive/:
               run `python3 -I tools/backlog.py archive` (ADR-0019; a warning, because a lane on an older
               branch closes entries in place and the orchestrator sweeps them after the merge)
+           W7 a `Total` table row whose numbers differ from the sum of the rows above (specs, findings, plans)
 
 Wiki front matter (E11, W4): `based_on: [process]`, or a list of `<repo path of a spec> <date>`, either
 `based_on: [docs/specs/rng/core.md 2026-10-11, ...]` or one `  - docs/specs/rng/core.md 2026-10-11` line
@@ -95,6 +103,11 @@ IMAGE_LO = 0x00400000
 IMAGE_HI = 0x009BA000
 
 FIXTURES = "tools/gate/fixtures/"
+# research-map status word for each spec `status:` value (E15)
+MAP_STATUS = {"draft": "draft spec"}
+# error rules reported at warning level until the files they flag are fixed (plan 0053 Phase 1);
+# the architect empties this set in Phase 2
+DEMOTED = {"E14", "E15"}
 BASELINES = "tools/gate/baselines"
 
 # ---------------------------------------------------------------- full tier: survey registry
@@ -251,6 +264,8 @@ class Report:
         self.checked = {}   # rule -> count of items checked
 
     def err(self, rule, path, line, msg):
+        if rule in DEMOTED:
+            return self.warn(rule, path, line, msg)
         self.errors.setdefault(rule, []).append(f"{path}:{line}: {rule} {msg}")
 
     def warn(self, rule, path, line, msg):
@@ -377,18 +392,42 @@ def table_cells(line):
     s = s[1:]
     if s.endswith("|"):
         s = s[:-1]
-    # split on unescaped pipes outside code spans
-    cells, cur, tick = [], [], False
+    # split on unescaped pipes outside code spans; a span opens with a run of k backticks and
+    # closes at the next run of exactly k (CommonMark), an unclosed run is literal text
+    cells, cur = [], []
     i = 0
     while i < len(s):
         c = s[i]
-        if c == "\\" and not tick and i + 1 < len(s):
+        if c == "\\" and i + 1 < len(s):
             cur.append(s[i:i + 2])
             i += 2
             continue
         if c == "`":
-            tick = not tick
-        if c == "|" and not tick:
+            j = i
+            while j < len(s) and s[j] == "`":
+                j += 1
+            run = s[i:j]
+            k = j
+            close = -1
+            while k < len(s):
+                if s[k] == "`":
+                    e = k
+                    while e < len(s) and s[e] == "`":
+                        e += 1
+                    if e - k == len(run):
+                        close = e
+                        break
+                    k = e
+                else:
+                    k += 1
+            if close >= 0:
+                cur.append(s[i:close])
+                i = close
+            else:
+                cur.append(run)
+                i = j
+            continue
+        if c == "|":
             cells.append("".join(cur).strip())
             cur = []
         else:
@@ -1068,6 +1107,179 @@ def check_mermaid(blocks, cache_root, rep):
         rep.err("E9", rel, line, f"mermaid parse error: {r['message']}")
 
 
+# ---------------------------------------------------------------- E14, E15, E16, W7 (plan 0053)
+
+def iter_tables(text):
+    """Yield (header_lineno, [(lineno, cells)]) for each markdown table outside code fences.
+
+    A table is a run of lines starting with `|` whose second line is a separator row."""
+    run = []
+
+    def flush():
+        if len(run) >= 2 and is_separator_row(run[1][1]):
+            return (run[0][0], list(run))
+        return None
+
+    for n, line, fenced in iter_lines_outside_fences(text):
+        cells = None if fenced else table_cells(line)
+        if cells is not None:
+            run.append((n, cells))
+            continue
+        t = flush()
+        run.clear()
+        if t:
+            yield t
+    t = flush()
+    if t:
+        yield t
+
+
+def check_table_cells(rel, text, rep):
+    """E14: every row of a table has as many cells as its header."""
+    for _, rows in iter_tables(text):
+        rep.count("E14")
+        width = len(rows[0][1])
+        for n, cells in rows[1:]:
+            if len(cells) != width:
+                rep.err("E14", rel, n, f"table row has {len(cells)} cells, its header has {width}")
+
+
+RE_TAGS_GROUP = re.compile(r"\bC (\d+) / I (\d+)(?: / L (\d+))?")
+RE_MAP_UPDATED = re.compile(r"\bupdated (\d{4}-\d{2}-\d{2})")
+RE_SPEC_PATH = re.compile(r"docs/specs/.+\.md")
+
+
+def spec_front(text, name):
+    fm, _, _ = split_front_matter(text)
+    return front_field(fm, name) if fm is not None else None
+
+
+def check_map_rows(rel, text, ctx, rep):
+    """E15: a research-map row's status words, tag counts and update date vs the spec it links."""
+    for n, line, fenced in iter_lines_outside_fences(text):
+        if fenced:
+            continue
+        cells = table_cells(line)
+        if not cells or is_separator_row(cells) or len(cells) < 2:
+            continue
+        cell = cells[-1]
+        links = list(RE_INLINE_LINK.finditer(cell))
+        specs = []
+        for i, m in enumerate(links):
+            target = m.group(1).strip("<>").split("#")[0]
+            path = os.path.normpath(os.path.join(os.path.dirname(rel), unquote(target))).replace(os.sep, "/")
+            if RE_SPEC_PATH.fullmatch(path) and path in ctx["texts"] and is_spec(path, ctx["texts"][path]):
+                end = links[i + 1].start() if i + 1 < len(links) else len(cell)
+                specs.append((path, cell[m.end():end]))
+        if not specs:
+            continue
+        rep.count("E15")
+        words = cell.split(" \u00b7 ", 1)[0].replace("**", "").strip() if " \u00b7 " in cell else ""
+        first = specs[0][0]
+        status = spec_front(ctx["texts"][first], "status")
+        want = MAP_STATUS.get(status, status)
+        if words != want:
+            rep.err("E15", rel, n, f"status words {words or cell[:30]!r} differ from {first} status: "
+                    f"{status} (the map says {want!r})")
+        for path, seg in specs:
+            fmtext = ctx["texts"][path]
+            m = RE_TAGS_GROUP.search(seg)
+            fm, _, _ = split_front_matter(fmtext)
+            mt = RE_FRONT_TAGS.search(fm or "")
+            if m and mt:
+                have = {k: int(v) for k, v in re.findall(r"([CIL]):\s*(\d+)", mt.group(1))}
+                got = {"C": int(m.group(1)), "I": int(m.group(2))}
+                if m.group(3) is not None:
+                    got["L"] = int(m.group(3))
+                if any(have.get(k) != v for k, v in got.items()):
+                    rep.err("E15", rel, n, f"tags {m.group(0)!r} after {path} differ from its tags: "
+                            f"C {have.get('C')} / I {have.get('I')} / L {have.get('L')}")
+            mu = RE_MAP_UPDATED.search(seg)
+            upd = spec_front(fmtext, "updated")
+            if mu and upd and mu.group(1) != upd.strip():
+                rep.err("E15", rel, n, f"updated {mu.group(1)} after {path} differs from its updated: {upd.strip()}")
+
+
+RE_PLAN_FILE = re.compile(r"docs/plans/(?:done/)?(\d{4})-[^/]+\.md")
+RE_PLAN_STATUS = re.compile(r"^>\s*\*\*Status:\*\*\s*(.*)$", re.M)
+RE_NEXT_FREE = re.compile(r"Next free number:\s*\*\*(\d+)\*\*")
+
+
+def check_index_numbers(rel, text, files, dirname, rep):
+    """E16: the 'Next free number' of an index exceeds every number in use."""
+    used = []
+    for p in files:
+        m = re.fullmatch(r"docs/" + dirname + r"/(?:done/)?(\d{4})-[^/]+\.md", p)
+        if m:
+            used.append(int(m.group(1)))
+    m = RE_NEXT_FREE.search(text)
+    rep.count("E16")
+    if not m:
+        rep.err("E16", rel, 1, "no 'Next free number: **NNNN**' line")
+    elif used and int(m.group(1)) <= max(used):
+        n = text[:m.start()].count("\n") + 1
+        rep.err("E16", rel, n, f"next free number {m.group(1)} is not above the highest in use, {max(used):04d}")
+
+
+def check_plans_index(rel, text, ctx, rep):
+    """E16 on docs/plans/README.md: row Status vs the plan's Status:, done/ placement, next free number."""
+    check_index_numbers(rel, text, ctx["tracked"], "plans", rep)
+    for n, line, fenced in iter_lines_outside_fences(text):
+        if fenced:
+            continue
+        cells = table_cells(line)
+        if not cells or len(cells) < 3 or is_separator_row(cells):
+            continue
+        m = RE_INLINE_LINK.search(cells[0])
+        if not m:
+            continue
+        target = m.group(1).strip("<>").split("#")[0]
+        path = os.path.normpath(os.path.join(os.path.dirname(rel), unquote(target))).replace(os.sep, "/")
+        if not RE_PLAN_FILE.fullmatch(path) or path not in ctx["texts"]:
+            continue
+        rep.count("E16")
+        ms = RE_PLAN_STATUS.search(ctx["texts"][path])
+        if not ms:
+            rep.err("E16", rel, n, f"{path} has no `Status:` line")
+            continue
+        value = re.sub(r"[^a-z]+", " ", ms.group(1).lower()).split()
+        value = value[0] if value else ""
+        cell = re.sub(r"[^a-z]+", " ", cells[2].lower()).split()
+        if not cell or cell[0] != value:
+            rep.err("E16", rel, n, f"status cell {cells[2][:30]!r} does not start with {path}'s Status: {value!r}")
+        if ("/done/" in "/" + path) != (value in ("done", "abandoned")):
+            rep.err("E16", rel, n, f"{path} with Status: {value} is {'' if '/done/' in path else 'not '}under done/")
+
+
+NUM_SEPARATORS = " \u00a0\u202f\u2009,"
+
+
+def table_number(cell):
+    s = cell.replace("**", "").strip()
+    for c in NUM_SEPARATORS:
+        s = s.replace(c, "")
+    return int(s) if re.fullmatch(r"-?\d+", s) else None
+
+
+def check_totals(rel, text, rep):
+    """W7: a `Total` row's numeric cells equal the sum of the numeric cells above them."""
+    for _, rows in iter_tables(text):
+        start = 2
+        for i, (n, cells) in enumerate(rows):
+            if i < 2 or cells[0].replace("**", "").strip().lower() != "total":
+                continue
+            rep.count("W7")
+            for col in range(1, len(cells)):
+                want = table_number(cells[col])
+                if want is None:
+                    continue
+                vals = [table_number(r[1][col]) for r in rows[start:i] if col < len(r[1])]
+                got = sum(v for v in vals if v is not None)
+                if got != want:
+                    rep.warn("W7", rel, n, f"Total, column {col + 1}: {want}, the rows above sum to {got}")
+            start = i + 1
+
+
 # ---------------------------------------------------------------- driver
 
 RULES = [
@@ -1084,12 +1296,16 @@ RULES = [
     ("E11", "wiki pages based_on reviewed specs"),
     ("E12", "wiki sections link a spec"),
     ("E13", "backlog entries well formed"),
+    ("E14", "table rows have as many cells as the header"),
+    ("E15", "research-map rows match the specs they link"),
+    ("E16", "plans index matches the plans; next free numbers"),
     ("W1", "[C]/[I] statements carry an anchor"),
     ("W2", "Tag cells filled"),
     ("W3", "symbols cited by a spec or finding"),
     ("W4", "wiki based_on dates current"),
     ("W5", "no live entry in the frozen backlog archive"),
     ("W6", "closed backlog entries in docs/backlog/archive/"),
+    ("W7", "Total rows equal the sum above"),
 ]
 
 
@@ -1138,6 +1354,17 @@ def run_gate(root, cache_root=None):
             cited.append(text)
         if rel.startswith(WIKI):
             check_wiki(rel, text, ctx, rep)
+    for rel in link_mds:
+        check_table_cells(rel, texts[rel], rep)
+    for rel in mds:
+        if is_spec(rel, texts[rel]) or rel.startswith(("docs/findings/", "docs/plans/")):
+            check_totals(rel, texts[rel], rep)
+    if "docs/specs/README.md" in texts:
+        check_map_rows("docs/specs/README.md", texts["docs/specs/README.md"], ctx, rep)
+    if "docs/plans/README.md" in texts:
+        check_plans_index("docs/plans/README.md", texts["docs/plans/README.md"], ctx, rep)
+    if "docs/adrs/README.md" in texts:
+        check_index_numbers("docs/adrs/README.md", texts["docs/adrs/README.md"], ctx["tracked"], "adrs", rep)
     for rel in link_mds:
         check_links(rel, texts[rel], ctx, rep)
     entries = {rel: texts[rel] for rel in mds
@@ -1217,11 +1444,12 @@ def main(argv=None):
     else:
         rep = run_gate(os.path.abspath(args.root))
     for rule, desc in RULES:
-        bucket = rep.errors if rule.startswith("E") else rep.warnings
+        is_err = rule.startswith("E") and rule not in DEMOTED
+        bucket = rep.errors if is_err else rep.warnings
         n = len(bucket.get(rule, []))
-        word = "errors" if rule.startswith("E") else "warnings"
-        status = ("FAIL" if n else "ok") if rule.startswith("E") else ("warn" if n else "ok")
-        if rule.startswith("E") and not n and rep.warnings.get(rule):
+        word = "errors" if is_err else "warnings"
+        status = ("FAIL" if n else "ok") if is_err else ("warn" if n else "ok")
+        if is_err and not n and rep.warnings.get(rule):
             status = "skip"
         print(f"{rule:3} {status:4} {desc}: {rep.checked.get(rule, 0)} checked, {n} {word}")
     nerr = sum(len(v) for v in rep.errors.values())
