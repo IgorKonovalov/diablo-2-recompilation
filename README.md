@@ -109,11 +109,7 @@ each row.
 
 | Subsystem | What it covers | Status | Date |
 |---|---|---|---|
-| [`combat/formulas`](docs/specs/combat/README.md) | to-hit, damage, resistances, block, avoid, damage reduction, on-hit effects (the overview) | reviewed | 2026-10-27 |
-| [`combat/to-hit`](docs/specs/combat/to-hit.md) | the hit test, chance to hit and the defence rolls | reviewed | 2026-10-21 |
-| [`combat/damage`](docs/specs/combat/damage.md) | the attacker's damage build | reviewed | 2026-10-21 |
-| [`combat/reductions`](docs/specs/combat/reductions.md) | the defender's reductions | reviewed | 2026-10-21 |
-| [`combat/delivery`](docs/specs/combat/delivery.md) | queue, delivery, on-hit effects and the life change | reviewed | 2026-10-21 |
+| [`combat/formulas`](docs/specs/combat/README.md) | to-hit, damage, resistances, block, avoid, damage reduction, on-hit effects: the overview and its four parts, [to-hit](docs/specs/combat/to-hit.md) (the hit test, chance to hit and the defence rolls), [damage](docs/specs/combat/damage.md) (the attacker's damage build), [reductions](docs/specs/combat/reductions.md) (the defender's reductions) and [delivery](docs/specs/combat/delivery.md) (queue, delivery, on-hit effects and the life change), each 2026-10-21 | reviewed | 2026-10-27 |
 | [`stats/aggregate`](docs/specs/stats/aggregate.md) | stat lists and their cache, the stat ops, the maxima and their rescale, item requirements, set bonuses ([overview](docs/specs/stats/README.md), 2026-10-21) | reviewed | 2026-10-20 |
 | [`stats/states`](docs/specs/stats/states.md) | timed state apply, refresh, `group`, expiry, the regeneration ticks, auras, shrines and wells | reviewed | 2026-10-27 |
 | [`skills/dispatch`](docs/specs/skills/dispatch.md) | the skill request, start checks, start and do function dispatch, charges, costs, the skill packet, event handlers, summons, monster skill use ([overview](docs/specs/skills/README.md), 2026-10-27) | reviewed | 2026-10-27 |
