@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-25
 status: done
 context:
-  - ../../plans/0051-backlog-sweep-6.md#implementation-log
+  - ../../plans/done/0051-backlog-sweep-6.md#implementation-log
 resolution: "Accepted with fixes (architect, 2026-10-27): 3 fixes (H4b follow-ups entry annotated with H4a's pieces; monsters/0003 special 66 mod 12 marked met; S1b session in H1a's inventory row); rulings in the plan 0051 log, Phase 1a review."
 ---
 

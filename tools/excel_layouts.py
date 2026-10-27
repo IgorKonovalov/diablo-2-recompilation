@@ -939,6 +939,16 @@ LAYOUTS["objmode"] = dict(size=0x34, fields=[
     U("unk_024", 0x024, "str", len=16),
 ])
 
+# ------------------------------------------------------------------ plrtype, objtype (52 B = 0x34)
+# Plan 0050 item 3 of the anim/0001 archivist entry (docs/tables/PlrType.md, ObjType.md). The ObjMode shape: a name
+# and a token at +0x020 (the animation token COMPOSIT_BuildCofName puts first in an animdata/COF name, findings
+# anim/0001 section 2), then 16 bytes that are 0 in every record. objtype.txt's Beta column has no field.
+LAYOUTS["plrtype"] = dict(size=0x34, fields=[
+    S("Name", 0x000, 32), C("Token", 0x020), U("unk_024", 0x024, "str", len=16)])
+LAYOUTS["objtype"] = dict(size=0x34, fields=[
+    S("Name", 0x000, 32), C("Token", 0x020), U("unk_024", 0x024, "str", len=16)],
+    txt_only={"Beta": "0/1 editor column; not in the 52-byte record (probe: no offset under any encoding)"})
+
 # ------------------------------------------------------------------ qualityitems (112 B = 0x70)
 # Backlog sweep 4 (docs/tables/QualityItems.md). One record per qualityitems.txt row (8): the superior
 # ("hiquality") mods. Bytes 0..9 are ten u8 type flags; the .txt has eleven. The six weapon-family columns

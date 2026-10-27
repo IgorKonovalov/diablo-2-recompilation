@@ -8,7 +8,7 @@ context:
   - ../../tables/Skills.md
   - ../../tables/MonStats.md
   - ../../tables/States.md
-resolution: "Folded 2026-10-27 (plan 0051 P0b, lane/p51b): Skills aurastate, auratargetstate, auralencalc, summon/summode, sumumod, sumoverlay, srvoverlay, aurarangecalc, lob, ResultFlags/HitFlags/HitClass, MonStats BaseId and States srvactivefunc 147 link skills/0018 (the callee's path move [I], as the review left it); the +0x0E/+0x0F bytes are MonStats2 S3v/S4v's drawn variants by monsters/0004 § 6 ([I], dated note), no Phase 1b item ([Skills](../../tables/Skills.md), [MonStats](../../tables/MonStats.md), [MonStats2](../../tables/MonStats2.md), [States](../../tables/States.md), [log](../../plans/0051-backlog-sweep-6.md#implementation-log))."
+resolution: "Folded 2026-10-27 (plan 0051 P0b, lane/p51b): Skills aurastate, auratargetstate, auralencalc, summon/summode, sumumod, sumoverlay, srvoverlay, aurarangecalc, lob, ResultFlags/HitFlags/HitClass, MonStats BaseId and States srvactivefunc 147 link skills/0018 (the callee's path move [I], as the review left it); the +0x0E/+0x0F bytes are MonStats2 S3v/S4v's drawn variants by monsters/0004 § 6 ([I], dated note), no Phase 1b item ([Skills](../../tables/Skills.md), [MonStats](../../tables/MonStats.md), [MonStats2](../../tables/MonStats2.md), [States](../../tables/States.md), [log](../../plans/done/0051-backlog-sweep-6.md#implementation-log))."
 ---
 
 Not blocking. Plan 0046 batch 8c ([skills/0018](../../findings/skills/0018-monster-8c.md)) settles code readers for these columns; please link them from the table docs. `[C]` here is the finding's ADR-0021 map up to the named boundary; what follows a boundary stays `[I]`.

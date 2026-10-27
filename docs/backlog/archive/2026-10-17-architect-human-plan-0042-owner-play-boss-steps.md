@@ -5,7 +5,7 @@ date: 2026-10-17
 status: dropped
 context:
   - ../../plans/done/0042-quests-travel.md
-resolution: "Dropped by the owner 2026-10-25 (plan [0051](../../plans/0051-backlog-sweep-6.md) Phase 2): plan 0042 closed 2026-10-20 without the session; the steps not played stay `[I]` for good."
+resolution: "Dropped by the owner 2026-10-25 (plan [0051](../../plans/done/0051-backlog-sweep-6.md) Phase 2): plan 0042 closed 2026-10-20 without the session; the steps not played stay `[I]` for good."
 ---
 
 Owner play for plan 0042 Phase 2 part 2 (optional; one session, may share plan 0038's d-owner rows): the act-boss quest steps (Andariel, Duriel, Mephisto, Diablo, Baal) and the Ancients on level 120 (which set quest 35's 'done in this game' byte and so open the summit door), the Nightmare and Hell boss steps, Diablo's +0x13 reader, and the Uber levels 133-136 with the portal refusal on 136, played under the quest-state logger. Steps not played become named shortfalls at the part 2 review; their bits stay [I].

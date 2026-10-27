@@ -8,7 +8,7 @@ context:
   - ../../tables/Skills.md
   - ../../tables/CharStats.md
   - ../../tables/MonStats.md
-resolution: "Folded 2026-10-25 (plan 0051 P0a, lane/p51a): Skills mana/lvlmana/manashift, perdelay, the aura and passive words, Param1; CharStats RunVelocity; MonStats Run (read signed) link skills/0011, values [C] and meanings [I] as the pal review left them ([Skills](../../tables/Skills.md), [CharStats](../../tables/CharStats.md), [MonStats](../../tables/MonStats.md), [log](../../plans/0051-backlog-sweep-6.md#implementation-log))."
+resolution: "Folded 2026-10-25 (plan 0051 P0a, lane/p51a): Skills mana/lvlmana/manashift, perdelay, the aura and passive words, Param1; CharStats RunVelocity; MonStats Run (read signed) link skills/0011, values [C] and meanings [I] as the pal review left them ([Skills](../../tables/Skills.md), [CharStats](../../tables/CharStats.md), [MonStats](../../tables/MonStats.md), [log](../../plans/done/0051-backlog-sweep-6.md#implementation-log))."
 ---
 
 Not blocking. Plan 0046 batch `pal` ([skills/0011](../../findings/skills/0011-paladin.md)) settles code readers for

@@ -7,7 +7,7 @@ context:
   - ../../findings/skills/0012-barbarian.md
   - ../../tables/Skills.md
   - ../../tables/MonStats2.md
-resolution: "Folded 2026-10-27 (plan 0051 P0b, lane/p51b): Skills srvoverlay, aurastate, auratargetstate, auralencalc, calc3, aurarangecalc, Param1..4, InTown (the +0x005 bit 0, by the layout) and MonStats2 corpseSel, soft, large, small, SizeX link skills/0012, values and tests [C], meanings [I] ([Skills](../../tables/Skills.md), [MonStats2](../../tables/MonStats2.md), [log](../../plans/0051-backlog-sweep-6.md#implementation-log))."
+resolution: "Folded 2026-10-27 (plan 0051 P0b, lane/p51b): Skills srvoverlay, aurastate, auratargetstate, auralencalc, calc3, aurarangecalc, Param1..4, InTown (the +0x005 bit 0, by the layout) and MonStats2 corpseSel, soft, large, small, SizeX link skills/0012, values and tests [C], meanings [I] ([Skills](../../tables/Skills.md), [MonStats2](../../tables/MonStats2.md), [log](../../plans/done/0051-backlog-sweep-6.md#implementation-log))."
 ---
 
 Not blocking. Plan 0046 batch `bar` ([skills/0012](../../findings/skills/0012-barbarian.md)) settles code readers for

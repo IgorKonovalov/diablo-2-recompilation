@@ -349,10 +349,10 @@ layout's ([§ Modes, animation and drawing](#modes-animation-and-drawing)); valu
 |---|---|---|---|---|
 | `Token` | `+0x0C0` char[3] | 573 set | the object's animation token | [C] layout |
 | `Mode0..7` | `+0x13F + k` u8 | 0/1; set in 562, 422, 441, 97, 33, 27, 20, 1 rows | the object has mode *k* | [C] layout; meaning `[L]` (`Mode1` `[C]` read by the chest operate, [§ Code semantics](#code-semantics-plan-0023-phase-1)) |
-| `FrameCnt0..7` | `+0x0D8 + 4k` u32 | 0..44, 0..50, 0..44, 0..30, 0..25, 0..20, 0..20, 0..10 | frames of mode *k* | [C] layout; `[L]` |
+| `FrameCnt0..7` | `+0x0D8 + 4k` u32 | 0..44, 0..50, 0..44, 0..30, 0..25, 0..20, 0..20, 0..10 | frames of mode *k* | [C] layout; `[I]` the animation length at a mode start (below) |
 | `FrameDelta0..7` | `+0x0F8 + 2k` u16 | 0..256, 0..640, then 0..256; mostly 0, 128, 256 | animation speed of mode *k* | [C] layout; `[C]` its use at an animation start (below) |
 | `CycleAnim0..7` | `+0x108 + k` u8 | 0/1; set in 249, 46, 67, 4, 4, 4, 3, 3 rows | mode *k* loops | [C] layout; `[L]` |
-| `Start0..7` | `+0x129 + k` u8 | 0, 0..1, 0..28, 0..29, 0..1, 0..1, 0, 0 | start frame of mode *k* | [C] layout; `[L]` |
+| `Start0..7` | `+0x129 + k` u8 | 0, 0..1, 0..28, 0..29, 0..1, 0..1, 0, 0 | start frame of mode *k* | [C] layout; `[I]` the start frame at a mode start (below) |
 | `Sync` | `+0x175` u8 | 0/1; 1 in 348 rows | — | [C] layout; `[C]` (below) |
 
 - `[C]` **`Sync` and `FrameDelta` at an animation start.** `UNIT_SetMode` → `UNIT_AnimInit` draws
@@ -366,8 +366,15 @@ layout's ([§ Modes, animation and drawing](#modes-animation-and-drawing)); valu
   1 385 of the 1 483). So the two sources disagree for most modes: the table gives fewer frames (61 `NU`, 38 `ON`
   rows with `FrameCnt` 1 against a longer record) and often a delta of 0 where the record has 256. Per mode in
   [ObjMode § Timing](ObjMode.md#timing-plan-0050-phase-0).
-- `[L]` Which source the server's frame advance uses for an object (the table's `FrameCnt`/`FrameDelta`, the record, or
-  both) is plan 0050 Phase 1.1.
+- `[I]` **Which source the server uses** ([anim/0001 § 3](../findings/anim/0001-modes-frames.md#3-unit_setmode-unit_animinit-and-sunit_animinit)):
+  the table's. `UNIT_AnimInit` sets an object's length `+0x48 = FrameCnt[mode]`, its frame `+0x44 = Start[mode] << 8`
+  and its rate `+0x4C = FrameDelta[mode]` (`Sync` ≠ 0) or `FrameDelta − (FrameDelta >> 4) + RangeB(unit seed,
+  FrameDelta >> 3)` clamped to `[0, 0x7FFF]` (`Sync` 0); a mode ≥ 8 is fatal. No server code advances an object's frame
+  through these fields (`UNIT_AnimAdvance`'s callers are the monster mode functions and client code). (fn:UNIT_AnimInit@0x00624390, 0x00624500–0x0062456F,
+  tbl:Objects.txt:FrameCnt0, tbl:Objects.txt:Start0, tbl:Objects.txt:FrameDelta0, tbl:Objects.txt:Sync)
+- `[I]` **The record's token** is [ObjType](ObjType.md)'s, not this table's `Token` ([anim/0001 § 2](../findings/anim/0001-modes-frames.md#2-records-the-token-the-lookup-and-the-fallback),
+  `0x0065B570(class, 0)`). `[C]` The two differ in 16 records; under the ObjType token 1 491 of the 1 603 flagged
+  modes have a record, against the 1 483 above ([ObjType § Timing](ObjType.md#timing-plan-0050)).
 
 ## Interpretation notes
 

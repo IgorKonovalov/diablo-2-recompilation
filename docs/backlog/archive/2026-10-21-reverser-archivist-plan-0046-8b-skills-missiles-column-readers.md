@@ -7,7 +7,7 @@ context:
   - ../../findings/skills/0017-monster-8b.md
   - ../../tables/Skills.md
   - ../../tables/Missiles.md
-resolution: "Folded 2026-10-27 (plan 0051 P0b, lane/p51b): Skills Param1..7, the curse rows' aura columns, ResultFlags/HitFlags/HitClass, summon/summode and Missiles Param1/Param2, Vel/VelLev link skills/0017 in their rows, tags as the finding has them (do 99's second ring and do 126's range [I]) ([Skills](../../tables/Skills.md), [Missiles](../../tables/Missiles.md), [log](../../plans/0051-backlog-sweep-6.md#implementation-log))."
+resolution: "Folded 2026-10-27 (plan 0051 P0b, lane/p51b): Skills Param1..7, the curse rows' aura columns, ResultFlags/HitFlags/HitClass, summon/summode and Missiles Param1/Param2, Vel/VelLev link skills/0017 in their rows, tags as the finding has them (do 99's second ring and do 126's range [I]) ([Skills](../../tables/Skills.md), [Missiles](../../tables/Missiles.md), [log](../../plans/done/0051-backlog-sweep-6.md#implementation-log))."
 ---
 
 Not blocking. Plan 0046 batch 8b ([skills/0017](../../findings/skills/0017-monster-8b.md)) settles code readers for these columns; please link them from the table docs.

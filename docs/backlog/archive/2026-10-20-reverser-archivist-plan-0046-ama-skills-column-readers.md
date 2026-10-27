@@ -7,7 +7,7 @@ context:
   - ../../findings/skills/0009-amazon.md
   - ../../tables/Skills.md
   - ../../tables/MonStats2.md
-resolution: "Folded 2026-10-25 (plan 0051 P0a, lane/p51a): Skills ToHit map, calc1..3, the aura block, srvmissileb (word 0 only), the summon words; MonStats2 MeleeRng link skills/0009, value [C] and meaning [I] as the ama review left them ([Skills](../../tables/Skills.md), [MonStats2](../../tables/MonStats2.md), [log](../../plans/0051-backlog-sweep-6.md#implementation-log))."
+resolution: "Folded 2026-10-25 (plan 0051 P0a, lane/p51a): Skills ToHit map, calc1..3, the aura block, srvmissileb (word 0 only), the summon words; MonStats2 MeleeRng link skills/0009, value [C] and meaning [I] as the ama review left them ([Skills](../../tables/Skills.md), [MonStats2](../../tables/MonStats2.md), [log](../../plans/done/0051-backlog-sweep-6.md#implementation-log))."
 ---
 
 Not blocking. Plan 0046 batch `ama` ([skills/0009](../../findings/skills/0009-amazon.md)) settles code readers for

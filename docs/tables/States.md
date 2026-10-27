@@ -91,6 +91,15 @@ Observed type and range are computed over `states.txt` (185 rows).
   ([data/0001 § Plan 0039 batch P1b](../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17), fn:STATES_Load@0x00618100, tbl:States.txt:rfred)
 - ² `[I]` `attred` is flag bit 10 (descriptor entry 12); it is blank in every row and bit 10 is 0 in every record
   `[C]`. (fn:STATES_Load@0x00618100, tbl:States.txt:attred)
+- `[I]` **The flag lists `STATES_Load` builds.** After the table load, `sub_00611DC0_StatesListByFlag` collects, in
+  id order, the rows with one flag bit into a `u16` list with an `s16` count in `DataTables`: bit 16 **`disguise`**
+  (byte `+0x12` bit 0) → `+0x17C`/`+0x180`, bit 4 `pgsv` → `+0x16C`/`+0x170`, bit 11 `curse` → `+0x174`/`+0x178`, bit 5
+  `active` → `+0x184`/`+0x188`; `sub_00611E60_StatesListByField` adds the rows whose `itemtype` (`+0x2A` s16) is above 0
+  → `+0x18C`/`+0x190` ([skills/0013 § 6](../findings/skills/0013-druid.md#6-the-melee-functions-start-56-57-58-do-121-122), fn:STATES_Load@0x00618100,
+  fn:sub_00611DC0_StatesListByFlag@0x00611DC0). `[C]` On stock data the `disguise` list is the seven rows 63, 93, 119,
+  139, 140, 176, 177 ([§ Flag bits by row](#flag-bits-by-row), bit 16). Its readers in the findings: skill do 121 (`0x005C8980`,
+  the to-hit sum, skills/0013 § 6) and `UNIT_AnimTransform`, which takes the first listed state the unit has for its
+  `gfxtype`/`gfxclass` display ([anim/0001 § 2](../findings/anim/0001-modes-frames.md#2-records-the-token-the-lookup-and-the-fallback), fn:UNIT_AnimTransform@0x00645270).
 
 ## Combat rows (plan 0037 Phase 0)
 
@@ -394,10 +403,8 @@ reach a state two ways, both data (`python3 -I tools/anim_survey.py skills works
   and 173 `sub_005C07A0_SkillReviveDo`, 105 `sub_005543B0_MonAlignSet`, 118, and 154 cleared only by
   `sub_00579AA0_MercRevive`; row 0's site marks a stat list as no state rather than setting one), most in functions
   not read; it finds no site for 7 (6, 25, 29, 39, 116, 164, 171), which stay open.
-- `[L]` **The shape-shift state list** (plan 0051 Phase 0, from the `dru` entry). Skill do 121's `0x005C8980` walks a
-  `u16` state list at `DataTables+0x17C` with an `s16` count at `+0x180` and sums the to-hit of the skills the listed
-  states' lists record ([skills/0013 § 6](../findings/skills/0013-druid.md#6-the-melee-functions-start-56-57-58-do-121-122),
-  `[I]` that it holds the shape-shift states). Which loader fills it is code, not layout: `states.bin` has no list
-  field, and `DataTables` is not a table record. By the data, the candidate columns are `restrict` (flag bit 17, set
-  exactly on 139 `wolf`, 140 `bear`, 177 `delerium`), `group` 3 (117, 120, 139, 140, 176, 177) and `transform` (8 rows),
-  § [Flag bits by row](#flag-bits-by-row); the reading is plan 0051 Phase 1b's.
+- ~~The shape-shift state list: which loader fills `DataTables+0x17C`/`+0x180`, and which column (`restrict`, `group` 3
+  or `transform`) picks its rows~~ answered `[I]` by [skills/0013 § 6](../findings/skills/0013-druid.md#6-the-melee-functions-start-56-57-58-do-121-122) (plan 0051 Phase 1b item 3a): `STATES_Load`
+  fills it with the `disguise` rows (flag bit 16), none of the three candidates ([§ Flag bits](#flag-bits-0x010-40-bits-bit-i--byte-0x010--i8-bit-i-mod-8)).
+  Still `[L]`: whether any other code writes the list (skills/0013 does not follow the four `[esi+0x17c]` stores'
+  base registers).

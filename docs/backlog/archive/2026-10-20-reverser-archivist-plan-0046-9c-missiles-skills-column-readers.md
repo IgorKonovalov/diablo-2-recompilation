@@ -7,7 +7,7 @@ context:
   - ../../findings/skills/0006-missile-hit-1-29.md
   - ../../tables/Missiles.md
   - ../../tables/Skills.md
-resolution: "Folded 2026-10-25 (plan 0051 P0a, lane/p51a): Missiles HitSubMissile2..4 (the stride [L] replaced by hit 4's reader), sHitPar1/2, HitFlags/ResultFlags, SHitCalc1, EType; Skills TargetPet, auratargetstate, aurastate, aurafilter, Param1..6 link skills/0006; the radii of hits 14, 22, 24, 44 [I] (9c ruling 1) ([Missiles](../../tables/Missiles.md), [Skills](../../tables/Skills.md), [log](../../plans/0051-backlog-sweep-6.md#implementation-log))."
+resolution: "Folded 2026-10-25 (plan 0051 P0a, lane/p51a): Missiles HitSubMissile2..4 (the stride [L] replaced by hit 4's reader), sHitPar1/2, HitFlags/ResultFlags, SHitCalc1, EType; Skills TargetPet, auratargetstate, aurastate, aurafilter, Param1..6 link skills/0006; the radii of hits 14, 22, 24, 44 [I] (9c ruling 1) ([Missiles](../../tables/Missiles.md), [Skills](../../tables/Skills.md), [log](../../plans/done/0051-backlog-sweep-6.md#implementation-log))."
 ---
 
 The request: what is needed, from whom, and why. Not blocking / blocking <what>.

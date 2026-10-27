@@ -8,7 +8,7 @@ context:
   - ../../tables/Skills.md
   - ../../tables/Missiles.md
   - ../../tables/States.md
-resolution: "Folded 2026-10-27 (plan 0051 P0b, lane/p51b): Skills pettype, petmax, summode, aurastate, auralencalc, aurarangecalc, Param4, ResultFlags/HitFlags/HitClass, SrcDam, calc1, InTown, Missiles Size and States srvactivefunc link skills/0013, with the lane/p46m10 review's narrowed wording; the DataTables +0x17C/+0x180 list goes to plan 0051 Phase 1b (dated note; data candidates in States § Open questions) ([Skills](../../tables/Skills.md), [Missiles](../../tables/Missiles.md), [States](../../tables/States.md), [log](../../plans/0051-backlog-sweep-6.md#implementation-log))."
+resolution: "Folded 2026-10-27 (plan 0051 P0b, lane/p51b): Skills pettype, petmax, summode, aurastate, auralencalc, aurarangecalc, Param4, ResultFlags/HitFlags/HitClass, SrcDam, calc1, InTown, Missiles Size and States srvactivefunc link skills/0013, with the lane/p46m10 review's narrowed wording; the DataTables +0x17C/+0x180 list goes to plan 0051 Phase 1b (dated note; data candidates in States § Open questions) ([Skills](../../tables/Skills.md), [Missiles](../../tables/Missiles.md), [States](../../tables/States.md), [log](../../plans/done/0051-backlog-sweep-6.md#implementation-log))."
 ---
 
 Not blocking. Plan 0046 batch `dru` ([skills/0013](../../findings/skills/0013-druid.md)) settles code readers for these

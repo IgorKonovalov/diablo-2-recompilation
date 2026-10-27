@@ -34,7 +34,7 @@ Points for the ruling:
   their targets are stats/states'. The mode-function graph (39 roots, 128 RNG functions) is reported by entry, not
   classified function by function.
 - (d) The archivist entry for `animdata.d2`, `monseq` and the token tables is filed
-  ([2026-10-27-reverser-archivist-p50a-animdata-monseq-readers](../2026-10-27-reverser-archivist-p50a-animdata-monseq-readers.md)).
+  ([2026-10-27-reverser-archivist-p50a-animdata-monseq-readers](2026-10-27-reverser-archivist-p50a-animdata-monseq-readers.md)).
 - (e) Two answered questions of other findings were annotated with dated notes: skills/0001's `Unit+0x38` and
   "which frame carries code 1 or 2", skills/0002's missile pass order.
 - (f) The five Phase 0 data surprises (`lane/p50z`, relayed by the orchestrator) are answered from the code in

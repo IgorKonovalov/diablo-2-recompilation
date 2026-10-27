@@ -10,7 +10,7 @@ context:
   - ../../tables/Books.md
   - ../../tables/Shrines.md
   - ../../tables/Misc.md
-resolution: "Folded 2026-10-27 (plan 0051 P0b, lane/p51b): Skills ItemEffect, ItemTarget, ItemTgtDo, ItemCheckStart, mana/lvlmana/minmana/manashift, srvmissilea, calc1, PetType unsummon, basemax and +0x0BC/+0x0C0, Books ScrollSkill/BookSkill, Shrines Arg0/Arg1 of codes 19, 21, 22 (5 to 9 potion tries, the review's fix 3) and Misc pSpell 10/11 link skills/0015 ([Skills](../../tables/Skills.md), [PetType](../../tables/PetType.md), [Books](../../tables/Books.md), [Shrines](../../tables/Shrines.md), [Misc](../../tables/Misc.md), [log](../../plans/0051-backlog-sweep-6.md#implementation-log))."
+resolution: "Folded 2026-10-27 (plan 0051 P0b, lane/p51b): Skills ItemEffect, ItemTarget, ItemTgtDo, ItemCheckStart, mana/lvlmana/minmana/manashift, srvmissilea, calc1, PetType unsummon, basemax and +0x0BC/+0x0C0, Books ScrollSkill/BookSkill, Shrines Arg0/Arg1 of codes 19, 21, 22 (5 to 9 potion tries, the review's fix 3) and Misc pSpell 10/11 link skills/0015 ([Skills](../../tables/Skills.md), [PetType](../../tables/PetType.md), [Books](../../tables/Books.md), [Shrines](../../tables/Shrines.md), [Misc](../../tables/Misc.md), [log](../../plans/done/0051-backlog-sweep-6.md#implementation-log))."
 ---
 
 Not blocking. Plan 0046 batch `item` ([skills/0015](../../findings/skills/0015-item.md)) settles code readers for these
