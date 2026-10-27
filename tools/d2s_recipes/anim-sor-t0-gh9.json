@@ -1,0 +1,316 @@
+{
+ "game": "expansion",
+ "class": "Sorceress",
+ "seed": 6910,
+ "name": "AnimSorQ0",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 300,
+  "energy": 200,
+  "dexterity": 300,
+  "vitality": 25,
+  "hitpoints": 400,
+  "maxhp": 400,
+  "mana": 600,
+  "maxmana": 600,
+  "stamina": 400,
+  "maxstamina": 400,
+  "level": 60,
+  "experience": 128782495
+ },
+ "skills": {
+  "Fire Bolt": 1,
+  "Charged Bolt": 1,
+  "Lightning": 1
+ },
+ "mouse": {
+  "left": "Attack",
+  "right": "Fire Bolt",
+  "swap_left": "Attack",
+  "swap_right": "Fire Bolt"
+ },
+ "hotkeys": [
+  "Attack",
+  "Fire Bolt",
+  "Kick",
+  "Charged Bolt",
+  "Lightning"
+ ],
+ "belt_fill": [
+  "rvl",
+  "rvl",
+  "rvl",
+  "rvl"
+ ],
+ "items": [
+  {
+   "code": "hbl",
+   "equip": "belt"
+  },
+  {
+   "code": "crs",
+   "equip": "rarm",
+   "prefix": 192
+  },
+  {
+   "code": "buc",
+   "equip": "larm"
+  },
+  {
+   "code": "lst",
+   "equip": "rarm2",
+   "prefix": 192
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 0,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 0,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 0,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 1,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 1,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 1,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 1,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 2,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 2,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 2,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 2,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 3,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 3,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 3,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 3,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 4,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 4,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 4,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 4,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 5,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 5,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 5,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 5,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 6,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 6,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 6,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 6,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 7,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 7,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 7,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 7,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 8,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 8,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 8,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 8,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 9,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 9,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 9,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 9,
+   "y": 3
+  }
+ ]
+}

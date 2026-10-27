@@ -1045,3 +1045,52 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     targets written `[I]`, re-tagged from part 2's reviewed raises); **0050·P3's review waits for part 2's review**.
     0052·P2 stays closed (gated on 0050·P3's review). **0050·P2 part 2** may start on one harness slot. The P1b
     cases entry stays closed (its remaining cases are part 2's); the review request is closed.
+- **2026-10-27 — Phase 2 part 2, first lane run: checkpoint and resume note (reverser, `lane/p50f`; harness slot 1,
+  no Ghidra; stopped at the owner's pause, about 75 min in).** Record `run:2026-10-27-anim-p2` (in progress; no
+  finding claim raised yet, the record section in anim/experiments is not written yet). **Built:** logger
+  `tools/gdb/anim.py` **rev 6** (`46400bef…`): `CQ` lines, `sub_005417D0_UnitQueueEvent` at its entry when the return
+  lies in 0x005B0000–0x005EFFFF (kind, frame, a, b; cap 20 000, not reached); `tools/anim.py` (`19837a6f…`): the `CQ`
+  queue taken as an ADR-0004 oracle (kinds 1 and 0 with `a ≠ 0`, compared like a schedule's), the excuse window kept
+  only for rev ≤ 5 logs (rev 6: an unqueued dispatch after a catalogue cancel is a mismatch,
+  `dispatch-catalogue-queued-rev6`), tallies `dispatch-cq-after-catcancel`, `dispatch-catcancel-0-4-compared`; `summary`
+  adds per class the throws and the A1 records with three rates of 30. Over part 1's 55 logs the check output is
+  byte-identical to `2026-10-27-anim-check.txt`. `tools/anim_sessions.py` (`c88ac497…`): the part 2 families (below),
+  `mon-7`, `sp-pal-chg2`, `sp-ass-bos2`, `th-dru`, `sp-pal-slow` (The Generals Tan Do Li Ga and Holy Freeze, P1b-13/14),
+  dev sessions `dev-inv`, `dev-inv2`, `dev-pot`; recipes `anim-<cls>-t<k>-gh9` and `-gh10` (21 each),
+  `anim-sor-t0-gh5`, `-gh6`, `anim-sor-t0-gh7`, `anim-bar-t0-gh7`, `anim-bar-t0-gh8`, `anim-dru-th`, `anim-pal-slow`
+  (their `RECIPE_BASES` rows are not added: archivist, with `lane/a4t`'s); `tools/d2pilot.py` (`0535411b…`): explore
+  `--inv-potions N` (after `--belt-life` belt drinks, the inventory opened, the next potion cell right-clicked, closed;
+  shown to drink in `dev-inv2`).
+  **The get-hit route, what the sessions showed** (development of the route, each a kept log): a get-hit costs about a
+  sixth to a quarter of max life whatever the hit (`GetHitRoll`'s bands: `3/8` in `[hp/16, hp/8)`, `3/4` up to `hp/4`),
+  so the potions, not the hit size, set the count, and the deaths come from swarms (up to about 160 damage a second at
+  life 400). gh5 (life 1 000, Act V Nightmare): 6 get-hits, death. gh6 (480, Stony Field): 7, death. gh7 (400, Strength
+  300, *Ferocious* weapons): 6–7, death. gh8 (+ Dexterity 300, the shield set first): 12, death in the second half.
+  gh9 (+ 40 inventory potions): 17 and 6. gh10 (clvl 70, elite bases of the same weapon classes: Phase Blade, Berserker
+  Axe, Colossus Blade, Legendary Mallet, Bone Knife, Suwayyah, Archon Staff, Thresher, Hyperion Spear): the Barbarian
+  lived through both halves (60 hops, 24 potions, 14 get-hits: its packs die fast), the Sorceress died at hop 7.
+  gh11/gh12 (gh10 saves, Cold Plains, 40 hops a half, `/players 2`; gh12 drinks below 0.62 of the orb): Sorceress 6
+  and 3 (deaths at hops 3–8), Amazon 12 (death after the belt), Necromancer 7 (8 throws, 20 blocks), Paladin 28 (18
+  throws, 72 blocks, 14 inventory drinks).
+  **Checkpoint** (`2026-10-27-anim-p2-ckpt1.lst`, 16 kept logs; `check --review` output
+  `2026-10-27-anim-p2-check-ckpt1.txt` `1ad72874…`; summary with part 1 `2026-10-27-anim-p2-summary-ckpt1.txt`):
+  every kind 0 mismatched (rate 36 521, schedules 3 519, dispatch 5 714, fire 5 745, steps 12 235, `GetHitRoll` 1 400,
+  block gate 392). **Met so far:** the catalogue queue: 83 dispatches of `CQ`-queued events after a catalogue cancel
+  compared, 0 uncompared (sp-pal-chg2, Charge), 134 dispatches 0–4 frames after a catalogue cancel compared; the
+  Necromancer's throws (30 with part 1). **Short** (with part 1): get-hits 222 in all, `get-hit rates30` 1 for the
+  Sorceress and Barbarian, 0 for the others; blocks `rates30` 2 only for the Paladin, Druid, Assassin; throws Paladin
+  21, Druid 0; second A1 record none; third FCR rate for the Amazon, Barbarian, Assassin; every rare branch not yet
+  staged. Kept: `workspace/logs/anim/2026-10-27-anim-p2-manifest-ckpt1.sha256` (`256719e3…`, 120 lines, base
+  `workspace/logs/anim/`, `sha256sum -c` passes): the 16 kept logs and the 3 aborted ones (gh9-bar-t1, gh11-ama-t0,
+  gh12-bar-t0: stopped mid-session, development logs, not in the list), pilot outputs, screenshots, batch outputs,
+  the 31 saves, the list, the check and the summary. Development: `dev-p50f-manifest.sha256` (12 lines, same base).
+  **Resume (next lane, same branch and worktree, slot 1, aside tag `p50f`, saves
+  `workspace/logs/anim/saves-2026-10-27-anim-p2/`):** the batch to run is the rest of batch 9: `gh12-bar-t0`
+  `gh12-dru-t0 gh12-ass-t0 th-dru gh12-<cls>-t1` (7) `gh12-<cls>-t2` (7) `sp-ass-bos2 sp-pal-slow`, then a second seed
+  per class and tier until each FHR rate has 30 (a gh12 session gives 6–28 get-hits; the Sorceress needs a sturdier
+  route, e.g. Cold Plains with a mercenary or more Dexterity, or name her short); the run's turn to a walk (a t1
+  recipe with low stamina and `r` pressed) and the player knockbacks are not staged by any session yet; `VASCHTH`: no
+  stock state transforms a player into the vampire (States.txt's transform rows are 63, 93, 101, 119, 139, 140, 176,
+  177), to be stated with that check. Then the closing check over part 1's and part 2's lists, the record section,
+  the findings' run sections (raise `sub_005417D0_UnitQueueEvent` under review-fix 14), the review-fixes pass, the
+  review request (`tools/backlog.py new`) listing the new recipes for `RECIPE_BASES`, and the ledger row with "—".

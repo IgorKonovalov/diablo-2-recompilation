@@ -2532,6 +2532,24 @@ def cmd_explore(args):
     bad = set()
     hist = []
     npot = 0
+    belt_used, inv_used = [0], [0]
+
+    def drink(col):
+        """a life potion: belt column col until --belt-life belt drinks are spent, then (--inv-potions N) the next of
+        the N inventory cells, column by column: the inventory opened, the cell right-clicked, the inventory closed
+        (plan 0050 Phase 2 part 2); returns what was drunk"""
+        belt_used[0] += 1
+        if not args.inv_potions or belt_used[0] <= args.belt_life or inv_used[0] >= args.inv_potions:
+            p.potion(col)
+            return "belt %d" % col
+        c, r = divmod(inv_used[0], 4)
+        inv_used[0] += 1
+        p.dpy.key("i")
+        time.sleep(0.4)     # gh9-bar-t0: four drinks 0.12 s after the key left the orb at 0.09; dev-inv2 (1 s) drank
+        p.dpy.click(p.off[0] + args.inv_x0 + 29 * c, p.off[1] + args.inv_y0 + 29 * r, button=3, hold=0.05)
+        time.sleep(0.2)
+        p.dpy.key("i")
+        return "inventory %d,%d" % (c, r)
     skip = set()
     cache = None
     stuck = 0
@@ -2655,8 +2673,7 @@ def cmd_explore(args):
                     if hpb is not None and args.dead_below <= hpb < args.drink:
                         npot += 1
                         col = [c for c in (1, 2, 3, 4) if c != args.mana_col][npot % 3]
-                        p.potion(col)
-                        print("hop %d: life %.2f in a burst, potion %d" % (k, hpb, col))
+                        print("hop %d: life %.2f in a burst, potion %s" % (k, hpb, drink(col)))
         if args.potion and k % args.potion == 0:
             p.potion(1 + (k // args.potion) % 4)
         hp = p.hp()
@@ -2667,8 +2684,7 @@ def cmd_explore(args):
                 break
         if hp is not None and hp < args.drink:
             npot += 1
-            p.potion(1 + npot % 4)
-            print("hop %d: life %.2f, potion %d" % (k, hp, 1 + npot % 4))
+            print("hop %d: life %.2f, potion %s" % (k, hp, drink(1 + npot % 4)))
         if args.shots and k % args.shot_every == 0:
             p.shot(os.path.join(args.shots, "pilot%s-%04d.png" % (args.shot_tag, k)))
         if args.verbose or k % 10 == 0:
@@ -3242,6 +3258,11 @@ def main():
     ap.add_argument("--merc-drink", type=float, default=0, help="farm, hunt: give the mercenary a belt potion "
                     "(Shift + column key) below this fill of its most seen MON life (0: never)")
     ap.add_argument("--drink", type=float, default=0.6, help="drink a belt potion below this life-orb fill")
+    ap.add_argument("--inv-potions", type=int, default=0, help="explore: after --belt-life belt drinks, drink the "
+                    "next of this many inventory potions (cells column by column from the first; plan 0050 P2 part 2)")
+    ap.add_argument("--belt-life", type=int, default=12, help="explore --inv-potions: belt drinks before the inventory")
+    ap.add_argument("--inv-x0", type=int, default=432, help="explore --inv-potions: window x of the first cell's centre")
+    ap.add_argument("--inv-y0", type=int, default=330, help="explore --inv-potions: window y of the first cell's centre")
     ap.add_argument("--drink-in-burst", action="store_true", help="explore: also sample the life orb after each "
                     "click of a burst and drink below --drink (plan 0050 Phase 2, the get-hit sessions)")
     ap.add_argument("--dead-below", type=float, default=0.05,
