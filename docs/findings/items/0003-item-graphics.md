@@ -98,9 +98,9 @@ references, [item-palette.md](../../formats/item-palette.md)); each was re-read 
 | `0x0062E8D0` | `sub_0062E8D0_ItemVarInvGfx` | item type `+0x23` | I |
 | `0x0062E920` | `sub_0062E920_ItemInvGfxName` | item type `InvGfx[i]` | I |
 | `0x006283F0` | `sub_006283F0_ItemInvGfxIndex` | item data `+0x49` | I |
-| `0x00627E70` | `ITEMS_GetQuality` | item data `+0x00`, 2 for a non-item | I |
+| `0x00627E70` | `ITEMS_GetQuality` | item data `+0x00`, 2 for a non-item | C (items/0010 H6e1) |
 | `0x00629DA0` | `ITEMS_GetFileIndex` | item data `+0x28` (unique/set row) | I |
-| `0x006280A0` | `ITEMS_CheckFlags` | item data `+0x18 & mask` | I |
+| `0x006280A0` | `ITEMS_CheckFlags` | item data `+0x18 & mask` | C (items/0010 H6e1) |
 | `0x0062BC20` | `sub_0062BC20_ItemMaxSockets` | type `MaxSock1/25/40` by level, capped | (`C` since the `lane/h2b` review: run:2026-10-20-sweep-items-chain) | C |
 | `0x00483470` | `UNIQUEITEMS_GetRecord` | row → `0x14C`-byte record | I |
 | `0x00633EE0` | `MAGICAFFIX_GetRecord` | 1-based affix id → `0x90`-byte record | I |

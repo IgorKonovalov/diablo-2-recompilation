@@ -217,7 +217,7 @@ data/0001). Phase 1b (2026-10-11) then compared the finished claims with two reg
 | `0x006556E0` | `sub_006556E0_SuperUniqueGet` | `superuniques` record (0x34 B) or 0 | I |
 | `0x00451F80` | `MONSTATS_GetRecord` | `monstats` record (0x1A8 B) by index or 0 | C |
 | `0x006335F0` | `ITEMS_GetRecord` | `g_pItems` record (0x1A8 B) by index or 0 | I |
-| `0x00628700` | `ITEMS_GetType` | item record `+0x11E` (`type`) | I |
+| `0x00628700` | `ITEMS_GetType` | item record `+0x11E` (`type`) | C (items/0010 H6e1) |
 | `0x00628860` | `ITEMTYPES_IsThrowable` | itemtypes record `+0x10` (`Throwable`) | C |
 | `0x00633680` | `sub_00633680_ItemIndexByCode` | Items index of a 4-byte code (code tree 0x0096BCC4); `lsd ` → 31 logged ([§ Plan 0038 batch H2c](#plan-0038-batch-h2c-2026-10-21)) | C |
 | `0x00629A90` | `ITEMS_IsType` | item index is of type t (`type`, then `type2`, through the equivalence bitmap) | I |
