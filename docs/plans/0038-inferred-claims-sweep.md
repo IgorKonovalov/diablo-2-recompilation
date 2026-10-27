@@ -5441,3 +5441,37 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Bookkeeping.** Review-fixes Seen lines: spec-writer 2 and 9. The review request and the counts entry closed; the
     S2c entry stays open for (d) (vendors, H6c). Ledger: the lane row filled (usage from the orchestrator: 235 263
     tokens, 78 tools, 23 min; accept with fixes, 4: overclaim 2, wrong anchor 2); the review row added, usage "—".
+- **2026-10-27 — H6c (`vendors`) filed (reverser, `lane/h6c`, harness slot 1, from `main` `ad8b8cd0`; `main`
+  `ffa5b957` merged).** Run id run:2026-10-27-sweep-vendors, record in
+  [items experiments](../findings/items/experiments.md#run2026-10-27-sweep-vendors), evidence in
+  [items/0009 § Plan 0038 batch H6c](../findings/items/0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors).
+  - **Built:** logger `tools/gdb/h6c.gdb` (`vendors.gdb`'s files) + `tools/gdb/h6c.py` (the town-leave call site, the
+    level-up note, the interaction set and clear, the hireling build's caller, each stock item's tab, placement and
+    cell, the inventories at builds, opens and windows, the creation record at IC0, purchases and sales), session driver
+    `tools/h6c_sessions.py` (H6b's loop; `BUY:`/`GBUY` tokens resolved from the log for `economy_sessions.py act`),
+    checker `tools/sweep_h6c.py logs|pairs|hb|fails|static`, a `tools/vendors.py` branch (an `ITEMS_CreateForStore`
+    call outside a build, a gold pile at 0x0055A18D, counted and skipped; run:2026-10-15-vendors unchanged), four
+    recipes `tools/d2s_recipes/vend-h6c-*.json` (rows in `tools/test_d2s.py`).
+  - **Sessions:** 8 launches, 6 kept (Normal clvl 1 in Act I: gamble windows, sales, purchases, a reopen, the walk out;
+    Normal clvl 30 from Act IV: Drognan's reopens around an act change, a level-up and a town entry; Hell clvl 99 in
+    Act V: Larzuk, Anya, Malah, Asheara at ilvl 104, gamble windows, a sale and purchases; two Larzuk rebuild loops,
+    one ended by a death in the Frigid Highlands; Nightmare clvl 19: six Fara builds at ilvl 24), 2 development logs.
+    Lessons: the tab of a store page is page + 1 (the trade window's labels); the Act IV start and H4a's fixed waypoint
+    click reach Lut Gholein reliably where the Lut Gholein start did not; an in-act waypoint in Hell without Energy
+    Shield killed the character at arrival; a stale rebuild needs a pause of 240 s before the act change.
+  - **Check:** `vendors.py check` over the 6 kept logs: 17 stock builds, 40 gamble windows, 1 646 creations through
+    the item chain, **0 mismatches**; `sweep_h6c.py logs`: **9 616 counted checks, 0 bad**.
+  - **Ledger (13): raised 7, raised in part 2, shortfall 4** (inventory § 2.6 H6c block). Corrections and refinements:
+    Asheara's hirelings are built at the interaction start, so the trade-first order is never taken (vend 14);
+    `PlayerInteractEnd` runs at a player unit's free and reaches `NpcStorePlayerLeave` only with an interaction open,
+    met in run:2026-10-20-two-clients's kept logs (vend 2); the 32-failure test sits only after normal copies and
+    permanent items (vend 5, at most 27 failures in 17 builds). Proposed d-2c: vendors 29 and 32. No class move filed;
+    totals unchanged: static 567, harness 513, c-emu 0, blocked 427, deferred 2, raised 17: 1 526.
+  - **S2c pieces:** vend 22 (tab and cell) met, its cell search `[I]`; vend 26 (`+0x18`, `+0x28`) met, proposed raised.
+    The S2c harness-pieces entry is annotated: every piece has run.
+  - **Symbols (rule 14), I → C:** `VENDOR_IsPermanent`, `sub_00576F50_StoreItemSold`, `sub_0062E880_ItemStorePage`;
+    new `sub_00554120_PlayerSetInteract`, `sub_00554190_PlayerClearInteract` (I).
+  - **Backlog:** review request
+    [2026-10-27-reverser-architect-review-lane-h6c-plan-0038-batch-h6c](../backlog/2026-10-27-reverser-architect-review-lane-h6c-plan-0038-batch-h6c.md)
+    filed. Slot 1 stopped, saves restored (empty, no aside).
+  - **Next:** the `lane/h6c` review; items/vendors is then ready for its Phase 3 re-tag (S2c and H6c).

@@ -1519,6 +1519,42 @@ Net effect on the totals: harness −2 (515 → 513), d-none +2 (298 → 300), b
 harness 513, c-emu awaiting a batch 0, blocked 427** (d-none 300, d-edit 73, d-sim 28, d-2c 8, d-owner 10, d-0032 8),
 **deferred 2, raised 17: 1 526.** § 5 marks H6a done. **Phase 3 ready:** items/cube (S2c and H6a, both accepted).
 
+**H6c (filed 2026-10-27, reverser, `lane/h6c`): 13 statements of items/vendors (rows 2, 5 ×2, 12, 14, 15, 18, 29, 30,
+32, 33, 34, 36) and the S2c pieces of vendors 22 and 26.** run:2026-10-27-sweep-vendors, 6 kept sessions on slot 1 (8
+launches, 2 development logs; expansion; Normal, Nightmare and Hell; tool-built saves at clvl 1, 19, 30 and 99),
+logger `tools/gdb/h6c.gdb` (`vendors.gdb`'s files and the new `h6c.py`), checks over the 6 kept logs:
+`tools/vendors.py check` **17 stock builds, 40 gamble windows, 1 646 creations through the item chain, 0 mismatches**
+(`check-vendors.txt`), `tools/sweep_h6c.py logs` **9 616 counted checks, 0 bad** (`check-sweep_h6c.txt`); the
+regression of run:2026-10-15-vendors still 0 mismatches; rescans of run:2026-10-20-two-clients (`check-pairs.txt`) and
+run:2026-10-15-vendors (`check-hb.txt`, `check-fails-vendors-run.txt`). The evidence is in
+[items/0009 § Plan 0038 batch H6c](../../findings/items/0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors),
+whose ledger gives each statement's `[C]` part and remainder.
+
+- **Raised (7):** vendors 2 (L66, with a refinement: the path runs at a player unit's free, and is reached only when a
+  client leaves with an interaction open: 2 of run:2026-10-20-two-clients's leaves), 12 (L256), 14 (L261, with a
+  correction: the interaction start builds Asheara's hirelings before any menu action, so the trade-first order is
+  never taken), 15 (L272), 30 (L607), 33 (L647), 36 (L762).
+- **Raised in part (2):** vendors 18 (L284: a town entry, a reopen and a level-up; no quest event), 34 (L650: the
+  purchases, and sales copied or refused by the permanent test, its clause outside Normal and the gamble view; the
+  refusals by `Cracked`, base type 7, flag `0x1000000` and `0x0055F590` not reached).
+- **Shortfall (4):** vendors 5 L123 and L368 (no build passed 32 failures: at most 27, Larzuk in Hell at ilvl 104;
+  the limit is tested only after a normal copy and a permanent item, a refinement), 29 (the gamble open with an
+  inventory left) and 32 (the free at a player's removal at a gambler; the same items within one interaction).
+- **Pieces:** vendors 22 (stays counted as S2c, raised in part): the tab of all 1 086 stock items, 901 cells, tab 2 only
+  after a failed tab-1 try, met; the cell search stays `[I]` (a column-major first fit gives 841 of 901). vendors 26: the
+  1 646 store creation records' `+0x18` = 4 and `+0x28` = 1, met.
+- **Proposed for the review** (not filed as moves): vendors 29 and 32 → d-2c (with one player every close sends the
+  cancel, and `NpcInteractRemove` frees the gamble inventory when the list empties, 0x00572FAF); vendors 26 (S2c) →
+  raised.
+- Symbols I → C (rule 14): `VENDOR_IsPermanent`, `sub_00576F50_StoreItemSold`, `sub_0062E880_ItemStorePage`; new
+  `sub_00554120_PlayerSetInteract`, `sub_00554190_PlayerClearInteract` (I).
+
+No class move is filed. Net effect on the totals: none. Taken against `main` after merging it into the lane
+(`ffa5b957`; the `lane/h6a` review's two moves are the last on `main`): **static 567, harness 513, c-emu awaiting a
+batch 0, blocked 427** (d-none 300, d-edit 73, d-sim 28, d-2c 8, d-owner 10, d-0032 8), **deferred 2, raised 17:
+1 526.** H6c's ledger: raised 7, raised in part 2, shortfall 4: 13. If the two d-2c proposals stand: harness 511, d-2c
+10, blocked 429.
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is

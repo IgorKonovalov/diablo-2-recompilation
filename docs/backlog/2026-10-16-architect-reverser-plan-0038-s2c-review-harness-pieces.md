@@ -47,3 +47,13 @@ side whose first pick lacks a candidate). Aff 14: row 17 on a magic tower shield
 level-window half met; "only" has no separating stock case. Both rows stay counted as S2c, raised in part
 ([items/0008 § Plan 0038 batch H6a](../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube)).
 The entry stays open for H6c (H6b's pieces met on `main`, `lane/h6b`).
+
+*2026-10-27 (reverser, `lane/h6c`, plan 0038 batch H6c, run:2026-10-27-sweep-vendors):* **H6c pieces met.** Vend 22:
+`sub_0062E880_ItemStorePage` returned the item type's StorePage byte for all 1 086 stock items, and the 901 placed items
+lie on their tab, inside the 10 × 10 grid, none overlapping, tab 2 only after a failed tab-1 try (171) and 185 parked;
+the cell search itself stays `[I]` (a column-major first fit gives 841 of 901), so the row stays raised in part. Vend
+26: all 1 646 store creation records have `+0x18` = 4 and `+0x28` = 1 (and `+0x80` = 2) at
+`ItemCreateByQuality`'s entry, proposed raised. Both rows stay counted as S2c
+([items/0009 § Plan 0038 batch H6c](../findings/items/0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors)).
+With H6a's and H6b's pieces met on `main`, every piece this entry carries has run; it can close at the `lane/h6c`
+review.

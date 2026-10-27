@@ -1010,9 +1010,9 @@ passes the level cap, is skipped) reproduces run:2026-10-15-vendors with 0 misma
   `sub_00537190_GambleInvFree`), which with one player is every close, and the client sends the gamble action only
   from the NPC menu. A second interactor keeps the list non-empty.
 - **vend 30** (L607, the gamble `lvl` clamped to 5..99) **raised.** [C] Of 560 `lvl` draws, 26 at clvl 1 fell below 5
-  (−4 to 4: 1, 3, 3, 3, 1, 6, 6, 2, 1) and were clamped to 5, and 232 at clvl 99 rose above 99 (100 to 103: 65, 55, 53,
-  59) and were clamped to 99; every window reproduces from the clamped value (the pick's bound `countUpTo[lvl]`, the
-  upgrade level and the creation `ilvl`). (0x005788A3–0x005788D6, fn:GAMBLE_BuildInv@0x00578790,
+  (−4 to 4: 1, 3, 3, 3, 1, 6, 6, 2, 1) and were clamped to 5, and 232 at clvl 99 rose above 99 (100 to 103: 65, 55,
+  53, 59) and were clamped to 99; every window reproduces from the clamped value (the pick's bound `countUpTo[lvl]`,
+  the upgrade level and the creation `ilvl`). (0x005788A3–0x005788D6, fn:GAMBLE_BuildInv@0x00578790,
   run:2026-10-27-sweep-vendors)
 - **vend 32** (L642, the gamble inventory freed at the interaction's end; the same items within one) **shortfall;
   proposed d-2c.** [C] The interaction's end that frees (vend 2's path) was met only at the joiner's leaves at Kashya
