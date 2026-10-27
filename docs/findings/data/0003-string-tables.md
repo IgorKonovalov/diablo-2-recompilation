@@ -92,10 +92,10 @@ Names are ours.
 | `0x00524C60` | `STRTABLE_FindInTable` | probe ≤ `max_probes` nodes, skip unused | C |
 | `0x00524D30` | `STRTABLE_GetByKey` | key → index (patch, expansion, string) | C |
 | `0x00524E20` | `STRTABLE_GetStringByKey` | key → converted value | I |
-| `0x00524E40` | `STRTABLE_Unload` | reference count; frees on 0 | I |
+| `0x00524E40` | `STRTABLE_Unload` | reference count; frees on 0 | C (H3b) |
 | `0x00525020` | `STRTABLE_Crc16` | CRC-16, init `0xFFFF`, table-driven | C |
 | `0x00525920` | `STRTABLE_LoadFile` | load, CRC check, offset checks | C |
-| `0x005259C0` | `STRTABLE_LoadAll` | the three files, value conversion | I |
+| `0x005259C0` | `STRTABLE_LoadAll` | the three files, value conversion | C (H3b) |
 | `0x006117B0` | `STRTABLE_KeyToIndex` | excel converter: 0 → 5382 | C |
 | `0x00526100` | `UNICODE_Utf8DecodeOne` | one UTF-8 sequence → u16, table-driven, −1 when bad or cut | C |
 | `0x00526320` | `UNICODE_Utf8ToUtf16` | UTF-8 → at most limit − 1 units | C |
@@ -192,6 +192,8 @@ module, string `0x006E03C8`), at load for every node and once per not-found key 
   by the shipped files; `RUS`, the one other reachable value, has no `.tbl` file in any archive or loose in the
   install, so `STRTABLE_LoadAll` would crash at `string.tbl` (§ Answer, Missing tables). Not run, per the plan.
   (fn:LNG_GetLanguageIndex@0x00525150, data/0002)
+- *Correction (2026-10-27, plan 0038 H3b, run:2026-10-27-sweep-data-load):* run with a loose `0B` and `-direct`, the
+  program ends at the `CYR` font map, before `string.tbl` (§ Plan 0038 batch H3b). (fn:UNICODE_LoadFontMap@0x00527790)
 
 ## Run
 
@@ -344,6 +346,62 @@ stays as § Walkthrough and the spec state it.
   *Review note (architect, 2026-10-17):* a key found nowhere goes to the not-xlated helper 0x00524AC0, whose cache miss
   allocates; only its cache hit was run. The returned index 0 is set after the helper returns (`xor ax, ax` at
   0x00524E0C), so it does not depend on the helper's path, but the text a cache miss returns is not covered.
+
+## Plan 0038 batch H3b (run:2026-10-27-sweep-data-load)
+
+Harness batch H3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the rows of
+[inventory data-strings](../../plans/0038-inventory/data-strings.md) and data-excel row 50 whose finding is this one.
+Seven program runs on slot 2 with gdb on the game before its startup code (`tools/d2run.py --early`); sessions,
+loose files and commands as in [data/0002 § Plan 0038 batch H3b](0002-mpq-precedence.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load)
+and the record [run:2026-10-27-sweep-data-load](experiments.md#run2026-10-27-sweep-data-load). Counts are printed by
+`python3 -I tools/sweep_h3b.py check` (`check/check-h3b.txt`); `tools/tbl.py check` reproduces every `SIDX` and `SKEY`
+line of the six runs that load strings (0 mismatches, `check/tbl-check-h3b.txt`). Where a statement above is tagged
+inferred and this section raises it, the tag and the run given here are the current ones.
+
+**What a program run does with the string tables** (all six runs that reach the menu, the same sequence):
+`STRTABLE_LoadAll` from 0x004359F2 (count 0 → 1), `STRTABLE_Unload` from 0x00435C8D (1 → 0), then `STRTABLE_LoadAll`
+from 0x0044B911 (0 → 1) before `DATATBLS_LoadAll`, and after the game is left, `STRTABLE_Unload` from 0x0044B976
+(1 → 0) after the excel unload; the main menu's next `STRTABLE_LoadAll` is again from 0x004359F2, and the program exit
+unloads from 0x00435C8D. The third caller, 0x00441B91, ran in none of the runs, and the count never went above 1.
+
+- **data/strings row 6** (spec L114, A1: `LoadAll`'s reference count, font map, three tables, UTF-16 conversion)
+  **raised in part.** [C] Each of the 18 calls made with count 0 (three per run) loads, by `FILE_LoadWhole` and in this
+  order, `data\local\font\LATIN\default.map`, then `data\local\lng\ENG\string.tbl`, `patchstring.tbl` and
+  `expansionstring.tbl` (the expansion argument is 1, `d2exp.mpq` being present), returns 1 and leaves count 1 with the
+  three buffers the loads returned. The conversion: every logged text (`SIDX`, `SKEY`) is the model's UTF-16 conversion
+  of the node. **Remainder `[I]`:** the call with the tables already loaded (count + 1, no load): no run reached it.
+  (fn:STRTABLE_LoadAll@0x005259C0, fn:STRTABLE_LoadFile@0x00525920, fn:UNICODE_LoadFontMap@0x00527790,
+  run:2026-10-27-sweep-data-load)
+- **data/strings row 2** (spec L45, release by reference count through `STRTABLE_Unload`) **raised in part.** [C] The
+  18 calls (three per run) each take the count from 1 to 0 and leave the three file buffers (0x008829B4, 0x008829D0,
+  0x008829D4) at 0. **Remainder `[I]`:** a release that leaves the count above 0 (the tables kept): the count was never
+  above 1. (fn:STRTABLE_Unload@0x00524E40, run:2026-10-27-sweep-data-load)
+- **data/strings row 29, data/excel row 50** (spec strings L384, excel L520: the language from the first byte of
+  `data\local\use`, values above 13 → 0) **raised.** [C] In every run the first `LNG_GetLanguageIndex` call finds its
+  flag (0x008829F0) clear, reads `data\local\use` through `FILE_LoadWhole` (one read per run) and returns the file's
+  first byte, clamped: the archive copy's `00` (stock, txt, loose, dtxt) and the direct run's loose `00 00 00 00` → 0,
+  and the tables load from `lng\ENG\`; the rus run's loose `0B` → 11, after which the loads use the `CYR` font charset;
+  the clamp run's loose `0E` (14) → 0, and that run loads `lng\ENG\` and plays normally. The 8 calls logged with their
+  return (5 in rus) give the same value, and the cached byte (0x008829EC) holds it at every 30-second count over the
+  later calls (20 175 in stock). The 14 separates the clamp from a plain byte read, the 11 the byte read from a
+  constant 0. (fn:LNG_GetLanguageIndex@0x00525150, fn:LNG_GetLanguageCode@0x00525260, run:2026-10-27-sweep-data-load)
+- **data/strings row 22** (spec L294, rare names: the load-time key into `+0x0C`, the client shows that index or the
+  raw name) **raised in part.** [C] Hovering the four rare items of `H3bRare` (names (160, 121), (200, 10),
+  (170, 50), (230, 100)) made the client's two name calls show 7 indices: name 1 from the call returning to 0x0048C5FD,
+  name 2 from 0x0048C6E0, each equal to `STRTABLE_GetByKey` of the merged record's `name` (id − 1 into `raresuffix` then
+  `rareprefix`), which is the `+0x0C` the load stored; the format line used string 1718 (`RareFormat`). **Remainder
+  `[I]`:** the raw name shown when the stored index is 0: every hovered record had a found key.
+  (fn:sub_00633F40_LoadRareAffixes@0x00633F40, fn:RAREAFFIX_GetRecord@0x00634260, 0x0048C5FD, 0x0048C6E0,
+  run:2026-10-27-sweep-data-load)
+  - *Seen, not counted:* the jewel's name 1 (230) is past the 201 merged records; no line was logged for it and the
+    screenshot shows the name line as `Shank` alone, as "a missing record leaves its buffer empty" says (§ D; the
+    statement keeps its tag: a screenshot is not a logged value).
+- *Correction to § Language* ("`STRTABLE_LoadAll` would crash at `string.tbl`"): in the rus run the program ended
+  earlier, at the font map. The loads after the byte used the `CYR` charset: `Font16.dc6` and `Font16.tbl` under
+  `DATA\LOCAL\Font\CYR\` were not found (each `FindFile` 0, the run going on), then `STRTABLE_LoadAll`'s load of
+  `data\local\font\CYR\default.map` returned 0 and the process exited (code 0377) before any `.tbl` was read.
+  [C] for the order of the failed loads and the exit, [I] for which test ends it (not followed).
+  (fn:UNICODE_LoadFontMap@0x00527790, run:2026-10-27-sweep-data-load)
 
 ## Data touched
 

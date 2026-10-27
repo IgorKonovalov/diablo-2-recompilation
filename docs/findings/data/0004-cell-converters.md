@@ -113,13 +113,13 @@ entry of a table's field descriptor (data/0001 §1).
 | `0x006BD780` | `EXCEL_ParseTxt` | two passes: link registrations, then cells; then the missing-column defaults | C |
 | `0x006117B0` | `STRTABLE_KeyToIndex` | type 0x16 converter: `STRTABLE_GetByKey`, 0 → 5382 | C |
 | `0x00631530` | `sub_00631530_ItemCalcCell` | item calc callback (type 0x19): no cell or an empty expression → −1, else the offset of the compiled expression | I |
-| `0x00636B70` | `GEMS_Load` | `gems` table; fills items `+0x0F0` | I |
+| `0x00636B70` | `GEMS_Load` | `gems` table; fills items `+0x0F0` | C (H3b) |
 | `0x006372C0` | `GEMS_GetRecord` | `gems` row by index, NULL for −1 or out of range | I |
 | `0x00650F00` | `sub_00650F00_MonStatsSpeeds` | monstats `+0x036`/`+0x038` at load | I |
 | `0x00651040` | `sub_00651040_MonClassChain` | monstats `+0x04A`/`+0x04B` at load | I |
 | `0x006510C0` | `MONSTATS_GetClassChainPos` | `(id, &count, &pos)` → pos, from `+0x04A`/`+0x04B` | I |
 | `0x00657010` | `sub_00657010_MonStats2CompList` | monstats2 list column callback (type 0x17): count, `compcode` rows, and `+0x025` | I |
-| `0x00659E60` | `MONEQUIP_Load` | `monequip` table; fills monstats `+0x02A` | I |
+| `0x00659E60` | `MONEQUIP_Load` | `monequip` table; fills monstats `+0x02A` | C (H3b) |
 
 ## Walkthrough
 
@@ -368,6 +368,39 @@ never reached. Spec writes on image addresses: the security cookie (no output de
   (`je 0x006BE022` at 0x006BE001), so such a field keeps the record's zero. A code reading only: no descriptor this run
   emulated had a callback entry without a link, so no case reached the branch (plan 0038 p38s4 review, ruling on S1f
   addition (g)). (fn:EXCEL_ParseTxt@0x006BD780, 0x006BDFFC–0x006BE001)
+
+## Plan 0038 batch H3b (run:2026-10-27-sweep-data-load)
+
+Harness batch H3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), data-excel row 71 of
+[inventory data-excel](../../plans/0038-inventory/data-excel.md). The logger dumps the whole record arrays of items
+(`g_pItems`, the combined 659 records), monstats (734), levels (137), charstats (7) and gems (68) at
+`DATATBLS_LoadAll`'s return and again at the excel unload when the game is left (the call at 0x0044B971), in six runs
+(the rus run loads no table); `python3 -I tools/sweep_h3b.py check` compares every byte with the archive `.bin`
+records (`check/check-h3b.txt`; sessions and record:
+[run:2026-10-27-sweep-data-load](experiments.md#run2026-10-27-sweep-data-load)). Where a statement above is tagged
+inferred and this section raises it, the tag and the run given here are the current ones.
+
+- **data/excel row 71** (spec L697, J4: record bytes no column fills are filled at load; the padding bytes are never
+  written) **raised in part, with a refinement.** [C] In all 60 dumps the bytes that differ from the file lie only in
+  the fields § 3 names (the dtxt run's monstats aside, below), and in every record where they are modelled they hold the model's value
+  (run:2026-10-27-sweep-data-load):
+  - items `+0x0F0` (s32, 4 offsets differ): −1 on the first 68 records (the gem count), then each gem row's index on
+    its item's record, as `GEMS_Load` writes it;
+  - monstats `+0x02A` (s16): the class's first `monequip` row, else −1 (`MONEQUIP_Load`); `+0x036`/`+0x038` and
+    `+0x04A`/`+0x04B` differ from the file (filled) but their values are not modelled here;
+  - levels `+0x16E`/`+0x1BE`: the UTF-16 text of the `LevelName`/`LevelWarp` key (40 units, the 40th forced 0), and
+    `+0x033..+0x035` (below);
+  - gems: no byte differs (`+0x2C` stays 0, as S1b found from the keys).
+  The padding bytes (items `+0x123`, `+0x12E`; monstats `+0x00A..+0x00B` and `+0x00F` bits 5–7; levels
+  `+0x00A..+0x00B`) equal the file in every dump, and every load dump equals its run's unload dump byte for byte, so
+  nothing wrote these records between the load and the excel unload. **Remainder `[I]`:** the values of monstats
+  `+0x036`/`+0x038` and `+0x04A`/`+0x04B`; "never written" beyond that window and for records reached through other
+  pointers. **Refinement:** levels `+0x033..+0x035` are also written at load (the counts of leading non-negative
+  `mon`/`nmon`/`umon` slots, model exact in all 137 records), which J4's list leaves out (tables/Levels has them).
+  In the dtxt run the monstats dumps also differ at `+0x006..+0x007` of one record: the `-direct -txt` compile's own
+  table (data/0001 § Plan 0038 batch H3b, row 27), not a load-time write. (fn:GEMS_Load@0x00636B70,
+  fn:MONEQUIP_Load@0x00659E60, fn:DRLG_LoadLevels@0x0061C540, fn:sub_00650F00_MonStatsSpeeds@0x00650F00,
+  fn:sub_00651040_MonClassChain@0x00651040, run:2026-10-27-sweep-data-load)
 
 ## Data touched
 

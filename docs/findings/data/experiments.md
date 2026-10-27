@@ -469,3 +469,95 @@
   (0x005BDB87); the defaults dispatch at 0x006BDFBE, its 26-entry table at 0x006BE128 and the callback call
   (0x006BDFFC–0x006BE01A: ECX 0, EDX the record, the offset as the first stack argument); the `÷ 3` sequences
   (0x006468BE, 0x00646918). All match the ledgers.
+
+## run:2026-10-27-sweep-data-load
+
+- **Question:** (plan 0038 batch H3b, `data-load`) Do the startup and load steps of data/excel, data/strings and
+  data/README that no attached logger could see (gdb came 3 s after the window) reproduce from program start: the file
+  I/O mode, the archive opens and their list, the file lookup and its sources with and without `-direct`, `-txt`, the
+  language byte, the string-table load and release, the excel load order, the item-code and TC-name lookups, the
+  record bytes filled at load, and the client's rare-name lines?
+- **The start mode (review ruling 3, built and tested before the batch):** `tools/d2run.py --early`. The launcher polls
+  every 2 ms for a descendant whose command line holds `\game.exe` and whose `/proc/<pid>/maps` maps that file at
+  0x00400000, sends it SIGSTOP, forks the driver (which waits for the window itself) and execs gdb on the stopped
+  process; gdb attaches and the script's `continue` resumes it. Tested first off-slot on a stopped two-thread
+  process (attach, resume, normal exit), then on slot 2 with a probe script (the game stopped 0.9–2.0 s after launch;
+  breakpoints at `InitGame`, `InitFileIO`, the archive opens, the language index and both `LoadAll`s hit). The probe
+  runs without `set displaced-stepping off` ended the game at its second breakpoint (exit code 5, an empty
+  `BlizzardError/<time>/Crash.txt` in the game directory, removed); with it, as every harness logger has it, the game
+  ran normally. In the kept runs the stop came 0.50–0.57 s after launch and `XATT` found every startup global still 0.
+- **Setup:** seven runs, single player, expansion, Normal, harness slot 2 only (display `:9`, prefix
+  `workspace/wineprefix-2`, ADR-0011), launched by `tools/h3b_sessions.py run --slot 2 --tag h3b --save
+  workspace/runtime/h3b-chars/H3bRare.d2s --run h3b <session>…` (revision `6b4acfde…` for the first four,
+  `377e7355…` for the last three, which only adds them), each as `tools/d2run.py --slot 2 --early --seed N --gdb
+  tools/gdb/excel.gdb --steps tools/gdb/enter-normal.steps --after 1800 --install h3b <save> --game-dir <dir>
+  [--game-args=…]` (`d2run.py` `d80370bc…`) and then the xdrive steps files `tools/gdb/h3b-hover.steps`,
+  `h3b-leave.steps` (Escape, *Save and Exit*, *Exit* to the main menu), `h3b-cine.steps` (*Cinematics*, the first
+  film, Escape, *Cancel*) and `h3b-quit.steps` (*Exit Diablo II*). Logger `tools/gdb/excel.gdb` (`75ebc28c…`):
+  `tools/gdb/pilot.py` (`1ad48a4c…`), `tools/gdb/strings.py` (`b9ebdb10…`) and `tools/gdb/excel.py` (`0e59d2e7…`;
+  the `X*` lines, documented in its header; record dumps into `$H3B_DUMP`). Breakpoints only print and continue.
+  - **Character** (ADR-0003 tool-built input): `H3bRare`, `python3 -I tools/d2s.py build workspace/merged/data/global/excel
+    tools/d2s_recipes/h3brare.json workspace/samples/d2s-owner/smpsor-l50.d2s workspace/runtime/h3b-chars/H3bRare.d2s`
+    (recipe `52aa64e8…`, save `ce57d8f7…`): four rare items in the inventory, names (160, 121), (200, 10), (170, 50),
+    (230, 100); 230 is past the 201 merged rare-name records. Installed with `--install` on an empty aside `h3b`, the
+    saves directory restored after every run (`saves.py --slot 2 status`: empty, no aside, idle at the end).
+  - **Game directories** (`h3b_sessions.py stage --slot 2`, all under `workspace/wineprefix-2/h3b/`, each a symlink
+    farm of `workspace/runtime/game` plus its own files; removed with `unstage` after the checks, their files hashed in
+    `check/staged-files-h3b*.txt`): `game-txt` (an empty `data/global/excel/`), `game-loose` and `game-direct` (as
+    listed in [data/0002 § Plan 0038 batch H3b](0002-mpq-precedence.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load)),
+    `game-rus` (`data/local/use` = `0B`), `game-clamp` (`data/local/use` = `0E`). The stock run used
+    `workspace/runtime/game` itself. The two `-txt` runs' written `.bin` files are hashed in
+    `check/txt-written-bins-h3b.txt` and `…-dtxt.txt` (the same 90 hashes).
+  - **Runs:**
+
+    | seed | session | directory, switches | play | end |
+    |---|---|---|---|---|
+    | 3101 | stock | `workspace/runtime/game` | hover, leave, cinematic, quit | exited normally |
+    | 3102 | txt | `game-txt`, `-txt` | leave, quit | exited normally |
+    | 3103 | loose | `game-loose` | leave, quit | exited normally |
+    | 3104 | direct | `game-direct`, `-direct` | leave, quit | exited normally |
+    | 3105 | dtxt | `game-txt` (restaged, empty), `-direct -txt` | leave, quit | exited normally |
+    | 3106 | rus | `game-rus`, `-direct` | none (no game) | exit code 0377 at the font map |
+    | 3107 | clamp | `game-clamp`, `-direct` | leave, quit | exited normally |
+
+- **Logs** (workspace, not in git): `workspace/logs/h3b/h3b-s2-<seed>-<session>.log`, the dumps beside each in
+  `…-dump/`, the screenshots in `…-shots/`, the driver output in `.driver.txt` and `h3b-sessions*.driver-main.txt`;
+  manifest `workspace/logs/h3b/h3b-manifest.sha256` (`0b75400a…`, 88 files, `sha256sum -c` from `workspace/logs/h3b`).
+  Development runs (the probes, two early stock runs; no claim rests on them): `workspace/logs/h3b/dev/`, manifest
+  `h3b-manifest-dev.sha256` (`73e35bff…`, checked from `workspace/logs/h3b/dev`).
+- **Procedure:**
+  ```
+  python3 -I tools/h3b_sessions.py stage --slot 2          # the loose files again, byte for byte (staged-files-h3b-2.txt)
+  python3 -I tools/sweep_h3b.py check --written workspace/logs/h3b/check/txt-written-bins-h3b-dtxt.txt \
+      workspace/logs/h3b/h3b-s2-310{1-stock,2-txt,3-loose,4-direct,5-dtxt,6-rus,7-clamp}.log
+      # check/check-h3b.txt, sweep_h3b.py 2872bc90…; TOTAL bad=0 (check-h3b-rev1.txt, by 8a60af88… with the
+      # directories still in place after the runs, is the same byte for byte)
+  python3 -I tools/h3b_sessions.py unstage --slot 2
+  python3 -I tools/sweep_h3b.py txtfiles <game-txt>/data/global/excel     # check/txtfiles-h3b.txt, …-dtxt.txt
+  CHECK txtfiles written=90 identical=89 different=1                      # monstats.bin
+  python3 -I tools/tbl.py check workspace/merged/data/local/lng/eng <log>  # check/tbl-check-h3b.txt: 0 mismatches
+  ```
+  Per run (stock / txt / loose / direct / dtxt / rus / clamp):
+
+  | check | result |
+  |---|---|
+  | early | `XATT` early in all 7; `InitFileIO` `ECX` 0/0/0/1/1/1/1, both direct flags equal after it |
+  | archives | 12 startup opens in A1's order and priorities, 10 handles, in all 7; A2's list after every open (22 / 14 × 6 snapshots); stock: one `d2video` open at 1000, front of the 1000 band, 5 game archives closed and reopened around it |
+  | files | `FindFile` in `FILE_LoadWhole` 442 / 530 / 418 / 418 / 521 / 8 / 413, every one as A3; buffers equal to the source the model picks (the 3 rus failures excepted, which return 0); disk 0 / 0 / 0 / 5 / 95 / 1 / 1; all `FindFile` calls 1 107 / 1 186 / 1 074 / 1 072 / 1 173 / – / 1 064 |
+  | language | `use` byte 00 / 00 / 00 / 00 (4 bytes) / 00 / 0B / 0E → 0 / 0 / 0 / 0 / 0 / 11 / 0 |
+  | strings | 3 loads at count 0 and 3 releases to 0 per run (not rus); no count above 1 |
+  | excel | one `LoadAll`; 73 / 91 / 73 / 73 / 91 / – / 73 tables, each with its `.bin` read; the 18 `-txt`-only calls only under `-txt`; the same order in every run |
+  | lookups | `ITEMS_GetByCode` 127 / 323 / 126 / 125 / 321 / – / 125 lines (29 in play); `EXCEL_FindName` on `g_TCLink` 503 / 858 / 503 / 503 / 858 / – / 503; `TC_GetByName` 0 hits |
+  | records | 10 dumps per run (not rus), every byte as listed in data/0004 § H3b |
+  | hover (stock) | 7 rare-name indices at the two client calls, each the record's load-time key index; 1 id without a record |
+  | rus | the first failed load `DATA\LOCAL\Font\CYR\Font16.dc6`, then `Font16.tbl`, `default.map`; no `LoadAll` returned |
+
+- **Conclusion:** the start mode works, and every logged event reproduces with 0 mismatches. Per-statement rulings are
+  in the "Plan 0038 batch H3b" sections of [data/0001](0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
+  [data/0002](0002-mpq-precedence.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
+  [data/0003](0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
+  [data/0004](0004-cell-converters.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load) and
+  [player/0001](../player/0001-creation.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load). Not reached: a
+  string-table load or release with the count above 1, the third `STRTABLE_LoadAll` caller 0x00441B91, the raw rare name
+  for a stored index of 0, the charstats name fallback, and any TC name lookup in play.
+  (fn:STRTABLE_LoadAll@0x005259C0, fn:STORM_FindFile@0x00417F10, fn:DATATBLS_LoadAll@0x00619300)

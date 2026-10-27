@@ -307,6 +307,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/h1b` review | 0038 H1b | architect-review | 186 510 | 93 | 18 | — (static, objdump, no Ghidra) | gave accept with fixes | — (on the lane row) |
 | 2026-10-27 | `lane/p50b` | 0050 P1.2 | reverser-static | 383 385 | 155 | 49 | no slot, one Ghidra (`ghidra-p50b`, `-Xmx3G`) | accept with fixes (rulings: the bonus and advance `[C]` stand as maps, scheduled modes keep their events `[I]`; classic monsters' S1–S4 moving rate a Phase 2 required case; the negative-factor wrap and the no-event case not required, stock reach to the archivist; MonStats § Timing `[L]` to the archivist; blind rule met) | 6: miscount 2, omission 2, overclaim 1, misread 1 (the `UpdateAnimRate` breakdown and the manifest's "26 lines" for 27; the second `+0x4C` writer `0x00621780` and the Holy Shield wrap bound; "the unit's full stat" inside the bonus `[C]`; "every branch but block" for the floor) |
 | 2026-10-27 | `lane/p50b` review | 0050 P1.2 | architect-review | 180 535 | 72 | 14 | — (static, objdump, re-emulation under `MemoryMax=4G` on `ghidra-p50b`) | gave accept with fixes | — (on the lane row; P1.3 may start) |
+| 2026-10-27 | `lane/h3b` | 0038 H3b | reverser-harness | — | — | — | slot 2 | — | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

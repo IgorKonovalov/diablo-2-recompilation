@@ -2,7 +2,11 @@
 """Plan 0038 batch H3b (data-load): the checks over the session logs of tools/gdb/excel.gdb (tools/h3b_sessions.py).
 
 Usage:
-  python3 -I tools/sweep_h3b.py check LOG [LOG ...]          # every check, per log, then the totals
+  python3 -I tools/sweep_h3b.py check [--written HASHES] LOG [LOG ...]   # every check, per log, then the totals
+
+The loose and written files are read from each log's game directory, which tools/h3b_sessions.py stage --slot 2
+recreates byte for byte (the loose ones); the .bin files a -direct -txt run wrote are gone after unstage, so --written
+gives their sha256sum list (check/txt-written-bins-h3b-dtxt.txt), used where the file is absent.
   python3 -I tools/sweep_h3b.py txtfiles DIR                 # the .bin files a -txt session wrote into DIR against
                                                              # the archive copies the game loads instead
 
@@ -276,6 +280,8 @@ def check_files(S, C, A):
             n_ff += 1
             path = r["name"]
             loose = ci_exists(S["dir"], path)
+            if loose is None and WRITTEN and path.lower() in written and r["ret"] == 2:
+                loose = "(written by the run)"   # the directory is gone: the kept hash list stands for it
             if path.lower() in written and path.lower() not in went_disk and r["ret"] == 1:
                 loose = None           # not written yet: the archive model applies
                 n_before_write += 1
@@ -307,6 +313,15 @@ def check_files(S, C, A):
                     C.note("line %d: %s, an earlier write, size %d against its LoadTable %r" % (n, path, d["size"], tb))
                 else:
                     n_bytes += 1
+            elif t == "XFLW" and d.get("sha256") and len(d["ff"]) == 1 and want == 2 and path.lower() in written \
+                    and WRITTEN:
+                # a file the run wrote, checked against the hash list kept after the run (--written)
+                if d["sha256"] != WRITTEN.get(path.split("\\")[-1].lower()):
+                    bad += 1
+                    C.note("line %d: %s bytes differ from the kept hash" % (n, path))
+                else:
+                    n_bytes += 1
+                    n_excel += 1
             elif t == "XFLW" and d.get("sha256") and len(d["ff"]) == 1:
                 fpath = src if want == 2 else src[1]
                 if d["size"] != os.path.getsize(fpath) or d["sha256"] != sha(fpath):
@@ -775,7 +790,16 @@ def cmd_txtfiles(d):
     return 0
 
 
+WRITTEN = {}
+
+
 def main(argv):
+    if len(argv) >= 3 and argv[0] == "check" and argv[1] == "--written":
+        # sha256sum lines of the .bin files a -direct -txt run wrote (check/txt-written-bins-h3b-dtxt.txt)
+        for ln in open(argv[2]):
+            h, _, name = ln.strip().partition("  ")
+            WRITTEN[name.lower()] = h
+        argv = ["check"] + argv[3:]
     if len(argv) >= 2 and argv[0] == "check":
         return cmd_check(argv[1:])
     if len(argv) == 2 and argv[0] == "txtfiles":

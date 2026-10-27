@@ -3803,3 +3803,30 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     [2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises](../backlog/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md)
     was **released**, with four points added. The reverser entry above was filed. The archivist entry is unchanged.
   - **Next:** merge `lane/h1b`; then H1a (`d2s-load`).
+- **2026-10-27 — H3b (`data-load`) filed (reverser, `lane/h3b`, harness slot 2, after merging `main` `2637b08`).**
+  run:2026-10-27-sweep-data-load: seven program runs (stock, `-txt`, loose files, `-direct`, `-direct -txt`, and `-direct`
+  with a loose `use` byte of 0x0B and of 0x0E; expansion Normal, `H3bRare`), record in
+  [data experiments](../findings/data/experiments.md#run2026-10-27-sweep-data-load), evidence in the "Plan 0038 batch
+  H3b" sections of [data/0001](../findings/data/0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
+  [data/0002](../findings/data/0002-mpq-precedence.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
+  [data/0003](../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
+  [data/0004](../findings/data/0004-cell-converters.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load) and
+  [player/0001](../findings/player/0001-creation.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load).
+  - **Ruling 3's start mode works:** `tools/d2run.py --early` stops the game once `game.exe` is mapped (0.50–0.57 s
+    after launch in the kept runs) and attaches then; built and tested off-slot on a stopped dummy process, then with
+    probe runs on slot 2 (kept in `dev/`). Loggers used with it need `set displaced-stepping off`. The 9 startup rows
+    are no shortfall.
+  - **Ledger (25):** raised 18 (data/README 2, 3, 4; data/excel 1–7, 17, 18, 20, 24, 25, 27, 50; data/strings 29),
+    raised in part 7 (data/README 5 and data/excel 8, with a correction: `TC_GetByName` is dead code, its half a d-none
+    remainder; data/excel 71 with a refinement, 74; data/strings 2, 6, 22), shortfall 0. S1b remainders: data/README 1
+    raised, data/excel 30 raised in part with a correction (`hitclass.bin` read whole by the character-graphics loader).
+    No class move; inventory § 2.6 H3b block; totals static 567, harness 523, blocked 417, deferred 2, raised 17: 1 526.
+  - **Design changes on the way:** three runs were added to the plan's piece list (dtxt, rus, clamp), which separate
+    `-direct -txt`'s load of the written files, the language byte read and its clamp; the loose files stay in the
+    slot's prefix (`h3b_sessions.py stage` / `unstage`), and the checker re-creates them by `stage` (`--written` for the
+    files the dtxt run wrote).
+  - **Backlog:** review request
+    [h3b review](../backlog/2026-10-27-reverser-architect-review-lane-h3b-plan-0038-batch-h3b.md); spec-writer entry
+    [h3b raises](../backlog/2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections.md) (held for the
+    review).
+  - **Next:** the H3b review. Slot 2 stopped, saves restored (empty, no aside), staged directories removed.

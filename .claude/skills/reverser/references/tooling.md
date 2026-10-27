@@ -221,6 +221,13 @@ it whenever a run logs nothing.
   reloads the same save in the same process. Copy a written save **from** the saves directory before `restore`.
 - `d2run.py --game-dir <dir>` starts the game elsewhere (a copy of `game/` with loose `data/…` files for `-direct`;
   pass switches as `--game-args=-direct`). A start-up fatal leaves `BlizzardError/<time>/Crash.txt` in that dir.
+- `d2run.py --early` (plan 0038 H3b) puts gdb on the game **before its startup code**: the launcher stops the game
+  process (SIGSTOP) as soon as `game.exe` is mapped at `0x400000` (about 1 s after launch), then attaches; the
+  driver waits for the window itself. So breakpoints see `InitGame`, the archive opens, the language read, the first
+  `STRTABLE_LoadAll` and `DATATBLS_LoadAll`. A gdb file used with it must `set displaced-stepping off` (without it
+  the first breakpoint hits ended the game, exit code 5, an empty `BlizzardError/…/Crash.txt`); `tools/gdb/excel.gdb`
+  is the logger, and its `XATT` line says whether the attach was early. Without `--early` gdb attaches 3 s after the
+  window, during `DATATBLS_LoadAll` (in the H3b runs it ran once, at startup).
 - `xdrive.py keydown Alt_L` / `keyup Alt_L` hold a key (item labels on the ground: click a label to pick it up).
 - Test characters: `python3 -I tools/d2s.py setwp` sets waypoints, and `python3 -I tools/d2s.py setstats <excel> <in.d2s>
   <out.d2s> <stat>=<value>…` sets character stats (e.g. raise a sample to level 50) and re-checksums. Swap it in
