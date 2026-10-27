@@ -506,10 +506,13 @@ class Checker:
 
     def run(self, path):
         lines = []
+        self.rev = 0        # the logger revision of this log ("ANIM logger armed rev N")
         with open(path, errors="replace") as f:
             for raw in f:
                 tag, _, rest = raw.partition(" ")
                 if not rest.startswith("{"):
+                    if raw.startswith("ANIM logger armed rev "):
+                        self.rev = int(raw.split()[4])
                     continue
                 try:
                     lines.append((tag, json.loads(rest)))
@@ -623,9 +626,22 @@ class Checker:
             elif tag == "FREE":
                 freed.setdefault(x["u"], []).append((x["fr"], x["n"]))
         queued = {}     # (unit, kind, frame, a, b) -> sched line
+        self.cq_keys = set()    # the keys a CQ line queued (rev 6)
         for tag, x in lines:
             if tag == "SR":
                 last[x["u"]["u"]] = x
+                continue
+            if tag == "CQ":
+                # (rev 6) the catalogue's own UnitQueueEvent call (plan 0050 Phase 2 part 2): an ADR-0004 oracle, its
+                # event taken as given; the dispatches it explains are compared like the schedule's. Kinds 0 (a != 0)
+                # and 1 only: the dispatch lines log no other
+                kind, qf, a, b = x["q"]
+                if kind == 1 or (kind == 0 and a != 0):
+                    fr = max(qf, x["fr"] + 1)
+                    queued[(x["u"]["u"], kind, fr, a, b)] = x["n"]
+                    self.cq_keys.add((x["u"]["u"], kind, fr, a, b))
+                    pend[x["u"]["u"]].append((kind, fr, a, b, x["n"]))
+                self.tally["cq-k%d" % kind] += 1
                 continue
             if tag == "RSC":
                 # a catalogue reschedule (anim/0001 § 7.1, a boundary oracle): its queue is taken as given
@@ -719,15 +735,26 @@ class Checker:
                     if (uu, kind, fr, a, b) in queued:
                         continue
                     cc = [f for f in self.cat_cancel.get(uu, ()) if f <= fr]
-                    if cc:
+                    if cc and self.rev < 6:
+                        # rev <= 5 logs (part 1) carry no CQ line: a dispatch after a catalogue cancel stays
+                        # uncompared, named; from rev 6 the catalogue queue is logged and no window excuses one
                         self.tally["dispatch-catalogue-queued"] += 1    # after a catalogue cancel: not modelled
                         if self.rv:     # frames since the unit's latest catalogue cancel, and the event kind
                             self.tally["rv-catq-dist=%d" % min(99, fr - max(cc))] += 1
                             self.tally["rv-catq-kind=%d" % kind] += 1
                         continue
+                    if cc:
+                        self.tally["dispatch-catalogue-queued-rev6"] += 1   # part 2's closing clause: 0
                     self.ok("dispatch", False, ("unqueued", n, uu, fr, kind, a, b))
                 else:
                     self.ok("dispatch", True)
+                    cc = [f for f in self.cat_cancel.get(uu, ()) if f <= fr]
+                    if self.rev >= 6 and cc and fr - max(cc) <= 4:
+                        # part 1's excuse window held such dispatches 0-4 frames after the cancel: now compared
+                        self.tally["dispatch-catcancel-0-4-compared"] += 1
+                    if (uu, kind, fr, a, b) in self.cq_keys:
+                        # a dispatch of an event the catalogue queued itself (CQ), after one of its cancels or not
+                        self.tally["dispatch-cq-after-catcancel" if cc else "dispatch-cq-other"] += 1
 
     # --- movement ------------------------------------------------------------------------------------------------
     def check_steps(self, lines):
@@ -877,12 +904,19 @@ class Checker:
                 kbe.add((x["ecx"], x["fr"]))
                 kbe.add((x["edx"], x["fr"]))
         cls_now = {}
+        restarted = False
         for tag, x in lines:
             if tag in ("SR", "MSET", "SCH") and x["u"]["t"] == 1:
                 cls_now[x["u"]["u"]] = x["u"]["c"]      # unit pointers are reused: the class at this point
+            if tag == "SR" and prev is not None and x["u"]["u"] == prev["u"]:
+                restarted = True        # rev 6 check: a restart of the same mode (a get-hit hit again) between the two advances
             if tag != "AD0":
                 continue
-            pair = prev is not None and prev["u"] == x["u"] and x["fr"] == prev["fr"] + 1 and x["m"] == prev["m"]
+            pair = (prev is not None and prev["u"] == x["u"] and x["fr"] == prev["fr"] + 1 and x["m"] == prev["m"]
+                    and not restarted)
+            if restarted and prev is not None and prev["u"] == x["u"] and x["fr"] == prev["fr"] + 1 and x["m"] == prev["m"]:
+                self.tally["adv-restart-unpaired"] += 1
+            restarted = False
             if pair and not prev["seq"] and not x["seq"]:
                 ev = None
                 if prev["rec"]:
@@ -1507,6 +1541,14 @@ def summary(paths):
             n30 = sum(1 for v in pooled.values() if v >= 30)
             r3 = sorted(rec for rec, rc in recs.items() if sum(1 for v in rc.values() if v >= 30) >= 3)
             parts.append("%s rates30=%d recs3x30=%s" % (PMODE_NAMES[m], n30, ",".join(r3) or "-"))
+        # part 2: the throws per class (30 for every class) and the A1 records with three rates of 30 (two wanted)
+        thr = sum(per.get((c, 11), collections.Counter()).values())
+        a1 = per.get((c, 7), collections.Counter())
+        recs = collections.defaultdict(collections.Counter)
+        for (rec, r), v in a1.items():
+            recs[rec][r] += v
+        n3 = sum(1 for rc in recs.values() if sum(1 for v in rc.values() if v >= 30) >= 3)
+        parts.append("throw %d; A1 records3x30 %d" % (thr, n3))
         print("RATES %s %s" % (PLR_CLS[c], "; ".join(parts)))
     print("MODES " + " ".join("%s=%d" % (PMODE_NAMES.get(m, m), v) for m, v in sorted(tot.items())),
           "total=%d" % sum(tot.values()))

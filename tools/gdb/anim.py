@@ -52,6 +52,10 @@
 #           least positive kind-1 event frame (sub_005415A0's return, read at 0x0057ED7A / 0x0057EDBC before the + 5)
 #   KBE     sub_005A8520_MonKnockbackEnd entry (unit in ECX/EDX: both logged)
 #   DLY     (rev 4) SKILLS_SetDelayState 0x0056EF90 (EDI unit, EAX the delay d): state 121 for d frames from "fr"
+#   CQ      (rev 6) sub_005417D0_UnitQueueEvent at its entry (ECX game, EDX unit; [esp+4] kind, frame, a, b) when the
+#           return address lies in the skill catalogue, 0x005B0000..0x005EFFFF (plan 0050 Phase 2 part 2: the queue
+#           a catalogue skill writes after its own cancel, e.g. 0x005CFABE, 0x005D1517, 0x005DA2BE); players and
+#           monsters: u, fr, ra, q [kind, frame, a, b]
 #   CAP     once per kind when its cap is reached
 # Windows (ADR-0014 § Log volume): the player is always windowed for PS/CT; one monster at a time is windowed for PS,
 # CT and AD, opened at an MSET of a monster into mode 2, 13, 14 or 15 (13 preempts an open walk
@@ -65,8 +69,9 @@ import struct
 
 import gdb
 
-REV = 5  # rev 1: the development logs (dev-, dev2-, dev3-, dev-r1-); rev 2: FREE lines, PS0 "pts"; rev 3: "ph";
-#          rev 4: DLY lines, GH "st" (95, 102), stat 150 in SR; rev 5: states 139 (wolf), 140 (bear) in "ss"
+REV = 6  # rev 1: the development logs (dev-, dev2-, dev3-, dev-r1-); rev 2: FREE lines, PS0 "pts"; rev 3: "ph";
+#          rev 4: DLY lines, GH "st" (95, 102), stat 150 in SR; rev 5: states 139 (wolf), 140 (bear) in "ss";
+#          rev 6: CQ lines (the catalogue's own UnitQueueEvent calls)
 
 
 def _anim_main():
@@ -74,7 +79,7 @@ def _anim_main():
     DT_PTR = 0x00744304
     CAPS = {"sr": 40000, "sch": 30000, "mds": 60000, "pds": 40000, "mset": 60000, "oa": 3000, "oq": 3000,
             "ps": 60000, "ad": 40000, "dr": 20000, "gr": 6000, "gh": 8000, "pa": 6000, "pl": 6000, "can": 60000,
-            "ct": 60000, "ef": 30000, "oev": 2000}
+            "ct": 60000, "ef": 30000, "oev": 2000, "cq": 20000}
     for k in list(CAPS):
         v = os.environ.get("ANIM_CAP_" + k.upper())
         if v:
@@ -607,6 +612,17 @@ def _anim_main():
         if n:
             emit("PL1", {"k": n, "r": sreg("eax")})
 
+    def on_cq():
+        # sub_005417D0_UnitQueueEvent entry: [esp] the return address, [esp+4] kind, frame, a, b; EDX the unit
+        esp = reg("esp")
+        ra = u32(esp)
+        if not 0x005B0000 <= ra < 0x005F0000:
+            return
+        u = reg("edx")
+        if not server(u) or u32(u) not in (0, 1) or not take("cq"):
+            return
+        emit("CQ", {"u": unit(u), "fr": frame(), "ra": ra, "q": list(struct.unpack("<4i", mem(esp + 4, 16)))})
+
     def on_kbe():
         emit("KBE", {"ecx": reg("ecx"), "edx": reg("edx"), "fr": frame()})
 
@@ -665,5 +681,7 @@ def _anim_main():
     Bp(0x0057EDBC, on_ple)
     Bp(0x005A8520, on_kbe)
     Bp(0x0056EF90, on_dly)
+    if REV >= 6:
+        Bp(0x005417D0, on_cq)
     gdb.write("ANIM logger armed rev %d\n" % REV)
 _anim_main()

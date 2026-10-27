@@ -395,6 +395,9 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/r52` (resume: EDX callers, review-fixes pass, review request) | 0052 P1.1 | reverser-static | 154 444 | 115 | 17 | — (static, objdump, no Ghidra) | accept (Tier B check) | none |
 | 2026-10-27 | r52 | 0052 | architect-check | 60 680 | 14 | 2 | — | accept | none |
 | 2026-10-27 | lane/r52 P1.1 rulings | 0052 P1.1 | architect-review | 109 206 | 27 | 4 | — | rulings: tier amended (18), batches set (12), boundary accepted with conditions, no logger ADR | none (planning rulings; the finding passed its lane check) |
+| 2026-10-27 | `lane/p50f` (to the first pause) | 0050 P2 | reverser-harness | 359 473 | 184 | 70 | slot 1, no Ghidra | — (on the resume row) | — (on the resume row) |
+| 2026-10-27 | `lane/p50f` (resume: batches 10-11, restart rule, write-up) | 0050 P2 | reverser-harness | 120 111 | 62 | 50 | slot 1, no Ghidra | accept with fixes (Tier B check) | on the check row |
+| 2026-10-27 | `lane/p50f` check | 0050 | architect-check | 83 708 | 17 | 3 | — | accept with fixes | overclaim 2, omission 1, stale cross-reference 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

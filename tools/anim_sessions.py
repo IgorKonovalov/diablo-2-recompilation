@@ -243,7 +243,24 @@ def cmd_recipes():
             with open(p, "w") as f:
                 json.dump(gh2_recipe(cls, tier, 1500, "B", 5800), f, indent=1)
                 f.write("\n")
-    for rec, (_, r, _) in special_recipes().items():
+    for cls in CLASSES:
+        for tier in (0, 1, 2):
+            p = os.path.join(RDIR, "anim-%s-t%d-gh9.json" % (cls, tier))
+            with open(p, "w") as f:
+                json.dump(gh9_recipe(cls, tier), f, indent=1)
+                f.write("\n")
+            p = os.path.join(RDIR, "anim-%s-t%d-gh10.json" % (cls, tier))
+            with open(p, "w") as f:
+                json.dump(gh10_recipe(cls, tier), f, indent=1)
+                f.write("\n")
+    # the earlier part 2 families: only the rows a kept session played (P2_TRIED)
+    for fam, cls, tier in P2_TRIED:
+        r = {"gh5": gh5_recipe, "gh6": lambda c, t: gh5_recipe(c, t, GH6_LIFE, "J", 6300), "gh7": gh7_recipe,
+             "gh8": gh8_recipe}[fam](cls, tier)
+        with open(os.path.join(RDIR, "anim-%s-t%d-%s.json" % (cls, tier, fam)), "w") as f:
+            json.dump(r, f, indent=1)
+            f.write("\n")
+    for rec, (_, r, _) in list(special_recipes().items()) + list(p2_special_recipes().items()):
         with open(os.path.join(RDIR, rec + ".json"), "w") as f:
             json.dump(r, f, indent=1)
             f.write("\n")
@@ -458,6 +475,256 @@ SESSIONS["sp-dru-form"] = sp_session("AnimDruForm", 5483, "1,5", ["F2", "F1", "F
                                                                   "F3", "F5", "F3", "F1", "F1"])
 
 
+# --- part 2 (plan 0050 Phase 2 part 2, the get-hit fix of the part 1 review) ---------------------------------------
+# gh5: a high-life character per class and tier (clvl 60, life GH5_LIFE, Dexterity 100 for the blocks, no defence
+# beyond the tier items) in a Nightmare field, a girdle (16 boxes) of full rejuvenation potions, the pilot drinking
+# early; set 1 and set 2 give the second weapon record of the IAS rates (and the throws the part 1 run lacks).
+# gh5-sor-t0 (the first part 2 session, life 1000 in Act V Nightmare, Bloody Foothills) took hits of 41-183 from
+# packs it could not kill and died after 6 get-hits and 3 potions; the later recipes (gh6) have life 480 in Act I
+# Nightmare, whose hits of about 20-43 (monster levels 36-39) fall around maxHP / 16 = 30 and whose packs die
+# gh6-sor-t0 (life 480, Stony Field) died to a pack of eight skeletons with 6 of its 12 life potions left: the gh7
+# recipes kill faster (Strength 300, the melee weapons *Ferocious* as well) and play Cold Plains and Black Marsh at
+# life 400 (maxHP / 16 = 25 against hits of about 17-40)
+GH5_LIFE = 1000
+GH6_LIFE = 480
+P2_TRIED = (("gh5", "sor", 0), ("gh6", "sor", 0), ("gh7", "bar", 0), ("gh7", "sor", 0), ("gh8", "bar", 0))
+GH7_LIFE = 400
+FEROCIOUS = 192     # magicprefix record index (the file's row after the Expansion row, less one), ED 200 % as built
+GH5_SETS = {   # class: (set 1 weapon, set 1 left, set 2 weapon, set 2 left); a None left hand: two-handed or none
+    "ama": ("ssd", "buc", "jav", "buc"),     # AMA11HS (short sword) at the tier IAS; javelins (throws)
+    "sor": ("lst", None, "crs", "buc"),      # SOA1STF (long staff); crystal sword and buckler (blocks)
+    "nec": ("tax", "buc", "scy", None),      # throws and blocks; NEA1STF (scythe)
+    "pal": ("spr", None, "tax", "buc"),      # PAA12HT (spear); throws
+    "bar": ("hax", "buc", "2hs", None),      # BAA11HS (hand axe) at the tier IAS and blocks; BAA12HS (two-handed sword)
+    "dru": ("whm", "buc", "2hs", None),      # P1b-8: get-hits with a one-handed hammer and a two-handed sword; DZA12HS
+    "ass": ("dgr", "buc", "ktr", None),      # AIA11HT (dagger); AIA1HT1
+}
+
+
+def gh7_recipe(cls, tier):
+    r = gh5_recipe(cls, tier, GH7_LIFE, "K", 6500)
+    r["stats"]["strength"] = 300
+    for it in r["items"]:
+        if it["equip"] in ("rarm", "rarm2") and it["code"] not in THROWN:
+            it["prefix"] = FEROCIOUS
+    return r
+
+
+# gh7-bar-t0 (life 400, Cold Plains) died in 46 s to two champion packs after 6 get-hits and 2 potions, each hop's
+# first orb sample already below the threshold: the gh8 recipes block (Dexterity 300, the shield set first), so
+# that fewer hits land per second while each landing hit costs the same; the two-handed set is played second
+GH8_FIRST = {"sor": ("crs", "buc", "lst", None), "pal": ("tax", "buc", "spr", None)}
+
+
+def gh8_recipe(cls, tier):
+    r = gh7_recipe(cls, tier)
+    r["name"] = "Anim%sP%d" % (cls.capitalize(), tier)
+    r["seed"] = 6700 + 10 * list(CLASSES).index(cls) + tier
+    r["stats"]["dexterity"] = 300
+    if cls in GH8_FIRST:
+        w1, l1, w2, l2 = GH8_FIRST[cls]
+        ias_w = (None, ALACRITY_W, QUICKNESS_W)[tier]
+        items = [it for it in r["items"] if it["equip"] not in ("rarm", "larm", "rarm2", "larm2")]
+        for w, l, eq in ((w1, l1, ""), (w2, l2, "2")):
+            it = dict(magic(w, None if w in THROWN else ias_w, "rarm" + eq), **({"quantity": 60} if w in THROWN else {}))
+            if w not in THROWN:
+                it["prefix"] = FEROCIOUS
+            items.append(it)
+            if l:
+                items.append(magic(l, (None, BLOCKING, DEFLECTING)[tier], "larm" + eq))
+        r["items"] = items
+    return r
+
+
+# gh8-bar-t0 (blocking) survived its shield half and took 12 get-hits for 8 potions: a get-hit costs about a quarter
+# of life whatever the hit (GetHitRoll's bands), so the belt's 12 life potions buy about 20; the gh9 recipes add 40
+# more in the inventory, which the pilot drinks there once the belt's life columns are spent (d2pilot --inv-potions)
+def gh9_recipe(cls, tier):
+    r = gh8_recipe(cls, tier)
+    r["name"] = "Anim%sQ%d" % (cls.capitalize(), tier)
+    r["seed"] = 6900 + 10 * list(CLASSES).index(cls) + tier
+    r["items"] += [{"code": "rvl", "store": "inventory", "x": x, "y": y} for x in range(10) for y in range(4)]
+    return r
+
+
+# gh9-bar-t0 and gh9-sor-t0 drank their belts and died in swarms (seven skeletons, about 160 damage a second at
+# the end, while a potion restores 400): the gh10 recipes kill faster, at clvl 70 with elite bases of the same
+# weapon classes (the shield set first), the rest as gh9
+GH10_SETS = {   # class: (set 1 weapon, set 1 left, set 2 weapon, set 2 left)
+    "ama": ("7cr", "buc", "jav", "buc"),     # Phase Blade (1hs); javelins
+    "sor": ("7cr", "buc", "6ws", None),      # Phase Blade; Archon Staff (stf)
+    "nec": ("tax", "buc", "7s8", None),      # throws and blocks; Thresher (stf)
+    "pal": ("tax", "buc", "7sr", None),      # throws and blocks; Hyperion Spear (2ht)
+    "bar": ("7wa", "buc", "7gd", None),      # Berserker Axe (1hs); Colossus Blade (2hs)
+    "dru": ("7wh", "buc", "7gd", None),      # P1b-8: Legendary Mallet (a one-handed hammer); Colossus Blade (2hs)
+    "ass": ("7dg", "buc", "7ar", None),      # Bone Knife (1ht); Suwayyah (ht1)
+}
+
+
+def gh10_recipe(cls, tier):
+    r = gh9_recipe(cls, tier)
+    r["name"] = "Anim%sR%d" % (cls.capitalize(), tier)
+    r["seed"] = 7000 + 10 * list(CLASSES).index(cls) + tier
+    r["stats"].update({"level": 70, "experience": 311105466})
+    ias_w = (None, ALACRITY_W, QUICKNESS_W)[tier]
+    items = [it for it in r["items"] if it.get("equip") not in ("rarm", "larm", "rarm2", "larm2")]
+    w1, l1, w2, l2 = GH10_SETS[cls]
+    for w, l, eq in ((w1, l1, ""), (w2, l2, "2")):
+        it = dict(magic(w, None if w in THROWN else ias_w, "rarm" + eq), **({"quantity": 60} if w in THROWN else {}))
+        if w not in THROWN:
+            it["prefix"] = FEROCIOUS
+        items.append(it)
+        if l:
+            items.append(magic(l, (None, BLOCKING, DEFLECTING)[tier], "larm" + eq))
+    r["items"] = items
+    return r
+
+
+def gh5_recipe(cls, tier, life=GH5_LIFE, tag="G", seed0=6000):
+    r = recipe(cls, tier)
+    r["name"] = "Anim%s%s%d" % (cls.capitalize(), tag, tier)
+    r["seed"] = seed0 + 10 * list(CLASSES).index(cls) + tier
+    r["stats"].update({"hitpoints": life, "maxhp": life, "level": 60, "experience": 128782495})
+    w1, l1, w2, l2 = GH5_SETS[cls]
+    ias_w = (None, ALACRITY_W, QUICKNESS_W)[tier]
+    items = [it for it in r["items"] if it["equip"] not in ("rarm", "larm", "rarm2", "larm2", "belt")]
+    for w, l, eq in ((w1, l1, ""), (w2, l2, "2")):
+        items.append(dict(magic(w, None if w in THROWN else ias_w, "rarm" + eq), **({"quantity": 60} if w in THROWN else {})))
+        if l:
+            items.append(magic(l, (None, BLOCKING, DEFLECTING)[tier], "larm" + eq))
+    items.append(magic("hbl", STABILITY if tier == 2 else None, "belt"))
+    r["items"] = items
+    r["belt_fill"] = ["rvl", "rvl", "rvl", "rvl"]
+    thr = w1 in THROWN or w2 in THROWN
+    r["hotkeys"][3] = "Throw" if thr else CLASSES[cls][7]
+    return r
+
+
+def gh5_session(cls, tier, seed, field="5,2", hops=20, diff="enter-nightmare"):
+    """part 2's get-hit session: Act V Nightmare (Frigid Highlands), fights only (Attack, Throw or the second cast,
+    the cast, Kick), the pilot drinking below 0.6 of the orb inside its click bursts too; the weapon swap half way."""
+    keys = ["F1", "F4", "F2", "F1", "F4", "F3"]
+    f = fight(keys, hops, extra=("--drink-in-burst",))
+    f = (f[0], [("0.6" if a == "0.7" else a) for a in f[1]], f[2])
+    return ("gh5/Anim%sG%d" % (cls.capitalize(), tier), diff, seed, [wp(field), f, ("keys", ["w"], 1.0), f])
+
+
+for k, cls in enumerate(CLASSES):
+    for tier in (0, 1, 2):
+        SESSIONS["gh5-%s-t%d" % (cls, tier)] = gh5_session(cls, tier, 6100 + 10 * k + tier)
+SAVES.update({"gh5/Anim%sG%d" % (c.capitalize(), t): ("anim-%s-t%d-gh5" % (c, t), CLASSES[c][1]) for c in CLASSES
+              for t in (0, 1, 2)})
+
+
+def gh6_session(cls, tier, seed, field, hops=18):
+    """the gh6 save (life 480) in Act I Nightmare, drinking below 0.5 of the orb (a full orb reads about 0.75)."""
+    keys = ["F1", "F4", "F2", "F1", "F4", "F3"]
+    f = fight(keys, hops, extra=("--drink-in-burst",))
+    f = (f[0], [("0.5" if a == "0.7" else a) for a in f[1]], f[2])
+    return ("gh5/Anim%sJ%d" % (cls.capitalize(), tier), "enter-nightmare", seed,
+            [wp(field), f, ("keys", ["w"], 1.0), f])
+
+
+for k, cls in enumerate(CLASSES):
+    for tier in (0, 1, 2):
+        SESSIONS["gh6-%s-t%d" % (cls, tier)] = gh6_session(cls, tier, 6200 + 10 * k + tier,
+                                                           ("1,2", "1,3", "1,5")[(k + tier) % 3])
+SAVES.update({"gh5/Anim%sJ%d" % (c.capitalize(), t): ("anim-%s-t%d-gh6" % (c, t), CLASSES[c][1]) for c in CLASSES
+              for t in (0, 1, 2)})
+SAVES.update({"gh5/Anim%sK%d" % (c.capitalize(), t): ("anim-%s-t%d-gh7" % (c, t), CLASSES[c][1]) for c in CLASSES
+              for t in (0, 1, 2)})
+for k, cls in enumerate(CLASSES):
+    for tier in (0, 1, 2):
+        row = gh6_session(cls, tier, 6600 + 10 * k + tier, ("1,2", "1,5")[(k + tier) % 2], hops=24)
+        SESSIONS["gh7-%s-t%d" % (cls, tier)] = ("gh5/Anim%sK%d" % (cls.capitalize(), tier),) + row[1:]
+SAVES.update({"gh5/Anim%sP%d" % (c.capitalize(), t): ("anim-%s-t%d-gh8" % (c, t), CLASSES[c][1]) for c in CLASSES
+              for t in (0, 1, 2)})
+SAVES.update({"gh5/Anim%sQ%d" % (c.capitalize(), t): ("anim-%s-t%d-gh9" % (c, t), CLASSES[c][1]) for c in CLASSES
+              for t in (0, 1, 2)})
+for k, cls in enumerate(CLASSES):
+    for tier in (0, 1, 2):
+        row = gh6_session(cls, tier, 6950 + 10 * k + tier, ("1,2", "1,5")[(k + tier) % 2], hops=30)
+        todo = [(st[0], st[1] + ["--inv-potions", "40"], st[2] + 120) if st[0] == "pilot" and st[1][0] == "explore"
+                else st for st in row[3]]
+        SESSIONS["gh9-%s-t%d" % (cls, tier)] = ("gh5/Anim%sQ%d" % (cls.capitalize(), tier), row[1], row[2], todo)
+# rev 6's catalogue queue: Act V Normal (the imps' inferno cancels, 0x005D1503, most of part 1's uncompared dispatches)
+SESSIONS["mon-7"] = mon_session(5206, "5,2")
+SAVES.update({"gh5/Anim%sR%d" % (c.capitalize(), t): ("anim-%s-t%d-gh10" % (c, t), CLASSES[c][1]) for c in CLASSES
+              for t in (0, 1, 2)})
+for k, cls in enumerate(CLASSES):
+    for tier in (0, 1, 2):
+        row = SESSIONS["gh9-%s-t%d" % (cls, tier)]
+        SESSIONS["gh10-%s-t%d" % (cls, tier)] = ("gh5/Anim%sR%d" % (cls.capitalize(), tier), row[1],
+                                                 7100 + 10 * k + tier, row[3])
+# gh10-bar-t0 (Cold Plains) lived through both halves (60 hops, 24 potions) but took 14 get-hits: its packs die
+# fast; gh10-sor-t0 (Black Marsh) died at hop 7. The gh11 sessions play the gh10 saves in Cold Plains only, 40 hops a
+# half, at /players 2 (monster life up, so that the packs live longer against the elite weapons)
+for k, cls in enumerate(CLASSES):
+    for tier in (0, 1, 2):
+        row = gh6_session(cls, tier, 7200 + 10 * k + tier, "1,2", hops=40)
+        todo = [(st[0], st[1] + ["--inv-potions", "40"] + (["--players", "2"] if i == 1 else []), st[2] + 120)
+                if st[0] == "pilot" and st[1][0] == "explore" else st for i, st in enumerate(row[3])]
+        SESSIONS["gh11-%s-t%d" % (cls, tier)] = ("gh5/Anim%sR%d" % (cls.capitalize(), tier), row[1], row[2], todo)
+# gh11-sor-t0 died at hop 8 after 3 potions (two champion packs at the waypoint): the gh12 sessions are gh11's with the
+# pilot drinking earlier, below 0.62 of the orb (a full orb reads about 0.75)
+for k, cls in enumerate(CLASSES):
+    for tier in (0, 1, 2):
+        row = SESSIONS["gh11-%s-t%d" % (cls, tier)]
+        todo = [(st[0], [("0.62" if a == "0.5" else a) for a in st[1]], st[2]) if st[0] == "pilot" and
+                st[1][0] == "explore" else st for st in row[3]]
+        SESSIONS["gh12-%s-t%d" % (cls, tier)] = (row[0], row[1], 7300 + 10 * k + tier, todo)
+# the inventory's screen cells (development: the inventory opened and shot once)
+SESSIONS["dev-inv"] = ("gh5/AnimBarQ0", "enter-nightmare", 6990, [("keys", ["i"], 2.0)])
+SESSIONS["dev-inv2"] = ("gh5/AnimBarQ0", "enter-nightmare", 6991, [("wait", 90)])
+SESSIONS["dev-pot"] = ("gh5/AnimBarQ0", "enter-nightmare", 6992, [("wait", 8), ("keys", ["1", "1", "1", "1"], 0.6)])
+for k, cls in enumerate(CLASSES):
+    for tier in (0, 1, 2):
+        row = gh6_session(cls, tier, 6800 + 10 * k + tier, ("1,2", "1,5")[(k + tier) % 2], hops=24)
+        SESSIONS["gh8-%s-t%d" % (cls, tier)] = ("gh5/Anim%sP%d" % (cls.capitalize(), tier),) + row[1:]
+
+
+def p2_special_recipes():
+    """part 2's special recipes: the Druid's throws (a throwing axe in set 1, gh6 otherwise); P1b-13/P1b-14 (a
+    Paladin with The Generals Tan Do Li Ga, slows target 50 %, and Holy Freeze on the right button: stacked stock
+    slows on the monsters he hits)."""
+    out = {}
+    r = gh5_recipe("dru", 0, GH6_LIFE, "T", 6400)
+    r["items"] = [it for it in r["items"] if it["equip"] not in ("rarm", "larm")] + [
+        {"code": "tax", "equip": "rarm", "quantity": 60}, {"code": "buc", "equip": "larm"}]
+    r["hotkeys"][3] = "Throw"
+    out["anim-dru-th"] = ("AnimDruT0", r, "smpdru")
+    r = gh5_recipe("pal", 1, GH6_LIFE, "S", 6410)
+    r["items"] = [it for it in r["items"] if it["equip"] not in ("rarm", "larm", "rarm2", "larm2")] + [
+        {"unique": "The Generals Tan Do Li Ga", "equip": "rarm"}, magic("buc", None, "larm"),
+        {"unique": "The Generals Tan Do Li Ga", "equip": "rarm2"}, magic("buc", None, "larm2")]
+    r["skills"] = {"Holy Freeze": 20, "Holy Bolt": 1, "Sacrifice": 1}
+    r["mouse"] = {"left": "Attack", "right": "Holy Freeze", "swap_left": "Attack", "swap_right": "Holy Freeze"}
+    r["hotkeys"] = ["Attack", "Holy Freeze", "Kick", "Holy Bolt", "Sacrifice"]
+    out["anim-pal-slow"] = ("AnimPalS1", r, "smppal")
+    return out
+
+
+SAVES.update({"gh5/" + name: (rec, base) for rec, (name, _, base) in p2_special_recipes().items()})
+SESSIONS["th-dru"] = gh6_session("dru", 0, 6290, "1,3")
+SESSIONS["th-dru"] = ("gh5/AnimDruT0",) + SESSIONS["th-dru"][1:]
+# P1b-13/P1b-14: the left button attacks (Attack), Holy Freeze stays the right skill, so its aura runs throughout
+_slow = ("pilot", ["explore", "--walk", "--melee", "--give-up", "10", "--radius", "10", "--melee-hold", "0.3",
+                   "--drink", "0.5", "--drink-in-burst", "--mana-col", "4", "--hops", "36"], 60 + 12 * 36)
+SESSIONS["sp-pal-slow"] = ("gh5/AnimPalS1", "enter-nightmare", 6291, [wp("1,2"), _slow, ("keys", ["w"], 1.0), _slow])
+SESSIONS["sp-pal-chg2"] = SESSIONS["sp-pal-chg"][:2] + (5493,) + SESSIONS["sp-pal-chg"][3:]   # rev 6: the Charge queue
+SESSIONS["sp-ass-bos2"] = SESSIONS["sp-ass-bos"][:2] + (5487,) + SESSIONS["sp-ass-bos"][3:]   # P1b-2 again
+
+
+# the development families gh5-gh8: only the rows a kept session played (P2_TRIED) keep their sessions and saves
+_TAGS = {"gh5": "G", "gh6": "J", "gh7": "K", "gh8": "P"}
+for _fam, _tag in _TAGS.items():
+    for _c in CLASSES:
+        for _t in (0, 1, 2):
+            if (_fam, _c, _t) not in P2_TRIED:
+                SESSIONS.pop("%s-%s-t%d" % (_fam, _c, _t), None)
+                SAVES.pop("gh5/Anim%s%s%d" % (_c.capitalize(), _tag, _t), None)
+
+
 def sh(args, timeout=None, log=None):
     print("$ " + " ".join(args), flush=True)
     try:
@@ -468,7 +735,7 @@ def sh(args, timeout=None, log=None):
 
 
 def build(saves, only=None):
-    for d in ("gh", "gh2", "gh3", "gh4", "bk", "sp"):
+    for d in ("gh", "gh2", "gh3", "gh4", "bk", "sp", "gh5"):
         os.makedirs(os.path.join(saves, d), exist_ok=True)
     for name, (rec, base) in SAVES.items():
         if only and not any(name.startswith(o) for o in only):

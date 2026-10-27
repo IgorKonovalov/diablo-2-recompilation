@@ -1,0 +1,76 @@
+{
+ "game": "expansion",
+ "class": "Barbarian",
+ "seed": 6740,
+ "name": "AnimBarP0",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 300,
+  "energy": 200,
+  "dexterity": 300,
+  "vitality": 25,
+  "hitpoints": 400,
+  "maxhp": 400,
+  "mana": 600,
+  "maxmana": 600,
+  "stamina": 400,
+  "maxstamina": 400,
+  "level": 60,
+  "experience": 128782495
+ },
+ "skills": {
+  "Howl": 1,
+  "Shout": 1,
+  "Double Swing": 1
+ },
+ "mouse": {
+  "left": "Attack",
+  "right": "Howl",
+  "swap_left": "Attack",
+  "swap_right": "Howl"
+ },
+ "hotkeys": [
+  "Attack",
+  "Howl",
+  "Kick",
+  "Shout",
+  "Double Swing"
+ ],
+ "belt_fill": [
+  "rvl",
+  "rvl",
+  "rvl",
+  "rvl"
+ ],
+ "items": [
+  {
+   "code": "hax",
+   "equip": "rarm",
+   "prefix": 192
+  },
+  {
+   "code": "buc",
+   "equip": "larm"
+  },
+  {
+   "code": "2hs",
+   "equip": "rarm2",
+   "prefix": 192
+  },
+  {
+   "code": "hbl",
+   "equip": "belt"
+  }
+ ]
+}

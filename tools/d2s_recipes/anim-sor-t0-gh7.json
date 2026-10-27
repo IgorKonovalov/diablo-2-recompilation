@@ -1,0 +1,76 @@
+{
+ "game": "expansion",
+ "class": "Sorceress",
+ "seed": 6510,
+ "name": "AnimSorK0",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 300,
+  "energy": 200,
+  "dexterity": 100,
+  "vitality": 25,
+  "hitpoints": 400,
+  "maxhp": 400,
+  "mana": 600,
+  "maxmana": 600,
+  "stamina": 400,
+  "maxstamina": 400,
+  "level": 60,
+  "experience": 128782495
+ },
+ "skills": {
+  "Fire Bolt": 1,
+  "Charged Bolt": 1,
+  "Lightning": 1
+ },
+ "mouse": {
+  "left": "Attack",
+  "right": "Fire Bolt",
+  "swap_left": "Attack",
+  "swap_right": "Fire Bolt"
+ },
+ "hotkeys": [
+  "Attack",
+  "Fire Bolt",
+  "Kick",
+  "Charged Bolt",
+  "Lightning"
+ ],
+ "belt_fill": [
+  "rvl",
+  "rvl",
+  "rvl",
+  "rvl"
+ ],
+ "items": [
+  {
+   "code": "lst",
+   "equip": "rarm",
+   "prefix": 192
+  },
+  {
+   "code": "crs",
+   "equip": "rarm2",
+   "prefix": 192
+  },
+  {
+   "code": "buc",
+   "equip": "larm2"
+  },
+  {
+   "code": "hbl",
+   "equip": "belt"
+  }
+ ]
+}

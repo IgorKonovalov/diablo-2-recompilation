@@ -1,0 +1,354 @@
+{
+ "game": "expansion",
+ "class": "Paladin",
+ "seed": 7032,
+ "name": "AnimPalR2",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 300,
+  "energy": 200,
+  "dexterity": 300,
+  "vitality": 25,
+  "hitpoints": 400,
+  "maxhp": 400,
+  "mana": 600,
+  "maxmana": 600,
+  "stamina": 400,
+  "maxstamina": 400,
+  "level": 70,
+  "experience": 311105466
+ },
+ "skills": {
+  "Holy Bolt": 1,
+  "Holy Shield": 1,
+  "Sacrifice": 1
+ },
+ "mouse": {
+  "left": "Attack",
+  "right": "Holy Bolt",
+  "swap_left": "Attack",
+  "swap_right": "Holy Bolt"
+ },
+ "hotkeys": [
+  "Attack",
+  "Holy Bolt",
+  "Kick",
+  "Throw",
+  "Sacrifice"
+ ],
+ "belt_fill": [
+  "rvl",
+  "rvl",
+  "rvl",
+  "rvl"
+ ],
+ "items": [
+  {
+   "code": "rin",
+   "equip": "rrin",
+   "suffix": 173
+  },
+  {
+   "code": "rin",
+   "equip": "lrin",
+   "suffix": 173
+  },
+  {
+   "code": "qui",
+   "equip": "tors",
+   "suffix": 263
+  },
+  {
+   "code": "vbt",
+   "equip": "feet",
+   "suffix": 113
+  },
+  {
+   "code": "amu",
+   "equip": "neck",
+   "suffix": 173
+  },
+  {
+   "code": "ci0",
+   "equip": "head",
+   "suffix": 174
+  },
+  {
+   "code": "lgl",
+   "equip": "glov",
+   "suffix": 674
+  },
+  {
+   "code": "hbl",
+   "equip": "belt",
+   "suffix": 263
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 0,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 0,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 0,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 1,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 1,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 1,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 1,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 2,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 2,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 2,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 2,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 3,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 3,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 3,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 3,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 4,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 4,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 4,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 4,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 5,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 5,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 5,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 5,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 6,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 6,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 6,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 6,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 7,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 7,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 7,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 7,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 8,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 8,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 8,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 8,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 9,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 9,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 9,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 9,
+   "y": 3
+  },
+  {
+   "code": "tax",
+   "equip": "rarm",
+   "quantity": 60
+  },
+  {
+   "code": "buc",
+   "equip": "larm",
+   "suffix": 172
+  },
+  {
+   "code": "7sr",
+   "equip": "rarm2",
+   "suffix": 18,
+   "prefix": 192
+  }
+ ]
+}

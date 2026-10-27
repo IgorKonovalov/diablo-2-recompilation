@@ -171,7 +171,7 @@ verdict per compared claim.
 | `0x00586AD0` | `OBJ_EventDispatch` | `g_ObjEventFns[event](game, object)` for an object event without its own callback (§ 9) | I |
 | `0x00541160` | `sub_00541160_ObjEventsRun` | runs the object event list (list 3) of the current frame (§ 9) | I |
 | `0x005414D0` | `sub_005414D0_GameRunUnitEvents` | per frame: the five unit-type event lists (§ 9) | I |
-| `0x005417D0` | `sub_005417D0_UnitQueueEvent` | queues event `e` on a unit at a frame, no callback (§ 9) | I |
+| `0x005417D0` | `sub_005417D0_UnitQueueEvent` | queues event `e` on a unit at a frame, no callback (§ 9); raised in part: kind 0 with `a ≠ 0` and kind 1 `[C]`, kinds 2 and 12 `[I]` ([anim/0001](../anim/0001-modes-frames.md#plan-0050-phase-2-part-2-run2026-10-27-anim-p2)) | C |
 | `0x005537D0` | `sub_005537D0_GameForEachUnit` | calls a function on each unit of a type in the game (skips state 7 `playerbody`) | I |
 | `0x00540510` | `sub_00540510_PartyForEach` | calls a function on each member of a party | I |
 | `0x00559A30` | `sub_00559A30_DropItemAtUnit` | creates the item coded at `source+0xB8` (or a random base) at the source, quality given | I |
