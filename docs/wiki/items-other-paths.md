@@ -2,7 +2,7 @@
 based_on:
   - docs/specs/items/sockets-runewords.md 2026-10-27
   - docs/specs/items/cube.md 2026-10-27
-  - docs/specs/items/vendors.md 2026-10-21
+  - docs/specs/items/vendors.md 2026-10-27
   - docs/specs/items/quest-drops.md 2026-10-27
 ---
 
@@ -318,8 +318,8 @@ flowchart TD
 
 ### When stock is built and refreshed
 
-There is **one stock per vendor per game, shared by every player** (read from the code; the run was single player).
-It is built the first time anyone opens the trade
+There is **one stock per vendor per game, shared by every player**: a two-client game confirmed it for two players,
+and beyond that it is read from the code. It is built the first time anyone opens the trade
 window, from the opener's level ([§ C](../specs/items/vendors.md#c-when-stock-is-built-reset-and-marked-stale)):
 
 - A waypoint to another level **of the same act** resets every built store of that act at once; the next trade open
@@ -329,9 +329,16 @@ window, from the opener's level ([§ C](../specs/items/vendors.md#c-when-stock-i
   The leaving player still counts as in town here because, for a change of act, the town-leave check runs before the
   player leaves its town room; within an act it runs only after the player is found in the new level. That ordering
   is read from the code and matches the run's counts.
-- Read from the code but never seen in the test run, so unconfirmed: the same player reopening a built store keeps its stock; walking out of town behaves
-  like a waypoint within the act; and a level-up, entering a town or a quest event rebuilds nothing, so the stock
-  keeps the level of its build.
+- Walking out of town behaves like a waypoint within the act: the walk from the Rogue Encampment into the Blood Moor
+  reset Akara's and Charsi's stores at once.
+- The same player reopening a built store keeps its stock, and so do entering a town and a level-up: in a test run a
+  store built at level 30 was reopened after an act change, a level-up and a return by waypoint, and showed the same
+  items each time. That level-up was a single event of two levels, made from a character file built by a tool, not
+  by play. Read from the code: a quest event rebuilds nothing either, and the level-up's note to the stores is never
+  read, so the stock keeps the level of its build.
+- Asheara sells both items and mercenaries, and the two lists draw on the same store seed. Her mercenary list is
+  built when a player first starts talking to her, before any menu choice, so it always comes before her first stock
+  build. The runs confirmed this order; that no other order can occur is read from the code.
 - A two-client game confirmed the multiplayer cases: a store one player built is kept, unchanged, when the other opens
   it; when a player leaves the game from a town, a store is only marked stale (if built more than 240 seconds before)
   while the other player is still in that town, and every built store is reset when nobody is left there; a stale
@@ -342,15 +349,15 @@ window, from the opener's level ([§ C](../specs/items/vendors.md#c-when-stock-i
 ### The stock build
 
 The [stock level](../glossary.md) is the opener's level + 5. In Normal it is capped per act at 12, 20, 28, 36 and 45;
-in Nightmare and Hell there is no cap, and the spec reads the code as not clamping it to 99 either
+in Nightmare and Hell there is no cap, not even at 99: a level-99 character in Hell got stock level 104
 ([§ D](../specs/items/vendors.md#d-the-stock-build-vendor_buildstock), [Constants](../specs/items/vendors.md#constants)).
 
 For each base on the vendor's list, in order, and only if the base level is not above the stock level:
 
 - **Normal copies.** Below stock level 25 the vendor makes between the base's `Min` and `Max` copies; from 25 on, none.
   Each copy draws its quality: normal, or superior with 14 in 100 below stock level 10 and 25 in 100 from 10 on (the
-  code's bounds, not a measured frequency). Read from the code, the low-quality branch can never be reached, so stock is
-  normal, superior or magic, never low, rare, set or unique.
+  code's bounds, not a measured frequency). The low-quality branch can never be reached, so stock is normal, superior
+  or magic, never low, rare, set or unique; the 4 656 logged stock items of the first run bear this out.
 - **Magic copies**, if the base allows them and its `MagicLvl` is not above the stock level. `MagicLvl` is a minimum
   stock level, **not** an affix level; the affixes come from the ordinary [affix level](../glossary.md) (alvl) rule
   with the item's ilvl. From
@@ -363,19 +370,26 @@ stock level × 64 + 4000, else the base's `NightmareUpgrade` if it has one. In H
 only) below stock level × 16 + 1000, else the exceptional base below stock level × 128 + 5000; the base's `HellUpgrade`,
 when it has one, then replaces either result. Those two upgrade columns always name a normal-tier base one step up the
 same type, so exceptional and elite stock comes only from the two thresholds. Vendor and gamble items are **never ethereal**: the creation record switches the ethereal roll off
-([vendors § F](../specs/items/vendors.md#f-the-creation-record-items_createforstore-and-the-item-seeds)). Some limits were
-never reached in the run and are read from the code: the build stops after more than 32 failed creations, and a
-"Cracked" low-quality result would be retried.
+([vendors § F](../specs/items/vendors.md#f-the-creation-record-items_createforstore-and-the-item-seeds)).
+
+Each stock item goes on the tab of its item type: armor, weapons or miscellaneous. A weapon that does not fit tries
+the second weapons tab, and an item that still does not fit is created anyway, its random draws spent, and then
+left out of the stock as a failed creation. The runs confirmed the tabs; exactly which free cell the game picks is
+not modelled yet ([§ E](../specs/items/vendors.md#e-one-stock-item-vendor_createstockitem)). No build reached 32
+failed creations (the most was 27, Larzuk in Hell). Read from the code, the check that finds a 33rd failure ends the
+whole build at once, permanent items included; the check runs only after a normal copy or a permanent item. Also read
+from the code: a "Cracked" low-quality result would be retried.
 
 ### Gambling
 
-A gamble window has 14 slots and belongs to one player at one gambler NPC; read from the code, it is built only when
-that player has no window there yet
+A gamble window has 14 slots and belongs to one player at one gambler NPC. Every gamble open in the runs built a new
+window. Read from the code, it is built only when that player has no window there yet, and a window can survive to a
+second open only while another player is talking to the same NPC, so single player has no such case
 ([§ G](../specs/items/vendors.md#g-gambling-gamble_buildinv), [§ Worked example](../specs/items/vendors.md#worked-example),
 [§ H](../specs/items/vendors.md#h-gamble-refresh-and-purchases)). For each slot:
 
-1. A [gamble level](../glossary.md) is drawn in the range character level − 5 to + 4 (clamped to 5..99; the clamp was
-   not reached in the run). It is the base filter, the item's ilvl and the upgrade level. There is no separate affix
+1. A [gamble level](../glossary.md) is drawn in the range character level − 5 to + 4 and clamped to 5..99 (seen at
+   character levels 1 and 99). It is the base filter, the item's ilvl and the upgrade level. There is no separate affix
    window around the character's level.
 2. A base is drawn uniformly among the gamble list rows whose level is at most the gamble level. **Slot 0 is always a
    ring and slot 1 always an amulet**: their draws are made and thrown away, but their gamble level is kept.
@@ -386,8 +400,14 @@ that player has no window there yet
    item.
 
 The gambled item is fully decided at the build, base and quality included. Closing the window frees it, and the next
-*Gamble* builds a new one. Read from the code, not exercised: opening it twice within one interaction shows the same
-items, and buying an item copies it to the player without making a replacement. A gambled unique enters the
+*Gamble* builds a new one. Buying an item copies it to the player without making a replacement. Read from the code:
+opening the window twice within one interaction shows the same items, but that needs a second player talking to
+the NPC.
+
+Buying from the stock removes the item unless it is one of the vendor's permanent items. Selling copies the item into
+the stock unless it is refused. The runs saw refusals of a permanent item, of an item sold in the gamble window, and
+of healing potions sold outside Normal (`hp5` there; that `hp4`, `mp4` and `mp5` are refused the same way is read
+from the code). The [prices page](economy.md) covers the ethereal, `0x100` and `carry1` refusals. A gambled unique enters the
 [made-uniques set](../glossary.md) when the window is built, as a dropped one does, whether or not it is bought, so a
 later pick of that row fails and falls back; this is read from the code. Prices and repair have their own spec, which the
 vendor spec points to ([§ I](../specs/items/vendors.md#i-prices-and-repair)); the [prices, repair, gold and wear](economy.md)
@@ -638,7 +658,8 @@ Collected from the specs' open questions and unconfirmed points:
   pick with no candidate on an empty side); and stock cases no run has logged (a repair on an item with a durability
   bonus, a recharge with several charged skills, a stack above 255, a copy with two socketed items).
 - **Vendors** ([open questions](../specs/items/vendors.md#open-questions)): the rest of the multiplayer cases (a leave
-  with a trade window open, the two ways of leaving, three or more players); three bytes of the
+  with a trade window open, the two ways of leaving, a gamble window kept while a second player talks to the same
+  NPC, three or more players); the cell a stock item is placed in; three bytes of the
   vendor record that nothing read in the windows a run watched (a reader elsewhere is not excluded); and how many draws
   the [mercenary (hireling)](../glossary.md) list takes from the shared store seed, which the vendor run did not follow:
   it took the store seed after each hire-list build from the recording (16 builds, each entered with the seed the

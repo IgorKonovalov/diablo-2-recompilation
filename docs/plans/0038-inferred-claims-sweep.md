@@ -5039,7 +5039,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     [H4a](../backlog/archive/2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48.md),
     [H6e1](../backlog/archive/2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item.md) and
     [H6e2](../backlog/archive/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md) entries;
-    annotated the [S2c entry](../backlog/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md) ((b),
+    annotated the [S2c entry](../backlog/archive/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md) ((b),
     (c) done; (a), (d)–(g) wait for cube, vendors, sockets-runewords); filed the
     [counts entry](../backlog/archive/2026-10-27-spec-writer-architect-s38q-quest-drops-counts-for-the-research-map.md) and the
     [review request](../backlog/archive/2026-10-27-spec-writer-architect-s38q-review-quest-drops-phase-3.md). Ledger row
@@ -5208,7 +5208,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     sockets-runewords 2026-10-27; [items](../wiki/items.md) `based_on` properties 2026-10-27 (no text change).
   - **Backlog:** closed the [H6b entry](../backlog/archive/2026-10-27-architect-spec-writer-h6b-sockets-raises-for-the-phase-3-re.md)
     and the [H2b entry](../backlog/archive/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md) ((r)–(s),
-    its last open items); annotated the [S2c entry](../backlog/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md)
+    its last open items); annotated the [S2c entry](../backlog/archive/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md)
     ((e), (g) done; (a), (d), (f) wait for cube and vendors); filed the
     [counts entry](../backlog/archive/2026-10-27-spec-writer-architect-s38k-sockets-runewords-counts-for-the-research-map.md) and the
     [review request](../backlog/archive/2026-10-27-spec-writer-architect-s38k-review-sockets-runewords-phase-3.md). Ledger row
@@ -5386,7 +5386,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Wiki:** [items-other-paths](../wiki/items-other-paths.md) cube section refreshed, `based_on` cube 2026-10-27;
     [items](../wiki/items.md) `based_on` affixes 2026-10-27 (one open-question line).
   - **Backlog:** closed the [H6a entry](../backlog/archive/2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re.md);
-    annotated the [S2c entry](../backlog/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md)
+    annotated the [S2c entry](../backlog/archive/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md)
     ((a), (f) done; (d) waits for vendors, H6c); filed the
     [counts entry](../backlog/archive/2026-10-27-spec-writer-architect-s38c-cube-counts-for-the-research-map.md) and the
     [review request](../backlog/archive/2026-10-27-spec-writer-architect-s38c-review-cube-phase-3.md). Ledger row added, usage "—".
@@ -5528,7 +5528,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `a105ae13`: **static 567, harness 511, c-emu awaiting a batch 0, blocked 429** (d-none 300, d-edit 73, d-sim 28,
     d-2c 10, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526** (inventory § 2.6 H6c block, § 3, § 5).
   - **Phase 3 ready:** items/vendors (S2c and H6c, both accepted). The spec-writer entry
-    [2026-10-27-architect-spec-writer-h6c-items-vendors-phase-3-retag](../backlog/2026-10-27-architect-spec-writer-h6c-items-vendors-phase-3-retag.md)
+    [2026-10-27-architect-spec-writer-h6c-items-vendors-phase-3-retag](../backlog/archive/2026-10-27-architect-spec-writer-h6c-items-vendors-phase-3-retag.md)
     filed (no H6c entry existed); the research map's items/vendors row says so.
   - **Bookkeeping.** Review-fixes Seen lines: reverser 3, 4 and 9. The review request and the S2c
     harness-pieces entry closed (every piece has run). Ledger: the lane row filled (usage from the orchestrator:
@@ -5633,3 +5633,30 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Readiness.** **hirelings is ready for Phase 3** on every row but 3, 30 and 33, which wait on H1c and stay `[I]`
     in this pass (the sockets precedent: Phase 3 ran with sock 1's piece routed to H1c); a small re-tag follows H1c's
     acceptance. The conditional d-none parts and row 29 are `[I]` in the spec until the reverser entry is answered.
+- **2026-10-27 — Phase 3, the items/vendors cluster (spec-writer, `lane/s38v`, from `main` `fcce5b4d`).** Batches S2c
+  and H6c, both accepted; each restated statement checked against its section of
+  [items/0009](../findings/items/0009-vendors.md) (§ Plan 0038 batch S2c, H6c, the S2c pieces) and the `lane/h6c`
+  review's rulings and fixes.
+  - **items/vendors** {C 77, I 37, L 2} → **{C 112, I 37, L 2}** (recounted with the gate's tag reader; diff +37 / −2
+    `[C]`, +28 / −28 `[I]`). Raised from S2c: vend 3, 4 (the call sites and the direct walk; the indirect calls `[I]`;
+    the correction (d): quest code resets a store only through a dropped client), 7, 8, 9, 11 (in part), 19, 20, 21
+    (in part), 22 (the tab; with H6c's piece the placement, the cell search `[I]`), 24 (in part), 25, 26 (with H6c's
+    piece, raised), 27, 28 (in part). From H6c, each naming run:2026-10-27-sweep-vendors: vend 2 (the `UnitFree` row,
+    ruling (a), the flag test `[I]`, `PlayerSetInteract` only while `+0x6C` is 0, fix 6), 12, 14 (a new C0 step, the
+    trade-first branch inline `[I]`, "never" beyond the runs `[I]` from the `+0x21` writes, fix 4; the *Two seeds
+    interleave* note rewritten), 15, 18 (in part: one level-up event of two levels on a built state, fix 3, ruling
+    (c); a quest event and the note's consumer `[I]`), 30, 33, 34 (in part), 36. Kept `[I]`: vend 5 (shortfall on the
+    count `[C]`; the test sites and the epilogue jump `[I]`), vend 29 and 32 (d-2c: a second interactor on the NPC,
+    0x00572FAF, no single-player case). The gold piles: `DropGoldAmount`'s call (return 0x0055A18D), no cause (fix 2).
+    Pseudocode lines no run reached got inline `[I]` (A2, C1, D3–D4, E2, E3, G2). Open questions: the multiplayer
+    `[L]` gains the second-interactor gamble window.
+  - **Wiki:** [items-other-paths](../wiki/items-other-paths.md) vendor sections refreshed, `based_on` vendors
+    2026-10-27; wiki/economy restates no vendors statement, unchanged. Research-map row rewritten (review pending);
+    the root README row dated 2026-10-27.
+  - **Backlog:** closed the [H6c entry](../backlog/archive/2026-10-27-architect-spec-writer-h6c-items-vendors-phase-3-retag.md)
+    and the [S2c entry](../backlog/archive/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md)
+    ((d), its last open part); filed the
+    [counts entry](../backlog/2026-10-27-spec-writer-architect-s38v-vendors-counts-for-the-research-map.md) and the
+    [review request](../backlog/2026-10-27-spec-writer-architect-s38v-review-vendors-phase-3.md). Ledger row added,
+    usage "—".
+  - **Next:** architect review of `lane/s38v`.

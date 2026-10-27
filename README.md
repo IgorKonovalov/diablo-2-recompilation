@@ -88,7 +88,7 @@ research map is authoritative: it adds the dependencies, key tables, tag counts 
 
 | Subsystem | What it covers | Status | Date |
 |---|---|---|---|
-| [`items/vendors`](docs/specs/items/vendors.md) | store stock, refresh, vendor ilvl, gambling | reviewed | 2026-10-16 |
+| [`items/vendors`](docs/specs/items/vendors.md) | store stock, refresh, vendor ilvl, gambling | reviewed; re-tagged, review pending | 2026-10-27 |
 | [`items/cube`](docs/specs/items/cube.md) | recipe matching, input checks, output construction, rerolls | reviewed | 2026-10-16 |
 | [`items/sockets-runewords`](docs/specs/items/sockets-runewords.md) | socket filling, gems, runes and jewels, runeword activation | reviewed | 2026-10-15 |
 | [`items/quest-drops`](docs/specs/items/quest-drops.md) | quest-state TC switches, first-kill and special drops, quest rewards | reviewed | 2026-10-16 |
