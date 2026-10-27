@@ -3452,3 +3452,7 @@ run id). Evidence in [items/0010 § Plan 0038 batch H6e2](0010-quest-drops.md#pl
 - **Limits:** button `0x17` and a non-cube interaction type were not sent; no `eth`, `eli` or `nru` input and no `rem`
   output exist in the stock table; the three row-19 transmutes did not separate the skipped record; the crafted
   pick of 0 with an empty side (case (a)) has no stock base.
+  *`lane/h6a` review:* the swords carry no maximum-durability modifier (the evaluated and base stat 73 agree), the wand
+  holds one charge entry, the knives' max stack 160 lies under the `qty=255` byte, and the forced rows' other tests all
+  pass on stock data: cube 39 L491 and L524, 40 L528 and 58 are raised in part
+  ([items/0008 § Plan 0038 batch H6a](0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube)).

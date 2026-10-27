@@ -65,7 +65,9 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    sell's seed with five refusal tests unreached (0043 P2b review); spawn 41 filed raised with its "other sizes" half
    d-none (`lane/h5d` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)); the language clamp filed
    raised on a made-up `use` byte of 0x0E, where only edited data reaches it (ADR-0010: that half stays `[I]`,
-   d-edit; `lane/h3b` review, 0038).
+   d-edit; `lane/h3b` review, 0038). A `min` met on one side only (`min(255, max stack)` at a max stack of 160), a
+   "every entry" refill on a one-entry wand, an evaluated-or-base stat 73 equal on both swords, and "a forced row
+   skips only the window" filed raised beside aff 14's same "only" kept in part (`lane/h6a` review, 0038).
 9. **Name the path for every claim about a caller**, or say "unfollowed" with the count. Seen: the
    superunique minion path (0039 P1b, Q19); the 8/9 case's `RoomTileSetFlags` call (0039 P1a); "the effect flag is 1
    only from handler 20" without `SKILLS_SrvDo`'s seven other calls, and `SKILLS_PayCost`'s 0 for a zero-cost row
@@ -85,6 +87,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     evidence (59 events counted, one separating; `lane/p47b` review, [0047](../../../../docs/plans/done/0047-simulation-shortfalls.md));
     Radament's `2 + r` escorts filed raised on r = 0 alone (`lane/h4a` review, 0038); `MonIsNpc`'s "`npc` or `inTown`"
     scored against `npc` alone but not against `inTown` alone, which every stock row also fits (`lane/h5d` review, 0038);
+    `ItemCopy`'s "two more seed steps per child" from the one copy that had a child (`lane/h6a` review, 0038);
     a constant one-frame offset over 76 table rows filed `contradicted` when the rows cannot tell a different count
     (the schedule's steps `N = n − 1` against its end `n`) from a different behaviour, A1's source naming the
     convention (`lane/p50v` review, [0050](../../../../docs/plans/0050-animation-frame-timing.md)); Kick's 25 logged
