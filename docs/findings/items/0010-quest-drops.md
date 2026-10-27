@@ -1260,6 +1260,90 @@ quest item without stat 356, such as `box` (`questdiffcheck` 0), is found on the
 inventory in every difficulty. (fn:sub_00558110_PlayerFindItemByCode@0x00558110, fn:STATS_GetUnitStat@0x00625480,
 fn:sub_00624F60_StatListGetValue@0x00624F60, tbl:Misc.txt:quest, tbl:Misc.txt:questdiffcheck)
 
+## Plan 0038 batch H6e2 (run:2026-10-27-sweep-quest-items, in progress)
+
+Harness batch H6e2 (`quest-items`) of [plan 0038](../../plans/0038-inferred-claims-sweep.md) takes 24 inferred
+statements: [items/quest-drops](../../specs/items/quest-drops.md) rows 1, 30, 33, 34 and 35 of
+[the inventory](../../plans/0038-inventory/items-quest-drops.md) and [objects](../../specs/objects/README.md) row 48
+([inventory](../../plans/0038-inventory/objects-README.md)). This section is the first checkpoint (rotation, plan 0038
+log 2026-10-27): one kept session, the static reads the logger and the checker needed, and the route for the rest. Run
+record [run:2026-10-27-sweep-quest-items](experiments.md#run2026-10-27-sweep-quest-items). Logger
+`tools/gdb/quest-items.gdb` (`tools/gdb/quests.gdb`'s files plus `tools/gdb/quest-items.py`), checker
+`tools/sweep_h6e2.py check`.
+
+### Static reads behind the checker (2026-10-27, objdump of the pinned `game.exe`)
+
+- [I] **A quest chest opens once.** Every chest script (`box`, `tr1`, `msf`, the three Khalim chests) first calls
+  `0x00545850`, which returns 0 (the script stops) when the object's mode (`+0x10`) is not 0, and otherwise sets the
+  mode to 1 (queuing object event 1 at the frame `+ Objects+0xDC >> 8`) or 2. So a chest reopened in the same game
+  creates nothing, and the duplicate route "chest reopened with the item held" of inventory row 34 needs a new game
+  with the item held (the `QuestBoxH` and `QuestMsfN` saves of the run). (0x00545850–0x005458BD,
+  fn:sub_00599C10_A2Q2_ScrollChest@0x00599C10 0x00599C17, fn:sub_005B8860_A3Q2_HeartChest@0x005B8860 0x005B8867)
+- [I] **The per-player gates of the Act II chests**, read from their `GameForEachUnit` callbacks: `tr1`
+  (callback 0x00599700) counts a player whose record has word 10 bit 0 clear and bit 3 clear; `msf` (0x00599750) word
+  10 bit 0 clear and no `msf` and no `hst` held (`PlayerFindItemByCode`, returns 0x00599780, 0x00599792); `box`
+  (0x005997C0) no `box` held (0x005997CD). The count is the quest object 9's data `+0x14`; the chest then creates that
+  many items with `DropItemAtUnit` (quality 7 for `tr1` and `msf`, 2 for `box`; `msf` also sets item flag `0x10`,
+  0x00599D61). This is the table of § 5 as read before. (fn:sub_00599C10_A2Q2_ScrollChest@0x00599C10,
+  fn:sub_00599CF0_A2Q2_StaffChest@0x00599CF0, fn:sub_00599DF0_A2Q2_CubeChest@0x00599DF0,
+  fn:sub_00558110_PlayerFindItemByCode@0x00558110, fn:QUESTRECORD_GetState@0x0065C310)
+- [I] **Correction: the Khalim chests draw their gold first, and refuse a held part.** `HeartChest`, `EyeChest` and
+  `BrainChest` take the quest seed (`QUESTS_GetSeed` at 0x005B8878 / 0x005B8958 / 0x005B8A38), drop `5 + QuestPick(5)`
+  `gld ` piles (`DropItemCodeAt`, quality 2), **then** count the players with their callbacks (0x005B8810,
+  0x005B8770, 0x005B87C0), each of which counts a player who holds neither the chest's part (`qhr`, `qey`, `qbr`) nor
+  `qf2` (Khalim's Will), create that many parts (quality 2), and only then run the chest's ordinary drop
+  (`ObjectChestDrop`, 0x005B8931 / 0x005B8A11 / 0x005B8AF1). The spec's E1 order (items, chest drop, gold) holds for
+  `box`, `tr1`, `msf` and the altar, not for these three; and their "per player" gate has the held-part test.
+  (fn:sub_005B8860_A3Q2_HeartChest@0x005B8860 0x005B8878–0x005B8931, fn:sub_005B8940_A3Q2_EyeChest@0x005B8940,
+  fn:sub_005B8A20_A3Q2_BrainChest@0x005B8A20, fn:sub_00585970_DropItemCodeAt@0x00585970,
+  fn:sub_00585B90_ObjectChestDrop@0x00585B90)
+- [I] **Wirt's body** creates `leg` (quality 2) only in mode 0, then sets mode 1 and queues object event 1 (frame
+  `+ Objects+0xDC >> 8 + 1`) and event 7 (frame + 10); in any other mode the click does nothing. **The Inifuss tree**
+  needs quest object 4 with `+0x09` ≠ 0 (else it sets mode 1 and stops), its state `+0x0C` < 6, mode 0,
+  word 4 bits 0 and 1 clear, no `bkd` and no `bks` held; then `bks` (quality 2). **The Malus** needs quest object 3's
+  `+0x09` ≠ 0, word 3 bits 0 and 1 clear and character level (stat 12) ≥ 8 (else message 0x13); then `hdm` (quality 2).
+  **The Lam Esen tome** needs quest object 15's `+0x09` ≠ 0 and mode 0; word 17 bit 0 set gives message 0x13 and no item,
+  clear gives `bbb` (quality 2). (fn:sub_00583E70_WirtLegDrop@0x00583E70 0x00583E7E–0x00583EF5,
+  fn:sub_00593AF0_A1Q4_InifussDrop@0x00593AF0 0x00593B2B–0x00593C11, fn:sub_00591AC0_A1Q3_MalusDrop@0x00591AC0
+  0x00591AEC–0x00591B99, fn:sub_005B7A60_A3Q1_TomeDrop@0x005B7A60 0x005B7A7E–0x005B7AF3)
+- [I] **The gate's ground-pickup route.** `sub_0055CC90_ItemQuestGate` runs when a player picks up an item lying on
+  the ground: the call at 0x00563631 (inside `sub_00563470_ItemDiscardInvalid`, after the test that the item's mode
+  `+0x10` is 3, on the ground) sends error 0x13 and returns 0 when the gate refuses. The call at 0x0055D011 (in
+  `0x0055CF50`, called from `sub_00548B00_UnitInteract` at 0x00548C9D) is a second interact path; neither ran at the load
+  of a save holding refused items (the first session: no `IQG` line before the first pickup), so a held quest item is
+  not taken away at the join by this gate. (0x005635F8–0x00563649, 0x0055CF50–0x0055D011)
+- [I] **The quality column of § 5 is the argument.** In the kept log `quests-s3-3356-meph-normal.log`
+  (run:2026-10-16-quest-drops) `j34` (`FigurineDrop`, return 0x005BABFE) and `mss` (`MephistoDeath`, 0x005BCA86) were
+  requested with quality 2 and came back as items of quality 7 (`QDX`); `leg`, the gems and the Hellforge's `hfh` came
+  back with the quality they were asked for. Where the 7 comes from is not read (an open question below).
+  (fn:sub_00559A30_DropItemAtUnit@0x00559A30, fn:sub_005BAB60_A3Q4_FigurineDrop@0x005BAB60,
+  fn:sub_005BC8B0_A3Q6_MephistoDeath@0x005BC8B0)
+
+### Checkpoint 1: what the run has so far
+
+- **Item-move gate (inventory row 35): 8 cases, 0 mismatches.** Session `gate-done` (`QuestGateD`: every quest word's
+  bit 0 set, one of each gated item held, Normal): each item dropped from the inventory and picked up again by its
+  label. `ItemQuestGate` ran at the ground pickup (`IQG` return 0x00563636) and returned 0 for `bks`, `tr1`, `qbr`,
+  `hdm`, `j34` and `ass`, and 1 for `box` and `bbb`, each as the model of § 5 gives it on the logged record words;
+  for the two allowed items the `0x0055CA40` tail ran once and returned 0 (`IHD` at 0x0055CEDD, the call at 0x0055CED8).
+  (fn:sub_0055CC90_ItemQuestGate@0x0055CC90, run:2026-10-27-sweep-quest-items)
+  - What the cases separate: a reading that refuses every quest item is wrong on `box` and `bbb`; one without `box`'s
+    exception to object 9 is wrong on `box`; one without the `ass` test (quest 15, object 14, no pair) is wrong on
+    `ass`. Every word bit 0 was set, so the cases do not tell which word each branch reads (word 3 against word 4
+    for `hdm`, word 18 for `qbr`, word 10 for `tr1`): those stay `[I]`, with the `xyz`, `g33` and `tr2` tests, the
+    unique-row branch and the tail's other-player half, none of which ran. (fn:sub_0055CC90_ItemQuestGate@0x0055CC90, run:2026-10-27-sweep-quest-items)
+- **Duplicates (row 34):** 6 `PlayerFindItemByCode` stat-356 reads at the join (`PSX`), all of a Normal item (356 = 0)
+  in a Normal game; none separates the `questdiffcheck` test yet (the Nightmare `QuestMsfN` session is its case).
+- Nothing else is raised at this checkpoint: the chest, object and event-7 sessions did not run (the run record's
+  stalls).
+
+### Open questions (H6e2)
+
+- Where `j34`'s and `mss`'s quality 7 comes from (the `DropItemAtUnit` record has quality 2): `ItemCreate`'s quality
+  path for an item with no unique row is not read.
+- What the 0x0055D011 interact route is (which click reaches `0x0055CF50`), and whether `sub_00563470_ItemDiscardInvalid`'s
+  name fits the ground-pickup path that ran.
+
 ## Data touched
 
 - `tbl:MonStats.txt:TCQuestId` (`+0x9E` u8), `tbl:MonStats.txt:TCQuestCP` (`+0x9F` u8), `tbl:MonStats.txt:TreasureClass4`

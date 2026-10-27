@@ -3803,3 +3803,33 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     [2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises](../backlog/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md)
     was **released**, with four points added. The reverser entry above was filed. The archivist entry is unchanged.
   - **Next:** merge `lane/h1b`; then H1a (`d2s-load`).
+- **2026-10-27 — H6e2 (`quest-items`) started; rotated at the first checkpoint (reverser, `lane/h6e2`, harness slot 1,
+  from `main` `3c90008`; `main` `2637b08` merged at the checkpoint).** Run id run:2026-10-27-sweep-quest-items, record in
+  [items experiments](../findings/items/experiments.md#run2026-10-27-sweep-quest-items), evidence so far in
+  [items/0010 § Plan 0038 batch H6e2](../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items-in-progress).
+  - **Built:** logger `tools/gdb/quest-items.gdb` + `tools/gdb/quest-items.py` (object operates with record words,
+    object event 7 and its targets, `GiveItem`, the chest gold, `ObjectChestDrop`, `PlayerFindItemByCode` with its
+    stat-356 reads, `ItemQuestGate` with its result and tail, the orifice); session driver `tools/h6e2_sessions.py`
+    (13 sessions listed: gate-done, gate-fresh, radament, cube, cube-held, staff, staff-nm, heart, brain, eye, tome,
+    inifuss, tristram); checker `tools/sweep_h6e2.py check` (chest, object, event7, dup, gate models); four recipes
+    `tools/d2s_recipes/quest-h6e2-*.json`; saves in `workspace/scratch-h6e2/saves/`.
+  - **So far:** one kept session (`gate-done`, by hand): item-move gate 8 cases, 0 mismatches (qd 35 raised in part
+    when filed; the word identities, `xyz`/`g33`/`tr2` and the unique branch still open). Static reads for the checker,
+    all `[I]`: a chest opens once (mode test `0x00545850`); the Act II chest callbacks; **a correction** to E1 for the
+    three Khalim chests (gold first, then the parts, then the chest drop; each counts a player holding neither the part
+    nor `qf2`); the Wirt / Inifuss / Malus / tome gates; the gate's ground-pickup route; `j34`/`mss` requested at
+    quality 2 come back quality 7 (kept log 3356). Kept logs usable as a-logs for the write-up: `leg`
+    (`economy2-s1-4506-wirt.log`), `j34` and `mss` (`quests-s3-3356-meph-normal.log`), the orifice's StaffPlaced bits
+    (`quests-s3-3364-duriel-normal.log`, `QS` returns 0x0059DDA1 / 0x0059DDB9).
+  - **Resume note.** (1) The scripted Act II descent stalled on map seed 3811: `descend` sees the Sewers Level 2
+    down-stairs 9 sub-tiles away and finds no path; clicks on their label did not take them; the pilot also read the
+    orbs as 0.00 through that session (a direct read later gave 0.75 / 0.79) and `wpchain` ran to its 120 s timeout
+    after arriving. Next agent: try H4a's map seeds (radament 4904) or another seed per session, check `Pilot.hp()` once
+    after the waypoint, and give `wpchain` a shorter timeout. (2) Then run, in this order (cheapest first): `tristram`
+    (QuestAllDone: leg, the gold piles' event 7 for the qd 1 backtrace, the second click), `inifuss`, `cube`,
+    `cube-held`, `radament` (ass, tr1), `staff`, `staff-nm` (the questdiffcheck duplicate), `heart` (sewer lever event 7,
+    the Khalim order), `brain`, `eye`, `tome`; a `gate-fresh` hand session as in the record (drop one item, Alt, click its
+    label, one at a time; walking off ended the first). (3) `sweep_h6e2.py`'s chest model already has the Khalim order;
+    the altar (`vip`) gate is unmodelled (prints a mismatch if met); Malus, tome and Inifuss assume the quest object's
+    `+0x09` is set. (4) The backlog entry on `objects.py`'s waypoint mode was not hit (no `objects.py` run yet). Slot 1
+    stopped, saves restored (empty, no aside). Four launches so far (one kept, three development logs); the cap is ~20.
