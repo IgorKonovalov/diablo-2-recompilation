@@ -400,6 +400,16 @@ none rejected.
 457 k, 40 min, 3.9; reverser-harness 3, 275 k, 56 min, 3.7; spec-writer 6, 252 k, 19 min, 3.7; archivist
 5, 243 k, 18 min, 4.6; wiki 5, 154 k, 8 min, 5.6; architect-review 32, 145 k, 9 min.
 
+## Kinds
+
+The `Kind` cell names the lane skill and how it ran: `reverser-static`, `reverser-harness`, `archivist`,
+`spec-writer`, `wiki`, `architect` (planning and ADRs), `architect-review` (a Tier A review, architect Mode 3) and
+`architect-check` (a Tier B lane check, `.claude/skills/architect/references/lane-check.md`; ADR-0023, from plan 0053
+Phase 3). A check covering several lanes gets one row per lane, its tokens split evenly and the split said in the
+Lane cell. An **audit** (every fifth Tier B lane also reviewed at Tier A) is an `architect-review` row whose Fixes
+cell begins `audit of <lane>:`, then the fix count by category as usual, and names any reject-grade problem the
+check missed.
+
 ## Fix categories
 
 Each fix is counted once, in the first category that fits, in this order.

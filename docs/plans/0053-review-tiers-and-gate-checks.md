@@ -1,6 +1,6 @@
 # 0053 — Review tiers and gate checks for the mechanical fix categories
 
-> **Status:** approved (owner, 2026-10-27; ADR-0023 accepted as a trial)
+> **Status:** approved (owner, 2026-10-27; ADR-0023 accepted as a trial); Phases 0–2 done 2026-10-27, Phase 3 (the trial) next
 > **Created:** 2026-10-27
 > **Owner skill(s):** archivist (phases 0–1), architect (phases 2 and 4), human (phase 3)
 > **Related ADRs:** [0023-review-tiers-and-gate-first-fixes](../adrs/0023-review-tiers-and-gate-first-fixes.md) (accepted, trial), [0006-docs-gate](../adrs/0006-docs-gate.md)
@@ -184,3 +184,23 @@ entry): `monsters/pool` and `monsters/spawn` get `**reviewed** · `; `player/cre
 plan 0048 P3's staff-mod oracle rewording; `stats/aggregate` reads C 65 / I 42 / L 4, updated 2026-10-20, with plan 0047
 P1's J4 (the full Trang-Oul's `state` and `oskill` blocks `[C]`) in place of the stale `[I]`. E15 leaves `DEMOTED`.
 E14, E15, E16 and W7 are in `evidence-rules.md` § Mechanical checks.
+
+### 2026-10-27 — Phase 2 (architect, `lane/p53a`)
+
+- **Backlog.** The E15 entry to the architect is closed (archive/) with the review commit's map fixes. `DEMOTED` now
+  holds only E14: its six findings rows wait for the reverser's entry
+  `2026-10-27-archivist-reverser-e14-table-rows-with-an-extra-cell-in.md`, and whoever lands that entry empties the set
+  in the same commit (`tools/gate.py`, `evidence-rules.md`'s sentence under the errors table). Until then the Phase 2
+  *Done when*'s "E14–E16 at error" holds for E15 and E16 only.
+- **Lane check.** `.claude/skills/architect/references/lane-check.md`: which lane kinds are Tier B, the inputs and the
+  scope limit (the diff, the request, the lane's `review-fixes.md`, and range reads for three anchors), the four checks,
+  the escalation list, batching of up to three disjoint lanes, the verdict format.
+- **Skill.** `SKILL.md` Mode 3 opens with the tiers, the promotion re-check of imported `[C]` (`git log -L`), the
+  every-fifth audit with its ledger form and its two-in-five rule, and gate first; References lists the lane check.
+- **Ledger.** `docs/plans/metrics.md` § Kinds (new): the kind list with `architect-check`, one row per lane for a
+  batched check, and the audit row as an `architect-review` whose Fixes cell begins `audit of <lane>:`. No rows added.
+- **Not done here:** the orchestrator's lane-model memory note (an Outputs item) is the orchestrator's own file; it
+  should point at `SKILL.md` Mode 3 § Tiers and `lane-check.md` before Phase 3 starts.
+
+**Next: Phase 3** (human, the orchestrator): the next ten non-spec lanes through `lane-check.md` on Sonnet, the fifth
+and tenth also at Tier A as audits, every run in the ledger.
