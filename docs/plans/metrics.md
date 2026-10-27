@@ -273,6 +273,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-25 | `lane/h4a` review | 0038 H4a | architect-review | 158 439 | 64 | 22 | — (static, no Ghidra) | gave accept with fixes | — (on the lane row; ledger raised 15, in part 9, shortfall 8; totals 1 526 unchanged) |
 | 2026-10-25 | `lane/p51a` | 0051 P0a | archivist | 183 561 | 59 | 14 | — (static, no Ghidra) | accept | 0 |
 | 2026-10-27 | `lane/p51a` review | 0051 P0a | architect-review | 69 432 | 27 | 3 | — (static, no Ghidra) | gave accept | — (on the lane row; resumed after the owner's usage-limit pause) |
+| 2026-10-27 | `lane/p51b` | 0051 P0b | archivist | — | — | — | — (static, no Ghidra) | — | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

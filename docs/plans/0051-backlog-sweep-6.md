@@ -254,3 +254,42 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   finding gives do 34's third slot. (3) No review-fixes Seen line: no fix was made, so no rule recurred. Review request
   closed ([archive](../backlog/archive/2026-10-25-archivist-architect-review-plan-0051-phase-0a-column-readers.md)).
   Ledger rows filed. Next: P0b (items 9–16).
+- **2026-10-27 — Phase 0b landed for review (archivist, `lane/p51b`, no slot, no Ghidra).** The seven plan 0046
+  column-reader entries of 2026-10-21 (8a, 8b, 8c, `ass`, `bar`, `dru`, `item`) are folded and closed, and the MonEquip
+  entry is done. Each reader ends its row's Meaning cell with `*plan 0046 readers:*` (P0a's convention: the § Dispatch row
+  in Skills where one exists, else § Columns), a tagged reader, the finding section (skills/0012–0018) and an `fn:` or
+  address anchor. Tables touched: [Skills](../tables/Skills.md) (38 rows), [Missiles](../tables/Missiles.md) (`Vel`,
+  `VelLev`, `Param1`, `Param2`, `Size`), [MonStats2](../tables/MonStats2.md) (`InfernoLen`, `InfernoAnim`, `corpseSel`,
+  `soft`, `large`, `small`, `SizeX`, `S3v`, `S4v`), [MonStats](../tables/MonStats.md) (§ Spawn columns `spawn`,
+  `spawnx`/`spawny`, `spawnmode`, whose name readings `[L]` are replaced by the summon readers; `+0x04B`; a `BaseId` row
+  in § Readers), [States](../tables/States.md) (`srvactivefunc`, an Open question), [Levels](../tables/Levels.md)
+  (`Teleport`), [PetType](../tables/PetType.md), [Books](../tables/Books.md), [Shrines](../tables/Shrines.md) (§ Effects:
+  codes 19, 21, 22; the `[L]` bullet narrowed to 16–18) and [Misc](../tables/Misc.md) (`pSpell` 10, 11).
+  - **The tags are the findings', as their reviews left them.** Values and tests `[C]` up to each ADR-0021 boundary,
+    meanings and what follows a boundary `[I]` (`bar`: the archivist entry's `[C]` items carry values only; `dru` fix 2:
+    `InTown` and `aurarangecalc` give the branch and its calls `[C]`, "the state is removed", "the period ends" `[I]`; 8c
+    fix 3: `srvactivefunc` 147's call `[C]`, the path move `[I]`; `ass`: "0 forbids, 2 restricts" and stat 8 as mana `[I]`;
+    `item` fix 3: 5 to 9 potion **tries**, a try with no free spot making none). Where an entry and its finding differ
+    in wording, the finding's text is used: `SKILLS_PayCost`'s 0 refuses nothing (`item` review fix 2, added); start
+    60's packet is set on the bit-0 return by the caller (as start 58's); `PrgCalcByCharge` is `[C]` only as part of the
+    entries' maps. One count recomputed: the Skills `.txt` has 357 rows, not the 358 skills/0013 § 6 writes; the fact
+    (only 239 and 242 use start 58 and do 122, both `ResultFlags` blank) holds.
+  - **The three data questions of § Phase 0.** (a) `bar`'s Skills `+0x005` bit 0 is the `InTown` column by the layout
+    (`[C]`), as the `dru` entry names it: answered, no Phase 1b item. (b) 8c's monster-data bytes `+0x0E`/`+0x0F` hold no
+    table column; by monsters/0004 § 6 MonsterData `+0x04 + k` is MonStats2 component `k`'s drawn variant, so they are
+    `S3v` (k = 10) and `S4v` (k = 11), `[I]`, and the data agree (the DoomKnightMissile classes' `S3v` and `necromage`'s
+    `S4v` have 4 variants each, and `undeadmissile1..4`, `necromage1..4` run in Missiles): answered on the MonStats2 and
+    Skills `srvmissilea` rows, no Phase 1b item. (c) `dru`'s DataTables `+0x17C`/`+0x180` list needs its loader read:
+    **forwarded to Phase 1b** (§ Phase 1b item 3), with the data candidates in States § Open questions (`restrict`,
+    exactly 139, 140, 177; `group` 3; `transform`).
+  - **MonEquip** ([MonEquip](../tables/MonEquip.md), new): a `monequip` layout in `tools/excel_layouts.py` (45 records ×
+    12 fields = 540 cells, 0 mismatches; `loc2`/`loc3` and `mod2`/`mod3` placed by order, `[I]`, since the 9 rows that
+    set slot 2 set slot 3 alike), the `excel_layout` baseline regenerated (69 tables). The `oninit` rows are the first
+    rows of 267 `bloodraven` and 234 `flyingscimitar`, level 0, one location; the other 42 rows are the summons
+    `valkyrie` (357), `shadowwarrior` (417), `shadowmaster` (418), walked by the summon code's own `MonEquipInit` calls
+    (`[I]`). `mod1..3` stay `[L]`; whether `MonEquipInit`'s last argument skips the `oninit` test is an open question of
+    the doc, not needed by oracle 13.
+  - Left open: none of P0b's entries. `tools/` changes: the layout and the baseline only; `re/` unchanged. Gate fast tier GREEN (the 11 W1
+    warnings are `main`'s, in `docs/specs/data/excel.md`); `--full=excel_layout` GREEN against the new baseline. Review
+    request filed ([entry](../backlog/2026-10-27-archivist-architect-review-plan-0051-phase-0b-column-readers.md)); ledger
+    row added. Next: Phase 1b (with the `dru` item).

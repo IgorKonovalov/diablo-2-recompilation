@@ -152,7 +152,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   drlg/warps point list in the same step; the player, walk-in, item and corpse marks stay logged inputs, counted;
   (8) oracle 7, the gold piles' items; (9) oracle 6, an object's drop; (10) oracle 13, MonEquip's item creation,
   `[I]` at best, and it may close as "not modelled, unreached" if no stock row reaches it (archivist entry
-  [MonEquip table doc](../../backlog/2026-10-20-architect-archivist-monequip-table-doc-for-plan-0048.md), not blocking).
+  [MonEquip table doc](../../backlog/archive/2026-10-20-architect-archivist-monequip-table-doc-for-plan-0048.md), not blocking).
   Not assigned: 8, 12, 18, 24, 25 (inputs) and 9, 10, 11, 23 (off the chain), as proposed.
   **Rulings.** (a) The S and N line classes of chain/0001 § 6 meet the Phase 0 *Done when*: a structural use or a "no
   oracle" statement names no oracle, so "in the list or a historical sentence" applies to the 134 naming lines; no plan
@@ -547,7 +547,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   question on activation order is answered in chain § Runtime state (`[I]`: the game seed, `O` and the near lists
   depend on it; the level and room seeds do not); the vendors-and-hirelings question was left as stated (off the
   chain). Left open outside the plan: the archivist entry
-  [MonEquip table doc](../../backlog/2026-10-20-architect-archivist-monequip-table-doc-for-plan-0048.md) and chain's six
+  [MonEquip table doc](../../backlog/archive/2026-10-20-architect-archivist-monequip-table-doc-for-plan-0048.md) and chain's six
   `[L]` (the chest interact-byte writer, MonEquip's unreachable branches by a forced-path run, oracle 19's room flags,
   oracle 20's model side, the other monster-creating `InitFn`s and MonPlace rows, a log-free world build), for a later
   plan. Research map: the `chain` row's wiki cell set to the page. Spec-writer `review-fixes.md` rules 2 and 8 extended.
