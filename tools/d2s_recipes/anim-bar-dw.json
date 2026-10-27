@@ -1,0 +1,82 @@
+{
+ "game": "expansion",
+ "class": "Barbarian",
+ "seed": 5481,
+ "name": "AnimBarDw",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 150,
+  "energy": 200,
+  "dexterity": 100,
+  "vitality": 25,
+  "hitpoints": 1500,
+  "maxhp": 1500,
+  "mana": 600,
+  "maxmana": 600,
+  "stamina": 400,
+  "maxstamina": 400,
+  "level": 25,
+  "experience": 2050449
+ },
+ "skills": {
+  "Double Swing": 1,
+  "Frenzy": 1,
+  "Leap Attack": 1,
+  "Leap": 1,
+  "Howl": 1
+ },
+ "mouse": {
+  "left": "Attack",
+  "right": "Frenzy",
+  "swap_left": "Attack",
+  "swap_right": "Frenzy"
+ },
+ "hotkeys": [
+  "Attack",
+  "Double Swing",
+  "Frenzy",
+  "Leap Attack",
+  "Kick"
+ ],
+ "belt_fill": [
+  "rvl",
+  "rvl",
+  "rvl",
+  "mp5"
+ ],
+ "items": [
+  {
+   "code": "mbl",
+   "equip": "belt"
+  },
+  {
+   "code": "hax",
+   "equip": "rarm"
+  },
+  {
+   "code": "scm",
+   "equip": "larm"
+  },
+  {
+   "code": "hax",
+   "equip": "rarm2",
+   "suffix": 18
+  },
+  {
+   "code": "flc",
+   "equip": "larm2",
+   "suffix": 16
+  }
+ ]
+}

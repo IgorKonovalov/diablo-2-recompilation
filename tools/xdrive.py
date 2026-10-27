@@ -9,6 +9,7 @@ window is, and input gets mapped wrongly. Use --window offsets instead.
     python3 -I tools/xdrive.py --display :7 --window "Diablo II" click 400 307   # window-relative
     python3 -I tools/xdrive.py --display :7 shot out.png          # whole root
     python3 -I tools/xdrive.py --display :7 --window "Diablo II" rclick 678 345   # right button
+    python3 -I tools/xdrive.py --display :7 --window "Diablo II" rhold 430 270 4.0   # right button held 4 s
     python3 -I tools/xdrive.py --display :7 key Return
     python3 -I tools/xdrive.py --display :7 type harness
     python3 -I tools/xdrive.py --display :7 keydown Alt_L     # held until 'keyup Alt_L' (item labels)
@@ -181,9 +182,9 @@ def do(dpy, argv, off=None, tag=""):
     if cmd == "shot" and tag:
         base, ext = os.path.splitext(a[0])
         a = [base + tag + ext]
-    if cmd in ("click", "rclick", "dclick", "move"):
+    if cmd in ("click", "rclick", "dclick", "move", "rhold", "lhold"):
         ox, oy = off or (0, 0)
-        a = [int(a[0]) + ox, int(a[1]) + oy]
+        a = [int(a[0]) + ox, int(a[1]) + oy] + a[2:]
     if cmd == "shot":
         if off:
             dpy.shot(a[0], off[0], off[1], GAME_W, GAME_H)
@@ -193,6 +194,8 @@ def do(dpy, argv, off=None, tag=""):
         dpy.click(a[0], a[1])
     elif cmd == "rclick":
         dpy.click(a[0], a[1], button=3)
+    elif cmd in ("rhold", "lhold"):          # plan 0050 Phase 2: a button held for S seconds (a held cast)
+        dpy.click(a[0], a[1], button=3 if cmd == "rhold" else 1, hold=float(a[2]))
     elif cmd == "move":
         dpy.move(a[0], a[1])
     elif cmd == "dclick":

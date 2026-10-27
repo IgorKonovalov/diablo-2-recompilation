@@ -1,0 +1,97 @@
+{
+ "game": "expansion",
+ "class": "Barbarian",
+ "seed": 5041,
+ "name": "AnimBar1",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 150,
+  "energy": 200,
+  "dexterity": 100,
+  "vitality": 25,
+  "hitpoints": 1500,
+  "maxhp": 1500,
+  "mana": 600,
+  "maxmana": 600,
+  "stamina": 120,
+  "maxstamina": 120,
+  "level": 25,
+  "experience": 2050449
+ },
+ "skills": {
+  "Howl": 1,
+  "Shout": 1,
+  "Double Swing": 1
+ },
+ "mouse": {
+  "left": "Attack",
+  "right": "Howl",
+  "swap_left": "Attack",
+  "swap_right": "Howl"
+ },
+ "hotkeys": [
+  "Attack",
+  "Howl",
+  "Kick",
+  "Throw",
+  "Double Swing"
+ ],
+ "belt_fill": [
+  "rvl",
+  "rvl",
+  "rvl",
+  "mp5"
+ ],
+ "items": [
+  {
+   "code": "tax",
+   "equip": "rarm",
+   "quantity": 60
+  },
+  {
+   "code": "buc",
+   "equip": "larm",
+   "suffix": 171
+  },
+  {
+   "code": "2hs",
+   "equip": "rarm2",
+   "suffix": 16
+  },
+  {
+   "code": "rin",
+   "equip": "rrin",
+   "suffix": 173
+  },
+  {
+   "code": "rin",
+   "equip": "lrin",
+   "suffix": 173
+  },
+  {
+   "code": "qui",
+   "equip": "tors",
+   "suffix": 263
+  },
+  {
+   "code": "lbt",
+   "equip": "feet",
+   "suffix": 112
+  },
+  {
+   "code": "mbl",
+   "equip": "belt"
+  }
+ ]
+}

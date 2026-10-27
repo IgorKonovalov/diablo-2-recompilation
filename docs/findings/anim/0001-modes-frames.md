@@ -20,6 +20,8 @@ names agree (P1.1 review). 8.8 means frames × 256.
 
 ## Answer (summary)
 
+*2026-10-27, Phase 2:* the record, the start frame, the schedule with its dispatch, the advance, the object draw (not its chaining) and the per-frame order are raised to `[C]` by run:2026-10-27-anim; see [the run section](#plan-0050-phase-2-run2026-10-27-anim), whose tags are the current ones.
+
 - [I] **Two clocks.** A unit's frame fields (`Unit+0x44` frame, `+0x48` length, `+0x4C` rate, `+0x4E` event byte) are
   advanced per frame by `UNIT_AnimAdvance` only for **monsters in an every-frame mode** (walk, run, knockback,
   sequence, and the attack and skill modes whose MonStats2 `*mv` bit is set). Every other server mode with events
@@ -119,32 +121,34 @@ New names (subsystem `anim/timing`) and the existing ones this finding reads; al
 |---|---|---|---|
 | `0x00624690` | `UNIT_SetMode` | mode change, then `UNIT_AnimInit` (§ 3) | C (objects; unchanged) |
 | `0x00624390` | `UNIT_AnimInit` | frame fields per unit type (§ 3) | C (objects; unchanged) |
-| `0x00623F50` | `UNIT_AnimSetRate` | record and `+0x4C`/`+0x3C` rate (formulas: [anim/0002](0002-rates.md)) | I |
-| `0x00620F00` | `UNIT_AnimSetRecord` | `+0x50 = ANIMDATA_Lookup(mode, type, inventory)` (class in a register) | I |
-| `0x00623B10` | `UNIT_AnimStartFrame` | the start frame (§ 4) | I |
-| `0x00623E00` | `UNIT_AnimAdvance` | the per-frame advance and event byte (§ 8) | I |
+| `0x00623F50` | `UNIT_AnimSetRate` | record and `+0x4C`/`+0x3C` rate (formulas: [anim/0002](0002-rates.md)) | C (anim/0002's run section) |
+| `0x00620F00` | `UNIT_AnimSetRecord` | `+0x50 = ANIMDATA_Lookup(mode, type, inventory)` (class in a register) | C |
+| `0x00623B10` | `UNIT_AnimStartFrame` | the start frame (§ 4) | C |
+| `0x00623E00` | `UNIT_AnimAdvance` | the per-frame advance and event byte (§ 8) | C |
 | `0x00621310` | `UNIT_AnimAdvanceLoop` | `+0x44 += rate`, wrap at `+0x48`; client callers only (5 sites) | I |
 | `0x006217C0` | `UNIT_AnimAtEnd` | sequence: `+0x48 < 1`; else `+0x48 ≤ +0x44 + rate` | I |
 | `0x00621260` | `UNIT_SeqInit` | sequence fields, frame 0 read, `+0xC4 |= 0x4000` | I |
-| `0x00621210` | `UNIT_SeqReadFrame` | the frame at `+0x38`: mode, frame, event; returns "mode changed" | I |
+| `0x00621210` | `UNIT_SeqReadFrame` | the frame at `+0x38`: mode, frame, event; returns "mode changed" | C |
 | `0x006212C0` | `sub_006212C0_UnitSetSeqPos` | `+0x38 = (+0x38 & 0xFF) + n·256` | I |
 | `0x00663310` / `0x006633D0` / `0x006633F0` | `sub_00663310_UnitSeqRecord` / `sub_006633D0_UnitSeqLength` / `sub_006633F0_UnitSeqFrames` | the used skill's sequence record, its `+4 << 8`, its `+8` | I |
-| `0x00663410` / `0x006634C0` | `SEQ_ReadFrame` / `sub_006634C0_SeqFrameEvent` | 6-byte frame reader; event byte at a position | I |
+| `0x00663410` / `0x006634C0` | `SEQ_ReadFrame` / `sub_006634C0_SeqFrameEvent` | 6-byte frame reader; event byte at a position | C / I |
 | `0x00643D00` / `0x006632C0` / `0x00659E30` | `sub_00643D00_SkillSeqIndex` / `sub_006632C0_PlrSeqColumn` / `sub_00659E30_MonSeqRecord` | sequence number, player column, monseq record | I |
 | `0x00659C60` | `MONSEQ_Load` | `monseq.bin` and its 12-byte index | I |
-| `0x0066A770` / `0x0066A8F0` / `0x0066A9B0` | `ANIMDATA_Load` / `ANIMDATA_Find` / `ANIMDATA_Lookup` | `AnimData.d2` table, find, find-or-fallback | I |
-| `0x0064F5B0` / `0x0064F060` / `0x0064F020` | `COMPOSIT_BuildCofName` / `COMPOSIT_WeaponClass` / `COMPOSIT_WeaponClassIndex` | the record name and its weapon class (§ 2) | I |
-| `0x00645270` / `0x00645190` | `UNIT_AnimTransform` / `sub_00645190_PlrToMonMode` | the shapeshift states' display type, class and mode (§ 2) | I |
+| `0x0066A770` / `0x0066A8F0` / `0x0066A9B0` | `ANIMDATA_Load` / `ANIMDATA_Find` / `ANIMDATA_Lookup` | `AnimData.d2` table, find, find-or-fallback | I / C / C |
+| `0x0064F5B0` / `0x0064F060` / `0x0064F020` | `COMPOSIT_BuildCofName` / `COMPOSIT_WeaponClass` / `COMPOSIT_WeaponClassIndex` | the record name and its weapon class (§ 2) | C / C / I |
+| `0x00645270` / `0x00645190` | `UNIT_AnimTransform` / `sub_00645190_PlrToMonMode` | the shapeshift states' display type, class and mode (§ 2) | C / C |
 | `0x005533D0` | `SUNIT_AnimInit` | server re-init at a mode start (§ 3) | I |
-| `0x005539B0` | `SUNIT_ScheduleModeEvents` | the schedule (§ 7) | I |
+| `0x005539B0` | `SUNIT_ScheduleModeEvents` | the schedule (§ 7) | C |
 | `0x00553B10` / `0x00553C70` / `0x00553DC0` | `sub_00553B10_RescheduleFromPct` / `sub_00553C70_RescheduleSkip` / `sub_00553DC0_RescheduleAt` | catalogue reschedules (§ 7.1) | I |
-| `0x00553F00` / `0x00553990` / `0x00553570` | `SUNIT_ModeEveryFrame` / `SUNIT_CancelModeEvents` / `SUNIT_SetMode` | event 0 every frame; cancel events 0 and 1; `0x0057C980` then `UNIT_SetMode` | I |
+| `0x00553F00` | `SUNIT_ModeEveryFrame` | event 0 every frame (raised at the Phase 2 review: 9 682 logged starts, `ef-first`, [run section](#plan-0050-phase-2-run2026-10-27-anim)) | C |
+| `0x00553990` / `0x00553570` | `SUNIT_CancelModeEvents` / `SUNIT_SetMode` | cancel events 0 and 1; `0x0057C980` then `UNIT_SetMode` | I |
 | `0x005416B0` / `0x005415E0` / `0x00541650` | `sub_005416B0_EventQueueAt` / `sub_005415E0_EventQueueEveryFrame` / `sub_00541650_UnitQueueEveryFrame` | the event queue (§ 6) | I |
 | `0x00541240` / `0x00540F60` / `0x00541060` / `0x00541320` | `sub_00541240_MissileEventsRun` / `sub_00540F60_PlayerEventsRun` / `sub_00541060_MonEventsRun` / `sub_00541320_ItemEventsRun` | the list runners (§ 6) | I |
 | `0x00581220` / `0x005A7F80` | `sub_00581220_PlayerEventDispatch` / `sub_005A7F80_MonEventDispatch` | `g_PlayerEventFuncs` / `g_MonEventFuncs` by kind | I |
 | `0x005811D0` / `0x005A7BA0` / `0x005A7BE0` | `sub_005811D0_PlayerModeFrameEvent` / `sub_005A7BA0_MonModeFrameEvent` / `sub_005A7BE0_MonModeEndEvent` | event 0 and 1 handlers | I |
 | `0x005A6B10` | `sub_005A6B10_MonModeEveryFrame` | is the monster mode every-frame? | I |
-| `0x005A8030` / `0x005A8520` / `0x005A8330` / `0x005A83E0` / `0x005A73E0` | `sub_005A8030_MonModeEndGeneric` / `sub_005A8520_MonKnockbackEnd` / `sub_005A8330_MonModeEndToS1` / `sub_005A83E0_MonModeEndToS1b` / `sub_005A73E0_MonModeStartNeutral` | monster mode ends and the neutral start (§ 10) | I |
+| `0x005A8520` | `sub_005A8520_MonKnockbackEnd` | the monster knockback's end (§ 10; raised at the Phase 2 review: 541 logged ends, `kb-end`, [anim/0003's run section](0003-movement-gates.md#plan-0050-phase-2-run2026-10-27-anim)) | C |
+| `0x005A8030` / `0x005A8330` / `0x005A83E0` / `0x005A73E0` | `sub_005A8030_MonModeEndGeneric` / `sub_005A8330_MonModeEndToS1` / `sub_005A83E0_MonModeEndToS1b` / `sub_005A73E0_MonModeStartNeutral` | monster mode ends and the neutral start (§ 10) | I |
 | `0x0057F020` / `0x0057F090` / `0x0057F1F0` / `0x0057F190` / `0x0057FE30` / `0x0057FDC0` / `0x00580C20` | `sub_0057F020_PlrModeStartNeutral` / `sub_0057F090_PlrModeStartMove` / `sub_0057F1F0_PlrModeStartMoveXY` / `sub_0057F190_PlrModeStartMoveUnit` / `sub_0057FE30_PlrModeStartGetHit` / `sub_0057FDC0_PlrModeStartBlock` / `sub_00580C20_PlrModeMoveFrame` | player mode starts and the move frame (§ 9) | I |
 
 Data: `g_MonModeRecords` `0x006E2260` (21 × 16 B), `g_MonModePerFrame` `0x006E23D0` (16 × 12 B), `g_MonModeEndDirect`
@@ -631,3 +635,80 @@ for (; f <= (unit->animFrame >> 8); f++) take(f);
   archivist entry ([PlrType](../../tables/PlrType.md), [ObjType](../../tables/ObjType.md)).
 - ~~`UNIT_AnimSetRate`'s branches.~~ *2026-10-27 (P1.2):* read in [anim/0002 §§ 1–3](0002-rates.md).
 - [L] `sub_0064C040` (called by `UNIT_SetMode`) and `0x0057C980` (by `SUNIT_SetMode`) are not read.
+
+## Plan 0050 Phase 2 (run:2026-10-27-anim)
+
+Phase 2 of [plan 0050](../../plans/0050-animation-frame-timing.md): `tools/anim.py check`, the model of this
+finding, [anim/0002](0002-rates.md) and [anim/0003](0003-movement-gates.md), over the 55 kept session logs of
+[run:2026-10-27-anim](experiments.md#run2026-10-27-anim) (logger rev 4 and 5). Every count below is printed by the
+closing check (`2026-10-27-anim-check.txt`) or by `tools/anim.py summary` over it (`2026-10-27-anim-summary.txt`);
+every compared kind has 0 mismatches. Where a statement above is tagged inferred and this section raises it, the tag
+and the run given here are the current ones; what the run does not separate stays `[I]` above. The oracles are those
+of Phase 2's *Boundary* (the mode request, the AI, the path plan, the collision test, the catalogue speed writers,
+queues and reschedules, the client): what a callee or a catalogue function does with the logged values is not raised.
+
+- **The record** (§ 2) **raised.** [C] At every logged `UNIT_AnimSetRate` exit (298 373 server player and monster
+  calls) the record in `Unit+0x50` is the `animdata.d2` record of the model's name, its frames and speed equal
+  (`name`, `record` 298 373 each): the PlrType token, the PlrMode token with `GH` for 18 and 19, the weapon class of
+  `COMPOSIT_WeaponClass` (CharStats `baseWClass` without a weapon, the item's one- or two-handed class, the
+  Barbarian's one-or-two-handed weapon one-handed beside a shield, `hth` in modes 0 and 17 and for a throw with another
+  class, and the dual classes `1ss` and `ht2` met in sp-bar-dw and sp-ass-bos); MonStats `Code` + MonMode token (`KB`
+  → `GH`) + MonStats2 `BaseW` (`hth` in 0 and 12 without `compositeDeath`); and, for a shapeshifted player (rev 5 logs,
+  states 139 and 140), the display class 430 or 431 with the mode through `g_PlrToMonMode` and the MonStats2 fallback
+  (`40A1HTH`, `TGA1HTH`, `40SCHTH`, `TGSCHTH`, `40BLHTH`, `TGBLHTH` among them; 758 transformed calls). The `1js`,
+  `1jt` and `1st` dual classes and the fallback record are not separated by a case. (fn:UNIT_AnimSetRecord@0x00620F00,
+  fn:COMPOSIT_BuildCofName@0x0064F5B0, fn:COMPOSIT_WeaponClass@0x0064F060, fn:ANIMDATA_Find@0x0066A8F0,
+  fn:UNIT_AnimTransform@0x00645270, data:g_PlrToMonMode@0x006EB348, run:2026-10-27-anim)
+- **The start frame** (§ 4) **raised.** [C] `UNIT_AnimStartFrame`'s return (read at 0x005539CC) equals
+  `g_AttackStartFrames[wclass][class]` at all 25 149 logged schedules that read it: 1 or 2 in the Amazon's and the
+  Sorceress's A1 with a weapon, 0 elsewhere (`startframe`). The S3/S4 dual-wield half is met (the Barbarian's
+  `BAS31SS` 11, the Assassin's `AIS4HT2` 7 schedules) but not separated: the table's cells for both classes are 0. (fn:UNIT_AnimStartFrame@0x00623B10, data:g_AttackStartFrames@0x006E8E60, run:2026-10-27-anim)
+- **The schedule** (§ 7) **raised.** [C] All 25 848 logged `SUNIT_ScheduleModeEvents` calls (players and monsters,
+  sequences among them) queue exactly the kind-0 list and the kind-1 end of § 7's loop from the start frame, the
+  rate and the length of the unit's last rate call and record (`sched`, `sched-rate`, `sched-len` 25 848 each), and
+  the 42 542 queued events fire at their frames unless cancelled first (`fire`); no dispatch of the slot lists fires an
+  event the schedulers did not queue (`dispatch` 42 449). Not compared, and outside this `[C]`: 124 dispatches (110
+  kind 0, 14 kind 1) 0–4 frames after a catalogue skill function's own `UNIT_CancelEvents` call (returns
+  0x005B0000–0x005EFFFF: `SkillSt49Nest` 0x005CBDED, `SkillDo67Charge` 0x005CFAAA, `SkillDo126ImpInferno` 0x005D1503,
+  `LeapAttackLand` 0x005DA2AA among them), each of which is followed at once by that function's own
+  `sub_005417D0_UnitQueueEvent` call (0x005CFABE, 0x005D1517, 0x005DA2BE), a queue the logger does not read
+  (`dispatch-catalogue-queued`; `rv-catq-*` of `2026-10-27-anim-check-review.txt`). Since that queue's output is not
+  logged, it is an uncompared catalogue path (plan 0046), not an ADR-0004 oracle; Phase 2 part 2 logs it.
+  (fn:SUNIT_ScheduleModeEvents@0x005539B0, fn:UNIT_CancelEvents@0x00540E60, fn:sub_005417D0_UnitQueueEvent@0x005417D0,
+  fn:sub_005416B0_EventQueueAt@0x005416B0, fn:sub_00581220_PlayerEventDispatch@0x00581220,
+  fn:sub_005A7F80_MonEventDispatch@0x005A7F80, run:2026-10-27-anim)
+- **The advance** (§ 8) **raised.** [C] 2 927 consecutive advances of windowed every-frame monsters (`adv`, knockback
+  among them) give the next `+0x44` and event byte, and 1 453 monster sequence advances (`adv-seq`, mode 14, the
+  `monseq` rows of the used skill's `Sk<k>seq`) give the next position, length, frame, event byte and mode, the event
+  scan of `SEQ_ReadFrame` (the rows after the old position up to the new, the last non-zero winning). [I] In two the byte
+  was 0 where the rows give 1, read as the do of that event (do 87, `sub_005CB3C0_SkillDo87MaggotLay`, which stores 0
+  at `+0x4E` at 0x005CB48E) clearing it, a catalogue write outside the advance (`adv-seq-do-cleared-4e`). (fn:UNIT_AnimAdvance@0x00623E00,
+  fn:UNIT_SeqReadFrame@0x00621210, fn:SEQ_ReadFrame@0x00663410, run:2026-10-27-anim)
+- **The object draw** (§ 11) **raised in part.** [C] 725 object animation starts: `RangeB(object seed, FrameDelta >>
+  3)` when `Sync` is 0 (490) and no draw otherwise (235), the rate `FrameDelta − (FrameDelta >> 4) + draw`, `+0x44` and
+  `+0x48` as § 3 (`obj`). [I] Its place in the object seed's draw order stays as above: 7 pairs of consecutive draws
+  on one object, none chained (another draw on that seed between each). (fn:UNIT_AnimInit@0x00624390, 0x00624563,
+  run:2026-10-27-anim)
+- **The per-frame order** (§ 6, and anim/0003's open question on the first run). [C] 9 682 every-frame starts
+  (`SUNIT_ModeEveryFrame`) run their event first in the frame they are queued when queued before the type's
+  every-frame list is walked (the runner's phase below 3 for players, 5 for monsters), else in the next frame
+  (`ef-first`; players 6 205, all next-frame; monsters 3 477). (fn:sub_005414D0_GameRunUnitEvents@0x005414D0,
+  fn:sub_005415E0_EventQueueEveryFrame@0x005415E0, fn:SUNIT_ModeEveryFrame@0x00553F00, run:2026-10-27-anim)
+- **P1b-1, the interval between two actions** (A1, A2, C1, H1, B1; [anim/leads § 12](leads.md#12-verdicts-part-2)).
+  [C] The schedule's end is at `T + n` and its last step at `T + N`, `N = n − 1` (above). What the run shows of the
+  next scheduled mode within 3 frames of the end (`act-m<mode>-nextact-minus-n`): after a cast it starts at `T + N`
+  448 times and at `T + n` 103; after A1 107 and 63; after a throw 36 and 2; after the held Lightning sequence (mode
+  18, the control) at `T + n` 68 times and never at `T + N`; get-hit and block are never left before `T + n`. The
+  starts earlier than `T + N` (8 after a cast, 15 after A1) are block and get-hit requests (9, 4), not actions. 23 A1
+  restarts at `N` have A2's `⌈256 (F − 1 − S) / r⌉ ≠ N`, so A2's count is not the interval there.
+  [C] **The next action starts in the frame of its request** (the mode request, an oracle of Phase 2's *Boundary*;
+  the checker's `--review` tallies `rv-req-*` in `2026-10-27-anim-check-review.txt`): of the 2 084 first action
+  requests after a cast's start, 1 816 are followed by the next scheduled mode in their own frame, 1 793 of them at or
+  after `T + N` and 23 two to five or more frames before it (the rest start it later, from a later request); after
+  A1 1 685 of 2 332, after a throw 90 of 149, after a kick 368 of 569 likewise. The first action request after a
+  cast comes at `T + N` 451 times, at `T + n` 97, later 1 505 and earlier 31. `PlrModeLeaveOk` returned 1 at all
+  5 633 first requests after a start (its refusal is not reached). So the `N` interval is the cadence of the client's
+  held request (sent at `T + N`, at `T + n` for Lightning), not a server gate: the server starts the next action in
+  the request's frame, before `T + N` too. After, `[I]`: the
+  client's rule for when it sends a held request is not read (ADR-0005, the client is presentation and an oracle).
+  (fn:SUNIT_ScheduleModeEvents@0x005539B0, fn:sub_0057EDD0_PlrModeLeaveOk@0x0057EDD0, run:2026-10-27-anim)

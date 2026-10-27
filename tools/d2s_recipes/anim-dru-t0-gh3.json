@@ -1,0 +1,74 @@
+{
+ "game": "expansion",
+ "class": "Druid",
+ "seed": 5550,
+ "name": "AnimDruL0",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 150,
+  "energy": 200,
+  "dexterity": 100,
+  "vitality": 25,
+  "hitpoints": 60,
+  "maxhp": 60,
+  "mana": 600,
+  "maxmana": 600,
+  "stamina": 400,
+  "maxstamina": 400,
+  "level": 25,
+  "experience": 2050449
+ },
+ "skills": {
+  "Firestorm": 1,
+  "Molten Boulder": 1,
+  "Arctic Blast": 1
+ },
+ "mouse": {
+  "left": "Attack",
+  "right": "Firestorm",
+  "swap_left": "Attack",
+  "swap_right": "Firestorm"
+ },
+ "hotkeys": [
+  "Attack",
+  "Firestorm",
+  "Kick",
+  "Molten Boulder",
+  "Arctic Blast"
+ ],
+ "belt_fill": [
+  "rvl",
+  "rvl",
+  "rvl",
+  "mp5"
+ ],
+ "items": [
+  {
+   "code": "whm",
+   "equip": "rarm"
+  },
+  {
+   "code": "buc",
+   "equip": "larm"
+  },
+  {
+   "code": "mbl",
+   "equip": "belt"
+  },
+  {
+   "code": "2hs",
+   "equip": "rarm2"
+  }
+ ]
+}

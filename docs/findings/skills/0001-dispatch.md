@@ -182,7 +182,7 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
 | `0x0056C160` | `SKILLS_SrvManaCheck` | the server-side mana test | I |
 | `0x0056BFE0` | `SKILLS_PayCost` | mana, blood-mana life or a charge (1 798 logged returns, § 17) | C |
 | `0x005D2B60` | `sub_005D2B60_BloodManaPay` | the life payment under state 114 | I |
-| `0x0056EF90` | `SKILLS_SetDelayState` | state 121 until `frame + delay` | I |
+| `0x0056EF90` | `SKILLS_SetDelayState` | state 121 until `frame + delay` (raised at the plan 0050 Phase 2 review: the next cast at the logged frame plus `d`, 72 of 73, [anim/0003](../anim/0003-movement-gates.md#plan-0050-phase-2-run2026-10-27-anim)) | C |
 | `0x0056F020` | `sub_0056F020_SkillDelayFromCalc` | evaluates `delay` and sets the state | I |
 | `0x0056CDA0` | `SKILLS_QueuePeriodic` | unit event 8 on the `perdelay` grid | I |
 | `0x0056D2C0` | `SKILLS_GetTargetXY` | the target unit's position or the path target | I |

@@ -2,18 +2,18 @@
 from: reverser
 to: reverser
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../findings/anim/0001-modes-frames.md#leads-used
-  - ../findings/anim/0002-rates.md#leads-used
-  - ../findings/anim/0003-movement-gates.md#leads-used
-  - ../findings/anim/leads.md
-  - ../plans/0050-animation-frame-timing.md#implementation-log
-resolution: ""
+  - ../../findings/anim/0001-modes-frames.md#leads-used
+  - ../../findings/anim/0002-rates.md#leads-used
+  - ../../findings/anim/0003-movement-gates.md#leads-used
+  - ../../findings/anim/leads.md
+  - ../../plans/0050-animation-frame-timing.md#implementation-log
+resolution: "Phase 2 run closed (lane/p50e): each case's outcome, met or short with its count, is in the record's Covers and Readings ([run:2026-10-27-anim](../../findings/anim/experiments.md#run2026-10-27-anim)); met: P1b-3, -4, -6, -8, -9, -10 (15 results, 12 to neutral at once), -11, -12; in part: P1b-1 (A2 separated in 23 A1 restarts), -5, -7 (no VASCHTH), -15 (no slowed charge); short: P1b-2 (31 calls), -13 (not staged), -14 (no factor below 25)"
 ---
 
 Plan 0050 Phase 2 required cases from the Phase 1b part 2 `contradicted` leads (`lane/p50v`; the verdicts are in the
-*Leads used* sections of anim/0001, anim/0002 and anim/0003 and in the Verdict column of [anim/leads](../findings/anim/leads.md)).
+*Leads used* sections of anim/0001, anim/0002 and anim/0003 and in the Verdict column of [anim/leads](../../findings/anim/leads.md)).
 All 19 contradicted claims are reachable on stock data (23 as filed; the `lane/p50v` review moved A1, C1, H1 and B1
 to `held with refinement`, P1b-1 staying required for A2 and the counting question); each is settled by a case below,
 written into Phase 2's

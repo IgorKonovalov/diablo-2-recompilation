@@ -1,0 +1,73 @@
+{
+ "game": "expansion",
+ "class": "Necromancer",
+ "seed": 5520,
+ "name": "AnimNecL0",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 150,
+  "energy": 200,
+  "dexterity": 100,
+  "vitality": 25,
+  "hitpoints": 60,
+  "maxhp": 60,
+  "mana": 600,
+  "maxmana": 600,
+  "stamina": 400,
+  "maxstamina": 400,
+  "level": 25,
+  "experience": 2050449
+ },
+ "skills": {
+  "Teeth": 1,
+  "Amplify Damage": 1
+ },
+ "mouse": {
+  "left": "Attack",
+  "right": "Teeth",
+  "swap_left": "Attack",
+  "swap_right": "Teeth"
+ },
+ "hotkeys": [
+  "Attack",
+  "Teeth",
+  "Kick",
+  "Throw"
+ ],
+ "belt_fill": [
+  "rvl",
+  "rvl",
+  "rvl",
+  "mp5"
+ ],
+ "items": [
+  {
+   "code": "tax",
+   "equip": "rarm",
+   "quantity": 60
+  },
+  {
+   "code": "buc",
+   "equip": "larm"
+  },
+  {
+   "code": "scy",
+   "equip": "rarm2"
+  },
+  {
+   "code": "mbl",
+   "equip": "belt"
+  }
+ ]
+}
