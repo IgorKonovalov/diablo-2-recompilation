@@ -2,11 +2,11 @@
 from: reverser
 to: spec-writer
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../findings/items/0010-quest-drops.md#plan-0038-batch-h6e1-run2026-10-27-sweep-quest-npc
-  - ../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
-resolution: ""
+  - ../../findings/items/0010-quest-drops.md#plan-0038-batch-h6e1-run2026-10-27-sweep-quest-npc
+  - ../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
+resolution: "Done on lane/s38q (plan 0038 Phase 3, items/quest-drops cluster), with items/economy F7's qualifier [items/quest-drops](../../specs/items/quest-drops.md)"
 ---
 
 **Released by the `lane/h6e1` review (2026-10-27, accept with fixes; plan 0038 log).** Phase 3 re-tag input for
@@ -33,3 +33,11 @@ Points beyond a tag change:
 
 With this entry and H6e2's, every items/quest-drops batch (S2c, H6d, H6e2, H6e1) is accepted, so the spec is ready for
 its Phase 3 re-tag.
+
+*Annotation (spec-writer, 2026-10-27, `lane/s38q`, plan 0038 Phase 3, items/quest-drops cluster):* applied to
+[items/quest-drops](../../specs/items/quest-drops.md): the 11 raised rows and the `[C]` halves of the 11 raised in part,
+qd 38; F4's Malah row and § E's `g34` row created at 7 `[C]` (`xyz` at 2); F1's throwable skip `[C]` for the logged
+tests, "a throwable is refused" `[I]`; F0 and the Outputs line: the imbued item repaired when `ItemCreate` returns it
+identified `[C]`, `ItemCanRepair`'s ethereal refusal `[I]`; Malah's `ice` `[I]` with a state-4 note and an *Open
+questions* entry; the new `[C]` symbols as anchors. [items/economy § F](../../specs/items/economy.md#f-callers-buy-sell-repair)
+F7 carries the same qualifier (the leg's 61 → 66).

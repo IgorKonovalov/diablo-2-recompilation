@@ -410,11 +410,12 @@ What the recorded games confirm:
   chest's test, then the ordinary chest drop, then 5 to 9 gold piles on the quest seed. A player who already holds a
   cube gets no new one, and the drop and the gold still come.
 - **The Khalim chests go the other way round**: the gold piles first, then the part (for a player who holds neither
-  that part nor Khalim's Will), then the ordinary drop. A recorded game met this on the heart chest; the eye and brain
-  chests have the same code and are read from it. The altar was not run.
-- **The Inifuss tree** gives its scroll on the first click when the quest allows it, with no roll. The scroll is asked
-  for at normal quality and comes out at quality 7; that the 7 comes from the item's base is read from the code.
-  The Malus and the tome were not run.
+  that part nor Khalim's Will), then the ordinary drop. Recorded games met this on all three chests, the heart, the
+  eye and the brain, each with the gold count its quest seed gives. That a player who already holds the part or
+  Khalim's Will gets none is read from the code. The altar was not run.
+- **The Inifuss tree and the Lam Esen tome** each give their item on the first click when the quest allows it, with
+  no roll. Both items are asked for at normal quality and come out at quality 7; that the 7 comes from the item's
+  base is read from the code, as is the tome's refusal once its quest bit is set. The Malus was not run.
 - **The orifice**: placing the staff sets the two quest bits the code names. That it opens only for a player holding
   the staff is read from the code.
 

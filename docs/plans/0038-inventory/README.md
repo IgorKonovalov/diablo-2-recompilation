@@ -1383,6 +1383,22 @@ moves. Recounted against `main` `92b811df` after merging it into the lane (`lane
 8), **deferred 2, raised 17: 1 526.** § 5 marks H6e1 done. **Phase 3 ready:** items/quest-drops (S2c, H6d, H6e2 and
 H6e1, all accepted).
 
+**`lane/s38q` review (2026-10-27, architect, Phase 3 of items/quest-drops): one H6e2 line completed by H6e1's compared
+calls.** H6e2 counted qd 30's `g34`/`xyz` line a shortfall (not run by H6e2). H6e1's checker compares both gifts
+(`QGV` → `CF0` → `QGC`, 0 mismatches): Meshif's `g34` with `j34` held (Nightmare, created at quality 7) and Alkor's
+`xyz` with word 20 bit 1 set (Normal), each at clvl. A met piece with a compared line moves at the review that finds it
+(the `lane/s38s` and `lane/h6e1` precedents), with no class change:
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| items-quest-drops 30, the `g34`/`xyz` line | H6e2, shortfall | **H6e2, raised in part** | The two gifts in the logged word-20 states, compared by H6e1's check; the other word-20 states stay `[I]`. |
+
+H6e2's ledger is now **raised 3, raised in part 16, shortfall 5: 24.** The operate-slot sentence of § Entry points
+(slots 33, 12, 28, 39–41, 57–59 `[C]`) is part of row 1's original statement (`QUESTS_ObjectOperate` dispatches by
+class); its slots are on H6e2's compared `QOW` lines, so it is reflected with row 1 (raised in part, the other classes
+stay) and moves nothing. Totals unchanged: **static 567, harness 519, c-emu awaiting a batch 0, blocked 421** (d-none
+295, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
