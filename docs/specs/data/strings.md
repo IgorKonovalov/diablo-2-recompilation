@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [data/excel]
 consumed_by: [data/excel, monsters/special, items/affixes, hirelings]
-tags: {C: 60, I: 42, L: 3}
-updated: 2026-10-17
+tags: {C: 88, I: 31, L: 3}
+updated: 2026-10-27
 ---
 
 # String tables: loading, index → text, key → index
@@ -40,16 +40,23 @@ flowchart LR
 | One table file, from `LoadAll` | fn:STRTABLE_LoadFile@0x00525920 | [C] |
 | Any text shown for a stored index (UI, monster and item names) | fn:STRTABLE_GetByIndex@0x00524A30 | [C] |
 | A key looked up at run time (table loaders, e.g. fn:GEMS_Load@0x00636B70, fn:sub_00633730_LoadMagicAffixes@0x00633730, fn:sub_006342B0_LoadUniqueItems@0x006342B0) | fn:STRTABLE_GetByKey@0x00524D30 | [C] |
-| A key looked up for its text only (0x00524E35) | fn:STRTABLE_GetStringByKey@0x00524E20 | [I] |
+| A key looked up for its text only (0x00524E35) | fn:STRTABLE_GetStringByKey@0x00524E20 | [C] run:2026-10-15-strings |
 | A `.txt` string-key cell compiled into a `.bin` (`-txt` only) | fn:STRTABLE_KeyToIndex@0x006117B0 | [C] |
-| Release (reference count) | fn:STRTABLE_Unload@0x00524E40 | [I] |
+| Release (reference count) | fn:STRTABLE_Unload@0x00524E40 | [C] run:2026-10-27-sweep-data-load, for a release to 0; [I] for one that keeps the count above 0 |
 
 - [C] The three `LoadAll` callers run at program level, before any game, and the run saw all three tables
   loaded from the main menu on, in both sessions. (0x004359F2, 0x00441B91, 0x0044B911,
   [data/0003 § Answer](../../findings/data/0003-string-tables.md#answer-summary), run:2026-10-15-strings)
-- [I] `GetStringByKey` is a thin key → text call: ten of the run's not-found keys came through it (0x00524E35), and
-  their results are those of `GetByKey`. (fn:STRTABLE_GetStringByKey@0x00524E20,
-  [run:2026-10-15-strings](../../findings/data/experiments.md#run2026-10-15-strings))
+- [C] `GetStringByKey` is a thin key → text call: it zeroes a local, calls `STRTABLE_GetByKey(key, &local)` and
+  returns the local, the text. The 906 lookups logged from its return address (886 found, 20 not found) all equal the
+  `GetByKey` model, text included. (fn:STRTABLE_GetStringByKey@0x00524E20, 0x00524E29–0x00524E35,
+  [run:2026-10-15-strings](../../findings/data/experiments.md#run2026-10-15-strings), [data/0003 § S1b](../../findings/data/0003-string-tables.md#plan-0038-batch-s1b-2026-10-16))
+- [C] **What a program run does with the tables** (the six H3b runs that reach the menu): `LoadAll` from 0x004359F2
+  (count 0 → 1), `Unload` from 0x00435C8D (1 → 0), `LoadAll` from 0x0044B911 (0 → 1) before the excel load, and after
+  the game is left `Unload` from 0x0044B976 (1 → 0) after the excel unload; the main menu loads again from 0x004359F2
+  and the program exit unloads from 0x00435C8D. The caller 0x00441B91 ran in none of the runs, and the count never
+  went above 1. Each release to 0 leaves the three file buffers at 0. (fn:STRTABLE_LoadAll@0x005259C0,
+  fn:STRTABLE_Unload@0x00524E40, run:2026-10-27-sweep-data-load, [data/0003 § H3b](../../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load))
 
 ## Inputs
 
@@ -80,8 +87,8 @@ flowchart LR
 | index base `string` | 0 | fn:STRTABLE_GetByIndex@0x00524A30 | [C] |
 | index base `patchstring` | 10000 | fn:STRTABLE_GetByIndex@0x00524A30 | [C] |
 | index base `expansionstring` | 20000 | fn:STRTABLE_GetByIndex@0x00524A30 | [C] |
-| expansion index without `expansionstring` | 11078 | 0x00524A33–0x00524A49 | [I] |
-| entry past `count` | 500 | fn:STRTABLE_EntryToString@0x00524930 | [I] |
+| expansion index without `expansionstring` | 11078 | 0x00524A33–0x00524A49, run:2026-10-17-sweep-emu | [C] |
+| entry past `count` | 500 | fn:STRTABLE_EntryToString@0x00524930, run:2026-10-17-sweep-emu | [C] |
 | excel "not found" index | 5382 (`0x1506`, `string.tbl` key `dummy`) | fn:STRTABLE_KeyToIndex@0x006117B0 | [C] |
 | `FindInTable` give-up value | `0xFFFF` | fn:STRTABLE_FindInTable@0x00524C60 | [C] |
 | placeholder suffix | `" -not xlated call ken w"` (23 bytes) | data:g_szNotXlatedSuffix@0x00730520 | [C] |
@@ -111,8 +118,8 @@ flowchart TD
 ```
 
 ```
-A1. LoadAll(lang, expansionLoad):                                                [I] (fn:STRTABLE_LoadAll@0x005259C0, 0x00525AF5, 0x00525B05–0x00525F5C)
-      if refCount > 0: refCount ← refCount + 1; return                           ; loaded once
+A1. LoadAll(lang, expansionLoad):                                                [C] (fn:STRTABLE_LoadAll@0x005259C0, 0x00525AF5, 0x00525B05–0x00525F5C, run:2026-10-27-sweep-data-load)
+      if refCount > 0: refCount ← refCount + 1; return                           ; loaded once; [I] no run reached it (0x00525AF5)
       LoadFontMap("data\local\font\<charset>\default.map")                       ; § B3
       string      ← LoadFile("data\local\lng\<lang>\string.tbl")
       patchstring ← LoadFile("data\local\lng\<lang>\patchstring.tbl")
@@ -130,6 +137,11 @@ A5.   if buf = NULL: the header read faults (access violation), no test, no eng 
 
 Step notes:
 
+- A1. Each of the 18 H3b calls made with the count at 0 (three per run) loads, by `FILE_LoadWhole` and in this order,
+  `data\local\font\LATIN\default.map`, then `data\local\lng\ENG\string.tbl`, `patchstring.tbl` and
+  `expansionstring.tbl` (the expansion argument is 1, `d2exp.mpq` being present), returns 1 and leaves the count at 1
+  with the three buffers the loads returned; every logged text is the model's UTF-16 conversion of its node. [C]
+  (fn:STRTABLE_LoadAll@0x005259C0, fn:STRTABLE_LoadFile@0x00525920, fn:UNICODE_LoadFontMap@0x00527790, run:2026-10-27-sweep-data-load, [data/0003 § H3b](../../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load))
 - A2. **`expansionstring.tbl` loads whenever `d2exp.mpq` exists, in a classic game too.** The callers push the result
   of `HasExpansionMpq()` as the stack argument of `LoadAll`, and the call runs before any game exists. In the run
   every logged line of both sessions, the classic one included, had the three tables loaded, and the classic session
@@ -160,7 +172,7 @@ B2. Utf8ToUtf16(dst, src, limit):                                               
         dst[n] ← r.unit; n ← n + 1; advance src by r.bytes
       dst[n] ← 0
 B3. CharCount(str, maxBytes): i32                                                [C] (fn:UNICODE_CharCount@0x00527D50, fn:UNICODE_IsWideByte@0x005276E0, 0x00527D54–0x00527DA4, run:2026-10-15-strings)
-      if no font map is loaded: return strlen(str)                               ; [I] not exercised (0x00527D54)
+      if no font map is loaded: return strlen(str)                               ; [C] under emulation (0x00527D54, run:2026-10-17-sweep-emu); a stock run always has the map
       count ← 0; walk at most maxBytes bytes up to the NUL:
         if IsWideByte(b): count ← count + 1, skip 2 bytes
         else: count ← count + 1, skip 1 byte
@@ -177,8 +189,10 @@ Step notes:
 - B3. The font map is `data\local\font\<charset>\default.map` (`"KAMAP\n"`, a name ended by 0x1A, then at name end + 5
   a u16 `n`, a u8 range count `r`, `r` (lo, hi) byte pairs, `n` 4-byte pairs and `n` u16). The `eng` charset's
   `font/latin/default.map` has the ranges (0x20–0x7E) and (0xA0–0xFF), so bytes 0x7F–0x9F count as two-byte
-  characters. [I] (fn:UNICODE_LoadFontMap@0x00527790, 0x005277A1–0x00527A1F, data:g_FontMapRangeCount@0x00882B22,
-  data:g_pFontMapRanges@0x00882B28, data:g_pFontMapTable@0x00882B2C)
+  characters. [C] The model's parse of the shipped map gives these ranges, and with them every one of the 4 264 logged
+  conversions reproduces; the key `"\x7f\x02"` gives 23 units for 25 bytes, as the two-byte count of 0x7F predicts.
+  (fn:UNICODE_LoadFontMap@0x00527790, 0x005277A1–0x00527A1F, data:g_FontMapRangeCount@0x00882B22,
+  data:g_pFontMapRanges@0x00882B28, data:g_pFontMapTable@0x00882B2C, run:2026-10-15-strings, [data/0003 § S1b](../../findings/data/0003-string-tables.md#plan-0038-batch-s1b-2026-10-16))
 - A1/B. **At load a value converts whole**: the limit is `CharCount(value, string_length) + 1`, and over all 9 388
   entries of the three `eng` tables the result equals a plain UTF-8 decode. [C] (0x00525C49–0x00525C64,
   [data/0003 § Text conversion](../../findings/data/0003-string-tables.md#text-conversion), run:2026-10-15-strings)
@@ -205,12 +219,12 @@ flowchart TD
 C1. GetByIndex(index: u16) → UTF-16 text:                                        [C] (fn:STRTABLE_GetByIndex@0x00524A30, run:2026-10-15-strings)
       if index ≥ 20000:
         if expansionstring loaded: return EntryToString(expansionstring, index − 20000)
-        index ← 11078                                                            ; [I] (0x00524A33–0x00524A49) not reached
+        index ← 11078                                                            ; [C] (0x00524A33–0x00524A49, run:2026-10-17-sweep-emu); not reached on a stock install
       if index ≥ 10000 and patchstring loaded: return EntryToString(patchstring, index − 10000)
       if string not loaded: fatal 0x246                                          ; [I] (fn:STRTABLE_GetByIndex@0x00524A30)
       return EntryToString(string, index)
 C2. EntryToString(t, entry: u16):                                                [C] (fn:STRTABLE_EntryToString@0x00524930, run:2026-10-15-strings)
-      if entry ≥ t.count: entry ← 500                                            ; [I] not reached (fn:STRTABLE_EntryToString@0x00524930)
+      if entry ≥ t.count: entry ← 500                                            ; [C] (fn:STRTABLE_EntryToString@0x00524930, run:2026-10-17-sweep-emu); no stock index reaches it
       node: u16 ← t.index[entry]
       if node ≥ t.hash_size or not t.nodes[node].used or t.text[node] = NULL: fatal   ; [I] not reached (fn:STRTABLE_EntryToString@0x00524930)
       return t.text[node]
@@ -222,10 +236,17 @@ Step notes:
   `expansionstring`), and the table, entry, node and text of each matched the model. [C]
   ([run:2026-10-15-strings](../../findings/data/experiments.md#run2026-10-15-strings), fn:STRTABLE_GetByIndex@0x00524A30)
 - C1. **The 11078 path is unreachable on a stock install**: it needs `expansionstring` unloaded, which happens only
-  when `d2exp.mpq` is absent (A2). It would land on `patchstring` entry 1078, or on entry 500 when `patchstring` has
-  1078 entries or fewer. [I] (0x00524A33–0x00524A49, [data/0003 § Walkthrough](../../findings/data/0003-string-tables.md#walkthrough))
+  when `d2exp.mpq` is absent (A2). [I] (0x00524A33–0x00524A49, [data/0003 § Walkthrough](../../findings/data/0003-string-tables.md#walkthrough))
+  It lands on `patchstring` entry 1078, or on entry 500 when `patchstring` has 1078 entries or fewer. [C] Under
+  emulation, 141 indices ≥ 20000 in three worlds without `expansionstring` went through 11078 and returned the stock
+  `patchstring`'s entry 1078 (1 179 entries), or a 600-entry `patchstring`'s entry 500. (fn:STRTABLE_GetByIndex@0x00524A30,
+  run:2026-10-17-sweep-emu, [data/0003 § S1e](../../findings/data/0003-string-tables.md#plan-0038-batch-s1e-2026-10-17))
 - C1. With `patchstring` not loaded, an index in 10000–19999 is looked up as a `string` entry, where it is past the
-  end and falls back to entry 500. [I] (fn:STRTABLE_GetByIndex@0x00524A30, fn:STRTABLE_EntryToString@0x00524930)
+  end and falls back to entry 500. [C] In the `string`-alone world every index 10000–19999, and every index ≥ 20000
+  through 11078, returned `string` entry 500. (fn:STRTABLE_GetByIndex@0x00524A30, fn:STRTABLE_EntryToString@0x00524930,
+  run:2026-10-17-sweep-emu, [data/0003 § S1e](../../findings/data/0003-string-tables.md#plan-0038-batch-s1e-2026-10-17))
+- C2. Under emulation 218 calls landed on entry 500, in every table (stock and synthetic), with the 16-bit entry
+  compared unsigned. [C] (fn:STRTABLE_EntryToString@0x00524930, run:2026-10-17-sweep-emu, [data/0003 § S1e](../../findings/data/0003-string-tables.md#plan-0038-batch-s1e-2026-10-17))
 - C2. Text lookup is by **entry position**: a language whose `string.tbl` has other entries (the `deu` and `fra`
   files have 5322) shows other text for the same stored index. [I] (fn:STRTABLE_EntryToString@0x00524930,
   [data/excel § I](excel.md#i-string-table-keys), [tbl.md § Unique monster name tables](../../formats/tbl.md#unique-monster-name-tables))
@@ -268,7 +289,12 @@ Step notes:
   79 found nowhere, 1 empty), each with every table searched, the index and the text as modelled. [C]
   (fn:STRTABLE_GetByKey@0x00524D30, [run:2026-10-15-strings](../../findings/data/experiments.md#run2026-10-15-strings))
 - D1. **Entry 0 of `string` cannot be told from "not found"**: both return 0. `string.tbl` entry 0 is
-  `WarrivAct1IntroGossip1`. [I] (fn:STRTABLE_GetByKey@0x00524D30, [data/excel § I](excel.md#i-string-table-keys))
+  `WarrivAct1IntroGossip1`. [C] for the index returned: under emulation that key and a synthetic table's entry-0 key
+  return 0 with their text, as do keys found nowhere and the empty key, while every other key returns `10000 + e`,
+  `20000 + e` or `e` in the D1 order. The index 0 is set after the not-translated helper returns (`xor ax, ax` at
+  0x00524E0C). (fn:STRTABLE_GetByKey@0x00524D30, 0x00524E0C, run:2026-10-17-sweep-emu, [data/0003 § S1e](../../findings/data/0003-string-tables.md#plan-0038-batch-s1e-2026-10-17), [data/excel § I](excel.md#i-string-table-keys))
+  [I] for the text a key found nowhere returns on a cache miss of that helper, which allocates: only its cache hit was
+  emulated (the run's D2 covers the text). (fn:sub_00524AC0_NotXlated@0x00524AC0)
 - D2. **The placeholder loses its last character**, because the limit is the character count without the `+ 1` of
   load time: `"funeralpire"` gives `"funeralpire -not xlated call ken "` (with a trailing space). A key byte in 0x7F–0x9F
   counts as two bytes in the `latin` map and loses one more character (`"\x7f\x02"` →
@@ -283,23 +309,29 @@ Step notes:
 - D2. **Why the 68 gems keys miss.** The key is bytes `+0x28..+0x2A` of the gems record (a space read as 0, then a
   NUL). The loop treats `+0x28` as the gem's 4-character `code`, but in 1.14d that field holds the item index the
   `code` column compiles to (557..642 for the 69 rows), which is where the two-byte keys come from. The lookup meant to
-  give the gem's name string by its code finds nothing, and every gem stores 0 at `+0x2C` (0x00637225). [I]
-  (fn:GEMS_Load@0x00636B70 0x006371D6–0x00637225, [data/0003 § Run](../../findings/data/0003-string-tables.md#run),
+  give the gem's name string by its code finds nothing, and every gem stores 0 at `+0x2C` (0x00637225). [C] The 68
+  distinct keys of the 136 lookups from 0x0063721C are exactly those bytes of the 68 `gems.bin` records (a space turned
+  into 0), and every lookup returned 0. (fn:GEMS_Load@0x00636B70 0x006371D6–0x00637225, run:2026-10-15-strings, [data/0003 § S1b](../../findings/data/0003-string-tables.md#plan-0038-batch-s1b-2026-10-16),
+  [data/0003 § Run](../../findings/data/0003-string-tables.md#run),
   [items/0007 § 9](../../findings/items/0007-sockets-runewords.md))
 - **Rare names, a load-time key and a client-side index.** `sub_00633F40_LoadRareAffixes` fills `+0x0C` of each
   merged rare-name record (0x48 bytes: the suffix and prefix tables together) with `STRTABLE_GetByKey(record + 0x26)`,
   the row's `name`; the `.bin` holds 0 there. The client's item-name builder takes a rare item's two merged ids
   (`ITEMS_GetRareName1`, item data `+0x32`, and `0x00628040`, `+0x34`), resolves each through `RAREAFFIX_GetRecord`
   and shows `STRTABLE_GetByIndex(record + 0x0C)` for each; when that index is 0 it shows the raw `name` between `(`
-  and `)` instead. The two texts go to two separate buffers. [I] (fn:sub_00633F40_LoadRareAffixes@0x00633F40
+  and `)` instead. The two texts go to two separate buffers. [C] for the load-time key and the shown index: hovering
+  four rare items made the client's two name calls (returning to 0x0048C5FD and 0x0048C6E0) show 7 indices, each equal
+  to `STRTABLE_GetByKey` of the merged record's `name`, the `+0x0C` the load stored. (fn:sub_00633F40_LoadRareAffixes@0x00633F40
   0x006341E0–0x0063420B, fn:RAREAFFIX_GetRecord@0x00634260, fn:ITEMS_GetRareName1@0x00627FE0,
-  fn:STRTABLE_GetByIndex@0x00524A30, 0x0048C5C1–0x0048C726, [data/0003 § Run](../../findings/data/0003-string-tables.md#run))
+  fn:STRTABLE_GetByIndex@0x00524A30, 0x0048C5FD, 0x0048C6E0, run:2026-10-27-sweep-data-load, [data/0003 § H3b](../../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load), [data/0003 § Run](../../findings/data/0003-string-tables.md#run))
+  [I] for the raw name shown when the index is 0: every hovered record had a found key. (0x0048C5C1–0x0048C726)
   A missing record leaves its buffer empty. [I] (0x0048C6BE, 0x0048C7F3)
 - **The rare name line is `RareFormat`.** Qualities 6, 8 and 9 share one case of the client builder, which then calls
   `ClientFormatArgs(out, STRTABLE_GetByIndex(1718), name1Text, name2Text, NULL)`; string 1718 is the key `RareFormat`.
   The formatter copies its NULL-terminated arguments into 400-byte slots in order, so `%0` is `name1`'s text and `%1`
   `name2`'s; `MagicFormat` (1714, `%0 %1 %2`) is called the same way with the prefix text, the base name and the suffix
-  text. [I] (0x0048C89A–0x0048C8BC, 0x0048BEB2–0x0048BED8, 0x0048CDCB–0x0048CDF7,
+  text. [C] for the format line's index: the H3b hovers used string 1718. (run:2026-10-27-sweep-data-load, [data/0003 § H3b](../../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load))
+  [I] for the rest. (0x0048C89A–0x0048C8BC, 0x0048BEB2–0x0048BED8, 0x0048CDCB–0x0048CDF7,
   fn:sub_0048C060_ClientItemNameBuild@0x0048C060, fn:sub_0048BE80_ClientFormatArgs@0x0048BE80,
   [data/0003 § Plan 0039 batch P1b](../../findings/data/0003-string-tables.md#plan-0039-batch-p1b-2026-10-17))
   [C] In the shipped English `string.tbl`, entry 1718 is `%0 %1` (data check with `tools/tbl.py`; [tbl.md](../../formats/tbl.md)).
@@ -350,7 +382,11 @@ Step notes:
 - E2. **A miss always examines `max_probes` nodes**, through unused ones (1 179 in `patchstring`, 2 453 in
   `expansionstring`, 5 192 in `string` for the `eng` files). The run logged 5 688 such misses, each over all
   `max_probes` nodes. [C] (0x00524C7D–0x00524CDC, [run:2026-10-15-strings](../../findings/data/experiments.md#run2026-10-15-strings))
-- E2. The match is an exact, case-sensitive `strcmp`. [C] (fn:STRTABLE_FindInTable@0x00524C60, run:2026-10-15-strings)
+- E2. The match is an exact `strcmp`: every logged hit and miss is the model's. [C] (fn:STRTABLE_FindInTable@0x00524C60,
+  run:2026-10-15-strings) It is case-sensitive: the compare is an inline byte loop with no case folding. [I] No logged
+  key is held by a table only under another case, so the run cannot tell it from a case-folding compare
+  ([data/0003 § S1b](../../findings/data/0003-string-tables.md#plan-0038-batch-s1b-2026-10-16), data/excel I3).
+  (0x00524CA4–0x00524CC6)
 - E2. **A duplicated key returns its lowest entry**: the nodes were placed by inserting entries in order along the
   same probe chain, so the first used node with that key is the first entry. The run hit three: `Berserker's`
   (string 1826, not 2507), `Eschuta's temper` (expansionstring 1586, not 1620), `fire` (string 3272, not 3328). [C]
@@ -369,9 +405,9 @@ F1. KeyToIndex(cell key) → u16:                                               
 ```
 
 - [C] This is the stored value of every string-key cell in the shipped `.bin` tables (2 344 present cells; 776 blank
-  and 15 unknown keys store 5382), with one exception that nothing in the code explains: monstats `uberandariel`
-  `NameStr = Lilith` stores 5382 although `Lilith` is a `patchstring.tbl` key (see [data/excel § I](excel.md#i-string-table-keys)
-  and its Open questions). It runs only when a `.txt` is compiled;
+  and 15 unknown keys store 5382), with one exception in the shipped file: monstats `uberandariel` `NameStr = Lilith`
+  stores 5382 although `Lilith` is a `patchstring.tbl` key. The pinned game's own compile stores 11154 there, so the
+  rule holds for that cell too ([data/excel § I](excel.md#i-string-table-keys) I2). It runs only when a `.txt` is compiled;
   a stock run reads the stored indices. (fn:STRTABLE_KeyToIndex@0x006117B0,
   [data/0003 § Answer](../../findings/data/0003-string-tables.md#answer-summary), [data/excel § J](excel.md#j-compiling-a-txt--txt-only))
 
@@ -382,8 +418,8 @@ F1. KeyToIndex(cell key) → u16:                                               
 | index 0–9999 | `string` entry `index` | yes | yes | [C] (fn:STRTABLE_GetByIndex@0x00524A30, run:2026-10-15-strings) |
 | index 10000–19999 | `patchstring` entry `index − 10000` | yes | yes | [C] (fn:STRTABLE_GetByIndex@0x00524A30, run:2026-10-15-strings) |
 | index ≥ 20000 | `expansionstring` entry `index − 20000` | yes, classic games too | yes | [C] (fn:STRTABLE_GetByIndex@0x00524A30, run:2026-10-15-strings) |
-| index ≥ 20000, no `expansionstring` | index ← 11078 | no: needs `d2exp.mpq` absent | only for an install without `d2exp.mpq` | [I] (0x00524A33–0x00524A49) |
-| entry ≥ `count` | entry 500 of the same table | no stock index exceeds a count | only for edited or foreign-language tables | [I] (fn:STRTABLE_EntryToString@0x00524930) |
+| index ≥ 20000, no `expansionstring` | index ← 11078 | no: needs `d2exp.mpq` absent | only for an install without `d2exp.mpq` | [C] (0x00524A33–0x00524A49, run:2026-10-17-sweep-emu) |
+| entry ≥ `count` | entry 500 of the same table | no stock index exceeds a count | only for edited or foreign-language tables | [C] (fn:STRTABLE_EntryToString@0x00524930, run:2026-10-17-sweep-emu) |
 | key empty | 0, empty text, no search | yes | yes | [C] (fn:STRTABLE_GetByKey@0x00524D30, run:2026-10-15-strings) |
 | key found nowhere | 0, placeholder text | yes | yes, for the text (D2) | [C] (fn:sub_00524AC0_NotXlated@0x00524AC0, run:2026-10-15-strings) |
 | excel cell blank or unknown | 5382 | yes (in the shipped `.bin`) | only for a `.txt` compiler | [C] (fn:STRTABLE_KeyToIndex@0x006117B0) |
@@ -396,14 +432,29 @@ F1. KeyToIndex(cell key) → u16:                                               
 
 ### H. Language
 
-- [I] The language code comes from the first byte of `data\local\use` (I1 of [data/excel § I](excel.md#i-string-table-keys)).
+- [C] The language code comes from the first byte of `data\local\use` (I1 of [data/excel § I](excel.md#i-string-table-keys)).
   The shipped files hold 0x00 (`ENG`) in the MPQ copy and in the loose `Use` and `Use_eng`; the loose `Use_rus` holds
-  0x0B (`RUS`) and is read only when copied over `Use` with `-direct`. `RUS` has no `.tbl` file anywhere in the
-  install, so `LoadAll` would crash at `string.tbl` (A5). No shipped file selects `pol`, `por` or any other language.
-  (fn:LNG_GetLanguageIndex@0x00525150, [data/0003 § Language](../../findings/data/0003-string-tables.md#language),
+  0x0B (`RUS`) and is read only when copied over `Use` with `-direct`, as the install's Russian launcher script does.
+  In every H3b run the first `LNG_GetLanguageIndex` call reads `use` once and returns its first byte: `00` gives 0 and
+  the tables load from `lng\ENG\`, the copied `Use_rus` gives 11, and the cached byte holds the value for every later
+  call. No shipped file selects `pol`, `por` or any other language. (fn:LNG_GetLanguageIndex@0x00525150,
+  fn:LNG_GetLanguageCode@0x00525260, run:2026-10-27-sweep-data-load, [data/0003 § H3b](../../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load), [data/0003 § Language](../../findings/data/0003-string-tables.md#language),
   [data/0002 § 4](../../findings/data/0002-mpq-precedence.md#4-the-language-byte))
-- [I] Any language other than `eng` would also crash at `expansionstring.tbl` while `d2exp.mpq` exists, since only
-  `eng` ships that file. (fn:STRTABLE_LoadAll@0x005259C0, [tbl.md § Files](../../formats/tbl.md#files),
+- [I] Values above 13 become 0 (the clamp): no shipped file holds such a byte, so only a made-up `use` file reaches
+  it. (0x005251A1, fn:LNG_GetLanguageIndex@0x00525150)
+- [C] **`RUS` ends the program at the font map**, before any `.tbl`. With the byte 11 the loads use the `CYR` charset:
+  `Font16.dc6` and `Font16.tbl` under `DATA\LOCAL\Font\CYR\` are not found (each lookup returns 0, the run going on),
+  then `STRTABLE_LoadAll`'s load of `data\local\font\CYR\default.map` returns 0 and the process exits (code 0377)
+  before any `.tbl` is read. `RUS` has no `.tbl` file anywhere in the install either. (fn:UNICODE_LoadFontMap@0x00527790,
+  fn:STRTABLE_LoadAll@0x005259C0, run:2026-10-27-sweep-data-load, [data/0003 § H3b](../../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load))
+  [I] for which test ends it, which the run did not follow. (fn:UNICODE_LoadFontMap@0x00527790)
+- [C] **A `use` byte of 13 is not a fallback to `ENG`.** The clamp lets 13 through, and `LNG_GetLanguageCode` sends
+  only an id of 14 or more to entry 0, so 13, which matches none of the 13 entries, reads entry 13: the 0x18 bytes
+  after the table (0x00730514). (fn:LNG_GetLanguageCode@0x00525260, 0x005252B2, run:2026-10-17-sweep-emu, [data/0002 § S1e](../../findings/data/0002-mpq-precedence.md#plan-0038-batch-s1e-2026-10-17))
+  [I] for what it reads there: run-time memory whose "pointers" are below 0x10000, so the string-table load would
+  fault. Only an edited `use` file holds 13. (0x00525832–0x005258E7, [data/excel § I](excel.md#i-string-table-keys))
+- [I] Any language other than `eng` whose font map and first tables load would also crash at `expansionstring.tbl`
+  while `d2exp.mpq` exists, since only `eng` ships that file. (fn:STRTABLE_LoadAll@0x005259C0, [tbl.md § Files](../../formats/tbl.md#files),
   [data/0003 § Answer](../../findings/data/0003-string-tables.md#answer-summary))
 
 ## Outputs
@@ -433,9 +484,10 @@ fn:STRTABLE_FindInTable@0x00524C60, run:2026-10-15-strings)
 Result: index `20000 + 925` = **20925**, text `of Amianthus`. Note that the patchstring miss costs 1 179 node visits
 before the expansion hit.
 
-**Index lookups.** [C] for the first row, logged in the classic session; [I] for the others, `tools/tbl.py` model
-output of the code (the second on a path no stock install reaches).
-(fn:STRTABLE_GetByIndex@0x00524A30, fn:STRTABLE_EntryToString@0x00524930, run:2026-10-15-strings)
+**Index lookups.** [C] for the three rows: the first logged in the classic session, the third logged once
+(`string` entry 5382, node 5313), and the second, on a path no stock install reaches, under emulation with the stock
+`string` and `patchstring` and no `expansionstring`. (fn:STRTABLE_GetByIndex@0x00524A30, fn:STRTABLE_EntryToString@0x00524930,
+run:2026-10-15-strings, run:2026-10-17-sweep-emu, [data/0003 § S1b](../../findings/data/0003-string-tables.md#plan-0038-batch-s1b-2026-10-16), [data/0003 § S1e](../../findings/data/0003-string-tables.md#plan-0038-batch-s1e-2026-10-17))
 
 | index | tables loaded | table, entry | node | text |
 |---|---|---|---|---|
@@ -456,11 +508,15 @@ all its `max_probes` nodes, and returns 0 with `"funeralpire -not xlated call ke
   (fn:STRTABLE_GetByIndex@0x00524A30, fn:STRTABLE_GetByKey@0x00524D30, run:2026-10-15-strings)
 - **What only guards corrupt files.** The CRC check, the offset checks, the node checks, the NULL-text fatal and the
   missing-file crash (§ G rows marked "guards"). A reimplementation that reads only the stock tables can drop them
-  without changing any output; the 11078 and entry-500 fallbacks matter only to an install without `d2exp.mpq` or to
-  edited tables. [I] (fn:STRTABLE_LoadFile@0x00525920, fn:STRTABLE_EntryToString@0x00524930)
+  without changing any output. [I] (fn:STRTABLE_LoadFile@0x00525920) The 11078 and entry-500 fallbacks behave as
+  § C states under emulation. [C] (fn:STRTABLE_EntryToString@0x00524930, run:2026-10-17-sweep-emu) They matter only to
+  an install without `d2exp.mpq` or to edited tables. [I] (0x00524A33–0x00524A49, fn:STRTABLE_EntryToString@0x00524930)
 - **An exact-match map can replace the probe walk** if it returns the lowest entry of a duplicated key and `0xFFFF`
   for an absent key: every entry of every shipped file is found within `max_probes` nodes of its home slot, and the
-  walk returns the first-inserted node of a key. [I] (fn:STRTABLE_FindInTable@0x00524C60, fmt:tbl#hash-table)
+  walk returns the first-inserted node of a key. [C] Over every distinct key of the three `eng` tables (8 949 keys,
+  449 duplicate entries) the probe walk returns the lowest entry of the key within `max_probes`. (`not used`, the
+  longest hit chain of § E, is held once, at 5384: no duplicate case.) (fn:STRTABLE_FindInTable@0x00524C60,
+  fmt:tbl#hash-table, [data/0003 § S1b](../../findings/data/0003-string-tables.md#plan-0038-batch-s1b-2026-10-16))
 - **Signed hash.** Hash keys as signed chars: a key byte ≥ 0x80 (`GEMS_Load`'s keys) gives a different home slot than
   the unsigned ELF hash. On a miss the home slot does not change the result, since every miss walks `max_probes` nodes. [C]
   (fn:STRTABLE_Hash@0x005249E0, run:2026-10-15-strings)
@@ -468,12 +524,18 @@ all its `max_probes` nodes, and returns 0 with `"funeralpire -not xlated call ke
   a LoD install resolves indices ≥ 20000 normally. [C] (0x00525E11, run:2026-10-15-strings)
 - **Stored indices are language-bound.** The `.bin` indices are the English ones; another language's `string.tbl` may
   have other entries at the same position. [I] (fn:STRTABLE_EntryToString@0x00524930, [data/excel § I](excel.md#i-string-table-keys))
-- **Entry 0 of `string`** is indistinguishable from "not found" through `GetByKey`. [I] (fn:STRTABLE_GetByKey@0x00524D30)
+- **Entry 0 of `string`** is indistinguishable from "not found" through `GetByKey`. [C] (fn:STRTABLE_GetByKey@0x00524D30,
+  run:2026-10-17-sweep-emu)
+- **`use` byte 13 is not `ENG`** (§ H): only 14 and above map to entry 0. [C] (fn:LNG_GetLanguageCode@0x00525260, run:2026-10-17-sweep-emu)
 
 ## Evidence
 
 - [findings/data/0003-string-tables.md](../../findings/data/0003-string-tables.md): every section (loading, index,
-  key, hash, text conversion, language, the run); § Plan 0039 batch P1b (the rare name line).
+  key, hash, text conversion, language, the run); § Plan 0039 batch P1b (the rare name line); the plan 0038 batch
+  sections S1b (kept-log re-checks), S1e (emulation, [run:2026-10-17-sweep-emu](../../findings/data/experiments.md#run2026-10-17-sweep-emu))
+  and H3b (the startup runs, [run:2026-10-27-sweep-data-load](../../findings/data/experiments.md#run2026-10-27-sweep-data-load)).
+- [findings/data/0002-mpq-precedence.md § S1e](../../findings/data/0002-mpq-precedence.md#plan-0038-batch-s1e-2026-10-17):
+  the language code table, id 13.
 - [findings/data/experiments.md § run:2026-10-15-strings](../../findings/data/experiments.md#run2026-10-15-strings):
   the lookup log and the `tools/tbl.py check` counts.
 - [findings/save/experiments.md § run:2026-10-12-d2s-io](../../findings/save/experiments.md#run2026-10-12-d2s-io): the
@@ -487,9 +549,10 @@ all its `max_probes` nodes, and returns 0 with `"funeralpire -not xlated call ke
 
 ## Open questions
 
-- [L] The entry-500 and 11078 fallbacks, the node and offset fatal checks and the NULL-text fatal are read from the
-  code and not reached by any stock case; forcing them means editing a `.tbl`, which the CRC check already makes
-  fatal. They stay `[I]` above. (fn:STRTABLE_EntryToString@0x00524930, 0x00524A33, [data/0003 § Open questions](../../findings/data/0003-string-tables.md#open-questions))
+- [L] The node and offset fatal checks and the NULL-text fatal are read from the code and not reached by any stock
+  case; forcing them means editing a `.tbl`, which the CRC check already makes fatal. They stay `[I]` above. (The
+  entry-500 and 11078 fallbacks are now shown under emulation, § C.) (fn:STRTABLE_EntryToString@0x00524930,
+  [data/0003 § Open questions](../../findings/data/0003-string-tables.md#open-questions))
 - [L] The other charsets' `default.map` files and the map's two other tables are not read; they matter only for
   non-`eng` text and presentation. ([data/0003 § Open questions](../../findings/data/0003-string-tables.md#open-questions))
 - [L] How the client's item-name line joins a rare item's two name texts, narrowed (plan 0039 P1b): the line is

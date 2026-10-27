@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: []
 consumed_by: [items/tc, items/*, monsters/*, drlg/*, objects, data/strings, data/calc]
-tags: {C: 42, I: 100, L: 8}
-updated: 2026-10-15
+tags: {C: 144, I: 51, L: 2}
+updated: 2026-10-27
 ---
 
 # Excel tables: file lookup, load, record addressing, code and name links
@@ -24,16 +24,29 @@ and are linked, not repeated.
 
 | When | Function | Tag |
 |---|---|---|
-| Startup: file I/O mode from `-direct` | fn:sub_00405C30_InitGame@0x00405C30 → fn:sub_00406870_InitFileIO@0x00406870 | [I] |
-| Startup: core archives | fn:MPQ_OpenCoreArchives@0x004FAB90 | [I] |
-| Startup: game archives | fn:MPQ_OpenGameArchives@0x004FAEC0 | [I] |
-| On demand: video archive | fn:MPQ_OpenVideoArchives@0x004FAD10 | [I] |
-| Command-line options applied (`-txt`) | fn:sub_0044D9F0_ApplyOptions@0x0044D9F0 → fn:sub_0044D9C0_ApplyTxtOption@0x0044D9C0 | [I] |
-| Startup: every table, fixed order | fn:DATATBLS_LoadAll@0x00619300 | [I] |
+| Startup: file I/O mode from `-direct` | fn:sub_00405C30_InitGame@0x00405C30 → fn:sub_00406870_InitFileIO@0x00406870 | [C] run:2026-10-27-sweep-data-load |
+| Startup: core archives | fn:MPQ_OpenCoreArchives@0x004FAB90 | [C] run:2026-10-27-sweep-data-load |
+| Startup: game archives | fn:MPQ_OpenGameArchives@0x004FAEC0 | [C] run:2026-10-27-sweep-data-load |
+| On demand: video archive | fn:MPQ_OpenVideoArchives@0x004FAD10 | [C] run:2026-10-27-sweep-data-load |
+| Command-line options applied (`-txt`) | fn:sub_0044D9F0_ApplyOptions@0x0044D9F0 → fn:sub_0044D9C0_ApplyTxtOption@0x0044D9C0 | [C] run:2026-10-27-sweep-data-load |
+| Startup: every table, fixed order | fn:DATATBLS_LoadAll@0x00619300 | [C] run:2026-10-27-sweep-data-load |
 | One table | fn:DATATBLS_LoadTable@0x006122F0 | [C] |
-| Item code → item | fn:ITEMS_GetByCode@0x00633640 | [I] |
-| TC name → TC | fn:TC_GetByName@0x00654DD0 | [I] |
-| TC index → TC | fn:TC_GetByIndex@0x00654E00 | [I] |
+| Item code → item | fn:ITEMS_GetByCode@0x00633640 → fn:EXCEL_FindCode@0x006BD130 | [C] run:2026-10-27-sweep-data-load |
+| TC name → TC index, at load | fn:EXCEL_FindName@0x006BD3C0 on data:g_TCLink@0x0096C5E8, from fn:TC_ParseItemCell@0x00654440 (G4), fn:TC_BuildChestTable@0x0065A2C0 (G1) and, under `-txt`, the `.txt` parser (0x006BDDEC) | [C] run:2026-10-27-sweep-data-load |
+| TC index → TC | fn:TC_GetByIndex@0x00654E00 | [C] run:2026-10-11-tc-drops, run:2026-10-12-tc-champion |
+
+- [C] The H3b runs log the startup rows: `InitFileIO` once per run with the `-direct` byte, the 12 archive opens,
+  `ApplyTxtOption` once with the `-txt` byte, and `DATATBLS_LoadAll` once, making the same 73 `DATATBLS_LoadTable`
+  calls in the same order in every stock-mode run (91 under `-txt`). They log the video archive opened only
+  from the main menu's *Cinematics* list, 1 147 item-code calls returning the code's combined position (29 of them in
+  play) and 3 728 TC-name lookups returning the TC index of the name, or −1 for the 6 names that are no TC; in the stock
+  run no TC name was looked up in play. `TC_GetByIndex` is items/tc § C's getter, whose replay of 9 390 stock calls has
+  0 failures. (run:2026-10-27-sweep-data-load, run:2026-10-11-tc-drops; [data/0001 § H3b](../../findings/data/0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
+  [data/0002 § H3b](../../findings/data/0002-mpq-precedence.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
+  [data/0001 § S1b](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16))
+- [I] `TC_GetByName` (0x00654DD0), a name → TC wrapper, is dead code: no call, jump or pointer in the image names it and
+  its breakpoint had no hit in the seven runs, but a computed call target is not excluded. (fn:TC_GetByName@0x00654DD0,
+  run:2026-10-27-sweep-data-load)
 
 ## Inputs
 
@@ -65,16 +78,26 @@ and are linked, not repeated.
 
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
-| excel directory | `DATA\GLOBAL\EXCEL\` | fn:DATATBLS_OpenExcelFile@0x00612280 | [I] |
-| priority of `patch_d2` / `d2exp` / `d2X*` / others | 5000 / 3000 / 3000 / 1000 | fn:MPQ_OpenCoreArchives@0x004FAB90, fn:MPQ_OpenGameArchives@0x004FAEC0 | [I] |
-| combined item record stride | `0x1A8` (424) | fn:ITEMS_LoadItemTables@0x006315D0 | [I] |
-| TC entry size (runtime) | `0x2C` | fn:TC_Alloc@0x00653F90 | [I] |
-| auto-TC levels | 3, 6, …, 96 (32 values) | fn:TC_BuildAutoTCs@0x006541C0 | [I] |
+| excel directory | `DATA\GLOBAL\EXCEL\` | fn:DATATBLS_OpenExcelFile@0x00612280, run:2026-10-15-cube-saves | [C] |
+| priority of `patch_d2` / `d2exp` / `d2X*` / others | 5000 / 3000 / 3000 / 1000 | fn:MPQ_OpenCoreArchives@0x004FAB90, fn:MPQ_OpenGameArchives@0x004FAEC0, run:2026-10-27-sweep-data-load | [C] |
+| combined item record stride | `0x1A8` (424) | fn:ITEMS_LoadItemTables@0x006315D0, 0x0063366D, run:2026-10-12-d2s-io | [C] |
+| TC entry size (runtime) | `0x2C` | fn:TC_Alloc@0x00653F90, fn:TC_GetByIndex@0x00654E00, run:2026-10-11-tc-drops | [C] |
+| auto-TC levels | 3, 6, …, 96 (32 values) | fn:TC_BuildAutoTCs@0x006541C0, run:2026-10-11-tc-drops | [C] |
 | first TCEx index | 161 (= 1 + 5 × 32 in the shipped data) | fn:TC_LoadAll@0x0065A390, tbl:MonStats.txt:TreasureClass1 | [C] |
 | TC count limit | `0xFFFE` (more is fatal) | fn:TC_LoadAll@0x0065A390 | [I] |
-| name key length | 31 characters (node `char[32]`) | fn:EXCEL_FindName@0x006BD3C0 | [I] |
+| name key length | 31 characters (node `char[32]`) | fn:EXCEL_FindName@0x006BD3C0, run:2026-10-17-sweep-emu | [C] |
 | string index bases | `string.tbl` 0, `patchstring.tbl` 10000, `expansionstring.tbl` 20000 | fmt:tbl | [C] |
 | "not found" string index | 5382 (`string.tbl` key `dummy`) | fmt:tbl | [C] |
+
+- [C] The constants raised by the plan 0038 batches, each with its own case: the directory (the game read a loose
+  `cubemain.txt` from it and wrote every compiled table there under `-direct -txt`, and the forced runs loaded loose
+  `.bin` files from it under `-direct`); the priorities (the H3b runs log every archive open with them); the item stride
+  (`imul eax, eax, 0x1a8` in `ITEMS_GetByCode`, and 302 logged item codes read at `g_pItems + cls × 0x1A8 + 0x80`); the
+  TC entry size (writer and reader agree, and the logged sub-TC indices are the model's in all 9 390 calls); the 32
+  auto-TC levels per type (369 treasureclassex TCs logged at `161 + r`); the 31-byte name key (S1e: 435 keys longer than
+  31 bytes cut to their first 31). (run:2026-10-15-cube-saves, run:2026-10-27-sweep-data-load, run:2026-10-12-d2s-io,
+  run:2026-10-11-tc-drops, run:2026-10-17-sweep-emu; [data/0001 § S1b](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16),
+  [§ S1e](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1e-2026-10-17))
 
 ## Algorithm
 
@@ -117,7 +140,7 @@ flowchart LR
 ```
 
 ```
-A1. OpenArchives(expansion: bool):                                   [I] (fn:MPQ_OpenCoreArchives@0x004FAB90, fn:MPQ_OpenGameArchives@0x004FAEC0)
+A1. OpenArchives(expansion: bool):                                   [C] (fn:MPQ_OpenCoreArchives@0x004FAB90, fn:MPQ_OpenGameArchives@0x004FAEC0, run:2026-10-27-sweep-data-load)
       for (name, prio) in [ (d2data,1000), (d2sfx,1000), (d2speech,1000),
                             (d2delta,1000), (d2kfixup,1000),
                             (patch_d2,5000), (d2exp,3000) ]:          ; core, this order
@@ -125,15 +148,15 @@ A1. OpenArchives(expansion: bool):                                   [I] (fn:MPQ
       for (name, prio) in [ (d2char,1000), (d2music,1000) ]: same     ; game archives
       if expansion:
         for (name, prio) in [ (d2Xmusic,3000), (d2Xtalk,3000), (d2Xvideo,3000) ]: same
-      ; d2video (1000) is opened and linked later, on demand     [I] (fn:MPQ_OpenVideoArchives@0x004FAD10)
+      ; d2video (1000) is opened and linked later, on demand     [C] (fn:MPQ_OpenVideoArchives@0x004FAD10, run:2026-10-27-sweep-data-load)
 
-A2. Link(a):                                                         [I] (fn:STORM_LinkArchive@0x0041B6B0, 0x0041B955)
-      n ← first node of the list with n.priority ≤ a.priority        ; signed compare
+A2. Link(a):                                                         [C] (fn:STORM_LinkArchive@0x0041B6B0, 0x0041B955, run:2026-10-27-sweep-data-load)
+      n ← first node of the list with n.priority ≤ a.priority        ; signed compare: [I] every priority is positive (0x0041B95B)
       insert a before n (append when there is none)
       ; result: descending priority; on a tie, the later-opened archive is searched first
 
-A3. FindFile(path) → source:                                         [I] (fn:STORM_FindFile@0x00417F10, fn:STORM_GetDirectFlags@0x00418B50, fn:STORM_DiskPath@0x00415B00)
-      diskAllowed: bool ← direct or (no archive is open)
+A3. FindFile(path) → source:                                         [C] (fn:STORM_FindFile@0x00417F10, fn:STORM_GetDirectFlags@0x00418B50, fn:STORM_DiskPath@0x00415B00, run:2026-10-27-sweep-data-load)
+      diskAllowed: bool ← direct or (no archive is open)            ; [I] the no-archive half: no run shows a lookup before the first open (0x00418B6A–0x00418B7A)
       if diskAllowed and path exists on disk (relative to the working directory):
         return disk                                                  ; checked before any archive
       for a in archive list, front to back:
@@ -143,20 +166,46 @@ A3. FindFile(path) → source:                                         [I] (fn:S
 
 Step notes:
 
+- A1. The H3b runs make the 12 opens of A1 in this order with these priorities, all before the first string-table
+  and excel load (`d2video` aside), in every run. [C] (fn:MPQ_OpenArchive@0x00517332, run:2026-10-27-sweep-data-load, [data/0002 § H3b](../../findings/data/0002-mpq-precedence.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load))
 - A1. `d2kfixup.mpq` and `d2delta.mpq` are optional; their absence is not an error. `d2exp.mpq` is opened
   whenever the file exists, for classic games too, so classic and expansion games read the same
-  excel data. [I] ([data/0002](../../findings/data/0002-mpq-precedence.md#answer-summary), fn:MPQ_OpenCoreArchives@0x004FAB90)
+  excel data. [C] No stock game directory holds either optional archive and every run started (in the H3b runs their
+  opens return 0); the classic session of run:2026-10-15-strings resolved three indices ≥ 20000 through
+  `expansionstring.tbl`, which only `d2exp.mpq` holds, and `d2data` holds no excel `.bin`. (fn:MPQ_OpenCoreArchives@0x004FAB90,
+  run:2026-10-15-strings, run:2026-10-27-sweep-data-load, [data/0002 § S1b](../../findings/data/0002-mpq-precedence.md#plan-0038-batch-s1b-2026-10-16))
+- A1. `d2video` is opened from the main menu's *Cinematics* list: the five game archives are closed, `d2video.mpq` is
+  opened at 1000 and linked, and after the film `MPQ_OpenGameArchives` opens the five again (call at 0x004345D7). [C]
+  (fn:MPQ_OpenVideoArchives@0x004FAD10, 0x004345D7, run:2026-10-27-sweep-data-load)
 - A1. Without `-direct`, startup fails unless `d2data`, `d2sfx` and `d2speech` opened (and, when the
-  expansion is detected, `d2exp`); with `-direct` it continues regardless. [I] (fn:MPQ_OpenCoreArchives@0x004FAB90)
+  expansion is detected, `d2exp`); with `-direct` it continues regardless. [I] Only a broken install reaches it: every
+  run had the core archives. (fn:MPQ_OpenCoreArchives@0x004FAB90)
 - A2. With every archive present, the search order is `patch_d2`, `d2Xvideo`, `d2Xtalk`, `d2Xmusic`,
   `d2exp`, `d2music`, `d2char`, `d2kfixup`, `d2delta`, `d2speech`, `d2sfx`, `d2data`. For files under
-  `data\global\` this means **`patch_d2` > `d2exp` > `d2kfixup` > `d2delta` > `d2data`**. [I]
-  ([data/0002 §2](../../findings/data/0002-mpq-precedence.md#2-archive-open-and-the-sorted-list))
+  `data\global\` this means **`patch_d2` > `d2exp` > `d2kfixup` > `d2delta` > `d2data`**.
+  [C] for the ten archives the install holds: after every open the logged archive list equals A2's model. For
+  `data\global\`, `patch_d2` > `d2exp` > `d2data` is also shown by content: a kept log reads each kind of file these
+  archives hold with different bytes (excel `.bin`, DS1 maps, string tables) with 0 mismatches in that order and fails
+  with the other copies. (fn:STORM_LinkArchive@0x0041B6B0, run:2026-10-27-sweep-data-load, run:2026-10-15-strings, [data/0002 § S1b](../../findings/data/0002-mpq-precedence.md#plan-0038-batch-s1b-2026-10-16),
+  [data/0002 §2](../../findings/data/0002-mpq-precedence.md#2-archive-open-and-the-sorted-list))
+  [I] for the places of `d2kfixup` and `d2delta`: our install ships neither, so only an added archive would show
+  them. (fn:STORM_LinkArchive@0x0041B6B0)
+- A2. The tie rule is live: `d2video`, opened after the 1000 band, is linked at its **front** (before `d2speech`,
+  `d2sfx`, `d2data`). No stock file differs between two archives of one band (of the 6 files shared inside a band, 0
+  differ), so no lookup's result depends on it. [C] (fn:STORM_LinkArchive@0x0041B6B0, run:2026-10-27-sweep-data-load, [data/0002 § S1b](../../findings/data/0002-mpq-precedence.md#plan-0038-batch-s1b-2026-10-16))
 - A3. The game writes the direct flag only from the `-direct` byte, so in a stock run (archives open,
   no `-direct`) the disk is never read and a loose file never overrides an archive. Under `-direct`,
-  a loose file beats every MPQ. [I] (fn:sub_00406870_InitFileIO@0x00406870, data:g_StormDirectFlags@0x00779058)
+  a loose file beats every MPQ. [C] `InitFileIO` stores the `-direct` byte in both flags in all seven H3b runs; every
+  `FindFile` inside a `FILE_LoadWhole` returns what A3 predicts from the archive list of that moment; without
+  `-direct` no call returns the disk (the loose run's directory held three loose files, every buffer read was the
+  archive copy), and with it the same kind of loose files were read from disk. (fn:sub_00406870_InitFileIO@0x00406870,
+  data:g_StormDirectFlags@0x00779058, fn:STORM_FindFile@0x00417F10, run:2026-10-27-sweep-data-load, [data/0002 § H3b](../../findings/data/0002-mpq-precedence.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load))
 - A3. Every excel table and `data\local\use` go through `FILE_LoadWhole`, which calls this lookup
-  with no archive restriction. [I] (fn:FILE_LoadWhole@0x00517079)
+  with no archive restriction. [C] Every `DATATBLS_LoadTable` call is followed by one `FILE_LoadWhole` of its `.bin`,
+  and `use` is read once per run the same way. The excel files read outside `DATATBLS_LoadTable` go through it too:
+  `weapons`, `armor`, `misc`, `itemtypes` and `hitclass` `.bin` from the character-graphics copy of the loader (return
+  0x0050448A, before `DATATBLS_LoadAll`), and the four `*code.bin` (return 0x006122D1). (fn:FILE_LoadWhole@0x00517079,
+  0x0050448A, 0x006122D1, run:2026-10-27-sweep-data-load, [data/0002 § H3b](../../findings/data/0002-mpq-precedence.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load))
 
 ### B. Loading one table
 
@@ -171,7 +220,7 @@ flowchart TD
 
 ```
 B1. LoadTable(name) → (records, count: u32):                         [C] (fn:DATATBLS_LoadTable@0x006122F0)
-      if compileTxt:                                                 [I] (all of B1a–B1b; fn:DATATBLS_SetCompileTxt@0x006125A0)
+      if compileTxt:                                                 [C] (all of B1a–B1b; fn:DATATBLS_SetCompileTxt@0x006125A0, run:2026-10-15-cube-saves)
 B1a.    src ← (name equals "leveldefs", case-insensitive) ? "levels" : name
         parse FindFile("DATA\GLOBAL\EXCEL\" + src + ".txt"), fatal if absent
 B1b.    write the records to DATA\GLOBAL\EXCEL\<name>.bin ON DISK (relative path)
@@ -188,21 +237,39 @@ Step notes:
   (data:g_DataTblsLoadBin@0x00744308; corroborated by the record-size match of step C1)
 - B1a–B1b. `-txt` writes freshly compiled `.bin` files to disk, and **then** loads the `.bin` through
   A3 like a stock run. Without `-direct` the disk copy is invisible, so `-txt` alone changes nothing
-  that is loaded. Only `-direct -txt` makes the game run on `.txt` content. [I]
-  ([data/0001 §1–2](../../findings/data/0001-excel-loader.md#1-load-path-of-one-table))
-- B1. In a stock run the authoritative side of the five mixed-archive tables is the `.bin`:
-  `automagic`, `RarePrefix`, `RareSuffix` from `patch_d2`; `inventory`, `PlrMode` from `d2exp` (the
-  `patch_d2` `.txt` edits to these two are not live). [I] ([data/0001](../../findings/data/0001-excel-loader.md#answer-summary),
+  that is loaded. Only `-direct -txt` makes the game run on `.txt` content. [C] Both `-txt` runs wrote the same 90
+  `.bin` files (89 byte-identical to the archive copies, `monstats.bin` differing in two bytes). Under `-txt` alone
+  every excel buffer loaded was the archive copy, `monstats.bin` included; under `-direct -txt` every `.bin` read after
+  its write came from the disk, and the loaded `monstats` records carry the compile's two bytes. Earlier,
+  run:2026-10-15-cube-saves compiled a loose probe `cubemain.txt` into its own table.
+  (fn:DATATBLS_LoadTable@0x006122F0, fn:DATATBLS_SetCompileTxt@0x006125A0, run:2026-10-27-sweep-data-load, run:2026-10-15-cube-saves, [data/0001 § H3b](../../findings/data/0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
+  [data/0001 §1–2](../../findings/data/0001-excel-loader.md#1-load-path-of-one-table))
+- B1. In a stock run the five mixed-archive tables load from their `.bin` like every other table:
+  `automagic`, `RarePrefix`, `RareSuffix` from `patch_d2`; `inventory`, `PlrMode` from `d2exp`. The pinned game's own
+  `-txt` compile of the `.txt` the archives rank first gives `.bin` files byte-identical to these five, so either side
+  gives the same records, and which one is authoritative has no observable on stock data. [C]
+  (fn:DATATBLS_LoadTable@0x006122F0, run:2026-10-15-cube-saves, [data/0002 § S1b](../../findings/data/0002-mpq-precedence.md#plan-0038-batch-s1b-2026-10-16),
   [tables/README](../../tables/README.md#source-and-shape))
 - B1. `TreasureClass.txt`, `Aiparms.txt`, `MonName.txt` and `WeaponClass.txt` have no loader.
   `cubemod.bin` and `cubetype.bin` ship but are never loaded (their names do not occur in
-  `Game.exe`). [I] / [C] respectively ([data/0001 §3–4](../../findings/data/0001-excel-loader.md#3-what-is-registered-datatbls_loadall-0x00619300))
+  `Game.exe`). [C] for both: the `-txt` compile writes a `.bin` for every table it loads and wrote none of the four,
+  although all four `.txt` files are in the archives. (fn:DATATBLS_LoadTable@0x006122F0, run:2026-10-15-cube-saves, [data/0001 § S1b](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16),
+  [data/0001 §3–4](../../findings/data/0001-excel-loader.md#3-what-is-registered-datatbls_loadall-0x00619300))
 - B1. 15 small code-list tables (`playerclass`, `bodylocs`, `monmode` 4-byte form, …) and the
   2-byte `monstats`/`skilldesc` calls are loaded only under `-txt`; they serve the `.txt` compiler.
-  A stock run never loads them. [I] (fn:DATATBLS_LoadCodeLists@0x00612750)
+  A stock run never loads them **through `DATATBLS_LoadTable`**. A further `-txt`-only call, the 18th, is a 2-byte
+  `sounds` load (the call at 0x00659C16, skipped by the `je` at 0x00659BC1 when `g_DataTblsCompileTxt` is 0; the full
+  `sounds` table loads in every run). [C] No `DATATBLS_LoadTable` call names one of them in the four stock-mode H3b runs,
+  and under `-txt` all 18 are called, with their small record sizes; the `-txt` compile wrote all 15. (fn:DATATBLS_LoadCodeLists@0x00612750,
+  0x006127DF, 0x00659BC1, 0x00659C16, run:2026-10-27-sweep-data-load, run:2026-10-15-cube-saves, [data/0001 § H3b](../../findings/data/0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load))
+- B1. **`hitclass.bin` is read whole in every run**, `-txt` or not, by the character-graphics copy of the loader (the
+  `FILE_LoadWhole` returning to 0x0050448A, with `weapons`, `armor`, `misc` and `itemtypes`), so "a stock run never
+  loads them" holds for `DATATBLS_LoadTable` only. [C] (0x0050448A, fn:FILE_LoadWhole@0x00517079, run:2026-10-27-sweep-data-load, [data/0001 § H3b](../../findings/data/0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load))
 - B1. The four header-less `*code.bin` files (`itemscode`, `misscode`, `skillscode`, `skilldesccode`)
-  are loaded whole as raw buffers, not through B1. Their contents are [data/calc](calc.md). [I]
-  (fn:DATATBLS_LoadCodeBin@0x00613E90)
+  are loaded whole as raw buffers, not through B1. Their contents are [data/calc](calc.md). [C] In all 44 529
+  evaluations of run:2026-10-16-calc, the pool's offset + length equals its file size, the pool's base is
+  constant within each (log, pool) pair, and the logged bytes are the file bytes at those offsets: the pool is the whole
+  file, with no header. (fn:DATATBLS_LoadCodeBin@0x00613E90, run:2026-10-16-calc, [data/0001 § S1b](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16))
 
 ### C. Addressing records
 
@@ -229,8 +296,13 @@ Step notes:
   mismatches), which is why `(fileSize − 4) ÷ count` is safe to use. Records are packed, with no
   alignment padding. [C] ([data/0001 §4](../../findings/data/0001-excel-loader.md#4-record-size-corroboration-all-88-bin-tables),
   fmt:excel-bin)
-- C1. Where the tables of `items/tc` land (all fields of the data-tables block data:g_DataTables@0x0096BC30): [I]
-  ([data/0001 §5](../../findings/data/0001-excel-loader.md#5-where-the-nine-phase-1-tables-land))
+- C1. Where the tables of `items/tc` land (all fields of the data-tables block data:g_DataTables@0x0096BC30).
+  [C] for the globals a kept logger dereferenced and whose checker matched: `g_pTreasureClasses` (the tc-drops sub-TC
+  indices, 9 390 calls), `g_pItemRatio` (the tc-drops ratio rows), `g_pItems`/`g_nItems` (302 item codes read in the
+  d2s-io run) and `g_pLevelDefs` (drlg-roomk). [I] for `g_pItemTypes`, `g_pMonStats`, `g_pLevels`, the three links and
+  the counts: no logger reads them by address. (data:g_pTreasureClasses@0x0096C5EC, data:g_pItemRatio@0x0096CC4C,
+  data:g_pItems@0x0096CA5C, data:g_pLevelDefs@0x0096C890, run:2026-10-11-tc-drops, run:2026-10-12-d2s-io,
+  run:2026-10-11-drlg-roomk, [data/0001 § S1b](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16), [data/0001 §5](../../findings/data/0001-excel-loader.md#5-where-the-nine-phase-1-tables-land))
 
   | Table | Records | Count | Lookup link |
   |---|---|---|---|
@@ -255,21 +327,36 @@ block-beta
 ```
 
 ```
-D1. LoadItems():                                                      [I] (fn:ITEMS_LoadItemTables@0x006315D0, 0x006333E1–0x0063343B)
+D1. LoadItems():                                                      [C] (fn:ITEMS_LoadItemTables@0x006315D0, 0x006333E1–0x0063343B, run:2026-10-15-vendors)
       (W, nW) ← LoadTable("weapons"); (A, nA) ← LoadTable("armor"); (M, nM) ← LoadTable("misc")
       items ← W ++ A ++ M                                            ; one array, stride 0x1A8, in this order
       nItems ← nW + nA + nM
-      weapons, armor, misc pointers ← the three sub-ranges of items  ; the file buffers are freed
-D2.   for i in 0 ..< nItems:                                          [I] (0x00633491)
+      weapons, armor, misc pointers ← the three sub-ranges of items  ; the file buffers are freed: [I] not logged (fn:ITEMS_LoadItemTables@0x006315D0)
+D2.   for i in 0 ..< nItems:                                          [C] (0x00633491, run:2026-10-15-vendors)
         AddCode(itemCodeLink, code: u32 ← item[i]+0x080 read as u32 LE)     ; step E2
-D3. GetItemByCode(code: u32) → (record, index: i32):                  [I] (fn:ITEMS_GetByCode@0x00633640)
+D3. GetItemByCode(code: u32) → (record, index: i32):                  [C] (fn:ITEMS_GetByCode@0x00633640, run:2026-10-27-sweep-data-load)
       index ← FindCode(itemCodeLink, code)                           ; step E1, −1 if absent
       record ← items + index × 0x1A8
 ```
 
 The **item index** used everywhere else is the position in this combined array: weapons first, then
 armor, then misc. With the shipped counts (306, 202, 151) weapons are 0..305, armor 306..507, misc
-508..658. [I] (fn:ITEMS_LoadItemTables@0x006315D0; counts from [tables/README](../../tables/README.md))
+508..658. [C] 4 999 logged (code, index) pairs, 282 distinct and in all three ranges (148 weapons, 84 armor, 50 misc),
+equal the code's combined position: the vendor stock creations, the quest drops and the d2s-io memory reads. In the H3b
+runs 1 147 `ITEMS_GetByCode` calls return the record `g_pItems + 0x1A8 × i` with index i, the code's first position;
+the 37 calls with a code that is no item return 0 with index 0. (fn:ITEMS_LoadItemTables@0x006315D0,
+fn:EXCEL_FindCode@0x006BD130, run:2026-10-15-vendors, run:2026-10-16-quest-drops, run:2026-10-12-d2s-io, run:2026-10-27-sweep-data-load,
+[data/0001 § S1b](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16); counts from [tables/README](../../tables/README.md))
+
+The load also builds a **classic item index map**, a u16 list (data:g_pClassicItemIndex@0x0096CA78, `2 · nItems`
+bytes, zeroed): in item order, the combined index of every record whose `version` (`+0x0F6`, u16) is 0; entries past
+the last version-0 item stay 0, and the count is not stored. Its one reader, `sub_006335A0_ItemClassicIndexMap(i)`,
+returns `list[i]` for `0 ≤ i < nItems`, else −1, and serves only the version-`0x47` item reader, which names an item
+by a signed 10-bit index among the version-0 items (a format [save/d2s](../save/d2s.md) does not specify). [I] (fn:ITEMS_LoadItemTables@0x006315D0
+0x006334C4–0x00633531, fn:sub_006335A0_ItemClassicIndexMap@0x006335A0, fn:sub_00532F30_ItemReadV71Record@0x00532F30,
+[data/0001 § P1b](../../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17))
+In the shipped tables 361 of the 659 item rows have `version` 0 (175 weapons, 92 armor, 94 misc). [C]
+(tbl:Weapons.txt:version, tbl:Armor.txt:version, tbl:Misc.txt:version)
 
 ### E. Code links (4-character codes)
 
@@ -282,10 +369,14 @@ flowchart TD
 ```
 
 A link is a 16-byte object `{count: i32, capacity: i32, codes: *{code: u32, index: i32}, nameRoot}`
-used either for codes or for names, never both (mixing is a fatal error). [I] (fn:EXCEL_LinkCreate@0x006BD040)
+used either for codes or for names, never both (mixing is a fatal error). [C] Rule 1: every function that touches a
+link reads this one layout (`LinkCreate` allocates and zeroes the 16 bytes; `FindCode`/`AddCode` use `+0`, `+4`, `+8`
+and fail when `+0xC` is set; `FindName`/`AddName`/`AddNameIfAbsent` use `+0xC` and fail when `+8` is set).
+(fn:EXCEL_LinkCreate@0x006BD040, fn:EXCEL_FindCode@0x006BD130, fn:EXCEL_AddCode@0x006BD230,
+fn:EXCEL_FindName@0x006BD3C0, fn:EXCEL_AddName@0x006BD500, fn:EXCEL_AddNameIfAbsent@0x006BD5A0, [data/0001 § S1b](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16))
 
 ```
-E1. FindCode(link, code: u32) → i32:                                  [I] (fn:EXCEL_FindCode@0x006BD130)
+E1. FindCode(link, code: u32) → i32:                                  [C] (fn:EXCEL_FindCode@0x006BD130, run:2026-10-17-sweep-emu)
       lo: i32 ← 0;  hi: i32 ← link.count
       while lo < hi:
         mid ← lo + (hi − lo) ÷ 2
@@ -295,8 +386,8 @@ E1. FindCode(link, code: u32) → i32:                                  [I] (fn:
         else: return link.codes[mid].index
       return −1
 
-E2. AddCode(link, code: u32) → i32:                                   [I] (fn:EXCEL_AddCode@0x006BD230)
-      grow codes by 64 entries when count ≥ capacity
+E2. AddCode(link, code: u32) → i32:                                   [C] (fn:EXCEL_AddCode@0x006BD230, run:2026-10-17-sweep-emu)
+      grow codes by 64 entries when count ≥ capacity                 ; [I] the emulation never filled the array (0x006BD26C, 0x006BD27A)
       loop:
         pos ← first position whose code ≥ code (unsigned)
         if pos < count and codes[pos].code = code:
@@ -310,14 +401,25 @@ E2. AddCode(link, code: u32) → i32:                                   [I] (fn:
 Step notes:
 
 - E1. Codes are compared as unsigned 32-bit values; there is no hashing. A 4-character code
-  `"hax "` is the u32 `0x20786168` (its four bytes read little-endian). [I] (fn:EXCEL_FindCode@0x006BD130,
-  fn:STR_ToItemCode@0x00650EB0)
+  `"hax "` is the u32 `0x20786168` (its four bytes read little-endian). [C] Under emulation 2 500 calls (1 021 probes
+  ≥ 2³¹, arrays deliberately unsorted so the probe path itself is compared) return the model's `lo/hi` search with
+  `mid = (hi − lo) ÷ 2 + lo` and an unsigned compare, and a signed-compare control differs. The d2s-io logger read
+  `hax ` at item 0's `+0x80`, and the vendor logger prints the u32 code local as its four characters in text order.
+  (fn:EXCEL_FindCode@0x006BD130, fn:STR_ToItemCode@0x00650EB0, run:2026-10-17-sweep-emu, run:2026-10-12-d2s-io, run:2026-10-15-vendors,
+  [data/0001 § S1e](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1e-2026-10-17), [data/0001 § S1b](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16))
+- E2. Under emulation 1 500 inserts (capacity above the count) bump 665 duplicates, 221 of them through `0xFFFFFFFF`
+  → 0 → … chains, and the array, count and returned index match the model byte for byte. [C] (fn:EXCEL_AddCode@0x006BD230,
+  run:2026-10-17-sweep-emu, [data/0001 § S1e](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1e-2026-10-17))
+  The growth by 64 entries is read from the code: the capacity `+4` is compared with the count `+0` and grown by `0x40`
+  (the link layout of rule 1), but every emulated insert had room, so no case grew the array. [I] (0x006BD26C, 0x006BD27A)
 - E2. **Duplicate codes:** the first record keeps its code; a later record with the same code is
   registered under `code + 1` (or the next free value), so it is unreachable by its written code and
   reachable by an unrelated one. The index returned is still the insertion count. The shipped
-  weapons/armor/misc have no duplicate codes (659 distinct), so this never fires on stock data. [I]
-  (fn:EXCEL_AddCode@0x006BD230; data check in [Weapons](../../tables/Weapons.md#row-identity))
-- E1. Item codes are **case-sensitive**: no case folding happens on this path. [I] (fn:EXCEL_FindCode@0x006BD130)
+  weapons/armor/misc have no duplicate codes (659 distinct), so this never fires on stock data. [C] for the rule by
+  emulation; [I] for "never fires", which has no observable. (fn:EXCEL_AddCode@0x006BD230, run:2026-10-17-sweep-emu; data check in
+  [Weapons](../../tables/Weapons.md#row-identity))
+- E1. Item codes are **case-sensitive**: no case folding happens on this path. [C] Under emulation, 316 probes that
+  differ from a stored code only in letter case find nothing (−1). (fn:EXCEL_FindCode@0x006BD130, run:2026-10-17-sweep-emu)
 
 ### F. Name links (TC names, monster Ids)
 
@@ -332,19 +434,19 @@ flowchart TD
 ```
 
 ```
-F1. Key(s) = lowercase(first 31 bytes of s)       ; only A–Z → a–z, all other bytes unchanged     [I] (fn:STR_ToLowerN@0x004113C0, table 0x006CEB98)
+F1. Key(s) = lowercase(first 31 bytes of s)       ; only A–Z → a–z, all other bytes unchanged     [C] (fn:STR_ToLowerN@0x004113C0, table 0x006CEB98, run:2026-10-17-sweep-emu)
 
-F2. FindName(link, s) → i32:                                          [I] (fn:EXCEL_FindName@0x006BD3C0)
+F2. FindName(link, s) → i32:                                          [C] (fn:EXCEL_FindName@0x006BD3C0, run:2026-10-17-sweep-emu)
       walk the binary search tree from link.nameRoot comparing Key(s) to node.name
       with a byte-wise strcmp; equal → return node.index; fell off → return −1
 
-F3. AddName(link, s) → i32:                                           [I] (fn:EXCEL_AddName@0x006BD500)
+F3. AddName(link, s) → i32:                                           [C] (fn:EXCEL_AddName@0x006BD500, run:2026-10-11-tc-drops)
       index ← link.count;  link.count ← link.count + 1               ; ALWAYS consumes an index
       if a node with Key(s) exists: discard the new node             ; first one wins
       else: insert node {name: Key(s), index} into the tree (unbalanced, insertion order)
       return index
 
-F4. AddNameIfAbsent(link, s) → i32:                                   [I] (fn:EXCEL_AddNameIfAbsent@0x006BD5A0)
+F4. AddNameIfAbsent(link, s) → i32:                                   [C] (fn:EXCEL_AddNameIfAbsent@0x006BD5A0, run:2026-10-15-cube-saves)
       i ← FindName(link, s)
       if i ≥ 0: return i                                              ; NO index consumed; the existing index
       else: return AddName(link, s)                                   ; the new index
@@ -353,12 +455,20 @@ F4. AddNameIfAbsent(link, s) → i32:                                   [I] (fn:
 Step notes:
 
 - F1–F2. Names are **case-insensitive** (ASCII only) and only their first 31 characters count. With
-  the duplicate rule of F3, a lookup returns the **first** record registered under that key. [I]
-  ([data/0001 §6](../../findings/data/0001-excel-loader.md#6-codeindex-and-nameindex))
+  the duplicate rule of F3, a lookup returns the **first** record registered under that key. [C] Under emulation 1 500
+  `FindName` calls on random trees cut the key to 31 bytes, lower-case it through the table (bytes ≥ 0x80 indexed as
+  signed), and walk by unsigned `strcmp` (`<` left at `+0x24`, else right at `+0x28`): 435 keys longer than 31 bytes,
+  57 of them found by their first 31, and an empty link returns −1. In the stock tables 11 name-lookup cells differ in
+  case from their key and resolve to it, and the 736 name-lookup cells resolve in the survey of the game-compiled
+  tables, the duplicated `cr_lancer8` and the repeated `monseq` values storing their first occurrence.
+  (fn:EXCEL_FindName@0x006BD3C0, fn:STR_ToLowerN@0x004113C0, run:2026-10-17-sweep-emu, run:2026-10-15-cube-saves, [data/0001 § S1e](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1e-2026-10-17), [data/0001 § S1b](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16),
+  [data/0001 §6](../../findings/data/0001-excel-loader.md#6-codeindex-and-nameindex))
 - F3 vs F4. The difference matters for numbering: `AddName` leaves a gap (the duplicate's index has
   no name), `AddNameIfAbsent` produces ordinals among distinct names. The TC loader uses `AddName`
-  (step G); the compiler used `AddNameIfAbsent` for the monstats `Id` (step H). [I]
-  (fn:TC_Alloc@0x00653F90, fn:EXCEL_AddNameIfAbsent@0x006BD5A0)
+  (step G); the compiler used `AddNameIfAbsent` for the monstats `Id` (step H). [C] The TC numbering of G5 holds
+  for every TC index of the 9 390 replayed calls (`AddName`, one index per TC), and the monstats ordinals among distinct
+  `Id`s hold in the game-compiled table (`AddNameIfAbsent`, no index for the duplicate). (fn:TC_Alloc@0x00653F90,
+  fn:EXCEL_AddNameIfAbsent@0x006BD5A0, run:2026-10-11-tc-drops, run:2026-10-15-cube-saves, [data/0001 § S1b](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16))
 
 ### G. Treasure classes
 
@@ -384,49 +494,63 @@ The live table is **`treasureclassex`**. `TreasureClass.txt` is never loaded; th
 (fn:TC_LoadTreasureClassEx@0x006547D0, 0x006EA76C; corroborated by the data check in G5)
 
 ```
-G1. LoadTCs():                                                        [I] (fn:TC_LoadAll@0x0065A390)
+G1. LoadTCs():                                                        [C] (fn:TC_LoadAll@0x0065A390, run:2026-10-11-tc-drops)
       tcLink ← new link
       Alloc("")                                                       ; index 0: empty name, empty TC
       BuildAutoTCs()                                                  ; G2
       LoadTreasureClassEx()                                           ; G3
-      post-pass (fn 0x0065A2C0, not specified here)
-      if tcCount > 0xFFFE: fatal
+      BuildChestTable()                                               ; G1a
+      if tcCount > 0xFFFE: fatal                                      ; [I] no stock case (fn:TC_LoadAll@0x0065A390)
 
-    Alloc(name) → index: AddName(tcLink, name) (F3); grow the TC array by 16 entries of 0x2C as needed   [I] (fn:TC_Alloc@0x00653F90)
+G1a. BuildChestTable():                                               [C] the lookups (fn:TC_BuildChestTable@0x0065A2C0, 0x0065A33B, run:2026-10-27-sweep-data-load)
+      for each act 1 … 5, difficulty suffix "", " (N)", " (H)" and chest kind "A", "B", "C":
+        i ← FindName(tcLink, "Act %d%s Chest %s")                     ; 45 lookups
+        store TC i, or NULL when i < 0, in g_ChestTCs for (act, difficulty, kind)   ; [I] the store (data:g_ChestTCs@0x0096C5F4)
+      ; reads no TC field and changes none; objects read it back through TC_GetChestTC (items/tc)
 
-G2. BuildAutoTCs():                                                   [I] (fn:TC_BuildAutoTCs@0x006541C0)
+    Alloc(name) → index: AddName(tcLink, name) (F3); entries of 0x2C   [C] (fn:TC_Alloc@0x00653F90, run:2026-10-11-tc-drops)
+      grow the TC array by 16 entries as needed                       ; [I] no observable (0x00653FB8)
+
+G2. BuildAutoTCs():                                                   [C] (fn:TC_BuildAutoTCs@0x006541C0, 0x0065428B–0x00654361, run:2026-10-11-tc-drops)
       for t in itemtypes records, in record order:
         if itemtypes[t].TreasureClass (+0x01D, u8) ≠ 0:
-          for level in 3, 6, …, 96:
-            Alloc(<itemtypes[t].Code> followed by <level> in decimal)  ; "%s%d"
-            fill it with the items of type t whose byte +0x0FD lies in (level − 3, level]
-              (the exact name text, further item filters, the TC header fields and the
-               per-entry probability and flags are not yet in a finding; see Open questions)
+          for L in 3, 6, …, 96:
+            name ← "%s%d" of the type code rebuilt by 0x006BD180 (a space becomes NUL: "bow " → "bow3"), L
+            if the rebuild fails: no TC for this L                    ; [I] no stock case (fn:TC_BuildAutoTCs@0x006541C0)
+            tc ← Alloc(name); picks 1, group 0, level L − 3, noDrop 0, all ratios 0
+            for item in the combined item array, in item-index order:
+              if item.quest (+0x12A) = 0 and item.spawnable (+0x133) ≠ 0
+                 and item is of type t
+                 and (item is not of itemtypes record 38, tpot, or t = 38)
+                 and L − 3 < item.level (+0x0FD) ≤ L:
+                add entry ITEM item, prob max(1, itemtypes[item.type].Rarity (+0x1E))
+                  with flag 0x10 when item.version (+0x0F6) ≥ 100     ; expansion only
 
-G3. LoadTreasureClassEx():                                            [I] (fn:TC_LoadTreasureClassEx@0x006547D0)
+G3. LoadTreasureClassEx():                                            [C] (fn:TC_LoadTreasureClassEx@0x006547D0, run:2026-10-11-tc-drops)
       (R, n) ← LoadTable("treasureclassex")
       autoTypes ← number of item types that passed G2's test          ; 5 in the shipped data
       for r in 0 ..< n:
-        if R[r].name (+0x000, char[32]) is empty: stop                ; first empty name ends the table
+        if R[r].name (+0x000, char[32]) is empty: stop                ; [I] first empty name ends the table (fn:TC_LoadTreasureClassEx@0x006547D0)
         idx ← Alloc(R[r].name)
-        picks: i32 ← R[r].Picks;  if picks = 0: picks ← 1
+        picks: i32 ← R[r].Picks;  if picks = 0: picks ← 1             ; [I] the 0 case (fn:TC_LoadTreasureClassEx@0x006547D0)
         group ← R[r].group;       if group ≠ 0: group ← group + autoTypes
         copy level, Magic, Rare, Set, Unique, NoDrop
         for k in 1 ... 10:
-          if R[r].Item[k] is empty: stop reading items                ; later columns are ignored
-          if R[r].Prob[k] < 1: skip this cell                         ; signed compare
+          if R[r].Item[k] is empty: stop reading items                ; [I] later columns are ignored (fn:TC_LoadTreasureClassEx@0x006547D0)
+          if R[r].Prob[k] < 1: skip this cell                         ; [I] signed compare (fn:TC_LoadTreasureClassEx@0x006547D0)
           ParseItemCell(R[r].Item[k], R[r].Prob[k])                   ; G4
 
-G4. ParseItemCell(text, prob):                                        [I] (fn:TC_ParseItemCell@0x00654440)
+G4. ParseItemCell(text, prob):                                        [C] (fn:TC_ParseItemCell@0x00654440, run:2026-10-11-tc-drops)
       if text starts with '"': skip that one character
-      every later '"' becomes NUL, so the name ends at the first inner '"'   [I] (fn:TC_ParseItemCell@0x00654440, 0x00654458–0x00654475)
+      every later '"' becomes NUL, so a trailing '"' is dropped
+        and the name ends at the first inner '"'                      ; [I] the inner case (0x00654458–0x00654475)
       split at the first ','; the tail holds modifiers (mul=, cu=, cs=, cr=,
         cm=, ce=, cg=, ma=, mg=), specified by items/tc
       if length(name) ≤ 4:
         (rec, i) ← GetItemByCode(STR_ToItemCode(name))                ; D3; first 4 chars, space-padded
         if found: entry is ITEM i;                     done
       i ← FindName(tcLink, name);       if i ≥ 1: entry is TC i;      done   ; 0 (empty TC) = miss
-      i ← FindName(uniqueitems link, name); if i ≥ 1: entry is UNIQUE i (flag 0x11); done
+      i ← FindName(uniqueitems link, name); if i ≥ 1: entry is UNIQUE i (flag 0x11); done   ; [I] these two steps (0x00654569, 0x006545B4)
       i ← FindName(setitems link, name);    if i ≥ 0: entry is SET i (flag 0x12);   done
       drop the cell
 ```
@@ -451,19 +575,34 @@ flowchart LR
 
 Step notes:
 
+- G1–G4. **The evidence.** A model of G1–G4 (`tools/tc.py`) reproduces all 9 390 stock calls of the kept TC logs: every
+  total, pick, selected entry and sub-TC index, over 425 distinct TC indices. Index 0 is the empty TC (752 drops with
+  base 0 name no TC). 55 auto TCs were logged with their entries (type order, the level window, the rarity weights),
+  302 logged TCs have a `group` and their upgrade walks reproduce, every logged entry resolves item code first and TC
+  name second, and 81 quoted cells, 23 of them in logged TCs, reproduce. [C] (fn:TC_LoadAll@0x0065A390,
+  fn:TC_BuildAutoTCs@0x006541C0, fn:TC_ParseItemCell@0x00654440, run:2026-10-11-tc-drops, run:2026-10-12-tc-champion,
+  [data/0001 § S1b](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16))
+- G1a. `TC_BuildChestTable`'s 45 lookups (return 0x0065A33B; it is called from `TC_LoadAll` at 0x0065A3B5) are logged in
+  every H3b run that loads the tables and return the TC index of each name; the store into `g_ChestTCs` was not logged.
+  [C] for the lookups (fn:TC_BuildChestTable@0x0065A2C0, 0x0065A3B5, run:2026-10-27-sweep-data-load, [data/0001 § H3b](../../findings/data/0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load), [data/0001 § P1b](../../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17))
 - G2. The order inside 1…160 follows the loop: item type in `itemtypes` record order, then level
   ascending, so the auto TC for the `j`-th qualifying type (0-based) at level `L` is index
-  `1 + 32 × j + (L ÷ 3 − 1)`. [I] (fn:TC_BuildAutoTCs@0x006541C0)
+  `1 + 32 × j + (L ÷ 3 − 1)`. [C] The formula puts the 852 treasureclassex TCs at `161 + r`, and 369 of them were
+  logged at those indices. (fn:TC_BuildAutoTCs@0x006541C0, run:2026-10-11-tc-drops, [data/0001 § S1b](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16))
 - G3. The shipped table's last record (852) has an empty name, so it ends the loop and 852 TCs are
-  loaded: 1 + 160 + 852 = 1013 runtime TCs. [I] (fn:TC_LoadTreasureClassEx@0x006547D0,
-  [TreasureClassEx § Row identity](../../tables/TreasureClassEx.md#row-identity))
+  loaded: 1 + 160 + 852 = 1013 runtime TCs. [C] for the numbering up to the highest logged index, 993 (`Durielq (N)`);
+  [I] for the count itself, since no logged index is above 993. (fn:TC_LoadTreasureClassEx@0x006547D0,
+  run:2026-10-11-tc-drops, [TreasureClassEx § Row identity](../../tables/TreasureClassEx.md#row-identity))
 - G4. A name of up to 4 characters that is both an item code and a TC name resolves to the **item**.
-  TC and unique/set names are case-insensitive (F1); item codes are case-sensitive (E1). [I]
-  (fn:TC_ParseItemCell@0x00654440)
+  TC and unique/set names are case-insensitive (F1); item codes are case-sensitive (E1). [I] The lookups themselves
+  are raised (E1, F1), but no stock cell is both, and the emulation cannot run the function: every resolved cell goes through
+  `TC_AddEntry` → `TC_GrowEntries` and the pool allocator. (fn:TC_ParseItemCell@0x00654440, 0x0065450F,
+  fn:TC_GrowEntries@0x00654010)
 - G4. `uniqueitems` index 0 can never be named from a TC (the test is `≥ 1`); `setitems` index 0 can. [I]
-  (fn:TC_ParseItemCell@0x00654440)
+  (fn:TC_ParseItemCell@0x00654440, 0x00654569, 0x006545B4)
 - G. `TC_GetByIndex` applies a `group`/`level` upgrade walk when a TC is fetched; that belongs to
-  `items/tc`, not to the load. [I] (fn:TC_GetByIndex@0x00654E00)
+  `items/tc`, not to the load. [C] (fn:TC_GetByIndex@0x00654E00, run:2026-10-11-tc-drops, run:2026-10-12-tc-champion,
+  [items/tc § C](../items/tc.md#c-level-upgrade--tc_dropbyindex-and-tc_getbyindex))
 
 ### H. Monster references
 
@@ -482,12 +621,12 @@ flowchart LR
 ```
 
 ```
-H1. Monster records are addressed by position:                        [I] (0x006538A0, 0x00651040, 0x00650F00)
+H1. Monster records are addressed by position:                        [C] (0x006538A0, 0x005A3D3E, 0x00651040, 0x00650F00, run:2026-10-12-mon-pool)
       MonStats(i) = g_pMonStats + i × 0x1A8, valid for 0 ≤ i < count
 H2. Every stored monster reference (monstats BaseId, NextInClass, spawn, minion1/2;   [C] (tbl:MonStats.txt:Id, tbl:Levels.txt:mon1)
     levels mon*, nmon*, umon*, cmon*) holds the ordinal of the referenced Id among
     DISTINCT monstats Ids (F4 numbering), which monstats.bin also stores at +0x000.
-H3. The game uses that stored value directly as the record position of H1;           [I] (data/0001 §8)
+H3. The game uses that stored value directly as the record position of H1;           [C] (fn:sub_005475E0_MonRegionPool@0x005475E0, run:2026-10-12-mon-pool)
     nothing remaps it at load.
 ```
 
@@ -495,14 +634,27 @@ Consequence: `monstats.txt` repeats `cr_lancer8` (records 617 and 723). Ordinals
 positions agree for records 0…722 and diverge after, so a reference to any monster in records
 724…733 reaches the record **one before** it. In the shipped data only three cells are affected:
 *Act 5 - Pandemonium 3* (`levels` record 135) `mon1`, `nmon1`, `umon1` name `overseer6` (record 724)
-and store 723, which is the second `cr_lancer8` record. [I] (H2 is [C] by data, H3 is [I];
-[MonStats § Row identity](../../tables/MonStats.md#row-identity), [data/0001 §8](../../findings/data/0001-excel-loader.md#8-answers-to-the-archivists-phase-1-questions))
+and store 723, which is the second `cr_lancer8` record. [C] H2 by data; H3 by the pool run below and the position
+reads of H1. (tbl:Levels.txt:mon1, run:2026-10-12-mon-pool; [MonStats § Row identity](../../tables/MonStats.md#row-identity),
+[data/0001 §8](../../findings/data/0001-excel-loader.md#8-answers-to-the-archivists-phase-1-questions), [data/0001 § S1b](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16))
+H1's two readers agree, the getter 0x006538A0 (bound `DataTables + 0xA80`, stride `0x1A8`, base `DataTables + 0xA78`)
+and the inline read at 0x005A3D3E–0x005A3D4C, and the monster checkers, which read `monstats.bin` by class position,
+reproduce the kept monster runs with 0 mismatches. [C] (0x006538A0, 0x005A3D3E, data:g_pMonStats@0x0096C6A8, [data/0001 § S1b](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16))
+**Every reader indexes by position.** An operand scan finds 191 reads of `g_pMonStats`: 177 bounded by the count and
+then `base + i × 0x1A8`, 6 at constant offsets for the fixed classes 492–495 (`imp1`–`imp4`), 5 in the loader's
+`BaseId`/`NextInClass` post-passes, and 3 allocation, free and NULL checks. None searches the records by `Id`, so every
+stored monster reference is used directly as the position and never mapped back through the ordinal. A copy of the
+base pointer kept elsewhere would escape the scan; none was met. [I] (data:g_pMonStats@0x0096C6A8,
+data:g_pDataTables@0x00744304, 0x0065385D, [data/0001 § P1c](../../findings/data/0001-excel-loader.md#plan-0039-batch-p1c-2026-10-17))
 For the monster-region pool H3 is observed: the pool code addresses `g_pMonStats + 0x1A8 × index`, and
 *Pandemonium 3*'s region held class 723, the second `cr_lancer8`, in every logged game. [C]
 (fn:sub_005475E0_MonRegionPool@0x005475E0, run:2026-10-12-mon-pool, [monsters/0001 § 8](../../findings/monsters/0001-level-pool.md#8-ordinal-723-and-g_monstatslink-backlog-spec-writer--reverser-a))
 `g_MonStatsLink`, the monstats name link, is filled when a table is compiled and appears only in table
-descriptors; no game-time name lookup goes through it. [I] (data:g_MonStatsLink@0x0096C6AC,
-fn:MONSTATS_Load@0x00651210, [monsters/0001 § 8](../../findings/monsters/0001-level-pool.md#8-ordinal-723-and-g_monstatslink-backlog-spec-writer--reverser-a))
+descriptors; no game-time name lookup goes through it. [C] objdump and the raw scan find the same 9 operands that name
+it: 5 descriptor link fields, the store after `EXCEL_LinkCreate`, two loads before `EXCEL_LinkFree` and one
+`EXCEL_FindName` in a compile callback whose only reference is a descriptor field. (data:g_MonStatsLink@0x0096C6AC,
+fn:MONSTATS_Load@0x00651210, 0x006599CC, [data/0001 § S1b](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16),
+[monsters/0001 § 8](../../findings/monsters/0001-level-pool.md#8-ordinal-723-and-g_monstatslink-backlog-spec-writer--reverser-a))
 
 ### I. String-table keys
 
@@ -517,9 +669,11 @@ flowchart TD
 ```
 
 ```
-I1. Language: lang ← first byte of data\local\use (via A3); if lang > 13: lang ← 0      [I] (fn:LNG_GetLanguageIndex@0x00525150)
+I1. Language: lang: u8 ← first byte of data\local\use (via A3)       [C] (fn:LNG_GetLanguageIndex@0x00525150, run:2026-10-27-sweep-data-load)
+      if lang > 13: lang ← 0                                          ; [I] the clamp (0x005251A1)
       code ← language table[lang] (0 ENG, 1 ESP, 2 DEU, 3 FRA, 4 POR, 5 ITA, 6 JPN,
-             7 KOR, 8 SIN, 9 CHI, 10 POL, 11 RUS, 12 ENG/HAN); unknown → entry 0     [I] (fn:LNG_GetLanguageCode@0x00525260, data:g_LanguageTable@0x007303DC)
+             7 KOR, 8 SIN, 9 CHI, 10 POL, 11 RUS, 12 ENG/HAN)         [C] (fn:LNG_GetLanguageCode@0x00525260, data:g_LanguageTable@0x007303DC, run:2026-10-17-sweep-emu)
+      lang 13 matches no entry: it reads entry 13, the 0x18 bytes after the table (0x00730514)   [C] the index map (0x005252AA, 0x005252B2, run:2026-10-17-sweep-emu)
       string tables: data\local\lng\<code>\string.tbl, expansionstring.tbl, patchstring.tbl
 
 I2. Stored string index of a key column (namestr, spelldescstr, monstats NameStr/DescStr):   [C] (fmt:tbl, fmt:excel-bin)
@@ -535,11 +689,11 @@ I2. Stored string index of a key column (namestr, spelldescstr, monstats NameStr
 I3. Text of a stored index (u16) at run time:                          [C] (fn:STRTABLE_GetByIndex@0x00524A30, fn:STRTABLE_EntryToString@0x00524930, data/0003, run:2026-10-15-strings)
       if index ≥ 20000:
         if expansionstring.tbl is loaded: (file, e) ← (expansionstring, index − 20000)
-        else: index ← 11078, then as below                           ; [I] not reached (0x00524A33–0x00524A49, data/strings § C)
+        else: index ← 11078, then as below                           ; [C] (0x00524A33–0x00524A49, run:2026-10-17-sweep-emu); not reached on a stock install (I3)
       if index ≥ 10000 and patchstring.tbl is loaded and file unset:
         (file, e) ← (patchstring, index − 10000)
       else if file unset: (file, e) ← (string, index)
-      if e ≥ file.count: e ← 500                                       ; [I] not reached: entry 500 of the same file (fn:STRTABLE_EntryToString@0x00524930)
+      if e ≥ file.count: e ← 500                                       ; [C] entry 500 of the same file (fn:STRTABLE_EntryToString@0x00524930, run:2026-10-17-sweep-emu); no stock index reaches it
       return the value of the node file.index[e] names                  ; an unused node is fatal
 ```
 
@@ -560,22 +714,54 @@ flowchart TD
 
 Step notes:
 
+- I1. **The language byte.** In every H3b run the first `LNG_GetLanguageIndex` call reads `data\local\use` once
+  through `FILE_LoadWhole` and returns its first byte: the archive copy's `00` (and a loose `00 00 00 00` under
+  `-direct`) gives 0 and the tables load from `lng\ENG\`; the install's `Use_rus`, `0B`, copied over `Use` with
+  `-direct` as its Russian launcher script does, gives 11, after which the loads use the `CYR` font charset (and the
+  program ends, [data/strings § H](strings.md#h-language)). The byte is cached at 0x008829EC for the later calls. [C]
+  (fn:LNG_GetLanguageIndex@0x00525150, run:2026-10-27-sweep-data-load, [data/0003 § H3b](../../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load))
+- I1. The clamp of values above 13 to 0 is reached only by a made-up `use` byte, which no shipped file holds. [I]
+  (0x005251A1, fn:LNG_GetLanguageIndex@0x00525150)
+- I1. **Id 13 is not a fallback to `ENG`.** `LNG_GetLanguageCode` searches the 13 entries and sends only a count ≥ 14
+  to entry 0 (`cmp ecx, 0xe; jl`), so ids 0–12 give their entry, ids ≥ 14 give entry 0 (a field other than 1, 2 or 3
+  copies the code), and an unmatched id below 14, which from a `u8` `use` byte past the clamp is 13 alone, reads the
+  0x18 bytes after the table. [C] for this index map under emulation (182 calls). (fn:LNG_GetLanguageCode@0x00525260,
+  0x005252B2, run:2026-10-17-sweep-emu, [data/0002 § S1e](../../findings/data/0002-mpq-precedence.md#plan-0038-batch-s1e-2026-10-17))
+  What it reads there is run-time memory: the low words of the first three dwords are written at startup (each a
+  default letter, or the single character of strings 0x14D1–0x14D3) and their high words are 0, so each "pointer" is
+  below 0x10000, and a `use` byte of 13 would make the string-table load fault. Only an edited `use` file holds 13. [I]
+  (0x00525832–0x005258E7, 0x00730514)
 - I1. The language byte affects only localisation (string tables, fonts, charset), never
-  `data\global\` or any excel table. [I] ([data/0002 §4](../../findings/data/0002-mpq-precedence.md#4-the-language-byte))
+  `data\global\` or any excel table. [I] (fn:LNG_GetLanguageIndex@0x00525150,
+  [data/0002 §4](../../findings/data/0002-mpq-precedence.md#4-the-language-byte))
 - I2. This is what the shipped `.bin` files contain, verified against the English tables over 2 278
   cells of the nine documented tables, and over 2 344 cells of all 28 laid-out tables (776 blank and 15
   non-blank unknown keys store 5382; each precedence pair is exercised: patchstring over string, patchstring
   over expansionstring, expansionstring over string). One exception: monstats `uberandariel`
   `NameStr = Lilith` stores 5382 although `Lilith` is entry 1154 (index 11154) of the shipped `eng`
-  `patchstring.tbl` (Open questions). The values are the English ones: the `deu` and `fra` `string.tbl`
-  have fewer entries. [C] / [I] for the language remark ([tbl.md](../../formats/tbl.md#key--index-as-the-excel-bin-files-store-it),
+  `patchstring.tbl`. The values are the English ones: the `deu` and `fra` `string.tbl`
+  have fewer entries. [C] (fmt:tbl, fn:STRTABLE_KeyToIndex@0x006117B0; [tbl.md](../../formats/tbl.md#key--index-as-the-excel-bin-files-store-it),
   [data/0004](../../findings/data/0004-cell-converters.md#answer-summary))
+  The `deu` and `fra` `string.tbl` hold 5 322 entries, `eng` 5 391; with either in place of `eng`, 1 505 (1 506) of
+  the 4 548 string-key cells of the laid-out tables would compile to another index, while the `eng` tables explain them
+  all. [C] (fn:STRTABLE_KeyToIndex@0x006117B0, [data/0004 § S1b](../../findings/data/0004-cell-converters.md#plan-0038-batch-s1b-2026-10-16))
+- I2. **The `Lilith` cell is the shipped file's, not the converter's.** The pinned game, compiling under `-direct -txt`,
+  stores 11154 there (`patchstring` entry 1154, `Lilith`): the converter rule holds for this cell too, and it is one
+  of the two bytes in which the game's `monstats.bin` differs from the shipped one. [C] (fn:STRTABLE_KeyToIndex@0x006117B0,
+  run:2026-10-15-cube-saves, [data/0004 § S1b](../../findings/data/0004-cell-converters.md#plan-0038-batch-s1b-2026-10-16)) That the shipped file was compiled against string tables without `Lilith` is
+  an inference about how it was made. [I] (fn:STRTABLE_KeyToIndex@0x006117B0)
 - I2. Entry 0 of `string.tbl` (key `WarrivAct1IntroGossip1`) also gets 0 from `STRTABLE_GetByKey`, so it
-  would compile to 5382; no cell names it. [I] (fn:STRTABLE_GetByKey@0x00524D30, [data/0004](../../findings/data/0004-cell-converters.md))
-- I3. Text lookup is by entry position, so a language whose `string.tbl` has other entries (the `deu`
-  and `fra` files have 5322) shows other text for the same stored index, and an index past a file's
-  count shows entry 500. The key → index search `STRTABLE_GetByKey` is patchstring → expansionstring
-  (when loaded) → string, the I2 order; the hash lookup is case-sensitive. [I] ([data/0003](../../findings/data/0003-string-tables.md#answer-summary),
+  would compile to 5382; no cell names it. [C] Under emulation `STRTABLE_KeyToIndex` returns 5382 for that key, as for
+  the empty key and the keys found nowhere. (fn:STRTABLE_GetByKey@0x00524D30, fn:STRTABLE_KeyToIndex@0x006117B0, run:2026-10-17-sweep-emu,
+  [data/0004 § S1e](../../findings/data/0004-cell-converters.md#plan-0038-batch-s1e-2026-10-17))
+- I3. Text lookup is by entry position, and the key → index search `STRTABLE_GetByKey` is patchstring →
+  expansionstring (when loaded) → string, the I2 order. [C] 336 logged index lookups go index → table, entry → node →
+  text, and 3 928 logged key lookups search in that order. (fn:STRTABLE_GetByIndex@0x00524A30,
+  fn:STRTABLE_FindInTable@0x00524C60, run:2026-10-15-strings, [data/0003 § S1b](../../findings/data/0003-string-tables.md#plan-0038-batch-s1b-2026-10-16))
+  So a language whose `string.tbl` has other entries (the `deu` and `fra` files have 5322) shows other text for the
+  same stored index, and an index past a file's count shows entry 500 (I3 above); the hash lookup is case-sensitive.
+  [I] for the other languages' text, which needs non-`eng` tables, and for the case, which no logged key tests
+  (no key is held by a table only under another case). ([data/0003](../../findings/data/0003-string-tables.md#answer-summary),
   [tbl.md § Override order](../../formats/tbl.md#override-order), fn:STRTABLE_FindInTable@0x00524C60)
 - I3. The game loads `string.tbl`, then `patchstring.tbl`, then `expansionstring.tbl` **whenever `d2exp.mpq`
   exists**, in a classic game too (the load flag is `HasExpansionMpq()`, not the game's mode), so on a stock LoD
@@ -615,18 +801,21 @@ J2. Convert a cell by its field type (record zeroed before the row):
 J2a. integer (types 2–6, 8, 0x1A):                                     [C] (fn:EXCEL_ParseTxt@0x006BD780, 0x006BDE15–0x006BDE3E)
        optional leading '-', then v ← v × 10 + (byte − 0x30) per byte   ; no validation
        store v truncated to the field width
-J2b.   byte is sign-extended, so a byte ≥ 0x80 adds a negative digit;  [I] (0x006BDE20)
+J2b.   byte is sign-extended, so a byte ≥ 0x80 adds a negative digit;  [C] (0x006BDE20, run:2026-10-17-sweep-emu)
        type 5 stores only a non-empty cell; type 0x1A sets or clears one bit
-J2c. code lookup (0x0B dword, 0x0D byte, 0x0F word):                   [I] (0x006BDD82, fn:EXCEL_FindCode@0x006BD130)
+J2c. code lookup (0x0B dword, 0x0D byte, 0x0F word):                   [C] (0x006BDD82, fn:EXCEL_FindCode@0x006BD130, run:2026-10-15-cube-saves, run:2026-10-17-sweep-emu)
        ; the sub-rules a named cell exercises (4-character cut, blank, duplicates): step notes
        key ← first ≤ 4 bytes of the cell, padded with spaces            ; blank → "    "
        store FindCode(link, key) at the field width                     ; −1 when absent
-J2d. name lookup (0x13 dword, 0x14 word, 0x15 byte):                   [I] (0x006BDDE7, fn:EXCEL_FindName@0x006BD3C0)
+                                                                        ; [I] a found key at the byte and dword widths (no stock cell; 0x006BDD82)
+J2d. name lookup (0x13 dword, 0x14 word, 0x15 byte):                   [C] (0x006BDDE7, fn:EXCEL_FindName@0x006BD3C0, run:2026-10-15-cube-saves, run:2026-10-17-sweep-emu)
        key ← first ≤ 31 bytes of the cell                               ; blank → ""
        store FindName(link, key) at the field width                     ; −1 when absent
+                                                                        ; [I] a found key at the byte width (no stock cell; 0x006BDDE7)
 J2e. string key (0x16): store STRTABLE_KeyToIndex(cell) as u16 (I2)    [C] (fn:STRTABLE_KeyToIndex@0x006117B0, 0x006BDEE5–0x006BDEED)
-J2f. callbacks (0x17–0x19): link(cell, record, offset, len, row, col)  [I] (0x006BDB50)
-       the item calc callback stores −1 for a blank cell or an           [I] (fn:sub_00631530_ItemCalcCell@0x00631530, 0x00631552)
+J2f. callbacks (0x17–0x19): link(cell, record, offset, len, row, col)  [C] the cell and record offset (0x006BDB50, run:2026-10-15-cube-saves)
+                                                                        ; [I] the len, row and col arguments (0x006BE003–0x006BE01A)
+       the item calc callback stores −1 for a blank cell or an           [C] (fn:sub_00631530_ItemCalcCell@0x00631530, 0x00631552, run:2026-10-17-sweep-emu)
        expression that fails to compile, else the expression's offset
 
 J3. After each row, for each appended (absent) entry, by type:          (0x006BDFA0–0x006BE031, jump table 0x006BE128)
@@ -642,11 +831,11 @@ J3. After each row, for each appended (absent) entry, by type:          (0x006BD
 | 0x0F word code lookup | `0xFFFF` | magicsuffix/automagic `etype4`, `etype5` | [C] (0x006BE128) |
 | 0x14 word name lookup | `0xFFFF` | weapons/armor `state`, `cstate1`/`2`, `stat1`–`3` | [C] (0x006BE128) |
 | 0x19 calc callback | called with no cell → −1 | weapons/armor `calc1`–`3`, `len`, `spelldesccalc` | [C] (0x006BE128, 0x00631552) |
-| 5, 7, 8; 0x0A, 0x0C, 0x0E, 0x10–0x12 registrations | 0 | none | [I] (0x006BE128) |
-| 0x0B, 0x13 dword lookups | −1 | none | [I] (0x006BE128) |
-| 0x15 byte name lookup | `0xFF` | none | [I] (0x006BE128) |
-| 0x17, 0x18 callbacks | called with no cell; the effect is the callback's | none | [I] (0x006BE128) |
-| 0x1A bit flag | untouched (the record was zeroed) | none | [I] (0x006BE128) |
+| 5, 7, 8; 0x0A, 0x0C, 0x0E, 0x10–0x12 registrations | 0 at the field width: the byte for 5, 7, 0x0C, 0x10; the word for 0x0E, 0x11; the dword for 8, 0x0A, 0x12 | none | [C] (0x006BE128, run:2026-10-17-sweep-emu2) |
+| 0x0B, 0x13 dword lookups | the dword −1 | none | [C] (0x006BE128, run:2026-10-17-sweep-emu2) |
+| 0x15 byte name lookup | the byte `0xFF` | none | [C] (0x006BE128, run:2026-10-17-sweep-emu2) |
+| 0x17, 0x18 callbacks | called with no cell (ECX 0) and the record and field offset; the effect is the callback's | none | [C] (0x006BE128, run:2026-10-17-sweep-emu2); [I] for the len, row and col pushed with them (0x006BE003–0x006BE01A) |
+| 0x1A bit flag | untouched (the record was zeroed, J3 note) | none | [C] (0x006BE128, run:2026-10-17-sweep-emu2) |
 
 Step notes:
 
@@ -662,17 +851,31 @@ Step notes:
 - J2c–J2d. **A blank cell is looked up**, not skipped: it gets the target row whose key is blank (itemtypes row
   0 for the item-type references, the empty-named TC 0 for monstats `TreasureClass*`), or −1 when the target
   has no blank key. [C] (0x006BDD82, 0x006BDDE7) A non-blank key that matches nothing takes the same −1 path;
-  no cell has one. [I] (0x006BDD82, 0x006BDDE7)
+  no cell has one. [C] Under emulation 1 931 code-lookup and 1 258 name-lookup cells that match nothing store −1 at
+  the field width (`0xFFFFFFFF`, `0xFFFF`, `0xFF`), and longer keys are cut to 4 (codes) and 31 (names) before the
+  lookup. (0x006BDD82, 0x006BDDE7, run:2026-10-17-sweep-emu, [data/0004 § S1e](../../findings/data/0004-cell-converters.md#plan-0038-batch-s1e-2026-10-17))
 - J2c–J2d. **A duplicated key resolves to its first row:** 15 443 blank itemtypes references store row 0, the
   first of the blank-code itemtypes rows (E2 keeps the first and bumps later duplicates); monstats
   `NextInClass` = `cr_lancer8` and the `Sk*mode` cells naming a repeated `monseq` value store the first
   occurrence's ordinal (F). [C] (fn:EXCEL_AddCode@0x006BD230, fn:EXCEL_AddNameIfAbsent@0x006BD5A0)
 - J2. Before any lookup, a first pass registers the keys of the registration columns (0x0A, 0x0C, 0x0E,
   0x10–0x12): codes through `EXCEL_AddCode` (an index above 255 / 65535 for a u8 / u16 field is fatal),
-  names through `EXCEL_AddName` or `EXCEL_AddNameIfAbsent`. Callbacks run in `.txt` column order. [I]
-  (0x006BD99F, 0x006BDA34, 0x006BDA74)
+  names through `EXCEL_AddName` or `EXCEL_AddNameIfAbsent`. Callbacks run in `.txt` column order.
+  [C] for registration before lookup (442 `monstats` `NextInClass` cells name a later row and resolve in the
+  game-compiled table) and for the callback order (J2f–J3 note). [I] for the overflow fatal: no stock table reaches
+  255 or 65535 entries. (0x006BD99F, 0x006BDA34, 0x006BDA74, run:2026-10-15-cube-saves, [data/0004 § S1b](../../findings/data/0004-cell-converters.md#plan-0038-batch-s1b-2026-10-16))
+- J2. The first pass's gate and loop count only the `.txt` columns (`mov eax, [ebx+0xc]` at 0x006BD7FE), so a
+  registration entry with no column is never registered, only defaulted (J3). [I] (0x006BD7FE, 0x006BD85F, [data/0004 § S1f](../../findings/data/0004-cell-converters.md#plan-0038-batch-s1f-2026-10-17))
 - J3. The record is zeroed before parsing, so a 0 default and "not written" give the same byte; the −1
-  defaults are real writes. [I] (fn:EXCEL_ParseTxt@0x006BD780, [data/0004 § 1](../../findings/data/0004-cell-converters.md#1-column-map-and-the-defaults-pass))
+  defaults are real writes. [C] The no-column and padding bytes are 0 in every record of the game-compiled files, and
+  the absent-column −1 defaults (23 855 cells) are present in them. (fn:EXCEL_ParseTxt@0x006BD780,
+  run:2026-10-15-cube-saves, [data/0004 § S1b](../../findings/data/0004-cell-converters.md#plan-0038-batch-s1b-2026-10-16), [data/0004 § 1](../../findings/data/0004-cell-converters.md#1-column-map-and-the-defaults-pass))
+- J3. **The rows "none" exercises.** Under emulation every type 1–0x1A was absent in 113 to 1 261 rows of synthetic
+  tables, and after each row's last cell every absent entry was written through the jump table at its exact width, the
+  bytes around it unchanged; the 0x17 and 0x18 entries called the callback with ECX = 0 and the record and field offset.
+  All 618 rows reproduce. [C] (fn:EXCEL_ParseTxt@0x006BD780, 0x006BDFBE, 0x006BE128, run:2026-10-17-sweep-emu2, [data/0004 § S1f](../../findings/data/0004-cell-converters.md#plan-0038-batch-s1f-2026-10-17))
+- J3. An absent callback entry (0x17–0x19) with no callback is skipped (`test ebx, ebx; je` at 0x006BDFFF), so its
+  field keeps the record's zero. No emulated descriptor had one. [I] (0x006BDFFC–0x006BE001, [data/0004 § S1f](../../findings/data/0004-cell-converters.md#plan-0038-batch-s1f-2026-10-17))
 - J2f–J3. **Callback order within a row.** The second pass walks the row's cells in `.txt` column order, and a
   type `0x17`–`0x19` entry calls its callback when its column is reached, so a formula's pool bytes are appended in
   header order, not descriptor order. After the row's last cell, the entries the `.txt` lacks run in descriptor
@@ -680,7 +883,10 @@ Step notes:
   with no cell (an absent `calc` column → −1). So the callback order is the `.txt` columns, then the absent entries.
   Stock `skills.txt` has `skpoints`, `delay`, `perdelay` in header order against the descriptor's `perdelay`,
   `skpoints`, `delay`; no stock row fills `perdelay` with either, so both orders rebuild the stock pools, but an
-  edited row with all three filled puts `perdelay`'s bytes after `delay`'s. [I] (fn:EXCEL_ParseTxt@0x006BD780
+  edited row with all three filled puts `perdelay`'s bytes after `delay`'s. [C] Under emulation (300 calls) the present
+  callback columns ran in shuffled header order and the absent entries after the row's last cell in descriptor order: an
+  absent entry's default overwrote a present cell's value on the same field in every row, and two negative controls
+  fail. (run:2026-10-17-sweep-emu2, [data/0004 § S1f](../../findings/data/0004-cell-converters.md#plan-0038-batch-s1f-2026-10-17), fn:EXCEL_ParseTxt@0x006BD780
   0x006BDB50–0x006BDF77, fn:EXCEL_MapColumns@0x006BCE20 0x006BCFA0–0x006BCFDC, 0x006BDFA0–0x006BE031,
   tbl:Skills.txt:perdelay, [data/0005 § 9](../../findings/data/0005-calc.md#9-compile-order-within-a-row-backlog-2026-10-15-static))
 - J4. **Descriptor facts the data can't show.** `levels.txt` `camt1`..`camt4` are four descriptor entries that
@@ -690,42 +896,74 @@ Step notes:
   [data/0004](../../findings/data/0004-cell-converters.md#answer-summary))
 - J4. **Record bytes no column fills.** Filled at load, after the table: items `+0x0F0` (`gemoffset`,
   rewritten by `GEMS_Load`), monstats `+0x02A` (first `MonEquip` row, `MONEQUIP_Load`), `+0x036`/`+0x038`
-  (walk/run values) and `+0x04A`/`+0x04B` (class-chain length and position), levels `+0x16E`/`+0x1BE`
+  (walk/run values) and `+0x04A`/`+0x04B` (class-chain length and position), levels `+0x033..+0x035` (the counts
+  of leading non-negative `mon`, `nmon` and `umon` slots, at most 25 each) and `+0x16E`/`+0x1BE`
   (localised `LevelName`/`LevelWarp` text, `DRLG_LoadLevels`). Padding, no reader or writer found by a
   displacement search after the table's record getters: items `+0x123`, `+0x12E`, monstats `+0x00A` and
   `+0x00F` bits 5–7, levels `+0x00A`. Records reached through a cached pointer are outside that search.
-  [I] (fn:GEMS_Load@0x00636B70, fn:MONEQUIP_Load@0x00659E60, fn:sub_00650F00_MonStatsSpeeds@0x00650F00,
+  [C] In 60 dumps of the items, monstats, levels, charstats and gems arrays (at `DATATBLS_LoadAll`'s return and at the
+  excel unload, six runs) the bytes that differ from the file lie only in these fields (the `-direct -txt` run's own
+  compiled `monstats` aside), and where a value is modelled
+  the dump holds it: items `+0x0F0` −1 on the first 68 records, then each gem row's index on its item's record;
+  monstats `+0x02A` the class's first `monequip` row, else −1; levels `+0x16E`/`+0x1BE` the UTF-16 text of the key (40
+  units, the 40th forced 0) and `+0x033..+0x035` the slot counts in all 137 records; no gems byte differs. The padding
+  bytes equal the file in every dump, and each load dump equals its run's unload dump, so nothing wrote these records
+  in between. (run:2026-10-27-sweep-data-load, fn:GEMS_Load@0x00636B70, fn:MONEQUIP_Load@0x00659E60, fn:DRLG_LoadLevels@0x0061C540, [data/0004 § H3b](../../findings/data/0004-cell-converters.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load))
+  The `+0x033..+0x035` writers: per record, three loops over the s16 slots at `+0x036`, `+0x068` and `+0x09A` stop at
+  the first negative slot or after 25 and store the count as a byte at 0x0061DB05, 0x0061DB20 and 0x0061DB40. [C]
+  for the counts and the stop at the first negative slot (fn:DRLG_LoadLevels@0x0061C540, 0x0061DAF0–0x0061DB4D,
+  run:2026-10-27-sweep-data-load, [Levels](../../tables/Levels.md)); [I] for the bound of 25 (`cmp eax, 0x19`): no
+  stock record has more than 10 leading non-negative slots in any of the three lists. (0x0061DAF0–0x0061DB4D)
+  [I] for the values of monstats `+0x036`/`+0x038` and `+0x04A`/`+0x04B`, which the run does not model, for
+  "never written" outside the load-to-unload window and through other pointers, and for "no reader" of the padding
+  bytes, which a dump cannot show. (fn:sub_00650F00_MonStatsSpeeds@0x00650F00,
   fn:sub_00651040_MonClassChain@0x00651040, [data/0004 § 3–4](../../findings/data/0004-cell-converters.md#3-runtime-fillers-of-no-column-fields))
 - J4. **More record bytes filled at load** (the 0 in the `.bin` is overwritten):
-  - [I] gems `+0x02C`: `GEMS_Load` stores `STRTABLE_GetByKey` of a key built from `+0x28..+0x2A`, which hold the
-    compiled item index of `code`, not its text; the lookup fails and every gem stores 0 (data/strings § D2).
-    (fn:GEMS_Load@0x00636B70 0x006371D6–0x00637225, [items/0007 § 9](../../findings/items/0007-sockets-runewords.md#9-table-fields-the-socket-path-does-not-use-backlog-2026-10-15-static))
+  - [C] gems `+0x02C`: `GEMS_Load` stores `STRTABLE_GetByKey` of a key built from `+0x28..+0x2A`, which hold the
+    compiled item index of `code`, not its text; the lookup fails and every gem stores 0 (data/strings § D2). The 68
+    logged keys are exactly those bytes of the 68 records, and every lookup returned 0.
+    (fn:GEMS_Load@0x00636B70 0x006371D6–0x00637225, run:2026-10-15-strings, [data/0003 § S1b](../../findings/data/0003-string-tables.md#plan-0038-batch-s1b-2026-10-16),
+    [items/0007 § 9](../../findings/items/0007-sockets-runewords.md#9-table-fields-the-socket-path-does-not-use-backlog-2026-10-15-static))
   - [I] gamble `+0x04` (the base's `level`, item record byte `+0xFD` as a u32) and `+0x08` (the item index of `code`,
     `EXCEL_FindCode(g_ItemCodeLink, code)`); the records are then sorted in place by `+0x04`.
     (fn:GAMBLE_LoadTable@0x00638AE0, tbl:Gamble.txt:code, [items/0009 § 7](../../findings/items/0009-vendors.md#7-gambling-gamble_buildinv-0x00578790))
-  - [I] charstats `+0x000..+0x01F`: the class's display name as UTF-16 (at most 16 units), looked up from the `class`
-    text at `+0x20`, or a fallback built from the key text when not found. (fn:CHARSTATS_LoadTable@0x00613260 0x00613D23,
-    fn:sub_00612600_RecWideNameFill@0x00612600, [player/0001 § 9](../../findings/player/0001-creation.md#9-other-charstats-readers-for-the-archivists-table-doc))
-  - [I] the merged rare-name records `+0x0C`: `STRTABLE_GetByKey(record + 0x26)`, the row's `name`.
-    (fn:sub_00633F40_LoadRareAffixes@0x00633F40 0x006341E0–0x0063420B, [data/0003 § Run](../../findings/data/0003-string-tables.md#run))
-  - [I] runes `+0x082` (u16): `STRTABLE_GetByKey(Name)`, looked up row by row, so the two rows named `Runeword95`
-    share one string index. `+0x084` is not written. (fn:RUNES_Load@0x006394A0 0x00639C63–0x00639C6E,
+    [C] The gamble list built from these records (dumped once per process, the same 125 entries in every dump) holds
+    exactly the gamble codes' combined positions in ascending base level, and its count up to each level L is the
+    number of base levels ≤ L; only the record offsets themselves are not logged. (fn:GAMBLE_LoadTable@0x00638AE0,
+    run:2026-10-15-vendors, [data/0001 § S1b](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16))
+  - [C] charstats `+0x000..+0x01F`: the class's display name as UTF-16 (at most 16 units), looked up from the `class`
+    text at `+0x20`. In all 12 dumps the 7 records' first 32 bytes are the text `STRTABLE_GetStringByKey` gives for the
+    key, zero padded, and no other byte differs from the file. (fn:CHARSTATS_LoadTable@0x00613260 0x00613D23,
+    fn:sub_00612600_RecWideNameFill@0x00612600, run:2026-10-27-sweep-data-load, [player/0001 § H3b](../../findings/player/0001-creation.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
+    [player/0001 § 9](../../findings/player/0001-creation.md#9-other-charstats-readers-for-the-archivists-table-doc))
+    [I] for the fallback built from the key text when the key is not found: every class key was found.
+    (fn:sub_00612600_RecWideNameFill@0x00612600)
+  - [C] the merged rare-name records `+0x0C`: `STRTABLE_GetByKey(record + 0x26)`, the row's `name`. The 394 logged
+    lookups from this loop carry the names at `+0x26` of the 201 merged records, and each logged index equals the
+    model's. (fn:sub_00633F40_LoadRareAffixes@0x00633F40 0x006341E0–0x0063420B, run:2026-10-15-strings, [data/0003 § S1b](../../findings/data/0003-string-tables.md#plan-0038-batch-s1b-2026-10-16),
+    [data/0003 § Run](../../findings/data/0003-string-tables.md#run))
+  - [C] runes `+0x082` (u16): `STRTABLE_GetByKey(Name)`, looked up row by row, so the two rows named `Runeword95`
+    share one string index (20600, logged once for rows 39 and 118). (fn:RUNES_Load@0x006394A0 0x00639C63–0x00639C6E,
+    run:2026-10-15-strings, [data/0003 § S1b](../../findings/data/0003-string-tables.md#plan-0038-batch-s1b-2026-10-16),
     [items/0007 § 9](../../findings/items/0007-sockets-runewords.md#9-table-fields-the-socket-path-does-not-use-backlog-2026-10-15-static))
+    [I] `+0x084` is not written. (fn:RUNES_Load@0x006394A0)
 
 ## Outputs
 
 ### Loaded state
 
 - Per table: a record array and a count, at the globals of C1. [C] (fn:DATATBLS_LoadTable@0x006122F0)
-- One combined item array with a code link; item index = combined position (D). [I]
+- One combined item array with a code link; item index = combined position (D). [C]
+  (fn:ITEMS_LoadItemTables@0x006315D0, run:2026-10-15-vendors, run:2026-10-27-sweep-data-load)
 - One runtime TC array (1013 entries of 0x2C bytes in the shipped data) with a name link; TC index
-  space as in G5. [I] for the size, [C] for the numbering.
+  space as in G5. [C] for the entry size and the numbering; [I] for the count, since no logged index is above 993 (G3).
+  (fn:TC_Alloc@0x00653F90, fn:TC_LoadAll@0x0065A390, run:2026-10-11-tc-drops)
 
 ### Cell values in a `.bin` record
 
 What a reimplementer reading a stock `.bin` must know about stored values. All rows are [C] by data
 behaviour: `tools/excel_bin.py diff` applies them to every cell of the nine documented tables with
-no unexplained mismatch. ([excel-bin.md § Cell encoding rules](../../formats/excel-bin.md#cell-encoding-rules))
+no unexplained mismatch. (fmt:excel-bin, [excel-bin.md § Cell encoding rules](../../formats/excel-bin.md#cell-encoding-rules))
 
 | Field kind | Stored value | Blank cell | Column absent from the `.txt` |
 |---|---|---|---|
@@ -742,7 +980,8 @@ no unexplained mismatch. ([excel-bin.md § Cell encoding rules](../../formats/ex
 | formula (calc) | s32 offset into the `*code.bin` buffer | −1 | −1 |
 
 The compiler code behind each row is § J, with its own `[C]`/`[I]` split. Signedness is pinned only
-where a column holds negative values; elsewhere the table docs mark fields `u`, which is [I]. ([excel-bin.md § Integers](../../formats/excel-bin.md#integers))
+where a column holds negative values; elsewhere the table docs mark fields `u`, which is [I]. (fmt:excel-bin,
+[excel-bin.md § Integers](../../formats/excel-bin.md#integers))
 
 ## Worked example
 
@@ -762,7 +1001,8 @@ Values from the shipped `.bin` files, decoded with `tools/excel_bin.py dump`.
 ## Reimplementation notes
 
 - **Read the `.bin`, not the `.txt`.** The two agree for the stock data except where noted, but the
-  `.bin` is what the game runs on. For `inventory` and `PlrMode` the patched `.txt` is not live.
+  `.bin` is what the game runs on. For the five mixed-archive tables (`automagic`, `RarePrefix`, `RareSuffix`,
+  `inventory`, `PlrMode`) the game's own compile of the top-ranked `.txt` gives the shipped `.bin` byte for byte (B1).
 - **Merge archives in priority order**, not open order: `d2exp` (opened last) still loses to
   `patch_d2`. Overlaying `d2data` → `d2exp` → `patch_d2` (later wins) reproduces the game for
   `data\global\`.
@@ -779,6 +1019,8 @@ Values from the shipped `.bin` files, decoded with `tools/excel_bin.py dump`.
 - **Codes are case-sensitive, names are not.** A 4-character TC name that equals an item code
   resolves to the item.
 - **Name keys are cut at 31 characters** before comparison.
+- **Language 13 is not `ENG`.** Only a language id of 14 or more maps to entry 0; a `use` byte of 13 passes the clamp
+  and reads past the language table (I1).
 - **Duplicate codes shift to `code + 1`.** Harmless on stock data, but a modded table with a
   duplicate code makes the second record reachable only through a different code.
 
@@ -794,6 +1036,11 @@ Values from the shipped `.bin` files, decoded with `tools/excel_bin.py dump`.
   index → text, table loading (I2, I3); [tbl.md § Override order](../../formats/tbl.md#override-order) summarises it.
 - [findings/monsters/0001-level-pool.md § 8](../../findings/monsters/0001-level-pool.md#8-ordinal-723-and-g_monstatslink-backlog-spec-writer--reverser-a):
   H3 observed for the pool, `g_MonStatsLink`.
+- The plan 0038 batch sections S1b, S1e, S1f and H3b of data/0001–0004 and [player/0001](../../findings/player/0001-creation.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
+  and the plan 0039 P1b and P1c sections of [data/0001](../../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17):
+  the raises of this spec, with [run:2026-10-27-sweep-data-load](../../findings/data/experiments.md#run2026-10-27-sweep-data-load)
+  (the startup runs), [run:2026-10-17-sweep-emu](../../findings/data/experiments.md#run2026-10-17-sweep-emu) and
+  [run:2026-10-17-sweep-emu2](../../findings/data/experiments.md#run2026-10-17-sweep-emu2) (emulation), and the kept logs S1b re-checked.
 - [formats/excel-bin.md](../../formats/excel-bin.md), [formats/tbl.md](../../formats/tbl.md),
   [formats/mpq.md](../../formats/mpq.md): file formats and cell encoding (data behaviour).
 - [tables/README.md](../../tables/README.md) and the table docs [TreasureClassEx](../../tables/TreasureClassEx.md),
@@ -806,36 +1053,30 @@ Values from the shipped `.bin` files, decoded with `tools/excel_bin.py dump`.
 
 ## Open questions
 
-- [L] `-direct -txt` and the loose-file rule are read from code only. A wine run with a loose
-  `DATA\GLOBAL\EXCEL\<table>.bin` that differs from the MPQ copy, with and without `-direct`, and one
-  edited `.txt` cell under `-direct -txt`, would confirm A3 and B1a–B1b.
-  ([data/0001](../../findings/data/0001-excel-loader.md#open-questions), [data/0002](../../findings/data/0002-mpq-precedence.md#open-questions))
+- ~~`-direct -txt` and the loose-file rule are read from code only~~: answered by run:2026-10-27-sweep-data-load
+  (A3, B1a–B1b): loose files with and without `-direct`, `-txt` alone and `-direct -txt`
+  ([data/0001 § H3b](../../findings/data/0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
+  [data/0002 § H3b](../../findings/data/0002-mpq-precedence.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load)).
 - [L] `d2kfixup.mpq` / `d2delta.mpq` precedence is code-read only; neither ships. A dummy archive
   carrying one excel file would confirm it.
-- [L] H3 (monster references used as positions) is observed for the region pool (§ H) but not read in
-  all ~189 readers of `g_pMonStats`; whether a spawned unit of class 723 is ever seen in play belongs to
-  `monsters/spawn`. The `g_MonStatsLink` part is answered in § H (monsters/0001 § 8).
-- [L] G2 details, seen by the architect during the plan 0002 review and not yet in a finding
-  (backlog entry architect → reverser on `TC_BuildAutoTCs`, plan 0004 Phase 1). (a) Name: the type
-  code is rebuilt by `0x006BD180`, which writes the padding space as NUL, so the names are
-  `bow3` … `bow96`; if that lookup fails no TC is allocated for that level, which would shift the
-  G5 numbering. (b) Each auto TC has `picks` 1, `group` 0, `level` = L − 3. (c) Item filter, in
-  order: `+0x12A` = 0, `+0x133` ≠ 0, `0x00629A90(item, t)`, and the item must not also be of
-  itemtypes record 38 unless t is 38; then the `+0x0FD` window. (d) Entry probability
-  `max(1, byte +0x1E)` of the record from `0x00555C90(item +0x11E)`; entry flag `0x10` when the
-  item's `+0xF6` word ≥ 100. All of this matters to `items/tc` and moves into G2 once recorded.
-- [L] The TC post-pass `0x0065A2C0` and the `group`/`level` walk in `TC_GetByIndex` are not read
-  (plan 0004).
+- ~~H3 (monster references used as positions) not read in all ~189 readers of `g_pMonStats`~~: answered in § H, every
+  one of the 191 reads indexes by position ([data/0001 § P1c](../../findings/data/0001-excel-loader.md#plan-0039-batch-p1c-2026-10-17)).
+  Whether a spawned unit of class 723 is ever seen in play stays with [monsters/spawn](../monsters/spawn.md).
+- ~~G2 details not yet in a finding~~: in G2 ([items/0001 § 9](../../findings/items/0001-tc-resolution.md#9-auto-item-type-tcs-weapn-armon-bown-melen-abown),
+  [data/0001 § P1b](../../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17)).
+- ~~The TC post-pass `0x0065A2C0` and the `group`/`level` walk in `TC_GetByIndex` are not read~~: the post-pass is
+  `TC_BuildChestTable` (G1a), and the walk is [items/tc § C](../items/tc.md#c-level-upgrade--tc_dropbyindex-and-tc_getbyindex)
+  ([data/0001 § P1b](../../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17)).
 - ~~Run-time string lookup through the I2 bases, and a non-English `string.tbl`~~: answered in I3
   ([data/0003](../../findings/data/0003-string-tables.md)), plan 0015.
 - ~~The cell-encoding defaults, the not-found value and the string-key order have no code anchor~~:
   answered in § J and I2 ([data/0004](../../findings/data/0004-cell-converters.md)), plan 0015.
-- [L] The `Lilith` cell (monstats `uberandariel` `NameStr`): `Lilith` is entry 1154 of the shipped `eng`
-  `patchstring.tbl` (index 11154) and in no other table, so the converter would store 11154, yet the `.bin`
-  holds 5382. The `.bin` was probably compiled against string tables that lacked the key; nothing in the
-  code explains it. ([data/0004 § Open questions](../../findings/data/0004-cell-converters.md#open-questions))
+- ~~The `Lilith` cell (monstats `uberandariel` `NameStr`)~~: the pinned compiler stores 11154 there, so the converter
+  rule holds; the shipped file was compiled against other string tables (I2;
+  [data/0004 § S1b](../../findings/data/0004-cell-converters.md#plan-0038-batch-s1b-2026-10-16)).
 - [L] Whether a reader reaches the monstats padding bytes (`+0x00A`, `+0x00F` bits 5–7) through a cached
-  record pointer, outside the J4 search. A data breakpoint during a game would settle it.
+  record pointer, outside the J4 search. The H3b dumps show no write between the load and the excel unload; a read is
+  not observable that way, so a data breakpoint during a game would still be needed.
   ([data/0004 § Open questions](../../findings/data/0004-cell-converters.md#open-questions))
-- [L] The u16 list at `0x0096CA78` of item indices whose `+0x0F6` word is 0, built at item load:
-  meaning left to the items plans.
+- ~~The u16 list at `0x0096CA78`~~: the classic item index map of the version-`0x47` item reader (§ D,
+  [data/0001 § P1b](../../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17)).

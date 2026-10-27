@@ -69,6 +69,10 @@ Names are ours.
   node, the longest 5 159 nodes, `"not used"` in `string`; 5 688 misses, each over all `max_probes` nodes, through
   unused ones); the signed hash shows on three keys with a byte ≥ 0x80 (`"\x80\x02"`: patchstring home 361, unsigned
   869). (0x00524C7D–0x00524CDC, [run:2026-10-15-strings](experiments.md#run2026-10-15-strings))
+  *Review note (architect, 2026-10-27, `lane/s38d`):* the run covers the match test, not its case-sensitivity. No
+  logged key is held by a table only under another case (§ Plan 0038 batch S1b, data/excel row 57), so a case-folding
+  compare would give the same 9 456 results. The case-sensitivity is `[I]`: the compare is an inline byte loop with no
+  folding (0x00524CA4–0x00524CC6, objdump).
 - [I] **Missing tables.** `FILE_LoadWhole` returns NULL for a file it cannot open (after logging
   `"Error opening file: %s"`), and `STRTABLE_LoadFile` reads the header through that pointer without a test, so a
   missing `string.tbl`, `patchstring.tbl`, or, with `d2exp.mpq` present, `expansionstring.tbl` ends in an access
