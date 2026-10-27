@@ -280,6 +280,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/p45h` review | 0045 P2 | architect-review | 144 335 | 62 | 12 | — (static, objdump, no Ghidra) | gave accept with fixes | — (on the lane row) |
 | 2026-10-27 | `lane/p51b` | 0051 P0b | archivist | 399 437 | 140 | 27 | — (static, no Ghidra) | accept with fixes (rulings: the summons' MonEquip walk open, not `[I]`; the `+0x17C` list named as Phase 1b item 3a; the 357 recount written into skills/0013) | 7: overclaim 2, misread 1, omission 2, miscount 1, stale cross-reference 1 (Levels `Teleport`'s post-boundary outcome under `[C]`; MonEquip's summon rows "walked" `[I]` with the `oninit` gate unread; Skills `InTown`'s start 40 scope "a monster with a target" for "a monster"; Phase 1b item 3 left unnamed; MonStats `spawn` without do 131's `EDX` 0 call; skills/0013 § 6's 358 rows for 357; skills/0013's `+0x17C` open question still "an archivist question") |
 | 2026-10-27 | `lane/p51b` review | 0051 P0b | architect-review | 142 616 | 48 | 6 | — (static, no Ghidra) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/p50c` | 0050 P1b part 1 | reverser-static | — | — | — | — (static, web only, no Ghidra) | | |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

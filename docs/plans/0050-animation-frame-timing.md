@@ -249,3 +249,23 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   lacked ([0045 log](0045-skills-missiles-machinery.md#implementation-log)). That acceptance is the one this plan's
   approval waited for: **Phases 0, 1 and 1b are open**. Phase 2 still waits for 0045·P3's review, which waits for 0045
   Phase 2 part 2's review.
+- **2026-10-27 — P1b part 1: sources registered and claims staged, no verdicts (reverser, `lane/p50c`; no Ghidra, no
+  harness, P1 work on other branches not read).** P1.2 and P1.3 have not run, so this part does only the blind half
+  of Phase 1b; **part 2 (one verdict per claim against P1.2 and P1.3) runs after P1.3's review.** Registered in
+  [sources](../sources.md), each with the version it describes: `maxroll-d2r-breakpoints` and
+  `maxroll-d2r-attack-speed` (D2R, patch 2.4 and later), `basin-wiki-animation` (LoD 1.10+ with D2R notes, nine
+  pages by revision), `basin-runwalk-thread` (February 2003, 1.09 era; Hammerman's two in-memory offsets of that
+  build read in prose, not copied, not used), `basin-movement-clarification` (2012, 1.13 era), `pd-breakpoints` (no
+  patch named, classic-era tables); not read: `lurker-movement-thread` (HTTP 409/406) and `gustafsson-movement-speed`
+  (archive refused). No page with game code was met. Staged in [anim/leads](../findings/anim/leads.md): **61
+  claims**, all `[L]`, each with source, version and the batch that decides it: rates R 5, attack A 15, cast C 7,
+  delays D 5, hit recovery, stun and knockback H 10, block B 5, movement M 14 (`grep -cE` in its § 11). Seven
+  conflicts are named in the rows (A1/A2 the `− 1` inside or outside the ceiling; C2 against C3; D1/D2 the delay from
+  the action frame or after the cast; H4 three "one-handed swinging" lists; H5/H6 the hit-recovery threshold; M6/M7
+  Slows Target's speed effect; M12/M13 Charge speed). **Kept check** `tools/anim_leads_check.py` (`331eb0f0…`): the
+  sources' FCR, FHR and FBR tables against their own formula, 39 cases × 2 sources, 70 agree, 8 differ (the Druid's
+  three forms and the Necromancer's FCR, reproduced only with bases 15 and 16), output
+  `workspace/logs/anim-leads/p50c-leads-check.txt` (`b185e780…`, `manifest.sha256`); a check of community claims
+  against each other, not of the game. **Gaps** (no lead found): monster frames and rates, the `fast` mod, object
+  operate frames, `monseq` sequences; part 2 records them "no lead". The `animdata.d2` format guides are left to
+  Phase 0. Review request: [backlog](../backlog/2026-10-27-reverser-architect-review-plan-0050-p1b-part-1.md).
