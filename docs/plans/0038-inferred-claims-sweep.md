@@ -4668,7 +4668,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     not), the character-screen list rule, and the H1a `[C]`s for `0x029`, `0x02A`, ears, personalized names.
   - **Not done:** the version 71/87 layouts and a legacy builder, version 92's property overrides, the completeness of
     the version-test list, the old-form mask width outside `0x029` = 12, 16, and the reader side of the ear's realm
-    bit: reverser entry [2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md).
+    bit: reverser entry [2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading](../backlog/archive/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md).
     So the legacy rows (hirelings 3, 30, 33; player-creation 1; items-uniques-sets 21) and save-d2s 126 stay
     shortfalls under ruling 5. The H1a entry is annotated and stays open for the legacy builder.
   - **Backlog:** review request [2026-10-27-archivist-architect-review-lane-a71-d2s-versions-93-95-realm](../backlog/archive/2026-10-27-archivist-architect-review-lane-a71-d2s-versions-93-95-realm.md). Ledger row added, usage "—".
@@ -4708,7 +4708,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
        a 92 file (`0x0043C8A0`), and `D2S_ReadSave` sends < 92 to the legacy reader (`v91`, `[C]`), so the code is
        reachable by a file the stock game shows; what is missing is a layout to build, which the findings do not give.
        They move only on the reverser entry
-       [2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md):
+       [2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading](../backlog/archive/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md):
        (a) for the legacy rows (d-none only if every legacy layout is refused), (b) for 126.
     4. The H1a archivist entry stays open for the legacy builder, as the lane left it.
   - **Bookkeeping:** review request closed
@@ -4716,3 +4716,26 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     ledger: the lane row's usage filled from the orchestrator (230 283 tokens, 72 tools, 20 min), verdict and fixes
     filled, the review row added with usage "—"; archivist review-fixes rules 1 and 4 gain `lane/a71` Seen lines.
   - **Next:** merge `lane/a71`; the reverser takes the legacy and version-92 readers entry.
+- **2026-10-27 — `lane/rlg` (reverser, static, no slot, no harness, no emulation, from `main` `1f8c0858`): the d2s
+  legacy and version-92 readers.** Work of the archivist entry
+  [2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading](../backlog/archive/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md)
+  (`lane/a71` review rulings 2–3). Ghidra on the lane copy `workspace/ghidra-rlg` (decompile only, `-Xmx3G`), objdump,
+  and `tools/rlg_static.py` (kept output `workspace/logs/rlg/static.txt`, manifest `rlg-manifest.sha256`,
+  `RLG_STATIC hits=73 functions=42`).
+  - **Written** ([save/0001 § Plan 0038 lane/rlg](../findings/save/0001-d2s-io.md#plan-0038-lanerlg-the-legacy-and-version-92-readers-static-2026-10-27),
+    all `[I]`): (a) the version 71..91 layout: the `0x82`-byte header and its tests and codes, the ten sections in
+    order with their tags and lengths, the 3-byte stat mask, the version-71 item record's four forms, the mercenary's
+    two forms, the hotkey tail; no checksum or size test; failures after the skills do not fail the load. (b) version
+    92: the 1.09 columns for every width including the fixed fields, no param in the generic path, the ≤ 92 per-id
+    encodings, the fold into stat 127, a set item's `Sets` id. (c) the 92..96 version tests: 68 of 73 compares are
+    version tests, 29 met by 92..96 with a version-dependent result; 93..95 differ from 96 in the stat form, stat 72 and
+    the third realm word only. (d) the old-form mask is ⌈`0x029`/8⌉ bytes. (e) the reader takes an ear's realm bit
+    after the name; the writer writes realm data only when item data `+0x20` ≠ 0. save/0002 § 1 gains the legacy
+    quest reader. 17 symbols added (I).
+  - **Ruling 3:** no legacy version is refused, so hirelings 3, 30, 33, player-creation 1 and items-uniques-sets 21
+    stay shortfalls; none is proposed to move. Save-d2s 126 likewise (the layout is now given).
+  - **Backlog:** the entry closed; archivist entry
+    [2026-10-27-reverser-archivist-d2s-legacy-layouts-for-a-builder](../backlog/2026-10-27-reverser-archivist-d2s-legacy-layouts-for-a-builder.md);
+    review request [2026-10-27-reverser-architect-review-lane-rlg-d2s-legacy-and-v92-readers](../backlog/2026-10-27-reverser-architect-review-lane-rlg-d2s-legacy-and-v92-readers.md).
+    Ledger row added, usage "—".
+  - **Next:** the `lane/rlg` review; then the archivist's legacy builder.

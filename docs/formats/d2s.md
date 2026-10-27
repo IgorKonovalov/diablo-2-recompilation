@@ -446,7 +446,7 @@ common-part field with the logged runtime item over 8 writes and 5 loads (no soc
   ear's length only when the name ends on a byte boundary: 93 + 7·*n* bits for a name of *n* characters in the
   stored or equipped common part, so *n* = 5 or 13. H1a's 7-character name does not separate the two readings,
   and whether the reader takes the bit for an ear is asked of the reverser
-  ([backlog](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md) (e)).
+  ([backlog](../backlog/archive/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md) (e)).
   `d2s.py` ends an ear at its name by default and reads and writes the bit in its extended form.
 
 #### Flags
@@ -643,7 +643,7 @@ repeat:
 92..96 ([§ Checksum](#checksum)). The layout is the version-96 one except where the reader tests the version. The
 tests the findings name are below; the findings name no other that a version 92..96 file can meet (the class-affix
 base tests at ≤ 88 / 89 and the 72–88 jump table of [save/0001](../findings/save/0001-d2s-io.md) fall in the legacy range), and whether that list is complete is asked of the
-reverser ([backlog](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md) (c)). `[I]` (fn:D2S_ReadSave@0x00534330, fn:D2S_ReadHeader@0x0056A090)
+reverser ([backlog](../backlog/archive/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md) (c)). `[I]` (fn:D2S_ReadSave@0x00534330, fn:D2S_ReadHeader@0x0056A090)
 
 | versions | what changes | tag | source |
 |---|---|---|---|
@@ -660,14 +660,14 @@ reverser ([backlog](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-
   above it (`v94s12`, `0x029` = 12: stat 12 not set, written back with no level). The mask took 2 bytes for
   `0x029` = 16 and 12, and `if` followed the last u32 (the skills' cursor 2 + 2 + 4 × 11 bytes after the stats'). The
   game wrote both back as version 96 in the bit form. Whether the mask is ⌈`0x029`/8⌉ bytes or always 2 is open
-  ([backlog](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md) (d)). (fn:D2S_ReadStats@0x0056A620 0x0056A627–0x0056A640, [save/0001 § Plan 0038 batch H1a](../findings/save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load))
+  ([backlog](../backlog/archive/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md) (d)). (fn:D2S_ReadStats@0x0056A620 0x0056A627–0x0056A640, [save/0001 § Plan 0038 batch H1a](../findings/save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load))
 - `[C]` **The version tested for stat 72 is the save's** (`ITEMS_ReadFull`'s argument at `[ebp+0x1C]`, `cmp [ebp+0x1C],
   0x5F; ja`). The H1a `v94` items keep their item `version` field 101 (above 95) and were still read with an 8-bit
   current durability: the three values (7, 8, 20) came back in the write, which a 9-bit read keyed on the item's
   version would have shifted. Version 95 itself was not loaded `[I]`. ([save/0001](../findings/save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load) row 68)
 - **Version 92 is not documented here**: its property lists need the per-id width overrides, which the findings do
   not list (which ids, which widths, whether the fixed fields take the 1.09 columns, what a set item does below
-  93). `d2s.py` refuses it ([backlog](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md) (b)). The `1.09-Save Bits` and `1.09-Save Add` columns themselves are
+  93). `d2s.py` refuses it ([backlog](../backlog/archive/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md) (b)). The `1.09-Save Bits` and `1.09-Save Add` columns themselves are
   `ItemStatCost` record `+0x1A` and `+0x20` ([save/0001](../findings/save/0001-d2s-io.md) § 7).
 
 ## Legacy versions (71..91)
@@ -694,7 +694,7 @@ reverser ([backlog](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-
   framing; the stat and skill forms; the mercenary fields; the version-`0x47` item record around its 10-bit index;
   how the item list's version is chosen; and which of 71..91 the reader accepts and with which code it refuses the
   rest. The section readers are named (0x00532690, 0x00532BE0..0x00532DA0, 0x005337F0, 0x005339A0, 0x00533C70,
-  0x00533F70) but not read. The static reading is asked of the reverser ([backlog](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md) (a)). Until it
+  0x00533F70) but not read. The static reading is asked of the reverser ([backlog](../backlog/archive/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md) (a)). Until it
   lands, `d2s.py` builds no legacy save, and the H1a legacy rows stay shortfalls: the findings show neither the
   reader accepting a legacy layout nor refusing every one (plan 0038 `lane/h1a` review, ruling 5).
 
@@ -1263,7 +1263,7 @@ the game writes version 96, `0x029` = 16, `0x02A` = 30 and no realm data.
   (`skill_count` 29, the skills Fire Bolt and Frozen Orb, header name `QITSOR`). The extended reader reads those and
   the `items` case (realm data, an ear) to their last byte and re-encodes every item record unchanged.
 - Not buildable: version 92 and the legacy versions ([§ Legacy versions](#legacy-versions-7191)); both wait on the
-  reverser ([backlog](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md) (a), (b)).
+  reverser ([backlog](../backlog/archive/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md) (a), (b)).
 
 ## Sample hashes
 
@@ -1323,7 +1323,7 @@ What the save code leaves open after [save/0001](../findings/save/0001-d2s-io.md
 - `[L]` The legacy layouts (versions 71..91), the version-92 property overrides, whether the version tests listed in
   [§ Versions 92..95](#versions-9295) are all of them, the old stat form's mask width outside `0x029` = 12 and 16,
   and whether the reader takes an ear's realm bit: asked of the reverser,
-  [backlog](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md). (Ears, personalized names and realm data have left the next bullet: H1a's tool-built ear,
+  [backlog](../backlog/archive/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md). (Ears, personalized names and realm data have left the next bullet: H1a's tool-built ear,
   personalized cap and realm gloves were read by the game, [§ Common part](#common-part), [§ Realm data](#realm-data).)
 
 - `[L]` Branches no sample exercises (the save code reads them, tagged `[I]` above, but no file shows them):
