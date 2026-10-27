@@ -21,3 +21,10 @@ C2: us 21 stays `[I]` as the H1a shortfall (no version 71 or 87 save is built), 
 **Open:** player/creation (rows 1, 8, 9, 11, 20, 34; (h) and (j) on that spec's § A2, § J and F1), which waits for
 H6g; hirelings (3, 30, 32, 33), which waits for H6f; and (k), the S1b leftovers in data/calc L417 and rng/seeds L362,
 whose clusters are done and which no round has taken yet.
+
+*Annotation (spec-writer, 2026-10-27, `lane/s38h`, plan 0038 Phase 3, hirelings cluster):* the hirelings part is
+applied in [hirelings](../specs/hirelings/README.md) § H: row 32 (the mercenary items read after the header, `MercMF`,
+run:2026-10-27-sweep-d2s-load) `[C]`. Rows 3, 30 and 33 (saves older than version 92, the version-71 Id `0xFFFF`, the
+experience conversion) stay `[I]` as H1a shortfalls, routed to H1c; a small re-tag follows H1c's acceptance.
+**Open:** player/creation (rows 1, 8, 9, 11, 20, 34; (h) and (j)), which waits for H6g; hirelings 3, 30 and 33 (H1c);
+and (k), the S1b leftovers.

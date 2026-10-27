@@ -2,7 +2,7 @@
 based_on:
   - docs/specs/player/README.md 2026-10-16
   - docs/specs/player/creation.md 2026-10-21
-  - docs/specs/hirelings/README.md 2026-10-20
+  - docs/specs/hirelings/README.md 2026-10-27
   - docs/specs/save/d2s.md 2026-10-27
 ---
 
@@ -285,8 +285,9 @@ Because vendors and hirelings share the store seed
 ([hirelings § B](../specs/hirelings/README.md#b-the-store-seed)), opening a trade or gamble window before you first
 talk to a seller changes that seller's list, and the reverse. When a hire empties the list, the table is rebuilt
 from the store seed. The table lives with the NPC, so all players of a game share it: in a two-client game
-Kashya's list was built once and the second player saw the same entries. That Asheara's trade window can also build the table is read from the code and was not reached
-in a run.
+Kashya's list was built once and the second player saw the same entries. Opening Asheara's trade window does not
+build her table: the first talk with her has already built it, and in a run that opened the trade first the trade's
+own build test found the table there. That build has no stock case.
 
 ## A list entry and the hire
 
@@ -295,9 +296,9 @@ rest ([hirelings § E](../specs/hirelings/README.md#e-an-entry-hireling_rollentr
 
 - The **type** is one draw among the 2 or 3 types for that act and the game's difficulty (for example the fire and
   cold Rogues).
-- The **level** is the player's level minus 1 to 5, **never above the player**. All 530 listed entries of the test
-  run lie 1 to 5 levels below the player. A floor of level 2 exists in the code but was
-  not reached.
+- The **level** is the player's level minus 1 to 5, **never above the player**, and at least 2. All 530 listed
+  entries of the first test run lie 1 to 5 levels below the player; a later run at player level 3 had 12 rolls that
+  would have come out at 1 or below, and all came out at 2.
 - The **price** is the type's `Gold`, raised 15 % per level above the start of its first level band, and never below
   `Gold`. The 49 hires of the run paid exactly this.
 - The **shown stats** use the type's first-band row and round negative values down.
@@ -307,17 +308,23 @@ rest ([hirelings § E](../specs/hirelings/README.md#e-an-entry-hireling_rollentr
   and the equipment columns are not read at all, so neither changes anything.
 
 The entry is rolled again each time with the player's current level: once by the client to draw the list and once
-by the server at the hire. So a level-up between opening the list and hiring would change the mercenary you buy;
-this follows from the code but the run had no such case. The client's list also appears to show one Act III name
-as another; only the numbers, not the text, were compared.
+by the server at the hire. So a level-up between opening the list and hiring changes the mercenary you buy: in a
+run, an entry listed at level 29 for 490 gold was hired at level 30 for 505 after the player reached level 31. The
+client draws one Act III name, `Lharhad`, as another, `Jarulf`, both in the list and on the hired mercenary; every
+other name is drawn as itself.
 
 **The hire** ([hirelings § F](../specs/hirelings/README.md#f-the-hire-hire_hire-merc_init)) pays the price from the
 gold you carry first, spawns the seller's monster class next to you, and records three values with the player: the
 seed, the name and the type Id. Any earlier mercenary is released. A hire takes no store-seed draw unless the list
-is rebuilt. The rest of the price comes from the stash, and a payment that gold and stash together cannot cover is
-refused with both unchanged; the economy run showed this on purchases and resurrections. Several parts are read from
-the code only: refusing a hire when gold is short, Qual-Kehk's quest gate, Kashya's quest gate for a player below level 8, and hiring a name that is in the table but
-not listed. Hires at Greiz and classic-game hires were not made in the run.
+is rebuilt. The rest of the price comes from the stash, and a hire that gold and stash together cannot cover is
+refused and pays nothing: in a run, a 2 500 hire took the 100 gold carried and 2 400 from the stash, and a second
+one, at 2 650, was refused with no mercenary made.
+
+Two sellers check a quest first. Qual-Kehk reads an Act V quest bit, and Kashya, for a player below level 8, an Act I
+quest bit; Greiz and Asheara read none. Runs showed the reads and the hires that passed them. In the three states tried
+with the quest still open, the game offered no hire line at all, so the server's refusal was never asked for; the refusal itself is read
+from the code, and so is hiring a name that is in the table but not listed. Hires at Greiz and classic-game hires at
+Kashya and Asheara behave like the others; a classic hire at Greiz was not made.
 
 ## The mercenary's stats per level
 
@@ -348,14 +355,18 @@ The mercenary is created as a monster at level 1 and these values then overwrite
 creation also leaves a few stats `Hireling` does not set (movement and attack speed values, a player count of at least
 1) and, for the Rogues, their missile skill from the monster table, at level 1 in Normal, 4 in Nightmare and 8 in Hell;
 the logs of every hire and load agree ([hirelings § I](../specs/hirelings/README.md#i-monster-class-and-the-monster-level)). Because
-hirelings have `Align` 1 in MonStats, the player-count bonus of monster stats does not apply to it; that is read
-from the code ([hirelings § I](../specs/hirelings/README.md#i-monster-class-and-the-monster-level)). When a
+hirelings have `Align` 1 in MonStats, the player-count bonus of monster stats does not apply to them: a hireling
+created with `/players 8` set got no bonus
+([hirelings § I](../specs/hirelings/README.md#i-monster-class-and-the-monster-level)). When a
 mercenary kills a monster, the [magic find](../glossary.md) used is its own plus its owner's
 ([hirelings § J](../specs/hirelings/README.md#j-magic-find-on-a-mercenarys-kill)).
 
-Levelling in play is read from the code but was not reached by the run: a mercenary gains levels only while it is
-below its owner's level, and one gain is capped at a sixty-fourth of the current level's span. How much of the
-owner's experience it receives is not read.
+**Levelling in play** ([hirelings § G](../specs/hirelings/README.md#levelling-in-play-merc_addexp)). When a monster
+dies, the owner's mercenary gets its own share, worked out at the mercenary's level and capped at a sixty-fourth of
+that level's experience span. If someone else made the kill, the mercenary keeps `86/256` of it, rounded toward zero;
+its own kill gives it the full amount. The mercenary then adds **twice** that value, but only while it is below its
+owner's level: in a run, a level-85 mercenary under a level-80 owner gained nothing. The upper bound, level 98 on the
+stock tables, is read from the code: at that level the mercenary would gain nothing, and the level loop stops there.
 
 ## A saved mercenary
 
@@ -370,16 +381,19 @@ the name range), its type Id and its experience. On load
    expansion game creates it in any act. In the run, 10 classic loads outside their act were not created and the
    header was kept.
 
-The load side was checked on 33 headers. A later save run confirmed the write side, a dead mercenary written and
-loaded back dead, and the empty header (all zeros means no mercenary, and the load goes on)
-([save/d2s § D](../specs/save/d2s.md#d-header-fields)). A name past the end of its range is read from the code
-only. The header layout is on the [saves](saves.md) page.
+The load side was checked on 33 headers. Later runs checked the write side (a mercenary hired in play, saved and
+loaded back), a dead mercenary loaded back dead, the empty header (all zeros means no mercenary, and the load goes
+on), the level cap (a test save with experience far past level 99 loaded at 99) and the mercenary's items, read just
+after the header ([save/d2s § D](../specs/save/d2s.md#d-header-fields)). A test save whose name was past the end of
+its range loaded with the range's first name; how the name's 16-bit addition wraps for a huge value is read from the
+code. The header layout is on the [saves](saves.md) page.
 
-Resurrection costs `min(50000, (L² ÷ 2) × 15)` gold, with `L` the mercenary's level, paid like a hire; the economy
-run checked the price and the payment, and a resurrection you cannot afford takes no gold. Some things are named in
-the spec only: the free mercenary from the Act I and Act III quests, death (the mercenary stays in the pet list as
-dead), and how it chooses skills in combat. These are read from the code and none was run
-([hirelings § K](../specs/hirelings/README.md#k-named-only)).
+Resurrection costs `min(50000, (L² ÷ 2) × 15)` gold, with `L` the mercenary's level, paid like a hire; runs at
+Qual-Kehk and Kashya checked the price and the payment, and a resurrection you cannot afford takes no gold. That
+Greiz, Asheara and Tyrael resurrect too is read from the code. When a mercenary dies it stays in the pet list,
+marked dead, which is how the resurrection finds it. The free mercenary of the Act I quest was run: Kashya gave the
+first listed name, with no payment. The Act III gift is read from the code. How a mercenary chooses skills in combat is
+not covered ([hirelings § K](../specs/hirelings/README.md#k-named-only)).
 
 ## Worked examples
 
@@ -448,9 +462,11 @@ attribute spending, the experience cap, and the edge cases of kill experience li
 
 From [hirelings § Open questions](../specs/hirelings/README.md#open-questions):
 
-- not reached by a run: classic hire lists and hires, a Greiz hire, the free mercenary, refused hires, hiring an unlisted entry, the table built from Asheara's trade window, levelling in play and the share
-  of the owner's experience, a dead or empty saved header, the written header, a second player hiring from the shared table, and
-  the list window's odd name;
+- not reached by a run: a classic hire at Greiz, the Act III gift, resurrection at Greiz, Asheara and Tyrael, a
+  mercenary at the level-98 bound, a second player hiring from the shared table, and mercenaries in saves older than
+  version 92;
+- not yet read: whether the client's hire-line test matches the server's quest checks in every state, and what fills
+  the list of a third caller (`PlayerPlaceInAct`) that can also create a mercenary;
 - whether the client ever shows its own rolled values instead of the server's.
 
 ## Where to read more

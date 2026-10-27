@@ -93,7 +93,7 @@ research map is authoritative: it adds the dependencies, key tables, tag counts 
 | [`items/sockets-runewords`](docs/specs/items/sockets-runewords.md) | socket filling, gems, runes and jewels, runeword activation | reviewed | 2026-10-15 |
 | [`items/quest-drops`](docs/specs/items/quest-drops.md) | quest-state TC switches, first-kill and special drops, quest rewards | reviewed | 2026-10-16 |
 | [`monsters/stats`](docs/specs/monsters/stats.md) | HP, damage, AC and XP per difficulty and player count, mod effects | reviewed | 2026-10-15 |
-| [`hirelings`](docs/specs/hirelings/README.md) | hireling stock, per-difficulty stats, name rolls | reviewed | 2026-10-16 |
+| [`hirelings`](docs/specs/hirelings/README.md) | hireling stock, per-difficulty stats, name rolls | reviewed (plan 0038 re-tag in review) | 2026-10-27 |
 | [`player/creation`](docs/specs/player/creation.md) | starting stats and items, experience curve, level-up | reviewed | 2026-10-16 |
 
 **Simulation** ([ADR-0014](docs/adrs/0014-scope-game-simulation.md))

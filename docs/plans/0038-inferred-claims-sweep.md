@@ -3747,7 +3747,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** archivist entry
     [2026-10-27-reverser-archivist-h1b-d2s-build-test-state-keys-for-a](../backlog/archive/2026-10-27-reverser-archivist-h1b-d2s-build-test-state-keys-for-a.md)
     (lone follower, merc name past range); spec-writer entry
-    [2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises](../backlog/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md)
+    [2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises](../backlog/archive/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md)
     (held for the review); review request
     [2026-10-27-reverser-architect-review-lane-h1b-plan-0038-batch-h1b](../backlog/archive/2026-10-27-reverser-architect-review-lane-h1b-plan-0038-batch-h1b.md).
   - **Next:** the `lane/h1b` review.
@@ -3800,7 +3800,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Ledger:** the resume row's usage was filled from the orchestrator (212 206 tokens, 100 tools, 22 min), with the
     verdict and 6 fixes: overclaim 2, omission 2, under-claim 1, other 1. The review row was added with usage "—".
   - **Backlog:** the review request was closed (archive). The spec-writer entry
-    [2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises](../backlog/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md)
+    [2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises](../backlog/archive/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md)
     was **released**, with four points added. The reverser entry above was filed. The archivist entry is unchanged.
   - **Next:** merge `lane/h1b`; then H1a (`d2s-load`).
 - **2026-10-27 — H6e2 (`quest-items`) started; rotated at the first checkpoint (reverser, `lane/h6e2`, harness slot 1,
@@ -5569,7 +5569,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request
     [2026-10-27-reverser-architect-review-lane-h6f-plan-0038-batch-h6f](../backlog/archive/2026-10-27-reverser-architect-review-lane-h6f-plan-0038-batch-h6f.md);
     spec-writer entry
-    [2026-10-27-reverser-spec-writer-h6f-hirelings-raises](../backlog/2026-10-27-reverser-spec-writer-h6f-hirelings-raises.md),
+    [2026-10-27-reverser-spec-writer-h6f-hirelings-raises](../backlog/archive/2026-10-27-reverser-spec-writer-h6f-hirelings-raises.md),
     held until the review. Ledger row added with usage "—".
   - **Next:** the `lane/h6f` review; hirelings is then ready for its Phase 3 re-tag.
 - **2026-10-27 — `lane/h6f` review (architect): H6f (`hirelings`) accept with fixes (6); ledger as filed.** `main`
@@ -5627,9 +5627,36 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     rests on; (6) *omission:* the client-test gap behind ruling 2 left unfiled (filed, with row 29's).
   - **Bookkeeping.** Inventory § 2.6 review paragraph and § 5 marks H6f done. Review-fixes Seen lines: reverser 9,
     10, 12 and 15. The review request closed; the spec-writer entry
-    [2026-10-27-reverser-spec-writer-h6f-hirelings-raises](../backlog/2026-10-27-reverser-spec-writer-h6f-hirelings-raises.md)
+    [2026-10-27-reverser-spec-writer-h6f-hirelings-raises](../backlog/archive/2026-10-27-reverser-spec-writer-h6f-hirelings-raises.md)
     released with the rulings. Ledger: the lane row filled (usage from the orchestrator: 492 169 tokens, 210 tools,
     73 min; accept with fixes, 6: overclaim 3, misread 1, omission 2); the review row added, usage "—".
   - **Readiness.** **hirelings is ready for Phase 3** on every row but 3, 30 and 33, which wait on H1c and stay `[I]`
     in this pass (the sockets precedent: Phase 3 ran with sock 1's piece routed to H1c); a small re-tag follows H1c's
     acceptance. The conditional d-none parts and row 29 are `[I]` in the spec until the reverser entry is answered.
+- **2026-10-27 — Phase 3, the hirelings cluster (spec-writer, `lane/s38h`, from `main` `fcce5b4d`).** Batches S3a,
+  S3b, H4b, H1b, H1a and H6f, all accepted; each restated statement checked against its section of
+  [hirelings/0001](../findings/hirelings/0001-hirelings.md) and the `lane/h6f` review's rulings and fixes. A partial
+  pass on the sockets precedent: rows 3, 30 and 33 stay `[I]` for H1c.
+  - **hirelings** {C 95, I 39, L 6} → **{C 137, I 41, L 7}** (recounted with the gate's tag reader; line diff +43 / −1
+    `[C]`, +32 / −30 `[I]`, +2 / −1 `[L]`). Raised: S3a rows 4 (the layout; the 0x450 bound `[I]`), 19 (the slot; the
+    refusals `[I]`), 26 (the empty header; one-field zeros `[I]`); S3b 7, 8 (the fatal branches `[I]`); H4b 34; H1b
+    24 (F8); H1a 32 (§ H items); H6f 5, 6, 10, 14, 15, 16, 20, 27 (the clamp only, built state; the u16 add and unsigned
+    compare `[I]` with the wrap bound, fix 1), 28 ×2, 31, 37, and in part 2 and 35 (Act I, expansion), 17, 18 and 21
+    (the reads and passes; the two refusals `[I]` server checks the stock client did not send, ruling 2), 23 (no
+    classic Greiz hire), 25 (a new levelling block G2–G7: `2·gain`, the owner test, the cap's `min` and the `·86 >> 8`
+    share `[C]`; `M = ExpMaxLevel(0) − 1`, tested before the write, and the loop bound `[I]`, fix 2; the cap's unsigned
+    width `[I]`, fix 3), 36 (Kashya and Qual-Kehk). Rows 1 and 9 written as no stock case (C2: the skip `[C]`, the
+    reach `[I]`, ruling 1); row 29 an `[I]` shortfall with the unread `+0x60` list (H12, ruling 3, fix 4). New:
+    `HIRE_Hire` returns no value. Inline `[I]` on lines no case reached (A1, A2, D1, D5, E2, F1, F2, G4, G5, G7, H12,
+    H13). Open questions: the not-reached list struck and rewritten; one `[L]` added for the reverser entry's two reads.
+  - **Wiki:** the hireling sections of [characters](../wiki/characters.md) refreshed, `based_on` hirelings 2026-10-27.
+    wiki/saves still lists hirelings 2026-10-20 (W4 warning; `lane/wiki`'s page, left).
+  - **Map and README:** the research-map row rewritten whole; the root README's hirelings row 2026-10-27.
+  - **Backlog:** closed the [H6f entry](../backlog/archive/2026-10-27-reverser-spec-writer-h6f-hirelings-raises.md) and
+    the [H1b entry](../backlog/archive/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md); annotated
+    the [H1a entry](../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md) (hirelings 32
+    done; 3, 30, 33 for H1c); filed the
+    [counts entry](../backlog/2026-10-27-spec-writer-architect-s38h-hirelings-counts-for-the-research-map.md) and the
+    [review request](../backlog/2026-10-27-spec-writer-architect-s38h-review-hirelings-phase-3.md). Ledger row added,
+    usage "—".
+  - **Next:** architect review of `lane/s38h`; the H1c re-tag of rows 3, 30 and 33 after H1c.
