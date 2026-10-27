@@ -52,7 +52,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    the directory above its files (`lane/h1b` review, 0038); the crashed `--early` probes' logs and the crash files
    they left in the shared game directory deleted, not kept in `dev/`, and the session screenshots left outside the
    kept manifest (`lane/h3b` review, 0038); a dev manifest said to pass from `dev/` while it sat in the directory above, where it
-   fails (`lane/rbd` review, 0038).
+   fails (`lane/rbd` review, 0038); the 24 kept-session screenshots left outside every manifest again (`lane/h6e2` review, 0038).
 7. **A conclusion needs an address, `fn:` or `run:` anchor**, not a link to another finding (gate W1).
    Seen: the resume lane's experiments addendum (0037); `lane/w1`'s 104 W1 lines (0039); the levels
    `+0x033..+0x035` refinement and the 18th `-txt`-only (`sounds`) call filed without their writer and call addresses
@@ -114,7 +114,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     (a class word, a register it must preserve, a mode) and every later call go in "After, `[I]`", also in the Answer
     summary. Seen: the radius of hits 24, 44 and 14 in a callee-saved register (`lane/p46m3` review); hit 52's row 0
     (`arrow`) and hits 51/52's later creations under `[C]` (`lane/p46m4` review, both
-    [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
+    [0046](../../../../docs/plans/0046-skills-function-catalogue.md)); the Inifuss tree's `bks` filed "created … quality 2" from
+    the `QDI` argument, where the next `ICQ` line shows the creation at 7 (`lane/h6e2` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)).
 14. **Raise the symbols your run checks.** A function whose logged return the run compares with a model or a table row
     (and whose consumer agrees) is `[C]` in `re/symbols.csv` and the finding's Functions table, evidence column moved
     to the finding that holds the claim; don't leave it to the review. Seen: five H2b symbols (`lane/h2b` review fix 4);
