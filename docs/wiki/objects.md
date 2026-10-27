@@ -1,6 +1,6 @@
 ---
 based_on:
-  - docs/specs/objects/README.md 2026-10-21
+  - docs/specs/objects/README.md 2026-10-27
   - docs/specs/items/tc.md 2026-10-21
   - docs/specs/drlg/lifecycle.md 2026-10-27
 ---
@@ -64,12 +64,14 @@ holds and whether it is locked ([objects § Reimplementation notes](../specs/obj
 
 Before any random object is placed, a gate decides whether this room takes part at all
 ([objects § C](../specs/objects/README.md#c-the-gate-and-the-theme-roll)). A room is skipped when it holds a waypoint,
-when it has no population level, when a preset test on the room says no, or when it is in a town. Those
-tests come from the level generator ([DRLG](../glossary.md)); in the test runs they were taken from the recording
-rather than modelled, and the gate as a whole is read from the code. The code behind those tests has since been read,
-and the end-to-end run checked the recorded values against that reading at every gate, but the values are still taken
-from the recording there ([seed to world](seed-to-world.md#how-it-was-checked)). Town rooms drew nothing in all 222 recorded
-town activations.
+when it has no population level, when a preset test on the room says no, or when it is in a town, tested in that
+order. The recorded games confirm the order: in all 1265 recorded windows the tests ran one after the other and the
+window closed at the first that failed (46 waypoint rooms, 315 rooms with no population level, 35 by the preset test,
+110 in towns; 759 passed). The tests' inputs come from the level generator ([DRLG](../glossary.md)); in the test runs
+they were taken from the recording rather than modelled. The code behind them has since been read, and the end-to-end
+run checked the recorded values against that reading at every gate, but the values are still taken from the recording
+there ([seed to world](seed-to-world.md#how-it-was-checked)). Town rooms drew nothing in all 222 recorded town
+activations.
 
 Each gated room increments a "rooms visited" counter of its population level. That counter counts gated rooms, not
 rooms that actually got objects, and among other things it drives the theme roll below and two later rules: the late-level health shrine (a shrine of code 2)
@@ -78,9 +80,10 @@ and the forced-slot rule below.
 Then comes the **room-theme roll**, for the 39 levels whose `Themes` column is set. It costs one or two draws on the
 object-region seed: a roll against 12 (raised by 5 past half the level's rooms and by 5 more past three quarters) and,
 if that passes, a pick of a theme number. On the game's stock data **no theme ever runs**: every listed theme number
-falls outside the range the code accepts, except one that has no handler. The draws are still made. The theme
-handlers themselves (an empty room, a barrel grid, an item grid, bookshelf or weapon-rack rows) are only named in
-the spec and were never reached.
+falls outside the range the code accepts, except one that has no handler. That one, theme 3, was drawn four times in
+a later recorded game, and nothing ran: its entry in the theme table is switched off. The draws are still made. The
+theme handlers themselves (an empty room, a barrel grid, an item grid, bookshelf or weapon-rack rows) are only named
+in the spec and were never reached.
 
 ## The eight slots and the member pick
 
@@ -116,9 +119,10 @@ The details that matter for an exact copy:
   with group numbers 1–6, 50–53, 59, 60, 77, 109, 116, 119, 120,
   123, 124 or 129. The run tracked this rule at every slot and it matched.
 - Groups 0, 30 and 72 (no members) and group 69 (whose first member slot is empty) cost their draws and place
-  nothing; a member with `PROB` 0 is never picked; and the `Gore` test never excludes anything on stock data. These
-  points are read from the code, not separately confirmed by a run. The gore limit itself is a fixed value with no
-  code that changes it (also read from the code).
+  nothing; a member with `PROB` 0 is never picked; and the `Gore` test never excludes anything on stock data. The
+  recorded games confirm it: group 0 was drawn by 2364 slots, groups 30 and 69 by 124 and 156, and none of them led to
+  a placement; group 72 was never drawn, but like group 30 it has no member. The gore limit is a fixed value (2) that
+  no code changes: its address is read at one place in the whole program.
 
 ## Placement handlers
 
@@ -148,18 +152,21 @@ What a player may notice:
 - **Shrines** are placed with up to 3 tries per call, and a new shrine must be at least 50 subtiles away from every
   earlier shrine of the level **on each axis** (not just by distance). Wells use 100. A shrine with `Orientation` 1
   always lands one subtile in from the room's first row (`y`), with `x` in the middle half of the room. Orientation 2
-  is the mirror case on the other axis, read from the code only: no orientation-2 shrine was placed in the test runs.
+  is the mirror case on the other axis, read from the code only, and the stock data never uses it: no shrine that the
+  random population places has orientation 2.
 - **The late health shrine.** Once more than 75 % of a level's rooms have been gated and no health shrine stands, the
-  shrine handler gets 30 tries instead of 3. Two windows of the earlier runs needed those 30 tries. The rule that
-  decides "due" is read from the code; the further step that would convert a placed shrine into a health shrine was
-  never reached.
-- **Caps** of 10 shrines and 4 wells per level (or more than one eighth of the level's rooms) are read from the code and were never
-  reached in a run.
+  shrine handler gets 30 tries instead of 3, and a shrine it places that is not a health shrine is converted into one
+  (its class becomes the row's `Parm1`). A recorded game in the City of the Damned met both: two calls with the rule
+  due, 30 tries each, and the second placed a shrine and converted it. The conversion makes a shrine-type pick whose
+  draws are spent and whose result is thrown away; that game matched it draw for draw.
+- **Caps.** A level stops getting shrines once it has more than one shrine per eight rooms; a recorded game met this
+  twice (a 15-room Catacombs level with two shrines). The other half of that cap (10 shrines) and the well cap
+  (4 wells, or more than one per eight rooms) are read from the code and were never reached in a run.
 
-Some handler details are read from the code but not confirmed by a run. The crate handler (5) is used by no stock
-level at all. The urn-and-casket cluster handler (1) seems to test every spot with the size of the group's member
-class, even when the list draw picked a different, larger object. The runs only drew lists whose objects are all
-1 × 1, so they could not tell the difference.
+The urn-and-casket cluster handler (1) tests every spot with the size of the group's member class, even when the
+list draw picked a different, larger object: in a recorded game, 32 follower spots after a casket or sarcophagus of
+another size were each tested with the member's size. The crate handler (5) is read from the code only: no stock
+level uses it.
 
 ## Finding a spot
 
@@ -188,9 +195,11 @@ A few map-piece ids are not objects but instructions, the pseudo-objects
 
 The sparkle chest's flag is set after all of the chest's creation rolls. In Maggot Lair levels 1–3 one more roll
 skips the sparkle with chance about one half (a roll above 50 out of 0..99); two sparkle chests of the run stood in
-Maggot Lair 1 and drew in exactly that order. The level-25 variant (a fixed class with trap type 3) and the fixed
-shrines 574–579 (no stock map piece places them) are read from the code only; so is the 582 quest object and the
-closing mode reset of the 580 chest, which is expected to draw nothing.
+Maggot Lair 1 and drew in exactly that order. The closing mode reset of the 580 chest draws nothing: seven recorded
+super chests reproduce with it doing nothing. The level-25 variant (a fixed class, 371, with trap type 3) was met in
+Tower Cellar Level 5; whether the code writes the trap type over the whole state byte or only adds it is read from the
+code, since the byte was 0 before. The fixed shrines 574–579 (no stock map piece places them) and the 582 quest object
+are read from the code only.
 
 ## Creation rolls
 
@@ -202,8 +211,11 @@ Every object, hand-placed or random, is created the same way
 3. the draws of its `InitFn` (the table below), on the object-region seed;
 4. for a row with [PreOperate](../glossary.md), a 1-in-14 roll that creates the object already opened.
 
-After that, the object marks the collision grid if its mode has collision. The class used is the Objects record's
-position in the table; that the `Id` column is never read for the lookup is read from the code.
+After that, the object marks the collision grid if its mode has collision, with a size of its own: an object with
+collision but a size of 0 marks nothing, and a door that blocks neither sight nor missiles marks the plain object bit
+(both met in a recorded game). The class used is the Objects record's position in the table: the only code that reads
+the table computes the record from that position, and the `Id` column is never read (a whole-program scan with a
+second tool agrees). The two differ only at records 410–412.
 
 The `InitFn` column selects what extra rolls an object makes when created
 ([objects § H](../specs/objects/README.md#h-draws-at-creation-per-initfn)):
@@ -232,9 +244,12 @@ level's `Id` (the level number, not a monster level). If all 8 fail, the eighth 
 hit this once, a shrine in Cold Plains that kept a shrine type whose `LevelMin` is 5. Codes 4, 5 and 16 are rewritten
 to 2, 3 and 18, so Health Exchange, Mana Exchange and the Shrine of Enirhs are never placed by the random population.
 
-The callee scan behind this table went three calls deep, so "no draw" for the other `InitFn`s is read from the code.
-The sparkle chest's own `InitFn` (57), the fissure (58) and the Zoo (79) were not reached in a run. Quest objects and
-the City of the Damned spawn monsters when created. The City of the Damned's spawns, with their room, game and
+For the 13 other `InitFn`s that the recorded games reached, "no draw" is confirmed: every seed matched after each with
+no draw. For the ones never reached it is read from the code. The sparkle chest's own `InitFn` (57: the chest's rolls,
+then the sparkle flag) and the fissure's (58: one roll) were met in a later recorded game; the Zoo (79) was not.
+Quest objects, the objects of nine more `InitFn`s that a full scan of the code found, and the City of the Damned
+spawn monsters when created. Where the recorded games met such an object,
+it drew nothing from the object-region seed. The City of the Damned's spawns, with their room, game and
 object-region draws, are now modelled; for the other monster-spawning objects the rolls are still taken from the
 recording. Each pile of the gold-pile dummy is now a modelled item, with its two game-seed steps and its mark on the
 grid and no object-region draw (71 of 71 piles); where a pile lands is read from the code, and that reading placed 69
@@ -242,13 +257,14 @@ of the 71 ([objects § H](../specs/objects/README.md#h-draws-at-creation-per-ini
 
 ## Leaving and coming back
 
-When a room goes inactive, the game saves its eligible objects (oldest first), and when the room is activated again,
-it re-creates them
+When a room goes inactive, the game saves its eligible objects (oldest first, confirmed: 392 of 392 recorded pairs
+came back in their creation order), and when the room is activated again, it re-creates them
 ([objects § B](../specs/objects/README.md#b-the-window-in-the-room-driver-and-the-revisit)). The re-creation makes
 **every creation roll again**, including a fresh trap and lock roll, and then overwrites the result with the saved
 state: a chest locked the first time stays locked, whatever the new roll said. A random or sparkle chest comes back
-as its plain class, without the pseudo-object's extra draws. The run reproduced 548 re-creations. A later run checked
-the saving test on 3 023 objects; the flag it starts from is the level's `SaveMonsters` column. That run never met an
+as its plain class, without the pseudo-object's extra draws. The run reproduced 548 re-creations, and every object of
+its 190 restores was saved or left out as the saving test says. A later run checked the saving test on 3 023 objects;
+the flag it starts from is the level's `SaveMonsters` column. Neither run met an
 object refused for its sparkle flag, or one whose level flag and placed-by-preset flag were both clear, so those two
 refusals are read from the code only. The room and game seeds at a revisit are still taken from the recording in the
 objects model: the monster and item restores that come before the objects are described by the
@@ -299,18 +315,25 @@ Other containers:
 | urns, jars, baskets | one drop with chance 21/100, then the trap |
 | barrels | an effect on the player; a monster with chance 18.08 % (a roll of 8192 or more out of 10000); then one drop with chance 21/100 |
 | caskets, sarcophagi | one drop; only if it made an item, a monster with chance 18.08 %; then the trap |
-| bookshelves, trapped souls, the evil urn | their own rolls, read from the code: none was operated in a run |
+| bookshelves | the book or scroll pick: a roll 0..19 (above 12 a book, else a scroll) and one more for which kind, then the item |
+| trapped souls | a roll 0..99: under 90 a drop; 90 or more, a mode change and two timer events instead |
+| the evil urn | one drop; only if it made an item, a special monster from the region, then the trap |
 
-The casket's monster roll after an item is read from the code; the run only saw caskets that made no item. When an
-operate does spawn a monster, the operate itself is a player's action and so an input; the monster's creation is not
-run by the composed model, and the end-to-end check counts such creations rather than predicting them
-([objects § Inputs and oracles](../specs/objects/README.md#inputs-and-oracles)). Class
-397, a special chest with its own tiered drop table, was never operated in a run, so its table is read from the code
-only. Of the 68 operate handlers, only seven roll the object-region seed directly; the others reach it only through an
-object they create, a trap fired later, or a room they activate (for example a portal), all read from the code. The
-three other handlers operated in the run (an exploding barrel, a door and waypoints, 25 operates) left the stream
-untouched. A portal-like operate that activates a room runs that room's object window inside the operate; this too is
-read from the code.
+A recorded game operated 58 caskets: 44 made an item and then rolled for the monster (3 got one), and 14 made none
+and rolled nothing more. It also operated one bookshelf (which gave a book), nine trapped souls (all under 90, each
+with an item) and one evil urn (an item, then the monster). So those three handlers are confirmed on the branch they
+took; the scroll side of the bookshelf, the trapped soul's 90-or-more branch and the urn's no-item case are read from
+the code. When an operate does spawn a monster, the operate itself is a player's action and so an input; the
+monster's creation is not run by the composed model, and the end-to-end check counts such creations rather than
+predicting them ([objects § Inputs and oracles](../specs/objects/README.md#inputs-and-oracles)). Class
+397, a special chest with its own tiered drop table, was never operated in a run (a later game created it three times
+but never reached it), so its table is read from the code only. Of the 68 operate handlers, exactly seven roll the
+object-region seed directly and seven more (the quest scripts) the quest seed, as two independent scans of the code
+agree; the others reach the object-region seed only through an object they create, a trap fired later, or a room they
+activate (for example a portal), read from the code. The three other handlers operated in the run (an exploding
+barrel, a door and waypoints, 25 operates) left the stream untouched. A portal-like operate that activates a room runs
+that room's object window inside the operate; this too is read from the code (the 19 recorded operates of the Arcane
+Sanctuary's pads activated no room).
 
 ## What a chest drops: the hand-off
 
@@ -323,20 +346,17 @@ resolution of the [items page](items.md), drawing the object's own unit seed (fo
 creation).
 
 - Which of A, B or C: the level's monster level (the same value the monster pages call the area level), compared
-  with the monster levels of the act's two reference levels, the span between them cut into thirds. Both specs now
-  say it this way ([objects § J](../specs/objects/README.md#j-operate-chests-and-containers-up-to-the-drop),
-  [treasure class spec § J](../specs/items/tc.md#j-object-drops-named-only)). The treasure class spec now writes the
-  exact cut: a third of the span (plus one) rounded toward zero, tier A below the first third, C from the second on,
-  and checks it against the 59 chest drops of a recorded objects run (three difficulties, classic and expansion, acts
-  I, II, III and V, all three tiers, both boundaries met). The objects spec still gives the tier as read from the code
-  until its own re-tag, so this page counts it as read from the code too. The shape of the drop (no roll of its own,
-  one hand-off) is confirmed; the 11 object drops of one test run (all `Act 1 Chest A`) and the Jail chest of the
-  worked example below reproduced.
+  with the monster levels of the act's two reference levels, the span between them cut into thirds: a third of the
+  span (plus one) rounded toward zero, tier A below the first third, C from the second on
+  ([objects § J](../specs/objects/README.md#j-operate-chests-and-containers-up-to-the-drop),
+  [treasure class spec § J](../specs/items/tc.md#j-object-drops-named-only)). Both specs check it against the 59
+  chest drops of a recorded objects run (three difficulties, classic and expansion, acts I, II, III and V, all three
+  tiers, both boundaries met). The shape of the drop (no roll of its own, one hand-off) is confirmed too; the 11
+  object drops of one test run (all `Act 1 Chest A`) and the Jail chest of the worked example below reproduced.
 - The tier also goes to the resolver as the drop's item level for the quality roll, so a chest drop rolls its
-  quality at item level 0 to 2: its odds of magic and better are no better than those of a monster drop of the same base in the same area; the
-  item's own level still comes from the chest. The treasure class and quality specs check it on the same 59 chest
-  drops, which pass their tier as that item level ([items/tc § J](../specs/items/tc.md#j-object-drops-named-only)); the
-  objects spec still reads it from the code, as above.
+  quality at item level 0 to 2: its odds of magic and better are no better than those of a monster drop of the same
+  base in the same area; the item's own level still comes from the chest. The same 59 chest drops pass their tier as
+  that item level ([items/tc § J](../specs/items/tc.md#j-object-drops-named-only)).
 - The forced quality: 0 from urns, caskets and barrels, the sparkle chest's rare or magic
   [quality code](../glossary.md) otherwise. A non-zero forced quality replaces the normal quality roll for every entry
   that is not a unique or set entry. A sparkle chest uses the **same** act chest TC as any other chest; only the
@@ -348,10 +368,16 @@ creation).
 
 ## Traps and timer events
 
-A trap does not go off during the operate. Operating a trapped object only queues a timer event 35 frames later; the
-trap's rolls (for example a monster trap's one object-region draw) happen then, among the other timer events
-([objects § K](../specs/objects/README.md#k-object-timer-events)). This is read from the code: no trap of the types
-that roll fired in the test run, and the fire created by fire traps is not modelled.
+A trap does not go off during the operate. Operating a trapped object only queues a timer event 35 frames later, and
+the trap goes off then, among the other timer events ([objects § K](../specs/objects/README.md#k-object-timer-events)).
+A recorded game confirms it for ten traps of types 1 to 7: each was queued as the operate's last step and ran 35
+frames later. Which effect a trap gets depends on its type **and the level**: below level 40, a lightning or nova
+trap fires firebolts instead, and so does a poison trap outside the Tower Cellar's level 25; from level 75 on a
+monster trap does too. The recorded game met the nova case (a casket in level 35 fired firebolts); the other remapped
+cases are read from the code. The lightning, firebolt, poison and nova traps create a trap monster; the six that
+went off in the game (lightning, firebolt and poison) left the object-region seed alone. The fire trap creates two fires (the second one subtile to the side, when that is still in
+the room), each one game-seed step, and both were predicted. The monster traps (types 8 and 9), the only ones that
+roll the object-region seed, were not reached, so their roll is read from the code.
 
 Some objects also have periodic timer events that roll the object-region seed. One callback draws a new event time
 at every call (3042 such draws in one run); the spec gives the act-town fires as an example of such a periodic
@@ -370,12 +396,27 @@ That timer event is entry 7 of the object timer events
 ([objects § K](../specs/objects/README.md#k-object-timer-events)).
 The objects spec only places them; their drops are explained on the [other item paths page](items-other-paths.md), and
 the quest scripts behind them, the waypoints and the portals on [quests and travel](quests.md).
-That routing is read from the code. For the Hellforge it is confirmed, for one player in Normal, Nightmare and Hell:
-its click reaches its operate function and its waves come through the timer event, its 25 item creations in a test
-run left the quest seed unchanged on each entry and exit and drew nothing from the object-region seed, and in Hell its
-gems and rune took item level 85. A quest chest gives its quest item, then its ordinary chest drop; Wirt's body gives
-10 to 19 gold piles, one per timer event. These are read from the code; for the quest objects other than the forge,
-the timer route has not been seen at run time.
+
+What the recorded games confirm:
+
+- **The Hellforge**, for one player in Normal, Nightmare and Hell: its click reaches its operate function and its
+  waves come through the timer event, its 25 item creations in a test run left the quest seed unchanged on each entry
+  and exit and drew nothing from the object-region seed, and in Hell its gems and rune took item level 85.
+- **The timer route** for Wirt's body and the Kurast sewer lever: 19 timer events went through entry 7 and the
+  dispatcher to the right script by class. For the other quest objects it is read from the code.
+- **Wirt's body**, on its first click: it gives the leg, with no quest-seed roll, then 18 timer events give one gold
+  pile each; the count, 10 to 19, is one quest-seed roll at the first event.
+- **The Act II quest chests** (the scroll, the staff and the cube chest): the quest item when the player passes the
+  chest's test, then the ordinary chest drop, then 5 to 9 gold piles on the quest seed. A player who already holds a
+  cube gets no new one, and the drop and the gold still come.
+- **The Khalim chests go the other way round**: the gold piles first, then the part (for a player who holds neither
+  that part nor Khalim's Will), then the ordinary drop. A recorded game met this on the heart chest; the eye and brain
+  chests have the same code and are read from it. The altar was not run.
+- **The Inifuss tree** gives its scroll on the first click when the quest allows it, with no roll. The scroll is asked
+  for at normal quality and comes out at quality 7; that the 7 comes from the item's base is read from the code.
+  The Malus and the tome were not run.
+- **The orifice**: placing the staff sets the two quest bits the code names. That it opens only for a player holding
+  the staff is read from the code.
 
 ## A worked example
 
@@ -423,23 +464,20 @@ resolver draws the chest's own seed and, in this case, makes no item. The chest 
 From the spec's [open questions](../specs/objects/README.md#open-questions) and its
 [inputs list](../specs/objects/README.md#inputs-and-oracles):
 
-- **Never reached in a run, so stated as read from the code:** the crate handler; the sparkle chest's own `InitFn`
-  and the fissure's; the class-397 chest table; a casket's monster roll after an item; the shrine and well caps; the
-  forced conversion of a placed shrine to a health shrine; the fixed shrines 574–579; the room-theme handlers.
-- **Read from the code, but the run could not tell it apart:** the cluster handler's size tests, orientation-2
-  shrines, the bookshelf, trapped-soul and evil-urn operates, the traps that roll (none fired), the level-25 sparkle
-  chest, and a guard in the shrine pick that stock data never reaches.
-- **Still taken from the recording, not modelled:** when timer events run; the room and game seeds at a revisit; the
-  fires that fire traps create.
-- **Not tried on the collision model:** a gold pile placed off its room, door masks, and units that move between a
-  room's activation and its object window.
+- **Never reached in a run, so stated as read from the code:** the crate handler; the class-397 chest table; the Zoo;
+  the 10-shrine cap and the well cap; the fixed shrines 574–579 and the 582 quest object; the room-theme handlers.
+- **Read from the code, but no run told it apart:** the branches of the bookshelf, trapped-soul and evil-urn operates
+  that no click took, the monster traps (types 8 and 9) and most of the trap's level remap, whether the level-25
+  sparkle chest's trap is written over the whole state byte, and whether bookshelves test any quest state. No stock
+  data reaches orientation-2 shrines, a door that blocks missiles but not sight, or a guard in the shrine pick.
+- **Still taken from the recording, not modelled:** when timer events run; the room and game seeds at a revisit; a
+  room activated inside a portal-like operate (never met).
+- **Not tried on the collision model:** a gold pile placed off its room, and units that move between a room's
+  activation and its object window.
 - **Open leads:** whether any code reads the Objects column `TrapProb`: none of the functions that fetch an Objects
   record reads it, but code that keeps a record from elsewhere could. A whole-image scan finds no reader of `SpawnMax`
   or `Act` either, though a reader through a computed address is not ruled out. Also open: two contradictions with a community guide (a
   `DENSITY` of 128 and a shrine row with `Parm0` 0) that only modified data could reach.
-- **The chest tier in the objects spec:** the exact cut and its check against recorded chests (with the tier used as
-  the quality roll's item level) are in the treasure class spec; the objects spec has not taken them over yet, see
-  [the hand-off](#what-a-chest-drops-the-hand-off).
 - **Who changes a chest's state byte before it is opened.** Seven chests of the end-to-end run reached their operate
   with a lock bit or state their creation had not left (set, cleared, or the whole byte cleared), and no recorded line
   wrote it; the check takes the byte at the operate.
