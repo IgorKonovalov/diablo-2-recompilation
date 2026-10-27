@@ -76,7 +76,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    host callback, 0x0052BFC0, left "callers unfollowed" when one raw scan settles it, and the nearest indexed store
    (0x0052C134) left unbounded beside a "no block write" claim (`lane/r1h` review, 0038); a logged `EXCEL_FindName`
    return (0x0065A33B) credited to `TC_LoadAll` where it lies in `TC_BuildChestTable`, which `TC_LoadAll` calls
-   (`lane/h3b` review, 0038).
+   (`lane/h3b` review, 0038); "Kick itself never reaches" `GetPhysMin`'s `Kick` branch from a scan of start 2's and
+   do 2's direct calls only, their callees' calls unfollowed (`lane/rk` review, 0038).
 10. **One case decides only if a wrong reading could not match it by chance.** Seen: aff 28's durability
     value, about one in eight (S2b, 0038). Count the cases that separate the readings, not the cases checked: a
     rounding needs a remainder (three curse lengths whose `MulDiv` is exact), and a model fix's counter is not its
@@ -85,7 +86,10 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     scored against `npc` alone but not against `inTown` alone, which every stock row also fits (`lane/h5d` review, 0038);
     a constant one-frame offset over 76 table rows filed `contradicted` when the rows cannot tell a different count
     (the schedule's steps `N = n − 1` against its end `n`) from a different behaviour, A1's source naming the
-    convention (`lane/p50v` review, [0050](../../../../docs/plans/0050-animation-frame-timing.md)).
+    convention (`lane/p50v` review, [0050](../../../../docs/plans/0050-animation-frame-timing.md)); Kick's 25 logged
+    physicals of 0 set against `GetPhysMin`'s ≥ 49 920 without saying the packet at `ApplyDamage` is already reduced, so
+    that a physical-immune target would also log 0: name what the observed value has been through, and rule it out
+    (`lane/rk` review, 0038).
 11. **"Moved" names the destination plan**; otherwise write "out of this plan". Seen: status bit 1
     (0039 P1b ruling 4); a closed entry's "(3) deferred" with no home (H7a review, 0038).
 12. **Carry a correction into the section it corrects**, not only into the run's ledger section: the claim, its

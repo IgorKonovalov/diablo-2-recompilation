@@ -1096,7 +1096,7 @@ run:2026-10-25-skills) The step's use, `low mod 100` against Raise Skeleton's `P
   `GetPhysMin/Max` give a `Kick` row strength-and-dexterity damage. The `Kick` row's `MinDam` and `HitShift` values
   (a blank `MinDam` makes the start hit's physical 0), whether run:2026-10-27-skills's Kick events logged the queued
   hit's physical, and which path uses the `Kick` branch of `GetPhysMin/Max` are put to the reverser
-  ([entry](../../backlog/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md)).
+  ([entry](../../backlog/archive/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md)).
 - [L] Which unit's skill level `MonOwnerSkillDamage` reads (register-passed).
 - [L] Pet types 1's and 7's special cases in `PetLimit`, and where do 31 and 114 fill the spawn block's pet type and
   maximum.

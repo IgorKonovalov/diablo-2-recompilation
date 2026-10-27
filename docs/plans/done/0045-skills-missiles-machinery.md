@@ -1161,4 +1161,4 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   [plan 0038 log](../0038-inferred-claims-sweep.md#implementation-log)).** Missiles F1's mastery left the `[C]`
   bullet, which now cites both runs' 4 118 builds; the mastery's carrier is an `[L]`. Dispatch I4 is restated per
   bound (the `Kick` minimum `÷ 4` `[C]`, the maximum `÷ 3` `[I]`); which damage Kick's start hit carries is an `[L]`,
-  routed to the reverser ([entry](../../backlog/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md)).
+  routed to the reverser ([entry](../../backlog/archive/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md)).
