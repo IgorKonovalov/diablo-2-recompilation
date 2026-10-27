@@ -101,7 +101,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | lvlprest | `lvlprest.txt` (patch_d2) | `.bin` (patch_d2) | 1091 | 1092 | 432 | = (−1 marker) | [LvlPrest](LvlPrest.md) |
 | LvlSub | `LvlSub.txt` (patch_d2) | `.bin` (patch_d2) | 34 | 35 | 348 | = (−1 marker) | [LvlSub](LvlSub.md) |
 | LvlTypes | `LvlTypes.txt` (patch_d2) | `.bin` (patch_d2) | 36 | 37 | 1928 | = (−1 marker) | [LvlTypes](LvlTypes.md) |
-| LvlWarp | `LvlWarp.txt` (d2exp) | `.bin` (d2exp) | 88 | 89 | 48 | = (−1 marker) | | [LvlWarp](LvlWarp.md) |
+| LvlWarp | `LvlWarp.txt` (d2exp) | `.bin` (d2exp) | 88 | 89 | 48 | = (−1 marker) | [LvlWarp](LvlWarp.md) |
 | magicprefix | `magicprefix.txt` (patch_d2) | `.bin` (patch_d2) | 669 | 670 | 144 | = (−1 marker) | [MagicPrefix](MagicPrefix.md) (price) |
 | magicsuffix | `magicsuffix.txt` (patch_d2) | `.bin` (patch_d2) | 747 | 748 | 144 | = (−1 marker) | [MagicSuffix](MagicSuffix.md) (price) |
 | misc | `misc.txt` (patch_d2) | `.bin` (patch_d2) | 151 | 152 | 424 | = (−1 marker) | [Misc](Misc.md) (economy) |

@@ -389,6 +389,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/a52` review | 0052 P0 | architect-review | 123 218 | 49 | 10 | — (static, objdump, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
 | 2026-10-27 | `lane/s38h` | 0038 P3 hirelings (S3a, S3b, H4b, H1b, H1a, H6f; rows 3, 30, 33 left for H1c) | spec-writer | 236 661 | 99 | 20 | — (no slot, no Ghidra, no harness) | accept with fixes (rulings: the partial pass stands; G2 an `[I]` call path; § K keeps its heading) | 6: overclaim 2, wrong anchor 1, omission 1, misread 1, stale cross-reference 1 (F1's and F2's "never sent"; G4's `shr` and G5's gain-test anchors; the levelling functions' missing-record exits and test order; `MaxLvl` 98 for `M`; the introduction's "named only"; two `[I]` points flat on wiki/characters) |
 | 2026-10-27 | `lane/s38h` review | 0038 P3 hirelings | architect-review | 184 271 | 68 | 18 | — (static, objdump, no Ghidra, no harness) | gave accept with fixes | — (on the lane row; also wiki/saves' hirelings date and text, items/economy's resurrection classes 150 and 515 raised) |
+| 2026-10-27 | `lane/p53a` | 0053 P0–P1 | archivist | 129 135 | 44 | 13 | — (no Ghidra; Sonnet) | accept with fixes | 4: miscount 1, other 3 |
+| 2026-10-27 | `lane/p53a` review | 0053 P0–P2 | architect-review | 108 797 | 42 | 7 | — (review + Phase 2 in one run) | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
@@ -399,6 +401,16 @@ none rejected.
 **By kind** (runs, mean agent tokens, mean wall minutes, fixes per reviewed run): reverser-static 10,
 457 k, 40 min, 3.9; reverser-harness 3, 275 k, 56 min, 3.7; spec-writer 6, 252 k, 19 min, 3.7; archivist
 5, 243 k, 18 min, 4.6; wiki 5, 154 k, 8 min, 5.6; architect-review 32, 145 k, 9 min.
+
+## Kinds
+
+The `Kind` cell names the lane skill and how it ran: `reverser-static`, `reverser-harness`, `archivist`,
+`spec-writer`, `wiki`, `architect` (planning and ADRs), `architect-review` (a Tier A review, architect Mode 3) and
+`architect-check` (a Tier B lane check, `.claude/skills/architect/references/lane-check.md`; ADR-0023, from plan 0053
+Phase 3). A check covering several lanes gets one row per lane, its tokens split evenly and the split said in the
+Lane cell. An **audit** (every fifth Tier B lane also reviewed at Tier A) is an `architect-review` row whose Fixes
+cell begins `audit of <lane>:`, then the fix count by category as usual, and names any reject-grade problem the
+check missed.
 
 ## Fix categories
 
