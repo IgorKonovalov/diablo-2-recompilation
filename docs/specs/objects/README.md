@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, drlg/preset, drlg/collision]
 consumed_by: [monsters/spawn, drlg/collision, items/tc, items/quality, items/quest-drops, chain]
-tags: {C: 188, I: 56, L: 4}
+tags: {C: 189, I: 62, L: 4}
 updated: 2026-10-27
 ---
 
@@ -109,7 +109,7 @@ tbl:Objects.txt:SpawnMax, tbl:Objects.txt:Act, tbl:Objects.txt:TrapProb,
 | placement attempts per placer call | 5 | fn:OBJ_PlaceRandom@0x00550380 | [C] |
 | position-test masks | `0x3F11` (box test), `0xC01` (padded box) | fn:OBJ_PosTestPadded@0x00550220 | [C] |
 | shrine spacing, well spacing | 50, 100 subtiles on **each** axis | fn:OBJRGN_ShrineDistOk@0x00547430, fn:OBJRGN_WellDistOk@0x005473A0 | [C] |
-| shrine cap per level, its `> roomCount ÷ 8` half | `nShrinePos > roomCount ÷ 8`: met twice in Catacombs (`roomCount` 15, two shrines placed), returning before any draw of the handler | fn:OBJRGN_ShrineCapReached@0x00547360, run:2026-10-19-h5b-objects | [C] |
+| shrine cap per level, its `> roomCount ÷ 8` half | `nShrinePos > roomCount ÷ 8`: met twice in Catacombs (`roomCount` 15, two shrines placed), returning after the handler's `P100(S)` draw and before any placement draw (E2) | fn:OBJRGN_ShrineCapReached@0x00547360, run:2026-10-19-h5b-objects | [C] |
 | shrine cap's `= 10` half, well cap per level | `nShrinePos = 10`; `nWellPos = 4` or `> roomCount ÷ 8`; not reached | fn:OBJRGN_ShrineCapReached@0x00547360, fn:OBJRGN_WellCapReached@0x00547300 | [I] |
 | `PreOperate` chance | `Range(O, 14) = 0` | fn:OBJ_ServerInit@0x0054F5D0 | [C] |
 | handler tables | `g_ObjInitFns` 80, `g_ObjPopulateFns` 10, `g_ObjOperateFns` 101, `g_ObjTrapFns` 10, `g_ObjPseudoFns` 9 entries | data:g_ObjInitFns@0x00731BC0, data:g_ObjPopulateFns@0x00731D00, data:g_ObjOperateFns@0x00732D18, data:g_ObjTrapFns@0x00732CEC, data:g_ObjPseudoFns@0x00731D28 | [C] |
@@ -233,7 +233,7 @@ flowchart LR
 ```
 
 ```
-B4. Saving, when the room driver deactivates a room:             [C] for SaveTest on the branches the run met (run:2026-10-17-lifecycle), [I] for the rest (fn:sub_0052D240_RoomsDeactivate@0x0052D240, fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0, fn:sub_00542E30_InactiveUnitSave@0x00542E30)
+B4. Saving, when the room driver deactivates a room:             [C] for SaveTest on the branches the runs met (run:2026-10-17-lifecycle, run:2026-10-15-objects), [I] for the rest (fn:sub_0052D240_RoomsDeactivate@0x0052D240, fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0, fn:sub_00542E30_InactiveUnitSave@0x00542E30)
       ; the room's unit list room+0x74 is newest first: every creation prepends (unit+0xE8 ← room+0x74; room+0x74 ← unit)
       for u in room+0x74, head first:
         if u.type = 2 and SaveTest(u): prepend a 0x34-byte record to the room's record list (+0x10, next at +0x30)
@@ -294,7 +294,7 @@ C1. Gate(game, room, lvlRec) → bool:                              [C] (fn:OBJ_
       L ← objrgn.level[pop]
       if L.roomCount = 0x7FFFFFFF: L.roomCount ← LevelRoomCount(act of L, pop)               ; input, once
       L.roomsVisited ← L.roomsVisited + 1                          ; [C] counts gated rooms, not populated ones (run:2026-10-15-objects)
-      if lvlRec.Themes ≠ 0 and ThemeRoll(game, room, L, lvlRec.Themes) = 1: return false
+      if lvlRec.Themes ≠ 0 and ThemeRoll(game, room, L, lvlRec.Themes) = 1: return false   ; [I] no stock case: no theme runs (C2, data:g_ObjThemeFns@0x00731E68)
       return true
 
 C2. ThemeRoll(game, room, L, themes) → i32:                       [C] (fn:OBJ_RoomThemeRoll@0x00552400, run:2026-10-15-objects)
@@ -478,7 +478,7 @@ E2. Shrine(class, prob = 100):
         PlaceByOrientation(class, sx, sy, room, Orientation, popLvl, ShrineDistOk)   ; on S, F3
       on a placement:
         if forced and code ≠ 2:                                    ; [C] (fn:OBJ_ShrineClassSubst@0x00552AC0, run:2026-10-19-h5b-objects)
-          class ← Parm1 if 1 ≤ Parm1 ≤ 572 else 84
+          class ← Parm1 if 1 ≤ Parm1 ≤ 572 else 84                 ; the 84 case [I], not reached (fn:OBJ_ShrineClassSubst@0x00552AC0)
           ShrinePick(class 2, level 1)                             ; its draws are made, the result discarded
           code ← 2
         if code = 2 or forced: L.healthShrines ← L.healthShrines + 1
@@ -759,7 +759,7 @@ H1a. ShrinePick(c: u8, lid: u32) → code:                          [C] (fn:OBJ_
 | Id | Handler | What it creates | Tag |
 |---|---|---|---|
 | 574..579 | `OBJ_PresetFixedShrine` | class 136 in the DS1 mode (its `InitFn` 1 draws first), then `code = lo + R(unit.seed, hi − lo)` with (lo, hi) = (2,6), (7,7), (8,11), (12,12), (1,5), (14,14); 4 and 5 → 2. No stock DS1 places them | [I] (fn:OBJ_PresetFixedShrine@0x0054F0D0, data:g_PresetShrineRanges@0x006E1080) |
-| 580 | `OBJ_PresetSuperChest` | I1: a random chest as 581 (level 25: class 371), the sparkle flag except in Maggot Lair 62–64, where `P100(O) > 50` skips it; level 25 sets trap type 3; unit flag `0x80`; mode 0 | [C] (fn:OBJ_PresetSuperChest@0x0054F370, run:2026-10-15-objects: 4 super chests) |
+| 580 | `OBJ_PresetSuperChest` | I1: a random chest as 581 (level 25: class 371), the sparkle flag except in Maggot Lair 62–64, where `P100(O) > 50` skips it; level 25 sets trap type 3; unit flag `0x80`; mode 0 | [C] (fn:OBJ_PresetSuperChest@0x0054F370, run:2026-10-15-objects: 7 DS1 580 creations at 7 positions, in sessions 3, 13, 29 and 30; the run record's first summary line gives 4) |
 | 581 | `OBJ_PresetRandomChest` | one draw on `O`: Act II level 74 `{387, 389, 390, 391}[low & 3]`, other Act II `{87, 88}[low & 1]`; Act III level 83 `{329..332}[low & 3]`, other Act III `{181, 183}[low & 1]`; other acts `{5, 6, 139, 140, 141, 144, 176, 177, 198, 240, 241, 242, 243}[low mod 13]`; mode 0 | [C] (fn:OBJ_PresetRandomChest@0x0054F180, run:2026-10-15-objects) |
 | 582 | `OBJ_PresetQuestObject` | the class from quest 13's state, else 307; seed oracle | [I] (fn:OBJ_PresetQuestObject@0x0054F430) |
 
@@ -958,14 +958,16 @@ J3. ObjectChestDrop(object, player, q):                           [C] the drop's
 ```
 K2. The trap, from operate to effect:                             [C] (fn:OBJ_TrapFire@0x00582510, fn:OBJ_TrapEvent@0x005817A0, data:g_ObjEventFns@0x006E19B0, data:g_ObjTrapFns@0x00732CEC, run:2026-10-19-h5b-objects)
       OBJ_TrapFire(object, t: u8 = interact & 0x7F), last in the operate:
-        if t ≥ 10 or g_ObjTrapFns[t] = none: return
-        if t ∈ {8, 9} and the region's monster class test (0x00582250) refuses: return    ; nothing queued
+        if t ≥ 10 or g_ObjTrapFns[t] = none: return                ; t ≥ 10 [I], not reached (0x00582518)
+        a code-pointer check on g_ObjTrapFns[t] (fatal)
+        if t ∈ {8, 9} and the region's monster class test (0x00582250) refuses: return    ; [I] not reached; nothing queued
         queue object event 4 at frame + 35                         ; 0x00582595; no draw
+        sub_00553380_UnitSetEvent(object, 13)                      ; 0x005825A4; no draw in the operate
       OBJ_TrapEvent (entry 4 of g_ObjEventFns), when the event runs:
-        t ← interact & 0x7F;  lvl ← RoomGetLevelId(the object's room);  if t ≥ 10: return
+        t ← interact & 0x7F;  lvl ← RoomGetLevelId(the object's room);  if t ≥ 10: return   ; [I] not reached (fn:OBJ_TrapEvent@0x005817A0)
         fn ← g_ObjTrapFns[2]  if t = 8 and lvl ≥ 75                ; 0x005817CB   [I] not reached
                               or t = 3 and lvl < 40 and lvl ≠ 25   ; 0x00581816   [I] not reached
-                              or t ∈ {1, 4} and lvl < 40           ; 0x00581849
+                              or t ∈ {1, 4} and lvl < 40           ; 0x00581849   [C] type 4 in level 35; type 1 [I]
              g_ObjTrapFns[t]  otherwise
         fn(game, object)                                           ; a tail jump, after a code-pointer check (fatal)
       g_ObjTrapFns: 0 none; 1 OBJTRAP_Lightning; 2, 6 OBJTRAP_Firebolt; 3 OBJTRAP_PoisonCloud; 4 OBJTRAP_Nova;

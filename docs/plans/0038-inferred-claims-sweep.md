@@ -4549,7 +4549,57 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     the [S4b corrections](../backlog/archive/2026-10-16-reverser-spec-writer-plan-0038-s4b-corrections-for-phase.md) and the
     [S2a tc 64](../backlog/archive/2026-10-16-architect-reverser+spec-writer-plan-0038-s2a-tc-64-and.md) entries; annotated the
     [H6e2 entry](../backlog/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md) (objects done,
-    quest-drops waits for H6e1); filed the [counts entry](../backlog/2026-10-27-spec-writer-architect-s38o-objects-counts-for-the-research-map.md)
-    and the [review request](../backlog/2026-10-27-spec-writer-architect-s38o-review-objects-phase-3.md). Ledger row
+    quest-drops waits for H6e1); filed the [counts entry](../backlog/archive/2026-10-27-spec-writer-architect-s38o-objects-counts-for-the-research-map.md)
+    and the [review request](../backlog/archive/2026-10-27-spec-writer-architect-s38o-review-objects-phase-3.md). Ledger row
     added, usage "—".
   - **Next:** architect review of `lane/s38o`.
+- **2026-10-27 — `lane/s38o` review (architect): accept with fixes (8).** Phase 3 of the objects cluster, reviewed at
+  `1b8846cc` after merging `main` `af36891d` into the lane (`4b50aa08`; conflicts in this log and the ledger, both
+  appends, kept both sides; `backlog.py archive` moved nothing). Static review: objdump on the pinned image
+  (`631066c1…`), the 29 objects logs grepped, `tools/objects.py` read, no Ghidra, no harness.
+  - **Trace.** Of the 50 new `[C]`, more than 35 traced to their batch lines within the reviews' scopes: S4a rows 7, 8,
+    9, 11, 14, 28, 37, 47; S4b rows 1, 2, 22, 43 and row 25's restatement (`[I]` kept); H5b.1 (the remap's reached case,
+    the 35-frame queue, the trap monsters, 162 then 160), H5b.2 (handler 1's sizes, the cap's `÷ 8` half, the forced
+    conversion, theme 3), H5b.3 (the `0x400` door, the zero size, `InitFn` 57, 58 and the quest `InitFn`s, the level-25
+    chest), H5b.4 (`OperateFn` 1, 26, 48, 68 on the branches taken); the S2a tc 64 entry (b) under the S4b review's
+    ruling (5) for J3's tier and `ilvl`; items/0010 § H6e2 (qd 1's route, the three Act II chests, the heart chest,
+    Wirt's body, `leg`, `bks`, the orifice bits). The H6e2 rulings are applied: Wirt's row raised, the Khalim order `[C]`
+    on the heart chest only, `bks` created at 7 with the override `[I]`. K2's rewrite follows H5b.1 and the 160
+    correction; no `162` twice is left in specs or wiki.
+  - **Steps under `[C]` headers no run reached** (fixed): C1's `ThemeRoll = 1` return (no theme runs, C2), E2's
+    `else 84`, K2's `t ≥ 10` returns, the types 8/9 refusal in `OBJ_TrapFire` and the type-1 half of the `{1, 4}` remap,
+    each now tagged `[I]` inline (the type-4 half `[C]`).
+  - **Rulings on the lane's points.**
+    1. **H5b.2's "before any draw".** objdump: `OBJPOP_Shrine` steps the room seed (0x00552B9A–0x00552BBA) before
+       `HealthShrineDue` (0x00552BC5) and the cap test (0x00552BF7), and `tools/objects.py` `pop_2` draws `P100` before
+       the cap, so the seeds that matched after the two cap returns confirm the draw. E2's order and § E's count stand;
+       the finding means "before any placement draw". The spec's *Constants* row, which copied the finding's words, is
+       fixed; the finding's wording goes to the reverser
+       ([entry](../backlog/2026-10-27-architect-reverser-h5b-shrine-cap-wording.md)). No code question.
+    2. **7 against 4 super chests.** The 29 logs hold 7 `OPU0` lines with id 580 at 7 distinct positions (sessions 3:
+       three in level 79; 13: level 44; 29: two in level 62; 30: level 4), each run through the checker's 580 model, so
+       S4a's 7 counts creations, not re-creations or windows twice. The run record's "super chests (DS1 580) 4, all
+       sparkle" is its first summary line, a different count; § I's 580 row now cites the 7 and names the 4, and
+       wiki/objects says "seven recorded super chests", not "sparkle".
+    3. **Row 52's split** is accepted (spec-writer rule 2): the queue and the 35 frames `[C]`, the types 8/9 draw `[I]`,
+       and the remap note `[C]` for type 4 in level 35 only.
+    4. **Row 7's second `[C]`** is accepted as a separate statement: it confirms the save test on another run and on the
+       populated objects with the level flag, which the lifecycle bullet does not cover. B4's header now names both runs.
+    5. **The raises beyond the inventory rows are allowed.** § K's event-7 route restates items/quest-drops qd 1's accepted
+       H6e2 raise (spec-writer rule 8), and § J3's tier and `ilvl` are the S2a tc 64 raise accepted at the S4b review
+       (5); neither goes past its batch's scope (the route for classes 268 and 367 only; the `|b − a|` and return-1
+       guards `[I]`).
+    6. **wiki/items-other-paths' chest order** waits for items/quest-drops' H6e1 round, as the H6e2 entry records; the
+       page follows quest-drops § E1, which has not taken the correction yet, and wiki/objects already states it.
+  - **Fixes (8):** the four steps above (overclaim 3); wiki/objects' "sparkle chests" (overclaim 1); B4's header
+    without run:2026-10-15-objects (under-claim 1); *Constants*' "before any draw" (misread 1); § I's 580 row "4"
+    (miscount 1); K2's `OBJ_TrapFire` without its code-pointer check and the `sub_00553380_UnitSetEvent(object, 13)`
+    after the queue (0x005825A4; omission 1).
+  - **Counts:** objects **{C 189, I 62, L 4}** (recounted with the gate's `RE_TAG`; the lane's 188 / 56 plus the review's
+    1 `[C]` and 6 `[I]`), `updated:` 2026-10-27; research-map row rewritten whole. wiki/objects and wiki/seed-to-world
+    checked against the spec (seed-to-world states nothing that moved).
+  - **Bookkeeping:** review-fixes Seen lines, spec-writer 2, 3, 4 and 5. The review request and the counts entry closed;
+    the reverser wording entry filed. Ledger: the lane row filled (accept with fixes, 8: overclaim 4, under-claim 1,
+    misread 1, miscount 1, omission 1; usage from the orchestrator: 297 611 tokens, 122 tools, 18 min); the review row
+    added, usage "—".
+  - **Next:** merge `lane/s38o`; objects is done for plan 0038 Phase 3.

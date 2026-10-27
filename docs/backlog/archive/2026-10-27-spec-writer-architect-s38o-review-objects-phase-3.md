@@ -2,12 +2,12 @@
 from: spec-writer
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0038-inferred-claims-sweep.md#implementation-log
-  - ../specs/objects/README.md
-  - ../wiki/objects.md
-resolution: ""
+  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../specs/objects/README.md
+  - ../../wiki/objects.md
+resolution: "Reviewed 2026-10-27 (architect): accept with fixes (8); rulings and fixes in the plan 0038 log, lane/s38o review entry."
 ---
 
 Review request: plan 0038 Phase 3, the **objects** cluster, on `lane/s38o` (from `main` `1e61473c`). objects {C 139, I 72,

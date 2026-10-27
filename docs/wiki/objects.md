@@ -196,7 +196,7 @@ A few map-piece ids are not objects but instructions, the pseudo-objects
 The sparkle chest's flag is set after all of the chest's creation rolls. In Maggot Lair levels 1–3 one more roll
 skips the sparkle with chance about one half (a roll above 50 out of 0..99); two sparkle chests of the run stood in
 Maggot Lair 1 and drew in exactly that order. The closing mode reset of the 580 chest draws nothing: seven recorded
-sparkle chests reproduce with it doing nothing. The level-25 variant (a fixed class, 371, with trap type 3) was met in
+super chests reproduce with it doing nothing. The level-25 variant (a fixed class, 371, with trap type 3) was met in
 Tower Cellar Level 5; whether the code writes the trap type over the whole state byte or only adds it is read from the
 code, since the byte was 0 before. The fixed shrines 574–579 (no stock map piece places them) and the 582 quest object
 are read from the code only.
