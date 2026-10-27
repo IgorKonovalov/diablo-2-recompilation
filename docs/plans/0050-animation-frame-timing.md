@@ -620,7 +620,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `25 · 2 + 90` = 140). (f) The d2s keys are opt-in and default off, and each refusal path is tested. The two old
   `test_d2s.py` failures are not this lane's and are not an architect fix: each missing `RECIPE_BASES` row needs a
   base save and a built hash. They are routed:
-  [archivist entry](../backlog/2026-10-27-architect-archivist-test-d2s-recipe-bases-and-mp-saves-pin.md). The 13
+  [archivist entry](../backlog/archive/2026-10-27-architect-archivist-test-d2s-recipe-bases-and-mp-saves-pin.md). The 13
   recipes are three plan 0051 P1a mp recipes and ten `skills-*` recipes; `travel-tab2` is not one.
   **Fixes:** the Missiles `VelLev` row gains the review note that a level-1 `spike1` separates the term, with its C2
   entry (omission); the P1.3 reads of ruling (d) (omission); the request's `travel-tab2` (misread, in the request only).

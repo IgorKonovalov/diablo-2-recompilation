@@ -26,7 +26,7 @@ every output goes to a scratch directory, nothing in workspace/ is written:
   simple quest item's required "quest_diff" (stat 356). Plan 0042 Phase 0: tools/quest_saves.py check passes on
   its 33 recipes (14 of Phase 0, 3 of Phase 1 (c), 16 of Phase 2: plan 0049 Phase 0) and build writes the
   whole set. Plan 0044 Phase 2:
-  tools/mp_saves.py check passes on its 27 recipes and 18 pairs and build writes the whole set.
+  tools/mp_saves.py check passes on its 30 recipes and 21 pairs and build writes the whole set.
 - MercTest (plan 0033 Phase 0) covers the "merc" key: the header fields 0xAF..0xBE, the mercenary item list after
   'jf' (equipped, hand item last) read back and round-trip byte for byte, the dead flag (bit 16), and the refusals
   (no row of the save's Version, seed 0, a name id past NameLast, items in a classic save, an item not placed with
@@ -306,6 +306,22 @@ RECIPE_BASES = {
     "mp-pvp-host": (BASE_X, None),
     "mp-pvp-join": (BASE_X, None),
     "mp-pal-join": (BASE_PAL, None),
+    # plan 0051 Phase 1a's staged pairs (MP18, MP25 offensive, open wounds): not loaded yet; hashes pinned at the build (lane/a2t)
+    "mp-sock-join": (BASE_X, "7526561af0c9ee6e46e10918514e7a8b5f06701088ea70132e52812c414570e0"),
+    "mp-wound-join": (BASE_X, "a10d0efa7056a774fa9af29e00a3f5cdf51554927dd9ab7f44c8a12008bba611"),
+    "mp-pal-conv": (BASE_PAL, "4f6906111cecf8dbc377e194a7754d768a3847b09035cffaa73b9eb904517d14"),
+    # plan 0045 Phase 2 (tools/skills_sessions.py SAVES, bases p0005/smp<cls>.d2s): hashes equal the kept saves of
+    # run:2026-10-27-skills (2026-10-27-skills-manifest.sha256)
+    "skills-sor": (os.path.join(P0005, "smpsor.d2s"), "d033b674bb0e6f03b3006f4d433fd23ad5b17e515dde6a0a8ca51caba64f5239"),  # run:2026-10-27-skills
+    "skills-sorlow": (os.path.join(P0005, "smpsor.d2s"), "4af9bda6fcbfe4ab48450c100bb3799abb6bb418e563356b1292de8587373e0c"),  # run:2026-10-27-skills
+    "skills-ama": (os.path.join(P0005, "smpama.d2s"), "e62bbee3a38172f50fe36d538d48a49cbf2335639f9d42a03fadb32b7d589215"),  # run:2026-10-27-skills
+    "skills-amaj": (os.path.join(P0005, "smpama.d2s"), "ebc1da7ab733fc055f63420e088436a43d737053ad090c0f114a6b68faf39dae"),  # run:2026-10-27-skills
+    "skills-nec": (os.path.join(P0005, "smpnec.d2s"), "4ff1948c372d2bae36f72b3592f5f5cb974cdad3d063522291a16a722ec978ad"),  # run:2026-10-27-skills
+    "skills-dru": (os.path.join(P0005, "smpdru.d2s"), "6ed45fc4394835746383c91d640fbe490edae294bfec630a74997361a86b02e9"),  # run:2026-10-27-skills
+    "skills-bar": (os.path.join(P0005, "smpbar.d2s"), "acefd40dfe0bd209aa497d9221f967ab1f4837715d908ac24ce57a024fcb2c2b"),  # run:2026-10-27-skills
+    "skills-barh": (os.path.join(P0005, "smpbar.d2s"), "8d5978557b2532f67660c31a909c43630985f7a3dd0a83a7cdbb46852ae86373"),  # run:2026-10-27-skills
+    "skills-pal": (os.path.join(P0005, "smppal.d2s"), "d5dcb6aba4e3408613ad1479e5ef6f792e214d22b0604d12efed878bad6efeb3"),  # run:2026-10-27-skills
+    "skills-ass": (os.path.join(P0005, "smpasn.d2s"), "a89fc6e77b20559f6fc888703dd1cde8ad0db290a74608cc34aa615a842a603f"),  # run:2026-10-27-skills
     # recipes committed by session lanes without a base entry here (found by test_every_recipe_has_a_base, lane/arc5)
     "combatow": (BASE_X, None),
     "combatsorh": (BASE_X, None),
@@ -794,7 +810,7 @@ class QuestBitsTest(Scratch):
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             self.assertEqual(mp_saves.main(["check", EXCEL]), 0, buf.getvalue())
-        self.assertIn("SURVEY mp_saves recipes=27 bad=0 pairs=18 pairs_bad=0", buf.getvalue())
+        self.assertIn("SURVEY mp_saves recipes=30 bad=0 pairs=21 pairs_bad=0", buf.getvalue())
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(mp_saves.main(["build", EXCEL, self.path("mp")]), 0)
         self.assertEqual(len(os.listdir(self.path("mp"))), len(mp_saves.SET))

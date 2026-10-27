@@ -315,6 +315,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/plans52` | 0052 re-draft, ADR-0022 (proposed), run order | architect | 189 180 | 55 | 12 | — (static, no Ghidra) | for the owner: 0052 approval and its eight questions, ADR-0022 | — |
 | 2026-10-27 | `lane/a50t` | 0050 P1.2 follow-up, 0045 P2 part 2 links, 0038 H1b builder keys | archivist | 214 950 | 100 | 19 | — (static, no Ghidra) | accept with fixes (rulings: item 3's lost frame-0 event is not a case, no stock source reaches `r ≥ 512`; a `9A` trap S1 is a Phase 2 optional case; the `9A` walk base and anim/0002's rate-stat question go into P1.3's *Done when*; the two old `test_d2s.py` failures routed to the archivist) | 3: omission 2, misread 1 (Missiles `VelLev` without the `spike1` review note; the P1.3 reads left unrouted; the request's `travel-tab2`) |
 | 2026-10-27 | `lane/a50t` review | 0050 P1.2 follow-up | architect-review | 112 791 | 41 | 11 | — (static, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/a2t` | 0050 hand-over: test_d2s recipe bases and mp_saves pin | archivist | — | — | — | — (static, no Ghidra, no harness) | — | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
