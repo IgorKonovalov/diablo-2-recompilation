@@ -547,7 +547,7 @@ Then, in order, each only when it applies ([save/0001](../findings/save/0001-d2s
 |---|---|---|---|---|
 | `runeword` | 16 | flags bit 26 | `0x509F` for *Steel* (Runes.txt row 18, `Runeword134`), read earlier as (159, 5) in 12 + 4 bits | layout `[C]`; one u16, the `Runes` record's `+0x82` `[I]` |
 | ear / `pname` | 7 bits per char, 0-terminated | flags bit 24 (bit 16: the ear fields) | — | `[I]` |
-| `realm` | 1 (+64 or +96) | always | 0 in the samples | layout `[C]`; when 1, two u32 and, above version 93, a third ([§ Realm data](#realm-data)) `[C]` |
+| `realm` | 1 (+64 or +96) | always | 0 in the samples | layout `[C]`; when 1, two u32 and a third `[C]` (version 96); the third only above version 93 `[I]` ([§ Realm data](#realm-data)) |
 | `defense` | `Save Bits`[31] = 11, minus `Save Add` 10 | armor (code in `armor.txt`) | 3..10, within the base ranges | `[C]`; stat 31 for item type 50 `[I]` |
 | `maxdur` | `Save Bits`[73] = 8 | armor and weapons | 2..48, the base durability | `[C]`; stat 73 `[I]` |
 | `dur` | `Save Bits`[72] = 9 | if `maxdur` > 0 | current durability; equal to `maxdur` except on 6 cube-made items | `[C]`; stat 72 `[I]` |
@@ -614,9 +614,9 @@ repeat:
 
 ### Realm data
 
-The realm field closes every item record that is not an ear in the default reading: after the simple-item fields
-(gold, stat 356) or after `pname` in an extended item ([§ Extended items](#extended-items-simple--0)), and after an
-ear's name ([§ Common part](#common-part)).
+`[C]` The realm field ends a simple item record, after its gold and stat 356 fields; in an extended item it follows
+`pname` and comes before the type-specific fields (`defense`, `maxdur`, …; [§ Extended items](#extended-items-simple--0)).
+`[I]` The writer also puts it after an ear's name ([§ Common part](#common-part)).
 
 | bits | name | meaning | tag |
 |---|---|---|---|
@@ -641,7 +641,8 @@ ear's name ([§ Common part](#common-part)).
 `D2S_ReadSave` sends a version below 92 to the legacy reader ([§ Legacy versions](#legacy-versions-7191)) and
 `D2S_ReadHeader` accepts 92..96 (`cmp eax, 0x5B; jbe` at 0x0056A117, after 0x00534364); the character screen lists
 92..96 ([§ Checksum](#checksum)). The layout is the version-96 one except where the reader tests the version. The
-tests the findings name are below; the findings name no other, and whether that list is complete is asked of the
+tests the findings name are below; the findings name no other that a version 92..96 file can meet (the class-affix
+base tests at ≤ 88 / 89 and the 72–88 jump table of [save/0001](../findings/save/0001-d2s-io.md) fall in the legacy range), and whether that list is complete is asked of the
 reverser ([backlog](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md) (c)). `[I]` (fn:D2S_ReadSave@0x00534330, fn:D2S_ReadHeader@0x0056A090)
 
 | versions | what changes | tag | source |
@@ -660,9 +661,10 @@ reverser ([backlog](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-
   `0x029` = 16 and 12, and `if` followed the last u32 (the skills' cursor 2 + 2 + 4 × 11 bytes after the stats'). The
   game wrote both back as version 96 in the bit form. Whether the mask is ⌈`0x029`/8⌉ bytes or always 2 is open
   ([backlog](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md) (d)). (fn:D2S_ReadStats@0x0056A620 0x0056A627–0x0056A640, [save/0001 § Plan 0038 batch H1a](../findings/save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load))
-- `[I]` **The version tested for stat 72 is the save's.** The H1a `v94` items keep their item `version` field 101
-  (above 95) and were still read with an 8-bit current durability: the three values (7, 8, 20) came back in the
-  write. ([save/0001](../findings/save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load) row 68)
+- `[C]` **The version tested for stat 72 is the save's** (`ITEMS_ReadFull`'s argument at `[ebp+0x1C]`, `cmp [ebp+0x1C],
+  0x5F; ja`). The H1a `v94` items keep their item `version` field 101 (above 95) and were still read with an 8-bit
+  current durability: the three values (7, 8, 20) came back in the write, which a 9-bit read keyed on the item's
+  version would have shifted. Version 95 itself was not loaded `[I]`. ([save/0001](../findings/save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load) row 68)
 - **Version 92 is not documented here**: its property lists need the per-id width overrides, which the findings do
   not list (which ids, which widths, whether the fixed fields take the 1.09 columns, what a set item does below
   93). `d2s.py` refuses it ([backlog](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md) (b)). The `1.09-Save Bits` and `1.09-Save Add` columns themselves are
@@ -1321,11 +1323,11 @@ What the save code leaves open after [save/0001](../findings/save/0001-d2s-io.md
 - `[L]` The legacy layouts (versions 71..91), the version-92 property overrides, whether the version tests listed in
   [§ Versions 92..95](#versions-9295) are all of them, the old stat form's mask width outside `0x029` = 12 and 16,
   and whether the reader takes an ear's realm bit: asked of the reverser,
-  [backlog](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md). (H1a's tool-built ear, personalized cap and realm data have since been read by the game:
-  [§ Common part](#common-part), [§ Realm data](#realm-data).)
+  [backlog](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md). (Ears, personalized names and realm data have left the next bullet: H1a's tool-built ear,
+  personalized cap and realm gloves were read by the game, [§ Common part](#common-part), [§ Realm data](#realm-data).)
 
-- `[L]` Branches no sample exercises (the save code reads them, tagged `[I]` above, but no file shows them): ears,
-  personalized names, class-specific affixes, realm data, mercenary and golem items, corpses,
+- `[L]` Branches no sample exercises (the save code reads them, tagged `[I]` above, but no file shows them):
+  class-specific affixes, mercenary and golem items, corpses,
   ground positions, waypoint bits 9–38 (their tabs need quest progress), stats past id 12, signed and param
   character stats, grouped fire/magic/poison stats, gold and quest simple items. A save from a played character
   would cover most of them.

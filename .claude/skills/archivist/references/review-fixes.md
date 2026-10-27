@@ -7,7 +7,7 @@ against all of them before you file the review request. Categories are those of 
 1. **Check the findings before tagging a meaning.** Where a finding states it with addresses, write
    `[I]` and cite it; where a reviewed spec settles it, state it. Seen: the resurrection price `[L]`
    ([0043](../../../../docs/plans/done/0043-items-economy.md) P0); the four `SubWaypoint` levels ([0042](../../../../docs/plans/done/0042-quests-travel.md) P0); a
-   raise missed ([0039](../../../../docs/plans/done/0039-backlog-sweep-4.md) P0); a post-boundary outcome under a `[C]` (Levels `Teleport`) and the summons' MonEquip rows "walked" `[I]` with the `oninit` gate unread ([0051](../../../../docs/plans/done/0051-backlog-sweep-6.md) P0b).
+   raise missed ([0039](../../../../docs/plans/done/0039-backlog-sweep-4.md) P0); a post-boundary outcome under a `[C]` (Levels `Teleport`) and the summons' MonEquip rows "walked" `[I]` with the `oninit` gate unread ([0051](../../../../docs/plans/done/0051-backlog-sweep-6.md) P0b); d2s.md's "the version tested for stat 72 is the save's" `[I]` where save/0001 row 68 (its `lane/s38s` review note) and the spec state it `[C]` (`lane/a71`, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)).
 2. **A sentence about code with no finding is `[L]`**; "no reader" needs a full xref, otherwise write a
    scope note ("combat/0001 reads none of these"). Seen: "set by code" ([0041](../../../../docs/plans/done/0041-stats-and-states.md) P0);
    ItemStatCost "not read" (0039 P0).
@@ -15,7 +15,7 @@ against all of them before you file the review request. Categories are those of 
    "no", "every" or "N rows". Seen: 44 names both a skill and a state (0041 P0); *Find Potion* takes the
    tier above (0043 P0); MonStats2's `m<mode>` "every set bit names a record" checked over the 603 rows MonStats names, not the 609 ([0050](../../../../docs/plans/0050-animation-frame-timing.md) P0); `compellingorb` called "the same code" as the `9A` rows where the file has `9a`, and Missiles `HitClass` linked as the packet's whole `+0x60` without counting the 122 set rows whose value carries a high nibble (`lane/a3f`, 0050).
 4. **Re-read the format doc and the findings a column touches.** Seen: ds1.md bits 18–19 against
-   drlg/0001, and Levels level 0 as a town (`lane/arc4`, 0039); Missiles `VelLev`'s part 2 link without skills/0002 § 12's review note (a level-1 `spike1` separates it; `lane/a50t`, [0050](../../../../docs/plans/0050-animation-frame-timing.md)).
+   drlg/0001, and Levels level 0 as a town (`lane/arc4`, 0039); Missiles `VelLev`'s part 2 link without skills/0002 § 12's review note (a level-1 `spike1` separates it; `lane/a50t`, [0050](../../../../docs/plans/0050-animation-frame-timing.md)); d2s.md's open question still listing ears, personalized names and realm data as unexercised after the lane raised them, and § Realm data saying the field "closes every item record" where an extended item's type fields follow it (`lane/a71`, 0038).
 5. **Label every count with its game type, difficulty and index kind.** Seen: 138/208 are classic
    Nightmare/Hell (0039 P0); record index called "Id" (0042 P0).
 6. **List everything the request names**: every handler, every row asked for per row. Seen: `OperateFn`

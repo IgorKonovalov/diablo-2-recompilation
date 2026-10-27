@@ -4547,5 +4547,48 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     bit: reverser entry [2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md).
     So the legacy rows (hirelings 3, 30, 33; player-creation 1; items-uniques-sets 21) and save-d2s 126 stay
     shortfalls under ruling 5. The H1a entry is annotated and stays open for the legacy builder.
-  - **Backlog:** review request [2026-10-27-archivist-architect-review-lane-a71-d2s-versions-93-95-realm](../backlog/2026-10-27-archivist-architect-review-lane-a71-d2s-versions-93-95-realm.md). Ledger row added, usage "—".
+  - **Backlog:** review request [2026-10-27-archivist-architect-review-lane-a71-d2s-versions-93-95-realm](../backlog/archive/2026-10-27-archivist-architect-review-lane-a71-d2s-versions-93-95-realm.md). Ledger row added, usage "—".
   - **Next:** the `lane/a71` review.
+- **2026-10-27 — `lane/a71` review (architect): accept with fixes (5).** From the lane's head `5558db55` with `main`
+  `af36891d` merged in (`fe4285dc`; the log and ledger conflicts kept both sides). Static, scratchpad builds only, no
+  Ghidra, no harness.
+  - **Checks:** the 259 `RECIPE_BASES` recipes rebuilt with `main`'s `tools/d2s.py` and the lane's give the same 259
+    sha256; `dump` on the 20 sample and owner files (two of them stubs) and on the 38 H1a saves prints the same with both
+    tools (the refusals included); `roundtrip` on the 18 full saves 205 items, 0 diffs; `tools/h1a_saves.py` regenerates `v94`,
+    `v94s12`, `skills29` and `items` byte for byte against `workspace/runtime/h1a/`, and `ExtendedTest` builds the three
+    from the new keys byte for byte; `tools/sweep_h1a.py check` on the five H1a logs prints the kept
+    `sweep-h1a-check.txt` byte for byte; `python3 -I tools/test_d2s.py` 55 tests OK. Fourteen anchors spot-checked
+    in `re/symbols.csv` (`D2S_ReadSave`, `D2S_ReadHeader`, `D2S_ReadStats`, `D2S_ReadSkills`, `ITEMS_WriteFull`, the
+    two character-list functions and the seven legacy readers): all resolve. The legacy section's six bullets each
+    trace to save/0001, player/0001, hirelings/0001 § 7, rng/0002, data/0001 P1b or items/0004; none states a layout.
+    The refusals hold: 92 (reader and builder), < 92 and > 96 (builder), `stat_slots` outside 9..16 (both readings of
+    the mask width give 2 bytes there), a stat at or above `0x029`, a cut-off skill byte, version-96 trailer items in
+    another version, and realm-word counts that do not fit the version. No game data in the diff.
+  - **Fixes** ([d2s.md](../formats/d2s.md)): (1) under-claim: "the version tested for stat 72 is the save's" `[I]` →
+    `[C]` with the `[ebp+0x1C]` test, as save/0001 row 68's `lane/s38s` review note and the spec give it (the `v94`
+    items' version 101 separates it); 95 itself `[I]`. (2) overclaim: the `realm` field row's version test (third word
+    above 93) was under the row's `[C]`; now `[C]` for 96, the test `[I]`. (3) misread: § Realm data said the field
+    "closes every item record"; an extended item's `defense`, `maxdur`, … follow it. (4) misread: § Versions 92..95's
+    "the findings name no other" version test, where save/0001 names the class-affix base tests at ≤ 88 / 89 and the
+    72–88 jump table; scoped to tests a 92..96 file can meet. (5) stale cross-reference: the open question "branches no
+    sample exercises" still listed ears, personalized names and realm data, which the lane raised to `[C]`.
+  - **Rulings:**
+    1. **The default path is unchanged**: every new behaviour sits behind `extended`, `ver` or a new recipe key, and
+       the evidence above shows the 96 reader, writer and builder byte-identical.
+    2. **The ear's realm bit and the `+0x20` write condition stay `[I]`** on the reverser's addresses
+       (0x0062B277 → 0x0062B2E2 → 0x0062B341, 0x0062B341–0x0062B387), which are in the reverser's H1a archivist entry,
+       not yet in save/0001; the reverser entry (e) asks for the read side, and its answer should record both in
+       save/0001. The tool's extended form taking the bit is a test state, labelled as such.
+    3. **Ruling 5 holds: the H1a legacy rows (hirelings 3, 30, 33; player-creation 1; items-uniques-sets 21) and
+       save-d2s 126 stay shortfalls**, not d-none. The character screen lists a version 71..91 file of `0x82` bytes and
+       a 92 file (`0x0043C8A0`), and `D2S_ReadSave` sends < 92 to the legacy reader (`v91`, `[C]`), so the code is
+       reachable by a file the stock game shows; what is missing is a layout to build, which the findings do not give.
+       They move only on the reverser entry
+       [2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md):
+       (a) for the legacy rows (d-none only if every legacy layout is refused), (b) for 126.
+    4. The H1a archivist entry stays open for the legacy builder, as the lane left it.
+  - **Bookkeeping:** review request closed
+    ([archive](../backlog/archive/2026-10-27-archivist-architect-review-lane-a71-d2s-versions-93-95-realm.md));
+    ledger: the lane row's usage filled from the orchestrator (230 283 tokens, 72 tools, 20 min), verdict and fixes
+    filled, the review row added with usage "—"; archivist review-fixes rules 1 and 4 gain `lane/a71` Seen lines.
+  - **Next:** merge `lane/a71`; the reverser takes the legacy and version-92 readers entry.
