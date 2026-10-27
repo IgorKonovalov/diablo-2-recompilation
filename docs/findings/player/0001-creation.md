@@ -937,20 +937,20 @@ calls reproduced, 0 failed) and `tools/sweep_h6g.py check` (**0 mismatches**, `w
   8-box belt: the column path at box 4 (the same class in column 0), the first-free path at box 1 and at box 2, the column
   path at box 5; 2 + 2 cases from the packet-0x63 handler's call (0x0054D5C4) and 16 + 8 (free and none) from the
   placement (0x0063C7AE), each reproduced from the logged boxes, and the next lookup shows the item in the predicted
-  box (3). (fn:sub_0063C600_BeltFreeSlot@0x0063C600, fn:sub_0054D520_SrvPacket63Handler@0x0054D520)
+  box (3). (fn:sub_0063C600_BeltFreeSlot@0x0063C600, fn:sub_0054D520_SrvPacket63Handler@0x0054D520, run:2026-10-27-sweep-player)
   [I] The handler at 0x0054D520 is the packet-0x63 entry of the server's table (`g_PacketTable` at 0x006E0D18, 8 bytes
   per opcode, 0x0054D520 at index 0x63: the table address read from the dispatch at 0x0054D772, the entry from the
   bytes at 0x006E1030); what the client sends for the Shift+click is not read.
 - **Row 22** (the input is the killed monster's experience) **raised.** [C] 145 kills: `XP_Compute`'s input equals
   the monster's base stat 13 read by `XP_OnMonsterKill` (`XKE`) and the `XK0` entry for each; the stat is read with
   `STATS_GetUnitBaseStat`. (fn:XP_OnMonsterKill@0x0057E990, fn:STATS_GetUnitBaseStat@0x006253B0,
-  fn:XP_Compute@0x0057E480)
+  fn:XP_Compute@0x0057E480, run:2026-10-27-sweep-player)
 - **Row 25** (the stat 85 bonus) **raised.** [C] 73 kills of the `xp85` session (Hell, an Annihilus carried): stat 85 =
   10 (the unique's `addxp` maximum) at every `XC85`, the term `exp + MulDiv(exp, 10, 100)` differing from `exp` on all
-  73, each reproduced by `tools/player.py check`. (fn:XP_Compute@0x0057E480, tbl:UniqueItems.txt:addxp)
+  73, each reproduced by `tools/player.py check`. (fn:XP_Compute@0x0057E480, tbl:UniqueItems.txt:addxp, run:2026-10-27-sweep-player)
 - **Row 28** (the cap at the threshold of MaxLvl: two statements) **raised.** [C] The level-98 save (`cap98`, Hell): a
   kill adding 5 at `T(98) - 2` ended at `T(98)` exactly and level 99 (`XA0`, `XAX`, `PLAYER_LevelUp` reproduced);
-  every later kill (71) returned 0 at `XCX`. (fn:PLAYER_AddExperience@0x0057E510)
+  every later kill (71) returned 0 at `XCX`. (fn:PLAYER_AddExperience@0x0057E510, run:2026-10-27-sweep-player)
 - **Row 23** (the clamp, the non-positive and the level-cap returns of `XP_Compute`) **raised in part.** [C] The
   cap return: `XP_Compute` returned 0 at clvl 99 (`>= MaxLvl`) on 71 of 71 kills (fn:XP_Compute@0x0057E480, run:2026-10-27-sweep-player). **Remainder `[I]`:** the non-positive
   return (no killed monster had experience <= 0: 145 of 145 positive) and the 0x7FFFFF clamp (d-owner, row 5).
@@ -963,7 +963,7 @@ calls reproduced, 0 failed) and `tools/sweep_h6g.py check` (**0 mismatches**, `w
   appended at level 1, then 1 -> 2, and Frozen Armor 19 -> 20 (the Skills maximum), `newskills` falling by the cost
   at each (`SKX`, 3 cases); the other callers only appended (467 cases). **Remainder `[I]`:** the
   at-the-maximum side: a click on Frost Nova at level 20 sent no request (the client refuses it), so the add never
-  saw a full entry. (fn:SKILLS_AddSkill@0x00647110, fn:PLAYER_SpendSkillPoint@0x00570080)
+  saw a full entry. (fn:SKILLS_AddSkill@0x00647110, fn:PLAYER_SpendSkillPoint@0x00570080, run:2026-10-27-sweep-player)
 - **Rows 3, 30** (the death experience loss) **raised in part.** [C] `PLAYER_DeathExpLoss` reproduced in four deaths on
   three difficulties: Normal (`deathn`, pen 0): loss 0, corpse 0; Nightmare (`deathnm`, pen 5, span 1 964 461): the
   loss 98 223 would take the experience below `T(39)`, so the kept amount is the clamp: 1 000 (17 271 791 - 17 270 791),
@@ -972,14 +972,14 @@ calls reproduced, 0 failed) and `tools/sweep_h6g.py check` (**0 mismatches**, `w
   1, the experience unchanged, share 0. The gate (`DG0`) was entered with a monster killer of type 1 and no owner
   every time (5). (fn:PLAYER_DeathExpLoss@0x005359F0, fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0,
   fn:CLIENT_SetDeathExpLoss@0x005391E0, fn:PLAYER_CorpseCreate@0x0057F700, fn:CLIENT_GetDeathExpLoss@0x00539210,
-  tbl:DifficultyLevels.txt:DeathExpPenalty) **Remainder `[I]`:** the corpse pickup, the share going back to the
+  tbl:DifficultyLevels.txt:DeathExpPenalty, run:2026-10-27-sweep-player) **Remainder `[I]`:** the corpse pickup, the share going back to the
   owner. Four `deathnm` sessions (r2 to r5, the last kept) walked from the town to the corpse; the character died
   again at or before it each time (life 60), so no `CP0` line was logged.
 - **Row 12** (`client +0x3D4 |= 1` at 0x00537970) **raised in part.** [C] After the call the word equals the word at
   `NC0` with bit 0 set (4 new characters). [C] Bit 0 is already set at `NC0`, by 0x005397A3 in
   `sub_00539760_ClientAddPlayerToGame` (`C3W` before = 0 at 0x005397A3: 8, before = 1 at 0x00537993: 2 and at
   0x00539594: 8), so the `or` at 0x00537993 changes nothing in these sessions. **Remainder `[I]`:** a path that reaches
-  0x00537970 with bit 0 clear. (fn:sub_00537970_ClientFlag3D4Set@0x00537970)
+  0x00537970 with bit 0 clear. (fn:sub_00537970_ClientFlag3D4Set@0x00537970, run:2026-10-27-sweep-player)
 - **Row 33** (J2-J5 not run: a note) **raised in part.** [C] J3 (death loss) and J5 (spend) ran, and the cap (H; fn:PLAYER_DeathExpLoss@0x005359F0, fn:PLAYER_SpendStatPoint@0x00570D60, run:2026-10-27-sweep-player);
   the party half stays d-2c. **Remainder:** J2, the capped grant (rows 2 and 29).
 - **Rows 2 and 29** (`sub_0058C5C0_ExpGrantCapped`, the Ancients' reward) **open (shortfall).** Two tries of the `anc`

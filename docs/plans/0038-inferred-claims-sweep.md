@@ -5842,3 +5842,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (index 0x63 at 0x006E0D18), the packet's meaning is not.
   - **Review-fixes pass:** rules 1 (the table-index claim is `[I]`), 2 (counts copied from `check-final.txt`) and 14
     (10 symbols) checked.
+- **2026-10-27 — `lane/h6g` check (architect, Tier B, plan 0038 H6g): accept with fixes (1).** Rulings: (1) the split of rows
+  23, 27, 33 and 35 is honest (each [C] half names the run; row 35's met half is the level-cap return the spec note at
+  `creation.md` line 692 pairs with the return of 1, which stays `[I]`); (2) rows 2/29 and the corpse pickup stay open,
+  routed by the backlog entry, which stays open and is addressed to the unpause: the project is paused, so the static
+  read of the Ancients' spawn, a different recipe or an owner play session is the owner's choice then, none started;
+  (3) `sub_0054D520_SrvPacket63Handler` is scoped right at `[I]` (table index read, the client's send not read).
+  Totals: no row class changed in the diff (`player-creation.md` untouched) and `main` has no later total, so static 567,
+  harness 509, blocked 431, deferred 2, raised 17 = 1 526 stand. Fix: the run id added to seven [C] bullets of
+  player/0001's H6g ledger (rows 3/30, 12, 16, 18, 22, 25, 28).
