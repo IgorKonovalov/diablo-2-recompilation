@@ -5,7 +5,163 @@ evidence rules: ADR-0003, ADR-0004, ADR-0011, ADR-0013, ADR-0014;
 [tooling](../../../.claude/skills/reverser/references/tooling.md),
 [harness-play](../../../.claude/skills/reverser/references/harness-play.md).
 
-Plan 0045 Phase 2's harness run comes first (run:2026-10-25-skills); plan 0046's emulated runs (ADR-0015) follow.
+Plan 0045 Phase 2's harness runs come first (part 2, run:2026-10-27-skills, then part 1, run:2026-10-25-skills); plan
+0046's emulated runs (ADR-0015) follow.
+
+## run:2026-10-27-skills
+
+Plan 0045 Phase 2 **part 2** (ruled at the part 1 review, 2026-10-27): the models and sessions part 1 lacked. Part 1's
+logs (run:2026-10-25-skills, below) are kept unchanged and re-checked here with part 2's checker; the floors count both.
+
+- **Question:** with a `SKILLS_CanUse` breakpoint, models of `MonAttackStats`, the stat-event handlers, the state-52
+  hook, the summoned unit's seed and stats and the end of a damaging hit, and the caster's own logged draws added to
+  the chaining, does `tools/skills.py` reproduce part 2's sessions with 0 mismatches, and do both parts together meet
+  plan 0045 Phase 2's floors?
+- **Setup:** 15 agent-driven sessions on harness slot 2 only (display `:9`, prefix `workspace/wineprefix-2`; slot 1
+  held by another lane), single player, the pinned `game.exe` in `workspace/runtime/game` (stock data), gdb by
+  `tools/d2run.py` with `-seed` per session; Normal, and Nightmare for `spike-1`/`spike-2`. Logger
+  `tools/gdb/skills.gdb` (`92420a1c…`, unchanged) sourcing `tools/gdb/pilot.py` (`1ad48a4c…`, unchanged) and
+  `tools/gdb/skills.py` **rev 4** (`5459da8a…`, commit `3b5b843`) for `barh-1`, `ref-sor-1`, `ref-low-1`, **rev 5**
+  (`e28d1344…`, commit `a06e825`) for the other 12 (each log's `SKILLSLOG` line names its revision). Rev 4 adds to
+  rev 3: `CU0`/`CUL`/`CU1` (`SKILLS_CanUse` `0x00647960` entered from the four request call sites, return addresses
+  `0x00549B0F`, `0x00549B49`, `0x00549BC6`, `0x00549C11`, and its ten `ret 8`s; `CUL` the level bonus `EAX` and base
+  `EDI` at `0x00647589` inside `SKILLS_ManaOk`); on `EVH` the handler's own stat value (`sv`, the record's
+  `stat << 16 | layer`), the other unit's type, stats and MonsterData `+0x16` flags, the packet's first 0x70 bytes; on
+  `MAS0`/`MAS1` the elemental stats 48–66 and 315–317 and the game's `+0x6A/+0x6D/+0x70/+0x74`; `SP1` with stats 6–9,
+  12, 19, 21, 22, 31, 36, 37, 39, 41, 43, 45, 100; `THR`/`DRR` written outside the logged spans too (capped at 20 000
+  each). Rev 5 adds the client's per-frame check of a skill button (`SKILLS_CanUse` returning to `0x004D9FCA`), written
+  (`"cl": 1`) only when that skill's code differs from the last one written for it, and keys the pending calls by ESP.
+  Driver `tools/skills_sessions.py` (`97c0820f…`) over `tools/d2pilot.py` (`3ccabe20…`, main's, unchanged by this
+  lane): `saves.py --slot 2 aside p45k` before each `run`, per session `restore`/`aside p45k`, `d2run.py --install
+  p45k`, then the steps of `SESSIONS` (the waypoint, `cast` presses with a right-click beside the player, `explore
+  --melee --melee-button 3 --curse-keys … --keys-cycle`, the Necromancer's `corpse` step); `slots.py stop 2` after
+  each session, `saves.py --slot 2 restore p45k` at the end (aside empty, slot idle). The pilot only decides where to
+  click.
+- **Characters** (ADR-0013 § Neutral: tool-built by `skills_sessions.py build` from the recipes on the stock `p0005`
+  base saves, stock items and skill points, no test-state key), into `workspace/logs/skills/2026-10-27-skills-saves/`:
+  the eight part 1 saves, byte for byte part 1's (`cmp`), and two new recipes. `SkillsBarH`
+  (`tools/d2s_recipes/skills-barh.json`, clvl 85; Bash F1, Kick F2, Left Hand Throw F3, Attack F4, Howl F5; dual
+  wielding *Fleshripper* and *Lacerator*; *Howltusk*, *Corpsemourn*, *Dracul's Grasp*, *Nosferatu's Coil*,
+  *Gorefoot*, *Nagelring*, *Nature's Peace*, *Atma's Scarab*, all `roll: max`): the handler stats (prevent heal,
+  crushing blow, open wounds, slow, knockback, howl, thorns, damage to mana, skill on attack and on get-hit, mana and
+  life after a kill, rest in peace) and Left Hand Swing through the dual-wield Attack alternation. `SkillsSorLow`
+  (`skills-sorlow.json`: `SkillsSor` with energy 10, mana 30 and a belt of `hp5`): the mana refusals.
+
+### Sessions
+
+| session | save | difficulty | seed | what |
+|---|---|---|---:|---|
+| barh-1 … barh-3 | SkillsBarH | Normal | 4611–4613 | waypoint 1,2 · 1,3 · 1,4; the ten-key cycle `F1 F2 F3 F4 F4 F5 F2 F3 F4 F4` walking |
+| ref-sor-1, ref-sor-2 | SkillsSor | Normal | 4601, 4602 | 20 casts in the Rogue Encampment, waypoint 1,2 · 1,3, 40 Meteor and 20 Static Field presses, then explore |
+| ref-low-1, ref-low-2 | SkillsSorLow | Normal | 4603, 4604 | (ref-low-1: 20 town casts) waypoint, Nova, Fire Bolt, Meteor, Frost Nova presses |
+| amaj-3 | SkillsAmaJ | Normal | 4621 | waypoint 1,4; Plague Javelin twice in the four-key cycle |
+| nec-3 | SkillsNec | Normal | 4622 | waypoint 1,3; `corpse` (420 s, 60 corpses), then Amplify Damage and Bone Armor |
+| ass-3 | SkillsAss | Normal | 4623 | waypoint 1,4; Fire Trauma twice in the cycle |
+| pal-3 | SkillsPal | Normal | 4624 | waypoint 1,3; 25 Holy Shield casts, then explore |
+| blaze-1 | SkillsSor | Normal | 4625 | waypoint 1,2; Blaze twice and Nova, **walking** (C4) |
+| spike-1, spike-2 | SkillsSor | Nightmare | 4626, 4627 | waypoint 1,4 (Dark Wood) · 1,5 (Black Marsh), the quill-rat areas (C2) |
+| spike-3 | SkillsSor | Normal | 4628 | waypoint 1,4 |
+
+No session was relaunched, aborted or died. Logs `workspace/logs/skills/2026-10-27-skills-<session>.log` (49 MB),
+with their `.pilot.txt` and `-shots/`. Two development sessions before the run, `dev-p45k-dev-barh` (rev 4 before
+the request filter: its `CU` lines include the client's per-frame calls, which a gdb condition on `[esp]` failed to
+exclude; the filter moved into Python) and `dev-p45k-dev-barh2` (rev 4 with the filter; Left Hand Swing on F4, which
+the request handlers never received: the run uses the Attack alternation), are kept under
+`dev-p45k-manifest.sha256` (`0450c0c9…`); no claim rests on them.
+
+- **Procedure** (from the worktree; checks under a 4 GB scope; the kept outputs by
+  `systemd-run --user --scope -p MemoryMax=4G python3 -I tools/skills.py …` from `workspace/logs/skills`):
+  ```
+  python3 -I tools/skills_sessions.py build --saves workspace/logs/skills/2026-10-27-skills-saves
+  python3 -I tools/saves.py --slot 2 aside p45k
+  python3 -I tools/skills_sessions.py run --slot 2 --tag p45k --saves workspace/logs/skills/2026-10-27-skills-saves \
+      --run 2026-10-27-skills barh-1 ref-sor-1 ref-low-1 blaze-1 spike-1 nec-3 amaj-3 ass-3 pal-3 barh-2 ref-sor-2 \
+      ref-low-2 spike-2 spike-3 barh-3
+  cd workspace/logs/skills
+  skills.py check 2026-10-27-skills-*.log --json 2026-10-27-skills-check.json --gaps 2026-10-27-skills-gaps.txt \
+      > 2026-10-27-skills-check.txt
+  skills.py tally 2026-10-27-skills-*.log > 2026-10-27-skills-tally.txt
+  skills.py check 2026-10-25-skills-*.log --json 2026-10-27-skills-part1-check.json \
+      --gaps 2026-10-27-skills-part1-gaps.txt > 2026-10-27-skills-part1-check.txt     # part 1's logs, unchanged
+  skills.py tally 2026-10-25-skills-*.log 2026-10-27-skills-*.log > 2026-10-27-skills-tally-both.txt
+  skills.py audit $(cat workspace/logs/combat/c37p2-run.lst) $(awk '{print $4}' workspace/logs/stats/s1017-manifest.txt) \
+      workspace/logs/combat/p47h-owf-n-andariel-p8.log > workspace/logs/skills/2026-10-27-skills-audit.txt   # from the root
+  ```
+  Checker `tools/skills.py` `c09f9419…` (it gives every kept output); its tests `tools/test_skills.py` (`89f4d098…`, 12
+  tests, passing: part 1's 8 and MonAttackStats, a handler, `SKILLS_CanUse` and the summon's seed, each both ways).
+- **Kept:** `workspace/logs/skills/2026-10-27-skills-manifest.sha256` (`08b79a9b…`, 49 files: the 15 logs and their
+  pilot files, `check.txt` `f6e4df6c…`, `check.json` `a9e72b5e…`, `gaps.txt` `6843be4a…`, `tally.txt` `41f45171…`,
+  `part1-check.txt` `82688917…`, `part1-check.json` `5df6ffee…`, `part1-gaps.txt` `5f43d175…`, `tally-both.txt`
+  `48561615…`, `audit.txt` `28f85c9a…`, the 10 saves); `sha256sum -c` from that directory passes.
+
+### Result
+
+**0 mismatches** over part 2's 15 logs and over part 1's 18 logs re-checked (`check.txt`, `part1-check.txt`: every
+row 0). The new checks, part 2 and the re-check of part 1:
+
+| check | part 2 | part 1 re-checked | what it asserts |
+|---|---:|---:|---|
+| `MAS.seed`, `MAS.stats` | 13 905, 13 693 | 13 050, 12 732 | `MonAttackStats`: the unit's seed steps by the `El<e>` rolls only (21 one-draw calls, all `El1`), and stats 21, 22, 19 are MonLvlStats by the mode's `A1`/`A2`/`S1` columns (the other column sets would give other values in 13 683 and 12 700 of them); a summon's other-list offset learned at its first call (4 and 10 summons, 3 061 and 2 632 later calls checked through it); 2 218 calls of the Raven class (419), which has a `SkillDamage` owner pair, and 208 + 308 calls with no stat list yet, reported |
+| `MAS.elem` | 2 | — | an applied `El1` (cold, type 4; poison, type 5): its stats as written (the poison 10 × and 2 × scalings) |
+| `EVH.seed`, `EVH.seed1` | 991, 28 | 284, 0 | the handler unit's seed steps by the handler's own draws: 0, or 1 for knockback, howl (gated on a plain monster), stupidity, open wounds, crushing blow; at least 1 for the casts of 20 and 21 |
+| `EVH.mana`, `EVH.life` | 78, 78 | — | mana and life after a kill: `+= sv << 8`, capped at stat 9 / 7 |
+| `EVH.ow` | 120 | — | open wounds' roll `low % 100 < sv` against its `STA` state 62 (82 hits, 38 misses) |
+| `PH.state52`, `PH.seed` | 333, 333 | 585, 585 | the prevent-heal hook: state 52 for 120 000 frames with stat 31 = 0 exactly when the player attacker's stat 117 ≠ 0 (86 applies, 247 without), no draw |
+| `CU.code` | 1 340 | — | `SKILLS_CanUse`'s code: 1 126 request calls (all code 0) and 214 client changes of code (129 to 0, 8 to 1, 76 to 8, 1 to 6) |
+| `SP.seed`, `.gameseed`, `.stats` | 4 each | 215 each | the summon's seed `Init(step(game).low)` in its `SUnitCreate`; its life (stat 6 = 7) and AC (31) from `tools/monstats.py`'s appearance and HP draws on that seed (207 Ravens with a 20–32 HP range) |
+| `MH.end` | 3 166 | 710 | a damaging hit of a row with no hit function: the result and stat 328 (137 + 139 ends at the unit, 12 + 118 pierce uses, 3 017 + 453 continuing rows with no `CollideKill`) |
+| `CHAIN.caster+logged` | 45 | 90 | a caster resync attributed by the unit's own logged draws and the logged exits of the spans and boundaries between |
+
+Part 1's other checks re-run unchanged in value (`MC`, `MF`, `BD`, `PAY`, `SL`, `RSK`, `SST.seed`, `SDO.seed`,
+`CHAIN`): `part1-check.txt` repeats part 1's counts row for row.
+
+Coverage against the *Done when* of part 2 (part 1 and part 2 together, `tally-both.txt` unless named):
+
+- **Skill uses: met.** 3 183 do events (1 840 + 1 343) and 2 985 start events (1 688 + 1 297); 2 375 do events in the
+  26 tier-A rows. Every tier-A row at ≥ 30 except **70 Raise Skeleton, 12** (8 + 4: the Necromancer's `corpse` step
+  raises few; short): 0 Attack 188, 1 Kick 32, 2 Throw 53, 4 Left Hand Throw 36, 5 Left Hand Swing 30, 10 Jab 108,
+  12 Multiple Shot 36, 25 Plague Javelin 45, 36 Fire Bolt 89, 42 Static Field 104, 44 Frost Nova 71, 48 Nova 93,
+  54 Teleport 378, 56 Meteor 117, 66 Amplify Damage 61, 68 Bone Armor 34, 98 Might 90, 102 Holy Fire 35, 117 Holy
+  Shield 65, 126 Bash 82, 130 Howl 74, 221 Raven 207, 225 Firestorm 221, 251 Fire Trauma 61, 259 Fists of Fire 53.
+  Kick and Left Hand Throw are cast from a hotkey bound by the recipe; Left Hand Swing only through the dual-wield
+  alternation of Attack (skills/0001 § 1), the F4 binding of the development session reaching no request handler.
+- **Refusals, with `CanUse`'s code: named short.** The request handlers received no refused request: the client runs
+  the same `SKILLS_CanUse` on its own copy of the player every frame (`0x004D9FC5`) and sends no request for a refused
+  skill, so all 1 126 request calls return 0. The refusals are the client check's: **delay** (code 8) 76 changes,
+  **mana** (code 1) 8, an aura (code 6) 1; the **town** refusal is `SKILLS_SrvStart`'s `InTown` test, not a `CanUse`
+  code, and the 60 town casts of `ref-sor-1`, `ref-sor-2` and `ref-low-1` reached no request (none sent): 0. Delay at about 30, mana and town short (rare-branch).
+- **Handlers: met.** 1 303 `EVH` fires (284 + 1 019) over six event kinds (1, 2, 5, 6, 9, 11), event 9 (kill) 328;
+  every fire checked for its seed effect (`EVH.seed`/`.seed1` 1 303 = 284 + 991 + 28); state 52 applied 86 times.
+- **Summons: met.** 219 (215 + 4), each with its seed, level and stats predicted to the monsters/stats boundary.
+- **`MonAttackStats`: met.** 26 425 calls predicted (12 732 + 13 693), 13 050 + 13 905 seeds.
+- **Hit ends and pierce uses: met.** 276 ends of a missile at a unit it damages (139 + 137) and 130 pierce uses at a hit
+  (118 + 12), besides part 1's 105 missed to-hits.
+- **Re-seeds at the Q15 sites other than `0x005C9290`: named unreached.** No breakpoint sits on them and no session's
+  row reaches them by skills/0003 § 9's *Reached by* column: `0x005ACDF0` (hit 58, Missiles row 654), `0x005D40F0`
+  (do 37), `0x005D5BF0` (a catalogue hit function, skills/0007), the call at `0x005AC073` (in `0x005AC040`, reached from the hit functions at
+  `0x005AC14B` and `0x005AC525`), and `0x00645390` (no reference in the image). `0x005C9290`: 168 more (`MC.cbseed`, 38 steps
+  after the Init each, a monster's class-195 missiles).
+- **C2: short.** 22 `spike2` creations (Normal Dark Wood's quill rats, `amaj-3` and `ass-3`), all at level 1, where
+  `(VelLev · 1) / 8` is 0 and so does not separate the `VelLev` term; the Nightmare sessions met no quill rat.
+  **C4: met.** 271 `blaze` creations (`LevRange` 25) at Blaze level 2 while walking, every range checked (`MC.range`).
+- **The 304 caster resyncs of part 1, re-checked** (`part1-gaps.txt`): of the 133 player resyncs, **90 are attributed**
+  by the unit's own logged draws (the `THR` rolls, with the delivery boundaries' logged exits), and 43 are listed with
+  their lines: 31 with the player a hit's defender between (its defence rolls, combat/0001, which part 1's logger
+  wrote only inside an open span), 11 with no logged line naming the player, 1 other. The 171 monster resyncs are
+  left to plan 0052 (monster AI): 131 where the walk reaches a logged observation of the monster's seed (a
+  `MonAttackStats` entry, mostly) that its logged draws do not explain, the AI's draws among the candidates, 33 with no line naming the monster, 7 as a defender. Part 2's own 308 resyncs: 45 attributed; 103
+  player resyncs listed (60 as a defender, 17 nested in a span that opened before the first event's exit, 11 off the
+  stream within 4 096 steps, 2 with no line, 13 other); 160 monster resyncs left to plan 0052 (`gaps.txt`).
+- **The handler audit** (`audit.txt`): the 3 461 handler fires of run:2026-10-16-combat, run:2026-10-17-stats and the
+  *Fleshripper* log are all replaced by the handler model for their seed effects (0 mismatches): crushing blow 1 637,
+  open wounds 1 637, slow 59, heal after kill 57, skill on attack 59 (at least one draw: the cast is a boundary), life
+  tap 12. Their outcomes (the crushing-blow life, the open-wounds state) stay combat.py's checks; the 59 heal-after-kill
+  fires carry no handler stat value in those logs, so their life effect is not replaced. The missile-packet and
+  aura-run oracles stay as part 1 named (ruling (b)).
+
+Readings the run adds or changes, in the findings: `MonAttackStats` clears its list first and gives every `El<e>` El1's
+bounds (skills/0001 § 18, monsters/0004 § 9); the delay state ends at frame `set + d` (§ 18); the client's own
+`CanUse` filters refusals before any request (§ 18).
 
 ## run:2026-10-25-skills
 
@@ -98,7 +254,7 @@ with their `.pilot.txt` and `-shots/`.
 | `THR.roll`, `MH.missed` | 269, 105 | 105 missed to-hits ending the missile, 7 of them with a pierce left (C5) |
 | `SL.level` | 215 | 8 Raise Skeleton summons from the owner's level (C1: L 86, skill level 20, 84 each), 207 Raven summons at the given level |
 | `RSK.seed` | 8 | do 31's class draw, 8 class-363 summons at skill level 20, one caster step each |
-| `SST.seed`, `SDO.seed` | 1 142, 1 269 | the rows with no own draws, the nested events' draws added |
+| `SST.seed`, `SDO.seed` | 1 142, 1 269 | the rows with no own draws (17 rows of the checker's `NO_OWN_DRAWS`, Raise Skeleton's 8 do events too), the nested events' draws added; not the run's skill-use totals (*2026-10-27*) |
 | `CHAIN.gameseed`, `CHAIN.caster` | 21 860, 3 155 | chained pairs; 304 caster resyncs between skill events (steps in `check.txt`'s distribution) |
 
 Coverage against the plan's *Done when* (`tally.txt`):

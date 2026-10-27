@@ -24,4 +24,6 @@ review against these before committing it. Categories are those of the [lane run
    "wiki: not part of this plan" (0037 P3 → `lane/wiki1` ruling, 0038); the stats rows due when plan 0041
    started ([0041](../../../../docs/plans/done/0041-stats-and-states.md) P1 review); the `skills/dispatch`, `skills/missiles` and
    `skills/catalogue` rows, due when plan 0045 started, added only at the `lane/p46m15` review
-   ([0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
+   ([0046](../../../../docs/plans/0046-skills-function-catalogue.md)); and keep a row's status current at each phase acceptance: the
+   `skills/dispatch` and `skills/missiles` rows still read "Phase 2 and the spec not started" after the part 1 review
+   (fixed at the `lane/p45k` review, [0045](../../../../docs/plans/0045-skills-missiles-machinery.md)).

@@ -32,8 +32,9 @@
 #   MHT0/MHT1  COMBAT_MeleeHitTest 0x0057EC10 and its rets: attacker, defender seeds (boundary, combat/0001 [C])
 #   DQ0/DQ1    COMBAT_DeliverQueued 0x0057D4F0 and its rets (boundary)
 #   AD0/AD1    COMBAT_ApplyDamage 0x0057C6C0 and its rets: packet at entry (boundary)
-#   THR        0x005347B0 the to-hit debug stub: attacker (EDX), chance, roll, seed after the draw
-#   DRR        0x005347C0 the defence debug stub: unit, chance, roll, label, seed after
+#   THR        0x005347B0 the to-hit debug stub: attacker (EDX), chance, roll, seed after the draw (rev 4: also
+#              outside the logged spans, capped by SKILLS_CAP_THR)
+#   DRR        0x005347C0 the defence debug stub: unit, chance, roll, label, seed after (rev 4: likewise, _DRR)
 #   EVH/EVR    UNIT_DispatchEvent before (0x005C0C8E) and after (0x005C0C90) a handler call: fn, event, unit, other,
 #              seeds and life (as tools/gdb/combat.py)
 #   PH0/PH1    sub_0057D810_PreventHealHook (EDI attacker, ESI defender) and its ret: stat 117, seeds
@@ -48,7 +49,14 @@
 #   RSK0/RSK1  do 31's call of 0x005C4430 (0x005C4C7A: EDI the caster, ESI the summon) and its return (0x005C4C7F):
 #              the caster's seed before and after, the summon's class (rev 3)
 #   ARM0/ARM1  sub_005C8520_SkillDo146Armageddon and its rets: caster seed, SkillEntry+0x18 (logged whenever it fires)
-#   MAS0/MAS1  sub_005A4F50_MonAttackStats (ECX unit, EDX mode) and its ret 0x005A5443: seed, stats
+#   MAS0/MAS1  sub_005A4F50_MonAttackStats (ECX unit, EDX mode) and its ret 0x005A5443: seed, stats (rev 4: the
+#              elemental stats 48..66, 315..317 too, and the game's +0x6A/+0x6D/+0x70/+0x74 bytes)
+#   CU0/CU1    (rev 4) SKILLS_CanUse 0x00647960 (stdcall unit, entry) called from the request handlers (return address
+#              0x00549B0F, 0x00549B49, 0x00549BC6, 0x00549C11) and its ten rets: the skill id, the entry's base level
+#              (+0x28), item guid (+0x34) and charges (+0x38), the unit's stats 6, 8, its mode, the frame; exit eax
+#              rev 5: also the client's per-frame check of a skill button (return address 0x004D9FCA), written
+#              ("cl": 1) only when that skill's code differs from the last one written for it (the transitions)
+#   CUL        (rev 4) SKILLS_ManaOk's level bonus 0x00647589 inside a CU: EAX the bonus (0x00644180), EDI the base
 #   CAP        once per kind when its cap is reached
 import json
 import os
@@ -60,7 +68,7 @@ import gdb
 def _skills_main():
     inf = gdb.selected_inferior()
     DT_PTR = 0x00744304
-    CAPS = {"sst": 6000, "sdo": 6000, "mc": 12000, "mh": 8000, "ev": 6000, "mas": 1500, "sp": 600, "msst": 2500,
+    CAPS = {"sst": 6000, "sdo": 6000, "mc": 12000, "mh": 8000, "ev": 6000, "mas": 4000, "sp": 600, "thr": 20000, "drr": 20000, "msst": 2500,
             "msdo": 2500}
     for k in list(CAPS):
         v = os.environ.get("SKILLS_CAP_" + k.upper())
@@ -70,6 +78,10 @@ def _skills_main():
     UST = [6, 7, 8, 9, 12, 19, 117, 141, 156, 166, 337, 329, 330, 331, 332, 357, 68, 25, 21, 22, 23, 24, 159, 160]
     MST = [12, 19, 21, 22, 25, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 103, 104,
            106, 120, 121, 122, 141, 315, 316, 317, 326, 327, 328, 329, 330, 331, 332, 357]
+    # rev 4: MonAttackStats' writes (19, 21, 22 and the elemental stats) and a summon's stats at creation
+    MAST = [12, 19, 21, 22, 23, 24, 25, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 315,
+            316, 317]
+    SPST = [6, 7, 8, 9, 12, 19, 21, 22, 31, 36, 37, 39, 41, 43, 45, 100]
     LABELS = {0x006E1738: "block", 0x006E1730: "wblock", 0x006E1728: "dodge", 0x006E1720: "avoid", 0x006E1718: "evade"}
     st = {"game": 0, "n": {}, "capped": set(), "open": {}, "line": 0, "isc": None, "win": {}, "wins": 0, "depth": 0}
 
@@ -161,6 +173,24 @@ def _skills_main():
             return 0
         for k, v in struct.iter_unpack("<Ii", mem(arr, 8 * n)):
             if k == sid << 16:
+                return v
+        return 0
+
+    def stat_layer(u, sid, lay):
+        """the value of (stat, layer) in the list stats() reads, without the min clamp (rev 4: a handler's stat)."""
+        lst = u32(u + 0x5C) if u else 0
+        if not lst:
+            return 0
+        full = u32(lst + 0x10) & 0x80000000
+        if full:
+            arr, n = u32(lst + 0x48), s16(lst + 0x4C)
+        else:
+            arr, n = u32(lst + 0x24), s16(lst + 0x28)
+        if not arr or n <= 0 or n > 2048:
+            return 0
+        want = (sid << 16) | lay
+        for k, v in struct.iter_unpack("<Ii", mem(arr, 8 * n)):
+            if k == want:
                 return v
         return 0
 
@@ -437,17 +467,19 @@ def _skills_main():
         return lambda: reg(n)
 
     def on_thr():
-        if not any_open():
-            return
         a = reg("edx")
+        # rev 4: also outside the logged spans (every to-hit roll, capped), so the chaining can add a unit's own
+        # rolls between its skill events (part 1 review ruling (c))
+        if not any_open() and not take("thr"):
+            return
         esp = reg("esp")
         emit("THR", {"a": a, "c": s32(esp + 8), "r": s32(esp + 12), "sa": sd(a)})
 
     def on_drr():
-        if not any_open():
-            return
         esp = reg("esp")
         u = u32(esp + 4)
+        if not any_open() and not take("drr"):
+            return
         emit("DRR", {"u": u, "ch": s32(esp + 8), "r": s32(esp + 12),
                      "lab": LABELS.get(u32(esp + 16), hex(u32(esp + 16))), "s": sd(u)})
 
@@ -456,8 +488,18 @@ def _skills_main():
         u, o = u32(esp), u32(esp + 4)
         if not any_open() and not take("ev"):
             return
-        n = emit("EVH", {"fn": reg("eax"), "e": reg("edx"), "u": unit(u, [6, 7, 8]), "o": o, "par": u32(esp + 12),
-                         "so": sd(o), "fr": frame()})
+        par = u32(esp + 12)
+        pk = u32(esp + 8)
+        d = {"fn": reg("eax"), "e": reg("edx"), "u": unit(u, [6, 7, 8, 9]), "o": o, "par": par,
+             "so": sd(o), "fr": frame()}
+        # rev 4: the handler's own stat (record +0x0C = stat << 16 | layer) on the unit, the other unit's type, class
+        # and stats 6, 7, and the packet's first 0x70 bytes
+        d["sv"] = stat_layer(u, par >> 16, par & 0xFFFF) if par >> 16 < 0x400 else None
+        d["ot"] = unit(o, [6, 7, 12]) if o else None
+        if o and u32(o) == 1 and u32(o + 0x14):
+            d["ot"]["mf"] = u16(u32(o + 0x14) + 0x16)        # MonsterData +0x16 (sub_005A0180's flag word)
+        d["pk"] = mem(pk, 0x70).hex() if pk else None
+        n = emit("EVH", d)
         st["open"].setdefault("ev", []).append((n, u, o))
 
     def on_evr():
@@ -465,7 +507,8 @@ def _skills_main():
         if not lst:
             return
         n, u, o = lst.pop()
-        emit("EVR", {"k": n, "r": sreg("eax"), "su": sd(u), "so": sd(o), "st": stats(u, [6, 7, 8])})
+        emit("EVR", {"k": n, "r": sreg("eax"), "su": sd(u), "so": sd(o), "st": stats(u, [6, 7, 8, 9]),
+                     "ost": stats(o, [6, 7]) if o else None})
 
     def on_ph0():
         a, d = reg("edi"), reg("esi")
@@ -533,7 +576,7 @@ def _skills_main():
             return
         n, o = d
         m = reg("eax")
-        emit("SP1", {"k": n, "m": unit(m, [6, 7, 12, 19, 31]) if m else None, "so": sd(o) if o else None})
+        emit("SP1", {"k": n, "m": unit(m, SPST) if m else None, "so": sd(o) if o else None})
 
     def on_sl0():
         # rev 2: ECX is the game, the summon is the first stack argument (rev 1 read ECX as the summon)
@@ -581,20 +624,73 @@ def _skills_main():
         if d:
             emit("ARM1", {"k": d[0], "s": sd(d[1]), "r": sreg("eax")})
 
+    # --- SKILLS_CanUse at the request (rev 4) ---------------------------------------------------------------------
+    CU_RETS = (0x00549B0F, 0x00549B49, 0x00549BC6, 0x00549C11)
+    CU_CLIENT = 0x004D9FCA            # rev 5: the client's per-frame check of a skill button (0x004D9FC5)
+
+    def on_cu0():
+        esp = reg("esp")
+        ret = u32(esp)
+        if ret not in CU_RETS and ret != CU_CLIENT:   # the other client checks (0x0055C…, 0x00561…) are not logged
+            return
+        u, e = u32(esp + 4), u32(esp + 8)
+        if not u or not e:
+            return
+        rec = u32(e)
+        d = {"u": unit(u, [6, 8, 9]), "sk": s16(rec) if rec else None, "ret": ret,
+             "bl": s32(e + 0x28), "it": s32(e + 0x34), "ch": s32(e + 0x38), "fr": frame()}
+        if ret == CU_CLIENT:
+            # rev 5: buffered; written only when this skill's code differs from the last one written for it
+            d["cl"] = 1
+            st.setdefault("cus", {})[esp] = (None, esp, u, d, [], d["sk"])
+            return
+        n = emit("CU0", d)
+        st.setdefault("cus", {})[esp] = (n, esp, u, None, None, None)
+
+    def on_cul():
+        # the pending CanUse whose frame encloses this one (the nearest entry ESP above the current one)
+        cus = st.get("cus") or {}
+        esp = reg("esp")
+        above = [k for k in cus if k > esp]
+        d = cus[min(above)] if above else None
+        if d:
+            if d[0] is None:
+                d[4].append({"bonus": sreg("eax"), "base": sreg("edi")})
+            else:
+                emit("CUL", {"k": d[0], "bonus": sreg("eax"), "base": sreg("edi")})
+
+    def on_cu1():
+        d = (st.get("cus") or {}).pop(reg("esp"), None)
+        if d:
+            r = sreg("eax")
+            if d[0] is None:
+                last = st.setdefault("cucl", {})
+                if last.get(d[5]) != r:
+                    last[d[5]] = r
+                    n = emit("CU0", d[3])
+                    for c in d[4]:
+                        c["k"] = n
+                        emit("CUL", c)
+                    emit("CU1", {"k": n, "r": r, "s": sd(d[2])})
+            else:
+                emit("CU1", {"k": d[0], "r": r, "s": sd(d[2])})
+
     # --- MonAttackStats ------------------------------------------------------------------------------------------
     def on_mas0():
         u, mode = reg("ecx"), sreg("edx")
         if not u or u32(u) != 1 or not take("mas"):
             return
         esp = reg("esp")
-        n = emit("MAS0", {"mode": mode, "u": unit(u, [12, 19, 21, 22, 23, 24, 25]), "fr": frame(),
-                          "diff": u8(st["game"] + 0x6D) if st["game"] else None})
+        g = st["game"]
+        n = emit("MAS0", {"mode": mode, "u": unit(u, MAST), "fr": frame(),
+                          "diff": u8(g + 0x6D) if g else None,
+                          "g": [u8(g + 0x6A), u8(g + 0x6D), u32(g + 0x70), u32(g + 0x74)] if g else None})
         st["open"][("mas", esp)] = (n, u)
 
     def on_mas1():
         d = st["open"].pop(("mas", reg("esp")), None)
         if d:
-            emit("MAS1", {"k": d[0], "s": sd(d[1]), "st": stats(d[1], [12, 19, 21, 22, 23, 24, 25])})
+            emit("MAS1", {"k": d[0], "s": sd(d[1]), "st": stats(d[1], MAST)})
 
     Bp(0x0052C312, on_game)
     Bp(0x0056F640, skill_entry("sst", 3))
@@ -637,8 +733,8 @@ def _skills_main():
         Bp(entry, f0, "$sk_open > 0")
         for a in rets:
             Bp(a, f1, "$sk_open > 0")
-    Bp(0x005347B0, on_thr, "$sk_open > 0")
-    Bp(0x005347C0, on_drr, "$sk_open > 0")
+    Bp(0x005347B0, on_thr)
+    Bp(0x005347C0, on_drr)
     Bp(0x005C0C8E, on_evh)
     Bp(0x005C0C90, on_evr)
     Bp(0x0057D810, on_ph0)
@@ -665,9 +761,14 @@ def _skills_main():
     Bp(0x005C8520, on_arm0)
     for a in (0x005C85EB, 0x005C8734, 0x005C8779):
         Bp(a, on_arm1)
+    Bp(0x00647960, on_cu0)
+    Bp(0x00647589, on_cul)
+    for a in (0x006479BC, 0x006479D5, 0x006479E8, 0x00647A0C, 0x00647A24, 0x00647A3E, 0x00647A53, 0x00647A6C,
+              0x00647A85, 0x00647A8F):
+        Bp(a, on_cu1)
     Bp(0x005A4F50, on_mas0)
     Bp(0x005A5443, on_mas1)
-    emit("SKILLSLOG", {"rev": 2, "win": WIN, "caps": CAPS})
+    emit("SKILLSLOG", {"rev": 5, "win": WIN, "caps": CAPS})
     gdb.write("SKILLS logger armed\n")
 
 

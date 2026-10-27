@@ -6,7 +6,7 @@ status: open
 context:
   - ../specs/monsters/spawn.md#d-the-class-pick
   - ../specs/monsters/pool.md
-  - ../plans/0038-inferred-claims-sweep.md#log
+  - ../plans/0038-inferred-claims-sweep.md#implementation-log
 resolution: ""
 ---
 
