@@ -29,3 +29,9 @@ write the rule as `npc` or `inTown` with the `npc` and `+0xC4` halves tagged `[I
 part**: sizes 0 and 1 `[C]`, other sizes (`0xFFFF`) stay `[I]` (d-none, as drlg/collision row 3); (h) monsters/spawn 42
 (still counted as H4b) is raised in part: 206, 228, 298 and 528 `[C]`, 334 `[I]` with its d-none note; (i) in (b), the
 ring's classes 260 and 263 were not met (the range test covers them, `[I]` for those two if the spec names them).
+
+*Annotation (spec-writer, 2026-10-27, `lane/s38m`, plan 0038 Phase 3, monsters cluster):* the monsters/spawn parts are
+applied: (g) spawn H3 sizes 0 and 1 `[C]`, other sizes `[I]`; (h) spawn H5 `[C]` for 206, 228, 298 and 528, 334 `[I]` with
+its no-stock-source note; (a)'s in-pass mark is not restated in monsters/spawn (it names no `npc` rule), so nothing to
+correct there; (b)/(i) the spawn Constants row states the `spawnCol` 1 and 3 masks `[C]` and does not name 260 or 263.
+**Open:** every drlg/collision part, which waits with its cluster (H6e2).
