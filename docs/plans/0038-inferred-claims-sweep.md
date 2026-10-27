@@ -3519,7 +3519,46 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `npc` half and `+0xC4`), the `Position` levels narrowed to the operand.
   - **Backlog:** closed the S4a corrections entry and the H5d entry (its monsters parts on `lane/s38m`); annotated the S4b
     corrections ((a) waits for objects) and H5b entries (objects waits for H6e2). New: the counts entry to the architect
-    [s38n counts](../backlog/2026-10-27-spec-writer-architect-s38n-drlg-collision-counts-for-the-research-map.md) (research
+    [s38n counts](../backlog/archive/2026-10-27-spec-writer-architect-s38n-drlg-collision-counts-for-the-research-map.md) (research
     map; W4 on wiki/levels and wiki/monsters, proposed for the open wiki refresh entry) and the review request
-    [s38n review](../backlog/2026-10-27-spec-writer-architect-s38n-review-drlg-collision-phase-3.md).
+    [s38n review](../backlog/archive/2026-10-27-spec-writer-architect-s38n-review-drlg-collision-phase-3.md).
   - **Next:** architect review of `lane/s38n`; objects after H6e2.
+- **2026-10-27 — `lane/s38n` review (architect): accept with fixes.** Phase 3, the drlg/collision cluster, reviewed at
+  `58fdde0` (`9e5c05a` the spec, `17c7346` the merge of `main`); `main` `8b8f4ec` was already in the lane (merge a no-op;
+  backlog `archive` clean). The spec diff was read against the S4a, S4b, H5b and H5d sections of
+  [drlg/0005](../findings/drlg/0005-collision.md), the inventory rows and the H5d review's rulings. objdump of the pinned
+  `Game.exe`, no Ghidra: `MonIsNpc` 0x0063E89A–0x0063E8C5 (`+0x0D` tested against `.rdata` 0x006CE268 = 1, then
+  0x006CE270 = 4, then `+0xC4` bit 31); `MonSpawnTry`'s ring branch 0x005B2B7E–0x005B2BA6 (`spawnCol` = 1, then 258–263
+  and 153); the three `TileCollisionUpdate` calls 0x0066E822, 0x0066E8B6, 0x0066E916 (return 0x0066E91B); the item
+  `RectOrWH` call 0x00620ACA and `UNIT_CollMark`'s `SizeMark` call 0x0064954C; the `SpawnClassCellTest` calls the spec
+  gives as call sites (0x005B2D90, 0x005F6AE5, 0x005F9F9D, 0x005E62BC; the finding gives their return addresses, + 5).
+  Counts by script over the body: {C 157, I 35, L 7}, as filed and unchanged by the fixes; no `[L]` before *Open questions*.
+  - **Fixes (3):** (1) omission: the Constants row of the `spawnCol` 1 and 3 masks anchored its 271 and 837 calls to
+    run:2026-10-27-sweep-collision alone, while they are counted over the 1 330 kept logs and the nine sessions (the
+    `lane/s38m` fix 5 again, in this spec); bit 2's `0x80` writer anchored the same way. Both now name the kept runs and
+    say where they were counted. (2) overclaim: bit 13's row named its writers "NPCs with `interact` clear" inside the row's
+    `[C]`, while F2 keeps the `npc` half and the `+0xC4` branch `[I]`; the cell now says patterns 3 and 4 and points to F2
+    for who takes them. (3) misread: "exercised since", "reached since" and "seen since" a 2026-10-27 or 2026-10-19 run for
+    the `0x01C0`/`0` masks (C2's open question), the door `0x400` and grid `0x04` (open questions): the earlier runs' logs
+    held them, the later run counted them; reworded.
+  - **Rulings.** (a) **Readiness: drlg/collision did not wait on H6e2.** The inventory's
+    [drlg-collision](0038-inventory/drlg-collision.md) *Batch* column holds S4a (20 rows), S4b (5), H5b (2), H5d (12) and —
+    (10), no H6 batch; H6e2's row in inventory § 5 lists quest-drops 1, 30, 33–35 and objects 48 only. The orchestrator's
+    prompt and `lane/s38m`'s annotation were wrong; the objects cluster is the one that waits on H6e2. (b) **Every raise
+    names its `run:`** and stays within the batch reviews: collision 21 is `[C]` for the `inTown` half only, with the `npc`
+    half and `+0xC4` `[I]` and one `[L]` under *Open questions*; collision 46 has only the step `[C]` (one draw per lookup,
+    none on zero matches, H5d (c)), the operand `[I]`; 45's 334 is `[I]` with the no-stock-source bullet (d-none). (c) The
+    split statements are honest: the `TileCollisionUpdate` entry row and § B (the call `[C]`, the write `[I]`), G3 (the
+    entries the floods read `[C]`; (3, −1), (4, −1) and orientations 4, 13, 15 `[I]`), bits 1 and 2 (the writers only `[C]`,
+    the readers named; point to check (3) stands), bit 11 and the door row (`BlocksVis`, `0x400` `[C]`; `0x804` `[I]`), F1 and
+    F3 (missiles and sizes 1, 2 `[C]`), the player's size `[I]`. (d) The B-section bullet's 0x0066E91B is the return address
+    of the re-pick call at 0x0066E916 (objdump); point to check (2) stands. (e) Every accepted raise, in-part and
+    correction of the four batches is reflected, and the kept `[I]` (rows 2, 9, 11, the d-none rows 3, 4, 25, 37's `0x804`,
+    45's 334) are listed in the counts entry. (f) **Wiki:** wiki/levels (§ *The collision grid and logic regions* and the
+    *Collision* bullet of its untested list are stale) and wiki/monsters (date only) are folded into the open wiki refresh
+    entry, annotated.
+  - **Research map:** the drlg/collision row rewritten whole (C 157 / I 35 / L 7, updated 2026-10-27).
+  - **Ledger:** the lane row's usage filled from the orchestrator (267 684 tokens, 85 tools, 17 min), verdict and fixes:
+    omission 1, overclaim 1, misread 1; the review row added with usage "—".
+  - **Backlog:** review request and counts entry closed (archive); the wiki refresh entry annotated.
+  - **Next:** merge `lane/s38n`; the wiki refresh (now with wiki/levels); objects after H6e2.

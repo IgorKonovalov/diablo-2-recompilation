@@ -2,17 +2,17 @@
 from: spec-writer
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0038-inferred-claims-sweep.md#implementation-log
-  - ../specs/drlg/collision.md
-resolution: ""
+  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../specs/drlg/collision.md
+resolution: "Reviewed 2026-10-27 (architect): accept with fixes (3: omission, overclaim, misread); readiness confirmed (no collision row in H6e2); rulings in the plan 0038 log."
 ---
 
 Review request, plan 0038 Phase 3, the **drlg/collision** cluster (`lane/s38n`, from `main` `0848879`, `main` `4fe6362`
 merged after the spec commit). Its batches are S4a, S4b, H5b and H5d (inventory drlg-collision and § 5; none is in H6e2),
 all accepted; H5d's review (2026-10-27) named this round as next. Every raise was checked against the "Plan 0038 batch S4a,
-S4b, H5b, H5d" sections of [drlg/0005](../findings/drlg/0005-collision.md) and the inventory § 2.6 blocks.
+S4b, H5b, H5d" sections of [drlg/0005](../../findings/drlg/0005-collision.md) and the inventory § 2.6 blocks.
 
 - **Counts** (script over the body, the gate's rule): {C 111, I 61, L 9} → **{C 157, I 35, L 7}**; `updated:` 2026-10-27.
 - **S4a raised `[C]`** (inventory rows): 6 (`g_LogicFloodDirs`), 42 (ROW/RULES, the G3 note: the unexercised entries

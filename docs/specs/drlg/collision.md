@@ -85,7 +85,7 @@ line of sight read the same grid. They are named here, not specified.
 | `g_CollPatternBySize` | size 2 → pattern 1, 3 → 2 | data:g_CollPatternBySize@0x006EB3DC, run:2026-10-14-collision (pattern 1: 271, pattern 2: 135 creations) | [C] |
 | `g_CollPatternBySize` | size 0 → pattern 0, 1 → 1; any other size → 1, which no stock input reaches on the server (players 2, MonStats2 `SizeX` 0–3, Missiles `+0x18A` 0–3) | data:g_CollPatternBySize@0x006EB3DC, fn:PATH_PatternFromSize@0x00648580, [drlg/0005 § Plan 0038 batch S4b](../../findings/drlg/0005-collision.md#plan-0038-batch-s4b-2026-10-16) | [I] |
 | spawn mask by `spawnCol` | 0 and 4+: `0x3C01`; 2: `0x3F11` | fn:sub_005B2A00_MonSpawnTry@0x005B2A00, run:2026-10-14-collision (1754 and 10 calls) | [C] |
-| spawn mask by `spawnCol` | 1: `0x01C0`; 3: `0` | fn:sub_005B2A00_MonSpawnTry@0x005B2A00, run:2026-10-27-sweep-collision (271 and 837 calls) | [C] |
+| spawn mask by `spawnCol` | 1: `0x01C0`; 3: `0` | fn:sub_005B2A00_MonSpawnTry@0x005B2A00, the 1 330 kept logs of the earlier runs and run:2026-10-27-sweep-collision (271 and 837 calls, counted at H5d; the 43 mask-0 tests of the sessions predicted) | [C] |
 | `g_SpawnTileOffsets` | (0, −3), (3, 0), (0, 3), (−3, 0) | data:g_SpawnTileOffsets@0x006E2D50, run:2026-10-14-collision (195 `SpawnPosOnTile` calls) | [C] |
 | `g_LogicFloodDirs` | (1, 0), (0, 1), (−1, 0), (0, −1) for d = 0..3 | data:g_LogicFloodDirs@0x006EEE14, fn:LOGIC_FloodFill@0x0066C3D0, run:2026-10-14-collision, run:2026-10-15-objects (1475 floods) | [C] |
 | `g_LogicFloodOrientRow`, `g_LogicFloodRules` | step G3 | data:g_LogicFloodOrientRow@0x006EEEA0, data:g_LogicFloodRules@0x006EEE3C, run:2026-10-14-collision, run:2026-10-15-objects | [C] the entries the floods read; [I] the two entries and three rows G3's note names (data:g_LogicFloodRules@0x006EEE3C) |
@@ -300,7 +300,7 @@ for 1, `0x3F11` for 2, `0` for 3), the out-of-room value `0x27`, and the move ma
 |---:|---|---|---|---|
 | 0 | `0x0001` | DT1 sub-tile bit 0; entry flag `0x40` over the tile | `0x3C01`, `0x3401`, `0x1C09`, `0x3F11`; in `0x27` | [C] (fn:COLL_StampTileList@0x0064C790, run:2026-10-14-collision: 956 rejections) |
 | 1 | `0x0002` | DT1 sub-tile bit 1; doors with `BlocksVis` | no spawn mask; in `0x27`; the line test (named) | [C] the writers (fn:COLL_StampTileList@0x0064C790, fn:UNIT_GetCollMask@0x006209D0, run:2026-10-14-collision, run:2026-10-15-objects: 195 834 tile cells, 12 `0x806` door marks; [drlg/0005 § S4a](../../findings/drlg/0005-collision.md#plan-0038-batch-s4a-2026-10-16)) |
-| 2 | `0x0004` | DT1 sub-tile bit 2; entry flag `0x80`; objects with `BlockMissile` | flying `0x1804`, wraith `0x804`; in `0x27` | [C] the writers (fn:COLL_StampTileList@0x0064C790, fn:UNIT_GetCollMask@0x006209D0, run:2026-10-14-collision, run:2026-10-15-objects: 1 446 257 tile cells, 21 `0x404` object marks; run:2026-10-27-sweep-collision: entry flag `0x80`, § A3) |
+| 2 | `0x0004` | DT1 sub-tile bit 2; entry flag `0x80`; objects with `BlockMissile` | flying `0x1804`, wraith `0x804`; in `0x27` | [C] the writers (fn:COLL_StampTileList@0x0064C790, fn:UNIT_GetCollMask@0x006209D0, run:2026-10-14-collision, run:2026-10-15-objects: 1 446 257 tile cells, 21 `0x404` object marks; run:2026-10-19-h5b-objects, run:2026-10-21-sweep-monsters-a: entry flag `0x80`, counted at run:2026-10-27-sweep-collision, § A3) |
 | 3 | `0x0008` | none: no stock DT1 sub-tile has bit 3 and no writer's mask holds it (below) | player `0x1C09` | [I] (fn:PATH_DynamicCreate@0x00649D00, fn:COLL_StampTile@0x0064C4C0, fn:UNIT_GetCollMask@0x006209D0) |
 | 4 | `0x0010` | DT1 sub-tile bit 4 (`tombsteps.dt1` only); entry flag `0x02` over the tile | `0x3F11` | [C] (fn:COLL_StampTileList@0x0064C790, fn:sub_005B2A00_MonSpawnTry@0x005B2A00, run:2026-10-14-collision, run:2026-10-15-objects: 775 275 cells; [drlg/0005 § S4a](../../findings/drlg/0005-collision.md#plan-0038-batch-s4a-2026-10-16)) |
 | 5 | `0x0020` | DT1 sub-tile bit 5 | no listed mask; in `0x27` | [C] (fn:COLL_StampTile@0x0064C4C0, run:2026-10-14-collision, run:2026-10-15-objects: 10 139 cells) |
@@ -311,7 +311,7 @@ for 1, `0x3F11` for 2, `0` for 3), the out-of-room value `0x27`, and the move ma
 | 10 | `0x0400` | objects (not portals) | `0x3C01`, `0x3401`, `0x1C09`, `0x3F11` | [C] (fn:UNIT_GetCollMask@0x006209D0, run:2026-10-14-collision: 12 rejections) |
 | 11 | `0x0800` | doors with `BlocksVis` or `BlockMissile` | `0x3C01`, `0x1C09`, `0x1804`, `0x804`, `0x3F11`; not `0x3401` (`opendoors`) | [C] doors with `BlocksVis` (fn:UNIT_GetCollMask@0x006209D0, run:2026-10-15-objects: 12 `0x806` marks); [I] `BlockMissile` alone, which no stock door has (fn:UNIT_GetCollMask@0x006209D0, tbl:Objects.txt:BlockMissile) |
 | 12 | `0x1000` | players and monsters, patterns 1 and 2 | `0x3C01`, `0x3401`, `0x1C09`, `0x1804`, `0x3F11` | [C] (fn:COLL_PatternMark@0x0064EA90, run:2026-10-14-collision: 306 rejections) |
-| 13 | `0x2000` | NPCs with `interact` clear, patterns 3 and 4 (F2) | `0x3C01`, `0x3401`, `0x3F11` | [C] (fn:COLL_PatternMark@0x0064EA90, run:2026-10-27-sweep-collision: 2 336 marks, 1 581 unmarks) |
+| 13 | `0x2000` | patterns 3 and 4 (who takes them: F2, whose `MonIsNpc` parts carry their own tags) | `0x3C01`, `0x3401`, `0x3F11` | [C] (fn:COLL_PatternMark@0x0064EA90, run:2026-10-27-sweep-collision: 2 336 marks, 1 581 unmarks) |
 | 14 | `0x4000` | none: outside a tile byte, and no writer's mask holds it (below) | none | [I] (fn:COLL_PatternMark@0x0064EA90, fn:COLL_StampTile@0x0064C4C0, fn:UNIT_GetCollMask@0x006209D0) |
 | 15 | `0x8000` | corpses (`deadCol` 0 monsters: plus; players: 3×3); portal objects | no listed mask | [C] (fn:sub_00649F70_UnitCorpseColl@0x00649F70, run:2026-10-14-collision) |
 
@@ -1040,15 +1040,15 @@ is the R2 case of the plan, and the run had 67 such acceptances. The plan 0014 w
 
 ## Open questions
 
-- [L] **C2's reader.** The `0x40` missile mark is reproduced, and the masks `0x01C0` and `0` are exercised since
-  run:2026-10-27-sweep-collision (Constants), but no `0x01C0` ring test was logged with a `Collision` missile in the room, so no
+- [L] **C2's reader.** The `0x40` missile mark is reproduced, and the masks `0x01C0` and `0` are exercised (Constants: in the kept logs of
+  the earlier runs, counted at run:2026-10-27-sweep-collision), but no `0x01C0` ring test was logged with a `Collision` missile in the room, so no
   rejection by bit 6 is seen. (`suckernest1`'s `0x01C0` cell test has no stock case, § H.) On the missile side the code has no
   stock reader (`CollideType` 7 is unused) and a second writer, do function 3 (§ F, plan 0045 P1.2).
 - ~~**Entry flag `0x80`** (cell bit 16 → grid `0x04` over the tile) was never seen; which cells carry cell bits 16, 17 and 28
   stays with drlg/0002.~~ Answered (plan 0027 Phase 2): [drlg/room-tiles](room-tiles.md) step 9d now gives the full flag word per
   entry kind, `0x80` included (1164 entries carry it in the 40 logs), from
   [drlg/0002 § Entry flags](../../findings/drlg/0002-room-build-draws.md#entry-flags-in-full-and-the-entry-chains-plan-0027-phase-2-2026-10-15);
-  its grid `0x04` is seen in Harrogath since run:2026-10-27-sweep-collision (§ A3).
+  its grid `0x04` is seen in Harrogath, in two kept logs counted at run:2026-10-27-sweep-collision (§ A3).
 - [L] **`TileCollisionUpdate`'s clear and re-stamp** (§ B) were never reached: none of its 41 logged calls (4 in
   run:2026-10-14-collision, 37 in run:2026-10-27-sweep-collision) had the tile in a room it could reach. A level where a bit-2
   merge reaches an already active neighbour is still to find.
@@ -1070,8 +1070,8 @@ is the R2 case of the plan, and the run had 67 such acceptances. The plan 0014 w
   of the items an object's drop creates is still applied from the log (their drop-spot search is not modelled,
   [chain/0002 § 10](../../findings/chain/0002-retirements.md#10-oracle-6-an-objects-drop)); the gold drop's items are
   modelled since plan 0048 Phase 1, their spot predicted in 69 of 71. Since plan 0027 Phase 2 the object marks
-  and the object placers' `COLL_WHTest` results are predicted (§ E6, § F); the door `0x400` is reached since
-  run:2026-10-19-h5b-objects, and no stock door takes `0x804`.
+  and the object placers' `COLL_WHTest` results are predicted (§ E6, § F); the door `0x400` is reached (run:2026-10-15-objects and
+  run:2026-10-19-h5b-objects, counted at H5b), and no stock door takes `0x804`.
   Spawn-test rejections on bits 4, 8, 9, 11 and 13 were not reached. Units that move between their room's activation and its
   objects window (players, wandering monsters) are not modelled, because their moves are not logged; none of the 5859 object
   tests needed one ([drlg/0005 § 14](../../findings/drlg/0005-collision.md#14-plan-0027-phase-2-the-objects-window-on-the-grid-model-2026-10-15)).
