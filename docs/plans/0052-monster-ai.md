@@ -102,12 +102,23 @@ Data first, then code, then spec. Phase numbers follow plans 0045 and 0050.
     planner draws, on which seed** (if it does, the harness oracle must log its exit seed); leader and minion following;
     the draws of each and their seeds; H4's AI side; the **tier proposal** for Phase 2 (below) and the batch list for
     P1.2 onward from Phase 0's table; **the boundary recommendation** (what the AI takes as oracles: the skill's
-    catalogue function, the mode's frames before 0050·P3, the path result) and the per-event log windows.
-  - **P1.2 onward, the catalogue:** the per-AI functions in batches from P1.1's list (an estimate: eight to twelve),
+    catalogue function, the mode's frames before 0050·P3, the path result) and the per-event log windows. *Folded in at
+    the `lane/a52` review:* `MonAiEntryGet`'s two branches, with the word its three callers pass as `EDX`, who sets
+    it, what `0x00623470` tests for 10–12, and the row count of the **second table at `0x0073D358`** (MonAI § The
+    second table); the `+0`, `+4` and `+C` words of a row of either table; rows 0 and 1 (and the second table's rows
+    0 and 1) as catalogue entries of this batch; whether any path gives a unit an AI other than its record's (row 143,
+    the hirelings, revived and converted monsters).
+  - **P1.2 onward, the catalogue:** the per-AI functions in batches from P1.1's list (Phase 0 proposed 13 by record
+    count, MonAI § Batches; P1.1 regroups them by shared code and adds the second table's rows),
     each AI's decision tree with its `aip` reads, its draws and its calls; **the summons batch** (PetType AIs, the
     necromancer and druid summons, H3's owner pair) and **the hirelings batch** (`MERCAI_PickSkill` and the four
     hireling classes' AIs) per § Scoping questions 4; the boss AIs (the act bosses and Baal's minions) in one batch;
-    H5 and H6 answered where a batch reaches them.
+    H5 and H6 answered where a batch reaches them. *Folded in at the `lane/a52` review:* the summons batch takes row 143
+    (row 106's `+8` word, its own `+4`, no record) and the five summon records with a skill at `Sk lvl` 0
+    (`bloodgolem`, `bonewall`, `chargeboltsentry`, `infernosentry`, `druidhawk`), and `shadowmaster`'s `aip8` = 279 in
+    Normal only; the hirelings batch says which skill list the one AI row 61 uses (`roguehire` and `act2hire` also
+    name MonStats skills); every batch reads the `aip` slots per record where its AI's records disagree (13 rows,
+    MonStats § AI columns), and the batch holding 50 `Mephisto` and 146 `UberMephisto` reads `aidist`.
 - **The P1.1 review** rules the tier, the floors of Phase 2 and the boundary, and the architect then drafts the path
   search plan (§ Scoping questions 1) from P1.1's path request kinds.
 
@@ -150,7 +161,8 @@ Data first, then code, then spec. Phase numbers follow plans 0045 and 0050.
   kinds and their seeds) and `machinery.md` (target search, the command, the path request, following), with each tier
   AI's entry; skills/dispatch § M, monsters/spawn and stats, drlg/lifecycle and hirelings updated where the AI was an
   input. **Its review is phase (5)'s reviewed spec** for any later gate (§ Scoping questions 7).
-- **P3b — catalogue:** `docs/specs/monsters/ai/catalogue.md`, one entry per stock AI (its `aip` meanings, its decision
+- **P3b — catalogue:** `docs/specs/monsters/ai/catalogue.md`, one entry per AI row (question 8: the 148 rows of
+  `g_MonAiTable` and the rows of the second table P1.1 names, stock-named or not) (its `aip` meanings, its decision
   tree, its draws), the tier entries linked, not repeated.
 - **Done when (each part):** the spec follows the template; every statement tagged; the tick and each tier AI's
   decision as pseudocode with its draw order; the architect's review passes. Specs edited by two plans merge one at a
@@ -265,4 +277,40 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
      (RogueMissile, Jab) beside their Hireling skills, and which list the AI uses is open.
   4. **Every catalogue batch:** in 13 AI rows the records disagree on which `aip` slots they set, so an entry reads per
      record; `aidist` is set only on `mephisto` and `ubermephisto` (0 / 40 / 46).
-  Review request [to the architect](../backlog/2026-10-27-archivist-architect-review-lane-a52-plan-0052-phase-0.md).
+  Review request [to the architect](../backlog/archive/2026-10-27-archivist-architect-review-lane-a52-plan-0052-phase-0.md).
+- **2026-10-27 — `lane/a52` review (architect): Phase 0 accepted with fixes (2: misread 1, omission 1).** Phase 0's
+  *Done when* is met: every AI a stock row uses is listed once with its records, the meanings are `[L]` except where a
+  finding anchors them, the survey matches its baseline, and the gate is green. Reran with `python3 -I`:
+  `ai_survey.py summary` gives the `ai` baseline, `test_ai_survey.py` passes 8 of 8, and `ai_survey.py md` reproduces
+  the index block. From the doc's index: 148 rows, each in exactly one of the 13 batches; the records sum to 734; the
+  marks give P 63, U 44, S 16, H 1 and no mark 60. The `excel_layout` baseline changes only `tables` 73→74,
+  `records`/`cells` +148 and the new `monai_cells=148 monai_bad=0`. Objdump against the pinned image (sha256 as in
+  the inventory): rows 0–3, 110, 143–147 and the zero row at `0x0073D358` are as MonAI states; `MonAiEntryGet`'s
+  `AI` < 148 test is at `0x005B1628`. Fixes:
+  1. *misread* (MonAI § Row identity and § The AI table in the image, MonStats § AI columns). The lane wrote "the
+     bound 148 is `MonAiEntryGet`'s, so no index past 147 reaches a row", but items/0001 gives that path only "with
+     `EDX` = 0". With `EDX` ≠ 0 the function returns `0x0073D358 + 16·EDX`, and `0x0073D358` is the lane's "row
+     after the last". Corrected: a MonStats `AI` out of range gives row 0, on that branch only.
+  2. *omission* (MonAI § The second table, § Batches, § Open questions). The second table: rows 0–17 have the
+     four-word shape. Seven of them reuse a first-table `+8` word (`Idle`, `Hireable` with its `+C`,
+     `GoodNpcRanged`, `NecroPet`, `SuicideMinion`, and rows 10 and 17 share one), and ten hold functions no `monai`
+     row has. These bytes are `[C]`, the branch is `[I]`, and the row count and the role are `[L]`, routed to P1.1.
+  **Rulings.** (a) **The generated 148-row index is acceptable** under "describe, don't dump". It is a derived
+  research index: a join of the name key to the records that use it, with aggregates and image addresses, the same
+  shape as Skills § Function index. The only whole column of a game table it reproduces is the name list of a
+  table that holds nothing else. It stays generated between its markers and gives no per-record values (`aip`
+  values, skill levels, chances): those stay in the `rows` output. Hireling § AI of the hirelings, with four kind
+  rows, is short and illustrative. (b) **Tags hold.** The image bytes are `[C]` as data. `+8` is the AI function
+  `[I]` by items/0001. `+0`, `+4` and `+C` are `[L]` with no finding reading them, and appear in § The AI table in
+  the image as leads and under Open questions. `Aiparms.txt` and the `*aip` comments are § Leads only. (c) **13
+  batches are accepted** against the plan's estimate of eight to twelve. The estimate was labelled an estimate,
+  question 8 adds the unnamed and the one-record rows, and P1.1 regroups by shared code. The second table's rows
+  are not yet batched. (d) **Rows 0 and 143 are placed correctly.** Row 0 goes with P1.1: its `+8` word lies beside
+  `Idle`'s, and the out-of-range fallback lands on it. Row 143 goes with the summons, since it holds row 106's `+8`
+  word. Both get catalogue entries (P3b now reads "one entry per AI row"). (e) **Reading the image table stays in
+  the archivist lane.** Reading a hash-pinned image at an address already in `re/symbols.csv` and printing the
+  words as data is extraction (precedent: `tools/ds1.py` reads `g_Ds1ObjectIds`). Naming a word's meaning is the
+  reverser's. The `tbl_*` keys stay. Once P1.1 names the second table, an archivist request adds it to the survey.
+  (f) **The log's four items are folded** into P1.1's and P1.2's text above, with the second table. The architect's
+  revision of the batches for question 8 stays due at the P1.1 review. (g) The lane relied on the commit hook. The
+  review ran `python3 -I tools/gate.py` (green).

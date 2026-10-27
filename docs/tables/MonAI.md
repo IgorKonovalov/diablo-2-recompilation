@@ -27,7 +27,8 @@ for parameter names only (§ Leads).
   `AI` names while compiling `monstats.txt` ([data/0001 § 3](../findings/data/0001-excel-loader.md#3-what-is-registered-datatbls_loadall-0x00619300),
   fn:DATATBLS_LoadCodeLists@0x00612750). The game therefore knows an AI only by its index.
 - `[I]` **The index selects a 16-byte row of `g_MonAiTable`** (`0x0073CA18`): `sub_005B15D0_MonAiEntryGet` returns
-  `0x0073CA18 + 16·AI` for `AI` < 148, and the AI function is the row's word at `+8`
+  `0x0073CA18 + 16·AI` for `AI` < 148 **when its `EDX` argument is 0** (row 0 for any other `AI`), and the AI function
+  is the row's word at `+8`
   ([items/0001](../findings/items/0001-tc-resolution.md), data:g_MonAiTable@0x0073CA18,
   fn:sub_005B15D0_MonAiEntryGet@0x005B15D0). So the image table and `monai.txt` have the same 148 rows in the same order;
   the names below are the `.txt`'s, and only the index reaches the code.
@@ -49,8 +50,10 @@ mismatches** (layout `monai` in `tools/excel_layouts.py`). Observed values from 
 16 bytes at `0x0073CA18` from the pinned image (it refuses another hash) as four u32 words, `+0`, `+4`, `+8`, `+C`
 (keys `tbl_*`). Only the `+8` word has a meaning from a finding; the other three are named here by offset alone.
 
-- `[C]` The row after the last (index 148, `0x0073D358`) is 16 zero bytes. `[I]` The bound 148 is `MonAiEntryGet`'s
-  (above), so no index past 147 reaches a row (data:g_MonAiTable@0x0073CA18).
+- `[C]` The row after the last (index 148, `0x0073D358`) is 16 zero bytes. `[I]` A MonStats `AI` past 147 (or
+  negative) reaches no row of this table: `MonAiEntryGet` then returns row 0 (`0x005B1626`–`0x005B163B`), but only on
+  its `EDX` = 0 branch. The 16 zero bytes are also row 0 of the **second table** below, which the `EDX` ≠ 0 branch
+  indexes (data:g_MonAiTable@0x0073CA18, fn:sub_005B15D0_MonAiEntryGet@0x005B15D0).
 - `[C]` `+8` is non-zero in all 148 rows and takes 147 distinct values (`tbl_fn8_distinct=147`): **rows 106
   `ShadowMaster` and 143 `ShadowMasterNoInit` hold the same word `0x005EB970`**, every other row its own. Rows 0 `None`
   and 1 `Idle` hold `0x005B0CC0` and `0x005B0CD0`; the other 146 lie in `0x005E0160`..`0x005FD210`. `[I]` By items/0001
@@ -68,6 +71,25 @@ mismatches** (layout `monai` in `tools/excel_layouts.py`). Observed values from 
 - `[C]` `+C` is set in 11 rows with 7 values; shared: `0x005E8480` by 51 `Diablo` and 147 `UberDiablo`, `0x005E5280`
   by 61 `Hireable` and 128 `Nihlathak`, `0x005FCF30` by 135 `BaalCrab`, 140 `BaalCrabClone` and 145 `UberBaal`; the
   others 15, 29, 52, 65. `[L]` As `+4`.
+
+### The second table at `0x0073D358` (found at the `lane/a52` review)
+
+`MonAiEntryGet` has a second branch, which this survey does not read. Reproduce with `objdump -s
+--start-address=0x73d358 --stop-address=0x73d478 workspace/install/app/game.exe` and the function's disassembly
+(`0x005B15D0`–`0x005B163B`).
+
+- `[I]` With `EDX` ≠ 0 the function returns `0x0073D358 + 16·EDX` and does not read MonStats `AI`. For `EDX` 10, 11
+  and 12 it first calls `0x00623470` (with `ECX` from the unit's `+0x04`, or −1 with no unit) and falls back to the
+  `EDX` = 0 path when that returns 0. No bound on `EDX` is tested. The three callers pass `EDX` from a word they hold
+  (`0x005B0E81`, `0x005B0EBE`, `0x005B1663`). (fn:sub_005B15D0_MonAiEntryGet@0x005B15D0)
+- `[C]` As bytes, rows 0–17 have the same four-word shape as `g_MonAiTable`'s, with `+0` ∈ {0, 1, 2}. Row 0 is all zero.
+  At `0x0073D478` (row 18) the words become `.rdata` addresses (`0x006CC7xx`), so they are something else. Seven
+  rows reuse a `+8` word of the first table: 1 (`Idle`'s `0x005B0CD0`), 4 (`Hireable`'s `0x005E52D0`, with its `+C`
+  `0x005E5280`), 5 (60 `GoodNpcRanged`'s), 7 (67 `NecroPet`'s `0x005E4CF0`), 15 (117 `SuicideMinion`'s), and rows 10
+  and 17 share `0x005E8020`. The other ten rows (2, 3, 6, 8, 9, 11–14, 16) hold `+8` words that no `monai` row holds.
+- `[L]` The second table holds AIs that a unit gets from its AI state, not from its record: an override that a
+  hireling, a pet or a scripted monster takes. It has 18 rows. Both rest on the shape of the bytes alone. Owner:
+  reverser, plan 0052 P1.1 (§ Open questions).
 
 ## The index
 
@@ -293,6 +315,8 @@ exactly one batch (`batch_rows=148`; the test `test_batches_cover_each_row_once`
   in table order, cut at 80 records or 18 AI rows. Thirteen batches against the plan's estimate of eight to twelve: the
   whole-table coverage (question 8) adds the unreferenced and the many one-record AIs; P1.1 regroups by shared code.
 - Hydra (86) is in summons although `hydra2` and `hydra3` carry no S mark: only `hydra1` is a Skills `summon`.
+- The rows of the second table (§ [The second table](#the-second-table-at-0x0073d358-found-at-the-lanea52-review)) are
+  in no batch: P1.1 names the table and adds them (`lane/a52` review).
 
 ## AI columns of MonStats
 
@@ -329,3 +353,7 @@ skill (775 cells) in 97 AI rows.
 - `[L]` What each `aip<k>` slot means per AI. Owner: reverser, plan 0052 P1 (each catalogue batch).
 - `[L]` Whether any path sets a unit's AI to a row other than its MonStats record's (a hireling, a revived or
   converted monster, row 143). Owner: reverser, plan 0052 P1.1.
+- `[L]` The second table at `0x0073D358` (§ [The second table](#the-second-table-at-0x0073d358-found-at-the-lanea52-review)):
+  the word its callers pass as `EDX` and who sets it, its row count, what `0x00623470` tests for rows 10–12, and which
+  units run its ten unshared `+8` functions. Owner: reverser, plan 0052 P1.1; its rows join the catalogue (question 8).
+  Once named, `tools/ai_survey.py` reads it as the first table is read.

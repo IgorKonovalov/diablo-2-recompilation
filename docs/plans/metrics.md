@@ -383,7 +383,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/h6f` review | 0038 H6f | architect-review | 175 941 | 73 | 14 | — (static, objdump, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
 | 2026-10-27 | `lane/wiki` | owner request: wiki refresh over the 2026-10-27 re-tags, root README | wiki | 191 812 | 45 | 9 | — (no slot, no Ghidra, no harness) | accept with fixes (ruling: the README Status table follows the research map's rows, so the four combat files fold into `combat/formulas`) | 2: misread 1, other 1 (wiki/saves' "long name" for a name id past `+0x116`; the four combat rows split from the map's one) |
 | 2026-10-27 | `lane/wiki` review | owner request: wiki refresh, root README | architect-review | 112 970 | 37 | 6 | — (static, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
-| 2026-10-27 | `lane/a52` | 0052 P0 | archivist | — | — | — | — (static, no Ghidra) | pending | — |
+| 2026-10-27 | `lane/a52` | 0052 P0 | archivist | 278 105 | 106 | 26 | — (static, no Ghidra) | accept with fixes (rulings: the generated 148-row index is a derived index, not a dump; 13 batches accepted; rows 0 and 143 placed right; reading the image table stays archivist) | 2: misread 1, omission 1 (`MonAiEntryGet`'s `EDX` = 0 condition dropped; the second table at `0x0073D358` undocumented) |
+| 2026-10-27 | `lane/a52` review | 0052 P0 | architect-review | — | — | — | — (static, objdump, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
