@@ -237,7 +237,7 @@ SESSIONS = {
     "brain4b": ("a4/QuestFreshT", "enter-normal", 4914, brain_mem()),
     "eye4": ("a4/QuestFreshT", "enter-normal", 4915, a4x(eye())),
     "tome4": ("a4/QuestFreshT", "enter-normal", 4913, a4x(tome())),
-    # lane/rdp (not run): the reruns of the three failed routes with the pilot fixes
+    # lane/rdp: the reruns of the three failed routes with the pilot fixes (run in lane/h6e2f, 2026-10-27)
     "eye4c": ("a4/QuestFreshT", "enter-normal", 4915, a4x(eye_to())),
     "tome4c": ("a4/QuestFreshT", "enter-normal", 4913, a4x(tome_to())),
     "brain4c": ("a4/QuestFreshT", "enter-normal", 4914, brain_copies()),

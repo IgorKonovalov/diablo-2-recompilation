@@ -40,3 +40,14 @@ for the word-10 bits (the kept Duriel log), `[I]` for the `hst` gate. § K adds 
 and 367. All anchored to run:2026-10-27-sweep-quest-items. **Still open:** every items/quest-drops part (§ E, E1, the
 gate wording, § Entry points, the quality column, Wirt's gold anchor), which waits for H6e1; wiki/items-other-paths'
 quest-chest sentence (its "quest item, then chest drop, then gold" is quest-drops' E1 and moves with that round).
+
+*Annotation (reverser, 2026-10-27, `lane/h6e2f`, the H6e2 follow-up; held for its architect review):* three more
+parts are met under run:2026-10-27-sweep-quest-items (addendum *Follow-up*;
+[items/0010 § H6e2](../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items)).
+**The eye and brain chests** ran in the corrected Khalim order (quest seed, gold 5 and 7 first, then `qey`/`qbr` at
+quality 2, then the chest drop), so objects § L's Khalim row can be `[C]` for all three chests, the held-part refusal
+staying `[I]`; quest-drops' E1 correction likewise. **The tome** (`bbb`) was created on the unchanged quest seed with
+word 17 clear (asked 2, created 7): objects § L's item-objects row gains `bbb` (`[C]`; quality 7 After `[I]`, as
+`bks`), `hdm` stays `[I]`. **The brain chest's question** (objects § L does not state it; items/0010's open question)
+is answered in part: listed and opened once its room is active (`[C]`), which copy the listing follows `[I]`.
+Ledger: `bbb` shortfall → raised in part.

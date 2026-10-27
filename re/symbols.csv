@@ -1568,7 +1568,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005B7740,func,sub_005B7740_A3Q1_NpcMessage,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005B7970,func,sub_005B7970_A3Q1_ItemEvent,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005B7A00,func,sub_005B7A00_A3Q1_ItemDropped,,I,quests/progression,docs/findings/quests/0001-progression.md
-0x005B7A60,func,sub_005B7A60_A3Q1_TomeDrop,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x005B7A60,func,sub_005B7A60_A3Q1_TomeDrop,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005B7B80,func,sub_005B7B80_A3Q1_LeaveItem,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005B7BC0,func,sub_005B7BC0_A3Q1_LaterJoin,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005B7C10,func,sub_005B7C10_A3Q1_FirstJoin,,I,quests/progression,docs/findings/quests/0001-progression.md
@@ -1588,8 +1588,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005B86B0,func,sub_005B86B0_A3Q2_SewerStairsInitB,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005B86E0,func,sub_005B86E0_QuestKhalimWillMade,,I,items/cube,docs/findings/items/0008-cube.md
 0x005B8860,func,sub_005B8860_A3Q2_HeartChest,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
-0x005B8940,func,sub_005B8940_A3Q2_EyeChest,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
-0x005B8A20,func,sub_005B8A20_A3Q2_BrainChest,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x005B8940,func,sub_005B8940_A3Q2_EyeChest,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x005B8A20,func,sub_005B8A20_A3Q2_BrainChest,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005B8B20,func,sub_005B8B20_A3Q3_SetProgressBits,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005B8BF0,func,sub_005B8BF0_A3Q3_LogUpdate,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005B8C50,func,sub_005B8C50_A3Q3_NpcTalkEnd,,I,quests/progression,docs/findings/quests/0001-progression.md

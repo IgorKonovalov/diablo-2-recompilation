@@ -354,6 +354,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/a71` review | backlog: the H1a d2s parser gaps | architect-review | 122 899 | 46 | 10 | — (static, scratch builds and dumps, `sweep_h1a.py check` rerun, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
 | 2026-10-27 | `lane/rsw` | backlog: objects/0001 § H5b.2 shrine-cap wording (0038 `lane/s38o` review ruling 1) | reverser-static | 69 910 | 30 | 9 | — (static, objdump, no Ghidra, no harness) | accept with fixes | omission 1 |
 | 2026-10-27 | `lane/rsw` review | backlog: objects/0001 § H5b.2 shrine-cap wording | architect-review | 63 340 | 20 | 3 | — (static, objdump, grep, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/h6e2f` | 0038 H6e2 follow-up (`lane/rdp` review ruling 7) | reverser-harness | — | — | — | slot 1 (3 launches), no Ghidra | — | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

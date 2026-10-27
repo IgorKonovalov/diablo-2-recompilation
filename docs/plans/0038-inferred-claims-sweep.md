@@ -4724,3 +4724,19 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   ([archive](../backlog/archive/2026-10-27-architect-reverser-h5b-shrine-cap-wording.md)); review requested
   ([entry](../backlog/archive/2026-10-27-reverser-architect-rsw-review.md)).
 - **2026-10-27 — `lane/rsw` review (architect): accept with fixes (1).** objdump of 0x00552B50–0x00552C10 on the pinned `Game.exe` matches the correction (seed step 0x00552B9A–0x00552BBA, `HealthShrineDue` 0x00552BC5, cap call 0x00552BF7), the wording matches objects/README *Constants* and E2, and the grep finds no other copy; fix (omission): the note now also cites the `% 100` test at 0x00552BDB–0x00552BF0 (skipped when the health shrine is due); request closed ([entry](../backlog/archive/2026-10-27-reverser-architect-rsw-review.md)).
+- **2026-10-27 — `lane/h6e2f` (reverser, harness slot 1, no Ghidra): the H6e2 follow-up** (the `lane/rdp` review's
+  ruling 7). `eye4c`, `tome4c` and `brain4c` run as staged in `tools/h6e2_sessions.py`, 3 launches, 3 kept, under
+  run:2026-10-27-sweep-quest-items (addendum *Follow-up* in items/experiments). First, additively, `tools/gdb/pilot.py`'s
+  RL line gains `f28` (room `+0x28`; rdp ruling 5).
+  - **Outcomes:** `eye4c` reached the Spider Cavern (85) with `--descend-to 85` and opened the eye chest (`qey`, gold 5
+    first); `tome4c` reached the Ruined Temple (94) and the tome made `bbb`; `brain4c`'s `explore --all-copies`
+    activated both level-91 copies, the brain chest was listed at (10014, 11879) and opened (`qbr`, gold 7 first).
+    Check over the 14 kept logs: chest 8, object 3, event7 19, dup 8, gate 8, gold 57, death 6; 0 mismatches.
+  - **Ledger** ([items/0010 § H6e2](../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items)):
+    the Khalim order `[C]` for all three chests (qd 33 and objects 48 chests: only `vip` and the held-part refusal
+    stay); `qey`, `qbr` met; `bbb` shortfall → raised in part; three more `j34` kills; H6e2 now raised 3, in part 15,
+    shortfall 6. Brain chest: listed and opened once its room is active `[C]`; which copy the listing follows `[I]`
+    (`brain4c` names the copies by `0x40000` but had the room active in both). Three symbols I → C. `bkd`, `hdm` not
+    routed (shortfall). Inventory § 2.6 follow-up paragraph; totals unchanged (1 526) against `main` `1573a48f`.
+  - **Backlog:** the spec-writer H6e2 entry annotated; review requested
+    ([entry](../backlog/2026-10-27-reverser-architect-h6e2f-review.md)). Ledger row added, usage "—".
