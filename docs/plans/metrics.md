@@ -393,6 +393,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/p53a` review | 0053 P0–P2 | architect-review | 108 797 | 42 | 7 | — (review + Phase 2 in one run) | gave accept with fixes | — (on the lane row) |
 | 2026-10-27 | `lane/r52` (to the first pause) | 0052 P1.1 | reverser-static | 478 119 | 170 | 45 | — (static, Ghidra copy ghidra-r52) | — (on the resume row) | — (on the resume row) |
 | 2026-10-27 | `lane/r52` (resume: EDX callers, review-fixes pass, review request) | 0052 P1.1 | reverser-static | — | — | — | — (static, objdump, no Ghidra) | — | — |
+| 2026-10-27 | r52 | 0052 | architect-check | 0 | 0 | 0 | — | accept | none |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
