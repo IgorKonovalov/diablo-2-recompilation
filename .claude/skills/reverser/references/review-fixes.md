@@ -35,7 +35,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    does not save without a host callback" with a logger at the entry only, where `0x00730FFC` and the time tests come
    before the callback test (`lane/h1b` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)); "no code reads a class-7
    player's column" as the d-none reason for `EXP_GetThreshold`'s clamp, without its other out-of-range input (the −1 of
-   the callers' inlined null-unit test; `lane/h1a` review, 0038); the brain chest's absence filed "Answered" from its room never activating in the matching copy, where no log has that room active, so the listing once it activates stays `[I]` until `brain4c` (`lane/rdp` review, 0038).
+   the callers' inlined null-unit test; `lane/h1a` review, 0038); the brain chest's absence filed "Answered" from its room never activating in the matching copy, where no log has that room active, so the listing once it activates stays `[I]` until `brain4c` (`lane/rdp` review, 0038). The legacy header's version refusal called "a case `D2S_ReadSave` never sends", where its unsigned `cmp ebx, 0x5B; jbe` sends 0..70 too and only the half above `0x60` is unreachable (`lane/rlg` review, 0038).
 5. **An existing reviewed symbol name wins.** Merge `main` and grep `re/symbols.csv` for every address
    before you name it; rename your side. Seen: six addresses named twice, `lane/p41r`
    ([0041](../../../../docs/plans/done/0041-stats-and-states.md) P1 review). The same holds inside `re/types/`
@@ -77,7 +77,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    (0x0052C134) left unbounded beside a "no block write" claim (`lane/r1h` review, 0038); a logged `EXCEL_FindName`
    return (0x0065A33B) credited to `TC_LoadAll` where it lies in `TC_BuildChestTable`, which `TC_LoadAll` calls
    (`lane/h3b` review, 0038); "Kick itself never reaches" `GetPhysMin`'s `Kick` branch from a scan of start 2's and
-   do 2's direct calls only, their callees' calls unfollowed (`lane/rk` review, 0038).
+   do 2's direct calls only, their callees' calls unfollowed (`lane/rk` review, 0038). The legacy header's left and right skills written as `PlayerSetSkill` calls of the header reader, which only returns them; the caller applies them after the skills section and skips a 0 (0x005341EC–0x00534210, `lane/rlg` review, 0038).
 10. **One case decides only if a wrong reading could not match it by chance.** Seen: aff 28's durability
     value, about one in eight (S2b, 0038). Count the cases that separate the readings, not the cases checked: a
     rounding needs a remainder (three curse lengths whose `MulDiv` is exact), and a model fix's counter is not its
