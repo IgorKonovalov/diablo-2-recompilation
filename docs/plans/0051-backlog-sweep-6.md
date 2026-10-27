@@ -286,7 +286,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
      **Forwarded to Phase 1b**, as new readings: MP31's prediction (the player-to-player trade, not read) and MP32's
      (the arithmetic of `sub_00540900_PartyGoldShare`; items/0011 gives only "a split by `PartyCount`").
   4. **H4b follow-ups**
-     ([entry](../backlog/2026-10-16-architect-reverser-plan-0038-h4b-review-follow-ups.md)): **with H4a**. `lane/h4a`
+     ([entry](../backlog/archive/2026-10-16-architect-reverser-plan-0038-h4b-review-follow-ups.md)): **with H4a**. `lane/h4a`
      has not landed (paused 2026-10-21, nothing claimed). The H5d piece is still in H5d's § 5 row.
   - **Not touched:** no slot, no Ghidra, no game launch. No tool that `lane/h4a` or `lane/p45h` edits on its branch
     (`d2pilot.py`, `sweep_h4a.py`, the `mon-h4a*` and `skills*` files) was changed. The inventory of plan 0038 is not

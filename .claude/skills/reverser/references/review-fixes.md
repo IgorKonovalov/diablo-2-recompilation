@@ -15,7 +15,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    earlier check. Seen: bit-17 writers 5 → 21
    ([0039](../../../../docs/plans/done/0039-backlog-sweep-4.md) P1b review); S4b row 17 short by 9, "7" instructions for 8 (0038);
    eight wear and resurrection counts one off `check-run.txt` ([0043](../../../../docs/plans/done/0043-items-economy.md) P2 review);
-   pool 12's "six of the 25 `boss` classes" met for five (`lane/h4a` review, 0038); "2 708 do events" in the record for the logs' 1 840, which hid the 2 000 skill-use floor's shortfall (`lane/p45h` review, [0045](../../../../docs/plans/0045-skills-missiles-machinery.md)).
+   pool 12's "six of the 25 `boss` classes" met for five (`lane/h4a` review, 0038); "2 708 do events" in the record for the logs' 1 840, which hid the 2 000 skill-use floor's shortfall (`lane/p45h` review, [0045](../../../../docs/plans/0045-skills-missiles-machinery.md)); 318 pattern-5 creations for `patterns.txt`'s 360 (`lane/h5d` review, 0038).
 3. **Take totals against `main` after merging it**, not against the totals your batch started from.
    Seen: S2c, S3b and S1a reviews (0038), each recomputed.
 4. **"Never", "only", "no X": say what the run separates.** If one case carries both readings (Andariel has
@@ -41,7 +41,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
 8. **Split a raise where it has a remainder** and head the row "raised in part", in the ledger itself.
    Seen: special 65 (H4b), sock 14 (S2c), special 43 (S3b), all 0038; five `[C]` bullets of drlg/0009 § 11 with an
    unreached branch inside (the wanderer gate's `+0x78`, the item drop on expiry; [0040](../../../../docs/plans/done/0040-drlg-room-lifecycle.md) P2 review);
-   sell's seed with five refusal tests unreached (0043 P2b review).
+   sell's seed with five refusal tests unreached (0043 P2b review); spawn 41 filed raised with its "other sizes" half
+   d-none (`lane/h5d` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)).
 9. **Name the path for every claim about a caller**, or say "unfollowed" with the count. Seen: the
    superunique minion path (0039 P1b, Q19); the 8/9 case's `RoomTileSetFlags` call (0039 P1a); "the effect flag is 1
    only from handler 20" without `SKILLS_SrvDo`'s seven other calls, and `SKILLS_PayCost`'s 0 for a zero-cost row
@@ -50,7 +51,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     value, about one in eight (S2b, 0038). Count the cases that separate the readings, not the cases checked: a
     rounding needs a remainder (three curse lengths whose `MulDiv` is exact), and a model fix's counter is not its
     evidence (59 events counted, one separating; `lane/p47b` review, [0047](../../../../docs/plans/done/0047-simulation-shortfalls.md));
-    Radament's `2 + r` escorts filed raised on r = 0 alone (`lane/h4a` review, 0038).
+    Radament's `2 + r` escorts filed raised on r = 0 alone (`lane/h4a` review, 0038); `MonIsNpc`'s "`npc` or `inTown`"
+    scored against `npc` alone but not against `inTown` alone, which every stock row also fits (`lane/h5d` review, 0038).
 11. **"Moved" names the destination plan**; otherwise write "out of this plan". Seen: status bit 1
     (0039 P1b ruling 4); a closed entry's "(3) deferred" with no home (H7a review, 0038).
 12. **Carry a correction into the section it corrects**, not only into the run's ledger section: the claim, its
@@ -61,7 +63,9 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     [0046](../../../../docs/plans/0046-skills-function-catalogue.md)); skills/0003 § 2's `EDX`-the-skill note filed under the
     bullet after the one that still said `EDX` the level (`lane/p46m12` review, 0046); class 312's remainder met by H4a but
     still `[I]` in monsters/0004's H4b section (`lane/h4a` review, 0038); special 66's mod 12, met by H4a (special 68)
-    but still `[I]` in monsters/0003's H4b section (`lane/p51r` review, [0051](../../../../docs/plans/0051-backlog-sweep-6.md)).
+    but still `[I]` in monsters/0003's H4b section (`lane/p51r` review, [0051](../../../../docs/plans/0051-backlog-sweep-6.md));
+    drlg/0005 § 5's `[C]` *Pattern from size* still stating the `npc`-only rule with the correction appended after it
+    (`lane/h5d` review, 0038).
 13. **At an observed boundary (ADR-0021), the `[C]` ends at the call.** What the callee makes of a compared argument
     (a class word, a register it must preserve, a mode) and every later call go in "After, `[I]`", also in the Answer
     summary. Seen: the radius of hits 24, 44 and 14 in a callee-saved register (`lane/p46m3` review); hit 52's row 0
