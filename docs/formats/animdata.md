@@ -32,8 +32,9 @@ code anchor.
   byte changes (`animdata.py compare`).
 - `[C]` **`data/global/eanimdata.d2`** (d2exp, `EAnimData.D2`, 565 984 bytes, 3 531 records, 3 520 names, sha256
   `c910e23d…5420113c`) has the same layout. Every one of its names is in `animdata.d2` with the same frames, speed
-  and events; `animdata.d2` adds 9 names (`K9` 6, `0J`, `41`, `44` one each). `[L]` Nothing names it in `Game.exe`;
-  whether it is read is not known.
+  and events; `animdata.d2` adds 9 names (`K9` 6, `0J`, `41`, `44` one each). `[C]` No string in the pinned
+  `Game.exe` names it: `animdata` occurs, in any case, as ASCII or UTF-16LE, only in `%s\AnimData.d2` (`strings -a`,
+  both encodings). `[L]` Whether it is read (a name built at run time, say) is not known.
 
 ## Layout
 
@@ -72,7 +73,7 @@ flowchart LR
   (`ev_past_frames=0`). One record has more frames than event slots: `42DTHTH`, `frames` 200 (its 144 bytes are 0).
 - `[C]` **Duplicate names.** 29 names are held by two records (always in the same block); 9 of them differ in content:
   `3DNUHTH` (frames 1/256 and 16/176), `64A1HTH` (speed 208 event at 16 / speed 200 event at 13), `64NUHTH`,
-  `MINUHTH`, and the six `VM*` names `VMA1HTH`, `VMGHHTH`, `VMNUHTH`, `VMS1HTH`, `VMWLHTH` (different speeds) — the
+  `MINUHTH`, and the five `VM*` names `VMA1HTH`, `VMGHHTH`, `VMNUHTH`, `VMS1HTH`, `VMWLHTH` (different speeds) — the
   `VM` monster has two COF directories (`monsters/vm/cof/` and `monsters/vm/cof/vm/`, [cof](cof.md#files)) and `3D` is
   both a monster and an object token. `[L]` Which of two records the game takes is a code question (Phase 1.1).
 

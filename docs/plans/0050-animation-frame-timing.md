@@ -1,6 +1,6 @@
 # 0050 — Animation and frame timing: unit modes, frame counts, rates and breakpoints, movement speed (ADR-0014 phase 4)
 
-> **Status:** approved 2026-10-25 (owner), in effect 2026-10-27 (plan 0045 Phase 2 part 1 accepted); P0, P1 and P1b open, P2 after 0045·P3's review
+> **Status:** approved 2026-10-25 (owner), in effect 2026-10-27 (plan 0045 Phase 2 part 1 accepted); P0 accepted 2026-10-27, P1 and P1b open, P2 after 0045·P3's review
 > **Created:** 2026-10-25
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0005-presentation-formats-tools-only, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases, 0020-skills-phase-in-two-plans, 0021-observed-boundaries-in-emulation
@@ -135,6 +135,15 @@ client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing ente
     get-hit to neutral, death to dead, the sequence modes); the monster mode table `0x006E2260` per mode; the
     sequences (`monseq`, `seqtrans`, `seqnum`, mode 14, `Unit+0x4E`); every RNG draw made by animation code (the
     object `Sync` draw and any other), with its seed;
+    - **and the Phase 0 surprises** (folded in at the P0 review, [log](#implementation-log)), each answered with its
+      address or left open with the reason: (a) which record the lookup takes for the 29 duplicate names of
+      [animdata](../formats/animdata.md#layout) (9 differ: `3DNUHTH`, `64A1HTH`, `64NUHTH`, `MINUHTH`, `VM*`); (b) for
+      objects, whether the frame advance reads Objects `FrameCnt<k>`/`FrameDelta<k>` or the record's `frames`/`speed`
+      (they agree in 1 173 and 609 of 1 483 modes, [Objects § Timing](../tables/Objects.md#timing-plan-0050-phase-0));
+      (c) what a `monseq` step at or past its user's record frame count does (249 steps: `K9`, `OS`, `ST`); (d) where
+      `Unit+0x4E` comes from, given that `monseq` events and the record's event bytes agree in 81 of 805 set steps and
+      event 4 is only in `monseq` ([MonSeq](../tables/MonSeq.md#sequences)); (e) whether `eanimdata.d2` is read (no
+      string names it).
   - **P1.2 rates:** the rate of each mode from the stats and the weapon: attack rate and IAS with the weapon's `speed`
     (one-handed, two-handed, dual wield, kick, throw), the skill rate terms (sequence skills, skills that raise or
     lower attack speed), cast rate with `MinimumCastingDelay`, hit-recovery rate, block rate, the caps and floors, the
@@ -149,6 +158,9 @@ client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing ente
     frame (combat/0001 § 2), missile creation on the action frame, hit recovery (the get-hit mode and its length,
     `GetHitRoll`), knockback and stun lengths, the block mode's length, the skill `delay` against the animation, an
     object's operate frames; the get-hit and durability draws combat names;
+    the hit class (`sub_0057CE30_HitClassPick`: which of Weapons `hit class`, MonStats2 `HitClass` and the packet's
+    `+0x60` it starts from, and whether the server gates anything on it; [HitClass](../tables/HitClass.md#open-questions),
+    folded in at the P0 review);
   - for each event kind (mode start, frame event, mode end, rate change, movement step), its inputs, outputs, draws,
     seeds and the chaining reading (ADR-0014);
   - the community cross-check (Phase 1b) done;
@@ -275,3 +287,34 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     frame in only 81 of the 805 steps where either is set; event 4 exists only in `monseq`; (e) `eanimdata.d2` (d2exp,
     3 531 records, a subset with equal values) is named by no string in `Game.exe`.
   - Merge order: after plan 0051 Phase 0 (already on main at the branch point, 0e3f501).
+- **2026-10-27 — Phase 0 reviewed (architect, `lane/p50z`): accept with fixes.** `main` (0848879) merged into the
+  lane first (the metrics conflict kept both sides; `backlog.py archive` moved nothing). Re-run under
+  `systemd-run --user --scope -p MemoryMax=4G`: `animdata.py survey`, `anim_survey.py summary` and `excel_bin.py
+  survey` print their baselines byte for byte (71 tables, 951 693 cells, 0 unexplained); the two `SURVEY` lines quoted
+  in [formats/animdata](../formats/animdata.md#tools) equal the baselines. An independent parse of the merged file
+  (256 blocks, 160-byte records, the size sum, `hash_bad=0`, event bytes 1 ×433, 2 ×148, 3 ×4, the four speed-0
+  records) and `animdata.py compare` over the archive copies (d2data → d2exp: 973 names added, 3 frames and 1 speed
+  changed; `eanimdata.d2` a 3 520-name subset with equal values; patch_d2-classic's copy has d2exp's hash) agree with
+  the doc. Fixes (5), written into the documents:
+  1. [formats/animdata](../formats/animdata.md#files): "`[L]` Nothing names it in `Game.exe`" split: the string check
+     is `[C]` (`animdata` occurs, ASCII or UTF-16LE, only in `%s\AnimData.d2`), whether the file is read stays `[L]`.
+  2. [formats/animdata](../formats/animdata.md#layout): "the six `VM*` names" lists five (`animdata.py dups`: 9
+     differing names = `3DNUHTH`, `64A1HTH`, `64NUHTH`, `MINUHTH` + five `VM*`).
+  3. [MonStats2 § Timing](../tables/MonStats2.md#timing-plan-0050-phase-0): the `m<mode>` row's `[C]` "every set bit
+     names a record" scoped to the 603 records a MonStats row names; `diabloclone` and the five `uber*` rows have no
+     `Code` to build a name from and were not checked.
+  4. [Weapons § Timing](../tables/Weapons.md#timing-plan-0050-phase-0): `speed` "0 ×105 set" was the 105 blanks; no
+     cell is set to 0 (10 values in 201 rows).
+  5. Phase 1.3's *Done when* gains the hit class (HitClass's open question pointed there and was not in it).
+  Rulings:
+  - (a) **"d2exp wins by the precedence `[I]`" stands.** data/0002's precedence is `[I]`, and d2exp is opened by
+    `MPQ_OpenCoreArchives` in every game; the string `%s\AnimData.d2` is at file offset `0x2EED5C`, which is VA
+    `0x006EED5C` in `.rdata` (VA = offset + `0x400000`, objdump section map). Which code opens it stays Phase 1.1's.
+  - (b) **The layout rows are `[C]`** by the data-format rule (every byte read, every check passing, three files);
+    every meaning is `[L]` or carries a finding's `[I]` (skills/0001 § 5, combat/0001, data/0001, the reviewed specs
+    for the base rate stats and the `Sync` draw), spot-checked against `re/symbols.csv`.
+  - (c) **No game data dumped.** The § Timing tables are per-mode aggregates; HitClass's 14-row code list and MonSeq's
+    six sample sequences are short illustrative rows; the full grids stay in the tools' output.
+  - (d) **The five surprises are folded into P1.1's *Done when*** as one sub-item under P1.1 (lines added, none
+    changed, so `lane/p50a` merges cleanly). Archivist rule 9 stands; when a prompt limits a lane's plan edits to the
+    log, the lane lists them there and the review folds them, as here. Not counted as a lane fix.

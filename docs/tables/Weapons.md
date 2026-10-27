@@ -522,7 +522,7 @@ The columns a player's attack timing can read (values from the `.bin` over the 3
 
 | Column | `.bin` field | Observed | Meaning | Tag |
 |---|---|---|---|---|
-| `speed` | `+0x0D8` s32 | −60..20 (11 values: 0 ×105 set, −10 ×79, 10 ×67, −20 ×22, 20 ×19, …); 105 blank store 0 | the weapon's speed modifier (name) | [C] layout; `[L]` |
+| `speed` | `+0x0D8` s32 | −60..20: 10 values set in 201 rows (−10 ×79, 10 ×67, −20 ×22, 20 ×19, 5 ×4, −30 ×4, −60 ×2, −15 ×2, −40, −5), none set to 0; 105 blank store 0 | the weapon's speed modifier (name) | [C] layout; `[L]` |
 | `wclass` | `+0x0C0` 4-byte code | `1hs` 122, `stf` 56, `1ht` 44, `bow` 30, `2ht` 21, `ht1` 21, `xbw` 12 | weapon class held one-handed: the third part of the player's `animdata.d2` record name | [C] layout; `[L]` |
 | `2handedwclass` | `+0x0C4` 4-byte code | as `wclass` except 18 rows with `2hs` (their `wclass` is `1hs`) | weapon class held two-handed | [C] layout; `[L]` |
 | `hit class` | `+0x13C` u8, [HitClass](HitClass.md) row | 1..11 in all 306 | the hit class | [C] layout ([HitClass](HitClass.md)); `[L]` |
