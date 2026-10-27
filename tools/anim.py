@@ -773,30 +773,29 @@ class Checker:
                 last.pop(x["u"], None)
 
     def check_block_gate(self, lines):
-        """anim/0003 § 6.1: a blocked hit on a player (result 0x10 or 0x8000, without 0x4000) starts the block mode only when
-        frame - stat 95 > stat 102 / 8 (signed, toward zero) + 15 (rev 4 GH lines carry the stats)."""
-        schs = collections.defaultdict(set)
-        cmds = collections.defaultdict(set)     # (unit, frame) of a block-mode request (PlrModeLeaveOk, req 9)
-        for tag, x in lines:
-            if tag == "SCH" and x["u"]["t"] == 0 and x["u"]["m"] == 9:
-                schs[x["u"]["u"]].add(x["T"])
-            elif tag == "PL0" and x["req"] == 9:
-                cmds[x["u"]["u"]].add(x["fr"])
-        for tag, x in lines:
+        """anim/0003 § 6.1: a blocked hit on a player (result 0x10 or 0x8000, without 0x4000) issues the block-mode
+        command only when frame - stat 95 > stat 102 / 8 (signed, toward zero) + 15 (rev 4 GH lines carry the
+        stats); the command's own tests (PlrModeLeaveOk, PlayerModeAllowed) decide whether the mode starts. The
+        command is the PL0 with request 9 between this GH line and the next one."""
+        for i, (tag, x) in enumerate(lines):
             if tag != "GH" or x["d"]["t"] != 0 or x.get("st") is None:
                 continue
             if not (x["res"] & 0x8010) or x["res"] & 0x4000 or x["res"] & 0x380:
                 continue
             st = x["st"]
             gate = x["fr"] - st.get("95", 0) > cdiv(st.get("102", 0), 8) + 15
-            # the gate decides whether the block-mode command is issued; the command's own tests (the current
-            # mode, anim/0003 § 6.2) decide whether the mode starts
-            got = x["fr"] in cmds.get(x["d"]["u"], ())
+            got, started = False, False
+            for tag2, y in lines[i + 1:i + 60]:
+                if tag2 == "GH":
+                    break
+                if tag2 == "PL0" and y["req"] == 9 and y["u"]["u"] == x["d"]["u"]:
+                    got = True
+                if tag2 == "SCH" and y["u"]["u"] == x["d"]["u"] and y["u"]["m"] == 9:
+                    started = True
             if self.ok("block-gate", gate == got, ("block", x["n"], gate, got, st)):
                 self.tally["block-gate-%s" % ("open" if gate else "shut")] += 1
                 if gate:
-                    self.tally["block-gate-open-mode-%s" % ("started" if x["fr"] in schs.get(x["d"]["u"], ())
-                                                            else "refused")] += 1
+                    self.tally["block-gate-open-mode-%s" % ("started" if started else "refused")] += 1
 
     def check_delay(self, lines):
         """P1b-12 (D1/D2): for a player's delay skill, the interval from one do to the next and the delay (DLY)."""
