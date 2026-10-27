@@ -158,6 +158,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005276E0,func,UNICODE_IsWideByte,,C,data/strings,docs/findings/data/0003-string-tables.md
 0x00527790,func,UNICODE_LoadFontMap,,I,data/strings,docs/findings/data/0003-string-tables.md
 0x00527D50,func,UNICODE_CharCount,,C,data/strings,docs/findings/data/0003-string-tables.md
+0x0052C0E0,func,sub_0052C0E0_SetHostSaveCallback,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0052C280,func,GAME_InitSeeds,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0052C320,func,GAME_SetSeedOverride,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0052C900,func,sub_0052C900_SaveClients,,C,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -192,6 +193,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005344B0,func,sub_005344B0_PlayerLoadFromFile,,I,save/d2s,docs/findings/quests/0001-progression.md
 0x00534520,func,sub_00534520_PlayerLoadFromClient,,I,save/d2s,docs/findings/quests/0001-progression.md
 0x005345A0,func,sub_005345A0_PlayerLoad,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00534630,func,sub_00534630_PlrSaveWrapper,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005347B0,func,DEBUG_ToHitRollStub,"void __fastcall DEBUG_ToHitRollStub(void * game, void * attacker, void * defender, int chance, int roll)",C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005347C0,func,DEBUG_DefenceRollStub,"void __fastcall DEBUG_DefenceRollStub(void * game, void * defender, void * unit, int chance, int roll, char * label)",C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005347D0,func,DEBUG_ReduceRowStub,,I,combat/formulas,docs/findings/combat/0001-formulas.md

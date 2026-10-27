@@ -280,7 +280,12 @@
   The d2sio part has 0 mismatches except rt-r2's four mouse words (file 42/43, runtime 0: d2sio compares player data
   `+0x74`/`+0x70`, which a swap leaves 0, where the writer reads the unit's current skill, `0x00620190`/`0x006201D0`;
   the `WSKL` group compares that source) and hell-r3's `RITEM` count (25 = 14 loaded + 11 `ItemCopy` recreations of the
-  corpse items at the death, the 11 `COPY` lines).
+  corpse items at the death, the 11 `COPY` lines). *(2026-10-27, `lane/r1h`: the d2sio model is fixed. `tools/d2sio.py` `29561293…` compares the mouse words
+  with `WSKL` and counts a load's items up to `LFIN2`; the wrapper in `tools/sweep_h1b.py` `b2d9ac1a…` is removed. The
+  re-check on the 13 logs, `workspace/logs/r1h/sweep-h1b-check-r1h.txt` (`c39fd4bd…`, manifest
+  `r1h-manifest.sha256`), gives 2 798 H1B comparisons, 0 failing, and 0 d2sio mismatches. The replaced revisions,
+  `2ac6e9f1…` and `c0063a8b…`, made the output above.
+  [save/0001 § Plan 0038 r1h](0001-d2s-io.md#plan-0038-r1h-the-host-callback-setter-and-the-d2sio-model-2026-10-27).)*
 - **Deviations and limits:** revision 1 (above) leaves the property checks to the four revision-2 logs that hold
   items with those properties (rt-r2, qr-r2, qrh-r2, drop) and the runeword write to rw-r2. The watchpoint armed on
   drop 27 logged no hit, though that drop's bit was cleared (`B13C`): it is no control, so no absence is claimed from

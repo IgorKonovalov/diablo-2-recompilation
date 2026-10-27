@@ -3783,7 +3783,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     what reaches the code. For rows 3 and 19, the only writer of the host callback `0x00883D50`, 0x0052C0E0, has no
     call, jump or absolute or RVA pointer in the image (objdump). If Ghidra xrefs agree, rows 3 and 19 and the callback
     halves of rows 2 and 18 become d-none
-    ([2026-10-27-architect-reverser-h1b-review-host-callback-setter-and-d2sio-model](../backlog/2026-10-27-architect-reverser-h1b-review-host-callback-setter-and-d2sio-model.md)).
+    ([2026-10-27-architect-reverser-h1b-review-host-callback-setter-and-d2sio-model](../backlog/archive/2026-10-27-architect-reverser-h1b-review-host-callback-setter-and-d2sio-model.md)).
     (e) Row 110's shortfall is right. The watchpoint armed on drop 27's flags missed a clear that `B13C` logged, so it
     was not live, and no absence is claimed under it. Rows 111–113 rest on breakpoints, not on the watch. (f) Row 39's
     tightened read half stands. The tool-built dead mercenary has no source of deadness but header bit 16, and each
@@ -3803,3 +3803,26 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     [2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises](../backlog/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md)
     was **released**, with four points added. The reverser entry above was filed. The archivist entry is unchanged.
   - **Next:** merge `lane/h1b`; then H1a (`d2s-load`).
+- **2026-10-27 — `lane/r1h` filed (reverser, static, Ghidra lane copy, no slot): the `lane/h1b` review's reverser
+  entry, rulings (d) and (i).** Branched from `main` `2b087d2c`.
+  - **Setter:** `tools/ghidra.sh findptr` (new: `re/ghidra_scripts/FindPointer.java`) and a raw byte scan both find
+    nothing that reaches `sub_0052C0E0_SetHostSaveCallback` (0x0052C0E0) or `sub_00534630_PlrSaveWrapper` (0x00534630).
+    The six channels are references of any type, the VA or RVA at any alignment in every initialized block,
+    immediates, raw relative branches, exports and fall-through. Each channel found its control in the same run.
+    The setter's two stores are the only writes of `0x00883D50` (Ghidra 38 READ + 2 WRITE; objdump 41 instructions,
+    the extra one a read in undisassembled code at 0x0052BFC0). The callback lies in zero-filled `.data`. Both
+    symbols were added (I). The absence is `[I]`: a target computed at run time is not excluded.
+    [save/0001 § Plan 0038 r1h](../findings/save/0001-d2s-io.md#plan-0038-r1h-the-host-callback-setter-and-the-d2sio-model-2026-10-27).
+  - **Proposed class moves** (inventory § 2.6 H1b block): rows 3 and 19 go shortfall → **d-none**. The callback
+    halves of rows 2 and 18 are d-none as halves, and those rows stay raised in part. H1b becomes raised 25, in part
+    14, shortfall 5, d-none 4: 48. Totals against `main` `2b087d2c`: **static 567, harness 521, c-emu 0, blocked 419**
+    (d-none 293), **deferred 2, raised 17: 1 526**.
+  - **d2sio:** `tools/d2sio.py` `2ac6e9f1…` → `29561293…`: the mouse words are compared with `WSKL` (fallback:
+    player data, labelled), and a load's items stop at `LFIN2`, with the later `RITEM` lines compared with
+    `COPY`/`COPY2`. `tools/sweep_h1b.py` `c0063a8b…` → `b2d9ac1a…`: the explaining wrapper is removed. The re-check
+    on the 13 kept logs, run under `MemoryMax=4G`, gives **2 798 H1B comparisons, 0 failing, 0 d2sio mismatches**
+    (`workspace/logs/r1h/sweep-h1b-check-r1h.txt` `c39fd4bd…`; manifest `r1h-manifest.sha256` `94f2b304…`). The
+    run:2026-10-12-d2s-io logs are unchanged apart from the added `later=` field. `tools/h1b_sessions.py` now keys
+    its copies on the log stem (entry item 3).
+  - **Backlog:** the reverser entry was closed (archive). Review request: [2026-10-27-reverser-architect-review-lane-r1h-host-callback-setter-and-d2sio](../backlog/2026-10-27-reverser-architect-review-lane-r1h-host-callback-setter-and-d2sio.md).
+  - **Next:** the `lane/r1h` review.
