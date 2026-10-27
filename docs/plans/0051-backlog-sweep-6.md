@@ -234,4 +234,30 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (`d2pilot.py`, `sweep_h4a.py`, the `mon-h4a*` and `skills*` files) was changed. The inventory of plan 0038 is not
     edited (the H1a session is for the architect to add to § 5).
   - **Backlog:** review request
-    [p51r review](../backlog/2026-10-25-reverser-architect-p51r-plan-0051-phase-1a-review.md).
+    [p51r review](../backlog/archive/2026-10-25-reverser-architect-p51r-plan-0051-phase-1a-review.md).
+- **2026-10-27 — Phase 1a review (architect, `lane/p51r`): accept with fixes.** Reviewed after merging `main` `cf25f22`
+  (the `lane/h4a` merge) into the lane. Re-run on the review side: `test_p51_staging.py` 9 OK; `mp_saves.py check` 30
+  recipes, 21 pairs, 0 bad; `manifest.sha256` and `tools-revisions.txt` pass (the merge touched none of the lane's
+  tools). objdump reads of the pinned image: `0x00486370` (called once, from `0x0048E978`) holds the three
+  `ITEMS_EvalCalc` calls `0x0048642F`, `0x004864D0`, `0x00486506` before its last `ret 4` at `0x00486562`; the six
+  direct calls of `0x00552DF0` (none by `jmp`); its prologue `push ebp; mov ebp, esp`, so `[EBP+4]` at `0x00552E2F` is
+  the return address; the e10 dispatch at `0x00543CA2` (event word 10 stored just before) and the reset call at
+  `0x00592CDC`.
+  - **Fixes (3):** the H4b follow-ups entry annotated with what H4a took ((a) and (c)) and what is out of this plan
+    ((b), (d), (e) with the owner as the entry says, (f) dropped), now open for H5d only (stale cross-reference:
+    `lane/h4a` landed after the lane ran, item 4's own condition); monsters/0003's H4b section, special 66's mod 12
+    remainder marked met since H4a (stale cross-reference, left by the `lane/h4a` review, which marked only the
+    class-312 piece); the S1b session written into H1a's row of inventory § 5 (sessions ~19) and § 8's cap note
+    (omission; the lane's point 1, left to the architect).
+  - **Rulings.** (1) The H1a assignment stands: no open batch loads `calc.gdb` or `seed-tree.gdb`, the session is
+    its own (its own logger, CalcSor), and H1a stays under the cap of 20 at about 19; if H1a counts more than 20
+    before it starts, the S1b session is the first piece to leave it (§ 8's split rule). (2) The hover marker's call
+    sites rest on the kept objdump scan (`call-sites.txt`) and the review's re-read; no tag depends on them before H1a's
+    session. The fold keeps the last run of identical entries unflushed at the end of a log; `calc.py hover` counts
+    lines and evaluations, not `n`, so nothing is lost. (3) `two-wounds.gdb` loading `combat.py` and `stats.py`
+    together is staged, parse-tested only, as the lane says; the session's first minutes are its test. (4) MP31 and
+    MP32 are Phase 1b forwards, alongside its item 3 (each a new reading: the trade path, `PartyGoldShare`'s
+    arithmetic); they ride on the plan 0044 shortfalls entry's annotation, which stays open.
+  - **Ledger:** no statement moved (staging only); the Routing count stands at 45 open (no entry closed).
+  - **Backlog:** review request closed (archive).
+  - **Next:** Phase 1b (optional, one Ghidra), with the MP31 and MP32 forwards.

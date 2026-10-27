@@ -22,3 +22,17 @@ doomknight3 piece as part of its Chaos Sanctuary session, both before review. (b
 there. The H5d piece (spawn 42's remainder in the tomb and `suckernest1` sessions, `monspawn.py check` on the `MC`
 lines) is still in H5d's row of [inventory § 5](../plans/0038-inventory/README.md#harness-batches), and no H5d run is on
 `main`. The entry stays open; the H4a review annotates which pieces the batch took.
+
+*2026-10-27 (architect, [plan 0051](../plans/0051-backlog-sweep-6.md) Phase 1a review, after merging `main` `cf25f22`):*
+`lane/h4a` has landed and was accepted
+([plan 0038 log](../plans/0038-inferred-claims-sweep.md#implementation-log), `lane/h4a` review). **H4a took (a) and (c):**
+(a) `doomknight3` (312), 63 creations, both appearance bytes one `Range(4)` (stats 14 and 13 raised whole, still counted
+as H4b; H4a review ruling (e), [monsters/0004](../findings/monsters/0004-stats.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a));
+(c) Blood Raven's client name, mod 12 to string 3111 (special 35 and 68 raised in H4a; special 66's remainder marked
+met in [monsters/0003](../findings/monsters/0003-special-monsters.md) § Plan 0038 batch H4b). **Not met by H4a, and out of
+this plan** (no harness batch left loads `mon-stats.gdb` for them): (b) stats 40 stays a shortfall counted as H4b;
+(d) special 27's clamp at 1 stays its `[I]` remainder; (e) no Shrines code-20 shrine was operated, so special 2 stays
+`d-owner` and special 74's remainder stays, as this entry's own "else it stays with the owner" says; (f) optional,
+not run, dropped. **Still open for H5d only:** spawn 42's remainder (the tomb and `suckernest1` sessions,
+`monspawn.py check` on the `MC` lines), in H5d's row of
+[inventory § 5](../plans/0038-inventory/README.md#harness-batches). The entry closes with H5d's review.
