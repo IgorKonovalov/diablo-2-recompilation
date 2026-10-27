@@ -904,12 +904,19 @@ class Checker:
                 kbe.add((x["ecx"], x["fr"]))
                 kbe.add((x["edx"], x["fr"]))
         cls_now = {}
+        restarted = False
         for tag, x in lines:
             if tag in ("SR", "MSET", "SCH") and x["u"]["t"] == 1:
                 cls_now[x["u"]["u"]] = x["u"]["c"]      # unit pointers are reused: the class at this point
+            if tag == "SR" and prev is not None and x["u"]["u"] == prev["u"]:
+                restarted = True        # rev 6 check: a restart of the same mode (a get-hit hit again) between the two advances
             if tag != "AD0":
                 continue
-            pair = prev is not None and prev["u"] == x["u"] and x["fr"] == prev["fr"] + 1 and x["m"] == prev["m"]
+            pair = (prev is not None and prev["u"] == x["u"] and x["fr"] == prev["fr"] + 1 and x["m"] == prev["m"]
+                    and not restarted)
+            if restarted and prev is not None and prev["u"] == x["u"] and x["fr"] == prev["fr"] + 1 and x["m"] == prev["m"]:
+                self.tally["adv-restart-unpaired"] += 1
+            restarted = False
             if pair and not prev["seq"] and not x["seq"]:
                 ev = None
                 if prev["rec"]:

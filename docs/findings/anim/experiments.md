@@ -5,7 +5,7 @@ and evidence rules: ADR-0003, ADR-0004, ADR-0011, ADR-0013, ADR-0014, ADR-0015, 
 [tooling](../../../.claude/skills/reverser/references/tooling.md),
 [harness-play](../../../.claude/skills/reverser/references/harness-play.md).
 
-Harness runs (plan 0050 Phase 2): [run:2026-10-27-anim](#run2026-10-27-anim), closed (two lane runs). Emulated runs
+Harness runs (plan 0050 Phase 2): [run:2026-10-27-anim](#run2026-10-27-anim), closed (two lane runs); [run:2026-10-27-anim-p2](#run2026-10-27-anim-p2), part 2 (in review). Emulated runs
 (ADR-0015, no wine, nothing native): [run:2026-10-27-anim-rates-emu](#run2026-10-27-anim-rates-emu).
 
 ## run:2026-10-27-anim
@@ -269,3 +269,56 @@ Emulated runs (ADR-0015, no wine, nothing native):
 - **Covers:** the two maps above, nothing about what the game stores in those fields or when it calls them
   (ADR-0015). Not covered: `s = −k` (a divide fault), the advance's sequence branch, a player, a start frame other
   than 0. Used by [anim/0002 §§ 2, 6](0002-rates.md).
+
+## run:2026-10-27-anim-p2
+
+**Status: closed for review (`lane/p50f`, three lane runs; the project paused after this roster).** Phase 2 part 2:
+get-hits by FHR, blocks, throws, rate tiers, the catalogue queue. 26 kept sessions on harness slot 1 (display `:8`),
+Normal sessions for the catalogue and specials, Nightmare for the get-hit route; stock data, single player.
+
+- **Question:** does `tools/anim.py` still reproduce with 0 mismatches over part 2's sessions, and which of part 1's
+  *Done when* floors (get-hits and blocks at three FHR/FBR rates of 30 per class, throws 30 per throwing class, a
+  second A1 record, a third FCR rate, the catalogue queue) does the run reach?
+- **Setup:** logger `tools/gdb/anim.py` rev 6 (`46400bef…`), checker `tools/anim.py` `5be6c31f…` (rev 6 plus the
+  restart rule, anim/0001's part 2 section), `tools/anim_sessions.py` `c88ac497…`, `tools/d2pilot.py` `0535411b…`
+  (explore `--inv-potions`). Recipes `anim-<cls>-t<k>-gh9`…`-gh10` and the special ones are built by
+  `anim_sessions.py build`; saves `saves-2026-10-27-anim-p2/` (manifest below). Sessions: `gh5`–`gh12` (get-hit route
+  development, see below), `mon-7`, `sp-pal-chg2`, `sp-ass-bos2`, `sp-pal-slow`, `th-dru`. Batches 10 and 11 of this
+  lane run: `gh12-bar-t0 gh12-dru-t0 gh12-ass-t0 th-dru sp-ass-bos2 sp-pal-slow` and `gh12-<bar,dru,ass,pal>-t1`.
+- **Deviation from the owner's build (for the review's ruling).** The owner asked for a get-hit build of clvl 60+ and
+  life 1 000+. The runs use **clvl 70, life 400, Cold Plains in Nightmare, `/players 2`** (gh10–gh12). The 1 000-life
+  build (gh5: life 1 000, Act V Nightmare) died after **6 get-hits**. A get-hit costs a sixth to a quarter of max
+  life whatever the hit (`GetHitRoll`'s bands `3/8` in `[hp/16, hp/8)`, `3/4` up to `hp/4`, anim/0003), so the count
+  per session is set by how many potions the route can drink, not by life; a higher life lets swarms (up to ~160
+  damage a second at life 400) hit longer before the pilot can react. The 400-life, elite-weapon builds gave 6–28
+  get-hits a session (gh7–gh12). gh5 and gh6 (480) logs are kept (`…-gh5-sor-t0.log`, `…-gh6-sor-t0.log`).
+- **Result** (`2026-10-27-anim-p2-all2.lst` = part 1's close list + `…-p2-ckpt2.lst`, 81 logs; check `--review`
+  `2026-10-27-anim-p2-check-ckpt2.txt` `03f83c9d…`; summary `…-summary-ckpt2.txt` `ae27fd27…`): every kind 0
+  mismatched (`adv=4110/0 adv-seq=2089/0 block-gate=2309/0 dispatch=56800/0 drain=49914/0 ef-first=12193/0
+  endpending-E=1568/0 fire=56941/0 ghr=9858/0 kb-end=5019/0 name=379410/0 obj=955/0 pathspeed=150696/0
+  pathspeed-step=164162/0 pma-seed=34743/0 rate=379410/0 record=379410/0 sched=34647/0 sched-len=34647/0
+  sched-rate=34647/0 seqstep=62678/0 startframe=33838/0 step=125141/0 step-point=122598/0`). The first check over
+  batch 10 had 10 `adv` mismatches: the checker paired two advances across a get-hit restart (anim/0001, part 2
+  section); the rule is fixed and part 1's output differs only in `adv` 2 927 → 2 924.
+- **Floors reached** (summary, all 81 logs): the catalogue queue (anim/0001); throws Paladin 74, Necromancer 30,
+  Barbarian 42, Amazon 54, Assassin 32, Sorceress 39; FBR/blocks at three rates of 30:
+  Paladin (`PABL1HS`) and Druid (`DZBL1HS`); one A1 record at 3×30 for every class (the Barbarian's `BAA11HS` is new);
+  A1 rates with 30+ on at least 3 rates for all classes; cast rates ≥ 3 for Sorceress, Necromancer,
+  Paladin, Druid.
+- **Floors short, and why.** (1) Get-hits at three FHR rates of 30: get-hit mode starts total 308 (part 1's 222 plus
+  86); per class rates with 30+: Barbarian 128 (61) and 179 (30), Paladin 179 (31), Druid and Assassin and Sorceress
+  one rate each, Amazon and Necromancer none (20, 14 starts). Potion-bound: the Sorceress, Amazon and Necromancer die
+  within 3–8 hops of Cold Plains; in the t1 sessions the pilot's last half ended in death at hop 1 (Druid,
+  Assassin), hop 3 (Paladin) and hop 7 (Barbarian) (`…pilot.txt`; the cause of the early deaths was not examined). The t2 tier (rate 215) was not run in this lane
+  run. (2) The Druid's throws: 12 (< 30; `th-dru` died at hop 1; the axes' throw mode is reached 12 times). (3) A second A1 record at 3×30: none (every class has one). The
+  third FCR rate: Amazon, Barbarian, Assassin have 2 cast rates of 30. (4) Rare branches not staged: the run's turn to
+  a walk (low stamina, `r`), player knockbacks, `VASCHTH` (no stock state transforms a player into the vampire:
+  States.txt's transform rows are 63, 93, 101, 119, 139, 140, 176, 177). The Sorceress "sturdier route" (mercenary or
+  more Dexterity) was not tried.
+- **Kept files:** manifest `2026-10-27-anim-p2-manifest-ckpt2.sha256` (`2801602f…`, 160 lines, base
+  `workspace/logs/anim/`, `sha256sum -c` passes): all part 2 logs, pilot outputs, screenshots, batch outputs
+  1–11, saves, lists, checks, summaries. The checkpoint manifest `…-manifest-ckpt1.sha256` fails on two lines
+  (`…-gh12-bar-t0.log` and its `.pilot.txt`): batch 10 re-ran that session under the aborted run's name and
+  overwrote the aborted development log (a review-fix 6 miss of this lane; the session itself is the kept one now,
+  `ckpt2` lists it). No claim rested on the aborted log.
+

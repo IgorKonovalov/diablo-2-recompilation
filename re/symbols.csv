@@ -294,7 +294,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005415E0,func,sub_005415E0_EventQueueEveryFrame,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x00541650,func,sub_00541650_UnitQueueEveryFrame,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x005416B0,func,sub_005416B0_EventQueueAt,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
-0x005417D0,func,sub_005417D0_UnitQueueEvent,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x005417D0,func,sub_005417D0_UnitQueueEvent,,C,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x005418C0,func,sub_005418C0_InactiveRecordTake,,I,objects,docs/findings/objects/0001-object-population.md
 0x00541990,func,sub_00541990_InactiveItemRestoreOne,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x00541AC0,func,sub_00541AC0_InactiveItemsRestore,,I,objects,docs/findings/objects/0001-object-population.md

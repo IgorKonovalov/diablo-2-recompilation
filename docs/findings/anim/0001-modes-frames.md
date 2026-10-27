@@ -712,3 +712,25 @@ queues and reschedules, the client): what a callee or a catalogue function does 
   the request's frame, before `T + N` too. After, `[I]`: the
   client's rule for when it sends a held request is not read (ADR-0005, the client is presentation and an oracle).
   (fn:SUNIT_ScheduleModeEvents@0x005539B0, fn:sub_0057EDD0_PlrModeLeaveOk@0x0057EDD0, run:2026-10-27-anim)
+
+## Plan 0050 Phase 2 part 2 (run:2026-10-27-anim-p2)
+
+Record: [experiments.md](experiments.md#run2026-10-27-anim-p2). Checker output `2026-10-27-anim-p2-check-ckpt2.txt`
+(`03f83c9d…`), over part 1's 55 logs and part 2's 26.
+
+- **The catalogue queue, `sub_005417D0_UnitQueueEvent`, raised in part.** [C] Logger rev 6 logs the call at its entry
+  when the return lies in 0x005B0000–0x005EFFFF (`CQ`: kind, frame, `a`, `b`). Kinds 0 and 1 with `a ≠ 0` are taken as
+  an ADR-0004 oracle and compared like a schedule's: 405 queued (`cq-k0` 379, `cq-k1` 26), and the 83 dispatches that
+  follow a catalogue cancel and a `CQ` queue (`dispatch-cq-after-catcancel`, all from Charge, return 0x005CFABE) fire at
+  the queued frames with the queued arguments; the 134 dispatches 0–4 frames after a catalogue cancel are all
+  explained by a `CQ` line (`dispatch-catcancel-0-4-compared`). An unqueued dispatch there is a mismatch under rev 6
+  (`dispatch-catalogue-queued-rev6`): 0. [I] Kinds 2 (65 324 calls) and 12 (9 166) are logged but not compared; the
+  callers other than Charge's are not separated by a dispatch here (`rv-catcan-ra=` tallies list the cancels).
+  (fn:sub_005417D0_UnitQueueEvent@0x005417D0, fn:UNIT_CancelEvents@0x00540E60, run:2026-10-27-anim-p2)
+- **The advance and a restart, correction to § 8's pair rule.** [C] A get-hit hit again in the same mode restarts the
+  monster's mode (an `SR` line for the unit between two `AD0` lines): the second line's `+0x44` is 0, not the advance
+  of the first. Checker `tools/anim.py` (`5be6c31f…`) pairs two consecutive advances only with no `SR` of that unit
+  between them (`adv-restart-unpaired`); the first 10 `adv` mismatches (8 printed; Druid mode 13, `+0x44` 512–1792 of length 2304
+  to 0) were those restarts. Over part 1's 55 logs the output differs only in `adv` 2 927 → 2 924 and that tally 3
+  (three restarts that had matched by chance); every other line is byte-identical. Closing `adv=4110/0`.
+
