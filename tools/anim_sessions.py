@@ -182,6 +182,15 @@ def class_session(cls, tier, seed, field, hops=24):
             [("keys", ["r"], 0.5), ("keys", ["w"], 1.0), fight(keys1, hops // 2)])
 
 
+def gh_session(cls, tier, seed, field, hops=16):
+    """the fragile character's session: fights only, drinking below 80 % life."""
+    keys = ["F1", "F1", "F2", "F1", "F3"]
+    f = fight(keys, hops)
+    f = (f[0], [("0.8" if a == "0.7" else a) for a in f[1]], f[2])
+    return ("Anim%s%d" % (cls.capitalize(), tier), "enter-normal", seed,
+            [wp(field), f, ("keys", ["w"], 1.0), f])
+
+
 SESSIONS = {"dev-smoke": ("AnimSor0", "enter-normal", 5900, [wp("1,2"), fight(["F1", "F2", "F3", "F4"], 6),
                                                              ("hold", "F1", 3.0), ("hold", "F5", 3.0),
                                                              ("keys", ["w"], 1.0), ("keys", ["r"], 0.5),
@@ -189,8 +198,13 @@ SESSIONS = {"dev-smoke": ("AnimSor0", "enter-normal", 5900, [wp("1,2"), fight(["
 for k, cls in enumerate(CLASSES):
     for tier in (0, 1, 2):
         SESSIONS["%s-t%d" % (cls, tier)] = class_session(cls, tier, 5100 + 10 * k + tier, FIELDS[(k + tier) % 4])
-        # the get-hit variant: life 40 (the bands of GetHitRoll reached by Act I Normal hits), same seed and steps
-        row = class_session(cls, tier, 5100 + 10 * k + tier, FIELDS[(k + tier) % 4])
+        # the get-hit variant: life 40 (the bands of GetHitRoll reached by Act I Normal hits); gh-ama-t0 and
+        # gh-sor-t0 (run:2026-10-27-anim, the first batch) played the class_session steps; from the second batch on
+        # the gh- sessions play gh_session (no held skills: the held button kept the pilot from drinking)
+        if (cls, tier) in (("ama", 0), ("sor", 0)):
+            row = class_session(cls, tier, 5100 + 10 * k + tier, FIELDS[(k + tier) % 4])
+        else:
+            row = gh_session(cls, tier, 5300 + 10 * k + tier, FIELDS[(k + tier + 1) % 4])
         SESSIONS["gh-%s-t%d" % (cls, tier)] = ("gh/" + row[0],) + row[1:]
 
 

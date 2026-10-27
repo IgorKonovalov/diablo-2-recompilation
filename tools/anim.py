@@ -163,12 +163,11 @@ class Data:
                 rb = self.speeds(b)[0]
             rn = cdiv(rb, 2)
         else:
-            _, _, rsp, _, _ = self.record(self.mon_name(b, 15))
-            rnb, rni = self.mon[b]["Run"] or 0, m["Run"] or 0
-            rn = rsp
-            if b != i and rnb > 0:
-                rn = (s16(rni) * rsp & M32) // rnb
-            rn = min(rn, 0x7FFF)
+            _, _, rn, _, _ = self.record(self.mon_name(b, 15))
+        rnb, rni = self.mon[b]["Run"] or 0, m["Run"] or 0
+        if b != i and rnb > 0:                     # both bases scaled by Run(i) / Run(b) (anim/0002 § 3.5)
+            rn = (s16(rni) * rn & M32) // rnb
+        rn = min(rn, 0x7FFF)
         self.walk[i], self.run[i] = w, rn
         return w, rn
 
@@ -774,22 +773,30 @@ class Checker:
                 last.pop(x["u"], None)
 
     def check_block_gate(self, lines):
-        """anim/0003 § 6.1: a blocked hit on a player (result 0x8010 without 0x4000) starts the block mode only when
+        """anim/0003 § 6.1: a blocked hit on a player (result 0x10 or 0x8000, without 0x4000) starts the block mode only when
         frame - stat 95 > stat 102 / 8 (signed, toward zero) + 15 (rev 4 GH lines carry the stats)."""
         schs = collections.defaultdict(set)
+        cmds = collections.defaultdict(set)     # (unit, frame) of a block-mode request (PlrModeLeaveOk, req 9)
         for tag, x in lines:
             if tag == "SCH" and x["u"]["t"] == 0 and x["u"]["m"] == 9:
                 schs[x["u"]["u"]].add(x["T"])
+            elif tag == "PL0" and x["req"] == 9:
+                cmds[x["u"]["u"]].add(x["fr"])
         for tag, x in lines:
             if tag != "GH" or x["d"]["t"] != 0 or x.get("st") is None:
                 continue
-            if (x["res"] & 0x8010) != 0x8010 or x["res"] & 0x4000 or x["res"] & 0x380:
+            if not (x["res"] & 0x8010) or x["res"] & 0x4000 or x["res"] & 0x380:
                 continue
             st = x["st"]
             gate = x["fr"] - st.get("95", 0) > cdiv(st.get("102", 0), 8) + 15
-            got = x["fr"] in schs.get(x["d"]["u"], ())
+            # the gate decides whether the block-mode command is issued; the command's own tests (the current
+            # mode, anim/0003 § 6.2) decide whether the mode starts
+            got = x["fr"] in cmds.get(x["d"]["u"], ())
             if self.ok("block-gate", gate == got, ("block", x["n"], gate, got, st)):
                 self.tally["block-gate-%s" % ("open" if gate else "shut")] += 1
+                if gate:
+                    self.tally["block-gate-open-mode-%s" % ("started" if x["fr"] in schs.get(x["d"]["u"], ())
+                                                            else "refused")] += 1
 
     def check_delay(self, lines):
         """P1b-12 (D1/D2): for a player's delay skill, the interval from one do to the next and the delay (DLY)."""
@@ -835,7 +842,9 @@ class Checker:
                     a["next"] = (x["fr"], x["to"])
         for a, b in zip(acts, acts[1:] + [None]):
             if b is not None and b["u"] == a["u"] and a["e1"] is not None:
-                self.tally["act-m%d-nextact-minus-n=%d" % (a["m"], (b["T"] - a["T"]) - (a["e1"] - a["T"]))] += 1
+                dd = (b["T"] - a["T"]) - (a["e1"] - a["T"])
+                # back to back (the next action within 3 frames of the end), else a gap
+                self.tally["act-m%d-nextact-minus-n=%s" % (a["m"], dd if abs(dd) <= 3 else "gap")] += 1
             if a["E"] is not None and a["e1"] is not None and a["req"] and a["req"][0] <= a["e1"]:
                 self.ok("endpending-E", a["E"] == a["e1"], ("E", a["n"], a["E"], a["e1"]))
             if a["e1"] is None or a["next"] is None:
