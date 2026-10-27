@@ -485,7 +485,10 @@
   breakpoints at `InitGame`, `InitFileIO`, the archive opens, the language index and both `LoadAll`s hit). The probe
   runs without `set displaced-stepping off` ended the game at its second breakpoint (exit code 5, an empty
   `BlizzardError/<time>/Crash.txt` in the game directory, removed); with it, as every harness logger has it, the game
-  ran normally. In the kept runs the stop came 0.50–0.57 s after launch and `XATT` found every startup global still 0.
+  ran normally. *(`lane/h3b` review: neither the probe runs' logs nor the removed crash files were kept; `dev/` holds
+  the two later runs 3100-a/b and an early stock run. The displaced-stepping note is tooling advice, and no claim rests
+  on it. The crash files were written into the shared `workspace/runtime/game`; the review found the directory's pinned
+  files unchanged, § Review below.)* In the kept runs the stop came 0.50–0.57 s after launch and `XATT` found every startup global still 0.
 - **Setup:** seven runs, single player, expansion, Normal, harness slot 2 only (display `:9`, prefix
   `workspace/wineprefix-2`, ADR-0011), launched by `tools/h3b_sessions.py run --slot 2 --tag h3b --save
   workspace/runtime/h3b-chars/H3bRare.d2s --run h3b <session>…` (revision `6b4acfde…` for the first four,
@@ -535,7 +538,8 @@
   python3 -I tools/h3b_sessions.py unstage --slot 2
   python3 -I tools/sweep_h3b.py txtfiles <game-txt>/data/global/excel     # check/txtfiles-h3b.txt, …-dtxt.txt
   CHECK txtfiles written=90 identical=89 different=1                      # monstats.bin
-  python3 -I tools/tbl.py check workspace/merged/data/local/lng/eng <log>  # check/tbl-check-h3b.txt: 0 mismatches
+  python3 -I tools/tbl.py check workspace/merged/data/local/lng/eng <log>  # check/tbl-check-h3b.txt (its CHECK lines only,
+      # one per log in session order): 0 mismatches
   ```
   Per run (stock / txt / loose / direct / dtxt / rus / clamp):
 
@@ -561,3 +565,16 @@
   string-table load or release with the count above 1, the third `STRTABLE_LoadAll` caller 0x00441B91, the raw rare name
   for a stored index of 0, the charstats name fallback, and any TC name lookup in play.
   (fn:STRTABLE_LoadAll@0x005259C0, fn:STORM_FindFile@0x00417F10, fn:DATATBLS_LoadAll@0x00619300)
+- **Review (`lane/h3b`, architect, 2026-10-27):** `sha256sum -c h3b-manifest.sha256` (88 files) and
+  `h3b-manifest-dev.sha256` (from `dev/`) pass. After `h3b_sessions.py stage --slot 2`, `sweep_h3b.py check` re-run
+  under `systemd-run --user --scope -p MemoryMax=4G` (tools as in `check/tools-at-check.sha256`) is byte-identical to
+  `check/check-h3b.txt` (`3cd7cecf…`, `TOTAL bad=0`), then `unstage`. `tools/tbl.py check` over the seven logs gives
+  the same 7 `CHECK` lines as `check/tbl-check-h3b.txt`. The session screenshots (25 files in the
+  `h3b-s2-*-shots/` directories) were outside the kept manifest; they are hashed in `review/shots-h3b.sha256`
+  (`7b9a89f4…`). The re-check outputs are in `workspace/logs/h3b/review/`, manifest `review/review-manifest.sha256`
+  (`a26cb23e…`, checked from `workspace/logs/h3b`). Shared game directory: `game.exe`, `binkw32.dll`, `ijl11.dll`,
+  `smackw32.dll` and `d2.lng` in `workspace/runtime/game` match `docs/inventory.md`. The `d2data`, `d2exp` and LoD
+  `patch_d2` reference archives it links to match `docs/formats/installer.md`. No `BlizzardError/` is left there. Nothing
+  in it or in the reference tree is newer than 2026-10-12 except the directory itself (the crash folder's removal) and
+  the game's own `BnetLog.txt` and `default.key`, which every run there rewrites (a slot 1 run was writing them during
+  the review).

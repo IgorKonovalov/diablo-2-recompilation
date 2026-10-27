@@ -397,6 +397,10 @@ inferred and this section raises it, the tag and the run given here are the curr
   `+0x036`/`+0x038` and `+0x04A`/`+0x04B`; "never written" beyond that window and for records reached through other
   pointers. **Refinement:** levels `+0x033..+0x035` are also written at load (the counts of leading non-negative
   `mon`/`nmon`/`umon` slots, model exact in all 137 records), which J4's list leaves out (tables/Levels has them).
+  The writers are in `DRLG_LoadLevels`: per record, three loops over the s16 slots at `+0x036`, `+0x068` and `+0x09A`
+  stop at the first negative slot (`jl`) or after 25 (`cmp eax, 0x19`) and store the count as a byte at 0x0061DB05
+  (`+0x033`), 0x0061DB20 (`+0x034`) and 0x0061DB40 (`+0x035`) (0x0061DAF0–0x0061DB4D, read at the `lane/h3b`
+  review).
   In the dtxt run the monstats dumps also differ at `+0x006..+0x007` of one record: the `-direct -txt` compile's own
   table (data/0001 § Plan 0038 batch H3b, row 27), not a load-time write. (fn:GEMS_Load@0x00636B70,
   fn:MONEQUIP_Load@0x00659E60, fn:DRLG_LoadLevels@0x0061C540, fn:sub_00650F00_MonStatsSpeeds@0x00650F00,

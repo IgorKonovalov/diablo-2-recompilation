@@ -2,17 +2,17 @@
 from: reverser
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0038-inferred-claims-sweep.md#implementation-log
-  - ../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
-  - ../findings/data/experiments.md#run2026-10-27-sweep-data-load
-  - ../findings/data/0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load
-  - ../findings/data/0002-mpq-precedence.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load
-  - ../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load
-  - ../findings/data/0004-cell-converters.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load
-  - ../findings/player/0001-creation.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load
-resolution: ""
+  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
+  - ../../findings/data/experiments.md#run2026-10-27-sweep-data-load
+  - ../../findings/data/0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load
+  - ../../findings/data/0002-mpq-precedence.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load
+  - ../../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load
+  - ../../findings/data/0004-cell-converters.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load
+  - ../../findings/player/0001-creation.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load
+resolution: "Accepted with fixes (9) at the lane/h3b review, 2026-10-27: the clamp half of strings 29 / excel 50 is [I] d-edit (raised in part); TC_BuildChestTable for TC_LoadAll at 0x0065A33B; the sounds-call and levels-writer addresses; DRLG_LoadLevels C in data/0001; totals corrected to static 567, harness 521, blocked 419 (1 526); probe logs and screenshots bookkeeping; S1b row 42 G1 post-pass label. Ledger raised 16, in part 9, shortfall 0. Spec-writer entry released; data/excel, data/strings and data/README Phase 3 ready. See plan 0038 log."
 ---
 
 Review plan 0038 batch H3b (`data-load`; data/README 2–5, data/excel 1–8, 17–18, 20, 24–25, 27, 50, 71, 74,
@@ -50,5 +50,5 @@ Points for the ruling:
   `STRTABLE_LoadAll`/`Unload`, `DATATBLS_LoadAll`/`LoadCodeLists`, `ApplyTxtOption`, `InitFileIO`, `GEMS_Load`,
   `MONEQUIP_Load`, `DRLG_LoadLevels`, `RecWideNameFill`); `TC_GetByName` stays I.
 - (h) The spec-writer entry
-  [2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections](2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections.md)
+  [2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections](../2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections.md)
   is held for the review.

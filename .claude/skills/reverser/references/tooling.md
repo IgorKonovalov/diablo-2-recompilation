@@ -225,9 +225,22 @@ it whenever a run logs nothing.
   process (SIGSTOP) as soon as `game.exe` is mapped at `0x400000` (about 1 s after launch), then attaches; the
   driver waits for the window itself. So breakpoints see `InitGame`, the archive opens, the language read, the first
   `STRTABLE_LoadAll` and `DATATBLS_LoadAll`. A gdb file used with it must `set displaced-stepping off` (without it
-  the first breakpoint hits ended the game, exit code 5, an empty `BlizzardError/…/Crash.txt`); `tools/gdb/excel.gdb`
-  is the logger, and its `XATT` line says whether the attach was early. Without `--early` gdb attaches 3 s after the
-  window, during `DATATBLS_LoadAll` (in the H3b runs it ran once, at startup).
+  the probes ended the game at its second breakpoint, exit code 5, an empty `BlizzardError/…/Crash.txt`);
+  `tools/gdb/excel.gdb` is the logger, and its `XATT` line says whether the attach was early. Without `--early` gdb
+  attaches 3 s after the window, during `DATATBLS_LoadAll` (in the H3b runs it ran once, at startup).
+  - **A stopped game left behind (`lane/h3b` review).** `--early` sends SIGSTOP before gdb exists. If gdb then never
+    resumes the game (`gdb` missing or failing to exec, the attach refused, the script erroring before its
+    `continue`, gdb killed), the game stays stopped (state `T`). The driver still times out: its window wait gives up
+    after 600 tries (a minute or more), and once `--after` runs out it calls `wineserver -k`, which SIGKILLs a stopped process too. Until then
+    the slot is held, by up to `--after` seconds (1 800 in H3b). After any `--early` run that did not end normally, check
+    `python3 -I tools/slots.py status N`. A game listed with no live gdb, or `ps -o stat= -p <pid>` showing `T`, is
+    stopped with `python3 -I tools/slots.py stop N` before the next run. If the game never maps (`--early: game.exe
+    never appeared`), no driver is forked, so stop the slot the same way.
+  - **The shared game directory.** `workspace/runtime/game` is shared by every slot and lane (the stock session and
+    every symlink farm point into it). A probe that may crash runs with `--game-dir` in the slot's own prefix, not in
+    the shared directory. A crash folder (`BlizzardError/…`) a run leaves anywhere is moved into the lane's `dev/` logs
+    with a manifest line, not deleted. The pinned files (`docs/inventory.md`) are re-hashed after a lane that wrote
+    there.
 - `xdrive.py keydown Alt_L` / `keyup Alt_L` hold a key (item labels on the ground: click a label to pick it up).
 - Test characters: `python3 -I tools/d2s.py setwp` sets waypoints, and `python3 -I tools/d2s.py setstats <excel> <in.d2s>
   <out.d2s> <stat>=<value>…` sets character stats (e.g. raise a sample to level 50) and re-checksums. Swap it in

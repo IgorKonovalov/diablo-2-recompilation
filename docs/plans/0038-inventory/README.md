@@ -1181,6 +1181,21 @@ No class moves (the d-none halves are remainders of rows raised in part). Totals
 the lane (`2637b08`; the `lane/h1b` review's are the latest above): **static 567, harness 523, c-emu awaiting a batch
 0, blocked 417** (d-none 291, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
 
+**`lane/h3b` review (2026-10-27, architect): accept with fixes (9).** One ledger change. **data/strings 29 and
+data/excel 50 move from raised to raised in part.** The byte read is `[C]`: the archive's `00`, the direct run's
+`00 00 00 00` and the shipped `Use_rus` byte `0B` (which the install's Russian launcher script copies over `Use`) →
+0, 0 and 11. The clamp of values above 13 stays `[I]`, d-edit as a half. No shipped file holds such a byte, so only
+the made-up `0E` reaches it, and a claim only edited data reaches stays `[I]` (ADR-0010, ADR-0013). The clamp run is
+kept as seen, not counted. **H3b's ledger: raised 16** (data/README 2, 3, 4; data/excel 1–7, 17, 18, 20, 24, 25, 27),
+**raised in part 9** (data/README 5; data/excel 8, 50, 71, 74; data/strings 2, 6, 22, 29), **shortfall 0: 25.** The S1b
+remainders stand as filed. data/README 1 is raised, and data/excel 30 is raised in part with its correction. S1b row 42
+G1's post-pass half loses its d-none label. H3b logs its 45 chest-name lookups (0x0065A33B, in `TC_BuildChestTable`),
+and they match. It stays `[I]` for the store into `g_ChestTCs`, with no count change. No class moves. Recounted against `main` after merging it
+into the lane (`550d2dcc`). The filed totals predate the `lane/r1h` review's moves (harness −2, d-none +2), so they are
+corrected here: **static 567, harness 521, c-emu awaiting a batch 0, blocked 419** (d-none 293, d-edit 73, d-sim 28,
+d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.** The 25 H3b rows are all (b) and batch H3b in the
+cluster tables (data-excel 17, data-README 4, data-strings 4).
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is

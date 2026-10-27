@@ -377,14 +377,18 @@ unloads from 0x00435C8D. The third caller, 0x00441B91, ran in none of the runs, 
   0x008829D4) at 0. **Remainder `[I]`:** a release that leaves the count above 0 (the tables kept): the count was never
   above 1. (fn:STRTABLE_Unload@0x00524E40, run:2026-10-27-sweep-data-load)
 - **data/strings row 29, data/excel row 50** (spec strings L384, excel L520: the language from the first byte of
-  `data\local\use`, values above 13 → 0) **raised.** [C] In every run the first `LNG_GetLanguageIndex` call finds its
+  `data\local\use`, values above 13 → 0) **raised in part** *(`lane/h3b` review: the clamp half stays `[I]`, d-edit
+  as a half)*. [C] In every run the first `LNG_GetLanguageIndex` call finds its
   flag (0x008829F0) clear, reads `data\local\use` through `FILE_LoadWhole` (one read per run) and returns the file's
-  first byte, clamped: the archive copy's `00` (stock, txt, loose, dtxt) and the direct run's loose `00 00 00 00` → 0,
-  and the tables load from `lng\ENG\`; the rus run's loose `0B` → 11, after which the loads use the `CYR` font charset;
-  the clamp run's loose `0E` (14) → 0, and that run loads `lng\ENG\` and plays normally. The 8 calls logged with their
-  return (5 in rus) give the same value, and the cached byte (0x008829EC) holds it at every 30-second count over the
-  later calls (20 175 in stock). The 14 separates the clamp from a plain byte read, the 11 the byte read from a
-  constant 0. (fn:LNG_GetLanguageIndex@0x00525150, fn:LNG_GetLanguageCode@0x00525260, run:2026-10-27-sweep-data-load)
+  first byte: the archive copy's `00` (stock, txt, loose, dtxt) and the direct run's loose `00 00 00 00` → 0,
+  and the tables load from `lng\ENG\`; the rus run's loose `0B` (the install's `Use_rus`, which its Russian launcher
+  script copies over `Use` with `-direct`) → 11, after which the loads use the `CYR` font charset. The calls logged
+  with their return (8 per run, 5 in rus) give the same value, and the cached byte (0x008829EC) holds it at every
+  30-second count over the later calls (20 175 in stock). The 11 separates the byte read from a constant 0.
+  **Remainder `[I]`, d-edit:** the clamp of values above 13 to 0 (0x005251A1). No shipped file holds such a byte, so
+  only a made-up `use` file reaches it, and a claim only edited data reaches stays `[I]` (ADR-0010, ADR-0013). The clamp
+  run's loose `0E` (14) returned 0, loaded `lng\ENG\` and played normally, as the code reading says: seen, not counted.
+  (fn:LNG_GetLanguageIndex@0x00525150, fn:LNG_GetLanguageCode@0x00525260, run:2026-10-27-sweep-data-load)
 - **data/strings row 22** (spec L294, rare names: the load-time key into `+0x0C`, the client shows that index or the
   raw name) **raised in part.** [C] Hovering the four rare items of `H3bRare` (names (160, 121), (200, 10),
   (170, 50), (230, 100)) made the client's two name calls show 7 indices: name 1 from the call returning to 0x0048C5FD,

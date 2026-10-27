@@ -83,7 +83,7 @@
 | `0x00638D80` | `ITEMS_LoadItemTypes` | | I |
 | `0x00637620` | `ITEMS_LoadItemRatio` | | I |
 | `0x00651210` | `MONSTATS_Load` | | I |
-| `0x0061C540` | `DRLG_LoadLevels` | | I |
+| `0x0061C540` | `DRLG_LoadLevels` | | C (H3b; data/0004 § Plan 0038 batch H3b) |
 | `0x0061DE00` | `DRLG_LoadLevelDefs` | | I |
 | `0x0065A390` | `TC_LoadAll` | create `g_TCLink`, empty TC, auto TCs, TCEx | I |
 | `0x006541C0` | `TC_BuildAutoTCs` | `"<itemtype code><3..96 step 3>"` TCs for item types with `TreasureClass` ≠ 0 | I |
@@ -163,7 +163,7 @@ destination).
   `monplace`, `skillcalc`, `misscalc`, `skills` (2 B), `events`) are skipped unless `-txt` (`0x006127DF je`). They
   exist to fill code links used while compiling `.txt`; a stock run never loads them. *(2026-10-27, plan 0038 H3b:
   true of `DATATBLS_LoadTable`; `hitclass.bin` is read whole at every start by the character-graphics loader, return
-  0x0050448A, and a 2-byte `sounds` call is `-txt`-only too: § Plan 0038 batch H3b, run:2026-10-27-sweep-data-load.)* Same for the 2-byte
+  0x0050448A, and a 2-byte `sounds` call (0x00659C16) is `-txt`-only too: § Plan 0038 batch H3b, run:2026-10-27-sweep-data-load.)* Same for the 2-byte
   `monstats`/`skilldesc` calls in `0x00613F80` (`0x00617745 je`).
 - [I] So `monmode`, `plrmode`, `skills`, `skilldesc`, `monstats` each have two call sites. In a stock run only the
   full-record one executes. (0x006127DF, 0x00617745)
@@ -481,6 +481,10 @@ rank first (`sweep_s1b.py compile`). Several rows below rest on that.
     (fn:TC_BuildAutoTCs@0x006541C0)
   - G1 (L387) **in part.** [C] index 0 is the empty TC (752 `DROP base=0` lines name no TC), then the auto TCs, then
     treasureclassex. **Remainder d-none:** the `> 0xFFFE` fatal and the post-pass `0x0065A2C0`. (fn:TC_LoadAll@0x0065A390)
+    *(2026-10-27, `lane/h3b` review: the post-pass has an observable. run:2026-10-27-sweep-data-load logs its 45
+    `"Act %d%s Chest %s"` lookups, from 0x0065A33B, in each run that loads the tables, and they return the model's TC
+    index (§ Plan 0038 batch H3b, rows 5 and 8). The half's d-none label is struck. It stays `[I]` for the store into
+    `g_ChestTCs`, which no run logged. The row is unchanged in the counts: S1b, raised in part.)*
   - Alloc (L395) **in part.** [C] one index per name, in allocation order, entries `0x2C` (row 13). **Remainder
     d-none:** the growth by 16 entries has no observable. (fn:TC_Alloc@0x00653F90)
   - G3 (L406) **in part.** [C] `group + autoTypes`: 302 logged TCs have a group and their upgrade walks reproduce.
@@ -693,8 +697,10 @@ statement above is tagged inferred and this section raises it, the tag and the r
   **Correction:** `hitclass.bin` is read whole in every run, `-txt` or not, by the character-graphics copy of the
   loader (`FILE_LoadWhole` returning to 0x0050448A, with `weapons`, `armor`, `misc`, `itemtypes`; § 3's D2Comp.cpp
   reader at 0x00504430), so "a stock run never loads them" holds for `DATATBLS_LoadTable` only. **Refinement:** a
-  2-byte `sounds` call is a further `-txt`-only call (the 18th; the full `sounds` table loads in every run).
-  (fn:DATATBLS_LoadCodeLists@0x00612750, 0x006127DF, 0x0050448A, run:2026-10-27-sweep-data-load)
+  2-byte `sounds` call is a further `-txt`-only call (the 18th; the full `sounds` table loads in every run). It is
+  the `DATATBLS_LoadTable` call at 0x00659C16 (logged return 0x00659C1B), which the function starting at 0x00659BB0
+  skips when `g_DataTblsCompileTxt` (0x0096C8B4) is 0 (the test at 0x00659BB8, `je` at 0x00659BC1).
+  (fn:DATATBLS_LoadCodeLists@0x00612750, 0x006127DF, 0x0050448A, 0x00659BC1, 0x00659C16, run:2026-10-27-sweep-data-load)
 - **data/excel row 27** (spec L191, `-txt` alone changes nothing loaded; `-direct -txt` runs on `.txt`) **raised.** [C]
   Both `-txt` runs compiled and wrote the same 90 `.bin` files (identical hashes); 89 are byte-identical to the
   archive copies and `monstats.bin` is not (two bytes, data/0004 § S1b). In the txt run every one of the 191 excel
@@ -712,7 +718,9 @@ statement above is tagged inferred and this section raises it, the tag and the r
 - **data/README row 5, data/excel row 8** (a TC name resolved through `TC_GetByName` → `EXCEL_FindName`) **raised in
   part, with a correction.** [C] The name → TC map: 3 728 logged `EXCEL_FindName` calls on `g_TCLink` (0x0096C5E8)
   return the TC index of the name (the empty name 0), or −1 for the 6 names that are no TC, from
-  `TC_ParseItemCell` (return 0x0065450B), `TC_LoadAll` (0x0065A33B) and, under `-txt`, the `.txt` parser (0x006BDDEC).
+  `TC_ParseItemCell` (return 0x0065450B), `TC_BuildChestTable` (return 0x0065A33B; it is called from `TC_LoadAll` at
+  0x0065A3B5; its 45 lookups per run are the chest names `"Act %d%s Chest %s"`, § Q2) and, under `-txt`, the `.txt`
+  parser (0x006BDDEC).
   **Correction, the remainder d-none:** `TC_GetByName` itself is never called. It has no reference in the image
   (`tools/xrefscan.py 0x00654DD0`: no rel32 call or jump, no absolute pointer) and its breakpoint had 0 hits in all
   seven runs, while the callers above called `EXCEL_FindName` directly. The entry-point rows that name it describe dead
@@ -720,7 +728,7 @@ statement above is tagged inferred and this section raises it, the tag and the r
   count of `EXCEL_FindName` calls on `g_TCLink` stays 2 789 from the first total in game to the last (t = 31.5–91.5 s)
   while `ITEMS_GetByCode`'s rises from 5 098 to 44 886.
   (fn:TC_GetByName@0x00654DD0, fn:EXCEL_FindName@0x006BD3C0, fn:TC_ParseItemCell@0x00654440,
-  fn:TC_LoadAll@0x0065A390, run:2026-10-27-sweep-data-load)
+  fn:TC_BuildChestTable@0x0065A2C0, fn:TC_LoadAll@0x0065A390, run:2026-10-27-sweep-data-load)
 
 ## Data touched
 
