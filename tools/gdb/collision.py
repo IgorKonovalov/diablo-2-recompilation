@@ -503,6 +503,131 @@ def _collision_main():
     Bp(0x00648C30, on_ms)
     Bp(0x00648CB2, on_msx)
     Bp(0x00648CCC, on_msx)
+
+    # --- plan 0038 batch H5d ------------------------------------------------------------------------------------
+    # Unwindowed lines (every call, any time), each a before / after pair on the same thread:
+    #   TCB0 / TCB1  sub_0064C860_TileCollisionUpdate entry / its ret 0x0064C8ED: the 5x5 block at the entry's
+    #                top-left subtile ((CollMap +0x10 + x) * 5, (+0x14 + y) * 5), cells by RoomAtSubtile from ECX
+    #   IM0 / IM1    an item's (type 4) mark: UNIT_CollMark's SizeMark call 0x0064954C (room, x, y, size, mask on the
+    #                stack) / after it 0x00649551; UNIT_CollMarkRect's RectOrWH call 0x00620ACA (room, x, y, w, h,
+    #                mask) / 0x00620ACF; unit, class, the call's arguments, 5x5 cells around (x, y)
+    #   PN0 / PN1    COLL_PatternMark / COLL_PatternUnmark with pattern 3 or 4 (entry; rets 0x0064EAD9 ...): room,
+    #                x, y, pattern, mask, 5x5 cells
+    #   SCT0 / SCT1  sub_005FD350_SpawnClassCellTest entry (ECX class, EDX room, x, y, flag on the stack) / rets
+    #                0x005FD3C7, 0x005FD3FB, 0x005FD46A: class, BaseId (MonStats +0x02), the caller; for BaseIds
+    #                206, 228, 298, 334 and 528 also the 11x11 cells around (x, y); the result
+    #   LPP0 / LPP1  sub_0066AC40_LevelPointPick entry (ECX level, type [esp+4]) / 0x0066AD60 (point chosen: x [ESI],
+    #                y EDX): level id +0x1D0, the point list (+0x2C x, +0x30 y, +0x34 type, 12 bytes each, count
+    #                +0x1D8), level seed +0x1C4 before and after
+    h5d = {}
+
+    def cells_rect(room, x0, y0, w, h):
+        return [[cell(room, x0 + dx, y0 + dy) for dx in range(w)] for dy in range(h)]
+
+    def on_tcb0():
+        room, e = reg("ecx"), reg("edx")
+        m = u32(room + 0x20) if room else 0
+        if not (room and e and m):
+            return
+        tx, ty = struct.unpack("<ii", mem(m + 0x10, 8))
+        x, y = struct.unpack("<ii", mem(e + 8, 8))
+        sx, sy = (tx + x) * 5, (ty + y) * 5
+        h5d[("TCB", th())] = (room, sx, sy)
+        emit("TCB0", {"th": th(), "room": room, "e": e, "sx": sx, "sy": sy, "cells": cells_rect(room, sx, sy, 5, 5)})
+
+    def on_tcb1():
+        k = h5d.pop(("TCB", th()), None)
+        if k:
+            room, sx, sy = k
+            emit("TCB1", {"th": th(), "room": room, "cells": cells_rect(room, sx, sy, 5, 5)})
+
+    Bp(0x0064C860, on_tcb0)
+    Bp(0x0064C8ED, on_tcb1)
+
+    def on_im0(f, nargs):
+        def fn():
+            u = reg("esi")
+            if not u or s32(u) != 4:
+                return
+            a = struct.unpack("<%di" % nargs, mem(reg("esp"), 4 * nargs))
+            room = a[0] & 0xFFFFFFFF
+            h5d[("IM", th())] = (room, a[1], a[2])
+            emit("IM0", {"th": th(), "f": f, "u": u, "cls": s32(u + 4), "room": room, "x": a[1], "y": a[2],
+                         "args": list(a[3:]), "cells": around(room, a[1], a[2]) if room else None})
+        return fn
+
+    def on_im1():
+        k = h5d.pop(("IM", th()), None)
+        if k:
+            room, x, y = k
+            emit("IM1", {"th": th(), "cells": around(room, x, y) if room else None})
+
+    Bp(0x0064954C, on_im0("SM", 5))
+    Bp(0x00649551, on_im1)
+    Bp(0x00620ACA, on_im0("RO", 6))
+    Bp(0x00620ACF, on_im1)
+
+    def on_pn0(f):
+        def fn():
+            room, x, y, p, m = struct.unpack("<Iiiii", mem(reg("esp") + 4, 20))
+            if p not in (3, 4):
+                return
+            h5d[("PN", th())] = (room, x, y)
+            emit("PN0", {"th": th(), "f": f, "room": room, "x": x, "y": y, "p": p, "m": m & 0xFFFFFFFF,
+                         "cells": around(room, x, y) if room else None})
+        return fn
+
+    def on_pn1():
+        k = h5d.pop(("PN", th()), None)
+        if k:
+            room, x, y = k
+            emit("PN1", {"th": th(), "cells": around(room, x, y) if room else None})
+
+    Bp(0x0064EA90, on_pn0("PM"))
+    Bp(0x0064EC10, on_pn0("PU"))
+    for a in (0x0064EAD9, 0x0064EB0B, 0x0064EB3A, 0x0064EB68, 0x0064EB82, 0x0064EC5F, 0x0064EC8C, 0x0064ECB6,
+              0x0064ECE3, 0x0064ECFA):
+        Bp(a, on_pn1)
+
+    def mon_base(cls):
+        t = u32(0x00744304)
+        if not t or cls < 0 or cls >= s32(t + 0xA80):
+            return None
+        return struct.unpack("<h", mem(u32(t + 0xA78) + 0x1A8 * cls + 2, 2))[0]
+
+    def on_sct0():
+        cls, room = s32_(reg("ecx")), reg("edx")
+        ret, x, y, fl = struct.unpack("<Iiii", mem(reg("esp"), 16))
+        b = mon_base(cls)
+        d = {"th": th(), "cls": cls, "base": b, "room": room, "x": x, "y": y, "flag": fl, "ret": ret}
+        if b in (206, 228, 298, 334, 528) and room:
+            d["cells"] = cells_rect(room, x - 5, y - 5, 11, 11)
+        h5d[("SCT", th())] = True
+        emit("SCT0", d)
+
+    def on_sct1():
+        if h5d.pop(("SCT", th()), None):
+            emit("SCT1", {"th": th(), "r": reg("eax")})
+
+    Bp(0x005FD350, on_sct0)
+    for a in (0x005FD3C7, 0x005FD3FB, 0x005FD46A):
+        Bp(a, on_sct1)
+
+    def on_lpp0():
+        lv = reg("ecx")
+        n = s32(lv + 0x1D8)
+        pts = [list(struct.unpack("<iii", mem(lv + 0x2C + 12 * i, 12))) for i in range(max(0, min(n, 40)))]
+        h5d[("LPP", th())] = lv
+        emit("LPP0", {"th": th(), "lv": lv, "lid": s32(lv + 0x1D0), "type": s32(reg("esp") + 4), "n": n, "pts": pts,
+                      "seed": sd(lv + 0x1C4), "ret": u32(reg("esp"))})
+
+    def on_lpp1():
+        lv = h5d.pop(("LPP", th()), None)
+        if lv:
+            emit("LPP1", {"th": th(), "x": s32(reg("esi")), "y": s32_(reg("edx")), "seed": sd(lv + 0x1C4)})
+
+    Bp(0x0066AC40, on_lpp0)
+    Bp(0x0066AD60, on_lpp1)
     gdb.write("COLLISION logger armed\n")
 
 

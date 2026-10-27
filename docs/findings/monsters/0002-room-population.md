@@ -232,8 +232,8 @@ describe a later build, so a contradiction with it may be a version difference. 
 | `0x005B2F70` | `sub_005B2F70_SpawnNearUnit` | request wrapper: around a unit, with a box | C |
 | `0x005B23C0` | `sub_005B23C0_SpawnNearUnitNoBox` | request wrapper: around a unit, no box | C |
 | `0x005B2700` | `sub_005B2700_SpawnPosOnTile` | position for `spawnCol` 1 classes: a random room tile with tile flag 2 | I |
-| `0x005FD350` | `sub_005FD350_SpawnClassCellTest` | extra cell test for five `BaseId`s (nests, sarcophagus, evil hut) | I |
-| `0x0064D9B0` | `sub_0064D9B0_CollisionTest` | collision-grid mask test by footprint size 0..3 | I |
+| `0x005FD350` | `sub_005FD350_SpawnClassCellTest` | extra cell test for five `BaseId`s (nests, sarcophagus, evil hut) | C (plan 0038 H5d; drlg/0005) |
+| `0x0064D9B0` | `sub_0064D9B0_CollisionTest` | collision-grid mask test by footprint size 0..3 | C (plan 0038 H5d; drlg/0005) |
 | `0x005B2830` | `sub_005B2830_MinionsSpawn` | `PartyMin..PartyMax` minions of `minion1`/`minion2` | C |
 | `0x004CC790` | `sub_004CC790_RandRangeIncl` | `lo ≥ hi ? lo : lo + RangeB(hi−lo+1)` | C |
 | `0x00547ED0` | `sub_00547ED0_MonRegionUnitLeave` | live-monster and special counters −1 when a monster leaves its level | C (S3a) |
@@ -559,11 +559,11 @@ MonSpawnTry(R) -> unit | 1 | none:                                     [C] excep
   moves before testing, so the start cell is tested last if at all. The start-edge direction runs against the corner turns on
   two of the four edges, so the walk reverses at the first corner and re-tests cells. Positions are subtiles.
   (0x005B2B63–0x005B2DE6, run:2026-10-13-mon-spawn)
-- [I] **The collision test** dispatches on the footprint size: 0 and 1 test one cell (`0x0064D450`), 2 tests the cell and its four neighbours
+- [I] **The collision test** (all four sizes reproduced at plan 0038 H5d, § Plan 0038 batch H5d) dispatches on the footprint size: 0 and 1 test one cell (`0x0064D450`), 2 tests the cell and its four neighbours
   (`0x0064D100`, falling back to the next room at an edge, `0x0064CA50`), 3 uses `0x0064CEB0`, other sizes return `0xFFFF`. A
   cell outside every room returns `0x27`. Each test is `grid[(y − y0)·w + x − x0] & mask` over the room's u16 grid
   (room `+0x20` → `{x0, y0, w, h, …, +0x20 cells}`). A non-zero result rejects the cell. (fn:sub_0064D9B0_CollisionTest@0x0064D9B0, 0x0064D450, 0x0064D100)
-- [I] `sub_005FD350_SpawnClassCellTest` passes every class except five `BaseId`s, which test an offset cell (size 2, mask
+- [I] (206, 228, 298 and 528 reproduced since: § H4b and § Plan 0038 batch H5d; 334 proposed d-none) `sub_005FD350_SpawnClassCellTest` passes every class except five `BaseId`s, which test an offset cell (size 2, mask
   `0x3C01` or `0x1C0`): 206 `crownest1` (y+3), 228 `sarcophagus` (y+2), 298 `vilemother1` (passes on this path, which calls with 1),
   334 `suckernest1` (−2, −2), 528 `evilhut` (+2, +4). (fn:sub_005FD350_SpawnClassCellTest@0x005FD350)
 - [C] `sub_0054DC40_SpawnPosPick` makes up to 20 tries. For a box it uses `x ∈ [5·left+1, 5·right−1]` (and the same for y), otherwise
@@ -848,6 +848,8 @@ Checks: `tools/sweep_h4b.py` (`tick`, `tentacle`, `masks`, `hwt`) and `tools/mon
   session 3 (fn:sub_005FD350_SpawnClassCellTest@0x005FD350, run:2026-10-15-mon-stats, run:2026-10-14-mon-special,
   run:2026-10-16-sweep-monsters-b; the session 3 pair found by the review's re-run of `tools/monstats.py check`). **Remainder
   `[I]`:** 228 (`sarcophagus`, the Act II tombs; session 6 found no way into one) and 334 (`suckernest1`, not met).
+  *Plan 0038 H5d:* 228 met and reproduced, 334 d-none (accepted at the `lane/h5d` review: spawn 42 raised in part,
+  § Plan 0038 batch H5d).
   Inventory note: 528 was filed "stays d-edit"; it is stock-reachable.
 
 ## Plan 0038 batch S3b (2026-10-16)
@@ -1027,6 +1029,30 @@ reads in `workspace/logs/h4a/check/static-wanderer.txt`, `static-wanderer-tick.t
   was logged. The row stays `[I]`, counted as H4a; route: the owner-played Chaos Sanctuary session of monsters/0003
   § H4a (special 9 and the rows with it). (0x0054EC1B, 0x0054EC27, fn:sub_0054EBC0_RoomPopulateGate@0x0054EBC0,
   run:2026-10-21-sweep-monsters-a)
+
+## Plan 0038 batch H5d (run:2026-10-27-sweep-collision)
+
+Harness batch H5d of [plan 0038](../../plans/0038-inferred-claims-sweep.md): monsters/spawn 41 (from S3b, inventory
+§ 2.6) and the H4b piece of spawn 42 (the row stays counted as H4b). Record:
+[drlg experiments § run:2026-10-27-sweep-collision](../drlg/experiments.md#run2026-10-27-sweep-collision); the drlg side
+is [drlg/0005 § Plan 0038 batch H5d](../drlg/0005-collision.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision).
+
+- **spawn 41** (`CollisionTest` sizes 0, 1 and others) **raised in part** (filed raised; the review moved it: the
+  "others" half has no stock observable). [C] Sizes 0 and 1 test one cell in placement: in the
+  presets window `tools/monspawn.py` predicted 26 size-0 tests (classes 327, 517, 545 `baaltaunt`) and 10 size-1 tests
+  (228 `sarcophagus`, 371), results 0 and non-zero in both, 0 mismatches; in 4 size-0 and 1 size-1 case a plus test of
+  the same cells gives non-zero where the game gave 0 (`check/collision-check.txt`). [I] Sizes other than 0–3
+  (`0xFFFF`) stay as read, d-none (no MonStats2 record has one, § Plan 0038 batch S3b; drlg/collision row 3). (fn:sub_0064D9B0_CollisionTest@0x0064D9B0,
+  fn:sub_005B2A00_MonSpawnTry@0x005B2A00, run:2026-10-27-sweep-collision)
+- **spawn 42's remainder** (H4b piece). [C] 228: `monspawn.py`'s presets-window prediction of the `MC` lines holds on the
+  four `sarcophagus` offset-cell tests (`SpawnClassCellTest: BaseId 228 offset-cell tests 4`), and the logger's own
+  before/after cells add the AI caller (drlg/0005 § H5d, row 45). [I] 334 (`suckernest1`): no stock source creates a
+  `BaseId` 334 class (drlg/0005 § H5d, the static check), so the remainder is proposed **d-none**. *Review of
+  `lane/h5d`:* d-none accepted; spawn 42 is **raised in part** (206, 228, 298 and 528 `[C]`, 334 `[I]` as read, d-none),
+  still counted as H4b (a Phase 3 note, not a class move).
+  (fn:sub_005FD350_SpawnClassCellTest@0x005FD350, run:2026-10-27-sweep-collision)
+- **Correction carried here** (§ 6 placement: the in-pass mark's pattern): an `inTown` class without `npc` also takes
+  patterns 3 and 4 (drlg/0005 § H5d, row 21). (fn:sub_0063E860_MonIsNpc@0x0063E860, fn:PATH_PatternFromSize@0x00648580)
 
 ## Open questions
 
