@@ -33,4 +33,4 @@
   AI52 result=ok
   ```
 - **Conclusion:** the five maps are `[C]` in ai/0001 §§ 3, 6, 7 and 12, each up to its boundary; not the callees after
-  it, not what the game stores at those offsets. No symbol raise (ADR-0015 scope, review-fixes rule 14).
+  it, not what the game stores at those offsets. No symbol raise (ADR-0015 scope, review-fixes rule 14). (run:2026-10-27-ai-emu)

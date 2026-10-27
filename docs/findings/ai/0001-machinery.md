@@ -26,14 +26,17 @@ emulated maps (run:2026-10-27-ai-emu). Table dumps, AI-row usage and pool counts
 - [I] **The next AI event is scheduled by the code that ends or refuses a mode.** `MonModeStartNeutral` queues it at
   `T + aidel` (15 when 0; `T + 45` under state 21) unless one is already pending later; the AI's own helpers queue it
   at `T + n` (`MonAiIdle` sets mode NU first, `MonAiDelay` keeps the mode, `MonAiDelayEarlier` only moves it earlier).
-  30 call sites queue kind 2, 66 cancel it. (fn:sub_005A73E0_MonModeStartNeutral@0x005A73E0,
+  30 call sites queue kind 2, 66 cancel it (`UNIT_CancelEvents` with kind 2 pushed, `aicancel-pushes.txt`). (fn:sub_005A73E0_MonModeStartNeutral@0x005A73E0,
   fn:sub_005DE080_MonAiIdle@0x005DE080, fn:sub_005DE0F0_MonAiDelay@0x005DE0F0,
   fn:sub_005DE130_MonAiDelayEarlier@0x005DE130, tbl:MonStats.txt:aidel, `aiq-sites.txt`)
 - [I] **The AI table** is `g_MonAiTable` (0x0073CA18): 148 rows of 16 bytes `{searchKind, init, think, alt}`,
   indexed by MonStats `AI` (`+0x1E`, s16; outside `[0, 148)` row 0), followed by 18 **state rows**
   `g_MonAiStateRows` (0x0073D358) indexed by the AI control's state word (1–17; states 10–12 only when
   0x00623470 allows). A row is dispatched in two steps: `MonAiInit` copies `think` (or `alt`) into `AiCtl.think`; on
-  each AI event the row's `searchKind` runs the target search, then `AiCtl.think(game, unit, &ctx)` runs. 147
+  each AI event the `searchKind` of the row for the stored state (`MonAiEntryGet(unit, AiCtl.state)`: the state row when
+  the state is non-zero, else the class's row) runs the target search, then `AiCtl.think(game, unit, &ctx)` runs. All
+  three `MonAiEntryGet` calls pass a state word; states 10–12 come from `CurseApplyCb` by the skill's
+  `auratargetstate`, and from `CloakAreaCb` (10) and `MonFleeFrom` (11). 147
   distinct think functions over 148 rows; 146 rows are named by a MonStats row (`None` and `ShadowMasterNoInit` are
   not). (data:g_MonAiTable@0x0073CA18, data:g_MonAiStateRows@0x0073D358, fn:sub_005B15D0_MonAiEntryGet@0x005B15D0,
   fn:sub_005B0E00_MonAiInit@0x005B0E00, fn:sub_005B1650_MonAiTargetByKind@0x005B1650, `ai-rows.txt`)
@@ -92,6 +95,7 @@ anchors where this batch builds on them (anim/0001's event queue, drlg/0009's pa
 | `0x005B1140` | `sub_005B1140_MonAiBossSightPause` | 20-frame pause of a boss at its first player sight | I |
 | `0x005B15D0` | `sub_005B15D0_MonAiEntryGet` | the table row of a unit and a state | C (map) |
 | `0x005B0E00` | `sub_005B0E00_MonAiInit` | sets `AiCtl.state` and `AiCtl.think`, calls the row's `init` | I |
+| `0x005C34B0` | `sub_005C34B0_CurseSetAiState` | `CurseApplyCb`'s callee: AI state 10, 12 or 11 for `auratargetstate` 23, 27 or 56, else 0 | I |
 | `0x005B0CC0` / `0x005B0CD0` | `sub_005B0CC0_AiNone` / `sub_005B0CD0_AiIdle` | row 0 (returns), rows 1 and state 1 (idle 200 frames) | I |
 | `0x0058EBC0` / `0x005A6490` | `sub_0058EBC0_AiCtlAlloc` / `sub_005A6490_MonPathCtlAlloc` | the two AI blocks of `MonsterInit` | I |
 | `0x0058EDE0` / `0x0058EFA0` | `sub_0058EDE0_AiCtlParamsFree` / `sub_0058EFA0_AiCtlParamGet` | the parameter records at `AiCtl+0x20` | I |
@@ -226,6 +230,27 @@ flowchart TD
   only. Seven state rows reuse a first-table think word: 1 `Idle`, 4 `Hireable` (with its `alt`), 5 `GoodNpcRanged`
   (row 60), 7 `NecroPet`, 15 `SuicideMinion`, and 10 and 17, which share 0x005E8020. (fn:sub_005B15D0_MonAiEntryGet@0x005B15D0,
   data:g_MonAiStateRows@0x0073D358, `ai-rows.txt`)
+- [I] **Who passes `EDX`.** `MonAiEntryGet` has three direct calls, in two functions, and no dword reference in the
+  image (`entryget-callers.txt`: `N 0x005B15D0 3 sites 2 functions`; excerpts in `entryget-windows.txt`). At each,
+  `ECX` is the unit (`edi`) and `EDX` is an AI state word:
+  - **0x005B1663** (`MonAiTargetByKind`): `esi = [ebp+0x8]`, the `AiCtx` that `MonAiEvent` passes (`lea ecx,[ebp-0x24];
+    push ecx`, 0x005B180F); `eax = [esi]`, its `+0x00` ctl; `edx = [eax]`, **the stored `AiCtl.state`**
+    (0x005B1655–0x005B165D). So the row kind of § 4 is the `+0` of the state row when the state is non-zero (states
+    10–12 only through the `0x00623470` gate), else of the class's `AI` row. The stock state rows' kinds are 0, 1 and 2
+    (`ai-rows.txt`, `ST` lines: 1 for states 2, 3, 8–11 and 13–16; 2 for 17; 0 for 0, 1, 4–7 and 12).
+  - **0x005B0E81** (`MonAiInit`, the old-state lookup): `esi = [ebp+0x8]`, the `ctl` argument (0x005B0E42); `edx =
+    [esi]`, **the current `AiCtl.state`** before the store (0x005B0E7D); reached only when `AiCtl.think` is non-zero
+    (0x005B0E77).
+  - **0x005B0EBE** (`MonAiInit`, the new-state lookup): `edx = ebx`, **the new state**: the `state` argument
+    (`[ebp+0xC]`, 0x005B0E4A) after the `< 18` test, or 1 when the class is at or past the MonStats count (0x005B0E6D).
+
+  So the two `MonAiInit` sites pass the argument it has tested or the word it stored, and the event passes that stored
+  word. The `< 18` test is signed (`cmp ebx,0x12; jge`), so a negative argument passes it and would index below the
+  second table (−1 gives 0x0073D348, row 147 of the first). Of `MonAiInit`'s 33 calls, 21 push an immediate in 0..16 and
+  12 pass a register; five of the twelve stay unresolved (the state rows below). Writes to `AiCtl+0x00` other than `MonAiInit`'s two stores
+  (0x005B0E94, 0x005B0F2B) are not scanned: a `+0x00` store does not separate by offset. So "the stored state is 0..17"
+  holds for the immediate callers and the writers read here. (fn:sub_005B1650_MonAiTargetByKind@0x005B1650,
+  fn:sub_005B0E00_MonAiInit@0x005B0E00, fn:sub_005B1740_MonAiEvent@0x005B1740, struct:AiCtl+0x00)
 - [C] The row address map (states 0–9, 13–17; `AI` over the s16 range) matches the emulation in all 554 cases; the
   control without the upper bound fails all 143 cases that separate it. (run:2026-10-27-ai-emu, `entry`)
 - [I] **The row** `{+0 searchKind, +4 init, +8 think, +C alt}` (`MonAiRow`). The stock table (`ai-rows.txt`): kinds 0
@@ -240,11 +265,26 @@ flowchart TD
   `0x005E5730`); 4 `0x005E52D0`/alt `0x005E5280` (the `Hireable` row's pair); 5 `0x005E7AC0`; 6 `0x005E7C10`; 7
   `0x005E4CF0` (the `NecroPet` row's function); 8 `0x005E7DC0`; 9 `0x005E7F80`; 10 and 17 `0x005E8020`; 11 `0x005E8140`
   (init `0x005E80E0`); 12 `0x005E8340`; 13 `0x005E5C50`; 14 `0x005E2610`; 15 `0x005E1D30` (the `SuicideMinion` row's);
-  16 `0x005E2D80` (init `0x005E2CD0`). Who sets them (`pushes 0x005B0E00 2`, 33 calls): state 0 from `MonsterInit`,
-  `SkillReviveDo`, `ImpDetach` and the restore paths; 5 and 6 by the `Hireable` think function (`0x005E5312`–`0x005E538F`);
-  10 `CloakAreaCb` (`0x005D6612`); 11 `MonFleeFrom` (`0x005DDE10`); 13 one `SuperUniqueSpawn` case (`0x005A4C1A`, switch
-  at `0x005A4BF7`); 15 `WhipChangeClass`; 16 `ImpAttach`; 7 calls pass a register. (data:g_MonAiStateRows@0x0073D358,
-  fn:sub_005B0E00_MonAiInit@0x005B0E00, fn:sub_005DDD00_MonFleeFrom@0x005DDD00, fn:sub_005D18E0_ImpAttach@0x005D18E0)
+  16 `0x005E2D80` (init `0x005E2CD0`). Who sets them: `MonAiInit` has 33 direct calls (`aiinit-pushes.txt`, `N
+  0x005B0E00 33 calls`; the second pushed word is the state, the nearest the ctl; windows in `aiinit-windows.txt`).
+  **21 push an immediate state:** 0 at 11 sites (`MonsterInit` 0x00574307, `SkillReviveDo` 0x005C08A0, `ImpDetach`
+  0x005D1AA1, 0x0057056D, 0x005C33B1, 0x005EF463, and the state-row functions of states 2, 3, 9, 12 and 16 sending the
+  unit back to state 0: 0x005B15B3, 0x005E5AA4, 0x005E8007, 0x005E8445, 0x005E2FB4); 5 and 6, two sites each, in the
+  `Hireable` think function (0x005E5312–0x005E538F); 10 `CloakAreaCb` (0x005D6612); 11 `MonFleeFrom` (0x005DDE10); 13
+  one `SuperUniqueSpawn` case (0x005A4C1A, switch at 0x005A4BF7); 15 `WhipChangeClass` (0x005D1EC0); 16 `ImpAttach`,
+  two sites (0x005D19A4, 0x005D19B9). **12 pass a register** (`aiinit-regstates.txt`): 0x005E817B in state 11's
+  function passes `eax` = 0 (after `test eax,eax; jne`); 0x005C3520 in 0x005C34B0, the one callee of `CurseApplyCb`
+  (0x005C36CF), passes 10, 12 or 11 for a skill whose `auratargetstate` (Skills `+0x82`) is 23, 27 or 56, else 0
+  (0x005C34D8–0x005C3503), and 0x005C352E is its twin on the no-monster-data branch (ctl 0, so `MonAiInit` returns);
+  `InactiveMonstersRestore` 0x0054286B the saved state (restore record `+0x28`); `SpawnOwnedMonster` 0x0056DA6A a word
+  of its block (`[ebx+0xC]`); and 7 sites in AI functions load the state through a pointer (0x005E52B5, 0x005E84D8,
+  0x005F17D6, 0x005F501E, 0x005F8240, 0x005F9985, 0x005FCF88), of which 0x005F17D6 and 0x005F501E visibly pass the
+  ctl's own `+0x00`, the current state; the other five are unresolved here. In each call whose ctl reads 0, that zero
+  is the inlined no-monster-data branch (`xor eax,eax` after a `jmp` past `mov eax,[eax+0x28]`). The immediates are 0, 5, 6, 10, 11,
+  13, 15 and 16: no immediate call passes 1–4, 7–9, 12, 14 or 17 (1 comes from `MonAiInit`'s own class bound, 10–12 also
+  from the curse path; the rest only through the five unresolved pointer loads, if at all). (data:g_MonAiStateRows@0x0073D358, fn:sub_005B0E00_MonAiInit@0x005B0E00,
+  fn:sub_005DDD00_MonFleeFrom@0x005DDD00, fn:sub_005D18E0_ImpAttach@0x005D18E0, fn:sub_005C35C0_CurseApplyCb@0x005C35C0,
+  tbl:Skills.txt:auratargetstate)
 - [I] **`MonAiInit(ECX game, EDX unit; ctl, state)`** returns at once unless game, unit and ctl are non-null, `state < 18`
   (signed) and the unit is a monster; a class at or past the MonStats count forces state 1. When `AiCtl.think` is
   non-zero, equals the `think` of the row of the **current** `AiCtl.state`, and that row has an `alt`: `AiCtl.state ←
@@ -272,7 +312,7 @@ flowchart TD
   a `MonsterData+0x0E` byte for classes 311 and 312 (record `+0x4C/+0x50`); the AI state word and think function are
   rebuilt by `MonAiInit(ctl, …)` on restore (0x0054286B). (fn:sub_00541FE0_InactiveMonAiSave@0x00541FE0,
   fn:sub_00541E20_InactiveMonAiRestore@0x00541E20, fn:sub_005424F0_InactiveMonstersRestore@0x005424F0)
-- [I] **The row kind** (`MonAiTargetByKind`, a switch on row `+0`, 0x005B1663): 0 no search; 1 `MonAiTargetOrIdle`,
+- [I] **The row kind** (`MonAiTargetByKind`, a switch on `+0` of the row `MonAiEntryGet(unit, AiCtl.state)` returns, 0x005B1663–0x005B1673; § 3): 0 no search; 1 `MonAiTargetOrIdle`,
   the think function runs only with a target; 2 `MonAiFindTarget`, the think function runs either way; 4
   `MonAiTargetOrWait`, only with a target; 5 the same search, either way; 3 and above 5 stop the event (no stock row).
   The target goes to `ctx+0x08`, the distance to `ctx+0x14`, the melee test to `ctx+0x18`.
@@ -465,7 +505,7 @@ flowchart TD
 
 - [I] **The machinery's own draws** (`rngcg-machinery.txt`: the 92 machinery functions and the tick as roots,
   stopping at `MonSetMode`, `PathPlan`, `MonModeStartNeutral` and the fatal entries; 2 231 functions reached, 116
-  indirect calls not followed, the AI think functions among them):
+  indirect calls not followed, the AI think functions among them; fn:sub_005DE200_MonAiWanderRing@0x005DE200):
 
   | function | seed | draws |
   |---|---|---|
