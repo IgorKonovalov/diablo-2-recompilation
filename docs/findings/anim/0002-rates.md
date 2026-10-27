@@ -19,6 +19,8 @@ after `UNIT_AnimTransform` ([anim/0001 § 2](0001-modes-frames.md#2-records-the-
 
 ## Answer (summary)
 
+*2026-10-27, Phase 2:* every branch of the rate (not its floors and cap), the dual-wield, sequence and shapeshift terms and the monster walk and run base are raised to `[C]` by run:2026-10-27-anim; see [the run section](#plan-0050-phase-2-run2026-10-27-anim), whose tags are the current ones.
+
 - [I] **One function, nine branches.** `UNIT_AnimSetRate(unit)` returns at once for a null unit or a type ≥ 4; it
   takes the display type, class and mode, sets the record (`UNIT_AnimSetRecord`), and then takes the first branch that
   matches: cast, block, get-hit, knockback, moving, attack, fixed, default. Each writes `+0x4C`; only cast and attack
@@ -82,7 +84,7 @@ No lead was used to locate or read this code, and [anim/leads](leads.md) was rea
 versions) before filing ("leads not read before filing"; plan 0050, `lane/p50c` review ruling (b)).
 *2026-10-27 (plan 0050 Phase 1b part 2, `lane/p50v`):* the verdicts on the 29 rate, attack, cast, hit-recovery and
 block rows, against this finding, anim/0001 and the P0 `animdata.d2` survey; agreement promotes nothing, and a
-`contradicted` row is a required Phase 2 case ([backlog](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md),
+`contradicted` row is a required Phase 2 case ([backlog](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md),
 cases P1b-1 … P1b-15; `(version: …)` marks a row whose only source describes D2R or 1.09, not a community error). The
 table and record comparisons come from `tools/anim_leads_check.py code` (`workspace/logs/anim-leads/p50v-code.txt`
 `99e7b983…`, `p50v-manifest.sha256`): the code's length `n` from `sched_len` and the rates of `tools/anim_rates.py`
@@ -98,12 +100,12 @@ over the records the code looks up.
 - [L] src:maxroll-d2r-breakpoints: R4, EFCR is capped at 75. **held**
   Detail: the cast factor `min(100 + B_FCR, 175)` (§ 3.1, 0x00623FDA–0x00623FE1).
 - [L] src:maxroll-d2r-breakpoints, src:pd-breakpoints: R5, no cap for EFHR, EFBR or EIAS. **contradicted**
-  ([P1b-2](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  ([P1b-2](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
   Detail: get-hit and block have no upper bound on their factor (§ 3.2), but the attack factor `B_IAS + stat 68 (+
   terms)` is clamped to 15..175 (§ 3.6, fn:UNIT_AnimSetRate@0x00623F50), so EIAS with the skill and weapon terms is
   capped; reachable with Fanaticism or Burst of Speed and a fast weapon.
 - [L] src:maxroll-d2r-attack-speed: A1, attack frames `⌈256 L / ⌊256 (100 + SIAS + EIAS − WSM) / 100⌋⌉ − 1`.
-  **held with refinement** ([P1b-1](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md); (verdict of the `lane/p50v` review, 2026-10-27, for "contradicted (version: D2R)"))
+  **held with refinement** ([P1b-1](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md); (verdict of the `lane/p50v` review, 2026-10-27, for "contradicted (version: D2R)"))
   Detail: the rate agrees (`r = ⌊spd · X / 100⌋`, `X = B_IAS + stat 68` with 68 = 100 + skill terms − `speed`, § 3.6,
   fn:UNIT_AnimSetRate@0x00623F50), and the code queues the steps `T + 1` … `T + N` that carry every frame event and the end at `T + N + 1 = T + n`, `n = max(2, ⌈256 (F − S) / r⌉)`, so `N = n − 1` whenever the ceiling is 2 or more (§ 7, fn:SUNIT_ScheduleModeEvents@0x005539B0): the source's count is `N`, the frames from the start to the last event step with the end's frame left out, the convention the source names ("the first and last frame are the
   same"). The source's 11-frame Amazon unarmed attack is `N` 11, `n` 12 (`AMA1HTH` 13 frames, start 1).
@@ -111,7 +113,7 @@ over the records the code looks up.
   fn:sub_0057EDD0_PlrModeLeaveOk@0x0057EDD0), so which of `n` and `n − 1` is the interval between two attacks is
   P1b-1's to log; the claim stays `[L]`.
 - [L] src:basin-wiki-animation: A2, attack frames `⌈256 (F − 1 − S) / r⌉`. **contradicted**
-  ([P1b-1](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  ([P1b-1](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
   Detail: at `r` 256 the formula is `n − 1` (the Basin cycle column, factor 100, is one below the code's `n` in all
   69 rows, `BASIN … cycle=… n_at_x100=…`), which A1's convention also gives. But its `− 1` sits inside the ceiling, so
   at other rates it is neither: `n − 2` below 256 (`F − S` 12 at `r` 128, factor 50: 22 for `N` 23) and up to `n`
@@ -139,12 +141,12 @@ over the records the code looks up.
   skills reach 68 through their stat lists (§ 4), whose values are not read here; the factor's floor 15 also bounds a
   slow.
 - [L] src:maxroll-d2r-attack-speed: A9, a throw with a throwing weapon costs 30 off the rate, except for the
-  Barbarian. **contradicted (version: D2R)** ([P1b-3](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  Barbarian. **contradicted (version: D2R)** ([P1b-3](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
   Detail: the only `− 30` is for a player whose real mode is 18 (a sequence), for every class (0x00624290–0x0062429B);
   the throw mode TH (11) takes the attack branch without it (§ 3.6).
 - [L] src:maxroll-d2r-attack-speed: A10, sequence skills use `⌈256 L / ⌊256 (100 + SIAS + EIAS − (WSM + 30)) / 100⌋⌉`
   with no `− 1`; Leap Attack and Charge ignore WSM. **contradicted (version: D2R)**
-  ([P1b-4](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  ([P1b-4](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
   Detail: for the five with `UseAttackRate` (Jab, Impale, Fists of Fire, Claws of Thunder, Blades of Ice) the attack
   branch with `X − 30` and the sequence length `L` with no `− 1` agree (§§ 3.6, 7), the speed being the mode-18 record's,
   whose token is `GH` (anim/0001 § 2); Charge and Leap Attack have no `UseAttackRate`, so they take the moving or the
@@ -156,19 +158,19 @@ over the records the code looks up.
   Zeal and Fury are not among the reschedule callers read; the per-hit lengths are not decided here.
 - [L] src:maxroll-d2r-attack-speed: A12, Double Throw `Vinc = 70 + (WSM1 + WSM2)/2 + SIAS + EIAS`, `fpa = ⌈256·12/⌊256
   Vinc/100⌋⌉ / 2`; Double Swing `Vinc = 120 + …`, 17 frames; `Vinc` clamped 15–175. **contradicted (version: D2R)**
-  ([P1b-5](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  ([P1b-5](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
   Detail: both are real-mode-18 attack-rate sequences, so `X = B_IAS + stat 68 + dual term − 30`, clamped 15..175
   (§ 3.6): base 70 for both, not 120 for Double Swing; the hands' mean is subtracted (stat 68 = −`speed`), where the
   row writes `+`; one schedule per sequence, 12 frames (sequence 15) and 17 (sequence 11) (`SEQ` lines, anim/0001 § 5; fn:UNIT_AnimSetRate@0x00623F50, fn:SUNIT_ScheduleModeEvents@0x005539B0).
 - [L] src:maxroll-d2r-attack-speed: A13, Frenzy's two swings at two factors (`WSM1st`, `WSM2nd`), `fpa1 = ⌈256·9/…⌉ −
   1`, `fpa2 = ⌈256·17/…⌉`; after a missed first swing the second uses the first weapon's speed.
-  **contradicted (version: D2R)** ([P1b-5](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  **contradicted (version: D2R)** ([P1b-5](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
   Detail: the 17-frame sequence 11 is scheduled once at the start's rate (anim/0001 § 7), one factor for both swings,
   with the base 70 and the dual term of A6; Frenzy is not among the reschedule callers of anim/0001 § 7.1 (fn:SUNIT_ScheduleModeEvents@0x005539B0).
 - [L] src:maxroll-d2r-attack-speed: A14, werewolf and werebear `AnimSpeed = ⌊256·FramesNeutral/Delay⌋`, `Delay =
   ⌊256·FramesChar/⌊(100 + WIAS − WSM)·CharSpeed/100⌋⌋`, FramesNeutral the NU length 13 or 12, FramesChar 15, then A1;
   the faster of this and A1 from patch 2.4. **contradicted (version: D2R)**
-  ([P1b-6](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  ([P1b-6](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
   Detail: the shape agrees: `w = (+0x48 & ~0xFF) / D`, `D` from the weapon's IAS and `speed` undiminished, then the
   attack factor (fn:sub_00646170_WereformAttackBase@0x00646170, § 3.6). But `+0x48` is the form's current record
   (A1 at `SUNIT_AnimInit`'s call: `40A1HTH` 13, `TGA1HTH` 12 frames; the NU records have 9 and 10), and `D` uses the
@@ -180,14 +182,14 @@ over the records the code looks up.
   fn:UNIT_AnimTransform@0x00645270); neither state has `meleeonly`, so the base is the record's speed (§ 3.6).
 - [L] src:maxroll-d2r-breakpoints: C1, cast frames `⌈256 B / ⌊S (100 + EFCR) / 100⌋ − 1⌉`, Lightning and Chain
   Lightning without the `− 1`. **held with refinement**
-  ([P1b-1](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md); (verdict of the `lane/p50v` review, 2026-10-27, for "contradicted (version: D2R)"))
+  ([P1b-1](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md); (verdict of the `lane/p50v` review, 2026-10-27, for "contradicted (version: D2R)"))
   Detail: the cast rate agrees (§ 3.1, fn:UNIT_AnimSetRate@0x00623F50) and the change points of all 24 FCR tables
   equal the code's; in every row of the eleven record casts the table is `N = n − 1` (`table_minus_n=[-1]`; A1's
   reading: the code queues the steps `T + 1` … `T + N` that carry every frame event and the end at `T + N + 1 = T + n`, `n = max(2, ⌈256 (F − S) / r⌉)`, so `N = n − 1` whenever the ceiling is 2 or more (§ 7, fn:SUNIT_ScheduleModeEvents@0x005539B0): the source's count is `N`, the frames from the start to the last event step with the end's frame left out). The Lightning tables equal `n` (`table_minus_n=[0]`: sequence 12, 19 frames, at the cast rate),
   the source's own exception; A1's convention does not by itself account for it, and P1b-1's Lightning control logs
   the same frames (start, events, end, next start) to settle both.
 - [L] src:maxroll-d2r-breakpoints: C2, cast bases and speeds per class and form. **contradicted (version: D2R)**
-  ([P1b-7](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  ([P1b-7](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
   Detail: the records agree for the Amazon (20/256, all weapon classes), Assassin 17, Barbarian 14, Paladin 16,
   Sorceress 14, the vampire (15/160), Lightning (19) and the Act 3 mercenary (18), and differ for the Druid (`DZSC*` 15
   frames, speed 208; the row 16), the Necromancer (`NESC*` 16; the row 15), the werewolf (`40SCHTH` 11/168; the row
@@ -206,7 +208,7 @@ over the records the code looks up.
   Detail: the Rogue's Inner Sight is Hireling `Mode1` 4 (A1), and a monster's A1 takes the attack branch (§ 1, fn:UNIT_AnimSetRate@0x00623F50); the
   mode choice is the AI's (plan 0052), tbl:Hireling.txt:Mode1.
 - [L] src:maxroll-d2r-breakpoints: H1, hit-recovery frames `⌈256 B / ⌊S (50 + EFHR) / 100⌋ − 1⌉`.
-  **held with refinement** ([P1b-1](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md); (verdict of the `lane/p50v` review, 2026-10-27, for "contradicted (version: D2R)"))
+  **held with refinement** ([P1b-1](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md); (verdict of the `lane/p50v` review, 2026-10-27, for "contradicted (version: D2R)"))
   Detail: the get-hit rate agrees (§ 3.2, fn:UNIT_AnimSetRate@0x00623F50) and the 32 FHR tables' change points equal
   the code's; every row is `N = n − 1` (`TAB fhr … table_minus_n=[-1]`; A1's reading). Get-hit cannot be left before
   its end (anim/0003 § 6.2, fn:sub_0057EDD0_PlrModeLeaveOk@0x0057EDD0), so here the two counts differ only in whether
@@ -222,14 +224,14 @@ over the records the code looks up.
   `src:pd-breakpoints`'s further rows included (fn:UNIT_AnimSetRate@0x00623F50); the counts are H1's, `N = n − 1`.
 - [L] src:maxroll-d2r-breakpoints, src:pd-breakpoints: H4, the "one-handed swinging" weapons of the Druid's FHR and the
   Amazon's FBR (three lists). **contradicted**
-  ([P1b-8](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  ([P1b-8](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
   Detail: the record is chosen by the weapon class (anim/0001 § 2, fn:COMPOSIT_WeaponClass@0x0064F060), and the
   248 and 88 records are `DZGH1HS` and `AMBL1HS`: the types whose Weapons `wclass` is `1hs` held one-handed (axes,
   clubs, hammers, maces, orbs, scepters, swords, throwing axes, wands; `WSM wclass_1hs_types`). Maxroll's FHR list
   lacks hammers and orbs, its FBR note lacks wands, PureDiablo's lacks hammers; a two-handed axe is `stf` and a
   two-handed sword held in two hands `2hs`.
 - [L] src:maxroll-d2r-breakpoints: B1, block frames `⌈256 B / ⌊S (50 + EFBR) / 100⌋ − 1⌉`, Holy Shield + 50 to EFBR.
-  **held with refinement** ([P1b-1](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md); (verdict of the `lane/p50v` review, 2026-10-27, for "contradicted (version: D2R)"))
+  **held with refinement** ([P1b-1](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md); (verdict of the `lane/p50v` review, 2026-10-27, for "contradicted (version: D2R)"))
   Detail: the block rate and Holy Shield's 100 for 50 agree (§ 3.2, fn:UNIT_AnimSetRate@0x00623F50), the 22 FBR
   tables' change points equal the code's, and every row is `N = n − 1` (`TAB fbr … table_minus_n=[-1]`; A1's reading,
   block as get-hit not left before its end, fn:sub_0057EDD0_PlrModeLeaveOk@0x0057EDD0).
@@ -250,7 +252,7 @@ family checks the function's map.
 
 | Address | Name | Role | Tag |
 |---|---|---|---|
-| `0x00623F50` | `UNIT_AnimSetRate` | the rate (§ 2); unchanged name | I |
+| `0x00623F50` | `UNIT_AnimSetRate` | the rate (§ 2); unchanged name | C |
 | `0x00621740` | `sub_00621740_AnimRateBonus` | `B_i` from `g_AnimRateBonus[i]` (EAX `i`, ECX unit) | I (its map checked by the `bonus` family; an ADR-0015 map raises no symbol row) |
 | `0x006216E0` | `sub_006216E0_AnimRateIsCast` | the cast test (EAX type, EDX mode, ECX unit) | I |
 | `0x006214A0` | `sub_006214A0_AnimRateIsMove` | the moving test (ECX type, EDX mode, ESI class) | I |
@@ -258,7 +260,7 @@ family checks the function's map.
 | `0x00621630` | `sub_00621630_AnimRateIsFixed` | the fixed test (EAX type, ECX mode, stack class) | I |
 | `0x006213D0` | `sub_006213D0_AnimMoveBaseRate` | `vbase`: player 0x65 (run) / 0xD5; monster MonStats `+0x36` / `+0x38` (RN) | I |
 | `0x00621360` | `sub_00621360_AnimPathBaseSpeed` | the path speed base: CharStats `+0x040` `<< 8` / MonStats `+0x032` `<< 8` | I |
-| `0x00646170` | `sub_00646170_WereformAttackBase` | `(+0x48 & ~0xFF) / D` for a transformed player (§ 3.6) | I |
+| `0x00646170` | `sub_00646170_WereformAttackBase` | `(+0x48 & ~0xFF) / D` for a transformed player (§ 3.6) | C |
 | `0x0062A710` | `sub_0062A710_HumanAttackFrames` | `D`: the human A1 length in game frames with this weapon | I |
 | `0x0066AA80` | `sub_0066AA80_AnimDataInfo` | frames, speed and first event frame of a named record | I |
 | `0x00628500` | `sub_00628500_ItemWClass` | Items `+0xC0` (the weapon class code) | I |
@@ -269,7 +271,7 @@ family checks the function's map.
 | `0x0057AD80` | `sub_0057AD80_ColdEndCb` | chill (state 11) end callback, then the rate | I |
 | `0x005C6DC0` | `sub_005C6DC0_SkillPassiveStatList` | a skill's `passivestat1..5` into a list (68 also into 69), then the rate | I |
 | `0x005D8EF0` | `sub_005D8EF0_SkillSt38EndCb` | Whirlwind start's state end callback, then the rate | I |
-| `0x00650F00` | `sub_00650F00_MonStatsSpeeds` | MonStats `+0x36`, `+0x38` at load (§ 3.5); unchanged name | I |
+| `0x00650F00` | `sub_00650F00_MonStatsSpeeds` | MonStats `+0x36`, `+0x38` at load (§ 3.5); unchanged name | C |
 
 Data: `g_AnimRateBonus` `0x006E8E24` (6 × 12 B: type, k, stat), `g_PlrModeRateClass` `0x006E8A00` (20 × 20 B),
 `g_MonModeRateClass` `0x006E8B90` (16 × 20 B), `g_MonXModeRateClass` `0x006E8CD0` (16 × 20 B); the 20-byte entry is
@@ -611,3 +613,52 @@ start stores at 0x005D91EC)
 - [L] The caller of `ClampVitalsSetRate` at 0x005CEC7B lies after `sub_005CE9F0_SkillDo150Smite` in the image and its
   own function is not delimited; not read.
 - [L] What the client does with its seven calls (the displayed animation) is presentation (plan 0050 § Open questions).
+
+## Plan 0050 Phase 2 (run:2026-10-27-anim)
+
+The closing check of [run:2026-10-27-anim](experiments.md#run2026-10-27-anim) (55 logs; `2026-10-27-anim-check.txt`,
+`2026-10-27-anim-summary.txt`; the run's setup and boundary in [anim/0001's run section](0001-modes-frames.md#plan-0050-phase-2-run2026-10-27-anim)).
+Every compared kind has 0 mismatches; where a statement above is tagged inferred and this section raises it, the
+tag and the run given here are the current ones.
+
+- **The rate** (§§ 1, 3) **raised in part** (every branch; not the floors and the cap). [C] At all 298 373 logged `UNIT_AnimSetRate` exits the
+  `+0x4C` (and `+0x3C` for cast and attack, 39 901 sequence steps, `seqstep`) equals the model's: the branch by the
+  image's mode-class tables (§ 3.4's `npc` rule included: classes 257 and 405 in S1–S4 take the default branch, 70
+  calls), then cast `spd · min(100 + B_FCR, 175) / 100` (players 4 672, monsters 33), block
+  `max(1, spd · (B_FBR + 50) / 100)` (1 150, 233; Holy Shield's `+ 100` in the Paladin's 256 and 317 rates), get-hit `spd · (B_FHR + 50) /
+  100` (173, 3 526), knockback the walk base (2, 1 331), moving `vbase · max(B_FRW + stat 67, 25) / 100` (3 191,
+  123 060), attack `base · clamp(B_IAS + stat 68 [+ dual] [− 30], 15, 175) / 100` (7 532, 27 664), fixed `spd` (72,
+  7 698), default `spd · clamp(stat 69, 15, 175) / 100` (9 129, 108 907) (`sr-p-*`, `sr-m-*`; a shapeshifted
+  player counts under its real type). The cap at 175 is reached by 31 player and 74 monster attack calls
+  (`sr-*-attack-x-gt175`, P1b-2: sp-ass-bos's Burst of Speed with two katars *of Quickness*, 22, and sp-bar-dw's Double Swing, 9); [I] the moving floor at 25, the attack
+  floor at 15, block's floor at 1 and the `0x7FFF` cap are reached by no call, so those halves stay as above. (fn:UNIT_AnimSetRate@0x00623F50,
+  fn:sub_00621740_AnimRateBonus@0x00621740, data:g_PlrModeRateClass@0x006E8A00, run:2026-10-27-anim)
+- **The dual-wield term** (§ 3.6) **raised.** [C] With two weapons in the hands (the Barbarian's hand axe with a
+  scimitar or a falchion, the Assassin's two katars), the attack factor takes the two hands' mean item stat 68 in
+  place of the right hand's (`(R + L) / 2 − R`, toward zero), over the dual-wield attack and sequence calls of
+  sp-bar-dw and sp-ass-bos (Double Swing 69, Frenzy 117, A1, S3/S4); a reading without the term mismatches wherever
+  the two speeds differ (hand axe 0 against scimitar −20). (fn:UNIT_AnimSetRate@0x00623F50, 0x00624211–0x0062428E,
+  run:2026-10-27-anim)
+- **The sequence term** (§ 3.6) **raised.** [C] A player whose real mode is 18 with an attack-rate skill (Jab,
+  Double Swing, Frenzy, Fists of Fire) takes `X − 30` before the clamp in every such call
+  (`seqstep`), the other sequences (Lightning by `seqtrans` SC, Charge and Leap Attack on the default branch: P1b-4,
+  Charge 156 calls at item IAS 0 and 40, Leap Attack 24 at 0 and 20, none on the attack branch) as § 3.1 and § 3.7.
+  (0x00624290–0x0062429B, run:2026-10-27-anim)
+- **The shapeshift base** (§ 3.6) **raised.** [C] Werewolf and werebear attacks (235 calls) take `base =
+  WereformAttackBase`: `(+0x48 & ~0xFF) / D` with `D` 19 with no weapon (78 calls) or `HumanAttackFrames` with the
+  war hammer (34), the spear (31) and the short staff (92), `+0x48` being the previous mode's length at
+  `UNIT_AnimInit`'s three calls before it writes the new one (returns 0x00624469, 0x006244C5, 0x006244E3) and the new
+  length at `SUNIT_AnimInit`'s; 50 inner calls separate the two lengths (a model taking the new one mismatched them). (P1b-6.)
+  (fn:sub_00646170_WereformAttackBase@0x00646170, fn:sub_0062A710_HumanAttackFrames@0x0062A710,
+  fn:UNIT_AnimInit@0x00624390, run:2026-10-27-anim)
+- **The monster walk and run base** (§ 3.5) **raised for the classes met.** [C] Every monster moving and knockback
+  call (124 391) uses `+0x36`/`+0x38` as § 3.5 derives them at load for its class, the `Run(i) / Run(b)` scaling of
+  the run base below class 410 included (54 classes scheduled). (fn:sub_00650F00_MonStatsSpeeds@0x00650F00,
+  run:2026-10-27-anim)
+- **The breakpoints** (§ 7). [C] The lengths the schedules queue at every logged rate equal `n(r) = max(2, ⌈256 (F −
+  S) / r⌉)` (`sched-len`), so the function of § 7 is exercised at the rates in the summary's `MODE` lines; per class
+  the run has three FCR rates of 30 events for four classes, two FBR rates for three, and no FHR rate with 30 (the
+  record's shortfalls). (fn:SUNIT_ScheduleModeEvents@0x005539B0, run:2026-10-27-anim)
+- **A rate change in a mode** (§ 6). [C] Every-frame monsters advance at the rate of the last call (the `adv` pairs
+  among 212 slowed monster windows included); the scheduled
+  modes' events fire at their queued frames whatever call comes after (`fire`). (run:2026-10-27-anim)

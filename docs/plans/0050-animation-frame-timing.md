@@ -232,7 +232,7 @@ client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing ente
   - **the Phase 1b cases** (required, from the 19 `contradicted` verdicts of P1b part 2, all reachable on stock data,
     and the P1b-1 refinement of A1, C1, H1 and B1 ruled at its review;
     [anim/leads § 12](../findings/anim/leads.md#12-verdicts-part-2),
-    [backlog](../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md); minimums are estimates):
+    [backlog](../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md); minimums are estimates):
     **P1b-1** the mode length (A2 contradicted; A1, C1, H1, B1 the counting refinement): attack (an Amazon or
     Sorceress A1 with a start frame and one class without), cast, get-hit and block at two or more rates each, one of
     them a slowed attack (factor ≤ 60) and one a fast one (factor ≥ 157), so A2 separates from both `n` and `n − 1`;
@@ -810,7 +810,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   shapeshift base uses the human A1 record per weapon (A14). One objdump read: `RunVelocityStat`'s class is the unit's
   real class (0x0062449F), cited in M14. **Phase 2:** the 23 contradicted claims are all reachable on stock data and
   are written into *Done when* as cases P1b-1 … P1b-15
-  ([backlog](../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md)). No tag changed; nothing
+  ([backlog](../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md)). No tag changed; nothing
   promoted; `re/symbols.csv` untouched. "No lead" recorded for monster frames and rates, the `fast` mod, object operate
   frames and `monseq`. Review requested
   ([backlog](../backlog/archive/2026-10-27-reverser-architect-review-plan-0050-p1b-part-2.md)).
@@ -897,3 +897,30 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   seed come between); either log the intervening draws or keep the draw order `[I]`; (e) then the closing check over
   every kept log, the findings' run sections (anim/0001–0003, raising what the run separates, review-fix 14's symbol
   raises), the review-fixes pass, the review request and the ledger row.
+- **2026-10-27 — Phase 2, second lane run: run closed (reverser, `lane/p50e` after its rotation; harness slot 2,
+  no Ghidra; objdump reads of `UNIT_SeqReadFrame`, `SEQ_ReadFrame`, `UNIT_AnimInit`'s rate calls and the `+0x4E`
+  stores).** 24 more sessions (batch 5: get-hit variants gh2/gh4/gh4n, block and throw `bk-`, the P1b specials
+  `sp-`, `p8-`, `br-hell`, `mon-4`, `mon-5`), logger rev 5 for 18 of them (the wolf and bear states), pilot
+  `--drink-in-burst`; the checker gained the dual-wield class and term, the shapeshift display and wereform base,
+  and two oracle classifications (a catalogue skill's own queue after its cancel; a do's store to `+0x4E`). The record
+  is [run:2026-10-27-anim](../findings/anim/experiments.md#run2026-10-27-anim), **closed**: the closing check over all
+  55 kept logs has 0 mismatches in every kind (rate 298 373, schedules 25 848, queued events 42 542, steps 99 241,
+  `GetHitRoll` 7 195 …), the checkpoint's 31 logs still 0 under the closing checker, the three replays byte-identical.
+  The findings' run sections raise to `[C]`: anim/0001 the record, start frame, schedule and dispatch, the advance,
+  the object draw (not its chaining), the per-frame order; anim/0002 every rate branch (not the floors and the cap),
+  the dual-wield, sequence and shapeshift terms, the monster walk and run base; anim/0003 the step, the speeds (not
+  the floor), the run drain (not the turn to a walk), the monster knockback end, `GetHitRoll` (not the divisors 32 and
+  64), the block gate, `PlrModeEndPending`, the delay's start. 21 symbols raised to `C` in `re/symbols.csv` and the
+  Functions tables (review-fix 14). **Short** (record's Covers, the rare-branch rule): get-hits per class (84 in
+  all; every fragile character died after 2–9: a get-hit needs a hit of a sixteenth of life), so the FHR
+  breakpoints; blocks for the Barbarian (11) and the FBR breakpoints for four classes; throws for the Necromancer
+  (22), Paladin (3) and Druid (0); the second weapon type of the IAS rates; three FCR rates for the Amazon,
+  Barbarian, Assassin; object-start and `PlayerModeAllowed` chaining (0 chained of 7; no draw met); player
+  knockbacks (2 mode-19 starts); a run turning to a walk; P1b-2 (31 calls above 175), P1b-13 (not staged), P1b-14 (no
+  factor below 25), `VASCHTH`, a slowed Charge. A `fast` champion is not reachable as named (MonUMod `fast` has no
+  `champion` cell); the mod is met on superuniques and their minions (9 300 calls). **Readings:** P1b-1, a held
+  normal action restarts at `T + N` (`N = n − 1`: casts 448 against 103 at `T + n`), held Lightning at `T + n` (68,
+  never `T + N`), get-hit and block never before `T + n`; 23 A1 restarts separate A2. P1b-12, the next cast starts at
+  the do plus the delay (72 of 73). P1b-10, 12 of Blood Raven's 13 knockback results put the player in neutral in the
+  same frame. The every-frame first run answered (anim/0003's open question, closed). The P1b cases entry is closed;
+  review requested ([backlog](../backlog/2026-10-27-reverser-architect-review-plan-0050-phase-2.md)).

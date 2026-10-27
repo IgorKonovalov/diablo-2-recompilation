@@ -19,6 +19,8 @@ hashes). Unit fields as in `re/types/game.h`, the path fields as in `re/types/an
 
 ## Answer (summary)
 
+*2026-10-27, Phase 2:* the step, the speeds (not the floor), the run drain (not its turn to a walk), the monster knockback end, the get-hit roll, the block gate, `PlrModeEndPending` and the delay's start are raised to `[C]` by run:2026-10-27-anim; see [the run section](#plan-0050-phase-2-run2026-10-27-anim), whose tags are the current ones.
+
 - [I] **The per-frame step.** A moving unit's path advances once per call of `sub_00554CA0_UnitMoveStep` (one per
   game frame from its every-frame mode function, 11 call sites): `sub_006502D0_PathVelocityStep` with `k = 0x400`
   makes the step `(d · ((v · 0x400) >> 6)) >> 12` on each axis (`imul`, `sar`), `d` the direction's component from
@@ -83,14 +85,14 @@ No lead was used to locate or read this code, and [anim/leads](leads.md) was rea
 versions) before filing ("leads not read before filing"; plan 0050, `lane/p50c` review ruling (b)).
 *2026-10-27 (plan 0050 Phase 1b part 2, `lane/p50v`):* the verdicts on the 29 gate, delay, hit-recovery, block and
 movement rows, against this finding, anim/0001, anim/0002 and the P0 table docs; agreement promotes nothing, and a
-`contradicted` row is a required Phase 2 case ([backlog](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md);
+`contradicted` row is a required Phase 2 case ([backlog](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md);
 `(version: …)` marks a row whose only source describes D2R or 1.09). Table comparisons: `tools/anim_leads_check.py
 code` (`workspace/logs/anim-leads/p50v-code.txt` `99e7b983…`, `p50v-manifest.sha256`).
 
 - [L] src:maxroll-d2r-breakpoints: C4, the cast action frame `⌈B_act · 256 / r⌉` with per-class bases (Amazon by
   weapon 10–13, Assassin 9, Barbarian 9, Druid 10, werewolf 8, werebear 9, Necromancer 8, vampire 5, Paladin 9,
   Sorceress 7, Act 3 mercenary 7). **contradicted (version: D2R)**
-  ([P1b-7](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  ([P1b-7](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
   Detail: the do runs at `T + max(1, ⌈256 (f − S) / r⌉)` for the first code-1/2 event frame `f` (§ 5,
   fn:sub_00580460_PlrModeSkillFrame@0x00580460), the same form; the records' `f` agree for the Amazon (bow 10, hand
   to hand 11, `1hs`/`2hs`/`xbw` 12, `1ht`/`stf`/`2ht` 13), Assassin, Barbarian, Necromancer, Paladin, Sorceress and
@@ -108,7 +110,7 @@ code` (`workspace/logs/anim-leads/p50v-code.txt` `99e7b983…`, `p50v-manifest.s
   while it lasts (§ 5, fn:SKILLS_SetDelayState@0x0056EF90, fn:SKILLS_CanUse@0x00647960); Immolation Arrow's `delay` is
   25; the next start also passes the mode tests of § 6.2.
 - [L] src:pd-breakpoints: D2, the delay runs after the whole cast (an 11-frame cast with a 25-frame delay repeats every
-  36). **contradicted** ([P1b-12](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  36). **contradicted** ([P1b-12](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
   Detail: the delay starts at the do frame (§ 5, fn:SKILLS_SetDelayState@0x0056EF90), not at the mode end; the frames from the do to the end overlap it.
 - [L] src:basin-wiki-animation: D3, every delay is global in LoD. **held**
   Detail: one state (121) per unit, and `SKILLS_CanUse` refuses every skill with a `delay` while it is set (§ 5, fn:SKILLS_CanUse@0x00647960).
@@ -127,7 +129,7 @@ code` (`workspace/logs/anim-leads/p50v-code.txt` `99e7b983…`, `p50v-manifest.s
   (D/4)` (signed), a kill is a result bit handled before (§ 6.1); `D` reads the whole `+0x60`, so any element or
   doubled nibble gives 16; a stunned defender skips the roll; a monster without a GH mode is never hit.
 - [L] src:pd-breakpoints: H6, hit recovery on any hit above 1/12 of maximum life. **contradicted**
-  ([P1b-9](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  ([P1b-9](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
   Detail: the threshold is `hp / D` with the bands of H5 (§ 6.3, fn:sub_0057CB00_GetHitRoll@0x0057CB00): at `D` 16 a hit from `hp/16` can get hit (3/8) and
   one at or above `hp/12` but below `hp/4` can fail.
 - [L] src:maxroll-d2r-breakpoints, src:pd-breakpoints: H7, hit recovery interrupts a cast, an attack, walking,
@@ -148,7 +150,7 @@ code` (`workspace/logs/anim-leads/p50v-code.txt` `99e7b983…`, `p50v-manifest.s
   flag `0x08` is combat's.
 - [L] src:basin-wiki-animation: H10, knockback moves the target up to three subtiles (sometimes fewer) and puts it into
   hit recovery; not when frozen or killed; it needs a knockback mode, and the chance depends on the target's size.
-  **contradicted** ([P1b-10](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  **contradicted** ([P1b-10](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
   Detail: the distance `n` 3 (6 for `sandleaper1`), shortened by collision, and the kill test before agree (§ 4,
   fn:sub_0067A000_PathPlanKnockback@0x0067A000); a monster's ends in a get-hit command (fn:sub_005A8520_MonKnockbackEnd@0x005A8520)
   and needs both GH and KB, but a player's ends in neutral when the path arrives (anim/0001 § 9.1,
@@ -160,7 +162,7 @@ code` (`workspace/logs/anim-leads/p50v-code.txt` `99e7b983…`, `p50v-manifest.s
   `ht1`/`ht2` included, are 3 frames at 256 (`TAB fbr Assassin`).
 - [L] src:pd-breakpoints, src:maxroll-d2r-breakpoints: B5, a block only in melee or while walking, not while running;
   nothing during the block; blocks repeat with no cooldown. **contradicted**
-  ([P1b-11](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  ([P1b-11](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
   Detail: a player's block mode starts only when `frame − stat 95 > ⌊stat 102 / 8⌋ + 15` (§ 6.1, 0x0057D282–0x0057D2D6),
   so a second block within that window plays no block mode; block refuses every request but death and neutral (§ 6.2);
   whether a running player can block at all is the block test's (combat), not read here.
@@ -189,16 +191,16 @@ code` (`workspace/logs/anim-leads/p50v-code.txt` `99e7b983…`, `p50v-manifest.s
   Target does not enter (M6).
 - [L] src:basin-wiki-animation, src:basin-movement-clarification: M6, Slows Target lowers a player's walk and run by
   its percentage, capped at −50. **contradicted**
-  ([P1b-13](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  ([P1b-13](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
   Detail: its state carries stats 68 and 69 (attack and default rate), not 67 (skills/0003 handler 19,
   fn:sub_005C0310_StatEv19Slow@0x005C0310), and movement reads only `B_FRW + stat 67` (§ 1).
 - [L] src:basin-runwalk-thread: M7, Slows Target of any percentage gives −100 % to walk and run. **contradicted
-  (version: 1.09)** ([P1b-13](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  (version: 1.09)** ([P1b-13](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
   Detail: as M6, no stat 67 in its state (fn:sub_005C0310_StatEv19Slow@0x005C0310).
 - [L] src:basin-wiki-animation: M8, Slows Target caps (90 % on normal and minion monsters, 50 % on players, mercenaries
   and special monsters); with cold, Decrepify and Holy Freeze no unit below 15 % attack rate or 25 % velocity; the first
   percentage sets velocity, the latest attack rate. **contradicted**
-  ([P1b-13](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  ([P1b-13](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
   Detail: the floors agree as clamps on every source (attack factor ≥ 15, anim/0002 § 3.6; moving factor ≥ 25, § 1);
   the caps are 50 (players, bosses, hirelings, a `MonTypeFlag`), 75 or 90 (fn:sub_005C0310_StatEv19Slow@0x005C0310);
   Slows Target sets no velocity at all (M6).
@@ -212,12 +214,12 @@ code` (`workspace/logs/anim-leads/p50v-code.txt` `99e7b983…`, `p50v-manifest.s
 - [L] src:basin-runwalk-thread: M11, `effective rw = skill FRW + EFRW + RunVelocity · 100 / WalkVelocity − 100 −
   armour`, floored at 15; `velocity1 = effective rw · factor / 100`, factor 213 (walk, town walk) or 65 (run);
   `velocity2 = WalkVelocity · 256 · effective rw / 100`. **contradicted (version: 1.09)**
-  ([P1b-14](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  ([P1b-14](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
   Detail: the sum is `X` and `velocity2` is the path speed (§ 1); `velocity1` is the animation rate `vbase · X / 100`
   with `vbase` 0xD5 = 213 for walk and town walk and 0x65 = 101 for run (anim/0002 § 3.4,
   fn:sub_006213D0_AnimMoveBaseRate@0x006213D0; the row's 65 matches only read as hex); the floor is 25, not 15.
 - [L] src:basin-runwalk-thread: M12, Charge at `RB · (1 + bonus + armour) · 150 %`, item FR/W not applied.
-  **contradicted (version: 1.09)** ([P1b-15](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  **contradicted (version: 1.09)** ([P1b-15](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
   Detail: start 31 sets `MulDiv(RunVelocity << 8, max(stat 67, 50) + Param1, 100)`, `Param1` 150 (skills/0011 § 5,
   fn:sub_005CF6B0_SkillSt31Charge@0x005CF6B0): `RB · (stat 67 + 150) / 100`, 2.5 RB at stat 67 100, not 1.5 RB.
 - [L] src:basin-movement-clarification, src:basin-wiki-animation: M13, Charge at `RB · (1 + bonus + armour) + 1.5 RB`,
@@ -242,11 +244,11 @@ New names (subsystems `anim/movement` and `anim/timing`) and the existing ones t
 | Address | Name | Role | Tag |
 |---|---|---|---|
 | `0x00554CA0` | `sub_00554CA0_UnitMoveStep` | revalidate the target, `PathStep(unit, 0x400)`, room update; 1 moving, 2 stopped (§ 2) | I (unchanged) |
-| `0x00650840` | `sub_00650840_PathStep` | one frame of a path (§ 2) | I (unchanged) |
+| `0x00650840` | `sub_00650840_PathStep` | one frame of a path (§ 2) | C |
 | `0x006502D0` | `sub_006502D0_PathVelocityStep` | acceleration and the step vector | C (skills/0002; unchanged) |
 | `0x006503F0` | `sub_006503F0_PathStepTargetCheck` | still heading for the target? else replan (§ 2) | I |
-| `0x00650090` | `sub_00650090_PathStepSnap` | clamp the step onto the next point when within it (§ 2) | I |
-| `0x00650660` | `sub_00650660_PathStepMove` | the new position, the collision walk, the point index (§ 2) | I |
+| `0x00650090` | `sub_00650090_PathStepSnap` | clamp the step onto the next point when within it (§ 2) | C |
+| `0x00650660` | `sub_00650660_PathStepMove` | the new position, the collision walk, the point index (§ 2) | C |
 | `0x00650150` | `sub_00650150_PathStepCollide` | per crossed subtile the collision test, at most 10 (§ 2) | I |
 | `0x00650350` | `sub_00650350_PathReplan` | re-plan a blocked monster path (types 2, 13, 15) | I |
 | `0x006507B0` | `sub_006507B0_PathStop` | snap to the subtile centre, clear flag 0x20, the points and the step | I |
@@ -258,7 +260,7 @@ New names (subsystems `anim/movement` and `anim/timing`) and the existing ones t
 | `0x00623C20` | `sub_00623C20_UnitBaseHitClass` | a unit's own hit class (§ 7) | I |
 | `0x0062A180` | `sub_0062A180_ItemHitClass` | an item's base record byte `+0x13C` | I |
 | `0x0057EDD0` | `sub_0057EDD0_PlrModeLeaveOk` | may the player leave its mode for the requested one (§ 6.2) | I |
-| `0x0057ED70` | `sub_0057ED70_PlrModeEndPending` | `frame ≤ (first kind-1 event frame) + 5` | I |
+| `0x0057ED70` | `sub_0057ED70_PlrModeEndPending` | `frame ≤ (first kind-1 event frame) + 5` | C |
 | `0x0057ED90` | `sub_0057ED90_PlrSeqLeaveOk` | the sequence mode's leave test (not read past its first test) | I |
 | `0x005415A0` | `sub_005415A0_UnitEventFirstFrame` | the least positive frame of the unit's queued events of a kind | I |
 | `0x00581490` | `sub_00581490_ObjEvOperateEnd` | object event 1: mode 1 → 2 (§ 6.5) | I |
@@ -272,7 +274,8 @@ Data: `g_HitClassElements` `0x006E16D8` (4 pairs, repeated: packet offset, class
 `sub_00648690_PathSetSpeed`, `sub_0064FB90_PathSetPoint`, `sub_00649970_PathPlan`, `sub_005A6380_MonModeVelocity`,
 `sub_0057EEC0_PlayerModeAllowed`, `sub_005809D0_PlayerModeCmd`, `PLAYER_ModeCmdUnit`, `sub_0057CB00_GetHitRoll`,
 `sub_0057CE30_HitClassPick`, `COMBAT_GetHit`, `sub_00554650_PacketHitClassSet`, `sub_0046C140_MonModeAllowed`,
-`COMBAT_ApplyStun`, `sub_0064A5A0_MissileHitClass`.
+`COMBAT_ApplyStun`, `sub_0064A5A0_MissileHitClass`. *2026-10-27 (Phase 2):* `sub_0057F240_RunStaminaDrain` and
+`sub_0057CB00_GetHitRoll` are `C` in `re/symbols.csv`, their evidence moved here (the run section).
 
 ## Walkthrough
 
@@ -667,7 +670,64 @@ return 0;
   `0x00679720` (the knockback point's adjustment).
 - [L] Whether a player under stun is refused anything other than through the get-hit it takes; no state-21 test was
   found in `PlrModeLeaveOk` or `PlayerModeAllowed`.
-- [L] Whether an every-frame event queued during a frame's monster or player list run first runs in that frame or the
-  next (`sub_005415E0_EventQueueEveryFrame` puts it at the list head; the walk order of § 6 of anim/0001 is not
-  enough to say); it sets the first call of every moving mode and of the knockback count. Phase 2 logs it.
+- ~~Whether an every-frame event queued during a frame's monster or player list run first runs in that frame or the
+  next.~~ *2026-10-27 (Phase 2, run:2026-10-27-anim):* in that frame when queued before its type's every-frame list
+  is walked, else in the next (9 682 starts, [the run section](#plan-0050-phase-2-run2026-10-27-anim)).
 - [L] `sub_0057ED90_PlrSeqLeaveOk` past its first test (a used skill whose record byte `+0x16` is non-zero passes).
+
+## Plan 0050 Phase 2 (run:2026-10-27-anim)
+
+The closing check of [run:2026-10-27-anim](experiments.md#run2026-10-27-anim) (55 logs; `2026-10-27-anim-check.txt`,
+`2026-10-27-anim-summary.txt`; setup and boundary in [anim/0001's run section](0001-modes-frames.md#plan-0050-phase-2-run2026-10-27-anim)).
+Every compared kind has 0 mismatches; where a statement above is tagged inferred and this section raises it, the tag
+and the run given here are the current ones. The collision test `0x0064FF90`, the path plan and replan, the catalogue
+speed writers (Charge, Leap Attack) and the mode requests are oracles.
+
+- **The step** (§ 2) **raised.** [C] 99 241 consecutive path steps of the windowed units (the player always, one
+  monster at a time) reproduce the next position (16.16) and point index (`step`, `step-point` 97 139): `(d · 16 v) >>
+  12` per axis from `PathVelocityStep`, the point snap, and the collision walk (the halved increment, the 10-crossing
+  exit) over the logged collision results, 3 steps stopped by a blocked subtile and 2 102 after a replan among them.
+  (fn:sub_00650840_PathStep@0x00650840, fn:sub_006502D0_PathVelocityStep@0x006502D0,
+  fn:sub_00650090_PathStepSnap@0x00650090, fn:sub_00650660_PathStepMove@0x00650660,
+  fn:sub_00650150_PathStepCollide@0x00650150, run:2026-10-27-anim)
+- **The speeds** (§ 1) **raised in part** (not the floor). [C] At every moving and knockback rate exit the path speed is
+  `(pbase · max(B_FRW + stat 67, 25)) / 100` with CharStats `WalkVelocity << 8` (player) or MonStats `Velocity << 8` (monster), and
+  `0x1000` in knockback (`pathspeed` 127 584); each windowed step's speed equals the last such call's (`pathspeed-step`
+  131 167; not compared after a catalogue writer: sp-pal-chg's 160 Charge steps run at 5 760, `ps-p-m18-v`, stat 67 100 at all 156 Charge calls, P1b-15).
+  Walk 1 536 and run 2 304 for the players at `X` 100 and 150; the floor at 25 is not reached (P1b-14), so it stays
+  `[I]`. (fn:sub_00621360_AnimPathBaseSpeed@0x00621360, fn:sub_00620E80_RunVelocityStat@0x00620E80,
+  fn:UNIT_AnimSetRate@0x00623F50, run:2026-10-27-anim)
+- **The run drain** (§ 1) **raised in part.** [C] 37 434 run frames take
+  `max(1, RunDrain · 2 · (armour speed / 10 + 1) + ⌊that · stat 154 / 100⌋)` from stat 10 (`drain`). [I] The turn to a walk at 0 is not reached (no run ran out of
+  stamina). (fn:sub_0057F240_RunStaminaDrain@0x0057F240, run:2026-10-27-anim)
+- **The monster knockback** (§ 4) **raised.** [C] 541 monster knockbacks end (`MonKnockbackEnd`) in the frame their
+  advance reaches the length, and no knockback frame before it ends one (`kb-end` 3 585 frames).
+  (fn:sub_005A8520_MonKnockbackEnd@0x005A8520, fn:UNIT_AnimAtEnd@0x006217C0, run:2026-10-27-anim)
+- **A player's knockback** (§ 4, H10, P1b-10). [C] 15 hits on a player with result bit `0x8`: 13 by Blood Raven in
+  Hell (MonProp `knock`), 12 of which set the player to neutral (mode 1) in the hit's own frame and one later; 2 by
+  class 462 started mode 19 (the knockback branch's rate `0xD5` and path speed `0x1000` at its 2 calls). After, `[I]`:
+  why Blood Raven's knockback commands end in neutral at once (the planner's point equal to the start, or a refusal
+  in the mode command) is not logged. (fn:COMBAT_GetHit@0x0057CEE0, fn:sub_0057F090_PlrModeStartMove@0x0057F090,
+  run:2026-10-27-anim)
+- **The get-hit roll** (§ 6.3) **raised.** [C] All 7 195 logged `GetHitRoll` calls return what § 6.3 gives, with
+  0–2 `RangePow2` draws on the defender's seed (`ghr`: none 5 977, one 928, two 290): the early returns (freeze, poison only,
+  below 256) 809, below `hp / D` 4 518, the two drawing bands 605 and 613, `hp / (D/4)` and above 650, `D` 16 (5 589) and 8 (774), the max HP the
+  boundary; P1b-9: 64 get-hits in `[hp/16, hp/12)` and 332 refusals above `hp/12`. 102 consecutive pairs on one
+  defender chain (the second's seed before is the first's after), 701 have other draws between. [I] The divisors 32 (19 calls) and
+  64 (4) are met but not shown to separate from 16. (fn:sub_0057CB00_GetHitRoll@0x0057CB00, fn:RNG_RangePow2@0x00472210, run:2026-10-27-anim)
+- **The block gate** (§ 6.1, P1b-11) **raised.** [C] For 867 blocked hits on a player the block command is issued
+  exactly when `frame − stat 95 > ⌊stat 102 / 8⌋ + 15` (618 open, 249 shut), and of the 618 the mode test refused 51.
+  (fn:COMBAT_GetHit@0x0057CEE0, run:2026-10-27-anim)
+- **The mode tests** (§ 6.2). [C] 1 027 `PlrModeEndPending` values equal the frame of the kind-1 end queued when the
+  request comes (`endpending-E`; one after a catalogue requeue not compared). 26 696 `PlayerModeAllowed` calls leave
+  the player's seed unchanged (`pma-seed`): none under state 42, so the draw itself is not reached and stays `[I]`.
+  Get-hit and block are never left before their end (anim/0001's P1b-1 tallies). (fn:sub_0057ED70_PlrModeEndPending@0x0057ED70,
+  fn:sub_0057EEC0_PlayerModeAllowed@0x0057EEC0, fn:sub_0057EDD0_PlrModeLeaveOk@0x0057EDD0, run:2026-10-27-anim)
+- **The skill delay** (§ 5, P1b-12, D1 and D2). [C] With Frozen Orb held, 72 of the 73 next casts that start within
+  3 frames of the delay state's end start exactly at the `SKILLS_SetDelayState` frame (the do's) plus `d`, one 3
+  frames later: the delay runs from the do (D1), not after the whole cast (D2). (fn:SKILLS_SetDelayState@0x0056EF90,
+  fn:SKILLS_SrvDo@0x0056F7F0, run:2026-10-27-anim)
+- **Every-frame first run** (open question below): answered in [anim/0001's run section](0001-modes-frames.md#plan-0050-phase-2-run2026-10-27-anim)
+  (`ef-first` 9 682), so the first step of a moving mode and the first knockback count run in the start's frame
+  when it is queued before the type's every-frame list is walked. (fn:sub_005415E0_EventQueueEveryFrame@0x005415E0,
+  run:2026-10-27-anim)

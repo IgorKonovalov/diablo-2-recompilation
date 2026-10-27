@@ -579,6 +579,7 @@ class Checker:
             if u["t"] == 0 and d.get("sk") and d["sk"][0] in (107, 143) and u["m"] == 18:
                 # P1b-4 (A10): Charge and Leap Attack's sequence rate against the item IAS (stat 93)
                 self.tally["sr-p-sk%d-m18-%s-r%d-s93=%d" % (d["sk"][0], br, r, int(d["st"].get("93", 0)))] += 1
+                self.tally["sr-p-sk%d-m18-s67=%s" % (d["sk"][0], d["st"].get("67"))] += 1
             if "_x" in d and br in ("attack", "move"):
                 xx = d["_x"]
                 if br == "attack" and (xx > 175 or xx < 15):
@@ -749,6 +750,8 @@ class Checker:
                     self.ok("pathspeed-step", x["v"] == srl["pv"], ("v", x["n"], u, x["v"], srl["pv"], srl["n"]))
                 if x["a"]:
                     self.tally["ps-accel"] += 1
+                if x["t"] == 0 and x["m"] == 18:     # P1b-15: a player's sequence steps (Charge), the path speed
+                    self.tally["ps-p-m18-v=%d" % x["v"]] += 1
                 prev[u] = x
                 cur = u
                 cts = []
@@ -1473,6 +1476,21 @@ def summary(paths):
             rates[r] += v
         print("MODE %s %-9s %5d  rates %s" % (PLR_CLS[c], PMODE_NAMES.get(m, m), n,
                                              " ".join("%d:%d" % kv for kv in sorted(rates.items()))))
+    # the rate minimums of *Done when*: per class and mode, the rates with 30 or more events (pooled over records)
+    # and the records holding three such rates
+    for c in range(7):
+        parts = []
+        for m in (7, 10, 4, 9):
+            ctr = per.get((c, m), collections.Counter())
+            pooled = collections.Counter()
+            recs = collections.defaultdict(collections.Counter)
+            for (rec, r), v in ctr.items():
+                pooled[r] += v
+                recs[rec][r] += v
+            n30 = sum(1 for v in pooled.values() if v >= 30)
+            r3 = sorted(rec for rec, rc in recs.items() if sum(1 for v in rc.values() if v >= 30) >= 3)
+            parts.append("%s rates30=%d recs3x30=%s" % (PMODE_NAMES[m], n30, ",".join(r3) or "-"))
+        print("RATES %s %s" % (PLR_CLS[c], "; ".join(parts)))
     print("MODES " + " ".join("%s=%d" % (PMODE_NAMES.get(m, m), v) for m, v in sorted(tot.items())),
           "total=%d" % sum(tot.values()))
     mc = {k[len("sch-mclass-"):]: v for k, v in t.items() if k.startswith("sch-mclass-")}

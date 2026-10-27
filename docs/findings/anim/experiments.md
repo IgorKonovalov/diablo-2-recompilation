@@ -5,15 +5,16 @@ and evidence rules: ADR-0003, ADR-0004, ADR-0011, ADR-0013, ADR-0014, ADR-0015, 
 [tooling](../../../.claude/skills/reverser/references/tooling.md),
 [harness-play](../../../.claude/skills/reverser/references/harness-play.md).
 
-Harness runs (plan 0050 Phase 2): [run:2026-10-27-anim](#run2026-10-27-anim), **in progress**. Emulated runs
+Harness runs (plan 0050 Phase 2): [run:2026-10-27-anim](#run2026-10-27-anim), closed (two lane runs). Emulated runs
 (ADR-0015, no wine, nothing native): [run:2026-10-27-anim-rates-emu](#run2026-10-27-anim-rates-emu).
 
 ## run:2026-10-27-anim
 
-**Status: in progress.** `lane/p50e`, the first lane run of plan 0050 Phase 2, rotated at its checkpoint; the
-sessions still owed are in the resume note of the [plan 0050 log](../../plans/0050-animation-frame-timing.md#implementation-log).
-No claim of anim/0001–0003 is raised by this record yet: the findings' run sections are written when the run closes,
-against the closing check. The numbers below are the checkpoint check's (`2026-10-27-anim-check-ckpt1.txt`).
+**Status: closed.** `lane/p50e`, two lane runs of plan 0050 Phase 2 (the first rotated at its checkpoint, 31
+sessions; the second added batch 5, 24 sessions). The findings' run sections ([anim/0001](0001-modes-frames.md#plan-0050-phase-2-run2026-10-27-anim),
+[anim/0002](0002-rates.md#plan-0050-phase-2-run2026-10-27-anim), [anim/0003](0003-movement-gates.md#plan-0050-phase-2-run2026-10-27-anim))
+cite the closing check (`2026-10-27-anim-check.txt`) and its summary (`2026-10-27-anim-summary.txt`); the
+checkpoint numbers are kept below as the first run's.
 
 - **Question:** (plan 0050 Phase 2) Does `tools/anim.py`, the model of [anim/0001](0001-modes-frames.md),
   [anim/0002](0002-rates.md) and [anim/0003](0003-movement-gates.md), reproduce per event, with 0 mismatches: the
@@ -25,8 +26,10 @@ against the closing check. The numbers below are the checkpoint check's (`2026-1
   P1b-1 back-to-back actions, the P1b-12 delay interval and the P1b-11 block window show?
 - **Setup:** agent-driven sessions on harness slot 2 (display `:9`, prefix `workspace/wineprefix-2`), single player,
   pinned `game.exe` in `workspace/runtime/game` (stock data), gdb by `tools/d2run.py` with `-seed` per session, all in
-  Normal. Logger `tools/gdb/anim.gdb` (`de08f7d2…`) sourcing `tools/gdb/pilot.py` (`1ad48a4c…`, unchanged) and
-  `tools/gdb/anim.py` **rev 4** (`c5fa964f…`; every kept log's header says `ANIM logger armed rev 4`). Breakpoints
+  Normal (batch 5: gh4n in Nightmare, br-hell and br-hell2 in Hell). Logger `tools/gdb/anim.gdb` (`de08f7d2…`) sourcing `tools/gdb/pilot.py` (`1ad48a4c…`, unchanged) and
+  `tools/gdb/anim.py` **rev 4** (`c5fa964f…`) for the first 37 logs and **rev 5** (`78cdb2c3…`: states 139 `wolf`
+  and 140 `bear` added to `ss`, for the shapeshift display; nothing else changed) for the 18 logs of batches 5f
+  and 5g; each kept log's header names its revision (`ANIM logger armed rev N`). Breakpoints
   only read and continue. No gdb conditions are used: a Python `stop()` method runs before gdb tests a condition, so
   every filter is in Python, and the per-frame breakpoints (PathStep's `0x00650899`, the advance `0x00623E00`) log
   only the windowed units. Driver `tools/anim_sessions.py` over `tools/d2pilot.py` (`3ccabe20…`, unchanged) and
@@ -37,7 +40,9 @@ against the closing check. The numbers below are the checkpoint check's (`2026-1
   sessions Teleport and cast at the nearest monster. `slots.py stop 2` after each session, `saves.py --slot 2 restore
   p50e` at the end of each batch (slot idle, aside empty). The pilot only decides where to click. Driver revisions:
   the batch gh and 1 sessions ran `0b5149f7…` (commit `ed221fa2`), batches 2 and 3 `be14bf3a…`; the sessions they
-  share have the same steps.
+  share have the same steps. Batch 5 ran `tools/anim_sessions.py` `889dae99…` (its new session families added
+  between the sub-batches, the earlier rows unchanged) and `tools/d2pilot.py` `771856fc…` (commit `e9bbbf84`: its new
+  `--drink-in-burst`, the life orb sampled after each click of a burst too, drinking from the non-mana columns).
 - **Characters** (ADR-0013 § Neutral: tool-built by `anim_sessions.py build` from `tools/d2s_recipes/anim-*.json` on
   the stock `p0005` base saves; stock magic affixes at their fixed values and plain base items; no test-state key),
   in `workspace/logs/anim/saves-2026-10-27-anim/`. Per class (Amazon `ama` … Assassin `ass`) and tier `Anim<Cls><k>`:
@@ -70,12 +75,45 @@ death is staged, and the logs are kept whole. Logs `workspace/logs/anim/2026-10-
 with life 32–45, Nightmare at clvl 50, a session cut by a recipe change), their saves in `dev-r2-saves/` and
 `dev-r3-saves/`.
 
+### Sessions (the second lane run, batch 5)
+
+| batch | sessions | saves (recipe life) | seeds | field |
+|---|---|---|---|---|
+| 5a | gh2-sor-t1 | `gh2/AnimSorH1` (120) | 5411 | Act III Normal, Spider Forest (3,2) |
+| 5c | gh4-sor-t2, gh4-nec-t1 | `gh4/Anim<Cls>M<k>` (80) | 5612, 5621 | Act II Normal, Far Oasis (2,5) |
+| 5d | gh4n-pal-t2, gh4n-bar-t1 | `gh4/` (80) | 5732, 5741 | Act I Nightmare, Stony Field (1,3) |
+| 5e | bk-ama-t2 | `bk/AnimAmaB2` (1 500) | 5802 | Far Oasis |
+| 5f | br-hell, sp-ass-bos, sp-bar-dw, sp-pal-chg, sp-dru-form, p8-dru-1h, p8-dru-2h, bk-sor-t1, bk-nec-t2, bk-pal-t1, bk-bar-t2, bk-dru-t1, bk-ass-t2, mon-4 | `sp/AnimSorBr` (2 500), `sp/AnimAssBos`, `sp/AnimBarDw`, `sp/AnimPalChg`, `sp/AnimDruForm` (1 500), `gh2/AnimDruH2`, `gh2/AnimDruH1` (120), `bk/` (1 500), `AnimSorMon` | 4807, 5480–5483, 5490, 5491, 5811–5862, 5203 | Hell Cold Plains → Burial Grounds; Act I; Spider Forest; Far Oasis; Spider Forest (mon-4) |
+| 5g | mon-5, br-hell2, sp-dru-form2, p8-dru-2hs | `AnimSorMon`, `sp/AnimSorBr`, `sp/AnimDruForm2`, `sp/AnimDruH2s` (120) | 5204, 4807, 5485, 5492 | Act I (1,4); Hell; Act I; Spider Forest |
+
+Recipes (tool-built by `anim_sessions.py recipes`, ADR-0013 § Neutral, stock affixes and plain base items, no
+test-state key): `anim-<cls>-t<k>-gh2` / `-gh3` / `-gh4` / `-bk` are the tier recipes with life 120 / 60 / 80 /
+1 500 and set 1 a throwing axe with a buckler, hotkey F4 Throw (the Amazon a wand with the buckler, for her block with
+a wand; the Druid a war hammer, his set 2 a two-handed sword); `anim-ass-bos` (Burst of Speed 20, two katars *of
+Quickness*, the t2 items), `anim-bar-dw` (hand axe and scimitar in set 1, hand axe *of Quickness* and falchion *of
+Alacrity* in set 2; Double Swing, Frenzy, Leap Attack, Leap), `anim-pal-chg` (Charge 5; a plain crystal sword in set
+1, one *of Quickness* in set 2), `anim-dru-form` (Werewolf, Werebear: no weapon in set 1, a war hammer *of Alacrity*
+in set 2) and `anim-dru-form2` (a spear in set 1, a short staff in set 2, the t2 items), `anim-dru-2hs` (life 120, a
+two-handed sword in set 1), `anim-sor-br` (clvl 80, life 2 500, Nova 20, Teleport). The `bk-` sessions after
+`bk-ama-t2` play 10 hops per half instead of 24 (session cap). br-hell2 repeats br-hell's steps.
+
+Deaths: gh2-sor-t1, gh4-sor-t2, gh4-nec-t1, gh4n-pal-t2, gh4n-bar-t1, p8-dru-1h and p8-dru-2h (each after 2–9
+get-hits); p8-dru-2h's weapon swap, pressed after the waypoint, did not take (its get-hits are one-handed), so
+p8-dru-2hs carries the two-handed sword in set 1. Development logs (`workspace/logs/anim/dev5/`, manifest
+`dev-p50e-manifest-2.sha256`, 9 lines, base `workspace/logs/anim/`): dev5-gh3-sor-t2 (life 60 in Act I: 2 of 33
+monster attacks landed on the clvl 25 character, the Act I monsters' level being near 5; stopped), dev5-gh4-pal-t2
+(stopped after gh4-nec-t1's character died within one click burst in Far Oasis with its belt full), dev5-gh4n-dru-t2
+and dev5-bk-sor-t1 (stopped at their launch when a batch was cut; bk-sor-t1 was rerun in 5f), and the cut batch
+output dev5-batch5b.out.
+
 - **Procedure** (from the worktree; the checks under a 4 GB scope):
   ```
   python3 -I tools/anim_sessions.py recipes && python3 -I tools/anim_sessions.py build --saves workspace/logs/anim/saves-2026-10-27-anim
   python3 -I tools/anim_sessions.py run --slot 2 --tag p50e --saves workspace/logs/anim/saves-2026-10-27-anim \
       --run 2026-10-27-anim <sessions of the batch>
   python3 -I tools/anim.py check $(cat workspace/logs/anim/2026-10-27-anim-ckpt1.lst) > workspace/logs/anim/2026-10-27-anim-check-ckpt1.txt
+  python3 -I tools/anim.py check $(cat workspace/logs/anim/2026-10-27-anim-close.lst) > workspace/logs/anim/2026-10-27-anim-check.txt
+  python3 -I tools/anim.py summary workspace/logs/anim/2026-10-27-anim-check.txt > workspace/logs/anim/2026-10-27-anim-summary.txt
   python3 -I tools/anim.py replay-skills workspace/logs/skills/2026-10-25-skills-*.log workspace/logs/skills/2026-10-27-skills-*.log \
       > workspace/logs/anim/2026-10-27-anim-replay-skills.txt
   python3 -I tools/anim.py replay-combat $(cat workspace/logs/combat/c37p2-run.lst) > workspace/logs/anim/2026-10-27-anim-replay-combat.txt
@@ -99,7 +137,97 @@ with life 32–45, Nightmare at clvl 50, a session cut by a recipe change), thei
   3 547 of 3 636 and 2 596 of 2 667 equal; every monster attack on a player equal, the misses all on monster
   defenders where the model draws and the log shows none (the freeze and stun states these logs do not carry, `[L]`).
   The get-hit and block lengths of those runs are not replaceable: their logs hold no mode or rate line.
-- **Covers so far** (not a closing claim): see the resume note's per-case table.
+- **Closing result** (all 55 kept sessions, `2026-10-27-anim-close.lst`, checker `tools/anim.py` `4241197a…`,
+  output `2026-10-27-anim-check.txt` `2c3a7ddb…`, summary by `tools/anim.py summary` `2026-10-27-anim-summary.txt` `ee3448a3…`):
+  `CHECK anim` every kind 0 mismatched (`adv=2927/0 adv-seq=1453/0 block-gate=867/0 dispatch=42449/0 drain=37434/0
+  ef-first=9682/0 endpending-E=1027/0 fire=42542/0 ghr=7195/0 kb-end=3585/0 name=298373/0 obj=725/0
+  pathspeed=127584/0 pathspeed-step=131167/0 pma-seed=26696/0 rate=298373/0 record=298373/0 sched=25848/0
+  sched-len=25848/0 sched-rate=25848/0 seqstep=39901/0 startframe=25149/0 step=99241/0 step-point=97139/0`). The
+  closing checker differs from the checkpoint's (`b3fca053…`) in: the dual-wield weapon class and attack term
+  (anim/0001 § 2, anim/0002 § 3.6; the checkpoint logs have no dual wield); the shapeshift display (`UNIT_AnimTransform`
+  with `g_PlrToMonMode` and its fallback, rev 5's form states) and the wereform base, with `+0x48` the previous mode's
+  length at `UNIT_AnimInit`'s three calls (returns 0x00624469, 0x006244C5, 0x006244E3, before its writes at 0x00624473
+  and 0x006244F4); two boundary classifications, both oracles of Phase 2's *Boundary* (catalogue code): a kind-1
+  dispatch after a cancel from skill code (returns 0x005B0000–0x005EFFFF, e.g. Leap Attack's 0x005DA2AA, whose own
+  queue the logger does not read) is not compared (`dispatch-catalogue-queued` 124, and one `PlrModeEndPending` E,
+  `endpending-E-after-catalogue`), and a sequence advance's event byte cleared by the do it triggered is not the
+  advance's (`adv-seq-do-cleared-4e` 2, sandmaggot's do 87, whose function `sub_005CB3C0_SkillDo87MaggotLay` stores 0
+  at `+0x4E`, 0x005CB48E; the other two such stores, 0x005CB989 and 0x005CD51E, in dos 89 and 103); and the path
+  speed of a step compared only with the last rate call whose branch writes it (moving, knockback), where the
+  checkpoint compared it with any last call (37 Leap Attack steps whose speed the skill had set showed the
+  difference). Over the 31 checkpoint logs the closing checker still finds 0 mismatches. The three replays are
+  byte-identical under it (`replay-skills`, `replay-combat`, `replay-combat-p47`).
+  Manifest `workspace/logs/anim/2026-10-27-anim-manifest.sha256` (`39ba842a…`, 324 lines, one path base:
+  `sha256sum -c` passes from `workspace/logs/anim/`): the 55 logs, their pilot outputs and screenshots, the batch
+  outputs, all saves, the two lists, both check outputs, the summary and the three replay outputs.
+- **Covers** (against Phase 2's *Done when*; counts from `2026-10-27-anim-check.txt` and its summary; a short item
+  keeps its claims inferred, the rare-branch rule):
+
+  | item | minimum | run | |
+  |---|---|---|---|
+  | player mode events, all seven classes | 1 500 | 7 092 scheduled (A1 2 599, cast 2 223, kick 637, sequence 699, block 567, throw 192, get-hit 84, S2–S4 77, death 14) | met |
+  | per class and stageable mode | 30 | A1, cast and kick met for every class; sequence for the six with one (the Necromancer recipe has none); throw met for the Amazon 54, Sorceress 39, Barbarian 42, Assassin 32, short for the Necromancer 22, Paladin 3, Druid 0; block met but the Barbarian 11; get-hit short for all (8, 22, 7, 6, 6, 27, 8) | short in part |
+  | attacks: 3 IAS values on two weapon types, per class | 30 each | three rates of 30+ on one record for six classes (`AMA1BOW`, `SOA11HS`, `NEA11HS`, `PAA11HS`, `DZA11HS`, `AIA1HT1`), none for the Barbarian (two rates); the second weapon type short for all | short in part |
+  | casts: 3 FCR breakpoints | 30 each | met for the Sorceress, Necromancer, Paladin, Druid; two rates for the Amazon, Barbarian, Assassin | short in part |
+  | get-hits: 3 FHR breakpoints | 30 each | no class has a rate with 30 (`RATES` lines); see below | short |
+  | blocks: 2 FBR breakpoints | 30 each | met for the Paladin, Druid, Assassin; one rate for the Amazon and Sorceress, none for the Necromancer and Barbarian | short in part |
+  | monster mode events | 500, 20 classes | 18 756 over 54 classes; sequence monsters 1 453 advances | met |
+  | a `fast` champion | 1 | not reachable as named: MonUMod `fast` (row 6) has an empty `champion` cell (champions take 16, 36, 37, 39; tbl:MonUMod.txt); the `fast` mod met on superuniques and their minions instead: 9 300 rate calls of units whose `MON` scan carries mod 6 (`sr-m-fastmod-*`; moving 3 519, most at stat 67 175) | met as the mod |
+  | ruling (g): classic S1–S4 at the moving rate, two classes, one under a stat-67 change; class ≥ 410 S1–S4 | 30, 30 | 1 818 moving calls over classes 6, 19, 20, 111, 180, 190 (19 under a changed stat 67); the 70 default-branch calls are classes 257 and 405, `npc` rows (moving only in WL and RN, anim/0002 § 3.4); class ≥ 410: 509 attack, 75 default | met |
+  | object animation starts, `Sync` draw predicted and chained | 100 | 725 starts, 490 draws, 235 without; chained pairs 0 of 7 (another draw on the object's seed between each) | met but chaining short |
+  | movement windows (walk, run per class; monsters walking, running); 50 slowed | 200, 50 | player walk 719, run 2 211, sequence 30, knockback 1; monster walk 2 544, run 164, knockback 449; slowed 212 monster + 9 player | met |
+  | chaining, 20 chained pairs per drawing kind | 20 | `GetHitRoll` 102 of 803 consecutive pairs; object starts 0 of 7; `PlayerModeAllowed` never drew (26 696 calls, no state 42) | met for `GetHitRoll` only |
+  | oracle replacement | — | as at the checkpoint; byte-identical under the closing checker | met as stated |
+  | P1.3: `GetHitRoll` 100 calls, 20 per drawing band, 2+ divisors | 100, 20 | 7 195 calls; bands `half` 605, `quarter` 613; `D` 16 (5 589), 8 (774), 32 (19), 64 (4) | met |
+  | P1.3: 30 knockbacks, players and monsters, end predicted | 30 | monsters 541 ends predicted; players 2 mode-19 starts (and P1b-10's 15 knockback results) | short for players |
+  | P1.3: run drain, a run turned to a walk at 0 | — | 35 472 run frames; no run reached 0 stamina | short (the turn) |
+  | P1.3: every-frame first run at 30+ moving starts | 30 | 9 682 | met |
+  | optional: `PlayerModeAllowed` under state 42; object operate ends | 30, 30 | not staged; not checked | short |
+
+  The P1b cases: **P1b-1** (below); **P1b-2** 31 player attack rate calls with the factor above 175 (clamped), 22
+  from sp-ass-bos's Burst of Speed (short of 30 attacks); **P1b-3** 96 throws by the Sorceress, Necromancer,
+  Paladin and Assassin, no −30 in the model (met); **P1b-4** Charge 156 rate calls at item IAS 0 and 40, Leap Attack
+  24 at 0 and 20, all on the default branch (met); **P1b-5** Double Swing 69 and Frenzy 117 rate calls with two
+  weapons of different speed (hand axe and scimitar, hand axe and falchion), the dual-wield term in the model (met;
+  Frenzy after a missed first swing not separated); **P1b-6** werewolf and werebear attacks with no weapon (78), a war
+  hammer (34), a spear (31) and a short staff (92) (met); **P1b-7** `DZSC*` at three FCR values, `NESC*` at three,
+  `40SCHTH` at two (11, 5), `TGSCHTH` at two (17, 20), `VASCHTH` not staged; **P1b-8** the Druid's get-hit with the war
+  hammer 9 (`DZGH1HS`) and the two-handed sword 4 (`DZGH2HS`), the Amazon's block with a wand 99 (`AMBL1HS`) (met);
+  **P1b-9** 64 get-hits in `[hp/16, hp/12)`, 332 refusals above `hp/12` (met); **P1b-10** 15 knockback results
+  (`GH` bit `0x8`) on a player, 13 from Blood Raven in Hell (met for 10), of which 12 set the player to neutral in
+  the same frame and 1 later, and 2 from class 462 that started mode 19; **P1b-11** 867 block gates (open 618:
+  started 567, refused by the mode test 51; shut 249) (met); **P1b-12** 72 casts starting exactly at the delay
+  state's end (`DLY` frame + `d`) (met); **P1b-13** not staged (no Slows Target item in the recipes); **P1b-14** no
+  moving factor below 25 reached (`sr-*-move-x-lt25` 0), the run at base `0x65` in 2 211 windows; **P1b-15** 91
+  Charge starts (sp-pal-chg), its 160 logged player sequence steps at path speed 5 760 (`ps-p-m18-v=5760`), stat 67
+  100 at all 156 Charge rate calls (`sr-p-sk107-m18-s67=100`; none at ≤ 50).
+
+  **Why the get-hits are short.** `GetHitRoll` refuses a hit below `maxHP / D` (`D` 16 for nearly every monster hit
+  met), so a get-hit needs a hit of a sixteenth of the character's life or more, and each such hit costs that much.
+  Every fragile character died after 2–9 get-hits: life 40 in Act I (gh-, first run), 120 in Spider Forest
+  (gh2-sor-t1, p8-dru-*), 80 in Far Oasis and Act I Nightmare (gh4-, gh4n-), the belt potions drunk between clicks
+  (`--drink-in-burst`) not keeping up with packs; a clvl 25 character with life 60 in Act I Normal is seldom hit at
+  all (dev5-gh3-sor-t2), and a life-1 500 character takes no get-hit. The 84 get-hits stay the run's.
+- **Readings** (what the logs show; the findings' run sections tag them):
+  - **P1b-1, the interval between two actions** (`act-m<mode>-nextact-minus-n`: the next scheduled player mode's
+    start `T'` against the kind-1 end `T + n`, within 3 frames, a held request; `gap` otherwise). Cast (mode 10):
+    `T' = T + n − 1` 448 times, `T + n` 103, earlier (−2, −3) 8, later 175. A1 (7): −1 107, 0 63, −2/−3 15. Throw
+    (11): −1 36, 0 2. Kick (12): −1 4, 0 6. Held Lightning (mode 18, skill 49, the control): `T + n` 68, `T + n − 2`
+    once, never `T + n − 1`. Get-hit (4) and block (9): never before `T + n` (0: 2 and 21 times; 1–3 later). So a
+    held normal action restarts at `T + N`, `N = n − 1`, the frame the last step's events fall on, the end still
+    queued; get-hit and block hold to their end; the Lightning sequence restarts at its end. Of the 107 A1 restarts
+    at `n − 1`, 23 have A2's `⌈256 (F − 1 − S) / r⌉ ≠ n − 1` (`act-a2-m7-a2ne-n-1-obs-n-1`), so A2's count is not the
+    interval there; the other 84 cannot tell them apart. 1 027 `PlrModeEndPending` values equal the queued end while
+    a request comes before it.
+  - **P1b-12, the delay**: Frozen Orb held (mon sessions), of the 73 next casts (mode 10) that start within 3 frames of
+    the delay state's end (`delay-next-start-m10-minus-end`), 72 start exactly at the `DLY` frame plus `d` and one 3
+    frames later; the `DLY` frame is the do's (`SKILLS_SetDelayState` from `SKILLS_SrvDo`): the delay runs from the do.
+  - **P1b-10, a player's knockback**: 15 hits on a player with result bit `0x8`; 12 of Blood Raven's 13 set the
+    player's mode to neutral (1) in the hit's own frame (`plr-kb-next=m10-to-1` 8, `m1-to-1` 3, `m9-to-1` 1; one
+    later); the two of class 462 started mode 19 (`m1-to-19`).
+  - **The first run of an every-frame event** (anim/0003's open question): 9 682 starts, each in the frame it was
+    queued when queued before its type's every-frame list ran, else in the next (`ef-first`, 0 mismatched; player
+    starts 6 205 all next-frame, monster 3 477).
 
 Emulated runs (ADR-0015, no wine, nothing native):
 
