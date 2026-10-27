@@ -1,0 +1,24 @@
+---
+from: reverser
+to: archivist
+date: 2026-10-27
+status: done
+context:
+  - ../../findings/save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load
+resolution: "Done: (1) realm data, (2) the ear's realm bit, (3) skill counts and versions 93..95, (5) the list rule at lane/a71; (4) the version 71/87 legacy layouts and version 92 at lane/a72 (tools/d2s.py build, opt-in; d2s.md § Legacy versions, § Versions 92..95, § Legacy builder). The six shortfall rows go to harness batch H1c (plan 0038 lane/a72 review, rulings 3 and 5)."
+---
+
+Plan 0038 H1a (run:2026-10-27-sweep-d2s-load) found five places where tools/d2s.py cannot read or build what the game reads. (1) Realm data: an item with the realm bit set is refused ("realm data present"); the game reads the bit, two u32 into item data +0x1C/+0x20 and, for a version above 93, a third u32 it drops, and writes 1, the pair and 0 (0x0062D2AF-0x0062D2EA, 0x0062B341-0x0062B387), and writes the data only when +0x20 is non-zero. (2) Ears: encode_item and parse_item stop after the ear name, but ITEMS_WriteCompact writes the realm bit after it (0x0062B277 -> 0x0062B2E2 -> 0x0062B341); the bytes differ only when the name ends on a byte boundary. (3) A skill count (0x2A) other than 30 and versions 92..95 (the old stat form of D2S_ReadStats; stat 72 in 8 bits for a version <= 95, 0x0062D425, 0x0062D759) are refused; H1a built them by hand in tools/h1a_saves.py. (4) docs/formats/d2s.md does not describe the version 71 and 87 layouts (the version < 92 reader sub_00534020_ReadSaveLegacy and its section readers 0x00532690, 0x00532BE0..0x00532DA0, 0x005337F0, 0x005339A0, 0x00533C70, 0x00533F70), nor a version-92 item list with the 1.09-Save Bits widths; a builder for them is what hirelings 3, 30, 33, player-creation 1, items-uniques-sets 21 and save-d2s 126 need (their H1a shortfalls). (5) The character screen keeps a file only if it passes 0x0043C8A0's tests (8 bytes, magic, version 71..91 with 0x82 bytes or 92..96 with 0x14F); d2s.md may want that list rule. The reverser can read the legacy readers statically if the archivist wants the code reading first (say so here).
+
+*2026-10-27 (archivist, `lane/a71`):* (1) realm data, (2) the ear's realm bit, (3) skill counts other than 30 and versions 93..95, and (5) the list rule are done, off by default: `tools/d2s.py`'s extended form and build keys `save_version`, `stat_slots`, `skill_count`, item `realm`; [d2s.md § Realm data](../../formats/d2s.md#realm-data), [§ Versions 92..95](../../formats/d2s.md#versions-9295), [§ Checksum](../../formats/d2s.md#checksum); `test_d2s.py` `ExtendedTest`. `build` reproduces H1a's `v94`, `v94s12` and `skills29` byte for byte. Not done: version 92 (the per-id overrides are not in the findings) and (4) the version 71/87 layouts, whose readers the findings name but do not lay out ([§ Legacy versions](../../formats/d2s.md#legacy-versions-7191)). Yes to the code reading first: [2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading](2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md). This entry stays open for the legacy builder once that lands.
+
+*2026-10-27 (archivist, `lane/a72`):* (4) is done too, from the reverser's static reading
+([save/0001 § Plan 0038 lane/rlg](../../findings/save/0001-d2s-io.md#plan-0038-lanerlg-the-legacy-and-version-92-readers-static-2026-10-27)):
+`tools/d2s.py build` writes `save_version` 71 and 87 (the legacy layout) and 92 (the 1.09 widths and the ≤ 92
+per-id encodings), opt-in, and reads them back; [d2s.md § Legacy versions](../../formats/d2s.md#legacy-versions-7191),
+[§ Versions 92..95](../../formats/d2s.md#versions-9295), [§ Legacy builder](../../formats/d2s.md#legacy-builder-versions-71-87-92).
+All `[I]`: no such file has been loaded. Recipes for the shortfall rows are staged, not run: `leg87merc` (hirelings 3,
+33), `leg87new` (player-creation 1), `leg71merc` (hirelings 30, 33), `leg71uniq` (items-uniques-sets 21),
+`leg92props` (save-d2s 126); a harness load of them is what would raise those rows. The builder entry is closed
+([archive](2026-10-27-reverser-archivist-d2s-legacy-layouts-for-a-builder.md)). Nothing of this entry's five
+parts is left for the archivist; it can close at the `lane/a72` review.

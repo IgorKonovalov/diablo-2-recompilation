@@ -1,0 +1,104 @@
+{
+  "game": "expansion",
+  "class": "Sorceress",
+  "seed": 739200001,
+  "name": "Leg92Props",
+  "save_version": 92,
+  "difficulty": [
+    128,
+    0,
+    0
+  ],
+  "stats": {
+    "strength": 60,
+    "energy": 60,
+    "dexterity": 25,
+    "vitality": 100,
+    "hitpoints": 500,
+    "maxhp": 500,
+    "mana": 300,
+    "maxmana": 300,
+    "stamina": 200,
+    "maxstamina": 200,
+    "level": 30,
+    "experience": 5493363,
+    "gold": 1000,
+    "goldbank": 5000
+  },
+  "skills": {
+    "Charged Bolt": 1,
+    "Static Field": 1,
+    "Telekinesis": 1,
+    "Teleport": 1,
+    "Nova": 1,
+    "Frost Nova": 1
+  },
+  "mouse": {
+    "left": "Charged Bolt",
+    "right": "Teleport",
+    "swap_left": "Nova",
+    "swap_right": "Static Field"
+  },
+  "hotkeys": [
+    "Teleport",
+    "Nova",
+    "Frost Nova",
+    "Static Field",
+    "Telekinesis",
+    "Charged Bolt",
+    "Teleport",
+    "Nova",
+    "Frost Nova",
+    "Static Field"
+  ],
+  "items": [
+    {
+      "code": "cap",
+      "store": "inventory",
+      "x": 0,
+      "y": 0,
+      "item_stats": {
+        "0": 5,
+        "39": 20,
+        "7": 10
+      },
+      "item_props": [
+        [
+          83,
+          1,
+          2
+        ],
+        [
+          107,
+          54,
+          3
+        ],
+        [
+          188,
+          8,
+          2
+        ],
+        [
+          195,
+          3075,
+          10
+        ],
+        [
+          126,
+          1,
+          2
+        ]
+      ]
+    },
+    {
+      "set": "Civerb's Ward",
+      "store": "inventory",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "code": "hp1",
+      "belt_slot": 0
+    }
+  ]
+}

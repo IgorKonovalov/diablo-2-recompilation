@@ -20,7 +20,7 @@ To check:
    version-71 record forms (`static.txt` § v71record, § header).
 2. Ruling 3: the reading finds no legacy version refused, so hirelings 3, 30, 33, player-creation 1 and
    items-uniques-sets 21 stay shortfalls (b) and wait for a builder (archivist entry
-   [2026-10-27-reverser-archivist-d2s-legacy-layouts-for-a-builder](../2026-10-27-reverser-archivist-d2s-legacy-layouts-for-a-builder.md)); no row is
+   [2026-10-27-reverser-archivist-d2s-legacy-layouts-for-a-builder](2026-10-27-reverser-archivist-d2s-legacy-layouts-for-a-builder.md)); no row is
    proposed to move.
 3. (b) and (c): the classification of the 73 compares (5 not version tests, 29 met by 92..96 with a version-dependent
    result, 39 not), and the claim that 93..95 differ from 96 in three places only.

@@ -1,0 +1,84 @@
+{
+  "game": "expansion",
+  "class": "Sorceress",
+  "seed": 738700001,
+  "name": "Leg87Merc",
+  "save_version": 87,
+  "difficulty": [
+    128,
+    0,
+    0
+  ],
+  "stats": {
+    "strength": 60,
+    "energy": 60,
+    "dexterity": 25,
+    "vitality": 100,
+    "hitpoints": 500,
+    "maxhp": 500,
+    "mana": 300,
+    "maxmana": 300,
+    "stamina": 200,
+    "maxstamina": 200,
+    "level": 30,
+    "experience": 5493363,
+    "gold": 1000,
+    "goldbank": 5000
+  },
+  "skills": {
+    "Charged Bolt": 1,
+    "Static Field": 1,
+    "Telekinesis": 1,
+    "Teleport": 1,
+    "Nova": 1,
+    "Frost Nova": 1
+  },
+  "mouse": {
+    "left": "Charged Bolt",
+    "right": "Teleport",
+    "swap_left": "Nova",
+    "swap_right": "Static Field"
+  },
+  "hotkeys": [
+    "Teleport",
+    "Nova",
+    "Frost Nova",
+    "Static Field",
+    "Telekinesis",
+    "Charged Bolt",
+    "Teleport",
+    "Nova",
+    "Frost Nova",
+    "Static Field"
+  ],
+  "items": [
+    {
+      "code": "cap",
+      "store": "inventory",
+      "x": 0,
+      "y": 0,
+      "item_stats": {
+        "39": 20,
+        "74": 3
+      }
+    },
+    {
+      "unique": "The Gnasher",
+      "store": "inventory",
+      "x": 2,
+      "y": 0
+    }
+  ],
+  "merc": {
+    "id": 1,
+    "seed": 12345,
+    "name": 3,
+    "exp": 100000,
+    "items": [
+      {
+        "code": "cap",
+        "equip": "head"
+      }
+    ]
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "game": "expansion",
+  "class": "Sorceress",
+  "seed": 737100002,
+  "name": "Leg71Uniq",
+  "save_version": 71,
+  "difficulty": [
+    128,
+    0,
+    0
+  ],
+  "stats": {
+    "strength": 60,
+    "energy": 60,
+    "dexterity": 25,
+    "vitality": 100,
+    "hitpoints": 500,
+    "maxhp": 500,
+    "mana": 300,
+    "maxmana": 300,
+    "stamina": 200,
+    "maxstamina": 200,
+    "level": 30,
+    "experience": 5493363,
+    "gold": 1000,
+    "goldbank": 5000
+  },
+  "skills": {
+    "Charged Bolt": 1,
+    "Static Field": 1,
+    "Telekinesis": 1,
+    "Teleport": 1,
+    "Nova": 1,
+    "Frost Nova": 1
+  },
+  "mouse": {
+    "left": "Charged Bolt",
+    "right": "Teleport",
+    "swap_left": "Nova",
+    "swap_right": "Static Field"
+  },
+  "hotkeys": [
+    "Teleport",
+    "Nova",
+    "Frost Nova",
+    "Static Field",
+    "Telekinesis",
+    "Charged Bolt",
+    "Teleport",
+    "Nova",
+    "Frost Nova",
+    "Static Field"
+  ],
+  "items": [
+    {
+      "unique": "The Gnasher",
+      "store": "inventory",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "set": "Civerb's Ward",
+      "store": "inventory",
+      "x": 2,
+      "y": 0,
+      "v71": {
+        "unit_seed": 1234567,
+        "item_seed": 7654321
+      }
+    },
+    {
+      "code": "jew",
+      "store": "inventory",
+      "x": 4,
+      "y": 0
+    },
+    {
+      "unique": "Deathspade",
+      "store": "inventory",
+      "x": 5,
+      "y": 0
+    },
+    {
+      "set": "Civerb's Icon",
+      "store": "inventory",
+      "x": 7,
+      "y": 0
+    },
+    {
+      "code": "hp1",
+      "belt_slot": 0
+    }
+  ]
+}

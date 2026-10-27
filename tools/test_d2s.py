@@ -35,6 +35,11 @@ every output goes to a scratch directory, nothing in workspace/ is written:
   build reproduces tools/h1a_saves.py's v94, v94s12 and skills29 cases byte for byte; the default parser still
   refuses them and realm data; realm words per version (three above 93); an ear's realm bit; the 8-bit stat 72 at
   <= 95; the old stat form at <= 94; the refusals (92, < 92, 97, stat_slots, a stat past the slots, a cut-off skill).
+- LegacyTest (backlog 2026-10-27, the d2s legacy layouts) builds save_version 87 and 71 (the legacy layout of
+  save/0001 § Plan 0038 lane/rlg, read back with d2s.parse_legacy: section tags and lengths, the header's skill
+  bytes, the 0x12-byte and version-71 mercenaries, the hotkey tail, the 25-byte and code-form records, the corpse
+  list) and 92 (the 1.09 widths, the <= 92 per-id encodings, the Sets id), and the refusals. The game has loaded
+  none of these files: the tests check the builder against d2s.md, not d2s.md against the game.
 - ExcelEditTest edits integer and text cells through excel_edit.py and checks that nothing else changed.
 """
 import contextlib
@@ -69,6 +74,11 @@ SAMPLES = os.path.join(WS, "samples", "d2s")                               # run
 
 # recipe -> (base save, sha256 of the built save as a run record gives it, or None)
 RECIPE_BASES = {
+    "leg71merc": (BASE_X, None),    # backlog 2026-10-27 legacy builder: hirelings 30, 33 (not run)
+    "leg71uniq": (BASE_X, None),    # backlog 2026-10-27 legacy builder: items-uniques-sets 21 (not run)
+    "leg87merc": (BASE_X, None),    # backlog 2026-10-27 legacy builder: hirelings 3, 33 (not run)
+    "leg87new": (BASE_X, None),     # backlog 2026-10-27 legacy builder: player-creation 1 (not run)
+    "leg92props": (BASE_X, None),   # backlog 2026-10-27 legacy builder: save-d2s 126 (not run)
     "calc-ama": (os.path.join(P0005, "smpama.d2s"), "527952cb6672585f2fc465a99b763fe7dd036a4f383ed4c9fa56cfa167afc944"),  # run:2026-10-16-calc
     "calc-ama-field": (os.path.join(P0005, "smpama.d2s"), "3ae9a886bad294ca3f17b3bd4695929cd3e1f8485afe729c31d18edfa70fc15a"),  # run:2026-10-16-calc
     "calc-ass": (os.path.join(P0005, "smpasn.d2s"), "d28ac300eaeac7176c59e028caa2b735cd457349ed00c9a4d181a5ccdd89820f"),  # run:2026-10-16-calc
@@ -450,8 +460,13 @@ class RecipeTest(Scratch):
                 out = self.path(name + ".d2s")
                 d2s.build(EXCEL, os.path.join(RECIPES, name + ".json"), base, out)
                 b = readb(out)
-                self.assertEqual(d2s.checksum(b), d2s.u32(b, 12))
-                self.assertEqual(d2s.parse(b, tables().isc, tables().kinds)["end"], len(b))
+                ver = d2s.u32(b, 4)
+                if ver in d2s.LEGACY_VERSIONS:   # the legacy layout: no checksum, its own reader
+                    f = d2s.parse_legacy(b, tables().isc, tables().kinds, d2s.classic_codes(tables()))
+                    self.assertEqual(f["end"], len(b))
+                else:
+                    self.assertEqual(d2s.checksum(b), d2s.u32(b, 12))
+                    self.assertEqual(d2s.parse(b, tables().isc, tables().kinds, extended=ver != 96)["end"], len(b))
                 if sha:
                     self.assertEqual(hashlib.sha256(b).hexdigest(), sha)
 
@@ -1033,8 +1048,8 @@ class ExtendedTest(Scratch):
             with self.assertRaises(d2s.D2sError) as cm:
                 self.build(dict(dict(stats=self.STATS), **rc), base)
             self.assertIn(word, str(cm.exception))
-        refused(dict(save_version=92), "per-id overrides")
-        refused(dict(save_version=87), "legacy layouts")
+        refused(dict(save_version=91), "71, 87, 92")    # backlog 2026-10-27: 71, 87 and 92 are built now
+        refused(dict(save_version=70), "71, 87, 92")
         refused(dict(save_version=97), "93..96")
         refused(dict(save_version=94, stat_slots=8), "9..16")
         refused(dict(save_version=94, stat_slots=12), "stat 12")
@@ -1050,11 +1065,11 @@ class ExtendedTest(Scratch):
         refused(dict(save_version=95), "mercenary", merc)
         self.build(dict(stats=self.STATS, save_version=95, merc=dict(id=0, seed=5, name=3, exp=100, items=[])),
                    merc, "merc95.d2s")   # replaced by the recipe's merc: written in the version's widths
-        # a 92 file is refused by the extended reader as well
+        # a 92 file is read by the extended reader only (LegacyTest builds and reads real ones)
         b = bytearray(self.build(dict(stats=self.STATS)))
         struct.pack_into("<I", b, 4, 92)
         with self.assertRaises(d2s.D2sError) as cm:
-            self.ext(d2s.finish(b))
+            d2s.parse(d2s.finish(b), tables().isc, tables().kinds)
         self.assertIn("version 92", str(cm.exception))
 
     def test_skill_count_over_30(self):
@@ -1062,6 +1077,170 @@ class ExtendedTest(Scratch):
         f = self.ext(b)
         self.assertEqual((b[0x2A], len(f["skills"]), f["skills"][30:]), (32, 32, [0, 0]))
         self.assertEqual(f["end"], len(b))
+
+
+class LegacyTest(Scratch):
+    """backlog 2026-10-27 (reverser -> archivist, the d2s legacy layouts): save_version 71, 87 and 92, built from the
+    static reading of save/0001 § Plan 0038 lane/rlg and read back with d2s.parse_legacy (71, 87) or the extended
+    parser (92). No file of these versions has been loaded by the game: these tests check the builder against the
+    layout as d2s.md states it, not the layout against the game."""
+    STATS = {"strength": 30, "energy": 10, "dexterity": 20, "vitality": 25, "hitpoints": 100, "maxhp": 100,
+             "mana": 50, "maxmana": 50, "stamina": 80, "maxstamina": 80, "level": 20, "experience": 300000}
+    MOUSE = {"left": "Charged Bolt", "right": "Teleport", "swap_left": "Nova", "swap_right": "Static Field"}
+    HOT = ["Teleport", "Nova", "Frost Nova", "Static Field", "Telekinesis", "Charged Bolt", "Teleport", "Nova",
+           "Frost Nova"]
+
+    def build(self, recipe, name="out.d2s"):
+        need(BASE_X)
+        out = self.path(name)
+        d2s.build(EXCEL, dict(dict(seed=1, game="expansion", stats=self.STATS), **recipe), BASE_X, out)
+        return readb(out)
+
+    def legacy(self, b):
+        t = tables()
+        f = d2s.parse_legacy(b, t.isc, t.kinds, d2s.classic_codes(t))
+        self.assertEqual(f["end"], len(b))
+        return f
+
+    def refused(self, rc, word):
+        with self.assertRaises(d2s.D2sError) as cm:
+            self.build(rc)
+        self.assertIn(word, str(cm.exception))
+
+    def sections(self, b):
+        """Offsets of the legacy sections after the header, checked tag by tag (lane/rlg (a), Order and framing)."""
+        p = d2s.LEGACY_HEADER_SIZE
+        self.assertEqual(b[p:p + 4], b"Woo!")
+        self.assertEqual(d2s.u32(b, p + 4), 6)
+        p += 0x12A
+        self.assertEqual(b[p:p + 2], b"WS")
+        p += 0x50
+        self.assertEqual(b[p:p + 2], b"\x01w")
+        p += 0x34
+        self.assertEqual(b[p:p + 2], b"gf")
+        mask = int.from_bytes(b[p + 2:p + 5], "little")
+        p += 5 + 4 * bin(mask).count("1")
+        self.assertEqual(b[p:p + 2], b"if")
+        return mask, p + 32
+
+    def test_v87_layout(self):
+        b = self.build(dict(save_version=87, skills={"Teleport": 1, "Nova": 1}, mouse=self.MOUSE, hotkeys=self.HOT,
+                            items=[dict(code="cap", store="inventory", x=0, y=0, item_stats={"39": 20, "74": 3}),
+                                   dict(unique="The Gnasher", store="inventory", x=2, y=0)],
+                            merc=dict(id=1, seed=1234, name=2, exp=5000, dead=True,
+                                      items=[dict(code="cap", equip="head")])))
+        t = tables()
+        self.assertEqual((d2s.u32(b, 0), d2s.u32(b, 4), d2s.u16(b, 0x20), d2s.u16(b, 0x22)), (d2s.MAGIC, 87, 0x82, 1))
+        mask, p = self.sections(b)
+        self.assertEqual(mask, sum(1 << t.stat_id(k) for k in self.STATS))
+        f = self.legacy(b)
+        h = f["header"]
+        self.assertEqual((h["status"] & 0x21, h["level"], h["left"], h["right"]),
+                         (0x20, 20, t.skills["Charged Bolt"]["id"], t.skills["Teleport"]["id"]))
+        self.assertEqual([s for s, _ in h["hotkeys"]], [t.skills[n]["id"] for n in self.HOT[:8]])
+        self.assertEqual(f["hotkeys_tail"][0][0], t.skills[self.HOT[8]]["id"])
+        self.assertEqual(f["hotkeys_tail"][1][0], -1)
+        self.assertEqual(f["swap"], (t.skills["Nova"]["id"], t.skills["Static Field"]["id"]))
+        self.assertEqual(f["merc"], dict(dead=1, seed=1234, name=2, id=1, exp=5000))
+        self.assertEqual([it["code"] for it in f["merc_items"]["items"]], ["cap "])
+        cap, gn = f["items"]["items"]
+        self.assertEqual(cap["props"], [(39, None, [20]), (74, None, [3])])
+        self.assertEqual((gn["quality"], gn["qid"]), (7, t.unique("The Gnasher")[0]))
+        for it in f["items"]["items"] + f["merc_items"]["items"]:    # each record re-encodes byte for byte
+            self.assertEqual(d2s.encode_item(it, t.isc, t.kinds, 87), b[it["off"]:it["end"]])
+        # stat 74 at <= 89: 5 bits, add 10 (the 1.09 column: 6 bits, add 30)
+        w = d2s.BitWriter()
+        d2s.encode_props_109(w, [(74, None, [3])], t.isc, 87)
+        self.assertEqual((len(w.bits), d2s.Bits(w.tobytes()).read(14)), (9 + 5 + 9, 74 | 13 << 9))
+        # the corpse list (JM, count 0) and the 0x12-byte mercenary follow the item list
+        c = f["items"]["items"][-1]["end"]
+        self.assertEqual(b[c:c + 4], b"JM\0\0")
+        self.assertEqual((b[c + 4], d2s.u32(b, c + 6)), (1, 0x10000))
+        self.assertEqual(len(b) - f["merc_items"]["items"][-1]["end"], 0x38)   # the hotkey tail, >= 82
+
+    def test_v87_new_char_and_refusals(self):
+        b = self.build(dict(save_version=87, legacy_new_char=True))
+        self.assertEqual(d2s.u32(b, 0x18) & 1, 1)
+        f = self.legacy(b)
+        seed = d2s.u32(readb(BASE_X), 0xB3)     # the base's mercenary header, carried into the legacy record
+        self.assertEqual(f["merc"] and f["merc"]["seed"], seed or None)
+        self.refused(dict(legacy_new_char=True), "legacy_new_char")
+        self.refused(dict(save_version=87, items=[dict(code="cap", suffix=290, store="inventory", x=0, y=0)]),
+                     "magic, rare")
+        self.refused(dict(save_version=87, items=[dict(code="cap", store="inventory", x=0, y=0,
+                                                       item_stats={"93": 10})]), "older override")
+        self.refused(dict(save_version=87, stat_slots=16), "header fields")
+        self.refused(dict(save_version=87, stats=dict(self.STATS, **{"16": 1})), "stats 0..15")
+
+    def test_v71_layout(self):
+        t = tables()
+        classic = d2s.classic_codes(t)
+        b = self.build(dict(save_version=71, mouse=self.MOUSE, hotkeys=self.HOT,
+                            items=[dict(unique="The Gnasher", store="inventory", x=0, y=0),
+                                   dict(set="Civerb's Ward", store="stash", x=2, y=0),
+                                   dict(code="jew", store="inventory", x=4, y=0, v71=dict(unit_seed=7)),
+                                   dict(code="hp1", belt_slot=3)],
+                            merc=dict(id=1, seed=1234, name=2, exp=5000)))
+        self.assertEqual(d2s.u32(b, 4), 71)
+        _, p = self.sections(b)
+        self.assertEqual((b[p:p + 2], d2s.u16(b, p + 2)), (b"JM", 4))
+        f = self.legacy(b)
+        gn, cw, jw, hp = f["items"]["items"]
+        self.assertEqual([it["end"] - it["off"] for it in (gn, cw, hp)], [27, 27, 27])   # JM + 25 (index form)
+        self.assertEqual((gn["form"], gn["index"], gn["code"], gn["quality"], gn["file_index"]),
+                         ("index", classic.index("hax"), "hax ", 7, t.unique("The Gnasher")[0]))
+        self.assertEqual((cw["quality"], cw["file_index"], cw["page"]), (5, t.setitem("Civerb's Ward")[0], 4))
+        self.assertEqual((jw["form"], jw["code"], jw["unit_seed"], jw["end"] - jw["off"]), ("code", "jew ", 7, 2 + 29))
+        self.assertEqual(jw["flags"] & 0x300000, 0x100000)
+        self.assertEqual((hp["location"], hp["x"], hp["flags"] & 0x200000), (2, 3, 0))
+        self.assertEqual(f["merc"], dict(seed=1234, name=2))
+        self.assertEqual(b[f["items"]["items"][-1]["end"]:][:4], b"JM\0\0")
+        self.assertEqual(len(b) - f["items"]["items"][-1]["end"], 4 + 8)       # corpses, mercenary, no tail
+        self.refused(dict(save_version=71, merc=dict(id=1, seed=5, name=2, items=[dict(code="cap", equip="head")])),
+                     "no item list")
+        self.refused(dict(save_version=71, items=[dict(code="hp1", belt_slot=0, seed=3),
+                                                  dict(code="hp1", belt_slot=1, seed=3)]), "skips the second")
+        self.refused(dict(save_version=87, items=[dict(code="cap", store="inventory", x=0, y=0, v71={})]),
+                     "needs save_version 71")
+        self.refused(dict(save_version=71, items=[dict(code="jew", store="inventory", x=0, y=0,
+                                                       v71=dict(form="index"))]), "no version-0 row")
+
+    def test_v92_build_and_read(self):
+        t = tables()
+        props = [[83, 1, 2], [107, 54, 3], [188, 8, 2], [195, 48 << 6 | 3, 10], [126, 1, 2]]
+        b = self.build(dict(save_version=92, items=[
+            dict(code="cap", store="inventory", x=0, y=0, item_stats={"0": 5, "39": 20}, item_props=props),
+            dict(set="Civerb's Ward", store="inventory", x=2, y=0)]))
+        self.assertEqual((d2s.u32(b, 4), d2s.checksum(b), d2s.u32(b, 8)), (92, d2s.u32(b, 12), len(b)))
+        f = d2s.parse(b, t.isc, t.kinds, extended=True)
+        self.assertEqual(f["end"], len(b))
+        cap = [it for it in f["items"]["items"] if it.get("code") == "cap "][0]
+        self.assertEqual(sorted(cap["props"]), sorted([(0, None, [5]), (39, None, [20])] +
+                                                      [(s, p, [v]) for s, p, v in props]))
+        cw = [it for it in f["items"]["items"] if it.get("code") == "lrg "][0]
+        self.assertEqual(cw["qid"], 0)    # Civerb's Vestments, the Sets record, not the SetItems one
+        for it in d2s.all_items(f):
+            self.assertEqual(d2s.encode_item(it, t.isc, t.kinds, 92), b[it["off"]:it["end"]])
+        # stat 39 is 8 bits with add 0 at 92 (1.09) against add 50 at 96: the raw field is the value itself
+        w = d2s.BitWriter()
+        d2s.encode_props_109(w, [(39, None, [20])], t.isc, 92)
+        self.assertEqual(d2s.Bits(w.tobytes()).read(17), 39 | 20 << 9)
+        cap_ = dict(code="cap", store="inventory", x=0, y=0)
+        for extra, word in ((dict(item_stats={"97": 1}), "stores it as stat 99"),
+                            (dict(item_props=[[151, 40, 3]]), "reads no param"),
+                            (dict(item_props=[[204, 54 << 6 | 3, 5]]), "not writable"),
+                            (dict(item_props=[[83, c, 2] for c in range(5)]), "folds"),
+                            (dict(item_stats={"305": 5}), "no 1.09-Save Bits"),
+                            (dict(item_props=[[107, 54, 8]]), "stat 107")):
+            with self.subTest(word=word):
+                self.refused(dict(save_version=92, items=[dict(cap_, **extra)]), word)
+
+    def test_skill_byte(self):
+        self.assertEqual([d2s.skill_byte(s) for s in (0, 155, 217, 221, 281, -1)], [0, 155, 217, 0x9C, 0xD8, 0xFF])
+        self.assertEqual([d2s.unskill_byte(x) for x in (0, 155, 0x9C, 0xD8, 0xD9, 0xFF)], [0, 155, 221, 281, 0xD9, -1])
+        for s in (156, 216, 282):
+            with self.assertRaises(d2s.D2sError):
+                d2s.skill_byte(s)
 
 
 class ExcelEditTest(Scratch):

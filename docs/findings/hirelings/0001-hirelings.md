@@ -814,7 +814,7 @@ with the counts of `workspace/logs/h1a/check/sweep-h1a-check.txt`.
   fn:D2S_ReadSaveV92@0x0056B180, 0x0056B32D, run:2026-10-27-sweep-d2s-load)
 - **hirelings 3, 30, 33** (saves older than version 92: `ReadMercOldSave`, the Id `0xFFFF` of a version-71 save,
   `MercExpFromOldSave`) **shortfall.** No save in the version 71 or 87 layout was built (no builder, no format doc;
-  archivist entry [2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps](../../backlog/2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md)).
+  archivist entry [2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps](../../backlog/archive/2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md)).
   The one legacy load, a version-96 body labelled 91, was refused by `sub_00534020_ReadSaveLegacy` (14) before any
   mercenary step.
 
