@@ -512,6 +512,40 @@ tbl:ItemStatCost.txt:ValShift, tbl:ItemStatCost.txt:Encode)
   11 `maxstamina`); the last three have `ValShift` 8, and `[I]` the price shifts the value first (whole points,
   [items/0011 § 3](../findings/items/0011-economy.md#3-the-value-terms)).
 
+## Timing (plan 0050 Phase 0)
+
+The rate and velocity stats, the rows with `UpdateAnimRate`, and the property codes that set them (values from the
+`.bin`; `python3 -I tools/anim_survey.py skills workspace/merged`, keys `isc_updateanimrate`, `rate_stat_*`). Fields:
+`Signed` `+0x004` bit 1, `UpdateAnimRate` `+0x005` bit 1, `fCallback` `+0x005` bit 3, `Send Bits` `+0x008` u8,
+`Save Bits` `+0x019` u8, `Save Add` `+0x01C` s32, `op` `+0x054` u8 ([§ Record layout](#record-layout)).
+
+| Row | `Stat` | `Signed` | `UpdateAnimRate` | `fCallback` | `Send Bits` | `Save Bits` / `Save Add` | `op` | Set by (Properties `code`, stat1) | Tag |
+|---:|---|---:|---:|---:|---:|---|---:|---|---|
+| 67 | `velocitypercent` | 1 | 1 | 0 | 10 | 7 / 30 | 0 | — (skills and states, [States § Timing](States.md#timing-plan-0050-phase-0)) | [C] |
+| 68 | `attackrate` | 1 | 1 | 0 | 10 | 7 / 30 | 0 | — | [C] |
+| 69 | `other_animrate` | 1 | 1 | 0 | 10 | 0 / 0 | 0 | — | [C] |
+| 93 | `item_fasterattackrate` | 1 | 0 | 0 | 9 | 7 / 20 | 0 | `swing1`, `swing2`, `swing3` | [C] |
+| 96 | `item_fastermovevelocity` | 1 | 0 | 0 | 9 | 7 / 20 | 0 | `move1`, `move2`, `move3` | [C] |
+| 99 | `item_fastergethitrate` | 1 | 0 | 0 | 9 | 7 / 20 | 0 | `balance1`, `balance2`, `balance3` | [C] |
+| 102 | `item_fasterblockrate` | 1 | 0 | 0 | 9 | 7 / 20 | 0 | `block1`, `block2`, `block3` | [C] |
+| 105 | `item_fastercastrate` | 1 | 0 | 0 | 9 | 7 / 20 | 0 | `cast1`, `cast2`, `cast3` | [C] |
+| 150 | `item_slow` | 1 | 0 | 1 | 7 | 7 / 0 | 0 | `slow` | [C] |
+
+- `[C]` **`UpdateAnimRate` is set on exactly three rows**, 67, 68 and 69 (`isc_updateanimrate=3`); none of the five
+  `item_faster*` rows has it. The Properties rows above name these stats as `stat1` with `func1` 8 (`slow`: 1).
+- `[C]` **Where the three base rates come from.** A new player gets `SetStat 68 ← 100; 67 ← 100; 69 ← 100`
+  ([player/creation C3](../specs/player/creation.md), fn:PLAYER_InitBaseStats@0x005706D0); a new weapon gets the base stat
+  `68 ← −speed` ([Weapons](Weapons.md#timing-plan-0050-phase-0) `speed`, [items/properties A4](../specs/items/properties.md));
+  a new monster gets `SetStat(68, 100); SetStat(67, 75); SetStat(69, 100)`, and the `champion` and `possessed` mods add
+  20 to 67, `fast` and `fanatic` `clamp(2048 ÷ Velocity − 128, 10, 100)`, each only when MonStats `Velocity` > 0
+  ([monsters/stats](../specs/monsters/stats.md), 0x00573F14, fn:sub_005A1910_UModFast@0x005A1910).
+- `[I]` A skill can put stat 68 on its own list: `sub_0056E520_SkillAttackRateList` builds a plain stat list with stat
+  68 = the row's `calc3` for start 32 ([skills/0001 § 11](../findings/skills/0001-dispatch.md#11-the-skill-packet),
+  fn:sub_0056E520_SkillAttackRateList@0x0056E520).
+- `[L]` By the names, `UpdateAnimRate` makes a change of the stat refresh the unit's animation rate, `item_faster*` are
+  the item IAS/FRW/FHR/FBR/FCR terms and `item_slow` the target slow. How each enters a mode's rate, its caps, and
+  whether `damage_framerate` (327, `Signed`, `Send Bits` 8, not saved) is a timing stat, are plan 0050 Phase 1.2.
+
 ## Interpretation notes
 
 - **Save columns.** [save/0001 § 7–8](../findings/save/0001-d2s-io.md) reads the item property writer and reader:

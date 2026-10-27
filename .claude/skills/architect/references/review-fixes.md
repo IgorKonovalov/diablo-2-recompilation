@@ -9,7 +9,7 @@ review against these before committing it. Categories are those of the [lane run
    at the resume-lane review; the run could not tell it from "`0x0C` or `boss`" (Andariel carries both),
    and the `lane/p37t` review had to scope it ([0037](../../../../docs/plans/done/0037-combat-formulas.md)).
 3. **Write a review fix into the document it changes**, not only into the review's fix list. Seen: S4a's
-   preset 18 split, still "raised" in drlg/0004 at the `lane/p38s3` review ([0038](../../../../docs/plans/0038-inferred-claims-sweep.md)); the `lane/s38h2b` review's items/affixes count (I 28) missing from its research-map row, fixed at the `lane/s38h2c` review (0038); the `lane/h4a` review marking class 312's H4b piece met in monsters/0004 but not special 66's in monsters/0003, fixed at the `lane/p51r` review ([0051](../../../../docs/plans/0051-backlog-sweep-6.md)).
+   preset 18 split, still "raised" in drlg/0004 at the `lane/p38s3` review ([0038](../../../../docs/plans/0038-inferred-claims-sweep.md)); the `lane/s38h2b` review's items/affixes count (I 28) missing from its research-map row, fixed at the `lane/s38h2c` review (0038); the `lane/h4a` review marking class 312's H4b piece met in monsters/0004 but not special 66's in monsters/0003, fixed at the `lane/p51r` review ([0051](../../../../docs/plans/done/0051-backlog-sweep-6.md)).
 4. **Read the whole branch region before ruling.** Seen: the Phase 2 review missed the moving player's
    `÷ 3`, found at Phase 3 (0037).
 5. **Recompute totals once, over every reviewed batch, after merging `main`.** Two reviews computed in
@@ -24,4 +24,6 @@ review against these before committing it. Categories are those of the [lane run
    "wiki: not part of this plan" (0037 P3 → `lane/wiki1` ruling, 0038); the stats rows due when plan 0041
    started ([0041](../../../../docs/plans/done/0041-stats-and-states.md) P1 review); the `skills/dispatch`, `skills/missiles` and
    `skills/catalogue` rows, due when plan 0045 started, added only at the `lane/p46m15` review
-   ([0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
+   ([0046](../../../../docs/plans/0046-skills-function-catalogue.md)); and keep a row's status current at each phase acceptance: the
+   `skills/dispatch` and `skills/missiles` rows still read "Phase 2 and the spec not started" after the part 1 review
+   (fixed at the `lane/p45k` review, [0045](../../../../docs/plans/0045-skills-missiles-machinery.md)).

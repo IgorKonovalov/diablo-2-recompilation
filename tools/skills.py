@@ -2,7 +2,7 @@
 docs/findings/skills/0001-dispatch.md, 0002-missiles.md and 0003-handlers.md.
 
 Usage:
-  python3 -I tools/skills.py check <log> [...] [--excel DIR] [-v] [--json OUT]
+  python3 -I tools/skills.py check <log> [...] [--excel DIR] [-v] [--json OUT] [--gaps OUT]
   python3 -I tools/skills.py manifest <log> [...]          # sha256, size and line count of each log
   python3 -I tools/skills.py audit <log> [...]             # the oracle replacement: what a foreign log holds
   python3 -I tools/skills.py tally <log> [...] [--excel DIR] # the run's coverage counts against plan 0045's minimums
@@ -43,8 +43,24 @@ Checked (a mismatch is any difference):
   RSK   do 31's call of 0x005C4430 (logger rev 3): one caster draw for a class-363 summon at skill level > 2
         (0x005C4300) or a class-364 summon (0x005C43D0 -> 0x005C4180), none otherwise; the SDO.seed of rows 70 and 80
         counts the same draw per SP1 summon.
-Reported (oracles, ADR-0014): MH (the hit's result and the boundary calls after the build), EVH/EVR, MAS, SP/SL/PA,
-DLY.
+Part 2 (plan 0045 Phase 2 part 2, lane/p45k; logger rev 4/5):
+  MAS   sub_005A4F50_MonAttackStats: 21, 22, 19 from MonLvlStats by the mode's A1/A2/S1 columns, the El<e> rolls on the
+        unit seed and their stats (El1's bounds for every e: the mask 0x40 + e), a summon's other-list offset learned
+        at its first call; classes with a SkillDamage owner pair are reported (MAS.seed, MAS.stats).
+  EVH   each UNIT_DispatchEvent handler call: the handler unit's seed steps by the handler's own draws (EVH.seed; a
+        cast handler's at least one, EVH.seed1), the howl gate on the other unit's flags, mana and life after a kill
+        (EVH.mana, EVH.life), open wounds' roll against its STA 62 (EVH.ow).
+  PH    sub_0057D810_PreventHealHook: STA state 52 (120 000 frames, stat 31 = 0) exactly when the attacker is a player,
+        the defender a monster outside 704..709 and the attacker's stat 117 is non-zero; no draw (PH.state52, PH.seed).
+  CU    SKILLS_CanUse at the request (and, rev 5, the client's per-frame check at its changes of code): the aura,
+        passive, mana, startmana and delay codes (CU.code); the delay from the unit's last DLY line.
+  SP    the summoned unit's seed Init(step(game).low) (SP.seed, SP.gameseed).
+  MH.end  a damaging hit of a row with no hit function: the pierce use (stat 328 - 1) and the result (2 when CollideKill
+        or the end call, without a pierce used).
+  CHAIN.caster+logged  a caster resync attributed by walking the unit's own logged draws (THR, DRR, REL) and the logged
+        exits of the spans the checker models or takes (MAS, EVH, MC, RSK; AD, DQ, MA, MHT as boundaries); every resync
+        left is listed in --gaps OUT with the lines between.
+Reported (oracles, ADR-0014): MH (a hit function's result and the boundary calls after the build), SL/PA, DLY.
 Exit 0 only if every check holds. Stdlib only. Read-only.
 """
 import hashlib
@@ -123,6 +139,18 @@ class Tables:
     def __init__(self, excel=DEFAULT_EXCEL):
         self.mi = read_bin(find_file(excel, "missiles", ".bin"))[0]
         self.sk = read_bin(find_file(excel, "skills", ".bin"))[0]
+        # part 2: MonAttackStats (monstats 0x1A8-byte records, monlvl 0x78) and the request checks
+        self.ms = read_bin(find_file(excel, "monstats", ".bin"))[0]
+        self.ml = read_bin(find_file(excel, "monlvl", ".bin"))[0]
+
+    def ms16(self, c, off):
+        return struct.unpack_from("<h", self.ms[c], off)[0]
+
+    def skrow(self, sid):
+        """the Skills record fields SKILLS_CanUse and SKILLS_ManaOk read (docs/tables/Skills.md offsets)."""
+        r = self.sk[sid]
+        return {"b04": r[4], "b05": r[5], "delay": struct.unpack_from("<i", r, 0x190)[0],
+                "startmana": struct.unpack_from("<H", r, 0x184)[0]}
 
     def mrec(self, cls):
         r = self.mi[cls]
@@ -133,7 +161,8 @@ class Tables:
                 "levrange": h(0x98), "activate": u8(0x136), "subloop": u8(0x180), "substart": u8(0x181),
                 "substop": u8(0x182), "pierce": bool(r[4] & 4), "canslow": bool(r[4] & 8),
                 "mskill": bool(r[5] & 0x80), "skill": h(0x194), "srcdmg": u8(0x12D), "srcmiss": u8(0x12E),
-                "do": h(0x0C)}
+                "do": h(0x0C), "hitfn": h(0x0E), "collidekill": r[0x186], "explosion": bool(r[4] & 2),
+                "tohit": r[0x18B], "alwaysexplode": r[0x18C]}
 
     def srec(self, sid):
         r = self.sk[sid]
@@ -175,6 +204,11 @@ class Checker:
         self.info = Counter()
         self.miss = []
         self.dist = defaultdict(Counter)
+        self.gaps = []
+        self.mon_flags = {}
+        self.mas_off = {}
+        self.mc_owner = {}
+        self.summons = set()
 
     def fail(self, log, kind, n, msg):
         self.bad[kind] += 1
@@ -504,10 +538,14 @@ class Checker:
             self.check("THR.roll", t["r"] == sd_parse(t["sa"])[0] % 100, log, t["n"], "roll %d, seed after %s" %
                        (t["r"], t["sa"]))
         m = d0["m"]
+        if not thr and d0.get("d") and not self.T.mrec(m["c"])["tohit"]:
+            self.mh_end(log, d0, d1, inner)              # a row with no to-hit roll
+            return
         if len(thr) == 1 and d0.get("d"):
             hit = thr[0]["r"] < thr[0]["c"]
             if hit:
                 self.info["MH to-hit hits"] += 1
+                self.mh_end(log, d0, d1, inner)
                 return
             self.info["MH to-hit misses"] += 1
             p0 = stat(m.get("st"), 328)
@@ -517,6 +555,550 @@ class Checker:
                 self.info["MH missed with a pierce left (C5)"] += 1
             self.check("MH.missed", d1["r"] == 2 and d1.get("m328", 0) == want, log, n,
                        "missed: result %s stat 328 %d -> %s (want 2, %d)" % (d1["r"], p0, d1.get("m328"), want))
+
+
+    # ================================================================ part 2 (plan 0045 Phase 2 part 2, lane/p45k)
+    # ---------------------------------------------------------------- MAS
+    # sub_005A4F50_MonAttackStats (ECX unit, EDX mode), read from the pinned image (objdump, 0x005A4F50-0x005A5443):
+    # MonLvlStats(class, L, d, stat 12, mask, out) with mask 0x10 (mode 5: A2), 0x20 (modes 7, 8: S1), 0x08 (else: A1);
+    # the owner skill-damage pair of 0x0056E050 added (summon classes with a MonStats SkillDamage: not modelled,
+    # reported); classic games (game +0x70 == 0) with d > 0 and Align != 1 scale damage by 10/12 and to-hit by 10/15;
+    # expansion games add x * b / 128 (truncating) with b = sub_005A4F20_PlayerDmgBonus(game, max(stat 100, 1)), which is
+    # 0 for d = 0 or a player count below 2 (every session here: Normal or Nightmare, /players never typed); then
+    # the list 0x00625760(unit, 1) cleared (0x00627340) and SetStat 21, 22, 19 on it (absent: nothing written, no draw). Then for e = 0, 1, 2:
+    # El<e>Mode (+0xFE + e) must be non-zero and equal the mode; El<e>Pct (+0x104 + d + 3e) non-zero; below 100 one
+    # RNG_Range(unit seed, 100) that must be below it; then MonLvlStats with mask 0x40 + e, which is El1's block (0x40)
+    # with HP (0x01) or AC (0x02) added for e = 1, 2: the element's min, max and length are El1's for every e (the
+    # out-block's +0x2C/+0x30/+0x34; 0 min and max for a noRatio class, whose raw cells go to +0x24/+0x28); El<e>Type
+    # (+0x101 + e) 10 draws RNG_Range(unit seed, 5) + 1 as the type and a length of 0 becomes 25; the type's stats are
+    # written (1: 48, 49; 2: 50, 51; 3: 52, 53; 4: 54, 55, 56 = length; 5: 57 = 10 min, 58 = 10 max, 59 = 2 length;
+    # 6: 60, 61; 7: 62, 63; 8: 64, 65; 9: 66 = length; 11: 316, 317, 315 = length; 10 after the redraw cannot occur).
+    MAS_EL = {1: ((48, "mn"), (49, "mx")), 2: ((50, "mn"), (51, "mx")), 3: ((52, "mn"), (53, "mx")),
+              4: ((54, "mn"), (55, "mx"), (56, "dur")), 5: ((57, "mn10"), (58, "mx10"), (59, "dur2")),
+              6: ((60, "mn"), (61, "mx")), 7: ((62, "mn"), (63, "mx")), 8: ((64, "mn"), (65, "mx")),
+              9: ((66, "dur"),), 11: ((316, "mn"), (317, "mx"), (315, "dur"))}
+    MAS_STATS = (19, 21, 22, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 315, 316, 317)
+
+    def mas_model(self, cls, lvl, d, L, mode, seed, game70=1):
+        """-> (writes {stat: value}, seed after, draws, notes) for one MonAttackStats call."""
+        T = self.T
+        notes = []
+        d = 0 if d < 1 else min(d, 2)
+        nml = len(T.ml)
+        i = min(lvl, nml - 1)
+        row = T.ml[i] if 0 <= i < nml else None
+        r32 = lambda off: struct.unpack_from("<i", row, off)[0] if row is not None else 0  # noqa: E731
+        noratio = bool(T.ms[cls][0x0C] & 0x04)
+        th_o = 0x18 + 0xC * L + 4 * d
+        dm_o = 0x48 + 0xC * L + 4 * d
+        if mode == 5:
+            cth, cmn, cmx = 0xC8, 0xE6, 0xEC
+        elif 7 <= mode <= 8:
+            cth, cmn, cmx = 0xCE, 0xF2, 0xF8
+        else:
+            cth, cmn, cmx = 0xC2, 0xDA, 0xE0
+        cell = lambda off: T.ms16(cls, off + 2 * d)  # noqa: E731
+        if row is None:
+            th = mn = mx = 0
+        elif noratio:
+            th, mn, mx = cell(cth), cell(cmn), cell(cmx)
+        else:
+            th, mn, mx = (muldiv(r32(th_o), cell(cth), 100), muldiv(r32(dm_o), cell(cmn), 100),
+                          muldiv(r32(dm_o), cell(cmx), 100))
+        if not game70 and d and T.ms[cls][0x4C] != 1:
+            notes.append("classic")
+            mn, mx, th = tdiv(mn * 10, 12), tdiv(mx * 10, 12), tdiv(th * 10, 15)
+        w = {21: mn, 22: mx, 19: th}
+        t = seed
+        draws = 0
+        r = T.ms[cls]
+        for e in range(3):
+            em = r[0xFE + e]
+            if not em or em != mode:
+                continue
+            pct = r[0x104 + d + 3 * e]
+            if not pct:
+                continue
+            if pct < 100:
+                t = step(t)
+                draws += 1
+                if t[0] % 100 >= pct:
+                    notes.append("el%d roll failed" % (e + 1))
+                    continue
+            # MonLvlStats mask 0x40 + e: El1's block for every e
+            if row is None:
+                emn = emx = edur = 0
+            else:
+                edur = T.ms16(cls, 0x132 + 2 * d)
+                if noratio:
+                    emn = emx = 0
+                else:
+                    emn = muldiv(r32(dm_o), T.ms16(cls, 0x10E + 2 * d), 100)
+                    emx = muldiv(r32(dm_o), T.ms16(cls, 0x120 + 2 * d), 100)
+            if e and (T.ms16(cls, 0x10E + 6 * e + 2 * d), T.ms16(cls, 0x120 + 6 * e + 2 * d),
+                      T.ms16(cls, 0x132 + 6 * e + 2 * d)) != (T.ms16(cls, 0x10E + 2 * d), T.ms16(cls, 0x120 + 2 * d),
+                                                             edur):
+                notes.append("el%d cells differ from el1 (separating)" % (e + 1))
+            typ = r[0x101 + e]
+            if typ == 10:
+                t = step(t)
+                draws += 1
+                typ = t[0] % 5 + 1
+                if edur == 0:
+                    edur = 25
+            for sid, how in self.MAS_EL.get(typ, ()):
+                w[sid] = {"mn": emn, "mx": emx, "dur": edur, "mn10": emn * 10, "mx10": emx * 10,
+                          "dur2": edur * 2}[how]
+            notes.append("el%d applied (type %d)" % (e + 1, typ))
+        return w, t, draws, notes
+
+    def mas(self, log, d0, d1):
+        n = d0["n"]
+        u = d0["u"]
+        cls = u["c"]
+        st0, st1 = u.get("st") or {}, d1.get("st") or {}
+        s0, s1 = sd_parse(u["s"]), sd_parse(d1["s"])
+        if not st0 and not st1:
+            # no stat list yet (the first calls at a creation): nothing written, no draw (0x005A4FAB)
+            self.check("MAS.seed", s0 == s1, log, n, "no list, seed %s -> %s" % (u["s"], d1["s"]))
+            self.info["MAS no stat list"] += 1
+            return
+        sdmg = struct.unpack_from("<H", self.T.ms[cls], 0xA8)[0]
+        if sdmg != 0xFFFF:
+            self.info["MAS skill-damage class %d (owner pair not modelled)" % cls] += 1
+            return
+        g = d0.get("g")
+        L = 1 if g is None else int(bool(g[0] or g[3]))
+        game70 = 1 if g is None else g[2]
+        d = d0.get("diff") or 0
+        w, t, draws, notes = self.mas_model(cls, stat(st0, 12), d, L, d0["mode"], s0, game70)
+        self.dist["MAS draws"][draws] += 1
+        for k in notes:
+            self.info["MAS " + k] += 1
+        self.check("MAS.seed", t == s1, log, n, "cls %d mode %d: %d draws, %s -> want %s got %s" %
+                   (cls, d0["mode"], draws, u["s"], sd_fmt(t), d1["s"]))
+        # the list is cleared first (0x00627340 at 0x005A4FB3), then 21, 22, 19 and the applied elements written. The
+        # logged values are the unit's full list (every list summed), so only the written stats are compared; a stat
+        # MAS_STATS names that the call does not write is reported when it changes (another list, or the clear)
+        rev4 = g is not None
+        want = {sid: v for sid, v in w.items() if sid in (19, 21, 22) or rev4}
+        if rev4:
+            for sid in self.MAS_STATS:
+                if sid not in w and stat(st0, sid) != stat(st1, sid):
+                    self.info["MAS unwritten stat %d changed (%s)" % (sid, "cleared" if not stat(st1, sid)
+                                                                     else "other")] += 1
+        got = {sid: stat(st1, sid) for sid in want}
+        # a summon's other lists add to the same stats (the full list sums every list: e.g. its to-hit bonus): the
+        # offset (logged value - written value) is learned at its first call and must stay the same afterwards
+        key = (log, u["u"], u.get("id"))
+        off = self.mas_off.get(key)
+        if off is None:
+            if (log, u["u"]) in self.summons:
+                self.mas_off[key] = {sid: got[sid] - want[sid] for sid in want}
+                self.info["MAS summon: offset learned at its first call"] += 1
+                return
+            off = {}
+        else:
+            self.info["MAS checked with a learned offset"] += 1
+        want = {sid: v + off.get(sid, 0) for sid, v in want.items()}
+        ok = self.check("MAS.stats", got == want, log, n, "cls %d lvl %d mode %d d %d: want %s got %s" %
+                        (cls, stat(st0, 12), d0["mode"], d, {k: v for k, v in want.items() if v},
+                         {k: v for k, v in got.items() if v}))
+        if ok:
+            # review-fix 10: does the mode's column choice separate? the other two column sets' writes
+            alt = {mm: self.mas_model(cls, stat(st0, 12), d, L, mm, s0, game70)[0] for mm in (4, 5, 7)}
+            mine = 5 if d0["mode"] == 5 else 7 if d0["mode"] in (7, 8) else 4
+            own = {k2: w[k2] for k2 in (19, 21, 22)}
+            others = [mm for mm in alt if mm != mine and {k2: alt[mm][k2] for k2 in (19, 21, 22)} != own]
+            if others:
+                self.info["MAS mode's columns separate from another set (A1/A2/S1)"] += 1
+            if L == 1:
+                altL = self.mas_model(cls, stat(st0, 12), d, 0, d0["mode"], s0, game70)[0]
+                if {k2: altL[k2] for k2 in (19, 21, 22)} != own:
+                    self.info["MAS the L columns separate from the plain ones"] += 1
+        if ok and rev4 and any(k.startswith("el") and "applied" in k for k in notes):
+            self.ok["MAS.elem"] += 1
+        if ok and any("separating" in k for k in notes) and any("applied" in k for k in notes):
+            self.info["MAS el2/el3 applied with cells that differ from el1 (separating)"] += 1
+
+    # ---------------------------------------------------------------- H (stat-event handlers)
+    # The handlers of skills/0003 section 3, by address: (number, name, draws on the handler's unit before any cast,
+    # cast: a successful roll leads to an item cast whose draws are a boundary (ADR-0021), effect).
+    HANDLERS = {0x005CAB40: (1, "MissileAtSource", 0, False), 0x005CAC50: (2, "CalcHitAttacker", 0, False),
+                0x005CAD40: (3, "ElemHitAttacker", None, False), 0x005C5F50: (4, "ReturnDamage", 0, False),
+                0x005C61E0: (5, "LifeTap", 0, False), 0x005BF670: (6, "ThornsPhys", 0, False),
+                0x005BF960: (7, "Knockback", 1, False), 0x005BFA10: (8, "Howl", 1, False),
+                0x005BFAA0: (9, "Stupidity", 1, False), 0x005BF720: (10, "ThornsLightning", 0, False),
+                0x005BF7D0: (11, "ThornsFire", 0, False), 0x005BF880: (12, "ThornsCold", 0, False),
+                0x005BFBB0: (13, "DamageToMana", 0, False), 0x005BFC60: (14, "Freeze", 1, False),
+                0x005BFE60: (15, "OpenWounds", 1, False), 0x005BFFC0: (16, "CrushingBlow", 1, False),
+                0x005C0130: (17, "ManaAfterKill", 0, False), 0x005C0260: (18, "HealAfterDemonKill", 0, False),
+                0x005C0310: (19, "Slow", 0, False), 0x005C0470: (20, "SkillOnEvent", 1, True),
+                0x005C05A0: (21, "SkillOnGetHit", 1, True), 0x005C6370: (22, "BoneArmorAbsorb", 0, False),
+                0x005C6530: (23, "BloodGolemHit", 0, False), 0x005CA6C0: (24, "EnergyShield", 0, False),
+                0x005C87A0: (25, "CycloneArmor", 0, False), 0x005C6690: (26, "BloodGolemDamaged", 0, False),
+                0x005C6760: (27, "ClayGolemSlow", 0, False), 0x005C01D0: (28, "HealAfterKill", 0, False),
+                0x005C0770: (29, "RestInPeace", 0, False), 0x005C0670: (30, "SkillOnDeathOrLevel", 1, True),
+                0x005C09E0: (31, "Reanimate", 1, True)}
+
+    def handler(self, log, h0, h1, inner):
+        """One UNIT_DispatchEvent handler call (EVH .. EVR): the handler unit's seed steps by the handler's own draws
+        (0 or 1 before a cast); a handler that casts (20, 21, 30, 31) on a successful roll leaves the cast's draws
+        to the boundary (the steps after its first are reported). The other unit's seed: reported. Effects checked
+        where the logged fields hold their inputs (rev 4: the handler's stat value `sv`): 17 mana += sv << 8 and 28
+        life += sv << 8, each capped at stat 9 / stat 7; 15 and 16 the roll (low % 100 < sv) against the STA / life
+        outcome is combat.py's (reported here)."""
+        n = h0.get("n")
+        fn = h0.get("fn") or 0
+        u = h0.get("u")
+        su0 = u.get("s") if isinstance(u, dict) else h0.get("su")
+        su1 = h1.get("su")
+        H = self.HANDLERS.get(fn)
+        tag = "EVH %s" % (H[1] if H else "fn 0x%08X" % fn)
+        self.info[tag] += 1
+        self.info["EVH event %s" % h0.get("e")] += 1
+        if not H or su0 is None or su1 is None:
+            self.info["EVH not modelled (no seed or unknown handler)"] += 1
+            return
+        num, name, draws, cast = H
+        a, b = sd_parse(su0), sd_parse(su1)
+        k = steps_between(a, b, 4096)
+        sv = h0.get("sv")
+        if draws is None:
+            self.dist["EVH %s steps" % name][k] += 1
+            return
+        if draws == 0:
+            self.check("EVH.seed", k == 0, log, n, "%s: no draw, steps %s" % (name, k))
+            return
+        if num == 8:
+            # howl (0x005BFA10): the other unit must be a monster whose MonsterData +0x16 has neither 0x04 nor 0x08
+            # (sub_005A0180 with 0x0C) before the stat test and the draw
+            ot = h0.get("ot") or {}
+            mf = ot.get("mf")
+            if mf is None:
+                mf = self.mon_flags.get((log, ot.get("id")))
+            if ot.get("t") is not None and (ot.get("t") != 1 or (mf is not None and mf & 0x0C)):
+                self.check("EVH.seed", k == 0, log, n, "Howl: other type %s flags %s, no draw, steps %s" %
+                           (ot.get("t"), mf, k))
+                self.info["EVH Howl gate (not a plain monster)"] += 1
+                return
+        if sv is not None and sv <= 0 and num in (7, 8, 9, 14, 15, 16, 20, 21):
+            self.check("EVH.seed", k == 0, log, n, "%s: stat %d gate, steps %s" % (name, sv, k))
+            self.info["EVH gate (stat <= 0)"] += 1
+            return
+        if cast:
+            roll = step(a)[0] % 100
+            if sv is not None and num in (20, 30) and roll >= sv:
+                self.check("EVH.seed", k == 1, log, n, "%s: roll %d >= %d, one draw, steps %s" % (name, roll, sv, k))
+                self.info["EVH %s roll failed (no cast)" % name] += 1
+                return
+            if sv is not None and num in (20, 30):
+                self.info["EVH %s roll succeeded (cast: a boundary)" % name] += 1
+            self.check("EVH.seed1", k is not None and k >= 1, log, n, "%s: at least one draw, steps %s" % (name, k))
+            self.dist["EVH %s steps (the cast's after the first)" % name][k] += 1
+            return
+        self.check("EVH.seed", k == 1, log, n, "%s: one draw, steps %s" % (name, k))
+        if sv is not None and num in (15, 16):
+            hit = step(a)[0] % 100 < sv
+            self.info["EVH %s roll %s" % (name, "hit" if hit else "missed")] += 1
+            if num == 15:
+                stas = [dd for tt, dd in inner if tt == "STA" and dd.get("state") == 62]
+                self.check("EVH.ow", bool(stas) == hit, log, n, "open wounds roll %s, STA 62 lines %d" %
+                           (hit, len(stas)))
+
+    def handler_effect(self, log, h0, h1):
+        fn = h0.get("fn") or 0
+        sv = h0.get("sv")
+        u = h0.get("u")
+        if sv is None or not isinstance(u, dict):
+            return
+        st0, st1 = u.get("st") or {}, h1.get("st") or {}
+        if fn in (0x005C0130, 0x005C01D0) and sv > 0:
+            cur, mx = (stat(st0, 8), stat(st0, 9)) if fn == 0x005C0130 else (stat(st0, 6), stat(st0, 7))
+            self.info["EVH %s: %s" % ("mana after kill" if fn == 0x005C0130 else "heal after kill",
+                                      "the addition below the cap (separating)" if mx - cur > (sv << 8) else
+                                      "the cap binds")] += 1
+        if fn == 0x005C0130 and sv > 0:
+            want = min(stat(st0, 8) + (sv << 8), stat(st0, 9))
+            want = max(want, stat(st0, 8))
+            self.check("EVH.mana", stat(st1, 8) == want, log, h0["n"], "mana after kill %d: %d -> want %d got %d" %
+                       (sv, stat(st0, 8), want, stat(st1, 8)))
+        elif fn == 0x005C01D0 and sv > 0:
+            want = max(min(stat(st0, 6) + (sv << 8), stat(st0, 7)), stat(st0, 6))
+            self.check("EVH.life", stat(st1, 6) == want, log, h0["n"], "life after kill %d: %d -> want %d got %d" %
+                       (sv, stat(st0, 6), want, stat(st1, 6)))
+
+    # ---------------------------------------------------------------- CU (SKILLS_CanUse at the request)
+    def cu(self, log, c0, c1, cul, delay_until):
+        """SKILLS_CanUse's code (skills/0001 section 2): 6 aura, 5 passive (the record's +0x04 bits 0x20, 0x10), then
+        the ammunition and weapon tests (2, not modelled), the mana test (1: cost (lvlmana * max(lvl - 1, 0) + mana)
+        << manashift above stat 8, lvl = clamp(base + bonus, 0, max) with base and bonus the CUL line's), restrict (4,
+        not modelled), startmana (1), item charges (2), the delay (8: the unit is in state 121, taken from its last
+        DLY line: set at frame f for d frames; the row's delay calc present). Checked: the code the model gives for
+        the tests it models, given the logged result passed the ones it does not."""
+        n = c0["n"]
+        sid = c0.get("sk")
+        r = c1["r"]
+        self.info["CU code %d%s" % (r, " (client check, a change of code)" if c0.get("cl") else "")] += 1
+        if sid is None or not (0 <= sid < len(self.T.sk)):
+            self.check("CU.code", r == 3, log, n, "no record, code %d" % r)
+            return
+        R = self.T.skrow(sid)
+        if R["b04"] & 0x20:
+            self.check("CU.code", r == 6, log, n, "skill %d aura, code %d" % (sid, r))
+            return
+        if R["b04"] & 0x10:
+            self.check("CU.code", r == 5, log, n, "skill %d passive, code %d" % (sid, r))
+            return
+        if r in (7, 2) and not cul:
+            self.info["CU code %d (level 0 / ammunition, weapon: not modelled)" % r] += 1
+            return
+        if not cul:
+            self.fail(log, "CU.code", n, "skill %d code %d with no mana test line" % (sid, r))
+            return
+        if c0.get("it", -1) != -1:
+            self.info["CU item skill (charges, not modelled)"] += 1
+            return
+        P = self.T.srec(sid)
+        lvl = max(cul["base"] + cul["bonus"], 0)
+        cost = s32((P["lvlmana"] * max(lvl - 1, 0) + P["mana"]) << P["shift"])
+        mana = stat(c0["u"].get("st"), 8)
+        mana_ok = cost <= mana
+        if not mana_ok:
+            self.check("CU.code", r == 1, log, n, "skill %d lvl %d cost %d mana %d: code %d" % (sid, lvl, cost, mana, r))
+            self.dist["CU code 1: cost - mana (1/256)"][min(cost - mana, 512)] += 1
+            self.info["CU mana refusal predicted (cost %s mana)" % ">"] += 1
+            return
+        if r == 4:
+            self.info["CU code 4 (restrict, not modelled)"] += 1
+            return
+        if R["startmana"] and mana < R["startmana"] << 8:
+            self.check("CU.code", r == 1, log, n, "skill %d startmana: code %d" % (sid, r))
+            return
+        fr = c0.get("fr")
+        in_delay = delay_until is not None and fr is not None and fr < delay_until
+        has_delay = R["delay"] != -1
+        want = 8 if (in_delay and has_delay) else 0
+        if r == 2:
+            self.info["CU code 2 after the mana test (item charges, not modelled)"] += 1
+            return
+        if delay_until is not None and fr is not None and has_delay and abs(fr - delay_until) <= 1:
+            self.info["CU at the delay boundary frame (frame - end %d, code %d)" % (fr - delay_until, r)] += 1
+        self.check("CU.code", r == want, log, n, "skill %d frame %s delay until %s (row delay %s): want %d got %d" %
+                   (sid, fr, delay_until, has_delay, want, r))
+        if want == 0 and r == 0 and mana - cost < 512:
+            self.dist["CU code 0 within 2 mana of the cost: mana - cost (1/256)"][mana - cost] += 1
+        if want == 8:
+            self.info["CU delay refusal predicted"] += 1
+            self.dist["CU code 8: frame - the delay's end frame"][fr - delay_until] += 1
+        elif in_delay is False and delay_until is not None and fr is not None and has_delay:
+            self.dist["CU code 0 after a delay, %s: frame - its end frame (0..3)" % (
+                "client change" if c0.get("cl") else "request")][min(fr - delay_until, 4)
+                                                                 if fr >= delay_until else "<0"] += 1
+        elif in_delay:
+            self.info["CU in state 121, row without delay: passes"] += 1
+
+    # ---------------------------------------------------------------- CHAIN.caster with the unit's logged draws
+    def caster_gap(self, log, u, utype, prev, s0, between, k, n):
+        """ruling (c) of the part 1 review: walk the lines between two skill events of unit u, stepping u's seed for
+        each of its own logged draws (THR: the attacker's to-hit roll, the seed after it logged; DRR: a defence roll
+        on the defender's seed; REL: RollElemDamage's RangeB) and taking the logged exit of each span whose own draws
+        the checker models (MAS0..MAS1, EVH..EVR, MC0..MC1 as the owner, RSK0..RSK1), comparing every logged
+        observation of u's seed on the way (a span's entry, a hit's defender or attacker seed). The gap is attributed
+        when every observation and the next event's entry agree; else it is listed with the lines between."""
+        t = prev
+        tags = []
+        ok = True
+        why = None
+        open_spans = {}
+        bopen = {}               # boundary spans (AD, DQ, MA, MHT) naming u: their exit seed is taken (ADR-0021)
+        for tt, dd in between:
+            obs = None
+            if tt in ("AD1", "DQ1", "MA1", "MHT1") and (tt[:-1], dd.get("k")) in bopen:
+                side = bopen.pop((tt[:-1], dd.get("k")))
+                t = sd_parse(dd["sa"] if side == "a" else dd["sb"])
+                tags.append(tt[:-1] + " exit")
+                continue
+            if bopen:
+                continue         # inside a boundary: its own draws (the delivery's) are the exit's
+            if tt in ("AD0", "DQ0", "MA0", "MHT0") and u in (dd.get("a"), dd.get("b")):
+                side = "a" if dd.get("a") == u else "b"
+                o2 = dd.get("sa") if side == "a" else dd.get("sb")
+                if o2 and sd_parse(o2) != t:
+                    ok, why = False, "%s n=%s" % (tt, dd.get("n"))
+                    break
+                bopen[(tt[:-1], dd["n"])] = side
+                continue
+            if tt == "THR" and dd.get("a") == u:
+                t = step(t)
+                obs = dd.get("sa")
+                tags.append("THR")
+            elif tt == "DRR" and dd.get("u") == u:
+                t = step(t)
+                obs = dd.get("s")
+                tags.append("DRR")
+            elif tt == "REL" and dd.get("u") == u:
+                obs = dd.get("s")
+                if obs and sd_parse(obs) != t:
+                    ok, why = False, "REL entry"
+                    break
+                if dd.get("n", 0) >= 1:
+                    t = step(t)
+                obs = None
+                tags.append("REL")
+            elif tt == "MAS0" and dd["u"]["u"] == u:
+                obs = dd["u"]["s"]
+                open_spans[("MAS", dd["n"])] = 1
+                tags.append("MAS")
+            elif tt == "MAS1" and ("MAS", dd.get("k")) in open_spans:
+                t = sd_parse(dd["s"])
+            elif tt == "EVH" and isinstance(dd.get("u"), dict) and dd["u"]["u"] == u:
+                obs = dd["u"]["s"]
+                open_spans[("EV", dd["n"])] = 1
+                tags.append("EVH")
+            elif tt == "EVR" and ("EV", dd.get("k")) in open_spans:
+                t = sd_parse(dd["su"])
+            elif tt == "MC0" and (dd.get("o") or {}).get("u") == u:
+                obs = dd["o"]["s"]
+                open_spans[("MC", dd["n"])] = 1
+                tags.append("MC")
+            elif tt == "MC1" and ("MC", dd.get("k")) in open_spans and dd.get("so"):
+                t = sd_parse(dd["so"])
+            elif tt == "RSK0" and dd.get("u") == u:
+                obs = dd["s"]
+                open_spans[("RSK", dd["n"])] = 1
+            elif tt == "RSK1" and ("RSK", dd.get("k")) in open_spans:
+                t = sd_parse(dd["s"])
+            elif tt in ("MH0",) and (dd.get("d") or {}).get("u") == u:
+                obs = dd["d"].get("s")
+                tags.append("MH0.d")
+            elif tt in ("MA0", "AD0", "DQ0", "MHT0") and dd.get("b") == u:
+                obs = dd.get("sb")
+                tags.append(tt + ".b")
+            elif tt in ("MA0", "AD0", "DQ0", "MHT0") and dd.get("a") == u:
+                obs = dd.get("sa")
+                tags.append(tt + ".a")
+            elif tt == "PH0" and dd.get("d") == u:
+                obs = dd.get("sd")
+                tags.append("PH0.d")
+            if obs is not None and sd_parse(obs) != t:
+                ok, why = False, "%s n=%s" % (tt, dd.get("n"))
+                break
+        if ok and t == s0:
+            self.ok["CHAIN.caster+logged"] += 1
+            self.info["CHAIN.caster resync attributed (%s), %s" % ("player" if utype == 0 else "monster",
+                                                                  "+".join(sorted(set(tags))) or "none")] += 1
+            return
+        who = "player" if utype == 0 else "monster"
+        # a span closing between the two events that opened before the first one's exit: the first event (an item
+        # cast of handler 20 or 21, a skill event of a summon's owner...) was nested in it
+        seen = {dd.get("n") for _, dd in between}
+        nested = any(tt in ("AD1", "DQ1", "MA1", "MHT1", "EVR", "MH1", "SDO1", "SST1") and dd.get("k") is not None and
+                     dd["k"] not in seen for tt, dd in between)
+        defender = any(tt == "PH0" and dd.get("d") == u or tt == "MH0" and (dd.get("d") or {}).get("u") == u or
+                       tt in ("AD0", "MA0", "DQ0") and dd.get("b") == u for tt, dd in between)
+        kind = "nested (a span open across the first event's exit)" if nested else (
+            "off the stream within 4096 steps" if k is None else
+            "a hit's defender between (PH0, MH0, AD0, MA0 or DQ0): its defence rolls, combat/0001" if defender else
+            "no logged line names the unit" if not tags else "not attributed")
+        self.info["CHAIN.caster resync left (%s): %s" % (who, kind)] += 1
+        self.info["CHAIN.caster resync left (%s)" % who] += 1
+        mas = sum(1 for tt, dd in between if tt == "MAS0" and dd["u"]["u"] == u)
+        self.gaps.append("%s n=%s %s unit %s [%s]: %s steps; %s; first disagreement %s; own lines %s; MonAttackStats calls "
+                         "%d; lines between %d (%s)" % (
+                             os.path.basename(log), n, who, u, kind, k, "walk ended off the entry" if ok else "stopped",
+                             why, "+".join(tags) or "none", mas, len(between),
+                             ",".join(sorted({tt for tt, _ in between}))))
+
+    # ---------------------------------------------------------------- PH (state 52)
+    def ph(self, log, d0, d1, inner):
+        """sub_0057D810_PreventHealHook (EDI attacker, ESI defender), called by COMBAT_ToHitRoll on a hit
+        (skills/0003 section 3): a player attacker, a monster defender of a class outside 704..709 and the attacker's
+        stat 117 non-zero give STATE_ApplyTimed(state 52, 120 000 frames, stat 31 = 0) on the defender, nothing
+        otherwise; no draw on either seed."""
+        want = d0.get("ta") == 0 and d0.get("td") == 1 and not (704 <= (d0.get("dc") or 0) <= 709) and \
+            bool(d0.get("s117"))
+        sta = [dd for tt, dd in inner if tt == "STA" and dd.get("state") == 52]
+        got = len(sta) == 1 and sta[0]["d"] == d0["d"] and sta[0]["len"] == 120000 and sta[0]["stat"] == 31 and \
+            sta[0]["val"] == 0
+        self.check("PH.state52", (got if want else not sta), log, d0["n"], "want apply %s, STA 52 lines %s" %
+                   (want, sta))
+        self.info["PH state 52 applied" if want else "PH no apply (%s)" % (
+            "stat 117 is 0" if not d0.get("s117") else "attacker or defender type, or class 704-709")] += 1
+        self.check("PH.seed", (d0.get("sa"), d0.get("sd")) == (d1.get("sa"), d1.get("sd")), log, d0["n"],
+                   "seeds moved in the hook")
+
+    # ---------------------------------------------------------------- SP (the summoned unit)
+    def sp(self, log, d0, d1, inner):
+        """sub_0056D940_SpawnOwnedMonster: the created unit's seed is Init(step(game).low) inside its SUnitCreate
+        (SU0 -> SU1, as a missile's: rng/seeds 7a), the hand-off to monsters/spawn; its stats at SP1 are reported."""
+        m = d1.get("m")
+        if not m:
+            self.info["SP no unit"] += 1
+            return
+        self.summons.add((log, m["u"]))
+        su0 = [dd for tt, dd in inner if tt == "SU0" and dd.get("u") == m["u"]]
+        su1 = [dd for tt, dd in inner if tt == "SU1" and dd.get("u") == m["u"]]
+        if len(su0) != 1 or len(su1) != 1:
+            self.fail(log, "SP.seed", d0["n"], "SU lines %d/%d" % (len(su0), len(su1)))
+            return
+        pre, post = sd_parse(su0[0]["pre"]), sd_parse(su1[0]["post"])
+        self.check("SP.gameseed", step(pre) == post, log, d0["n"], "game seed %s -> %s" % (su0[0]["pre"],
+                                                                                         su1[0]["post"]))
+        self.check("SP.seed", sd_parse(su1[0]["s"]) == (post[0], INIT_HIGH), log, d0["n"], "unit seed %s, want %s" %
+                   (su1[0]["s"], sd_fmt((post[0], INIT_HIGH))))
+        self.info["SP class %d" % m["c"]] += 1
+        # the stats at the monsters/stats boundary: tools/monstats.py's MonStatsInit draws on the new unit's seed
+        # (the appearance draws per MonStats2 component, then the HP draw lo + RangeB(hi - lo + 1) of MonLvlStats;
+        # both stock summon classes met here are noRatio, so the raw MonStats cells and no level term), stat 6 = 7 =
+        # hp << 8 and stat 31 the AC cell
+        import monstats  # noqa: E402 (lazy: its tables load once)
+        if not hasattr(self, "_msT"):
+            self._msT = monstats.Tables()
+            self._msM = monstats.Model(self._msT)
+        S = monstats.Seed((post[0], INIT_HIGH))
+        self._msM.appearance(S, m["c"], 0, None)
+        lo, hi, ac, _ = self._msM.monlvl_stats(m["c"], 1, 0, 1)
+        hp = lo + S.rangeb(hi - lo + 1)
+        st = m.get("st") or {}
+        self.check("SP.stats", (stat(st, 6), stat(st, 7), stat(st, 31)) == (hp << 8, hp << 8, ac), log, d0["n"],
+                   "class %d: want life %d AC %d, got %s" % (m["c"], hp, ac, st))
+        if hi > lo:
+            self.info["SP HP drawn from a range (separating), class %d" % m["c"]] += 1
+        mas = [dd for tt, dd in inner if tt == "MAS0" and dd["u"]["u"] == m["u"]]
+        if mas:
+            k = steps_between((post[0], INIT_HIGH), sd_parse(mas[0]["u"]["s"]), 4096)
+            self.dist["SP init -> first MonAttackStats steps (MonStatsInit, class %d)" % m["c"]][k] += 1
+
+    def mh_end(self, log, d0, d1, inner):
+        """part 2: the end of a missile at a unit it damages (skills/0002 section 5), for rows with no hit function
+        (pSrvHitFunc not in 1..70), on calls that reached the damage build (a BD line inside: no early return 1): the
+        pierce use p = 2 (stat 328 - 1) when the row has Pierce, the owner has stat 166 or 156 (taken from the
+        missile's creation line, MC0) and stat 328 > 0, else p = 3; c = (Explosion ? 0 : 2) | CollideKill; the result
+        is 2 when (c & 1 or end) and p & 1, else 1."""
+        m = d0["m"]
+        R = self.T.mrec(m["c"])
+        if not any(tt == "BD0" for tt, _ in inner):
+            self.info["MH no build inside (a filter or a hit function returned first)"] += 1
+            return
+        if 0 < R["hitfn"] < 71:
+            self.info["MH end with a hit function (its result: a boundary)"] += 1
+            return
+        o = self.mc_owner.get((log, m["u"]))
+        if o is None:
+            self.info["MH end: missile created before the log or not logged"] += 1
+            return
+        p328 = stat(m.get("st"), 328)
+        pierce = R["pierce"] and (stat(o.get("st"), 166) or stat(o.get("st"), 156)) and p328 > 0
+        p = 2 if pierce else 3
+        c = (0 if R["explosion"] else 2) | (1 if R["collidekill"] else 0)
+        want = 2 if ((c & 1) or d0.get("end")) and (p & 1) else 1
+        want328 = p328 - 1 if pierce else p328
+        self.check("MH.end", d1["r"] == want and d1.get("m328", 0) == want328, log, d0["n"],
+                   "cls %d pierce %s CollideKill %d: want r %d 328 %d, got r %s 328 %s" %
+                   (m["c"], bool(pierce), R["collidekill"], want, want328, d1["r"], d1.get("m328")))
+        self.info["MH end: %s" % ("pierce used, continues" if pierce else
+                                  "ends at the unit" if want == 2 else "continues (no CollideKill)")] += 1
 
     # ---------------------------------------------------------------- the run
     def run(self, log):
@@ -530,10 +1112,14 @@ class Checker:
         pos = {d["n"]: i for i, (t, d) in enumerate(L) if "n" in d}
         caster_last = {}
         mf_open = {}
+        ev_open = []
+        delay_until = {}
+        ptr2id = {}
         utype = {}
         for i, (t, d) in enumerate(L):
             if t in ("SST0", "SDO0"):
                 utype[d["u"]["u"]] = d["u"]["t"]
+                ptr2id[d["u"]["u"]] = (d["u"]["t"], d["u"]["id"])
             if t == "PAY0":
                 d1 = exits.get(("PAY", d["n"]))
                 if d1:
@@ -550,6 +1136,8 @@ class Checker:
                     self.info["MC with a nested creation (not checked)"] += 1
                     continue
                 self.mc(log, d, d1, inner)
+                if d1.get("m") and d.get("o"):
+                    self.mc_owner[(log, d1["m"]["u"])] = d["o"]
             elif t == "MH0":
                 d1 = exits.get(("MH", d["n"]))
                 if not d1:
@@ -574,6 +1162,40 @@ class Checker:
                     self.check("RSK.seed", step_n(sd_parse(d["s"]), k) == sd_parse(d1["s"]), log, d["n"],
                                "class %s level %d: %d caster draws, %s -> %s" % (d["c"], sdo["a"][1], k, d["s"],
                                                                                  d1["s"]))
+            elif t == "PH0":
+                d1 = exits.get(("PH", d["n"]))
+                if d1:
+                    self.ph(log, d, d1, L[i + 1:pos[d1["n"]]])
+            elif t == "MON":
+                for mm in d.get("m") or ():
+                    if "mf" in mm:
+                        self.mon_flags[(log, mm.get("id"))] = mm["mf"]
+            elif t == "MAS0":
+                d1 = exits.get(("MAS", d["n"]))
+                if d1:
+                    self.mas(log, d, d1)
+            elif t == "EVH":
+                ev_open.append((i, d))
+            elif t == "EVR":
+                if ev_open:
+                    j0, h0 = ev_open.pop()
+                    if d.get("k") is None or d.get("k") == h0["n"]:
+                        self.handler(log, h0, d, L[j0 + 1:i])
+                        self.handler_effect(log, h0, d)
+            elif t == "DLY":
+                # keyed by the unit's guid: the client's checks (rev 5, "cl") run on the client's copy of the player
+                if d.get("d", 0) > 0 and d.get("fr") is not None:
+                    delay_until[ptr2id.get(d["u"], ("ptr", d["u"]))] = d["fr"] + d["d"]
+            elif t == "CU0":
+                c1 = exits.get(("CU", d["n"]))
+                cul = next((d2 for t2, d2 in L[i + 1:i + 8] if t2 == "CUL" and d2.get("k") == d["n"]), None)
+                if c1:
+                    self.cu(log, d, c1, cul, delay_until.get((d["u"]["t"], d["u"]["id"]),
+                                                             delay_until.get(("ptr", d["u"]["u"]))))
+            elif t == "SP0":
+                d1 = exits.get(("SP", d["n"]))
+                if d1:
+                    self.sp(log, d, d1, L[i + 1:pos[d1["n"]]])
             elif t == "MF0":
                 mf_open[d["m"]] = (i, d)
             elif t == "MF1":
@@ -591,13 +1213,15 @@ class Checker:
                 s0 = sd_parse(d["u"]["s"])
                 # chaining: the caster's seed against its exit seed at the previous skill event
                 if u in caster_last:
-                    prev = caster_last[u]
+                    prev, ppos = caster_last[u]
                     k = steps_between(prev, s0, 4096)
                     if k == 0:
                         self.ok["CHAIN.caster"] += 1
                     else:
                         self.info["CHAIN.caster resync"] += 1
                         self.dist["caster resync steps"][k if k is not None else ">4096"] += 1
+                        # part 2 (ruling (c)): add the unit's own logged draws between the two events
+                        self.caster_gap(log, u, utype.get(u), prev, s0, L[ppos + 1:i], k, d["n"])
                 j = pos[d1["n"]]
                 tt = s0
                 draws = 0
@@ -638,7 +1262,7 @@ class Checker:
                 else:
                     k = steps_between(s0, s1, 4096)
                     self.dist["%s skill %d caster steps" % (kind, sid)][k] += 1
-                caster_last[u] = s1
+                caster_last[u] = (s1, pos[d1["n"]])
                 # the game seed across consecutive creations of this event
                 prev_post = None
                 for d2 in mcs:
@@ -702,16 +1326,18 @@ def report(C, out=None):
     return tot
 
 
-def audit(paths):
+def audit(paths, excel=DEFAULT_EXCEL):
     """The oracle replacement (plan 0045 Phase 2): for a log written by another logger (tools/gdb/combat.py,
     tools/gdb/stats.py), count the oracle events of its own checker that this model could replace and the fields each
     replacement needs. A missile packet (combat MS0, RD0) needs the missile's stat list at the hit and the
     BuildDamage lines with the missile's seed (MH0 "m.st", BD0/BD1 "sm"); a creation or a motion step needs MC0/MF0; a
-    stat-event handler fire (EVH/EVR) needs a handler model, which this tool does not have (combat.py's crushing blow
-    and open wounds are already modelled there); an aura run (stats AU0/AU1) needs the run's RollElemDamage lines (REL).
+    stat-event handler fire (EVH/EVR) goes through the handler model (part 2: Checker.handler; a fire counts as replaced
+    when the model checks its seed effect and the check holds; combat.py's crushing blow and open wounds outcomes stay
+    combat.py's); an aura run (stats AU0/AU1) needs the run's RollElemDamage lines (REL).
     Prints one row per log and the totals; returns the rows."""
     rows = []
     tot = Counter()
+    T = Tables(excel)
     for p in paths:
         c = Counter()
         for line in open(p, errors="replace"):
@@ -724,9 +1350,28 @@ def audit(paths):
                     c["BD with the missile seed"] += 1
                 if tag == "MH0" and '"st"' in rest:
                     c["MH0 with the missile's stats"] += 1
+        # part 2: the handler fires through the handler model (Checker.handler on the EVH/EVR pairs); a fire is
+        # replaced when the model checks its seed effect and it holds (a cast handler's later draws stay a boundary)
+        H = Checker(T, False)
+        L = parse(p)
+        ev = []
+        for i, (t, d) in enumerate(L):
+            if t == "EVH":
+                ev.append((i, d))
+            elif t == "EVR" and ev:
+                j0, h0 = ev.pop()
+                ok0, bad0 = sum(H.ok.values()), sum(H.bad.values())
+                H.handler(p, h0, d, L[j0 + 1:i])
+                if sum(H.bad.values()) == bad0 and sum(H.ok.values()) > ok0:
+                    c["handler fires replaced"] += 1
+        hb = sum(H.bad.values())
+        tot["handler model mismatches"] += hb
+        for k, v in H.info.items():
+            if k.startswith("EVH ") and not k.startswith("EVH event"):
+                tot["(handlers) " + k] += v
         repl = {
             "missile packets": (c["MS0"], min(c["MS0 with the missile's stats"], c["BD with the missile seed"])),
-            "handler fires": (c["EVH"], 0),
+            "handler fires": (c["EVH"], c["handler fires replaced"]),
             "aura runs": (c["AU0"], min(c["AU0"], c["REL"])),
             "creations and steps": (c["MC0"] + c["MF0"], c["MC0"] + c["MF0"]),
         }
@@ -783,6 +1428,11 @@ def tally(paths, excel=DEFAULT_EXCEL):
             elif t == "EVH":
                 c["EVH event %s fn 0x%08X" % (d.get("e"), d.get("fn") or 0)] += 1
                 c["EVH fires"] += 1
+            elif t == "CU0":
+                e = exits.get(("CU", d["n"]))
+                if e:
+                    c["CU code %d, row %s" % (e["r"], d.get("sk"))] += 1
+                    c["CU calls (request checks)"] += 1
             elif t == "STA" and d.get("state") == 52:
                 c["STA state 52"] += 1
             elif t in ("SP0", "MAS0", "MCB0", "ARM0", "PF0"):
@@ -808,7 +1458,7 @@ def main(argv):
     if not argv or argv[0] not in ("check", "manifest"):
         print(__doc__)
         return 2
-    logs, excel, verbose, out = [], DEFAULT_EXCEL, False, None
+    logs, excel, verbose, out, gaps = [], DEFAULT_EXCEL, False, None, None
     k = 1
     while k < len(argv):
         a = argv[k]
@@ -821,6 +1471,9 @@ def main(argv):
         elif a == "-v":
             verbose = True
             k += 1
+        elif a == "--gaps":
+            gaps = argv[k + 1]
+            k += 2
         else:
             logs.append(a)
             k += 1
@@ -833,6 +1486,11 @@ def main(argv):
     C = Checker(Tables(excel), verbose)
     for p in logs:
         C.run(p)
+    if gaps:
+        with open(gaps, "w") as fh:
+            fh.write("caster resyncs left after the unit's own logged draws: %d\n" % len(C.gaps))
+            for g in C.gaps:
+                fh.write(g + "\n")
     return 1 if report(C, out) else 0
 
 

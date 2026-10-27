@@ -142,7 +142,7 @@ backlog entries (2026-10-16 "combat contradictions").
 | `0x0057D9B0` | `COMBAT_ToHitRoll` | chance to hit and its draw | I |
 | `0x0057D8A0` | `COMBAT_ToHitTargetMods` | ignore/fractional target defence, demon/undead to-hit | I |
 | `0x006223F0` | `UNIT_GetDefense` | defence: `armorclass + dex/4`, percents, override | I |
-| `0x0057D810` | `sub_0057D810_PreventHealHook` | on hit: stat 117 applies a state to a monster | I |
+| `0x0057D810` | `sub_0057D810_PreventHealHook` | on hit: stat 117 applies a state to a monster (state 52 checked, skills/0003 § 16) | C |
 | `0x0057DFB0` | `COMBAT_DefenceRoll` | shield block, then `COMBAT_AvoidRoll` | I |
 | `0x0057DD60` | `COMBAT_AvoidRoll` | evade, weapon block, dodge, avoid | I |
 | `0x0057DCA0` | `sub_0057DCA0_WeaponBlockChance` | stat 348 by the held weapons' item type | I |

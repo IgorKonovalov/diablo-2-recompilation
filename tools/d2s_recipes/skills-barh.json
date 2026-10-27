@@ -1,0 +1,107 @@
+{
+  "game": "expansion",
+  "progression": 15,
+  "difficulty": [
+    131,
+    131,
+    131
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "quests": "all",
+  "stats": {
+    "strength": 400,
+    "energy": 400,
+    "dexterity": 400,
+    "vitality": 800,
+    "hitpoints": 6000,
+    "maxhp": 6000,
+    "mana": 6000,
+    "maxmana": 6000,
+    "stamina": 800,
+    "maxstamina": 800,
+    "level": 85,
+    "experience": 1145236814
+  },
+  "belt_fill": [
+    "rvl",
+    "rvl",
+    "rvl",
+    "mp5"
+  ],
+  "class": "Barbarian",
+  "seed": 4616,
+  "name": "SkillsBarH",
+  "skills": {
+    "Bash": 20,
+    "Howl": 20
+  },
+  "mouse": {
+    "left": "Attack",
+    "right": "Bash",
+    "swap_left": "Attack",
+    "swap_right": "Bash"
+  },
+  "hotkeys": [
+    "Bash",
+    "Kick",
+    "Left Hand Throw",
+    "Attack",
+    "Howl"
+  ],
+  "items": [
+    {
+      "unique": "Fleshripper",
+      "equip": "rarm",
+      "roll": "max"
+    },
+    {
+      "unique": "Lacerator",
+      "equip": "larm",
+      "roll": "max"
+    },
+    {
+      "unique": "Howltusk",
+      "equip": "head",
+      "roll": "max"
+    },
+    {
+      "unique": "Corpsemourn",
+      "equip": "tors",
+      "roll": "max"
+    },
+    {
+      "unique": "Dracul's Grasp",
+      "equip": "glov",
+      "roll": "max"
+    },
+    {
+      "unique": "Nosferatu's Coil",
+      "equip": "belt",
+      "roll": "max"
+    },
+    {
+      "unique": "Gorefoot",
+      "equip": "feet",
+      "roll": "max"
+    },
+    {
+      "unique": "Nagelring",
+      "equip": "rrin",
+      "roll": "max"
+    },
+    {
+      "unique": "Nature's Peace",
+      "equip": "lrin",
+      "roll": "max"
+    },
+    {
+      "unique": "Atma's Scarab",
+      "equip": "neck",
+      "roll": "max"
+    }
+  ]
+}

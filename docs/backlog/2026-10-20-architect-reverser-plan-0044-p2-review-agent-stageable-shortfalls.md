@@ -13,7 +13,7 @@ Out of plan 0044 (Phase 2 review, 2026-10-20), for a later two-client run when b
 
 2026-10-20, reverser (`lane/mp26`): (1) done statically. `tools/ufwcheck.sh <session> <baseline> <log>` is the fixed successor of `drivers/ufwcheck.sh` (the run copy is kept unchanged, manifest hash `47c1d42d…`): it exits 1 with `UFW-CHANGED` unless ufw is active and enabled, the line is exactly `DEFAULT_INPUT_POLICY="DROP"`, `ENABLED=yes` and every baseline hash checks, and exits 2 on a missing argument or baseline; it reads only the input-policy line (the unchanged file also holds `DEFAULT_OUTPUT_POLICY="ACCEPT"`). Self-test in `workspace/logs/mp26/check-mp26.txt` § C ([experiments](../findings/multiplayer/experiments.md#run2026-10-20-two-clients), the precondition). (2)–(4) stay open: they need both harness slots.
 
-*2026-10-25 (reverser, `lane/p51r`, [plan 0051](../plans/0051-backlog-sweep-6.md) Phase 1a, no slot, no game):*
+*2026-10-25 (reverser, `lane/p51r`, [plan 0051](../plans/done/0051-backlog-sweep-6.md) Phase 1a, no slot, no game):*
 **Staged:** MP18, MP25's offensive auras, MP30 and the open-wounds pair. MP31 and MP32 go to Phase 1b. The rest
 stays with the two-client run.
 - **MP18:** recipe `tools/d2s_recipes/mp-sock-join.json` (MpSockJoin: level 30, a `cap` with 2 empty sockets and the
@@ -50,3 +50,13 @@ stays with the two-client run.
   from the findings.
 - **Still open for the two-client run (both slots):** (2) MP16, MP20, MP21, MP27, MP28 (b), (c); (3) the shield flag
   for `combat.py --no-shield`; and the sessions of everything staged above. The entry stays open.
+
+*2026-10-27 (reverser, `lane/p51s`, [plan 0051](../plans/done/0051-backlog-sweep-6.md) Phase 1b, no slot, no game):*
+**MP31 and MP32 predictions written** (the Phase 1a forward). The trade path and `sub_00540900_PartyGoldShare`'s
+arithmetic are read in [multiplayer/0002](../findings/multiplayer/0002-trade-and-party-gold.md) (§ 1, § 2, all
+`[I]`); § 3 gives the predictions, counter cases and logger points, and
+[multiplayer/0001](../findings/multiplayer/0001-cases.md) § 2 rows MP31 and MP32 now cite them. MP32: J gets
+`min(⌊A/2⌋, room)`, H the rest plus J's overflow, clipped at H's cap (an odd `A` and an `A` above J's room separate
+the readings). MP31: H `+g`, J `−g` with the offer clipped to H's room at button 8, and J holds the `ItemCopy` of the
+item. The logger lines are not written (they need the sessions' design). The sessions wait for the two-client run with
+both slots, like the rest of (2)–(4). The entry stays open.

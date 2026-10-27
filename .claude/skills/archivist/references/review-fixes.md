@@ -7,20 +7,20 @@ against all of them before you file the review request. Categories are those of 
 1. **Check the findings before tagging a meaning.** Where a finding states it with addresses, write
    `[I]` and cite it; where a reviewed spec settles it, state it. Seen: the resurrection price `[L]`
    ([0043](../../../../docs/plans/done/0043-items-economy.md) P0); the four `SubWaypoint` levels ([0042](../../../../docs/plans/done/0042-quests-travel.md) P0); a
-   raise missed ([0039](../../../../docs/plans/done/0039-backlog-sweep-4.md) P0).
+   raise missed ([0039](../../../../docs/plans/done/0039-backlog-sweep-4.md) P0); a post-boundary outcome under a `[C]` (Levels `Teleport`) and the summons' MonEquip rows "walked" `[I]` with the `oninit` gate unread ([0051](../../../../docs/plans/done/0051-backlog-sweep-6.md) P0b).
 2. **A sentence about code with no finding is `[L]`**; "no reader" needs a full xref, otherwise write a
    scope note ("combat/0001 reads none of these"). Seen: "set by code" ([0041](../../../../docs/plans/done/0041-stats-and-states.md) P0);
    ItemStatCost "not read" (0039 P0).
 3. **Recompute universal data claims over the whole table** (case-insensitive for names) before writing
    "no", "every" or "N rows". Seen: 44 names both a skill and a state (0041 P0); *Find Potion* takes the
-   tier above (0043 P0).
+   tier above (0043 P0); MonStats2's `m<mode>` "every set bit names a record" checked over the 603 rows MonStats names, not the 609 ([0050](../../../../docs/plans/0050-animation-frame-timing.md) P0).
 4. **Re-read the format doc and the findings a column touches.** Seen: ds1.md bits 18–19 against
    drlg/0001, and Levels level 0 as a town (`lane/arc4`, 0039).
 5. **Label every count with its game type, difficulty and index kind.** Seen: 138/208 are classic
    Nightmare/Hell (0039 P0); record index called "Id" (0042 P0).
 6. **List everything the request names**: every handler, every row asked for per row. Seen: `OperateFn`
    34 (0042 P0); the aura rows' passive columns (0041 P0).
-7. **Quote a composed rule whole**, with its other branch. Seen: the Npc scaling for `v ≥ 0x10000` (0043 P0).
+7. **Quote a composed rule whole**, with its other branch. Seen: the Npc scaling for `v ≥ 0x10000` (0043 P0); Skills `InTown`'s start 40 town test scoped to "a monster with a target" where the finding exempts every monster (0051 P0b); MonStats `aidel`'s re-queue without its "next AI event not later than now" condition and PlrMode's mode ends without row 19's get-hit branch (`lane/a51f`, [0050](../../../../docs/plans/0050-animation-frame-timing.md) items 3–4).
 8. **Time in frames, never seconds** (ADR-0014). Seen: Shrines' "96 s" (0041 P0).
 9. **Surprises for your plan's own later phases go into its *Done when***, not the backlog. Seen: 0041 P0
-   ruling 4; 0043 P0 ruling 6.
+   ruling 4; 0043 P0 ruling 6; the `dru` `+0x17C` forward sent to "§ Phase 1b item 3" but not written into that item (0051 P0b); HitClass's open question sent to Phase 1.3 but not in its *Done when* (0050 P0). When a prompt limits plan edits to the log, list them there; the review folds them (0050 P0 ruling d).

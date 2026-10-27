@@ -59,6 +59,12 @@ offsets are record offsets. This batch continues [skills/0001](0001-dispatch.md)
   unreached) or the given level (207); `0x005C9290` re-seeds the new missile from `Init(path x + arg)` (450 of 450), and its
   path calls then step that seed (§ 9's "none" corrected; which call, `[I]`). (fn:sub_005C4430_SummonClassRoll@0x005C4430,
   fn:sub_005C49E0_SummonSetLevel@0x005C49E0, fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290, run:2026-10-25-skills)
+- [C] *2026-10-27:* **Part 2** (§ 16, run:2026-10-27-skills, 0 mismatches), raised in part: the § 3 handlers' own
+  draws in 1 303 calls (none, one, or one before an item cast), heal after kill's capped addition, open wounds' roll,
+  the state-52 apply by stat 117 with no draw, and the summoned unit's seed, life and defence in 219 summons; the 3 461
+  handler fires of the combat and stats logs reproduced for their seed effects. The cast's own draws, howl's flag gate,
+  the handlers no session fired and the re-seed sites other than `0x005C9290` stay `[I]`.
+  (fn:UNIT_DispatchEvent@0x005C0C30, fn:sub_0057D810_PreventHealHook@0x0057D810, run:2026-10-27-skills)
 - [I] **The frame pass** (`sub_005414D0_GameRunUnitEvents`) runs the unit-event lists in this order: missiles, players,
   monsters, objects, then a fifth list; each first its every-frame list, then the current frame's bucket. So every
   missile steps before any player or monster acts in a frame. (0x005414EE–0x00541589)
@@ -314,7 +320,7 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
 | 25 | `0x005C87A0` | Cyclone Armor (235) | `absorbdamage` | absorbs fire, cold, lightning from `aurastat1` | none |
 | 26 | `0x005C6690` | Blood Golem (85) | `damagedinmelee`, `damagedbymissile` | the owner loses life with the golem, floor 256 | none |
 | 27 | `0x005C6760` | Clay Golem (75) | `damagedinmelee` | slow by its stat 150 (as 19, cap 50/90) | none |
-| 28 | `0x005C01D0` | stat 86 | `kill` | life `+= stat · 256`, capped, overlay 151 | none |
+| 28 | `0x005C01D0` | stat 86 | `kill` | life `+= stat · 256`, capped, overlay 151 (checked, § 16) | none |
 | 29 | `0x005C0770` | stat 108 | `kill` | state 172 on the victim | none |
 | 30 | `0x005C0670` | stats 197, 199 | `killed`, `levelup` | skill on death/level-up: skill `= layer >> shift`, level `= layer & mask`; one inline step, `low % 100 < stat` → cast, effect 0 | 1 inline |
 | 31 | `0x005C09E0` | stat 155 | `kill` | reanimate (items/0002) | 1 |
@@ -749,11 +755,17 @@ RunList(lists->a14, every); RunList(lists->bucket[4], frame);     // fifth list 
   equal to its entry seed stepped by exactly the nested events' draws (the creations' critical draws, `THR`, `DRR`,
   `REL`), and the same at `SKILLS_SrvStart`'s exit: 36 Fire Bolt (32 do events), 44 Frost Nova (33), 48 Nova (33),
   54 Teleport (182), 56 Meteor (30), 98 Might (84), 102 Holy Fire (35, its one `RollElemDamage` per run the nested
-  `REL`), 130 Howl (54), 221 Raven (207), 225 Firestorm (221), 12 Multiple Shot (36); 1 269 do and 1 142 start
-  events checked in all, a missing or extra step being a mismatch in each. (fn:SKILLS_SrvDo@0x0056F7F0,
+  `REL`), 130 Howl (54), 221 Raven (207), 225 Firestorm (221), 12 Multiple Shot (36): 947 do and 828 start events
+  of these eleven rows (98 Might and 102 Holy Fire have no start event), a missing or extra step being a mismatch in
+  each. *Corrected 2026-10-27 (lane/p45k):* the "1 269 do and 1 142 start events" written here before are the
+  checker's `SDO.seed`/`SST.seed` totals, which also hold the five rows under 30 below (106 do, 106 start), 92 Poison
+  Nova (208, 208; not tier A, the same do 22 as Nova) and do 31's 8 Raise Skeleton do events (§ 5 note): 947 + 106 +
+  208 + 8 = 1 269 and 828 + 106 + 208 = 1 142 (`2026-10-25-skills-tally.txt`). They are not the run's skill-use totals
+  (1 840 do, 1 688 start; experiments § run:2026-10-25-skills). (fn:SKILLS_SrvDo@0x0056F7F0,
   fn:SKILLS_SrvStart@0x0056F640, run:2026-10-25-skills)
 - [I] The same rows under the plan's 30 events: 25 Plague Javelin (26), 66 Amplify Damage (25), 68 Bone Armor (23),
-  251 Fire Trauma (19), 117 Holy Shield (13); every one of their events held. (run:2026-10-25-skills)
+  251 Fire Trauma (19), 117 Holy Shield (13); every one of their events held. *2026-10-27:* over 30 with part 2's
+  events, raised in § 16. (run:2026-10-25-skills)
 - [C] **Do 31's class draw, raised in part** (§ 5 note, corrected 2026-10-25): in 8 of 8 Raise Skeleton casts (skill
   level 20, a class-363 `necroskeleton` summon) the caster's seed steps exactly once between do 31's call of
   `sub_005C4430_SummonClassRoll` at `0x005C4C7A` and its return at `0x005C4C7F` (`RSK0`/`RSK1`), and nowhere else in
@@ -770,7 +782,7 @@ RunList(lists->a14, every); RunList(lists->bucket[4], frame);     // fifth list 
 - [I] The 8 summons share one input (L 86, `lvl` 0, skill level 20) and decide one case. It separates the read
   formula from the lead's 86 and from a rounded-up `3/4` (64.5 → 65 would give 85), not the clamps: neither `max(…, 1)`
   nor `min(…, L)` binds at 84. Its MonLvl defence and to-hit, `SummonInitStats`, and the created unit's seed are not
-  checked. (run:2026-10-25-skills)
+  checked. *2026-10-27:* the seed, life and defence checked by part 2 (§ 16). (run:2026-10-25-skills)
 - [C] **`0x005C9290`'s re-seed** (§ 9): the new missile's seed at the callback's `ret` lies on the stream of
   `Init(path x + arg)` (low = the word at path `+0x10` plus `+0x58`, high `0x29A`) in 450 of 450 creations, 20 steps
   past it in the 442 of Firestorm's sub-missiles and 38 in the 8 of a monster's class-195 missiles; a seed made any
@@ -780,7 +792,77 @@ RunList(lists->a14, every); RunList(lists->bucket[4], frame);     // fifth list 
   sites of § 9 are not reached. (run:2026-10-25-skills)
 - [I] **Not checked by the run** (named in the record as shortfalls): the stat-event handlers of § 3 (284 fires
   logged, oracles), state 52 (never applied), the progressive entries of § 1 (56 finisher calls, oracles), Kick, Left
-  Hand Throw and Left Hand Swing (no session). (run:2026-10-25-skills)
+  Hand Throw and Left Hand Swing (no session). *2026-10-27:* the handlers, state 52 and the three general rows are
+  checked by part 2 (§ 16, skills/0001 § 18); the progressive entries stay oracles. (run:2026-10-25-skills)
+
+### 16. Plan 0045 Phase 2 part 2: the run (run:2026-10-27-skills)
+
+15 sessions, logger rev 4/5 (the record: [experiments § run:2026-10-27-skills](experiments.md#run2026-10-27-skills));
+`tools/skills.py` (`c09f9419…`) over part 2's logs and part 1's re-checked: **0 mismatches**
+(`workspace/logs/skills/2026-10-27-skills-check.txt` `f6e4df6c…`, `…-part1-check.txt` `82688917…`). The `EVH` lines
+of rev 4/5 add the handler's own stat (`sv`, read at the record's `stat << 16 | layer`), the other unit and the packet;
+the checker's handler model is § 3's table by address. Raises of §§ 3, 5, 7 and 15, split where the run leaves a
+remainder:
+
+- [C] **The handlers' draws, raised in part** (§ 3, the *Draws* column): in 1 303 handler calls (284 of part 1's logs,
+  1 019 of part 2's) the handler unit's seed steps exactly by the handler's own draws: none for 17 mana after kill
+  (172), 28 heal after kill (78), 29 rest in peace (78), 19 slow (103), 6 thorns (7), 13 damage to mana (9), 5 life tap
+  (2), 22 Bone Armor (2); one for 7 knockback (103), 8 howl (103), 9 stupidity (65), 15 open wounds (182), 16 crushing
+  blow (138); one for 20 skill on attack when its roll `low % 100` is at or above the stat (233), at least one when it
+  is below and the item cast follows (19), at least one for 21 skill on get-hit (9). A reading of 0 for a one-draw
+  handler or 1 for a no-draw one fails on every such call. (fn:sub_005BF960_StatEv07Knockback@0x005BF960,
+  fn:sub_005BFA10_StatEv08Howl@0x005BFA10, fn:sub_005BFAA0_StatEv09Stupidity@0x005BFAA0,
+  fn:STATEVENT_OpenWounds@0x005BFE60, fn:STATEVENT_CrushingBlow@0x005BFFC0,
+  fn:sub_005C0130_StatEv17ManaAfterKill@0x005C0130, fn:sub_005C0470_StatEv20SkillOnEvent@0x005C0470,
+  run:2026-10-27-skills, run:2026-10-25-skills)
+- [I] The remainder: the cast's own draws (20 and 21, a boundary under ADR-0021: the steps after the first are
+  reported, 1 in each of the 28 casts), howl's gate on the other unit's MonsterData `+0x16 & 0x0C` (read at
+  `0x005BFA38`–`0x005BFA46`; a development session met it twice, the run's 103 howls all on plain monsters), knockback's
+  `0x7F` mask and its result bit, stupidity's chance formula, and the handlers no session fired (1–4, 10–12, 14, 18,
+  23–27, 30, 31). (0x005BFA38, run:2026-10-27-skills)
+- [C] **Mana and life after a kill, raised in part** (§ 3, 17 and 28): mana `+= sv << 8` and life `+= sv << 8`, each
+  capped at stat 9 / stat 7, in 78 and 78 kills (`EVH.mana`, `EVH.life`). The cap binds in 154 of them (the unit at its
+  maximum); the 2 heals with the life more than `sv << 8` below the maximum separate the addition.
+  (fn:sub_005C0130_StatEv17ManaAfterKill@0x005C0130, fn:sub_005C01D0_StatEv28HealAfterKill@0x005C01D0,
+  run:2026-10-27-skills)
+- [I] The mana addition below the cap is not separated (every mana-after-kill fired at full mana); the overlays are not
+  logged. (run:2026-10-27-skills)
+- [C] **Open wounds' roll** (§ 3, 15; combat/0001 § 10): `low % 100` of the attacker's next draw below stat 135 applies
+  state 62 for 200 frames (82 of 120 fires), at or above it applies nothing (38) (`EVH.ow`).
+  (fn:STATEVENT_OpenWounds@0x005BFE60, run:2026-10-27-skills)
+- [C] **State 52, raised in part** (§ 3 note): `sub_0057D810_PreventHealHook` applies `STATE_ApplyTimed(state 52,
+  120 000 frames, stat 31 = 0)` to the defender in 86 of 918 hook calls, exactly those with the player attacker's stat
+  117 non-zero (*Fleshripper* and *Nature's Peace*), and draws on neither seed (`PH.state52`, `PH.seed`: 333 in part 2's
+  logs, 585 in part 1's). (fn:sub_0057D810_PreventHealHook@0x0057D810, fn:STATE_ApplyTimed@0x0056E970,
+  run:2026-10-27-skills, run:2026-10-25-skills)
+- [I] Only stat 117 separates: every call had a player attacker and a monster defender outside 704–709, so the type
+  and class tests are not reached. (run:2026-10-27-skills)
+- [C] **The summoned unit, raised in part** (§ 7): in 219 summons (215 + 4: 207 Ravens of row 221, 12
+  `necroskeleton` of Raise Skeleton) the new unit's seed is `Init(step(game).low)` in its `SUnitCreate`, the game seed
+  stepped once (`SP.seed`, `SP.gameseed`), and its life (stat 6 = stat 7) and defence (31) are what `tools/monstats.py`'s
+  `MonStatsInit` draws give on that seed: one draw per MonStats2 component with a count ≥ 1, then the HP draw
+  `lo + RangeB(hi − lo + 1)` of the class's raw cells (both classes `noRatio`), in 219 of 219 (`SP.stats`); the Raven's
+  20–32 range separates in 207. Their level is § 15's C1 (4 more Raise Skeleton summons at 84). (fn:sub_0056D940_SpawnOwnedMonster@0x0056D940,
+  fn:sub_00552DF0_UnitSeedInit@0x00552DF0, fn:sub_00573CB0_MonStatsInit@0x00573CB0, run:2026-10-27-skills,
+  run:2026-10-25-skills)
+- [I] The remainder: the other stats of the summon (`SummonInitStats`, the skill's bonuses, the to-hit offset that
+  `MonAttackStats`' check learns), a `noRatio`-free summon class (the MonLvl term), the golems and the other summons
+  of § 7. (run:2026-10-27-skills)
+- [C] **§ 15's rows under 30, now over it**: 25 Plague Javelin (45 do events), 66 Amplify Damage (61), 68 Bone Armor
+  (34), 251 Fire Trauma (61), 117 Holy Shield (65): the caster's seed at `SKILLS_SrvDo`'s exit is the entry's stepped by
+  the nested events' draws in every one, part 1's events with part 2's. 70 Raise Skeleton stays at 12.
+  (fn:SKILLS_SrvDo@0x0056F7F0, run:2026-10-27-skills, run:2026-10-25-skills)
+- [I] **The re-seed sites other than `0x005C9290` are not reached** (no breakpoint on them, and no session's row on
+  their *Reached by* paths in § 9): `0x005ACDF0` (hit 58), `0x005D40F0` (do 37), `0x005D5BF0`, the call at `0x005AC073`,
+  `0x00645390` (no reference). `0x005C9290`: 168 more re-seeds, 38 steps past the Init each. (run:2026-10-27-skills)
+- [C] **The handler audit** (part 1 review ruling (b)): the 3 461 handler fires of run:2026-10-16-combat,
+  run:2026-10-17-stats and the *Fleshripper* log (`tools/gdb/combat.py`'s `EVH`/`EVR`, with the handler unit's seed
+  before and after) are reproduced by the handler model for their seed effects, 0 mismatches
+  (`workspace/logs/skills/2026-10-27-skills-audit.txt` `28f85c9a…`): crushing blow and open wounds 1 637 each, slow 59,
+  heal after kill 57, life tap 12, and the 59 skill-on-attack fires with at least one draw. (fn:UNIT_DispatchEvent@0x005C0C30,
+  run:2026-10-16-combat, run:2026-10-27-skills)
+- [I] Those logs carry no handler stat value, so the heal-after-kill life and the skill-on-attack roll are not
+  replaced; the crushing-blow and open-wounds outcomes stay combat.py's checks. (run:2026-10-27-skills)
 
 ## Kept outputs
 

@@ -12,7 +12,7 @@ resolution: ""
 
 *2026-10-17 (reverser, `lane/rbs` static sweep):* skipped: needs harness; rides on the next plan 0038 harness session that loads calc.gdb or seed-tree.gdb (no open batch).
 
-*2026-10-25 (reverser, `lane/p51r`, [plan 0051](../plans/0051-backlog-sweep-6.md) Phase 1a, no slot):* **Both lines
+*2026-10-25 (reverser, `lane/p51r`, [plan 0051](../plans/done/0051-backlog-sweep-6.md) Phase 1a, no slot):* **Both lines
 written and tested off-slot; the session is assigned to plan 0038 H1a.**
 - **data-calc 19, the hover marker.** `tools/gdb/calc.py` writes a `CH` line at the entry of the client function
   `0x00486370` (its one call is at `0x0048E978`), with the return address, the stack argument, EDI and, when EDI is

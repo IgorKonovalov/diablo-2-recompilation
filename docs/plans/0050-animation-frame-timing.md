@@ -1,6 +1,6 @@
 # 0050 — Animation and frame timing: unit modes, frame counts, rates and breakpoints, movement speed (ADR-0014 phase 4)
 
-> **Status:** approved 2026-10-25 (owner), in effect 2026-10-27 (plan 0045 Phase 2 part 1 accepted); P0, P1 and P1b open, P2 after 0045·P3's review
+> **Status:** approved 2026-10-25 (owner), in effect 2026-10-27 (plan 0045 Phase 2 part 1 accepted); P0 accepted 2026-10-27, P1 and P1b open, P2 after 0045·P3's review
 > **Created:** 2026-10-25
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0005-presentation-formats-tools-only, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases, 0020-skills-phase-in-two-plans, 0021-observed-boundaries-in-emulation
@@ -135,6 +135,15 @@ client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing ente
     get-hit to neutral, death to dead, the sequence modes); the monster mode table `0x006E2260` per mode; the
     sequences (`monseq`, `seqtrans`, `seqnum`, mode 14, `Unit+0x4E`); every RNG draw made by animation code (the
     object `Sync` draw and any other), with its seed;
+    - **and the Phase 0 surprises** (folded in at the P0 review, [log](#implementation-log)), each answered with its
+      address or left open with the reason: (a) which record the lookup takes for the 29 duplicate names of
+      [animdata](../formats/animdata.md#layout) (9 differ: `3DNUHTH`, `64A1HTH`, `64NUHTH`, `MINUHTH`, `VM*`); (b) for
+      objects, whether the frame advance reads Objects `FrameCnt<k>`/`FrameDelta<k>` or the record's `frames`/`speed`
+      (they agree in 1 173 and 609 of 1 483 modes, [Objects § Timing](../tables/Objects.md#timing-plan-0050-phase-0));
+      (c) what a `monseq` step at or past its user's record frame count does (249 steps: `K9`, `OS`, `ST`); (d) where
+      `Unit+0x4E` comes from, given that `monseq` events and the record's event bytes agree in 81 of 805 set steps and
+      event 4 is only in `monseq` ([MonSeq](../tables/MonSeq.md#sequences)); (e) whether `eanimdata.d2` is read (no
+      string names it).
   - **P1.2 rates:** the rate of each mode from the stats and the weapon: attack rate and IAS with the weapon's `speed`
     (one-handed, two-handed, dual wield, kick, throw), the skill rate terms (sequence skills, skills that raise or
     lower attack speed), cast rate with `MinimumCastingDelay`, hit-recovery rate, block rate, the caps and floors, the
@@ -142,13 +151,19 @@ client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing ente
     progress; monsters (MonStats speeds, the `fast` mod, the champion and unique bonuses, the difficulty terms if any);
     the **breakpoints** are derived from the formula and stated as a function, not copied; where the formula is a pure
     function, its cases are emulated (ADR-0015, ADR-0021) over the stock input range so the derived tables are
-    checked against the binary;
+    checked against the binary; and anim/0001 § 10's class overrides re-read on the `.bin` rows (the
+    [`SplGetModeChart` row-shift entry](../backlog/2026-10-27-archivist-reverser-anim0001-splgetmodechart-rows-shifted.md),
+    folded at the `lane/a51f` review): the records classes 417, 543, 570, 705 and 709 take, and 418/544 named
+    `shadowmaster`/`baalcrab`;
   - **P1.3 movement and the gates:** walk and run velocity (CharStats, MonStats, `MonStatsSpeeds` at load, stat 67 and
     the slowing states, `RunDrain`), `PathSetSpeed`, `PathVelocityStep` and the position advance per frame in its
     fixed-point units; then each gate: the frame the do function runs on (skills/0001 § 5), the attack's delivery
     frame (combat/0001 § 2), missile creation on the action frame, hit recovery (the get-hit mode and its length,
     `GetHitRoll`), knockback and stun lengths, the block mode's length, the skill `delay` against the animation, an
     object's operate frames; the get-hit and durability draws combat names;
+    the hit class (`sub_0057CE30_HitClassPick`: which of Weapons `hit class`, MonStats2 `HitClass` and the packet's
+    `+0x60` it starts from, and whether the server gates anything on it; [HitClass](../tables/HitClass.md#open-questions),
+    folded in at the P0 review);
   - for each event kind (mode start, frame event, mode end, rate change, movement step), its inputs, outputs, draws,
     seeds and the chaining reading (ADR-0014);
   - the community cross-check (Phase 1b) done;
@@ -249,3 +264,221 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   lacked ([0045 log](0045-skills-missiles-machinery.md#implementation-log)). That acceptance is the one this plan's
   approval waited for: **Phases 0, 1 and 1b are open**. Phase 2 still waits for 0045·P3's review, which waits for 0045
   Phase 2 part 2's review.
+- **2026-10-27 — Phase 0 landed (archivist, `lane/p50z`).** `animdata.d2` decoded and the timing columns documented;
+  no Ghidra, no harness. What was produced:
+  - [formats/animdata](../formats/animdata.md) and `tools/animdata.py` (`survey`, `dump`, `compare`, `dups`; gate
+    survey `animdata`): 256 hash blocks (`u32` count + 160-byte records: `name` char[8], `frames` u32, `speed` u32,
+    144 event bytes), every record in block `sum(name bytes) & 0xFF`, the file consumed exactly; layout `[C]`, meanings
+    `[L]`. Copies: d2data 2 563 records, d2exp 3 558 (wins by the precedence, `[I]`), patch_d2 none; d2exp adds 973
+    names and changes 4 values. Event bytes 1 ×433, 2 ×148, 3 ×4.
+  - [cof](../formats/cof.md#animdatad2-against-the-cof-fields-data-only): for all 3 500 joined names the COF
+    `frames_per_dir`, frame bytes and `rate` equal the record's `frames`, events and `speed` (data only).
+  - [MonSeq](../tables/MonSeq.md) and [HitClass](../tables/HitClass.md) (new; layouts `monseq` 5 050 cells and
+    `hitclass` 14 cells, 0 mismatches; `excel_layout` baseline regenerated: 71 tables, 951 693 cells, 0 unexplained).
+  - § Timing in PlrMode, MonMode, ObjMode (the stale "phase (5)" lines rewritten), CharStats, MonStats, MonStats2,
+    Weapons, Skills, States, ItemStatCost and Objects, each column with offset, width and range.
+  - `tools/anim_survey.py` (gate survey `anim`): the token-to-record joins with their misses: players 755 of 756 names
+    (`AMWK1HS` unjoined), monsters 5 109 flagged modes all joined (5 057 by `BaseW`, 52 by `HTH`), objects 1 483 of
+    1 603 flagged modes (120 misses); the Skills `anim`/`monanim`/`seqnum` rows; the rate stats and their users; the 60
+    `monseq` sequences with lengths and event steps.
+  - **Surprises for Phase 1.1** (written here, not into its *Done when*, per the lane's instruction to keep this plan's
+    edits to a log entry; the architect may fold them in): (a) 29 duplicate record names, 9 with different content
+    (`3DNUHTH`, `64A1HTH`, `VM*`): which one the lookup takes; (b) for objects the table and the record disagree:
+    `FrameCnt<k>` equals `frames` in 1 173 of 1 483 modes and `FrameDelta<k>` equals `speed` in 609 (0 in 421): which
+    one the server's frame advance reads; (c) 249 `monseq` steps name a frame at or past the user's record (`K9`
+    shadow warriors on 2-frame records, `OS`, `ST`); (d) `monseq` events agree with the record's event byte at the same
+    frame in only 81 of the 805 steps where either is set; event 4 exists only in `monseq`; (e) `eanimdata.d2` (d2exp,
+    3 531 records, a subset with equal values) is named by no string in `Game.exe`.
+  - Merge order: after plan 0051 Phase 0 (already on main at the branch point, 0e3f501).
+- **2026-10-27 — Phase 0 reviewed (architect, `lane/p50z`): accept with fixes.** `main` (0848879) merged into the
+  lane first (the metrics conflict kept both sides; `backlog.py archive` moved nothing). Re-run under
+  `systemd-run --user --scope -p MemoryMax=4G`: `animdata.py survey`, `anim_survey.py summary` and `excel_bin.py
+  survey` print their baselines byte for byte (71 tables, 951 693 cells, 0 unexplained); the two `SURVEY` lines quoted
+  in [formats/animdata](../formats/animdata.md#tools) equal the baselines. An independent parse of the merged file
+  (256 blocks, 160-byte records, the size sum, `hash_bad=0`, event bytes 1 ×433, 2 ×148, 3 ×4, the four speed-0
+  records) and `animdata.py compare` over the archive copies (d2data → d2exp: 973 names added, 3 frames and 1 speed
+  changed; `eanimdata.d2` a 3 520-name subset with equal values; patch_d2-classic's copy has d2exp's hash) agree with
+  the doc. Fixes (5), written into the documents:
+  1. [formats/animdata](../formats/animdata.md#files): "`[L]` Nothing names it in `Game.exe`" split: the string check
+     is `[C]` (`animdata` occurs, ASCII or UTF-16LE, only in `%s\AnimData.d2`), whether the file is read stays `[L]`.
+  2. [formats/animdata](../formats/animdata.md#layout): "the six `VM*` names" lists five (`animdata.py dups`: 9
+     differing names = `3DNUHTH`, `64A1HTH`, `64NUHTH`, `MINUHTH` + five `VM*`).
+  3. [MonStats2 § Timing](../tables/MonStats2.md#timing-plan-0050-phase-0): the `m<mode>` row's `[C]` "every set bit
+     names a record" scoped to the 603 records a MonStats row names; `diabloclone` and the five `uber*` rows have no
+     `Code` to build a name from and were not checked.
+  4. [Weapons § Timing](../tables/Weapons.md#timing-plan-0050-phase-0): `speed` "0 ×105 set" was the 105 blanks; no
+     cell is set to 0 (10 values in 201 rows).
+  5. Phase 1.3's *Done when* gains the hit class (HitClass's open question pointed there and was not in it).
+  Rulings:
+  - (a) **"d2exp wins by the precedence `[I]`" stands.** data/0002's precedence is `[I]`, and d2exp is opened by
+    `MPQ_OpenCoreArchives` in every game; the string `%s\AnimData.d2` is at file offset `0x2EED5C`, which is VA
+    `0x006EED5C` in `.rdata` (VA = offset + `0x400000`, objdump section map). Which code opens it stays Phase 1.1's.
+  - (b) **The layout rows are `[C]`** by the data-format rule (every byte read, every check passing, three files);
+    every meaning is `[L]` or carries a finding's `[I]` (skills/0001 § 5, combat/0001, data/0001, the reviewed specs
+    for the base rate stats and the `Sync` draw), spot-checked against `re/symbols.csv`.
+  - (c) **No game data dumped.** The § Timing tables are per-mode aggregates; HitClass's 14-row code list and MonSeq's
+    six sample sequences are short illustrative rows; the full grids stay in the tools' output.
+  - (d) **The five surprises are folded into P1.1's *Done when*** as one sub-item under P1.1 (lines added, none
+    changed, so `lane/p50a` merges cleanly). Archivist rule 9 stands; when a prompt limits a lane's plan edits to the
+    log, the lane lists them there and the review folds them, as here. Not counted as a lane fix.
+- **2026-10-27 — P1b part 1: sources registered and claims staged, no verdicts (reverser, `lane/p50c`; no Ghidra, no
+  harness, P1 work on other branches not read).** P1.2 and P1.3 have not run, so this part does only the blind half
+  of Phase 1b; **part 2 (one verdict per claim against P1.2 and P1.3) runs after P1.3's review.** Registered in
+  [sources](../sources.md), each with the version it describes: `maxroll-d2r-breakpoints` and
+  `maxroll-d2r-attack-speed` (D2R, patch 2.4 and later), `basin-wiki-animation` (LoD 1.10+ with D2R notes, nine
+  pages by revision), `basin-runwalk-thread` (February 2003, 1.09 era; Hammerman's two in-memory offsets of that
+  build read in prose, not copied, not used), `basin-movement-clarification` (2012, 1.13 era), `pd-breakpoints` (no
+  patch named, classic-era tables); not read: `lurker-movement-thread` (HTTP 409/406) and `gustafsson-movement-speed`
+  (archive refused). No page with game code was met. Staged in [anim/leads](../findings/anim/leads.md): **61
+  claims**, all `[L]`, each with source, version and the batch that decides it: rates R 5, attack A 15, cast C 7,
+  delays D 5, hit recovery, stun and knockback H 10, block B 5, movement M 14 (`grep -cE` in its § 11). Seven
+  conflicts are named in the rows (A1/A2 the `− 1` inside or outside the ceiling; C2 against C3; D1/D2 the delay from
+  the action frame or after the cast; H4 three "one-handed swinging" lists; H5/H6 the hit-recovery threshold; M6/M7
+  Slows Target's speed effect; M12/M13 Charge speed). **Kept check** `tools/anim_leads_check.py` (`331eb0f0…`): the
+  sources' FCR, FHR and FBR tables against their own formula, 39 cases × 2 sources, 70 agree, 8 differ (the Druid's
+  three forms and the Necromancer's FCR, reproduced only with bases 15 and 16), output
+  `workspace/logs/anim-leads/p50c-leads-check.txt` (`b185e780…`, `manifest.sha256`); a check of community claims
+  against each other, not of the game. **Gaps** (no lead found): monster frames and rates, the `fast` mod, object
+  operate frames, `monseq` sequences; part 2 records them "no lead". The `animdata.d2` format guides are left to
+  Phase 0. Review request: [backlog](../backlog/archive/2026-10-27-reverser-architect-review-plan-0050-p1b-part-1.md).
+- **2026-10-27 — P1b part 1 reviewed: accept with fixes (architect, `lane/p50c` review; `main` merged first, ledger
+  rows kept on both sides; no Ghidra, no harness).** Re-run: `python3 -I tools/anim_leads_check.py` (`331eb0f0…`)
+  byte-identical to the kept output (`b185e780…`, `sha256sum -c manifest.sha256` OK), `SUMMARY … agree=70 differ=8
+  alt_base_found=8`, the 8 ALT lines the Druid's three forms (base 15) and the Necromancer (base 16) in both sources;
+  case counts 12 FCR + 16 FHR + 11 FBR = 39 as C3, H3 and B3 state. The § 11 grep gives 61 (R 5, A 15, C 7, D 5, H 10,
+  B 5, M 14); every row `[L]` with an empty verdict, no `[C]` or `[I]` in the file, nothing promoted. No hex offset in
+  the commit; the longest quote is 66 characters (the Basin's "required EIAS" formula); the six registry rows are
+  summaries. **Rulings.** (a) **Hammerman's post:** within the sources policy. ADR-0001 names offset lists among the
+  community documentation usable as leads; what it bars is decompiled or reconstructed code, the reason
+  `pk-pathfinding-thread` is rejected (structs and code that walks them). Two field offsets named in prose are an
+  offset list of a 1.09 build, which ADR-0001 also says does not transfer; `src:basin-runwalk-thread` stays a
+  registered lead, the offsets stay uncopied and unused, and M11 (the mode factors, no offset) stays staged. (b) **The
+  blind rule:** the header note is the control, widened and made checkable; the file is not withheld. A lane must
+  merge `main`, the claims restate public pages any lane could fetch, and the blind-first rule is about order, which a
+  log statement and the reviewer can check; keeping the file on an unmerged branch would strand part 2's bookkeeping.
+  The rule now covers every Phase 1 batch, P1.1 included (R1, A3 and A4 are frame-advance and start-frame claims, now
+  batched P1.1 too): a P1 lane reads only § 1 before filing, says "leads not read before filing" in its log entry, and
+  its review checks that the finding cites no leads row and states no community number or formula without an address.
+  (c) **Version scope:** each claim now carries a **Version** column from its sources; 19 rows are **D2R 2.4+ only**
+  and 5 **1.09 only**. A code disagreement on such a row is written `contradicted (version: D2R)` or `(version: 1.09)`
+  and is not a community error, and it stays a required Phase 2 case when reachable on stock data (the run settles
+  1.14d; the version note does not excuse the code reading). (d) A4 and D4 are decided from the P0 survey in part 2,
+  as staged. **Fixes (3), written into `anim/leads`:** (1) the Version column and its § 1, § 2 and § 11 text, with
+  the kept greps (19, 5); (2) § 2's "the breakpoint tables are not copied" corrected: they are not in the file but are
+  transcribed as numbers into the check; (3) the blind rule widened to P1.1 with the log statement and review check,
+  and P1.1 added to R1, A3 and A4's batch (the plan's own Phase 1b text named only P1.2 and P1.3; the gap was the
+  plan's). Ledger: accept with fixes, 3 (omission 2, misread 1). The review request is closed. Part 2 (verdicts) runs
+  after P1.3's review.
+- **2026-10-27 — Phase 1, batch P1.1 landed for review (reverser, `lane/p50a`, static, Ghidra copy `ghidra-p50a`).**
+  [anim/0001](../findings/anim/0001-modes-frames.md) reads the mode machine, all `[I]`: the `animdata.d2` record by
+  token, mode token and weapon class (with a built-in fallback of 2048 frames, speed 256, no events), the attack
+  start-frame table (Amazon and Sorceress only), `UNIT_SetMode`/`UNIT_AnimInit` per unit type, the unit's frame fields
+  (`re/types/game.h`, new `re/types/anim.h`), sequences (player tables in the image, `monseq` for monsters), the
+  player and monster mode tables with their ends, and the event lists' order in a frame. **Surprise:** most server
+  modes are not advanced frame by frame; `SUNIT_ScheduleModeEvents` queues the frame events (codes 1–4) and the mode
+  end at the start, from the start frame, rate and length, and only monster every-frame modes advance with
+  `UNIT_AnimAdvance`. The animation machine draws once (an object's start when `Sync` is 0). Second surprise: the
+  monster frame event ignores a frame function's 2. 75 symbols (`anim/timing`); `tools/anim_scan.py` and the `stop@`
+  root of `RngCallGraph.java`; outputs kept under `workspace/logs/anim/` (`p50a-manifest.sha256`). Archivist entry
+  for the `animdata.d2`/`monseq`/token docs filed; review requested
+  ([backlog](../backlog/archive/2026-10-27-reverser-architect-review-lane-p50a-plan-0050-phase-1-batch.md)). P1.2 (rates:
+  `UNIT_AnimSetRate`, already named) is next. The five data questions of Phase 0's survey (`lane/p50z`) are answered
+  from the code in anim/0001 § 2.1.
+
+- **2026-10-27 — Phase 1, batch P1.1 reviewed: accept with fixes (architect, `lane/p50a` review; static, objdump
+  only, no Ghidra, no harness).** `main` merged into the lane twice (0e3f501 → 0848879, then d24d839 with P0 and P1b
+  part 1; ledger and log conflicts kept both sides; `backlog.py archive` moved nothing). Judged against the plan as on
+  `main` **with the P0 fold** (P1.1's sub-item (a)–(e), landed with `lane/p50z`). Re-run: `tools/anim_scan.py` (scan
+  and rows) byte-identical to the kept outputs (`d6679d5f…`, `8e5d2636…`); `sha256sum -c p50a-manifest.sha256` OK
+  (6 files); tool hashes equal `p50a-commands.txt`'s. objdump of the pinned `Game.exe`: `SUNIT_ScheduleModeEvents`
+  (`0x005539B0`) as § 7 states (one `T` step per `acc < L` pass, the inner scan to `acc >> 8` capped at `0x90`, the
+  jump table `0x00553AFC` 1, 2, 4 → `0x00553A82` with the running index, 3 → `0x00553A9A` with 0, the end at `T + N + 1`
+  or `T + 2`, `+0x44 = T << 8`), so `T + max(2, ⌈(L − 256·S)/r⌉)` for `L > 256·S` holds; `UNIT_AnimAdvance`
+  (`0x00623E00`) as § 8 (the 16-bit signed `0x100` test, the wrap restarting the scan at 0 and the position at the
+  start frame, the last event byte winning); its 11 call sites, 7 monster (`0x005A736C`, `0x005A74AC`, three in
+  `MonAttackFrame`, `0x005A863C`, `0x005A8720`) and 4 client; `UNIT_AnimSetRate` calls neither the event queue nor
+  the cancel; the fallback `+0x40C = 0x800`, `+0x410 = 0x100` returned as `+0x404`; `ANIMDATA_Find`'s forward walk
+  returning the first match; the image's one `AnimData` string at `0x006EED5C` and no `eanimdata`; the five runners in
+  the order missile, player, monster, object, item, every-frame list then slot; `0x005A7BA0` calling the frame
+  function with ECX/EDX only and `sub_00541060_MonEventsRun` not testing the result (`0x005410C4`); the
+  `PlrModeSkillFrame` write of `b` at `0x00580482`; `g_MonModeRecords`, `g_MonModePerFrame` and `g_MonModeEndDirect`
+  dumped and equal to § 10. 75 rows, all `I`, `anim/timing`; no duplicate address or name after both merges; no `[C]`
+  and no raise. `RngCallGraph.java`: `stop@` is parsed before roots and only consulted for callees, so a call without
+  it runs as before (backward-compatible). **Blind check (the `lane/p50c` ruling, applied on P1.1's behalf):** the
+  finding cites no [anim/leads](../findings/anim/leads.md) row and states no community number or formula without an
+  address; the lane ran before the file existed on `main` and was told not to read `lane/p50c` — **leads not read
+  before filing**. Not a lane fix.
+  **Fixes (7), written into the documents:** (1) anim/0001 summary and § 10: the generic S3 (row 10, `schedule` 0)
+  queues no event, so its frame function and "S3 to S4" are run by nothing read; open question 1 widened; (2)
+  `re/types/anim.h` `MonModeRec.pfnFrame` "2 ends the mode" → the return is not read; (3) `re/types/game.h` bit 19's
+  "§ 4" → § 10; (4) `anim.h`'s `MON_ModeEveryFrame` → `sub_005A6B10_MonModeEveryFrame`; (5) § 5 and skills/0001's dated
+  note: `PlrModeSkillFrame` writes the index only with a used skill (`0x00580475` returns 2 first); (6) the Draws
+  summary names the 3 unfollowed indirect calls, § 11 the mode graph's 118; (7) § 6: the frame function gets no code
+  or index, the return's path to `MonEventsRun`, the object runner `sub_00541160_ObjEventsRun`, and the no-record
+  fallback `0x005A7B30`. Not counted (left stale by the P0 and P1b merges): the header's and *Data touched*'s "no
+  format doc", § 2.1's "under review", open question 4, *Leads used* (now naming R1, A3, A4), and a dated note on the
+  archivist entry (items 1–2 met by P0; 3–4 remain).
+  **Rulings.** (a) **Two clocks** stand `[I]`. Phase 2 logs a scheduled mode at `SUNIT_ScheduleModeEvents` (the
+  queued list, once per start) and the kind 0/1 dispatch, and `UNIT_AnimAdvance` only in windows for every-frame
+  monsters; P1.2 answers "does a rate change apply to a mode in progress" as two cases: a scheduled mode keeps its
+  events (bar the § 7.1 reschedules), an every-frame monster's next advance takes the new rate (P1.2 to read).
+  (b) **The ignored 2** (and the generic S3) **stay an open question of anim/0001 for Phase 2 to log**, not routed:
+  what ends the mode is the AI command if anything, which § 12 already names as plan 0052's oracle; Phase 2 records
+  the mode's end event per every-frame attack it meets, and plan 0052 takes it over only if the log shows the AI
+  command. (c) **The RNG scope** is accepted as stated: "only draw" holds over the 171-function graph with its stops
+  and 3 unfollowed callbacks (stats/states'), now in the text; the mode-function graph stays reported by entry, its
+  draws belong to the subsystems named; `PlayerModeAllowed`'s draw is P1.3's gate. (d) The archivist entry stays
+  open for items 3–4, non-blocking. (e) The dated notes in skills/0001 and skills/0002 stand (0001 scoped by fix 5).
+  (f) **§ 2.1 meets the P0 fold** (a)–(e), each `[I]` with its address: first record in the block wins, objects
+  never read their record on the server, a sequence's frame and event come from the sequence record, only
+  `%s\AnimData.d2` is loaded. Ledger: lane row filled (usage from the orchestrator), accept with fixes, 7 (misread 2,
+  omission 2, overclaim 1, wrong anchor 1, symbol clash 1). The review request is closed. **P1.2 may start** once this
+  lane is merged into `main`.
+- **2026-10-27 — Archivist entry items 3–4 folded (archivist, `lane/a51f`; no Ghidra, no harness).** The anim/0001
+  readers entry ([archive](../backlog/archive/2026-10-27-reverser-archivist-p50a-animdata-monseq-readers.md)), whose
+  items 1–2 Phase 0 had met:
+  - Item 3: [PlrType](../tables/PlrType.md) and [ObjType](../tables/ObjType.md) (new; layouts `plrtype` 14 cells and
+    `objtype` 1 146 cells, 0 mismatches; the ObjMode shape, `Token` at `+0x020`, 16 zero bytes; `excel_layout`
+    baseline regenerated: 73 tables, 952 853 cells, 0 unexplained). The token's use `[I]` from anim/0001 § 2.
+  - Item 4: anim/0001 linked from the § Timing notes of PlrMode, MonMode, ObjMode, MonStats2 (`compositeDeath`,
+    `*mv`, `m<mode>` under a shape-shift), MonStats (`SplGetModeChart`, `SplEndGeneric`, `SplEndDeath`, `aidel`;
+    the old `aidel` scope note replaced), Objects (`FrameCnt`, `Start`, `FrameDelta`, `Sync`: the server's object
+    frame fields come from the table, the old `[L]` answered) and Skills (`seqnum`, `durability`, `interrupt`; the
+    `seqnum` `[L]` answered). Tags are the finding's.
+  - `tools/anim_survey.py` gains the finding's rules as counts (anim baseline regenerated, 60 keys):
+    `mon_rule_miss=0` (by the game's monster name, `hth` in DT/DD without `compositeDeath`, every flagged mode outside
+    `xx` has a record) and `obj_objtype_token_ne=16`, `obj_objtype_hit=1491` (the ObjType token differs from the
+    Objects `Token` in 16 records; under it 1 491 of the 1 603 flagged object modes have a record, against 1 483).
+  - Surprise, for the reverser ([backlog](../backlog/2026-10-27-archivist-reverser-anim0001-splgetmodechart-rows-shifted.md)):
+    anim/0001 § 10's `SplGetModeChart` data is one row off from record 410 on (`anim_scan.py rows` keeps the
+    `Expansion` row). By the `.bin` all ten override classes have the column set, so the five branches § 10 calls
+    unreached (417, 543, 570, 705, 709) are reached, and 418/544 are `shadowmaster`/`baalcrab`. MonStats § Timing
+    states the data and leaves those branches `[L]`. For P1.2's *Done when*: re-check § 10 once that entry is answered.
+- **2026-10-27 — Archivist entry items 3–4 reviewed (architect, `lane/a51f` at `727653f`): accept with fixes (3).**
+  `main` `e88e8e2` merged first (one conflict, `metrics.md`, both sides kept; `backlog.py archive` a no-op). Both
+  surveys re-run under `MemoryMax=4G` reproduce their baselines (`excel_layout` 73 tables, `plrtype_cells=14`,
+  `objtype_cells=1146`, 0 bad; `anim` 60 keys with `mon_rule_miss=0`, `obj_objtype_token_ne=16`,
+  `obj_objtype_hit=1491`). Rulings:
+  (a) **The row shift holds.** Read on `monstats.bin` (424-byte records, `+0x1A5`): 20 records have
+  `SplGetModeChart` 1, all ten switch classes among them (243, 333, 403, 417, 418, 543, 544, 570, 705, 709), and
+  the `.txt` read without dropping the `Expansion` line gives `deathsentry`, `shadowwarrior`, `ancientbarb3`,
+  `baalthrone`, `injuredbarb3`, `ubermephisto` and `uberduriel` blank or set exactly as § 10 reports. The entry to
+  the reverser stands; MonStats § Timing's `[C]` data and `[L]` branches are right. Folded into P1.2's item list
+  (§ Phase 1), as the archivist's log asked.
+  (b) **The new tables.** PlrType and ObjType are layout-complete; their token use is `[I]` from anim/0001 § 2
+  (`0x0065B480`, `0x0065B570` in its *Data touched*; record sizes `0x0065AE26`/`0x0065B216` in data/0001 § 4).
+  ObjType's record-*k* pairing is data `[C]` with the code half `[L]`, which is right. Three illustrative rows each;
+  no dump. The rule count models KB's `GH` token implicitly: `monmode.bin` row 13 already stores `GH`, so the
+  remap is a no-op on stock data (checked: 0 misses with it applied).
+  (c) **Spot-checks of the seven Timing notes against anim/0001 § 2, § 3, § 5, § 9, § 10 and § 11:** the
+  `SplEndGeneric`/`SplEndDeath` counts (27; 8 + 1) and the disguise rows (63, 93, 119, 139, 140, 176, 177, on
+  `states.bin` byte `+0x12` bit 0) recomputed. Fixes: (1) MonStats `aidel`: the re-queue's condition (the next AI
+  event not later than now) and the 18 blank rows added (omission); (2) PlrMode: row 19's get-hit branch of
+  `PlayerModeEnd`, not reached from its move frame (§ 9.1), added (omission); (3) the States `disguise` struck
+  question linked `#columns` for § Flag bits; now `#flag-bits-0x010-40-bits-bit-i--byte-0x010--i8-bit-i-mod-8` there, in the plan 0051 log and in the closed
+  States entry (wrong anchor).
+  (d) **The gate's slug.** Not a gate bug: `gh_slug` gives the heading GitHub's anchor (`*i*` is emphasis, `+`,
+  `=` and `/` drop), the gate resolves it, and the gate stays green with the precise link. No entry.
+  (e) anim/0001's open question on the token tables is the reverser's to strike; it rides with the row-shift entry.
+  Ledger: lane row filled (usage from the orchestrator), review row added with "—" usage. The review request is
+  closed. P1.2 is not held.

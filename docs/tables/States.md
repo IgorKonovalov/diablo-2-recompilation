@@ -61,7 +61,7 @@ Observed type and range are computed over `states.txt` (185 rows).
 | `cltevent` | str, 1 distinct (`hitbymissile`), 184 blank | `+0x030` u16 | `events.txt` row; blank → −1 | `events.txt:event` | [C] layout |
 | `clteventfunc` | int 1, 184 blank | `+0x032` u16 | function number | — | [C] layout |
 | `cltactivefunc` | int 85..90, 6 distinct, 179 blank | `+0x034` u16 | function number | — | [C] layout |
-| `srvactivefunc` | int 145..147, 3 distinct, 182 blank | `+0x036` u16 | function number; `[I]` an index into the skill do table `g_SkillDoFuncs` (`0x007322B0`), run on unit event 5 by `sub_0056D790_StateDoFunc` ([skills/0001 § Functions](../findings/skills/0001-dispatch.md#functions); fn:sub_0056D790_StateDoFunc@0x0056D790); 146, on `armageddon`, is `sub_005C8520_SkillDo146Armageddon` ([skills/0003 § 9](../findings/skills/0003-handlers.md#9-re-seed-sites-rng0002--the-other-initialiser-sites)); the three entries: [Skills § Function index](Skills.md#function-index-plan-0046-phase-0) | — | [C] layout |
+| `srvactivefunc` | int 145..147, 3 distinct, 182 blank | `+0x036` u16 | function number; `[I]` an index into the skill do table `g_SkillDoFuncs` (`0x007322B0`), run on unit event 5 by `sub_0056D790_StateDoFunc` ([skills/0001 § Functions](../findings/skills/0001-dispatch.md#functions); fn:sub_0056D790_StateDoFunc@0x0056D790); 146, on `armageddon`, is `sub_005C8520_SkillDo146Armageddon` ([skills/0003 § 9](../findings/skills/0003-handlers.md#9-re-seed-sites-rng0002--the-other-initialiser-sites)); the three entries: [Skills § Function index](Skills.md#function-index-plan-0046-phase-0); *plan 0046 readers:* `[I]` `sub_0056D790_StateDoFunc` (unit event 5: `g_PlayerEventFuncs[5]` and `g_MonEventFuncs[5]`, `[C]` as data read from the image) takes the Skills `aurastate` of the event's skill id, that state's `srvactivefunc` in `[0, 0xBF)`, and calls `g_SkillDoFuncs[value]` with the event's skill id and level ([skills/0013 § 1](../findings/skills/0013-druid.md#1-the-table-slots-the-shared-shape-and-entries-145-and-146); fn:sub_0056D790_StateDoFunc@0x0056D790); `[C]` 147 (row 143 `attached`) is `sub_005D2B20_StateDo147Attached`: it calls `0x006505E0(unit, its owner)` when the unit has an owner, else returns 1; `[I]` that the callee moves the unit's path to its owner's point ([skills/0018 § 5](../findings/skills/0018-monster-8c.md#5-moves-spawns-and-links-start-61-62-do-129-135-140-147); fn:sub_005D2B20_StateDo147Attached@0x005D2B20) | — | [C] layout |
 | `skill` | str, 2 distinct (`Holy Shield`, `redemption`), 183 blank | `+0x038` u16 | [Skills](Skills.md) row, key matched case-insensitively (`redemption` → 124); blank → −1 | `skills.txt:skill` | [C] layout |
 | `missile` | str, 2 distinct, 183 blank | `+0x03A` u16 | `missiles.txt` row; blank → −1 | `missiles.txt:Missile` | [C] layout |
 | `immed` | int 1, 173 blank (12 rows) | — (not compiled) | `[I]` the descriptor has no entry for it, so the compiler ignores the column ([data/0001 § Plan 0039 batch P1b](../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17)); no byte or bit of the record follows it `[C]` (data) | — | [I] |
@@ -91,6 +91,15 @@ Observed type and range are computed over `states.txt` (185 rows).
   ([data/0001 § Plan 0039 batch P1b](../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17), fn:STATES_Load@0x00618100, tbl:States.txt:rfred)
 - ² `[I]` `attred` is flag bit 10 (descriptor entry 12); it is blank in every row and bit 10 is 0 in every record
   `[C]`. (fn:STATES_Load@0x00618100, tbl:States.txt:attred)
+- `[I]` **The flag lists `STATES_Load` builds.** After the table load, `sub_00611DC0_StatesListByFlag` collects, in
+  id order, the rows with one flag bit into a `u16` list with an `s16` count in `DataTables`: bit 16 **`disguise`**
+  (byte `+0x12` bit 0) → `+0x17C`/`+0x180`, bit 4 `pgsv` → `+0x16C`/`+0x170`, bit 11 `curse` → `+0x174`/`+0x178`, bit 5
+  `active` → `+0x184`/`+0x188`; `sub_00611E60_StatesListByField` adds the rows whose `itemtype` (`+0x2A` s16) is above 0
+  → `+0x18C`/`+0x190` ([skills/0013 § 6](../findings/skills/0013-druid.md#6-the-melee-functions-start-56-57-58-do-121-122), fn:STATES_Load@0x00618100,
+  fn:sub_00611DC0_StatesListByFlag@0x00611DC0). `[C]` On stock data the `disguise` list is the seven rows 63, 93, 119,
+  139, 140, 176, 177 ([§ Flag bits by row](#flag-bits-by-row), bit 16). Its readers in the findings: skill do 121 (`0x005C8980`,
+  the to-hit sum, skills/0013 § 6) and `UNIT_AnimTransform`, which takes the first listed state the unit has for its
+  `gfxtype`/`gfxclass` display ([anim/0001 § 2](../findings/anim/0001-modes-frames.md#2-records-the-token-the-lookup-and-the-fallback), fn:UNIT_AnimTransform@0x00645270).
 
 ## Combat rows (plan 0037 Phase 0)
 
@@ -314,6 +323,29 @@ several.
   the state is the code + 122; fire, cold and lightning are in another order). The pairing is a name reading until the shrine
   operate is read.
 
+## Timing (plan 0050 Phase 0)
+
+States has no timing column of its own. The rate and velocity stats ([ItemStatCost § Timing](ItemStatCost.md#timing-plan-0050-phase-0))
+reach a state two ways, both data (`python3 -I tools/anim_survey.py skills workspace/merged`, keys
+`rate_stat_states`, `rate_stat_skill_cells`):
+
+| Column | `.bin` field | Observed | Tag |
+|---|---|---|---|
+| `stat` | `+0x018` u16, `itemstatcost` row; blank 65 535 | 55 set; a rate stat in 7: 67 `velocitypercent` in 11 `cold`, 44 `holywindcold`, 82 `increasedspeed`; 68 `attackrate` in 25 `fetishaura`, 49 `fanaticism`, 120 `feralrage`, 157 `quickness` | [C] layout ([§ Which data names a row](#which-data-names-a-row)); `[L]` meaning |
+
+- `[C]` **The skills that put a rate stat with a state.** The Skills rows whose `aurastat*` or `passivestat*` name a rate
+  stat, with the state the same row names: Holy Freeze (`aurastat1..3` = 67, 68, 69; `aurastate` 43 `holywind`,
+  `auratargetstate` 44 `holywindcold`), Fanaticism (68; 49 `fanaticism` both), Decrepify (67, 68; target 60
+  `decrepify`), Frenzy (67, 68; 94 `frenzy`), MonFrenzy and BloodLordFrenzy (67, 68, 69; 103 `monfrenzy`), Quickness
+  (67, 68; 157), Feral Rage (67; 120), Wearwolf (68; 139 `wolf`), Delerium Change (67, 68, 69; 177 `delerium`),
+  Overseer Whip (67, 68; target 141 `bloodlust`), SpiderLay and Vine Attack (67; target 24 `slowed`), Vigor (67 as
+  `aurastat3`; 41 `stamina`), Increased Speed (67 as `passivestat1`; `passivestate` 82), and the four golems and Revive (67
+  as `passivestat1`, no `passivestate`; Clay Golem also `item_slow` as `aurastat1`). 20 rows, 33 cells. Whether the stat value
+  rides on the state's stat list is the aggregation of [stats/aggregate](../specs/stats/aggregate.md); how it changes a
+  rate in frames is plan 0050 Phase 1.2.
+- `[L]` The chill (`cold`, stat 67) and the other slowing states change a unit's velocity and, through `UpdateAnimRate`,
+  its animation rate (names). Plan 0050 Phases 1.2–1.3.
+
 ## Interpretation notes
 
 - `[I]` **`exp` is flag bit 30, and the quest TC switch reads it.** The states loader builds 40 bit-sets at
@@ -371,3 +403,8 @@ several.
   and 173 `sub_005C07A0_SkillReviveDo`, 105 `sub_005543B0_MonAlignSet`, 118, and 154 cleared only by
   `sub_00579AA0_MercRevive`; row 0's site marks a stat list as no state rather than setting one), most in functions
   not read; it finds no site for 7 (6, 25, 29, 39, 116, 164, 171), which stay open.
+- ~~The shape-shift state list: which loader fills `DataTables+0x17C`/`+0x180`, and which column (`restrict`, `group` 3
+  or `transform`) picks its rows~~ answered `[I]` by [skills/0013 § 6](../findings/skills/0013-druid.md#6-the-melee-functions-start-56-57-58-do-121-122) (plan 0051 Phase 1b item 3a): `STATES_Load`
+  fills it with the `disguise` rows (flag bit 16), none of the three candidates ([§ Flag bits](#flag-bits-0x010-40-bits-bit-i--byte-0x010--i8-bit-i-mod-8)).
+  Still `[L]`: whether any other code writes the list (skills/0013 does not follow the four `[esi+0x17c]` stores'
+  base registers).

@@ -297,9 +297,9 @@ blank everywhere and placed by stride `[I]`.
 | `+0x00A` | u16 | 0 in every record | `[I]` padding: no descriptor entry, no writer found |
 | `+0x00F` bits 5–7 | bits | 0 in every record | `[I]` padding: no descriptor entry, no writer found |
 | `+0x025` | u8 | 0 | unknown |
-| `+0x02A` | s16 | 0 | `[I]` first `monequip` row of the class, −1 if none, written at load by `MONEQUIP_Load` |
+| `+0x02A` | s16 | 0 | `[I]` first `monequip` row of the class, −1 if none, written at load by `MONEQUIP_Load` (the rows: [MonEquip](MonEquip.md)) |
 | `+0x036`, `+0x038` | s16 each | 0 | `[I]` walk and run values derived at load from the animation data and `Velocity`/`Run` (`sub_00650F00_MonStatsSpeeds`) |
-| `+0x04A`, `+0x04B` | u8 each | 0 | `[I]` length of the class chain (`BaseId` → `NextInClass`) and the record's position in it, written at load (`sub_00651040_MonClassChain`) |
+| `+0x04A`, `+0x04B` | u8 each | 0 | `[I]` length of the class chain (`BaseId` → `NextInClass`) and the record's position in it, written at load (`sub_00651040_MonClassChain`); *plan 0046 readers:* `[C]` skill do 85 and do 132 add `+0x04B` to `srvmissilea` through `MONSTATS_GetClassChainPos` (0 for a class out of range), so the n-th class of a chain casts the n-th missile after the named one (ADR-0021) ([skills/0016 § 6](../findings/skills/0016-monster-8a.md#6-missiles-and-the-infernos-do-85-88-93-95-111-start-53), [skills/0018 § 3](../findings/skills/0018-monster-8c.md#3-the-missile-casts-do-130-132-136-139-148-149-and-start-63); fn:MONSTATS_GetClassChainPos@0x006510C0, fn:sub_005CB0C0_SkillDo85ChainMissile@0x005CB0C0) |
 | `+0x055`, `+0x0A7`, `+0x10D`, `+0x16B` | u8 | 0 | unknown (gaps before u16 groups) |
 | `+0x188 + 2k`, k = 0..7 | s16 | sequence ordinal for `Sk(k+1)mode = seq_*`, else −1 | `[C]` derived from `SknMode` |
 
@@ -357,7 +357,7 @@ Counts are by `python3 -I tools/mon_survey.py monstats <excel-dir>` over the 734
 | `MinGrp`, `MaxGrp` | `+0x02F`, `+0x030` u8 | `MinGrp` ≤ `MaxGrp` in every record; (0,0) on 8, (1,1) on 286, widest (5,10) | critter count `RangeB(MaxGrp − MinGrp) + MinGrp` ([monsters/0001](../findings/monsters/0001-level-pool.md) § 7); the random group size: [§ Spawn columns](#spawn-columns-plan-0014-phase-0) | [C] |
 | `PartyMin`, `PartyMax` | `+0x02C`, `+0x02D` u8 | `PartyMin` ≤ `PartyMax` in every record; (0,0) on 656. Every record with `PartyMax` > 0 has `minion1`; `radament` has `minion1` with `PartyMax` 0 | the MonStats minion count: [§ Spawn columns](#spawn-columns-plan-0014-phase-0) | [C] |
 | `minion1`, `minion2` | `+0x026`, `+0x028` u16 monster ordinal | set on 79 and 9 records; all resolve to enabled records | the minion classes: [§ Spawn columns](#spawn-columns-plan-0014-phase-0) | [C] |
-| `spawn` | `+0x020` u16 monster ordinal | set on 52 records (31 of them with `isSpawn` 0); all resolve to enabled records | name: the class a spawner creates | [L] |
+| `spawn` | `+0x020` u16 monster ordinal | set on 52 records (31 of them with `isSpawn` 0); all resolve to enabled records | the class a monster's summon skill creates ([§ Spawn columns](#spawn-columns-plan-0014-phase-0), *plan 0046 readers*) | [C] (skill summon) |
 | `noRatio` | `+0x00C` bit 2 | 1 on 31 records, all player summons and pets (`claygolem` … `bear`) | blocks the TC level upgrade on drops (items/0001 §4); keeps the MonStats `Level*` in expansion nightmare/hell ([monsters/0001](../findings/monsters/0001-level-pool.md) § 5) | [I] (TC), [C] (level) |
 | `boss` | `+0x00C` bit 6 | 1 on 25 records: the act bosses, their uber and clone forms, `summoner`, `izual`, `bloodraven`, `griswold`, `radament`, `nihlathakboss` and `putriddefiler1..5`. The `putriddefiler*` are the only `boss` classes in any `Levels` pool (10 cells, Act 5 temples) | blocks the TC level upgrade on drops (items/0001 §4); keeps the MonStats `Level*` like `noRatio` ([monsters/0001](../findings/monsters/0001-level-pool.md) § 5); in combat, the hireling percent, the stun and freeze exemptions, crushing blow's divisor 8 and the stat 115/116 target modifiers ([§ Combat readers](#combat-readers-plan-0037-phase-1-plan-0039-a1)) | [I] |
 | `primeevil` | `+0x00C` bit 7 | 1 on 12 records: `andariel`, `duriel`, `mephisto`, `diablo`, `diabloclone`, `baalcrab`, `baalclone` and the five `uber*` act bosses | an attacker with it deals 200 % to a hireling and 400 % to some other defenders (`COMBAT_DamagePercent`, [§ Combat readers](#combat-readers-plan-0037-phase-1-plan-0039-a1)) | [I] |
@@ -401,10 +401,10 @@ only where a finding anchors it; readings of the names are `[L]`.
 | `minion1`, `minion2` | `+0x026`, `+0x028` u16 monster ordinal | set on 79 / 9 records. `minion1` names the class itself on 31 records (22 pool classes: `fallen1..4`, `fetish*`, `fetishblow*`, `scarab1..7`); otherwise a related class (`fallenshaman*` → `fallen*`, `cantor*` → `zealot*`, `overseer*` → `minion*`, `unraveler*` → `skeleton*`, `siegebeast*` → `imp*`). `minion2` only on the `fetishshaman*` (and `fetish11`), always a `fetishblow*` | the classes of the MonStats minions above, alternating `minion1`, `minion2` (`minion2` only when valid), radius 4 around the unit; a unique boss's minions are `minion1`, or its own class when `minion1` is not valid ([monsters/0002](../findings/monsters/0002-room-population.md) § 5, § 6, fn:sub_005B2830_MinionsSpawn@0x005B2830, fn:sub_005A0BB0_UniqueMinionClass@0x005A0BB0, run:2026-10-13-mon-spawn) | [C] |
 | `SetBoss` | `+0x00C` bit 4 | 63 records, 43 pool classes; every `SetBoss` record has `minion1`. 16 records have `minion1` without `SetBoss` (`unraveler1..4`, `cantor1..6`, `doomknight3`, `dkmag1..3`, `radament`, `bloodraven`) | when set, `MinionsSpawn` links each minion to its leader (calls `0x0058F030`/`0x0058F100`); what the link does is not read ([monsters/0002](../findings/monsters/0002-room-population.md) § 6, fn:sub_005B2830_MinionsSpawn@0x005B2830) | [I] |
 | `BossXfer` | `+0x00C` bit 5 | 41 records, 28 pool classes; always with `SetBoss` | passed as an argument to the link call `0x0058F030` above; its effect is not read ([monsters/0002](../findings/monsters/0002-room-population.md) § 6, fn:sub_005B2830_MinionsSpawn@0x005B2830) | [I] |
-| `spawn` | `+0x020` u16 monster ordinal | 52 records; 15 pool classes: `sandmaggot1..7` → `maggotegg*`, `vilemother1..5` → `vilechild*`, `crownest1..3` → `foulcrow*` | with `placespawn`, a `% 100 > 20` roll in the class pick substitutes the `spawn` class (fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, [monsters/0001](../findings/monsters/0001-level-pool.md) § 6); other uses (spawner monsters) [L] | [I] substitution |
+| `spawn` | `+0x020` u16 monster ordinal | 52 records; 15 pool classes: `sandmaggot1..7` → `maggotegg*`, `vilemother1..5` → `vilechild*`, `crownest1..3` → `foulcrow*` | with `placespawn`, a `% 100 > 20` roll in the class pick substitutes the `spawn` class (fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, [monsters/0001](../findings/monsters/0001-level-pool.md) § 6); *plan 0046 readers:* `[C]` `sub_0056E620_SkillSummonClass` with `EDX` 1 (start 49, 62, do 84, 87) takes a **monster** caster's own `spawn` (s16) as the class, one outside the MonStats count replaced by `0x0058F710`'s link fallback (the data `+0x28` link's `+0x3C`, else −1); with `EDX` 0 (do 104, 114, 115, 119, 44, 45, 49) or a non-monster caster the Skills `summon` serves (ADR-0021; `[I]` do 131's class change calls it with `EDX` 0 after its boundary, [skills/0018 § 4](../findings/skills/0018-monster-8c.md#4-the-hits-the-curses-and-the-states-do-128-131-133-134-137)) ([skills/0016 § 4](../findings/skills/0016-monster-8a.md#4-moves-and-marks-start-4346-48-49-51-52-do-8991-94-98), [skills/0016 § 5](../findings/skills/0016-monster-8a.md#5-spawns-heals-and-revives-do-84-86-87-96-97), [skills/0017 § 5](../findings/skills/0017-monster-8b.md#5-the-node-words-the-prison-the-corpse-explosion-and-the-curse-start-54-55-59-64-do-104-141-112), [skills/0018 § 5](../findings/skills/0018-monster-8c.md#5-moves-spawns-and-links-start-61-62-do-129-135-140-147); fn:sub_0056E620_SkillSummonClass@0x0056E620, fn:sub_0063EA70_SkillSummonRec@0x0063EA70) | [I] substitution; [C] summon class |
 | `placespawn` | `+0x00E` bit 7 | 4 records, `crownest1..4` (`spawn` = `foulcrow1..4`); 3 pool classes (`crownest1..3`). No record has `placespawn` without `spawn` | gates the substitution above | [I] |
-| `spawnx`, `spawny` | `+0x022`, `+0x023` s8 | set exactly on the 52 `spawn` records. (0,0) ×25, (0,3) ×13, (8,0) ×5 (`maggotqueen*`), (0,2) ×4, (−2,−2) ×4 (`suckernest*`), (2,5) ×1 (`evilhut`) | name: offset of the spawned unit from the spawner | [L] |
-| `spawnmode` | `+0x024` u8 `monmode` index | `S1` on 19 `spawn` records (`sandmaggot*`, `maggotegg*`, `maggotqueen*`, `bloodraven`), `NU` on the other 33; blank (255) on the 682 without `spawn` | name: the spawned unit's starting mode | [L] |
+| `spawnx`, `spawny` | `+0x022`, `+0x023` s8 | set exactly on the 52 `spawn` records. (0,0) ×25, (0,3) ×13, (8,0) ×5 (`maggotqueen*`), (0,2) ×4, (−2,−2) ×4 (`suckernest*`), (2,5) ×1 (`evilhut`) | *plan 0046 readers:* `[C]` `SkillSummonClass` with `EDX` 1 adds them (s8) to a monster caster's position; start 49 and start 62 write the point into the used node's `+0x1C`/`+0x20`, and do 135 passes the node's point to `SpawnAtPos` (ADR-0021); `[I]` do 91 spawns there after its boundary; do 84 and do 87 pass no point pointers (do 87 steps one cell towards the target) ([skills/0016 § 4](../findings/skills/0016-monster-8a.md#4-moves-and-marks-start-4346-48-49-51-52-do-8991-94-98), [skills/0016 § 5](../findings/skills/0016-monster-8a.md#5-spawns-heals-and-revives-do-84-86-87-96-97), [skills/0018 § 5](../findings/skills/0018-monster-8c.md#5-moves-spawns-and-links-start-61-62-do-129-135-140-147); fn:sub_005CBD10_SkillSt49Nest@0x005CBD10, fn:sub_005D2490_SkillDo135MinionSpawn@0x005D2490) | [C] (the node words, do 135); [I] (do 91) |
+| `spawnmode` | `+0x024` u8 `monmode` index | `S1` on 19 `spawn` records (`sandmaggot*`, `maggotegg*`, `maggotqueen*`, `bloodraven`), `NU` on the other 33; blank (255) on the 682 without `spawn` | *plan 0046 readers:* `[C]` the mode (s8; 1 outside `[0, 16)`) `SkillSummonClass` gives a monster caster with `EDX` 1: the used node's `+0x24` in start 49 and 62, the spawn mode of do 84 and do 87 (ADR-0021) ([skills/0016 § 4](../findings/skills/0016-monster-8a.md#4-moves-and-marks-start-4346-48-49-51-52-do-8991-94-98), [skills/0016 § 5](../findings/skills/0016-monster-8a.md#5-spawns-heals-and-revives-do-84-86-87-96-97), [skills/0018 § 5](../findings/skills/0018-monster-8c.md#5-moves-spawns-and-links-start-61-62-do-129-135-140-147); fn:sub_005CAFA0_SkillDo84MaggotEgg@0x005CAFA0, fn:sub_005CB3C0_SkillDo87MaggotLay@0x005CB3C0) | [C] |
 | `isMelee` | `+0x00C` bit 1 | 430 records, 213 pool classes (18 of them also `rangedtype`) | name | [L] |
 | `npc` | `+0x00D` bit 0 | 59 records, 0 pool classes | name | [L] |
 | `inTown` | `+0x00D` bit 2 | 109 records (54 also `npc`), 0 pool classes | name | [L] |
@@ -543,6 +543,7 @@ finding's, linked here by column. `d` is the difficulty (0 for a hireling), `L` 
 | `Velocity` | creation (mods); hit time | the champion/fanatic/`fast` velocity bonus, only when > 0; 0 makes the monster unstunnable ([§ Combat readers](#combat-readers-plan-0037-phase-1-plan-0039-a1)) | I |
 | `Velocity` (plan 0046) | skill target test | `[C]` as a map: the corpse test `0x00645510` (starts 15 and 21) refuses a monster whose `+0x032` word is 0; a class outside the MonStats count reads it through a null record (0x0064557F), unmodelled; why the test reads it is an open question of the finding ([skills/0010 § 3](../findings/skills/0010-necromancer.md#3-the-start-functions-15-17-18-19-20-21); fn:sub_00645510_MonCorpseTest@0x00645510) | C |
 | `Run` (plan 0046) | Charge (start 31) | `[C]` as a map: a monster caster's base is `+0x034` read **signed** (`movsx`) `<< 8`, then `0x00649050(path)`, into `MulDiv(base, max(stat 67, 50) + Param1, 100)` (Skills `Param1`) for `sub_00648690_PathSetSpeed` (ADR-0021 boundaries); `[I]` that this is the charge's run speed; the layout's u16 and the signed read agree on the stock values 0..20 ([skills/0011 § 5](../findings/skills/0011-paladin.md#5-charge-and-the-missiles-start-31-do-67-73-80); fn:sub_005CF6B0_SkillSt31Charge@0x005CF6B0) | C |
+| `BaseId` (plan 0046) | skill target tests | `[C]` as a map: do 131 (Overseer Whip) draws only for a monster target whose `MonClassCheck(MonBaseId)` is 453 (`minion1`); do 133 (Impregnate) refuses 546 (`putriddefiler1`) and 551 (`painworm1`) through `sub_005D2140_ImpregnateTest` (ADR-0021); `[I]` do 129's attach helper takes an imp (base 492) and a base-435 or 441 target (`barricadetower`, `siegebeast1`), and `sub_0063EFA0_SpawnClassByBase` (do 140's class) switches on the caster's base ([skills/0018 § 4](../findings/skills/0018-monster-8c.md#4-the-hits-the-curses-and-the-states-do-128-131-133-134-137), [skills/0018 § 5](../findings/skills/0018-monster-8c.md#5-moves-spawns-and-links-start-61-62-do-129-135-140-147), [skills/0018 § 7](../findings/skills/0018-monster-8c.md#7-case-writer-restrictions-and-what-stays-unreached); fn:sub_005D1F70_SkillDo131OverseerWhip@0x005D1F70, fn:sub_005D18E0_ImpAttach@0x005D18E0, fn:sub_0063EFA0_SpawnClassByBase@0x0063EFA0) | C (do 131, 133); I (do 129, 140) |
 | `A1TH`/`A2TH`/`S1TH`, `A1MinD`…`S1MaxD`, `El<e>*` | **attack time** | to-hit and damage = MonLvl `TH`/`DM` × cell / 100 from the current level stat, with the classic or player-count factors; `El<e>Pct` < 100 draws on the unit seed per attack; out of the creation model | I |
 | `Drain`, `coldeffect`, `Crit`, `NoShldBlock` | not at creation; hit time | [§ Combat readers](#combat-readers-plan-0037-phase-1-plan-0039-a1) | I |
 
@@ -780,6 +781,55 @@ fn:MONSTATS_IsPrimeEvil@0x0063EDC0, fn:MONSTATS_IsDemon@0x0063E940, fn:MONSTATS_
   ([combat/0001 § 7](../findings/combat/0001-formulas.md#7-reductions-combat_applyreductions),
   fn:COMBAT_BuildDamage@0x0057B7D0, fn:sub_0057B660_UndeadDmgBonus@0x0057B660, fn:COMBAT_ToHitTargetMods@0x0057D8A0,
   fn:COMBAT_ApplyReductions@0x0057C1E0, fn:COMBAT_ResistFor@0x0057BE00, tbl:MonStats.txt:demon, tbl:MonStats.txt:lUndead)
+
+## Timing (plan 0050 Phase 0)
+
+The columns that name a monster's animation, its modes and its speeds (values from the `.bin` over the 734 records;
+`python3 -I tools/anim_survey.py monsters workspace/merged` and `monseq`, survey keys `mon_*` and `seq_*`):
+
+| Column | `.bin` field | Observed | Meaning | Tag |
+|---|---|---|---|---|
+| `Code` | `+0x010` 4-byte code | 210 distinct (`SK` 49, `CR` 24, `xx` 23, …) | the animation token: the first part of the `animdata.d2` record name | [C] layout; the join below `[C]`, the game's use `[L]` |
+| `MonStatsEx` | `+0x018` u16, `monstats2` row | 0..603, set in all 734 | the [MonStats2](MonStats2.md#timing-plan-0050-phase-0) row whose `m<mode>` bits and `BaseW` complete the record name | [C] layout |
+| `Velocity` | `+0x032` u16 | 0..15 (16 distinct), 4 blank (`gorgon1..4`); 0 in 99 | walk speed | [C] layout; `[I]` readers in [§ Readers at creation](#readers-at-creation-and-at-attack-time-plan-0025-phase-1) (the bonus, the stun test) |
+| `Run` | `+0x034` u16 | 0..20 (18 distinct), 4 blank; 0 in 99; below `Velocity` in 7 | run speed | [C] layout; `[C]` as a map, Charge's base ([§ Readers](#readers-at-creation-and-at-attack-time-plan-0025-phase-1)) |
+| — | `+0x036`, `+0x038` s16 | 0 in the file | walk and run values derived at load from the animation data and `Velocity`/`Run` | `[I]` (`sub_00650F00_MonStatsSpeeds`, [§ Fields with no `.txt` column](#fields-with-no-txt-column)) |
+| `Sk1mode`..`Sk8mode` | `+0x180 + k` u8, `monmode` row; `+0x188 + 2k` s16, `monseq` ordinal | 775 cells set: mode 14 (`xx`) 319, `S1` 112, `S2` 106, `A1` 93, `SC` 62, `A2` 48, `S3` 24, `S4` 6, `NU` 5; ordinal 1..59 in the 319 `xx` cells, −1 otherwise | the mode skill *k* plays, or the sequence | [C] layout ([§ Columns](#columns)) |
+| `spawnmode` | `+0x024` u8, `monmode` row | 52 set: `NU` 33, `S1` 19; blank 255 | the mode a spawned monster starts in | [C] layout; `[L]` |
+| `El1Mode`..`El3Mode` | `+0x0FE + e` u8, `monmode` row | `El1Mode` 295 set (`A1` 230, `A2` 53, `S1` 12), `El2Mode` 40 (`A2` 19, `A1` 13, `SC` 8), `El3Mode` none; blank 255 | the mode the elemental attack adds to | [C] layout ([§ Combat columns](#combat-columns-plan-0037-phase-0)) |
+
+- `[C]` **The record join.** Each row's `Code` + the [MonMode](MonMode.md#timing-plan-0050-phase-0) `token` of every mode
+  its MonStats2 `m<mode>` bit sets + MonStats2 `BaseW` (else `HTH`) names an `animdata.d2` record for all 5 109 flagged
+  modes outside `xx` (5 057 with `BaseW`, 52 with `HTH`); per mode in [MonMode § Timing](MonMode.md#timing-plan-0050-phase-0).
+- `[C]` **The sequences.** The 319 `xx` cells name 54 of the 60 `monseq` sequences; 249 of the 5 408 (row, step) pairs
+  name a frame at or past the row's record ([MonSeq § Sequences](MonSeq.md#sequences)).
+- `[I]` **The mode columns the mode machine reads** ([anim/0001 § 10](../findings/anim/0001-modes-frames.md#10-monster-modes); values from the
+  [§ Columns](#columns) rows):
+  - `SplGetModeChart` (`+0x1A5` u8, 1 in 20 rows): only when it is set does `sub_005A78A0_MonModeRecord` test the
+    class against its override switch, which gives classes 243, 333, 403, 418 and 544 their own records for some of
+    `A1`, `A2`, `S1`–`S4` (fn:sub_005A78A0_MonModeRecord@0x005A78A0, tbl:MonStats.txt:SplGetModeChart). `[C]` By the
+    `.bin` all ten classes the switch names have the column set: 243 `diablo`, 333 `diabloclone`, 403 `trappedsoul1`,
+    417 `shadowwarrior`, 418 `shadowmaster`, 543 `baalthrone`, 544 `baalcrab`, 570 `baalclone`, 705 `uberdiablo`, 709
+    `uberbaal`. anim/0001 § 10 reads 417, 543, 570, 705 and 709 as blank and names 418 and 544 after 417 and 543: its
+    row read counts the `Expansion` marker row, so it is one row off from record 410 on
+    ([backlog](../backlog/2026-10-27-archivist-reverser-anim0001-splgetmodechart-rows-shifted.md)). `[L]` What those
+    five branches give is not read.
+  - `SplEndGeneric` (`+0x1A6` u8, 1 in 27 rows): at the end of a listed mode of a listed base class (110 `vulture1` S1,
+    247 `frogdemon1` SQ, 136 `batdemon1` S3/S4, 230/231 any, 118 `willowisp1` WL, 403 any) `MonModeEndGeneric` only
+    queues the AI event instead of the neutral command. (fn:sub_005A8030_MonModeEndGeneric@0x005A8030,
+    tbl:MonStats.txt:SplEndGeneric)
+  - `SplEndDeath` (`+0x1A4` u8, 1 or 2 in 9 rows): at the end of `DT`, after mode 12, 1 changes the class to its
+    `minion1`, 2 kills the owner. (0x005A72B0, tbl:MonStats.txt:SplEndDeath)
+  - `aidel`, `aidel(N)`, `aidel(H)` (`+0x04F`..`+0x051` u8, 1..15, 0 in the 18 blank rows): when the next AI
+    event is not later than now, `MonModeStartNeutral` re-queues it at `T +` the delay of the difficulty (15 when the
+    cell is 0), or at `T + 45` under state 21 `stunned`. The AI itself is
+    phase (5)'s ([plan 0052](../plans/0052-monster-ai.md)). (fn:sub_005A73E0_MonModeStartNeutral@0x005A73E0,
+    tbl:MonStats.txt:aidel)
+- `[C]` A new monster's stat 67 `velocitypercent` is 75, and the `champion`/`possessed` (+20) and `fast`/`fanatic`
+  (`clamp(2048 ÷ Velocity − 128, 10, 100)`) mods add to it only when `Velocity` > 0
+  ([monsters/stats](../specs/monsters/stats.md), [ItemStatCost § Timing](ItemStatCost.md#timing-plan-0050-phase-0)).
+- `[L]` How `Velocity`/`Run` and stat 67 become the per-frame step, and how the rate stats change a monster's modes,
+  are plan 0050 Phases 1.2 and 1.3.
 
 ## Open questions
 

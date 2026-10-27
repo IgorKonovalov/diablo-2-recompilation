@@ -11,8 +11,8 @@ The sixteen monster animation modes (`death`, `neutral`, `walk`, `gethit`, `atta
 is the **mode number**: [MonStats](MonStats.md) `El<e>Mode`, `Sk<k>mode` and `spawnmode`, [Skills](Skills.md)
 `monanim` and `summode`, and [MonStats2](MonStats2.md) `ResurrectMode` store it, and the MonStats2 per-mode columns
 (`mDT`..`mRN`, `dDT`..`dRN`, `*mv`) are laid out in this row order. Readers expected: `combat/formulas` (plan 0037), the
-mode that selects a monster's `A1`/`A2`/`S1` damage columns and the mode an `El<e>` group fires in; animation timing
-is ADR-0014 phase (5).
+mode that selects a monster's `A1`/`A2`/`S1` damage columns and the mode an `El<e>` group fires in; `anim/timing`
+(plan 0050), the mode's frames, events and rate ([§ Timing](#timing-plan-0050-phase-0)).
 
 ## Row identity
 
@@ -75,6 +75,54 @@ non-blank cells naming the row):
 
 `Sk<k>mode` counts only the cells that name a mode; the others name a `monseq` sequence (`seq_*`) and store 0 here
 ([MonStats § Columns](MonStats.md#columns)). 1 841 cells in all.
+
+## Timing (plan 0050 Phase 0)
+
+The table has no timing column: a mode's frame count, speed and event bytes are in `animdata.d2`
+([animdata](../formats/animdata.md)), one record per monster token, mode `token` (`+0x020`, 4-byte code) and weapon
+class. `[C]` The join (`python3 -I tools/anim_survey.py monsters workspace/merged`; survey keys `mon_*`): for each of
+the 734 MonStats rows (every one has a `Code` and a `MonStatsEx`), each mode whose [MonStats2](MonStats2.md) `m<mode>`
+bit is set, the record `<Code><token><BaseW>`, else `<Code><token>HTH`. 5 109 flagged modes outside `xx`: 5 057 find
+the `BaseW` record, 52 the `HTH` one (the death modes `DT`/`DD` of the `GM`, `FE` and `FK` classes, whose `BaseW` is
+`2hs` or `1hs`), none finds nothing (`mon_miss=0`). `xx` is flagged on 492 rows and has no record of its own (a
+sequence names other modes' frames, [MonSeq](MonSeq.md)). 1 143 record names are used, of 1 214 that start with a
+MonStats `Code`.
+
+| Row | `code` | Rows with the bit | Distinct records | `frames` | `speed` | Event bytes (value: records, frames) |
+|---:|---|---:|---:|---|---|---|
+| 0 | DT | 645 | 158 | 1..200 | 0..256 | — |
+| 1 | NU | 711 | 211 | 1..60 | 0..256 | — |
+| 2 | WL | 599 | 157 | 1..29 | 56..344 | — |
+| 3 | GH | 524 | 104 | 1..16 | 96..260 | 1: 7, frame 0 |
+| 4 | A1 | 571 | 119 | 2..38 | 96..260 | 1: 96, frames 3..19; 2: 21, 0..16; 3: 2, 14 |
+| 5 | A2 | 275 | 53 | 2..38 | 48..256 | 1: 39, 1..18; 2: 14, 1..12; 3: 1, 16 |
+| 6 | BL | 78 | 13 | 2..10 | 96..256 | 1: 1, frame 5 |
+| 7 | SC | 61 | 16 | 2..19 | 152..256 | 1: 7, 7..11; 2: 16, 3..16 |
+| 8 | S1 | 287 | 89 | 1..129 | 40..256 | 1: 7, 3..24; 2: 11, 0..11; 3: 1, 3 |
+| 9 | S2 | 82 | 21 | 2..130 | 128..256 | 1: 4, 1..15; 2: 7, 0..11 |
+| 10 | S3 | 35 | 13 | 2..23 | 128..256 | 1: 3, 6..13; 2: 3, 1..14 |
+| 11 | S4 | 20 | 6 | 1..21 | 152..256 | 1: 2, 4; 2: 1, 1 |
+| 12 | DD | 650 | 162 | 1..3 | 128..256 | — |
+| 13 | KB | 498 | 86 | 1..16 | 96..260 | 1: 6, frame 0 (the `GH` records: `KB`'s token is `GH`) |
+| 14 | xx | 492 | 0 | — | — | — |
+| 15 | RN | 73 | 19 | 1..22 | 80..272 | — |
+
+- `[I]` **The code's per-mode table.** `sub_005A78A0_MonModeRecord` returns a 16-byte record per mode from the table at
+  `0x006E2260` (start, frame and end functions at `+0`, `+4`, `+8`): `A1`, `A2`, `SC`, `S1`, `S2` start with
+  `sub_005A75C0_MonModeStartSkill` and frame with `sub_005A7670_MonAttackFrame`, which runs the do function with no
+  event-code test; `xx` (14) starts at `0x005A7870` and frames with `sub_005A8670_MonSeqFrame`
+  ([skills/0001 § 5](../findings/skills/0001-dispatch.md#5-the-frame-when-the-do-function-runs),
+  fn:sub_005A78A0_MonModeRecord@0x005A78A0).
+- `[I]` **How often the frame function runs** ([anim/0001 § 10](../findings/anim/0001-modes-frames.md#10-monster-modes)): every game frame for `WL`,
+  `KB`, `xx` and `RN`, and for `A1`, `A2`, `SC`, `S1`–`S4` when the MonStats2 `*mv` bit of the mode is set; else once
+  per frame event (codes 1–4) of the record, queued at the mode start with the end after the last step
+  (`SUNIT_ScheduleModeEvents`); `NU`, `S3`, `S4` and `DD` queue nothing (their record's `schedule` is 0).
+  (fn:sub_005A6B10_MonModeEveryFrame@0x005A6B10, fn:sub_005A7C20_MonSetMode@0x005A7C20)
+- `[I]` **The game's name** ([anim/0001 § 2](../findings/anim/0001-modes-frames.md#2-records-the-token-the-lookup-and-the-fallback)): MonStats `Code`, this
+  table's `token` (`KB` → `GH`, `g_MonModeTokenRemap`) and MonStats2 `BaseW`, except `hth` in rows 0 and 12 unless
+  MonStats2 `compositeDeath`, and `hth` with no MonStats2 record; a name with no record gets the built-in fallback
+  (2048 frames, speed 256), not an `HTH` retry. `[C]` By that rule every flagged mode outside `xx` names a record too
+  (`mon_rule_miss=0`; the 52 `HTH` joins above are death modes without `compositeDeath`). (fn:COMPOSIT_BuildCofName@0x0064F5B0)
 
 ## Interpretation notes
 
