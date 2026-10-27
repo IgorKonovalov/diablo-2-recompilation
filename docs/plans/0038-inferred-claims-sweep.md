@@ -3887,7 +3887,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     files the dtxt run wrote).
   - **Backlog:** review request
     [h3b review](../backlog/archive/2026-10-27-reverser-architect-review-lane-h3b-plan-0038-batch-h3b.md); spec-writer entry
-    [h3b raises](../backlog/2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections.md) (held for the
+    [h3b raises](../backlog/archive/2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections.md) (held for the
     review).
   - **Next:** the H3b review. Slot 2 stopped, saves restored (empty, no aside), staged directories removed.
 - **2026-10-27 — H3b review (architect, `lane/h3b`): accept with fixes (9).** Merged `main` `550d2dcc` into the lane
@@ -3947,6 +3947,24 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     their re-tag round. Their batches are S1b, S1e and H3b, all accepted. The data/excel round also folds plan 0039's
     remainder (P1b (a), P1c (a), the 11 data/excel W1).
   - **Backlog:** the review request was closed. The spec-writer entry
-    [h3b raises](../backlog/2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections.md) was **released**,
+    [h3b raises](../backlog/archive/2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections.md) was **released**,
     with the TC caller list, the clamp half, the addresses and the G1 post-pass note added.
   - **Next:** merge `lane/h3b`; then H6e2 (plan order), and the data clusters' Phase 3 round.
+- **2026-10-27 — Phase 3, the data/excel, data/strings and data/README clusters (spec-writer, `lane/s38d`, from `main`
+  `41500789`).** Their batches are S1b, S1e, S1f (data/excel 65, 69) and H3b, all accepted; the data/excel round also folds
+  plan 0039 P1b (a), P1c (a) and the 11 data/excel W1 warnings.
+  - **Counts:** [data/README](../specs/data/README.md) {C 3, I 5, L 0} → **{C 9, I 2, L 0}**;
+    [data/excel](../specs/data/excel.md) {C 42, I 100, L 8} → **{C 144, I 45, L 2}**;
+    [data/strings](../specs/data/strings.md) {C 60, I 42, L 3} → **{C 88, I 29, L 3}**; `updated:` 2026-10-27.
+  - **Applied:** the H3b entry (the TC entry rows name `EXCEL_FindName`'s callers, `TC_GetByName` an `[I]` dead-code note;
+    the language clamp `[I]`; levels `+0x033..+0x035` in J4; the `CYR` exit; the `hitclass.bin` read and the `sounds` call;
+    the G1 post-pass lookups `[C]`, the store `[I]`), the S1b, S1e and S1f lines of these specs (the id-13 correction
+    among them, as the S1e review's addition (a) words it), plan 0039 P1b (a) and P1c (a). W1 for data/excel is 0.
+  - **Wiki:** [wiki/game-data](../wiki/game-data.md) `based_on` dates for the three specs set to 2026-10-27 and its stale
+    paragraphs restated (W4 clear).
+  - **Backlog:** closed the H3b, W1, P1b, P1c and S1b entries; the S1e corrections, S1e review additions and S1f entries
+    annotated (save/d2s and items/uniques-sets parts open). Counts entry
+    [s38d counts](../backlog/2026-10-27-spec-writer-architect-s38d-data-clusters-counts-for-the-research-map.md), review
+    request [s38d review](../backlog/2026-10-27-spec-writer-architect-s38d-review-data-clusters-phase-3.md). Ledger row
+    added, usage "—".
+  - **Next:** the `lane/s38d` review.

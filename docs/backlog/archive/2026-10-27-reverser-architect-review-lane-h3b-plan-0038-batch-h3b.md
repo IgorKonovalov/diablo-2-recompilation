@@ -50,5 +50,5 @@ Points for the ruling:
   `STRTABLE_LoadAll`/`Unload`, `DATATBLS_LoadAll`/`LoadCodeLists`, `ApplyTxtOption`, `InitFileIO`, `GEMS_Load`,
   `MONEQUIP_Load`, `DRLG_LoadLevels`, `RecWideNameFill`); `TC_GetByName` stays I.
 - (h) The spec-writer entry
-  [2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections](../2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections.md)
+  [2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections](2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections.md)
   is held for the review.

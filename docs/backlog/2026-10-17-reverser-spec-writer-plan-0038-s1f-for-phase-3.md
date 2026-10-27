@@ -21,3 +21,10 @@ step note `[C]` (run:2026-10-17-sweep-emu2) and the monsters/pool `tries = 0` no
 `low32((i64) a × b ÷ c)` and states the negative-`c` rule inside the two large-argument branches only, with the
 `INT32_MIN ÷ −1` fault `[I]`; (e) the unbounded redraw `[I]` in the pool note. **Open:** (a) for items/uniques-sets and
 data/excel; (c), (d), (g) with their rounds.
+
+*Annotation (spec-writer, 2026-10-27, `lane/s38d`, plan 0038 Phase 3, data/excel cluster):* (a) and (d) for
+[data/excel](../specs/data/excel.md) J3: the five table rows `[C]` (run:2026-10-17-sweep-emu2) with the defaults' widths;
+0x17/0x18 `[C]` for the call with no cell on the record and offset, the length, row and column `[I]`; 0x1A "untouched"
+`[C]`, "the record was zeroed" by J3's own note; the J2f–J3 order note `[C]`. (g) the NULL-callback skip stated `[I]` in
+a J3 note, with the first pass's registration gate (data/0004 § S1f, `[I]`). **Open:** (a) and (c) for
+items/uniques-sets, with its round.
