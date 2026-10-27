@@ -1448,6 +1448,9 @@ def clickable(st, c, goal=None, r=2):
     test is generous)."""
     if near_warp(st, c[0], c[1], r + 2):
         return False
+    wp = getattr(st, "wp_avoid", None)      # plan 0038 H6e1: a click near the town waypoint opened its menu (twice)
+    if wp and abs(wp[0] - c[0]) <= 7 and abs(wp[1] - c[1]) <= 7:
+        return False
     for x, y in st.objs_xy:
         if abs(x - c[0]) <= r and abs(y - c[1]) <= r:
             return False
@@ -1586,6 +1589,8 @@ def cmd_npc(args):
 
     def npc_pos():
         st.poll()
+        if st.pos and getattr(st, "wp_avoid", None) is None:
+            st.wp_avoid = waypoint_at(args.log, st.pos[2]) or False
         units = st.npcs.get(cls) or []
         if not units or not st.pos:
             return None
@@ -1751,6 +1756,29 @@ def cmd_npc(args):
                 bx, by = (int(v) for v in args.svc_box.split(","))
                 kx, ky = (int(v) for v in args.svc_ok.split(","))
                 ix, iy = cell_xy(args.item)
+                for spec in (args.try_items.split(";") if args.try_items else []):
+                    # plan 0038 H6e1: an item tried in the box first (a refusal case): pick it up, click the box,
+                    # read the client test's CAN line (tools/gdb/quest-npc.py), take it back out of the box if it
+                    # went in, and put it back on its own cells
+                    tx, ty = cell_xy(spec)
+                    p.dpy.click(p.off[0] + tx, p.off[1] + ty, button=1, hold=0.12)
+                    time.sleep(0.7)
+                    mark = os.path.getsize(args.log)
+                    p.dpy.click(p.off[0] + bx, p.off[1] + by, button=1, hold=0.12)
+                    time.sleep(1.0)
+                    text, _ = log_tail(args.log, mark)
+                    can = [json.loads(ln[4:]) for ln in text.splitlines() if ln.startswith("CAN ")]
+                    r = can[-1].get("r") if can else None
+                    print("npc: try %s: %s" % (spec, "no CAN line" if r is None else "CAN r=%s at %s" % (
+                        r, can[-1].get("at"))))
+                    if args.shots:
+                        p.shot(os.path.join(args.shots, "npc%s-%s-try-%s.png" % (
+                            tag, name, spec.replace(":", "").replace(",", "-"))))
+                    if r == 1:                  # in the box: pick it up again
+                        p.dpy.click(p.off[0] + bx, p.off[1] + by, button=1, hold=0.12)
+                        time.sleep(0.7)
+                    p.dpy.click(p.off[0] + tx, p.off[1] + ty, button=1, hold=0.12)
+                    time.sleep(0.7)
                 for x, y in ((ix, iy), (bx, by), (kx, ky)):
                     p.dpy.click(p.off[0] + x, p.off[1] + y, button=1, hold=0.12)
                     time.sleep(0.7)
@@ -3297,6 +3325,8 @@ def main():
                     help="npc ... hire: hire list row N (1 = top) after each opening, answer Yes to the replace box "
                          "and wait for the HHX line of tools/gdb/hirelings.py (plan 0033)")
     ap.add_argument("--item", help="npc imbue|socket|personalize: the inventory cell of the item, inv:c,r[,w,h]")
+    ap.add_argument("--try", dest="try_items", help="npc imbue|socket|personalize: items tried in the box before "
+                    "--item, 'inv:c,r,w,h;inv:...' (plan 0038 H6e1: the refusal cases; needs tools/gdb/quest-npc.py)")
     ap.add_argument("--svc-box", default="170,165", help="npc services: the item box (window coordinates)")
     ap.add_argument("--svc-ok", default="137,240", help="npc services: the box's check mark (window coordinates)")
     ap.add_argument("--menu-line", type=int, default=0, help="npc: click this menu line (1 = under the name) instead "

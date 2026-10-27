@@ -1327,6 +1327,54 @@ raised by H1a on the logged `RCST`/`RMAP` lines and the two crash reports, so a 
 (what a class-7 player's experience lookup and starting kit would be) need a class-7 player, which the halt shows
 never exists; they are d-none and stay `[I]` readings. The halt is the reason for the d-none, not a contradiction of it.
 
+**H6e1 (filed 2026-10-27, reverser, `lane/h6e1`; accepted with fixes at the `lane/h6e1` review, 2026-10-27): 22 statements of items/quest-drops (rows 2, 4, 5, 32, 39, 40,
+42–46, 50, 51) and the S2c piece of row 38.** run:2026-10-27-sweep-quest-npc, 14 kept sessions on slot 1 (17
+launches, 3 development logs; Normal, Nightmare and Hell, all in town; tool-built saves in the Act V and Act I towns,
+one three-game chain on the saves the game wrote), logger `tools/gdb/quest-npc.gdb`, checker `tools/sweep_h6e1.py check`
+over the 14 kept logs: **69 service-test calls, 9 sockets, 2 imbues, 18 consumed cursor items, 18 tails, 20 given
+items, 3 Anya draws; 0 mismatches** (`check-final.txt`, manifests `manifest-final.sha256`, `manifest-shots-final.sha256`,
+`manifest-dev-final.sha256`). The evidence is in [items/0010 § Plan 0038 batch H6e1](../../findings/items/0010-quest-drops.md#plan-0038-batch-h6e1-run2026-10-27-sweep-quest-npc),
+whose ledger table gives each statement's `[C]` part and remainder.
+
+- **Raised (11):** quest-drops 2 (L36, L299), 4 (L78, L680, L684), 5 (L79, L682), 39, 45 (L678, L679), 51.
+- **Raised in part (11):** quest-drops 2 (L278: the durability write and the drop when full), 5 (L690: the clvl
+  halves, game type 3 only), 32 and 46 (`tr2`, created at quality 7; `ice` not given), 40 (refinement: the throwable
+  test skipped for every item; gold, `0x1000`, quality 9), 42 (L621, L639: quality 9; `0x1000`, type 4, "0 sockets
+  now"), 43 (type 4, ears, `0x1000`), 44 (refinement: an imbued item repaired when created identified; charges, the
+  broken flag, the attach), 45 (L686: the Ancients and Nihlathak), 50 (the scripted half).
+- **Shortfall (0).** The qd 38 piece is met (18 consumed items, each the player's cursor item); qd 38 stays counted
+  as S2c (raised in part there); its remainder, the cursor line, is met here.
+- Corrections carried into items/0010 § 6: `tr2` and `g34` are created at quality 7 (base `unique`), the asked 2 in
+  the table; the throwable and the imbue-repair notes.
+- Symbols I → C (rule 14): `QUESTS_GiveItem`, the five NPC message handlers, the three service tests,
+  `CursorItemConsume`, `ItemRepairAll`, `ItemIdentifyAttach`, `ITEMS_GetType`, `ITEMS_GetCode`, `ITEMS_GetQuality`;
+  new rows `sub_0062A270_ItemHoldsItem` and `sub_0062A2B0_ItemCompactSave` (C), `sub_00578610_PlayerCursorItemIs` (I).
+
+No class move is proposed. Net effect on the totals: none. Taken against `main` after merging it into the lane
+(`44cfbcb5`; no inventory row moved on `main` since the `lane/h6e2` review totals above): **static 567, harness 519,
+c-emu awaiting a batch 0, blocked 421** (d-none 295, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred
+2, raised 17: 1 526.** H6e1's ledger: raised 11, raised in part 11, shortfall 0: 22.
+
+**`lane/h6e1` review (2026-10-27, architect): accept with fixes. The ledger stands, and one S2c row is completed.**
+H6e1's 22 rows stay as filed: raised 11, raised in part 11, shortfall 0. The 11 rows raised in part each have a
+`[C]` half the kept check compares, and a remainder no stock single-player game reaches, or that this run did not
+reach. Malah's `ice` (qd 32, 46) needs quest state 4, and the clvl halves of qd 5 L690 need a game type other than 3.
+qd 45 L686 needs the Ancients and Nihlathak. Those halves stay `[I]` in Phase 3. The piece H6e1 met for S2c has a
+compared line (`CIC`/`CICR`, 18 calls), so the row moves here, with no class change:
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| quest-drops 38 (`NPC_MenuAction` consumes the cursor item) | S2c, raised in part | **S2c, raised** | Its remainder (the consumed item is the cursor item) is met: in all 18 `CursorItemConsume` calls (imbue 2, socket 9, personalize 7) the item is `[[player+0x60]+0x20]`, and each call returns 1. |
+
+S2c's quest-drops tally (16) is now raised 13 (with `lane/p49r`'s qd 10 and 19), raised in part 2 (qd 8 and 21),
+reclassified 1. Symbols: the review raises `ITEMS_CheckFlags` and `sub_00628110_ItemGetFlags` as well, on the same `CAN`
+steps (rule 14). That makes **17 I → C** (the lane's list has 15, its request said 14) and 3 new rows. No class
+moves. Recounted against `main` `92b811df` after merging it into the lane (`lane/s38s`, `lane/rdp`, `lane/s38o`,
+`lane/a71`, `lane/rsw` and `lane/rlg` merged since the lane's base; only `lane/s38s` moved rows, with no class change): **static
+567, harness 519, c-emu awaiting a batch 0, blocked 421** (d-none 295, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032
+8), **deferred 2, raised 17: 1 526.** § 5 marks H6e1 done. **Phase 3 ready:** items/quest-drops (S2c, H6d, H6e2 and
+H6e1, all accepted).
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
@@ -1421,7 +1469,7 @@ a letter suffix and its own run id, as the plan requires.
 | **H6b** | `sockets` | 25 | 0/20/5 | sockets 1, 9–10, 12–13, 16–18, 21, 29, 35 ×2 (from S2c), 38 | `sockets.gdb` + `sockets.py`; child x/y and cursor lines; sock-refuse and sock-rw plans; a save holding a runeword (the *Steel* sample) loaded under the logger (sockets 35; with it the reader's `+0x38` store of sockets 46). From the S2c review (piece; sockets 14 stays counted as S2c): an unidentified socketed parent's client flags before and after identifying it, with an insert tried each time | `findings/items/experiments.md` | ≤ 20 |
 | **H6c** | `vendors` | 13 | 0/11/2 | vendors 2, 5, 12, 14–15, 18, 29–30, 32–34, 36 | `vendors.gdb` + `vendors.py`; reopen store or gamble, Asheara's hire list first, walk out of town, level-up between opens, buy and sell; saves at clvl ≤ 9, ≥ 96, 99 in Hell. From the S2c review (pieces; vendors 22 and 26 stay counted as S2c): the stock item's store tab and grid cell, and `+0x18`/`+0x28` of the store creation record at `IC0` | `findings/items/experiments.md` | ≤ 20 |
 | **H6d** (done) | `quest-b6` | 16 (17 filed; uniques-sets 21 to H1a, § 2.6) | 10/5/2 | quest-drops 11, 13, 16, 18, 22, 25, 27; tc 26–27; uniques-sets 21 | `quests.gdb` + tc-drops, `tc.py` b6_model, `questdrops.py`: Andariel or Duriel killed by a mercenary or summon, Diablo and Baal, Warriv's report, questfresh in Nightmare, Hell and classic, the forge with a stat-356-1 hammer, the unique restore path | `findings/items/experiments.md` | ≤ 20 |
-| **H6e1** | `quest-npc` | 22 | 0/20/2 | quest-drops 2, 4–5, 32, 39–40, 42–46, 50–51 | `quests.gdb` + `d2pilot.py npc`: given items and service branches and refusals. From the S2c review (piece; quest-drops 38 stays counted as S2c): a cursor-item line at `sub_0055EEA0_CursorItemConsume` in each service branch | `findings/items/experiments.md` | ≤ 20 |
+| **H6e1** (done) | `quest-npc` | 22 | 0/20/2 | quest-drops 2, 4–5, 32, 39–40, 42–46, 50–51 | `quests.gdb` + `d2pilot.py npc`: given items and service branches and refusals. From the S2c review (piece; quest-drops 38 stays counted as S2c): a cursor-item line at `sub_0055EEA0_CursorItemConsume` in each service branch | `findings/items/experiments.md` | ≤ 20 |
 | **H6e2** (done) | `quest-items` | 24 | 0/23/1 | quest-drops 1, 30, 33–35; objects 48 | `quests.gdb` with `objop`/`hunt` on tool-built quest saves: the 16 quest items, chests, duplicates, the item-move gate; the quest objects ride the same sessions; a backtrace at `QUESTS_ObjectEvent` (quest-drops 1). objects/0001 cites the record | `findings/items/experiments.md` | ~20, at the cap |
 | **H6f** | `hirelings` | 23 | 0/17/6 | hirelings 1–2, 5–6, 9–10, 14–18, 20–21, 23, 25, 27–29, 31, 35–37 | `hirelings.gdb` + `hireling_sessions.py`: Asheara's trade first, Greiz, classic lists, the free mercenary, the level floor, quest, level and gold gates, stash payment, `MERC_AddExp`, `merc_saves.py` saves, resurrection | `findings/hirelings/experiments.md` | ≤ 20 |
 | **H6g** | `player` | 17 | 0/8/9 | player/creation 2–4, 12, 16 (from S3b), 18, 22–23, 25, 27–30, 32–33, 35 | `player.gdb` + `player_sessions.py`: death loss, a stat point, two skill points on one skill and one skill to its maximum (16, § 2.6), stat 85, the level-99 cap and a level-98 save, the capped grant (trigger read statically first), client `+0x3D4`, the belt column, the monster's experience at the kill | `findings/player/experiments.md` | ≤ 20 |

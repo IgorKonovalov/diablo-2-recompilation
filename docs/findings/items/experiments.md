@@ -3157,3 +3157,103 @@ run id). Evidence in [items/0010 § Plan 0038 batch H6e2](0010-quest-drops.md#pl
 - **Limits.** One player, record words all clear, nothing held: the Khalim chests' held-part refusals and the tome's
   word-17 refusal did not run. In `brain4c` both copies activated every room before the chest was listed, so this log
   alone does not tell which copy the listing follows (items/0010 § The brain chest in level 91).
+
+## run:2026-10-27-sweep-quest-npc
+
+- **Question:** (plan 0038 Phase 2, batch H6e1, [inventory § 5](../../plans/0038-inventory/README.md#5-batch-list))
+  Do the NPC messages give the items [items/0010 § 6](0010-quest-drops.md#6-npc-rewards) reads (code, ilvl and
+  quality by NPC and difficulty, Qual-Kehk's count, Anya's table and draw) through `QUESTS_GiveItem`'s store path; do
+  the three service tests refuse and accept as read, test by test; do the imbue's clvl ≤ 5 and ethereal branches,
+  Larzuk's quality branches and the bound-1 draw run as read; is each service's consumed item the cursor item (the S2c
+  piece of quest-drops 38); and does the shared tail repair, refill and identify? Boundary as in
+  run:2026-10-16-quest-drops: quest bits and held items are inputs (tool-built saves, ADR-0013 § Neutral), and each
+  draw takes the seed it finds.
+- **Status:** done (2026-10-27). Evidence in
+  [items/0010 § Plan 0038 batch H6e1](0010-quest-drops.md#plan-0038-batch-h6e1-run2026-10-27-sweep-quest-npc).
+- **Setup:** agent-driven sessions on harness **slot 1** (display `:8`, `workspace/wineprefix-1`, game in
+  `workspace/runtime/game`), stock data, pinned `game.exe`, expansion, one player, all in town.
+  - **Logger** `tools/gdb/quest-npc.gdb` (`0639e3d0…`): `tools/gdb/quest-state.gdb`'s files (`pilot.py`,
+    `vendors.py`, `quests.py`, `questev.py`), `uniques.py`, `affixes.py`, and the new `tools/gdb/quest-npc.py`
+    (`95cfec6e…`): `QGV`/`QGC`/`QGD`/`QGX` (`QUESTS_GiveItem` at entry, after `ITEMS_CreateForStore`, after the
+    durability write, at its exits), `CAN` (each call of the three service tests, a step after every call inside
+    the function, the result and the return site), `CIC`/`CICR` (`CursorItemConsume` and its result at the three
+    service sites), `RPA`/`RPX` and `IDA`/`IDX` (the shared tail). Every kept session ran this revision; the
+    first development log ran it without the item's `kids` field (the children count).
+  - **Session driver** `tools/h6e1_sessions.py` (`4a0795ca…`): H6e2's session loop with this logger, a `qs` command
+    (`tools/quest_sessions.py act` on the live log: `talk:CLS:N`, `towp2`, `wp:A,R`) and `d2pilot.py npc … --try`
+    (new: each listed item is picked up, dropped on the service box, the client test's `CAN` line read, taken back out
+    if it went in, and put back; then the service item as before). `tools/d2pilot.py` (`3d6d4f20…`) also keeps walking
+    clicks 7 sub-tiles from the town waypoint: in the first two `svcb-n` launches a click near Harrogath's waypoint
+    opened its menu and a later click took the player to the Frozen Tundra (117) and the Halls of Pain (123).
+  - **Characters** (`tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/<recipe>.json
+    workspace/samples/d2s-owner/smpsor-l50.d2s <out>`, saves in `workspace/scratch-h6e1/saves/`; rows in
+    `tools/test_d2s.py` `RECIPE_BASES`): the clvl 80 Sorceress of `questservices.json` in the Act V town (header act
+    bytes 132) unless noted:
+    `NpcGive` (`quest-h6e1-give.json` `6e2396c1…`, save `3668f330…`: word 4 b1, word 19 b6, word 36 b1 with b5 / b6 / b7
+    in Normal / Nightmare / Hell, word 37 b1 b15, word 20 b1 in Normal and clear in Nightmare, a `j34` with stat 356 =
+    1), `NpcSvcA` (`quest-h6e1-svca.json` `6fc61b61…`, `7dd9f003…`: low, normal and superior Great Helms and the
+    refusal cases), `NpcSvcB` (`quest-h6e1-svcb.json` `f97d606a…`, `636db82b…`: *Sigon's Visor*, a rare and
+    *Howltusk*, bolts, two damaged throwing-knife stacks of 20 and 30), `NpcSvcC` (`quest-h6e1-svcc.json` `f1e00536…`,
+    `406d719a…`: a crafted Great Helm, a magic Buckler, Wirt's Leg; Hell word 37 clear), `NpcImbFive` and `NpcImbSix`
+    (`quest-h6e1-imb5.json` `b8ac200c…`, `f4aa3374…`; `quest-h6e1-imb6.json` `892ffbe4…`, `5bf8e670…`: clvl 5 and 6,
+    the Act I town, word 3 b1; the ethereal `cap` and the imbue refusal cases; Wirt's Leg and a low and a superior
+    `cap`). Words 3, 35 and 38 b1 as `questservices.json`. Built (test) states, as the recipes' keys say: the low and
+    superior qualities with empty quality fields, the broken `cap` (durability 0), the crafted items without recipe
+    mods, the damaged items' durability.
+- **Sessions** (`python3 -I tools/h6e1_sessions.py run --slot 1 --tag h6e1 --saves workspace/scratch-h6e1/saves --run
+  quest-npc <session>`; logs `workspace/logs/h6e1/quest-npc-s1-<seed>-<session>.log`):
+
+  | session | save | difficulty | what | result |
+  |---|---|---|---|---|
+  | `4921-give-n` `65a036f2…` | NpcGive | Normal | Qual-Kehk, Malah, Anya; Rogue Encampment: Akara; Kurast Docks: Ormus, Alkor, Meshif | **kept**: 8 `GiveItem` (r07 r08 r09, tr2, ob4, rin ×2, xyz) |
+  | `4922-give-nm` `d13dc3c4…` | NpcGive | Nightmare | as give-n | **kept**: 7 (r07 r08, tr2, ob8, rin ×2, g34) |
+  | `4923-give-h` `bb41d2ff…` | NpcGive | Hell | as give-n | **kept**: 5 (r07, tr2, obb, rin ×2) |
+  | `3811-imb5` `abc7a6f5…` | NpcImbFive | Normal | Charsi: 12 items tried, the ethereal `cap` imbued | **kept** |
+  | `3811-imb6` `00f1cab1…` | NpcImbSix | Normal | Charsi: low and superior `cap` tried, Wirt's Leg imbued | **kept** |
+  | `4931-svca-n` `95a2ef23…` | NpcSvcA | Normal | Larzuk: 7 tried, the low helm socketed; Anya: 4 tried, the normal helm personalized; Save and Exit | **kept** |
+  | `4932-svca-nm` `f405427d…` | the save svca-n wrote | Nightmare | waypoint to Harrogath; Anya: the personalized helm tried, the `cap` holding a gem personalized; Larzuk: the socketed helm tried, the normal helm socketed; Save and Exit | **kept** |
+  | `4933-svca-h` `e253e5ce…` | the save svca-nm wrote | Hell | waypoint to Harrogath; the superior helm socketed, the low helm personalized | **kept** |
+  | `4941-svcb-n` `5475174a…` | NpcSvcB | Normal | the set helm socketed; bolts tried, knives (20) personalized | **kept** |
+  | `4942-svcb-nm` `78a18381…` | NpcSvcB | Nightmare | the rare helm socketed; knives (30) personalized | **kept** |
+  | `4943-svcb-h` `61924e94…` | NpcSvcB | Hell | the unique helm socketed; *Sigon's Visor* personalized | **kept** |
+  | `4951-svcc-n` `dec5188e…` | NpcSvcC | Normal | the crafted helm socketed; the Buckler personalized | **kept** |
+  | `4952-svcc-nm` `e8d1e06e…` | NpcSvcC | Nightmare | the magic Buckler socketed (max 1) | **kept** |
+  | `4953-svcc-h` `9fcc2412…` | NpcSvcC | Hell | Malah three times (word 37 clear: no potion given), Wirt's Leg socketed | **kept** |
+
+  Development logs (`workspace/logs/h6e1/dev/`, renamed before any manifest listed them; no claim rests on them):
+  `dev1-` and `dev2-quest-npc-s1-4941-svcb-n` (the waypoint clicks above; dev2 holds the first set-helm socket, met
+  again in the kept svcb-n), `dev3-quest-npc-s1-4932-svca-nm` (the game wrote 0 into the Nightmare and Hell act bytes
+  at svca-n's Save and Exit, so this game started in the Rogue Encampment and the Anya walk gave up; the driver then
+  added the waypoint to Harrogath; its written save is `workspace/scratch-h6e1/saves/dev3-quest-npc-svca-nm/`),
+  `dev4-quest-npc-s1-4933-svca-h.pilot.txt` (the driver named a save that did not exist, `@svca-n.d2s` for a chain of
+  two; no game was launched). **Launches: 17** (14 kept, 3 development); the batch cap is 20.
+- **Procedure:** `python3 -I tools/sweep_h6e1.py check workspace/merged/data/global/excel workspace/install/app/game.exe
+  $(ls workspace/logs/h6e1/quest-npc-*.log) > workspace/logs/h6e1/check-final.txt` (from `workspace/logs/h6e1/`, under
+  `systemd-run --user --scope -p MemoryMax=4G`; checker `8e9e74c3…`), and `python3 -I tools/sweep_h6e1.py static
+  workspace/install/app/game.exe > workspace/logs/h6e1/static-callers.txt` (`da056cd7…`).
+- **Observed** (`check-final.txt` `66868cc2…`, 105 lines; manifests `manifest-final.sha256` `fde5d72e…` (the 14 logs,
+  their pilot outputs, the check and the static scan: 30 lines), `manifest-shots-final.sha256` `49ff932a…` (85
+  screenshots), `manifest-dev-final.sha256` `91943707…` (12 development files), all checked with `sha256sum -c` from
+  `workspace/logs/h6e1/`; per-case lines trimmed):
+  ```
+  can imbue client checks            20      can imbue server checks            2
+  can personalize client checks      13      can personalize server checks      7
+  can socket client checks           18      can socket server checks           9
+  cursor consume checks              18      cursor consume result checks      18
+  give checks                        20      give qualkehk checks               3     give anya draw checks   3
+  give qualkehk word 36 8022: r07 r08 r09    word 36 8042: r07 r08    word 36 8082: r07
+  imbue clvl 5 -> ilvl 5, ethereal 1, f80 00000024
+  imbue clvl 6 -> ilvl 10, ethereal 0, f80 00000022
+  socket magic (draw, bound 1) n=1; quality 1 (max 3) n=3; quality 2 (max 3) n=3 (2); quality 3 (max 3) n=3;
+  quality 5 (1) n=1; quality 6 (1) n=1; quality 7 (1) n=1; quality 8 (1) n=1
+  tail repair checks: imbue 2, personalize 7, socket 9; tail identify checks: imbue 2, personalize 7, socket 9
+  tail repair personalize durability 1/4 -> 4, quantity 20 -> 160;  durability 2/4 -> 4, quantity 30 -> 160
+  tail repair imbue durability 61/66 -> 66;  tail repair imbue: unidentified, left as it was
+  LOGERR lines 0
+  SUMMARY logs=14 mismatches=0
+  ```
+- **Limits.** One player; single player only (game type 3), so Anya's clvl branches and the per-player loops are not
+  separated. No item the stock game gives held charges spent, a `0x1000` flag or quality 9, and no gold or ear item can
+  reach the cursor, so those tests are not reached. Malah's potion was not given (word 37 clear: her talk table offers
+  it only in quest state 4, § 6 of the finding). The given items carry no durability, so `GiveItem`'s durability write
+  is not separated.

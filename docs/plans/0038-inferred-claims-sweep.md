@@ -4668,7 +4668,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     not), the character-screen list rule, and the H1a `[C]`s for `0x029`, `0x02A`, ears, personalized names.
   - **Not done:** the version 71/87 layouts and a legacy builder, version 92's property overrides, the completeness of
     the version-test list, the old-form mask width outside `0x029` = 12, 16, and the reader side of the ear's realm
-    bit: reverser entry [2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md).
+    bit: reverser entry [2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading](../backlog/archive/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md).
     So the legacy rows (hirelings 3, 30, 33; player-creation 1; items-uniques-sets 21) and save-d2s 126 stay
     shortfalls under ruling 5. The H1a entry is annotated and stays open for the legacy builder.
   - **Backlog:** review request [2026-10-27-archivist-architect-review-lane-a71-d2s-versions-93-95-realm](../backlog/archive/2026-10-27-archivist-architect-review-lane-a71-d2s-versions-93-95-realm.md). Ledger row added, usage "—".
@@ -4708,7 +4708,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
        a 92 file (`0x0043C8A0`), and `D2S_ReadSave` sends < 92 to the legacy reader (`v91`, `[C]`), so the code is
        reachable by a file the stock game shows; what is missing is a layout to build, which the findings do not give.
        They move only on the reverser entry
-       [2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading](../backlog/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md):
+       [2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading](../backlog/archive/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md):
        (a) for the legacy rows (d-none only if every legacy layout is refused), (b) for 126.
     4. The H1a archivist entry stays open for the legacy builder, as the lane left it.
   - **Bookkeeping:** review request closed
@@ -4716,6 +4716,29 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     ledger: the lane row's usage filled from the orchestrator (230 283 tokens, 72 tools, 20 min), verdict and fixes
     filled, the review row added with usage "—"; archivist review-fixes rules 1 and 4 gain `lane/a71` Seen lines.
   - **Next:** merge `lane/a71`; the reverser takes the legacy and version-92 readers entry.
+- **2026-10-27 — `lane/rlg` (reverser, static, no slot, no harness, no emulation, from `main` `1f8c0858`): the d2s
+  legacy and version-92 readers.** Work of the archivist entry
+  [2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading](../backlog/archive/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md)
+  (`lane/a71` review rulings 2–3). Ghidra on the lane copy `workspace/ghidra-rlg` (decompile only, `-Xmx3G`), objdump,
+  and `tools/rlg_static.py` (kept output `workspace/logs/rlg/static.txt`, manifest `rlg-manifest.sha256`,
+  `RLG_STATIC hits=73 functions=42`).
+  - **Written** ([save/0001 § Plan 0038 lane/rlg](../findings/save/0001-d2s-io.md#plan-0038-lanerlg-the-legacy-and-version-92-readers-static-2026-10-27),
+    all `[I]`): (a) the version 71..91 layout: the `0x82`-byte header and its tests and codes, the ten sections in
+    order with their tags and lengths, the 3-byte stat mask, the version-71 item record's four forms, the mercenary's
+    two forms, the hotkey tail; no checksum or size test; failures after the skills do not fail the load. (b) version
+    92: the 1.09 columns for every width including the fixed fields, no param in the generic path, the ≤ 92 per-id
+    encodings, the fold into stat 127, a set item's `Sets` id. (c) the 92..96 version tests: 68 of 73 compares are
+    version tests, 29 met by 92..96 with a version-dependent result; 93..95 differ from 96 in the stat form, stat 72 and
+    the third realm word only. (d) the old-form mask is ⌈`0x029`/8⌉ bytes. (e) the reader takes an ear's realm bit
+    after the name; the writer writes realm data only when item data `+0x20` ≠ 0. save/0002 § 1 gains the legacy
+    quest reader. 17 symbols added (I).
+  - **Ruling 3:** no legacy version is refused, so hirelings 3, 30, 33, player-creation 1 and items-uniques-sets 21
+    stay shortfalls; none is proposed to move. Save-d2s 126 likewise (the layout is now given).
+  - **Backlog:** the entry closed; archivist entry
+    [2026-10-27-reverser-archivist-d2s-legacy-layouts-for-a-builder](../backlog/2026-10-27-reverser-archivist-d2s-legacy-layouts-for-a-builder.md);
+    review request [2026-10-27-reverser-architect-review-lane-rlg-d2s-legacy-and-v92-readers](../backlog/archive/2026-10-27-reverser-architect-review-lane-rlg-d2s-legacy-and-v92-readers.md).
+    Ledger row added, usage "—".
+  - **Next:** the `lane/rlg` review; then the archivist's legacy builder.
 - **2026-10-27 — H5b.2 shrine-cap wording (reverser, `lane/rsw`).** The `lane/s38o` review's ruling 1 is carried into
   objects/0001 § H5b.2: the shrine cap returned "before any placement draw (after the handler's `P100(S)` draw)", with
   a dated correction naming the room-seed step at 0x00552B9A–0x00552BBA, `OBJRGN_HealthShrineDue` at 0x00552BC5 and
@@ -4724,6 +4747,131 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   ([archive](../backlog/archive/2026-10-27-architect-reverser-h5b-shrine-cap-wording.md)); review requested
   ([entry](../backlog/archive/2026-10-27-reverser-architect-rsw-review.md)).
 - **2026-10-27 — `lane/rsw` review (architect): accept with fixes (1).** objdump of 0x00552B50–0x00552C10 on the pinned `Game.exe` matches the correction (seed step 0x00552B9A–0x00552BBA, `HealthShrineDue` 0x00552BC5, cap call 0x00552BF7), the wording matches objects/README *Constants* and E2, and the grep finds no other copy; fix (omission): the note now also cites the `% 100` test at 0x00552BDB–0x00552BF0 (skipped when the health shrine is due); request closed ([entry](../backlog/archive/2026-10-27-reverser-architect-rsw-review.md)).
+- **2026-10-27 — `lane/rlg` review (architect): accept with fixes (4).** `sha256sum -c` passes on
+  `rlg-manifest.sha256`, and a rerun of `python3 -I tools/rlg_static.py` gives a byte-identical `static.txt`
+  (`RLG_STATIC hits=73 functions=42`). objdump of the pinned `Game.exe` matches the version dispatch (0x00534330–0x00534390),
+  the header's length test and `0x47`..`0x60` accept (0x00532717–0x005327B8, 0x00532BA9), the quest, waypoint, NPC and
+  stats tags, offsets and lengths (`Woo!`/6/`0x12A`, `WS`/`0x50`, `0x7701`/`0x34`, `gf` values at `+0x05`), the
+  swallowed item, corpse and mercenary returns (0x00534246–0x00534283 → 0x0053429A), the 25-byte version-71 records (195
+  bits, `mov eax, 0x19` at 0x0053322A and 0x0053332C), the mercenary's two forms, the hotkey tail's ≥ 73 and ≥ 82 tests,
+  the version-92 width index (`ebx` = 1 below 93, 0x0062D2F1; `+0x19 + ebx`, `+0x24 + 4·flag`), the `(n + 7) / 8` mask
+  (0x0056A643–0x0056A659), the ear's jump into the realm tail (0x0062AA91 → 0x0062AB1A, `> 0x56` at 0x0062ABFF) and the
+  writer's second-word test (0x0062B341–0x0062B387). The 73 compares recount as 5 + 29 + 39.
+  - **Fixes:** (1) misread: `D2S_ReadSave` sends every version 0..91 to the legacy reader (an unsigned `jbe`), so 0..70
+    fail the header's version test with 1 (9 on the host path); the finding said that case is never sent. Corrected in
+    § (a), the Answer bullet and the archivist entry. (2) omission: the header's left and right skills are returned to
+    the caller and applied after the skills section, only when non-zero (0x005341EC–0x00534210); the header table now
+    says so. (3) omission: the per-version base-adjustment constants a 72..88 builder needs (`0x295`/`0x4EE` for 72, 73,
+    80..82; `0x2A2`/`0x4F1` for 83, 84; `0x2A3`/`0x4F2` for 85..87; `0x2D9`/`0x5A0` for 88; none for 74..79) added from
+    0x0062CDDC–0x0062CE10, and the H1a row 87 note's "72–88" scoped. (4) stale cross-reference: "the ItemStatCost table
+    doc" and Data touched's "no table doc yet" now link `docs/tables/ItemStatCost.md`, whose record layout gives `+0x028` = 0.
+  - **Rulings.** (1) The claims stay `[I]`. The one `[C]`, H1a's `v91` returning 14, is cited as the run's observation,
+    and the attribution to the `+0x20` length test (0x00532751 → 0x00532788) is kept `[I]`. The elimination holds: every
+    other `mov eax, 0xe` of the legacy chain lies in the item, corpse and mercenary readers, whose returns are swallowed.
+    (2) The layout is precise enough for the archivist to build versions 71, 87 and 92 from it, with the three additions
+    above. The archivist entry is annotated, and it says that the archivist, not this lane, updates d2s.md § Legacy
+    versions, § Versions 92..95 and `tools/d2s.py`. The lane's d2s.md edits are link repoints only. (3) Ruling 3, the
+    d-none question: no refusal of 71..91 is found, so hirelings 3, 30, 33, player-creation 1, items-uniques-sets 21
+    and save-d2s 126 stay shortfalls and wait for the builder. No row moves class. The 0..70 refusal moves none: no row
+    needs a version below 71. (4) The 17 symbols stay I; none was checked by a run.
+  - **Backlog:** review request closed. The archivist builder entry stays open, annotated. Ledger: the lane row was
+    filled with the orchestrator's usage (425 490 tokens, 131 tools, 36 min) and the fixes. The review row was added
+    with usage "—".
+- **2026-10-27 — H6e1 (`quest-npc`) filed (reverser, `lane/h6e1`, harness slot 1, from `main` `147e5ca3`; `main`
+  `44cfbcb5` merged).** Run id run:2026-10-27-sweep-quest-npc, record in
+  [items experiments](../findings/items/experiments.md#run2026-10-27-sweep-quest-npc), evidence in
+  [items/0010 § Plan 0038 batch H6e1](../findings/items/0010-quest-drops.md#plan-0038-batch-h6e1-run2026-10-27-sweep-quest-npc).
+  - **Built:** logger `tools/gdb/quest-npc.gdb` + `tools/gdb/quest-npc.py` (`QUESTS_GiveItem`, the three service tests
+    step by step, the consumed cursor item, the shared tail), session driver `tools/h6e1_sessions.py` (H6e2's loop, a
+    `qs` command for `quest_sessions.py act`), `d2pilot.py npc --try` (the refusal cases tried in the service box) and
+    a 7-sub-tile margin around the town waypoint for walking clicks, checker `tools/sweep_h6e1.py check|static`, six
+    recipes `tools/d2s_recipes/quest-h6e1-*.json` (rows in `tools/test_d2s.py`, 47 tests OK).
+  - **Sessions:** 17 launches, 14 kept (three given-item games, two imbues, nine Larzuk/Anya games, one a chain of
+    three on the saves the game wrote), 3 development logs. H6e2's habits held: the town waypoint walk and `wpchain`
+    returned in seconds; no Act II/III descents were needed. Two new traps, recorded in the run: a walking click near
+    Harrogath's waypoint opens its menu (fixed by the margin), and Save and Exit writes 0 into the act bytes of the
+    difficulties not played, so a chained game starts in the Rogue Encampment (the driver takes the waypoint first).
+  - **Check:** `sweep_h6e1.py check` over the 14 kept logs: 69 service-test calls, 9 sockets, 2 imbues, 18 consumed
+    cursor items, 18 tails, 20 given items, 3 Anya draws; **0 mismatches** (`check-final.txt` `66868cc2…`).
+  - **Ledger (22): raised 11, raised in part 11, shortfall 0** (inventory § 2.6 H6e1 block). Highlights: every given
+    item by NPC and difficulty through the store path, Qual-Kehk's count on all three bit states, Anya's table and
+    draw; the imbue's clvl 5 / 6 bound and the ethereal flag; every Larzuk branch but quality 9 and the bound-1 draw;
+    the three tests' refusals in code order. Corrections: `tr2` and `g34` are created at quality 7 (base `unique`).
+    Refinements: the throwable test is skipped for every tested item (unit `+0xC8` bit 25); an imbued item is
+    repaired when created identified. Malah's potion was not given (her talk table offers it in quest state 4 only).
+    No class move; totals unchanged: static 567, harness 519, c-emu 0, blocked 421, deferred 2, raised 17: 1 526.
+  - **S2c piece (qd 38):** met, 18 consumed items, each the player's cursor item; qd 38 stays counted as S2c.
+  - **Symbols (rule 14), I → C:** `QUESTS_GiveItem`, `A1Q4`/`A3Q3`/`A3Q4`/`A5Q2`/`A5Q3_NpcMessage`, the three
+    service tests, `CursorItemConsume`, `ItemRepairAll`, `ItemIdentifyAttach`, `ITEMS_GetType`, `ITEMS_GetCode`,
+    `ITEMS_GetQuality`; new `sub_0062A270_ItemHoldsItem`, `sub_0062A2B0_ItemCompactSave` (C) and
+    `sub_00578610_PlayerCursorItemIs` (I).
+  - **Backlog:** review request
+    [2026-10-27-reverser-architect-review-lane-h6e1-plan-0038-batch-h6e1](../backlog/archive/2026-10-27-reverser-architect-review-lane-h6e1-plan-0038-batch-h6e1.md)
+    filed; spec-writer entry
+    [2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item](../backlog/2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item.md)
+    filed, held until the review. Slot 1 stopped, saves restored (empty, no aside).
+  - **Next:** the `lane/h6e1` review; items/quest-drops is then ready for its Phase 3 re-tag.
+- **2026-10-27 — `lane/h6e1` review (architect): H6e1 (`quest-npc`) accept with fixes (7).** `main` merged into the
+  lane twice: `1573a48f` first, then `92b811df` (`lane/rlg`). Both times the plan log and ledger conflicts kept both
+  sides, and `backlog.py archive` had nothing to move. `tools/d2pilot.py` auto-merged. `lane/rdp`'s `--descend-to` and
+  `--all-copies` are kept, and so are this lane's `npc --try` and the town-waypoint margin (`wp_avoid`, set in `cmd_npc`
+  only, so `clickable` is unchanged for every other command). The merged file is `3ba03df5…`. The kept sessions ran
+  `3d6d4f20…`, and no claim depends on the difference. Static review: no Ghidra, no harness.
+  - **Checked.** The three manifests pass `sha256sum -c` from `workspace/logs/h6e1/` (30, 85 and 12 lines): 14 kept logs
+    and 3 development launches, plus dev4's pilot output with no game. `sweep_h6e1.py check` (`8e9e74c3…`) was rerun
+    after each merge under `systemd-run --user --scope -p MemoryMax=4G` over the 14 kept logs. Both outputs are
+    byte-identical to `check-final.txt` (`66868cc2…`, 0 mismatches). After the merges, `tools/test_d2pilot_descend.py`
+    gives 10 tests OK and `tools/test_d2s.py` 55 OK, with the six H6e1 `RECIPE_BASES` rows rebuilt. From the logs: 69
+    `CAN` calls (imbue 20 + 2, personalize 13 + 7, socket 18 + 9), every one with `+0xC8` = `0x02000000` client side and
+    `0x06000000` server side. objdump on the pinned `game.exe`: `ItemCanImbue` 0x0062C590–0x0062C692 (bit 25 at
+    0x0062C5FF–0x0062C60B skips the 0x0062C60E call; quest byte, `leg `, `0x0062A270`, `0x800`, qualities 4–9 in that
+    order); the client box test 0x004BFD1F–0x004BFD9B (154 / 0x1FF / 0x200 to the three tests); `CursorItemConsume`'s
+    `INV_GetCursorItem` compare 0x0055EEB8–0x0055EEC0; `QUESTS_GiveItem`'s ilvl-0 → clvl at 0x005466D6–0x005466E2,
+    `ITEMS_CreateForStore` (kind 4, noEthereal 1) at 0x005466FB, durability 0x0054670B–0x0054671A; the pre-switch
+    override 0x005574E3–0x00557567 (`ItemBaseIsUnique` at 0x0055753E → 7); Malah's talk table 0x00589B90–0x00589BD4
+    (state `+0x0C` = 4, no `ice`, `+0xD8` = 0, message 3); `ItemRepairAll` 0x005761C0–0x005762A3 and its gate
+    `sub_0062E660_ItemCanRepair` 0x0062E660–0x0062E693. The 22 rows re-summed from the inventory (`items-quest-drops.md`,
+    13 rows: 3 + 3 + 3 + 1 + 1 + 1 + 2 + 1 + 1 + 3 + 1 + 1 + 1). The given-items save chain checked on the saves the game
+    wrote: after each game only the difficulty just played keeps its act byte (`[132,0,0]`, `[0,132,0]`, `[0,0,132]`).
+  - **Fixes.** (1) overclaim: the imbue-repair `[C]` rested on this run's imbued `cap`, which separates nothing: it is
+    unidentified **and** ethereal (`0x00482000`), at 7 of 7. The bullet is re-anchored. The leg (61 → 66) is the
+    identified case, and run:2026-10-19-economy2's unidentified, non-ethereal `cap` (10 of 12 kept) is the other. The
+    gate `ItemCanRepair` (0x005761CB) and its ethereal refusal are added as `[I]`, with an open question. Carried into
+    § 6's note, the Answer summary, the ledger row qd 44 and the spec-writer entry. (2) under-claim (rule 14):
+    `ITEMS_CheckFlags` and `sub_00628110_ItemGetFlags` stayed I. Their logged returns separate (0x0062C653,
+    0x0062C81E, 0x0062C72F: 0 and the flag; 0x0062C739: the flag word, `0x1800010` refused), the same basis as the
+    lane's `ITEMS_GetQuality`. Both are raised. `ITEMS_GetSockets` returns 0 every time and stays I. (3) under-claim:
+    qd 38 stayed "S2c, raised in part" although H6e1's `CIC`/`CICR` line meets its remainder. It is now S2c, raised
+    (the `lane/s38s` precedent); items/0010's S2c entry, its tally and the inventory are updated. (4) omission (rule
+    14): `ITEMS_GetType`, `ITEMS_GetCode` and `ITEMS_GetQuality` were raised in `re/symbols.csv` but left I in
+    items/0001, 0003 and 0006, and had no row in items/0010's Functions table. Rows were added (with `CheckFlags`,
+    `ItemGetFlags`, and `ItemCanRepair` I), and the owner tables now say C. (5) miscount: the request said 14 symbol
+    raises for the 15 the lane made. The review's total is 17 I → C and 3 new. (6) omission: `tkf` ×2 passed
+    `ItemCanImbue` but was missing from its "accepted" cell. (7) stale cross-reference: items/0011 Phase 2b said
+    "never: the imbued item is built unidentified". It now carries a note giving the leg as the counter-case. items/0010's
+    `ItemMagicStockable` row said I where `re/symbols.csv` says C (items/0009).
+  - **Rulings.** (a) **"Shortfall 0" is honest.** Each of the 11 rows raised in part has a `[C]` half that the kept
+    check compares on separating cases. Their remainders are states that single-player stock play does not reach
+    (game type ≠ 3 for Anya's clvl halves; gold, ears, flag `0x1000`, quality 9; sockets already present with flag `0x800` clear), or
+    paths this run did not reach. Malah's `ice` (qd 32, 46) needs her quest object in state 4. qd 45 L686 needs the
+    Ancients and Nihlathak. qd 50's scripted half belongs to other runs. Those halves stay `[I]` in Phase 3. Nothing is
+    routed: no batch is left in the family, and the state-4 question stays in items/0010's open questions. (b) **The
+    quality-7 correction stands** as `[C]`. `xyz` separates `unique` from `quest`: it is a `ques` item with quest 19 and
+    `unique` 0, and it kept quality 2, while `tr2` (quest 32) and `g34` (quest 19), both `unique` 1, came back 7 (`ICQ`
+    rq 2). (c) **The throwable refinement stands**, scoped to the 22 logged imbue tests (no 0x0062C613 step, `tkf` ×2
+    accepted). What sets bit 25 is an open question; "a throwable is refused" stays `[I]`. (d) **The act-byte trap**
+    is a harness note, not a save claim: the game writes the act byte of the difficulty it played and 0 for the others.
+    The recipes' three active bytes are ADR-0003 tool inputs that no checked code reads. (e) **The symbols:** 17 I → C
+    (15 by the lane, plus two by this review) and 3 new (2 C, `PlayerCursorItemIs` I). Each raise is backed by a
+    logged return the checker compares on separating cases. `ItemTypeThrowable`, `ItemCanRepair`, `ITEMS_GetSockets`
+    and `INV_GetCursorItem` stay I.
+  - **Totals** recounted against `main` `92b811df` after the merges: unchanged, static 567, harness 519, c-emu 0,
+    blocked 421, deferred 2, raised 17: 1 526 (qd 38's move has no class change). H6e1's ledger: raised 11, raised in
+    part 11, shortfall 0: 22. S2c's quest-drops tally: raised 13, raised in part 2, reclassified 1.
+  - **Readiness.** **items/quest-drops is ready for its Phase 3 re-tag**: S2c, H6d, H6e2 and H6e1 are all accepted, and
+    no other batch holds one of its rows. Research-map row updated. Spec-writer entry
+    [2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item](../backlog/2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item.md)
+    released, and the review request closed. The inventory § 5 marks H6e1 done.
 - **2026-10-27 — `lane/h6e2f` (reverser, harness slot 1, no Ghidra): the H6e2 follow-up** (the `lane/rdp` review's
   ruling 7). `eye4c`, `tome4c` and `brain4c` run as staged in `tools/h6e2_sessions.py`, 3 launches, 3 kept, under
   run:2026-10-27-sweep-quest-items (addendum *Follow-up* in items/experiments). First, additively, `tools/gdb/pilot.py`'s
