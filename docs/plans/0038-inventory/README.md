@@ -1081,7 +1081,7 @@ review.
   separated).
 - **Shortfall (7):** save-d2s 1, 3, 19 (no host callback; the shutdown save found no game), 110 (the watchpoint logged
   no hit: no working control), 114 (no gold pile), 117 (no separating case), 124 (the builder refuses a lone follower;
-  archivist entry).
+  archivist entry). *(2026-10-27, `lane/r1h` review: rows 3 and 19 moved to d-none, so 5 shortfalls remain, below.)*
 - **Proposed d-none (2):** save-d2s 77 and 78, by their own route ("else reclass d-none"): no item record in mode 3 or
   5 in any write or read of the run.
 - **S1a pieces met** (the rows stay S1a): 20, 24, 32; 123, 130 and 138 in part (group 52). Not met: 71, 86, 103, 128.
@@ -1121,7 +1121,7 @@ instruction immediates, relative branches in disassembled and undisassembled byt
 nothing that reaches `sub_0052C0E0_SetHostSaveCallback`, the only writer of the host callback `0x00883D50`. Each
 channel found its control in the same run, and the callback starts at 0 (zero-filled `.data`)
 ([save/0001 § Plan 0038 r1h](../../findings/save/0001-d2s-io.md#plan-0038-r1h-the-host-callback-setter-and-the-d2sio-model-2026-10-27)).
-Proposed:
+Proposed (accepted at the `lane/r1h` review, below):
 
 | Row | Was | Now (proposed) | Why |
 |---|---|---|---|
@@ -1135,6 +1135,17 @@ inventory change has landed on `main` since the `lane/h1b` review totals above. 
 awaiting a batch 0, blocked 419** (d-none 293, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2,
 raised 17: 1 526.** H1b's ledger becomes raised 25, raised in part 14, shortfall 5 (rows 1, 110, 114, 117, 124),
 d-none 4 (rows 3, 19, 77, 78): 48.
+
+**`lane/r1h` review (2026-10-27, architect): accept with fixes (3).** The four moves above are **accepted**: rows 3
+and 19 shortfall → d-none, and the callback halves of rows 2 and 18 d-none as halves, with both rows still counted as
+H1b, raised in part. The statements stay `[I]`. d-none with an `[I]` absence fits the class. The class is "no
+observable (dead code, …)", and it raises nothing, so its reason may be a reading, as at tc 41 and outdoor 10. The
+reason is recorded, and finding a caller of 0x0052C0E0 (a computed target included) moves rows 3 and 19 back to (b).
+The undisassembled read at 0x0052BFCF does not change ruling (d). It runs only when `0x00883D54` is non-zero, which only
+the setter writes, and a raw scan finds nothing that reaches 0x0052BFC0. **H1b's ledger: raised 25, raised in part
+14, shortfall 5, d-none 4: 48.** Recounted against `main` after merging it into the lane (`2637b081`; `lane/p50b`
+changed no inventory row): **static 567, harness 521, c-emu awaiting a batch 0, blocked 419** (d-none 293, d-edit 73,
+d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
 
 ## 3. Blocked rows, for the plan's open questions
 

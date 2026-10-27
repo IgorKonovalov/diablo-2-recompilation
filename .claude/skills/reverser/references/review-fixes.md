@@ -61,7 +61,9 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    "the only RNG call" of a call graph with 3 indirect calls unfollowed, and the mode graph's 118, left out of the
    text (`lane/p50a` review, [0050](../../../../docs/plans/0050-animation-frame-timing.md)); a logged load chain written
    without the two frames between `PlayerLoad` and the logged returns (`PlayerLoadFromFile`, `PlayerLoadFromClient`;
-   `lane/h1b` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)).
+   `lane/h1b` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)); an undisassembled reader of the
+   host callback, 0x0052BFC0, left "callers unfollowed" when one raw scan settles it, and the nearest indexed store
+   (0x0052C134) left unbounded beside a "no block write" claim (`lane/r1h` review, 0038).
 10. **One case decides only if a wrong reading could not match it by chance.** Seen: aff 28's durability
     value, about one in eight (S2b, 0038). Count the cases that separate the readings, not the cases checked: a
     rounding needs a remainder (three curse lengths whose `MulDiv` is exact), and a model fix's counter is not its

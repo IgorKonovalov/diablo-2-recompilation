@@ -10,6 +10,10 @@
 //   entry  <name>                                             the address is an external entry point (export/entry)
 //   fall   0x<prev> <instruction>                             the instruction before the target can fall through into it
 //   counts ref=<n> ptr=<n> scalar=<n> rel=<n> entry=<n> fall=<n>
+// Limits (lane/r1h review): fall sees only instructions Ghidra disassembled, so check the bytes before an
+// undisassembled target by hand. rel does not decode E0-E3 (loop/jecxz) or 66-prefixed branches, and it skips the
+// last 4 bytes of each executable block. Nothing finds a target computed at run time (a base plus an index, a pointer
+// built in a register). Every count of 0 is an absence over these channels only.
 // @category d2-recon
 
 import java.io.PrintWriter;
