@@ -36,23 +36,19 @@ Terms are in the [glossary](docs/glossary.md).
 
 ## Scope
 
-Three subsystems came first, all built on the game's RNG:
+The specification covers six areas. The first three are built on the game's RNG and form the core; the
+[chain](docs/specs/chain/README.md) composes them from the game seed to a populated level and a drop.
 
-| Area | What gets specified |
-|---|---|
-| **Item creation** | treasure class resolution, quality rolls, affix/unique/set selection, ilvl/alvl, sockets |
-| **Monster spawning** | per-level monster pools, packs and minions, champions/uniques/superuniques, monster level per difficulty |
-| **Level generation (DRLG)** | preset, maze and outdoor generators, rooms, warps, object and population placement |
+| Area | What gets specified | Defined by |
+|---|---|---|
+| **Item creation** | treasure class resolution, quality rolls, affix/unique/set selection, ilvl/alvl, sockets | [ADR-0001](docs/adrs/0001-target-toolchain-evidence-sources.md) |
+| **Monster spawning** | per-level monster pools, packs and minions, champions/uniques/superuniques, monster level per difficulty | [ADR-0001](docs/adrs/0001-target-toolchain-evidence-sources.md) |
+| **Level generation (DRLG)** | preset, maze and outdoor generators, rooms, warps, object and population placement | [ADR-0001](docs/adrs/0001-target-toolchain-evidence-sources.md) |
+| **Enablers and creation paths** | the systems the core cannot be reproduced without (excel data, strings, calc formulas, the seed tree, collision, saves), and the other callers into the item and monster code (vendors, the cube, sockets, quest drops, hirelings, new characters) | [ADR-0002](docs/adrs/0002-scope-creation-paths-and-enablers.md) |
+| **Simulation** | the game run over time, in six phases: combat formulas; stats and states; skills and missiles (the machinery and the function catalogue, [ADR-0020](docs/adrs/0020-skills-phase-in-two-plans.md)); animation and frame timing; monster AI and path search; and the server frame, which composes them so that events chain across units ([ADR-0022](docs/adrs/0022-scope-server-frame.md)) | [ADR-0014](docs/adrs/0014-scope-game-simulation.md) |
+| **Game rules** | quest progression, travel, and the item economy | [ADR-0017](docs/adrs/0017-scope-quests-travel-economy.md) |
 
-All three are reviewed, and [chain](docs/specs/chain/README.md) composes them from the game seed to a populated level
-and a drop. [ADR-0002](docs/adrs/0002-scope-creation-paths-and-enablers.md) added the systems the core cannot be
-reproduced without (enablers) and the other callers into the item and monster code (creation paths).
-[ADR-0014](docs/adrs/0014-scope-game-simulation.md) added the game run over time (simulation) in five phases: combat
-formulas, stats and states, skills and missiles ([ADR-0020](docs/adrs/0020-skills-phase-in-two-plans.md) splits it into
-the machinery and the function catalogue), animation and frame timing, and monster AI (plan 0052, approved
-2026-10-27). [ADR-0017](docs/adrs/0017-scope-quests-travel-economy.md) brought quest progression, travel and the item
-economy in beside them (game rules). [ADR-0022](docs/adrs/0022-scope-server-frame.md) (accepted 2026-10-27) adds a
-sixth simulation phase after monster AI: the server frame, composed so that simulation events chain across units.
+Out of scope: the network protocol, client prediction and wall-clock pacing, sound, fonts, video, rendering and input handling. Presentation formats are covered by tools only ([ADR-0005](docs/adrs/0005-presentation-formats-tools-only.md)).
 
 ## Status
 
@@ -136,27 +132,9 @@ In flight ([plans index](docs/plans/README.md)):
   re-tags the specs cluster by cluster.
 - **[0046](docs/plans/0046-skills-function-catalogue.md)**: the skills and missiles function catalogue.
 - **[0050](docs/plans/0050-animation-frame-timing.md)**: animation and frame timing.
-- **[0052](docs/plans/0052-monster-ai.md)**: monster AI (approved 2026-10-27).
+- **[0052](docs/plans/0052-monster-ai.md)**: monster AI.
 
-Done (each closed plan is in `docs/plans/done/`, listed in the [plans index](docs/plans/README.md)):
-
-- **Foundations**: bootstrap and binary pinning (0001), the excel foundation (0002), the seed tree and the runtime
-  harness (0003), prerequisite formats (0005), asset rendering tools (0006), the docs gate (0007), item art tools
-  (0009), the two-client harness (0011).
-- **Items**: treasure classes (0004), the quality roll and magic find (0010), uniques and sets (0019), affixes (0021),
-  base stats and properties (0024), sockets and runewords (0029), the Horadric Cube (0030), vendors and gambling
-  (0031), quest drops and rewards (0032).
-- **Monsters**: the level pool and monster level (0012), room population (0014), special monsters (0018), monster
-  stats (0025), hirelings (0033).
-- **Levels and objects**: the DRLG overview and room seeds (0008), presets (0016), the collision grid (0017), the maze
-  generator and warps (0022), objects (0023), the outdoor generators (0026), the room lifecycle (0040).
-- **Data, saves and players**: save files (0013), string tables (0028), player creation (0034), calc formulas (0035).
-- **Sweeps**: backlog sweeps 1–6 (0015, 0020, 0027, 0039, 0049, 0051), the multiplayer branches (0044), the
-  simulation shortfalls (0047).
-- **Reading**: the human wiki and this README (0036).
-- **Simulation**: combat formulas (0037), stats and states (0041), the skills and missiles machinery (0045).
-- **Game rules**: quests and travel (0042), the item economy (0043).
-- **Composition**: seed to world (0048).
+Closed plans are in `docs/plans/done/`, listed in the [plans index](docs/plans/README.md).
 
 ### Supporting material
 
