@@ -1198,11 +1198,333 @@ corrected here: **static 567, harness 521, c-emu awaiting a batch 0, blocked 419
 d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.** The 25 H3b rows are all (b) and batch H3b in the
 cluster tables (data-excel 17, data-README 4, data-strings 4).
 
+**H1a (filed 2026-10-27, reverser, `lane/h1a`): 46 statements of save/d2s, hirelings, player/creation and
+items-uniques-sets.** run:2026-10-27-sweep-d2s-load, 5 kept sessions on slot 2 (expansion, Normal, Nightmare
+and Hell, single player), tool-built saves from `tools/h1a_saves.py` swapped in after the character screen read its
+list, logger `tools/gdb/d2s-h1a.gdb`; plus the S1b session (CalcSor, `tools/gdb/s1b-pieces.gdb`; data-calc 19 and
+rng-seeds 11 stay counted as S1b). `sweep_h1a.py check` on the kept logs: **410 comparisons over 38 cases, 0 failing**, every log's `d2sio.py` part 0 mismatches (`check/sweep-h1a-check.txt`,
+manifest `h1a-manifest.sha256`). The evidence is in the "Plan 0038 batch H1a" sections of
+[save/0001](../../findings/save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load),
+[hirelings/0001](../../findings/hirelings/0001-hirelings.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load) and
+[player/0001](../../findings/player/0001-creation.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load). The batch is
+45 statements filed (save-d2s 35 in 34 rows, hirelings 4, player-creation 6) and items-uniques-sets 21 from H6d.
+
+- **Raised (32):** save-d2s 9, 22, 26, 27, 28, 29, 30, 36, 38, 44 (2), 46, 47, 49, 52, 53, 54, 59, 62, 65, 68, 80, 90,
+  91, 105, 106, 107, 132; hirelings 32; player-creation 8, 9, 11.
+- **Raised in part (4):** save-d2s 23 (91 → legacy, 94 and 96 accepted, 97 → 7; 92, 93, 95 not loaded), 50 (every
+  status code met; the ladder test and the classic progression bounds not), 139 (the item param half; the `gf` half
+  has no stock case), 140 (the reader half; no write above 8 KiB).
+- **Shortfall (8):** save-d2s 10, 17 (no write above 8 KiB), 126 (no version-92 item list in the 1.09 widths);
+  hirelings 3, 30, 33, player-creation 1, items-uniques-sets 21 (no save in the version 71 or 87 layout: no builder,
+  no format doc; archivist entry).
+- **Proposed d-none (2):** player-creation 20 and 34. A class-7 player is never made: a class-7 full save and a
+  class-7 stub both pass the header, then halt the game at the null-unit test (line 1210) when the player unit is made,
+  so no code reads a class-7 CharStats row or experience column.
+- **Halves proposed d-none (the rows stay counted as H1a, raised in part):** save-d2s 139's `gf` half (no
+  `ItemStatCost` row with `CSvBits` has a `CSvParam`), save-d2s 50's ladder test (it runs only with the host callback
+  set, `0x00883D54`, which the r1h ruling holds is never set on this image).
+
+| Row | Was | Now (accepted at review) | Why |
+|---|---|---|---|
+| player-creation 20 (class outside 0..6 reads column 0) | b, H1a | **d-none** | No class-7 player unit is made: both loads halt at `sub_00553180`'s null-unit test (1210), per the two crash reports. The statement stays `[I]` as a reading of `EXP_GetThreshold`. |
+| player-creation 34 (class 7 gets nothing; class 0 experience column) | b, H1a | **d-none** | As row 20. |
+
+Net effect on the totals (proposed): harness −2, d-none +2. Taken against `main` after merging it into the lane
+(`ee8273b7`; no inventory change on `main` since the `lane/r1h` review totals above): **static 567, harness 519, c-emu
+awaiting a batch 0, blocked 421** (d-none 295, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2,
+raised 17: 1 526.** H1a's ledger: raised 32, raised in part 4, shortfall 8, d-none 2: 46.
+
+**`lane/h1a` review (2026-10-27, architect): accept with fixes (5).** The ledger stands as filed: **raised 32, raised in
+part 4, shortfall 8, d-none 2: 46**, and the two moves (player-creation 20 and 34, b → d-none) are accepted with a
+reach condition (a null-unit call at any `EXP_GetThreshold` caller, whose inlined test passes −1, moves row 20 back to
+(b)). The swap is ruled a stock-path observation of the server's reader (ADR-0013 § Neutral: no table, memory or code
+edit; it bypasses the client's list filter only), so each raise carries a reach note in single player. The two d-none
+halves (save-d2s 139's `gf` half, 50's ladder half) are accepted; the legacy rows stay shortfalls (a 1.07/1.08-era save
+is a real input, not edited data). S1b leftovers (counted as S1b): data-calc 19 **in part → raised** (the hovered
+potions return on `+0xB4` = 0 before the evaluation sites); rng-seeds 11 stays in part (four callers unhit, H5c route).
+No class moves beyond the lane's. Recounted against `main` `6ad383c4` after merging it into the lane (`lane/h3b`,
+`lane/a3f` and `lane/rbd` merged since the lane's base; none moved a row after the r1h totals): **static 567, harness
+519, c-emu awaiting a batch 0, blocked 421** (d-none 295, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8),
+**deferred 2, raised 17: 1 526.** § 5 marks H1a done, and H1b, H3b, H4a, H5c, H5d and H7a, accepted earlier, too.
+**Phase 3 ready:** save/d2s (S1a, S1e, H1b, H1a) and items/uniques-sets (S2b, S2c, S1f, H2b, H6d, H1a). Not ready:
+hirelings (H6f, 22 rows) and player/creation (H6g, 15 rows).
+
+**H6e2 (filed 2026-10-27, reverser, `lane/h6e2`; accepted with fixes at the `lane/h6e2` review, 2026-10-27): 24 statements of items/quest-drops (rows 1, 30, 33, 34, 35) and
+objects (row 48).** run:2026-10-27-sweep-quest-items, 11 kept sessions on slot 1 (19 launches, 8 development logs;
+Normal, one Nightmare; tool-built quest saves, the Act II and III ones starting in the Act IV town), logger
+`tools/gdb/quest-items.gdb`, checker `tools/sweep_h6e2.py check` over the 11 kept logs: **chest 6, object 2, event7 19,
+dup 8, gate 8; 0 mismatches** (`check-final.txt`, manifests `manifest-final.sha256` and `manifest-ckpt1.sha256`). The
+evidence is in [items/0010 § Plan 0038 batch H6e2](../../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items),
+whose ledger table gives each statement's `[C]` part and remainder.
+
+- **Raised (3):** quest-drops 30 `box` (made without a cube, refused with one); 30 Wirt's gold (already `[C]` in the
+  spec from run:2026-10-19-economy2; met again, 18 piles by event 7); objects 48 Wirt's body row.
+- **Raised in part (14):** quest-drops 1 (classes 268 and 367; the other event-7 classes), 30 `leg`, `bks`, `ass`,
+  `tr1`, `msf`, `qhr`/`qey`/`qbr` (`qhr` only; all three after the follow-up below), `j34` (the creations; the refusal halves), 33 (E1 for `box`, `tr1`,
+  `msf`; **corrected** for the Khalim chests, gold first, met on `qhr`; `vip`, `qey`, `qbr` stay), 34 (a held cube
+  refuses in Normal; a Normal staff does not count in Nightmare; the cursor branch and "only" stay), 35 (8 gate
+  cases, as at checkpoint 1); objects 48 chests row (as 33, with the correction), item-objects row (`leg`, `bks`),
+  orifice row (the bits, from the kept log `quests-s3-3364-duriel-normal.log`; the `hst` gate stays).
+- **Shortfall (7):** quest-drops 30 `bkd`, `hdm`, `vip`, `bbb`, `g33`, `g34`/`xyz`, `qf1`: not run (launch cap), or
+  the route failed (the tome's warp led to the Disused Fane). *(Follow-up below: `bbb` raised in part, shortfall 6.)*
+- Eleven symbols I → C (rule 14): `QUESTS_ObjectEvent`, `A1Q4_WirtGold`, `WirtLegDrop`, `A1Q4_InifussDrop`, the
+  scroll, staff, cube and heart chests, `DropItemCodeAt`, `PlayerFindItemByCode`, `ItemQuestGate`.
+
+No class move is proposed. Net effect on the totals: none. Taken against `main` after merging it into the lane
+(`147e5ca3`; no inventory row moved on `main` since the `lane/h1a` review totals above): **static 567, harness 519,
+c-emu awaiting a batch 0, blocked 421** (d-none 295, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred
+2, raised 17: 1 526.** H6e2's ledger: raised 3, raised in part 14, shortfall 7: 24.
+
+*Review (2026-10-27):* the ledger stands. Wirt's gold stays counted **raised** under H6e2 with no class move (the
+`lane/p49r` precedent for quest-drops 10 and 19): plan 0043 raised it first (run:2026-10-19-economy2, map seed 4506),
+this run met it again on an independent seed (3811); Phase 3 adds the run anchor only. Recounted against `main`
+`507a6f5c` after merging it (`lane/rk` moved no inventory row): totals as above. **Phase 3 ready:** objects (S4a,
+S4b, H5b, H6e2; its 13 "—" rows have no batch). Not ready: items/quest-drops (H6e1 open).
+*Follow-up (2026-10-27, reverser, `lane/h6e2f`; the `lane/rdp` review's ruling 7):* the reruns `eye4c`, `tome4c`
+and `brain4c` under run:2026-10-27-sweep-quest-items (addendum *Follow-up*), 3 launches and 3 kept sessions on slot 1
+with `d2pilot.py --descend-to` and `--all-copies`, the RL line's new `f28` key; checker over the 14 kept logs: **chest
+8, object 3, event7 19, dup 8, gate 8, gold 57, death 6 (listed); 0 mismatches** (`check-followup.txt`, manifest
+`manifest-followup.sha256`, 18 lines). Ledger moves inside H6e2, no class move:
+- quest-drops 30 `bbb`: **shortfall → raised in part** (`tome4c`: the creation with word 17 clear; the refusal stays);
+- quest-drops 30 `qhr`/`qey`/`qbr`, 30 `j34`, 33 and objects 48 chests and item-objects rows stay **raised in part**,
+  with more met: `qey` and `qbr` in the corrected Khalim order (gold first; `k` 5 and 7 on their logged seeds, the
+  heart chest's 8), so E1's correction holds for all three Khalim chests and only `vip` and the held-part refusal
+  stay; `bbb` joins `leg` and `bks`; three more `j34` kills;
+- the brain chest's open question: with its room active in both copies the chest is listed and opens (`[C]`; scoped
+  at the review, `brain4`'s activation in the other copy alone listed nothing); which copy the listing follows stays
+  `[I]` (an order match over three logs; `brain4c` had the room active in both copies).
+
+Symbols `sub_005B7A60_A3Q1_TomeDrop`, `sub_005B8940_A3Q2_EyeChest`, `sub_005B8A20_A3Q2_BrainChest` I → C (rule 14:
+each one's logged calls compared with the checker's model). H6e2's ledger: **raised 3, raised in part 15, shortfall
+6: 24.** Net effect on the totals: none. Taken against `main` `1573a48f` (the lane's base; no inventory row moved on
+`main` since the `lane/s38s` review's totals): **static 567, harness 519, c-emu awaiting a batch 0, blocked 421**
+(d-none 295, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.** Review-fixes pass
+(reverser 1–15): the new `[C]` bullets each carry a `run:` anchor and an address; the copy identification stays `[I]`
+(1, 4); every count copied from the kept outputs (2); totals against `main` (3); logs, outputs and the 8 screenshots in
+one manifest, the `--warps` replay kept as a tool mode (6); the remainders named in the ledger rows (8); three
+separating seeds for `k` (10); the correction carried into § Static reads' Khalim bullet, the eye/brain `[I]`
+sub-bullet, the open questions and the `h6e2_sessions.py` comment (12); `bbb`'s quality 7 as After `[I]` (13); the
+three symbols raised in `re/symbols.csv` and the Functions table (14).
+**`lane/h6e2f` review (2026-10-27, architect): accept with fixes (2).** The ledger moves stand: `bbb` shortfall →
+raised in part, H6e2 **raised 3, raised in part 15, shortfall 6: 24**, no class move, three symbols I → C. The brain
+chest's `[C]` is scoped to "with its room active in both copies" (in `brain4` the room activated in the other copy
+alone and the chest was not listed); the copy order lines are now in a kept output (`copies-review.txt`). Recounted
+against `main` `dcf6c210` after merging it into the lane (`lane/rlg` and `lane/h6e1` merged since the lane's base;
+neither moved a class): **static 567, harness 519, c-emu awaiting a batch 0, blocked 421** (d-none 295, d-edit 73,
+d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
+**`lane/s38s` review (2026-10-27, architect, Phase 3 of save/d2s and items/uniques-sets): three S1a rows completed by
+H1b's kept check.** The H1b ledger listed the S1a pieces it met and left the rows as S1a. Two of those pieces carry a
+compared line in the kept check output (`workspace/logs/r1h/sweep-h1b-check-r1h.txt`, 0 failing), so they move here,
+with no class change:
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| save-d2s 24 (`weapon_set` bit 0 from client `+0x45C`) | S1a, raised in part (value 0) | **S1a, raised** | rt-r2's four writes after `w`: bit 0 = 1, equal to the logged `+0x45C` (`tools/d2sio.py`'s `weapon_set bit 0` check). |
+| save-d2s 123 (groups 52 and 57 framed like the others) | S1a, raised in part (57) | **S1a, raised** | `9cr` 52/53 = 50/120 read three times with stats 52 and 53 equal to the file's group values (`group 52 stats 52/53 = file`), the second rt-r2 read on the file the game wrote. One item. |
+| save-d2s 138 (groups 52 and 57 read the same way) | S1a, raised in part | **S1a, raised** | As row 123. |
+| save-d2s 130 (unseen ids, groups, clamp bounds, stat 326, version < 93) | S1a, raised in part | S1a, raised in part | The group-52 remainder is met; the clamp bounds (d-none), stat 326 (d-none here; its own row 125 raised by H1b) and version < 93 (d-edit) are as before. |
+
+Rows 20 (the pet-type-7 test) and 32 (the read side's `& 0xFFF` mask) stay as filed: no compared line covers them (the
+H1b hotkey check compares the written words only). S1a's ledger is now **raised 42, raised in part 12, returned 2**
+(56). Totals unchanged: **static 567, harness 519, c-emu awaiting a batch 0, blocked 421** (d-none 295, d-edit 73, d-sim
+28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
+
+*Rows 20 and 34 of player/creation (ruling).* The class-7 halt and the two d-none rows are different statements. The
+halt (a class-7 file passes the class test and the game stops at the null-unit test, 1210) is player-creation row 11,
+raised by H1a on the logged `RCST`/`RMAP` lines and the two crash reports, so a spec states it `[C]`. Rows 20 and 34
+(what a class-7 player's experience lookup and starting kit would be) need a class-7 player, which the halt shows
+never exists; they are d-none and stay `[I]` readings. The halt is the reason for the d-none, not a contradiction of it.
+
+**H6e1 (filed 2026-10-27, reverser, `lane/h6e1`; accepted with fixes at the `lane/h6e1` review, 2026-10-27): 22 statements of items/quest-drops (rows 2, 4, 5, 32, 39, 40,
+42–46, 50, 51) and the S2c piece of row 38.** run:2026-10-27-sweep-quest-npc, 14 kept sessions on slot 1 (17
+launches, 3 development logs; Normal, Nightmare and Hell, all in town; tool-built saves in the Act V and Act I towns,
+one three-game chain on the saves the game wrote), logger `tools/gdb/quest-npc.gdb`, checker `tools/sweep_h6e1.py check`
+over the 14 kept logs: **69 service-test calls, 9 sockets, 2 imbues, 18 consumed cursor items, 18 tails, 20 given
+items, 3 Anya draws; 0 mismatches** (`check-final.txt`, manifests `manifest-final.sha256`, `manifest-shots-final.sha256`,
+`manifest-dev-final.sha256`). The evidence is in [items/0010 § Plan 0038 batch H6e1](../../findings/items/0010-quest-drops.md#plan-0038-batch-h6e1-run2026-10-27-sweep-quest-npc),
+whose ledger table gives each statement's `[C]` part and remainder.
+
+- **Raised (11):** quest-drops 2 (L36, L299), 4 (L78, L680, L684), 5 (L79, L682), 39, 45 (L678, L679), 51.
+- **Raised in part (11):** quest-drops 2 (L278: the durability write and the drop when full), 5 (L690: the clvl
+  halves, game type 3 only), 32 and 46 (`tr2`, created at quality 7; `ice` not given), 40 (refinement: the throwable
+  test skipped for every item; gold, `0x1000`, quality 9), 42 (L621, L639: quality 9; `0x1000`, type 4, "0 sockets
+  now"), 43 (type 4, ears, `0x1000`), 44 (refinement: an imbued item repaired when created identified; charges, the
+  broken flag, the attach), 45 (L686: the Ancients and Nihlathak), 50 (the scripted half).
+- **Shortfall (0).** The qd 38 piece is met (18 consumed items, each the player's cursor item); qd 38 stays counted
+  as S2c (raised in part there); its remainder, the cursor line, is met here.
+- Corrections carried into items/0010 § 6: `tr2` and `g34` are created at quality 7 (base `unique`), the asked 2 in
+  the table; the throwable and the imbue-repair notes.
+- Symbols I → C (rule 14): `QUESTS_GiveItem`, the five NPC message handlers, the three service tests,
+  `CursorItemConsume`, `ItemRepairAll`, `ItemIdentifyAttach`, `ITEMS_GetType`, `ITEMS_GetCode`, `ITEMS_GetQuality`;
+  new rows `sub_0062A270_ItemHoldsItem` and `sub_0062A2B0_ItemCompactSave` (C), `sub_00578610_PlayerCursorItemIs` (I).
+
+No class move is proposed. Net effect on the totals: none. Taken against `main` after merging it into the lane
+(`44cfbcb5`; no inventory row moved on `main` since the `lane/h6e2` review totals above): **static 567, harness 519,
+c-emu awaiting a batch 0, blocked 421** (d-none 295, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred
+2, raised 17: 1 526.** H6e1's ledger: raised 11, raised in part 11, shortfall 0: 22.
+
+**`lane/h6e1` review (2026-10-27, architect): accept with fixes. The ledger stands, and one S2c row is completed.**
+H6e1's 22 rows stay as filed: raised 11, raised in part 11, shortfall 0. The 11 rows raised in part each have a
+`[C]` half the kept check compares, and a remainder no stock single-player game reaches, or that this run did not
+reach. Malah's `ice` (qd 32, 46) needs quest state 4, and the clvl halves of qd 5 L690 need a game type other than 3.
+qd 45 L686 needs the Ancients and Nihlathak. Those halves stay `[I]` in Phase 3. The piece H6e1 met for S2c has a
+compared line (`CIC`/`CICR`, 18 calls), so the row moves here, with no class change:
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| quest-drops 38 (`NPC_MenuAction` consumes the cursor item) | S2c, raised in part | **S2c, raised** | Its remainder (the consumed item is the cursor item) is met: in all 18 `CursorItemConsume` calls (imbue 2, socket 9, personalize 7) the item is `[[player+0x60]+0x20]`, and each call returns 1. |
+
+S2c's quest-drops tally (16) is now raised 13 (with `lane/p49r`'s qd 10 and 19), raised in part 2 (qd 8 and 21),
+reclassified 1. Symbols: the review raises `ITEMS_CheckFlags` and `sub_00628110_ItemGetFlags` as well, on the same `CAN`
+steps (rule 14). That makes **17 I → C** (the lane's list has 15, its request said 14) and 3 new rows. No class
+moves. Recounted against `main` `92b811df` after merging it into the lane (`lane/s38s`, `lane/rdp`, `lane/s38o`,
+`lane/a71`, `lane/rsw` and `lane/rlg` merged since the lane's base; only `lane/s38s` moved rows, with no class change): **static
+567, harness 519, c-emu awaiting a batch 0, blocked 421** (d-none 295, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032
+8), **deferred 2, raised 17: 1 526.** § 5 marks H6e1 done. **Phase 3 ready:** items/quest-drops (S2c, H6d, H6e2 and
+H6e1, all accepted).
+
+**`lane/s38q` review (2026-10-27, architect, Phase 3 of items/quest-drops): one H6e2 line completed by H6e1's compared
+calls.** H6e2 counted qd 30's `g34`/`xyz` line a shortfall (not run by H6e2). H6e1's checker compares both gifts
+(`QGV` → `CF0` → `QGC`, 0 mismatches): Meshif's `g34` with `j34` held (Nightmare, created at quality 7) and Alkor's
+`xyz` with word 20 bit 1 set (Normal), each at clvl. A met piece with a compared line moves at the review that finds it
+(the `lane/s38s` and `lane/h6e1` precedents), with no class change:
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| items-quest-drops 30, the `g34`/`xyz` line | H6e2, shortfall | **H6e2, raised in part** | The two gifts in the logged word-20 states, compared by H6e1's check; the other word-20 states stay `[I]`. |
+
+H6e2's ledger is now **raised 3, raised in part 16, shortfall 5: 24.** The operate-slot sentence of § Entry points
+(slots 33, 12, 28, 39–41, 57–59 `[C]`) is part of row 1's original statement (`QUESTS_ObjectOperate` dispatches by
+class); its slots are on H6e2's compared `QOW` lines, so it is reflected with row 1 (raised in part, the other classes
+stay) and moves nothing. Totals unchanged: **static 567, harness 519, c-emu awaiting a batch 0, blocked 421** (d-none
+295, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
+**H6b (filed 2026-10-27, reverser, `lane/h6b`; accepted with fixes at the `lane/h6b` review, 2026-10-27): 25 statements of items/sockets-runewords (rows 1, 9, 10, 12, 13, 16–18,
+21, 29, 35 ×2 from S2c, 38) and the S2c pieces of rows 14 and 46.** run:2026-10-27-sweep-sockets, 5 kept sessions on
+slot 1 (10 launches, 5 development logs; expansion, Normal, in town; the game-written *Steel* sample and four
+tool-built saves), logger `tools/gdb/h6b.gdb`, checks over the 5 kept logs: `tools/sockets.py check` **35 inserts and
+37 client verdicts reproduced, 0 failed** (`check-sockets.txt`), `tools/sweep_h6b.py logs` **773 counted checks, 0 bad**
+(`check-sweep_h6b.txt`); the regression of run:2026-10-15-sockets still 351 and 357, 0 failed. The evidence is in
+[items/0007 § Plan 0038 batch H6b](../../findings/items/0007-sockets-runewords.md#plan-0038-batch-h6b-run2026-10-27-sweep-sockets),
+whose ledger gives each statement's `[C]` part and remainder.
+
+- **Raised (9):** sockets 10 (L170, L171; built states), 12 (L173; built state), 16 (L236, L274), 21 (L262), 35
+  (L438, L470), 38 (L490).
+- **Raised in part (9):** sockets 1 (L51, L283, L288: the copier; the golem reader and the other reader sites not
+  run), 13 (L181: `hasinv`, `ItemMaxSockets`, `0x100` now seen failing), 17 (L291: `p4`, `p6`, `p7`), 18 (L243, L450:
+  the 252 timer; no stock runeword parent carries 253), 38 (L481: *Leaf*'s `par`-0 branch at min = max; L505).
+- **Shortfall (7):** sockets 1 L284 (0x00563441's callers: a trade, `0x00568770`), 9 (UI states 10 and 11: the
+  player-trade window, `[I]`), 12 L174 (no target without a client inventory reached the test), 17 L237 (the cursor slot is already
+  empty at the `p5` test, a correction), 29 (the enable-bit branch never taken; no socket filler has durability), 38
+  L482 (func 24: only *Faith*, a `server` row) and L507 (func 7's `+1` fallback: no observable). Fewer than half are
+  raised; the finding's ledger says why.
+- **Pieces met:** sockets 14 (the unidentified socketed parent's client flags `0x00800000` before and `0x00800811` after
+  a Scroll of Identify; refused, then inserted) and 46 (the reader's store at `+0x38`, `0x509F`, and the client copies'
+  Name indexes). Both rows stay counted as S2c, raised in part there.
+- **Proposed for the review** (not filed as moves): sockets 9 → d-2c; sockets 18's 253 half, 29, 38 L481's ranged
+  half, L482 and L507 → d-none.
+- Symbols I → C (rule 14): `sub_00558530_ItemReplenishDurTimer`, `sub_00629900_ItemBaseHasInv`.
+
+No class move is filed. Net effect on the totals: none. Taken against `main` after merging it into the lane
+(`fd841611`; `lane/a72` and `lane/h6e2f` merged since the lane's base, neither moved a class): **static 567, harness
+519, c-emu awaiting a batch 0, blocked 421** (d-none 295, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8),
+**deferred 2, raised 17: 1 526.** H6b's ledger: raised 9, raised in part 9, shortfall 7: 25.
+
+**`lane/h6b` review (2026-10-27, architect): accept with fixes (6).** The raises stand. Four shortfalls move, and one
+S2c row is completed. sock 10's two raises rest on a tool-built save on stock tables (ADR-0013 § Neutral, not a
+forced-path run). They back the client test's order and its refusal at `hasinv` and at `ItemMaxSockets` on a target
+with bit 11, and nothing about how an item gets bit 11. No stock item reaches either refusal, and Phase 3 says so.
+The two half-moves (sock 18's 253 half, sock 38 L481's ranged half) are labelled d-none for Phase 3. Their statements
+stay counted here, raised in part, as the H2b review did with tc 58's half.
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| items-sockets-runewords 9 (the client refuses UI states 10 and 11; 1) | b, H6b | **d-2c** | The only stores of 10 and 11 are the immediates in `0x00489360`, whose four callers test UI panel 23 and send packet `0x4F` (the player-trade window, `[I]`). Of the seven register stores, five store constants (0, 6, 1, 0, 1) and two copy the slot table at 0x007BC9E4 (unfollowed). The word was 0 or 14 at all 45 + 357 logged tests. |
+| items-sockets-runewords 29 (the owner branch and the `0x100` child on the socket path; 1) | b, H6b | **d-none** | In all 35 inserts the child's list had owner 0 and the link branch ran. To be owned by the parent, a child must already be linked to it, and no stock path takes a child back out. No socket filler has durability (69 rows), so none can carry `0x100`. Scoped to the socket path: the function's other 44 call sites are outside this spec. |
+| items-sockets-runewords 38 L482 (func 24; 1) | b, H6b | **d-none** | Its one stock row, *Faith*, has `server` 1, and single player is never ladder (the same reason as row 23). |
+| items-sockets-runewords 38 L507 (func 7's `+1` fallback; 1) | b, H6b | **d-none** | The fallback sits on the weapon branch, and the handlers' item is the rune, which is never a weapon: no observable. |
+| items-sockets-runewords 46 (the runeword field; S2c) | S2c, raised in part | **S2c, raised** | Both remainder parts are compared in the kept check: the reader's store `0x509F` (0x0062D1EA) and the Name index in six client copies. |
+
+sock 14 (S2c) stays raised in part: its piece is met, and its remainder is narrower. Fixes, each written into the
+document it changes:
+(1) *misread:* `RUNEWORD_Apply`'s already-applied test does not read `0x40`. `sub_00625790_UnitFindStatList` searches
+by state alone when the state is non-zero (0x006257AC → 0x00625650). The model now tests the state alone
+(`tools/sockets.py` `af5c8279`, both outputs byte-identical), and spec L438's "flags 0x40" is a correction for Phase 3.
+(2) *stale cross-reference:* "ADR-0010 § built states" becomes ADR-0013 § Neutral (items/0007 sock 10, the run record).
+(3) *miscount:* sock 9 has seven register stores of the UI word, not six, and five of them resolve.
+(4) *omission:* two 253-timer schedules outside an insert (`v` 10 and 5) were not stated and are not compared by the
+checker, so `sub_00558580_ItemReplenishQtyTimer` stays I. The truncation in 2500 / `v` is the `idiv` (read): every
+logged schedule divides exactly.
+(5) *omission:* sock 1's version-71 sites have a builder route since `lane/a72`. The piece is routed to H1c (§ 5).
+(6) *overclaim:* sock 17 L237's reason (`0x0063AAF0` empties the slot) is a reading, `[I]`. The `[C]` is the empty slot
+at the test in the 29 inserts with `p5` 1.
+
+Net effect on the totals: harness −4 (519 → 515), d-2c +1 (7 → 8), d-none +3 (295 → 298), blocked 421 → 425. H6b's
+ledger: **raised 9, raised in part 9, shortfall 3, reclassified 4: 25.** Recounted once, against `main` `fd841611`
+merged into the lane (no inventory row moved on `main` since the `lane/h6e1` review totals): **static 567, harness 515,
+c-emu awaiting a batch 0, blocked 425** (d-none 298, d-edit 73, d-sim 28, d-2c 8, d-owner 10, d-0032 8), **deferred
+2, raised 17: 1 526.** § 5 marks H6b done. **Phase 3 ready:** items/sockets-runewords (S2c, H2b and H6b, all
+accepted).
+
+**H6a (filed 2026-10-27, reverser, `lane/h6a`): 29 statements of items/cube (rows 1, 7, 15–17, 25, 32, 36, 38–40,
+43, 44, 51, 53, 54, 58) and the S2c pieces of cube 49 and aff 14.** run:2026-10-27-sweep-cube, 8 sessions on slot 1,
+all kept (one game each; expansion and classic, Normal, in town; tool-built saves, one with the Act IV act byte, one
+at clvl 1 in its own game directory for the expected fault), logger `tools/gdb/cube.gdb` with `tools/gdb/cube.py` r4,
+checker `tools/sweep_h6a.py check` over the 8 logs: **26 transmutes reproduced by `tools/cube.py`, 27 call chains,
+23 `UnitSetEvent` calls, 0 mismatches** (`check-final.txt`, manifests `manifest-final.sha256`, `manifest-shots.sha256`,
+`manifest-dev.sha256`). The evidence is in [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube).
+
+- **Raised (22):** cube 1 L48; 7 (3); 15; 25 L331; 36; 38 (2); 39 (3); 40 (3); 43 (3); 53 (2); 54; 58.
+- **Raised in part (4):** cube 1 L54 (button `0x17` and a type other than 4 not sent), 17 (no stock `eli` input), 25
+  L349 (the version gate's classic half: rows 129–136 are all version 100, d-none part), 32 (no stock `rem` row).
+- **Shortfall (1):** cube 51, three row-19 transmutes, the skipped record `start − 1` a candidate in none (10 in 659 per
+  transmute).
+- **Pieces:** cube 49 (stays counted as S2c, raised in part): case (b) met, the fault at 0x005C2460 logged and in the
+  game's crash report; case (a) d-none (no crafted base, ilvl and side whose first pick lacks a candidate, 0 of 40 194).
+  aff 14 (stays S2c, raised in part): the level-window half met (cube 58); "only" has no separating stock case.
+- Refinements carried into items/0008: an `ItemCopy` draws two more game-seed steps per child it copies; the runeword
+  copy's prefix slot 0 holds the name id; `InvPlaceItem` sets flags bit 0 on an item holding items; `ItemInitStats` on
+  an ethereal copy writes the plain base values (the open question answered).
+- Symbols I → C (rule 14): `g_SrvPacketTable`, `SrvPacketDispatch`, `Pkt4FButton`, `PktInteractButton`,
+  `PlayerGetInteract`, `CubeButton`, `ItemRemoveRuneword`, `ItemRepairBroken`, `QuestStaffMade`,
+  `QuestKhalimWillMade` (10); new `sub_0055F590_ItemInvNonEmpty` (I).
+
+Proposed class moves (two rows):
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| items-cube 16 (`eth` input) | b, H6a | **d-none** | 0 of the 389 compiled stock inputs has `eth` (`tables.txt`); `noe`, the same `ITEMS_IsEthereal` test, refused an ethereal sword at row 137. |
+| items-cube 44 (the `rem` children placed) | b, H6a | **d-none** | No stock output has `rem` (only row 141 has `uns`), so the second placement loop counts 0 in every stock transmute. |
+
+Net effect on the totals: harness −2, d-none +2. Taken against `main` `fd841611` (the lane's base; no inventory row
+moved on `main` since the `lane/h6e1` review totals above): **static 567, harness 517, c-emu awaiting a batch 0,
+blocked 423** (d-none 297, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
+H6a's ledger: raised 22, raised in part 4, reclassified 2, shortfall 1: 29.
+
+**`lane/h6a` review (2026-10-27, architect): accept with fixes (7).** Both moves stand, checked from the tables with
+`python3 -I` at review: 0 of the 389 stock inputs carry `eth` (4 carry `noe`), no stock output carries `rem` (`uns` row
+141 only), and 0 of the 40 194 crafted (row, base, output ilvl, side) cases has a side without a candidate (203 row-base
+pairs × 99 × 2; recounted with a looser filter, every level 1–99 against `level`/`maxlevel`, which can only add empty
+sides). Four raises have a half the run does not separate, and move to raised in part:
+
+| Row | Filed | Now | The half not separated |
+|---|---|---|---|
+| items-cube 39 L491 (`rep`) | raised | **raised in part** | evaluated against base stat 73 (both 24, no durability modifier on the swords; `STATS_GetUnitStat(it, 73)` read at 0x005662F1), and the 255 side of the stackable `min` |
+| items-cube 39 L524 (repair and refill) | raised | **raised in part** | "every stat-204 count": one charge entry; stock items with 2–4 exist (*Spellsteel*, *Wisp*) |
+| items-cube 40 L528 (`min(255, max stack)`) | raised | **raised in part** | the 255 side: max stack 160 < 255; a 200-stack throwing weapon with *Dense* reaches it on stock data |
+| items-cube 58 L968 (a forced row skips only the window) | raised | **raised in part** | "only", as aff 14: d-none part, the 8 stock forced ids pass every other C4 test |
+
+No class move beyond the lane's two. H6a's ledger: **raised 18, raised in part 8, reclassified 2, shortfall 1: 29.**
+Net effect on the totals: harness −2 (515 → 513), d-none +2 (298 → 300), blocked 425 → 427. Recounted once, against
+`main` `ad8b8cd0` merged into the lane (`lane/h6b`'s four moves and `lane/s38q`, which moved none): **static 567,
+harness 513, c-emu awaiting a batch 0, blocked 427** (d-none 300, d-edit 73, d-sim 28, d-2c 8, d-owner 10, d-0032 8),
+**deferred 2, raised 17: 1 526.** § 5 marks H6a done. **Phase 3 ready:** items/cube (S2c and H6a, both accepted).
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
   what accepting ADR-0008 would unlock now. *(2026-10-20: 7 of them raised by plan 0044, and tc 43, 44 and
   player/creation 6 raised in part; d-2c is now 7: [§ 2.6, Plan 0044 Phase 3](#26-moves-made-by-the-batch-reviews).)*
+  *(2026-10-27, `lane/h6b` review: sockets 9, the UI states 10 and 11 of the player-trade window, joins; d-2c is now 8.)*
   - Partial rows add a few more halves: the trade part of sockets 22, the party half of player/creation 33, the
     n > 1 part of quest-drops 25.
   - Six save/d2s rows (1–3, 6, 18, 19) assume that a one-client TCP/IP host counts as one client. If the review
@@ -1275,32 +1597,33 @@ a letter suffix and its own run id, as the plan requires.
 
 | Batch | Slug | Stmts | T1/T2/T3 | Rows | Recipe, logger and checker; new pieces | Record | Sessions |
 |---|---|---|---|---|---|---|---|
-| **H1a** | `d2s-load` | 46 (45 filed; uniques-sets 21 from H6d, § 2.6) | 0/3/43 | save/d2s 9–10, 17, 22–23, 26–30, 36, 38, 44, 46–47, 49–50, 52–54, 59, 62, 65, 68, 80, 90–91, 105–107, 126, 132, 139–140; hirelings 3, 30, 32–33; player/creation 1, 8–9, 11, 20, 34; uniques-sets 21 (from H6d) | `d2s-io.gdb` + `d2sio.py check`. Tool-built saves from `d2sio_saves.py`: bad magic or version, wrong name, class 7 and 8, act 5, status mismatches, waypoint markers, out-of-range unique and set ids, legacy v94 and versions 71 and 87 (builder support needed; from H6d, a version-`0x47` item list holding a unique, under `uniques.py`, if a version-71 load reaches `0x00533350`), item version < 93, ear, personalized, realm, > 8 KiB, checksum and size wrong; `MercMF` loaded. From S1b (one extra session, staged by plan 0051 Phase 1a; the rows stay counted as S1b, § 2.6): `tools/gdb/s1b-pieces.gdb` + `s1b-pieces.steps` on CalcSor, the hover marker `CH` (data-calc 19) and the `SUNITPRE` caller `ra` with a second load (rng-seeds 11), checked with `rng.py seedtree`, `calc.py hover` and `calc.py check` | `findings/save/experiments.md` | ~19 |
-| **H1b** | `d2s-play` | 48 | 0/22/26 | save/d2s 1–4, 6, 18–19, 21, 25, 31, 33–35, 37, 39–43, 48, 55–57, 60, 72–73, 77–78, 83, 88, 102, 108, 110–116, 117 (from S1a), 118, 124 (from S1a), 125, 127; hirelings 24 | same family. A one-client TCP/IP host, weapon swap, hotkeys, the hirelings mercenary saves (write side, dead flag), iron golem, corpse, runeword, the `questdiffcheck` item, `maxhp`/`maxmana` and poison items, the bit-13 case, and section writer, reader and join breakpoints. **Also:** load `questrewards` and `questrewardsh` (built `246515c5…`, `14c28526…`; backlog 2026-10-16, archivist `lane/abl`) and pin both in `tools/test_d2s.py` with the run id, as the plan 0032 recipes were pinned. From S1a (§ 2.6; 117 and 124 counted here, the other pieces stay counted as S1a): a set item with one damage group in its main and a bonus list; a lone `fire-max` and a lone `fire-min`; magic damage (group 52); a hired mercenary, a swapped weapon set, a left-button hotkey, an item on the cursor and a class item with an automagic affix at *Save and Exit* | `findings/save/experiments.md` | ~14–17 |
+| **H1a** (done) | `d2s-load` | 46 (45 filed; uniques-sets 21 from H6d, § 2.6) | 0/3/43 | save/d2s 9–10, 17, 22–23, 26–30, 36, 38, 44, 46–47, 49–50, 52–54, 59, 62, 65, 68, 80, 90–91, 105–107, 126, 132, 139–140; hirelings 3, 30, 32–33; player/creation 1, 8–9, 11, 20, 34; uniques-sets 21 (from H6d) | `d2s-io.gdb` + `d2sio.py check`. Tool-built saves from `d2sio_saves.py`: bad magic or version, wrong name, class 7 and 8, act 5, status mismatches, waypoint markers, out-of-range unique and set ids, legacy v94 and versions 71 and 87 (builder support needed; from H6d, a version-`0x47` item list holding a unique, under `uniques.py`, if a version-71 load reaches `0x00533350`), item version < 93, ear, personalized, realm, > 8 KiB, checksum and size wrong; `MercMF` loaded. From S1b (one extra session, staged by plan 0051 Phase 1a; the rows stay counted as S1b, § 2.6): `tools/gdb/s1b-pieces.gdb` + `s1b-pieces.steps` on CalcSor, the hover marker `CH` (data-calc 19) and the `SUNITPRE` caller `ra` with a second load (rng-seeds 11), checked with `rng.py seedtree`, `calc.py hover` and `calc.py check` | `findings/save/experiments.md` | ~19 |
+| **H1b** (done) | `d2s-play` | 48 | 0/22/26 | save/d2s 1–4, 6, 18–19, 21, 25, 31, 33–35, 37, 39–43, 48, 55–57, 60, 72–73, 77–78, 83, 88, 102, 108, 110–116, 117 (from S1a), 118, 124 (from S1a), 125, 127; hirelings 24 | same family. A one-client TCP/IP host, weapon swap, hotkeys, the hirelings mercenary saves (write side, dead flag), iron golem, corpse, runeword, the `questdiffcheck` item, `maxhp`/`maxmana` and poison items, the bit-13 case, and section writer, reader and join breakpoints. **Also:** load `questrewards` and `questrewardsh` (built `246515c5…`, `14c28526…`; backlog 2026-10-16, archivist `lane/abl`) and pin both in `tools/test_d2s.py` with the run id, as the plan 0032 recipes were pinned. From S1a (§ 2.6; 117 and 124 counted here, the other pieces stay counted as S1a): a set item with one damage group in its main and a bonus list; a lone `fire-max` and a lone `fire-min`; magic damage (group 52); a hired mercenary, a swapped weapon set, a left-button hotkey, an item on the cursor and a class item with an automagic affix at *Save and Exit* | `findings/save/experiments.md` | ~14–17 |
+| **H1c** | `d2s-legacy` | 0 new (the 6 H1a shortfall rows, counted in H1a, no class move) | — | hirelings 3, 30, 33; player/creation 1; uniques-sets 21; save/d2s 126 | `d2s-io.gdb` (H1a's logger) on the staged `lane/a72` builds `leg87merc`, `leg87new`, `leg71merc`, `leg71uniq`, `leg92props` (base `smpsor-l50.d2s`); each load logged at the legacy reader's or `D2S_ReadSaveV92`'s return and checked by the game's version-96 write-back field by field (`lane/a72` review rulings 2–3, plan 0038 log). From the `lane/h6b` review (piece; sockets 1 stays counted as H6b): a `leg71` build holding a socketed item with a child, loaded with `sockets.gdb`'s `INS` lines, for the version-71 reader's inserts at 0x005311B5 and 0x005313F0 | run id `sweep-d2s-legacy` | 5 (estimate) |
 | **H2a** (done) | `items-tc` | 17 | 10/0/7 | quality 20, 22–23; tc 1–2, 11, 22, 34 (2, from S2a), 37, 45, 47, 59–60, 70–71 | `tc-drops.gdb` + `tc.py`. New lines: the caller, gold (stat 14), the MonDeathDrop exit. A Find Item barbarian, `/players 8` host and chests, Hell mfnecro, skeleton or Valkyrie kills; a classic Countess kill (tc 34, § 2.6) | `findings/items/experiments.md` | ~6 |
 | **H2b** (done) | `items-chain` | 25 (5 to d-none, § 2.6) | 7/1/17 | affixes 5, 13, 17, 19–21, 24; properties 7, 20, 24 (from S2b); sockets 42 (from S2c); tc 58, 68 (from S2a); uniques-sets 7, 9, 10, 35, 39 (9, 39 from S2b) | `items-chain.gdb` + `items_chain.py both`. A classic hunt (classicsorc) and a long Hell hunt (also a superior ethereal `dur%` item where the two orders differ, properties 24; magic drops requesting 5 or 6 sockets, sockets 42; from the S2c review, a piece with the row counted as S2c: normal and rare drops requesting more than 3 and 4, sockets 44). New line (tc 58, 68, uniques-sets 9, 39; § 2.6): `game+0xD0` at `sub_00558D90_ItemCreate` entry and after `sub_00552E90_ItemSeedInit`, and `Unit+0x20` with the game seed at `IC0` and `ICJ` | `findings/items/experiments.md` | 6–10 |
 | **H2c** (done) | `items-forced` (id ends `-forced`) | 7 | 0/0/7 | properties 12 (spec L390 only), 14–15; tc 10, 55–56 | **forced, admitted with conditions** (§ 6): `items-chain.gdb` + `tc.py`, `props.py` on a loose `treasureclassex.bin` under `-direct`; two edits (classic throwables; TC-named uniques), each its own `-forced` session set | `findings/items/experiments.md` | few |
-| **H3b** | `data-load` | 25 | 0/16/9 | data/README 2–5; data/excel 1–8, 17–18, 20, 24–25, 27, 50, 71, 74; data/strings 2, 6, 22, 29 | **new** `excel`/startup logger that also sources `strings.py`. **First piece (review ruling 3):** a `d2run.py` mode that has gdb on the game before `DATATBLS_LoadAll`, built and tested off-slot; if it cannot be made to work, the 9 startup rows are a recorded shortfall and stay `[I]` (they have an observable, so not d-none). Covers `FindFile`, loose files without `-direct`, `-txt`, record-byte dumps, the rare-item hover, `STRTABLE_Unload`. From the S1b review (§ 2.6, rows stay counted as S1b): the remainders of data/README 1 ("only under `-direct`") and data/excel 30 (the code-list tables' names at `DATATBLS_LoadTable` in a stock start) | `findings/data/experiments.md` | ~6 |
-| **H4a** | `monsters-a` | 32 | 0/14/18 | pool 12; quest-drops 48 (from S2c); spawn 5, 11, 47–49; special 9–10, 25, 30–31, 34 (from S3a), 35, 38, 46, 48 (from S3a), 50–52, 54–56, 58–60, 68–69; stats 7, 18, 21 | `mon-stats.gdb` with `d2pilot.py` wp, `--descend`, `hunt`, `objop`: Radament, the Travincal council, the Chaos seals, Shenk, Nihlathak, Blood Raven, Andariel, Izual (Blood Raven, Izual or Radament in an expansion Nightmare or Hell game for quest-drops 48), a `flyingscimitar` level. The Ancients (b) need a quest-open recipe. From the H4b review (pieces; the rows stay counted as H4b, § 2.6): `doomknight3` (312) in the Chaos Sanctuary (stats 13, 14), a `willowisp` champion or unique (stats 40), Blood Raven's client name (special 66, mod 12), an aura special of level ≤ 15 (special 27, the clamp at 1); if a seed places one, a Shrines code-20 shrine operated with `objop` (special 2, 74; `MMS0`); optionally the camel at `/players` 8 (stats 23). From S3b (pieces; the rows stay counted as S3b, § 2.6): a Druid casting Raven in a Normal game (stats 30, the `druidhawk` Normal MonProp row), and, optionally (the S3b review raised the rows without it; no row depends on it), a Normal visit to the Durance of Hate Level 3 (`mephistospirit`, stats 19 and 45). Checked with `sweep_h4b.py` and `monstats.py` | `findings/monsters/experiments.md` | ~10 |
+| **H3b** (done) | `data-load` | 25 | 0/16/9 | data/README 2–5; data/excel 1–8, 17–18, 20, 24–25, 27, 50, 71, 74; data/strings 2, 6, 22, 29 | **new** `excel`/startup logger that also sources `strings.py`. **First piece (review ruling 3):** a `d2run.py` mode that has gdb on the game before `DATATBLS_LoadAll`, built and tested off-slot; if it cannot be made to work, the 9 startup rows are a recorded shortfall and stay `[I]` (they have an observable, so not d-none). Covers `FindFile`, loose files without `-direct`, `-txt`, record-byte dumps, the rare-item hover, `STRTABLE_Unload`. From the S1b review (§ 2.6, rows stay counted as S1b): the remainders of data/README 1 ("only under `-direct`") and data/excel 30 (the code-list tables' names at `DATATBLS_LoadTable` in a stock start) | `findings/data/experiments.md` | ~6 |
+| **H4a** (done) | `monsters-a` | 32 | 0/14/18 | pool 12; quest-drops 48 (from S2c); spawn 5, 11, 47–49; special 9–10, 25, 30–31, 34 (from S3a), 35, 38, 46, 48 (from S3a), 50–52, 54–56, 58–60, 68–69; stats 7, 18, 21 | `mon-stats.gdb` with `d2pilot.py` wp, `--descend`, `hunt`, `objop`: Radament, the Travincal council, the Chaos seals, Shenk, Nihlathak, Blood Raven, Andariel, Izual (Blood Raven, Izual or Radament in an expansion Nightmare or Hell game for quest-drops 48), a `flyingscimitar` level. The Ancients (b) need a quest-open recipe. From the H4b review (pieces; the rows stay counted as H4b, § 2.6): `doomknight3` (312) in the Chaos Sanctuary (stats 13, 14), a `willowisp` champion or unique (stats 40), Blood Raven's client name (special 66, mod 12), an aura special of level ≤ 15 (special 27, the clamp at 1); if a seed places one, a Shrines code-20 shrine operated with `objop` (special 2, 74; `MMS0`); optionally the camel at `/players` 8 (stats 23). From S3b (pieces; the rows stay counted as S3b, § 2.6): a Druid casting Raven in a Normal game (stats 30, the `druidhawk` Normal MonProp row), and, optionally (the S3b review raised the rows without it; no row depends on it), a Normal visit to the Durance of Hate Level 3 (`mephistospirit`, stats 19 and 45). Checked with `sweep_h4b.py` and `monstats.py` | `findings/monsters/experiments.md` | ~10 |
 | **H4b** (done) | `monsters-b` | 45 (47 filed; 2 returned, § 2.6) | 22/1/22 | hirelings 34; pool 1, 7, 8 (from S3a), 19; spawn 3, 6 (from S3a), 12, 42–45 (45 from S3a), 51; special 1–2, 5–7, 11, 15–16, 18, 20, 27, 29, 65 (from S3a), 66–67, 71–72, 74; stats 5, 13–14, 17, 20, 23, 40, 44 | `mon-stats.gdb` extended (skill list, aura id and level, client names, restore lines; from S3a: the tick line for every room, `PM0` for every MonPlace case) plus seeded-pool hunts picked with `monpool.py pool` (from S3a: a level holding class 141, 398 or 659–661), a `/players 8` `MercNova` session, and (from S3a) a classic Normal game start with `mon-pool.gdb` | `findings/monsters/experiments.md` | ≤ 20 |
 | **H5a** (done) | `drlg-links` | 16 (21 filed; 5 to d-none, § 2.6) | 16/0/5 | maze 4–5, 15; preset 22; warps 3, 5–6, 8–9, 11–12 | `drlg-maze.gdb` (LNK0/LNK1/LK27) + `drlg.py gen`; map seeds chosen offline with the link-builder model; `-seed N -act A` starts and one Barracks entry | `findings/drlg/experiments.md` | few |
 | **H5b** (done) | `objects` | 32 (33 filed; 1 to d-none, § 2.6) | 12/2/19 | collision 27, 37, 39 (from S4b); objects 3–4, 6, 13, 15–17, 19–20, 23, 26–27, 35–36, 38–42, 45–46, 49–52 | `objects.gdb` + the objects checker, `d2pilot.py objop`, seeds from the populate model; the casket group and the orientation-2 shrine (plan 0023 ruling); from S4b (§ 2.6), one object of size 0 with `HasCollision` set (class 131, 399 or 564–567) created on `objects.gdb`; new `OBJTRAP_ObjectCreate` fire lines and revisit restores | `findings/objects/experiments.md` | ≤ 20 |
-| **H5c** | `roomk` | 41 | 33/0/8 | drlg/README 1–3, 5, 10; preset 31–32; room-tiles 1–2, 4 (2), 14 (2), 15, 27, 28 (3), 30–31, 33, 37, 38; warps 1, 16, 19; **rng/seeds 2, 4–10, 14** (ex H5r); room-tiles 4, 14, 28, 37 and warps 16 from S4a (§ 2.6) | `drlg-roomk.gdb` and `collision.gdb` (LevelUnload, RoomTilesRelease, TINIT-exit flags, `LI0` caller, the act callback, WarpExitPos), plus `seed-tree.gdb` + `rng.py seedtree` (act-seed steps in `LevelLinkBuild`, `R+0x28`/`R+0x60` and `T+0x18`/`+0x20` at activation, flags at `0x0052D1C9`, `LEVEL` caller, client `UnitInit` (x, y), one `-seed -2147483648` session). rng/0002 cites the record. From S4a (§ 2.6): a walled level whose bit-2 merges go through the remap rows 0–5, the row −2 return and the 8/9 edge (counted by `sweep_s4a.py roomk` on the batch's logs), and a `RoomNeighboursEnsure` line at `0x0066C370` (room, warp bits, each `WarpPairLink` call and outcome) | `findings/drlg/experiments.md` | ~10 |
-| **H5d** | `collision` | 17 | 6/0/11 | collision 1, 5, 8–9, 11, 19, 21, 24, 30, 36, 45–46; spawn 41 (from S3b) | `collision.gdb` + `collision.py`: tombs (228), Act III (334), Act V (298, 528, baaltaunt), a non-town `Position` level, `spawnCol` 1, ground items, an entry-flag `0x80` cell. From the H4b review (piece; the row stays counted as H4b): the tomb (228) and `suckernest1` (334) sessions also decide spawn 42's remainder, by `monspawn.py check` on the presets-window `SpawnClassCellTest` (`MC`) lines. From S3b (§ 2.6): a `sarcophagus` (228, size 1) and a `baaltaunt` (545, size 0) creation with their `MK0` lines (spawn 41) | `findings/drlg/experiments.md` | ~8 |
+| **H5c** (done) | `roomk` | 41 | 33/0/8 | drlg/README 1–3, 5, 10; preset 31–32; room-tiles 1–2, 4 (2), 14 (2), 15, 27, 28 (3), 30–31, 33, 37, 38; warps 1, 16, 19; **rng/seeds 2, 4–10, 14** (ex H5r); room-tiles 4, 14, 28, 37 and warps 16 from S4a (§ 2.6) | `drlg-roomk.gdb` and `collision.gdb` (LevelUnload, RoomTilesRelease, TINIT-exit flags, `LI0` caller, the act callback, WarpExitPos), plus `seed-tree.gdb` + `rng.py seedtree` (act-seed steps in `LevelLinkBuild`, `R+0x28`/`R+0x60` and `T+0x18`/`+0x20` at activation, flags at `0x0052D1C9`, `LEVEL` caller, client `UnitInit` (x, y), one `-seed -2147483648` session). rng/0002 cites the record. From S4a (§ 2.6): a walled level whose bit-2 merges go through the remap rows 0–5, the row −2 return and the 8/9 edge (counted by `sweep_s4a.py roomk` on the batch's logs), and a `RoomNeighboursEnsure` line at `0x0066C370` (room, warp bits, each `WarpPairLink` call and outcome) | `findings/drlg/experiments.md` | ~10 |
+| **H5d** (done) | `collision` | 17 | 6/0/11 | collision 1, 5, 8–9, 11, 19, 21, 24, 30, 36, 45–46; spawn 41 (from S3b) | `collision.gdb` + `collision.py`: tombs (228), Act III (334), Act V (298, 528, baaltaunt), a non-town `Position` level, `spawnCol` 1, ground items, an entry-flag `0x80` cell. From the H4b review (piece; the row stays counted as H4b): the tomb (228) and `suckernest1` (334) sessions also decide spawn 42's remainder, by `monspawn.py check` on the presets-window `SpawnClassCellTest` (`MC`) lines. From S3b (§ 2.6): a `sarcophagus` (228, size 1) and a `baaltaunt` (545, size 0) creation with their `MK0` lines (spawn 41) | `findings/drlg/experiments.md` | ~8 |
 | **H5e** (done) | `drlg-mazes` | 22 | 16/0/6 | maze 6, 10–12; outdoor 7, 11, 13–14, 20; preset 2, 12–14 | `drlg-outdoor.gdb` (with the maze lines) + `drlg-preset.py`, `maze_replay.py`, `outdoor_replay.py`, `drlg.py gen`: unreached maze levels from waypoint saves, outdoor rare branches on chosen seeds, the Blood Moor centre monster | `findings/drlg/experiments.md` | 16–17 |
-| **H6a** | `cube` | 29 | 0/18/11 | cube 1, 7, 15–16, 17 (from S2c), 25, 32, 36, 38–40, 43–44, 51 (from S2c), 53–54, 58 (from S2c) | `cube.gdb` + `cube.py`; new `.plan` files (upgrades, eth/strip rows, ethereal or socketed inputs, repair, recharge, `qty`, Staff of Kings, Khalim's Will, unsocket, the cow portal outside level 1 and in classic; from S2c: an elite upgrade with an exceptional-tier and a normal-tier base, more row-19 transmutes, row 17 on a magic tower shield, which also decides affixes 14's remainder); a UnitSetEvent line. From the S2c review (piece; cube 49 stays counted as S2c): a crafting session at output ilvl ≤ 5 with `sst` (rows 72, 90), `lbt` (83) or `lgl` (84) on a tool-built low-level save, for the crafted pick of 0; case (b) faults the game, so it is the session's last transmute | `findings/items/experiments.md` | ≤ 20 |
-| **H6b** | `sockets` | 25 | 0/20/5 | sockets 1, 9–10, 12–13, 16–18, 21, 29, 35 ×2 (from S2c), 38 | `sockets.gdb` + `sockets.py`; child x/y and cursor lines; sock-refuse and sock-rw plans; a save holding a runeword (the *Steel* sample) loaded under the logger (sockets 35; with it the reader's `+0x38` store of sockets 46). From the S2c review (piece; sockets 14 stays counted as S2c): an unidentified socketed parent's client flags before and after identifying it, with an insert tried each time | `findings/items/experiments.md` | ≤ 20 |
+| **H6a** (done) | `cube` | 29 (2 reclassified, § 2.6) | 0/18/11 | cube 1, 7, 15–16, 17 (from S2c), 25, 32, 36, 38–40, 43–44, 51 (from S2c), 53–54, 58 (from S2c) | `cube.gdb` + `cube.py`; new `.plan` files (upgrades, eth/strip rows, ethereal or socketed inputs, repair, recharge, `qty`, Staff of Kings, Khalim's Will, unsocket, the cow portal outside level 1 and in classic; from S2c: an elite upgrade with an exceptional-tier and a normal-tier base, more row-19 transmutes, row 17 on a magic tower shield, which also decides affixes 14's remainder); a UnitSetEvent line. From the S2c review (piece; cube 49 stays counted as S2c): a crafting session at output ilvl ≤ 5 with `sst` (rows 72, 90), `lbt` (83) or `lgl` (84) on a tool-built low-level save, for the crafted pick of 0; case (b) faults the game, so it is the session's last transmute | `findings/items/experiments.md` | ≤ 20 |
+| **H6b** (done) | `sockets` | 25 (4 reclassified, § 2.6) | 0/20/5 | sockets 1, 9–10, 12–13, 16–18, 21, 29, 35 ×2 (from S2c), 38 | `sockets.gdb` + `sockets.py`; child x/y and cursor lines; sock-refuse and sock-rw plans; a save holding a runeword (the *Steel* sample) loaded under the logger (sockets 35; with it the reader's `+0x38` store of sockets 46). From the S2c review (piece; sockets 14 stays counted as S2c): an unidentified socketed parent's client flags before and after identifying it, with an insert tried each time | `findings/items/experiments.md` | ≤ 20 |
 | **H6c** | `vendors` | 13 | 0/11/2 | vendors 2, 5, 12, 14–15, 18, 29–30, 32–34, 36 | `vendors.gdb` + `vendors.py`; reopen store or gamble, Asheara's hire list first, walk out of town, level-up between opens, buy and sell; saves at clvl ≤ 9, ≥ 96, 99 in Hell. From the S2c review (pieces; vendors 22 and 26 stay counted as S2c): the stock item's store tab and grid cell, and `+0x18`/`+0x28` of the store creation record at `IC0` | `findings/items/experiments.md` | ≤ 20 |
 | **H6d** (done) | `quest-b6` | 16 (17 filed; uniques-sets 21 to H1a, § 2.6) | 10/5/2 | quest-drops 11, 13, 16, 18, 22, 25, 27; tc 26–27; uniques-sets 21 | `quests.gdb` + tc-drops, `tc.py` b6_model, `questdrops.py`: Andariel or Duriel killed by a mercenary or summon, Diablo and Baal, Warriv's report, questfresh in Nightmare, Hell and classic, the forge with a stat-356-1 hammer, the unique restore path | `findings/items/experiments.md` | ≤ 20 |
-| **H6e1** | `quest-npc` | 22 | 0/20/2 | quest-drops 2, 4–5, 32, 39–40, 42–46, 50–51 | `quests.gdb` + `d2pilot.py npc`: given items and service branches and refusals. From the S2c review (piece; quest-drops 38 stays counted as S2c): a cursor-item line at `sub_0055EEA0_CursorItemConsume` in each service branch | `findings/items/experiments.md` | ≤ 20 |
-| **H6e2** | `quest-items` | 24 | 0/23/1 | quest-drops 1, 30, 33–35; objects 48 | `quests.gdb` with `objop`/`hunt` on tool-built quest saves: the 16 quest items, chests, duplicates, the item-move gate; the quest objects ride the same sessions; a backtrace at `QUESTS_ObjectEvent` (quest-drops 1). objects/0001 cites the record | `findings/items/experiments.md` | ~20, at the cap |
+| **H6e1** (done) | `quest-npc` | 22 | 0/20/2 | quest-drops 2, 4–5, 32, 39–40, 42–46, 50–51 | `quests.gdb` + `d2pilot.py npc`: given items and service branches and refusals. From the S2c review (piece; quest-drops 38 stays counted as S2c): a cursor-item line at `sub_0055EEA0_CursorItemConsume` in each service branch | `findings/items/experiments.md` | ≤ 20 |
+| **H6e2** (done) | `quest-items` | 24 | 0/23/1 | quest-drops 1, 30, 33–35; objects 48 | `quests.gdb` with `objop`/`hunt` on tool-built quest saves: the 16 quest items, chests, duplicates, the item-move gate; the quest objects ride the same sessions; a backtrace at `QUESTS_ObjectEvent` (quest-drops 1). objects/0001 cites the record | `findings/items/experiments.md` | ~20, at the cap |
 | **H6f** | `hirelings` | 23 | 0/17/6 | hirelings 1–2, 5–6, 9–10, 14–18, 20–21, 23, 25, 27–29, 31, 35–37 | `hirelings.gdb` + `hireling_sessions.py`: Asheara's trade first, Greiz, classic lists, the free mercenary, the level floor, quest, level and gold gates, stash payment, `MERC_AddExp`, `merc_saves.py` saves, resurrection | `findings/hirelings/experiments.md` | ≤ 20 |
 | **H6g** | `player` | 17 | 0/8/9 | player/creation 2–4, 12, 16 (from S3b), 18, 22–23, 25, 27–30, 32–33, 35 | `player.gdb` + `player_sessions.py`: death loss, a stat point, two skill points on one skill and one skill to its maximum (16, § 2.6), stat 85, the level-99 cap and a level-98 save, the capped grant (trigger read statically first), client `+0x3D4`, the belt column, the monster's experience at the kill | `findings/player/experiments.md` | ≤ 20 |
-| **H7a** | `lifecycle` | 0 inventory rows (plan 0040 P2 shortfalls, `lane/rbs4` review) | — | none: drlg/lifecycle open questions, the town-follow case and the `0x400` drop ([drlg/0009 § 11.2](../../findings/drlg/0009-room-lifecycle.md#112-the-town-follow-static-remainder-lanerbs4), § 11) | `rooms.gdb` + `rooms.py check`, `rooms_sessions.py` (run:2026-10-17-lifecycle's family). (1) Town-follow, recipe (b): a chaser in the Blood Moor whose planned route to the player crosses a Rogue Encampment room; then the player leaves until the camp's rooms release, and the save rule's `SaveMonsters` 0 half is checked. Its map seed and points come from an offline geometry check made before a slot is taken (reverser entry [rbs4 review static remainders](../../backlog/archive/2026-10-17-architect-reverser-rbs4-review-static-remainders.md) (1)); if no stock layout allows the route, (b) is a recorded shortfall. Recipe (c), a teleporting unique chasing a player inside the camp, only if that entry's (2) shows an AI teleport target can lie in a town room. (2) The `0x400` drop: re-enter an `h-highlands` room holding a class 522 record with flags `0x540`. | `findings/drlg/experiments.md` | ~4 (estimate) |
+| **H7a** (done) | `lifecycle` | 0 inventory rows (plan 0040 P2 shortfalls, `lane/rbs4` review) | — | none: drlg/lifecycle open questions, the town-follow case and the `0x400` drop ([drlg/0009 § 11.2](../../findings/drlg/0009-room-lifecycle.md#112-the-town-follow-static-remainder-lanerbs4), § 11) | `rooms.gdb` + `rooms.py check`, `rooms_sessions.py` (run:2026-10-17-lifecycle's family). (1) Town-follow, recipe (b): a chaser in the Blood Moor whose planned route to the player crosses a Rogue Encampment room; then the player leaves until the camp's rooms release, and the save rule's `SaveMonsters` 0 half is checked. Its map seed and points come from an offline geometry check made before a slot is taken (reverser entry [rbs4 review static remainders](../../backlog/archive/2026-10-17-architect-reverser-rbs4-review-static-remainders.md) (1)); if no stock layout allows the route, (b) is a recorded shortfall. Recipe (c), a teleporting unique chasing a player inside the camp, only if that entry's (2) shows an AI teleport target can lie in a town room. (2) The `0x400` drop: re-enter an `h-highlands` room holding a class 522 record with flags `0x540`. | `findings/drlg/experiments.md` | ~4 (estimate) |
 
 **Logger-family conflicts.** Two batches may run at once only when they share no recipe save, logger file or checker
 under edit. Inside one family the batches run one after the other:
-- H1a and H1b;
+- H1a, H1b and H1c;
 - H2a, H2b and H2c;
 - H4a and H4b;
 - H5a, H5c, H5d and H5e (H5c edits `collision.gdb`, which H5d uses);

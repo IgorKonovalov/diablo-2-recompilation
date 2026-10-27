@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview]
 consumed_by: [rng/seeds, drlg/preset, drlg/outdoor, drlg/collision, monsters/spawn, objects, chain]
-tags: {C: 121, I: 34, L: 0}
-updated: 2026-10-21
+tags: {C: 122, I: 35, L: 0}
+updated: 2026-10-27
 ---
 
 # Room tile build: DT1 list, tile choice by rarity, and the k room-seed draws
@@ -718,7 +718,7 @@ Step notes:
    rewritten by a merge. [C] (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, fn:sub_0066DDE0_TileEntryInit@0x0066DDE0,
    fn:sub_0066DF40_RoomShadowAdd@0x0066DF40, run:2026-10-14-collision, run:2026-10-13-mon-spawn,
    run:2026-10-14-mon-special, run:2026-10-15-mon-stats, run:2026-10-15-objects)
-   Two bits are not the build's and are not part of 9d: `0x20000` and `0x40000`, which neighbours' entries
+   These bits are not the build's and are not part of 9d: `0x20000` and `0x40000`, which neighbours' entries
    carry at a later room's dump but never at their own room's, and the `0x8` of an animation frame, which the
    running animation toggles to show one frame. For `0x20000` the writers are five client sites beside the wall
    cut-away, none in the build. [C] (fn:sub_004DD060_WallCutawayTest@0x004DD060, run:2026-10-14-collision,
@@ -728,6 +728,17 @@ Step notes:
    collision stamp, so neither changes k or the grid. [I] (fn:sub_00457CF0_AutomapTileAdd@0x00457CF0,
    fn:sub_00458F40_AutomapRoomTilesAdd@0x00458F40, fn:COLL_StampTileList@0x0064C790,
    [drlg/0002 § Plan 0039 batch P1a](../../findings/drlg/0002-room-build-draws.md#plan-0039-batch-p1a-2026-10-16))
+   `0x400` is not the build's either: it is the client wall fade's "faded out" mark. The fade moves an entry's
+   alpha byte (`+0x28`) over 500 ms, sets `0x400` when the alpha reaches 0 and clears it otherwise, and its draw skips
+   an entry with `0x400` or `0x8`. Its only immediate writers are the two `or`/`and` pairs of that client code, none
+   in the build; a computed store of the whole word is not excluded. [I] (0x004DF05A, 0x004DF2A8, 0x004DF086,
+   fn:sub_004DD060_WallCutawayTest@0x004DD060,
+   [drlg/0002 § Lane rbd](../../findings/drlg/0002-room-build-draws.md#lane-rbd-entry-bit-0x400-on-a-neighbours-walls-2026-10-27))
+   In the council log the bit is on 33 entries, all wall entries of one near room in the dumps of other rooms
+   (151 dumps, none on a room's own dump), so the checker treats it like `0x20000` and `0x40000` on a near room and
+   keeps comparing it on a room's own dump. This holds for that log alone, not for every log. [C]
+   (run:2026-10-21-sweep-monsters-a,
+   [drlg/0002 § Lane rbd](../../findings/drlg/0002-room-build-draws.md#lane-rbd-entry-bit-0x400-on-a-neighbours-walls-2026-10-27))
    No writer of the animation `0x8` was found. [I]
    (fn:sub_0066D440_AnimTilesBuild@0x0066D440, run:2026-10-14-collision, run:2026-10-15-objects)
    Not reached: a merge into or out of orientation 3 (the `0xC008` and the `0x8` on E's next entry; unreachable

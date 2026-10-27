@@ -134,7 +134,7 @@ handlers test. A row is `[C]` only for what a game-written save shows; the bit m
 | `0x0065C360` | `QUESTRECORD_SetState` | sets bit `16q + s` | I |
 | `0x0065C3A0` | `QUESTRECORD_ClearState` | clears bit `16q + s` | I |
 | `0x0065C430` | `QUESTRECORD_Alloc` | 96 zero bytes behind a bit-buffer header (`.\QuestRecord\QuestRecord.cpp`) | I |
-| `0x0065C4D0` | `QUESTRECORD_LoadBytes` | 96 bytes in; with the flag, per word 0–41: clear bits 13, 14; bit 1 → set bit 15 | I |
+| `0x0065C4D0` | `QUESTRECORD_LoadBytes` | 96 bytes in; with the flag, per word 0–41: clear bits 13, 14; bit 1 → set bit 15 | C (rule 14: `RQW` against the model over 126 words, [save/0001 § Plan 0038 batch H1a](0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load); `lane/h1a` review) |
 | `0x0065C560` | `QUESTRECORD_SaveBytes` | 96 bytes out, as they are | I |
 | `0x00660E00` | `WAYPOINT_IndexFromLevel` | `levels.txt` `Waypoint` (`+0xE4`) of a level; 255 = none | I |
 | `0x00660E50` | `WAYPOINT_IsSet` | `(rec, n)` → word `g_WaypointBits[n]`, mask | I |
@@ -175,8 +175,16 @@ act 1: 8–14, 30, 31; act 2: 16–22, 32; act 3: 24–27, 33; act 4: 35–40. W
   `i = 14, 30, …, 670` (`cmp esi, 0x2AE`, 42 iterations): clear bits `i − 1` and `i`, and if bit `i − 13` is set, set
   bit `i + 1`. Per word *k* = 0–41: clear bits 13 and 14, set bit 15 if bit 1 is set. Bytes `0x54`–`0x5F` (words
   42–47) are only copied. (0x0065C50E–0x0065C54D)
+  *Raised to `[C]` by plan 0038 H1a (save-d2s row 62):* `RQW` after `D2S_ReadQuests` equals this model with flag 1
+  for all 126 words of the `fields` case, including a word with bits 13–14 set and bit 1 clear (cleared) and words
+  42–47 unchanged. (fn:QUESTRECORD_LoadBytes@0x0065C4D0, run:2026-10-27-sweep-d2s-load)
 - [I] `D2S_ReadQuests` and `D2S_WriteQuests` move the three records at player data `+0x10`, `+0x14`, `+0x18` in that
   order, so block *d* is the record at `+0x10 + 4d`. (fn:D2S_ReadQuests@0x0056A370, fn:D2S_WriteQuests@0x00569320)
+- [I] *Plan 0038 lane/rlg:* a save of version 71..91 loads its quest blocks the same way: `sub_00532BE0_ReadQuestsLegacy`
+  tests `Woo!` and the u32 6, and calls `QUESTRECORD_LoadBytes(record, block, 0x60, 1)` for player data `+0x10`,
+  `+0x14`, `+0x18` from section offset `+0x0A` (0x00532C40–0x00532C56); its waypoints go through `WAYPOINT_Load` as
+  in the current reader ([save/0001 § Plan 0038 lane/rlg](0001-d2s-io.md#plan-0038-lanerlg-the-legacy-and-version-92-readers-static-2026-10-27)).
+  (fn:sub_00532BE0_ReadQuestsLegacy@0x00532BE0, fn:sub_00532C70_ReadWaypointsLegacy@0x00532C70)
 - [I] Every gameplay access found takes `+0x10 + 4·game[+0x6D]`: `movzx ecx, byte [ebx+0x6D]` at 0x005467F3 and
   0x00546AE0, `byte [edi+0x6D]` at 0x0058478A, and the join pass in `sub_00546270_QuestsPlayerJoin`.
 

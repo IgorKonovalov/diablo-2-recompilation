@@ -24,6 +24,8 @@ community text had been read when it was written.
   with `p4..p7` = 0, 0, 0, 0, which the code pushes), the golem reader and the item copier call it too, for each
   socketed child they rebuild, with `p4`, `p6` and `p7` clear; the other reader sites, the copier and the golem
   reader set `p5` (§ 1 caller table, `[I]`, not run). It refuses, in this order:
+  *2026-10-27, plan 0038 batch H6b:* the copier now ran (Anya's personalize: `p` = 0, 1, 0, 0 at 0x0055A41C, the copy
+  itself as the player argument); the golem reader and the other reader sites still did not, [§ Plan 0038 batch H6b](#plan-0038-batch-h6b-run2026-10-27-sweep-sockets).
   - a child that is not an item, or is not **on the cursor** (mode 4);
   - a parent that is not an item or is not identified;
   - (packet path) a parent that is not stored or equipped (mode 0 or 1);
@@ -47,6 +49,8 @@ community text had been read when it was written.
   (run:2026-10-15-sockets)
 - [I] **No level-requirement test.** Every rune of the run (up to Zod, level 69) was below the character's level 80, so
   the run does not show it; the code has no such test (§ 1, fn:ITEMS_InsertSocket@0x00562660).
+  *2026-10-27, plan 0038 batch H6b:* **raised**: a level-1 character inserted 24 runes up to `levelreq` 65, each
+  accepted by the client and the server, [§ Plan 0038 batch H6b](#plan-0038-batch-h6b-run2026-10-27-sweep-sockets).
 - [C] **The client tests first and sends `0x28` only when its own test passes** (`sub_004843E0_UiCanInsertSocket`,
   `.\UI\inv.cpp`). Its order: the UI state word `0x007BCBF0` not 10 or 11, cursor item a socket filler, target socketed
   (flag bit 11), base `hasinv`, `ItemMaxSockets` ≠ 0, target identified, target flag bit 8 clear, target inventory
@@ -59,12 +63,16 @@ community text had been read when it was written.
   showed the client flags `0x00804001`, without bit 11, so the client refused it as not socketed and sent a swap
   instead of `0x28`. The client unit apparently lacks the socketed flag until the item is identified; one case.
   (run:2026-10-15-sockets, session `refuse`)
+  *2026-10-27, plan 0038 batch H6b:* met: the same insert, tried before and after a Scroll of Identify, failed at the
+  socketed test (client flags `0x00800000`, stat 194 0) and then passed (`0x00800811`, stat 194 2), [§ Plan 0038 batch H6b](#plan-0038-batch-h6b-run2026-10-27-sweep-sockets).
 - [C] **The child joins the parent's inventory at the tail** (fn:sub_0063B210_InvPlaceSocketed@0x0063B210). Its mode
   becomes 6. The socket order is therefore insertion order: `INV_GetFirstItem` → `INV_GetNextItem` walks the children
   in that order. Corroboration: the parent's child list after each of the 350 inserts was its list before plus the
   child at the tail, and the child's mode was 6.
 - [I] **Its x is the filled count before the insert and its y is 0** (§ 1, the child's place). Not logged by the run. (fn:sub_0063AF20_InvAppendItem@0x0063AF20,
   0x005627FC, run:2026-10-15-sockets)
+  *2026-10-27, plan 0038 batch H6b:* **raised**: logged at the setter calls in all 35 inserts (x > 0 in 20; y 0, body
+  location −1), [§ Plan 0038 batch H6b](#plan-0038-batch-h6b-run2026-10-27-sweep-sockets).
 - [C] **Gems and runes write into their own stat list, which is linked to the parent.** `ITEMS_AttachToOwner` looks up
   the child's `gems` row (base `+0x0F0`). It applies the row's 3-block group chosen by the **parent's**
   `gemapplytype`: 0 → `weaponMod`, 1 → `helmMod`, 2 → `shieldMod`. The child is the item and the target, in mode 2
@@ -117,7 +125,9 @@ community text had been read when it was written.
   (an input, ADR-0004), 50 draws among them (ranged lines of *Splendor*, *Sanctuary*, *Gloom*, *Enigma*, *Stone*,
   *Bramble*'s aura, *Call to Arms*'s `oskill`, *Famine*, *Duress*, *Bone*, …, and every func 19 charge), with the
   game seed and the parent's item and unit seeds unchanged. The run reached funcs 1, 2, 3, 5, 6, 7, 8, 10, 11, 15, 16,
-  17, 19, 21, 22 and 23, not 20 or 24; the per-func counts and tags are in § 5. (fn:PROP_RollValue@0x0065E9E0,
+  17, 19, 21, 22 and 23, not 20 or 24; the per-func counts and tags are in § 5.
+  *2026-10-27, plan 0038 batch H6b:* func 20 is now reached (*Eternity*), and func 17's `par`-0 branch with min = max
+  (*Leaf*); func 24 and the ranged `par`-0 roll are reached only by `server` rows, [§ Plan 0038 batch H6b](#plan-0038-batch-h6b-run2026-10-27-sweep-sockets). (fn:PROP_RollValue@0x0065E9E0,
   fn:PROP_Func19_Charged@0x0065F6A0, fn:ITEMS_GetSeed@0x00627D90, run:2026-10-15-sockets)
 - [C] **That seed, for a rune loaded from a save, is `{startSeed, 666}`** at the insert: 49 of the 50 completing runes
   were loaded, and each one's item seed equalled its own start seed with high word 666. A rune made in the session
@@ -258,6 +268,7 @@ required Phase 2 case (backlog 2026-10-15 reverser → architect, plan 0029 Phas
 | `0x005490E0` | `sub_005490E0_PktIsCursorItem` | the child is the player's cursor item (mode 4) | I |
 | `0x005491B0` | `sub_005491B0_PktIsOwnStoredItem` | a mode-0/1 parent belongs to the player's inventory | I |
 | `0x004843E0` | `sub_004843E0_UiCanInsertSocket` | client: may the cursor item go into the target (`.\UI\inv.cpp`); sends `0x28` only when it passes | C |
+| `0x00629900` | `sub_00629900_ItemBaseHasInv` | base `hasinv` (`+0x137`); its value at the client test equals the table's in 39 calls (H6b) | C |
 | `0x00562660` | `ITEMS_InsertSocket` | the server insert (§ 1) | C |
 | `0x0055C2C0` | `ITEMS_AttachToOwner` | gem/rune mods, set bonus, stat-list link of a child to its owner (§ 3) | C |
 | `0x004C0D20` | `sub_004C0D20_ClientSocketAttach` | the client's copy of the gem/rune transfer (fatal instead of silent on a bad row) | I |
@@ -266,7 +277,7 @@ required Phase 2 case (backlog 2026-10-15 reverser → architect, plan 0029 Phas
 | `0x0062BED0` | `RUNEWORD_Match` | the `Runes` row a parent makes, or NULL (§ 4) | C |
 | `0x006600A0` | `RUNEWORD_Apply` | flag bit 26 and the state-171 list (§ 5) | C |
 | `0x0055FE80` | `sub_0055FE80_ItemRefillCharges` | every stat 204 entry with current < max gets max | C |
-| `0x00558530` | `sub_00558530_ItemReplenishDurTimer` | schedules the stat 252 (`item_replenish_durability`) event | I |
+| `0x00558530` | `sub_00558530_ItemReplenishDurTimer` | schedules the stat 252 (`item_replenish_durability`) event at the frame + 2500 / v + 1 (H6b; the truncation is the `idiv` at 0x00558561, read: the logged case divides exactly) | C |
 | `0x00558580` | `sub_00558580_ItemReplenishQtyTimer` | the same for stat 253 | I |
 | `0x00563470` | `sub_00563470_ItemDiscardInvalid` | removes a loaded item flagged runeword that no longer matches | I |
 | `0x00627910` | `sub_00627910_StatListLinkOwner` | attaches a child's stat list (`Unit+0x5C`) to an owner | I |
@@ -313,6 +324,10 @@ Fastcall-plus-stack: ECX = game, EDX = the player (or NULL), stack `(childId, pa
   0x00531567–0x0053156D, 0x0055A3F9–0x0055A3FF, 0x0056AE00–0x0056AE06. None ran in the run. `0x00563350`'s call
   pushes `push 0` (`p7`), `push 1` (`p6`), `push 0` (`p5`) and `p4` from its own third stack argument
   (`[ebp+0x10]`, 0x00563424–0x00563430). The packet handler pushes four `push 1` (0x0054B6C2–0x0054B6C8).
+  *2026-10-27, plan 0038 batch H6b:* the copier's call 0x0055A41C logged `p` = 0, 1, 0, 0 (2 inserts); the other
+  readers, the golem reader and 0x00563441 did not run. Which reader runs: the corpse reader `0x00533850` passes 1 as
+  the fourth argument (0x0053397D), so corpse items take `0x00531520`; `0x00533350` is the version-71 list reader
+  (`sub_005337F0_ItemListReadByVersion`, 0x005337F6), [§ Plan 0038 batch H6b](#plan-0038-batch-h6b-run2026-10-27-sweep-sockets).
 - [I] **Which inventory reader runs.** `ITEMS_ReadInventoryList` reads each socketed child through `0x00531520`
   when its fourth stack argument (`[ebp+0x14]`) is non-zero and through `0x00531210` when it is zero (0x00533688,
   0x0053374A, both child loops). The character load of the run took the zero branch. What that argument means and
@@ -395,6 +410,9 @@ not_found: *notFound = 1; return 0;
 - [I] `p4` = 1: the parent's update (flag bit 0 set, bit 14 cleared, the player's update queue) happens even when no
   runeword was made. With `p4` = 0 (the readers) it happens only for a runeword. (0x0056284F–0x0056289E)
 - [I] `p5` = 1 with a player: the player's cursor slot is cleared (`0x0063C180(inv, NULL)`). (0x005627CB–0x005627DE)
+  *2026-10-27, plan 0038 batch H6b:* the slot was already empty at this test in all 35 logged inserts (packet, reader
+  and copier): `InvPlaceSocketed` removes the child from the cursor first (0x0063B26E). The clear has no observable
+  effect there; `p4`, `p6` and `p7` are now each separated by a logged case, [§ Plan 0038 batch H6b](#plan-0038-batch-h6b-run2026-10-27-sweep-sockets).
 - [I] `p6` = 1: the parent must be stored or equipped. (0x00562715–0x00562725)
 - [I] `p7` = 1: a new runeword's charged skills are refilled (§ 5). (0x0056283A–0x00562848)
 
@@ -458,6 +476,9 @@ if (!ITEMS_CheckFlags(child, 0x100) || flag) sub_00627910_StatListLinkOwner(owne
   belongs to the owner, only its enable bit `0x40000000` is toggled. The parent's own lists are never written by a
   gem, rune or jewel insert. Flag `0x100` on the child (meaning not settled) suppresses the link when `flag` is 0,
   which it is on the socket path. (fn:ITEMS_AttachToOwner@0x0055C2C0)
+  *2026-10-27, plan 0038 batch H6b:* the link branch (0x00627984) was taken in all 35 inserts, the child's list
+  owned by nobody before, stored, equipped and cursor parents alike; no stock socket filler has durability, so none
+  can be broken, [§ Plan 0038 batch H6b](#plan-0038-batch-h6b-run2026-10-27-sweep-sockets).
 - [I] **Jewels** take the last branch. Their quality is 4 or 6, never 5, so nothing is applied, and their own list,
   rolled at creation (items/0005), is linked as above. (fn:ITEMS_AttachToOwner@0x0055C2C0)
 - [I] **The client** runs the same transfer in `sub_004C0D20_ClientSocketAttach` with the same modes and arguments.
@@ -538,6 +559,13 @@ return 1;
 - [I] **Already applied.** When the parent already holds a state-171 list, nothing is applied and no flag is set.
   This is the save-load case: the reader rebuilds the parent with its saved lists before it re-inserts the children
   (save/0001 § 6–7), so a loaded runeword is not rolled again. (0x006600BC–0x006600CB)
+  *2026-10-27, plan 0038 batch H6b:* **raised**: the *Steel* sample's reader re-insert matched row 18, and `Apply`
+  returned 0 with no slot applied and the 171 list unchanged, [§ Plan 0038 batch H6b](#plan-0038-batch-h6b-run2026-10-27-sweep-sockets).
+  *`lane/h6b` review:* the pushed `0x40` is not a test. `sub_00625790_UnitFindStatList` goes to `0x00625650` when its
+  state argument is non-zero (0x006257AC–0x006257B5), and that walk compares the state (`+0x14`) of each list on the
+  parent's two chains (`+0x3C`, `+0x40`) and nothing else (0x00625680, 0x00625697); a parent whose own list lacks bit
+  `0x80000000` returns 0 first (0x006257A3). So any state-171 list stops the runeword. `[I]` (read): the run's only
+  171 list had flags `0x40`, so it cannot separate the two readings.
 - [C] **Target and item.** `PROP_ApplyBlock`'s 2nd argument (EDX for the handlers) is the parent, and its 3rd (the
   handlers' item) is the child. `PROP_WriteStat` writes into `sub_0065CBF0_PropTargetList(parent, 171, 0x40)`, a
   list it creates on the parent the first time and attaches with state 171. Every roll and every item test uses the
@@ -569,6 +597,7 @@ return 1;
     uses, so `prev` is 0 there and the branch is not reachable on stock data (data check); the run's 50 func 8 slots
     all had `prev` 0 (fn:PROP_Func08_Reuse@0x0065F2B0, tbl:Properties.txt:func1, run:2026-10-15-sockets);
   - [I] func 24 (`v ← prev or Roll`): one stock row uses it; the run did not reach it (fn:PROP_Func24_ParParam@0x0065F390);
+    *2026-10-27, H6b:* that row, *Faith*, has `server` 1: never made in single player, [§ Plan 0038 batch H6b](#plan-0038-batch-h6b-run2026-10-27-sweep-sockets);
   - [C] func 2 (`ac%`): one `Roll`; the base reset tests the rune, which is not armour, so the parent's defense is not
     reset to `maxac + 1` (`sub_0065CCC0_PropBaseReset` uses ESI = the child) (fn:PROP_Func02_RollAcPercent@0x0065EBA0,
     fn:sub_0065CCC0_PropBaseReset@0x0065CCC0, run:2026-10-15-sockets);
@@ -582,6 +611,8 @@ return 1;
     with `par` 0 on a ranged line: four stock rows have such a line (*Harmony*, *Fortitude*, *Lawbringer*,
     *Winter*; data check), none was made in the run (fn:PROP_Func15_Min@0x0065F960, fn:PROP_Func16_Max@0x0065F9D0,
     fn:PROP_Func17_Par@0x0065FA40, run:2026-10-15-sockets);
+    *2026-10-27, H6b:* all four have `server` 1; *Leaf*'s `ac/lvl` (`par` 0, min = max) took the `par`-0 branch
+    without a draw, [§ Plan 0038 batch H6b](#plan-0038-batch-h6b-run2026-10-27-sweep-sockets);
   - [C] func 11 (`hit-skill`, `gethit-skill`, …): no draw; the skill level is `max`. [I] Every stock runeword line has
     `max` > 0, so the ilvl branch (which would read the **rune's** ilvl) is not reached (data check)
     (fn:PROP_Func11_SkillOnEvent@0x0065F470, run:2026-10-15-sockets);
@@ -589,6 +620,8 @@ return 1;
     (fn:PROP_Func19_Charged@0x0065F6A0, run:2026-10-15-sockets);
   - [I] func 20 (`indestruct`): adds stat 152 to the parent's 171 list, no draw; three stock rows use it, the run
     reached none (fn:PROP_Func20_Indestructible@0x0065FAE0);
+    *2026-10-27, H6b:* **raised**: *Eternity* (the one of the three rows with `server` 0) added stat 152, reproduced,
+    [§ Plan 0038 batch H6b](#plan-0038-batch-h6b-run2026-10-27-sweep-sockets);
   - [C] func 23 (`ethereal`): tests `ITEMS_IsEthereal(child)` and `ItemHasDurability(child)`, so it never makes the
     parent ethereal. *Famine* (`Runeword39`) is the stock row with this line. (fn:PROP_Func23_Ethereal@0x0065FD20,
     run:2026-10-15-sockets)
@@ -635,10 +668,15 @@ return 1;
   and, where the current charges (low byte) are below the maximum (`>> 8`), sets them to the maximum
   (`0x0065C940`), with a client update. So a runeword made by a player always shows full charges, while the func 19
   draw has still stepped the child's seed. Readers (`p7` = 0) do not refill. (fn:sub_0055FE80_ItemRefillCharges@0x0055FE80)
+  *2026-10-27, plan 0038 batch H6b:* the timers run after `Apply` exactly when the gate passes (4 inserts, the *Steel*
+  re-insert among them), read the parent's stat, and *Prudence*'s `rep-dur` 25 scheduled event type 3 at the frame +
+  trunc(2500 / 25) + 1; no runeword parent carries stat 253, [§ Plan 0038 batch H6b](#plan-0038-batch-h6b-run2026-10-27-sweep-sockets).
 - [I] **The name.** Nothing in the insert writes `ItemData+0x38`. The 16-bit runeword field the serialiser writes is
   `R->nameStr` (`+0x82`), the string index `RUNES_Load` sets with `STRTABLE_GetByKey(R->name)`. The reader stores it
   at `+0x38` (save/0001 § 7). A client receives the item through the same serialiser, so its `+0x38` is that string
   index. (0x00639C44–0x00639C7F, 0x00630887)
+  *2026-10-27, plan 0038 batch H6b:* the reader's store (0x0062D1EA) logged `0x509F` on the server's *Steel*, and the
+  client copies of four runewords held the Name index of their row, [§ Plan 0038 batch H6b](#plan-0038-batch-h6b-run2026-10-27-sweep-sockets).
 
 ```mermaid
 flowchart TD
@@ -871,6 +909,9 @@ run and the quest run. The second tool next to Ghidra is GNU objdump.
   (sock 6), and nothing in the insert writes `ItemData+0x38`: it stayed 0 on the 50 runewords made by inserts.
   (fn:ITEMS_WriteFull@0x0062FFF0, run:2026-10-11-d2s-samples, run:2026-10-15-sockets) **Remainder:** the reader's
   store at `+0x38` and the client copy (no runeword loaded under the logger).
+  *2026-10-27, `lane/h6b` review:* **raised.** Both remainder parts are met with compared lines in
+  run:2026-10-27-sweep-sockets: the reader's store `0x509F` at 0x0062D1EA and the Name index in six client copies
+  (`sweep_h6b.py`, "reader runeword store"), [§ Plan 0038 batch H6b](#plan-0038-batch-h6b-run2026-10-27-sweep-sockets).
 - **sock 47** (L565) **raised in part.** [C] The game-written *Steel* save holds `n_filled` 2 and its two children
   follow it, and the load session re-inserted each parent's saved children through the reader.
   (fn:ITEMS_CountFilledSockets@0x0062A900, run:2026-10-11-d2s-samples, run:2026-10-15-sockets) **Remainder:** the
@@ -879,6 +920,9 @@ run and the quest run. The second tool next to Ghidra is GNU objdump.
 **Tally:** 27 statements: 14 raised (3, 5, 8, 19, 20, 25, 27, 28 ×2, 32, 34, 36 L472, 41, 45), 9 raised in
 part (2, 4, 6, 14, 26, 43, 44, 46, 47; 14 split at the S2c review, filed as raised), 4 reclassified (35 ×2 → b H6b, 36 L442 → d-none, 42 → a-run H2b). Correction:
 sock 25's count is 422.
+*2026-10-27, `lane/h6b` review:* sock 46 is now raised, so the tally is 15 raised and 8 raised in part. sock 14's piece is
+met, but its remainder (every unidentified socketed item; what sends the flag at identification) is still `[I]`, so
+it stays raised in part (fn:sub_004843E0_UiCanInsertSocket@0x004843E0, run:2026-10-27-sweep-sockets).
 
 ## Plan 0039 batch P1b (2026-10-17)
 
@@ -1010,6 +1054,211 @@ request exceeded the cap, so the clamp of the write is not; review scope); the q
 (fn:ITEMS_SetSockets@0x0062BCB0, run:2026-10-20-sweep-items-chain).
 
 **Tally:** 1 statement: 1 raised in part (sock 42); the S2c piece of sock 44 in part.
+
+## Plan 0038 batch H6b (run:2026-10-27-sweep-sockets)
+
+Harness batch H6b (`sockets`) of [plan 0038](../../plans/0038-inferred-claims-sweep.md) takes 25 inferred statements
+of [items/sockets-runewords](../../specs/items/sockets-runewords.md): rows 1, 9, 10, 12, 13, 16–18, 21, 29, 35 (from
+S2c) and 38 of [the inventory](../../plans/0038-inventory/items-sockets-runewords.md), and the S2c pieces of rows 14
+and 46. Spec lines are those of the inventory's commit `c3167c6`. Run record
+[run:2026-10-27-sweep-sockets](experiments.md#run2026-10-27-sweep-sockets): 5 kept sessions on slot 1 (10 launches),
+stock data, tool-built saves and the game-written *Steel* sample. Logger `tools/gdb/h6b.gdb` (`pilot.py`, `vendors.py`,
+`quests.py`, the unchanged plan 0029 `sockets.py`, and the new `h6b.py`). Checks over the 5 kept logs, all 0
+mismatches: `tools/sockets.py check` (`check-sockets.txt` `815bdd9b…`: **35 inserts and 37 client verdicts
+reproduced**, 3 runewords made, 1 loaded runeword re-inserted) and `tools/sweep_h6b.py logs` (`check-sweep_h6b.txt`
+`64d81481…`: **773 counted checks, 0 bad**); `tools/sweep_h6b.py static` (`check-static.txt` `589f34e3…`) holds the objdump
+call sites and the data checks cited below. Regression: `sockets.py check` with this batch's revision still
+reproduces run:2026-10-15-sockets (351 inserts, 357 client verdicts, 0 failed; `check-regress-sockets-run.txt`
+`7c94a139…`).
+
+### The new lines (`tools/gdb/h6b.py`, addresses read with objdump)
+
+- `XY`/`XYY`/`XYB`: the pushed arguments of the three calls in `sub_0063B210_InvPlaceSocketed` after the append:
+  `sub_00620470(child, inv+0x28)` at 0x0063B27F (the x), `sub_006204C0(child, 0)` at 0x0063B287 (the y),
+  `sub_00629ED0(child, −1)` at 0x0063B29B (the body location), with the inventory count at the first.
+- `CUR`/`CURX`: at the `p5` test 0x005627CB (`cmp [ebp+0x18], 0`) the option word, the player argument (`[ebp−4]`) and
+  its inventory's cursor slot (`+0x20`, the word `0x0063C180(inv, NULL)` clears); the same slot at 0x005627E3.
+- `SLO`/`SLB`: `sub_00627910_StatListLinkOwner(owner, child, flag)`'s arguments, the child's list (`+0x5C`) owner
+  (`+0x04`) and flags (`+0x10`), and the branch: 0x0062793E (a weapon-switch item), 0x00627950 (the list already
+  belongs to the owner: the enable-bit branch), 0x00627984 (the link, `0x00626E10`).
+- `RPE`/`RPV`/`RPS`: both replenish timers. Each is `v ← UnitGetStat(item, 252 or 253, 0)`; when `v` ≠ 0 and the item
+  has no event of type 3 yet (`0x005415A0`), `0x005417D0(game, item, 3, game+0xA8 + trunc(2500 / v) + 1, 0, 0)`
+  (0x00558530–0x0055857C, 0x00558580–0x005585CC).
+- `RDS`: `ITEMS_ReadFull`'s store `mov [ecx+0x38], ax` at 0x0062D1EA (the 16 bits read at 0x0062D1D5 when flag bit 26
+  is set).
+- `CPY`: `sub_0055A2A0_ItemCopy`'s entry (return, item, its two stack words, the item's children); `RCP` at
+  0x00563350.
+- `UIS`/`UIR`: the client test's steps, each value after the call or load its test reads (the UI word 0x004843F8,
+  `ITEMS_IsSocketFiller` 0x00484410, flag `0x800` 0x00484429, `sub_00629900_ItemBaseHasInv` 0x00484433,
+  `ItemMaxSockets` AL 0x0048443D, flag `0x10` 0x00484453, flag `0x100` 0x0048446C, the inventory `[esi+0x60]`
+  0x00484474, count and stat 194 0x0048448A) and its return site; `UIR` the target's runeword field.
+
+### Ledger
+
+- **sock 1** (L51, L283, L284, L288; 4). **L51, L283, L288 raised in part; L284 shortfall.** [C] **The item copier
+  rebuilds a socketed item through the insert with `p4..p7` = 0, 1, 0, 0.** Anya's personalize copied the cap
+  holding a gem and a rune: `ItemCopy` from 0x0057A533 (`NPC_MenuAction`) with its second stack word 1, then two
+  inserts from 0x0055A41C (return 0x0055A421) with `p` = 0, 1, 0, 0, the gem then the rune, each at x 0 and 1, and
+  each reproduced by `sockets.py`. The copier passes the **copy itself** as the insert's player argument (`EDX` =
+  the new parent unit, `CUR`), and the copy's mode is 4 (the cursor) at the insert, accepted because `p6` is 0.
+  (fn:sub_0055A2A0_ItemCopy@0x0055A2A0, 0x0055A3F9–0x0055A41C, fn:ITEMS_InsertSocket@0x00562660,
+  run:2026-10-27-sweep-sockets) **Remainder `[I]`:** the golem reader (0x0056AE18, a Necromancer's Iron Golem item
+  in a save) and the other inventory readers (0x005311B5 and 0x005313F0 in `0x00533350`, the version-71 list reader;
+  0x00531578, the corpse reader's branch: `sub_00533850_ReadCorpseLegacy` passes 1 as `ITEMS_ReadInventoryList`'s
+  fourth argument, 0x0053397D) did not run. L284 (0x00563441): its two callers, `sub_005670E0_TradeMoveItems`
+  (0x005671B5) and `0x00568770` (0x00568906, unfollowed), did not run; both copy with the second word 0 first
+  (0x00567147, 0x005687FB), then re-insert through `0x00563350`. A sale to Malah (client packet `0x33`) made no copy: the
+  cap left the inventory (the end screenshot) and no `ItemCopy` call was logged between the packet and the personalize,
+  so on this path `NPC_SellItem` takes the branch at 0x00579736 that skips its copy (0x00579747): the sale is not a
+  copier case `[I]`.
+  *`lane/h6b` review:* the two version-71 sites (0x005311B5, 0x005313F0) are reachable now: `lane/a72`'s builder writes
+  version-71 saves (`leg71*`, on `main` since `a30c7245` and merged into this lane before the run). The piece (a
+  `leg71` build holding a socketed item with a child, loaded under the `INS` lines) is routed to H1c; the row stays
+  counted here.
+- **sock 9** (L167; 1). **Shortfall.** The UI word was 0 or 14 at every logged test (45 `UIS` lines; and 0 or 14 in the
+  357 `UIC` lines of run:2026-10-15-sockets), never 10 or 11, so the refusal is not reached. The two immediate stores of
+  10 and 11 (0x004893F8, 0x004893AD) are in `0x00489360`, whose four callers (0x004B8D83–0x004B8EF0) sit in code
+  that tests UI panel 23 and sends packet `0x4F`; read as the player-trade window, `[I]`. Seven stores of the word take
+  a register (`check-static.txt` lists 31 stores). *`lane/h6b` review:* five of them store a constant: 0 (0x00487B3B, `xor ebx, ebx`
+  at 0x00487B37; 0x0048A6A9, `xor esi, esi` at 0x0048A6A1), 6 (0x00487CB0, 0x00487CA0), 1 (0x00488430, 0x00488409;
+  0x0049216B, 0x00492134). The other two copy a word of the 20-byte slot table at 0x007BC9E4 (0x00488C2F from
+  `[esi]`, 0x00488FD5 from `[esi+0x7BC9EA]`), unfollowed. **Moved to d-2c at the review**, `[I]` as above.
+- **sock 10** (L170, L171; 2). **Raised** (built states). [C] With bit 11 set by the builder on a base that never
+  gets it in stock play (`"forced_sockets"`, a test state; a tool-built save on stock tables, ADR-0013 § Neutral), the client stops at the
+  `hasinv` test for gloves (`lgl`: `ItemBaseHasInv` 0, return 0x00484496, the steps end there) and at the
+  `ItemMaxSockets` test for a ring (`rin`: `hasinv` 1, `ItemMaxSockets` 0); each failing step is the last step logged,
+  so the order separates them from the later tests both items also fail. `ItemBaseHasInv` equals the base's `hasinv`
+  in all 39 calls (one 0) and `ItemMaxSockets` equals `min(gemsockets, MaxSock by ilvl)` in all 38.
+  (fn:sub_004843E0_UiCanInsertSocket@0x004843E0, fn:sub_00629900_ItemBaseHasInv@0x00629900,
+  fn:sub_0062BC20_ItemMaxSockets@0x0062BC20, run:2026-10-27-sweep-sockets) The built state backs the code that reads
+  it, not how an item reaches it: no stock item has bit 11 on such a base.
+  *`lane/h6b` review:* the `[C]` is the client test's order and its refusal at each of the two steps on a target with bit 11.
+  No stock item reaches either refusal, and the spec says so. Nothing here is about how an item gets bit 11.
+- **sock 12** (L173, L174; 2). **L173 raised; L174 shortfall.** [C] A broken socketed cap (`"broken"`, durability 0,
+  a test state; client flags `0x00800910`) passed the socketed, `hasinv`, `ItemMaxSockets` (2) and identified steps and
+  stopped at flag `0x100` (return 0x00484496). (fn:sub_004843E0_UiCanInsertSocket@0x004843E0, run:2026-10-27-sweep-sockets)
+  L174: the only target logged without a client inventory is the gloves, which stop at `hasinv` first; every
+  socketed `hasinv` target had one (the `inventory` step non-zero in all 36 `UIS` lines that reached it).
+- **sock 13** (L181; 1). **Raised in part.** [C] Of the tests the note lists, `hasinv`, `ItemMaxSockets` and flag
+  `0x100` are now seen failing (sock 10, 12; fn:sub_004843E0_UiCanInsertSocket@0x004843E0, run:2026-10-27-sweep-sockets).
+  **Remainder `[I]`:** the UI state (sock 9), identified (an unidentified
+  socketed target fails at the socketed test first: sock 14 below) and inventory (L174).
+- **sock 14 piece** (L187; the row stays counted as S2c). **Met.** [C] An unidentified magic skull cap with two
+  sockets had the client flags `0x00800000`, no bit 4 and no bit 11, and stat 194 0 on the client, and the insert
+  was refused at the socketed test (a swap, `0x1F`); after a Scroll of Identify on it the client flags were
+  `0x00800811` and stat 194 2, and the same insert passed the client test and the server's
+  (`sockets.py`: inserted). So on this item the client copy got the socketed flag and the socket count only once it
+  was identified, and the client's identified test was not reached while it was unidentified.
+  (fn:sub_004843E0_UiCanInsertSocket@0x004843E0, run:2026-10-27-sweep-sockets) **`[I]`:** that this holds for every
+  unidentified socketed item (two items seen without bit 11: this skull cap and the magic cap of
+  run:2026-10-15-sockets, `0x00804001`), and what sends the flag at identification (the identify routine sets flag
+  `0x10` and bit 0, 0x005762FE; not followed).
+- **sock 16** (L236, L274; 2). **Raised.** [C] In all 35 inserts (27 packet, 6 reader, 2 copier) the child's x is the
+  inventory count at the call, which equals the parent's children before the insert (x > 0 in 20), y is 0 and the body
+  location −1. (fn:sub_0063B210_InvPlaceSocketed@0x0063B210, 0x0063B27F–0x0063B29B, run:2026-10-27-sweep-sockets)
+- **sock 17** (L237, L291; 2). **L291 raised in part; L237 shortfall, with a correction.** [C] `p4`: the reader's
+  insert that completed *Steel* (`p4` 0, a matched row) made the parent update (bit 0), while the five reader inserts
+  of run:2026-10-15-sockets without a row did not (S2c sock 19); `p6`: the copier's parent was in mode 4 and was
+  accepted (`p6` 0); `p7`: the charges were refilled on the three packet runewords and not on the reader's (RF0
+  present only with `p7`). (0x0056284F–0x0056289E, 0x00562715–0x00562725, 0x0056283A–0x00562848,
+  run:2026-10-27-sweep-sockets) L237: **the cursor slot was already empty at the `p5` test** in all 35 inserts
+  (packet 27, reader 6, copier 2). The clear can run only in the 29 with `p5` 1 (packet 27, copier 2); the reader's 6
+  have `p5` 0. `[I]` (read): the reason is that `InvPlaceSocketed` removes the child first (`0x0063AAF0` at
+  0x0063B26E clears `inv+0x20` when it holds the child, 0x0063AB61–0x0063AB66). So the `p5` clear has no observable
+  effect on these paths. Whether the call runs is `[I]` (read).
+- **sock 18** (L243, L450; 2). **Raised in part.** [C] After `RUNEWORD_Apply` the insert runs the 252 then the 253
+  timer exactly when the gate lets the row through (4 inserts: *Prudence*, *Eternity*, *Leaf*, and the *Steel* re-insert,
+  whose `Apply` returned 0), and in none of the other 31 (fn:ITEMS_InsertSocket@0x00562660,
+  run:2026-10-27-sweep-sockets). Each reads the parent's stat (`RPV` = the parent's stat
+  summed over its lists at `RWX`). *Prudence* (`rep-dur` 25) scheduled event type 3 at frame 324 + trunc(2500 / 25)
+  + 1 = 425. (fn:sub_00558530_ItemReplenishDurTimer@0x00558530, run:2026-10-27-sweep-sockets) **Remainder:** a 253
+  schedule: no stock runeword carries stat 253 and a runeword parent (normal or superior, no affixes) has none of its
+  own, so the timer read 0 in all 4 (no route on stock data; proposed d-none). The two timers also run outside the
+  inserts (300 `RPE` lines: 186 at the load, frame 1, and 114 at later item creations, the store's among them), which
+  the spec does not state. *`lane/h6b` review:* two of those outside calls are the 253 timer scheduling (`RPS`, session
+  `6104-svc`, frame 584): `v` 10 at 835 and `v` 5 at 1085, each the frame + 2500 / `v` + 1. `sweep_h6b.py` compares
+  `RPS` only inside an insert, so these two are not checked, and `sub_00558580_ItemReplenishQtyTimer` stays I. All
+  three logged schedules divide exactly, so the truncation is the `idiv` at 0x00558561 (read, `[I]`). The 253 half at
+  the insert is labelled d-none for Phase 3. The row stays counted here, raised in part.
+- **sock 21** (L262; 1). **Raised.** [C] A level-1 Barbarian (the *Steel* sample's character without its items)
+  inserted 24 runes up to `levelreq` 65 (*Jah*; *Ber* 63, *Sur* 61, *Lo* 59, *Ohm* 57, *Mal* 49; misc.txt,
+  `check-static.txt`) into stored and equipped parents: each passed every server test and the client test.
+  (fn:ITEMS_InsertSocket@0x00562660, fn:sub_004843E0_UiCanInsertSocket@0x004843E0, run:2026-10-27-sweep-sockets)
+- **sock 29** (L352; 1). **Shortfall.** [C] In all 35 inserts the child's list had owner 0 before the link and the
+  link branch (0x00627984) was taken, for stored (25), equipped (8) and cursor (2) parents. So the enable-bit branch
+  (the list already the owner's) is not reached by the socket path on this run. The `0x100` case: no stock socket
+  filler can carry flag `0x100`: all 69 `sock` rows have no durability (`check-static.txt`), and `ItemBreak`, the only
+  server setter, sets it with durability 0 on an item that has it. **Moved to d-none at the review**, scoped to the
+  socket path. `sub_00627910_StatListLinkOwner`'s owner branch (0x0062794B–0x00627981) calls `0x00627A40` with `flag`
+  0 when bit `0x40000000` is clear, and `0x00627860` with `flag` ≠ 0 when the bit is set. The function has 44 direct
+  call sites (objdump at the review), and its other callers lie outside this spec.
+- **sock 35** (L438, L470; 2). **Raised.** [C] Loading the game-written *Steel* sample re-inserted Tir and El through
+  the reader (`p` = 0, 0, 0, 0). After El, `RUNEWORD_Match` gave row 18 (*Steel*), `RUNEWORD_Apply` found the parent's
+  state-171 list, applied no slot and returned 0; the 171 list and the child's seed were unchanged (flag bit 26 was
+  already set by the reader), and the insert still made the parent update (bit 0). `sockets.py` reproduces it with the 171 branch added.
+  *`lane/h6b` review:* L438's "flags 0x40" is a correction, not part of the raise. The callee tests the state only (§ 5
+  *Already applied* note), and `sockets.py` now tests the state alone (`af5c8279`, outputs unchanged). (0x006600BC–0x006600CB,
+  fn:RUNEWORD_Apply@0x006600A0, run:2026-10-27-sweep-sockets)
+- **sock 38** (L481, L482, L490, L505, L507; 5). **L490 raised; L481 and L505 raised in part; L482 and L507
+  shortfall.** [C] Func 20: *Eternity* added stat 152 to the parent's 171 list, no draw, reproduced (L490). Func 17
+  with `par` 0: *Leaf*'s `ac/lvl` (min = max 16) took the `Roll` branch (`v` 16, no step). (fn:PROP_Func20_Indestructible@0x0065FAE0,
+  fn:PROP_Func17_Par@0x0065FA40, run:2026-10-27-sweep-sockets) **Remainder:** the ranged `par`-0 roll (L481) and func
+  24 (L482): every complete row that reaches them (*Harmony*, *Fortitude*, *Lawbringer*, *Winter*; *Faith*) has
+  `server` 1 (`check-static.txt`), so a non-ladder game inserts the runes and makes no runeword (all four of the
+  session's server rows did: *Faith*, *Fortitude*, *Lawbringer*, *Oath*). Single player is never ladder: proposed
+  d-none. L505 lists the `[I]` rows, of which 20 is now met and 17 in part; L507, func 7's `+1` fallback, has no
+  observable (the rune is never a weapon): proposed d-none. *`lane/h6b` review:* L482 and L507 are **moved to d-none**. L481's ranged
+  half is labelled d-none and the statement stays counted here, raised in part.
+- **sock 46 piece** (L556; the row stays counted as S2c). **Met.** [C] `ITEMS_ReadFull` stored `0x509F` at
+  `ItemData+0x38` of the server's *Steel* sword (the Name index of `Runeword134`), and the parent held it at both
+  reader inserts. The client copy: the client's reader stored the Name index of the row in 6 client units (the *Steel*
+  sword; *Prudence*, *Eternity* and *Leaf* after they were made), none of them a server insert's unit, and the client
+  test read `0x509F` on the client's *Steel* (`UIR`). So the server's field of a runeword made by an insert stays 0
+  (S2c) while its client copy holds the index the serialiser writes. (0x0062D1D5–0x0062D1EA, fn:ITEMS_ReadFull@0x0062CBE0,
+  fn:ITEMS_WriteFull@0x0062FFF0, run:2026-10-27-sweep-sockets)
+
+| Row (spec line) | Statement | Result |
+|---|---|---|
+| sock 1 (L51) | golem reader and copier rebuild a socketed item | raised in part (copier) |
+| sock 1 (L283) | other readers, copier, golem: 0 1 0 0 | raised in part (copier) |
+| sock 1 (L284) | 0x00563441: caller's, 0, 1, 0 | shortfall |
+| sock 1 (L288) | the other sites' tag | raised in part (copier) |
+| sock 9 (L167) | client refuses UI 10/11 | shortfall; **d-2c** at the review |
+| sock 10 (L170, L171) | client refuses `hasinv` 0, `ItemMaxSockets` 0 | raised ×2 (built states) |
+| sock 12 (L173) | client refuses flag `0x100` | raised (built state) |
+| sock 12 (L174) | client refuses no inventory | shortfall |
+| sock 13 (L181) | the tests never seen failing | raised in part |
+| sock 16 (L236, L274) | child x = count, y = 0 | raised ×2 |
+| sock 17 (L237) | `p5` clears the cursor | shortfall, with a correction (already empty) |
+| sock 17 (L291) | `p4`..`p7` meanings | raised in part (`p4`, `p6`, `p7`) |
+| sock 18 (L243, L450) | the 252 and 253 replenish events | raised in part ×2 (252) |
+| sock 21 (L262) | no child level test | raised |
+| sock 29 (L352) | the toggle and the `0x100` child | shortfall; **d-none** at the review |
+| sock 35 (L438, L470) | a parent with a 171 list gets nothing | raised ×2 (L438's "flags 0x40" corrected: not tested) |
+| sock 38 (L481) | func 17 `par` 0 ranged | raised in part (Leaf, min = max) |
+| sock 38 (L482) | func 24 | shortfall (server row only); **d-none** at the review |
+| sock 38 (L490) | func 20 | raised |
+| sock 38 (L505) | E3's list of inferred rows | raised in part (20, 17) |
+| sock 38 (L507) | func 7's `+1` fallback | shortfall (no observable); **d-none** at the review |
+
+**Raised 9, raised in part 9, shortfall 7: 25** as filed. *`lane/h6b` review:* four shortfalls move: sock 9 to d-2c,
+and sock 29 and sock 38 L482 and L507 to d-none. That leaves **raised 9, raised in part 9, shortfall 3 (sock 1 L284,
+sock 12 L174, sock 17 L237), reclassified 4: 25.** The S2c row sock 46 is now raised (its remainder is met, with
+compared lines). As filed: fewer than half are raised: the shortfalls are a two-client UI state,
+ladder-only rows, a branch the socket path never takes, a cleared slot already empty, and three callers that need a
+Necromancer's golem, a corpse save or a trade. The S2c pieces of sock 14 and sock 46 are met.
+
+**Corrections carried (rule 12):** the Answer's bullets "No level-requirement test", "The client's identified test is
+not reached", "Its x is the filled count" and the per-func coverage ("not 20 or 24"), § 1's caller table and
+reader bullets, § 2's `p5` bullet, § 3's link bullet, and § 5's "Already applied", func 17, 20 and 24 bullets, the
+timers and the name bullet get dated notes pointing here.
+
+### Open questions (H6b)
+
+- What the insert's `p5` clear is for, when `InvPlaceSocketed` has already emptied the cursor slot on every path seen;
+  and what the copier's own unit as the player argument does in the insert's player branches (`sub_0055BF50`, the
+  update queue at 0x00562883–0x0056289B; not followed).
+- `0x00568770`, the other caller of `0x00563350`: what it copies (unfollowed).
 
 ## Data touched
 

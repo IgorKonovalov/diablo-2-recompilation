@@ -813,5 +813,8 @@ Phase 2b list, in its order; what is not raised stays as tagged above.
   (0x005796F6–0x00579747, fn:NPC_SellItem@0x00579510, run:2026-10-17-economy, run:2026-10-19-economy2)
 
 **Not reached in Phase 2b** (stay as tagged): the copy refusals by `Cracked` (0x00579630), base type 7 (0x00579677),
-flag `0x1000000` (0x00579688), `0x0055F590` (0x005796D4) and the store record's byte `+4` (0x0057970E); the imbue's repair on an identified item (never: the imbued item is built unidentified).
+flag `0x1000000` (0x00579688), `0x0055F590` (0x005796D4) and the store record's byte `+4` (0x0057970E); the imbue's repair on an identified item (never: the imbued item is built unidentified). *Corrected by plan 0038 H6e1
+(run:2026-10-27-sweep-quest-npc, [items/0010 § Plan 0038 batch H6e1](0010-quest-drops.md#the-shared-tail-inventory-qd-44)): an imbued
+Wirt's Leg came back from `ItemCreate` identified (flags `0x00082010`) and was repaired, 61 → 66 of 66. So "never" holds
+only for a new rare that is created unidentified, as this run's `cap` was (`lane/h6e1` review).*
 

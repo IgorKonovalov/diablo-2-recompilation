@@ -1,0 +1,84 @@
+{
+ "game": "expansion",
+ "class": "Barbarian",
+ "keep_items": [],
+ "stats": {
+  "strength": 30,
+  "energy": 10,
+  "dexterity": 20,
+  "vitality": 25,
+  "hitpoints": 55,
+  "maxhp": 55,
+  "mana": 10,
+  "maxmana": 10,
+  "stamina": 92,
+  "maxstamina": 92,
+  "level": 1
+ },
+ "name": "SockHLow2",
+ "seed": 381150002,
+ "items": [
+  {
+   "code": "box",
+   "store": "inventory",
+   "x": 8,
+   "y": 2
+  },
+  {
+   "code": "crs",
+   "sockets": 5,
+   "store": "inventory",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "code": "r11",
+   "store": "inventory",
+   "x": 3,
+   "y": 0
+  },
+  {
+   "code": "r30",
+   "store": "inventory",
+   "x": 4,
+   "y": 0
+  },
+  {
+   "code": "r24",
+   "store": "inventory",
+   "x": 5,
+   "y": 0
+  },
+  {
+   "code": "r12",
+   "store": "inventory",
+   "x": 6,
+   "y": 0
+  },
+  {
+   "code": "r29",
+   "store": "inventory",
+   "x": 7,
+   "y": 0
+  },
+  {
+   "code": "sst",
+   "sockets": 2,
+   "store": "inventory",
+   "x": 2,
+   "y": 0
+  },
+  {
+   "code": "r03",
+   "store": "inventory",
+   "x": 8,
+   "y": 0
+  },
+  {
+   "code": "r08",
+   "store": "inventory",
+   "x": 9,
+   "y": 0
+  }
+ ]
+}

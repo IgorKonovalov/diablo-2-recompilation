@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/uniques-sets, items/affixes, items/quality, data/excel]
 consumed_by: [items/affixes, items/sockets-runewords, items/cube, items/vendors, save/d2s, player/creation, stats/aggregate]
-tags: {C: 152, I: 22, L: 3}
-updated: 2026-10-21
+tags: {C: 153, I: 22, L: 3}
+updated: 2026-10-27
 ---
 
 # Base stats and the property roll
@@ -648,8 +648,10 @@ Step notes:
   (fn:ITEMS_GetStartSeed@0x00627DF0, fn:ITEMS_SetSockets@0x0062BCB0, run:2026-10-14-props-forced)
 - F5. **ilvl 40 uses `MaxSock25`** (`cmp 0x28; jg`). [C] (0x0062BC8C, fn:sub_0062BC20_ItemMaxSockets@0x0062BC20,
   tbl:ItemTypes.txt:MaxSock25, run:2026-10-14-props-forced)
-- F6. `ITEMS_SetSockets` also has quality clamps (magic ≤ 4, rare ≤ 2, crafted ≤ 3, set and unique special); they do
-  not apply to qualities 2 and 3, the only ones that reach it from here. [I] (0x0062BC61–0x0062BCA6) The setter is
+- F6. `ITEMS_SetSockets` also has quality clamps (magic ≤ 4, rare ≤ 2, crafted ≤ 3, set and unique special); only
+  qualities 2 and 3 reach it from here. [I] (0x0062BC61–0x0062BCA6) Neither gets a quality clamp: in the 34 calls of
+  the drop socket roll logged step by step, the cap after the quality switch equalled `min(p, 6)` (normal 30,
+  superior 4). [C] (fn:ITEMS_SetSockets@0x0062BCB0, run:2026-10-20-sweep-items-chain) The setter is
   read in full, with the load setter that keeps a count above these clamps, in
   [items/sockets-runewords § F](sockets-runewords.md#f-socket-counts-the-two-setters); filling the sockets and the
   runeword are [items/sockets-runewords](sockets-runewords.md).

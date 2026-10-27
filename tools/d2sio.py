@@ -24,8 +24,12 @@ For every save written (a WDONE line, with the WHDR/WLVL/WTIME/SBIT lines since 
   - for an item logged at its drop (CPOST, same unit and unit id), the saved seed, quality and ilvl against the
     values logged when the drop created it.
 For every load (RHDR ... RHRET / RERR / LFIN2): checksum and size as logged; the reader's code predicted from the
-file (6 if the model checksum differs from the stored one, else 5 if the size field differs from the length, else 0)
-against D2S_ReadHeader's return (RHRET) and, on failure, the failure exit's internal code, with the mapped code 14; the map-seed branch (RMAP/RMAP2),
+file in D2S_ReadHeader's order (4 if shorter than the 0x14F-byte header, else 6 if the model checksum differs from
+the stored one, else 5 if the size field differs from the length, else 7 if the version is outside 92..96, else 0;
+plan 0038 H1a added 4 and 7) against D2S_ReadHeader's return (RHRET) and, on failure, the failure exit's internal
+code, with the mapped code of g_D2sLoadErrorMap (0x006E1208; every code of the earlier runs maps to 14); a code the
+file alone cannot give (the name, status and class tests: CONTEXT_CODES) is printed as context= and left to the
+run's own checker; the map-seed branch (RMAP/RMAP2),
 the client fields read (unk_2c, class, status, act, weapon switch, 0xCF), the stats read (RSTAT) against the file's
 'gf' list, the items read (RITEM: seed, ilvl, quality, version, code, mode) against the file's items in order, the
 act map seed against the game's, and D2S_LoadFinish's stats 7/9 (LFIN/LFIN2). The items read are the RITEM lines
@@ -71,6 +75,28 @@ class Checker:
         if got != want:
             self.bad += 1
             print("  MISMATCH %s: file %r, runtime %r" % (what, got, want))
+
+
+# data:g_D2sLoadErrorMap@0x006E1208, the 27 u32 of the pinned image (indices 0..26; D2S_ReadSaveV92 maps an internal
+# code outside 0..26 to 1 first, 0x0056B363-0x0056B36C). Read from the file at RVA 0x002E1208 (plan 0038 H1a).
+LOAD_ERROR_MAP = [0, 14, 9, 14, 9, 14, 14, 1, 24, 23, 21, 20, 19, 17, 18, 2, 3, 11, 4, 5, 7, 8, 10, 10, 14, 26, 25]
+# D2S_ReadHeader codes that depend on the client or the game, not on the file alone: 3 (no client name), 7 (the
+# name test, after the version test), 8-14 and 25-26 (D2S_CheckStatus), 4 (the class byte, after the length test)
+CONTEXT_CODES = {3, 4, 7, 8, 9, 10, 11, 12, 13, 14, 25, 26}
+
+
+def file_code(buf):
+    """D2S_ReadHeader's first four tests on the file alone: 4, 6, 5, 7 or 0 (0x0056A0B7-0x0056A123)."""
+    if len(buf) < 0x14F:
+        return 4
+    stored, size_field = struct.unpack_from("<II", buf, 0x08)[::-1]
+    if d2s.checksum(buf) != stored:
+        return 6
+    if size_field != len(buf):
+        return 5
+    if not 92 <= struct.unpack_from("<I", buf, 4)[0] <= 96:
+        return 7
+    return 0
 
 
 def csv_clamp(v, bits, signed):
@@ -184,17 +210,29 @@ def check_read(ck, buf, ev, isc, kinds):
     rhret = next((d for t, d in ev if t == "RHRET"), None)
     out["header_code"] = rhret["code"] if rhret else None
     out["err"] = rerr
-    # The reader's code predicted from the file alone (D2S_ReadHeader: checksum first, then the size field).
-    stored, size_field = struct.unpack_from("<II", buf, 0x08)[::-1]
-    predicted = 6 if d2s.checksum(buf) != stored else 5 if size_field != len(buf) else 0
+    # The reader's code predicted from the file alone, in D2S_ReadHeader's order (0x0056A0B7-0x0056A123, plan 0038
+    # H1a): fewer than 0x14F bytes 4, the checksum 6, the size field 5, a version outside 92..96 7. The later tests
+    # (the client's name, D2S_CheckStatus, the class byte) need the client and the game: when one of them failed
+    # (a code the file alone does not give), the code is reported as "context" and compared by the run's own checker
+    # (tools/sweep_h1a.py), not here.
+    predicted = file_code(buf)
     out["predicted"] = predicted
+    if rhret is None and rerr is None:
+        # the read never returned (plan 0038 H1a: a class-7 file halts the game inside D2S_ReadHeader); the run's
+        # own checker compares that case, nothing is predicted here
+        out["unterminated"] = True
+        return out
     # a new character's stub (status bit 0, plan 0034 Phase 2): D2S_ReadHeader returns 2 once the checks pass
     want = 2 if not predicted and len(buf) >= 0x25 and buf[0x24] & 1 else predicted
-    ck.eq("D2S_ReadHeader code (RHRET) = predicted", out["header_code"], want)
+    if not predicted and out["header_code"] in CONTEXT_CODES:
+        out["context"] = out["header_code"]
+    else:
+        ck.eq("D2S_ReadHeader code (RHRET) = predicted", out["header_code"], want)
     if predicted:
         ck.eq("failure exit internal code (RERR) = predicted", rerr["internal"] if rerr else None, predicted)
     if rerr and rerr["internal"] != 0:
-        ck.eq("failure exit mapped code (RERR)", rerr["mapped"], 14)
+        ck.eq("failure exit mapped code (RERR) = g_D2sLoadErrorMap", rerr["mapped"],
+              LOAD_ERROR_MAP[rerr["internal"]] if 0 <= rerr["internal"] < len(LOAD_ERROR_MAP) else None)
     if rerr or not rhret or rhret["code"] != 0:
         return out
     f = d2s.parse(buf, isc, kinds)
@@ -261,6 +299,7 @@ def check(excel, log, saved):
     ev = events(log)
     ck = Checker()
     written = {}
+    unparsed = []
     nwrite = 0
     drops = {}
     cur = None
@@ -284,9 +323,13 @@ def check(excel, log, saved):
             print("WRITE #%d %s ret=%08X caller=%s size=%d sha256=%s" % (
                 nwrite, d["path"], cur["save"]["ret"],
                 "%08X" % cur["psave"]["ret"] if cur["psave"] else "?", d["size"], d["sha256"][:16]))
-            f, nitems = check_write(ck, buf, cur["whdr"], cur["wlvl"], cur["wtime"], cur["sbits"], isc, kinds, drops,
-                                      cur.get("wskl"))
-            print("  header, %d stats, %d items: %d comparisons" % (len(f["stats"]), nitems, ck.n - n0))
+            try:
+                f, nitems = check_write(ck, buf, cur["whdr"], cur["wlvl"], cur["wtime"], cur["sbits"], isc, kinds,
+                                          drops, cur.get("wskl"))
+                print("  header, %d stats, %d items: %d comparisons" % (len(f["stats"]), nitems, ck.n - n0))
+            except d2s.D2sError as e:  # a layout tools/d2s.py does not parse (plan 0038 H1a: realm data)
+                unparsed.append(str(e))
+                print("  UNPARSED by tools/d2s.py: %s (%d comparisons before)" % (e, ck.n - n0))
             written.setdefault(d["sha256"], buf)
             cur = None
     starts = [k for k, (t, _) in enumerate(ev) if t == "RHDR"]
@@ -295,15 +338,23 @@ def check(excel, log, saved):
         d = ev[k][1]
         buf = bytes.fromhex(d["hex"])
         n0 = ck.n
-        r = check_read(ck, buf, ev[k:end], isc, kinds)
-        print("READ #%d len=%d sha256=%s checksum_ok=%s size_ok=%s predicted=%s header_code=%s err=%s reuse=%s items=%s later=%s stats=%s: "
+        try:
+            r = check_read(ck, buf, ev[k:end], isc, kinds)
+        except d2s.D2sError as e:  # plan 0038 H1a: versions 94, a skill count of 29, realm data
+            unparsed.append(str(e))
+            print("READ #%d len=%d sha256=%s UNPARSED by tools/d2s.py after the code checks: %s (%d comparisons)" % (
+                j + 1, d["len"], d["sha256"][:16], e, ck.n - n0))
+            continue
+        print("READ #%d len=%d sha256=%s checksum_ok=%s size_ok=%s predicted=%s header_code=%s context=%s%s err=%s reuse=%s items=%s later=%s stats=%s: "
               "%d comparisons" % (j + 1, d["len"], d["sha256"][:16], r.get("checksum_ok"), r.get("size_ok"),
-                                  r.get("predicted"), r.get("header_code"), r.get("err"), r.get("reuse"), r.get("nitems"),
+                                  r.get("predicted"), r.get("header_code"), r.get("context"),
+                                  " UNTERMINATED (no RHRET, no RERR)" if r.get("unterminated") else "", r.get("err"), r.get("reuse"), r.get("nitems"),
                                   r.get("nlater"), r.get("nstats"), ck.n - n0))
     for p in saved:
         h = hashlib.sha256(open(p, "rb").read()).hexdigest()
         ck.eq("%s is a logged WDONE buffer" % p, h in written, True)
-    print("TOTAL %d comparisons, %d mismatches" % (ck.n, ck.bad))
+    print("TOTAL %d comparisons, %d mismatches%s" % (ck.n, ck.bad, ", %d buffers unparsed by tools/d2s.py" % len(unparsed)
+                                                   if unparsed else ""))
     return 0 if ck.bad == 0 else 1
 
 

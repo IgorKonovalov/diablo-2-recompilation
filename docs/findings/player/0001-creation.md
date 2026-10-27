@@ -847,6 +847,37 @@ tables`; the string indices are resolved with `tools/tbl.py index workspace/merg
   `sweep_s1a.py survey` now prints the breakdown: `empty_main_list_samples_q4_ilvl1` 40, `_d2sio_q4_ilvl1` 8,
   `_cube_q6_ilvl99` 5 (kept output `sweep-s1a-survey-p49r-2026-10-20.txt`). (run:2026-10-15-cube-saves)
 
+## Plan 0038 batch H1a (run:2026-10-27-sweep-d2s-load)
+
+Harness batch H1a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took six rows of
+[player/creation](../../specs/player/creation.md) ([inventory](../../plans/0038-inventory/player-creation.md), rows 1, 8,
+9, 11, 20, 34); the save rows are in
+[save/0001](../save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load), with the method (tool-built
+saves swapped in after the character screen read its list) and the counts of `workspace/logs/h1a/check/sweep-h1a-check.txt`.
+
+- **Row 8** (A2, `D2S_ReadHeader`'s checks and their order) **raised.** [C] length < 0x14F → 4, then the checksum 6,
+  the size 5, the version 7, the name 7, `D2S_CheckStatus`'s code, the class 4: each test failed alone gave its code,
+  and the cases that fail two tests (`v97sum`: checksum before version; `both`: checksum before size; `namehc`: name
+  before status; `class8hc`: status before class) gave the earlier one's. The "client name null → 3" test was not met
+  (a single-player client always has its name). (fn:D2S_ReadHeader@0x0056A090, run:2026-10-27-sweep-d2s-load)
+- **Row 9** (A4, a stub with bytes after the header) **raised.** [C] The stub with 10 bytes after its 335: header 2,
+  failure exit internal 2, mapped 9; the same stub without them made a new character. (0x0056B1C6–0x0056B1E2,
+  data:g_D2sLoadErrorMap@0x006E1208, run:2026-10-27-sweep-d2s-load)
+- **Row 11** (A2, class 7 passes the class test) **raised.** [C] A class-7 full save and a class-7 stub both passed
+  the header (`RCST` 0; the client's class 7; the stub returned 2). Neither loaded: the player unit of class 7 is not
+  made, and `sub_00553180_PlayerSetClient` halts on the null unit (line 1210) from `sub_00569F20_PlayerUnitInit`
+  (the full save) and from `sub_00569F80_NewCharFromStub` (the stub), per the two crash reports kept under
+  `workspace/logs/h1a/`. (0x0056A172, 0x00553185–0x00553187, run:2026-10-27-sweep-d2s-load)
+- **Rows 20 and 34** (class 7 reads class 0's experience column; it gets no attributes, items or start skill)
+  **d-none** (proposed; accepted at the `lane/h1a` review, ruling 2). No class-7 player exists for that code to read
+  (row 11): both ways in halt before. The statements stay `[I]` readings of 0x00611806–0x0061180F and 0x005706FD.
+  [I] Reach condition: the clamp's other out-of-range input, the −1 of the callers' inlined null-unit test
+  (0x005342DE, 0x00535A0A, 0x0056B13D), is not met by any run or reading; a null-unit call found at any of the 13
+  `EXP_GetThreshold` callers moves row 20 back to (b). (fn:EXP_GetThreshold@0x00611800)
+- **Row 1** (the version < 92 reader reaches the same steps through `sub_00532590_NewCharLegacy`) **shortfall.** No
+  save in the legacy layout was built; the one legacy load (a version-96 body labelled 91) was refused (14) by
+  `sub_00534020_ReadSaveLegacy`.
+
 ## Plan 0038 batch H3b (run:2026-10-27-sweep-data-load)
 
 Harness batch H3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), data-excel row 74 of

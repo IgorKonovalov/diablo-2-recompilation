@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/calc, combat/overview, combat/delivery, stats/states, monsters/spawn, monsters/stats]
 consumed_by: [skills/missiles, combat/overview, combat/delivery, stats/states, items/economy, monsters/stats]
-tags: {C: 72, I: 187, L: 10}
+tags: {C: 75, I: 191, L: 10}
 updated: 2026-10-27
 ---
 
@@ -65,12 +65,13 @@ flowchart LR
 | tbl:Skills.txt:delay, `perdelay` | the delay state and the periodic grid (§ G) |
 | tbl:Skills.txt:LineOfSight, `TargetableOnly`, `TargetCorpse`, `TargetAlly`, `TargetItem`, `AttackNoMana` | the start and request tests (§ B, § D) |
 | tbl:Skills.txt:ItemEffect, `ItemTarget`, `ItemCheckStart`, `ItemTgtDo` | item-event casts (§ H) |
-| tbl:Skills.txt:ResultFlags, `HitFlags`, `HitClass`, `calc1`, `calc2`, `calc3`, `calc4`, `EType`, `SrcDam`, `Kick`, `MinDam`, `MinLevDam1`, `DmgSymPerCalc`, `HitShift` | the skill packet (§ I) |
+| tbl:Skills.txt:ResultFlags, `HitFlags`, `HitClass`, `calc1`, `calc2`, `calc3`, `calc4`, `EType`, `SrcDam`, `Kick`, `MinDam`, `MaxDam`, `MinLevDam1`, `DmgSymPerCalc`, `HitShift` | the skill packet (§ I) |
 | tbl:Skills.txt:aurastate, `auratargetstate`, `auralencalc`, `aurastat1`, `aurastatcalc2`, `srvoverlay` | the melee deliver do and the charges (§ I, § J) |
 | tbl:Skills.txt:summon, `summode`, `pettype`, `petmax`, `Param1` | summons (§ L) |
 | tbl:PetType.txt:group | the pet group clear (§ L) |
 | tbl:ItemStatCost.txt:itemeventfunc1 | the item-stat handler registrations (§ K) |
 | tbl:MonStats.txt:SkillDamage | a summon's owner skill damage (§ M) |
+| tbl:MonStats.txt:ResDm, `Skill1` | the logged Kick targets and the `Kick` branch's monster casters (§ I) |
 
 Column semantics are the table docs': [Skills § Dispatch](../../tables/Skills.md#dispatch-plan-0045-phase-0),
 [Skills § Function index](../../tables/Skills.md#function-index-plan-0046-phase-0), [PetType](../../tables/PetType.md).
@@ -624,11 +625,55 @@ I2. SKILLS_RollElemDamage(unit, p, id, lvl):                         [I] (fn:SKI
   set) when `QueuedHitFind(caster, target)` finds no queued hit naming both, and 0 without a target; for Kick, whose
   row fills none of those columns, it sets bit 6 and delivers. [C] (ADR-0021, fn:SKILL_MeleeDeliverDo@0x0056F1F0,
   run:2026-10-21-cat-emu-bar)
-- I4. **Physical damage of a skill** (`SKILLS_GetPhysMin/Max(unit, id, lvl, withWeapon)`, used by summons, missiles
-  and several do functions): a `Kick` row gives `(max(x, 1) ÷ 4) << 8` with `x = str + dex − 20` for a player or
-  `3 · level` for other units; otherwise `w = SrcDam · weaponMin ÷ 128` when `SrcDam` and `withWeapon`,
-  `x = w + LevelBands(lvl, MinLevDam1..5) + MinDam`, `x += MulDiv(x, DmgSymPerCalc, 100)` when that calc is non-zero,
-  then `x << HitShift`. [I] (fn:SKILLS_GetPhysMin@0x00647BC0, 0x00647CA6–0x00647CF1, fn:SKILLS_LevelBands@0x00644B70)
+- I4. **Physical damage of a skill** (`SKILLS_GetPhysMin/Max(unit, id, lvl, withWeapon)`). For a row with `Kick` clear and `SrcDam` 0, the minimum is
+  `x = MinDam + LevelBands(lvl, MinLevDam1..5)` (bands 2–8, 9–16, 17–22, 23–28, 29+; 0 at `lvl ≤ 1`),
+  `x += MulDiv(x, DmgSymPerCalc, 100)` when that calc is set and non-zero, then `x << HitShift`, and the maximum is the
+  same with the `Max` columns. For a `Kick` row with an owner, the **minimum** is `(max(x, 1) ÷ 4) << 8` with
+  `x = str + dex − 20` for a player owner or `3 · level` for another owner. [C] (ADR-0021, emulated inside hit 43,
+  fn:SKILLS_GetPhysMin@0x00647BC0, fn:SKILLS_GetPhysMax@0x00647D00, fn:SKILLS_LevelBands@0x00644B70,
+  run:2026-10-20-cat-emu-9d, [skills/0007 § 3](../../findings/skills/0007-missile-hit-31-59.md#3-hit-31-43-and-55-heals-and-drains))
+- I4. For a `Kick` row, the **maximum** is `(max(x, 1) ÷ 3) << 8`, with `x` as for the minimum: `GetPhysMax` calls
+  `sub_00644C20_SkillKickDamage` with flag 0, which divides by 3 (by 4 when the flag is set). The emulation stops at
+  that call. [I] (0x00644C20–0x00644C8C, fn:sub_00644C20_SkillKickDamage@0x00644C20, fn:SKILLS_GetPhysMax@0x00647D00,
+  [skills/0007 § 3](../../findings/skills/0007-missile-hit-31-59.md#3-hit-31-43-and-55-heals-and-drains))
+- I4. `GetPhysMin/Max` are called by summons, missiles and several do functions (the callers are a code reading,
+  outside the emulation's map). With `SrcDam ≠ 0` and `withWeapon`, `w = SrcDam · weaponMin ÷ 128` is added to `x`
+  before the synergy step (`GetPhysMin` first calls `sub_00623990_SkillSrcDamWeapon(unit, 0)`, where the emulation
+  stops). [I] (0x00647C4D–0x00647CA3, 0x00647CBA, fn:sub_00623990_SkillSrcDamWeapon@0x00623990)
+- I4. **Kick's start hit is not built from these functions**: start 2 (`0x0056CAF0`) zeroes the packet, stores
+  result 9 and flags 2 (which `COMBAT_ResolveAndQueue` reads as "no weapon build", I1), reads the row's `HitShift`
+  (`+0x1A4`, `0x0056CB54`) and `MinDam` (`+0x1A8`, `0x0056CB5A`) itself, stores `MinDam << HitShift` as the packet's
+  physical (`+0x08`, `0x0056CB71`) and hit class 1 (`+0x60`), then calls `COMBAT_ResolveAndQueue(…, 0x80)`. It calls
+  neither `GetPhysMin` nor `GetPhysMax`, and does not read `MaxDam`. [I] (0x0056CB42–0x0056CB80,
+  fn:sub_0056CAF0_SkillSt02Kick@0x0056CAF0, [skills/0003 § 5](../../findings/skills/0003-handlers.md#5-tier-a-start-and-do-functions))
+- I4. **The stock Kick row's damage columns are all zero but `HitShift`**: `skills.bin` row 1 has `HitShift` 8,
+  `SrcDam` 0, `MinDam` 0, `MaxDam` 0, `MinLevDam1..5` and `MaxLevDam1..5` 0 and `DmgSymPerCalc` blank (−1), so start
+  2's physical is `0 << 8` = 0. [C] (tbl:Skills.txt:MinDam, tbl:Skills.txt:HitShift, tbl:Skills.txt:MaxDam,
+  [skills/0003 § 5](../../findings/skills/0003-handlers.md#5-tier-a-start-and-do-functions))
+- I4. **The logged Kick hits carry physical 0.** In run:2026-10-27-skills, 25 of Kick's 32 do events call
+  `COMBAT_ApplyDamage` with the Kicker as attacker, and every one of the 25 packets has result 9, physical 0 and hit
+  class 1; the other 7 call `COMBAT_DeliverQueued` and no `ApplyDamage`. The packet is logged at `ApplyDamage`'s entry,
+  after the reductions `ResolveAndQueue` runs on a hit ([combat/delivery § A](../combat/delivery.md#a-queue-and-delivery));
+  the run is on Normal, and the 25 targets are 9 monster classes (`MonStats` rows 15, 19, 20, 28, 44, 53, 58, 165,
+  170) whose `ResDm` is 0. On those targets `GetPhysMin`'s `Kick` branch, at least `(400 + 400 − 20) ÷ 4 << 8` = 49 920
+  for `SkillsBarH` before reductions, could not give 0, so these 25 deliveries separate start 2's
+  `MinDam << HitShift` from that branch. [C] (fn:COMBAT_ApplyDamage@0x0057C6C0, fn:sub_0056CAF0_SkillSt02Kick@0x0056CAF0,
+  fn:COMBAT_ApplyReductions@0x0057C1E0, tbl:MonStats.txt:ResDm, run:2026-10-27-skills, [skills/0003 § 5](../../findings/skills/0003-handlers.md#5-tier-a-start-and-do-functions))
+- I4. The run does not separate a start that stores `MinDam << HitShift` from one that stores no physical (both are
+  0 on the stock row); the code above gives the store. Why 7 of the do events reach no `ApplyDamage` is not read:
+  `DeliverQueued`'s gates (the target in melee range, the queued result's bit `0x1`, a living attacker;
+  [combat/delivery § A](../combat/delivery.md#a-queue-and-delivery) A2) are the candidates, and the log holds none of
+  them. [I] (0x0056CB71, fn:COMBAT_DeliverQueued@0x0057D4F0, run:2026-10-27-skills, [skills/0003 § 5](../../findings/skills/0003-handlers.md#5-tier-a-start-and-do-functions))
+- I4. **Who reaches the `Kick` branch.** `GetPhysMin` takes it when the row's `+0x05` byte has bit `0x02` (the `Kick`
+  column; set in rows 1 Kick, 255 Dragon Talon, 270 Dragon Tail and 275 Dragon Flight), and `GetPhysMax` through
+  `sub_00644C20_SkillKickDamage`, whose only call is `0x00647D41`, so both branches have the same callers. The branch
+  is reached through `sub_005D54B0_SkillKickPhysDamage`, called by Dragon Talon's start 24 and do 42 (both through
+  `0x005D5880`), Dragon Tail's start 27 and Dragon Flight's do 52: the `str + dex − 20` form for an Assassin, the
+  `3 · level` form for `shadowwarrior` and `shadowmaster`, whose MonStats skills hold Dragon Flight. No direct call
+  of Kick's own start 2 or do 2 reaches it; their callees' calls, and the 15 call sites of `GetPhysMin/Max` that pass a
+  skill id from a variable, are unfollowed. [I] (0x00647BF0–0x00647BF9, 0x00647D41,
+  fn:sub_005D54B0_SkillKickPhysDamage@0x005D54B0, fn:SKILLS_GetPhysMin@0x00647BC0, fn:SKILLS_GetPhysMax@0x00647D00,
+  tbl:Skills.txt:Kick, tbl:MonStats.txt:Skill1, [skills/0003 § 5](../../findings/skills/0003-handlers.md#5-tier-a-start-and-do-functions))
 - I4. The mastery bonus enters a skill hit through the combat build (`SKILLS_GetMasteryBonus` from
   `COMBAT_BuildDamage` and `COMBAT_ToHitRoll`) and through the missile damage block; the synergies enter through the
   calcs (`DmgSymPerCalc`, `EDmgSymPerCalc`, the `skill('…'.blvl)` terms of calc1–calc4). [I]
@@ -914,7 +959,7 @@ The rows plan 0045 reproduces; the reading is [skills/0003 § 5](../../findings/
 | Row | `srvstfunc` | `srvdofunc` | What runs | Own draws | Tag |
 |---|---|---|---|---|---|
 | 0 Attack, 5 Left Hand Swing | 1 `SKILL_AttackStart` | 1 `SKILL_AttackDo` | the normal attack ([combat/overview § A](../combat/README.md#a-the-attack-events)) or the missile | the attack's | [C] for Attack (fn:SKILL_AttackDo@0x0056F070, run:2026-10-16-combat); [C] for Left Hand Swing's 30 do events (run:2026-10-27-skills) |
-| 1 Kick | 2 (`0x0056CAF0`): result 9, flags 2, physical `MinDam << HitShift`, hit class 1, `ResolveAndQueue(…, 128)` | 2 | start builds, do delivers (I3) | the builder's | [C] for 32 do events (run:2026-10-27-skills); [I] the build (0x0056CAF0) |
+| 1 Kick | 2 (`0x0056CAF0`): result 9, flags 2, physical `MinDam << HitShift` (0 on the stock row, I4), hit class 1, `ResolveAndQueue(…, 128)` | 2 | start builds, do delivers (I3) | the builder's | [C] for 32 do events (run:2026-10-27-skills); [I] the build (0x0056CAF0) |
 | 2 Throw, 4 Left Hand Throw | 65 (`0x0056CAB0`): the thrown item | 3, 5 | the throw missile ([skills/missiles § B](missiles.md#b-creation)) | none | [C] for Left Hand Throw's 36 do events (run:2026-10-27-skills); [I] otherwise (fn:sub_0056F460_SkillThrowDo@0x0056F460) |
 | 25 Plague Javelin, 12 Multiple Shot | 4 (`0x005DA8B0`) | — / 8 | 8: `calc1` missiles fanned perpendicular to the line to the target | the creations' | [I] (fn:sub_005DB410_SkillDo08MultiShot@0x005DB410) |
 | 10 Jab | 5: a target | 7 | to-hit, `edPct = calc1`, conversion, elemental roll, `ResolveAndQueue(SrcDam or 128)`, delivery | to-hit, defence, build, 1–2 | [I] (0x005DB2D0) |
@@ -1076,6 +1121,9 @@ run:2026-10-25-skills) The step's use, `low mod 100` against Raise Skeleton's `P
 - [L] What `Unit+0x38` holds (the sequence-anim delay gate of E4 and do 35's parity).
 - [L] Which frame of a mode carries event code 1 or 2, and `Unit+0x4E`: animation timing (plan 0050).
 - [L] The finisher's entries in a run (56 finisher calls were oracles in run:2026-10-25-skills).
+- ~~The damage of Kick's start hit.~~ Physical 0 on the stock row, by the table and run:2026-10-27-skills's 25
+  deliveries; the `Kick` branch's callers read from the code, its 15 variable-id call sites unfollowed (I4;
+  [entry](../../backlog/archive/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md)).
 - [L] Which unit's skill level `MonOwnerSkillDamage` reads (register-passed).
 - [L] Pet types 1's and 7's special cases in `PetLimit`, and where do 31 and 114 fill the spawn block's pet type and
   maximum.

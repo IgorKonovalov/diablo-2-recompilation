@@ -2,9 +2,9 @@
 based_on:
   - docs/specs/items/tc.md 2026-10-21
   - docs/specs/items/quality.md 2026-10-20
-  - docs/specs/items/uniques-sets.md 2026-10-21
+  - docs/specs/items/uniques-sets.md 2026-10-27
   - docs/specs/items/affixes.md 2026-10-21
-  - docs/specs/items/properties.md 2026-10-21
+  - docs/specs/items/properties.md 2026-10-27
 ---
 
 # How an item drops
@@ -301,8 +301,10 @@ touch: seven bases are always magic (rings, amulets, jewels, the three charms, a
 unique rule then makes unique), and no quiver is,
 since the two quiver types that are flagged always-magic have no base of their own; 153 bases of 30 types (potions,
 gems, runes, scrolls, books, keys, gold, quivers, body parts, charms, quest items) cannot be rare; 18 bases (17 quest
-items and the Standard of Heroes) are flagged unique; 121 bases of 24 types are always normal ([quality § F](../specs/items/quality.md#f-boundaries-named-only)). The
-rules are read from the code, and only the last one was ever seen writing
+items and the Standard of Heroes) are flagged unique; 121 bases of 24 types are always normal ([quality § F](../specs/items/quality.md#f-boundaries-named-only)).
+That the rules change nothing on a drop is confirmed, over every logged drop creation and, from the tables, for every
+stock base a TC can hold. That they change only the item's quality, not the creation record's, is confirmed by two
+quest items the unique rule made unique. Their order is read from the code: no creation had two rules writing
 ([uniques-sets § B](../specs/items/uniques-sets.md#b-itemcreatebyquality-the-creation-roll-the-overrides-and-the-switch)).
 
 **Unique.** The game lists every `UniqueItems` row that
@@ -320,21 +322,24 @@ otherwise, which 1.14d does not follow.
 
 Only after the pick does the game check the [made-uniques set](../glossary.md): if the drawn row was already built in
 this game, the whole build fails, with no re-pick. Every stock unique is marked when built, so in 1.14d each unique
-can be built once per game; the set is cleared only when a game is created (that no stock row is exempt and that
-nothing on the drop path clears a mark is read from the code). Ladder-only uniques drop in single player
+can be built once per game. No stock row is exempt, and nothing on the drop path clears a mark: the set is cleared
+only when a game is created, and the one other code that clears a mark is the cube's (both checked against the data
+and every place in the code that touches the set; one routine that copies the whole set between two records is not
+read yet). Ladder-only uniques drop in single player
 and in a TCP/IP game, because the ladder test only excludes them when two game values are both 0, and which game type
-(if any) has that is not known. Read from the code: the builder clears the identified flag of every unique, and a
-quest unique is identified again right after, when its base stats are set; every stock quest base that can be unique
-qualifies, which is checked against the data. `nolimit` plays no part in this; it only exempts a row from the
+(if any) has that is not known. The builder clears the identified flag of every unique (confirmed). Read from the
+code, a quest unique is identified again right after, when its base stats are set; every stock quest base that can
+be unique qualifies, which is checked against the data. `nolimit` plays no part in this; it only exempts a row from the
 made-uniques set. Every way of building a unique goes through the one marking step, so a unique shown in a gamble
 window is marked too ([uniques-sets § C](../specs/items/uniques-sets.md#c-the-unique-builder)).
 
 **Set.** Set items are picked the same way from `SetItems`: the base must match, `lvl` must be at or below the item
-level, and in a classic game expansion-only rows are skipped. Weight 0 counts as 1
-([uniques-sets § D](../specs/items/uniques-sets.md#d-the-set-builder)). Read from the code but not seen in a run: a
-set item takes its version from its set, so a classic game sees only the members of the 16 classic sets; there is no
-enabled, ladder or once-per-game test for sets, so a set item can drop any number of times in a game, and the Cow
-King's set can only come from a Hell Bovine.
+level, and in a classic game expansion-only rows are skipped. Weight 0 counts as 1, which running the pick in an
+emulator confirms ([uniques-sets § D](../specs/items/uniques-sets.md#d-the-set-builder)). Also confirmed: a set item
+takes its version from its set, so a classic game sees only the members of the 16 classic sets; there is no enabled,
+ladder or once-per-game test for sets, so a set item can drop any number of times in a game (seen in a session with
+edited quality odds); and the Cow King's set is never a candidate for a drop that does not come from a Hell Bovine.
+That a Hell Bovine's drop can be a Cow King's item was not seen.
 
 ## When a unique or set cannot be made
 
@@ -355,8 +360,10 @@ flowchart LR
 The durability step only touches bases that have durability. Before each fallback the item seed is reset to
 `{start, 666}`, so the draw the failed builder made is thrown away and the fallback starts exactly where the unique or
 set pick started. All of this is confirmed in recorded games: 39 failed uniques became rare and 47 failed sets became
-magic. No fallback rare or magic build of a failed unique or set ever failed in a run, so the steps further down the chain are read from the code
-only, as is the rule that a failed item keeps no unique or set row. This is the [failed unique / failed
+magic, and a failed item keeps no unique or set row. No fallback rare or magic build of a failed unique or set ever
+failed in a run. The steps further down use the same reset, which was seen on another path: cube outputs whose rare
+build failed went to magic, failed again, and became superior, each step starting again from `{start, 666}`. A
+superior step that fails, and so the last step to normal, is read from the code only. This is the [failed unique / failed
 set](../glossary.md) of the
 glossary.
 
@@ -570,7 +577,8 @@ The main flow above is confirmed in recorded games. These parts are not, or are 
 - **Quality** ([quality open questions](../specs/items/quality.md#open-questions)): Hell, negative magic find,
   games of three or more players (with two, the magic find is the killer's alone), a monster killer with no player owner, an object or missile killer, and the unique-only base and quest-item early returns.
 - **Uniques and sets** ([uniques-sets open questions](../specs/items/uniques-sets.md#open-questions)): the fallback
-  chain past its first step; a unique-only base with no row; a quest base skipping the made test; the Cow King's set
+  chain past its first step when it starts from a failed unique or set, and a failing superior step; a unique-only
+  base with no row; a quest base skipping the made test; the Cow King's set
   from a Hell Bovine; which game type, if any, excludes ladder uniques.
 - **Affixes** ([affixes open questions](../specs/items/affixes.md#open-questions)): the socket test on affixes, a rare
   with names but no affix, charms reaching the normal builder, the low-quality armour and throw-damage cuts, automagic on unique items

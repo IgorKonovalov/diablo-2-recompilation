@@ -211,7 +211,7 @@ A `C` in the table rests on the bit-exact reproduction run:2026-10-14-affixes.
 | `0x00628070` | `ITEMS_SetRareName2` | item data `+0x34` | I |
 | `0x00628740` | `ITEMS_GetQLvl` | base `level` (`+0x0FD`) | C |
 | `0x006289F0` | `sub_006289F0_ItemBaseStackable` | base `stackable` (`+0x132`) | I |
-| `0x00629900` | `sub_00629900_ItemBaseHasInv` | base `hasinv` (`+0x137`) | I |
+| `0x00629900` | `sub_00629900_ItemBaseHasInv` | base `hasinv` (`+0x137`); raised by plan 0038 H6b ([items/0007](0007-sockets-runewords.md#plan-0038-batch-h6b-run2026-10-27-sweep-sockets)) | C |
 | `0x0062B400` | `ITEMS_GetBaseType` | the base's `type` (ItemTypes row) | C |
 | `0x0062BA80` | `sub_0062BA80_ItemTypeThrowable` | ItemTypes `Throwable` (`+0x10`) | I |
 | `0x0062BBD0` | `sub_0062BBD0_ItemTypeStaffMods` | ItemTypes `StaffMods` (`+0x1F`), 7 = none | C |
@@ -983,6 +983,11 @@ with its row's level window) and `props` (reports `workspace/logs/sweep-s2c-*.tx
   forced picks lie inside their rows' windows (alvl 28–50 against levels 6–42), so the run does not decide it; stock
   data reaches the case once, cube row 17 on a magic tower shield (alvl 19 at output ilvl 30, *of Spikes* level 21;
   items/0008 § Plan 0038 batch S2c, cube 58).
+  *H6a (2026-10-27, run:2026-10-27-sweep-cube):* the level-window half is met. [C] Row 17 on a magic tower shield
+  (output ilvl 30, alvl 19) took *of Spikes* (`suf=162`, level 21), reproduced by the affix model with no level window
+  on the forced row ([items/0008 § Plan 0038 batch H6a](0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) cube
+  58). "Only" (the forced row's other tests still apply) has no separating stock case: every forced row's other tests
+  pass. The row stays counted as S2c, raised in part. (0x005C16FE–0x005C1713, fn:ITEMS_PickMagicAffix@0x005C1560)
 - **aff 27, remainder cited** (not an S2c row; S2b review point 5). The false return of the low builder for a base
   that is neither weapon nor armour is logged once on stock data: run:2026-10-15-cube, `cube-cowopen-s1-3071.log`
   transmute 5, a Token of Absolution whose quality-0 roll gave 1; `ITEMS_BuildLowPick` failed and the normal fallback

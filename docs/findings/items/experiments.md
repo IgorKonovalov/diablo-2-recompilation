@@ -2977,3 +2977,482 @@ logs; shortfalls under *Limits*.
   durability, func 23 sets flag `0x400000`, returns 1, makes no draw and no `PROP_WriteStat` call. `props.py`
   reproduces all three creations of each from their seeds. The ledger is in
   [items/0006 § Plan 0038 batch H2c](0006-properties.md#plan-0038-batch-h2c-2026-10-21).
+
+## run:2026-10-27-sweep-quest-items
+
+- **Question:** (plan 0038 Phase 2, batch H6e2, [inventory § 5](../../plans/0038-inventory/README.md#5-batch-list))
+  Do the quest chests, Wirt's body, the quest-item objects and the orifice create what
+  [items/0010 § 5](0010-quest-drops.md#5-quest-items) reads, in that order and under those gates; does object event 7
+  reach `QUESTS_ObjectEvent` and its class target; do the duplicate test and the item-move gate answer as read? Boundary
+  as in run:2026-10-16-quest-drops: quest bits and held items are inputs (tool-built saves, ADR-0013 § Neutral), and
+  each scripted draw takes the quest seed it finds (`QGS`).
+- **Status:** done (2026-10-27): the first checkpoint (rotation) and the resume, under the same run id. Evidence in
+  [items/0010 § Plan 0038 batch H6e2](0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items).
+- **Setup:** agent-driven sessions on harness **slot 1** (display `:8`, `workspace/wineprefix-1`, game in
+  `workspace/runtime/game`), stock data, pinned `game.exe`, gdb by `tools/d2run.py --slot 1 --seed 3811 --gdb
+  tools/gdb/quest-items.gdb --steps tools/gdb/enter-normal.steps --after 1500 --install h6e2 <save> --log <log>`.
+  - **Logger** `tools/gdb/quest-items.gdb` (`1b917862…`): `tools/gdb/quests.gdb`'s files (`pilot.py`, `uniques.py`,
+    `affixes.py`, `vendors.py`, `mon-pool.py`, `quests.py`, `tc-drops.gdb`, unchanged) plus `tools/gdb/quest-items.py`
+    (`d0a860fe…`): `QOW` (each object operate with the player's record words), `QOE`/`QOT` (object event 7 and its
+    targets), `QGV`/`QGX` (`QUESTS_GiveItem`), `QDC` (`DropItemCodeAt`), `OCD` (`ObjectChestDrop`), `PFI`/`PFX`/`PSX`
+    (`PlayerFindItemByCode` and its stat-356 reads), `IQG`/`IQX`/`IHD` (`ItemQuestGate`, its result and the
+    `0x0055CA40` answers), `ORF`/`OSP` (the orifice).
+  - **Session driver** `tools/h6e2_sessions.py` (`61c03244…`, the H6d loop with this logger); the gate session was
+    driven by hand with `tools/xdrive.py` (inventory clicks, drops, item labels with Alt held), recorded below.
+  - **Characters** (`tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/<recipe>.json
+    workspace/samples/d2s-owner/smpsor-l50.d2s <out>`, saves in `workspace/scratch-h6e2/saves/`): `QuestFreshT`
+    (`questfresht.json`, save `09fd6ec4…`, as H6d), `QuestAllDone` (`questalldone.json`, `501eb4a8…`), and four new
+    recipes: `QuestGateD` (`quest-h6e2-questgated.json` `c4e29b8e…`, save `fa1794ec…`: `QuestAllDone` holding `bks`,
+    `ass`, `tr2`, `tr1`, `box`, `j34`, `g33`, `hdm`, `xyz`, Amulet of the Viper, `qey`, `bbb`, `qhr`, `qbr` in the
+    inventory and Staff of Kings, `leg`, `ice` in the stash, each with stat 356 = 0 where the base has
+    `questdiffcheck`), `QuestGateF` (`quest-h6e2-questgatef.json` `f9694233…`, `5d0635bd…`: the same items on
+    `QuestFreshT`), `QuestBoxH` (`quest-h6e2-questboxh.json` `80e9ac90…`, `284ac719…`: `QuestFreshT` with a cube) and
+    `QuestMsfN` (`quest-h6e2-questmsfn.json` `30a3a73d…`, `8c85a011…`: `QuestFreshT` with a Normal Staff of Kings).
+- **Sessions of the first checkpoint** (logs `workspace/logs/h6e2/`):
+
+  | log | save | what | result |
+  |---|---|---|---|
+  | `dev-quest-items-s1-3811-gate-done.log` | QuestGateD | load only, 20 s (logger revision without `PSX`) | development log: no `IQG` at the load; 10 `PFI` calls |
+  | `quest-items-s1-3811-gate-done-r2.log` | QuestGateD | by hand: `bks` dropped and picked up; then 13 items dropped and their labels clicked (7 picked or refused before the character walked off) | **kept**: 8 `IQG` calls (6 refused, 2 allowed) |
+  | `dev-quest-items-s1-3811-radament.log` | QuestFreshT | `h6e2_sessions.py` radament: waypoint to the Sewers Level 2, `farm --descend 23` | development log: the descent never left level 48 (below); session stopped |
+  | `dev-quest-items-s1-3811-skilltest.log` | QuestFreshT | by hand: the same waypoint, one Teleport hop, `farm --descend 23`, clicks on the stairs | development log: Teleport works; `descend` finds the warp 9 sub-tiles away and reports "no hop along the path"; two clicks on the stairs' label did not take them |
+
+- **Procedure:** `python3 -I tools/sweep_h6e2.py check workspace/merged/data/global/excel
+  workspace/logs/h6e2/quest-items-s1-3811-gate-done-r2.log > workspace/logs/h6e2/check-ckpt1.txt` (`a859021f…` the
+  checker).
+- **Observed** (`check-ckpt1.txt` `6963f9e1…`; manifests `workspace/logs/h6e2/manifest-ckpt1.sha256` `cdc9d9d7…` for
+  the kept log and the check, `manifest-dev-ckpt1.sha256` `c43293dd…` for the three development logs, both checked
+  with `sha256sum -c` from `workspace/logs/h6e2/`):
+  ```
+  gate: 8 cases, 0 mismatches: bks, tr1, qbr, j34, ass, hdm refused (IQX 0); box, bbb allowed (IQX 1, IHD 0)
+  dup: 6 PlayerFindItemByCode stat-356 reads, all 0 against difficulty 0
+  chest 0, object 0, event7 0 (no such session yet)
+  SUMMARY ... mismatches=0
+  ```
+- **Stalls of this checkpoint** (for the resume): in the scripted `radament` session `d2pilot.py farm` printed
+  "life 0.00" and "mana 0.00" after every hop in the Sewers (the orbs were full on a screenshot taken then; a later
+  direct read gave 0.75 / 0.79), and `wpchain` arrived at once (level 1 → 48 in 0.4 s) but its command ran to the
+  120 s timeout. On map seed 3811 the Sewers Level 2 down-stairs (LvlWarp 23) stand 9 sub-tiles from the waypoint and
+  `descend` finds no path to them. The resume should try another map seed for the Act II and III descents (H4a's
+  radament ran on 4904), and check the orb read before a long session.
+
+### Resume (2026-10-27): the sessions
+
+- **Changes at the resume.** `tools/h6e2_sessions.py` (final revision `399a30c3…`; sessions were only added after one
+  ran, so its definitions are those that ran): `wpchain`'s limit 120 → 45 s (its settle loop waits for a quiet log,
+  which this logger never gives; it arrived in 0.2 s in every session); `objop` takes `--obj-near` (6 for the tree);
+  the Act II and III sessions start in the **Act IV town** (`wp4`: `tools/d2pilot.py wp --wp-x 715 --wp-y 58`, H4a's
+  move; the Pandemonium Fortress does not change with the map seed), so each takes its own map seed; `a4x` puts an
+  `explore --to-pdef … --pdef-any` before each preset objop and `--pdef-any` on it. Three recipes
+  `tools/d2s_recipes/quest-h6e2-{questfresht,questboxh,questmsfn}-a4.json` (`726c3682…`, `c6514175…`, `ba2ea8f1…`) are
+  the checkpoint's `QuestFreshT`, `QuestBoxH` and `QuestMsfN` with the three header act bytes 131 (Act IV, the
+  `0x80` flag set); built as before into `workspace/scratch-h6e2/saves/a4/` (`d6d11161…`, `54ac3e3d…`, `1b6796d6…`).
+  `tools/sweep_h6e2.py` (`44225cb0…`) adds the `death` listing (no model). The orb read was checked once after the
+  first waypoint (`tristram`): life 0.75, mana 0.79 at `--view-h 571` (the checkpoint's 0.00 did not recur; the frame
+  measured 600 rows).
+- **Sessions** (`python3 -I tools/h6e2_sessions.py run --slot 1 --tag h6e2 --saves workspace/scratch-h6e2/saves --run
+  quest-items <session>`, under `systemd-run --user --scope -p MemoryMax=4G`; all Normal but `staff-nm4b`, expansion,
+  one player, agent-driven):
+
+  | log (`quest-items-s1-…`) | save | route | result |
+  |---|---|---|---|
+  | `3811-tristram` `1ee7610a…` | QuestAllDone | Stony Field, the cairn stones, the portal, Wirt's body, a second click | **kept**: `leg`, 18 event-7 `WirtGold` piles; the second click logged no operate |
+  | `4904-radament4` `64227ea1…` | a4/QuestFreshT | Sewers Level 2 waypoint, the down-stairs (second try, after the driver's explore), Radament, the scroll chest | **kept**: `ass`; `tr1` chest |
+  | `4911-cube4` `01fdb98f…` | a4/QuestFreshT | Halls of the Dead 2, down, the cube chest | **kept**: `box` chest |
+  | `4911-cube-held4` `f9e9ea25…` | a4/QuestBoxH | as cube4 | **kept**: the held cube refuses `box` |
+  | `4916-staff4b` `01f927c4…` | a4/QuestFreshT | Far Oasis, the Maggot Lair 1–3, explore to LvlPrest 509, the staff chest | **kept**: `msf` chest |
+  | `4916-staff-nm4b` `7aaee230…` | a4/QuestMsfN | as staff4b, Nightmare | **kept**: the Normal staff does not count; `msf` made |
+  | `4913-heart4` `fa8cfa0b…` | a4/QuestFreshT | Kurast Bazaar, the sewers, the lever (event 7), down, the heart chest | **kept**: event 7 on class 367; `qhr` chest (gold first) |
+  | `4914-brain4` `3b55e206…` | a4/QuestFreshT | Flayer Jungle, the dungeon 1–3, the brain chest | **kept** for one `j34` kill; the chest was not found (objop 0/1) |
+  | `4913-tome4` `a98604bd…` | a4/QuestFreshT | Kurast Bazaar, the temple warp (61) | **kept** for one `j34` kill; the warp led to the Disused Fane (95), not the Ruined Temple (94) |
+  | `3811-inifuss6` `0e36f883…` | QuestFreshT | Dark Wood, the tree (`--obj-near 6`), a second click | **kept**: `bks`; the second click logged no operate |
+
+  Development logs (no claim rests on them): `dev-quest-items-s1-3811-inifuss` (stood 4.1 sub-tiles from the tree
+  with `--obj-near 4`, no click), `dev-quest-items-s1-4912-staff4` and `-staff-nm4` (map seed 4912: `objop --to-pdef
+  509` stood 420 s at the Maggot Lair 3 arrival point, the preset room logged but no hop moved the player),
+  `dev-quest-items-s1-4915-eye4` (the Spider Forest warp 51 led to the Arachnid Lair 84, not the Spider Cavern 85),
+  `dev-quest-items-s1-4914-brain4b` (the brain4 route with a full explore of level 91, frontier 0, then `objop
+  --obj-mem`: no class-406 object in any `OBJS` line). They were renamed `dev-` before any manifest listed them.
+  *Note (lane/rdp, 2026-10-27):* `brain4b`'s "frontier 0" was not a full explore. The pilot's frontier was that of
+  the last-activated of level 91's two copies, and the chest's room was never activated in the other copy, the one
+  whose rooms held the listed objects. See [items/0010 § The brain chest in level 91](0010-quest-drops.md#the-brain-chest-in-level-91-lanerdp-2026-10-27-static).
+- **Launches:** 19 in all (4 at the checkpoint, 15 at the resume); 11 kept sessions (`gate-done-r2` and the ten
+  above), 8 development logs.
+- **Not run** (launch cap): `gate-fresh`, the Malus, the NPC items (`bkd`, `g34`, `xyz`), the altar (`vip`), `g33`,
+  the council (`qf1`); the eye and brain chests and the tome after their failures above. The checkpoint's Act II
+  stall: on map seed 4904 the first `descend` also found "no hop along the path" to the Sewers stairs, and the
+  driver's explore-then-retry (the `until` loop's second try) took them, as in H4a's radament.
+- **Procedure:** `python3 -I tools/sweep_h6e2.py check workspace/merged/data/global/excel $(ls
+  workspace/logs/h6e2/quest-items-*.log) > workspace/logs/h6e2/check-final.txt`.
+- **Observed** (`check-final.txt` `d4ce6d6d…`; manifests `manifest-final.sha256` `849df588…` (the ten resume logs,
+  their pilot outputs, the check: 21 lines) and `manifest-dev-final.sha256` `04ad2b1a…` (the five resume development
+  logs and pilot outputs: 10 lines), both checked with `sha256sum -c` from `workspace/logs/h6e2/`; the checkpoint's
+  two manifests still pass there):
+  ```
+  chest 6: tr1 (9 gold), box (5), box held (no box, 5), msf (9), msf Nightmare (9), qhr (gold 8 first, then qhr, OCD)
+  object 2: leg (Wirt, mode 0), bks (tree, mode 0)
+  event7 19: 18 x class 268 -> 0x00594630, 1 x class 367 -> 0x005B85E0; all ev 7, ret 0x00586B1B, r1 0x005411C4
+  dup 8: 6 Normal reads (gate-done), 2 msf reads s356 0 in Nightmare -> none
+  gate 8 (gate-done); death 3 (listed): ass, j34 x2, asked 2, created 7
+  SUMMARY chest=6 chest_bad=0 object=2 object_bad=0 event7=19 event7_bad=0 dup=8 dup_bad=0 gate=8 gate_bad=0
+          gate_skip=0 gold=45 death=3 mismatches=0
+  ```
+- **Screenshots** *(added at the review, 2026-10-27)*: the 24 pilot screenshots of the kept sessions (eight
+  `quest-items-*-shots/` directories; the dev and the other kept directories are empty) were outside every manifest;
+  the review hashed them into `workspace/logs/h6e2/manifest-shots-final.sha256` (`2f8f0b14…`, 24 lines, `sha256sum -c`
+  from `workspace/logs/h6e2/`). No claim rests on them. The empty `quest-items-s1-3811-radament-shots/` belongs to the
+  development log `dev-quest-items-s1-3811-radament.log`.
+- **Limits.** One player in every session, so the per-player counts are 0 or 1; the record words are those the
+  tool-built saves give (all clear or all done), so no case separates which word a gate reads. The `QOW` record
+  is the operating player's at the operate, not at a death. The second clicks reached no operate.
+
+### Follow-up (2026-10-27, `lane/h6e2f`): `eye4c`, `tome4c`, `brain4c`
+
+The three staged reruns of the resume's failed routes (the `lane/rdp` review, ruling 7: an H6e2 follow-up under this
+run id). Evidence in [items/0010 § Plan 0038 batch H6e2](0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items).
+
+- **Changes.** `tools/gdb/pilot.py` (`05d89736…`): the RL line gains `f28`, room `+0x28` read at the same breakpoint
+  as `drlg-gen.py`'s RL (0x0066B970), additively (no other key changed); its bit `0x40000` marks the client copy
+  (drlg/0004 row 10). `tools/d2pilot.py` (`e0260335…`, `lane/rdp`'s, unchanged) with `--descend-to` and
+  `--all-copies`; `tools/h6e2_sessions.py` (`e5c6388c…` as run, `lane/rdp`'s recipes; after the runs only the comment above the three
+  recipes changed, "not run" to "run in lane/h6e2f": `666c3755…`); the logger
+  `tools/gdb/quest-items.gdb` (`1b917862…`) and `tools/gdb/quest-items.py` (`d0a860fe…`) unchanged; checker
+  `tools/sweep_h6e2.py` (`44225cb0…`) unchanged. New: `tools/h6e2f_copies.py` (`17da68c6…`, read-only over logs; per level-91
+  copy its RL rooms' `0x40000` count and, for each listed object, whether its room activated in that copy before
+  its first `OBJS` listing; `--warps` replays `d2pilot.LogState.warp_dest` over a log's prefixes).
+- **Sessions** (`python3 -I tools/h6e2_sessions.py run --slot 1 --tag h6e2 --saves workspace/scratch-h6e2/saves --run
+  quest-items <session>`, under `systemd-run --user --scope -p MemoryMax=4G`; save `a4/QuestFreshT` `d6d11161…`,
+  Normal, expansion, one player, agent-driven; slot 1 stopped and its saves restored after each):
+
+  | log (`quest-items-s1-…`) | route | result |
+  |---|---|---|
+  | `4915-eye4c` `ca0d99eb…` | Spider Forest waypoint, `farm --descend 51 --descend-to 85` (the first try timed out after 240 s exploring: the one row-51 warp logged then, at (5235, 4591), has its destination 84 known from its first WRP line, 1222, so it was not taken; the driver's explore, then the second try, whose WRP line 11175 gave the warp at (5055, 4071) and its destination 85, took it; `warps-eye4c.txt`), the eye chest (407, LvlPrest 663) | **kept**: `qey` chest, gold 5 first; one `j34` kill; level 84 never entered |
+  | `4913-tome4c` `8d550048…` | Kurast Bazaar waypoint, `--descend 61 --descend-to 94` (first try), the tome (193, LvlPrest 748) | **kept**: `bbb` from the tome; one `j34` kill |
+  | `4914-brain4c` `8bfb4c64…` | Flayer Jungle waypoint, the dungeon 1–3, `explore --all-copies` (35 hops, both copies' frontier 0), `objop --obj-cls 406 --obj-mem` | **kept**: the chest listed at (10014, 11879), `qbr` chest, gold 7 first; one `j34` kill |
+
+  3 launches, 3 kept sessions, no development log. In `eye4c` and `brain4c` the objop printed "no OCD line" twice at
+  1.4 sub-tiles from the chest (Nova bursts between) before the click that operated it; in `tome4c` the first click
+  operated the tome.
+- **Procedure:** `python3 -I tools/sweep_h6e2.py check workspace/merged/data/global/excel $(ls
+  workspace/logs/h6e2/quest-items-*.log) > workspace/logs/h6e2/check-followup.txt` (the 11 kept logs and the 3 new);
+  `python3 -I tools/h6e2f_copies.py <brain4c> <brain4> <dev brain4b> > workspace/logs/h6e2/copies-followup.txt`;
+  `python3 -I tools/h6e2f_copies.py --warps 76 51 <eye4c> > workspace/logs/h6e2/warps-eye4c.txt`;
+  `python3 -I tools/rdp_brain91.py <brain4c> > workspace/logs/h6e2/brain91-4c.txt` (`lane/rdp`'s tool, unchanged).
+- **Observed** (`check-followup.txt` `fe0f034f…`, `copies-followup.txt` `c119a6c2…`, `brain91-4c.txt` `ed4f4bd5…`,
+  `warps-eye4c.txt` `c220d2bc…`; manifest `workspace/logs/h6e2/manifest-followup.sha256` `e63fe13a…`, 18 lines: the
+  three logs, their pilot outputs, the four outputs and the 8 screenshots of the three sessions, `sha256sum -c` from `workspace/logs/h6e2/`; the
+  six earlier manifests still pass there):
+  ```
+  ok chest 407 qey mode 0 pfi [('qey ', False), ('qf2 ', False)]: got QGS QDC:gld x5 QDI:qey OCD  [eye4c]
+  ok object 193 bbb mode 0: 1 creation(s) [('005b7af8', 2)]  [tome4c]
+  ok chest 406 qbr mode 0 pfi [('qbr ', False), ('qf2 ', False)]: got QGS QDC:gld x7 QDI:qbr OCD  [brain4c]
+  seen death FigurineDrop j34 x3 (sources 397, 27, 144), quality asked 2, created quality 7
+  SUMMARY chest=8 chest_bad=0 object=3 object_bad=0 event7=19 event7_bad=0 dup=8 dup_bad=0 gate=8 gate_bad=0
+          gate_skip=0 gold=57 death=6 mismatches=0
+  brain4c copy 41673728: RL rooms 25, 0x40000 in 0; copy 41677824: 25, 0x40000 in 25; both 25 rooms activated,
+          64 listed objects, each one's room activated in both copies before its first listing
+  chest (14, 179), room (0, 32): RRESEED line 7639 (0x40000 copy), 7728 (the other), first OBJS line 7897
+  ```
+  (the `x5`/`x7` are written out in the file.)
+- **Limits.** One player, record words all clear, nothing held: the Khalim chests' held-part refusals and the tome's
+  word-17 refusal did not run. In `brain4c` both copies activated every room before the chest was listed, so this log
+  alone does not tell which copy the listing follows (items/0010 § The brain chest in level 91).
+- **Review addition** (2026-10-27, `lane/h6e2f` review): the first-RL and first-`RRESEED` lines per level-91 copy that
+  items/0010 § The brain chest in level 91 cites (6951/6974, 6857/6880, 6982/7005; 0-based) were in no kept output.
+  `tools/h6e2f_copies.py` gained `--first` (`566a0531…`; the default output is byte-identical to
+  `copies-followup.txt`), and `python3 -I tools/h6e2f_copies.py --first <brain4c> <brain4> <dev brain4b> >
+  workspace/logs/h6e2/copies-review.txt` (`33c41b9c…`) prints them; manifest `workspace/logs/h6e2/manifest-review.sha256`
+  (`6b4d3ac4…`, 1 line, `sha256sum -c` from `workspace/logs/h6e2/`).
+
+## run:2026-10-27-sweep-quest-npc
+
+- **Question:** (plan 0038 Phase 2, batch H6e1, [inventory § 5](../../plans/0038-inventory/README.md#5-batch-list))
+  Do the NPC messages give the items [items/0010 § 6](0010-quest-drops.md#6-npc-rewards) reads (code, ilvl and
+  quality by NPC and difficulty, Qual-Kehk's count, Anya's table and draw) through `QUESTS_GiveItem`'s store path; do
+  the three service tests refuse and accept as read, test by test; do the imbue's clvl ≤ 5 and ethereal branches,
+  Larzuk's quality branches and the bound-1 draw run as read; is each service's consumed item the cursor item (the S2c
+  piece of quest-drops 38); and does the shared tail repair, refill and identify? Boundary as in
+  run:2026-10-16-quest-drops: quest bits and held items are inputs (tool-built saves, ADR-0013 § Neutral), and each
+  draw takes the seed it finds.
+- **Status:** done (2026-10-27). Evidence in
+  [items/0010 § Plan 0038 batch H6e1](0010-quest-drops.md#plan-0038-batch-h6e1-run2026-10-27-sweep-quest-npc).
+- **Setup:** agent-driven sessions on harness **slot 1** (display `:8`, `workspace/wineprefix-1`, game in
+  `workspace/runtime/game`), stock data, pinned `game.exe`, expansion, one player, all in town.
+  - **Logger** `tools/gdb/quest-npc.gdb` (`0639e3d0…`): `tools/gdb/quest-state.gdb`'s files (`pilot.py`,
+    `vendors.py`, `quests.py`, `questev.py`), `uniques.py`, `affixes.py`, and the new `tools/gdb/quest-npc.py`
+    (`95cfec6e…`): `QGV`/`QGC`/`QGD`/`QGX` (`QUESTS_GiveItem` at entry, after `ITEMS_CreateForStore`, after the
+    durability write, at its exits), `CAN` (each call of the three service tests, a step after every call inside
+    the function, the result and the return site), `CIC`/`CICR` (`CursorItemConsume` and its result at the three
+    service sites), `RPA`/`RPX` and `IDA`/`IDX` (the shared tail). Every kept session ran this revision; the
+    first development log ran it without the item's `kids` field (the children count).
+  - **Session driver** `tools/h6e1_sessions.py` (`4a0795ca…`): H6e2's session loop with this logger, a `qs` command
+    (`tools/quest_sessions.py act` on the live log: `talk:CLS:N`, `towp2`, `wp:A,R`) and `d2pilot.py npc … --try`
+    (new: each listed item is picked up, dropped on the service box, the client test's `CAN` line read, taken back out
+    if it went in, and put back; then the service item as before). `tools/d2pilot.py` (`3d6d4f20…`) also keeps walking
+    clicks 7 sub-tiles from the town waypoint: in the first two `svcb-n` launches a click near Harrogath's waypoint
+    opened its menu and a later click took the player to the Frozen Tundra (117) and the Halls of Pain (123).
+  - **Characters** (`tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/<recipe>.json
+    workspace/samples/d2s-owner/smpsor-l50.d2s <out>`, saves in `workspace/scratch-h6e1/saves/`; rows in
+    `tools/test_d2s.py` `RECIPE_BASES`): the clvl 80 Sorceress of `questservices.json` in the Act V town (header act
+    bytes 132) unless noted:
+    `NpcGive` (`quest-h6e1-give.json` `6e2396c1…`, save `3668f330…`: word 4 b1, word 19 b6, word 36 b1 with b5 / b6 / b7
+    in Normal / Nightmare / Hell, word 37 b1 b15, word 20 b1 in Normal and clear in Nightmare, a `j34` with stat 356 =
+    1), `NpcSvcA` (`quest-h6e1-svca.json` `6fc61b61…`, `7dd9f003…`: low, normal and superior Great Helms and the
+    refusal cases), `NpcSvcB` (`quest-h6e1-svcb.json` `f97d606a…`, `636db82b…`: *Sigon's Visor*, a rare and
+    *Howltusk*, bolts, two damaged throwing-knife stacks of 20 and 30), `NpcSvcC` (`quest-h6e1-svcc.json` `f1e00536…`,
+    `406d719a…`: a crafted Great Helm, a magic Buckler, Wirt's Leg; Hell word 37 clear), `NpcImbFive` and `NpcImbSix`
+    (`quest-h6e1-imb5.json` `b8ac200c…`, `f4aa3374…`; `quest-h6e1-imb6.json` `892ffbe4…`, `5bf8e670…`: clvl 5 and 6,
+    the Act I town, word 3 b1; the ethereal `cap` and the imbue refusal cases; Wirt's Leg and a low and a superior
+    `cap`). Words 3, 35 and 38 b1 as `questservices.json`. Built (test) states, as the recipes' keys say: the low and
+    superior qualities with empty quality fields, the broken `cap` (durability 0), the crafted items without recipe
+    mods, the damaged items' durability.
+- **Sessions** (`python3 -I tools/h6e1_sessions.py run --slot 1 --tag h6e1 --saves workspace/scratch-h6e1/saves --run
+  quest-npc <session>`; logs `workspace/logs/h6e1/quest-npc-s1-<seed>-<session>.log`):
+
+  | session | save | difficulty | what | result |
+  |---|---|---|---|---|
+  | `4921-give-n` `65a036f2…` | NpcGive | Normal | Qual-Kehk, Malah, Anya; Rogue Encampment: Akara; Kurast Docks: Ormus, Alkor, Meshif | **kept**: 8 `GiveItem` (r07 r08 r09, tr2, ob4, rin ×2, xyz) |
+  | `4922-give-nm` `d13dc3c4…` | NpcGive | Nightmare | as give-n | **kept**: 7 (r07 r08, tr2, ob8, rin ×2, g34) |
+  | `4923-give-h` `bb41d2ff…` | NpcGive | Hell | as give-n | **kept**: 5 (r07, tr2, obb, rin ×2) |
+  | `3811-imb5` `abc7a6f5…` | NpcImbFive | Normal | Charsi: 12 items tried, the ethereal `cap` imbued | **kept** |
+  | `3811-imb6` `00f1cab1…` | NpcImbSix | Normal | Charsi: low and superior `cap` tried, Wirt's Leg imbued | **kept** |
+  | `4931-svca-n` `95a2ef23…` | NpcSvcA | Normal | Larzuk: 7 tried, the low helm socketed; Anya: 4 tried, the normal helm personalized; Save and Exit | **kept** |
+  | `4932-svca-nm` `f405427d…` | the save svca-n wrote | Nightmare | waypoint to Harrogath; Anya: the personalized helm tried, the `cap` holding a gem personalized; Larzuk: the socketed helm tried, the normal helm socketed; Save and Exit | **kept** |
+  | `4933-svca-h` `e253e5ce…` | the save svca-nm wrote | Hell | waypoint to Harrogath; the superior helm socketed, the low helm personalized | **kept** |
+  | `4941-svcb-n` `5475174a…` | NpcSvcB | Normal | the set helm socketed; bolts tried, knives (20) personalized | **kept** |
+  | `4942-svcb-nm` `78a18381…` | NpcSvcB | Nightmare | the rare helm socketed; knives (30) personalized | **kept** |
+  | `4943-svcb-h` `61924e94…` | NpcSvcB | Hell | the unique helm socketed; *Sigon's Visor* personalized | **kept** |
+  | `4951-svcc-n` `dec5188e…` | NpcSvcC | Normal | the crafted helm socketed; the Buckler personalized | **kept** |
+  | `4952-svcc-nm` `e8d1e06e…` | NpcSvcC | Nightmare | the magic Buckler socketed (max 1) | **kept** |
+  | `4953-svcc-h` `9fcc2412…` | NpcSvcC | Hell | Malah three times (word 37 clear: no potion given), Wirt's Leg socketed | **kept** |
+
+  Development logs (`workspace/logs/h6e1/dev/`, renamed before any manifest listed them; no claim rests on them):
+  `dev1-` and `dev2-quest-npc-s1-4941-svcb-n` (the waypoint clicks above; dev2 holds the first set-helm socket, met
+  again in the kept svcb-n), `dev3-quest-npc-s1-4932-svca-nm` (the game wrote 0 into the Nightmare and Hell act bytes
+  at svca-n's Save and Exit, so this game started in the Rogue Encampment and the Anya walk gave up; the driver then
+  added the waypoint to Harrogath; its written save is `workspace/scratch-h6e1/saves/dev3-quest-npc-svca-nm/`),
+  `dev4-quest-npc-s1-4933-svca-h.pilot.txt` (the driver named a save that did not exist, `@svca-n.d2s` for a chain of
+  two; no game was launched). **Launches: 17** (14 kept, 3 development); the batch cap is 20.
+- **Procedure:** `python3 -I tools/sweep_h6e1.py check workspace/merged/data/global/excel workspace/install/app/game.exe
+  $(ls workspace/logs/h6e1/quest-npc-*.log) > workspace/logs/h6e1/check-final.txt` (from `workspace/logs/h6e1/`, under
+  `systemd-run --user --scope -p MemoryMax=4G`; checker `8e9e74c3…`), and `python3 -I tools/sweep_h6e1.py static
+  workspace/install/app/game.exe > workspace/logs/h6e1/static-callers.txt` (`da056cd7…`).
+- **Observed** (`check-final.txt` `66868cc2…`, 105 lines; manifests `manifest-final.sha256` `fde5d72e…` (the 14 logs,
+  their pilot outputs, the check and the static scan: 30 lines), `manifest-shots-final.sha256` `49ff932a…` (85
+  screenshots), `manifest-dev-final.sha256` `91943707…` (12 development files), all checked with `sha256sum -c` from
+  `workspace/logs/h6e1/`; per-case lines trimmed):
+  ```
+  can imbue client checks            20      can imbue server checks            2
+  can personalize client checks      13      can personalize server checks      7
+  can socket client checks           18      can socket server checks           9
+  cursor consume checks              18      cursor consume result checks      18
+  give checks                        20      give qualkehk checks               3     give anya draw checks   3
+  give qualkehk word 36 8022: r07 r08 r09    word 36 8042: r07 r08    word 36 8082: r07
+  imbue clvl 5 -> ilvl 5, ethereal 1, f80 00000024
+  imbue clvl 6 -> ilvl 10, ethereal 0, f80 00000022
+  socket magic (draw, bound 1) n=1; quality 1 (max 3) n=3; quality 2 (max 3) n=3 (2); quality 3 (max 3) n=3;
+  quality 5 (1) n=1; quality 6 (1) n=1; quality 7 (1) n=1; quality 8 (1) n=1
+  tail repair checks: imbue 2, personalize 7, socket 9; tail identify checks: imbue 2, personalize 7, socket 9
+  tail repair personalize durability 1/4 -> 4, quantity 20 -> 160;  durability 2/4 -> 4, quantity 30 -> 160
+  tail repair imbue durability 61/66 -> 66;  tail repair imbue: unidentified, left as it was
+  LOGERR lines 0
+  SUMMARY logs=14 mismatches=0
+  ```
+- **Limits.** One player; single player only (game type 3), so Anya's clvl branches and the per-player loops are not
+  separated. No item the stock game gives held charges spent, a `0x1000` flag or quality 9, and no gold or ear item can
+  reach the cursor, so those tests are not reached. Malah's potion was not given (word 37 clear: her talk table offers
+  it only in quest state 4, § 6 of the finding). The given items carry no durability, so `GiveItem`'s durability write
+  is not separated.
+
+## run:2026-10-27-sweep-sockets
+
+- **Question:** (plan 0038 Phase 2, batch H6b, [inventory § 5](../../plans/0038-inventory/README.md#5-batch-list))
+  Does the socket path do what [items/0007](0007-sockets-runewords.md) reads where run:2026-10-15-sockets did not
+  look: the child's x and y, the cursor at the `p5` test, the stat-list link branch, the replenish timers, a loaded
+  runeword's re-insert (the *Steel* sample) and the reader's runeword field on the server and the client, the item
+  copier's inserts, a low-level character inserting high runes, the non-server runewords with funcs 20 and 17's
+  `par` 0, the client test's refusals step by step, and an unidentified socketed parent before and after it is
+  identified (the S2c piece of sock 14)? Boundary as in run:2026-10-15-sockets: the child's item seed at the insert
+  is the one input (ADR-0004); tool-built saves are inputs (ADR-0013 § Neutral).
+- **Status:** done (2026-10-27). Evidence in
+  [items/0007 § Plan 0038 batch H6b](0007-sockets-runewords.md#plan-0038-batch-h6b-run2026-10-27-sweep-sockets).
+- **Setup:** agent-driven sessions on harness **slot 1** (display `:8`, `workspace/wineprefix-1`, game in
+  `workspace/runtime/game`), stock data, pinned `game.exe`, expansion, one player, Normal, all in town.
+  - **Logger** `tools/gdb/h6b.gdb` (`826f1a2c…`): `pilot.py`, `vendors.py`, `quests.py`, the plan 0029
+    `tools/gdb/sockets.py` (`d82f7871…`, unchanged since run:2026-10-15-sockets) and the new `tools/gdb/h6b.py`
+    (`e23bf51e…`; its lines are listed in the finding). Every kept session ran this revision; the five development
+    sessions ran it without the `UIS` lines.
+  - **Session driver** `tools/h6b_sessions.py` (`3f803be1…`): H6e1's loop with `d2pilot.py insert` on the session's
+    plan, `d2pilot.py npc` (Anya's personalize, Malah's trade window) and `economy_sessions.py act sell:0,0`. It writes
+    the recipes and plans with `tools/socket_sessions.py`'s layout (`h6b_sessions.py write`).
+  - **Characters** (`tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/<recipe>.json <base>
+    <out>`, `tools/d2s.py` `7fdd013d…` at the run; saves in `workspace/scratch-h6b/saves/`; rows in
+    `tools/test_d2s.py` `RECIPE_BASES`):
+    - `steel`: the game-written sample `workspace/samples/d2s/qitbarb.d2s` (`98042d88…`, run:2026-10-11-d2s-samples:
+      a level-1 Barbarian holding the *Steel* long sword, Tir El, and a magic jewel), installed as it is.
+    - `SockHLow` (`sock-h6b-low.json` `261d5083…`, save `6fe4ad56…`) and `SockHLow2` (`sock-h6b-low2.json`
+      `f88fd1a3…`, save `7e3d88cc…`): the sample's level-1 Barbarian on the sample as base, without its items, with
+      socketed normal bases and the runes of *Prudence* (a `qui`, equipped), *Faith* (a `lbw`, equipped),
+      *Fortitude*, *Lawbringer* and *Oath*; and of *Eternity* (a 5-socket `crs`) and *Leaf* (a `sst`).
+    - `SockHRefuse` (`sock-h6b-refuse.json` `a34fcb01…`, save `a9afe502…`): the level-80 Sorceress of
+      `socketnova.json` with an unidentified magic `skp` with 2 sockets and two Chipped Topazes, a Scroll of Identify, a
+      ring and gloves with bit 11 and 1 socket (`"forced_sockets"`, new), a broken `cap` with 1 socket (durability 0,
+      `"broken"`), an equipped helm and shield with a gem each, and one Flawed Amethyst for the three tries.
+    - `SockSvc` (`sock-h6b-svc.json` `ceb8d918…`, save `a0aa3e8c…`): `quest-h6e1-svca.json`'s Sorceress in the Act V
+      town with Anya's reward bit, and three socketed items holding children (a `cap` with a gem, a `cap` with a gem
+      and *El*, a `skp` with a jewel), built with `"filled"`.
+  - **Built (test) states** (tool-built saves on stock tables, ADR-0013 § Neutral; not forced-path runs): bit 11 on a ring and on gloves, the broken cap, the
+    unidentified cap, the filled children of `SockSvc` (the builder's, not an insert's), the low-level character
+    holding runes above its level. None changes a path the checks model: the client reads them as logged.
+- **Sessions** (`python3 -I tools/h6b_sessions.py run --slot 1 --tag h6b --saves workspace/scratch-h6b/saves --run
+  sockets <session>`; logs `workspace/logs/h6b/sockets-s1-<seed>-<session>.log`):
+
+  | session | save | what | result |
+  |---|---|---|---|
+  | `6101-steel` `556a53be…` | qitbarb | load (2 reader inserts, *Steel* re-matched); the jewel tried on the full sword | **kept** |
+  | `6102-low` `c5abd358…` | SockHLow | 17 packet inserts by the level-1 character: *Prudence* made; *Faith*, *Fortitude*, *Lawbringer*, *Oath* server rows | **kept** |
+  | `6105-low2` `eb0a1c8f…` | SockHLow2 | 7 inserts: *Eternity*, *Leaf* made | **kept** |
+  | `6103-refuse` `ccc33ccd…` | SockHRefuse | the unidentified `skp` tried, identified, tried again (inserted); gems on the equipped helm and shield; a gem tried on the ring, the gloves, the broken cap | **kept** |
+  | `6104-svc` `6734e49b…` | SockSvc | load (4 reader inserts); a sale to Malah (`sell:0,0`); Anya personalizes the cap holding a gem and *El* (`ItemCopy`, 2 inserts) | **kept** |
+
+  Development logs (`workspace/logs/h6b/dev/`, renamed `dev1-` before any manifest listed them; no claim rests on
+  them): the same five sessions with the logger before the `UIS` lines, and their screenshots. **Launches: 10** (5
+  kept, 5 development); the batch cap is 20.
+- **Procedure** (from `/home/igor/Work/recompilcation-project-h6b`, each under `systemd-run --user --scope -p
+  MemoryMax=4G`; `L` = the five kept logs):
+  ```
+  python3 -I tools/sockets.py check $L > workspace/logs/h6b/check-sockets.txt
+  python3 -I tools/sweep_h6b.py logs $L > workspace/logs/h6b/check-sweep_h6b.txt
+  python3 -I tools/sweep_h6b.py static workspace/install/app/game.exe > workspace/logs/h6b/check-static.txt
+  python3 -I tools/sockets.py check $(cat workspace/logs/sockets-run.lst) > workspace/logs/h6b/check-regress-sockets-run.txt
+  ```
+  `tools/sockets.py` `e6534401…` (this batch adds the already-applied branch of `RUNEWORD_Apply`), `tools/sweep_h6b.py`
+  `4a20d395…`.
+- **Observed** (`check-sockets.txt` `815bdd9b…`, `check-sweep_h6b.txt` `64d81481…`, `check-static.txt` `589f34e3…`,
+  `check-regress-sockets-run.txt` `7c94a139…`; manifests `manifest-run.sha256` `f27e222a…` (the 5 logs, their pilot
+  outputs and the 4 checks: 14 lines), `manifest-shots.sha256` `04f92c9d…` (16 screenshots), `dev/manifest-dev.sha256`
+  `e34c8df5…` (26 development files), each checked with `sha256sum -c` from its own directory; trimmed):
+  ```
+  35 inserts reproduced, 0 failed; 37 client tests          (packet 27, reader 6, copier p[0, 1, 0, 0] 2)
+  runewords made: Prudence, Eternity, Leaf; runeword already applied (a 171 list): reader lsd Steel
+  server row in a non-ladder game: inserted, no runeword: Faith, Fortitude, Lawbringer, Oath
+  client test verdicts: ok 27; not a filler 5; ItemMaxSockets 0 1; hasinv 0 1; flag 0x100 1; full 1; not socketed 1
+  xy: x = count before = children before; y 0; body -1     packet 27, reader 6, copier 2 (x > 0: 20)
+  cursor at the p5 test empty, after empty                  packet 27 (p5 1), reader 6 (p5 0), copier 2 (p5 1)
+  link: list owner 0 before, branch link                    stored 25, equipped 8, cursor 2
+  timers: called iff the gate passed                        gate 4, no gate 31; Prudence stat 252 = 25 -> type 3 at 324 + 101
+  client steps: ItemBaseHasInv = hasinv 39; ItemMaxSockets = min(gemsockets, MaxSock) 38
+  reader runeword store: the Name index of the row         server parent 1, client copies 6
+  client steps: UI word 14 43, 0 2; inventory step reached, non-zero 36
+  timers outside an insert (RPE): at the load, frame 1 186; later 114
+  SUMMARY logs=5 checks=773 bad=0
+  regression: 351 inserts reproduced, 0 failed; 357 client tests (run:2026-10-15-sockets)
+  ```
+- **Limits.** One player, single player, never ladder: the `server` rows (every row with func 24 or a ranged
+  `par`-0 func 17 line) make no runeword. No Necromancer's golem, corpse or version-71 save, so the golem reader and
+  the other reader sites did not run; no player trade, so the UI states 10 and 11 and 0x00563441's callers did not
+  either. The sale made no copy.
+- **Review checks** (`lane/h6b` review, 2026-10-27; no harness, no Ghidra). The three manifests pass `sha256sum -c` from
+  their own directories. The four procedure commands were rerun under `systemd-run --user --scope -p MemoryMax=4G`, and
+  each output is byte-identical to the kept one (`815bdd9b…`, `64d81481…`, `589f34e3…`, `7c94a139…`). `main`'s
+  `sockets.py` gives the same regression output (`7c94a139…`) and fails on this run's logs at one insert only, the
+  *Steel* re-insert (34 of 35). At the review, `tools/sockets.py` `af5c8279…` tests the state alone in the
+  already-applied branch (the flag argument is not read), and both of its outputs are unchanged. `tools/d2s.py`: the 270
+  existing recipes build byte-identically with `main`'s tool and the lane's, and `"forced_sockets"` is off unless it is
+  given (one recipe uses it); `test_d2s.py` gives 60 OK. Version-71 saves are buildable since `lane/a72` (the `leg71*`
+  recipes), so the limit above concerns this run, not the setup.
+
+## run:2026-10-27-sweep-cube
+
+- **Question:** (plan 0038 Phase 2, batch H6a, [inventory § 5](../../plans/0038-inventory/README.md#5-batch-list))
+  Do the cube paths run:2026-10-15-cube left `[I]` run as [items/0008](0008-cube.md) reads them: the packet-to-transmute
+  chain, the event codes, `upg` and `exc`/`eli` on higher tiers, the `eli` slots, the ethereal upgrade, `rep` (damaged,
+  broken, stackable), `rch`, `qty=`, `uns` on gemmed and runeword items, the quest outputs' hooks, the cow portal
+  outside level 1 and in classic, row 17's forced suffix above the alvl, more row-19 transmutes, and the crafted pick
+  of 0 at output ilvl 1 (the S2c piece)? Boundary as in run:2026-10-15-cube (ItemCopy's stream, the cow portal's spot
+  search and object are oracles); every transmute is checked from the game seed at CUB0.
+- **Status:** done (2026-10-27). Evidence in
+  [items/0008 § Plan 0038 batch H6a](0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube).
+- **Setup:** agent-driven sessions on harness **slot 1** (display `:8`, `workspace/wineprefix-1`), stock data, pinned
+  `game.exe`, one player, in town. Game directory `workspace/runtime/game`, except `craftlow`, whose last transmute was
+  expected to fault: it ran in a symlink copy inside the slot's prefix (`workspace/wineprefix-1/drive_c/h6a-game`,
+  `--game-dir`), and its `BlizzardError` folder was moved into `workspace/logs/h6a/dev/`.
+  - **Logger** `tools/gdb/cube.gdb` (`406fd79b…`, unchanged) sourcing `uniques.py`, `props.py` (unchanged) and
+    `tools/gdb/cube.py` revision r4 (`7033ed72…`): r3's lines unchanged, plus `PK4F`, `PIB`, `CBTN`, `SEV`,
+    `RRW0`/`RRWX`, `QSM`/`QSMS`/`QSMX`/`QSD0`/`QSD1`, `QKW`/`QKW18`/`QKD0`/`QKD1`, `CNULL`, `CUBL`, and the fields
+    `CUB0.ret`, `CCPX.own` (the header comment lists each address).
+  - **Session driver** `tools/h6a_sessions.py` (`0d815539…` at the last session; the `repair` session ran the revision
+    before it, which lacked the closing `saves.py restore`, done by hand after it): `cube_sessions.py`'s layouts plus
+    a step's `ins` (runes put into input 1's sockets with `d2pilot.py cube`'s `mv:` before the step) and a session's
+    Act IV act byte; per session `saves.py --slot 1 restore`/`aside h6a`, `d2run.py --slot 1 --seed S --gdb
+    tools/gdb/cube.gdb --steps tools/gdb/cube-enter-normal.steps` (`3ac7701d…`) `--after 1200 --install h6a <save>`,
+    `d2pilot.py cube <log> --slot 1 --plan tools/gdb/cube-h6a-<name>.plan --ins-gap 1.2 --pick-wait 0.5`,
+    `slots.py stop 1`, `saves.py restore`.
+  - **Characters** (`tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/cube-h6a-<name>.json
+    <base> workspace/runtime/h6a-chars/<Name>.d2s`; base `workspace/samples/d2s-owner/smpsor-l50.d2s`, the classic
+    ones `workspace/runtime/monspawn-chars/cls/smpsor.d2s`; build hashes pinned in `tools/test_d2s.py`): the Sorceress
+    of `cubecraft.json` / `cubeclassic.json`, clvl 80 (classic 50, `craftlow` 1). Built (test) states: `dur`, `broken`,
+    `item_props` (stat 204), `quantity`, `ethereal`, `sockets` with `filled`, magic items with one suffix, rare items
+    without affixes, `quest_bits`, and act byte 131 (`cowa4`). Each backs only the code that reads it.
+- **Sessions** (`python3 -I tools/h6a_sessions.py run --slot 1 --tag h6a --saves workspace/runtime/h6a-chars --run h6a
+  <name>`; logs `workspace/logs/h6a/h6a-s1-<seed>-<name>.log`, pilot output beside each):
+
+  | seed, session (log sha256) | game | transmutes (row) | result |
+  |---|---|---|---|
+  | 6103 `repair` `7dbab454…` | exp, Normal, 80 | 137 damaged, 137 broken, 139 charges, 137 knives, noe refusal, 141 gems, 141 *Steel* | kept, 7 |
+  | 6101 `upgu` `17374d06…` | exp, Normal, 80 | 131 on *Gull* (none), on *Wizardspike* (none), 131 *Spineripper*, 135 rare `9dg`, 129 ethereal *Gull*, 19 | kept, 6 |
+  | 6102 `upgc` `2e77ee5f…` | exp, Normal, 80 | 66 on `xmg`, 66 on `umg`, 130 *Greyform* with a gem | kept, 3 |
+  | 6104 `quest` `6b7f2d6d…` | exp, Normal, 80 | 1 (`qf2`), 0 (`hst`) | kept, 2 |
+  | 6105 `cowa4` `2125a81e…` | exp, Normal, 80, Act IV start | 2 refused (level 103), 17 on `tow`, 19 | kept, 3 |
+  | 6106 `cowcl0` `9e93294e…` | classic, Normal, 50 | 2 refused (word 26 clear), 19 | kept, 2 |
+  | 6107 `cowcl1` `b2f3c204…` | classic, Normal, 50 | 2 opened (word 26 set, word 40 clear) | kept, 1 |
+  | 6108 `craftlow` `d5c5ac5b…` | exp, Normal, 1, own game dir | 83 `lbt`, 72 `sst`, then 83 `lbt`: the fault | kept, 2 + the fault |
+
+  Recipes `tools/d2s_recipes/cube-h6a-<name>.json`: upgu `688ed51f…`, upgc `277425df…`, repair `9a84624e…`, quest
+  `045e6b72…`, cowa4 `68ababe2…`, cowcl0 `1e9d3836…`, cowcl1 `c8e4e3eb…`, craftlow `cc01e1b5…`. **Launches: 8, all
+  kept**; the batch cap is 20. In `craftlow` the pilot's last two `tm` tokens met a dead game (no CUB0).
+- **Procedure** (from `workspace/logs/h6a/`, under `systemd-run --user --scope -q -p MemoryMax=4G`, tool paths absolute
+  into the worktree): `python3 -I tools/sweep_h6a.py check $(cat kept.lst) > check-final.txt` (checker `974bf702…`); `python3 -I
+  tools/sweep_h6a.py static > static.txt`; `python3 -I tools/sweep_h6a.py tables > tables.txt`; the regressions
+  `python3 -I tools/cube.py check <the 29 logs of cube-run.lst> > regress-cube-run.txt` (182 reproduced, 0 failed) and
+  `python3 -I tools/sweep_s2c.py cube > regress-sweep-s2c-cube.txt` (byte-identical to the kept
+  `sweep-s2c-cube.txt`).
+- **Observed** (`check-final.txt` `15e54b63…`; `static.txt` `f736601e…`, `tables.txt` `9eb18467…`; manifests
+  `manifest-final.sha256` `8735a574…` (24 lines: logs, pilot outputs, checks, the session driver's output),
+  `manifest-shots.sha256` `2dced972…` (46 screenshots), `manifest-dev.sha256` `8e2d2cdf…` (4: the crash folder's three
+  files and the pre-edit regression), each checked with `sha256sum -c` from `workspace/logs/h6a/`; trimmed):
+  ```
+  cube 1: PK4F 0x4F/0x18 -> PIB type 4 -> CBTN 0x18 -> CUBE_Transmute (ret 0x00566AFC)       27
+     return addresses (PK4F, CBTN, CUB0): 0054d81a 005680f6 00566afc (x27)
+  cube 7: UnitSetEvent(player, 4) after the destroy (ret 0x0056643E)                        21
+  cube 7: UnitSetEvent(player, 20) at a refused cow portal (ret 00594258)                    2
+  cube 7: no UnitSetEvent (nothing produced, no cow refusal)                                  3
+  cube 15: upg matched a higher tier: row 66 input mgl, item xmg / umg                      1 / 1
+  cube 17: exc decided: row 131 refuses dgr (normal) / 7dg (elite); exc passed: rows 131, 135 (9dg)
+  cube 25: eli slot branch: rows 131, 135
+  cube 32: copy kept its 1 children; uns copy: 2 children on the input, 0 on the copy (x2)
+  cube 36: uns removed the runeword                                                          1
+  cube 39: rep dur (5, 24); rep broken (0, 24); rch 1
+  cube 40: rep qty (20, 160); qty (160, 160)
+  cube 43: hst placed -> QuestStaffMade, word 10 bit 11 set (0x0000 -> 0x0800); qf2 placed -> QuestKhalimWillMade
+  cube 49: (b) the crafted pick of 0 with a filled slot: record 0 read at +0x5C (side s, slot 0 id 730)
+  cube 51: row 19 start 28, 255, 505: start - 1 a candidate in none
+  cube 53/54: not in level 1 (level 103) (exp); word 26 bit 0 clear (classic); opened (classic)
+  cube 58: forced suffix above the alvl (level 21 > alvl 19) taken                            1
+  transmutes reproduced by tools/cube.py                                                      26
+  8 logs, 26 transmutes checked, 0 mismatches
+  ```
+  The crash report (`dev/h6a-s1-6108-craftlow-BlizzardError/2026-10-27 14.46.23/Crash.txt`): `ACCESS_VIOLATION`, stack
+  0x005C2460, 0x005577E5, 0x00557E46, 0x00558EC0, 0x005660C5, 0x00566A9E, 0x00566AFC, 0x005680F6, 0x0054C7F5,
+  0x0054D81A, ….
+- **Model changes** (`tools/cube.py` `47ca0924…`): `uns` on a `useitem` output (the copy without children, then
+  `RemoveRuneword`), `rep` on a stackable base and on a broken item, `qty=` on a stackable base, two more game-seed
+  steps per child an `ItemCopy` copies, flags bit 0 on a placed item holding items, the runeword copy's prefix slot 0,
+  and the r4 side lines skipped by `read_log`.
+- **Limits:** button `0x17` and a non-cube interaction type were not sent; no `eth`, `eli` or `nru` input and no `rem`
+  output exist in the stock table; the three row-19 transmutes did not separate the skipped record; the crafted
+  pick of 0 with an empty side (case (a)) has no stock base.
+  *`lane/h6a` review:* the swords carry no maximum-durability modifier (the evaluated and base stat 73 agree), the wand
+  holds one charge entry, the knives' max stack 160 lies under the `qty=255` byte, and the forced rows' other tests all
+  pass on stock data: cube 39 L491 and L524, 40 L528 and 58 are raised in part
+  ([items/0008 § Plan 0038 batch H6a](0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube)).

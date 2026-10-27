@@ -268,6 +268,11 @@ clicks at screenshot coordinates landed):
 
 A footprint `c,r,w,h` is clicked at its centre, so a swapped parent goes back to its own cells. `tools/socket_sessions.py`
 writes one recipe (`tools/d2s_recipes/sock-*.json`) and one token list (`tools/gdb/sock-*.plan`) per session.
+Plan 0038 H6b (run:2026-10-27-sweep-sockets): `tools/gdb/h6b.gdb` adds `tools/gdb/h6b.py` to `sockets.py` (the client
+test step by step, `UIS`; x/y, cursor, link branch, timers, `ItemCopy`, the reader's runeword store) and the pilot's
+files; `tools/h6b_sessions.py write|run` lays out and plays its sessions (the insert plan, `npc` services, a sale through
+`economy_sessions.py act`). A token `rclick:` on a Scroll of Identify then `click:` on the item identifies it. The
+build key `"forced_sockets": true` gives bit 11 to any base (a test state).
 
 ### Cube sessions (plan 0030, run:2026-10-15-cube)
 

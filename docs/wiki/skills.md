@@ -144,8 +144,13 @@ rolls, the target's defence rolls, a missile creation's critical roll, an aura's
 rows that share Bash's start function roll the to-hit, defence and damage when the mode starts and deliver the hit on
 the action frame; Jab does everything on the action frame. A rebuild has to order the draws by frame accordingly
 ([dispatch § Reimplementation notes](../specs/skills/dispatch.md#reimplementation-notes)). Kick's start function builds
-its hit from its row's values (a set result and hit class, the row's `MinDam` as physical damage), read from the code,
-and the same delivering do function delivers it; in its 32 uses the caster's seed did not move at the start, and the
+its hit from its row's values (a set result and hit class, the row's `MinDam` shifted by its `HitShift` as physical
+damage), read from the code, and the same delivering do function delivers it. The stock Kick row's `MinDam` is 0, so
+that physical damage is 0 (from the table). In the 25 of its 32 uses whose hit reached the damage step, on Normal
+against nine monster kinds with no physical resistance, the hit carried no physical damage, which the
+strength-and-dexterity damage below could not have given (confirmed); that the start stores the shifted `MinDam`
+rather than nothing at all is read from the code, and why the other 7 uses reached no damage step is not read. In its
+32 uses the caster's seed did not move at the start, and the
 action frame added no draw of its own (confirmed). The
 delivering do function was run on its own under emulation up to its calls.
 
@@ -215,13 +220,16 @@ start function is the pattern, read from the code:
    **after** the defender's reductions.
 
 Bash's start function was run under emulation up to the call that sets its attack rate; the rest is the code
-reading. A skill's own
-physical damage, used by summons, missiles and several do functions, is the skill's min and max damage by level
-bands plus its weapon share and synergy percent; for a row flagged `Kick` it is instead a quarter of
-(strength + dexterity − 20), at least 1 before the quarter, for a player (Kick's own start function, above, takes its
-row's `MinDam`). The
-weapon masteries enter through the combat build and the missile damage, the synergies through the skill's formulas.
-All of that is read from the code.
+reading. A skill's own physical damage is the skill's min and max damage by level bands plus its synergy percent,
+run under emulation for a row with no weapon share; the weapon share, and which code uses this damage (summons,
+missiles and several do functions), are read from the code. For a row flagged `Kick` the minimum is instead a quarter of (strength + dexterity − 20)
+for a player, or of three times the level for another unit, at least 1 before the quarter (run under emulation); the
+maximum is a third of the same, read from the code. Kick's own start function, above, does not use it: it reads
+its row's `MinDam` itself (read from the code), which is 0 for Kick. Read from the code, the `Kick`-flagged damage is reached by the
+Assassin's Dragon Talon, Dragon Tail and Dragon Flight (strength and dexterity for the Assassin, three times the
+level for the two shadow monsters that cast Dragon Flight), and not by a direct call of Kick's own functions; the
+calls that pass a skill chosen at run time are not followed. The weapon masteries enter
+through the combat build and the missile damage, the synergies through the skill's formulas, read from the code.
 
 ## Charge-up skills and the finisher
 
@@ -438,10 +446,11 @@ from the code). Two draws happen at creation:
 4. **The hit function** of the row, if any, runs and its result decides the missile's fate (read from the code).
 5. **The damage packet, on the missile's seed.** For each of up to seven damage pairs (physical, fire, magic,
    lightning, cold, poison, burning) whose bounds are both at least 1, the game draws the damage between them on the
-   missile's seed; then the enhanced damage percent, and a critical doubles the physical part. Confirmed over 778
-   builds, with 0, 1 or 2 draws. Read from the code: before the draw an inverted pair is swapped (no build of the run
-   had one) and the elemental mastery, read on the missile itself, not on its owner, is added to both bounds; and the
-   pair order, which only 19 builds separate.
+   missile's seed; then the enhanced damage percent, and a critical doubles the physical part. Confirmed over 4 118
+   builds in the two runs (the first run's 778 had 0, 1 or 2 draws each). Read from the code: once both bounds are found above 0, an inverted
+   pair is swapped (no build of either run had one), then the elemental mastery, read on the missile itself, not on
+   its owner, is added to both bounds, then the draw; and the pair order, which only 19 builds separate. No logged
+   missile carried a mastery stat, so whether a missile ever carries its owner's mastery is still open.
 6. **Delivery.** Read from the code: knockback is one `Range(100)` on the missile's seed, then the defender's defence
    rolls on its own seed and the delivery of [combat](combat.md#delivery-crushing-blow-open-wounds-leech-and-the-life-change).
 
@@ -537,7 +546,8 @@ From the specs' open questions ([overview](../specs/skills/README.md#open-questi
   rows and the end-of-life branch in a run; the speed's per-level term, the slow-missiles scaling, the extra loops and
   the distance refusal; the re-seed sites other than Firestorm's, and which path call steps Firestorm's; the critical
   chain's second and third rolls; how a new missile joins the every-frame list; and the unit filter of a missile used
-  as a skill's unit, and the fifth list of the frame pass.
+  as a skill's unit, and the fifth list of the frame pass; and whether a missile ever carries its owner's elemental
+  mastery, which no logged missile did.
 
 ## Where to read more
 

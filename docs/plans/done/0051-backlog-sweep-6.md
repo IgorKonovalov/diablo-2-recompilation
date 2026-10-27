@@ -270,7 +270,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
      44) is pruned. It was met in part at H2b's run and review, and its remainder (a request of 4 or more) is out of
      this plan. H6a, H6b, H6c and H6e1 are left, each still in its inventory § 5 row.
   2. **S1b leftover pieces**
-     ([entry](../../backlog/2026-10-16-architect-reverser-plan-0038-phase-2-leftover-pieces.md)): `tools/gdb/calc.py`
+     ([entry](../../backlog/archive/2026-10-16-architect-reverser-plan-0038-phase-2-leftover-pieces.md)): `tools/gdb/calc.py`
      writes the hover marker `CH` at `0x00486370`, and `tools/calc.py hover` counts it. The `SUNITPRE` line of
      `seed-tree-core.gdb` carries the caller's `ra=`, which `tools/rng.py seedtree` names among the six direct calls of
      `0x00552DF0`. The call sites behind both come from a kept objdump scan (`call-sites.txt`). The session is staged as

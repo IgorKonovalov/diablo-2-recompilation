@@ -31,6 +31,15 @@ every output goes to a scratch directory, nothing in workspace/ is written:
   'jf' (equipped, hand item last) read back and round-trip byte for byte, the dead flag (bit 16), and the refusals
   (no row of the save's Version, seed 0, a name id past NameLast, items in a classic save, an item not placed with
   "equip").
+- ExtendedTest (backlog 2026-10-27, the plan 0038 H1a gaps) covers the extension keys and the extended reader:
+  build reproduces tools/h1a_saves.py's v94, v94s12 and skills29 cases byte for byte; the default parser still
+  refuses them and realm data; realm words per version (three above 93); an ear's realm bit; the 8-bit stat 72 at
+  <= 95; the old stat form at <= 94; the refusals (92, < 92, 97, stat_slots, a stat past the slots, a cut-off skill).
+- LegacyTest (backlog 2026-10-27, the d2s legacy layouts) builds save_version 87 and 71 (the legacy layout of
+  save/0001 § Plan 0038 lane/rlg, read back with d2s.parse_legacy: section tags and lengths, the header's skill
+  bytes, the 0x12-byte and version-71 mercenaries, the hotkey tail, the 25-byte and code-form records, the corpse
+  list) and 92 (the 1.09 widths, the <= 92 per-id encodings, the Sets id), and the refusals. The game has loaded
+  none of these files: the tests check the builder against d2s.md, not d2s.md against the game.
 - ExcelEditTest edits integer and text cells through excel_edit.py and checks that nothing else changed.
 """
 import contextlib
@@ -65,6 +74,11 @@ SAMPLES = os.path.join(WS, "samples", "d2s")                               # run
 
 # recipe -> (base save, sha256 of the built save as a run record gives it, or None)
 RECIPE_BASES = {
+    "leg71merc": (BASE_X, None),    # backlog 2026-10-27 legacy builder: hirelings 30, 33 (not run)
+    "leg71uniq": (BASE_X, None),    # backlog 2026-10-27 legacy builder: items-uniques-sets 21 (not run)
+    "leg87merc": (BASE_X, None),    # backlog 2026-10-27 legacy builder: hirelings 3, 33 (not run)
+    "leg87new": (BASE_X, None),     # backlog 2026-10-27 legacy builder: player-creation 1 (not run)
+    "leg92props": (BASE_X, None),   # backlog 2026-10-27 legacy builder: save-d2s 126 (not run)
     "calc-ama": (os.path.join(P0005, "smpama.d2s"), "527952cb6672585f2fc465a99b763fe7dd036a4f383ed4c9fa56cfa167afc944"),  # run:2026-10-16-calc
     "calc-ama-field": (os.path.join(P0005, "smpama.d2s"), "3ae9a886bad294ca3f17b3bd4695929cd3e1f8485afe729c31d18edfa70fc15a"),  # run:2026-10-16-calc
     "calc-ass": (os.path.join(P0005, "smpasn.d2s"), "d28ac300eaeac7176c59e028caa2b735cd457349ed00c9a4d181a5ccdd89820f"),  # run:2026-10-16-calc
@@ -122,6 +136,14 @@ RECIPE_BASES = {
     "cube-craft5": (BASE_X, "317c3fbc460a0813869a81b224a748299da4930b6a8c7f20bd886981766819a7"),  # run:2026-10-15-cube
     "cube-craftgear": (BASE_X, "47584b5529fa892e3ac41d79fe241c072af6c4d8e91e0a92550f2ad0c3f447be"),  # run:2026-10-15-cube
     "cube-forced": (BASE_X, "ff91be7fc0d50bb7c9e2dbb7cbd081481d956373ccbe868a29f12e42f422361a"),  # run:2026-10-15-cube
+    "cube-h6a-cowa4": (BASE_X, "2a10c928773b8614f42e82696a3adf7154af83496e88b9c5b3f2db6e397c664b"),  # run:2026-10-27-sweep-cube
+    "cube-h6a-cowcl0": (BASE_C, "d1ad2732eb2d9870153122f7b29d81a137340d6dd05b166c67080b001812aafa"),  # run:2026-10-27-sweep-cube
+    "cube-h6a-cowcl1": (BASE_C, "3839e7ba4b4da7d0938c4e9c9a7daf9c7d79a503fa63e151dfe125ad32bee3f6"),  # run:2026-10-27-sweep-cube
+    "cube-h6a-craftlow": (BASE_X, "aae80fc0b6b5c62a01a9263ac6a3934cc4932ec7826e3695c2af7bd5b6d88fe3"),  # run:2026-10-27-sweep-cube
+    "cube-h6a-quest": (BASE_X, "5cf60735f06e95a519b14e277aa21e983ec71e055268935149bd67095625eefe"),  # run:2026-10-27-sweep-cube
+    "cube-h6a-repair": (BASE_X, "39fa3e939ed72342ed6436d53023c0af3f0ea3f3a6a0c54e39b7d83273753903"),  # run:2026-10-27-sweep-cube
+    "cube-h6a-upgc": (BASE_X, "3d642dc9d30f5a09fa0018bfcec1b6b05185cb7423f8f55105ba7d4d0c022852"),  # run:2026-10-27-sweep-cube
+    "cube-h6a-upgu": (BASE_X, "52bfa7721ae14058a0fbcac253ef19b343c1a07d01540e5367ca94fd44a752ba"),  # run:2026-10-27-sweep-cube
     "cube-kinds1": (BASE_X, "0051a31bad0faa0cd8790ffd9b2ed4c77f401969ba3743ae847946ebd8e6d980"),  # run:2026-10-15-cube
     "cube-kinds2": (BASE_X, "9318cf69b85b8d10d93db03729566dadbd45ecd8ace1b12854c58452d65c6663"),  # run:2026-10-15-cube
     "cube-nomatch": (BASE_X, "96ed5e8b3d91286dd96c1ae8255c12c52820136c8f7757bdc0baa7fc365038d2"),  # run:2026-10-15-cube
@@ -331,6 +353,25 @@ RECIPE_BASES = {
     "questfreshm": (BASE_X, None),
     "questfresht": (BASE_X, None),
     "questservicesone": (BASE_X, None),
+    # plan 0038 batch H6e2 (run:2026-10-27-sweep-quest-items): the saves of the run record
+    "quest-h6e2-questgated": (BASE_X, "fa1794ecb0db6769257c1f34286afb0ad2d5cb1700187a43b2e0e3c2283f8bea"),
+    "quest-h6e2-questgatef": (BASE_X, "5d0635bd80d70d5e18a8e1e9d741aadee9eb092d51080548c01d0b071f3fbdac"),
+    "quest-h6e2-questboxh": (BASE_X, "284ac719ebcbfdde00a593ac97941c0e0555a51122dda5487bfe984abe665b61"),
+    "quest-h6e2-questmsfn": (BASE_X, "8c85a0112726494bd502e73412424c1bb3066ca453fdff3c58c4998cf1a01b75"),
+    "quest-h6e2-questfresht-a4": (BASE_X, "d6d11161a9375a3d9b151bc10822c7d729b3c4b3fad3069b518cca1da3c23f08"),
+    "quest-h6e2-questboxh-a4": (BASE_X, "54ac3e3dee32ee1c207f89c1a6405250016641cf4735e5e9f9bc00f508bb238b"),
+    "quest-h6e2-questmsfn-a4": (BASE_X, "1b6796d678b1c05b7f54ec26c2fd66258508effcbfe9cb40a185d38145846a52"),
+    "h3brare": (BASE_X, "ce57d8f76eaabcad6bdb6eea7b06082ae400ae8c01be85404ec11dfa9cf86317"),  # run:2026-10-27-sweep-data-load
+    "quest-h6e1-give": (BASE_X, "3668f330864628d73c64277ed22326df2eb829eccb6eacb491160d80a9fa3cca"),  # run:2026-10-27-sweep-quest-npc
+    "quest-h6e1-imb5": (BASE_X, "f4aa33741cea53bfc1f48bf5387b83351fff8bc80308eee892f378fb4c601f9f"),
+    "quest-h6e1-imb6": (BASE_X, "5bf8e6702cc54bb2fbc5ca6cee87de97a215d0a1acf1cc9d93a7ad46ce6c77c5"),
+    "quest-h6e1-svca": (BASE_X, "7dd9f00355fbf41af37e03d2c2f111f4d510abdc6930a2f3a83177165afab47f"),
+    "quest-h6e1-svcb": (BASE_X, "636db82b21cd5eb7e1c308fadf005735a02c278af531abcf3bfa2ab1d0de4058"),
+    "quest-h6e1-svcc": (BASE_X, "406d719aa7cf2db52cf204b617f01f6e6ea173b435f035d5e0e81760080de10c"),
+    "sock-h6b-low": (BASE_RW, "6fe4ad5619497d909b4e01d290a8f694f3830ef1ea010eb90d62e965d4ee5d61"),  # run:2026-10-27-sweep-sockets
+    "sock-h6b-low2": (BASE_RW, "7e3d88ccc9ad7446fe9594aff0bfb8b5d8fa3f70e07f83e33af96da1aa0915da"),
+    "sock-h6b-refuse": (BASE_X, "a9afe50254561549f5d134b8632d33208cdff598c7b4a8992426cef9c6ba65b8"),
+    "sock-h6b-svc": (BASE_X, "a0aa3e8ce029d439cae03c8fbc787c0203e02a413bce9d604c0c72d5f46bd783"),
 }
 
 _TABLES = []
@@ -431,8 +472,13 @@ class RecipeTest(Scratch):
                 out = self.path(name + ".d2s")
                 d2s.build(EXCEL, os.path.join(RECIPES, name + ".json"), base, out)
                 b = readb(out)
-                self.assertEqual(d2s.checksum(b), d2s.u32(b, 12))
-                self.assertEqual(d2s.parse(b, tables().isc, tables().kinds)["end"], len(b))
+                ver = d2s.u32(b, 4)
+                if ver in d2s.LEGACY_VERSIONS:   # the legacy layout: no checksum, its own reader
+                    f = d2s.parse_legacy(b, tables().isc, tables().kinds, d2s.classic_codes(tables()))
+                    self.assertEqual(f["end"], len(b))
+                else:
+                    self.assertEqual(d2s.checksum(b), d2s.u32(b, 12))
+                    self.assertEqual(d2s.parse(b, tables().isc, tables().kinds, extended=ver != 96)["end"], len(b))
                 if sha:
                     self.assertEqual(hashlib.sha256(b).hexdigest(), sha)
 
@@ -876,6 +922,337 @@ class MercTest(Scratch):
         self.refused(dict(self.MERC, name=0x10000, name_unchecked=True), "u16")
         self.refused(dict(self.MERC, name=-1, name_unchecked=True), "u16")
         self.refused(dict(self.MERC, name=41, name_unchecked=False), "name 41 outside 0 .. 40")
+
+
+class ExtendedTest(Scratch):
+    """backlog 2026-10-27 (plan 0038 H1a gaps): the extended reading and writing (versions 93..95, the old stat
+    form, the stat-slot and skill counts, realm data, an ear's realm bit), off unless asked for."""
+    QITSOR = os.path.join(SAMPLES, "qitsor.d2s")
+    STATS = {"0": 10, "1": 35, "2": 25, "3": 10, "6": 40, "7": 40, "8": 35, "9": 35, "10": 74, "11": 74, "12": 1}
+    KEEP = ["hp1", "tsc", "box", "rin", "amu", "jew", "cm1", "cap", "lgl", "sst"]
+
+    def build(self, recipe, base=None, name="out.d2s"):
+        base = base or self.QITSOR
+        need(base)
+        out = self.path(name)
+        d2s.build(EXCEL, dict(dict(seed=1, game="expansion"), **recipe), base, out)
+        return readb(out)
+
+    def ext(self, b):
+        return d2s.parse(b, tables().isc, tables().kinds, extended=True)
+
+    def items_round_trip(self, b, f):
+        t = tables()
+        for it in d2s.all_items(f):
+            self.assertEqual(d2s.encode_item(it, t.isc, t.kinds, f["ver"]), b[it["off"]:it["end"]])
+
+    def test_h1a_cases_rebuilt_byte_for_byte(self):
+        """The v94, v94s12 and skills29 saves of tools/h1a_saves.py (loaded in run:2026-10-27-sweep-d2s-load) come
+        out of build with the new keys byte for byte."""
+        import h1a_saves
+        ref = self.path("h1a")
+        with contextlib.redirect_stdout(io.StringIO()):
+            h1a_saves.main([EXCEL, ref])
+        keep = dict(keep_items=self.KEEP)
+        cases = {"v94": dict(keep, stats=self.STATS, save_version=94),
+                 "v94s12": dict(keep, stats={k: v for k, v in self.STATS.items() if int(k) < 12}, save_version=94,
+                                stat_slots=12),
+                 "skills29": dict(keep, stats=self.STATS, name="QITSOR", skills={"Fire Bolt": 1, "Frozen Orb": 1},
+                                  skill_count=29)}
+        for case, rc in cases.items():
+            with self.subTest(case=case):
+                b = self.build(rc, name=case + ".d2s")
+                self.assertEqual(b, readb(os.path.join(ref, case, "qitsor.d2s")))
+                f = self.ext(b)
+                self.assertEqual(f["end"], len(b))
+                self.items_round_trip(b, f)
+        # the items case (realm data on the gloves, an ear) reads and re-encodes item by item
+        b = readb(os.path.join(ref, "items", "qitsor.d2s"))
+        f = self.ext(b)
+        self.assertEqual(f["end"], len(b))
+        self.items_round_trip(b, f)
+        realm = [it["realm_data"] for it in d2s.all_items(f) if it.get("realm")]
+        self.assertEqual(realm, [[0x11223344, 0x55667788, 0x99AABBCC]])
+        ears = [it for it in d2s.all_items(f) if it["ear"]]
+        self.assertEqual([(e["ear_class"], e["ear_level"], e["ear_name"], e["realm"]) for e in ears],
+                         [(3, 42, "earname", 0)])
+
+    def test_default_reading_unchanged(self):
+        """Without extended the parser refuses what it refused before: a version other than 96, realm data, and a
+        skill count other than 30 (read as 30 bytes, so the item list tag is missed)."""
+        t = tables()
+        for rc, word in ((dict(stats=self.STATS, keep_items=self.KEEP, save_version=94), "version 94"),
+                         (dict(stats=self.STATS, keep_items=self.KEEP, skill_count=29), "item list tag"),
+                         (dict(stats=self.STATS, items=[dict(code="lgl", store="inventory", x=6, y=0,
+                                                             realm=[1, 2, 3])]), "realm data")):
+            with self.subTest(word=word):
+                b = self.build(rc)
+                with self.assertRaises(d2s.D2sError) as cm:
+                    d2s.parse(b, t.isc, t.kinds)
+                self.assertIn(word, str(cm.exception))
+                self.assertEqual(self.ext(b)["end"], len(b))
+
+    def test_realm_words_by_version(self):
+        lgl = dict(code="lgl", store="inventory", x=6, y=0)
+        for ver, words in ((96, [7, 8, 0]), (95, [7, 8, 9]), (94, [1, 2, 0]), (93, [5, 6])):
+            with self.subTest(ver=ver):
+                b = self.build(dict(stats=self.STATS, save_version=ver, items=[dict(lgl, realm=words)]))
+                f = self.ext(b)
+                self.assertEqual(d2s.u32(b, 4), ver)
+                self.assertEqual([it["realm_data"] for it in d2s.all_items(f) if it.get("realm")], [words])
+                self.items_round_trip(b, f)
+        for ver, words in ((96, [7, 8]), (93, [5, 6, 0])):
+            with self.subTest(refused=ver):
+                with self.assertRaises(d2s.D2sError) as cm:
+                    self.build(dict(stats=self.STATS, save_version=ver, items=[dict(lgl, realm=words)]))
+                self.assertIn("words for version %d" % ver, str(cm.exception))
+        with self.assertRaises(d2s.D2sError):
+            self.build(dict(stats=self.STATS, items=[dict(lgl, realm=[1 << 32, 0, 0])]))
+        # a simple item takes realm data too (the realm bit after its code)
+        b = self.build(dict(stats=self.STATS, items=[dict(code="hp1", store="inventory", x=6, y=0, realm=[3, 4, 0])]))
+        self.assertEqual([it["realm_data"] for it in d2s.all_items(self.ext(b)) if it.get("realm")], [[3, 4, 0]])
+
+    def test_ear_realm_bit(self):
+        """An ear's realm bit after the name: one more byte only when the name ends on a byte boundary
+        (5 or 13 characters in the stored/equipped common part); the default encoder writes none."""
+        t = tables()
+        for n in range(2, 16):
+            with self.subTest(n=n):
+                ear = dict(flags=(1 << 4) | (1 << 16) | (1 << 21) | (1 << 23), version=101, location=0, body=0, x=0,
+                           y=0, store=1, ear_class=3, ear_level=42, ear_name="e" * n)
+                old, new = d2s.encode_item(ear, t.isc, t.kinds), d2s.encode_item(ear, t.isc, t.kinds, 96)
+                self.assertEqual(len(new) - len(old), 1 if n in (5, 13) else 0)
+                self.assertEqual(new[:len(old)], old)
+                it, end = d2s.parse_item(new, 0, t.isc, t.kinds, 96)
+                self.assertEqual((it["ear_name"], it["realm"], end), ("e" * n, 0, len(new)))
+                rd = dict(ear, realm=1, realm_data=[9, 10, 0])
+                it, end = d2s.parse_item(d2s.encode_item(rd, t.isc, t.kinds, 96), 0, t.isc, t.kinds, 96)
+                self.assertEqual(it["realm_data"], [9, 10, 0])
+
+    def test_durability_width(self):
+        """Stat 72 is 8 bits for a save version <= 95, Save Bits (9) at 96; v95 keeps the bit-form stats."""
+        t = tables()
+        rc = dict(stats=self.STATS, items=[dict(code="lgl", store="inventory", x=6, y=0, dur=5)])
+        for ver in (95, 96):
+            with self.subTest(ver=ver):
+                b = self.build(dict(rc, save_version=ver))
+                f = self.ext(b)
+                self.assertEqual(b[d2s.HEADER_SIZE:d2s.HEADER_SIZE + 2], b"gf")
+                self.assertEqual(sorted(s for s, _, _ in f["stats"]), sorted(int(k) for k in self.STATS))
+                gl = [it for it in d2s.all_items(f) if it.get("code") == "lgl "]
+                self.assertEqual([it["dur"] for it in gl], [5])
+                self.items_round_trip(b, f)
+        with self.assertRaises(d2s.D2sError):    # 256 does not fit the 8-bit width
+            d2s.encode_item(dict(gl[0], dur=256), t.isc, t.kinds, 95)
+        d2s.encode_item(dict(gl[0], dur=256), t.isc, t.kinds, 96)
+
+    def test_old_stat_form(self):
+        b = self.build(dict(stats=self.STATS, save_version=93))
+        f = self.ext(b)
+        mask = struct.unpack_from("<H", b, d2s.HEADER_SIZE + 2)[0]
+        self.assertEqual(mask, sum(1 << int(k) for k in self.STATS))
+        self.assertEqual(f["stats"], [(int(k), None, v << 8 if 6 <= int(k) <= 11 else v)
+                                      for k, v in sorted(self.STATS.items(), key=lambda kv: int(kv[0]))])
+        self.assertEqual(b[d2s.HEADER_SIZE + 4 + 4 * len(self.STATS):][:2], b"if")
+
+    def test_refusals(self):
+        def refused(rc, word, base=None):
+            with self.assertRaises(d2s.D2sError) as cm:
+                self.build(dict(dict(stats=self.STATS), **rc), base)
+            self.assertIn(word, str(cm.exception))
+        refused(dict(save_version=91), "71, 87, 92")    # backlog 2026-10-27: 71, 87 and 92 are built now
+        refused(dict(save_version=70), "71, 87, 92")
+        refused(dict(save_version=97), "93..96")
+        refused(dict(save_version=94, stat_slots=8), "9..16")
+        refused(dict(save_version=94, stat_slots=12), "stat 12")
+        refused(dict(save_version=94, stat_slots=13, stats=dict(self.STATS, experience=1)), "stat 13")
+        refused(dict(skill_count=29, skills={"Cold Mastery": 1}), "cuts off")
+        refused(dict(skill_count=300), "a byte")
+        # a base whose trailer holds mercenary items (version-96 widths) is refused for another version
+        merc = os.path.join(self.tmp, "merc.d2s")
+        need(BASE_X)
+        d2s.build(EXCEL, dict(seed=1, game="expansion", stats={"level": 30},
+                              merc=dict(id=0, seed=5, name=3, exp=100, items=[dict(code="cap", equip="head")])),
+                  BASE_X, merc)
+        refused(dict(save_version=95), "mercenary", merc)
+        self.build(dict(stats=self.STATS, save_version=95, merc=dict(id=0, seed=5, name=3, exp=100, items=[])),
+                   merc, "merc95.d2s")   # replaced by the recipe's merc: written in the version's widths
+        # a 92 file is read by the extended reader only (LegacyTest builds and reads real ones)
+        b = bytearray(self.build(dict(stats=self.STATS)))
+        struct.pack_into("<I", b, 4, 92)
+        with self.assertRaises(d2s.D2sError) as cm:
+            d2s.parse(d2s.finish(b), tables().isc, tables().kinds)
+        self.assertIn("version 92", str(cm.exception))
+
+    def test_skill_count_over_30(self):
+        b = self.build(dict(stats=self.STATS, skill_count=32))
+        f = self.ext(b)
+        self.assertEqual((b[0x2A], len(f["skills"]), f["skills"][30:]), (32, 32, [0, 0]))
+        self.assertEqual(f["end"], len(b))
+
+
+class LegacyTest(Scratch):
+    """backlog 2026-10-27 (reverser -> archivist, the d2s legacy layouts): save_version 71, 87 and 92, built from the
+    static reading of save/0001 § Plan 0038 lane/rlg and read back with d2s.parse_legacy (71, 87) or the extended
+    parser (92). No file of these versions has been loaded by the game: these tests check the builder against the
+    layout as d2s.md states it, not the layout against the game."""
+    STATS = {"strength": 30, "energy": 10, "dexterity": 20, "vitality": 25, "hitpoints": 100, "maxhp": 100,
+             "mana": 50, "maxmana": 50, "stamina": 80, "maxstamina": 80, "level": 20, "experience": 300000}
+    MOUSE = {"left": "Charged Bolt", "right": "Teleport", "swap_left": "Nova", "swap_right": "Static Field"}
+    HOT = ["Teleport", "Nova", "Frost Nova", "Static Field", "Telekinesis", "Charged Bolt", "Teleport", "Nova",
+           "Frost Nova"]
+
+    def build(self, recipe, name="out.d2s"):
+        need(BASE_X)
+        out = self.path(name)
+        d2s.build(EXCEL, dict(dict(seed=1, game="expansion", stats=self.STATS), **recipe), BASE_X, out)
+        return readb(out)
+
+    def legacy(self, b):
+        t = tables()
+        f = d2s.parse_legacy(b, t.isc, t.kinds, d2s.classic_codes(t))
+        self.assertEqual(f["end"], len(b))
+        return f
+
+    def refused(self, rc, word):
+        with self.assertRaises(d2s.D2sError) as cm:
+            self.build(rc)
+        self.assertIn(word, str(cm.exception))
+
+    def sections(self, b):
+        """Offsets of the legacy sections after the header, checked tag by tag (lane/rlg (a), Order and framing)."""
+        p = d2s.LEGACY_HEADER_SIZE
+        self.assertEqual(b[p:p + 4], b"Woo!")
+        self.assertEqual(d2s.u32(b, p + 4), 6)
+        p += 0x12A
+        self.assertEqual(b[p:p + 2], b"WS")
+        p += 0x50
+        self.assertEqual(b[p:p + 2], b"\x01w")
+        p += 0x34
+        self.assertEqual(b[p:p + 2], b"gf")
+        mask = int.from_bytes(b[p + 2:p + 5], "little")
+        p += 5 + 4 * bin(mask).count("1")
+        self.assertEqual(b[p:p + 2], b"if")
+        return mask, p + 32
+
+    def test_v87_layout(self):
+        b = self.build(dict(save_version=87, skills={"Teleport": 1, "Nova": 1}, mouse=self.MOUSE, hotkeys=self.HOT,
+                            items=[dict(code="cap", store="inventory", x=0, y=0, item_stats={"39": 20, "74": 3}),
+                                   dict(unique="The Gnasher", store="inventory", x=2, y=0)],
+                            merc=dict(id=1, seed=1234, name=2, exp=5000, dead=True,
+                                      items=[dict(code="cap", equip="head")])))
+        t = tables()
+        self.assertEqual((d2s.u32(b, 0), d2s.u32(b, 4), d2s.u16(b, 0x20), d2s.u16(b, 0x22)), (d2s.MAGIC, 87, 0x82, 1))
+        mask, p = self.sections(b)
+        self.assertEqual(mask, sum(1 << t.stat_id(k) for k in self.STATS))
+        f = self.legacy(b)
+        h = f["header"]
+        self.assertEqual((h["status"] & 0x21, h["level"], h["left"], h["right"]),
+                         (0x20, 20, t.skills["Charged Bolt"]["id"], t.skills["Teleport"]["id"]))
+        self.assertEqual([s for s, _ in h["hotkeys"]], [t.skills[n]["id"] for n in self.HOT[:8]])
+        self.assertEqual(f["hotkeys_tail"][0][0], t.skills[self.HOT[8]]["id"])
+        self.assertEqual(f["hotkeys_tail"][1][0], -1)
+        self.assertEqual(f["swap"], (t.skills["Nova"]["id"], t.skills["Static Field"]["id"]))
+        self.assertEqual(f["merc"], dict(dead=1, seed=1234, name=2, id=1, exp=5000))
+        self.assertEqual([it["code"] for it in f["merc_items"]["items"]], ["cap "])
+        cap, gn = f["items"]["items"]
+        self.assertEqual(cap["props"], [(39, None, [20]), (74, None, [3])])
+        self.assertEqual((gn["quality"], gn["qid"]), (7, t.unique("The Gnasher")[0]))
+        for it in f["items"]["items"] + f["merc_items"]["items"]:    # each record re-encodes byte for byte
+            self.assertEqual(d2s.encode_item(it, t.isc, t.kinds, 87), b[it["off"]:it["end"]])
+        # stat 74 at <= 89: 5 bits, add 10 (the 1.09 column: 6 bits, add 30)
+        w = d2s.BitWriter()
+        d2s.encode_props_109(w, [(74, None, [3])], t.isc, 87)
+        self.assertEqual((len(w.bits), d2s.Bits(w.tobytes()).read(14)), (9 + 5 + 9, 74 | 13 << 9))
+        # the corpse list (JM, count 0) and the 0x12-byte mercenary follow the item list
+        c = f["items"]["items"][-1]["end"]
+        self.assertEqual(b[c:c + 4], b"JM\0\0")
+        self.assertEqual((b[c + 4], d2s.u32(b, c + 6)), (1, 0x10000))
+        self.assertEqual(len(b) - f["merc_items"]["items"][-1]["end"], 0x38)   # the hotkey tail, >= 82
+
+    def test_v87_new_char_and_refusals(self):
+        b = self.build(dict(save_version=87, legacy_new_char=True))
+        self.assertEqual(d2s.u32(b, 0x18) & 1, 1)
+        f = self.legacy(b)
+        seed = d2s.u32(readb(BASE_X), 0xB3)     # the base's mercenary header, carried into the legacy record
+        self.assertEqual(f["merc"] and f["merc"]["seed"], seed or None)
+        self.refused(dict(legacy_new_char=True), "legacy_new_char")
+        self.refused(dict(save_version=87, items=[dict(code="cap", suffix=290, store="inventory", x=0, y=0)]),
+                     "magic, rare")
+        self.refused(dict(save_version=87, items=[dict(code="cap", store="inventory", x=0, y=0,
+                                                       item_stats={"93": 10})]), "older override")
+        self.refused(dict(save_version=87, stat_slots=16), "header fields")
+        self.refused(dict(save_version=87, stats=dict(self.STATS, **{"16": 1})), "stats 0..15")
+
+    def test_v71_layout(self):
+        t = tables()
+        classic = d2s.classic_codes(t)
+        b = self.build(dict(save_version=71, mouse=self.MOUSE, hotkeys=self.HOT,
+                            items=[dict(unique="The Gnasher", store="inventory", x=0, y=0),
+                                   dict(set="Civerb's Ward", store="stash", x=2, y=0),
+                                   dict(code="jew", store="inventory", x=4, y=0, v71=dict(unit_seed=7)),
+                                   dict(code="hp1", belt_slot=3)],
+                            merc=dict(id=1, seed=1234, name=2, exp=5000)))
+        self.assertEqual(d2s.u32(b, 4), 71)
+        _, p = self.sections(b)
+        self.assertEqual((b[p:p + 2], d2s.u16(b, p + 2)), (b"JM", 4))
+        f = self.legacy(b)
+        gn, cw, jw, hp = f["items"]["items"]
+        self.assertEqual([it["end"] - it["off"] for it in (gn, cw, hp)], [27, 27, 27])   # JM + 25 (index form)
+        self.assertEqual((gn["form"], gn["index"], gn["code"], gn["quality"], gn["file_index"]),
+                         ("index", classic.index("hax"), "hax ", 7, t.unique("The Gnasher")[0]))
+        self.assertEqual((cw["quality"], cw["file_index"], cw["page"]), (5, t.setitem("Civerb's Ward")[0], 4))
+        self.assertEqual((jw["form"], jw["code"], jw["unit_seed"], jw["end"] - jw["off"]), ("code", "jew ", 7, 2 + 29))
+        self.assertEqual(jw["flags"] & 0x300000, 0x100000)
+        self.assertEqual((hp["location"], hp["x"], hp["flags"] & 0x200000), (2, 3, 0))
+        self.assertEqual(f["merc"], dict(seed=1234, name=2))
+        self.assertEqual(b[f["items"]["items"][-1]["end"]:][:4], b"JM\0\0")
+        self.assertEqual(len(b) - f["items"]["items"][-1]["end"], 4 + 8)       # corpses, mercenary, no tail
+        self.refused(dict(save_version=71, merc=dict(id=1, seed=5, name=2, items=[dict(code="cap", equip="head")])),
+                     "no item list")
+        self.refused(dict(save_version=71, items=[dict(code="hp1", belt_slot=0, seed=3),
+                                                  dict(code="hp1", belt_slot=1, seed=3)]), "skips the second")
+        self.refused(dict(save_version=87, items=[dict(code="cap", store="inventory", x=0, y=0, v71={})]),
+                     "needs save_version 71")
+        self.refused(dict(save_version=71, items=[dict(code="jew", store="inventory", x=0, y=0,
+                                                       v71=dict(form="index"))]), "no version-0 row")
+
+    def test_v92_build_and_read(self):
+        t = tables()
+        props = [[83, 1, 2], [107, 54, 3], [188, 8, 2], [195, 48 << 6 | 3, 10], [126, 1, 2]]
+        b = self.build(dict(save_version=92, items=[
+            dict(code="cap", store="inventory", x=0, y=0, item_stats={"0": 5, "39": 20}, item_props=props),
+            dict(set="Civerb's Ward", store="inventory", x=2, y=0)]))
+        self.assertEqual((d2s.u32(b, 4), d2s.checksum(b), d2s.u32(b, 8)), (92, d2s.u32(b, 12), len(b)))
+        f = d2s.parse(b, t.isc, t.kinds, extended=True)
+        self.assertEqual(f["end"], len(b))
+        cap = [it for it in f["items"]["items"] if it.get("code") == "cap "][0]
+        self.assertEqual(sorted(cap["props"]), sorted([(0, None, [5]), (39, None, [20])] +
+                                                      [(s, p, [v]) for s, p, v in props]))
+        cw = [it for it in f["items"]["items"] if it.get("code") == "lrg "][0]
+        self.assertEqual(cw["qid"], 0)    # Civerb's Vestments, the Sets record, not the SetItems one
+        for it in d2s.all_items(f):
+            self.assertEqual(d2s.encode_item(it, t.isc, t.kinds, 92), b[it["off"]:it["end"]])
+        # stat 39 is 8 bits with add 0 at 92 (1.09) against add 50 at 96: the raw field is the value itself
+        w = d2s.BitWriter()
+        d2s.encode_props_109(w, [(39, None, [20])], t.isc, 92)
+        self.assertEqual(d2s.Bits(w.tobytes()).read(17), 39 | 20 << 9)
+        cap_ = dict(code="cap", store="inventory", x=0, y=0)
+        for extra, word in ((dict(item_stats={"97": 1}), "stores it as stat 99"),
+                            (dict(item_props=[[151, 40, 3]]), "reads no param"),
+                            (dict(item_props=[[204, 54 << 6 | 3, 5]]), "not writable"),
+                            (dict(item_props=[[83, c, 2] for c in range(5)]), "folds"),
+                            (dict(item_stats={"305": 5}), "no 1.09-Save Bits"),
+                            (dict(item_props=[[107, 54, 8]]), "stat 107")):
+            with self.subTest(word=word):
+                self.refused(dict(save_version=92, items=[dict(cap_, **extra)]), word)
+
+    def test_skill_byte(self):
+        self.assertEqual([d2s.skill_byte(s) for s in (0, 155, 217, 221, 281, -1)], [0, 155, 217, 0x9C, 0xD8, 0xFF])
+        self.assertEqual([d2s.unskill_byte(x) for x in (0, 155, 0x9C, 0xD8, 0xD9, 0xFF)], [0, 155, 221, 281, 0xD9, -1])
+        for s in (156, 216, 282):
+            with self.assertRaises(d2s.D2sError):
+                d2s.skill_byte(s)
 
 
 class ExcelEditTest(Scratch):

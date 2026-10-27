@@ -1,9 +1,9 @@
 ---
 based_on:
-  - docs/specs/items/sockets-runewords.md 2026-10-17
+  - docs/specs/items/sockets-runewords.md 2026-10-27
   - docs/specs/items/cube.md 2026-10-17
   - docs/specs/items/vendors.md 2026-10-21
-  - docs/specs/items/quest-drops.md 2026-10-20
+  - docs/specs/items/quest-drops.md 2026-10-27
 ---
 
 # Items that do not come from a monster drop
@@ -72,9 +72,10 @@ full, and so on) are read from the code and were never seen failing.
 
 Some things are *not* tested at all. The insert does not look at the parent's quality, its item class or the game
 type. Low, magic, rare and [crafted](../glossary.md) parents all accepted children in the test run, and a rune went into a helm in a
-classic game. The code has no level-requirement test for the child either, but that is read from the code only: no
-rune in the run was above the character's level. One single case also suggests that an unidentified socketed item
-looks "not socketed" to the client until it is identified.
+classic game. There is no level-requirement test for the child either: a level-1 character put in runes up to *Jah*
+(level 65). In the two cases logged, an unidentified socketed item looked "not socketed" to the client, so the client
+refused the insert as if the item had no sockets; the one of them that was then identified took the child. That this holds for
+every unidentified socketed item, and what tells the client at identification, are not shown.
 
 **Socket order is insertion order.** Each child goes to the end of the parent's list of children, and that order is
 the one a runeword is compared against
@@ -137,16 +138,17 @@ on the game seed. Two consequences matter to a player:
 
 - The property handlers treat the *rune* as "the item". So `ac%` on a runeword does not reset the parent's base
   defense the way it would on a magic item, `dmg-min`/`dmg-max` write all three related damage stats, and *Famine*'s
-  ethereal line never makes the parent ethereal (all confirmed by a run or a game-written save). The indestructible
-  line and a few other handler branches are read from the code only, because no runeword that uses them was made in
-  the run.
+  ethereal line never makes the parent ethereal (all confirmed by a run or a game-written save), and *Eternity*'s
+  indestructible line was made in a run. A few other handler branches are read from the code only: no stock runeword
+  line uses them, or the runewords that would use them are ladder-only rows, or the branch needs the rune to be a
+  weapon, so no stock single-player game reaches them.
 - A rune loaded from a save starts with a fixed item seed derived from its saved start value, so the same save with
   the same insert order gives the same rolls.
 
 Charged skills still draw their roll, and then a player-made runeword has its charges refilled to the maximum.
-That refill is confirmed for the insert a player makes; that the save reader does *not* refill is read from the code.
-A runeword loaded from a save is not rolled again: read from the code, the reader rebuilds the parent with its saved
-lists first, so the match finds the runeword list already present
+That refill is confirmed for the insert a player makes, and the save reader does *not* refill. A runeword loaded
+from a save is not rolled again: the reader rebuilds the parent with its saved lists first, so when the last rune goes
+back in, the game finds the runeword list already present and adds nothing (seen on the *Steel* save)
 ([§ E](../specs/items/sockets-runewords.md#e-the-runeword-flag-list-and-rolls)). The save does not name the runeword's
 row either: the writer runs the match again and saves that row's name index, and the reader keeps the number without
 looking a row up; the row of a loaded runeword is always found again from its runes (read from the code;
@@ -159,8 +161,9 @@ loaded item still marked as a runeword whose row no longer matches is discarded
 There are two ways an item gets its number of sockets
 ([§ F](../specs/items/sockets-runewords.md#f-socket-counts-the-two-setters)). At creation (a drop, the cube, a quest
 reward) the count is capped by the inventory size, by 6, by the base's maximum, and by quality: magic at most 4, rare
-at most 2, crafted at most 3, sets and uniques 1 (or the count they already have). Those quality caps are read from the
-code; the socket test run did not execute them. A count loaded from a save is kept as it is, above those caps: a magic
+at most 2, crafted at most 3, sets and uniques 1 (or the count they already have). On drops, the size, 6 and base
+caps and their order are confirmed, and normal and superior items get no quality cap; the quality caps themselves are
+read from the code, since no logged run executed them. A count loaded from a save is kept as it is, above those caps: a magic
 crystal sword with 6 sockets loaded with 6 and took 6 children.
 
 ## The Horadric Cube
@@ -400,17 +403,20 @@ boss's own script sets for that kill cannot hide it. What each boss's state give
 | Boss | Quest TC while | Evidence |
 |---|---|---|
 | Andariel | fresh: the quest bits are clear | confirmed |
-| Andariel | killed and reported to Warriv: in every later game | confirmed for that state; that the report is what sets it is read from the code |
+| Andariel | killed and reported to Warriv: in every later game | confirmed: the report cleared the "killed" bit and set the "done" bit, the game saved them, and the next game gave the quest TC again |
 | Andariel | killed in this game, not yet reported: normal TC | read from the code |
 | Andariel | saved and reloaded before reporting: normal TC for good | confirmed |
 | Duriel | until the character's first kill in that difficulty, even with the quest marked done | confirmed |
 | Mephisto | until the first kill | confirmed both ways: a fresh killer got the quest TC, a character with the quest done got the usual TC (and no soulstone) |
-| Diablo, Baal | until the first kill | read from the code (neither was killed in the run) |
+| Baal | until the first kill | confirmed both ways: a fresh killer got the quest TC, a character with the quest done got the usual TC |
+| Diablo | until the first kill | read from the code (he was not killed in any run) |
 
-Scope: these results are for single player with the player as the killer. A kill by a pet, a hireling, a golem or a
-monster under a state such as conversion is resolved to its owner by the code, but none was run, and no party was run
-either; only the resolved player's own record is read. According to the tables, the Countess, the Cow King and
-Nihlathak have no quest TC, so their drops are their ordinary [superunique](../glossary.md) TCs.
+Scope: these results are for single player. A kill by a [hireling](../glossary.md) or a summon counts as the owner's:
+a hireling and a Hydra each killed Andariel, the owner's quest record was read and the quest TC used, and the owner
+got the quest credit and Andariel's gems; the drop itself still records the hireling or the summon as the killer.
+A monster under a state such as conversion is also resolved to its caster by the code, but that was not run, and no
+party was run either; only the resolved player's own record is read. The Countess, the Cow King and Nihlathak have no
+quest TC (only the five bosses above have one), so their drops are their ordinary [superunique](../glossary.md) TCs.
 
 ### Special drops on the quest seed
 
@@ -426,7 +432,8 @@ recorded game.
 - **Andariel** ([§ D1](../specs/items/quest-drops.md#d1-andariels-gems)): on a kill whose killer's quest word shows
   neither an unreported kill nor the quest done, two picks from a list of seven (six chipped gems and a chipped skull),
   then one from the seven standard ones, one draw of 7 each, all normal quality, at Andariel's level. Kills with
-  either of those bits set drew nothing. That this is the same in every difficulty and game type is read from the code.
+  either of those bits set drew nothing. The same held in Normal, Nightmare and Hell and in a classic Normal game;
+  the credit the script also gives the killer's party is read from the code.
 - **The Countess** ([§ D2](../specs/items/quest-drops.md#d2-the-countess)): her death script creates no item and
   draws nothing; her runes come from her superunique TC, so quest state does not enter. Confirmed in Normal and
   Nightmare, with her quest done and not done (one owner-played kill in each of the four states); Hell is read from
@@ -450,58 +457,86 @@ recorded game.
   hammer itself drops from Hephasto as a unique and draws nothing on the quest seed. The forge's click goes to the
   forge's own operate function like any object's, and its waves arrive later as a timer event of the quest objects;
   both confirmed.
-- **Baal** ([§ D6](../specs/items/quest-drops.md#d6-baals-first-kill)): read from the code only, a gold amount of
-  6000·difficulty + 1500 to + 2999 per qualifying player, dropped as at most 32 piles of at most 2 000 000 000 gold,
-  each made like any dropped gold pile, so each takes that item's draws.
+- **Baal** ([§ D6](../specs/items/quest-drops.md#d6-baals-first-kill)): on a first kill, a gold amount of
+  6000·difficulty + 1500 to + 2999 per qualifying player, one draw on the quest seed each, dropped as gold piles made
+  like any dropped gold, so each takes that item's draws. Confirmed for one player in Normal (2 178 gold, one pile);
+  a kill with the quest already done drew nothing. That a pile holds up to 2 000 000 000, so any Baal amount is one
+  pile, is read from the code, as are Nightmare, Hell and several players.
 
 ### Quest items and quest chests
 
 The Horadric parts, Wirt's Leg, the scrolls, the books and the other quest items are created by their scripts with
-fixed codes and qualities ([§ E](../specs/items/quest-drops.md#e-quest-items)). Nearly all of that table is read from
-the code. A duplicate is refused only by each script's own test (its quest bits, or "the player already holds the
-item"); this is read from the code. Because a quest item checked against the difficulty only counts when its
-quest-difficulty stat is at least the current difficulty, a Normal staff does not stop a Nightmare chest from making a new one, while the cube does.
-The item on the cursor is tested slightly differently: the cube held on the cursor counts only in Normal, while in the
-inventory it counts in every difficulty (read from the code). Separately, the check on moving an item refuses a second
-copy of a quest item, a quest item whose finished form (the Horadric Staff, Khalim's Will) is already held, and a
-second copy of a carry-one unique (read from the code). A quest chest, read from the
-code, makes its quest item, then its ordinary chest drop, then 5 to 9 gold piles with one draw on the quest seed.
-An object's drop takes its item level from the monster level of the object's level; in a level with no `Levels`
-record, or a town (monster level 0 or 1), that is 1 (read from the code).
+fixed codes and qualities ([§ E](../specs/items/quest-drops.md#e-quest-items)). Most of that table is now confirmed
+for the case where the script gives its item: Wirt's Leg, the Inifuss scroll, the Lam Esen tome, Radament's book,
+the Horadric scroll, staff and cube, the three Khalim parts, the figurine and the gifts that follow it, the
+soulstone and the hammer. The refusals (a quest bit already set, the item already held) were mostly not run; the
+altar, the Malus, Akara's book, the Gidbinn and the council's flail are read from the code. The quality in the table
+is the one the script asks for: seven of these items (Radament's book, the Inifuss scroll, the tome, the figurine,
+the soulstone, Malah's scroll and the golden bird) ask for normal quality and come out at quality 7. The cause is
+their base's unique flag: confirmed for the figurine, the soulstone, Malah's scroll and the golden bird (a gift
+whose base lacks the flag kept its asked quality), and read from the code for the book, the Inifuss scroll and the
+tome.
+
+A duplicate is refused by each script's own test (its quest bits, or "the player already holds the item"); that no
+other test refuses one is read from the code. Because a quest item checked against the difficulty only counts when
+its quest-difficulty stat is at least the current difficulty, a Normal staff does not stop a Nightmare chest from
+making a new one, while a held cube stops the cube chest; both were seen. The item on the cursor is tested slightly
+differently: the cube held on the cursor counts only in Normal, while in the inventory it counts in every
+difficulty (read from the code). Separately, the check on picking up or moving an item refuses a second copy of a
+quest item, a quest item whose finished form (the Horadric Staff, Khalim's Will) is already held, and a second copy
+of a carry-one unique (read from the code); at a pickup it was seen refusing six quest items and allowing the cube
+and the tome as the reading gives, though not which quest word each test reads.
+
+The quest chests come in two orders. The Act II chests (the scroll, the staff and the cube) make their quest item,
+then their ordinary chest drop, then 5 to 9 gold piles with one draw on the quest seed. The three Khalim chests make
+the gold first, then the part, then the ordinary drop. Both orders were seen, with the gold count the logged quest
+seed gives each time; the altar was not run. A chest gives nothing a second time in the same game (read from the
+code). An object's drop takes its item level from the monster level of the object's level; in a level with no
+`Levels` record, or a town (monster level 0 or 1), that is 1 (read from the code).
 
 ### NPC services: imbue, socket, personalize
 
 Three NPC services take the item on the cursor and give back a new or changed one
 ([§ F](../specs/items/quest-drops.md#f-npc-item-services-and-given-items)). All three call the repair and then identify
-their result. A run showed the socketed and the personalized item come back repaired, but not the imbued one: it is
-not yet identified when the repair runs, and an unidentified item cannot be repaired
-([§ F0](../specs/items/quest-drops.md#f0-the-shared-tail); [prices, repair, gold and wear](economy.md#repair)). Each
-service then sets bit 0 of its quest word and clears bit 1.
+their result, in that order. Runs showed the socketed and the personalized item come back repaired, and a throwing
+knife stack refilled. The imbued item is repaired only when it comes out of its creation already identified, as an
+imbued Wirt's Leg did; an imbued cap, created unidentified, kept its damage, because the repair runs before the
+service identifies it ([§ F0](../specs/items/quest-drops.md#f0-the-shared-tail);
+[prices, repair, gold and wear](economy.md#repair)). That an ethereal item is never repaired here is read from the
+code. Each service then sets bit 0 of its quest word and clears bit 1. Every refused item in the runs was refused by
+the client before it reached the server, so the server's own refusal is read from the code.
 
 - **Charsi's [imbue](../glossary.md)** ([§ F1](../specs/items/quest-drops.md#f1-charsis-imbue-action-154-word-3-bit-1-set))
   is a **fresh creation**, not an edit: same base, quality rare, ilvl = character level + 4 (character level when it
-  is 5 or less), on two new game-seed steps, so the old item's seeds are not reused. 17 imbues in the run confirm it.
-  The low-level branch and the imbue of an ethereal item were not run, and the list of refused items (only low, normal
-  and superior bases qualify) is read from the code.
+  is 5 or less), on two new game-seed steps, so the old item's seeds are not reused. 17 imbues in one run confirm it,
+  and the low-level branch (character level 5 gives item level 5, 6 gives 10) and an ethereal item (it stays
+  ethereal) are confirmed too. Only low, normal and superior bases qualify: magic, set, rare, unique and crafted
+  items, a quest item other than the leg, a socketed item and an item holding a gem were all refused. Throwing
+  knives were accepted: the throwing-weapon refusal in the code was skipped for every item the run tested, and what
+  makes it apply is not known.
 - **Larzuk's socket** ([§ F2](../specs/items/quest-drops.md#f2-larzuks-socket-action-511-word-35-bit-1-set)) copies
   the item on fresh seeds. A magic item gets 1 or 2 sockets (one draw, confirmed on 15 magic caps: 1 eight times, 2
-  seven times). Read from the code only: low, normal and superior items get their base's maximum, and set, rare,
-  unique and crafted items get 1.
+  seven times), and a magic item whose base allows only 1 still takes that draw. Low, normal and superior items get
+  their base's maximum, and set, rare, unique and crafted items get 1, with no draw: confirmed once each.
 - **Anya's personalization** ([§ F3](../specs/items/quest-drops.md#f3-anyas-personalization-action-512-word-38-bit-1-set))
   copies the item and writes the player's name on it after placing it; the service itself touches no affix or seed.
 
 ### Items NPCs give
 
-Read from the code only, none were run ([§ F4](../specs/items/quest-drops.md#f4-given-items-quests_giveitem)):
+Confirmed in all three difficulties ([§ F4](../specs/items/quest-drops.md#f4-given-items-quests_giveitem)):
 Akara's ring (magic in Normal, rare in Nightmare and Hell, at a fixed ilvl of 7, 30 or 60), Ormus's rare ring (ilvl 21,
-35 or 75), Qual-Kehk's one to three runes, Malah's items, and Anya's class item from the Prison of Ice, picked with one
-quest-seed draw from a per-class list for the difficulty. These are created like store items.
+35 or 75), Qual-Kehk's one to three runes (by his quest bits), Malah's scroll, and Anya's class item from the Prison
+of Ice, picked with one quest-seed draw from a per-class list for the difficulty. Alkor's potion (in Normal) and
+Meshif's golden bird (in Nightmare) were each confirmed in one difficulty. Each is created like a store item, at the character's level unless a fixed level is given. Malah's
+potion was not given: her talk offers it only in one quest state, which no run reached and whose cause is not known.
 
 ### The boss level exception
 
 A monster flagged as a boss keeps its own Nightmare and Hell level instead of the area level in an expansion game
 ([§ G](../specs/items/quest-drops.md#g-the-boss-level-exception-monsterspool-e4)). Andariel was level 49 in Nightmare
-and 75 in Hell; a monster's scripted drop takes the monster's level as its ilvl. For the other 24 boss classes this is read from the code.
+and 75 in Hell; a monster's scripted drop takes the monster's level as its ilvl. Four more boss-flagged monsters
+(Blood Raven, Radament, Mephisto, Nihlathak) were seen keeping their own Nightmare level; the remaining classes and
+the Hell levels of all but Andariel follow from the same test in the code.
 
 ## Worked examples
 
@@ -596,10 +631,10 @@ Collected from the specs' open questions and unconfirmed points:
   it took the store seed after each hire-list build from the recording (16 builds, each entered with the seed the
   model predicted). The hire list's own draws are specified with the hirelings (see
   [characters and hirelings](characters.md)), and a reimplementation runs them in that build's place.
-- **Quests** ([open questions](../specs/items/quest-drops.md#open-questions)): kills by pets, hirelings or converted
-  monsters, parties, classic games, Diablo, Baal and his gold, Anya's and Qual-Kehk's items, the chest gold (Wirt's gold is now run, see [gold](economy.md#how-much-a-pile-holds)),
-  the Countess in Hell and the Cow King's refusals were not attempted; and, for quest objects other than the
-  Hellforge, the timer route at run time.
+- **Quests** ([open questions](../specs/items/quest-drops.md#open-questions)): kills by converted monsters, parties,
+  a classic Hellforge, Diablo, the Countess in Hell, the Cow King's refusals, the altar, the Malus and a few other
+  quest items, and most refusal cases were not attempted; Malah's potion waits on a quest state no run reached; and,
+  for quest objects other than the Hellforge, Wirt's body and the Kurast sewer lever, the timer route at run time.
 
 ## Where to read more
 
