@@ -9,8 +9,33 @@ searched for the base (10..21) that does. Prints one DIFF/ALT line per mismatch,
 thresholds per case, and a last `SUMMARY` line.
 
 Usage: python3 -I tools/anim_leads_check.py
+       python3 -I tools/anim_leads_check.py code <merged root> <p50a-anim-scan.txt>
+
+`code` (plan 0050 Phase 1b part 2, the verdicts): the same 39 community tables, and the other numeric
+claims of anim/leads, against the code's model of anim/0001 and anim/0002 (tools/anim_rates.py: the
+rate bonus, the cast, get-hit and block rates and the schedule loop of SUNIT_ScheduleModeEvents) over
+the stock animdata.d2 records the code would look up, and against the stock tables. Sections, one line
+each, then `SUMMARY anim_leads_code ...`:
+  TAB   per table case: the records the case covers (name, frames, speed), the stat values where the
+        code's mode length n changes (from 0 to the table's last row), whether they equal the table's,
+        and the set of (table frames - n) over the table's rows
+  BASIN per row of the Basin attack table (src:basin-wiki-animation rev 65669, transcribed as numbers):
+        the record's frames and speed, the code's start frame (g_AttackStartFrames, anim/0001 § 4), the
+        first code-1/2 event frame, each against the row, and the row's cycle against the code's n at factor X = 100
+  CAST  per cast record: frames, speed and the first code-1/2 event frame (the cast action frame)
+  DELAY Skills `delay` (frames) of every row with a charclass and a delay, against the seconds of D4
+  SEQ   the player sequence lengths the A10, A12, A13 and C1 rows name (from the kept P1.1 scan)
+  MOVE  CharStats walk/run per class; the shape classes' MonStats Velocity and MonStats2 mRN
+  WSM   Weapons `speed` range and the three named bases; the item types whose `wclass` is 1hs
+Read-only; game data stays in the workspace (the output prints numbers and record names only).
 """
 import math
+import os
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
 
 def eff(x):
     return x * 120 // (x + 120)
@@ -137,5 +162,241 @@ def main():
     print(f"SUMMARY anim_leads cases={len(CASES)} agree={agree} differ={disagree} alt_base_found={alts}")
 
 
+# ------------------------------------------------------------------------------------ part 2: the code
+WCLASSES = ("HTH", "BOW", "1HS", "1HT", "STF", "2HS", "2HT", "XBW", "1JS", "1JT", "1SS", "1ST", "HT1", "HT2")
+
+# (kind, case name) -> (record prefix + mode token, weapon classes or None for every class present,
+#                       classes excluded, sequence number or None). A sequence case takes its length from
+# the player sequence table (anim/0001 § 5) and its speed from the mode-18 record, whose mode token is
+# remapped to GH (anim/0001 § 2).
+REC = {
+    ("fcr", "Amazon"): ("AMSC", None, (), None),
+    ("fcr", "Assassin"): ("AISC", None, (), None),
+    ("fcr", "Barbarian"): ("BASC", None, (), None),
+    ("fcr", "Druid"): ("DZSC", None, (), None),
+    ("fcr", "Werewolf"): ("40SC", None, (), None),
+    ("fcr", "Werebear"): ("TGSC", None, (), None),
+    ("fcr", "Necromancer"): ("NESC", None, (), None),
+    ("fcr", "Vampire form"): ("VASC", None, (), None),
+    ("fcr", "Paladin"): ("PASC", None, (), None),
+    ("fcr", "Sorceress"): ("SOSC", None, (), None),
+    ("fcr", "Sorceress Lightning"): ("SOGH", None, (), 12),
+    ("fcr", "Act 3 merc"): ("IWSC", None, (), None),
+    ("fhr", "Amazon"): ("AMGH", None, (), None),
+    ("fhr", "Assassin"): ("AIGH", None, (), None),
+    ("fhr", "Barbarian"): ("BAGH", None, (), None),
+    ("fhr", "Druid 1H swing"): ("DZGH", ("1HS",), (), None),
+    ("fhr", "Druid other"): ("DZGH", None, ("1HS",), None),
+    ("fhr", "Werewolf"): ("40GH", None, (), None),
+    ("fhr", "Werebear"): ("TGGH", None, (), None),
+    ("fhr", "Necromancer"): ("NEGH", None, (), None),
+    ("fhr", "Vampire form"): ("VAGH", None, (), None),
+    ("fhr", "Paladin spear/staff"): ("PAGH", ("STF", "2HT"), (), None),
+    ("fhr", "Paladin other"): ("PAGH", None, ("STF", "2HT"), None),
+    ("fhr", "Sorceress"): ("SOGH", None, (), None),
+    ("fhr", "Act 1 merc"): ("RGGH", None, (), None),
+    ("fhr", "Act 2 merc"): ("GUGH", None, (), None),
+    ("fhr", "Act 3 merc"): ("IWGH", None, (), None),
+    ("fhr", "Act 5 merc"): ("0AGH", None, (), None),
+    ("fbr", "Amazon 1H swing"): ("AMBL", ("1HS",), (), None),
+    ("fbr", "Amazon other"): ("AMBL", None, ("1HS",), None),
+    ("fbr", "Assassin"): ("AIBL", None, (), None),
+    ("fbr", "Barbarian"): ("BABL", None, (), None),
+    ("fbr", "Druid"): ("DZBL", None, (), None),
+    ("fbr", "Werewolf"): ("40BL", None, (), None),
+    ("fbr", "Werebear"): ("TGBL", None, (), None),
+    ("fbr", "Necromancer"): ("NEBL", None, (), None),
+    ("fbr", "Paladin"): ("PABL", None, ("2HS",), None),
+    ("fbr", "Paladin Holy Shield"): ("PABL", None, ("2HS",), None),
+    ("fbr", "Sorceress"): ("SOBL", None, (), None),
+}
+
+# src:basin-wiki-animation "Attack speed" rev 65669 (re-fetched 2026-10-27, plan 0050 P1b part 2), as
+# numbers: code, mode, wclass, FramesPerDirection, AnimationSpeed, StartingFrame, ActionFlagFrames, cycle.
+BASIN = [
+    ("AI", "A1", "HTH", 11, 256, 0, 6, 10), ("AI", "A1", "1HS", 15, 256, 0, 7, 14), ("AI", "A1", "2HS", 23, 256, 0, 11, 22),
+    ("AI", "A1", "1HT", 15, 256, 0, 7, 14), ("AI", "A1", "2HT", 23, 256, 0, 10, 22), ("AI", "A1", "STF", 19, 256, 0, 9, 18),
+    ("AI", "A1", "BOW", 16, 256, 0, 7, 15), ("AI", "A1", "XBW", 21, 256, 0, 10, 20), ("AI", "A1", "HT1", 11, 208, 0, 6, 13),
+    ("AI", "A1", "HT2", 11, 208, 0, 6, 13),
+    ("AM", "A1", "HTH", 13, 256, 1, 8, 11), ("AM", "A1", "1HS", 16, 256, 2, 10, 13), ("AM", "A1", "2HS", 20, 256, 2, 12, 17),
+    ("AM", "A1", "1HT", 15, 256, 2, 9, 12), ("AM", "A1", "2HT", 18, 256, 2, 11, 15), ("AM", "A1", "STF", 20, 256, 2, 12, 17),
+    ("AM", "A1", "BOW", 14, 256, 0, 6, 13), ("AM", "A1", "XBW", 20, 256, 0, 9, 19),
+    ("BA", "A1", "HTH", 12, 256, 0, 6, 11), ("BA", "A1", "1HS", 16, 256, 0, 7, 15), ("BA", "A1", "2HS", 18, 256, 0, 8, 17),
+    ("BA", "A1", "1HT", 16, 256, 0, 7, 15), ("BA", "A1", "2HT", 19, 256, 0, 9, 18), ("BA", "A1", "STF", 19, 256, 0, 9, 18),
+    ("BA", "A1", "BOW", 15, 256, 0, 7, 14), ("BA", "A1", "XBW", 20, 256, 0, 10, 19), ("BA", "A1", "1JS", 16, 256, 0, 7, 15),
+    ("BA", "A1", "1JT", 16, 256, 0, 7, 15), ("BA", "A1", "1SS", 16, 256, 0, 7, 15), ("BA", "A1", "1ST", 16, 256, 0, 7, 15),
+    ("DZ", "A1", "HTH", 16, 256, 0, 8, 15), ("DZ", "A1", "1HS", 19, 256, 0, 9, 18), ("DZ", "A1", "2HS", 21, 256, 0, 10, 20),
+    ("DZ", "A1", "1HT", 19, 256, 0, 8, 18), ("DZ", "A1", "2HT", 23, 256, 0, 9, 22), ("DZ", "A1", "STF", 17, 256, 0, 9, 16),
+    ("DZ", "A1", "BOW", 16, 256, 0, 8, 15), ("DZ", "A1", "XBW", 20, 256, 0, 10, 19),
+    ("NE", "A1", "HTH", 15, 256, 0, 8, 14), ("NE", "A1", "1HS", 19, 256, 0, 9, 18), ("NE", "A1", "2HS", 23, 256, 0, 11, 22),
+    ("NE", "A1", "1HT", 19, 256, 0, 9, 18), ("NE", "A1", "2HT", 24, 256, 0, 10, 23), ("NE", "A1", "STF", 20, 256, 0, 11, 19),
+    ("NE", "A1", "BOW", 18, 256, 0, 9, 17), ("NE", "A1", "XBW", 20, 256, 0, 11, 19),
+    ("PA", "A1", "HTH", 14, 256, 0, 7, 13), ("PA", "A1", "1HS", 15, 256, 0, 7, 14), ("PA", "A1", "2HS", 18, 256, 0, 8, 17),
+    ("PA", "A1", "1HT", 17, 256, 0, 8, 16), ("PA", "A1", "2HT", 20, 256, 0, 8, 19), ("PA", "A1", "STF", 18, 256, 0, 9, 17),
+    ("PA", "A1", "BOW", 16, 256, 0, 8, 15), ("PA", "A1", "XBW", 20, 256, 0, 10, 19),
+    ("SO", "A1", "HTH", 16, 256, 1, 9, 14), ("SO", "A1", "1HS", 20, 256, 2, 12, 17), ("SO", "A1", "2HS", 24, 256, 2, 14, 21),
+    ("SO", "A1", "1HT", 19, 256, 2, 11, 16), ("SO", "A1", "2HT", 23, 256, 2, 13, 20), ("SO", "A1", "STF", 18, 256, 2, 11, 15),
+    ("SO", "A1", "BOW", 17, 256, 0, 9, 16), ("SO", "A1", "XBW", 20, 256, 0, 11, 19),
+    ("AI", "KK", "STF", 13, 256, 0, 4, 12), ("AM", "KK", "2HT", 12, 256, 0, 5, 11), ("BA", "KK", "XBW", 12, 256, 0, 4, 11),
+    ("DZ", "KK", "2HT", 12, 256, 0, 5, 11), ("NE", "KK", "STF", 12, 256, 0, 6, 11), ("PA", "KK", "XBW", 12, 256, 0, 5, 11),
+    ("SO", "KK", "1HS", 12, 256, 0, 6, 11),
+]
+
+# data:g_AttackStartFrames@0x006E8E60 as anim/0001 § 4 states it: classes Amazon and Sorceress only, for
+# player modes A1, A2 (and S3/S4 while able to dual-wield), by the weapon's own class code.
+START = {"HTH": 1, "1HS": 2, "1HT": 2, "STF": 2, "2HS": 2, "2HT": 2}
+
+# D4 (src:basin-wiki-animation, Cast rate), seconds, keyed by the Skills.txt `skill` name.
+D4 = {"Poison Javelin": 0.6, "Plague Javelin": 4, "Immolation Arrow": 1, "Valkyrie": 6, "Shock Field": 0.6,
+      "Blade Sentinel": 2, "Shadow Warrior": 6, "Dragon Flight": 1, "Shadow Master": 6, "Wearwolf": 1,
+      "Firestorm": 0.6, "Wearbear": 1, "Molten Boulder": 2, "Eruption": 2, "Volcano": 4, "Armageddon": 6,
+      "Hurricane": 6, "Fist of the Heavens": 1, "Fire Wall": 1.4, "Meteor": 1.2, "Blizzard": 1.8, "Hydra": 1.6,
+      "Frozen Orb": 1}
+
+
+def first_event(r):
+    for f, v in enumerate(r.events[:r.frames]):
+        if v in (1, 2):
+            return f
+    return None
+
+
+def seq_lengths(scan_path):
+    """PSEQ <seqnum> <col> <addr> <frames> <length> lines of the kept P1.1 scan -> {(seqnum, col): length}."""
+    out = {}
+    with open(scan_path) as f:
+        for line in f:
+            p = line.split()
+            if len(p) == 6 and p[0] == "PSEQ":
+                out[(int(p[1]), int(p[2]))] = int(p[5])
+    return out
+
+
+def read_rows(path):
+    import csv
+    with open(path, encoding="latin-1") as f:
+        return list(csv.DictReader(f, delimiter="\t"))
+
+
+def cmd_code(root, scan_path):
+    import anim_rates as AR
+    import animdata as AD
+    recs = AD.load(os.path.join(root, "data", "global", "animdata.d2"))
+    byname = {}
+    for r in recs:
+        byname.setdefault(r.name, r)          # the first record of a name wins (anim/0001 § 2.1)
+    seqs = seq_lengths(scan_path)
+    xd = os.path.join(root, "data", "global", "excel")
+    n_tab = n_thr = n_off1 = n_off0 = 0
+
+    # ---- TAB
+    for name, kind, base, speed, kw, mx, pd in CASES:
+        pre, only, excl, seq = REC[(kind, name)]
+        names = [pre + w for w in WCLASSES if (only is None or w in only) and w not in excl and pre + w in byname]
+        shapes = sorted({(byname[n].frames, byname[n].speed) for n in names})
+        if seq is not None:
+            shapes = sorted({(seqs[(seq, c)], s) for c in range(14) if (seq, c) in seqs for (_, s) in shapes})
+        for F, spd in shapes:
+            def n_at(p):
+                if kind == "fcr":
+                    r = AR.rate_cast(spd, AR.bonus(2, p))
+                elif kind == "fhr":
+                    r = AR.rate_gethit(spd, AR.bonus(1, p))
+                else:
+                    r = AR.rate_block(spd, AR.bonus(3, p), kw.get("holy", False))
+                return AR.sched_len(F, 0, r)[0]
+            for label, tab in (("maxroll", mx), ("pd", pd)):
+                lim = tab[-1][0]
+                thr, last = [], None
+                for p in range(0, lim + 1):
+                    v = n_at(p)
+                    if v != last:
+                        thr.append(p)
+                        last = v
+                offs = sorted({f - n_at(p) for p, f in tab})
+                eq = int(thr == [p for p, _ in tab])
+                n_tab += 1
+                n_thr += eq
+                n_off1 += int(offs == [-1])
+                n_off0 += int(offs == [0])
+                print("TAB %s %s %s records=%s F=%d spd=%d thresholds_equal=%d table_minus_n=%s code_thr=%s" % (
+                    kind, name.replace(" ", "_"), label, ",".join(names) if seq is None else "seq%d(%s)" % (seq, ",".join(names)),
+                    F, spd, eq, offs, thr))
+
+    # ---- BASIN
+    b_ok = 0
+    for code, mode, wc, F, spd, S, act, cyc in BASIN:
+        nm = code + mode + wc
+        r = byname.get(nm)
+        if r is None:
+            print("BASIN %s missing" % nm)
+            continue
+        s_code = START.get(wc, 0) if (code in ("AM", "SO") and mode == "A1") else 0
+        fe = first_event(r)
+        n = AR.sched_len(r.frames, s_code, AR.rate_attack(r.speed, 100))[0]
+        ok = (r.frames, r.speed, s_code, fe) == (F, spd, S, act)
+        b_ok += ok
+        print("BASIN %s frames=%d/%d speed=%d/%d start=%d/%d action=%s/%d match=%d cycle=%d n_at_x100=%d" % (
+            nm, r.frames, F, r.speed, spd, s_code, S, fe, act, int(ok), cyc, n))
+
+    # ---- CAST
+    for pre in ("AMSC", "AISC", "BASC", "DZSC", "40SC", "TGSC", "NESC", "VASC", "PASC", "SOSC", "IWSC"):
+        for w in WCLASSES:
+            r = byname.get(pre + w)
+            if r:
+                print("CAST %s frames=%d speed=%d action=%s" % (r.name, r.frames, r.speed, first_event(r)))
+
+    # ---- DELAY
+    sk = read_rows(os.path.join(xd, "skills.txt"))
+    d_ok = d_n = 0
+    for row in sk:
+        if row["charclass"] and row["delay"] not in ("", "0"):
+            d_n += 1
+            sec = D4.get(row["skill"])
+            ok = sec is not None and round(sec * 25) == int(row["delay"])
+            d_ok += ok
+            print("DELAY %s %s delay=%s d4_seconds=%s match_at_25=%d" % (
+                row["charclass"], row["skill"].replace(" ", "_"), row["delay"], sec, int(ok)))
+    print("DELAY rows=%d match=%d d4_named=%d" % (d_n, d_ok, len(D4)))
+
+    # ---- SEQ
+    for nm, sq in (("Jab", 1), ("Impale", 8), ("Lightning/Chain_Lightning", 12), ("Charge", 4), ("Double_Swing/Frenzy", 11),
+                   ("Double_Throw", 15), ("Leap_Attack", 14), ("Fists_of_Fire/Claws_of_Thunder/Blades_of_Ice", 16)):
+        print("SEQ %s seqnum=%d lengths_by_column=%s" % (nm, sq, sorted({v for (s, c), v in seqs.items() if s == sq})))
+    for row in sk:
+        if row["skill"] in ("Jab", "Impale", "Lightning", "Chain Lightning", "Charge", "Double Swing", "Frenzy",
+                            "Double Throw", "Leap Attack", "Fists of Fire", "Claws of Thunder", "Blades of Ice"):
+            print("SKILL %s anim=%s seqtrans=%s seqnum=%s UseAttackRate=%s interrupt=%s" % (
+                row["skill"].replace(" ", "_"), row["anim"], row["seqtrans"], row["seqnum"], row["UseAttackRate"] or 0,
+                row["interrupt"] or 0))
+    no_int = [row["skill"].replace(" ", "_") for row in sk if (row["charclass"] or row["Id"] in ("0", "1"))
+              and row["interrupt"] != "1"]
+    print("INTERRUPT player_rows_without=%d %s" % (len(no_int), ",".join(no_int)))
+
+    # ---- MOVE
+    for row in read_rows(os.path.join(xd, "charstats.txt")):
+        if row["class"] != "Expansion":
+            print("MOVE charstats %s WalkVelocity=%s RunVelocity=%s" % (row["class"], row["WalkVelocity"], row["RunVelocity"]))
+    ms = [r for r in read_rows(os.path.join(xd, "monstats.txt")) if r["Id"] != "Expansion"]
+    m2 = {r["Id"]: r for r in read_rows(os.path.join(xd, "monstats2.txt"))}
+    for i in (430, 431, 135, 212):
+        r = ms[i]
+        print("MOVE shape class=%d %s Velocity=%s mRN=%s" % (i, r["Id"], r["Velocity"], m2[r["MonStatsEx"]]["mRN"] or 0))
+
+    # ---- WSM
+    wp = [r for r in read_rows(os.path.join(xd, "weapons.txt")) if r.get("code") and r["name"] != "Expansion"]
+    sp = [int(r["speed"] or 0) for r in wp]
+    print("WSM rows=%d speed_min=%d speed_max=%d %s" % (len(wp), min(sp), max(sp), " ".join(
+        "%s=%s" % (r["name"].replace(" ", "_"), r["speed"] or 0) for r in wp if r["name"] in ("Axe", "Hand Axe", "Military Pick"))))
+    t1 = sorted({r["type"] for r in wp if r["wclass"] == "1hs"})
+    t1h = sorted({r["type"] for r in wp if r["wclass"] == "1hs" and r["2handed"] != "1"})
+    print("WSM wclass_1hs_types=%s one_handed_only=%s" % (",".join(t1), ",".join(t1h)))
+    print("SUMMARY anim_leads_code tab=%d thresholds_equal=%d table_minus_n_is_-1=%d table_minus_n_is_0=%d basin=%d basin_match=%d "
+          "delay_rows=%d delay_match=%d" % (n_tab, n_thr, n_off1, n_off0, len(BASIN), b_ok, d_n, d_ok))
+
+
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) == 4 and sys.argv[1] == "code":
+        cmd_code(sys.argv[2], sys.argv[3])
+    else:
+        main()

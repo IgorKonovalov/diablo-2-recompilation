@@ -79,10 +79,33 @@ names agree (P1.1 review). 8.8 means frames × 256.
 
 ## Leads used
 
-None. No lead was registered for animation timing when this batch was filed; it reads code only ("no lead; derived
-from code"), and [anim/leads](leads.md) was not read before filing. The community cross-check is Phase 1b part 2's;
-its rows R1, A3 and A4 (frame advance, start frame) are decided against this finding (plan 0050 log, `lane/p50c`
-review).
+No lead was registered for animation timing when this batch was filed; it reads code only ("no lead; derived from
+code"), and [anim/leads](leads.md) was not read before filing. *2026-10-27 (plan 0050 Phase 1b part 2, `lane/p50v`):*
+the verdicts on the three [anim/leads](leads.md) rows batched here (R1, A3, A4), against this finding and the P0
+`animdata.d2` survey; agreement promotes nothing. The numeric comparisons come from `tools/anim_leads_check.py code`
+(`workspace/logs/anim-leads/p50v-code.txt`, `p50v-manifest.sha256`). The other 58 rows are in
+[anim/0002](0002-rates.md#leads-used) and [anim/0003](0003-movement-gates.md#leads-used).
+
+- [L] src:maxroll-d2r-breakpoints, src:pd-breakpoints: R1, the game runs 25 frames a second, a mode lasts a whole
+  number of frames, and a rate gain shows only when it removes a whole frame. **held with refinement**
+  Detail: the schedule queues every event and the end at whole game frames `T + k` (§ 7,
+  fn:SUNIT_ScheduleModeEvents@0x005539B0), so a length changes only at the breakpoints of anim/0002 § 7; the 25 per
+  second is not read in this finding (no anchor here for the frame period).
+- [L] src:basin-wiki-animation: A3, the starting frame is 1 or 2 for the Amazon's and the Sorceress's melee A1 and 0
+  elsewhere. **held with refinement**
+  Detail: `g_AttackStartFrames` gives 1 for `hth` and 2 for `1hs`, `1ht`, `stf`, `2hs`, `2ht` for those two classes
+  only, 0 for `bow`, `xbw`, `ht1` and every other class (data:g_AttackStartFrames@0x006E8E60); it applies to A2 too
+  and to S3/S4 while the unit can dual-wield, and by the weapon's own class code (§ 4,
+  fn:UNIT_AnimStartFrame@0x00623B10).
+- [L] src:basin-wiki-animation: A4, the per-class A1 and kick parameters (frames per direction, speed, starting frame,
+  action frame) of the Basin table. **held**
+  Detail: re-fetched (rev 65669, unchanged); all 69 rows (62 A1, 7 KK) equal the first record of the name in
+  `animdata.d2` (§ 2.1) for frames and speed, the code's start frame (§ 4) and the record's first code-1/2 event frame
+  (`BASIN … match=1` ×69, `SUMMARY … basin_match=69`; fn:ANIMDATA_Find@0x0066A8F0). The table's cycle column is A2's
+  formula, one below the code's length at factor 100 in every row (anim/0002, A2).
+
+No lead was found for the monster sequences (`monseq`, mode 14) or for which record a duplicate name yields (part 1,
+anim/leads § 1): "no lead; derived from code".
 
 Questions routed here by other findings: skills/0001's `Unit+0x38` (§ 5) and its "which frame carries code 1 or 2"
 (§§ 7–8: the frame whose `animdata.d2` or sequence event byte is 1 or 2, at the game frame the schedule gives it);
