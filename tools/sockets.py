@@ -370,9 +370,11 @@ def check_insert(T, blk, pdt, S, notes):
             T.base(pa["cls"])["code"], T.rune(rw)["ename"]))
     eq("RUNEWORD_Apply called", apply_, rwa is not None)
     it = None
-    # plan 0038 H6b: a parent that already holds a state-171 list (flags 0x40) gets nothing (0x006600BC-0x006600CB):
-    # the reader's re-insert of a loaded runeword's children
-    already = apply_ and any(st == 171 and fl == 0x40 for st, fl, _ in psubs)
+    # plan 0038 H6b: a parent that already holds a state-171 list gets nothing (0x006600BC-0x006600CB): the reader's
+    # re-insert of a loaded runeword's children. The pushed 0x40 is not tested: sub_00625790_UnitFindStatList searches
+    # by state alone when the state is non-zero (0x006257AC-0x006257B5 -> 0x00625650, which compares +0x14 only;
+    # lane/h6b review)
+    already = apply_ and any(st == 171 for st, _fl, _ in psubs)
     if already:
         a, rwx = rwa
         eq("RUNEWORD_Apply child is the inserted child", True, a["same"])

@@ -11,16 +11,17 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    charge speed", "moves the unit's path to its owner's point") inside a `[C]` of the batch's column-reader entry (`lane/p46m6`, `lane/p46m8` and `lane/p46m15` reviews,
    [0046](../../../../docs/plans/0046-skills-function-catalogue.md)); "the unit's full stat" for the `s` of anim/0002's ADR-0015 bonus map, where the map
    covers `UnitGetStat(unit, stat, 0)` only (`lane/p50b` review, [0050](../../../../docs/plans/0050-animation-frame-timing.md)).
+   A pushed argument is not a test until the callee reads it: `RUNEWORD_Apply`'s `0x40` was modelled and stated as a flag test, but `UnitFindStatList` ignores it when the state is non-zero. Also, sock 17's reason for the empty cursor slot (`0x0063AAF0`, a reading) sat inside the logged `[C]` (`lane/h6b` review, 0038).
 2. **Recount every count from the binary with a kept command**, never from memory or a partial scan:
    writers, call sites, instructions, items. Copy a run's counts from the kept, hashed check output, never from an
    earlier check. Seen: bit-17 writers 5 → 21
    ([0039](../../../../docs/plans/done/0039-backlog-sweep-4.md) P1b review); S4b row 17 short by 9, "7" instructions for 8 (0038);
    eight wear and resurrection counts one off `check-run.txt` ([0043](../../../../docs/plans/done/0043-items-economy.md) P2 review);
    pool 12's "six of the 25 `boss` classes" met for five (`lane/h4a` review, 0038); "2 708 do events" in the record for the logs' 1 840, which hid the 2 000 skill-use floor's shortfall (`lane/p45h` review, [0045](../../../../docs/plans/done/0045-skills-missiles-machinery.md)); 318 pattern-5 creations for `patterns.txt`'s 360 (`lane/h5d` review, 0038); a 27-line manifest filed as "26 lines", and the 9 non-ItemStatCost `UpdateAnimRate` sites
-   described without the scan's own breakdown (2 unidentified among them; `lane/p50b` review, 0050); "ten readers" raised for the eleven of `re/symbols.csv`'s diff (`lane/h1a` review, 0038); "four of the six" brain-chest positions at a corner for `brain91.txt`'s five files (`lane/rdp` review, 0038). The review request's "14 symbol raises" for the lane's 15 `re/symbols.csv` rows (`lane/h6e1` review, 0038).
+   described without the scan's own breakdown (2 unidentified among them; `lane/p50b` review, 0050); "ten readers" raised for the eleven of `re/symbols.csv`'s diff (`lane/h1a` review, 0038); "four of the six" brain-chest positions at a corner for `brain91.txt`'s five files (`lane/rdp` review, 0038). The review request's "14 symbol raises" for the lane's 15 `re/symbols.csv` rows (`lane/h6e1` review, 0038). "Six" register stores of the UI word, where `check-static.txt` lists seven, and five of them resolve to constants (`lane/h6b` review, 0038).
 3. **Take totals against `main` after merging it**, not against the totals your batch started from.
    Seen: S2c, S3b and S1a reviews (0038), each recomputed; H3b's totals taken before the `lane/r1h` moves had landed
-   (`lane/h3b` review, 0038).
+   (`lane/h3b` review, 0038). Check the routes after the merge too: sock 1 still read "needs a version-71 save" after `lane/a72`'s `leg71` builder had been merged (`lane/h6b` review, 0038).
 4. **"Never", "only", "no X": say what the run separates.** If one case carries both readings (Andariel has
    flag `0x08` and `boss`), that half stays `[I]`. An observed absence counts only while a control is shown live over
    the whole window. Seen: resume-lane review

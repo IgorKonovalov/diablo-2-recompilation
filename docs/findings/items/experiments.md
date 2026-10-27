@@ -3301,7 +3301,7 @@ run id). Evidence in [items/0010 § Plan 0038 batch H6e2](0010-quest-drops.md#pl
     - `SockSvc` (`sock-h6b-svc.json` `ceb8d918…`, save `a0aa3e8c…`): `quest-h6e1-svca.json`'s Sorceress in the Act V
       town with Anya's reward bit, and three socketed items holding children (a `cap` with a gem, a `cap` with a gem
       and *El*, a `skp` with a jewel), built with `"filled"`.
-  - **Built (test) states** (ADR-0010 § built states): bit 11 on a ring and on gloves, the broken cap, the
+  - **Built (test) states** (tool-built saves on stock tables, ADR-0013 § Neutral; not forced-path runs): bit 11 on a ring and on gloves, the broken cap, the
     unidentified cap, the filled children of `SockSvc` (the builder's, not an insert's), the low-level character
     holding runes above its level. None changes a path the checks model: the client reads them as logged.
 - **Sessions** (`python3 -I tools/h6b_sessions.py run --slot 1 --tag h6b --saves workspace/scratch-h6b/saves --run
@@ -3352,3 +3352,12 @@ run id). Evidence in [items/0010 § Plan 0038 batch H6e2](0010-quest-drops.md#pl
   `par`-0 func 17 line) make no runeword. No Necromancer's golem, corpse or version-71 save, so the golem reader and
   the other reader sites did not run; no player trade, so the UI states 10 and 11 and 0x00563441's callers did not
   either. The sale made no copy.
+- **Review checks** (`lane/h6b` review, 2026-10-27; no harness, no Ghidra). The three manifests pass `sha256sum -c` from
+  their own directories. The four procedure commands were rerun under `systemd-run --user --scope -p MemoryMax=4G`, and
+  each output is byte-identical to the kept one (`815bdd9b…`, `64d81481…`, `589f34e3…`, `7c94a139…`). `main`'s
+  `sockets.py` gives the same regression output (`7c94a139…`) and fails on this run's logs at one insert only, the
+  *Steel* re-insert (34 of 35). At the review, `tools/sockets.py` `af5c8279…` tests the state alone in the
+  already-applied branch (the flag argument is not read), and both of its outputs are unchanged. `tools/d2s.py`: the 270
+  existing recipes build byte-identically with `main`'s tool and the lane's, and `"forced_sockets"` is off unless it is
+  given (one recipe uses it); `test_d2s.py` gives 60 OK. Version-71 saves are buildable since `lane/a72` (the `leg71*`
+  recipes), so the limit above concerns this run, not the setup.

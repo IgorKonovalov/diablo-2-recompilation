@@ -5042,3 +5042,70 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - No class move filed (proposals for the review in the § 2.6 block); totals unchanged: static 567, harness 519,
     c-emu 0, blocked 421, deferred 2, raised 17: 1 526.
   - **Next:** the `lane/h6b` review.
+- **2026-10-27 — `lane/h6b` review (architect): accept with fixes (6).** First, `main` was merged into the lane: it
+  was already up to date at `fd841611`, and `backlog.py archive` was a no-op. The review re-checked the run with no
+  harness and no Ghidra:
+  - `manifest-run.sha256`, `manifest-shots.sha256` and `dev/manifest-dev.sha256` pass from their own directories.
+  - The four procedure commands were rerun under `systemd-run --user --scope -p MemoryMax=4G`. Each output is
+    byte-identical to the kept one: `check-sockets.txt` `815bdd9b…` (35 inserts, 37 client verdicts, 0 failed),
+    `check-sweep_h6b.txt` `64d81481…` (773 checks, 0 bad), `check-static.txt` `589f34e3…` and the regression
+    `7c94a139…` (351 and 357).
+  - `main`'s `sockets.py` gives the same regression output. On this run's logs it fails at one insert only, the
+    *Steel* re-insert.
+  - `tools/d2s.py`: the 270 existing recipes build byte-identically with `main`'s tool and the lane's, and
+    `"forced_sockets"` is read only when it is given (one recipe uses it). `test_d2s.py` gives 60 OK.
+  - objdump confirms the anchors: the copier's pushes 0, 1, 0, 0 and `EDX` = `edi` at 0x0055A3F9–0x0055A41C; the corpse
+    reader's `push 1` at 0x0053397D; `NPC_SellItem`'s skip at 0x00579736; the `p5` test at 0x005627CB–0x005627DE;
+    `InvPlaceSocketed`'s remove at 0x0063B26E, and `0x0063AAF0` clearing `inv+0x20` (0x0063AB61); the 252 timer's
+    `idiv` at 0x00558561; `RUNEWORD_Apply`'s `push 0x40; push 0xAB` at 0x006600BC, and the callee
+    `0x00625790` → `0x00625650`; the link branches of `0x00627910`.
+
+  **Rulings.**
+  1. **sock 10's `"forced_sockets"` is a tool-built save on stock tables (ADR-0013 § Neutral).** It is neither a
+     forced-path run (no table is edited) nor a stock path (no game-written save has bit 11 on a ring or on gloves).
+     It backs `[C]` for the code that reads the built state: the client test's order, and its refusal at `hasinv` and
+     at `ItemMaxSockets` on a target with bit 11. The two raises stand on that scope, and Phase 3 states that no stock
+     item reaches either refusal. It raises nothing about how an item gets bit 11. The `lane/h3b` `use`-byte ruling
+     does not bind here: that byte was an edited table, and this is a save. The broken cap (sock 12) is a state stock
+     play reaches.
+  2. **The `sockets.py` "already applied" branch is modelling, not fitting.** The branch is the code's own test
+     (0x006600BC–0x006600CB, read `[I]` since plan 0029). Only the case it describes takes it: `main`'s tool fails
+     only the *Steel* re-insert, and the old run gives byte-identical output under both tools. And it asserts six
+     equalities; it skips none. One part was a misread (fix 1): the model tested the pushed `0x40`, which the callee
+     does not read.
+  3. **The sock 17 L237 correction stands, re-scoped.** `[C]`: the slot was empty at the test in the 29 inserts with
+     `p5` 1. `[I]`: why it is empty (`0x0063AAF0`). The statement stays a shortfall, not d-none: an insert whose child
+     is not the player's cursor item with `p5` 1 is not ruled out (the copier's "player" is the copy).
+  4. **"Fewer than half raised" is honest** (9 of 25), and every reason holds except one. sock 1's version-71 sites
+     have had a builder route since `lane/a72` (fix 5), so that piece goes to H1c, not to a class. After the moves,
+     3 shortfalls remain.
+  5. **Class moves** (inventory § 2.6): sock 9 → d-2c (`[I]`: the immediate stores sit in the trade routine; two
+     table-copied stores are unfollowed); sock 29 → d-none, on the socket path only; sock 38 L482 and L507 → d-none.
+     sock 18's 253 half and sock 38 L481's ranged half are labelled d-none for Phase 3. Their statements stay counted
+     here, raised in part (the H2b precedent, tc 58).
+  6. **Symbols:** both raises stand under rule 14 (`ItemBaseHasInv` against the table in 39 calls; the 252 timer's
+     logged schedule against its formula). `sub_00558580_ItemReplenishQtyTimer` stays I: its two schedules outside an
+     insert are not compared by the checker.
+  7. **S2c rows:** sock 46 → raised (both remainder parts compared); sock 14 stays raised in part.
+
+  **Fixes:**
+  1. *Misread:* the already-applied test does not read `0x40`. `tools/sockets.py` is now `af5c8279`, and both
+     outputs are unchanged. items/0007 § 5 and sock 35 carry the note.
+  2. *Stale cross-reference:* "ADR-0010 § built states" becomes ADR-0013 § Neutral, in items/0007 sock 10 and the run
+     record.
+  3. *Miscount:* the UI word has seven register stores, not six, and five resolve to constants (sock 9).
+  4. *Omission:* the two 253-timer schedules outside an insert. The truncation is the read `idiv` (sock 18, and the
+     Functions table).
+  5. *Omission:* sock 1's version-71 route. The piece goes on H1c's § 5 row.
+  6. *Overclaim:* sock 17 L237's reason sat inside the `[C]`.
+
+  **Bookkeeping:**
+  - H6b's ledger: raised 9, raised in part 9, shortfall 3, reclassified 4: 25.
+  - Totals, recounted against `main` `fd841611`: **static 567, harness 515, c-emu 0, blocked 425** (d-none 298,
+    d-2c 8), **deferred 2, raised 17: 1 526.**
+  - § 5 marks H6b done, and the research-map row says the spec is ready.
+  - **Phase 3 ready: items/sockets-runewords** (S2c, H2b and H6b, all accepted).
+  - No H6b spec-writer entry existed, so the review filed one:
+    [2026-10-27-architect-spec-writer-h6b-sockets-raises-for-the-phase-3-re](../backlog/2026-10-27-architect-spec-writer-h6b-sockets-raises-for-the-phase-3-re.md).
+  - The S2c harness-pieces entry stays open for H6a and H6c.
+  - Review request closed; the lane's ledger row is filled.

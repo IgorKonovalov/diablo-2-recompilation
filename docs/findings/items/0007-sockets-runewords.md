@@ -277,7 +277,7 @@ required Phase 2 case (backlog 2026-10-15 reverser → architect, plan 0029 Phas
 | `0x0062BED0` | `RUNEWORD_Match` | the `Runes` row a parent makes, or NULL (§ 4) | C |
 | `0x006600A0` | `RUNEWORD_Apply` | flag bit 26 and the state-171 list (§ 5) | C |
 | `0x0055FE80` | `sub_0055FE80_ItemRefillCharges` | every stat 204 entry with current < max gets max | C |
-| `0x00558530` | `sub_00558530_ItemReplenishDurTimer` | schedules the stat 252 (`item_replenish_durability`) event at the frame + trunc(2500 / v) + 1 (H6b) | C |
+| `0x00558530` | `sub_00558530_ItemReplenishDurTimer` | schedules the stat 252 (`item_replenish_durability`) event at the frame + 2500 / v + 1 (H6b; the truncation is the `idiv` at 0x00558561, read: the logged case divides exactly) | C |
 | `0x00558580` | `sub_00558580_ItemReplenishQtyTimer` | the same for stat 253 | I |
 | `0x00563470` | `sub_00563470_ItemDiscardInvalid` | removes a loaded item flagged runeword that no longer matches | I |
 | `0x00627910` | `sub_00627910_StatListLinkOwner` | attaches a child's stat list (`Unit+0x5C`) to an owner | I |
@@ -561,6 +561,11 @@ return 1;
   (save/0001 § 6–7), so a loaded runeword is not rolled again. (0x006600BC–0x006600CB)
   *2026-10-27, plan 0038 batch H6b:* **raised**: the *Steel* sample's reader re-insert matched row 18, and `Apply`
   returned 0 with no slot applied and the 171 list unchanged, [§ Plan 0038 batch H6b](#plan-0038-batch-h6b-run2026-10-27-sweep-sockets).
+  *`lane/h6b` review:* the pushed `0x40` is not a test. `sub_00625790_UnitFindStatList` goes to `0x00625650` when its
+  state argument is non-zero (0x006257AC–0x006257B5), and that walk compares the state (`+0x14`) of each list on the
+  parent's two chains (`+0x3C`, `+0x40`) and nothing else (0x00625680, 0x00625697); a parent whose own list lacks bit
+  `0x80000000` returns 0 first (0x006257A3). So any state-171 list stops the runeword. `[I]` (read): the run's only
+  171 list had flags `0x40`, so it cannot separate the two readings.
 - [C] **Target and item.** `PROP_ApplyBlock`'s 2nd argument (EDX for the handlers) is the parent, and its 3rd (the
   handlers' item) is the child. `PROP_WriteStat` writes into `sub_0065CBF0_PropTargetList(parent, 171, 0x40)`, a
   list it creates on the parent the first time and attaches with state 171. Every roll and every item test uses the
@@ -904,6 +909,9 @@ run and the quest run. The second tool next to Ghidra is GNU objdump.
   (sock 6), and nothing in the insert writes `ItemData+0x38`: it stayed 0 on the 50 runewords made by inserts.
   (fn:ITEMS_WriteFull@0x0062FFF0, run:2026-10-11-d2s-samples, run:2026-10-15-sockets) **Remainder:** the reader's
   store at `+0x38` and the client copy (no runeword loaded under the logger).
+  *2026-10-27, `lane/h6b` review:* **raised.** Both remainder parts are met with compared lines in
+  run:2026-10-27-sweep-sockets: the reader's store `0x509F` at 0x0062D1EA and the Name index in six client copies
+  (`sweep_h6b.py`, "reader runeword store"), [§ Plan 0038 batch H6b](#plan-0038-batch-h6b-run2026-10-27-sweep-sockets).
 - **sock 47** (L565) **raised in part.** [C] The game-written *Steel* save holds `n_filled` 2 and its two children
   follow it, and the load session re-inserted each parent's saved children through the reader.
   (fn:ITEMS_CountFilledSockets@0x0062A900, run:2026-10-11-d2s-samples, run:2026-10-15-sockets) **Remainder:** the
@@ -912,6 +920,9 @@ run and the quest run. The second tool next to Ghidra is GNU objdump.
 **Tally:** 27 statements: 14 raised (3, 5, 8, 19, 20, 25, 27, 28 ×2, 32, 34, 36 L472, 41, 45), 9 raised in
 part (2, 4, 6, 14, 26, 43, 44, 46, 47; 14 split at the S2c review, filed as raised), 4 reclassified (35 ×2 → b H6b, 36 L442 → d-none, 42 → a-run H2b). Correction:
 sock 25's count is 422.
+*2026-10-27, `lane/h6b` review:* sock 46 is now raised, so the tally is 15 raised and 8 raised in part. sock 14's piece is
+met, but its remainder (every unidentified socketed item; what sends the flag at identification) is still `[I]`, so
+it stays raised in part (fn:sub_004843E0_UiCanInsertSocket@0x004843E0, run:2026-10-27-sweep-sockets).
 
 ## Plan 0039 batch P1b (2026-10-17)
 
@@ -1100,13 +1111,20 @@ reproduces run:2026-10-15-sockets (351 inserts, 357 client verdicts, 0 failed; `
   cap left the inventory (the end screenshot) and no `ItemCopy` call was logged between the packet and the personalize,
   so on this path `NPC_SellItem` takes the branch at 0x00579736 that skips its copy (0x00579747): the sale is not a
   copier case `[I]`.
+  *`lane/h6b` review:* the two version-71 sites (0x005311B5, 0x005313F0) are reachable now: `lane/a72`'s builder writes
+  version-71 saves (`leg71*`, on `main` since `a30c7245` and merged into this lane before the run). The piece (a
+  `leg71` build holding a socketed item with a child, loaded under the `INS` lines) is routed to H1c; the row stays
+  counted here.
 - **sock 9** (L167; 1). **Shortfall.** The UI word was 0 or 14 at every logged test (45 `UIS` lines; and 0 or 14 in the
   357 `UIC` lines of run:2026-10-15-sockets), never 10 or 11, so the refusal is not reached. The two immediate stores of
   10 and 11 (0x004893F8, 0x004893AD) are in `0x00489360`, whose four callers (0x004B8D83–0x004B8EF0) sit in code
-  that tests UI panel 23 and sends packet `0x4F`; read as the player-trade window, `[I]`. Six stores of the word take
-  a register (`check-static.txt`), not resolved. Proposed for the review: d-2c.
+  that tests UI panel 23 and sends packet `0x4F`; read as the player-trade window, `[I]`. Seven stores of the word take
+  a register (`check-static.txt` lists 31 stores). *`lane/h6b` review:* five of them store a constant: 0 (0x00487B3B, `xor ebx, ebx`
+  at 0x00487B37; 0x0048A6A9, `xor esi, esi` at 0x0048A6A1), 6 (0x00487CB0, 0x00487CA0), 1 (0x00488430, 0x00488409;
+  0x0049216B, 0x00492134). The other two copy a word of the 20-byte slot table at 0x007BC9E4 (0x00488C2F from
+  `[esi]`, 0x00488FD5 from `[esi+0x7BC9EA]`), unfollowed. **Moved to d-2c at the review**, `[I]` as above.
 - **sock 10** (L170, L171; 2). **Raised** (built states). [C] With bit 11 set by the builder on a base that never
-  gets it in stock play (`"forced_sockets"`, a test state, ADR-0010 § built states), the client stops at the
+  gets it in stock play (`"forced_sockets"`, a test state; a tool-built save on stock tables, ADR-0013 § Neutral), the client stops at the
   `hasinv` test for gloves (`lgl`: `ItemBaseHasInv` 0, return 0x00484496, the steps end there) and at the
   `ItemMaxSockets` test for a ring (`rin`: `hasinv` 1, `ItemMaxSockets` 0); each failing step is the last step logged,
   so the order separates them from the later tests both items also fail. `ItemBaseHasInv` equals the base's `hasinv`
@@ -1114,6 +1132,8 @@ reproduces run:2026-10-15-sockets (351 inserts, 357 client verdicts, 0 failed; `
   (fn:sub_004843E0_UiCanInsertSocket@0x004843E0, fn:sub_00629900_ItemBaseHasInv@0x00629900,
   fn:sub_0062BC20_ItemMaxSockets@0x0062BC20, run:2026-10-27-sweep-sockets) The built state backs the code that reads
   it, not how an item reaches it: no stock item has bit 11 on such a base.
+  *`lane/h6b` review:* the `[C]` is the client test's order and its refusal at each of the two steps on a target with bit 11.
+  No stock item reaches either refusal, and the spec says so. Nothing here is about how an item gets bit 11.
 - **sock 12** (L173, L174; 2). **L173 raised; L174 shortfall.** [C] A broken socketed cap (`"broken"`, durability 0,
   a test state; client flags `0x00800910`) passed the socketed, `hasinv`, `ItemMaxSockets` (2) and identified steps and
   stopped at flag `0x100` (return 0x00484496). (fn:sub_004843E0_UiCanInsertSocket@0x004843E0, run:2026-10-27-sweep-sockets)
@@ -1142,8 +1162,10 @@ reproduces run:2026-10-15-sockets (351 inserts, 357 client verdicts, 0 failed; `
   accepted (`p6` 0); `p7`: the charges were refilled on the three packet runewords and not on the reader's (RF0
   present only with `p7`). (0x0056284F–0x0056289E, 0x00562715–0x00562725, 0x0056283A–0x00562848,
   run:2026-10-27-sweep-sockets) L237: **the cursor slot was already empty at the `p5` test** in all 35 inserts
-  (packet 27, reader 6, copier 2), because `InvPlaceSocketed` removes the child from the cursor first (`0x0063AAF0` at
-  0x0063B26E). So the `p5` clear has no observable effect on these paths; whether the call runs is `[I]` (read).
+  (packet 27, reader 6, copier 2). The clear can run only in the 29 with `p5` 1 (packet 27, copier 2); the reader's 6
+  have `p5` 0. `[I]` (read): the reason is that `InvPlaceSocketed` removes the child first (`0x0063AAF0` at
+  0x0063B26E clears `inv+0x20` when it holds the child, 0x0063AB61–0x0063AB66). So the `p5` clear has no observable
+  effect on these paths. Whether the call runs is `[I]` (read).
 - **sock 18** (L243, L450; 2). **Raised in part.** [C] After `RUNEWORD_Apply` the insert runs the 252 then the 253
   timer exactly when the gate lets the row through (4 inserts: *Prudence*, *Eternity*, *Leaf*, and the *Steel* re-insert,
   whose `Apply` returned 0), and in none of the other 31 (fn:ITEMS_InsertSocket@0x00562660,
@@ -1153,7 +1175,11 @@ reproduces run:2026-10-15-sockets (351 inserts, 357 client verdicts, 0 failed; `
   schedule: no stock runeword carries stat 253 and a runeword parent (normal or superior, no affixes) has none of its
   own, so the timer read 0 in all 4 (no route on stock data; proposed d-none). The two timers also run outside the
   inserts (300 `RPE` lines: 186 at the load, frame 1, and 114 at later item creations, the store's among them), which
-  the spec does not state.
+  the spec does not state. *`lane/h6b` review:* two of those outside calls are the 253 timer scheduling (`RPS`, session
+  `6104-svc`, frame 584): `v` 10 at 835 and `v` 5 at 1085, each the frame + 2500 / `v` + 1. `sweep_h6b.py` compares
+  `RPS` only inside an insert, so these two are not checked, and `sub_00558580_ItemReplenishQtyTimer` stays I. All
+  three logged schedules divide exactly, so the truncation is the `idiv` at 0x00558561 (read, `[I]`). The 253 half at
+  the insert is labelled d-none for Phase 3. The row stays counted here, raised in part.
 - **sock 21** (L262; 1). **Raised.** [C] A level-1 Barbarian (the *Steel* sample's character without its items)
   inserted 24 runes up to `levelreq` 65 (*Jah*; *Ber* 63, *Sur* 61, *Lo* 59, *Ohm* 57, *Mal* 49; misc.txt,
   `check-static.txt`) into stored and equipped parents: each passed every server test and the client test.
@@ -1162,11 +1188,16 @@ reproduces run:2026-10-15-sockets (351 inserts, 357 client verdicts, 0 failed; `
   link branch (0x00627984) was taken, for stored (25), equipped (8) and cursor (2) parents. So the enable-bit branch
   (the list already the owner's) is not reached by the socket path on this run. The `0x100` case: no stock socket
   filler can carry flag `0x100`: all 69 `sock` rows have no durability (`check-static.txt`), and `ItemBreak`, the only
-  server setter, sets it with durability 0 on an item that has it. Proposed: d-none.
+  server setter, sets it with durability 0 on an item that has it. **Moved to d-none at the review**, scoped to the
+  socket path. `sub_00627910_StatListLinkOwner`'s owner branch (0x0062794B–0x00627981) calls `0x00627A40` with `flag`
+  0 when bit `0x40000000` is clear, and `0x00627860` with `flag` ≠ 0 when the bit is set. The function has 44 direct
+  call sites (objdump at the review), and its other callers lie outside this spec.
 - **sock 35** (L438, L470; 2). **Raised.** [C] Loading the game-written *Steel* sample re-inserted Tir and El through
   the reader (`p` = 0, 0, 0, 0). After El, `RUNEWORD_Match` gave row 18 (*Steel*), `RUNEWORD_Apply` found the parent's
   state-171 list, applied no slot and returned 0; the 171 list and the child's seed were unchanged (flag bit 26 was
-  already set by the reader), and the insert still made the parent update (bit 0). `sockets.py` reproduces it with the 171 branch added. (0x006600BC–0x006600CB,
+  already set by the reader), and the insert still made the parent update (bit 0). `sockets.py` reproduces it with the 171 branch added.
+  *`lane/h6b` review:* L438's "flags 0x40" is a correction, not part of the raise. The callee tests the state only (§ 5
+  *Already applied* note), and `sockets.py` now tests the state alone (`af5c8279`, outputs unchanged). (0x006600BC–0x006600CB,
   fn:RUNEWORD_Apply@0x006600A0, run:2026-10-27-sweep-sockets)
 - **sock 38** (L481, L482, L490, L505, L507; 5). **L490 raised; L481 and L505 raised in part; L482 and L507
   shortfall.** [C] Func 20: *Eternity* added stat 152 to the parent's 171 list, no draw, reproduced (L490). Func 17
@@ -1176,7 +1207,8 @@ reproduces run:2026-10-15-sockets (351 inserts, 357 client verdicts, 0 failed; `
   `server` 1 (`check-static.txt`), so a non-ladder game inserts the runes and makes no runeword (all four of the
   session's server rows did: *Faith*, *Fortitude*, *Lawbringer*, *Oath*). Single player is never ladder: proposed
   d-none. L505 lists the `[I]` rows, of which 20 is now met and 17 in part; L507, func 7's `+1` fallback, has no
-  observable (the rune is never a weapon): proposed d-none.
+  observable (the rune is never a weapon): proposed d-none. *`lane/h6b` review:* L482 and L507 are **moved to d-none**. L481's ranged
+  half is labelled d-none and the statement stays counted here, raised in part.
 - **sock 46 piece** (L556; the row stays counted as S2c). **Met.** [C] `ITEMS_ReadFull` stored `0x509F` at
   `ItemData+0x38` of the server's *Steel* sword (the Name index of `Runeword134`), and the parent held it at both
   reader inserts. The client copy: the client's reader stored the Name index of the row in 6 client units (the *Steel*
@@ -1191,7 +1223,7 @@ reproduces run:2026-10-15-sockets (351 inserts, 357 client verdicts, 0 failed; `
 | sock 1 (L283) | other readers, copier, golem: 0 1 0 0 | raised in part (copier) |
 | sock 1 (L284) | 0x00563441: caller's, 0, 1, 0 | shortfall |
 | sock 1 (L288) | the other sites' tag | raised in part (copier) |
-| sock 9 (L167) | client refuses UI 10/11 | shortfall (proposed d-2c) |
+| sock 9 (L167) | client refuses UI 10/11 | shortfall; **d-2c** at the review |
 | sock 10 (L170, L171) | client refuses `hasinv` 0, `ItemMaxSockets` 0 | raised ×2 (built states) |
 | sock 12 (L173) | client refuses flag `0x100` | raised (built state) |
 | sock 12 (L174) | client refuses no inventory | shortfall |
@@ -1201,15 +1233,18 @@ reproduces run:2026-10-15-sockets (351 inserts, 357 client verdicts, 0 failed; `
 | sock 17 (L291) | `p4`..`p7` meanings | raised in part (`p4`, `p6`, `p7`) |
 | sock 18 (L243, L450) | the 252 and 253 replenish events | raised in part ×2 (252) |
 | sock 21 (L262) | no child level test | raised |
-| sock 29 (L352) | the toggle and the `0x100` child | shortfall (proposed d-none) |
-| sock 35 (L438, L470) | a parent with a 171 list gets nothing | raised ×2 |
+| sock 29 (L352) | the toggle and the `0x100` child | shortfall; **d-none** at the review |
+| sock 35 (L438, L470) | a parent with a 171 list gets nothing | raised ×2 (L438's "flags 0x40" corrected: not tested) |
 | sock 38 (L481) | func 17 `par` 0 ranged | raised in part (Leaf, min = max) |
-| sock 38 (L482) | func 24 | shortfall (server row only) |
+| sock 38 (L482) | func 24 | shortfall (server row only); **d-none** at the review |
 | sock 38 (L490) | func 20 | raised |
 | sock 38 (L505) | E3's list of inferred rows | raised in part (20, 17) |
-| sock 38 (L507) | func 7's `+1` fallback | shortfall (no observable) |
+| sock 38 (L507) | func 7's `+1` fallback | shortfall (no observable); **d-none** at the review |
 
-**Raised 9, raised in part 9, shortfall 7: 25.** Fewer than half are raised: the shortfalls are a two-client UI state,
+**Raised 9, raised in part 9, shortfall 7: 25** as filed. *`lane/h6b` review:* four shortfalls move: sock 9 to d-2c,
+and sock 29 and sock 38 L482 and L507 to d-none. That leaves **raised 9, raised in part 9, shortfall 3 (sock 1 L284,
+sock 12 L174, sock 17 L237), reclassified 4: 25.** The S2c row sock 46 is now raised (its remainder is met, with
+compared lines). As filed: fewer than half are raised: the shortfalls are a two-client UI state,
 ladder-only rows, a branch the socket path never takes, a cleared slot already empty, and three callers that need a
 Necromancer's golem, a corpse save or a trade. The S2c pieces of sock 14 and sock 46 are met.
 
