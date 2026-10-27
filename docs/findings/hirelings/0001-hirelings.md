@@ -2,7 +2,7 @@
 
 > **Subsystem:** hirelings
 > **Question:** Which hirelings does a town's hire list offer (names, types, levels, prices), and how does a hired or loaded mercenary get its state from `Hireling.txt`, its seed and its experience?
-> **Date:** 2026-10-15   **Plan:** 0033 (Phase 1, Phase 1b, Phase 2)   **Status:** open (Phase 1 read from the decompile and the disassembly, committed before any community source was read; Phase 1b cross-check added after, with a re-read of every contradicted claim; Phase 2 run:2026-10-16-hirelings, § Phase 2); plan 0038 batch S3a, 2026-10-16: 0 raised, 3 in part, [§ Plan 0038 batch S3a](#plan-0038-batch-s3a-2026-10-16)
+> **Date:** 2026-10-15   **Plan:** 0033 (Phase 1, Phase 1b, Phase 2)   **Status:** open (Phase 1 read from the decompile and the disassembly, committed before any community source was read; Phase 1b cross-check added after, with a re-read of every contradicted claim; Phase 2 run:2026-10-16-hirelings, § Phase 2); plan 0038 batch S3a, 2026-10-16: 0 raised, 3 in part, [§ Plan 0038 batch S3a](#plan-0038-batch-s3a-2026-10-16); plan 0038 batch H6f, 2026-10-27: 12 raised, 8 in part, 1 shortfall, 2 reclassified, [§ Plan 0038 batch H6f](#plan-0038-batch-h6f-run2026-10-27-sweep-hirelings)
 
 Names of structs and fields are ours (`re/types/hireling.h`). Column names are those of
 [Hireling](../../tables/Hireling.md) and [HireDesc](../../tables/HireDesc.md) (the `hireling.txt` header); the
@@ -19,7 +19,7 @@ it to both vendor and hire code), not a second seed: one game-seed draw (draw 3)
 ## Answer (summary)
 
 The tags below are those of the plan 0033 record. [§ Plan 0038 batch S3a](#plan-0038-batch-s3a-2026-10-16) raises
-further statements; where it lists one, its tag and evidence take precedence over the bullet here.
+further statements, and so do the later batch sections (H4b, S3b, H1b, H1a, [§ Plan 0038 batch H6f](#plan-0038-batch-h6f-run2026-10-27-sweep-hirelings)); where one lists a statement, its tag and evidence take precedence over the bullet here.
 
 - [C] **The `hireling` record is 0x118 bytes** with the field offsets of `struct:HirelingRec+0x000` (the loader's
   field descriptor, `Version` u16 at +0x00 … `NameLast` at +0xF3), plus two u16 string indices at +0x114/+0x116 that
@@ -60,7 +60,7 @@ further statements; where it lists one, its tag and evidence take precedence ove
 - [C] **The hire stores `{seed, name index, Hireling Id}`** in the player's pet list (pet type 7). The seed is the
   entry's seed from the stock build; the Id is draw 1 of `RollEntry`; the price is `RollEntry`'s, taken from
   inventory gold (49 hires). [C] The save header copies it (`D2S_WriteMercHeader`; § Plan 0038 batch H1b,
-  run:2026-10-27-sweep-d2s-play). [I] A price above the inventory gold takes the rest from the stash (never needed in the run). (run:2026-10-16-hirelings,
+  run:2026-10-27-sweep-d2s-play). [C] A price above the inventory gold takes the rest from the stash, and a short total refuses with nothing paid ([§ Plan 0038 batch H6f](#plan-0038-batch-h6f-run2026-10-27-sweep-hirelings)). (run:2026-10-16-hirelings,
   fn:HIRE_Hire@0x005770E0, fn:MERC_Init@0x00573270, fn:PETS_Add@0x00575E90,
   fn:sub_00576D90_PayGold@0x00576D90, fn:D2S_WriteMercHeader@0x00568E60, tbl:Hireling.txt:Id, tbl:Hireling.txt:Gold)
 - [C] **In the world, every stat comes from the row whose `Level` band holds the mercenary's level**
@@ -198,21 +198,21 @@ Its verdicts therefore often mean "1.14d differs", and the spec must say so.
 | `0x00656580` | `HIRELING_NextByActDiff` | next row with `Act`, `Difficulty` and the previous row's `Level` | C |
 | `0x00663750` | `HIRELING_GetAct` | act index (`Act` − 1) by class, else by name index | C |
 | `0x00663790` | `HIRELING_ExpForLevel` | `(L+1)·L·L·expPerLvl` | C |
-| `0x006637B0` | `MERC_ResurrectCost` | resurrection price (named only) | I |
+| `0x006637B0` | `MERC_ResurrectCost` | resurrection price | C |
 | `0x006637F0` | `HIRELING_RollEntry` | seed → Id, level, price, experience and displayed stats | C |
 | `0x00575FF0` | `HIRE_GetNameRange` | seller's Normal row: first, last name index, class | C |
 | `0x00576070` | `HIRE_BuildStock` | the hire table and its 10 picks | C |
 | `0x00576770` | `HIRE_SendList` | builds if needed; sends each listed, unhired entry | C |
 | `0x00577010` | `HIRE_RebuildIfEmpty` | rebuild when nothing listed is left | C |
 | `0x005770E0` | `HIRE_Hire` | the hire request | C |
-| `0x00579180` | `HIRE_GiveFreeMerc` | quest gift (`a1q2.cpp` → Kashya, `a3q3.cpp` → Asheara) | I |
+| `0x00579180` | `HIRE_GiveFreeMerc` | quest gift (`a1q2.cpp` → Kashya, `a3q3.cpp` → Asheara) | C |
 | `0x005774F0` | `MERC_Create` | creates the monster for a loaded mercenary | C |
 | `0x00573270` | `MERC_Init` | replaces the old mercenary, pet info, owner; fresh hire: experience and level | C |
 | `0x00572840` | `MERC_SetLevel` | level, experience floor, stats and skills from the band row | C |
 | `0x005726C0` | `sub_005726C0_MercSendStats` | sends the mercenary's stats to the client | I |
-| `0x0057E3F0` | `MERC_CapExpGain` | caps one gain at `(ExpForLevel(L+1) − ExpForLevel(L)) >> 6` | I |
-| `0x0057E860` | `MERC_AddExp` | adds experience, levels up while below the owner's level | I |
-| `0x00579C00` | `MERC_Resurrect` | resurrection at an NPC (named only) | I |
+| `0x0057E3F0` | `MERC_CapExpGain` | caps one gain at `(ExpForLevel(L+1) − ExpForLevel(L)) >> 6` | C |
+| `0x0057E860` | `MERC_AddExp` | adds 2·gain while below the owner's level (and `ExpMaxLevel(0) − 1`); levels up to at most `ExpMaxLevel(0) − 1` | C |
+| `0x00579C00` | `MERC_Resurrect` | resurrection at an NPC | C |
 | `0x005E4D30` | `MERCAI_PickSkill` | combat skill choice from `DefaultChance`, `Chance`, `ChancePerLvl` (named only) | I |
 | `0x00533C70` | `sub_00533C70_ReadMercOldSave` | the older save versions' mercenary reader | I |
 | `0x00533BF0` | `sub_00533BF0_MercExpFromOldSave` | experience conversion for save versions below 90 | I |
@@ -220,18 +220,18 @@ Its verdicts therefore often mean "1.14d differs", and the spec must say so.
 | `0x00574EC0` | `PETS_GetUnitOfType` | first pet of a type (dead ones only when asked) | I |
 | `0x005749B0` | `PETS_SetInfo` | overwrites a pet's info | I |
 | `0x00575E90` | `PETS_Add` | adds a pet with its info | I |
-| `0x005751A0` | `PETS_OnDeath` | marks a pet dead (a mercenary stays in the list) (named only) | I |
+| `0x005751A0` | `PETS_OnDeath` | marks a pet dead (a mercenary stays in the list) | C |
 | `0x00535EA0` | `NPCSTORE_FindRec` | NPC record by MonStats row | I |
 | `0x00536070` | `NPCSTORE_CtlCreate` | NPC records and the NPC seed, at game creation | C |
 | `0x00536B40` | `NPCSTORE_GetSeed` | `&NpcControl.seed` | I |
 | `0x00576890` | `VENDOR_StockLevel` | Normal only: `min(level, {12,20,28,36,45}[act])` | I |
-| `0x00576D90` | `sub_00576D90_PayGold` | takes a price from gold, then the stash | I |
+| `0x00576D90` | `sub_00576D90_PayGold` | takes a price from gold, then the stash | C |
 | `0x00572C10` | `sub_00572C10_NpcInteractStart` | an NPC starts interacting with a player | I |
 | `0x00578B30` | `NPC_OpenStore` | trade start: vendor stock, then hire table if not built | I |
 | `0x00579D60` | `NPC_MenuAction` | NPC menu command; 3 = open the hire list | I |
 | `0x0058F030` | `sub_0058F030_MonSetOwner` | sets a monster's owner unit | I |
-| `0x004B1090` | `sub_004B1090_ClientMercInit` | client: mercenary skills and name | I |
-| `0x004B5C60` | `sub_004B5C60_ClientHireListDraw` | client: the hire list window | I |
+| `0x004B1090` | `sub_004B1090_ClientMercInit` | client: mercenary skills and name | C |
+| `0x004B5C60` | `sub_004B5C60_ClientHireListDraw` | client: the hire list window | C |
 
 Data: `data:g_pHirelingTxt@0x0096BDD0` (records), `data:g_nHirelingTxt@0x0096BDD4` (count),
 `data:g_HirelingFirstById@0x0096BDD8` (2 × 256 i32: first row index per Id, classic half then expansion half; −1 =
@@ -397,8 +397,8 @@ out->hireDesc = row->hireDesc;  out->_34 = 1;  out->_38 = 0;
   `L` is inside the first band and `d ≥ 0`. (run:2026-10-16-hirelings, fn:HIRELING_RollEntry@0x006637F0, fn:MERC_SetLevel@0x00572840)
 - [C] The price is the `Gold` column raised 15 % per level above the band start, never below `Gold`.
   (run:2026-10-16-hirelings, 0x0066391F–0x0066394C, tbl:Hireling.txt:Gold)
-- [I] The client list window draws up to 10 entries. It shows name index 1057 (`Lharhad`) as 11021 (`Jarulf`), and
-  so does the client's mercenary init. (fn:sub_004B5C60_ClientHireListDraw@0x004B5C60,
+- [I] The client list window draws up to 10 entries. [C] It shows name index 1057 (`Lharhad`) as 11021 (`Jarulf`), and
+  so does the client's mercenary init ([§ Plan 0038 batch H6f](#plan-0038-batch-h6f-run2026-10-27-sweep-hirelings)). (fn:sub_004B5C60_ClientHireListDraw@0x004B5C60,
   fn:sub_004B1090_ClientMercInit@0x004B1090)
 
 ### 5. The hire
@@ -436,7 +436,8 @@ fn:PETS_GetInfo@0x00574BD0)
 gives one when the player has none (expansion: no mercenary at all, dead or alive; classic: no living one) and the
 seller's table exists: the first entry in name order with `listed = 1` and `hired ≠ 1` becomes hired and is spawned
 (class from `NextBySeller(vflag, seller, difficulty)`; ranges 4, 6, 12) and initialised like a hire, with no payment
-and no quest gate. [I] (fn:HIRE_GiveFreeMerc@0x00579180)
+and no quest gate. [I] (fn:HIRE_GiveFreeMerc@0x00579180) The Act I gift in expansion is [C] by [§ Plan 0038 batch H6f](#plan-0038-batch-h6f-run2026-10-27-sweep-hirelings); the Act III
+and classic cases stay `[I]`.
 
 ### 6. The stats per level (`MERC_SetLevel`)
 
@@ -487,14 +488,18 @@ product at 0x0066394F–0x00663968 in fn:HIRELING_RollEntry@0x006637F0; run:2026
 tbl:Hireling.txt:Exp/Lvl)
 (fn:sub_00611830_ExpMaxLevel@0x00611830)
 
-**Levelling in play** (named, not specified): `MERC_AddExp` adds experience and calls `MERC_SetLevel` for each level
-reached, only while the mercenary's level is below its owner's; `MERC_CapExpGain` caps one gain at
-`(ExpForLevel(L+1) − ExpForLevel(L)) >> 6`. [I] (fn:MERC_AddExp@0x0057E860, fn:MERC_CapExpGain@0x0057E3F0)
+**Levelling in play**: `MERC_AddExp` adds **twice** the gain, only while the mercenary's level is below its owner's
+(and below `ExpMaxLevel(0) − 1`, 98 on stock data, tested before the write), then levels up while `ExpForLevel(i+1)` of the old band's row is reached; `MERC_CapExpGain` caps one gain at
+`(ExpForLevel(L+1) − ExpForLevel(L)) >> 6`, and a kill by another unit gives the mercenary `·86 >> 8` of its gain. [C] by
+[§ Plan 0038 batch H6f](#plan-0038-batch-h6f-run2026-10-27-sweep-hirelings). [I] The `L ≥ ExpMaxLevel(0) − 1` return, and the loop's bound of
+`ExpMaxLevel(0) − 1` (not the owner's level), not separated there.
+(fn:MERC_AddExp@0x0057E860, fn:MERC_CapExpGain@0x0057E3F0)
 
 ### 7. The mercenary from a save
 
-`D2S_ReadMercHeader(hdr + 0xAF)` [C] (run:2026-10-16-hirelings, fn:D2S_ReadMercHeader@0x0056AA50; the dead flag, a
-name past `NameLast` and the empty header not exercised: those lines stay [I]):
+`D2S_ReadMercHeader(hdr + 0xAF)` [C] (run:2026-10-16-hirelings, fn:D2S_ReadMercHeader@0x0056AA50; the empty header
+in [§ Plan 0038 batch S3a](#plan-0038-batch-s3a-2026-10-16); the dead flag, a name past `NameLast` and the cap 99 in
+[§ Plan 0038 batch H6f](#plan-0038-batch-h6f-run2026-10-27-sweep-hirelings)):
 
 ```
 if seed = 0 and name = 0 and exp = 0: return none                ; hdr 0xB3, 0xB7 (u16), 0xBB
@@ -516,8 +521,8 @@ if no inventory: create one
   (`Client+0x1AC`, or the unit's own byte when it has no client). An expansion game creates it anywhere. In the run:
   10 classic loads in Act IV were not created, the 9 in the mercenary's own act were, and the 14 expansion loads (all
   in Act IV) were.
-- [I] (not exercised: no hire table existed at a load) if the seller's hire table exists and the name's entry is
-  not listed, the entry is marked hired (fn:MERC_Create@0x005774F0);
+- [I] (not exercised: no hire table existed at a load; in [§ Plan 0038 batch H6f](#plan-0038-batch-h6f-run2026-10-27-sweep-hirelings) every call came from the load and act changes made none; the third caller's trigger is unread) if the seller's hire
+  table exists and the name's entry is not listed, the entry is marked hired (fn:MERC_Create@0x005774F0);
 - the row is `GetRecord(vflag, id, 1)` (or, for id `0xFFFF`, the first `NextByActDiff(vflag, act, difficulty)` row);
   the name is clamped into its range (id `0xFFFF` and a name past the range not exercised);
 - `sub_00555230_SUnitCreate(type 1, class, …, mode = dead ? 12 : 1)`, then `MERC_Init(merc, id, {name, seed}, dead)`.
@@ -567,11 +572,11 @@ The pre-1.07 save reader `sub_00533C70_ReadMercOldSave` does the same, after con
 
 ### 10. Named only
 
-- [I] Resurrection: `MERC_Resurrect` at Kashya, Greiz, Asheara, Tyrael (`tyrael2`, 367) or Qual-Kehk, for a dead mercenary,
+- [I] Resurrection (Kashya's `[C]` in [§ Plan 0038 batch H6f](#plan-0038-batch-h6f-run2026-10-27-sweep-hirelings)): `MERC_Resurrect` at Kashya, Greiz, Asheara, Tyrael (`tyrael2`, 367) or Qual-Kehk, for a dead mercenary,
   price `MERC_ResurrectCost = min(50000, (L²/2)·15)` (unsigned compare), paid like a hire. (fn:MERC_Resurrect@0x00579C00,
   fn:MERC_ResurrectCost@0x006637B0)
-- [I] Death: `PETS_OnDeath` sets the pet node's dead bit; a mercenary (pet type 7) stays in the list.
-  (fn:PETS_OnDeath@0x005751A0)
+- [C] Death: `PETS_OnDeath` sets the pet node's dead bit (bit 0); a mercenary (pet type 7) stays in the list
+  ([§ Plan 0038 batch H6f](#plan-0038-batch-h6f-run2026-10-27-sweep-hirelings)). (fn:PETS_OnDeath@0x005751A0)
 - [I] Combat skill choice: `MERCAI_PickSkill` reads `DefaultChance`, `Chance_i`, `ChancePerLvl_i` and `Mode_i`. Out of
   scope (ADR-0002). (fn:MERCAI_PickSkill@0x005E4D30, tbl:Hireling.txt:DefaultChance, tbl:Hireling.txt:Chance1,
   tbl:Hireling.txt:ChancePerLvl1, tbl:Hireling.txt:Mode1)
@@ -818,6 +823,195 @@ with the counts of `workspace/logs/h1a/check/sweep-h1a-check.txt`.
   The one legacy load, a version-96 body labelled 91, was refused by `sub_00534020_ReadSaveLegacy` (14) before any
   mercenary step.
 
+## Plan 0038 batch H6f (run:2026-10-27-sweep-hirelings)
+
+Harness batch H6f of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 23 statements of
+[hirelings](../../specs/hirelings/README.md) ([inventory](../../plans/0038-inventory/hirelings-README.md), rows 1–2, 5–6,
+9–10, 14–18, 20–21, 23, 25, 27–29, 31, 35–37; row 28 counts 2). Run record:
+[experiments](experiments.md#run2026-10-27-sweep-hirelings); every count below is from its `check/check-final.txt`
+(`tools/sweep_h6f.py check`, 603 comparisons over 15 kept logs, 0 failing; `tools/hirelings.py check` on the same
+logs, 0 mismatches). The models were written from the disassembly (objdump on the pinned image) before the run; the
+addresses below are those reads. Built (test) states are named per row; each backs only the code that reads it.
+
+### The table's trigger at Asheara's trade (rows 1, 9)
+
+- [C] Trade opened first at Asheara (session `ash`): the table was built from `HIRE_SendList` at the interaction start
+  (`HBS` return 0x005767F0, `HSL` return 0x00572D04), and `NPC_OpenStore`'s hire test then read `+0x21` = 1 and did
+  not call `HIRE_BuildStock` (one `OSH` line, no `HBS` returning to 0x00578C04). (fn:NPC_OpenStore@0x00578B30,
+  0x00578BD3–0x00578BFF, fn:HIRE_SendList@0x00576770, run:2026-10-27-sweep-hirelings)
+- [I] **Reach:** `sub_00572C10_NpcInteractStart` calls `HIRE_SendList` (0x00572CFF) on every new interaction once its
+  early tests pass (0x00572C24–0x00572C9A), and `HIRE_SendList` builds whenever `+0x21` is 0 (0x005767D5–0x005767EB),
+  so by the time a trade request reaches `NPC_OpenStore` the flag is 1; its own build at 0x00578BFF is reached by no
+  stock single-player sequence. Proposed: rows 1 and 9 → **d-none** (the `[C]` above is what a stock trade does).
+  (fn:sub_00572C10_NpcInteractStart@0x00572C10)
+
+### The client's name 1057 (row 16)
+
+- [C] Name index 1057 (`Lharhad`) is drawn as string 11021 (`0x2B0D`) by the list window (0x004B5EF7–0x004B5F0F,
+  3 games) and by the client's mercenary init (0x004B11C2–0x004B11CE, the hire of 1057 in `ash`); every other name of
+  the 122 `CLN` lines is drawn as itself. (fn:sub_004B5C60_ClientHireListDraw@0x004B5C60,
+  fn:sub_004B1090_ClientMercInit@0x004B1090, run:2026-10-27-sweep-hirelings)
+
+### The level floor (rows 5, 14) and a level-up before the hire (row 15)
+
+- [C] The floor of 2 binds: at player level 3 (`free`), 12 rolls whose unclamped `playerLevel − 5 + low mod 5` was −2,
+  −1, 0 or 1 (7 list draws, 1 `HIRE_Hire`, 2 `MERC_Init`, 2 client merc inits) came out at 2, reproduced by
+  `tools/hirelings.py` with the clamp. (fn:HIRELING_RollEntry@0x006637F0, 0x006638B6–0x006638BB,
+  run:2026-10-27-sweep-hirelings)
+- [C] A level-up between the list and the hire changes the mercenary bought (`lvl30`): the list drawn at player level
+  30 showed the entry of seed 1 515 150 068 at level 29, price 490; after a kill took the player to 31, the list
+  reopened at 31 and the hire's roll (`HIRE_Hire`, then `MERC_Init`) gave level 30, price 505, which was paid.
+  (fn:HIRE_Hire@0x005770E0, fn:HIRELING_RollEntry@0x006637F0, run:2026-10-27-sweep-hirelings)
+
+### The gates and the payment (rows 17, 18, 20, 21)
+
+- [C] `VENDOR_StockLevel` returned `min(level, {12, 20, 28, 36, 45}[act])` in all 17 hires, every one in Normal
+  (Kashya 3, 8, 12 for levels 3, 8, 30; Greiz 20; Asheara 28; Qual-Kehk 30); its other-difficulty branch was not met. Quest word 2 was read only below 8: at
+  level 3 after the quest gift (bit 0 read 1, the hire went on), not at 8 (`lvlup`) nor at 30. Qual-Kehk read word 36
+  (`qkh`: 1, the hire went on); Greiz and Asheara read none (12). (fn:VENDOR_StockLevel@0x00576890,
+  fn:QUESTRECORD_GetState@0x0065C310, 0x00577115–0x0057717C, run:2026-10-27-sweep-hirelings)
+- [C] **The refusals were not sent by the stock client:** with word 2 open at levels 3 and 7 Kashya's menu had two
+  lines (talk, cancel), and with word 36 open Qual-Kehk's too (`floor`, `lvlup`, `qk`: the pilot's menu count; the
+  `qk` and `lvlup` screenshots). No hire request left the client, so the refusal tails 0x654 and 0x65F ran in no
+  session. [I] Which client test drops the line is unfollowed; with it the two refusals are a server check no stock
+  client reaches (d-none parts of rows 17, 18 and 21). **Ruling (`lane/h6f` review):** d-none, not d-2c (a second
+  stock client filters its own menu the same way; a hand-made packet is outside the stock boundary), on the condition
+  that the client test is read and shown to match the server's gates (0x00577115–0x0057717C) in every state; a state
+  where the client offers the line and the server refuses would make the refusal reachable. Filed for the reverser. (fn:HIRE_Hire@0x005770E0, run:2026-10-27-sweep-hirelings)
+- [C] **The stash pays the rest; a short total refuses** (`qk`, gold 100 and stash 2 410 as `tools/h6f_sessions.py
+  plan` predicted from the seed): the first Asheara hire, price 2 500, took the 100 and 2 400 of the stash (stash 10
+  after); the second, price 2 650, had `PayGold` return 0 (`HPR`), went to the refusal tail with line 0x6AE, code 12,
+  and paid nothing (no `MERC_Init`). In all 17 hires `PayGold`'s price was the hire roll's and its result `gold +
+  stash ≥ price`. (fn:sub_00576D90_PayGold@0x00576D90, 0x0057728F–0x005772AD, run:2026-10-27-sweep-hirelings)
+- [C] Correction of a checker reading: `HIRE_Hire` returns no value (the refused hire's `EAX` was 15); a hire is made
+  when `MERC_Init` runs inside it. `tools/hirelings.py` now counts hires that way (output on the 48 logs of
+  run:2026-10-16-hirelings unchanged). (fn:HIRE_Hire@0x005770E0, 0x005773C5–0x005773CB)
+
+### Greiz and classic hires (row 23)
+
+- [C] A Greiz hire (`mact`, expansion, Normal, name 1019) and classic hires at Kashya (`cl1`, 3414) and Asheara
+  (`cl3`, 1044) reproduce as run:2026-10-16-hirelings's: table, roll, price, `MERC_Init`'s `{name, seed}`, the seller's
+  Normal-row class (338, 271, 359) and the stats; the classic lists use the `Version` 0 rows. **Remainder `[I]`:** a
+  classic Greiz hire (four launches; the pilot never reached him). (fn:HIRE_Hire@0x005770E0,
+  fn:HIRE_BuildStock@0x00576070, run:2026-10-27-sweep-hirelings)
+
+### The free mercenary (rows 2, 10, 35)
+
+- [C] At Kashya's talk with Act I word 2 bit 1 set and bit 0 clear (`free`, expansion, no mercenary),
+  `sub_00590980_A1Q2_NpcMessage` called `HIRE_GiveFreeMerc(150)` (return 0x00590AFB): the dead-or-alive pet test
+  returned none, the pick was table index 5 (name 3416), the first entry in name order with `hired ≠ 1` and
+  `listed = 1` (indices 0–4 unlisted), `MERC_Init` got its `{name, seed}` with id 0xFFFF and no payment, and
+  `HIRE_RebuildIfEmpty` ran after it (from 0x0057933F) with 9 entries left, so no rebuild. After it word 2 bit 0 read
+  1 at the hire that followed. (fn:HIRE_GiveFreeMerc@0x00579180, 0x005791BE–0x0057932C,
+  fn:sub_00590980_A1Q2_NpcMessage@0x00590980, 0x00590A10–0x00590AF6, fn:HIRE_RebuildIfEmpty@0x00577010,
+  run:2026-10-27-sweep-hirelings)
+- **Remainder `[I]`:** the Act III gift (Asheara, `0x005B94CE`, word 19 bit 7), the classic test (a living
+  mercenary only, 0x005791E1–0x005791F0) and the expansion refusal with a mercenary present (rebuild test only,
+  0x005791D5).
+
+### The saved mercenary (rows 6, 27, 28, 31)
+
+- [C] **The level cap 99:** a Rogue with experience 150 000 000 loaded at level 99 (`n99`), where
+  `ExpForLevel(100, 100) = 101 000 000` and the uncapped loop would go on to 114; `MERC_SetLevel` ran at 99. The other
+  five loads gave 3, 10, 30 (×2) and 85 as the loop says. (fn:D2S_ReadMercHeader@0x0056AA50, 0x0056AB72–0x0056AB7B,
+  fn:sub_00611830_ExpMaxLevel@0x00611830, run:2026-10-27-sweep-hirelings)
+- [C] **The name reset:** a saved name id of 50 (built state, `name_unchecked`; the Rogue range is 0..40) gave
+  `3411 + 50 = 3461 > 3451` and was reset to 3411 (`RMH`), which `MERC_Create` and `MERC_Init` received; the five
+  in-range names (3, 5, 6, 7) were kept as `3411 + name`. (0x0056AAA0–0x0056AABB,
+  run:2026-10-27-sweep-hirelings) [I] The widths are read, not separated (50 gives the same result under any width):
+  `add dx, cx` is a u16 add and `jbe` an unsigned compare, so a name equal to `+0x116` is kept, and a saved name past
+  `0xFFFF − first` wraps (for the Rogue, first 3411: 62 124 still fits, `3411 + 62 124 = 65 535`, which is reset; 62 125
+  gives 0, which is ≤ `+0x116` and kept as string 0). (`lane/h6f` review)
+- [C] **The dead flag:** the header's `0x10000` (`dead`) reached `MERC_Create` as its dead argument, the unit was made in
+  mode 12, `PETS_OnDeath` (from 0x0056ABD2) set the pet node's bit 0, and the unit kept flag `0x10000` after
+  0x0056ABD7; the five living loads had neither. (0x0056AAC8, 0x0056ABC7–0x0056ABE7, fn:PETS_OnDeath@0x005751A0,
+  run:2026-10-27-sweep-hirelings)
+
+### `MERC_Create` with a hire table present (row 29)
+
+- **Shortfall.** The six `MERC_Create` calls all came from `D2S_ReadMercHeader` (0x0056AAE8) at the load, before any
+  NPC interaction, and `mact`'s act changes (Act IV → I → II → I with a loaded Rogue and Kashya's table built) made
+  none. The other callers are the legacy reader (0x00533CB1, 0x00533DA5, at a load too) and
+  `sub_005394A0_PlayerPlaceInAct` (0x00539637), not reached. [I] At a load the table cannot exist yet (a new game
+  builds its NPC records afresh). The third caller (named a join step in [quests/0002](../quests/0002-travel.md)) walks a list at `+0x60` of its `EDX` argument (0x005395BF–0x00539637)
+  and calls `MERC_Create` with id 0xFFFF for an entry with a non-zero name; what fills that list, and so whether
+  single player reaches it after a table is built, is unread. (fn:MERC_Create@0x005774F0, 0x005775E2–0x00577605)
+  **Ruling (`lane/h6f` review):** the d-2c proposal is not accepted on this reading; the row stays a shortfall
+  (`[I]`) until the list's writer is read (reverser entry filed by the review).
+
+### Death and resurrection (rows 36, 37)
+
+- [C] `PETS_OnDeath` sets bit 0 of the mercenary's pet node (pet type 7): at the dead load and at three deaths in play
+  (`hexp`, `hx3`, `hx85`, from `sub_0057CCB0_UnitKilled`, 0x0057CD21) the node's flags went 0 → 1. The node stays: at
+  the dead load `MERC_Resurrect` found the mercenary through it (`PETS_GetUnitOfType(…, 7, 1)`); after the three deaths
+  in play nothing read it.
+  (fn:PETS_OnDeath@0x005751A0, 0x005751FF, 0x00575251, fn:sub_0057CCB0_UnitKilled@0x0057CCB0,
+  run:2026-10-27-sweep-hirelings)
+- [C] Resurrection at **Kashya** (`dead`): cost `min(50 000, (30·30)/2·15) = 6 750`, `PayGold` 1, paid from gold,
+  the unit's flag `0x10000` cleared (`0x840B0203 → 0x840A220F`), mode 12 → 1, the done line 0x99E. With
+  run:2026-10-17-economy's Qual-Kehk resurrections this is two of the five classes of 0x00579C31–0x00579C55.
+  **Remainder `[I]`:** Greiz, Asheara and Tyrael. (fn:MERC_Resurrect@0x00579C00, 0x00579CC8,
+  fn:MERC_ResurrectCost@0x006637B0, run:2026-10-27-sweep-hirelings)
+
+### `MERC_AddExp` and the gain cap (row 25)
+
+[I] Read from the code before the run (the `[C]` bullets below check each step): the kill award `XP_OnMonsterKill` gives the owner's mercenary (pet type 7,
+living) `XP_Compute` of the victim's experience at the mercenary's level, which ends in `MERC_CapExpGain`, scaled by
+`·86 >> 8` (signed, truncating: `imul 0x56; cdq; and edx, 0xFF; add; sar 8`, 0x0057EA2D–0x0057EA39) unless the
+mercenary is the killer, then `MERC_AddExp(gain, merc, owner, L)`.
+
+- [C] `MERC_CapExpGain` returns a player's gain unchanged (207 calls) and a mercenary's as
+  `min(gain, (ExpForLevel(L+1) − ExpForLevel(L)) >> 6)` with `Exp/Lvl` of the band row of L (39: 4 capped,
+  at L 3 → 68 and L 4 → 109 from 356; 35 below). [I] The shift and the compare are unsigned (`shr`, `jbe`): read, not
+  separated, as no logged gain or difference was negative (`lane/h6f` review). (fn:MERC_CapExpGain@0x0057E3F0, 0x0057E3FD, 0x0057E43E–0x0057E463,
+  run:2026-10-27-sweep-hirelings)
+- [C] The share: 39 awards for another's kill at `gain·86/256` truncated, 3 for the mercenary's own kill at the full
+  gain. (fn:XP_OnMonsterKill@0x0057E990, run:2026-10-27-sweep-hirelings)
+- [C] `MERC_AddExp` (42 calls): nothing when `gain ≤ 0` (3, `n99`) or when the mercenary's level is not below its
+  owner's (33: L 85 under an owner of 80 and 81, gains 77 to 113); otherwise experience += **2·gain** (6, two of them with a level-up), then the
+  level loop `while ExpForLevel(i + 1)` (the band row of the old L) ≤ the new experience, up to `M` (below), and
+  `MERC_SetLevel` at the new level when it moved: 3 → 4 and 10 → 11.
+  (fn:MERC_AddExp@0x0057E860, 0x0057E8BA–0x0057E8BC, 0x0057E8CE, 0x0057E8D6–0x0057E8E3, 0x0057E920–0x0057E950,
+  run:2026-10-27-sweep-hirelings) **Remainder `[I]`:** the bound `M = sub_00611830_ExpMaxLevel(0) − 1`
+  (0x0057E8D6–0x0057E8E3: class 0's `MaxLvl` record of [Experience](../../tables/Experience.md), 99 in stock data, so
+  `M` = 98; a table value, not a constant), tested before the experience write at 0x0057E8F2, so a mercenary at
+  `L ≥ M` gains no experience at all: that return with a gain > 0 (`n99`'s three gains were 0, so they do not separate
+  it), and the loop's bound: it stops at `M` (0x0057E93B), not at the owner's level, which no level-up here came near
+  (each moved one level). (`lane/h6f` review: the 98 read as `ExpMaxLevel(0) − 1`.)
+
+### Symbols
+
+Raised I → C (rule 14; each a logged return compared with the model above): `HIRE_GiveFreeMerc`, `MERC_AddExp`,
+`MERC_CapExpGain`, `PETS_OnDeath`, `MERC_Resurrect`, `MERC_ResurrectCost`, `sub_00576D90_PayGold`,
+`sub_004B5C60_ClientHireListDraw`, `sub_004B1090_ClientMercInit`. `sub_00590980_A1Q2_NpcMessage` (its gift call is
+logged by return address; no output compared) and `sub_0057CCB0_UnitKilled` (C already) are unchanged.
+
+### Ledger (23)
+
+| Row | Statement | Result |
+|---|---|---|
+| 1, 9 | trade first at Asheara builds the table | **reclassified d-none** (accepted at review): the interaction start builds first; the skip is the `[C]` above (0x00578BD3) |
+| 16 | client 1057 → 11021 | raised |
+| 5, 14 | level floor 2 | raised (12 floor-bound rolls) |
+| 15 | a level-up between list and hire | raised |
+| 17 | Qual-Kehk's quest gate | raised in part (the read and the pass; the refusal: d-none part, no hire line) |
+| 18 | Kashya's level and quest gate | raised in part (stock level, the read below 8 only, the passes; the refusal as row 17) |
+| 20 | stash payment and refusal when short | raised |
+| 21 | gates, refusal and gold check | raised in part (gold check and gates' passes; the gate refusals as row 17) |
+| 23 | Greiz; classic lists and hires | raised in part (no classic Greiz hire) |
+| 2, 35 | the quest gift | raised in part (Act I, expansion; the Act III and classic cases stay inferred, 0x005B94CE) |
+| 10 | rebuild after a free mercenary | raised |
+| 6 | loaded level cap 99 | raised |
+| 27 | name past `+0x116` reset | raised (built state) |
+| 28 (2) | dead flag; dead mercenary marked | raised |
+| 31 | the note (name, dead mercenary not loaded) | raised |
+| 29 | `MERC_Create` with a table present | shortfall (d-2c not accepted at review: the third caller's trigger is unread) |
+| 36 | resurrection and its price | raised in part (Kashya here, Qual-Kehk by the economy run; Greiz, Asheara, Tyrael) |
+| 37 | death sets the dead bit | raised |
+| 25 | `MERC_AddExp` and the cap | raised in part (the `L ≥ 98` return) |
+
+**Raised 12, raised in part 8, shortfall 1, reclassified 2: 23.**
+
 ## Open questions
 
 - Which MonStats-derived fields (velocity, mana, other stats that `MERC_SetLevel` does not set) survive from
@@ -830,11 +1024,12 @@ with the counts of `workspace/logs/h1a/check/sweep-h1a-check.txt`.
 - The client's mercenary init rolls the entry again from the seed and the player's level and draws skills with
   `d` clamped at 0 (`sub_004B1090_ClientMercInit`); whether the client ever shows those instead of the server's values
   is a display question for Phase 2.
-- The input of `MERC_AddExp` (the share of the owner's experience) and its doubling were not read.
+- ~~The input of `MERC_AddExp` (the share of the owner's experience) and its doubling were not read.~~ Answered in
+  [§ Plan 0038 batch H6f](#plan-0038-batch-h6f-run2026-10-27-sweep-hirelings): `XP_Compute` at the mercenary's level, capped, `·86 >> 8` unless it is the killer, doubled in `MERC_AddExp`.
 - The third byte of the `0x00731188` NPC table (`NpcRecord+0x26`) is not used by hire code.
 - ~~Phase 1b contradictions to settle in Phase 2~~ Settled by run:2026-10-16-hirelings: the resistance divisor is 4
   (32 mercenary levels where ÷4 and ÷8 differ, every one as ÷4) and the list levels lie at player level −5 .. −1
   (530 entries, none above the player). The experience formula was settled by run:2026-10-12-mon-pool-p2 and
   `HireDesc` by data.
-- The client's list window draws name index 1057 as 11021 (§ 4): not checked (the run compares the window's
-  `RollEntry` calls, not its text).
+- ~~The client's list window draws name index 1057 as 11021 (§ 4): not checked.~~ Checked in [§ Plan 0038 batch H6f](#plan-0038-batch-h6f-run2026-10-27-sweep-hirelings) (the string index
+  at the draw).

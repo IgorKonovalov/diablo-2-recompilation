@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/vendors
 > **Question:** When a player opens a vendor's trade or gamble window, which items does the server create, with which ilvl, quality and seed, and when is the stock rebuilt?
-> **Date:** 2026-10-15   **Plan:** 0031 (Phase 1, Phase 2)   **Status:** open (Phase 1 read from the decompile and the disassembly, committed before any community text was read; Phase 1b cross-check 2026-10-15: three contradictions, all reachable on stock data and required cases of Phase 2; reviewed and accepted 2026-10-15 by the architect, see [backlog](../../backlog.md); Phase 2 bit-exact run 2026-10-16, [§ Phase 2](#phase-2-runtime-results-run2026-10-15-vendors), awaiting review; plan 0038 batch S2c, 2026-10-16: 8 statements raised and 7 in part, one correction, [§ Plan 0038 batch S2c](#plan-0038-batch-s2c-2026-10-16))
+> **Date:** 2026-10-15   **Plan:** 0031 (Phase 1, Phase 2)   **Status:** open (Phase 1 read from the decompile and the disassembly, committed before any community text was read; Phase 1b cross-check 2026-10-15: three contradictions, all reachable on stock data and required cases of Phase 2; reviewed and accepted 2026-10-15 by the architect, see [backlog](../../backlog.md); Phase 2 bit-exact run 2026-10-16, [§ Phase 2](#phase-2-runtime-results-run2026-10-15-vendors), awaiting review; plan 0038 batch S2c, 2026-10-16: 8 statements raised and 7 in part, one correction, [§ Plan 0038 batch S2c](#plan-0038-batch-s2c-2026-10-16); plan 0038 batch H6c, 2026-10-27: 7 raised, 2 in part, 2 reclassified to d-2c, 2 shortfalls, one correction, accepted with fixes at the `lane/h6c` review, [§ Plan 0038 batch H6c](#plan-0038-batch-h6c-run2026-10-27-sweep-vendors))
 
 Names of structs and fields are ours (`re/types/vendors.h`). "Store seed" is the seed at `NpcStoreCtl+0x08`
 (`Game+0x1D24` → `+0x08`), "game seed" is `Game+0xD0` ([rng/0002](../rng/0002-seed-tree.md)), "item seed" is the
@@ -44,11 +44,11 @@ classes are MonStats rows (`hcIdx`). Column names are those of the table docs ([
   (`GetTickCount`) have passed since the last build. [C] In single player
   the leaving player still counts in the town when the level change is an **act change** (a waypoint to another
   act: `townEmpty` 0, so only the 240 s stale mark), and no longer counts on a level change **within the act** (a
-  waypoint to the act's wilderness: `townEmpty` 1, every built store of the act destroyed at once; [I] a walk out of
-  town takes the same `sub_00537340_TownLevelLeave` call, not run);
-  [§ Phase 2](#phase-2-runtime-results-run2026-10-15-vendors), run:2026-10-15-vendors. [I] **None of these
-  rebuilds anything** (not exercised: every trade open of the run met a store that was unbuilt, reset or stale):
-  entering town, a quest event, opening the window again, or a level-up. A level-up only queues a
+  waypoint to the act's wilderness: `townEmpty` 1, every built store of the act destroyed at once; a walk out of
+  town takes the same `sub_00537340_TownLevelLeave` call, from the per-frame room check, plan 0038 H6c);
+  [§ Phase 2](#phase-2-runtime-results-run2026-10-15-vendors), run:2026-10-15-vendors. **None of these
+  rebuilds anything**: entering town, a quest event, opening the window again, or a level-up ([C] for a town entry, a
+  reopen and a level-up in plan 0038 H6c; [I] for a quest event, not run). A level-up only queues a
   note, and that queue's consumer has no caller. (fn:NPC_OpenStore@0x00578B30, fn:NPCSTORE_ActStale@0x00537230,
   fn:sub_00537340_TownLevelLeave@0x00537340, fn:sub_00537580_TownPlayerRemove@0x00537580, fn:NPCSTORE_Reset@0x00536D10,
   fn:sub_00536850_NpcStoreLevelUpNote@0x00536850)
@@ -117,11 +117,11 @@ classes are MonStats rows (`hcIdx`). Column names are those of the table docs ([
   tbl:DifficultyLevels.txt:GambleUnique, tbl:DifficultyLevels.txt:GambleSet, tbl:DifficultyLevels.txt:GambleRare,
   tbl:DifficultyLevels.txt:GambleUber, tbl:DifficultyLevels.txt:GambleUltra, fn:sub_00557450_ItemCreateByQuality@0x00557450)
 - [C] **Gamble refresh.** A player's gamble inventory is freed when the interaction with the NPC ends
-  (`sub_00555500_PlayerInteractEnd`). It is also freed when the NPC's interaction list empties on a cancel, and on a
+  (`sub_00555500_PlayerInteractEnd`, run at a player unit's free: plan 0038 H6c, vend 2). It is also freed when the NPC's interaction list empties on a cancel, and on a
   full store reset. The next gamble open builds a new one. A purchase copies the shown item (serialise and recreate)
   and creates no replacement. Closing the gamble window (Escape) sends the cancel: `sub_00572F20_NpcInteractRemove`
   empties the NPC's list and frees the inventory, and the next *Gamble* builds a new window (325 times,
-  run:2026-10-15-vendors; the purchase path was not exercised and stays `[I]`).
+  run:2026-10-15-vendors; the purchase: 2 cases in plan 0038 H6c, [§ Plan 0038 batch H6c](#plan-0038-batch-h6c-run2026-10-27-sweep-vendors)).
   (fn:sub_00536B50_NpcStorePlayerLeave@0x00536B50, fn:sub_00537190_GambleInvFree@0x00537190,
   fn:sub_00576F50_StoreItemSold@0x00576F50)
 - [C] **Item creation** (9206 creations; each item reproduces in the item model, run:2026-10-15-vendors).
@@ -267,14 +267,14 @@ tbl:Npc.txt:max buy) were read but not compared, because prices are named only.
 | `0x00559CE0` | `ITEMS_CreateForStore` | creation record for stock and gamble items, then `ItemCreate` | C |
 | `0x00572DA0` | `sub_00572DA0_NpcInteractCount` | non-empty entries of an NPC's interaction list | I |
 | `0x00572F20` | `sub_00572F20_NpcInteractRemove` | removes a player; an emptied list frees the gamble inventory | C |
-| `0x00555500` | `sub_00555500_PlayerInteractEnd` | the player stops interacting: frees the gamble inventory | I |
+| `0x00555500` | `sub_00555500_PlayerInteractEnd` | a player unit's free (`sub_00555600_UnitFree`, type 0): with an NPC interaction open, `NpcStorePlayerLeave` | I |
 | `0x00576070` | `HIRE_BuildStock` | hireling list, a store-seed consumer (named only) | I |
 | `0x00576330` | `VENDOR_CreateStockItem` | upgrade draw, creation retries, placement | C |
 | `0x00576890` | `VENDOR_StockLevel` | Normal: `min(arg, cap[act])`; else `arg` | C |
 | `0x00576900` | `VENDOR_PickNormalQuality` | one draw: quality 1, 2 or 3 | C |
 | `0x00576980` | `VENDOR_BuildStock` | the stock build | C |
-| `0x00576ED0` | `VENDOR_IsPermanent` | permanent list, or `hp4`/`hp5`/`mp4`/`mp5` outside Normal | I |
-| `0x00576F50` | `sub_00576F50_StoreItemSold` | after a buy: gamble item kept as sold, a stock item removed unless permanent | I |
+| `0x00576ED0` | `VENDOR_IsPermanent` | permanent list, or `hp4`/`hp5`/`mp4`/`mp5` outside Normal | C |
+| `0x00576F50` | `sub_00576F50_StoreItemSold` | after a buy: a gamble item leaves the player's gamble inventory (0x00576650), a stock item is removed unless permanent (0x005766D0) | C |
 | `0x005786A0` | `GAMBLE_Upgrade` | uber then ultra test on the store seed | C |
 | `0x00578790` | `GAMBLE_BuildInv` | the gamble window: 14 slots | C |
 | `0x00578AE0` | `sub_00578AE0_GambleEnsure` | builds unless the player already has a gamble inventory | C |
@@ -285,7 +285,9 @@ tbl:Npc.txt:max buy) were read but not compared, because prices are named only.
 | `0x00638AE0` | `GAMBLE_LoadTable` | `gamble` table, sorted by base level, `countUpTo` | C |
 | `0x00638CC0` | `GAMBLE_GetList` | returns `g_GambleList` | C |
 | `0x00629C80` | `sub_00629C80_ItemMagicStockable` | base `bitfield1` bit 0 | C |
-| `0x0062E880` | `sub_0062E880_ItemStorePage` | the item type's `StorePage` | I |
+| `0x0062E880` | `sub_0062E880_ItemStorePage` | the item type's `StorePage` | C |
+| `0x00554120` | `sub_00554120_PlayerSetInteract` | the unit's interaction, only while `+0x6C` is 0: `+0x68` type, `+0x64` id, `+0x6C` = 1 (plan 0038 H6c; a set flag leaves the fields, 0x00554133) | I |
+| `0x00554190` | `sub_00554190_PlayerClearInteract` | `+0x64` = −1, `+0x68` = 6, `+0x6C` = 0 (plan 0038 H6c) | I |
 | `0x0062FDC0` | `sub_0062FDC0_ItemTradePrice` | price wrapper (named only) | I |
 | `0x00578050` | `sub_00578050_NpcRepair` | repair packet (named only) | I |
 | `0x0062FE60` | `sub_0062FE60_RepairCost` | repair cost (named only, not read) | L |
@@ -416,7 +418,13 @@ if (!rec->hirelingsBuilt) { if (cls in {150, 515, 198, 252}) HIRE_BuildStock(rec
   `NPC_MenuAction` before the call (0x00579E08). (fn:sub_00572DA0_NpcInteractCount@0x00572DA0)
 - [I] For Asheara (252, store and hirelings), the first trade open builds the stock first and the hireling list
   second. Both draw on the store seed. Opening the hire list first (action 3 → `0x00576770`) builds the hirelings first.
-  (0x00578BCB, 0x00578BFF, 0x005767EB)
+  (0x00578BCB, 0x00578BFF, 0x005767EB) **Corrected by plan 0038 H6c ([C], [§ Plan 0038 batch H6c](#plan-0038-batch-h6c-run2026-10-27-sweep-vendors), vend 14):** the
+  stock client never takes the first order. `sub_00572C10_NpcInteractStart` builds the hire table at the first click
+  on her (0x00572CFF → `HIRE_SendList` → 0x005767EB), before any menu action, so the hirelings come first whatever is
+  chosen, and `NPC_OpenStore`'s call 0x00578BFF finds the table built. [I] (read, the `lane/h6c` review) The flag it
+  tests, store `+0x21`, is cleared only at 0x005770C5, which rebuilds the table at once (0x005770C9); `NPCSTORE_Reset`
+  writes `+0x20` alone (0x00536D24), so no reset, in single player or with two players, brings the flag back to 0
+  before a trade open.
 
 **Stale and reset** (`NPCSTORE_ActStale(game, act, townEmpty)`, 0x00537230). It visits each record with `act` = the
 argument, `hasStore` = 1, `opened` = 1 and `built` = 1:
@@ -440,7 +448,7 @@ if (!townEmpty) {
   act: 6 and 26 calls, every one so (run:2026-10-15-vendors; why the act change still counts the player: [§ Plan 0039 batch P1b](#plan-0039-batch-p1b-2026-10-17)). `sub_00537580_TownPlayerRemove` (from the client-removal path
   `0x00539DA0`) does the same with `count − 1 == 0`, for levels 1, 40, 75 and 103 only: Harrogath is missing from its
   switch. (0x00537340–0x00537402, 0x00537580–0x005375FB)
-- [C] So in single player, leaving the town for a level of the same act by a waypoint of the act ([I] walking out: not run) destroys
+- [C] So in single player, leaving the town for a level of the same act by a waypoint of the act (or walking out: plan 0038 H6c) destroys
   every built stock of that act at once: `NPCSTORE_Reset` when the NPC unit is still there with nobody interacting,
   the clear path (`built` = 0, no reset call) when the unit is gone. Leaving it for another act (a waypoint) only marks
   the act's stores stale, and only those built more than 240 000 ms before; a stale store is reset and rebuilt at the
@@ -547,7 +555,7 @@ page = storePage(it); if (page == -1) { destroy; return 0; }
 place in npc inventory on `page`; if that fails and page == 1, try page 2; if that fails, park the item (0x00535F30) and return 0;
 ```
 
-- [I] **The tab** is `sub_0062E880_ItemStorePage(item)`: the item type record's byte `+0x22` (ItemTypes
+- [I] (the tab returned and the placement `[C]` in plan 0038 H6c, [§ Plan 0038 batch H6c](#plan-0038-batch-h6c-run2026-10-27-sweep-vendors)) **The tab** is `sub_0062E880_ItemStorePage(item)`: the item type record's byte `+0x22` (ItemTypes
   `StorePage`, compiled to a `storepage` row index: 0 `armo`, 1 `weap`, 2 `mag`, 3 `misc`), or −1 when `0xFF` or the
   type is out of range (the item is then destroyed). Nothing reads `storepage.bin` at run time; the row index in
   `itemtypes.bin` is the tab. No item type names `mag`, so tab 2 receives only the overflow of tab 1 (`weap`).
@@ -574,7 +582,7 @@ place in npc inventory on `page`; if that fails and page == 1, try page 2; if th
 ECX source (the NPC), EDX item index, stack `(game, kind, q, noSockets, noEthereal, ilvl, restoreArg, seedU, seedI)`.
 Stock and gamble pass `(game, 4, q, 0, 1, ilvl, 0, 0, 0)`.
 
-- [I] Record (0x84, zeroed): `+0x00` NPC, `+0x08` game, `+0x0C` `ilvl` (< 1 → 1; −1 would mean "the source's level"),
+- [I] (`+0x18`, `+0x28` and `+0x80` `[C]`: 1 646 records in plan 0038 H6c) Record (0x84, zeroed): `+0x00` NPC, `+0x08` game, `+0x0C` `ilvl` (< 1 → 1; −1 would mean "the source's level"),
   `+0x14` item index, `+0x18` = `kind` (4; drops use 3), `+0x28` u16 = 1, `+0x2A` u16 = `game+0x78`, `+0x30` = `q`,
   `+0x48`/`+0x4C` = the seed arguments (0), `+0x80` = `(noSockets ? 0x08 : 0) | (noEthereal ? 0x02 : 0)` = 0x02.
   Then `sub_00558D90_ItemCreate(game, &rec, 0)` and `ITEMS_SetFlag(item, 0x10, 1)` (identified).
@@ -633,7 +641,7 @@ for (slot = 0; slot < 14; ) {
   (`EXCEL_FindCode(g_ItemCodeLink, code)`); the 8 bytes no column feeds (0 in `gamble.bin`) are these two. The array
   is then sorted in place by `+0x04`, and a separate index array (`g_GambleList+4`) copies each sorted record's `+0x08`.
   (fn:GAMBLE_LoadTable@0x00638AE0, tbl:Gamble.txt:code, tbl:Weapons.txt:level)
-- [C] **The gamble ilvl** is `lvl`, drawn per slot from `clvl − 5 .. clvl + 4` ([I] and clamped to 5..99: not reached). The base is
+- [C] **The gamble ilvl** is `lvl`, drawn per slot from `clvl − 5 .. clvl + 4` and clamped to 5..99 (the clamp: 26 cases below 5 and 232 above 99 in plan 0038 H6c). The base is
   uniform among the Gamble.txt rows with base `level ≤ lvl`. The same `lvl` is the creation `ilvl` and the upgrade
   level. (0x00578877–0x00578916, run:2026-10-15-vendors)
 - [C] **Rings and amulets**: slot 0 is always a ring and slot 1 always an amulet. Their `lvl` and pick draws are made
@@ -660,7 +668,7 @@ for (slot = 0; slot < 14; ) {
   without advancing the slot.
 - [C] **Refresh** (closing the window frees it: 325 windows, run:2026-10-15-vendors; the other two frees `[I]`). A gamble inventory is per player and per NPC (`rec->gambleInvs`, keyed by player unit id; 0x00578AE0).
   `sub_00578AE0_GambleEnsure` builds only when the player has none. It is freed:
-  1. by `sub_00555500_PlayerInteractEnd` → `sub_00536B50_NpcStorePlayerLeave`, when the player's interaction with
+  1. by `sub_00555500_PlayerInteractEnd` → `sub_00536B50_NpcStorePlayerLeave` (at the player unit's free, [§ Plan 0038 batch H6c](#plan-0038-batch-h6c-run2026-10-27-sweep-vendors), vend 2), when the player's interaction with
      that NPC ends;
   2. by `sub_00572F20_NpcInteractRemove` (the cancel packet `0x0054BA6B`/`0x0054BA81`), when the removal empties the
      NPC's interaction list;
@@ -672,7 +680,7 @@ for (slot = 0; slot < 14; ) {
 
 ### 8. After a sale (stock)
 
-- [I] A bought stock item is removed from the store unless `VENDOR_IsPermanent` holds. That is the case for a code in
+- [I] ([C] for the purchases and the sales of plan 0038 H6c, [§ Plan 0038 batch H6c](#plan-0038-batch-h6c-run2026-10-27-sweep-vendors), vend 34) A bought stock item is removed from the store unless `VENDOR_IsPermanent` holds. That is the case for a code in
   the record's permanent list, and outside Normal also for `hp4`, `hp5`, `mp4` and `mp5`. A sold player item is copied
   into the store unless one of these holds: it is a `Cracked` low-quality item, it has item flag `0x100`, `0x1000000`
   or `0x400000` (ethereal), its base type is 7, `0x0055F590`/`0x00575FA0` refuse it, the player is in the gamble view,
@@ -848,6 +856,8 @@ compare-and-jump-table switch for one register value through the objdump instruc
   StorePage row index of its `StorePage` code (`armo` 0, `weap` 1, `misc` 3; 0xFF for the 28 blank cells), as
   `sub_0062E880_ItemStorePage` reads it. (tbl:ItemTypes.txt:StorePage) **Remainder → b, H6c:** the placement itself;
   the logs hold each item's result (348 not placed) but not its tab, and the store grid's spot search is not modelled.
+  *(H6c piece met in part, the `lane/h6c` review: the tab and the placement `[C]`, [§ Plan 0038 batch H6c](#the-s2c-pieces);
+  the remainder is now the cell search alone. The row stays raised in part.)*
 - **vend 24** (L446) **raised in part.** [C] No item type has `StorePage` `mag` (blank 28, `armo` 12, `misc` 45,
   `weap` 18), and the compiled byte is the row index (vend 22). (tbl:ItemTypes.txt:StorePage, tbl:StorePage.txt:Code)
   **Remainder:** that nothing reads `storepage.bin` at run time.
@@ -858,7 +868,8 @@ compare-and-jump-table switch for one register value through the objdump instruc
 - **vend 26** (L458) **raised in part.** [C] At `ItemCreate` (the `IC0` line after each `CF0`), all 9 206 stock and
   gamble records have `+0x80` = 2, row 0, no restore, the quality and `max(1, ilvl)` passed, and the game's item
   version. (fn:ITEMS_CreateForStore@0x00559CE0, struct:ItemCreateRec+0x80, run:2026-10-15-vendors) **Remainder:**
-  `+0x18` = 4 and `+0x28` = 1, not logged here.
+  `+0x18` = 4 and `+0x28` = 1, not logged here. *(H6c piece met, the `lane/h6c` review: 1 646 records with `+0x18` = 4
+  and `+0x28` = 1, run:2026-10-27-sweep-vendors, [§ Plan 0038 batch H6c](#the-s2c-pieces). The row is now **raised**.)*
 - **vend 27** (L466) **raised.** [C] All 4 656 stock and 4 550 gamble items have the identified flag `0x10` when
   `ITEMS_CreateForStore` returns (`CFX`). (fn:ITEMS_CreateForStore@0x00559CE0, run:2026-10-15-vendors)
 - **vend 28** (L487) **raised in part.** [C] The dumped list (`VGL`, the same in all 7 games) is the 125 rows' item
@@ -868,7 +879,7 @@ compare-and-jump-table switch for one register value through the objdump instruc
   `+0x04`/`+0x08` fields and the order `qsort` leaves among equal levels (taken from the dump).
 
 **Tally:** 15 statements: 8 raised (3, 7, 8, 9, 19, 20, 25, 27), 7 raised in part (4, 11, 21, 22, 24, 26, 28). One
-correction (vend 4). Symbol `NPCSTORE_FindRec` I → C (vend 7).
+correction (vend 4). *(After the `lane/h6c` review: 9 raised (vend 26 added), 6 raised in part.)* Symbol `NPCSTORE_FindRec` I → C (vend 7).
 
 ## Plan 0039 batch P1b (2026-10-17)
 
@@ -901,6 +912,179 @@ Row Q23 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md). Static (objdum
   the record + 0x14 forms were looked for). A record pointer kept elsewhere is not excluded, so the
   meaning stays open; the store's trade rules are plan 0043 Phase 1's subject, and the search goes there with this
   writer table. (fn:NPCSTORE_CtlCreate@0x00536070, fn:NPCSTORE_FindRec@0x00535EA0)
+
+## Plan 0038 batch H6c (run:2026-10-27-sweep-vendors)
+
+Harness batch H6c (`vendors`) of [plan 0038](../../plans/0038-inferred-claims-sweep.md) takes 13 inferred statements
+of [items/vendors](../../specs/items/vendors.md): rows 2, 5 (2), 12, 14, 15, 18, 29, 30, 32, 33, 34 and 36 of
+[the inventory](../../plans/0038-inventory/items-vendors.md), and the S2c pieces of rows 22 and 26. Spec lines are
+those of the inventory's commit `ac0f5c2`. Run record [run:2026-10-27-sweep-vendors](experiments.md#run2026-10-27-sweep-vendors):
+6 kept sessions on slot 1 (8 launches), stock data, tool-built saves (ADR-0013 § Neutral). Logger `tools/gdb/h6c.gdb`
+(`tools/gdb/vendors.gdb`'s files and the new `tools/gdb/h6c.py`). Checks over the 6 kept logs, all 0 mismatches:
+`tools/vendors.py check` (`check-vendors.txt`: **17 stock builds, 40 gamble windows, 1 646 creations reproduced through
+the item chain**, 7 trade opens with the stock kept, 2 stale rebuilds, 9 resets by a town leave) and `tools/sweep_h6c.py
+logs` (`check-sweep_h6c.txt`: **9 616 counted checks, 0 bad**). `tools/sweep_h6c.py static` (`check-static.txt`) holds
+the objdump excerpts cited below; `sweep_h6c.py pairs` and `hb` rescan the kept logs of run:2026-10-20-two-clients and
+run:2026-10-15-vendors (`check-pairs.txt`, `check-hb.txt`). Regression: `tools/vendors.py check` with this batch's
+revision (one branch added: an `ITEMS_CreateForStore` call from `sub_0055A090_DropGoldAmount`, return 0x0055A18D,
+a gold pile of class 523, is counted and skipped; at the `lane/h6c` review the branch was narrowed to that return
+address, a call from any other site outside a build staying a mismatch) reproduces run:2026-10-15-vendors with 0
+mismatches, and no such call occurs there (`regress/check-regress-vendors-run.txt`). Of this run's 4 such piles, one
+came at the `larz` session's arrival in the Frigid Highlands, where the character died, two after a refused sale and
+one after a copied sale; why they drop is not part of this batch.
+
+### The new lines (`tools/gdb/h6c.py`, addresses read with objdump)
+
+- `TLL`: `sub_00537340_TownLevelLeave`'s entry with its return address: 0x00538196 is the per-frame room check's call
+  (0x00538191), 0x0053AF45 `sub_0053AEC0_PlayerChangeLevel`'s (0x0053AF40).
+- `LUN`: `sub_00536850_NpcStoreLevelUpNote`'s entry (the level-up's call 0x005709E0, return 0x005709E5) with the pushed
+  level.
+- `ISET`/`ICLR`: the player's interaction set (0x00554120, called by `sub_00572C10_NpcInteractStart` at 0x00572D0B with
+  type 1 and the NPC's id) and cleared (0x00554190), with the unit's `+0x64` (id), `+0x68` (type) and `+0x6C` (the
+  flag) before; `NIR`: `sub_00572F20_NpcInteractRemove`'s entry; `HSL`/`HBR`: `HIRE_SendList`'s and `HIRE_BuildStock`'s
+  entries with their return addresses.
+- `VPG`/`VPA`/`VPR`/`VPK`/`VOK`: `VENDOR_CreateStockItem`'s tab (AL after `sub_0062E880_ItemStorePage`, 0x00576571), the
+  two `sub_00560200_InvPlaceItem` calls (0x005765C8 on the tab, 0x0057660B on tab 2) and their results, the park call
+  (0x00576623) and the tab-1 success (0x00576633); `INVB`/`INVT`/`INVG`: the store's stock inventory (record `+0x04`,
+  item list `+0x0C`, next ItemData `+0x64`) after each build and at each trade open, and the player's gamble inventory
+  after each window, each item with its id, class, page (ItemData `+0x45`) and cell (path `+0x0C`/`+0x10`).
+- `ICR`: the creation record at `sub_00557450_ItemCreateByQuality`'s entry (the IC0 address, `[esp+4]`): `+0x18`,
+  `+0x28`, `+0x2A`, `+0x80` and the other fields IC0 does not print.
+- `NB0`/`NB1`, `SIS`/`SISP`/`SISR`/`SISG`, `CPY0`/`CPY1`, `NS0`/`NS1`, `NSX`: `NPC_BuyItem` (its first stack word is the
+  NPC unit) with the stock and gamble inventories before and after, `sub_00576F50_StoreItemSold` with
+  `VENDOR_IsPermanent`'s result (0x00576FD9) and the branch taken (the removal call 0x00576FE4, the gamble call
+  0x00576FFF), `sub_0055A2A0_ItemCopy` from the purchase (returns 0x005776EE, 0x00577C7F) and the sale (0x0057974C), and
+  `NPC_SellItem` with plan 0043 Phase 2b's `NSX` decision points.
+
+### Ledger
+
+- **vend 2** (L66, the entry `sub_00555500_PlayerInteractEnd` → `sub_00536B50_NpcStorePlayerLeave`) **raised, with a
+  refinement.** [C] `PlayerInteractEnd` is entered from its one call site (raw scan, `check-xref.txt`), 0x005555C6 in
+  `sub_00555600_UnitFree` (every one of the 8 logged entries returns to 0x005555CB), and it calls
+  `NpcStorePlayerLeave` when the player is still interacting with an NPC: 2 of the 7 host-side entries of run:2026-10-20-two-clients's
+  kept logs (`p44h-vend-1-host.log`: two of the joiner's leaves, its NPC unit Kashya's, class 150 by that unit's
+  `MLV` line, and Akara's, by her `BS0`) are followed by `PLEAVE` returning to 0x00555562 (the call at 0x0055555D). In this run's single-player *Save and Exit* the entry came after the trade
+  window's cancel had cleared the interaction (`NIR`, then `ICLR` with `+0x6C` = 1 before it, and no `ISET` after)
+  and no `PLEAVE` followed. (fn:sub_00555500_PlayerInteractEnd@0x00555500,
+  fn:sub_00555600_UnitFree@0x00555600, run:2026-10-20-two-clients, run:2026-10-27-sweep-vendors; `sweep_h6c.py pairs`)
+  [I] The call site is `UnitFree`'s case for unit type 0 (the jump table at 0x005555EC, read), and the test between
+  the two outcomes is the flag `+0x6C` and the interaction type 1 (0x00555500–0x00555544, read): the two logged sides
+  fit it, and no log shows the flag set at an entry without a `PLEAVE`. **Refinement for Phase 3:** the
+  row is "a player unit is freed while interacting with an NPC", not the end of an interaction: in single player every
+  window close and menu Escape sends the cancel first (`NIR` and `ICLR` at each of the run's closes), so the path is
+  reached only when a client leaves with an interaction open.
+- **vend 5** (L123, L368: `MAX_FAILS` 32, never reached) **shortfall (2).** [C] No build passed 32 failed creations:
+  the most were 27 (Larzuk, Hell, ilvl 104, in three games: 26, 12, 13, 27, 17), Fara in Nightmare at ilvl 24 (the most
+  normal copies, six builds) 9 to 20, Asheara at 104 8, Anya and Malah at 104 none; nor did any of
+  run:2026-10-15-vendors's 94 builds (most 20, `check-fails-vendors-run.txt`). `tools/vendors.py check` reproduced every build with the limit modelled.
+  [I] **Refinement for Phase 3** (read, objdump in `check-static.txt`): the count is tested after each normal copy
+  (`cmp [ebp-4], 0x20; jg`, 0x00576AA3) and after each permanent item (0x00576BE5), never in the magic loop
+  (0x00576B3C–0x00576B4D), so from stock level 25 (no normal copies) the limit can end a build only in the permanent
+  loop, after its first item. Both `jg` go to 0x00576B74, the function's epilogue (`ret 8` at 0x00576B7A), so a 33rd
+  failure ends the whole build at once (read at the `lane/h6c` review). The row stays `[I]`.
+- **vend 12** (L256, the same player reopening a built, non-stale store) **raised.** [C] 7 trade opens with `built` 1
+  and `stale` 0 (Charsi 1, Drognan 3, Larzuk 3): no build before the next open, and the stock's item ids at the open
+  (`INVT`) are those after the build (`INVB`), less the items bought since (one, Charsi's `lax`); `vendors.py`
+  predicts each from the record. (fn:NPC_TradeOpen@0x00579430, fn:NPC_OpenStore@0x00578B30, run:2026-10-27-sweep-vendors)
+- **vend 14** (L261, Asheara: the hire list first builds the hirelings first) **raised, with a correction.** [C]
+  Asheara's hire table is built once, by `HIRE_SendList` (`HBR` returns to 0x005767F0) called from
+  `sub_00572C10_NpcInteractStart` (`HSL` returns to 0x00572D04), at the first click on her and before her first menu
+  action (four hire-list actions, then the trade open, with `hirelingsBuilt` 1 and `built` 0: the stock build that
+  follows calls no `HIRE_BuildStock`). In run:2026-10-15-vendors's 5 games with Asheara, her first trade open likewise found the
+  record's `hirelingsBuilt` at 1, with the game's `HB0` before her first menu action (`sweep_h6c.py hb`, 6 of 6 with
+  this run's). So the hirelings come first
+  whatever the menu choice. **Correction for Phase 3:** "the first trade open builds the stock first and the hireling
+  list second" is never taken by the stock client: `NPC_OpenStore`'s call 0x00578BFF finds the table built by the
+  interaction start (hirelings/0001 § When, `[C]`). (fn:HIRE_SendList@0x00576770, fn:HIRE_BuildStock@0x00576070,
+  fn:sub_00572C10_NpcInteractStart@0x00572C10, fn:NPC_OpenStore@0x00578B30, run:2026-10-15-vendors, run:2026-10-27-sweep-vendors)
+  [I] "Never" for every case the runs did not hold rests on the read of the flag's writes: `+0x21` = 0 only at
+  0x005770C5, followed at once by `HIRE_BuildStock` (0x005770C9); `NPCSTORE_Reset` writes `+0x20` alone (0x00536D24),
+  so a store reset, including the two-player stale branch (vend 17), leaves the table built (the `lane/h6c` review).
+- **vend 15** (L272, a walk out of a town calls `TownLevelLeave` as a waypoint within the act does) **raised.** [C]
+  The walk from the Rogue Encampment into the Blood Moor called it from the per-frame room check (return 0x00538196),
+  levels 1 → 2, and `NPCSTORE_ActStale` got `townEmpty` 1 and reset Akara's and Charsi's stores at once. The waypoints
+  within an act took the same call site with `townEmpty` 1 (Harrogath → the Frigid Highlands 1 time, Lut Gholein →
+  the Sewers Level 2 6 times: Larzuk and Fara reset), and every act change came from `PlayerChangeLevel` (return
+  0x0053AF45; the 14 from a town all with `townEmpty` 0). (fn:sub_00537340_TownLevelLeave@0x00537340, 0x00538191, 0x0053AF40,
+  fn:NPCSTORE_ActStale@0x00537230, run:2026-10-27-sweep-vendors)
+- **vend 18** (L284, a town entry, a quest event, a reopen and a level-up rebuild nothing) **raised in part.** [C]
+  Drognan's store built at clvl 30 in Lut Gholein was opened again, then the player took the waypoint to the Frigid
+  Highlands (an act change, `townEmpty` 0, the store kept), levelled up there (`LUN` from 0x005709E5, level 32: the
+  built save holds clvl 30 with 6 397 854 experience, one point under clvl 32's threshold and over clvl 31's, so the
+  kill gave one level-up event of two levels; the note's queue (0x00536850–0x005368DF) does not read the level gained),
+  returned by waypoint (a town entry: no `NPCSTORE_ActStale` call) and opened the store twice more: no build at any of
+  the three later opens, the same 57 item ids at each, and `vendors.py` predicted the record's state (built, not
+  stale) each time. (fn:sub_00536850_NpcStoreLevelUpNote@0x00536850, fn:NPC_TradeOpen@0x00579430,
+  run:2026-10-27-sweep-vendors) **Remainder (`[I]`):** a quest event (none in the run), and why the level-up's note
+  changes nothing (its consumer has no caller, § 3, read; fn:sub_005368F0_NpcStorePendingDead@0x005368F0).
+- **vend 29** (L598, a gamble open builds only without an existing inventory) **shortfall; d-2c (the `lane/h6c` review).** [C] All
+  40 gamble opens built a window, each after the previous window's close had freed the inventory (`vendors.py`;
+  fn:sub_00578AE0_GambleEnsure@0x00578AE0, run:2026-10-27-sweep-vendors). [I]
+  The other branch needs a gamble open while the player still has an inventory there: `sub_00572F20_NpcInteractRemove`
+  frees it only when its removal empties the NPC's interaction list (`cmp [edx], 0; jne` at 0x00572FAF skips
+  `sub_00537190_GambleInvFree`), which with one player is every close, and the client sends the gamble action only
+  from the NPC menu. A second interactor keeps the list non-empty.
+- **vend 30** (L607, the gamble `lvl` clamped to 5..99) **raised.** [C] Of 560 `lvl` draws, 26 at clvl 1 fell below 5
+  (−4 to 4: 1, 3, 3, 3, 1, 6, 6, 2, 1) and were clamped to 5, and 232 at clvl 99 rose above 99 (100 to 103: 65, 55,
+  53, 59) and were clamped to 99; every window reproduces from the clamped value (the pick's bound `countUpTo[lvl]`,
+  the upgrade level and the creation `ilvl`). (0x005788A3–0x005788D6, fn:GAMBLE_BuildInv@0x00578790,
+  run:2026-10-27-sweep-vendors)
+- **vend 32** (L642, the gamble inventory freed at the interaction's end; the same items within one) **shortfall;
+  d-2c (the `lane/h6c` review).** [C] The interaction's end that frees (vend 2's path) was met only at the joiner's leaves at Kashya
+  and Akara (neither a gambler), and the 77 `sub_00537190_GambleInvFree` calls logged here all return into `NpcInteractRemove`
+  (0x00572FBF: the cancel, § 7 free 2). [I] A free by `NpcStorePlayerLeave` needs a client leaving with a gamble
+  window open, and "the same items within one interaction" is vend 29's branch: both need a second player.
+  (fn:sub_00536B50_NpcStorePlayerLeave@0x00536B50, 0x00572FAF)
+- **vend 33** (L647, a purchase copies the item and creates no replacement) **raised.** [C] Two gamble purchases
+  (Gheed's `sml` at clvl 1, Anya's `cap` at clvl 99): `NPC_BuyItem` → `sub_0055A2A0_ItemCopy` of the shown item (a new
+  unit with the same class, quality and file index), `StoreItemSold`'s gamble branch (0x00576FFF → 0x00576650), no
+  `ITEMS_CreateForStore`, `GAMBLE_BuildInv` or `VENDOR_BuildStock` call inside the purchase, and the player's gamble
+  inventory afterwards = before less the bought item (13 left). (fn:NPC_BuyItem@0x00577830, fn:sub_0055A2A0_ItemCopy@0x0055A2A0,
+  fn:sub_00576F50_StoreItemSold@0x00576F50, run:2026-10-27-sweep-vendors)
+- **vend 34** (L650, a bought stock item removed unless permanent; a sold item added unless excluded) **raised in
+  part.** [C] Purchases: Akara's `tsc` (`VENDOR_IsPermanent` 1: no removal call, the stock unchanged), Akara's `wnd`,
+  Charsi's `lax` and Malah's `bwn` (0: the removal call 0x005766D0, the stock = before less the item). Sales
+  (`NPC_SellItem`'s decision): a `hp5` to Akara in Normal and a `cap` to Malah in Hell copied and placed; a `tsc` to
+  Akara refused by the permanent test (her permanent list); a `hp5` to Malah in Hell refused by the permanent test,
+  where `hp5` is in no vendor's permanent list (`vendors.py lists`), so the clause outside Normal (`hp4`, `hp5`, `mp4`,
+  `mp5` when `difficulty` > 0, 0x00576EF0–0x00576F10) is what refused it, against the Normal `hp5` copied; a `cap` sold
+  in Gheed's gamble window refused by the gamble view (0x00579714) with no copy. The refused items are named by their
+  ids (`NS0`) and the cells sold from: in both copied sales the copy's source is the `NS0` id (`CPY0`), so id 1 is the
+  Normal save's `hp5`; its ids 3 and 2 were sold from the cells (2, 0) and (1, 0), which hold the built save's `cap`
+  and `tsc`; the Hell save's inventory holds only the `hp5` (id 9, refused) and the `cap` (id 10, copied). With run:2026-10-19-economy2's
+  refusals by the flags `0x400000` and `0x100` and by `carry1` (items/0011 § Phase 2b, item 8). (fn:VENDOR_IsPermanent@0x00576ED0,
+  fn:sub_00576F50_StoreItemSold@0x00576F50, fn:NPC_SellItem@0x00579510, run:2026-10-19-economy2, run:2026-10-27-sweep-vendors)
+  **Remainder (`[I]`):** the refusals by `Cracked`, base type 7, flag `0x1000000` and `0x0055F590` (not reached;
+  0x00579653, 0x00579681, 0x005796A1, 0x005796DD), and `hp4`, `mp4`, `mp5` of the clause (0x00576EF6–0x00576F10).
+- **vend 36** (L762, the stock level not clamped to 99 in Nightmare and Hell) **raised.** [C] 8 Hell builds at clvl 99
+  (Larzuk 5, Anya, Malah, Asheara) took `ilvl` 104 from `VENDOR_StockLevel` (`BSL`), and each reproduces from it in
+  `vendors.py` (the level gate, the upgrade bounds `104·16 + 1000` and `104·128 + 5000`, the creations' `ilvl`), while
+  the same games' gamble `lvl` was clamped to 99 (vend 30). (fn:VENDOR_StockLevel@0x00576890, run:2026-10-27-sweep-vendors)
+
+### The S2c pieces
+
+- **vend 22** (the stock item's tab and cell) **met in part.** [C] For all 1 086 stock items `sub_0062E880_ItemStorePage`
+  returned the StorePage byte of the item's type (itemtypes `+0x22`, the type at items `+0x11E`). Placed: tab 0 277,
+  tab 1 314, tab 2 171, tab 3 139; parked 185. Each placed item lies on the tab it was placed on, inside the 10 × 10 grid,
+  overlapping no other (901 cells from `INVB`). Tab 2 received only items whose tab-1 try had failed (171), and a
+  tab-1 item that also failed on tab 2, or an item of another tab that failed once, was parked (185, the build's
+  failures). [I] The cell search itself is not modelled: a first fit in column-major order (x outer, y inner) over the
+  tab, in creation order, gives 841 of the 901 cells, and row-major 384, so the search is close to column-major but is
+  not that alone. The row stays counted as S2c, raised in part, with this narrower remainder. (fn:sub_0062E880_ItemStorePage@0x0062E880,
+  fn:sub_00560200_InvPlaceItem@0x00560200, 0x005765C8, 0x0057660B, tbl:ItemTypes.txt:StorePage, run:2026-10-27-sweep-vendors)
+- **vend 26** (`+0x18` and `+0x28` of the store creation record) **met.** [C] All 1 646 stock and gamble creation
+  records (`ITEMS_CreateForStore` from 0x005764DB and 0x005789FE) have `+0x18` = 4, `+0x28` = 1 and `+0x80` = 2 at
+  `ItemCreateByQuality`'s entry. The row stays counted as S2c; it is now raised. (fn:ITEMS_CreateForStore@0x00559CE0,
+  struct:ItemCreateRec+0x80, run:2026-10-27-sweep-vendors)
+
+**Tally:** 13 statements: raised 7 (2, 12, 14, 15, 30, 33, 36), raised in part 2 (18, 34), shortfall 4 (5 ×2, 29, 32;
+29 and 32 proposed d-2c). *(The `lane/h6c` review, accept with fixes: 29 and 32 moved to d-2c; raised 7, raised in
+part 2, reclassified 2, shortfall 2: 13. Vendors 26 (S2c) raised, 22 (S2c) stays raised in part.)* Corrections and refinements for Phase 3: vend 14 (the order), vend 2 (the row's meaning),
+vend 5 (the limit's test sites). Symbols I → C (rule 14): `VENDOR_IsPermanent` (8 logged results, 4 purchases and 4
+sales, from its calls 0x00576FD4 and 0x0057972F, against the permanent lists and the difficulty clause, the two `hp5`
+cases separating; its third call, 0x005779D7 in `NPC_BuyItem`, is not logged), `sub_00576F50_StoreItemSold` (its branch
+against the inventories after), `sub_0062E880_ItemStorePage` (1 086 returns against the table). New, `[I]`:
+`sub_00554120_PlayerSetInteract`, `sub_00554190_PlayerClearInteract`.
 
 ## Data touched
 

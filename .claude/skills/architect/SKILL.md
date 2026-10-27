@@ -68,6 +68,23 @@ To change one, supersede it.
 
 ### Mode 3 — Review (a closed plan, a findings batch, or a spec)
 
+**Tiers** ([ADR-0023](../../../docs/adrs/0023-review-tiers-and-gate-first-fixes.md), accepted as a trial, measured by
+plan 0053):
+
+- **Tier B, the lane check** (`references/lane-check.md`, Sonnet, diff-scoped): `reverser-static`,
+  `reverser-harness`, `archivist` and `wiki` lanes. Its verdicts are `accept`, `accept with fixes` or `escalate`.
+- **Tier A, this mode in full**: every `spec-writer` lane, every change to an ADR or to `references/evidence-rules.md`,
+  every lane a Tier B check escalates, and the audit sample.
+- **Promotion re-check.** A Tier A review of a spec promotion also re-checks every `[C]` the spec imports from a
+  finding statement written or raised since that finding's last Tier A review. Find them with
+  `git log -L` on the statement (or the ledger's `architect-check` rows for that finding) and read each one as this
+  mode reads a raise: named second source, anchor that says what the sentence says.
+- **Audit.** Every fifth Tier B lane (counted over all kinds in ledger order) also gets a Tier A review. Its ledger row
+  is an `architect-review` whose Fixes cell begins `audit of <lane>:`, and it names any reject-grade problem the check
+  missed. Two such misses in any five audits of one lane kind send that kind back to Tier A until a new rule is written.
+- **Gate first.** Neither tier counts or repairs what `tools/gate.py` checks (`references/evidence-rules.md`
+  § Mechanical checks): research-map rows, the plans index, `Total` rows, tag counts, table cells.
+
 Deliver the review in conversation, not as a file. Check:
 
 - **Anchors resolve.** Spot-check at least three addresses per document against `re/symbols.csv`,
@@ -125,3 +142,4 @@ docs/plans/metrics.md                     # lane run ledger: you fill verdicts a
 - `references/evidence-rules.md`: tags, anchors, promotion rules, how experiments are recorded.
 - `references/templates/plan.md`, `references/templates/adr.md`.
 - `references/review-fixes.md`: the reviewer's recurring blind spots. Read before each review.
+- `references/lane-check.md`: the Tier B lane check (ADR-0023), complete enough to run with no other instructions.

@@ -1,6 +1,6 @@
 # ADR index
 
-Next free number: **0023**
+Next free number: **0024**
 
 | # | Title | Status |
 |---|---|---|
@@ -25,4 +25,5 @@ Next free number: **0023**
 | [0019](0019-backlog-closed-entries-archive.md) | Closed backlog entries move to `docs/backlog/archive/`; `backlog.py archive` sweeps and fixes links after each merge (amends 0018) | accepted 2026-10-20 |
 | [0020](0020-skills-phase-in-two-plans.md) | Simulation phase 3 (skills and missiles) in two plans: the machinery, then the function catalogue (amends 0014, 0016) | accepted 2026-10-20 (owner) |
 | [0021](0021-observed-boundaries-in-emulation.md) | Observed boundaries in emulated reproduction: a case may end at a declared callee's entry (amends 0015) | accepted 2026-10-20 (owner) |
-| [0022](0022-scope-server-frame.md) | After phase (5): the server frame composed, so simulation events chain across units (amends 0014, 0016) | proposed (architect, 2026-10-27; for the owner before 0052·P2) |
+| [0022](0022-scope-server-frame.md) | After phase (5): the server frame composed, so simulation events chain across units (amends 0014, 0016) | accepted (owner, 2026-10-27) |
+| [0023](0023-review-tiers-and-gate-first-fixes.md) | Review tiers: a full review at spec promotion, a diff-scoped Sonnet check for other lanes with a 1-in-5 audit, and gate checks for the mechanical fix categories | accepted (trial; owner, 2026-10-27; settled by plan 0053 Phase 4) |

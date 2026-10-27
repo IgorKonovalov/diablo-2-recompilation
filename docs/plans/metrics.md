@@ -375,6 +375,22 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/p50e` (to the first rotation) | 0050 P2 | reverser-harness | 672 782 | 339 | 212 | slot 2, no Ghidra | — (on the second run's row) | — (on the second run's row) |
 | 2026-10-27 | `lane/p50e` (second run: batch 5, closing check, write-up) | 0050 P2 | reverser-harness | 497 904 | 323 | 114 | slot 2, no Ghidra | accept with fixes (Phase 2 part 1; rulings: part 2 filed, the get-hits, blocks, throws and rate tiers not rare branches; the catalogue dispatch exclusion legitimate but not an oracle; P1b-1's `N` the client's request cadence; the `fast` mod read for the `fast` champion) | 5: overclaim 1, under-claim 1, misread 2, tool not kept 1 (P1b-1's `N` as a server rule; four symbols left I; "124 kind-1" for 110 kind 0 and 14 kind 1 with "oracle" for an unlogged path; MonUMod's champion rows without 38; a dev manifest listing its own hash) |
 | 2026-10-27 | `lane/p50e` review | 0050 P2 | architect-review | 211 324 | 91 | 19 | — (static, objdump, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/a4t` | 0050 P2 (the 134 `anim-*` recipe bases in `tools/test_d2s.py`) | archivist | 75 864 | 18 | 5 | — (scratch builds, no Ghidra, no harness) | accept | 0 |
+| 2026-10-27 | `lane/a4t` review | 0050 P2 | architect-review | 57 215 | 14 | 2 | — (scratch builds, no Ghidra, no harness) | gave accept | — (on the lane row) |
+| 2026-10-27 | `lane/h6c` | 0038 H6c | reverser-harness | 606 857 | 273 | 129 | slot 1 (8 launches), no Ghidra | accept with fixes (rulings: vend 2's rescan of run:2026-10-20-two-clients legitimate; vendors 29 and 32 to d-2c; the built states neutral inputs; the `vendors.py` branch modelling once narrowed; the `larz` session kept for its build and leave; vendors 26 (S2c) raised; items/vendors Phase 3 ready) | 6: misread 2, omission 2, stale cross-reference 1, other 1 (the skip branch open to any caller; the gold piles' cause; the clvl-30 save's threshold; vend 14's "never" without the `+0x21` read; totals against `ffa5b957` for `a105ae13`; `PlayerSetInteract`'s flag guard) |
+| 2026-10-27 | `lane/h6c` review | 0038 H6c | architect-review | 179 463 | 84 | 16 | — (static, objdump, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/h6f` | 0038 H6f | reverser-harness | 492 169 | 210 | 73 | slot 2 (19 launches), no Ghidra | accept with fixes (ledger as filed; rows 1, 9 d-none; the refusal halves of 17, 18, 21 d-none on a condition; row 29 a shortfall, d-2c not accepted) | 6: overclaim 3, misread 1, omission 2 (the name clamp's widths, the cap's "unsigned", "no other call" for `MERC_Create`; `MERC_AddExp`'s 98 as a constant; the `floor` shots path; the client-test gap unfiled) |
+| 2026-10-27 | `lane/h6f` review | 0038 H6f | architect-review | 175 941 | 73 | 14 | — (static, objdump, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/wiki` | owner request: wiki refresh over the 2026-10-27 re-tags, root README | wiki | 191 812 | 45 | 9 | — (no slot, no Ghidra, no harness) | accept with fixes (ruling: the README Status table follows the research map's rows, so the four combat files fold into `combat/formulas`) | 2: misread 1, other 1 (wiki/saves' "long name" for a name id past `+0x116`; the four combat rows split from the map's one) |
+| 2026-10-27 | `lane/wiki` review | owner request: wiki refresh, root README | architect-review | 112 970 | 37 | 6 | — (static, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/s38v` | 0038 P3 items/vendors (S2c, H6c) | spec-writer | 227 622 | 95 | 20 | — (no slot, no Ghidra, no harness) | accept with fixes | 5: under-claim 2, overclaim 2, misread 1 |
+| 2026-10-27 | `lane/s38v` review | 0038 P3 items/vendors | architect-review | 160 089 | 44 | 9 | — (static, objdump only) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/a52` | 0052 P0 | archivist | 278 105 | 106 | 26 | — (static, no Ghidra) | accept with fixes (rulings: the generated 148-row index is a derived index, not a dump; 13 batches accepted; rows 0 and 143 placed right; reading the image table stays archivist) | 2: misread 1, omission 1 (`MonAiEntryGet`'s `EDX` = 0 condition dropped; the second table at `0x0073D358` undocumented) |
+| 2026-10-27 | `lane/a52` review | 0052 P0 | architect-review | 123 218 | 49 | 10 | — (static, objdump, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/s38h` | 0038 P3 hirelings (S3a, S3b, H4b, H1b, H1a, H6f; rows 3, 30, 33 left for H1c) | spec-writer | 236 661 | 99 | 20 | — (no slot, no Ghidra, no harness) | accept with fixes (rulings: the partial pass stands; G2 an `[I]` call path; § K keeps its heading) | 6: overclaim 2, wrong anchor 1, omission 1, misread 1, stale cross-reference 1 (F1's and F2's "never sent"; G4's `shr` and G5's gain-test anchors; the levelling functions' missing-record exits and test order; `MaxLvl` 98 for `M`; the introduction's "named only"; two `[I]` points flat on wiki/characters) |
+| 2026-10-27 | `lane/s38h` review | 0038 P3 hirelings | architect-review | 184 271 | 68 | 18 | — (static, objdump, no Ghidra, no harness) | gave accept with fixes | — (on the lane row; also wiki/saves' hirelings date and text, items/economy's resurrection classes 150 and 515 raised) |
+| 2026-10-27 | `lane/p53a` | 0053 P0–P1 | archivist | 129 135 | 44 | 13 | — (no Ghidra; Sonnet) | accept with fixes | 4: miscount 1, other 3 |
+| 2026-10-27 | `lane/p53a` review | 0053 P0–P2 | architect-review | 108 797 | 42 | 7 | — (review + Phase 2 in one run) | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
@@ -385,6 +401,16 @@ none rejected.
 **By kind** (runs, mean agent tokens, mean wall minutes, fixes per reviewed run): reverser-static 10,
 457 k, 40 min, 3.9; reverser-harness 3, 275 k, 56 min, 3.7; spec-writer 6, 252 k, 19 min, 3.7; archivist
 5, 243 k, 18 min, 4.6; wiki 5, 154 k, 8 min, 5.6; architect-review 32, 145 k, 9 min.
+
+## Kinds
+
+The `Kind` cell names the lane skill and how it ran: `reverser-static`, `reverser-harness`, `archivist`,
+`spec-writer`, `wiki`, `architect` (planning and ADRs), `architect-review` (a Tier A review, architect Mode 3) and
+`architect-check` (a Tier B lane check, `.claude/skills/architect/references/lane-check.md`; ADR-0023, from plan 0053
+Phase 3). A check covering several lanes gets one row per lane, its tokens split evenly and the split said in the
+Lane cell. An **audit** (every fifth Tier B lane also reviewed at Tier A) is an `architect-review` row whose Fixes
+cell begins `audit of <lane>:`, then the fix count by category as usual, and names any reject-grade problem the
+check missed.
 
 ## Fix categories
 
