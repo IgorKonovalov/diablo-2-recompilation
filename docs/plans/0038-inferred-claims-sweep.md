@@ -4952,3 +4952,63 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     [2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps](../backlog/archive/2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md)
     closed. Ledger: the lane row was filled with the orchestrator's usage (255 234 tokens, 82 tools, 22 min) and the
     fixes. The review row was added with usage "—".
+- **2026-10-27 — `lane/h6e2f` (reverser, harness slot 1, no Ghidra): the H6e2 follow-up** (the `lane/rdp` review's
+  ruling 7). `eye4c`, `tome4c` and `brain4c` run as staged in `tools/h6e2_sessions.py`, 3 launches, 3 kept, under
+  run:2026-10-27-sweep-quest-items (addendum *Follow-up* in items/experiments). First, additively, `tools/gdb/pilot.py`'s
+  RL line gains `f28` (room `+0x28`; rdp ruling 5).
+  - **Outcomes:** `eye4c` reached the Spider Cavern (85) with `--descend-to 85` and opened the eye chest (`qey`, gold 5
+    first); `tome4c` reached the Ruined Temple (94) and the tome made `bbb`; `brain4c`'s `explore --all-copies`
+    activated both level-91 copies, the brain chest was listed at (10014, 11879) and opened (`qbr`, gold 7 first).
+    Check over the 14 kept logs: chest 8, object 3, event7 19, dup 8, gate 8, gold 57, death 6; 0 mismatches.
+  - **Ledger** ([items/0010 § H6e2](../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items)):
+    the Khalim order `[C]` for all three chests (qd 33 and objects 48 chests: only `vip` and the held-part refusal
+    stay); `qey`, `qbr` met; `bbb` shortfall → raised in part; three more `j34` kills; H6e2 now raised 3, in part 15,
+    shortfall 6. Brain chest: listed and opened once its room is active `[C]`; which copy the listing follows `[I]`
+    (`brain4c` names the copies by `0x40000` but had the room active in both). Three symbols I → C. `bkd`, `hdm` not
+    routed (shortfall). Inventory § 2.6 follow-up paragraph; totals unchanged (1 526) against `main` `1573a48f`.
+  - **Backlog:** the spec-writer H6e2 entry annotated; review requested
+    ([entry](../backlog/archive/2026-10-27-reverser-architect-h6e2f-review.md)). Ledger row added, usage "—".
+- **2026-10-27 — `lane/h6e2f` review (architect): accept with fixes (2).** `main` (`dcf6c210`) merged into the lane
+  first (plan log, metrics and items experiments conflicts kept both sides; `backlog.py archive` moved nothing). All
+  seven `workspace/logs/h6e2/` manifests pass `sha256sum -c` there (`manifest-followup.sha256`: 18 lines, the three
+  logs, their pilot outputs, four outputs, 8 screenshots). Under `systemd-run --user --scope -p MemoryMax=4G`,
+  `sweep_h6e2.py check` over the 14 kept logs is byte-identical to `check-followup.txt` (`fe0f034f…`; chest 8, object 3,
+  event7 19, dup 8, gate 8, gold 57, death 6, 0 mismatches), and `h6e2f_copies.py`, its `--warps 76 51` mode and
+  `rdp_brain91.py` reproduce `copies-followup.txt`, `warps-eye4c.txt` and `brain91-4c.txt` byte for byte.
+  `test_d2pilot_descend.py`: 10 tests OK.
+  - **objdump** (pinned `game.exe` `631066c1…`): the eye chest calls `QUESTS_GetSeed` at 0x005B8958 (return 0x005B895D),
+    computes `k = 5 + low32(lo·0x6AC690C5 + hi) mod 5` (0x005B895F–0x005B8987) and loops `DropItemCodeAt('gld ', 2)`
+    at 0x005B899C (return 0x005B89A1) `k` times, then `QUESTS_FindById(16)`, the `GameForEachUnit` callback 0x005B8770,
+    `DropItemAtUnit` at 0x005B89F1 (return 0x005B89F6) and `ObjectChestDrop` at 0x005B8A11 (return 0x005B8A16). The
+    brain chest is the same at +0xE0 (0x005B8A38, 0x005B8A7C, 0x005B8AD1, 0x005B8AF1; returns as filed). The tome calls
+    no `QUESTS_GetSeed`; its `DropItemAtUnit` is at 0x005B7AF3 (return 0x005B7AF8), after the word test via
+    `QUESTRECORD_GetState` (0x005B7AB2). The returns match the logged `QGS`/`QDC`/`QDI`/`OCD` returns.
+  - **Rulings.** (1) The Khalim order `[C]` for the eye and brain chests stands: the checker models `k` from the logged
+    `QGS` seed, and three seeds give three different `k` (5, 7, 8; recomputed here), which a wrong count or order could
+    not match by chance (rule 10). The held-part refusals (no session held a part or `qf2`) and the tome's word-17
+    refusal and used-tome half stay `[I]`; `bbb`'s quality 7 is After `[I]`. (2) `qey`, `qbr` met; `bbb` shortfall →
+    raised in part; H6e2 raised 3, in part 15, shortfall 6: 24; no class move. (3) The three symbols I → C stand
+    (rule 14: each one's logged returns compared with the checker's model). (4) **Fix 1 (overclaim):** the brain
+    chest's `[C]` was "listed and opened once its room is active"; in `brain4` the chest's room activated in the fully
+    activated copy (line 7337) and the chest was never listed, so the `[C]` is scoped to "with its room active in both
+    copies" (items/0010 bullet, its sub-bullet, the open question, inventory § 2.6). (5) "Which copy the listing
+    follows" stays `[I]`: an order match (the `0x40000` copy activates first in `brain4c`; the fully activated copy
+    activates first in `brain4`/`brain4b`), not a flag read in a log that separates the copies. **Fix 2 (tool not
+    kept):** the first-`RRESEED` lines it cites were in no kept output; `tools/h6e2f_copies.py --first` (`566a0531…`,
+    default output unchanged) writes them, with each copy's first RL line, to `copies-review.txt` (`33c41b9c…`,
+    `manifest-review.sha256` `6b4d3ac4…`). They match the finding (0-based lines, now said); the build order (the
+    listing copy built first in `brain4`/`brain4b`, the copy without `0x40000` built first in `brain4c`) is added to
+    the `[I]` as a second order. (6) The RL `f28` key breaks
+    no reader: `d2pilot.LogState`, `rdp_brain91.py` and `h6e2f_copies.py` read RL keys by name, and the pilot's RL is
+    renamed `PRL` wherever `drlg-gen.py`'s RL (which already carries `f28`) shares a log. (7) The `eye4c` descent was
+    correct, not lucky: `descend_cells` drops a warp whose known destination is not the target and keeps only unknown
+    ones; the row-51 warp at (5235, 4591) had destination 84 from its first WRP line, and the development `eye4` log of
+    the same seed took that very warp (WRP room rect (1040, 912) + (35, 31)) and arrived in 84 (PLR line 2276), so the
+    skip was right. The first try timed out because no unknown-destination warp was logged within 240 s; the recipe's
+    `until` step explored and retried, and the second try's warp at (5055, 4071) resolved to 85 and arrived there
+    (line 11527). (8) Totals against `main` `dcf6c210`: unchanged, 1 526.
+  - **Readiness.** items/quest-drops' Phase 3 can start (S2c, H6d, H6e2 with this follow-up, H6e1 all accepted).
+    **objects needs a small follow-up re-tag** of § L: the Khalim chests' row (`[C]` for all three chests, the held-part
+    refusal `[I]`) and the item-objects row (`bbb` joins `leg` and `bks` as `[C]`, its quality 7 `[I]`; `hdm` stays
+    `[I]`). The brain chest's listing is not stated in the objects spec. The spec-writer H6e2 entry is annotated.
+    Request closed ([archive](../backlog/archive/2026-10-27-reverser-architect-h6e2f-review.md)); ledger rows filled.

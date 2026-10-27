@@ -3106,6 +3106,64 @@ logs; shortfalls under *Limits*.
   tool-built saves give (all clear or all done), so no case separates which word a gate reads. The `QOW` record
   is the operating player's at the operate, not at a death. The second clicks reached no operate.
 
+### Follow-up (2026-10-27, `lane/h6e2f`): `eye4c`, `tome4c`, `brain4c`
+
+The three staged reruns of the resume's failed routes (the `lane/rdp` review, ruling 7: an H6e2 follow-up under this
+run id). Evidence in [items/0010 § Plan 0038 batch H6e2](0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items).
+
+- **Changes.** `tools/gdb/pilot.py` (`05d89736…`): the RL line gains `f28`, room `+0x28` read at the same breakpoint
+  as `drlg-gen.py`'s RL (0x0066B970), additively (no other key changed); its bit `0x40000` marks the client copy
+  (drlg/0004 row 10). `tools/d2pilot.py` (`e0260335…`, `lane/rdp`'s, unchanged) with `--descend-to` and
+  `--all-copies`; `tools/h6e2_sessions.py` (`e5c6388c…` as run, `lane/rdp`'s recipes; after the runs only the comment above the three
+  recipes changed, "not run" to "run in lane/h6e2f": `666c3755…`); the logger
+  `tools/gdb/quest-items.gdb` (`1b917862…`) and `tools/gdb/quest-items.py` (`d0a860fe…`) unchanged; checker
+  `tools/sweep_h6e2.py` (`44225cb0…`) unchanged. New: `tools/h6e2f_copies.py` (`17da68c6…`, read-only over logs; per level-91
+  copy its RL rooms' `0x40000` count and, for each listed object, whether its room activated in that copy before
+  its first `OBJS` listing; `--warps` replays `d2pilot.LogState.warp_dest` over a log's prefixes).
+- **Sessions** (`python3 -I tools/h6e2_sessions.py run --slot 1 --tag h6e2 --saves workspace/scratch-h6e2/saves --run
+  quest-items <session>`, under `systemd-run --user --scope -p MemoryMax=4G`; save `a4/QuestFreshT` `d6d11161…`,
+  Normal, expansion, one player, agent-driven; slot 1 stopped and its saves restored after each):
+
+  | log (`quest-items-s1-…`) | route | result |
+  |---|---|---|
+  | `4915-eye4c` `ca0d99eb…` | Spider Forest waypoint, `farm --descend 51 --descend-to 85` (the first try timed out after 240 s exploring: the one row-51 warp logged then, at (5235, 4591), has its destination 84 known from its first WRP line, 1222, so it was not taken; the driver's explore, then the second try, whose WRP line 11175 gave the warp at (5055, 4071) and its destination 85, took it; `warps-eye4c.txt`), the eye chest (407, LvlPrest 663) | **kept**: `qey` chest, gold 5 first; one `j34` kill; level 84 never entered |
+  | `4913-tome4c` `8d550048…` | Kurast Bazaar waypoint, `--descend 61 --descend-to 94` (first try), the tome (193, LvlPrest 748) | **kept**: `bbb` from the tome; one `j34` kill |
+  | `4914-brain4c` `8bfb4c64…` | Flayer Jungle waypoint, the dungeon 1–3, `explore --all-copies` (35 hops, both copies' frontier 0), `objop --obj-cls 406 --obj-mem` | **kept**: the chest listed at (10014, 11879), `qbr` chest, gold 7 first; one `j34` kill |
+
+  3 launches, 3 kept sessions, no development log. In `eye4c` and `brain4c` the objop printed "no OCD line" twice at
+  1.4 sub-tiles from the chest (Nova bursts between) before the click that operated it; in `tome4c` the first click
+  operated the tome.
+- **Procedure:** `python3 -I tools/sweep_h6e2.py check workspace/merged/data/global/excel $(ls
+  workspace/logs/h6e2/quest-items-*.log) > workspace/logs/h6e2/check-followup.txt` (the 11 kept logs and the 3 new);
+  `python3 -I tools/h6e2f_copies.py <brain4c> <brain4> <dev brain4b> > workspace/logs/h6e2/copies-followup.txt`;
+  `python3 -I tools/h6e2f_copies.py --warps 76 51 <eye4c> > workspace/logs/h6e2/warps-eye4c.txt`;
+  `python3 -I tools/rdp_brain91.py <brain4c> > workspace/logs/h6e2/brain91-4c.txt` (`lane/rdp`'s tool, unchanged).
+- **Observed** (`check-followup.txt` `fe0f034f…`, `copies-followup.txt` `c119a6c2…`, `brain91-4c.txt` `ed4f4bd5…`,
+  `warps-eye4c.txt` `c220d2bc…`; manifest `workspace/logs/h6e2/manifest-followup.sha256` `e63fe13a…`, 18 lines: the
+  three logs, their pilot outputs, the four outputs and the 8 screenshots of the three sessions, `sha256sum -c` from `workspace/logs/h6e2/`; the
+  six earlier manifests still pass there):
+  ```
+  ok chest 407 qey mode 0 pfi [('qey ', False), ('qf2 ', False)]: got QGS QDC:gld x5 QDI:qey OCD  [eye4c]
+  ok object 193 bbb mode 0: 1 creation(s) [('005b7af8', 2)]  [tome4c]
+  ok chest 406 qbr mode 0 pfi [('qbr ', False), ('qf2 ', False)]: got QGS QDC:gld x7 QDI:qbr OCD  [brain4c]
+  seen death FigurineDrop j34 x3 (sources 397, 27, 144), quality asked 2, created quality 7
+  SUMMARY chest=8 chest_bad=0 object=3 object_bad=0 event7=19 event7_bad=0 dup=8 dup_bad=0 gate=8 gate_bad=0
+          gate_skip=0 gold=57 death=6 mismatches=0
+  brain4c copy 41673728: RL rooms 25, 0x40000 in 0; copy 41677824: 25, 0x40000 in 25; both 25 rooms activated,
+          64 listed objects, each one's room activated in both copies before its first listing
+  chest (14, 179), room (0, 32): RRESEED line 7639 (0x40000 copy), 7728 (the other), first OBJS line 7897
+  ```
+  (the `x5`/`x7` are written out in the file.)
+- **Limits.** One player, record words all clear, nothing held: the Khalim chests' held-part refusals and the tome's
+  word-17 refusal did not run. In `brain4c` both copies activated every room before the chest was listed, so this log
+  alone does not tell which copy the listing follows (items/0010 § The brain chest in level 91).
+- **Review addition** (2026-10-27, `lane/h6e2f` review): the first-RL and first-`RRESEED` lines per level-91 copy that
+  items/0010 § The brain chest in level 91 cites (6951/6974, 6857/6880, 6982/7005; 0-based) were in no kept output.
+  `tools/h6e2f_copies.py` gained `--first` (`566a0531…`; the default output is byte-identical to
+  `copies-followup.txt`), and `python3 -I tools/h6e2f_copies.py --first <brain4c> <brain4> <dev brain4b> >
+  workspace/logs/h6e2/copies-review.txt` (`33c41b9c…`) prints them; manifest `workspace/logs/h6e2/manifest-review.sha256`
+  (`6b4d3ac4…`, 1 line, `sha256sum -c` from `workspace/logs/h6e2/`).
+
 ## run:2026-10-27-sweep-quest-npc
 
 - **Question:** (plan 0038 Phase 2, batch H6e1, [inventory § 5](../../plans/0038-inventory/README.md#5-batch-list))

@@ -1260,13 +1260,13 @@ whose ledger table gives each statement's `[C]` part and remainder.
 - **Raised (3):** quest-drops 30 `box` (made without a cube, refused with one); 30 Wirt's gold (already `[C]` in the
   spec from run:2026-10-19-economy2; met again, 18 piles by event 7); objects 48 Wirt's body row.
 - **Raised in part (14):** quest-drops 1 (classes 268 and 367; the other event-7 classes), 30 `leg`, `bks`, `ass`,
-  `tr1`, `msf`, `qhr`/`qey`/`qbr` (`qhr` only), `j34` (the creations; the refusal halves), 33 (E1 for `box`, `tr1`,
+  `tr1`, `msf`, `qhr`/`qey`/`qbr` (`qhr` only; all three after the follow-up below), `j34` (the creations; the refusal halves), 33 (E1 for `box`, `tr1`,
   `msf`; **corrected** for the Khalim chests, gold first, met on `qhr`; `vip`, `qey`, `qbr` stay), 34 (a held cube
   refuses in Normal; a Normal staff does not count in Nightmare; the cursor branch and "only" stay), 35 (8 gate
   cases, as at checkpoint 1); objects 48 chests row (as 33, with the correction), item-objects row (`leg`, `bks`),
   orifice row (the bits, from the kept log `quests-s3-3364-duriel-normal.log`; the `hst` gate stays).
 - **Shortfall (7):** quest-drops 30 `bkd`, `hdm`, `vip`, `bbb`, `g33`, `g34`/`xyz`, `qf1`: not run (launch cap), or
-  the route failed (the tome's warp led to the Disused Fane).
+  the route failed (the tome's warp led to the Disused Fane). *(Follow-up below: `bbb` raised in part, shortfall 6.)*
 - Eleven symbols I → C (rule 14): `QUESTS_ObjectEvent`, `A1Q4_WirtGold`, `WirtLegDrop`, `A1Q4_InifussDrop`, the
   scroll, staff, cube and heart chests, `DropItemCodeAt`, `PlayerFindItemByCode`, `ItemQuestGate`.
 
@@ -1280,6 +1280,38 @@ c-emu awaiting a batch 0, blocked 421** (d-none 295, d-edit 73, d-sim 28, d-2c 7
 this run met it again on an independent seed (3811); Phase 3 adds the run anchor only. Recounted against `main`
 `507a6f5c` after merging it (`lane/rk` moved no inventory row): totals as above. **Phase 3 ready:** objects (S4a,
 S4b, H5b, H6e2; its 13 "—" rows have no batch). Not ready: items/quest-drops (H6e1 open).
+*Follow-up (2026-10-27, reverser, `lane/h6e2f`; the `lane/rdp` review's ruling 7):* the reruns `eye4c`, `tome4c`
+and `brain4c` under run:2026-10-27-sweep-quest-items (addendum *Follow-up*), 3 launches and 3 kept sessions on slot 1
+with `d2pilot.py --descend-to` and `--all-copies`, the RL line's new `f28` key; checker over the 14 kept logs: **chest
+8, object 3, event7 19, dup 8, gate 8, gold 57, death 6 (listed); 0 mismatches** (`check-followup.txt`, manifest
+`manifest-followup.sha256`, 18 lines). Ledger moves inside H6e2, no class move:
+- quest-drops 30 `bbb`: **shortfall → raised in part** (`tome4c`: the creation with word 17 clear; the refusal stays);
+- quest-drops 30 `qhr`/`qey`/`qbr`, 30 `j34`, 33 and objects 48 chests and item-objects rows stay **raised in part**,
+  with more met: `qey` and `qbr` in the corrected Khalim order (gold first; `k` 5 and 7 on their logged seeds, the
+  heart chest's 8), so E1's correction holds for all three Khalim chests and only `vip` and the held-part refusal
+  stay; `bbb` joins `leg` and `bks`; three more `j34` kills;
+- the brain chest's open question: with its room active in both copies the chest is listed and opens (`[C]`; scoped
+  at the review, `brain4`'s activation in the other copy alone listed nothing); which copy the listing follows stays
+  `[I]` (an order match over three logs; `brain4c` had the room active in both copies).
+
+Symbols `sub_005B7A60_A3Q1_TomeDrop`, `sub_005B8940_A3Q2_EyeChest`, `sub_005B8A20_A3Q2_BrainChest` I → C (rule 14:
+each one's logged calls compared with the checker's model). H6e2's ledger: **raised 3, raised in part 15, shortfall
+6: 24.** Net effect on the totals: none. Taken against `main` `1573a48f` (the lane's base; no inventory row moved on
+`main` since the `lane/s38s` review's totals): **static 567, harness 519, c-emu awaiting a batch 0, blocked 421**
+(d-none 295, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.** Review-fixes pass
+(reverser 1–15): the new `[C]` bullets each carry a `run:` anchor and an address; the copy identification stays `[I]`
+(1, 4); every count copied from the kept outputs (2); totals against `main` (3); logs, outputs and the 8 screenshots in
+one manifest, the `--warps` replay kept as a tool mode (6); the remainders named in the ledger rows (8); three
+separating seeds for `k` (10); the correction carried into § Static reads' Khalim bullet, the eye/brain `[I]`
+sub-bullet, the open questions and the `h6e2_sessions.py` comment (12); `bbb`'s quality 7 as After `[I]` (13); the
+three symbols raised in `re/symbols.csv` and the Functions table (14).
+**`lane/h6e2f` review (2026-10-27, architect): accept with fixes (2).** The ledger moves stand: `bbb` shortfall →
+raised in part, H6e2 **raised 3, raised in part 15, shortfall 6: 24**, no class move, three symbols I → C. The brain
+chest's `[C]` is scoped to "with its room active in both copies" (in `brain4` the room activated in the other copy
+alone and the chest was not listed); the copy order lines are now in a kept output (`copies-review.txt`). Recounted
+against `main` `dcf6c210` after merging it into the lane (`lane/rlg` and `lane/h6e1` merged since the lane's base;
+neither moved a class): **static 567, harness 519, c-emu awaiting a batch 0, blocked 421** (d-none 295, d-edit 73,
+d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
 **`lane/s38s` review (2026-10-27, architect, Phase 3 of save/d2s and items/uniques-sets): three S1a rows completed by
 H1b's kept check.** The H1b ledger listed the S1a pieces it met and left the rows as S1a. Two of those pieces carry a
 compared line in the kept check output (`workspace/logs/r1h/sweep-h1b-check-r1h.txt`, 0 failing), so they move here,

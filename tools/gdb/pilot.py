@@ -6,7 +6,8 @@
 #   RL       0x0066B970 (DRLG room added to its level: ECX level, EDX room): level pointer, room, tile rect, preset
 #            def (type 2), and the room's warp nodes (room +0x4C list, LvlWarp record index and id) as drlg-roomk.py
 #            (lane/rdp: also "lid", the level id at level +0x1D0, so that d2pilot's warp_dest knows a warp's
-#            destination level before the player has been there)
+#            destination level before the player has been there; lane/h6e2f: also "f28", room +0x28, whose bit
+#            0x40000 marks the client copy of a level, drlg/0004 row 10, as drlg-gen.py's RL)
 #   RRESEED  0x0066EE40 (room activation, ECX = DRLG room): room and level id
 #   CB       0x0064C9FF (COLL_MapBuild after the stamp loop; [ebp-0x10] room): sub-tile rect and the cells only,
 #            zlib+base64 JSON under "z" as collision.py writes them ({"cells": [x0, y0, w, h, hex]})
@@ -117,7 +118,7 @@ def _pilot_main():
         lv, r = reg("ecx"), reg("edx")
         x, y, w, h = struct.unpack("<iiii", mem(r + 0x34, 16))
         d = {"level": lv, "lid": s32(lv + 0x1D0), "room": r, "type": u32(r + 0x48), "rect": [x, y, w, h],
-             "warps": warps(r)}
+             "f28": u32(r + 0x28), "warps": warps(r)}
         if d["type"] == 2 and u32(r + 0x20):
             d["pdef"] = s32(u32(r + 0x20))
         emit(os.environ.get("PILOT_RL_TAG", "RL"), d)   # drlg-maze.gdb: "PRL", beside drlg-gen.py's RL
