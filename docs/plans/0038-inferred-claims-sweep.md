@@ -4736,7 +4736,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     stay shortfalls; none is proposed to move. Save-d2s 126 likewise (the layout is now given).
   - **Backlog:** the entry closed; archivist entry
     [2026-10-27-reverser-archivist-d2s-legacy-layouts-for-a-builder](../backlog/2026-10-27-reverser-archivist-d2s-legacy-layouts-for-a-builder.md);
-    review request [2026-10-27-reverser-architect-review-lane-rlg-d2s-legacy-and-v92-readers](../backlog/2026-10-27-reverser-architect-review-lane-rlg-d2s-legacy-and-v92-readers.md).
+    review request [2026-10-27-reverser-architect-review-lane-rlg-d2s-legacy-and-v92-readers](../backlog/archive/2026-10-27-reverser-architect-review-lane-rlg-d2s-legacy-and-v92-readers.md).
     Ledger row added, usage "—".
   - **Next:** the `lane/rlg` review; then the archivist's legacy builder.
 - **2026-10-27 — H5b.2 shrine-cap wording (reverser, `lane/rsw`).** The `lane/s38o` review's ruling 1 is carried into
@@ -4747,3 +4747,33 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   ([archive](../backlog/archive/2026-10-27-architect-reverser-h5b-shrine-cap-wording.md)); review requested
   ([entry](../backlog/archive/2026-10-27-reverser-architect-rsw-review.md)).
 - **2026-10-27 — `lane/rsw` review (architect): accept with fixes (1).** objdump of 0x00552B50–0x00552C10 on the pinned `Game.exe` matches the correction (seed step 0x00552B9A–0x00552BBA, `HealthShrineDue` 0x00552BC5, cap call 0x00552BF7), the wording matches objects/README *Constants* and E2, and the grep finds no other copy; fix (omission): the note now also cites the `% 100` test at 0x00552BDB–0x00552BF0 (skipped when the health shrine is due); request closed ([entry](../backlog/archive/2026-10-27-reverser-architect-rsw-review.md)).
+- **2026-10-27 — `lane/rlg` review (architect): accept with fixes (4).** `sha256sum -c` passes on
+  `rlg-manifest.sha256`, and a rerun of `python3 -I tools/rlg_static.py` gives a byte-identical `static.txt`
+  (`RLG_STATIC hits=73 functions=42`). objdump of the pinned `Game.exe` matches the version dispatch (0x00534330–0x00534390),
+  the header's length test and `0x47`..`0x60` accept (0x00532717–0x005327B8, 0x00532BA9), the quest, waypoint, NPC and
+  stats tags, offsets and lengths (`Woo!`/6/`0x12A`, `WS`/`0x50`, `0x7701`/`0x34`, `gf` values at `+0x05`), the
+  swallowed item, corpse and mercenary returns (0x00534246–0x00534283 → 0x0053429A), the 25-byte version-71 records (195
+  bits, `mov eax, 0x19` at 0x0053322A and 0x0053332C), the mercenary's two forms, the hotkey tail's ≥ 73 and ≥ 82 tests,
+  the version-92 width index (`ebx` = 1 below 93, 0x0062D2F1; `+0x19 + ebx`, `+0x24 + 4·flag`), the `(n + 7) / 8` mask
+  (0x0056A643–0x0056A659), the ear's jump into the realm tail (0x0062AA91 → 0x0062AB1A, `> 0x56` at 0x0062ABFF) and the
+  writer's second-word test (0x0062B341–0x0062B387). The 73 compares recount as 5 + 29 + 39.
+  - **Fixes:** (1) misread: `D2S_ReadSave` sends every version 0..91 to the legacy reader (an unsigned `jbe`), so 0..70
+    fail the header's version test with 1 (9 on the host path); the finding said that case is never sent. Corrected in
+    § (a), the Answer bullet and the archivist entry. (2) omission: the header's left and right skills are returned to
+    the caller and applied after the skills section, only when non-zero (0x005341EC–0x00534210); the header table now
+    says so. (3) omission: the per-version base-adjustment constants a 72..88 builder needs (`0x295`/`0x4EE` for 72, 73,
+    80..82; `0x2A2`/`0x4F1` for 83, 84; `0x2A3`/`0x4F2` for 85..87; `0x2D9`/`0x5A0` for 88; none for 74..79) added from
+    0x0062CDDC–0x0062CE10, and the H1a row 87 note's "72–88" scoped. (4) stale cross-reference: "the ItemStatCost table
+    doc" and Data touched's "no table doc yet" now link `docs/tables/ItemStatCost.md`, whose record layout gives `+0x028` = 0.
+  - **Rulings.** (1) The claims stay `[I]`. The one `[C]`, H1a's `v91` returning 14, is cited as the run's observation,
+    and the attribution to the `+0x20` length test (0x00532751 → 0x00532788) is kept `[I]`. The elimination holds: every
+    other `mov eax, 0xe` of the legacy chain lies in the item, corpse and mercenary readers, whose returns are swallowed.
+    (2) The layout is precise enough for the archivist to build versions 71, 87 and 92 from it, with the three additions
+    above. The archivist entry is annotated, and it says that the archivist, not this lane, updates d2s.md § Legacy
+    versions, § Versions 92..95 and `tools/d2s.py`. The lane's d2s.md edits are link repoints only. (3) Ruling 3, the
+    d-none question: no refusal of 71..91 is found, so hirelings 3, 30, 33, player-creation 1, items-uniques-sets 21
+    and save-d2s 126 stay shortfalls and wait for the builder. No row moves class. The 0..70 refusal moves none: no row
+    needs a version below 71. (4) The 17 symbols stay I; none was checked by a run.
+  - **Backlog:** review request closed. The archivist builder entry stays open, annotated. Ledger: the lane row was
+    filled with the orchestrator's usage (425 490 tokens, 131 tools, 36 min) and the fixes. The review row was added
+    with usage "—".

@@ -16,7 +16,7 @@ For [d2s.md § Legacy versions](../formats/d2s.md#legacy-versions-7191), § Vers
 versions 71, 87 and 92, which the H1a rows need (hirelings 3, 30, 33; player-creation 1; items-uniques-sets 21;
 save-d2s 126; the H1a entry stays open for it). All `[I]`, no run:
 
-1. **No legacy version is refused**: 71..91 with the layout below load (§ (a), "Which versions load"). So ruling 3
+1. **No legacy version is refused**: 71..91 with the layout below load (0..70 are sent to the same reader and fail its header's version test with code 1; *corrected at the `lane/rlg` review*) (§ (a), "Which versions load"). So ruling 3
    leaves the legacy rows as shortfalls; a builder is what they need.
 2. **Section order and framing** (§ (a) table): header `0x82` bytes (its own length word `+0x20` = `0x82`); `Woo!` u32 6
    (`0x12A`); `WS` (`0x50`, only the tag and the markers tested); `01 77` (`0x34`); `gf` + a **3-byte** mask over
@@ -44,3 +44,14 @@ save-d2s 126; the H1a entry stays open for it). All `[I]`, no run:
    third word.
 
 Not blocking anything else. A run on built saves (pieces in save/0001's Open questions) would raise these.
+
+**Architect review note (`lane/rlg` review, 2026-10-27).** Ruled precise enough to build from: the section order,
+tags and lengths, the header table, the 25-byte version-71 record forms, the mercenary's two forms, the hotkey tail,
+the version-92 widths and per-id encodings and the 92..96 version-test list were checked against objdump of the pinned
+`Game.exe`, and `tools/rlg_static.py` reproduces `static.txt` byte for byte. Three additions made at the review are in
+the finding, and a builder needs them: the header's left and right skills (`+0x56`, `+0x57`) are applied after the
+skills section, and only when non-zero; for 72..88 the two affix bases are lowered by per-version constants (§ (a), *The
+base adjustment*: 74..79 take none); and versions 0..70 fail with code 1. **The archivist updates d2s.md** (§ Legacy
+versions (71..91), § Versions 92..95, the version row, Open questions) and `tools/d2s.py` from the finding. This lane
+and the review edited d2s.md only to repoint backlog links, and § Legacy versions still says the layout is not read.
+Everything stays `[I]` until a built save is loaded (save/0001 Open questions lists the pieces).
