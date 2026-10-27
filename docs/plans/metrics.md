@@ -401,6 +401,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/h6g` (to the first pause) | 0038 H6g | reverser-harness | 430 121 | 158 | 62 | slot 2 (8 kept sessions), no Ghidra | — | — |
 | 2026-10-27 | `lane/h6g` (resume) | 0038 H6g | reverser-harness | 172 188 | 103 | 58 | slot 2 (6 launches), no Ghidra | accept with fixes (Tier B check) | on the check row |
 | 2026-10-27 | lane/h6g check | 0038 H6g | architect-check | 78 300 | 15 | 2 | — (Tier B check, no harness) | accept with fixes | 1: omission 1 (run id missing from 7 [C] bullets of the H6g ledger) |
+| 2026-10-27 | `lane/s50p3` | 0050 P3 (anim/timing, anim/movement, anim/overview; skills/dispatch, combat, objects, monsters/stats updates) | spec-writer | 402 558 | 82 | 30 | — (no slot, no Ghidra, no harness) | accept with fixes (Tier A, after 0050 P2 part 2's merge; rulings: the re-tag pass from part 2 done at review; the short floors keep their statements `[I]` whatever the owner rules on the build deviation) | 4: under-claim 1, stale cross-reference 1, overclaim 1, omission 1 (the catalogue queue's partial raise not carried; "part 2 (not yet run)" text in timing, movement, the overview and combat; B3's fallback steps inside the `[C]`; the advance's restart rule and C1's scope) |
+| 2026-10-27 | `lane/s50p3` review | 0050 P3 | architect-review | 205 688 | 64 | 10 | — (static, objdump, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

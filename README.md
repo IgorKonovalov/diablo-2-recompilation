@@ -111,8 +111,8 @@ each row.
 | [`skills/dispatch`](docs/specs/skills/dispatch.md) | the skill request, start checks, start and do function dispatch, charges, costs, the skill packet, event handlers, summons, monster skill use ([overview](docs/specs/skills/README.md), 2026-10-27) | reviewed | 2026-10-27 |
 | [`skills/missiles`](docs/specs/skills/missiles.md) | missile creation, seed, motion, collision, hit, pierce, sub-missiles, end of life | reviewed | 2026-10-27 |
 | `skills/catalogue` | every numbered skill and missile function a stock row uses (plan 0046) | findings in progress | — |
-| `anim/timing` | unit modes and frame counts, event frames, attack, cast, hit-recovery and block rates and their breakpoints (plan 0050) | findings in progress | — |
-| `anim/movement` | walk and run speed, the slowing states, the per-frame step along a path (plan 0050) | findings in progress | — |
+| [`anim/timing`](docs/specs/anim/timing.md) | unit modes and frame counts, event frames, attack, cast, hit-recovery and block rates and their breakpoints ([overview](docs/specs/anim/README.md)) | reviewed | 2026-10-27 |
+| [`anim/movement`](docs/specs/anim/movement.md) | walk and run speed, the slowing states, the per-frame step along a path | reviewed | 2026-10-27 |
 | `monsters/ai` | the AI tick, target, mode and skill choice, following, the path request and its draws (plan 0052) | not started | — |
 
 **Game rules** ([ADR-0017](docs/adrs/0017-scope-quests-travel-economy.md))
