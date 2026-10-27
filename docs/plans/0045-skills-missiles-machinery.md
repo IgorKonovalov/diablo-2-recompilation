@@ -875,3 +875,27 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request closed.
   - **Next:** merge `lane/p45h`; 0045·P3 (spec-writer) and 0050·P0 (archivist) and P1/P1b (static) as the run order
     places them; Phase 2 part 2 (reverser, harness) when slot 2 is scheduled.
+- **2026-10-27 — Phase 2 part 2 written up, review requested (reverser, `lane/p45k`).** Slot 2 only (slot 1 held by
+  `lane/h5d`), stopped after every session (`slots.py stop 2`), saves restored, no aside left; no Ghidra (objdump only;
+  nothing deferred to Ghidra). `main` merged (`f979d04d`, no conflict). Done:
+  - **Logger** `tools/gdb/skills.py` rev 4 (`5459da8a…`): `SKILLS_CanUse` at the request (`CU0`/`CUL`/`CU1`), the
+    handler's stat, other unit and packet on `EVH`, `MonAttackStats`' elemental stats, the summon's stats, `THR`/`DRR`
+    outside the spans; rev 5 (`e28d1344…`, from the fourth session on): the client's per-frame `CanUse` at its changes
+    of code (the request handlers received no refused request: the client refuses first).
+  - **Checker** `tools/skills.py` (`c09f9419…`; tests 12 passing): models of `MonAttackStats`, the stat-event handlers,
+    the state-52 hook, `CanUse`'s codes, the summon's seed and stats (through `tools/monstats.py`), the end of a
+    damaging hit, and `CHAIN.caster` walking the unit's own logged draws (ruling (c)); the handler audit (ruling (b)).
+  - **run:2026-10-27-skills**: 15 sessions, recipes `skills-barh.json` (new: the handler items, Kick, Left Hand Throw,
+    Left Hand Swing by the Attack alternation) and `skills-sorlow.json` (new: low mana); 0 mismatches, part 1's 18 logs
+    re-checked with 0. Record: [skills/experiments § run:2026-10-27-skills](../findings/skills/experiments.md#run2026-10-27-skills);
+    raises in skills/0001 § 18, 0002 § 12, 0003 § 16 and monsters/0004 § 9 (a new `[I]` reading: El2/El3 take El1's
+    bounds by the mask `0x40 + e`); four symbols raised to C.
+  - **The floors with part 1:** met for skill uses, handlers, state 52, summons, `MonAttackStats`, hit ends and pierce
+    uses, C4, the handler audit (3 461 of 3 461 fires) and the 304 resyncs (player ones attributed or listed, monster
+    ones to plan 0052). **Short, named:** the request refusals (the client filter; delay 76 and mana 8 at the client's
+    check, town 0), C2 (22 `spike2` at level 1), the re-seed sites other than `0x005C9290` (named unreached), 70 Raise
+    Skeleton (12 do events).
+  - The orchestrator's count note on skills/0001 § 17 and 0003 § 15 answered: "1 269 do / 1 142 start" are the
+    `SDO.seed`/`SST.seed` totals over 18 and 15 rows, not the eleven rows' (947/828); corrected in both.
+  - Review request: [backlog](../backlog/2026-10-27-reverser-architect-review-lane-p45k-plan-0045-phase-2-part.md);
+    table links for the archivist: [backlog](../backlog/2026-10-27-reverser-archivist-plan-0045-phase-2-part-2-table-readings.md).
