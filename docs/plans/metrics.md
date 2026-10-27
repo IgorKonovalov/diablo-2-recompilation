@@ -393,6 +393,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/p53a` review | 0053 P0–P2 | architect-review | 108 797 | 42 | 7 | — (review + Phase 2 in one run) | gave accept with fixes | — (on the lane row) |
 | 2026-10-27 | `lane/p50f` (to the first pause) | 0050 P2 | reverser-harness | 359 473 | 184 | 70 | slot 1, no Ghidra | — (on the resume row) | — (on the resume row) |
 | 2026-10-27 | `lane/p50f` (resume: batches 10-11, restart rule, write-up) | 0050 P2 | reverser-harness | — | — | 170 | slot 1, no Ghidra | — | — |
+| 2026-10-27 | `lane/p50f` check | 0050 | architect-check | 0 | 0 | 0 | — | accept with fixes | overclaim 2, omission 1, stale cross-reference 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

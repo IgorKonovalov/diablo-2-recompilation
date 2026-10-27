@@ -139,7 +139,7 @@ output dev5-batch5b.out.
   The get-hit and block lengths of those runs are not replaceable: their logs hold no mode or rate line.
 - **Closing result** (all 55 kept sessions, `2026-10-27-anim-close.lst`, checker `tools/anim.py` `4241197a…`,
   output `2026-10-27-anim-check.txt` `2c3a7ddb…`, summary by `tools/anim.py summary` `2026-10-27-anim-summary.txt` `ee3448a3…`):
-  `CHECK anim` every kind 0 mismatched (`adv=2927/0 adv-seq=1453/0 block-gate=867/0 dispatch=42449/0 drain=37434/0
+  `CHECK anim` every kind 0 mismatched (`adv=2927/0 (2 924 under the part 2 checker, anim/0001) adv-seq=1453/0 block-gate=867/0 dispatch=42449/0 drain=37434/0
   ef-first=9682/0 endpending-E=1027/0 fire=42542/0 ghr=7195/0 kb-end=3585/0 name=298373/0 obj=725/0
   pathspeed=127584/0 pathspeed-step=131167/0 pma-seed=26696/0 rate=298373/0 record=298373/0 sched=25848/0
   sched-len=25848/0 sched-rate=25848/0 seqstep=39901/0 startframe=25149/0 step=99241/0 step-point=97139/0`). The
@@ -288,9 +288,11 @@ Normal sessions for the catalogue and specials, Nightmare for the get-hit route;
 - **Deviation from the owner's build (for the review's ruling).** The owner asked for a get-hit build of clvl 60+ and
   life 1 000+. The runs use **clvl 70, life 400, Cold Plains in Nightmare, `/players 2`** (gh10–gh12). The 1 000-life
   build (gh5: life 1 000, Act V Nightmare) died after **6 get-hits**. A get-hit costs a sixth to a quarter of max
-  life whatever the hit (`GetHitRoll`'s bands `3/8` in `[hp/16, hp/8)`, `3/4` up to `hp/4`, anim/0003), so the count
-  per session is set by how many potions the route can drink, not by life; a higher life lets swarms (up to ~160
-  damage a second at life 400) hit longer before the pilot can react. The 400-life, elite-weapon builds gave 6–28
+  life whatever the hit (`GetHitRoll`'s bands `3/8` in `[hp/16, hp/8)`, `3/4` up to `hp/4`, anim/0003), so the lane
+  reads the count as set by the potions the route can drink, not by life. The evidence does not separate that from
+  survivability: the deaths came from swarms (up to ~160 damage a second at life 400) faster than the pilot could
+  drink, and 40 extra inventory potions (gh9) moved the counts only to 17 and 6. The review rules the floors short and
+  *survivability-bound at this build*, not potion-bound. The 400-life, elite-weapon builds gave 6–28
   get-hits a session (gh7–gh12). gh5 and gh6 (480) logs are kept (`…-gh5-sor-t0.log`, `…-gh6-sor-t0.log`).
 - **Result** (`2026-10-27-anim-p2-all2.lst` = part 1's close list + `…-p2-ckpt2.lst`, 81 logs; check `--review`
   `2026-10-27-anim-p2-check-ckpt2.txt` `03f83c9d…`; summary `…-summary-ckpt2.txt` `ae27fd27…`): every kind 0
@@ -307,7 +309,7 @@ Normal sessions for the catalogue and specials, Nightmare for the get-hit route;
   Paladin, Druid.
 - **Floors short, and why.** (1) Get-hits at three FHR rates of 30: get-hit mode starts total 308 (part 1's 222 plus
   86); per class rates with 30+: Barbarian 128 (61) and 179 (30), Paladin 179 (31), Druid and Assassin and Sorceress
-  one rate each, Amazon and Necromancer none (20, 14 starts). Potion-bound: the Sorceress, Amazon and Necromancer die
+  one rate each, Amazon and Necromancer none (20, 14 starts). Survivability-bound (review ruling; the lane filed it potion-bound): the Sorceress, Amazon and Necromancer die
   within 3–8 hops of Cold Plains; in the t1 sessions the pilot's last half ended in death at hop 1 (Druid,
   Assassin), hop 3 (Paladin) and hop 7 (Barbarian) (`…pilot.txt`; the cause of the early deaths was not examined). The t2 tier (rate 215) was not run in this lane
   run. (2) The Druid's throws: 12 (< 30; `th-dru` died at hop 1; the axes' throw mode is reached 12 times). (3) A second A1 record at 3×30: none (every class has one). The
