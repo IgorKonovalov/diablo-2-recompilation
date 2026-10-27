@@ -217,6 +217,7 @@ Column readers (objects/0001 §§ 3–9 and § 12; a `C` tag is run:2026-10-15-o
 | `Lockable` | `InitFn` 3 (and 57, which runs 3) | locked with chance `(MonLvl1/2 + 8)` % | C (`InitFn` 3) |
 | `Sync` | `UNIT_AnimInit` | 0: the animation start draws the object's own unit seed, `RangeB(FrameDelta[mode] >> 3)` | C |
 | `Mode1` | `OBJOP_Chest` | non-zero: the opened chest goes to mode 1 and queues an event; else mode 2 | C |
+| `FrameCnt1`, `Mode2`, `HasCollision2` | `OBJOP_Chest`, `sub_00581490_ObjEvOperateEnd` (event 1) | the event is queued `FrameCnt1 + 1` frames on; it sets mode 2 without an animation start when `Mode2` is set and unmarks the footprint when `HasCollision2` is 0 ([§ Timing](#timing-plan-0050-phase-0), [anim/0003 § 6.5](../findings/anim/0003-movement-gates.md#65-objects-the-operate-frames)) | I |
 | `Parm0` | `InitFn` 1 (shrines) | 1 → health class, 2 → mana class, other → class 1 with chance 1/10, else class 4 | C |
 | `Parm1` | `OBJ_ShrineClassSubst` (forced shrine) | the class a forced non-health shrine becomes (1..572, else 84) | I (not reached) |
 | `Parm0`, `Parm1`, `Parm3` | `OperateFn` 22 (wells, `0x005858A0`) | with charges left, a use adds `Parm1 · max >> 8` (`Parm1` in 1/256 of the maximum) to life when `Parm3` bit 1 is set, to mana when bit 0 is, and to stamina, each capped, and frees the `poison` and `freeze` lists; a use that changed something costs a charge and re-arms at `frame + 1 + Parm0`. `[C]` (data) all 14 `OperateFn` 22 rows have `Parm0` 750, `Parm1` 128 (half), `Parm3` 3 (life and mana) ([stats/0002 § 5](../findings/stats/0002-states.md#5-shrines-and-wells), tbl:Objects.txt:Parm0) | I |
@@ -349,7 +350,7 @@ layout's ([§ Modes, animation and drawing](#modes-animation-and-drawing)); valu
 |---|---|---|---|---|
 | `Token` | `+0x0C0` char[3] | 573 set | the object's animation token | [C] layout |
 | `Mode0..7` | `+0x13F + k` u8 | 0/1; set in 562, 422, 441, 97, 33, 27, 20, 1 rows | the object has mode *k* | [C] layout; meaning `[L]` (`Mode1` `[C]` read by the chest operate, [§ Code semantics](#code-semantics-plan-0023-phase-1)) |
-| `FrameCnt0..7` | `+0x0D8 + 4k` u32 | 0..44, 0..50, 0..44, 0..30, 0..25, 0..20, 0..20, 0..10 | frames of mode *k* | [C] layout; `[I]` the animation length at a mode start (below) |
+| `FrameCnt0..7` | `+0x0D8 + 4k` u32 | 0..44, 0..50, 0..44, 0..30, 0..25, 0..20, 0..20, 0..10 | frames of mode *k* (the file's value; `[I]` shifted left by 8 at load, so 8.8 in memory, below) | [C] layout; `[I]` the animation length at a mode start (below) |
 | `FrameDelta0..7` | `+0x0F8 + 2k` u16 | 0..256, 0..640, then 0..256; mostly 0, 128, 256 | animation speed of mode *k* | [C] layout; `[C]` its use at an animation start (below) |
 | `CycleAnim0..7` | `+0x108 + k` u8 | 0/1; set in 249, 46, 67, 4, 4, 4, 3, 3 rows | mode *k* loops | [C] layout; `[L]` |
 | `Start0..7` | `+0x129 + k` u8 | 0, 0..1, 0..28, 0..29, 0..1, 0..1, 0, 0 | start frame of mode *k* | [C] layout; `[I]` the start frame at a mode start (below) |
@@ -367,11 +368,25 @@ layout's ([§ Modes, animation and drawing](#modes-animation-and-drawing)); valu
   rows with `FrameCnt` 1 against a longer record) and often a delta of 0 where the record has 256. Per mode in
   [ObjMode § Timing](ObjMode.md#timing-plan-0050-phase-0).
 - `[I]` **Which source the server uses** ([anim/0001 § 3](../findings/anim/0001-modes-frames.md#3-unit_setmode-unit_animinit-and-sunit_animinit)):
-  the table's. `UNIT_AnimInit` sets an object's length `+0x48 = FrameCnt[mode]`, its frame `+0x44 = Start[mode] << 8`
+  the table's. `UNIT_AnimInit` sets an object's length `+0x48 = FrameCnt[mode]` (the loaded value, frames << 8: next
+  bullet), its frame `+0x44 = Start[mode] << 8`
   and its rate `+0x4C = FrameDelta[mode]` (`Sync` ≠ 0) or `FrameDelta − (FrameDelta >> 4) + RangeB(unit seed,
   FrameDelta >> 3)` clamped to `[0, 0x7FFF]` (`Sync` 0); a mode ≥ 8 is fatal. No server code advances an object's frame
   through these fields (`UNIT_AnimAdvance`'s callers are the monster mode functions and client code). (fn:UNIT_AnimInit@0x00624390, 0x00624500–0x0062456F,
   tbl:Objects.txt:FrameCnt0, tbl:Objects.txt:Start0, tbl:Objects.txt:FrameDelta0, tbl:Objects.txt:Sync)
+- `[I]` **`FrameCnt` is 8.8 in memory** ([anim/0003 § 6.5](../findings/anim/0003-movement-gates.md#65-objects-the-operate-frames)).
+  `sub_0063F690_ObjectsLoad` shifts each record's eight `FrameCnt` dwords (`+0x0D8`…`+0x0F4`) left by 8 after loading,
+  so an object's length `+0x48` is frames << 8 like every other unit type's; the observed ranges above are the file's
+  frames. This corrects anim/0001 § 1's "objects unshifted" (dated note there). (0x00640E33–0x00640E64,
+  fn:sub_0063F690_ObjectsLoad@0x0063F690, tbl:Objects.txt:FrameCnt0)
+- `[I]` **The operate end** (anim/0003 § 6.5). After a chest's drops, `OBJOP_Chest` sets mode 1 when `Mode1` is set and
+  queues object event 1 at `frame + (FrameCnt1 >> 8) + 1`, i.e. `FrameCnt1 + 1` frames on (the file's `FrameCnt1`).
+  Event 1 (`sub_00581490_ObjEvOperateEnd`) sets `Unit+0x10 = 2` when the object is still in mode 1 and the row has
+  `Mode2`, **without** `UNIT_SetMode` (no animation start, so no `Sync` draw), and unmarks the footprint
+  (`UNIT_CollUnmarkRect`) when `HasCollision2` is 0. The same `FrameCnt1 >> 8` + frame + 1 queue appears at 46 sites;
+  anim/0003 reads two (`0x0058639A`, `0x00586475`), and what the other 44 schedule is its open question.
+  (fn:OBJOP_Chest@0x00585F60, fn:sub_00581490_ObjEvOperateEnd@0x00581490, 0x0058639A–0x005863B7,
+  tbl:Objects.txt:Mode1, tbl:Objects.txt:HasCollision0)
 - `[I]` **The record's token** is [ObjType](ObjType.md)'s, not this table's `Token` ([anim/0001 § 2](../findings/anim/0001-modes-frames.md#2-records-the-token-the-lookup-and-the-fallback),
   `0x0065B570(class, 0)`). `[C]` The two differ in 16 records; under the ObjType token 1 491 of the 1 603 flagged
   modes have a record, against the 1 483 above ([ObjType § Timing](ObjType.md#timing-plan-0050)).

@@ -666,7 +666,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `+0x48` is 8.8) and combat/0001 § 6 (the delivery calls `UnitBaseHitClass`, not `HitClassPick`), as dated notes.
   23 symbols (12 `anim/movement`, 11 `anim/timing`), `re/types/anim.h` `PathMove`, `tools/anim_moves.py`, outputs
   `workspace/logs/anim/p50d-*` (`p50d-manifest.sha256`). Boundary recommendation in anim/0003 § 9. Archivist entry
-  ([backlog](../backlog/2026-10-27-reverser-archivist-p50d-objects-framecnt-shift-and-hit-class-readers.md)); review
+  ([backlog](../backlog/archive/2026-10-27-reverser-archivist-p50d-objects-framecnt-shift-and-hit-class-readers.md)); review
   requested ([backlog](../backlog/archive/2026-10-27-reverser-architect-review-lane-p50d-plan-0050-phase-1-batch.md));
   **Phase 1b part 2 runs after this review.**
   *Addendum (same lane, after merging `main` `ee8273b7` with the `lane/a50t` review's two reads):* anim/0003 § 1.1:
@@ -720,3 +720,16 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   returns at 0x0057D3BD (omission); the function table's "§ 6.7" for § 6.5, and that heading's level (stale
   cross-reference). The review request is closed. Ledger: the lane row filled (usage from the orchestrator), the
   review row added with "—" usage.
+- **2026-10-27 — anim/0003's table links folded (archivist, `lane/a3f`; no Ghidra, no harness).** From the reverser's
+  p50d entry ([backlog](../backlog/archive/2026-10-27-reverser-archivist-p50d-objects-framecnt-shift-and-hit-class-readers.md)),
+  every reader `[I]` as the finding: [Objects § Timing](../tables/Objects.md#timing-plan-0050-phase-0) gains the
+  load-time `FrameCnt` `<< 8` (`0x00640E33`–`0x00640E64`, an object's length is 8.8) and the chest operate end (event 1
+  `FrameCnt1 + 1` frames on, mode 2 without an animation start), with a reader row;
+  [HitClass](../tables/HitClass.md#open-questions)'s open question is answered (the attacker's low nibble, the element
+  nibble in `COMBAT_GetHit`, `GetHitRoll`'s divisor), its old "the delivery picks from the counter" sentence replaced
+  per anim/0003's correction of combat/0001 § 6, and the Weapons, MonStats2 and Missiles hit-class rows link it
+  (Missiles has no § Timing: its column row); MonStats § Timing's `9A`/`E9` `[L]` is replaced by § 1.1's reading, walk
+  base 256 and run 128 below 410. **Surprises:** the entry's "Missiles gives the low nibble" differs from the finding
+  (the whole `+0x60` under the packet's high nibble), and the finding's "seven classic `9A` rows" are the `mS1` ones;
+  an eighth (`compellingorb` 366) gets the same base. The docs follow the finding and say both. No survey baseline
+  changed. Review request: [backlog](../backlog/2026-10-27-archivist-architect-review-lane-a3f-p50d-table-links.md).
