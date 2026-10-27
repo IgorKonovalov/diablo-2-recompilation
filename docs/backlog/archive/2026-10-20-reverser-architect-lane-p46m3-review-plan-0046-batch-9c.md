@@ -35,4 +35,4 @@ Please review plan 0046 Phase 1 batch 9c (`lane/p46m3`): missile server hit func
   return 3 on refusal, hit 3's return 0 for a unit.
 - **Symbols:** 42 rows (subsystem `skills/catalogue`), no clash with `main`.
 - Column readers filed to the archivist
-  ([entry](../2026-10-20-reverser-archivist-plan-0046-9c-missiles-skills-column-readers.md)).
+  ([entry](2026-10-20-reverser-archivist-plan-0046-9c-missiles-skills-column-readers.md)).

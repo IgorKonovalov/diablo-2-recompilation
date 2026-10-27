@@ -223,7 +223,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   carries an end frame (`+0x28 − frame` is its poison length); do 19 runs Redemption's corpse callback, do 36 spawns
   `tyrael3` under quest 36. Review request
   [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p46m2-review-plan-0046-batch-9b.md); column
-  readers [to the archivist](../backlog/2026-10-20-reverser-archivist-plan-0046-9b-missiles-skills-column-readers.md).
+  readers [to the archivist](../backlog/archive/2026-10-20-reverser-archivist-plan-0046-9b-missiles-skills-column-readers.md).
 - **2026-10-20 — `lane/p46m2` review (architect): batch 9b accepted with fixes (5: misread 3, overclaim 2).**
   Checks (kept in `workspace/logs/skills-cat-9b-review/`, `manifest.sha256` `02466fbf…`): the run's
   `sha256sum -c manifest.sha256` passes (68 files); `check rabies reseed9b` from the kept outputs gives `check.txt`'s
@@ -289,7 +289,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   stride the table doc had as `[L]`). Corrections in skills/0003 § 6 (hits 2, 3, 14, 17, 22, 44). Review request
   [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p46m3-review-plan-0046-batch-9c.md) (three
   rulings: register values at a boundary, two weak controls, hit 2 unemulated); column readers
-  [to the archivist](../backlog/2026-10-20-reverser-archivist-plan-0046-9c-missiles-skills-column-readers.md).
+  [to the archivist](../backlog/archive/2026-10-20-reverser-archivist-plan-0046-9c-missiles-skills-column-readers.md).
 - **2026-10-20 — `lane/p46m3` review (architect): batch 9c accepted with fixes (2: overclaim 1, other 1).**
   Checks (kept in `workspace/logs/skills-cat-9c-review/`, `manifest.sha256` `b3761c63…`): the run's
   `sha256sum -c manifest.sha256` passes (28 files); the lane's tool (`412e3e5c…`) regenerates every kept case, memory
@@ -364,7 +364,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   signed `test ax, ax; jle` (scan `[C]`, meaning `[I]`). Tags: 38 `[C]`, 10 `[I]`, 4 `[L]` bullets; 28 symbols added
   (`I`). Dated notes in skills/0003 § 6 and skills/0006 § 16. Review request
   [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p46m4-review-plan-0046-batch-9d.md); column
-  readers [to the archivist](../backlog/2026-10-20-reverser-archivist-plan-0046-9d-missiles-skills-column-readers.md).
+  readers [to the archivist](../backlog/archive/2026-10-20-reverser-archivist-plan-0046-9d-missiles-skills-column-readers.md).
 - **2026-10-20 — `lane/p46m4` review (architect): batch 9d accepted with fixes (4: overclaim 2, misread 1, miscount
   1).** Merged `main` (`9ef5f84`) first; no conflict, `backlog.py archive` moved nothing; 28 new symbols, no address
   or name twice in `re/symbols.csv` after the merge. **Re-run:** `sha256sum -c manifest.sha256` passes (29 files);
@@ -422,7 +422,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `0x0096C794`; start 11's mana test covers any caster type. Tags: 34 `[C]`, 10 `[I]`, 4 `[L]` bullets; 25 symbols
   added (`I`). Dated note in skills/0003 § 5. Review request
   [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p46m5-review-plan-0046-batch-sor.md); column
-  readers [to the archivist](../backlog/2026-10-20-reverser-archivist-plan-0046-sor-skills-missiles-column-readers.md).
+  readers [to the archivist](../backlog/archive/2026-10-20-reverser-archivist-plan-0046-sor-skills-missiles-column-readers.md).
 - **2026-10-20 — Batch `sor` reviewed (architect, on `lane/p46m5` at `d240aa5`): accept with fixes.** `main` had not
   moved past `43d534c`, so no merge. Re-run from the lane's tool (`7525830c…`): `check --batch sor` and
   `static --batch sor` reproduce `check.txt` `961ccef7…` and `static.txt` `91a6de74…` byte for byte;
@@ -492,7 +492,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   caster–point line, not along it (skills/0003 § 5 note); start 4 has no skill-record test. Tags: 31 `[C]`, 13 `[I]`,
   4 `[L]` bullets; 22 symbols added (`I`). Review request
   [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p46m6-review-plan-0046-batch-ama.md); column
-  readers [to the archivist](../backlog/2026-10-20-reverser-archivist-plan-0046-ama-skills-column-readers.md).
+  readers [to the archivist](../backlog/archive/2026-10-20-reverser-archivist-plan-0046-ama-skills-column-readers.md).
 - **2026-10-20 — Batch `ama` reviewed (architect, on `lane/p46m6` at `a6eaf75`): accept with fixes.** `main` had not
   moved past `9b5dfa8`, so no merge. Re-run from the lane's tool (`69c01d13…`, unchanged since the checkpoint
   `9d0263c` that committed the killed session's tool section): `check --batch ama` and `static --batch ama` reproduce
@@ -638,7 +638,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   result word (`[I]`). Tags: 25 `[C]`, 12 `[I]`, 4 `[L]` bullets; 29 symbols added (`I`). Dated notes in skills/0003 § 5
   (rows 98, 102, 117 in step) and stats/0002 §§ 4, 7. Review request
   [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p46m8-review-plan-0046-batch-pal.md); column
-  readers [to the archivist](../backlog/2026-10-20-reverser-archivist-plan-0046-pal-skills-charstats-column-readers.md).
+  readers [to the archivist](../backlog/archive/2026-10-20-reverser-archivist-plan-0046-pal-skills-charstats-column-readers.md).
 - **2026-10-20 — Batch `pal` reviewed (architect, on `lane/p46m8` at `d8c384b`): accept with fixes.** `main` had not
   moved past `e345eaf`, so no merge. Re-run from the lane's tool (`c1630af4…`): `check --batch pal` and
   `static --batch pal` reproduce `check.txt` `989e5367…` and `static.txt` `5fd43532…` byte for byte;

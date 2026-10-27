@@ -6,6 +6,7 @@
     python3 -I tools/calc.py eval <excel-dir> <context> <formula|hex:BYTES|offset> [--skill S|--missile M --lvl L] [name=value ...]
     python3 -I tools/calc.py dis <excel-dir> <context> <hex:BYTES|offset>
     python3 -I tools/calc.py check <excel-dir> <calc-log> ... [-v]
+    python3 -I tools/calc.py hover <calc-log> ...
 
 <context> is skills (skills and skilldesc formulas), missiles or items: it chooses the function-name list and the
 identifier lookup the game passes to the compiler (the callbacks of 0x00611BD0/0x00611C70, 0x006619A0, 0x00631530).
@@ -29,6 +30,12 @@ check    replays the evaluations of tools/gdb/calc.py logs (plan 0035 Phase 2, r
          also computed and compared; the other reads are logged unit state (ADR-0004 value oracles). Prints the
          opcodes executed, the operator outcomes, the variable codes and functions met, and a `SURVEY calc_run` line.
          Exit 0 only with no mismatch and no malformed nesting.
+hover    (plan 0051 Phase 1a, the S1b leftover data-calc 19) counts, per log, the CH hover-marker lines of
+         tools/gdb/calc.py (entries of the client function 0x00486370; "n" folds repeated entries), the records and
+         b4 values they name, and the CE evaluations whose caller's return address (ra2) is one of that function's
+         three ITEMS_EvalCalc call sites (0x00486434, 0x004864D5, 0x0048650B), next to all itemscode evaluations by
+         ra2. A log with no CH line was written without the marker and is reported as such. It decides nothing by
+         itself: the session's record says when the pointer rested on which item. Exit 1 only on a malformed line.
 
 Stdlib only. Read-only.
 """
@@ -1218,7 +1225,61 @@ def cmd_check(excel_dir, paths, verbose=False):
     return 0 if not chk.bad and not anomalies else 1
 
 
+HOVER_RA = (0x00486434, 0x004864D5, 0x0048650B)   # returns of 0x00486370's three ITEMS_EvalCalc calls
+
+
+def cmd_hover(paths):
+    tot = {"ch": 0, "entries": 0, "hover_evals": 0, "item_evals": 0, "bad": 0, "no_marker": 0}
+    recs_all = set()
+    for path in paths:
+        ch = entries = 0
+        recs, b4s, hov, items = set(), {}, {}, {}
+        with open(path, errors="replace") as fh:
+            for n, line in enumerate(fh, 1):
+                tag, _, rest = line.partition(" ")
+                if tag not in ("CH", "CE"):
+                    continue
+                try:
+                    d = json.loads(rest)
+                except ValueError:
+                    print("BAD %s:%d malformed %s line" % (path, n, tag))
+                    tot["bad"] += 1
+                    continue
+                if tag == "CH":
+                    ch += 1
+                    entries += 1 + d.get("n", 0)
+                    recs.add(d["rec"])
+                    b4s[d.get("b4")] = b4s.get(d.get("b4"), 0) + 1
+                    continue
+                ra2 = d.get("ra2")
+                if ra2 in HOVER_RA:
+                    k = (ra2, d.get("pool"), d.get("off"))
+                    hov[k] = hov.get(k, 0) + 1
+                if d.get("pool") == "itemscode":
+                    items[ra2] = items.get(ra2, 0) + 1
+        # the last CH line's own folded repeats are not written (no later line carries them)
+        print("%s: CH lines %d (entries >= %d), records %d, b4 %s%s" % (
+            path, ch, entries, len(recs), " ".join("%s:%d" % kv for kv in sorted(b4s.items(), key=str)) or "-",
+            "" if ch else "  (no hover marker in this log)"))
+        for (ra2, pool, off), c in sorted(hov.items(), key=str):
+            print("  evaluation from 0x00486370: ra2 %#010x pool %s off %s: %d" % (ra2, pool, off, c))
+        for ra2, c in sorted(items.items(), key=str):
+            print("  itemscode evaluation, ra2 %s: %d" % ("%#010x" % ra2 if ra2 is not None else None, c))
+        tot["ch"] += ch
+        tot["entries"] += entries
+        tot["hover_evals"] += sum(hov.values())
+        tot["item_evals"] += sum(items.values())
+        tot["no_marker"] += 0 if ch else 1
+        recs_all |= recs
+    print("SURVEY calc_hover logs=%d no_marker=%d ch_lines=%d ch_entries=%d records=%d hover_evals=%d item_evals=%d "
+          "bad=%d" % (len(paths), tot["no_marker"], tot["ch"], tot["entries"], len(recs_all), tot["hover_evals"],
+                      tot["item_evals"], tot["bad"]))
+    return 1 if tot["bad"] else 0
+
+
 def main(argv):
+    if len(argv) >= 2 and argv[0] == "hover":
+        return cmd_hover(argv[1:])
     if len(argv) < 2 or argv[0] not in ("compile", "text", "eval", "dis", "check"):
         print(__doc__)
         return 2

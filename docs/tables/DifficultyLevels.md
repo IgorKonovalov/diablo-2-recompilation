@@ -157,7 +157,7 @@ The columns that by their names are combat-time constants, with their values per
 | `ResistPenalty` | `+0x000` s32 | 0 | −40 | −100 | `[C]` `COMBAT_ResistFor`, player and hireling defenders, expansion only |
 | `MonsterFreezeDivisor` | `+0x014` s32 | 1 | 2 | 4 | `[I]` `COMBAT_ApplyFreeze`, monster defenders |
 | `MonsterColdDivisor` | `+0x018` s32 | 1 | 2 | 4 | `[I]` `COMBAT_ApplyCold`, monster defenders with `coldeffect` < 0 |
-| `AiCurseDivisor` | `+0x01C` s32 | 1 | 2 | 4 | `[I]` four curse functions, use not read |
+| `AiCurseDivisor` | `+0x01C` s32 | 1 | 2 | 4 | `[C]` the curse length of do 30 (states 23, 56) and do 61, divided when non-zero; three other readers not read (below) (fn:sub_005C37A0_DiffDivide@0x005C37A0) |
 | `LifeStealDivisor` | `+0x028` s32 | 1 | 2 | 3 | `[C]` `COMBAT_Leech`, player attackers |
 | `ManaStealDivisor` | `+0x02C` s32 | 1 | 2 | 3 | `[C]` `COMBAT_Leech`, player attackers |
 | `UniqueDamageBonus` | `+0x030` s32 | 90 | 75 | 66 | `[I]` none in the whole binary (§ Code semantics) |
@@ -212,7 +212,14 @@ the reduction context keeps (`ReduceCtx+0x04`).
   hirelings get cold instead. No freeze was reproduced. (fn:COMBAT_ApplyFreeze@0x0057B230, 0x0057B2F1,
   tbl:DifficultyLevels.txt:MonsterFreezeDivisor)
 - `[I]` **`AiCurseDivisor`** (`+0x1C`) is read in four curse functions, `0x004E6E30`, `0x004EDEA0`, `0x005C37A0` and
-  `0x005C39C0`; what they do with it is not read (§ Open questions). Not a combat-formula input.
+  `0x005C39C0`. Not a combat-formula input.
+  *2026-10-25 (plan 0051 P0a):* `[C]` as a map, `0x005C37A0` (`DiffDivide`) takes the game's `+0x6D` difficulty byte
+  (`movzx`), clamps it to the record count (`sub_00611D30_DifficultyRec`) and divides the length by this word
+  (`idiv`, truncating) when it is non-zero; do 30 (`sub_005C37C0_SkillDo30Curse`) applies it when Skills
+  `auratargetstate` is 23 or 56 (`0x005C3400`), do 61 (`sub_005C3F20_SkillDo61Confuse`) always, both emulated up to
+  their `ForUnitsNearTarget` boundary (ADR-0021). `[I]` by the stock rows: the length do 30 and do 61 pass for Dim Vision,
+  Terror and Confuse is halved in Nightmare and quartered in Hell. `0x004E6E30`, `0x004EDEA0` and `0x005C39C0` are still not read
+  ([skills/0010 § 4](../findings/skills/0010-necromancer.md#4-start-16-do-32-and-the-curses-do-30-do-61); fn:sub_005C37A0_DiffDivide@0x005C37A0, tbl:DifficultyLevels.txt:AiCurseDivisor)
   ([combat/0001 § 12](../findings/combat/0001-formulas.md#12-branches-difficulty-game-type-players-hirelings-player-against-player))
 - `[I]` **`MonsterCEDamagePercent`** (`+0x3C`) is read by `sub_005A2620_MonDeathDamage`, a monster's death explosion
   computed from its MonLvl life (0x005A2709). Not a combat-formula input. (fn:sub_005A2620_MonDeathDamage@0x005A2620,
@@ -249,6 +256,7 @@ the reduction context keeps (`ReduceCtx+0x04`).
   near call sites, none read as code~~ answered by combat/0001 ([§ Combat readers](#combat-readers-plan-0037-phase-1-plan-0039-a1));
   `+0x44..+0x54` are read by gambling ([§ Gamble columns](#gamble-columns-plan-0031)). The `HireableBossDamagePercent`
   "no reader" above is corrected there.
-- `[L]` What the four curse functions do with `AiCurseDivisor` (by the name, a curse duration divisor), and how
+- `[L]` What the three curse functions other than `0x005C37A0` do with `AiCurseDivisor` (by the name, a curse
+  duration divisor too), and how
   `StaticFieldMin` bounds Static Field (by the name, a floor in percent of life). Owner of a future skills finding.
 - The `UberCodeOdds*`/`UltraCodeOdds*` columns have no reader in a finding yet.

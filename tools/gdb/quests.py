@@ -51,6 +51,19 @@
 #         unit, class, function (a done line for tools/d2pilot.py objop: seals, portals, the forge)
 #   GLD   0x0055A1BD sub_0055A090_DropGoldAmount after the stat-14 write, while a BG0 loop is open: pile item, the
 #         pile's amount (EDI), stat 14 of the item
+#   Added by plan 0051 Phase 1a for plan 0044's MP30 (tags only; the lines above are unchanged):
+#   QL0   0x00543BD0 sub_00543BD0_QuestsInvItemEvent entry (ECX game, EDX the leaving player): player unit
+#   QE9   0x00543C87 its call of a quest object's e9 callback (ESI quest object, EAX the callback, EDI the item,
+#         [ebp-0x14] the player): the object's first dword ("q", the index the item's Misc +0x12A - 1 is compared
+#         with), the callback, the item unit, the player unit
+#   Q4B   0x00592C96 the e9 callback 0x00592C80 past its two early returns (ESI quest object, EDI its data +0x18):
+#         the data's +0x7C count before the code test
+#   Q4C   0x00592CAE the same after the code test (EAX the item code): code, the +0x7C count after the test's
+#         decrement (if any)
+#   Q4R   0x00592CDC its call of 0x00592BD0 (count 0): the count
+#   QE10  0x00543CA2 the e10 dispatch (QUESTS_DispatchEvent, force 1; [ebp-0x14] the player): player unit
+#   QLR   0x00545240 entry while a leave is open (QL0 up to 0x00543CA7, after the e10 dispatch; ECX the list, EDX
+#         the id): the return address, list, id. QL1 at 0x00543CA7 closes the leave
 import json
 import struct
 
@@ -310,6 +323,47 @@ def _quests_main():
         d = u32(it + 0x14)
         emit("PZ", {"item": item(it), "name": mem(d + 0x4A, 16).split(b"\0")[0].decode("latin1") if d else None})
 
+    def s32_of(v):
+        return v - (1 << 32) if v & 0x80000000 else v
+
+    def on_ql0():
+        st["leave"] = True
+        emit("QL0", {"pl": unit(reg("edx"))})
+
+    def on_qe9():
+        ebp = reg("ebp")
+        emit("QE9", {"q": u32(reg("esi")), "fn": "%08x" % reg("eax"), "item": unit(reg("edi")),
+                     "pl": unit(u32(ebp - 0x14))})
+
+    def on_q4b():
+        emit("Q4B", {"cnt": s32(reg("edi") + 0x7C)})
+
+    def on_qlr():
+        if st.get("leave"):
+            emit("QLR", {"ret": "%08x" % u32(reg("esp")), "list": "%08x" % reg("ecx"), "id": s32_of(reg("edx"))})
+
+    def on_ql1():
+        st["leave"] = False
+        emit("QL1", {})
+
+    def on_q4c():
+        emit("Q4C", {"code": struct.pack("<I", reg("eax")).decode("latin1"),
+                     "cnt": s32(reg("edi") + 0x7C)})
+
+    def on_q4r():
+        emit("Q4R", {"cnt": s32(reg("edi") + 0x7C)})
+
+    def on_qe10():
+        emit("QE10", {"pl": unit(u32(reg("ebp") - 0x14))})
+
+    Bp(0x00543BD0, on_ql0)
+    Bp(0x00543C87, on_qe9)
+    Bp(0x00592C96, on_q4b)
+    Bp(0x00592CAE, on_q4c)
+    Bp(0x00592CDC, on_q4r)
+    Bp(0x00543CA2, on_qe10)
+    Bp(0x00543CA7, on_ql1)
+    Bp(0x00545240, on_qlr)
     Bp(0x00545F21, on_qi0)
     Bp(0x00545F5F, on_qi1)
     Bp(0x0065C360, on_qs("QS"))
