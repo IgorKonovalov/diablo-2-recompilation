@@ -1373,6 +1373,20 @@ LAYOUTS["books"] = dict(size=0x20, fields=[
 ], txt_only={"Namco": "display suffix (\"of Town Portal\"); no field (its keys are not in the string tables)",
              "Completed": "1, 1, 0; no byte or bit follows it (+0x003 is 0 in every record)"})
 
+# ------------------------------------------------------------------ monequip (0x1C B)
+# Plan 0051 Phase 0 (docs/tables/MonEquip.md). The monster class and level as s16 (MonEquipInit 0x005D6B60 and the
+# reverser's note of 2026-10-20), the oninit byte, three item codes, then the three body locations and the three
+# mods as bytes. The *end* row's class does not resolve (-1).
+LAYOUTS["monequip"] = dict(size=0x1C, fields=[
+    R("monster", 0x000, "monstats:Id", "s16", distinct=True), I("level", 0x002, "s16"), I("oninit", 0x004, "u8"),
+    U("pad_005", 0x005, "u8"), U("pad_006", 0x006, "u8"), U("pad_007", 0x007, "u8"),
+    C("item1", 0x008), C("item2", 0x00C), C("item3", 0x010),
+    R("loc1", 0x014, "bodylocs:Code", "u8", blank=0), R("loc2", 0x015, "bodylocs:Code", "u8", blank=0),
+    R("loc3", 0x016, "bodylocs:Code", "u8", blank=0),
+    I("mod1", 0x017, "u8"), I("mod2", 0x018, "u8"), I("mod3", 0x019, "u8"),
+    U("pad_01A", 0x01A, "u8"), U("pad_01B", 0x01B, "u8"),
+], txt_only={"eol": "end-of-line marker column (0 in every row); no byte follows mod3 but the two pad bytes"})
+
 # ------------------------------------------------------------------ gamble (12 B)
 # Plan 0031 Phase 0 (docs/tables/Gamble.md). The item code, then 8 bytes that are 0 in every record (no column feeds
 # them; filled at load or never, a question for the reverser).

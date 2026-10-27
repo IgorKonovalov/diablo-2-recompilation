@@ -115,6 +115,13 @@ take them as soon as the plan is approved.
   2. `2026-10-17-architect-reverser-plan-0038-s1e-review-follow-ups.md` (b): re-run run:2026-10-16-calc-emu's cases
      under `emutrace` so its read set is enumerated by the tool (an addendum; no tag depends on it);
   3. the data questions Phase 0 could not answer from the layouts, each as its own item.
+     Named at the P0b review (2026-10-27): **(3a)** who fills `DataTables+0x17C` (`u16` state ids) and `+0x180` (`s16`
+     count), the list skill do 121's `0x005C8980` walks ([skills/0013 § 6](../findings/skills/0013-druid.md#6-the-melee-functions-start-56-57-58-do-121-122)):
+     the loader and the States column or flag it selects on; the data candidates are `restrict` (139, 140, 177),
+     `group` 3 and `transform` ([States § Open questions](../tables/States.md#open-questions)); from the closed
+     [`dru` entry](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-dru-skills-missiles-column-readers.md).
+     The other two P0 data questions were answered from the layouts (`bar`'s `InTown`, 8c's `S3v`/`S4v`). The
+     Phase 1a forwards MP31 and MP32 ride with this item (that review's ruling 4).
 - **Done when:** each entry is closed with a resolution or annotated with the reason it stays open; any `[C]` from an
   emulation names its run id and meets ADR-0015's conditions (ADR-0021 if a case ends at a callee); the architect's
   review passes. Both items are optional: this phase may be skipped whole if a gated plan needs the Ghidra lane first.
@@ -312,3 +319,83 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Ledger:** no statement moved (staging only); the Routing count stands at 45 open (no entry closed).
   - **Backlog:** review request closed (archive).
   - **Next:** Phase 1b (optional, one Ghidra), with the MP31 and MP32 forwards.
+- **2026-10-27 — Phase 0b landed for review (archivist, `lane/p51b`, no slot, no Ghidra).** The seven plan 0046
+  column-reader entries of 2026-10-21 (8a, 8b, 8c, `ass`, `bar`, `dru`, `item`) are folded and closed, and the MonEquip
+  entry is done. Each reader ends its row's Meaning cell with `*plan 0046 readers:*` (P0a's convention: the § Dispatch row
+  in Skills where one exists, else § Columns), a tagged reader, the finding section (skills/0012–0018) and an `fn:` or
+  address anchor. Tables touched: [Skills](../tables/Skills.md) (38 rows), [Missiles](../tables/Missiles.md) (`Vel`,
+  `VelLev`, `Param1`, `Param2`, `Size`), [MonStats2](../tables/MonStats2.md) (`InfernoLen`, `InfernoAnim`, `corpseSel`,
+  `soft`, `large`, `small`, `SizeX`, `S3v`, `S4v`), [MonStats](../tables/MonStats.md) (§ Spawn columns `spawn`,
+  `spawnx`/`spawny`, `spawnmode`, whose name readings `[L]` are replaced by the summon readers; `+0x04B`; a `BaseId` row
+  in § Readers), [States](../tables/States.md) (`srvactivefunc`, an Open question), [Levels](../tables/Levels.md)
+  (`Teleport`), [PetType](../tables/PetType.md), [Books](../tables/Books.md), [Shrines](../tables/Shrines.md) (§ Effects:
+  codes 19, 21, 22; the `[L]` bullet narrowed to 16–18) and [Misc](../tables/Misc.md) (`pSpell` 10, 11).
+  - **The tags are the findings', as their reviews left them.** Values and tests `[C]` up to each ADR-0021 boundary,
+    meanings and what follows a boundary `[I]` (`bar`: the archivist entry's `[C]` items carry values only; `dru` fix 2:
+    `InTown` and `aurarangecalc` give the branch and its calls `[C]`, "the state is removed", "the period ends" `[I]`; 8c
+    fix 3: `srvactivefunc` 147's call `[C]`, the path move `[I]`; `ass`: "0 forbids, 2 restricts" and stat 8 as mana `[I]`;
+    `item` fix 3: 5 to 9 potion **tries**, a try with no free spot making none). Where an entry and its finding differ
+    in wording, the finding's text is used: `SKILLS_PayCost`'s 0 refuses nothing (`item` review fix 2, added); start
+    60's packet is set on the bit-0 return by the caller (as start 58's); `PrgCalcByCharge` is `[C]` only as part of the
+    entries' maps. One count recomputed: the Skills `.txt` has 357 rows, not the 358 skills/0013 § 6 writes; the fact
+    (only 239 and 242 use start 58 and do 122, both `ResultFlags` blank) holds.
+  - **The three data questions of § Phase 0.** (a) `bar`'s Skills `+0x005` bit 0 is the `InTown` column by the layout
+    (`[C]`), as the `dru` entry names it: answered, no Phase 1b item. (b) 8c's monster-data bytes `+0x0E`/`+0x0F` hold no
+    table column; by monsters/0004 § 6 MonsterData `+0x04 + k` is MonStats2 component `k`'s drawn variant, so they are
+    `S3v` (k = 10) and `S4v` (k = 11), `[I]`, and the data agree (the DoomKnightMissile classes' `S3v` and `necromage`'s
+    `S4v` have 4 variants each, and `undeadmissile1..4`, `necromage1..4` run in Missiles): answered on the MonStats2 and
+    Skills `srvmissilea` rows, no Phase 1b item. (c) `dru`'s DataTables `+0x17C`/`+0x180` list needs its loader read:
+    **forwarded to Phase 1b** (§ Phase 1b item 3), with the data candidates in States § Open questions (`restrict`,
+    exactly 139, 140, 177; `group` 3; `transform`).
+  - **MonEquip** ([MonEquip](../tables/MonEquip.md), new): a `monequip` layout in `tools/excel_layouts.py` (45 records ×
+    12 fields = 540 cells, 0 mismatches; `loc2`/`loc3` and `mod2`/`mod3` placed by order, `[I]`, since the 9 rows that
+    set slot 2 set slot 3 alike), the `excel_layout` baseline regenerated (69 tables). The `oninit` rows are the first
+    rows of 267 `bloodraven` and 234 `flyingscimitar`, level 0, one location; the other 42 rows are the summons
+    `valkyrie` (357), `shadowwarrior` (417), `shadowmaster` (418), walked by the summon code's own `MonEquipInit` calls
+    (`[I]`). `mod1..3` stay `[L]`; whether `MonEquipInit`'s last argument skips the `oninit` test is an open question of
+    the doc, not needed by oracle 13.
+  - Left open: none of P0b's entries. `tools/` changes: the layout and the baseline only; `re/` unchanged. Gate fast tier GREEN (the 11 W1
+    warnings are `main`'s, in `docs/specs/data/excel.md`); `--full=excel_layout` GREEN against the new baseline. Review
+    request filed ([entry](../backlog/archive/2026-10-27-archivist-architect-review-plan-0051-phase-0b-column-readers.md)); ledger
+    row added. Next: Phase 1b (with the `dru` item).
+- **2026-10-27 — Phase 0b review (architect, `lane/p51b`): accept with fixes.** Reviewed after merging `main` `3fa5209`
+  into the lane (the plan log and the ledger kept both sides; `backlog.py archive` moved nothing). Re-run on the review
+  side: `excel_bin.py survey` over `workspace/merged/data/global/excel` gives the committed baseline line exactly (69
+  tables, 11 502 records, 946 629 cells, 0 unexplained; against the old line only `tables`, `records`, `cells` and the
+  two `monequip` keys differ, +45 records, +540 cells); `excel_bin.py diff … monequip`: 45 × 12 = 540 cells, 0
+  mismatches, the one unmatched reference the `*end*` row. The MonEquip `.txt` re-read by script: the five classes
+  and their row counts, `level` 0..27 (20 distinct), `mod1` 3 ×5, 4 ×18, 6 ×21, the 8 location-only rows, the 9
+  three-slot rows with one location and one mod (so `loc2`/`loc3` and `mod2`/`mod3` by order stays `[I]`). Data
+  answers re-checked: Skills `+0x005` bit 0 is `InTown` in the layout; do 148's classes (`doomknight2`, `doomknight3`,
+  `dkmag1..3`) carry `S3v` `pos,fir,col,unh` and do 149's `necromage` `S4v` `pos,cld,fir,lht`, `undeadmissile1..4` and
+  `necromage1..4` consecutive; `restrict` set on exactly 139, 140, 177 and `group` 3 on 117, 120, 139, 140, 176, 177;
+  Misc `pSpell` values 1, 2, 3, 5–9. The recount: `skills.txt` has 357 rows and the `.bin` count is 357; start 58 is
+  row 239 only and do 122 row 242 only, both `ResultFlags` blank. Readers read against their finding sections:
+  Levels `Teleport` (skills/0014 § 4), Shrines 19, 21, 22 (skills/0015 § 8), Books (skills/0015 § 4), PetType
+  `basemax` and the `+0x0BC` list (skills/0015 § 10), Skills `InTown` (skills/0012 § 6, skills/0013 § 5), MonStats
+  `spawn` (skills/0013 § 3, 0014 § 6, 0016 §§ 4–5, 0017 § 5, 0018 § 4–5), MonStats2 `S3v`/`S4v` (skills/0018 § 3,
+  monsters/0004 § 6), Missiles `Param1` do 99 (skills/0017 § 3), Skills `ResultFlags` (skills/0013 § 6), MonEquip
+  (monsters/0004 § 6, chain/0002 § 11, skills/0003 § 7, skills/0014 § 6).
+  - **Fixes (7):** Levels `Teleport`: `0x006229F0`'s outcome (non-zero → 0, zero → the teleport) tagged `[I]`, being
+    past that boundary in skills/0014 § 4 (overclaim). MonEquip § Interpretation notes: the summons' rows were
+    "walked" `[I]` while the doc's own open question leaves the `oninit` gate for a last argument of 0 unread; now the
+    summon code calls `MonEquipInit` and whether the walk runs is open, and "their last argument is 0" narrowed to
+    do 49's (skills/0003 records no arguments for `SummonInitStats`' call) (overclaim). Skills `InTown`: start 40's
+    town test applies to a caster that is not a monster, type 1 taking the monster branch with or without a target
+    (skills/0012 § 6; the fold read "other than a monster with a target") (misread). MonStats `spawn`: do 131's class
+    change, `EDX` 0 after its boundary (skills/0018 § 4), added `[I]` (omission). Phase 1b item 3 named as **3a**, the
+    `+0x17C`/`+0x180` loader with the data candidates and the closed `dru` entry; the P0b entry had sent it to "item
+    3", which named no question (omission). skills/0013 § 6: "358 Skills rows" → 357 (miscount, the lane's recount
+    written into the finding), and its open question on `+0x17C` no longer "an archivist question" but Phase 1b item
+    3a (stale cross-reference).
+  - **Rulings.** (1) The folds stand with the findings' tags: values and tests `[C]` to each ADR-0021 boundary, what
+    follows `[I]`, as Phase 0a ruled; the seven fixes above are the exceptions found. (2) The 8c bytes `+0x0E`/`+0x0F`
+    as `S3v`/`S4v` drawn variants stay `[I]` (monsters/0004 § 6 is `[I]`; the data agree, the dkmag classes carry four
+    `S4v` variants as well, which the reading does not use). (3) `bar`'s bit closes on the layout, `[C]`, no Phase 1b
+    item. (4) The `dru` list is Phase 1b item 3a; the States § Open questions bullet stays `[L]` until it is read.
+    (5) Whether `MonEquipInit`'s last argument skips the `oninit` test is a reverser question, not Phase 1b's: no
+    oracle needs it, and chain/0002 § 11's "unreachable with the stock table" holds only if the summons' calls are
+    gated; it stays in MonEquip § Open questions.
+  - **Ledger:** lane row filled (usage from the orchestrator), review row added.
+  - **Backlog:** review request closed (archive).
+  - **Next:** Phase 1b (optional, one Ghidra): items 1, 2 and 3a, with the MP31 and MP32 forwards.

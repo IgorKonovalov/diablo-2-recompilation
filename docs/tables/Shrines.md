@@ -31,8 +31,8 @@ Values from `python3 -I tools/obj_survey.py shrines workspace/merged/data/global
 | `Shrine name` | str, 23 distinct | — | editor name | — | [C] |
 | `Effect` | str, 23 distinct | — | editor description | — | [C] |
 | `Code` | int 0..22 = row index | `+0x000` u32 | effect number | — | [C] |
-| `Arg0` | int 0..400 (8 distinct) | `+0x004` s32 | first effect argument | — | [C] |
-| `Arg1` | int 0..2000 (9 distinct) | `+0x008` s32 | second effect argument | — | [C] |
+| `Arg0` | int 0..400 (8 distinct) | `+0x004` s32 | first effect argument; *plan 0046 readers:* codes 19, 21, 22: § [Effects](#effects-plan-0041-phase-0) | — | [C] |
+| `Arg1` | int 0..2000 (9 distinct) | `+0x008` s32 | second effect argument; *plan 0046 readers:* codes 19, 21, 22: § [Effects](#effects-plan-0041-phase-0) | — | [C] |
 | `Duration in frames` | int {0: 13, 3600: 5, 2400: 4, 4800: 1} | `+0x00C` u32 | `[I]` duration of the timed state, in frames (§ Effects) | — | [C] |
 | `reset time in minutes` | int {5: 11, 0: 10, 2: 2} | `+0x010` u8 | `[I]` the shrine re-arms `value × 1200 + 1` frames after use; 0 = never (§ Effects) | — | [C] |
 | `rarity` | int {2: 12, 3: 9, 1: 2} | `+0x011` u8 | `[I]` not read by the shrine pick | — | [C] |
@@ -107,8 +107,8 @@ function of row 20. (tbl:Shrines.txt:Arg0, tbl:Shrines.txt:Duration in frames)
 - `[I]` **Row 20 (Warping Shrine)** runs `sub_00583050_ShrineWarping` (`g_ShrineEffects` row at `0x006E1940`): it finds
   the operator's nearest unit through filter `0x00582750` and makes it a special monster (`MonMakeSpecial`); with no
   hit nothing happens. ([monsters/0003 § Plan 0039 batch P1c](../findings/monsters/0003-special-monsters.md#plan-0039-batch-p1c-2026-10-17), fn:sub_00583050_ShrineWarping@0x00583050)
-- `[L]` By the names, codes 16–19, 21 and 22 are the magic class (portal, gem, storm, explosion, poison) that create
-  objects, missiles or monsters; their functions are not read.
+- `[L]` By the names, codes 16–18 are magic shrines (Enirhs, a portal, a gem upgrade); their functions are not read.
+- *plan 0046 readers* ([skills/0015 § 8](../findings/skills/0015-item.md#8-the-shrine-missiles-19-21-22), plan 0046 batch `item`): **code 19 (Storm Shrine)** `[C]` passes `Arg1` as the radius of its unit search round the shrine (`0x0065A950`, block `+0x14`; ADR-0021, no draw); `[I]` each living unit of type 0 or 1 found loses `Arg0` percent of its life (`(life >> 8) · Arg0 / −100`, truncated, `<< 8`): half for the stock 50, within the stock `Arg1` 2000; then sixteen fireballs (fn:SHRINE_Storm@0x00582DA0). **Codes 21 and 22 (Exploding, Poison)** `[C]`: `r = Arg1 − Arg0`; `r > 0` → one inline step of the shrine's seed, `low & (r − 1)` for a power of two, else `low mod r`; `r ≤ 0` → no step and 0; the count `n = Arg0 +` that, so **5 to 9** for the stock 5 and 10, not the 5–10 of the row's `Effect` text (ADR-0021, up to `ItemIndexByCode` or `MissileCreate`) (fn:SHRINE_Exploding@0x005830E0, fn:SHRINE_Poison@0x00583410); `[I]` `n` counts potion tries (`opm`, `gpm`), a try with no free spot making none and still counting, so `n` is the most potions; then six missiles (45 or 48) round the shrine (after the boundary, `lane/p46m12` review).
 - `[C]` `rarity` sums to 53 over the 23 rows (1 on rows 0 and 1, 3 on rows 4, 5, 14–16, 18, 20–22, else 2).
 - `[C]` `LevelMin` is above 8 only for the three resist boosts other than fire: cold 26, poison 21, lightning 32.
 
