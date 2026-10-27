@@ -1,11 +1,11 @@
 ---
 based_on:
   - docs/specs/monsters/README.md 2026-10-16
-  - docs/specs/monsters/pool.md 2026-10-16
-  - docs/specs/monsters/spawn.md 2026-10-21
-  - docs/specs/monsters/special.md 2026-10-21
-  - docs/specs/monsters/stats.md 2026-10-21
-  - docs/specs/drlg/collision.md 2026-10-21
+  - docs/specs/monsters/pool.md 2026-10-27
+  - docs/specs/monsters/spawn.md 2026-10-27
+  - docs/specs/monsters/special.md 2026-10-27
+  - docs/specs/monsters/stats.md 2026-10-27
+  - docs/specs/drlg/collision.md 2026-10-27
   - docs/specs/drlg/lifecycle.md 2026-10-21
 ---
 
@@ -95,8 +95,9 @@ How one level's pool is picked ([pool § C](../specs/monsters/pool.md#c-the-pool
 
 The candidate count is read from the code as the number of *leading* filled slots, stopping at the first blank.
 Stock data has no gaps, so a test run cannot tell this apart from "the number of filled slots". The nightmare and
-hell pools were checked in natural games for one seed only. A classic normal game was not logged; by the code it
-reads `mon` like an expansion game.
+hell pools were checked in natural games for one seed only. A classic normal game reads `mon` like an expansion game:
+a logged one matched all 136 regions, and in 23 of the 27 levels 110–136 the `nmon` slots would have given another
+pool.
 
 ### Appearance sets
 
@@ -126,20 +127,23 @@ class and the level the monster stands in
 The exceptions are as follows:
 
 - Classes with `noRatio` (player summons and pets) and `boss` classes keep MonStats `Level(N)`/`Level(H)` even
-  in expansion nightmare and hell. The `boss` rule was seen with Andariel: level 49 in nightmare and 75 in hell,
-  not her area's 43 and 73. That the other `boss` classes behave the same is read from the code, since only
-  Andariel was created in a run.
+  in expansion nightmare and hell. The `boss` rule was seen with Andariel, at level 49 in nightmare and 75 in hell
+  instead of her area's 43 and 73. In an expansion nightmare game four more kept their own level where the area's
+  differs: Blood Raven, Radament, Mephisto and Nihlathak. That makes five of the 25 `boss` classes met. The test
+  reads the class's own flag, with no list of classes.
 - A [mercenary](../glossary.md) is created at its normal-difficulty `Level` (1) in every difficulty, and its
   level and stats are then overwritten from the hireling table.
-- The classic area-level columns `MonLvl1..3` gave no monster's level in any logged game, and by the code they
-  never do. In expansion normal the area's `MonLvl1Ex` is not used either.
+- The classic area-level columns `MonLvl1..3` gave no monster's level in any classic difficulty of the logged
+  games: every creation took its MonStats level, including the many where the area level differs. In expansion
+  normal the area's `MonLvl1Ex` is not used either.
 
 The logged cases from the spec: in *Jail Level 1*, two classes with MonStats levels 10/40/70 are created at 41
 (nightmare) and 71 (hell) in an expansion game, and at 40 and 70 in a classic game. In *Stony Field*, expansion
 normal, `zombie2` gets 2 (its MonStats `Level`), not the area's 4.
 
-Still open or unconfirmed: a classic normal game was not logged, so its levels rest on the code. When the
-monster's level has no `Levels` record the code returns 1, but this was never exercised. Town NPCs in expansion
+A classic normal game takes MonStats `Level` like an expansion one; all 163 creations of a logged classic normal
+game did. Still open: when the monster's level has no `Levels` record the code returns 1, but no stock case has
+one, so this may never be logged. Town NPCs in expansion
 nightmare or hell would take their town's blank area level, 0, which their MonStats level also gives, so the runs
 cannot tell the two sources apart.
 
@@ -156,14 +160,16 @@ after the first one that creates critters are not predicted
 
 The population pass runs on the server only, once per room, the first time it is activated. The wanderer tick, the
 room's preset monsters and objects come first, then the pass, and then the room is marked as populated
-([spawn § A](../specs/monsters/spawn.md#a-when-the-pass-runs-and-the-room-seed-before-it)). That the client
-never runs this pass is read from the code. On the client, the room's own content is the critter draw.
+([spawn § A](../specs/monsters/spawn.md#a-when-the-pass-runs-and-the-room-seed-before-it)). The client never runs
+this pass: only server code calls it, and every one of 4 154 logged passes ran on the server's game. On the client,
+the room's own content is the critter draw.
 
 **The gate** ([spawn § B](../specs/monsters/spawn.md#b-the-gate)). A level whose density (`MonDen` for the
 difficulty) is 0 gets no random population, and neither does a room flagged "no population" by the map
 generator. The gate also counts every room of the level that reaches it. That count is the level's "rooms
-visited", which the special catch-up below uses. A test for Chaos Sanctuary that closes the gate when a quest
-byte is set is read from the code but was not exercised; the quest side of it is on
+visited", which the special catch-up below uses. A test for Chaos Sanctuary closes the gate when a quest byte is
+set. A run met it 91 times, always with the byte clear and the gate open. The closed state, once the three seal
+bosses are dead, was not logged, so it rests on the code. The quest side of it is on
 [quests and travel](quests.md#diablo-and-the-harrogath-portal-word-26).
 
 **Density** ([spawn § C](../specs/monsters/spawn.md#c-density-attempts-per-logic-box)). The room is split into its
@@ -175,7 +181,8 @@ density passes. A density above 10000 is clamped to 10000, and the stock maximum
 ## Picking a class, and normal versus special
 
 **The class pick** ([spawn § D](../specs/monsters/spawn.md#d-the-class-pick)) is a weighted draw on the room seed
-over the pool's `Rarity` values, so a class with `Rarity` 0 is never picked. A class flagged `placespawn` (in
+over the pool's `Rarity` values, so, by the code, a class with `Rarity` 0 could never be picked; no stock pool holds
+one. A class flagged `placespawn` (in
 stock data the three crow nests) turns into its `spawn` class with a further room draw: 79 times in 100 for a
 normal pick, 99 in 100 for the special pick of nightmare and hell. In normal difficulty the special class comes
 from the level's `umon` columns with no substitution.
@@ -207,9 +214,9 @@ flowchart TD
 - The last draw can return a "type 1", but the pass turns it into a normal group. The champion-formation
   branch for type 1 is never reached. The draw still happens.
 - The count is live and builds up over the game. It goes up for each random boss, each champion-pack member, each
-  preset special and each superunique. The increments for random bosses and pack members are confirmed by a run.
-  The preset and superunique increments, and the decrease when a special leaves its level, are read from the code
-  only.
+  preset special and each superunique, and goes down by one when a special leaves its level. All of these were
+  logged: the increments for superuniques and preset specials too, and 188 decreases, all outside a pass. The 7 910
+  logged region snapshots equal the count these rules give.
 
 ## Groups and minions
 
@@ -228,9 +235,11 @@ the only class with a value is the evil hut, which appears only as a map preset.
 the code only: the group would spawn with probability `(value + 1)/100`, and nothing would take its place.
 Community descriptions disagree with this, and no stock-data run can settle it.
 
-The code read for this pass has no read of the [player count](../glossary.md). Group sizes, minions and density do not scale with
-players by that code, but multiplayer games were not logged
-([spawn § Open questions](../specs/monsters/spawn.md#open-questions)).
+Group sizes, minions and density do not scale with the [player count](../glossary.md): passes logged at `/players 3`
+and `/players 8` are reproduced by the same model as those at one player, and the code read for this pass has no
+read of the player count. Games with several real players were not logged, so for them this rests on the code
+([spawn § I](../specs/monsters/spawn.md#i-monstats-minions),
+[§ Open questions](../specs/monsters/spawn.md#open-questions)).
 
 ## Placement: where each monster stands
 
@@ -267,10 +276,14 @@ this seed for all 12 580 monster creations it met ([spawn § Inputs and oracles]
 [seed to world](seed-to-world.md#e-one-monsters-creation)).
 
 **Wanderers** ([spawn § K](../specs/monsters/spawn.md#k-wanderers-the-tick)). Every room in the update walk takes one
-room-seed draw per tick; that it goes on after the room is populated is read from the code. Rarely (1 in 32 768 ticks), and only in a level with `MonWndr` set, a
-wanderer roll follows. It never fired in a run, so the rest of it is read from the code only: its class list holds
-one class, for Act I only. By the code, `MonWndr` gates only this roll, and watching it in play found no other read
-of it. It does not decide whether monsters roam, which is what a community page says.
+room-seed draw per tick, and it goes on doing so after the room is populated: 4 044 logged ticks on
+populated rooms each took exactly one step. Rarely (1 in 32 768 ticks), and only in a level with `MonWndr` set, a
+wanderer roll follows. It fired once in a run, in the Chaos Sanctuary: the roll stepped the room seed once more,
+missed its 3 in 100, and spawned nothing, so that tick took two steps. The spawn itself was never reached and is
+read from the code only. So are two details of the gate that this single case cannot separate: how many bits of
+the draw the gate tests, and its "no player near the room" test. The wanderer class list holds one class, for Act I
+only. `MonWndr` gates only this roll: the code has no other reader of it, and watching it in play found none. It
+does not decide whether monsters roam, which is what a community page says.
 
 ## Champions and uniques
 
@@ -294,13 +307,17 @@ is 1 (champion) or 6 (unique), so the allowed candidates are equally likely:
 | Unique mods | 12 in normal, 13 in nightmare and hell (`resist` joins) | the same |
 
 A row can also be refused for the class. `teleport` needs the class to have the `A1` mode, `fast` the `WL` mode, and
-`multishot` a class that is neither `isMelee` nor `nomultishot`. The one stock exclusion, `lightning` on
-sand leapers, is read from the code but was never rolled in a run. A unique never gets the same mod twice. A unique's
+`multishot` a class that is neither `isMelee` nor `nomultishot`. The one stock exclusion is `lightning` on sand
+leapers. A run met it once: a unique sand leaper's candidate list lacked `lightning`, as predicted. A unique never
+gets the same mod twice. A unique's
 mod count costs one extra draw (`Range(1)`, which always gives 0 but still steps the seed).
 
 **Pack members and preset champions** ([special § F](../specs/monsters/special.md#f-champion-pack-members-and-preset-champions))
 are not rolled. Each one always gets mod 16 `champion`, whatever the boss drew. Each counts as a special, and each
-brings its own MonStats minions if its class has them. They are not linked to the boss as minions.
+brings its own MonStats minions if its class has them. They are not linked to the boss as minions. A pack member whose
+class is a `SetBoss` class (three were logged, `fallenshaman2` and `fallenshaman6` among them) is a small leader in its
+own right: its mod handlers also
+run on its MonStats minions, as a unique's do on its minions (see [What the mods do](#what-the-mods-do-to-stats)).
 
 **Map presets** ([special § H](../specs/monsters/special.md#h-monplace-presets)) can also make specials. One preset
 kind makes a unique, its class picked as for a random special, at a random point of the room, with no champion roll. Another makes a champion
@@ -308,9 +325,14 @@ at the preset point, with mod 16 and a champion pack. Both were reproduced in Tr
 by the code, place nothing at all when the room's presets are spawned or restored: the group presets that the map's
 keep/drop roll keeps (see [levels](levels.md#what-a-preset-places-units-and-keepdrop-rolls)), the river, nest, guard and maggot kinds among them. Five
 place one fixed monster at the point with no special code: the rogue warner (`navi`), Blood Raven, the Maggot Queen,
-and two tentacle-head kinds whose type depends on the level. The imp-group and minion-group kinds place a leader and
-its group around the point in Normal only; in Nightmare and Hell they place nothing (read from the code). Other code
-that reads a room's presets is not yet followed.
+and two tentacle-head kinds whose type depends on the level. A further range of kinds places one fixed class at the
+point, not as a special: the fallen camps, fallen shamans, fetish shamans and imps among them. The class is first
+turned into the level's own variant, then a fallen class into its camp variant, a step that looks at the class's base
+type. In level 6, for example, a fallen camp comes out as `fallen2` and a shaman as `fallenshaman2`; both were logged.
+The variants of the other levels, and a few of the kinds, were not logged and are read from the code. The
+imp-group and minion-group kinds place a leader and its group around the point in Normal only; in Nightmare and Hell
+they place nothing. That was logged in Hell; Nightmare and the Normal groups are read from the code. Other code that reads a
+room's presets is not yet followed.
 
 ## Unique minions and mod transfer
 
@@ -320,9 +342,10 @@ every unique mod except `aura`, so **a unique's minions carry its rolled mods, e
 mods, if any, stay first in its list
 ([special § E](../specs/monsters/special.md#e-unique-minions-and-transfer)).
 
-Read from the code, not yet confirmed by a run: the copy is the list the server sends and other code reads, but the
-effects reach a minion through the boss's mod handlers running on each group member, and a minion's own handlers are
-never called for its copied list.
+The copy is the list the server sends for the minion, but a minion's own handlers are never called for it, and runs
+confirm both. The effects reach a minion another way: the boss's mod handlers run on each group member, for every
+boss mod, copied or not. The other readers of the copied list (the save of an inactive monster, the restore, a
+packet that sends only its first three slots) are read from the code.
 
 ## Mod handlers and the name seed
 
@@ -335,8 +358,14 @@ twice ([special § C](../specs/monsters/special.md#c-mod-handlers),
   low 16 bits as the [name seed](../glossary.md). Champions and pack members run it too.
 - `aura` draws on a *local* seed made from the name seed, which no other seed sees. It picks one of the aura rows
   whose minimum level the monster has reached: Might, Holy Fire, Blessed Aim, Holy Freeze, Conviction and
-  Fanaticism from level 0, and Holy Shock from level 20. The aura table itself is read from the game's code, and a
-  Thorns row needs level 999.
+  Fanaticism from level 0, and Holy Shock from level 20. The aura table was read from the game's memory, and runs
+  reproduced the aura skill and its level for six of its rows, in all three difficulties. A Thorns row needs level
+  999, so it is never drawn. The clamps of the aura's level to 1 and 99 were never met.
+- **A restored aura special holds two auras.** When a special comes back with its room, its handlers run again and
+  `rndname` makes a fresh name seed, so `aura` draws on that one. Only after that does the restore put back the saved
+  name seed and draw the aura a second time. The monster gets another aura and then its first one: a logged
+  `regurgitator3` got Holy Shock first, then its original Holy Freeze
+  ([special § J](../specs/monsters/special.md#j-other-entry-paths-and-pre-existing-mods)).
 - Every other handler only writes stats (see [What the mods do](#what-the-mods-do-to-stats)).
 
 The [draw order](../specs/monsters/special.md#draw-order-on-the-unit-seed) on the boss's seed is: for a champion,
@@ -349,7 +378,9 @@ A superunique is placed by a [preset unit](../glossary.md) in the map and built 
 `SuperUniques` row ([special § G](../specs/monsters/special.md#g-superuniques)):
 
 1. **Placement.** At the preset point, or anywhere in the room when the row's `AutoPos` is set. A row with `Stacks`
-   0 can be placed only once per game. That refusal is read from the code but was not reached in a run.
+   0 can be placed only once per game: three second attempts in the logs were refused, with no monster made. The
+   placement makes no quest test of its own that a done quest fails. Every logged character had all its quests
+   done, so whether an open quest changes anything is read from the code.
 2. **Fixed mods** `Mod1`–`Mod3` are written as they are and skip the eligibility tests. That they skip the tests is
    read from the code.
 3. **Extra mods**: `difficulty` unique picks, so 0, 1 or 2, with no `Range(1)` before them. An extra never repeats a
@@ -357,11 +388,16 @@ A superunique is placed by a [preset unit](../glossary.md) in the map and built 
 4. **Minions**: `MinGrp + d … MaxGrp + d`, where `d` is the difficulty. Rakanishu (8 and 8 in his row) got 8, 9 and 10
    minions in normal, nightmare and hell. A row with both bounds 0 still makes one draw and gets no minion.
 5. **A tail per record** for a few superuniques, such as Radament's extra skeletons, the Countess's set-up and
-   various quest hooks. All the tails are read from the code only.
+   various quest hooks. A run met the tails of Radament, the three council members, the Infector of Souls, the Grand
+   Vizier of Chaos, Shenk (20 escorts) and Nihlathak (20 escorts), each making exactly its listed calls, and records
+   with no tail made none. Radament's skeleton count is two plus a draw, but the draw came out 0, so the "plus a
+   draw" is read from the code. The tails of the Countess, Lord De Seis, the Cow King, the Ancients and Baal's
+   second subject were not met.
 6. Mod 22 `questcomplete` is appended last.
 
-Also read from the code only: the `thief` mod is dropped from a row's fixed mods, a fixed `aura` would run its
-handler a second time, and a superunique that already holds 5 or more mods gets nothing below placement.
+A fixed `aura` runs its handler a second time, on the same seed, so it writes the same aura twice: logged for
+Bremm Sparkfist. Read from the code only: the `thief` mod is dropped from a row's fixed mods, and a superunique
+that already holds 5 or more mods gets nothing below placement.
 
 ## Names
 
@@ -373,7 +409,9 @@ The name is built on the client ([special § I](../specs/monsters/special.md#i-n
   (in one recorded game, from the keys `Fire`, `lust` and `the Mauler`). Every name roll of a test run followed this.
   The roll runs on its own seed, so by the code it cannot affect any server seed.
 - A **champion** shows a word for its champion mod in front of the class name. A **superunique** shows its row's
-  `Name`. Both are read from the code. Where a unique's random colour is drawn is not known.
+  `Name`. A run reproduced both from the string tables, and showed that a minion gets no name. A few bosses have a
+  fixed name: Andariel's, Mephisto's, Izual's and Blood Raven's were logged; those of the other fixed-name classes
+  are read from the code. Where a unique's random colour is drawn is not known.
 
 **The Warping Shrine.** One path makes an existing monster special outside population: the Warping Shrine ("nearest
 monster becomes unique"). Read from the code, operating an unused one picks the nearest monster to the player, over the
@@ -402,14 +440,19 @@ A surprise from the runs: **single-player games read the `MonLvl` columns prefix
 source reserves for ladder games. In 3 954 nightmare and hell creations where the two column sets differ, every one
 matched `L-`. The two sets differ only in nightmare and hell defence and in hell hit points.
 
-The game stores hit points times 256. Read from the code but never reached: a hit-point cap for very large values,
-the case of a minimum above the maximum, and the overflow branches of the arithmetic. Skills get the difficulty's
-`MonsterSkillBonus` added to their level, also read from the code only.
+The game stores hit points times 256. A minimum above the maximum makes no draw and gives the minimum; no logged
+creation met one (two stock rows have one, in normal), but each piece of that path is confirmed on its own. The scaling
+arithmetic's branches, overflow included, were checked under emulation. Read from the code but never reached: a
+hit-point cap for very large values and the overflow branches of the hit-point percentage step. Skills get the
+difficulty's `MonsterSkillBonus` (0, 3 or 7) added to their level, with no draw; a run confirmed the skill list of
+every creation in all three difficulties.
 
 **MonProp** ([stats § F](../specs/monsters/stats.md#f-monprop-at-creation)) gives every monster
 of a class its row's properties for the difficulty, special or not, with any value range rolled on the unit seed.
 On stock data only `thorns` has a range, and a test run reproduced it. Stock `chance` is 0 everywhere, so the
-`chance` roll is never reached. No normal-difficulty row can be reached on stock data, by the code read.
+`chance` roll is never reached. Of the three rows with a normal-difficulty part, two cannot be reached on stock
+data. The third, `druidhawk`, can: it belongs to the Druid's Raven, so by the code a Raven in a normal game reads its
+normal row. No such creation was logged.
 
 **Monster equipment** (`MonEquip`, [stats § B](../specs/monsters/stats.md#b-monstatsinit-in-order), step B12) comes
 last. Only two classes have a row that equips at creation in the stock table: 234 (a flying scimitar) and 267 (Blood
@@ -426,7 +469,8 @@ The player count is the number of living players, raised to the `/players` setti
 second real player counts like `/players 2` for the monsters created while it is in the game; whether a dead player
 counts was not tested there. Hostile
 monsters get **+50 % hit points and +50 % experience for each player beyond the first**, so +350 % at 8 players.
-Town NPCs, critters, hirelings, summons and a few neutral classes get no bonus; this is read from the code.
+Town NPCs, critters, hirelings, summons and a few neutral classes get no bonus. At `/players 8` this was confirmed
+for Lut Gholein's NPCs, the rogue hireling and the cow; the camel was not met.
 
 **The count is applied once, at creation.** A test run changed `/players` 13 times and compared 302 live monsters
 at each change: none changed. Monsters created after the change get the new count. A monster that is re-created when
@@ -461,7 +505,8 @@ the code. Whether a graphics renderer could change that precision is an open que
 ## What the mods do to stats
 
 The handlers run in the order of [Mod handlers](#mod-handlers-and-the-name-seed). "Group member" means a minion of a
-unique or superunique. Champion-pack members run their own pass as champions
+unique or superunique, or a MonStats minion of a champion-pack member whose class is a `SetBoss` class. Champion-pack
+members run their own pass as champions
 ([stats § G](../specs/monsters/stats.md#g-the-mod-handlers-stat-effects)). A selection (percentages from `MonUMod`'s
 constants, normal / nightmare / hell):
 
@@ -481,6 +526,8 @@ Notes the spec makes a point of:
 - **Spectral Hit adds 20, not the 40 of community pages.** Seen in 17 uniques of a run.
 - **A berserker ends at + 3 levels**, every other champion at + 2 (`leveladd` + 3, `champion` − 1). This was shown
   by a forced test run with edited data, which backs the handler only, not how often `berserk` appears.
+- **The speed bonus of `fast` and `fanatic`** is `2048 ÷ Velocity − 128`, kept between 10 and 100. Runs saw 100 at
+  velocities 1 and 3 to 7 and 42 at 12. By the formula it is 100 up to `Velocity` 8 and 99 at 9; 8 and 9 were not met.
 - **Mod order matters.** The resistance mods stop adding once two resistances are already at 100 or more, and each
   mod checks this when it runs, so an earlier mod can block a later one.
 - The `ChampionDamageBonus` column (90 / 75 / 66) also scales a unique's `strong` bonus. That `UniqueDamageBonus`
@@ -560,23 +607,29 @@ Each spec's *Open questions* has the full list: [pool](../specs/monsters/pool.md
 [spawn](../specs/monsters/spawn.md#open-questions), [special](../specs/monsters/special.md#open-questions),
 [stats](../specs/monsters/stats.md#open-questions). The ones that bear on this page:
 
-- **Pools:** the classic normal game (pool and monster level) and the no-record fallback are not logged. Natural
-  nightmare and hell pools are checked for one seed, with Act I visited.
+- **Pools:** a creation in a level with no record (the fallback level 1) has no stock case. Natural nightmare and
+  hell pools are checked for one seed, with Act I visited.
 - **Population:** what `sparsePopulate` really does (unreachable on stock data, and the community sources
-  disagree), and multiplayer games, which were not logged. The room field the wanderer roll tests and the restore of
-  inactive monsters are answered by the [room lifecycle spec](../specs/drlg/lifecycle.md). Many guard exits and rare branches were never reached: the evil hut object, the tentacle-head
-  minions, the wanderer spawn, and others listed in the spec. Monster positions also depend on inputs no spec yet
-  produces end to end: the collision grid at the start of the pass, whose object marks are modelled but whose marks of
-  players, monsters that walked in, items and corpses are not (the grid the models build equals the recorded one in
-  4 723 of 4 883 rooms of the end-to-end run), and one waypoint point.
+  disagree), and games with several real players, which were not logged. The Chaos Sanctuary gate's closed state
+  needs the three seal bosses dead, Lord De Seis among them, and no session created him. The room field the wanderer
+  roll tests and the restore of inactive monsters are answered by the [room lifecycle spec](../specs/drlg/lifecycle.md).
+  Many guard exits and rare branches were never reached: the evil hut object, the wanderer spawn, and others listed in
+  the spec. Monster positions also depend on inputs no spec yet produces end to end: the collision grid at the start
+  of the pass, whose object marks are modelled but whose marks of players, monsters that walked in, items and corpses
+  are not (the grid the models build equals the recorded one in 4 723 of 4 883 rooms of the end-to-end run), and one
+  waypoint point.
 - **Specials:** whether a `MonUMod` row with `champion` 0 could ever be a champion mod (no stock row tests it, and a
-  community source claims it can). Where a unique's colour is drawn. The superunique tails, the `lightning` exclusion,
-  `thief`, the `Stacks` refusal, Blood Raven's and the act bosses' fixed names and the Warping Shrine are read from the
-  code only. The restore of inactive specials was reached by a run; a minion restored without its boss was not.
+  community source claims it can). Where a unique's colour is drawn. Read from the code only: the superunique tails
+  not met (the Countess, Lord De Seis, the Cow King, the Ancients, Baal's second subject) and the draw in Radament's
+  count, `thief`, the fixed names not met, the aura level clamps, the preset kinds not logged and the Warping Shrine.
+  Lord De Seis was never created, so his forced aura and his tail rest on the code; an owner-played Chaos Sanctuary
+  session would log him. The restore of inactive specials was reached by runs; a minion restored without its boss was
+  not.
 - **Stats:** whether a graphics renderer can change the
   floating-point precision of the hit-point rescale, the will-o'-wisp halving, and the unreached branches (`poisonhit`,
-  `always_run_ai`, monster equipment beyond the one-row case, a `MonProp` slot with a chance, more than 8 players, the
-  overflow branches).
+  `always_run_ai`, monster equipment beyond the one-row case, a `MonProp` slot with a chance, `fast` and `fanatic` at
+  `Velocity` 8 and 9, more than 8 players, the hit-point percentage and regeneration overflows). A Druid's Raven reading the normal
+  `druidhawk` row was not logged.
   The formulas of the attack-time to-hit and damage values were not asserted by a run.
 
 ## Where to read more

@@ -294,6 +294,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/p50a` review | 0050 P1.1 | architect-review | 184 033 | 65 | 14 | — (static, objdump, no Ghidra) | gave accept with fixes | — (on the lane row; blind check passed on P1.1's behalf; P1.2 may start) |
 | 2026-10-27 | `lane/s38n` | 0038 P3 drlg/collision | spec-writer | 267 684 | 85 | 17 | no slot, no Ghidra | accept with fixes (rulings: no collision row in H6e2, so the cluster was ready; the readiness ruling, the 0x0066E91B re-pick site and the bits 1 and 2 writer-only split stand; wiki/levels and wiki/monsters folded into the open wiki refresh entry) | 3: omission 1 (the `spawnCol` 1 and 3 mask row and bit 2's `0x80` writer anchored to the counting run alone, for counts over kept logs), overclaim 1 (bit 13's writers named NPCs inside the row's `[C]` while F2's `npc` half and `+0xC4` stay `[I]`), misread 1 ("exercised since" / "reached since" / "seen since" for the `0x01C0`/`0` masks, the door `0x400` and grid `0x04`, which earlier runs' logs already held) |
 | 2026-10-27 | `lane/s38n` review | 0038 P3 drlg/collision | architect-review | 147 133 | 46 | 9 | — (static, objdump, no Ghidra) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/swk` | 0038 P3 wiki refresh | wiki | — | — | — | no slot, no Ghidra | — | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

@@ -23,7 +23,7 @@ wiki's `based_on` dates (gate W4).
   and the *Collision* bullet of the untested list (single-cell tests, three special-class checks, NPC footprints and the
   Arcane Sanctuary and Canyon are now answered; the NPC rule is now `npc` or `inTown`). The monsters page's collision bullets
   hold no stale claim I found, only the date. Suggest folding both into the open wiki refresh entry
-  [2026-10-27-architect-spec-writer-wiki-refresh-after-the-plan-0038-phase-3](../2026-10-27-architect-spec-writer-wiki-refresh-after-the-plan-0038-phase-3.md),
+  [2026-10-27-architect-spec-writer-wiki-refresh-after-the-plan-0038-phase-3](2026-10-27-architect-spec-writer-wiki-refresh-after-the-plan-0038-phase-3.md),
   which already covers wiki/monsters.
 - **Not reflected, with the reason:** none of the cluster's accepted raises is left out. Kept `[I]` as the ledgers rule: S4b
   row 2 (client grids, shortfall), rows 9 and 11 (H5d shortfall), the d-none statements (rows 3, 4, 25, collision 37's

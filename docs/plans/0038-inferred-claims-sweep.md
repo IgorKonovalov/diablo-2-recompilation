@@ -3499,7 +3499,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request
     [s38m review](../backlog/archive/2026-10-27-spec-writer-architect-review-lane-s38m-plan-0038-phase-3-monsters.md)
     closed; new spec-writer entry
-    [wiki refresh after the monsters cluster](../backlog/2026-10-27-architect-spec-writer-wiki-refresh-after-the-plan-0038-phase-3.md).
+    [wiki refresh after the monsters cluster](../backlog/archive/2026-10-27-architect-spec-writer-wiki-refresh-after-the-plan-0038-phase-3.md).
   - **Ledger:** the lane row's usage filled from the orchestrator (412 899 tokens, 109 tools, 26 min), verdict and fixes:
     overclaim 2, misread 2, stale cross-reference 1, omission 1; the review row's usage left "—".
   - **Next:** merge `lane/s38m`; the wiki refresh; the remaining Phase 3 clusters as their batches are accepted.
@@ -3562,3 +3562,16 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     omission 1, overclaim 1, misread 1; the review row added with usage "—".
   - **Backlog:** review request and counts entry closed (archive); the wiki refresh entry annotated.
   - **Next:** merge `lane/s38n`; the wiki refresh (now with wiki/levels); objects after H6e2.
+- **2026-10-27 — The wiki refresh after the monsters and drlg/collision clusters (spec-writer, `lane/swk`, from
+  `main` `e88e8e2`).** [wiki/monsters](../wiki/monsters.md) and [wiki/levels](../wiki/levels.md) are refreshed over the
+  re-tagged monsters/pool, spawn, special and stats and drlg/collision, and
+  [wiki/seed-to-world](../wiki/seed-to-world.md)'s stats date is bumped. The six corrections are carried at the specs'
+  tags, the raised statements are said as confirmed, and the kept `[I]` parts are said in words. wiki/levels'
+  § *The collision grid and logic regions* and its *Collision* bullet are rewritten whole. W4 is clear (0 of 60); the
+  gate is green. The specs `lane/s45p3` holds and the economy and randomness pages are untouched.
+  - **Backlog:** the refresh entry is closed
+    ([archive](../backlog/archive/2026-10-27-architect-spec-writer-wiki-refresh-after-the-plan-0038-phase-3.md)), and
+    the review request is filed
+    ([swk review](../backlog/2026-10-27-spec-writer-architect-review-lane-swk-wiki-refresh-after-plan-0038.md)). It also
+    notes that drlg/lifecycle § I lags spawn § K on the wanderer roll.
+  - **Next:** architect review of `lane/swk`.

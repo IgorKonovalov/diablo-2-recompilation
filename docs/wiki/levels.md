@@ -3,11 +3,12 @@ based_on:
   - docs/specs/drlg/README.md 2026-10-21
   - docs/specs/drlg/room-tiles.md 2026-10-21
   - docs/specs/drlg/preset.md 2026-10-17
-  - docs/specs/drlg/collision.md 2026-10-21
+  - docs/specs/drlg/collision.md 2026-10-27
   - docs/specs/drlg/maze.md 2026-10-17
   - docs/specs/drlg/warps.md 2026-10-17
   - docs/specs/drlg/outdoor.md 2026-10-20
   - docs/specs/drlg/lifecycle.md 2026-10-21
+  - docs/specs/monsters/spawn.md 2026-10-27
 ---
 
 # How a level is built
@@ -451,19 +452,30 @@ one of them never meets a set cell, and the other is neither written nor read.
 
 **[Logic regions](../glossary.md)** ([collision § G](../specs/drlg/collision.md#g-logic-regions)). Each room also gets
 a list of [logic boxes](../glossary.md), the rectangles the population pass makes its spawn attempts in. An outdoor
-room, or a preset room whose record has `Logicals` 0, is one box covering the room (that builder is read from the
-code). A preset with `Logicals` 1 floods its tiles into regions separated by walls, cuts them into rectangles and
-relabels regions that continue into neighbour rooms; the flood was reproduced 378 times, while the wall grid it
-starts from was taken from the run (the rule that builds it is read from the code). The relabelling walks the points along the room's four edges and, for each
-neighbour in the near list that touches the room and whose tiles hold the point, merges the two regions there; a
-released room takes no part until it is built again. That is read from the code; a later check reproduced it on every
-flood of two runs, and the spec has not yet raised it.
+room, or a preset room whose record has `Logicals` 0, is one box covering the room, and it resets the level's region
+counter, so the next flooded room of the level numbers its regions from 1 again; the runs matched every such build. A
+preset with `Logicals` 1 floods its tiles into regions separated by walls, cuts them into rectangles and relabels
+regions that continue into neighbour rooms. All three steps are reproduced on all 1 475 floods of two runs:
+
+- **The walls.** A tile is a wall for the flood when one of the room's own wall entries there is on the first wall
+  layer, is not a roof and lacks one exclusion flag (which a wall can take from its tile's own flags), or when a neighbour room's tile merge puts such an entry inside this
+  room. Built this way from the room-tile model, the wall grid matches every recorded one.
+- **The flood.** It spreads in four directions and, through a wall tile, by rules that depend on the wall's
+  orientation and the direction it came from. Two of those rule entries, and three orientations that no wall tile had,
+  were never used by a flood and rest on the code.
+- **The relabelling.** The points along the room's four edges are walked and, for each neighbour in the near list
+  that touches the room and whose tiles hold the point, the two regions there are merged. A released room takes no
+  part until it is built again; leaving that out breaks 200 comparisons. With it, the region ids after every flood and
+  in every logged box grid are reproduced, renames by later rooms included.
 
 **Side effects of the warp test** ([collision § I](../specs/drlg/collision.md#i-nearwarptestgame-room-x-y-and-its-side-effects)).
 The "is this point too close to a warp" test that spawning calls is not a pure test. When no warp point is near, it
 looks up the level's waypoint point, which can **activate a room** in the middle of the population pass (17 times in
-the run) and, in a level whose `Levels` row has `Position` set and that has a matching waypoint point, **step the level seed**
-once per call (seen only in Tristram, 20 times; the other such levels are read from the code). The order in which spawning calls its tests is fixed, and a test that fails skips the later ones
+the run). In a level whose `Levels` row has `Position` set and that has a matching waypoint point, it also **steps the
+level seed** once per call. That was seen in Tristram (20 lookups), the Canyon of the Magi (100), the Arcane Sanctuary
+(554) and level 125 (1), point and seed predicted each time. A lookup with no match makes no draw. Every lookup met
+had exactly one match, so the draw's range for two or more matches is read from the code. The order in which spawning
+calls its tests is fixed, and a test that fails skips the later ones
 ([collision § The predicate order](../specs/drlg/collision.md#the-predicate-order-in-the-population-pass)).
 
 ## Rooms that come and go: release and restore
@@ -548,12 +560,14 @@ inputs (they depend on what the monster did before the release), not where or in
 The call path that makes the marks is read from the code; the marks and their order are what the run compared. Leaving the marks out breaks later placement
 tests: the first end-to-end run's only two mismatches were that.
 
-**Wanderers** ([lifecycle § I](../specs/drlg/lifecycle.md#i-the-wanderer-tick)). Each time a room is handled at the
-start of a frame it takes one room-seed draw for the wandering monster; that draw passes 1 time in 32 768. What
-follows is read from the code only, since no draw passed in the run: the room must have no player near and the level
-must allow wanderers, a second draw must fall below 3 out of 100 with fewer than 3 wanderers already in the
-level's region, and only Act I has a wanderer class. So wanderers
-can only appear in active rooms no player is near.
+**Wanderers** ([lifecycle § I](../specs/drlg/lifecycle.md#i-the-wanderer-tick),
+[spawn § K](../specs/monsters/spawn.md#k-wanderers-the-tick)). Each time a room is handled at the
+start of a frame it takes one room-seed draw for the wandering monster; that draw passes 1 time in 32 768. In the
+lifecycle run no draw passed. A later run saw one pass, in the Chaos Sanctuary: the second draw followed on the room
+seed, did not fall below 3 out of 100, and nothing spawned. The rest is read from the code only: the room must have no
+player near and the level must allow wanderers, a spawn needs the second draw below 3 out of 100 with fewer than 3
+wanderers already in the level's region, and only Act I has a wanderer class. So wanderers can only appear in active
+rooms no player is near.
 
 **An example** ([lifecycle § Worked example](../specs/drlg/lifecycle.md#worked-example)). In the run's Cold Plains
 game, one room left the player's range at frame 5331 and was released at frame 5460, 129 frames later. It held four
@@ -680,13 +694,19 @@ section.
   crosses, and the teleport code tests no destination room. A scan of the town layouts in the kept logs found no
   shortest route that crosses a town (each town meets its neighbour at one gate, some camp layouts at one more opening a cell or two wide), and the two monster AIs read that
   choose a teleport point both refuse one in town; neither covers every case, so the question stays open. Also open:
-  which form of the mod handlers a restored minion gets, the wanderer roll and spawn, a quest item that never expires,
+  which form of the mod handlers a restored minion gets, the wanderer spawn (the roll before it fired once in a later
+  run, [spawn § K](../specs/monsters/spawn.md#k-wanderers-the-tick)), a quest item that never expires,
   the dropped-record case for one alignment, which call sets one monster flag before the record is written, several
   save tests and restore paths, and multiplayer games, none of which a run met.
-- **Collision** ([collision § Open questions](../specs/drlg/collision.md#open-questions)): the reader of the missile
-  mark in spawn tests, the clear-and-restamp of a merged tile, single-cell placement tests, three special-class spawn
-  checks, NPC footprints, the level-seed step in the Arcane Sanctuary and Canyon of the Magi (seen only in Tristram),
-  and the meaning of the bits that only movement reads.
+- **Collision** ([collision § Open questions](../specs/drlg/collision.md#open-questions)): runs have now reached the
+  one-cell placement tests (sizes 0 and 1), the `sarcophagus` and `evilhut` cell checks, and the NPC footprints. A third
+  special-class check has no class that stock data creates, so it cannot be seen. An NPC takes the larger footprint
+  pattern when its class is flagged `npc` or `inTown` and `interact` is clear. Only the `inTown` half is confirmed: every
+  upgraded class met has `inTown`, and no stock row has `npc` without `inTown` and with `interact` clear, so the `npc`
+  test (and a third, unit-level test) rests on the code. Still open: a spawn test rejected by a missile's mark, the
+  clear-and-restamp of a merged tile in an active neighbour (none of 41 logged calls reached a room it could write), a
+  `flying` test in the spawn path, the level-seed step's range when a level has two or more matching points, spawn
+  tests rejected by object marks, and the meaning of the bits that only movement reads.
 
 ## Where to read more
 
