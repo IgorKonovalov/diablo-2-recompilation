@@ -1,6 +1,6 @@
 # 0050 — Animation and frame timing: unit modes, frame counts, rates and breakpoints, movement speed (ADR-0014 phase 4)
 
-> **Status:** approved 2026-10-25 (owner), effective when plan 0045 Phase 2 is accepted
+> **Status:** approved 2026-10-25 (owner), in effect 2026-10-27 (plan 0045 Phase 2 part 1 accepted); P0, P1 and P1b open, P2 after 0045·P3's review
 > **Created:** 2026-10-25
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0005-presentation-formats-tools-only, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases, 0020-skills-phase-in-two-plans, 0021-observed-boundaries-in-emulation
@@ -244,3 +244,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-25 — Approved (owner, via the orchestrator).** Approved as drafted, effective when plan 0045 Phase 2 is
   accepted; the movement split kept (speed here, the path in phase (5)); Phase 2 runs before plan 0046 Phase 2 on the
   harness; the 2026-10-25 run order of the [plans index](README.md#run-order-set-2026-10-25-plans-00380052) is current.
+- **2026-10-27 — In effect (architect, at the plan 0045 Phase 2 part 1 review).** Plan 0045 Phase 2 part 1
+  (`lane/p45h`, run:2026-10-25-skills) is accepted with fixes, with a part 2 filed for the models and sessions it
+  lacked ([0045 log](0045-skills-missiles-machinery.md#implementation-log)). That acceptance is the one this plan's
+  approval waited for: **Phases 0, 1 and 1b are open**. Phase 2 still waits for 0045·P3's review, which waits for 0045
+  Phase 2 part 2's review.

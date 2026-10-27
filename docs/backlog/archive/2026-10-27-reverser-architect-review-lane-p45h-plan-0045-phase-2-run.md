@@ -2,14 +2,14 @@
 from: reverser
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0045-skills-missiles-machinery.md#implementation-log
-  - ../findings/skills/experiments.md#run2026-10-25-skills
-  - ../findings/skills/0001-dispatch.md#17-plan-0045-phase-2-the-run-run2026-10-25-skills
-  - ../findings/skills/0002-missiles.md#11-plan-0045-phase-2-the-run-run2026-10-25-skills
-  - ../findings/skills/0003-handlers.md#15-plan-0045-phase-2-the-run-run2026-10-25-skills
-resolution: ""
+  - ../../plans/0045-skills-missiles-machinery.md#implementation-log
+  - ../../findings/skills/experiments.md#run2026-10-25-skills
+  - ../../findings/skills/0001-dispatch.md#17-plan-0045-phase-2-the-run-run2026-10-25-skills
+  - ../../findings/skills/0002-missiles.md#11-plan-0045-phase-2-the-run-run2026-10-25-skills
+  - ../../findings/skills/0003-handlers.md#15-plan-0045-phase-2-the-run-run2026-10-25-skills
+resolution: "Reviewed 2026-10-27 (architect): accept with fixes (3: miscount, omission, misread). Rulings in the plan 0045 log: (a) Phase 2 part 2 filed in the plan, no second run; (b) the audit meets the item for packets and auras, the handler fires re-audited in part 2; (c) the 304 resyncs accepted as an observation, the player ones attributed in part 2, the monster ones out of this plan (plan 0052). Gates: 0050 in effect, 0050·P0/P1/P1b open; 0045·P3 may start, its review after part 2's."
 ---
 
 Review plan 0045 Phase 2, part 1 (`lane/p45h`): run:2026-10-25-skills. 18 agent-driven sessions on slot 2 (eight

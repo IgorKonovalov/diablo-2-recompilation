@@ -103,7 +103,9 @@ with their `.pilot.txt` and `-shots/`.
 
 Coverage against the plan's *Done when* (`tally.txt`):
 
-- **Skill uses:** 2 708 do events and 2 508 start events. Tier-A rows at ≥ 30 do events: 0 Attack 116, 2 Throw 35,
+- **Skill uses:** 1 840 do events and 1 688 start events (the logs' `SDO0` and `SST0` lines, the tally's rows
+  summed; 2 708 and 2 508 before the review's correction), 1 409 of the do events in tier-A rows: **short** of the
+  2 000 skill uses the plan asks. Tier-A rows at ≥ 30 do events: 0 Attack 116, 2 Throw 35,
   10 Jab 63, 12 Multiple Shot 36, 36 Fire Bolt 32, 44 Frost Nova 33, 48 Nova 33, 54 Teleport 182, 56 Meteor 30,
   98 Might 84, 102 Holy Fire 35, 126 Bash 67, 130 Howl 54, 221 Raven 207, 225 Firestorm 221, 259 Fists of Fire 41.
   **Short:** 25 Plague Javelin 26, 42 Static Field 26, 66 Amplify Damage 25, 68 Bone Armor 23, 251 Fire Trauma 19,
@@ -121,7 +123,9 @@ Coverage against the plan's *Done when* (`tally.txt`):
 - **Monster skill uses:** 15 268 `MonAttackStats` calls, all oracles: **short** (no `MonAttackStats` model).
 - **Re-seeds:** 450 at `0x005C9290`; the other sites of skills/0003 § 9 not reached: **short in part**.
 - **Chaining:** the game seed across creations of one do event (21 860 pairs) and the caster's seed across skill
-  events (3 155); the missile's seed across the hits of one frame (`MF.hitseed`, 110).
+  events (3 155); the missile's seed across the hits of one frame (`MF.hitseed`, 110). The 304 caster resyncs are sorted by the
+  lines between at the review (skills/0001 § 17: 87 match the unit's own `THR` rolls, which `CHAIN.caster` does not
+  add).
 - **The oracle replacement:** `audit.txt` over the 19 logs of run:2026-10-16-combat, the 18 of run:2026-10-17-stats
   and the *Fleshripper* log: 2 554 missile-packet oracle events, 3 461 handler fires and 3 646 aura runs, **none
   replaceable**: those loggers wrote no missile stat list at the hit and no `MISSILE_BuildDamage` line with the

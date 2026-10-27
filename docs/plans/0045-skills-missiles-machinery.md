@@ -1,6 +1,6 @@
 # 0045 — Skills and missiles, the machinery: dispatch, packets, missiles, event handlers (ADR-0014 phase 3, part 1)
 
-> **Status:** approved 2026-10-20 (owner)
+> **Status:** approved 2026-10-20 (owner); Phase 2 part 1 accepted with fixes 2026-10-27, part 2 filed
 > **Created:** 2026-10-20
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases, 0020-skills-phase-in-two-plans
@@ -201,8 +201,35 @@ logged input here, stated in game frames; phases renumbered by the owner's 2026-
 
   Rare-branch minimums (about 30 each) may fall short, named in the record with their counts; their claims stay `[I]`.
 
+#### Phase 2 part 2 — the models and sessions part 1 lacked (ruled at the part 1 review, 2026-10-27)
+- **Owner skill:** reverser (agent-driven; slot 2, and slot 1 too when H1 is between batches; never with 0044·P2)
+- **Why:** run:2026-10-25-skills (part 1) holds 0 mismatches over 335 618 checks, but the *Done when* above is not
+  met: the skill-use floor (1 840 do events, 1 409 in tier-A rows, for 2 000), seven tier-A rows under 30 and three
+  with no session, the request refusals (`SKILLS_CanUse` not logged), the handler fires and state 52, the summoned
+  unit's seed and stats, `MonAttackStats`, the end of a missile at a hit and pierce uses, the re-seed sites other
+  than `0x005C9290`, cases C2 and C4. Each needs a model, a breakpoint or a pilot change, not more of part 1's sessions.
+- **Start:** part 1's tools (`tools/skills.py` `1b297c24…`, logger rev 3, `tools/skills_sessions.py`); part 1's logs
+  stay kept and unchanged, and the floors below count part 1's events with part 2's.
+- **What:** (1) a `SKILLS_CanUse` breakpoint (its return code) and refusal sessions; (2) a stat-event handler model;
+  (3) a `MonAttackStats` model; (4) the summoned unit's seed and stats to the monsters/stats boundary; (5) a walking
+  Blaze session (C4) and an area with `spike1`–`spike4` monsters (C2); (6) sessions for the short rows (the pilot's
+  Kick, Left Hand Throw and Left Hand Swing, or the lane says it cannot and the review substitutes a row of the same
+  family, as Phase 1's tier-A rule); (7) `CHAIN.caster` adds the caster's own logged draws between two skill events
+  (the `THR` rolls first) and reports each remaining resync with the lines between, as the review's `caster-gaps.txt`
+  does; (8) the oracle-replacement audit re-run for the handler fires once (2) exists.
+- **Done when:** `run:YYYY-MM-DD-skills` (part 2) reproduces with **0 mismatches** and, with part 1, the floors of
+  Phase 2's *Done when* are met or named short with counts, in particular: 2 000 skill uses, 30 per tier-A row; the
+  mana, delay and town refusals with `CanUse`'s code (about 30 each, rare-branch); 300 handler fires over at least
+  five event kinds, event 9 among them, and the state-52 apply; 100 summons with the created unit's seed and stats;
+  200 `MonAttackStats` calls predicted; 100 hit ends with a unit and 50 pierce uses at a hit; 50 re-seeds at the Q15
+  sites other than `0x005C9290` or each site named unreached; C2 and C4 created at a level above 1; the 304 caster
+  resyncs of part 1 re-checked with (7): every player resync attributed to a modelled draw or listed with its lines,
+  the monster resyncs left to plan 0052 (monster AI, proposed) when the AI is what remains; the handler audit's result named.
+
 ### Phase 3 — Spec: skills
 - **Owner skill:** spec-writer
+- **Start:** after the Phase 2 part 1 review (2026-10-27), in parallel with Phase 2 part 2: the statements part 2
+  targets are written `[I]` and re-tagged from part 2's reviewed raises; the Phase 3 review waits for part 2's.
 - **What:** write `docs/specs/skills/README.md`, `skills/dispatch.md` and `skills/missiles.md`; update combat (the
   packet, the handlers), stats/states (aura hits, the self-states of tier A), data/calc (19–27 in context), rng/seeds
   (the re-seed sites), monsters/spawn and monsters/stats (summons, `MonAttackStats`), items/economy (ammunition and
@@ -793,4 +820,58 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     rows under 30; the other shortfalls (request refusals, handlers and state 52, `MonAttackStats`, summon seeds and
     stats, hit ends and pierce uses, re-seed sites, C2, C4) need new models, a `CanUse` breakpoint or pilot changes.
     Proposed as Phase 2 part 2 in the review request, for the architect's ruling.
-  - Review request: [backlog](../backlog/2026-10-27-reverser-architect-review-lane-p45h-plan-0045-phase-2-run.md).
+  - Review request: [backlog](../backlog/archive/2026-10-27-reverser-architect-review-lane-p45h-plan-0045-phase-2-run.md).
+- **2026-10-27 — Phase 2 part 1 review (architect, `lane/p45h` at `c167c4f`, `main` merged first): accept with
+  fixes.** Static, objdump only, no slot, no Ghidra.
+  - **Re-checked.** The manifest `2026-10-25-skills-manifest.sha256` (`8b01d216…`, 48 files) passes `sha256sum -c`
+    from `workspace/logs/skills`; `tools/skills.py` `1b297c24…` re-run under `MemoryMax=4G` gives `check.txt`
+    (`17555e43…`), `check.json` (`5619ca23…`), `tally.txt` (`b82c4040…`) and `audit.txt` (`96816fa4…`) byte for byte;
+    the check table sums to 335 618 ok, 0 mismatches; `tools/test_skills.py` 8 of 8. Logger rev 3 (`12e30fe5…`),
+    `skills.gdb` (`92420a1c…`) and `skills_sessions.py` (`f5777a25…`) match the record; `d2pilot.py`'s `b1db3063…` is
+    the lane's revision at `157c296` (main's H4a merge changed it since: part 2 names its own). Counts recomputed from
+    the kept outputs: `PAY` 1 334 + 259 + 205 = 1 798; `CHAIN.caster` 3 155 + 304 resyncs = 3 459, the resync
+    distribution sums to 304 over 1–33 steps; BD 39 + 720 + 19 = 778; SL 8 + 207 = 215; delay states 30 + 221 + 26 = 277.
+    Anchors (objdump): `0x005C4C7A` is `call 0x5C4430` with `0x005C4C7F` its return; `0x005C4384` is the inline LCG
+    step (`mov ecx,0x6AC690C5`, `mul`, `adc` into the seed's `+0x24`); `SKILLS_PayCost` `0x0056BFE0` returns 1 at once
+    for a null unit or a unit whose type word is not 0 (the players-only branch). The symbol raises (`SKILLS_PayCost`,
+    the 0002 § 11 and 0003 § 15 rows: `0x0059F940`, `0x0064A850`, `0x005C4430`, `0x005C9290` spot-checked) are `C` in
+    `re/symbols.csv` with the finding holding the claim (review-fix 14). The "raised in part" heads (RSK, C1, the
+    payment) say what the one input separates (review-fixes 8, 10).
+  - **Fixes (made here):** (1) *miscount:* the record's "2 708 do events and 2 508 start events" are 1 840 and 1 688
+    (the logs' `SDO0`/`SST0` lines, the tally's rows summed); corrected in skills/experiments. (2) *omission:* with
+    them the 2 000 skill-use floor is short (1 409 do events in tier-A rows), named neither in the record nor in the
+    request's point (a); named in the record and in part 2. (3) *misread:* skills/0001 § 17's "what draws in those
+    304 gaps … is not logged by this run": the run logs the caster's own to-hit rolls (`THR`, the owner's next draw,
+    checked 269 times), and **87 of the 133 player gaps step exactly as many times as that unit's `THR` lines between
+    the events**; 31 more find the player a hit's defender (combat/0001's defence draws on the defender's seed), 4 hold
+    fewer `THR` than steps, 1 other, 10 no line naming the unit; of the 171 monster gaps 146 hold `MonAttackStats`
+    calls (each leaving the seed unchanged) and 25 none. Review aid kept: `workspace/logs/skills/2026-10-25-skills-review/`
+    (`caster_gaps.py` `fb547873…`, `caster-gaps.txt` `67be8e5f…`, the re-check outputs; `manifest.sha256`
+    `9b1d157b…`, `sha256sum -c` passes there). The bullet rewritten with this sort at `[I]` (a count that matches is
+    not a draw-for-draw check), the § 15 note and the record's chaining line likewise.
+  - **Ruling (a): a Phase 2 part 2, no second run of part 1's kind.** Agreed: a rerun with the current checker would
+    only add events to the short rows. Part 2 is written above (*Phase 2 part 2*) with its *Done when*; it counts part
+    1's events toward the floors. **Part 1 is accepted** as the reproduction of what it checked: every raise in skills/0001
+    § 17, 0002 § 11 and 0003 § 15 stands as split (the fixes above change no tag).
+  - **Ruling (b): the oracle-replacement record meets that item for the packet and aura oracles, not yet for the
+    handler fires.** Verified on the kept logs: run:2026-10-16-combat's `MS0` lines carry the missile's seed (`mi.s`)
+    but no missile stat list before `"o"`, and its `BD0`/`BD1` lines carry the attacker's and defender's seeds
+    (`sa`/`sd`), not the missile's; run:2026-10-17-stats' aura runs have no `REL` line (`s1017-pal-oasis.log`: 0). So
+    "none replaceable" is the logs' limit there, as the item allows. The 3 461 handler fires are "not replaceable"
+    because the tool has no handler model, which is this tool's shortfall, not the logs': the audit re-runs for them
+    in part 2 once the handler model exists (part 2, item 8).
+  - **Ruling (c): accepted as an observation; part 2 attributes the player resyncs, the monster ones may stay open.**
+    The `[C]` bullet states only the measured chaining (3 155 of 3 459, every resync on the stream within 4 096 steps),
+    which holds. Part 2's checker adds the caster's own logged draws between skill events (`THR` first) and re-checks
+    part 1's 304; every player resync left is attributed to a modelled draw (the defence rolls of combat/0001) or listed
+    with its lines. The monster resyncs, where `MonAttackStats` leaves the seed unchanged, point at the AI, which is
+    out of this plan (plan 0052, monster AI, proposed); they stay open there and in the spec's *Open questions*.
+  - **Gates.** Part 1's acceptance is the acceptance plan 0050's approval waits for: **0050 is in effect, and 0050·P0,
+    P1 and P1b are open** (data and static work, which take the action frame as part 1 logs it). **0045·P3 may start
+    now** (spec-writer), the statements part 2 targets written `[I]`, re-tagged from part 2's reviewed raises; **the
+    0045·P3 review waits for part 2's review**, so 0050·P2, 0046·P2 and 0052's approvability, all gated on that
+    review, stay closed. Part 2 takes harness slot 2 (slot 1 too when free), never beside 0044·P2.
+  - **Ledger:** 3 fixes: miscount 1, omission 1, misread 1. Reverser review-fixes 2 and 4 gain Seen lines.
+  - **Backlog:** review request closed.
+  - **Next:** merge `lane/p45h`; 0045·P3 (spec-writer) and 0050·P0 (archivist) and P1/P1b (static) as the run order
+    places them; Phase 2 part 2 (reverser, harness) when slot 2 is scheduled.

@@ -730,7 +730,8 @@ return 1;
   no draw site of their own (callees not followed: `0x00548EF0`, `0x00548F80`, `0x0063A510`, `0x00643D90`).
   (fn:SKILLS_SrvStart@0x0056F640, fn:SKILLS_SrvDo@0x0056F7F0) *2026-10-27:* measured in § 17: the cost and delay
   steps add no draw in the checked events, and between two skill events of one unit the seed moved in 304 of
-  3 459 pairs (unattributed).
+  3 459 pairs (not attributed draw by draw; sorted by the lines between in § 17, 87 of them matching the unit's own
+  to-hit rolls).
 
 ### 16. Branches
 
@@ -775,9 +776,16 @@ event's own line. Raises of § 7 and § 15, each split where the run leaves a re
   1 to 33 steps further on the same stream (1 ×92, 2 ×64, 3 ×59, 4 ×20, 5 ×12, the rest under 10 each), so something
   drew on that seed between the two events; none lies off the stream within 4 096 steps.
   (fn:SKILLS_SrvStart@0x0056F640, fn:SKILLS_SrvDo@0x0056F7F0, run:2026-10-25-skills)
-- [I] What draws in those 304 gaps (the unit's own defence or block rolls, a monster's AI, a hit recovery) is not
-  logged by this run; § 15's reading that a start-built hit and its delivery are two events with frames between them
-  stands, with the gap's draws open. (run:2026-10-25-skills)
+- [I] What draws in those 304 gaps is not attributed draw by draw; the logged lines between the two events that name
+  the unit sort them (architect review, 2026-10-27: `workspace/logs/skills/2026-10-25-skills-review/caster-gaps.txt`
+  `67be8e5f…`, by `caster_gaps.py` `fb547873…` beside it, manifest `9b1d157b…`): of the 133 player gaps, **87 step
+  exactly as many times as the unit's own logged to-hit rolls** between the events (`THR`, the owner's next draw of
+  skills/0002 § 11's C5, which `CHAIN.caster` does not add), 4 hold fewer `THR` rolls than steps, 31 hold none but
+  find the unit a hit's defender (`PH0`'s `d`, `MA0`'s or `AD0`'s `b`: its defence or block rolls, combat/0001), 1
+  names it otherwise and 10 have no line naming it; of the 171 monster gaps, 146 hold `MonAttackStats` calls on the
+  unit (each leaving its seed unchanged, so the steps lie elsewhere, the AI's among the candidates) and 25 none.
+  A count that matches is not yet a draw-for-draw check. § 15's reading that a start-built hit and its delivery are
+  two events with frames between them stands, with the gaps' draws open. (run:2026-10-25-skills)
 - [I] Not logged by the run: the request checks of § 2 (`SKILLS_CanUse` has no breakpoint, so its codes, the mana,
   delay and town refusals among them, are not seen), the delay state's end (`DLY`, 277 lines, an oracle), the
   periodic queue. The refusals the run does see are a start function's or a do function's 0 (2 and 21 events,
