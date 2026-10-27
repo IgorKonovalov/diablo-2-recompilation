@@ -441,8 +441,12 @@ start stores at 0x005D91EC)
 - [L] `SkillEntry+0x0C` bit 12 (`0x1000`), which turns a move-first skill's mode back to the default branch, is not
   named by the code read.
 - [L] Item flag `0x4000` (`ItemData+0x18`), which makes a hand count as empty for the dual-wield term, is not named.
-- [L] Whether any stock property or state gives a rate stat a value at or below −36 (the wrap of § 3.1–3.2) or −120
-  (the divide fault of § 2); not surveyed here.
+- ~~[L] Whether any stock property or state gives a rate stat a value at or below −36 (the wrap of § 3.1–3.2) or −120
+  (the divide fault of § 2); not surveyed here.~~ *2026-10-27 (plan 0050 P1.3, `lane/p50d`):* closed by
+  [ItemStatCost § Timing](../../tables/ItemStatCost.md#timing-plan-0050-phase-0) (`lane/a50t`): the 353 stock property
+  blocks that write stats 93, 96, 99, 102 or 105 all have `min`/`max` ≥ 3, and no Skills, States, Misc or `op stat`
+  cell names one of them, so no stock source makes a rate-bonus stat negative; the wraps of §§ 3.1–3.2 and the
+  divide fault of § 2 are not reached by stock data.
 - [L] The caller of `ClampVitalsSetRate` at 0x005CEC7B lies after `sub_005CE9F0_SkillDo150Smite` in the image and its
   own function is not delimited; not read.
 - [L] What the client does with its seven calls (the displayed animation) is presentation (plan 0050 § Open questions).

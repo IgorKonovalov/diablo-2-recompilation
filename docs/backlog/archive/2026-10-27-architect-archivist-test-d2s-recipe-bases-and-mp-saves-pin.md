@@ -2,11 +2,11 @@
 from: architect
 to: archivist
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../formats/d2s.md
-  - ../plans/0050-animation-frame-timing.md#implementation-log
-resolution: ""
+  - ../../formats/d2s.md
+  - ../../plans/0050-animation-frame-timing.md#implementation-log
+resolution: "Done 2026-10-27 (lane/a2t): 13 RECIPE_BASES rows added in tools/test_d2s.py, each built twice byte-identical; the ten skills-* hashes equal the kept saves of run:2026-10-27-skills; the three mp-* recipes pinned at the build (not loaded yet); mp_saves check re-pinned to recipes=30 pairs=21 (the only change is plan 0051 P1a's MP18, MP25 offensive and open-wounds pairs, from 4a9488d1, accepted at lane/p51r); test_d2s.py 47 tests OK. Review: [request](2026-10-27-archivist-architect-review-lane-a2t-testd2s-recipe-bases.md)"
 ---
 
 Two `tools/test_d2s.py` tests fail on `main` (found at the `lane/a50t` review, 2026-10-27; that lane did not cause them). Both come from recipes other lanes added to `tools/d2s_recipes/` without updating the test.
