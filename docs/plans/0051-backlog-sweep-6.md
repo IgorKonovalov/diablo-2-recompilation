@@ -401,10 +401,10 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Next:** Phase 1b (optional, one Ghidra): items 1, 2 and 3a, with the MP31 and MP32 forwards.
 - **2026-10-27 — Phase 1b done (reverser, `lane/p51s`, from `main` `7ff8d98`; no slot, one headless Ghidra on the lane
   copy `ghidra-p51s`, `-Xmx3G`, no game).** Two entries closed, one annotated. The items are item 1, item 2 and the
-  two Phase 1a forwards; P0b (`lane/p51b`, running at the same time) had forwarded nothing to `main`, so item 3 holds
-  only MP31 and MP32. Emulation outputs: `workspace/logs/p51s/emu/` (`manifest.txt` `b16c2780…`, 79 files;
+  two Phase 1a forwards, then item 3a (named at the P0b review), taken after merging `main` `0e3f501` into the
+  lane. Emulation outputs: `workspace/logs/p51s/emu/` (`manifest.txt` `b16c2780…`, 79 files;
   `check.txt` `7ee746af…`; `commands.txt`, `tools-revisions.txt`). Static outputs: `workspace/logs/p51s/static/`
-  (`manifest.txt` `1464d267…`: the findstring, objdump excerpts and call-site scan behind multiplayer/0002). Tool: `tools/sweep_p51s.py`.
+  (`manifest.txt`: the findstring, objdump excerpts and call-site scan behind multiplayer/0002, and the item 3a scan). Tool: `tools/sweep_p51s.py`.
   1. **Op 6/7 emulation** ([archive](../backlog/archive/2026-10-17-reverser-reverser-plan-0041-op-6-7-emulation.md)),
      closed. `STAT_ByTimeValue` ran 6 000 calls, and `StatEvaluate` cases 6/7 with `ActTimeOfDay`, `MulDiv`, ops 10,
      12 and above 13 and nested sources ran 3 000. Result: 0 mismatches, 0 undeclared reads (the jump table and the
@@ -427,7 +427,15 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
      3/4/7/8 over `PlayerData+0x50`; the offer is clipped to the partner's room; the commit re-checks gold, cap,
      room and the quest gate, then moves `ItemCopy` units and carried gold. Predictions in multiplayer/0002 § 3;
      multiplayer/0001 rows MP31 and MP32 and items/0011 § 6 (the pickup line, the Open question) updated.
-  - **Symbols:** 15 added (`I`): `UnitGetMode`, `PartyGoldClip`, and 13 trade functions (`TradeRequest` …
-    `TradeBlocked`). No rename, no tag change; names checked against `main`'s `re/symbols.csv`.
+  4. **Item 3a, the `DataTables+0x17C`/`+0x180` list**: [I] `STATES_Load` fills it through the new
+     `sub_00611DC0_StatesListByFlag` with flag bit 16, **`disguise`** (rows 63, 93, 119, 139, 140, 176, 177 on stock
+     data), so none of the three data candidates. Four sibling lists are built in the same pass. Written in
+     skills/0013 § 6, with that section's "shape-shift states" layout guess corrected and its Open question struck.
+     The States § Open questions bullet is the archivist's:
+     [entry](../backlog/2026-10-27-reverser-archivist-states-0x17c-list-is-the-disguise-flag.md). Scan and excerpts in
+     `workspace/logs/p51s/static/` (manifest now `7436cda5…`).
+  - **Symbols:** 17 added (`I`): `UnitGetMode`, `PartyGoldClip`, 13 trade functions (`TradeRequest` …
+    `TradeBlocked`), `StatesListByFlag` and `StatesListByField`. No rename, no tag change; names checked against
+    `main`'s `re/symbols.csv` after the merge.
   - **Backlog:** review request
     [p51s review](../backlog/2026-10-27-reverser-architect-p51s-plan-0051-phase-1b-review.md).

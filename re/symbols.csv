@@ -2020,6 +2020,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00611860,func,EXP_LevelFromExp,,C,player/creation,docs/findings/player/0001-creation.md
 0x00611D30,func,sub_00611D30_DifficultyRec,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00611D60,func,sub_00611D60_StatesMaskBuild,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x00611DC0,func,sub_00611DC0_StatesListByFlag,,I,data/excel,docs/findings/skills/0013-druid.md
+0x00611E60,func,sub_00611E60_StatesListByField,,I,data/excel,docs/findings/skills/0013-druid.md
 0x006121F0,func,DATATBLS_WriteBin,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00612280,func,DATATBLS_OpenExcelFile,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006122F0,func,DATATBLS_LoadTable,"void * __stdcall DATATBLS_LoadTable(void * pool, char * name, void * fields, int * pCount, int recSize)",C,data/excel,docs/findings/data/0001-excel-loader.md
