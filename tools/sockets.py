@@ -369,7 +369,22 @@ def check_insert(T, blk, pdt, S, notes):
         notes["server row in a non-ladder game: inserted, no runeword"].append("%s %s" % (
             T.base(pa["cls"])["code"], T.rune(rw)["ename"]))
     eq("RUNEWORD_Apply called", apply_, rwa is not None)
-    if apply_:
+    it = None
+    # plan 0038 H6b: a parent that already holds a state-171 list (flags 0x40) gets nothing (0x006600BC-0x006600CB):
+    # the reader's re-insert of a loaded runeword's children
+    already = apply_ and any(st == 171 and fl == 0x40 for st, fl, _ in psubs)
+    if already:
+        a, rwx = rwa
+        eq("RUNEWORD_Apply child is the inserted child", True, a["same"])
+        eq("parent lists at RUNEWORD_Apply", norm(psubs), norm(lists_of(a)[1]))
+        eq("no slot applied to a parent holding a 171 list", [], [t for t, _ in rw_ev if t in ROLLTAGS])
+        eq("child seed at RWX (no draw)", str(child.seed), rwx["seed"])
+        eq("parent lists at RWX unchanged", norm(psubs), norm(lists_of(rwx)[1]))
+        eq("RUNEWORD_Apply return (already applied)", 0, rwx["eax"])
+        res["rw_already"] = T.rune(rw)["ename"]
+        rf0, _, rest2 = split(rest2, "RF0", "RFX")
+        eq("charges refilled (option p7)", bool(ins["p"][3]), rf0 is not None)
+    elif apply_:
         a, rwx = rwa
         eq("RUNEWORD_Apply child is the inserted child", True, a["same"])
         eq("child seed at RUNEWORD_Apply (the seed it had at the insert, no draw since)", str(child.seed), a["seed"])
@@ -405,7 +420,7 @@ def check_insert(T, blk, pdt, S, notes):
             res["refilled"] = refilled
     elif ins["p"][0] == 0:
         pass
-    child_seed = str(child.seed) if rwa is None else str(it.seed)
+    child_seed = str(child.seed) if it is None else str(it.seed)
     # ---- the result
     if apply_ or ins["p"][0]:
         pfl |= 1
@@ -532,6 +547,9 @@ def cmd_check(ns):
                         " (loaded rune: seed = {start, 666})" if w["loaded_seed"] else " (seed != {start, 666})"))
                     if "refilled" in r:
                         notes["charges refilled"].append("%s: %d entries" % (w["name"], r["refilled"]))
+                elif r.get("rw_already"):
+                    notes["runeword already applied (a 171 list): matched, nothing applied"].append(
+                        "%s %s: %s" % (r["path"], T.base(pa["cls"])["code"], r["rw_already"]))
                 elif r["match"][0] is None and len(pa.get("kids") or []) + 1 == ({(s, p): v for s, p, v in
                                                                                    (pa.get("b") or [])}.get((194, 0), 0) & 0xFF):
                     notes["full item, no runeword"].append("%s %s q%d %s: %s" % (

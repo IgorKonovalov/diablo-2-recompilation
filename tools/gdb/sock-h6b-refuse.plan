@@ -1,0 +1,15 @@
+# tools/d2pilot.py insert tokens for tools/d2s_recipes/sock-h6b-refuse.json (tools/h6b_sessions.py)
+key:i
+rclick:inv:8,2,2,2
+inv:7,0>inv:0,0,2,2
+inv:8,0>eq:head
+inv:9,0>eq:larm
+inv:6,1>inv:6,0,1,1
+inv:6,1>inv:2,0,2,2
+inv:6,1>inv:4,0,2,2
+rclick:inv:7,1
+click:inv:0,0,2,2
+sleep:1
+shot:workspace/logs/h6b/refuse-identified.png
+inv:8,1>inv:0,0,2,2
+shot:workspace/logs/h6b/sock-h6b-refuse-end.png
