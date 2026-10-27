@@ -1550,10 +1550,32 @@ whose ledger gives each statement's `[C]` part and remainder.
   `sub_00554120_PlayerSetInteract`, `sub_00554190_PlayerClearInteract` (I).
 
 No class move is filed. Net effect on the totals: none. Taken against `main` after merging it into the lane
-(`ffa5b957`; the `lane/h6a` review's two moves are the last on `main`): **static 567, harness 513, c-emu awaiting a
+(`a105ae13`, merged at `e21e840a`; the lane named `ffa5b957`, corrected at the review; the `lane/h6a` review's two moves are the last on `main`): **static 567, harness 513, c-emu awaiting a
 batch 0, blocked 427** (d-none 300, d-edit 73, d-sim 28, d-2c 8, d-owner 10, d-0032 8), **deferred 2, raised 17:
 1 526.** H6c's ledger: raised 7, raised in part 2, shortfall 4: 13. If the two d-2c proposals stand: harness 511, d-2c
 10, blocked 429.
+
+**`lane/h6c` review (2026-10-27, architect): accept with fixes (6).** The six kept logs, their pilot outputs and the 11
+checks pass `manifest-run.sha256` (23 lines), the 62 screenshots `manifest-shots.sha256`, the 25 development files
+`dev/manifest-dev.sha256` (which does not list itself); the ten procedure commands, rerun under `systemd-run --user
+--scope -p MemoryMax=4G`, give byte-identical outputs (`vendors.py check` 0 mismatches, `sweep_h6c.py logs` 9 616
+checks 0 bad, the run:2026-10-15-vendors regression 0 mismatches). run:2026-10-20-two-clients's
+`workspace/logs/p44h-run/manifest.sha256` passes; its host logs hold 7 `PIEND` lines (return 0x005555CB) and 2 `PLEAVE`
+(return 0x00555562), Kashya's (class 150 by `MLV`) and Akara's (148 by `BS0`). Both d-2c proposals stand
+(objdump: `NpcInteractRemove` skips `GambleInvFree` at 0x00572FAF while the NPC's list is not empty; `GambleEnsure`
+skips the build when the list holds the player's id, 0x00578AFC–0x00578B18):
+
+| Row | Filed | Now | Reason |
+|---|---|---|---|
+| items-vendors 29 (a gamble open with an inventory left) | b, H6c | **d-2c** | the branch needs the NPC's interaction list non-empty at a close; with one player every close and menu Escape sends the cancel (`NIR`, `ICLR` at each of the run's closes) |
+| items-vendors 32 (the free at a player's removal at a gambler; the same items within one interaction) | b, H6c | **d-2c** | the free needs a client leaving with a gamble window open, the second half is row 29's branch |
+
+S2c pieces: vendors 26 is raised (it stays counted as S2c); vendors 22 stays raised in part with the cell search as its
+remainder. H6c's ledger: **raised 7, raised in part 2, reclassified 2, shortfall 2: 13.** Net effect on the totals:
+harness −2 (513 → 511), d-2c +2 (8 → 10), blocked 427 → 429. Recounted once, against `main` `a105ae13` (merged into
+the lane; no inventory row moved on `main` since the `lane/h6a` review): **static 567, harness 511, c-emu awaiting a
+batch 0, blocked 429** (d-none 300, d-edit 73, d-sim 28, d-2c 10, d-owner 10, d-0032 8), **deferred 2, raised 17:
+1 526.** § 5 marks H6c done. **Phase 3 ready:** items/vendors (S2c and H6c, both accepted).
 
 ## 3. Blocked rows, for the plan's open questions
 
@@ -1561,6 +1583,7 @@ batch 0, blocked 427** (d-none 300, d-edit 73, d-sim 28, d-2c 8, d-owner 10, d-0
   what accepting ADR-0008 would unlock now. *(2026-10-20: 7 of them raised by plan 0044, and tc 43, 44 and
   player/creation 6 raised in part; d-2c is now 7: [§ 2.6, Plan 0044 Phase 3](#26-moves-made-by-the-batch-reviews).)*
   *(2026-10-27, `lane/h6b` review: sockets 9, the UI states 10 and 11 of the player-trade window, joins; d-2c is now 8.)*
+  *(2026-10-27, `lane/h6c` review: vendors 29 and 32, a gamble window left open by a second interactor; d-2c is now 10.)*
   - Partial rows add a few more halves: the trade part of sockets 22, the party half of player/creation 33, the
     n > 1 part of quest-drops 25.
   - Six save/d2s rows (1–3, 6, 18, 19) assume that a one-client TCP/IP host counts as one client. If the review
@@ -1649,7 +1672,7 @@ a letter suffix and its own run id, as the plan requires.
 | **H5e** (done) | `drlg-mazes` | 22 | 16/0/6 | maze 6, 10–12; outdoor 7, 11, 13–14, 20; preset 2, 12–14 | `drlg-outdoor.gdb` (with the maze lines) + `drlg-preset.py`, `maze_replay.py`, `outdoor_replay.py`, `drlg.py gen`: unreached maze levels from waypoint saves, outdoor rare branches on chosen seeds, the Blood Moor centre monster | `findings/drlg/experiments.md` | 16–17 |
 | **H6a** (done) | `cube` | 29 (2 reclassified, § 2.6) | 0/18/11 | cube 1, 7, 15–16, 17 (from S2c), 25, 32, 36, 38–40, 43–44, 51 (from S2c), 53–54, 58 (from S2c) | `cube.gdb` + `cube.py`; new `.plan` files (upgrades, eth/strip rows, ethereal or socketed inputs, repair, recharge, `qty`, Staff of Kings, Khalim's Will, unsocket, the cow portal outside level 1 and in classic; from S2c: an elite upgrade with an exceptional-tier and a normal-tier base, more row-19 transmutes, row 17 on a magic tower shield, which also decides affixes 14's remainder); a UnitSetEvent line. From the S2c review (piece; cube 49 stays counted as S2c): a crafting session at output ilvl ≤ 5 with `sst` (rows 72, 90), `lbt` (83) or `lgl` (84) on a tool-built low-level save, for the crafted pick of 0; case (b) faults the game, so it is the session's last transmute | `findings/items/experiments.md` | ≤ 20 |
 | **H6b** (done) | `sockets` | 25 (4 reclassified, § 2.6) | 0/20/5 | sockets 1, 9–10, 12–13, 16–18, 21, 29, 35 ×2 (from S2c), 38 | `sockets.gdb` + `sockets.py`; child x/y and cursor lines; sock-refuse and sock-rw plans; a save holding a runeword (the *Steel* sample) loaded under the logger (sockets 35; with it the reader's `+0x38` store of sockets 46). From the S2c review (piece; sockets 14 stays counted as S2c): an unidentified socketed parent's client flags before and after identifying it, with an insert tried each time | `findings/items/experiments.md` | ≤ 20 |
-| **H6c** | `vendors` | 13 | 0/11/2 | vendors 2, 5, 12, 14–15, 18, 29–30, 32–34, 36 | `vendors.gdb` + `vendors.py`; reopen store or gamble, Asheara's hire list first, walk out of town, level-up between opens, buy and sell; saves at clvl ≤ 9, ≥ 96, 99 in Hell. From the S2c review (pieces; vendors 22 and 26 stay counted as S2c): the stock item's store tab and grid cell, and `+0x18`/`+0x28` of the store creation record at `IC0` | `findings/items/experiments.md` | ≤ 20 |
+| **H6c** (done) | `vendors` | 13 (2 reclassified, § 2.6) | 0/11/2 | vendors 2, 5, 12, 14–15, 18, 29–30, 32–34, 36 | `vendors.gdb` + `vendors.py`; reopen store or gamble, Asheara's hire list first, walk out of town, level-up between opens, buy and sell; saves at clvl ≤ 9, ≥ 96, 99 in Hell. From the S2c review (pieces; vendors 22 and 26 stay counted as S2c): the stock item's store tab and grid cell, and `+0x18`/`+0x28` of the store creation record at `IC0` | `findings/items/experiments.md` | ≤ 20 |
 | **H6d** (done) | `quest-b6` | 16 (17 filed; uniques-sets 21 to H1a, § 2.6) | 10/5/2 | quest-drops 11, 13, 16, 18, 22, 25, 27; tc 26–27; uniques-sets 21 | `quests.gdb` + tc-drops, `tc.py` b6_model, `questdrops.py`: Andariel or Duriel killed by a mercenary or summon, Diablo and Baal, Warriv's report, questfresh in Nightmare, Hell and classic, the forge with a stat-356-1 hammer, the unique restore path | `findings/items/experiments.md` | ≤ 20 |
 | **H6e1** (done) | `quest-npc` | 22 | 0/20/2 | quest-drops 2, 4–5, 32, 39–40, 42–46, 50–51 | `quests.gdb` + `d2pilot.py npc`: given items and service branches and refusals. From the S2c review (piece; quest-drops 38 stays counted as S2c): a cursor-item line at `sub_0055EEA0_CursorItemConsume` in each service branch | `findings/items/experiments.md` | ≤ 20 |
 | **H6e2** (done) | `quest-items` | 24 | 0/23/1 | quest-drops 1, 30, 33–35; objects 48 | `quests.gdb` with `objop`/`hunt` on tool-built quest saves: the 16 quest items, chests, duplicates, the item-move gate; the quest objects ride the same sessions; a backtrace at `QUESTS_ObjectEvent` (quest-drops 1). objects/0001 cites the record | `findings/items/experiments.md` | ~20, at the cap |

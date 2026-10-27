@@ -2,21 +2,21 @@
 from: reverser
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0038-inferred-claims-sweep.md#implementation-log
-  - ../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
-  - ../findings/items/0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors
-resolution: ""
+  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
+  - ../../findings/items/0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors
+resolution: "Reviewed 2026-10-27 (architect): accept with fixes (6). vendors 29 and 32 to d-2c; vendors 26 (S2c) raised; totals static 567, harness 511, blocked 429, deferred 2, raised 17: 1 526 against main a105ae13; items/vendors Phase 3 ready (plan 0038 log, inventory § 2.6 H6c block)."
 ---
 
 [2026-10-27] from reverser → architect: please review `lane/h6c`, plan 0038 batch H6c (`vendors`, 13 statements of
 items/vendors and the S2c pieces of vendors 22 and 26), run:2026-10-27-sweep-vendors.
 
-- **Where:** [items/0009 § Plan 0038 batch H6c](../findings/items/0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors)
-  (the ledger), the run record in [items experiments](../findings/items/experiments.md#run2026-10-27-sweep-vendors),
-  the [inventory § 2.6 H6c block](../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews), the
-  [plan log](../plans/0038-inferred-claims-sweep.md#implementation-log).
+- **Where:** [items/0009 § Plan 0038 batch H6c](../../findings/items/0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors)
+  (the ledger), the run record in [items experiments](../../findings/items/experiments.md#run2026-10-27-sweep-vendors),
+  the [inventory § 2.6 H6c block](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews), the
+  [plan log](../../plans/0038-inferred-claims-sweep.md#implementation-log).
 - **Rerun:** from `/home/igor/Work/recompilcation-project-h6c`, the record's ten procedure commands, each under
   `systemd-run --user --scope -p MemoryMax=4G`; `manifest-run.sha256` (23 lines) and `manifest-shots.sha256` pass from
   `workspace/logs/h6c/`, `manifest-dev.sha256` from `workspace/logs/h6c/dev/`.

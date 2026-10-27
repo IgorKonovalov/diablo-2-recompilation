@@ -3487,7 +3487,8 @@ run id). Evidence in [items/0010 § Plan 0038 batch H6e2](0010-quest-drops.md#pl
     only before they ran, so the final revision holds the definitions that ran.
   - **Characters** (`tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/<recipe>.json
     workspace/samples/d2s-owner/smpsor-l50.d2s <out>`, `tools/d2s.py` `8044c638…`, saves in `workspace/scratch-h6c/saves/`,
-    rows in `tools/test_d2s.py` `RECIPE_BASES`, 60 tests OK): the Nova build of `uniqnova.json` (its stats, skills,
+    rows in `tools/test_d2s.py` `RECIPE_BASES`, 60 tests OK before `main`'s 134 `anim-*` recipes, whose rows are not
+    this batch's): the Nova build of `uniqnova.json` (its stats, skills,
     hotkeys and equipped items, no charms), every difficulty open, every quest done, written by `h6c_sessions.py write`:
     `VendH6cLow` (`vend-h6c-low.json` `77826b26…`, save `b0334a6e…`: level 1, experience 0, the Act I town, gold 10 000
     and 2 000 000 in the stash, a `hp5`, a `tsc` and a `cap` at inventory cells (0, 0), (1, 0), (2, 0); no belt, no
@@ -3496,10 +3497,11 @@ run id). Evidence in [items/0010 § Plan 0038 batch H6e2](0010-quest-drops.md#pl
     town, gold 990 000 and 2 500 000, a `hp5` and a `cap` at (0, 0), (1, 0)), `VendH6cN19` (`vend-h6c-n19.json`
     `4c344103…`, `1a48c286…`: level 19, experience 537 513, the Act IV town).
   - **Built (test) states** (tool-built saves on stock tables, ADR-0013 § Neutral; no `d2s.py` test-state key is
-    used): a level-1 character with every quest done and the Nova build's stats, the experience one point short of a
-    threshold, level 99 in Hell, level 19 with Nightmare open. They are inputs of the code that reads them (the opener's
-    clvl at the stock and gamble builds, the gold a sale pays over the level cap, the act start); they raise nothing
-    about how a character reaches them.
+    used): a level-1 character with every quest done and the Nova build's stats, clvl 30 with the experience one
+    point under clvl 32's threshold (and over clvl 31's: the level-up the kill gave was one event of two levels, 30 →
+    32; corrected at the `lane/h6c` review), level 99 in Hell, level 19 with Nightmare open (at clvl 20's threshold,
+    537 513). They are inputs of the code that reads them (the opener's clvl at the stock and gamble builds, the
+    level-up's call into the store note, the act start); they raise nothing about how a character reaches them.
 - **Sessions** (`python3 -I tools/h6c_sessions.py run --slot 1 --tag h6c --saves workspace/scratch-h6c/saves --run
   vendors <session>`; logs `workspace/logs/h6c/vendors-s1-<seed>-<session>.log`; saves restored after each):
 
@@ -3532,7 +3534,9 @@ run id). Evidence in [items/0010 § Plan 0038 batch H6e2](0010-quest-drops.md#pl
   python3 -I tools/vendors.py check $(cat workspace/logs/vendors-run.lst) > workspace/logs/h6c/regress/check-regress-vendors-run.txt
   ```
   `tools/vendors.py` `555fe1e2…` (this batch adds one branch: an `ITEMS_CreateForStore` call outside a build, from
-  `sub_0055A090_DropGoldAmount` at 0x0055A18D, is counted and skipped), `tools/sweep_h6c.py` `bf8a970d…`. The
+  `sub_0055A090_DropGoldAmount` at 0x0055A18D, is counted and skipped; narrowed at the `lane/h6c` review to that
+  return address, `a0ec05e4…`, with both checks' outputs unchanged, `workspace/logs/h6c/review/manifest-review.sha256`
+  `4ac7f16e…`), `tools/sweep_h6c.py` `bf8a970d…`. The
   `p44h-*-host.log` files are run:2026-10-20-two-clients's, checked against its manifest
   (`workspace/logs/p44h-run/manifest.sha256`) before the rescan.
 - **Observed** (`check-vendors.txt` `8daa6759…`, `check-sweep_h6c.txt` `79c18580…`, `check-fails.txt` `4d4f9a63…`,
