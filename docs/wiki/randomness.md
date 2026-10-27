@@ -289,7 +289,8 @@ From the [RNG core open questions](../specs/rng/README.md#open-questions) and th
   skill and missile code that re-seed something are read from the code too: they restart a missile's seed or a
   short-lived one, except Armageddon, which restarts its caster's seed from a number it keeps. One of them is
   confirmed by a run: the sub-missiles of Firestorm (and of some monster missiles) get a seed made from a position
-  word plus their index, which the new missile's own path setup then advances (20 steps for Firestorm's). Casting Armageddon
+  word plus their index, which the new missile's own path setup then advances (20 steps for Firestorm's; see
+  [skills and missiles](skills.md#seeds-a-missile-is-given-the-re-seed-sites)). Casting Armageddon
   draws one number below 65 536 from the caster's own seed, and a run has confirmed that draw. Reading the code, the
   cast then stores that number in the skill's slot for the first time Armageddon fires. Whether that first firing
   really reads the same slot, untouched since the cast, is still open, and no run has logged one yet.
@@ -305,5 +306,6 @@ From the [RNG core open questions](../specs/rng/README.md#open-questions) and th
 - [RNG core spec](../specs/rng/README.md#algorithm) and [seed tree spec](../specs/rng/seeds.md#algorithm).
 - How k is counted: [room tiles § k](../specs/drlg/room-tiles.md#k).
 - The [glossary](../glossary.md) for seed, draw, map seed, game seed and the room terms.
-- Related wiki pages: [levels](levels.md), [monsters](monsters.md), [objects](objects.md), [items](items.md), and
+- Related wiki pages: [levels](levels.md), [monsters](monsters.md), [objects](objects.md), [items](items.md),
+  [skills and missiles](skills.md) for the seeds a skill and a missile draw on, and
   [quests and travel](quests.md) for the quest seed's draws and the level-seed step of each arrival.

@@ -1084,3 +1084,14 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     review-fixes Seen lines (spec-writer 3, 4, 8, 9; architect 8). Ledger: the lane row filled (verdict, fixes 9:
     overclaim 1, under-claim 1, misread 2, omission 3, wrong anchor 1, other 1), the re-tag pass row's usage filled
     from the orchestrator, the review row added with its usage "—".
+- **2026-10-27 — Phase 4 written, review requested (spec-writer, `lane/s45p4`).** Branched from `main` at
+  `c62d9e39`; no Ghidra, no harness. New: [wiki/skills](../wiki/skills.md) (ADR-0012), `based_on` skills/README,
+  skills/dispatch and skills/missiles at `2026-10-27`; 22 sections, each linking its spec section; three diagrams (the
+  event chain, the missile's life, the draw order of one missile with the creation callback before the critical
+  roll); two worked examples from run:2026-10-25-skills (Raise Skeleton's 84, Firestorm's re-seeds) and one made-up
+  cost; *What is not known yet* from the three specs' open questions. Linked from the wiki index (reading-order row
+  12; rows 13–15 renumbered; the *What the wiki does not cover* sentences on 0045 and 0046 rewritten whole) and from
+  wiki/combat, wiki/stats-and-states and wiki/randomness (links, and the "still to come" phrases they replace; no
+  `based_on` bump needed). Review:
+  [request](../backlog/2026-10-27-spec-writer-architect-review-lane-s45p4-plan-0045-phase-4-wiki.md). Ledger row added
+  with usage "—".

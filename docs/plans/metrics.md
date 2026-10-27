@@ -310,6 +310,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/s45p3` | 0045 P3 | spec-writer | 346 068 | 74 | 23 | — (no slot, no Ghidra) | accept with fixes (rulings: tier A lives in dispatch § O and missiles § G, the catalogue spec links them; data/calc and drlg/collision rightly unedited; the W1 warnings anchored; part 1's counts stand with part 1's anchor; 0050·P2, 0046·P2 and 0052's approvability open, 0045·P4 may start) | 9: overclaim 1, under-claim 1, misread 2, omission 3, wrong anchor 1, other 1 (glossary's "oldest" pet; Raise Skeleton row's runs; `BuildDamage`'s mastery on the owner, missiles § A's callback order; the inverted-pair swap, the `MulDiv` link, state 52's diagram; the three W1 inline tags; the duplicate B4) |
 | 2026-10-27 | `lane/s45p3` (re-tag pass from 0045 P2 part 2's reviewed raises) | 0045 P3 | spec-writer | 232 675 | 75 | 18 | — (no slot, no Ghidra, no harness) | — (on the lane row) | — (on the lane row) |
 | 2026-10-27 | `lane/s45p3` review | 0045 P3 | architect-review | 247 098 | 84 | 16 | — (static, objdump, no Ghidra) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/s45p4` | 0045 P4 | wiki | — | — | — | — (no slot, no Ghidra, no harness) | — (review requested) | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
