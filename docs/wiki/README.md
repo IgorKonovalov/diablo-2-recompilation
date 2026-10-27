@@ -76,8 +76,8 @@ and missile functions outside tier A, has no reviewed spec yet.
 The plans still open are listed in the [plan index](../plans/README.md):
 - **0038**, a sweep that tries to confirm inferred claims with another run, a re-check of kept logs or a second code
   path; its batches are still running, and the specs are re-tagged cluster by cluster;
-- **0045** and **0046**, skills and missiles: 0045's machinery specs are reviewed (2026-10-27) and its wiki page is
-  [Skills and missiles](skills.md); 0046, the function catalogue, has no spec yet;
+- **0046**, the skills and missiles function catalogue: no spec yet (plan 0045, the machinery, closed 2026-10-27
+  with its page [Skills and missiles](skills.md));
 - **0047**, the simulation shortfalls (the named remainders of the combat, stats and travel runs), **0048**, seed to
   world (the core specs composed end to end), and **0049**, backlog sweep 5: approved 2026-10-20.
 

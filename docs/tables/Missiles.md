@@ -4,7 +4,7 @@
 > **sha256:** `.txt` `89bee1fdeeb520d6eb3920437d237ba5a70bdf045770ed9808ca1a611fd932f0`, `.bin` `faa7be5af7ec274248dc51a1efcda31c3018888ef9166359101bb9a4585ab233`, `misscode.bin` `7784fbc408651ba070f060ac52a9a90b4565795aee3e89c97439fc65a29786db`
 > **Doc status:** layout complete (every compiled column placed, `[C]` by diff; plan 0045 Phase 0); semantics `[C]`/`[I]` only for
 > the columns the formula readers, the hit path and the collision code are known to read, `[L]` elsewhere until
-> [skills/0002](../plans/0045-skills-missiles-machinery.md#phase-1--read-the-machinery) (plan 0045 Phase 1.2)
+> [skills/0002](../plans/done/0045-skills-missiles-machinery.md#phase-1--read-the-machinery) (plan 0045 Phase 1.2)
 
 ## Purpose
 
@@ -12,7 +12,7 @@ One row per missile class: arrows, bolts, novas, clouds, walls, explosions, debr
 "control" missiles that spawn others, and pure client effects. A row holds the missile's server and client function
 numbers, their parameters and formulas, its motion (velocity, acceleration, lifetime), its collision rules, its
 physical and elemental damage, the missiles it creates (sub-missiles, on-hit missiles, the explosion) and its art,
-light and sound. Readers: `skills/missiles` ([plan 0045](../plans/0045-skills-missiles-machinery.md)); so far
+light and sound. Readers: `skills/missiles` ([plan 0045](../plans/done/0045-skills-missiles-machinery.md)); so far
 `data/calc` (the missile formula variables), `combat` (the hit path, named) and `drlg/collision` (the creation mark).
 Leads: no lead; derived from data.
 

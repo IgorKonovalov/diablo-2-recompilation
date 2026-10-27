@@ -7,7 +7,7 @@ context:
   - ../../specs/combat/delivery.md
   - ../../findings/skills/0001-dispatch.md#10-item-granted-skills
   - ../../findings/skills/0003-handlers.md#2-item-event-casts
-  - ../../plans/0045-skills-missiles-machinery.md#implementation-log
+  - ../../plans/done/0045-skills-missiles-machinery.md#implementation-log
 resolution: "Done 2026-10-20 (spec-writer, lane/e5fix): combat/delivery E5's item-cast bullet scoped to ItemTarget blank or 1, a new [I] bullet for the ItemTarget 2 helper's 2 to 20 steps, one [L] open question for helper 2's unit and helpers 3 and 4; combat/README B6, rng/seeds and wiki/combat hold no such claim, unchanged ([delivery § E](../../specs/combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze))."
 ---
 

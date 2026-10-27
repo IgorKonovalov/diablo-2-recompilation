@@ -6,7 +6,7 @@ status: open
 context:
   - ../findings/skills/0002-missiles.md
   - ../specs/skills/missiles.md
-  - ../plans/0045-skills-missiles-machinery.md#implementation-log
+  - ../plans/done/0045-skills-missiles-machinery.md#implementation-log
 resolution: ""
 ---
 

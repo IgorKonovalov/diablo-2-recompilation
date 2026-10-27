@@ -109,8 +109,8 @@ any other code does nothing.
 | 11 | the delay state, for a skill with a delay | 8 |
 
 **What the run confirmed.** Codes 0, 1, 6 and 8 and their order are confirmed over 1 340 checks: an aura refused with
-6, the mana test with 1, the delay with 8, everything else usable. **A cost equal to the mana passes**: five uses with
-exactly as much mana as the cost went through. The other codes, the starting-mana test and the item charges are read
+6, the mana test with 1, the delay with 8, everything else usable. **A cost equal to the mana passes**: five checks with
+exactly as much mana as the cost returned 0. The other codes, the starting-mana test and the item charges are read
 from the code only; no check of the run reached them.
 
 **No refused request reached the server.** All 1 126 requests of the run passed, while the client's own check of the
@@ -143,8 +143,10 @@ rolls, the target's defence rolls, a missile creation's critical roll, an aura's
 **A skill's melee hit may roll at the start of the swing.** Read from the code: Bash, Stun, Concentrate and the other
 rows that share Bash's start function roll the to-hit, defence and damage when the mode starts and deliver the hit on
 the action frame; Jab does everything on the action frame. A rebuild has to order the draws by frame accordingly
-([dispatch § Reimplementation notes](../specs/skills/dispatch.md#reimplementation-notes)). Kick builds a fixed hit at
-the start and the same delivering do function delivers it; its 32 uses are confirmed to add no draw of their own. The
+([dispatch § Reimplementation notes](../specs/skills/dispatch.md#reimplementation-notes)). Kick's start function builds
+its hit from its row's values (a set result and hit class, the row's `MinDam` as physical damage), read from the code,
+and the same delivering do function delivers it; in its 32 uses the caster's seed did not move at the start, and the
+action frame added no draw of its own (confirmed). The
 delivering do function was run on its own under emulation up to its calls.
 
 **A monster** reaches the same start and do functions through its AI, which picks the skill, sets the
@@ -215,7 +217,9 @@ start function is the pattern, read from the code:
 Bash's start function was run under emulation up to the call that sets its attack rate; the rest is the code
 reading. A skill's own
 physical damage, used by summons, missiles and several do functions, is the skill's min and max damage by level
-bands plus its weapon share and synergy percent; Kick's is a quarter of (strength + dexterity − 20), at least 1 before the quarter, for a player. The
+bands plus its weapon share and synergy percent; for a row flagged `Kick` it is instead a quarter of
+(strength + dexterity − 20), at least 1 before the quarter, for a player (Kick's own start function, above, takes its
+row's `MinDam`). The
 weapon masteries enter through the combat build and the missile damage, the synergies through the skill's formulas.
 All of that is read from the code.
 
@@ -252,7 +256,7 @@ taken or a death), and inside delivery the attacker's melee handlers run before 
 handlers before the attacker's "kill" ones, newest first.
 
 **The draws, measured.** Over 1 303 handler calls of the two runs, each handler's unit seed stepped by exactly the
-count below; the 3 461 handler fires of the earlier combat and stats runs give the same, with no mismatch. Confirmed:
+count below; the 3 461 handler fires of the earlier combat and stats runs and of the *Fleshripper* log give the same, with no mismatch. Confirmed:
 
 | Draws | Handlers |
 |---|---|
@@ -363,7 +367,7 @@ stateDiagram-v2
   Flying --> Hit: a crossed cell holds a unit it may hit
   Hit --> Flying: kept (no end, or a pierce used)
   Hit --> Freed: ended at the unit, or a missed to-hit
-  Flying --> Exploded: range spent, or a wall crossed
+  Flying --> Exploded: range spent, a step that does not move, or a wall crossed
   Exploded --> Freed
   Flying --> Freed: blocked at its own cell, or the town rules
   Freed --> [*]
@@ -392,7 +396,8 @@ from the code). Two draws happen at creation:
 - **The critical roll, on the owner's seed.** A missile that takes a share of the weapon's damage rolls the owner's
   critical chain. Confirmed: one step of the owner's seed per such creation (984), none for any other missile
   (30 407): the chain's first roll **draws even when its chance is 0**. The second and third rolls,
-  after a non-zero chance, were never reached and are read from the code. This chain is not the melee build's.
+  after a non-zero chance, were never reached and are read from the code. This chain is not the melee build's (read
+  from the code: the order differs).
 - **The pierce count, on a local seed.** For a missile that can pierce and an owner with a pierce chance, a local
   seed made from the owner's request counter (see the request above) is stepped up to four times while its roll is
   below the chance; the count of successes is the missile's pierce count. Confirmed over 1 066 creations, the owner's
@@ -406,8 +411,8 @@ from the code). Two draws happen at creation:
   every missile steps before any unit acts. Confirmed: a new missile first steps on the frame after its creation
   (493 of 493 followed).
 - **Motion, confirmed** over 11 413 logged frames: the speed rises by the acceleration on every fifth step and stops
-  at the maximum, the position moves along a direction vector looked up in a table (not computed with trigonometry;
-  the table is read from the code), and the frames left fall by one per frame.
+  at the maximum, the position moves by the step's shifts along a direction vector, and the frames left fall by one per
+  frame. Read from the code: the direction vector is looked up in a table, not computed with trigonometry.
 - **No draw of its own.** The common step function leaves the missile's seed unchanged except by the hits inside it.
   Confirmed on 37 followed frames.
 - **Town.** Read from the code: a player's missile ends as soon as the player stands in town; a monster's only for
@@ -432,10 +437,10 @@ from the code). Two draws happen at creation:
    having spent its pierce first. Confirmed: 105 misses, 7 with a pierce left.
 4. **The hit function** of the row, if any, runs and its result decides the missile's fate (read from the code).
 5. **The damage packet, on the missile's seed.** For each of up to seven damage pairs (physical, fire, magic,
-   lightning, cold, poison, burning) whose bounds are both at least 1, the game applies the elemental mastery to both
-   bounds, then draws the damage between them on the missile's seed; then the enhanced damage percent, and a
-   critical doubles the physical part. Confirmed over 778 builds, with 0, 1 or 2 draws. Read from the code: the
-   mastery is read on the missile itself, an inverted pair is swapped first (no build of the run had one), and the
+   lightning, cold, poison, burning) whose bounds are both at least 1, the game draws the damage between them on the
+   missile's seed; then the enhanced damage percent, and a critical doubles the physical part. Confirmed over 778
+   builds, with 0, 1 or 2 draws. Read from the code: before the draw an inverted pair is swapped (no build of the run
+   had one) and the elemental mastery, read on the missile itself, not on its owner, is added to both bounds; and the
    pair order, which only 19 builds separate.
 6. **Delivery.** Read from the code: knockback is one `Range(100)` on the missile's seed, then the defender's defence
    rolls on its own seed and the delivery of [combat](combat.md#delivery-crushing-blow-open-wounds-leech-and-the-life-change).
@@ -451,7 +456,7 @@ code. One stock row (a Royal Strike chain lightning) holds a function number tha
 A missile's seed is private: only the missile draws on it, except where the code that creates it sets it from the
 creator's value ([missiles § H](../specs/skills/missiles.md#h-re-seed-sites), [randomness](randomness.md)). One
 such site is confirmed: **Firestorm's sub-missiles** (and those of one monster missile) get the seed `Init(w + k)`,
-`w` a position word of the new missile's path and `k` the sub-missile's index, and the new missile's own path setup
+`w` a position word of the new missile's path and `k` the creator's argument (for Firestorm, the sub-missile's index), and the new missile's own path setup
 then steps that seed (20 steps for Firestorm's, 38 for the monster's) in 450 of 450 creations. Which of the path
 calls makes the steps is not read. The other sites (the Assassin's rings and zig-zags, several missile functions)
 are read from the code and none was reached by the runs.

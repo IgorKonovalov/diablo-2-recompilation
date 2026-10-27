@@ -3,7 +3,7 @@
 > **Status:** accepted 2026-10-20 (owner)
 > **Date:** 2026-10-20
 > **Amends:** [ADR-0014](0014-scope-game-simulation.md) (what "the phase's spec is reviewed" means for phase 3), [ADR-0016](0016-pipelined-simulation-phases.md) (which P2 opens phase 4)
-> **Related plan(s):** [0045-skills-missiles-machinery](../plans/0045-skills-missiles-machinery.md), [0046-skills-function-catalogue](../plans/0046-skills-function-catalogue.md)
+> **Related plan(s):** [0045-skills-missiles-machinery](../plans/done/0045-skills-missiles-machinery.md), [0046-skills-function-catalogue](../plans/0046-skills-function-catalogue.md)
 
 ## Context
 

@@ -2,16 +2,16 @@
 from: spec-writer
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0045-skills-missiles-machinery.md#implementation-log
-  - ../wiki/skills.md
-resolution: ""
+  - ../../plans/done/0045-skills-missiles-machinery.md#implementation-log
+  - ../../wiki/skills.md
+resolution: "Reviewed 2026-10-27 (architect): accept with fixes (9, made on wiki/skills: overclaim 5, misread 2, omission 2). Rulings: missiles F1 reconciled at [I] after lane/rbd (spec-writer entry 2026-10-27-architect-spec-writer-skills-missiles-f1-mastery-and-dispatch-i4-kick); Kick worded at the specs' tags. Plan 0045 closed (done/)."
 ---
 
-Review `lane/s45p4`: plan 0045 Phase 4, the wiki page [skills and missiles](../wiki/skills.md) (ADR-0012), written over
-the three skills specs reviewed 2026-10-27 ([skills/README](../specs/skills/README.md),
-[dispatch](../specs/skills/dispatch.md), [missiles](../specs/skills/missiles.md)); `based_on` lists all three at
+Review `lane/s45p4`: plan 0045 Phase 4, the wiki page [skills and missiles](../../wiki/skills.md) (ADR-0012), written over
+the three skills specs reviewed 2026-10-27 ([skills/README](../../specs/skills/README.md),
+[dispatch](../../specs/skills/dispatch.md), [missiles](../../specs/skills/missiles.md)); `based_on` lists all three at
 `2026-10-27`, their `updated:` dates. No Ghidra, no harness.
 
 The page, 22 sections, each linking its spec section: the big picture (a flowchart of the event chain), what the model
@@ -34,7 +34,7 @@ the pet limit's first pet not "the oldest" (rule 9), and the counts restated fro
 
 Also edited, links only and the stale "still to come" phrases they replace (rule 7): the wiki index (reading-order
 row 12, rows 13–15 renumbered; the *What the wiki does not cover* sentences on plans 0045 and 0046 rewritten whole),
-[combat](../wiki/combat.md) (the two "later subject" / "still to come" phrases, the open-questions bullet, *Where to
-read more*), [stats and states](../wiki/stats-and-states.md) (Sanctuary's damage and the skills bullet, *Where to read
-more*), [randomness](../wiki/randomness.md) (the re-seed bullet and *Where to read more*). No `based_on` bump was
+[combat](../../wiki/combat.md) (the two "later subject" / "still to come" phrases, the open-questions bullet, *Where to
+read more*), [stats and states](../../wiki/stats-and-states.md) (Sanctuary's damage and the skills bullet, *Where to read
+more*), [randomness](../../wiki/randomness.md) (the re-seed bullet and *Where to read more*). No `based_on` bump was
 needed on those three: their dates already match their specs.
