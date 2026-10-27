@@ -4012,10 +4012,10 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     the three groups sat on an H4a row (the H4a review's ruling d stands); row 60 (H4a) was already raised, and the
     526 piece belongs to special § J's `[I]` bullet, a remainder of S3a's row 73 that the spec-writer splits in Phase 3
     with no class move. Totals stand at the H3b review's 1 526 (`main` `7cd4f991` adds no inventory change).
-  - **Spec-writer:** the entry [skills/missiles F1 and dispatch I4](../backlog/2026-10-27-architect-spec-writer-skills-missiles-f1-mastery-and-dispatch-i4-kick.md)
+  - **Spec-writer:** the entry [skills/missiles F1 and dispatch I4](../backlog/archive/2026-10-27-architect-spec-writer-skills-missiles-f1-mastery-and-dispatch-i4-kick.md)
     is **released** with what to write (the mastery out of F1's `[C]`, the `k` lines `[I]` inline, the `[L]` open
     question, the swap's order, both runs' 4 118 builds). The lane's entry
-    [MonPostCreateBoss and 0x400](../backlog/2026-10-27-reverser-spec-writer-postcreateboss-table-and-entry-bit-0x400.md)
+    [MonPostCreateBoss and 0x400](../backlog/archive/2026-10-27-reverser-spec-writer-postcreateboss-table-and-entry-bit-0x400.md)
     is **released** with the § J split and the scope of the `0x400` `[C]`.
   - **Backlog:** the review request was closed. Review-fixes Seen lines: reverser 6 and 14.
   - **Ledger:** the lane row filled (verdict, fixes 6: under-claim 1, tool not kept 1, omission 4; usage from the
@@ -4191,3 +4191,63 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Ledger rows:** the lane row filled (verdict, fixes 5: under-claim 1, miscount 1, omission 3; usage from the
     orchestrator: 533 080 tokens, 290 tools, 52 min); the review row added, usage "—".
   - **Next:** merge `lane/h1a`; the save/d2s and items/uniques-sets Phase 3 re-tags may start.
+- **2026-10-27 — `lane/sf2` (spec-writer, no slot, no Ghidra, no harness): the two entries released at the
+  `lane/rbd` review.** (1) [skills/missiles § F1](../specs/skills/missiles.md#f-the-packet-at-the-hit-missile_builddamage):
+  the mastery taken out of the `[C]` bullet, which now cites both runs (4 118 builds over 33 logs, 0 mismatches; the
+  778-build breakdown kept as run:2026-10-25-skills's); the `k ←` and `if k ≠ 0` lines `[I]` inline at `0x005A895F`;
+  a new `[I]` bullet on the mastery (0 of 54 655 `MH0` lists hold one); the `[I]` bullet gives the order *test both
+  bounds > 0, swap, mastery, draw* and no inverted pair in either run; the `[L]` on a missile carrying its owner's
+  masteries. [Dispatch § I4](../specs/skills/dispatch.md#i-the-skill-packet) restated per bound: the `Kick`-clear,
+  `SrcDam` 0 formula and the `Kick` minimum `÷ 4` `[C]` (emulated inside hit 43, skills/0007 § 3), the `Kick` maximum
+  `÷ 3` `[I]`, the weapon share `[I]`; skills/0003 § 5 does not say whether start 2 reads `MinDam` itself or calls
+  `GetPhysMin/Max`, nor the table doc the `Kick` row's `MinDam`, so which damage Kick's start hit carries is an `[L]`
+  open question and a [reverser entry](../backlog/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md).
+  (2) [monsters/special § J](../specs/monsters/special.md#j-other-entry-paths-and-pre-existing-mods): the post-create
+  helpers and the flag-2 gate `[I]`, `MonPostCreateBoss`'s case table by `BaseId` (one tag per row, 13 `[I]`; the 526
+  row `[C]` for mod 22, `[I]` for its hook) and a `[C]` bullet for Nihlathak's 22, scoped to `BaseId` 526; § G row 60
+  keeps its tag and cites the chained placement. [drlg/room-tiles](../specs/drlg/room-tiles.md) 9d's note: `0x400`,
+  the client wall fade's mark, its writer `[I]`, on a near room's walls only `[C]` for the council log alone.
+  Tags: missiles C 46, I 92 → 95, L 6 → 7; dispatch C 72 → 73, I 187 → 189, L 10 → 11; special C 149 → 151, I 70 → 86,
+  L 4; room-tiles C 121 → 122, I 34 → 35, L 0 (`updated:` 2026-10-27). Wiki: skills (F1, I4, two open items);
+  `based_on` of levels, randomness and seed-to-world bumped for room-tiles. Both entries closed;
+  [review request](../backlog/archive/2026-10-27-spec-writer-architect-review-lane-sf2-missiles-f1-dispatch-i4-special.md)
+  filed; ledger row added, usage "—".
+- **2026-10-27 — `lane/sf2` review (architect): accept with fixes (3).** Merged `main` `94738360` into the lane first
+  (`a74f768d`; the plan log and ledger conflicts kept both sides, `backlog.py archive` had nothing to move).
+  - **Checks:** each change read against the released entries, the `lane/rbd` review's instructions and skills/0002
+    § 6, skills/0007 §§ 2–3, skills/0003 § 5, monsters/0003 § Lane rbd and drlg/0002 § Lane rbd. The four front
+    matters match a script count (gate E6 rule, backticked tags included). Every `[L]` sits under *Open questions*.
+    objdump confirms `MissileElemRoll`'s max-then-min reads and `jg` tests (`0x005A8925`, `0x005A8940`), the swap at
+    `0x005A894B`–`0x005A8951`, the mastery skip on −1 (`0x005A8956`), its read at `0x005A895F` and the two `MulDiv`
+    adds ending at `0x005A8982`; `GetPhysMin`'s `Kick` branch (`str + dex − 20` for type 0, else `3 · stat 12`,
+    floor 1, `÷ 4 << 8`, `0x00647BF0`–`0x00647C48`), the `SrcDam` call at `0x00647C61`, `MinDam` `+0x1A8` and the
+    `HitShift` shift (`0x00647CB4`, `0x00647CF1`); `GetPhysMax`'s `Kick` call `KickDamage(0)` at `0x00647D41` and
+    `KickDamage`'s `÷ 4`/`÷ 3` (`0x00644C70`, `0x00644C7A`); the wall fade's `test eax, 0x408` at `0x004DF086`; start 2's
+    reads at `0x0056CB54`/`0x0056CB5A`.
+  - **Fixes (3, made here):** (1) *overclaim:* dispatch I4's `[C]` bullet named `GetPhysMin/Max`'s callers (summons,
+    missiles, do functions), which ADR-0015 (3) leaves outside an emulated map; moved to the `SrcDam` `[I]` bullet, and
+    wiki/skills says the callers are read from the code. (2) *under-claim:* the `[L]` asked whether start 2 reads
+    `MinDam` itself or calls `GetPhysMin/Max`; skills/0003 § 5's reading gives the former and objdump shows it
+    (`0x0056CB54`–`0x0056CB71`, no call). The I4 `[I]` bullet now says the start hit carries the row's `MinDam`; the
+    `[L]` is narrowed to the `Kick` row's values, the logged hits and the `Kick` branch's callers; wiki/skills and the
+    [reverser entry](../backlog/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md) annotated (counts unchanged).
+    (3) *wrong anchor:* the `SrcDam` share cited `0x00647CA6`–`0x00647CF1` (bands, synergy, shift); now
+    `0x00647C4D`–`0x00647CA3` and the add at `0x00647CBA`.
+  - **Rulings:** (a) **The I4 `[C]` raise is within the ADR-0015 map.** skills/0007 § 2 lists `SKILLS_GetPhysMin/Max`
+    and `SKILLS_LevelBands` as emulated inside `heal9d` (1 500 cases, 0 mismatches), with the `SrcDam` and kick-damage
+    calls as boundaries; the `Kick`-clear, `SrcDam` 0 formula and the `Kick` minimum are computed wholly before either
+    boundary, and § 3 already states both `[C]`. The spec's `[I]` was an under-claim (spec-writer rule 8); the raise
+    stands as a map from the row, the level and the owner's stats to the value. It does not cover the callers (fix 1),
+    the column meanings beyond skills/0002 § 1's layout, or the maximum past `KickDamage` (kept `[I]`). (b) **Special's
+    I + 16 is honest splitting.** 15 new claims (the two helper bullets, 12 table rows and the 526 row's hook) and one
+    backticked mention (`` `[I]` `` in the Nihlathak bullet), which the gate counts as elsewhere in the specs. Each row
+    is a distinct `BaseId` case with its own mods, as in § G's per-row table; no claim was duplicated. (c) missiles F1
+    and room-tiles 9d follow the `lane/rbd` rulings (mastery out of the `[C]`; the `0x400` `[C]` scoped to the council
+    log, its writer `[I]`).
+  - **Counts (final):** skills/missiles C 46 / I 95 / L 7; skills/dispatch C 73 / I 189 / L 11; monsters/special
+    C 151 / I 86 / L 4; drlg/room-tiles C 122 / I 35 / L 0. No inventory row or total moves (1 526 stand).
+  - **Bookkeeping:** research-map rows for the four specs rewritten; review-fixes Seen lines: spec-writer 2, 8 and 9;
+    the review request closed; the reverser entry stays open. Ledger: the lane row filled (verdict, fixes 3: overclaim
+    1, under-claim 1, wrong anchor 1; usage from the orchestrator: 133 323 tokens, 62 tools, 13 min); the review row
+    added, usage "—".
+  - **Next:** merge `lane/sf2`; the reverser entry on Kick's row values may start.
