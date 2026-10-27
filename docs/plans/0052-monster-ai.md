@@ -1,6 +1,6 @@
 # 0052 — Monster AI: the AI tick, target and skill choice, and the path request it makes (ADR-0014 phase 5)
 
-> **Status:** proposed (re-drafted 2026-10-27 at its gate, the review of plan 0045's spec; awaiting the owner's approval and the answers to § Scoping questions)
+> **Status:** approved (owner, 2026-10-27; scoping answers in the [plans README](README.md) owner decisions: questions 1–7 as recommended, question 8 the whole AI table)
 > **Created:** 2026-10-25
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases, 0020-skills-phase-in-two-plans, 0021-observed-boundaries-in-emulation
@@ -237,3 +237,4 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   town-follow and teleport targets. P2 keeps its gate on 0050·P3's review (ADR-0016) and adds its own P1.1 and tier
   reviews. Eight scoping questions for the owner, the seventh on ADR-0022 (proposed), what follows. Status stays
   `proposed`: the owner approves.
+- 2026-10-27 — **Approved by the owner.** Questions 1–7 answered as recommended; ADR-0022 accepted. Question 8 differs: the catalogue covers **the whole AI table**, every row whether or not a stock MonStats, PetType or Hireling row names it. The architect revises P1's catalogue batches and P3b to match, at the latest at the P1.1 review. P0 and P1.1 may start.
