@@ -639,7 +639,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `25 · 2 + 90` = 140). (f) The d2s keys are opt-in and default off, and each refusal path is tested. The two old
   `test_d2s.py` failures are not this lane's and are not an architect fix: each missing `RECIPE_BASES` row needs a
   base save and a built hash. They are routed:
-  [archivist entry](../backlog/2026-10-27-architect-archivist-test-d2s-recipe-bases-and-mp-saves-pin.md). The 13
+  [archivist entry](../backlog/archive/2026-10-27-architect-archivist-test-d2s-recipe-bases-and-mp-saves-pin.md). The 13
   recipes are three plan 0051 P1a mp recipes and ten `skills-*` recipes; `travel-tab2` is not one.
   **Fixes:** the Missiles `VelLev` row gains the review note that a level-1 `spike1` separates the term, with its C2
   entry (omission); the P1.3 reads of ruling (d) (omission); the request's `travel-tab2` (misread, in the request only).
@@ -720,6 +720,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   returns at 0x0057D3BD (omission); the function table's "§ 6.7" for § 6.5, and that heading's level (stale
   cross-reference). The review request is closed. Ledger: the lane row filled (usage from the orchestrator), the
   review row added with "—" usage.
+- **2026-10-27 — `lane/a2t` review (architect): accept.** The archivist's fix for the two old `test_d2s.py` failures
+  ([request](../backlog/archive/2026-10-27-archivist-architect-review-lane-a2t-testd2s-recipe-bases.md)). After merging
+  `main`, `python3 -I tools/test_d2s.py` runs 47 tests, OK. Under `tools/` the lane touches only `tools/test_d2s.py`:
+  13 `RECIPE_BASES` rows, the `test_mp_saves_check` pin and its docstring line. No recipe, builder or `mp_saves.py`
+  line changed. All ten `skills-*` hashes equal their saves in `2026-10-27-skills-manifest.sha256`, checked by script.
+  `mp-sock-join`, `mp-wound-join` and `mp-pal-conv` were built twice into the review scratchpad, and both builds give the
+  pinned hashes. `mp_saves.py check` gives `recipes=30 bad=0 pairs=21 pairs_bad=0`, the figure the `lane/p51r` review
+  accepted for plan 0051 P1a. **`workspace/runtime/`:** the mp saves have no manifest. Nothing under
+  `mp-saves-p44` or `mp-saves-p44h` is newer than 2026-10-20, and no `MpSockJoin`, `MpWoundJoin` or `MpPalConv` exists
+  anywhere in `workspace/`. That is consistent with the blocked build never running. No fixes. The request is closed.
+  Ledger: lane row filled (usage from the orchestrator), review row added with "—" usage.
 - **2026-10-27 — anim/0003's table links folded (archivist, `lane/a3f`; no Ghidra, no harness).** From the reverser's
   p50d entry ([backlog](../backlog/archive/2026-10-27-reverser-archivist-p50d-objects-framecnt-shift-and-hit-class-readers.md)),
   every reader `[I]` as the finding: [Objects § Timing](../tables/Objects.md#timing-plan-0050-phase-0) gains the
