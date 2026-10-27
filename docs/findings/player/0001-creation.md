@@ -117,7 +117,7 @@ branches § 11 and the summary list as not exercised stay `[I]` in the text.
 | `0x00532520` | `sub_00532520_PlayerUnitInitLegacy` | the same, for `0x00532590` | I |
 | `0x005348C0` | `sub_005348C0_PlayerUnitAlloc` | `SUnitCreate`'s player branch: inventory, skill list, stat list | I |
 | `0x00647EE0` | `SKILLS_InitPlayerSkills` | Attack + `Skill 1..10`; left/right default to Attack | C |
-| `0x00647110` | `SKILLS_AddSkill` | add a skill at level 1, or raise an existing one by 1 (below its max) | I |
+| `0x00647110` | `SKILLS_AddSkill` | add a skill at level 1, or raise an existing one by 1 (below its max) | C (plan 0038 H6g) |
 | `0x005706D0` | `PLAYER_InitBaseStats` | starting stats; `act ≠ 0` → `PLAYER_GrantLevel` | C |
 | `0x00534F10` | `PLAYER_GiveStartItems` | `item1..item10` | C |
 | `0x00534D60` | `sub_00534D60_StartItemSlot` | one `itemN`, `count` times: create, flags, place, durability | C |
@@ -140,10 +140,18 @@ branches § 11 and the summary list as not exercised stay `[I]` in the text.
 | `0x0057E990` | `XP_OnMonsterKill` | experience of a killed monster to the credited player | C |
 | `0x0057EAB0` | `sub_0057EAB0_AddExperienceDirect` | unadjusted grant to a player | I |
 | `0x0058C5C0` | `sub_0058C5C0_ExpGrantCapped` | grant 1,400,000 / 20,000,000 / 40,000,000 by difficulty, one level span at most per step | I |
-| `0x005359F0` | `PLAYER_DeathExpLoss` | `DeathExpPenalty`% of the level span | I |
-| `0x00570D60` | `PLAYER_SpendStatPoint` | `statpts` − 1, attribute + 1 | I |
-| `0x00570A80` | `PLAYER_SpendEnergy` | energy and `ManaPerMagic` | I |
-| `0x00570B60` | `PLAYER_SpendVitality` | vitality, `LifePerVitality`, `StaminaPerVitality` | I |
+| `0x005359F0` | `PLAYER_DeathExpLoss` | `DeathExpPenalty`% of the level span | C (plan 0038 H6g) |
+| `0x00570D60` | `PLAYER_SpendStatPoint` | `statpts` − 1, attribute + 1 | C (plan 0038 H6g) |
+| `0x00570A80` | `PLAYER_SpendEnergy` | energy and `ManaPerMagic` | C (plan 0038 H6g) |
+| `0x00570B60` | `PLAYER_SpendVitality` | vitality, `LifePerVitality`, `StaminaPerVitality` | C (plan 0038 H6g) |
+| `0x00570080` | `PLAYER_SpendSkillPoint` | skill-point spend: `newskills` (base stat 5) ≥ the cost, minus the cost, then `SKILLS_AddSkill` | I |
+| `0x00535AB0` | `sub_00535AB0_PlayerDeathExpLossGate` | calls `PLAYER_DeathExpLoss` when the killer is a monster with no owner | C (plan 0038 H6g) |
+| `0x005391E0` | `CLIENT_SetDeathExpLoss` | the client's kept amount (`DLC`) | C (plan 0038 H6g) |
+| `0x00539210` | `CLIENT_GetDeathExpLoss` | read by the corpse creation | C (plan 0038 H6g) |
+| `0x0057F700` | `PLAYER_CorpseCreate` | the corpse with 75 % of the kept amount | C (plan 0038 H6g) |
+| `0x006253B0` | `STATS_GetUnitBaseStat` | `(unit, id, param)`: base entries; the kill's stat 13 read | C (plan 0038 H6g) |
+| `0x00537970` | `sub_00537970_ClientFlag3D4Set` | `client +0x3D4 \|= 1` (0x00537993) | I |
+| `0x0054D520` | `sub_0054D520_SrvPacket63Handler` | handler of packet 0x63 (`g_PacketTable` 0x006E0D18, index 0x63; read), calls `BeltFreeSlot` at 0x0054D5BF | I |
 | `0x00570C80` | `sub_00570C80_StatsResetToBase` | attributes back to the CharStats values | I |
 | `0x00622560` | `sub_00622560_PlayerBaseToHit` | `(dex − 7) × 5 + stat 19 + ToHitFactor` | I |
 | `0x00622720` | `sub_00622720_UnitBlockChance` | `toblock + BlockFactor`, dex and level scaling, cap 75 | I |
@@ -892,6 +900,94 @@ Harness batch H3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), dat
   no other byte of the records differs from the file. **Remainder `[I]`:** the fallback built from the key text when the
   key is not found: every class key was found. (fn:sub_00612600_RecWideNameFill@0x00612600,
   fn:CHARSTATS_LoadTable@0x00613260, run:2026-10-27-sweep-data-load)
+
+## Plan 0038 batch H6g (run:2026-10-27-sweep-player)
+
+Harness batch H6g (`player`) of [plan 0038](../../plans/0038-inferred-claims-sweep.md) takes 17 statements of
+[player/creation](../../specs/player/creation.md): rows 2-4, 12, 16, 18, 22, 23, 25, 27, 28 (2), 29, 30, 32, 33 and 35 of
+[the inventory](../../plans/0038-inventory/player-creation.md). Run record
+[run:2026-10-27-sweep-player](experiments.md#run2026-10-27-sweep-player): 9 kept logs on slot 2 (stock data, tool-built
+saves, ADR-0013 § Neutral), logger `tools/gdb/h6g.gdb` (`player.gdb`'s files and the new `tools/gdb/h6g.py`). Checks
+over the 9 kept logs: `tools/player.py check` (4 new characters, 1 level-up, 145 `XP_Compute` and `PLAYER_AddExperience`
+calls reproduced, 0 failed) and `tools/sweep_h6g.py check` (**0 mismatches**, `workspace/logs/h6g/check/check-final.txt`);
+`tools/sweep_h6g.py static` (`check-static-final.txt`): 31 pins, 0 failing.
+
+### The new lines (`tools/gdb/h6g.py`)
+
+- `NCF`/`C3W`: client `+0x3D4` after `sub_00537970_ClientFlag3D4Set` in `NewCharFromStub`, and before each of its
+  writers (0x00537993 the `or [ecx], 1`, 0x005397A3, 0x00539594, 0x0053A3F0).
+- `SP0`/`SPX`: `PLAYER_SpendStatPoint`'s entry (which: 0 str, 1 energy, 2 dex, 3 vit) with base entries 0-11 before and
+  after; `SKC`/`SKX`/`AS0`/`ASX`: the skill-point spend (`PLAYER_SpendSkillPoint`, 0x00570080) and
+  `SKILLS_AddSkill` with the entry's level after. `ASX` reads the Skills `+0x12C` maxlvl cell as a dword; it is an
+  i16 (`movsx word` at 0x004AA8CD), so the checker takes the low word.
+- `BFG`/`BFX`: the belt's boxes before and the path `sub_0063C600_BeltFreeSlot` took (return 0x0054D5C4 from
+  `sub_0054D520_SrvPacket63Handler`, 0x0063C7AE from the item placement).
+- `XKE`/`XK0`: `XP_OnMonsterKill`'s read of the monster's base stat 13 and its stat list; `DG0`/`DL0`/`DLP`/`DLL`/`DLC`/`DLW`/
+  `DLX`: the death gate and `PLAYER_DeathExpLoss`'s steps; `CC0`/`CCX`: the corpse creation.
+
+### Ledger (17 statements): raised 7, raised in part 8, open 2
+
+- **Row 4 and row 32** (`PLAYER_SpendStatPoint`: `statpts` - 1, the attribute + 1) **raised.** [C] Four spends in the
+  town session (6711): strength 35 -> 36, dexterity 25 -> 26, vitality 30 -> 31 (maxhp and hp + `LifePerVitality` x 64,
+  maxstamina + `StaminaPerVitality` x 64) and energy 35 -> 36 (maxmana and mana + `ManaPerMagic` x 64): each
+  reproduced from `SP0` and `SPX` with every base entry 0-11 compared (`stat:` lines of the check, 4 cases).
+  (fn:PLAYER_SpendStatPoint@0x00570D60, fn:PLAYER_SpendEnergy@0x00570A80, fn:PLAYER_SpendVitality@0x00570B60,
+  run:2026-10-27-sweep-player)
+- **Row 18** (the belt column search path) **raised.** [C] The four Shift+click potions of the town session, to an
+  8-box belt: the column path at box 4 (the same class in column 0), the first-free path at box 1 and at box 2, the column
+  path at box 5; 2 + 2 cases from the packet-0x63 handler's call (0x0054D5C4) and 16 + 8 (free and none) from the
+  placement (0x0063C7AE), each reproduced from the logged boxes, and the next lookup shows the item in the predicted
+  box (3). (fn:sub_0063C600_BeltFreeSlot@0x0063C600, fn:sub_0054D520_SrvPacket63Handler@0x0054D520)
+  [I] The handler at 0x0054D520 is the packet-0x63 entry of the server's table (`g_PacketTable` at 0x006E0D18, 8 bytes
+  per opcode, 0x0054D520 at index 0x63: the table address read from the dispatch at 0x0054D772, the entry from the
+  bytes at 0x006E1030); what the client sends for the Shift+click is not read.
+- **Row 22** (the input is the killed monster's experience) **raised.** [C] 145 kills: `XP_Compute`'s input equals
+  the monster's base stat 13 read by `XP_OnMonsterKill` (`XKE`) and the `XK0` entry for each; the stat is read with
+  `STATS_GetUnitBaseStat`. (fn:XP_OnMonsterKill@0x0057E990, fn:STATS_GetUnitBaseStat@0x006253B0,
+  fn:XP_Compute@0x0057E480)
+- **Row 25** (the stat 85 bonus) **raised.** [C] 73 kills of the `xp85` session (Hell, an Annihilus carried): stat 85 =
+  10 (the unique's `addxp` maximum) at every `XC85`, the term `exp + MulDiv(exp, 10, 100)` differing from `exp` on all
+  73, each reproduced by `tools/player.py check`. (fn:XP_Compute@0x0057E480, tbl:UniqueItems.txt:addxp)
+- **Row 28** (the cap at the threshold of MaxLvl: two statements) **raised.** [C] The level-98 save (`cap98`, Hell): a
+  kill adding 5 at `T(98) - 2` ended at `T(98)` exactly and level 99 (`XA0`, `XAX`, `PLAYER_LevelUp` reproduced);
+  every later kill (71) returned 0 at `XCX`. (fn:PLAYER_AddExperience@0x0057E510)
+- **Row 23** (the clamp, the non-positive and the level-cap returns of `XP_Compute`) **raised in part.** [C] The
+  cap return: `XP_Compute` returned 0 at clvl 99 (`>= MaxLvl`) on 71 of 71 kills (fn:XP_Compute@0x0057E480, run:2026-10-27-sweep-player). **Remainder `[I]`:** the non-positive
+  return (no killed monster had experience <= 0: 145 of 145 positive) and the 0x7FFFFF clamp (d-owner, row 5).
+- **Row 27** (the clamp, cap, overflow and stat 85 not reached: a note) **raised in part.** [C] The cap and stat 85 are
+  now reached (rows 25, 28, 23; fn:XP_Compute@0x0057E480, run:2026-10-27-sweep-player); **remainder:** the clamp and the overflow test are still not reached (rows 5, 24, d-owner).
+- **Row 35** (`XP_Compute` returns 1 for a non-positive input) **raised in part.** [C] The "0 at the level cap" side
+  (71 cases; fn:XP_Compute@0x0057E480, run:2026-10-27-sweep-player). **Remainder `[I]`:** the return of 1, no input <= 0.
+- **Row 16** (`SKILLS_AddSkill` raises an existing entry by 1 below its maximum) **raised in part.** [C] Through the
+  skill-point path (`PLAYER_SpendSkillPoint`: `newskills` >= the cost, then minus the cost, then the add): Ice Bolt
+  appended at level 1, then 1 -> 2, and Frozen Armor 19 -> 20 (the Skills maximum), `newskills` falling by the cost
+  at each (`SKX`, 3 cases); the other callers only appended (467 cases). **Remainder `[I]`:** the
+  at-the-maximum side: a click on Frost Nova at level 20 sent no request (the client refuses it), so the add never
+  saw a full entry. (fn:SKILLS_AddSkill@0x00647110, fn:PLAYER_SpendSkillPoint@0x00570080)
+- **Rows 3, 30** (the death experience loss) **raised in part.** [C] `PLAYER_DeathExpLoss` reproduced in four deaths on
+  three difficulties: Normal (`deathn`, pen 0): loss 0, corpse 0; Nightmare (`deathnm`, pen 5, span 1 964 461): the
+  loss 98 223 would take the experience below `T(39)`, so the kept amount is the clamp: 1 000 (17 271 791 - 17 270 791),
+  the new experience `T(39) + 1`, the corpse share 750; Hell (`deathh`, pen 10, span 4 650 593): loss 465 059, new
+  49 534 941, corpse share 348 794 (465 059 x 75 / 100, truncated); and a second Nightmare death at `T(39) + 1`: kept
+  1, the experience unchanged, share 0. The gate (`DG0`) was entered with a monster killer of type 1 and no owner
+  every time (5). (fn:PLAYER_DeathExpLoss@0x005359F0, fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0,
+  fn:CLIENT_SetDeathExpLoss@0x005391E0, fn:PLAYER_CorpseCreate@0x0057F700, fn:CLIENT_GetDeathExpLoss@0x00539210,
+  tbl:DifficultyLevels.txt:DeathExpPenalty) **Remainder `[I]`:** the corpse pickup, the share going back to the
+  owner. Four `deathnm` sessions (r2 to r5, the last kept) walked from the town to the corpse; the character died
+  again at or before it each time (life 60), so no `CP0` line was logged.
+- **Row 12** (`client +0x3D4 |= 1` at 0x00537970) **raised in part.** [C] After the call the word equals the word at
+  `NC0` with bit 0 set (4 new characters). [C] Bit 0 is already set at `NC0`, by 0x005397A3 in
+  `sub_00539760_ClientAddPlayerToGame` (`C3W` before = 0 at 0x005397A3: 8, before = 1 at 0x00537993: 2 and at
+  0x00539594: 8), so the `or` at 0x00537993 changes nothing in these sessions. **Remainder `[I]`:** a path that reaches
+  0x00537970 with bit 0 clear. (fn:sub_00537970_ClientFlag3D4Set@0x00537970)
+- **Row 33** (J2-J5 not run: a note) **raised in part.** [C] J3 (death loss) and J5 (spend) ran, and the cap (H; fn:PLAYER_DeathExpLoss@0x005359F0, fn:PLAYER_SpendStatPoint@0x00570D60, run:2026-10-27-sweep-player);
+  the party half stays d-2c. **Remainder:** J2, the capped grant (rows 2 and 29).
+- **Rows 2 and 29** (`sub_0058C5C0_ExpGrantCapped`, the Ancients' reward) **open (shortfall).** Two tries of the `anc`
+  route (seed 6718, then 4314: `towp2`, `wp:5,8`, `explore:40`, `warp:76:150`, `clickwarp:76:1`, `objop:546:1`, `farm
+  --boss-cls 540,541,542`): the first never found warp 76 in level 118 (40 hops, "no warp 76"); the second reached
+  level 120 but `objop` found no object of class 546 ("level explored"), and no Ancient was met. No `EG0` line.
+  Plan 0042's x-summit sessions operated the summit door (class 564) at this stage; the altar object was not
+  identified. Routed, not retried (backlog).
 
 ## Open questions
 

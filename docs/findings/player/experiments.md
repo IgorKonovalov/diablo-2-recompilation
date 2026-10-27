@@ -213,3 +213,29 @@ result; the findings cite them by `run:<id>`.
   runtime 2 276 402 written as `2^21 − 1` = 2 097 151 (session 34414): the `gf` writer's unsigned clamp at its top bound.
 - Backs [save/0001 § Plan 0038 batch S1a](../save/0001-d2s-io.md#plan-0038-batch-s1a-2026-10-16).
 
+
+## run:2026-10-27-sweep-player
+
+Plan 0038 batch H6g (`player`), slot 2, expansion install, stock excel data, tool-built saves
+(`tools/d2s.py build` of `tools/d2s_recipes/player-h6g-*.json` onto the owner-sample base; ADR-0013 § Neutral).
+Logger `tools/gdb/h6g.gdb` (`player.gdb`'s files and `tools/gdb/h6g.py`; revision r1 for the town and new-character
+logs, r2 with the `C3W` writers for the rest) and `tools/gdb/h6g-quest.gdb` (the Ancients route); sessions by
+`tools/h6g_sessions.py`, checks by `tools/sweep_h6g.py` (which runs `tools/player.py check` first). Kept under
+`workspace/logs/h6g/` (`manifest-final.sha256`, 75 lines, passes from that directory; `dev/manifest-dev-final.sha256`,
+54 lines, passes from `dev/`).
+
+| Session | Seed | Save | Mode | What it covers |
+|---|---|---|---|---|
+| town | 6711 | `H6gTown` | Normal | stat spends, skill points, four Shift+click potions to the belt (rows 4, 16, 18, 32) |
+| newchar (r1, r2) | 6712 | none | Normal | a Sorceress and a classic Barbarian (row 12) |
+| cap98 | 6713 | `H6gCap` | Hell | level 98 to 99 at the threshold, 71 kills at the cap (rows 23, 27, 28, 35) |
+| xp85 | 6714 | `H6gXp` | Hell | Annihilus, 73 kills with stat 85 (row 25) |
+| deathn | 6715 | `H6gDn` | Normal | death loss 0 (rows 3, 30) |
+| deathh | 6716 | `H6gDh` | Hell | death loss 465 059 (rows 3, 30) |
+| deathnm | 6717 | `H6gDnm` | Nightmare | the clamp (kept 1 000), a second death (kept 1); the kept log is r5 and the first (rows 3, 30) |
+
+Not landed: the corpse pickup (`deathnm` r2 to r5 in `dev/`: the character died again before or at the corpse), and
+the Ancients' reward (`anc`, seeds 6718 and 4314 in `dev/`: no warp 76 on the first, no object of class 546 on the
+second). Checks: `tools/sweep_h6g.py check` over the 9 kept logs, 0 mismatches (`check/check-final.txt`, sha256
+`bec4893d…`), `tools/sweep_h6g.py static` 31 pins, 0 failing (`check/static-final.txt`). Backs
+[player/0001 § Plan 0038 batch H6g](0001-creation.md#plan-0038-batch-h6g-run2026-10-27-sweep-player).

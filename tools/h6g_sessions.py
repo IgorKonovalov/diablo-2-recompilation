@@ -185,7 +185,7 @@ SESSIONS = {
     "deathnm": ("H6gDnm", "enter-nightmare", 6717, death_cmds(True)),
     # Act V start; the route of plan 0042's x-summit sessions (tools/quest_sessions.py), the altar (object 546), then
     # the three Ancients (540-542)
-    "anc": ("H6gAnc", "enter-normal", 6718,
+    "anc": ("H6gAnc", "enter-normal", 4314,
             [("qs", ["towp2", "wp:5,8", "explore:40", "warp:76:150", "clickwarp:76:1", "objop:546:1"], 600),
              pilot("farm", "--boss-cls", "540,541,542", "--time", "300", "--nova-key", "F1", "--es-key", "F2",
                    "--es", "20", "--sweep", t=360),
@@ -332,10 +332,15 @@ def do_corpse(slot, log, timeout, out, shots):
             k = min(1.0, (6.0 if p.walk else 10.0) / d)
             p.teleport(int((gx - px) * k), int((gy - py) * k))
             time.sleep(0.8)
-            near = [m for m in st.mon if d2pilot.live(m) and ((m["x"] - px) ** 2 + (m["y"] - py) ** 2) ** 0.5 < 12]
+            near = [m for m in st.mon if d2pilot.live(m) and ((m["x"] - px) ** 2 + (m["y"] - py) ** 2) ** 0.5 < 18]
             if near:
-                p.nova()
+                p.nova(); p.nova()
                 time.sleep(0.4)
+            continue
+        near = [m for m in st.mon if d2pilot.live(m) and ((m["x"] - px) ** 2 + (m["y"] - py) ** 2) ** 0.5 < 18]
+        if near:   # at the corpse: clear what is around it before clicking (the killer waits there)
+            p.nova(); p.nova()
+            time.sleep(0.4)
             continue
         sx, sy = p.screen(gx - px, gy - py)
         oy = (-10, -20, 0, -30)[tries % 4]

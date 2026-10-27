@@ -391,6 +391,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/s38h` review | 0038 P3 hirelings | architect-review | 184 271 | 68 | 18 | — (static, objdump, no Ghidra, no harness) | gave accept with fixes | — (on the lane row; also wiki/saves' hirelings date and text, items/economy's resurrection classes 150 and 515 raised) |
 | 2026-10-27 | `lane/p53a` | 0053 P0–P1 | archivist | 129 135 | 44 | 13 | — (no Ghidra; Sonnet) | accept with fixes | 4: miscount 1, other 3 |
 | 2026-10-27 | `lane/p53a` review | 0053 P0–P2 | architect-review | 108 797 | 42 | 7 | — (review + Phase 2 in one run) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/h6g` (to the first pause) | 0038 H6g | reverser-harness | 430 121 | 158 | 62 | slot 2 (8 kept sessions), no Ghidra | — | — |
+| 2026-10-27 | `lane/h6g` (resume) | 0038 H6g | reverser-harness | — | — | — | slot 2 (6 launches), no Ghidra | — | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

@@ -5813,3 +5813,32 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `0x0054D520` packet 0x63 handler, `0x00537970`), the review-fixes pass, the review request and the ledger row.
     Expected ledger, as the logs stand: raised 4, 32, 16 (in part: the at-maximum side unsent), 18, 22, 25, 28 (2),
     3 and 30 (in part until the pickup), 12 (in part), 23, 27, 33, 35 (in part); 2 and 29 open.
+- **2026-10-27 — H6g (`player`) filed, review requested (reverser, `lane/h6g`, harness slot 2; `main` merged at
+  `5c7f1c5e`, the one conflict this log, kept both sides).** Run id run:2026-10-27-sweep-player
+  ([player/experiments](../findings/player/experiments.md#run2026-10-27-sweep-player)); slot 2 stopped, its saves
+  directory restored (no aside left); no game, driver or gdb of the lane remains. The old `test_d2s` anim failure cleared
+  with the merge.
+  - **Resume work:** `deathnm` rerun four times (r2 to r5; `do_corpse` now clears monsters within 18 before each step and
+    before each click): the character died a second time at or before the corpse each time (60 life), so no `CP0`; r5 is
+    kept (its first death is the clamp case again, its second the new kept-1 case, share 0), r2 to r4 are in `dev/`.
+    `anc` twice (seed 6718, then 4314): no warp 76 on the first, level 120 on the second with no object of class 546;
+    in `dev/`, not retried. The seed of the `anc` row in `tools/h6g_sessions.py` is now 4314.
+  - **Ledger (17): raised 7 (rows 4, 18, 22, 25, 28 x2, 32), raised in part 8 (3, 12, 16, 23, 27, 30, 33, 35), open 2
+    (2 and 29).** Details and remainders in
+    [player/0001 § Plan 0038 batch H6g](../findings/player/0001-creation.md#plan-0038-batch-h6g-run2026-10-27-sweep-player).
+    Checks over the 9 kept logs: `tools/sweep_h6g.py check` 0 mismatches (`check-final.txt`, `bec4893d…`), `static` 31 pins;
+    manifests `workspace/logs/h6g/manifest-final.sha256` (75 lines, `9dbee516…`) and `dev/manifest-dev-final.sha256` (54
+    lines, `606f3c68…`).
+  - **Totals:** no row changed class, so `main`'s stand: **static 567, harness 509, c-emu 0, blocked 431, deferred 2, raised
+    17: 1 526** (inventory § 2.6 H6g block).
+  - **Symbols:** 10 raised to `[C]` (`PLAYER_SpendStatPoint`, `PLAYER_SpendEnergy`, `PLAYER_SpendVitality`,
+    `SKILLS_AddSkill`, `PLAYER_DeathExpLoss`, the gate, `CLIENT_SetDeathExpLoss`, `CLIENT_GetDeathExpLoss`,
+    `PLAYER_CorpseCreate`, `STATS_GetUnitBaseStat`; their Functions-table rows moved) and 3 new `[I]`
+    (`PLAYER_SpendSkillPoint` 0x00570080, `sub_0054D520_SrvPacket63Handler`, `sub_00537970_ClientFlag3D4Set`).
+  - **For the reviewer to rule on:** (1) rows 23, 27, 33 and 35 as "raised in part" (my reading: the cap and stat 85
+    halves are met, the non-positive, clamp and overflow halves not); (2) rows 2 and 29 and the corpse pickup: the backlog
+    entry `2026-10-27-reverser-architect-plan-0038-h6g-shortfalls-ancients-altar-and-corpse.md` (static read of the
+    Ancients' spawn, a different recipe, or d-owner); (3) the 0x0054D520 name: packet 0x63 is read from the table
+    (index 0x63 at 0x006E0D18), the packet's meaning is not.
+  - **Review-fixes pass:** rules 1 (the table-index claim is `[I]`), 2 (counts copied from `check-final.txt`) and 14
+    (10 symbols) checked.

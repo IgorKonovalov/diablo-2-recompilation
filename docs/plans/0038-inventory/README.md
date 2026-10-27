@@ -1628,6 +1628,29 @@ raised 17: 1 526.** § 5 marks H6f done. **Phase 3 ready:** hirelings (S3a, S3b,
 
 **Merge recount (2026-10-27, `lane/h6f` merged after `lane/h6c`).** The two reviews each counted against `main` `a105ae13`; their moves are disjoint (H6c: harness −2, d-2c +2; H6f: harness −2, d-none +2). Combined: **static 567, harness 509, c-emu awaiting a batch 0, blocked 431** (d-none 302, d-edit 73, d-sim 28, d-2c 10, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
 
+**H6g (filed 2026-10-27, reverser, `lane/h6g`): 17 statements of player/creation (rows 2-4, 12, 16, 18, 22, 23, 25, 27, 28
+x2, 29, 30, 32, 33, 35).** run:2026-10-27-sweep-player, 9 kept logs on slot 2 (expansion; Normal, Nightmare, Hell;
+tool-built saves), logger `tools/gdb/h6g.gdb` (`player.gdb`'s files and the new `h6g.py`), checks over the 9 kept logs:
+`tools/player.py check` 0 failed (4 new characters, 145 kills, 1 level-up), `tools/sweep_h6g.py check` **0 mismatches**
+(`check-final.txt`), `static` 31 pins 0 failing. The evidence is in
+[player/0001 § Plan 0038 batch H6g](../../findings/player/0001-creation.md#plan-0038-batch-h6g-run2026-10-27-sweep-player),
+whose ledger gives each statement's `[C]` part and remainder.
+
+- **Raised (7):** player/creation 4 and 32 (the four stat spends), 18 (the belt's column, free and none paths), 22 (145
+  kills: the input is the monster's base stat 13), 25 (73 kills with stat 85 = 10), 28 x2 (`T(98)` exactly, level 99).
+- **Raised in part (8):** 3 and 30 (the death loss on three difficulties, the clamp, the corpse share; the pickup
+  unreached after four `deathnm` sessions), 12 (bit 0 is set before the `or`), 16 (the at-the-maximum side: the client
+  sends no request), 23 and 35 (the cap return; the non-positive input never met), 27 (the clamp and the overflow still
+  not reached, d-owner rows 5 and 24), 33 (J2 not run).
+- **Open, shortfall (2):** 2 and 29 (`ExpGrantCapped`): two tries of the Ancients route did not reach the altar (no warp
+  76 on seed 6718, no object 546 at level 120 on seed 4314); filed to the architect for a route ruling (d-owner or a
+  further route with the summit door of class 564).
+
+No row changed class: the 17 stay in (b) until the review, so the totals stand on `main`'s: **static 567, harness 509,
+c-emu awaiting a batch 0, blocked 431** (d-none 302, d-edit 73, d-sim 28, d-2c 10, d-owner 10, d-0032 8), **deferred 2,
+raised 17: 1 526.** (Recounted after merging `main` at `5c7f1c5e`; any reclassification of rows 2, 29 or 23's
+remainder is the review's.)
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
